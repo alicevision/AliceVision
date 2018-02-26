@@ -78,41 +78,42 @@ install(TARGETS aliceVision_meshing
   DESTINATION bin/
 )
 
-# Mesh Denoising
+if(ALICEVISION_HAVE_MESHSDFILTER)
+  
+  # Mesh Denoising
+  
+  add_executable(aliceVision_meshDenoising main_meshDenoising.cpp)
+  
+  target_link_libraries(aliceVision_meshDenoising
+    PUBLIC aliceVision_common
+           MeshSDLibrary
+           ${Boost_LIBRARIES}
+           Eigen3::Eigen
+  )
+  
+  set_property(TARGET aliceVision_meshDenoising
+    PROPERTY FOLDER AliceVision/Software/Pipeline
+  )
+  
+  install(TARGETS aliceVision_meshDenoising DESTINATION bin/)
+  
+  # Mesh Decimate
+  
+  add_executable(aliceVision_meshDecimate main_meshDecimate.cpp)
+  
+  target_link_libraries(aliceVision_meshDecimate
+    PUBLIC aliceVision_common
+           OpenMesh
+           ${Boost_LIBRARIES}
+  )
+  
+  set_property(TARGET aliceVision_meshDecimate
+    PROPERTY FOLDER AliceVision/Software/Pipeline
+  )
+  
+  install(TARGETS aliceVision_meshDecimate DESTINATION bin/)
 
-add_executable(aliceVision_meshDenoising main_meshDenoising.cpp)
-
-target_link_libraries(aliceVision_meshDenoising
-  PUBLIC aliceVision_common
-         MeshSDLibrary
-         ${Boost_LIBRARIES}
-         Eigen3::Eigen
-)
-#target_link_libraries(aliceVision_meshDenoising
-#  PUBLIC ${EIGEN3_INCLUDE_DIR}
-#)
-
-set_property(TARGET aliceVision_meshDenoising
-  PROPERTY FOLDER AliceVision/Software/Pipeline
-)
-
-install(TARGETS aliceVision_meshDenoising DESTINATION bin/)
-
-# Mesh Decimate
-
-add_executable(aliceVision_meshDecimate main_meshDecimate.cpp)
-
-target_link_libraries(aliceVision_meshDecimate
-  PUBLIC aliceVision_common
-         OpenMesh
-         ${Boost_LIBRARIES}
-)
-
-set_property(TARGET aliceVision_meshDecimate
-  PROPERTY FOLDER AliceVision/Software/Pipeline
-)
-
-install(TARGETS aliceVision_meshDecimate DESTINATION bin/)
+endif()
 
 # Mesh Filtering
 
