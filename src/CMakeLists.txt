@@ -136,7 +136,7 @@ if(NOT DEFINED EIGEN_INCLUDE_DIR_HINTS)
   set(EIGEN_INCLUDE_DIR_HINTS ${CMAKE_CURRENT_SOURCE_DIR}/dependencies/eigen)
   set(ALICEVISION_USE_INTERNAL_EIGEN ON)
 endif()
-find_package(Eigen QUIET)
+find_package(Eigen 3.3 QUIET)
 if(EIGEN_FOUND)
   include_directories(${EIGEN_INCLUDE_DIRS})
   # See https://eigen.tuxfamily.org/dox/group__TopicUnalignedArrayAssert.html

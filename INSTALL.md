@@ -37,25 +37,27 @@ Dependencies
 AliceVision depends on:
 
 * Boost >= 1.60.0
-* Eigen 3.2.4 
-* Ceres 1.10.0
-* Flann 1.8.4
-* CoinUtils 2.9.3
+* Eigen >= 3.3.4
+* Ceres >= 1.10.0
+* Flann >= 1.8.4
+* CoinUtils >= 2.9.3
 * Coin-or linear programming (Clp)
-* Open Solver Interface (Osi) 0.106.10
-* Lemon 1.3
-* OpenEXR 2.2.0
+* Open Solver Interface (Osi) >= 0.106.10
+* Lemon >= 1.3
+* OpenEXR >= 2.2.0
 * OpenImageIO >= 1.8.7
 
 Other optional libraries can enable specific features (check "CMake Options" for enabling them):
 
 * OpenMP (enable multi-threading)
 * Mosek (linear programming)
-* OpenCV >= 3.0 (feature extraction, calibration module)
+* OpenCV >= 3.0 (feature extraction, calibration module, video IO)
 * Alembic (data I/O)
-* CCTag (feature extraction/matching and localization)
-* PopSift (feature extraction/matching)
-* Cuda >=7.0 (feature extraction)
+* CCTag (feature extraction/matching and localization on CPU or GPU)
+* PopSift (feature extraction on GPU)
+* UncertaintyTE (Uncertainty computation)
+* Magma (required for UncertaintyTE)
+* Cuda >= 7.0 (feature extraction)
 * OpenGV (rig calibration and localization)
 
 
@@ -85,7 +87,7 @@ and `-DOPENIMAGEIO_INCLUDE_DIR:PATH=/path/to/oiio/install/include/`
 At the end of the cmake process, a report shows for each library which version (internal/external) will be used in the building process, e.g.:
 
 ```
--- EIGEN: 3.2.4 (external)
+-- EIGEN: 3.3.4 (external)
 -- CERES: 1.10.0 (external)
 -- FLANN: 1.8.4 (external)
 -- CLP: 1.15.11 (internal)
@@ -125,6 +127,11 @@ CMake Options
 * `ALICEVISION_USE_POPSIFT` (default: `AUTO`)
   Enable GPU SIFT implementation.
   `-DPopSift_DIR:PATH=/path/to/popsift/install/lib/cmake/PopSift` (where PopSiftConfig.cmake can be found)
+  
+* `ALICEVISION_USE_UNCERTAINTYTE` (default: `AUTO`)
+  Enable Uncertainty computation.
+  `-DUNCERTAINTYTE_DIR:PATH=/path/to/uncertaintyTE/install/` (where `inlude` and `lib` can be found)
+  `-DMAGMA_ROOT:PATH=/path/to/magma/install/` (where `inlude` and `lib` can be found)
   
 * `ALICEVISION_USE_OPENCV` (default: `OFF`)
   Build with openCV
