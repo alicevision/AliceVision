@@ -1,4 +1,6 @@
 // This file is part of the AliceVision project.
+// Copyright (c) 2016 AliceVision contributors.
+// Copyright (c) 2012 openMVG contributors.
 // This Source Code Form is subject to the terms of the Mozilla Public License,
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
@@ -57,14 +59,14 @@ struct HammingBitSet
 // Lookup table to count the number of common 1 bits on unsigned char values
 static const unsigned char pop_count_LUT[256] =
 {
-#define OMVG_B2(n) n,     n+1,     n+1,     n+2
-#define OMVG_B4(n) OMVG_B2(n), OMVG_B2(n+1), OMVG_B2(n+1), OMVG_B2(n+2)
-#define OMVG_B6(n) OMVG_B4(n), OMVG_B4(n+1), OMVG_B4(n+1), OMVG_B4(n+2)
-    OMVG_B6(0), OMVG_B6(1), OMVG_B6(1), OMVG_B6(2)
+#define ALICEVISION_B2(n) n,     n+1,     n+1,     n+2
+#define ALICEVISION_B4(n) ALICEVISION_B2(n), ALICEVISION_B2(n+1), ALICEVISION_B2(n+1), ALICEVISION_B2(n+2)
+#define ALICEVISION_B6(n) ALICEVISION_B4(n), ALICEVISION_B4(n+1), ALICEVISION_B4(n+1), ALICEVISION_B4(n+2)
+    ALICEVISION_B6(0), ALICEVISION_B6(1), ALICEVISION_B6(1), ALICEVISION_B6(2)
             
-#undef OMVG_B2
-#undef OMVG_B4
-#undef OMVG_B6
+#undef ALICEVISION_B2
+#undef ALICEVISION_B4
+#undef ALICEVISION_B6
 };
 
 // Hamming distance to work on raw memory
