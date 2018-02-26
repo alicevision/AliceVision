@@ -25,17 +25,7 @@ namespace fuseCut {
 
 namespace bfs = boost::filesystem;
 
-Fuser::Fuser(const mvsUtils::MultiViewParams* _mp, mvsUtils::PreMatchCams* _pc)
-  : mp(_mp)
-  , pc(_pc)
-{
-}
-
-Fuser::~Fuser()
-{
-}
-
-unsigned long Fuser::computeNumberOfAllPoints(int scale)
+unsigned long computeNumberOfAllPoints(const mvsUtils::MultiViewParams* mp, int scale)
 {
     unsigned long npts = 0;
 
@@ -64,6 +54,16 @@ unsigned long Fuser::computeNumberOfAllPoints(int scale)
         npts += nbDepthValues;
     }
     return npts;
+}
+
+Fuser::Fuser(const mvsUtils::MultiViewParams* _mp, mvsUtils::PreMatchCams* _pc)
+  : mp(_mp)
+  , pc(_pc)
+{
+}
+
+Fuser::~Fuser()
+{
 }
 
 
@@ -408,7 +408,7 @@ void Fuser::divideSpace(Point3d* hexah, float& minPixSize)
     ALICEVISION_LOG_INFO("Estimate space.");
     int scale = 0;
 
-    unsigned long npset = computeNumberOfAllPoints(scale);
+    unsigned long npset = computeNumberOfAllPoints(mp, scale);
     int stepPts = std::max(1, (int)(npset / (unsigned long)3000000));
 
     minPixSize = std::numeric_limits<float>::max();
@@ -543,7 +543,7 @@ Voxel Fuser::estimateDimensions(Point3d* vox, Point3d* newSpace, int scale, int 
     vy = vy.normalize();
     vz = vz.normalize();
 
-    int nAllPts = computeNumberOfAllPoints(scale);
+    int nAllPts = computeNumberOfAllPoints(mp, scale);
     float pointToJoinPixSizeDist = (float)mp->_ini.get<double>("Fuser.pointToJoinPixSizeDist", 2.0f);
     ALICEVISION_LOG_INFO("pointToJoinPixSizeDist: " << pointToJoinPixSizeDist);
     int maxpts = 1000000;

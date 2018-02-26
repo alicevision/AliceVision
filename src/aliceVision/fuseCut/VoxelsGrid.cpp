@@ -22,18 +22,18 @@ VoxelsGrid::VoxelsGrid()
 {
 }
 
-VoxelsGrid::VoxelsGrid(const Voxel& dimmensions, Point3d* _space, mvsUtils::MultiViewParams* _mp, mvsUtils::PreMatchCams* _pc,
+VoxelsGrid::VoxelsGrid(const Voxel& dimensions, Point3d* _space, mvsUtils::MultiViewParams* _mp, mvsUtils::PreMatchCams* _pc,
                        const std::string& _spaceRootDir, bool _doVisualize)
 {
     doVisualize = _doVisualize;
     mp = _mp;
     pc = _pc;
-    voxelDim = dimmensions;
+    voxelDim = dimensions;
     for(int k = 0; k < 8; k++)
     {
         space[k] = _space[k]; // TODO faca
     }
-    voxels = mvsUtils::computeVoxels(space, dimmensions);
+    voxels = mvsUtils::computeVoxels(space, dimensions);
     spaceRootDir = _spaceRootDir;
     bfs::create_directory(spaceRootDir);
 

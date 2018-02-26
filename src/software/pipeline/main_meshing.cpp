@@ -25,12 +25,15 @@ namespace po = boost::program_options;
 
 enum EPartitioning {
     eUndefined = 0,
-    eSingleBlock = 1,
-    eAuto = 2
+    eSingleBlockVoxels = 1,
+    eSingleBlock = 2,
+    eAuto = 3,
 };
 
 EPartitioning EPartitioning_stringToEnum(const std::string& s)
 {
+    if(s == "singleBlockVoxels")
+        return eSingleBlockVoxels;
     if(s == "singleBlock")
         return eSingleBlock;
     if(s == "auto")
@@ -88,7 +91,7 @@ int main(int argc, char* argv[])
         ("smoothingWeight", po::value<float>(&smoothingWeight)->default_value(smoothingWeight),
             "Meshing post-processing: smoothing weight.")
         ("partitioning", po::value<EPartitioning>(&partitioning)->default_value(partitioning),
-            "Partitioning: singleBlock or auto.");
+            "Partitioning: 'singleBlock', 'singleBlockVoxels' or 'auto'.");
 
     po::options_description logParams("Log parameters");
     logParams.add_options()
@@ -173,6 +176,9 @@ int main(int argc, char* argv[])
             // Join meshes
             mesh::Mesh* mesh = fuseCut::joinMeshes(voxelsArrayFileName, &lsbase);
 
+            if(mesh->pts->empty() || mesh->tris->empty())
+              throw std::runtime_error("Empty mesh");
+
             ALICEVISION_LOG_INFO("Saving joined meshes...");
 
             bfs::path spaceBinFileName = outDirectory/"denseReconstruction.bin";
@@ -189,7 +195,7 @@ int main(int argc, char* argv[])
             deleteArrayOfArrays<int>(&ptsCams);
         }
         break;
-        case eSingleBlock:
+        case eSingleBlockVoxels:
         {
             ALICEVISION_LOG_INFO("Meshing partitioning mode: single block.");
             fuseCut::LargeScale ls0(&mp, &pc, tmpDirectory.string() + "/");
@@ -219,26 +225,27 @@ int main(int argc, char* argv[])
             fuseCut::ReconstructionPlan rp(lsbase.dimensions, &lsbase.space[0], lsbase.mp, lsbase.pc, lsbase.spaceVoxelsFolderName);
 
             StaticVector<int> voxelNeighs;
-            voxelNeighs.reserve(rp.voxels->size() / 8);
+            voxelNeighs.resize(rp.voxels->size() / 8);
+            ALICEVISION_LOG_INFO("voxelNeighs.size(): " << voxelNeighs.size());
+            for(int i = 0; i < voxelNeighs.size(); ++i)
+                voxelNeighs[i] = i;
 
-            for(int i = 0; i < rp.voxels->size() / 8; ++i)
-                voxelNeighs.push_back(i);
             fuseCut::DelaunayGraphCut delaunayGC(lsbase.mp, lsbase.pc);
-            StaticVector<Point3d>* hexahsToExcludeFromResultingMesh = nullptr;
             Point3d* hexah = &lsbase.space[0];
             delaunayGC.reconstructVoxel(hexah, &voxelNeighs, outDirectory.string()+"/", lsbase.getSpaceCamsTracksDir(), false,
-                                  (fuseCut::VoxelsGrid*)&rp, lsbase.getSpaceSteps());
+                                  (fuseCut::VoxelsGrid*)&rp, lsbase.getSpaceSteps(), 0);
 
             delaunayGC.graphCutPostProcessing();
 
             // Save mesh as .bin and .obj
             mesh::Mesh* mesh = delaunayGC.createMesh();
-            if(mesh->pts->empty())
+            if(mesh->pts->empty() || mesh->tris->empty())
               throw std::runtime_error("Empty mesh");
 
             StaticVector<StaticVector<int>*>* ptsCams = delaunayGC.createPtsCams();
             StaticVector<int> usedCams = delaunayGC.getSortedUsedCams();
 
+            StaticVector<Point3d>* hexahsToExcludeFromResultingMesh = nullptr;
             mesh::meshPostProcessing(mesh, ptsCams, usedCams, mp, pc, outDirectory.string()+"/", hexahsToExcludeFromResultingMesh, hexah);
             mesh->saveToBin((outDirectory/"denseReconstruction.bin").string());
 
@@ -250,6 +257,58 @@ int main(int argc, char* argv[])
             delete mesh;
         }
         break;
+        case eSingleBlock:
+        {
+            fuseCut::DelaunayGraphCut delaunayGC(&mp, &pc);
+            std::array<Point3d, 8> hexah;
+            
+            float minPixSize;
+            fuseCut::Fuser fs(&mp, &pc);
+            fs.divideSpace(&hexah[0], minPixSize);
+            Voxel dimensions = fs.estimateDimensions(&hexah[0], &hexah[0], 0, ocTreeDim);
+            StaticVector<Point3d>* voxels = mvsUtils::computeVoxels(&hexah[0], dimensions);
+
+            StaticVector<int> voxelNeighs;
+            voxelNeighs.resize(voxels->size() / 8);
+            ALICEVISION_LOG_INFO("voxelNeighs.size(): " << voxelNeighs.size());
+            for(int i = 0; i < voxelNeighs.size(); ++i)
+                voxelNeighs[i] = i;
+            Point3d spaceSteps;
+            {
+                Point3d vx = hexah[1] - hexah[0];
+                Point3d vy = hexah[3] - hexah[0];
+                Point3d vz = hexah[4] - hexah[0];
+                spaceSteps.x = (vx.size() / (double)dimensions.x) / (double)ocTreeDim;
+                spaceSteps.y = (vy.size() / (double)dimensions.y) / (double)ocTreeDim;
+                spaceSteps.z = (vz.size() / (double)dimensions.z) / (double)ocTreeDim;
+            }
+            delaunayGC.reconstructVoxel(&hexah[0], &voxelNeighs, outDirectory.string()+"/", outDirectory.string()+"/SpaceCamsTracks/", false,
+                                        nullptr, spaceSteps, maxPts);
+            // TODO change the function name: reconstructFromDepthMaps(hexah);
+
+            delaunayGC.graphCutPostProcessing();
+
+            // Save mesh as .bin and .obj
+            mesh::Mesh* mesh = delaunayGC.createMesh();
+            if(mesh->pts->empty() || mesh->tris->empty())
+              throw std::runtime_error("Empty mesh");
+
+            StaticVector<StaticVector<int>*>* ptsCams = delaunayGC.createPtsCams();
+            StaticVector<int> usedCams = delaunayGC.getSortedUsedCams();
+
+            StaticVector<Point3d>* hexahsToExcludeFromResultingMesh = nullptr;
+            mesh::meshPostProcessing(mesh, ptsCams, usedCams, mp, pc, outDirectory.string()+"/", hexahsToExcludeFromResultingMesh, &hexah[0]);
+            mesh->saveToBin((outDirectory/"denseReconstruction.bin").string());
+
+            saveArrayOfArraysToFile<int>((outDirectory/"meshPtsCamsFromDGC.bin").string(), ptsCams);
+            deleteArrayOfArrays<int>(&ptsCams);
+            delete voxels;
+
+            mesh->saveToObj(outputMesh);
+
+            delete mesh;
+            break;
+        }
         case eUndefined:
         default:
             throw std::invalid_argument("Partitioning not defined");

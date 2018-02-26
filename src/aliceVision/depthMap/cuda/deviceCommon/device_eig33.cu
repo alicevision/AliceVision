@@ -123,7 +123,7 @@ __device__ static void cuda_tred2(double V0[], double V1[], double V2[], double 
         d[i] = h;
     }
 
-    // Accumulate tra3sformatio3s.
+    // Accumulate transformations.
 
     for(i = 0; i < 3 - 1; i++)
     {

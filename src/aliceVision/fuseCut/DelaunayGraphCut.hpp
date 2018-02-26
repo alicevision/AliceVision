@@ -231,7 +231,8 @@ public:
      */
     void addHelperPoints(int nGridHelperVolumePointsDim, Point3d Voxel[8], float minDist);
 
-    void loadPrecomputedDensePoints(StaticVector<int>* voxelsIds, Point3d voxel[8], VoxelsGrid* ls);
+    void fuseFromDepthMaps(const StaticVector<int>& cams, const Point3d voxel[8], int maxVertices);
+    void loadPrecomputedDensePoints(const StaticVector<int>* voxelsIds, const Point3d voxel[8], VoxelsGrid* ls);
 
     void createTetrahedralizationFromDepthMapsCamsVoxel(const StaticVector<int>& allCams,
                                                    StaticVector<int>* voxelsIds, Point3d Voxel[8], VoxelsGrid* ls);
@@ -291,7 +292,7 @@ public:
 
     void reconstructVoxel(Point3d hexah[8], StaticVector<int>* voxelsIds, const std::string& folderName,
                           const std::string& tmpCamsPtsFolderName, bool removeSmallSegments,
-                          VoxelsGrid* ls, const Point3d& spaceSteps);
+                          VoxelsGrid* ls, const Point3d& spaceSteps, int maxVertices);
 
     /**
      * @brief Invert full/empty status of cells if they represent a too small group after labelling.
@@ -363,7 +364,7 @@ inline DelaunayGraphCut::Facet DelaunayGraphCut::getFacetInFrontVertexOnTheRayTo
     //};
     if((cam < 0) || (cam >= mp->ncams))
     {
-        ALICEVISION_LOG_WARNING("Bad camId, cam: " << cam << ",ptid: ", vertexIndex);
+        ALICEVISION_LOG_WARNING("Bad camId, cam: " << cam << ", ptid: " << vertexIndex);
     }
 
     return getFacetInFrontVertexOnTheRayToThePoint3d(vertexIndex, mp->CArr[cam]);
