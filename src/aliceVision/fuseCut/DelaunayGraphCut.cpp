@@ -4,8 +4,8 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "DelaunayGraphCut.hpp"
-#include <aliceVision/fuseCut/MaxFlow_CSR.hpp>
-// #include <aliceVision/fuseCut/MaxFlow_AdjList.hpp>
+// #include <aliceVision/fuseCut/MaxFlow_CSR.hpp>
+#include <aliceVision/fuseCut/MaxFlow_AdjList.hpp>
 #include <aliceVision/structures/geometry.hpp>
 #include <aliceVision/structures/jetColorMap.hpp>
 #include <aliceVision/structures/Pixel.hpp>
@@ -1883,7 +1883,8 @@ void DelaunayGraphCut::maxflow()
     long t_maxflow = clock();
 
     std::cout << "Maxflow: start allocation" << std::endl;
-    MaxFlow_CSR maxFlowGraph(_cellsAttr.size());
+    // MaxFlow_CSR maxFlowGraph(_cellsAttr.size());
+    MaxFlow_AdjList maxFlowGraph(_cellsAttr.size());
 
     std::cout << "Maxflow: add nodes" << std::endl;
     // fill s-t edges
