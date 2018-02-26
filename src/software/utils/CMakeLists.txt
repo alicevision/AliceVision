@@ -1,6 +1,37 @@
 ## AliceVision
 ## Utilities software
 
+# Uncertainty
+if(ALICEVISION_HAVE_UNCERTAINTYTE)
+    add_executable(aliceVision_utils_computeUncertainty main_computeUncertainty.cpp)
+    
+    target_link_libraries(aliceVision_utils_computeUncertainty
+      aliceVision_sfm
+      ${Boost_LIBRARIES}
+      ${UNCERTAINTYTE_LIBRARY}
+      ${CUDA_LIBRARIES}
+      ${CUDA_CUBLAS_LIBRARIES}
+      ${CUDA_cusparse_LIBRARY}
+    )
+    target_include_directories(aliceVision_utils_computeUncertainty
+      PUBLIC
+        ${UNCERTAINTYTE_INCLUDE_DIR}
+    )
+    
+    message(warning "UNCERTAINTYTE_LIBRARY: ${UNCERTAINTYTE_LIBRARY}")
+    message(warning "CUDA_LIBRARIES: ${CUDA_LIBRARIES}")
+    message(warning "CUDA_CUBLAS_LIBRARIES: ${CUDA_CUBLAS_LIBRARIES}")
+    message(warning "CUDA_cusparse_LIBRARY: ${CUDA_cusparse_LIBRARY}")
+    
+    set_property(TARGET aliceVision_utils_computeUncertainty
+      PROPERTY FOLDER AliceVision/Software/Utils
+    )
+    
+    install(TARGETS aliceVision_utils_computeUncertainty
+      DESTINATION bin/
+    )
+endif()
+
 # Voctree creation
 
 add_executable(aliceVision_utils_voctreeCreation main_voctreeCreation.cpp)

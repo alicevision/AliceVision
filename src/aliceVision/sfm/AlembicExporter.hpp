@@ -63,7 +63,9 @@ public:
    * @brief Add a set of 3d points
    * @param[in] points The 3D points to add
    */
-  void addLandmarks(const Landmarks& points, bool withVisibility = true);
+  void addLandmarks(const Landmarks& points,
+                    const sfm::LandmarksUncertainty &landmarksUncertainty = sfm::LandmarksUncertainty(),
+                    bool withVisibility = true);
 
   /**
    * @brief Add a camera
@@ -71,12 +73,14 @@ public:
    * @param[in] view The corresponding view
    * @param[in] pose The camera pose (nullptr if undefined)
    * @param[in] intrinsic The camera intrinsic (nullptr if undefined)
+   * @param[in] uncertainty The camera uncertainty values (nullptr if undefined)
    * @param[in,out] parent The Alembic parent node
    */
   void addCamera(const std::string& name,
                  const View& view,
                  const geometry::Pose3* pose = nullptr,
                  const camera::IntrinsicBase* intrinsic = nullptr,
+                 const Vec6* uncertainty = nullptr,
                  Alembic::Abc::OObject* parent = nullptr);
 
   /**

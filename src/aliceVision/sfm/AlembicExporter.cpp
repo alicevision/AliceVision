@@ -83,8 +83,14 @@ void AlembicExporter::addSfM(const SfMData& sfmData, ESfMData flagsPart)
   OStringArrayProperty(userProps, "mvg_featuresFolders").set(sfmData.getRelativeFeaturesFolders());
   OStringArrayProperty(userProps, "mvg_matchesFolders").set(sfmData.getRelativeMatchesFolders());
 
-  if(flagsPart & ESfMData::STRUCTURE)
-    addLandmarks(sfmData.GetLandmarks(), (flagsPart & ESfMData::OBSERVATIONS));
+  if(flagsPart & sfm::ESfMData::STRUCTURE)
+  {
+    const sfm::LandmarksUncertainty noUncertainty;
+
+    addLandmarks(sfmData.GetLandmarks(),
+              (flagsPart & sfm::ESfMData::LANDMARKS_UNCERTAINTY) ? sfmData._landmarksUncertainty : noUncertainty,
+              (flagsPart & sfm::ESfMData::OBSERVATIONS));
+  }
 
   if(flagsPart & ESfMData::VIEWS ||
      flagsPart & ESfMData::EXTRINSICS)
@@ -122,9 +128,9 @@ void AlembicExporter::addSfMSingleCamera(const SfMData& sfmData, const View& vie
   const camera::IntrinsicBase* intrinsic = sfmData.GetIntrinsicPtr(view.getIntrinsicId());
 
   if(sfmData.IsPoseAndIntrinsicDefined(&view))
-    addCamera(name, view, pose, intrinsic, &_dataImpl->_mvgCameras);
+    addCamera(name, view, pose, intrinsic, nullptr, &_dataImpl->_mvgCameras);
   else
-    addCamera(name, view, pose, intrinsic, &_dataImpl->_mvgCamerasUndefined);
+    addCamera(name, view, pose, intrinsic, nullptr, &_dataImpl->_mvgCamerasUndefined);
 }
 
 void AlembicExporter::addSfMCameraRig(const SfMData& sfmData, IndexT rigId, const std::vector<IndexT>& viewIds)
@@ -199,11 +205,11 @@ void AlembicExporter::addSfMCameraRig(const SfMData& sfmData, IndexT rigId, cons
         OUInt16Property(userProps, "mvg_nbSubPoses").set(nbSubPoses);
       }
     }
-    addCamera(name, view, subPose, intrinsic, &(rigObj.at(isReconstructed)));
+    addCamera(name, view, subPose, intrinsic, nullptr, &(rigObj.at(isReconstructed)));
   }
 }
 
-void AlembicExporter::addLandmarks(const Landmarks& landmarks, bool withVisibility)
+void AlembicExporter::addLandmarks(const Landmarks& landmarks, const sfm::LandmarksUncertainty &landmarksUncertainty, bool withVisibility)
 {
   if(landmarks.empty())
     return;
@@ -279,9 +285,24 @@ void AlembicExporter::addLandmarks(const Landmarks& landmarks, bool withVisibili
       }
     }
 
-    OUInt32ArrayProperty( userProps, "mvg_visibilitySize" ).set(visibilitySize);
+    OUInt32ArrayProperty(userProps, "mvg_visibilitySize" ).set(visibilitySize);
     OUInt32ArrayProperty(userProps, "mvg_visibilityIds" ).set(visibilityIds); // (viewID, featID)
     OFloatArrayProperty(userProps, "mvg_visibilityFeatPos" ).set(featPos2d); // feature position (x,y)
+  }
+  if(!landmarksUncertainty.empty())
+  {
+    std::vector<V3d> uncertainties;
+
+    std::size_t indexLandmark = 0;
+    for (Landmarks::const_iterator itLandmark = landmarks.begin(); itLandmark != landmarks.end(); ++itLandmark, ++indexLandmark)
+    {
+      const IndexT idLandmark = itLandmark->first;
+      const Vec3& u = landmarksUncertainty.at(idLandmark);
+      uncertainties.emplace_back(u[0], u[1], u[2]);
+    }
+    // Uncertainty eigen values (x,y,z)
+    OV3dArrayProperty propUncertainty(userProps, "mvg_uncertaintyEigenValues");
+    propUncertainty.set(uncertainties);
   }
 }
 
@@ -289,6 +310,7 @@ void AlembicExporter::addCamera(const std::string& name,
                                 const View& view,
                                 const geometry::Pose3* pose,
                                 const camera::IntrinsicBase* intrinsic,
+                                const Vec6* uncertainty,
                                 Alembic::Abc::OObject* parent)
 {
   if(parent == nullptr)
@@ -411,6 +433,13 @@ void AlembicExporter::addCamera(const std::string& name,
     ODoubleArrayProperty(userProps, "mvg_intrinsicParams").set(pinhole->getParams());
 
     camObj.getSchema().set(camSample);
+  }
+
+  if(uncertainty)
+  {
+      std::vector<double> uncertaintyParams(uncertainty->data(), uncertainty->data()+6);
+      ODoubleArrayProperty mvg_uncertaintyParams(userProps, "mvg_uncertaintyEigenValues");
+      mvg_uncertaintyParams.set(uncertaintyParams);
   }
 
   if(pose == nullptr || !isIntrinsicValid)

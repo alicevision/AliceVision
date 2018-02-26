@@ -43,6 +43,7 @@ trilean_option(ALICEVISION_USE_CCTAG "Enable CCTAG markers" AUTO)
 trilean_option(ALICEVISION_USE_POPSIFT "Enable GPU SIFT implementation" AUTO)
 trilean_option(ALICEVISION_USE_OPENGV "Enable use of OpenGV algorithms" AUTO)
 trilean_option(ALICEVISION_USE_ALEMBIC "Enable Alembic I/O" AUTO)
+trilean_option(ALICEVISION_USE_UNCERTAINTYTE "Enable Uncertainty computation" AUTO)
 
 option(ALICEVISION_USE_LOG "Enable logger" ON)
 

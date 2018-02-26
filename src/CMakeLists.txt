@@ -136,9 +136,12 @@ if(NOT DEFINED EIGEN_INCLUDE_DIR_HINTS)
   set(EIGEN_INCLUDE_DIR_HINTS ${CMAKE_CURRENT_SOURCE_DIR}/dependencies/eigen)
   set(ALICEVISION_USE_INTERNAL_EIGEN ON)
 endif()
-find_package(Eigen QUIET)
+find_package(Eigen 3.3 QUIET)
 if(EIGEN_FOUND)
   include_directories(${EIGEN_INCLUDE_DIRS})
+  # See https://eigen.tuxfamily.org/dox/group__TopicUnalignedArrayAssert.html
+  add_definitions("-DEIGEN_DONT_ALIGN_STATICALLY=1")
+  add_definitions("-DEIGEN_DONT_VECTORIZE=1")
 endif()
 
 # ==============================================================================
@@ -252,6 +255,17 @@ if(ALICEVISION_USE_INTERNAL_OSI AND ALICEVISION_USE_INTERNAL_CLP AND ALICEVISION
   set_property(TARGET lib_CoinUtils PROPERTY FOLDER AliceVision/Dependencies/Lib_CoinUtils)
   set_property(TARGET lib_Osi PROPERTY FOLDER AliceVision/Dependencies/Lib_Osi)
   set_property(TARGET lib_OsiClpSolver PROPERTY FOLDER AliceVision/Dependencies/Lib_OsiClpSolver)
+endif()
+
+find_package(CUDA 7.0)
+if( CUDA_FOUND )
+  MESSAGE( "Found CUDA ${CUDA_VERSION}" )
+  MESSAGE( STATUS "> CUDA_INCLUDE_DIRS:   ${CUDA_INCLUDE_DIRS}"   )
+  MESSAGE( STATUS "> CUDA_LIBRARIES: ${CUDA_LIBRARIES}" )
+  MESSAGE( STATUS "> CUDA_CUBLAS_LIBRARIES: ${CUDA_CUBLAS_LIBRARIES}" )
+  MESSAGE( STATUS "> CUDA_CUDART_LIBRARY: ${CUDA_cusparse_LIBRARY}" )
+  SET(INCLUDE_DIRS ${INCLUDE_DIRS} ${CUDA_INCLUDE_DIRS})
+  SET(LIBS_FILES ${LIBS_FILES} ${CUDA_LIBRARIES};${CUDA_CUBLAS_LIBRARIES};${CUDA_cusparse_LIBRARY})
 endif()
 
 # ==============================================================================
@@ -446,6 +460,30 @@ if(ALICEVISION_HAVE_OPENGV)
 endif()
 
 # ==============================================================================
+# UncertaintyTE
+# ==============================================================================
+if(ALICEVISION_USE_UNCERTAINTYTE STREQUAL "OFF")
+  set(ALICEVISION_USE_UNCERTAINTYTE 0)
+else() # ON OR AUTO
+  find_package(UncertaintyTE)
+
+  if(UNCERTAINTYTE_FOUND)
+    set(ALICEVISION_HAVE_UNCERTAINTYTE 1)
+    message(STATUS "UncertaintyTE found.")
+  elseif(ALICEVISION_USE_UNCERTAINTYTE STREQUAL "ON")
+    set(ALICEVISION_HAVE_UNCERTAINTYTE 0)
+    message(SEND_ERROR "Failed to find UncertaintyTE.")
+  else()
+    set(ALICEVISION_HAVE_UNCERTAINTYTE 0)
+  endif()
+endif()
+
+if(ALICEVISION_HAVE_UNCERTAINTYTE)
+  include_directories(${UNCERTAINTYTE_INCLUDE_DIR})
+  link_directories(${UNCERTAINTYTE_LIBRARY_DIR})
+endif()
+
+# ==============================================================================
 # OpenEXR
 # ==============================================================================
 find_package(OpenEXR)
@@ -477,6 +515,8 @@ set(ALICEVISION_INCLUDE_DIRS
   ${LEMON_INCLUDE_DIRS}
   ${EIGEN_INCLUDE_DIRS}
   ${CERES_INCLUDE_DIRS}
+  ${UNCERTAINTYTE_INCLUDE_DIRS}
+  ${MAGMA_INCLUDE_DIRS}
   ${FLANN_INCLUDE_DIRS}
   ${LP_INCLUDE_DIRS}
   ${COINUTILS_INCLUDE_DIRS}

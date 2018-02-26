@@ -49,10 +49,10 @@ BOOST_AUTO_TEST_CASE(LMedsLineFitter_OutlierFree) {
   Vec2 model;
   double dThreshold = std::numeric_limits<double>::infinity();
   double dBestMedian = LeastMedianOfSquares(kernel, &model, &dThreshold);
-  EXPECT_NEAR(2.0, model[1], dExpectedPrecision);
-  EXPECT_NEAR(1.0, model[0], dExpectedPrecision);
-  EXPECT_NEAR(0.0, dBestMedian, dExpectedPrecision);
-  EXPECT_NEAR(0.0, dThreshold, dExpectedPrecision);
+  BOOST_CHECK_CLOSE(2.0, model[1], dExpectedPrecision);
+  BOOST_CHECK_CLOSE(1.0, model[0], dExpectedPrecision);
+  BOOST_CHECK_CLOSE(0.0, dBestMedian, dExpectedPrecision);
+  BOOST_CHECK_CLOSE(0.0, dThreshold, dExpectedPrecision);
   //Compute which point are inliers (error below dThreshold)
   std::vector<size_t> vec_inliers;
   EvalInlier(kernel, model, dExpectedPrecision, &vec_inliers);
@@ -72,10 +72,10 @@ BOOST_AUTO_TEST_CASE(LMedsLineFitter_OneOutlier) {
   Vec2 model;
   double dThreshold = std::numeric_limits<double>::infinity();
   double dBestMedian = LeastMedianOfSquares(kernel, &model, &dThreshold);
-  EXPECT_NEAR(2.0, model[1], dExpectedPrecision);
-  EXPECT_NEAR(1.0, model[0], dExpectedPrecision);
-  EXPECT_NEAR(0.0, dBestMedian, dExpectedPrecision);
-  EXPECT_NEAR(0.0, dThreshold, dExpectedPrecision);
+  BOOST_CHECK_CLOSE(2.0, model[1], dExpectedPrecision);
+  BOOST_CHECK_CLOSE(1.0, model[0], dExpectedPrecision);
+  BOOST_CHECK_CLOSE(0.0, dBestMedian, dExpectedPrecision);
+  BOOST_CHECK_CLOSE(0.0, dThreshold, dExpectedPrecision);
   //Compute which point are inliers (error below dThreshold)
   std::vector<size_t> vec_inliers;
   EvalInlier(kernel, model, dExpectedPrecision, &vec_inliers);
@@ -135,8 +135,8 @@ BOOST_AUTO_TEST_CASE(LMedsLineFitter_RealisticCase) {
   Vec2 model;
   double dThreshold = std::numeric_limits<double>::infinity();
   double dBestMedian = LeastMedianOfSquares(kernel, &model, &dThreshold);
-  EXPECT_NEAR(-2.0, model[0], dExpectedPrecision);
-  EXPECT_NEAR(6.3, model[1], dExpectedPrecision);
+  BOOST_CHECK_CLOSE(-2.0, model[0], dExpectedPrecision);
+  BOOST_CHECK_CLOSE(6.3, model[1], dExpectedPrecision);
   //Compute which point are inliers (error below dThreshold)
   std::vector<size_t> vec_inliers;
   EvalInlier(kernel, model, dThreshold, &vec_inliers);

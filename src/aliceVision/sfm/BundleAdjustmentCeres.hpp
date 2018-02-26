@@ -7,10 +7,10 @@
 
 #pragma once
 
-#include "aliceVision/sfm/SfMData.hpp"
-#include "aliceVision/sfm/BundleAdjustment.hpp"
-#include "aliceVision/sfm/ResidualErrorFunctor.hpp"
-#include "ceres/ceres.h"
+#include <aliceVision/sfm/SfMData.hpp>
+#include <aliceVision/sfm/BundleAdjustment.hpp>
+#include <aliceVision/sfm/ResidualErrorFunctor.hpp>
+#include <ceres/ceres.h>
 
 namespace aliceVision {
 namespace sfm {
@@ -21,7 +21,7 @@ ceres::CostFunction * createRigCostFunctionFromIntrinsics(camera::IntrinsicBase 
 
 class BundleAdjustmentCeres : public BundleAdjustment
 {
-  public:
+public:
   struct BA_options
   {
     bool _bVerbose;
@@ -35,11 +35,21 @@ class BundleAdjustmentCeres : public BundleAdjustment
     void setDenseBA();
     void setSparseBA();
   };
-  private:
+private:
     BA_options _aliceVision_options;
+    // Data wrapper for refinement:
+    HashMap<IndexT, std::vector<double> > map_poses;
+    // Setup rig sub-poses
+    HashMap<IndexT, HashMap<IndexT, std::vector<double>>> map_subposes;
+    std::vector<double*> parameterBlocks;
+    HashMap<IndexT, std::vector<double> > map_intrinsics;
 
-  public:
+public:
   BundleAdjustmentCeres(BundleAdjustmentCeres::BA_options options = BA_options());
+
+  void createProblem(SfMData& sfm_data, BA_Refine refineOptions, ceres::Problem& problem);
+
+  void createJacobian(SfMData& sfm_data, BA_Refine refineOptions, ceres::CRSMatrix& jacobian);
 
   /**
    * @see BundleAdjustment::Adjust

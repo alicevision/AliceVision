@@ -4,15 +4,17 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
-#include "aliceVision/multiview/resection/ResectionKernel.hpp"
-#include "aliceVision/multiview/resection/P4PfSolver.hpp"
-#include "aliceVision/multiview/NViewDataSet.hpp"
+#define BOOST_TEST_MODULE P4PfSolver
+
+#include <aliceVision/multiview/resection/ResectionKernel.hpp>
+#include <aliceVision/multiview/resection/P4PfSolver.hpp>
+#include <aliceVision/multiview/NViewDataSet.hpp>
+
+#include <boost/test/included/unit_test.hpp>
+#include <boost/test/floating_point_comparison.hpp>
 
 #include <vector>
 
-#define BOOST_TEST_MODULE P4PfSolver
-#include <boost/test/included/unit_test.hpp>
-#include <boost/test/floating_point_comparison.hpp>
 
 using namespace aliceVision;
 
