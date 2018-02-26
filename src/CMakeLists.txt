@@ -24,7 +24,7 @@ endif()
 # Additional cmake find modules
 # ==============================================================================
 set(CMAKE_MODULE_PATH
-  ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmakeFindModules)
+  ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/../cmake)
 include(OptimizeForArchitecture)
 OptimizeForArchitecture()
 set(ALICEVISION_HAVE_SSE 0)
@@ -719,7 +719,7 @@ endif()
 # Create a AliceVisionConfig.cmake file. <name>Config.cmake files are searched by
 # find_package() automatically. We configure that file so that we can put any
 # information we want in it, e.g. version numbers, include directories, etc.
-configure_file("${CMAKE_CURRENT_SOURCE_DIR}/cmakeFindModules/AliceVisionConfig.cmake.in"
+configure_file("${CMAKE_CURRENT_SOURCE_DIR}/../cmake/AliceVisionConfig.cmake.in"
                "${CMAKE_CURRENT_BINARY_DIR}/AliceVisionConfig.cmake" @ONLY)
 
 install(FILES "${CMAKE_CURRENT_BINARY_DIR}/AliceVisionConfig.cmake"
@@ -727,7 +727,7 @@ install(FILES "${CMAKE_CURRENT_BINARY_DIR}/AliceVisionConfig.cmake"
 
 # create the config.hpp file containing all the preprocessor definitions
 set(configfile "${generatedDir}/aliceVision/config.hpp")
-configure_file("${CMAKE_CURRENT_SOURCE_DIR}/cmakeFindModules/config.hpp.in"
+configure_file("${CMAKE_CURRENT_SOURCE_DIR}/../cmake/config.hpp.in"
                "${configfile}" @ONLY)
 
 install(FILES "${configfile}"
@@ -735,9 +735,9 @@ install(FILES "${configfile}"
 
 ########### Add uninstall target ###############
 configure_file(
-  "${CMAKE_CURRENT_SOURCE_DIR}/cmakeFindModules/cmake_uninstall.cmake.in"
-  "${CMAKE_CURRENT_BINARY_DIR}/cmakeFindModules/cmake_uninstall.cmake"
+  "${CMAKE_CURRENT_SOURCE_DIR}/../cmake/cmake_uninstall.cmake.in"
+  "${CMAKE_CURRENT_BINARY_DIR}/../cmake/cmake_uninstall.cmake"
   IMMEDIATE @ONLY)
 
 add_custom_target(uninstall
-  "${CMAKE_COMMAND}" -P "${CMAKE_CURRENT_BINARY_DIR}/cmakeFindModules/cmake_uninstall.cmake")
+  "${CMAKE_COMMAND}" -P "${CMAKE_CURRENT_BINARY_DIR}/../cmake/cmake_uninstall.cmake")

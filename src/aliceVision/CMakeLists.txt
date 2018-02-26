@@ -1,3 +1,5 @@
+# SfM modules
+
 add_subdirectory(camera)
 add_subdirectory(colorHarmonization)
 add_subdirectory(dataio)
@@ -25,6 +27,18 @@ if(ALICEVISION_HAVE_OPENCV)
   add_subdirectory(calibration)
 endif()
 
+# MVS modules
+
+add_subdirectory(common)
+add_subdirectory(imageIO)
+add_subdirectory(mesh)
+add_subdirectory(fuseCut)
+add_subdirectory(structures)
+
+if(ALICEVISION_HAVE_CUDA)
+  add_subdirectory(depthMap)
+endif()
+
 # Install rules
 
 install(
@@ -34,6 +48,8 @@ install(
   FILES_MATCHING PATTERN "*.hpp" PATTERN "*.h" PATTERN "*.tcc"
 )
 
+# Add files to an empty target to get them in IDE
+
 set(global_files_headers
   alicevision_omp.hpp
   prettyprint.hpp
@@ -42,3 +58,4 @@ set(global_files_headers
 )
 
 add_custom_target(aliceVision_global_headers_ide SOURCES ${global_files_headers})
+

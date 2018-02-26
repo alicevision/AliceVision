@@ -1,15 +1,15 @@
-
 AliceVision
 ===========
-
 
 Build instructions
 ------------------
 
 Required tools:
-* Cmake >= 3.3
+* CMake >= 3.4 
 * Git
-* c/c++ compiler (gcc or visual studio or clang)
+* C/C++ compiler (gcc or visual studio or clang) with C++11 support.
+
+### Compile the project
 
 Getting the sources:
 
@@ -46,6 +46,12 @@ AliceVision depends on:
 * Lemon >= 1.3
 * OpenEXR >= 2.2.0
 * OpenImageIO >= 1.8.7
+* Geogram (https://gforge.inria.fr/frs/?group_id=5833)
+* OpenImageIO >= 1.8
+* OpenEXR
+* MeshSDFilter (internal)
+* OpenMesh (internal)
+* zlib
 
 Other optional libraries can enable specific features (check "CMake Options" for enabling them):
 
@@ -57,12 +63,12 @@ Other optional libraries can enable specific features (check "CMake Options" for
 * PopSift (feature extraction on GPU)
 * UncertaintyTE (Uncertainty computation)
 * Magma (required for UncertaintyTE)
-* Cuda >= 7.0 (feature extraction)
+* Cuda >= 7.0 (feature extraction and depth map computation)
 * OpenGV (rig calibration and localization)
 
 
 Building using external dependencies
---------------------------
+------------------------------------
 
 AliceVision source tree contains some of the mandatory dependencies that are needed to build the library, and which will be built together with the libray. In order to build the library with existing versions of the dependencies (e.g. system installed libraries or user built libraries), and thus reduce the compilation time and favour the modularization, the paths where to find such libraries can be given at cmake command line. In particular:
 
@@ -98,7 +104,14 @@ At the end of the cmake process, a report shows for each library which version (
 
 
 CMake Options
---------------------------
+-------------
+
+* GEOGRAM
+  `-DGEOGRAM_INSTALL_PREFIX:PATH=path/to/geogram/install`
+
+* OPENIMAGEIO
+  `-DOPENIMAGEIO_LIBRARY_DIR_HINTS:PATH=/path/to/oiio/install/lib/`
+  `-DOPENIMAGEIO_INCLUDE_DIR:PATH=/path/to/oiio/install/include/`
 
 * `BOOST_NO_CXX11` (default `OFF`)
   If your Boost binaries are compiled without C++11 support, you need to set this option to avoid compilation errors.
@@ -106,6 +119,8 @@ CMake Options
 
 * `ALICEVISION_USE_OPENMP` (default `ON`)
   Use OpenMP parallelization (huge impact on performances)
+  **OSX**: if you are compiling with clang shipped with XCode, please note that OpenMP is not supported and you need to
+  disable OpenMP passing `-DALICEVISION_USE_OPENMP:BOOL=OFF`.
 
 * `ALICEVISION_USE_CCTAG` (default: `AUTO`)
   Build with CCTag markers support.
@@ -120,9 +135,9 @@ CMake Options
   Build with Alembic file format support.
   `-DAlembic_DIR:PATH=/path/to/alembic/install/lib/cmake/Alembic/` (where AlembicConfig.cmake can be found)
   With old Alembic versions (<1.6), you need to set many variables: `ALEMBIC_ROOT`, `ALEMBIC_HDF5_ROOT`, `ALEMBIC_ILMBASE_ROOT`, `ALEMBIC_OPENEXR_ROOT`.
-  
-* `ALICEVISION_USE_OPENMP` (default: `AUTO`)
-  Enable OpenMP parallelization
+
+* `ALICEVISION_USE_CUDA` (default: `ON`)
+  Enable build with CUDA (for feature extraction and depth map computation)
 
 * `ALICEVISION_USE_POPSIFT` (default: `AUTO`)
   Enable GPU SIFT implementation.
@@ -154,7 +169,6 @@ CMake Options
 
 * `ALICEVISION_BUILD_COVERAGE` (default `OFF`)
   Enable code coverage generation (gcc only)
-
 
 
 General informations for aliceVision SfM pipelines
@@ -223,12 +237,6 @@ Launch unity tests (if asked at cmake step)
 make test
 ```
 
-Have fun with the samples
-```bash
-cd aliceVision_Samples
-```
--------------------
-
 
 Windows compilation
 -------------------
@@ -276,7 +284,7 @@ Add `-DAliceVision_USE_OPENCV=ON` to your cmake command line and set `OpenCV_DIR
 
 
 Using AliceVision as a third party library dependency in cmake
--------------------------------------------------------------
+--------------------------------------------------------------
 
 AliceVision can be used as a third party once it have been installed.
 Because it can use its own Ceres version, it is better to install it locally and not in system files.
