@@ -215,7 +215,7 @@ int main(int argc, char* argv[])
             fuseCut::DelaunayGraphCut delaunayGC(lsbase.mp, lsbase.pc);
             StaticVector<Point3d>* hexahsToExcludeFromResultingMesh = nullptr;
             Point3d* hexah = &lsbase.space[0];
-            delaunayGC.reconstructVoxel(hexah, &voxelNeighs, outDirectory.string()+"/", lsbase.getSpaceCamsTracksDir(), false, hexahsToExcludeFromResultingMesh,
+            delaunayGC.reconstructVoxel(hexah, &voxelNeighs, outDirectory.string()+"/", lsbase.getSpaceCamsTracksDir(), false,
                                   (fuseCut::VoxelsGrid*)&rp, lsbase.getSpaceSteps());
 
             delaunayGC.graphCutPostProcessing();

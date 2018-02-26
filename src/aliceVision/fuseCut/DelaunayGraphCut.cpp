@@ -288,11 +288,11 @@ StaticVector<int> DelaunayGraphCut::getSortedUsedCams() const
     return out;
 }
 
-void DelaunayGraphCut::addPointsFromCameraCenters(StaticVector<int>* cams, float minDist)
+void DelaunayGraphCut::addPointsFromCameraCenters(const StaticVector<int>& cams, float minDist)
 {
-    for(int camid = 0; camid < cams->size(); camid++)
+    for(int camid = 0; camid < cams.size(); camid++)
     {
-        int rc = (*cams)[camid];
+        int rc = cams[camid];
         {
             Point3d p(mp->CArr[rc].x, mp->CArr[rc].y, mp->CArr[rc].z);
 
@@ -327,6 +327,8 @@ void DelaunayGraphCut::addPointsFromCameraCenters(StaticVector<int>* cams, float
 
 void DelaunayGraphCut::addPointsToPreventSingularities(Point3d voxel[8], float minDist)
 {
+    printf("Add points to prevent singularities");
+
     Point3d vcg = (voxel[0] + voxel[1] + voxel[2] + voxel[3] + voxel[4] + voxel[5] + voxel[6] + voxel[7]) / 8.0f;
     Point3d extrPts[6];
     Point3d fcg;
@@ -371,8 +373,7 @@ void DelaunayGraphCut::addHelperPoints(int nGridHelperVolumePointsDim, Point3d v
     if(nGridHelperVolumePointsDim <= 0)
         return;
 
-    if(mp->verbose)
-        printf("adding helper points ...");
+    printf("Add helper points");
 
     int ns = nGridHelperVolumePointsDim;
     float md = 1.0f / 500.0f;
@@ -425,31 +426,13 @@ void DelaunayGraphCut::addHelperPoints(int nGridHelperVolumePointsDim, Point3d v
         printf(" done\n");
 }
 
-
-void DelaunayGraphCut::createTetrahedralizationFromDepthMapsCamsVoxel(StaticVector<int>* cams,
-                                                               StaticVector<int>* voxelsIds, Point3d voxel[8],
-                                                               VoxelsGrid* ls)
+void DelaunayGraphCut::loadPrecomputedDensePoints(StaticVector<int>* voxelsIds, Point3d voxel[8], VoxelsGrid* ls)
 {
-    ///////////////////////////////////////////////////////////////////////////////////////
-    printf("Creating delaunay tetrahedralization from depth maps voxel\n");
-    long tall = clock();
+    Point3d cgpt;
+    int ncgpt = 0;
 
     bool doFilterOctreeTracks = mp->mip->_ini.get<bool>("LargeScale.doFilterOctreeTracks", true);
     int minNumOfConsistentCams = mp->mip->_ini.get<int>("filter.minNumOfConsistentCams", 2);
-
-    ///////////////////////////////////////////////////////////////////////////////////////
-    // build tetrahedralization
-
-    float minDist = (voxel[0] - voxel[1]).size() / 1000.0f;
-
-    // add points for cam centers
-    addPointsFromCameraCenters(cams, minDist);
-
-    // add 6 points to prevent singularities
-    addPointsToPreventSingularities(voxel, minDist);
-
-    Point3d cgpt;
-    int ncgpt = 0;
 
     // add points from voxel
     for(int i = 0; i < voxelsIds->size(); i++)
@@ -457,11 +440,8 @@ void DelaunayGraphCut::createTetrahedralizationFromDepthMapsCamsVoxel(StaticVect
         printf("%i of %i\n", i, voxelsIds->size());
 
         std::string folderName = ls->getVoxelFolderName((*voxelsIds)[i]);
-
-        std::string fileNameTracksCams, fileNameTracksPts, fileNameTracksPtsCams;
-        fileNameTracksCams = folderName + "tracksGridCams.bin";
-        fileNameTracksPts = folderName + "tracksGridPts.bin";
-        fileNameTracksPtsCams = folderName + "tracksGridPtsCams.bin";
+        std::string fileNameTracksPts = folderName + "tracksGridPts.bin";
+        std::string fileNameTracksPtsCams = folderName + "tracksGridPtsCams.bin";
 
         if(common::FileExists(fileNameTracksPts))
         {
@@ -510,8 +490,30 @@ void DelaunayGraphCut::createTetrahedralizationFromDepthMapsCamsVoxel(StaticVect
         } // if fileexists
     }
 
-    if(mp->verbose)
-        printf("voxels tracks triangulated\n");
+    printf("Dense points loaded.\n");
+}
+
+
+void DelaunayGraphCut::createTetrahedralizationFromDepthMapsCamsVoxel(const StaticVector<int>& allCams,
+                                                               StaticVector<int>* voxelsIds, Point3d voxel[8],
+                                                               VoxelsGrid* ls)
+{
+    ///////////////////////////////////////////////////////////////////////////////////////
+    printf("Creating delaunay tetrahedralization from depth maps voxel\n");
+    long tall = clock();
+
+    ///////////////////////////////////////////////////////////////////////////////////////
+    // build tetrahedralization
+
+    float minDist = (voxel[0] - voxel[1]).size() / 1000.0f;
+
+    // add points for cam centers
+    addPointsFromCameraCenters(allCams, minDist);
+
+    // add 6 points to prevent singularities
+    addPointsToPreventSingularities(voxel, minDist);
+
+    loadPrecomputedDensePoints(voxelsIds, voxel, ls);
 
     /* initialize random seed: */
     srand(time(nullptr));
@@ -1477,16 +1479,16 @@ void DelaunayGraphCut::forceTedgesByGradientIJCV(bool fixesSigma, float nPixelSi
     common::printfElapsedTime(t2, "t-edges forced : ");
 }
 
-void DelaunayGraphCut::updateGraphFromTmpPtsCamsHexah(StaticVector<int>* incams, Point3d hexah[8],
+void DelaunayGraphCut::updateGraphFromTmpPtsCamsHexah(const StaticVector<int>& incams, Point3d hexah[8],
                                                     std::string tmpCamsPtsFolderName, bool labatutWeights,
                                                     float distFcnHeight)
 {
     printf("Updating : LSC\n");
 
 #pragma omp parallel for
-    for(int c = 0; c < incams->size(); c++)
+    for(int c = 0; c < incams.size(); c++)
     {
-        int rc = (*incams)[c];
+        int rc = incams[c];
         std::string camPtsFileName;
         camPtsFileName = tmpCamsPtsFolderName + "camPtsGrid_" + common::num2strFourDecimal(rc) + ".bin";
         if(common::FileExists(camPtsFileName))
@@ -1661,7 +1663,7 @@ void DelaunayGraphCut::graphCutPostProcessing()
     common::printfElapsedTime(timer, "Graph cut post-processing ");
 }
 
-void DelaunayGraphCut::freeUnwantedFullCells(std::string  /*folderName*/, Point3d* hexah)
+void DelaunayGraphCut::freeUnwantedFullCells(const Point3d* hexah)
 {
     if(mp->verbose)
         printf("freeUnwantedFullCells\n");
@@ -1803,23 +1805,14 @@ void DelaunayGraphCut::invertFullStatusForSmallLabels()
     delete colorPerCell;
 }
 
-void DelaunayGraphCut::reconstructVoxel(Point3d hexah[8], StaticVector<int>* voxelsIds, std::string folderName,
-                                      std::string tmpCamsPtsFolderName, bool removeSmallSegments,
-                                      StaticVector<Point3d>* hexahsToExcludeFromResultingMesh, VoxelsGrid* ls,
-                                      Point3d spaceSteps)
+void DelaunayGraphCut::reconstructVoxel(Point3d hexah[8], StaticVector<int>* voxelsIds, const std::string& folderName,
+                                      const std::string& tmpCamsPtsFolderName, bool removeSmallSegments,
+                                      VoxelsGrid* ls, const Point3d& spaceSteps)
 {
-    StaticVector<int>* cams = pc->findCamsWhichIntersectsHexahedron(hexah);
+    StaticVector<int> cams = pc->findCamsWhichIntersectsHexahedron(hexah);
 
-    if(cams->size() < 1)
+    if(cams.size() < 1)
         throw std::logic_error("No camera to make the reconstruction");
-
-    int camerasPerOneOmni = 1;
-    std::string fileNameDh = folderName + "delaunayTriangulation.bin";
-    std::string fileNameInfo = folderName + "delaunayTriangulationInfo.bin";
-    std::string fileNameStGraph = folderName + "stGraph.bin";
-    std::string fileNameStSolution = folderName + "stGraphSolution.bin";
-    std::string fileNameTxt = folderName + "delaunayTrianglesMaxflow.txt";
-    std::string fileNameTxtCam = folderName + "delaunayTrianglesCamerasForColoringMaxflow.txt";
 
     // Load tracks and create tetrahedralization (into T variable)
     createTetrahedralizationFromDepthMapsCamsVoxel(cams, voxelsIds, hexah, ls);
@@ -1835,19 +1828,20 @@ void DelaunayGraphCut::reconstructVoxel(Point3d hexah[8], StaticVector<int>* vox
 
     bool updateLSC = mp->mip->_ini.get<bool>("LargeScale.updateLSC", true);
 
-    reconstructExpetiments(cams, folderName, fileNameStGraph, fileNameStSolution, fileNameTxt, fileNameTxtCam,
-                           camerasPerOneOmni, updateLSC, hexah, tmpCamsPtsFolderName, hexahsToExcludeFromResultingMesh,
+    reconstructExpetiments(cams, folderName, updateLSC,
+                           hexah, tmpCamsPtsFolderName,
                            spaceSteps);
 
     bool saveOrNot = mp->mip->_ini.get<bool>("LargeScale.saveDelaunayTriangulation", false);
     if(saveOrNot)
     {
+        std::string fileNameDh = folderName + "delaunayTriangulation.bin";
+        std::string fileNameInfo = folderName + "delaunayTriangulationInfo.bin";
         saveDh(fileNameDh, fileNameInfo);
     }
 
-    // reconstructExpetiments(cams, folderName, fileNameStGraph,
-    // fileNameStSolution, fileNameTxt,
-    // fileNameTxtCam, camerasPerOneOmni, true, hexahInflated,
+    // reconstructExpetiments(cams, folderName,
+    // true, hexahInflated,
     // tmpCamsPtsFolderName);
 
     // smooth(mp,fileNameTxt,"delaunayTrianglesSmoothTextured.wrl","delaunayTrianglesSmoothTextured.ply",folderName,1,true);
@@ -1855,8 +1849,6 @@ void DelaunayGraphCut::reconstructVoxel(Point3d hexah[8], StaticVector<int>* vox
     // "meshTrisAreaColored.wrl",
     // "meshAreaConsistentTextured.wrl", "meshAreaConsistent.ply",
     // "meshAreaConsistent.wrl");
-
-    delete cams;
 }
 
 void DelaunayGraphCut::addToInfiniteSw(float sW)
@@ -1871,10 +1863,7 @@ void DelaunayGraphCut::addToInfiniteSw(float sW)
     }
 }
 
-void DelaunayGraphCut::reconstructGC(float alphaQual, std::string baseName, StaticVector<int>* cams,
-                                   std::string folderName, std::string fileNameStGraph, std::string fileNameStSolution,
-                                   std::string fileNameTxt, std::string fileNameTxtCam, int camerasPerOneOmni,
-                                   bool doRemoveBubbles, StaticVector<Point3d>* hexahsToExcludeFromResultingMesh, Point3d* hexah) // alphaQual=5.0f
+void DelaunayGraphCut::reconstructGC(const Point3d* hexah)
 {
     std::cout << "reconstructGC" << std::endl;
 
@@ -1884,10 +1873,7 @@ void DelaunayGraphCut::reconstructGC(float alphaQual, std::string baseName, Stat
     // Convert cells FULL/EMPTY into surface
     setIsOnSurface();
 
-    std::string resultFolderName = folderName + baseName + "/";
-    bfs::create_directory(resultFolderName);
-
-    freeUnwantedFullCells(resultFolderName, hexah);
+    freeUnwantedFullCells(hexah);
 
     std::cout << "reconstructGC end" << std::endl;
 }
@@ -1976,11 +1962,9 @@ void DelaunayGraphCut::maxflow()
     std::cout << "Maxflow: end" << std::endl;
 }
 
-void DelaunayGraphCut::reconstructExpetiments(StaticVector<int>* cams, std::string folderName,
-                                            std::string fileNameStGraph, std::string fileNameStSolution,
-                                            std::string fileNameTxt, std::string fileNameTxtCam, int camerasPerOneOmni,
-                                            bool update, Point3d* hexahInflated, std::string tmpCamsPtsFolderName,
-                                            StaticVector<Point3d>* hexahsToExcludeFromResultingMesh, Point3d spaceSteps)
+void DelaunayGraphCut::reconstructExpetiments(const StaticVector<int>& cams, const std::string& folderName,
+                                            bool update, Point3d* hexahInflated, const std::string& tmpCamsPtsFolderName,
+                                            const Point3d& spaceSteps)
 {
     int maxint = 1000000.0f;
 
@@ -2028,8 +2012,7 @@ void DelaunayGraphCut::reconstructExpetiments(StaticVector<int>* cams, std::stri
         if(saveTemporaryBinFiles)
             saveDhInfo(folderName + "delaunayTriangulationInfoAfterForce.bin");
 
-        reconstructGC(5.0f, "", cams, folderName, fileNameStGraph, fileNameStSolution, fileNameTxt,
-                      fileNameTxtCam, camerasPerOneOmni, true, hexahsToExcludeFromResultingMesh, hexahInflated);
+        reconstructGC(hexahInflated);
 
         if(saveTemporaryBinFiles)
             saveDhInfo(folderName + "delaunayTriangulationInfoAfterHallRemoving.bin");
@@ -2064,8 +2047,7 @@ void DelaunayGraphCut::reconstructExpetiments(StaticVector<int>* cams, std::stri
         if(saveTemporaryBinFiles)
             saveDhInfo(folderName + "delaunayTriangulationInfoAfterForce.bin");
 
-        reconstructGC(5.0f, "", cams, folderName, fileNameStGraph, fileNameStSolution, fileNameTxt,
-                      fileNameTxtCam, camerasPerOneOmni, true, hexahsToExcludeFromResultingMesh, hexahInflated);
+        reconstructGC(hexahInflated);
 
         if(saveTemporaryBinFiles)
             saveDhInfo(folderName + "delaunayTriangulationInfoAfterHallRemoving.bin");
@@ -2085,8 +2067,7 @@ void DelaunayGraphCut::reconstructExpetiments(StaticVector<int>* cams, std::stri
         if(saveTemporaryBinFiles)
             saveDhInfo(folderName + "delaunayTriangulationInfoInit.bin");
 
-        reconstructGC(5.0f, "", cams, folderName, fileNameStGraph, fileNameStSolution, fileNameTxt,
-                      fileNameTxtCam, camerasPerOneOmni, true, hexahsToExcludeFromResultingMesh, hexahInflated);
+        reconstructGC(hexahInflated);
 
         if(saveTemporaryBinFiles)
             saveDhInfo(folderName + "delaunayTriangulationInfoAfterHallRemoving.bin");

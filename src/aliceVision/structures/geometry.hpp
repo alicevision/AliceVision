@@ -153,6 +153,6 @@ bool isPointInTriangle(const Point2d& A, const Point2d& B, const Point2d& C, con
 bool lineSegmentsIntersect2DTest(const Point2d* A, const Point2d* B, const Point2d* C, const Point2d* D);
 bool lineSegmentsIntersect2DTest(Point2d* S, const Point2d* A, const Point2d* B, const Point2d* C, const Point2d* D);
 
-bool interectsTriangleTriangle(Point3d* tri1, Point3d* tri2);
+bool interectsTriangleTriangle(const Point3d* tri1, const Point3d* tri2);
 
 } // namespace aliceVision

@@ -70,10 +70,10 @@ bool PreMatchCams::overlap(int rc, int tc)
     return true;
 }
 
-StaticVector<int>* PreMatchCams::findNearestCams(int rc, int _nnearestcams)
+StaticVector<int> PreMatchCams::findNearestCams(int rc, int _nnearestcams)
 {
-    StaticVector<int>* out;
-    out = new StaticVector<int>(_nnearestcams);
+    StaticVector<int> out;
+    out.reserve(_nnearestcams);
     StaticVector<SortedId>* ids = new StaticVector<SortedId>(mp->ncams - 1);
     for(int c = 0; c < mp->ncams; c++)
     {
@@ -97,7 +97,7 @@ StaticVector<int>* PreMatchCams::findNearestCams(int rc, int _nnearestcams)
         int c = 0;
         Point3d rC = mp->CArr[rc];
 
-        while((out->size() < _nnearestcams) && (c < ids->size()))
+        while((out.size() < _nnearestcams) && (c < ids->size()))
         {
             int tc = (*ids)[c].id;
             Point3d tC = mp->CArr[tc];
@@ -105,7 +105,7 @@ StaticVector<int>* PreMatchCams::findNearestCams(int rc, int _nnearestcams)
 
             if((rc != tc) && (d > minCamsDistance) && (overlap(rc, tc)))
             {
-                out->push_back(tc);
+                out.push_back(tc);
             }
             c++;
         }
@@ -153,21 +153,21 @@ StaticVector<int>* PreMatchCams::loadCamPairsMatrix()
 }
 
 
-StaticVector<int>* PreMatchCams::findNearestCamsFromSeeds(int rc, int nnearestcams)
+StaticVector<int> PreMatchCams::findNearestCamsFromSeeds(int rc, int nnearestcams)
 {
-    StaticVector<int>* out = nullptr;
+    StaticVector<int> out;
     std::string tarCamsFile = mp->mip->mvDir + "_tarCams/" + num2strFourDecimal(rc) + ".txt";
     if(FileExists(tarCamsFile))
     {
         FILE* f = fopen(tarCamsFile.c_str(), "r");
         int ntcams;
         fscanf(f, "ntcams %i, tcams", &ntcams);
-        out = new StaticVector<int>(ntcams);
+        out.reserve(ntcams);
         for(int c = 0; c < ntcams; c++)
         {
             int tc;
             fscanf(f, " %i", &tc);
-            out->push_back(tc);
+            out.push_back(tc);
         }
         fclose(f);
     }
@@ -183,29 +183,30 @@ StaticVector<int>* PreMatchCams::findNearestCamsFromSeeds(int rc, int nnearestca
         
         // Ensure the ideal number of target cameras is not superior to the actual number of cameras
         const int maxNumTC = std::min(mp->ncams, nnearestcams);
-        out = new StaticVector<int>(maxNumTC);
+        out.reserve(maxNumTC);
 
         for(int i = 0; i < maxNumTC; i++)
         {
             // a minimum of 10 common points is required (10*2 because points are stored in both rc/tc combinations)
             if(ids[i].value > (10 * 2)) 
-                out->push_back(ids[i].id);
+                out.push_back(ids[i].id);
         }
 
         delete camsmatrix;
         
-        if(out->size() < nnearestcams)
-            std::cout << "Warning: rc " << rc << " - only found " << out->size() << "/" << nnearestcams << " tc by seeds" << std::endl;
+        if(out.size() < nnearestcams)
+            std::cout << "Warning: rc " << rc << " - only found " << out.size() << "/" << nnearestcams << " tc by seeds" << std::endl;
     }
     return out;
 }
 
 // hexahedron format ... 0-3 frontal face, 4-7 back face
-StaticVector<int>* PreMatchCams::findCamsWhichIntersectsHexahedron(Point3d hexah[8],
-                                                                       std::string minMaxDepthsFileName)
+StaticVector<int> PreMatchCams::findCamsWhichIntersectsHexahedron(const Point3d hexah[8],
+                                                                  const std::string& minMaxDepthsFileName)
 {
     StaticVector<Point2d>* minMaxDepths = loadArrayFromFile<Point2d>(minMaxDepthsFileName);
-    StaticVector<int>* tcams = new StaticVector<int>(mp->ncams);
+    StaticVector<int> tcams;
+    tcams.reserve(mp->ncams);
     for(int rc = 0; rc < mp->ncams; rc++)
     {
         float mindepth = (*minMaxDepths)[rc].x;
@@ -216,7 +217,7 @@ StaticVector<int>* PreMatchCams::findCamsWhichIntersectsHexahedron(Point3d hexah
             getCamHexahedron(mp, rchex, rc, mindepth, maxdepth);
             if(intersectsHexahedronHexahedron(rchex, hexah))
             {
-                tcams->push_back(rc);
+                tcams.push_back(rc);
             }
         }
     }
@@ -225,9 +226,10 @@ StaticVector<int>* PreMatchCams::findCamsWhichIntersectsHexahedron(Point3d hexah
 }
 
 // hexahedron format ... 0-3 frontal face, 4-7 back face
-StaticVector<int>* PreMatchCams::findCamsWhichIntersectsHexahedron(Point3d hexah[8])
+StaticVector<int> PreMatchCams::findCamsWhichIntersectsHexahedron(const Point3d hexah[8])
 {
-    StaticVector<int>* tcams = new StaticVector<int>(mp->ncams);
+    StaticVector<int> tcams;
+    tcams.reserve(mp->ncams);
     for(int rc = 0; rc < mp->ncams; rc++)
     {
         float mindepth, maxdepth;
@@ -240,7 +242,7 @@ StaticVector<int>* PreMatchCams::findCamsWhichIntersectsHexahedron(Point3d hexah
 
             if(intersectsHexahedronHexahedron(rchex, hexah))
             {
-                tcams->push_back(rc);
+                tcams.push_back(rc);
             }
         }
     }

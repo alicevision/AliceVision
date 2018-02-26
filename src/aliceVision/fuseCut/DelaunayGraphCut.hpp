@@ -220,7 +220,7 @@ public:
     StaticVector<int> getIsUsedPerCamera() const;
     StaticVector<int> getSortedUsedCams() const;
 
-    void addPointsFromCameraCenters(StaticVector<int>* cams, float minDist);
+    void addPointsFromCameraCenters(const StaticVector<int>& cams, float minDist);
 
     void addPointsToPreventSingularities(Point3d Voxel[8], float minDist);
 
@@ -229,7 +229,9 @@ public:
      */
     void addHelperPoints(int nGridHelperVolumePointsDim, Point3d Voxel[8], float minDist);
 
-    void createTetrahedralizationFromDepthMapsCamsVoxel(StaticVector<int>* cams,
+    void loadPrecomputedDensePoints(StaticVector<int>* voxelsIds, Point3d voxel[8], VoxelsGrid* ls);
+
+    void createTetrahedralizationFromDepthMapsCamsVoxel(const StaticVector<int>& allCams,
                                                    StaticVector<int>* voxelsIds, Point3d Voxel[8], VoxelsGrid* ls);
 
     void computeVerticesSegSize(bool allPoints, float alpha = 0.0f);
@@ -266,7 +268,7 @@ public:
     void forceTedgesByGradientCVPR11(bool fixesSigma, float nPixelSizeBehind);
     void forceTedgesByGradientIJCV(bool fixesSigma, float nPixelSizeBehind);
 
-    void updateGraphFromTmpPtsCamsHexah(StaticVector<int>* incams, Point3d hexah[8], std::string tmpCamsPtsFolderName,
+    void updateGraphFromTmpPtsCamsHexah(const StaticVector<int>& incams, Point3d hexah[8], std::string tmpCamsPtsFolderName,
                                         bool labatutWeights, float distFcnHeight = 0.0f);
     void updateGraphFromTmpPtsCamsHexahRC(int rc, Point3d hexah[8], std::string tmpCamsPtsFolderName,
                                           bool labatutWeights, float distFcnHeight);
@@ -275,24 +277,19 @@ public:
 
     void addToInfiniteSw(float sW);
 
-    void freeUnwantedFullCells(std::string folderName, Point3d* hexah);
+    void freeUnwantedFullCells(const Point3d* hexah);
 
-    void reconstructGC(float alphaQual, std::string baseName, StaticVector<int>* cams, std::string folderName,
-                       std::string fileNameStGraph, std::string fileNameStSolution, std::string fileNameTxt,
-                       std::string fileNameTxtCam, int camerasPerOneOmni, bool doRemoveBubbles,
-                       StaticVector<Point3d>* hexahsToExcludeFromResultingMesh, Point3d* hexah);
+    void reconstructGC(const Point3d* hexah);
 
     void maxflow();
 
-    void reconstructExpetiments(StaticVector<int>* cams, std::string folderName, std::string fileNameStGraph,
-                                std::string fileNameStSolution, std::string fileNameTxt, std::string fileNameTxtCam,
-                                int camerasPerOneOmni, bool update, Point3d hexahInflated[8],
-                                std::string tmpCamsPtsFolderName,
-                                StaticVector<Point3d>* hexahsToExcludeFromResultingMesh, Point3d spaceSteps);
+    void reconstructExpetiments(const StaticVector<int>& cams, const std::string& folderName,
+                                bool update, Point3d hexahInflated[8], const std::string& tmpCamsPtsFolderName,
+                                const Point3d& spaceSteps);
 
-    void reconstructVoxel(Point3d hexah[8], StaticVector<int>* voxelsIds, std::string folderName,
-                          std::string tmpCamsPtsFolderName, bool segment,
-                          StaticVector<Point3d>* hexahsToExcludeFromResultingMesh, VoxelsGrid* ls, Point3d spaceSteps);
+    void reconstructVoxel(Point3d hexah[8], StaticVector<int>* voxelsIds, const std::string& folderName,
+                          const std::string& tmpCamsPtsFolderName, bool removeSmallSegments,
+                          VoxelsGrid* ls, const Point3d& spaceSteps);
 
     /**
      * @brief Invert full/empty status of cells if they represent a too small group after labelling.

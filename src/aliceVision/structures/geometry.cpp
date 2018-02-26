@@ -480,7 +480,7 @@ bool TrianglesOverlap(const Point2d* t1, const Point2d* t2)
         return ccw_tri_tri_intersection_2d(t1[0], t1[1], t1[2], t2[0], t2[1], t2[2]);
 }
 
-bool interectsTriangleTriangle(Point3d* tri1, Point3d* tri2)
+bool interectsTriangleTriangle(const Point3d* tri1, const Point3d* tri2)
 {
     bool ok = (bool)tri_tri_intersect(tri1[0].m, tri1[1].m, tri1[2].m, tri2[0].m, tri2[1].m, tri2[2].m);
     return ok;
