@@ -41,7 +41,7 @@ inline bool gpuSupportCUDA(int minComputeCapabilityMajor,
     {
       std::unique_ptr<cudaDeviceProp> deviceProperties(new cudaDeviceProp);
       if(cudaGetDeviceProperties(deviceProperties.get(), i) != cudaSuccess)
-        throw std::runtime_error("Cannot get properties for CUDA gpu device " + i);
+        throw std::runtime_error("Cannot get properties for CUDA gpu device " + std::to_string(i));
 
       if((deviceProperties->major > minComputeCapabilityMajor ||
          (deviceProperties->major == minComputeCapabilityMajor &&
@@ -80,7 +80,7 @@ inline std::string gpuInformationCUDA()
     {
       std::unique_ptr<cudaDeviceProp> deviceProperties(new cudaDeviceProp);
       if(cudaGetDeviceProperties(deviceProperties.get(), i) != cudaSuccess)
-        throw std::runtime_error("Cannot get properties for CUDA gpu device " + i);
+        throw std::runtime_error("Cannot get properties for CUDA gpu device " + std::to_string(i));
 
       std::stringstream deviceSS;
 

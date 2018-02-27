@@ -13,8 +13,6 @@
 #include <aliceVision/camera/Pinhole.hpp>
 #include <aliceVision/types.hpp>
 
-#include <Alembic/Abc/OObject.h>
-
 #include <memory>
 #include <string>
 
@@ -80,8 +78,7 @@ public:
                  const View& view,
                  const geometry::Pose3* pose = nullptr,
                  const camera::IntrinsicBase* intrinsic = nullptr,
-                 const Vec6* uncertainty = nullptr,
-                 Alembic::Abc::OObject* parent = nullptr);
+                 const Vec6* uncertainty = nullptr);
 
   /**
    * @brief Add a keyframe to the animated camera
@@ -95,9 +92,9 @@ public:
   void addCameraKeyframe(const geometry::Pose3 &pose,
                          const camera::Pinhole *cam,
                          const std::string &imagePath,
-                         const IndexT id_view,
-                         const IndexT id_intrinsic,
-                         const float sensorWidth_mm=36.0);
+                         IndexT id_view,
+                         IndexT id_intrinsic,
+                         float sensorWidth_mm=36.0);
 
   /**
    * @brief Initiate an animated camera

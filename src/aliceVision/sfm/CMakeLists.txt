@@ -89,6 +89,9 @@ add_library(aliceVision_sfm
 )
 
 target_link_libraries(aliceVision_sfm
+  PUBLIC
+  aliceVision_numeric
+  aliceVision_track
   aliceVision_multiview
   stlplus
   ${CERES_LIBRARIES}
@@ -109,7 +112,7 @@ set_target_properties(aliceVision_sfm
 
 if(ALICEVISION_HAVE_ALEMBIC)
   target_link_libraries(aliceVision_sfm
-    ${ABC_LIBRARIES}
+    PRIVATE Alembic::Alembic
   )
 endif()
 
@@ -123,7 +126,7 @@ UNIT_TEST(aliceVision bundleAdjustment   "aliceVision_multiview_test_data;aliceV
 UNIT_TEST(aliceVision rig                "aliceVision_feature;aliceVision_sfm;aliceVision_system")
 
 if(ALICEVISION_HAVE_ALEMBIC)
-  UNIT_TEST(aliceVision alembicIO "aliceVision_sfm;${ABC_LIBRARIES}")
+  UNIT_TEST(aliceVision alembicIO "aliceVision_sfm;Alembic::Alembic")
 endif()
 
 add_subdirectory(pipeline)

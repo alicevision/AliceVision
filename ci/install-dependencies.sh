@@ -20,3 +20,4 @@ downloadFromAliceVisionDependencies opencv-3.0.0 ${DEPS_INSTALL_PATH}
 downloadFromAliceVisionDependencies opengv-dev ${DEPS_INSTALL_PATH}
 downloadFromAliceVisionDependencies openexr-2.2.1 ${DEPS_INSTALL_PATH}
 downloadFromAliceVisionDependencies openimageio-master ${DEPS_INSTALL_PATH}
+downloadFromAliceVisionDependencies alembic-1.7.5 ${DEPS_INSTALL_PATH}
