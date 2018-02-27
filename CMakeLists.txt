@@ -34,6 +34,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # AliceVision build options
 # ==============================================================================
 option(ALICEVISION_BUILD_SHARED "Build AliceVision shared libs" OFF)
+option(ALICEVISION_BUILD_SFM "Build AliceVision SfM part" ON)
+option(ALICEVISION_BUILD_MVS "Build AliceVision MVS part" ON)
 option(ALICEVISION_BUILD_TESTS "Build AliceVision tests" OFF)
 option(ALICEVISION_BUILD_EXAMPLES "Build AliceVision samples applications." ON)
 option(ALICEVISION_BUILD_COVERAGE "Enable code coverage generation (gcc only)" OFF)
@@ -191,7 +193,7 @@ if(ALICEVISION_BUILD_COVERAGE AND CMAKE_COMPILER_IS_GNUCXX)
 endif()
 
 # ==============================================================================
-# OpenMP detection
+# OpenMP
 # ==============================================================================
 if(ALICEVISION_USE_OPENMP STREQUAL "OFF")
   set(ALICEVISION_HAVE_OPENMP 0)
@@ -219,222 +221,6 @@ if(ALICEVISION_HAVE_OPENMP)
     else()
     list(APPEND ALICEVISION_LIBRARY_DEPENDENCIES gomp)
     endif()
-  endif()
-endif()
-
-# ==============================================================================
-# SUBMODULE CONFIGURATION
-# ==============================================================================
-#- Mosek (linear programming interface)
-#===============================================================================
-set(ALICEVISION_HAVE_MOSEK 0)
-find_package(Mosek)
-if(MOSEK_FOUND)
-  set(ALICEVISION_HAVE_MOSEK 1)
-  set(LP_INCLUDE_DIRS
-    ${MOSEK_INCLUDE}
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/dependencies/osi_clp/Osi/src/OsiMsk/
-  )
-  include_directories(${LP_INCLUDE_DIRS})
-endif()
-
-#Install RULES
-install(
-  DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/src/dependencies/
-  DESTINATION include/aliceVision_dependencies
-  COMPONENT headers
-  FILES_MATCHING PATTERN "*.hpp" PATTERN "*.h"
-)
-
-# ==============================================================================
-# Eigen
-# ==============================================================================
-# - internal by default,
-# - external if EIGEN_INCLUDE_DIR_HINTS is defined
-# ==============================================================================
-if(NOT DEFINED EIGEN_INCLUDE_DIR_HINTS)
-  set(EIGEN_INCLUDE_DIR_HINTS ${CMAKE_CURRENT_SOURCE_DIR}/src/dependencies/eigen)
-  set(ALICEVISION_USE_INTERNAL_EIGEN ON)
-endif()
-find_package(Eigen 3.3 QUIET)
-if(EIGEN_FOUND)
-  include_directories(${EIGEN_INCLUDE_DIRS})
-  # See https://eigen.tuxfamily.org/dox/group__TopicUnalignedArrayAssert.html
-  add_definitions("-DEIGEN_DONT_ALIGN_STATICALLY=1")
-  add_definitions("-DEIGEN_DONT_VECTORIZE=1")
-endif()
-
-# ==============================================================================
-# Ceres
-# ==============================================================================
-# - internal by default (ceres-solver+cxsparse+miniglog),
-# - external if Ceres_DIR and find_package return a valid Ceres setup
-# ==============================================================================
-message(STATUS "Trying to find package Ceres for aliceVision: ${Ceres_DIR}")
-if(ALICEVISION_REQUIRE_CERES_WITH_SUITESPARSE)
-  message(STATUS "By default, Ceres required SuiteSparse to ensure best performances. if you explicitly need to build without it, you can use the option: -DALICEVISION_REQUIRE_CERES_WITH_SUITESPARSE=OFF")
-  find_package(Ceres QUIET REQUIRED SuiteSparse CONFIG)
-else()
-  find_package(Ceres CONFIG QUIET CONFIG)
-endif()
-
-if(NOT Ceres_FOUND)
-  if(DEFINED ALICEVISION_USE_INTERNAL_CERES AND NOT ALICEVISION_USE_INTERNAL_CERES)
-    message(FATAL_ERROR "External CERES not found. Not found in Ceres_DIR: ${Ceres_DIR}")
-  endif()
-
-  message(STATUS "No external CERES detected, using the embedded one.")
-  set(ALICEVISION_USE_INTERNAL_CERES ON)
-  set(CERES_INCLUDE_DIRS
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/dependencies/ceres-solver/include
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/dependencies/ceres-solver/internal/ceres/miniglog
-    ${CMAKE_CURRENT_BINARY_DIR}/src/dependencies/ceres-solver/config)
-    file(READ "${CMAKE_CURRENT_SOURCE_DIR}/src/dependencies/ceres-solver/VERSION" CERES_CONFIG)
-    string(REGEX REPLACE "version ([0-9.]+).*" "\\1" CERES_VERSION ${CERES_CONFIG})
-  set(CERES_LIBRARIES ceres cxsparse)
-  set(Ceres_FOUND TRUE)
-else()
-  message(STATUS "Ceres include dirs ${CERES_INCLUDE_DIRS}")
-  message(STATUS "Ceres libraries ${CERES_LIBRARIES}")
-  include_directories(${CERES_INCLUDE_DIRS})
-  set(ALICEVISION_USE_INTERNAL_CERES OFF)
-endif()
-
-# ==============================================================================
-# Flann
-# ==============================================================================
-# - internal by default (flann),
-# - external if FLANN_INCLUDE_DIR_HINTS and a valid Flann setup is found
-# ==============================================================================
-if(NOT DEFINED FLANN_INCLUDE_DIR_HINTS)
-  set(FLANN_INCLUDE_DIR_HINTS ${CMAKE_CURRENT_SOURCE_DIR}/src/dependencies/flann/src/cpp)
-  set(ALICEVISION_USE_INTERNAL_FLANN ON)
-endif()
-find_package(Flann QUIET)
-if(NOT FLANN_FOUND OR ALICEVISION_USE_INTERNAL_FLANN)
-  set(FLANN_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/src/dependencies/flann/src/cpp)
-  set(FLANN_LIBRARY flann_cpp_s)
-endif()
-
-# ==============================================================================
-# CoinUtils
-# ==============================================================================
-# - internal by default (CoinUtils),
-# - external if COINUTILS_INCLUDE_DIR_HINTS and a valid CoinUtils setup is found
-# ==============================================================================
-if(NOT DEFINED COINUTILS_INCLUDE_DIR_HINTS)
-  set(COINUTILS_INCLUDE_DIR_HINTS ${CMAKE_CURRENT_SOURCE_DIR}/src/dependencies/osi_clp/CoinUtils/src/)
-  set(ALICEVISION_USE_INTERNAL_COINUTILS ON)
-endif()
-find_package(CoinUtils QUIET)
-if(NOT COINUTILS_FOUND OR ALICEVISION_USE_INTERNAL_COINUTILS)
-  set(COINUTILS_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/src/dependencies/osi_clp/CoinUtils/src/)
-  set(COINUTILS_LIBRARY lib_CoinUtils)
-endif()
-
-## ==============================================================================
-## Clp
-## ==============================================================================
-## - internal by default (Clp),
-## - external if CLP_INCLUDE_DIR_HINTS and a valid Clp setup is found
-## ==============================================================================
-if(NOT DEFINED CLP_INCLUDE_DIR_HINTS)
-  set(CLP_INCLUDE_DIR_HINTS ${CMAKE_CURRENT_SOURCE_DIR}/src/dependencies/osi_clp/Clp/src/)
-  set(ALICEVISION_USE_INTERNAL_CLP ON)
-endif()
-find_package(Clp QUIET)
-if(NOT CLP_FOUND OR ALICEVISION_USE_INTERNAL_CLP)
-  set(CLP_INCLUDE_DIRS
-     ${CMAKE_CURRENT_SOURCE_DIR}/src/dependencies/osi_clp/Clp/src/
-     ${CMAKE_CURRENT_SOURCE_DIR}/src/dependencies/osi_clp/Clp/src/OsiClp/)
-  set(CLP_LIBRARIES lib_clp lib_OsiClpSolver)
-endif()
-
-# ==============================================================================
-# Osi
-# ==============================================================================
-# - internal by default (Osi),
-# - external if OSI_INCLUDE_DIR_HINTS and a valid Osi setup is found
-# ==============================================================================
-if(NOT DEFINED OSI_INCLUDE_DIR_HINTS)
-  set(OSI_INCLUDE_DIR_HINTS ${CMAKE_CURRENT_SOURCE_DIR}/src/dependencies/osi_clp/Osi/src/)
-  set(ALICEVISION_USE_INTERNAL_OSI ON)
-endif()
-find_package(Osi QUIET)
-if(NOT OSI_FOUND OR ALICEVISION_USE_INTERNAL_OSI)
-  set(OSI_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/src/dependencies/osi_clp/Osi/src/Osi/)
-  set(OSI_LIBRARY lib_Osi)
-endif()
-
-# ==============================================================================
-# Internal CLP/OSI/COINUTILS libraries:
-# ==============================================================================
-if(ALICEVISION_USE_INTERNAL_OSI AND ALICEVISION_USE_INTERNAL_CLP AND ALICEVISION_USE_INTERNAL_COINUTILS)
-  add_subdirectory(src/dependencies/osi_clp/)
-  set_property(TARGET lib_clp PROPERTY FOLDER AliceVision/Dependencies/Lib_clp)
-  set_property(TARGET lib_CoinUtils PROPERTY FOLDER AliceVision/Dependencies/Lib_CoinUtils)
-  set_property(TARGET lib_Osi PROPERTY FOLDER AliceVision/Dependencies/Lib_Osi)
-  set_property(TARGET lib_OsiClpSolver PROPERTY FOLDER AliceVision/Dependencies/Lib_OsiClpSolver)
-endif()
-
-find_package(CUDA 7.0)
-if( CUDA_FOUND )
-  MESSAGE( "Found CUDA ${CUDA_VERSION}" )
-  MESSAGE( STATUS "> CUDA_INCLUDE_DIRS:   ${CUDA_INCLUDE_DIRS}"   )
-  MESSAGE( STATUS "> CUDA_LIBRARIES: ${CUDA_LIBRARIES}" )
-  MESSAGE( STATUS "> CUDA_CUBLAS_LIBRARIES: ${CUDA_CUBLAS_LIBRARIES}" )
-  MESSAGE( STATUS "> CUDA_CUDART_LIBRARY: ${CUDA_cusparse_LIBRARY}" )
-  SET(INCLUDE_DIRS ${INCLUDE_DIRS} ${CUDA_INCLUDE_DIRS})
-  SET(LIBS_FILES ${LIBS_FILES} ${CUDA_LIBRARIES};${CUDA_CUBLAS_LIBRARIES};${CUDA_cusparse_LIBRARY})
-endif()
-
-# ==============================================================================
-# Lemon
-# ==============================================================================
-# - internal by default (Lemon),
-# - external if LEMON_INCLUDE_DIR_HINTS and a valid Lemon setup is found
-# ==============================================================================
-if(NOT DEFINED LEMON_INCLUDE_DIR_HINTS)
-  set(LEMON_INCLUDE_DIR_HINTS ${CMAKE_CURRENT_SOURCE_DIR}/src/dependencies/lemon)
-  set(ALICEVISION_USE_INTERNAL_LEMON ON)
-endif()
-find_package(Lemon QUIET)
-if(NOT LEMON_FOUND OR ALICEVISION_USE_INTERNAL_LEMON)
-  set(LEMON_INCLUDE_DIRS
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/dependencies/lemon
-    ${CMAKE_CURRENT_BINARY_DIR}/src/dependencies/lemon)
-  set(LEMON_LIBRARY lemon)
-endif()
-
-# ==============================================================================
-# OpenCV
-# ==============================================================================
-# - only external and enabled only if ALICEVISION_USE_OPENCV is set to ON
-# ==============================================================================
-if(ALICEVISION_USE_OPENCV STREQUAL "OFF")
-  set(ALICEVISION_HAVE_OPENCV 0)
-  set(ALICEVISION_HAVE_OCVSIFT 0)
-else() # ON OR AUTO
-  find_package(OpenCV COMPONENTS core imgproc video imgcodecs videoio features2d xfeatures2d)
-
-  if(OpenCV_FOUND)
-    set(ALICEVISION_HAVE_OPENCV 1)
-    message(STATUS "OpenCV found.")
-  elseif(ALICEVISION_USE_OPENCV STREQUAL "ON")
-    set(ALICEVISION_HAVE_OPENCV 0)
-    message(SEND_ERROR "Failed to find OpenCV.")
-  else()
-    set(ALICEVISION_HAVE_OPENCV 0)
-  endif()
-endif()
-
-if(ALICEVISION_HAVE_OPENCV)
-  include_directories(${OpenCV_INCLUDE_DIRS})
-  # add a definition that allows the conditional compiling
-  if(ALICEVISION_USE_OCVSIFT)
-    set(ALICEVISION_HAVE_OCVSIFT 1)
-  else()
-    set(ALICEVISION_HAVE_OCVSIFT 0)
   endif()
 endif()
 
@@ -469,134 +255,6 @@ add_definitions(${Boost_DEFINITIONS})
 set(LOG_LIB ${Boost_LOG_LIBRARY} ${Boost_LOG_SETUP_LIBRARY})
 
 # ==============================================================================
-# Alembic
-# ==============================================================================
-# - optional, it allows to use the classes to export data in alembic format
-# ==============================================================================
-if(ALICEVISION_USE_ALEMBIC STREQUAL "OFF")
-  set(ALICEVISION_HAVE_ALEMBIC 0)
-else() # ON OR AUTO
-  find_package(Alembic)
-
-  if(ALEMBIC_FOUND)
-    set(ALICEVISION_HAVE_ALEMBIC 1)
-    message(STATUS "Alembic found.")
-  elseif(ALICEVISION_USE_ALEMBIC STREQUAL "ON")
-    set(ALICEVISION_HAVE_ALEMBIC 0)
-    message(SEND_ERROR "Failed to find Alembic.")
-  else()
-    set(ALICEVISION_HAVE_ALEMBIC 0)
-  endif()
-endif()
-
-if(ALICEVISION_HAVE_ALEMBIC)
-  include_directories(${ABC_INCLUDE_DIR})
-endif()
-
-# ==============================================================================
-# CCTag
-# ==============================================================================
-# - optional
-# ==============================================================================
-if(ALICEVISION_USE_CCTAG STREQUAL "OFF")
-  set(ALICEVISION_HAVE_CCTAG 0)
-else() # ON OR AUTO
-  if(ALICEVISION_HAVE_OPENCV) #
-    find_package(CCTag 1.0.0 CONFIG)
-
-    if(CCTag_FOUND)
-      set(ALICEVISION_HAVE_CCTAG 1)
-      set(ALICEVISION_HAVE_CUDA 1)
-      message(STATUS "CCTAG ${CCTag_VERSION} found.")
-    elseif(ALICEVISION_USE_CCTAG STREQUAL "ON")
-      set(ALICEVISION_HAVE_CCTAG 0)
-      message(SEND_ERROR "Failed to find CCTAG.")
-    else()
-      set(ALICEVISION_HAVE_CCTAG 0)
-    endif()
-  elseif(ALICEVISION_USE_CCTAG STREQUAL "ON")
-    set(ALICEVISION_HAVE_CCTAG 0)
-    message(SEND_ERROR "Can't use CCTAG without OPENCV.")
-  else()
-    set(ALICEVISION_HAVE_CCTAG 0)
-  endif()
-endif()
-
-# ==============================================================================
-# PopSift
-# ==============================================================================
-# - optional
-# ==============================================================================
-if(ALICEVISION_USE_POPSIFT STREQUAL "OFF")
-  set(ALICEVISION_HAVE_POPSIFT 0)
-else() # ON OR AUTO
-  find_package(PopSift CONFIG)
-
-  if(PopSift_FOUND)
-    set(ALICEVISION_HAVE_POPSIFT 1)
-    set(ALICEVISION_HAVE_CUDA 1)
-    message(STATUS "PopSIFT found.")
-  elseif(ALICEVISION_USE_POPSIFT STREQUAL "ON")
-    set(ALICEVISION_HAVE_POPSIFT 0)
-    message(SEND_ERROR "Failed to find PopSIFT.")
-  else()
-    set(ALICEVISION_HAVE_POPSIFT 0)
-  endif()
-endif()
-
-# ==============================================================================
-# OpenGV
-# ==============================================================================
-# - optional, it allows to use the generic camera PnP algorithms for rig localization
-# ==============================================================================
-if(ALICEVISION_USE_OPENGV STREQUAL "OFF")
-  set(ALICEVISION_HAVE_OPENGV 0)
-else() # ON OR AUTO
-  find_package(OpenGV)
-
-  if(OPENGV_FOUND)
-    set(ALICEVISION_HAVE_OPENGV 1)
-    message(STATUS "OpenGV found.")
-  elseif(ALICEVISION_USE_OPENGV STREQUAL "ON")
-    set(ALICEVISION_HAVE_OPENGV 0)
-    message(SEND_ERROR "Failed to find OpenGV.")
-  else()
-    set(ALICEVISION_HAVE_OPENGV 0)
-  endif()
-endif()
-
-if(ALICEVISION_HAVE_OPENGV)
-  include_directories(${OPENGV_INCLUDE_DIR})
-  link_directories(${OPENGV_LIBRARY_DIR})
-endif()
-
-# ==============================================================================
-# UncertaintyTE
-# ==============================================================================
-# - optional
-# ==============================================================================
-if(ALICEVISION_USE_UNCERTAINTYTE STREQUAL "OFF")
-  set(ALICEVISION_USE_UNCERTAINTYTE 0)
-else() # ON OR AUTO
-  find_package(UncertaintyTE)
-
-  if(UNCERTAINTYTE_FOUND)
-    set(ALICEVISION_HAVE_UNCERTAINTYTE 1)
-    message(STATUS "UncertaintyTE found.")
-  elseif(ALICEVISION_USE_UNCERTAINTYTE STREQUAL "ON")
-    set(ALICEVISION_HAVE_UNCERTAINTYTE 0)
-    message(SEND_ERROR "Failed to find UncertaintyTE.")
-  else()
-    set(ALICEVISION_HAVE_UNCERTAINTYTE 0)
-  endif()
-endif()
-
-if(ALICEVISION_HAVE_UNCERTAINTYTE)
-  include_directories(${UNCERTAINTYTE_INCLUDE_DIR})
-  link_directories(${UNCERTAINTYTE_LIBRARY_DIR})
-endif()
-
-# ==============================================================================
 # OpenEXR
 # ==============================================================================
 find_package(OpenEXR)
@@ -617,44 +275,396 @@ else()
 endif()
 
 # ==============================================================================
-# ZLIB
+# Mosek (linear programming interface)
 # ==============================================================================
-find_package(ZLIB REQUIRED)
+set(ALICEVISION_HAVE_MOSEK 0)
 
-# ==============================================================================
-# GEOGRAM
-# ==============================================================================
-find_package(Geogram REQUIRED)
-message(STATUS "Geogram: ${GEOGRAM_LIBRARY}, ${GEOGRAM_INCLUDE_DIR}")
+if(ALICEVISION_BUILD_SFM)
+  find_package(Mosek)
+  if(MOSEK_FOUND)
+    set(ALICEVISION_HAVE_MOSEK 1)
+    set(LP_INCLUDE_DIRS
+      ${MOSEK_INCLUDE}
+      ${CMAKE_CURRENT_SOURCE_DIR}/src/dependencies/osi_clp/Osi/src/OsiMsk/
+    )
+    include_directories(${LP_INCLUDE_DIRS})
+  endif()
+
+  #Install RULES
+  install(
+    DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/src/dependencies/
+    DESTINATION include/aliceVision_dependencies
+    COMPONENT headers
+    FILES_MATCHING PATTERN "*.hpp" PATTERN "*.h"
+  )
+endif()
 
 # ==============================================================================
 # Eigen
 # ==============================================================================
-find_package(Eigen3 3.3 REQUIRED)
-if(EIGEN3_FOUND)
-  message("Found external Eigen. include: ${EIGEN3_INCLUDE_DIR}, version: ${EIGEN3_VERSION_STRING}.")
+# - internal by default,
+# - external if EIGEN_INCLUDE_DIR_HINTS is defined
+# ==============================================================================
+if(NOT DEFINED EIGEN_INCLUDE_DIR_HINTS)
+  set(EIGEN_INCLUDE_DIR_HINTS ${CMAKE_CURRENT_SOURCE_DIR}/src/dependencies/eigen)
+  set(ALICEVISION_USE_INTERNAL_EIGEN ON)
+endif()
+find_package(Eigen 3.3 QUIET)
+if(EIGEN_FOUND)
+  include_directories(${EIGEN_INCLUDE_DIRS})
+  # See https://eigen.tuxfamily.org/dox/group__TopicUnalignedArrayAssert.html
+  add_definitions("-DEIGEN_DONT_ALIGN_STATICALLY=1")
+  add_definitions("-DEIGEN_DONT_VECTORIZE=1")
+endif()
+
+# ==============================================================================
+# Ceres
+# ==============================================================================
+# - internal by default (ceres-solver+cxsparse+miniglog),
+# - external if Ceres_DIR and find_package return a valid Ceres setup
+# ==============================================================================
+if(ALICEVISION_BUILD_SFM)
+  message(STATUS "Trying to find package Ceres for aliceVision: ${Ceres_DIR}")
+  if(ALICEVISION_REQUIRE_CERES_WITH_SUITESPARSE)
+    message(STATUS "By default, Ceres required SuiteSparse to ensure best performances. if you explicitly need to build without it, you can use the option: -DALICEVISION_REQUIRE_CERES_WITH_SUITESPARSE=OFF")
+    find_package(Ceres QUIET REQUIRED SuiteSparse CONFIG)
+  else()
+    find_package(Ceres CONFIG QUIET CONFIG)
+  endif()
+
+  if(NOT Ceres_FOUND)
+    if(DEFINED ALICEVISION_USE_INTERNAL_CERES AND NOT ALICEVISION_USE_INTERNAL_CERES)
+      message(FATAL_ERROR "External CERES not found. Not found in Ceres_DIR: ${Ceres_DIR}")
+    endif()
+
+    message(STATUS "No external CERES detected, using the embedded one.")
+    set(ALICEVISION_USE_INTERNAL_CERES ON)
+    set(CERES_INCLUDE_DIRS
+      ${CMAKE_CURRENT_SOURCE_DIR}/src/dependencies/ceres-solver/include
+      ${CMAKE_CURRENT_SOURCE_DIR}/src/dependencies/ceres-solver/internal/ceres/miniglog
+      ${CMAKE_CURRENT_BINARY_DIR}/src/dependencies/ceres-solver/config)
+      file(READ "${CMAKE_CURRENT_SOURCE_DIR}/src/dependencies/ceres-solver/VERSION" CERES_CONFIG)
+      string(REGEX REPLACE "version ([0-9.]+).*" "\\1" CERES_VERSION ${CERES_CONFIG})
+    set(CERES_LIBRARIES ceres cxsparse)
+    set(Ceres_FOUND TRUE)
+  else()
+    message(STATUS "Ceres include dirs ${CERES_INCLUDE_DIRS}")
+    message(STATUS "Ceres libraries ${CERES_LIBRARIES}")
+    include_directories(${CERES_INCLUDE_DIRS})
+    set(ALICEVISION_USE_INTERNAL_CERES OFF)
+  endif()
+endif()
+
+# ==============================================================================
+# Flann
+# ==============================================================================
+# - internal by default (flann),
+# - external if FLANN_INCLUDE_DIR_HINTS and a valid Flann setup is found
+# ==============================================================================
+if(ALICEVISION_BUILD_SFM)
+  if(NOT DEFINED FLANN_INCLUDE_DIR_HINTS)
+    set(FLANN_INCLUDE_DIR_HINTS ${CMAKE_CURRENT_SOURCE_DIR}/src/dependencies/flann/src/cpp)
+    set(ALICEVISION_USE_INTERNAL_FLANN ON)
+  endif()
+  find_package(Flann QUIET)
+  if(NOT FLANN_FOUND OR ALICEVISION_USE_INTERNAL_FLANN)
+    set(FLANN_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/src/dependencies/flann/src/cpp)
+    set(FLANN_LIBRARY flann_cpp_s)
+  endif()
+endif()
+
+# ==============================================================================
+# CoinUtils
+# ==============================================================================
+# - internal by default (CoinUtils),
+# - external if COINUTILS_INCLUDE_DIR_HINTS and a valid CoinUtils setup is found
+# ==============================================================================
+if(ALICEVISION_BUILD_SFM)
+  if(NOT DEFINED COINUTILS_INCLUDE_DIR_HINTS)
+    set(COINUTILS_INCLUDE_DIR_HINTS ${CMAKE_CURRENT_SOURCE_DIR}/src/dependencies/osi_clp/CoinUtils/src/)
+    set(ALICEVISION_USE_INTERNAL_COINUTILS ON)
+  endif()
+  find_package(CoinUtils QUIET)
+  if(NOT COINUTILS_FOUND OR ALICEVISION_USE_INTERNAL_COINUTILS)
+    set(COINUTILS_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/src/dependencies/osi_clp/CoinUtils/src/)
+    set(COINUTILS_LIBRARY lib_CoinUtils)
+  endif()
+endif()
+
+## ==============================================================================
+## Clp
+## ==============================================================================
+## - internal by default (Clp),
+## - external if CLP_INCLUDE_DIR_HINTS and a valid Clp setup is found
+## ==============================================================================
+if(ALICEVISION_BUILD_SFM)
+  if(NOT DEFINED CLP_INCLUDE_DIR_HINTS)
+    set(CLP_INCLUDE_DIR_HINTS ${CMAKE_CURRENT_SOURCE_DIR}/src/dependencies/osi_clp/Clp/src/)
+    set(ALICEVISION_USE_INTERNAL_CLP ON)
+  endif()
+  find_package(Clp QUIET)
+  if(NOT CLP_FOUND OR ALICEVISION_USE_INTERNAL_CLP)
+    set(CLP_INCLUDE_DIRS
+       ${CMAKE_CURRENT_SOURCE_DIR}/src/dependencies/osi_clp/Clp/src/
+       ${CMAKE_CURRENT_SOURCE_DIR}/src/dependencies/osi_clp/Clp/src/OsiClp/)
+    set(CLP_LIBRARIES lib_clp lib_OsiClpSolver)
+  endif()
+endif()
+
+# ==============================================================================
+# Osi
+# ==============================================================================
+# - internal by default (Osi),
+# - external if OSI_INCLUDE_DIR_HINTS and a valid Osi setup is found
+# ==============================================================================
+if(ALICEVISION_BUILD_SFM)
+  if(NOT DEFINED OSI_INCLUDE_DIR_HINTS)
+    set(OSI_INCLUDE_DIR_HINTS ${CMAKE_CURRENT_SOURCE_DIR}/src/dependencies/osi_clp/Osi/src/)
+    set(ALICEVISION_USE_INTERNAL_OSI ON)
+  endif()
+  find_package(Osi QUIET)
+  if(NOT OSI_FOUND OR ALICEVISION_USE_INTERNAL_OSI)
+    set(OSI_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/src/dependencies/osi_clp/Osi/src/Osi/)
+    set(OSI_LIBRARY lib_Osi)
+  endif()
+endif()
+
+# ==============================================================================
+# Internal CLP/OSI/COINUTILS libraries
+# ==============================================================================
+if(ALICEVISION_BUILD_SFM)
+  if(ALICEVISION_USE_INTERNAL_OSI AND ALICEVISION_USE_INTERNAL_CLP AND ALICEVISION_USE_INTERNAL_COINUTILS)
+    add_subdirectory(src/dependencies/osi_clp/)
+    set_property(TARGET lib_clp PROPERTY FOLDER AliceVision/Dependencies/Lib_clp)
+    set_property(TARGET lib_CoinUtils PROPERTY FOLDER AliceVision/Dependencies/Lib_CoinUtils)
+    set_property(TARGET lib_Osi PROPERTY FOLDER AliceVision/Dependencies/Lib_Osi)
+    set_property(TARGET lib_OsiClpSolver PROPERTY FOLDER AliceVision/Dependencies/Lib_OsiClpSolver)
+  endif()
+endif()
+
+# ==============================================================================
+# Lemon
+# ==============================================================================
+# - internal by default (Lemon),
+# - external if LEMON_INCLUDE_DIR_HINTS and a valid Lemon setup is found
+# ==============================================================================
+if(ALICEVISION_BUILD_SFM)
+  if(NOT DEFINED LEMON_INCLUDE_DIR_HINTS)
+    set(LEMON_INCLUDE_DIR_HINTS ${CMAKE_CURRENT_SOURCE_DIR}/src/dependencies/lemon)
+    set(ALICEVISION_USE_INTERNAL_LEMON ON)
+  endif()
+  find_package(Lemon QUIET)
+  if(NOT LEMON_FOUND OR ALICEVISION_USE_INTERNAL_LEMON)
+    set(LEMON_INCLUDE_DIRS
+      ${CMAKE_CURRENT_SOURCE_DIR}/src/dependencies/lemon
+      ${CMAKE_CURRENT_BINARY_DIR}/src/dependencies/lemon)
+    set(LEMON_LIBRARY lemon)
+  endif()
+endif()
+
+# ==============================================================================
+# OpenCV
+# ==============================================================================
+# - optional, only external and enabled only if ALICEVISION_USE_OPENCV is ON
+# ==============================================================================
+set(ALICEVISION_HAVE_OPENCV 0)
+set(ALICEVISION_HAVE_OCVSIFT 0)
+
+if(ALICEVISION_BUILD_SFM)
+  if(NOT ALICEVISION_USE_OPENCV STREQUAL "OFF")
+    find_package(OpenCV COMPONENTS core imgproc video imgcodecs videoio features2d xfeatures2d)
+
+    if(OpenCV_FOUND)
+      set(ALICEVISION_HAVE_OPENCV 1)
+      message(STATUS "OpenCV found.")
+    elseif(ALICEVISION_USE_OPENCV STREQUAL "ON")
+      message(SEND_ERROR "Failed to find OpenCV.")
+    endif()
+  endif()
+
+  if(ALICEVISION_HAVE_OPENCV)
+    include_directories(${OpenCV_INCLUDE_DIRS})
+    # add a definition that allows the conditional compiling
+    if(ALICEVISION_USE_OCVSIFT)
+      set(ALICEVISION_HAVE_OCVSIFT 1)
+    endif()
+  endif()
+endif()
+
+# ==============================================================================
+# Alembic
+# ==============================================================================
+# - optional, it allows to use the classes to export data in alembic format
+# ==============================================================================
+set(ALICEVISION_HAVE_ALEMBIC 0)
+
+if(ALICEVISION_BUILD_SFM) # or ALICEVISION_BUILD_MVS
+  if(NOT ALICEVISION_USE_ALEMBIC STREQUAL "OFF")
+    find_package(Alembic)
+
+    if(ALEMBIC_FOUND)
+      set(ALICEVISION_HAVE_ALEMBIC 1)
+      message(STATUS "Alembic found.")
+    elseif(ALICEVISION_USE_ALEMBIC STREQUAL "ON")
+      message(SEND_ERROR "Failed to find Alembic.")
+    endif()
+  endif()
+
+  if(ALICEVISION_HAVE_ALEMBIC)
+    include_directories(${ABC_INCLUDE_DIR})
+  endif()
+endif()
+
+# ==============================================================================
+# CCTag
+# ==============================================================================
+# - optional, only external and enabled only if ALICEVISION_USE_CCTAG is ON
+# ==============================================================================
+set(ALICEVISION_HAVE_CCTAG 0)
+
+if(ALICEVISION_BUILD_SFM)
+  if(NOT ALICEVISION_USE_CCTAG STREQUAL "OFF")
+    if(ALICEVISION_HAVE_OPENCV)
+      find_package(CCTag 1.0.0 CONFIG)
+
+      if(CCTag_FOUND)
+        set(ALICEVISION_HAVE_CCTAG 1)
+        message(STATUS "CCTAG ${CCTag_VERSION} found.")
+      elseif(ALICEVISION_USE_CCTAG STREQUAL "ON")
+        message(SEND_ERROR "Failed to find CCTAG.")
+      endif()
+    elseif(ALICEVISION_USE_CCTAG STREQUAL "ON")
+      message(SEND_ERROR "Can't use CCTAG without OPENCV.")
+    endif()
+  endif()
+endif()
+
+# ==============================================================================
+# PopSift
+# ==============================================================================
+# - optional, only external and enabled only if ALICEVISION_USE_POPSIFT is ON
+# ==============================================================================
+set(ALICEVISION_HAVE_POPSIFT 0)
+
+if(ALICEVISION_BUILD_SFM)
+  if(NOT ALICEVISION_USE_POPSIFT STREQUAL "OFF")
+    find_package(PopSift CONFIG)
+
+    if(PopSift_FOUND)
+      set(ALICEVISION_HAVE_POPSIFT 1)
+      message(STATUS "PopSIFT found.")
+    elseif(ALICEVISION_USE_POPSIFT STREQUAL "ON")
+      message(SEND_ERROR "Failed to find PopSIFT.")
+    endif()
+  endif()
+endif()
+
+# ==============================================================================
+# OpenGV
+# ==============================================================================
+# - optional, it allows to use the generic camera PnP algorithms for rig localization
+# ==============================================================================
+set(ALICEVISION_HAVE_OPENGV 0)
+
+if(ALICEVISION_BUILD_SFM)
+  if(NOT ALICEVISION_USE_OPENGV STREQUAL "OFF")
+    find_package(OpenGV)
+
+    if(OPENGV_FOUND)
+      set(ALICEVISION_HAVE_OPENGV 1)
+      message(STATUS "OpenGV found.")
+    elseif(ALICEVISION_USE_OPENGV STREQUAL "ON")
+      message(SEND_ERROR "Failed to find OpenGV.")
+    endif()
+  endif()
+
+  if(ALICEVISION_HAVE_OPENGV)
+    include_directories(${OPENGV_INCLUDE_DIR})
+    link_directories(${OPENGV_LIBRARY_DIR})
+  endif()
+endif()
+
+# ==============================================================================
+# UncertaintyTE
+# ==============================================================================
+# - optional, only external and enabled only if ALICEVISION_USE_UNCERTAINTYTE is ON
+# ==============================================================================
+set(ALICEVISION_HAVE_UNCERTAINTYTE 0)
+
+if(ALICEVISION_BUILD_SFM)
+  if(NOT ALICEVISION_USE_UNCERTAINTYTE STREQUAL "OFF")
+    find_package(UncertaintyTE)
+
+    if(UNCERTAINTYTE_FOUND)
+      set(ALICEVISION_HAVE_UNCERTAINTYTE 1)
+      message(STATUS "UncertaintyTE found.")
+    elseif(ALICEVISION_USE_UNCERTAINTYTE STREQUAL "ON")
+      message(SEND_ERROR "Failed to find UncertaintyTE.")
+    endif()
+  endif()
+
+  if(ALICEVISION_HAVE_UNCERTAINTYTE)
+    include_directories(${UNCERTAINTYTE_INCLUDE_DIR})
+    link_directories(${UNCERTAINTYTE_LIBRARY_DIR})
+  endif()
+endif()
+
+# ==============================================================================
+# ZLIB
+# ==============================================================================
+if(ALICEVISION_BUILD_MVS)
+  find_package(ZLIB REQUIRED)
+endif()
+
+# ==============================================================================
+# GEOGRAM
+# ==============================================================================
+if(ALICEVISION_BUILD_MVS)
+  find_package(Geogram REQUIRED)
+  message(STATUS "Geogram: ${GEOGRAM_LIBRARY}, ${GEOGRAM_INCLUDE_DIR}")
+endif()
+
+# ==============================================================================
+# MeshSDFilter
+# ==============================================================================
+# - optional, only internal and enabled only if ALICEVISION_USE_MESHSDFILTER is ON
+# ==============================================================================
+set(ALICEVISION_HAVE_MESHSDFILTER 0)
+
+if(ALICEVISION_BUILD_MVS)
+  if(ALICEVISION_USE_MESHSDFILTER STREQUAL "ON")
+    set(ALICEVISION_HAVE_MESHSDFILTER 1)
+    add_subdirectory(src/dependencies/MeshSDFilter)
+  endif()
+endif()
+
+# ==============================================================================
+# Eigen
+# ==============================================================================
+if(ALICEVISION_BUILD_MVS)
+  find_package(Eigen3 3.3 REQUIRED)
+  if(EIGEN3_FOUND)
+    message("Found external Eigen. include: ${EIGEN3_INCLUDE_DIR}, version: ${EIGEN3_VERSION_STRING}.")
+  endif()
 endif()
 
 # ==============================================================================
 # CUDA
 # ==============================================================================
-if(ALICEVISION_USE_CUDA STREQUAL "OFF")
-  set(ALICEVISION_HAVE_CUDA 0)
-else() # ON OR AUTO
+set(ALICEVISION_HAVE_CUDA 0)
+
+if(NOT ALICEVISION_USE_CUDA STREQUAL "OFF")
   find_package(CUDA 7.0)
+
   if(CUDA_FOUND)
     set(ALICEVISION_HAVE_CUDA 1)
     message(STATUS "CUDA found.")
   elseif(ALICEVISION_USE_CUDA STREQUAL "ON")
-    set(ALICEVISION_HAVE_CUDA 0)
     message(SEND_ERROR "Failed to find CUDA (>= 7.0).")
-  else()
-    set(ALICEVISION_HAVE_CUDA 0)
   endif()
 endif()
 
 if(ALICEVISION_HAVE_CUDA)
-
   if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
     if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER "4.9.3")
       if(CUDA_VERSION VERSION_LESS "8.0")
@@ -707,26 +717,6 @@ if(ALICEVISION_HAVE_CUDA)
   cuda_find_library_local_first(CUDA_CUDADEVRT_LIBRARY cudadevrt "\"cudadevrt\" library")
 endif()
 
-# set the directory where all the generated files (config etc) will be placed
-set(generatedDir "${CMAKE_CURRENT_BINARY_DIR}/generated")
-
-# contains the "root" directory from which including all headers
-set(ALICEVISION_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/src)
-
-# ==============================================================================
-# MeshSDFilter
-# ==============================================================================
-if(ALICEVISION_USE_MESHSDFILTER STREQUAL "OFF")
-  set(ALICEVISION_HAVE_MESHSDFILTER 0)
-else() # ON
-  set(ALICEVISION_HAVE_MESHSDFILTER 1)
-  add_subdirectory(src/dependencies/MeshSDFilter)
-endif()
-
-# ==============================================================================
-
-add_subdirectory(src)
-
 # ==============================================================================
 # Documentation
 # --------------------------
@@ -766,18 +756,73 @@ else()
   endif()
 endif()
 
+# ==============================================================================
+# Include directories
+# ==============================================================================
+# set the directory where all the generated files (config etc) will be placed
+# ==============================================================================
+set(generatedDir "${CMAKE_CURRENT_BINARY_DIR}/generated")
+message("generatedDir: ${generatedDir}")
+
+# contains the "root" directory from which including all headers
+set(ALICEVISION_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/src)
+
+set(ALICEVISION_INCLUDE_DIRS
+  ${CMAKE_CURRENT_SOURCE_DIR}/src
+  ${generatedDir}
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/dependencies
+  ${LEMON_INCLUDE_DIRS}
+  ${EIGEN_INCLUDE_DIRS}
+  ${CERES_INCLUDE_DIRS}
+  ${UNCERTAINTYTE_INCLUDE_DIRS}
+  ${MAGMA_INCLUDE_DIRS}
+  ${FLANN_INCLUDE_DIRS}
+  ${LP_INCLUDE_DIRS}
+  ${COINUTILS_INCLUDE_DIRS}
+  ${CLP_INCLUDE_DIRS}
+  ${OSI_INCLUDE_DIRS}
+)
+
+include_directories(${ALICEVISION_INCLUDE_DIRS})
+
+# ==============================================================================
+# AliceVision version
+# ==============================================================================
+file(STRINGS "src/aliceVision/version.hpp" _ALICEVISION_VERSION_HPP_CONTENTS REGEX "#define ALICEVISION_VERSION_")
+foreach(v MAJOR MINOR REVISION)
+  if("${_ALICEVISION_VERSION_HPP_CONTENTS}" MATCHES "#define ALICEVISION_VERSION_${v} ([0-9]+)")
+    set(ALICEVISION_VERSION_${v} "${CMAKE_MATCH_1}")
+  else()
+    message(FATAL_ERROR "Failed to retrieve the AliceVision version the source code. Missing ALICEVISION_VERSION_${v}.")
+  endif()
+endforeach()
+set(ALICEVISION_VERSION ${ALICEVISION_VERSION_MAJOR}.${ALICEVISION_VERSION_MINOR}.${ALICEVISION_VERSION_REVISION})
+
+# ==============================================================================
+# Add sources
+# ==============================================================================
+add_subdirectory(src)
+
+# ==============================================================================
+# Information print
+# ==============================================================================
 message("\n")
 message("** AliceVision version: " ${ALICEVISION_VERSION})
 message("** Build Shared libs: " ${ALICEVISION_BUILD_SHARED})
+message("** Build SfM part: " ${ALICEVISION_BUILD_SFM})
+message("** Build MVS part: " ${ALICEVISION_BUILD_MVS})
 message("** Build AliceVision tests: " ${ALICEVISION_BUILD_TESTS})
-message("** Build AliceVision samples applications: " ${ALICEVISION_BUILD_EXAMPLES})
 message("** Build AliceVision documentation: " ${ALICEVISION_HAVE_DOC})
+message("** Build AliceVision samples programs: " ${ALICEVISION_BUILD_EXAMPLES})
+message("** Build AliceVision+OpenCV samples programs: " ${ALICEVISION_HAVE_OPENCV})
+message("** Build UncertaintyTE: " ${ALICEVISION_HAVE_UNCERTAINTYTE})
+message("** Build MeshSDFilter: " ${ALICEVISION_HAVE_MESHSDFILTER})
+message("** Build Alembic exporter: " ${ALICEVISION_HAVE_ALEMBIC})
 message("** Enable code coverage generation: " ${ALICEVISION_BUILD_COVERAGE})
 message("** Enable OpenMP parallelization: " ${ALICEVISION_HAVE_OPENMP})
-message("** Build OpenCV+AliceVision samples programs: " ${ALICEVISION_HAVE_OPENCV})
+message("** Use CUDA: " ${ALICEVISION_HAVE_CUDA})
 message("** Use OpenCV SIFT features: " ${ALICEVISION_HAVE_OCVSIFT})
 message("** Use CCTAG markers: " ${ALICEVISION_HAVE_CCTAG})
-message("** Build Alembic exporter: " ${ALICEVISION_HAVE_ALEMBIC})
 message("** Use OpenGV for rig localization: " ${ALICEVISION_HAVE_OPENGV})
 message("\n")
 
@@ -787,46 +832,48 @@ else()
   message(STATUS "EIGEN: " ${EIGEN_VERSION} " (external)")
 endif()
 
-if(ALICEVISION_USE_INTERNAL_CERES)
-  message(STATUS "CERES: " ${CERES_VERSION} " (internal)")
-else()
-  message(STATUS "CERES: " ${CERES_VERSION} " (external)")
-endif()
+if(ALICEVISION_BUILD_SFM)
+  if(ALICEVISION_USE_INTERNAL_CERES)
+    message(STATUS "CERES: " ${CERES_VERSION} " (internal)")
+  else()
+    message(STATUS "CERES: " ${CERES_VERSION} " (external)")
+  endif()
 
-if(ALICEVISION_USE_INTERNAL_FLANN)
-  message(STATUS "FLANN: " ${FLANN_VERSION} " (internal)")
-else()
-  message(STATUS "FLANN: " ${FLANN_VERSION} " (external)")
-endif()
+  if(ALICEVISION_USE_INTERNAL_FLANN)
+    message(STATUS "FLANN: " ${FLANN_VERSION} " (internal)")
+  else()
+    message(STATUS "FLANN: " ${FLANN_VERSION} " (external)")
+  endif()
 
-if(ALICEVISION_USE_INTERNAL_CLP)
-  message(STATUS "CLP: " ${CLP_VERSION} " (internal)")
-else()
-  message(STATUS "CLP: " ${CLP_VERSION} " (external)")
-endif()
+  if(ALICEVISION_USE_INTERNAL_CLP)
+    message(STATUS "CLP: " ${CLP_VERSION} " (internal)")
+  else()
+    message(STATUS "CLP: " ${CLP_VERSION} " (external)")
+  endif()
 
-if(ALICEVISION_USE_INTERNAL_COINUTILS)
-  message(STATUS "COINUTILS: " ${COINUTILS_VERSION} " (internal)")
-else()
-  message(STATUS "COINUTILS: " ${COINUTILS_VERSION} " (external)")
-endif()
+  if(ALICEVISION_USE_INTERNAL_COINUTILS)
+    message(STATUS "COINUTILS: " ${COINUTILS_VERSION} " (internal)")
+  else()
+    message(STATUS "COINUTILS: " ${COINUTILS_VERSION} " (external)")
+  endif()
 
-if(ALICEVISION_USE_INTERNAL_OSI)
-  message(STATUS "OSI: " ${OSI_VERSION} " (internal)")
-else()
-  message(STATUS "OSI: " ${OSI_VERSION} " (external)")
-endif()
+  if(ALICEVISION_USE_INTERNAL_OSI)
+    message(STATUS "OSI: " ${OSI_VERSION} " (internal)")
+  else()
+    message(STATUS "OSI: " ${OSI_VERSION} " (external)")
+  endif()
 
-if(ALICEVISION_USE_INTERNAL_LEMON)
-  message(STATUS "LEMON: " ${LEMON_VERSION} " (internal)")
-else()
-  message(STATUS "LEMON: " ${LEMON_VERSION} " (external)")
+  if(ALICEVISION_USE_INTERNAL_LEMON)
+    message(STATUS "LEMON: " ${LEMON_VERSION} " (internal)")
+  else()
+    message(STATUS "LEMON: " ${LEMON_VERSION} " (external)")
+  endif()
 endif()
 
 message("\n")
 
 # ==============================================================================
-# INSTALL RULES
+# Install rules
 # ==============================================================================
 
 install(EXPORT aliceVision-targets DESTINATION lib)
