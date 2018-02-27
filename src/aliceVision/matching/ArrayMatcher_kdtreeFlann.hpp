@@ -137,7 +137,7 @@ class ArrayMatcher_kdtreeFlann : public ArrayMatcher<Scalar, Metric>
     {
       for (size_t j = 0; j < NN; ++j)
       {
-          pvec_indices->emplace_back(IndMatch(i, vec_indices[i*NN+j]));
+          pvec_indices->emplace_back(i, vec_indices[i*NN+j]);
           pvec_distances->emplace_back(vec_distances[i*NN+j]);
       }
     }
