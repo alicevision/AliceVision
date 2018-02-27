@@ -90,6 +90,8 @@ SET_PROPERTY(GLOBAL PROPERTY USE_FOLDERS ON)
 if(WIN32)
   add_definitions(-DNOMINMAX)
   add_definitions(-D_USE_MATH_DEFINES)
+  # avoid 'ERROR' macro clashing on Windows
+  add_definitions(-DGLOG_NO_ABBREVIATED_SEVERITIES)
 endif()
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
