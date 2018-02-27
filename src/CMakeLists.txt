@@ -328,6 +328,7 @@ if(Boost_FOUND)
   message(STATUS "Boost ${Boost_LIB_VERSION} found.")
 else()
   message(SEND_ERROR "Failed to find Boost.")
+  message(SEND_ERROR ${Boost_ERROR_REASON})
 endif()
 
 if(BOOST_NO_CXX11)
