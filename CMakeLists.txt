@@ -234,6 +234,7 @@ if(Boost_FOUND)
   message(STATUS "Boost ${Boost_LIB_VERSION} found.")
 else()
   message(SEND_ERROR "Failed to find Boost.")
+  message(SEND_ERROR "${Boost_ERROR_REASON}")
 endif()
 
 # Disable BOOST autolink
@@ -270,6 +271,10 @@ endif()
 find_package(OpenImageIO)
 if(OPENIMAGEIO_FOUND)
   message(STATUS "OpenImageIO found.")
+  if(UNIX)
+    # Add DL dependency on linux
+    set(OPENIMAGEIO_LIBRARIES "${OPENIMAGEIO_LIBRARIES};dl")
+  endif()
 else()
   message(SEND_ERROR "Failed to find OpenImageIO.")
 endif()
@@ -302,26 +307,23 @@ endif()
 # ==============================================================================
 # Eigen
 # ==============================================================================
-# - internal by default,
-# - external if EIGEN_INCLUDE_DIR_HINTS is defined
+# - rely on EIGEN_INCLUDE_DIR_HINTS
 # ==============================================================================
-if(NOT DEFINED EIGEN_INCLUDE_DIR_HINTS)
-  set(EIGEN_INCLUDE_DIR_HINTS ${CMAKE_CURRENT_SOURCE_DIR}/src/dependencies/eigen)
-  set(ALICEVISION_USE_INTERNAL_EIGEN ON)
-endif()
-find_package(Eigen 3.3 QUIET)
-if(EIGEN_FOUND)
-  include_directories(${EIGEN_INCLUDE_DIRS})
+find_package(Eigen3 3.3 REQUIRED)
+if(Eigen3_FOUND)
+  # message(FATAL_ERROR "EIGEN_INCLUDE_DIR: ${EIGEN_INCLUDE_DIR}")
+  include_directories(${EIGEN_INCLUDE_DIR})
   # See https://eigen.tuxfamily.org/dox/group__TopicUnalignedArrayAssert.html
   add_definitions("-DEIGEN_DONT_ALIGN_STATICALLY=1")
   add_definitions("-DEIGEN_DONT_VECTORIZE=1")
+else()
+  message(FATAL_ERROR " EIGEN NOT FOUND. EIGEN_INCLUDE_DIR: ${EIGEN_INCLUDE_DIR}")
 endif()
 
 # ==============================================================================
 # Ceres
 # ==============================================================================
-# - internal by default (ceres-solver+cxsparse+miniglog),
-# - external if Ceres_DIR and find_package return a valid Ceres setup
+# - rely on Ceres_DIR
 # ==============================================================================
 if(ALICEVISION_BUILD_SFM)
   message(STATUS "Trying to find package Ceres for aliceVision: ${Ceres_DIR}")
@@ -332,26 +334,12 @@ if(ALICEVISION_BUILD_SFM)
     find_package(Ceres CONFIG QUIET CONFIG)
   endif()
 
-  if(NOT Ceres_FOUND)
-    if(DEFINED ALICEVISION_USE_INTERNAL_CERES AND NOT ALICEVISION_USE_INTERNAL_CERES)
-      message(FATAL_ERROR "External CERES not found. Not found in Ceres_DIR: ${Ceres_DIR}")
-    endif()
-
-    message(STATUS "No external CERES detected, using the embedded one.")
-    set(ALICEVISION_USE_INTERNAL_CERES ON)
-    set(CERES_INCLUDE_DIRS
-      ${CMAKE_CURRENT_SOURCE_DIR}/src/dependencies/ceres-solver/include
-      ${CMAKE_CURRENT_SOURCE_DIR}/src/dependencies/ceres-solver/internal/ceres/miniglog
-      ${CMAKE_CURRENT_BINARY_DIR}/src/dependencies/ceres-solver/config)
-      file(READ "${CMAKE_CURRENT_SOURCE_DIR}/src/dependencies/ceres-solver/VERSION" CERES_CONFIG)
-      string(REGEX REPLACE "version ([0-9.]+).*" "\\1" CERES_VERSION ${CERES_CONFIG})
-    set(CERES_LIBRARIES ceres cxsparse)
-    set(Ceres_FOUND TRUE)
-  else()
+  if(Ceres_FOUND)
     message(STATUS "Ceres include dirs ${CERES_INCLUDE_DIRS}")
     message(STATUS "Ceres libraries ${CERES_LIBRARIES}")
     include_directories(${CERES_INCLUDE_DIRS})
-    set(ALICEVISION_USE_INTERNAL_CERES OFF)
+  else()
+    message(FATAL_ERROR "External CERES not found. Not found in Ceres_DIR: ${Ceres_DIR}")
   endif()
 endif()
 
@@ -641,12 +629,12 @@ endif()
 # ==============================================================================
 # Eigen
 # ==============================================================================
-if(ALICEVISION_BUILD_MVS)
-  find_package(Eigen3 3.3 REQUIRED)
-  if(EIGEN3_FOUND)
-    message("Found external Eigen. include: ${EIGEN3_INCLUDE_DIR}, version: ${EIGEN3_VERSION_STRING}.")
-  endif()
-endif()
+#if(ALICEVISION_BUILD_MVS)
+#  find_package(Eigen3 3.3 REQUIRED)
+#  if(EIGEN3_FOUND)
+#    message("Found external Eigen. include: ${EIGEN3_INCLUDE_DIR}, version: ${EIGEN3_VERSION_STRING}.")
+#  endif()
+#endif()
 
 # ==============================================================================
 # CUDA
@@ -826,18 +814,10 @@ message("** Use CCTAG markers: " ${ALICEVISION_HAVE_CCTAG})
 message("** Use OpenGV for rig localization: " ${ALICEVISION_HAVE_OPENGV})
 message("\n")
 
-if(ALICEVISION_USE_INTERNAL_EIGEN)
-  message(STATUS "EIGEN: " ${EIGEN_VERSION} " (internal)")
-else()
-  message(STATUS "EIGEN: " ${EIGEN_VERSION} " (external)")
-endif()
+message(STATUS "EIGEN: " ${EIGEN_VERSION} "")
 
 if(ALICEVISION_BUILD_SFM)
-  if(ALICEVISION_USE_INTERNAL_CERES)
-    message(STATUS "CERES: " ${CERES_VERSION} " (internal)")
-  else()
-    message(STATUS "CERES: " ${CERES_VERSION} " (external)")
-  endif()
+  message(STATUS "CERES: " ${CERES_VERSION} "")
 
   if(ALICEVISION_USE_INTERNAL_FLANN)
     message(STATUS "FLANN: " ${FLANN_VERSION} " (internal)")
@@ -899,21 +879,6 @@ string(REGEX REPLACE
   ALICEVISION_INCLUDE_DIRS
   "${ALICEVISION_INCLUDE_DIRS}"
 )
-
-if(ALICEVISION_USE_INTERNAL_CERES)
-  string(REGEX REPLACE
-    "ceres-solver"
-    "ceres"
-    ALICEVISION_INCLUDE_DIRS
-    "${ALICEVISION_INCLUDE_DIRS}"
-  )
-  string(REGEX REPLACE
-    "internal/ceres/"
-    ""
-    ALICEVISION_INCLUDE_DIRS
-    "${ALICEVISION_INCLUDE_DIRS}"
-  )
-endif()
 
 # Create a AliceVisionConfig.cmake file. <name>Config.cmake files are searched by
 # find_package() automatically. We configure that file so that we can put any
