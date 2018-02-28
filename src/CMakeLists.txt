@@ -68,6 +68,7 @@ endif()
 set(EXECUTABLE_OUTPUT_PATH "${PROJECT_BINARY_DIR}/${CMAKE_SYSTEM_NAME}-${CMAKE_SYSTEM_PROCESSOR}-${CMAKE_BUILD_TYPE}")
 set(LIBRARY_OUTPUT_PATH "${PROJECT_BINARY_DIR}/${CMAKE_SYSTEM_NAME}-${CMAKE_SYSTEM_PROCESSOR}-${CMAKE_BUILD_TYPE}")
 
+# Windows specific defines
 if(WIN32)
   add_definitions(-DNOMINMAX)
   add_definitions(-D_USE_MATH_DEFINES)
@@ -79,12 +80,6 @@ endif()
 
 # Folders
 SET_PROPERTY(GLOBAL PROPERTY USE_FOLDERS ON)
-
-# Windows specific defines
-if(WIN32)
-  add_definitions(-DNOMINMAX)
-  add_definitions(-D_USE_MATH_DEFINES)
-endif()
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 
@@ -337,6 +332,10 @@ if(ALICEVISION_BUILD_SFM)
   if(Ceres_FOUND)
     message(STATUS "Ceres include dirs ${CERES_INCLUDE_DIRS}")
     message(STATUS "Ceres libraries ${CERES_LIBRARIES}")
+    if(WIN32)
+        # avoid 'ERROR' macro clashing on Windows 
+        add_definitions(-DGLOG_NO_ABBREVIATED_SEVERITIES)
+    endif()
     include_directories(${CERES_INCLUDE_DIRS})
   else()
     message(FATAL_ERROR "External CERES not found. Not found in Ceres_DIR: ${Ceres_DIR}")
@@ -488,18 +487,14 @@ set(ALICEVISION_HAVE_ALEMBIC 0)
 
 if(ALICEVISION_BUILD_SFM) # or ALICEVISION_BUILD_MVS
   if(NOT ALICEVISION_USE_ALEMBIC STREQUAL "OFF")
-    find_package(Alembic)
+    find_package(Alembic 1.7.0 CONFIG)
 
-    if(ALEMBIC_FOUND)
+    if(Alembic_FOUND)
       set(ALICEVISION_HAVE_ALEMBIC 1)
-      message(STATUS "Alembic found.")
+      message(STATUS "Alembic version ${Alembic_VERSION} found.")
     elseif(ALICEVISION_USE_ALEMBIC STREQUAL "ON")
       message(SEND_ERROR "Failed to find Alembic.")
     endif()
-  endif()
-
-  if(ALICEVISION_HAVE_ALEMBIC)
-    include_directories(${ABC_INCLUDE_DIR})
   endif()
 endif()
 
@@ -919,4 +914,3 @@ configure_file(
 )
 
 add_custom_target(uninstall "${CMAKE_COMMAND}" -P "${CMAKE_CURRENT_BINARY_DIR}/../cmake/cmake_uninstall.cmake")
-
