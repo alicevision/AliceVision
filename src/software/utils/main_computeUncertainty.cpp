@@ -36,13 +36,13 @@ int main(int argc, char **argv)
   po::options_description params("AliceVision Uncertainty");
   params.add_options()
     ("input,i", po::value<std::string>(&sfmDataFilename)->required(),
-      "SfMData file to align.")
+      "SfMData file to compute the uncertainty of.")
   ("output,o", po::value<std::string>(&outSfMDataFilename)->required(),
-    "Output SfMData scene.")
+    "Output SfMData scene with uncertainty values.")
   ("outputCov,c", po::value<std::string>(&outputStats),
     "Output covariances file.")
   ("algorithm,a", po::value<std::string>(&algorithm)->default_value(algorithm),
-    "Algorithm.")
+    "Algorithm to use for uncertainty computation.")
   ("debug,d", po::value<bool>(&debug)->default_value(debug),
     "Enable creation of debug files in the current folder.")
     ("verboseLevel,v", po::value<std::string>(&verboseLevel)->default_value(verboseLevel),
