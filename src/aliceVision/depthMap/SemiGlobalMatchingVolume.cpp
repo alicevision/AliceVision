@@ -4,7 +4,7 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "SemiGlobalMatchingVolume.hpp"
-#include <aliceVision/structures/Point3d.hpp>
+#include <aliceVision/mvsData/Point3d.hpp>
 #include <aliceVision/mvsUtils/common.hpp>
 
 namespace aliceVision {

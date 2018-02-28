@@ -4,9 +4,9 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "Texturing.hpp"
-#include <aliceVision/structures/Color.hpp>
-#include <aliceVision/structures/geometry.hpp>
-#include <aliceVision/structures/Pixel.hpp>
+#include <aliceVision/mvsData/Color.hpp>
+#include <aliceVision/mvsData/geometry.hpp>
+#include <aliceVision/mvsData/Pixel.hpp>
 #include <aliceVision/imageIO/image.hpp>
 #include <aliceVision/mesh/UVAtlas.hpp>
 

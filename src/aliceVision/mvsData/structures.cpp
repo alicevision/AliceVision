@@ -4,8 +4,8 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "structures.hpp"
-#include <aliceVision/structures/Pixel.hpp>
-#include <aliceVision/structures/Voxel.hpp>
+#include <aliceVision/mvsData/Pixel.hpp>
+#include <aliceVision/mvsData/Voxel.hpp>
 
 namespace aliceVision {
 

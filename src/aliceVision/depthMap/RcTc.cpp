@@ -4,7 +4,7 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "RcTc.hpp"
-#include <aliceVision/structures/StaticVector.hpp>
+#include <aliceVision/mvsData/StaticVector.hpp>
 #include <aliceVision/mvsUtils/common.hpp>
 
 namespace aliceVision {

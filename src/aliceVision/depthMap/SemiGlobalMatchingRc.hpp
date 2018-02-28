@@ -5,8 +5,8 @@
 
 #pragma once
 
-#include <aliceVision/structures/Pixel.hpp>
-#include <aliceVision/structures/StaticVector.hpp>
+#include <aliceVision/mvsData/Pixel.hpp>
+#include <aliceVision/mvsData/StaticVector.hpp>
 #include <aliceVision/depthMap/SemiGlobalMatchingParams.hpp>
 
 namespace aliceVision {

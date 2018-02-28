@@ -5,10 +5,10 @@
 
 #pragma once
 
-#include <aliceVision/structures/Color.hpp>
-#include <aliceVision/structures/Point2d.hpp>
-#include <aliceVision/structures/Rgb.hpp>
-#include <aliceVision/structures/StaticVector.hpp>
+#include <aliceVision/mvsData/Color.hpp>
+#include <aliceVision/mvsData/Point2d.hpp>
+#include <aliceVision/mvsData/Rgb.hpp>
+#include <aliceVision/mvsData/StaticVector.hpp>
 #include <aliceVision/mvsUtils/MultiViewParams.hpp>
 
 namespace aliceVision {

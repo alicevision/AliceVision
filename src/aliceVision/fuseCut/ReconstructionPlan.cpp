@@ -4,7 +4,7 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "ReconstructionPlan.hpp"
-#include <aliceVision/structures/Rgb.hpp>
+#include <aliceVision/mvsData/Rgb.hpp>
 #include <aliceVision/mvsUtils/common.hpp>
 #include <aliceVision/mvsUtils/fileIO.hpp>
 #include <aliceVision/mesh/meshPostProcessing.hpp>

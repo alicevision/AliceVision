@@ -5,11 +5,11 @@
 
 #pragma once
 
-#include <aliceVision/structures/Point2d.hpp>
-#include <aliceVision/structures/Point3d.hpp>
-#include <aliceVision/structures/Matrix3x3.hpp>
-#include <aliceVision/structures/Matrix3x4.hpp>
-#include <aliceVision/structures/StaticVector.hpp>
+#include <aliceVision/mvsData/Point2d.hpp>
+#include <aliceVision/mvsData/Point3d.hpp>
+#include <aliceVision/mvsData/Matrix3x3.hpp>
+#include <aliceVision/mvsData/Matrix3x4.hpp>
+#include <aliceVision/mvsData/StaticVector.hpp>
 
 namespace aliceVision {
 

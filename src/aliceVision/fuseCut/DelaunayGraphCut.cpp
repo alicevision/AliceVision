@@ -6,11 +6,11 @@
 #include "DelaunayGraphCut.hpp"
 // #include <aliceVision/fuseCut/MaxFlow_CSR.hpp>
 #include <aliceVision/fuseCut/MaxFlow_AdjList.hpp>
-#include <aliceVision/structures/geometry.hpp>
-#include <aliceVision/structures/jetColorMap.hpp>
-#include <aliceVision/structures/Pixel.hpp>
-#include <aliceVision/structures/Point2d.hpp>
-#include <aliceVision/structures/Universe.hpp>
+#include <aliceVision/mvsData/geometry.hpp>
+#include <aliceVision/mvsData/jetColorMap.hpp>
+#include <aliceVision/mvsData/Pixel.hpp>
+#include <aliceVision/mvsData/Point2d.hpp>
+#include <aliceVision/mvsData/Universe.hpp>
 #include <aliceVision/mvsUtils/fileIO.hpp>
 
 #include <boost/filesystem.hpp>

@@ -5,8 +5,8 @@
 
 #pragma once
 
-#include <aliceVision/structures/Rgb.hpp>
-#include <aliceVision/structures/StaticVector.hpp>
+#include <aliceVision/mvsData/Rgb.hpp>
+#include <aliceVision/mvsData/StaticVector.hpp>
 #include <aliceVision/mvsUtils/ImagesCache.hpp>
 #include <aliceVision/mvsUtils/PreMatchCams.hpp>
 #include <aliceVision/depthMap/DepthSimMap.hpp>

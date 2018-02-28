@@ -5,13 +5,13 @@
 
 #pragma once
 
-#include <aliceVision/structures/Matrix3x3.hpp>
-#include <aliceVision/structures/Point2d.hpp>
-#include <aliceVision/structures/Point3d.hpp>
-#include <aliceVision/structures/Pixel.hpp>
-#include <aliceVision/structures/SeedPointCams.hpp>
-#include <aliceVision/structures/StaticVector.hpp>
-#include <aliceVision/structures/structures.hpp>
+#include <aliceVision/mvsData/Matrix3x3.hpp>
+#include <aliceVision/mvsData/Point2d.hpp>
+#include <aliceVision/mvsData/Point3d.hpp>
+#include <aliceVision/mvsData/Pixel.hpp>
+#include <aliceVision/mvsData/SeedPointCams.hpp>
+#include <aliceVision/mvsData/StaticVector.hpp>
+#include <aliceVision/mvsData/structures.hpp>
 
 #include <boost/property_tree/ptree.hpp>
 

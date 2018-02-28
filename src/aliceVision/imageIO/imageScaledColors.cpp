@@ -4,8 +4,8 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "imageScaledColors.hpp"
-#include <aliceVision/structures/Color.hpp>
-#include <aliceVision/structures/jetColorMap.hpp>
+#include <aliceVision/mvsData/Color.hpp>
+#include <aliceVision/mvsData/jetColorMap.hpp>
 #include <aliceVision/imageIO/image.hpp>
 
 namespace aliceVision {

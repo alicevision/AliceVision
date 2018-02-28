@@ -5,13 +5,13 @@
 
 #include "common.hpp"
 #include <aliceVision/mvsUtils/fileIO.hpp>
-#include <aliceVision/structures/geometry.hpp>
-#include <aliceVision/structures/geometryTriTri.hpp>
-#include <aliceVision/structures/Matrix3x3.hpp>
-#include <aliceVision/structures/Matrix3x4.hpp>
-#include <aliceVision/structures/OrientedPoint.hpp>
-#include <aliceVision/structures/Pixel.hpp>
-#include <aliceVision/structures/SeedPoint.hpp>
+#include <aliceVision/mvsData/geometry.hpp>
+#include <aliceVision/mvsData/geometryTriTri.hpp>
+#include <aliceVision/mvsData/Matrix3x3.hpp>
+#include <aliceVision/mvsData/Matrix3x4.hpp>
+#include <aliceVision/mvsData/OrientedPoint.hpp>
+#include <aliceVision/mvsData/Pixel.hpp>
+#include <aliceVision/mvsData/SeedPoint.hpp>
 
 
 namespace aliceVision {

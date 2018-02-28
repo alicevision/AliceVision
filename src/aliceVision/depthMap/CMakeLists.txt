@@ -87,7 +87,7 @@ target_include_directories(aliceVision_depthMap
 
 # TODO : PUBLIC
 target_link_libraries(aliceVision_depthMap
-  aliceVision_structures
+  aliceVision_mvsData
   aliceVision_imageIO
   aliceVision_mvsUtils
 )

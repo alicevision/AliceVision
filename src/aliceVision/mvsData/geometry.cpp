@@ -4,7 +4,7 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "geometry.hpp"
-#include <aliceVision/structures/geometryTriTri.hpp>
+#include <aliceVision/mvsData/geometryTriTri.hpp>
 
 #include <cfloat>
 

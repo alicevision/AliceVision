@@ -4,7 +4,7 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "OctreeTracks.hpp"
-#include <aliceVision/structures/geometry.hpp>
+#include <aliceVision/mvsData/geometry.hpp>
 #include <aliceVision/mvsUtils/common.hpp>
 #include <aliceVision/mvsUtils/fileIO.hpp>
 

@@ -4,7 +4,7 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "VoxelsGrid.hpp"
-#include <aliceVision/structures/Pixel.hpp>
+#include <aliceVision/mvsData/Pixel.hpp>
 #include <aliceVision/mvsUtils/common.hpp>
 #include <aliceVision/mvsUtils/fileIO.hpp>
 #include <aliceVision/fuseCut/delaunayGraphCutTypes.hpp>

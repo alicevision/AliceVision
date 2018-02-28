@@ -35,7 +35,7 @@ target_include_directories(aliceVision_fuseCut
 )
 
 target_link_libraries(aliceVision_fuseCut
-  PUBLIC aliceVision_structures
+  PUBLIC aliceVision_mvsData
          aliceVision_mvsUtils
          aliceVision_imageIO
          aliceVision_mesh

@@ -6,9 +6,9 @@
 #pragma once
 
 #include "OctreeTracks.hpp"
-#include <aliceVision/structures/Point3d.hpp>
-#include <aliceVision/structures/StaticVector.hpp>
-#include <aliceVision/structures/Voxel.hpp>
+#include <aliceVision/mvsData/Point3d.hpp>
+#include <aliceVision/mvsData/StaticVector.hpp>
+#include <aliceVision/mvsData/Voxel.hpp>
 #include <aliceVision/mvsUtils/PreMatchCams.hpp>
 
 namespace aliceVision {

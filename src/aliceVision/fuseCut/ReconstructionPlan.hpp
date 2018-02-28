@@ -5,9 +5,9 @@
 
 #pragma once
 
-#include <aliceVision/structures/Point3d.hpp>
-#include <aliceVision/structures/StaticVector.hpp>
-#include <aliceVision/structures/Voxel.hpp>
+#include <aliceVision/mvsData/Point3d.hpp>
+#include <aliceVision/mvsData/StaticVector.hpp>
+#include <aliceVision/mvsData/Voxel.hpp>
 #include <aliceVision/fuseCut/LargeScale.hpp>
 #include <aliceVision/fuseCut/VoxelsGrid.hpp>
 #include <aliceVision/mesh/Mesh.hpp>

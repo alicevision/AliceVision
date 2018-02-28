@@ -4,9 +4,9 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "Mesh.hpp"
-#include <aliceVision/structures/geometry.hpp>
-#include <aliceVision/structures/OrientedPoint.hpp>
-#include <aliceVision/structures/Pixel.hpp>
+#include <aliceVision/mvsData/geometry.hpp>
+#include <aliceVision/mvsData/OrientedPoint.hpp>
+#include <aliceVision/mvsData/Pixel.hpp>
 
 #include <boost/filesystem.hpp>
 

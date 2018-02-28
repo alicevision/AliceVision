@@ -5,9 +5,9 @@
 
 #pragma once
 
-#include <aliceVision/structures/OrientedPoint.hpp>
-#include <aliceVision/structures/Point3d.hpp>
-#include <aliceVision/structures/SeedPointCams.hpp>
+#include <aliceVision/mvsData/OrientedPoint.hpp>
+#include <aliceVision/mvsData/Point3d.hpp>
+#include <aliceVision/mvsData/SeedPointCams.hpp>
 
 namespace aliceVision {
 

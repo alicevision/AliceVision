@@ -5,8 +5,8 @@
 
 #pragma once
 
-#include <aliceVision/structures/Color.hpp>
-#include <aliceVision/structures/Rgb.hpp>
+#include <aliceVision/mvsData/Color.hpp>
+#include <aliceVision/mvsData/Rgb.hpp>
 
 namespace aliceVision {
 

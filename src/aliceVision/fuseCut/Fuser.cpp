@@ -4,10 +4,10 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "Fuser.hpp"
-#include <aliceVision/structures/geometry.hpp>
-#include <aliceVision/structures/Pixel.hpp>
-#include <aliceVision/structures/Point2d.hpp>
-#include <aliceVision/structures/Stat3d.hpp>
+#include <aliceVision/mvsData/geometry.hpp>
+#include <aliceVision/mvsData/Pixel.hpp>
+#include <aliceVision/mvsData/Point2d.hpp>
+#include <aliceVision/mvsData/Stat3d.hpp>
 #include <aliceVision/mvsUtils/common.hpp>
 #include <aliceVision/mvsUtils/fileIO.hpp>
 #include <aliceVision/imageIO/image.hpp>

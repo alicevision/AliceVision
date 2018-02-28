@@ -5,8 +5,8 @@
 
 #pragma once
 
-#include <aliceVision/structures/Point2d.hpp>
-#include <aliceVision/structures/Point3d.hpp>
+#include <aliceVision/mvsData/Point2d.hpp>
+#include <aliceVision/mvsData/Point3d.hpp>
 
 #include <boost/math/constants/constants.hpp>
 

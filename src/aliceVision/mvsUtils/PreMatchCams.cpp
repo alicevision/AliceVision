@@ -4,8 +4,8 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "PreMatchCams.hpp"
-#include <aliceVision/structures/Point2d.hpp>
-#include <aliceVision/structures/SeedPoint.hpp>
+#include <aliceVision/mvsData/Point2d.hpp>
+#include <aliceVision/mvsData/SeedPoint.hpp>
 #include <aliceVision/mvsUtils/fileIO.hpp>
 #include <aliceVision/mvsUtils/common.hpp>
 

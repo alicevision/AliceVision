@@ -5,7 +5,7 @@
 
 #pragma once
 
-#include <aliceVision/structures/Point2d.hpp>
+#include <aliceVision/mvsData/Point2d.hpp>
 
 namespace aliceVision {
 

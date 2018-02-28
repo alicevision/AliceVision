@@ -23,7 +23,7 @@ target_include_directories(aliceVision_imageIO
 )
 
 target_link_libraries(aliceVision_imageIO
-  PUBLIC aliceVision_structures
+  PUBLIC aliceVision_mvsData
          ${OPENIMAGEIO_LIBRARIES}
 )
 

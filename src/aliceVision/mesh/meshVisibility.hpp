@@ -6,7 +6,7 @@
 #pragma once
 
 #include <aliceVision/mesh/Mesh.hpp>
-#include <aliceVision/structures/StaticVector.hpp>
+#include <aliceVision/mvsData/StaticVector.hpp>
 
 namespace aliceVision {
 namespace mesh {
