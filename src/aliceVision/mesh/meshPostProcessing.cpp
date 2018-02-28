@@ -7,7 +7,7 @@
 #include <aliceVision/structures/geometry.hpp>
 #include <aliceVision/structures/Point3d.hpp>
 #include <aliceVision/structures/StaticVector.hpp>
-#include <aliceVision/common/PreMatchCams.hpp>
+#include <aliceVision/mvsUtils/PreMatchCams.hpp>
 #include <aliceVision/mesh/MeshEnergyOpt.hpp>
 
 #include <boost/filesystem/operations.hpp>
@@ -36,7 +36,7 @@ void filterLargeEdgeTriangles(Mesh* me, float avelthr)
 }
 
 void meshPostProcessing(Mesh*& inout_mesh, StaticVector<StaticVector<int>*>*& inout_ptsCams, StaticVector<int>& usedCams,
-                      common::MultiViewParams& mp, common::PreMatchCams& pc,
+                      mvsUtils::MultiViewParams& mp, mvsUtils::PreMatchCams& pc,
                       const std::string& resultFolderName,
                       StaticVector<Point3d>* hexahsToExcludeFromResultingMesh, Point3d* hexah)
 {
@@ -207,7 +207,7 @@ void meshPostProcessing(Mesh*& inout_mesh, StaticVector<StaticVector<int>*>*& in
 
         delete meOpt;
     }
-    common::printfElapsedTime(timer, "Mesh post-processing ");
+    mvsUtils::printfElapsedTime(timer, "Mesh post-processing ");
     std::cout << "meshPostProcessing done" << std::endl;
 }
 

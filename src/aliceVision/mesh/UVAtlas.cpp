@@ -12,7 +12,7 @@ namespace mesh {
 
 using namespace std;
 
-UVAtlas::UVAtlas(const Mesh& mesh, common::MultiViewParams& mp, StaticVector<StaticVector<int>*>* ptsCams,
+UVAtlas::UVAtlas(const Mesh& mesh, mvsUtils::MultiViewParams& mp, StaticVector<StaticVector<int>*>* ptsCams,
                                  unsigned int textureSide, unsigned int gutterSize)
     : _textureSide(textureSide)
     , _gutterSize(gutterSize)
@@ -33,7 +33,7 @@ UVAtlas::UVAtlas(const Mesh& mesh, common::MultiViewParams& mp, StaticVector<Sta
     createTextureAtlases(charts, mp);
 }
 
-void UVAtlas::createCharts(vector<Chart>& charts, common::MultiViewParams& mp, StaticVector<StaticVector<int>*>* ptsCams)
+void UVAtlas::createCharts(vector<Chart>& charts, mvsUtils::MultiViewParams& mp, StaticVector<StaticVector<int>*>* ptsCams)
 {
     cout << "Creating texture charts" << endl;
 
@@ -70,7 +70,7 @@ void UVAtlas::createCharts(vector<Chart>& charts, common::MultiViewParams& mp, S
     deleteArrayOfArrays<int>(&trisCams);
 }
 
-void UVAtlas::packCharts(vector<Chart>& charts, common::MultiViewParams& mp)
+void UVAtlas::packCharts(vector<Chart>& charts, mvsUtils::MultiViewParams& mp)
 {
     cout << "Packing texture charts (" <<  charts.size() << " charts)" << endl;
 
@@ -167,7 +167,7 @@ void UVAtlas::packCharts(vector<Chart>& charts, common::MultiViewParams& mp)
             }), charts.end());
 }
 
-void UVAtlas::finalizeCharts(vector<Chart>& charts, common::MultiViewParams& mp)
+void UVAtlas::finalizeCharts(vector<Chart>& charts, mvsUtils::MultiViewParams& mp)
 {
     cout << "Finalize packed charts (" <<  charts.size() << " charts)" << endl;
 
@@ -196,7 +196,7 @@ void UVAtlas::finalizeCharts(vector<Chart>& charts, common::MultiViewParams& mp)
     }
 }
 
-void UVAtlas::createTextureAtlases(vector<Chart>& charts, common::MultiViewParams& mp)
+void UVAtlas::createTextureAtlases(vector<Chart>& charts, mvsUtils::MultiViewParams& mp)
 {
     cout << "Creating texture atlases" << endl;
 

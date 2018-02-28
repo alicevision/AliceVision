@@ -6,21 +6,21 @@
 #pragma once
 
 #include <aliceVision/structures/StaticVector.hpp>
-#include <aliceVision/common/MultiViewParams.hpp>
+#include <aliceVision/mvsUtils/MultiViewParams.hpp>
 #include <aliceVision/mesh/Mesh.hpp>
 
 namespace aliceVision {
 
 class Point3d;
 
-namespace common {
+namespace mvsUtils {
 class PreMatchCams;
-} // namespace common
+} // namespace mvsUtils
 
 namespace mesh {
 
 void meshPostProcessing(Mesh*& inout_mesh, StaticVector<StaticVector<int>*>*& inout_ptsCams, StaticVector<int>& usedCams,
-                      common::MultiViewParams& mp, common::PreMatchCams& pc,
+                      mvsUtils::MultiViewParams& mp, mvsUtils::PreMatchCams& pc,
                       const std::string& resultFolderName,
                       StaticVector<Point3d>* hexahsToExcludeFromResultingMesh, Point3d* hexah);
 

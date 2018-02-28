@@ -6,13 +6,13 @@
 #include "PreMatchCams.hpp"
 #include <aliceVision/structures/Point2d.hpp>
 #include <aliceVision/structures/SeedPoint.hpp>
-#include <aliceVision/common/fileIO.hpp>
-#include <aliceVision/common/common.hpp>
+#include <aliceVision/mvsUtils/fileIO.hpp>
+#include <aliceVision/mvsUtils/common.hpp>
 
 #include <iostream>
 
 namespace aliceVision {
-namespace common {
+namespace mvsUtils {
 
 PreMatchCams::PreMatchCams(MultiViewParams* _mp)
 {
@@ -249,5 +249,5 @@ StaticVector<int> PreMatchCams::findCamsWhichIntersectsHexahedron(const Point3d 
     return tcams;
 }
 
-} // namespace common
+} // namespace mvsUtils
 } // namespace aliceVision

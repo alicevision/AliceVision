@@ -7,8 +7,8 @@
 #include <aliceVision/structures/geometry.hpp>
 #include <aliceVision/structures/Matrix3x4.hpp>
 #include <aliceVision/structures/Pixel.hpp>
-#include <aliceVision/common/fileIO.hpp>
-#include <aliceVision/common/common.hpp>
+#include <aliceVision/mvsUtils/fileIO.hpp>
+#include <aliceVision/mvsUtils/common.hpp>
 #include <aliceVision/imageIO/image.hpp>
 
 #include <boost/filesystem.hpp>
@@ -21,7 +21,7 @@
 #include <set>
 
 namespace aliceVision {
-namespace common {
+namespace mvsUtils {
 
 namespace bfs = boost::filesystem;
 
@@ -399,5 +399,5 @@ void MultiViewParams::decomposeProjectionMatrix(Point3d& Co, Matrix3x3& Ro, Matr
     iPo = iRo * iKo;
 }
 
-} // namespace common
+} // namespace mvsUtils
 } // namespace aliceVision

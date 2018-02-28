@@ -9,8 +9,8 @@
 #include <aliceVision/structures/OrientedPoint.hpp>
 #include <aliceVision/structures/Point3d.hpp>
 #include <aliceVision/structures/SeedPoint.hpp>
-#include <aliceVision/common/common.hpp>
-#include <aliceVision/common/fileIO.hpp>
+#include <aliceVision/mvsUtils/common.hpp>
+#include <aliceVision/mvsUtils/fileIO.hpp>
 #include <aliceVision/imageIO/image.hpp>
 #include <aliceVision/imageIO/imageScaledColors.hpp>
 #include <aliceVision/omp.hpp>
@@ -67,7 +67,7 @@ SemiGlobalMatchingRc::SemiGlobalMatchingRc(bool doComputeDepthsAndResetTCams, in
         tcams = nullptr;
         depths = nullptr;
         depthsTcamsLimits = nullptr;
-        if(common::FileExists(tcamsFileName) && common::FileExists(depthsFileName) && common::FileExists(depthsTcamsLimitsFileName))
+        if(mvsUtils::FileExists(tcamsFileName) && mvsUtils::FileExists(depthsFileName) && mvsUtils::FileExists(depthsTcamsLimitsFileName))
         {
             tcams = loadArrayFromFile<int>(tcamsFileName, true);
             depths = loadArrayFromFile<float>(depthsFileName);
@@ -97,7 +97,7 @@ StaticVector<float>* SemiGlobalMatchingRc::getTcSeedsRcPlaneDists(int rc, Static
     for(int c = 0; c < tcams->size(); c++)
     {
         StaticVector<SeedPoint>* seeds;
-        common::loadSeedsFromFile(&seeds, (*tcams)[c], sp->mp->mip, common::EFileType::seeds);
+        mvsUtils::loadSeedsFromFile(&seeds, (*tcams)[c], sp->mp->mip, mvsUtils::EFileType::seeds);
         nTcSeeds += seeds->size();
         delete seeds;
     } // for c
@@ -107,7 +107,7 @@ StaticVector<float>* SemiGlobalMatchingRc::getTcSeedsRcPlaneDists(int rc, Static
     for(int c = 0; c < tcams->size(); c++)
     {
         StaticVector<SeedPoint>* seeds;
-        common::loadSeedsFromFile(&seeds, (*tcams)[c], sp->mp->mip, common::EFileType::seeds);
+        mvsUtils::loadSeedsFromFile(&seeds, (*tcams)[c], sp->mp->mip, mvsUtils::EFileType::seeds);
         for(int i = 0; i < seeds->size(); i++)
         {
             rcDists->push_back(pointPlaneDistance((*seeds)[i].op.p, rcplane.p, rcplane.n));
@@ -489,7 +489,7 @@ void SemiGlobalMatchingRc::computeDepthsAndResetTCams()
     {
         for(int i = 0; i < alldepths->size(); i++)
         {
-            std::string fn = tmpDir + std::to_string(sp->mp->mip->getViewId(rc)) + "depths" + common::num2str(i) + ".txt";
+            std::string fn = tmpDir + std::to_string(sp->mp->mip->getViewId(rc)) + "depths" + mvsUtils::num2str(i) + ".txt";
             FILE* f = fopen(fn.c_str(), "w");
             for(int j = 0; j < (*alldepths)[i]->size(); j++)
             {
@@ -548,7 +548,7 @@ bool SemiGlobalMatchingRc::sgmrc(bool checkIfExists)
         return false;
     }
 
-    if((common::FileExists(SGM_idDepthMapFileName)) && (checkIfExists))
+    if((mvsUtils::FileExists(SGM_idDepthMapFileName)) && (checkIfExists))
     {
         return false;
     }
@@ -659,11 +659,11 @@ bool SemiGlobalMatchingRc::sgmrc(bool checkIfExists)
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-    common::printfElapsedTime(tall, "PSSGM rc " + common::num2str(rc) + " of " + common::num2str(sp->mp->ncams));
+    mvsUtils::printfElapsedTime(tall, "PSSGM rc " + mvsUtils::num2str(rc) + " of " + mvsUtils::num2str(sp->mp->ncams));
 
     if(sp->visualizeDepthMaps)
         depthSimMapFinal->saveToImage(tmpDir + "SemiGlobalMatchingRc_SGM" + std::to_string(sp->mp->mip->getViewId(rc)) + "_" + "scale" +
-                                        common::num2str(depthSimMapFinal->scale) + "step" + common::num2str(depthSimMapFinal->step) +
+                                        mvsUtils::num2str(depthSimMapFinal->scale) + "step" + mvsUtils::num2str(depthSimMapFinal->step) +
                                         ".depthSimMap.png", 1.0f);
 
 
@@ -673,7 +673,7 @@ bool SemiGlobalMatchingRc::sgmrc(bool checkIfExists)
     return true;
 }
 
-void computeDepthMapsPSSGM(int CUDADeviceNo, common::MultiViewParams* mp, common::PreMatchCams* pc, const StaticVector<int>& cams)
+void computeDepthMapsPSSGM(int CUDADeviceNo, mvsUtils::MultiViewParams* mp, mvsUtils::PreMatchCams* pc, const StaticVector<int>& cams)
 {
     int scale = mp->mip->_ini.get<int>("semiGlobalMatching.scale", -1);
     int step = mp->mip->_ini.get<int>("semiGlobalMatching.step", -1);
@@ -692,7 +692,7 @@ void computeDepthMapsPSSGM(int CUDADeviceNo, common::MultiViewParams* mp, common
     int bandType = 0;
     
     // load images from files into RAM 
-    common::ImagesCache ic(mp, bandType, true);
+    mvsUtils::ImagesCache ic(mp, bandType, true);
     // load stuff on GPU memory and creates multi-level images and computes gradients
     PlaneSweepingCuda cps(CUDADeviceNo,& ic, mp, pc, scale);
     // init plane sweeping parameters
@@ -703,7 +703,7 @@ void computeDepthMapsPSSGM(int CUDADeviceNo, common::MultiViewParams* mp, common
     for(const int rc : cams)
     {
         std::string depthMapFilepath = sp.getSGM_idDepthMapFileName(mp->mip->getViewId(rc), scale, step);
-        if(!common::FileExists(depthMapFilepath))
+        if(!mvsUtils::FileExists(depthMapFilepath))
         {
             std::cout << "Compute depth map: " << depthMapFilepath << std::endl;
             SemiGlobalMatchingRc psgr(true, rc, scale, step, &sp);
@@ -716,7 +716,7 @@ void computeDepthMapsPSSGM(int CUDADeviceNo, common::MultiViewParams* mp, common
     }
 }
 
-void computeDepthMapsPSSGM(common::MultiViewParams* mp, common::PreMatchCams* pc, const StaticVector<int>& cams)
+void computeDepthMapsPSSGM(mvsUtils::MultiViewParams* mp, mvsUtils::PreMatchCams* pc, const StaticVector<int>& cams)
 {
     int num_gpus = listCUDADevices(true);
     int num_cpu_threads = omp_get_num_procs();

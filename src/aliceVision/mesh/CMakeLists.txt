@@ -35,7 +35,7 @@ target_include_directories(aliceVision_mesh
 
 target_link_libraries(aliceVision_mesh
   PUBLIC aliceVision_structures
-         aliceVision_common
+         aliceVision_mvsUtils
          aliceVision_imageIO
          Geogram::geogram
          ${Boost_FILESYSTEM_LIBRARIES}

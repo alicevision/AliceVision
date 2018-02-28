@@ -5,7 +5,7 @@
 
 #include "SemiGlobalMatchingVolume.hpp"
 #include <aliceVision/structures/Point3d.hpp>
-#include <aliceVision/common/common.hpp>
+#include <aliceVision/mvsUtils/common.hpp>
 
 namespace aliceVision {
 namespace depthMap {
@@ -101,7 +101,7 @@ void SemiGlobalMatchingVolume::cloneVolumeStepZ()
     _volume = nullptr;
 
     if(sp->mp->verbose)
-        common::printfElapsedTime(tall, "SemiGlobalMatchingVolume::cloneVolumeStepZ ");
+        mvsUtils::printfElapsedTime(tall, "SemiGlobalMatchingVolume::cloneVolumeStepZ ");
 }
 
 void SemiGlobalMatchingVolume::cloneVolumeSecondStepZ()
@@ -135,7 +135,7 @@ void SemiGlobalMatchingVolume::cloneVolumeSecondStepZ()
     }
 
     if (sp->mp->verbose)
-        common::printfElapsedTime(tall, "SemiGlobalMatchingVolume::cloneVolumeSecondStepZ ");
+        mvsUtils::printfElapsedTime(tall, "SemiGlobalMatchingVolume::cloneVolumeSecondStepZ ");
 }
 
 /**
@@ -149,7 +149,7 @@ void SemiGlobalMatchingVolume::SGMoptimizeVolumeStepZ(int rc, int volStepXY, int
                                   scale, sp->P1, sp->P2);
 
     if(sp->mp->verbose)
-        common::printfElapsedTime(tall, "SemiGlobalMatchingVolume::SGMoptimizeVolumeStepZ");
+        mvsUtils::printfElapsedTime(tall, "SemiGlobalMatchingVolume::SGMoptimizeVolumeStepZ");
 }
 
 StaticVector<IdValue>* SemiGlobalMatchingVolume::getOrigVolumeBestIdValFromVolumeStepZ(int zborder)
@@ -191,7 +191,7 @@ StaticVector<IdValue>* SemiGlobalMatchingVolume::getOrigVolumeBestIdValFromVolum
     }
 
     if(sp->mp->verbose)
-        common::printfElapsedTime(tall, "SemiGlobalMatchingVolume::getOrigVolumeBestIdValFromVolumeStepZ ");
+        mvsUtils::printfElapsedTime(tall, "SemiGlobalMatchingVolume::getOrigVolumeBestIdValFromVolumeStepZ ");
 
     return volumeBestIdVal;
 }

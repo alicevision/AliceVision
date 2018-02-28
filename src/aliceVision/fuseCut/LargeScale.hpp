@@ -8,8 +8,8 @@
 #include <aliceVision/structures/Point3d.hpp>
 #include <aliceVision/structures/StaticVector.hpp>
 #include <aliceVision/structures/Voxel.hpp>
-#include <aliceVision/common/common.hpp>
-#include <aliceVision/common/PreMatchCams.hpp>
+#include <aliceVision/mvsUtils/common.hpp>
+#include <aliceVision/mvsUtils/PreMatchCams.hpp>
 #include <aliceVision/fuseCut/OctreeTracks.hpp>
 
 #include <array>
@@ -20,8 +20,8 @@ namespace fuseCut {
 class LargeScale
 {
 public:
-    common::MultiViewParams* mp;
-    common::PreMatchCams* pc;
+    mvsUtils::MultiViewParams* mp;
+    mvsUtils::PreMatchCams* pc;
     std::string spaceFolderName;
     std::string spaceVoxelsFolderName;
     std::string spaceFileName;
@@ -30,7 +30,7 @@ public:
     int maxOcTreeDim;
     bool doVisualize;
 
-    LargeScale(common::MultiViewParams* _mp, common::PreMatchCams* _pc, std::string _spaceFolderName);
+    LargeScale(mvsUtils::MultiViewParams* _mp, mvsUtils::PreMatchCams* _pc, std::string _spaceFolderName);
     ~LargeScale();
 
     std::string getSpaceCamsTracksDir();
@@ -44,7 +44,7 @@ public:
 
     std::string getReconstructionVoxelFolder(int i) const
     {
-        return spaceFolderName + "reconstructedVoxel" + common::num2strFourDecimal(i) + "/";
+        return spaceFolderName + "reconstructedVoxel" + mvsUtils::num2strFourDecimal(i) + "/";
     }
     std::vector<std::string> getRecsDirs(const StaticVector<Point3d>* voxelsArray) const
     {

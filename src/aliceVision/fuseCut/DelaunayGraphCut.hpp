@@ -9,8 +9,8 @@
 #include <aliceVision/structures/Rgb.hpp>
 #include <aliceVision/structures/StaticVector.hpp>
 #include <aliceVision/structures/Voxel.hpp>
-#include <aliceVision/common/common.hpp>
-#include <aliceVision/common/PreMatchCams.hpp>
+#include <aliceVision/mvsUtils/common.hpp>
+#include <aliceVision/mvsUtils/PreMatchCams.hpp>
 #include <aliceVision/mesh/Mesh.hpp>
 #include <aliceVision/fuseCut/delaunayGraphCutTypes.hpp>
 #include <aliceVision/fuseCut/VoxelsGrid.hpp>
@@ -45,8 +45,8 @@ public:
         VertexIndex localVertexIndex = GEO::NO_VERTEX;
     };
 
-    common::MultiViewParams* mp;
-    common::PreMatchCams* pc;
+    mvsUtils::MultiViewParams* mp;
+    mvsUtils::PreMatchCams* pc;
 
     GEO::Delaunay_var _tetrahedralization;
     /// 3D points coordinates
@@ -65,7 +65,7 @@ public:
 
     static const GEO::index_t NO_TETRAHEDRON = GEO::NO_CELL;
 
-    DelaunayGraphCut(common::MultiViewParams* _mp, common::PreMatchCams* _pc);
+    DelaunayGraphCut(mvsUtils::MultiViewParams* _mp, mvsUtils::PreMatchCams* _pc);
     virtual ~DelaunayGraphCut();
 
     /// Get absolute opposite vertex index

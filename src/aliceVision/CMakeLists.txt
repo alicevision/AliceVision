@@ -32,9 +32,9 @@ endif()
 # MVS modules
 
 if(ALICEVISION_BUILD_MVS)
-  add_subdirectory(common)
   add_subdirectory(imageIO)
   add_subdirectory(mesh)
+  add_subdirectory(mvsUtils)
   add_subdirectory(fuseCut)
   add_subdirectory(structures)
 

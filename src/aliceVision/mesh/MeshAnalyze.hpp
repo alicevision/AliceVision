@@ -16,7 +16,7 @@ namespace mesh {
 class MeshAnalyze : public MeshClean
 {
 public:
-    MeshAnalyze(common::MultiViewParams* _mp);
+    MeshAnalyze(mvsUtils::MultiViewParams* _mp);
     ~MeshAnalyze();
 
     double getCotanOfAngle(Point3d& vo, Point3d& v1, Point3d& v2);

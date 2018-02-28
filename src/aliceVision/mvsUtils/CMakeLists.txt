@@ -16,27 +16,27 @@ set(common_files_sources
   PreMatchCams.cpp
 )
 
-add_library(aliceVision_common
+add_library(aliceVision_mvsUtils
   ${common_files_headers}
   ${common_files_sources}
 )
 
-target_include_directories(aliceVision_common
+target_include_directories(aliceVision_mvsUtils
   PUBLIC $<BUILD_INTERFACE:${ALICEVISION_INCLUDE_DIR}>
          $<BUILD_INTERFACE:${generatedDir}>
          $<INSTALL_INTERFACE:include>
 )
 
-target_link_libraries(aliceVision_common
+target_link_libraries(aliceVision_mvsUtils
   PUBLIC aliceVision_structures
          aliceVision_imageIO
 )
 
-set_property(TARGET aliceVision_common
+set_property(TARGET aliceVision_mvsUtils
   PROPERTY FOLDER AliceVision/AliceVision
 )
 
-install(TARGETS aliceVision_common
+install(TARGETS aliceVision_mvsUtils
   DESTINATION lib
   EXPORT aliceVision-targets
 )

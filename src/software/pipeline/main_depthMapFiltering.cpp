@@ -4,9 +4,9 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include <aliceVision/structures/StaticVector.hpp>
-#include <aliceVision/common/common.hpp>
-#include <aliceVision/common/MultiViewParams.hpp>
-#include <aliceVision/common/PreMatchCams.hpp>
+#include <aliceVision/mvsUtils/common.hpp>
+#include <aliceVision/mvsUtils/MultiViewParams.hpp>
+#include <aliceVision/mvsUtils/PreMatchCams.hpp>
 #include <aliceVision/fuseCut/Fuser.hpp>
 
 #include <boost/program_options.hpp>
@@ -95,10 +95,10 @@ int main(int argc, char* argv[])
     ALICEVISION_COUT("ini file: " << iniFilepath);
 
     // .ini parsing
-    common::MultiViewInputParams mip(iniFilepath, depthMapFolder, outputFolder);
+    mvsUtils::MultiViewInputParams mip(iniFilepath, depthMapFolder, outputFolder);
     const double simThr = mip._ini.get<double>("global.simThr", 0.0);
-    common::MultiViewParams mp(mip.getNbCameras(), &mip, (float) simThr);
-    common::PreMatchCams pc(&mp);
+    mvsUtils::MultiViewParams mp(mip.getNbCameras(), &mip, (float) simThr);
+    mvsUtils::PreMatchCams pc(&mp);
 
     StaticVector<int> cams(mp.ncams);
     if(rangeSize == -1)
@@ -130,6 +130,6 @@ int main(int argc, char* argv[])
         fs.filterDepthMaps(cams, minNumOfConsistensCams, minNumOfConsistensCamsWithLowSimilarity);
     }
 
-    common::printfElapsedTime(startTime, "#");
+    mvsUtils::printfElapsedTime(startTime, "#");
     return EXIT_SUCCESS;
 }

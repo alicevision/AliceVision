@@ -8,8 +8,8 @@
 #include <aliceVision/structures/Matrix3x4.hpp>
 #include <aliceVision/structures/OrientedPoint.hpp>
 #include <aliceVision/structures/SeedPoint.hpp>
-#include <aliceVision/common/common.hpp>
-#include <aliceVision/common/fileIO.hpp>
+#include <aliceVision/mvsUtils/common.hpp>
+#include <aliceVision/mvsUtils/fileIO.hpp>
 #include <aliceVision/depthMap/cuda/commonStructures.hpp>
 
 #include <iostream>
@@ -239,7 +239,7 @@ extern void ps_colorExtractionPushPull(CudaHostMemoryHeap<uchar4, 2>* bmp_hmh, i
                                        bool verbose);
 
 */
-void cps_fillCamera(cameraStruct* cam, int c, common::MultiViewParams* mp, float** H, int scale)
+void cps_fillCamera(cameraStruct* cam, int c, mvsUtils::MultiViewParams* mp, float** H, int scale)
 {
     cam->scale = scale;
 
@@ -337,7 +337,7 @@ void cps_fillCamera(cameraStruct* cam, int c, common::MultiViewParams* mp, float
     }
 }
 
-void cps_fillCameraData(common::ImagesCache* ic, cameraStruct* cam, int c, common::MultiViewParams* mp)
+void cps_fillCameraData(mvsUtils::ImagesCache* ic, cameraStruct* cam, int c, mvsUtils::MultiViewParams* mp)
 {
     // memcpyGrayImageFromFileToArr(cam->tex_hmh->getBuffer(), mp->indexes[c], mp->mip, true, 1, 0);
     // memcpyRGBImageFromFileToArr(
@@ -375,8 +375,8 @@ void cps_updateCamH(cameraStruct* cam, float** H)
     }
 }
 
-PlaneSweepingCuda::PlaneSweepingCuda(int _CUDADeviceNo, common::ImagesCache* _ic, common::MultiViewParams* _mp,
-                                         common::PreMatchCams* _pc, int _scales)
+PlaneSweepingCuda::PlaneSweepingCuda(int _CUDADeviceNo, mvsUtils::ImagesCache* _ic, mvsUtils::MultiViewParams* _mp,
+                                         mvsUtils::PreMatchCams* _pc, int _scales)
 {
     CUDADeviceNo = _CUDADeviceNo;
 
@@ -462,7 +462,7 @@ int PlaneSweepingCuda::addCam(int rc, float** H, int scale)
                            varianceWSH);
 
         if(verbose)
-            common::printfElapsedTime(t1, "copy image from disk to GPU ");
+            mvsUtils::printfElapsedTime(t1, "copy image from disk to GPU ");
 
         (*camsRcs)[oldestId] = rc;
         (*camsTimes)[oldestId] = clock();
@@ -507,7 +507,7 @@ void PlaneSweepingCuda::getMinMaxdepths(int rc, StaticVector<int>* tcams, float&
                                           float& maxDepth)
 {
     StaticVector<SeedPoint>* seeds;
-    common::loadSeedsFromFile(&seeds, rc, mp->mip, common::EFileType::seeds);
+    mvsUtils::loadSeedsFromFile(&seeds, rc, mp->mip, mvsUtils::EFileType::seeds);
 
     float minCamDist = (float)mp->mip->_ini.get<double>("prematching.minCamDist", 0.0f);
     float maxCamDist = (float)mp->mip->_ini.get<double>("prematching.maxCamDist", 15.0f);
@@ -1127,7 +1127,7 @@ bool PlaneSweepingCuda::smoothDepthMap(StaticVector<float>* depthMap, int rc, in
     delete camsids;
 
     if(verbose)
-        common::printfElapsedTime(t1);
+        mvsUtils::printfElapsedTime(t1);
 
     return true;
 }
@@ -1172,7 +1172,7 @@ bool PlaneSweepingCuda::filterDepthMap(StaticVector<float>* depthMap, int rc, in
     delete camsids;
 
     if(verbose)
-        common::printfElapsedTime(t1);
+        mvsUtils::printfElapsedTime(t1);
 
     return true;
 }
@@ -1220,7 +1220,7 @@ bool PlaneSweepingCuda::computeNormalMap(StaticVector<float>* depthMap, StaticVe
     delete camsids;
 
     if(verbose)
-        common::printfElapsedTime(t1);
+        mvsUtils::printfElapsedTime(t1);
 
     return true;
 }
@@ -1269,7 +1269,7 @@ void PlaneSweepingCuda::alignSourceDepthMapToTarget(StaticVector<float>* sourceD
     delete camsids;
 
     if(verbose)
-        common::printfElapsedTime(t1);
+        mvsUtils::printfElapsedTime(t1);
 }
 
 bool PlaneSweepingCuda::refineDepthMapReproject(StaticVector<float>* depthMap, StaticVector<float>* simMap, int rc,
@@ -1342,7 +1342,7 @@ bool PlaneSweepingCuda::refineDepthMapReproject(StaticVector<float>* depthMap, S
     delete camsids;
 
     if(verbose)
-        common::printfElapsedTime(t1);
+        mvsUtils::printfElapsedTime(t1);
 
     return true;
 }
@@ -1421,7 +1421,7 @@ bool PlaneSweepingCuda::computeRcTcPhotoErrMapReproject(StaticVector<Point4d>* s
     delete camsids;
 
     if(verbose)
-        common::printfElapsedTime(t1);
+        mvsUtils::printfElapsedTime(t1);
 
     return true;
 }
@@ -1488,7 +1488,7 @@ bool PlaneSweepingCuda::computeSimMapForRcTcDepthMap(StaticVector<float>* oSimMa
     delete camsids;
 
     if(verbose)
-        common::printfElapsedTime(t1);
+        mvsUtils::printfElapsedTime(t1);
 
     return true;
 }
@@ -1561,7 +1561,7 @@ bool PlaneSweepingCuda::refineRcTcDepthMap(bool useTcOrRcPixSize, int nStepsToRe
     delete camsids;
 
     if(verbose)
-        common::printfElapsedTime(t1);
+        mvsUtils::printfElapsedTime(t1);
 
     return true;
 }
@@ -1670,7 +1670,7 @@ float PlaneSweepingCuda::sweepPixelsToVolume(int nDepthsToSearch, StaticVector<u
     delete camsids;
 
     if(verbose)
-        common::printfElapsedTime(t1);
+        mvsUtils::printfElapsedTime(t1);
 
     return volumeMBinGPUMem;
 }
@@ -1693,7 +1693,7 @@ bool PlaneSweepingCuda::SGMoptimizeSimVolume(int rc, StaticVector<unsigned char>
                             CUDADeviceNo, nImgsInGPUAtTime, scales);
 
     if(verbose)
-        common::printfElapsedTime(t1);
+        mvsUtils::printfElapsedTime(t1);
 
     return true;
 }
@@ -2139,7 +2139,7 @@ bool PlaneSweepingCuda::fuseDepthSimMapsGaussianKernelVoting(int w, int h, Stati
     delete[] dataMaps_hmh;
 
     if(verbose)
-        common::printfElapsedTime(t1);
+        mvsUtils::printfElapsedTime(t1);
 
     return true;
 }
@@ -2223,7 +2223,7 @@ bool PlaneSweepingCuda::optimizeDepthSimMapGradientDescent(StaticVector<DepthSim
     delete camsids;
 
     if(verbose)
-        common::printfElapsedTime(t1);
+        mvsUtils::printfElapsedTime(t1);
 
     return true;
 }
@@ -2430,7 +2430,7 @@ bool PlaneSweepingCuda::getSilhoueteMap(StaticVectorBool* oMap, int scale, int s
     }
 
     if(verbose)
-        common::printfElapsedTime(t1);
+        mvsUtils::printfElapsedTime(t1);
 
     return true;
 }

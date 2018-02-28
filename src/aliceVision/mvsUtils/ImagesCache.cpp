@@ -4,11 +4,11 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "ImagesCache.hpp"
-#include <aliceVision/common/common.hpp>
-#include <aliceVision/common/fileIO.hpp>
+#include <aliceVision/mvsUtils/common.hpp>
+#include <aliceVision/mvsUtils/fileIO.hpp>
 
 namespace aliceVision {
-namespace common {
+namespace mvsUtils {
 
 int ImagesCache::getPixelId(int x, int y, int imgid)
 {
@@ -167,5 +167,5 @@ rgb ImagesCache::getPixelValue(const Pixel& pix, int camId)
                static_cast<unsigned char>(floatRGB.b));
 }
 
-} // namespace common
+} // namespace mvsUtils
 } // namespace aliceVision

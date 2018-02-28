@@ -4,8 +4,8 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "LargeScale.hpp"
-#include <aliceVision/common/common.hpp>
-#include <aliceVision/common/fileIO.hpp>
+#include <aliceVision/mvsUtils/common.hpp>
+#include <aliceVision/mvsUtils/fileIO.hpp>
 #include <aliceVision/fuseCut/DelaunayGraphCut.hpp>
 
 #include <boost/filesystem.hpp>
@@ -15,7 +15,7 @@ namespace fuseCut {
 
 namespace bfs = boost::filesystem;
 
-LargeScale::LargeScale(common::MultiViewParams* _mp, common::PreMatchCams* _pc, std::string _spaceFolderName)
+LargeScale::LargeScale(mvsUtils::MultiViewParams* _mp, mvsUtils::PreMatchCams* _pc, std::string _spaceFolderName)
   : mp(_mp)
   , pc(_pc)
   , spaceFolderName(_spaceFolderName)
@@ -34,7 +34,7 @@ LargeScale::~LargeScale()
 
 bool LargeScale::isSpaceSaved()
 {
-    return common::FileExists(spaceFileName);
+    return mvsUtils::FileExists(spaceFileName);
 }
 
 void LargeScale::saveSpaceToFile()
@@ -130,7 +130,7 @@ LargeScale* LargeScale::cloneSpaceIfDoesNotExists(int newOcTreeDim, std::string 
         out->saveSpaceToFile();
 
         if(mp->verbose)
-            common::printfElapsedTime(t1, "space cloned in:");
+            mvsUtils::printfElapsedTime(t1, "space cloned in:");
 
         return out;
     }
@@ -188,7 +188,7 @@ bool LargeScale::generateSpace(int maxPts, int ocTreeDim)
     delete vgnew;
     delete vg;
 
-    common::DeleteDirectory(tmpdir);
+    mvsUtils::DeleteDirectory(tmpdir);
 
     deleteTempPtsSimsFiles(mp, depthMapsPtsSimsTmpDir);
 

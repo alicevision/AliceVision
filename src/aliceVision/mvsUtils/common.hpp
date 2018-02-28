@@ -11,12 +11,12 @@
 #include <aliceVision/structures/Pixel.hpp>
 #include <aliceVision/structures/StaticVector.hpp>
 #include <aliceVision/structures/Voxel.hpp>
-#include <aliceVision/common/MultiViewParams.hpp>
+#include <aliceVision/mvsUtils/MultiViewParams.hpp>
 
 #include <string>
 
 namespace aliceVision {
-namespace common {
+namespace mvsUtils {
 
 bool get2dLineImageIntersection(Point2d* pFrom, Point2d* pTo, Point2d linePoint1, Point2d linePoint2,
                                 const MultiViewParams* mp, int camId);
@@ -67,5 +67,5 @@ std::string num2strThreeDigits(int index);
 std::string num2strFourDecimal(int index);
 std::string num2strTwoDecimal(int index);
 
-} // namespace common
+} // namespace mvsUtils
 } // namespace aliceVision

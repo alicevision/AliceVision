@@ -9,7 +9,7 @@
 #include <aliceVision/structures/StaticVector.hpp>
 #include <aliceVision/structures/Universe.hpp>
 #include <aliceVision/structures/Voxel.hpp>
-#include <aliceVision/common/PreMatchCams.hpp>
+#include <aliceVision/mvsUtils/PreMatchCams.hpp>
 
 namespace aliceVision {
 namespace fuseCut {
@@ -17,10 +17,10 @@ namespace fuseCut {
 class Fuser
 {
 public:
-    const common::MultiViewParams* mp;
-    common::PreMatchCams* pc;
+    const mvsUtils::MultiViewParams* mp;
+    mvsUtils::PreMatchCams* pc;
 
-    Fuser(const common::MultiViewParams* _mp, common::PreMatchCams* _pc);
+    Fuser(const mvsUtils::MultiViewParams* _mp, mvsUtils::PreMatchCams* _pc);
     ~Fuser(void);
 
     // minNumOfModals number of other cams including this cam ... minNumOfModals /in 2,3,... default 3
@@ -43,9 +43,9 @@ private:
                       StaticVector<float>* depthMap, StaticVector<float>* simMap, int scale);
 };
 
-std::string generateTempPtsSimsFiles(std::string tmpDir, common::MultiViewParams* mp, bool addRandomNoise = false,
+std::string generateTempPtsSimsFiles(std::string tmpDir, mvsUtils::MultiViewParams* mp, bool addRandomNoise = false,
                                      float percNoisePts = 0.0, int noisPixSizeDistHalfThr = 0);
-void deleteTempPtsSimsFiles(common::MultiViewParams* mp, std::string depthMapsPtsSimsTmpDir);
+void deleteTempPtsSimsFiles(mvsUtils::MultiViewParams* mp, std::string depthMapsPtsSimsTmpDir);
 
 } // namespace fuseCut
 } // namespace aliceVision

@@ -4,8 +4,8 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include <aliceVision/structures/image.hpp>
-#include <aliceVision/common/common.hpp>
-#include <aliceVision/common/MultiViewParams.hpp>
+#include <aliceVision/mvsUtils/common.hpp>
+#include <aliceVision/mvsUtils/MultiViewParams.hpp>
 #include <aliceVision/mesh/Mesh.hpp>
 #include <aliceVision/mesh/Texturing.hpp>
 #include <aliceVision/mesh/meshVisibility.hpp>
@@ -99,9 +99,9 @@ int main(int argc, char* argv[])
     const EImageFileType outputTextureFileType = EImageFileType_stringToEnum(outTextureFileTypeName);
 
     // .ini parsing
-    common::MultiViewInputParams mip(iniFilepath, "", "");
+    mvsUtils::MultiViewInputParams mip(iniFilepath, "", "");
     const double simThr = mip._ini.get<double>("global.simThr", 0.0);
-    common::MultiViewParams mp(mip.getNbCameras(), &mip, (float) simThr);
+    mvsUtils::MultiViewParams mp(mip.getNbCameras(), &mip, (float) simThr);
 
     mesh::Texturing mesh;
     mesh.texParams = texParams;
@@ -153,6 +153,6 @@ int main(int argc, char* argv[])
     ALICEVISION_COUT("Generate textures.");
     mesh.generateTextures(mp, ptsCams, outputFolder, outputTextureFileType);
 
-    common::printfElapsedTime(startTime, "#");
+    mvsUtils::printfElapsedTime(startTime, "#");
     return EXIT_SUCCESS;
 }

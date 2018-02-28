@@ -14,8 +14,8 @@
 #include <aliceVision/structures/Rgb.hpp>
 #include <aliceVision/structures/StaticVector.hpp>
 #include <aliceVision/structures/Voxel.hpp>
-#include <aliceVision/common/ImagesCache.hpp>
-#include <aliceVision/common/PreMatchCams.hpp>
+#include <aliceVision/mvsUtils/ImagesCache.hpp>
+#include <aliceVision/mvsUtils/PreMatchCams.hpp>
 #include <aliceVision/depthMap/DepthSimMap.hpp>
 
 namespace aliceVision {
@@ -49,8 +49,8 @@ public:
     int scales;
     int nbest;
 
-    common::MultiViewParams* mp;
-    common::PreMatchCams* pc;
+    mvsUtils::MultiViewParams* mp;
+    mvsUtils::PreMatchCams* pc;
 
     int CUDADeviceNo;
     void** ps_texs_arr;
@@ -74,9 +74,9 @@ public:
     int varianceWSH;
 
     // float gammaC,gammaP;
-    common::ImagesCache* ic;
+    mvsUtils::ImagesCache* ic;
 
-    PlaneSweepingCuda(int _CUDADeviceNo, common::ImagesCache* _ic, common::MultiViewParams* _mp, common::PreMatchCams* _pc,
+    PlaneSweepingCuda(int _CUDADeviceNo, mvsUtils::ImagesCache* _ic, mvsUtils::MultiViewParams* _mp, mvsUtils::PreMatchCams* _pc,
                         int _scales);
     ~PlaneSweepingCuda(void);
 

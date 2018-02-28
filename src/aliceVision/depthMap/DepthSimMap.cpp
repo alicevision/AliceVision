@@ -4,8 +4,8 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "DepthSimMap.hpp"
-#include <aliceVision/common/common.hpp>
-#include <aliceVision/common/fileIO.hpp>
+#include <aliceVision/mvsUtils/common.hpp>
+#include <aliceVision/mvsUtils/fileIO.hpp>
 #include <aliceVision/structures/Color.hpp>
 #include <aliceVision/structures/geometry.hpp>
 #include <aliceVision/structures/jetColorMap.hpp>
@@ -16,7 +16,7 @@
 namespace aliceVision {
 namespace depthMap {
 
-DepthSimMap::DepthSimMap(int _rc, common::MultiViewParams* _mp, int _scale, int _step)
+DepthSimMap::DepthSimMap(int _rc, mvsUtils::MultiViewParams* _mp, int _scale, int _step)
 {
     rc = _rc;
     mp = _mp;
@@ -394,12 +394,12 @@ void DepthSimMap::save(int rc, StaticVector<int>* tcams)
     metadata.push_back(oiio::ParamValue("AliceVision:CArr", oiio::TypeDesc(oiio::TypeDesc::DOUBLE, oiio::TypeDesc::VEC3), 1, mp->CArr[rc].m));
     metadata.push_back(oiio::ParamValue("AliceVision:iCamArr", oiio::TypeDesc(oiio::TypeDesc::DOUBLE, oiio::TypeDesc::MATRIX33), 1, mp->iCamArr[rc].m));
 
-    imageIO::writeImage(mv_getFileName(mp->mip, rc, common::EFileType::depthMap, scale), width, height, depthMap->getDataWritable(), imageIO::EImageQuality::LOSSLESS, metadata);
-    imageIO::writeImage(mv_getFileName(mp->mip, rc, common::EFileType::simMap, scale), width, height, simMap->getDataWritable());
+    imageIO::writeImage(mv_getFileName(mp->mip, rc, mvsUtils::EFileType::depthMap, scale), width, height, depthMap->getDataWritable(), imageIO::EImageQuality::LOSSLESS, metadata);
+    imageIO::writeImage(mv_getFileName(mp->mip, rc, mvsUtils::EFileType::simMap, scale), width, height, simMap->getDataWritable());
 
     {
         Point2d maxMinDepth = getMaxMinDepth();
-        FILE* f = mv_openFile(mp->mip, rc, common::EFileType::depthMapInfo, "w");
+        FILE* f = mv_openFile(mp->mip, rc, mvsUtils::EFileType::depthMapInfo, "w");
         int nbTCs = tcams ? tcams->size() : 0;
         fprintf(f, "minDepth %f, maxDepth %f, ntcams %i, tcams", maxMinDepth.y, maxMinDepth.x, nbTCs);
         for(int c = 0; c < nbTCs; c++)
@@ -418,8 +418,8 @@ void DepthSimMap::load(int rc, int fromScale)
     StaticVector<float> depthMap;
     StaticVector<float> simMap;
 
-    imageIO::readImage(mv_getFileName(mp->mip, rc, common::EFileType::depthMap, fromScale), width, height, depthMap.getDataWritable());
-    imageIO::readImage(mv_getFileName(mp->mip, rc, common::EFileType::simMap, fromScale), width, height, simMap.getDataWritable());
+    imageIO::readImage(mv_getFileName(mp->mip, rc, mvsUtils::EFileType::depthMap, fromScale), width, height, depthMap.getDataWritable());
+    imageIO::readImage(mv_getFileName(mp->mip, rc, mvsUtils::EFileType::simMap, fromScale), width, height, simMap.getDataWritable());
 
     imageIO::transposeImage(width, height, depthMap.getDataWritable());
     imageIO::transposeImage(width, height, simMap.getDataWritable());

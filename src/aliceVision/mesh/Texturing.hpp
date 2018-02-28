@@ -10,7 +10,7 @@
 #include <aliceVision/structures/Point3d.hpp>
 #include <aliceVision/structures/StaticVector.hpp>
 #include <aliceVision/structures/Voxel.hpp>
-#include <aliceVision/common/ImagesCache.hpp>
+#include <aliceVision/mvsUtils/ImagesCache.hpp>
 #include <aliceVision/mesh/Mesh.hpp>
 
 #include <boost/filesystem.hpp>
@@ -68,15 +68,15 @@ public:
      * @param ptsCams visibilities of internal mesh's points
      * @return visibilities of new internal mesh's points
      */
-    StaticVector<StaticVector<int>*>* generateUVs(common::MultiViewParams &mp, StaticVector<StaticVector<int> *> *ptsCams);
+    StaticVector<StaticVector<int>*>* generateUVs(mvsUtils::MultiViewParams &mp, StaticVector<StaticVector<int> *> *ptsCams);
 
     /// Generate texture files for all texture atlases
-    void generateTextures(const common::MultiViewParams& mp, StaticVector<StaticVector<int>*>* ptsCams,
+    void generateTextures(const mvsUtils::MultiViewParams& mp, StaticVector<StaticVector<int>*>* ptsCams,
                           const bfs::path &outPath, EImageFileType textureFileType = EImageFileType::PNG);
 
     /// Generate texture files for the given texture atlas index
-    void generateTexture(const common::MultiViewParams& mp, StaticVector<StaticVector<int>*>* ptsCams,
-                         size_t atlasID, common::ImagesCache& imageCache,
+    void generateTexture(const mvsUtils::MultiViewParams& mp, StaticVector<StaticVector<int>*>* ptsCams,
+                         size_t atlasID, mvsUtils::ImagesCache& imageCache,
                          const bfs::path &outPath, EImageFileType textureFileType = EImageFileType::PNG);
 
     /// Save textured mesh as an OBJ + MTL file

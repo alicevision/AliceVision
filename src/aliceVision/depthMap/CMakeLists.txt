@@ -89,7 +89,7 @@ target_include_directories(aliceVision_depthMap
 target_link_libraries(aliceVision_depthMap
   aliceVision_structures
   aliceVision_imageIO
-  aliceVision_common
+  aliceVision_mvsUtils
 )
 
 set_property(TARGET aliceVision_depthMap
