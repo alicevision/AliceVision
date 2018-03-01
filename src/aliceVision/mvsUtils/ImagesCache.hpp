@@ -5,14 +5,14 @@
 
 #pragma once
 
-#include <aliceVision/structures/Color.hpp>
-#include <aliceVision/structures/Point2d.hpp>
-#include <aliceVision/structures/Rgb.hpp>
-#include <aliceVision/structures/StaticVector.hpp>
-#include <aliceVision/common/MultiViewParams.hpp>
+#include <aliceVision/mvsData/Color.hpp>
+#include <aliceVision/mvsData/Point2d.hpp>
+#include <aliceVision/mvsData/Rgb.hpp>
+#include <aliceVision/mvsData/StaticVector.hpp>
+#include <aliceVision/mvsUtils/MultiViewParams.hpp>
 
 namespace aliceVision {
-namespace common {
+namespace mvsUtils {
 
 class ImagesCache
 {
@@ -42,5 +42,5 @@ public:
     rgb getPixelValue(const Pixel& pix, int camId);
 };
 
-} // namespace common
+} // namespace mvsUtils
 } // namespace aliceVision

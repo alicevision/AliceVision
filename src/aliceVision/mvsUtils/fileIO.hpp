@@ -5,18 +5,18 @@
 
 #pragma once
 
-#include <aliceVision/structures/Color.hpp>
-#include <aliceVision/structures/Matrix3x4.hpp>
-#include <aliceVision/structures/Point2d.hpp>
-#include <aliceVision/structures/Point3d.hpp>
-#include <aliceVision/structures/SeedPoint.hpp>
-#include <aliceVision/structures/StaticVector.hpp>
-#include <aliceVision/common/MultiViewParams.hpp>
+#include <aliceVision/mvsData/Color.hpp>
+#include <aliceVision/mvsData/Matrix3x4.hpp>
+#include <aliceVision/mvsData/Point2d.hpp>
+#include <aliceVision/mvsData/Point3d.hpp>
+#include <aliceVision/mvsData/SeedPoint.hpp>
+#include <aliceVision/mvsData/StaticVector.hpp>
+#include <aliceVision/mvsUtils/MultiViewParams.hpp>
 
 #include <fstream>
 
 namespace aliceVision {
-namespace common {
+namespace mvsUtils {
 
 struct MultiViewInputParams;
 
@@ -49,5 +49,5 @@ bool getDepthMapInfo(int refImgFileId, MultiViewInputParams* mip, float& mindept
                      StaticVector<int>** tcams);
 bool DeleteDirectory(const std::string& sPath);
 
-} // namespace common
+} // namespace mvsUtils
 } // namespace aliceVision

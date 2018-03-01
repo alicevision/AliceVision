@@ -5,12 +5,12 @@
 
 #pragma once
 
-#include <aliceVision/structures/Universe.hpp>
-#include <aliceVision/structures/Pixel.hpp>
-#include <aliceVision/structures/Point2d.hpp>
-#include <aliceVision/structures/Point3d.hpp>
-#include <aliceVision/structures/StaticVector.hpp>
-#include <aliceVision/common/MultiViewParams.hpp>
+#include <aliceVision/mvsData/Universe.hpp>
+#include <aliceVision/mvsData/Pixel.hpp>
+#include <aliceVision/mvsData/Point2d.hpp>
+#include <aliceVision/mvsData/Point3d.hpp>
+#include <aliceVision/mvsData/StaticVector.hpp>
+#include <aliceVision/mvsUtils/MultiViewParams.hpp>
 
 namespace aliceVision {
 namespace depthMap {
@@ -50,11 +50,11 @@ public:
 class DepthSimMap
 {
 public:
-    common::MultiViewParams* mp;
+    mvsUtils::MultiViewParams* mp;
     int rc, w, h, scale, step;
     StaticVector<DepthSim>* dsm; //< depth similarity map
 
-    DepthSimMap(int rc, common::MultiViewParams* _mp, int _scale, int _step);
+    DepthSimMap(int rc, mvsUtils::MultiViewParams* _mp, int _scale, int _step);
     ~DepthSimMap(void);
 
     void initJustFromDepthMapT(StaticVector<float>* depthMapT, float defaultSim);

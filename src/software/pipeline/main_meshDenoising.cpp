@@ -13,7 +13,7 @@
 
 #include <OpenMesh/Core/IO/IOManager.hh>
 
-#include <aliceVision/common/common.hpp>
+#include <aliceVision/mvsUtils/common.hpp>
 
 #include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>
@@ -203,6 +203,6 @@ int main(int argc, char* argv[])
 
     ALICEVISION_CERR("Mesh \"" << outputMeshPath << "\" saved.");
 
-    common::printfElapsedTime(startTime, "#");
+    mvsUtils::printfElapsedTime(startTime, "#");
     return EXIT_SUCCESS;
 }

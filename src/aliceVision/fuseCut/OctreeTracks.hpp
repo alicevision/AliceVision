@@ -5,11 +5,11 @@
 
 #pragma once
 
-#include <aliceVision/structures/Pixel.hpp>
-#include <aliceVision/structures/Point3d.hpp>
-#include <aliceVision/structures/StaticVector.hpp>
-#include <aliceVision/structures/Voxel.hpp>
-#include <aliceVision/common/PreMatchCams.hpp>
+#include <aliceVision/mvsData/Pixel.hpp>
+#include <aliceVision/mvsData/Point3d.hpp>
+#include <aliceVision/mvsData/StaticVector.hpp>
+#include <aliceVision/mvsData/Voxel.hpp>
+#include <aliceVision/mvsUtils/PreMatchCams.hpp>
 #include <aliceVision/fuseCut/Fuser.hpp>
 
 namespace aliceVision {
@@ -87,7 +87,7 @@ public:
     int minNumOfConsistentCams;
     float simWspThr;
 
-    OctreeTracks(const Point3d* _voxel, common::MultiViewParams* _mp, common::PreMatchCams* _pc, Voxel dimensions);
+    OctreeTracks(const Point3d* _voxel, mvsUtils::MultiViewParams* _mp, mvsUtils::PreMatchCams* _pc, Voxel dimensions);
     ~OctreeTracks();
 
     float computeAveragePixelSizeForVoxel();

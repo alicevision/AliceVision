@@ -4,7 +4,7 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "SemiGlobalMatchingRcTc.hpp"
-#include <aliceVision/common/common.hpp>
+#include <aliceVision/mvsUtils/common.hpp>
 
 namespace aliceVision {
 namespace depthMap {
@@ -82,7 +82,7 @@ StaticVector<unsigned char>* SemiGlobalMatchingRcTc::computeDepthSimMapVolume(fl
     delete tcams;
 
     if(sp->mp->verbose)
-        common::printfElapsedTime(tall, "SemiGlobalMatchingRcTc::computeDepthSimMapVolume ");
+        mvsUtils::printfElapsedTime(tall, "SemiGlobalMatchingRcTc::computeDepthSimMapVolume ");
 
     if(sp->P3 > 0)
     {

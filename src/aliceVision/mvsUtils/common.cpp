@@ -4,18 +4,18 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "common.hpp"
-#include <aliceVision/common/fileIO.hpp>
-#include <aliceVision/structures/geometry.hpp>
-#include <aliceVision/structures/geometryTriTri.hpp>
-#include <aliceVision/structures/Matrix3x3.hpp>
-#include <aliceVision/structures/Matrix3x4.hpp>
-#include <aliceVision/structures/OrientedPoint.hpp>
-#include <aliceVision/structures/Pixel.hpp>
-#include <aliceVision/structures/SeedPoint.hpp>
+#include <aliceVision/mvsUtils/fileIO.hpp>
+#include <aliceVision/mvsData/geometry.hpp>
+#include <aliceVision/mvsData/geometryTriTri.hpp>
+#include <aliceVision/mvsData/Matrix3x3.hpp>
+#include <aliceVision/mvsData/Matrix3x4.hpp>
+#include <aliceVision/mvsData/OrientedPoint.hpp>
+#include <aliceVision/mvsData/Pixel.hpp>
+#include <aliceVision/mvsData/SeedPoint.hpp>
 
 
 namespace aliceVision {
-namespace common {
+namespace mvsUtils {
 
 bool get2dLineImageIntersection(Point2d* pFrom, Point2d* pTo, Point2d linePoint1, Point2d linePoint2,
                                 const MultiViewParams* mp, int camId)
@@ -871,5 +871,5 @@ std::string num2strTwoDecimal(int index)
     return ms;
 }
 
-} // namespace common
+} // namespace mvsUtils
 } // namespace aliceVision

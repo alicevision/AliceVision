@@ -5,9 +5,9 @@
 
 #pragma once
 
-#include <aliceVision/structures/Point2d.hpp>
-#include <aliceVision/structures/Point3d.hpp>
-#include <aliceVision/structures/StaticVector.hpp>
+#include <aliceVision/mvsData/Point2d.hpp>
+#include <aliceVision/mvsData/Point3d.hpp>
+#include <aliceVision/mvsData/StaticVector.hpp>
 #include <aliceVision/mesh/MeshClean.hpp>
 
 namespace aliceVision {
@@ -16,7 +16,7 @@ namespace mesh {
 class MeshAnalyze : public MeshClean
 {
 public:
-    MeshAnalyze(common::MultiViewParams* _mp);
+    MeshAnalyze(mvsUtils::MultiViewParams* _mp);
     ~MeshAnalyze();
 
     double getCotanOfAngle(Point3d& vo, Point3d& v1, Point3d& v2);

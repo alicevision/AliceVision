@@ -5,12 +5,12 @@
 
 #pragma once
 
-#include <aliceVision/structures/Point3d.hpp>
-#include <aliceVision/structures/StaticVector.hpp>
-#include <aliceVision/common/MultiViewParams.hpp>
+#include <aliceVision/mvsData/Point3d.hpp>
+#include <aliceVision/mvsData/StaticVector.hpp>
+#include <aliceVision/mvsUtils/MultiViewParams.hpp>
 
 namespace aliceVision {
-namespace common {
+namespace mvsUtils {
 
 class PreMatchCams
 {
@@ -34,5 +34,5 @@ public:
     StaticVector<int> findNearestCamsFromSeeds(int rc, int nnearestcams);
 };
 
-} // namespace common
+} // namespace mvsUtils
 } // namespace aliceVision

@@ -4,15 +4,15 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "fileIO.hpp"
-#include <aliceVision/common/common.hpp>
-#include <aliceVision/common/MultiViewParams.hpp>
+#include <aliceVision/mvsUtils/common.hpp>
+#include <aliceVision/mvsUtils/MultiViewParams.hpp>
 #include <aliceVision/imageIO/image.hpp>
 
 #include <boost/filesystem/operations.hpp>
 #include <boost/filesystem/path.hpp>
 
 namespace aliceVision {
-namespace common {
+namespace mvsUtils {
 
 bool FileExists(const std::string& filePath)
 {
@@ -552,5 +552,5 @@ bool DeleteDirectory(const std::string& sPath)
     return true;
 }
 
-} // namespace common
+} // namespace mvsUtils
 } // namespace aliceVision

@@ -3,10 +3,10 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
-#include <aliceVision/common/common.hpp>
-#include <aliceVision/common/fileIO.hpp>
-#include <aliceVision/common/MultiViewParams.hpp>
-#include <aliceVision/common/PreMatchCams.hpp>
+#include <aliceVision/mvsUtils/common.hpp>
+#include <aliceVision/mvsUtils/fileIO.hpp>
+#include <aliceVision/mvsUtils/MultiViewParams.hpp>
+#include <aliceVision/mvsUtils/PreMatchCams.hpp>
 
 #include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>
@@ -64,13 +64,13 @@ int main(int argc, char* argv[])
     ALICEVISION_COUT("ini file: " << iniFilepath);
 
     // .ini parsing
-    common::MultiViewInputParams mip(iniFilepath, "", "");
+    mvsUtils::MultiViewInputParams mip(iniFilepath, "", "");
     const double simThr = mip._ini.get<double>("global.simThr", 0.0);
-    common::MultiViewParams mp(mip.getNbCameras(), &mip, (float) simThr);
-    common::PreMatchCams pc(&mp);
+    mvsUtils::MultiViewParams mp(mip.getNbCameras(), &mip, (float) simThr);
+    mvsUtils::PreMatchCams pc(&mp);
 
     ALICEVISION_COUT("--- compute camera pairs");
     pc.precomputeIncidentMatrixCamsFromSeeds();
-    common::printfElapsedTime(startTime, "#");
+    mvsUtils::printfElapsedTime(startTime, "#");
     return EXIT_SUCCESS;
 }

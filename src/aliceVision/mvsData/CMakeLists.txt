@@ -34,12 +34,12 @@ set(structures_files_sources
   Universe.cpp
 )
 
-add_library(aliceVision_structures
+add_library(aliceVision_mvsData
   ${structures_files_headers}
   ${structures_files_sources}
 )
 
-target_include_directories(aliceVision_structures
+target_include_directories(aliceVision_mvsData
   PUBLIC $<BUILD_INTERFACE:${ALICEVISION_INCLUDE_DIR}>
          $<BUILD_INTERFACE:${generatedDir}>
          $<INSTALL_INTERFACE:include>
@@ -47,16 +47,16 @@ target_include_directories(aliceVision_structures
          ${Boost_INCLUDE_DIR}
 )
 
-target_link_libraries(aliceVision_structures
+target_link_libraries(aliceVision_mvsData
   PUBLIC ${ZLIB_LIBRARIES}
          ${Boost_FILESYSTEM_LIBRARIES}
 )
 
-set_property(TARGET aliceVision_structures
+set_property(TARGET aliceVision_mvsData
   PROPERTY FOLDER AliceVision/AliceVision
 )
 
-install(TARGETS aliceVision_structures
+install(TARGETS aliceVision_mvsData
   DESTINATION lib
   EXPORT aliceVision-targets
 )

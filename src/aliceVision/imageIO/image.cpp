@@ -4,8 +4,8 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "image.hpp"
-#include <aliceVision/structures/Color.hpp>
-#include <aliceVision/structures/Rgb.hpp>
+#include <aliceVision/mvsData/Color.hpp>
+#include <aliceVision/mvsData/Rgb.hpp>
 
 #include <OpenImageIO/imageio.h>
 #include <OpenImageIO/imagebuf.h>

@@ -4,9 +4,9 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "OctreeTracks.hpp"
-#include <aliceVision/structures/geometry.hpp>
-#include <aliceVision/common/common.hpp>
-#include <aliceVision/common/fileIO.hpp>
+#include <aliceVision/mvsData/geometry.hpp>
+#include <aliceVision/mvsUtils/common.hpp>
+#include <aliceVision/mvsUtils/fileIO.hpp>
 
 #include <boost/accumulators/accumulators.hpp>
 #include <boost/accumulators/statistics.hpp>
@@ -459,7 +459,7 @@ void OctreeTracks::trackStruct::doPrintf()
         printf("cams %i, rc %i, val %i \n", i, cams[i].x, cams[i].y);
 }
 
-OctreeTracks::OctreeTracks(const Point3d* _voxel, common::MultiViewParams* _mp, common::PreMatchCams* _pc, Voxel dimensions)
+OctreeTracks::OctreeTracks(const Point3d* _voxel, mvsUtils::MultiViewParams* _mp, mvsUtils::PreMatchCams* _pc, Voxel dimensions)
     : Fuser(_mp, _pc)
 {
     numSubVoxsX = dimensions.x;
@@ -672,7 +672,7 @@ StaticVector<OctreeTracks::trackStruct*>* OctreeTracks::fillOctree(int maxPts, s
     long t1 = clock();
     StaticVector<int> cams = pc->findCamsWhichIntersectsHexahedron(vox, depthMapsPtsSimsTmpDir + "minMaxDepths.bin");
     if(mp->verbose)
-        common::printfElapsedTime(t1, "findCamsWhichIntersectsHexahedron");
+        mvsUtils::printfElapsedTime(t1, "findCamsWhichIntersectsHexahedron");
     if(mp->verbose)
         printf("ncams %i\n", cams.size());
 
@@ -725,7 +725,7 @@ StaticVector<OctreeTracks::trackStruct*>* OctreeTracks::fillOctree(int maxPts, s
 
     StaticVector<trackStruct*>* tracks = getAllPoints();
     if(mp->verbose)
-        common::printfElapsedTime(t1, "fillOctree fill");
+        mvsUtils::printfElapsedTime(t1, "fillOctree fill");
 
     // TODO this is not working well ...
     // updateOctreeTracksCams(tracks);
@@ -739,7 +739,7 @@ StaticVector<OctreeTracks::trackStruct*>* OctreeTracks::fillOctree(int maxPts, s
 
         filterMinNumConsistentCams(tracks);
         if(mp->verbose)
-            common::printfElapsedTime(t2, "filterMinNumConsistentCams");
+            mvsUtils::printfElapsedTime(t2, "filterMinNumConsistentCams");
 
         if(mp->verbose)
             printf("ntracks after filterMinNumConsistentCams %i\n", tracks->size());
@@ -749,7 +749,7 @@ StaticVector<OctreeTracks::trackStruct*>* OctreeTracks::fillOctree(int maxPts, s
         filterOctreeTracks2(tracks);
 
         if(mp->verbose)
-            common::printfElapsedTime(t2, "filterOctreeTracks2");
+            mvsUtils::printfElapsedTime(t2, "filterOctreeTracks2");
 
         if(mp->verbose)
             printf("ntracks after filterOctreeTracks2 %i\n", tracks->size());
@@ -789,7 +789,7 @@ OctreeTracks::fillOctreeFromTracks(StaticVector<OctreeTracks::trackStruct*>* tra
     StaticVector<trackStruct*>* tracks = getAllPoints();
 
     if(mp->verbose)
-        common::printfElapsedTime(t1, "fillOctreeFromTracks");
+        mvsUtils::printfElapsedTime(t1, "fillOctreeFromTracks");
 
     return tracks;
 }

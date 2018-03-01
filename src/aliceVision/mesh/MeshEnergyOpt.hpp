@@ -5,8 +5,8 @@
 
 #pragma once
 
-#include <aliceVision/structures/Point3d.hpp>
-#include <aliceVision/structures/StaticVector.hpp>
+#include <aliceVision/mvsData/Point3d.hpp>
+#include <aliceVision/mvsData/StaticVector.hpp>
 #include <aliceVision/mesh/MeshAnalyze.hpp>
 
 namespace aliceVision {
@@ -15,7 +15,7 @@ namespace mesh {
 class MeshEnergyOpt : public MeshAnalyze
 {
 public:
-    MeshEnergyOpt(common::MultiViewParams* _mp);
+    MeshEnergyOpt(mvsUtils::MultiViewParams* _mp);
     ~MeshEnergyOpt();
 
     bool optimizeSmooth(float lambda, float epsilon, int type, int niter, StaticVectorBool* ptsCanMove);

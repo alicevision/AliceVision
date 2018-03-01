@@ -5,8 +5,8 @@
 
 #pragma once
 
-#include <aliceVision/structures/StaticVector.hpp>
-#include <aliceVision/structures/Voxel.hpp>
+#include <aliceVision/mvsData/StaticVector.hpp>
+#include <aliceVision/mvsData/Voxel.hpp>
 #include <aliceVision/mesh/Mesh.hpp>
 
 namespace aliceVision {
@@ -68,7 +68,7 @@ public:
         bool isWrongPt();
     };
 
-    common::MultiViewParams* mp;
+    mvsUtils::MultiViewParams* mp;
 
     StaticVector<StaticVector<int>*>* ptsNeighTrisSortedAsc;
     StaticVector<StaticVector<int>*>* ptsNeighPtsOrdered;
@@ -82,7 +82,7 @@ public:
 
     int nPtsInit;
 
-    MeshClean(common::MultiViewParams* _mp);
+    MeshClean(mvsUtils::MultiViewParams* _mp);
     ~MeshClean();
 
     bool getEdgeNeighTrisInterval(Pixel& itr, int _ptId1, int _ptId2);

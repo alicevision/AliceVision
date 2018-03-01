@@ -3,11 +3,11 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
-#include <aliceVision/structures/Point3d.hpp>
-#include <aliceVision/structures/StaticVector.hpp>
-#include <aliceVision/common/common.hpp>
-#include <aliceVision/common/MultiViewParams.hpp>
-#include <aliceVision/common/PreMatchCams.hpp>
+#include <aliceVision/mvsData/Point3d.hpp>
+#include <aliceVision/mvsData/StaticVector.hpp>
+#include <aliceVision/mvsUtils/common.hpp>
+#include <aliceVision/mvsUtils/MultiViewParams.hpp>
+#include <aliceVision/mvsUtils/PreMatchCams.hpp>
 #include <aliceVision/mesh/meshPostProcessing.hpp>
 #include <aliceVision/fuseCut/LargeScale.hpp>
 #include <aliceVision/fuseCut/ReconstructionPlan.hpp>
@@ -120,10 +120,10 @@ int main(int argc, char* argv[])
     ALICEVISION_COUT("ini file: " << iniFilepath);
 
     // .ini parsing
-    common::MultiViewInputParams mip(iniFilepath, depthMapFolder, depthMapFilterFolder);
+    mvsUtils::MultiViewInputParams mip(iniFilepath, depthMapFolder, depthMapFilterFolder);
     const double simThr = mip._ini.get<double>("global.simThr", 0.0);
-    common::MultiViewParams mp(mip.getNbCameras(), &mip, (float) simThr);
-    common::PreMatchCams pc(&mp);
+    mvsUtils::MultiViewParams mp(mip.getNbCameras(), &mip, (float) simThr);
+    mvsUtils::PreMatchCams pc(&mp);
 
     // .ini parsing
     int ocTreeDim = mip._ini.get<int>("LargeScale.gridLevel0", 1024);
@@ -189,7 +189,7 @@ int main(int argc, char* argv[])
             unsigned long ntracks = std::numeric_limits<unsigned long>::max();
             while(ntracks > maxPts)
             {
-                bfs::path dirName = outDirectory/("LargeScaleMaxPts" + common::num2strFourDecimal(ocTreeDim));
+                bfs::path dirName = outDirectory/("LargeScaleMaxPts" + mvsUtils::num2strFourDecimal(ocTreeDim));
                 fuseCut::LargeScale* ls = ls0.cloneSpaceIfDoesNotExists(ocTreeDim, dirName.string() + "/");
                 fuseCut::VoxelsGrid vg(ls->dimensions, &ls->space[0], ls->mp, ls->pc, ls->spaceVoxelsFolderName);
                 ntracks = vg.getNTracks();
@@ -205,7 +205,7 @@ int main(int argc, char* argv[])
             }
             ALICEVISION_COUT("Number of tracks: " << ntracks);
             ALICEVISION_COUT("ocTreeDim: " << ocTreeDim);
-            bfs::path dirName = outDirectory/("LargeScaleMaxPts" + common::num2strFourDecimal(ocTreeDim));
+            bfs::path dirName = outDirectory/("LargeScaleMaxPts" + mvsUtils::num2strFourDecimal(ocTreeDim));
             fuseCut::LargeScale lsbase(&mp, &pc, dirName.string()+"/");
             lsbase.loadSpaceFromFile();
             fuseCut::ReconstructionPlan rp(lsbase.dimensions, &lsbase.space[0], lsbase.mp, lsbase.pc, lsbase.spaceVoxelsFolderName);
@@ -244,6 +244,6 @@ int main(int argc, char* argv[])
             throw std::invalid_argument("Partitioning not defined");
     }
 
-    common::printfElapsedTime(startTime, "#");
+    mvsUtils::printfElapsedTime(startTime, "#");
     return EXIT_SUCCESS;
 }

@@ -5,7 +5,7 @@
 
 #pragma once
 
-#include <aliceVision/structures/StaticVector.hpp>
+#include <aliceVision/mvsData/StaticVector.hpp>
 #include <aliceVision/depthMap/SemiGlobalMatchingParams.hpp>
 
 namespace aliceVision {
