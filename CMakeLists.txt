@@ -5,6 +5,16 @@ option(ALICEVISION_BUILD_DEPENDENCIES "Build all AliceVision dependencies" OFF)
 
 option(AV_BUILD_JPEG "Enable building an embedded Jpeg" ON)
 
+option(ALICEVISION_BUILD_TESTS "Build AliceVision tests" OFF)
+
+# ==============================================================================
+# Enable cmake UNIT TEST framework
+# ==============================================================================
+if(ALICEVISION_BUILD_TESTS)
+  enable_testing()
+endif()
+
+
 if(ALICEVISION_BUILD_DEPENDENCIES)
 # Use CMake ExternalProject to build all dependencies
 include(ExternalProject)

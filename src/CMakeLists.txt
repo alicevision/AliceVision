@@ -36,7 +36,6 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 option(ALICEVISION_BUILD_SHARED "Build AliceVision shared libs" OFF)
 option(ALICEVISION_BUILD_SFM "Build AliceVision SfM part" ON)
 option(ALICEVISION_BUILD_MVS "Build AliceVision MVS part" ON)
-option(ALICEVISION_BUILD_TESTS "Build AliceVision tests" OFF)
 option(ALICEVISION_BUILD_EXAMPLES "Build AliceVision samples applications." ON)
 option(ALICEVISION_BUILD_COVERAGE "Enable code coverage generation (gcc only)" OFF)
 trilean_option(ALICEVISION_BUILD_DOC "Build AliceVision documentation" AUTO)
@@ -105,13 +104,8 @@ elseif()
 endif()
 
 # ==============================================================================
-# Enable cmake UNIT TEST framework
-# ==============================================================================
-if(ALICEVISION_BUILD_TESTS)
-  enable_testing()
-endif()
-
 # MACRO to ease UnitTesting
+# ==============================================================================
 macro(UNIT_TEST NAMESPACE NAME EXTRA_LIBS)
   if(ALICEVISION_BUILD_TESTS)
     add_executable(${NAMESPACE}_test_${NAME} ${NAME}_test.cpp)
