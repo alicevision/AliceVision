@@ -256,6 +256,8 @@ void AlembicExporter::addSfM(const SfMData& sfmData, ESfMData flagsPart)
   {
     std::map<IndexT, std::map<IndexT, std::vector<IndexT>>> rigsViewIds; //map<rigId,map<poseId,viewId>>
 
+    const bool withUncertainty = (flagsPart & sfm::ESfMData::POSES_UNCERTAINTY) && !sfmData._posesUncertainty.empty();
+
     // save all single views
     for(const auto& viewPair : sfmData.GetViews())
     {
@@ -267,7 +269,7 @@ void AlembicExporter::addSfM(const SfMData& sfmData, ESfMData flagsPart)
         rigsViewIds[view.getRigId()][view.getPoseId()].push_back(view.getViewId());
         continue;
       }
-      addSfMSingleCamera(sfmData, view);
+      addSfMSingleCamera(sfmData, view, withUncertainty);
     }
 
     // save rigs views
@@ -280,16 +282,22 @@ void AlembicExporter::addSfM(const SfMData& sfmData, ESfMData flagsPart)
   }
 }
 
-void AlembicExporter::addSfMSingleCamera(const SfMData& sfmData, const View& view)
+void AlembicExporter::addSfMSingleCamera(const SfMData& sfmData, const View& view, bool withUncertainty)
 {
   const std::string name = stlplus::basename_part(view.getImagePath());
   const geometry::Pose3* pose = (sfmData.existsPose(view)) ? &(sfmData.GetPoses().at(view.getPoseId())) :  nullptr;
   const camera::IntrinsicBase* intrinsic = sfmData.GetIntrinsicPtr(view.getIntrinsicId());
+  const Vec6* uncertainty = nullptr;
+
+  if(withUncertainty)
+  {
+    uncertainty = &sfmData._posesUncertainty.at(view.getPoseId());
+  }
 
   if(sfmData.IsPoseAndIntrinsicDefined(&view))
-    _dataImpl->addCamera(name, view, pose, intrinsic, nullptr, &_dataImpl->_mvgCameras);
+    _dataImpl->addCamera(name, view, pose, intrinsic, uncertainty, &_dataImpl->_mvgCameras);
   else
-    _dataImpl->addCamera(name, view, pose, intrinsic, nullptr, &_dataImpl->_mvgCamerasUndefined);
+    _dataImpl->addCamera(name, view, pose, intrinsic, uncertainty, &_dataImpl->_mvgCamerasUndefined);
 }
 
 void AlembicExporter::addSfMCameraRig(const SfMData& sfmData, IndexT rigId, const std::vector<IndexT>& viewIds)

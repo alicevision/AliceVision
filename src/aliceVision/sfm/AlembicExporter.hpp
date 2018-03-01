@@ -44,8 +44,11 @@ public:
    * @brief Add a SfM single camera
    * @param sfmData The corresponding view scene
    * @param view The corresponding view
+   * @param withUncertainty Whether to export pose uncertainty
    */
-  void addSfMSingleCamera(const SfMData& sfmData, const View& view);
+  void addSfMSingleCamera(const SfMData& sfmData, 
+                          const View& view, 
+                          bool withUncertainty = false);
 
   /**
    * @brief Add a SfM camera rig
