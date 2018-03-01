@@ -128,11 +128,11 @@ ExternalProject_Add(${JPEG_TARGET}
        PREFIX ${BUILD_DIR}
        BUILD_IN_SOURCE 0
        SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/turbojpeg
-       BINARY_DIR ${BUILD_DIR}/turbojpeg_build
+       BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/turbojpeg
        INSTALL_DIR ${BUILD_DIR}/turbojpeg_build
-       CONFIGURE_COMMAND cd <SOURCE_DIR> && autoreconf -fiv && ./configure --prefix=<INSTALL_DIR> 
+       CONFIGURE_COMMAND cd <BINARY_DIR> && autoreconf -fiv && ./configure --prefix=<INSTALL_DIR> 
        )
-SET(JPEG_CMAKE_FLAGS "-DJPEG_LIBRARY=${BUILD_DIR}/turbojpeg_build/lib/libjpeg.so -DJPEG_INCLUDE_DIR=${BUILD_DIR}/turbojpeg_build/include")
+SET(JPEG_CMAKE_FLAGS -DJPEG_LIBRARY=${BUILD_DIR}/turbojpeg_build/lib/libjpeg.so -DJPEG_INCLUDE_DIR=${BUILD_DIR}/turbojpeg_build/include)
 endif()
 
 # Add Boost
