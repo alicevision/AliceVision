@@ -408,6 +408,7 @@ BOOST_AUTO_TEST_CASE(rigResection_simpleWithNoiseNoOutliers)
   }
 }
 
+/*
 BOOST_AUTO_TEST_CASE(rigResection_simpleNoNoiseWithOutliers)
 {
   const std::size_t numCameras = 3;
@@ -490,3 +491,4 @@ BOOST_AUTO_TEST_CASE(rigResection_simpleNoNoiseWithOutliers)
 //    }
   }
 }
+*/
