@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.3)
 
-project(aliceVision LANGUAGES C CXX)
+project(aliceVisionSrc LANGUAGES C CXX)
 
 # Guard against in-source builds
 if(${CMAKE_SOURCE_DIR} STREQUAL ${CMAKE_BINARY_DIR})
@@ -9,6 +9,10 @@ endif()
 
 message("CMake version: ${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION}")
 cmake_minimum_required(VERSION 3.4)
+
+if(NOT ALICEVISION_ROOT)
+  message(FATAL_ERROR "Should build from the CMakeLists.txt in the root folder.")
+endif()
 
 # Trilean option
 function(trilean_option NAME DESCRIPTION DEFAULT_VALUE)
@@ -64,8 +68,8 @@ if(NOT CMAKE_BUILD_TYPE AND NOT MSVC)
 endif()
 
 # Set build path
-set(EXECUTABLE_OUTPUT_PATH "${PROJECT_BINARY_DIR}/${CMAKE_SYSTEM_NAME}-${CMAKE_SYSTEM_PROCESSOR}-${CMAKE_BUILD_TYPE}")
-set(LIBRARY_OUTPUT_PATH "${PROJECT_BINARY_DIR}/${CMAKE_SYSTEM_NAME}-${CMAKE_SYSTEM_PROCESSOR}-${CMAKE_BUILD_TYPE}")
+set(EXECUTABLE_OUTPUT_PATH "${ALICEVISION_ROOT}/${CMAKE_SYSTEM_NAME}-${CMAKE_SYSTEM_PROCESSOR}-${CMAKE_BUILD_TYPE}")
+set(LIBRARY_OUTPUT_PATH "${ALICEVISION_ROOT}/${CMAKE_SYSTEM_NAME}-${CMAKE_SYSTEM_PROCESSOR}-${CMAKE_BUILD_TYPE}")
 
 # Windows specific defines
 if(WIN32)

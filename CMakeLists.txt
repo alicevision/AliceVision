@@ -1,11 +1,15 @@
 cmake_minimum_required(VERSION 3.3)
-project(aliceVisionAutoBuild)
+project(aliceVision LANGUAGES C CXX)
+
 
 option(ALICEVISION_BUILD_DEPENDENCIES "Build all AliceVision dependencies" OFF)
 
 option(AV_BUILD_JPEG "Enable building an embedded Jpeg" ON)
 
 option(ALICEVISION_BUILD_TESTS "Build AliceVision tests" OFF)
+
+
+set(ALICEVISION_ROOT ${PROJECT_BINARY_DIR})
 
 # ==============================================================================
 # Enable cmake UNIT TEST framework
@@ -192,7 +196,7 @@ ExternalProject_Add(aliceVision
        SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src
        BINARY_DIR ${BUILD_DIR}/aliceVision_build
        INSTALL_DIR ${BUILD_DIR}/aliceVision_build
-       CONFIGURE_COMMAND ${CMAKE_COMMAND} -DCMAKE_PREFIX_PATH="${BUILD_DIR}/boost_build;${BUILD_DIR}/openimageio_build;${BUILD_DIR}/openexr_build;${BUILD_DIR}/openexr_build;${BUILD_DIR}/alembic_build;${BUILD_DIR}/geogram_install;${BUILD_DIR}/openimageio_build;${BUILD_DIR}/cuda_build;${BUILD_DIR}/ceres_build/lib64/cmake/Ceres;${BUILD_DIR}/alembic_build/lib/cmake/Alembic" -DCMAKE_BUILD_TYPE=Release -DEigen3_DIR:PATH=${BUILD_DIR}/eigen_build/share/eigen3/cmake -DEigen3_DIR:PATH=${BUILD_DIR}/eigen_build/share/eigen3/cmake -DEIGEN3_INCLUDE_DIR=${BUILD_DIR}/eigen_build/include/eigen3 -DEIGEN_INCLUDE_DIR=${BUILD_DIR}/eigen_build/include/eigen3 -DILMBASE_ROOT=${BUILD_DIR}/openexr_build  -DOPENEXR_ROOT=${BUILD_DIR}/openexr_build -DOPENEXR_INCLUDE_PATH=${BUILD_DIR}/openexr_build/include -DILMBASE_INCLUDE_PATH=${BUILD_DIR}/openexr_build/include -DBOOST_ROOT=${BUILD_DIR}/boost_build -DALICEVISION_USE_ALEMBIC=ON -DAlembic_DIR:PATH=${BUILD_DIR}/alembic_build/lib/cmake/Alembic -DMINIGLOG=ON -DALICEVISION_USE_OPENCV=OFF -DALICEVISION_USE_OPENGV=OFF -DALICEVISION_BUILD_DOC=OFF -DALICEVISION_BUILD_EXAMPLES=OFF -DGEOGRAM_INSTALL_PREFIX=${BUILD_DIR}/geogram_build -DGEOGRAM_INCLUDE_DIR=${BUILD_DIR}/geogram_install/include/geogram1 -DOPENIMAGEIO_LIBRARY_DIR_HINTS=${BUILD_DIR}/openimageio_build/lib -DOPENIMAGEIO_INCLUDE_DIR_HINTS=${BUILD_DIR}/openimageio_build/include -DCeres_DIR=${BUILD_DIR}/ceres_build/lib64/cmake/Ceres ${CUDA_CMAKE_FLAGS} -DALICEVISION_BUILD_SHARED=ON -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR> <SOURCE_DIR>
+       CONFIGURE_COMMAND ${CMAKE_COMMAND} -DALICEVISION_ROOT=${ALICEVISION_ROOT} -DCMAKE_PREFIX_PATH="${BUILD_DIR}/boost_build;${BUILD_DIR}/openimageio_build;${BUILD_DIR}/openexr_build;${BUILD_DIR}/openexr_build;${BUILD_DIR}/alembic_build;${BUILD_DIR}/geogram_install;${BUILD_DIR}/openimageio_build;${BUILD_DIR}/cuda_build;${BUILD_DIR}/ceres_build/lib64/cmake/Ceres;${BUILD_DIR}/alembic_build/lib/cmake/Alembic" -DCMAKE_BUILD_TYPE=Release -DEigen3_DIR:PATH=${BUILD_DIR}/eigen_build/share/eigen3/cmake -DEigen3_DIR:PATH=${BUILD_DIR}/eigen_build/share/eigen3/cmake -DEIGEN3_INCLUDE_DIR=${BUILD_DIR}/eigen_build/include/eigen3 -DEIGEN_INCLUDE_DIR=${BUILD_DIR}/eigen_build/include/eigen3 -DILMBASE_ROOT=${BUILD_DIR}/openexr_build  -DOPENEXR_ROOT=${BUILD_DIR}/openexr_build -DOPENEXR_INCLUDE_PATH=${BUILD_DIR}/openexr_build/include -DILMBASE_INCLUDE_PATH=${BUILD_DIR}/openexr_build/include -DBOOST_ROOT=${BUILD_DIR}/boost_build -DALICEVISION_USE_ALEMBIC=ON -DAlembic_DIR:PATH=${BUILD_DIR}/alembic_build/lib/cmake/Alembic -DMINIGLOG=ON -DALICEVISION_USE_OPENCV=OFF -DALICEVISION_USE_OPENGV=OFF -DALICEVISION_BUILD_DOC=OFF -DALICEVISION_BUILD_EXAMPLES=OFF -DGEOGRAM_INSTALL_PREFIX=${BUILD_DIR}/geogram_build -DGEOGRAM_INCLUDE_DIR=${BUILD_DIR}/geogram_install/include/geogram1 -DOPENIMAGEIO_LIBRARY_DIR_HINTS=${BUILD_DIR}/openimageio_build/lib -DOPENIMAGEIO_INCLUDE_DIR_HINTS=${BUILD_DIR}/openimageio_build/include -DCeres_DIR=${BUILD_DIR}/ceres_build/lib64/cmake/Ceres ${CUDA_CMAKE_FLAGS} -DALICEVISION_BUILD_SHARED=ON -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR> <SOURCE_DIR>
        DEPENDS boost ceres eigen alembic openimageio geogram
        )
 
