@@ -48,11 +48,11 @@ inline bool gpuSupportCUDA(int minComputeCapabilityMajor,
           deviceProperties->minor >= minComputeCapabilityMinor)) &&
          deviceProperties->totalGlobalMem >= (minTotalDeviceMemory*1024*1024))
       {
-        ALICEVISION_LOG_DEBUG("Supported CUDA-Enabled GPU detected");
+        ALICEVISION_LOG_INFO("Supported CUDA-Enabled GPU detected");
         return true;
       }
     }
-    ALICEVISION_LOG_DEBUG("CUDA-Enabled GPU not supported");
+    ALICEVISION_LOG_INFO("CUDA-Enabled GPU not supported");
   }
   else
   {

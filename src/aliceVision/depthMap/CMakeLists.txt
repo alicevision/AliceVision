@@ -83,6 +83,7 @@ target_include_directories(aliceVision_depthMap
   PUBLIC $<BUILD_INTERFACE:${ALICEVISION_INCLUDE_DIR}>
          $<BUILD_INTERFACE:${generatedDir}>
          $<INSTALL_INTERFACE:include>
+         ${CUDA_INCLUDE_DIRS}
 )
 
 # TODO : PUBLIC
@@ -90,6 +91,7 @@ target_link_libraries(aliceVision_depthMap
   aliceVision_mvsData
   aliceVision_imageIO
   aliceVision_mvsUtils
+  ${CUDA_CUDADEVRT_LIBRARY}
 )
 
 set_property(TARGET aliceVision_depthMap

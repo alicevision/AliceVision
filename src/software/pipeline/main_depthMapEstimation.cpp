@@ -9,6 +9,7 @@
 #include <aliceVision/mvsUtils/PreMatchCams.hpp>
 #include <aliceVision/depthMap/RefineRc.hpp>
 #include <aliceVision/depthMap/SemiGlobalMatchingRc.hpp>
+#include <aliceVision/system/gpu.hpp>
 
 #include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>
@@ -120,6 +121,9 @@ int main(int argc, char* argv[])
     }
 
     ALICEVISION_COUT("ini file: " << iniFilepath);
+
+    // Print GPU Information
+    std::cout << system::gpuInformationCUDA() << std::endl;
 
     // .ini parsing
     mvsUtils::MultiViewInputParams mip(iniFilepath, outputFolder, "");
