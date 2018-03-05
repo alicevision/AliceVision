@@ -232,7 +232,7 @@ __device__ float3 closestPointOnPlaneToPoint(const float3& point, const float3& 
                                              const float3& planeNormalNormalized)
 {
     return point - planeNormalNormalized * dot(planeNormalNormalized, point - planePoint);
-};
+}
 
 __device__ float3 closestPointToLine3D(const float3& point, const float3& linePoint, const float3& lineVectNormalized)
 {

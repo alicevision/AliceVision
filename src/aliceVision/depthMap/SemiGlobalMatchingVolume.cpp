@@ -4,6 +4,7 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "SemiGlobalMatchingVolume.hpp"
+#include <aliceVision/system/Logger.hpp>
 #include <aliceVision/mvsData/Point3d.hpp>
 #include <aliceVision/mvsUtils/common.hpp>
 
@@ -22,7 +23,7 @@ SemiGlobalMatchingVolume::SemiGlobalMatchingVolume(float _volGpuMB, int _volDimX
     {
         Point3d dmi = sp->cps->getDeviceMemoryInfo();
         if(sp->mp->verbose)
-            printf("GPU memory : free %f, total %f, used %f\n", dmi.x, dmi.y, dmi.z);
+            ALICEVISION_LOG_DEBUG("GPU memory : free: " << dmi.x << ", total: " << dmi.y << ", used: " << dmi.z);
         volStepZ = 1;
         float volumeMB = volGpuMB;
         while(4.0f * volumeMB > dmi.x)
@@ -31,12 +32,12 @@ SemiGlobalMatchingVolume::SemiGlobalMatchingVolume(float _volGpuMB, int _volDimX
             volumeMB = (volGpuMB / (float)volDimZ) * (volDimZ / volStepZ);
         }
         if(sp->mp->verbose)
-            printf("GPU memory : volume %f\n", 4.0f * volumeMB);
+            ALICEVISION_LOG_DEBUG("GPU memory volume: " <<  (4.0f * volumeMB));
 
         if(volStepZ > 1)
         {
             if(sp->mp->verbose)
-                printf("WARNING - low GPU memory - stepz %i\n", volStepZ);
+                ALICEVISION_LOG_WARNING("Low GPU memory volume step Z: " << volStepZ);
         }
     }
 

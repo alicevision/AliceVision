@@ -3,6 +3,11 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
+#include <aliceVision/system/cmdline.hpp>
+#include <aliceVision/system/Logger.hpp>
+#include <aliceVision/system/Timer.hpp>
+#include <aliceVision/mvsUtils/common.hpp>
+
 #include <OpenMesh/Core/IO/reader/OBJReader.hh>
 #include <OpenMesh/Core/IO/writer/OBJWriter.hh>
 #include <OpenMesh/Core/IO/MeshIO.hh>
@@ -11,26 +16,21 @@
 #include <OpenMesh/Tools/Decimater/DecimaterT.hh>
 #include <OpenMesh/Tools/Decimater/ModQuadricT.hh>
 
-#include <aliceVision/mvsUtils/common.hpp>
-
 #include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>
-
 
 namespace bfs = boost::filesystem;
 namespace po = boost::program_options;
 using namespace aliceVision;
 
-#define ALICEVISION_COUT(x) std::cout << x << std::endl
-#define ALICEVISION_CERR(x) std::cerr << x << std::endl
-
-
 int main(int argc, char* argv[])
 {
-    long startTime = clock();
+    system::Timer timer;
 
+    std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
     std::string inputMeshPath;
     std::string outputMeshPath;
+
     float simplificationFactor = 0;
     int fixedNbVertices = 0;
     int minVertices = 0;
@@ -59,7 +59,12 @@ int main(int argc, char* argv[])
         ("flipNormals", po::value<bool>(&flipNormals)->default_value(flipNormals),
             "Option to flip face normals. It can be needed as it depends on the vertices order in triangles and the convention change from one software to another.");
 
-    allParams.add(requiredParams).add(optionalParams);
+    po::options_description logParams("Log parameters");
+    logParams.add_options()
+      ("verboseLevel,v", po::value<std::string>(&verboseLevel)->default_value(verboseLevel),
+        "verbosity level (fatal, error, warning, info, debug, trace).");
+
+    allParams.add(requiredParams).add(optionalParams).add(logParams);
 
     po::variables_map vm;
 
@@ -88,6 +93,12 @@ int main(int argc, char* argv[])
       return EXIT_FAILURE;
     }
 
+    ALICEVISION_COUT("Program called with the following parameters:");
+    ALICEVISION_COUT(vm);
+
+    // set verbose level
+    system::Logger::get()->setLogLevel(verboseLevel);
+
     bfs::path outDirectory = bfs::path(outputMeshPath).parent_path();
     if(!bfs::is_directory(outDirectory))
         bfs::create_directory(outDirectory);
@@ -105,11 +116,11 @@ int main(int argc, char* argv[])
     Mesh mesh;
     if(!OpenMesh::IO::read_mesh(mesh, inputMeshPath.c_str()))
     {
-        std::cerr << "Error: unable to read input mesh from the file " << inputMeshPath << std::endl;
+        ALICEVISION_LOG_ERROR("Unable to read input mesh from the file: " << inputMeshPath);
         return EXIT_FAILURE;
     }
 
-    ALICEVISION_COUT("Mesh \"" << inputMeshPath << "\" loaded");
+    ALICEVISION_LOG_INFO("Mesh file: \"" << inputMeshPath << "\" loaded.");
 
     int nbInputPoints = mesh.n_vertices();
     int nbOutputPoints = 0;
@@ -135,8 +146,8 @@ int main(int argc, char* argv[])
         }
     }
 
-    ALICEVISION_COUT("Input mesh: " << nbInputPoints << " vertices and " << mesh.n_faces() << " facets.");
-    ALICEVISION_COUT("Target output mesh: " << nbOutputPoints << " vertices.");
+    ALICEVISION_LOG_INFO("Input mesh: " << nbInputPoints << " vertices and " << mesh.n_faces() << " facets.");
+    ALICEVISION_LOG_INFO("Target output mesh: " << nbOutputPoints << " vertices.");
 
     {
         // a decimater object, connected to a mesh
@@ -161,23 +172,23 @@ int main(int argc, char* argv[])
         size_t removedVertices = decimater.decimate_to(nbOutputPoints);
         decimater.mesh().garbage_collection();
     }
-    ALICEVISION_COUT("Output mesh: " << mesh.n_vertices() << " vertices and " << mesh.n_faces() << " facets.");
+    ALICEVISION_LOG_INFO("Output mesh: " << mesh.n_vertices() << " vertices and " << mesh.n_faces() << " facets.");
 
     if(mesh.n_faces() == 0)
     {
-        ALICEVISION_CERR("Failed: the output mesh is empty.");
+        ALICEVISION_LOG_ERROR("Failed: the output mesh is empty.");
         return EXIT_FAILURE;
     }
 
-    ALICEVISION_COUT("Save mesh");
+    ALICEVISION_LOG_INFO("Save mesh.");
     // Save output mesh
     if(!OpenMesh::IO::write_mesh(mesh, outputMeshPath))
     {
-        ALICEVISION_CERR("Failed to save mesh \"" << outputMeshPath << "\".");
+        ALICEVISION_LOG_ERROR("Failed to save mesh \"" << outputMeshPath << "\".");
         return EXIT_FAILURE;
     }
-    ALICEVISION_CERR("Mesh \"" << outputMeshPath << "\" saved.");
+    ALICEVISION_LOG_INFO("Mesh file: \"" << outputMeshPath << "\" saved.");
 
-    mvsUtils::printfElapsedTime(startTime, "#");
+    ALICEVISION_LOG_INFO("Task done in (s): " + std::to_string(timer.elapsed()));
     return EXIT_SUCCESS;
 }

@@ -4,6 +4,7 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "Texturing.hpp"
+#include <aliceVision/system/Logger.hpp>
 #include <aliceVision/mvsData/Color.hpp>
 #include <aliceVision/mvsData/geometry.hpp>
 #include <aliceVision/mvsData/Pixel.hpp>
@@ -60,7 +61,7 @@ StaticVector<StaticVector<int>*>* Texturing::generateUVs(mvsUtils::MultiViewPara
         throw std::runtime_error("Can't generate UVs without a mesh");
 
     // automatic uv atlasing
-    std::cout << "- generating UVs (textureSide: " << texParams.textureSide << "; padding: " << texParams.padding << ") " << std::endl;
+    ALICEVISION_LOG_INFO("Generating UVs (textureSide: " << texParams.textureSide << "; padding: " << texParams.padding << ").");
     UVAtlas mua(*me, mp, ptsCams, texParams.textureSide, texParams.padding);
     // create a new mesh to store data
     Mesh* m = new Mesh();
@@ -217,8 +218,8 @@ void Texturing::generateTexture(const mvsUtils::MultiViewParams& mp, StaticVecto
 
     std::vector<std::vector<unsigned int>> camTriangles(mp.ncams);
 
-    std::cout << "Generating texture for atlas " << atlasID + 1 << "/" << _atlases.size()
-              << " (" << _atlases[atlasID].size() << " triangles)" << std::endl;
+    ALICEVISION_LOG_INFO("Generating texture for atlas " << atlasID + 1 << "/" << _atlases.size()
+              << " (" << _atlases[atlasID].size() << " triangles).");
 
     // iterate over atlas' triangles
     for(size_t i = 0; i < _atlases[atlasID].size(); ++i)
@@ -241,7 +242,7 @@ void Texturing::generateTexture(const mvsUtils::MultiViewParams& mp, StaticVecto
             camTriangles[camId].push_back(triangleId);
     }
 
-    std::cout << "- reading pixel color" << std::endl;
+    ALICEVISION_LOG_INFO("Reading pixel color.");
 
     std::vector<AccuColor> perPixelColors(textureSize);
     int camId = 0;
@@ -312,7 +313,7 @@ void Texturing::generateTexture(const mvsUtils::MultiViewParams& mp, StaticVecto
     }
     camTriangles.clear();
 
-    std::cout << "- edge padding (" << texParams.padding << " pixels)" << std::endl;
+    ALICEVISION_LOG_INFO("Edge padding (" << texParams.padding << " pixels).");
     // edge padding (dilate gutter)
     for(unsigned int g = 0; g < texParams.padding; ++g)
     {
@@ -349,7 +350,7 @@ void Texturing::generateTexture(const mvsUtils::MultiViewParams& mp, StaticVecto
         }
     }
 
-    std::cout << "- computing final (average) color" << std::endl;
+    ALICEVISION_LOG_INFO("Computing final (average) color.");
 
     // save texture image
     std::vector<Color> colorBuffer(texParams.textureSide * texParams.textureSide);
@@ -370,7 +371,7 @@ void Texturing::generateTexture(const mvsUtils::MultiViewParams& mp, StaticVecto
 
     std::string textureName = "texture_" + std::to_string(atlasID) + "." + EImageFileType_enumToString(textureFileType);
     bfs::path texturePath = outPath / textureName;
-    std::cout << "- writing texture file " << texturePath.string() << std::endl;
+    ALICEVISION_LOG_INFO("Writing texture file: " << texturePath.string());
 
     // downscale texture if required
     if(texParams.downscale > 1)
@@ -378,7 +379,7 @@ void Texturing::generateTexture(const mvsUtils::MultiViewParams& mp, StaticVecto
         std::vector<Color> resizedColorBuffer;
         const int resizedTextureSide = texParams.textureSide / texParams.downscale;
 
-        std::cout << "- downscaling texture (" << texParams.downscale << "x)" << std::endl;
+        ALICEVISION_LOG_INFO("Downscaling texture (" << texParams.downscale << "x).");
         imageIO::resizeImage(texParams.textureSide, texParams.textureSide, texParams.downscale, colorBuffer, resizedColorBuffer);
         imageIO::writeImage(texturePath.string(), resizedTextureSide, resizedTextureSide, resizedColorBuffer);
     }
@@ -415,7 +416,7 @@ void Texturing::loadFromOBJ(const std::string& filename, bool flipNormals)
 
 void Texturing::saveAsOBJ(const bfs::path& dir, const std::string& basename, EImageFileType textureFileType)
 {
-    std::cout << "- writing .obj and .mtl file" << std::endl;
+    ALICEVISION_LOG_INFO("Writing obj and mtl file.");
 
     std::string objFilename = (dir / (basename + ".obj")).string();
     std::string mtlName = (basename + ".mtl");
@@ -460,7 +461,6 @@ void Texturing::saveAsOBJ(const bfs::path& dir, const std::string& basename, EIm
         }
     }
     fclose(fobj);
-    std::cout << "OBJ: " << objFilename << std::endl;
 
     // create .MTL material file
     FILE* fmtl = fopen(mtlFilename.c_str(), "w");
@@ -486,7 +486,10 @@ void Texturing::saveAsOBJ(const bfs::path& dir, const std::string& basename, EIm
         fprintf(fmtl, "map_Kd %s\n", textureName.c_str());
     }
     fclose(fmtl);
-    std::cout << "MTL: " << mtlFilename << std::endl;
+
+    ALICEVISION_LOG_INFO("Writing done: " << std::endl
+                         << "\t- obj file: " << objFilename << std::endl
+                         << "\t- mtl file: " << mtlFilename);
 }
 
 } // namespace mesh

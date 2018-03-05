@@ -5,6 +5,8 @@
 
 #pragma once
 
+#include <aliceVision/system/Logger.hpp>
+
 #include <boost/graph/graph_traits.hpp>
 #include <boost/graph/one_bit_color_map.hpp>
 #include <boost/property_map/property_map.hpp>
@@ -78,7 +80,7 @@ public:
         , _S(NodeType(numNodes))
         , _T(NodeType(numNodes+1))
     {
-        std::cout << "MaxFlow constructor" << std::endl;
+        ALICEVISION_LOG_INFO("MaxFlow constructor.");
         const std::size_t nbEdgesEstimation = numNodes * 9 + numNodes * 2;
         _edges.reserve(nbEdgesEstimation);
         _edgesData.reserve(nbEdgesEstimation);
@@ -115,7 +117,7 @@ public:
 
     inline ValueType compute()
     {
-        std::cout << "Compute boykov_kolmogorov_max_flow" << std::endl;
+        ALICEVISION_LOG_INFO("Compute boykov_kolmogorov_max_flow.");
 
         Graph graph(boost::edges_are_unsorted_multi_pass, _edges.begin(), _edges.end(), _edgesData.begin(), _numNodes);
         // Graph graph(boost::edges_are_unsorted, _edges.begin(), _edges.end(), _edgesData.begin(), _numNodes);
@@ -124,7 +126,8 @@ public:
         const vertex_size_type nbVertices = boost::num_vertices(graph);
         const edges_size_type nbEdges = boost::num_edges(graph);
 
-        std::cout << "nbVertices: " << nbVertices << ", nbEdges: " << nbEdges << std::endl;
+        ALICEVISION_LOG_INFO("# vertices: " << nbVertices);
+        ALICEVISION_LOG_INFO("# edges: " << nbEdges);
 
         /*
         // Cannot be used as it is far too compute intensive
@@ -156,7 +159,7 @@ public:
                 graph[*ei].reverse = edgeDescriptors[std::make_pair(v2, v1)];
             }
         }
-        std::cout << "boykov_kolmogorov_max_flow: start" << std::endl;
+        ALICEVISION_LOG_INFO("boykov_kolmogorov_max_flow: start.");
         ValueType v = boost::boykov_kolmogorov_max_flow(graph,
             boost::get(&Edge::capacity, graph), // edge_capacity: The edge capacity property map.
             boost::get(&Edge::residual, graph), // edge_residual_capacity: The edge residual capacity property map.
@@ -167,7 +170,7 @@ public:
             boost::get(boost::vertex_index, graph), // this is not bundled, get it from graph
             _S, _T
             );
-        std::cout << "boykov_kolmogorov_max_flow: end" << std::endl;
+        ALICEVISION_LOG_INFO("boykov_kolmogorov_max_flow: done.");
 
         _isTarget.resize(nbVertices);
         for(std::size_t vi = 0; vi < nbVertices; ++vi)

@@ -4,6 +4,7 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "ReconstructionPlan.hpp"
+#include <aliceVision/system/Logger.hpp>
 #include <aliceVision/mvsData/Rgb.hpp>
 #include <aliceVision/mvsUtils/common.hpp>
 #include <aliceVision/mvsUtils/fileIO.hpp>
@@ -160,7 +161,7 @@ bool ReconstructionPlan::divideBox(Voxel& LU1o, Voxel& RD1o, Voxel& LU2o, Voxel&
         }
     }
 
-    printf("WARNING should not happen\n");
+    throw std::runtime_error("divideBox: no valid return condition");
 
     return false;
 }
@@ -260,7 +261,7 @@ void reconstructSpaceAccordingToVoxelsArray(const std::string& voxelsArrayFileNa
 
     for(int i = 0; i < voxelsArray->size() / 8; i++)
     {
-        printf("RECONSTRUCTING %i-th VOXEL OF %i \n", i, voxelsArray->size() / 8);
+        ALICEVISION_LOG_INFO("Reconstructing " << (voxelsArray->size() / 8) << "-th Voxel of " <<  i << ".");
 
         const std::string folderName = ls->getReconstructionVoxelFolder(i);
         bfs::create_directory(folderName);
@@ -359,7 +360,7 @@ mesh::Mesh* joinMeshes(const std::vector<std::string>& recsDirs, StaticVector<Po
     ReconstructionPlan rp(ls->dimensions, &ls->space[0], ls->mp, ls->pc, ls->spaceVoxelsFolderName);
 
     if(ls->mp->verbose)
-        printf("Detecting size of merged mesh\n");
+        ALICEVISION_LOG_DEBUG("Detecting size of merged mesh.");
     int npts = 0;
     int ntris = 0;
     for(int i = 0; i < recsDirs.size(); i++)
@@ -374,15 +375,16 @@ mesh::Mesh* joinMeshes(const std::vector<std::string>& recsDirs, StaticVector<Po
             npts += mei->pts->size();
             ntris += mei->tris->size();
 
-            printf("npts %i %i \n", npts, mei->pts->size());
-            printf("ntris %i %i \n", ntris, mei->tris->size());
+            ALICEVISION_LOG_DEBUG("npts: " << npts << " " << mei->pts->size());
+            ALICEVISION_LOG_DEBUG("ntris: " << ntris << " " << mei->tris->size());
 
             delete mei;
         }
     }
 
     if(ls->mp->verbose)
-        printf("Creating mesh\n");
+        ALICEVISION_LOG_DEBUG("Creating mesh.");
+
     mesh::Mesh* me = new mesh::Mesh();
 
     me->pts = new StaticVector<Point3d>();
@@ -396,11 +398,11 @@ mesh::Mesh* joinMeshes(const std::vector<std::string>& recsDirs, StaticVector<Po
     ptsCols->reserve(npts);
 
     if(ls->mp->verbose)
-        printf("Merging part to one mesh (not connecting them!!!)\n");
+        ALICEVISION_LOG_DEBUG("Merging part to one mesh (but not connecting them).");
     for(int i = 0; i < recsDirs.size(); i++)
     {
         if(ls->mp->verbose)
-            printf("Merging part %i\n", i);
+            ALICEVISION_LOG_DEBUG("Merging part: " << i);
         std::string folderName = recsDirs[i];
 
         std::string fileName = folderName + "mesh.bin";
@@ -416,11 +418,11 @@ mesh::Mesh* joinMeshes(const std::vector<std::string>& recsDirs, StaticVector<Po
             mei->removeTrianglesOutsideHexahedron(hexah);
 
             if(ls->mp->verbose)
-                printf("Adding mesh part %i to mesh\n", i);
+                ALICEVISION_LOG_DEBUG("Adding mesh part "<< i << " to mesh");
             me->addMesh(mei);
 
             if(ls->mp->verbose)
-                printf("Merging colors of part %i\n", i);
+                ALICEVISION_LOG_DEBUG("Merging colors of part: s" << i);
             fileName = folderName + "meshAvImgCol.ply.ptsColors";
             if(mvsUtils::FileExists(fileName))
             {
@@ -446,7 +448,7 @@ mesh::Mesh* joinMeshes(const std::vector<std::string>& recsDirs, StaticVector<Po
     // int gridLevel = ls->mp->mip->_ini.get<int>("LargeScale.gridLevel0", 0);
 
     if(ls->mp->verbose)
-        printf("Deleting\n");
+        ALICEVISION_LOG_DEBUG("Deleting...");
     delete ptsCols;
     delete trisCols;
 

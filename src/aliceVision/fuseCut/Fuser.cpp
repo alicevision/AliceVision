@@ -4,6 +4,7 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "Fuser.hpp"
+#include <aliceVision/system/Logger.hpp>
 #include <aliceVision/mvsData/geometry.hpp>
 #include <aliceVision/mvsData/Pixel.hpp>
 #include <aliceVision/mvsData/Point2d.hpp>
@@ -52,7 +53,7 @@ unsigned long Fuser::computeNumberOfAllPoints(int scale)
             StaticVector<float> depthMap;
             nbDepthValues = 0;
 
-            std::cout << "Warning: Can't find or invalid 'nbDepthValues' metadata in '" << filename << "'. Recompute the number of valid values." << std::endl;
+            ALICEVISION_LOG_WARNING("Can't find or invalid 'nbDepthValues' metadata in '" << filename << "'. Recompute the number of valid values.");
 
             imageIO::readImage(mvsUtils::mv_getFileName(mp->mip, rc, mvsUtils::EFileType::depthMap, scale), width, height, depthMap.getDataWritable());
             // no need to transpose for this operation
@@ -133,7 +134,7 @@ bool Fuser::updateInSurr(int pixSizeBall, int pixSizeBallWSP, Point3d& p, int rc
 // minNumOfModals number of other cams including this cam ... minNumOfModals /in 2,3,...
 void Fuser::filterGroups(const StaticVector<int>& cams, int pixSizeBall, int pixSizeBallWSP, int nNearestCams)
 {
-    printf("Precomputing groups\n");
+    ALICEVISION_LOG_INFO("Precomputing groups.");
     long t1 = clock();
 #pragma omp parallel for
     for(int c = 0; c < cams.size(); c++)
@@ -232,7 +233,7 @@ bool Fuser::filterGroupsRC(int rc, int pixSizeBall, int pixSizeBallWSP, int nNea
     delete numOfPtsMap;
 
     if(mp->verbose)
-        printf("%i solved in ", rc);
+        ALICEVISION_LOG_DEBUG(rc << " solved.");
     if(mp->verbose)
         mvsUtils::printfElapsedTime(t1);
 
@@ -242,7 +243,7 @@ bool Fuser::filterGroupsRC(int rc, int pixSizeBall, int pixSizeBallWSP, int nNea
 // minNumOfModals number of other cams including this cam ... minNumOfModals /in 2,3,...
 void Fuser::filterDepthMaps(const StaticVector<int>& cams, int minNumOfModals, int minNumOfModalsWSP2SSP)
 {
-    printf("Filtering depth maps\n");
+    ALICEVISION_LOG_INFO("Filtering depth maps.");
     long t1 = clock();
 
 #pragma omp parallel for
@@ -320,7 +321,7 @@ bool Fuser::filterDepthMapsRC(int rc, int minNumOfModals, int minNumOfModalsWSP2
     imageIO::writeImage(mv_getFileName(mp->mip, rc, mvsUtils::EFileType::simMap, 0), w, h, simMap);
 
     if(mp->verbose)
-        printf("%i solved in ", rc);
+        ALICEVISION_LOG_DEBUG(rc << " solved.");
     if(mp->verbose)
         mvsUtils::printfElapsedTime(t1);
 
@@ -398,7 +399,7 @@ float Fuser::computeAveragePixelSizeInHexahedron(Point3d* hexah, int step, int s
  */
 void Fuser::divideSpace(Point3d* hexah, float& minPixSize)
 {
-    printf("Estimate space\n");
+    ALICEVISION_LOG_INFO("Estimate space.");
     int scale = 0;
 
     unsigned long npset = computeNumberOfAllPoints(scale);
@@ -538,7 +539,7 @@ Voxel Fuser::estimateDimensions(Point3d* vox, Point3d* newSpace, int scale, int 
 
     int nAllPts = computeNumberOfAllPoints(scale);
     float pointToJoinPixSizeDist = (float)mp->mip->_ini.get<double>("Fuser.pointToJoinPixSizeDist", 2.0f);
-    std::cout << "pointToJoinPixSizeDist: " << pointToJoinPixSizeDist << std::endl;
+    ALICEVISION_LOG_INFO("pointToJoinPixSizeDist: " << pointToJoinPixSizeDist);
     int maxpts = 1000000;
     int stepPts = nAllPts / maxpts + 1;
     // WARNING perf: reload all depth maps to compute the minPixelSize (minPixelSize consider only points in the hexahedron)
@@ -562,12 +563,13 @@ Voxel Fuser::estimateDimensions(Point3d* vox, Point3d* newSpace, int scale, int 
     newSpace[6] = O + vvz + vvx + vvy - vvx / 2.0f - vvy / 2.0f - vvz / 2.0f;
     newSpace[7] = O + vvz + vvy - vvx / 2.0f - vvy / 2.0f - vvz / 2.0f;
 
-    printf("Estimated : %s %s %s \n", mvsUtils::num2str(maxDim.x).c_str(), mvsUtils::num2str(maxDim.y).c_str(), mvsUtils::num2str(maxDim.z).c_str());
+    ALICEVISION_LOG_INFO("Estimated: " << mvsUtils::num2str(maxDim.x) << " " << mvsUtils::num2str(maxDim.y) << " " << mvsUtils::num2str(maxDim.z));
 
     if(mp->verbose)
-        printf("optimal detail: %i %i %i\n", (int)((vvx.size() / (float)maxDim.x) / aAvPixelSize),
-               (int)((vvy.size() / (float)maxDim.y) / aAvPixelSize),
-               (int)((vvz.size() / (float)maxDim.z) / aAvPixelSize));
+        ALICEVISION_LOG_DEBUG("optimal detail: "
+               << static_cast<int>((vvx.size() / (float)maxDim.x) / aAvPixelSize) << " "
+               << static_cast<int>((vvy.size() / (float)maxDim.y) / aAvPixelSize) << " "
+               << static_cast<int>((vvz.size() / (float)maxDim.z) / aAvPixelSize));
 
     return maxDim;
 }
@@ -575,7 +577,7 @@ Voxel Fuser::estimateDimensions(Point3d* vox, Point3d* newSpace, int scale, int 
 std::string generateTempPtsSimsFiles(std::string tmpDir, mvsUtils::MultiViewParams* mp, bool addRandomNoise, float percNoisePts,
                                      int noisPixSizeDistHalfThr)
 {
-    printf("generating temp files\n");
+    ALICEVISION_LOG_INFO("generating temp files.");
     std::string depthMapsPtsSimsTmpDir = tmpDir + "depthMapsPtsSimsTmp/";
 
     if(!mvsUtils::FolderExists(depthMapsPtsSimsTmpDir))
@@ -681,8 +683,6 @@ std::string generateTempPtsSimsFiles(std::string tmpDir, mvsUtils::MultiViewPara
                     }
                 }
                 if(mp->verbose)
-                    printf("%i depth map -> 3D pts arr : ", rc);
-                if(mp->verbose)
                     mvsUtils::printfElapsedTime(t1);
 
                 delete idsAlive;
@@ -727,8 +727,6 @@ std::string generateTempPtsSimsFiles(std::string tmpDir, mvsUtils::MultiViewPara
                         }
                     }
                 }
-                if(mp->verbose)
-                    printf("%i depth map -> 3D pts arr : ", rc);
                 if(mp->verbose)
                     mvsUtils::printfElapsedTime(t1);
             }

@@ -4,6 +4,7 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "meshVisibility.hpp"
+#include <aliceVision/system/Logger.hpp>
 
 #include <geogram/points/kd_tree.h>
 
@@ -12,7 +13,7 @@ namespace mesh {
 
 int getNearestVertices(const Mesh& refMesh, const Mesh& mesh, StaticVector<int>& out_nearestVertex)
 {
-    std::cout << "getNearestVertices begin" << std::endl;
+    ALICEVISION_LOG_DEBUG("getNearestVertices start.");
     out_nearestVertex.resize(mesh.pts->size(), -1);
 
     GEO::AdaptiveKdTree refMesh_kdTree(3);
@@ -23,7 +24,7 @@ int getNearestVertices(const Mesh& refMesh, const Mesh& mesh, StaticVector<int>&
     {
         out_nearestVertex[i] = refMesh_kdTree.get_nearest_neighbor((*mesh.pts)[i].m);
     }
-    std::cout << "getNearestVertices end" << std::endl;
+    ALICEVISION_LOG_DEBUG("getNearestVertices done.");
     return 0;
 }
 
@@ -32,7 +33,7 @@ void remapMeshVisibilities(
     const Mesh& refMesh, const PointsVisibility& refPtsVisibilities,
     const Mesh& mesh, PointsVisibility& out_ptsVisibilities)
 {
-    std::cout << "remapMeshVisibility begin" << std::endl;
+    ALICEVISION_LOG_DEBUG("remapMeshVisibility start.");
 
     GEO::AdaptiveKdTree refMesh_kdTree(3);
     refMesh_kdTree.set_points(refMesh.pts->size(), refMesh.pts->front().m);
@@ -55,7 +56,7 @@ void remapMeshVisibilities(
         *pOut = *pRef;
     }
 
-    std::cout << "remapMeshVisibility end" << std::endl;
+    ALICEVISION_LOG_DEBUG("remapMeshVisibility done.");
 }
 
 } // namespace mesh

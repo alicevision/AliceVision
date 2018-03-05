@@ -3,36 +3,36 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
+#include <aliceVision/system/cmdline.hpp>
+#include <aliceVision/system/Logger.hpp>
+#include <aliceVision/system/Timer.hpp>
+#include <aliceVision/mvsUtils/common.hpp>
+
 #include <EigenTypes.h>
 #include <MeshTypes.h>
 #include <SDFilter.h>
 #include <MeshNormalFilter.h>
 #include <MeshNormalDenoising.h>
+
 #include <OpenMesh/Core/IO/reader/OBJReader.hh>
 #include <OpenMesh/Core/IO/writer/OBJWriter.hh>
-
 #include <OpenMesh/Core/IO/IOManager.hh>
-
-#include <aliceVision/mvsUtils/common.hpp>
 
 #include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>
-
 
 namespace bfs = boost::filesystem;
 namespace po = boost::program_options;
 using namespace aliceVision;
 
-#define ALICEVISION_COUT(x) std::cout << x << std::endl
-#define ALICEVISION_CERR(x) std::cerr << x << std::endl
-
-
 int main(int argc, char* argv[])
 {
-    long startTime = clock();
+    system::Timer timer;
 
+    std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
     std::string inputMeshPath;
     std::string outputMeshPath;
+
     int denoisingIterations = 5; // OuterIterations
     float meshUpdateClosenessWeight = 0.001;
     int meshUpdateIterations = 20;
@@ -68,10 +68,14 @@ int main(int argc, char* argv[])
         ("meshUpdateMethod", po::value<int>(&meshUpdateMethod)->default_value(meshUpdateMethod),
             "Mesh Update Method: \n"
             "* ITERATIVE_UPDATE(" BOOST_PP_STRINGIZE(SDFilter::MeshFilterParameters::ITERATIVE_UPDATE) ") (default): ShapeUp styled iterative solver\n"
-            "* POISSON_UPDATE(" BOOST_PP_STRINGIZE(SDFilter::MeshFilterParameters::POISSON_UPDATE) "): Poisson-based update from [Want et al. 2015]\n"
-         );
+            "* POISSON_UPDATE(" BOOST_PP_STRINGIZE(SDFilter::MeshFilterParameters::POISSON_UPDATE) "): Poisson-based update from [Want et al. 2015]\n");
 
-    allParams.add(requiredParams).add(optionalParams);
+    po::options_description logParams("Log parameters");
+    logParams.add_options()
+      ("verboseLevel,v", po::value<std::string>(&verboseLevel)->default_value(verboseLevel),
+        "verbosity level (fatal, error, warning, info, debug, trace).");
+
+    allParams.add(requiredParams).add(optionalParams).add(logParams);
 
     po::variables_map vm;
 
@@ -100,15 +104,17 @@ int main(int argc, char* argv[])
       return EXIT_FAILURE;
     }
 
-    ALICEVISION_COUT("inputMeshPath: " << inputMeshPath);
+    ALICEVISION_COUT("Program called with the following parameters:");
+    ALICEVISION_COUT(vm);
+
+    // set verbose level
+    system::Logger::get()->setLogLevel(verboseLevel);
 
     bfs::path outDirectory = bfs::path(outputMeshPath).parent_path();
     if(!bfs::is_directory(outDirectory))
         bfs::create_directory(outDirectory);
 
     // OpenMesh::IO::IOManager();
-    ALICEVISION_COUT("outputMeshPath: " << outputMeshPath);
-
     // OpenMesh: Need to force the loading of the OBJ... when it's statically linked...
     OpenMesh::IO::_OBJReader_();
     OpenMesh::IO::_OBJWriter_();
@@ -116,13 +122,13 @@ int main(int argc, char* argv[])
     TriMesh inMesh;
     if(!OpenMesh::IO::read_mesh(inMesh, inputMeshPath.c_str()))
     {
-        std::cerr << "Error: unable to read input mesh from the file " << inputMeshPath << std::endl;
+        ALICEVISION_LOG_ERROR("Unable to read input mesh from the file: " << inputMeshPath);
         return EXIT_FAILURE;
     }
     if(inMesh.n_vertices() == 0 || inMesh.n_faces() == 0)
     {
-        ALICEVISION_CERR("Error: empty mesh from the file " << inputMeshPath);
-        ALICEVISION_CERR("Input mesh: " << inMesh.n_vertices() << " vertices and " << inMesh.n_faces() << " facets.");
+        ALICEVISION_LOG_ERROR("Empty mesh from the file: " << inputMeshPath);
+        ALICEVISION_LOG_ERROR("Input mesh: " << inMesh.n_vertices() << " vertices and " << inMesh.n_faces() << " facets.");
         return EXIT_FAILURE;
     }
 
@@ -152,57 +158,56 @@ int main(int argc, char* argv[])
 
     if(!param.valid_parameters())
     {
-        std::cerr << "Invalid filter options. Aborting..." << std::endl;
+        ALICEVISION_LOG_ERROR("Invalid filter options. Aborting...");
         return EXIT_FAILURE;
     }
     param.output();
 
-    ALICEVISION_COUT("Mesh \"" << inputMeshPath << "\" loaded");
-
-    ALICEVISION_COUT("Input mesh: " << inMesh.n_vertices() << " vertices and " << inMesh.n_faces() << " facets.");
+    ALICEVISION_LOG_INFO("Mesh file: \"" << inputMeshPath << "\" loaded.");
+    ALICEVISION_LOG_INFO("Input mesh: " << inMesh.n_vertices() << " vertices and " << inMesh.n_faces() << " facets.");
 
     TriMesh outMesh;
-    ALICEVISION_COUT("Mesh normalization.");
+    ALICEVISION_LOG_INFO("Mesh normalization.");
     // Normalize the input mesh
     Eigen::Vector3d original_center;
     double original_scale;
     SDFilter::normalize_mesh(inMesh, original_center, original_scale);
     if(true)
     {
-        ALICEVISION_COUT("Start mesh denoising.");
+        ALICEVISION_LOG_INFO("Start mesh denoising.");
         // Filter the normals and construct the output mesh
         SDFilter::MeshNormalDenoising denoiser(inMesh);
         denoiser.denoise(param, outMesh);
-        ALICEVISION_COUT("Mesh denoising done.");
+        ALICEVISION_LOG_INFO("Mesh denoising done.");
     }
     else
     {
-        ALICEVISION_COUT("Start mesh filtering.");
+        ALICEVISION_LOG_INFO("Start mesh filtering.");
         // Filter the normals and construct the output mesh
         SDFilter::MeshNormalFilter filter(inMesh);
         filter.filter(param, outMesh);
-        ALICEVISION_COUT("Mesh filtering done.");
+        ALICEVISION_LOG_INFO("Mesh filtering done.");
     }
     SDFilter::restore_mesh(outMesh, original_center, original_scale);
 
-    ALICEVISION_COUT("Output mesh: " << outMesh.n_vertices() << " vertices and " << outMesh.n_faces() << " facets.");
+    ALICEVISION_LOG_INFO("Output mesh: " << outMesh.n_vertices() << " vertices and " << outMesh.n_faces() << " facets.");
 
     if(outMesh.n_faces() == 0)
     {
-        ALICEVISION_CERR("Failed: the output mesh is empty.");
+        ALICEVISION_LOG_ERROR("Failed: the output mesh is empty.");
         return EXIT_FAILURE;
     }
 
-    ALICEVISION_COUT("Save mesh");
+    ALICEVISION_LOG_INFO("Save mesh.");
     // Save output mesh
     if(!OpenMesh::IO::write_mesh(outMesh, outputMeshPath))
     {
-        ALICEVISION_CERR("Failed to save mesh \"" << outputMeshPath << "\".");
+        ALICEVISION_LOG_ERROR("Failed to save mesh file: \"" << outputMeshPath << "\".");
         return EXIT_FAILURE;
     }
 
-    ALICEVISION_CERR("Mesh \"" << outputMeshPath << "\" saved.");
+    ALICEVISION_LOG_INFO("Mesh file: \"" << outputMeshPath << "\" saved.");
 
-    mvsUtils::printfElapsedTime(startTime, "#");
+    ALICEVISION_LOG_INFO("Task done in (s): " + std::to_string(timer.elapsed()));
     return EXIT_SUCCESS;
 }

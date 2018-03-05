@@ -62,9 +62,6 @@ void DelaunayGraphCut::saveDhInfo(std::string fileNameInfo)
         v.fwriteinfo(f);
     }
 
-    if(mp->verbose)
-        printf(".");
-
     int ncells = _cellsAttr.size();
     fwrite(&ncells, sizeof(int), 1, f);
     for(const GC_cellInfo& c: _cellsAttr)
@@ -72,15 +69,12 @@ void DelaunayGraphCut::saveDhInfo(std::string fileNameInfo)
         c.fwriteinfo(f);
     }
     fclose(f);
-
-    if(mp->verbose)
-        printf(".");
 }
 
 void DelaunayGraphCut::saveDh(std::string fileNameDh, std::string fileNameInfo)
 {
     if(mp->verbose)
-        printf("Saving triangulation");
+        ALICEVISION_LOG_DEBUG("Saving triangulation");
 
     saveDhInfo(fileNameInfo);
 
@@ -94,7 +88,7 @@ void DelaunayGraphCut::saveDh(std::string fileNameDh, std::string fileNameInfo)
 void DelaunayGraphCut::initVertices()
 {
     if(mp->verbose)
-        printf("initVertices ...\n");
+        ALICEVISION_LOG_DEBUG("initVertices ...\n");
 
     // Re-assign ids to the vertices to go one after another
     for(int vi = 0; vi < _verticesAttr.size(); ++vi)
@@ -107,13 +101,13 @@ void DelaunayGraphCut::initVertices()
     }
 
     if(mp->verbose)
-        printf("initVertices done\n");
+        ALICEVISION_LOG_DEBUG("initVertices done\n");
 }
 
 void DelaunayGraphCut::computeDelaunay()
 {
     if(mp->verbose)
-        printf("computeDelaunay GEOGRAM ...\n");
+        ALICEVISION_LOG_DEBUG("computeDelaunay GEOGRAM ...\n");
 
     assert(_verticesCoords.size() == _verticesAttr.size());
 
@@ -126,17 +120,17 @@ void DelaunayGraphCut::computeDelaunay()
     updateVertexToCellsCache();
 
     if(mp->verbose)
-        printf("computeDelaunay done\n");
+        ALICEVISION_LOG_DEBUG("computeDelaunay done\n");
 }
 
 void DelaunayGraphCut::initCells()
 {
     if(mp->verbose)
-        printf("initCells ...\n");
+        ALICEVISION_LOG_DEBUG("initCells ...\n");
 
     _cellsAttr.resize(_tetrahedralization->nb_cells()); // or nb_finite_cells() if keeps_infinite()
 
-    std::cout << _cellsAttr.size() << " cells created by tetrahedralization." << std::endl;
+    ALICEVISION_LOG_INFO(_cellsAttr.size() << " cells created by tetrahedralization.");
     for(int i = 0; i < _cellsAttr.size(); ++i)
     {
         GC_cellInfo& c = _cellsAttr[i];
@@ -153,7 +147,7 @@ void DelaunayGraphCut::initCells()
     }
 
     if(mp->verbose)
-        printf("initCells done\n");
+        ALICEVISION_LOG_DEBUG("initCells done\n");
 }
 
 void DelaunayGraphCut::displayStatistics()
@@ -161,24 +155,22 @@ void DelaunayGraphCut::displayStatistics()
     // Display some statistics
 
     StaticVector<int>* ptsCamsHist = getPtsCamsHist();
-    std::cout << "Histogram of number of cams per point:\n";
+    ALICEVISION_LOG_INFO("Histogram of number of cams per point:");
     for(int i = 0; i < ptsCamsHist->size(); ++i)
-        std::cout << "    " << i << ": " << mvsUtils::num2str((*ptsCamsHist)[i]) << "\n";
-    std::cout << "\n";
+        ALICEVISION_LOG_INFO("    " << i << ": " << mvsUtils::num2str((*ptsCamsHist)[i]));
     delete ptsCamsHist;
 
     StaticVector<int>* ptsNrcsHist = getPtsNrcHist();
-    std::cout << "Histogram of alpha_vis per point:\n";
+    ALICEVISION_LOG_INFO("Histogram of alpha_vis per point:");
     for(int i = 0; i < ptsNrcsHist->size(); ++i)
-        std::cout << "    " << i << ": " << mvsUtils::num2str((*ptsNrcsHist)[i]) << "\n";
-    std::cout << "\n";
+        ALICEVISION_LOG_INFO("    " << i << ": " << mvsUtils::num2str((*ptsNrcsHist)[i]));
     delete ptsNrcsHist;
 }
 
 StaticVector<StaticVector<int>*>* DelaunayGraphCut::createPtsCams()
 {
     long t = std::clock();
-    std::cout << "Extract visibilities." << std::endl;
+    ALICEVISION_LOG_INFO("Extract visibilities.");
     int npts = getNbVertices();
     StaticVector<StaticVector<int>*>* out = new StaticVector<StaticVector<int>*>();
     out->reserve(npts);
@@ -194,7 +186,7 @@ StaticVector<StaticVector<int>*>* DelaunayGraphCut::createPtsCams()
         out->push_back(cams);
     } // for i
 
-    std::cout << "Extract visibilities done." << std::endl;
+    ALICEVISION_LOG_INFO("Extract visibilities done.");
 
     mvsUtils::printfElapsedTime(t, "Extract visibilities ");
     return out;
@@ -209,7 +201,7 @@ StaticVector<int>* DelaunayGraphCut::getPtsCamsHist()
     }
     maxnCams++;
     if(mp->verbose)
-        printf("maxnCams %i\n", maxnCams);
+        ALICEVISION_LOG_DEBUG("maxnCams: " << maxnCams);
 
     StaticVector<int>* ncamsHist = new StaticVector<int>();
     ncamsHist->reserve(maxnCams);
@@ -232,10 +224,10 @@ StaticVector<int>* DelaunayGraphCut::getPtsNrcHist()
     }
     maxnnrcs++;
     if(mp->verbose)
-        printf("maxnnrcs %i\n", maxnnrcs);
+        ALICEVISION_LOG_DEBUG("maxnnrcs: " << maxnnrcs);
     maxnnrcs = std::min(1000, maxnnrcs);
     if(mp->verbose)
-        printf("maxnnrcs %i\n", maxnnrcs);
+        ALICEVISION_LOG_DEBUG("maxnnrcs: " << maxnnrcs);
 
     StaticVector<int>* nnrcsHist = new StaticVector<int>();
     nnrcsHist->reserve(maxnnrcs);
@@ -331,7 +323,7 @@ void DelaunayGraphCut::addPointsFromCameraCenters(const StaticVector<int>& cams,
 
 void DelaunayGraphCut::addPointsToPreventSingularities(Point3d voxel[8], float minDist)
 {
-    printf("Add points to prevent singularities");
+    ALICEVISION_LOG_DEBUG("Add points to prevent singularities");
 
     Point3d vcg = (voxel[0] + voxel[1] + voxel[2] + voxel[3] + voxel[4] + voxel[5] + voxel[6] + voxel[7]) / 8.0f;
     Point3d extrPts[6];
@@ -377,7 +369,7 @@ void DelaunayGraphCut::addHelperPoints(int nGridHelperVolumePointsDim, Point3d v
     if(nGridHelperVolumePointsDim <= 0)
         return;
 
-    printf("Add helper points");
+    ALICEVISION_LOG_DEBUG("Add helper points");
 
     int ns = nGridHelperVolumePointsDim;
     float md = 1.0f / 500.0f;
@@ -427,7 +419,7 @@ void DelaunayGraphCut::addHelperPoints(int nGridHelperVolumePointsDim, Point3d v
     }
 
     if(mp->verbose)
-        printf(" done\n");
+        ALICEVISION_LOG_DEBUG(" done\n");
 }
 
 void DelaunayGraphCut::loadPrecomputedDensePoints(StaticVector<int>* voxelsIds, Point3d voxel[8], VoxelsGrid* ls)
@@ -441,7 +433,7 @@ void DelaunayGraphCut::loadPrecomputedDensePoints(StaticVector<int>* voxelsIds, 
     // add points from voxel
     for(int i = 0; i < voxelsIds->size(); i++)
     {
-        printf("%i of %i\n", i, voxelsIds->size());
+        ALICEVISION_LOG_INFO("Add points from voxel " << i << " of " << voxelsIds->size() << ".");
 
         std::string folderName = ls->getVoxelFolderName((*voxelsIds)[i]);
         std::string fileNameTracksPts = folderName + "tracksGridPts.bin";
@@ -494,7 +486,7 @@ void DelaunayGraphCut::loadPrecomputedDensePoints(StaticVector<int>* voxelsIds, 
         } // if fileexists
     }
 
-    printf("Dense points loaded.\n");
+    ALICEVISION_LOG_INFO("Dense points loaded.\n");
 }
 
 
@@ -503,7 +495,7 @@ void DelaunayGraphCut::createTetrahedralizationFromDepthMapsCamsVoxel(const Stat
                                                                VoxelsGrid* ls)
 {
     ///////////////////////////////////////////////////////////////////////////////////////
-    printf("Creating delaunay tetrahedralization from depth maps voxel\n");
+    ALICEVISION_LOG_INFO("Creating delaunay tetrahedralization from depth maps voxel.");
     long tall = clock();
 
     ///////////////////////////////////////////////////////////////////////////////////////
@@ -538,7 +530,7 @@ void DelaunayGraphCut::createTetrahedralizationFromDepthMapsCamsVoxel(const Stat
 void DelaunayGraphCut::computeVerticesSegSize(bool allPoints, float alpha) // allPoints=true, alpha=0
 {
     if(mp->verbose)
-        printf("creating universe\n");
+        ALICEVISION_LOG_DEBUG("creating universe");
     int scalePS = mp->mip->_ini.get<int>("global.scalePS", 1);
     int step = mp->mip->_ini.get<int>("global.step", 1);
     float pointToJoinPixSizeDist = (float)mp->mip->_ini.get<double>("delaunaycut.pointToJoinPixSizeDist", 2.0) *
@@ -618,13 +610,13 @@ void DelaunayGraphCut::computeVerticesSegSize(bool allPoints, float alpha) // al
 
     delete u;
     if(mp->verbose)
-        printf("creating universe done.\n");
+        ALICEVISION_LOG_DEBUG("creating universe done.");
 }
 
 void DelaunayGraphCut::removeSmallSegs(int minSegSize)
 {
     if(mp->verbose)
-        std::cout << "removeSmallSegs: " << minSegSize << std::endl;
+        ALICEVISION_LOG_DEBUG("removeSmallSegs: " << minSegSize);
     StaticVector<int>* toRemove = new StaticVector<int>();
     toRemove->reserve(getNbVertices());
 
@@ -958,7 +950,7 @@ float DelaunayGraphCut::weightFcn(float nrc, bool labatutWeights, int  /*ncams*/
 void DelaunayGraphCut::fillGraph(bool fixesSigma, float nPixelSizeBehind, bool allPoints, bool behind,
                                bool labatutWeights, bool fillOut, float distFcnHeight) // fixesSigma=true nPixelSizeBehind=2*spaceSteps allPoints=1 behind=0 labatutWeights=0 fillOut=1 distFcnHeight=0
 {
-    printf("Computing s-t graph weights\n");
+    ALICEVISION_LOG_INFO("Computing s-t graph weights.");
     long t1 = clock();
 
     setIsOnSurface();
@@ -1023,10 +1015,10 @@ void DelaunayGraphCut::fillGraph(bool fixesSigma, float nPixelSizeBehind, bool a
 
     if(mp->verbose)
     {
-        std::cout << "avStepsFront " << avStepsFront << " \n";
-        std::cout << "avStepsFront = " << mvsUtils::num2str(avStepsFront) << " // " << mvsUtils::num2str(aAvStepsFront) << " \n";
-        std::cout << "avStepsBehind = " << mvsUtils::num2str(avStepsBehind) << " // " << mvsUtils::num2str(nAvStepsBehind) << " \n";
-        std::cout << "avCams = " << mvsUtils::num2str(avCams) << " // " << mvsUtils::num2str(nAvCams) << " \n";
+        ALICEVISION_LOG_DEBUG("avStepsFront " << avStepsFront);
+        ALICEVISION_LOG_DEBUG("avStepsFront = " << mvsUtils::num2str(avStepsFront) << " // " << mvsUtils::num2str(aAvStepsFront));
+        ALICEVISION_LOG_DEBUG("avStepsBehind = " << mvsUtils::num2str(avStepsBehind) << " // " << mvsUtils::num2str(nAvStepsBehind));
+        ALICEVISION_LOG_DEBUG("avCams = " << mvsUtils::num2str(avCams) << " // " << mvsUtils::num2str(nAvCams));
     }
     mvsUtils::printfElapsedTime(t1, "s-t graph weights computed : ");
 }
@@ -1183,14 +1175,14 @@ void DelaunayGraphCut::fillGraphPartPtRc(int& out_nstepsFront, int& out_nstepsBe
 
 void DelaunayGraphCut::forceTedgesByGradientCVPR11(bool fixesSigma, float nPixelSizeBehind)
 {
-    printf("Forcing t-edges\n");
+    ALICEVISION_LOG_INFO("Forcing t-edges.");
     long t2 = clock();
 
     float delta = (float)mp->mip->_ini.get<double>("delaunaycut.delta", 0.1f);
-    printf("delta %f \n", delta);
+    ALICEVISION_LOG_INFO("delta: " << delta);
 
     float beta = (float)mp->mip->_ini.get<double>("delaunaycut.beta", 1000.0f);
-    printf("beta %f \n", beta);
+    ALICEVISION_LOG_INFO("beta: " << beta);
 
     for(GC_cellInfo& c: _cellsAttr)
     {
@@ -1278,37 +1270,37 @@ void DelaunayGraphCut::forceTedgesByGradientCVPR11(bool fixesSigma, float nPixel
         c.cellTWeight = std::max(c.cellTWeight, std::min(1000000.0f, std::max(1.0f, c.cellTWeight) * c.on));
     }
 
-    mvsUtils::printfElapsedTime(t2, "t-edges forced : ");
+    mvsUtils::printfElapsedTime(t2, "t-edges forced: ");
 }
 
 void DelaunayGraphCut::forceTedgesByGradientIJCV(bool fixesSigma, float nPixelSizeBehind)
 {
-    printf("Forcing t-edges\n");
+    ALICEVISION_LOG_INFO("Forcing t-edges");
     long t2 = clock();
 
     float delta = (float)mp->mip->_ini.get<double>("delaunaycut.delta", 0.1f);
     if(mp->verbose)
-        printf("delta %f \n", delta);
+        ALICEVISION_LOG_DEBUG("delta: " << delta);
 
     float minJumpPartRange = (float)mp->mip->_ini.get<double>("delaunaycut.minJumpPartRange", 10000.0f);
     if(mp->verbose)
-        printf("minJumpPartRange %f \n", minJumpPartRange);
+        ALICEVISION_LOG_DEBUG("minJumpPartRange: " << minJumpPartRange);
 
     float maxSilentPartRange = (float)mp->mip->_ini.get<double>("delaunaycut.maxSilentPartRange", 100.0f);
     if(mp->verbose)
-        printf("maxSilentPartRange %f \n", maxSilentPartRange);
+        ALICEVISION_LOG_DEBUG("maxSilentPartRange: " << maxSilentPartRange);
 
     float nsigmaJumpPart = (float)mp->mip->_ini.get<double>("delaunaycut.nsigmaJumpPart", 2.0f);
     if(mp->verbose)
-        printf("nsigmaJumpPart %f \n", nsigmaJumpPart);
+        ALICEVISION_LOG_DEBUG("nsigmaJumpPart: " << nsigmaJumpPart);
 
     float nsigmaFrontSilentPart = (float)mp->mip->_ini.get<double>("delaunaycut.nsigmaFrontSilentPart", 2.0f);
     if(mp->verbose)
-        printf("nsigmaFrontSilentPart %f \n", nsigmaFrontSilentPart);
+        ALICEVISION_LOG_DEBUG("nsigmaFrontSilentPart: " << nsigmaFrontSilentPart);
 
     float nsigmaBackSilentPart = (float)mp->mip->_ini.get<double>("delaunaycut.nsigmaBackSilentPart", 2.0f);
     if(mp->verbose)
-        printf("nsigmaBackSilentPart %f \n", nsigmaBackSilentPart);
+        ALICEVISION_LOG_DEBUG("nsigmaBackSilentPart: " << nsigmaBackSilentPart);
 
 
     for(GC_cellInfo& c: _cellsAttr)
@@ -1477,18 +1469,18 @@ void DelaunayGraphCut::forceTedgesByGradientIJCV(bool fixesSigma, float nPixelSi
     {
         std::string sstat;
         sstat = "avStepsFront = " + mvsUtils::num2str(avStepsFront) + " // " + mvsUtils::num2str(aAvStepsFront) + " \n";
-        printf("%s", sstat.c_str());
+        ALICEVISION_LOG_DEBUG(sstat);
         sstat = "avStepsBehind = " + mvsUtils::num2str(avStepsBehind) + " // " + mvsUtils::num2str(nAvStepsBehind) + " \n";
-        printf("%s", sstat.c_str());
+        ALICEVISION_LOG_DEBUG(sstat);
     }
-    mvsUtils::printfElapsedTime(t2, "t-edges forced : ");
+    mvsUtils::printfElapsedTime(t2, "t-edges forced: ");
 }
 
 void DelaunayGraphCut::updateGraphFromTmpPtsCamsHexah(const StaticVector<int>& incams, Point3d hexah[8],
                                                     std::string tmpCamsPtsFolderName, bool labatutWeights,
                                                     float distFcnHeight)
 {
-    printf("Updating : LSC\n");
+    ALICEVISION_LOG_INFO("Updating: LSC.");
 
 #pragma omp parallel for
     for(int c = 0; c < incams.size(); c++)
@@ -1632,14 +1624,14 @@ int DelaunayGraphCut::setIsOnSurface()
             assert(!(isInfiniteCell(f1.cellIndex) && isInfiniteCell(f2.cellIndex))); // infinite both cells of finite vertex!
         }
     }
-    std::cout << "setIsOnSurface nbSurfaceFacets: " << nbSurfaceFacets << std::endl;
+    ALICEVISION_LOG_INFO("setIsOnSurface nbSurfaceFacets: " << nbSurfaceFacets);
     return nbSurfaceFacets;
 }
 
 void DelaunayGraphCut::graphCutPostProcessing()
 {
     long timer = std::clock();
-    std::cout << "Graph cut post-processing." << std::endl;
+    ALICEVISION_LOG_INFO("Graph cut post-processing.");
     invertFullStatusForSmallLabels();
 
     StaticVector<CellIndex> toDoInverse;
@@ -1663,7 +1655,7 @@ void DelaunayGraphCut::graphCutPostProcessing()
         CellIndex ci = toDoInverse[i];
         _cellIsFull[ci] = !_cellIsFull[ci];
     }
-    std::cout << "Graph cut post-processing done." << std::endl;
+    ALICEVISION_LOG_INFO("Graph cut post-processing done.");
 
     mvsUtils::printfElapsedTime(timer, "Graph cut post-processing ");
 }
@@ -1671,7 +1663,7 @@ void DelaunayGraphCut::graphCutPostProcessing()
 void DelaunayGraphCut::freeUnwantedFullCells(const Point3d* hexah)
 {
     if(mp->verbose)
-        printf("freeUnwantedFullCells\n");
+        ALICEVISION_LOG_DEBUG("freeUnwantedFullCells\n");
 
     int minSegmentSize = (int)mp->mip->_ini.get<int>("hallucinationsFiltering.minSegmentSize", 10);
     bool doRemoveBubbles = (bool)mp->mip->_ini.get<bool>("hallucinationsFiltering.doRemoveBubbles", true);
@@ -1728,7 +1720,7 @@ void DelaunayGraphCut::freeUnwantedFullCells(const Point3d* hexah)
             }
         }
         if(mp->verbose)
-            printf("%i removed cells outside hexahedron\n", nremoved);
+            ALICEVISION_LOG_DEBUG(nremoved << " removed cells outside hexahedron");
     }
 
     if(doRemoveDust)
@@ -1745,7 +1737,7 @@ void DelaunayGraphCut::freeUnwantedFullCells(const Point3d* hexah)
 void DelaunayGraphCut::invertFullStatusForSmallLabels()
 {
     if(mp->verbose)
-        printf("filling small holes\n");
+        ALICEVISION_LOG_DEBUG("filling small holes");
 
     const std::size_t nbCells = _cellIsFull.size();
     StaticVector<int>* colorPerCell = new StaticVector<int>();
@@ -1807,7 +1799,7 @@ void DelaunayGraphCut::invertFullStatusForSmallLabels()
     }
 
     if(mp->verbose)
-        std::cout << "Full number of cells: " << nbCells << ", Number of labels: " << nbCellsPerColor->size() << ", Number of cells changed: " << nfilled << std::endl;
+        ALICEVISION_LOG_DEBUG("Full number of cells: " << nbCells << ", Number of labels: " << nbCellsPerColor->size() << ", Number of cells changed: " << nfilled);
 
     delete nbCellsPerColor;
     delete colorPerCell;
@@ -1873,28 +1865,28 @@ void DelaunayGraphCut::addToInfiniteSw(float sW)
 
 void DelaunayGraphCut::reconstructGC(const Point3d* hexah)
 {
-    std::cout << "reconstructGC" << std::endl;
+    ALICEVISION_LOG_INFO("reconstructGC start.");
 
     maxflow();
 
-    std::cout << "Maxflow: convert result to surface" << std::endl;
+    ALICEVISION_LOG_INFO("Maxflow: convert result to surface.");
     // Convert cells FULL/EMPTY into surface
     setIsOnSurface();
 
     freeUnwantedFullCells(hexah);
 
-    std::cout << "reconstructGC end" << std::endl;
+    ALICEVISION_LOG_INFO("reconstructGC done.");
 }
 
 void DelaunayGraphCut::maxflow()
 {
     long t_maxflow = clock();
 
-    std::cout << "Maxflow: start allocation" << std::endl;
+    ALICEVISION_LOG_INFO("Maxflow: start allocation.");
     // MaxFlow_CSR maxFlowGraph(_cellsAttr.size());
     MaxFlow_AdjList maxFlowGraph(_cellsAttr.size());
 
-    std::cout << "Maxflow: add nodes" << std::endl;
+    ALICEVISION_LOG_INFO("Maxflow: add nodes.");
     // fill s-t edges
     for(CellIndex ci = 0; ci < _cellsAttr.size(); ++ci)
     {
@@ -1910,7 +1902,7 @@ void DelaunayGraphCut::maxflow()
         maxFlowGraph.addNode(ci, ws, wt);
     }
 
-    std::cout << "Maxflow: add edges" << std::endl;
+    ALICEVISION_LOG_INFO("Maxflow: add edges.");
     const float CONSTalphaVIS = 1.0f;
     const float CONSTalphaPHOTO = 5.0f;
 
@@ -1947,18 +1939,18 @@ void DelaunayGraphCut::maxflow()
         }
     }
 
-    std::cout << "Maxflow: clear cells info" << std::endl;
+    ALICEVISION_LOG_INFO("Maxflow: clear cells info.");
     const std::size_t nbCells = _cellsAttr.size();
     std::vector<GC_cellInfo>().swap(_cellsAttr); // force clear
 
     long t_maxflow_compute = clock();
     // Find graph-cut solution
-    std::cout << "Maxflow: compute" << std::endl;
+    ALICEVISION_LOG_INFO("Maxflow: compute.");
     const float totalFlow = maxFlowGraph.compute();
     mvsUtils::printfElapsedTime(t_maxflow_compute, "Maxflow computation ");
-    std::cout << "totalFlow: " << totalFlow << std::endl;
+    ALICEVISION_LOG_INFO("totalFlow: " << totalFlow);
 
-    std::cout << "Maxflow: update full/empty cells status" << std::endl;
+    ALICEVISION_LOG_INFO("Maxflow: update full/empty cells status.");
     _cellIsFull.resize(nbCells);
     // Update FULL/EMPTY status of all cells
     for(CellIndex ci = 0; ci < nbCells; ++ci)
@@ -1968,7 +1960,7 @@ void DelaunayGraphCut::maxflow()
 
     mvsUtils::printfElapsedTime(t_maxflow, "Full maxflow step");
 
-    std::cout << "Maxflow: end" << std::endl;
+    ALICEVISION_LOG_INFO("Maxflow: done.");
 }
 
 void DelaunayGraphCut::reconstructExpetiments(const StaticVector<int>& cams, const std::string& folderName,
@@ -1998,7 +1990,7 @@ void DelaunayGraphCut::reconstructExpetiments(const StaticVector<int>& cams, con
     {
         float delta = (float)mp->mip->_ini.get<double>("delaunaycut.delta", 0.1f);
 
-        printf("Jancosek CVPR 2011 method ( delta*100 = %d ) : \n", (int)(delta * 100.0f));
+        ALICEVISION_LOG_INFO("Jancosek CVPR 2011 method ( delta*100 = " << static_cast<int>(delta * 100.0f) << "):");
 
         fillGraph(fixesSigma, sigma, true, false, false, true, distFcnHeight);
 
@@ -2031,8 +2023,7 @@ void DelaunayGraphCut::reconstructExpetiments(const StaticVector<int>& cams, con
     {
         float delta = (float)mp->mip->_ini.get<double>("delaunaycut.delta", 0.1f);
 
-        if(mp->verbose)
-            printf("Jancosek IJCV method ( delta*100 = %d ) : \n", (int)(delta * 100.0f));
+        ALICEVISION_LOG_INFO("Jancosek IJCV method ( delta*100 = " << static_cast<int>(delta * 100.0f) << " ): ");
 
         // compute weights on edge between tetrahedra
         fillGraph(fixesSigma, sigma, true, false, false, true, distFcnHeight);
@@ -2064,7 +2055,7 @@ void DelaunayGraphCut::reconstructExpetiments(const StaticVector<int>& cams, con
 
     if(labatutCFG09)
     {
-        printf("Labatut CFG 2009 method :\n");
+        ALICEVISION_LOG_INFO("Labatut CFG 2009 method:");
         fillGraph(fixesSigma, sigma, true, false, true, true, distFcnHeight);
         if(update)
         {
@@ -2085,13 +2076,13 @@ void DelaunayGraphCut::reconstructExpetiments(const StaticVector<int>& cams, con
 
 mesh::Mesh* DelaunayGraphCut::createMesh(bool filterHelperPointsTriangles)
 {
-    std::cout << "Extract mesh from GC" << std::endl;
+    ALICEVISION_LOG_INFO("Extract mesh from Graph Cut.");
 
     int nbSurfaceFacets = setIsOnSurface();
 
-    std::cout << "Nb surface facets: " << nbSurfaceFacets << std::endl;
-    std::cout << "Nb vertixes: " << _verticesCoords.size() << std::endl;
-    std::cout << "_cellIsFull.size(): " << _cellIsFull.size() << std::endl;
+    ALICEVISION_LOG_INFO("# surface facets: " << nbSurfaceFacets);
+    ALICEVISION_LOG_INFO("# vertixes: " << _verticesCoords.size());
+    ALICEVISION_LOG_INFO("_cellIsFull.size(): " << _cellIsFull.size());
 
     mesh::Mesh* me = new mesh::Mesh();
 
@@ -2216,7 +2207,7 @@ mesh::Mesh* DelaunayGraphCut::createMesh(bool filterHelperPointsTriangles)
             {
                 if(dd2 == 0.0f)
                 {
-                    printf("WARNING bad triangle orientation.\n");
+                    ALICEVISION_LOG_WARNING("createMesh: bad triangle orientation.");
                 }
                 if(dd2 > 0.0f)
                 {
@@ -2252,14 +2243,14 @@ mesh::Mesh* DelaunayGraphCut::createMesh(bool filterHelperPointsTriangles)
         }
     }
 
-    std::cout << "Extract mesh from GC done." << std::endl;
+    ALICEVISION_LOG_INFO("Extract mesh from Graph Cut done.");
     return me;
 }
 
 void DelaunayGraphCut::segmentFullOrFree(bool full, StaticVector<int>** out_fullSegsColor, int& out_nsegments)
 {
     if(mp->verbose)
-        printf("segmenting connected space\n");
+        ALICEVISION_LOG_DEBUG("segmentFullOrFree: segmenting connected space.");
 
     StaticVector<int>* colors = new StaticVector<int>();
     colors->reserve(_cellIsFull.size());
@@ -2313,7 +2304,7 @@ int DelaunayGraphCut::removeBubbles()
     segmentFullOrFree(false, &emptySegColors, nbEmptySegments);
 
     if(mp->verbose)
-        printf("removing bubbles\n");
+        ALICEVISION_LOG_DEBUG("removing bubbles.");
 
     StaticVectorBool* colorsToFill = new StaticVectorBool();
     colorsToFill->reserve(nbEmptySegments);
@@ -2358,7 +2349,7 @@ int DelaunayGraphCut::removeBubbles()
     delete emptySegColors;
 
     if(mp->verbose)
-        printf("nbubbles %i, all segs %i\n", nbubbles, nbEmptySegments);
+        ALICEVISION_LOG_DEBUG("nbubbles: " << nbubbles << ", all empty segments: " << nbEmptySegments);
 
     setIsOnSurface();
 
@@ -2368,7 +2359,7 @@ int DelaunayGraphCut::removeBubbles()
 int DelaunayGraphCut::removeDust(int minSegSize)
 {
     if(mp->verbose)
-        printf("removing dust\n");
+        ALICEVISION_LOG_DEBUG("removing dust.");
 
     int nbFullSegments = 0;
     StaticVector<int>* fullSegsColor = nullptr;
@@ -2402,7 +2393,7 @@ int DelaunayGraphCut::removeDust(int minSegSize)
     delete fullSegsColor;
 
     if(mp->verbose)
-        printf("Removed dust cells: %i, Number of segments: %i\n", ndust, nbFullSegments);
+        ALICEVISION_LOG_DEBUG("Removed dust cells: " << ndust << ", Number of segments: " << nbFullSegments);
 
     setIsOnSurface();
 
@@ -2412,7 +2403,7 @@ int DelaunayGraphCut::removeDust(int minSegSize)
 void DelaunayGraphCut::leaveLargestFullSegmentOnly()
 {
     if(mp->verbose)
-        printf("Largest full segment only.\n");
+        ALICEVISION_LOG_DEBUG("Largest full segment only.");
 
     int nsegments;
     StaticVector<int>* colors = nullptr;
@@ -2454,7 +2445,7 @@ void DelaunayGraphCut::leaveLargestFullSegmentOnly()
     setIsOnSurface();
 
     if(mp->verbose)
-        printf("Largest full segment only. Done.\n");
+        ALICEVISION_LOG_DEBUG("Largest full segment only done.");
 }
 
 } // namespace fuseCut

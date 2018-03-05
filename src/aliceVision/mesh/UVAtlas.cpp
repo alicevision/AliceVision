@@ -4,6 +4,7 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "UVAtlas.hpp"
+#include <aliceVision/system/Logger.hpp>
 
 #include <iostream>
 
@@ -35,7 +36,7 @@ UVAtlas::UVAtlas(const Mesh& mesh, mvsUtils::MultiViewParams& mp, StaticVector<S
 
 void UVAtlas::createCharts(vector<Chart>& charts, mvsUtils::MultiViewParams& mp, StaticVector<StaticVector<int>*>* ptsCams)
 {
-    cout << "Creating texture charts" << endl;
+    ALICEVISION_LOG_INFO("Creating texture charts.");
 
     // compute per cam triangle visibility
     StaticVector<StaticVector<int>*>* trisCams = _mesh.computeTrisCamsFromPtsCams(ptsCams);
@@ -72,7 +73,7 @@ void UVAtlas::createCharts(vector<Chart>& charts, mvsUtils::MultiViewParams& mp,
 
 void UVAtlas::packCharts(vector<Chart>& charts, mvsUtils::MultiViewParams& mp)
 {
-    cout << "Packing texture charts (" <<  charts.size() << " charts)" << endl;
+    ALICEVISION_LOG_INFO("Packing texture charts (" <<  charts.size() << " charts).");
 
     function<int(int)> findChart = [&](int cid)
     {
@@ -169,7 +170,7 @@ void UVAtlas::packCharts(vector<Chart>& charts, mvsUtils::MultiViewParams& mp)
 
 void UVAtlas::finalizeCharts(vector<Chart>& charts, mvsUtils::MultiViewParams& mp)
 {
-    cout << "Finalize packed charts (" <<  charts.size() << " charts)" << endl;
+    ALICEVISION_LOG_INFO("Finalize packed charts (" <<  charts.size() << " charts).");
 
     for(auto&c : charts)
     {
@@ -198,7 +199,7 @@ void UVAtlas::finalizeCharts(vector<Chart>& charts, mvsUtils::MultiViewParams& m
 
 void UVAtlas::createTextureAtlases(vector<Chart>& charts, mvsUtils::MultiViewParams& mp)
 {
-    cout << "Creating texture atlases" << endl;
+    ALICEVISION_LOG_INFO("Creating texture atlases.");
 
     // sort charts by size, descending
     sort(charts.begin(), charts.end(), [](const Chart& a, const Chart& b)
@@ -219,7 +220,7 @@ void UVAtlas::createTextureAtlases(vector<Chart>& charts, mvsUtils::MultiViewPar
     {
         texCount++;
         // create a texture atlas
-        cout << "* Texture atlas " << texCount << endl;
+        ALICEVISION_LOG_INFO("\t- texture atlas " << texCount);
         vector<Chart> atlas;
         // create a tree root
         ChartRect* root = new ChartRect();
@@ -249,7 +250,7 @@ void UVAtlas::createTextureAtlases(vector<Chart>& charts, mvsUtils::MultiViewPar
         while(j > i && insertChart(j)) { --j; }
 
         // atlas is full or all charts have been handled
-        cout << "filled with " << atlas.size() << " charts" << endl;
+        ALICEVISION_LOG_INFO("Filled with " << atlas.size() << " charts.");
         // store this texture
         _atlases.emplace_back(atlas);
         // clear the whole tree

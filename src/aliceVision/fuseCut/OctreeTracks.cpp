@@ -4,6 +4,7 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "OctreeTracks.hpp"
+#include <aliceVision/system/Logger.hpp>
 #include <aliceVision/mvsData/geometry.hpp>
 #include <aliceVision/mvsUtils/common.hpp>
 #include <aliceVision/mvsUtils/fileIO.hpp>
@@ -242,7 +243,7 @@ OctreeTracks::Branch::~Branch()
                         }
                         else
                         {
-                            printf("WARNING unknows node type\n");
+                            ALICEVISION_LOG_WARNING("Unknows node type.");
                         }
                     }
                     children[i][j][k] = nullptr;
@@ -453,11 +454,10 @@ int OctreeTracks::trackStruct::indexOf(int val)
 
 void OctreeTracks::trackStruct::doPrintf()
 {
-    printf("------------------------------------\n");
-    printf("point %f %f %f\n", point.x, point.y, point.z);
-    printf("ncams %i\n", cams.size());
+    ALICEVISION_LOG_INFO("point: " << point.x << " " << point.y << " " << point.z);
+    ALICEVISION_LOG_INFO("ncams: " << cams.size());
     for(int i = 0; i < cams.size(); i++)
-        printf("cams %i, rc %i, val %i \n", i, cams[i].x, cams[i].y);
+        ALICEVISION_LOG_INFO("\t- cam: " << i << ", rc: " << cams[i].x << ", val: " << cams[i].y);
 }
 
 OctreeTracks::OctreeTracks(const Point3d* _voxel, mvsUtils::MultiViewParams* _mp, mvsUtils::PreMatchCams* _pc, Voxel dimensions)
@@ -555,12 +555,11 @@ void OctreeTracks::filterMinNumConsistentCams(StaticVector<trackStruct*>* tracks
     }
     // finishEstimate();
 
-    std::cout << "== filterMinNumConsistentCams ==" << std::endl;
-    std::cout << "minPixelSize min: " << boost::accumulators::min(accMinPixSize) << ", max: " << boost::accumulators::max(accMinPixSize) << ", mean: " << boost::accumulators::mean(accMinPixSize) << ", median: " << boost::accumulators::median(accMinPixSize) << std::endl;
-    std::cout << "minSim min: " << boost::accumulators::min(accMinSim) << ", max: " << boost::accumulators::max(accMinSim) << ", mean: " << boost::accumulators::mean(accMinSim) << ", median: " << boost::accumulators::median(accMinSim) << std::endl;
-    std::cout << "accNbCamsA min: " << boost::accumulators::min(accNbCamsA) << ", max: " << boost::accumulators::max(accNbCamsA) << ", mean: " << boost::accumulators::mean(accNbCamsA) << ", median: " << boost::accumulators::median(accNbCamsA) << std::endl;
-    std::cout << "accNbCamsB min: " << boost::accumulators::min(accNbCamsB) << ", max: " << boost::accumulators::max(accNbCamsB) << ", mean: " << boost::accumulators::mean(accNbCamsB) << ", median: " << boost::accumulators::median(accNbCamsB) << std::endl;
-    std::cout << "== filterMinNumConsistentCams ==" << std::endl;
+    ALICEVISION_LOG_INFO("filterMinNumConsistentCams: " << std::endl
+      << "\t- minPixelSize min: " << boost::accumulators::min(accMinPixSize) << ", max: " << boost::accumulators::max(accMinPixSize) << ", mean: " << boost::accumulators::mean(accMinPixSize) << ", median: " << boost::accumulators::median(accMinPixSize) << std::endl
+      << "\t- minSim min: " << boost::accumulators::min(accMinSim) << ", max: " << boost::accumulators::max(accMinSim) << ", mean: " << boost::accumulators::mean(accMinSim) << ", median: " << boost::accumulators::median(accMinSim) << std::endl
+      << "\t- accNbCamsA min: " << boost::accumulators::min(accNbCamsA) << ", max: " << boost::accumulators::max(accNbCamsA) << ", mean: " << boost::accumulators::mean(accNbCamsA) << ", median: " << boost::accumulators::median(accNbCamsA) << std::endl
+      << "\t- accNbCamsB min: " << boost::accumulators::min(accNbCamsB) << ", max: " << boost::accumulators::max(accNbCamsB) << ", mean: " << boost::accumulators::mean(accNbCamsB) << ", median: " << boost::accumulators::median(accNbCamsB) << std::endl);
 
     tracks->swap(tracksOut);
 }
@@ -619,7 +618,7 @@ void OctreeTracks::updateOctreeTracksCams(StaticVector<trackStruct*>* tracks)
 void OctreeTracks::filterOctreeTracks2(StaticVector<trackStruct*>* tracks)
 {
     if(mp->verbose)
-        std::cout << "filterOctreeTracks2" << std::endl;
+        ALICEVISION_LOG_DEBUG("filterOctreeTracks2");
     StaticVector<trackStruct*> tracksOut;
     tracksOut.reserve(tracks->size());
 
@@ -675,7 +674,7 @@ StaticVector<OctreeTracks::trackStruct*>* OctreeTracks::fillOctree(int maxPts, s
     if(mp->verbose)
         mvsUtils::printfElapsedTime(t1, "findCamsWhichIntersectsHexahedron");
     if(mp->verbose)
-        printf("ncams %i\n", cams.size());
+        ALICEVISION_LOG_DEBUG("ncams: " << cams.size());
 
     t1 = clock();
 
@@ -735,7 +734,7 @@ StaticVector<OctreeTracks::trackStruct*>* OctreeTracks::fillOctree(int maxPts, s
     if(doFilterOctreeTracks)
     {
         if(mp->verbose)
-            printf("ntracks before filtering %i\n", tracks->size());
+            ALICEVISION_LOG_DEBUG("# tracks before filtering: " << tracks->size());
         long t2 = clock();
 
         filterMinNumConsistentCams(tracks);
@@ -743,7 +742,7 @@ StaticVector<OctreeTracks::trackStruct*>* OctreeTracks::fillOctree(int maxPts, s
             mvsUtils::printfElapsedTime(t2, "filterMinNumConsistentCams");
 
         if(mp->verbose)
-            printf("ntracks after filterMinNumConsistentCams %i\n", tracks->size());
+            ALICEVISION_LOG_DEBUG("# tracks after filterMinNumConsistentCams: " << tracks->size());
 
         t2 = clock();
         // filter cameras observations that have a large pixelSize regarding the others
@@ -753,21 +752,21 @@ StaticVector<OctreeTracks::trackStruct*>* OctreeTracks::fillOctree(int maxPts, s
             mvsUtils::printfElapsedTime(t2, "filterOctreeTracks2");
 
         if(mp->verbose)
-            printf("ntracks after filterOctreeTracks2 %i\n", tracks->size());
+            ALICEVISION_LOG_DEBUG("# tracks after filterOctreeTracks2: " << tracks->size());
         if(mp->verbose)
-            printf("ntracks after filtering %i\n", tracks->size());
+            ALICEVISION_LOG_DEBUG("# tracks after filtering: " << tracks->size());
     }
 
     if(tracks->size() > maxPts)
     {
         if(mp->verbose)
-            printf("Too much tracks %i, clear all.\n",tracks->size());
+            ALICEVISION_LOG_DEBUG("Too much tracks (" << tracks->size() << "), clear all.");
         delete tracks; // DO NOT DELETE POINTER JUST DELETE THE ARRAY!!!
         return nullptr;
     }
 
     if(mp->verbose)
-        printf("number of tracks %i\n",tracks->size());
+        ALICEVISION_LOG_DEBUG("number of tracks: " << tracks->size());
 
     return tracks;
 }

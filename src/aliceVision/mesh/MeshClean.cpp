@@ -4,6 +4,7 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "MeshClean.hpp"
+#include <aliceVision/system/Logger.hpp>
 
 namespace aliceVision {
 namespace mesh {
@@ -44,7 +45,7 @@ bool MeshClean::path::addNextTriIdToPathBack(int nextTriId, StaticVector<MeshCle
         return true;
     }
 
-    printf("WARNING addNextTriIdToPath %i %i %i %i %i\n", lastTriId, nextTriId, ptId2, others2.x, others2.y);
+    ALICEVISION_LOG_WARNING("addNextTriIdToPath: " << lastTriId << " " << nextTriId << " " << ptId2 << " " << others2.x << " " << others2.y);
     return false;
 }
 
@@ -74,7 +75,7 @@ bool MeshClean::path::addNextTriIdToPathFront(int nextTriId, StaticVector<MeshCl
         return true;
     }
 
-    printf("WARNING addNextTriIdToPath %i %i %i %i %i\n", firstTriId, nextTriId, ptId1, others2.x, others2.y);
+    ALICEVISION_LOG_WARNING("addNextTriIdToPath: " << firstTriId << " " << nextTriId << " " << ptId1 << " " << others2.x << " " << others2.y);
     return false;
 }
 
@@ -145,22 +146,17 @@ int MeshClean::path::getNextNeighBouringUnprocessedFirst(StaticVector<int>* ptNe
 
 void MeshClean::path::printfState(StaticVector<MeshClean::path::pathPart>* _pth)
 {
-    printf("ptid %i\n", ptId);
-    printf("tris in path : ");
+    ALICEVISION_LOG_DEBUG("ptid: " << ptId);
+    ALICEVISION_LOG_DEBUG("tris in path:");
     for(int i = 0; i < _pth->size(); i++)
     {
-        printf("%i ", (*_pth)[i].triId);
+        ALICEVISION_LOG_DEBUG("\t- " << (*_pth)[i].triId);
     }
-    printf("\n");
-    printf("pts in path : ");
+    ALICEVISION_LOG_DEBUG("pts in path:");
     for(int i = 0; i < _pth->size(); i++)
     {
-        printf("(%i %i) ", (*_pth)[i].ptsIds[0], (*_pth)[i].ptsIds[1]);
+        ALICEVISION_LOG_DEBUG("\t- (" << (*_pth)[i].ptsIds[0] << " " << (*_pth)[i].ptsIds[1] << ")");
     }
-    printf("\n");
-    // printf("tris to process : "); for (int i=0;i<ptNeighTrisSortedAscToProcess->size();i++) { printf("%i
-    // ",(*ptNeighTrisSortedAscToProcess)[i]); };printf("\n");
-    printf("-----------------------\n");
 }
 
 int MeshClean::path::nCrossings(StaticVector<MeshClean::path::pathPart>* _pth)
@@ -500,14 +496,14 @@ int MeshClean::path::deployAll()
                 ptsNeighTrisSortedAsc->reserve(pthNew->size());
                 printfState(pth);
                 printfState(pthNew);
-                printf("WARNING  pthNew->size() %i !!!\n", pthNew->size());
+                throw std::runtime_error("deployAll: bad condition, pthNew size: " + std::to_string(pthNew->size()));
             }
 
             if(ptsNeighTrisSortedAsc->capacity() < pthNew->size())
             {
                 printfState(pth);
                 printfState(pthNew);
-                printf("WARNING should not happen, pthNew->size() %i !!!\n", pthNew->size());
+                throw std::runtime_error("deployAll: bad condition, pthNew size: " + std::to_string(pthNew->size()));
             }
 
             StaticVector<int>* toUpdate = ptsNeighTrisSortedAsc;
@@ -656,7 +652,6 @@ bool MeshClean::getEdgeNeighTrisInterval(Pixel& itr, int _ptId1, int _ptId2)
     {
         return false;
     }
-
     return true;
 }
 
@@ -759,8 +754,7 @@ void MeshClean::init()
 
 void MeshClean::testPtsNeighTrisSortedAsc()
 {
-    printf("-------------------------------------------------------------------------------\n");
-    printf("Testing if each point of each triangle has the triangleid in ptsNeighTris array\n");
+    ALICEVISION_LOG_DEBUG("Testing if each point of each triangle has the triangleid in ptsNeighTris array.");
     int n = 0;
     for(int i = 0; i < tris->size(); i++)
     {
@@ -770,20 +764,20 @@ void MeshClean::testPtsNeighTrisSortedAsc()
             if((*ptsNeighTrisSortedAsc)[ptId]->indexOf(i) == -1)
             {
                 n++;
-                printf("ptid %i triid %i\n", ptId, i);
+                ALICEVISION_LOG_DEBUG("\t- ptid: " << ptId << "triid: " <<  i);
             }
         }
     }
     if(n == 0)
     {
-        printf("test OK\n");
+        ALICEVISION_LOG_DEBUG("test ok");
     }
     else
     {
-        printf("test %i BAD !!!!\n", n);
+        ALICEVISION_LOG_DEBUG("test " << n << " bad");
     }
-    printf("-------------------------------------------------------------------------------\n");
-    printf("Testing for each pt if all neigh triangles are sorted by id in asc \n");
+
+    ALICEVISION_LOG_DEBUG("Testing for each pt if all neigh triangles are sorted by id in asc");
     n = 0;
     for(int i = 0; i < pts->size(); i++)
     {
@@ -800,19 +794,17 @@ void MeshClean::testPtsNeighTrisSortedAsc()
     }
     if(n == 0)
     {
-        printf("test OK\n");
+        ALICEVISION_LOG_DEBUG("test ok");
     }
     else
     {
-        printf("test %i BAD !!!!\n", n);
+        ALICEVISION_LOG_DEBUG("test " << n << " bad");
     }
-    printf("-------------------------------------------------------------------------------\n");
 }
 
 void MeshClean::testEdgesNeighTris()
 {
-    printf("-------------------------------------------------------------------------------\n");
-    printf("Testing if each edge of each triangle has the triangleid in edgeNeighTris array\n");
+    ALICEVISION_LOG_DEBUG("Testing if each edge of each triangle has the triangleid in edgeNeighTris array");
     int n = 0;
     for(int i = 0; i < tris->size(); i++)
     {
@@ -842,19 +834,17 @@ void MeshClean::testEdgesNeighTris()
     }
     if(n == 0)
     {
-        printf("test OK\n");
+        ALICEVISION_LOG_DEBUG("test ok");
     }
     else
     {
-        printf("test %i BAD !!!!\n", n);
+        ALICEVISION_LOG_DEBUG("test " << n << " bad");
     }
-    printf("-------------------------------------------------------------------------------\n");
 }
 
 void MeshClean::testPtsNeighPtsOrdered()
 {
-    printf("-------------------------------------------------------------------------------\n");
-    printf("Testing if each edge of each triangle has both pts in ptsNeighPtsOrdered\n");
+    ALICEVISION_LOG_DEBUG("Testing if each edge of each triangle has both pts in ptsNeighPtsOrdered");
     int n = 0;
     for(int i = 0; i < tris->size(); i++)
     {
@@ -885,13 +875,12 @@ void MeshClean::testPtsNeighPtsOrdered()
     }
     if(n == 0)
     {
-        printf("test OK\n");
+        ALICEVISION_LOG_DEBUG("test ok");
     }
     else
     {
-        printf("test %i BAD !!!!\n", n);
+        ALICEVISION_LOG_DEBUG("test " << n << " bad");
     }
-    printf("-------------------------------------------------------------------------------\n");
 }
 
 int MeshClean::cleanMesh()
@@ -903,7 +892,9 @@ int MeshClean::cleanMesh()
         path pth(this, i);
         nWrongPts += static_cast<int>(pth.deployAll() > 0);
     }
-    printf("nWrongPts %i, nNewPts %i", nWrongPts, pts->size() - nv);
+    ALICEVISION_LOG_INFO("cleanMesh:" << std::endl
+                      << "\t- # wrong points: " << nWrongPts << std::endl
+                      << "\t- # new points: " << (pts->size() - nv));
 
     return pts->size() - nv;
 }

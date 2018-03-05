@@ -5,6 +5,8 @@
 
 #pragma once
 
+#include <aliceVision/system/Logger.hpp>
+
 #include <boost/graph/graph_traits.hpp>
 #include <boost/graph/one_bit_color_map.hpp>
 #include <boost/property_map/property_map.hpp>
@@ -110,7 +112,7 @@ public:
     inline ValueType compute()
     {
         printStats();
-        std::cout << "Compute boykov_kolmogorov_max_flow" << std::endl;
+        ALICEVISION_LOG_INFO("Compute boykov_kolmogorov_max_flow.");
 
         vertex_size_type nbVertices(boost::num_vertices(_graph));
         _color.resize(nbVertices, boost::white_color);

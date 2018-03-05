@@ -3,6 +3,9 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
+#include <aliceVision/system/cmdline.hpp>
+#include <aliceVision/system/Logger.hpp>
+#include <aliceVision/system/Timer.hpp>
 #include <aliceVision/mvsUtils/common.hpp>
 
 #include <geogram/mesh/mesh.h>
@@ -22,16 +25,14 @@ using namespace aliceVision;
 namespace bfs = boost::filesystem;
 namespace po = boost::program_options;
 
-#define ALICEVISION_COUT(x) std::cout << x << std::endl
-#define ALICEVISION_CERR(x) std::cerr << x << std::endl
-
-
 int main(int argc, char* argv[])
 {
-    long startTime = clock();
+    system::Timer timer;
 
+    std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
     std::string inputMeshPath;
     std::string outputMeshPath;
+
     float simplificationFactor = 0;
     int fixedNbVertices = 0;
     int minVertices = 0;
@@ -63,7 +64,12 @@ int main(int argc, char* argv[])
         ("flipNormals", po::value<bool>(&flipNormals)->default_value(flipNormals),
             "Option to flip face normals. It can be needed as it depends on the vertices order in triangles and the convention change from one software to another.");
 
-    allParams.add(requiredParams).add(optionalParams);
+    po::options_description logParams("Log parameters");
+    logParams.add_options()
+      ("verboseLevel,v", po::value<std::string>(&verboseLevel)->default_value(verboseLevel),
+        "verbosity level (fatal, error, warning, info, debug, trace).");
+
+    allParams.add(requiredParams).add(optionalParams).add(logParams);
 
     po::variables_map vm;
 
@@ -92,24 +98,30 @@ int main(int argc, char* argv[])
       return EXIT_FAILURE;
     }
 
+    ALICEVISION_COUT("Program called with the following parameters:");
+    ALICEVISION_COUT(vm);
+
+    // set verbose level
+    system::Logger::get()->setLogLevel(verboseLevel);
+
     bfs::path outDirectory = bfs::path(outputMeshPath).parent_path();
     if(!bfs::is_directory(outDirectory))
         bfs::create_directory(outDirectory);
 
     GEO::initialize();
 
-    ALICEVISION_COUT("Geogram initialized");
+    ALICEVISION_LOG_INFO("Geogram initialized.");
 
     GEO::Mesh M_in, M_out;
     {
         if(!GEO::mesh_load(inputMeshPath, M_in))
         {
-            ALICEVISION_CERR("Failed to load mesh \"" << inputMeshPath << "\".");
+            ALICEVISION_LOG_ERROR("Failed to load mesh file: \"" << inputMeshPath << "\".");
             return 1;
         }
     }
 
-    ALICEVISION_COUT("Mesh \"" << inputMeshPath << "\" loaded");
+    ALICEVISION_LOG_INFO("Mesh file: \"" << inputMeshPath << "\" loaded.");
 
     int nbInputPoints = M_in.vertices.nb();
     int nbOutputPoints = 0;
@@ -135,8 +147,8 @@ int main(int argc, char* argv[])
         }
     }
 
-    ALICEVISION_COUT("Input mesh: " << nbInputPoints << " vertices and " << M_in.facets.nb() << " facets.");
-    ALICEVISION_COUT("Target output mesh: " << nbOutputPoints << " vertices.");
+    ALICEVISION_LOG_INFO("Input mesh: " << nbInputPoints << " vertices and " << M_in.facets.nb() << " facets.");
+    ALICEVISION_LOG_INFO("Target output mesh: " << nbOutputPoints << " vertices.");
 
     {
         GEO::CmdLine::import_arg_group("standard");
@@ -149,7 +161,7 @@ int main(int argc, char* argv[])
         const unsigned int nbNewtonIter = 0;
         const unsigned int newtonM = 0;
 
-        ALICEVISION_COUT("Start mesh resampling.");
+        ALICEVISION_LOG_INFO("Start mesh resampling.");
         GEO::remesh_smooth(
             M_in, M_out,
             nbOutputPoints,
@@ -158,13 +170,13 @@ int main(int argc, char* argv[])
             nbNewtonIter, // Number of iterations for Newton-CVT
             newtonM // Number of evaluations for Hessian approximation
             );
-        ALICEVISION_COUT("Mesh resampling done.");
+        ALICEVISION_LOG_INFO("Mesh resampling done.");
     }
-    ALICEVISION_COUT("Output mesh: " << M_out.vertices.nb() << " vertices and " << M_out.facets.nb() << " facets.");
+    ALICEVISION_LOG_INFO("Output mesh: " << M_out.vertices.nb() << " vertices and " << M_out.facets.nb() << " facets.");
 
     if(M_out.facets.nb() == 0)
     {
-        ALICEVISION_CERR("Failed: the output mesh is empty.");
+        ALICEVISION_LOG_ERROR("The output mesh is empty.");
         return 1;
     }
     if(flipNormals)
@@ -175,14 +187,15 @@ int main(int argc, char* argv[])
         }
     }
 
-    ALICEVISION_COUT("Save mesh");
+    ALICEVISION_LOG_INFO("Save mesh.");
     if(!GEO::mesh_save(M_out, outputMeshPath))
     {
-        ALICEVISION_CERR("Failed to save mesh \"" << outputMeshPath << "\".");
+        ALICEVISION_LOG_ERROR("Failed to save mesh file: \"" << outputMeshPath << "\".");
         return EXIT_FAILURE;
     }
-    ALICEVISION_CERR("Mesh \"" << outputMeshPath << "\" saved.");
 
-    mvsUtils::printfElapsedTime(startTime, "#");
+    ALICEVISION_LOG_INFO("Mesh file: \"" << outputMeshPath << "\" saved.");
+
+    ALICEVISION_LOG_INFO("Task done in (s): " + std::to_string(timer.elapsed()));
     return EXIT_SUCCESS;
 }

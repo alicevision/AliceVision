@@ -4,6 +4,7 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "MeshEnergyOpt.hpp"
+#include <aliceVision/system/Logger.hpp>
 
 #include <boost/filesystem.hpp>
 
@@ -151,10 +152,15 @@ bool MeshEnergyOpt::optimizeSmooth(float lambda, float epsilon, int type, int ni
         RD.z = std::max(RD.z, (*pts)[i].z);
     }
 
-    printf("optimizing mesh : lamda %f, epsilon %f, type %i, niters %i\n", lambda, epsilon, type, niter);
+    ALICEVISION_LOG_INFO("Optimizing mesh smooth: " << std::endl
+                         << "\t- lamda: " << lambda << std::endl
+                         << "\t- epsilon: " << epsilon << std::endl
+                         << "\t- type: " << type << std::endl
+                         << "\t- niters: " << niter << std::endl);
+
     for(int i = 0; i < niter; i++)
     {
-        printf("Iteration: %i\n", i);
+        ALICEVISION_LOG_INFO("Optimizing mesh smooth: iteration " << i);
         updateGradientParallel(lambda, epsilon, type, LU, RD, ptsCanMove);
         if(saveDebug)
             saveToObj(mp->mip->mvDir + "mesh_smoothed_" + std::to_string(i) + ".obj");

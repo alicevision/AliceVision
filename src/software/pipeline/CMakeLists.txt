@@ -310,7 +310,8 @@ if(ALICEVISION_BUILD_MVS)
   add_executable(aliceVision_cameraConnection main_cameraConnection.cpp)
 
   target_link_libraries(aliceVision_cameraConnection
-    PUBLIC aliceVision_mvsUtils
+    PUBLIC aliceVision_system
+           aliceVision_mvsUtils
            ${Boost_LIBRARIES}
   )
 
@@ -328,7 +329,8 @@ if(ALICEVISION_BUILD_MVS)
     add_executable(aliceVision_depthMapEstimation main_depthMapEstimation.cpp)
 
     target_link_libraries(aliceVision_depthMapEstimation
-      PUBLIC aliceVision_mvsData
+      PUBLIC aliceVision_system
+             aliceVision_mvsData
              aliceVision_mvsUtils
              aliceVision_depthMap
              ${Boost_LIBRARIES}
@@ -348,7 +350,8 @@ if(ALICEVISION_BUILD_MVS)
   add_executable(aliceVision_depthMapFiltering main_depthMapFiltering.cpp)
 
   target_link_libraries(aliceVision_depthMapFiltering
-    PUBLIC aliceVision_mvsData
+    PUBLIC aliceVision_system
+           aliceVision_mvsData
            aliceVision_mvsUtils
            aliceVision_fuseCut
            ${Boost_LIBRARIES}
@@ -367,7 +370,8 @@ if(ALICEVISION_BUILD_MVS)
   add_executable(aliceVision_meshing main_meshing.cpp)
 
   target_link_libraries(aliceVision_meshing
-    PUBLIC aliceVision_mvsData
+    PUBLIC aliceVision_system
+           aliceVision_mvsData
            aliceVision_mvsUtils
            aliceVision_mesh
            aliceVision_fuseCut
@@ -389,7 +393,8 @@ if(ALICEVISION_BUILD_MVS)
     add_executable(aliceVision_meshDenoising main_meshDenoising.cpp)
 
     target_link_libraries(aliceVision_meshDenoising
-      PUBLIC aliceVision_mvsUtils
+      PUBLIC aliceVision_system
+             aliceVision_mvsUtils
              MeshSDLibrary
              ${Boost_LIBRARIES}
              Eigen3::Eigen
@@ -406,7 +411,8 @@ if(ALICEVISION_BUILD_MVS)
     add_executable(aliceVision_meshDecimate main_meshDecimate.cpp)
 
     target_link_libraries(aliceVision_meshDecimate
-      PUBLIC aliceVision_mvsUtils
+      PUBLIC aliceVision_system
+             aliceVision_mvsUtils
              OpenMesh
              ${Boost_LIBRARIES}
     )
@@ -424,7 +430,8 @@ if(ALICEVISION_BUILD_MVS)
   add_executable(aliceVision_meshFiltering main_meshFiltering.cpp)
 
   target_link_libraries(aliceVision_meshFiltering
-    PUBLIC aliceVision_mvsUtils
+    PUBLIC aliceVision_system
+           aliceVision_mvsUtils
            aliceVision_mesh
            ${Boost_LIBRARIES}
   )
@@ -440,7 +447,8 @@ if(ALICEVISION_BUILD_MVS)
   add_executable(aliceVision_meshResampling main_meshResampling.cpp)
 
   target_link_libraries(aliceVision_meshResampling
-    PUBLIC aliceVision_mvsUtils
+    PUBLIC aliceVision_system
+           aliceVision_mvsUtils
            Geogram::geogram
            ${Boost_LIBRARIES}
   )
@@ -458,7 +466,8 @@ if(ALICEVISION_BUILD_MVS)
   add_executable(aliceVision_texturing main_texturing.cpp)
 
   target_link_libraries(aliceVision_texturing
-    PUBLIC aliceVision_mvsData
+    PUBLIC aliceVision_system
+           aliceVision_mvsData
            aliceVision_mvsUtils
            aliceVision_mesh
            ${Boost_LIBRARIES}

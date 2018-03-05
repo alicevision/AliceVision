@@ -3,7 +3,9 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
-
+#include <aliceVision/system/cmdline.hpp>
+#include <aliceVision/system/Logger.hpp>
+#include <aliceVision/system/Timer.hpp>
 #include <aliceVision/mesh/MeshEnergyOpt.hpp>
 #include <aliceVision/mesh/Texturing.hpp>
 #include <aliceVision/mvsUtils/common.hpp>
@@ -15,13 +17,11 @@ using namespace aliceVision;
 namespace bfs = boost::filesystem;
 namespace po = boost::program_options;
 
-#define ALICEVISION_COUT(x) std::cout << x << std::endl
-#define ALICEVISION_CERR(x) std::cerr << x << std::endl
-
 int main(int argc, char* argv[])
 {
-    long startTime = clock();
+    system::Timer timer;
 
+    std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
     std::string inputMeshPath;
     std::string outputMeshPath;
 
@@ -44,7 +44,12 @@ int main(int argc, char* argv[])
         ("lambda", po::value<float>(&lambda)->default_value(lambda),
             "");
 
-    allParams.add(requiredParams).add(optionalParams);
+    po::options_description logParams("Log parameters");
+    logParams.add_options()
+      ("verboseLevel,v", po::value<std::string>(&verboseLevel)->default_value(verboseLevel),
+        "verbosity level (fatal, error, warning, info, debug, trace).");
+
+    allParams.add(requiredParams).add(optionalParams).add(logParams);
 
     po::variables_map vm;
 
@@ -73,8 +78,11 @@ int main(int argc, char* argv[])
       return EXIT_FAILURE;
     }
 
-    ALICEVISION_COUT("inputMeshPath: " << inputMeshPath);
-    ALICEVISION_COUT("outputMeshPath: " << outputMeshPath);
+    ALICEVISION_COUT("Program called with the following parameters:");
+    ALICEVISION_COUT(vm);
+
+    // set verbose level
+    system::Logger::get()->setLogLevel(verboseLevel);
 
     bfs::path outDirectory = bfs::path(outputMeshPath).parent_path();
     if(!bfs::is_directory(outDirectory))
@@ -87,24 +95,24 @@ int main(int argc, char* argv[])
 
     if(!mesh)
     {
-        std::cerr << "Error: unable to read input mesh from the file " << inputMeshPath << std::endl;
+        ALICEVISION_LOG_ERROR("Unable to read input mesh from the file: " << inputMeshPath);
         return EXIT_FAILURE;
     }
 
 //    if(mesh.n_vertices() == 0 || mesh.n_faces() == 0)
 //    {
-//        ALICEVISION_CERR("Error: empty mesh from the file " << inputMeshPath);
-//        ALICEVISION_CERR("Input mesh: " << mesh.n_vertices() << " vertices and " << mesh.n_faces() << " facets.");
+//        ALICEVISION_LOG_ERROR("Error: empty mesh from the file " << inputMeshPath);
+//        ALICEVISION_LOG_ERROR("Input mesh: " << mesh.n_vertices() << " vertices and " << mesh.n_faces() << " facets.");
 //        return EXIT_FAILURE;
 //    }
 
-    ALICEVISION_COUT("Mesh \"" << inputMeshPath << "\" loaded");
+    ALICEVISION_LOG_INFO("Mesh file: \"" << inputMeshPath << "\" loaded.");
 
-//    ALICEVISION_COUT("Input mesh: " << mesh.n_vertices() << " vertices and " << mesh.n_faces() << " facets.");
+//    ALICEVISION_LOG_INFO("Input mesh: " << mesh.n_vertices() << " vertices and " << mesh.n_faces() << " facets.");
 
     mesh::MeshEnergyOpt meOpt(nullptr);
     {
-        ALICEVISION_COUT("Start mesh filtering.");
+        ALICEVISION_LOG_INFO("Start mesh filtering.");
         meOpt.addMesh(mesh);
         meOpt.init();
         meOpt.cleanMesh(10);
@@ -114,7 +122,7 @@ int main(int argc, char* argv[])
         int type = 3; // 0, 1, 2, 3, 4 => only 1 and 3 works
         meOpt.optimizeSmooth(lambda, epsilon, type, smoothNIter, ptsCanMove);
 
-        ALICEVISION_COUT("Mesh filtering done.");
+        ALICEVISION_LOG_INFO("Mesh filtering done.");
     }
 
     mesh::Mesh outMesh;
@@ -128,13 +136,13 @@ int main(int argc, char* argv[])
 //        return EXIT_FAILURE;
 //    }
 
-    ALICEVISION_COUT("Save mesh");
+    ALICEVISION_LOG_INFO("Save mesh.");
 
     // Save output mesh
     outMesh.saveToObj(outputMeshPath);
 
-    ALICEVISION_CERR("Mesh \"" << outputMeshPath << "\" saved.");
+    ALICEVISION_LOG_INFO("Mesh file: \"" << outputMeshPath << "\" saved.");
 
-    mvsUtils::printfElapsedTime(startTime, "#");
+    ALICEVISION_LOG_INFO("Task done in (s): " + std::to_string(timer.elapsed()));
     return EXIT_SUCCESS;
 }

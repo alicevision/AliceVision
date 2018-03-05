@@ -4,6 +4,7 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "RcTc.hpp"
+#include <aliceVision/system/Logger.hpp>
 #include <aliceVision/mvsData/StaticVector.hpp>
 #include <aliceVision/mvsUtils/common.hpp>
 
@@ -25,7 +26,7 @@ void RcTc::refineRcTcDepthSimMap(bool useTcOrRcPixSize, DepthSimMap* depthSimMap
     int h = mp->mip->getHeight(rc) / scale;
 
     if(verbose)
-        printf("w %i, h %i\n", w, h);
+        ALICEVISION_LOG_DEBUG("refineRcTcDepthSimMap: width: " << w << ", height: " << h);
 
     long t1 = clock();
 

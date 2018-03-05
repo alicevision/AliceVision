@@ -3,6 +3,9 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
+#include <aliceVision/system/cmdline.hpp>
+#include <aliceVision/system/Logger.hpp>
+#include <aliceVision/system/Timer.hpp>
 #include <aliceVision/mvsData/StaticVector.hpp>
 #include <aliceVision/mvsUtils/common.hpp>
 #include <aliceVision/mvsUtils/MultiViewParams.hpp>
@@ -18,13 +21,11 @@ using namespace aliceVision;
 namespace bfs = boost::filesystem;
 namespace po = boost::program_options;
 
-#define ALICEVISION_COUT(x) std::cout << x << std::endl
-#define ALICEVISION_CERR(x) std::cerr << x << std::endl
-
 int main(int argc, char* argv[])
 {
-    long startTime = clock();
+    system::Timer timer;
 
+    std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
     std::string iniFilepath;
     std::string outputFolder;
 
@@ -91,7 +92,12 @@ int main(int argc, char* argv[])
         ("refineUseTcOrRcPixSize", po::value<bool>(&refineUseTcOrRcPixSize)->default_value(refineUseTcOrRcPixSize),
             "Refine: Use current camera pixel size or minimum pixel size of neighbour cameras.");
 
-    allParams.add(requiredParams).add(optionalParams);
+    po::options_description logParams("Log parameters");
+    logParams.add_options()
+      ("verboseLevel,v", po::value<std::string>(&verboseLevel)->default_value(verboseLevel),
+        "verbosity level (fatal, error, warning, info, debug, trace).");
+
+    allParams.add(requiredParams).add(optionalParams).add(logParams);
 
     po::variables_map vm;
 
@@ -120,10 +126,14 @@ int main(int argc, char* argv[])
       return EXIT_FAILURE;
     }
 
-    ALICEVISION_COUT("ini file: " << iniFilepath);
+    ALICEVISION_COUT("Program called with the following parameters:");
+    ALICEVISION_COUT(vm);
+
+    // set verbose level
+    system::Logger::get()->setLogLevel(verboseLevel);
 
     // Print GPU Information
-    std::cout << system::gpuInformationCUDA() << std::endl;
+    ALICEVISION_LOG_INFO(system::gpuInformationCUDA());
 
     // .ini parsing
     mvsUtils::MultiViewInputParams mip(iniFilepath, outputFolder, "");
@@ -162,23 +172,25 @@ int main(int argc, char* argv[])
     {
         if(rangeStart < 0)
         {
-            ALICEVISION_CERR("invalid subrange of cameras to process.");
+            ALICEVISION_LOG_ERROR("invalid subrange of cameras to process.");
             return EXIT_FAILURE;
         }
         for(int rc = rangeStart; rc < std::min(rangeStart + rangeSize, mp.ncams); ++rc)
             cams.push_back(rc);
         if(cams.empty())
         {
-            ALICEVISION_COUT("No camera to process");
+            ALICEVISION_LOG_INFO("No camera to process.");
             return EXIT_SUCCESS;
         }
     }
 
-    ALICEVISION_COUT("--- create depthmap");
+    ALICEVISION_LOG_INFO("Create depth maps.");
 
-    depthMap::computeDepthMapsPSSGM(&mp, &pc, cams);
-    depthMap::refineDepthMaps(&mp, &pc, cams);
+    {
+        depthMap::computeDepthMapsPSSGM(&mp, &pc, cams);
+        depthMap::refineDepthMaps(&mp, &pc, cams);
+    }
 
-    mvsUtils::printfElapsedTime(startTime, "#");
+    ALICEVISION_LOG_INFO("Task done in (s): " + std::to_string(timer.elapsed()));
     return EXIT_SUCCESS;
 }

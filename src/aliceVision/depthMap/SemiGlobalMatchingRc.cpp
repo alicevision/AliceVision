@@ -4,6 +4,7 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "SemiGlobalMatchingRc.hpp"
+#include <aliceVision/system/Logger.hpp>
 #include <aliceVision/depthMap/SemiGlobalMatchingRcTc.hpp>
 #include <aliceVision/depthMap/SemiGlobalMatchingVolume.hpp>
 #include <aliceVision/mvsData/OrientedPoint.hpp>
@@ -532,7 +533,7 @@ void SemiGlobalMatchingRc::computeDepthsAndResetTCams()
     }
 
     if(sp->mp->verbose)
-        printf("rc depths %i\n", depths->size());
+        ALICEVISION_LOG_DEBUG("rc depths: " << depths->size());
 
     deleteArrayOfArrays<float>(&alldepths);
 }
@@ -554,7 +555,7 @@ StaticVector<float>* SemiGlobalMatchingRc::getSubDepthsForTCam(int tcamid)
 bool SemiGlobalMatchingRc::sgmrc(bool checkIfExists)
 {
     if(sp->mp->verbose)
-        printf("processing sgmrc %i of %i\n", rc, sp->mp->ncams);
+        ALICEVISION_LOG_DEBUG("sgmrc: processing " << (rc + 1) << " of " << sp->mp->ncams << ".");
 
     if(tcams->size() == 0)
     {
@@ -700,7 +701,7 @@ void computeDepthMapsPSSGM(int CUDADeviceNo, mvsUtils::MultiViewParams* mp, mvsU
         int scaleTmp = computeStep(mp->mip, 1, (width > height ? 700 : 550), (width > height ? 550 : 700));
         scale = std::min(2, scaleTmp);
         step = computeStep(mp->mip, scale, (width > height ? 700 : 550), (width > height ? 550 : 700));
-        printf("PSSGM autoScaleStep %i %i\n", scale, step);
+        ALICEVISION_LOG_INFO("PSSGM autoScaleStep: scale: " << scale << ", step: " << step);
     }
 
     int bandType = 0;
@@ -719,13 +720,13 @@ void computeDepthMapsPSSGM(int CUDADeviceNo, mvsUtils::MultiViewParams* mp, mvsU
         std::string depthMapFilepath = sp.getSGM_idDepthMapFileName(mp->mip->getViewId(rc), scale, step);
         if(!mvsUtils::FileExists(depthMapFilepath))
         {
-            std::cout << "Compute depth map: " << depthMapFilepath << std::endl;
+            ALICEVISION_LOG_INFO("Compute depth map: " << depthMapFilepath);
             SemiGlobalMatchingRc psgr(true, rc, scale, step, &sp);
             psgr.sgmrc();
         }
         else
         {
-            std::cout << "Depth map already computed: " << depthMapFilepath << std::endl;
+            ALICEVISION_LOG_INFO("Depth map already computed: " << depthMapFilepath);
         }
     }
 }
@@ -734,7 +735,7 @@ void computeDepthMapsPSSGM(mvsUtils::MultiViewParams* mp, mvsUtils::PreMatchCams
 {
     int num_gpus = listCUDADevices(true);
     int num_cpu_threads = omp_get_num_procs();
-    std::cout << "Number of GPU devices: " << num_gpus << ", number of CPU threads: " << num_cpu_threads << std::endl;
+    ALICEVISION_LOG_INFO("Number of GPU devices: " << num_gpus << ", number of CPU threads: " << num_cpu_threads);
     int numthreads = std::min(num_gpus, num_cpu_threads);
 
     int num_gpus_to_use = mp->mip->_ini.get<int>("semiGlobalMatching.num_gpus_to_use", 1);
@@ -754,7 +755,7 @@ void computeDepthMapsPSSGM(mvsUtils::MultiViewParams* mp, mvsUtils::PreMatchCams
         {
             int cpu_thread_id = omp_get_thread_num();
             int CUDADeviceNo = cpu_thread_id % numthreads;
-            std::cout << "CPU thread " << cpu_thread_id << " (of " << numthreads << ") uses CUDA device: " << CUDADeviceNo << std::endl;
+            ALICEVISION_LOG_INFO("CPU thread " << cpu_thread_id << " (of " << numthreads << ") uses CUDA device: " << CUDADeviceNo);
 
             int rcFrom = CUDADeviceNo * (cams.size() / numthreads);
             int rcTo = (CUDADeviceNo + 1) * (cams.size() / numthreads);

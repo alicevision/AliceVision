@@ -3,6 +3,9 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
+#include <aliceVision/system/cmdline.hpp>
+#include <aliceVision/system/Logger.hpp>
+#include <aliceVision/system/Timer.hpp>
 #include <aliceVision/mvsData/Point3d.hpp>
 #include <aliceVision/mvsData/StaticVector.hpp>
 #include <aliceVision/mvsUtils/common.hpp>
@@ -19,9 +22,6 @@
 using namespace aliceVision;
 namespace bfs = boost::filesystem;
 namespace po = boost::program_options;
-
-#define ALICEVISION_COUT(x) std::cout << x << std::endl
-#define ALICEVISION_CERR(x) std::cerr << x << std::endl
 
 enum EPartitioning {
     eUndefined = 0,
@@ -49,12 +49,14 @@ inline std::istream& operator>>(std::istream& in, EPartitioning& mode)
 
 int main(int argc, char* argv[])
 {
-    long startTime = clock();
+    system::Timer timer;
 
+    std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
     std::string iniFilepath;
     std::string outputMesh;
     std::string depthMapFolder;
     std::string depthMapFilterFolder;
+
     EPartitioning partitioning = eSingleBlock;
     po::options_description inputParams;
     int maxPts = 6000000;
@@ -88,7 +90,12 @@ int main(int argc, char* argv[])
         ("partitioning", po::value<EPartitioning>(&partitioning)->default_value(partitioning),
             "Partitioning: singleBlock or auto.");
 
-    allParams.add(requiredParams).add(optionalParams);
+    po::options_description logParams("Log parameters");
+    logParams.add_options()
+      ("verboseLevel,v", po::value<std::string>(&verboseLevel)->default_value(verboseLevel),
+        "verbosity level (fatal, error, warning, info, debug, trace).");
+
+    allParams.add(requiredParams).add(optionalParams).add(logParams);
 
     po::variables_map vm;
 
@@ -117,7 +124,11 @@ int main(int argc, char* argv[])
       return EXIT_FAILURE;
     }
 
-    ALICEVISION_COUT("ini file: " << iniFilepath);
+    ALICEVISION_COUT("Program called with the following parameters:");
+    ALICEVISION_COUT(vm);
+
+    // set verbose level
+    system::Logger::get()->setLogLevel(verboseLevel);
 
     // .ini parsing
     mvsUtils::MultiViewInputParams mip(iniFilepath, depthMapFolder, depthMapFilterFolder);
@@ -143,7 +154,7 @@ int main(int argc, char* argv[])
     {
         case eAuto:
         {
-            ALICEVISION_COUT("--- meshing partitioning: auto");
+            ALICEVISION_LOG_INFO("Meshing partitioning mode: auto.");
             fuseCut::LargeScale lsbase(&mp, &pc, tmpDirectory.string() + "/");
             lsbase.generateSpace(maxPtsPerVoxel, ocTreeDim);
             std::string voxelsArrayFileName = lsbase.spaceFolderName + "hexahsToReconstruct.bin";
@@ -151,12 +162,12 @@ int main(int argc, char* argv[])
             if(bfs::exists(voxelsArrayFileName))
             {
                 // If already computed reload it.
-                ALICEVISION_COUT("Voxels array already computed, reload from file: " << voxelsArrayFileName);
+                ALICEVISION_LOG_INFO("Voxels array already computed, reload from file: " << voxelsArrayFileName);
                 voxelsArray = loadArrayFromFile<Point3d>(voxelsArrayFileName);
             }
             else
             {
-                ALICEVISION_COUT("Compute voxels array");
+                ALICEVISION_LOG_INFO("Compute voxels array.");
                 fuseCut::ReconstructionPlan rp(lsbase.dimensions, &lsbase.space[0], lsbase.mp, lsbase.pc, lsbase.spaceVoxelsFolderName);
                 voxelsArray = rp.computeReconstructionPlanBinSearch(maxPts);
                 saveArrayToFile<Point3d>(voxelsArrayFileName, voxelsArray);
@@ -165,7 +176,7 @@ int main(int argc, char* argv[])
             // Join meshes
             mesh::Mesh* mesh = fuseCut::joinMeshes(voxelsArrayFileName, &lsbase);
 
-            ALICEVISION_COUT("Saving joined meshes");
+            ALICEVISION_LOG_INFO("Saving joined meshes...");
 
             bfs::path spaceBinFileName = outDirectory/"denseReconstruction.bin";
             mesh->saveToBin(spaceBinFileName.string());
@@ -183,7 +194,7 @@ int main(int argc, char* argv[])
         break;
         case eSingleBlock:
         {
-            ALICEVISION_COUT("--- meshing partitioning: single block");
+            ALICEVISION_LOG_INFO("Meshing partitioning mode: single block.");
             fuseCut::LargeScale ls0(&mp, &pc, tmpDirectory.string() + "/");
             ls0.generateSpace(maxPtsPerVoxel, ocTreeDim);
             unsigned long ntracks = std::numeric_limits<unsigned long>::max();
@@ -194,17 +205,17 @@ int main(int argc, char* argv[])
                 fuseCut::VoxelsGrid vg(ls->dimensions, &ls->space[0], ls->mp, ls->pc, ls->spaceVoxelsFolderName);
                 ntracks = vg.getNTracks();
                 delete ls;
-                ALICEVISION_COUT("Number of track candidates: " << ntracks);
+                ALICEVISION_LOG_INFO("Number of track candidates: " << ntracks);
                 if(ntracks > maxPts)
                 {
-                    ALICEVISION_COUT("ocTreeDim: " << ocTreeDim);
+                    ALICEVISION_LOG_INFO("ocTreeDim: " << ocTreeDim);
                     double t = (double)ntracks / (double)maxPts;
-                    ALICEVISION_COUT("downsample: " << ((t < 2.0) ? "slow" : "fast"));
+                    ALICEVISION_LOG_INFO("downsample: " << ((t < 2.0) ? "slow" : "fast"));
                     ocTreeDim = (t < 2.0) ? ocTreeDim-100 : ocTreeDim*0.5;
                 }
             }
-            ALICEVISION_COUT("Number of tracks: " << ntracks);
-            ALICEVISION_COUT("ocTreeDim: " << ocTreeDim);
+            ALICEVISION_LOG_INFO("Number of tracks: " << ntracks);
+            ALICEVISION_LOG_INFO("ocTreeDim: " << ocTreeDim);
             bfs::path dirName = outDirectory/("LargeScaleMaxPts" + mvsUtils::num2strFourDecimal(ocTreeDim));
             fuseCut::LargeScale lsbase(&mp, &pc, dirName.string()+"/");
             lsbase.loadSpaceFromFile();
@@ -247,6 +258,6 @@ int main(int argc, char* argv[])
             throw std::invalid_argument("Partitioning not defined");
     }
 
-    mvsUtils::printfElapsedTime(startTime, "#");
+    ALICEVISION_LOG_INFO("Task done in (s): " + std::to_string(timer.elapsed()));
     return EXIT_SUCCESS;
 }

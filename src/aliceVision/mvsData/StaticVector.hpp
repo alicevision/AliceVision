@@ -5,6 +5,8 @@
 
 #pragma once
 
+#include <aliceVision/system/Logger.hpp>
+
 #include <algorithm>
 #include <assert.h>
 #include <cstdlib>
@@ -190,7 +192,7 @@ int indexOf(T* arr, int n, const T& what)
 template <class T>
 void saveArrayOfArraysToFile(std::string fileName, StaticVector<StaticVector<T>*>* aa)
 {
-    std::cout << "[IO] saveArrayOfArraysToFile: " << fileName << std::endl;
+    ALICEVISION_LOG_DEBUG("[IO] saveArrayOfArraysToFile: " << fileName);
     FILE* f = fopen(fileName.c_str(), "wb");
     int n = aa->size();
     fwrite(&n, sizeof(int), 1, f);
@@ -218,7 +220,7 @@ void saveArrayOfArraysToFile(std::string fileName, StaticVector<StaticVector<T>*
 template <class T>
 StaticVector<StaticVector<T>*>* loadArrayOfArraysFromFile(std::string fileName)
 {
-    std::cout << "[IO] loadArrayOfArraysFromFile: " << fileName << std::endl;
+    ALICEVISION_LOG_DEBUG("[IO] loadArrayOfArraysFromFile: " << fileName);
     FILE* f = fopen(fileName.c_str(), "rb");
     if(f == nullptr)
         throw std::runtime_error("loadArrayOfArraysFromFile : can't open file " + fileName);
@@ -248,7 +250,7 @@ StaticVector<StaticVector<T>*>* loadArrayOfArraysFromFile(std::string fileName)
 template <class T>
 void saveArrayToFile(std::string fileName, StaticVector<T>* a, bool docompress = true)
 {
-    std::cout << "[IO] saveArrayToFile: " << fileName << std::endl;
+    ALICEVISION_LOG_DEBUG("[IO] saveArrayToFile: " << fileName);
 
     if((docompress == false) || (a->size() < 1000))
     {
@@ -281,7 +283,7 @@ void saveArrayToFile(std::string fileName, StaticVector<T>* a, bool docompress =
 
         if(err != Z_OK)
         {
-            printf("compress error %i : %lu -> %lu, n %i \n", err, sizeof(T) * a->size(), comprLen, a->size());
+            ALICEVISION_LOG_ERROR("compress error " << err << " : " << (sizeof(T) * a->size()) << " -> " << comprLen << ", n " << a->size());
 
             FILE* f = fopen(fileName.c_str(), "wb");
             int n = a->size();
@@ -308,7 +310,7 @@ void saveArrayToFile(std::string fileName, StaticVector<T>* a, bool docompress =
 template <class T>
 StaticVector<T>* loadArrayFromFile(std::string fileName, bool printfWarning = false)
 {
-    std::cout << "[IO] loadArrayFromFile: " << fileName << std::endl;
+    ALICEVISION_LOG_DEBUG("[IO] loadArrayFromFile: " << fileName);
 
     FILE* f = fopen(fileName.c_str(), "rb");
     if(f == NULL)
@@ -337,7 +339,7 @@ StaticVector<T>* loadArrayFromFile(std::string fileName, bool printfWarning = fa
 
             if(err != Z_OK)
             {
-                printf("uncompress error %i : %lu -> %lu, n %i \n", err, sizeof(T) * n, uncomprLen, n);
+                ALICEVISION_LOG_ERROR("uncompress error " << err << " : " << (sizeof(T) * n) << " -> " << uncomprLen << ", n " << n);
             }
 
             if(uncomprLen != sizeof(T) * n)
@@ -363,7 +365,7 @@ StaticVector<T>* loadArrayFromFile(std::string fileName, bool printfWarning = fa
 template <class T>
 void loadArrayFromFileIntoArray(StaticVector<T>* a, std::string fileName, bool printfWarning = false)
 {
-    std::cout << "[IO] loadArrayFromFileIntoArray: " << fileName << std::endl;
+    ALICEVISION_LOG_DEBUG("[IO] loadArrayFromFileIntoArray: " << fileName);
 
     FILE* f = fopen(fileName.c_str(), "rb");
     if(f == NULL)
@@ -393,7 +395,7 @@ void loadArrayFromFileIntoArray(StaticVector<T>* a, std::string fileName, bool p
  
         if(err != Z_OK)
         {
-            printf("uncompress error %i : %lu -> %lu, n %i \n", err, sizeof(T) * n, uncomprLen, n);
+            ALICEVISION_LOG_ERROR("uncompress error " << err << " : " << (sizeof(T) * n) << " -> " << uncomprLen << ", n " << n);
         }
  
         if(uncomprLen != sizeof(T) * n)

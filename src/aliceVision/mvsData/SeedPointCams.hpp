@@ -5,6 +5,7 @@
 
 #pragma once
 
+#include <aliceVision/system/Logger.hpp>
 #include <aliceVision/mvsData/Point2d.hpp>
 
 namespace aliceVision {
@@ -60,7 +61,7 @@ public:
     {
         if(SP_NCAMS < newSize)
         {
-            printf("reserve too many cams\n");
+            ALICEVISION_LOG_ERROR("reserve too many cams\n");
             // exit(1);
         }
     }

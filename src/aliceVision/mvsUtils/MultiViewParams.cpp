@@ -4,6 +4,7 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "MultiViewParams.hpp"
+#include <aliceVision/system/Logger.hpp>
 #include <aliceVision/mvsData/geometry.hpp>
 #include <aliceVision/mvsData/Matrix3x4.hpp>
 #include <aliceVision/mvsData/Pixel.hpp>
@@ -75,10 +76,10 @@ void MultiViewInputParams::initFromConfigFile(const std::string& iniFile)
     }
     if(getNbCameras() != ncams)
         throw std::runtime_error("Incoherent number of cameras.");
-    std::cout << "Found " << dimensions.size() << " image dimension(s): " << std::endl;
+    ALICEVISION_LOG_INFO("Found " << dimensions.size() << " image dimension(s): ");
     for(const auto& dim : dimensions)
-        std::cout << " - [" << dim.first << "x" << dim.second << "]" << std::endl;
-    std::cout << "Overall maximum dimension: [" << maxImageWidth << "x" << maxImageHeight << "]" << std::endl;
+        ALICEVISION_LOG_INFO(" - [" << dim.first << "x" << dim.second << "]");
+    ALICEVISION_LOG_INFO("Overall maximum dimension: [" << maxImageWidth << "x" << maxImageHeight << "]");
 }
 
 MultiViewParams::MultiViewParams(int _ncams, MultiViewInputParams* _mip, float _simThr,
@@ -119,7 +120,7 @@ MultiViewParams::MultiViewParams(int _ncams, MultiViewInputParams* _mip, float _
 
         if(KArr[i].m11 > (float)(mip->getWidth(i) * 100))
         {
-            printf("WARNING camera %i at infinity ... settitng to zero\n", i);
+            ALICEVISION_LOG_WARNING("Camera " << i << " at infinity ... setting to zero");
 
             KArr[i].m11 = mip->getWidth(i) / 2;
             KArr[i].m12 = 0;

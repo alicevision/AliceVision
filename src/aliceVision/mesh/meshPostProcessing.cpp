@@ -4,6 +4,7 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "meshPostProcessing.hpp"
+#include <aliceVision/system/Logger.hpp>
 #include <aliceVision/mvsData/geometry.hpp>
 #include <aliceVision/mvsData/Point3d.hpp>
 #include <aliceVision/mvsData/StaticVector.hpp>
@@ -42,7 +43,7 @@ void meshPostProcessing(Mesh*& inout_mesh, StaticVector<StaticVector<int>*>*& in
                       StaticVector<Point3d>* hexahsToExcludeFromResultingMesh, Point3d* hexah)
 {
     long timer = std::clock();
-    std::cout << "meshPostProcessing" << std::endl;
+    ALICEVISION_LOG_INFO("Mesh post-processing.");
 
 
     bool exportDebug = (float)mp.mip->_ini.get<bool>("delaunaycut.exportDebugGC", false);
@@ -111,7 +112,7 @@ void meshPostProcessing(Mesh*& inout_mesh, StaticVector<StaticVector<int>*>*& in
     }
 
     {
-        printf("Cleaning mesh\n");
+        ALICEVISION_LOG_INFO("Mesh Cleaning.");
 
         MeshEnergyOpt* meOpt = new MeshEnergyOpt(&mp);
         meOpt->addMesh(inout_mesh);
@@ -194,7 +195,7 @@ void meshPostProcessing(Mesh*& inout_mesh, StaticVector<StaticVector<int>*>*& in
         int smoothNIter = mp.mip->_ini.get<int>("meshEnergyOpt.smoothNbIterations", 10);
         if(doSmoothMesh && smoothNIter != 0)
         {
-            printf("Smoothing mesh\n");
+            ALICEVISION_LOG_INFO("Mesh smoothing.");
             float lambda = (float)mp.mip->_ini.get<double>("meshEnergyOpt.lambda", 1.0f);
             float epsilon = (float)mp.mip->_ini.get<double>("meshEnergyOpt.epsilon", 0.1f); // unused in type 3
             int type = mp.mip->_ini.get<int>("meshEnergyOpt.smoothType", 3); // 0, 1, 2, 3, 4 => only 1 and 3 works
@@ -213,7 +214,7 @@ void meshPostProcessing(Mesh*& inout_mesh, StaticVector<StaticVector<int>*>*& in
         delete meOpt;
     }
     mvsUtils::printfElapsedTime(timer, "Mesh post-processing ");
-    std::cout << "meshPostProcessing done" << std::endl;
+    ALICEVISION_LOG_INFO("Mesh post-processing done.");
 }
 
 } // namespace mesh

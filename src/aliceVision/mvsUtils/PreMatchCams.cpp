@@ -4,6 +4,7 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "PreMatchCams.hpp"
+#include <aliceVision/system/Logger.hpp>
 #include <aliceVision/mvsData/Point2d.hpp>
 #include <aliceVision/mvsData/SeedPoint.hpp>
 #include <aliceVision/mvsUtils/fileIO.hpp>
@@ -121,10 +122,10 @@ StaticVector<int>* PreMatchCams::precomputeIncidentMatrixCamsFromSeeds()
     std::string fn = mp->mip->mvDir + "camsPairsMatrixFromSeeds.bin";
     if(FileExists(fn))
     {
-        std::cout << "Camera pairs matrix file already computed: " << fn << std::endl;
+        ALICEVISION_LOG_INFO("Camera pairs matrix file already computed: " << fn);
         return loadArrayFromFile<int>(fn);
     }
-    std::cout << "Compute camera pairs matrix file: " << fn << std::endl;
+    ALICEVISION_LOG_INFO("Compute camera pairs matrix file: " << fn);
     StaticVector<int>* camsmatrix = new StaticVector<int>();
     camsmatrix->reserve(mp->ncams * mp->ncams);
     camsmatrix->resize_with(mp->ncams * mp->ncams, 0);
@@ -199,7 +200,7 @@ StaticVector<int> PreMatchCams::findNearestCamsFromSeeds(int rc, int nnearestcam
         delete camsmatrix;
         
         if(out.size() < nnearestcams)
-            std::cout << "Warning: rc " << rc << " - only found " << out.size() << "/" << nnearestcams << " tc by seeds" << std::endl;
+            ALICEVISION_LOG_WARNING("rc: " << rc << " - found only " << out.size() << "/" << nnearestcams << " tc by seeds" );
     }
     return out;
 }

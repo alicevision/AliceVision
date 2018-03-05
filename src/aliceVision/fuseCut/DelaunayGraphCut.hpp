@@ -5,6 +5,7 @@
 
 #pragma once
 
+#include <aliceVision/system/Logger.hpp>
 #include <aliceVision/mvsData/Point3d.hpp>
 #include <aliceVision/mvsData/Rgb.hpp>
 #include <aliceVision/mvsData/StaticVector.hpp>
@@ -175,10 +176,10 @@ public:
                 neighboringCellsPerVertexTmp[vi].insert(ci);
             }
         }
-        std::cout << "coutInvalidVertices: " << coutInvalidVertices << std::endl;
-        std::cout << "neighboringCellsPerVertexTmp.size(): " << neighboringCellsPerVertexTmp.size() << std::endl;
+        ALICEVISION_LOG_INFO("coutInvalidVertices: " << coutInvalidVertices);
+        ALICEVISION_LOG_INFO("neighboringCellsPerVertexTmp: " << neighboringCellsPerVertexTmp.size());
         _neighboringCellsPerVertex.resize(_verticesCoords.size());
-        std::cout << "_verticesCoords.size(): " << _verticesCoords.size() << std::endl;
+        ALICEVISION_LOG_INFO("verticesCoords: " << _verticesCoords.size());
         for(const auto& it: neighboringCellsPerVertexTmp)
         {
             const std::set<CellIndex>& input = it.second;
@@ -361,7 +362,7 @@ inline DelaunayGraphCut::Facet DelaunayGraphCut::getFacetInFrontVertexOnTheRayTo
     //};
     if((cam < 0) || (cam >= mp->ncams))
     {
-        printf("WARNING cam %i, ptid %i\n", cam, vertexIndex);
+        ALICEVISION_LOG_WARNING("Bad camId, cam: " << cam << ",ptid: ", vertexIndex);
     }
 
     return getFacetInFrontVertexOnTheRayToThePoint3d(vertexIndex, mp->CArr[cam]);

@@ -4,6 +4,7 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "RefineRc.hpp"
+#include <aliceVision/system/Logger.hpp>
 #include <aliceVision/mvsData/Point2d.hpp>
 #include <aliceVision/mvsData/Point3d.hpp>
 #include <aliceVision/mvsUtils/common.hpp>
@@ -239,7 +240,7 @@ bool RefineRc::refinercCUDA(bool checkIfExists)
     const IndexT viewId = sp->mp->mip->getViewId(rc);
 
     if(sp->mp->verbose)
-        printf("processing refinercCUDA %i of %i\n", rc + 1, sp->mp->ncams);
+        ALICEVISION_LOG_DEBUG("refinercCUDA: processing " << (rc + 1) << " of " << sp->mp->ncams << ".");
 
     // generate default depthSimMap if rc has no tcam
     if(tcams == nullptr || depths == nullptr)
@@ -314,7 +315,7 @@ void refineDepthMaps(int CUDADeviceNo, mvsUtils::MultiViewParams* mp, mvsUtils::
         int scaleTmp = computeStep(mp->mip, 1, (width > height ? 700 : 550), (width > height ? 550 : 700));
         scale = std::min(2, scaleTmp);
         step = computeStep(mp->mip, scale, (width > height ? 700 : 550), (width > height ? 550 : 700));
-        printf("PSSGM autoScaleStep %i %i\n", scale, step);
+        ALICEVISION_LOG_INFO("PSSGM autoScaleStep scale: " << scale << ", step: " << step);
     }
 
     int bandType = 0;
@@ -343,7 +344,7 @@ void refineDepthMaps(mvsUtils::MultiViewParams* mp, mvsUtils::PreMatchCams* pc, 
 {
     int num_gpus = listCUDADevices(true);
     int num_cpu_threads = omp_get_num_procs();
-    std::cout << "Number of GPU devices: " << num_gpus << ", number of CPU threads: " << num_cpu_threads << std::endl;
+    ALICEVISION_LOG_INFO("Number of GPU devices: " << num_gpus << ", number of CPU threads: " << num_cpu_threads);
     int numthreads = std::min(num_gpus, num_cpu_threads);
 
     int num_gpus_to_use = mp->mip->_ini.get<int>("refineRc.num_gpus_to_use", 1);
@@ -363,7 +364,7 @@ void refineDepthMaps(mvsUtils::MultiViewParams* mp, mvsUtils::PreMatchCams* pc, 
         {
             int cpu_thread_id = omp_get_thread_num();
             int CUDADeviceNo = cpu_thread_id % numthreads;
-            std::cout << "CPU thread " << cpu_thread_id << " (of " << numthreads << ") uses CUDA device: " << CUDADeviceNo << std::endl;
+            ALICEVISION_LOG_INFO("CPU thread " << cpu_thread_id << " (of " << numthreads << ") uses CUDA device: " << CUDADeviceNo);
 
             int rcFrom = CUDADeviceNo * (cams.size() / numthreads);
             int rcTo = (CUDADeviceNo + 1) * (cams.size() / numthreads);

@@ -4,6 +4,7 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "image.hpp"
+#include <aliceVision/system/Logger.hpp>
 #include <aliceVision/mvsData/Color.hpp>
 #include <aliceVision/mvsData/Rgb.hpp>
 
@@ -65,7 +66,7 @@ void readImageSpec(const std::string& path,
                    int& height,
                    int& nchannels)
 {
-  std::cout << "[IO] Read Image Spec : " << path << std::endl;
+  ALICEVISION_LOG_DEBUG("[IO] Read Image Spec: " << path);
   std::unique_ptr<oiio::ImageInput> in(oiio::ImageInput::open(path));
 
   if(!in)
@@ -82,7 +83,7 @@ void readImageSpec(const std::string& path,
 
 void readImageMetadata(const std::string& path, oiio::ParamValueList& metadata)
 {
-  std::cout << "[IO] Read Image Metadata : " << path << std::endl;
+  ALICEVISION_LOG_DEBUG("[IO] Read Image Metadata: " << path);
   std::unique_ptr<oiio::ImageInput> in(oiio::ImageInput::open(path));
 
   if(!in)
@@ -101,7 +102,7 @@ void readImage(const std::string& path,
                int& height,
                std::vector<T>& buffer)
 {
-    std::cout << "[IO] Read Image : " << path << std::endl;
+    ALICEVISION_LOG_DEBUG("[IO] Read Image: " << path);
 
     // check requested channels number
     assert(nchannels == 1 || nchannels >= 3);
@@ -207,10 +208,10 @@ void writeImage(const std::string& path,
                 EImageQuality imageQuality,
                 const oiio::ParamValueList& metadata)
 {
-    std::cout << "[IO] Write Image : " << path << std::endl;
-    std::cout << "- width : " << width << std::endl;
-    std::cout << "- height : " << height << std::endl;
-    std::cout << "- channels : " << nchannels << std::endl;
+    ALICEVISION_LOG_DEBUG("[IO] Write Image: " << path << std::endl
+      << "\t- width: " << width << std::endl
+      << "\t- height: " << height << std::endl
+      << "\t- channels: " << nchannels);
 
     const bool isEXR = (path.size() > 4 && path.compare(path.size() - 4, 4, ".exr") == 0);
 

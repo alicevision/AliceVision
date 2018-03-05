@@ -1,3 +1,7 @@
+# Common modules
+
+add_subdirectory(system)
+
 # SfM modules
 
 if(ALICEVISION_BUILD_SFM)
@@ -20,7 +24,6 @@ if(ALICEVISION_BUILD_SFM)
   add_subdirectory(sensorDB)
   add_subdirectory(sfm)
   add_subdirectory(stl)
-  add_subdirectory(system)
   add_subdirectory(track)
   add_subdirectory(voctree)
 

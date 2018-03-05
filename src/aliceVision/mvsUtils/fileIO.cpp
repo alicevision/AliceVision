@@ -4,6 +4,7 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "fileIO.hpp"
+#include <aliceVision/system/Logger.hpp>
 #include <aliceVision/mvsUtils/common.hpp>
 #include <aliceVision/mvsUtils/MultiViewParams.hpp>
 #include <aliceVision/imageIO/image.hpp>
@@ -531,7 +532,7 @@ bool getDepthMapInfo(int refImgFileId, MultiViewInputParams* mip, float& mindept
     FILE* f = mv_openFile(mip, refImgFileId, EFileType::depthMapInfo, "r");
     if(f == nullptr)
     {
-        printf("WARNING!!!! depth map info %i does not exists!\n", refImgFileId);
+        ALICEVISION_LOG_WARNING("Depth map info: " << refImgFileId << " does not exists.");
         return false;
     }
 

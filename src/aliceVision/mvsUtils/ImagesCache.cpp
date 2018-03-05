@@ -46,11 +46,6 @@ void ImagesCache::initIC(int _bandType, std::vector<std::string>& _imagesNames,
     transposed = _transposed;
     bandType = _bandType;
 
-    if(_imagesNames.size() != mp->ncams)
-    {
-        printf("WARNING _imagesNames->size() %zu !=  mp->ncams %i \n", _imagesNames.size(), mp->ncams);
-    }
-
     for(int rc = 0; rc < mp->ncams; rc++)
     {
         imagesNames.push_back(_imagesNames[rc]);

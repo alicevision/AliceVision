@@ -4,6 +4,7 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "common.hpp"
+#include <aliceVision/system/Logger.hpp>
 #include <aliceVision/mvsUtils/fileIO.hpp>
 #include <aliceVision/mvsData/geometry.hpp>
 #include <aliceVision/mvsData/geometryTriTri.hpp>
@@ -195,19 +196,13 @@ void printfEstimate(int i, int n, long startTime)
         int elapsedsec = (int)d1 - (int)floor(d1 / 60.0) * 60;
 
         if(elapsedsec > 15)
-        {
-            printf("\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b%03i%% - remaining "
-                   "time %02li days %02i:%02i:%02i",
-                   perc, days, ihour, iminu, iseco);
-        }
+          ALICEVISION_LOG_INFO(perc << "% - remaining time: " << days << " days "<< ihour <<":" << iminu << ":" << iseco);
+
     }
 }
 
 void finishEstimate()
 {
-    printf("\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b");
-    printf("                                      ");
-    printf("\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b");
 }
 
 std::string printfElapsedTime(long t1, std::string prefix)
@@ -219,9 +214,11 @@ std::string printfElapsedTime(long t1, std::string prefix)
     int sec = (int)d1 - (int)floor(d1 / 60.0) * 60;
     int mil = (int)((d1 - (int)floor(d1)) * 1000);
 
-    printf("%s elapsed time %i minutes %i seconds %i miliseconds\n", prefix.c_str(), min, sec, mil);
     std::string out = prefix + " elapsed time " + num2strTwoDecimal(min) + " minutes " + num2strTwoDecimal(sec) +
                       " seconds " + num2strThreeDigits(mil) + " miliseconds\n";
+
+    ALICEVISION_LOG_DEBUG(out);
+
     return out;
 }
 
@@ -587,7 +584,7 @@ StaticVector<StaticVector<int>*>* convertObjectsCamsToCamsObjects(const MultiVie
             }
             else
             {
-                printf("WARNING convertObjectsCamsToCamsObjects %i \n", rc);
+                ALICEVISION_LOG_WARNING("ConvertObjectsCamsToCamsObjects bad camId: " << rc << " \n");
             }
         }
     }

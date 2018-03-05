@@ -4,6 +4,7 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "DepthSimMap.hpp"
+#include <aliceVision/system/Logger.hpp>
 #include <aliceVision/mvsUtils/common.hpp>
 #include <aliceVision/mvsUtils/fileIO.hpp>
 #include <aliceVision/mvsData/Color.hpp>
@@ -139,7 +140,6 @@ float DepthSimMap::getPercentileDepth(float perc)
 
     int step = std::max(1, (w * h) / 50000);
     int n = (w * h) / std::max(1, (step - 1));
-    // if (mp->verbose) printf("%i\n",n);
     StaticVector<float>* depths = new StaticVector<float>();
     depths->reserve(n);
 
@@ -366,7 +366,7 @@ void DepthSimMap::saveToImage(std::string filename, float simThr)
                 maxMinSim = autoMaxMinSim;
 
             if(mp->verbose)
-                printf("max %f, min %f\n", maxMinSim.x, maxMinSim.y);
+                ALICEVISION_LOG_DEBUG("saveToImage: max : " << maxMinSim.x << ", min: " << maxMinSim.y);
         }
 
         for(int y = 0; y < h; y++)
@@ -386,7 +386,7 @@ void DepthSimMap::saveToImage(std::string filename, float simThr)
     }
     catch(...)
     {
-        std::cout << "Failed to save " << filename << " (simThr :" << simThr << ")" << std::endl;
+        ALICEVISION_LOG_ERROR("Failed to save '" << filename << "' (simThr: " << simThr << ")");
     }
 }
 

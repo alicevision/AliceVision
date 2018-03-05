@@ -3,6 +3,9 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
+#include <aliceVision/system/cmdline.hpp>
+#include <aliceVision/system/Logger.hpp>
+#include <aliceVision/system/Timer.hpp>
 #include <aliceVision/mvsUtils/common.hpp>
 #include <aliceVision/mvsUtils/fileIO.hpp>
 #include <aliceVision/mvsUtils/MultiViewParams.hpp>
@@ -15,13 +18,11 @@ using namespace aliceVision;
 namespace bfs = boost::filesystem;
 namespace po = boost::program_options;
 
-#define ALICEVISION_COUT(x) std::cout << x << std::endl
-#define ALICEVISION_CERR(x) std::cerr << x << std::endl
-
 int main(int argc, char* argv[])
 {
-    long startTime = clock();
+    system::Timer timer;
 
+    std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
     std::string iniFilepath;
 
     po::options_description allParams("AliceVision cameraConnection\n"
@@ -32,7 +33,12 @@ int main(int argc, char* argv[])
         ("ini", po::value<std::string>(&iniFilepath)->required(),
             "Configuration file (mvs.ini).");
 
-    allParams.add(requiredParams);
+    po::options_description logParams("Log parameters");
+    logParams.add_options()
+      ("verboseLevel,v", po::value<std::string>(&verboseLevel)->default_value(verboseLevel),
+        "verbosity level (fatal, error, warning, info, debug, trace).");
+
+    allParams.add(requiredParams).add(logParams);
 
     po::variables_map vm;
 
@@ -61,7 +67,11 @@ int main(int argc, char* argv[])
       return EXIT_FAILURE;
     }
 
-    ALICEVISION_COUT("ini file: " << iniFilepath);
+    ALICEVISION_COUT("Program called with the following parameters:");
+    ALICEVISION_COUT(vm);
+
+    // set verbose level
+    system::Logger::get()->setLogLevel(verboseLevel);
 
     // .ini parsing
     mvsUtils::MultiViewInputParams mip(iniFilepath, "", "");
@@ -69,8 +79,9 @@ int main(int argc, char* argv[])
     mvsUtils::MultiViewParams mp(mip.getNbCameras(), &mip, (float) simThr);
     mvsUtils::PreMatchCams pc(&mp);
 
-    ALICEVISION_COUT("--- compute camera pairs");
+    ALICEVISION_LOG_INFO("Compute camera pairs.");
     pc.precomputeIncidentMatrixCamsFromSeeds();
-    mvsUtils::printfElapsedTime(startTime, "#");
+
+    ALICEVISION_LOG_INFO("Task done in (s): " + std::to_string(timer.elapsed()));
     return EXIT_SUCCESS;
 }

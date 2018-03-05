@@ -4,6 +4,7 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "LargeScale.hpp"
+#include <aliceVision/system/Logger.hpp>
 #include <aliceVision/mvsUtils/common.hpp>
 #include <aliceVision/mvsUtils/fileIO.hpp>
 #include <aliceVision/fuseCut/DelaunayGraphCut.hpp>
@@ -106,9 +107,10 @@ LargeScale* LargeScale::cloneSpaceIfDoesNotExists(int newOcTreeDim, std::string 
         out->maxOcTreeDim = (int)((float)maxOcTreeDim / (1024.0f / (float)newOcTreeDim));
 
         if(mp->verbose)
-            printf("maxOcTreeDim new %i\n", out->maxOcTreeDim);
-        if(mp->verbose)
-            printf("maxOcTreeDim old %i\n", maxOcTreeDim);
+        {
+            ALICEVISION_LOG_DEBUG("maxOcTreeDim new: " << out->maxOcTreeDim);
+            ALICEVISION_LOG_DEBUG("maxOcTreeDim old: " << maxOcTreeDim);
+        }
 
         long t1 = clock();
 
@@ -159,7 +161,7 @@ bool LargeScale::generateSpace(int maxPts, int ocTreeDim)
     std::string depthMapsPtsSimsTmpDir = generateTempPtsSimsFiles(
         spaceFolderName, mp, addRandomNoise, addRandomNoisePercNoisePts, addRandomNoiseNoisPixSizeDistHalfThr);
 
-    printf("CREATING TRACKS %i %i %i\n", dimensions.x, dimensions.y, dimensions.z);
+    ALICEVISION_LOG_INFO("Creating tracks: " << dimensions.x << ", " << dimensions.y << ", " << dimensions.z);
     StaticVector<Point3d>* ReconstructionPlan = new StaticVector<Point3d>();
     ReconstructionPlan->reserve(1000000);
 
@@ -169,16 +171,16 @@ bool LargeScale::generateSpace(int maxPts, int ocTreeDim)
     int maxlevel = 0;
     vg->generateTracksForEachVoxel(ReconstructionPlan, maxOcTreeDim, maxPts, 1, maxlevel, depthMapsPtsSimsTmpDir);
     if(mp->verbose)
-        printf("max rec level is %i\n", maxlevel);
+        ALICEVISION_LOG_DEBUG("max rec level: " << maxlevel);
     for(int i = 1; i < maxlevel; i++)
     {
         dimensions = dimensions * 2;
         maxOcTreeDim = maxOcTreeDim / 2;
         if(mp->verbose)
-            printf("dimmension is %i,%i,%i  %i\n", dimensions.x, dimensions.y, dimensions.z, maxOcTreeDim);
+            ALICEVISION_LOG_DEBUG("dimmension: " << dimensions.x << ", " << dimensions.y << ", " << dimensions.z << " max: " << maxOcTreeDim);
     }
     if(mp->verbose)
-        printf("final dimmension is %i,%i,%i  %i\n", dimensions.x, dimensions.y, dimensions.z, maxOcTreeDim);
+        ALICEVISION_LOG_DEBUG("final dimmension: " << dimensions.x << ", " << dimensions.y << ", " << dimensions.z << " max: " << maxOcTreeDim);
 
     VoxelsGrid* vgnew = new VoxelsGrid(dimensions, &space[0], mp, pc, spaceVoxelsFolderName, doVisualize);
     vg->generateSpace(vgnew, Voxel(0, 0, 0), dimensions, depthMapsPtsSimsTmpDir);

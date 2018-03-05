@@ -3,6 +3,9 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
+#include <aliceVision/system/cmdline.hpp>
+#include <aliceVision/system/Logger.hpp>
+#include <aliceVision/system/Timer.hpp>
 #include <aliceVision/mvsData/image.hpp>
 #include <aliceVision/mvsUtils/common.hpp>
 #include <aliceVision/mvsUtils/MultiViewParams.hpp>
@@ -22,13 +25,11 @@ bfs::path absolutePathNoExt(const bfs::path& p)
     return p.parent_path() / p.stem();
 }
 
-#define ALICEVISION_COUT(x) std::cout << x << std::endl
-#define ALICEVISION_CERR(x) std::cerr << x << std::endl
-
 int main(int argc, char* argv[])
 {
-    long startTime = clock();
+    system::Timer timer;
 
+    std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
     std::string iniFilepath;
     std::string inputDenseReconstruction;
     std::string inputMeshFilepath;
@@ -63,7 +64,12 @@ int main(int argc, char* argv[])
         ("flipNormals", po::value<bool>(&flipNormals)->default_value(flipNormals),
             "Option to flip face normals. It can be needed as it depends on the vertices order in triangles and the convention change from one software to another.");
 
-    allParams.add(requiredParams).add(optionalParams);
+    po::options_description logParams("Log parameters");
+    logParams.add_options()
+      ("verboseLevel,v", po::value<std::string>(&verboseLevel)->default_value(verboseLevel),
+        "verbosity level (fatal, error, warning, info, debug, trace).");
+
+    allParams.add(requiredParams).add(optionalParams).add(logParams);
 
     po::variables_map vm;
 
@@ -92,8 +98,11 @@ int main(int argc, char* argv[])
       return EXIT_FAILURE;
     }
 
-    ALICEVISION_COUT("ini file: " << iniFilepath);
-    ALICEVISION_COUT("inputMesh: " << inputMeshFilepath);
+    ALICEVISION_COUT("Program called with the following parameters:");
+    ALICEVISION_COUT(vm);
+
+    // set verbose level
+    system::Logger::get()->setLogLevel(verboseLevel);
 
     // set output texture file type
     const EImageFileType outputTextureFileType = EImageFileType_stringToEnum(outTextureFileTypeName);
@@ -109,7 +118,7 @@ int main(int argc, char* argv[])
 
     if(!mesh.me->loadFromBin(inputDenseReconstruction))
     {
-        std::cerr << "Unable to load: " << inputDenseReconstruction << std::endl;
+        ALICEVISION_LOG_ERROR("Unable to load: " << inputDenseReconstruction);
         return EXIT_FAILURE;
     }
 
@@ -126,7 +135,7 @@ int main(int argc, char* argv[])
     // texturing from input mesh
     if(!inputMeshFilepath.empty())
     {
-        ALICEVISION_COUT("An external input mesh is provided, so we remap the visibility from the reconstruction on it.");
+        ALICEVISION_LOG_INFO("An external input mesh is provided, so we remap the visibility from the reconstruction on it.");
         // keep previous mesh as reference
         mesh::Mesh* refMesh = mesh.me;
         // load input obj file
@@ -141,7 +150,7 @@ int main(int argc, char* argv[])
     }
     if(!mesh.hasUVs())
     {
-        ALICEVISION_COUT("The input mesh has no UV, so we generate them.");
+        ALICEVISION_LOG_INFO("The input mesh has no UV, so we generate them.");
         // generate UV coordinates based on automatic uv atlas
         auto* updatedPtsCams = mesh.generateUVs(mp, ptsCams);
         std::swap(ptsCams, updatedPtsCams);
@@ -150,9 +159,9 @@ int main(int argc, char* argv[])
     }
 
     // generate textures
-    ALICEVISION_COUT("Generate textures.");
+    ALICEVISION_LOG_INFO("Generate textures.");
     mesh.generateTextures(mp, ptsCams, outputFolder, outputTextureFileType);
 
-    mvsUtils::printfElapsedTime(startTime, "#");
+    ALICEVISION_LOG_INFO("Task done in (s): " + std::to_string(timer.elapsed()));
     return EXIT_SUCCESS;
 }

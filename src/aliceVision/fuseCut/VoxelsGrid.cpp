@@ -4,6 +4,7 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "VoxelsGrid.hpp"
+#include <aliceVision/system/Logger.hpp>
 #include <aliceVision/mvsData/Pixel.hpp>
 #include <aliceVision/mvsUtils/common.hpp>
 #include <aliceVision/mvsUtils/fileIO.hpp>
@@ -75,7 +76,7 @@ VoxelsGrid::~VoxelsGrid()
 StaticVector<int>* VoxelsGrid::getNVoxelsTracks()
 {
     if(mp->verbose)
-        printf("reading number of tracks for each voxel file\n");
+        ALICEVISION_LOG_DEBUG("reading number of tracks for each voxel file.");
 
     StaticVector<int>* nVoxelsTracks = new StaticVector<int>();
     nVoxelsTracks->reserve(voxels->size() / 8);
@@ -98,7 +99,7 @@ StaticVector<int>* VoxelsGrid::getNVoxelsTracks()
 unsigned long VoxelsGrid::getNTracks() const
 {
     if(mp->verbose)
-        printf("computing number of all tracks \n");
+        ALICEVISION_LOG_DEBUG("computing number of all tracks.");
 
     unsigned long ntracks = 0;
     long t1 = mvsUtils::initEstimate();
@@ -208,7 +209,7 @@ bool VoxelsGrid::saveTracksToVoxelFiles(StaticVector<int>* cams, StaticVector<Oc
     bfs::create_directory(folderName);
     if(!mvsUtils::FolderExists(folderName))
     {
-        printf("Warning folder %s does not exist!\n", folderName.c_str());
+        ALICEVISION_LOG_WARNING("Folder '" << folderName << "' does not exist.");
     }
 
     StaticVector<Point3d>* tracksPoints = new StaticVector<Point3d>();
@@ -258,11 +259,14 @@ void VoxelsGrid::generateTracksForEachVoxel(StaticVector<Point3d>* Reconstructio
                                             int level, int& maxlevel, const std::string& depthMapsPtsSimsTmpDir)
 {
     if(mp->verbose)
-        printf("\n generateTracksForEachVoxel recursive numSubVoxs %i, maxPts %i, level %i \n", numSubVoxs, maxPts,
-               level);
-    if(mp->verbose)
-        printf("dim %i %i %i \n", voxelDim.x, voxelDim.y, voxelDim.z);
+    {
+        ALICEVISION_LOG_DEBUG("generateTracksForEachVoxel recursive "
+                              << "\t- numSubVoxs: " << numSubVoxs << std::endl
+                              << "\t- maxPts: " << maxPts << std::endl
+                              << "\t- level: " << level);
 
+        ALICEVISION_LOG_DEBUG("Voxel Dim: " << voxelDim.x << ", " << voxelDim.y << ", " << voxelDim.z);
+    }
     maxlevel = std::max(maxlevel, level);
 
     long tall = clock();
@@ -286,10 +290,10 @@ void VoxelsGrid::generateTracksForEachVoxel(StaticVector<Point3d>* Reconstructio
         if(tracks == nullptr)
         {
             if(mp->verbose)
-                printf("deleting OTT %i\n", i);
+                ALICEVISION_LOG_DEBUG("deleting OTT: " << i);
             delete ott;
             if(mp->verbose)
-                printf("deleted %i\n", i);
+                ALICEVISION_LOG_DEBUG("deleted " << i);
 #pragma omp critical
             {
                 toRecurse->push_back(i);
@@ -312,7 +316,7 @@ void VoxelsGrid::generateTracksForEachVoxel(StaticVector<Point3d>* Reconstructio
                             }
                             else
                             {
-                                printf("WARNINIG reconstruction plan array is full!\n");
+                                ALICEVISION_LOG_WARNING("reconstruction plan array is full.");
                             }
                         }
                     }
@@ -323,15 +327,15 @@ void VoxelsGrid::generateTracksForEachVoxel(StaticVector<Point3d>* Reconstructio
             }
             delete tracks;
             if(mp->verbose)
-                printf("deleting OTT %i\n", i);
+                ALICEVISION_LOG_DEBUG("deleting OTT: " << i);
             delete ott;
             if(mp->verbose)
-                printf("deleted %i\n", i);
+                ALICEVISION_LOG_DEBUG("deleted " << i);
         }
     }
 
     if(mp->verbose)
-        printf("toRecurse %i\n", toRecurse->size());
+        ALICEVISION_LOG_DEBUG("toRecurse " << toRecurse->size());
 
     for(int j = 0; j < toRecurse->size(); j++)
     {
@@ -365,7 +369,9 @@ void VoxelsGrid::generateSpace(VoxelsGrid* vgnew, const Voxel& LU, const Voxel& 
                                const std::string& depthMapsPtsSimsTmpDir)
 {
     if(mp->verbose)
-        printf("\n generateSpace recursive LU %i %i %i, RD %i %i %i\n", LU.x, LU.y, LU.z, RD.x, RD.y, RD.z);
+        ALICEVISION_LOG_DEBUG("generateSpace recursive: " << std::endl
+                              << "\t- LU: " << LU.x << " " << LU.y << " " << LU.z << std::endl
+                              << "\t- RD: " << RD.x << " " << RD.y << " " << RD.z);
 
     int nvoxs = voxels->size() / 8;
     for(int voxid = 0; voxid < nvoxs; voxid++)
@@ -502,7 +508,7 @@ void VoxelsGrid::cloneSpaceVoxel(int voxelId, int numSubVoxs, VoxelsGrid* newSpa
 VoxelsGrid* VoxelsGrid::cloneSpace(int numSubVoxs, std::string newSpaceRootDir)
 {
     if(mp->verbose)
-        printf("cloning space\n");
+        ALICEVISION_LOG_DEBUG("cloning space.");
 
     VoxelsGrid* out = clone(newSpaceRootDir);
 
@@ -543,7 +549,7 @@ void VoxelsGrid::copySpaceVoxel(int voxelId, VoxelsGrid* newSpace)
 VoxelsGrid* VoxelsGrid::copySpace(std::string newSpaceRootDir)
 {
     if(mp->verbose)
-        printf("copy space\n");
+        ALICEVISION_LOG_DEBUG("Copy space.");
 
     VoxelsGrid* out = clone(newSpaceRootDir);
 
@@ -564,7 +570,7 @@ VoxelsGrid* VoxelsGrid::copySpace(std::string newSpaceRootDir)
 void VoxelsGrid::generateCamsPtsFromVoxelsTracks()
 {
     if(mp->verbose)
-        printf("distributing pts from voxels tracks to camera files\n");
+        ALICEVISION_LOG_DEBUG("Distributing pts from voxels tracks to camera files.");
 
     long t1 = mvsUtils::initEstimate();
     int nvoxs = voxels->size() / 8;

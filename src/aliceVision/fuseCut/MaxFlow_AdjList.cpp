@@ -10,7 +10,7 @@ namespace fuseCut {
 
 void MaxFlow_AdjList::printStats() const
 {
-    std::cout << "nb vertices: " << _graph.m_vertices.size() << ", capacity: " << _graph.m_vertices.capacity() << std::endl;
+    ALICEVISION_LOG_INFO("# vertices: " << _graph.m_vertices.size() << ", capacity: " << _graph.m_vertices.capacity());
     // std::cout << "nb edges: " << _graph.m_edges.size() << ", capacity: " << _graph.m_edges.capacity() << std::endl;
 
     VertexIterator vi, vi_end;
@@ -37,11 +37,11 @@ void MaxFlow_AdjList::printStats() const
 
     for(const auto& it: histSize)
     {
-      std::cout << "size[" << it.first << "]: " << it.second << std::endl;
+      ALICEVISION_LOG_INFO("\t- size[" << it.first << "]: " << it.second);
     }
     for(const auto& it: histCapacity)
     {
-      std::cout << "capacity[" << it.first << "]: " << it.second << std::endl;
+      ALICEVISION_LOG_INFO("\t- capacity[" << it.first << "]: " << it.second);
     }
 }
 
@@ -57,13 +57,13 @@ void MaxFlow_AdjList::printColorStats() const
     else
         ++histColor[c];
   }
-  std::cout << "Full (white):" << int(boost::white_color) << std::endl;
-  std::cout << "Empty (black):" << int(boost::black_color) << std::endl;
-  std::cout << "Undefined (gray):" << int(boost::gray_color) << std::endl;
+  ALICEVISION_LOG_INFO("Full (white):" << int(boost::white_color));
+  ALICEVISION_LOG_INFO("Empty (black):" << int(boost::black_color));
+  ALICEVISION_LOG_INFO("Undefined (gray):" << int(boost::gray_color));
 
   for(const auto& it: histColor)
   {
-    std::cout << "color[" << it.first << "]: " << it.second << std::endl;
+    ALICEVISION_LOG_INFO("\t- color[" << it.first << "]: " << it.second);
   }
 }
 

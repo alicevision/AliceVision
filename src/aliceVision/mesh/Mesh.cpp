@@ -4,6 +4,7 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "Mesh.hpp"
+#include <aliceVision/system/Logger.hpp>
 #include <aliceVision/mvsData/geometry.hpp>
 #include <aliceVision/mvsData/OrientedPoint.hpp>
 #include <aliceVision/mvsData/Pixel.hpp>
@@ -30,7 +31,7 @@ Mesh::~Mesh()
 
 void Mesh::saveToObj(const std::string& filename)
 {
-  std::cout << "saveToObj: " << filename << std::endl;
+  ALICEVISION_LOG_INFO("Save mesh to obj: " << filename);
   FILE* f = fopen(filename.c_str(), "w");
 
   fprintf(f, "# \n");
@@ -47,7 +48,7 @@ void Mesh::saveToObj(const std::string& filename)
       fprintf(f, "f %i %i %i\n", t.i[0] + 1, t.i[1] + 1, t.i[2] + 1);
   }
   fclose(f);
-  std::cout << "saveToObj done." << std::endl;
+  ALICEVISION_LOG_INFO("Save mesh to obj done.");
 }
 
 bool Mesh::loadFromBin(std::string binFileName)
@@ -77,7 +78,7 @@ bool Mesh::loadFromBin(std::string binFileName)
 void Mesh::saveToBin(std::string binFileName)
 {
     long t = std::clock();
-    std::cout << "save mesh to bin." << std::endl;
+    ALICEVISION_LOG_DEBUG("Save mesh to bin.");
     // printf("open\n");
     FILE* f = fopen(binFileName.c_str(), "wb");
     int npts = pts->size();
@@ -126,7 +127,7 @@ void Mesh::addMesh(Mesh* me)
             }
             else
             {
-                printf("WARNING BAD TRIANGLE INDEX %i %i %i, npts : %i \n", t.i[0], t.i[1], t.i[2], npts1);
+                ALICEVISION_LOG_WARNING("addMesh: bad triangle index: " << t.i[0] << " " << t.i[1] << " " << t.i[2] << ", npts: " << npts1);
             }
         }
     }
@@ -163,7 +164,7 @@ void Mesh::addMesh(Mesh* me)
             }
             else
             {
-                printf("WARNING BAD TRIANGLE INDEX %i %i %i, npts : %i \n", t.i[0], t.i[1], t.i[2], npts1);
+                ALICEVISION_LOG_WARNING("addMesh: bad triangle index: " << t.i[0] << " " << t.i[1] << " " << t.i[2] << ", npts: " << npts1);
             }
         }
 
@@ -669,12 +670,12 @@ StaticVector<StaticVector<int>*>* Mesh::getPtsNeighPtsOrdered()
 StaticVector<StaticVector<int>*>* Mesh::getTrisMap(const mvsUtils::MultiViewParams* mp, int rc, int  /*scale*/, int w, int h)
 {
     long tstart = clock();
-    printf("getTrisMap \n");
+
+    ALICEVISION_LOG_INFO("getTrisMap.");
     StaticVector<int>* nmap = new StaticVector<int>();
     nmap->reserve(w * h);
     nmap->resize_with(w * h, 0);
 
-    printf("estimating numbers \n");
     long t1 = mvsUtils::initEstimate();
     for(int i = 0; i < tris->size(); i++)
     {
@@ -699,7 +700,6 @@ StaticVector<StaticVector<int>*>* Mesh::getTrisMap(const mvsUtils::MultiViewPara
     mvsUtils::finishEstimate();
 
     // allocate
-    printf("allocating\n");
     StaticVector<StaticVector<int>*>* tmp = new StaticVector<StaticVector<int>*>();
     tmp->reserve(w * h);
     tmp->resize_with(w * h, nullptr);
@@ -716,7 +716,6 @@ StaticVector<StaticVector<int>*>* Mesh::getTrisMap(const mvsUtils::MultiViewPara
     delete nmap;
 
     // fill
-    printf("filling\n");
     t1 = mvsUtils::initEstimate();
     for(int i = 0; i < tris->size(); i++)
     {
@@ -749,12 +748,12 @@ StaticVector<StaticVector<int>*>* Mesh::getTrisMap(StaticVector<int>* visTris, c
                                                       int  /*scale*/, int w, int h)
 {
     long tstart = clock();
-    printf("getTrisMap \n");
+
+    ALICEVISION_LOG_INFO("getTrisMap.");
     StaticVector<int>* nmap = new StaticVector<int>();
     nmap->reserve(w * h);
     nmap->resize_with(w * h, 0);
 
-    printf("estimating numbers \n");
     long t1 = mvsUtils::initEstimate();
     for(int m = 0; m < visTris->size(); m++)
     {
@@ -780,7 +779,6 @@ StaticVector<StaticVector<int>*>* Mesh::getTrisMap(StaticVector<int>* visTris, c
     mvsUtils::finishEstimate();
 
     // allocate
-    printf("allocating\n");
     StaticVector<StaticVector<int>*>* tmp = new StaticVector<StaticVector<int>*>();
     tmp->reserve(w * h);
     tmp->resize_with(w * h, nullptr);
@@ -797,7 +795,6 @@ StaticVector<StaticVector<int>*>* Mesh::getTrisMap(StaticVector<int>* visTris, c
     delete nmap;
 
     // fill
-    printf("filling\n");
     t1 = mvsUtils::initEstimate();
     for(int m = 0; m < visTris->size(); m++)
     {
@@ -1392,7 +1389,6 @@ StaticVector<Point3d>* Mesh::computeNormalsForPts(StaticVector<StaticVector<int>
                (n.z != n.z)) // check if is not NaN
             {
                 n = Point3d(0.0f, 0.0f, 0.0f);
-                printf(".");
             }
 
             (*nms)[i] = n;
@@ -1435,7 +1431,7 @@ void Mesh::smoothNormals(StaticVector<Point3d>* nms, StaticVector<StaticVector<i
 
 void Mesh::removeFreePointsFromMesh(StaticVector<int>** out_ptIdToNewPtId)
 {
-    printf("removeFreePointsFromMesh\n");
+    ALICEVISION_LOG_INFO("remove free points from mesh.");
 
     // declare all triangles as used
     StaticVector<int> visTris;
@@ -1515,7 +1511,7 @@ StaticVector<Voxel>* Mesh::getTrianglesEdgesIds(StaticVector<StaticVector<int>*>
                     }
                     else
                     {
-                        printf("warning ... getEdgesIdsToEachTriangle!!!\n");
+                        ALICEVISION_LOG_ERROR("getTrianglesEdgesIds: bad condition.");
                     }
                 }
             }
@@ -1528,7 +1524,7 @@ StaticVector<Voxel>* Mesh::getTrianglesEdgesIds(StaticVector<StaticVector<int>*>
     {
         if(((*out)[i].x == -1) || ((*out)[i].y == -1) || ((*out)[i].z == -1))
         {
-            printf("warning ... getEdgesIdsToEachTriangle 1!!!\n");
+            ALICEVISION_LOG_ERROR("triangle " << i << " has to have three edge ids.");
         }
     }
 
@@ -1655,7 +1651,7 @@ StaticVector<StaticVector<int>*>* Mesh::subdivideMesh(const mvsUtils::MultiViewP
                                                          bool useMaxTrisAreaOrAvEdgeLength,
                                                          StaticVector<StaticVector<int>*>* trisCams, int maxMeshPts)
 {
-    printf("SUBDIVIDING MESH\n");
+    ALICEVISION_LOG_INFO("Subdivide mesh.");
 
     StaticVector<int>* trisCamsId = new StaticVector<int>();
     trisCamsId->reserve(tris->size());
@@ -1668,7 +1664,7 @@ StaticVector<StaticVector<int>*>* Mesh::subdivideMesh(const mvsUtils::MultiViewP
     while((pts->size() < maxMeshPts) && (nsubd > 10))
     {
         nsubd = subdivideMesh(mp, maxTriArea, maxEdgeLength, useMaxTrisAreaOrAvEdgeLength, trisCams, &trisCamsId);
-        printf("subdivided %i\n", nsubd);
+        ALICEVISION_LOG_DEBUG("subdivided: " << nsubd);
     }
     // subdivideMesh(mp, maxTriArea, trisCams, &trisCamsId);
     // subdivideMesh(mp, maxTriArea, trisCams, &trisCamsId);
@@ -1706,7 +1702,7 @@ StaticVector<StaticVector<int>*>* Mesh::subdivideMesh(const mvsUtils::MultiViewP
 void Mesh::subdivideMeshMaxEdgeLengthUpdatePtsCams(const mvsUtils::MultiViewParams* mp, float maxEdgeLength,
                                                       StaticVector<StaticVector<int>*>* ptsCams, int maxMeshPts)
 {
-    printf("SUBDIVIDING MESH\n");
+    ALICEVISION_LOG_INFO("Subdivide mesh.");
 
     StaticVector<int>* trisCamsId = new StaticVector<int>();
     trisCamsId->reserve(tris->size());
@@ -1725,7 +1721,7 @@ void Mesh::subdivideMeshMaxEdgeLengthUpdatePtsCams(const mvsUtils::MultiViewPara
     while((pts->size() < maxMeshPts) && (nsubd > 10))
     {
         nsubd = subdivideMesh(mp, 0.0f, maxEdgeLength, false, nullptr, &trisCamsId);
-        printf("subdivided %i\n", nsubd);
+        ALICEVISION_LOG_DEBUG("subdivided: " << nsubd);
     }
     // subdivideMesh(mp, maxTriArea, trisCams, &trisCamsId);
     // subdivideMesh(mp, maxTriArea, trisCams, &trisCamsId);
@@ -1896,8 +1892,8 @@ int Mesh::subdivideMesh(const mvsUtils::MultiViewParams* mp, float maxTriArea, f
         nTrisToSubdivide += static_cast<int>(subdivide);
     }
 
-    printf("number of triangles to subdivide %i\n", nTrisToSubdivide);
-    printf("number of pts to add %i\n", nEdgesToSubdivide);
+    ALICEVISION_LOG_INFO("\t- # triangles to subdivide: " << nTrisToSubdivide);
+    ALICEVISION_LOG_INFO("\t- # pts to add: " << nEdgesToSubdivide);
 
     StaticVector<int>* trisCamsId1 = new StaticVector<int>();
     StaticVector<Mesh::triangle>* tris1 = new StaticVector<Mesh::triangle>();
@@ -1927,7 +1923,7 @@ int Mesh::subdivideMesh(const mvsUtils::MultiViewParams* mp, float maxTriArea, f
 
             if(n == 0)
             {
-                printf("warning subdivideMesh 1 !!!");
+                ALICEVISION_LOG_ERROR("subdivideMesh: Bad condition.");
             }
 
             if(n == 1)
@@ -2045,7 +2041,7 @@ void Mesh::letJustTringlesIdsInMesh(StaticVector<int>* trisIdsToStay)
 StaticVector<StaticVector<int>*>* Mesh::computeTrisCams(const mvsUtils::MultiViewParams* mp, std::string tmpDir)
 {
     if(mp->verbose)
-        printf("computing tris cams\n");
+        ALICEVISION_LOG_DEBUG("Computing tris cams.");
 
     StaticVector<int>* ntrisCams = new StaticVector<int>();
     ntrisCams->reserve(tris->size());
@@ -2102,16 +2098,11 @@ StaticVector<StaticVector<int>*>* Mesh::computeTrisCams(const mvsUtils::MultiVie
     mvsUtils::finishEstimate();
 
     delete ntrisCams;
-
-    if(mp->verbose)
-        printf("done\n");
-
     return trisCams;
 }
 
 StaticVector<StaticVector<int>*>* Mesh::computeTrisCamsFromPtsCams(StaticVector<StaticVector<int>*>* ptsCams) const
 {
-    //std::cout << "computeTrisCamsFromPtsCams" << std::endl;
     // TODO: try intersection
     StaticVector<StaticVector<int>*>* trisCams = new StaticVector<StaticVector<int>*>();
     trisCams->reserve(tris->size());
@@ -2133,7 +2124,6 @@ StaticVector<StaticVector<int>*>* Mesh::computeTrisCamsFromPtsCams(StaticVector<
         trisCams->push_back(cams);
     }
 
-    //std::cout << "computeTrisCamsFromPtsCams end" << std::endl;
     return trisCams;
 }
 
@@ -2222,8 +2212,7 @@ void Mesh::removeTrianglesInHexahedrons(StaticVector<Point3d>* hexahsToExcludeFr
 {
     if(hexahsToExcludeFromResultingMesh != nullptr)
     {
-        printf("removeTrianglesInHexahedrons %i %i \n", tris->size(),
-               (int)(hexahsToExcludeFromResultingMesh->size() / 8));
+        ALICEVISION_LOG_INFO("Remove triangles in hexahedrons: " <<  tris->size() << " " << static_cast<int>(hexahsToExcludeFromResultingMesh->size() / 8));
         StaticVector<int>* trisIdsToStay = new StaticVector<int>();
         trisIdsToStay->reserve(tris->size());
 
@@ -2263,7 +2252,7 @@ void Mesh::removeTrianglesInHexahedrons(StaticVector<Point3d>* hexahsToExcludeFr
 
 void Mesh::removeTrianglesOutsideHexahedron(Point3d* hexah)
 {
-    printf("removeTrianglesOutsideHexahedrons %i \n", tris->size());
+    ALICEVISION_LOG_INFO("Remove triangles outside hexahedrons: " << tris->size());
     StaticVector<int>* trisIdsToStay = new StaticVector<int>();
     trisIdsToStay->reserve(tris->size());
 
@@ -2319,7 +2308,7 @@ void Mesh::filterLargeEdgeTriangles(float maxEdgelengthThr)
 
 void Mesh::invertTriangleOrientations()
 {
-    std::cout << "invertTriangleOrientations" << std::endl;
+    ALICEVISION_LOG_INFO("Invert triangle orientations.");
     for(int i = 0; i < tris->size(); ++i)
     {
         Mesh::triangle& t = (*tris)[i];
@@ -2432,8 +2421,7 @@ StaticVector<int>* Mesh::getLargestConnectedComponentTrisIds(const mvsUtils::Mul
                 {
                     if((*colors)[ptid] != col)
                     {
-                        if(mp.verbose)
-                            printf("WARNING should not happen!\n");
+                        throw std::runtime_error("getLargestConnectedComponentTrisIds: bad condition.");
                     }
                 }
                 for(int j = 0; j < sizeOfStaticVector<int>((*ptsNeighPtsOrdered)[ptid]); j++)
@@ -2441,10 +2429,9 @@ StaticVector<int>* Mesh::getLargestConnectedComponentTrisIds(const mvsUtils::Mul
                     int nptid = (*(*ptsNeighPtsOrdered)[ptid])[j];
                     if((nptid > -1) && ((*colors)[nptid] == -1))
                     {
-                        if(buff->size() >= buff->capacity())
+                        if(buff->size() >= buff->capacity()) // should not happen but no problem
                         {
-                            if(mp.verbose)
-                                printf("WARNING should not happen but no problem!\n");
+                            ALICEVISION_LOG_WARNING("getLargestConnectedComponentTrisIds: bad condition.");
                             buff->resizeAdd(pts->size());
                         }
                         buff->push_back(nptid);
@@ -2483,7 +2470,7 @@ bool Mesh::loadFromObjAscii(int& nmtls, StaticVector<int>** trisMtlIds, StaticVe
                                StaticVector<Voxel>** trisNormalsIds, StaticVector<Point2d>** uvCoords,
                                StaticVector<Voxel>** trisUvIds, std::string objAsciiFileName)
 {
-    std::cout << "Loading mesh from obj file: " << objAsciiFileName << std::endl;
+    ALICEVISION_LOG_INFO("Loading mesh from obj file: " << objAsciiFileName);
     // read number of points, triangles, uvcoords
     int npts = 0;
     int ntris = 0;
@@ -2522,10 +2509,10 @@ bool Mesh::loadFromObjAscii(int& nmtls, StaticVector<int>** trisMtlIds, StaticVe
         in.close();
     }
 
-    printf("vertices %i\n", npts);
-    printf("normals %i\n", nnorms);
-    printf("uv coordinates %i\n", nuvs);
-    printf("triangles %i\n", ntris);
+    ALICEVISION_LOG_INFO("\t- # vertices: " << npts << std::endl
+      << "\t- # normals: " << nnorms << std::endl
+      << "\t- # uv coordinates: " << nuvs << std::endl
+      << "\t- # triangles: " << ntris);
 
     pts = new StaticVector<Point3d>();
     pts->reserve(npts);
@@ -2702,7 +2689,7 @@ bool Mesh::loadFromObjAscii(int& nmtls, StaticVector<int>** trisMtlIds, StaticVe
         in.close();
         nmtls = materialCache.size();
     }
-    std::cout << "Mesh loaded, nb points: " << npts << ", nb triangles: " << ntris << std::endl;
+    ALICEVISION_LOG_INFO("Mesh loaded: \n\t- #points: " << npts << "\n\t- # triangles: " << ntris);
     return npts != 0 && ntris != 0;
 }
 

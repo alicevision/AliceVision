@@ -4,6 +4,7 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "PlaneSweepingCuda.hpp"
+#include <aliceVision/system/Logger.hpp>
 #include <aliceVision/mvsData/Matrix3x3.hpp>
 #include <aliceVision/mvsData/Matrix3x4.hpp>
 #include <aliceVision/mvsData/OrientedPoint.hpp>
@@ -413,8 +414,11 @@ PlaneSweepingCuda::PlaneSweepingCuda(int _CUDADeviceNo, mvsUtils::ImagesCache* _
 
     subPixel = mp->mip->_ini.get<bool>("global.subPixel", true);
 
-    printf("nImgsInGPUAtTime %i, scales %i, subPixel %i, varianceWSH %i\n", nImgsInGPUAtTime, scales, (int)subPixel,
-           varianceWSH);
+    ALICEVISION_LOG_INFO("PlaneSweepingCuda:" << std::endl
+                         << "\t- nImgsInGPUAtTime: " << nImgsInGPUAtTime << std::endl
+                         << "\t- scales: " << scales << std::endl
+                         << "\t- subPixel: " << (subPixel ? "Yes" : "No") << std::endl
+                         << "\t- varianceWSH: ", varianceWSH);
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -634,7 +638,7 @@ StaticVector<float>* PlaneSweepingCuda::getDepthsByPixelSize(int rc, float minDe
 
             for(int j = 0; j <= i + 1; j++)
             {
-                printf("%f\n", (*out)[j]);
+                ALICEVISION_LOG_TRACE("getDepthsByPixelSize: check if it is asc: " << (*out)[j]);
             }
             throw std::runtime_error("getDepthsByPixelSize not asc.");
         }
@@ -655,10 +659,10 @@ StaticVector<float>* PlaneSweepingCuda::getDepthsRcTc(int rc, int tc, int scale,
     Point2d pFromTar, pToTar; // segment of epipolar line of the principal point of the rc camera to the tc camera
     getTarEpipolarDirectedLine(&pFromTar, &pToTar, rmid, rc, tc, mp);
 
-    int allDepths = (int)(pToTar - pFromTar).size();
+    int allDepths = static_cast<int>((pToTar - pFromTar).size());
     if(verbose == true)
     {
-        printf("allDepths %i\n", allDepths);
+        ALICEVISION_LOG_DEBUG("allDepths: " << allDepths);
     }
 
     Point2d pixelVect = ((pToTar - pFromTar).normalize()) * std::max(1.0f, (float)scale);
@@ -696,7 +700,7 @@ StaticVector<float>* PlaneSweepingCuda::getDepthsRcTc(int rc, int tc, int scale,
 
     if(verbose == true)
     {
-        printf("all correct depths %i\n", allDepths);
+        ALICEVISION_LOG_DEBUG("All correct depths: " << allDepths);
     }
 
     Point2d midpoint = cg;
@@ -846,11 +850,10 @@ StaticVector<float>* PlaneSweepingCuda::getDepthsRcTc(int rc, int tc, int scale,
 
             for(int j = 0; j <= i + 1; j++)
             {
-                printf("%f\n", (*out)[j]);
+                ALICEVISION_LOG_TRACE("getDepthsRcTc: check if it is asc: " << (*out)[j]);
             }
-            printf("WARNING getDepthsRcTc not asc!!!\n");
-            //
-            printf("sorting!!!\n");
+            ALICEVISION_LOG_WARNING("getDepthsRcTc: not asc");
+
             if(out->size() > 1)
             {
                 qsort(&(*out)[0], out->size(), sizeof(float), qSortCompareFloatAsc);
@@ -860,7 +863,7 @@ StaticVector<float>* PlaneSweepingCuda::getDepthsRcTc(int rc, int tc, int scale,
 
     if(verbose == true)
     {
-        printf("used depths %i\n", out->size());
+        ALICEVISION_LOG_DEBUG("used depths: " << out->size());
     }
 
     return out;
@@ -1106,7 +1109,7 @@ bool PlaneSweepingCuda::smoothDepthMap(StaticVector<float>* depthMap, int rc, in
     long t1 = clock();
 
     if(verbose)
-        printf("smoothDepthMap rc: %i\n", rc);
+        ALICEVISION_LOG_DEBUG("smoothDepthMap rc: " << rc);
     StaticVector<int>* camsids = new StaticVector<int>();
     camsids->reserve(1);
     camsids->push_back(addCam(rc, NULL, scale));
@@ -1152,7 +1155,7 @@ bool PlaneSweepingCuda::filterDepthMap(StaticVector<float>* depthMap, int rc, in
     long t1 = clock();
 
     if(verbose)
-        printf("filterDepthMap rc: %i\n", rc);
+        ALICEVISION_LOG_DEBUG("filterDepthMap rc: " << rc);
     StaticVector<int>* camsids = new StaticVector<int>();
     camsids->reserve(1);
     camsids->push_back(addCam(rc, NULL, scale));
@@ -1198,7 +1201,7 @@ bool PlaneSweepingCuda::computeNormalMap(StaticVector<float>* depthMap, StaticVe
     long t1 = clock();
 
     if(verbose)
-        printf("computeNormalMap rc: %i\n", rc);
+        ALICEVISION_LOG_DEBUG("computeNormalMap rc: " << rc);
     StaticVector<int>* camsids = new StaticVector<int>();
     camsids->reserve(1);
     camsids->push_back(addCam(rc, NULL, scale));
@@ -1248,7 +1251,7 @@ void PlaneSweepingCuda::alignSourceDepthMapToTarget(StaticVector<float>* sourceD
     long t1 = clock();
 
     if(verbose)
-        printf("alignSourceDepthMapToTarget rc: %i\n", rc);
+        ALICEVISION_LOG_DEBUG("alignSourceDepthMapToTarget rc: " << rc);
     StaticVector<int>* camsids = new StaticVector<int>();
     camsids->reserve(1);
     camsids->push_back(addCam(rc, NULL, scale));
@@ -1299,15 +1302,11 @@ bool PlaneSweepingCuda::refineDepthMapReproject(StaticVector<float>* depthMap, S
     StaticVector<int>* camsids = new StaticVector<int>();
     camsids->reserve(2);
     camsids->push_back(addCam(rc, NULL, scale));
+
     if(verbose)
-        printf("rc: %i, ", rc);
-    if(verbose)
-        printf("tcams: ");
-    if(verbose)
-        printf("%i ", tc);
+        ALICEVISION_LOG_DEBUG("\t- rc: " << rc << std::endl << "\t- tcams: " << tc);
+
     camsids->push_back(addCam(tc, NULL, scale));
-    if(verbose)
-        printf("\n");
 
     cameraStruct** ttcams = new cameraStruct*[camsids->size()];
     for(int i = 0; i < camsids->size(); i++)
@@ -1376,15 +1375,11 @@ bool PlaneSweepingCuda::computeRcTcPhotoErrMapReproject(StaticVector<Point4d>* s
     StaticVector<int>* camsids = new StaticVector<int>();
     camsids->reserve(2);
     camsids->push_back(addCam(rc, NULL, scale));
+
     if(verbose)
-        printf("rc: %i, ", rc);
-    if(verbose)
-        printf("tcams: ");
-    if(verbose)
-        printf("%i ", tc);
+        ALICEVISION_LOG_DEBUG("\t- rc: " << rc << std::endl << "\t- tcams: " << tc);
+
     camsids->push_back(addCam(tc, NULL, scale));
-    if(verbose)
-        printf("\n");
 
     cameraStruct** ttcams = new cameraStruct*[camsids->size()];
     for(int i = 0; i < camsids->size(); i++)
@@ -1455,15 +1450,11 @@ bool PlaneSweepingCuda::computeSimMapForRcTcDepthMap(StaticVector<float>* oSimMa
     StaticVector<int>* camsids = new StaticVector<int>();
     camsids->reserve(2);
     camsids->push_back(addCam(rc, NULL, scale));
+
     if(verbose)
-        printf("rc: %i, ", rc);
-    if(verbose)
-        printf("tcams: ");
-    if(verbose)
-        printf("%i ", tc);
+        ALICEVISION_LOG_DEBUG("\t- rc: " << rc << std::endl << "\t- tcams: " << tc);
+
     camsids->push_back(addCam(tc, NULL, scale));
-    if(verbose)
-        printf("\n");
 
     cameraStruct** ttcams = new cameraStruct*[camsids->size()];
     for(int i = 0; i < camsids->size(); i++)
@@ -1523,15 +1514,11 @@ bool PlaneSweepingCuda::refineRcTcDepthMap(bool useTcOrRcPixSize, int nStepsToRe
     StaticVector<int>* camsids = new StaticVector<int>();
     camsids->reserve(2);
     camsids->push_back(addCam(rc, NULL, scale));
+
     if(verbose)
-        printf("rc: %i, ", rc);
-    if(verbose)
-        printf("tcams: ");
-    if(verbose)
-        printf("%i ", tc);
+        ALICEVISION_LOG_DEBUG("\t- rc: " << rc << std::endl << "\t- tcams: " << tc);
+
     camsids->push_back(addCam(tc, NULL, scale));
-    if(verbose)
-        printf("\n");
 
     cameraStruct** ttcams = new cameraStruct*[camsids->size()];
     for(int i = 0; i < camsids->size(); i++)
@@ -1589,37 +1576,41 @@ float PlaneSweepingCuda::sweepPixelsToVolume(int nDepthsToSearch, StaticVector<u
                                                int volLUZ, StaticVector<float>* depths, int rc, int wsh, float gammaC,
                                                float gammaP, StaticVector<Voxel>* pixels, int scale, int step,
                                                StaticVector<int>* tcams, float epipShift) {
-    if (verbose)
-        printf("\n sweepPixelsVolume scale %i step %i npixels %i volStepXY %i volDimX %i volDimY %i volDimZ %i\n",
-               scale, step, pixels->size(), volStepXY, volDimX, volDimY, volDimZ);
+    if(verbose)
+        ALICEVISION_LOG_DEBUG("sweepPixelsVolume:" << std::endl
+                              << "\t- scale: " << scale << std::endl
+                              << "\t- step: " << step << std::endl
+                              << "\t- npixels: " << pixels->size() << std::endl
+                              << "\t- volStepXY: " << volStepXY << std::endl
+                              << "\t- volDimX: " << volDimX << std::endl
+                              << "\t- volDimY: " << volDimY << std::endl
+                              << "\t- volDimZ: " << volDimZ);
 
     int w = mp->mip->getWidth(rc) / scale;
     int h = mp->mip->getHeight(rc) / scale;
 
     long t1 = clock();
 
-    if ((tcams->size() == 0) || (pixels->size() == 0)) {
+    if((tcams->size() == 0) || (pixels->size() == 0)) {
         return -1.0f;
     }
 
     StaticVector<int> *camsids = new StaticVector<int>();
     camsids->reserve(tcams->size() + 1);
     camsids->push_back(addCam(rc, NULL, scale));
-    if (verbose)
-        printf("rc: %i, ", rc);
-    if (verbose)
-        printf("tcams: ");
-    for (int c = 0; c < tcams->size(); c++) {
+    if(verbose)
+        ALICEVISION_LOG_DEBUG("rc: " << rc << std::endl << "tcams: ");
+
+    for(int c = 0; c < tcams->size(); ++c)
+    {
         int tc = (*tcams)[c];
-        if (verbose)
-            printf("%i ", tc);
+        if(verbose)
+            ALICEVISION_LOG_DEBUG("\t- " << tc);
         camsids->push_back(addCam(tc, NULL, scale));
     }
-    if (verbose)
-        printf("\n");
 
     cameraStruct **ttcams = new cameraStruct *[camsids->size()];
-    for (int i = 0; i < camsids->size(); i++) {
+    for(int i = 0; i < camsids->size(); i++) {
         ttcams[i] = (cameraStruct *) (*cams)[(*camsids)[i]];
         ttcams[i]->camId = (*camsids)[i];
         if (i == 0) {
@@ -1639,9 +1630,9 @@ float PlaneSweepingCuda::sweepPixelsToVolume(int nDepthsToSearch, StaticVector<u
 
     int4 *_volPixs = volPixs_hmh.getBuffer();
     const Voxel *_pixels = pixels->getData().data();
-    if (ntimes * slicesAtTime <= npixs)
+    if(ntimes * slicesAtTime <= npixs)
     {
-        for (int i = 0; i < ntimes * slicesAtTime; ++i)
+        for(int i = 0; i < ntimes * slicesAtTime; ++i)
         {
             _volPixs->x = _pixels->x;
             _volPixs->y = _pixels->y;
@@ -1653,10 +1644,10 @@ float PlaneSweepingCuda::sweepPixelsToVolume(int nDepthsToSearch, StaticVector<u
     }
     else
     {
-        for (int y = 0; y < ntimes; ++y)
-            for (int x = 0; x < slicesAtTime; ++x) {
+        for(int y = 0; y < ntimes; ++y)
+            for(int x = 0; x < slicesAtTime; ++x) {
                 int index = y * slicesAtTime + x;
-                if (index >= npixs)
+                if(index >= npixs)
                     break;
                 int4 &volPix = _volPixs[index];
                 const Voxel &pixel = _pixels[index];
@@ -1703,7 +1694,10 @@ bool PlaneSweepingCuda::SGMoptimizeSimVolume(int rc, StaticVector<unsigned char>
                                                unsigned char P1, unsigned char P2)
 {
     if(verbose)
-        printf("\n SGM optimizing volume volDimX %i volDimY %i volDimZ %i \n", volDimX, volDimY, volDimZ);
+        ALICEVISION_LOG_DEBUG("SGM optimizing volume:" << std::endl
+                              << "\t- volDimX: " << volDimX << std::endl
+                              << "\t- volDimY: " << volDimY << std::endl
+                              << "\t- volDimZ: " << volDimZ);
 
     long t1 = clock();
 
@@ -2169,7 +2163,7 @@ bool PlaneSweepingCuda::optimizeDepthSimMapGradientDescent(StaticVector<DepthSim
                                                              int nIters, int yFrom, int hPart)
 {
     if(mp->verbose)
-        printf("optimizeDepthSimMapGradientDescent\n");
+        ALICEVISION_LOG_DEBUG("optimizeDepthSimMapGradientDescent.");
 
     int scale = 1;
     int w = mp->mip->getWidth(rc);
@@ -2425,7 +2419,7 @@ bool PlaneSweepingCuda::computeRcTcdepthMap(StaticVector<float>* iRcDepthMap_oRc
 bool PlaneSweepingCuda::getSilhoueteMap(StaticVectorBool* oMap, int scale, int step, const rgb maskColor, int rc)
 {
     if(verbose)
-        printf("getSilhoueteeMap rc: %i\n", rc);
+        ALICEVISION_LOG_DEBUG("getSilhoueteeMap: rc: " << rc);
 
     int w = mp->mip->getWidth(rc) / scale;
     int h = mp->mip->getHeight(rc) / scale;
