@@ -8,7 +8,11 @@ option(AV_BUILD_JPEG "Enable building an embedded Jpeg" ON)
 option(AV_BUILD_PNG "Enable building an embedded Png" ON)
 option(INSTALL_DEPS_BUILD "Install all files from dependencies (only used if ALICEVISION_BUILD_DEPENDENCIES=ON)" OFF)
 
-set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Build type for AliceVision")
+if(NOT CMAKE_BUILD_TYPE)
+  set(CMAKE_BUILD_TYPE Release CACHE STRING "Build type for AliceVision" FORCE)
+endif()
+
+# set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Build type for AliceVision")
 set(DEPS_CMAKE_BUILD_TYPE "Release" CACHE STRING "Build type for all external libraries (only used if ALICEVISION_BUILD_DEPENDENCIES=ON)")
 string(TOLOWER ${DEPS_CMAKE_BUILD_TYPE} DEPS_CMAKE_BUILD_TYPE_LOWERCASE)
 
@@ -23,6 +27,7 @@ message(STATUS "AV_BUILD_JPEG: ${AV_BUILD_JPEG}")
 message(STATUS "AV_BUILD_PNG: ${AV_BUILD_PNG}")
 message(STATUS "CMAKE_BUILD_TYPE: ${CMAKE_BUILD_TYPE}")
 message(STATUS "DEPS_CMAKE_BUILD_TYPE: ${DEPS_CMAKE_BUILD_TYPE}")
+message(STATUS "CMAKE_INSTALL_PREFIX: ${CMAKE_INSTALL_PREFIX}")
 message(STATUS "----------------------------------------")
 
 # ==============================================================================
