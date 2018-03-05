@@ -40,16 +40,20 @@ SemiGlobalMatchingVolume::SemiGlobalMatchingVolume(float _volGpuMB, int _volDimX
         }
     }
 
-    _volume = new StaticVector<unsigned char>(volDimX * volDimY * volDimZ);
+    _volume = new StaticVector<unsigned char>();
+    _volume->reserve(volDimX * volDimY * volDimZ);
     _volume->resize_with(volDimX * volDimY * volDimZ, 255);
 
-    _volumeSecondBest = new StaticVector<unsigned char>(volDimX * volDimY * volDimZ);
+    _volumeSecondBest = new StaticVector<unsigned char>();
+    _volumeSecondBest->reserve(volDimX * volDimY * volDimZ);
     _volumeSecondBest->resize_with(volDimX * volDimY * volDimZ, 255);
 
-    _volumeStepZ = new StaticVector<unsigned char>(volDimX * volDimY * (volDimZ / volStepZ));
+    _volumeStepZ = new StaticVector<unsigned char>();
+    _volumeStepZ->reserve(volDimX * volDimY * (volDimZ / volStepZ));
     _volumeStepZ->resize_with(volDimX * volDimY * (volDimZ / volStepZ), 255);
 
-    _volumeBestZ = new StaticVector<int>(volDimX * volDimY * (volDimZ / volStepZ));
+    _volumeBestZ = new StaticVector<int>();
+    _volumeBestZ->reserve(volDimX * volDimY * (volDimZ / volStepZ));
     _volumeBestZ->resize_with(volDimX * volDimY * (volDimZ / volStepZ), -1);
 }
 
@@ -156,7 +160,8 @@ StaticVector<IdValue>* SemiGlobalMatchingVolume::getOrigVolumeBestIdValFromVolum
 {
     long tall = clock();
 
-    StaticVector<IdValue>* volumeBestIdVal = new StaticVector<IdValue>(volDimX * volDimY);
+    StaticVector<IdValue>* volumeBestIdVal = new StaticVector<IdValue>();
+    volumeBestIdVal->reserve(volDimX * volDimY);
     volumeBestIdVal->resize_with(volDimX * volDimY, IdValue(-1, 1.0f));
     unsigned char* _volumeStepZPtr = _volumeStepZ->getDataWritable().data();
     int* _volumeBestZPtr = _volumeBestZ->getDataWritable().data();

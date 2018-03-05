@@ -118,7 +118,8 @@ void OctreeTracks::addTrack(int x, int y, int z, OctreeTracks::trackStruct* t)
 
 StaticVector<OctreeTracks::trackStruct*>* OctreeTracks::getAllPoints()
 {
-    StaticVector<trackStruct*>* out = new StaticVector<trackStruct*>(leafsNumber_);
+    StaticVector<trackStruct*>* out = new StaticVector<trackStruct*>();
+    out->reserve(leafsNumber_);
     if(root_ != nullptr)
     {
         getAllPointsRecursive(out, root_);
@@ -796,7 +797,8 @@ OctreeTracks::fillOctreeFromTracks(StaticVector<OctreeTracks::trackStruct*>* tra
 
 StaticVector<int>* OctreeTracks::getTracksCams(StaticVector<OctreeTracks::trackStruct*>* tracks)
 {
-    StaticVectorBool* camsb = new StaticVectorBool(mp->ncams);
+    StaticVectorBool* camsb = new StaticVectorBool();
+    camsb->reserve(mp->ncams);
     camsb->resize_with(mp->ncams, false);
 
     for(int i = 0; i < tracks->size(); i++)
@@ -807,7 +809,8 @@ StaticVector<int>* OctreeTracks::getTracksCams(StaticVector<OctreeTracks::trackS
         }
     }
 
-    StaticVector<int>* cams = new StaticVector<int>(mp->ncams);
+    StaticVector<int>* cams = new StaticVector<int>();
+    cams->reserve(mp->ncams);
     for(int i = 0; i < mp->ncams; i++)
     {
         if((*camsb)[i])

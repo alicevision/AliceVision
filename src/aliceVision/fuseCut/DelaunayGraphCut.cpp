@@ -180,11 +180,13 @@ StaticVector<StaticVector<int>*>* DelaunayGraphCut::createPtsCams()
     long t = std::clock();
     std::cout << "Extract visibilities." << std::endl;
     int npts = getNbVertices();
-    StaticVector<StaticVector<int>*>* out = new StaticVector<StaticVector<int>*>(npts);
+    StaticVector<StaticVector<int>*>* out = new StaticVector<StaticVector<int>*>();
+    out->reserve(npts);
 
     for(const GC_vertexInfo& v: _verticesAttr)
     {
-        StaticVector<int>* cams = new StaticVector<int>(v.getNbCameras());
+        StaticVector<int>* cams = new StaticVector<int>();
+        cams->reserve(v.getNbCameras());
         for(int c = 0; c < v.getNbCameras(); c++)
         {
             cams->push_back(v.cams[c]);
@@ -209,7 +211,8 @@ StaticVector<int>* DelaunayGraphCut::getPtsCamsHist()
     if(mp->verbose)
         printf("maxnCams %i\n", maxnCams);
 
-    StaticVector<int>* ncamsHist = new StaticVector<int>(maxnCams);
+    StaticVector<int>* ncamsHist = new StaticVector<int>();
+    ncamsHist->reserve(maxnCams);
     ncamsHist->resize_with(maxnCams, 0);
 
     for(const GC_vertexInfo& v: _verticesAttr)
@@ -234,7 +237,8 @@ StaticVector<int>* DelaunayGraphCut::getPtsNrcHist()
     if(mp->verbose)
         printf("maxnnrcs %i\n", maxnnrcs);
 
-    StaticVector<int>* nnrcsHist = new StaticVector<int>(maxnnrcs);
+    StaticVector<int>* nnrcsHist = new StaticVector<int>();
+    nnrcsHist->reserve(maxnnrcs);
     nnrcsHist->resize_with(maxnnrcs, 0);
 
     for(const GC_vertexInfo& v: _verticesAttr)
@@ -621,7 +625,8 @@ void DelaunayGraphCut::removeSmallSegs(int minSegSize)
 {
     if(mp->verbose)
         std::cout << "removeSmallSegs: " << minSegSize << std::endl;
-    StaticVector<int>* toRemove = new StaticVector<int>(getNbVertices());
+    StaticVector<int>* toRemove = new StaticVector<int>();
+    toRemove->reserve(getNbVertices());
 
     for(int i = 0; i < _verticesAttr.size(); ++i)
     {
@@ -1743,14 +1748,17 @@ void DelaunayGraphCut::invertFullStatusForSmallLabels()
         printf("filling small holes\n");
 
     const std::size_t nbCells = _cellIsFull.size();
-    StaticVector<int>* colorPerCell = new StaticVector<int>(nbCells);
+    StaticVector<int>* colorPerCell = new StaticVector<int>();
+    colorPerCell->reserve(nbCells);
     colorPerCell->resize_with(nbCells, -1);
 
-    StaticVector<int>* nbCellsPerColor = new StaticVector<int>(100);
+    StaticVector<int>* nbCellsPerColor = new StaticVector<int>();
+    nbCellsPerColor->reserve(100);
     nbCellsPerColor->resize_with(1, 0);
     int lastColorId = 0;
 
-    StaticVector<CellIndex>* buff = new StaticVector<CellIndex>(nbCells);
+    StaticVector<CellIndex>* buff = new StaticVector<CellIndex>();
+    buff->reserve(nbCells);
 
     for(CellIndex ci = 0; ci < nbCells; ++ci)
     {
@@ -2088,7 +2096,9 @@ mesh::Mesh* DelaunayGraphCut::createMesh(bool filterHelperPointsTriangles)
     mesh::Mesh* me = new mesh::Mesh();
 
     // TODO: copy only surface points and remap visibilities
-    me->pts = new StaticVector<Point3d>(_verticesCoords.size());
+    me->pts = new StaticVector<Point3d>();
+    me->pts->reserve(_verticesCoords.size());
+
     for(const Point3d& p: _verticesCoords)
     {
         me->pts->push_back(p);
@@ -2140,7 +2150,9 @@ mesh::Mesh* DelaunayGraphCut::createMesh(bool filterHelperPointsTriangles)
         }
     }
 
-    me->tris = new StaticVector<mesh::Mesh::triangle>(nbSurfaceFacets);
+    me->tris = new StaticVector<mesh::Mesh::triangle>();
+    me->tris->reserve(nbSurfaceFacets);
+
     // loop over all facets
     for(CellIndex ci = 0; ci < _cellIsFull.size(); ++ci)
     {
@@ -2249,11 +2261,12 @@ void DelaunayGraphCut::segmentFullOrFree(bool full, StaticVector<int>** out_full
     if(mp->verbose)
         printf("segmenting connected space\n");
 
-    StaticVector<int>* colors = new StaticVector<int>(_cellIsFull.size());
+    StaticVector<int>* colors = new StaticVector<int>();
+    colors->reserve(_cellIsFull.size());
     colors->resize_with(_cellIsFull.size(), -1);
 
-    StaticVector<CellIndex>* buff = new StaticVector<CellIndex>(_cellIsFull.size());
-
+    StaticVector<CellIndex>* buff = new StaticVector<CellIndex>();
+    buff->reserve(_cellIsFull.size());
     int col = 0;
 
     // segment connected free space
@@ -2302,7 +2315,8 @@ int DelaunayGraphCut::removeBubbles()
     if(mp->verbose)
         printf("removing bubbles\n");
 
-    StaticVectorBool* colorsToFill = new StaticVectorBool(nbEmptySegments);
+    StaticVectorBool* colorsToFill = new StaticVectorBool();
+    colorsToFill->reserve(nbEmptySegments);
     // all free space segments which contains camera has to remain free all others full
     colorsToFill->resize_with(nbEmptySegments, true);
 
@@ -2360,7 +2374,8 @@ int DelaunayGraphCut::removeDust(int minSegSize)
     StaticVector<int>* fullSegsColor = nullptr;
     segmentFullOrFree(true, &fullSegsColor, nbFullSegments);
 
-    StaticVector<int>* colorsSize = new StaticVector<int>(nbFullSegments);
+    StaticVector<int>* colorsSize = new StaticVector<int>();
+    colorsSize->reserve(nbFullSegments);
     colorsSize->resize_with(nbFullSegments, 0);
 
     // all free space segments which contains camera has to remain free
@@ -2403,7 +2418,8 @@ void DelaunayGraphCut::leaveLargestFullSegmentOnly()
     StaticVector<int>* colors = nullptr;
     segmentFullOrFree(true, &colors, nsegments);
 
-    StaticVector<int>* colorsSize = new StaticVector<int>(nsegments);
+    StaticVector<int>* colorsSize = new StaticVector<int>();
+    colorsSize->reserve(nsegments);
     colorsSize->resize_with(nsegments, 0);
 
     // all free space segments which contains camera has to remain free

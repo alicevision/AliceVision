@@ -35,7 +35,10 @@ SemiGlobalMatchingRcTc::~SemiGlobalMatchingRcTc()
 
 StaticVector<Voxel>* SemiGlobalMatchingRcTc::getPixels()
 {
-    StaticVector<Voxel>* pixels = new StaticVector<Voxel>(w * h);
+    StaticVector<Voxel>* pixels = new StaticVector<Voxel>();
+
+    pixels->reserve(w * h);
+
     for(int y = 0; y < h; y++)
     {
         for(int x = 0; x < w; x++)
@@ -67,10 +70,12 @@ StaticVector<unsigned char>* SemiGlobalMatchingRcTc::computeDepthSimMapVolume(fl
     int volDimY = h;
     int volDimZ = rcTcDepths->size();
 
-    StaticVector<unsigned char>* volume = new StaticVector<unsigned char>(volDimX * volDimY * volDimZ);
+    StaticVector<unsigned char>* volume = new StaticVector<unsigned char>();
+    volume->reserve(volDimX * volDimY * volDimZ);
     volume->resize_with(volDimX * volDimY * volDimZ, 255);
 
-    StaticVector<int>* tcams = new StaticVector<int>(1);
+    StaticVector<int>* tcams = new StaticVector<int>();
+    tcams->reserve(1);
     tcams->push_back(tc);
 
     StaticVector<Voxel>* pixels = getPixels();

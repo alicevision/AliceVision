@@ -32,7 +32,8 @@ ReconstructionPlan::~ReconstructionPlan()
 
 StaticVector<int>* ReconstructionPlan::voxelsIdsIntersectingHexah(Point3d* hexah)
 {
-    StaticVector<int>* ids = new StaticVector<int>(voxels->size() / 8);
+    StaticVector<int>* ids = new StaticVector<int>();
+    ids->reserve(voxels->size() / 8);
 
     for(int i = 0; i < voxels->size() / 8; i++)
     {
@@ -175,10 +176,15 @@ StaticVector<Point3d>* ReconstructionPlan::computeReconstructionPlanBinSearch(un
     printf("actHexahRD %i %i %i\n",actHexahRD.x,actHexahRD.y,actHexahRD.z);
     */
 
-    StaticVector<Point3d>* hexahsToReconstruct = new StaticVector<Point3d>(nVoxelsTracks->size() * 8);
+    StaticVector<Point3d>* hexahsToReconstruct = new StaticVector<Point3d>();
+    hexahsToReconstruct->reserve(nVoxelsTracks->size() * 8);
 
-    StaticVector<Voxel>* toDivideLU = new StaticVector<Voxel>(10 * nVoxelsTracks->size());
-    StaticVector<Voxel>* toDivideRD = new StaticVector<Voxel>(10 * nVoxelsTracks->size());
+    StaticVector<Voxel>* toDivideLU = new StaticVector<Voxel>();
+    StaticVector<Voxel>* toDivideRD = new StaticVector<Voxel>();
+
+    toDivideLU->reserve(10 * nVoxelsTracks->size());
+    toDivideRD->reserve(10 * nVoxelsTracks->size());
+
     toDivideLU->push_back(actHexahLU);
     toDivideRD->push_back(actHexahRD);
 
@@ -249,7 +255,9 @@ void reconstructSpaceAccordingToVoxelsArray(const std::string& voxelsArrayFileNa
     ReconstructionPlan* rp =
         new ReconstructionPlan(ls->dimensions, &ls->space[0], ls->mp, ls->pc, ls->spaceVoxelsFolderName);
 
-    StaticVector<Point3d>* hexahsToExcludeFromResultingMesh = new StaticVector<Point3d>(voxelsArray->size());
+    StaticVector<Point3d>* hexahsToExcludeFromResultingMesh = new StaticVector<Point3d>();
+    hexahsToExcludeFromResultingMesh->reserve(voxelsArray->size());
+
     for(int i = 0; i < voxelsArray->size() / 8; i++)
     {
         printf("RECONSTRUCTING %i-th VOXEL OF %i \n", i, voxelsArray->size() / 8);
@@ -325,7 +333,7 @@ StaticVector<StaticVector<int>*>* loadLargeScalePtsCams(const std::vector<std::s
 
 StaticVector<rgb>* getTrisColorsRgb(mesh::Mesh* me, StaticVector<rgb>* ptsColors)
 {
-    StaticVector<rgb>* trisColors = new StaticVector<rgb>(me->tris->size());
+    StaticVector<rgb>* trisColors = new StaticVector<rgb>();
     trisColors->resize(me->tris->size());
     for(int i = 0; i < me->tris->size(); i++)
     {
@@ -376,11 +384,16 @@ mesh::Mesh* joinMeshes(const std::vector<std::string>& recsDirs, StaticVector<Po
     if(ls->mp->verbose)
         printf("Creating mesh\n");
     mesh::Mesh* me = new mesh::Mesh();
-    me->pts = new StaticVector<Point3d>(npts);
-    me->tris = new StaticVector<mesh::Mesh::triangle>(ntris);
 
-    StaticVector<rgb>* trisCols = new StaticVector<rgb>(ntris);
-    StaticVector<rgb>* ptsCols = new StaticVector<rgb>(npts);
+    me->pts = new StaticVector<Point3d>();
+    me->pts->reserve(npts);
+    me->tris = new StaticVector<mesh::Mesh::triangle>();
+    me->tris->reserve(ntris);
+
+    StaticVector<rgb>* trisCols = new StaticVector<rgb>();
+    trisCols->reserve(ntris);
+    StaticVector<rgb>* ptsCols = new StaticVector<rgb>();
+    ptsCols->reserve(npts);
 
     if(ls->mp->verbose)
         printf("Merging part to one mesh (not connecting them!!!)\n");
@@ -474,7 +487,9 @@ mesh::Mesh* joinMeshes(int gl, LargeScale* ls)
     }
     subFolderName = subFolderName + "/";
 
-    StaticVector<Point3d>* voxelsArray = new StaticVector<Point3d>(optimalReconstructionPlan->size() * 8);
+    StaticVector<Point3d>* voxelsArray = new StaticVector<Point3d>();
+    voxelsArray->reserve(optimalReconstructionPlan->size() * 8);
+
     std::vector<std::string> recsDirs;
     for(int i = 0; i < optimalReconstructionPlan->size(); i++)
     {

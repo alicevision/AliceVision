@@ -58,15 +58,19 @@ void ImagesCache::initIC(int _bandType, std::vector<std::string>& _imagesNames,
 
     imgs = new Color*[N_PRELOADED_IMAGES];
 
-    camIdMapId = new StaticVector<int>(mp->ncams);
-    mapIdCamId = new StaticVector<int>(N_PRELOADED_IMAGES);
-    mapIdClock = new StaticVector<long>(N_PRELOADED_IMAGES);
+    camIdMapId = new StaticVector<int>();
+    camIdMapId->reserve(mp->ncams);
+    mapIdCamId = new StaticVector<int>();
+    mapIdCamId->reserve(N_PRELOADED_IMAGES);
+    mapIdClock = new StaticVector<long>();
+    mapIdClock->reserve(N_PRELOADED_IMAGES);
 
-    for(int i = 0; i < mp->ncams; i++)
+    for(int i = 0; i < mp->ncams; ++i)
     {
         camIdMapId->push_back(-1);
     }
-    for (int ni = 0; ni < N_PRELOADED_IMAGES; ni++)
+
+    for (int ni = 0; ni < N_PRELOADED_IMAGES; ++ni)
     {
         imgs[ni] = nullptr;
 

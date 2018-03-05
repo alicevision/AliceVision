@@ -209,8 +209,11 @@ int main(int argc, char* argv[])
             fuseCut::LargeScale lsbase(&mp, &pc, dirName.string()+"/");
             lsbase.loadSpaceFromFile();
             fuseCut::ReconstructionPlan rp(lsbase.dimensions, &lsbase.space[0], lsbase.mp, lsbase.pc, lsbase.spaceVoxelsFolderName);
-            StaticVector<int> voxelNeighs(rp.voxels->size() / 8);
-            for(int i = 0; i < rp.voxels->size() / 8; i++)
+
+            StaticVector<int> voxelNeighs;
+            voxelNeighs.reserve(rp.voxels->size() / 8);
+
+            for(int i = 0; i < rp.voxels->size() / 8; ++i)
                 voxelNeighs.push_back(i);
             fuseCut::DelaunayGraphCut delaunayGC(lsbase.mp, lsbase.pc);
             StaticVector<Point3d>* hexahsToExcludeFromResultingMesh = nullptr;

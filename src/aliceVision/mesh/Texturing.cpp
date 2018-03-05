@@ -64,15 +64,20 @@ StaticVector<StaticVector<int>*>* Texturing::generateUVs(mvsUtils::MultiViewPara
     UVAtlas mua(*me, mp, ptsCams, texParams.textureSide, texParams.padding);
     // create a new mesh to store data
     Mesh* m = new Mesh();
-    m->pts = new StaticVector<Point3d>(me->pts->size());
-    m->tris = new StaticVector<Mesh::triangle>(me->tris->size());
-    trisUvIds = new StaticVector<Voxel>(me->tris->size());
-    uvCoords = new StaticVector<Point2d>(me->pts->size());
+    m->pts = new StaticVector<Point3d>();
+    m->pts->reserve(me->pts->size());
+    m->tris = new StaticVector<Mesh::triangle>();
+    m->tris->reserve(me->tris->size());
+    trisUvIds = new StaticVector<Voxel>();
+    trisUvIds->reserve(me->tris->size());
+    uvCoords = new StaticVector<Point2d>();
+    uvCoords->reserve(me->pts->size());
     _atlases.clear();
     _atlases.resize(mua.atlases().size());
 
     std::map<int, int> vertexCache;
-    auto* updatedPointsCams = new StaticVector<StaticVector<int>*>(ptsCams->size());
+    auto* updatedPointsCams = new StaticVector<StaticVector<int>*>();
+    updatedPointsCams->reserve(ptsCams->size());
 
     int atlasId = 0;
     int triangleCount = 0;

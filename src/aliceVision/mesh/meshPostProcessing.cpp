@@ -21,7 +21,8 @@ void filterLargeEdgeTriangles(Mesh* me, float avelthr)
 {
     float averageEdgeLength = me->computeAverageEdgeLength();
 
-    StaticVector<int>* trisIdsToStay = new StaticVector<int>(me->tris->size());
+    StaticVector<int>* trisIdsToStay = new StaticVector<int>();
+    trisIdsToStay->reserve(me->tris->size());
     for(int i = 0; i < me->tris->size(); i++)
     {
         float triMaxEdgelength = me->computeTriangleMaxEdgeLength(i);
@@ -84,7 +85,8 @@ void meshPostProcessing(Mesh*& inout_mesh, StaticVector<StaticVector<int>*>*& in
 
         inout_mesh->removeFreePointsFromMesh(&ptIdToNewPtId);
 
-        inout_ptsCams = new StaticVector<StaticVector<int>*>(inout_mesh->pts->size());
+        inout_ptsCams = new StaticVector<StaticVector<int>*>();
+        inout_ptsCams->reserve(inout_mesh->pts->size());
         for(int i = 0; i < inout_mesh->pts->size(); i++)
         {
             inout_ptsCams->push_back(nullptr);
@@ -94,7 +96,8 @@ void meshPostProcessing(Mesh*& inout_mesh, StaticVector<StaticVector<int>*>*& in
             int newId = (*ptIdToNewPtId)[i];
             if(newId > -1)
             {
-                StaticVector<int>* ptCamsNew = new StaticVector<int>(sizeOfStaticVector<int>((*ptsCamsOld)[i]));
+                StaticVector<int>* ptCamsNew = new StaticVector<int>();
+                ptCamsNew->reserve(sizeOfStaticVector<int>((*ptsCamsOld)[i]));
                 for(int j = 0; j < sizeOfStaticVector<int>((*ptsCamsOld)[i]); j++)
                 {
                     ptCamsNew->push_back((*(*ptsCamsOld)[i])[j]);
@@ -127,7 +130,8 @@ void meshPostProcessing(Mesh*& inout_mesh, StaticVector<StaticVector<int>*>*& in
             for(int i = 0; i < meOpt->newPtsOldPtId->size(); i++)
             {
                 int oldPtId = (*meOpt->newPtsOldPtId)[i];
-                StaticVector<int>* ptCams = new StaticVector<int>(sizeOfStaticVector<int>((*inout_ptsCams)[oldPtId]));
+                StaticVector<int>* ptCams = new StaticVector<int>();
+                ptCams->reserve(sizeOfStaticVector<int>((*inout_ptsCams)[oldPtId]));
                 for(int j = 0; j < sizeOfStaticVector<int>((*inout_ptsCams)[oldPtId]); j++)
                 {
                     ptCams->push_back((*(*inout_ptsCams)[oldPtId])[j]);
@@ -169,7 +173,8 @@ void meshPostProcessing(Mesh*& inout_mesh, StaticVector<StaticVector<int>*>*& in
             vz = vz.normalize();
             float avel = 10.0f * meOpt->computeAverageEdgeLength();
 
-            ptsCanMove = new StaticVectorBool(meOpt->pts->size());
+            ptsCanMove = new StaticVectorBool();
+            ptsCanMove->reserve(meOpt->pts->size());
             ptsCanMove->resize_with(meOpt->pts->size(), true);
             for(int i = 0; i < meOpt->pts->size(); i++)
             {

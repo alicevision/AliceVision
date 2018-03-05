@@ -100,7 +100,9 @@ int main(int argc, char* argv[])
     mvsUtils::MultiViewParams mp(mip.getNbCameras(), &mip, (float) simThr);
     mvsUtils::PreMatchCams pc(&mp);
 
-    StaticVector<int> cams(mp.ncams);
+    StaticVector<int> cams;
+    cams.reserve(mp.ncams);
+
     if(rangeSize == -1)
     {
         for(int rc = 0; rc < mp.ncams; rc++) // process all cameras

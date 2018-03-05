@@ -74,7 +74,9 @@ StaticVector<int> PreMatchCams::findNearestCams(int rc, int _nnearestcams)
 {
     StaticVector<int> out;
     out.reserve(_nnearestcams);
-    StaticVector<SortedId>* ids = new StaticVector<SortedId>(mp->ncams - 1);
+    StaticVector<SortedId>* ids = new StaticVector<SortedId>();
+    ids->reserve(mp->ncams - 1);
+
     for(int c = 0; c < mp->ncams; c++)
     {
         if(c != rc)
@@ -123,7 +125,8 @@ StaticVector<int>* PreMatchCams::precomputeIncidentMatrixCamsFromSeeds()
         return loadArrayFromFile<int>(fn);
     }
     std::cout << "Compute camera pairs matrix file: " << fn << std::endl;
-    StaticVector<int>* camsmatrix = new StaticVector<int>(mp->ncams * mp->ncams);
+    StaticVector<int>* camsmatrix = new StaticVector<int>();
+    camsmatrix->reserve(mp->ncams * mp->ncams);
     camsmatrix->resize_with(mp->ncams * mp->ncams, 0);
     for(int rc = 0; rc < mp->ncams; ++rc)
     {
@@ -174,7 +177,8 @@ StaticVector<int> PreMatchCams::findNearestCamsFromSeeds(int rc, int nnearestcam
     else
     {
         StaticVector<int>* camsmatrix = loadCamPairsMatrix();
-        StaticVector<SortedId> ids(mp->ncams);
+        StaticVector<SortedId> ids;
+        ids.reserve(mp->ncams);
         for(int tc = 0; tc < mp->ncams; tc++)
         {
             ids.push_back(SortedId(tc, (float)(*camsmatrix)[std::min(rc, tc) * mp->ncams + std::max(rc, tc)]));

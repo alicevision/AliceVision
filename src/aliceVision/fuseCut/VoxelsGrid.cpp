@@ -48,7 +48,8 @@ VoxelsGrid* VoxelsGrid::clone(const std::string& _spaceRootDir)
     out->mp = mp;
     out->pc = pc;
     out->voxelDim = voxelDim;
-    out->voxels = new StaticVector<Point3d>(voxels->size());
+    out->voxels = new StaticVector<Point3d>();
+    out->voxels->resize(voxels->size());
     for(int i = 0; i < voxels->size(); i++)
     {
         out->voxels->push_back((*voxels)[i]);
@@ -76,7 +77,8 @@ StaticVector<int>* VoxelsGrid::getNVoxelsTracks()
     if(mp->verbose)
         printf("reading number of tracks for each voxel file\n");
 
-    StaticVector<int>* nVoxelsTracks = new StaticVector<int>(voxels->size() / 8);
+    StaticVector<int>* nVoxelsTracks = new StaticVector<int>();
+    nVoxelsTracks->reserve(voxels->size() / 8);
     long t1 = mvsUtils::initEstimate();
     for(int i = 0; i < voxels->size() / 8; i++)
     {
@@ -171,8 +173,9 @@ StaticVector<OctreeTracks::trackStruct*>* VoxelsGrid::loadTracksFromVoxelFiles(S
     StaticVector<StaticVector<Pixel>*>* tracksPointsCams = loadArrayOfArraysFromFile<Pixel>(fileNameTracksPtsCams);
     *cams = loadArrayFromFile<int>(fileNameTracksCams);
 
-    StaticVector<OctreeTracks::trackStruct*>* tracks =
-        new StaticVector<OctreeTracks::trackStruct*>(tracksPoints->size());
+    StaticVector<OctreeTracks::trackStruct*>* tracks = new StaticVector<OctreeTracks::trackStruct*>();
+    tracks->reserve(tracksPoints->size());
+
     for(int i = 0; i < tracksPoints->size(); i++)
     {
         StaticVector<Pixel>* tcams = (*tracksPointsCams)[i];
@@ -208,9 +211,12 @@ bool VoxelsGrid::saveTracksToVoxelFiles(StaticVector<int>* cams, StaticVector<Oc
         printf("Warning folder %s does not exist!\n", folderName.c_str());
     }
 
-    StaticVector<Point3d>* tracksPoints = new StaticVector<Point3d>(tracks->size());
-    StaticVector<StaticVector<Pixel>*>* tracksPointsCams = new StaticVector<StaticVector<Pixel>*>(tracks->size());
-    StaticVector<Point3d>* tracksStat = new StaticVector<Point3d>(tracks->size());
+    StaticVector<Point3d>* tracksPoints = new StaticVector<Point3d>();
+    tracksPoints->reserve(tracks->size());
+    StaticVector<StaticVector<Pixel>*>* tracksPointsCams = new StaticVector<StaticVector<Pixel>*>();
+    tracksPointsCams->reserve(tracks->size());
+    StaticVector<Point3d>* tracksStat = new StaticVector<Point3d>();
+    tracksStat->reserve(tracks->size());
 
     for(int j = 0; j < tracks->size(); j++)
     {
@@ -218,7 +224,8 @@ bool VoxelsGrid::saveTracksToVoxelFiles(StaticVector<int>* cams, StaticVector<Oc
         tracksPoints->push_back(info->point);
         tracksStat->push_back(Point3d(info->minPixSize, info->minSim, info->npts));
 
-        StaticVector<Pixel>* tcams = new StaticVector<Pixel>(info->cams.size());
+        StaticVector<Pixel>* tcams = new StaticVector<Pixel>();
+        tcams->reserve(info->cams.size());
         for(int k = 0; k < info->cams.size(); k++)
         {
             tcams->push_back(info->cams[k]);
@@ -261,7 +268,8 @@ void VoxelsGrid::generateTracksForEachVoxel(StaticVector<Point3d>* Reconstructio
     long tall = clock();
     int nvoxs = voxels->size() / 8;
 
-    StaticVector<int>* toRecurse = new StaticVector<int>(nvoxs);
+    StaticVector<int>* toRecurse = new StaticVector<int>();
+    toRecurse->reserve(nvoxs);
 
 #pragma omp parallel for
     for(int i = 0; i < nvoxs; i++)
@@ -394,7 +402,8 @@ void VoxelsGrid::generateSpace(VoxelsGrid* vgnew, const Voxel& LU, const Voxel& 
             if((tracks != nullptr) && (tracks->size() > 0))
             {
                 // estimate nubers // TODO FACA: remove costly estimation of numbers
-                StaticVector<int>* nnewVoxsTracks = new StaticVector<int>(part.x * part.y * part.z);
+                StaticVector<int>* nnewVoxsTracks = new StaticVector<int>();
+                nnewVoxsTracks->reserve(part.x * part.y * part.z);
                 nnewVoxsTracks->resize_with(part.x * part.y * part.z, 0);
                 for(int i = 0; i < tracks->size(); i++)
                 {
@@ -406,10 +415,13 @@ void VoxelsGrid::generateSpace(VoxelsGrid* vgnew, const Voxel& LU, const Voxel& 
 
                 // allocate
                 StaticVector<StaticVector<OctreeTracks::trackStruct*>*>* newVoxsTracks =
-                    new StaticVector<StaticVector<OctreeTracks::trackStruct*>*>(part.x * part.y * part.z);
+                    new StaticVector<StaticVector<OctreeTracks::trackStruct*>*>();
+                newVoxsTracks->reserve(part.x * part.y * part.z);
                 for(int i = 0; i < part.x * part.y * part.z; i++)
                 {
-                    newVoxsTracks->push_back(new StaticVector<OctreeTracks::trackStruct*>((*nnewVoxsTracks)[i]));
+                    auto* newVoxTracks = new StaticVector<OctreeTracks::trackStruct*>();
+                    newVoxTracks->reserve((*nnewVoxsTracks)[i]);
+                    newVoxsTracks->push_back(newVoxTracks);
                 }
 
                 // fill

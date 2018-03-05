@@ -28,13 +28,7 @@ class StaticVector
 
 public:
     StaticVector()
-    {
-    }
-
-    StaticVector(int _allocated)
-    {
-        _data.reserve(_allocated);
-    }
+    {}
 
     const T& operator[](int index) const
     {
@@ -148,20 +142,6 @@ public:
         return std::distance(_data.begin(), it);
     }
 
-    T minVal() const
-    {
-        if (_data.empty())
-            return 0;
-        return *std::min_element(_data.begin(), _data.end());
-    }
-
-    T maxVal() const
-    {
-        if(_data.empty())
-            return 0;
-        return *std::max_element(_data.begin(), _data.end());
-    }
-
     int minValId() const
     {
         if(_data.empty())
@@ -245,7 +225,8 @@ StaticVector<StaticVector<T>*>* loadArrayOfArraysFromFile(std::string fileName)
 
     int n = 0;
     fread(&n, sizeof(int), 1, f);
-    StaticVector<StaticVector<T>*>* aa = new StaticVector<StaticVector<T>*>(n);
+    StaticVector<StaticVector<T>*>* aa = new StaticVector<StaticVector<T>*>();
+    aa->reserve(n);
     aa->resize_with(n, NULL);
     for(int i = 0; i < n; i++)
     {
@@ -253,7 +234,7 @@ StaticVector<StaticVector<T>*>* loadArrayOfArraysFromFile(std::string fileName)
         fread(&m, sizeof(int), 1, f);
         if(m > 0)
         {
-            StaticVector<T>* a = new StaticVector<T>(m);
+            StaticVector<T>* a = new StaticVector<T>();
             a->resize(m);
             fread(&(*a)[0], sizeof(T), m, f);
             (*aa)[i] = a;
@@ -343,7 +324,7 @@ StaticVector<T>* loadArrayFromFile(std::string fileName, bool printfWarning = fa
         if(n == -1)
         {
             fread(&n, sizeof(int), 1, f);
-            a = new StaticVector<T>(n);
+            a = new StaticVector<T>();
             a->resize(n);
 
             uLong comprLen;
@@ -368,7 +349,7 @@ StaticVector<T>* loadArrayFromFile(std::string fileName, bool printfWarning = fa
         }
         else
         {
-            a = new StaticVector<T>(n);
+            a = new StaticVector<T>();
             a->resize(n);
             fread(&(*a)[0], sizeof(T), n, f);
         }
@@ -455,7 +436,8 @@ void deleteArrayOfArrays(StaticVector<StaticVector<T>*>** aa)
 template <class T>
 StaticVector<StaticVector<T>*>* cloneArrayOfArrays(StaticVector<StaticVector<T>*>* inAOA)
 {
-    StaticVector<StaticVector<T>*>* outAOA = new StaticVector<StaticVector<T>*>(inAOA->size());
+    StaticVector<StaticVector<T>*>* outAOA = new StaticVector<StaticVector<T>*>();
+    outAOA->reserve(inAOA->size());
     // copy
     for(int i = 0; i < inAOA->size(); i++)
     {
@@ -465,7 +447,8 @@ StaticVector<StaticVector<T>*>* cloneArrayOfArrays(StaticVector<StaticVector<T>*
         }
         else
         {
-            StaticVector<T>* outA = new StaticVector<T>((*inAOA)[i]->size());
+            StaticVector<T>* outA = new StaticVector<T>();
+            outA->reserve((*inAOA)[i]->size());
             outA->push_back_arr((*inAOA)[i]);
             outAOA->push_back(outA);
         };

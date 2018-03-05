@@ -23,7 +23,8 @@ MeshEnergyOpt::~MeshEnergyOpt() = default;
 
 StaticVector<Point3d>* MeshEnergyOpt::computeLaplacianPtsParallel()
 {
-    StaticVector<Point3d>* lapPts = new StaticVector<Point3d>(pts->size());
+    StaticVector<Point3d>* lapPts = new StaticVector<Point3d>();
+    lapPts->reserve(pts->size());
     lapPts->resize_with(pts->size(), Point3d(0.0f, 0.0f, 0.f));
     int nlabpts = 0;
 
@@ -47,7 +48,8 @@ void MeshEnergyOpt::updateGradientParallel(float lambda, float epsilon, int type
     // printf("nlabpts %i of %i\n",nlabpts,pts->size());
     StaticVector<Point3d>* lapPts = computeLaplacianPtsParallel();
 
-    StaticVector<Point3d>* newPts = new StaticVector<Point3d>(pts->size());
+    StaticVector<Point3d>* newPts = new StaticVector<Point3d>();
+    newPts->reserve(pts->size());
     newPts->push_back_arr(pts);
 
 #pragma omp parallel for

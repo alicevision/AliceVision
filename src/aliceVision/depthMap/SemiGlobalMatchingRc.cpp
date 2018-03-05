@@ -102,7 +102,8 @@ StaticVector<float>* SemiGlobalMatchingRc::getTcSeedsRcPlaneDists(int rc, Static
         delete seeds;
     } // for c
 
-    StaticVector<float>* rcDists = new StaticVector<float>(nTcSeeds);
+    StaticVector<float>* rcDists = new StaticVector<float>();
+    rcDists->reserve(nTcSeeds);
 
     for(int c = 0; c < tcams->size(); c++)
     {
@@ -125,7 +126,8 @@ bool SemiGlobalMatchingRc::selectBestDepthsRange(int nDepthsThr, StaticVector<fl
         return true;
     }
 
-    StaticVector<int>* votes = new StaticVector<int>(depths->size() - nDepthsThr);
+    StaticVector<int>* votes = new StaticVector<int>();
+    votes->reserve(depths->size() - nDepthsThr);
     for(int i = 0; i < depths->size() - nDepthsThr; i++)
     {
         float d1 = (*depths)[i];
@@ -151,7 +153,8 @@ bool SemiGlobalMatchingRc::selectBestDepthsRange(int nDepthsThr, StaticVector<fl
         }
     }
 
-    StaticVector<float>* depthsNew = new StaticVector<float>(nDepthsThr);
+    StaticVector<float>* depthsNew = new StaticVector<float>();
+    depthsNew->reserve(nDepthsThr);
 
     int id1 = votes->maxValId();
     int id2 = id1 + nDepthsThr - 1;
@@ -178,7 +181,9 @@ bool SemiGlobalMatchingRc::selectBestDepthsRange(int nDepthsThr, StaticVector<St
         return true;
     }
 
-    StaticVector<float>* votes = new StaticVector<float>(depths->size() - nDepthsThr);
+    StaticVector<float>* votes = new StaticVector<float>();
+    votes->reserve(depths->size() - nDepthsThr);
+
     for(int i = 0; i < depths->size() - nDepthsThr; i++)
     {
         float d1 = (*depths)[i];
@@ -198,7 +203,8 @@ bool SemiGlobalMatchingRc::selectBestDepthsRange(int nDepthsThr, StaticVector<St
         votes->push_back(overlap);
     }
 
-    StaticVector<float>* depthsNew = new StaticVector<float>(nDepthsThr);
+    StaticVector<float>* depthsNew = new StaticVector<float>();
+    depthsNew->reserve(nDepthsThr);
 
     int id1 = votes->maxValId();
     int id2 = id1 + nDepthsThr - 1;
@@ -262,7 +268,8 @@ void SemiGlobalMatchingRc::computeDepths(float minDepth, float maxDepth, StaticV
         }
     }
 
-    depths = new StaticVector<float>(maxNdetphs);
+    depths = new StaticVector<float>();
+    depths->reserve(maxNdetphs);
 
     {
         float depth = minDepth;
@@ -286,8 +293,11 @@ StaticVector<StaticVector<float>*>* SemiGlobalMatchingRc::computeAllDepthsAndRes
     };
     */
 
-    StaticVector<int>* tcamsNew = new StaticVector<int>(tcams->size());
-    StaticVector<StaticVector<float>*>* alldepths = new StaticVector<StaticVector<float>*>(tcams->size());
+    StaticVector<int>* tcamsNew = new StaticVector<int>();
+    StaticVector<StaticVector<float>*>* alldepths = new StaticVector<StaticVector<float>*>();
+    tcamsNew->reserve(tcams->size());
+    alldepths->reserve(tcams->size());
+
     float midDepth = getCGDepthFromSeeds(sp->mp, rc);
 
     for(int c = 0; c < tcams->size(); c++)
@@ -340,7 +350,9 @@ StaticVector<StaticVector<float>*>* SemiGlobalMatchingRc::computeAllDepthsAndRes
  */
 void SemiGlobalMatchingRc::computeDepthsTcamsLimits(StaticVector<StaticVector<float>*>* alldepths)
 {
-    depthsTcamsLimits = new StaticVector<Pixel>(tcams->size());
+    depthsTcamsLimits = new StaticVector<Pixel>();
+    depthsTcamsLimits->reserve(tcams->size());
+
     for(int c = 0; c < tcams->size(); c++)
     {
         float d1 = (*(*alldepths)[c])[0];
@@ -527,7 +539,8 @@ void SemiGlobalMatchingRc::computeDepthsAndResetTCams()
 
 StaticVector<float>* SemiGlobalMatchingRc::getSubDepthsForTCam(int tcamid)
 {
-    StaticVector<float>* out = new StaticVector<float>((*depthsTcamsLimits)[tcamid].y);
+    StaticVector<float>* out = new StaticVector<float>();
+    out->reserve((*depthsTcamsLimits)[tcamid].y);
 
     for(int i = (*depthsTcamsLimits)[tcamid].x; i < (*depthsTcamsLimits)[tcamid].x + (*depthsTcamsLimits)[tcamid].y;
         i++)
@@ -565,7 +578,8 @@ bool SemiGlobalMatchingRc::sgmrc(bool checkIfExists)
     StaticVectorBool* rcSilhoueteMap = nullptr;
     if(sp->useSilhouetteMaskCodedByColor)
     {
-        rcSilhoueteMap = new StaticVectorBool(w * h);
+        rcSilhoueteMap = new StaticVectorBool();
+        rcSilhoueteMap->reserve(w * h);
         rcSilhoueteMap->resize_with(w * h, true);
         sp->cps->getSilhoueteMap(rcSilhoueteMap, scale, step, sp->silhouetteMaskColor, rc);
     }
@@ -748,7 +762,8 @@ void computeDepthMapsPSSGM(mvsUtils::MultiViewParams* mp, mvsUtils::PreMatchCams
             {
                 rcTo = cams.size();
             }
-            StaticVector<int> subcams(cams.size());
+            StaticVector<int> subcams;
+            subcams.reserve(cams.size());
             for(int rc = rcFrom; rc < rcTo; rc++)
             {
                 subcams.push_back(cams[rc]);

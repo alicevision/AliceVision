@@ -357,7 +357,8 @@ StaticVector<Point3d>* triangleHexahedronIntersection(Point3d& A, Point3d& B, Po
     Point3d tris[12][3];
     getHexahedronTriangles(tris, hexah);
 
-    StaticVector<Point3d>* out = new StaticVector<Point3d>(40);
+    StaticVector<Point3d>* out = new StaticVector<Point3d>();
+    out->reserve(40);
     for(int i = 0; i < 12; i++)
     {
         Point3d a = tris[i][0];
@@ -383,7 +384,8 @@ StaticVector<Point3d>* lineSegmentHexahedronIntersection(Point3d& linePoint1, Po
     Point3d tris[12][3];
     getHexahedronTriangles(tris, hexah);
 
-    StaticVector<Point3d>* out = new StaticVector<Point3d>(40);
+    StaticVector<Point3d>* out = new StaticVector<Point3d>();
+    out->reserve(40);
     for(int i = 0; i < 12; i++)
     {
         Point3d a = tris[i][0];
@@ -406,7 +408,8 @@ StaticVector<Point3d>* triangleRectangleIntersection(Point3d& A, Point3d& B, Poi
     float maxd =
         std::max(std::max((mp->CArr[rc] - A).size(), (mp->CArr[rc] - B).size()), (mp->CArr[rc] - C).size()) * 1000.0f;
 
-    StaticVector<Point3d>* out = new StaticVector<Point3d>(40);
+    StaticVector<Point3d>* out = new StaticVector<Point3d>();
+    out->reserve(40);
 
     Point3d a, b, c;
     int coplanar;
@@ -570,9 +573,10 @@ plot(x,y)
 StaticVector<StaticVector<int>*>* convertObjectsCamsToCamsObjects(const MultiViewParams* mp,
                                                                   StaticVector<StaticVector<int>*>* ptsCams)
 {
-    StaticVector<int>* nCamsPts = new StaticVector<int>(mp->ncams);
+    StaticVector<int>* nCamsPts = new StaticVector<int>();
+    nCamsPts->reserve(mp->ncams);
     nCamsPts->resize_with(mp->ncams, 0);
-    for(int i = 0; i < ptsCams->size(); i++)
+    for(int i = 0; i < ptsCams->size(); ++i)
     {
         for(int j = 0; j < sizeOfStaticVector<int>((*ptsCams)[i]); j++)
         {
@@ -588,10 +592,13 @@ StaticVector<StaticVector<int>*>* convertObjectsCamsToCamsObjects(const MultiVie
         }
     }
 
-    StaticVector<StaticVector<int>*>* camsPts = new StaticVector<StaticVector<int>*>(mp->ncams);
-    for(int rc = 0; rc < mp->ncams; rc++)
+    StaticVector<StaticVector<int>*>* camsPts = new StaticVector<StaticVector<int>*>();
+    camsPts->reserve(mp->ncams);
+    for(int rc = 0; rc < mp->ncams; ++rc)
     {
-        camsPts->push_back(new StaticVector<int>((*nCamsPts)[rc]));
+        auto* camPts = new StaticVector<int>();
+        camPts->reserve((*nCamsPts)[rc]);
+        camsPts->push_back(camPts);
     }
 
     for(int i = 0; i < ptsCams->size(); i++)
@@ -612,7 +619,8 @@ StaticVector<StaticVector<int>*>* convertObjectsCamsToCamsObjects(const MultiVie
 StaticVector<StaticVector<Pixel>*>* convertObjectsCamsToCamsObjects(const MultiViewParams* mp,
                                                                     StaticVector<StaticVector<Pixel>*>* ptsCams)
 {
-    StaticVector<int>* nCamsPts = new StaticVector<int>(mp->ncams);
+    StaticVector<int>* nCamsPts = new StaticVector<int>();
+    nCamsPts->reserve(mp->ncams);
     nCamsPts->resize_with(mp->ncams, 0);
     for(int i = 0; i < ptsCams->size(); i++)
     {
@@ -623,10 +631,13 @@ StaticVector<StaticVector<Pixel>*>* convertObjectsCamsToCamsObjects(const MultiV
         }
     }
 
-    StaticVector<StaticVector<Pixel>*>* camsPts = new StaticVector<StaticVector<Pixel>*>(mp->ncams);
+    StaticVector<StaticVector<Pixel>*>* camsPts = new StaticVector<StaticVector<Pixel>*>();
+    camsPts->reserve(mp->ncams);
     for(int rc = 0; rc < mp->ncams; rc++)
     {
-        camsPts->push_back(new StaticVector<Pixel>((*nCamsPts)[rc]));
+        auto* camPts = new StaticVector<Pixel>();
+        camPts->reserve((*nCamsPts)[rc]);
+        camsPts->push_back(camPts);
     }
 
     for(int i = 0; i < ptsCams->size(); i++)
@@ -676,7 +687,7 @@ StaticVector<Point3d>* computeVoxels(const Point3d* space, const Voxel& dimensio
     float stepz = sz / voxelDimZ;
 
     int nvoxels = dimensions.x * dimensions.y * dimensions.z;
-    StaticVector<Point3d>* voxels = new StaticVector<Point3d>(nvoxels * 8);
+    StaticVector<Point3d>* voxels = new StaticVector<Point3d>();
     voxels->resize(nvoxels * 8);
 
     // printf("%i %i %i %i\n",dimensions.x,dimensions.y,dimensions.z,nvoxels,voxels->size());
@@ -712,7 +723,9 @@ StaticVector<int>* createRandomArrayOfIntegers(int n)
     /* initialize random seed: */
     srand(time(nullptr));
 
-    StaticVector<int>* tracksPointsRandomIds = new StaticVector<int>(n);
+    StaticVector<int>* tracksPointsRandomIds = new StaticVector<int>();
+    tracksPointsRandomIds->reserve(n);
+
     for(int j = 0; j < n; j++)
     {
         tracksPointsRandomIds->push_back(j);

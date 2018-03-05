@@ -469,13 +469,15 @@ bool loadSeedsFromFile(StaticVector<SeedPoint>** seeds, const std::string& fileN
     if(f == nullptr)
     {
         // printf("file does not exists \n");
-        *seeds = new StaticVector<SeedPoint>(1);
+        *seeds = new StaticVector<SeedPoint>();
+        (*seeds)->reserve(1);
         return false;
     }
 
     int size;
     fread(&size, sizeof(int), 1, f);
-    *seeds = new StaticVector<SeedPoint>(std::max(1, size));
+    *seeds = new StaticVector<SeedPoint>();
+    (*seeds)->reserve(std::max(1, size));
 
     for(int i = 0; i < size; i++)
     {
@@ -535,7 +537,8 @@ bool getDepthMapInfo(int refImgFileId, MultiViewInputParams* mip, float& mindept
 
     int ntcams;
     fscanf(f, "minDepth %f, maxDepth %f, ntcams %i, tcams", &mindepth, &maxdepth, &ntcams);
-    (*tcams) = new StaticVector<int>(ntcams);
+    (*tcams) = new StaticVector<int>();
+    (*tcams)->reserve(ntcams);
     for(int c = 0; c < ntcams; c++)
     {
         int tc;

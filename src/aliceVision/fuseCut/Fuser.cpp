@@ -180,7 +180,8 @@ bool Fuser::filterGroupsRC(int rc, int pixSizeBall, int pixSizeBallWSP, int nNea
        throw std::runtime_error(s.str());
     }
 
-    StaticVector<int>* numOfPtsMap = new StaticVector<int>(w * h);
+    StaticVector<int>* numOfPtsMap = new StaticVector<int>();
+    numOfPtsMap->reserve(w * h);
     numOfPtsMap->resize_with(w * h, 0);
 
     // StaticVector<int> *tcams = pc->findNearestCams(rc);
@@ -584,7 +585,8 @@ std::string generateTempPtsSimsFiles(std::string tmpDir, mvsUtils::MultiViewPara
         int scale = 0;
         int scaleuse = std::max(1, scale);
 
-        StaticVector<Point2d>* minMaxDepths = new StaticVector<Point2d>(mp->ncams);
+        StaticVector<Point2d>* minMaxDepths = new StaticVector<Point2d>();
+        minMaxDepths->reserve(mp->ncams);
         minMaxDepths->resize_with(mp->ncams, Point2d(-1.0, -1.0));
 
 #pragma omp parallel for
@@ -592,8 +594,12 @@ std::string generateTempPtsSimsFiles(std::string tmpDir, mvsUtils::MultiViewPara
         {
             int w = mp->mip->getWidth(rc) / scaleuse;
             int h = mp->mip->getHeight(rc) / scaleuse;
-            StaticVector<Point3d>* pts = new StaticVector<Point3d>(w * h);
-            StaticVector<float>* sims = new StaticVector<float>(w * h);
+
+            StaticVector<Point3d>* pts = new StaticVector<Point3d>();
+            StaticVector<float>* sims = new StaticVector<float>();
+
+            pts->reserve(w * h);
+            sims->reserve(w * h);
 
             StaticVector<float> depthMap;
             StaticVector<float> simMap;
@@ -610,7 +616,8 @@ std::string generateTempPtsSimsFiles(std::string tmpDir, mvsUtils::MultiViewPara
 
             if(addRandomNoise)
             {
-                StaticVector<int>* idsAlive = new StaticVector<int>(w * h);
+                StaticVector<int>* idsAlive = new StaticVector<int>();
+                idsAlive->reserve(w * h);
                 for(int i = 0; i < w * h; i++)
                 {
                     if(depthMap[i] > 0.0f)

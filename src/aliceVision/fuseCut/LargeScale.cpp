@@ -160,7 +160,8 @@ bool LargeScale::generateSpace(int maxPts, int ocTreeDim)
         spaceFolderName, mp, addRandomNoise, addRandomNoisePercNoisePts, addRandomNoiseNoisPixSizeDistHalfThr);
 
     printf("CREATING TRACKS %i %i %i\n", dimensions.x, dimensions.y, dimensions.z);
-    StaticVector<Point3d>* ReconstructionPlan = new StaticVector<Point3d>(1000000);
+    StaticVector<Point3d>* ReconstructionPlan = new StaticVector<Point3d>();
+    ReconstructionPlan->reserve(1000000);
 
     std::string tmpdir = spaceFolderName + "tmp/";
     bfs::create_directory(tmpdir);
