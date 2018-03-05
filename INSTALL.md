@@ -14,16 +14,7 @@ Required tools:
 Getting the sources:
 
 ```bash
-git clone --recursive https://github.com/alicevision/aliceVision.git
-```
-
-or
-
-```bash
-git clone https://github.com/alicevision/aliceVision.git
-cd aliceVision
-git submodule init
-git submodule update
+git clone https://github.com/alicevision/AliceVision.git --recursive
 ```
 
 As AliceVision use some C++11 features you must have a c++11 ready compiler:
@@ -39,16 +30,16 @@ AliceVision depends on:
 * Boost >= 1.60.0
 * Eigen >= 3.3.4
 * Ceres >= 1.10.0
-* Flann >= 1.8.4
-* CoinUtils >= 2.9.3
-* Coin-or linear programming (Clp)
-* Open Solver Interface (Osi) >= 0.106.10
-* Lemon >= 1.3
+* Flann >= 1.8.4 (internal)
+* CoinUtils >= 2.9.3 (internal)
+* Coin-or linear programming (Clp) (internal)
+* Open Solver Interface (Osi) >= 0.106.10 (internal)
+* Lemon >= 1.3 (internal)
 * OpenEXR >= 2.2.0
 * OpenImageIO >= 1.8.7
-* Geogram (https://gforge.inria.fr/frs/?group_id=5833)
+* Geogram >= 1.5.4 (https://gforge.inria.fr/frs/?group_id=5833)
 * OpenImageIO >= 1.8
-* OpenEXR
+* OpenEXR >= 2.2
 * MeshSDFilter (internal)
 * OpenMesh (internal)
 * zlib
@@ -67,10 +58,29 @@ Other optional libraries can enable specific features (check "CMake Options" for
 * OpenGV (rig calibration and localization)
 
 
-Building using external dependencies
-------------------------------------
+Building the project with embedded dependencies
+-----------------------------------------------
 
-AliceVision source tree contains some of the mandatory dependencies that are needed to build the library, and which will be built together with the libray. In order to build the library with existing versions of the dependencies (e.g. system installed libraries or user built libraries), and thus reduce the compilation time and favour the modularization, the paths where to find such libraries can be given at cmake command line. In particular:
+```bash
+git clone https://github.com/alicevision/AliceVision.git --recursive
+mkdir build && cd build
+cmake -DALICEVISION_BUILD_DEPENDENCIES=ON -DCMAKE_INSTALL_PREFIX=$PWD/../install ../AliceVision
+make -j10
+```
+
+* JPEG
+You need `autoreconf`, `libtool` and `nasm` to compile `libturbo-jpeg`.
+Else if you have jpeg already install on your OS, you can disable the JPEG build with `-DAV_BUILD_JPEG=OFF`.
+
+* PNG
+You need `automake` to compile `libpng`.
+Else if you have png already install on your OS, you can disable the PNG build with `-DAV_BUILD_PNG=OFF`.
+
+
+Building the project using external dependencies
+------------------------------------------------
+
+In order to build the library with existing versions of the dependencies (e.g. system installed libraries or user built libraries), and thus reduce the compilation time and favour the modularization, the paths where to find such libraries can be given at cmake command line. In particular:
 
 * For Ceres solver library, `Ceres_DIR` can be passed pointing to where CeresConfig.cmake can be found.
   e.g. `-DCeres_DIR:PATH=/path/to/ceres/install/share/Ceres/`
@@ -93,8 +103,8 @@ and `-DOPENIMAGEIO_INCLUDE_DIR:PATH=/path/to/oiio/install/include/`
 At the end of the cmake process, a report shows for each library which version (internal/external) will be used in the building process, e.g.:
 
 ```
--- EIGEN: 3.3.4 (external)
--- CERES: 1.10.0 (external)
+-- EIGEN: 3.3.4
+-- CERES: 1.10.0
 -- FLANN: 1.8.4 (external)
 -- CLP: 1.15.11 (internal)
 -- COINUTILS: 2.9.3 (internal)
@@ -174,13 +184,6 @@ CMake Options
   Enable code coverage generation (gcc only)
 
 
-General informations for aliceVision SfM pipelines
---------------------------
-
-AliceVision can export graphs as graphviz .dot files and render them as SVG files.
-If you want consider this graph visualization feature, please consider to install Graphviz.
-
-
 Linux compilation
 -----------------
 
@@ -194,15 +197,14 @@ Linux compilation
 ### Clone and configure the project:
 
 ```bash
- git clone --recursive https://github.com/alicevision/aliceVision.git
- mkdir aliceVision_Build
- cd aliceVision_Build
- cmake -DCMAKE_BUILD_TYPE=RELEASE . ../aliceVision/src/
+ git clone --recursive https://github.com/alicevision/AliceVision.git
+ mkdir build && cd build
+ cmake -DCMAKE_BUILD_TYPE=Release . ../AliceVision
 ```
 
 If you want enable unit tests and examples to the build:
 ```bash
-cmake -DCMAKE_BUILD_TYPE=RELEASE -DALICEVISION_BUILD_TESTS=ON -DALICEVISION_BUILD_EXAMPLES=ON . ../aliceVision/src/
+cmake -DCMAKE_BUILD_TYPE=Release -DALICEVISION_BUILD_TESTS=ON -DALICEVISION_BUILD_EXAMPLES=ON ../AliceVision
 ```
 
 In order to use the MOSEK 6 back-end for the linear programming aliceVision module:
@@ -212,16 +214,16 @@ In order to use the MOSEK 6 back-end for the linear programming aliceVision modu
 - Then:
 
   ```bash
-  cmake -DCMAKE_BUILD_TYPE=RELEASE \
+  cmake -DCMAKE_BUILD_TYPE=Release \
         -DMOSEK_SEARCH_HEADER="~/Documents/Lib/mosek/6/tools/platform/linux64x86/h" \
         -DMOSEK_SEARCH_LIB="~/Documents/Lib/mosek/6/tools/platform/linux64x86/bin" \
-        . ../aliceVision/src/
+        ../AliceVision
   ```
 
 If you want to have an IDE openable project with codeblocks:
 
 ```bash
-cmake -G "CodeBlocks - Unix Makefiles" -DCMAKE_BUILD_TYPE=RELEASE . ../aliceVision/src/
+cmake -G "CodeBlocks - Unix Makefiles" -DCMAKE_BUILD_TYPE=Release ../AliceVision
 ```
 
 ### Compile the project
@@ -247,7 +249,7 @@ Windows compilation
 * Checkout the project
   `git clone --recursive https://github.com/alicevision/aliceVision.git`
 * Open cmake-gui
-  * Fill the source path with the src aliceVision path.
+  * Fill the source path with the AliceVision path.
   * Fill the build path with a new directory
   * Select your Visual Studio IDE and click configure and then generate
 * Open the .sln solution created in your build directory.
@@ -260,30 +262,20 @@ Windows compilation
 Mac OSX compilation
 -------------------
 ```bash
-git clone --recursive https://github.com/alicevision/aliceVision.git
-mkdir aliceVision_Build
-cd aliceVision_Build
-cmake -DCMAKE_BUILD_TYPE=RELEASE -G "Xcode" . ../aliceVision/src/
+git clone --recursive https://github.com/alicevision/AliceVision.git
+mkdir build && cd build
+cmake -DCMAKE_BUILD_TYPE=Release -G "Xcode" ../AliceVision
 ```
 If you want enable unit tests and examples to the build:
 ```bash
-cmake -DCMAKE_BUILD_TYPE=RELEASE \
+cmake -DCMAKE_BUILD_TYPE=Release \
       -DALICEVISION_BUILD_TESTS=ON \
       -DALICEVISION_BUILD_EXAMPLES=ON \
       -G "Xcode" \
-      . ../aliceVision/src/
+      ../AliceVision
 xcodebuild -configuration Release
 ```
 --------------------
-
-
-Using openCV sample
---------------------
-
-Add `-DAliceVision_USE_OPENCV=ON` to your cmake command line and set `OpenCV_DIR` variable to your openCV install directory where the OpenCVConfigure.cmake file can be found, i.e.: 
-`-DOpenCV_DIR="/home/user/Dev/github/itseez/opencv_Build/install/share/OpenCV/" -DAliceVision_USE_OPENCV=ON`
-
-------------------------------------------------------------
 
 
 Using AliceVision as a third party library dependency in cmake
@@ -295,20 +287,19 @@ So please consider using the `CMAKE_INSTALL_PREFIX` cmake variable to specify a 
 
 Here the syntax to add the variable to the cmake command line (use absolute path), e.g.: 
 ```bash
--DCMAKE_INSTALL_PREFIX:STRING="/home/user/Dev/github/aliceVision_Build/aliceVision_install"
+-DCMAKE_INSTALL_PREFIX="/home/user/dev/AliceVision_install"
 ```
 
 Perform `make` and `make install`
 
-Once the library has been installed, go to your project that want use AliceVision as an external library and add:
+Then you will be able to use AliceVision as an external library in your `CMakeLists.txt`:
 ```cmake
-FIND_PACKAGE(AliceVision REQUIRED)
-INCLUDE_DIRECTORIES(${ALICEVISION_INCLUDE_DIRS})
-ADD_EXECUTABLE(main main.cpp)
-TARGET_LINK_LIBRARIES(main ${ALICEVISION_LIBRARIES})
+find_package(AliceVision REQUIRED)
+include_directories(${ALICEVISION_INCLUDE_DIRS})
+add_executable(main main.cpp)
+target_link_libraries(main ${ALICEVISION_LIBRARIES})
 ```
 
-Specify to CMake where AliceVision have been installed by using the cmake `AliceVision_DIR` variable that must point to: `-DAliceVision_DIR:STRING="YourInstallPath"/share/aliceVision/cmake`
+Specify to CMake where AliceVision is installed by using the `AliceVision_DIR` cmake variable: `-DAliceVision_DIR:STRING="YourInstallPath"/share/aliceVision/cmake`
 
-A message will be displayed if AliceVision is found or not at the cmake configure step.
 
