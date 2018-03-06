@@ -48,15 +48,15 @@ inline bool gpuSupportCUDA(int minComputeCapabilityMajor,
           deviceProperties->minor >= minComputeCapabilityMinor)) &&
          deviceProperties->totalGlobalMem >= (minTotalDeviceMemory*1024*1024))
       {
-        ALICEVISION_LOG_INFO("Supported CUDA-Enabled GPU detected");
+        ALICEVISION_LOG_INFO("Supported CUDA-Enabled GPU detected.");
         return true;
       }
     }
-    ALICEVISION_LOG_INFO("CUDA-Enabled GPU not supported");
+    ALICEVISION_LOG_INFO("CUDA-Enabled GPU not supported.");
   }
   else
   {
-    ALICEVISION_LOG_DEBUG("Can't find CUDA-Enabled GPU");
+    ALICEVISION_LOG_DEBUG("Can't find CUDA-Enabled GPU.");
   }
 #endif
   return false;
@@ -75,7 +75,7 @@ inline std::string gpuInformationCUDA()
 
   if(nbDevices > 0)
   {
-    information = "CUDA-Enabled GPU\n";
+    information = "CUDA-Enabled GPU.\n";
     for(int i = 0; i < nbDevices; ++i)
     {
       std::unique_ptr<cudaDeviceProp> deviceProperties(new cudaDeviceProp);
@@ -85,8 +85,9 @@ inline std::string gpuInformationCUDA()
       std::stringstream deviceSS;
 
       deviceSS << "Device information:" << std::endl
-               << "\t- name: " << deviceProperties->name << std::endl
-               << "\t- compute Capability:      " << deviceProperties->major << "." << deviceProperties->minor << std::endl
+               << "\t- id:                      " << i << std::endl
+               << "\t- name:                    " << deviceProperties->name << std::endl
+               << "\t- compute capability:      " << deviceProperties->major << "." << deviceProperties->minor << std::endl
                << "\t- total device memory:     " << deviceProperties->totalGlobalMem / (1024 * 1024) << " MB " << std::endl
                << "\t- per-block shared memory: " << deviceProperties->sharedMemPerBlock << std::endl
                << "\t- warp size:               " << deviceProperties->warpSize << std::endl
@@ -107,14 +108,13 @@ inline std::string gpuInformationCUDA()
                << "\t- mapping host memory:     " << (deviceProperties->canMapHostMemory ? "yes":"no") << std::endl
                << "\t- unified addressing:      " << (deviceProperties->unifiedAddressing ? "yes":"no") << std::endl
                << "\t- texture alignment:       " << deviceProperties->textureAlignment << " byte" << std::endl
-               << "\t- pitch alignment:         " << deviceProperties->texturePitchAlignment << " byte" << std::endl
-               << std::endl;
+               << "\t- pitch alignment:         " << deviceProperties->texturePitchAlignment << " byte" << std::endl;
 
       information += deviceSS.str();
     }
   }
 #else
-  information = "No CUDA-Enabled GPU";
+  information = "No CUDA-Enabled GPU.";
 #endif
   return information;
 }

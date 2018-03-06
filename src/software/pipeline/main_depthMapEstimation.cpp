@@ -132,8 +132,15 @@ int main(int argc, char* argv[])
     // set verbose level
     system::Logger::get()->setLogLevel(verboseLevel);
 
-    // Print GPU Information
+    // print GPU Information
     ALICEVISION_LOG_INFO(system::gpuInformationCUDA());
+
+    // check if the gpu suppport CUDA compute capability 2.0
+    if(!system::gpuSupportCUDA(2,0))
+    {
+      ALICEVISION_LOG_ERROR("This program needs a CUDA-Enabled GPU (with at least compute capablility 2.0).");
+      return EXIT_FAILURE;
+    }
 
     // .ini parsing
     mvsUtils::MultiViewInputParams mip(iniFilepath, outputFolder, "");
