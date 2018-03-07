@@ -75,7 +75,7 @@ public:
     using edges_size_type = typename Graph::edges_size_type;
 
 public:
-    MaxFlow_CSR(size_t numNodes)
+    explicit MaxFlow_CSR(size_t numNodes)
         : _numNodes(numNodes+2)
         , _S(NodeType(numNodes))
         , _T(NodeType(numNodes+1))

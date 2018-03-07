@@ -126,14 +126,14 @@ int indexOfSortedVoxelArrByX(int val, StaticVector<Voxel>* values, int startId, 
     {
         if((val >= (*values)[lef].x) && (val < (*values)[mid].x))
         {
-            lef = lef;
+            //lef = lef;
             rig = mid;
             mid = lef + (rig - lef) / 2;
         }
         if((val >= (*values)[mid].x) && (val <= (*values)[rig].x))
         {
             lef = mid;
-            rig = rig;
+            //rig = rig;
             mid = lef + (rig - lef) / 2;
         }
         if((val < (*values)[lef].x) || (val > (*values)[rig].x))

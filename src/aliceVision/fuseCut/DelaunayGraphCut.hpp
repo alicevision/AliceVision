@@ -61,7 +61,7 @@ public:
 
     std::vector<int> _camsVertexes;
     std::vector<std::vector<CellIndex>> _neighboringCellsPerVertex;
-    bool btest;
+
     bool saveTemporaryBinFiles;
 
     static const GEO::index_t NO_TETRAHEDRON = GEO::NO_CELL;

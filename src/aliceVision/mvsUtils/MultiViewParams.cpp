@@ -90,13 +90,12 @@ MultiViewParams::MultiViewParams(int _ncams, MultiViewInputParams* _mip, float _
     verbose = (bool)mip->_ini.get<bool>("global.verbose", true);
     CUDADeviceNo = mip->_ini.get<int>("global.CUDADeviceNo", 0);
 
-    minWinSizeHalf = 2;
     simThr = _simThr;
 
     resizeCams(_ncams);
 
     long t1 = initEstimate();
-    for(int i = 0; i < ncams; i++)
+    for(int i = 0; i < ncams; ++i)
     {
         FocK1K2Arr[i] = Point3d(-1.0f, -1.0f, -1.0f);
 

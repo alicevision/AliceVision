@@ -82,7 +82,7 @@ public:
 
     int nPtsInit;
 
-    MeshClean(mvsUtils::MultiViewParams* _mp);
+    explicit MeshClean(mvsUtils::MultiViewParams* _mp);
     ~MeshClean();
 
     bool getEdgeNeighTrisInterval(Pixel& itr, int _ptId1, int _ptId2);

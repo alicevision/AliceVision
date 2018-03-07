@@ -496,6 +496,7 @@ int MeshClean::path::deployAll()
                 ptsNeighTrisSortedAsc->reserve(pthNew->size());
                 printfState(pth);
                 printfState(pthNew);
+                delete ptsNeighTrisSortedAsc;
                 throw std::runtime_error("deployAll: bad condition, pthNew size: " + std::to_string(pthNew->size()));
             }
 

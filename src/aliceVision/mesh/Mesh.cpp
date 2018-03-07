@@ -2421,6 +2421,9 @@ StaticVector<int>* Mesh::getLargestConnectedComponentTrisIds(const mvsUtils::Mul
                 {
                     if((*colors)[ptid] != col)
                     {
+                        delete colors;
+                        delete buff;
+                        deleteArrayOfArrays<int>(&ptsNeighPtsOrdered);
                         throw std::runtime_error("getLargestConnectedComponentTrisIds: bad condition.");
                     }
                 }

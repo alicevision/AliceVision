@@ -54,7 +54,7 @@ public:
     using VertexIterator = typename boost::graph_traits<Graph>::vertex_iterator;
 
 public:
-    MaxFlow_AdjList(size_t numNodes)
+    explicit MaxFlow_AdjList(size_t numNodes)
         : _graph(numNodes+2)
         , _S(NodeType(numNodes))
         , _T(NodeType(numNodes+1))

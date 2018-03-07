@@ -1030,7 +1030,7 @@ void DelaunayGraphCut::fillGraphPartPtRc(int& out_nstepsFront, int& out_nstepsBe
     out_nstepsFront = 0;
     out_nstepsBehind = 0;
 
-    int maxint = 1000000.0f; // std::numeric_limits<int>::std::max()
+    int maxint = 1000000; // std::numeric_limits<int>::std::max()
 
     const Point3d& po = _verticesCoords[vertexIndex];
     const float pixSize = mp->getCamPixelSize(po, cam);
@@ -1803,6 +1803,7 @@ void DelaunayGraphCut::invertFullStatusForSmallLabels()
 
     delete nbCellsPerColor;
     delete colorPerCell;
+    delete buff;
 }
 
 void DelaunayGraphCut::reconstructVoxel(Point3d hexah[8], StaticVector<int>* voxelsIds, const std::string& folderName,

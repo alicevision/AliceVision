@@ -188,10 +188,6 @@ public:
     bool isPixelInImage(const Point2d& pix, int camId) const;
     void decomposeProjectionMatrix(Point3d& Co, Matrix3x3& Ro, Matrix3x3& iRo, Matrix3x3& Ko, Matrix3x3& iKo,
                                    Matrix3x3& iPo, const Matrix3x4& P) const;
-
-private:
-    int winSizeHalf;
-    int minWinSizeHalf;
 };
 
 } // namespace mvsUtils

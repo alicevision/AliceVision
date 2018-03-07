@@ -419,14 +419,14 @@ int OctreeTracks::trackStruct::indexOf(int val)
     {
         if((val >= cams[lef].x) && (val < cams[mid].x))
         {
-            lef = lef;
+            //lef = lef;
             rig = mid;
             mid = lef + (rig - lef) / 2;
         }
         if((val >= cams[mid].x) && (val <= cams[rig].x))
         {
             lef = mid;
-            rig = rig;
+            //rig = rig;
             mid = lef + (rig - lef) / 2;
         }
         if((val < cams[lef].x) || (val > cams[rig].x))

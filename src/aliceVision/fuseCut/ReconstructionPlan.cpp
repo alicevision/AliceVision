@@ -319,8 +319,12 @@ StaticVector<StaticVector<int>*>* loadLargeScalePtsCams(const std::vector<std::s
         std::string folderName = recsDirs[i];
 
         std::string filePtsCamsFromDCTName = folderName + "meshPtsCamsFromDGC.bin";
+
         if(!mvsUtils::FileExists(filePtsCamsFromDCTName))
+        {
+            delete ptsCamsFromDct;
             throw std::runtime_error("Missing file: " + filePtsCamsFromDCTName);
+        }
         StaticVector<StaticVector<int>*>* ptsCamsFromDcti = loadArrayOfArraysFromFile<int>(filePtsCamsFromDCTName);
         ptsCamsFromDct->resizeAdd(ptsCamsFromDcti->size());
         for(int i = 0; i < ptsCamsFromDcti->size(); i++)

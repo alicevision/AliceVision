@@ -610,6 +610,7 @@ StaticVector<StaticVector<int>*>* convertObjectsCamsToCamsObjects(const MultiVie
         }
     }
 
+    delete nCamsPts;
     return camsPts;
 }
 
