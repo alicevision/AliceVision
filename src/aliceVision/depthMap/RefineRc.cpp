@@ -10,7 +10,7 @@
 #include <aliceVision/mvsUtils/common.hpp>
 #include <aliceVision/mvsUtils/fileIO.hpp>
 #include <aliceVision/imageIO/image.hpp>
-#include <aliceVision/omp.hpp>
+#include <aliceVision/alicevision_omp.hpp>
 
 #include <boost/filesystem.hpp>
 
