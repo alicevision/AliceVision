@@ -9,10 +9,13 @@
 #include <aliceVision/sfm/viewIO.hpp>
 #include <aliceVision/sfm/utils/uid.hpp>
 
-#include <dependencies/stlplus3/filesystemSimplified/file_system.hpp>
+#include <boost/regex.hpp>
+#include <boost/filesystem.hpp>
 
 #include <fstream>
 #include <vector>
+
+namespace fs = boost::filesystem;
 
 namespace aliceVision {
 namespace sfm {
@@ -20,7 +23,7 @@ namespace sfm {
 bool read_aliceVision_Camera(const std::string & camName, camera::Pinhole & cam, geometry::Pose3 & pose)
 {
   std::vector<double> val;
-  if (stlplus::extension_part(camName) == "bin")
+  if (fs::extension(camName) == ".bin")
   {
     std::ifstream in(camName.c_str(), std::ios::in|std::ios::binary);
     if (!in.is_open())
@@ -55,7 +58,7 @@ bool read_aliceVision_Camera(const std::string & camName, camera::Pinhole & cam,
 
   //Update the camera from file value
   Mat34 P;
-  if (stlplus::extension_part(camName) == "bin")
+  if (fs::extension(camName) == ".bin")
   {
     P << val[0], val[3], val[6], val[9],
       val[1], val[4], val[7], val[10],
@@ -125,8 +128,8 @@ bool read_Strecha_Camera(const std::string & camName, camera::Pinhole & cam, geo
 bool readGt(const std::string & sRootPath, SfMData & sfm_data, bool useUID)
 {
   // IF GT_Folder exists, perform evaluation of the quality of rotation estimates
-  const std::string sGTPath = stlplus::folder_down(sRootPath, "gt_dense_cameras");
-  if (!stlplus::is_folder(sGTPath))
+  const std::string sGTPath = (fs::path(sRootPath) / "gt_dense_cameras").string();
+  if (!fs::is_directory(sGTPath))
   {
     ALICEVISION_LOG_DEBUG("There is not valid GT data to read from " << sGTPath);
     return false;
@@ -135,17 +138,47 @@ bool readGt(const std::string & sRootPath, SfMData & sfm_data, bool useUID)
   // Switch between case to choose the file reader according to the file types in GT path
   bool (*fcnReadCamPtr)(const std::string &, camera::Pinhole &, geometry::Pose3&);
   std::string suffix;
-  if (!stlplus::folder_wildcard(sGTPath, "*.bin", true, true).empty())
+
+  const boost::regex binFilter("*.bin");
+  const boost::regex camFilter("*.camera");
+
+  std::vector<std::string> binFiles;
+  std::vector<std::string> camFiles;
+
+  boost::filesystem::directory_iterator endItr;
+  for(boost::filesystem::directory_iterator i(sGTPath); i != endItr; ++i)
+  {
+      if(!boost::filesystem::is_regular_file(i->status()))
+        continue;
+
+      boost::smatch what;
+
+      if(boost::regex_match(i->path().filename().string(), what, binFilter))
+      {
+        binFiles.push_back(i->path().filename().string());
+        continue;
+      }
+
+      if(boost::regex_match(i->path().filename().string(), what, camFilter))
+      {
+        camFiles.push_back(i->path().filename().string());
+      }
+  }
+
+  std::vector<std::string>& vec_camfilenames = binFiles;
+
+  if(!binFiles.empty())
   {
     ALICEVISION_LOG_TRACE("Using aliceVision Camera");
     fcnReadCamPtr = &read_aliceVision_Camera;
     suffix = "bin";
   }
-  else if (!stlplus::folder_wildcard(sGTPath, "*.camera", true, true).empty())
+  else if(!camFiles.empty())
   {
     ALICEVISION_LOG_TRACE("Using Strechas Camera");
     fcnReadCamPtr = &read_Strecha_Camera;
     suffix = "camera";
+    vec_camfilenames = camFiles;
   }
   else
   {
@@ -153,11 +186,10 @@ bool readGt(const std::string & sRootPath, SfMData & sfm_data, bool useUID)
   }
 
   ALICEVISION_LOG_TRACE("Read rotation and translation estimates");
-  const std::string sImgPath = stlplus::folder_down(sRootPath, "images");
+  const std::string sImgPath = (fs::path(sRootPath) / "images").string();
   std::map< std::string, Mat3 > map_R_gt;
   //Try to read .suffix camera (parse camera names)
-  std::vector<std::string> vec_camfilenames =
-    stlplus::folder_wildcard(sGTPath, "*."+suffix, true, true);
+
   std::sort(vec_camfilenames.begin(), vec_camfilenames.end());
   if (vec_camfilenames.empty())
   {
@@ -170,15 +202,15 @@ bool readGt(const std::string & sRootPath, SfMData & sfm_data, bool useUID)
   {
     geometry::Pose3 pose;
     std::shared_ptr<camera::Pinhole> pinholeIntrinsic = std::make_shared<camera::Pinhole>();
-    bool loaded = fcnReadCamPtr(stlplus::create_filespec(sGTPath, *iter), *pinholeIntrinsic.get(), pose);
+    bool loaded = fcnReadCamPtr((fs::path(sGTPath) / *iter).string(), *pinholeIntrinsic.get(), pose);
     if (!loaded)
     {
       ALICEVISION_LOG_ERROR("Failed to load: " << *iter);
       return false;
     }
 
-    const std::string sImgName = stlplus::basename_part(*iter);
-    const std::string sImgFile = stlplus::create_filespec(sImgPath, sImgName);
+    const std::string sImgName = fs::path(*iter).stem().string();
+    const std::string sImgFile = (fs::path(sImgPath) / sImgName).string();
 
     std::shared_ptr<View> viewPtr = std::make_shared<View>(sImgFile, UndefinedIndexT, index);
 

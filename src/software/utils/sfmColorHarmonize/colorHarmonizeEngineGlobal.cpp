@@ -6,30 +6,29 @@
 #include "colorHarmonizeEngineGlobal.hpp"
 #include "software/utils/sfmHelper/sfmIOHelper.hpp"
 
-#include "aliceVision/image/all.hpp"
+#include <aliceVision/image/all.hpp>
 //-- Load features per view
 #include <aliceVision/sfm/pipeline/regionsIO.hpp>
 //-- Feature matches
 #include <aliceVision/matching/IndMatch.hpp>
-#include "aliceVision/matching/io.hpp"
-#include "aliceVision/stl/stl.hpp"
+#include <aliceVision/matching/io.hpp>
+#include <aliceVision/stl/stl.hpp>
 
-#include "aliceVision/sfm/sfm.hpp"
-#include "aliceVision/graph/graph.hpp"
+#include <aliceVision/sfm/sfm.hpp>
+#include <aliceVision/graph/graph.hpp>
 #include <aliceVision/config.hpp>
 
-#include "dependencies/stlplus3/filesystemSimplified/file_system.hpp"
-#include "dependencies/vectorGraphics/svgDrawer.hpp"
+#include <dependencies/vectorGraphics/svgDrawer.hpp>
 
 //-- Selection Methods
-#include "aliceVision/colorHarmonization/CommonDataByPair_fullFrame.hpp"
-#include "aliceVision/colorHarmonization/CommonDataByPair_matchedPoints.hpp"
-#include "aliceVision/colorHarmonization/CommonDataByPair_vldSegment.hpp"
+#include <aliceVision/colorHarmonization/CommonDataByPair_fullFrame.hpp>
+#include <aliceVision/colorHarmonization/CommonDataByPair_matchedPoints.hpp>
+#include <aliceVision/colorHarmonization/CommonDataByPair_vldSegment.hpp>
 
 //-- Color harmonization solver
-#include "aliceVision/colorHarmonization/GainOffsetConstraintBuilder.hpp"
+#include <aliceVision/colorHarmonization/GainOffsetConstraintBuilder.hpp>
 
-#include "aliceVision/system/Timer.hpp"
+#include <aliceVision/system/Timer.hpp>
 
 #include <boost/progress.hpp>
 
@@ -40,6 +39,7 @@
 #include <functional>
 #include <sstream>
 
+namespace fs = boost::filesystem;
 
 namespace aliceVision {
 
@@ -68,9 +68,9 @@ ColorHarmonizationEngineGlobal::ColorHarmonizationEngineGlobal(
   _sOutDirectory(sOutDirectory),
   _descTypes(descTypes)
 {
-  if( !stlplus::folder_exists( sOutDirectory ) )
+  if(!fs::exists(sOutDirectory))
   {
-    stlplus::folder_create( sOutDirectory );
+    fs::create_directory(sOutDirectory);
   }
 
   //Choose image reference
@@ -148,7 +148,7 @@ bool ColorHarmonizationEngineGlobal::Process()
 
     // Save the graph before cleaning:
     graph::exportToGraphvizData(
-      stlplus::create_filespec(_sOutDirectory, "input_graph_poor_supportRemoved"),
+      (fs::path(_sOutDirectory) / "input_graph_poor_supportRemoved").string(),
       putativeGraph.g);
   }
 
@@ -215,8 +215,8 @@ bool ColorHarmonizationEngineGlobal::Process()
     std::pair< std::string, std::string > p_imaNames;
     p_imaNames = make_pair( _vec_fileNames[ viewI ], _vec_fileNames[ viewJ ] );
     std::cout << "Current edge : "
-      << stlplus::filename_part(p_imaNames.first) << "\t"
-      << stlplus::filename_part(p_imaNames.second) << std::endl;
+      << fs::path(p_imaNames.first).filename().string() << "\t"
+      << fs::path(p_imaNames.second).filename().string() << std::endl;
 
     //-- Compute the masks from the data selection:
     Image< unsigned char > maskI ( _vec_imageSize[ viewI ].first, _vec_imageSize[ viewI ].second );
@@ -275,16 +275,16 @@ bool ColorHarmonizationEngineGlobal::Process()
     if (bExportMask)
     {
       string sEdge = _vec_fileNames[ viewI ] + "_" + _vec_fileNames[ viewJ ];
-      sEdge = stlplus::create_filespec( _sOutDirectory, sEdge );
-      if( !stlplus::folder_exists( sEdge ) )
-        stlplus::folder_create( sEdge );
+      sEdge = (fs::path(_sOutDirectory) / sEdge ).string();
+
+      if( !fs::exists(sEdge) )
+        fs::create_directory(sEdge);
 
       string out_filename_I = "00_mask_I.png";
-      out_filename_I = stlplus::create_filespec( sEdge, out_filename_I );
+      out_filename_I = (fs::path(sEdge) / out_filename_I).string();
 
       string out_filename_J = "00_mask_J.png";
-      out_filename_J = stlplus::create_filespec( sEdge, out_filename_J );
-
+      out_filename_J = (fs::path(sEdge) / out_filename_J).string();
       writeImage(out_filename_I, maskI);
       writeImage(out_filename_J, maskJ);
     }
@@ -432,11 +432,10 @@ bool ColorHarmonizationEngineGlobal::Process()
       }
     }
 
-    const std::string out_folder = stlplus::create_filespec( _sOutDirectory,
-      vec_selectionMethod[ _selectionMethod ] + "_" + vec_harmonizeMethod[ harmonizeMethod ]);
-    if( !stlplus::folder_exists( out_folder ) )
-      stlplus::folder_create( out_folder );
-    const std::string out_filename = stlplus::create_filespec( out_folder, stlplus::filename_part(_vec_fileNames[ imaNum ]) );
+    const std::string out_folder = (fs::path(_sOutDirectory) / (vec_selectionMethod[ _selectionMethod ] + "_" + vec_harmonizeMethod[ harmonizeMethod ])).string();
+    if(!fs::exists(out_folder))
+      fs::create_directory(out_folder);
+    const std::string out_filename = (fs::path(out_folder) / fs::path(_vec_fileNames[ imaNum ]).filename() ).string();
 
     writeImage( out_filename, image_c );
   }
@@ -445,18 +444,18 @@ bool ColorHarmonizationEngineGlobal::Process()
 
 bool ColorHarmonizationEngineGlobal::ReadInputData()
 {
-  if ( !stlplus::is_folder( _sMatchesPath) ||
-      !stlplus::is_folder( _sOutDirectory) )
+  if ( !fs::is_directory(_sMatchesPath) ||
+      !fs::is_directory( _sOutDirectory) )
   {
     std::cerr << std::endl
       << "One of the required folder is not a valid folder" << std::endl;
     return false;
   }
 
-  if ( !stlplus::is_file( _sSfMData_Path ))
+  if ( !fs::is_regular_file(_sSfMData_Path ))
   {
     std::cerr << std::endl
-      << "Invalid input sfm_data file: (" << stlplus::basename_part(_sMatchesGeometricModel) << ")" << std::endl;
+      << "Invalid input sfm_data file: (" << fs::path(_sMatchesGeometricModel).stem().string() << ")" << std::endl;
     return false;
   }
 
@@ -491,9 +490,7 @@ bool ColorHarmonizationEngineGlobal::ReadInputData()
   graph::indexedGraph putativeGraph(getImagePairs(_pairwiseMatches));
 
   // Save the graph before cleaning:
-  graph::exportToGraphvizData(
-      stlplus::create_filespec( _sOutDirectory, "initialGraph" ),
-      putativeGraph.g );
+  graph::exportToGraphvizData((fs::path(_sOutDirectory) / "initialGraph" ).string(),putativeGraph.g );
 
   return true;
 }
@@ -506,9 +503,7 @@ bool ColorHarmonizationEngineGlobal::CleanGraph()
   graph::indexedGraph putativeGraph(getImagePairs(_pairwiseMatches));
 
   // Save the graph before cleaning:
-  graph::exportToGraphvizData(
-    stlplus::create_filespec(_sOutDirectory, "initialGraph"),
-    putativeGraph.g);
+  graph::exportToGraphvizData((fs::path(_sOutDirectory) / "initialGraph").string(), putativeGraph.g);
 
   const int connectedComponentCount = lemon::countConnectedComponents(putativeGraph.g);
   std::cout << "\n"
@@ -566,9 +561,7 @@ bool ColorHarmonizationEngineGlobal::CleanGraph()
   }
 
   // Save the graph after cleaning:
-  graph::exportToGraphvizData(
-    stlplus::create_filespec(_sOutDirectory, "cleanedGraph"),
-    putativeGraph.g);
+  graph::exportToGraphvizData((fs::path(_sOutDirectory) / "cleanedGraph").string(), putativeGraph.g);
 
   std::cout << "\n"
     << "Cardinal of nodes: " << lemon::countNodes(putativeGraph.g) << "\n"

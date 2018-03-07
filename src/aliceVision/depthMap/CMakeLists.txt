@@ -91,6 +91,7 @@ target_link_libraries(aliceVision_depthMap
   aliceVision_mvsData
   aliceVision_imageIO
   aliceVision_mvsUtils
+  ${Boost_FILESYSTEM_LIBRARIES}
   ${CUDA_CUDADEVRT_LIBRARY}
 )
 

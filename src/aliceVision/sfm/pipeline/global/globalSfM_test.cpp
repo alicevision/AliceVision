@@ -5,11 +5,13 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
-#include "aliceVision/sfm/utils/statistics.hpp"
-#include "aliceVision/sfm/utils/syntheticScene.hpp"
-#include "aliceVision/feature/FeaturesPerView.hpp"
-#include "aliceVision/matching/IndMatch.hpp"
-#include "aliceVision/sfm/sfm.hpp"
+#include <aliceVision/sfm/utils/statistics.hpp>
+#include <aliceVision/sfm/utils/syntheticScene.hpp>
+#include <aliceVision/feature/FeaturesPerView.hpp>
+#include <aliceVision/matching/IndMatch.hpp>
+#include <aliceVision/sfm/sfm.hpp>
+
+#include <boost/filesystem.hpp>
 
 #include <cmath>
 #include <cstdio>
@@ -23,6 +25,7 @@ using namespace aliceVision;
 using namespace aliceVision::camera;
 using namespace aliceVision::geometry;
 using namespace aliceVision::sfm;
+namespace fs = boost::filesystem;
 
 // Test summary:
 // - Create features points and matching from the synthetic dataset
@@ -50,7 +53,7 @@ BOOST_AUTO_TEST_CASE(GLOBAL_SFM_RotationAveragingL2_TranslationAveragingL1) {
   ReconstructionEngine_globalSfM sfmEngine(
     sfmData2,
     "./",
-    stlplus::create_filespec("./", "Reconstruction_Report.html"));
+    "./Reconstruction_Report.html");
 
   // Add a tiny noise in 2D observations to make data more realistic
   std::normal_distribution<double> distribution(0.0,0.5);
@@ -100,7 +103,7 @@ BOOST_AUTO_TEST_CASE(GLOBAL_SFM_RotationAveragingL1_TranslationAveragingL1) {
   ReconstructionEngine_globalSfM sfmEngine(
     sfmData2,
     "./",
-    stlplus::create_filespec("./", "Reconstruction_Report.html"));
+    "./Reconstruction_Report.html");
 
   // Add a tiny noise in 2D observations to make data more realistic
   std::normal_distribution<double> distribution(0.0,0.5);
@@ -150,7 +153,7 @@ BOOST_AUTO_TEST_CASE(GLOBAL_SFM_RotationAveragingL2_TranslationAveragingL2_Chord
   ReconstructionEngine_globalSfM sfmEngine(
     sfmData2,
     "./",
-    stlplus::create_filespec("./", "Reconstruction_Report.html"));
+    "./Reconstruction_Report.html");
 
   // Add a tiny noise in 2D observations to make data more realistic
   std::normal_distribution<double> distribution(0.0,0.5);
@@ -200,7 +203,7 @@ BOOST_AUTO_TEST_CASE(GLOBAL_SFM_RotationAveragingL2_TranslationAveragingSoftL1) 
   ReconstructionEngine_globalSfM sfmEngine(
     sfmData2,
     "./",
-    stlplus::create_filespec("./", "Reconstruction_Report.html"));
+    "./Reconstruction_Report.html");
 
   // Add a tiny noise in 2D observations to make data more realistic
   std::normal_distribution<double> distribution(0.0,0.5);

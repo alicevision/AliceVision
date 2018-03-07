@@ -18,7 +18,7 @@ add_library(aliceVision_sensorDB
 )
 
 target_link_libraries(aliceVision_sensorDB
-  stlplus
+  ${Boost_LIBRARIES}
   ${LOG_LIB}
 )
 

@@ -7,7 +7,6 @@ target_link_libraries(aliceVision_samples_repeatabilityDataset
   aliceVision_system
   aliceVision_multiview
   vlsift
-  stlplus
   ${BOOST_LIBRARIES}
 )
 

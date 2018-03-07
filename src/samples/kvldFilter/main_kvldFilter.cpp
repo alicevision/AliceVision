@@ -1,21 +1,21 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include "aliceVision/image/all.hpp"
-#include "aliceVision/feature/feature.hpp"
-#include "aliceVision/feature/sift/ImageDescriber_SIFT.hpp"
-#include "aliceVision/matching/RegionsMatcher.hpp"
-#include "aliceVision/multiview/homographyKernelSolver.hpp"
-#include "aliceVision/multiview/conditioning.hpp"
-#include "aliceVision/matching/kvld/kvld.h"
-#include "aliceVision/matching/kvld/kvld_draw.h"
-#include "aliceVision/robustEstimation/ACRansac.hpp"
-#include "aliceVision/robustEstimation/ACRansacKernelAdaptator.hpp"
+#include <aliceVision/image/all.hpp>
+#include <aliceVision/feature/feature.hpp>
+#include <aliceVision/feature/sift/ImageDescriber_SIFT.hpp>
+#include <aliceVision/matching/RegionsMatcher.hpp>
+#include <aliceVision/multiview/homographyKernelSolver.hpp>
+#include <aliceVision/multiview/conditioning.hpp>
+#include <aliceVision/matching/kvld/kvld.h>
+#include <aliceVision/matching/kvld/kvld_draw.h>
+#include <aliceVision/robustEstimation/ACRansac.hpp>
+#include <aliceVision/robustEstimation/ACRansacKernelAdaptator.hpp>
 
-#include "dependencies/stlplus3/filesystemSimplified/file_system.hpp"
-#include "dependencies/vectorGraphics/svgDrawer.hpp"
+#include <dependencies/vectorGraphics/svgDrawer.hpp>
 
 #include <boost/program_options.hpp>
+#include <boost/filesystem.hpp>
 
 #include <string>
 #include <iostream>
@@ -27,6 +27,7 @@ using namespace aliceVision::image;
 using namespace aliceVision::matching;
 using namespace aliceVision::robustEstimation;
 namespace po = boost::program_options;
+namespace fs = boost::filesystem;
 
 int main(int argc, char **argv)
 {
@@ -82,8 +83,8 @@ int main(int argc, char **argv)
   // -----------------------------
 
   // Create output dir
-  if (!stlplus::folder_exists(outputFolder))
-    stlplus::folder_create( outputFolder );
+  if (!fs::exists(outputFolder))
+    fs::create_directory(outputFolder);
 
   const string jpg_filenameL = imageAFilename;
   const string jpg_filenameR = imageBFilename;
@@ -232,7 +233,7 @@ int main(int argc, char **argv)
       }
     }
     string out_filename = "05_KVLD_Matches.svg";
-    out_filename = stlplus::create_filespec(outputFolder, out_filename);
+    out_filename = (fs::path(outputFolder) / out_filename).string();
     ofstream svgFile( out_filename.c_str() );
     svgFile << svgStream.closeSvgFile().str();
     svgFile.close();
@@ -261,7 +262,7 @@ int main(int argc, char **argv)
       }
     }
     string out_filename = "06_KVLD_Keypoints.svg";
-    out_filename = stlplus::create_filespec(outputFolder, out_filename);
+    out_filename = (fs::path(outputFolder) / out_filename).string();
     ofstream svgFile( out_filename.c_str() );
     svgFile << svgStream.closeSvgFile().str();
     svgFile.close();
@@ -279,12 +280,12 @@ int main(int argc, char **argv)
 
   {
     string out_filename = "07_Left-K-VLD-MASK.jpg";
-    out_filename = stlplus::create_filespec(outputFolder, out_filename);
+    out_filename = (fs::path(outputFolder) / out_filename).string();
     writeImage(out_filename, imageOutL);
   }
   {
     string out_filename = "08_Right-K-VLD-MASK.jpg";
-    out_filename = stlplus::create_filespec(outputFolder, out_filename);
+    out_filename = (fs::path(outputFolder) / out_filename).string();
     writeImage(out_filename, imageOutR);
   }
 

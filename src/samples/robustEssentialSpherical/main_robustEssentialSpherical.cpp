@@ -14,7 +14,6 @@
 
 #include "software/utils/sfmHelper/sfmPlyHelper.hpp"
 
-#include "dependencies/stlplus3/filesystemSimplified/file_system.hpp"
 #include "dependencies/vectorGraphics/svgDrawer.hpp"
 
 #include <string>

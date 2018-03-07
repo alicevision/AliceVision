@@ -7,9 +7,11 @@
 
 #include "sfmDataIO_baf.hpp"
 
-#include <dependencies/stlplus3/filesystemSimplified/file_system.hpp>
+#include <boost/filesystem.hpp>
 
 #include <fstream>
+
+namespace fs = boost::filesystem;
 
 namespace aliceVision {
 namespace sfm {
@@ -99,8 +101,7 @@ bool saveBAF(
 
   // Export View filenames & ids as an imgList.txt file
   {
-    const std::string sFile = stlplus::create_filespec(
-      stlplus::folder_part(filename), stlplus::basename_part(filename) + std::string("_imgList"), "txt");
+    const std::string sFile = (fs::path(filename).parent_path() / (fs::path(filename).stem().string() + "_imgList.txt")).string();
 
     stream.open(sFile.c_str());
     if (!stream.is_open())

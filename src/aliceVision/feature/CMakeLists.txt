@@ -74,7 +74,7 @@ target_link_libraries(aliceVision_feature
          aliceVision_image
          aliceVision_multiview
          vlsift
-         stlplus
+         ${BOOST_LIBRARIES}
          ${LOG_LIB}
 )
 

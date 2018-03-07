@@ -8,7 +8,6 @@ target_link_libraries(aliceVision_samples_robustHomography
   aliceVision_feature
   aliceVision_matching
   vlsift
-  stlplus
 )
 
 set_property(TARGET aliceVision_samples_robustHomography

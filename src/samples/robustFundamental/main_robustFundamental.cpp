@@ -10,7 +10,6 @@
 #include "aliceVision/robustEstimation/ACRansac.hpp"
 #include "aliceVision/robustEstimation/ACRansacKernelAdaptator.hpp"
 
-#include "dependencies/stlplus3/filesystemSimplified/file_system.hpp"
 #include "dependencies/vectorGraphics/svgDrawer.hpp"
 
 #include <boost/program_options.hpp>

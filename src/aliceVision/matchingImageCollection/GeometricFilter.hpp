@@ -8,12 +8,10 @@
 #pragma once
 
 #include <aliceVision/config.hpp>
-#include "aliceVision/feature/PointFeature.hpp"
-#include "aliceVision/feature/RegionsPerView.hpp"
-#include "aliceVision/matching/IndMatch.hpp"
-#include "aliceVision/matchingImageCollection/GeometricFilterMatrix.hpp"
-
-#include "dependencies/stlplus3/filesystemSimplified/file_system.hpp"
+#include <aliceVision/feature/PointFeature.hpp>
+#include <aliceVision/feature/RegionsPerView.hpp>
+#include <aliceVision/matching/IndMatch.hpp>
+#include <aliceVision/matchingImageCollection/GeometricFilterMatrix.hpp>
 
 #include <boost/progress.hpp>
 

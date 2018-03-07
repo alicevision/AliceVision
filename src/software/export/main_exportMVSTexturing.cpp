@@ -3,12 +3,11 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
-#include "aliceVision/sfm/sfm.hpp"
-#include "aliceVision/image/all.hpp"
-
-#include "dependencies/stlplus3/filesystemSimplified/file_system.hpp"
+#include <aliceVision/sfm/sfm.hpp>
+#include <aliceVision/image/all.hpp>
 
 #include <boost/program_options.hpp>
+#include <boost/filesystem.hpp>
 
 #include <fstream>
 
@@ -17,6 +16,7 @@ using namespace aliceVision::camera;
 using namespace aliceVision::geometry;
 using namespace aliceVision::sfm;
 namespace po = boost::program_options;
+namespace fs = boost::filesystem;
 
 int main(int argc, char **argv)
 {
@@ -73,8 +73,8 @@ int main(int argc, char **argv)
   bool bOneHaveDisto = false;
   
   // Create output dir
-  if (!stlplus::folder_exists(outDirectory))
-    stlplus::folder_create( outDirectory );
+  if (!fs::exists(outDirectory))
+    fs::create_directory(outDirectory);
 
   // Read the SfM scene
   SfMData sfm_data;
@@ -112,8 +112,7 @@ int main(int argc, char **argv)
     const int h = pinhole_cam->h();
     
     // We can now create the .cam file for the View in the output dir 
-    std::ofstream outfile( stlplus::create_filespec(
-                outDirectory, stlplus::basename_part(view->getImagePath()), "cam" ).c_str() );
+    std::ofstream outfile((fs::path(outDirectory) / (fs::path(view->getImagePath()).stem().string() + ".cam")).string());
     // See https://github.com/nmoehrle/mvs-texturing/blob/master/Arguments.cpp
     // for full specs
     const int largerDim = w > h ? w : h;

@@ -22,6 +22,7 @@
 using namespace std;
 using namespace aliceVision;
 using namespace aliceVision::sfm;
+
 namespace po = boost::program_options;
 namespace fs = boost::filesystem;
 
@@ -143,14 +144,14 @@ int main(int argc, char **argv)
   }
 
   // visual output of the camera location
-  plyHelper::exportToPly(vec_camPosGT, string(stlplus::folder_append_separator(outputFolder) + "camGT.ply").c_str());
-  plyHelper::exportToPly(vec_C, string(stlplus::folder_append_separator(outputFolder) + "camComputed.ply").c_str());
+  plyHelper::exportToPly(vec_camPosGT, (fs::path(outputFolder) / "camGT.ply").string());
+  plyHelper::exportToPly(vec_C, (fs::path(outputFolder) / "camComputed.ply").string());
 
   // evaluation
   htmlDocument::htmlDocumentStream _htmlDocStream("aliceVision Quality evaluation.");
   EvaluteToGT(vec_camPosGT, vec_C, vec_camRotGT, vec_camRot, outputFolder, &_htmlDocStream);
 
-  ofstream htmlFileStream( string(stlplus::folder_append_separator(outputFolder) + "ExternalCalib_Report.html"));
+  ofstream htmlFileStream((fs::path(outputFolder) / "ExternalCalib_Report.html").string());
   htmlFileStream << _htmlDocStream.getDoc();
 
   return EXIT_SUCCESS;

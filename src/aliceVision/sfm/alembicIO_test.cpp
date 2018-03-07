@@ -9,8 +9,6 @@
 #include "SfMData.hpp"
 #include "sfmDataIO.hpp"
 
-#include "dependencies/stlplus3/filesystemSimplified/file_system.hpp"
-
 #define BOOST_TEST_MODULE alembicIO
 #include <boost/test/included/unit_test.hpp>
 #include <boost/test/floating_point_comparison.hpp>

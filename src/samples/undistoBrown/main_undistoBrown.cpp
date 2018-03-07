@@ -1,12 +1,12 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include "aliceVision/image/all.hpp"
-#include "aliceVision/camera/camera.hpp"
+#include <aliceVision/image/all.hpp>
+#include <aliceVision/camera/camera.hpp>
 
-#include "dependencies/stlplus3/filesystemSimplified/file_system.hpp"
-
+#include <boost/regex.hpp>
 #include <boost/progress.hpp>
+#include <boost/filesystem.hpp>
 #include <boost/program_options.hpp>
 
 #include <string>
@@ -17,6 +17,7 @@ using namespace aliceVision;
 using namespace aliceVision::camera;
 using namespace aliceVision::image;
 namespace po = boost::program_options;
+namespace fs = boost::filesystem;
 
 int main(int argc, char **argv)
 {
@@ -80,8 +81,8 @@ int main(int argc, char **argv)
     return EXIT_FAILURE;
   }
 
-  if (!stlplus::folder_exists(outputImagePath))
-    stlplus::folder_create(outputImagePath);
+  if (!fs::exists(outputImagePath))
+    fs::create_directory(outputImagePath);
 
   std::cout << "Used Brown's distortion model values: \n"
     << "  Distortion center: " << c.transpose() << "\n"
@@ -89,16 +90,32 @@ int main(int argc, char **argv)
     << k.transpose() << "\n"
     << "  Distortion focal: " << f << std::endl;
 
-  const std::vector<std::string> vec_fileNames =
-    stlplus::folder_wildcard(inputImagePath, "*."+suffix, false, true);
+  const boost::regex filter("*."+suffix);
+
+  std::vector<std::string> vec_fileNames;
+
+  boost::filesystem::directory_iterator endItr;
+  for(boost::filesystem::directory_iterator i(inputImagePath); i != endItr; ++i)
+  {
+      if(!boost::filesystem::is_regular_file(i->status()))
+        continue;
+
+      boost::smatch what;
+
+      if(!boost::regex_match(i->path().filename().string(), what, filter))
+        continue;
+
+      vec_fileNames.push_back(i->path().filename().string());
+  }
+
   std::cout << "\nLocated " << vec_fileNames.size() << " files in " << inputImagePath
     << " with suffix " << suffix;
 
   boost::progress_display my_progress_bar( vec_fileNames.size() );
   for (size_t j = 0; j < vec_fileNames.size(); ++j, ++my_progress_bar)
   {
-    const string inFileName = stlplus::create_filespec(inputImagePath, stlplus::basename_part(vec_fileNames[j]));
-    const string outFileName = stlplus::create_filespec(outputImagePath, stlplus::basename_part(vec_fileNames[j]), "JPG");
+    const string inFileName = (fs::path(inputImagePath) / fs::path(vec_fileNames[j]).filename()).string();
+    const string outFileName = (fs::path(outputImagePath) / fs::path(vec_fileNames[j]).filename()).string();
 
     Image<RGBColor> image, imageUd;
     readImage(inFileName, image);

@@ -234,16 +234,14 @@ bool ReconstructionEngine_globalSfM::Compute_Global_Rotations
         }
         const std::string sGraph_name = "global_relative_rotation_pose_graph_final";
         graph::indexedGraph putativeGraph(set_pose_ids, rotationAveraging_solver.GetUsedPairs());
-        graph::exportToGraphvizData(
-          stlplus::create_filespec(_sOutDirectory, sGraph_name, "dot"),
-          putativeGraph.g);
+        graph::exportToGraphvizData((fs::path(_sOutDirectory) / (sGraph_name + ".dot")).string(), putativeGraph.g);
 
         /*
         using namespace htmlDocument;
         std::ostringstream os;
         os << "<br>" << sGraph_name << "<br>"
            << "<img src=\""
-           << stlplus::create_filespec(_sOutDirectory, sGraph_name, "svg")
+           << (fs::path(_sOutDirectory) / (sGraph_name + "svg")).string()
            << "\" height=\"600\">\n";
         _htmlDocStream->pushInfo(os.str());
         */
@@ -274,8 +272,8 @@ bool ReconstructionEngine_globalSfM::Compute_Global_Translations
   if (!_sLoggingFile.empty())
   {
     Save(_sfm_data,
-      stlplus::create_filespec(stlplus::folder_part(_sLoggingFile), "cameraPath_translation_averaging", "ply"),
-      ESfMData(EXTRINSICS));
+         (fs::path(_sLoggingFile).parent_path() / "cameraPath_translation_averaging.ply").string(),
+         ESfMData(EXTRINSICS));
   }
 
   return bTranslationAveraging;
@@ -376,8 +374,8 @@ bool ReconstructionEngine_globalSfM::Compute_Initial_Structure
     if (!_sLoggingFile.empty())
     {
       Save(_sfm_data,
-        stlplus::create_filespec(stlplus::folder_part(_sLoggingFile), "initial_structure", "ply"),
-        ESfMData(EXTRINSICS | STRUCTURE));
+           (fs::path(_sLoggingFile).parent_path() / "initial_structure.ply").string(),
+           ESfMData(EXTRINSICS | STRUCTURE));
     }
   }
   return !_sfm_data.structure.empty();
@@ -396,8 +394,8 @@ bool ReconstructionEngine_globalSfM::Adjust()
     if (!_sLoggingFile.empty())
     {
       Save(_sfm_data,
-        stlplus::create_filespec(stlplus::folder_part(_sLoggingFile), "structure_00_refine_T_Xi", "ply"),
-        ESfMData(EXTRINSICS | STRUCTURE));
+           (fs::path(_sLoggingFile).parent_path() / "structure_00_refine_T_Xi.ply").string(),
+           ESfMData(EXTRINSICS | STRUCTURE));
     }
 
     // - refine only Structure and Rotations & translations
@@ -405,8 +403,8 @@ bool ReconstructionEngine_globalSfM::Adjust()
     if (b_BA_Status && !_sLoggingFile.empty())
     {
       Save(_sfm_data,
-        stlplus::create_filespec(stlplus::folder_part(_sLoggingFile), "structure_01_refine_RT_Xi", "ply"),
-        ESfMData(EXTRINSICS | STRUCTURE));
+           (fs::path(_sLoggingFile).parent_path() / "structure_01_refine_RT_Xi.ply").string(),
+           ESfMData(EXTRINSICS | STRUCTURE));
     }
   }
 
@@ -416,8 +414,8 @@ bool ReconstructionEngine_globalSfM::Adjust()
     if (b_BA_Status && !_sLoggingFile.empty())
     {
       Save(_sfm_data,
-        stlplus::create_filespec(stlplus::folder_part(_sLoggingFile), "structure_02_refine_KRT_Xi", "ply"),
-        ESfMData(EXTRINSICS | STRUCTURE));
+           (fs::path(_sLoggingFile).parent_path() / "structure_02_refine_KRT_Xi.ply").string(),
+           ESfMData(EXTRINSICS | STRUCTURE));
     }
   }
 
@@ -436,8 +434,8 @@ bool ReconstructionEngine_globalSfM::Adjust()
   if (!_sLoggingFile.empty())
   {
     Save(_sfm_data,
-      stlplus::create_filespec(stlplus::folder_part(_sLoggingFile), "structure_03_outlier_removed", "ply"),
-      ESfMData(EXTRINSICS | STRUCTURE));
+         (fs::path(_sLoggingFile).parent_path() / "structure_03_outlier_removed.ply").string(),
+         ESfMData(EXTRINSICS | STRUCTURE));
   }
 
   // Check that poses & intrinsic cover some measures (after outlier removal)
@@ -460,7 +458,7 @@ bool ReconstructionEngine_globalSfM::Adjust()
   if (b_BA_Status && !_sLoggingFile.empty())
   {
     Save(_sfm_data,
-      stlplus::create_filespec(stlplus::folder_part(_sLoggingFile), "structure_04_outlier_removed", "ply"),
+      (fs::path(_sLoggingFile).parent_path() / "structure_04_outlier_removed.ply").string(),
       ESfMData(EXTRINSICS | STRUCTURE));
   }
 
@@ -679,9 +677,7 @@ void ReconstructionEngine_globalSfM::Compute_Relative_Rotations
       std::transform(_sfm_data.GetViews().begin(), _sfm_data.GetViews().end(),
         std::inserter(set_ViewIds, set_ViewIds.begin()), stl::RetrieveKey());
       graph::indexedGraph putativeGraph(set_ViewIds, getImagePairs(*_pairwiseMatches));
-      graph::exportToGraphvizData(
-        stlplus::create_filespec(_sOutDirectory, "global_relative_rotation_view_graph.dot"),
-        putativeGraph.g);
+      graph::exportToGraphvizData((fs::path(_sOutDirectory) / "global_relative_rotation_view_graph.dot").string(), putativeGraph.g);
     }
 
     // Log a relative pose graph
@@ -697,16 +693,14 @@ void ReconstructionEngine_globalSfM::Compute_Relative_Rotations
       }
       const std::string sGraph_name = "global_relative_rotation_pose_graph";
       graph::indexedGraph putativeGraph(set_pose_ids, relative_pose_pairs);
-      graph::exportToGraphvizData(
-        stlplus::create_filespec(_sOutDirectory, sGraph_name, "dot"),
-        putativeGraph.g);
+      graph::exportToGraphvizData((fs::path(_sOutDirectory) / (sGraph_name + ".dot")).string(), putativeGraph.g);
       /*
       using namespace htmlDocument;
       std::ostringstream os;
 
       os << "<br>" << "global_relative_rotation_pose_graph" << "<br>"
          << "<img src=\""
-         << stlplus::create_filespec(_sOutDirectory, "global_relative_rotation_pose_graph", "svg")
+         << (fs::path(_sOutDirectory) / "global_relative_rotation_pose_graph.svg").string()
          << "\" height=\"600\">\n";
       _htmlDocStream->pushInfo(os.str());
       */

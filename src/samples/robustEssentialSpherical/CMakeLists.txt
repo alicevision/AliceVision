@@ -9,7 +9,6 @@ target_link_libraries(aliceVision_samples_robustEssentialSpherical
   aliceVision_matching
   aliceVision_system
   aliceVision_sfm
-  stlplus
   vlsift
 )
 

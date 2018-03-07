@@ -26,9 +26,8 @@
 #include <aliceVision/graph/graph.hpp>
 #include <aliceVision/stl/stl.hpp>
 
-#include <dependencies/stlplus3/filesystemSimplified/file_system.hpp>
-
 #include <boost/program_options.hpp>
+#include <boost/filesystem.hpp>
 
 #include <cstdlib>
 #include <fstream>
@@ -42,7 +41,9 @@ using namespace aliceVision::robustEstimation;
 using namespace aliceVision::sfm;
 using namespace aliceVision::matchingImageCollection;
 using namespace std;
+
 namespace po = boost::program_options;
+namespace fs = boost::filesystem;
 
 enum EGeometricModel
 {
@@ -218,7 +219,7 @@ int main(int argc, char **argv)
   system::Logger::get()->setLogLevel(verboseLevel);
 
   // check and set input options
-  if(matchesFolder.empty() || !stlplus::is_folder(matchesFolder))
+  if(matchesFolder.empty() || !fs::is_directory(matchesFolder))
   {
     ALICEVISION_LOG_ERROR("Invalid output matches folder: " + matchesFolder);
     return EXIT_FAILURE;
@@ -370,7 +371,7 @@ int main(int argc, char **argv)
     //-- export putative matches Adjacency matrix
     PairwiseMatchingToAdjacencyMatrixSVG(sfmData.GetViews().size(),
       mapPutativesMatches,
-      stlplus::create_filespec(matchesFolder, "PutativeAdjacencyMatrix", "svg"));
+      (fs::path(matchesFolder) / "PutativeAdjacencyMatrix.svg").string());
     //-- export view pair graph once putative graph matches have been computed
     {
       std::set<IndexT> set_ViewIds;
@@ -381,7 +382,7 @@ int main(int argc, char **argv)
       graph::indexedGraph putativeGraph(set_ViewIds, getPairs(mapPutativesMatches));
 
       graph::exportToGraphvizData(
-        stlplus::create_filespec(matchesFolder, "putative_matches.dot"),
+        (fs::path(matchesFolder) / "putative_matches.dot").string(),
         putativeGraph.g);
     }
   }
@@ -523,8 +524,7 @@ int main(int argc, char **argv)
     // export Adjacency matrix
     ALICEVISION_LOG_INFO("Export Adjacency Matrix of the pairwise's geometric matches");
     PairwiseMatchingToAdjacencyMatrixSVG(sfmData.GetViews().size(),
-      finalMatches,
-      stlplus::create_filespec(matchesFolder, "GeometricAdjacencyMatrix", "svg"));
+      finalMatches,(fs::path(matchesFolder) / "GeometricAdjacencyMatrix.svg").string());
 
     /*
     // export view pair graph once geometric filter have been done
@@ -534,7 +534,7 @@ int main(int argc, char **argv)
         std::inserter(set_ViewIds, set_ViewIds.begin()), stl::RetrieveKey());
       graph::indexedGraph putativeGraph(set_ViewIds, getPairs(finalMatches));
       graph::exportToGraphvizData(
-        stlplus::create_filespec(matchesFolder, "geometric_matches.dot"),
+        (fs::path(matchesFolder) / "geometric_matches.dot").string(),
         putativeGraph.g);
     }
     */

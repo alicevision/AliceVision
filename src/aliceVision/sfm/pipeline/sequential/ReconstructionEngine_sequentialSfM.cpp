@@ -462,7 +462,7 @@ void ReconstructionEngine_sequentialSfM::updateReconstruction(IndexT resectionId
       // Scene logging as ply for visual debug
       std::ostringstream os;
       os << std::setw(8) << std::setfill('0') << resectionId << "_resection";
-      Save(_sfm_data, stlplus::create_filespec(_sOutDirectory, os.str(), _sfmdataInterFileExtension), _sfmdataInterFilter);
+      Save(_sfm_data, (fs::path(_sOutDirectory) / (os.str() + _sfmdataInterFileExtension)).string(), _sfmdataInterFilter);
       ALICEVISION_LOG_DEBUG("Save of file " << os.str() << " took " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - chrono_start).count() << " msec.");
     }
 
@@ -602,7 +602,7 @@ void ReconstructionEngine_sequentialSfM::exportStatistics(double reconstructionT
     _jsonLogTree.put("hardware.ram.size", system::getMemoryInfo().totalRam); // ram size
 
     // write json on disk
-    pt::write_json(stlplus::folder_append_separator(_sOutDirectory) + "stats.json", _jsonLogTree);
+    pt::write_json((fs::path(_sOutDirectory) / "stats.json").string(), _jsonLogTree);
   }
 }
 
@@ -869,7 +869,7 @@ bool ReconstructionEngine_sequentialSfM::makeInitialPair3D(const Pair& current_p
   if (!robustRelativePose(
         camI->K(), camJ->K(), xI, xJ, relativePose_info, imageSizeI, imageSizeJ, 4096))
   {
-    ALICEVISION_LOG_WARNING(" /!\\ Robust estimation failed to compute E for this pair");
+    ALICEVISION_LOG_WARNING("Robust estimation failed to compute E for this pair");
     return false;
   }
   ALICEVISION_LOG_DEBUG("A-Contrario initial pair residual: "
@@ -892,7 +892,7 @@ bool ReconstructionEngine_sequentialSfM::makeInitialPair3D(const Pair& current_p
 
     triangulate(_sfm_data, prevImageIndex, newImageIndex);
 
-    Save(_sfm_data, stlplus::create_filespec(_sOutDirectory, "initialPair", _sfmdataInterFileExtension), _sfmdataInterFilter);
+    Save(_sfm_data,(fs::path(_sOutDirectory) / ("initialPair" + _sfmdataInterFileExtension)).string(), _sfmdataInterFilter);
 
     /*
     // - refine only Structure and Rotations & translations (keep intrinsic constant)
@@ -936,7 +936,7 @@ bool ReconstructionEngine_sequentialSfM::makeInitialPair3D(const Pair& current_p
     while(removeOutliers(4.0) > nbOutliersThreshold);
 
 
-    Save(_sfm_data, stlplus::create_filespec(_sOutDirectory, "initialPair_afterBA", _sfmdataInterFileExtension), _sfmdataInterFilter);
+    Save(_sfm_data, (fs::path(_sOutDirectory) / ("initialPair_afterBA" + _sfmdataInterFileExtension)).string(), _sfmdataInterFilter);
 
     // Save outlier residual information
     Histogram<double> histoResiduals;
@@ -980,12 +980,12 @@ bool ReconstructionEngine_sequentialSfM::makeInitialPair3D(const Pair& current_p
       _htmlDocStream->pushInfo(jsxGraph.toStr());
       _htmlDocStream->pushInfo("<hr>");
 
-      std::ofstream htmlFileStream( std::string(stlplus::folder_append_separator(_sOutDirectory) + _htmlLogFile).c_str());
+      std::ofstream htmlFileStream( (fs::path(_sOutDirectory) / _htmlLogFile).string());
       htmlFileStream << _htmlDocStream->getDoc();
     }
   }
 
-  Save(_sfm_data, stlplus::create_filespec(_sOutDirectory, "initialPair_sfmData", _sfmdataInterFileExtension), _sfmdataInterFilter);
+  Save(_sfm_data, (fs::path(_sOutDirectory) / ("initialPair_sfmData" + _sfmdataInterFileExtension)).string(), _sfmdataInterFilter);
 
   return !_sfm_data.structure.empty();
 }

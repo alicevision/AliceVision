@@ -11,8 +11,6 @@
 #include <aliceVision/track/Track.hpp>
 #include <aliceVision/sfm/SfMData.hpp>
 
-#include <dependencies/stlplus3/filesystemSimplified/file_system.hpp>
-
 namespace aliceVision {
 namespace sfm {
 
@@ -74,7 +72,7 @@ public:
   std::size_t getGraphDistanceLimit() const       {return _graphDistanceLimit;}
     
   /// Get the output path where Local BA outputs are saved
-  std::string getOutDirectory() const             {return stlplus::folder_append_separator(_outFolder);}
+  std::string getOutDirectory() const             {return _outFolder;}
   
   /// Set the output path where Local BA outputs will be saved
   void setOutDirectory(const std::string& dir)    {_outFolder = dir;}

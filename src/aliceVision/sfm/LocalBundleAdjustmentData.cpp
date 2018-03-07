@@ -8,9 +8,13 @@
 #include "LocalBundleAdjustmentData.hpp"
 #include <aliceVision/stl/stl.hpp>
 
+#include <boost/filesystem.hpp>
+
 #include <lemon/bfs.h>
 
 #include <fstream>
+
+namespace fs = boost::filesystem;
 
 namespace aliceVision {
 namespace sfm {
@@ -106,9 +110,9 @@ void LocalBundleAdjustmentData::exportFocalLengths(const std::string& folder)
   for (const auto& x : _focalLengthsHistory)
   {
     IndexT idIntr = x.first;
-    std::string filename = stlplus::create_filespec(stlplus::folder_append_separator(folder),  "K" + std::to_string(idIntr), "txt");
+    std::string filename = (fs::path(folder) / ("K" + std::to_string(idIntr) + std::string(".txt"))).string();
     
-    bool isNewFile = !stlplus::file_exists(filename);
+    bool isNewFile = !fs::exists(filename);
     
     std::ofstream os;
     os.open(filename, std::ios::app);
@@ -576,8 +580,8 @@ double LocalBundleAdjustmentData::standardDeviation(const std::vector<T>& data)
 
 void LocalBundleAdjustmentData::drawGraph(const SfMData& sfm_data, const std::string& dir, const std::string& nameComplement)
 {
-  if (!stlplus::folder_exists(dir))
-    stlplus::folder_create(dir);
+  if (!fs::exists(dir))
+    fs::create_directory(dir);
   
   std::stringstream dotStream;
   dotStream << "digraph lemon_dot_example {" << "\n";
@@ -610,13 +614,13 @@ void LocalBundleAdjustmentData::drawGraph(const SfMData& sfm_data, const std::st
   }
   dotStream << "}" << "\n";
   
-  const std::string dotFilepath = stlplus::create_filespec(dir, "/graph_" + std::to_string(_mapViewIdPerNode.size())  + "_" + nameComplement + ".dot");
+  const std::string dotFilepath = (fs::path(dir) / ("graph_" + std::to_string(_mapViewIdPerNode.size())  + "_" + nameComplement + ".dot")).string();
   std::ofstream dotFile;
   dotFile.open(dotFilepath);
   dotFile.write(dotStream.str().c_str(), dotStream.str().length());
   dotFile.close();
   
-  ALICEVISION_LOG_DEBUG("The graph '"<< dir << "/graph_" << std::to_string(_mapViewIdPerNode.size()) << "_" << nameComplement << ".dot' has been saved.");
+  ALICEVISION_LOG_DEBUG("The graph '"<< dotFilepath << "' has been saved.");
 }
 
 std::size_t LocalBundleAdjustmentData::addIntrinsicEdgesToTheGraph(const SfMData& sfm_data, const std::set<IndexT>& newReconstructedViews)

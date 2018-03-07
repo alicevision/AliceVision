@@ -7,10 +7,13 @@
 
 #include "generateReport.hpp"
 
-#include "dependencies/stlplus3/filesystemSimplified/file_system.hpp"
-#include "dependencies/htmlDoc/htmlDoc.hpp"
-#include "dependencies/histogram/histogram.hpp"
-#include "dependencies/vectorGraphics/svgDrawer.hpp"
+#include <dependencies/htmlDoc/htmlDoc.hpp>
+#include <dependencies/histogram/histogram.hpp>
+#include <dependencies/vectorGraphics/svgDrawer.hpp>
+
+#include <boost/filesystem.hpp>
+
+namespace fs = boost::filesystem;
 
 namespace aliceVision {
 namespace sfm {
@@ -89,7 +92,7 @@ bool Generate_SfM_Report(const SfMData & sfm_data,
     os.str("");
     os << sRowBegin
       << sColBegin << id_view << sColEnd
-      << sColBegin + stlplus::basename_part(v->getImagePath()) + sColEnd;
+      << sColBegin + fs::path(v->getImagePath()).stem().string() + sColEnd;
 
     // IdView | basename | #Observations | residuals min | residual median | residual max
     if (sfm_data.IsPoseAndIntrinsicDefined(v))
@@ -153,7 +156,7 @@ bool Generate_SfM_Report(const SfMData & sfm_data,
 
       svg::svgHisto svg_Histo;
       svg_Histo.draw(histo.GetHist(), std::pair<float,float>(0.f, maxRange),
-        stlplus::create_filespec(stlplus::folder_part(htmlFilename), "residuals_histogram", "svg"),
+        (fs::path(htmlFilename).parent_path() / std::string("residuals_histogram.svg")).string(),
         600, 200);
 
       os.str("");

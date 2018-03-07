@@ -3,12 +3,11 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
-#include "aliceVision/sfm/sfm.hpp"
-#include "aliceVision/image/all.hpp"
-
-#include "dependencies/stlplus3/filesystemSimplified/file_system.hpp"
+#include <aliceVision/sfm/sfm.hpp>
+#include <aliceVision/image/all.hpp>
 
 #include <boost/program_options.hpp>
+#include <boost/filesystem.hpp>
 #include <boost/progress.hpp>
 
 #include <stdlib.h>
@@ -24,6 +23,7 @@ using namespace aliceVision::image;
 using namespace aliceVision::sfm;
 using namespace aliceVision::feature;
 namespace po = boost::program_options;
+namespace fs = boost::filesystem;
 
 /// Naive image bilinear resampling of an image for thumbnail generation
 template <typename ImageT>
@@ -54,11 +54,11 @@ bool exportToMVE2Format(
 {
   bool bOk = true;
   // Create basis folder structure
-  if (!stlplus::is_folder(sOutDirectory))
+  if (!fs::is_directory(sOutDirectory))
   {
     std::cout << "\033[1;31mCreating folder:  " << sOutDirectory << "\033[0m\n";
-    stlplus::folder_create(sOutDirectory);
-    bOk = stlplus::is_folder(sOutDirectory);
+    fs::create_directory(sOutDirectory);
+    bOk = fs::is_directory(sOutDirectory);
   }
 
   if (!bOk)
@@ -70,11 +70,11 @@ bool exportToMVE2Format(
   // Export the SfMData scene to the MVE2 format
   {
     // Create 'views' subfolder
-    const std::string sOutViewsDirectory = stlplus::folder_append_separator(sOutDirectory) + "views";
-    if (!stlplus::folder_exists(sOutViewsDirectory))
+    const std::string sOutViewsDirectory = (fs::path(sOutDirectory) / "views").string();
+    if (!fs::exists(sOutViewsDirectory))
     {
       std::cout << "\033[1;31mCreating folder:  " << sOutViewsDirectory << "\033[0m\n";
-      stlplus::folder_create(sOutViewsDirectory);
+      fs::create_directory(sOutViewsDirectory);
     }
 
     // Prepare to write bundle file
@@ -89,7 +89,7 @@ bool exportToMVE2Format(
     const std::string filename = "synth_0.out";
     std::cout << "Writing bundle (" << cameraCount << " cameras, "
         << featureCount << " features): to " << filename << "...\n";
-    std::ofstream out(stlplus::folder_append_separator(sOutDirectory) + filename);
+    std::ofstream out((fs::path(sOutDirectory) / filename).string());
     out << "drews 1.0\n";  // MVE expects this header
     out << cameraCount << " " << featureCount << "\n";
 
@@ -114,16 +114,15 @@ bool exportToMVE2Format(
       // Warning: We use view_index instead of view->getViewId() because MVE use indexes instead of IDs.
       padding << std::setw(4) << std::setfill('0') << view_index;
 
-      sOutViewIteratorDirectory = stlplus::folder_append_separator(sOutViewsDirectory) + "view_" + padding.str() + ".mve";
-      if (!stlplus::folder_exists(sOutViewIteratorDirectory))
+      sOutViewIteratorDirectory = (fs::path(sOutViewsDirectory) / ("view_" + padding.str() + ".mve")).string();
+      if (!fs::exists(sOutViewIteratorDirectory))
       {
-        stlplus::folder_create(sOutViewIteratorDirectory);
+        fs::create_directory(sOutViewIteratorDirectory);
       }
 
       // We have a valid view with a corresponding camera & pose
       const std::string srcImage = view->getImagePath();
-      const std::string dstImage =
-        stlplus::create_filespec(stlplus::folder_append_separator(sOutViewIteratorDirectory), "undistorted","png");
+      const std::string dstImage = (fs::path(sOutViewIteratorDirectory) / "undistorted.png").string();
 
       Intrinsics::const_iterator iterIntrinsic = sfm_data.GetIntrinsics().find(view->getIntrinsicId());
       const IntrinsicBase * cam = iterIntrinsic->second.get();
@@ -137,10 +136,10 @@ bool exportToMVE2Format(
       else // (no distortion)
       {
         // If extensions match, copy the PNG image
-        if (stlplus::extension_part(srcImage) == "PNG" ||
-          stlplus::extension_part(srcImage) == "png")
+        if (fs::extension(srcImage) == ".PNG" ||
+          fs::extension(srcImage) == ".png")
         {
-          stlplus::file_copy(srcImage, dstImage);
+          fs::copy_file(srcImage, dstImage);
         }
         else
         {
@@ -180,13 +179,11 @@ bool exportToMVE2Format(
         << fileOut.widen('\n')
         << "[view]" << fileOut.widen('\n')
         << "id = " << view_index << fileOut.widen('\n')
-        << "name = " << stlplus::filename_part(srcImage.c_str()) << fileOut.widen('\n');
+        << "name = " << fs::path(srcImage.c_str()).filename().string() << fileOut.widen('\n');
 
       // To do:  trim any extra separator(s) from aliceVision name we receive, e.g.:
       // '/home/insight/aliceVision_KevinCain/aliceVision_Build/software/SfM/ImageDataset_SceauxCastle/images//100_7100.JPG'
-      std::ofstream file(
-        stlplus::create_filespec(stlplus::folder_append_separator(sOutViewIteratorDirectory),
-        "meta","ini").c_str());
+      std::ofstream file((fs::path(sOutViewIteratorDirectory) / "meta.ini").string());
       file << fileOut.str();
       file.close();
 
@@ -199,8 +196,7 @@ bool exportToMVE2Format(
 
       // Save a thumbnail image "thumbnail.png", 50x50 pixels
       thumbnail = create_thumbnail(image, 50, 50);
-      const std::string dstThumbnailImage =
-        stlplus::create_filespec(stlplus::folder_append_separator(sOutViewIteratorDirectory), "thumbnail","png");
+      const std::string dstThumbnailImage = (fs::path(sOutViewIteratorDirectory) / "thumbnail.png").string();
       writeImage(dstThumbnailImage, thumbnail);
       
       ++view_index;
@@ -289,8 +285,8 @@ int main(int argc, char *argv[])
   system::Logger::get()->setLogLevel(verboseLevel);
 
   // Create output dir
-  if (!stlplus::folder_exists(outDirectory))
-    stlplus::folder_create(outDirectory);
+  if (!fs::exists(outDirectory))
+    fs::create_directory(outDirectory);
 
   // Read the input SfM scene
   SfMData sfm_data;
@@ -300,7 +296,7 @@ int main(int argc, char *argv[])
     return EXIT_FAILURE;
   }
 
-  if (exportToMVE2Format(sfm_data, stlplus::folder_append_separator(outDirectory) + "MVE"))
+  if (exportToMVE2Format(sfm_data, (fs::path(outDirectory) / "MVE").string()))
     return( EXIT_SUCCESS );
   else
     return( EXIT_FAILURE );

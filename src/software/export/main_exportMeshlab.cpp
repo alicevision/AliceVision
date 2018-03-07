@@ -3,13 +3,12 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
-#include "aliceVision/sfm/sfm.hpp"
-#include "aliceVision/image/all.hpp"
-#include "aliceVision/numeric/numeric.hpp"
-
-#include "dependencies/stlplus3/filesystemSimplified/file_system.hpp"
+#include <aliceVision/sfm/sfm.hpp>
+#include <aliceVision/image/all.hpp>
+#include <aliceVision/numeric/numeric.hpp>
 
 #include <boost/program_options.hpp>
+#include <boost/filesystem.hpp>
 
 #include <fstream>
 
@@ -19,6 +18,7 @@ using namespace aliceVision::geometry;
 using namespace aliceVision::image;
 using namespace aliceVision::sfm;
 namespace po = boost::program_options;
+namespace fs = boost::filesystem;
 
 int main(int argc, char **argv)
 {
@@ -76,8 +76,8 @@ int main(int argc, char **argv)
   system::Logger::get()->setLogLevel(verboseLevel);
 
   // Create output dir
-  if (!stlplus::folder_exists(outDirectory))
-    stlplus::folder_create( outDirectory );
+  if (!fs::exists(outDirectory))
+    fs::create_directory(outDirectory);
 
   // Read the SfM scene
   SfMData sfm_data;
@@ -87,7 +87,7 @@ int main(int argc, char **argv)
     return EXIT_FAILURE;
   }
 
-  std::ofstream outfile( stlplus::create_filespec( outDirectory, "sceneMeshlab", "mlp" ).c_str() );
+  std::ofstream outfile((fs::path(outDirectory) / "sceneMeshlab.mlp").string());
 
   // Init mlp file
   outfile << "<!DOCTYPE MeshLabDocument>" << outfile.widen('\n')
@@ -131,7 +131,7 @@ int main(int argc, char **argv)
     const Vec3 optical_center = R.transpose() * t;
 
     outfile
-      << "  <MLRaster label=\"" << stlplus::filename_part(view->getImagePath()) << "\">" << std::endl
+      << "  <MLRaster label=\"" << fs::path(view->getImagePath()).filename().string() << "\">" << std::endl
       << "   <VCGCamera TranslationVector=\""
       << optical_center[0] << " "
       << optical_center[1] << " "

@@ -3,10 +3,11 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
-#include "aliceVision/sfm/sfm.hpp"
-#include "aliceVision/image/all.hpp"
+#include <aliceVision/sfm/sfm.hpp>
+#include <aliceVision/image/all.hpp>
 
 #include <boost/program_options.hpp>
+#include <boost/filesystem.hpp>
 #include <boost/progress.hpp>
 
 #include <stdlib.h>
@@ -17,6 +18,7 @@ using namespace aliceVision::geometry;
 using namespace aliceVision::image;
 using namespace aliceVision::sfm;
 namespace po = boost::program_options;
+namespace fs = boost::filesystem;
 
 int main(int argc, char *argv[])
 {
@@ -82,8 +84,8 @@ int main(int argc, char *argv[])
   image::EImageFileType outputFileType = image::EImageFileType_stringToEnum(outImageFileTypeName);
 
   // Create output dir
-  if (!stlplus::folder_exists(outDirectory))
-    stlplus::folder_create(outDirectory);
+  if (!fs::exists(outDirectory))
+    fs::create_directory(outDirectory);
 
   SfMData sfmData;
   if (!Load(sfmData, sfmDataFilename, ESfMData(VIEWS | INTRINSICS)))
@@ -105,7 +107,7 @@ int main(int argc, char *argv[])
     Intrinsics::const_iterator iterIntrinsic = sfmData.GetIntrinsics().find(view->getIntrinsicId());
 
     const std::string srcImage = view->getImagePath();
-    const std::string dstImage = stlplus::create_filespec(outDirectory, stlplus::basename_part(srcImage) + "." + image::EImageFileType_enumToString(outputFileType));
+    const std::string dstImage = (fs::path(outDirectory) / (fs::path(srcImage).stem().string() + "." + image::EImageFileType_enumToString(outputFileType))).string();
 
     const IntrinsicBase * cam = iterIntrinsic->second.get();
     if (cam->isValid() && cam->have_disto())
@@ -118,7 +120,7 @@ int main(int argc, char *argv[])
     else // (no distortion)
     {
       // copy the image since there is no distortion
-      stlplus::file_copy(srcImage, dstImage);
+      fs::copy_file(srcImage, dstImage);
     }
   }
 

@@ -9,7 +9,7 @@
 #include <aliceVision/numeric/numeric.hpp>
 #include <aliceVision/sfm/pipeline/localization/SfMLocalizer.hpp>
 
-#include <dependencies/stlplus3/filesystemSimplified/file_system.hpp>
+#include <boost/filesystem.hpp>
 
 #include <vector>
 #include <chrono>
@@ -20,6 +20,7 @@
 #include <boost/test/floating_point_comparison.hpp>
 #include <aliceVision/unitTest.hpp>
 
+namespace fs = boost::filesystem;
 using namespace aliceVision;
 
 sfm::ImageLocalizerMatchData generateRandomMatch_Data(std::size_t numPts)
@@ -147,6 +148,6 @@ BOOST_AUTO_TEST_CASE(LocalizationResult_LoadSaveVector)
       BOOST_CHECK(matchedImagesGT[j] == matchedImages[j]);
     }
 
-    stlplus::file_delete(filename);
+    fs::remove(filename);
   }
 }

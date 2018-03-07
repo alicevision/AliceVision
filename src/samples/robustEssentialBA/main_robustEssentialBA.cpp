@@ -1,20 +1,19 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include "aliceVision/camera/camera.hpp"
-#include "aliceVision/image/all.hpp"
-#include "aliceVision/feature/feature.hpp"
-#include "aliceVision/feature/sift/ImageDescriber_SIFT.hpp"
-#include "aliceVision/sfm/sfm.hpp"
+#include <aliceVision/camera/camera.hpp>
+#include <aliceVision/image/all.hpp>
+#include <aliceVision/feature/feature.hpp>
+#include <aliceVision/feature/sift/ImageDescriber_SIFT.hpp>
+#include <aliceVision/sfm/sfm.hpp>
+#include <aliceVision/matching/ArrayMatcher_bruteForce.hpp>
+#include <aliceVision/matching/IndMatchDecorator.hpp>
+#include <aliceVision/multiview/triangulation/triangulationDLT.hpp>
+#include <aliceVision/matching/RegionsMatcher.hpp>
 
-#include "aliceVision/matching/ArrayMatcher_bruteForce.hpp"
-#include "aliceVision/matching/IndMatchDecorator.hpp"
-#include "aliceVision/multiview/triangulation/triangulationDLT.hpp"
+#include <dependencies/vectorGraphics/svgDrawer.hpp>
 
-#include "aliceVision/matching/RegionsMatcher.hpp"
-
-#include "dependencies/stlplus3/filesystemSimplified/file_system.hpp"
-#include "dependencies/vectorGraphics/svgDrawer.hpp"
+#include <boost/filesystem.hpp>
 
 #include <string>
 #include <iostream>
@@ -27,6 +26,7 @@ using namespace aliceVision::geometry;
 using namespace aliceVision::sfm;
 using namespace svg;
 using namespace std;
+namespace fs = boost::filesystem;
 
 /// Read intrinsic K matrix from a file (ASCII)
 /// F 0 ppx
@@ -41,8 +41,7 @@ bool readIntrinsic(const std::string & fileName, Mat3 & K);
 ///   way 2: independent cameras motion [R|t], shared focal [f] and structure
 int main() {
 
-  const std::string sInputDir = stlplus::folder_up(string(THIS_SOURCE_DIR))
-    + "/imageData/SceauxCastle/";
+  const std::string sInputDir = string("../") + string(THIS_SOURCE_DIR) + "/imageData/SceauxCastle/";
   Image<RGBColor> image;
   const string jpg_filenameL = sInputDir + "100_7101.jpg";
   const string jpg_filenameR = sInputDir + "100_7102.jpg";
@@ -134,7 +133,7 @@ int main() {
   {
     Mat3 K;
     //read K from file
-    if (!readIntrinsic(stlplus::create_filespec(sInputDir,"K","txt"), K))
+    if (!readIntrinsic((fs::path(sInputDir) / "K.txt").string(), K))
     {
       std::cerr << "Cannot read intrinsic parameters." << std::endl;
       return EXIT_FAILURE;

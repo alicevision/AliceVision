@@ -18,8 +18,10 @@
 #include <dependencies/htmlDoc/htmlDoc.hpp>
 #include <dependencies/histogram/histogram.hpp>
 
+#include <boost/filesystem.hpp>
 #include <boost/property_tree/ptree.hpp>
 
+namespace fs = boost::filesystem;
 namespace pt = boost::property_tree;
 
 namespace aliceVision {
@@ -86,12 +88,12 @@ public:
     if(v)
     {
       _localBA_data = std::make_shared<LocalBundleAdjustmentData>(_sfm_data);
-      _localBA_data->setOutDirectory(stlplus::folder_append_separator(_sOutDirectory)+"localBA/");
+      _localBA_data->setOutDirectory((fs::path(_sOutDirectory) / "localBA").string());
 
       // delete all the previous data about the Local BA.
-      if(stlplus::folder_exists(_localBA_data->getOutDirectory()))
-        stlplus::folder_delete(_localBA_data->getOutDirectory(), true);
-      stlplus::folder_create(_localBA_data->getOutDirectory());
+      if(fs::exists(_localBA_data->getOutDirectory()))
+        fs::remove(_localBA_data->getOutDirectory());
+      fs::create_directory(_localBA_data->getOutDirectory());
     }
   }
 

@@ -7,7 +7,11 @@
 
 #include "LocalBundleAdjustmentCeres.hpp"
 
+#include <boost/filesystem.hpp>
+
 #include <fstream>
+
+namespace fs = boost::filesystem;
 
 namespace aliceVision {
 namespace sfm {
@@ -212,7 +216,7 @@ bool LocalBundleAdjustmentCeres::Adjust(SfMData& sfm_data, const LocalBundleAdju
 bool LocalBundleAdjustmentCeres::exportStatistics(const std::string& dir, const std::string& filename)
 {
   std::ofstream os;
-  os.open(stlplus::create_filespec(dir, filename), std::ios::app);
+  os.open((fs::path(dir) / filename).string(), std::ios::app);
   if (!os.is_open())
   {
     ALICEVISION_LOG_DEBUG("Unable to open the Bundle adjustment stat file '" << filename << "'.");

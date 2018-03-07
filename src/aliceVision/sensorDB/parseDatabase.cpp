@@ -6,11 +6,9 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "parseDatabase.hpp"
-
 #include <aliceVision/sensorDB/Datasheet.hpp>
 
-#include <dependencies/stlplus3/filesystemSimplified/file_system.hpp>
-
+#include <boost/filesystem.hpp>
 #include <boost/algorithm/string.hpp>
 
 #include <vector>
@@ -20,13 +18,15 @@
 #include <fstream>
 #include <iterator>
 
+namespace fs = boost::filesystem;
+
 namespace aliceVision {
 namespace sensorDB {
 
 bool parseDatabase(const std::string& databaseFilePath, std::vector<Datasheet>& databaseStructure)
 {
   std::ifstream iFilein( databaseFilePath );
-  if(!iFilein || !stlplus::is_file(databaseFilePath))
+  if(!iFilein || !fs::exists(databaseFilePath) || !fs::is_regular_file(databaseFilePath))
     return false;
 
   std::string line;

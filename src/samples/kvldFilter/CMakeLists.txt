@@ -9,7 +9,6 @@ target_link_libraries(aliceVision_samples_kvldFilter
   aliceVision_kvld
   aliceVision_feature
   aliceVision_matching
-  stlplus
   vlsift
   ${BOOST_LIBRARIES}
 )

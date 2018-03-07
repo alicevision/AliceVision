@@ -80,7 +80,6 @@ if(ALICEVISION_BUILD_SFM)
     aliceVision_multiview
     aliceVision_sfm
     aliceVision_matchingImageCollection
-    stlplus
     ${BOOST_LIBRARIES}
   )
 
@@ -101,7 +100,6 @@ if(ALICEVISION_BUILD_SFM)
     aliceVision_image
     aliceVision_feature
     aliceVision_sfm
-    stlplus
     ${BOOST_LIBRARIES}
   )
 
@@ -122,7 +120,6 @@ if(ALICEVISION_BUILD_SFM)
     aliceVision_image
     aliceVision_feature
     aliceVision_sfm
-    stlplus
     ${BOOST_LIBRARIES}
   )
 
@@ -142,7 +139,6 @@ if(ALICEVISION_BUILD_SFM)
     aliceVision_system
     aliceVision_feature
     aliceVision_sfm
-    stlplus
     ${BOOST_LIBRARIES}
   )
 
@@ -163,7 +159,6 @@ if(ALICEVISION_BUILD_SFM)
     aliceVision_image
     aliceVision_feature
     aliceVision_sfm
-    stlplus
     ${BOOST_LIBRARIES}
   )
 
@@ -288,7 +283,6 @@ if(ALICEVISION_BUILD_SFM)
     aliceVision_image
     aliceVision_feature
     aliceVision_sfm
-    stlplus
     ${BOOST_LIBRARIES}
   )
 

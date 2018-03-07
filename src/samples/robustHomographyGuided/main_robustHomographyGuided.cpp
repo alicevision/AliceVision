@@ -9,10 +9,8 @@
 #include "aliceVision/multiview/conditioning.hpp"
 #include "aliceVision/robustEstimation/ACRansac.hpp"
 #include "aliceVision/robustEstimation/ACRansacKernelAdaptator.hpp"
-
 #include "aliceVision/robustEstimation/guidedMatching.hpp"
 
-#include "dependencies/stlplus3/filesystemSimplified/file_system.hpp"
 #include "dependencies/vectorGraphics/svgDrawer.hpp"
 
 #include <string>
@@ -28,10 +26,8 @@ using namespace std;
 int main() {
 
   Image<RGBColor> image;
-  const string jpg_filenameL = stlplus::folder_up(string(THIS_SOURCE_DIR))
-    + "/imageData/StanfordMobileVisualSearch/Ace_0.png";
-  const string jpg_filenameR = stlplus::folder_up(string(THIS_SOURCE_DIR))
-    + "/imageData/StanfordMobileVisualSearch/Ace_1.png";
+  const string jpg_filenameL = string("../") + string(THIS_SOURCE_DIR) + "/imageData/StanfordMobileVisualSearch/Ace_0.png";
+  const string jpg_filenameR = string("../") + string(THIS_SOURCE_DIR) + "/imageData/StanfordMobileVisualSearch/Ace_1.png";
 
   Image<unsigned char> imageL, imageR;
   readImage(jpg_filenameL, imageL);

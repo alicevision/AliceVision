@@ -13,8 +13,6 @@
 #include <aliceVision/matchingImageCollection/IImageCollectionMatcher.hpp>
 #include <aliceVision/config.hpp>
 
-#include <dependencies/stlplus3/filesystemSimplified/file_system.hpp>
-
 #include <boost/progress.hpp>
 
 namespace aliceVision {

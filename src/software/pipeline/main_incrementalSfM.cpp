@@ -10,8 +10,6 @@
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/cmdline.hpp>
 
-#include <dependencies/stlplus3/filesystemSimplified/file_system.hpp>
-
 #include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>
 
@@ -41,7 +39,7 @@ bool retrieveViewIdFromImageName(
 {
   out_viewId = UndefinedIndexT;
 
-  bool isName = (initialName == stlplus::filename_part(initialName));
+  bool isName = (initialName == fs::path(initialName).filename().string());
   
   /// List views filenames and find the one that correspond to the user ones:
   for(Views::const_iterator it = sfm_data.GetViews().begin();
@@ -51,9 +49,7 @@ bool retrieveViewIdFromImageName(
     std::string filename;
     
     if(isName)
-      filename = stlplus::filename_part(v->getImagePath());
-    else if(stlplus::is_full_path(v->getImagePath()))
-      filename = v->getImagePath();
+      filename = fs::path(v->getImagePath()).filename().string();
     else
       filename = v->getImagePath();
     
@@ -213,8 +209,8 @@ int main(int argc, char **argv)
     extraInfoFolder = fs::path(outputSfM).parent_path().string();
   }
 
-  if (!stlplus::folder_exists(extraInfoFolder))
-    stlplus::folder_create(extraInfoFolder);
+  if (!fs::exists(extraInfoFolder))
+    fs::create_directory(extraInfoFolder);
 
   // sequential reconstruction process
   
@@ -222,7 +218,7 @@ int main(int argc, char **argv)
   ReconstructionEngine_sequentialSfM sfmEngine(
     sfmData,
     extraInfoFolder,
-    stlplus::create_filespec(extraInfoFolder, "sfm_log.html"));
+    (fs::path(extraInfoFolder) / "sfm_log.html").string());
 
   // configure the featuresPerView & the matches_provider
   sfmEngine.setFeatures(&featuresPerView);
@@ -285,12 +281,12 @@ int main(int argc, char **argv)
   ALICEVISION_LOG_INFO("Structure from motion took (s): " + std::to_string(timer.elapsed()));
   ALICEVISION_LOG_INFO("Generating HTML report...");
 
-  Generate_SfM_Report(sfmEngine.Get_SfMData(), stlplus::create_filespec(extraInfoFolder, "sfm_report.html"));
+  Generate_SfM_Report(sfmEngine.Get_SfMData(), (fs::path(extraInfoFolder) / "sfm_report.html").string());
 
   // export to disk computed scene (data & visualizable results)
   ALICEVISION_LOG_INFO("Export SfMData to disk: " + outputSfM);
 
-  Save(sfmEngine.Get_SfMData(), stlplus::create_filespec(extraInfoFolder, "cloud_and_poses", outInterFileExtension), ESfMData(VIEWS | EXTRINSICS | INTRINSICS | STRUCTURE));
+  Save(sfmEngine.Get_SfMData(), (fs::path(extraInfoFolder) / ("cloud_and_poses" + outInterFileExtension)).string(), ESfMData(VIEWS | EXTRINSICS | INTRINSICS | STRUCTURE));
   Save(sfmEngine.Get_SfMData(), outputSfM, ESfMData(ALL));
 
   if(!outputSfMViewsAndPoses.empty())

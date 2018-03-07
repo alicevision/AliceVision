@@ -1,19 +1,21 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include "aliceVision/system/Timer.hpp"
-#include "aliceVision/image/image.hpp"
-#include "aliceVision/feature/akaze/AKAZE.hpp"
+#include <aliceVision/system/Timer.hpp>
+#include <aliceVision/image/image.hpp>
+#include <aliceVision/feature/akaze/AKAZE.hpp>
 
-#include "dependencies/vectorGraphics/svgDrawer.hpp"
-#include "dependencies/cmdLine/cmdLine.h"
-#include "dependencies/stlplus3/filesystemSimplified/file_system.hpp"
+#include <dependencies/vectorGraphics/svgDrawer.hpp>
+#include <dependencies/cmdLine/cmdLine.h>
+
+#include <boost/filesystem.hpp>
 
 #include <iostream>
 #include <sstream>
 
 using namespace aliceVision;
 using namespace svg;
+namespace fs = boost::filesystem;
 
 void usage( const std::string & appName )
 {
@@ -65,7 +67,7 @@ int main( int argc , char ** argv )
   }
 
   // Compute base output filename
-  const std::string outputBaseName = stlplus::basename_part( sOuputFile ) ;
+  const std::string outputBaseName = fs::path(sOuputFile).stem().string();
 
   image::Image<unsigned char> src;
   readImageadImage(sInputImage, src);

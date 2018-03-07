@@ -52,15 +52,6 @@ std::set<IndexT> CleanGraph_KeepLargestBiEdge_Nodes(
 
   typedef lemon::ListGraph Graph;
   graph::indexedGraph putativeGraph(edges);
-/*
-  if (!_sOutDirectory.empty())
-  {
-    // Save the graph before cleaning:
-    imageGraph::exportToGraphvizData(
-    stlplus::create_filespec(_sOutDirectory, "initialGraph.dot"),
-    putativeGraph.g);
-  }
-  */
 
   // Remove not bi-edge connected edges
   typedef Graph::EdgeMap<bool> EdgeMapAlias;
@@ -133,14 +124,6 @@ std::set<IndexT> CleanGraph_KeepLargestBiEdge_Nodes(
       }
     }
   }
-/*
-  if (!_sOutDirectory.empty())
-  {
-    // Save the graph after cleaning:
-    imageGraph::exportToGraphvizData(
-      stlplus::create_filespec(_sOutDirectory, "cleanedGraph.dot"),
-      putativeGraph.g);
-  }*/
 
   ALICEVISION_LOG_DEBUG(
     "Cardinal of nodes: " << lemon::countNodes(putativeGraph.g) << "\n" <<
