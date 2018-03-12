@@ -2502,9 +2502,12 @@ bool Mesh::loadFromObjAscii(int& nmtls, StaticVector<int>** trisMtlIds, StaticVe
             {
                 int n1 = mvsUtils::findNSubstrsInString(line, "/");
                 int n2 = mvsUtils::findNSubstrsInString(line, "//");
-                if((n2 == 0 && n1 == 3) || n2 == 3)
+                if((n1 == 3 && n2 == 0) ||
+                   (n1 == 0 && n2 == 3) ||
+                   (n1 == 0 && n2 == 0))
                     ntris += 1;
-                else if((n2 == 0 && n1 == 4) || n2 == 4)
+                else if((n1 == 4 && n2 == 0) ||
+                        (n1 == 0 && n2 == 4))
                     ntris += 2;
             }
             nlines++;
