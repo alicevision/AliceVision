@@ -3,7 +3,10 @@ add_library(aliceVision_numeric
   numeric.hpp
 )
 
-target_link_libraries(aliceVision_numeric ${LOG_LIB})
+target_link_libraries(aliceVision_numeric
+  PUBLIC
+    ${LOG_LIB}
+)
 
 set_target_properties(aliceVision_numeric
   PROPERTIES SOVERSION ${ALICEVISION_VERSION_MAJOR}

@@ -10,6 +10,7 @@
 
 #include <Alembic/AbcGeom/All.h>
 #include <Alembic/AbcCoreOgawa/All.h>
+#include <Alembic/Abc/OObject.h>
 
 #include <dependencies/stlplus3/filesystemSimplified/file_system.hpp>
 
@@ -23,11 +24,11 @@ using namespace Alembic::AbcGeom;
 
 struct AlembicExporter::DataImpl
 {
-  DataImpl(const std::string& filename)
+    explicit DataImpl(const std::string& filename)
     : _archive(Alembic::AbcCoreOgawa::WriteArchive(), filename)
     , _topObj(_archive, Alembic::Abc::kTop)
   {
-    // create MVG hierarchy
+  // create MVG hierarchy
     _mvgRoot = Alembic::Abc::OObject(_topObj, "mvgRoot");
     _mvgCameras = Alembic::Abc::OObject(_mvgRoot, "mvgCameras");
     _mvgCamerasUndefined = Alembic::Abc::OObject(_mvgRoot, "mvgCamerasUndefined");
@@ -46,6 +47,21 @@ struct AlembicExporter::DataImpl
     // hide mvgCamerasUndefined
     Alembic::AbcGeom::CreateVisibilityProperty(_mvgCamerasUndefined, 0).set(Alembic::AbcGeom::kVisibilityHidden);
   }
+
+  /**
+   * @brief Add a camera
+   * @param[in] name The camera identifier
+   * @param[in] view The corresponding view
+   * @param[in] pose The camera pose (nullptr if undefined)
+   * @param[in] intrinsic The camera intrinsic (nullptr if undefined)
+   * @param[in,out] parent The Alembic parent node
+   */
+  void addCamera(const std::string& name,
+               const View& view,
+               const geometry::Pose3* pose = nullptr,
+               const camera::IntrinsicBase* intrinsic = nullptr,
+               const Vec6* uncertainty = nullptr,
+               Alembic::Abc::OObject* parent = nullptr);
   
   Alembic::Abc::OArchive _archive;
   Alembic::Abc::OObject _topObj;
@@ -64,12 +80,155 @@ struct AlembicExporter::DataImpl
   Alembic::AbcGeom::ODoubleArrayProperty _mvgIntrinsicParams;
 };
 
+
+void AlembicExporter::DataImpl::addCamera(const std::string& name,
+               const View& view,
+               const geometry::Pose3* pose,
+               const camera::IntrinsicBase* intrinsic,
+               const Vec6* uncertainty,
+               Alembic::Abc::OObject* parent)
+{
+  if(parent == nullptr)
+    parent = &_mvgCameras;
+
+  XformSample xformsample;
+
+  // set camera pose
+  if(pose != nullptr)
+  {
+    const Mat3& R = pose->rotation();
+    const Vec3& center = pose->center();
+
+    // compensate translation with rotation
+    // build transform matrix
+    Abc::M44d xformMatrix;
+    xformMatrix[0][0] = R(0, 0);
+    xformMatrix[0][1] = R(0, 1);
+    xformMatrix[0][2] = R(0, 2);
+    xformMatrix[1][0] = R(1, 0);
+    xformMatrix[1][1] = R(1, 1);
+    xformMatrix[1][2] = R(1, 2);
+    xformMatrix[2][0] = R(2, 0);
+    xformMatrix[2][1] = R(2, 1);
+    xformMatrix[2][2] = R(2, 2);
+    xformMatrix[3][0] = center(0);
+    xformMatrix[3][1] = center(1);
+    xformMatrix[3][2] = center(2);
+    xformMatrix[3][3] = 1.0;
+
+    // correct camera orientation for alembic
+    M44d scale; // by default this is an identity matrix
+    scale[0][0] = 1;
+    scale[1][1] = -1;
+    scale[2][2] = -1;
+
+    xformMatrix = scale * xformMatrix;
+    xformsample.setMatrix(xformMatrix);
+  }
+
+  std::stringstream ssLabel;
+  ssLabel << "camxform_" << std::setfill('0') << std::setw(5) << view.getResectionId() << "_" << view.getPoseId();
+  ssLabel << "_" << name << "_" << view.getViewId();
+
+  Alembic::AbcGeom::OXform xform(*parent, ssLabel.str());
+  xform.getSchema().set(xformsample);
+
+  OCamera camObj(xform, "camera_" + ssLabel.str());
+  auto userProps = camObj.getSchema().getUserProperties();
+
+  // set view custom properties
+  if(!view.getImagePath().empty())
+    OStringProperty(userProps, "mvg_imagePath").set(view.getImagePath());
+
+  OUInt32Property(userProps, "mvg_viewId").set(view.getViewId());
+  OUInt32Property(userProps, "mvg_poseId").set(view.getPoseId());
+  OUInt32Property(userProps, "mvg_intrinsicId").set(view.getIntrinsicId());
+  OUInt32Property(userProps, "mvg_resectionId").set(view.getResectionId());
+
+  if(view.isPartOfRig())
+  {
+    OUInt32Property(userProps, "mvg_rigId").set(view.getRigId());
+    OUInt32Property(userProps, "mvg_subPoseId").set(view.getSubPoseId());
+  }
+
+  // set view metadata
+  {
+    std::vector<std::string> rawMetadata(view.getMetadata().size() * 2);
+    auto it = view.getMetadata().cbegin();
+
+    for(std::size_t i = 0; i < rawMetadata.size(); i+=2)
+    {
+      rawMetadata.at(i) = it->first;
+      rawMetadata.at(i + 1) = it->second;
+      std::advance(it,1);
+    }
+    OStringArrayProperty(userProps, "mvg_metadata").set(rawMetadata);
+  }
+
+  // set intrinsic properties
+  const bool isIntrinsicValid = (intrinsic != nullptr &&
+                                 intrinsic->isValid() &&
+                                 camera::isPinhole(intrinsic->getType()));
+
+  if(isIntrinsicValid)
+  {
+    const auto* pinhole = dynamic_cast<const camera::Pinhole*>(intrinsic);
+    CameraSample camSample;
+
+    // Use a common sensor width if we don't have this information.
+    // We chose a full frame 24x36 camera
+    float sensorWidth_mm = 36.0;
+
+    if(view.hasMetadata("sensor_width"))
+      sensorWidth_mm = std::stof(view.getMetadata("sensor_width"));
+
+    // Take the max of the image size to handle the case where the image is in portrait mode
+    const float imgWidth = pinhole->w();
+    const float imgHeight = pinhole->h();
+    const float sensorWidth_pix = std::max(imgWidth, imgHeight);
+    const float focalLength_pix = static_cast<const float>(pinhole->focal());
+    const float focalLength_mm = sensorWidth_mm * focalLength_pix / sensorWidth_pix;
+    const float pix2mm = sensorWidth_mm / sensorWidth_pix;
+
+    // aliceVision: origin is (top,left) corner and orientation is (bottom,right)
+    // ABC: origin is centered and orientation is (up,right)
+    // Following values are in cm, hence the 0.1 multiplier
+    const float haperture_cm = static_cast<const float>(0.1 * imgWidth * pix2mm);
+    const float vaperture_cm = static_cast<const float>(0.1 * imgHeight * pix2mm);
+
+    camSample.setFocalLength(focalLength_mm);
+    camSample.setHorizontalAperture(haperture_cm);
+    camSample.setVerticalAperture(vaperture_cm);
+
+    // Add sensor width (largest image side) in pixels as custom property
+    std::vector<::uint32_t> sensorSize_pix = {pinhole->w(), pinhole->h()};
+
+    OUInt32ArrayProperty(userProps, "mvg_sensorSizePix").set(sensorSize_pix);
+    OStringProperty(userProps, "mvg_intrinsicType").set(pinhole->getTypeStr());
+    ODoubleArrayProperty(userProps, "mvg_intrinsicParams").set(pinhole->getParams());
+
+    camObj.getSchema().set(camSample);
+  }
+
+  if(uncertainty)
+  {
+     std::vector<double> uncertaintyParams(uncertainty->data(), uncertainty->data()+6);
+     ODoubleArrayProperty mvg_uncertaintyParams(userProps, "mvg_uncertaintyEigenValues");
+     mvg_uncertaintyParams.set(uncertaintyParams);
+  }
+
+  if(pose == nullptr || !isIntrinsicValid)
+  {
+    // hide camera
+    Alembic::AbcGeom::CreateVisibilityProperty(xform, 0).set(Alembic::AbcGeom::kVisibilityHidden);
+  }
+}
+
 AlembicExporter::AlembicExporter(const std::string& filename)
   : _dataImpl(new DataImpl(filename))
 {}
 
-AlembicExporter::~AlembicExporter()
-{}
+AlembicExporter::~AlembicExporter() = default;
 
 std::string AlembicExporter::getFilename() const
 {
@@ -128,9 +287,9 @@ void AlembicExporter::addSfMSingleCamera(const SfMData& sfmData, const View& vie
   const camera::IntrinsicBase* intrinsic = sfmData.GetIntrinsicPtr(view.getIntrinsicId());
 
   if(sfmData.IsPoseAndIntrinsicDefined(&view))
-    addCamera(name, view, pose, intrinsic, nullptr, &_dataImpl->_mvgCameras);
+    _dataImpl->addCamera(name, view, pose, intrinsic, nullptr, &_dataImpl->_mvgCameras);
   else
-    addCamera(name, view, pose, intrinsic, nullptr, &_dataImpl->_mvgCamerasUndefined);
+    _dataImpl->addCamera(name, view, pose, intrinsic, nullptr, &_dataImpl->_mvgCamerasUndefined);
 }
 
 void AlembicExporter::addSfMCameraRig(const SfMData& sfmData, IndexT rigId, const std::vector<IndexT>& viewIds)
@@ -205,7 +364,7 @@ void AlembicExporter::addSfMCameraRig(const SfMData& sfmData, IndexT rigId, cons
         OUInt16Property(userProps, "mvg_nbSubPoses").set(nbSubPoses);
       }
     }
-    addCamera(name, view, subPose, intrinsic, nullptr, &(rigObj.at(isReconstructed)));
+    _dataImpl->addCamera(name, view, subPose, intrinsic, nullptr, &(rigObj.at(isReconstructed)));
   }
 }
 
@@ -222,7 +381,7 @@ void AlembicExporter::addLandmarks(const Landmarks& landmarks, const sfm::Landma
   descTypes.reserve(landmarks.size());
 
   // For all the 3d points in the hash_map
-  for(const auto landmark : landmarks)
+  for(const auto& landmark : landmarks)
   {
     const Vec3& pt = landmark.second.X;
     const image::RGBColor& color = landmark.second.rgb;
@@ -256,7 +415,7 @@ void AlembicExporter::addLandmarks(const Landmarks& landmarks, const sfm::Landma
   {
     std::vector<::uint32_t> visibilitySize;
     visibilitySize.reserve(positions.size());
-    for(const auto landmark : landmarks)
+    for(const auto& landmark : landmarks)
     {
       visibilitySize.emplace_back(landmark.second.observations.size());
     }
@@ -269,11 +428,10 @@ void AlembicExporter::addLandmarks(const Landmarks& landmarks, const sfm::Landma
     std::vector<float>featPos2d;
     featPos2d.reserve(nbObservations*2);
 
-    for(Landmarks::const_iterator itLandmark = landmarks.cbegin(), itLandmarkEnd = landmarks.cend();
-       itLandmark != itLandmarkEnd; ++itLandmark)
+    for (const auto &landmark : landmarks)
     {
-      const Observations& observations = itLandmark->second.observations;
-      for(const auto vObs: observations )
+      const Observations& observations = landmark.second.observations;
+      for(const auto& vObs: observations )
       {
         const Observation& obs = vObs.second;
         // (View ID, Feature ID)
@@ -310,143 +468,9 @@ void AlembicExporter::addCamera(const std::string& name,
                                 const View& view,
                                 const geometry::Pose3* pose,
                                 const camera::IntrinsicBase* intrinsic,
-                                const Vec6* uncertainty,
-                                Alembic::Abc::OObject* parent)
+                                const Vec6* uncertainty)
 {
-  if(parent == nullptr)
-    parent = &_dataImpl->_mvgCameras;
-
-  XformSample xformsample;
-
-  // set camera pose
-  if(pose != nullptr)
-  {
-    const Mat3 R = pose->rotation();
-    const Vec3 center = pose->center();
-
-    // compensate translation with rotation
-    // build transform matrix
-    Abc::M44d xformMatrix;
-    xformMatrix[0][0] = R(0, 0);
-    xformMatrix[0][1] = R(0, 1);
-    xformMatrix[0][2] = R(0, 2);
-    xformMatrix[1][0] = R(1, 0);
-    xformMatrix[1][1] = R(1, 1);
-    xformMatrix[1][2] = R(1, 2);
-    xformMatrix[2][0] = R(2, 0);
-    xformMatrix[2][1] = R(2, 1);
-    xformMatrix[2][2] = R(2, 2);
-    xformMatrix[3][0] = center(0);
-    xformMatrix[3][1] = center(1);
-    xformMatrix[3][2] = center(2);
-    xformMatrix[3][3] = 1.0;
-
-    // correct camera orientation for alembic
-    M44d scale; // by default this is an identity matrix
-    scale[0][0] = 1;
-    scale[1][1] = -1;
-    scale[2][2] = -1;
-
-    xformMatrix = scale * xformMatrix;
-    xformsample.setMatrix(xformMatrix);
-  }
-
-  std::stringstream ssLabel;
-  ssLabel << "camxform_" << std::setfill('0') << std::setw(5) << view.getResectionId() << "_" << view.getPoseId();
-  ssLabel << "_" << name << "_" << view.getViewId();
-
-  Alembic::AbcGeom::OXform xform(*parent, ssLabel.str());
-  xform.getSchema().set(xformsample);
-
-  OCamera camObj(xform, "camera_" + ssLabel.str());
-  auto userProps = camObj.getSchema().getUserProperties();
-
-  // set view custom properties
-  if(!view.getImagePath().empty())
-    OStringProperty(userProps, "mvg_imagePath").set(view.getImagePath().c_str());
-
-  OUInt32Property(userProps, "mvg_viewId").set(view.getViewId());
-  OUInt32Property(userProps, "mvg_poseId").set(view.getPoseId());
-  OUInt32Property(userProps, "mvg_intrinsicId").set(view.getIntrinsicId());
-  OUInt32Property(userProps, "mvg_resectionId").set(view.getResectionId());
-
-  if(view.isPartOfRig())
-  {
-    OUInt32Property(userProps, "mvg_rigId").set(view.getRigId());
-    OUInt32Property(userProps, "mvg_subPoseId").set(view.getSubPoseId());
-  }
-
-  // set view metadata
-  {
-    std::vector<std::string> rawMetadata(view.getMetadata().size() * 2);
-    std::map<std::string, std::string>::const_iterator it = view.getMetadata().cbegin();
-
-    for(std::size_t i = 0; i < rawMetadata.size(); i+=2)
-    {
-      rawMetadata.at(i) = it->first;
-      rawMetadata.at(i + 1) = it->second;
-      std::advance(it,1);
-    }
-    OStringArrayProperty(userProps, "mvg_metadata").set(rawMetadata);
-  }
-
-  // set intrinsic properties
-  const bool isIntrinsicValid = (intrinsic != nullptr &&
-                                 intrinsic->isValid() &&
-                                 camera::isPinhole(intrinsic->getType()));
-
-  if(isIntrinsicValid)
-  {
-    const camera::Pinhole* pinhole = dynamic_cast<const camera::Pinhole*>(intrinsic);
-    CameraSample camSample;
-
-    // Use a common sensor width if we don't have this information.
-    // We chose a full frame 24x36 camera
-    float sensorWidth_mm = 36.0;
-
-    if(view.hasMetadata("sensor_width"))
-      sensorWidth_mm = std::stof(view.getMetadata("sensor_width"));
-
-    // Take the max of the image size to handle the case where the image is in portrait mode
-    const float imgWidth = pinhole->w();
-    const float imgHeight = pinhole->h();
-    const float sensorWidth_pix = std::max(imgWidth, imgHeight);
-    const float focalLength_pix = pinhole->focal();
-    const float focalLength_mm = sensorWidth_mm * focalLength_pix / sensorWidth_pix;
-    const float pix2mm = sensorWidth_mm / sensorWidth_pix;
-
-    // aliceVision: origin is (top,left) corner and orientation is (bottom,right)
-    // ABC: origin is centered and orientation is (up,right)
-    // Following values are in cm, hence the 0.1 multiplier
-    const float haperture_cm = 0.1 * imgWidth * pix2mm;
-    const float vaperture_cm = 0.1 * imgHeight * pix2mm;
-
-    camSample.setFocalLength(focalLength_mm);
-    camSample.setHorizontalAperture(haperture_cm);
-    camSample.setVerticalAperture(vaperture_cm);
-
-    // Add sensor width (largest image side) in pixels as custom property
-    std::vector<::uint32_t> sensorSize_pix = {pinhole->w(), pinhole->h()};
-
-    OUInt32ArrayProperty(userProps, "mvg_sensorSizePix").set(sensorSize_pix);
-    OStringProperty(userProps, "mvg_intrinsicType").set(pinhole->getTypeStr());
-    ODoubleArrayProperty(userProps, "mvg_intrinsicParams").set(pinhole->getParams());
-
-    camObj.getSchema().set(camSample);
-  }
-
-  if(uncertainty)
-  {
-      std::vector<double> uncertaintyParams(uncertainty->data(), uncertainty->data()+6);
-      ODoubleArrayProperty mvg_uncertaintyParams(userProps, "mvg_uncertaintyEigenValues");
-      mvg_uncertaintyParams.set(uncertaintyParams);
-  }
-
-  if(pose == nullptr || !isIntrinsicValid)
-  {
-    // hide camera
-    Alembic::AbcGeom::CreateVisibilityProperty(xform, 0).set(Alembic::AbcGeom::kVisibilityHidden);
-  }
+  _dataImpl->addCamera(name, view, pose, intrinsic, uncertainty);
 }
 
 void AlembicExporter::initAnimatedCamera(const std::string& cameraName)
@@ -484,12 +508,12 @@ void AlembicExporter::initAnimatedCamera(const std::string& cameraName)
 void AlembicExporter::addCameraKeyframe(const geometry::Pose3& pose,
                                         const camera::Pinhole* cam,
                                         const std::string& imagePath,
-                                        const IndexT viewId,
-                                        const IndexT intrinsicId,
-                                        const float sensorWidth_mm)
+                                        IndexT viewId,
+                                        IndexT intrinsicId,
+                                        float sensorWidth_mm)
 {
-  const aliceVision::Mat3 R = pose.rotation();
-  const aliceVision::Vec3 center = pose.center();
+  const aliceVision::Mat3& R = pose.rotation();
+  const aliceVision::Vec3& center = pose.center();
   // POSE
   // Compensate translation with rotation
   // Build transform matrix
@@ -529,15 +553,15 @@ void AlembicExporter::addCameraKeyframe(const geometry::Pose3& pose,
   const float imgWidth = cam->w();
   const float imgHeight = cam->h();
   const float sensorWidth_pix = std::max(imgWidth, imgHeight);
-  const float focalLength_pix = cam->focal();
+  const float focalLength_pix = static_cast<const float>(cam->focal());
   const float focalLength_mm = sensorWidth_mm * focalLength_pix / sensorWidth_pix;
   const float pix2mm = sensorWidth_mm / sensorWidth_pix;
 
   // aliceVision: origin is (top,left) corner and orientation is (bottom,right)
   // ABC: origin is centered and orientation is (up,right)
   // Following values are in cm, hence the 0.1 multiplier
-  const float haperture_cm = 0.1 * imgWidth * pix2mm;
-  const float vaperture_cm = 0.1 * imgHeight * pix2mm;
+  const float haperture_cm = static_cast<const float>(0.1 * imgWidth * pix2mm);
+  const float vaperture_cm = static_cast<const float>(0.1 * imgHeight * pix2mm);
 
   camSample.setFocalLength(focalLength_mm);
   camSample.setHorizontalAperture(haperture_cm);

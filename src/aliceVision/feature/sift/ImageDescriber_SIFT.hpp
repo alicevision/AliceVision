@@ -8,10 +8,10 @@
 #pragma once
 
 #include <aliceVision/config.hpp>
-#include <aliceVision/system/gpu.hpp>
 #include <aliceVision/feature/sift/ImageDescriber_SIFT_vlfeat.hpp>
 
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_POPSIFT)
+#include <aliceVision/system/gpu.hpp>
 #include <aliceVision/feature/sift/ImageDescriber_SIFT_popSIFT.hpp>
 #endif
 

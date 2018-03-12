@@ -9,6 +9,7 @@
 #include <aliceVision/sfm/sfm.hpp>
 #include <aliceVision/feature/imageDescriberCommon.hpp>
 #include <aliceVision/feature/feature.hpp>
+#include <aliceVision/system/gpu.hpp>
 #include <aliceVision/system/MemoryInfo.hpp>
 #include <aliceVision/system/Timer.hpp>
 #include <aliceVision/system/Logger.hpp>
@@ -338,6 +339,9 @@ int main(int argc, char **argv)
       return EXIT_FAILURE;
     }
   }
+
+  // Print GPU Information
+  ALICEVISION_LOG_INFO(system::gpuInformationCUDA());
 
   // load input scene
   sfm::SfMData sfmData;
