@@ -52,7 +52,7 @@ void UVAtlas::createCharts(vector<Chart>& charts, mvsUtils::MultiViewParams& mp,
         {
             int cameraID = (*cameras)[c];
             // project triangle
-            Mesh::triangle_proj tp = _mesh.getTriangleProjection(i, &mp, cameraID, mp.mip->getWidth(cameraID), mp.mip->getHeight(cameraID));
+            Mesh::triangle_proj tp = _mesh.getTriangleProjection(i, &mp, cameraID, mp.getWidth(cameraID), mp.getHeight(cameraID));
             if(!mp.isPixelInImage(Pixel(tp.tp2ds[0]), 10, cameraID)
                     || !mp.isPixelInImage(Pixel(tp.tp2ds[1]), 10, cameraID)
                     || !mp.isPixelInImage(Pixel(tp.tp2ds[2]), 10, cameraID))
@@ -187,7 +187,7 @@ void UVAtlas::finalizeCharts(vector<Chart>& charts, mvsUtils::MultiViewParams& m
         auto it = c.triangleIDs.begin();
         while(it != c.triangleIDs.end())
         {
-            Mesh::triangle_proj tp = _mesh.getTriangleProjection(*it, &mp, c.refCameraID, mp.mip->getWidth(c.refCameraID), mp.mip->getHeight(c.refCameraID));
+            Mesh::triangle_proj tp = _mesh.getTriangleProjection(*it, &mp, c.refCameraID, mp.getWidth(c.refCameraID), mp.getHeight(c.refCameraID));
             c.sourceLU.x = min(c.sourceLU.x, tp.lu.x);
             c.sourceLU.y = min(c.sourceLU.y, tp.lu.y);
             c.sourceRD.x = max(c.sourceRD.x, tp.rd.x);

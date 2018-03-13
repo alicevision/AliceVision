@@ -66,58 +66,103 @@ enum class EFileType {
     D = 42,
 };
 
-struct MultiViewInputParams
+class MultiViewParams
 {
-    static const int N_SCALES = 4;
-    std::string newDir;
+public:
     /// prepareDenseScene data
     std::string mvDir;
-    /// depthMapEstimate data folder
-    std::string _depthMapFolder;
-    /// depthMapFilter data folder
-    std::string _depthMapFilterFolder;
-    std::string outDir;
+    /// global data prefix
     std::string prefix;
-    std::string imageExt = ".exr";
+    /// camera projection matrix P
+    std::vector<Matrix3x4> camArr;
+    /// camera intrinsics matrix K: [focalx skew u; 0 focaly v; 0 0 1]
+    std::vector<Matrix3x3> KArr;
+    /// inverse camera intrinsics matrix K
+    std::vector<Matrix3x3> iKArr;
+    /// camera rotation matrix R
+    std::vector<Matrix3x3> RArr;
+    /// inverse camera rotation matrix R
+    std::vector<Matrix3x3> iRArr;
+    /// camera position C in world coordinate system
+    std::vector<Point3d> CArr;
+    /// K * R inverse matrix
+    std::vector<Matrix3x3> iCamArr;
+    ///
+    std::vector<Point3d> FocK1K2Arr;
+    /// number of cameras
+    int ncams;
+    /// cuda device id
+    int CUDADeviceNo;
+    ///
+    float simThr;
+    int g_border = 10;
+    int g_maxPlaneNormalViewDirectionAngle = 70;
+    bool verbose;
 
-    int maxImageWidth = 0;
-    int maxImageHeight = 0;
-    bool usesil = false;
     boost::property_tree::ptree _ini;
 
-    MultiViewInputParams() = default;
-    explicit MultiViewInputParams(const std::string& file, const std::string& depthMapFolder, const std::string& depthMapFilterFolder);
+    MultiViewParams(const std::string& iniFile,
+                    const std::string& depthMapFolder = "",
+                    const std::string& depthMapFilterFolder = "",
+                    bool readFromDepthMaps = false,
+                    int downscale = 1,
+                    StaticVector<CameraMatrices>* cameras = nullptr);
 
-    void initFromConfigFile(const std::string& iniFile);
+    ~MultiViewParams();
 
     inline int getViewId(int index) const
     {
         return _imagesParams.at(index).viewId;
     }
 
-    inline int getWidth(int index) const
+    inline int getOriginalWidth(int index) const
     {
         return _imagesParams.at(index).width;
     }
 
-    inline int getHeight(int index) const
+    inline int getOriginalHeight(int index) const
     {
         return _imagesParams.at(index).height;
     }
 
-    inline int getSize(int index) const
+    inline int getOriginalSize(int index) const
     {
         return _imagesParams.at(index).size;
     }
 
+    inline int getWidth(int index) const
+    {
+        return _imagesParams.at(index).width / getDownscaleFactor(index);
+    }
+
+    inline int getHeight(int index) const
+    {
+        return _imagesParams.at(index).height / getDownscaleFactor(index);
+    }
+
+    inline int getSize(int index) const
+    {
+        return _imagesParams.at(index).size / getDownscaleFactor(index);
+    }
+
+    inline int getDownscaleFactor(int index) const
+    {
+        return _imagesScale.at(index) * _processDownscale;
+    }
+
+    inline int getProcessDownscale() const
+    {
+        return _processDownscale;
+    }
+
     inline int getMaxImageWidth() const
     {
-        return maxImageWidth;
+        return _maxImageWidth;
     }
 
     inline int getMaxImageHeight() const
     {
-        return maxImageHeight;
+        return _maxImageHeight;
     }
 
     inline int getNbCameras() const
@@ -125,50 +170,34 @@ struct MultiViewInputParams
         return _imagesParams.size();
     }
 
-private:
-    std::vector<imageParams> _imagesParams;
-};
-
-
-class MultiViewParams
-{
-public:
-    std::vector<Matrix3x4> camArr;
-    std::vector<Matrix3x3> KArr;
-    std::vector<Matrix3x3> iKArr;
-    std::vector<Matrix3x3> RArr;
-    std::vector<Matrix3x3> iRArr;
-    std::vector<Point3d> CArr;
-    std::vector<Matrix3x3> iCamArr;
-    std::vector<Point3d> FocK1K2Arr;
-
-    MultiViewInputParams* mip;
-
-    int ncams;
-    int CUDADeviceNo;
-    float simThr;
-    int g_border;
-    int g_maxPlaneNormalViewDirectionAngle;
-    bool verbose;
-
-    MultiViewParams(int _ncams, MultiViewInputParams* _mip, float _simThr,
-                    StaticVector<CameraMatrices>* cameras = nullptr);
-    ~MultiViewParams();
-
-    void resizeCams(int _ncams)
+    inline std::vector<double> getOriginalP(int index) const
     {
-        ncams = _ncams;
-        camArr.resize(ncams);
-        KArr.resize(ncams);
-        iKArr.resize(ncams);
-        RArr.resize(ncams);
-        iRArr.resize(ncams);
-        CArr.resize(ncams);
-        iCamArr.resize(ncams);
-        FocK1K2Arr.resize(ncams);
+        std::vector<double> p44; // projection matrix (4x4) scale 1
+        const Matrix3x4& p34 = camArr.at(index); // projection matrix (3x4) scale = getDownscaleFactor()
+        const int downscale = getDownscaleFactor(index);
+        p44.assign(p34.m, p34.m + 12);
+        std::transform(p44.begin(), p44.begin() + 8, p44.begin(), std::bind1st(std::multiplies<double>(),downscale));
+        p44.push_back(0);
+        p44.push_back(0);
+        p44.push_back(0);
+        p44.push_back(1);
+        return p44;
     }
 
-    void loadCameraFile(int i, const std::string& fileNameP, const std::string& fileNameD);
+    inline const std::string& getImageExtension() const
+    {
+        return _imageExt;
+    }
+
+    inline const std::string& getDepthMapFolder() const
+    {
+        return _depthMapFolder;
+    }
+
+    inline const std::string& getDepthMapFilterFolder() const
+    {
+        return _depthMapFilterFolder;
+    }
 
     bool is3DPointInFrontOfCam(const Point3d* X, int rc) const;
     void getPixelFor3DPoint(Point2d* out, const Point3d& X, const Matrix3x4& P) const;
@@ -186,8 +215,44 @@ public:
     bool isPixelInImage(const Pixel& pix, int d, int camId) const;
     bool isPixelInImage(const Pixel& pix, int camId) const;
     bool isPixelInImage(const Point2d& pix, int camId) const;
-    void decomposeProjectionMatrix(Point3d& Co, Matrix3x3& Ro, Matrix3x3& iRo, Matrix3x3& Ko, Matrix3x3& iKo,
-                                   Matrix3x3& iPo, const Matrix3x4& P) const;
+    void decomposeProjectionMatrix(Point3d& Co, Matrix3x3& Ro, Matrix3x3& iRo, Matrix3x3& Ko, Matrix3x3& iKo, Matrix3x3& iPo, const Matrix3x4& P) const;
+
+private:
+    /// image params list (width, height, size)
+    std::vector<imageParams> _imagesParams;
+    /// image scale list
+    std::vector<int> _imagesScale;
+    /// downscale apply to input images during process
+    int _processDownscale = 1;
+    /// maximum width
+    int _maxImageWidth = 0;
+    /// maximum height
+    int _maxImageHeight = 0;
+    /// images extension
+    std::string _imageExt = ".exr";
+    /// depthMapEstimate data folder
+    std::string _depthMapFolder;
+    /// depthMapFilter data folder
+    std::string _depthMapFilterFolder;
+    /// use silhouettes
+    bool _useSil = false;
+
+    void initFromConfigFile(const std::string& iniFile);
+    void loadCameraFile(int i, const std::string& fileNameP, const std::string& fileNameD);
+
+    inline void resizeCams(int _ncams)
+    {
+        ncams = _ncams;
+        camArr.resize(ncams);
+        KArr.resize(ncams);
+        iKArr.resize(ncams);
+        RArr.resize(ncams);
+        iRArr.resize(ncams);
+        CArr.resize(ncams);
+        iCamArr.resize(ncams);
+        FocK1K2Arr.resize(ncams);
+        _imagesScale.resize(ncams);
+    }
 };
 
 } // namespace mvsUtils

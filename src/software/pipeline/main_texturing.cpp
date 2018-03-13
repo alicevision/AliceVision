@@ -107,10 +107,8 @@ int main(int argc, char* argv[])
     // set output texture file type
     const EImageFileType outputTextureFileType = EImageFileType_stringToEnum(outTextureFileTypeName);
 
-    // .ini parsing
-    mvsUtils::MultiViewInputParams mip(iniFilepath, "", "");
-    const double simThr = mip._ini.get<double>("global.simThr", 0.0);
-    mvsUtils::MultiViewParams mp(mip.getNbCameras(), &mip, (float) simThr);
+    // .ini and files parsing
+    mvsUtils::MultiViewParams mp(iniFilepath);
 
     mesh::Texturing mesh;
     mesh.texParams = texParams;

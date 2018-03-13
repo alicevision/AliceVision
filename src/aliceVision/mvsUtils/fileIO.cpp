@@ -25,16 +25,16 @@ bool FolderExists(const std::string& folderPath)
     return boost::filesystem::is_directory(folderPath);
 }
 
-std::string mv_getFileNamePrefix(const std::string& baseDir, MultiViewInputParams* mip, int index)
+std::string mv_getFileNamePrefix(const std::string& baseDir, const MultiViewParams* mp, int index)
 {
-    return baseDir + mip->prefix + std::to_string(mip->getViewId(index));
+    return baseDir + mp->prefix + std::to_string(mp->getViewId(index));
 }
 
-std::string mv_getFileName(MultiViewInputParams* mip, int index, EFileType mv_file_type, int scale)
+std::string mv_getFileName(const MultiViewParams* mp, int index, EFileType mv_file_type, int scale)
 {
     std::string suffix;
     std::string ext;
-    std::string baseDir = mip->mvDir;
+    std::string baseDir = mp->mvDir;
 
     switch(mv_file_type)
     {
@@ -245,9 +245,9 @@ std::string mv_getFileName(MultiViewInputParams* mip, int index, EFileType mv_fi
         case EFileType::depthMap:
         {
             if(scale == 0)
-                baseDir = mip->_depthMapFilterFolder;
+                baseDir = mp->getDepthMapFilterFolder();
             else
-                baseDir = mip->_depthMapFolder;
+                baseDir = mp->getDepthMapFolder();
             suffix = "_depthMap";
             ext = "exr";
             break;
@@ -255,9 +255,9 @@ std::string mv_getFileName(MultiViewInputParams* mip, int index, EFileType mv_fi
         case EFileType::simMap:
         {
             if(scale == 0)
-                baseDir = mip->_depthMapFilterFolder;
+                baseDir = mp->getDepthMapFilterFolder();
             else
-                baseDir = mip->_depthMapFolder;
+                baseDir = mp->getDepthMapFolder();
             suffix = "_simMap";
             ext = "exr";
             break;
@@ -276,7 +276,7 @@ std::string mv_getFileName(MultiViewInputParams* mip, int index, EFileType mv_fi
         }
         case EFileType::depthMapInfo:
         {
-            baseDir = mip->_depthMapFolder;
+            baseDir = mp->getDepthMapFolder();
             suffix = "_depthMapInfo";
             ext = "tmp";
             break;
@@ -289,7 +289,7 @@ std::string mv_getFileName(MultiViewInputParams* mip, int index, EFileType mv_fi
         }
         case EFileType::nmodMap:
         {
-            baseDir = mip->_depthMapFilterFolder;
+            baseDir = mp->getDepthMapFilterFolder();
             suffix = "_nmodMap";
             ext = "png";
             break;
@@ -306,13 +306,13 @@ std::string mv_getFileName(MultiViewInputParams* mip, int index, EFileType mv_fi
         suffix += "_scale" + num2str(scale);
     }
 
-    std::string fileName = mv_getFileNamePrefix(baseDir, mip, index) + suffix + "." + ext;
+    std::string fileName = mv_getFileNamePrefix(baseDir, mp, index) + suffix + "." + ext;
     return fileName;
 }
 
-FILE* mv_openFile(MultiViewInputParams* mip, int index, EFileType mv_file_type, const char* readWrite)
+FILE* mv_openFile(const MultiViewParams* mp, int index, EFileType mv_file_type, const char* readWrite)
 {
-    const std::string fileName = mv_getFileName(mip, index, mv_file_type);
+    const std::string fileName = mv_getFileName(mp, index, mv_file_type);
     FILE* out = fopen(fileName.c_str(), readWrite);
     if (out==NULL)
         throw std::runtime_error(std::string("Cannot create file: ") + fileName);
@@ -345,31 +345,33 @@ Matrix3x4 load3x4MatrixFromFile(FILE* fi)
     return m;
 }
 
-void memcpyRGBImageFromFileToArr(int camId, Color* imgArr, const std::string& fileNameOrigStr, MultiViewInputParams* mip,
-                                 bool transpose, int scaleFactor, int bandType)
+void memcpyRGBImageFromFileToArr(int camId, Color* imgArr, const std::string& fileNameOrigStr, const MultiViewParams* mp, bool transpose, int bandType)
 {
-    int w = mip->getWidth(camId) / std::max(scaleFactor, 1);
-    int h = mip->getHeight(camId) / std::max(scaleFactor, 1);
-
     int origWidth, origHeight;
     std::vector<Color> cimg;
     imageIO::readImage(fileNameOrigStr, origWidth, origHeight, cimg);
 
-    // check image size...
-    if((mip->getWidth(camId) != origWidth) || (mip->getHeight(camId) != origHeight))
+    // check image size
+    if((mp->getOriginalWidth(camId) != origWidth) || (mp->getOriginalHeight(camId) != origHeight))
     {
         std::stringstream s;
         s << "Bad image dimension for camera : " << camId << "\n";
-        s << "- image path : " << fileNameOrigStr << "\n";
-        s << "- expected dimension : " << mip->getWidth(camId) << "x" << mip->getHeight(camId) << "\n";
-        s << "- real dimension : " << origWidth << "x" << origHeight << "\n";
+        s << "\t- image path : " << fileNameOrigStr << "\n";
+        s << "\t- expected dimension : " << mp->getOriginalWidth(camId) << "x" << mp->getOriginalHeight(camId) << "\n";
+        s << "\t- real dimension : " << origWidth << "x" << origHeight << "\n";
         throw std::runtime_error(s.str());
     }
 
-    if(scaleFactor > 1)
+    // scale choosed by the user and apply during the process
+    const int processScale = mp->getProcessDownscale();
+    const int width = mp->getWidth(camId);
+    const int height = mp->getHeight(camId);
+
+    if(processScale > 1)
     {
+        ALICEVISION_LOG_DEBUG("Downscale (x" << processScale << ") image: " << mp->getViewId(camId) << ".");
         std::vector<Color> bmpr;
-        imageIO::resizeImage(origWidth, origHeight, scaleFactor, cimg, bmpr);
+        imageIO::resizeImage(origWidth, origHeight, processScale, cimg, bmpr);
         cimg = bmpr;
     }
 
@@ -381,36 +383,36 @@ void memcpyRGBImageFromFileToArr(int camId, Color* imgArr, const std::string& fi
         // cvReleaseImage(&cimg);
         // cimg=cimg1;
         std::vector<Color> smooth;
-        imageIO::convolveImage(w, h, cimg, smooth, "gaussian", 11.0f, 11.0f);
+        imageIO::convolveImage(width, height, cimg, smooth, "gaussian", 11.0f, 11.0f);
         cimg = smooth;
     }
 
     if(bandType == 2)
     {
         std::vector<Color> bmps;
-        imageIO::convolveImage(w, h, cimg, bmps, "gaussian", 11.0f, 11.0f);
+        imageIO::convolveImage(width, height, cimg, bmps, "gaussian", 11.0f, 11.0f);
 
-        for(int y = 0; y < h; y++)
+        for(int y = 0; y < height; y++)
         {
-            for(int x = 0; x < w; x++)
+            for(int x = 0; x < width; x++)
             {
-                const std::size_t index = y * w + x;
+                const std::size_t index = y * width + x;
                 Color& cimc = cimg.at(index);
                 cimc = cimc - bmps.at(index); //cimg(x, y) - bmps(x, y)
             }
         }
     }
 
-    for(int y = 0; y < h; y++)
+    for(int y = 0; y < height; y++)
     {
-        for(int x = 0; x < w; x++)
+        for(int x = 0; x < width; x++)
         {
-            const Color color = cimg.at(y * w + x);
+            const Color color = cimg.at(y * width + x);
 
             if(transpose)
-                imgArr[y * w + x] = color;
+                imgArr[y * width + x] = color;
             else
-                imgArr[x * h + y] = color;
+                imgArr[x * height + y] = color;
 
         }
     }
@@ -458,9 +460,9 @@ void saveSeedsToFile(StaticVector<SeedPoint>* seeds, const std::string& fileName
     }
 }
 
-void saveSeedsToFile(StaticVector<SeedPoint>* seeds, int refImgFileId, MultiViewInputParams* mip, EFileType mv_file_type)
+void saveSeedsToFile(StaticVector<SeedPoint>* seeds, int refImgFileId, const MultiViewParams* mp, EFileType mv_file_type)
 {
-    std::string fileName = mv_getFileName(mip, refImgFileId, mv_file_type);
+    std::string fileName = mv_getFileName(mp, refImgFileId, mv_file_type);
     saveSeedsToFile(seeds, fileName);
 }
 
@@ -519,17 +521,17 @@ bool loadSeedsFromFile(StaticVector<SeedPoint>** seeds, const std::string& fileN
     return true;
 }
 
-bool loadSeedsFromFile(StaticVector<SeedPoint>** seeds, int refImgFileId, MultiViewInputParams* mip, EFileType mv_file_type)
+bool loadSeedsFromFile(StaticVector<SeedPoint>** seeds, int refImgFileId, const MultiViewParams* mp, EFileType mv_file_type)
 {
-    std::string fileName = mv_getFileName(mip, refImgFileId, mv_file_type);
+    std::string fileName = mv_getFileName(mp, refImgFileId, mv_file_type);
     return loadSeedsFromFile(seeds, fileName);
 }
 
-bool getDepthMapInfo(int refImgFileId, MultiViewInputParams* mip, float& mindepth, float& maxdepth,
+bool getDepthMapInfo(int refImgFileId, const MultiViewParams* mp, float& mindepth, float& maxdepth,
                      StaticVector<int>** tcams)
 {
     *tcams = nullptr;
-    FILE* f = mv_openFile(mip, refImgFileId, EFileType::depthMapInfo, "r");
+    FILE* f = mv_openFile(mp, refImgFileId, EFileType::depthMapInfo, "r");
     if(f == nullptr)
     {
         ALICEVISION_LOG_WARNING("Depth map info: " << refImgFileId << " does not exists.");
