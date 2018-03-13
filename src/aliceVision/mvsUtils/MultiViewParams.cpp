@@ -97,8 +97,6 @@ MultiViewParams::MultiViewParams(const std::string& iniFile,
     // Resize internal structures
     resizeCams(getNbCameras());
 
-    long t1 = initEstimate();
-
     for(int i = 0; i < ncams; ++i)
     {
         std::string path;
@@ -227,12 +225,9 @@ MultiViewParams::MultiViewParams(const std::string& iniFile,
         // find max width and max height
         _maxImageWidth = std::max(_maxImageWidth, getWidth(i));
         _maxImageHeight = std::max(_maxImageHeight, getHeight(i));
-
-        printfEstimate(i, ncams, t1);
     }
 
     ALICEVISION_LOG_INFO("Overall maximum dimension: [" << _maxImageWidth << "x" << _maxImageHeight << "]");
-    finishEstimate();
 }
 
 

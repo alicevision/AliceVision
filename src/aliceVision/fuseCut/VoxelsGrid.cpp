@@ -75,12 +75,11 @@ VoxelsGrid::~VoxelsGrid()
 
 StaticVector<int>* VoxelsGrid::getNVoxelsTracks()
 {
-    if(mp->verbose)
-        ALICEVISION_LOG_DEBUG("reading number of tracks for each voxel file.");
+    ALICEVISION_LOG_DEBUG("reading number of tracks for each voxel file.");
 
     StaticVector<int>* nVoxelsTracks = new StaticVector<int>();
     nVoxelsTracks->reserve(voxels->size() / 8);
-    long t1 = mvsUtils::initEstimate();
+    //long t1 = mvsUtils::initEstimate();
     for(int i = 0; i < voxels->size() / 8; i++)
     {
         std::string folderName = getVoxelFolderName(i);
@@ -89,20 +88,19 @@ StaticVector<int>* VoxelsGrid::getNVoxelsTracks()
         int n = getArrayLengthFromFile(fileNameTracksPts);
         // printf("%i %i\n",i,n);
         nVoxelsTracks->push_back(n);
-        mvsUtils::printfEstimate(i, voxels->size() / 8, t1);
+        //mvsUtils::printfEstimate(i, voxels->size() / 8, t1);
     }
-    mvsUtils::finishEstimate();
+    //mvsUtils::finishEstimate();
 
     return nVoxelsTracks;
 }
 
 unsigned long VoxelsGrid::getNTracks() const
 {
-    if(mp->verbose)
-        ALICEVISION_LOG_DEBUG("computing number of all tracks.");
+    ALICEVISION_LOG_DEBUG("computing number of all tracks.");
 
     unsigned long ntracks = 0;
-    long t1 = mvsUtils::initEstimate();
+    //long t1 = mvsUtils::initEstimate();
     for(int i = 0; i < voxels->size() / 8; i++)
     {
         const std::string folderName = getVoxelFolderName(i);
@@ -111,9 +109,9 @@ unsigned long VoxelsGrid::getNTracks() const
         int n = getArrayLengthFromFile(fileNameTracksPts);
         // printf("%i %i\n",i,n);
         ntracks += (unsigned long)n;
-        mvsUtils::printfEstimate(i, voxels->size() / 8, t1);
+        //mvsUtils::printfEstimate(i, voxels->size() / 8, t1);
     }
-    mvsUtils::finishEstimate();
+    //mvsUtils::finishEstimate();
 
     return ntracks;
 }
@@ -258,15 +256,13 @@ bool VoxelsGrid::saveTracksToVoxelFiles(StaticVector<int>* cams, StaticVector<Oc
 void VoxelsGrid::generateTracksForEachVoxel(StaticVector<Point3d>* ReconstructionPlan, int numSubVoxs, int maxPts,
                                             int level, int& maxlevel, const std::string& depthMapsPtsSimsTmpDir)
 {
-    if(mp->verbose)
-    {
-        ALICEVISION_LOG_DEBUG("generateTracksForEachVoxel recursive "
-                              << "\t- numSubVoxs: " << numSubVoxs << std::endl
-                              << "\t- maxPts: " << maxPts << std::endl
-                              << "\t- level: " << level);
+    ALICEVISION_LOG_DEBUG("generateTracksForEachVoxel recursive "
+                          << "\t- numSubVoxs: " << numSubVoxs << std::endl
+                          << "\t- maxPts: " << maxPts << std::endl
+                          << "\t- level: " << level);
 
-        ALICEVISION_LOG_DEBUG("Voxel Dim: " << voxelDim.x << ", " << voxelDim.y << ", " << voxelDim.z);
-    }
+    ALICEVISION_LOG_DEBUG("Voxel Dim: " << voxelDim.x << ", " << voxelDim.y << ", " << voxelDim.z);
+
     maxlevel = std::max(maxlevel, level);
 
     long tall = clock();

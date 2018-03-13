@@ -850,7 +850,7 @@ void DelaunayGraphCut::computeVerticesSegSize(bool allPoints, float alpha) // al
         alpha = 2.0f * std::max(2.0f, pointToJoinPixSizeDist);
     }
 
-    long t1 = mvsUtils::initEstimate();
+    // long t1 = mvsUtils::initEstimate();
     assert(_verticesCoords.size() == _verticesAttr.size());
 
     for(VertexIndex vi = 0; vi < _verticesAttr.size(); ++vi)
@@ -882,13 +882,13 @@ void DelaunayGraphCut::computeVerticesSegSize(bool allPoints, float alpha) // al
                 }
             }
         }
-        mvsUtils::printfEstimate(vi, _verticesAttr.size(), t1);
+        // mvsUtils::printfEstimate(vi, _verticesAttr.size(), t1);
     }
-    mvsUtils::finishEstimate();
+    // mvsUtils::finishEstimate();
 
     Universe* u = new Universe(_verticesAttr.size());
 
-    t1 = mvsUtils::initEstimate();
+    // t1 = mvsUtils::initEstimate();
     int s = (int)edges.size(); // Fuse all edges collected to be merged
     for(int i = 0; i < s; i++)
     {
@@ -898,9 +898,9 @@ void DelaunayGraphCut::computeVerticesSegSize(bool allPoints, float alpha) // al
         {
             u->join(a, b);
         }
-        mvsUtils::printfEstimate(i, s, t1);
+        // mvsUtils::printfEstimate(i, s, t1);
     }
-    mvsUtils::finishEstimate();
+    // mvsUtils::finishEstimate();
 
     // Last loop over vertices to update segId
     for(int vi = 0; vi < _verticesAttr.size(); ++vi)
@@ -2115,7 +2115,7 @@ void DelaunayGraphCut::reconstructVoxel(Point3d hexah[8], StaticVector<int>* vox
         throw std::logic_error("No camera to make the reconstruction");
 
     // Load tracks
-    printf("Creating delaunay tetrahedralization from depth maps voxel\n");
+    ALICEVISION_LOG_INFO("Creating delaunay tetrahedralization from depth maps voxel");
 
     float minDist = hexah ? (hexah[0] - hexah[1]).size() / 1000.0f : 0.00001f;
 
