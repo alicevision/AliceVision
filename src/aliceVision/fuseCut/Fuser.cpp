@@ -409,7 +409,7 @@ void Fuser::divideSpace(Point3d* hexah, float& minPixSize)
     int scale = 0;
 
     unsigned long npset = computeNumberOfAllPoints(mp, scale);
-    int stepPts = std::max(1, (int)(npset / (unsigned long)3000000));
+    int stepPts = std::max(1, (int)(npset / (unsigned long)1000000));
 
     minPixSize = std::numeric_limits<float>::max();
     //long t1 = mvsUtils::initEstimate();
