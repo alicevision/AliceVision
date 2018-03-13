@@ -21,6 +21,10 @@ set_target_properties(aliceVision_kvld
   VERSION "${ALICEVISION_VERSION_MAJOR}.${ALICEVISION_VERSION_MINOR}"
 )
 
+target_link_libraries(aliceVision_kvld
+  PUBLIC aliceVision_image
+)
+
 set_property(TARGET aliceVision_kvld
   PROPERTY FOLDER AliceVision/AliceVision
 )

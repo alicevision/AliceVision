@@ -36,12 +36,11 @@ target_include_directories(aliceVision_image
 )
 
 target_link_libraries(aliceVision_image
-  PUBLIC
-  aliceVision_numeric
-  PRIVATE
-  ${OPENIMAGEIO_LIBRARIES}
-  ${LOG_LIB}
-  ${OPENEXR_LIBRARIES}
+  PUBLIC aliceVision_numeric
+         ${OPENIMAGEIO_LIBRARIES}
+
+  PRIVATE ${OPENEXR_LIBRARIES}
+          ${LOG_LIB}
 )
 
 set_target_properties(aliceVision_image
