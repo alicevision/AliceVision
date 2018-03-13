@@ -3,12 +3,14 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
+#include <aliceVision/config.hpp>
 #include <aliceVision/sfm/sfm.hpp>
 #include <aliceVision/image/all.hpp>
-#include <aliceVision/image/convertion.hpp>
-#include <aliceVision/config.hpp>
+#include <aliceVision/system/Logger.hpp>
+#include <aliceVision/system/cmdline.hpp>
 
 #include <boost/program_options.hpp>
+#include <boost/filesystem.hpp>
 #include <boost/progress.hpp>
 
 #include <stdlib.h>
@@ -24,7 +26,9 @@ using namespace aliceVision::camera;
 using namespace aliceVision::geometry;
 using namespace aliceVision::image;
 using namespace aliceVision::sfm;
+
 namespace po = boost::program_options;
+namespace fs = boost::filesystem;
 
 class point2d
 {
@@ -90,12 +94,12 @@ typedef std::vector<Seed> SeedVector;
 typedef stl::flat_map< size_t, SeedVector> SeedsPerView;
 
 void retrieveSeedsPerView(
-    const SfMData & sfm_data,
+    const SfMData& sfmData,
     const std::set<IndexT>& viewIds,
     SeedsPerView& outSeedsPerView)
 {
   static const double minAngle = 3.0;
-  for(const auto& s: sfm_data.structure)
+  for(const auto& s: sfmData.structure)
   {
     const IndexT landmarkId = s.first;
     const Landmark& landmark = s.second;
@@ -106,9 +110,9 @@ void retrieveSeedsPerView(
       const auto& obsACamId_it = viewIds.find(obsA.first);
       if(obsACamId_it == viewIds.end())
         continue; // this view cannot be exported to mvs, so we skip the observation
-      const View& viewA = *sfm_data.GetViews().at(obsA.first).get();
-      const geometry::Pose3& poseA = sfm_data.GetPoses().at(viewA.getPoseId());
-      const Pinhole * intrinsicsA = dynamic_cast<const Pinhole*>(sfm_data.GetIntrinsics().at(viewA.getIntrinsicId()).get());
+      const View& viewA = *sfmData.GetViews().at(obsA.first).get();
+      const geometry::Pose3& poseA = sfmData.GetPoses().at(viewA.getPoseId());
+      const Pinhole * intrinsicsA = dynamic_cast<const Pinhole*>(sfmData.GetIntrinsics().at(viewA.getIntrinsicId()).get());
       
       for(const auto& obsB: landmark.observations)
       {
@@ -119,9 +123,9 @@ void retrieveSeedsPerView(
         if(obsBCamId_it == viewIds.end())
           continue; // this view cannot be exported to mvs, so we skip the observation
         const unsigned short indexB = std::distance(viewIds.begin(), obsBCamId_it);
-        const View& viewB = *sfm_data.GetViews().at(obsB.first).get();
-        const geometry::Pose3& poseB = sfm_data.GetPoses().at(viewB.getPoseId());
-        const Pinhole * intrinsicsB = dynamic_cast<const Pinhole*>(sfm_data.GetIntrinsics().at(viewB.getIntrinsicId()).get());
+        const View& viewB = *sfmData.GetViews().at(obsB.first).get();
+        const geometry::Pose3& poseB = sfmData.GetPoses().at(viewB.getPoseId());
+        const Pinhole * intrinsicsB = dynamic_cast<const Pinhole*>(sfmData.GetIntrinsics().at(viewB.getIntrinsicId()).get());
 
         const double angle = AngleBetweenRays(
           poseA, intrinsicsA, poseB, intrinsicsB, obsA.second.x, obsB.second.x);
@@ -143,48 +147,28 @@ void retrieveSeedsPerView(
   }
 }
 
-std::string replaceAll( std::string const& original, std::string const& from, std::string const& to )
-{
-    std::string results;
-    std::string::const_iterator end = original.end();
-    std::string::const_iterator current = original.begin();
-    std::string::const_iterator next = std::search( current, end, from.begin(), from.end() );
-    while ( next != end ) {
-        results.append( current, next );
-        results.append( to );
-        current = next + from.size();
-        next = std::search( current, end, from.begin(), from.end() );
-    }
-    results.append( current, next );
-    return results;
-}
-
-bool prepareDenseScene(
-  const SfMData & sfm_data,
-  int scale,
-  image::EImageFileType outputFileType,
-  const std::string & sOutDirectory)
+bool prepareDenseScene(const SfMData& sfmData, const std::string& outFolder)
 {
   // defined view Ids
   std::set<IndexT> viewIds;
   // Export valid views as Projective Cameras:
-  for(const auto &iter : sfm_data.GetViews())
+  for(const auto &iter : sfmData.GetViews())
   {
-    const View * view = iter.second.get();
-    if (!sfm_data.IsPoseAndIntrinsicDefined(view))
+    const View* view = iter.second.get();
+    if (!sfmData.IsPoseAndIntrinsicDefined(view))
       continue;
     viewIds.insert(view->getViewId());
   }
 
   SeedsPerView seedsPerView;
-  retrieveSeedsPerView(sfm_data, viewIds, seedsPerView);
+  retrieveSeedsPerView(sfmData, viewIds, seedsPerView);
   
   // Export data
-  boost::progress_display my_progress_bar(viewIds.size(), std::cout, "\n- Exporting Data -\n");
+  boost::progress_display my_progress_bar(viewIds.size(), std::cout, "Exporting Scene Data\n");
 
   // Export views:
   //   - viewId_P.txt (Pose of the reconstructed camera)
-  //   - viewId.exr (undistorted & scaled colored image)
+  //   - viewId.exr (undistorted colored image)
   //   - viewId_seeds.bin (3d points visible in this image)
 
 #pragma omp parallel for num_threads(3)
@@ -194,39 +178,46 @@ bool prepareDenseScene(
     std::advance(itView, i);
 
     const IndexT viewId = *itView;
-    const View * view = sfm_data.GetViews().at(viewId).get();
+    const View* view = sfmData.GetViews().at(viewId).get();
 
     assert(view->getViewId() == viewId);
-    Intrinsics::const_iterator iterIntrinsic = sfm_data.GetIntrinsics().find(view->getIntrinsicId());
+    Intrinsics::const_iterator iterIntrinsic = sfmData.GetIntrinsics().find(view->getIntrinsicId());
 
     // We have a valid view with a corresponding camera & pose
     const std::string baseFilename = std::to_string(viewId);
 
+    oiio::ParamValueList metadata;
+
     // Export camera
     {
       // Export camera pose
-      const Pose3 pose = sfm_data.getPose(*view);
+      const Pose3 pose = sfmData.getPose(*view);
       Mat34 P = iterIntrinsic->second.get()->get_projective_equivalent(pose);
-      std::ofstream fileP(
-        stlplus::create_filespec(stlplus::folder_append_separator(sOutDirectory),
-        baseFilename + "_P", "txt").c_str());
+      std::ofstream fileP((fs::path(outFolder) / (baseFilename + "_P.txt")).string());
+
       fileP << std::setprecision(10)
-           << P(0, 0) / (double)scale << " " << P(0, 1) / (double)scale << " "  << P(0, 2) / (double)scale << " "  << P(0, 3) / (double)scale << "\n"
-           << P(1, 0) / (double)scale << " " << P(1, 1) / (double)scale << " "  << P(1, 2) / (double)scale << " "  << P(1, 3) / (double)scale << "\n"
-           << P(2, 0) << " " << P(2, 1) << " "  << P(2, 2) << " "  << P(2, 3) << "\n";
+           << P(0, 0) << " " << P(0, 1) << " " << P(0, 2) << " " << P(0, 3) << "\n"
+           << P(1, 0) << " " << P(1, 1) << " " << P(1, 2) << " " << P(1, 3) << "\n"
+           << P(2, 0) << " " << P(2, 1) << " " << P(2, 2) << " " << P(2, 3) << "\n";
       fileP.close();
 
+      Mat4 projectionMatrix;
+
+      projectionMatrix << P(0, 0), P(0, 1), P(0, 2), P(0, 3),
+                          P(1, 0), P(1, 1), P(1, 2), P(1, 3),
+                          P(2, 0), P(2, 1), P(2, 2), P(2, 3),
+                                0,       0,       0,       1;
+
       // Export camera intrinsics
-      const Mat3 K = dynamic_cast<const Pinhole*>(sfm_data.GetIntrinsicPtr(view->getIntrinsicId()))->K();
+      const Mat3 K = dynamic_cast<const Pinhole*>(sfmData.GetIntrinsicPtr(view->getIntrinsicId()))->K();
       const Mat3 R = pose.rotation();
       const Vec3 t = pose.translation();
-      std::ofstream fileKRt(
-        stlplus::create_filespec(stlplus::folder_append_separator(sOutDirectory),
-        baseFilename + "_KRt", "txt").c_str());
+      std::ofstream fileKRt((fs::path(outFolder) / (baseFilename + "_KRt.txt")).string());
+
       fileKRt << std::setprecision(10)
-           << K(0, 0) / (double)scale << " " << K(0, 1) / (double)scale << " " << K(0, 2) / (double)scale << "\n"
-           << K(1, 0) / (double)scale << " " << K(1, 1) / (double)scale << " " << K(1, 2) / (double)scale << "\n"
-           << K(2, 0) << " " << K(2, 1) << " "  << K(2, 2) << "\n"
+           << K(0, 0) << " " << K(0, 1) << " " << K(0, 2) << "\n"
+           << K(1, 0) << " " << K(1, 1) << " " << K(1, 2) << "\n"
+           << K(2, 0) << " " << K(2, 1) << " " << K(2, 2) << "\n"
            << "\n"
            << R(0, 0) << " " << R(0, 1) << " " << R(0, 2) << "\n"
            << R(1, 0) << " " << R(1, 1) << " " << R(1, 2) << "\n"
@@ -234,70 +225,52 @@ bool prepareDenseScene(
            << "\n"
            << t(0) << " " << t(1) << " " << t(2) << "\n";
       fileKRt.close();
+
+
+      // convert matrices to rowMajor
+      std::vector<double> vP(projectionMatrix.size());
+      std::vector<double> vK(K.size());
+      std::vector<double> vR(R.size());
+
+      typedef Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> RowMatrixXd;
+      Eigen::Map<RowMatrixXd>(vP.data(), projectionMatrix.rows(), projectionMatrix.cols()) = projectionMatrix;
+      Eigen::Map<RowMatrixXd>(vK.data(), K.rows(), K.cols()) = K;
+      Eigen::Map<RowMatrixXd>(vR.data(), R.rows(), R.cols()) = R;
+
+      // add metadata
+      metadata.push_back(oiio::ParamValue("AliceVision:downscale", 1));
+      metadata.push_back(oiio::ParamValue("AliceVision:P", oiio::TypeDesc(oiio::TypeDesc::DOUBLE, oiio::TypeDesc::MATRIX44), 1, vP.data()));
+      metadata.push_back(oiio::ParamValue("AliceVision:K", oiio::TypeDesc(oiio::TypeDesc::DOUBLE, oiio::TypeDesc::MATRIX33), 1, vK.data()));
+      metadata.push_back(oiio::ParamValue("AliceVision:R", oiio::TypeDesc(oiio::TypeDesc::DOUBLE, oiio::TypeDesc::MATRIX33), 1, vR.data()));
+      metadata.push_back(oiio::ParamValue("AliceVision:t", oiio::TypeDesc(oiio::TypeDesc::DOUBLE, oiio::TypeDesc::VEC3), 1, t.data()));
     }
     
     // Export undistort image
     {
       const std::string srcImage = view->getImagePath();
-      std::string dstColorImage = stlplus::create_filespec(stlplus::folder_append_separator(sOutDirectory), baseFilename, image::EImageFileType_enumToString(outputFileType));
+      std::string dstColorImage = (fs::path(outFolder) / (baseFilename + ".exr")).string();
 
-      const IntrinsicBase * cam = iterIntrinsic->second.get();
-      Image<RGBfColor> image, image_ud, image_ud_scaled;
+      const IntrinsicBase* cam = iterIntrinsic->second.get();
+      Image<RGBfColor> image, image_ud;
 
       readImage(srcImage, image);
       
       // Undistort
-      if (cam->isValid() && cam->have_disto())
+      if(cam->isValid() && cam->have_disto())
       {
         // undistort the image and save it
         UndistortImage(image, cam, image_ud, FBLACK);
+        writeImage(dstColorImage, image_ud, metadata);
       }
       else
       {
-        image_ud = image;
+        writeImage(dstColorImage, image, metadata);
       }
-      
-      // Rescale
-      if(scale == 1)
-      {
-        image_ud_scaled = image_ud;
-      }
-      else if(scale == 2)
-      {
-        ImageHalfSample(image_ud, image_ud_scaled);
-      }
-      else if(scale == 4)
-      {
-        ImageHalfSample(image_ud, image_ud_scaled); // 2
-        image_ud = image_ud_scaled;
-        ImageHalfSample(image_ud, image_ud_scaled); // 4
-      }
-      else if(scale == 8)
-      {
-        ImageHalfSample(image_ud, image_ud_scaled); // 2
-        ImageHalfSample(image_ud_scaled, image_ud); // 4
-        ImageHalfSample(image_ud, image_ud_scaled); // 8
-      }
-      else if(scale == 16)
-      {
-        ImageHalfSample(image_ud, image_ud_scaled); // 2
-        ImageHalfSample(image_ud_scaled, image_ud); // 4
-        ImageHalfSample(image_ud, image_ud_scaled); // 8
-        image_ud = image_ud_scaled;
-        ImageHalfSample(image_ud, image_ud_scaled); // 16
-      }
-      else
-      {
-        std::cerr << "Rescale not implemented." << std::endl;
-        image_ud_scaled = image_ud;
-      }
-      writeImage(dstColorImage, image_ud_scaled);
     }
     
     // Export Seeds
     {
-      const std::string seedsFilepath = stlplus::create_filespec(
-        stlplus::folder_append_separator(sOutDirectory), baseFilename + "_seeds", "bin");
+      const std::string seedsFilepath = (fs::path(outFolder) / (baseFilename + "_seeds.bin")).string();
       std::ofstream seedsFile(seedsFilepath, std::ios::binary);
       
       const int nbSeeds = seedsPerView[viewId].size();
@@ -316,25 +289,19 @@ bool prepareDenseScene(
   // Write the mvs ini file
   std::ostringstream os;
   os << "[global]" << os.widen('\n')
-  << "outDir=../../meshes" << os.widen('\n')
   << "ncams=" << viewIds.size() << os.widen('\n')
-  << "scale=" << scale << os.widen('\n')
-  << "imgExt=" << image::EImageFileType_enumToString(outputFileType) << os.widen('\n')
+  << "imgExt=exr" << os.widen('\n')
   << "verbose=TRUE" << os.widen('\n')
   << os.widen('\n')
   << "[imageResolutions]" << os.widen('\n');
 
   for(const IndexT viewId : viewIds)
   {
-    const View * view = sfm_data.GetViews().at(viewId).get();
-    const std::string baseFilename = std::to_string(viewId);
-
-    os << baseFilename << "=" << int(view->getWidth() / (double)scale) << "x" << int(view->getHeight() / (double)scale) << os.widen('\n');
+    const View* view = sfmData.GetViews().at(viewId).get();
+    os << viewId << "=" << static_cast<int>(view->getWidth()) << "x" << static_cast<int>(view->getHeight()) << os.widen('\n');
   }
 
-  std::ofstream file2(
-    stlplus::create_filespec(stlplus::folder_append_separator(sOutDirectory),
-    "mvs", "ini").c_str());
+  std::ofstream file2((fs::path(outFolder) / "mvs.ini").string());
   file2 << os.str();
   file2.close();
 
@@ -348,8 +315,6 @@ int main(int argc, char *argv[])
   std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
   std::string sfmDataFilename;
   std::string outFolder;
-  std::string outImageFileTypeName = image::EImageFileType_enumToString(image::EImageFileType::EXR);
-  int scale = 2;
 
   po::options_description allParams("AliceVision prepareDenseScene");
 
@@ -360,19 +325,12 @@ int main(int argc, char *argv[])
     ("output,o", po::value<std::string>(&outFolder)->required(),
       "Output folder.");
 
-  po::options_description optionalParams("Optional parameters");
-  optionalParams.add_options()
-    ("scale", po::value<int>(&scale)->default_value(scale),
-      "Image downscale factor.")
-    ("outputFileType", po::value<std::string>(&outImageFileTypeName)->default_value(outImageFileTypeName),
-      image::EImageFileType_informations().c_str());
-
   po::options_description logParams("Log parameters");
   logParams.add_options()
     ("verboseLevel,v", po::value<std::string>(&verboseLevel)->default_value(verboseLevel),
       "verbosity level (fatal, error, warning, info, debug, trace).");
 
-  allParams.add(requiredParams).add(optionalParams).add(logParams);
+  allParams.add(requiredParams).add(logParams);
 
   po::variables_map vm;
   try
@@ -399,30 +357,27 @@ int main(int argc, char *argv[])
     return EXIT_FAILURE;
   }
 
+  ALICEVISION_COUT("Program called with the following parameters:");
+  ALICEVISION_COUT(vm);
+
   // set verbose level
   system::Logger::get()->setLogLevel(verboseLevel);
 
-  // set output file type
-  image::EImageFileType outputFileType = image::EImageFileType_stringToEnum(outImageFileTypeName);
-
   // export
   {
-    outFolder = stlplus::folder_to_path(outFolder);
-
     // Create output dir
-    if (!stlplus::folder_exists(outFolder))
-      stlplus::folder_create(outFolder);
+    if(!fs::exists(outFolder))
+      fs::create_directory(outFolder);
 
     // Read the input SfM scene
-    SfMData sfm_data;
-    if (!Load(sfm_data, sfmDataFilename, ESfMData(ALL)))
+    SfMData sfmData;
+    if(!Load(sfmData, sfmDataFilename, ESfMData::ALL))
     {
-      std::cerr << std::endl
-        << "The input SfMData file \""<< sfmDataFilename << "\" cannot be read." << std::endl;
+      ALICEVISION_LOG_ERROR("The input SfMData file '" << sfmDataFilename << "' cannot be read.");
       return EXIT_FAILURE;
     }
 
-    if (!prepareDenseScene(sfm_data, scale, outputFileType, outFolder))
+    if(!prepareDenseScene(sfmData, outFolder))
       return EXIT_FAILURE;
   }
 
