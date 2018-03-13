@@ -384,7 +384,7 @@ void MeshClean::path::deployPath(StaticVector<MeshClean::path::pathPart>* _pth)
 
 void MeshClean::path::updatePtNeighPtsOrderedByPath(int _ptId, StaticVector<MeshClean::path::pathPart>* _pth)
 {
-    auto* ptNeighPtsOrderedByPath = (*me->ptsNeighPtsOrdered)[_ptId];
+    StaticVector<int>*& ptNeighPtsOrderedByPath = (*me->ptsNeighPtsOrdered)[_ptId];
 
     if(ptNeighPtsOrderedByPath != nullptr)
     {
@@ -453,7 +453,7 @@ MeshClean::path::createPath(StaticVector<int>* ptNeighTrisSortedAscToProcess)
 
 int MeshClean::path::deployAll()
 {
-    auto* ptsNeighTrisSortedAsc = (*me->ptsNeighTrisSortedAsc)[ptId];
+    StaticVector<int>*& ptsNeighTrisSortedAsc = (*me->ptsNeighTrisSortedAsc)[ptId];
     if(sizeOfStaticVector<int>(ptsNeighTrisSortedAsc) == 0)
     {
         return 0;
@@ -489,14 +489,12 @@ int MeshClean::path::deployAll()
         }
         else
         {
-
             if(ptsNeighTrisSortedAsc == nullptr)
             {
                 ptsNeighTrisSortedAsc = new StaticVector<int>();
                 ptsNeighTrisSortedAsc->reserve(pthNew->size());
                 printfState(pth);
                 printfState(pthNew);
-                delete ptsNeighTrisSortedAsc;
                 throw std::runtime_error("deployAll: bad condition, pthNew size: " + std::to_string(pthNew->size()));
             }
 
