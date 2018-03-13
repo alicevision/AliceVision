@@ -354,6 +354,9 @@ void Texturing::generateTexture(const mvsUtils::MultiViewParams& mp, StaticVecto
 
     // save texture image
     std::vector<Color> colorBuffer(texParams.textureSide * texParams.textureSide);
+    std::vector<float> alphaBuffer;
+    if(texParams.fillHoles)
+        alphaBuffer.resize(colorBuffer.size(), 0.0f);
 
     for(unsigned int yp = 0; yp < texParams.textureSide; ++yp)
     {
@@ -362,7 +365,14 @@ void Texturing::generateTexture(const mvsUtils::MultiViewParams& mp, StaticVecto
         {
             unsigned int xyoffset = yoffset + xp;
             int colorID = colorIDs[xyoffset];
-            colorBuffer[yp * texParams.textureSide + xp] = (colorID >= 0) ? perPixelColors[colorID].average() : Color();
+            Color color;
+            if(colorID >= 0)
+            {
+                color = perPixelColors[colorID].average();
+                if(texParams.fillHoles)
+                    alphaBuffer[xyoffset] = 1.0f;
+            }
+            colorBuffer[xyoffset] = color;
         }
     }
 
@@ -373,20 +383,27 @@ void Texturing::generateTexture(const mvsUtils::MultiViewParams& mp, StaticVecto
     bfs::path texturePath = outPath / textureName;
     ALICEVISION_LOG_INFO("Writing texture file: " << texturePath.string());
 
+    unsigned int outTextureSide = texParams.textureSide;
+
+    // texture holes filling
+    if(texParams.fillHoles)
+    {
+        ALICEVISION_LOG_INFO("Filling texture holes.");
+        std::vector<Color> filledColorBuffer;
+        imageIO::fillHoles(texParams.textureSide, texParams.textureSide, colorBuffer, alphaBuffer, filledColorBuffer);
+        std::swap(filledColorBuffer, colorBuffer);
+    }
     // downscale texture if required
     if(texParams.downscale > 1)
     {
         std::vector<Color> resizedColorBuffer;
-        const int resizedTextureSide = texParams.textureSide / texParams.downscale;
+        outTextureSide = texParams.textureSide / texParams.downscale;
 
         ALICEVISION_LOG_INFO("Downscaling texture (" << texParams.downscale << "x).");
         imageIO::resizeImage(texParams.textureSide, texParams.textureSide, texParams.downscale, colorBuffer, resizedColorBuffer);
-        imageIO::writeImage(texturePath.string(), resizedTextureSide, resizedTextureSide, resizedColorBuffer);
+        std::swap(resizedColorBuffer, colorBuffer);
     }
-    else
-    {
-        imageIO::writeImage(texturePath.string(), texParams.textureSide, texParams.textureSide, colorBuffer);
-    }
+    imageIO::writeImage(texturePath.string(), outTextureSide, outTextureSide, colorBuffer);
 }
 
 

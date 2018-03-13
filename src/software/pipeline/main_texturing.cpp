@@ -59,6 +59,8 @@ int main(int argc, char* argv[])
             "Texture edge padding size in pixel")
         ("downscale", po::value<unsigned int>(&texParams.downscale)->default_value(texParams.downscale),
             "Texture downscale factor")
+        ("fillHoles", po::value<bool>(&texParams.fillHoles)->default_value(texParams.fillHoles),
+            "Fill texture holes with plausible values.")
         ("inputMesh", po::value<std::string>(&inputMeshFilepath),
             "Optional input mesh to texture. By default, it will texture the inputReconstructionMesh.")
         ("flipNormals", po::value<bool>(&flipNormals)->default_value(flipNormals),

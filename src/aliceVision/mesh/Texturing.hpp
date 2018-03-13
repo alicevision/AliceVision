@@ -25,6 +25,7 @@ struct TexturingParams
     unsigned int textureSide = 8192;
     unsigned int padding = 15;
     unsigned int downscale = 2;
+    bool fillHoles = false;
 };
 
 struct Texturing
