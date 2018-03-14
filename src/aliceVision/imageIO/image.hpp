@@ -155,11 +155,10 @@ void convolveImage(int inWidth, int inHeight, const std::vector<Color>& inBuffer
  * @brief fill holes in a given image buffer with plausible values
  * @param[in] inWidth The input image buffer width
  * @param[in] inHeight The input image buffer height
- * @param[in] colorBuffer The input image buffer
+ * @param[in,out] colorBuffer The image buffer to fill
  * @param[in] alphaBuffer The input alpha buffer containing 0.0/1.0 for empty/valid pixels
- * @param[out] outBuffer outBuffer The output image buffer
  */
-void fillHoles(int inWidth, int inHeight, const std::vector<Color>& colorBuffer, const std::vector<float>& alphaBuffer, std::vector<Color>& outbuffer);
+void fillHoles(int inWidth, int inHeight, std::vector<Color>& colorBuffer, const std::vector<float>& alphaBuffer);
 
 } // namespace imageIO
 } // namespace aliceVision

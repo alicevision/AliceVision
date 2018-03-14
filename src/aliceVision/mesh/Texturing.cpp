@@ -389,9 +389,8 @@ void Texturing::generateTexture(const mvsUtils::MultiViewParams& mp, StaticVecto
     if(texParams.fillHoles)
     {
         ALICEVISION_LOG_INFO("Filling texture holes.");
-        std::vector<Color> filledColorBuffer;
-        imageIO::fillHoles(texParams.textureSide, texParams.textureSide, colorBuffer, alphaBuffer, filledColorBuffer);
-        std::swap(filledColorBuffer, colorBuffer);
+        imageIO::fillHoles(texParams.textureSide, texParams.textureSide, colorBuffer, alphaBuffer);
+        alphaBuffer.clear();
     }
     // downscale texture if required
     if(texParams.downscale > 1)
