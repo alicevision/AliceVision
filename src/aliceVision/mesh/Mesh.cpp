@@ -183,8 +183,8 @@ void Mesh::addMesh(Mesh* me)
 
 Mesh::triangle_proj Mesh::getTriangleProjection(int triid, const mvsUtils::MultiViewParams* mp, int rc, int w, int h) const
 {
-    int ow = mp->mip->getWidth(rc);
-    int oh = mp->mip->getHeight(rc);
+    int ow = mp->getWidth(rc);
+    int oh = mp->getHeight(rc);
 
     triangle_proj tp;
     for(int j = 0; j < 3; j++)
@@ -976,8 +976,8 @@ StaticVector<int>* Mesh::getVisibleTrianglesIndexes(std::string depthMapFileName
 
 StaticVector<int>* Mesh::getVisibleTrianglesIndexes(std::string tmpDir, const mvsUtils::MultiViewParams* mp, int rc, int w, int h)
 {
-    std::string depthMapFileName = tmpDir + "depthMap" + std::to_string(mp->mip->getViewId(rc)) + ".bin";
-    std::string trisMapFileName = tmpDir + "trisMap" + std::to_string(mp->mip->getViewId(rc)) + ".bin";
+    std::string depthMapFileName = tmpDir + "depthMap" + std::to_string(mp->getViewId(rc)) + ".bin";
+    std::string trisMapFileName = tmpDir + "trisMap" + std::to_string(mp->getViewId(rc)) + ".bin";
 
     StaticVector<float>* depthMap = loadArrayFromFile<float>(depthMapFileName);
     StaticVector<StaticVector<int>*>* trisMap = loadArrayOfArraysFromFile<int>(trisMapFileName);
@@ -993,8 +993,8 @@ StaticVector<int>* Mesh::getVisibleTrianglesIndexes(std::string tmpDir, const mv
 StaticVector<int>* Mesh::getVisibleTrianglesIndexes(StaticVector<float>* depthMap, const mvsUtils::MultiViewParams* mp, int rc,
                                                        int w, int h)
 {
-    int ow = mp->mip->getWidth(rc);
-    int oh = mp->mip->getHeight(rc);
+    int ow = mp->getWidth(rc);
+    int oh = mp->getHeight(rc);
 
     StaticVector<int>* out = new StaticVector<int>();
     out->reserve(tris->size());
@@ -1024,8 +1024,8 @@ StaticVector<int>* Mesh::getVisibleTrianglesIndexes(StaticVector<StaticVector<in
                                                        StaticVector<float>* depthMap, const mvsUtils::MultiViewParams* mp, int rc,
                                                        int w, int h)
 {
-    int ow = mp->mip->getWidth(rc);
-    int oh = mp->mip->getHeight(rc);
+    int ow = mp->getWidth(rc);
+    int oh = mp->getHeight(rc);
 
     StaticVectorBool* btris = new StaticVectorBool();
     btris->reserve(tris->size());
@@ -1813,8 +1813,8 @@ int Mesh::subdivideMesh(const mvsUtils::MultiViewParams* mp, float maxTriArea, f
             for(int j = 0; j < sizeOfStaticVector<int>((*trisCams)[tcid]); j++)
             {
                 int rc = (*(*trisCams)[tcid])[j];
-                int w = mp->mip->getWidth(rc);
-                int h = mp->mip->getHeight(rc);
+                int w = mp->getWidth(rc);
+                int h = mp->getHeight(rc);
                 triangle_proj tp = getTriangleProjection(i, mp, rc, w, h);
                 if(computeTriangleProjectionArea(tp) > maxTriArea)
                 {
@@ -2050,7 +2050,7 @@ StaticVector<StaticVector<int>*>* Mesh::computeTrisCams(const mvsUtils::MultiVie
     long t1 = mvsUtils::initEstimate();
     for(int rc = 0; rc < mp->ncams; ++rc)
     {
-        std::string visTrisFileName = tmpDir + "visTris" + std::to_string(mp->mip->getViewId(rc)) + ".bin";
+        std::string visTrisFileName = tmpDir + "visTris" + std::to_string(mp->getViewId(rc)) + ".bin";
         StaticVector<int>* visTris = loadArrayFromFile<int>(visTrisFileName);
         if(visTris != nullptr)
         {
@@ -2082,7 +2082,7 @@ StaticVector<StaticVector<int>*>* Mesh::computeTrisCams(const mvsUtils::MultiVie
     t1 = mvsUtils::initEstimate();
     for(int rc = 0; rc < mp->ncams; ++rc)
     {
-        std::string visTrisFileName = tmpDir + "visTris" + std::to_string(mp->mip->getViewId(rc)) + ".bin";
+        std::string visTrisFileName = tmpDir + "visTris" + std::to_string(mp->getViewId(rc)) + ".bin";
         StaticVector<int>* visTris = loadArrayFromFile<int>(visTrisFileName);
         if(visTris != nullptr)
         {
@@ -2140,8 +2140,8 @@ void Mesh::initFromDepthMap(const mvsUtils::MultiViewParams* mp, float* depthMap
 void Mesh::initFromDepthMap(int stepDetail, const mvsUtils::MultiViewParams* mp, float* depthMap, int rc, int scale, int step,
                                float alpha)
 {
-    int w = mp->mip->getWidth(rc) / (scale * step);
-    int h = mp->mip->getHeight(rc) / (scale * step);
+    int w = mp->getWidth(rc) / (scale * step);
+    int h = mp->getHeight(rc) / (scale * step);
 
     pts = new StaticVector<Point3d>();
     pts->reserve(w * h);

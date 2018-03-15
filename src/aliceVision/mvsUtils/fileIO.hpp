@@ -18,17 +18,15 @@
 namespace aliceVision {
 namespace mvsUtils {
 
-struct MultiViewInputParams;
-
 bool FileExists(const std::string& filePath);
 bool FolderExists(const std::string& folderPath);
 
-std::string mv_getFileNamePrefix(const std::string& baseDir, MultiViewInputParams* mip, int index);
-std::string mv_getFileName(MultiViewInputParams* mip, int index, EFileType mv_file_type, int scale = 0);
-FILE* mv_openFile(MultiViewInputParams* mip, int index, EFileType mv_file_type, const char* readWrite);
+std::string mv_getFileNamePrefix(const std::string& baseDir, const MultiViewParams* mp, int index);
+std::string mv_getFileName(const MultiViewParams* mp, int index, EFileType mv_file_type, int scale = 0);
+FILE* mv_openFile(const MultiViewParams* mp, int index, EFileType mv_file_type, const char* readWrite);
 Matrix3x4 load3x4MatrixFromFile(FILE* fi);
-void memcpyRGBImageFromFileToArr(int camId, Color* imgArr, const std::string& fileNameOrigStr, MultiViewInputParams* mip,
-                                 bool transpose, int scaleFactor, int bandType);
+void memcpyRGBImageFromFileToArr(int camId, Color* imgArr, const std::string& fileNameOrigStr, const MultiViewParams* mp,
+                                 bool transpose, int bandType);
 struct seed_io_block            // 80 bytes
 {
     OrientedPoint op;           // 28 bytes
@@ -42,10 +40,10 @@ struct seed_io_block            // 80 bytes
 };
 
 void saveSeedsToFile(StaticVector<SeedPoint>* seeds, const std::string& fileName);
-void saveSeedsToFile(StaticVector<SeedPoint>* seeds, int refImgFileId, MultiViewInputParams* mip, EFileType mv_file_type);
+void saveSeedsToFile(StaticVector<SeedPoint>* seeds, int refImgFileId, const MultiViewParams* mp, EFileType mv_file_type);
 bool loadSeedsFromFile(StaticVector<SeedPoint>** seeds, const std::string& fileName);
-bool loadSeedsFromFile(StaticVector<SeedPoint>** seeds, int refImgFileId, MultiViewInputParams* mip, EFileType mv_file_type);
-bool getDepthMapInfo(int refImgFileId, MultiViewInputParams* mip, float& mindepth, float& maxdepth,
+bool loadSeedsFromFile(StaticVector<SeedPoint>** seeds, int refImgFileId, const MultiViewParams* mp, EFileType mv_file_type);
+bool getDepthMapInfo(int refImgFileId, const MultiViewParams* mp, float& mindepth, float& maxdepth,
                      StaticVector<int>** tcams);
 bool DeleteDirectory(const std::string& sPath);
 

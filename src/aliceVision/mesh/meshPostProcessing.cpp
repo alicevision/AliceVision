@@ -46,18 +46,18 @@ void meshPostProcessing(Mesh*& inout_mesh, StaticVector<StaticVector<int>*>*& in
     ALICEVISION_LOG_INFO("Mesh post-processing.");
 
 
-    bool exportDebug = (float)mp.mip->_ini.get<bool>("delaunaycut.exportDebugGC", false);
+    bool exportDebug = (float)mp._ini.get<bool>("delaunaycut.exportDebugGC", false);
 
     if(exportDebug)
         inout_mesh->saveToObj(resultFolderName + "rawGraphCut.obj");
 
     const auto doRemoveHugeTriangles =
-            mp.mip->_ini.get<bool>("hallucinationsFiltering.doRemoveHugeTriangles", false);
+            mp._ini.get<bool>("hallucinationsFiltering.doRemoveHugeTriangles", false);
 
     if(doRemoveHugeTriangles)
     {
         filterLargeEdgeTriangles(
-            inout_mesh, (float)mp.mip->_ini.get<double>("hallucinationsFiltering.NbAverageEdgeLength", 60.0));
+            inout_mesh, (float)mp._ini.get<double>("hallucinationsFiltering.NbAverageEdgeLength", 60.0));
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -69,14 +69,14 @@ void meshPostProcessing(Mesh*& inout_mesh, StaticVector<StaticVector<int>*>*& in
 
         //!!!!!!!!!!!!!
         bool doRemoveTrianglesInhexahsToExcludeFromResultingMesh =
-            (bool)mp.mip->_ini.get<bool>("LargeScale.doRemoveTrianglesInhexahsToExcludeFromResultingMesh",
+            (bool)mp._ini.get<bool>("LargeScale.doRemoveTrianglesInhexahsToExcludeFromResultingMesh",
                                        false);
         if(doRemoveTrianglesInhexahsToExcludeFromResultingMesh && hexahsToExcludeFromResultingMesh)
         {
             inout_mesh->removeTrianglesInHexahedrons(hexahsToExcludeFromResultingMesh);
         }
 
-        const auto doLeaveLargestFullSegmentOnly = (bool)mp.mip->_ini.get<bool>("hallucinationsFiltering.doLeaveLargestFullSegmentOnly", false);
+        const auto doLeaveLargestFullSegmentOnly = (bool)mp._ini.get<bool>("hallucinationsFiltering.doLeaveLargestFullSegmentOnly", false);
         if(doLeaveLargestFullSegmentOnly)
         {
             StaticVector<int>* trisIdsToStay = inout_mesh->getLargestConnectedComponentTrisIds(mp);
@@ -142,13 +142,13 @@ void meshPostProcessing(Mesh*& inout_mesh, StaticVector<StaticVector<int>*>*& in
         }
 
         /////////////////////////////
-        bool doSubdivideMesh = mp.mip->_ini.get<bool>("meshEnergyOpt.doSubdivideMesh", false);
+        bool doSubdivideMesh = mp._ini.get<bool>("meshEnergyOpt.doSubdivideMesh", false);
         if(doSubdivideMesh == true)
         {
             float subdivideMeshNTimesAvEdgeLengthThr =
-                (float)mp.mip->_ini.get<double>("meshEnergyOpt.doSubdivideMesh", 20.0);
+                (float)mp._ini.get<double>("meshEnergyOpt.doSubdivideMesh", 20.0);
             int subdivideMaxPtsThr =
-                mp.mip->_ini.get<int>("meshEnergyOpt.subdivideMaxPtsThr", 6000000);
+                mp._ini.get<int>("meshEnergyOpt.subdivideMaxPtsThr", 6000000);
 
             meOpt->subdivideMeshMaxEdgeLengthUpdatePtsCams(&mp, subdivideMeshNTimesAvEdgeLengthThr *
                                                                               meOpt->computeAverageEdgeLength(),
@@ -191,12 +191,12 @@ void meshPostProcessing(Mesh*& inout_mesh, StaticVector<StaticVector<int>*>*& in
 
         /////////////////////////////
         bool doSmoothMesh =
-            mp.mip->_ini.get<bool>("meshEnergyOpt.doSmoothMesh", true);
-        int smoothNIter = mp.mip->_ini.get<int>("meshEnergyOpt.smoothNbIterations", 10);
+            mp._ini.get<bool>("meshEnergyOpt.doSmoothMesh", true);
+        int smoothNIter = mp._ini.get<int>("meshEnergyOpt.smoothNbIterations", 10);
         if(doSmoothMesh && smoothNIter != 0)
         {
             ALICEVISION_LOG_INFO("Mesh smoothing.");
-            float lambda = (float)mp.mip->_ini.get<double>("meshEnergyOpt.lambda", 1.0f);
+            float lambda = (float)mp._ini.get<double>("meshEnergyOpt.lambda", 1.0f);
             meOpt->optimizeSmooth(lambda, smoothNIter, ptsCanMove);
 
             if(exportDebug)

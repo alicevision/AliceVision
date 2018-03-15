@@ -22,17 +22,17 @@ namespace bfs = boost::filesystem;
 RefineRc::RefineRc(int _rc, int _scale, int _step, SemiGlobalMatchingParams* _sp)
     : SemiGlobalMatchingRc(false, _rc, _scale, _step, _sp)
 {
-    _nSamplesHalf = sp->mp->mip->_ini.get<int>("refineRc.nSamplesHalf", 150);
-    _ndepthsToRefine = sp->mp->mip->_ini.get<int>("refineRc.ndepthsToRefine", 31);
-    _sigma = (float)sp->mp->mip->_ini.get<double>("refineRc.sigma", 15.0);
-    _niters = sp->mp->mip->_ini.get<int>("refineRc.niters", 100);
+    _nSamplesHalf = sp->mp->_ini.get<int>("refineRc.nSamplesHalf", 150);
+    _ndepthsToRefine = sp->mp->_ini.get<int>("refineRc.ndepthsToRefine", 31);
+    _sigma = (float)sp->mp->_ini.get<double>("refineRc.sigma", 15.0);
+    _niters = sp->mp->_ini.get<int>("refineRc.niters", 100);
 
-    _userTcOrPixSize = sp->mp->mip->_ini.get<bool>("refineRc.useTcOrRcPixSize", false);
-    _wsh = sp->mp->mip->_ini.get<int>("refineRc.wsh", 3);
-    _gammaC = (float)sp->mp->mip->_ini.get<double>("refineRc.gammaC", 15.5);
-    _gammaP = (float)sp->mp->mip->_ini.get<double>("refineRc.gammaP", 8.0);
+    _userTcOrPixSize = sp->mp->_ini.get<bool>("refineRc.useTcOrRcPixSize", false);
+    _wsh = sp->mp->_ini.get<int>("refineRc.wsh", 3);
+    _gammaC = (float)sp->mp->_ini.get<double>("refineRc.gammaC", 15.5);
+    _gammaP = (float)sp->mp->_ini.get<double>("refineRc.gammaP", 8.0);
     
-    int nnearestcams = sp->mp->mip->_ini.get<int>("refineRc.maxTCams", 6);
+    int nnearestcams = sp->mp->_ini.get<int>("refineRc.maxTCams", 6);
     tcams = new StaticVector<int>();
     *tcams = sp->pc->findNearestCamsFromSeeds(rc, nnearestcams);
 }
@@ -44,8 +44,8 @@ RefineRc::~RefineRc()
 
 DepthSimMap* RefineRc::getDepthPixSizeMapFromSGM()
 {
-    int w11 = sp->mp->mip->getWidth(rc);
-    int h11 = sp->mp->mip->getHeight(rc);
+    int w11 = sp->mp->getWidth(rc);
+    int h11 = sp->mp->getHeight(rc);
 
     int volDimX = w;
     int volDimY = h;
@@ -103,8 +103,8 @@ DepthSimMap* RefineRc::getDepthPixSizeMapFromSGM()
 
 DepthSimMap* RefineRc::refineAndFuseDepthSimMapCUDA(DepthSimMap* depthPixSizeMapVis)
 {
-    int w11 = sp->mp->mip->getWidth(rc);
-    int h11 = sp->mp->mip->getHeight(rc);
+    int w11 = sp->mp->getWidth(rc);
+    int h11 = sp->mp->getHeight(rc);
 
     StaticVector<DepthSimMap*>* dataMaps = new StaticVector<DepthSimMap*>();
     dataMaps->reserve(tcams->size() + 1);
@@ -125,8 +125,8 @@ DepthSimMap* RefineRc::refineAndFuseDepthSimMapCUDA(DepthSimMap* depthPixSizeMap
         dataMaps->push_back(depthSimMapC);
 
         if(sp->visualizePartialDepthMaps)
-            depthSimMapC->saveToImage(outDir + "refineRc_Photo_" + std::to_string(sp->mp->mip->getViewId(rc)) + "_tc_" +
-                                           std::to_string(sp->mp->mip->getViewId(tc)) + ".depthSimMap.png", -2.0f);
+            depthSimMapC->saveToImage(outDir + "refineRc_Photo_" + std::to_string(sp->mp->getViewId(rc)) + "_tc_" +
+                                           std::to_string(sp->mp->getViewId(tc)) + ".depthSimMap.png", -2.0f);
     }
 
     // in order to fit into GPU memory
@@ -194,7 +194,7 @@ DepthSimMap* RefineRc::refineAndFuseDepthSimMapCUDA(DepthSimMap* depthPixSizeMap
 DepthSimMap* RefineRc::optimizeDepthSimMapCUDA(DepthSimMap* depthPixSizeMapVis,
                                                       DepthSimMap* depthSimMapPhoto)
 {
-    int h11 = sp->mp->mip->getHeight(rc);
+    int h11 = sp->mp->getHeight(rc);
 
     StaticVector<DepthSimMap*>* dataMaps = new StaticVector<DepthSimMap*>();
     dataMaps->reserve(2);
@@ -237,7 +237,7 @@ DepthSimMap* RefineRc::optimizeDepthSimMapCUDA(DepthSimMap* depthPixSizeMapVis,
 
 bool RefineRc::refinercCUDA(bool checkIfExists)
 {
-    const IndexT viewId = sp->mp->mip->getViewId(rc);
+    const IndexT viewId = sp->mp->getViewId(rc);
 
     if(sp->mp->verbose)
         ALICEVISION_LOG_DEBUG("refinercCUDA: processing " << (rc + 1) << " of " << sp->mp->ncams << ".");
@@ -305,31 +305,33 @@ bool RefineRc::refinercCUDA(bool checkIfExists)
 
 void refineDepthMaps(int CUDADeviceNo, mvsUtils::MultiViewParams* mp, mvsUtils::PreMatchCams* pc, const StaticVector<int>& cams)
 {
-    int scale = mp->mip->_ini.get<int>("semiGlobalMatching.scale", -1);
-    int step = mp->mip->_ini.get<int>("semiGlobalMatching.step", -1);
+    const int fileScale = 1; // input images scale (should be one)
+    int sgmScale = mp->_ini.get<int>("semiGlobalMatching.scale", -1);
+    int sgmStep = mp->_ini.get<int>("semiGlobalMatching.step", -1);
 
-    if(scale == -1)
+    if(sgmScale == -1)
     {
-        int width = mp->mip->getMaxImageWidth(); 
-        int height = mp->mip->getMaxImageHeight(); 
-        int scaleTmp = computeStep(mp->mip, 1, (width > height ? 700 : 550), (width > height ? 550 : 700));
-        scale = std::min(2, scaleTmp);
-        step = computeStep(mp->mip, scale, (width > height ? 700 : 550), (width > height ? 550 : 700));
-        ALICEVISION_LOG_INFO("PSSGM autoScaleStep scale: " << scale << ", step: " << step);
+        int width = mp->getMaxImageWidth();
+        int height = mp->getMaxImageHeight();
+
+        int scaleTmp = computeStep(mp, fileScale, (width > height ? 700 : 550), (width > height ? 550 : 700));
+        sgmScale = std::min(2, scaleTmp);
+        sgmStep = computeStep(mp, fileScale * sgmScale, (width > height ? 700 : 550), (width > height ? 550 : 700));
+        ALICEVISION_LOG_INFO("PSSGM autoScaleStep scale: " << sgmScale << ", step: " << sgmStep);
     }
 
     int bandType = 0;
     mvsUtils::ImagesCache* ic = new mvsUtils::ImagesCache(mp, bandType, true);
-    PlaneSweepingCuda* cps = new PlaneSweepingCuda(CUDADeviceNo, ic, mp, pc, scale);
+    PlaneSweepingCuda* cps = new PlaneSweepingCuda(CUDADeviceNo, ic, mp, pc, sgmScale);
     SemiGlobalMatchingParams* sp = new SemiGlobalMatchingParams(mp, pc, cps);
 
     //////////////////////////////////////////////////////////////////////////////////////////
 
     for(const int rc : cams)
     {
-        if(!mvsUtils::FileExists(sp->getREFINE_opt_simMapFileName(mp->mip->getViewId(rc), 1, 1)))
+        if(!mvsUtils::FileExists(sp->getREFINE_opt_simMapFileName(mp->getViewId(rc), 1, 1)))
         {
-            RefineRc* rrc = new RefineRc(rc, scale, step, sp);
+            RefineRc* rrc = new RefineRc(rc, sgmScale, sgmStep, sp);
             rrc->refinercCUDA();
             delete rrc;
         }
@@ -347,7 +349,7 @@ void refineDepthMaps(mvsUtils::MultiViewParams* mp, mvsUtils::PreMatchCams* pc, 
     ALICEVISION_LOG_INFO("Number of GPU devices: " << num_gpus << ", number of CPU threads: " << num_cpu_threads);
     int numthreads = std::min(num_gpus, num_cpu_threads);
 
-    int num_gpus_to_use = mp->mip->_ini.get<int>("refineRc.num_gpus_to_use", 1);
+    int num_gpus_to_use = mp->_ini.get<int>("refineRc.num_gpus_to_use", 1);
     if(num_gpus_to_use > 0)
     {
         numthreads = num_gpus_to_use;

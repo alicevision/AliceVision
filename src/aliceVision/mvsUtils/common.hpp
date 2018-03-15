@@ -53,7 +53,7 @@ StaticVector<StaticVector<int>*>* convertObjectsCamsToCamsObjects(const MultiVie
                                                                   StaticVector<StaticVector<int>*>* ptsCams);
 StaticVector<StaticVector<Pixel>*>* convertObjectsCamsToCamsObjects(const MultiViewParams* mp,
                                                                     StaticVector<StaticVector<Pixel>*>* ptsCams);
-int computeStep(MultiViewInputParams* mip, int scale, int maxWidth, int maxHeight);
+int computeStep(MultiViewParams* mp, int scale, int maxWidth, int maxHeight);
 
 StaticVector<Point3d>* computeVoxels(const Point3d* space, const Voxel& dimensions);
 float getCGDepthFromSeeds(const MultiViewParams* mp, int rc); // TODO: require seeds vector as input param

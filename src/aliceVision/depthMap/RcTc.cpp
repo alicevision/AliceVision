@@ -22,8 +22,8 @@ void RcTc::refineRcTcDepthSimMap(bool useTcOrRcPixSize, DepthSimMap* depthSimMap
                                     int ndepthsToRefine, int wsh, float gammaC, float gammaP, float epipShift)
 {
     int scale = depthSimMap->scale;
-    int w = mp->mip->getWidth(rc) / scale;
-    int h = mp->mip->getHeight(rc) / scale;
+    int w = mp->getWidth(rc) / scale;
+    int h = mp->getHeight(rc) / scale;
 
     if(verbose)
         ALICEVISION_LOG_DEBUG("refineRcTcDepthSimMap: width: " << w << ", height: " << h);
