@@ -478,7 +478,7 @@ void DelaunayGraphCut::fuseFromDepthMaps(const StaticVector<int>& cams, const Po
     {
         nbPixels += imgParams.size;
     }
-    int step = std::floor(std::sqrt(((double)nbPixels / (1.0*maxVertices))));
+    int step = std::floor(std::sqrt(((double)nbPixels / (10.0*maxVertices))));
     step = std::max(step, 1);
     std::size_t realMaxVertices = 0;
     std::vector<int> startIndex(mp->getNbCameras(), 0);
@@ -614,7 +614,8 @@ void DelaunayGraphCut::fuseFromDepthMaps(const StaticVector<int>& cams, const Po
         }
 
         ALICEVISION_LOG_INFO("Filter initial 3D points by pixel size to limit the number of points.");
-        // while(true)
+        double pixSizeMarginCoef = 2.0;
+        while(true)
         {
             // Filter by pixSize
             {
@@ -627,14 +628,14 @@ void DelaunayGraphCut::fuseFromDepthMaps(const StaticVector<int>& cams, const Po
                 KdTree kdTree(3 /*dim*/, pointCloudRef, nanoflann::KDTreeSingleIndexAdaptorParams(MAX_LEAF_ELEMENTS));
                 kdTree.buildIndex();
 #endif
-                std::cout << "KdTree created for " << verticesCoordsPrepare.size() << " points." << std::endl;
+                ALICEVISION_LOG_INFO("KdTree created for " << verticesCoordsPrepare.size() << " points.");
                 #pragma omp parallel for
                 for(int i = 0; i < verticesCoordsPrepare.size(); ++i)
                 {
                     if(pixSizePrepare[i] == -1.0)
                         continue;
 
-                    const double pixSizeScore = 2.0 * simScorePrepare[i] * pixSizePrepare[i] * pixSizePrepare[i];
+                    const double pixSizeScore = pixSizeMarginCoef * simScorePrepare[i] * pixSizePrepare[i] * pixSizePrepare[i];
 #ifdef USE_GEOGRAM_KDTREE
                     static const std::size_t nbNeighbors = 20;
                     static const double nbNeighborsInv = 1.0 / (double)nbNeighbors;
@@ -702,8 +703,6 @@ void DelaunayGraphCut::fuseFromDepthMaps(const StaticVector<int>& cams, const Po
                     }
                 }
                 ALICEVISION_LOG_INFO((verticesCoordsPrepare.size() - verticesCoordsTmp.size()) << " points with overlap removed.");
-                // if(verticesCoordsPrepare.size() == verticesCoordsTmp.size())
-                //     break;
                 verticesCoordsPrepare.swap(verticesCoordsTmp);
                 pixSizePrepare.swap(pixSizeTmp);
                 simScorePrepare.swap(simScoreTmp);
@@ -711,17 +710,17 @@ void DelaunayGraphCut::fuseFromDepthMaps(const StaticVector<int>& cams, const Po
 
             if(verticesCoordsPrepare.size() < maxVertices)
             {
-                std::cout << "The number of points is below the max number of vertices." << std::endl;
-                // break;
+                ALICEVISION_LOG_INFO("The number of points is below the max number of vertices.");
+                break;
             }
             else
             {
-                // pixSizeMarginCoef *= 2.0;
+                pixSizeMarginCoef *= 1.5;
                 // ALICEVISION_LOG_INFO("Increase pixel size margin coef to " << pixSizeMarginCoef << ", nb points: " << verticesCoordsPrepare.size() << ", maxVertices: " << maxVertices);
                 ALICEVISION_LOG_INFO("Nb points: " << verticesCoordsPrepare.size() << ", maxVertices: " << maxVertices);
             }
         }
-        ALICEVISION_LOG_INFO("3D points loaded and filtered to " << verticesCoordsPrepare.size() << " points (maxVertices was " << maxVertices << ").");
+        ALICEVISION_LOG_INFO("3D points loaded and filtered to " << verticesCoordsPrepare.size() << " points (maxVertices is " << maxVertices << ").");
     }
 
     ALICEVISION_LOG_INFO("Create visibilities");
@@ -743,7 +742,7 @@ void DelaunayGraphCut::fuseFromDepthMaps(const StaticVector<int>& cams, const Po
         #pragma omp parallel for num_threads(5)
         for(int c = 0; c < cams.size(); ++c)
         {
-            std::cout << "Create visibilities (" << c << "/" << cams.size() << ")" << std::endl;
+            ALICEVISION_LOG_INFO("Create visibilities (" << c << "/" << cams.size() << ")");
             std::vector<float> depthMap;
             std::vector<float> simMap;
             int width, height;
