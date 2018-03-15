@@ -114,23 +114,23 @@ void meshPostProcessing(Mesh*& inout_mesh, StaticVector<StaticVector<int>*>*& in
     {
         ALICEVISION_LOG_INFO("Mesh Cleaning.");
 
-        MeshEnergyOpt* meOpt = new MeshEnergyOpt(&mp);
-        meOpt->addMesh(inout_mesh);
+        MeshEnergyOpt meOpt(&mp);
+        meOpt.addMesh(inout_mesh);
         delete inout_mesh;
 
-        meOpt->init();
-        meOpt->cleanMesh(10);
+        meOpt.init();
+        meOpt.cleanMesh(10);
 
         if(exportDebug)
-            meOpt->saveToObj(resultFolderName + "MeshClean.obj");
+            meOpt.saveToObj(resultFolderName + "MeshClean.obj");
 
         /////////////////////////////
         {
             // Update pointCams after clean
-            inout_ptsCams->resizeAdd(meOpt->newPtsOldPtId->size());
-            for(int i = 0; i < meOpt->newPtsOldPtId->size(); i++)
+            inout_ptsCams->resizeAdd(meOpt.newPtsOldPtId->size());
+            for(int i = 0; i < meOpt.newPtsOldPtId->size(); i++)
             {
-                int oldPtId = (*meOpt->newPtsOldPtId)[i];
+                int oldPtId = (*meOpt.newPtsOldPtId)[i];
                 StaticVector<int>* ptCams = new StaticVector<int>();
                 ptCams->reserve(sizeOfStaticVector<int>((*inout_ptsCams)[oldPtId]));
                 for(int j = 0; j < sizeOfStaticVector<int>((*inout_ptsCams)[oldPtId]); j++)
@@ -150,12 +150,12 @@ void meshPostProcessing(Mesh*& inout_mesh, StaticVector<StaticVector<int>*>*& in
             int subdivideMaxPtsThr =
                 mp._ini.get<int>("meshEnergyOpt.subdivideMaxPtsThr", 6000000);
 
-            meOpt->subdivideMeshMaxEdgeLengthUpdatePtsCams(&mp, subdivideMeshNTimesAvEdgeLengthThr *
-                                                                              meOpt->computeAverageEdgeLength(),
-                                                           inout_ptsCams, subdivideMaxPtsThr);
-            meOpt->deallocateCleaningAttributes();
-            meOpt->init();
-            meOpt->cleanMesh(1); // has to be here
+            meOpt.subdivideMeshMaxEdgeLengthUpdatePtsCams(&mp, subdivideMeshNTimesAvEdgeLengthThr *
+                                                          meOpt.computeAverageEdgeLength(),
+                                                          inout_ptsCams, subdivideMaxPtsThr);
+            meOpt.deallocateCleaningAttributes();
+            meOpt.init();
+            meOpt.cleanMesh(1); // has to be here
         }
 
         /////////////////////////////
@@ -172,16 +172,16 @@ void meshPostProcessing(Mesh*& inout_mesh, StaticVector<StaticVector<int>*>*& in
             vx = vx.normalize();
             vy = vy.normalize();
             vz = vz.normalize();
-            float avel = 10.0f * meOpt->computeAverageEdgeLength();
+            float avel = 10.0f * meOpt.computeAverageEdgeLength();
 
             ptsCanMove = new StaticVectorBool();
-            ptsCanMove->reserve(meOpt->pts->size());
-            ptsCanMove->resize_with(meOpt->pts->size(), true);
-            for(int i = 0; i < meOpt->pts->size(); i++)
+            ptsCanMove->reserve(meOpt.pts->size());
+            ptsCanMove->resize_with(meOpt.pts->size(), true);
+            for(int i = 0; i < meOpt.pts->size(); i++)
             {
-                float x = pointPlaneDistance((*meOpt->pts)[i], O, vx);
-                float y = pointPlaneDistance((*meOpt->pts)[i], O, vy);
-                float z = pointPlaneDistance((*meOpt->pts)[i], O, vz);
+                float x = pointPlaneDistance((*meOpt.pts)[i], O, vx);
+                float y = pointPlaneDistance((*meOpt.pts)[i], O, vy);
+                float z = pointPlaneDistance((*meOpt.pts)[i], O, vz);
                 bool isHexahBorderPt = ((x < avel) || (x > svx - avel) || (y < avel) || (y > svy - avel) ||
                                         (z < avel) || (z > svz - avel));
                 (*ptsCanMove)[i] = ((isHexahBorderPt == false) || (sizeOfStaticVector<int>((*inout_ptsCams)[i]) > 0));
@@ -197,19 +197,17 @@ void meshPostProcessing(Mesh*& inout_mesh, StaticVector<StaticVector<int>*>*& in
         {
             ALICEVISION_LOG_INFO("Mesh smoothing.");
             float lambda = (float)mp._ini.get<double>("meshEnergyOpt.lambda", 1.0f);
-            meOpt->optimizeSmooth(lambda, smoothNIter, ptsCanMove);
+            meOpt.optimizeSmooth(lambda, smoothNIter, ptsCanMove);
 
             if(exportDebug)
-                meOpt->saveToObj(resultFolderName + "mesh_smoothed.obj");
+                meOpt.saveToObj(resultFolderName + "mesh_smoothed.obj");
         }
 
         delete ptsCanMove;
-        meOpt->deallocateCleaningAttributes();
+        meOpt.deallocateCleaningAttributes();
 
         inout_mesh = new Mesh();
-        inout_mesh->addMesh(meOpt);
-
-        delete meOpt;
+        inout_mesh->addMesh(&meOpt);
     }
     mvsUtils::printfElapsedTime(timer, "Mesh post-processing ");
     ALICEVISION_LOG_INFO("Mesh post-processing done.");
