@@ -363,8 +363,7 @@ mesh::Mesh* joinMeshes(const std::vector<std::string>& recsDirs, StaticVector<Po
 {
     ReconstructionPlan rp(ls->dimensions, &ls->space[0], ls->mp, ls->pc, ls->spaceVoxelsFolderName);
 
-    if(ls->mp->verbose)
-        ALICEVISION_LOG_DEBUG("Detecting size of merged mesh.");
+    ALICEVISION_LOG_DEBUG("Detecting size of merged mesh.");
     int npts = 0;
     int ntris = 0;
     for(int i = 0; i < recsDirs.size(); i++)
@@ -386,8 +385,7 @@ mesh::Mesh* joinMeshes(const std::vector<std::string>& recsDirs, StaticVector<Po
         }
     }
 
-    if(ls->mp->verbose)
-        ALICEVISION_LOG_DEBUG("Creating mesh.");
+    ALICEVISION_LOG_DEBUG("Creating mesh.");
 
     mesh::Mesh* me = new mesh::Mesh();
 
@@ -401,8 +399,7 @@ mesh::Mesh* joinMeshes(const std::vector<std::string>& recsDirs, StaticVector<Po
     StaticVector<rgb>* ptsCols = new StaticVector<rgb>();
     ptsCols->reserve(npts);
 
-    if(ls->mp->verbose)
-        ALICEVISION_LOG_DEBUG("Merging part to one mesh (but not connecting them).");
+    ALICEVISION_LOG_DEBUG("Merging part to one mesh without connecting them.");
     for(int i = 0; i < recsDirs.size(); i++)
     {
         if(ls->mp->verbose)
@@ -421,12 +418,10 @@ mesh::Mesh* joinMeshes(const std::vector<std::string>& recsDirs, StaticVector<Po
             mvsUtils::inflateHexahedron(&(*voxelsArray)[i * 8], hexah, inflateFactor);
             mei->removeTrianglesOutsideHexahedron(hexah);
 
-            if(ls->mp->verbose)
-                ALICEVISION_LOG_DEBUG("Adding mesh part "<< i << " to mesh");
+            ALICEVISION_LOG_DEBUG("Adding mesh part "<< i << " to mesh");
             me->addMesh(mei);
 
-            if(ls->mp->verbose)
-                ALICEVISION_LOG_DEBUG("Merging colors of part: s" << i);
+            ALICEVISION_LOG_DEBUG("Merging colors of part: s" << i);
             fileName = folderName + "meshAvImgCol.ply.ptsColors";
             if(mvsUtils::FileExists(fileName))
             {
@@ -450,9 +445,7 @@ mesh::Mesh* joinMeshes(const std::vector<std::string>& recsDirs, StaticVector<Po
     }
 
     // int gridLevel = ls->mp->_ini.get<int>("LargeScale.gridLevel0", 0);
-
-    if(ls->mp->verbose)
-        ALICEVISION_LOG_DEBUG("Deleting...");
+    ALICEVISION_LOG_DEBUG("Deleting...");
     delete ptsCols;
     delete trisCols;
 
