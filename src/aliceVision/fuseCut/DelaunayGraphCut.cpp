@@ -38,7 +38,7 @@ DelaunayGraphCut::DelaunayGraphCut(mvsUtils::MultiViewParams* _mp, mvsUtils::Pre
 
     _camsVertexes.resize(mp->ncams, -1);
 
-    saveTemporaryBinFiles = mp->mip->_ini.get<bool>("LargeScale.saveTemporaryBinFiles", false);
+    saveTemporaryBinFiles = mp->_ini.get<bool>("LargeScale.saveTemporaryBinFiles", false);
 
     GEO::initialize();
     _tetrahedralization = GEO::Delaunay::create(3, "BDEL");
@@ -249,7 +249,7 @@ StaticVector<int> DelaunayGraphCut::getIsUsedPerCamera() const
     long timer = std::clock();
 
     StaticVector<int> cams;
-    cams.resize_with(mp->mip->getNbCameras(), 0);
+    cams.resize_with(mp->getNbCameras(), 0);
 
 //#pragma omp parallel for
     for(int vi = 0; vi < _verticesAttr.size(); ++vi)
@@ -427,8 +427,8 @@ void DelaunayGraphCut::loadPrecomputedDensePoints(StaticVector<int>* voxelsIds, 
     Point3d cgpt;
     int ncgpt = 0;
 
-    bool doFilterOctreeTracks = mp->mip->_ini.get<bool>("LargeScale.doFilterOctreeTracks", true);
-    int minNumOfConsistentCams = mp->mip->_ini.get<int>("filter.minNumOfConsistentCams", 2);
+    bool doFilterOctreeTracks = mp->_ini.get<bool>("LargeScale.doFilterOctreeTracks", true);
+    int minNumOfConsistentCams = mp->_ini.get<int>("filter.minNumOfConsistentCams", 2);
 
     // add points from voxel
     for(int i = 0; i < voxelsIds->size(); i++)
@@ -514,7 +514,7 @@ void DelaunayGraphCut::createTetrahedralizationFromDepthMapsCamsVoxel(const Stat
     /* initialize random seed: */
     srand(time(nullptr));
 
-    int nGridHelperVolumePointsDim = mp->mip->_ini.get<int>("LargeScale.nGridHelperVolumePointsDim", 10);
+    int nGridHelperVolumePointsDim = mp->_ini.get<int>("LargeScale.nGridHelperVolumePointsDim", 10);
     // add volume points to prevent singularities
     addHelperPoints(nGridHelperVolumePointsDim, voxel, minDist);
 
@@ -531,9 +531,9 @@ void DelaunayGraphCut::computeVerticesSegSize(bool allPoints, float alpha) // al
 {
     if(mp->verbose)
         ALICEVISION_LOG_DEBUG("creating universe");
-    int scalePS = mp->mip->_ini.get<int>("global.scalePS", 1);
-    int step = mp->mip->_ini.get<int>("global.step", 1);
-    float pointToJoinPixSizeDist = (float)mp->mip->_ini.get<double>("delaunaycut.pointToJoinPixSizeDist", 2.0) *
+    int scalePS = mp->_ini.get<int>("global.scalePS", 1);
+    int step = mp->_ini.get<int>("global.step", 1);
+    float pointToJoinPixSizeDist = (float)mp->_ini.get<double>("delaunaycut.pointToJoinPixSizeDist", 2.0) *
                                    (float)scalePS * (float)step * 2.0f;
 
     std::vector<Pixel> edges;
@@ -1178,10 +1178,10 @@ void DelaunayGraphCut::forceTedgesByGradientCVPR11(bool fixesSigma, float nPixel
     ALICEVISION_LOG_INFO("Forcing t-edges.");
     long t2 = clock();
 
-    float delta = (float)mp->mip->_ini.get<double>("delaunaycut.delta", 0.1f);
+    float delta = (float)mp->_ini.get<double>("delaunaycut.delta", 0.1f);
     ALICEVISION_LOG_INFO("delta: " << delta);
 
-    float beta = (float)mp->mip->_ini.get<double>("delaunaycut.beta", 1000.0f);
+    float beta = (float)mp->_ini.get<double>("delaunaycut.beta", 1000.0f);
     ALICEVISION_LOG_INFO("beta: " << beta);
 
     for(GC_cellInfo& c: _cellsAttr)
@@ -1278,27 +1278,27 @@ void DelaunayGraphCut::forceTedgesByGradientIJCV(bool fixesSigma, float nPixelSi
     ALICEVISION_LOG_INFO("Forcing t-edges");
     long t2 = clock();
 
-    float delta = (float)mp->mip->_ini.get<double>("delaunaycut.delta", 0.1f);
+    float delta = (float)mp->_ini.get<double>("delaunaycut.delta", 0.1f);
     if(mp->verbose)
         ALICEVISION_LOG_DEBUG("delta: " << delta);
 
-    float minJumpPartRange = (float)mp->mip->_ini.get<double>("delaunaycut.minJumpPartRange", 10000.0f);
+    float minJumpPartRange = (float)mp->_ini.get<double>("delaunaycut.minJumpPartRange", 10000.0f);
     if(mp->verbose)
         ALICEVISION_LOG_DEBUG("minJumpPartRange: " << minJumpPartRange);
 
-    float maxSilentPartRange = (float)mp->mip->_ini.get<double>("delaunaycut.maxSilentPartRange", 100.0f);
+    float maxSilentPartRange = (float)mp->_ini.get<double>("delaunaycut.maxSilentPartRange", 100.0f);
     if(mp->verbose)
         ALICEVISION_LOG_DEBUG("maxSilentPartRange: " << maxSilentPartRange);
 
-    float nsigmaJumpPart = (float)mp->mip->_ini.get<double>("delaunaycut.nsigmaJumpPart", 2.0f);
+    float nsigmaJumpPart = (float)mp->_ini.get<double>("delaunaycut.nsigmaJumpPart", 2.0f);
     if(mp->verbose)
         ALICEVISION_LOG_DEBUG("nsigmaJumpPart: " << nsigmaJumpPart);
 
-    float nsigmaFrontSilentPart = (float)mp->mip->_ini.get<double>("delaunaycut.nsigmaFrontSilentPart", 2.0f);
+    float nsigmaFrontSilentPart = (float)mp->_ini.get<double>("delaunaycut.nsigmaFrontSilentPart", 2.0f);
     if(mp->verbose)
         ALICEVISION_LOG_DEBUG("nsigmaFrontSilentPart: " << nsigmaFrontSilentPart);
 
-    float nsigmaBackSilentPart = (float)mp->mip->_ini.get<double>("delaunaycut.nsigmaBackSilentPart", 2.0f);
+    float nsigmaBackSilentPart = (float)mp->_ini.get<double>("delaunaycut.nsigmaBackSilentPart", 2.0f);
     if(mp->verbose)
         ALICEVISION_LOG_DEBUG("nsigmaBackSilentPart: " << nsigmaBackSilentPart);
 
@@ -1508,8 +1508,8 @@ void DelaunayGraphCut::updateGraphFromTmpPtsCamsHexahRC(int rc, Point3d hexah[8]
     std::string camPtsFileName;
     camPtsFileName = tmpCamsPtsFolderName + "camPtsGrid_" + mvsUtils::num2strFourDecimal(rc) + ".bin";
 
-    bool doFilterOctreeTracks = mp->mip->_ini.get<bool>("LargeScale.doFilterOctreeTracks", true);
-    int minNumOfConsistentCams = mp->mip->_ini.get<int>("filter.minNumOfConsistentCams", 2);
+    bool doFilterOctreeTracks = mp->_ini.get<bool>("LargeScale.doFilterOctreeTracks", true);
+    int minNumOfConsistentCams = mp->_ini.get<int>("filter.minNumOfConsistentCams", 2);
 
     /////////////////////////////////////////////////////////////////////////////////
     FILE* f = fopen(camPtsFileName.c_str(), "rb");
@@ -1665,10 +1665,10 @@ void DelaunayGraphCut::freeUnwantedFullCells(const Point3d* hexah)
     if(mp->verbose)
         ALICEVISION_LOG_DEBUG("freeUnwantedFullCells\n");
 
-    int minSegmentSize = (int)mp->mip->_ini.get<int>("hallucinationsFiltering.minSegmentSize", 10);
-    bool doRemoveBubbles = (bool)mp->mip->_ini.get<bool>("hallucinationsFiltering.doRemoveBubbles", true);
-    bool doRemoveDust = (bool)mp->mip->_ini.get<bool>("hallucinationsFiltering.doRemoveDust", true);
-    bool doLeaveLargestFullSegmentOnly = (bool)mp->mip->_ini.get<bool>("hallucinationsFiltering.doLeaveLargestFullSegmentOnly", false);
+    int minSegmentSize = (int)mp->_ini.get<int>("hallucinationsFiltering.minSegmentSize", 10);
+    bool doRemoveBubbles = (bool)mp->_ini.get<bool>("hallucinationsFiltering.doRemoveBubbles", true);
+    bool doRemoveDust = (bool)mp->_ini.get<bool>("hallucinationsFiltering.doRemoveDust", true);
+    bool doLeaveLargestFullSegmentOnly = (bool)mp->_ini.get<bool>("hallucinationsFiltering.doLeaveLargestFullSegmentOnly", false);
 
     if(doRemoveBubbles)
     {
@@ -1818,7 +1818,7 @@ void DelaunayGraphCut::reconstructVoxel(Point3d hexah[8], StaticVector<int>* vox
     // Load tracks and create tetrahedralization (into T variable)
     createTetrahedralizationFromDepthMapsCamsVoxel(cams, voxelsIds, hexah, ls);
 
-    //float nPixelSizeBehind = (float)mp->mip->_ini.get<double>("delaunaycut.filterPtsWithHigherPixSizeInDist", 5.0f)*spaceSteps.size();
+    //float nPixelSizeBehind = (float)mp->_ini.get<double>("delaunaycut.filterPtsWithHigherPixSizeInDist", 5.0f)*spaceSteps.size();
     // initTriangulationDefaults(folderName + "delaunayVerticesFiltered.wrl");
 
     computeVerticesSegSize(true, 0.0f);
@@ -1827,13 +1827,13 @@ void DelaunayGraphCut::reconstructVoxel(Point3d hexah[8], StaticVector<int>* vox
         removeSmallSegs(2500); // TODO FACA: to decide
     }
 
-    bool updateLSC = mp->mip->_ini.get<bool>("LargeScale.updateLSC", true);
+    bool updateLSC = mp->_ini.get<bool>("LargeScale.updateLSC", true);
 
     reconstructExpetiments(cams, folderName, updateLSC,
                            hexah, tmpCamsPtsFolderName,
                            spaceSteps);
 
-    bool saveOrNot = mp->mip->_ini.get<bool>("LargeScale.saveDelaunayTriangulation", false);
+    bool saveOrNot = mp->_ini.get<bool>("LargeScale.saveDelaunayTriangulation", false);
     if(saveOrNot)
     {
         std::string fileNameDh = folderName + "delaunayTriangulation.bin";
@@ -1973,23 +1973,23 @@ void DelaunayGraphCut::reconstructExpetiments(const StaticVector<int>& cams, con
     long t1;
 
     bool fixesSigma = update;
-    float sigma = (float)mp->mip->_ini.get<double>("delaunaycut.sigma", 2.0f) * spaceSteps.size();
+    float sigma = (float)mp->_ini.get<double>("delaunaycut.sigma", 2.0f) * spaceSteps.size();
 
     // 0 for distFcn equals 1 all the time
-    float distFcnHeight = (float)mp->mip->_ini.get<double>("delaunaycut.distFcnHeight", 0.0f);
+    float distFcnHeight = (float)mp->_ini.get<double>("delaunaycut.distFcnHeight", 0.0f);
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-    bool labatutCFG09 = mp->mip->_ini.get<bool>("global.LabatutCFG09", false);
-    bool jancosekCVPR11 = mp->mip->_ini.get<bool>("global.JancosekCVPR11", false);
+    bool labatutCFG09 = mp->_ini.get<bool>("global.LabatutCFG09", false);
+    bool jancosekCVPR11 = mp->_ini.get<bool>("global.JancosekCVPR11", false);
     // jancosekIJCV: "Exploiting Visibility Information in Surface Reconstruction to Preserve Weakly Supported Surfaces", Michal Jancosek and Tomas Pajdla, 2014
-    bool jancosekIJCV = mp->mip->_ini.get<bool>("global.JancosekIJCV", true);
+    bool jancosekIJCV = mp->_ini.get<bool>("global.JancosekIJCV", true);
 
     if(jancosekCVPR11)
     {
-        float delta = (float)mp->mip->_ini.get<double>("delaunaycut.delta", 0.1f);
+        float delta = (float)mp->_ini.get<double>("delaunaycut.delta", 0.1f);
 
         ALICEVISION_LOG_INFO("Jancosek CVPR 2011 method ( delta*100 = " << static_cast<int>(delta * 100.0f) << "):");
 
@@ -2022,7 +2022,7 @@ void DelaunayGraphCut::reconstructExpetiments(const StaticVector<int>& cams, con
 
     if(jancosekIJCV) // true by default
     {
-        float delta = (float)mp->mip->_ini.get<double>("delaunaycut.delta", 0.1f);
+        float delta = (float)mp->_ini.get<double>("delaunaycut.delta", 0.1f);
 
         ALICEVISION_LOG_INFO("Jancosek IJCV method ( delta*100 = " << static_cast<int>(delta * 100.0f) << " ): ");
 

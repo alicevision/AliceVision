@@ -73,10 +73,8 @@ int main(int argc, char* argv[])
     // set verbose level
     system::Logger::get()->setLogLevel(verboseLevel);
 
-    // .ini parsing
-    mvsUtils::MultiViewInputParams mip(iniFilepath, "", "");
-    const double simThr = mip._ini.get<double>("global.simThr", 0.0);
-    mvsUtils::MultiViewParams mp(mip.getNbCameras(), &mip, (float) simThr);
+    // .ini and files parsing
+    mvsUtils::MultiViewParams mp(iniFilepath);
     mvsUtils::PreMatchCams pc(&mp);
 
     ALICEVISION_LOG_INFO("Compute camera pairs.");

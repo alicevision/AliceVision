@@ -10,7 +10,11 @@
 #include <aliceVision/image/Image.hpp>
 #include <aliceVision/image/pixelTypes.hpp>
 
+#include <OpenImageIO/paramlist.h>
+
 #include <string>
+
+namespace oiio = OIIO;
 
 namespace aliceVision {
 namespace image {
@@ -87,10 +91,10 @@ void readImage(const std::string& path, Image<RGBColor>& image);
  * @param[in] path The given path to the image
  * @param[in] image The output image buffer
  */
-void writeImage(const std::string& path, const Image<unsigned char>& image);
-void writeImage(const std::string& path, const Image<RGBAColor>& image);
-void writeImage(const std::string& path, const Image<RGBfColor>& image);
-void writeImage(const std::string& path, const Image<RGBColor>& image);
+void writeImage(const std::string& path, const Image<unsigned char>& image, const oiio::ParamValueList& metadata = oiio::ParamValueList());
+void writeImage(const std::string& path, const Image<RGBAColor>& image, const oiio::ParamValueList& metadata = oiio::ParamValueList());
+void writeImage(const std::string& path, const Image<RGBfColor>& image, const oiio::ParamValueList& metadata = oiio::ParamValueList());
+void writeImage(const std::string& path, const Image<RGBColor>& image, const oiio::ParamValueList& metadata = oiio::ParamValueList());
 
 }  // namespace image
 }  // namespace aliceVision

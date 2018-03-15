@@ -16,7 +16,7 @@ namespace bfs = boost::filesystem;
 MeshEnergyOpt::MeshEnergyOpt(mvsUtils::MultiViewParams* _mp)
     : MeshAnalyze(_mp)
 {
-//    tmpDir = mp->mip->mvDir + "meshEnergyOpt/";
+//    tmpDir = mp->mvDir + "meshEnergyOpt/";
 //    bfs::create_directory(tmpDir);
 }
 
@@ -137,7 +137,7 @@ bool MeshEnergyOpt::optimizeSmooth(float lambda, float epsilon, int type, int ni
         return false;
     }
 
-    bool saveDebug = mp ? mp->mip->_ini.get<bool>("meshEnergyOpt.saveAllIterations", false) : false;
+    bool saveDebug = mp ? mp->_ini.get<bool>("meshEnergyOpt.saveAllIterations", false) : false;
 
     Point3d LU, RD;
     LU = (*pts)[0];
@@ -163,7 +163,7 @@ bool MeshEnergyOpt::optimizeSmooth(float lambda, float epsilon, int type, int ni
         ALICEVISION_LOG_INFO("Optimizing mesh smooth: iteration " << i);
         updateGradientParallel(lambda, epsilon, type, LU, RD, ptsCanMove);
         if(saveDebug)
-            saveToObj(mp->mip->mvDir + "mesh_smoothed_" + std::to_string(i) + ".obj");
+            saveToObj(mp->mvDir + "mesh_smoothed_" + std::to_string(i) + ".obj");
     }
 
     return true;

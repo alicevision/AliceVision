@@ -35,8 +35,8 @@ bool get2dLineImageIntersection(Point2d* pFrom, Point2d* pTo, Point2d linePoint1
     float c = -a * linePoint1.x - b * linePoint1.y;
 
     int intersections = 0;
-    float rw = (float)mp->mip->getWidth(camId);
-    float rh = (float)mp->mip->getHeight(camId);
+    float rw = (float)mp->getWidth(camId);
+    float rh = (float)mp->getHeight(camId);
 
     // ax + by + c = 0
 
@@ -303,8 +303,8 @@ void getHexahedronTriangles(Point3d tris[12][3], const Point3d hexah[8])
 // hexahedron format ... 0-3 frontal face, 4-7 back face
 void getCamHexahedron(const MultiViewParams* mp, Point3d hexah[8], int cam, float mind, float maxd)
 {
-    float w = (float)mp->mip->getWidth(cam);
-    float h = (float)mp->mip->getHeight(cam);
+    float w = (float)mp->getWidth(cam);
+    float h = (float)mp->getHeight(cam);
     hexah[0] = mp->CArr[cam] + (mp->iCamArr[cam] * Point2d(0.0f, 0.0f)).normalize() * mind;
     hexah[4] = mp->CArr[cam] + (mp->iCamArr[cam] * Point2d(0.0f, 0.0f)).normalize() * maxd;
     hexah[1] = mp->CArr[cam] + (mp->iCamArr[cam] * Point2d(w, 0.0f)).normalize() * mind;
@@ -651,13 +651,13 @@ StaticVector<StaticVector<Pixel>*>* convertObjectsCamsToCamsObjects(const MultiV
     return camsPts;
 }
 
-int computeStep(MultiViewInputParams* mip, int scale, int maxWidth, int maxHeight)
+int computeStep(MultiViewParams* mp, int scale, int maxWidth, int maxHeight)
 {
     int step = 1;
-    int ow = mip->getMaxImageWidth() / scale;
-    int oh = mip->getMaxImageHeight() / scale;
-    int g_Width = mip->getMaxImageWidth() / scale;
-    int g_Height = mip->getMaxImageHeight() / scale;
+    int ow = mp->getMaxImageWidth() / scale;
+    int oh = mp->getMaxImageHeight() / scale;
+    int g_Width = mp->getMaxImageWidth() / scale;
+    int g_Height = mp->getMaxImageHeight() / scale;
     while((g_Width > maxWidth) || (g_Height > maxHeight))
     {
         step++;
@@ -772,7 +772,7 @@ StaticVector<int>* createRandomArrayOfIntegers(int n)
 float getCGDepthFromSeeds(const MultiViewParams* mp, int rc)
 {
     StaticVector<SeedPoint>* seeds;
-    loadSeedsFromFile(&seeds, rc, mp->mip, EFileType::seeds);
+    loadSeedsFromFile(&seeds, rc, mp, EFileType::seeds);
 
     float midDepth = -1.0f;
 
