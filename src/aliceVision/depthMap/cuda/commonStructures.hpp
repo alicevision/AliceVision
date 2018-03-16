@@ -136,6 +136,10 @@ public:
     if (Dim >= 2) sy = _size[1];
     if (Dim >= 3) sx = _size[2];
     buffer = (Type*)malloc(sx * sy * sz * sizeof (Type));
+    if( buffer == 0 ) {
+        printf("%d malloc failed\n", __LINE__ );
+        exit(-1);
+    }
     memset(buffer, 0, sx * sy * sz * sizeof (Type));
   }
   CudaHostMemoryHeap<Type,Dim>& operator=(const CudaHostMemoryHeap<Type,Dim>& rhs)
@@ -148,6 +152,10 @@ public:
     if (Dim >= 2) sy = rhs.sy;
     if (Dim >= 3) sx = rhs.sz;
     buffer = (Type*)malloc(sx * sy * sz * sizeof (Type));
+    if( buffer == 0 ) {
+        printf("%d malloc failed\n", __LINE__ );
+        exit(-1);
+    }
     memcpy(buffer, rhs.buffer, sx * sy * sz * sizeof (Type));
     return *this;
   }
@@ -292,6 +300,8 @@ template <class Type, unsigned Dim> class CudaArray
 public:
   explicit CudaArray(const CudaSize<Dim> &_size)
   {
+    cudaError_t err;
+
     size = _size;
     sx = 1;
     sy = 1;
@@ -302,11 +312,19 @@ public:
     cudaChannelFormatDesc channelDesc = cudaCreateChannelDesc<Type>();
     if(Dim == 1)
     {
-      cudaMallocArray(&array, &channelDesc, _size[0], 1, cudaArraySurfaceLoadStore);
+      err = cudaMallocArray(&array, &channelDesc, _size[0], 1, cudaArraySurfaceLoadStore);
+      if( err != cudaSuccess )
+      {
+          printf( "Failed to allocate CUDA Array in line %d\n", __LINE__-3 );
+      }
     }
     else if(Dim == 2)
     {
-      cudaMallocArray(&array, &channelDesc, _size[0], _size[1], cudaArraySurfaceLoadStore);
+      err = cudaMallocArray(&array, &channelDesc, _size[0], _size[1], cudaArraySurfaceLoadStore);
+      if( err != cudaSuccess )
+      {
+          printf( "Failed to allocate CUDA Array in line %d\n", __LINE__-3 );
+      }
     }
     else
     {
@@ -316,11 +334,17 @@ public:
       extent.depth = _size[2];
       for(unsigned i = 3; i < Dim; ++i)
         extent.depth *= _size[i];
-      cudaMalloc3DArray(&array, &channelDesc, extent);
+      err = cudaMalloc3DArray(&array, &channelDesc, extent);
+      if( err != cudaSuccess )
+      {
+          printf( "Failed to allocate CUDA Array in line %d\n", __LINE__-3 );
+      }
     }
   }
   explicit inline CudaArray(const CudaDeviceMemoryPitched<Type, Dim> &rhs)
   {
+    cudaError_t err;
+
     size = rhs.getSize();
     sx = 1;
     sy = 1;
@@ -331,11 +355,19 @@ public:
     cudaChannelFormatDesc channelDesc = cudaCreateChannelDesc<Type>();
     if(Dim == 1)
     {
-      cudaMallocArray(&array, &channelDesc, size[0], 1, cudaArraySurfaceLoadStore);
+      err = cudaMallocArray(&array, &channelDesc, size[0], 1, cudaArraySurfaceLoadStore);
+      if( err != cudaSuccess )
+      {
+          printf( "Failed to allocate CUDA Array in line %d\n", __LINE__-3 );
+      }
     }
     else if(Dim == 2)
     {
-      cudaMallocArray(&array, &channelDesc, size[0], size[1], cudaArraySurfaceLoadStore);
+      err = cudaMallocArray(&array, &channelDesc, size[0], size[1], cudaArraySurfaceLoadStore);
+      if( err != cudaSuccess )
+      {
+          printf( "Failed to allocate CUDA Array in line %d\n", __LINE__-3 );
+      }
     }
     else
     {
@@ -345,12 +377,18 @@ public:
       extent.depth = size[2];
       for(unsigned i = 3; i < Dim; ++i)
         extent.depth *= size[i];
-      cudaMalloc3DArray(&array, &channelDesc, extent);
+      err = cudaMalloc3DArray(&array, &channelDesc, extent);
+      if( err != cudaSuccess )
+      {
+          printf( "Failed to allocate CUDA Array in line %d\n", __LINE__-3 );
+      }
     }
     copy(*this, rhs);
   }
   explicit inline CudaArray(const CudaHostMemoryHeap<Type, Dim> &rhs)
   {
+    cudaError_t err;
+
     size = rhs.getSize();
     sx = 1;
     sy = 1;
@@ -361,11 +399,19 @@ public:
     cudaChannelFormatDesc channelDesc = cudaCreateChannelDesc<Type>();
     if(Dim == 1)
     {
-      cudaMallocArray(&array, &channelDesc, size[0], 1, cudaArraySurfaceLoadStore);
+      err = cudaMallocArray(&array, &channelDesc, size[0], 1, cudaArraySurfaceLoadStore);
+      if( err != cudaSuccess )
+      {
+          printf( "Failed to allocate CUDA Array in line %d\n", __LINE__-3 );
+      }
     }
     else if(Dim == 2)
     {
-      cudaMallocArray(&array, &channelDesc, size[0], size[1], cudaArraySurfaceLoadStore);
+      err = cudaMallocArray(&array, &channelDesc, size[0], size[1], cudaArraySurfaceLoadStore);
+      if( err != cudaSuccess )
+      {
+          printf( "Failed to allocate CUDA Array in line %d\n", __LINE__-3 );
+      }
     }
     else
     {
@@ -375,7 +421,11 @@ public:
       extent.depth = size[2];
       for(unsigned i = 3; i < Dim; ++i)
         extent.depth *= size[i];
-      cudaMalloc3DArray(&array, &channelDesc, extent);
+      err = cudaMalloc3DArray(&array, &channelDesc, extent);
+      if( err != cudaSuccess )
+      {
+          printf( "Failed to allocate CUDA Array in line %d\n", __LINE__-3 );
+      }
     }
     copy(*this, rhs);
   }
