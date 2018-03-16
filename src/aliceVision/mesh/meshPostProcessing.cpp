@@ -197,9 +197,7 @@ void meshPostProcessing(Mesh*& inout_mesh, StaticVector<StaticVector<int>*>*& in
         {
             ALICEVISION_LOG_INFO("Mesh smoothing.");
             float lambda = (float)mp._ini.get<double>("meshEnergyOpt.lambda", 1.0f);
-            float epsilon = (float)mp._ini.get<double>("meshEnergyOpt.epsilon", 0.1f); // unused in type 3
-            int type = mp._ini.get<int>("meshEnergyOpt.smoothType", 3); // 0, 1, 2, 3, 4 => only 1 and 3 works
-            meOpt->optimizeSmooth(lambda, epsilon, type, smoothNIter, ptsCanMove);
+            meOpt->optimizeSmooth(lambda, smoothNIter, ptsCanMove);
 
             if(exportDebug)
                 meOpt->saveToObj(resultFolderName + "mesh_smoothed.obj");

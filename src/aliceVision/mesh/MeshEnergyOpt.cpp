@@ -43,7 +43,7 @@ StaticVector<Point3d>* MeshEnergyOpt::computeLaplacianPtsParallel()
     return lapPts;
 }
 
-void MeshEnergyOpt::updateGradientParallel(float lambda, float epsilon, int type, const Point3d& LU,
+void MeshEnergyOpt::updateGradientParallel(float lambda, const Point3d& LU,
                                                 const Point3d& RD, StaticVectorBool* ptsCanMove)
 {
     // printf("nlabpts %i of %i\n",nlabpts,pts->size());
@@ -54,73 +54,19 @@ void MeshEnergyOpt::updateGradientParallel(float lambda, float epsilon, int type
     newPts->push_back_arr(pts);
 
 #pragma omp parallel for
-    for(int i = 0; i < pts->size(); i++)
+    for(int i = 0; i < pts->size(); ++i)
     {
         if((ptsCanMove == nullptr) || ((*ptsCanMove)[i]))
         {
-
             Point3d n;
 
-            switch(type)
+            if(getBiLaplacianSmoothingVector(i, lapPts, n))
             {
-                case 0:
-                // doesn't work
-                    if(getVertexMeanCurvatureNormal(i, n))
-                    {
-                        (*newPts)[i] = (*newPts)[i] + n * lambda;
-                    }
-                    break;
-                case 1:
-                // smooth only
-                    if(applyLaplacianOperator(i, pts, n))
-                    {
-                        (*newPts)[i] = (*newPts)[i] + n * lambda;
-                    }
-                    break;
-                case 2:
-                // doesn't work
-                    if(getMeanCurvAndLaplacianSmoothing(i, n, epsilon))
-                    {
-                        (*newPts)[i] = (*newPts)[i] + n * lambda;
-                    }
-                    break;
-                case 3:
-                // default mode
-
-                    // if (isIsBoundaryPt(i)==false)
-                    //{
-                    if(getBiLaplacianSmoothingVector(i, lapPts, n))
-                    {
-                        Point3d p = (*newPts)[i] + n * lambda;
-                        if((p.x > LU.x) && (p.y > LU.y) && (p.z > LU.z) && (p.x < RD.x) && (p.y < RD.y) && (p.z < RD.z))
-                        {
-                            (*newPts)[i] = p;
-                        }
-                    }
-                    /*
-            }else{
-                    if (applyLaplacianOperator(i, pts, n)==true)
-                    {
-                            Point3d p = (*newPts)[i] + n * lamda;
-                            if ((p.x>LU.x)&&(p.y>LU.y)&&(p.z>LU.z)&&
-                                    (p.x<RD.x)&&(p.y<RD.y)&&(p.z<RD.z))
-                            {
-                                    (*newPts)[i] = p;
-                            };
-                    };
-            };
-            */
-                    break;
-                case 4:
-                // doesn't work
-                    Point3d lap;
-                    Point3d bilap;
-                    if((applyLaplacianOperator(i, pts, lap)) && (applyLaplacianOperator(i, lapPts, bilap)) &&
-                       (!isIsBoundaryPt(i)))
-                    {
-                        (*newPts)[i] = (*newPts)[i] + bilap * lambda;
-                    }
-                    break;
+                Point3d p = (*newPts)[i] + n * lambda;
+                if((p.x > LU.x) && (p.y > LU.y) && (p.z > LU.z) && (p.x < RD.x) && (p.y < RD.y) && (p.z < RD.z))
+                {
+                    (*newPts)[i] = p;
+                }
             }
         }
     }
@@ -130,7 +76,7 @@ void MeshEnergyOpt::updateGradientParallel(float lambda, float epsilon, int type
     delete lapPts;
 }
 
-bool MeshEnergyOpt::optimizeSmooth(float lambda, float epsilon, int type, int niter, StaticVectorBool* ptsCanMove)
+bool MeshEnergyOpt::optimizeSmooth(float lambda, int niter, StaticVectorBool* ptsCanMove)
 {
     if(pts->size() <= 4)
     {
@@ -154,14 +100,12 @@ bool MeshEnergyOpt::optimizeSmooth(float lambda, float epsilon, int type, int ni
 
     ALICEVISION_LOG_INFO("Optimizing mesh smooth: " << std::endl
                          << "\t- lamda: " << lambda << std::endl
-                         << "\t- epsilon: " << epsilon << std::endl
-                         << "\t- type: " << type << std::endl
                          << "\t- niters: " << niter << std::endl);
 
     for(int i = 0; i < niter; i++)
     {
         ALICEVISION_LOG_INFO("Optimizing mesh smooth: iteration " << i);
-        updateGradientParallel(lambda, epsilon, type, LU, RD, ptsCanMove);
+        updateGradientParallel(lambda, LU, RD, ptsCanMove);
         if(saveDebug)
             saveToObj(mp->mvDir + "mesh_smoothed_" + std::to_string(i) + ".obj");
     }
