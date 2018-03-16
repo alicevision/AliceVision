@@ -227,6 +227,10 @@ int ps_listCUDADevices(bool verbose)
             cudaDeviceProp dprop;
             cudaGetDeviceProperties(&dprop, i);
             printf("   %d: %s\n", i, dprop.name);
+            printf("       max 1D texture size: %d bytes\n", dprop.maxTexture1D );
+            printf("       max 1D surface size: %d bytes\n", dprop.maxSurface1D );
+            printf("       max 2D texture size: (%d,%d) bytes\n", dprop.maxTexture2D[0], dprop.maxTexture2D[1] );
+            printf("       max 2D surface size: (%d,%d) bytes\n", dprop.maxSurface2D[0], dprop.maxSurface2D[1] );
         }
     }
 
@@ -243,18 +247,18 @@ void ps_deviceAllocate(CudaArray<uchar4, 2>*** ps_texs_arr, int ncams, int width
     {
         printf("requested CUDA device no %d does not exist, only %d devices\n", deviceId, num_gpus );
     }
-	else
-	{
-    	cudaError_t outval = cudaSetDevice(deviceId);
-		if( outval == cudaSuccess )
-		{
-    		printf("CUDA device no %i for %i\n", outval, deviceId);
-		}
-		else
-		{
-    		printf("Could not select CUDA device no %d\n", deviceId);
-		}
-	}
+    else
+    {
+        cudaError_t outval = cudaSetDevice(deviceId);
+        if( outval == cudaSuccess )
+        {
+            printf("CUDA device no %i for %i\n", outval, deviceId);
+        }
+        else
+        {
+            printf("Could not select CUDA device no %d\n", deviceId);
+        }
+    }
 
     // printf("ps_deviceAllocate\n");
     // pr_printfDeviceMemoryInfo();

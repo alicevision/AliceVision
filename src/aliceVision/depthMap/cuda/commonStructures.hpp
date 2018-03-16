@@ -403,7 +403,7 @@ public:
       err = cudaMallocArray(&array, &channelDesc, size[0], 1, cudaArraySurfaceLoadStore);
       if( err != cudaSuccess )
       {
-        printf( "Failed to allocate CUDA Array in line %d, size=(%i)\n", __LINE__-3, size[0] );
+          printf( "Failed to allocate CUDA Array of size %i in line %s,%d - reason %s\n", size[0], __FILE__, __LINE__-3, cudaGetErrorString(err) );
       }
     }
     else if(Dim == 2)
@@ -411,7 +411,7 @@ public:
       err = cudaMallocArray(&array, &channelDesc, size[0], size[1], cudaArraySurfaceLoadStore);
       if( err != cudaSuccess )
       {
-        printf( "Failed to allocate CUDA Array in line %d, size=(%i, %i)\n", __LINE__-3, size[0], size[1] );
+          printf( "Failed to allocate CUDA Array of size (%i,%i) in line %s,%d - reason %s\n", size[0], size[1], __FILE__, __LINE__-3, cudaGetErrorString(err) );
       }
     }
     else
@@ -425,7 +425,7 @@ public:
       err = cudaMalloc3DArray(&array, &channelDesc, extent);
       if( err != cudaSuccess )
       {
-        printf( "Failed to allocate CUDA Array in line %d, size=(%i, %i, %i)\n", __LINE__-3, size[0], size[1], size[2] );
+          printf( "Failed to allocate CUDA Array of size (%i,%i,%i) in line %s,%d - reason %s\n", size[0], size[1], size[2], __FILE__, __LINE__-3, cudaGetErrorString(err) );
       }
     }
     copy(*this, rhs);
@@ -600,7 +600,7 @@ template<class Type, unsigned Dim> void copy(CudaArray<Type, Dim>& _dst, const C
   }
   if( err != cudaSuccess )
   {
-    printf("Failed to copy heap memory to CUDA array in %s : %d\n", __FILE__, __LINE__ );
+    printf("Failed to copy heap memory to CUDA array in %s:%d, reason %s\n", __FILE__, __LINE__, cudaGetErrorString(err) );
   }
 }
 
