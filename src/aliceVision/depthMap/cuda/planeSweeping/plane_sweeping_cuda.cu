@@ -239,9 +239,22 @@ void ps_deviceAllocate(CudaArray<uchar4, 2>*** ps_texs_arr, int ncams, int width
     int num_gpus = 0;
     cudaGetDeviceCount(&num_gpus);
 
-
-    int outval = cudaSetDevice(deviceId);
-    printf("CUDA device no %i for %i\n", outval, deviceId);
+    if( deviceId >= num_gpus )
+    {
+        printf("requested CUDA device no %d does not exist, only %d devices\n", deviceId, num_gpus );
+    }
+	else
+	{
+    	cudaError_t outval = cudaSetDevice(deviceId);
+		if( outval == cudaSuccess )
+		{
+    		printf("CUDA device no %i for %i\n", outval, deviceId);
+		}
+		else
+		{
+    		printf("Could not select CUDA device no %d\n", deviceId);
+		}
+	}
 
     // printf("ps_deviceAllocate\n");
     // pr_printfDeviceMemoryInfo();
