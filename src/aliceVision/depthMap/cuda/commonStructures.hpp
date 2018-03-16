@@ -570,12 +570,14 @@ template<class Type, unsigned Dim> void copy(CudaDeviceMemoryPitched<Type, Dim>&
 
 template<class Type, unsigned Dim> void copy(CudaArray<Type, Dim>& _dst, const CudaHostMemoryHeap<Type, Dim>& _src)
 {
+  cudaError_t err;
+
   cudaMemcpyKind kind = cudaMemcpyHostToDevice;
   if(Dim == 1) {
-    cudaMemcpyToArray(_dst.getArray(), 0, 0, _src.getBuffer(), _src.getSize()[0] * sizeof (Type), kind);
+    err = cudaMemcpyToArray(_dst.getArray(), 0, 0, _src.getBuffer(), _src.getSize()[0] * sizeof (Type), kind);
   }
   else if(Dim == 2) {
-    cudaMemcpy2DToArray(_dst.getArray(), 0, 0, _src.getBuffer(), _src.getSize()[0] * sizeof (Type), _src.getSize()[0] * sizeof (Type), _src.getSize()[1], kind);
+    err = cudaMemcpy2DToArray(_dst.getArray(), 0, 0, _src.getBuffer(), _src.getSize()[0] * sizeof (Type), _src.getSize()[0] * sizeof (Type), _src.getSize()[1], kind);
   }
   else if(Dim == 3) {
     cudaMemcpy3DParms p = { 0 };
@@ -593,7 +595,11 @@ template<class Type, unsigned Dim> void copy(CudaArray<Type, Dim>& _dst, const C
     for(unsigned i = 3; i < Dim; ++i)
       p.extent.depth *= _src.getSize()[i];
     p.kind = kind;
-    cudaMemcpy3D(&p);
+    err = cudaMemcpy3D(&p);
+  }
+  if( err != cudaSuccess )
+  {
+    printf("Failed to copy heap memory to CUDA array in %s : %d\n", __FILE__, __LINE__ );
   }
 }
 
