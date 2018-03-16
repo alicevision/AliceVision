@@ -21,6 +21,7 @@ public:
     for(int i = Dim; i--;)
       size[i] = 0;
   }
+  inline size_t dim() const { return Dim; }
   inline size_t operator[](size_t i) const { return size[i]; }
   inline size_t &operator[](size_t i) { return size[i]; }
   inline CudaSizeBase operator+(const CudaSizeBase<Dim> &s) const {
@@ -315,7 +316,7 @@ public:
       err = cudaMallocArray(&array, &channelDesc, _size[0], 1, cudaArraySurfaceLoadStore);
       if( err != cudaSuccess )
       {
-          printf( "Failed to allocate CUDA Array in line %d\n", __LINE__-3 );
+          printf( "Failed to allocate CUDA Array in line %d, size=%i\n", __LINE__-3, _size[0] );
       }
     }
     else if(Dim == 2)
@@ -323,7 +324,7 @@ public:
       err = cudaMallocArray(&array, &channelDesc, _size[0], _size[1], cudaArraySurfaceLoadStore);
       if( err != cudaSuccess )
       {
-          printf( "Failed to allocate CUDA Array in line %d\n", __LINE__-3 );
+          printf( "Failed to allocate CUDA Array in line %d, size=(%i, %i)\n", __LINE__-3, _size[0], _size[1] );
       }
     }
     else
@@ -337,7 +338,7 @@ public:
       err = cudaMalloc3DArray(&array, &channelDesc, extent);
       if( err != cudaSuccess )
       {
-          printf( "Failed to allocate CUDA Array in line %d\n", __LINE__-3 );
+          printf( "Failed to allocate CUDA Array in line %d, size=(%i, %i, %i)\n", __LINE__-3, _size[0], _size[1], _size[2] );
       }
     }
   }
@@ -351,14 +352,14 @@ public:
     sz = 1;
     if (Dim >= 1) sx = rhs.getSize()[0];
     if (Dim >= 2) sy = rhs.getSize()[1];
-    if (Dim >= 3) sx = rhs.getSize()[2];
+    if (Dim >= 3) sz = rhs.getSize()[2];
     cudaChannelFormatDesc channelDesc = cudaCreateChannelDesc<Type>();
     if(Dim == 1)
     {
       err = cudaMallocArray(&array, &channelDesc, size[0], 1, cudaArraySurfaceLoadStore);
       if( err != cudaSuccess )
       {
-          printf( "Failed to allocate CUDA Array in line %d\n", __LINE__-3 );
+        printf( "Failed to allocate CUDA Array in line %d, size=(%i)\n", __LINE__-3, size[0] );
       }
     }
     else if(Dim == 2)
@@ -366,7 +367,7 @@ public:
       err = cudaMallocArray(&array, &channelDesc, size[0], size[1], cudaArraySurfaceLoadStore);
       if( err != cudaSuccess )
       {
-          printf( "Failed to allocate CUDA Array in line %d\n", __LINE__-3 );
+        printf( "Failed to allocate CUDA Array in line %d, size=(%i, %i)\n", __LINE__-3, size[0], size[1] );
       }
     }
     else
@@ -380,7 +381,7 @@ public:
       err = cudaMalloc3DArray(&array, &channelDesc, extent);
       if( err != cudaSuccess )
       {
-          printf( "Failed to allocate CUDA Array in line %d\n", __LINE__-3 );
+        printf( "Failed to allocate CUDA Array in line %d, size=(%i, %i, %i)\n", __LINE__-3, size[0], size[1], size[2] );
       }
     }
     copy(*this, rhs);
@@ -395,14 +396,14 @@ public:
     sz = 1;
     if (Dim >= 1) sx = rhs.getSize()[0];
     if (Dim >= 2) sy = rhs.getSize()[1];
-    if (Dim >= 3) sx = rhs.getSize()[2];
+    if (Dim >= 3) sz = rhs.getSize()[2];
     cudaChannelFormatDesc channelDesc = cudaCreateChannelDesc<Type>();
     if(Dim == 1)
     {
       err = cudaMallocArray(&array, &channelDesc, size[0], 1, cudaArraySurfaceLoadStore);
       if( err != cudaSuccess )
       {
-          printf( "Failed to allocate CUDA Array in line %d\n", __LINE__-3 );
+        printf( "Failed to allocate CUDA Array in line %d, size=(%i)\n", __LINE__-3, size[0] );
       }
     }
     else if(Dim == 2)
@@ -410,7 +411,7 @@ public:
       err = cudaMallocArray(&array, &channelDesc, size[0], size[1], cudaArraySurfaceLoadStore);
       if( err != cudaSuccess )
       {
-          printf( "Failed to allocate CUDA Array in line %d\n", __LINE__-3 );
+        printf( "Failed to allocate CUDA Array in line %d, size=(%i, %i)\n", __LINE__-3, size[0], size[1] );
       }
     }
     else
@@ -424,7 +425,7 @@ public:
       err = cudaMalloc3DArray(&array, &channelDesc, extent);
       if( err != cudaSuccess )
       {
-          printf( "Failed to allocate CUDA Array in line %d\n", __LINE__-3 );
+        printf( "Failed to allocate CUDA Array in line %d, size=(%i, %i, %i)\n", __LINE__-3, size[0], size[1], size[2] );
       }
     }
     copy(*this, rhs);

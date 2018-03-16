@@ -355,7 +355,7 @@ void testCUDAdeviceNo(int CUDAdeviceNo)
     	if(myCUDAdeviceNo != CUDAdeviceNo)
     	{
             printf("WARNING different device %i %i\n", myCUDAdeviceNo, CUDAdeviceNo);
-    	};
+    	}
     }
 }
 
@@ -987,14 +987,22 @@ void ps_computeSimilarityVolume(CudaArray<uchar4, 2>** ps_texs_arr,
 {
     clock_t tall = tic();
     testCUDAdeviceNo(CUDAdeviceNo);
+    CHECK_CUDA_ERROR();
 
-    if(verbose)
-        printf("nDepths %i, nDepthsToSearch %i \n", nDepths, nDepthsToSearch);
+    //if(verbose)
+    printf("nDepths %i, nDepthsToSearch %i \n", nDepths, nDepthsToSearch);
+    printf("volPixs_hmh.getBytes(): %i\n", volPixs_hmh.getBytes());
+    printf("volPixs_hmh.getSize().dim(): %i\n", volPixs_hmh.getSize().dim());
+    printf("volPixs_hmh.getSize(): (%i, %i)\n", volPixs_hmh.getSize()[0], volPixs_hmh.getSize()[1]);
     CudaArray<int4, 2> volPixs_arr(volPixs_hmh);
+    CHECK_CUDA_ERROR();
     CudaArray<float, 2> depths_arr(depths_hmh);
+    CHECK_CUDA_ERROR();
 
     cudaBindTextureToArray(volPixsTex, volPixs_arr.getArray(), cudaCreateChannelDesc<int4>());
+    CHECK_CUDA_ERROR();
     cudaBindTextureToArray(depthsTex, depths_arr.getArray(), cudaCreateChannelDesc<float>());
+    CHECK_CUDA_ERROR();
 
     int block_size = 8;
     dim3 block(block_size, block_size, 1);
@@ -1013,6 +1021,7 @@ void ps_computeSimilarityVolume(CudaArray<uchar4, 2>** ps_texs_arr,
                                    cams[c]->C);
     cudaBindTextureToArray(t4tex, ps_texs_arr[cams[c]->camId * scales + scale]->getArray(),
                            cudaCreateChannelDesc<uchar4>());
+    CHECK_CUDA_ERROR();
 
     //--------------------------------------------------------------------------------------------------
     // init similarity volume
@@ -1021,7 +1030,8 @@ void ps_computeSimilarityVolume(CudaArray<uchar4, 2>** ps_texs_arr,
         volume_initVolume_kernel<unsigned char><<<gridvol, blockvol>>>(
             vol_dmp.getBuffer(), vol_dmp.stride()[1], vol_dmp.stride()[0], volDimX, volDimY, volDimZ, z, 255);
         cudaThreadSynchronize();
-    };
+        CHECK_CUDA_ERROR();
+    }
 
     //--------------------------------------------------------------------------------------------------
     // compute similarity volume
@@ -1031,6 +1041,7 @@ void ps_computeSimilarityVolume(CudaArray<uchar4, 2>** ps_texs_arr,
         volume_slice_kernel<<<grid, block>>>(slice_dmp.getBuffer(), slice_dmp.stride()[0], nDepthsToSearch, nDepths,
                                              slicesAtTime, width, height, wsh, t, npixs, gammaC, gammaP, epipShift);
         cudaThreadSynchronize();
+        CHECK_CUDA_ERROR();
 
         volume_saveSliceToVolume_kernel<<<grid, block>>>(vol_dmp.getBuffer(), vol_dmp.stride()[1], vol_dmp.stride()[0],
                                                          slice_dmp.getBuffer(), slice_dmp.stride()[0], nDepthsToSearch,
@@ -1038,16 +1049,17 @@ void ps_computeSimilarityVolume(CudaArray<uchar4, 2>** ps_texs_arr,
                                                          volDimX, volDimY, volDimZ, volLUX, volLUY, volLUZ);
         cudaThreadSynchronize();
         CHECK_CUDA_ERROR();
-    };
+    }
 
     cudaUnbindTexture(r4tex);
     cudaUnbindTexture(t4tex);
     cudaUnbindTexture(volPixsTex);
     cudaUnbindTexture(depthsTex);
+    CHECK_CUDA_ERROR();
 
     if(verbose)
         printf("ps_computeSimilarityVolume elapsed time: %f ms \n", toc(tall));
-};
+}
 
 float ps_planeSweepingGPUPixelsVolume(CudaArray<uchar4, 2>** ps_texs_arr,
                                       unsigned char* ovol_hmh, cameraStruct** cams, int ncams,
