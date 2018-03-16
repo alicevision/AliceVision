@@ -16,6 +16,8 @@
 
 #include <algorithm>
 
+#undef USE_VOL_PIX_TEXTURE
+
 namespace aliceVision {
 namespace depthMap {
 
@@ -280,8 +282,10 @@ void ps_deviceAllocate(CudaArray<uchar4, 2>*** ps_texs_arr, int ncams, int width
     tTexU4.filterMode = cudaFilterModePoint;
     tTexU4.normalized = false;
 
+#ifdef USE_VOL_PIX_TEXTURE
     volPixsTex.filterMode = cudaFilterModePoint;
     volPixsTex.normalized = false;
+#endif
     pixsTex.filterMode = cudaFilterModePoint;
     pixsTex.normalized = false;
     gradTex.filterMode = cudaFilterModePoint;
@@ -998,13 +1002,19 @@ void ps_computeSimilarityVolume(CudaArray<uchar4, 2>** ps_texs_arr,
     printf("volPixs_hmh.getBytes(): %i\n", volPixs_hmh.getBytes());
     printf("volPixs_hmh.getSize().dim(): %i\n", volPixs_hmh.getSize().dim());
     printf("volPixs_hmh.getSize(): (%i, %i)\n", volPixs_hmh.getSize()[0], volPixs_hmh.getSize()[1]);
+#ifdef USE_VOL_PIX_TEXTURE
     CudaArray<int4, 2> volPixs_arr(volPixs_hmh);
+#else
+    CudaDeviceMemoryPitched<int4, 2> volPixs_arr(volPixs_hmh);
+#endif
     CHECK_CUDA_ERROR();
     CudaArray<float, 2> depths_arr(depths_hmh);
     CHECK_CUDA_ERROR();
 
+#ifdef USE_VOL_PIX_TEXTURE
     cudaBindTextureToArray(volPixsTex, volPixs_arr.getArray(), cudaCreateChannelDesc<int4>());
     CHECK_CUDA_ERROR();
+#endif
     cudaBindTextureToArray(depthsTex, depths_arr.getArray(), cudaCreateChannelDesc<float>());
     CHECK_CUDA_ERROR();
 
@@ -1042,7 +1052,13 @@ void ps_computeSimilarityVolume(CudaArray<uchar4, 2>** ps_texs_arr,
     CudaDeviceMemoryPitched<unsigned char, 2> slice_dmp(CudaSize<2>(nDepthsToSearch, slicesAtTime));
     for(int t = 0; t < ntimes; t++)
     {
-        volume_slice_kernel<<<grid, block>>>(slice_dmp.getBuffer(), slice_dmp.stride()[0], nDepthsToSearch, nDepths,
+        volume_slice_kernel<<<grid, block>>>(
+#ifdef USE_VOL_PIX_TEXTURE
+#else
+                                             volPixs_arr,getBuffer(),
+                                             volPixs_arr.getPitch(),
+#endif
+                                             slice_dmp.getBuffer(), slice_dmp.stride()[0], nDepthsToSearch, nDepths,
                                              slicesAtTime, width, height, wsh, t, npixs, gammaC, gammaP, epipShift);
         cudaThreadSynchronize();
         CHECK_CUDA_ERROR();
@@ -1057,7 +1073,9 @@ void ps_computeSimilarityVolume(CudaArray<uchar4, 2>** ps_texs_arr,
 
     cudaUnbindTexture(r4tex);
     cudaUnbindTexture(t4tex);
+#ifdef USE_VOL_PIX_TEXTURE
     cudaUnbindTexture(volPixsTex);
+#endif
     cudaUnbindTexture(depthsTex);
     CHECK_CUDA_ERROR();
 

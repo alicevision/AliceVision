@@ -6,6 +6,8 @@
 namespace aliceVision {
 namespace depthMap {
 
+#undef USE_VOL_PIX_TEXTURE
+
 __device__ void volume_computePatch(patch& ptch, int depthid, int2& pix)
 {
     float3 p;
@@ -20,7 +22,13 @@ __device__ void volume_computePatch(patch& ptch, int depthid, int2& pix)
     computeRotCSEpip(ptch, p);
 }
 
-__global__ void volume_slice_kernel(unsigned char* slice, int slice_p,
+__global__ void volume_slice_kernel(
+#ifdef USE_VOL_PIX_TEXTURE
+#else
+                                    int4* volPixsMem,
+                                    int   volPixsPitch,
+#endif
+                                    unsigned char* slice, int slice_p,
                                     // float3* slicePts, int slicePts_p,
                                     int nsearchdepths, int ndepths, int slicesAtTime, int width, int height, int wsh,
                                     int t, int npixs, const float gammaC, const float gammaP, const float epipShift)
@@ -30,7 +38,12 @@ __global__ void volume_slice_kernel(unsigned char* slice, int slice_p,
 
     if((sdptid < nsearchdepths) && (pixid < slicesAtTime) && (slicesAtTime * t + pixid < npixs))
     {
+#ifdef USE_VOL_PIX_TEXTURE
         int4 volPix = tex2D(volPixsTex, pixid, t);
+#else
+        int4* vp_ptr = make_cudaPitchedPtr( volPixsMem, volPixsPitch, pixid, t );
+        int4  volPix = *vp_ptr;
+#endif
         int2 pix = make_int2(volPix.x, volPix.y);
         int depthid = sdptid + volPix.z;
 
