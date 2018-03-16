@@ -1212,9 +1212,9 @@ float PlaneSweepingCuda::sweepPixelsToVolume(int nDepthsToSearch, StaticVector<u
         }
     }
 
-    int slicesAtTime = std::min(pixels->size(), 4096); //TODO
+    //int slicesAtTime = std::min(pixels->size(), 4096); //TODO
     // int slicesAtTime = 480/scale;
-    //int slicesAtTime = pixels->size();
+    int slicesAtTime = pixels->size();
 
     int npixs = pixels->size();
     int ntimes = npixs / slicesAtTime + 1;
