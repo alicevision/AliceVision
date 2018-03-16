@@ -333,12 +333,30 @@ void ps_deviceAllocate(CudaArray<uchar4, 2>*** ps_texs_arr, int ncams, int width
 
 void testCUDAdeviceNo(int CUDAdeviceNo)
 {
-    int myCUDAdeviceNo;
-    cudaGetDevice(&myCUDAdeviceNo);
-    if(myCUDAdeviceNo != CUDAdeviceNo)
+    cudaError_t err;
+    int num_gpus;
+
+    err = cudaGetDeviceCount(&num_gpus);
+    if( err != cudaSuccess )
     {
-        printf("WARNING different device %i %i\n", myCUDAdeviceNo, CUDAdeviceNo);
-    };
+        printf("Cannot enumerate GPUs\n");
+    }
+    else
+    {
+    	printf("Number of GPUs in the system: %d\n", num_gpus );
+
+    	int myCUDAdeviceNo;
+    	err = cudaGetDevice(&myCUDAdeviceNo);
+    	if( err != cudaSuccess )
+    	{
+	    printf( "Could not retrieve own device number\n" );
+    	}
+
+    	if(myCUDAdeviceNo != CUDAdeviceNo)
+    	{
+            printf("WARNING different device %i %i\n", myCUDAdeviceNo, CUDAdeviceNo);
+    	};
+    }
 }
 
 void ps_deviceUpdateCam(CudaArray<uchar4, 2>** ps_texs_arr, cameraStruct* cam, int camId, int CUDAdeviceNo,
