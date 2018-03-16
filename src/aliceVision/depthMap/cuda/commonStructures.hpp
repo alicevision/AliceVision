@@ -134,7 +134,7 @@ public:
     sz = 1;
     if (Dim >= 1) sx = _size[0];
     if (Dim >= 2) sy = _size[1];
-    if (Dim >= 3) sx = _size[2];
+    if (Dim >= 3) sz = _size[2];
     buffer = (Type*)malloc(sx * sy * sz * sizeof (Type));
     if( buffer == 0 ) {
         printf("%d malloc failed\n", __LINE__ );
@@ -150,7 +150,7 @@ public:
     sz = 1;
     if (Dim >= 1) sx = rhs.sx;
     if (Dim >= 2) sy = rhs.sy;
-    if (Dim >= 3) sx = rhs.sz;
+    if (Dim >= 3) sz = rhs.sz;
     buffer = (Type*)malloc(sx * sy * sz * sizeof (Type));
     if( buffer == 0 ) {
         printf("%d malloc failed\n", __LINE__ );
@@ -308,7 +308,7 @@ public:
     sz = 1;
     if (Dim >= 1) sx = _size[0];
     if (Dim >= 2) sy = _size[1];
-    if (Dim >= 3) sx = _size[2];
+    if (Dim >= 3) sz = _size[2];
     cudaChannelFormatDesc channelDesc = cudaCreateChannelDesc<Type>();
     if(Dim == 1)
     {
