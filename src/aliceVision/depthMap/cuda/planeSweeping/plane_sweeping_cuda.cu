@@ -1055,7 +1055,7 @@ void ps_computeSimilarityVolume(CudaArray<uchar4, 2>** ps_texs_arr,
         volume_slice_kernel<<<grid, block>>>(
 #ifdef USE_VOL_PIX_TEXTURE
 #else
-                                             volPixs_arr,getBuffer(),
+                                             volPixs_arr.getBuffer(),
                                              volPixs_arr.getPitch(),
 #endif
                                              slice_dmp.getBuffer(), slice_dmp.stride()[0], nDepthsToSearch, nDepths,
@@ -1063,7 +1063,13 @@ void ps_computeSimilarityVolume(CudaArray<uchar4, 2>** ps_texs_arr,
         cudaThreadSynchronize();
         CHECK_CUDA_ERROR();
 
-        volume_saveSliceToVolume_kernel<<<grid, block>>>(vol_dmp.getBuffer(), vol_dmp.stride()[1], vol_dmp.stride()[0],
+        volume_saveSliceToVolume_kernel<<<grid, block>>>(
+#ifdef USE_VOL_PIX_TEXTURE
+#else
+                                             volPixs_arr.getBuffer(),
+                                             volPixs_arr.getPitch(),
+#endif
+                                                         vol_dmp.getBuffer(), vol_dmp.stride()[1], vol_dmp.stride()[0],
                                                          slice_dmp.getBuffer(), slice_dmp.stride()[0], nDepthsToSearch,
                                                          nDepths, slicesAtTime, width, height, t, npixs, volStepXY,
                                                          volDimX, volDimY, volDimZ, volLUX, volLUY, volLUZ);

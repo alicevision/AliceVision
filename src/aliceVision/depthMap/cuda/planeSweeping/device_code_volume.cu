@@ -25,8 +25,8 @@ __device__ void volume_computePatch(patch& ptch, int depthid, int2& pix)
 __global__ void volume_slice_kernel(
 #ifdef USE_VOL_PIX_TEXTURE
 #else
-                                    int4* volPixsMem,
-                                    int   volPixsPitch,
+                                    int4*  volPixsMem,
+                                    size_t volPixsPitch,
 #endif
                                     unsigned char* slice, int slice_p,
                                     // float3* slicePts, int slicePts_p,
@@ -41,8 +41,8 @@ __global__ void volume_slice_kernel(
 #ifdef USE_VOL_PIX_TEXTURE
         int4 volPix = tex2D(volPixsTex, pixid, t);
 #else
-        int4* vp_ptr = make_cudaPitchedPtr( volPixsMem, volPixsPitch, pixid, t );
-        int4  volPix = *vp_ptr;
+        char* ptr = ((char*)volPixsMem) + t * volPixsPitch;
+        int4  volPix = ( (int4*)ptr )[pixid];
 #endif
         int2 pix = make_int2(volPix.x, volPix.y);
         int depthid = sdptid + volPix.z;
@@ -69,7 +69,13 @@ __global__ void volume_slice_kernel(
     }
 }
 
-__global__ void volume_saveSliceToVolume_kernel(unsigned char* volume, int volume_s, int volume_p, unsigned char* slice,
+__global__ void volume_saveSliceToVolume_kernel(
+#ifdef USE_VOL_PIX_TEXTURE
+#else
+                                                int4*  volPixsMem,
+                                                size_t volPixsPitch,
+#endif
+                                                unsigned char* volume, int volume_s, int volume_p, unsigned char* slice,
                                                 int slice_p, int nsearchdepths, int ndepths, int slicesAtTime,
                                                 int width, int height, int t, int npixs, int volStepXY, int volDimX,
                                                 int volDimY, int volDimZ, int volLUX, int volLUY, int volLUZ)
@@ -79,7 +85,12 @@ __global__ void volume_saveSliceToVolume_kernel(unsigned char* volume, int volum
 
     if((sdptid < nsearchdepths) && (pixid < slicesAtTime) && (slicesAtTime * t + pixid < npixs))
     {
+#ifdef USE_VOL_PIX_TEXTURE
         int4 volPix = tex2D(volPixsTex, pixid, t);
+#else
+        char* ptr = ((char*)volPixsMem) + t * volPixsPitch;
+        int4  volPix = ( (int4*)ptr )[pixid];
+#endif
         int2 pix = make_int2(volPix.x, volPix.y);
         int depthid = sdptid + volPix.z;
 
