@@ -94,15 +94,15 @@ bool ValidIds(const SfMData& sfmData, ESfMData partFlag)
 
 bool Load(SfMData& sfmData, const std::string& filename, ESfMData partFlag)
 {
-  const std::string ext = fs::extension(filename);
+  const std::string extension = fs::extension(filename);
   bool status = false;
 
-  if(ext == ".sfm" || ext == ".json") // JSON File
+  if(extension == ".sfm" || extension == ".json") // JSON File
   {
     status = loadJSON(sfmData, filename, partFlag);
   }
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_ALEMBIC)
-  else if(ext == ".abc") // Alembic
+  else if(extension == ".abc") // Alembic
   {
     AlembicImporter(filename).populateSfM(sfmData, partFlag);
     status = true;
@@ -114,7 +114,7 @@ bool Load(SfMData& sfmData, const std::string& filename, ESfMData partFlag)
   }
   else // It is not a folder or known format, return false
   {
-    ALICEVISION_LOG_ERROR("Unknown input SfM data format: '" << ext << "'");
+    ALICEVISION_LOG_ERROR("Unknown input SfM data format: '" << extension << "'");
     return false;
   }
 
@@ -130,30 +130,42 @@ bool Load(SfMData& sfmData, const std::string& filename, ESfMData partFlag)
 
 bool Save(const SfMData& sfmData, const std::string& filename, ESfMData partFlag)
 {
-  const std::string ext = fs::extension(filename);
+  const fs::path bPath = fs::path(filename);
+  const std::string extension = bPath.extension().string();
+  const std::string tmpPath = (bPath.parent_path() / bPath.stem()).string() + "." + fs::unique_path().string() + extension;
+  bool status = false;
 
-  if(ext == ".sfm" || ext == ".json") // JSON File
+  if(extension == ".sfm" || extension == ".json") // JSON File
   {
-    return saveJSON(sfmData, filename, partFlag);
+    status = saveJSON(sfmData, tmpPath, partFlag);
   }
-  else if(ext == ".ply") // Polygon File
+  else if(extension == ".ply") // Polygon File
   {
-    return savePLY(sfmData, filename, partFlag);
+    status = savePLY(sfmData, tmpPath, partFlag);
   }
-  else if (ext == ".baf") // Bundle Adjustment File
+  else if (extension == ".baf") // Bundle Adjustment File
   {
-    return saveBAF(sfmData, filename, partFlag);
+    status = saveBAF(sfmData, tmpPath, partFlag);
   }
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_ALEMBIC)
-  else if (ext == ".abc") // Alembic
+  else if (extension == ".abc") // Alembic
   {
-    aliceVision::sfm::AlembicExporter(filename).addSfM(sfmData, partFlag);
-    return true;
+    aliceVision::sfm::AlembicExporter(tmpPath).addSfM(sfmData, partFlag);
+    status = true;
   }
 #endif // ALICEVISION_HAVE_ALEMBIC
-  ALICEVISION_LOG_ERROR("Cannot save the SfM data file: '" << filename << "'."
-                        << std::endl << "The file extension is not recognized.");
-  return false;
+  else
+  {
+    ALICEVISION_LOG_ERROR("Cannot save the SfM data file: '" << filename << "'."
+                          << std::endl << "The file extension is not recognized.");
+    return false;
+  }
+
+  // rename temporay filename
+  if(status)
+    fs::rename(tmpPath, filename);
+
+  return status;
 }
 
 } // namespace sfm
