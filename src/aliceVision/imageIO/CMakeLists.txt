@@ -27,6 +27,8 @@ target_link_libraries(aliceVision_imageIO
          ${OPENIMAGEIO_LIBRARIES}
 
   PRIVATE ${Boost_FILESYSTEM_LIBRARIES}
+          # dependency of Boost filesystem, not always declared depending on CMake version
+          ${Boost_SYSTEM_LIBRARIES}
 )
 
 set_property(TARGET aliceVision_imageIO

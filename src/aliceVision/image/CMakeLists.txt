@@ -42,6 +42,8 @@ target_link_libraries(aliceVision_image
   PRIVATE ${OPENEXR_LIBRARIES}
           ${LOG_LIB}
           ${Boost_FILESYSTEM_LIBRARIES}
+          # dependency of Boost filesystem, not always declared depending on CMake version
+          ${Boost_SYSTEM_LIBRARIES}
 )
 
 set_target_properties(aliceVision_image
