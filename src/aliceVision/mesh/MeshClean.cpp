@@ -453,17 +453,23 @@ MeshClean::path::createPath(StaticVector<int>* ptNeighTrisSortedAscToProcess)
 
 int MeshClean::path::deployAll()
 {
-    StaticVector<int>*& ptsNeighTrisSortedAsc = (*me->ptsNeighTrisSortedAsc)[ptId];
-    if(sizeOfStaticVector<int>(ptsNeighTrisSortedAsc) == 0)
+    StaticVector<int>* ptNeighTrisSortedAscToProcess;
+    StaticVector<MeshClean::path::pathPart>* pth;
+
     {
+      StaticVector<int>* ptsNeighTrisSortedAsc = (*me->ptsNeighTrisSortedAsc)[ptId];
+      if(sizeOfStaticVector<int>(ptsNeighTrisSortedAsc) == 0)
+      {
         return 0;
+      }
+
+      ptNeighTrisSortedAscToProcess = new StaticVector<int>();
+      ptNeighTrisSortedAscToProcess->reserve(sizeOfStaticVector<int>(ptsNeighTrisSortedAsc));
+      ptNeighTrisSortedAscToProcess->push_back_arr(ptsNeighTrisSortedAsc);
+      pth = createPath(ptNeighTrisSortedAscToProcess);
     }
 
     int nNewPts = 0;
-    StaticVector<int>* ptNeighTrisSortedAscToProcess = new StaticVector<int>();
-    ptNeighTrisSortedAscToProcess->reserve(sizeOfStaticVector<int>(ptsNeighTrisSortedAsc));
-    ptNeighTrisSortedAscToProcess->push_back_arr(ptsNeighTrisSortedAsc);
-    StaticVector<MeshClean::path::pathPart>* pth = createPath(ptNeighTrisSortedAscToProcess);
 
     // if there are some not connected triangles then deploy them
     if(ptNeighTrisSortedAscToProcess->size() > 0)
@@ -489,23 +495,22 @@ int MeshClean::path::deployAll()
         }
         else
         {
-            if(ptsNeighTrisSortedAsc == nullptr)
-            {
-                ptsNeighTrisSortedAsc = new StaticVector<int>();
-                ptsNeighTrisSortedAsc->reserve(pthNew->size());
-                printfState(pth);
-                printfState(pthNew);
-                throw std::runtime_error("deployAll: bad condition, pthNew size: " + std::to_string(pthNew->size()));
-            }
-
-            if(ptsNeighTrisSortedAsc->capacity() < pthNew->size())
+            // get an up-to-date pointer to data since me->ptsNeighTrisSortedAsc might have been 
+            // modified inside the while loop by 'deployPath'
+            StaticVector<int>* toUpdate = (*me->ptsNeighTrisSortedAsc)[ptId];
+            if(toUpdate == nullptr)
             {
                 printfState(pth);
                 printfState(pthNew);
                 throw std::runtime_error("deployAll: bad condition, pthNew size: " + std::to_string(pthNew->size()));
             }
 
-            StaticVector<int>* toUpdate = ptsNeighTrisSortedAsc;
+            if(toUpdate->capacity() < pthNew->size())
+            {
+                printfState(pth);
+                printfState(pthNew);
+                throw std::runtime_error("deployAll: bad condition, pthNew size: " + std::to_string(pthNew->size()));
+            }
 
             toUpdate->resize(0);
             for(int i = 0; i < pthNew->size(); i++)
