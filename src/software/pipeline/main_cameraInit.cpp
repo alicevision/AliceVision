@@ -100,25 +100,16 @@ bool listFiles(const std::string& folderOrFile,
     for(fs::directory_iterator itr(folderOrFile); itr != endItr; ++itr)
       allFiles.push_back(itr->path().string());
 
-    if(allFiles.empty())
+    bool hasFile = false;
+    for(const std::string& filePath: allFiles)
     {
-      ALICEVISION_LOG_ERROR("'" << fs::path(folderOrFile).string() << "' is empty.");
-      return false;
+      if(listFiles(filePath, extensions, resources))
+        hasFile = true;
     }
-
-    for(const std::string& item: allFiles)
-    {
-      const std::string itemPath = (fs::path(folderOrFile) / item).string();
-      if(!listFiles(itemPath, extensions, resources))
-        return false;
-    }
+    return hasFile;
   }
-  else
-  {
-    ALICEVISION_LOG_ERROR("'" << folderOrFile << "' is not a valid folder or file path.");
-    return false;
-  }
-  return true;
+  ALICEVISION_LOG_ERROR("'" << folderOrFile << "' is not a valid folder or file path.");
+  return false;
 }
 
 
