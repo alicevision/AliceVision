@@ -118,9 +118,7 @@ int main(int argc, char* argv[])
         meOpt.cleanMesh(10);
 
         StaticVectorBool* ptsCanMove = nullptr;
-        float epsilon = 0.0f; // unused
-        int type = 3; // 0, 1, 2, 3, 4 => only 1 and 3 works
-        meOpt.optimizeSmooth(lambda, epsilon, type, smoothNIter, ptsCanMove);
+        meOpt.optimizeSmooth(lambda, smoothNIter, ptsCanMove);
 
         ALICEVISION_LOG_INFO("Mesh filtering done.");
     }

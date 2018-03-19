@@ -32,6 +32,9 @@ int main(int argc, char* argv[])
     int rangeStart = -1;
     int rangeSize = -1;
 
+    // image downscale factor during process
+    int downscale = 2;
+
     // semiGlobalMatching
     int sgmMaxTCams = 10;
     int sgmWSH = 4;
@@ -65,6 +68,8 @@ int main(int argc, char* argv[])
             "Compute a sub-range of images from index rangeStart to rangeStart+rangeSize.")
         ("rangeSize", po::value<int>(&rangeSize)->default_value(rangeSize),
             "Compute a sub-range of N images (N=rangeSize).")
+        ("downscale", po::value<int>(&downscale)->default_value(downscale),
+            "Image downscale factor.")
         ("sgmMaxTCams", po::value<int>(&sgmMaxTCams)->default_value(sgmMaxTCams),
             "Semi Global Matching: Number of neighbour cameras.")
         ("sgmWSH", po::value<int>(&sgmWSH)->default_value(sgmWSH),
@@ -142,30 +147,35 @@ int main(int argc, char* argv[])
       return EXIT_FAILURE;
     }
 
-    // .ini parsing
-    mvsUtils::MultiViewInputParams mip(iniFilepath, outputFolder, "");
-    const double simThr = mip._ini.get<double>("global.simThr", 0.0);
+    // check if the scale is correct
+    if(downscale < 1)
+    {
+      ALICEVISION_LOG_ERROR("Invalid value for downscale parameter. Should be at least 1.");
+      return EXIT_FAILURE;
+    }
+
+    // .ini and files parsing
+    mvsUtils::MultiViewParams mp(iniFilepath, outputFolder, "", false, downscale);
 
     // set params in bpt
 
     // semiGlobalMatching
-    mip._ini.put("semiGlobalMatching.maxTCams", sgmMaxTCams);
-    mip._ini.put("semiGlobalMatching.wsh", sgmWSH);
-    mip._ini.put("semiGlobalMatching.gammaC", sgmGammaC);
-    mip._ini.put("semiGlobalMatching.gammaP", sgmGammaP);
+    mp._ini.put("semiGlobalMatching.maxTCams", sgmMaxTCams);
+    mp._ini.put("semiGlobalMatching.wsh", sgmWSH);
+    mp._ini.put("semiGlobalMatching.gammaC", sgmGammaC);
+    mp._ini.put("semiGlobalMatching.gammaP", sgmGammaP);
 
     // refineRc
-    mip._ini.put("refineRc.nSamplesHalf", refineNSamplesHalf);
-    mip._ini.put("refineRc.ndepthsToRefine", refineNDepthsToRefine);
-    mip._ini.put("refineRc.niters", refineNiters);
-    mip._ini.put("refineRc.wsh", refineWSH);
-    mip._ini.put("refineRc.maxTCams", refineMaxTCams);
-    mip._ini.put("refineRc.sigma", refineSigma);
-    mip._ini.put("refineRc.gammaC", refineGammaC);
-    mip._ini.put("refineRc.gammaP", refineGammaP);
-    mip._ini.put("refineRc.useTcOrRcPixSize", refineUseTcOrRcPixSize);
+    mp._ini.put("refineRc.nSamplesHalf", refineNSamplesHalf);
+    mp._ini.put("refineRc.ndepthsToRefine", refineNDepthsToRefine);
+    mp._ini.put("refineRc.niters", refineNiters);
+    mp._ini.put("refineRc.wsh", refineWSH);
+    mp._ini.put("refineRc.maxTCams", refineMaxTCams);
+    mp._ini.put("refineRc.sigma", refineSigma);
+    mp._ini.put("refineRc.gammaC", refineGammaC);
+    mp._ini.put("refineRc.gammaP", refineGammaP);
+    mp._ini.put("refineRc.useTcOrRcPixSize", refineUseTcOrRcPixSize);
 
-    mvsUtils::MultiViewParams mp(mip.getNbCameras(), &mip, (float) simThr);
     mvsUtils::PreMatchCams pc(&mp);
 
     StaticVector<int> cams;

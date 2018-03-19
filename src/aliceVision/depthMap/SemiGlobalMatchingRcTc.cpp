@@ -22,8 +22,8 @@ SemiGlobalMatchingRcTc::SemiGlobalMatchingRcTc(StaticVector<float>* _rcTcDepths,
 
     rcTcDepths = _rcTcDepths;
 
-    w = sp->mp->mip->getWidth(rc) / (scale * step);
-    h = sp->mp->mip->getHeight(rc) / (scale * step);
+    w = sp->mp->getWidth(rc) / (scale * step);
+    h = sp->mp->getHeight(rc) / (scale * step);
 
     rcSilhoueteMap = _rcSilhoueteMap;
 }

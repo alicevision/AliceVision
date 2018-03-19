@@ -419,14 +419,14 @@ int OctreeTracks::trackStruct::indexOf(int val)
     {
         if((val >= cams[lef].x) && (val < cams[mid].x))
         {
-            lef = lef;
+            //lef = lef;
             rig = mid;
             mid = lef + (rig - lef) / 2;
         }
         if((val >= cams[mid].x) && (val <= cams[rig].x))
         {
             lef = mid;
-            rig = rig;
+            //rig = rig;
             mid = lef + (rig - lef) / 2;
         }
         if((val < cams[lef].x) || (val > cams[rig].x))
@@ -486,11 +486,11 @@ OctreeTracks::OctreeTracks(const Point3d* _voxel, mvsUtils::MultiViewParams* _mp
     sy = svy / (float)numSubVoxsY;
     sz = svz / (float)numSubVoxsZ;
 
-    doFilterOctreeTracks = mp->mip->_ini.get<bool>("LargeScale.doFilterOctreeTracks", true);
-    doUseWeaklySupportedPoints = mp->mip->_ini.get<bool>("LargeScale.doUseWeaklySupportedPoints", false);
-    doUseWeaklySupportedPointCam = mp->mip->_ini.get<bool>("LargeScale.doUseWeaklySupportedPointCam", false);
-    minNumOfConsistentCams = mp->mip->_ini.get<int>("filter.minNumOfConsistentCams", 2);
-    simWspThr = (float)mp->mip->_ini.get<double>("LargeScale.simWspThr", -0.0f);
+    doFilterOctreeTracks = mp->_ini.get<bool>("LargeScale.doFilterOctreeTracks", true);
+    doUseWeaklySupportedPoints = mp->_ini.get<bool>("LargeScale.doUseWeaklySupportedPoints", false);
+    doUseWeaklySupportedPointCam = mp->_ini.get<bool>("LargeScale.doUseWeaklySupportedPointCam", false);
+    minNumOfConsistentCams = mp->_ini.get<int>("filter.minNumOfConsistentCams", 2);
+    simWspThr = (float)mp->_ini.get<double>("LargeScale.simWspThr", -0.0f);
 
     int maxNumSubVoxs = std::max(std::max(numSubVoxsX, numSubVoxsY), numSubVoxsZ);
     size_ = 2;
@@ -622,7 +622,7 @@ void OctreeTracks::filterOctreeTracks2(StaticVector<trackStruct*>* tracks)
     StaticVector<trackStruct*> tracksOut;
     tracksOut.reserve(tracks->size());
 
-    float clusterSizeThr = mp->mip->_ini.get<double>("OctreeTracks.clusterSizeThr", 2.0f);
+    float clusterSizeThr = mp->_ini.get<double>("OctreeTracks.clusterSizeThr", 2.0f);
 
     // long t1 = initEstimate();
     for(int i = 0; i < tracks->size(); i++)
@@ -684,9 +684,9 @@ StaticVector<OctreeTracks::trackStruct*>* OctreeTracks::fillOctree(int maxPts, s
     {
         int rc = cams[camid];
         StaticVector<Point3d>* pts =
-            loadArrayFromFile<Point3d>(depthMapsPtsSimsTmpDir + std::to_string(mp->mip->getViewId(rc)) + "pts.bin");
+            loadArrayFromFile<Point3d>(depthMapsPtsSimsTmpDir + std::to_string(mp->getViewId(rc)) + "pts.bin");
         StaticVector<float>* sims =
-            loadArrayFromFile<float>(depthMapsPtsSimsTmpDir + std::to_string(mp->mip->getViewId(rc)) + "sims.bin");
+            loadArrayFromFile<float>(depthMapsPtsSimsTmpDir + std::to_string(mp->getViewId(rc)) + "sims.bin");
 
         // long tpts=initEstimate();
         for(int i = 0; i < pts->size(); i++)

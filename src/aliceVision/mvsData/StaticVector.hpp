@@ -344,6 +344,8 @@ StaticVector<T>* loadArrayFromFile(std::string fileName, bool printfWarning = fa
 
             if(uncomprLen != sizeof(T) * n)
             {
+                delete a;
+                fclose(f);
                 throw std::runtime_error("loadArrayFromFile: uncompression failed uncomprLen!=sizeof(T)*n");
             }
 
@@ -382,6 +384,7 @@ void loadArrayFromFileIntoArray(StaticVector<T>* a, std::string fileName, bool p
         {
             std::stringstream s;
             s << "loadArrayFromFileIntoArray: expected length " << a->size() << " loaded length " << n;
+            fclose(f);
             throw std::runtime_error(s.str());
         }
  

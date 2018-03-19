@@ -23,7 +23,6 @@ public:
     mvsUtils::PreMatchCams* pc;
     RcTc* prt;
     PlaneSweepingCuda* cps;
-    mvsUtils::ImagesCache* ic;
     bool visualizeDepthMaps;
     bool visualizePartialDepthMaps;
     bool doSmooth;

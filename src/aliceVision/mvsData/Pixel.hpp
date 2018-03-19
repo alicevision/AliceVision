@@ -25,7 +25,7 @@ struct Pixel
         y = 0;
     }
 
-    Pixel(const Point2d& p)
+    explicit Pixel(const Point2d& p)
     {
 
         x = (int)floor(p.x + 0.5);

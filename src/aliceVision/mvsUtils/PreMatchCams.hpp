@@ -20,7 +20,7 @@ public:
     float maxang;
     float minCamsDistance;
 
-    PreMatchCams(MultiViewParams* _mp);
+    explicit PreMatchCams(MultiViewParams* _mp);
 
     float computeMinCamsDistance();
     bool overlap(int rc, int tc);

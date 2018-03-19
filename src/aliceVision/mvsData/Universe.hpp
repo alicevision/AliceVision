@@ -20,7 +20,7 @@ typedef struct
 class Universe
 {
 public:
-    Universe(int elements);
+    explicit Universe(int elements);
     ~Universe();
     /// Initialize all elements to the default values
     void initialize();

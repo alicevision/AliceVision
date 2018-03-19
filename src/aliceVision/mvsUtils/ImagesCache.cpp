@@ -13,8 +13,8 @@ namespace mvsUtils {
 int ImagesCache::getPixelId(int x, int y, int imgid)
 {
     if(!transposed)
-        return x * mp->mip->getHeight(imgid) + y;
-    return y * mp->mip->getWidth(imgid) + x;
+        return x * mp->getHeight(imgid) + y;
+    return y * mp->getWidth(imgid) + x;
 }
 
 ImagesCache::ImagesCache(const MultiViewParams* _mp, int _bandType, bool _transposed)
@@ -23,7 +23,7 @@ ImagesCache::ImagesCache(const MultiViewParams* _mp, int _bandType, bool _transp
     std::vector<std::string> _imagesNames;
     for(int rc = 0; rc < _mp->ncams; rc++)
     {
-        _imagesNames.push_back(mv_getFileNamePrefix(_mp->mip->mvDir, _mp->mip, rc) + "." + _mp->mip->imageExt);
+        _imagesNames.push_back(mv_getFileNamePrefix(_mp->mvDir, _mp, rc) + "." + _mp->getImageExtension());
     }
     initIC(_bandType, _imagesNames, _transposed);
 }
@@ -38,9 +38,9 @@ ImagesCache::ImagesCache(const MultiViewParams* _mp, int _bandType, std::vector<
 void ImagesCache::initIC(int _bandType, std::vector<std::string>& _imagesNames,
                              bool _transposed)
 {
-    float oneimagemb = (sizeof(Color) * mp->mip->getMaxImageWidth() * mp->mip->getMaxImageHeight()) / 1024.f / 1024.f;
-    float maxmbCPU = (float)mp->mip->_ini.get<int>("images_cache.maxmbCPU", 5000);
-    int _npreload = std::max((int)(maxmbCPU / oneimagemb), mp->mip->_ini.get<int>("grow.minNumOfConsistentCams", 10));
+    float oneimagemb = (sizeof(Color) * mp->getMaxImageWidth() * mp->getMaxImageHeight()) / 1024.f / 1024.f;
+    float maxmbCPU = (float)mp->_ini.get<int>("images_cache.maxmbCPU", 5000);
+    int _npreload = std::max((int)(maxmbCPU / oneimagemb), mp->_ini.get<int>("grow.minNumOfConsistentCams", 10));
     N_PRELOADED_IMAGES = std::min(mp->ncams, _npreload);
 
     transposed = _transposed;
@@ -109,12 +109,12 @@ void ImagesCache::refreshData(int camId)
         long t1 = clock();
         if (imgs[mapId] == nullptr)
         {
-            size_t maxsize = mp->mip->getMaxImageWidth() * mp->mip->getMaxImageHeight();
-            imgs[mapId] = new Color[maxsize];
+            const std::size_t maxSize = mp->getMaxImageWidth() * mp->getMaxImageHeight();
+            imgs[mapId] = new Color[maxSize];
         }
 
         std::string imagePath = imagesNames.at(camId);
-        memcpyRGBImageFromFileToArr(camId, imgs[mapId], imagePath, mp->mip, transposed, 1, bandType);
+        memcpyRGBImageFromFileToArr(camId, imgs[mapId], imagePath, mp, transposed, bandType);
 
         if(mp->verbose)
         {

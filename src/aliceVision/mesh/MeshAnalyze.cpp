@@ -165,7 +165,7 @@ bool MeshAnalyze::applyLaplacianOperator(int ptId, StaticVector<Point3d>* ptsToA
 
         if((npt.x == 0.0f) && (npt.y == 0.0f) && (npt.z == 0.0f))
         {
-            // printf("zero neighb pt\n");
+            ALICEVISION_LOG_WARNING("MeshAnalyze::applyLaplacianOperator: zero neighb pt");
             return false;
         }
         ln = ln + npt;
@@ -178,14 +178,14 @@ bool MeshAnalyze::applyLaplacianOperator(int ptId, StaticVector<Point3d>* ptsToA
     if(std::isnan(d) || std::isnan(n.x) || std::isnan(n.y) || std::isnan(n.z) || (d != d) || (n.x != n.x) ||
        (n.y != n.y) || (n.z != n.z)) // check if is not NaN
     {
-        // printf("nan\n");
+        ALICEVISION_LOG_WARNING("MeshAnalyze::applyLaplacianOperator: nan");
         return false;
     }
 
     if(std::isnan(d) || std::isnan(n.x) || std::isnan(n.y) || std::isnan(n.z) || (d != d) || (n.x != n.x) ||
        (n.y != n.y) || (n.z != n.z)) // check if is not NaN
     {
-        // printf("nan\n");
+        ALICEVISION_LOG_WARNING("MeshAnalyze::applyLaplacianOperator: nan");
         return false;
     }
 
@@ -200,7 +200,7 @@ bool MeshAnalyze::getLaplacianSmoothingVector(int ptId, Point3d& ln)
 }
 
 // kobbelt kampagna 98 Interactive Multi-Resolution Modeling on Arbitrary Meshes
-// page 5 - U1 - laplacian is obtained wnen apply to origina pts , U2 - bi-laplacian is obtained when apply to laplacian
+// page 5 - U1 - laplacian is obtained when apply to origina pts , U2 - bi-laplacian is obtained when apply to laplacian
 // pts
 bool MeshAnalyze::getBiLaplacianSmoothingVector(int ptId, StaticVector<Point3d>* ptsLaplacian, Point3d& tp)
 {

@@ -29,7 +29,7 @@ public:
     public:
         NodeType type_ : 2;
 
-        Node(NodeType type);
+        explicit Node(NodeType type);
         ~Node(){};
     };
 
@@ -51,7 +51,7 @@ public:
         float minPixSize;
         float minSim;
 
-        trackStruct(trackStruct* t);
+        explicit trackStruct(trackStruct* t);
         trackStruct(float sim, float pixSize, const Point3d& p, int rc);
         ~trackStruct();
         void resizeCamsAdd(int nadd);
@@ -75,7 +75,6 @@ public:
 
     Point3d O, vx, vy, vz;
     float sx, sy, sz, svx, svy, svz;
-    float avPixSize;
 
     Point3d vox[8];
     int numSubVoxsX;

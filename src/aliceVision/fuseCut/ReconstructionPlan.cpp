@@ -281,7 +281,7 @@ void reconstructSpaceAccordingToVoxelsArray(const std::string& voxelsArrayFileNa
             StaticVector<StaticVector<int>*>* ptsCams = delaunayGC.createPtsCams();
             StaticVector<int> usedCams = delaunayGC.getSortedUsedCams();
 
-            mesh::meshPostProcessing(mesh, ptsCams, usedCams, *ls->mp, *ls->pc, ls->mp->mip->mvDir, hexahsToExcludeFromResultingMesh, hexah);
+            mesh::meshPostProcessing(mesh, ptsCams, usedCams, *ls->mp, *ls->pc, ls->mp->mvDir, hexahsToExcludeFromResultingMesh, hexah);
             mesh->saveToBin(folderName + "mesh.bin");
             mesh->saveToObj(folderName + "mesh.obj");
 
@@ -319,8 +319,12 @@ StaticVector<StaticVector<int>*>* loadLargeScalePtsCams(const std::vector<std::s
         std::string folderName = recsDirs[i];
 
         std::string filePtsCamsFromDCTName = folderName + "meshPtsCamsFromDGC.bin";
+
         if(!mvsUtils::FileExists(filePtsCamsFromDCTName))
+        {
+            delete ptsCamsFromDct;
             throw std::runtime_error("Missing file: " + filePtsCamsFromDCTName);
+        }
         StaticVector<StaticVector<int>*>* ptsCamsFromDcti = loadArrayOfArraysFromFile<int>(filePtsCamsFromDCTName);
         ptsCamsFromDct->resizeAdd(ptsCamsFromDcti->size());
         for(int i = 0; i < ptsCamsFromDcti->size(); i++)
@@ -445,7 +449,7 @@ mesh::Mesh* joinMeshes(const std::vector<std::string>& recsDirs, StaticVector<Po
         }
     }
 
-    // int gridLevel = ls->mp->mip->_ini.get<int>("LargeScale.gridLevel0", 0);
+    // int gridLevel = ls->mp->_ini.get<int>("LargeScale.gridLevel0", 0);
 
     if(ls->mp->verbose)
         ALICEVISION_LOG_DEBUG("Deleting...");
@@ -469,20 +473,20 @@ mesh::Mesh* joinMeshes(int gl, LargeScale* ls)
     ReconstructionPlan* rp =
         new ReconstructionPlan(ls->dimensions, &ls->space[0], ls->mp, ls->pc, ls->spaceVoxelsFolderName);
     std::string param = "LargeScale:gridLevel" + mvsUtils::num2str(gl);
-    int gridLevel = ls->mp->mip->_ini.get<int>(param.c_str(), gl * 300);
+    int gridLevel = ls->mp->_ini.get<int>(param.c_str(), gl * 300);
 
     std::string optimalReconstructionPlanFileName =
         ls->spaceFolderName + "optimalReconstructionPlan" + mvsUtils::num2str(gridLevel) + ".bin";
     StaticVector<SortedId>* optimalReconstructionPlan = loadArrayFromFile<SortedId>(optimalReconstructionPlanFileName);
 
-    auto subFolderName = ls->mp->mip->_ini.get<std::string>("LargeScale.subFolderName", "");
+    auto subFolderName = ls->mp->_ini.get<std::string>("LargeScale.subFolderName", "");
     if(subFolderName.empty())
     {
-        if(ls->mp->mip->_ini.get<bool>("global.LabatutCFG09", false))
+        if(ls->mp->_ini.get<bool>("global.LabatutCFG09", false))
         {
             subFolderName = "LabatutCFG09";
         }
-        if(ls->mp->mip->_ini.get<bool>("global.JancosekCVPR11", true))
+        if(ls->mp->_ini.get<bool>("global.JancosekCVPR11", true))
         {
             subFolderName = "JancosekCVPR11";
         }

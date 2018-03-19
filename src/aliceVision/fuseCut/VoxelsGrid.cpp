@@ -9,7 +9,7 @@
 #include <aliceVision/mvsUtils/common.hpp>
 #include <aliceVision/mvsUtils/fileIO.hpp>
 #include <aliceVision/fuseCut/delaunayGraphCutTypes.hpp>
-#include <aliceVision/omp.hpp>
+#include <aliceVision/alicevision_omp.hpp>
 
 #include <boost/filesystem.hpp>
 
@@ -602,7 +602,7 @@ void VoxelsGrid::generateCamsPtsFromVoxelsTracks()
                 int rc = (*cams)[c];
 
                 // open camPtsFile for append
-                std::string camPtsFileName = spaceCamsTracksDir + "camPtsGrid_" + std::to_string(mp->mip->getViewId(rc)) + ".bin";
+                std::string camPtsFileName = spaceCamsTracksDir + "camPtsGrid_" + std::to_string(mp->getViewId(rc)) + ".bin";
                 FILE* fin = fopen(camPtsFileName.c_str(), "ab");
                 StaticVector<Pixel>* camPtsIds = (*camsTracksPoints)[rc];
                 for(int j = 0; j < sizeOfStaticVector<Pixel>(camPtsIds); j++)

@@ -19,8 +19,6 @@
 #include <iostream>
 #include <cmath>
 
-namespace oiio = OIIO;
-
 namespace aliceVision {
 namespace image {
 
@@ -162,11 +160,16 @@ void readImage(const std::string& path, oiio::TypeDesc format, int nchannels, Im
 }
 
 template<typename T>
-void writeImage(const std::string& path, oiio::TypeDesc typeDesc, int nchannels, const Image<T>& image)
+void writeImage(const std::string& path,
+                oiio::TypeDesc typeDesc,
+                int nchannels,
+                const Image<T>& image,
+                const oiio::ParamValueList& metadata = oiio::ParamValueList())
 {
   bool isEXR = (path.size() > 4 && path.compare(path.size() - 4, 4, ".exr") == 0);
 
   oiio::ImageSpec imageSpec(image.Width(), image.Height(), nchannels, typeDesc);
+  imageSpec.extra_attribs = metadata; // add custom metadata
 
   if(isEXR)
   {
@@ -222,24 +225,24 @@ void readImage(const std::string& path, Image<RGBColor>& image)
   readImage(path, oiio::TypeDesc::UINT8, 3, image);
 }
 
-void writeImage(const std::string& path, const Image<unsigned char>& image)
+void writeImage(const std::string& path, const Image<unsigned char>& image, const oiio::ParamValueList& metadata)
 {
-  writeImage(path, oiio::TypeDesc::UINT8, 1, image);
+  writeImage(path, oiio::TypeDesc::UINT8, 1, image, metadata);
 }
 
-void writeImage(const std::string& path, const Image<RGBAColor>& image)
+void writeImage(const std::string& path, const Image<RGBAColor>& image, const oiio::ParamValueList& metadata)
 {
-  writeImage(path, oiio::TypeDesc::UINT8, 4, image);
+  writeImage(path, oiio::TypeDesc::UINT8, 4, image, metadata);
 }
 
-void writeImage(const std::string& path, const Image<RGBfColor>& image)
+void writeImage(const std::string& path, const Image<RGBfColor>& image, const oiio::ParamValueList& metadata)
 {
-  writeImage(path, oiio::TypeDesc::FLOAT, 3, image);
+  writeImage(path, oiio::TypeDesc::FLOAT, 3, image, metadata);
 }
 
-void writeImage(const std::string& path, const Image<RGBColor>& image)
+void writeImage(const std::string& path, const Image<RGBColor>& image, const oiio::ParamValueList& metadata)
 {
-  writeImage(path, oiio::TypeDesc::UINT8, 3, image);
+  writeImage(path, oiio::TypeDesc::UINT8, 3, image, metadata);
 }
 
 }  // namespace image

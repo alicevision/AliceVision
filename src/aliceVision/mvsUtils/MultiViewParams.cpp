@@ -26,14 +26,7 @@ namespace mvsUtils {
 
 namespace bfs = boost::filesystem;
 
-MultiViewInputParams::MultiViewInputParams(const std::string& file, const std::string& depthMapFolder, const std::string& depthMapFilterFolder)
-{
-    initFromConfigFile(file);
-    _depthMapFolder = depthMapFolder + "/";
-    _depthMapFilterFolder = depthMapFilterFolder + "/";
-}
-
-void MultiViewInputParams::initFromConfigFile(const std::string& iniFile)
+void MultiViewParams::initFromConfigFile(const std::string& iniFile)
 {
     boost::property_tree::ini_parser::read_ini(iniFile, _ini);
     // debug, dump the read ini file to cout
@@ -42,16 +35,17 @@ void MultiViewInputParams::initFromConfigFile(const std::string& iniFile)
     // initialize directory names
     const auto rootPath = bfs::path(iniFile).parent_path().string() + "/";
     mvDir = rootPath;
-    _depthMapFolder = (bfs::path(rootPath) / "depthMap").string();
-    _depthMapFilterFolder = (bfs::path(rootPath) / "depthMapFilter").string();
-
-    imageExt = _ini.get<std::string>("global.imgExt", imageExt);
     prefix = _ini.get<std::string>("global.prefix", prefix);
+    verbose = _ini.get<bool>("global.verbose", true);
+    CUDADeviceNo = _ini.get<int>("global.CUDADeviceNo", 0);
+    ncams = _ini.get<int>("global.ncams", 0);
+    simThr = _ini.get<double>("global.simThr", 0.0);
+    _imageExt = _ini.get<std::string>("global.imgExt", _imageExt);
+    _useSil = _ini.get<bool>("global.use_silhouettes", _useSil);
 
-    usesil = _ini.get<bool>("global.use_silhouettes", usesil);
-    int ncams = _ini.get<int>("global.ncams", 0);
     assert(ncams > 0);
-    // Load image uid and dimensions
+
+    // load image uid and dimensions
     std::set<std::pair<int, int>> dimensions;
     {
         boost::optional<boost::property_tree::ptree&> cameras = _ini.get_child_optional("imageResolutions");
@@ -67,41 +61,88 @@ void MultiViewInputParams::initFromConfigFile(const std::string& iniFile)
             boost::split(valuesVec, values, boost::algorithm::is_any_of("x"));
             if(valuesVec.size() != 2)
                 throw std::runtime_error("Error when loading image sizes from INI file.");
-            imageParams imgParams(std::stoi(v.first), boost::lexical_cast<int>(valuesVec[0]), boost::lexical_cast<int>(valuesVec[1]));
+
+            imageParams imgParams(std::stoi(v.first),
+                                  boost::lexical_cast<int>(valuesVec[0]),
+                                  boost::lexical_cast<int>(valuesVec[1]));
+
             _imagesParams.push_back(imgParams);
-            maxImageWidth = std::max(maxImageWidth, imgParams.width);
-            maxImageHeight = std::max(maxImageHeight, imgParams.height);
             dimensions.emplace(imgParams.width, imgParams.height);
         }
     }
+
     if(getNbCameras() != ncams)
         throw std::runtime_error("Incoherent number of cameras.");
+
     ALICEVISION_LOG_INFO("Found " << dimensions.size() << " image dimension(s): ");
     for(const auto& dim : dimensions)
         ALICEVISION_LOG_INFO(" - [" << dim.first << "x" << dim.second << "]");
-    ALICEVISION_LOG_INFO("Overall maximum dimension: [" << maxImageWidth << "x" << maxImageHeight << "]");
 }
 
-MultiViewParams::MultiViewParams(int _ncams, MultiViewInputParams* _mip, float _simThr,
+
+
+MultiViewParams::MultiViewParams(const std::string& iniFile,
+                                 const std::string& depthMapFolder,
+                                 const std::string& depthMapFilterFolder,
+                                 bool readFromDepthMaps,
+                                 int downscale,
                                  StaticVector<CameraMatrices>* cameras)
+    : _depthMapFolder(depthMapFolder + "/")
+    , _depthMapFilterFolder(depthMapFilterFolder + "/")
+    , _processDownscale(downscale)
 {
-    mip = _mip;
+    // Parse the .ini file
+    initFromConfigFile(iniFile);
 
-    verbose = (bool)mip->_ini.get<bool>("global.verbose", true);
-    CUDADeviceNo = mip->_ini.get<int>("global.CUDADeviceNo", 0);
-
-    minWinSizeHalf = 2;
-    simThr = _simThr;
-
-    resizeCams(_ncams);
+    // Resize internal structures
+    resizeCams(getNbCameras());
 
     long t1 = initEstimate();
-    for(int i = 0; i < ncams; i++)
+
+    for(int i = 0; i < ncams; ++i)
     {
+        std::string path;
+
+        if(!readFromDepthMaps)
+            path = mv_getFileNamePrefix(mvDir, this, i) + "." + _imageExt;
+        else
+            path = mv_getFileName(this, i, mvsUtils::EFileType::depthMap, 1);
+
+        oiio::ParamValueList metadata;
+        imageIO::readImageMetadata(path, metadata);
+
+        const auto scaleIt = metadata.find("AliceVision:downscale");
+        const auto pIt = metadata.find("AliceVision:P");
+
+        // find image scale information
+        if(scaleIt != metadata.end() && scaleIt->type() == oiio::TypeDesc::INT)
+        {
+            // use aliceVision image metadata
+            _imagesScale.at(i) = scaleIt->get_int();
+        }
+        else
+        {
+            // use image dimension
+            ALICEVISION_LOG_WARNING("Reading '" << path << "' downscale from file dimension" << std::endl
+                                  << "No 'AliceVision:downscale' metadata found.");
+            int w, h, channels;
+            imageIO::readImageSpec(path, w, h, channels);
+            const imageParams& imgParams = _imagesParams.at(i);
+            const int widthScale = imgParams.width / w;
+            const int heightScale = imgParams.height / h;
+
+            if(widthScale != heightScale)
+              throw std::runtime_error("Can't find image scale of file: '" + path + "'");
+
+            _imagesScale.at(i) = widthScale;
+        }
+
         FocK1K2Arr[i] = Point3d(-1.0f, -1.0f, -1.0f);
 
+        // load camera matrices
         if(cameras != nullptr)
         {
+            // use constructor cameras input parameter
             camArr[i] = (*cameras)[i].P;
             KArr[i] = (*cameras)[i].K;
             RArr[i] = (*cameras)[i].R;
@@ -111,23 +152,45 @@ MultiViewParams::MultiViewParams(int _ncams, MultiViewInputParams* _mip, float _
             iCamArr[i] = (*cameras)[i].iCam;
             FocK1K2Arr[i] = Point3d((*cameras)[i].f, (*cameras)[i].k1, (*cameras)[i].k2);
         }
+        else if(pIt != metadata.end() && pIt->type() == oiio::TypeDesc(oiio::TypeDesc::DOUBLE, oiio::TypeDesc::MATRIX44))
+        {
+            // use aliceVision image metadata
+            Matrix3x4& pMatrix = camArr.at(i);
+            std::copy_n(static_cast<const double*>(pIt->data()), 12, pMatrix.m);
+
+            // apply scale to camera matrix (camera matrix is scale 1)
+            const int imgScale = _imagesScale.at(i) * _processDownscale;
+            for(int i=0; i< 8; ++i)
+              pMatrix.m[i] /= static_cast<double>(imgScale);
+
+            pMatrix.decomposeProjectionMatrix(KArr.at(i), RArr.at(i), CArr.at(i));
+            iKArr.at(i) = KArr.at(i).inverse();
+            iRArr.at(i) = RArr.at(i).inverse();
+            iCamArr.at(i) = iRArr.at(i) * iKArr.at(i);
+        }
         else
         {
-            std::string fileNameP = mv_getFileName(mip, i, EFileType::P);
-            std::string fileNameD = mv_getFileName(mip, i, EFileType::D);
+            // use P matrix file
+            std::string fileNameP = mv_getFileName(this, i, EFileType::P);
+            std::string fileNameD = mv_getFileName(this, i, EFileType::D);
+
+            ALICEVISION_LOG_WARNING("Reading " << getViewId(i) << " P matrix from file '" << fileNameP << "'" << std::endl
+                                    << "No 'AliceVision:P' metadata found.");
+
             loadCameraFile(i, fileNameP, fileNameD);
         }
 
-        if(KArr[i].m11 > (float)(mip->getWidth(i) * 100))
+
+        if(KArr[i].m11 > (float)(getWidth(i) * 100))
         {
             ALICEVISION_LOG_WARNING("Camera " << i << " at infinity ... setting to zero");
 
-            KArr[i].m11 = mip->getWidth(i) / 2;
+            KArr[i].m11 = getWidth(i) / 2;
             KArr[i].m12 = 0;
-            KArr[i].m13 = mip->getWidth(i) / 2;
+            KArr[i].m13 = getWidth(i) / 2;
             KArr[i].m21 = 0;
-            KArr[i].m22 = mip->getHeight(i) / 2;
-            KArr[i].m23 = mip->getHeight(i) / 2;
+            KArr[i].m22 = getHeight(i) / 2;
+            KArr[i].m23 = getHeight(i) / 2;
             KArr[i].m31 = 0;
             KArr[i].m32 = 0;
             KArr[i].m33 = 1;
@@ -161,23 +224,23 @@ MultiViewParams::MultiViewParams(int _ncams, MultiViewInputParams* _mip, float _
             camArr[i] = KArr[i] * (RArr[i] | (Point3d(0.0, 0.0, 0.0) - RArr[i] * CArr[i]));
         }
 
+        // find max width and max height
+        _maxImageWidth = std::max(_maxImageWidth, getWidth(i));
+        _maxImageHeight = std::max(_maxImageHeight, getHeight(i));
+
         printfEstimate(i, ncams, t1);
     }
-    finishEstimate();
 
-    g_border = 10;
-    g_maxPlaneNormalViewDirectionAngle = 70;
+    ALICEVISION_LOG_INFO("Overall maximum dimension: [" << _maxImageWidth << "x" << _maxImageHeight << "]");
+    finishEstimate();
 }
 
 
 void MultiViewParams::loadCameraFile(int i, const std::string& fileNameP, const std::string& fileNameD)
 {
-    // std::cout << "MultiViewParams::loadCameraFile: " << fileNameP << std::endl;
-
     if(!FileExists(fileNameP))
-    {
         throw std::runtime_error(std::string("mv_multiview_params: no such file: ") + fileNameP);
-    }
+
     FILE* f = fopen(fileNameP.c_str(), "r");
     char fc;
     fscanf(f, "%c", &fc);
@@ -195,10 +258,18 @@ void MultiViewParams::loadCameraFile(int i, const std::string& fileNameP, const 
         fclose(f);
         f = fopen(fileNameP.c_str(), "r");
     }
-    camArr[i] = load3x4MatrixFromFile(f);
+
+    Matrix3x4& pMatrix = camArr.at(i);
+
+    pMatrix = load3x4MatrixFromFile(f);
     fclose(f);
 
-    camArr[i].decomposeProjectionMatrix(KArr[i], RArr[i], CArr[i]);
+    // apply scale to camera matrix (camera matrix is scale 1)
+    const int imgScale = _imagesScale.at(i) * _processDownscale;
+    for(int i=0; i< 8; ++i)
+      pMatrix.m[i] /= static_cast<double>(imgScale);
+
+    pMatrix.decomposeProjectionMatrix(KArr[i], RArr[i], CArr[i]);
     iKArr[i] = KArr[i].inverse();
     iRArr[i] = RArr[i].inverse();
     iCamArr[i] = iRArr[i] * iKArr[i];
@@ -212,9 +283,7 @@ void MultiViewParams::loadCameraFile(int i, const std::string& fileNameP, const 
 }
 
 MultiViewParams::~MultiViewParams()
-{
-    mip = nullptr;
-}
+{}
 
 bool MultiViewParams::is3DPointInFrontOfCam(const Point3d* X, int rc) const
 {
@@ -378,12 +447,12 @@ float MultiViewParams::getCamsMinPixelSize(const Point3d& x0, StaticVector<int>&
 
 bool MultiViewParams::isPixelInImage(const Pixel& pix, int d, int camId) const
 {
-    return ((pix.x >= d) && (pix.x < mip->getWidth(camId) - d) && (pix.y >= d) && (pix.y < mip->getHeight(camId) - d));
+    return ((pix.x >= d) && (pix.x < getWidth(camId) - d) && (pix.y >= d) && (pix.y < getHeight(camId) - d));
 }
 bool MultiViewParams::isPixelInImage(const Pixel& pix, int camId) const
 {
-    return ((pix.x >= g_border) && (pix.x < mip->getWidth(camId) - g_border) && (pix.y >= g_border) &&
-            (pix.y < mip->getHeight(camId) - g_border));
+    return ((pix.x >= g_border) && (pix.x < getWidth(camId) - g_border) && (pix.y >= g_border) &&
+            (pix.y < getHeight(camId) - g_border));
 }
 
 bool MultiViewParams::isPixelInImage(const Point2d& pix, int camId) const

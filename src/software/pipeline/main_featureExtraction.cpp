@@ -9,7 +9,11 @@
 #include <aliceVision/sfm/sfm.hpp>
 #include <aliceVision/feature/imageDescriberCommon.hpp>
 #include <aliceVision/feature/feature.hpp>
+#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_POPSIFT) \
+ || ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_CCTAG)
+#define ALICEVISION_HAVE_GPU_FEATURES
 #include <aliceVision/system/gpu.hpp>
+#endif
 #include <aliceVision/system/MemoryInfo.hpp>
 #include <aliceVision/system/Timer.hpp>
 #include <aliceVision/system/Logger.hpp>
@@ -341,8 +345,10 @@ int main(int argc, char **argv)
     }
   }
 
+#ifdef ALICEVISION_HAVE_GPU_FEATURES
   // Print GPU Information
   ALICEVISION_LOG_INFO(system::gpuInformationCUDA());
+#endif
 
   // load input scene
   sfm::SfMData sfmData;

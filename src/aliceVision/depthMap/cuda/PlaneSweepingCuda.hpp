@@ -59,9 +59,6 @@ public:
     StaticVector<int>* camsRcs;
     StaticVector<long>* camsTimes;
 
-    float avMinDepth;
-    float avMaxDepth;
-
     bool verbose;
     bool doVizualizePartialDepthMaps;
     int nbestkernelSizeHalf;

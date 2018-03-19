@@ -61,7 +61,7 @@ public:
 
     std::vector<int> _camsVertexes;
     std::vector<std::vector<CellIndex>> _neighboringCellsPerVertex;
-    bool btest;
+
     bool saveTemporaryBinFiles;
 
     static const GEO::index_t NO_TETRAHEDRON = GEO::NO_CELL;
@@ -134,10 +134,11 @@ public:
 
     inline Facet mirrorFacet(const Facet& f) const
     {
-        std::set<VertexIndex> facetVertices;
-        facetVertices.insert(getVertexIndex(f, 0));
-        facetVertices.insert(getVertexIndex(f, 1));
-        facetVertices.insert(getVertexIndex(f, 2));
+        const std::array<VertexIndex, 3> facetVertices = {
+            getVertexIndex(f, 0),
+            getVertexIndex(f, 1),
+            getVertexIndex(f, 2)
+        };
         
         Facet out;
         out.cellIndex = _tetrahedralization->cell_adjacent(f.cellIndex, f.localVertexIndex);
@@ -147,7 +148,7 @@ public:
             for(int k = 0; k < 4; ++k)
             {
                 CellIndex out_vi = _tetrahedralization->cell_vertex(out.cellIndex, k);
-                if(facetVertices.count(out_vi) == 0)
+                if(std::find(facetVertices.begin(), facetVertices.end(), out_vi) == facetVertices.end())
                 {
                   out.localVertexIndex = k;
                   return out;

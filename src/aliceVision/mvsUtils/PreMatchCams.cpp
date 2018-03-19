@@ -18,8 +18,8 @@ namespace mvsUtils {
 PreMatchCams::PreMatchCams(MultiViewParams* _mp)
 {
     mp = _mp;
-    minang = (float)mp->mip->_ini.get<double>("prematching.minAngle", 2.0);
-    maxang = (float)mp->mip->_ini.get<double>("prematching.maxAngle", 70.0); // WARNING: may be too low, especially when using seeds from SFM
+    minang = (float)mp->_ini.get<double>("prematching.minAngle", 2.0);
+    maxang = (float)mp->_ini.get<double>("prematching.maxAngle", 70.0); // WARNING: may be too low, especially when using seeds from SFM
     minCamsDistance = computeMinCamsDistance();
 }
 
@@ -50,7 +50,7 @@ bool PreMatchCams::overlap(int rc, int tc)
         return false;
     }
 
-    Point2d rmid = Point2d((float)mp->mip->getWidth(rc) / 2.0f, (float)mp->mip->getHeight(rc) / 2.0f);
+    Point2d rmid = Point2d((float)mp->getWidth(rc) / 2.0f, (float)mp->getHeight(rc) / 2.0f);
     Point2d pFromTar, pToTar;
 
     if(!getTarEpipolarDirectedLine(&pFromTar, &pToTar, rmid, rc, tc, mp))
@@ -119,7 +119,7 @@ StaticVector<int> PreMatchCams::findNearestCams(int rc, int _nnearestcams)
 
 StaticVector<int>* PreMatchCams::precomputeIncidentMatrixCamsFromSeeds()
 {
-    std::string fn = mp->mip->mvDir + "camsPairsMatrixFromSeeds.bin";
+    std::string fn = mp->mvDir + "camsPairsMatrixFromSeeds.bin";
     if(FileExists(fn))
     {
         ALICEVISION_LOG_INFO("Camera pairs matrix file already computed: " << fn);
@@ -132,7 +132,7 @@ StaticVector<int>* PreMatchCams::precomputeIncidentMatrixCamsFromSeeds()
     for(int rc = 0; rc < mp->ncams; ++rc)
     {
         StaticVector<SeedPoint>* seeds;
-        loadSeedsFromFile(&seeds, rc, mp->mip, EFileType::seeds);
+        loadSeedsFromFile(&seeds, rc, mp, EFileType::seeds);
         for(int i = 0; i < seeds->size(); i++)
         {
             SeedPoint* sp = &(*seeds)[i];
@@ -150,7 +150,7 @@ StaticVector<int>* PreMatchCams::precomputeIncidentMatrixCamsFromSeeds()
 
 StaticVector<int>* PreMatchCams::loadCamPairsMatrix()
 {
-    std::string fn = mp->mip->mvDir + "camsPairsMatrixFromSeeds.bin"; // TODO: store this filename at one place
+    std::string fn = mp->mvDir + "camsPairsMatrixFromSeeds.bin"; // TODO: store this filename at one place
     if(!FileExists(fn))
         throw std::runtime_error("Missing camera pairs matrix file (see --computeCamPairs): " + fn);
     return loadArrayFromFile<int>(fn);
@@ -160,7 +160,7 @@ StaticVector<int>* PreMatchCams::loadCamPairsMatrix()
 StaticVector<int> PreMatchCams::findNearestCamsFromSeeds(int rc, int nnearestcams)
 {
     StaticVector<int> out;
-    std::string tarCamsFile = mp->mip->mvDir + "_tarCams/" + num2strFourDecimal(rc) + ".txt";
+    std::string tarCamsFile = mp->mvDir + "_tarCams/" + num2strFourDecimal(rc) + ".txt";
     if(FileExists(tarCamsFile))
     {
         FILE* f = fopen(tarCamsFile.c_str(), "r");
@@ -239,7 +239,7 @@ StaticVector<int> PreMatchCams::findCamsWhichIntersectsHexahedron(const Point3d 
     {
         float mindepth, maxdepth;
         StaticVector<int>* pscams;
-        if(getDepthMapInfo(rc, mp->mip, mindepth, maxdepth, &pscams))
+        if(getDepthMapInfo(rc, mp, mindepth, maxdepth, &pscams))
         {
             delete pscams;
             Point3d rchex[8];
