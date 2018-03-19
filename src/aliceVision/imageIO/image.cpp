@@ -14,8 +14,12 @@
 
 #include <OpenEXR/half.h>
 
+#include <boost/filesystem.hpp>
+
 #include <stdexcept>
 #include <memory>
+
+namespace fs = boost::filesystem;
 
 namespace aliceVision {
 namespace imageIO {
@@ -208,12 +212,15 @@ void writeImage(const std::string& path,
                 EImageQuality imageQuality,
                 const oiio::ParamValueList& metadata)
 {
+    const fs::path bPath = fs::path(path);
+    const std::string extension = bPath.extension().string();
+    const std::string tmpPath = (bPath.parent_path() / bPath.stem()).string() + "." + fs::unique_path().string() + extension;
+    const bool isEXR = (extension == ".exr");
+
     ALICEVISION_LOG_DEBUG("[IO] Write Image: " << path << std::endl
       << "\t- width: " << width << std::endl
       << "\t- height: " << height << std::endl
       << "\t- channels: " << nchannels);
-
-    const bool isEXR = (path.size() > 4 && path.compare(path.size() - 4, 4, ".exr") == 0);
 
     oiio::ImageSpec imageSpec(width, height, nchannels, typeDesc);
     imageSpec.extra_attribs = metadata;
@@ -241,15 +248,18 @@ void writeImage(const std::string& path,
           throw std::runtime_error("Can't convert output image file to half '" + path + "'.");
 
         // write image
-        if(!halfBuf.write(path))
+        if(!halfBuf.write(tmpPath))
           throw std::runtime_error("Can't write output image file '" + path + "'.");
     }
     else
     {
         // write image
-        if(!outBuf.write(path))
+        if(!outBuf.write(tmpPath))
           throw std::runtime_error("Can't write output image file '" + path + "'.");
     }
+
+    // rename temporay filename
+    fs::rename(tmpPath, path);
 }
 
 void writeImage(const std::string& path, int width, int height, const std::vector<unsigned char>& buffer, EImageQuality imageQuality, const oiio::ParamValueList& metadata)

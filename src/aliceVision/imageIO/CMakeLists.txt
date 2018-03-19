@@ -25,6 +25,8 @@ target_include_directories(aliceVision_imageIO
 target_link_libraries(aliceVision_imageIO
   PUBLIC aliceVision_mvsData
          ${OPENIMAGEIO_LIBRARIES}
+
+  PRIVATE ${Boost_FILESYSTEM_LIBRARIES}
 )
 
 set_property(TARGET aliceVision_imageIO
