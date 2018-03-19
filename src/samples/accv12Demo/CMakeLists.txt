@@ -5,6 +5,7 @@ if(ALICEVISION_HAVE_OPENCV)
     
     target_link_libraries(alicevision_samples_openCVFitting 
 		${OpenCV_LIBS} 
+    ${Boost_FILESYSTEM_LIBRARIES}
 		aliceVision_multiview
     ) 
     

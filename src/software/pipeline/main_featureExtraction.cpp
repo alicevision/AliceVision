@@ -32,6 +32,7 @@
 #include <limits>
 
 using namespace aliceVision;
+
 namespace po = boost::program_options;
 namespace fs = boost::filesystem;
 

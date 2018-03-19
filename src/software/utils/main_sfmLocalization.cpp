@@ -11,16 +11,17 @@
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/cmdline.hpp>
 
-#include <dependencies/stlplus3/filesystemSimplified/file_system.hpp>
-
 #include <boost/program_options.hpp>
+#include <boost/filesystem.hpp>
 
 #include <cstdlib>
 
 using namespace aliceVision;
 using namespace aliceVision::sfm;
 using namespace std;
+
 namespace po = boost::program_options;
+namespace fs = boost::filesystem;
 
 // ---------------------------------------------------------------------------
 // Image localization API sample:
@@ -153,8 +154,8 @@ int main(int argc, char **argv)
       return EXIT_FAILURE;
     }
 
-    if (!stlplus::folder_exists(outputFolder))
-      stlplus::folder_create(outputFolder);
+    if (!fs::exists(outputFolder))
+      fs::create_directory(outputFolder);
     
     if(!localizer.Init(sfmData, regionsPerView))
     {
@@ -238,9 +239,9 @@ int main(int argc, char **argv)
 
       std::unique_ptr<Regions> query_regions;
       imageDescribers->allocate(query_regions);
-      const std::string basename = stlplus::basename_part(sImagePath);
-      const std::string featFile = stlplus::create_filespec(featuresFolder, basename, ".feat");
-      const std::string descFile = stlplus::create_filespec(featuresFolder, basename, ".desc");
+      const std::string basename = fs::path(sImagePath).stem().string();
+      const std::string featFile = (fs::path(featuresFolder) / (basename + ".SIFT.feat")).string();
+      const std::string descFile = (fs::path(featuresFolder) / (basename + ".SIFT.desc")).string();
 
       try
       {
@@ -313,7 +314,7 @@ int main(int argc, char **argv)
   }
 
   // Export the found camera position
-  const std::string out_file_name = stlplus::create_filespec(outputFolder, "found_pose_centers", "ply");
+  const std::string out_file_name = (fs::path(outputFolder) / "found_pose_centers.ply").string();
   {
     std::ofstream outfile;
     outfile.open(out_file_name.c_str(), std::ios_base::out);

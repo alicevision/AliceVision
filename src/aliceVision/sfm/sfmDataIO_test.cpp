@@ -7,7 +7,9 @@
 
 #include <aliceVision/system/Timer.hpp>
 #include <aliceVision/sfm/sfm.hpp>
-#include <dependencies/stlplus3/filesystemSimplified/file_system.hpp>
+
+#include <boost/filesystem.hpp>
+
 #include <sstream>
 
 #define BOOST_TEST_MODULE sfmDataIO
@@ -18,6 +20,7 @@ using namespace aliceVision;
 using namespace aliceVision::camera;
 using namespace aliceVision::geometry;
 using namespace aliceVision::sfm;
+namespace fs = boost::filesystem;
 
 // Create a SfM scene with desired count of views & poses & intrinsic (shared or not)
 // Add a 3D point with observation in 2 view (just in order to have non empty data)
@@ -219,6 +222,6 @@ BOOST_AUTO_TEST_CASE(SfMData_IO_SAVE_PLY) {
     const SfMData sfmData = createTestScene(2, 2, true);
     ESfMData flags_part = ESfMData(EXTRINSICS | STRUCTURE);
     BOOST_CHECK( Save(sfmData, filename, flags_part) );
-    BOOST_CHECK( stlplus::is_file(filename) );
+    BOOST_CHECK( fs::is_regular_file(filename) );
   }
 }

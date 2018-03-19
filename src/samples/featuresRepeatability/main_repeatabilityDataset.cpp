@@ -1,18 +1,19 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include "aliceVision/image/all.hpp"
-#include "aliceVision/feature/feature.hpp"
-#include "aliceVision/feature/sift/ImageDescriber_SIFT.hpp"
-#include "aliceVision/feature/akaze/ImageDescriber_AKAZE.hpp"
-#include "aliceVision/robustEstimation/guidedMatching.hpp"
-#include "aliceVision/multiview/homographyKernelSolver.hpp"
-#include "aliceVision/matching/RegionsMatcher.hpp"
+#include <aliceVision/image/all.hpp>
+#include <aliceVision/feature/feature.hpp>
+#include <aliceVision/feature/sift/ImageDescriber_SIFT.hpp>
+#include <aliceVision/feature/akaze/ImageDescriber_AKAZE.hpp>
+#include <aliceVision/robustEstimation/guidedMatching.hpp>
+#include <aliceVision/multiview/homographyKernelSolver.hpp>
+#include <aliceVision/matching/RegionsMatcher.hpp>
 
-#include "dependencies/stlplus3/filesystemSimplified/file_system.hpp"
-#include "dependencies/vectorGraphics/svgDrawer.hpp"
+#include <dependencies/vectorGraphics/svgDrawer.hpp>
 
+#include <boost/regex.hpp>
 #include <boost/program_options.hpp>
+#include <boost/filesystem.hpp>
 
 #include <string>
 #include <iostream>
@@ -22,7 +23,9 @@ using namespace std;
 using namespace aliceVision;
 using namespace aliceVision::image;
 using namespace aliceVision::matching;
+
 namespace po = boost::program_options;
+namespace fs = boost::filesystem;
 
 // Class to load images and ground truth homography matrices
 // A reference image
@@ -53,17 +56,48 @@ private:
   /// Load the images of a folder
   bool loadImages()
   {
-    std::cout << "Loading images of the dataset: " << stlplus::folder_part(folderPath_) << std::endl;
-    std::vector<std::string> vec_image_basename = stlplus::folder_wildcard( folderPath_, "*.ppm" );
-    if (vec_image_basename.empty())
-      vec_image_basename = stlplus::folder_wildcard( folderPath_, "*.pgm" );
-    if (vec_image_basename.empty())
+    std::cout << "Loading images of the dataset: " << folderPath_ << std::endl;
+
+    const boost::regex ppmFilter(".*.ppm");
+    const boost::regex pgmFilter(".*.pgm");
+
+    std::vector<std::string> ppmFiles;
+    std::vector<std::string> pgmFiles;
+
+    boost::filesystem::directory_iterator endItr;
+    for(boost::filesystem::directory_iterator i(folderPath_); i != endItr; ++i)
+    {
+      if(!boost::filesystem::is_regular_file(i->status()))
+        continue;
+
+      boost::smatch what;
+
+      if(boost::regex_match(i->path().filename().string(), what, ppmFilter))
+      {
+        ppmFiles.push_back(i->path().filename().string());
+        continue;
+      }
+
+      if(boost::regex_match(i->path().filename().string(), what, pgmFilter))
+      {
+        pgmFiles.push_back(i->path().filename().string());
+      }
+    }
+
+    std::vector<std::string>& vec_image_basename = ppmFiles;
+
+    if(!ppmFiles.empty())
+      vec_image_basename = ppmFiles;
+    else if (!pgmFiles.empty())
+      vec_image_basename = pgmFiles;
+    else
       return false;
+
     sort(vec_image_basename.begin(), vec_image_basename.end());
     vec_image_.resize(vec_image_basename.size());
     for (int i = 0; i < vec_image_basename.size(); ++i)
     {
-      const std::string path = stlplus::create_filespec(folderPath_, vec_image_basename[i]);
+      const std::string path = (fs::path(folderPath_) / vec_image_basename[i]).string();
       image::Image<RGBColor> imageRGB;
       try
       {
@@ -88,7 +122,7 @@ private:
   ///  2-> H1to2p, ...
   bool loadGroundTruthHs()
   {
-    std::cout << "ground truth homographies of dataset: " << stlplus::folder_part(folderPath_) << std::endl;
+    std::cout << "ground truth homographies of dataset: " << folderPath_ << std::endl;
     vec_H_.resize(6);
     for (int i = 0; i < 6; ++i)
     {
@@ -247,11 +281,21 @@ int main(int argc, char **argv)
   const double nndr = 0.8;
 
   // List all subdirectories and for each one compute the repeatability
-  const std::vector<std::string> vec_dataset_path = stlplus::folder_subdirectories(datasetPath);
+  std::vector<std::string> vec_dataset_path;
+
+  boost::filesystem::directory_iterator endItr;
+  for(boost::filesystem::directory_iterator i(datasetPath); i != endItr; ++i)
+  {
+    if(boost::filesystem::is_directory(i->status()))
+    {
+      vec_dataset_path.push_back(i->path().string());
+    }
+  }
+
   for (auto const& dataset_path : vec_dataset_path)
   {
-    const std::string sPath = stlplus::create_filespec(datasetPath, dataset_path);
-    if (stlplus::is_file(sPath))
+    const std::string sPath = (fs::path(datasetPath) / dataset_path).string();
+    if (fs::is_regular_file(sPath))
       continue;
 
     RepeatabilityDataset dataset(sPath);
@@ -357,7 +401,7 @@ int main(int argc, char **argv)
 
           std::cout << "Feature matching repeatability Results" << "\n"
            << "*******************************" << "\n"
-           << "** " << stlplus::basename_part(sPath) << " **" << "\n"
+           << "** " << fs::path(sPath).stem().string() << " **" << "\n"
            << "*******************************" << "\n"
            << "# Keypoints 1:                        \t" << map_regions[0]->RegionCount() << "\n"
            << "# Keypoints N:                        \t" << map_regions[i]->RegionCount() << "\n"
@@ -375,7 +419,7 @@ int main(int argc, char **argv)
             };
           image_results.results[std::to_string(i)] = results;
         }
-        image_results.exportToFile("repeatability_results.xls", stlplus::basename_part(sPath));
+        image_results.exportToFile("repeatability_results.xls", fs::path(sPath).stem().string());
       }
     }
     else

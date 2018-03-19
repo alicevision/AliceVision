@@ -3,10 +3,11 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
-#include "aliceVision/sfm/sfm.hpp"
-#include "aliceVision/image/all.hpp"
+#include <aliceVision/sfm/sfm.hpp>
+#include <aliceVision/image/all.hpp>
 
 #include <boost/program_options.hpp>
+#include <boost/filesystem.hpp>
 #include <boost/progress.hpp>
 
 #include <stdlib.h>
@@ -21,6 +22,7 @@ using namespace aliceVision::geometry;
 using namespace aliceVision::image;
 using namespace aliceVision::sfm;
 namespace po = boost::program_options;
+namespace fs = boost::filesystem;
 
 bool exportToPMVSFormat(
   const SfMData & sfm_data,
@@ -31,22 +33,21 @@ bool exportToPMVSFormat(
   )
 {
   bool bOk = true;
-  if (!stlplus::is_folder(sOutDirectory))
+  if (!fs::exists(sOutDirectory))
   {
-    stlplus::folder_create(sOutDirectory);
-    bOk = stlplus::is_folder(sOutDirectory);
+    fs::create_directory(sOutDirectory);
+    bOk = fs::is_directory(sOutDirectory);
   }
 
   // Create basis folder structure
-  stlplus::folder_create( stlplus::folder_append_separator(sOutDirectory) + "models");
-  stlplus::folder_create( stlplus::folder_append_separator(sOutDirectory) + "txt");
-  stlplus::folder_create( stlplus::folder_append_separator(sOutDirectory) + "visualize");
+  fs::create_directory(fs::path(sOutDirectory) / std::string("models"));
+  fs::create_directory(fs::path(sOutDirectory) / std::string("txt"));
+  fs::create_directory(fs::path(sOutDirectory) / std::string("visualize"));
 
   if (bOk &&
-      stlplus::is_folder(stlplus::folder_append_separator(sOutDirectory) + "models") &&
-      stlplus::is_folder( stlplus::folder_append_separator(sOutDirectory) + "txt") &&
-      stlplus::is_folder( stlplus::folder_append_separator(sOutDirectory) + "visualize")
-      )
+      fs::is_directory(fs::path(sOutDirectory) / std::string("models")) &&
+      fs::is_directory(fs::path(sOutDirectory) / std::string("txt")) &&
+      fs::is_directory(fs::path(sOutDirectory) / std::string("visualize")))
   {
     bOk = true;
   }
@@ -80,9 +81,7 @@ bool exportToPMVSFormat(
       const Mat34 P = iterIntrinsic->second.get()->get_projective_equivalent(pose);
       std::ostringstream os;
       os << std::setw(8) << std::setfill('0') << map_viewIdToContiguous[view->getViewId()];
-      std::ofstream file(
-        stlplus::create_filespec(stlplus::folder_append_separator(sOutDirectory) + "txt",
-        os.str() ,"txt").c_str());
+      std::ofstream file((fs::path(sOutDirectory) / std::string("txt") / (os.str() + ".txt")).string());
       file << "CONTOUR" << os.widen('\n')
         << P.row(0) <<"\n"<< P.row(1) <<"\n"<< P.row(2) << os.widen('\n');
       file.close();
@@ -103,9 +102,7 @@ bool exportToPMVSFormat(
       const std::string srcImage = view->getImagePath();
       std::ostringstream os;
       os << std::setw(8) << std::setfill('0') << map_viewIdToContiguous[view->getViewId()];
-      const std::string dstImage = stlplus::create_filespec(
-        stlplus::folder_append_separator(sOutDirectory) + "visualize", os.str(),"jpg");
-
+      const std::string dstImage = (fs::path(sOutDirectory) / std::string("visualize") / (os.str() + ".jpg")).string();
       const IntrinsicBase * cam = iterIntrinsic->second.get();
       if (cam->isValid() && cam->have_disto())
       {
@@ -117,10 +114,10 @@ bool exportToPMVSFormat(
       else // (no distortion)
       {
         // copy the image if extension match
-        if (stlplus::extension_part(srcImage) == "JPG" ||
-          stlplus::extension_part(srcImage) == "jpg")
+        if (fs::extension(srcImage) == ".JPG" ||
+          fs::extension(srcImage) == ".jpg")
         {
-          stlplus::file_copy(srcImage, dstImage);
+          fs::copy_file(srcImage, dstImage);
         }
         else
         {
@@ -188,12 +185,12 @@ bool exportToPMVSFormat(
         }
         osVisData << os.widen('\n');
       }
-      std::ofstream file(stlplus::create_filespec(sOutDirectory, "vis", "dat").c_str());
+      std::ofstream file((fs::path(sOutDirectory) / "vis.dat").string());
       file << osVisData.str();
       file.close();
     }
 
-    std::ofstream file(stlplus::create_filespec(sOutDirectory, "pmvs_options", "txt").c_str());
+    std::ofstream file((fs::path(sOutDirectory) / "pmvs_options.txt").string());
     file << os.str();
     file.close();
   }
@@ -264,8 +261,7 @@ bool exportToBundlerFormat(
           << R(2,0) << " " << R(2, 1) << " " << R(2, 2) << os.widen('\n')  //R.row(2)
           << t(0)   << " " << t(1)    << " " << t(2)    << os.widen('\n'); //t
 
-        osList << stlplus::basename_part(view->getImagePath()) + "." + stlplus::extension_part(view->getImagePath())
-          << " 0 " << focal << os.widen('\n');
+        osList << fs::path(view->getImagePath()).filename() << " 0 " << focal << os.widen('\n');
       }
       else
       {
@@ -365,8 +361,8 @@ int main(int argc, char *argv[])
   system::Logger::get()->setLogLevel(verboseLevel);
 
   // Create output dir
-  if (!stlplus::folder_exists(outputFolder))
-    stlplus::folder_create( outputFolder );
+  if (!fs::exists(outputFolder))
+    fs::create_directory(outputFolder);
 
   SfMData sfm_data;
   if (!Load(sfm_data, sfmDataFilename, ESfMData(ALL))) {
@@ -377,17 +373,18 @@ int main(int argc, char *argv[])
 
   {
     exportToPMVSFormat(sfm_data,
-      stlplus::folder_append_separator(outputFolder) + "PMVS",
+      (fs::path(outputFolder) / std::string("PMVS")).string(),
       resolution,
       nbCore,
       useVisData);
 
     exportToBundlerFormat(sfm_data,
-      stlplus::folder_append_separator(outputFolder) +
-      stlplus::folder_append_separator("PMVS") + "bundle.rd.out",
-      stlplus::folder_append_separator(outputFolder) +
-      stlplus::folder_append_separator("PMVS") + "list.txt"
-      );
+      (fs::path(outputFolder) /
+      std::string("PMVS") /
+      std::string("bundle.rd.out")).string(),
+      (fs::path(outputFolder) /
+      std::string("PMVS") /
+      std::string("list.txt")).string());
 
     return( EXIT_SUCCESS );
   }

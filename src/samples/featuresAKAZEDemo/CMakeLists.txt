@@ -5,7 +5,6 @@ add_executable(aliceVision_samples_demoAKAZE main_demoAKAZE.cpp)
 target_link_libraries(aliceVision_samples_demoAKAZE
   aliceVision_image
   aliceVision_feature
-  stlplus
   ${ALICEVISION_LIBRARY_DEPENDENCIES}
 )
 
@@ -19,8 +18,8 @@ target_link_libraries( aliceVision_samples_computeAKAZE
   aliceVision_image
   aliceVision_feature
   aliceVision_system
-  stlplus
   ${ALICEVISION_LIBRARY_DEPENDENCIES}
+  ${Boost_FILESYSTEM_LIBRARIES}
 )
   
 set_property(TARGET aliceVision_samples_computeAKAZE 

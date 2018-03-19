@@ -8,8 +8,8 @@ target_link_libraries(aliceVision_samples_robustEssentialBA
   aliceVision_matching
   aliceVision_system
   aliceVision_sfm
-  stlplus
   vlsift
+  ${Boost_FILESYSTEM_LIBRARIES}
 )
 
 set_property(TARGET aliceVision_samples_robustEssentialBA

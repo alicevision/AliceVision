@@ -53,7 +53,7 @@ BOOST_AUTO_TEST_CASE(SEQUENTIAL_SFM_Known_Intrinsics)
   ReconstructionEngine_sequentialSfM sfmEngine(
     sfmData2,
     "./",
-    stlplus::create_filespec("./", "Reconstruction_Report.html"));
+    "./Reconstruction_Report.html");
 
   // Add a tiny noise in 2D observations to make data more realistic
   std::normal_distribution<double> distribution(0.0,0.5);
@@ -113,7 +113,7 @@ BOOST_AUTO_TEST_CASE(SEQUENTIAL_SFM_Partially_Known_Intrinsics)
   ReconstructionEngine_sequentialSfM sfmEngine(
     sfmData2,
     "./",
-    stlplus::create_filespec("./", "Reconstruction_Report.html"));
+    "./Reconstruction_Report.html");
 
   // Add a tiny noise in 2D observations to make data more realistic
   std::normal_distribution<double> distribution(0.0,0.5);
@@ -166,7 +166,7 @@ BOOST_AUTO_TEST_CASE(SEQUENTIAL_SFM_Known_Rig)
   ReconstructionEngine_sequentialSfM sfmEngine(
     sfmData2,
     "./",
-    stlplus::create_filespec("./", "Reconstruction_Report.html"));
+    "./Reconstruction_Report.html");
 
   // Add a tiny noise in 2D observations to make data more realistic
   std::normal_distribution<double> distribution(0.0,0.5);

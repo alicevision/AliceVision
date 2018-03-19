@@ -93,7 +93,6 @@ target_link_libraries(aliceVision_sfm
   aliceVision_numeric
   aliceVision_track
   aliceVision_multiview
-  stlplus
   ${CERES_LIBRARIES}
   aliceVision_lInftyComputerVision
   aliceVision_system
@@ -121,8 +120,8 @@ install(TARGETS aliceVision_sfm
   EXPORT aliceVision-targets
 )
 
-UNIT_TEST(aliceVision sfmDataIO          "aliceVision_feature;aliceVision_sfm;aliceVision_system;stlplus")
-UNIT_TEST(aliceVision bundleAdjustment   "aliceVision_multiview_test_data;aliceVision_feature;aliceVision_multiview;aliceVision_sfm;aliceVision_system;stlplus")
+UNIT_TEST(aliceVision sfmDataIO          "aliceVision_feature;aliceVision_sfm;aliceVision_system")
+UNIT_TEST(aliceVision bundleAdjustment   "aliceVision_multiview_test_data;aliceVision_feature;aliceVision_multiview;aliceVision_sfm;aliceVision_system")
 UNIT_TEST(aliceVision rig                "aliceVision_feature;aliceVision_sfm;aliceVision_system")
 
 if(ALICEVISION_HAVE_ALEMBIC)

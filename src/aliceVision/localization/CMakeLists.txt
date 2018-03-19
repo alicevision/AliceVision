@@ -32,7 +32,6 @@ target_link_libraries(aliceVision_localization
          aliceVision_voctree
          aliceVision_numeric
   PRIVATE aliceVision_system
-          stlplus
           ${Boost_LIBRARIES}
           ${LOG_LIB}
 )

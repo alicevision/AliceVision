@@ -4,7 +4,6 @@ target_link_libraries(aliceVision_samples_undistoBrown
   aliceVision_system
   aliceVision_image
   aliceVision_multiview
-  stlplus
   ${CERES_LIBRARIES}
   ${BOOST_LIBRARIES}
 )

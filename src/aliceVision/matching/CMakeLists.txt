@@ -37,7 +37,9 @@ set_target_properties(aliceVision_matching
 
 target_link_libraries(aliceVision_matching
   aliceVision_feature
-  stlplus
+  ${Boost_FILESYSTEM_LIBRARIES}
+  # dependency of Boost filesystem, not always declared depending on CMake version
+  ${Boost_SYSTEM_LIBRARIES}
   ${FLANN_LIBRARY}
   ${LOG_LIB}
 )

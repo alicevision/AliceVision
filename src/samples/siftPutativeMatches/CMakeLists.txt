@@ -7,7 +7,6 @@ target_link_libraries(aliceVision_samples_siftMatching
   aliceVision_feature
   aliceVision_matching
   vlsift
-  stlplus
 )
 
 set_property(TARGET aliceVision_samples_siftMatching

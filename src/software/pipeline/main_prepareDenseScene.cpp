@@ -194,7 +194,6 @@ bool prepareDenseScene(const SfMData& sfmData, const std::string& outFolder)
       const Pose3 pose = sfmData.getPose(*view);
       Mat34 P = iterIntrinsic->second.get()->get_projective_equivalent(pose);
       std::ofstream fileP((fs::path(outFolder) / (baseFilename + "_P.txt")).string());
-
       fileP << std::setprecision(10)
            << P(0, 0) << " " << P(0, 1) << " " << P(0, 2) << " " << P(0, 3) << "\n"
            << P(1, 0) << " " << P(1, 1) << " " << P(1, 2) << " " << P(1, 3) << "\n"
@@ -213,7 +212,6 @@ bool prepareDenseScene(const SfMData& sfmData, const std::string& outFolder)
       const Mat3 R = pose.rotation();
       const Vec3 t = pose.translation();
       std::ofstream fileKRt((fs::path(outFolder) / (baseFilename + "_KRt.txt")).string());
-
       fileKRt << std::setprecision(10)
            << K(0, 0) << " " << K(0, 1) << " " << K(0, 2) << "\n"
            << K(1, 0) << " " << K(1, 1) << " " << K(1, 2) << "\n"

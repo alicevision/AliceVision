@@ -10,9 +10,8 @@
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/cmdline.hpp>
 
-#include <dependencies/stlplus3/filesystemSimplified/file_system.hpp>
-
 #include <boost/program_options.hpp>
+#include <boost/filesystem.hpp>
 #include <boost/algorithm/string.hpp>
 
 #include <iostream>
@@ -27,6 +26,7 @@ using namespace aliceVision;
 using namespace aliceVision::sfm;
 
 namespace po = boost::program_options;
+namespace fs = boost::filesystem;
 
 /**
  * @brief Check that Kmatrix is a string like "f;0;ppx;0;f;ppy;0;0;1"
@@ -78,9 +78,9 @@ bool listFiles(const std::string& folderOrFile,
                const std::vector<std::string>& extensions,
                std::vector<std::string>& resources)
 {
-  if(stlplus::is_file(folderOrFile))
+  if(fs::is_regular_file(folderOrFile))
   {
-    std::string fileExtension = stlplus::extension_part(folderOrFile);
+    std::string fileExtension = fs::extension(folderOrFile);
     std::transform(fileExtension.begin(), fileExtension.end(), fileExtension.begin(), ::tolower);
     for(const std::string& extension: extensions)
     {
@@ -91,29 +91,25 @@ bool listFiles(const std::string& folderOrFile,
       }
     }
   }
-  else if(stlplus::is_folder(folderOrFile))
+  else if(fs::is_directory(folderOrFile))
   {
     // list all files of the folder
-    const std::vector<std::string> allFiles = stlplus::folder_all(folderOrFile);
-    if(allFiles.empty())
-    {
-      ALICEVISION_LOG_ERROR("'" << stlplus::filename_part(folderOrFile) <<"' is empty.");
-      return false;
-    }
+    std::vector<std::string> allFiles;
 
-    for(const std::string& item: allFiles)
+    fs::directory_iterator endItr;
+    for(fs::directory_iterator itr(folderOrFile); itr != endItr; ++itr)
+      allFiles.push_back(itr->path().string());
+
+    bool hasFile = false;
+    for(const std::string& filePath: allFiles)
     {
-      const std::string itemPath = stlplus::create_filespec(folderOrFile, item);
-      if(!listFiles(itemPath, extensions, resources))
-        return false;
+      if(listFiles(filePath, extensions, resources))
+        hasFile = true;
     }
+    return hasFile;
   }
-  else
-  {
-    ALICEVISION_LOG_ERROR("'" << folderOrFile << "' is not a valid folder or file path.");
-    return false;
-  }
-  return true;
+  ALICEVISION_LOG_ERROR("'" << folderOrFile << "' is not a valid folder or file path.");
+  return false;
 }
 
 
@@ -233,14 +229,14 @@ int main(int argc, char **argv)
   }
 
   // check input folder
-  if(!imageFolder.empty() && !stlplus::folder_exists(imageFolder))
+  if(!imageFolder.empty() && !fs::exists(imageFolder) && !fs::is_directory(imageFolder))
   {
     ALICEVISION_LOG_ERROR("The input folder doesn't exist");
     return EXIT_FAILURE;
   }
 
   // check sfm file
-  if(!sfmFilePath.empty() && !stlplus::file_exists(sfmFilePath))
+  if(!sfmFilePath.empty() && !fs::exists(sfmFilePath) && !fs::is_regular_file(sfmFilePath))
   {
     ALICEVISION_LOG_ERROR("The input sfm file doesn't exist");
     return EXIT_FAILURE;
@@ -255,11 +251,11 @@ int main(int argc, char **argv)
 
   // check if output folder exists, if no create it
   {
-    const std::string outputFolderPart = stlplus::folder_part(outputFilePath);
+    const std::string outputFolderPart = fs::path(outputFilePath).parent_path().string();
 
-    if(!outputFolderPart.empty() && !stlplus::folder_exists(outputFolderPart))
+    if(!outputFolderPart.empty() && !fs::exists(outputFolderPart))
     {
-      if(!stlplus::folder_create(outputFolderPart))
+      if(!fs::create_directory(outputFolderPart))
       {
         ALICEVISION_LOG_ERROR("Cannot create output folder");
         return EXIT_FAILURE;
@@ -330,7 +326,7 @@ int main(int argc, char **argv)
     Views& views = sfmData.GetViews();
     std::vector<std::string> imagePaths;
 
-    if(listFiles(imageFolder, {"jpg", "jpeg", "tif", "tiff", "exr"},  imagePaths))
+    if(listFiles(imageFolder, {".jpg", ".jpeg", ".tif", ".tiff", ".exr"},  imagePaths))
     {
       std::vector<View> incompleteViews(imagePaths.size());
 
@@ -439,7 +435,7 @@ int main(int argc, char **argv)
       {
         // when we have no metadata at all, we create one intrinsic group per folder.
         // the use case is images extracted from a video without metadata and assumes fixed intrinsics in the video.
-        intrinsic->setSerialNumber(stlplus::folder_part(view.getImagePath()));
+        intrinsic->setSerialNumber(fs::path(view.getImagePath()).parent_path().string());
       }
 
       if(view.isPartOfRig())
@@ -476,7 +472,7 @@ int main(int argc, char **argv)
   {
     ALICEVISION_LOG_ERROR("Sensor width doesn't exist in the database for image(s) :");
     for(const auto& unknownSensor : unknownSensors)
-      ALICEVISION_LOG_ERROR("image: '" << stlplus::filename_part(unknownSensor.second) << "'" << std::endl
+      ALICEVISION_LOG_ERROR("image: '" << fs::path(unknownSensor.second).filename().string() << "'" << std::endl
                         << "\t- camera brand: " << unknownSensor.first.first <<  std::endl
                         << "\t- camera model: " << unknownSensor.first.second <<  std::endl);
     ALICEVISION_LOG_ERROR("Please add camera model(s) and sensor width(s) in the database." << std::endl);

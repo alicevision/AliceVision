@@ -136,7 +136,6 @@ target_link_libraries(aliceVision_utils_qualityEvaluation
   aliceVision_system
   aliceVision_feature
   aliceVision_sfm
-  stlplus
   ${BOOST_LIBRARIES}
 )
 
@@ -156,7 +155,6 @@ target_link_libraries(aliceVision_utils_sfmAlignment
   aliceVision_system
   aliceVision_feature
   aliceVision_sfm
-  stlplus
   ${BOOST_LIBRARIES}
 )
 
@@ -176,7 +174,6 @@ target_link_libraries(aliceVision_utils_sfmTransform
   aliceVision_system
   aliceVision_feature
   aliceVision_sfm
-  stlplus
   ${BOOST_LIBRARIES}
 )
 
@@ -202,7 +199,6 @@ target_link_libraries(aliceVision_utils_sfmColorHarmonize
   aliceVision_feature
   aliceVision_colorHarmonization
   aliceVision_sfm
-  stlplus
   ${CLP_LIBRARIES}
   ${COINUTILS_LIBRARY}
   ${OSI_LIBRARY}
@@ -225,7 +221,6 @@ target_link_libraries(aliceVision_utils_sfmLocalization
   aliceVision_system
   aliceVision_feature
   aliceVision_sfm
-  stlplus
   ${BOOST_LIBRARIES}
 )
 

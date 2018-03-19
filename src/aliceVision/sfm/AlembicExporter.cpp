@@ -12,9 +12,11 @@
 #include <Alembic/AbcCoreOgawa/All.h>
 #include <Alembic/Abc/OObject.h>
 
-#include <dependencies/stlplus3/filesystemSimplified/file_system.hpp>
+#include <boost/filesystem.hpp>
 
 #include <numeric>
+
+namespace fs = boost::filesystem;
 
 namespace aliceVision {
 namespace sfm {
@@ -282,7 +284,7 @@ void AlembicExporter::addSfM(const SfMData& sfmData, ESfMData flagsPart)
 
 void AlembicExporter::addSfMSingleCamera(const SfMData& sfmData, const View& view)
 {
-  const std::string name = stlplus::basename_part(view.getImagePath());
+  const std::string name = fs::path(view.getImagePath()).stem().string();
   const geometry::Pose3* pose = (sfmData.existsPose(view)) ? &(sfmData.GetPoses().at(view.getPoseId())) :  nullptr;
   const camera::IntrinsicBase* intrinsic = sfmData.GetIntrinsicPtr(view.getIntrinsicId());
 
@@ -344,7 +346,7 @@ void AlembicExporter::addSfMCameraRig(const SfMData& sfmData, IndexT rigId, cons
     const View& view = *(sfmData.GetViews().at(viewId));
     const RigSubPose& rigSubPose = rig.getSubPose(view.getSubPoseId());
     const bool isReconstructed = (rigSubPose.status != ERigSubPoseStatus::UNINITIALIZED);
-    const std::string name = stlplus::basename_part(view.getImagePath());
+    const std::string name = fs::path(view.getImagePath()).stem().string();
     const geometry::Pose3* subPose = isReconstructed ? &(rigSubPose.pose) : nullptr;
     const camera::IntrinsicBase* intrinsic = sfmData.GetIntrinsicPtr(view.getIntrinsicId());
 

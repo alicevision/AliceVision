@@ -5,13 +5,11 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
-#include "aliceVision/matchingImageCollection/ImageCollectionMatcher_cascadeHashing.hpp"
-#include "aliceVision/matching/ArrayMatcher_cascadeHashing.hpp"
-#include "aliceVision/matching/IndMatchDecorator.hpp"
-#include "aliceVision/matching/filters.hpp"
+#include <aliceVision/matchingImageCollection/ImageCollectionMatcher_cascadeHashing.hpp>
+#include <aliceVision/matching/ArrayMatcher_cascadeHashing.hpp>
+#include <aliceVision/matching/IndMatchDecorator.hpp>
+#include <aliceVision/matching/filters.hpp>
 #include <aliceVision/config.hpp>
-
-#include "dependencies/stlplus3/filesystemSimplified/file_system.hpp"
 
 #include <boost/progress.hpp>
 

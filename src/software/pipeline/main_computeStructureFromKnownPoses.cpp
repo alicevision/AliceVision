@@ -11,14 +11,15 @@
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/cmdline.hpp>
 
-#include <dependencies/stlplus3/filesystemSimplified/file_system.hpp>
-
 #include <boost/program_options.hpp>
+#include <boost/filesystem.hpp>
 
 using namespace aliceVision;
 using namespace aliceVision::sfm;
 using namespace std;
+
 namespace po = boost::program_options;
+namespace fs = boost::filesystem;
 
 /// Compute the structure of a scene according existing camera poses.
 int main(int argc, char **argv)
@@ -170,13 +171,11 @@ int main(int argc, char **argv)
   ALICEVISION_LOG_INFO("Structure estimation took (s): " << timer.elapsed() << "." << std::endl
     << "\t- # landmarks found: " << sfm_data.GetLandmarks().size());
 
-  if (stlplus::extension_part(outSfMDataFilename) != "ply")
+  if (fs::extension(outSfMDataFilename) != ".ply")
   {
     Save(sfm_data,
-      stlplus::create_filespec(
-        stlplus::folder_part(outSfMDataFilename),
-        stlplus::basename_part(outSfMDataFilename), "ply"),
-      ESfMData(ALL));
+         (fs::path(outSfMDataFilename).parent_path() / (fs::path(outSfMDataFilename).stem().string() + ".ply")).string(),
+         ESfMData(ALL));
   }
 
   if (Save(sfm_data, outSfMDataFilename, ESfMData(ALL)))

@@ -5,31 +5,30 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
-#include "aliceVision/sfm/pipeline/global/GlobalSfMTranslationAveragingSolver.hpp"
-#include "aliceVision/sfm/filters.hpp"
-#include "aliceVision/sfm/sfmDataTriangulation.hpp"
-#include "aliceVision/sfm/sfmDataIO.hpp"
-#include "aliceVision/sfm/BundleAdjustmentCeres.hpp"
-#include "aliceVision/sfm/pipeline/global/reindexGlobalSfM.hpp"
-#include "aliceVision/sfm/pipeline/global/MutexSet.hpp"
-#include "aliceVision/matching/IndMatch.hpp"
-#include "aliceVision/multiview/translationAveraging/common.hpp"
-#include "aliceVision/multiview/translationAveraging/solver.hpp"
-#include "aliceVision/graph/graph.hpp"
-#include "aliceVision/track/Track.hpp"
-#include "aliceVision/stl/stl.hpp"
-#include "aliceVision/system/Timer.hpp"
-#include "aliceVision/linearProgramming/linearProgramming.hpp"
-#include "aliceVision/multiview/essential.hpp"
-#include "aliceVision/multiview/conditioning.hpp"
-#include "aliceVision/multiview/translationAveraging/common.hpp"
-#include "aliceVision/multiview/translationAveraging/solver.hpp"
-#include "aliceVision/sfm/pipeline/global/TranslationTripletKernelACRansac.hpp"
-#include "aliceVision/config.hpp"
-#include "aliceVision/alicevision_omp.hpp"
+#include <aliceVision/sfm/pipeline/global/GlobalSfMTranslationAveragingSolver.hpp>
+#include <aliceVision/sfm/filters.hpp>
+#include <aliceVision/sfm/sfmDataTriangulation.hpp>
+#include <aliceVision/sfm/sfmDataIO.hpp>
+#include <aliceVision/sfm/BundleAdjustmentCeres.hpp>
+#include <aliceVision/sfm/pipeline/global/reindexGlobalSfM.hpp>
+#include <aliceVision/sfm/pipeline/global/MutexSet.hpp>
+#include <aliceVision/matching/IndMatch.hpp>
+#include <aliceVision/multiview/translationAveraging/common.hpp>
+#include <aliceVision/multiview/translationAveraging/solver.hpp>
+#include <aliceVision/graph/graph.hpp>
+#include <aliceVision/track/Track.hpp>
+#include <aliceVision/stl/stl.hpp>
+#include <aliceVision/system/Timer.hpp>
+#include <aliceVision/linearProgramming/linearProgramming.hpp>
+#include <aliceVision/multiview/essential.hpp>
+#include <aliceVision/multiview/conditioning.hpp>
+#include <aliceVision/multiview/translationAveraging/common.hpp>
+#include <aliceVision/multiview/translationAveraging/solver.hpp>
+#include <aliceVision/sfm/pipeline/global/TranslationTripletKernelACRansac.hpp>
+#include <aliceVision/config.hpp>
+#include <aliceVision/alicevision_omp.hpp>
 
-#include "dependencies/histogram/histogram.hpp"
-#include "dependencies/stlplus3/filesystemSimplified/file_system.hpp"
+#include <dependencies/histogram/histogram.hpp>
 
 #include <boost/progress.hpp>
 

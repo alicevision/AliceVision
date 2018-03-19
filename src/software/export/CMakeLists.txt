@@ -67,7 +67,6 @@ target_link_libraries(aliceVision_exportUndistortedImages
   aliceVision_image
   aliceVision_feature
   aliceVision_sfm
-  stlplus
   ${BOOST_LIBRARIES}
 )
 
@@ -88,7 +87,6 @@ target_link_libraries(aliceVision_exportPMVS
   aliceVision_image
   aliceVision_feature
   aliceVision_sfm
-  stlplus
   ${BOOST_LIBRARIES}
 )
 
@@ -132,7 +130,6 @@ target_link_libraries(aliceVision_exportMVE2
   aliceVision_image
   aliceVision_feature
   aliceVision_sfm
-  stlplus
   ${BOOST_LIBRARIES}
 )
 
@@ -153,7 +150,6 @@ target_link_libraries(aliceVision_exportMeshlab
   aliceVision_image
   aliceVision_feature
   aliceVision_sfm
-  stlplus
   ${BOOST_LIBRARIES}
 )
 
@@ -174,7 +170,6 @@ target_link_libraries(aliceVision_exportMVSTexturing
   aliceVision_image
   aliceVision_feature
   aliceVision_sfm
-  stlplus
   ${BOOST_LIBRARIES}
 )
 
@@ -195,7 +190,6 @@ target_link_libraries(aliceVision_exportMatlab
   aliceVision_image
   aliceVision_feature
   aliceVision_sfm
-  stlplus
   ${BOOST_LIBRARIES}
 )
 

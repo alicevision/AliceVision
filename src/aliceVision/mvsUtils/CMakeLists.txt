@@ -30,6 +30,7 @@ target_include_directories(aliceVision_mvsUtils
 target_link_libraries(aliceVision_mvsUtils
   PUBLIC aliceVision_mvsData
          aliceVision_imageIO
+         ${Boost_FILESYSTEM_LIBRARIES}
 )
 
 set_property(TARGET aliceVision_mvsUtils

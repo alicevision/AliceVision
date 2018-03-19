@@ -3,11 +3,12 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
-#include "aliceVision/sfm/sfm.hpp"
-#include "aliceVision/image/all.hpp"
-#include "aliceVision/image/convertion.hpp"
+#include <aliceVision/sfm/sfm.hpp>
+#include <aliceVision/image/all.hpp>
+#include <aliceVision/image/convertion.hpp>
 
 #include <boost/program_options.hpp>
+#include <boost/filesystem.hpp>
 #include <boost/progress.hpp>
 
 #include <stdlib.h>
@@ -23,6 +24,7 @@ using namespace aliceVision::geometry;
 using namespace aliceVision::image;
 using namespace aliceVision::sfm;
 namespace po = boost::program_options;
+namespace fs = boost::filesystem;
 
 bool exportToMatlab(
   const SfMData & sfm_data,
@@ -33,7 +35,7 @@ bool exportToMatlab(
   std::map<IndexT, std::vector<Observation> > observationsPerView;
   
   {
-    const std::string landmarksFilename = stlplus::filespec_to_path(outDirectory, "scene.landmarks");
+    const std::string landmarksFilename = (fs::path(outDirectory) / "scene.landmarks").string();
     std::ofstream landmarksFile(landmarksFilename);
     landmarksFile << "# landmarkId X Y Z\n";
     for(const auto& s: sfm_data.structure)
@@ -56,7 +58,7 @@ bool exportToMatlab(
     const std::vector<Observation>& viewObservations = obsPerView.second;
     const IndexT viewId = obsPerView.first;
     
-    const std::string viewFeatFilename = stlplus::filespec_to_path(outDirectory, std::to_string(viewId) + ".reconstructedFeatures");
+    const std::string viewFeatFilename = (fs::path(outDirectory) / (std::to_string(viewId) + ".reconstructedFeatures")).string();
     std::ofstream viewFeatFile(viewFeatFilename);
     viewFeatFile << "# landmarkId x y\n";
     for(const Observation& obs: viewObservations)
@@ -68,7 +70,7 @@ bool exportToMatlab(
   
   // Expose camera poses
   {
-    const std::string cameraPosesFilename = stlplus::filespec_to_path(outDirectory, "cameras.poses");
+    const std::string cameraPosesFilename = (fs::path(outDirectory) / "cameras.poses").string();
     std::ofstream cameraPosesFile(cameraPosesFilename);
     cameraPosesFile << "# viewId R11 R12 R13 R21 R22 R23 R31 R32 R33 C1 C2 C3\n";
     for(const auto& v: sfm_data.views)
@@ -98,7 +100,7 @@ bool exportToMatlab(
   // Expose camera intrinsics
   // Note: we export it per view, It is really redundant but easy to parse.
   {
-    const std::string cameraIntrinsicsFilename = stlplus::filespec_to_path(outDirectory, "cameras.intrinsics");
+    const std::string cameraIntrinsicsFilename = (fs::path(outDirectory) / "cameras.intrinsics").string();
     std::ofstream cameraIntrinsicsFile(cameraIntrinsicsFilename);
     cameraIntrinsicsFile <<
       "# viewId pinhole f u0 v0\n"
@@ -179,11 +181,9 @@ int main(int argc, char *argv[])
 
   // export
   {
-    outputFolder = stlplus::folder_to_path(outputFolder);
-
     // Create output dir
-    if (!stlplus::folder_exists(outputFolder))
-      stlplus::folder_create( outputFolder );
+    if (!fs::exists(outputFolder))
+      fs::create_directory(outputFolder);
 
     // Read the input SfM scene
     SfMData sfmData;

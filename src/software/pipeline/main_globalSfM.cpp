@@ -10,9 +10,8 @@
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/cmdline.hpp>
 
-#include <dependencies/stlplus3/filesystemSimplified/file_system.hpp>
-
 #include <boost/program_options.hpp>
+#include <boost/filesystem.hpp>
 
 #include <cstdlib>
 
@@ -20,7 +19,9 @@ using namespace aliceVision;
 using namespace aliceVision::sfm;
 using namespace aliceVision::feature;
 using namespace std;
+
 namespace po = boost::program_options;
+namespace fs = boost::filesystem;
 
 int main(int argc, char **argv)
 {
@@ -170,15 +171,15 @@ int main(int argc, char **argv)
     return EXIT_FAILURE;
   }
 
-  if (!stlplus::folder_exists(outDirectory))
-    stlplus::folder_create(outDirectory);
+  if (!fs::exists(outDirectory))
+    fs::create_directory(outDirectory);
 
   // global SfM reconstruction process
   aliceVision::system::Timer timer;
   ReconstructionEngine_globalSfM sfmEngine(
     sfmData,
     outDirectory,
-    stlplus::create_filespec(outDirectory, "sfm_log.html"));
+    (fs::path(outDirectory) / "sfm_log.html").string());
 
   // configure the featuresPerView & the matches_provider
   sfmEngine.SetFeaturesProvider(&featuresPerView);
@@ -204,15 +205,12 @@ int main(int argc, char **argv)
 
   ALICEVISION_LOG_INFO("Total Ac-Global-Sfm took (s): " << timer.elapsed());
   ALICEVISION_LOG_INFO("Generating HTML report");
-  Generate_SfM_Report(sfmEngine.Get_SfMData(), stlplus::create_filespec(outDirectory, "sfm_report.html"));
+  Generate_SfM_Report(sfmEngine.Get_SfMData(), (fs::path(outDirectory) / "sfm_report.html").string());
 
   // export to disk computed scene (data & visualizable results)
   ALICEVISION_LOG_INFO("Export SfMData to disk");
   Save(sfmEngine.Get_SfMData(), outSfMDataFilename, ESfMData::ALL);
-
-  Save(sfmEngine.Get_SfMData(),
-    stlplus::create_filespec(outDirectory, "cloud_and_poses", ".ply"),
-    ESfMData(ALL));
+  Save(sfmEngine.Get_SfMData(), (fs::path(outDirectory) / "cloud_and_poses.ply").string(), ESfMData::ALL);
 
   return EXIT_SUCCESS;
 }

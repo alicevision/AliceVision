@@ -8,10 +8,6 @@ if(UNIX)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC")
 endif(UNIX)
 
-# Basic filesystem utils
-set(STLPLUS_INCLUDE_INSTALL_DIR ${CMAKE_INSTALL_PREFIX}/include/aliceVision/dependencies/stlplus3)
-add_subdirectory(stlplus3)
-
 # Add graph library
 if(DEFINED ALICEVISION_USE_INTERNAL_LEMON)
   add_subdirectory(lemon)

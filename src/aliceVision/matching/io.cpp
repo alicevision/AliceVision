@@ -10,7 +10,7 @@
 #include <aliceVision/config.hpp>
 #include <aliceVision/system/Logger.hpp>
 
-#include <dependencies/stlplus3/filesystemSimplified/file_system.hpp>
+#include <boost/filesystem.hpp>
 
 #include <map>
 #include <fstream>
@@ -18,20 +18,19 @@
 #include <string>
 #include <vector>
 
+namespace fs = boost::filesystem;
+
 namespace aliceVision {
 namespace matching {
 
-bool LoadMatchFile(PairwiseMatches& matches,
-                   const std::string& folder,
-                   const std::string& filename)
+bool LoadMatchFile(PairwiseMatches& matches, const std::string& filepath)
 {
-  if(!stlplus::is_file(stlplus::create_filespec(folder, filename)))
+  const std::string ext = fs::extension(filepath);
+
+  if(!fs::exists(filepath))
     return false;
 
-  const std::string ext = stlplus::extension_part(filename);
-  const std::string filepath = folder + "/" + filename;
-
-  if(ext == "txt")
+  if(ext == ".txt")
   {
     std::ifstream stream(filepath.c_str());
     if (!stream.is_open())
@@ -150,7 +149,7 @@ bool LoadMatchFilePerImage(
     const IndexT idView = *it;
     const std::string matchFilename = std::to_string(idView) + "." + basename;
     PairwiseMatches fileMatches;
-    if(!LoadMatchFile(fileMatches, folder, matchFilename))
+    if(!LoadMatchFile(fileMatches, (fs::path(folder) / matchFilename).string() ))
     {
       #pragma omp critical
       {
@@ -186,33 +185,27 @@ bool LoadMatchFilePerImage(
 }
 
 bool Load(
-  PairwiseMatches & matches,
-  const std::set<IndexT> & viewsKeysFilter,
+  PairwiseMatches& matches,
+  const std::set<IndexT>& viewsKeysFilter,
   const std::vector<std::string>& folders,
   const std::vector<feature::EImageDescriberType>& descTypesFilter,
-  const std::string & mode,
+  const std::string& mode,
   const int maxNbMatches)
 {
   bool res = false;
-  const std::string basename = "matches." + mode;
+  const std::string fileName = "matches." + mode + ".txt";
 
   for(const std::string& folder : folders)
   {
-    if(stlplus::is_file(stlplus::create_filespec(folder, basename + ".txt")))
+    const fs::path filePath = fs::path(folder) / fileName;
+
+    if(fs::exists(filePath))
     {
-      res = LoadMatchFile(matches, folder, basename + ".txt");
+      res = LoadMatchFile(matches, filePath.string());
     }
-    else if(stlplus::is_file(stlplus::create_filespec(folder, basename + ".bin")))
+    else
     {
-      res = LoadMatchFile(matches, folder, basename + ".bin");
-    }
-    else if(!stlplus::folder_wildcard(folder, "*."+basename+".txt", false, true).empty())
-    {
-      res = LoadMatchFilePerImage(matches, viewsKeysFilter, folder, basename + ".txt");
-    }
-    else if(!stlplus::folder_wildcard(folder, "*."+basename+".bin", false, true).empty())
-    {
-      res = LoadMatchFilePerImage(matches, viewsKeysFilter, folder, basename + ".bin");
+      res = LoadMatchFilePerImage(matches, viewsKeysFilter, folder, fileName);
     }
   }
 
@@ -279,7 +272,7 @@ public:
     : m_matches(matches)
     , m_directory(folder)
     , m_filename(filename)
-    , m_ext(stlplus::extension_part(filename))
+    , m_ext(fs::extension(filename))
   {
   }
 
@@ -290,7 +283,7 @@ public:
   void saveGlobalFile()
   {
     const std::string filepath = m_directory + "/" + m_filename;
-    if(m_ext == "txt")
+    if(m_ext == ".txt")
     {
       saveTxt(filepath, m_matches.begin(), m_matches.end());
     }
@@ -318,10 +311,10 @@ public:
       {
         ++match;
       }
-      const std::string filepath = m_directory + "/" + std::to_string(key) + "." + m_filename;
+      const std::string filepath = (fs::path(m_directory) / (std::to_string(key) + "." + m_filename)).string();
       ALICEVISION_LOG_DEBUG("Export Matches in: " << filepath);
       
-      if(m_ext == "txt")
+      if(m_ext == ".txt")
       {
         saveTxt(filepath, matchBegin, match);
       }

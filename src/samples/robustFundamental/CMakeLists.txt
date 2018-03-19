@@ -6,7 +6,6 @@ target_link_libraries(aliceVision_samples_robustFundamental
   aliceVision_multiview
   aliceVision_feature
   aliceVision_matching
-  stlplus
   vlsift
   ${BOOST_LIBRARIES}
 )

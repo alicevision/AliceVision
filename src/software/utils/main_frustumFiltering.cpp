@@ -53,7 +53,7 @@ PairSet BuildPairsFromFrustumsIntersections(
 {
   const FrustumFilter frustum_filter(sfmData, z_near, z_far);
   if (!sOutDirectory.empty())
-    frustum_filter.export_Ply(stlplus::create_filespec(sOutDirectory, "frustums.ply"));
+    frustum_filter.export_Ply((fs::path(sOutDirectory) / "frustums.ply").string());
   return frustum_filter.getFrustumIntersectionPairs();
 }
 
@@ -138,7 +138,7 @@ int main(int argc, char **argv)
 
   aliceVision::system::Timer timer;
 
-  const PairSet pairs = BuildPairsFromFrustumsIntersections(sfmData, zNear, zFar, stlplus::folder_part(outputFilename));
+  const PairSet pairs = BuildPairsFromFrustumsIntersections(sfmData, zNear, zFar, fs::path(outputFilename).parent_path().string());
   /*const PairSet pairs = BuildPairsFromStructureObservations(sfm_data); */
 
   ALICEVISION_LOG_INFO("# pairs: " << pairs.size());
