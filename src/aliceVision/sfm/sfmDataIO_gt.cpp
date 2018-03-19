@@ -139,8 +139,8 @@ bool readGt(const std::string & sRootPath, SfMData & sfm_data, bool useUID)
   bool (*fcnReadCamPtr)(const std::string &, camera::Pinhole &, geometry::Pose3&);
   std::string suffix;
 
-  const boost::regex binFilter("*.bin");
-  const boost::regex camFilter("*.camera");
+  const boost::regex binFilter(".*.bin");
+  const boost::regex camFilter(".*.camera");
 
   std::vector<std::string> binFiles;
   std::vector<std::string> camFiles;

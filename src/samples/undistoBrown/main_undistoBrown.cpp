@@ -90,7 +90,7 @@ int main(int argc, char **argv)
     << k.transpose() << "\n"
     << "  Distortion focal: " << f << std::endl;
 
-  const boost::regex filter("*."+suffix);
+  const boost::regex filter(".*."+suffix);
 
   std::vector<std::string> vec_fileNames;
 

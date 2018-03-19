@@ -58,8 +58,8 @@ private:
   {
     std::cout << "Loading images of the dataset: " << folderPath_ << std::endl;
 
-    const boost::regex ppmFilter("*.ppm");
-    const boost::regex pgmFilter("*.pgm");
+    const boost::regex ppmFilter(".*.ppm");
+    const boost::regex pgmFilter(".*.pgm");
 
     std::vector<std::string> ppmFiles;
     std::vector<std::string> pgmFiles;
