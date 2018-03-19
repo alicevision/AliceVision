@@ -14,10 +14,14 @@
 
 #include <OpenEXR/half.h>
 
+#include <boost/filesystem.hpp>
+
 #include <cstring>
 #include <stdexcept>
 #include <iostream>
 #include <cmath>
+
+namespace fs = boost::filesystem;
 
 namespace aliceVision {
 namespace image {
@@ -166,7 +170,10 @@ void writeImage(const std::string& path,
                 const Image<T>& image,
                 const oiio::ParamValueList& metadata = oiio::ParamValueList())
 {
-  bool isEXR = (path.size() > 4 && path.compare(path.size() - 4, 4, ".exr") == 0);
+  const fs::path bPath = fs::path(path);
+  const std::string extension = bPath.extension().string();
+  const std::string tmpPath =  (bPath.parent_path() / bPath.stem()).string() + "." + fs::unique_path().string() + extension;
+  const bool isEXR = (extension == ".exr");
 
   oiio::ImageSpec imageSpec(image.Width(), image.Height(), nchannels, typeDesc);
   imageSpec.extra_attribs = metadata; // add custom metadata
@@ -183,7 +190,7 @@ void writeImage(const std::string& path,
     outBuf.copy_pixels(buf);
 
     // write image
-    if(!outBuf.write(path))
+    if(!outBuf.write(tmpPath))
       throw std::runtime_error("Can't write output image file '" + path + "'.");
   }
   else
@@ -195,9 +202,12 @@ void writeImage(const std::string& path,
     oiio::ImageBuf outBuf(imageSpec, const_cast<T*>(image.data()));
 
     // write image
-    if(!outBuf.write(path))
+    if(!outBuf.write(tmpPath))
       throw std::runtime_error("Can't write output image file '" + path + "'.");
   }
+
+  // rename temporay filename
+  fs::rename(tmpPath, path);
 }
 
 void readImage(const std::string& path, Image<float>& image)

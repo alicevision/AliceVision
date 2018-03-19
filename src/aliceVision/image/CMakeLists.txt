@@ -41,6 +41,7 @@ target_link_libraries(aliceVision_image
 
   PRIVATE ${OPENEXR_LIBRARIES}
           ${LOG_LIB}
+          ${Boost_FILESYSTEM_LIBRARIES}
 )
 
 set_target_properties(aliceVision_image
