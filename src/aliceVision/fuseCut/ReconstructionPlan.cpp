@@ -248,8 +248,7 @@ void ReconstructionPlan::getHexahedronForID(float dist, int id, Point3d* out)
     mvsUtils::inflateHexahedron(&(*voxels)[id * 8], out, dist);
 }
 
-void reconstructSpaceAccordingToVoxelsArray(const std::string& voxelsArrayFileName, LargeScale* ls,
-                                            bool doComputeColoredMeshes)
+void reconstructSpaceAccordingToVoxelsArray(const std::string& voxelsArrayFileName, LargeScale* ls)
 {
     StaticVector<Point3d>* voxelsArray = loadArrayFromFile<Point3d>(voxelsArrayFileName);
 

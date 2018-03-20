@@ -39,7 +39,7 @@ public:
     void loadSpaceFromFile();
     void initialEstimateSpace(int maxOcTreeDim);
     LargeScale* cloneSpaceIfDoesNotExists(int newOcTreeDim, std::string newSpaceFolderName);
-    bool generateSpace(int maxPts, int ocTreeDim);
+    bool generateSpace(int maxPts, int ocTreeDim, bool generateTracks);
     Point3d getSpaceSteps();
 
     std::string getReconstructionVoxelFolder(int i) const
