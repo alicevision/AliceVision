@@ -241,27 +241,36 @@ class MatchExporter
 {
 private:
   void saveTxt(
-    const std::string & filepath,
+    const std::string& filepath,
     const PairwiseMatches::const_iterator& matchBegin,
     const PairwiseMatches::const_iterator& matchEnd)
   {
-    std::ofstream stream(filepath.c_str(), std::ios::out);
-    for(PairwiseMatches::const_iterator match = matchBegin;
-      match != matchEnd;
-      ++match)
+    const fs::path bPath = fs::path(filepath);
+    const std::string tmpPath = (bPath.parent_path() / bPath.stem()).string() + "." + fs::unique_path().string() + bPath.extension().string();
+
+    // write temporary file
     {
-      const std::size_t I = match->first.first;
-      const std::size_t J = match->first.second;
-      const MatchesPerDescType & matchesPerDesc = match->second;
-      stream << I << " " << J << '\n'
-             << matchesPerDesc.size() << '\n';
-      for(const auto& m: matchesPerDesc)
+      std::ofstream stream(tmpPath.c_str(), std::ios::out);
+      for(PairwiseMatches::const_iterator match = matchBegin;
+        match != matchEnd;
+        ++match)
       {
-        stream << feature::EImageDescriberType_enumToString(m.first) << " " << m.second.size() << '\n';
-        copy(m.second.begin(), m.second.end(),
-             std::ostream_iterator<IndMatch>(stream, "\n"));
+        const std::size_t I = match->first.first;
+        const std::size_t J = match->first.second;
+        const MatchesPerDescType & matchesPerDesc = match->second;
+        stream << I << " " << J << '\n'
+               << matchesPerDesc.size() << '\n';
+        for(const auto& m: matchesPerDesc)
+        {
+          stream << feature::EImageDescriberType_enumToString(m.first) << " " << m.second.size() << '\n';
+          copy(m.second.begin(), m.second.end(),
+               std::ostream_iterator<IndMatch>(stream, "\n"));
+        }
       }
     }
+
+    // rename temporary file
+    fs::rename(tmpPath, filepath);
   }
 
 public:
@@ -282,7 +291,8 @@ public:
   
   void saveGlobalFile()
   {
-    const std::string filepath = m_directory + "/" + m_filename;
+    const std::string filepath = (fs::path(m_directory) / m_filename).string();
+
     if(m_ext == ".txt")
     {
       saveTxt(filepath, m_matches.begin(), m_matches.end());

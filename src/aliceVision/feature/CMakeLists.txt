@@ -76,6 +76,8 @@ target_link_libraries(aliceVision_feature
          vlsift
          ${BOOST_LIBRARIES}
          ${LOG_LIB}
+
+  PRIVATE ${Boost_FILESYSTEM_LIBRARIES}
 )
 
 # Link CCTAG library

@@ -23,7 +23,11 @@
 #include <aliceVision/feature/openCV/ImageDescriber_AKAZE_OCV.hpp>
 #endif //ALICEVISION_HAVE_OPENCV
 
+#include <boost/filesystem.hpp>
+
 #include <stdexcept>
+
+namespace fs = boost::filesystem;
 
 namespace aliceVision{
 namespace feature{
@@ -69,6 +73,20 @@ std::istream& operator>>(std::istream& in, EImageDescriberPreset& p)
   in >> token;
   p = EImageDescriberPreset_stringToEnum(token);
   return in;
+}
+
+void ImageDescriber::Save(const Regions* regions, const std::string& sfileNameFeats, const std::string& sfileNameDescs) const
+{
+  const fs::path bFeatsPath = fs::path(sfileNameFeats);
+  const fs::path bDescsPath = fs::path(sfileNameDescs);
+  const std::string tmpFeatsPath = (bFeatsPath.parent_path() / bFeatsPath.stem()).string() + "." + fs::unique_path().string() + bFeatsPath.extension().string();
+  const std::string tmpDescsPath = (bDescsPath.parent_path() / bDescsPath.stem()).string() + "." + fs::unique_path().string() + bDescsPath.extension().string();
+
+  regions->Save(tmpFeatsPath, tmpDescsPath);
+
+  // rename temporay filenames
+  fs::rename(tmpFeatsPath, sfileNameFeats);
+  fs::rename(tmpDescsPath, sfileNameDescs);
 }
 
 std::unique_ptr<ImageDescriber> createImageDescriber(EImageDescriberType imageDescriberType)
