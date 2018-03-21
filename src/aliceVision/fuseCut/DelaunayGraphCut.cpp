@@ -701,60 +701,67 @@ void DelaunayGraphCut::fuseFromDepthMaps(const StaticVector<int>& cams, const Po
                 #pragma omp parallel for
                 for(int vIndex = 0; vIndex < verticesCoordsPrepare.size(); ++vIndex)
                 {
-                    if(pixSizePrepare[vIndex] != -1.0)
+                    if(pixSizePrepare[vIndex] == -1.0)
                     {
-                        const double pixSizeScore = pixSizeMarginCoef * simScorePrepare[vIndex] * pixSizePrepare[vIndex] * pixSizePrepare[vIndex];
+                        continue;
+                    }
+                    const double pixSizeScore = pixSizeMarginCoef * simScorePrepare[vIndex] * pixSizePrepare[vIndex] * pixSizePrepare[vIndex];
+                    if(pixSizeScore < std::numeric_limits<double>::epsilon())
+                    {
+                        pixSizePrepare[vIndex] = -1.0;
+                        continue;
+                    }
 #ifdef USE_GEOGRAM_KDTREE
-                        static const std::size_t nbNeighbors = 20;
-                        static const double nbNeighborsInv = 1.0 / (double)nbNeighbors;
-                        std::array<GEO::index_t, nbNeighbors> nnIndex;
-                        std::array<double, nbNeighbors> sqDist;
-                        // kdTree.get_nearest_neighbors(nbNeighbors, verticesCoordsPrepare[i].m, &nnIndex.front(), &sqDist.front());
-                        kdTree.get_nearest_neighbors(nbNeighbors, vIndex, &nnIndex.front(), &sqDist.front());
+                    static const std::size_t nbNeighbors = 20;
+                    static const double nbNeighborsInv = 1.0 / (double)nbNeighbors;
+                    std::array<GEO::index_t, nbNeighbors> nnIndex;
+                    std::array<double, nbNeighbors> sqDist;
+                    // kdTree.get_nearest_neighbors(nbNeighbors, verticesCoordsPrepare[i].m, &nnIndex.front(), &sqDist.front());
+                    kdTree.get_nearest_neighbors(nbNeighbors, vIndex, &nnIndex.front(), &sqDist.front());
 
-                        for(std::size_t n = 0; n < nbNeighbors; ++n)
+                    for(std::size_t n = 0; n < nbNeighbors; ++n)
+                    {
+                        // NOTE: we don't need to test the distance regarding pixSizePrepare[nnIndex[vIndex]]
+                        //       as we kill ourself only if our pixSize is bigger
+                        if(sqDist[n] < pixSizeScore)
                         {
-                            // NOTE: we don't need to test the distance regarding pixSizePrepare[nnIndex[vIndex]]
-                            //       as we kill ourself only if our pixSize is bigger
-                            if(sqDist[n] < pixSizeScore)
-                            {
-                                if(pixSizePrepare[nnIndex[n]] < pixSizePrepare[vIndex] ||
-                                   (pixSizePrepare[nnIndex[n]] == pixSizePrepare[vIndex] && nnIndex[n] < vIndex)
-                                   )
-                                {
-                                    // Kill itself if inside our volume (defined by marginCoef*pixSize) there is another point with a smaller pixSize
-                                    pixSizePrepare[vIndex] = -1.0;
-                                    break;
-                                }
-                            }
-                            // else
-                            // {
-                            //     break;
-                            // }
-                        }
-#else
-
-                        static const nanoflann::SearchParams searchParams(32, 0, false); // false: dont need to sort
-                        SmallerPixSizeInRadius<double, std::size_t> resultSet(pixSizeScore, pixSizePrepare, vIndex);
-                        if(kdTree.findNeighbors(resultSet, verticesCoordsPrepare[vIndex].m, searchParams))
-                            pixSizePrepare[vIndex] = -1.0;
-                        /*
-                        nanoflann::KNNResultSet<double, std::size_t> resultSet(20);
-                        std::vector<std::size_t> nnIndex(20);
-                        std::vector<double> dist(20);
-                        resultSet.init(&nnIndex[0], &dist[0]);
-                        kdTree.findNeighbors(resultSet, verticesCoordsPrepare[vIndex].m, nanoflann::SearchParams());
-                        for(std::size_t n = 0; n < resultSet.size(); ++n)
-                        {
-                            if(dist[n] < pixSizeScore && pixSizePrepare[nnIndex[n]] < pixSizePrepare[vIndex])
+                            if(pixSizePrepare[nnIndex[n]] < pixSizePrepare[vIndex] ||
+                               (pixSizePrepare[nnIndex[n]] == pixSizePrepare[vIndex] && nnIndex[n] < vIndex)
+                               )
                             {
                                 // Kill itself if inside our volume (defined by marginCoef*pixSize) there is another point with a smaller pixSize
                                 pixSizePrepare[vIndex] = -1.0;
                                 break;
                             }
-                        }*/
-#endif
+                        }
+                        // else
+                        // {
+                        //     break;
+                        // }
                     }
+#else
+
+                    static const nanoflann::SearchParams searchParams(32, 0, false); // false: dont need to sort
+                    SmallerPixSizeInRadius<double, std::size_t> resultSet(pixSizeScore, pixSizePrepare, vIndex);
+                    kdTree.findNeighbors(resultSet, verticesCoordsPrepare[vIndex].m, searchParams);
+                    if(resultSet.found)
+                        pixSizePrepare[vIndex] = -1.0;
+                    /*
+                    nanoflann::KNNResultSet<double, std::size_t> resultSet(20);
+                    std::vector<std::size_t> nnIndex(20);
+                    std::vector<double> dist(20);
+                    resultSet.init(&nnIndex[0], &dist[0]);
+                    kdTree.findNeighbors(resultSet, verticesCoordsPrepare[vIndex].m, nanoflann::SearchParams());
+                    for(std::size_t n = 0; n < resultSet.size(); ++n)
+                    {
+                        if(dist[n] < pixSizeScore && pixSizePrepare[nnIndex[n]] < pixSizePrepare[vIndex])
+                        {
+                            // Kill itself if inside our volume (defined by marginCoef*pixSize) there is another point with a smaller pixSize
+                            pixSizePrepare[vIndex] = -1.0;
+                            break;
+                        }
+                    }*/
+#endif
                 }
                 ALICEVISION_LOG_INFO("Filtering done.");
             }
