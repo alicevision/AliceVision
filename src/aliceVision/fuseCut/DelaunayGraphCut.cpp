@@ -95,8 +95,9 @@ public:
     const DistanceType radius;
 
     const std::vector<double>& m_pixSizePrepare;
-    int m_i;
     size_t m_result = 0;
+    const int m_i;
+    bool found = false;
 
     inline SmallerPixSizeInRadius(DistanceType radius_,
                                   const std::vector<double>& pixSizePrepare,
@@ -113,7 +114,11 @@ public:
 
     inline size_t size() const { return m_result; }
 
-    inline bool full() const { return size() != 0; }
+    // With limit on the number of points to test
+    // inline bool full() const { return size() >= 20; }
+
+    // Without limit on the number of points to test
+    inline bool full() const { return found; }
 
     /**
      * Called during search to add an element matching the criteria.
@@ -121,11 +126,17 @@ public:
      */
     inline bool addPoint(DistanceType dist, IndexType index)
     {
-        if(dist < radius && m_pixSizePrepare[index] < m_pixSizePrepare[m_i])
+        if(dist < radius)
         {
-            m_result = 1;
-            // return false;
+            ++m_result;
+            if(m_pixSizePrepare[index] < m_pixSizePrepare[m_i])
+            {
+                found = true;
+                return false;
+            }
         }
+        // if(full())
+        //     return false;
         return true;
     }
 
