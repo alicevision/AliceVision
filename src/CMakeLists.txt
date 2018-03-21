@@ -51,6 +51,7 @@ option(ALICEVISION_BUILD_HDR "Build AliceVision HDR part" ON)
 option(ALICEVISION_BUILD_SOFTWARE "Build AliceVision command line tools." ON)
 option(ALICEVISION_BUILD_EXAMPLES "Build AliceVision samples applications." OFF)
 option(ALICEVISION_BUILD_COVERAGE "Enable code coverage generation (gcc only)" OFF)
+option(ALICEVISION_BUILD_REGISTRATION "Build AliceVision Registration part" OFF)
 trilean_option(ALICEVISION_BUILD_DOC "Build AliceVision documentation" AUTO)
 
 trilean_option(ALICEVISION_USE_OPENMP "Enable OpenMP parallelization" ON)
@@ -594,6 +595,15 @@ endif()
 if(ALICEVISION_BUILD_MVS)
   find_package(Geogram REQUIRED)
   message(STATUS "Geogram: ${GEOGRAM_LIBRARY}, ${GEOGRAM_INCLUDE_DIR}")
+endif()
+
+# ==============================================================================
+# Point Cloud Library (PCL)
+# ==============================================================================
+if(ALICEVISION_BUILD_REGISTRATION)
+  find_package(PCL 1.8 REQUIRED COMPONENTS)
+  message(STATUS "PCL: ${PCL_LIBRARIES}, ${PCL_INCLUDE_DIRS}")
+  include_directories (${PCL_INCLUDE_DIRS})
 endif()
 
 # ==============================================================================
