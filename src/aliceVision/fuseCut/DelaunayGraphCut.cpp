@@ -50,8 +50,8 @@ struct PointVectorAdaptator
     using Derived = PointVectorAdaptator; //!< In this case the dataset class is myself.
     using T = double;
 
-    std::vector<Point3d>& _data;
-    PointVectorAdaptator(std::vector<Point3d>& data)
+    const std::vector<Point3d>& _data;
+    PointVectorAdaptator(const std::vector<Point3d>& data)
         : _data(data)
     {}
 
@@ -143,6 +143,195 @@ public:
     inline DistanceType worstDist() const { return radius; }
 };
 #endif
+
+
+/// Filter by pixSize
+void filterByPixSize(const std::vector<Point3d>& verticesCoordsPrepare, std::vector<double>& pixSizePrepare, double pixSizeMarginCoef, std::vector<float>& simScorePrepare)
+{
+#ifdef USE_GEOGRAM_KDTREE
+    ALICEVISION_LOG_INFO("Build geogram KdTree index.");
+    GEO::AdaptiveKdTree kdTree(3);
+    kdTree.set_exact(false);
+    kdTree.set_points(verticesCoordsPrepare.size(), verticesCoordsPrepare[0].m);
+#else
+    ALICEVISION_LOG_INFO("Build nanoflann KdTree index.");
+    PointVectorAdaptator pointCloudRef(verticesCoordsPrepare);
+    KdTree kdTree(3 /*dim*/, pointCloudRef, nanoflann::KDTreeSingleIndexAdaptorParams(MAX_LEAF_ELEMENTS));
+    kdTree.buildIndex();
+#endif
+    ALICEVISION_LOG_INFO("KdTree created for " << verticesCoordsPrepare.size() << " points.");
+
+    #pragma omp parallel for
+    for(int vIndex = 0; vIndex < verticesCoordsPrepare.size(); ++vIndex)
+    {
+        if(pixSizePrepare[vIndex] == -1.0)
+        {
+            continue;
+        }
+        const double pixSizeScore = pixSizeMarginCoef * simScorePrepare[vIndex] * pixSizePrepare[vIndex] * pixSizePrepare[vIndex];
+        if(pixSizeScore < std::numeric_limits<double>::epsilon())
+        {
+            pixSizePrepare[vIndex] = -1.0;
+            continue;
+        }
+#ifdef USE_GEOGRAM_KDTREE
+        static const std::size_t nbNeighbors = 20;
+        static const double nbNeighborsInv = 1.0 / (double)nbNeighbors;
+        std::array<GEO::index_t, nbNeighbors> nnIndex;
+        std::array<double, nbNeighbors> sqDist;
+        // kdTree.get_nearest_neighbors(nbNeighbors, verticesCoordsPrepare[i].m, &nnIndex.front(), &sqDist.front());
+        kdTree.get_nearest_neighbors(nbNeighbors, vIndex, &nnIndex.front(), &sqDist.front());
+
+        for(std::size_t n = 0; n < nbNeighbors; ++n)
+        {
+            // NOTE: we don't need to test the distance regarding pixSizePrepare[nnIndex[vIndex]]
+            //       as we kill ourself only if our pixSize is bigger
+            if(sqDist[n] < pixSizeScore)
+            {
+                if(pixSizePrepare[nnIndex[n]] < pixSizePrepare[vIndex] ||
+                   (pixSizePrepare[nnIndex[n]] == pixSizePrepare[vIndex] && nnIndex[n] < vIndex)
+                   )
+                {
+                    // Kill itself if inside our volume (defined by marginCoef*pixSize) there is another point with a smaller pixSize
+                    pixSizePrepare[vIndex] = -1.0;
+                    break;
+                }
+            }
+            // else
+            // {
+            //     break;
+            // }
+        }
+#else
+
+        static const nanoflann::SearchParams searchParams(32, 0, false); // false: dont need to sort
+        SmallerPixSizeInRadius<double, std::size_t> resultSet(pixSizeScore, pixSizePrepare, vIndex);
+        kdTree.findNeighbors(resultSet, verticesCoordsPrepare[vIndex].m, searchParams);
+        if(resultSet.found)
+            pixSizePrepare[vIndex] = -1.0;
+#endif
+    }
+    ALICEVISION_LOG_INFO("Filtering done.");
+}
+
+
+/// Remove invalid points based on invalid pixSize
+void removeInvalidPoints(std::vector<Point3d>& verticesCoordsPrepare, std::vector<double>& pixSizePrepare, std::vector<float>& simScorePrepare)
+{
+    std::vector<Point3d> verticesCoordsTmp;
+    verticesCoordsTmp.reserve(verticesCoordsPrepare.size());
+    std::vector<double> pixSizeTmp;
+    pixSizeTmp.reserve(pixSizePrepare.size());
+    std::vector<float> simScoreTmp;
+    simScoreTmp.reserve(simScorePrepare.size());
+    for(int i = 0; i < verticesCoordsPrepare.size(); ++i)
+    {
+        if(pixSizePrepare[i] != -1.0)
+        {
+            verticesCoordsTmp.push_back(verticesCoordsPrepare[i]);
+            pixSizeTmp.push_back(pixSizePrepare[i]);
+            simScoreTmp.push_back(simScorePrepare[i]);
+        }
+    }
+    ALICEVISION_LOG_INFO((verticesCoordsPrepare.size() - verticesCoordsTmp.size()) << " points with overlap removed.");
+    verticesCoordsPrepare.swap(verticesCoordsTmp);
+    pixSizePrepare.swap(pixSizeTmp);
+    simScorePrepare.swap(simScoreTmp);
+}
+
+void createVerticesWithVisibilities(const StaticVector<int>& cams, std::vector<Point3d>& verticesCoordsPrepare, const std::vector<double>& pixSizePrepare, const std::vector<float>& simScorePrepare,
+                                    std::vector<GC_vertexInfo>& verticesAttrPrepare, mvsUtils::MultiViewParams* mp)
+{
+#ifdef USE_GEOGRAM_KDTREE
+    GEO::AdaptiveKdTree kdTree(3);
+    kdTree.set_points(verticesCoordsPrepare.size(), verticesCoordsPrepare[0].m);
+    ALICEVISION_LOG_INFO("GEOGRAM: KdTree created");
+#else
+    PointVectorAdaptator pointCloudRef(verticesCoordsPrepare);
+    KdTree kdTree(3 /*dim*/, pointCloudRef, nanoflann::KDTreeSingleIndexAdaptorParams(MAX_LEAF_ELEMENTS));
+    kdTree.buildIndex();
+    ALICEVISION_LOG_INFO("NANOFLANN: KdTree created.");
+#endif
+    omp_set_nested(1);
+    #pragma omp parallel for num_threads(3)
+    for(int c = 0; c < cams.size(); ++c)
+    {
+        ALICEVISION_LOG_INFO("Create visibilities (" << c << "/" << cams.size() << ")");
+        std::vector<float> depthMap;
+        std::vector<float> simMap;
+        int width, height;
+        {
+            const std::string depthMapFilepath = mv_getFileName(mp, c, mvsUtils::EFileType::depthMap, 0);
+            imageIO::readImage(depthMapFilepath, width, height, depthMap);
+            if(depthMap.empty())
+            {
+                ALICEVISION_LOG_WARNING("Empty depth map: " << depthMapFilepath);
+                continue;
+            }
+//                int wTmp, hTmp;
+//                const std::string simMapFilepath = mv_getFileName(mp, c, mvsUtils::EFileType::simMap, 0);
+//                imageIO::readImage(simMapFilepath, wTmp, hTmp, simMap);
+//                if(wTmp != width || hTmp != height)
+//                    throw std::runtime_error("Empty depth map: " + depthMapFilepath);
+        }
+        // Add visibility
+        #pragma omp parallel for
+        for(int y = 0; y < height; ++y)
+        {
+            for(int x = 0; x < width; ++x)
+            {
+                const std::size_t index = y * width + x;
+                const float depth = depthMap[index];
+                if(depth <= 0.0f)
+                    continue;
+
+//                    const float sim = simMap[index];
+//                    // remap similarity values from [-1;+1] to [+1;+simScale]
+//                    // interpretation is [goodSimilarity;badSimilarity]
+//                    const float simScore = sim < -1.0f ? 1.0f : 1.0f + (1.0f + sim) * simScale;
+
+                const Point3d p = mp->CArr[c] + (mp->iCamArr[c] * Point2d((float)x, (float)y)).normalize() * depth;
+                const double pixSize = mp->getCamPixelSize(p, c);
+#ifdef USE_GEOGRAM_KDTREE
+                const std::size_t nearestVertexIndex = kdTree.get_nearest_neighbor(p.m);
+                // NOTE: Could compute the distance between the line (camera to pixel) and the nearestVertex OR
+                //       the distance between the back-projected point and the nearestVertex
+                const double dist = (p - verticesCoordsPrepare[nearestVertexIndex]).size2();
+#else
+                nanoflann::KNNResultSet<double, std::size_t> resultSet(1);
+                std::size_t nearestVertexIndex = std::numeric_limits<std::size_t>::max();
+                double dist = std::numeric_limits<double>::max();
+                resultSet.init(&nearestVertexIndex, &dist);
+                if(!kdTree.findNeighbors(resultSet, p.m, nanoflann::SearchParams()))
+                {
+                    ALICEVISION_LOG_WARNING("Failed to find Neighbors.");
+                    continue;
+                }
+#endif
+                const float pixSizeScoreI = simScorePrepare[nearestVertexIndex] * pixSize * pixSize;
+                const float pixSizeScoreV = simScorePrepare[nearestVertexIndex] * pixSizePrepare[nearestVertexIndex] * pixSizePrepare[nearestVertexIndex];
+
+                if(dist < 4.0f * std::max(pixSizeScoreI, pixSizeScoreV))
+                {
+                    GC_vertexInfo& va = verticesAttrPrepare[nearestVertexIndex];
+                    Point3d& vc = verticesCoordsPrepare[nearestVertexIndex];
+                    #pragma omp critical // could we limit to an index? nearestVertexIndex
+                    {
+                        va.cams.push_back_distinct(c);
+                        if(dist < 2.0f * pixSizeScoreV)
+                        {
+                            vc = (vc * (double)va.nrc + p) / double(va.nrc + 1);
+                            va.nrc += 1;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    omp_set_nested(0);
+    ALICEVISION_LOG_INFO("Visibilities created.");
+}
+
 
 DelaunayGraphCut::DelaunayGraphCut(mvsUtils::MultiViewParams* _mp, mvsUtils::PreMatchCams* _pc)
 {
@@ -681,113 +870,13 @@ void DelaunayGraphCut::fuseFromDepthMaps(const StaticVector<int>& cams, const Po
 
         ALICEVISION_LOG_INFO("Filter initial 3D points by pixel size to limit the number of points to " << maxVertices << ".");
         double pixSizeMarginCoef = 2.0;
+        // while more points than the max points (with a limit to 10 iterations).
         for(int filteringIt = 0; filteringIt < 10; ++filteringIt)
         {
-            // Filter by pixSize
-            {
-#ifdef USE_GEOGRAM_KDTREE
-                ALICEVISION_LOG_INFO("Build geogram KdTree index.");
-                GEO::AdaptiveKdTree kdTree(3);
-                kdTree.set_exact(false);
-                kdTree.set_points(verticesCoordsPrepare.size(), verticesCoordsPrepare[0].m);
-#else
-                ALICEVISION_LOG_INFO("Build nanoflann KdTree index.");
-                PointVectorAdaptator pointCloudRef(verticesCoordsPrepare);
-                KdTree kdTree(3 /*dim*/, pointCloudRef, nanoflann::KDTreeSingleIndexAdaptorParams(MAX_LEAF_ELEMENTS));
-                kdTree.buildIndex();
-#endif
-                ALICEVISION_LOG_INFO("KdTree created for " << verticesCoordsPrepare.size() << " points.");
+            filterByPixSize(verticesCoordsPrepare, pixSizePrepare, pixSizeMarginCoef, simScorePrepare);
 
-                #pragma omp parallel for
-                for(int vIndex = 0; vIndex < verticesCoordsPrepare.size(); ++vIndex)
-                {
-                    if(pixSizePrepare[vIndex] == -1.0)
-                    {
-                        continue;
-                    }
-                    const double pixSizeScore = pixSizeMarginCoef * simScorePrepare[vIndex] * pixSizePrepare[vIndex] * pixSizePrepare[vIndex];
-                    if(pixSizeScore < std::numeric_limits<double>::epsilon())
-                    {
-                        pixSizePrepare[vIndex] = -1.0;
-                        continue;
-                    }
-#ifdef USE_GEOGRAM_KDTREE
-                    static const std::size_t nbNeighbors = 20;
-                    static const double nbNeighborsInv = 1.0 / (double)nbNeighbors;
-                    std::array<GEO::index_t, nbNeighbors> nnIndex;
-                    std::array<double, nbNeighbors> sqDist;
-                    // kdTree.get_nearest_neighbors(nbNeighbors, verticesCoordsPrepare[i].m, &nnIndex.front(), &sqDist.front());
-                    kdTree.get_nearest_neighbors(nbNeighbors, vIndex, &nnIndex.front(), &sqDist.front());
-
-                    for(std::size_t n = 0; n < nbNeighbors; ++n)
-                    {
-                        // NOTE: we don't need to test the distance regarding pixSizePrepare[nnIndex[vIndex]]
-                        //       as we kill ourself only if our pixSize is bigger
-                        if(sqDist[n] < pixSizeScore)
-                        {
-                            if(pixSizePrepare[nnIndex[n]] < pixSizePrepare[vIndex] ||
-                               (pixSizePrepare[nnIndex[n]] == pixSizePrepare[vIndex] && nnIndex[n] < vIndex)
-                               )
-                            {
-                                // Kill itself if inside our volume (defined by marginCoef*pixSize) there is another point with a smaller pixSize
-                                pixSizePrepare[vIndex] = -1.0;
-                                break;
-                            }
-                        }
-                        // else
-                        // {
-                        //     break;
-                        // }
-                    }
-#else
-
-                    static const nanoflann::SearchParams searchParams(32, 0, false); // false: dont need to sort
-                    SmallerPixSizeInRadius<double, std::size_t> resultSet(pixSizeScore, pixSizePrepare, vIndex);
-                    kdTree.findNeighbors(resultSet, verticesCoordsPrepare[vIndex].m, searchParams);
-                    if(resultSet.found)
-                        pixSizePrepare[vIndex] = -1.0;
-                    /*
-                    nanoflann::KNNResultSet<double, std::size_t> resultSet(20);
-                    std::vector<std::size_t> nnIndex(20);
-                    std::vector<double> dist(20);
-                    resultSet.init(&nnIndex[0], &dist[0]);
-                    kdTree.findNeighbors(resultSet, verticesCoordsPrepare[vIndex].m, nanoflann::SearchParams());
-                    for(std::size_t n = 0; n < resultSet.size(); ++n)
-                    {
-                        if(dist[n] < pixSizeScore && pixSizePrepare[nnIndex[n]] < pixSizePrepare[vIndex])
-                        {
-                            // Kill itself if inside our volume (defined by marginCoef*pixSize) there is another point with a smaller pixSize
-                            pixSizePrepare[vIndex] = -1.0;
-                            break;
-                        }
-                    }*/
-#endif
-                }
-                ALICEVISION_LOG_INFO("Filtering done.");
-            }
-
-            // Remove invalid points
-            {
-                std::vector<Point3d> verticesCoordsTmp;
-                verticesCoordsTmp.reserve(verticesCoordsPrepare.size());
-                std::vector<double> pixSizeTmp;
-                pixSizeTmp.reserve(pixSizePrepare.size());
-                std::vector<float> simScoreTmp;
-                simScoreTmp.reserve(simScorePrepare.size());
-                for(int i = 0; i < verticesCoordsPrepare.size(); ++i)
-                {
-                    if(pixSizePrepare[i] != -1.0)
-                    {
-                        verticesCoordsTmp.push_back(verticesCoordsPrepare[i]);
-                        pixSizeTmp.push_back(pixSizePrepare[i]);
-                        simScoreTmp.push_back(simScorePrepare[i]);
-                    }
-                }
-                ALICEVISION_LOG_INFO((verticesCoordsPrepare.size() - verticesCoordsTmp.size()) << " points with overlap removed.");
-                verticesCoordsPrepare.swap(verticesCoordsTmp);
-                pixSizePrepare.swap(pixSizeTmp);
-                simScorePrepare.swap(simScoreTmp);
-            }
+            // remove points if pixSize == -1
+            removeInvalidPoints(verticesCoordsPrepare, pixSizePrepare, simScorePrepare);
 
             if(verticesCoordsPrepare.size() < maxVertices)
             {
@@ -807,96 +896,8 @@ void DelaunayGraphCut::fuseFromDepthMaps(const StaticVector<int>& cams, const Po
     std::vector<GC_vertexInfo> verticesAttrPrepare(verticesCoordsPrepare.size());
 
     // Initialize the vertice attributes and declare the visibility information
-    {
-#ifdef USE_GEOGRAM_KDTREE
-        GEO::AdaptiveKdTree kdTree(3);
-        kdTree.set_points(verticesCoordsPrepare.size(), verticesCoordsPrepare[0].m);
-        ALICEVISION_LOG_INFO("GEOGRAM: KdTree created");
-#else
-        PointVectorAdaptator pointCloudRef(verticesCoordsPrepare);
-        KdTree kdTree(3 /*dim*/, pointCloudRef, nanoflann::KDTreeSingleIndexAdaptorParams(MAX_LEAF_ELEMENTS));
-        kdTree.buildIndex();
-        ALICEVISION_LOG_INFO("NANOFLANN: KdTree created.");
-#endif
-        omp_set_nested(1);
-        #pragma omp parallel for num_threads(3)
-        for(int c = 0; c < cams.size(); ++c)
-        {
-            ALICEVISION_LOG_INFO("Create visibilities (" << c << "/" << cams.size() << ")");
-            std::vector<float> depthMap;
-            std::vector<float> simMap;
-            int width, height;
-            {
-                const std::string depthMapFilepath = mv_getFileName(mp, c, mvsUtils::EFileType::depthMap, 0);
-                imageIO::readImage(depthMapFilepath, width, height, depthMap);
-                if(depthMap.empty())
-                {
-                    ALICEVISION_LOG_WARNING("Empty depth map: " << depthMapFilepath);
-                    continue;
-                }
-//                int wTmp, hTmp;
-//                const std::string simMapFilepath = mv_getFileName(mp, c, mvsUtils::EFileType::simMap, 0);
-//                imageIO::readImage(simMapFilepath, wTmp, hTmp, simMap);
-//                if(wTmp != width || hTmp != height)
-//                    throw std::runtime_error("Empty depth map: " + depthMapFilepath);
-            }
-            // Add visibility
-            #pragma omp parallel for
-            for(int y = 0; y < height; ++y)
-            {
-                for(int x = 0; x < width; ++x)
-                {
-                    const std::size_t index = y * width + x;
-                    const float depth = depthMap[index];
-                    if(depth <= 0.0f)
-                        continue;
-
-//                    const float sim = simMap[index];
-//                    // remap similarity values from [-1;+1] to [+1;+simScale]
-//                    // interpretation is [goodSimilarity;badSimilarity]
-//                    const float simScore = sim < -1.0f ? 1.0f : 1.0f + (1.0f + sim) * simScale;
-
-                    const Point3d p = mp->CArr[c] + (mp->iCamArr[c] * Point2d((float)x, (float)y)).normalize() * depth;
-                    const double pixSize = mp->getCamPixelSize(p, c);
-#ifdef USE_GEOGRAM_KDTREE
-                    const std::size_t nearestVertexIndex = kdTree.get_nearest_neighbor(p.m);
-                    // NOTE: Could compute the distance between the line (camera to pixel) and the nearestVertex OR
-                    //       the distance between the back-projected point and the nearestVertex
-                    const double dist = (p - verticesCoordsPrepare[nearestVertexIndex]).size2();
-#else
-                    nanoflann::KNNResultSet<double, std::size_t> resultSet(1);
-                    std::size_t nearestVertexIndex = std::numeric_limits<std::size_t>::max();
-                    double dist = std::numeric_limits<double>::max();
-                    resultSet.init(&nearestVertexIndex, &dist);
-                    if(!kdTree.findNeighbors(resultSet, p.m, nanoflann::SearchParams()))
-                    {
-                        ALICEVISION_LOG_WARNING("Failed to find Neighbors.");
-                        continue;
-                    }
-#endif
-                    const float pixSizeScoreI = simScorePrepare[nearestVertexIndex] * pixSize * pixSize;
-                    const float pixSizeScoreV = simScorePrepare[nearestVertexIndex] * pixSizePrepare[nearestVertexIndex] * pixSizePrepare[nearestVertexIndex];
-
-                    if(dist < 4.0f * std::max(pixSizeScoreI, pixSizeScoreV))
-                    {
-                        GC_vertexInfo& va = verticesAttrPrepare[nearestVertexIndex];
-                        Point3d& vc = verticesCoordsPrepare[nearestVertexIndex];
-                        #pragma omp critical // could we limit to an index? nearestVertexIndex
-                        {
-                            va.cams.push_back_distinct(c);
-                            if(dist < 2.0f * pixSizeScoreV)
-                            {
-                                vc = (vc * (double)va.nrc + p) / double(va.nrc + 1);
-                                va.nrc += 1;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        omp_set_nested(0);
-        ALICEVISION_LOG_INFO("Visibilities created.");
-    }
+    createVerticesWithVisibilities(cams, verticesCoordsPrepare, pixSizePrepare, simScorePrepare,
+                                   verticesAttrPrepare, mp);
 
     // Export points with enough visibility support
     {
