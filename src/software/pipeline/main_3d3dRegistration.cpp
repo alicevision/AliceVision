@@ -95,14 +95,9 @@ int main(int argc, char** argv)
 	if (pa.loadTargetCloud(targetFile) == EXIT_FAILURE)
     return EXIT_FAILURE;
 
-	if (pa.setSourceMeasurements(sourceMeasurement) == EXIT_FAILURE)
-		return EXIT_FAILURE;
-
-	if (pa.setTargetMeasurements(targetMeasurement) == EXIT_FAILURE)
-		return EXIT_FAILURE;
-
+	pa.setSourceMeasurements(sourceMeasurement);
+	pa.setTargetMeasurements(targetMeasurement);
 	pa.setVoxelSize(voxelSize);
-	pa.setVerbose(true);
 	pa.setShowPipeline(true);
 
 	pcl::PointCloud<pcl::PointXYZ> regGICP_source;
@@ -110,7 +105,7 @@ int main(int argc, char** argv)
 	pa.align(regGICP_source);
 
 	Eigen::Matrix4f T = pa.getFinalTransformation();
-	std::cout << "Transformation (such as: T * source = target) =\n" << T << std::endl;
+	ALICEVISION_LOG_INFO("Transformation (such as: T * source = target) =\n" << T);
 	
 	return EXIT_SUCCESS;
 }

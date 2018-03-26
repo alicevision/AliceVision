@@ -64,27 +64,25 @@ public:
    * @brief To indicate a measurement made on the source point cloud.
    * The same measure must be done on the target model (whatever the unit).
    * It is used to evaluate manually the scale ratio between source and target clouds.
-   * @param[in] val The distance on the source cloud.
-   * @return EXIT_FAILURE if val <= 0, else EXIT_SUCCESS.
+   * @param[in] measurement The distance on the source cloud.
    */
-  int setSourceMeasurements(const float val);
+  void setSourceMeasurements(const float measurement);
   
   /**
    * @brief To indicate a measurement made on the target point cloud.
    * The same measure must be done on the source model (whatever the unit).
    * It is used to evaluate manually the scale ratio between source and target clouds.
-   * @param[in] val The distance on the target cloud.
-   * @return EXIT_FAILURE if val <= 0, else EXIT_SUCCESS.
+   * @param[in] measurement The distance on the target cloud.
    */
-  int setTargetMeasurements(const float val);
+  void setTargetMeasurements(const float measurement);
   
   /**
    * @brief To indicate directly the scale ratio between source and target clouds.
    * The scale ratio represent targetSize / sourceSize.
-   * @param[in] val The scale ratio (= targetSize / sourceSize).
+   * @param[in] ratio The scale ratio (= targetSize / sourceSize).
    * @return EXIT_FAILURE if val <= 0, else EXIT_SUCCESS.
    */
-  inline int setScaleRatio(const float val);
+  inline void setScaleRatio(const float ratio);
   
   /**
    * @brief To indicate the whished size of the voxel grid apply on the clouds during processing.
@@ -110,13 +108,6 @@ public:
    * @param[in] k The number points.
    */
   inline void setKSeachNormals(const int k) {kSearchNormals = k;}
-  
-  /**
-   * @brief To display or not some informations about the process.
-   * Set to \c false by default.
-   * @param[in] isActivated A boolean.
-   */
-  inline void setVerbose(const bool isActivated) {verbose = isActivated;}
   
   /**
    * @brief To display or not the 3D visulisation of the different step of the registering.
@@ -318,9 +309,7 @@ private:
   
   int kSearchNormals; /**< The number of closest neighbours used to compute normals. */
   
-  bool verbose; /**< Apply or not the verbose mode. */
-  
-  bool showPipeline; /**< Apply or not the verbose mode. */
+  bool showPipeline; /**< Vizualise (or not) each step of the alignement. */
   
   Eigen::Matrix4f finalTransformation; /**< Is the computed transformation such as: T * sourceCloud = targetCloud/ */
 };
