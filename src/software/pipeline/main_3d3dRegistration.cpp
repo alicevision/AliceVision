@@ -27,16 +27,21 @@ int main(int argc, char** argv)
   po::options_description requiredParams("Required parameters");
   requiredParams.add_options()
     ("sourceFile,s", po::value<std::string>(&sourceFile)->required(),
-      "Path to file source (fixed) 3D model.")
+      "Path to file source (moving) 3D model.")
     ("targetFile,t", po::value<std::string>(&targetFile)->required(),
-      "Path to the target (moveing) 3D model.");
+      "Path to the target (fixed) 3D model.");
 
+  // to choose which transformed 3D model to export:
+  std::string outputFile;
+  
   float sourceMeasurement = 1.f,
       targetMeasurement = 1.f,
       scaleRatio = 1.f,
       voxelSize = 0.1f;
   po::options_description optionalParams("Optional parameters");
   optionalParams.add_options()
+    ("outputFile,o", po::value<std::string>(&outputFile),
+      "Path to save the transformed source 3D model.")
     ("scaleRatio", po::value<float>(&scaleRatio)->default_value(scaleRatio),
       "Scale ratio between the two 3D models (= target size / source size)")
     ("sourceMeasurement", po::value<float>(&sourceMeasurement)->default_value(sourceMeasurement),
@@ -98,14 +103,15 @@ int main(int argc, char** argv)
 	pa.setSourceMeasurements(sourceMeasurement);
 	pa.setTargetMeasurements(targetMeasurement);
 	pa.setVoxelSize(voxelSize);
-	pa.setShowPipeline(true);
+	pa.setShowPipeline(false);
 
-	pcl::PointCloud<pcl::PointXYZ> regGICP_source;
-
-	pa.align(regGICP_source);
-
-	Eigen::Matrix4f T = pa.getFinalTransformation();
-	ALICEVISION_LOG_INFO("Transformation (such as: T * source = target) =\n" << T);
+	pa.align();
 	
-	return EXIT_SUCCESS;
+	if (!outputFile.empty()) // export a transformed 3D model
+	{
+  	Eigen::Matrix4f T = pa.getFinalTransformation();
+    return pa.tranformAndSaveCloud(sourceFile, T, outputFile);
+	}
+	else
+    return EXIT_SUCCESS;
 }
