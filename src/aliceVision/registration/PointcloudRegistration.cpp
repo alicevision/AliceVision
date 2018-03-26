@@ -130,7 +130,7 @@ int PointcloudRegistration::align()
   
   if (showPipeline)
   {
-    draw("1. Input", sourceCloud, targetCloud);
+    drawCentered("1. Input", sourceCloud, targetCloud);
   }
   
   // ===========================================================
@@ -208,7 +208,7 @@ int PointcloudRegistration::align()
       
   if (showPipeline)
   {
-    draw("4. Voxel grid", mutableSourceCloud, mutableTargetCloud);
+    draw("3. Voxel grid", mutableSourceCloud, mutableTargetCloud);
   }
   
   // ===========================================================
@@ -227,7 +227,7 @@ int PointcloudRegistration::align()
   
   if (showPipeline)
   {
-    draw("5. Normals", mutableSourceCloud, mutableTargetCloud);
+    draw("4. Normals", mutableSourceCloud, mutableTargetCloud, sourceNormals, targetNormals);
   }
   
   // ===========================================================
@@ -247,7 +247,7 @@ int PointcloudRegistration::align()
 
   if (showPipeline)
   {
-    draw("6. Result G-ICP", mutableSourceCloud, mutableTargetCloud);
+    draw("5. Result G-ICP", mutableSourceCloud, mutableTargetCloud);
   }
   
   // ===========================================================
@@ -419,7 +419,7 @@ int PointcloudRegistration::loadCloud(const std::string & file, pcl::PointCloud<
     return EXIT_FAILURE;
   }
   
-  if (res == 0)
+  if (res == 0 && cloud.width > 0)
     return EXIT_SUCCESS;
   else
     return EXIT_FAILURE;
@@ -447,7 +447,6 @@ Eigen::Matrix4f PointcloudRegistration::moveSourceToTargetPosition()
   sourceCloud.swap(movedCloud);
   return T;
 }
-
 
 void PointcloudRegistration::draw(
     const std::string & windowName,
