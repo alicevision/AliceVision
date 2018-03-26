@@ -38,21 +38,58 @@ int PointcloudRegistration::loadTargetCloud(const std::string & file)
   return loadCloud(file, targetCloud);
 }
 
-int PointcloudRegistration::saveCloud(const std::string & file, const pcl::PointCloud<pcl::PointXYZ> & cloud)
+int PointcloudRegistration::tranformAndSaveCloud(
+    const std::string & inputFile, 
+    const Eigen::Matrix4f & T, 
+    const std::string & outputFile)
 {
-  int res;
-  if (file.substr(file.find_last_of(".") + 1) == "ply")
-    res = pcl::io::savePLYFile<pcl::PointXYZ>(file, cloud);
-  else
+  if (!boost::filesystem::exists(inputFile))
   {
-    ALICEVISION_LOG_ERROR("PointcloudRegistration::saveCloud: Unknown extension of '" << file << "'");
+    ALICEVISION_LOG_ERROR("PointcloudRegistration::saveCloud: The file does not exist '" << inputFile << "'");
     return EXIT_FAILURE;
   }
   
-  if (res == 0)
-    return EXIT_SUCCESS;
+  pcl::PointCloud<pcl::PointXYZRGB> inputCloud, outputCloud;
+
+  // load input cloud:
+  if (inputFile.substr(inputFile.find_last_of(".") + 1) == "ply")
+  {
+    pcl::io::loadPLYFile(inputFile, inputCloud);
+  }
+  else if (inputFile.substr(inputFile.find_last_of(".") + 1) == "pcd")
+  {
+    pcl::io::loadPCDFile(inputFile, inputCloud);
+  }
   else
+  {
+    ALICEVISION_LOG_ERROR("PointcloudRegistration::saveCloud: Unknown extension: " << inputFile);
     return EXIT_FAILURE;
+  }
+
+  // transform input pointcloud according to T:
+  pcl::transformPointCloud(inputCloud, outputCloud, T);
+  
+  // save the transformed pointcloud:
+  if (outputFile.substr(outputFile.find_last_of(".") + 1) == "ply")
+  {
+    pcl::io::savePLYFile(outputFile, outputCloud);
+  }
+  else
+  {
+    ALICEVISION_LOG_ERROR("PointcloudRegistration::saveCloud: Unknown extension: " << outputFile);
+    return EXIT_FAILURE;
+  }
+  
+  if (outputCloud.width == inputCloud.width)
+  {
+    ALICEVISION_LOG_INFO("Transformation & saving succeed: '" << outputFile << "'");
+    return EXIT_SUCCESS;
+  }
+  else
+  {
+    ALICEVISION_LOG_ERROR("ERROR: Transformation & saving failed: '" << outputFile << "'");
+    return EXIT_FAILURE;
+  }
 }
 
 void PointcloudRegistration::setSourceMeasurements(const float measurement) 
@@ -82,13 +119,6 @@ void PointcloudRegistration::setScaleRatio(const float ratio)
   rescaleMode = ERescaleMode::Manual;
 }
 
-int PointcloudRegistration::align(pcl::PointCloud<pcl::PointXYZ> & registeredSourceCloud)
-{
-  int res = align();
-  pcl::transformPointCloud(sourceCloud, registeredSourceCloud, finalTransformation);
-  return res;
-}
-
 int PointcloudRegistration::align()
 {
   pcl::PointCloud<pcl::PointXYZ> mutableSourceCloud, mutableTargetCloud;
@@ -108,13 +138,13 @@ int PointcloudRegistration::align()
   // (Could be replaced by correspondences matching)
   // ===========================================================
   
-  ALICEVISION_LOG_INFO("\n-- Move source to the target position");
+  ALICEVISION_LOG_INFO("-- Move source to the target position");
   
   Eigen::Matrix4f To_source = moveToOrigin(mutableSourceCloud);
   Eigen::Matrix4f To_target = moveToOrigin(mutableTargetCloud);
   
-  ALICEVISION_LOG_INFO("|- To_source = \n" << To_source);
-  ALICEVISION_LOG_INFO("|- To_target = \n" << To_target);
+  ALICEVISION_LOG_INFO("|- T_origin_source = \n" << To_source);
+  ALICEVISION_LOG_INFO("|- T_origin_target = \n" << To_target);
 
   if (showPipeline)
   {
@@ -125,7 +155,7 @@ int PointcloudRegistration::align()
   // --  Rescale source cloud 
   // ===========================================================
   
-    ALICEVISION_LOG_INFO("\n-- Rescaling step");
+    ALICEVISION_LOG_INFO("-- Rescaling step");
   
   Eigen::Matrix4f Ts = Eigen::Matrix4f(Eigen::Matrix4f::Identity());
   if (rescaleMode == ERescaleMode::Manual)
@@ -161,13 +191,13 @@ int PointcloudRegistration::align()
     ALICEVISION_LOG_INFO("|- Mode: *not rescaled*");  
   }
   
-  ALICEVISION_LOG_INFO("Ts = \n" << Ts);
+  ALICEVISION_LOG_INFO("T_rescaling = \n" << Ts);
   
   // ===========================================================
   // -- VoxelGrid Subsampling
   // ===========================================================
   
-  ALICEVISION_LOG_INFO("\n-- Apply voxel grid");
+  ALICEVISION_LOG_INFO("-- Apply voxel grid");
   
   applyVoxelGrid(mutableSourceCloud, voxelSize);
   applyVoxelGrid(mutableTargetCloud, voxelSize);
@@ -185,7 +215,7 @@ int PointcloudRegistration::align()
   // -- Compute normals
   // ===========================================================
   
-  ALICEVISION_LOG_INFO("\n-- Compute normals");
+  ALICEVISION_LOG_INFO("-- Compute normals");
   
   pcl::PointCloud<pcl::Normal> sourceNormals, targetNormals;
   
@@ -204,7 +234,7 @@ int PointcloudRegistration::align()
   // -- Generalized-ICP
   // ===========================================================
   
-  ALICEVISION_LOG_INFO("\n-- Apply Generalized-ICP\n");
+  ALICEVISION_LOG_INFO("-- Apply Generalized-ICP");
   
   Eigen::Matrix4f Ti;
   std::clock_t start;
@@ -213,7 +243,7 @@ int PointcloudRegistration::align()
   Ti = applyGeneralizedICP(mutableSourceCloud, mutableTargetCloud, sourceNormals, targetNormals, mutableSourceCloud);
   
   ALICEVISION_LOG_INFO("|- G-ICP took " << (std::clock() - start) / (double)CLOCKS_PER_SEC << " sec.");
-  ALICEVISION_LOG_INFO("|- Ti = \n" );
+  ALICEVISION_LOG_INFO("|- T_gicp = \n" << Ti);
 
   if (showPipeline)
   {
@@ -233,7 +263,7 @@ int PointcloudRegistration::align()
   // -- Compute complete transformation
   // ===========================================================
   
-  ALICEVISION_LOG_INFO("\n-- Compute global transformation\n");
+  ALICEVISION_LOG_INFO("-- Compute global transformation");
   
   finalTransformation = To_target_inv * Ti * Ts * To_source;
   
@@ -369,7 +399,8 @@ Eigen::Matrix4f PointcloudRegistration::getPureScaleTransformation(const float s
   return T;
 }
 
-int PointcloudRegistration::loadCloud(const std::string & file, pcl::PointCloud<pcl::PointXYZ> & cloud)
+template<typename PointT>
+int PointcloudRegistration::loadCloud(const std::string & file, pcl::PointCloud<PointT> & cloud)
 {
   if (!boost::filesystem::exists(file))
   {
@@ -379,9 +410,9 @@ int PointcloudRegistration::loadCloud(const std::string & file, pcl::PointCloud<
   
   int res;
   if (file.substr(file.find_last_of(".") + 1) == "pcd")
-    res = pcl::io::loadPCDFile<pcl::PointXYZ>(file, cloud);
+    res = pcl::io::loadPCDFile<PointT>(file, cloud);
   else if (file.substr(file.find_last_of(".") + 1) == "ply")
-    res = pcl::io::loadPLYFile<pcl::PointXYZ>(file, cloud);
+    res = pcl::io::loadPLYFile<PointT>(file, cloud);
   else
   {
     ALICEVISION_LOG_ERROR("PointcloudRegistration::loadCloud: Unknown extension: " << file);

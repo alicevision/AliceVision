@@ -41,12 +41,16 @@ public:
   int loadTargetCloud(const std::string & file);
   
   /**
-   * @brief Save the \c cloud according to the \c file path. Accepted format: .ply.
-   * @param[in] file: The file name of the cloud.
-   * @param[in] cloud: The cloud to save.
+   * @brief Load the pointcloud in \c inputFile, transform it according to \c T and save the result
+   * in \c outputFile.
+   * @param[in] inputFile: The file path of the cloud you want to transform & save.
+   * @param[in] T: The transformation to apply to the \c inputFile.
+   * @param[in] outputFile: The transformed & saved file.
    * @return EXIT_FAILURE if something wrong happens, else EXIT_SUCCESS.
    */
-  static int saveCloud(const std::string & file, const pcl::PointCloud<pcl::PointXYZ> & cloud);
+  static int tranformAndSaveCloud(const std::string & inputFile, 
+                       const Eigen::Matrix4f & T, 
+                       const std::string & outputFile);
   
   /**
    * @brief To set a cloud as the source of the alignment (: moving cloud).
@@ -122,16 +126,7 @@ public:
    * @return A 4x4 matrix ([R|t]).
    */
   inline Eigen::Matrix4f getFinalTransformation() const {return finalTransformation;}
-  
-  /**
-   * @brief Perform the alignment of the source cloud on the target cloud and gives
-   * you the registered source cloud.
-   * The transformation matrix is available using: \c getFinalTransformation().
-   * @param[out] registeredSourceCloud The result of the alignment applied on the source cloud.
-   * @return EXIT_FAILURE if something wrong happens, else EXIT_SUCCESS.
-   */
-  int align(pcl::PointCloud<pcl::PointXYZ> & registeredSourceCloud);
-  
+    
   /**
    * @brief Perform the alignment of the source cloud on the target cloud and gives
    * you the registered source cloud.
@@ -214,7 +209,8 @@ private:
    * @param[out] cloud The loaded cloud.
    * @return EXIT_FAILURE if something wrong happens, else EXIT_SUCCESS.
    */
-  int loadCloud(const std::string & file, pcl::PointCloud<pcl::PointXYZ> & cloud);
+  template<typename PointT>
+  int loadCloud(const std::string & file, pcl::PointCloud<PointT> & cloud);
   
   /**
    * @brief Move the \c sourceCloud to the \c targetCloud position.
