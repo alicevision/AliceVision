@@ -38,6 +38,8 @@ int main(int argc, char** argv)
       targetMeasurement = 1.f,
       scaleRatio = 1.f,
       voxelSize = 0.1f;
+  bool showPipeline = false;
+
   po::options_description optionalParams("Optional parameters");
   optionalParams.add_options()
     ("outputFile,o", po::value<std::string>(&outputFile),
@@ -49,8 +51,9 @@ int main(int argc, char** argv)
     ("targetMeasurement", po::value<float>(&targetMeasurement)->default_value(targetMeasurement),
       "Measurement made ont the target 3D model (same unit as 'sourceMeasurement'). It allowes to compute the scale ratio between 3D models.")
     ("voxelSize", po::value<float>(&voxelSize)->default_value(voxelSize),
-      "Size of the voxel grid applied on each 3D model to downsample them. Downsampling reduces computing duration.");
-    ;
+      "Size of the voxel grid applied on each 3D model to downsample them. Downsampling reduces computing duration.")
+    ("showPipeline", po::value<bool>(&showPipeline)->default_value(showPipeline),
+      "To enable the visualization of each step of the pipeline in external windows.");
 
   std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
   po::options_description logParams("Log parameters");
@@ -92,25 +95,25 @@ int main(int argc, char** argv)
 	// -- Run alignement
 	// ===========================================================
 
-	PointcloudRegistration pa;
+	PointcloudRegistration reg;
 
-	if (pa.loadSourceCloud(sourceFile) == EXIT_FAILURE)
+	if (reg.loadSourceCloud(sourceFile) == EXIT_FAILURE)
     return EXIT_FAILURE;
 
-	if (pa.loadTargetCloud(targetFile) == EXIT_FAILURE)
+	if (reg.loadTargetCloud(targetFile) == EXIT_FAILURE)
     return EXIT_FAILURE;
 
-	pa.setSourceMeasurements(sourceMeasurement);
-	pa.setTargetMeasurements(targetMeasurement);
-	pa.setVoxelSize(voxelSize);
-	pa.setShowPipeline(false);
+	reg.setSourceMeasurements(sourceMeasurement);
+	reg.setTargetMeasurements(targetMeasurement);
+	reg.setVoxelSize(voxelSize);
+	reg.setShowPipeline(showPipeline);
 
-	pa.align();
-	
+	reg.align();
+
 	if (!outputFile.empty()) // export a transformed 3D model
 	{
-  	Eigen::Matrix4f T = pa.getFinalTransformation();
-    return pa.tranformAndSaveCloud(sourceFile, T, outputFile);
+  	Eigen::Matrix4f T = reg.getFinalTransformation();
+    return reg.tranformAndSaveCloud(sourceFile, T, outputFile);
 	}
 	else
     return EXIT_SUCCESS;
