@@ -66,14 +66,44 @@ public:
     _minInputTrackLength = minInputTrackLength;
   }
 
-  void setIntermediateFileExtension(const std::string& interFileExtension)
-  {
-    _sfmdataInterFileExtension = interFileExtension;
-  }
-
   void setNbOfObservationsForTriangulation(std::size_t minNbObservationsForTriangulation)
   {
     _minNbObservationsForTriangulation = minNbObservationsForTriangulation;
+  }
+
+  void setMinAngleForTriangulation(double minAngleForTriangulation)
+  {
+    _minAngleForTriangulation = minAngleForTriangulation;
+  }
+
+  void setMinAngleForLandmark(double minAngleForLandmark)
+  {
+    _minAngleForLandmark = minAngleForLandmark;
+  }
+
+  void setMaxReprojectionError(double maxReprojectionError)
+  {
+    _maxReprojectionError = maxReprojectionError;
+  }
+
+  void setMinAngleInitialPair(double minAngleInitialPair)
+  {
+    _minAngleInitialPair = minAngleInitialPair;
+  }
+
+  void setMaxAngleInitialPair(double maxAngleInitialPair)
+  {
+    _maxAngleInitialPair = maxAngleInitialPair;
+  }
+
+  void setLocalizerEstimator(robustEstimation::ERobustEstimator estimator)
+  {
+    _localizerEstimator = estimator;
+  }
+
+  void setIntermediateFileExtension(const std::string& interFileExtension)
+  {
+    _sfmdataInterFileExtension = interFileExtension;
   }
 
   void setLocalBundleAdjustmentGraphDistance(std::size_t distance)
@@ -95,11 +125,6 @@ public:
         fs::remove(_localBA_data->getOutDirectory());
       fs::create_directory(_localBA_data->getOutDirectory());
     }
-  }
-
-  void setLocalizerEstimator(robustEstimation::ERobustEstimator estimator)
-  {
-    _localizerEstimator = estimator;
   }
 
   /**
@@ -345,6 +370,10 @@ private:
   std::size_t _minNbObservationsForTriangulation = 2;
   /// a 3D point must have at least 2 obervations not too much aligned.
   double _minAngleForTriangulation = 3.0;
+  double _minAngleForLandmark = 2.0;
+  double _maxReprojectionError = 4.0;
+  double _minAngleInitialPair = 5.0;
+  double _maxAngleInitialPair = 40.0;
   robustEstimation::ERobustEstimator _localizerEstimator = robustEstimation::ERobustEstimator::ACRANSAC;
 
   // Data providers

@@ -309,7 +309,7 @@ void ReconstructionEngine_sequentialSfM::remapLandmarkIdsToTrackIds()
       }
     }
   }
-  ALICEVISION_LOG_DEBUG("Remap landmark ids to track ids: " << std::endl
+  ALICEVISION_LOG_INFO("Remap landmark ids to track ids: " << std::endl
                         << "\t- # tracks: " << _map_tracks.size() << std::endl
                         << "\t- # input landmarks: " << landmarks.size() << std::endl
                         << "\t- # output landmarks: " << _sfm_data.GetLandmarks().size());
@@ -328,13 +328,34 @@ double ReconstructionEngine_sequentialSfM::incrementalReconstruction()
     IndexT viewId = viewPair.second->getViewId();
     IndexT viewResectionId = viewPair.second->getResectionId();
 
-    viewIds.insert(viewId);
+    if(!_sfm_data.IsPoseAndIntrinsicDefined(viewId))
+      viewIds.insert(viewId);
 
     if(viewResectionId != UndefinedIndexT &&
        viewResectionId > resectionId)
     {
       resectionId = viewResectionId + 1;
     }
+  }
+
+  // initial print
+  {
+    std::stringstream ss;
+    ss << "Begin Incremental Reconstruction:" << std::endl;
+
+    if(_sfm_data.GetViews().size() == viewIds.size())
+    {
+      ss << "\t- mode: SfM creation" << std::endl;
+    }
+    else
+    {
+      ss << "\t- mode: SfM augmentation" << std::endl
+         << "\t- # images in input: " << _sfm_data.GetViews().size() << std::endl
+         << "\t- # images in resection: " << viewIds.size() << std::endl
+         << "\t- # landmarks in input: " << _sfm_data.GetLandmarks().size() << std::endl
+         << "\t- # cameras already calibrated: " << _sfm_data.GetPoses().size();
+    }
+    ALICEVISION_LOG_INFO(ss.str());
   }
 
   aliceVision::system::Timer timer;
@@ -344,7 +365,7 @@ double ReconstructionEngine_sequentialSfM::incrementalReconstruction()
   {
     ALICEVISION_LOG_INFO("Update Reconstruction:" << std::endl
       << "\t- resection id: " << resectionId << std::endl
-      << "\t- # images in the group: " << bestViewIds.size() << std::endl
+      << "\t- # images in the resection group: " << bestViewIds.size() << std::endl
       << "\t- # images remaining: " << viewIds.size());
 
     updateReconstruction(resectionId, bestViewIds, viewIds);
@@ -486,7 +507,7 @@ void ReconstructionEngine_sequentialSfM::updateReconstruction(IndexT resectionId
                 << " took " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - chrono2_start).count() << " msec.");
       ++bundleAdjustmentIteration;
     }
-    while(removeOutliers(4.0) > nbOutliersThreshold);
+    while(removeOutliers(_maxReprojectionError) > nbOutliersThreshold);
 
     ALICEVISION_LOG_DEBUG("Bundle adjustment with " << bundleAdjustmentIteration << " iterations took " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - chrono_start).count() << " msec.");
     chrono_start = std::chrono::steady_clock::now();
@@ -933,7 +954,7 @@ bool ReconstructionEngine_sequentialSfM::makeInitialPair3D(const Pair& current_p
            << " took " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - chrono2_start).count() << " msec.");
       ++bundleAdjustmentIteration;
     }
-    while(removeOutliers(4.0) > nbOutliersThreshold);
+    while(removeOutliers(_maxReprojectionError) > nbOutliersThreshold);
 
 
     Save(_sfm_data, (fs::path(_sOutDirectory) / ("initialPair_afterBA" + _sfmdataInterFileExtension)).string(), _sfmdataInterFilter);
@@ -997,9 +1018,9 @@ bool ReconstructionEngine_sequentialSfM::getBestInitialImagePairs(std::vector<Pa
   
   const unsigned iMin_inliers_count = 100;
   // Use a min angle limit to ensure quality of the geometric evaluation.
-  const float fRequired_min_angle = 5.0f;
+  const float fRequired_min_angle = _minAngleInitialPair;
   // Use a max angle limit to ensure good matching quality.
-  const float fLimit_max_angle = 40.0f;
+  const float fLimit_max_angle = _maxAngleInitialPair;
   
   // List Views that support valid intrinsic (view that could be used for Essential matrix computation)
   std::set<IndexT> valid_views;
@@ -1922,9 +1943,9 @@ bool ReconstructionEngine_sequentialSfM::localBundleAdjustment(const std::set<In
 std::size_t ReconstructionEngine_sequentialSfM::removeOutliers(double precision)
 {
   const std::size_t nbOutliersResidualErr = RemoveOutliers_PixelResidualError(_sfm_data, precision, 2);
-  const std::size_t nbOutliersAngleErr = RemoveOutliers_AngleError(_sfm_data, 2.0);
+  const std::size_t nbOutliersAngleErr = RemoveOutliers_AngleError(_sfm_data, _minAngleForLandmark);
 
-  ALICEVISION_LOG_DEBUG("Remove outliers: " << std::endl
+  ALICEVISION_LOG_INFO("Remove outliers: " << std::endl
                         << "\t- # outliers residual error: " << nbOutliersResidualErr << std::endl
                         << "\t- # outliers angular error: " << nbOutliersAngleErr);
 

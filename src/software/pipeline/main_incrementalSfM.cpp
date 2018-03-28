@@ -82,11 +82,17 @@ int main(int argc, char **argv)
   std::string describerTypesName = feature::EImageDescriberType_enumToString(feature::EImageDescriberType::SIFT);
   std::string outInterFileExtension = ".ply";
   std::pair<std::string,std::string> initialPairString("","");
-  int minInputTrackLength = 2;
   int maxNbMatches = 0;
+  int minInputTrackLength = 2;
   std::size_t minNbObservationsForTriangulation = 2;
+  double minAngleForTriangulation = 3.0;
+  double minAngleForLandmark = 2.0;
+  double maxReprojectionError = 4.0;
+  double minAngleInitialPair = 5.0;
+  double maxAngleInitialPair = 40.0;
   bool refineIntrinsics = true;
   bool useLocalBundleAdjustment = false;
+  bool useOnlyMatchesFromInputFolder = false;
   std::size_t localBundelAdjustementGraphDistanceLimit = 1;
   std::string localizerEstimatorName = robustEstimation::ERobustEstimator_enumToString(robustEstimation::ERobustEstimator::ACRANSAC);
 
@@ -116,11 +122,21 @@ int main(int argc, char **argv)
       feature::EImageDescriberType_informations().c_str())
     ("interFileExtension", po::value<std::string>(&outInterFileExtension)->default_value(outInterFileExtension),
       "Extension of the intermediate file export.")
-    ("minInputTrackLength", po::value<int>(&minInputTrackLength)->default_value(minInputTrackLength),
-      "Minimum track length in input of SfM.")
     ("maxNumberOfMatches", po::value<int>(&maxNbMatches)->default_value(maxNbMatches),
       "Maximum number of matches per image pair (and per feature type). "
       "This can be useful to have a quick reconstruction overview. 0 means no limit.")
+    ("minInputTrackLength", po::value<int>(&minInputTrackLength)->default_value(minInputTrackLength),
+      "Minimum track length in input of SfM.")
+    ("minAngleForTriangulation", po::value<double>(&minAngleForTriangulation)->default_value(minAngleForTriangulation),
+      "Minimum angle for triangulation.")
+    ("minAngleForLandmark", po::value<double>(&minAngleForLandmark)->default_value(minAngleForLandmark),
+      "Minimum angle for landmark.")
+    ("maxReprojectionError", po::value<double>(&maxReprojectionError)->default_value(maxReprojectionError),
+      "Maximum reprojection error.")
+    ("minAngleInitialPair", po::value<double>(&minAngleInitialPair)->default_value(minAngleInitialPair),
+      "Minimum angle for the initial pair.")
+    ("maxAngleInitialPair", po::value<double>(&maxAngleInitialPair)->default_value(maxAngleInitialPair),
+      "Maximum angle for the initial pair.")
     ("minNumberOfObservationsForTriangulation", po::value<std::size_t>(&minNbObservationsForTriangulation)->default_value(minNbObservationsForTriangulation),
       "Minimum number of observations to triangulate a point.\n"
       "Set it to 3 (or more) reduces drastically the noise in the point cloud, but the number of final poses is a little bit reduced (from 1.5% to 11% on the tested datasets).\n"
@@ -134,6 +150,9 @@ int main(int argc, char **argv)
     ("useLocalBA,l", po::value<bool>(&useLocalBundleAdjustment)->default_value(useLocalBundleAdjustment),
       "Enable/Disable the Local bundle adjustment strategy.\n"
       "It reduces the reconstruction time, especially for big datasets (500+ images).")
+    ("useOnlyMatchesFromInputFolder", po::value<bool>(&useOnlyMatchesFromInputFolder)->default_value(useOnlyMatchesFromInputFolder),
+      "Use only matches from the input matchesFolder parameter.\n"
+      "Matches folders previously added to the SfMData file will be ignored.")
     ("localBAGraphDistance", po::value<std::size_t>(&localBundelAdjustementGraphDistanceLimit)->default_value(localBundelAdjustementGraphDistanceLimit),
       "Graph-distance limit setting the Active region in the Local Bundle Adjustment strategy.")
     ("localizerEstimator", po::value<std::string>(&localizerEstimatorName)->default_value(localizerEstimatorName),
@@ -198,9 +217,9 @@ int main(int argc, char **argv)
   
   // matches reading
   matching::PairwiseMatches pairwiseMatches;
-  if(!sfm::loadPairwiseMatches(pairwiseMatches, sfmData, matchesFolder, describerTypes, "f", maxNbMatches))
+  if(!sfm::loadPairwiseMatches(pairwiseMatches, sfmData, matchesFolder, describerTypes, "f", maxNbMatches, useOnlyMatchesFromInputFolder))
   {
-    ALICEVISION_LOG_ERROR("Unable to load matches file from '" + matchesFolder + "'.");
+    ALICEVISION_LOG_ERROR("Unable to load matches.");
     return EXIT_FAILURE;
   }
 
@@ -227,6 +246,11 @@ int main(int argc, char **argv)
   // configure reconstruction parameters
   sfmEngine.Set_bFixedIntrinsics(!refineIntrinsics);
   sfmEngine.setMinInputTrackLength(minInputTrackLength);
+  sfmEngine.setMinAngleForTriangulation(minAngleForTriangulation);
+  sfmEngine.setMinAngleForLandmark(minAngleForLandmark);
+  sfmEngine.setMaxReprojectionError(maxReprojectionError);
+  sfmEngine.setMinAngleInitialPair(minAngleInitialPair);
+  sfmEngine.setMaxAngleInitialPair(maxAngleInitialPair);
   sfmEngine.setIntermediateFileExtension(outInterFileExtension);
   sfmEngine.setUseLocalBundleAdjustmentStrategy(useLocalBundleAdjustment);
   sfmEngine.setLocalBundleAdjustmentGraphDistance(localBundelAdjustementGraphDistanceLimit);
