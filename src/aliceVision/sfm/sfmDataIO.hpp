@@ -33,6 +33,9 @@ bool ValidIds(const SfMData& sfmData, ESfMData partFlag);
 /// Load SfMData SfM scene from a file
 bool Load(SfMData& sfmData, const std::string& filename, ESfMData partFlag);
 
+/// Load SfMData SfM scene from a file
+bool Load(SfMData& sfmData, const std::string& filename, ESfMData partFlag, std::string& extension);
+
 /// Save SfMData SfM scene to a file
 bool Save(const SfMData& sfmData, const std::string& filename, ESfMData partFlag);
 

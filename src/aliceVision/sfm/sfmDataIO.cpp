@@ -12,6 +12,7 @@
 #include <aliceVision/sfm/sfmDataIO_ply.hpp>
 #include <aliceVision/sfm/sfmDataIO_baf.hpp>
 #include <aliceVision/sfm/sfmDataIO_gt.hpp>
+#include <aliceVision/sfm/sfmDataIO_colmap.hpp>
 
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_ALEMBIC)
 #include <aliceVision/sfm/AlembicExporter.hpp>
@@ -92,40 +93,50 @@ bool ValidIds(const SfMData& sfmData, ESfMData partFlag)
   return bRet;
 }
 
+bool Load(SfMData& sfmData, const std::string& filename, ESfMData partFlag, std::string& extension) {
+	bool status = false;
+
+	if (extension == "sfm" || extension == "json") // JSON File
+	{
+		status = loadJSON(sfmData, filename, partFlag);
+	}
+#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_ALEMBIC)
+	else if (extension == "abc") // Alembic
+	{
+		AlembicImporter(filename).populateSfM(sfmData, partFlag);
+		status = true;
+	}
+#endif // ALICEVISION_HAVE_ALEMBIC
+	else if (extension == "colmap") 
+	{
+		status = loadColmap(sfmData, filename);
+	}
+	else if (fs::is_directory(filename))
+	{
+		status = readGt(filename, sfmData);
+	}
+	else // It is not a folder or known format, return false
+	{
+		ALICEVISION_LOG_ERROR("Unknown input SfM data format: '" << extension << "'");
+		return false;
+	}
+
+	if (status)
+		sfmData.setAbsolutePath(filename);
+
+	// Assert that loaded intrinsics | extrinsics are linked to valid view
+	if (status && (partFlag & VIEWS) && ((partFlag & INTRINSICS) || (partFlag & EXTRINSICS)))
+		return ValidIds(sfmData, partFlag);
+
+	return status;
+}
+
 bool Load(SfMData& sfmData, const std::string& filename, ESfMData partFlag)
 {
-  const std::string extension = fs::extension(filename);
-  bool status = false;
-
-  if(extension == ".sfm" || extension == ".json") // JSON File
-  {
-    status = loadJSON(sfmData, filename, partFlag);
-  }
-#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_ALEMBIC)
-  else if(extension == ".abc") // Alembic
-  {
-    AlembicImporter(filename).populateSfM(sfmData, partFlag);
-    status = true;
-  }
-#endif // ALICEVISION_HAVE_ALEMBIC
-  else if(fs::is_directory(filename))
-  {
-    status = readGt(filename, sfmData);
-  }
-  else // It is not a folder or known format, return false
-  {
-    ALICEVISION_LOG_ERROR("Unknown input SfM data format: '" << extension << "'");
-    return false;
-  }
-
-  if(status)
-    sfmData.setAbsolutePath(filename);
-
-  // Assert that loaded intrinsics | extrinsics are linked to valid view
-  if(status && (partFlag & VIEWS) && ((partFlag & INTRINSICS) || (partFlag & EXTRINSICS)))
-    return ValidIds(sfmData, partFlag);
-
-  return status;
+  std::string extension = fs::extension(filename);
+  if (extension.size() > 0) 
+	  extension = extension.substr(1, extension.size());
+  return Load(sfmData, filename, partFlag, extension);
 }
 
 bool Save(const SfMData& sfmData, const std::string& filename, ESfMData partFlag)
