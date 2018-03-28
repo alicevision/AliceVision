@@ -25,6 +25,10 @@ set_property(TARGET aliceVision_system
   PROPERTY FOLDER AliceVision/AliceVision
 )
 
+target_include_directories(aliceVision_system
+  PUBLIC ${Boost_INCLUDE_DIR}
+)
+
 target_link_libraries(aliceVision_system ${Boost_LIBRARIES})
 
 set_target_properties(aliceVision_system
