@@ -128,7 +128,7 @@ int main(int argc, char **argv)
     oiio::ImageBufAlgo::resample(proxyBuf,     imageBuf, false,     proxyROI); // no interpolation
     oiio::ImageBufAlgo::resample(thumbnailBuf, imageBuf, false, thumbnailROI); // no interpolation
 
-    const std::string basename = fs::basename(view.getImagePath());
+    const std::string basename = fs::path(view.getImagePath()).stem().string();
 
     proxyBuf.write(outputFolder + "/undistort/proxy/" + basename + "-" + std::to_string(view.getViewId()) + "-UOP.jpg");
     thumbnailBuf.write(outputFolder + "/undistort/thumbnail/" + basename + "-" + std::to_string(view.getViewId()) + "-UOT.jpg");
