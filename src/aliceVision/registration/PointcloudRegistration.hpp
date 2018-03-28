@@ -49,8 +49,8 @@ public:
    * @return EXIT_FAILURE if something wrong happens, else EXIT_SUCCESS.
    */
   static int tranformAndSaveCloud(const std::string & inputFile, 
-                       const Eigen::Matrix4f & T, 
-                       const std::string & outputFile);
+                                  const Eigen::Matrix4f & T, 
+                                  const std::string & outputFile);
   
   /**
    * @brief To set a cloud as the source of the alignment (: moving cloud).
@@ -70,7 +70,7 @@ public:
    * It is used to evaluate manually the scale ratio between source and target clouds.
    * @param[in] measurement The distance on the source cloud.
    */
-  void setSourceMeasurements(const float measurement);
+  void setSourceMeasurement(const float measurement);
   
   /**
    * @brief To indicate a measurement made on the target point cloud.
@@ -78,7 +78,7 @@ public:
    * It is used to evaluate manually the scale ratio between source and target clouds.
    * @param[in] measurement The distance on the target cloud.
    */
-  void setTargetMeasurements(const float measurement);
+  void setTargetMeasurement(const float measurement);
   
   /**
    * @brief To indicate directly the scale ratio between source and target clouds.
@@ -86,7 +86,7 @@ public:
    * @param[in] ratio The scale ratio (= targetSize / sourceSize).
    * @return EXIT_FAILURE if val <= 0, else EXIT_SUCCESS.
    */
-  inline void setScaleRatio(const float ratio);
+  void setScaleRatio(const float ratio);
   
   /**
    * @brief To indicate the whished size of the voxel grid apply on the clouds during processing.

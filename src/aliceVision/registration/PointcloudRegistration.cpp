@@ -92,8 +92,14 @@ int PointcloudRegistration::tranformAndSaveCloud(
   }
 }
 
-void PointcloudRegistration::setSourceMeasurements(const float measurement) 
+void PointcloudRegistration::setSourceMeasurement(const float measurement) 
 {
+  if (scaleRatio != 1.f)
+  {
+    ALICEVISION_LOG_WARNING("Cannot set the source measurement to " << measurement << ": the scale ratio is already set to " << scaleRatio << " (!= 1)." );
+    return;
+  }
+  
   assert(measurement != 0);
   
   sourceMeasurements = measurement; 
@@ -101,8 +107,14 @@ void PointcloudRegistration::setSourceMeasurements(const float measurement)
   scaleRatio = targetMeasurements / sourceMeasurements;
 }
 
-void PointcloudRegistration::setTargetMeasurements(const float measurement) 
+void PointcloudRegistration::setTargetMeasurement(const float measurement) 
 {
+  if (scaleRatio != 1.f)
+  {
+    ALICEVISION_LOG_WARNING("Cannot set the target measurement to " << measurement << ": the scale ratio is already set to " << scaleRatio << " (!= 1)." );
+    return;
+  }
+  
   assert(measurement != 0);
   assert(sourceMeasurements != 0);
   
@@ -132,12 +144,14 @@ int PointcloudRegistration::align()
   {
     drawCentered("1. Input", sourceCloud, targetCloud);
   }
-  
   // ===========================================================
-  // --  Move source & target to origin
-  // (Could be replaced by correspondences matching)
+  // -- Coarse registration: Move source & target to origin
+  // Could be replaced by:
+  // - correspondences matching
+  // - eigen vectors based
+  // - ...
   // ===========================================================
-  
+
   ALICEVISION_LOG_INFO("-- Move source to the target position");
   
   Eigen::Matrix4f To_source = moveToOrigin(mutableSourceCloud);
@@ -154,8 +168,8 @@ int PointcloudRegistration::align()
   // ===========================================================
   // --  Rescale source cloud 
   // ===========================================================
-  
-    ALICEVISION_LOG_INFO("-- Rescaling step");
+
+  ALICEVISION_LOG_INFO("-- Rescaling step");
   
   Eigen::Matrix4f Ts = Eigen::Matrix4f(Eigen::Matrix4f::Identity());
   if (rescaleMode == ERescaleMode::Manual)
