@@ -41,29 +41,29 @@ bool Datasheet::operator==(const Datasheet& ds) const
 
       for(const auto& model1 : vec_model1)
       {
-        const bool hasDigit = std::any_of(model1.begin(), model1.end(), ::isdigit);;
-
-        if ( hasDigit )
+        if(!std::any_of(model1.begin(), model1.end(), ::isdigit))
         {
-          std::string modellower1 = model1;
-          boost::algorithm::to_lower(modellower1);
+          continue;
+        }
 
-          bool isFound = false;
-          for(const auto& model2 : vec_model2)
-          {
-            std::string modellower2 = model2;
-            boost::algorithm::to_lower(modellower2);
+        std::string modellower1 = model1;
+        boost::algorithm::to_lower(modellower1);
 
-            if (modellower2 == modellower1)
-            {
-              isFound = true;
-            }
-          }
-          if ( !isFound )
+        bool isFound = false;
+        for(const auto& model2 : vec_model2)
+        {
+          std::string modellower2 = model2;
+          boost::algorithm::to_lower(modellower2);
+
+          if (modellower2 == modellower1)
           {
-            isAllFound = false;
-            break;
+            isFound = true;
           }
+        }
+        if ( !isFound )
+        {
+          isAllFound = false;
+          break;
         }
       }
       if ( isAllFound )
