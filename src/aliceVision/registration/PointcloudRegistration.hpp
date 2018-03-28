@@ -204,7 +204,7 @@ private:
   Eigen::Matrix4f rescaleAuto() { return Eigen::Matrix4f(Eigen::Matrix4f::Identity()); } 
   
   /**
-   * @brief Load a cloud from a file name.
+   * @brief Load a cloud from a file name (tolerated formats: .ply, .pcd and .obj)
    * @param[in] file The file name.
    * @param[out] cloud The loaded cloud.
    * @return EXIT_FAILURE if something wrong happens, else EXIT_SUCCESS.

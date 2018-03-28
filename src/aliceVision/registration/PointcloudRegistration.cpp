@@ -9,6 +9,7 @@
 #include <pcl/filters/voxel_grid.h>
 #include <pcl/io/pcd_io.h>
 #include <pcl/io/ply_io.h>
+#include <pcl/io/obj_io.h>
 #include <pcl/octree/octree_pointcloud.h>
 #include <pcl/registration/gicp.h>
 #include <pcl/search/kdtree.h>
@@ -427,6 +428,8 @@ int PointcloudRegistration::loadCloud(const std::string & file, pcl::PointCloud<
     res = pcl::io::loadPCDFile<PointT>(file, cloud);
   else if (file.substr(file.find_last_of(".") + 1) == "ply")
     res = pcl::io::loadPLYFile<PointT>(file, cloud);
+  else if (file.substr(file.find_last_of(".") + 1) == "obj")
+    res = pcl::io::loadOBJFile<PointT>(file, cloud);
   else
   {
     ALICEVISION_LOG_ERROR("PointcloudRegistration::loadCloud: Unknown extension: " << file);
