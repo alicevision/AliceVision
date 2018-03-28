@@ -5,6 +5,7 @@
 .DS_Store # MacOS
 Thumbs.db # Windows
 *.out
+tmp*
 
 *.aux
 *.toc
@@ -71,4 +72,5 @@ Production
 *.gz
 *.tgz
 *.tar*
+
 

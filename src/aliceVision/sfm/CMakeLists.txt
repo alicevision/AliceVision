@@ -28,6 +28,7 @@ set(sfm_files_headers
   sfmDataIO_gt.hpp
   sfmDataIO_json.hpp
   sfmDataIO_ply.hpp
+  sfmDataIO_colmap.hpp
   sfmDataTriangulation.hpp
   filters.hpp
   Landmark.hpp
@@ -63,6 +64,7 @@ set(sfm_files_sources
   sfmDataIO_gt.cpp
   sfmDataIO_json.cpp
   sfmDataIO_ply.cpp
+  sfmDataIO_colmap.cpp
   sfmDataTriangulation.cpp
   generateReport.cpp
   viewIO.cpp

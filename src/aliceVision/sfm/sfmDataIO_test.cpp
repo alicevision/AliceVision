@@ -7,6 +7,7 @@
 
 #include <aliceVision/system/Timer.hpp>
 #include <aliceVision/sfm/sfm.hpp>
+#include <aliceVision/sfm/sfmDataIO_colmap.hpp>
 
 #include <boost/filesystem.hpp>
 
@@ -225,3 +226,9 @@ BOOST_AUTO_TEST_CASE(SfMData_IO_SAVE_PLY) {
     BOOST_CHECK( fs::is_regular_file(filename) );
   }
 }
+
+
+//BOOST_AUTO_TEST_CASE(SfMData_IO_LOAD_COLMAP) {
+//	SfMData sfm_data;
+//	loadColmap( sfm_data, std::string("d:/Help/Reconstructions/colmap_budha8"));
+//}
