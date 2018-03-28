@@ -102,9 +102,10 @@ int main(int argc, char** argv)
 
 	if (reg.loadTargetCloud(targetFile) == EXIT_FAILURE)
     return EXIT_FAILURE;
-
-	reg.setSourceMeasurements(sourceMeasurement);
-	reg.setTargetMeasurements(targetMeasurement);
+  
+  reg.setScaleRatio(scaleRatio);
+  reg.setTargetMeasurement(targetMeasurement);
+  reg.setSourceMeasurement(sourceMeasurement);
 	reg.setVoxelSize(voxelSize);
 	reg.setShowPipeline(showPipeline);
 
