@@ -126,7 +126,12 @@ public:
    * @return A 4x4 matrix ([R|t]).
    */
   inline Eigen::Matrix4f getFinalTransformation() const {return finalTransformation;}
-    
+  
+  /**
+   * @brief Show the duration of each time of the alignment pipeline.
+   */
+  void showTimeline();
+
   /**
    * @brief Perform the alignment of the source cloud on the target cloud and gives
    * you the registered source cloud.
@@ -306,8 +311,22 @@ private:
   int kSearchNormals; /**< The number of closest neighbours used to compute normals. */
   
   bool showPipeline; /**< Vizualise (or not) each step of the alignement. */
-  
+    
   Eigen::Matrix4f finalTransformation; /**< Is the computed transformation such as: T * sourceCloud = targetCloud/ */
+  
+  struct DurationsSummary
+  {
+    double loadSourceCloud;
+    double loadTargetCloud;
+    double coarseAlignment;  // default: match centers
+    double rescaling;
+    double downsampling;     // default: voxel grid approach
+    double computeNormals;
+    double refinedAlignment; // default: generalized-icp
+  };
+  
+  DurationsSummary duration; // store the time spent on each step of the pipeline.
+  
 };
 
 } // namespace registration

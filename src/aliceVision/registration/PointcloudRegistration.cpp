@@ -14,6 +14,7 @@
 #include <pcl/registration/gicp.h>
 #include <pcl/search/kdtree.h>
 #include <pcl/visualization/cloud_viewer.h>
+#include <chrono>
 
 namespace aliceVision {
 namespace registration {
@@ -31,12 +32,24 @@ PointcloudRegistration::PointcloudRegistration()
 
 int PointcloudRegistration::loadSourceCloud(const std::string & file)
 {
-  return loadCloud(file, sourceCloud);
+  auto tic = std::chrono::steady_clock::now(); 
+
+  int res = loadCloud(file, sourceCloud);
+  
+  duration.loadSourceCloud = std::chrono::duration <double, std::milli> (std::chrono::steady_clock::now()-tic).count();
+
+  return res;
 }
 
 int PointcloudRegistration::loadTargetCloud(const std::string & file)
 {
-  return loadCloud(file, targetCloud);
+  auto tic = std::chrono::steady_clock::now(); 
+  
+  int res = loadCloud(file, targetCloud);
+  
+  duration.loadTargetCloud = std::chrono::duration <double, std::milli> (std::chrono::steady_clock::now()-tic).count();
+  
+  return res;
 }
 
 int PointcloudRegistration::tranformAndSaveCloud(
@@ -132,6 +145,20 @@ void PointcloudRegistration::setScaleRatio(const float ratio)
   rescaleMode = ERescaleMode::Manual;
 }
 
+void PointcloudRegistration::showTimeline()
+{
+  ALICEVISION_LOG_TRACE("Steps duration:\n" 
+                        "\t| - load target cloud: " << duration.loadTargetCloud << " ms \n" 
+                        "\t| - load source cloud: " << duration.loadSourceCloud << " ms \n" 
+                        "\t| - coarse alignment: " << duration.coarseAlignment << " ms \n" 
+                        "\t| - rescaling: " << duration.rescaling << " ms \n" 
+                        "\t| - downsampling: " << duration.downsampling << " ms \n" 
+                        "\t| - normals computation: " << duration.computeNormals << " ms \n" 
+                        "\t| - refined alignment (gicp): " << duration.refinedAlignment << " ms \n" 
+                        "\t| -------------------------------------------"
+                        );
+}
+
 int PointcloudRegistration::align()
 {
   pcl::PointCloud<pcl::PointXYZ> mutableSourceCloud, mutableTargetCloud;
@@ -155,9 +182,13 @@ int PointcloudRegistration::align()
 
   ALICEVISION_LOG_INFO("-- Move source to the target position");
   
+  auto tic = std::chrono::steady_clock::now(); 
+
   Eigen::Matrix4f To_source = moveToOrigin(mutableSourceCloud);
   Eigen::Matrix4f To_target = moveToOrigin(mutableTargetCloud);
   
+  duration.coarseAlignment = std::chrono::duration <double, std::milli> (std::chrono::steady_clock::now()-tic).count();
+
   ALICEVISION_LOG_INFO("|- T_origin_source = \n" << To_source);
   ALICEVISION_LOG_INFO("|- T_origin_target = \n" << To_target);
 
@@ -172,6 +203,8 @@ int PointcloudRegistration::align()
 
   ALICEVISION_LOG_INFO("-- Rescaling step");
   
+  tic = std::chrono::steady_clock::now(); 
+
   Eigen::Matrix4f Ts = Eigen::Matrix4f(Eigen::Matrix4f::Identity());
   if (rescaleMode == ERescaleMode::Manual)
   {
@@ -206,6 +239,8 @@ int PointcloudRegistration::align()
     ALICEVISION_LOG_INFO("|- Mode: *not rescaled*");  
   }
   
+  duration.rescaling = std::chrono::duration <double, std::milli> (std::chrono::steady_clock::now()-tic).count();
+  
   ALICEVISION_LOG_INFO("T_rescaling = \n" << Ts);
   
   // ===========================================================
@@ -214,9 +249,13 @@ int PointcloudRegistration::align()
   
   ALICEVISION_LOG_INFO("-- Apply voxel grid");
   
+  tic = std::chrono::steady_clock::now(); 
+
   applyVoxelGrid(mutableSourceCloud, voxelSize);
   applyVoxelGrid(mutableTargetCloud, voxelSize);
   
+  duration.downsampling = std::chrono::duration <double, std::milli> (std::chrono::steady_clock::now()-tic).count();
+
   ALICEVISION_LOG_INFO("|- Voxel size: " << voxelSize);
   ALICEVISION_LOG_INFO("|- Voxel source: " << mutableSourceCloud.size() << " pts");
   ALICEVISION_LOG_INFO("|- Voxel target: " << mutableTargetCloud.size() << " pts");
@@ -234,9 +273,13 @@ int PointcloudRegistration::align()
   
   pcl::PointCloud<pcl::Normal> sourceNormals, targetNormals;
   
+  tic = std::chrono::steady_clock::now(); 
+
   estimateNormals(mutableSourceCloud, sourceNormals, kSearchNormals);
   estimateNormals(mutableTargetCloud, targetNormals, kSearchNormals);
   
+  duration.computeNormals = std::chrono::duration <double, std::milli> (std::chrono::steady_clock::now()-tic).count();
+
   ALICEVISION_LOG_INFO("|- Normals source: " << sourceNormals.size() << " pts");
   ALICEVISION_LOG_INFO("|- Normals target: " << targetNormals.size() << " pts");
   
@@ -255,8 +298,12 @@ int PointcloudRegistration::align()
   std::clock_t start;
   start = std::clock();
   
+  duration.computeNormals = std::chrono::duration <double, std::milli> (std::chrono::steady_clock::now()-tic).count();
+
   Ti = applyGeneralizedICP(mutableSourceCloud, mutableTargetCloud, sourceNormals, targetNormals, mutableSourceCloud);
   
+  duration.refinedAlignment = std::chrono::duration <double, std::milli> (std::chrono::steady_clock::now()-tic).count();
+
   ALICEVISION_LOG_INFO("|- G-ICP took " << (std::clock() - start) / (double)CLOCKS_PER_SEC << " sec.");
   ALICEVISION_LOG_INFO("|- T_gicp = \n" << Ti);
 
@@ -264,29 +311,18 @@ int PointcloudRegistration::align()
   {
     draw("5. Result G-ICP", mutableSourceCloud, mutableTargetCloud);
   }
-  
-  // ===========================================================
-  // -- Go back to initial target position
-  // ===========================================================
-  
-  Eigen::Matrix4f To_target_inv = To_target.inverse();
-  pcl::PointCloud<pcl::PointXYZ> finalSource, finalTarget;
-  pcl::transformPointCloud(mutableSourceCloud, finalSource, To_target_inv);
-  pcl::transformPointCloud(mutableTargetCloud, finalTarget, To_target_inv);
-  
+
   // ===========================================================
   // -- Compute complete transformation
   // ===========================================================
   
   ALICEVISION_LOG_INFO("-- Compute global transformation");
   
+  Eigen::Matrix4f To_target_inv = To_target.inverse();
   finalTransformation = To_target_inv * Ti * Ts * To_source;
   
   ALICEVISION_LOG_INFO("|- finalTransformation = \n" << finalTransformation);
-  
-  pcl::PointCloud<pcl::PointXYZ> regSource;
-  pcl::transformPointCloud(sourceCloud, regSource, finalTransformation);
-  
+    
   if (showPipeline)
     goDraw();
   
