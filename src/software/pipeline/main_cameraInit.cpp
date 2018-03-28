@@ -360,7 +360,9 @@ int main(int argc, char **argv)
     View& view = *(std::next(viewPairItBegin,i)->second);
     IndexT intrinsicId = view.getIntrinsicId();
     double sensorWidth = -1;
-    const bool hasCameraMetadata = (view.hasMetadata("Make") && view.hasMetadata("Model"));
+    const std::string& make = view.getMetadataMake();
+    const std::string& model = view.getMetadataModel();
+    const bool hasCameraMetadata = (!make.empty() || !model.empty());
 
     // check if the view intrinsic is already defined
     if(intrinsicId != UndefinedIndexT)
@@ -379,10 +381,10 @@ int main(int argc, char **argv)
           // intrinsic px focal length is undefined
           // check if it is because the sensor is not in the database
           aliceVision::sensorDB::Datasheet datasheet;
-          if(hasCameraMetadata && !getInfo(view.getMetadata("Make"), view.getMetadata("Model"), sensorDatabase, datasheet))
+          if(hasCameraMetadata && !getInfo(make, model, sensorDatabase, datasheet))
           {
             #pragma omp critical
-            unknownSensors.emplace(std::make_pair(view.getMetadata("Make"),view.getMetadata("Model")), view.getImagePath()); // will throw an error message
+            unknownSensors.emplace(std::make_pair(make, model), view.getImagePath()); // will throw an error message
           }
         }
         // don't need to build a new intrinsic
@@ -394,12 +396,15 @@ int main(int argc, char **argv)
     if(hasCameraMetadata)
     {
       aliceVision::sensorDB::Datasheet datasheet;
-      if(getInfo(view.getMetadata("Make"), view.getMetadata("Model"), sensorDatabase, datasheet))
+      if(getInfo(make, model, sensorDatabase, datasheet))
+      {
         sensorWidth = datasheet._sensorSize; // sensor is in the database
+        ALICEVISION_COUT("sensorWidth: " << sensorWidth);
+      }
       else
       {
         #pragma omp critical
-        unknownSensors.emplace(std::make_pair(view.getMetadata("Make"),view.getMetadata("Model")), view.getImagePath()); // will throw an error message
+        unknownSensors.emplace(std::make_pair(make, model), view.getImagePath()); // will throw an error message
         if(!allowIncompleteOutput)
           continue;
       }

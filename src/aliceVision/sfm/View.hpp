@@ -192,6 +192,75 @@ public:
   }
 
   /**
+   * @brief Get the corresponding "Make" metadata value
+   * @return the metadata value string or "" if no corresponding value
+   */
+  const std::string& getMetadataMake() const
+  {
+    static std::string emptyString = "";
+    if(hasMetadata("Make"))
+      return getMetadata("Make");
+    if(hasMetadata("cameraMake"))
+      return getMetadata("cameraMake");
+    return emptyString;
+  }
+
+  /**
+   * @brief Get the corresponding "Model" metadata value
+   * @return the metadata value string or "" if no corresponding value
+   */
+  const std::string& getMetadataModel() const
+  {
+    static std::string emptyString = "";
+    if(hasMetadata("Model"))
+      return getMetadata("Model");
+    if(hasMetadata("cameraModel"))
+      return getMetadata("cameraModel");
+    return emptyString;
+  }
+
+  /**
+   * @brief Get the corresponding "BodySerialNumber" metadata value
+   * @return the metadata value string or "" if no corresponding value
+   */
+  const std::string& getMetadataBodySerialNumber() const
+  {
+    static std::string emptyString = "";
+    if(hasMetadata("Exif:BodySerialNumber"))
+      return getMetadata("Exif:BodySerialNumber");
+    if(hasMetadata("cameraSerialNumber:"))
+      return getMetadata("cameraSerialNumber:");
+    return emptyString;
+  }
+
+  /**
+   * @brief Get the corresponding "LensSerialNumber" metadata value
+   * @return the metadata value string or "" if no corresponding value
+   */
+  const std::string& getMetadataLensSerialNumber() const
+  {
+    static std::string emptyString = "";
+    if(hasMetadata("Exif:LensSerialNumber"))
+      return getMetadata("Exif:LensSerialNumber");
+    if(hasMetadata("lensSerialNumber"))
+      return getMetadata("lensSerialNumber");
+    return emptyString;
+  }
+
+  /**
+   * @brief Get the corresponding "FocalLength" metadata value
+   * @return the metadata value float or -1 if no corresponding value
+   */
+  float getMetadataFocalLength() const
+  {
+    if(hasMetadata("Exif:FocalLength"))
+      return std::stof(getMetadata("Exif:FocalLength"));
+    if(hasMetadata("focalLength"))
+      return std::stof(getMetadata("focalLength"));
+    return -1;
+  }
+
+  /**
    * @brief Get the view metadata structure
    * @return the view metadata
    */
