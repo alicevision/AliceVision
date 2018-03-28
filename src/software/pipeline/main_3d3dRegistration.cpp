@@ -38,7 +38,8 @@ int main(int argc, char** argv)
       targetMeasurement = 1.f,
       scaleRatio = 1.f,
       voxelSize = 0.1f;
-  bool showPipeline = false;
+  bool showPipeline = false, 
+      showTimeline = true;
 
   po::options_description optionalParams("Optional parameters");
   optionalParams.add_options()
@@ -54,6 +55,8 @@ int main(int argc, char** argv)
       "Size of the voxel grid applied on each 3D model to downsample them. Downsampling reduces computing duration.")
     ("showPipeline", po::value<bool>(&showPipeline)->default_value(showPipeline),
       "To enable the visualization of each step of the pipeline in external windows.");
+    ("showPipeline", po::value<bool>(&showTimeline)->default_value(showTimeline),
+      "To show the duration of each time of the algnment pipeline.");
 
   std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
   po::options_description logParams("Log parameters");
@@ -111,6 +114,9 @@ int main(int argc, char** argv)
 
 	reg.align();
 
+  if (showTimeline)
+    reg.showTimeline();
+    
 	if (!outputFile.empty()) // export a transformed 3D model
 	{
   	Eigen::Matrix4f T = reg.getFinalTransformation();
