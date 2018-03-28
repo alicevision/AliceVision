@@ -41,15 +41,8 @@ bool Datasheet::operator==(const Datasheet& ds) const
 
       for(const auto& model1 : vec_model1)
       {
-        bool hasDigit = false;
-        for(const char& c : (model1))
-        {
-          if(isdigit(c))
-          {
-            hasDigit = true;
-            break;
-          }
-        }
+        const bool hasDigit = std::any_of(model1.begin(), model1.end(), ::isdigit);;
+
         if ( hasDigit )
         {
           std::string modellower1 = model1;
