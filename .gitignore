@@ -6,6 +6,7 @@
 Thumbs.db # Windows
 *.out
 tmp*
+dist*
 
 *.aux
 *.toc

@@ -30,6 +30,8 @@ int main(int argc, char **argv)
   std::string sfmDataFilename;
   std::string outputSfMDataFilename;
   std::string featuresFolder;
+  std::string inputSfmDataFormat;
+  std::string outputSfmDataFormat;
 
   // user optional parameters
 
@@ -50,16 +52,13 @@ int main(int argc, char **argv)
 
   po::options_description optionalParams("Optional parameters");
   optionalParams.add_options()
-    ("views", po::value<bool>(&flagViews)->default_value(flagViews),
-      "Export views.")
-    ("intrinsics", po::value<bool>(&flagIntrinsics)->default_value(flagIntrinsics),
-      "Export intrinsics.")
-    ("extrinsics", po::value<bool>(&flagExtrinsics)->default_value(flagExtrinsics),
-      "Export extrinsics.")
-    ("structure", po::value<bool>(&flagStructure)->default_value(flagStructure),
-      "Export structure.")
-    ("observations", po::value<bool>(&flagObservations)->default_value(flagObservations),
-      "Export observations.")
+	("inputFileExt", po::value<std::string>(&inputSfmDataFormat), "Input SfM format")
+	("outputFileExt", po::value<std::string>(&outputSfmDataFormat)->default_value(std::string("abc")), "Output SfM format")
+    ("views", po::value<bool>(&flagViews)->default_value(flagViews),"Export views.")
+    ("intrinsics", po::value<bool>(&flagIntrinsics)->default_value(flagIntrinsics),"Export intrinsics.")
+    ("extrinsics", po::value<bool>(&flagExtrinsics)->default_value(flagExtrinsics),"Export extrinsics.")
+    ("structure", po::value<bool>(&flagStructure)->default_value(flagStructure),"Export structure.")
+    ("observations", po::value<bool>(&flagObservations)->default_value(flagObservations),"Export observations.")
     ("featuresFolder,m", po::value<std::string>(&featuresFolder),
       "Path to a folder in which computed features are stored to create links to files if 'regenerateUID' is used.");
 
@@ -118,7 +117,7 @@ int main(int argc, char **argv)
 
   // load input SfMData scene
   SfMData sfm_data;
-  if (!Load(sfm_data, sfmDataFilename, ESfMData(ALL)))
+  if (!Load(sfm_data, sfmDataFilename, ESfMData(ALL), inputSfmDataFormat))
   {
     ALICEVISION_LOG_ERROR("The input SfMData file '" << sfmDataFilename << "' cannot be read");
     return EXIT_FAILURE;
