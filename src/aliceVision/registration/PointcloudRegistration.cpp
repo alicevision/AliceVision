@@ -338,13 +338,13 @@ int PointcloudRegistration::align()
 Eigen::Matrix4f PointcloudRegistration::moveToOrigin(pcl::PointCloud<pcl::PointXYZ> & cloud)
 {
   pcl::PointCloud<pcl::PointXYZ> moved_cloud;
-  pcl::PointXYZ minPoint, maxPoint;
-  pcl::getMinMax3D(cloud, minPoint, maxPoint);
-  
   Eigen::Matrix4f T = Eigen::Matrix4f(Eigen::Matrix4f::Identity());
-  T(0, 3) = -(maxPoint.x + minPoint.x) / 2.f;
-  T(1, 3) = -(maxPoint.y + minPoint.y) / 2.f;
-  T(2, 3) = -(maxPoint.z + minPoint.z) / 2.f;
+    
+  Eigen::Vector4f centroid;
+  pcl::compute3DCentroid(cloud, centroid);
+  T(0, 3) = -centroid(0);
+  T(1, 3) = -centroid(1);
+  T(2, 3) = -centroid(2);
   
   pcl::transformPointCloud(cloud, moved_cloud, T);
   cloud.swap(moved_cloud);
