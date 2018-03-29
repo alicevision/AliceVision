@@ -122,7 +122,6 @@ void PointcloudRegistration::setSourceMeasurement(const float measurement)
   
   sourceMeasurements = measurement; 
   rescaleMode = ERescaleMode::Manual;
-  scaleRatio = targetMeasurements / sourceMeasurements;
 }
 
 void PointcloudRegistration::setTargetMeasurement(const float measurement) 
@@ -134,11 +133,9 @@ void PointcloudRegistration::setTargetMeasurement(const float measurement)
   }
   
   assert(measurement != 0);
-  assert(sourceMeasurements != 0);
   
   targetMeasurements = measurement; 
   rescaleMode = ERescaleMode::Manual;
-  scaleRatio = targetMeasurements / sourceMeasurements;
 }
 
 void PointcloudRegistration::setScaleRatio(const float ratio) 
@@ -214,17 +211,19 @@ int PointcloudRegistration::align()
   {
     ALICEVISION_LOG_INFO("|- Mode: Manual");  
     
-    if (scaleRatio == 1.f) // scaleRatio = 1
+    if (scaleRatio == 1.f ) 
     {
-      ALICEVISION_LOG_WARNING("Manual rescaling mode desired but 'scaleRatio' == 1");
-    } 
-    else // use scale ratio
-    {
-      ALICEVISION_LOG_INFO("|- scaleRatio: " << scaleRatio);
-      
-      Ts = getPureScaleTransformation(scaleRatio);
+      if (targetMeasurements == 1.f && sourceMeasurements == 1.f)
+        ALICEVISION_LOG_WARNING("Manual rescaling mode desired but 'scaleRatio' == 1");
+      else
+        scaleRatio = targetMeasurements / sourceMeasurements;
     }
-    pcl::transformPointCloud(mutableSourceCloud, mutableSourceCloud, Ts);
+    
+    ALICEVISION_LOG_INFO("|- scaleRatio: " << scaleRatio);
+    Ts = getPureScaleTransformation(scaleRatio);
+    
+    if (scaleRatio != 1.f ) 
+      pcl::transformPointCloud(mutableSourceCloud, mutableSourceCloud, Ts);
   }
   else if (rescaleMode == ERescaleMode::Auto)
   {
