@@ -74,6 +74,10 @@ int PointcloudRegistration::tranformAndSaveCloud(
   {
     pcl::io::loadPCDFile(inputFile, inputCloud);
   }
+  else if (inputFile.substr(inputFile.find_last_of(".") + 1) == "obj")
+  {
+    pcl::io::loadOBJFile(inputFile, inputCloud);
+  }
   else
   {
     ALICEVISION_LOG_ERROR("PointcloudRegistration::saveCloud: Unknown extension: " << inputFile);
