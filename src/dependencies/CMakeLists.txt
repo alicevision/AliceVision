@@ -1,5 +1,10 @@
 ## AliceVision dependencies
 
+add_library(nanoflann INTERFACE)
+target_include_directories(nanoflann INTERFACE
+    "${CMAKE_CURRENT_SOURCE_DIR}/nanoflann/include"
+)
+
 # libs should be static
 set(BUILD_SHARED_LIBS OFF)
 

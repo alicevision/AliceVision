@@ -41,6 +41,8 @@ target_link_libraries(aliceVision_fuseCut
          aliceVision_mesh
          Geogram::geogram
          ${Boost_LIBRARIES}
+  PRIVATE
+         nanoflann
 )
 
 set_property(TARGET aliceVision_fuseCut
