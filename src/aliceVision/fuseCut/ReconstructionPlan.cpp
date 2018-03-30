@@ -272,7 +272,7 @@ void reconstructSpaceAccordingToVoxelsArray(const std::string& voxelsArrayFileNa
             DelaunayGraphCut delaunayGC(ls->mp, ls->pc);
             Point3d* hexah = &(*voxelsArray)[i * 8];
             delaunayGC.reconstructVoxel(hexah, voxelsIds, folderName, ls->getSpaceCamsTracksDir(), false,
-                                  (VoxelsGrid*)rp, ls->getSpaceSteps(), 0);
+                                  (VoxelsGrid*)rp, ls->getSpaceSteps(), FuseParams());
             delete voxelsIds;
 
             // Save mesh as .bin and .obj

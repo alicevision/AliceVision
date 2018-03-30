@@ -95,15 +95,18 @@ public:
     const DistanceType radius;
 
     const std::vector<double>& m_pixSizePrepare;
+    const std::vector<float>& m_simScorePrepare;
     size_t m_result = 0;
     const int m_i;
     bool found = false;
 
     inline SmallerPixSizeInRadius(DistanceType radius_,
                                   const std::vector<double>& pixSizePrepare,
+                                  const std::vector<float>& simScorePrepare,
                                   int i)
         : radius(radius_)
         , m_pixSizePrepare(pixSizePrepare)
+        , m_simScorePrepare(simScorePrepare)
         , m_i(i)
     {
         init();
@@ -114,10 +117,6 @@ public:
 
     inline size_t size() const { return m_result; }
 
-    // With limit on the number of points to test
-    // inline bool full() const { return size() >= 20; }
-
-    // Without limit on the number of points to test
     inline bool full() const { return found; }
 
     /**
@@ -129,14 +128,12 @@ public:
         if(dist < radius)
         {
             ++m_result;
-            if(m_pixSizePrepare[index] < m_pixSizePrepare[m_i])
+            if(m_simScorePrepare[index] * m_pixSizePrepare[index] * m_pixSizePrepare[index] < m_simScorePrepare[m_i] * m_pixSizePrepare[m_i] * m_pixSizePrepare[m_i])
             {
                 found = true;
                 return false;
             }
         }
-        // if(full())
-        //     return false;
         return true;
     }
 
@@ -205,7 +202,7 @@ void filterByPixSize(const std::vector<Point3d>& verticesCoordsPrepare, std::vec
 #else
 
         static const nanoflann::SearchParams searchParams(32, 0, false); // false: dont need to sort
-        SmallerPixSizeInRadius<double, std::size_t> resultSet(pixSizeScore, pixSizePrepare, vIndex);
+        SmallerPixSizeInRadius<double, std::size_t> resultSet(pixSizeScore, pixSizePrepare, simScorePrepare, vIndex);
         kdTree.findNeighbors(resultSet, verticesCoordsPrepare[vIndex].m, searchParams);
         if(resultSet.found)
             pixSizePrepare[vIndex] = -1.0;
@@ -233,14 +230,41 @@ void removeInvalidPoints(std::vector<Point3d>& verticesCoordsPrepare, std::vecto
             simScoreTmp.push_back(simScorePrepare[i]);
         }
     }
-    ALICEVISION_LOG_INFO((verticesCoordsPrepare.size() - verticesCoordsTmp.size()) << " points with overlap removed.");
+    ALICEVISION_LOG_INFO((verticesCoordsPrepare.size() - verticesCoordsTmp.size()) << " invalid points removed.");
     verticesCoordsPrepare.swap(verticesCoordsTmp);
     pixSizePrepare.swap(pixSizeTmp);
     simScorePrepare.swap(simScoreTmp);
 }
 
-void createVerticesWithVisibilities(const StaticVector<int>& cams, std::vector<Point3d>& verticesCoordsPrepare, const std::vector<double>& pixSizePrepare, const std::vector<float>& simScorePrepare,
-                                    std::vector<GC_vertexInfo>& verticesAttrPrepare, mvsUtils::MultiViewParams* mp)
+void removeInvalidPoints(std::vector<Point3d>& verticesCoordsPrepare, std::vector<double>& pixSizePrepare, std::vector<float>& simScorePrepare, std::vector<GC_vertexInfo>& verticesAttrPrepare)
+{
+    std::vector<Point3d> verticesCoordsTmp;
+    verticesCoordsTmp.reserve(verticesCoordsPrepare.size());
+    std::vector<double> pixSizeTmp;
+    pixSizeTmp.reserve(pixSizePrepare.size());
+    std::vector<float> simScoreTmp;
+    simScoreTmp.reserve(simScorePrepare.size());
+    std::vector<GC_vertexInfo> verticesAttrTmp;
+    verticesAttrTmp.reserve(verticesAttrPrepare.size());
+    for(int i = 0; i < verticesCoordsPrepare.size(); ++i)
+    {
+        if(pixSizePrepare[i] != -1.0)
+        {
+            verticesCoordsTmp.push_back(verticesCoordsPrepare[i]);
+            pixSizeTmp.push_back(pixSizePrepare[i]);
+            simScoreTmp.push_back(simScorePrepare[i]);
+            verticesAttrTmp.push_back(verticesAttrPrepare[i]);
+        }
+    }
+    ALICEVISION_LOG_INFO((verticesCoordsPrepare.size() - verticesCoordsTmp.size()) << " invalid points removed.");
+    verticesCoordsPrepare.swap(verticesCoordsTmp);
+    pixSizePrepare.swap(pixSizeTmp);
+    simScorePrepare.swap(simScoreTmp);
+    verticesAttrPrepare.swap(verticesAttrTmp);
+}
+
+void createVerticesWithVisibilities(const StaticVector<int>& cams, std::vector<Point3d>& verticesCoordsPrepare, std::vector<double>& pixSizePrepare, std::vector<float>& simScorePrepare,
+                                    std::vector<GC_vertexInfo>& verticesAttrPrepare, mvsUtils::MultiViewParams* mp, float simFactor, float voteMarginFactor, float contributeMarginFactor, float simGaussianSize)
 {
 #ifdef USE_GEOGRAM_KDTREE
     GEO::AdaptiveKdTree kdTree(3);
@@ -252,6 +276,14 @@ void createVerticesWithVisibilities(const StaticVector<int>& cams, std::vector<P
     kdTree.buildIndex();
     ALICEVISION_LOG_INFO("NANOFLANN: KdTree created.");
 #endif
+    // TODO FACA: update into new data structures
+    // std::vector<Point3d> newVerticesCoordsPrepare(verticesCoordsPrepare.size());
+    // std::vector<float> newSimScorePrepare(simScorePrepare.size());
+    // std::vector<double> newPixSizePrepare(pixSizePrepare.size());
+    std::vector<omp_lock_t> locks(verticesCoordsPrepare.size());
+    for (auto& lock: locks)
+        omp_init_lock(&lock);
+
     omp_set_nested(1);
     #pragma omp parallel for num_threads(3)
     for(int c = 0; c < cams.size(); ++c)
@@ -268,11 +300,16 @@ void createVerticesWithVisibilities(const StaticVector<int>& cams, std::vector<P
                 ALICEVISION_LOG_WARNING("Empty depth map: " << depthMapFilepath);
                 continue;
             }
-//                int wTmp, hTmp;
-//                const std::string simMapFilepath = mv_getFileName(mp, c, mvsUtils::EFileType::simMap, 0);
-//                imageIO::readImage(simMapFilepath, wTmp, hTmp, simMap);
-//                if(wTmp != width || hTmp != height)
-//                    throw std::runtime_error("Empty depth map: " + depthMapFilepath);
+            int wTmp, hTmp;
+            const std::string simMapFilepath = mv_getFileName(mp, c, mvsUtils::EFileType::simMap, 0);
+            imageIO::readImage(simMapFilepath, wTmp, hTmp, simMap);
+            if(wTmp != width || hTmp != height)
+                throw std::runtime_error("Similarity map size doesn't match the depth map size: " + simMapFilepath + ", " + depthMapFilepath);
+            {
+                std::vector<float> simMapTmp(simMap.size());
+                imageIO::convolveImage(width, height, simMap, simMapTmp, "gaussian", simGaussianSize, simGaussianSize);
+                simMap.swap(simMapTmp);
+            }
         }
         // Add visibility
         #pragma omp parallel for
@@ -284,11 +321,6 @@ void createVerticesWithVisibilities(const StaticVector<int>& cams, std::vector<P
                 const float depth = depthMap[index];
                 if(depth <= 0.0f)
                     continue;
-
-//                    const float sim = simMap[index];
-//                    // remap similarity values from [-1;+1] to [+1;+simScale]
-//                    // interpretation is [goodSimilarity;badSimilarity]
-//                    const float simScore = sim < -1.0f ? 1.0f : 1.0f + (1.0f + sim) * simScale;
 
                 const Point3d p = mp->CArr[c] + (mp->iCamArr[c] * Point2d((float)x, (float)y)).normalize() * depth;
                 const double pixSize = mp->getCamPixelSize(p, c);
@@ -311,24 +343,43 @@ void createVerticesWithVisibilities(const StaticVector<int>& cams, std::vector<P
                 const float pixSizeScoreI = simScorePrepare[nearestVertexIndex] * pixSize * pixSize;
                 const float pixSizeScoreV = simScorePrepare[nearestVertexIndex] * pixSizePrepare[nearestVertexIndex] * pixSizePrepare[nearestVertexIndex];
 
-                if(dist < 4.0f * std::max(pixSizeScoreI, pixSizeScoreV))
+                if(dist < voteMarginFactor * std::max(pixSizeScoreI, pixSizeScoreV))
                 {
                     GC_vertexInfo& va = verticesAttrPrepare[nearestVertexIndex];
                     Point3d& vc = verticesCoordsPrepare[nearestVertexIndex];
-                    #pragma omp critical // could we limit to an index? nearestVertexIndex
+                    const float simValue = simMap[index];
+                    // remap similarity values from [-1;+1] to [+1;+simFactor]
+                    // interpretation is [goodSimilarity;badSimilarity]
+                    const float simScore = simValue < -1.0f ? 1.0f : 1.0f + (1.0f + simValue) * simFactor;
+
+                    // Custom locks to limit it to the index: nearestVertexIndex
+                    // to avoid using "omp critical"
+                    omp_lock_t* lock = &locks[nearestVertexIndex];
+                    omp_set_lock(lock);
                     {
                         va.cams.push_back_distinct(c);
-                        if(dist < 2.0f * pixSizeScoreV)
+                        if(dist < contributeMarginFactor * pixSizeScoreV)
                         {
                             vc = (vc * (double)va.nrc + p) / double(va.nrc + 1);
+//                            newVerticesCoordsPrepare[nearestVertexIndex] = (newVerticesCoordsPrepare[nearestVertexIndex] * double(va.nrc) + p) / double(va.nrc + 1);
+//                            newSimScorePrepare[nearestVertexIndex] = (newSimScorePrepare[nearestVertexIndex] * float(va.nrc) + simScore) / float(va.nrc + 1);
+//                            newPixSizePrepare[nearestVertexIndex] = (newPixSizePrepare[nearestVertexIndex] * double(va.nrc) + pixSize) / double(va.nrc + 1);
                             va.nrc += 1;
                         }
                     }
+                    omp_unset_lock(lock);
                 }
             }
         }
     }
     omp_set_nested(0);
+
+    for(auto& lock: locks)
+        omp_destroy_lock(&lock);
+
+//    verticesCoordsPrepare.swap(newVerticesCoordsPrepare);
+//    simScorePrepare.swap(newSimScorePrepare);
+//    pixSizePrepare.swap(newPixSizePrepare);
     ALICEVISION_LOG_INFO("Visibilities created.");
 }
 
@@ -714,9 +765,10 @@ void DelaunayGraphCut::addHelperPoints(int nGridHelperVolumePointsDim, Point3d v
 }
 
 
-void DelaunayGraphCut::fuseFromDepthMaps(const StaticVector<int>& cams, const Point3d voxel[8], int maxVertices)
+void DelaunayGraphCut::fuseFromDepthMaps(const StaticVector<int>& cams, const Point3d voxel[8], const FuseParams& params)
 {
-    ALICEVISION_LOG_INFO("fuseFromDepthMaps, maxVertices: " << maxVertices);
+    ALICEVISION_LOG_INFO("fuseFromDepthMaps, maxVertices: " << params.maxPoints);
+
     std::vector<Point3d> verticesCoordsPrepare;
     // Load depth from depth maps, select points per depth maps (1 value per tile).
     // Filter points inside other points (with a volume defined by the pixelSize)
@@ -730,8 +782,8 @@ void DelaunayGraphCut::fuseFromDepthMaps(const StaticVector<int>& cams, const Po
     {
         nbPixels += imgParams.size;
     }
-    int step = std::floor(std::sqrt(((double)nbPixels / (10.0*maxVertices))));
-    step = std::max(step, 1);
+    int step = std::floor(std::sqrt(double(nbPixels) / double(params.maxInputPoints)));
+    step = std::max(step, params.minStep);
     std::size_t realMaxVertices = 0;
     std::vector<int> startIndex(mp->getNbCameras(), 0);
     for(int i = 0; i < mp->getNbCameras(); ++i)
@@ -741,17 +793,16 @@ void DelaunayGraphCut::fuseFromDepthMaps(const StaticVector<int>& cams, const Po
         realMaxVertices += std::ceil(imgParams.width / step) * std::ceil(imgParams.height / step);
     }
     verticesCoordsPrepare.resize(realMaxVertices);
-    // TODO: std::vector<int> verticesOrigCamera(realMaxVertices);
     std::vector<double> pixSizePrepare(realMaxVertices);
     std::vector<float> simScorePrepare(realMaxVertices);
-    static const float simScale = 100.0f;
 
+    ALICEVISION_LOG_INFO("simFactor: " << params.simFactor);
     ALICEVISION_LOG_INFO("nbPixels: " << nbPixels);
-    ALICEVISION_LOG_INFO("maxVertices: " << maxVertices);
+    ALICEVISION_LOG_INFO("maxVertices: " << params.maxPoints);
     ALICEVISION_LOG_INFO("step: " << step);
     ALICEVISION_LOG_INFO("realMaxVertices: " << realMaxVertices);
-    ALICEVISION_LOG_INFO("Load depth maps and add points.");
 
+    ALICEVISION_LOG_INFO("Load depth maps and add points.");
     {
         omp_set_nested(1);
         #pragma omp parallel for num_threads(3)
@@ -776,7 +827,7 @@ void DelaunayGraphCut::fuseFromDepthMaps(const StaticVector<int>& cams, const Po
                     throw std::runtime_error("Wrong sim map dimensions: " + simMapFilepath);
                 {
                     std::vector<float> simMapTmp(simMap.size());
-                    imageIO::convolveImage(width, height, simMap, simMapTmp, "gaussian", 10.0f, 10.0f);
+                    imageIO::convolveImage(width, height, simMap, simMapTmp, "gaussian", params.simGaussianSizeInit, params.simGaussianSizeInit);
                     simMap.swap(simMapTmp);
                 }
 
@@ -826,9 +877,9 @@ void DelaunayGraphCut::fuseFromDepthMaps(const StaticVector<int>& cams, const Po
                             sim = sim < 0.0f ?  0.0f : sim; // clamp values < 0
                             // remap similarity values from [-1;+1] to [+1;+simScale]
                             // interpretation is [goodSimilarity;badSimilarity]
-                            const float simScore = 1.0f + sim * simScale;
+                            const float simScore = 1.0f + sim * params.simFactor;
 
-                            const float score = numOfModals; // * (1.0f / simScore);
+                            const float score = numOfModals + (1.0f / simScore);
                             if(score > bestScore)
                             {
                                 bestDepth = depth;
@@ -839,10 +890,9 @@ void DelaunayGraphCut::fuseFromDepthMaps(const StaticVector<int>& cams, const Po
                             }
                         }
                     }
-                    if(bestScore < 3)
+                    if(bestScore < 3*13)
                     {
                         // discard the point
-                        // verticesCoordsPrepare[index] = p;
                         pixSizePrepare[index] = -1.0;
                     }
                     else
@@ -867,71 +917,113 @@ void DelaunayGraphCut::fuseFromDepthMaps(const StaticVector<int>& cams, const Po
             }
         }
         omp_set_nested(0);
-
-        ALICEVISION_LOG_INFO("Filter initial 3D points by pixel size to limit the number of points to " << maxVertices << ".");
-        double pixSizeMarginCoef = 2.0;
-        // while more points than the max points (with a limit to 10 iterations).
-        for(int filteringIt = 0; filteringIt < 10; ++filteringIt)
-        {
-            filterByPixSize(verticesCoordsPrepare, pixSizePrepare, pixSizeMarginCoef, simScorePrepare);
-
-            // remove points if pixSize == -1
-            removeInvalidPoints(verticesCoordsPrepare, pixSizePrepare, simScorePrepare);
-
-            if(verticesCoordsPrepare.size() < maxVertices)
-            {
-                ALICEVISION_LOG_INFO("The number of points is below the max number of vertices.");
-                break;
-            }
-            else
-            {
-                pixSizeMarginCoef *= 2.0;
-                ALICEVISION_LOG_INFO("Increase pixel size margin coef to " << pixSizeMarginCoef << ", nb points: " << verticesCoordsPrepare.size() << ", maxVertices: " << maxVertices);
-            }
-        }
-        ALICEVISION_LOG_INFO("3D points loaded and filtered to " << verticesCoordsPrepare.size() << " points (maxVertices is " << maxVertices << ").");
     }
 
-    ALICEVISION_LOG_INFO("Create visibilities");
+    ALICEVISION_LOG_INFO("Filter initial 3D points by pixel size to remove duplicates.");
+
+    filterByPixSize(verticesCoordsPrepare, pixSizePrepare, params.pixSizeMarginInitCoef, simScorePrepare);
+    // remove points if pixSize == -1
+    removeInvalidPoints(verticesCoordsPrepare, pixSizePrepare, simScorePrepare);
+
+    ALICEVISION_LOG_INFO("3D points loaded and filtered to " << verticesCoordsPrepare.size() << " points.");
+
+    ALICEVISION_LOG_INFO("Init visibilities to compute angle scores");
     std::vector<GC_vertexInfo> verticesAttrPrepare(verticesCoordsPrepare.size());
 
-    // Initialize the vertice attributes and declare the visibility information
+    // Compute the vertices positions and simScore from all input depthMap/simMap images,
+    // and declare the visibility information (the cameras indexes seeing the vertex).
     createVerticesWithVisibilities(cams, verticesCoordsPrepare, pixSizePrepare, simScorePrepare,
-                                   verticesAttrPrepare, mp);
+                                   verticesAttrPrepare, mp, params.simFactor, params.voteMarginFactor, params.contributeMarginFactor, params.simGaussianSize);
 
-    // Export points with enough visibility support
+    ALICEVISION_LOG_INFO("Compute max angle per point");
+
+    ALICEVISION_LOG_INFO("angleFactor: " << params.angleFactor);
+    // Compute max visibility angle per point
+    // and weight simScore with angular score
+    double stat_minAngle = std::numeric_limits<double>::max(), stat_maxAngle = 0.0;
+    double stat_minAngleScore = std::numeric_limits<double>::max(), stat_maxAngleScore = 0.0;
+    #pragma omp parallel for reduction(max: stat_maxAngle,stat_maxAngleScore) reduction(min: stat_minAngle,stat_minAngleScore)
+    for(int vIndex = 0; vIndex < verticesCoordsPrepare.size(); ++vIndex)
     {
-        int nbPointsAdded = 0;
-        int nbPointsRemoved = 0;
-        int nbPoints_visibility0 = 0;
-        int nbPoints_visibility1 = 0;
-        for(int i = 0; i < verticesCoordsPrepare.size(); ++i)
+        if(pixSizePrepare[vIndex] == -1.0)
         {
-            if(verticesAttrPrepare[i].getNbCameras() > 1)
+            continue;
+        }
+        const std::vector<int>& visCams = verticesAttrPrepare[vIndex].cams.getData();
+        if(visCams.size() == 0)
+        {
+            ALICEVISION_LOG_WARNING("BAD: visCams.size() == 0");
+        }
+        double maxAngle = 0.0;
+        for(int i: visCams)
+        {
+            for(int j: visCams)
             {
-                _verticesCoords.push_back(verticesCoordsPrepare[i]);
-                _verticesAttr.push_back(verticesAttrPrepare[i]);
-                // _verticesAttr.back().cams.shrink_to_fit();
-                ++nbPointsAdded;
-            }
-            else
-            {
-                if(verticesAttrPrepare[i].getNbCameras() == 0)
-                    ++nbPoints_visibility0;
-                else
-                    ++nbPoints_visibility1;
-
-                ++nbPointsRemoved;
+                if(i == j)
+                    continue;
+                double angle = angleBetwABandAC(verticesCoordsPrepare[vIndex], mp->CArr[i], mp->CArr[j]);
+                maxAngle = std::max(angle, maxAngle);
             }
         }
-        ALICEVISION_LOG_INFO("Points with visibility 0: " << nbPoints_visibility0);
-        ALICEVISION_LOG_INFO("Points with visibility 1: " << nbPoints_visibility1);
-        ALICEVISION_LOG_INFO("Skip " << nbPointsRemoved << " points without enough visibility support.");
-        ALICEVISION_LOG_INFO("fuseFromDepthMaps done: " << nbPointsAdded << " points created.");
-        if(nbPointsAdded == 0)
-            throw std::runtime_error("Depth map fusion gives an empty result.");
+        // Kill the point if the angle is too small
+        if(maxAngle < params.minAngleThreshold)
+        {
+            pixSizePrepare[vIndex] = -1;
+            continue;
+        }
+
+        stat_minAngle = std::min(stat_minAngle, maxAngle);
+        stat_maxAngle = std::max(stat_maxAngle, maxAngle);
+
+        const double angleScore = 1.0 + params.angleFactor / maxAngle;
+        stat_minAngleScore = std::min(stat_minAngleScore, angleScore);
+        stat_maxAngleScore = std::max(stat_maxAngleScore, angleScore);
+        // Combine angleScore with simScore
+        simScorePrepare[vIndex] = simScorePrepare[vIndex] * angleScore;
     }
-    ALICEVISION_LOG_INFO("fuseFromDepthMaps done.");
+
+    ALICEVISION_LOG_INFO("Angle min: " << stat_minAngle << ", max: " << stat_maxAngle << ".");
+    ALICEVISION_LOG_INFO("Angle score min: " << stat_minAngleScore << ", max: " << stat_maxAngleScore << ".");
+
+    removeInvalidPoints(verticesCoordsPrepare, pixSizePrepare, simScorePrepare, verticesAttrPrepare);
+
+    ALICEVISION_LOG_INFO("Filter by angle score and sim score");
+
+    // while more points than the max points (with a limit to 20 iterations).
+    double pixSizeMarginFinalCoef = params.pixSizeMarginFinalCoef;
+    for(int filteringIt = 0; filteringIt < 20; ++filteringIt)
+    {
+        // Filter points with new simScore
+        filterByPixSize(verticesCoordsPrepare, pixSizePrepare, pixSizeMarginFinalCoef, simScorePrepare);
+        removeInvalidPoints(verticesCoordsPrepare, pixSizePrepare, simScorePrepare, verticesAttrPrepare);
+
+        if(verticesCoordsPrepare.size() < params.maxPoints)
+        {
+            ALICEVISION_LOG_INFO("The number of points is below the max number of vertices.");
+            break;
+        }
+        else
+        {
+            pixSizeMarginFinalCoef *= 1.5;
+            ALICEVISION_LOG_INFO("Increase pixel size margin coef to " << pixSizeMarginFinalCoef << ", nb points: " << verticesCoordsPrepare.size() << ", maxVertices: " << params.maxPoints);
+        }
+    }
+    ALICEVISION_LOG_INFO("3D points loaded and filtered to " << verticesCoordsPrepare.size() << " points (maxVertices is " << params.maxPoints << ").");
+
+    if(params.refineFuse)
+    {
+        ALICEVISION_LOG_INFO("Create final visibilities");
+        // Initialize the vertice attributes and declare the visibility information
+        createVerticesWithVisibilities(cams, verticesCoordsPrepare, pixSizePrepare, simScorePrepare,
+                                       verticesAttrPrepare, mp, params.simFactor, params.voteMarginFactor, params.contributeMarginFactor, params.simGaussianSize);
+    }
+    _verticesCoords.swap(verticesCoordsPrepare);
+    _verticesAttr.swap(verticesAttrPrepare);
+
+    if(_verticesCoords.size() == 0)
+        throw std::runtime_error("Depth map fusion gives an empty result.");
+
+    ALICEVISION_LOG_INFO("fuseFromDepthMaps done: " << _verticesCoords.size() << " points created.");
 }
 
 void DelaunayGraphCut::loadPrecomputedDensePoints(const StaticVector<int>* voxelsIds, const Point3d voxel[8], VoxelsGrid* ls)
@@ -2265,7 +2357,7 @@ void DelaunayGraphCut::invertFullStatusForSmallLabels()
 
 void DelaunayGraphCut::reconstructVoxel(Point3d hexah[8], StaticVector<int>* voxelsIds, const std::string& folderName,
                                       const std::string& tmpCamsPtsFolderName, bool removeSmallSegments,
-                                      VoxelsGrid* ls, const Point3d& spaceSteps, int maxVertices)
+                                      VoxelsGrid* ls, const Point3d& spaceSteps, const FuseParams& fuseParams)
 {
     StaticVector<int> cams;
     if(hexah)
@@ -2299,7 +2391,7 @@ void DelaunayGraphCut::reconstructVoxel(Point3d hexah[8], StaticVector<int>* vox
     }
     else
     {
-        fuseFromDepthMaps(cams, hexah, maxVertices);
+        fuseFromDepthMaps(cams, hexah, fuseParams);
     }
 
     // initialize random seed

@@ -32,6 +32,9 @@ Mesh::~Mesh()
 void Mesh::saveToObj(const std::string& filename)
 {
   ALICEVISION_LOG_INFO("Save mesh to obj: " << filename);
+  ALICEVISION_LOG_INFO("Nb points: " << pts->size());
+  ALICEVISION_LOG_INFO("Nb triangles: " << tris->size());
+
   FILE* f = fopen(filename.c_str(), "w");
 
   fprintf(f, "# \n");
@@ -1339,7 +1342,7 @@ Point3d Mesh::computeTriangleCenterOfGravity(int idTri) const
     return ((*pts)[(*tris)[idTri].i[0]] + (*pts)[(*tris)[idTri].i[1]] + (*pts)[(*tris)[idTri].i[2]]) / 3.0f;
 }
 
-float Mesh::computeTriangleMaxEdgeLength(int idTri) const
+double Mesh::computeTriangleMaxEdgeLength(int idTri) const
 {
     return std::max(std::max(((*pts)[(*tris)[idTri].i[0]] - (*pts)[(*tris)[idTri].i[1]]).size(),
                              ((*pts)[(*tris)[idTri].i[1]] - (*pts)[(*tris)[idTri].i[2]]).size()),
@@ -1983,40 +1986,18 @@ int Mesh::subdivideMesh(const mvsUtils::MultiViewParams* mp, float maxTriArea, f
     return nTrisToSubdivide;
 }
 
-float Mesh::computeAverageEdgeLength() const
+double Mesh::computeAverageEdgeLength() const
 {
-    /*
-    StaticVector<StaticVector<int>*> *edgesNeighTris;
-    StaticVector<pixel> *edgesPointsPairs;
-    getNotOrientedEdges(&edgesNeighTris, &edgesPointsPairs);
-
-    float s=0.0f;
-    float n=0.0f;
-    for (int i=0;i<edgesPointsPairs->size();i++) {
-            s += ((*pts)[(*edgesPointsPairs)[i].x]-(*pts)[(*edgesPointsPairs)[i].y]).size();
-            n += 1.0f;
-    };
-
-    deleteArrayOfArrays<int>(&edgesNeighTris);
-    delete edgesPointsPairs;
-
-    if (n==0.0f) {
-            return 0.0f;
-    }else{
-            return (s/n);
-    };
-    */
-
-    float s = 0.0f;
-    float n = 0.0f;
-    for(int i = 0; i < tris->size(); i++)
+    double s = 0.0;
+    double n = 0.0;
+    for(int i = 0; i < tris->size(); ++i)
     {
         s += computeTriangleMaxEdgeLength(i);
-        n += 1.0f;
+        n += 1.0;
     }
-    if(n == 0.0f)
+    if(n == 0.0)
     {
-        return 0.0f;
+        return 0.0;
     }
 
     return (s / n);
@@ -2286,18 +2267,18 @@ void Mesh::removeTrianglesOutsideHexahedron(Point3d* hexah)
     delete trisIdsToStay;
 }
 
-void Mesh::filterLargeEdgeTriangles(float maxEdgelengthThr)
+void Mesh::filterLargeEdgeTriangles(double cutAverageEdgeLengthFactor)
 {
-    float averageEdgeLength = computeAverageEdgeLength();
-    float avelthr = maxEdgelengthThr;
+    double averageEdgeLength = computeAverageEdgeLength();
+    double avelthr = averageEdgeLength * cutAverageEdgeLengthFactor;
 
     StaticVector<int>* trisIdsToStay = new StaticVector<int>();
     trisIdsToStay->reserve(tris->size());
 
     for(int i = 0; i < tris->size(); i++)
     {
-        float triMaxEdgelength = computeTriangleMaxEdgeLength(i);
-        if(triMaxEdgelength < averageEdgeLength * avelthr)
+        double triMaxEdgelength = computeTriangleMaxEdgeLength(i);
+        if(triMaxEdgelength < avelthr)
         {
             trisIdsToStay->push_back(i);
         }
@@ -2390,7 +2371,7 @@ bool Mesh::isTriangleObtuse(int triId)
            (isTriangleAngleAtVetexObtuse(2, triId));
 }
 
-StaticVector<int>* Mesh::getLargestConnectedComponentTrisIds(const mvsUtils::MultiViewParams& mp)
+StaticVector<int>* Mesh::getLargestConnectedComponentTrisIds()
 {
     StaticVector<StaticVector<int>*>* ptsNeighPtsOrdered = getPtsNeighPtsOrdered();
 

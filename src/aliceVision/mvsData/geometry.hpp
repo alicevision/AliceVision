@@ -121,7 +121,7 @@ bool TrianglesOverlap(const Point2d* t1, const Point2d* t2);
 
 double pointLineDistance3D(const Point3d& point, const Point3d& linePoint, const Point3d& lineVectNormalized);
 Point3d closestPointToLine3D(const Point3d* point, const Point3d* linePoint, const Point3d* lineVectNormalized);
-float pointPlaneDistance(const Point3d& point, const Point3d& planePoint, const Point3d& planeNormal);
+double pointPlaneDistance(const Point3d& point, const Point3d& planePoint, const Point3d& planeNormal);
 
 double orientedPointPlaneDistance(const Point3d& point, const Point3d& planePoint, const Point3d& planeNormal);
 void computeRotCS(Point3d* xax, Point3d* yax, const Point3d* n);
@@ -134,8 +134,8 @@ Point3d linePlaneIntersect(const Point3d& linePoint, const Point3d& lineVect, co
 void linePlaneIntersect(Point3d* out, const Point3d* linePoint, const Point3d* lineVect, const Point3d* planePoint,
                         const Point3d* planeNormal);
 
-float angleBetwV1andV2(const Point3d& iV1, const Point3d& iV2);
-float angleBetwABandAC(const Point3d& A, const Point3d& B, const Point3d& C);
+double angleBetwV1andV2(const Point3d& iV1, const Point3d& iV2);
+double angleBetwABandAC(const Point3d& A, const Point3d& B, const Point3d& C);
 
 void rotPointAroundVect(double* out, const double* X, const double* vect, const double angle);
 void rotPointAroundVect(Point3d* out, const Point3d* X, const Point3d* vect, const float angle);

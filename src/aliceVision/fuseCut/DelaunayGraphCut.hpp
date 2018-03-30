@@ -27,6 +27,30 @@
 namespace aliceVision {
 namespace fuseCut {
 
+
+struct FuseParams
+{
+    /// Max input points loaded from images
+    int maxInputPoints = 50000000;
+    /// Max points at the end of the depth maps fusion
+    int maxPoints = 5000000;
+    /// The step used to load depth values from depth maps is computed from maxInputPts. Here we define the minimal value for this step,
+    /// so on small datasets we will not spend too much time at the beginning loading all depth values.
+    int minStep = 2;
+
+    float simFactor = 15.0f;
+    float angleFactor = 15.0f;
+    double pixSizeMarginInitCoef = 2.0;
+    double pixSizeMarginFinalCoef = 1.0;
+    float voteMarginFactor = 4.0f;
+    float contributeMarginFactor = 2.0f;
+    float simGaussianSizeInit = 10.0f;
+    float simGaussianSize = 10.0f;
+    double minAngleThreshold = 0.1;
+    bool refineFuse = true;
+};
+
+
 class DelaunayGraphCut
 {
 public:
@@ -231,7 +255,7 @@ public:
      */
     void addHelperPoints(int nGridHelperVolumePointsDim, Point3d Voxel[8], float minDist);
 
-    void fuseFromDepthMaps(const StaticVector<int>& cams, const Point3d voxel[8], int maxVertices);
+    void fuseFromDepthMaps(const StaticVector<int>& cams, const Point3d voxel[8], const FuseParams& params);
     void loadPrecomputedDensePoints(const StaticVector<int>* voxelsIds, const Point3d voxel[8], VoxelsGrid* ls);
 
     void createTetrahedralizationFromDepthMapsCamsVoxel(const StaticVector<int>& allCams,
@@ -292,7 +316,7 @@ public:
 
     void reconstructVoxel(Point3d hexah[8], StaticVector<int>* voxelsIds, const std::string& folderName,
                           const std::string& tmpCamsPtsFolderName, bool removeSmallSegments,
-                          VoxelsGrid* ls, const Point3d& spaceSteps, int maxVertices);
+                          VoxelsGrid* ls, const Point3d& spaceSteps, const FuseParams& fuseParams);
 
     /**
      * @brief Invert full/empty status of cells if they represent a too small group after labelling.
