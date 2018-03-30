@@ -88,8 +88,6 @@ int main(int argc, char* argv[])
     po::options_description inputParams;
     int maxPts = 6000000;
     int maxPtsPerVoxel = 6000000;
-    int smoothingIteration = 0;
-    float smoothingWeight = 1.0;
 
     po::options_description allParams("AliceVision meshing");
 
@@ -110,10 +108,6 @@ int main(int argc, char* argv[])
             "Max points.")
         ("maxPtsPerVoxel", po::value<int>(&maxPtsPerVoxel)->default_value(maxPtsPerVoxel),
             "Max points per voxel.")
-        ("smoothingIteration", po::value<int>(&smoothingIteration)->default_value(smoothingIteration),
-            "Meshing post-processing: Number of smoothing iteration.")
-        ("smoothingWeight", po::value<float>(&smoothingWeight)->default_value(smoothingWeight),
-            "Meshing post-processing: smoothing weight.")
         ("partitioning", po::value<EPartitioningMode>(&partitioningMode)->default_value(partitioningMode),
             "Partitioning: 'singleBlock' or 'auto'.")
         ("repartition", po::value<ERepartitionMode>(&repartitionMode)->default_value(repartitionMode),
@@ -165,10 +159,6 @@ int main(int argc, char* argv[])
 
     int ocTreeDim = mp._ini.get<int>("LargeScale.gridLevel0", 1024);
     const auto baseDir = mp._ini.get<std::string>("LargeScale.baseDirName", "root01024");
-
-    // semiGlobalMatching
-    mp._ini.put("meshEnergyOpt.smoothNbIterations", smoothingIteration);
-    mp._ini.put("meshEnergyOpt.lambda", smoothingWeight);
 
     bfs::path outDirectory = bfs::path(outputMesh).parent_path();
     if(!bfs::is_directory(outDirectory))
