@@ -23,68 +23,50 @@ bool Datasheet::operator==(const Datasheet& ds) const
   boost::split(vec_brand, ds._brand, boost::is_any_of(" "));
 
   std::string brandlower = _brand;
+  boost::algorithm::to_lower(brandlower);
 
-  std::transform(brandlower.begin(), brandlower.end(),
-    brandlower.begin(), ::tolower);
-
-  for ( std::vector<std::string>::const_iterator iter_brand = vec_brand.begin();
-          iter_brand != vec_brand.end();
-          ++iter_brand )
+  for(const auto& brand : vec_brand)
   {
-    std::string brandlower2 = *iter_brand;
-    std::transform(brandlower2.begin(), brandlower2.end(),
-      brandlower2.begin(), ::tolower);
+    std::string brandlower2 = brand;
+    boost::algorithm::to_lower(brandlower2);
+
     //ALICEVISION_LOG_DEBUG(brandlower << "\t" << brandlower2);
-    if ( brandlower.compare( brandlower2 ) == 0 )
+    if (brandlower == brandlower2)
     {
       std::vector<std::string> vec_model1;
       boost::split(vec_model1, ds._model, boost::is_any_of(" "));
       std::vector<std::string> vec_model2;
       boost::split(vec_model2, _model, boost::is_any_of(" "));
-      bool isAllFind = true;
-      for ( std::vector<std::string>::const_iterator iter_model1 = vec_model1.begin();
-          iter_model1 != vec_model1.end();
-          ++iter_model1 )
+      bool isAllFound = true;
+
+      for(const auto& model1 : vec_model1)
       {
-        bool hasDigit = false;
-        for(std::string::const_iterator c = (*iter_model1).begin(); c != (*iter_model1).end(); ++c )
+        if(!std::any_of(model1.begin(), model1.end(), ::isdigit))
         {
-          if(isdigit(*c))
+          continue;
+        }
+
+        std::string modellower1 = model1;
+        boost::algorithm::to_lower(modellower1);
+
+        bool isFound = false;
+        for(const auto& model2 : vec_model2)
+        {
+          std::string modellower2 = model2;
+          boost::algorithm::to_lower(modellower2);
+
+          if (modellower2 == modellower1)
           {
-            hasDigit = true;
-            break;
+            isFound = true;
           }
         }
-        if ( hasDigit )
+        if ( !isFound )
         {
-          std::string modellower1 = *iter_model1;
-          for ( int index = 0; index < modellower1.length(); index++ )
-          {
-            modellower1[index] = tolower(modellower1[index]);
-          }
-          bool isFind = false;
-          for ( std::vector<std::string>::const_iterator iter_model2 = vec_model2.begin();
-                iter_model2 != vec_model2.end();
-                ++iter_model2 )
-          {
-            std::string modellower2 = *iter_model2;
-            for ( int index = 0; index < modellower2.length(); index++ )
-            {
-              modellower2[index] = tolower(modellower2[index]);
-            }
-            if ( modellower2.compare( modellower1 ) == 0 )
-            {
-              isFind = true;
-            }
-          }
-          if ( !isFind )
-          {
-            isAllFind = false;
-            break;
-          }
+          isAllFound = false;
+          break;
         }
       }
-      if ( isAllFind )
+      if ( isAllFound )
         isEqual = true;
     }
   }
