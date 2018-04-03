@@ -70,7 +70,7 @@ void getListOfDescriptorFiles(const sfm::SfMData& sfmData, const std::string& de
   for(const auto &view : sfmData.GetViews())
   {     
     // generate the equivalent .desc file path
-    const std::string filepath = bfs::path(bfs::path(descFolder) / (std::to_string(view.first) + ".SIFT.desc")).string();
+    const std::string filepath = bfs::path(bfs::path(descFolder) / (std::to_string(view.first) + "." + feature::EImageDescriberType_enumToString(feature::EImageDescriberType::SIFT) + ".desc")).string();
 
     if(bfs::exists(filepath))
     {
@@ -83,7 +83,7 @@ void getListOfDescriptorFiles(const sfm::SfMData& sfmData, const std::string& de
 
     for(const std::string& featureFolder : sfmData.getFeaturesFolders())
     {
-      const std::string filepathFromSfMData = bfs::path(bfs::path(featureFolder) / (std::to_string(view.first) + ".SIFT.desc")).string();
+      const std::string filepathFromSfMData = bfs::path(bfs::path(featureFolder) / (std::to_string(view.first) + "." + feature::EImageDescriberType_enumToString(feature::EImageDescriberType::SIFT) + ".desc")).string();
 
       if(bfs::exists(filepathFromSfMData))
       {

@@ -25,6 +25,7 @@
 
 #include <boost/filesystem.hpp>
 
+#include <algorithm>
 #include <stdexcept>
 
 namespace fs = boost::filesystem;
@@ -32,33 +33,28 @@ namespace fs = boost::filesystem;
 namespace aliceVision{
 namespace feature{
 
-EImageDescriberPreset EImageDescriberPreset_stringToEnum(const std::string& preset)
+EImageDescriberPreset EImageDescriberPreset_stringToEnum(const std::string& imageDescriberPreset)
 {
-  if(preset == "LOW")
-    return EImageDescriberPreset::LOW;
-  if(preset == "MEDIUM")
-    return EImageDescriberPreset::MEDIUM;
-  if(preset == "NORMAL")
-    return EImageDescriberPreset::NORMAL;
-  if(preset == "HIGH")
-    return EImageDescriberPreset::HIGH;
-  if(preset == "ULTRA")
-    return EImageDescriberPreset::ULTRA;
+  std::string preset = imageDescriberPreset;
+  std::transform(preset.begin(), preset.end(), preset.begin(), ::tolower); //tolower
+
+  if(preset == "low")    return EImageDescriberPreset::LOW;
+  if(preset == "medium") return EImageDescriberPreset::MEDIUM;
+  if(preset == "normal") return EImageDescriberPreset::NORMAL;
+  if(preset == "high")   return EImageDescriberPreset::HIGH;
+  if(preset == "ultra")  return EImageDescriberPreset::ULTRA;
+
   throw std::invalid_argument("Invalid descriptor preset: " + preset);
 }
 
-std::string EImageDescriberPreset_enumToString(const EImageDescriberPreset preset)
+std::string EImageDescriberPreset_enumToString(const EImageDescriberPreset imageDescriberPreset)
 {
-  if(preset == EImageDescriberPreset::LOW)
-    return "LOW";
-  if(preset == EImageDescriberPreset::MEDIUM)
-    return "MEDIUM";
-  if(preset == EImageDescriberPreset::NORMAL)
-    return "NORMAL";
-  if(preset == EImageDescriberPreset::HIGH)
-    return "HIGH";
-  if(preset == EImageDescriberPreset::ULTRA)
-    return "ULTRA";
+  if(imageDescriberPreset == EImageDescriberPreset::LOW)    return "low";
+  if(imageDescriberPreset == EImageDescriberPreset::MEDIUM) return "medium";
+  if(imageDescriberPreset == EImageDescriberPreset::NORMAL) return "normal";
+  if(imageDescriberPreset == EImageDescriberPreset::HIGH)   return "high";
+  if(imageDescriberPreset == EImageDescriberPreset::ULTRA)  return "ultra";
+
   throw std::invalid_argument("Unrecognized EImageDescriberPreset");
 }
 
@@ -95,11 +91,12 @@ std::unique_ptr<ImageDescriber> createImageDescriber(EImageDescriberType imageDe
   
   switch(imageDescriberType)
   {
-    case EImageDescriberType::SIFT:        describerPtr.reset(new ImageDescriber_SIFT(SiftParams())); break;
-    case EImageDescriberType::SIFT_FLOAT:  describerPtr.reset(new ImageDescriber_SIFT_vlfeatFloat(SiftParams())); break;
-    case EImageDescriberType::AKAZE:       describerPtr.reset(new ImageDescriber_AKAZE(AKAZEParams(AKAZEConfig(), feature::AKAZE_MSURF))); break;
-    case EImageDescriberType::AKAZE_MLDB:  describerPtr.reset(new ImageDescriber_AKAZE(AKAZEParams(AKAZEConfig(), feature::AKAZE_MLDB))); break;
-    case EImageDescriberType::AKAZE_LIOP:  describerPtr.reset(new ImageDescriber_AKAZE(AKAZEParams(AKAZEConfig(), feature::AKAZE_LIOP))); break;
+    case EImageDescriberType::SIFT:           describerPtr.reset(new ImageDescriber_SIFT(SiftParams(), true)); break;
+    case EImageDescriberType::SIFT_FLOAT:     describerPtr.reset(new ImageDescriber_SIFT_vlfeatFloat(SiftParams())); break;
+    case EImageDescriberType::SIFT_UPRIGHT:   describerPtr.reset(new ImageDescriber_SIFT(SiftParams(), false)); break;
+    case EImageDescriberType::AKAZE:          describerPtr.reset(new ImageDescriber_AKAZE(AKAZEParams(AKAZEConfig(), feature::AKAZE_MSURF))); break;
+    case EImageDescriberType::AKAZE_MLDB:     describerPtr.reset(new ImageDescriber_AKAZE(AKAZEParams(AKAZEConfig(), feature::AKAZE_MLDB))); break;
+    case EImageDescriberType::AKAZE_LIOP:     describerPtr.reset(new ImageDescriber_AKAZE(AKAZEParams(AKAZEConfig(), feature::AKAZE_LIOP))); break;
 
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_CCTAG)
     case EImageDescriberType::CCTAG3:      describerPtr.reset(new ImageDescriber_CCTAG(3)); break;
