@@ -258,7 +258,6 @@ int main(int argc, char **argv)
 
   std::string describerTypesName = feature::EImageDescriberType_enumToString(feature::EImageDescriberType::SIFT);
   std::string describerPreset = feature::EImageDescriberPreset_enumToString(feature::EImageDescriberPreset::NORMAL);
-  bool describersAreUpRight = false;
   int rangeStart = -1;
   int rangeSize = 1;
   int maxThreads = 0;
@@ -280,8 +279,6 @@ int main(int argc, char **argv)
     ("describerPreset,p", po::value<std::string>(&describerPreset)->default_value(describerPreset),
       "Control the ImageDescriber configuration (low, medium, normal, high, ultra).\n"
       "Configuration 'ultra' can take long time !")
-    ("upright,u", po::value<bool>(&describersAreUpRight)->default_value(describersAreUpRight),
-      "Use Upright feature.")
     ("forceCpuExtraction", po::value<bool>(&forceCpuExtraction)->default_value(forceCpuExtraction),
       "Use only CPU feature extraction methods.")
     ("rangeStart", po::value<int>(&rangeStart)->default_value(rangeStart),
@@ -389,7 +386,6 @@ int main(int argc, char **argv)
     {
       std::shared_ptr<feature::ImageDescriber> imageDescriber = feature::createImageDescriber(imageDescriberType);
       imageDescriber->setConfigurationPreset(describerPreset);
-      imageDescriber->setUpRight(describersAreUpRight);
       if(forceCpuExtraction)
         imageDescriber->setUseCuda(false);
 
