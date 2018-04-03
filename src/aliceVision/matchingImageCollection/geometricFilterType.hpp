@@ -23,10 +23,10 @@ enum EGeometricFilterType
 std::string EGeometricFilterType_informations()
 {
   return "Pairwise correspondences filtering thanks to robust model estimation:\n"
-         "* FUNDAMENTAL_MATRIX: fundamental matrix\n"
-         "* ESSENTIAL_MATRIX: essential matrix\n"
-         "* HOMOGRAPHY_MATRIX: homography matrix\n"
-         "* HOMOGRAPHY_GROWING: multiple homography matrices [F.Srajer, 2016]\n";
+         "* f  - FUNDAMENTAL_MATRIX:  fundamental matrix\n"
+         "* e  - ESSENTIAL_MATRIX:    essential matrix\n"
+         "* h  - HOMOGRAPHY_MATRIX:   homography matrix\n"
+         "* hg - HOMOGRAPHY_GROWING:  multiple homography matrices [F.Srajer, 2016]\n";
 }
 
 /**
@@ -53,10 +53,14 @@ std::string EGeometricFilterType_enumToString(const EGeometricFilterType geometr
  */
 EGeometricFilterType EGeometricFilterType_stringToEnum(const std::string& geometricFilterType)
 {
-  if(geometricFilterType == "FUNDAMENTAL_MATRIX")  return EGeometricFilterType::FUNDAMENTAL_MATRIX;
-  if(geometricFilterType == "ESSENTIAL_MATRIX")    return EGeometricFilterType::ESSENTIAL_MATRIX;
-  if(geometricFilterType == "HOMOGRAPHY_MATRIX")   return EGeometricFilterType::HOMOGRAPHY_MATRIX;
-  if(geometricFilterType == "HOMOGRAPHY_GROWING")  return EGeometricFilterType::HOMOGRAPHY_GROWING;
+  if(geometricFilterType == "FUNDAMENTAL_MATRIX" || geometricFilterType == "f")  
+    return EGeometricFilterType::FUNDAMENTAL_MATRIX;
+  if(geometricFilterType == "ESSENTIAL_MATRIX" || geometricFilterType == "e")    
+    return EGeometricFilterType::ESSENTIAL_MATRIX;
+  if(geometricFilterType == "HOMOGRAPHY_MATRIX" || geometricFilterType == "h")   
+    return EGeometricFilterType::HOMOGRAPHY_MATRIX;
+  if(geometricFilterType == "HOMOGRAPHY_GROWING" || geometricFilterType == "hg")  
+    return EGeometricFilterType::HOMOGRAPHY_GROWING;
   throw std::out_of_range("Invalid geometricFilterType : " + geometricFilterType);
 }
 
@@ -67,10 +71,10 @@ EGeometricFilterType EGeometricFilterType_stringToEnum(const std::string& geomet
  */
 std::string fromLongToShortNotation(const std::string& geometricFilterType)
 {
-  if(geometricFilterType == "FUNDAMENTAL_MATRIX")  return "f"; 
-  if(geometricFilterType == "ESSENTIAL_MATRIX")    return "e";
-  if(geometricFilterType == "HOMOGRAPHY_MATRIX")   return "h";
-  if(geometricFilterType == "HOMOGRAPHY_GROWING")  return "hg";
+  if(geometricFilterType == "FUNDAMENTAL_MATRIX" || geometricFilterType == "f")  return "f"; 
+  if(geometricFilterType == "ESSENTIAL_MATRIX" || geometricFilterType == "e")    return "e";
+  if(geometricFilterType == "HOMOGRAPHY_MATRIX" || geometricFilterType == "h")   return "h";
+  if(geometricFilterType == "HOMOGRAPHY_GROWING" || geometricFilterType == "hg") return "hg";
   throw std::out_of_range("Invalid geometricFilterType : " + geometricFilterType);
 }
 
