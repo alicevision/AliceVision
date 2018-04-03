@@ -313,40 +313,43 @@ void Texturing::generateTexture(const mvsUtils::MultiViewParams& mp, StaticVecto
     }
     camTriangles.clear();
 
-    ALICEVISION_LOG_INFO("Edge padding (" << texParams.padding << " pixels).");
-    // edge padding (dilate gutter)
-    for(unsigned int g = 0; g < texParams.padding; ++g)
+    if(!texParams.fillHoles)
     {
-        for(unsigned int y = 1; y < texParams.textureSide-1; ++y)
+        ALICEVISION_LOG_INFO("Edge padding (" << texParams.padding << " pixels).");
+        // edge padding (dilate gutter)
+        for(unsigned int g = 0; g < texParams.padding; ++g)
         {
-            unsigned int yoffset = y * texParams.textureSide;
-            for(unsigned int x = 1; x < texParams.textureSide-1; ++x)
+            for(unsigned int y = 1; y < texParams.textureSide-1; ++y)
             {
-                unsigned int xyoffset = yoffset + x;
-                if(colorIDs[xyoffset] > 0)
-                    continue;
-                else if(colorIDs[xyoffset-1] > 0)
+                unsigned int yoffset = y * texParams.textureSide;
+                for(unsigned int x = 1; x < texParams.textureSide-1; ++x)
                 {
-                    colorIDs[xyoffset] = (xyoffset-1)*-1;
-                }
-                else if(colorIDs[xyoffset+1] > 0)
-                {
-                    colorIDs[xyoffset] = (xyoffset+1)*-1;
-                }
-                else if(colorIDs[xyoffset+texParams.textureSide] > 0)
-                {
-                    colorIDs[xyoffset] = (xyoffset+texParams.textureSide)*-1;
-                }
-                else if(colorIDs[xyoffset-texParams.textureSide] > 0)
-                {
-                    colorIDs[xyoffset] = (xyoffset-texParams.textureSide)*-1;
+                    unsigned int xyoffset = yoffset + x;
+                    if(colorIDs[xyoffset] > 0)
+                        continue;
+                    else if(colorIDs[xyoffset-1] > 0)
+                    {
+                        colorIDs[xyoffset] = (xyoffset-1)*-1;
+                    }
+                    else if(colorIDs[xyoffset+1] > 0)
+                    {
+                        colorIDs[xyoffset] = (xyoffset+1)*-1;
+                    }
+                    else if(colorIDs[xyoffset+texParams.textureSide] > 0)
+                    {
+                        colorIDs[xyoffset] = (xyoffset+texParams.textureSide)*-1;
+                    }
+                    else if(colorIDs[xyoffset-texParams.textureSide] > 0)
+                    {
+                        colorIDs[xyoffset] = (xyoffset-texParams.textureSide)*-1;
+                    }
                 }
             }
-        }
-        for(unsigned int i=0; i < textureSize; ++i)
-        {
-            if(colorIDs[i] < 0)
-                colorIDs[i] = colorIDs[colorIDs[i]*-1];
+            for(unsigned int i=0; i < textureSize; ++i)
+            {
+                if(colorIDs[i] < 0)
+                    colorIDs[i] = colorIDs[colorIDs[i]*-1];
+            }
         }
     }
 
