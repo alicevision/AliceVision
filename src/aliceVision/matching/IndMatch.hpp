@@ -111,6 +111,5 @@ inline PairSet getImagePairs(const PairwiseMatches & matches)
   return pairs;
 }
 
-
 }  // namespace matching
 }  // namespace aliceVision

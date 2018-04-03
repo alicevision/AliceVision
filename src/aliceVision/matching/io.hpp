@@ -23,9 +23,9 @@ namespace matching {
  * @param[in] mode: type of matching, it could be: "f", "e" or "putative".
  */
 bool LoadMatchFile(
-  PairwiseMatches & matches,
-  const std::string & folder,
-  const std::string & filename);
+  PairwiseMatches& matches,
+  const std::string& folder,
+  const std::string& filename);
 
 /**
  * @brief Load the match file for each image.
@@ -35,10 +35,9 @@ bool LoadMatchFile(
  * @param[in] mode: type of matching, it could be: "f", "e" or "putative".
  */
 bool LoadMatchFilePerImage(
-  PairwiseMatches & matches,
-  const std::set<IndexT> & viewsKeys,
-  const std::string & folder,
-  const std::string & mode);
+  PairwiseMatches& matches,
+  const std::set<IndexT>& viewsKeys,
+  const std::string& folder);
 
 /**
  * @brief Load match files.
@@ -54,21 +53,20 @@ bool Load(PairwiseMatches& matches,
   const std::set<IndexT>& viewsKeysFilter,
   const std::vector<std::string>& folders,
   const std::vector<feature::EImageDescriberType>& descTypesFilter,
-  const std::string& mode,
   const int maxNbMatches = 0);
 
 /**
  * @brief Filter to keep only specific viewIds.
  */
 void filterMatchesByViews(
-  PairwiseMatches & matches,
-  const std::set<IndexT> & viewsKeys);
+  PairwiseMatches& matches,
+  const std::set<IndexT>& viewsKeys);
 
 /**
  * @brief Filter to keep only the \c limitNum first matches per descriptor type.
  */
 void filterTopMatches(
-  PairwiseMatches & allMatches,
+  PairwiseMatches& allMatches,
   const int limitNum);
 
 /**
@@ -83,10 +81,9 @@ void filterTopMatches(
  *            or one match file per image
  */
 bool Save(
-  const PairwiseMatches & matches,
-  const std::string & folder,
-  const std::string & mode,
-  const std::string & extension,
+  const PairwiseMatches& matches,
+  const std::string& folder,
+  const std::string& extension,
   bool matchFilePerImage);
 
 }  // namespace matching

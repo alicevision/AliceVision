@@ -4,6 +4,7 @@ set(matching_collection_images_files_headers
   IImageCollectionMatcher.hpp
   ImageCollectionMatcher_generic.hpp
   ImageCollectionMatcher_cascadeHashing.hpp
+  GeometricModel.hpp
   GeometricFilter.hpp
   GeometricFilterMatrix.hpp
   GeometricFilterMatrix_E_AC.hpp
@@ -18,6 +19,7 @@ set(matching_collection_images_files_sources
   matchingCommon.cpp
   ImageCollectionMatcher_generic.cpp
   ImageCollectionMatcher_cascadeHashing.cpp
+  GeometricModel.cpp
   pairBuilder.cpp
 )
 

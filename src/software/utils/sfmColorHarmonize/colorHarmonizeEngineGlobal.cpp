@@ -56,7 +56,6 @@ ColorHarmonizationEngineGlobal::ColorHarmonizationEngineGlobal(
   const string & sSfMData_Filename,
   const std::string & featuresFolder,
   const string & sMatchesPath,
-  const std::string & sMatchesGeometricModel,
   const string & sOutDirectory,
   const std::vector<feature::EImageDescriberType>& descTypes,
   int selectionMethod,
@@ -64,7 +63,6 @@ ColorHarmonizationEngineGlobal::ColorHarmonizationEngineGlobal(
   _sSfMData_Path(sSfMData_Filename),
   _featuresFolder(featuresFolder),
   _sMatchesPath(sMatchesPath),
-  _sMatchesGeometricModel(sMatchesGeometricModel),
   _sOutDirectory(sOutDirectory),
   _descTypes(descTypes)
 {
@@ -454,8 +452,7 @@ bool ColorHarmonizationEngineGlobal::ReadInputData()
 
   if ( !fs::is_regular_file(_sSfMData_Path ))
   {
-    std::cerr << std::endl
-      << "Invalid input sfm_data file: (" << fs::path(_sMatchesGeometricModel).stem().string() << ")" << std::endl;
+    std::cerr << std::endl << "Invalid input sfm_data file: " << _sSfMData_Path << std::endl;
     return false;
   }
 
@@ -477,7 +474,7 @@ bool ColorHarmonizationEngineGlobal::ReadInputData()
   }
 
   // b. Read matches
-  if ( !sfm::loadPairwiseMatches(_pairwiseMatches, sfm_data, _sMatchesPath, _descTypes, _sMatchesGeometricModel) )
+  if (!sfm::loadPairwiseMatches(_pairwiseMatches, sfm_data, _sMatchesPath, _descTypes))
     return false;
 
   // Read features:

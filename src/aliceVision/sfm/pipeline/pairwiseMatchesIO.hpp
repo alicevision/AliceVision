@@ -26,7 +26,6 @@ namespace sfm {
  * @param[in] sfmData
  * @param[in] folder Path to a folder in which computed matches are stored.
  * @param[in] descTypes ImageDescriberTypes used
- * @param[in] matchesMode
  * @param[in] maxNbMatches Maximum number of matches per image pair (and per feature type), 0 = no limit
  * @param[in] useOnlyMatchesFromFolder If enabled, don't use sfmData matches folders
  */
@@ -35,7 +34,6 @@ inline bool loadPairwiseMatches(
     const SfMData& sfmData,
     const std::string& folder,
     const std::vector<feature::EImageDescriberType>& descTypes,
-    const std::string& matchesMode,
     int maxNbMatches = 0,
     bool useOnlyMatchesFromFolder = false)
 {
@@ -49,12 +47,11 @@ inline bool loadPairwiseMatches(
   matchesFolders.emplace_back(folder);
 
   ALICEVISION_LOG_DEBUG("Loading matches");
-  if (!matching::Load(out_pairwiseMatches, sfmData.GetViewsKeys(), matchesFolders, descTypes, matchesMode, maxNbMatches))
+  if (!matching::Load(out_pairwiseMatches, sfmData.GetViewsKeys(), matchesFolders, descTypes, maxNbMatches))
   {
     std::stringstream ss("Unable to read the matches file(s) from:\n");
     for(const std::string& folder : matchesFolders)
       ss << "\t- " << folder << "\n";
-    ss << "(mode: " << matchesMode << ")\n";
     ALICEVISION_LOG_WARNING(ss.str());
     return false;
   }

@@ -153,7 +153,7 @@ bool LoadMatchFilePerImage(
     {
       #pragma omp critical
       {
-        ALICEVISION_LOG_DEBUG("Unable to load match file: " << matchFilename);
+        ALICEVISION_LOG_DEBUG("Unable to load match file: " << matchFilename << " in: " << folder);
       }
       continue;
     }
@@ -189,11 +189,10 @@ bool Load(
   const std::set<IndexT>& viewsKeysFilter,
   const std::vector<std::string>& folders,
   const std::vector<feature::EImageDescriberType>& descTypesFilter,
-  const std::string& mode,
   const int maxNbMatches)
 {
   bool res = false;
-  const std::string fileName = "matches." + mode + ".txt";
+  const std::string fileName = "matches.txt";
 
   for(const std::string& folder : folders)
   {
@@ -347,11 +346,10 @@ public:
 bool Save(
   const PairwiseMatches & matches,
   const std::string & folder,
-  const std::string & mode,
   const std::string & extension,
   bool matchFilePerImage)
 {
-  const std::string filename = "matches." + mode + "." + extension;
+  const std::string filename = "matches." + extension;
   MatchExporter exporter(matches, folder, filename);
   if(matchFilePerImage)
     exporter.saveOneFilePerImage();

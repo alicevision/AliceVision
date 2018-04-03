@@ -53,12 +53,7 @@ int main(int argc, char **argv)
     ("describerTypes,d", po::value<std::string>(&describerTypesName)->default_value(describerTypesName),
       feature::EImageDescriberType_informations().c_str())
     ("matchesFolder,m", po::value<std::string>(&matchesFolder)->default_value(matchesFolder),
-      "Path to a folder containing the matches.")
-    ("matchesGeometricModel,g", po::value<std::string>(&matchesGeometricModel)->default_value(matchesGeometricModel),
-      "Matches geometric Model :\n"
-      "* f: fundamental matrix\n"
-      "* e: essential matrix\n"
-      "* h: homography matrix");
+      "Path to a folder containing the matches.");
 
   po::options_description logParams("Log parameters");
   logParams.add_options()
@@ -138,7 +133,7 @@ int main(int argc, char **argv)
   {
     // Load pre-computed matches
     matching::PairwiseMatches matches;
-    if(!sfm::loadPairwiseMatches(matches, sfm_data, matchesFolder, describerMethodTypes, matchesGeometricModel))
+    if(!sfm::loadPairwiseMatches(matches, sfm_data, matchesFolder, describerMethodTypes))
       return EXIT_FAILURE;
 
     pairs = matching::getImagePairs(matches);
