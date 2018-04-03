@@ -20,6 +20,7 @@ add_library(aliceVision_registration
 )
 
 target_link_libraries(aliceVision_registration
+  ${Boost_PROGRAM_OPTIONS_LIBRARY}
   ${LOG_LIB}
 )
 

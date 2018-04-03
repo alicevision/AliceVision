@@ -620,9 +620,12 @@ endif()
 # Point Cloud Library (PCL)
 # ==============================================================================
 if(ALICEVISION_BUILD_REGISTRATION)
+  set(AV_Boost_LIBRARIES ${Boost_LIBRARIES})
   find_package(PCL 1.8 REQUIRED COMPONENTS)
   message(STATUS "PCL: ${PCL_LIBRARIES}, ${PCL_INCLUDE_DIRS}")
   include_directories (${PCL_INCLUDE_DIRS})
+  set(Boost_LIBRARIES ${AV_Boost_LIBRARIES})
+  set(BOOST_LIBRARIES ${AV_Boost_LIBRARIES})
 endif()
 
 # ==============================================================================

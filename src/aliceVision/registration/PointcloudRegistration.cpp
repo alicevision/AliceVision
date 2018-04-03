@@ -1,7 +1,7 @@
 #include <aliceVision/registration/PointcloudRegistration.hpp>
 
 #include <aliceVision/system/Logger.hpp>
-
+#include <pcl/Vertices.h>
 #include <pcl/common/common.h>
 #include <pcl/common/transforms.h>
 #include <pcl/features/normal_3d_omp.h>
