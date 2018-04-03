@@ -26,41 +26,35 @@ namespace fs = boost::filesystem;
 
 /**
  * @brief Retrieve the view id in the sfmData from the image filename.
- *
- * @param[in] sfm_data the SfM scene
- * @param[in] initialName the image name to find (filename or path)
+ * @param[in] sfmData the SfM scene
+ * @param[in] name the image name to find (uid or filename or path)
  * @param[out] out_viewId the id found
  * @return if a view is found
  */
 bool retrieveViewIdFromImageName(
-  const SfMData & sfm_data,
-  const std::string& initialName,
+  const SfMData& sfmData,
+  const std::string& name,
   IndexT& out_viewId)
 {
   out_viewId = UndefinedIndexT;
 
-  bool isName = (initialName == fs::path(initialName).filename().string());
-  
-  /// List views filenames and find the one that correspond to the user ones:
-  for(Views::const_iterator it = sfm_data.GetViews().begin();
-    it != sfm_data.GetViews().end(); ++it)
+  /// list views uid / filenames and find the one that correspond to the user ones
+  for(const auto& viewPair : sfmData.GetViews())
   {
-    const View * v = it->second.get();
-    std::string filename;
+    const View& v = *(viewPair.second.get());
     
-    if(isName)
-      filename = fs::path(v->getImagePath()).filename().string();
-    else
-      filename = v->getImagePath();
-    
-    if (filename == initialName)
+    if(name == std::to_string(v.getViewId()) ||
+       name == fs::path(v.getImagePath()).filename().string() ||
+       name == v.getImagePath())
     {
-      if(out_viewId == UndefinedIndexT)
-          out_viewId = v->getViewId();
-      else
-        std::cout<<"Error: Two pictures named :" << initialName << " !" << std::endl;
+      out_viewId = v.getViewId();
+      break;
     }
   }
+
+  if(out_viewId == UndefinedIndexT)
+    ALICEVISION_LOG_ERROR("Can't find the given initial pair view: " << name);
+
   return out_viewId != UndefinedIndexT;
 }
 
@@ -142,9 +136,9 @@ int main(int argc, char **argv)
       "Set it to 3 (or more) reduces drastically the noise in the point cloud, but the number of final poses is a little bit reduced (from 1.5% to 11% on the tested datasets).\n"
       "Note: set it to 0 or 1 to use the old triangulation algorithm (using 2 views only) during resection.")
     ("initialPairA", po::value<std::string>(&initialPairString.first)->default_value(initialPairString.first),
-      "filename of the first image (without path).")
+      "UID or filepath or filename of the first image (without path).")
     ("initialPairB", po::value<std::string>(&initialPairString.second)->default_value(initialPairString.second),
-      "filename of the second image (without path).")
+      "UID or filepath or filename of the second image (without path).")
     ("refineIntrinsics", po::value<bool>(&refineIntrinsics)->default_value(refineIntrinsics),
       "Refine intrinsic parameters.")
     ("useLocalBA,l", po::value<bool>(&useLocalBundleAdjustment)->default_value(useLocalBundleAdjustment),
