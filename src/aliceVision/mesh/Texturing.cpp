@@ -12,12 +12,40 @@
 #include <aliceVision/mesh/UVAtlas.hpp>
 
 #include <geogram/basic/geometry_nd.h>
+#include <geogram/mesh/mesh.h>
+#include <geogram/mesh/mesh_io.h>
+#include <geogram/parameterization/mesh_atlas_maker.h>
 
 #include <map>
 #include <set>
 
 namespace aliceVision {
 namespace mesh {
+
+EUnwrapMethod EUnwrapMethod_stringToEnum(const std::string& method)
+{
+    if(method == "Basic")
+        return EUnwrapMethod::Basic;
+    if(method == "ABF")
+        return EUnwrapMethod::ABF;
+    if(method == "LSCM")
+        return EUnwrapMethod::LSCM;
+    throw std::out_of_range("Invalid unwrap method " + method);
+}
+
+std::string EUnwrapMethod_enumToString(EUnwrapMethod method)
+{
+    switch(method)
+    {
+    case EUnwrapMethod::Basic:
+        return "Basic";
+    case EUnwrapMethod::ABF:
+        return "ABF";
+    case EUnwrapMethod::LSCM:
+        return "LSCM";
+    }
+    throw std::out_of_range("Unrecognized EUnwrapMethod");
+}
 
 /**
  * @brief Return whether a pixel is contained in or intersected by a 2D triangle.
@@ -54,15 +82,47 @@ Point3d barycentricToCartesian(const Point3d* triangle, const Point2d& coords)
     return triangle[0] + (triangle[2] - triangle[0]) * coords.x + (triangle[1] - triangle[0]) * coords.y;
 }
 
+/**
+ * @brief Create a Geogram GEO::Mesh from an aliceVision::Mesh
+ *
+ * @note only initialize vertices and facets
+ * @param[in] the source aliceVision mesh
+ * @param[out] the destination GEO::Mesh
+ */
+void toGeoMesh(const Mesh& src, GEO::Mesh& dst)
+{
+    GEO::vector<double> vertices;
+    vertices.reserve(src.pts->size() * 3);
+    GEO::vector<GEO::index_t> facets;
+    facets.reserve(src.tris->size() * 3);
 
-StaticVector<StaticVector<int>*>* Texturing::generateUVs(mvsUtils::MultiViewParams& mp, StaticVector<StaticVector<int>*>* ptsCams)
+    for(unsigned int i = 0; i < src.pts->size(); ++i)
+    {
+        const auto& point = (*src.pts)[i];
+        vertices.insert(vertices.end(), std::begin(point.m), std::end(point.m));
+    }
+
+    for(unsigned int i = 0; i < src.tris->size(); ++i)
+    {
+        const auto& tri = (*src.tris)[i];
+        facets.insert(facets.end(), std::begin(tri.i), std::end(tri.i));
+    }
+
+    dst.facets.assign_triangle_mesh(3, vertices, facets, true);
+    dst.facets.connect();
+
+    assert(src.pts->size() == dst.vertices.nb());
+    assert(src.tris->size() == dst.facets.nb());
+}
+
+void Texturing::generateUVs(mvsUtils::MultiViewParams& mp)
 {
     if(!me)
         throw std::runtime_error("Can't generate UVs without a mesh");
 
     // automatic uv atlasing
     ALICEVISION_LOG_INFO("Generating UVs (textureSide: " << texParams.textureSide << "; padding: " << texParams.padding << ").");
-    UVAtlas mua(*me, mp, ptsCams, texParams.textureSide, texParams.padding);
+    UVAtlas mua(*me, mp, pointsVisibilities, texParams.textureSide, texParams.padding);
     // create a new mesh to store data
     Mesh* m = new Mesh();
     m->pts = new StaticVector<Point3d>();
@@ -77,8 +137,8 @@ StaticVector<StaticVector<int>*>* Texturing::generateUVs(mvsUtils::MultiViewPara
     _atlases.resize(mua.atlases().size());
 
     std::map<int, int> vertexCache;
-    auto* updatedPointsCams = new StaticVector<StaticVector<int>*>();
-    updatedPointsCams->reserve(ptsCams->size());
+    PointsVisibility* updatedPointsCams = new PointsVisibility;
+    updatedPointsCams->reserve(pointsVisibilities->size());
 
     int atlasId = 0;
     int triangleCount = 0;
@@ -131,7 +191,7 @@ StaticVector<StaticVector<int>*>* Texturing::generateUVs(mvsUtils::MultiViewPara
                         newPointIdx = m->pts->size() - 1;
                         // map point visibilities
                         StaticVector<int>* pOther = new StaticVector<int>();
-                        StaticVector<int>* pRef = (*ptsCams)[pointId];
+                        StaticVector<int>* pRef = (*pointsVisibilities)[pointId];
                         if(pRef)
                             *pOther = *pRef;
                         updatedPointsCams->push_back(pOther);
@@ -166,16 +226,17 @@ StaticVector<StaticVector<int>*>* Texturing::generateUVs(mvsUtils::MultiViewPara
     // replace internal mesh
     std::swap(me, m);
     delete m;
-
-    return updatedPointsCams;
+    // replace visibilities
+    std::swap(pointsVisibilities, updatedPointsCams);
+    deleteArrayOfArrays<int>(&updatedPointsCams);
 }
 
-void Texturing::generateTextures(const mvsUtils::MultiViewParams &mp, StaticVector<StaticVector<int> *> *ptsCams,
+void Texturing::generateTextures(const mvsUtils::MultiViewParams &mp,
                                  const boost::filesystem::path &outPath, EImageFileType textureFileType)
 {
     mvsUtils::ImagesCache imageCache(&mp, 0, false);
     for(size_t atlasID = 0; atlasID < _atlases.size(); ++atlasID)
-        generateTexture(mp, ptsCams, atlasID, imageCache, outPath, textureFileType);
+        generateTexture(mp, atlasID, imageCache, outPath, textureFileType);
 }
 
 
@@ -207,7 +268,7 @@ struct AccuColor {
 };
 
 
-void Texturing::generateTexture(const mvsUtils::MultiViewParams& mp, StaticVector<StaticVector<int>*>* ptsCams,
+void Texturing::generateTexture(const mvsUtils::MultiViewParams& mp,
                                 size_t atlasID, mvsUtils::ImagesCache& imageCache, const bfs::path& outPath, EImageFileType textureFileType)
 {
     if(atlasID >= _atlases.size())
@@ -231,7 +292,7 @@ void Texturing::generateTexture(const mvsUtils::MultiViewParams& mp, StaticVecto
         for(int k = 0; k < 3; k++)
         {
             const int pointIndex = (*me->tris)[triangleId].i[k];
-            const StaticVector<int>* pointVisibilities = (*ptsCams)[pointIndex];
+            const StaticVector<int>* pointVisibilities = (*pointsVisibilities)[pointIndex];
             if(pointVisibilities != nullptr)
             {
                 std::copy(pointVisibilities->begin(), pointVisibilities->end(), std::inserter(triCams, triCams.end()));
@@ -430,6 +491,74 @@ void Texturing::loadFromOBJ(const std::string& filename, bool flipNormals)
     {
         unsigned int atlasID = nmtls ? (*trisMtlIds)[triangleID] : 0;
         _atlases[atlasID].push_back(triangleID);
+    }
+}
+
+void Texturing::loadFromMeshing(const std::string& meshFilepath, const std::string& visibilitiesFilepath)
+{
+    if(!me->loadFromBin(meshFilepath))
+    {
+        throw std::runtime_error("Unable to load: " + meshFilepath);
+    }
+
+    pointsVisibilities = loadArrayOfArraysFromFile<int>(visibilitiesFilepath);
+    if(pointsVisibilities->size() != me->pts->size())
+        throw std::runtime_error("Error: Reference mesh and associated visibilities don't have the same size.");
+}
+
+void Texturing::replaceMesh(const std::string& otherMeshPath, bool flipNormals)
+{
+    // keep previous mesh as reference
+    Mesh* refMesh = me;
+    // load input obj file
+    me = new mesh::Mesh();
+    loadFromOBJ(otherMeshPath, flipNormals);
+    // remap visibilities from reconstruction onto input mesh
+    PointsVisibility otherPtsVisibilities;
+    remapMeshVisibilities(*refMesh, *pointsVisibilities, *me, otherPtsVisibilities);
+    // delete src mesh
+    delete refMesh;
+    pointsVisibilities->swap(otherPtsVisibilities);
+}
+
+void Texturing::unwrap(mvsUtils::MultiViewParams& mp, EUnwrapMethod method)
+{
+    if(method == mesh::EUnwrapMethod::Basic)
+    {
+        // generate UV coordinates based on automatic uv atlas
+        generateUVs(mp);
+    }
+    else
+    {
+        GEO::initialize();
+        GEO::Mesh mesh;
+        toGeoMesh(*me, mesh);
+
+        // perform parametrization with Geogram
+        const GEO::ChartParameterizer param = (method == mesh::EUnwrapMethod::ABF) ? GEO::PARAM_ABF : GEO::PARAM_SPECTRAL_LSCM;
+
+        ALICEVISION_LOG_INFO("Start mesh atlasing (using Geogram " << EUnwrapMethod_enumToString(method) << ").");
+        GEO::mesh_make_atlas(mesh, 45.0, param);
+        ALICEVISION_LOG_INFO("Mesh atlasing done.");
+
+        // TODO: retrieve computed UV coordinates and find a way to update internal data
+        // GEO::Attribute<double> uvs(in.facet_corners.attributes(), "tex_coord");
+        // uvCoords = new StaticVector<Point2d>();
+        // uvCoords->reserve(in.vertices.nb());
+        // TODO: fill trisUvsIds
+        // trisUvIds = new StaticVector<Voxel>();
+        // trisUvIds->reserve(me->tris->size());
+
+        // Meanwhile,
+        // use a temporary obj file to save result - Geogram merges common UV coordinates per facet corner -
+        // and reload it
+        const std::string tmpObjPath = (bfs::temp_directory_path() / bfs::unique_path()).string() + ".obj";
+        // save temp mesh with UVs
+        GEO::mesh_save(mesh, tmpObjPath);
+        // replace initial mesh
+        replaceMesh(tmpObjPath);
+        // remove temp mesh
+        bfs::remove(tmpObjPath);
     }
 }
 
