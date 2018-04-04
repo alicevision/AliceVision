@@ -27,6 +27,7 @@
 #if defined _OPENMP && _OPENMP >= 201107 
 #define OMP_ATOMIC_UPDATE _Pragma("omp atomic update")
 #define OMP_ATOMIC_WRITE  _Pragma("omp atomic write")
+#define OMP_HAVE_MIN_MAX_REDUCTION
 #else
 #define OMP_ATOMIC_UPDATE _Pragma("omp atomic")
 #define OMP_ATOMIC_WRITE  _Pragma("omp atomic")
@@ -940,9 +941,18 @@ void DelaunayGraphCut::fuseFromDepthMaps(const StaticVector<int>& cams, const Po
     ALICEVISION_LOG_INFO("angleFactor: " << params.angleFactor);
     // Compute max visibility angle per point
     // and weight simScore with angular score
+#if defined(FUSE_COMPUTE_ANGLE_STATS) && !defined(OMP_HAVE_MIN_MAX_REDUCTION)
+    ALICEVISION_LOG_DEBUG("Disable angle stats computation: OpenMP does not provide required min/max reduction clauses.");
+#undef FUSE_COMPUTE_ANGLE_STATS
+#endif
+
+#ifdef FUSE_COMPUTE_ANGLE_STATS
     double stat_minAngle = std::numeric_limits<double>::max(), stat_maxAngle = 0.0;
     double stat_minAngleScore = std::numeric_limits<double>::max(), stat_maxAngleScore = 0.0;
     #pragma omp parallel for reduction(max: stat_maxAngle,stat_maxAngleScore) reduction(min: stat_minAngle,stat_minAngleScore)
+#else
+#pragma omp parallel for
+#endif
     for(int vIndex = 0; vIndex < verticesCoordsPrepare.size(); ++vIndex)
     {
         if(pixSizePrepare[vIndex] == -1.0)
@@ -972,19 +982,22 @@ void DelaunayGraphCut::fuseFromDepthMaps(const StaticVector<int>& cams, const Po
             continue;
         }
 
+        const double angleScore = 1.0 + params.angleFactor / maxAngle;
+        // Combine angleScore with simScore
+        simScorePrepare[vIndex] = simScorePrepare[vIndex] * angleScore;
+
+#ifdef FUSE_COMPUTE_ANGLE_STATS
         stat_minAngle = std::min(stat_minAngle, maxAngle);
         stat_maxAngle = std::max(stat_maxAngle, maxAngle);
 
-        const double angleScore = 1.0 + params.angleFactor / maxAngle;
         stat_minAngleScore = std::min(stat_minAngleScore, angleScore);
         stat_maxAngleScore = std::max(stat_maxAngleScore, angleScore);
-        // Combine angleScore with simScore
-        simScorePrepare[vIndex] = simScorePrepare[vIndex] * angleScore;
+#endif
     }
-
+#ifdef FUSE_COMPUTE_ANGLE_STATS
     ALICEVISION_LOG_INFO("Angle min: " << stat_minAngle << ", max: " << stat_maxAngle << ".");
     ALICEVISION_LOG_INFO("Angle score min: " << stat_minAngleScore << ", max: " << stat_maxAngleScore << ".");
-
+#endif
     removeInvalidPoints(verticesCoordsPrepare, pixSizePrepare, simScorePrepare, verticesAttrPrepare);
 
     ALICEVISION_LOG_INFO("Filter by angle score and sim score");
