@@ -303,11 +303,11 @@ bool ReconstructionEngine_globalSfM::Compute_Initial_Structure
     tracksBuilder.Build(pose_supported_matches);
 #else
     // Use triplet validated matches
-    tracksBuilder.Build(tripletWise_matches);
+    tracksBuilder.build(tripletWise_matches);
 #endif
-    tracksBuilder.Filter(3);
+    tracksBuilder.filter(3);
     TracksMap map_selectedTracks; // reconstructed track (visibility per 3D point)
-    tracksBuilder.ExportToSTL(map_selectedTracks);
+    tracksBuilder.exportToSTL(map_selectedTracks);
 
     // Fill sfm_data with the computed tracks (no 3D yet)
     Landmarks & structure = _sfm_data.structure;
@@ -336,10 +336,10 @@ bool ReconstructionEngine_globalSfM::Compute_Initial_Structure
       //    - number of images
       //    - number of tracks
       std::set<size_t> set_imagesId;
-      TracksUtilsMap::ImageIdInTracks(map_selectedTracks, set_imagesId);
+      TracksUtilsMap::imageIdInTracks(map_selectedTracks, set_imagesId);
       osTrack << "------------------" << "\n"
         << "-- Tracks Stats --" << "\n"
-        << " Tracks number: " << tracksBuilder.NbTracks() << "\n"
+        << " Tracks number: " << tracksBuilder.nbTracks() << "\n"
         << " Images Id: " << "\n";
       std::copy(set_imagesId.begin(),
         set_imagesId.end(),
@@ -347,7 +347,7 @@ bool ReconstructionEngine_globalSfM::Compute_Initial_Structure
       osTrack << "\n------------------" << "\n";
 
       std::map<size_t, size_t> map_Occurence_TrackLength;
-      TracksUtilsMap::TracksLength(map_selectedTracks, map_Occurence_TrackLength);
+      TracksUtilsMap::tracksLength(map_selectedTracks, map_Occurence_TrackLength);
       osTrack << "TrackLength, Occurrence" << "\n";
       for (std::map<size_t, size_t>::const_iterator iter = map_Occurence_TrackLength.begin();
         iter != map_Occurence_TrackLength.end(); ++iter)  {

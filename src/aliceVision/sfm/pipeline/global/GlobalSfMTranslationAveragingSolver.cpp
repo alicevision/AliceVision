@@ -380,11 +380,11 @@ void GlobalSfMTranslationAveragingSolver::ComputePutativeTranslation_EdgesCovera
       // Compute tracks:
       {
         aliceVision::track::TracksBuilder tracksBuilder;
-        tracksBuilder.Build(map_triplet_matches);
-        tracksBuilder.Filter(3);
+        tracksBuilder.build(map_triplet_matches);
+        tracksBuilder.filter(3);
 
         #pragma omp critical
-        map_tracksPerTriplets[i] = tracksBuilder.NbTracks(); //count the # of matches in the UF tree
+        map_tracksPerTriplets[i] = tracksBuilder.nbTracks(); //count the # of matches in the UF tree
       }
     }
 
@@ -619,9 +619,9 @@ bool GlobalSfMTranslationAveragingSolver::Estimate_T_triplet(
   }
 
   aliceVision::track::TracksBuilder tracksBuilder;
-  tracksBuilder.Build(map_triplet_matches);
-  tracksBuilder.Filter(3);
-  tracksBuilder.ExportToSTL(tracks);
+  tracksBuilder.build(map_triplet_matches);
+  tracksBuilder.filter(3);
+  tracksBuilder.exportToSTL(tracks);
 
   if (tracks.size() < 30)
     return false;

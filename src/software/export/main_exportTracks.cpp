@@ -143,11 +143,11 @@ int main(int argc, char ** argv)
   {
     const aliceVision::matching::PairwiseMatches& map_Matches = pairwiseMatches;
     track::TracksBuilder tracksBuilder;
-    tracksBuilder.Build(map_Matches);
-    tracksBuilder.Filter();
-    tracksBuilder.ExportToSTL(mapTracks);
+    tracksBuilder.build(map_Matches);
+    tracksBuilder.filter();
+    tracksBuilder.exportToSTL(mapTracks);
 
-    ALICEVISION_LOG_INFO("# tracks: " << tracksBuilder.NbTracks());
+    ALICEVISION_LOG_INFO("# tracks: " << tracksBuilder.nbTracks());
   }
 
   // for each pair, export the matches
@@ -181,7 +181,7 @@ int main(int argc, char ** argv)
       setImageIndex.insert(viewI->getViewId());
       setImageIndex.insert(viewJ->getViewId());
 
-      TracksUtilsMap::GetCommonTracksInImages(setImageIndex, mapTracks, mapTracksCommon);
+      TracksUtilsMap::getCommonTracksInImages(setImageIndex, mapTracks, mapTracksCommon);
 
       if(mapTracksCommon.empty())
       {

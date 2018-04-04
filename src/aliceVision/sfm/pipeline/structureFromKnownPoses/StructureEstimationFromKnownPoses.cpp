@@ -196,9 +196,9 @@ void StructureEstimationFromKnownPoses::filter(
           map_matchesIJK.insert(*_putativeMatches.find(std::make_pair(J,K)));
 
         if (map_matchesIJK.size() >= 2) {
-          tracksBuilder.Build(map_matchesIJK);
-          tracksBuilder.Filter(3, false);
-          tracksBuilder.ExportToSTL(map_tracksCommon);
+          tracksBuilder.build(map_matchesIJK);
+          tracksBuilder.filter(3, false);
+          tracksBuilder.exportToSTL(map_tracksCommon);
         }
 
         // Triangulate the tracks
@@ -249,9 +249,9 @@ void StructureEstimationFromKnownPoses::triangulate(
 {
   track::TracksMap map_tracksCommon;
   track::TracksBuilder tracksBuilder;
-  tracksBuilder.Build(_tripletMatches);
-  tracksBuilder.Filter(3);
-  tracksBuilder.ExportToSTL(map_tracksCommon);
+  tracksBuilder.build(_tripletMatches);
+  tracksBuilder.filter(3);
+  tracksBuilder.exportToSTL(map_tracksCommon);
   matching::PairwiseMatches().swap(_tripletMatches);
 
   // Generate new Structure tracks

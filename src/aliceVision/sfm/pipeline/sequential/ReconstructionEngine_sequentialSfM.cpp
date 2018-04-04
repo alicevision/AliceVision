@@ -207,13 +207,13 @@ std::size_t ReconstructionEngine_sequentialSfM::fuseMatchesIntoTracks()
     const aliceVision::matching::PairwiseMatches& map_Matches = *_pairwiseMatches;
 
     ALICEVISION_LOG_DEBUG("Track building");
-    tracksBuilder.Build(map_Matches);
+    tracksBuilder.build(map_Matches);
     ALICEVISION_LOG_DEBUG("Track filtering");
-    tracksBuilder.Filter(_minInputTrackLength);
+    tracksBuilder.filter(_minInputTrackLength);
 
     ALICEVISION_LOG_DEBUG("Track export to internal structure");
     // build tracks with STL compliant type
-    tracksBuilder.ExportToSTL(_map_tracks);
+    tracksBuilder.exportToSTL(_map_tracks);
     ALICEVISION_LOG_DEBUG("Build tracks per view");
     track::TracksUtilsMap::computeTracksPerView(_map_tracks, _map_tracksPerView);
     ALICEVISION_LOG_DEBUG("Build tracks pyramid per view");
@@ -223,14 +223,14 @@ std::size_t ReconstructionEngine_sequentialSfM::fuseMatchesIntoTracks()
     // display stats
     {
       std::set<size_t> imagesId;
-      track::TracksUtilsMap::ImageIdInTracks(_map_tracksPerView, imagesId);
+      track::TracksUtilsMap::imageIdInTracks(_map_tracksPerView, imagesId);
 
       ALICEVISION_LOG_INFO("Fuse matches into tracks: " << std::endl
-        << "\t- # tracks: " << tracksBuilder.NbTracks() << std::endl
+        << "\t- # tracks: " << tracksBuilder.nbTracks() << std::endl
         << "\t- # images in tracks: " << imagesId.size());
 
       std::map<size_t, size_t> map_Occurence_TrackLength;
-      track::TracksUtilsMap::TracksLength(_map_tracks, map_Occurence_TrackLength);
+      track::TracksUtilsMap::tracksLength(_map_tracks, map_Occurence_TrackLength);
       ALICEVISION_LOG_INFO("TrackLength, Occurrence");
       for(const auto& iter: map_Occurence_TrackLength)
       {
@@ -859,7 +859,7 @@ bool ReconstructionEngine_sequentialSfM::makeInitialPair3D(const Pair& current_p
   // use the track to have a more dense match correspondence set
   aliceVision::track::TracksMap map_tracksCommon;
   const std::set<std::size_t> set_imageIndex= {I, J};
-  track::TracksUtilsMap::GetCommonTracksInImagesFast(set_imageIndex, _map_tracks, _map_tracksPerView, map_tracksCommon);
+  track::TracksUtilsMap::getCommonTracksInImagesFast(set_imageIndex, _map_tracks, _map_tracksPerView, map_tracksCommon);
 
   //-- Copy point to arrays
   const std::size_t n = map_tracksCommon.size();
@@ -1077,7 +1077,7 @@ bool ReconstructionEngine_sequentialSfM::getBestInitialImagePairs(std::vector<Pa
 
     aliceVision::track::TracksMap map_tracksCommon;
     const std::set<size_t> set_imageIndex= {I, J};
-    track::TracksUtilsMap::GetCommonTracksInImagesFast(set_imageIndex, _map_tracks, _map_tracksPerView, map_tracksCommon);
+    track::TracksUtilsMap::getCommonTracksInImagesFast(set_imageIndex, _map_tracks, _map_tracksPerView, map_tracksCommon);
 
     // Copy points correspondences to arrays for relative pose estimation
     const size_t n = map_tracksCommon.size();
@@ -1319,7 +1319,7 @@ bool ReconstructionEngine_sequentialSfM::computeResection(const IndexT viewIndex
   
   // Get back featId associated to a tracksID already reconstructed.
   // These 2D/3D associations will be used for the resection.
-  TracksUtilsMap::GetFeatureIdInViewPerTrack(_map_tracks,
+  TracksUtilsMap::getFeatureIdInViewPerTrack(_map_tracks,
                                              resectionData.tracksId,
                                              viewIndex,
                                              &resectionData.featuresId);
@@ -1497,7 +1497,7 @@ void ReconstructionEngine_sequentialSfM::getTracksToTriangulate(const std::set<I
   allReconstructedViews.insert(newReconstructedViews.begin(), newReconstructedViews.end());
   
   std::set<IndexT> allTracksInNewViews;
-  track::TracksUtilsMap::GetTracksInImagesFast(newReconstructedViews, _map_tracksPerView, allTracksInNewViews);
+  track::TracksUtilsMap::getTracksInImagesFast(newReconstructedViews, _map_tracksPerView, allTracksInNewViews);
   
   std::set<IndexT>::iterator it;
 #pragma omp parallel private(it)
@@ -1714,7 +1714,7 @@ void ReconstructionEngine_sequentialSfM::triangulate(SfMData& scene, const std::
       // Find track correspondences between I and J
       const std::set<std::size_t> set_viewIndex = { I, J };
       track::TracksMap map_tracksCommonIJ;
-      track::TracksUtilsMap::GetCommonTracksInImagesFast(set_viewIndex, _map_tracks, _map_tracksPerView, map_tracksCommonIJ);
+      track::TracksUtilsMap::getCommonTracksInImagesFast(set_viewIndex, _map_tracks, _map_tracksPerView, map_tracksCommonIJ);
 
       const View* viewI = scene.GetViews().at(I).get();
       const View* viewJ = scene.GetViews().at(J).get();
