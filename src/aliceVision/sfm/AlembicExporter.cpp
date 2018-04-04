@@ -248,7 +248,7 @@ void AlembicExporter::addSfM(const SfMData& sfmData, ESfMData flagsPart)
   {
     const sfm::LandmarksUncertainty noUncertainty;
 
-    addLandmarks(sfmData.GetLandmarks(),
+    addLandmarks(sfmData.getLandmarks(),
               (flagsPart & sfm::ESfMData::LANDMARKS_UNCERTAINTY) ? sfmData._landmarksUncertainty : noUncertainty,
               (flagsPart & sfm::ESfMData::OBSERVATIONS));
   }
@@ -259,7 +259,7 @@ void AlembicExporter::addSfM(const SfMData& sfmData, ESfMData flagsPart)
     std::map<IndexT, std::map<IndexT, std::vector<IndexT>>> rigsViewIds; //map<rigId,map<poseId,viewId>>
 
     // save all single views
-    for(const auto& viewPair : sfmData.GetViews())
+    for(const auto& viewPair : sfmData.getViews())
     {
       const View& view = *(viewPair.second);
 
@@ -285,10 +285,10 @@ void AlembicExporter::addSfM(const SfMData& sfmData, ESfMData flagsPart)
 void AlembicExporter::addSfMSingleCamera(const SfMData& sfmData, const View& view)
 {
   const std::string name = fs::path(view.getImagePath()).stem().string();
-  const geometry::Pose3* pose = (sfmData.existsPose(view)) ? &(sfmData.GetPoses().at(view.getPoseId())) :  nullptr;
-  const camera::IntrinsicBase* intrinsic = sfmData.GetIntrinsicPtr(view.getIntrinsicId());
+  const geometry::Pose3* pose = (sfmData.existsPose(view)) ? &(sfmData.getPoses().at(view.getPoseId())) :  nullptr;
+  const camera::IntrinsicBase* intrinsic = sfmData.getIntrinsicPtr(view.getIntrinsicId());
 
-  if(sfmData.IsPoseAndIntrinsicDefined(&view))
+  if(sfmData.isPoseAndIntrinsicDefined(&view))
     _dataImpl->addCamera(name, view, pose, intrinsic, nullptr, &_dataImpl->_mvgCameras);
   else
     _dataImpl->addCamera(name, view, pose, intrinsic, nullptr, &_dataImpl->_mvgCamerasUndefined);
@@ -303,15 +303,15 @@ void AlembicExporter::addSfMCameraRig(const SfMData& sfmData, IndexT rigId, cons
                              + ":\n\t- # sub-poses in rig structure: " + std::to_string(nbSubPoses)
                              + "\n\t- # sub-poses find in views: " + std::to_string(viewIds.size()));
 
-  const View& firstView = *(sfmData.GetViews().at(viewIds.front()));
+  const View& firstView = *(sfmData.getViews().at(viewIds.front()));
 
   XformSample xformsample;
   const IndexT rigPoseId = firstView.getPoseId();
 
-  if(sfmData.GetPoses().find(rigPoseId) != sfmData.GetPoses().end())
+  if(sfmData.getPoses().find(rigPoseId) != sfmData.getPoses().end())
   {
     // rig pose
-    const geometry::Pose3 rigPose = sfmData.GetPoses().at(rigPoseId);
+    const geometry::Pose3 rigPose = sfmData.getPoses().at(rigPoseId);
 
     const aliceVision::Mat3& R = rigPose.rotation();
     const aliceVision::Vec3& center = rigPose.center();
@@ -343,12 +343,12 @@ void AlembicExporter::addSfMCameraRig(const SfMData& sfmData, IndexT rigId, cons
   std::map<bool, Alembic::AbcGeom::OXform> rigObj;
   for(const IndexT viewId : viewIds)
   {
-    const View& view = *(sfmData.GetViews().at(viewId));
+    const View& view = *(sfmData.getViews().at(viewId));
     const RigSubPose& rigSubPose = rig.getSubPose(view.getSubPoseId());
     const bool isReconstructed = (rigSubPose.status != ERigSubPoseStatus::UNINITIALIZED);
     const std::string name = fs::path(view.getImagePath()).stem().string();
     const geometry::Pose3* subPose = isReconstructed ? &(rigSubPose.pose) : nullptr;
-    const camera::IntrinsicBase* intrinsic = sfmData.GetIntrinsicPtr(view.getIntrinsicId());
+    const camera::IntrinsicBase* intrinsic = sfmData.getIntrinsicPtr(view.getIntrinsicId());
 
     Alembic::Abc::OObject& parent = isReconstructed ? _dataImpl->_mvgCameras : _dataImpl->_mvgCamerasUndefined;
 

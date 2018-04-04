@@ -111,7 +111,7 @@ int main(int argc, char **argv)
     return EXIT_FAILURE;
   }
 
-  if(sfmData.GetPoses().empty() || sfmData.GetLandmarks().empty())
+  if(sfmData.getPoses().empty() || sfmData.getLandmarks().empty())
   {
     ALICEVISION_LOG_ERROR("The input SfM_Data file have not 3D content to match with.");
     return EXIT_FAILURE;

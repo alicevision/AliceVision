@@ -456,8 +456,8 @@ bool ColorHarmonizationEngineGlobal::ReadInputData()
   }
 
   // Read images names
-  for(Views::const_iterator iter = sfmData.GetViews().begin();
-    iter != sfmData.GetViews().end(); ++iter)
+  for(Views::const_iterator iter = sfmData.getViews().begin();
+    iter != sfmData.getViews().end(); ++iter)
   {
     const View* v = iter->second.get();
     _fileNames.push_back(v->getImagePath());

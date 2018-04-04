@@ -135,7 +135,7 @@ int main(int argc, char ** argv)
     return EXIT_FAILURE;
   }
 
-  const std::size_t viewCount = sfmData.GetViews().size();
+  const std::size_t viewCount = sfmData.getViews().size();
   ALICEVISION_LOG_INFO("# views: " << viewCount);
 
   // compute tracks from matches
@@ -156,14 +156,14 @@ int main(int argc, char ** argv)
 
   for(std::size_t I = 0; I < viewCount; ++I)
   {
-    auto itI = sfmData.GetViews().begin();
+    auto itI = sfmData.getViews().begin();
     std::advance(itI, I);
 
     const View* viewI = itI->second.get();
 
     for(std::size_t J = I+1; J < viewCount; ++J, ++myProgressBar)
     {
-      auto itJ = sfmData.GetViews().begin();
+      auto itJ = sfmData.getViews().begin();
       std::advance(itJ, J);
 
       const View* viewJ = itJ->second.get();

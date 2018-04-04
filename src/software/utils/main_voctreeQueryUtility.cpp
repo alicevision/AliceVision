@@ -265,7 +265,7 @@ int main(int argc, char** argv)
     if(sfm::Load(sfmData, sfmDataFilename, sfm::ESfMData(sfm::VIEWS|sfm::INTRINSICS)))
     {
       ALICEVISION_LOG_INFO("SfMData loaded from " << sfmDataFilename << " containing: ");
-      ALICEVISION_LOG_INFO("\tnumber of views: " << sfmData.GetViews().size());
+      ALICEVISION_LOG_INFO("\tnumber of views: " << sfmData.getViews().size());
     }
     else
     {
@@ -280,7 +280,7 @@ int main(int argc, char** argv)
       if(sfm::Load(*querySfmData, querySfmDataFilename, sfm::ESfMData(sfm::VIEWS|sfm::INTRINSICS)))
       {
         ALICEVISION_LOG_INFO("SfMData loaded from " << querySfmDataFilename << " containing: ");
-        ALICEVISION_LOG_INFO("\tnumber of views: " << querySfmData->GetViews().size());
+        ALICEVISION_LOG_INFO("\tnumber of views: " << querySfmData->getViews().size());
       }
       else
       {
@@ -415,8 +415,8 @@ int main(int argc, char** argv)
 
       // get the dirname from the filename
       
-      aliceVision::sfm::Views::const_iterator it = querySfmData->GetViews().find(docMatches.first);
-      if(it == querySfmData->GetViews().end())
+      aliceVision::sfm::Views::const_iterator it = querySfmData->getViews().find(docMatches.first);
+      if(it == querySfmData->getViews().end())
       {
         // this is very wrong
         ALICEVISION_LOG_ERROR("Could not find the image file for the document " << docMatches.first << "!");
@@ -492,8 +492,8 @@ int main(int argc, char** argv)
         fs::path sylinkName; //< the name used for the symbolic link
 
         // get the dirname from the filename
-        aliceVision::sfm::Views::const_iterator it = sfmData.GetViews().find(matches[j].id);
-        if(it != sfmData.GetViews().end())
+        aliceVision::sfm::Views::const_iterator it = sfmData.getViews().find(matches[j].id);
+        if(it != sfmData.getViews().end())
         {
           absoluteFilename = it->second->getImagePath();
           sylinkName = fs::path(myToString(j, 4) + "." + std::to_string(matches[j].score) + "." + absoluteFilename.filename().string());

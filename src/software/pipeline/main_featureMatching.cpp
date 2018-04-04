@@ -243,7 +243,7 @@ int main(int argc, char **argv)
 
   if(predefinedPairList.empty())
   {
-    pairs = exhaustivePairs(sfmData.GetViews(), rangeStart, rangeSize);
+    pairs = exhaustivePairs(sfmData.getViews(), rangeStart, rangeSize);
   }
   else
   {
@@ -278,7 +278,7 @@ int main(int argc, char **argv)
 
   const std::vector<feature::EImageDescriberType> describerTypes = feature::EImageDescriberType_stringToEnums(describerTypesName);
 
-  ALICEVISION_LOG_INFO("There are " + std::to_string(sfmData.GetViews().size()) + " views and " + std::to_string(pairs.size()) + " image pairs.");
+  ALICEVISION_LOG_INFO("There are " + std::to_string(sfmData.getViews().size()) + " views and " + std::to_string(pairs.size()) + " image pairs.");
 
   // load the corresponding view regions
   RegionsPerView regionPerView;
@@ -326,14 +326,14 @@ int main(int argc, char **argv)
   if(exportDebugFiles)
   {
     //-- export putative matches Adjacency matrix
-    PairwiseMatchingToAdjacencyMatrixSVG(sfmData.GetViews().size(),
+    PairwiseMatchingToAdjacencyMatrixSVG(sfmData.getViews().size(),
       mapPutativesMatches,
       (fs::path(matchesFolder) / "PutativeAdjacencyMatrix.svg").string());
     //-- export view pair graph once putative graph matches have been computed
     {
       std::set<IndexT> set_ViewIds;
 
-      std::transform(sfmData.GetViews().begin(), sfmData.GetViews().end(),
+      std::transform(sfmData.getViews().begin(), sfmData.getViews().end(),
         std::inserter(set_ViewIds, set_ViewIds.begin()), stl::RetrieveKey());
 
       graph::indexedGraph putativeGraph(set_ViewIds, getPairs(mapPutativesMatches));
@@ -498,14 +498,14 @@ int main(int argc, char **argv)
   {
     // export Adjacency matrix
     ALICEVISION_LOG_INFO("Export Adjacency Matrix of the pairwise's geometric matches");
-    PairwiseMatchingToAdjacencyMatrixSVG(sfmData.GetViews().size(),
+    PairwiseMatchingToAdjacencyMatrixSVG(sfmData.getViews().size(),
       finalMatches,(fs::path(matchesFolder) / "GeometricAdjacencyMatrix.svg").string());
 
     /*
     // export view pair graph once geometric filter have been done
     {
       std::set<IndexT> set_ViewIds;
-      std::transform(sfmData.GetViews().begin(), sfmData.GetViews().end(),
+      std::transform(sfmData.getViews().begin(), sfmData.getViews().end(),
         std::inserter(set_ViewIds, set_ViewIds.begin()), stl::RetrieveKey());
       graph::indexedGraph putativeGraph(set_ViewIds, getPairs(finalMatches));
       graph::exportToGraphvizData(

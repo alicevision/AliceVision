@@ -177,8 +177,8 @@ int main(int argc, char ** argv)
     const std::size_t I = iter->first;
     const std::size_t J = iter->second;
 
-    const View* viewI = sfmData.GetViews().at(I).get();
-    const View* viewJ = sfmData.GetViews().at(J).get();
+    const View* viewI = sfmData.getViews().at(I).get();
+    const View* viewJ = sfmData.getViews().at(J).get();
 
     const std::string viewImagePathI= viewI->getImagePath();
     const std::string viewImagePathJ= viewJ->getImagePath();

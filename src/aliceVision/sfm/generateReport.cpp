@@ -24,8 +24,8 @@ bool generateSfMReport(const SfMData& sfmData,
   // Compute mean,max,median residual values per View
   IndexT residualCount = 0;
   HashMap< IndexT, std::vector<double> > residuals_per_view;
-  for (Landmarks::const_iterator iterTracks = sfmData.GetLandmarks().begin();
-    iterTracks != sfmData.GetLandmarks().end();
+  for (Landmarks::const_iterator iterTracks = sfmData.getLandmarks().begin();
+    iterTracks != sfmData.getLandmarks().end();
     ++iterTracks
   )
   {
@@ -33,9 +33,9 @@ bool generateSfMReport(const SfMData& sfmData,
     for (Observations::const_iterator itObs = observations.begin();
       itObs != observations.end(); ++itObs)
     {
-      const View * view = sfmData.GetViews().at(itObs->first).get();
+      const View * view = sfmData.getViews().at(itObs->first).get();
       const geometry::Pose3 pose = sfmData.getPose(*view);
-      const camera::IntrinsicBase * intrinsic = sfmData.GetIntrinsics().at(view->getIntrinsicId()).get();
+      const camera::IntrinsicBase * intrinsic = sfmData.getIntrinsics().at(view->getIntrinsicId()).get();
       // Use absolute values
       const Vec2 residual = intrinsic->residual(pose, iterTracks->second.X, itObs->second.x).array().abs();
       residuals_per_view[itObs->first].push_back(residual(0));
@@ -59,11 +59,11 @@ bool generateSfMReport(const SfMData& sfmData,
   htmlDocStream.pushInfo( "Dataset info:" + sNewLine );
 
   std::ostringstream os;
-  os << "#views: " << sfmData.GetViews().size() << sNewLine
+  os << "#views: " << sfmData.getViews().size() << sNewLine
   << " #valid views: " << sfmData.getValidViews().size() << sNewLine
-  << " #poses: " << sfmData.GetPoses().size() << sNewLine
-  << " #intrinsics: " << sfmData.GetIntrinsics().size() << sNewLine
-  << " #tracks: " << sfmData.GetLandmarks().size() << sNewLine
+  << " #poses: " << sfmData.getPoses().size() << sNewLine
+  << " #intrinsics: " << sfmData.getIntrinsics().size() << sNewLine
+  << " #tracks: " << sfmData.getLandmarks().size() << sNewLine
   << " #residuals: " << residualCount << sNewLine;
 
   htmlDocStream.pushInfo( os.str() );
@@ -82,8 +82,8 @@ bool generateSfMReport(const SfMData& sfmData,
     << sRowEnd;
   htmlDocStream.pushInfo( os.str() );
 
-  for (Views::const_iterator iterV = sfmData.GetViews().begin();
-    iterV != sfmData.GetViews().end();
+  for (Views::const_iterator iterV = sfmData.getViews().begin();
+    iterV != sfmData.getViews().end();
     ++iterV)
   {
     const View * v = iterV->second.get();
@@ -95,7 +95,7 @@ bool generateSfMReport(const SfMData& sfmData,
       << sColBegin + fs::path(v->getImagePath()).stem().string() + sColEnd;
 
     // IdView | basename | #Observations | residuals min | residual median | residual max
-    if (sfmData.IsPoseAndIntrinsicDefined(v))
+    if (sfmData.isPoseAndIntrinsicDefined(v))
     {
       if( residuals_per_view.find(id_view) != residuals_per_view.end() )
       {

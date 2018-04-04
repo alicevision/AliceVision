@@ -211,10 +211,10 @@ void BundleAdjustmentCeres::createProblem(SfMData & sfm_data, BA_Refine refineOp
   // parameters for cameras and points are added automatically.
   //----------
 
-  parameterBlocks.reserve(sfm_data.GetPoses().size() + sfm_data.structure.size());
+  parameterBlocks.reserve(sfm_data.getPoses().size() + sfm_data.structure.size());
 
   // Setup Poses data & subparametrization
-  for (Poses::const_iterator itPose = sfm_data.GetPoses().begin(); itPose != sfm_data.GetPoses().end(); ++itPose)
+  for (Poses::const_iterator itPose = sfm_data.getPoses().begin(); itPose != sfm_data.getPoses().end(); ++itPose)
   {
     const IndexT indexPose = itPose->first;
     const Pose3& pose = itPose->second;
@@ -246,10 +246,10 @@ void BundleAdjustmentCeres::createProblem(SfMData & sfm_data, BA_Refine refineOp
   const bool refineIntrinsics = (refineOptions & BA_REFINE_INTRINSICS_FOCAL) ||
                                 (refineOptions & BA_REFINE_INTRINSICS_DISTORTION) ||
                                 refineIntrinsicsOpticalCenter;
-  for(const auto& itView: sfm_data.GetViews())
+  for(const auto& itView: sfm_data.getViews())
   {
     const View* v = itView.second.get();
-    if (sfm_data.IsPoseAndIntrinsicDefined(v))
+    if (sfm_data.isPoseAndIntrinsicDefined(v))
     {
       if(intrinsicsUsage.find(v->getIntrinsicId()) == intrinsicsUsage.end())
         intrinsicsUsage[v->getIntrinsicId()] = 1;
@@ -264,7 +264,7 @@ void BundleAdjustmentCeres::createProblem(SfMData & sfm_data, BA_Refine refineOp
   }
 
   // Setup Intrinsics data & subparametrization
-  for(const auto& itIntrinsic: sfm_data.GetIntrinsics())
+  for(const auto& itIntrinsic: sfm_data.getIntrinsics())
   {
     const IndexT idIntrinsics = itIntrinsic.first;
     if(intrinsicsUsage[idIntrinsics] == 0)
@@ -464,7 +464,7 @@ bool BundleAdjustmentCeres::Adjust(
     ALICEVISION_LOG_DEBUG(
       "Bundle Adjustment statistics (approximated RMSE):\n"
       "\t- # views: " << sfm_data.views.size() << "\n"
-      "\t- # poses: " << sfm_data.GetPoses().size() << "\n"
+      "\t- # poses: " << sfm_data.getPoses().size() << "\n"
       "\t- # intrinsics: " << sfm_data.intrinsics.size() << "\n"
       "\t- # tracks: " << sfm_data.structure.size() << "\n"
       "\t- # residuals: " << summary.num_residuals << "\n"
@@ -476,8 +476,8 @@ bool BundleAdjustmentCeres::Adjust(
   // Update camera poses with refined data
   if ((refineOptions & BA_REFINE_ROTATION) || (refineOptions & BA_REFINE_TRANSLATION))
   {
-    for (Poses::iterator itPose = sfm_data.GetPoses().begin();
-      itPose != sfm_data.GetPoses().end(); ++itPose)
+    for (Poses::iterator itPose = sfm_data.getPoses().begin();
+      itPose != sfm_data.getPoses().end(); ++itPose)
     {
       const IndexT indexPose = itPose->first;
 

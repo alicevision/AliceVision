@@ -95,11 +95,11 @@ int main(int argc, char **argv)
   sfm::Save(sfmData, outputFolder + "/scene.abc", sfm::ESfMData::ALL);
 
   // export undistorted images and thumbnail images
-  boost::progress_display progressBar(sfmData.GetViews().size(), std::cout, "Exporting Images for MayaMVG\n");
-  for(auto& viewPair : sfmData.GetViews())
+  boost::progress_display progressBar(sfmData.getViews().size(), std::cout, "Exporting Images for MayaMVG\n");
+  for(auto& viewPair : sfmData.getViews())
   {
     const sfm::View& view = *viewPair.second;
-    const std::shared_ptr<camera::IntrinsicBase> intrinsicPtr = sfmData.GetIntrinsicSharedPtr(view.getIntrinsicId());
+    const std::shared_ptr<camera::IntrinsicBase> intrinsicPtr = sfmData.getIntrinsicsharedPtr(view.getIntrinsicId());
 
     if(intrinsicPtr == nullptr)
     {

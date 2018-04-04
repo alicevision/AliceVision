@@ -59,9 +59,9 @@ void StructureComputation_blind::triangulate(SfMData & sfm_data) const
       for(const auto& itObs : observations)
       {
         const View * view = sfm_data.views.at(itObs.first).get();
-        if (sfm_data.IsPoseAndIntrinsicDefined(view))
+        if (sfm_data.isPoseAndIntrinsicDefined(view))
         {
-          const IntrinsicBase * cam = sfm_data.GetIntrinsics().at(view->getIntrinsicId()).get();
+          const IntrinsicBase * cam = sfm_data.getIntrinsics().at(view->getIntrinsicId()).get();
           const Pose3 pose = sfm_data.getPose(*view);
           trianObj.add(
             cam->get_projective_equivalent(pose),
@@ -199,7 +199,7 @@ bool StructureComputation_robust::robust_triangulation(
       Observations::const_iterator itObs = observations.begin();
       std::advance(itObs, it);
       const View * view = sfm_data.views.at(itObs->first).get();
-      const IntrinsicBase * cam = sfm_data.GetIntrinsics().at(view->getIntrinsicId()).get();
+      const IntrinsicBase * cam = sfm_data.getIntrinsics().at(view->getIntrinsicId()).get();
       const Pose3 pose = sfm_data.getPose(*view);
       const double z = pose.depth(current_model); // TODO: cam->depth(pose(X));
       bChierality &= z > 0;
@@ -215,7 +215,7 @@ bool StructureComputation_robust::robust_triangulation(
     for (const auto& itObs : observations)
     {
       const View * view = sfm_data.views.at(itObs.first).get();
-      const IntrinsicBase * intrinsic = sfm_data.GetIntrinsics().at(view->getIntrinsicId()).get();
+      const IntrinsicBase * intrinsic = sfm_data.getIntrinsics().at(view->getIntrinsicId()).get();
       const Pose3 pose = sfm_data.getPose(*view);
       const Vec2 residual = intrinsic->residual(pose, current_model, itObs.second.x);
       const double residual_d = residual.norm();
@@ -255,7 +255,7 @@ Vec3 StructureComputation_robust::track_sample_triangulation(
     Observations::const_iterator itObs = observations.begin();
     std::advance(itObs, idx);
     const View * view = sfm_data.views.at(itObs->first).get();
-    const IntrinsicBase * cam = sfm_data.GetIntrinsics().at(view->getIntrinsicId()).get();
+    const IntrinsicBase * cam = sfm_data.getIntrinsics().at(view->getIntrinsicId()).get();
     const Pose3 pose = sfm_data.getPose(*view);
     trianObj.add(
       cam->get_projective_equivalent(pose),

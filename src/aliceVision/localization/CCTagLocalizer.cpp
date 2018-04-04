@@ -102,7 +102,7 @@ bool CCTagLocalizer::loadReconstructionDescriptors(const sfm::SfMData & sfm_data
   featuresFolders.emplace_back(feat_directory);
 
   // Read for each view the corresponding Regions and store them
-  for(const auto &iter : _sfm_data.GetViews())
+  for(const auto &iter : _sfm_data.getViews())
   {
     const IndexT id_view = iter.second->getViewId();
     if(observationsPerView.count(id_view) == 0)
@@ -132,7 +132,7 @@ bool CCTagLocalizer::loadReconstructionDescriptors(const sfm::SfMData & sfm_data
     std::vector<int> counterCCtagsInImage = {0, 0, 0, 0, 0, 0};
     // just debugging stuff -- print for each image the visible reconstructed cctag
     // and create an histogram of cctags per image
-    for(const auto &iter : sfm_data.GetViews())
+    for(const auto &iter : sfm_data.getViews())
     {
       const IndexT id_view = iter.second->getViewId();
       const feature::Regions& regions = _regionsPerView.getRegions(id_view, _cctagDescType);
@@ -175,7 +175,7 @@ bool CCTagLocalizer::loadReconstructionDescriptors(const sfm::SfMData & sfm_data
     ALICEVISION_LOG_DEBUG("Images with 5+ CCTags : " << counterCCtagsInImage[5]);
 
     // Display the cctag ids over all cctag landmarks present in the database
-    ALICEVISION_LOG_DEBUG("Found " << presentCCtagIds.size() << " different CCTag ids in the database with " << _sfm_data.GetLandmarks().size() << " associated 3D points\n"
+    ALICEVISION_LOG_DEBUG("Found " << presentCCtagIds.size() << " different CCTag ids in the database with " << _sfm_data.getLandmarks().size() << " associated 3D points\n"
             "The CCTag ids in the database are: ");
     for(int cctagId: presentCCtagIds)
     {
@@ -769,7 +769,7 @@ void CCTagLocalizer::getAllAssociations(const feature::CCTAG_Regions &queryRegio
   for(const IndexT keyframeId : nearestKeyFrames)
   {
     ALICEVISION_LOG_DEBUG(keyframeId);
-    ALICEVISION_LOG_DEBUG(_sfm_data.GetViews().at(keyframeId)->getImagePath());
+    ALICEVISION_LOG_DEBUG(_sfm_data.getViews().at(keyframeId)->getImagePath());
     const feature::Regions& matchedRegions = _regionsPerView.getRegions(keyframeId, _cctagDescType);
     const ReconstructedRegionsMapping& regionsMapping = _reconstructedRegionsMappingPerView.at(keyframeId).at(_cctagDescType);
     const feature::CCTAG_Regions & matchedCCtagRegions = dynamic_cast<const feature::CCTAG_Regions &>(matchedRegions);
@@ -784,7 +784,7 @@ void CCTagLocalizer::getAllAssociations(const feature::CCTAG_Regions &queryRegio
     if(!param._visualDebug.empty() && !imagePath.empty())
     {
       namespace bfs = boost::filesystem;
-      const sfm::View *mview = _sfm_data.GetViews().at(keyframeId).get();
+      const sfm::View *mview = _sfm_data.getViews().at(keyframeId).get();
       const std::string queryImage = bfs::path(imagePath).stem().string();
       const std::string matchedImage = bfs::path(mview->getImagePath()).stem().string();
       const std::string matchedPath = mview->getImagePath();
@@ -889,7 +889,7 @@ void CCTagLocalizer::getAllAssociations(const feature::CCTAG_Regions &queryRegio
     const IndexT pt2D_id = idx.first.featId;
       
     out_pt2D.col(index) = queryRegions.GetRegionPosition(pt2D_id);
-    out_pt3D.col(index) = _sfm_data.GetLandmarks().at(pt3D_id).X;
+    out_pt3D.col(index) = _sfm_data.getLandmarks().at(pt3D_id).X;
     ++index;
   }
 }

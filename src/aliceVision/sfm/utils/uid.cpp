@@ -115,7 +115,7 @@ void sanityCheckLandmarks(const Landmarks &landmarks, const Views &views)
 void regenerateUID(SfMData &sfmdata, std::map<std::size_t, std::size_t> &oldIdToNew, bool sanityCheck)
 {
   // if the views are empty, nothing to be done. 
-  if(sfmdata.GetViews().empty())
+  if(sfmdata.getViews().empty())
     return;
   
   regenerateViewUIDs(sfmdata.views, oldIdToNew);
@@ -123,9 +123,9 @@ void regenerateUID(SfMData &sfmdata, std::map<std::size_t, std::size_t> &oldIdTo
   if(!sanityCheck)
     return;
   
-  sanityCheckLandmarks(sfmdata.GetLandmarks(), sfmdata.GetViews());
+  sanityCheckLandmarks(sfmdata.getLandmarks(), sfmdata.getViews());
   
-  sanityCheckLandmarks(sfmdata.GetControl_Points(), sfmdata.GetViews());
+  sanityCheckLandmarks(sfmdata.getControlPoints(), sfmdata.getViews());
   
 }
 

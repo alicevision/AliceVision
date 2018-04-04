@@ -35,12 +35,16 @@ using Landmarks = HashMap<IndexT, Landmark>;
 /// Define a collection of Rig
 using Rigs = std::map<IndexT, Rig>;
 
+/// Define uncertainty per pose
 using PosesUncertainty = HashMap<IndexT, Vec6>;
+
+/// Define uncertainty per landmark
 using LandmarksUncertainty = HashMap<IndexT, Vec3>;
 
-
-/// Generic SfM data container
-/// Store structure and camera properties:
+/**
+ * @brief SfMData container
+ * Store structure and camera properties
+ */
 class SfMData
 {
 public:
@@ -52,14 +56,10 @@ public:
   Landmarks structure;
   /// Controls points (stored as Landmarks (id_feat has no meaning here))
   Landmarks control_points;
-
+  /// Uncertainty per pose
   PosesUncertainty _posesUncertainty;
+  /// Uncertainty per landmark
   LandmarksUncertainty _landmarksUncertainty;
-
-  /// Feature folder path
-  std::vector<std::string> _featuresFolders;
-  /// Matching folder path
-  std::vector<std::string> _matchesFolders;
 
   // Operators
 
@@ -67,23 +67,76 @@ public:
 
   // Accessors
 
-  const Views& GetViews() const {return views;}
-  Views& GetViews() {return views;}
-  const Poses& GetPoses() const {return _poses;}
-  Poses& GetPoses() {return _poses;}
+  /**
+   * @brief Get views
+   * @return views
+   */
+  const Views& getViews() const {return views;}
+  Views& getViews() {return views;}
+
+  /**
+   * @brief Get poses
+   * @return poses
+   */
+  const Poses& getPoses() const {return _poses;}
+  Poses& getPoses() {return _poses;}
+
+  /**
+   * @brief Get rigs
+   * @return rigs
+   */
   const Rigs& getRigs() const {return _rigs;}
   Rigs& getRigs() {return _rigs;}
-  const Intrinsics& GetIntrinsics() const {return intrinsics;}
-  Intrinsics& GetIntrinsics() {return intrinsics;}
-  const Landmarks& GetLandmarks() const {return structure;}
-  Landmarks& GetLandmarks() {return structure;}
-  const Landmarks& GetControl_Points() const {return control_points;}
-  Landmarks& GetControl_Points() {return control_points;}
 
-  const std::vector<std::string>& getRelativeFeaturesFolders() const {return _featuresFolders;}
-  const std::vector<std::string>& getRelativeMatchesFolders() const {return _matchesFolders;}
+  /**
+   * @brief Get intrinsics
+   * @return intrinsics
+   */
+  const Intrinsics& getIntrinsics() const {return intrinsics;}
+  Intrinsics& getIntrinsics() {return intrinsics;}
 
+  /**
+   * @brief Get landmarks
+   * @return landmarks
+   */
+  const Landmarks& getLandmarks() const {return structure;}
+  Landmarks& getLandmarks() {return structure;}
+
+  /**
+   * @brief Get control points
+   * @return control points
+   */
+  const Landmarks& getControlPoints() const {return control_points;}
+  Landmarks& getControlPoints() {return control_points;}
+
+  /**
+   * @brief Get relative features folder paths
+   * @return features folders paths
+   */
+  const std::vector<std::string>& getRelativeFeaturesFolders() const
+  {
+    return _featuresFolders;
+  }
+
+  /**
+   * @brief Get relative matches folder paths
+   * @return matches folder paths
+   */
+  const std::vector<std::string>& getRelativeMatchesFolders() const
+  {
+    return _matchesFolders;
+  }
+
+  /**
+   * @brief Get absolute features folder paths
+   * @return features folders paths
+   */
   std::vector<std::string> getFeaturesFolders() const;
+
+  /**
+   * @brief Get absolute matches folder paths
+   * @return matches folder paths
+   */
   std::vector<std::string> getMatchesFolders() const;
 
   /**
@@ -102,7 +155,7 @@ public:
    * @brief Return a pointer to an intrinsic if available or nullptr otherwise.
    * @param[in] intrinsicId
    */
-  const camera::IntrinsicBase * GetIntrinsicPtr(IndexT intrinsicId) const
+  const camera::IntrinsicBase* getIntrinsicPtr(IndexT intrinsicId) const
   {
     if(intrinsics.count(intrinsicId))
       return intrinsics.at(intrinsicId).get();
@@ -113,7 +166,7 @@ public:
    * @brief Return a pointer to an intrinsic if available or nullptr otherwise.
    * @param[in] intrinsicId
    */
-  camera::IntrinsicBase * GetIntrinsicPtr(IndexT intrinsicId)
+  camera::IntrinsicBase* getIntrinsicPtr(IndexT intrinsicId)
   {
     if(intrinsics.count(intrinsicId))
       return intrinsics.at(intrinsicId).get();
@@ -124,7 +177,7 @@ public:
    * @brief Return a shared pointer to an intrinsic if available or nullptr otherwise.
    * @param[in] intrinsicId
    */
-  std::shared_ptr<camera::IntrinsicBase> GetIntrinsicSharedPtr(IndexT intrinsicId)
+  std::shared_ptr<camera::IntrinsicBase> getIntrinsicsharedPtr(IndexT intrinsicId)
   {
     if(intrinsics.count(intrinsicId))
       return intrinsics.at(intrinsicId);
@@ -135,7 +188,7 @@ public:
    * @brief Get a set of views keys
    * @return set of views keys
    */
-  std::set<IndexT> GetViewsKeys() const
+  std::set<IndexT> getViewsKeys() const
   {
     std::set<IndexT> viewKeys;
     for(auto v: views)
@@ -148,7 +201,7 @@ public:
    * @param[in] view The given view
    * @return true if intrinsic and pose defined
    */
-  bool IsPoseAndIntrinsicDefined(const View* view) const
+  bool isPoseAndIntrinsicDefined(const View* view) const
   {
     if (view == nullptr)
       return false;
@@ -165,9 +218,9 @@ public:
    * @param[in] viewID The given viewID
    * @return true if intrinsic and pose defined
    */
-  bool IsPoseAndIntrinsicDefined(IndexT viewId) const
+  bool isPoseAndIntrinsicDefined(IndexT viewId) const
   { 
-    return IsPoseAndIntrinsicDefined(views.at(viewId).get());
+    return isPoseAndIntrinsicDefined(views.at(viewId).get());
   }
 
   /**
@@ -307,6 +360,10 @@ public:
 private:
   /// Absolute path to the SfMData file (should not be saved)
   std::string _absolutePath;
+  /// Features folders path
+  std::vector<std::string> _featuresFolders;
+  /// Matches folders path
+  std::vector<std::string> _matchesFolders;
   /// Considered poses (indexed by view.getPoseId())
   Poses _poses;
   /// Considered rigs
@@ -358,13 +415,13 @@ private:
 };
 
 /**
- * @brief ColorizeTracks Add the associated color to each 3D point of
+ * @brief colorizeTracks Add the associated color to each 3D point of
  * the sfm_data, using the track to determine the best view from which
  * to get the color.
- * @param sfm_data The container of the data
+ * @param sfmData The container of the data
  * @return true if everything went well
  */
-bool ColorizeTracks( SfMData & sfm_data );
+bool colorizeTracks(SfMData& sfmData);
 
 } // namespace sfm
 } // namespace aliceVision

@@ -47,7 +47,7 @@ BOOST_AUTO_TEST_CASE(GLOBAL_SFM_RotationAveragingL2_TranslationAveragingL1) {
 
   // Remove poses and structure
   SfMData sfmData2 = sfmData;
-  sfmData2.GetPoses().clear();
+  sfmData2.getPoses().clear();
   sfmData2.structure.clear();
 
   ReconstructionEngine_globalSfM sfmEngine(
@@ -81,8 +81,8 @@ BOOST_AUTO_TEST_CASE(GLOBAL_SFM_RotationAveragingL2_TranslationAveragingL1) {
   const double dResidual = RMSE(sfmEngine.getSfMData());
   ALICEVISION_LOG_DEBUG("RMSE residual: " << dResidual);
   BOOST_CHECK( dResidual < 0.5);
-  BOOST_CHECK( sfmEngine.getSfMData().GetPoses().size() == nviews);
-  BOOST_CHECK( sfmEngine.getSfMData().GetLandmarks().size() == npoints);
+  BOOST_CHECK( sfmEngine.getSfMData().getPoses().size() == nviews);
+  BOOST_CHECK( sfmEngine.getSfMData().getLandmarks().size() == npoints);
 }
 
 BOOST_AUTO_TEST_CASE(GLOBAL_SFM_RotationAveragingL1_TranslationAveragingL1) {
@@ -97,7 +97,7 @@ BOOST_AUTO_TEST_CASE(GLOBAL_SFM_RotationAveragingL1_TranslationAveragingL1) {
 
   // Remove poses and structure
   SfMData sfmData2 = sfmData;
-  sfmData2.GetPoses().clear();
+  sfmData2.getPoses().clear();
   sfmData2.structure.clear();
 
   ReconstructionEngine_globalSfM sfmEngine(
@@ -131,8 +131,8 @@ BOOST_AUTO_TEST_CASE(GLOBAL_SFM_RotationAveragingL1_TranslationAveragingL1) {
   const double dResidual = RMSE(sfmEngine.getSfMData());
   ALICEVISION_LOG_DEBUG("RMSE residual: " << dResidual);
   BOOST_CHECK( dResidual < 0.5);
-  BOOST_CHECK( sfmEngine.getSfMData().GetPoses().size() == nviews);
-  BOOST_CHECK( sfmEngine.getSfMData().GetLandmarks().size() == npoints);
+  BOOST_CHECK( sfmEngine.getSfMData().getPoses().size() == nviews);
+  BOOST_CHECK( sfmEngine.getSfMData().getLandmarks().size() == npoints);
 }
 
 BOOST_AUTO_TEST_CASE(GLOBAL_SFM_RotationAveragingL2_TranslationAveragingL2_Chordal) {
@@ -147,7 +147,7 @@ BOOST_AUTO_TEST_CASE(GLOBAL_SFM_RotationAveragingL2_TranslationAveragingL2_Chord
 
   // Remove poses and structure
   SfMData sfmData2 = sfmData;
-  sfmData2.GetPoses().clear();
+  sfmData2.getPoses().clear();
   sfmData2.structure.clear();
 
   ReconstructionEngine_globalSfM sfmEngine(
@@ -181,8 +181,8 @@ BOOST_AUTO_TEST_CASE(GLOBAL_SFM_RotationAveragingL2_TranslationAveragingL2_Chord
   const double dResidual = RMSE(sfmEngine.getSfMData());
   ALICEVISION_LOG_DEBUG("RMSE residual: " << dResidual);
   BOOST_CHECK( dResidual < 0.5);
-  BOOST_CHECK( sfmEngine.getSfMData().GetPoses().size() == nviews);
-  BOOST_CHECK( sfmEngine.getSfMData().GetLandmarks().size() == npoints);
+  BOOST_CHECK( sfmEngine.getSfMData().getPoses().size() == nviews);
+  BOOST_CHECK( sfmEngine.getSfMData().getLandmarks().size() == npoints);
 }
 
 BOOST_AUTO_TEST_CASE(GLOBAL_SFM_RotationAveragingL2_TranslationAveragingSoftL1) {
@@ -197,7 +197,7 @@ BOOST_AUTO_TEST_CASE(GLOBAL_SFM_RotationAveragingL2_TranslationAveragingSoftL1) 
 
   // Remove poses and structure
   SfMData sfmData2 = sfmData;
-  sfmData2.GetPoses().clear();
+  sfmData2.getPoses().clear();
   sfmData2.structure.clear();
 
   ReconstructionEngine_globalSfM sfmEngine(
@@ -231,6 +231,6 @@ BOOST_AUTO_TEST_CASE(GLOBAL_SFM_RotationAveragingL2_TranslationAveragingSoftL1) 
   const double dResidual = RMSE(sfmEngine.getSfMData());
   ALICEVISION_LOG_DEBUG("RMSE residual: " << dResidual);
   BOOST_CHECK( dResidual < 0.5);
-  BOOST_CHECK( sfmEngine.getSfMData().GetPoses().size() == nviews);
-  BOOST_CHECK( sfmEngine.getSfMData().GetLandmarks().size() == npoints);
+  BOOST_CHECK( sfmEngine.getSfMData().getPoses().size() == nviews);
+  BOOST_CHECK( sfmEngine.getSfMData().getLandmarks().size() == npoints);
 }

@@ -124,8 +124,8 @@ public:
   {
     // iteration on each view in the range in order
     // to prepare viewJob stack
-    sfm::Views::const_iterator itViewBegin = _sfmData.GetViews().begin();
-    sfm::Views::const_iterator itViewEnd = _sfmData.GetViews().end();
+    sfm::Views::const_iterator itViewBegin = _sfmData.getViews().begin();
+    sfm::Views::const_iterator itViewEnd = _sfmData.getViews().end();
 
     if(_rangeStart != -1)
     {
@@ -366,7 +366,7 @@ int main(int argc, char **argv)
   if(rangeStart != -1)
   {
     if(rangeStart < 0 || rangeSize < 0 ||
-       rangeStart > sfmData.GetViews().size())
+       rangeStart > sfmData.getViews().size())
     {
       ALICEVISION_LOG_ERROR("Range is incorrect");
       return EXIT_FAILURE;

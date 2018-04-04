@@ -34,16 +34,16 @@ bool savePLY(
     IndexT view_with_pose_count = 0;
     if (b_extrinsics)
     {
-      for (const auto & view : sfmData.GetViews())
+      for (const auto & view : sfmData.getViews())
       {
-        view_with_pose_count += sfmData.IsPoseAndIntrinsicDefined(view.second.get());
+        view_with_pose_count += sfmData.isPoseAndIntrinsicDefined(view.second.get());
       }
     }
     stream << "ply"
       << '\n' << "format ascii 1.0"
       << '\n' << "element vertex "
         // Vertex count: (#landmark + #view_with_valid_pose)
-        << ((b_structure ? sfmData.GetLandmarks().size() : 0) +
+        << ((b_structure ? sfmData.getLandmarks().size() : 0) +
             view_with_pose_count)
       << '\n' << "property float x"
       << '\n' << "property float y"
@@ -55,9 +55,9 @@ bool savePLY(
 
       if (b_extrinsics)
       {
-        for (const auto & view : sfmData.GetViews())
+        for (const auto & view : sfmData.getViews())
         {
-          if (sfmData.IsPoseAndIntrinsicDefined(view.second.get()))
+          if (sfmData.isPoseAndIntrinsicDefined(view.second.get()))
           {
             const geometry::Pose3 pose = sfmData.getPose(*(view.second.get()));
             stream << pose.center().transpose()
@@ -68,7 +68,7 @@ bool savePLY(
 
       if (b_structure)
       {
-        const Landmarks & landmarks = sfmData.GetLandmarks();
+        const Landmarks & landmarks = sfmData.getLandmarks();
         for (Landmarks::const_iterator iterLandmarks = landmarks.begin();
           iterLandmarks != landmarks.end();
           ++iterLandmarks)  {

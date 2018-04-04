@@ -20,7 +20,7 @@ void generateSyntheticMatches(
   const SfMData & sfmData,
   feature::EImageDescriberType descType)
 {
-  for(const auto& it: sfmData.GetLandmarks())
+  for(const auto& it: sfmData.getLandmarks())
   {
     const Landmark& landmark = it.second;
     const std::size_t limitMatches = std::min(std::size_t(3), landmark.observations.size());
@@ -163,7 +163,7 @@ SfMData getInputRigScene(const NViewDataSet& d,
   // 3. Poses
   for (int poseId = 0; poseId < nbPoses; ++poseId)
   {
-    sfmData.GetPoses()[poseId] = geometry::Pose3(d._R[poseId], d._C[poseId]);
+    sfmData.getPoses()[poseId] = geometry::Pose3(d._R[poseId], d._C[poseId]);
   }
 
   // 4. Intrinsic data (shared, so only one camera intrinsic is defined)

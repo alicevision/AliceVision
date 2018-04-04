@@ -323,7 +323,7 @@ int main(int argc, char **argv)
   else
   {
     // fill SfMData with the images in the input folder
-    Views& views = sfmData.GetViews();
+    Views& views = sfmData.getViews();
     std::vector<std::string> imagePaths;
 
     if(listFiles(imageFolder, {".jpg", ".jpeg", ".tif", ".tiff", ".exr"},  imagePaths))
@@ -345,17 +345,17 @@ int main(int argc, char **argv)
       return EXIT_FAILURE;
   }
 
-  if(sfmData.GetViews().empty())
+  if(sfmData.getViews().empty())
   {
     ALICEVISION_LOG_ERROR("Can't find views in input.");
     return EXIT_FAILURE;
   }
 
   // create missing intrinsics
-  auto viewPairItBegin = sfmData.GetViews().begin();
+  auto viewPairItBegin = sfmData.getViews().begin();
 
   #pragma omp parallel for
-  for(int i = 0; i < sfmData.GetViews().size(); ++i)
+  for(int i = 0; i < sfmData.getViews().size(); ++i)
   {
     View& view = *(std::next(viewPairItBegin,i)->second);
     IndexT intrinsicId = view.getIntrinsicId();
@@ -367,7 +367,7 @@ int main(int argc, char **argv)
     // check if the view intrinsic is already defined
     if(intrinsicId != UndefinedIndexT)
     {
-      std::shared_ptr<camera::IntrinsicBase> intrinsic = sfmData.GetIntrinsicSharedPtr(view.getIntrinsicId());
+      std::shared_ptr<camera::IntrinsicBase> intrinsic = sfmData.getIntrinsicsharedPtr(view.getIntrinsicId());
       if(intrinsic != nullptr)
       {
         if(intrinsic->initialFocalLengthPix() > 0)
@@ -462,7 +462,7 @@ int main(int argc, char **argv)
     #pragma omp critical
     {
       view.setIntrinsicId(intrinsicId);
-      sfmData.GetIntrinsics().emplace(intrinsicId, intrinsic);
+      sfmData.getIntrinsics().emplace(intrinsicId, intrinsic);
     }
   }
 
@@ -499,9 +499,9 @@ int main(int argc, char **argv)
 
   // print report
   ALICEVISION_LOG_INFO("CameraInit report:" << std::endl
-                   << "\t- # views listed in SfMData: " << sfmData.GetViews().size() << std::endl
+                   << "\t- # views listed in SfMData: " << sfmData.getViews().size() << std::endl
                    << "\t- # views with an initialized intrinsic listed in SfMData: " << completeViewCount << std::endl
-                   << "\t- # intrinsics listed in SfMData: " << sfmData.GetIntrinsics().size());
+                   << "\t- # intrinsics listed in SfMData: " << sfmData.getIntrinsics().size());
 
   return EXIT_SUCCESS;
 }

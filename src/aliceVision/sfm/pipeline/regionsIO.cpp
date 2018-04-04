@@ -125,7 +125,7 @@ bool loadRegionsPerView(feature::RegionsPerView& regionsPerView,
   std::vector<std::string> featuresFolders = sfmData.getFeaturesFolders(); // add sfm features folders
   featuresFolders.insert(featuresFolders.end(), folders.begin(), folders.end()); // add user features folders
 
-  boost::progress_display progressBar(sfmData.GetViews().size() * imageDescriberTypes.size(), std::cout, "Loading regions\n");
+  boost::progress_display progressBar(sfmData.getViews().size() * imageDescriberTypes.size(), std::cout, "Loading regions\n");
 
   std::atomic_bool invalid(false);
 
@@ -136,7 +136,7 @@ bool loadRegionsPerView(feature::RegionsPerView& regionsPerView,
     imageDescribers[i] = createImageDescriber(imageDescriberTypes[i]);
 
 #pragma omp parallel num_threads(3)
- for (auto iter = sfmData.GetViews().begin(); iter != sfmData.GetViews().end() && !invalid; ++iter)
+ for (auto iter = sfmData.getViews().begin(); iter != sfmData.getViews().end() && !invalid; ++iter)
  {
   #pragma omp single nowait
    {
@@ -174,7 +174,7 @@ bool loadFeaturesPerView(feature::FeaturesPerView& featuresPerView,
   std::vector<std::string> featuresFolders = sfmData.getFeaturesFolders(); // add sfm features folders
   featuresFolders.insert(featuresFolders.end(), folders.begin(), folders.end()); // add user features folders
 
-  boost::progress_display progressBar(sfmData.GetViews().size(), std::cout, "Loading features\n");
+  boost::progress_display progressBar(sfmData.getViews().size(), std::cout, "Loading features\n");
 
   // read for each view the corresponding features and store them as PointFeatures
   std::atomic_bool invalid(false);
@@ -186,7 +186,7 @@ bool loadFeaturesPerView(feature::FeaturesPerView& featuresPerView,
     imageDescribers.at(i) = createImageDescriber(imageDescriberTypes.at(i));
 
 #pragma omp parallel
-  for (auto iter = sfmData.GetViews().begin(); (iter != sfmData.GetViews().end()) && (!invalid); ++iter)
+  for (auto iter = sfmData.getViews().begin(); (iter != sfmData.getViews().end()) && (!invalid); ++iter)
   {
 #pragma omp single nowait
     {

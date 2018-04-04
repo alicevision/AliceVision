@@ -29,7 +29,7 @@ namespace sfm {
       return false;
     }
 
-    if (sfm_data.GetPoses().empty() || sfm_data.GetLandmarks().empty())
+    if (sfm_data.getPoses().empty() || sfm_data.getLandmarks().empty())
     {
       ALICEVISION_LOG_WARNING("The input SfMData file have not 3D content to match with.");
       return false;
@@ -44,7 +44,7 @@ namespace sfm {
 
     const feature::Regions& regionsType = regionsPerView.getFirstViewRegions();
     landmark_observations_descriptors_.reset(regionsType.EmptyClone());
-    for (const auto & landmark : sfm_data.GetLandmarks())
+    for (const auto & landmark : sfm_data.getLandmarks())
     {
       for (const auto & observation : landmark.second.obs)
       {
@@ -62,7 +62,7 @@ namespace sfm {
     matching_interface_.reset(new
       matching::Matcher_Regions_Database(matching::ANN_L2, *landmark_observations_descriptors_));
     ALICEVISION_LOG_DEBUG("Retrieval database initialized\n"
-      "#landmark: " << sfm_data.GetLandmarks().size() << "\n"
+      "#landmark: " << sfm_data.getLandmarks().size() << "\n"
       "#descriptor initialized: " << landmark_observations_descriptors_->RegionCount());
 
     sfm_data_ = &sfm_data;
@@ -102,7 +102,7 @@ namespace sfm {
     resection_data.pt2D.resize(2, vec_putative_matches.size());
     for (size_t i = 0; i < vec_putative_matches.size(); ++i)
     {
-      resection_data.pt3D.col(i) = sfm_data_->GetLandmarks().at(index_to_landmark_id_[vec_putative_matches[i]._i]).X;
+      resection_data.pt3D.col(i) = sfm_data_->getLandmarks().at(index_to_landmark_id_[vec_putative_matches[i]._i]).X;
       resection_data.pt2D.col(i) = query_regions.GetRegionPosition(vec_putative_matches[i]._j);
     }
 

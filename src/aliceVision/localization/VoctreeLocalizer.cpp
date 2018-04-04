@@ -283,7 +283,7 @@ bool VoctreeLocalizer::initDatabase(const std::string & vocTreeFilepath,
   // add its visual words to the database.
   // then only store the feature and descriptors that have a 3D point associated
   ALICEVISION_LOG_DEBUG("Build observations per view");
-  boost::progress_display my_progress_bar(_sfm_data.GetViews().size(),
+  boost::progress_display my_progress_bar(_sfm_data.getViews().size(),
                                      std::cout, "\n- Load Features and Descriptors per view -\n");
 
   // Build observations per view
@@ -314,9 +314,9 @@ bool VoctreeLocalizer::initDatabase(const std::string & vocTreeFilepath,
 
   // Read for each view the corresponding Regions and store them
 #pragma omp parallel for num_threads(3)
-  for(int i = 0; i < _sfm_data.GetViews().size(); ++i)
+  for(int i = 0; i < _sfm_data.getViews().size(); ++i)
   {
-    auto iter = _sfm_data.GetViews().cbegin();
+    auto iter = _sfm_data.getViews().cbegin();
     std::advance(iter, i);
     const IndexT id_view = iter->second->getViewId();
     if(observationsPerView.count(id_view) == 0)
@@ -435,7 +435,7 @@ bool VoctreeLocalizer::localizeFirstBestResult(const feature::MapRegionsPerDesc 
     ALICEVISION_LOG_DEBUG("[matching]\tTrying to match the query image with " << matchedView->getImagePath());
 
     // its associated intrinsics
-    const camera::IntrinsicBase *matchedIntrinsicsBase = _sfm_data.GetIntrinsicPtr(matchedView->getIntrinsicId());
+    const camera::IntrinsicBase *matchedIntrinsicsBase = _sfm_data.getIntrinsicPtr(matchedView->getIntrinsicId());
     if ( !isPinhole(matchedIntrinsicsBase->getType()) )
       throw std::logic_error("Unsupported intrinsic: " + EINTRINSIC_enumToString(matchedIntrinsicsBase->getType()) + " (only Pinhole cameras are supported for localization).");
 
@@ -468,7 +468,7 @@ bool VoctreeLocalizer::localizeFirstBestResult(const feature::MapRegionsPerDesc 
     if(!param._visualDebug.empty() && !imagePath.empty())
     {
       namespace bfs = boost::filesystem;
-      const sfm::View *mview = _sfm_data.GetViews().at(matchedViewId).get();
+      const sfm::View *mview = _sfm_data.getViews().at(matchedViewId).get();
       const std::string queryimage = bfs::path(imagePath).stem().string();
       const std::string matchedImage = bfs::path(mview->getImagePath()).stem().string();
       const std::string matchedPath = mview->getImagePath();
@@ -506,7 +506,7 @@ bool VoctreeLocalizer::localizeFirstBestResult(const feature::MapRegionsPerDesc 
         const IndexT trackId3D = matchedRegions._associated3dPoint[featureMatch._j];
 
         // prepare data for resectioning
-        resectionData.pt3D.col(index) = _sfm_data.GetLandmarks().at(trackId3D).X;
+        resectionData.pt3D.col(index) = _sfm_data.getLandmarks().at(trackId3D).X;
 
         const Vec2 feat = queryRegions.at(descType)->GetRegionPosition(featureMatch._i);
         resectionData.pt2D.col(index) = feat;
@@ -840,7 +840,7 @@ void VoctreeLocalizer::getAllAssociations(const feature::MapRegionsPerDesc &quer
     if(!param._visualDebug.empty() && !imagePath.empty())
     {
       namespace bfs = boost::filesystem;
-      const sfm::View *mview = _sfm_data.GetViews().at(matchedViewId).get();
+      const sfm::View *mview = _sfm_data.getViews().at(matchedViewId).get();
       // the current query image without extension
       const auto queryImage = bfs::path(imagePath).stem();
       // the matching image without extension
@@ -950,7 +950,7 @@ void VoctreeLocalizer::getAllAssociations(const feature::MapRegionsPerDesc &quer
   {
      // recopy all the points in the matching structure
     const IndexT pt2D_id = idx.first.featId;
-    const sfm::Landmark& landmark = _sfm_data.GetLandmarks().at(idx.first.landmarkId);
+    const sfm::Landmark& landmark = _sfm_data.getLandmarks().at(idx.first.landmarkId);
     
 //    ALICEVISION_LOG_DEBUG("[matching]\tAssociation [" << idx.first.landmarkId << "," << pt2D_id << "] occurred " << idx.second << " times");
 

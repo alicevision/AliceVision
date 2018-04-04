@@ -45,8 +45,8 @@ bool computeSimilarity(const SfMData & sfmDataA,
   for (size_t i = 0; i  < commonViewIds.size(); ++i)
   {
     IndexT viewId = commonViewIds[i];
-    xA.col(i) = sfmDataA.GetPoses().at(sfmDataA.GetViews().at(viewId)->getPoseId()).center();
-    xB.col(i) = sfmDataB.GetPoses().at(sfmDataB.GetViews().at(viewId)->getPoseId()).center();
+    xA.col(i) = sfmDataA.getPoses().at(sfmDataA.getViews().at(viewId)->getPoseId()).center();
+    xB.col(i) = sfmDataB.getPoses().at(sfmDataB.getViews().at(viewId)->getPoseId()).center();
   }
 
   // Compute rigid transformation p'i = S R pi + t
@@ -70,22 +70,22 @@ void computeNewCoordinateSystemFromCameras(const SfMData& sfmData,
                                            Mat3& out_R,
                                            Vec3& out_t)
 {
-  Mat3X vX(3, sfmData.GetLandmarks().size());
+  Mat3X vX(3, sfmData.getLandmarks().size());
 
   std::size_t i = 0;
-  for(const auto& landmark : sfmData.GetLandmarks())
+  for(const auto& landmark : sfmData.getLandmarks())
   {
     vX.col(i) = landmark.second.X;
     ++i;
   }
 
-  const std::size_t nbCameras = sfmData.GetPoses().size();
+  const std::size_t nbCameras = sfmData.getPoses().size();
   Mat3X vCamCenter(3,nbCameras);
 
   // Compute the mean of the point cloud
   Vec3 meanPoints = Vec3::Zero(3,1);
   i=0;
-  for(const auto & pose : sfmData.GetPoses())
+  for(const auto & pose : sfmData.getPoses())
   {
     vCamCenter.col(i) = pose.second.center();
     meanPoints +=  pose.second.center();
@@ -98,7 +98,7 @@ void computeNewCoordinateSystemFromCameras(const SfMData& sfmData,
   vCamRotation.reserve(nbCameras);
   i=0;
   double rms = 0;
-  for(const auto & pose : sfmData.GetPoses())
+  for(const auto & pose : sfmData.getPoses())
   {
     Vec3 camCenterMean = vCamCenter.col(i) - meanPoints;
     rms += camCenterMean.transpose() * camCenterMean; // squared dist to the mean of camera centers
@@ -141,7 +141,7 @@ void computeNewCoordinateSystemFromLandmarks(const SfMData& sfmData,
                                     Mat3& out_R,
                                     Vec3& out_t)
 {
-    const std::size_t nbLandmarks = sfmData.GetLandmarks().size();
+    const std::size_t nbLandmarks = sfmData.getLandmarks().size();
 
     Mat3X vX(3,nbLandmarks);
 
@@ -152,7 +152,7 @@ void computeNewCoordinateSystemFromLandmarks(const SfMData& sfmData,
 
     bacc::accumulator_set<double, bacc::stats<bacc::tag::min, bacc::tag::max> > accX, accY, accZ;
 
-    for(const auto & landmark : sfmData.GetLandmarks())
+    for(const auto & landmark : sfmData.getLandmarks())
     {
       const Vec3& position = landmark.second.X;
 

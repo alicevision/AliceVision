@@ -28,11 +28,11 @@ bool saveBAF(
   bool bOk = false;
   {
     stream
-      << sfmData.GetIntrinsics().size() << '\n'
-      << sfmData.GetViews().size() << '\n'
-      << sfmData.GetLandmarks().size() << '\n';
+      << sfmData.getIntrinsics().size() << '\n'
+      << sfmData.getViews().size() << '\n'
+      << sfmData.getLandmarks().size() << '\n';
 
-    const Intrinsics & intrinsics = sfmData.GetIntrinsics();
+    const Intrinsics & intrinsics = sfmData.getIntrinsics();
     for (Intrinsics::const_iterator iterIntrinsic = intrinsics.begin();
       iterIntrinsic != intrinsics.end(); ++iterIntrinsic)
     {
@@ -43,13 +43,13 @@ bool saveBAF(
       stream << '\n';
     }
 
-    const Poses & poses = sfmData.GetPoses();
-    for (Views::const_iterator iterV = sfmData.GetViews().begin();
-      iterV != sfmData.GetViews().end();
+    const Poses & poses = sfmData.getPoses();
+    for (Views::const_iterator iterV = sfmData.getViews().begin();
+      iterV != sfmData.getViews().end();
       ++ iterV)
     {
       const View * view = iterV->second.get();
-      if (!sfmData.IsPoseAndIntrinsicDefined(view))
+      if (!sfmData.isPoseAndIntrinsicDefined(view))
       {
         const Mat3 R = Mat3::Identity();
         const double * rotation = R.data();
@@ -70,7 +70,7 @@ bool saveBAF(
       }
     }
 
-    const Landmarks & landmarks = sfmData.GetLandmarks();
+    const Landmarks & landmarks = sfmData.getLandmarks();
     for (Landmarks::const_iterator iterLandmarks = landmarks.begin();
       iterLandmarks != landmarks.end();
       ++iterLandmarks)
@@ -85,7 +85,7 @@ bool saveBAF(
         iterOb != observations.end(); ++iterOb)
       {
         const IndexT id_view = iterOb->first;
-        const View * v = sfmData.GetViews().at(id_view).get();
+        const View * v = sfmData.getViews().at(id_view).get();
         stream
           << v->getIntrinsicId() << ' '
           << v->getPoseId() << ' '
@@ -106,8 +106,8 @@ bool saveBAF(
     stream.open(sFile.c_str());
     if (!stream.is_open())
       return false;
-    for (Views::const_iterator iterV = sfmData.GetViews().begin();
-      iterV != sfmData.GetViews().end();
+    for (Views::const_iterator iterV = sfmData.getViews().begin();
+      iterV != sfmData.getViews().end();
       ++ iterV)
     {
       const std::string sView_filename = iterV->second->getImagePath();

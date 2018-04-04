@@ -84,7 +84,7 @@ int main(int argc, char** argv)
     return EXIT_FAILURE;
   }
 
-  if(sfmData.GetViews().empty())
+  if(sfmData.getViews().empty())
   {
     ALICEVISION_LOG_ERROR("The input SfMData file '" << sfmDataFilename << "' is empty.");
     return EXIT_FAILURE;
@@ -97,7 +97,7 @@ int main(int argc, char** argv)
     return EXIT_FAILURE;
   }
 
-  if(sfmDataFilter.GetViews().empty())
+  if(sfmDataFilter.getViews().empty())
   {
     ALICEVISION_LOG_ERROR("The input SfMData file '" << sfmDataFilterFilename << "' is empty.");
     return EXIT_FAILURE;
@@ -107,7 +107,7 @@ int main(int argc, char** argv)
 
   std::map<unsigned int, IndexT> viewToFrame;
 
-  for(const auto& viewPair : sfmDataFilter.GetViews())
+  for(const auto& viewPair : sfmDataFilter.getViews())
   {
     const std::string imagePath = fs::path(viewPair.second->getImagePath()).stem().string();
 
@@ -146,14 +146,14 @@ int main(int argc, char** argv)
       {
         const IndexT viewId = findFrameIt->second;
 
-        const auto findViewIt = sfmData.GetViews().find(viewId);
-        if(findViewIt != sfmData.GetViews().end())
+        const auto findViewIt = sfmData.getViews().find(viewId);
+        if(findViewIt != sfmData.getViews().end())
         {
-          if(sfmData.IsPoseAndIntrinsicDefined(findViewIt->second.get()))
+          if(sfmData.isPoseAndIntrinsicDefined(findViewIt->second.get()))
           {
             ALICEVISION_LOG_DEBUG("Add Camera Keyframe");
             const IndexT intrinsicId = findViewIt->second->getIntrinsicId();
-            const camera::Pinhole* cam = dynamic_cast<camera::Pinhole*>(sfmData.GetIntrinsicPtr(intrinsicId));
+            const camera::Pinhole* cam = dynamic_cast<camera::Pinhole*>(sfmData.getIntrinsicPtr(intrinsicId));
             const geometry::Pose3 pose = sfmData.getPose(*findViewIt->second);
             exporter.addCameraKeyframe(pose,
                                        cam,

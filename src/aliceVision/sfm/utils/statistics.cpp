@@ -16,17 +16,17 @@ double RMSE(const SfMData& sfmData)
 {
   // Compute residuals for each observation
   std::vector<double> vec;
-  for(Landmarks::const_iterator iterTracks = sfmData.GetLandmarks().begin();
-      iterTracks != sfmData.GetLandmarks().end();
+  for(Landmarks::const_iterator iterTracks = sfmData.getLandmarks().begin();
+      iterTracks != sfmData.getLandmarks().end();
       ++iterTracks)
   {
     const Observations & obs = iterTracks->second.observations;
     for(Observations::const_iterator itObs = obs.begin();
       itObs != obs.end(); ++itObs)
     {
-      const View * view = sfmData.GetViews().find(itObs->first)->second.get();
+      const View * view = sfmData.getViews().find(itObs->first)->second.get();
       const geometry::Pose3 pose = sfmData.getPose(*view);
-      const std::shared_ptr<camera::IntrinsicBase> intrinsic = sfmData.GetIntrinsics().at(view->getIntrinsicId());
+      const std::shared_ptr<camera::IntrinsicBase> intrinsic = sfmData.getIntrinsics().at(view->getIntrinsicId());
       const Vec2 residual = intrinsic->residual(pose, iterTracks->second.X, itObs->second.x);
       //ALICEVISION_LOG_DEBUG(residual);
       vec.push_back( residual(0) );

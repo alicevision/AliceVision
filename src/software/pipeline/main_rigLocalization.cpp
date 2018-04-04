@@ -313,7 +313,7 @@ int main(int argc, char** argv)
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_ALEMBIC)
   sfm::AlembicExporter exporter(exportAlembicFile);
   exporter.initAnimatedCamera("rig");
-  exporter.addLandmarks(localizer->getSfMData().GetLandmarks());
+  exporter.addLandmarks(localizer->getSfMData().getLandmarks());
   
   boost::ptr_vector<sfm::AlembicExporter> cameraExporters;
   cameraExporters.reserve(numCameras);

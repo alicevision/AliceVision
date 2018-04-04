@@ -308,7 +308,7 @@ int main(int argc, char** argv)
 
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_ALEMBIC)
   sfm::AlembicExporter exporter(exportFile);
-  exporter.addLandmarks(localizer->getSfMData().GetLandmarks());
+  exporter.addLandmarks(localizer->getSfMData().getLandmarks());
 #endif
 
   // Create a camera rig

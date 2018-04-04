@@ -83,7 +83,7 @@ public:
    */
   inline bool colorize()
   {
-    return ColorizeTracks(_sfmData);
+    return colorizeTracks(_sfmData);
   }
 
 protected:

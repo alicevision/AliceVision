@@ -90,15 +90,15 @@ void StructureEstimationFromKnownPoses::match(
     // Use the computed model to check valid correspondences
     // - by considering geometric error and descriptor distance ratio.
 
-    const View * viewL = sfm_data.GetViews().at(it->first).get();
+    const View * viewL = sfm_data.getViews().at(it->first).get();
     const Pose3 poseL = sfm_data.getPose(*viewL);
-    const Intrinsics::const_iterator iterIntrinsicL = sfm_data.GetIntrinsics().find(viewL->getIntrinsicId());
-    const View * viewR = sfm_data.GetViews().at(it->second).get();
+    const Intrinsics::const_iterator iterIntrinsicL = sfm_data.getIntrinsics().find(viewL->getIntrinsicId());
+    const View * viewR = sfm_data.getViews().at(it->second).get();
     const Pose3 poseR = sfm_data.getPose(*viewR);
-    const Intrinsics::const_iterator iterIntrinsicR = sfm_data.GetIntrinsics().find(viewR->getIntrinsicId());
+    const Intrinsics::const_iterator iterIntrinsicR = sfm_data.getIntrinsics().find(viewR->getIntrinsicId());
 
-    if (sfm_data.GetIntrinsics().count(viewL->getIntrinsicId()) != 0 ||
-        sfm_data.GetIntrinsics().count(viewR->getIntrinsicId()) != 0)
+    if (sfm_data.getIntrinsics().count(viewL->getIntrinsicId()) != 0 ||
+        sfm_data.getIntrinsics().count(viewR->getIntrinsicId()) != 0)
     {
       const Mat34 P_L = iterIntrinsicL->second.get()->get_projective_equivalent(poseL);
       const Mat34 P_R = iterIntrinsicR->second.get()->get_projective_equivalent(poseR);
@@ -211,8 +211,8 @@ void StructureEstimationFromKnownPoses::filter(
             {
               const size_t imaIndex = iter->first;
               const size_t featIndex = iter->second;
-              const View * view = sfm_data.GetViews().at(imaIndex).get();
-              const IntrinsicBase * cam = sfm_data.GetIntrinsics().at(view->getIntrinsicId()).get();
+              const View * view = sfm_data.getViews().at(imaIndex).get();
+              const IntrinsicBase * cam = sfm_data.getIntrinsics().at(view->getIntrinsicId()).get();
               const Pose3 pose = sfm_data.getPose(*view);
               const Vec2 pt = regionsPerView.getRegions(imaIndex, subTrack.descType).GetRegionPosition(featIndex);
               trianObj.add(cam->get_projective_equivalent(pose), cam->get_ud_pixel(pt));

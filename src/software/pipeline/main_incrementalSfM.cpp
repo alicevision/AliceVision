@@ -39,7 +39,7 @@ bool retrieveViewIdFromImageName(
   out_viewId = UndefinedIndexT;
 
   // list views uid / filenames and find the one that correspond to the user ones
-  for(const auto& viewPair : sfmData.GetViews())
+  for(const auto& viewPair : sfmData.getViews())
   {
     const View& v = *(viewPair.second.get());
     
@@ -313,9 +313,9 @@ int main(int argc, char **argv)
     Save(sfmEngine.getSfMData(), outputSfMViewsAndPoses, ESfMData(VIEWS|EXTRINSICS|INTRINSICS));
 
   ALICEVISION_LOG_INFO("Structure from Motion results:" << std::endl
-    << "\t- # input images: " << sfmEngine.getSfMData().GetViews().size() << std::endl
-    << "\t- # cameras calibrated: " << sfmEngine.getSfMData().GetPoses().size() << std::endl
-    << "\t- # landmarks: " << sfmEngine.getSfMData().GetLandmarks().size());
+    << "\t- # input images: " << sfmEngine.getSfMData().getViews().size() << std::endl
+    << "\t- # cameras calibrated: " << sfmEngine.getSfMData().getPoses().size() << std::endl
+    << "\t- # landmarks: " << sfmEngine.getSfMData().getLandmarks().size());
 
   return EXIT_SUCCESS;
 }

@@ -159,7 +159,7 @@ int main(int argc, char **argv)
   RemoveOutliers_AngleError(sfmData, 2.0);
 
   ALICEVISION_LOG_INFO("Structure estimation took (s): " << timer.elapsed() << "." << std::endl
-    << "\t- # landmarks found: " << sfmData.GetLandmarks().size());
+    << "\t- # landmarks found: " << sfmData.getLandmarks().size());
 
   if(fs::extension(outSfMDataFilename) != ".ply")
   {

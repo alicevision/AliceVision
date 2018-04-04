@@ -61,11 +61,11 @@ void getListOfDescriptorFiles(const sfm::SfMData& sfmData, const std::vector<std
 
   descriptorsFiles.clear();
 
-  if(sfmData.GetViews().empty())
+  if(sfmData.getViews().empty())
     throw std::runtime_error("Can't get list of descriptor files, no views found");
 
   // explore the sfm_data container to get the files path
-  for(const auto& view : sfmData.GetViews())
+  for(const auto& view : sfmData.getViews())
   {
     bool found = false;
 

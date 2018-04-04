@@ -76,9 +76,9 @@ bool exportToMatlab(
     for(const auto& v: sfm_data.views)
     {
       const View& view = *v.second.get();
-      if(!sfm_data.IsPoseAndIntrinsicDefined(&view))
+      if(!sfm_data.isPoseAndIntrinsicDefined(&view))
         continue;
-      const Pose3& pose = sfm_data.GetPoses().at(view.getPoseId());
+      const Pose3& pose = sfm_data.getPoses().at(view.getPoseId());
       cameraPosesFile << view.getViewId()
         << " " << pose.rotation()(0, 0)
         << " " << pose.rotation()(0, 1)
@@ -113,7 +113,7 @@ bool exportToMatlab(
     for(const auto& v: sfm_data.views)
     {
       const View& view = *v.second.get();
-      if(!sfm_data.IsPoseAndIntrinsicDefined(&view))
+      if(!sfm_data.isPoseAndIntrinsicDefined(&view))
         continue;
       const IntrinsicBase& intrinsics = *sfm_data.intrinsics.at(view.getIntrinsicId()).get();
       cameraIntrinsicsFile << view.getViewId() << " " << camera::EINTRINSIC_enumToString(intrinsics.getType());
