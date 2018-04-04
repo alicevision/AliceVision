@@ -18,6 +18,7 @@
 #include <aliceVision/matchingImageCollection/GeometricFilterMatrix_F_AC.hpp>
 #include <aliceVision/matchingImageCollection/GeometricFilterMatrix_E_AC.hpp>
 #include <aliceVision/matchingImageCollection/GeometricFilterMatrix_H_AC.hpp>
+#include <aliceVision/matchingImageCollection/GeometricFilterMatrix_HGrowing.hpp>
 #include <aliceVision/matchingImageCollection/geometricFilterType.hpp>
 #include <aliceVision/matching/pairwiseAdjacencyDisplay.hpp>
 #include <aliceVision/matching/io.hpp>
@@ -291,7 +292,7 @@ int main(int argc, char **argv)
   ALICEVISION_LOG_INFO("There are " + std::to_string(sfmData.GetViews().size()) + " views and " + std::to_string(pairs.size()) + " image pairs.");
 
   // load the corresponding view regions
-  RegionsPerView regionPerView;;
+  RegionsPerView regionPerView;
   if(!sfm::loadRegionsPerView(regionPerView, sfmData, featuresFolder, describerTypes, filter))
   {
     ALICEVISION_LOG_ERROR("Invalid regions in '" + sfmDataFilename + "'");
@@ -380,6 +381,13 @@ int main(int argc, char **argv)
       geometricFilter.Robust_model_estimation(GeometricFilterMatrix_H_AC(std::numeric_limits<double>::infinity(), maxIteration),
         mapPutativesMatches, guidedMatching,
         bGeometric_only_guided_matching ? -1.0 : 0.6);
+      map_GeometricMatches = geometricFilter.Get_geometric_matches();
+    }
+    break;
+    case matchingImageCollection::HOMOGRAPHY_GROWING:
+    {
+      geometricFilter.Robust_model_estimation(GeometricFilterMatrix_HGrowing(std::numeric_limits<double>::infinity(), maxIteration),
+        mapPutativesMatches, guidedMatching);
       map_GeometricMatches = geometricFilter.Get_geometric_matches();
     }
     break;
