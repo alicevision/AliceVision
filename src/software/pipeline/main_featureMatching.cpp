@@ -83,10 +83,10 @@ int main(int argc, char **argv)
   std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
   std::string sfmDataFilename;
   std::string matchesFolder;
+  std::vector<std::string> featuresFolders;
 
   // user optional parameters
 
-  std::string featuresFolder = "";
   std::string geometricModelsName = matchingImageCollection::EGeometricModel_enumToString(matchingImageCollection::EGeometricModel::FUNDAMENTAL_MATRIX);
   std::string describerTypesName = feature::EImageDescriberType_enumToString(feature::EImageDescriberType::SIFT);
   float distRatio = 0.8f;
@@ -118,7 +118,9 @@ int main(int argc, char **argv)
     ("input,i", po::value<std::string>(&sfmDataFilename)->required(),
       "SfMData file.")
     ("output,o", po::value<std::string>(&matchesFolder)->required(),
-      "Path to a folder in which computed matches will be stored.");
+      "Path to a folder in which computed matches will be stored.")
+    ("featuresFolders,f", po::value<std::vector<std::string>>(&featuresFolders)->multitoken()->required(),
+      "Path to folder(s) containing the extracted features.");
 
   po::options_description optionalParams("Optional parameters");
   optionalParams.add_options()
@@ -126,8 +128,6 @@ int main(int argc, char **argv)
       matchingImageCollection::EGeometricModel_informations().c_str())
     ("describerTypes,d", po::value<std::string>(&describerTypesName)->default_value(describerTypesName),
       feature::EImageDescriberType_informations().c_str())
-    ("featuresFolder,f", po::value<std::string>(&featuresFolder)->default_value(featuresFolder),
-      "Path to a folder containing the extracted features.")
     ("imagePairsList,l", po::value<std::string>(&predefinedPairList)->default_value(predefinedPairList),
       "Path to a file which contains the list of image pairs to match.")
     ("photometricMatchingMethod,p", po::value<std::string>(&nearestMatchingMethod)->default_value(nearestMatchingMethod),
@@ -216,18 +216,6 @@ int main(int argc, char **argv)
     return EXIT_FAILURE;
   }
 
-  if(featuresFolder.empty())
-  {
-    ALICEVISION_LOG_INFO("Using matchesFolder as featuresFolder");
-    featuresFolder = matchesFolder;
-  }
-
-  if(describerTypesName.empty())
-  {
-    ALICEVISION_LOG_ERROR("Empty option: --describerMethods");
-    return EXIT_FAILURE;
-  }
-
   const std::vector<matchingImageCollection::EGeometricModel> geometricModelsToCompute = matchingImageCollection::EGeometricModel_stringToEnums(geometricModelsName);
 
   // Feature matching
@@ -294,7 +282,7 @@ int main(int argc, char **argv)
 
   // load the corresponding view regions
   RegionsPerView regionPerView;
-  if(!sfm::loadRegionsPerView(regionPerView, sfmData, featuresFolder, describerTypes, filter))
+  if(!sfm::loadRegionsPerView(regionPerView, sfmData, featuresFolders, describerTypes, filter))
   {
     ALICEVISION_LOG_ERROR("Invalid regions in '" + sfmDataFilename + "'");
     return EXIT_FAILURE;

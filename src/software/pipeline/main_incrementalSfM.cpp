@@ -65,8 +65,8 @@ int main(int argc, char **argv)
 
   std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
   std::string sfmDataFilename;
-  std::string featuresFolder;
-  std::string matchesFolder;
+  std::vector<std::string> featuresFolders;
+  std::vector<std::string> matchesFolders;
   std::string outputSfM;
 
   // user optional parameters
@@ -101,10 +101,10 @@ int main(int argc, char **argv)
       "SfMData file.")
     ("output,o", po::value<std::string>(&outputSfM)->required(),
       "Path to the output SfMData file.")
-    ("featuresFolder,f", po::value<std::string>(&featuresFolder)->required(),
-      "Path to a folder containing the extracted features.")
-    ("matchesFolder,m", po::value<std::string>(&matchesFolder)->required(),
-      "Path to a folder in which computed matches are stored.");
+    ("featuresFolders,f", po::value<std::vector<std::string>>(&featuresFolders)->multitoken()->required(),
+      "Path to folder(s) containing the extracted features.")
+    ("matchesFolders,m", po::value<std::vector<std::string>>(&matchesFolders)->multitoken()->required(),
+      "Path to folder(s) in which computed matches are stored.");
 
   po::options_description optionalParams("Optional parameters");
   optionalParams.add_options()
@@ -203,7 +203,7 @@ int main(int argc, char **argv)
 
   // features reading
   feature::FeaturesPerView featuresPerView;
-  if(!sfm::loadFeaturesPerView(featuresPerView, sfmData, featuresFolder, describerTypes))
+  if(!sfm::loadFeaturesPerView(featuresPerView, sfmData, featuresFolders, describerTypes))
   {
     ALICEVISION_LOG_ERROR("Invalid features.");
     return EXIT_FAILURE;
@@ -211,7 +211,7 @@ int main(int argc, char **argv)
   
   // matches reading
   matching::PairwiseMatches pairwiseMatches;
-  if(!sfm::loadPairwiseMatches(pairwiseMatches, sfmData, matchesFolder, describerTypes, maxNbMatches, useOnlyMatchesFromInputFolder))
+  if(!sfm::loadPairwiseMatches(pairwiseMatches, sfmData, matchesFolders, describerTypes, maxNbMatches, useOnlyMatchesFromInputFolder))
   {
     ALICEVISION_LOG_ERROR("Unable to load matches.");
     return EXIT_FAILURE;
@@ -283,16 +283,18 @@ int main(int argc, char **argv)
 
   // get the color for the 3D points
   if(!sfmEngine.Colorize())
-    ALICEVISION_LOG_ERROR("Colorize failed !");
+    ALICEVISION_LOG_ERROR("SfM Colorization failed.");
 
-  // set featuresFolder and matchesFolder relative paths
+  // set featuresFolders and matchesFolders relative paths
   {
     const fs::path sfmFolder = fs::path(outputSfM).remove_filename();
-    const std::string relativeFeaturesFolder = fs::relative(fs::path(featuresFolder), sfmFolder).string();
-    const std::string relativeMatchesFolder = fs::relative(fs::path(matchesFolder), sfmFolder).string();
 
-    sfmEngine.Get_SfMData().addFeaturesFolder(relativeFeaturesFolder);
-    sfmEngine.Get_SfMData().addMatchesFolder(relativeMatchesFolder);
+    for(const std::string& featuresFolder : featuresFolders)
+       sfmEngine.Get_SfMData().addFeaturesFolder(fs::relative(fs::path(featuresFolder), sfmFolder).string());
+
+    for(const std::string& matchesFolder : matchesFolders)
+       sfmEngine.Get_SfMData().addMatchesFolder(fs::relative(fs::path(matchesFolder), sfmFolder).string());
+
     sfmEngine.Get_SfMData().setAbsolutePath(outputSfM);
   }
 
