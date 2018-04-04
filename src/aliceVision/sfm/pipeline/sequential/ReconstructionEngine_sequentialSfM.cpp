@@ -73,7 +73,7 @@ void computeTracksPyramidPerView(
   std::vector<std::size_t> widthPerLevel(pyramidDepth);
   std::vector<std::size_t> startPerLevel(pyramidDepth);
   std::size_t start = 0;
-  for(size_t level = 0; level < pyramidDepth; ++level)
+  for(std::size_t level = 0; level < pyramidDepth; ++level)
   {
     startPerLevel[level] = start;
     widthPerLevel[level] = std::pow(pyramidBase, level+1);
@@ -204,15 +204,15 @@ std::size_t ReconstructionEngine_sequentialSfM::fuseMatchesIntoTracks()
 
   {
     // list of features matches for each couple of images
-    const aliceVision::matching::PairwiseMatches & map_Matches = *_pairwiseMatches;
-    ALICEVISION_LOG_DEBUG("Track building");
+    const aliceVision::matching::PairwiseMatches& map_Matches = *_pairwiseMatches;
 
+    ALICEVISION_LOG_DEBUG("Track building");
     tracksBuilder.Build(map_Matches);
     ALICEVISION_LOG_DEBUG("Track filtering");
     tracksBuilder.Filter(_minInputTrackLength);
 
-    ALICEVISION_LOG_DEBUG("Track export to internal struct");
-    //-- Build tracks with STL compliant type :
+    ALICEVISION_LOG_DEBUG("Track export to internal structure");
+    // build tracks with STL compliant type
     tracksBuilder.ExportToSTL(_map_tracks);
     ALICEVISION_LOG_DEBUG("Build tracks per view");
     track::TracksUtilsMap::computeTracksPerView(_map_tracks, _map_tracksPerView);
@@ -222,12 +222,12 @@ std::size_t ReconstructionEngine_sequentialSfM::fuseMatchesIntoTracks()
 
     // display stats
     {
-      std::set<size_t> set_imagesId;
-      track::TracksUtilsMap::ImageIdInTracks(_map_tracksPerView, set_imagesId);
+      std::set<size_t> imagesId;
+      track::TracksUtilsMap::ImageIdInTracks(_map_tracksPerView, imagesId);
 
       ALICEVISION_LOG_INFO("Fuse matches into tracks: " << std::endl
         << "\t- # tracks: " << tracksBuilder.NbTracks() << std::endl
-        << "\t- # images in tracks: " << set_imagesId.size());
+        << "\t- # images in tracks: " << imagesId.size());
 
       std::map<size_t, size_t> map_Occurence_TrackLength;
       track::TracksUtilsMap::TracksLength(_map_tracks, map_Occurence_TrackLength);
@@ -429,13 +429,13 @@ void ReconstructionEngine_sequentialSfM::updateReconstruction(IndexT resectionId
     }
 
     ResectionData newResectionData;
-    bool bResect = computeResection(viewId, newResectionData);
+    const bool hasResected = computeResection(viewId, newResectionData);
 
 #pragma omp critical
     {
-      if(bResect)
+      if(hasResected)
       {
-        imageAdded |= bResect;
+        imageAdded |= hasResected;
         updateScene(viewId, newResectionData);
         ALICEVISION_LOG_DEBUG("Resection of image " << i << " ( view id: " << viewId << " ) succeed.");
         _sfm_data.GetViews().at(viewId)->setResectionId(resectionId);
@@ -464,11 +464,11 @@ void ReconstructionEngine_sequentialSfM::updateReconstruction(IndexT resectionId
           std::inserter(newReconstructedViews, newReconstructedViews.end()));
   }
 
-  // Triangulate
+  // triangulate
   chrono_start = std::chrono::steady_clock::now();
 
-  // Allow to use to the old triangulatation algorithm (using 2 views only) 
-  if (_minNbObservationsForTriangulation == 0)
+  // allow to use to the old triangulatation algorithm (using 2 views only)
+  if(_minNbObservationsForTriangulation == 0)
     triangulate(_sfm_data, prevReconstructedViews, newReconstructedViews);
   else
     triangulateMultiViews_LORANSAC(_sfm_data, prevReconstructedViews, newReconstructedViews);
@@ -480,7 +480,7 @@ void ReconstructionEngine_sequentialSfM::updateReconstruction(IndexT resectionId
     if((resectionId % 3) == 0)
     {
       chrono_start = std::chrono::steady_clock::now();
-      // Scene logging as ply for visual debug
+      // scene logging as ply for visual debug
       std::ostringstream os;
       os << std::setw(8) << std::setfill('0') << resectionId << "_resection";
       Save(_sfm_data, (fs::path(_sOutDirectory) / (os.str() + _sfmdataInterFileExtension)).string(), _sfmdataInterFilter);
@@ -1508,7 +1508,7 @@ void ReconstructionEngine_sequentialSfM::getTracksToTriangulate(const std::set<I
       {
         const std::size_t trackId = *it;
         
-        const track::Track & track = _map_tracks.at(trackId);
+        const track::Track& track = _map_tracks.at(trackId);
         
         std::set<IndexT> allViewsSharingTheTrack;
         std::transform(track.featPerView.begin(), track.featPerView.end(),
@@ -1550,8 +1550,8 @@ void ReconstructionEngine_sequentialSfM::triangulateMultiViews_LORANSAC(SfMData&
   {
     const IndexT trackId = setTracksId.at(i);
     bool isValidTrack = true;
-    const track::Track & track = _map_tracks.at(trackId);
-    std::set<IndexT> & observations = mapTracksToTriangulate.at(trackId); // all the posed views possessing the track
+    const track::Track& track = _map_tracks.at(trackId);
+    std::set<IndexT>& observations = mapTracksToTriangulate.at(trackId); // all the posed views possessing the track
     
     // The track needs to be seen by a min. number of views to be triangulated
     if (observations.size() < _minNbObservationsForTriangulation)
@@ -1612,12 +1612,12 @@ void ReconstructionEngine_sequentialSfM::triangulateMultiViews_LORANSAC(SfMData&
      
       // -- Prepare:
       Mat2X features(2, observations.size()); // undistorted 2D features (one per pose)
-      std::vector< Mat34 > Ps; // projective matrices (one per pose)
+      std::vector<Mat34> Ps; // projective matrices (one per pose)
       {
-        const track::Track & track = _map_tracks.at(trackId);
+        const track::Track& track = _map_tracks.at(trackId);
         
         int i = 0;
-        for (const IndexT & viewId : observations)
+        for (const IndexT& viewId : observations)
         {
           const View* view = scene.GetViews().at(viewId).get();
           const IntrinsicBase* cam = scene.GetIntrinsics().at(view->getIntrinsicId()).get();

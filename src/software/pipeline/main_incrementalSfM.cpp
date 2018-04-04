@@ -136,9 +136,9 @@ int main(int argc, char **argv)
       "Set it to 3 (or more) reduces drastically the noise in the point cloud, but the number of final poses is a little bit reduced (from 1.5% to 11% on the tested datasets).\n"
       "Note: set it to 0 or 1 to use the old triangulation algorithm (using 2 views only) during resection.")
     ("initialPairA", po::value<std::string>(&initialPairString.first)->default_value(initialPairString.first),
-      "UID or filepath or filename of the first image (without path).")
+      "UID or filepath or filename of the first image.")
     ("initialPairB", po::value<std::string>(&initialPairString.second)->default_value(initialPairString.second),
-      "UID or filepath or filename of the second image (without path).")
+      "UID or filepath or filename of the second image.")
     ("refineIntrinsics", po::value<bool>(&refineIntrinsics)->default_value(refineIntrinsics),
       "Refine intrinsic parameters.")
     ("useLocalBA,l", po::value<bool>(&useLocalBundleAdjustment)->default_value(useLocalBundleAdjustment),
@@ -254,8 +254,8 @@ int main(int argc, char **argv)
   {
       // allows to use to the old triangulatation algorithm (using 2 views only) during resection.
       minNbObservationsForTriangulation = 0;
-//    ALICEVISION_LOG_ERROR("The value associated to the argument '--minNbObservationsForTriangulation' must be >= 2 ");
-//    return EXIT_FAILURE;
+      // ALICEVISION_LOG_ERROR("The value associated to the argument '--minNbObservationsForTriangulation' must be >= 2 ");
+      // return EXIT_FAILURE;
   }
   sfmEngine.setNbOfObservationsForTriangulation(minNbObservationsForTriangulation);
 
@@ -306,11 +306,11 @@ int main(int argc, char **argv)
   // export to disk computed scene (data & visualizable results)
   ALICEVISION_LOG_INFO("Export SfMData to disk: " + outputSfM);
 
-  Save(sfmEngine.Get_SfMData(), (fs::path(extraInfoFolder) / ("cloud_and_poses" + outInterFileExtension)).string(), ESfMData(VIEWS | EXTRINSICS | INTRINSICS | STRUCTURE));
-  Save(sfmEngine.Get_SfMData(), outputSfM, ESfMData(ALL));
+  Save(sfmEngine.Get_SfMData(), (fs::path(extraInfoFolder) / ("cloud_and_poses" + outInterFileExtension)).string(), ESfMData(VIEWS|EXTRINSICS|INTRINSICS|STRUCTURE));
+  Save(sfmEngine.Get_SfMData(), outputSfM, ESfMData::ALL);
 
   if(!outputSfMViewsAndPoses.empty())
-    Save(sfmEngine.Get_SfMData(), outputSfMViewsAndPoses, ESfMData(VIEWS | EXTRINSICS | INTRINSICS));
+    Save(sfmEngine.Get_SfMData(), outputSfMViewsAndPoses, ESfMData(VIEWS|EXTRINSICS|INTRINSICS));
 
   ALICEVISION_LOG_INFO("Structure from Motion results:" << std::endl
     << "\t- # input images: " << sfmEngine.Get_SfMData().GetViews().size() << std::endl
