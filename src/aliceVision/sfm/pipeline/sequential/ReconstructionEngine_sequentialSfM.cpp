@@ -140,7 +140,7 @@ ReconstructionEngine_sequentialSfM::ReconstructionEngine_sequentialSfM(
   }
 }
 
-bool ReconstructionEngine_sequentialSfM::Process()
+bool ReconstructionEngine_sequentialSfM::process()
 {
   initializePyramidScoring();
 
@@ -150,12 +150,12 @@ bool ReconstructionEngine_sequentialSfM::Process()
   }
 
   // initial pair choice
-  if(_sfm_data.GetPoses().empty())
+  if(_sfmData.GetPoses().empty())
   {
     std::vector<Pair> initialImagePairCandidates = getInitialImagePairsCandidates();
     createInitialReconstruction(initialImagePairCandidates);
   }
-  else if(_sfm_data.GetLandmarks().empty())
+  else if(_sfmData.GetLandmarks().empty())
   {
     // TODO: it could make sense to triangulate valid poses
     throw std::runtime_error("Valid poses with no landmark is not supported.");
@@ -173,7 +173,7 @@ bool ReconstructionEngine_sequentialSfM::Process()
 
   exportStatistics(elapsedTime);
 
-  return !_sfm_data.GetPoses().empty();
+  return !_sfmData.GetPoses().empty();
 }
 
 void ReconstructionEngine_sequentialSfM::initializePyramidScoring()
@@ -218,7 +218,7 @@ std::size_t ReconstructionEngine_sequentialSfM::fuseMatchesIntoTracks()
     track::TracksUtilsMap::computeTracksPerView(_map_tracks, _map_tracksPerView);
     ALICEVISION_LOG_DEBUG("Build tracks pyramid per view");
     computeTracksPyramidPerView(
-            _map_tracksPerView, _map_tracks, _sfm_data.views, *_featuresPerView, _pyramidBase, _pyramidDepth, _map_featsPyramidPerView);
+            _map_tracksPerView, _map_tracks, _sfmData.views, *_featuresPerView, _pyramidBase, _pyramidDepth, _map_featsPyramidPerView);
 
     // display stats
     {
@@ -282,7 +282,7 @@ void ReconstructionEngine_sequentialSfM::remapLandmarkIdsToTrackIds()
   // get unmap landmarks
   Landmarks landmarks;
   // clear sfmData structure and store them locally
-  std::swap(landmarks, _sfm_data.GetLandmarks());
+  std::swap(landmarks, _sfmData.GetLandmarks());
 
   // find new landmark id in tracks
   for(const std::pair<IndexT, Landmark>& landmarkPair : landmarks)
@@ -304,7 +304,7 @@ void ReconstructionEngine_sequentialSfM::remapLandmarkIdsToTrackIds()
          it->second == firstFeatureId)
       {
         // insert the landmark in the sfmData structure with the track id
-        _sfm_data.GetLandmarks().emplace(trackId, landmark);
+        _sfmData.GetLandmarks().emplace(trackId, landmark);
         break;
       }
     }
@@ -312,7 +312,7 @@ void ReconstructionEngine_sequentialSfM::remapLandmarkIdsToTrackIds()
   ALICEVISION_LOG_INFO("Remap landmark ids to track ids: " << std::endl
                         << "\t- # tracks: " << _map_tracks.size() << std::endl
                         << "\t- # input landmarks: " << landmarks.size() << std::endl
-                        << "\t- # output landmarks: " << _sfm_data.GetLandmarks().size());
+                        << "\t- # output landmarks: " << _sfmData.GetLandmarks().size());
 }
 
 double ReconstructionEngine_sequentialSfM::incrementalReconstruction()
@@ -323,12 +323,12 @@ double ReconstructionEngine_sequentialSfM::incrementalReconstruction()
   std::vector<IndexT> bestViewIds;
 
   // get all viewIds and max resection id
-  for(const auto& viewPair : _sfm_data.GetViews())
+  for(const auto& viewPair : _sfmData.GetViews())
   {
     IndexT viewId = viewPair.second->getViewId();
     IndexT viewResectionId = viewPair.second->getResectionId();
 
-    if(!_sfm_data.IsPoseAndIntrinsicDefined(viewId))
+    if(!_sfmData.IsPoseAndIntrinsicDefined(viewId))
       viewIds.insert(viewId);
 
     if(viewResectionId != UndefinedIndexT &&
@@ -343,17 +343,17 @@ double ReconstructionEngine_sequentialSfM::incrementalReconstruction()
     std::stringstream ss;
     ss << "Begin Incremental Reconstruction:" << std::endl;
 
-    if(_sfm_data.GetViews().size() == viewIds.size())
+    if(_sfmData.GetViews().size() == viewIds.size())
     {
       ss << "\t- mode: SfM creation" << std::endl;
     }
     else
     {
       ss << "\t- mode: SfM augmentation" << std::endl
-         << "\t- # images in input: " << _sfm_data.GetViews().size() << std::endl
+         << "\t- # images in input: " << _sfmData.GetViews().size() << std::endl
          << "\t- # images in resection: " << viewIds.size() << std::endl
-         << "\t- # landmarks in input: " << _sfm_data.GetLandmarks().size() << std::endl
-         << "\t- # cameras already calibrated: " << _sfm_data.GetPoses().size();
+         << "\t- # landmarks in input: " << _sfmData.GetLandmarks().size() << std::endl
+         << "\t- # cameras already calibrated: " << _sfmData.GetPoses().size();
     }
     ALICEVISION_LOG_INFO(ss.str());
   }
@@ -382,19 +382,19 @@ void ReconstructionEngine_sequentialSfM::updateReconstruction(IndexT resectionId
   bool imageAdded = false;
 
   // get reconstructed views before resection
-  const std::set<IndexT> prevReconstructedViews = _sfm_data.getValidViews();
+  const std::set<IndexT> prevReconstructedViews = _sfmData.getValidViews();
 
   // add images to the 3D reconstruction
 #pragma omp parallel for
   for(int i = 0; i < bestViewIds.size(); ++i)
   {
     const IndexT viewId = bestViewIds.at(i);
-    const View& view = *_sfm_data.GetViews().at(viewId);
+    const View& view = *_sfmData.GetViews().at(viewId);
 
     if(view.isPartOfRig())
     {
       // some views can become indirectly localized when the sub-pose becomes defined
-      if(_sfm_data.IsPoseAndIntrinsicDefined(view.getViewId()))
+      if(_sfmData.IsPoseAndIntrinsicDefined(view.getViewId()))
       {
         ALICEVISION_LOG_DEBUG("Resection of image " << i << " was skipped." << std::endl
           << "View indirectly localized, sub-pose and pose already defined." << std::endl
@@ -409,8 +409,8 @@ void ReconstructionEngine_sequentialSfM::updateReconstruction(IndexT resectionId
       }
 
       // we cannot localize a view if it is part of an initialized rig with unknown rig Pose
-      const bool knownPose = _sfm_data.existsPose(view);
-      const Rig& rig = _sfm_data.getRig(view);
+      const bool knownPose = _sfmData.existsPose(view);
+      const Rig& rig = _sfmData.getRig(view);
       const RigSubPose& subpose = rig.getSubPose(view.getSubPoseId());
 
       if(rig.isInitialized() && !knownPose && (subpose.status == ERigSubPoseStatus::UNINITIALIZED))
@@ -438,7 +438,7 @@ void ReconstructionEngine_sequentialSfM::updateReconstruction(IndexT resectionId
         imageAdded |= hasResected;
         updateScene(viewId, newResectionData);
         ALICEVISION_LOG_DEBUG("Resection of image " << i << " ( view id: " << viewId << " ) succeed.");
-        _sfm_data.GetViews().at(viewId)->setResectionId(resectionId);
+        _sfmData.GetViews().at(viewId)->setResectionId(resectionId);
       }
       else
       {
@@ -454,7 +454,7 @@ void ReconstructionEngine_sequentialSfM::updateReconstruction(IndexT resectionId
   std::set<IndexT> newReconstructedViews;
   {
     // get reconstructed views after resection
-    const std::set<IndexT> reconstructedViews = _sfm_data.getValidViews();
+    const std::set<IndexT> reconstructedViews = _sfmData.getValidViews();
 
     std::set_difference(
           reconstructedViews.begin(),
@@ -469,9 +469,9 @@ void ReconstructionEngine_sequentialSfM::updateReconstruction(IndexT resectionId
 
   // allow to use to the old triangulatation algorithm (using 2 views only)
   if(_minNbObservationsForTriangulation == 0)
-    triangulate(_sfm_data, prevReconstructedViews, newReconstructedViews);
+    triangulate(_sfmData, prevReconstructedViews, newReconstructedViews);
   else
-    triangulateMultiViews_LORANSAC(_sfm_data, prevReconstructedViews, newReconstructedViews);
+    triangulateMultiViews_LORANSAC(_sfmData, prevReconstructedViews, newReconstructedViews);
 
   ALICEVISION_LOG_DEBUG("Triangulation of the " << newReconstructedViews.size() << " newly reconstructed views took " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - chrono_start).count() << " msec.");
 
@@ -483,7 +483,7 @@ void ReconstructionEngine_sequentialSfM::updateReconstruction(IndexT resectionId
       // scene logging as ply for visual debug
       std::ostringstream os;
       os << std::setw(8) << std::setfill('0') << resectionId << "_resection";
-      Save(_sfm_data, (fs::path(_sOutDirectory) / (os.str() + _sfmdataInterFileExtension)).string(), _sfmdataInterFilter);
+      Save(_sfmData, (fs::path(_outputFolder) / (os.str() + _sfmdataInterFileExtension)).string(), _sfmdataInterFilter);
       ALICEVISION_LOG_DEBUG("Save of file " << os.str() << " took " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - chrono_start).count() << " msec.");
     }
 
@@ -501,7 +501,7 @@ void ReconstructionEngine_sequentialSfM::updateReconstruction(IndexT resectionId
       if (_uselocalBundleAdjustment)
         localBundleAdjustment(newReconstructedViews);
       else
-        BundleAdjustment(_bFixedIntrinsics);
+        BundleAdjustment(_hasFixedIntrinsics);
 
       ALICEVISION_LOG_DEBUG("Resection index: " << resectionId << ", bundle iteration: " << bundleAdjustmentIteration
                 << " took " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - chrono2_start).count() << " msec.");
@@ -513,17 +513,17 @@ void ReconstructionEngine_sequentialSfM::updateReconstruction(IndexT resectionId
     chrono_start = std::chrono::steady_clock::now();
 
     std::set<IndexT> removedPosesId;
-    bool contentRemoved = eraseUnstablePosesAndObservations(this->_sfm_data, _minPointsPerPose, _minTrackLength, &removedPosesId);
+    bool contentRemoved = eraseUnstablePosesAndObservations(this->_sfmData, _minPointsPerPose, _minTrackLength, &removedPosesId);
 
     if (_uselocalBundleAdjustment && contentRemoved)
     {
       // Get removed VIEWS index
       std::set<IndexT> removedViewsId;
-      for (const auto& x : _sfm_data.GetViews())
+      for (const auto& x : _sfmData.GetViews())
       {
         if (removedPosesId.find(x.second->getPoseId()) != removedPosesId.end())
         {
-          if (!_sfm_data.IsPoseAndIntrinsicDefined(x.second->getViewId()))
+          if (!_sfmData.IsPoseAndIntrinsicDefined(x.second->getViewId()))
             removedViewsId.insert(x.second->getViewId());
           else
             ALICEVISION_LOG_WARNING("The view #" << x.second->getViewId() << " is set as Removed while it is still in the scene.");
@@ -538,18 +538,18 @@ void ReconstructionEngine_sequentialSfM::updateReconstruction(IndexT resectionId
   }
 
   ALICEVISION_LOG_INFO("Update Reconstruction complete: " << std::endl
-     << "\t- # cameras calibrated: " << _sfm_data.GetPoses().size() << std::endl
-     << "\t- # landmarks: " << _sfm_data.GetLandmarks().size());
+     << "\t- # cameras calibrated: " << _sfmData.GetPoses().size() << std::endl
+     << "\t- # landmarks: " << _sfmData.GetLandmarks().size());
 }
 
 void ReconstructionEngine_sequentialSfM::exportStatistics(double reconstructionTime)
 {
-  const double residual = RMSE(_sfm_data);
+  const double residual = RMSE(_sfmData);
 
   ALICEVISION_LOG_INFO("Structure from Motion statistics:" << std::endl
-    << "\t- # input images: " << _sfm_data.GetViews().size() << std::endl
-    << "\t- # cameras calibrated: " << _sfm_data.GetPoses().size() << std::endl
-    << "\t- # landmarks: " << _sfm_data.GetLandmarks().size() << std::endl
+    << "\t- # input images: " << _sfmData.GetViews().size() << std::endl
+    << "\t- # cameras calibrated: " << _sfmData.GetPoses().size() << std::endl
+    << "\t- # landmarks: " << _sfmData.GetLandmarks().size() << std::endl
     << "\t- elapsed time: " << reconstructionTime << std::endl
     << "\t- residual RMSE: " <<  residual);
 
@@ -574,9 +574,9 @@ void ReconstructionEngine_sequentialSfM::exportStatistics(double reconstructionT
 
     os.str("");
     os << "Structure from Motion statistics:"
-       << "<br>- # input images: " << _sfm_data.GetViews().size()
-       << "<br>- # camera calibrated: " << _sfm_data.GetPoses().size()
-       << "<br>- # landmarks: " << _sfm_data.GetLandmarks().size()
+       << "<br>- # input images: " << _sfmData.GetViews().size()
+       << "<br>- # camera calibrated: " << _sfmData.GetPoses().size()
+       << "<br>- # landmarks: " << _sfmData.GetLandmarks().size()
        << "<br>- elapsed time: " << reconstructionTime
        << "<br>- residual RMSE: " << residual;
 
@@ -597,15 +597,15 @@ void ReconstructionEngine_sequentialSfM::exportStatistics(double reconstructionT
   // json log file
   {
     // put nb images, nb poses, nb points
-    _jsonLogTree.put("sfm.views", _sfm_data.GetViews().size());
-    _jsonLogTree.put("sfm.validViews", _sfm_data.getValidViews().size());
-    _jsonLogTree.put("sfm.poses", _sfm_data.GetPoses().size());
-    _jsonLogTree.put("sfm.points", _sfm_data.GetLandmarks().size());
+    _jsonLogTree.put("sfm.views", _sfmData.GetViews().size());
+    _jsonLogTree.put("sfm.validViews", _sfmData.getValidViews().size());
+    _jsonLogTree.put("sfm.poses", _sfmData.GetPoses().size());
+    _jsonLogTree.put("sfm.points", _sfmData.GetLandmarks().size());
     _jsonLogTree.put("sfm.residual", residual);
 
     // add observations histogram
     std::map<std::size_t, std::size_t> obsHistogram;
-    for (const auto& iterTracks : _sfm_data.GetLandmarks())
+    for (const auto& iterTracks : _sfmData.GetLandmarks())
     {
       const Observations& obs = iterTracks.second.observations;
       if(obsHistogram.count(obs.size()))
@@ -623,7 +623,7 @@ void ReconstructionEngine_sequentialSfM::exportStatistics(double reconstructionT
     _jsonLogTree.put("hardware.ram.size", system::getMemoryInfo().totalRam); // ram size
 
     // write json on disk
-    pt::write_json((fs::path(_sOutDirectory) / "stats.json").string(), _jsonLogTree);
+    pt::write_json((fs::path(_outputFolder) / "stats.json").string(), _jsonLogTree);
   }
 }
 
@@ -633,16 +633,16 @@ bool ReconstructionEngine_sequentialSfM::findConnectedViews(
 {
   out_connectedViews.clear();
 
-  if (remainingViewIds.empty() || _sfm_data.GetLandmarks().empty())
+  if (remainingViewIds.empty() || _sfmData.GetLandmarks().empty())
     return false;
 
   // Collect tracksIds
   std::set<size_t> reconstructed_trackId;
-  std::transform(_sfm_data.GetLandmarks().begin(), _sfm_data.GetLandmarks().end(),
+  std::transform(_sfmData.GetLandmarks().begin(), _sfmData.GetLandmarks().end(),
                  std::inserter(reconstructed_trackId, reconstructed_trackId.begin()),
                  stl::RetrieveKey());
 
-  const std::set<IndexT> reconstructedIntrinsics = _sfm_data.getReconstructedIntrinsics();
+  const std::set<IndexT> reconstructedIntrinsics = _sfmData.getReconstructedIntrinsics();
 
 #pragma omp parallel for
   for(int i = 0; i < remainingViewIds.size(); ++i)
@@ -650,7 +650,7 @@ bool ReconstructionEngine_sequentialSfM::findConnectedViews(
     std::set<IndexT>::const_iterator iter = remainingViewIds.cbegin();
     std::advance(iter, i);
     const IndexT viewId = *iter;
-    const IndexT intrinsicId = _sfm_data.GetViews().at(viewId)->getIntrinsicId();
+    const IndexT intrinsicId = _sfmData.GetViews().at(viewId)->getIntrinsicId();
     const bool isIntrinsicsReconstructed = reconstructedIntrinsics.count(intrinsicId);
 
     // Compute 2D - 3D possible content
@@ -664,19 +664,19 @@ bool ReconstructionEngine_sequentialSfM::findConnectedViews(
 
     // Check if the view is part of a rig
     {
-      const View& view = *_sfm_data.views.at(viewId);
+      const View& view = *_sfmData.views.at(viewId);
 
       if(view.isPartOfRig())
       {
         // Some views can become indirectly localized when the sub-pose becomes defined
-        if(_sfm_data.IsPoseAndIntrinsicDefined(view.getViewId()))
+        if(_sfmData.IsPoseAndIntrinsicDefined(view.getViewId()))
         {
           continue;
         }
 
         // We cannot localize a view if it is part of an initialized RIG with unknown Rig Pose
-        const bool knownPose = _sfm_data.existsPose(view);
-        const Rig& rig = _sfm_data.getRig(view);
+        const bool knownPose = _sfmData.existsPose(view);
+        const Rig& rig = _sfmData.getRig(view);
         const RigSubPose& subpose = rig.getSubPose(view.getSubPoseId());
 
         if(rig.isInitialized() &&
@@ -794,14 +794,14 @@ bool ReconstructionEngine_sequentialSfM::findNextBestViews(
   // more stable and it's quite cheap because we have few data.
   static const std::size_t nbFirstUnstableCameras = 30;
 
-  if(_sfm_data.GetPoses().size() < nbFirstUnstableCameras &&
+  if(_sfmData.GetPoses().size() < nbFirstUnstableCameras &&
      !out_selectedViewIds.empty())
   {
     // add images one by one to reconstruct the first cameras
     ALICEVISION_LOG_DEBUG("findNextBestViews: beginning of the incremental SfM" << std::endl
       << "Only the first image of the resection group is used." << std::endl
       << "\t- image view id : " << out_selectedViewIds.front() << std::endl
-      << "\t- # unstable poses : " << _sfm_data.GetPoses().size() << " / " << nbFirstUnstableCameras << std::endl);
+      << "\t- # unstable poses : " << _sfmData.GetPoses().size() << " / " << nbFirstUnstableCameras << std::endl);
 
     out_selectedViewIds.resize(1);
   }
@@ -830,17 +830,17 @@ bool ReconstructionEngine_sequentialSfM::makeInitialPair3D(const Pair& current_p
   const std::size_t J = std::max(current_pair.first, current_pair.second);
 
   // a. Assert we have valid pinhole cameras
-  const View * viewI = _sfm_data.GetViews().at(I).get();
-  const Intrinsics::const_iterator iterIntrinsicI = _sfm_data.GetIntrinsics().find(viewI->getIntrinsicId());
-  const View * viewJ = _sfm_data.GetViews().at(J).get();
-  const Intrinsics::const_iterator iterIntrinsicJ = _sfm_data.GetIntrinsics().find(viewJ->getIntrinsicId());
+  const View * viewI = _sfmData.GetViews().at(I).get();
+  const Intrinsics::const_iterator iterIntrinsicI = _sfmData.GetIntrinsics().find(viewI->getIntrinsicId());
+  const View * viewJ = _sfmData.GetViews().at(J).get();
+  const Intrinsics::const_iterator iterIntrinsicJ = _sfmData.GetIntrinsics().find(viewJ->getIntrinsicId());
 
   ALICEVISION_LOG_INFO("Initial pair is:" << std::endl
           << "  A - view id: " << I << " - filepath: " << viewI->getImagePath() << std::endl
           << "  B - view id: " << J << " - filepath: " << viewJ->getImagePath());
 
-  if (iterIntrinsicI == _sfm_data.GetIntrinsics().end() ||
-      iterIntrinsicJ == _sfm_data.GetIntrinsics().end() )
+  if (iterIntrinsicI == _sfmData.GetIntrinsics().end() ||
+      iterIntrinsicJ == _sfmData.GetIntrinsics().end() )
   {
     ALICEVISION_LOG_WARNING("Can't find initial image pair intrinsics: " << viewI->getIntrinsicId() << ", "  << viewJ->getIntrinsicId());
     return false;
@@ -904,16 +904,16 @@ bool ReconstructionEngine_sequentialSfM::makeInitialPair3D(const Pair& current_p
     const Pose3& initPoseI = Pose3(Mat3::Identity(), Vec3::Zero());
     const Pose3& initPoseJ = relativePose_info.relativePose;
 
-    _sfm_data.setPose(*viewI, initPoseI);
-    _sfm_data.setPose(*viewJ, initPoseJ);
+    _sfmData.setPose(*viewI, initPoseI);
+    _sfmData.setPose(*viewJ, initPoseJ);
 
     // Triangulate
     const std::set<IndexT> prevImageIndex = {static_cast<IndexT>(I)};
     const std::set<IndexT> newImageIndex = {static_cast<IndexT>(J)};
 
-    triangulate(_sfm_data, prevImageIndex, newImageIndex);
+    triangulate(_sfmData, prevImageIndex, newImageIndex);
 
-    Save(_sfm_data,(fs::path(_sOutDirectory) / ("initialPair" + _sfmdataInterFileExtension)).string(), _sfmdataInterFilter);
+    Save(_sfmData,(fs::path(_outputFolder) / ("initialPair" + _sfmdataInterFileExtension)).string(), _sfmdataInterFilter);
 
     /*
     // - refine only Structure and Rotations & translations (keep intrinsic constant)
@@ -944,9 +944,9 @@ bool ReconstructionEngine_sequentialSfM::makeInitialPair3D(const Pair& current_p
           ALICEVISION_LOG_WARNING("BA of initial pair " << current_pair.first << ", " << current_pair.second << " failed.");
 
           // Clear poses, RIGs, landmarks
-          _sfm_data.GetPoses().clear();
-          _sfm_data.GetLandmarks().clear();
-          _sfm_data.resetRigs();
+          _sfmData.GetPoses().clear();
+          _sfmData.GetLandmarks().clear();
+          _sfmData.resetRigs();
 
           return false;
       }
@@ -957,7 +957,7 @@ bool ReconstructionEngine_sequentialSfM::makeInitialPair3D(const Pair& current_p
     while(removeOutliers(_maxReprojectionError) > nbOutliersThreshold);
 
 
-    Save(_sfm_data, (fs::path(_sOutDirectory) / ("initialPair_afterBA" + _sfmdataInterFileExtension)).string(), _sfmdataInterFilter);
+    Save(_sfmData, (fs::path(_outputFolder) / ("initialPair_afterBA" + _sfmdataInterFileExtension)).string(), _sfmdataInterFilter);
 
     // Save outlier residual information
     Histogram<double> histoResiduals;
@@ -975,8 +975,8 @@ bool ReconstructionEngine_sequentialSfM::makeInitialPair3D(const Pair& current_p
         << "- Threshold: " << relativePose_info.found_residual_precision << "<br>"
         << "- Resection status: OK<br>"
         << "- # points used for robust Essential matrix estimation: " << xI.cols() << "<br>"
-        << "- # points validated by robust estimation: " << _sfm_data.structure.size() << "<br>"
-        << "- % points validated: " << _sfm_data.structure.size()/static_cast<float>(xI.cols()) << "<br>";
+        << "- # points validated by robust estimation: " << _sfmData.structure.size() << "<br>"
+        << "- % points validated: " << _sfmData.structure.size()/static_cast<float>(xI.cols()) << "<br>";
       _htmlDocStream->pushInfo(os.str());
 
       _htmlDocStream->pushInfo(htmlMarkup("h3",
@@ -1001,14 +1001,14 @@ bool ReconstructionEngine_sequentialSfM::makeInitialPair3D(const Pair& current_p
       _htmlDocStream->pushInfo(jsxGraph.toStr());
       _htmlDocStream->pushInfo("<hr>");
 
-      std::ofstream htmlFileStream( (fs::path(_sOutDirectory) / _htmlLogFile).string());
+      std::ofstream htmlFileStream( (fs::path(_outputFolder) / _htmlLogFile).string());
       htmlFileStream << _htmlDocStream->getDoc();
     }
   }
 
-  Save(_sfm_data, (fs::path(_sOutDirectory) / ("initialPair_sfmData" + _sfmdataInterFileExtension)).string(), _sfmdataInterFilter);
+  Save(_sfmData, (fs::path(_outputFolder) / ("initialPair_sfmData" + _sfmdataInterFileExtension)).string(), _sfmdataInterFilter);
 
-  return !_sfm_data.structure.empty();
+  return !_sfmData.structure.empty();
 }
 
 bool ReconstructionEngine_sequentialSfM::getBestInitialImagePairs(std::vector<Pair>& out_bestImagePairs) const
@@ -1024,12 +1024,12 @@ bool ReconstructionEngine_sequentialSfM::getBestInitialImagePairs(std::vector<Pa
   
   // List Views that support valid intrinsic (view that could be used for Essential matrix computation)
   std::set<IndexT> valid_views;
-  for(const auto& it : _sfm_data.GetViews())
+  for(const auto& it : _sfmData.GetViews())
   {
     
     const View * v = it.second.get();
-    if (_sfm_data.GetIntrinsics().count(v->getIntrinsicId()) &&
-        _sfm_data.GetIntrinsics().at(v->getIntrinsicId())->isValid())
+    if (_sfmData.GetIntrinsics().count(v->getIntrinsicId()) &&
+        _sfmData.GetIntrinsics().at(v->getIntrinsicId())->isValid())
       valid_views.insert(v->getViewId());
   }
   
@@ -1065,10 +1065,10 @@ bool ReconstructionEngine_sequentialSfM::getBestInitialImagePairs(std::vector<Pa
     if (!valid_views.count(I) || !valid_views.count(J))
       continue;
     
-    const View* viewI = _sfm_data.GetViews().at(I).get();
-    const Intrinsics::const_iterator iterIntrinsic_I = _sfm_data.GetIntrinsics().find(viewI->getIntrinsicId());
-    const View* viewJ = _sfm_data.GetViews().at(J).get();
-    const Intrinsics::const_iterator iterIntrinsic_J = _sfm_data.GetIntrinsics().find(viewJ->getIntrinsicId());
+    const View* viewI = _sfmData.GetViews().at(I).get();
+    const Intrinsics::const_iterator iterIntrinsic_I = _sfmData.GetIntrinsics().find(viewI->getIntrinsicId());
+    const View* viewJ = _sfmData.GetViews().at(J).get();
+    const Intrinsics::const_iterator iterIntrinsic_J = _sfmData.GetIntrinsics().find(viewJ->getIntrinsicId());
 
     const Pinhole* camI = dynamic_cast<const Pinhole*>(iterIntrinsic_I->second.get());
     const Pinhole* camJ = dynamic_cast<const Pinhole*>(iterIntrinsic_J->second.get());
@@ -1183,20 +1183,20 @@ bool ReconstructionEngine_sequentialSfM::getBestInitialImagePairs(std::vector<Pa
 
 double ReconstructionEngine_sequentialSfM::computeResidualsHistogram(Histogram<double> * histo) const
 {
-  if (_sfm_data.GetLandmarks().empty())
+  if (_sfmData.GetLandmarks().empty())
     return -1.0;
   
   // Collect residuals for each observation
   std::vector<float> vec_residuals;
-  vec_residuals.reserve(_sfm_data.structure.size());
-  for(const auto &track : _sfm_data.GetLandmarks())
+  vec_residuals.reserve(_sfmData.structure.size());
+  for(const auto &track : _sfmData.GetLandmarks())
   {
     const Observations & observations = track.second.observations;
     for(const auto& obs: observations)
     {
-      const View* view = _sfm_data.GetViews().find(obs.first)->second.get();
-      const Pose3 pose = _sfm_data.getPose(*view);
-      const std::shared_ptr<IntrinsicBase> intrinsic = _sfm_data.GetIntrinsics().find(view->getIntrinsicId())->second;
+      const View* view = _sfmData.GetViews().find(obs.first)->second.get();
+      const Pose3 pose = _sfmData.getPose(*view);
+      const std::shared_ptr<IntrinsicBase> intrinsic = _sfmData.GetIntrinsics().find(view->getIntrinsicId())->second;
       const Vec2 residual = intrinsic->residual(pose, track.second.X, obs.second.x);
       vec_residuals.push_back( fabs(residual(0)) );
       vec_residuals.push_back( fabs(residual(1)) );
@@ -1213,7 +1213,7 @@ double ReconstructionEngine_sequentialSfM::computeResidualsHistogram(Histogram<d
   }
 
   ALICEVISION_LOG_DEBUG("ReconstructionEngine_sequentialSfM::ComputeResidualsMSE." << std::endl
-    << "\t- #Tracks: " << _sfm_data.GetLandmarks().size() << std::endl
+    << "\t- #Tracks: " << _sfmData.GetLandmarks().size() << std::endl
     << "\t- Residual min: " << stats.min << std::endl
     << "\t- Residual median: " << stats.median << std::endl
     << "\t- Residual max: "  << stats.max << std::endl
@@ -1224,14 +1224,14 @@ double ReconstructionEngine_sequentialSfM::computeResidualsHistogram(Histogram<d
 
 double ReconstructionEngine_sequentialSfM::computeTracksLengthsHistogram(Histogram<double> * histo) const
 {
-  if (_sfm_data.GetLandmarks().empty())
+  if (_sfmData.GetLandmarks().empty())
     return -1.0;
   
   // Collect tracks size: number of 2D observations per 3D points
   std::vector<float> vec_nbTracks;
-  vec_nbTracks.reserve(_sfm_data.GetLandmarks().size());
+  vec_nbTracks.reserve(_sfmData.GetLandmarks().size());
   
-  for(const auto &track : _sfm_data.GetLandmarks())
+  for(const auto &track : _sfmData.GetLandmarks())
   {
     const Observations & observations = track.second.observations;
     vec_nbTracks.push_back(observations.size());
@@ -1247,7 +1247,7 @@ double ReconstructionEngine_sequentialSfM::computeTracksLengthsHistogram(Histogr
     histo->Add(vec_nbTracks.begin(), vec_nbTracks.end());
   }
 
-  ALICEVISION_LOG_INFO("# tracks: " << _sfm_data.GetLandmarks().size());
+  ALICEVISION_LOG_INFO("# tracks: " << _sfmData.GetLandmarks().size());
   ALICEVISION_LOG_INFO("Tracks Length min: " << stats.min);
   ALICEVISION_LOG_INFO("Tracks Length median: " << stats.median);
   ALICEVISION_LOG_INFO("Tracks Length max: "  << stats.max);
@@ -1300,7 +1300,7 @@ bool ReconstructionEngine_sequentialSfM::computeResection(const IndexT viewIndex
 
   // A2. intersects the track list with the reconstructed
   std::set<std::size_t> reconstructed_trackId;
-  std::transform(_sfm_data.GetLandmarks().begin(), _sfm_data.GetLandmarks().end(),
+  std::transform(_sfmData.GetLandmarks().begin(), _sfmData.GetLandmarks().end(),
                  std::inserter(reconstructed_trackId, reconstructed_trackId.begin()),
                  stl::RetrieveKey());
   
@@ -1330,8 +1330,8 @@ bool ReconstructionEngine_sequentialSfM::computeResection(const IndexT viewIndex
   resectionData.vec_descType.resize(resectionData.tracksId.size());
   
   // B. Look if intrinsic data is known or not
-  const View * view_I = _sfm_data.GetViews().at(viewIndex).get();
-  resectionData.optionalIntrinsic = _sfm_data.GetIntrinsicSharedPtr(view_I->getIntrinsicId());
+  const View * view_I = _sfmData.GetViews().at(viewIndex).get();
+  resectionData.optionalIntrinsic = _sfmData.GetIntrinsicSharedPtr(view_I->getIntrinsicId());
   
   std::size_t cpt = 0;
   std::set<std::size_t>::const_iterator iterTrackId = resectionData.tracksId.begin();
@@ -1340,7 +1340,7 @@ bool ReconstructionEngine_sequentialSfM::computeResection(const IndexT viewIndex
        ++iterfeatId, ++iterTrackId, ++cpt)
   {
     const feature::EImageDescriberType descType = iterfeatId->first;
-    resectionData.pt3D.col(cpt) = _sfm_data.GetLandmarks().at(*iterTrackId).X;
+    resectionData.pt3D.col(cpt) = _sfmData.GetLandmarks().at(*iterTrackId).X;
     resectionData.pt2D.col(cpt) = _featuresPerView->getFeatures(viewIndex, descType)[iterfeatId->second].coords().cast<double>();
     resectionData.vec_descType.at(cpt) = descType;
   }
@@ -1411,7 +1411,7 @@ bool ReconstructionEngine_sequentialSfM::computeResection(const IndexT viewIndex
       pinhole_cam->setK(focal, principal_point(0), principal_point(1));
     }
 
-    const std::set<IndexT> reconstructedIntrinsics = _sfm_data.getReconstructedIntrinsics();
+    const std::set<IndexT> reconstructedIntrinsics = _sfmData.getReconstructedIntrinsics();
     // If we use a camera intrinsic for the first time we need to refine it.
     const bool intrinsicsFirstUsage = (reconstructedIntrinsics.count(view_I->getIntrinsicId()) == 0);
 
@@ -1433,8 +1433,8 @@ void ReconstructionEngine_sequentialSfM::updateScene(const IndexT viewIndex, con
   // update the view pose or rig pose/sub-pose
   _map_ACThreshold.insert(std::make_pair(viewIndex, resectionData.error_max));
 
-  const View& view = *_sfm_data.views.at(viewIndex);
-  _sfm_data.setPose(view, resectionData.pose);
+  const View& view = *_sfmData.views.at(viewIndex);
+  _sfmData.setPose(view, resectionData.pose);
 
   // B. Update the observations into the global scene structure
   // - Add the new 2D observations to the reconstructed tracks
@@ -1448,7 +1448,7 @@ void ReconstructionEngine_sequentialSfM::updateScene(const IndexT viewIndex, con
         resectionData.pose.depth(X) > 0)
     {
       // Inlier, add the point to the reconstructed track
-      _sfm_data.structure[*iterTrackId].observations[viewIndex] = Observation(x, resectionData.featuresId[i].second);
+      _sfmData.structure[*iterTrackId].observations[viewIndex] = Observation(x, resectionData.featuresId[i].second);
     }
   }
 }
@@ -1840,7 +1840,7 @@ void ReconstructionEngine_sequentialSfM::triangulate(SfMData& scene, const std::
 bool ReconstructionEngine_sequentialSfM::BundleAdjustment(bool fixedIntrinsics)
 {
   BundleAdjustmentCeres::BA_options options;
-  if (_sfm_data.GetPoses().size() > 100)
+  if (_sfmData.GetPoses().size() > 100)
   {
     ALICEVISION_LOG_DEBUG("Global BundleAdjustment sparse");
     options.setSparseBA();
@@ -1854,7 +1854,7 @@ bool ReconstructionEngine_sequentialSfM::BundleAdjustment(bool fixedIntrinsics)
   BA_Refine refineOptions = BA_REFINE_ROTATION | BA_REFINE_TRANSLATION | BA_REFINE_STRUCTURE;
   if(!fixedIntrinsics)
     refineOptions |= BA_REFINE_INTRINSICS_ALL;
-  return bundle_adjustment_obj.Adjust(_sfm_data, refineOptions);
+  return bundle_adjustment_obj.Adjust(_sfmData, refineOptions);
 }
 
 bool ReconstructionEngine_sequentialSfM::localBundleAdjustment(const std::set<IndexT>& newReconstructedViews)
@@ -1865,7 +1865,7 @@ bool ReconstructionEngine_sequentialSfM::localBundleAdjustment(const std::set<In
   LocalBundleAdjustmentCeres::LocalBA_options options;
   options.enableParametersOrdering();
   
-  if (_sfm_data.GetPoses().size() > 100) // default value: 100 
+  if (_sfmData.GetPoses().size() > 100) // default value: 100 
   {
     options.setSparseBA();
     options.enableLocalBA();
@@ -1879,7 +1879,7 @@ bool ReconstructionEngine_sequentialSfM::localBundleAdjustment(const std::set<In
   bool isBaSucceed;
   
   // Add the new reconstructed views to the graph
-  _localBA_data->updateGraphWithNewViews(_sfm_data, _map_tracksPerView, newReconstructedViews, kMinNbOfMatches);
+  _localBA_data->updateGraphWithNewViews(_sfmData, _map_tracksPerView, newReconstructedViews, kMinNbOfMatches);
   
   // -- Prepare Local BA & Adjust
   LocalBundleAdjustmentCeres localBA_ceres;
@@ -1889,10 +1889,10 @@ bool ReconstructionEngine_sequentialSfM::localBundleAdjustment(const std::set<In
     ALICEVISION_LOG_DEBUG("Local BA is activated: YES");
     
     // Compute the graph-distance between each newly reconstructed views and all the reconstructed views
-    _localBA_data->computeGraphDistances(_sfm_data, newReconstructedViews);
+    _localBA_data->computeGraphDistances(_sfmData, newReconstructedViews);
 
     // Use the graph-distances to assign a LBA state (Refine, Constant & Ignore) for each parameter (poses, intrinsics & landmarks)
-    _localBA_data->convertDistancesToLBAStates(_sfm_data); 
+    _localBA_data->convertDistancesToLBAStates(_sfmData); 
 
     // Check Ceres mode: 
     // Restore the Ceres Dense mode if the number of cameras in the solver is <= 100
@@ -1911,7 +1911,7 @@ bool ReconstructionEngine_sequentialSfM::localBundleAdjustment(const std::set<In
     // - the number of cameras to refine cannot be < to the number of newly added cameras (set to 'refine' by default)
     if (_localBA_data->getNumOfRefinedPoses() > newReconstructedViews.size())
     {
-      isBaSucceed = localBA_ceres.Adjust(_sfm_data, *_localBA_data);
+      isBaSucceed = localBA_ceres.Adjust(_sfmData, *_localBA_data);
     }
     else
       ALICEVISION_LOG_WARNING("The refinement has not been done: the new cameras are not connected to the rest of the local BA graph.");
@@ -1920,15 +1920,15 @@ bool ReconstructionEngine_sequentialSfM::localBundleAdjustment(const std::set<In
   {
     ALICEVISION_LOG_DEBUG("Local BA is activated: NO");
 
-    _localBA_data->setAllParametersToRefine(_sfm_data);
+    _localBA_data->setAllParametersToRefine(_sfmData);
     
     localBA_ceres = LocalBundleAdjustmentCeres(*_localBA_data, options, newReconstructedViews);
     
-    isBaSucceed = localBA_ceres.Adjust(_sfm_data, *_localBA_data);
+    isBaSucceed = localBA_ceres.Adjust(_sfmData, *_localBA_data);
   }
   
   // Save the current focal lengths values (for each intrinsic) in the history  
-  _localBA_data->saveFocallengthsToHistory(_sfm_data);
+  _localBA_data->saveFocallengthsToHistory(_sfmData);
   // (optional) Export the current focallengths value to a txt file. 
   _localBA_data->exportFocalLengths(_localBA_data->getOutDirectory());
   
@@ -1942,8 +1942,8 @@ bool ReconstructionEngine_sequentialSfM::localBundleAdjustment(const std::set<In
 
 std::size_t ReconstructionEngine_sequentialSfM::removeOutliers(double precision)
 {
-  const std::size_t nbOutliersResidualErr = RemoveOutliers_PixelResidualError(_sfm_data, precision, 2);
-  const std::size_t nbOutliersAngleErr = RemoveOutliers_AngleError(_sfm_data, _minAngleForLandmark);
+  const std::size_t nbOutliersResidualErr = RemoveOutliers_PixelResidualError(_sfmData, precision, 2);
+  const std::size_t nbOutliersAngleErr = RemoveOutliers_AngleError(_sfmData, _minAngleForLandmark);
 
   ALICEVISION_LOG_INFO("Remove outliers: " << std::endl
                         << "\t- # outliers residual error: " << nbOutliersResidualErr << std::endl

@@ -38,7 +38,7 @@ bool retrieveViewIdFromImageName(
 {
   out_viewId = UndefinedIndexT;
 
-  /// list views uid / filenames and find the one that correspond to the user ones
+  // list views uid / filenames and find the one that correspond to the user ones
   for(const auto& viewPair : sfmData.GetViews())
   {
     const View& v = *(viewPair.second.get());
@@ -226,7 +226,6 @@ int main(int argc, char **argv)
     fs::create_directory(extraInfoFolder);
 
   // sequential reconstruction process
-  
   aliceVision::system::Timer timer;
   ReconstructionEngine_sequentialSfM sfmEngine(
     sfmData,
@@ -238,7 +237,7 @@ int main(int argc, char **argv)
   sfmEngine.setMatches(&pairwiseMatches);
 
   // configure reconstruction parameters
-  sfmEngine.Set_bFixedIntrinsics(!refineIntrinsics);
+  sfmEngine.setFixedIntrinsics(!refineIntrinsics);
   sfmEngine.setMinInputTrackLength(minInputTrackLength);
   sfmEngine.setMinAngleForTriangulation(minAngleForTriangulation);
   sfmEngine.setMinAngleForLandmark(minAngleForLandmark);
@@ -269,20 +268,21 @@ int main(int argc, char **argv)
     }
 
     Pair initialPairIndex;
-    if(!retrieveViewIdFromImageName(sfmData, initialPairString.first, initialPairIndex.first)
-            || !retrieveViewIdFromImageName(sfmData, initialPairString.second, initialPairIndex.second))
+    if(!retrieveViewIdFromImageName(sfmData, initialPairString.first, initialPairIndex.first) ||
+       !retrieveViewIdFromImageName(sfmData, initialPairString.second, initialPairIndex.second))
     {
       ALICEVISION_LOG_ERROR("Could not find the initial pairs (" + initialPairString.first + ", " + initialPairString.second + ") !");
       return EXIT_FAILURE;
     }
+
     sfmEngine.setInitialPair(initialPairIndex);
   }
 
-  if(!sfmEngine.Process())
+  if(!sfmEngine.process())
     return EXIT_FAILURE;
 
   // get the color for the 3D points
-  if(!sfmEngine.Colorize())
+  if(!sfmEngine.colorize())
     ALICEVISION_LOG_ERROR("SfM Colorization failed.");
 
   // set featuresFolders and matchesFolders relative paths
@@ -290,32 +290,32 @@ int main(int argc, char **argv)
     const fs::path sfmFolder = fs::path(outputSfM).remove_filename();
 
     for(const std::string& featuresFolder : featuresFolders)
-       sfmEngine.Get_SfMData().addFeaturesFolder(fs::relative(fs::path(featuresFolder), sfmFolder).string());
+       sfmEngine.getSfMData().addFeaturesFolder(fs::relative(fs::path(featuresFolder), sfmFolder).string());
 
     for(const std::string& matchesFolder : matchesFolders)
-       sfmEngine.Get_SfMData().addMatchesFolder(fs::relative(fs::path(matchesFolder), sfmFolder).string());
+       sfmEngine.getSfMData().addMatchesFolder(fs::relative(fs::path(matchesFolder), sfmFolder).string());
 
-    sfmEngine.Get_SfMData().setAbsolutePath(outputSfM);
+    sfmEngine.getSfMData().setAbsolutePath(outputSfM);
   }
 
   ALICEVISION_LOG_INFO("Structure from motion took (s): " + std::to_string(timer.elapsed()));
   ALICEVISION_LOG_INFO("Generating HTML report...");
 
-  Generate_SfM_Report(sfmEngine.Get_SfMData(), (fs::path(extraInfoFolder) / "sfm_report.html").string());
+  generateSfMReport(sfmEngine.getSfMData(), (fs::path(extraInfoFolder) / "sfm_report.html").string());
 
   // export to disk computed scene (data & visualizable results)
   ALICEVISION_LOG_INFO("Export SfMData to disk: " + outputSfM);
 
-  Save(sfmEngine.Get_SfMData(), (fs::path(extraInfoFolder) / ("cloud_and_poses" + outInterFileExtension)).string(), ESfMData(VIEWS|EXTRINSICS|INTRINSICS|STRUCTURE));
-  Save(sfmEngine.Get_SfMData(), outputSfM, ESfMData::ALL);
+  Save(sfmEngine.getSfMData(), (fs::path(extraInfoFolder) / ("cloud_and_poses" + outInterFileExtension)).string(), ESfMData(VIEWS|EXTRINSICS|INTRINSICS|STRUCTURE));
+  Save(sfmEngine.getSfMData(), outputSfM, ESfMData::ALL);
 
   if(!outputSfMViewsAndPoses.empty())
-    Save(sfmEngine.Get_SfMData(), outputSfMViewsAndPoses, ESfMData(VIEWS|EXTRINSICS|INTRINSICS));
+    Save(sfmEngine.getSfMData(), outputSfMViewsAndPoses, ESfMData(VIEWS|EXTRINSICS|INTRINSICS));
 
   ALICEVISION_LOG_INFO("Structure from Motion results:" << std::endl
-    << "\t- # input images: " << sfmEngine.Get_SfMData().GetViews().size() << std::endl
-    << "\t- # cameras calibrated: " << sfmEngine.Get_SfMData().GetPoses().size() << std::endl
-    << "\t- # landmarks: " << sfmEngine.Get_SfMData().GetLandmarks().size());
+    << "\t- # input images: " << sfmEngine.getSfMData().GetViews().size() << std::endl
+    << "\t- # cameras calibrated: " << sfmEngine.getSfMData().GetPoses().size() << std::endl
+    << "\t- # landmarks: " << sfmEngine.getSfMData().GetLandmarks().size());
 
   return EXIT_SUCCESS;
 }

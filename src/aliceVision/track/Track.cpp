@@ -56,7 +56,8 @@ void TracksBuilder::build(const PairwiseMatches& pairwiseMatches)
 
   // add the element of myset to the UnionFind insert method.
   _index = std::unique_ptr<IndexMap>( new IndexMap(_graph) );
-  _tracksUF = std::unique_ptr<UnionFindObject>( new UnionFindObject(*_index));
+  _tracksUF = std::unique_ptr<UnionFindObject>(new UnionFindObject(*_index));
+
   for(ListDigraph::NodeIt it(_graph); it != INVALID; ++it)
   {
     _tracksUF->insert(it);

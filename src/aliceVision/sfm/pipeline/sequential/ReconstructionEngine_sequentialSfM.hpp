@@ -117,8 +117,8 @@ public:
     _uselocalBundleAdjustment = v;
     if(v)
     {
-      _localBA_data = std::make_shared<LocalBundleAdjustmentData>(_sfm_data);
-      _localBA_data->setOutDirectory((fs::path(_sOutDirectory) / "localBA").string());
+      _localBA_data = std::make_shared<LocalBundleAdjustmentData>(_sfmData);
+      _localBA_data->setOutDirectory((fs::path(_outputFolder) / "localBA").string());
 
       // delete all the previous data about the Local BA.
       if(fs::exists(_localBA_data->getOutDirectory()))
@@ -131,7 +131,7 @@ public:
    * @brief Process the entire incremental reconstruction
    * @return true if done
    */
-  virtual bool Process();
+  virtual bool process();
 
   /**
    * @brief Initialize pyramid scoring
