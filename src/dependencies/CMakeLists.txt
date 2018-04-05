@@ -1,8 +1,9 @@
 ## AliceVision dependencies
 
-add_library(nanoflann INTERFACE)
-target_include_directories(nanoflann INTERFACE
-    "${CMAKE_CURRENT_SOURCE_DIR}/nanoflann/include"
+# Add nanoflann (header-only)
+add_library(nanoflann INTERFACE IMPORTED GLOBAL)
+set_target_properties(nanoflann PROPERTIES
+    INTERFACE_INCLUDE_DIRECTORIES "${CMAKE_CURRENT_SOURCE_DIR}/nanoflann/include"
 )
 
 # libs should be static
