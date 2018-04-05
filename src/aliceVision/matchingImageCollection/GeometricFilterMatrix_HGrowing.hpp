@@ -75,35 +75,34 @@ struct GeometricFilterMatrix_HGrowing : public GeometricFilterMatrix
     
     const feature::Regions& regionsSIFT_I = regionsPerView.getRegions(viewId_I, descTypes.at(0));
     const feature::Regions& regionsSIFT_J = regionsPerView.getRegions(viewId_J, descTypes.at(0));
-    const std::vector<feature::SIOPointFeature> allFeaturesI = getSIOPointFeatures(regionsSIFT_I);
-    const std::vector<feature::SIOPointFeature> allFeaturesJ = getSIOPointFeatures(regionsSIFT_J);
+    const std::vector<feature::SIOPointFeature> allSIFTFeaturesI = getSIOPointFeatures(regionsSIFT_I);
+    const std::vector<feature::SIOPointFeature> allSIFTfeaturesJ = getSIOPointFeatures(regionsSIFT_J);
     
-    matching::IndMatches putativeMatchesSIFT = putativeMatchesPerType.at(feature::EImageDescriberType::SIFT);
-    std::vector<feature::SIOPointFeature> putativeFeaturesI, putativeFeaturesJ;
-    putativeFeaturesI.reserve(putativeMatchesSIFT.size());
-    putativeFeaturesJ.reserve(putativeMatchesSIFT.size());
+    matching::IndMatches putativeSIFTMatches = putativeMatchesPerType.at(feature::EImageDescriberType::SIFT);
+//    std::vector<feature::SIOPointFeature> putativeFeaturesI, putativeFeaturesJ;
+//    putativeFeaturesI.reserve(putativeSIFTMatches.size());
+//    putativeFeaturesJ.reserve(putativeSIFTMatches.size());
     
-    for (const matching::IndMatch & idMatch : putativeMatchesSIFT)
-    {
-      putativeFeaturesI.push_back(allFeaturesI.at(idMatch._i));
-      putativeFeaturesJ.push_back(allFeaturesJ.at(idMatch._j));
-    }
+//    for (const matching::IndMatch & idMatch : putativeSIFTMatches)
+//    {
+//      putativeFeaturesI.push_back(allSIFTFeaturesI.at(idMatch._i));
+//      putativeFeaturesJ.push_back(allSIFTfeaturesJ.at(idMatch._j));
+//    }
     
     if (viewId_I == 200563944 && viewId_J == 1112206013) // MATLAB exemple
     {
-      std::cout << "|- #matches: " << putativeMatchesSIFT.size() << std::endl;
-      std::cout << "|- allFeaturesI : " << allFeaturesI.size() << std::endl;
-      std::cout << "|- allFeaturesJ : " << allFeaturesJ.size() << std::endl;
-      std::cout << "|- putativeFeaturesI : " << putativeFeaturesI.size() << std::endl;
-      std::cout << "|- putativeFeaturesJ : " << putativeFeaturesJ.size() << std::endl;
+      std::cout << "|- #matches: " << putativeSIFTMatches.size() << std::endl;
+      std::cout << "|- allSIFTFeaturesI : " << allSIFTFeaturesI.size() << std::endl;
+      std::cout << "|- allSIFTfeaturesJ : " << allSIFTfeaturesJ.size() << std::endl;
+//      std::cout << "|- putativeFeaturesI : " << putativeFeaturesI.size() << std::endl;
+//      std::cout << "|- putativeFeaturesJ : " << putativeFeaturesJ.size() << std::endl;
       //      std::cout << "-------" << std::endl;
       //      std::cout << "xI : " << std::endl;
       //      std::cout << xI << std::endl;    
       //      std::cout << "putativeFeaturesI : " << std::endl;
       //      std::cout << putativeFeaturesI << std::endl;
       
-      
-      std::size_t nbMatches = putativeMatchesSIFT.size();
+      std::size_t nbMatches = putativeSIFTMatches.size();
       
       // (?) make a map
       std::vector<Mat3> homographies;
@@ -119,7 +118,7 @@ struct GeometricFilterMatrix_HGrowing : public GeometricFilterMatrix
           std::vector<IndexT> planarMatchesIds;
           Mat3 homographie;
           
-          growHomography(putativeFeaturesI, putativeFeaturesJ, iMatch , planarMatchesIds, homographie);
+          growHomography(allSIFTFeaturesI, allSIFTfeaturesJ, putativeSIFTMatches, iMatch, planarMatchesIds, homographie);
           
           if (!planarMatchesIds.empty())
           {
@@ -164,23 +163,22 @@ private:
   //-- See: YASM/relative_pose.h
   void growHomography(const std::vector<feature::SIOPointFeature> & featuresI, 
                       const std::vector<feature::SIOPointFeature> & featuresJ, 
+                      const matching::IndMatches & putativeMatches,
                       const IndexT & seedMatchId,
                       std::vector<IndexT> & out_planarMatchesIndices, 
                       Mat3 & out_transformation)
   {
   
-    assert(featuresI.size() == featuresJ.size());
-    assert(seedMatchId <= featuresI.size());
-    
-//    std::cout << "featuresI = " << featuresI << std::endl;
-//    std::cout << "featuresI = " << featuresI << std::endl;
-    
+    assert(seedMatchId <= putativeMatches.size());
     out_planarMatchesIndices.clear();
     out_transformation = Mat3::Identity();
     
-    feature::SIOPointFeature seedFeatureI = featuresI.at(seedMatchId);
-    feature::SIOPointFeature seedFeatureJ = featuresJ.at(seedMatchId);
+    const matching::IndMatch & seedMatch = putativeMatches.at(seedMatchId);
+    const feature::SIOPointFeature & seedFeatureI = featuresI.at(seedMatch._i);
+    const feature::SIOPointFeature & seedFeatureJ = featuresJ.at(seedMatch._j);
+
     std::size_t currentTolerance;
+
     for (IndexT iRefineStep = 0; iRefineStep < _nbIterations; ++iRefineStep)
     {
       if (iRefineStep == 0)
@@ -203,7 +201,7 @@ private:
         currentTolerance = _homographyTolerance;
       }
       
-      findHomographyInliers();
+      findTransformationInliers();
       
     }
   }
@@ -276,9 +274,10 @@ private:
   /**
    * @brief findHomographyInliers Test the reprojection error
    */
-  void findHomographyInliers()
+  void findTransformationInliers()
   {
 //    std::cout << "findHomographyInliers" << std::endl;
+
   }
   
   //-- Stored data
