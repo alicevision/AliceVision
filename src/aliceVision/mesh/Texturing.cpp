@@ -329,12 +329,13 @@ void Texturing::generateTexture(const mvsUtils::MultiViewParams& mp,
                 triPixs[k] = (*uvCoords)[uvPointIndex] * texParams.textureSide;   // UV coordinates
             }
 
-            // compute triangle bounding box
-            // cast to int (floor) to get pixel indexes based on their top-left corners
-            unsigned int LUx = static_cast<unsigned int>(std::min(std::min(triPixs[0].x, triPixs[1].x), triPixs[2].x));
-            unsigned int LUy = static_cast<unsigned int>(std::min(std::min(triPixs[0].y, triPixs[1].y), triPixs[2].y));
-            unsigned int RDx = static_cast<unsigned int>(std::max(std::max(triPixs[0].x, triPixs[1].x), triPixs[2].x));
-            unsigned int RDy = static_cast<unsigned int>(std::max(std::max(triPixs[0].y, triPixs[1].y), triPixs[2].y));
+            // compute triangle bounding box in pixel indexes
+            // min values: floor(value)
+            // max values: ceil(value) - 1 (ensure resulting value is in valid index range [0; textureSide-1])
+            unsigned int LUx = static_cast<unsigned int>(std::floor(std::min(std::min(triPixs[0].x, triPixs[1].x), triPixs[2].x)));
+            unsigned int LUy = static_cast<unsigned int>(std::floor(std::min(std::min(triPixs[0].y, triPixs[1].y), triPixs[2].y)));
+            unsigned int RDx = static_cast<unsigned int>(std::ceil(std::max(std::max(triPixs[0].x, triPixs[1].x), triPixs[2].x))) - 1;
+            unsigned int RDy = static_cast<unsigned int>(std::ceil(std::max(std::max(triPixs[0].y, triPixs[1].y), triPixs[2].y))) - 1;
 
             // iterate over bounding box's pixels
             for(unsigned int y = LUy; y <= RDy; y++)
