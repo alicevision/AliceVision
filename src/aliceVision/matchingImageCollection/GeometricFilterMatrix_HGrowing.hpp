@@ -12,7 +12,7 @@
 //#include "aliceVision/robustEstimation/ACRansacKernelAdaptator.hpp"
 //#include "aliceVision/robustEstimation/guidedMatching.hpp"
 
-//#include "aliceVision/matching/IndMatch.hpp"
+#include "aliceVision/matching/IndMatch.hpp"
 //#include "aliceVision/matching/IndMatchDecorator.hpp"
 #include "aliceVision/sfm/SfMData.hpp"
 #include "aliceVision/feature/RegionsPerView.hpp"
@@ -57,8 +57,8 @@ struct GeometricFilterMatrix_HGrowing : public GeometricFilterMatrix
     out_geometricInliersPerType.clear();
     
     // Get back corresponding view index
-    const IndexT iIndex = pairIndex.first;
-    const IndexT jIndex = pairIndex.second;
+    const IndexT viewId_I = pairIndex.first;
+    const IndexT viewId_J = pairIndex.second;
     
     const std::vector<feature::EImageDescriberType> descTypes = regionsPerView.getCommonDescTypes(pairIndex);
     if(descTypes.empty())
@@ -67,31 +67,65 @@ struct GeometricFilterMatrix_HGrowing : public GeometricFilterMatrix
     // Retrieve all 2D features as undistorted positions into flat arrays
     Mat xI, xJ;
     MatchesPairToMat(pairIndex, putativeMatchesPerType, sfmData, regionsPerView, descTypes, xI, xJ);
+    
     std::cout << "Pair id. : " << pairIndex << std::endl;
+    std::cout << "|- putative: " << putativeMatchesPerType.at(feature::EImageDescriberType::SIFT).size() << std::endl;
     std::cout << "|- xI: " << xI.rows() << "x" << xI.cols() << std::endl;
     std::cout << "|- xJ: " << xJ.rows() << "x" << xJ.cols() << std::endl;
-    std::size_t nbMatches = xI.cols();
     
-    // (?) make a map
-    std::vector<Mat3> homographies;
-    std::vector<std::vector<IndexT>> planarMatchesPerH;
+    const feature::Regions& regionsSIFT_I = regionsPerView.getRegions(viewId_I, descTypes.at(0));
+    const feature::Regions& regionsSIFT_J = regionsPerView.getRegions(viewId_J, descTypes.at(0));
+    const std::vector<feature::SIOPointFeature> allFeaturesI = getSIOPointFeatures(regionsSIFT_I);
+    const std::vector<feature::SIOPointFeature> allFeaturesJ = getSIOPointFeatures(regionsSIFT_J);
     
-    for (IndexT iTransform = 0; iTransform < _maxNbHomographies; ++iTransform)
+    matching::IndMatches putativeMatchesSIFT = putativeMatchesPerType.at(feature::EImageDescriberType::SIFT);
+    std::vector<feature::SIOPointFeature> putativeFeaturesI, putativeFeaturesJ;
+    putativeFeaturesI.reserve(putativeMatchesSIFT.size());
+    putativeFeaturesJ.reserve(putativeMatchesSIFT.size());
+    
+    for (const matching::IndMatch & idMatch : putativeMatchesSIFT)
     {
-      for (IndexT iMatch = 0; iMatch < nbMatches; ++iMatch)
+      putativeFeaturesI.push_back(allFeaturesI.at(idMatch._i));
+      putativeFeaturesJ.push_back(allFeaturesJ.at(idMatch._j));
+    }
+    
+    if (viewId_I == 200563944 && viewId_J == 1112206013) // MATLAB exemple
+    {
+      std::cout << "|- #matches: " << putativeMatchesSIFT.size() << std::endl;
+      std::cout << "|- allFeaturesI : " << allFeaturesI.size() << std::endl;
+      std::cout << "|- allFeaturesJ : " << allFeaturesJ.size() << std::endl;
+      std::cout << "|- putativeFeaturesI : " << putativeFeaturesI.size() << std::endl;
+      std::cout << "|- putativeFeaturesJ : " << putativeFeaturesJ.size() << std::endl;
+      //      std::cout << "-------" << std::endl;
+      //      std::cout << "xI : " << std::endl;
+      //      std::cout << xI << std::endl;    
+      //      std::cout << "putativeFeaturesI : " << std::endl;
+      //      std::cout << putativeFeaturesI << std::endl;
+      
+      
+      std::size_t nbMatches = putativeMatchesSIFT.size();
+      
+      // (?) make a map
+      std::vector<Mat3> homographies;
+      std::vector<std::vector<IndexT>> planarMatchesPerH;
+      
+      for (IndexT iTransform = 0; iTransform < _maxNbHomographies; ++iTransform)
       {
-        // [TODO] Add 1st improvment
-        
-        // Growing a homography from one match ([F.Srajer, 2016] algo. 1, p. 20)  
-        std::vector<IndexT> planarMatchesIds;
-        Mat3 homographie;
-        
-        growHomography(xI, xJ, iMatch ,planarMatchesIds, homographie);
-        
-        if (!planarMatchesIds.empty())
+        for (IndexT iMatch = 0; iMatch < nbMatches; ++iMatch)
         {
-          homographies.push_back(homographie);
-          planarMatchesPerH.push_back(planarMatchesIds);
+          // [TODO] Add 1st improvment
+          
+          // Growing a homography from one match ([F.Srajer, 2016] algo. 1, p. 20)  
+          std::vector<IndexT> planarMatchesIds;
+          Mat3 homographie;
+          
+          growHomography(putativeFeaturesI, putativeFeaturesJ, iMatch , planarMatchesIds, homographie);
+          
+          if (!planarMatchesIds.empty())
+          {
+            homographies.push_back(homographie);
+            planarMatchesPerH.push_back(planarMatchesIds);
+          }
         }
       }
     }
@@ -128,29 +162,45 @@ private:
 
   // Growing a homography from one match ([F.Srajer, 2016] algo. 1, p. 20)  
   //-- See: YASM/relative_pose.h
-  void growHomography(const Mat & featuresI, 
-                      const Mat & featuresJ, 
-                      const IndexT & matchId,
-                      std::vector<IndexT> & planarMatchesIndices, 
-                      Mat3 & homographie)
+  void growHomography(const std::vector<feature::SIOPointFeature> & featuresI, 
+                      const std::vector<feature::SIOPointFeature> & featuresJ, 
+                      const IndexT & seedMatchId,
+                      std::vector<IndexT> & out_planarMatchesIndices, 
+                      Mat3 & out_transformation)
   {
   
-    planarMatchesIndices.clear();
-    homographie = Mat3::Identity();
+    assert(featuresI.size() == featuresJ.size());
+    assert(seedMatchId <= featuresI.size());
     
+//    std::cout << "featuresI = " << featuresI << std::endl;
+//    std::cout << "featuresI = " << featuresI << std::endl;
+    
+    out_planarMatchesIndices.clear();
+    out_transformation = Mat3::Identity();
+    
+    feature::SIOPointFeature seedFeatureI = featuresI.at(seedMatchId);
+    feature::SIOPointFeature seedFeatureJ = featuresJ.at(seedMatchId);
+    std::size_t currentTolerance;
     for (IndexT iRefineStep = 0; iRefineStep < _nbIterations; ++iRefineStep)
     {
       if (iRefineStep == 0)
       {
-        computeSimilarityFromMatch();
+        computeSimilarityFromMatch(seedFeatureI, seedFeatureJ, out_transformation);
+        std::cout << "featI: " << seedFeatureI << std::endl;
+        std::cout << "featJ: " << seedFeatureJ << std::endl;
+        std::cout << "S = " << out_transformation << std::endl;
+        getchar();
+        currentTolerance = _similarityTolerance;
       }
       else if (iRefineStep <= 4)
       {
         estimateAffinity();
+        currentTolerance = _affinityTolerance;
       }
       else
       {
         estimateHomography();
+        currentTolerance = _homographyTolerance;
       }
       
       findHomographyInliers();
@@ -163,9 +213,45 @@ private:
    * see: alicevision::sfm::computeSimilarity() [sfm/utils/alignment.cpp]
    *      alicevision::geometry::ACRansac_FindRTS() [geometry/rigidTransformation3D(_test).hpp]
    */   
-  void computeSimilarityFromMatch()
+
+  void computeSimilarityFromMatch(const feature::SIOPointFeature & feat1,
+                                  const feature::SIOPointFeature & feat2,
+                                  Mat3 & S)
   {
-    std::cout << "computeSimilarityFromMatch" << std::endl;
+    computeSimilarityFromMatch(feat1.coords(), feat1.scale(), feat1.orientation(),
+                               feat2.coords(), feat2.scale(), feat2.orientation(),
+                               S);
+  }
+
+  /**
+   * @brief computeSimilarityFromMatch
+   * Source: https://github.com/fsrajer/yasfm/blob/master/YASFM/relative_pose.cpp#L1649
+   * @param coord1
+   * @param scale1
+   * @param orientation1
+   * @param coord2
+   * @param scale2
+   * @param orientation2
+   * @param S
+   */  
+  void computeSimilarityFromMatch(const Vec2f & coord1, double scale1, double orientation1,
+                                  const Vec2f & coord2, double scale2, double orientation2,
+                                  Mat3 & S)
+  {
+    double c1 = cos(orientation1),
+        s1 = sin(orientation1),
+        c2 = cos(orientation2),
+        s2 = sin(orientation2);
+    
+    Mat3 A1,A2;
+    A1 << scale1*c1,scale1*(-s1),coord1(0),
+        scale1*s1,scale1*c1,coord1(1),
+        0,0,1;
+    A2 << scale2*c2,scale2*(-s2),coord2(0),
+        scale2*s2,scale2*c2,coord2(1),
+        0,0,1;
+    
+    S = A2*A1.inverse();
   }
   
   /**
@@ -174,7 +260,7 @@ private:
    */
   void estimateAffinity()
   {
-    std::cout << "estimateAffinity" << std::endl;
+//    std::cout << "estimateAffinity" << std::endl;
   }
   
   /**
@@ -184,7 +270,7 @@ private:
    */
   void estimateHomography()
   {
-    std::cout << "estimateHomography" << std::endl;
+//    std::cout << "estimateHomography" << std::endl;
   }
   
   /**
@@ -192,7 +278,7 @@ private:
    */
   void findHomographyInliers()
   {
-    std::cout << "findHomographyInliers" << std::endl;
+//    std::cout << "findHomographyInliers" << std::endl;
   }
   
   //-- Stored data
