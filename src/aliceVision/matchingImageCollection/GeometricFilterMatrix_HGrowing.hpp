@@ -17,6 +17,8 @@
 #include "aliceVision/sfm/SfMData.hpp"
 #include "aliceVision/feature/RegionsPerView.hpp"
 #include "aliceVision/matchingImageCollection/GeometricFilterMatrix.hpp"
+#include "Eigen/Geometry"
+
 
 namespace aliceVision {
 namespace matchingImageCollection {
@@ -163,46 +165,77 @@ private:
   //-- See: YASM/relative_pose.h
   void growHomography(const std::vector<feature::SIOPointFeature> & featuresI, 
                       const std::vector<feature::SIOPointFeature> & featuresJ, 
-                      const matching::IndMatches & putativeMatches,
+                      const matching::IndMatches & matches,
                       const IndexT & seedMatchId,
-                      std::vector<IndexT> & out_planarMatchesIndices, 
-                      Mat3 & out_transformation)
+                      std::vector<IndexT> & planarMatchesIndices, 
+                      Mat3 & transformation)
   {
   
-    assert(seedMatchId <= putativeMatches.size());
-    out_planarMatchesIndices.clear();
-    out_transformation = Mat3::Identity();
+    assert(seedMatchId <= matches.size());
+    planarMatchesIndices.clear();
+    transformation = Mat3::Identity();
     
-    const matching::IndMatch & seedMatch = putativeMatches.at(seedMatchId);
+    const matching::IndMatch & seedMatch = matches.at(seedMatchId);
     const feature::SIOPointFeature & seedFeatureI = featuresI.at(seedMatch._i);
     const feature::SIOPointFeature & seedFeatureJ = featuresJ.at(seedMatch._j);
 
-    std::size_t currentTolerance;
+    std::size_t currTolerance;
 
     for (IndexT iRefineStep = 0; iRefineStep < _nbIterations; ++iRefineStep)
     {
       if (iRefineStep == 0)
       {
-        computeSimilarityFromMatch(seedFeatureI, seedFeatureJ, out_transformation);
+        computeSimilarityFromMatch(seedFeatureI, seedFeatureJ, transformation);
         std::cout << "featI: " << seedFeatureI << std::endl;
         std::cout << "featJ: " << seedFeatureJ << std::endl;
-        std::cout << "S = " << out_transformation << std::endl;
-        getchar();
-        currentTolerance = _similarityTolerance;
+        std::cout << "S = " << transformation << std::endl;
+
+        currTolerance = _similarityTolerance;
       }
       else if (iRefineStep <= 4)
       {
         estimateAffinity();
-        currentTolerance = _affinityTolerance;
+        currTolerance = _affinityTolerance;
       }
       else
       {
         estimateHomography();
-        currentTolerance = _homographyTolerance;
+        currTolerance = _homographyTolerance;
       }
       
-      findTransformationInliers();
+      findTransformationInliers(featuresI, featuresJ, matches, transformation, currTolerance, planarMatchesIndices);
       
+      std::cout << "#Inliers = " << planarMatchesIndices.size() << std::endl;
+      std::cout << planarMatchesIndices << std::endl;
+      getchar();
+    }
+  }
+  /**
+   * @brief findHomographyInliers Test the reprojection error
+   */
+  void findTransformationInliers(const std::vector<feature::SIOPointFeature> & featuresI, 
+                                 const std::vector<feature::SIOPointFeature> & featuresJ, 
+                                 const matching::IndMatches & matches,
+                                 const Mat3 & transformation,
+                                 const std::size_t tolerance,
+                                 std::vector<IndexT> & planarMatchesIndices)
+  {
+    planarMatchesIndices.clear();
+
+    for (IndexT iMatch = 0; iMatch < matches.size(); ++iMatch)
+    {
+      const feature::SIOPointFeature & featI = featuresI.at(matches.at(iMatch)._i);
+      const feature::SIOPointFeature & featJ = featuresJ.at(matches.at(iMatch)._j);
+      
+      Vec2 ptI(featI.x(), featI.y());
+      Vec2 ptJ(featJ.x(), featJ.y());
+      
+      Vec3 ptIp_hom = transformation * ptI.homogeneous();
+
+      float dist = (ptJ - ptIp_hom.hnormalized()).squaredNorm();   
+      
+      if (dist < tolerance * tolerance)
+        planarMatchesIndices.push_back(iMatch);
     }
   }
   
@@ -271,14 +304,7 @@ private:
 //    std::cout << "estimateHomography" << std::endl;
   }
   
-  /**
-   * @brief findHomographyInliers Test the reprojection error
-   */
-  void findTransformationInliers()
-  {
-//    std::cout << "findHomographyInliers" << std::endl;
 
-  }
   
   //-- Stored data
   std::vector<Mat3> _Hs;
