@@ -8,6 +8,7 @@
 #pragma once
 
 //#include "aliceVision/multiview/homographyKernelSolver.hpp"
+#include "aliceVision/multiview/affineSolver.hpp"
 //#include "aliceVision/robustEstimation/ACRansac.hpp"
 //#include "aliceVision/robustEstimation/ACRansacKernelAdaptator.hpp"
 //#include "aliceVision/robustEstimation/guidedMatching.hpp"
@@ -185,17 +186,34 @@ private:
     {
       if (iRefineStep == 0)
       {
+        std::cout << "\n-- Similarity" << std::endl;
         computeSimilarityFromMatch(seedFeatureI, seedFeatureJ, transformation);
+        
         std::cout << "featI: " << seedFeatureI << std::endl;
         std::cout << "featJ: " << seedFeatureJ << std::endl;
-        std::cout << "S = " << transformation << std::endl;
+        std::cout << "T_sim = " << transformation << std::endl;
 
         currTolerance = _similarityTolerance;
       }
       else if (iRefineStep <= 4)
       {
-        estimateAffinity();
+        std::cout << "\n-- Affinity" << std::endl;
+
+        matching::IndMatches planarMatches(planarMatchesIndices.size());
+        
+        for (IndexT iMatch = 0; iMatch < planarMatchesIndices.size(); ++iMatch)
+        {
+          planarMatches.at(iMatch) = matches.at(planarMatchesIndices.at(iMatch));
+        }
+        
+        std::cout << "planarMatches : \n" << planarMatches << std::endl;
+                       
+        estimateAffinity(featuresI, featuresJ, planarMatches, transformation);
+        
         currTolerance = _affinityTolerance;
+        
+        std::cout << "T_aff = \n" << transformation << std::endl;
+        getchar();
       }
       else
       {
@@ -205,11 +223,20 @@ private:
       
       findTransformationInliers(featuresI, featuresJ, matches, transformation, currTolerance, planarMatchesIndices);
       
-      std::cout << "#Inliers = " << planarMatchesIndices.size() << std::endl;
+//      std::cout << "#Inliers = " << planarMatchesIndices.size() << std::endl;
       std::cout << planarMatchesIndices << std::endl;
-      getchar();
+//      getchar();
+      
+//      if (planarMatchesIndices.size() < _minNbPlanarMatches)
+//        break;
+      
+//      // Note: the following statement is present in the MATLAB code but not implemented in YASM
+//      if (planarMatchesIndices.size() >= _maxFractionPlanarMatches * matches.size())
+//        break;
+      
     }
   }
+  
   /**
    * @brief findHomographyInliers Test the reprojection error
    */
@@ -240,11 +267,85 @@ private:
   }
   
   /**
+   * @brief estimateAffinity
+   * see: 
+   * https://eigen.tuxfamily.org/dox/group__LeastSquares.html
+   * [ppt] https://www.google.fr/url?sa=t&rct=j&q=&esrc=s&source=web&cd=5&ved=0ahUKEwjg4JrL66PaAhWOyKQKHRz_BJ0QFghKMAQ&url=https%3A%2F%2Fcourses.cs.washington.edu%2Fcourses%2Fcse576%2F02au%2Flectures%2FMatching2D.ppt&usg=AOvVaw3dEP3al4Y-27r6e9FMYGrz
+   * [git] https://github.com/fsrajer/yasfm/blob/master/YASFM/relative_pose.cpp#L1669
+   */
+  void estimateAffinity(const std::vector<feature::SIOPointFeature> & featuresI,
+                        const std::vector<feature::SIOPointFeature> & featuresJ,
+                        const matching::IndMatches & matches,
+                        Mat3 & transformation)
+  {
+    transformation = Mat3::Identity();
+    
+    const std::size_t nbMatches = matches.size();
+    
+    Mat M(Mat::Zero(2*nbMatches,6));
+    Vec b(2*nbMatches);
+    
+    for (IndexT iMatch = 0; iMatch < nbMatches; ++iMatch)
+    {
+      const feature::SIOPointFeature & featI = featuresI.at(matches.at(iMatch)._i);
+      const feature::SIOPointFeature & featJ = featuresJ.at(matches.at(iMatch)._j);
+      Vec2 fI; 
+      
+      fI << featI.x(), featI.y();
+      M.block(iMatch,0,1,3) = fI.homogeneous().transpose();
+      M.block(iMatch+nbMatches,3,1,3) = fI.homogeneous().transpose();
+      b(iMatch) = featJ.x();
+      b(iMatch+nbMatches) = featJ.y();
+    }
+    
+    Vec a = M.jacobiSvd(Eigen::ComputeThinU | Eigen::ComputeThinV).solve(b);
+    transformation.row(0) = a.topRows(3).transpose();
+    transformation.row(1) = a.bottomRows(3).transpose();
+    transformation(2,0) = 0.;
+    transformation(2,1) = 0.;
+    transformation(2,2) = 1.;
+  }
+  
+//    void estimateAffinity(const std::vector<feature::SIOPointFeature> & featuresI,
+//                        const std::vector<feature::SIOPointFeature> & featuresJ,
+//                        const matching::IndMatches & matches,
+//                        Mat3 & transformation)
+//  {
+//    std::cout << "\n-- EstimateAffinity" << std::endl;
+//    transformation = Mat3::Identity();
+    
+//    const std::size_t nbMatches = matches.size();
+//    Mat xI(2, nbMatches);
+//    Mat xJ(2, nbMatches);
+    
+//    for (IndexT iMatch = 0; iMatch < nbMatches; ++iMatch)
+//    {
+//      const feature::SIOPointFeature & featI = featuresI.at(matches.at(iMatch)._i);
+//      const feature::SIOPointFeature & featJ = featuresJ.at(matches.at(iMatch)._j);
+//      xI(0,iMatch) = featI.x();
+//      xI(1,iMatch) = featI.y();
+//      xJ(0,iMatch) = featJ.x();
+//      xJ(1,iMatch) = featJ.y();
+//    }
+    
+//    std::cout << "xI = \n" << xI << std::endl;
+//    std::cout << "xJ = \n" << xJ << std::endl;
+    
+//    Affine2DFromCorrespondencesLinear(xJ, xI, &transformation);
+    
+//    // https://eigen.tuxfamily.org/dox/group__LeastSquares.html
+//    // [ppt] https://www.google.fr/url?sa=t&rct=j&q=&esrc=s&source=web&cd=5&ved=0ahUKEwjg4JrL66PaAhWOyKQKHRz_BJ0QFghKMAQ&url=https%3A%2F%2Fcourses.cs.washington.edu%2Fcourses%2Fcse576%2F02au%2Flectures%2FMatching2D.ppt&usg=AOvVaw3dEP3al4Y-27r6e9FMYGrz
+//    // [git] https://github.com/fsrajer/yasfm/blob/master/YASFM/relative_pose.cpp#L1669
+//    std::cout << "transformation = \n" << transformation << std::endl;
+
+//  }
+  
+  
+  /**
    * @brief computeSimilarityFromMatch
    * see: alicevision::sfm::computeSimilarity() [sfm/utils/alignment.cpp]
    *      alicevision::geometry::ACRansac_FindRTS() [geometry/rigidTransformation3D(_test).hpp]
    */   
-
   void computeSimilarityFromMatch(const feature::SIOPointFeature & feat1,
                                   const feature::SIOPointFeature & feat2,
                                   Mat3 & S)
@@ -265,10 +366,12 @@ private:
    * @param orientation2
    * @param S
    */  
-  void computeSimilarityFromMatch(const Vec2f & coord1, double scale1, double orientation1,
-                                  const Vec2f & coord2, double scale2, double orientation2,
+  void computeSimilarityFromMatch(const Vec2f & coord1, const double scale1, const double orientation1,
+                                  const Vec2f & coord2, const double scale2, const double orientation2,
                                   Mat3 & S)
   {
+    S = Mat3::Identity(); 
+    
     double c1 = cos(orientation1),
         s1 = sin(orientation1),
         c2 = cos(orientation2),
@@ -285,14 +388,7 @@ private:
     S = A2*A1.inverse();
   }
   
-  /**
-   * @brief estimateAffinity
-   * see: alicevision::Affine2DFromCorrespondencesLinear() [multiview/affineSolver(_test).hpp]
-   */
-  void estimateAffinity()
-  {
-//    std::cout << "estimateAffinity" << std::endl;
-  }
+  
   
   /**
    * @brief estimateHomography
