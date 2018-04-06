@@ -7,10 +7,10 @@
 
 #pragma once
 
-//#include "aliceVision/multiview/homographyKernelSolver.hpp"
-#include "aliceVision/multiview/affineSolver.hpp"
-//#include "aliceVision/robustEstimation/ACRansac.hpp"
-//#include "aliceVision/robustEstimation/ACRansacKernelAdaptator.hpp"
+#include "aliceVision/multiview/homographyKernelSolver.hpp"
+//#include "aliceVision/multiview/affineSolver.hpp"
+#include "aliceVision/robustEstimation/ACRansac.hpp"
+#include "aliceVision/robustEstimation/ACRansacKernelAdaptator.hpp"
 //#include "aliceVision/robustEstimation/guidedMatching.hpp"
 
 #include "aliceVision/matching/IndMatch.hpp"
@@ -62,6 +62,11 @@ struct GeometricFilterMatrix_HGrowing : public GeometricFilterMatrix
     // Get back corresponding view index
     const IndexT viewId_I = pairIndex.first;
     const IndexT viewId_J = pairIndex.second;
+    
+    std::size_t sizeImgI [2] = {sfmData->GetViews().at(viewId_I)->getWidth(), 
+                                sfmData->GetViews().at(viewId_I)->getHeight()};
+    std::size_t sizeImgJ [2] = {sfmData->GetViews().at(viewId_J)->getWidth(), 
+                                sfmData->GetViews().at(viewId_J)->getHeight()};
     
     const std::vector<feature::EImageDescriberType> descTypes = regionsPerView.getCommonDescTypes(pairIndex);
     if(descTypes.empty())
@@ -171,7 +176,6 @@ private:
                       std::vector<IndexT> & planarMatchesIndices, 
                       Mat3 & transformation)
   {
-  
     assert(seedMatchId <= matches.size());
     planarMatchesIndices.clear();
     transformation = Mat3::Identity();
@@ -199,33 +203,47 @@ private:
       {
         std::cout << "\n-- Affinity" << std::endl;
 
+        // [TODO] Either use the useful index of matches instead of create a new map of Matches
+        // or create an explicit function for it (avoid copied/pasted code)
         matching::IndMatches planarMatches(planarMatchesIndices.size());
-        
         for (IndexT iMatch = 0; iMatch < planarMatchesIndices.size(); ++iMatch)
         {
           planarMatches.at(iMatch) = matches.at(planarMatchesIndices.at(iMatch));
         }
         
-        std::cout << "planarMatches : \n" << planarMatches << std::endl;
-                       
         estimateAffinity(featuresI, featuresJ, planarMatches, transformation);
         
         currTolerance = _affinityTolerance;
         
         std::cout << "T_aff = \n" << transformation << std::endl;
-        getchar();
       }
       else
       {
-        estimateHomography();
+        std::cout << "\n-- Homography" << std::endl;
+        
+        // [TODO] Either use the useful index of matches instead of create a new map of Matches
+        // or create an explicit function for it (avoid copied/pasted code)
+        matching::IndMatches planarMatches(planarMatchesIndices.size());
+        for (IndexT iMatch = 0; iMatch < planarMatchesIndices.size(); ++iMatch)
+        {
+          planarMatches.at(iMatch) = matches.at(planarMatchesIndices.at(iMatch));
+        }
+        
+        std::cout << "#matchesToEstimate_H = " << planarMatchesIndices.size() << std::endl;
+        
+        estimateHomography(featuresI, featuresJ, planarMatches, transformation);
+        
         currTolerance = _homographyTolerance;
+
+        std::cout << "T_hom = \n" << transformation << std::endl;
       }
       
       findTransformationInliers(featuresI, featuresJ, matches, transformation, currTolerance, planarMatchesIndices);
       
-//      std::cout << "#Inliers = " << planarMatchesIndices.size() << std::endl;
-      std::cout << planarMatchesIndices << std::endl;
-//      getchar();
+      std::cout << "#Inliers = " << planarMatchesIndices.size() << std::endl;
+      
+      if (iRefineStep > 4)
+        getchar();
       
 //      if (planarMatchesIndices.size() < _minNbPlanarMatches)
 //        break;
@@ -238,33 +256,106 @@ private:
   }
   
   /**
-   * @brief findHomographyInliers Test the reprojection error
+   * @brief estimateHomography
+   * see: by DLT: alicevision::homography::kernel::FourPointSolver::Solve() [multiview/homographyKernelSolver.hpp]
+   *      by RANSAC: alicevision::matchingImageCOllection::geometricEstimation() [matchingImageCollection/GeometricFilterMatrix_H_AC.hpp]
+   *      [git] https://github.com/fsrajer/yasfm/blob/master/YASFM/relative_pose.cpp#L1694
    */
-  void findTransformationInliers(const std::vector<feature::SIOPointFeature> & featuresI, 
-                                 const std::vector<feature::SIOPointFeature> & featuresJ, 
-                                 const matching::IndMatches & matches,
-                                 const Mat3 & transformation,
-                                 const std::size_t tolerance,
-                                 std::vector<IndexT> & planarMatchesIndices)
+  void estimateHomography(const std::vector<feature::SIOPointFeature> & featuresI,
+                          const std::vector<feature::SIOPointFeature> & featuresJ,
+                          const matching::IndMatches & matches,
+                          Mat3 &H)
   {
-    planarMatchesIndices.clear();
-
-    for (IndexT iMatch = 0; iMatch < matches.size(); ++iMatch)
+    const std::size_t nbMatches = matches.size();
+    
+    // (?) estimateHomography has matched features directly
+    std::vector<feature::SIOPointFeature> matchedFeaturesI(nbMatches);
+    std::vector<feature::SIOPointFeature> matchedFeaturesJ(nbMatches);
+    
+    for (IndexT iMatch = 0; iMatch < nbMatches; ++iMatch)
+    {
+      matchedFeaturesI.at(iMatch) = featuresI.at(matches.at(iMatch)._i);
+      matchedFeaturesJ.at(iMatch) = featuresJ.at(matches.at(iMatch)._j);
+    }
+    
+    Mat3 CI, CJ;
+    centerMatrix(matchedFeaturesI, CI);
+    centerMatrix(matchedFeaturesJ, CJ);
+    
+    Mat A(Mat::Zero(2*nbMatches,9));
+    for(IndexT iMatch = 0; iMatch < nbMatches; ++iMatch)
     {
       const feature::SIOPointFeature & featI = featuresI.at(matches.at(iMatch)._i);
       const feature::SIOPointFeature & featJ = featuresJ.at(matches.at(iMatch)._j);
+      Vec2 fI(featI.x(), featI.y()); 
+      Vec2 fJ(featJ.x(), featJ.y());
+      Vec3 ptI = CI * fI.homogeneous();
+      Vec3 ptJ = CJ * fJ.homogeneous();
       
-      Vec2 ptI(featI.x(), featI.y());
-      Vec2 ptJ(featJ.x(), featJ.y());
-      
-      Vec3 ptIp_hom = transformation * ptI.homogeneous();
-
-      float dist = (ptJ - ptIp_hom.hnormalized()).squaredNorm();   
-      
-      if (dist < tolerance * tolerance)
-        planarMatchesIndices.push_back(iMatch);
+      A.block(iMatch,0,1,3) = ptI.transpose();
+      A.block(iMatch,6,1,3) = -ptJ(0) * ptI.transpose();
+      A.block(iMatch+nbMatches,3,1,3) = ptI.transpose();
+      A.block(iMatch+nbMatches,6,1,3) = -ptJ(1) * ptI.transpose();
     }
+    
+    Eigen::JacobiSVD<Mat> svd(A, Eigen::ComputeThinU | Eigen::ComputeFullV);
+    Vec h = svd.matrixV().rightCols(1);
+    Mat3 H0;
+    H0.row(0) = h.topRows(3).transpose();
+    H0.row(1) = h.middleRows(3,3).transpose();
+    H0.row(2) = h.bottomRows(3).transpose();
+    
+    H = CJ.inverse() * H0 * CI;
+    H /= H(2,2);
   }
+  
+//    void estimateHomography(const std::vector<feature::SIOPointFeature> & featuresI,
+//                          const std::vector<feature::SIOPointFeature> & featuresJ,
+//                          const std::size_t (& sizeImgI) [2],
+//                          const std::size_t (& sizeImgJ) [2],
+//                          const matching::IndMatches & matches,
+//                          Mat3 &H)
+//  {
+//    H = Mat3::Identity();
+    
+//    const std::size_t nbMatches = matches.size();
+    
+//    // Store matched features into Mat 
+//    Mat xI(2, nbMatches);
+//    Mat xJ(2, nbMatches);
+    
+//    for (IndexT iMatch = 0; iMatch < nbMatches; ++iMatch)
+//    {
+//      const feature::SIOPointFeature & featI = featuresI.at(matches.at(iMatch)._i);
+//      const feature::SIOPointFeature & featJ = featuresJ.at(matches.at(iMatch)._j);
+//      xI.col(iMatch) = featI.coords().cast<double>();
+//      xJ.col(iMatch) = featJ.coords().cast<double>();
+//    }
+    
+//    //-- Homography robust estimation
+//    std::vector<size_t> vec_inliers;
+//    typedef robustEstimation::ACKernelAdaptor<
+//      aliceVision::homography::kernel::FourPointSolver,
+//      aliceVision::homography::kernel::AsymmetricError,
+//      UnnormalizerI,
+//      Mat3>
+//      KernelType;
+
+//    KernelType kernel(
+//      xI, sizeImgI[0], sizeImgI[1],
+//      xJ, sizeImgJ[0], sizeImgJ[1],
+//      false); // configure as point to point error model.
+
+//    const std::pair<double,double> ACRansacOut = robustEstimation::ACRANSAC(kernel, vec_inliers, 1024, &H,
+//      10,
+//      true);
+
+//    H = H / H(2,2);      
+    
+//    const double & thresholdH = ACRansacOut.first;
+    
+//  }
+  
   
   /**
    * @brief estimateAffinity
@@ -290,7 +381,8 @@ private:
       const feature::SIOPointFeature & featI = featuresI.at(matches.at(iMatch)._i);
       const feature::SIOPointFeature & featJ = featuresJ.at(matches.at(iMatch)._j);
       Vec2 fI; 
-      
+      // (?) - utiliser coords() 
+      //     - utiliser Vec2 fI(featI.x(), featI.y())
       fI << featI.x(), featI.y();
       M.block(iMatch,0,1,3) = fI.homogeneous().transpose();
       M.block(iMatch+nbMatches,3,1,3) = fI.homogeneous().transpose();
@@ -391,17 +483,85 @@ private:
   
   
   /**
-   * @brief estimateHomography
-   * see: by DLT: alicevision::homography::kernel::FourPointSolver::Solve() [multiview/homographyKernelSolver.hpp]
-   *      by RANSAC: alicevision::matchingImageCOllection::geometricEstimation() [matchingImageCollection/GeometricFilterMatrix_H_AC.hpp]
+   * @brief findHomographyInliers Test the reprojection error
    */
-  void estimateHomography()
+  void findTransformationInliers(const std::vector<feature::SIOPointFeature> & featuresI, 
+                                 const std::vector<feature::SIOPointFeature> & featuresJ, 
+                                 const matching::IndMatches & matches,
+                                 const Mat3 & transformation,
+                                 const std::size_t tolerance,
+                                 std::vector<IndexT> & planarMatchesIndices)
   {
-//    std::cout << "estimateHomography" << std::endl;
-  }
-  
+    planarMatchesIndices.clear();
 
-  
+    for (IndexT iMatch = 0; iMatch < matches.size(); ++iMatch)
+    {
+      const feature::SIOPointFeature & featI = featuresI.at(matches.at(iMatch)._i);
+      const feature::SIOPointFeature & featJ = featuresJ.at(matches.at(iMatch)._j);
+      
+      Vec2 ptI(featI.x(), featI.y());
+      Vec2 ptJ(featJ.x(), featJ.y());
+      
+      Vec3 ptIp_hom = transformation * ptI.homogeneous();
+
+      float dist = (ptJ - ptIp_hom.hnormalized()).squaredNorm();   
+      
+      if (dist < Square(tolerance))
+        planarMatchesIndices.push_back(iMatch);
+    }
+  }
+
+  void centerMatrix(const std::vector<feature::SIOPointFeature> & features,
+                    Mat3 & C)
+  {
+    C = Mat3::Identity();
+
+    std::size_t nbFeatures = features.size();
+    Matf pts(2, nbFeatures);
+    
+    for (IndexT iFeat = 0; iFeat < nbFeatures; ++iFeat)
+    {
+      pts.col(iFeat) = features.at(iFeat).coords();
+    }
+   
+    Vec2f mean = pts.rowwise().mean();
+    
+    Vec2f stdDev = ((pts.colwise() - mean).cwiseAbs2().rowwise().sum()/(nbFeatures - 1)).cwiseSqrt();
+    
+    if(stdDev(0) < 0.1)
+      stdDev(0) = 0.1;
+    if(stdDev(1) < 0.1)
+      stdDev(1) = 0.1;
+    
+    C << 1./stdDev(0), 0.,            -mean(0)/stdDev(0),
+        0.,            1./stdDev(1),  -mean(1)/stdDev(1),
+        0.,            0.,            1.;
+  }
+ 
+//  void centeringMatrix(const std::vector<Vec2> & points, 
+//                       Mat3 & C)
+//  {
+//    C = Mat3::Identity();
+    
+//    // Compute mean
+//    Vec2 mean(Vec2::Zero());   
+//    for (const Vec2 & pt : points)
+//    {
+//      mean(0) += pt(0);
+//      mean(1) += pt(1);
+//    }
+//    mean /= points.size();
+    
+//    // Compute std dev.
+//    Vec2 stdDev(Vec2::Zero());   
+//    for (const Vec2 & pt : points)
+//    {
+      
+//    }
+    
+    
+//  }
+ 
   //-- Stored data
   std::vector<Mat3> _Hs;
   
