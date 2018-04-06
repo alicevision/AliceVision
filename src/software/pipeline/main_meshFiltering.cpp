@@ -122,14 +122,6 @@ int main(int argc, char* argv[])
         ALICEVISION_LOG_INFO("Mesh after large triangles removal: " << mesh->pts->size() << " vertices and " << mesh->tris->size() << " facets.");
     }
 
-    if(keepLargestMeshOnly)
-    {
-        StaticVector<int>* trisIdsToStay = mesh->getLargestConnectedComponentTrisIds();
-        mesh->letJustTringlesIdsInMesh(trisIdsToStay);
-        delete trisIdsToStay;
-        ALICEVISION_LOG_INFO("Mesh after keepLargestMeshOnly: " << mesh->pts->size() << " vertices and " << mesh->tris->size() << " facets.");
-    }
-
     mesh::MeshEnergyOpt meOpt(nullptr);
     {
         ALICEVISION_LOG_INFO("Start mesh filtering.");
@@ -141,6 +133,14 @@ int main(int argc, char* argv[])
         meOpt.optimizeSmooth(lambda, smoothNIter, ptsCanMove);
 
         ALICEVISION_LOG_INFO("Mesh filtering done.");
+    }
+
+    if(keepLargestMeshOnly)
+    {
+        StaticVector<int>* trisIdsToStay = meOpt.getLargestConnectedComponentTrisIds();
+        meOpt.letJustTringlesIdsInMesh(trisIdsToStay);
+        delete trisIdsToStay;
+        ALICEVISION_LOG_INFO("Mesh after keepLargestMeshOnly: " << mesh->pts->size() << " vertices and " << mesh->tris->size() << " facets.");
     }
 
     mesh::Mesh outMesh;
