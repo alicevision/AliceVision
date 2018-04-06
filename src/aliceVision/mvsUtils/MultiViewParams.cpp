@@ -97,8 +97,6 @@ MultiViewParams::MultiViewParams(const std::string& iniFile,
     // Resize internal structures
     resizeCams(getNbCameras());
 
-    long t1 = initEstimate();
-
     for(int i = 0; i < ncams; ++i)
     {
         std::string path;
@@ -137,7 +135,7 @@ MultiViewParams::MultiViewParams(const std::string& iniFile,
             _imagesScale.at(i) = widthScale;
         }
 
-        FocK1K2Arr[i] = Point3d(-1.0f, -1.0f, -1.0f);
+        FocK1K2Arr[i] = Point3d(-1.0, -1.0, -1.0);
 
         // load camera matrices
         if(cameras != nullptr)
@@ -217,9 +215,9 @@ MultiViewParams::MultiViewParams(const std::string& iniFile,
 
             iKArr[i] = KArr[i].inverse();
             iCamArr[i] = iRArr[i] * iKArr[i];
-            CArr[i].x = 0.0f;
-            CArr[i].y = 0.0f;
-            CArr[i].z = 0.0f;
+            CArr[i].x = 0.0;
+            CArr[i].y = 0.0;
+            CArr[i].z = 0.0;
 
             camArr[i] = KArr[i] * (RArr[i] | (Point3d(0.0, 0.0, 0.0) - RArr[i] * CArr[i]));
         }
@@ -227,12 +225,9 @@ MultiViewParams::MultiViewParams(const std::string& iniFile,
         // find max width and max height
         _maxImageWidth = std::max(_maxImageWidth, getWidth(i));
         _maxImageHeight = std::max(_maxImageHeight, getHeight(i));
-
-        printfEstimate(i, ncams, t1);
     }
 
     ALICEVISION_LOG_INFO("Overall maximum dimension: [" << _maxImageWidth << "x" << _maxImageHeight << "]");
-    finishEstimate();
 }
 
 
@@ -303,8 +298,8 @@ void MultiViewParams::getPixelFor3DPoint(Point2d* out, const Point3d& X, const M
 
     if(XT.z <= 0)
     {
-        out->x = -1.0f;
-        out->y = -1.0f;
+        out->x = -1.0;
+        out->y = -1.0;
     }
     else
     {
@@ -335,7 +330,7 @@ void MultiViewParams::getPixelFor3DPoint(Pixel* out, const Point3d& X, int rc) c
  * @param[in] x0 3d point
  * @param[in] cam camera index
  */
-float MultiViewParams::getCamPixelSize(const Point3d& x0, int cam) const
+double MultiViewParams::getCamPixelSize(const Point3d& x0, int cam) const
 {
     Point2d pix;
     getPixelFor3DPoint(&pix, x0, cam);
@@ -346,7 +341,7 @@ float MultiViewParams::getCamPixelSize(const Point3d& x0, int cam) const
     return pointLineDistance3D(x0, CArr[cam], vect);
 }
 
-float MultiViewParams::getCamPixelSize(const Point3d& x0, int cam, float d) const
+double MultiViewParams::getCamPixelSize(const Point3d& x0, int cam, float d) const
 {
     if(d == 0.0f)
     {
@@ -366,7 +361,7 @@ float MultiViewParams::getCamPixelSize(const Point3d& x0, int cam, float d) cons
 * @brief Return the size of a pixel in space with an offset
 * of "d" pixels in the target camera (along the epipolar line).
 */
-float MultiViewParams::getCamPixelSizeRcTc(const Point3d& p, int rc, int tc, float d) const
+double MultiViewParams::getCamPixelSizeRcTc(const Point3d& p, int rc, int tc, float d) const
 {
     if(d == 0.0f)
     {
@@ -397,27 +392,27 @@ float MultiViewParams::getCamPixelSizeRcTc(const Point3d& p, int rc, int tc, flo
     return (p - p1).size();
 }
 
-float MultiViewParams::getCamPixelSizePlaneSweepAlpha(const Point3d& p, int rc, int tc, int scale, int step) const
+double MultiViewParams::getCamPixelSizePlaneSweepAlpha(const Point3d& p, int rc, int tc, int scale, int step) const
 {
-    float splaneSeweepAlpha = (float)(scale * step);
+    double splaneSeweepAlpha = (double)(scale * step);
     // Compute the 3D volume defined by N pixels in the target camera.
     // We use an offset of splaneSeweepAlpha pixels along the epipolar line
     // (defined by p and the reference camera center) on the target camera.
-    float avRcTc = getCamPixelSizeRcTc(p, rc, tc, splaneSeweepAlpha);
+    double avRcTc = getCamPixelSizeRcTc(p, rc, tc, splaneSeweepAlpha);
     // Compute the 3D volume defined by N pixels in the reference camera
-    float avRc = getCamPixelSize(p, rc, splaneSeweepAlpha);
+    double avRc = getCamPixelSize(p, rc, splaneSeweepAlpha);
     // Return the average of the pixelSize in rc and tc cameras.
-    return (avRcTc + avRc) * 0.5f;
+    return (avRcTc + avRc) * 0.5;
 }
 
-float MultiViewParams::getCamPixelSizePlaneSweepAlpha(const Point3d& p, int rc, StaticVector<int>* tcams, int scale,
+double MultiViewParams::getCamPixelSizePlaneSweepAlpha(const Point3d& p, int rc, StaticVector<int>* tcams, int scale,
                                                       int step) const
 {
     //float av1 = 0.0f;
-    float avmax = 0.0f;
+    double avmax = 0.0;
     for(int c = 0; c < tcams->size(); c++)
     {
-        float dpxs = getCamPixelSizePlaneSweepAlpha(p, rc, (*tcams)[c], scale, step);
+        double dpxs = getCamPixelSizePlaneSweepAlpha(p, rc, (*tcams)[c], scale, step);
         //av1 += dpxs;
         avmax = std::max(avmax, dpxs);
     }
@@ -426,16 +421,16 @@ float MultiViewParams::getCamPixelSizePlaneSweepAlpha(const Point3d& p, int rc, 
     return avmax;
 }
 
-float MultiViewParams::getCamsMinPixelSize(const Point3d& x0, StaticVector<int>& tcams) const
+double MultiViewParams::getCamsMinPixelSize(const Point3d& x0, StaticVector<int>& tcams) const
 {
     if(tcams.empty())
     {
         return 0.0f;
     }
-    float minPixSize = 1000000000.0;
+    double minPixSize = 1000000000.0;
     for(int ci = 0; ci < (int)tcams.size(); ci++)
     {
-        float pixSize = getCamPixelSize(x0, (int)tcams[ci]);
+        double pixSize = getCamPixelSize(x0, (int)tcams[ci]);
         if(minPixSize > pixSize)
         {
             minPixSize = pixSize;

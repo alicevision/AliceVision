@@ -57,10 +57,12 @@ struct GC_cellInfo
 struct GC_vertexInfo
 {
     float pixSize = 0.0f;
-    int nrc = 0; // TODO FACA: what is that? Is it different from cams->size()?
+    /// Number of cameras which have contributed to the refinement of the vertex position, so nrc >= cams.size().
+    int nrc = 0;
     int segSize = 0;
     int segId = -1;
     bool isOnSurface = false;
+    /// All cameras having a visibility of this vertex. Some of them may not have contributed to the vertex position
     StaticVector<int> cams;
 
     /**
