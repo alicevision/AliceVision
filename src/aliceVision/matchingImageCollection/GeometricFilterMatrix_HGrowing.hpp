@@ -32,7 +32,7 @@ struct GeometricFilterMatrix_HGrowing : public GeometricFilterMatrix
     size_t iteration = 1024)
     : GeometricFilterMatrix(dPrecision, std::numeric_limits<double>::infinity(), iteration)
     , _maxNbHomographies(10)
-    , _minRemainingMatches(20)
+    , _minNbMatchesPerH(20)
     , _similarityTolerance(10)
     , _affinityTolerance(10)
     , _homographyTolerance(5)
@@ -72,27 +72,21 @@ struct GeometricFilterMatrix_HGrowing : public GeometricFilterMatrix
     const std::vector<feature::SIOPointFeature> allSIFTFeaturesI = getSIOPointFeatures(regionsSIFT_I);
     const std::vector<feature::SIOPointFeature> allSIFTfeaturesJ = getSIOPointFeatures(regionsSIFT_J);
     
-    matching::IndMatches putativeSIFTMatches = putativeMatchesPerType.at(feature::EImageDescriberType::SIFT);
+    matching::IndMatches remainingSIFTMatches = putativeMatchesPerType.at(feature::EImageDescriberType::SIFT);
     
     if (viewId_I == 200563944 && viewId_J == 1112206013) // MATLAB exemple
     {
-      std::cout << "|- #matches: " << putativeSIFTMatches.size() << std::endl;
+      std::cout << "|- #matches: " << remainingSIFTMatches.size() << std::endl;
       std::cout << "|- allSIFTFeaturesI : " << allSIFTFeaturesI.size() << std::endl;
       std::cout << "|- allSIFTfeaturesJ : " << allSIFTfeaturesJ.size() << std::endl;
 
-      std::size_t nbMatches = putativeSIFTMatches.size();
       
-      // (?) make a map
-      std::vector<Mat3> homographies;
-      homographies.reserve(_maxNbHomographies);
-      
-      std::vector<std::vector<IndexT>> planarMatchesPerH;
-      planarMatchesPerH.reserve(_maxNbHomographies);
+      std::vector<std::pair<Mat3, std::set<IndexT>>> planarMatchesPerH; // note: unable to create a std::map<Mat3,...>
        
-      
       for (IndexT iH = 0; iH < _maxNbHomographies; ++iH)
       {
-      
+        std::cout << "Computing H no. " << iH << std::endl;
+        
         std::set<IndexT> bestMatchesId;
         Mat3 bestHomographie;
         
@@ -100,9 +94,10 @@ struct GeometricFilterMatrix_HGrowing : public GeometricFilterMatrix
         
         std::set<IndexT> visitedMatchesId; // [1st improvement ([F.Srajer, 2016] p. 20) ] Each match is used once only per homography estimation (increases computation time)
         
-        for (IndexT iMatch = 0; iMatch < nbMatches; ++iMatch)
+        for (IndexT iMatch = 0; iMatch < remainingSIFTMatches.size(); ++iMatch)
         {
-//          std::cout << "iMatch : " << iMatch << std::endl;
+//          if (iH == 1)
+//            std::cout << "iMatch : " << iMatch << std::endl;
           
           if (visitedMatchesId.find(iMatch) != visitedMatchesId.end()) // is already visited
             continue;
@@ -112,11 +107,15 @@ struct GeometricFilterMatrix_HGrowing : public GeometricFilterMatrix
           std::set<IndexT> planarMatchesId;
           Mat3 homographie;
           
-          if(growHomography(allSIFTFeaturesI, allSIFTfeaturesJ, putativeSIFTMatches, iMatch, planarMatchesId, homographie) == EXIT_SUCCESS)
+          if(growHomography(allSIFTFeaturesI, allSIFTfeaturesJ, remainingSIFTMatches, iMatch, planarMatchesId, homographie) == EXIT_SUCCESS)
           {
-//            std::cout << "|- #planarMatches = \n" << planarMatchesId.size() << std::endl;
-//            std::cout << "|- H = \n" << homographie << std::endl;
-            
+//            if (iH == 1)
+//            {
+//              std::cout << "|- #planarMatches = \n" << planarMatchesId.size() << std::endl;
+//              std::cout << "|- H = \n" << homographie << std::endl;
+//              std::cout << "|- #remainingSIFTMatches size = \n" << remainingSIFTMatches.size() << std::endl;
+//              std::cout << "|- #remainingSIFTMatches = \n" << remainingSIFTMatches << std::endl;
+//            }           
             if (planarMatchesId.size() > bestMatchesId.size())
             {
               bestIdMatch = iMatch; // TEMP
@@ -126,18 +125,53 @@ struct GeometricFilterMatrix_HGrowing : public GeometricFilterMatrix
           }
           
           visitedMatchesId.insert(planarMatchesId.begin(), planarMatchesId.end());
-          
-//          std::cout << "|- #visitedMatches = \n" << visitedMatchesId.size() << std::endl;
+//          if (iH == 1)
+//          {
+//            std::cout << "|- #visitedMatches = \n" << visitedMatchesId.size() << std::endl;
+//            getchar();
+//          }
         }
-        
         
         std::cout << "Best iMatch = " << bestIdMatch << std::endl;
         std::cout << "Best H = \n" << bestHomographie << std::endl;
         std::cout << "Best planarMatch size = \n" << bestMatchesId.size() << std::endl;
-        getchar();
         
-//        planarMatchesPerH.push_back(bestMatchesId);
-//        homographies.push_back(bestHomographie);
+        // Stop when the models get to small        
+        if (bestMatchesId.size() < _minNbMatchesPerH)
+        {
+          std::cout << "#remainingMatches = " << remainingSIFTMatches.size() << std::endl;
+          std::cout << "BREAK: models get to small: " << bestMatchesId.size() << "/" <<  _minNbMatchesPerH << std::endl;
+          break;
+        }
+        
+        // { ...  
+        // [TODO] 3rd improvement: non lin optimization
+        // ... }
+        planarMatchesPerH.push_back(std::pair<Mat3, std::set<IndexT>>(bestHomographie, bestMatchesId));  
+          
+        // Remove used matches:
+//        for (IndexT iMatch : bestMatchesId) // fast but does not keep ordering
+//        {
+//          remainingSIFTMatches[iMatch] = remainingSIFTMatches.back();      
+//          remainingSIFTMatches.pop_back();
+//        }
+        std::size_t cpt = 0;
+        for (IndexT id : bestMatchesId) // [Todo] Improve it (std::remove_if, lambda expression ?)
+        {
+          remainingSIFTMatches.erase(remainingSIFTMatches.begin() + id - cpt);
+          ++cpt;
+        }
+          
+        // Stop when the number of remaining matches is too small   
+        if (remainingSIFTMatches.size() < _minNbMatchesPerH)
+        {
+          std::cout << "BREAK: number of remaining matches is too small" << std::endl;
+          break;
+        }
+                
+
+        std::cout << "Remaining Matches = \n" << remainingSIFTMatches.size() << std::endl;
+//        getchar();
         
         
       }
@@ -147,7 +181,7 @@ struct GeometricFilterMatrix_HGrowing : public GeometricFilterMatrix
     const bool hasStrongSupport = true;
     return EstimationStatus(true, hasStrongSupport);
   }
-  
+    
   /**
    * @brief Geometry_guided_matching
    * @param sfm_data
@@ -245,7 +279,8 @@ private:
       
       if (planarMatchesIndices.size() < _minInliersToRefine)
       {
-        std::cout << "[BREAK] Not enought remaining matches: " << planarMatchesIndices.size() << "/" << _minInliersToRefine << std::endl;
+        if (verbose)
+          std::cout << "[BREAK] Not enought remaining matches: " << planarMatchesIndices.size() << "/" << _minInliersToRefine << std::endl;
         break;
       }
       
@@ -505,7 +540,7 @@ private:
   //-- Options
   
   std::size_t _maxNbHomographies; // = MaxHoms
-  std::size_t _minRemainingMatches; // = MinInsNum
+  std::size_t _minNbMatchesPerH; // = MinInsNum
   
   // growHomography function:
   std::size_t _similarityTolerance; // = SimTol
