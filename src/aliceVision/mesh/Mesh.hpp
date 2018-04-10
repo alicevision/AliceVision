@@ -113,9 +113,9 @@ public:
 
     bool loadFromBin(std::string binFileName);
     void saveToBin(std::string binFileName);
-    bool loadFromObjAscii(int& nmtls, StaticVector<int>** trisMtlIds, StaticVector<Point3d>** normals,
-                          StaticVector<Voxel>** trisNormalsIds, StaticVector<Point2d>** uvCoords,
-                          StaticVector<Voxel>** trisUvIds, std::string objAsciiFileName);
+    bool loadFromObjAscii(int& nmtls, StaticVector<int>& trisMtlIds, StaticVector<Point3d>& normals,
+                          StaticVector<Voxel>& trisNormalsIds, StaticVector<Point2d>& uvCoords,
+                          StaticVector<Voxel>& trisUvIds, std::string objAsciiFileName);
 
     void addMesh(Mesh* me);
 

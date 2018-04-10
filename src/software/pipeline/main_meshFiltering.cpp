@@ -96,7 +96,6 @@ int main(int argc, char* argv[])
         bfs::create_directory(outDirectory);
 
     mesh::Texturing texturing;
-    texturing.me = new mesh::Mesh();
     texturing.loadFromOBJ(inputMeshPath);
     mesh::Mesh* mesh = texturing.me;
 

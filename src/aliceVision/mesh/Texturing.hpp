@@ -58,11 +58,11 @@ struct Texturing
     TexturingParams texParams;
 
     int nmtls = 0;
-    StaticVector<int>* trisMtlIds = nullptr;
-    StaticVector<Point2d>* uvCoords = nullptr;
-    StaticVector<Voxel>* trisUvIds = nullptr;
-    StaticVector<Point3d>* normals = nullptr;
-    StaticVector<Voxel>* trisNormalsIds = nullptr;
+    StaticVector<int> trisMtlIds;
+    StaticVector<Point2d> uvCoords;
+    StaticVector<Voxel> trisUvIds;
+    StaticVector<Point3d> normals;
+    StaticVector<Voxel> trisNormalsIds;
     PointsVisibility* pointsVisibilities = nullptr;
     Mesh* me = nullptr;
 
@@ -71,16 +71,16 @@ struct Texturing
 
     ~Texturing()
     {
-        delete trisMtlIds;
-        delete uvCoords;
-        delete trisUvIds;
-        delete normals;
-        delete trisNormalsIds;
-        delete pointsVisibilities;
+        if(pointsVisibilities != nullptr)
+            deleteArrayOfArrays<int>(&pointsVisibilities);
         delete me;
     }
 
 public:
+
+    /// Clear internal mesh data
+    void clear();
+
     /// Load a mesh from a .obj file and initialize internal structures
     void loadFromOBJ(const std::string& filename, bool flipNormals=false);
 
@@ -102,7 +102,7 @@ public:
     void replaceMesh(const std::string& otherMeshPath, bool flipNormals=false);
 
     /// Returns whether UV coordinates are available
-    inline bool hasUVs() const { return uvCoords != nullptr && !uvCoords->empty(); }
+    inline bool hasUVs() const { return !uvCoords.empty(); }
 
     /**
      * @brief Unwrap mesh with the given 'method'.
