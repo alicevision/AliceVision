@@ -92,32 +92,49 @@ struct GeometricFilterMatrix_HGrowing : public GeometricFilterMatrix
       
       for (IndexT iH = 0; iH < _maxNbHomographies; ++iH)
       {
-        
-        std::set<IndexT> remainingMatchesId;
+      
         std::set<IndexT> bestMatchesId;
         Mat3 bestHomographie;
         
+        IndexT bestIdMatch; // TEMP
+        
+        std::set<IndexT> visitedMatchesId; // [1st improvement ([F.Srajer, 2016] p. 20) ] Each match is used once only per homography estimation (increases computation time)
+        
         for (IndexT iMatch = 0; iMatch < nbMatches; ++iMatch)
         {
-          // [TODO] Add 1st improvment
+//          std::cout << "iMatch : " << iMatch << std::endl;
           
+          if (visitedMatchesId.find(iMatch) != visitedMatchesId.end()) // is already visited
+            continue;
+
           // Growing a homography from one match ([F.Srajer, 2016] algo. 1, p. 20)  
-          std::set<IndexT> currMatchesId;
+          
+          std::set<IndexT> planarMatchesId;
           Mat3 homographie;
           
-          if(growHomography(allSIFTFeaturesI, allSIFTfeaturesJ, putativeSIFTMatches, iMatch, currMatchesId, homographie) == EXIT_SUCCESS)
+          if(growHomography(allSIFTFeaturesI, allSIFTfeaturesJ, putativeSIFTMatches, iMatch, planarMatchesId, homographie) == EXIT_SUCCESS)
           {
-            std::cout << "H = \n" << homographie << std::endl;
-            std::cout << "#planarMatches = \n" << currMatchesId.size() << std::endl;
-            getchar();
+//            std::cout << "|- #planarMatches = \n" << planarMatchesId.size() << std::endl;
+//            std::cout << "|- H = \n" << homographie << std::endl;
             
-            if (currMatchesId.size() > bestMatchesId.size())
+            if (planarMatchesId.size() > bestMatchesId.size())
             {
-              currMatchesId = bestMatchesId;
-              homographie = bestHomographie;
+              bestIdMatch = iMatch; // TEMP
+              bestMatchesId = planarMatchesId;
+              bestHomographie = homographie;
             }
           }
+          
+          visitedMatchesId.insert(planarMatchesId.begin(), planarMatchesId.end());
+          
+//          std::cout << "|- #visitedMatches = \n" << visitedMatchesId.size() << std::endl;
         }
+        
+        
+        std::cout << "Best iMatch = " << bestIdMatch << std::endl;
+        std::cout << "Best H = \n" << bestHomographie << std::endl;
+        std::cout << "Best planarMatch size = \n" << bestMatchesId.size() << std::endl;
+        getchar();
         
 //        planarMatchesPerH.push_back(bestMatchesId);
 //        homographies.push_back(bestHomographie);
@@ -168,6 +185,8 @@ private:
     planarMatchesIndices.clear();
     std::size_t nbPlanarMatches = 0;
     
+    bool verbose = false;
+    
     transformation = Mat3::Identity();
     
     const matching::IndMatch & seedMatch = matches.at(seedMatchId);
@@ -180,44 +199,55 @@ private:
     {
       if (iRefineStep == 0)
       {
-        std::cout << "\n-- Similarity" << std::endl;
+        if (verbose)
+          std::cout << "\n-- Similarity" << std::endl;
+          
         computeSimilarity(seedFeatureI, seedFeatureJ, transformation);
-        
-        std::cout << "featI: " << seedFeatureI << std::endl;
-        std::cout << "featJ: " << seedFeatureJ << std::endl;
-        std::cout << "T_sim = " << transformation << std::endl;
-
+             
+        if (verbose)
+        {
+          std::cout << "featI: " << seedFeatureI << std::endl;
+          std::cout << "featJ: " << seedFeatureJ << std::endl;
+          std::cout << "T_sim = " << transformation << std::endl;
+        }
         currTolerance = _similarityTolerance;
       }
       else if (iRefineStep <= 4)
       {
-        std::cout << "\n-- Affinity" << std::endl;
+        if (verbose)
+          std::cout << "\n-- Affinity" << std::endl;
 
         estimateAffinity(featuresI, featuresJ, matches, transformation, planarMatchesIndices);
         
         currTolerance = _affinityTolerance;
-        
-        std::cout << "T_aff = \n" << transformation << std::endl;
+
+        if (verbose)
+          std::cout << "T_aff = \n" << transformation << std::endl;
       }
       else
       {
-        std::cout << "\n-- Homography" << std::endl;
+        if (verbose)
+          std::cout << "\n-- Homography" << std::endl;
                 
         estimateHomography(featuresI, featuresJ, matches, transformation, planarMatchesIndices);
         
         currTolerance = _homographyTolerance;
 
-        std::cout << "T_hom = \n" << transformation << std::endl;
+        if (verbose)
+          std::cout << "T_hom = \n" << transformation << std::endl;
       }
       
       findTransformationInliers(featuresI, featuresJ, matches, transformation, currTolerance, planarMatchesIndices);
       
       nbPlanarMatches = planarMatchesIndices.size();
-      
-      std::cout << "#filtredpalanarMatches = " << nbPlanarMatches << std::endl;
+      if (verbose)
+        std::cout << "#filtredpalanarMatches = " << nbPlanarMatches << std::endl;
       
       if (planarMatchesIndices.size() < _minInliersToRefine)
+      {
+        std::cout << "[BREAK] Not enought remaining matches: " << planarMatchesIndices.size() << "/" << _minInliersToRefine << std::endl;
         break;
+      }
       
 //      // Note: the following statement is present in the MATLAB code but not implemented in YASM
 //      if (planarMatchesIndices.size() >= _maxFractionPlanarMatches * matches.size())
