@@ -63,117 +63,85 @@ struct GeometricFilterMatrix_HGrowing : public GeometricFilterMatrix
     const IndexT viewId_I = pairIndex.first;
     const IndexT viewId_J = pairIndex.second;
         
-    const std::vector<feature::EImageDescriberType> descTypes = regionsPerView.getCommonDescTypes(pairIndex);
-    if(descTypes.empty())
-      return EstimationStatus(false, false);
-        
-    const feature::Regions & regionsSIFT_I = regionsPerView.getRegions(viewId_I, descTypes.at(0));
-    const feature::Regions & regionsSIFT_J = regionsPerView.getRegions(viewId_J, descTypes.at(0));
-    const std::vector<feature::SIOPointFeature> allSIFTFeaturesI = getSIOPointFeatures(regionsSIFT_I);
-    const std::vector<feature::SIOPointFeature> allSIFTfeaturesJ = getSIOPointFeatures(regionsSIFT_J);
-    
-    matching::IndMatches remainingSIFTMatches = putativeMatchesPerType.at(feature::EImageDescriberType::SIFT);
-    
     if (viewId_I == 200563944 && viewId_J == 1112206013) // MATLAB exemple
     {
+      const std::vector<feature::EImageDescriberType> descTypes = regionsPerView.getCommonDescTypes(pairIndex);
+      if(descTypes.empty())
+        return EstimationStatus(false, false);
+      
+      const feature::Regions & regionsSIFT_I = regionsPerView.getRegions(viewId_I, descTypes.at(0));
+      const feature::Regions & regionsSIFT_J = regionsPerView.getRegions(viewId_J, descTypes.at(0));
+      const std::vector<feature::SIOPointFeature> allSIFTFeaturesI = getSIOPointFeatures(regionsSIFT_I);
+      const std::vector<feature::SIOPointFeature> allSIFTfeaturesJ = getSIOPointFeatures(regionsSIFT_J);
+      
+      matching::IndMatches remainingSIFTMatches = putativeMatchesPerType.at(feature::EImageDescriberType::SIFT);
+      
       std::cout << "|- #matches: " << remainingSIFTMatches.size() << std::endl;
       std::cout << "|- allSIFTFeaturesI : " << allSIFTFeaturesI.size() << std::endl;
       std::cout << "|- allSIFTfeaturesJ : " << allSIFTfeaturesJ.size() << std::endl;
-
       
       std::vector<std::pair<Mat3, std::set<IndexT>>> planarMatchesPerH; // note: unable to create a std::map<Mat3,...>
-       
+      
       for (IndexT iH = 0; iH < _maxNbHomographies; ++iH)
       {
-        std::cout << "Computing H no. " << iH << std::endl;
+        ALICEVISION_LOG_DEBUG("Computing homography no. " << iH << "...");
         
-        std::set<IndexT> bestMatchesId;
+        std::set<IndexT> visitedMatchesId, bestMatchesId;
         Mat3 bestHomographie;
-        
-        IndexT bestIdMatch; // TEMP
-        
-        std::set<IndexT> visitedMatchesId; // [1st improvement ([F.Srajer, 2016] p. 20) ] Each match is used once only per homography estimation (increases computation time)
         
         for (IndexT iMatch = 0; iMatch < remainingSIFTMatches.size(); ++iMatch)
         {
-//          if (iH == 1)
-//            std::cout << "iMatch : " << iMatch << std::endl;
-          
-          if (visitedMatchesId.find(iMatch) != visitedMatchesId.end()) // is already visited
+          // [1st improvement ([F.Srajer, 2016] p. 20) ] Each match is used once only per homography estimation (increases computation time)
+          if (visitedMatchesId.find(iMatch) != visitedMatchesId.end()) 
             continue;
-
-          // Growing a homography from one match ([F.Srajer, 2016] algo. 1, p. 20)  
           
+          // Growing a homography from one match ([F.Srajer, 2016] algo. 1, p. 20)  
           std::set<IndexT> planarMatchesId;
           Mat3 homographie;
           
-          if(growHomography(allSIFTFeaturesI, allSIFTfeaturesJ, remainingSIFTMatches, iMatch, planarMatchesId, homographie) == EXIT_SUCCESS)
+          if(!growHomography(allSIFTFeaturesI, allSIFTfeaturesJ, remainingSIFTMatches, iMatch, planarMatchesId, homographie) == EXIT_SUCCESS)
+            continue;
+          
+          if (planarMatchesId.size() > bestMatchesId.size())
           {
-//            if (iH == 1)
-//            {
-//              std::cout << "|- #planarMatches = \n" << planarMatchesId.size() << std::endl;
-//              std::cout << "|- H = \n" << homographie << std::endl;
-//              std::cout << "|- #remainingSIFTMatches size = \n" << remainingSIFTMatches.size() << std::endl;
-//              std::cout << "|- #remainingSIFTMatches = \n" << remainingSIFTMatches << std::endl;
-//            }           
-            if (planarMatchesId.size() > bestMatchesId.size())
-            {
-              bestIdMatch = iMatch; // TEMP
-              bestMatchesId = planarMatchesId;
-              bestHomographie = homographie;
-            }
+            bestMatchesId = planarMatchesId;
+            bestHomographie = homographie;
           }
           
           visitedMatchesId.insert(planarMatchesId.begin(), planarMatchesId.end());
-//          if (iH == 1)
-//          {
-//            std::cout << "|- #visitedMatches = \n" << visitedMatchesId.size() << std::endl;
-//            getchar();
-//          }
         }
-        
-        std::cout << "Best iMatch = " << bestIdMatch << std::endl;
-        std::cout << "Best H = \n" << bestHomographie << std::endl;
-        std::cout << "Best planarMatch size = \n" << bestMatchesId.size() << std::endl;
         
         // Stop when the models get to small        
         if (bestMatchesId.size() < _minNbMatchesPerH)
         {
-          std::cout << "#remainingMatches = " << remainingSIFTMatches.size() << std::endl;
-          std::cout << "BREAK: models get to small: " << bestMatchesId.size() << "/" <<  _minNbMatchesPerH << std::endl;
+          ALICEVISION_LOG_DEBUG("Stop: Planar models get to small: " << bestMatchesId.size() << "/" <<  _minNbMatchesPerH);
           break;
         }
         
         // { ...  
         // [TODO] 3rd improvement: non lin optimization
         // ... }
+        
         planarMatchesPerH.push_back(std::pair<Mat3, std::set<IndexT>>(bestHomographie, bestMatchesId));  
-          
-        // Remove used matches:
-//        for (IndexT iMatch : bestMatchesId) // fast but does not keep ordering
-//        {
-//          remainingSIFTMatches[iMatch] = remainingSIFTMatches.back();      
-//          remainingSIFTMatches.pop_back();
-//        }
+        
+        // Remove used matches (/!\ Keep ordering):
         std::size_t cpt = 0;
         for (IndexT id : bestMatchesId) // [Todo] Improve it (std::remove_if, lambda expression ?)
         {
           remainingSIFTMatches.erase(remainingSIFTMatches.begin() + id - cpt);
           ++cpt;
         }
-          
+        
+        ALICEVISION_LOG_DEBUG("\t- best H found: \n" << bestHomographie);
+        ALICEVISION_LOG_DEBUG("\t- nb. corresponding planar matches: " << bestMatchesId.size());
+        ALICEVISION_LOG_DEBUG("\t- nb. remaining matches: " << remainingSIFTMatches.size());
+        
         // Stop when the number of remaining matches is too small   
         if (remainingSIFTMatches.size() < _minNbMatchesPerH)
         {
-          std::cout << "BREAK: number of remaining matches is too small" << std::endl;
+          ALICEVISION_LOG_TRACE("Stop: Not enought remaining matches (: " << remainingSIFTMatches.size() << "/" << _minNbMatchesPerH << " min.)");
           break;
         }
-                
-
-        std::cout << "Remaining Matches = \n" << remainingSIFTMatches.size() << std::endl;
-//        getchar();
-        
-        
       }
     }
     
@@ -215,12 +183,13 @@ private:
                       std::set<IndexT> & planarMatchesIndices, 
                       Mat3 & transformation)
   {
+    ALICEVISION_LOG_TRACE("Growing homography:"
+                          "\n- #matches = " << matches.size() <<
+                          "\n- seed match id. = " << seedMatchId);
+                          
     assert(seedMatchId <= matches.size());
+   
     planarMatchesIndices.clear();
-    std::size_t nbPlanarMatches = 0;
-    
-    bool verbose = false;
-    
     transformation = Mat3::Identity();
     
     const matching::IndMatch & seedMatch = matches.at(seedMatchId);
@@ -233,55 +202,40 @@ private:
     {
       if (iRefineStep == 0)
       {
-        if (verbose)
-          std::cout << "\n-- Similarity" << std::endl;
+        ALICEVISION_LOG_TRACE("Step " << iRefineStep << "/" << _nbIterations << ": Similarity");
           
         computeSimilarity(seedFeatureI, seedFeatureJ, transformation);
-             
-        if (verbose)
-        {
-          std::cout << "featI: " << seedFeatureI << std::endl;
-          std::cout << "featJ: " << seedFeatureJ << std::endl;
-          std::cout << "T_sim = " << transformation << std::endl;
-        }
         currTolerance = _similarityTolerance;
+
+        ALICEVISION_LOG_TRACE("|- T_similarity = \n" << transformation);
       }
       else if (iRefineStep <= 4)
       {
-        if (verbose)
-          std::cout << "\n-- Affinity" << std::endl;
+        ALICEVISION_LOG_TRACE("Step " << iRefineStep << "/" << _nbIterations << ": Affinity");
 
         estimateAffinity(featuresI, featuresJ, matches, transformation, planarMatchesIndices);
-        
         currTolerance = _affinityTolerance;
 
-        if (verbose)
-          std::cout << "T_aff = \n" << transformation << std::endl;
+        ALICEVISION_LOG_TRACE("|- T_affinity= \n" << transformation);
       }
       else
       {
-        if (verbose)
-          std::cout << "\n-- Homography" << std::endl;
+        ALICEVISION_LOG_TRACE("Step " << iRefineStep << "/" << _nbIterations << ": Homography");
                 
         estimateHomography(featuresI, featuresJ, matches, transformation, planarMatchesIndices);
-        
         currTolerance = _homographyTolerance;
 
-        if (verbose)
-          std::cout << "T_hom = \n" << transformation << std::endl;
+        ALICEVISION_LOG_TRACE("|- T_homography =  \n" << transformation);
       }
       
       findTransformationInliers(featuresI, featuresJ, matches, transformation, currTolerance, planarMatchesIndices);
       
-      nbPlanarMatches = planarMatchesIndices.size();
-      if (verbose)
-        std::cout << "#filtredpalanarMatches = " << nbPlanarMatches << std::endl;
+      ALICEVISION_LOG_TRACE("|- Nb. of matches corresponding to the transformation = " << planarMatchesIndices.size());
       
       if (planarMatchesIndices.size() < _minInliersToRefine)
       {
-        if (verbose)
-          std::cout << "[BREAK] Not enought remaining matches: " << planarMatchesIndices.size() << "/" << _minInliersToRefine << std::endl;
-        break;
+        ALICEVISION_LOG_TRACE("Stop: Not enought planar matches to estimate H (: " << planarMatchesIndices.size() << "/" << _minInliersToRefine << ").");
+        return EXIT_FAILURE;
       }
       
 //      // Note: the following statement is present in the MATLAB code but not implemented in YASM
