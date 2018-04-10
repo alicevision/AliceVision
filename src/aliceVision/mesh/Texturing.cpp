@@ -5,6 +5,7 @@
 
 #include "Texturing.hpp"
 #include <aliceVision/system/Logger.hpp>
+#include <aliceVision/numeric/numeric.hpp>
 #include <aliceVision/mvsData/Color.hpp>
 #include <aliceVision/mvsData/geometry.hpp>
 #include <aliceVision/mvsData/Pixel.hpp>
@@ -315,6 +316,8 @@ void Texturing::generateTexture(const mvsUtils::MultiViewParams& mp,
         if(triangles.empty())
             continue;
 
+        ALICEVISION_LOG_INFO(" - camera " << camId + 1 << "/" << mp.ncams);
+
         for(const auto& triangleId : triangles)
         {
             // retrieve triangle 3D and UV coordinates
@@ -331,16 +334,24 @@ void Texturing::generateTexture(const mvsUtils::MultiViewParams& mp,
 
             // compute triangle bounding box in pixel indexes
             // min values: floor(value)
-            // max values: ceil(value) - 1 (ensure resulting value is in valid index range [0; textureSide-1])
-            unsigned int LUx = static_cast<unsigned int>(std::floor(std::min(std::min(triPixs[0].x, triPixs[1].x), triPixs[2].x)));
-            unsigned int LUy = static_cast<unsigned int>(std::floor(std::min(std::min(triPixs[0].y, triPixs[1].y), triPixs[2].y)));
-            unsigned int RDx = static_cast<unsigned int>(std::ceil(std::max(std::max(triPixs[0].x, triPixs[1].x), triPixs[2].x))) - 1;
-            unsigned int RDy = static_cast<unsigned int>(std::ceil(std::max(std::max(triPixs[0].y, triPixs[1].y), triPixs[2].y))) - 1;
+            // max values: ceil(value)
+            Pixel LU, RD;
+            LU.x = static_cast<int>(std::floor(std::min(std::min(triPixs[0].x, triPixs[1].x), triPixs[2].x)));
+            LU.y = static_cast<int>(std::floor(std::min(std::min(triPixs[0].y, triPixs[1].y), triPixs[2].y)));
+            RD.x = static_cast<int>(std::ceil(std::max(std::max(triPixs[0].x, triPixs[1].x), triPixs[2].x)));
+            RD.y = static_cast<int>(std::ceil(std::max(std::max(triPixs[0].y, triPixs[1].y), triPixs[2].y)));
+
+            // sanity check: clamp values to [0; textureSide]
+            int texSide = static_cast<int>(texParams.textureSide);
+            LU.x = clamp(LU.x, 0, texSide);
+            LU.y = clamp(LU.y, 0, texSide);
+            RD.x = clamp(RD.x, 0, texSide);
+            RD.y = clamp(RD.y, 0, texSide);
 
             // iterate over bounding box's pixels
-            for(unsigned int y = LUy; y <= RDy; y++)
+            for(int y = LU.y; y < RD.y; y++)
             {
-                for(unsigned int x = LUx; x <= RDx; x++)
+                for(int x = LU.x; x < RD.x; x++)
                 {
                     Pixel pix(x, y); // top-left corner of the pixel
                     Point2d barycCoords;
