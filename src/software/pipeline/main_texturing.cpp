@@ -120,7 +120,6 @@ int main(int argc, char* argv[])
 
     mesh::Texturing mesh;
     mesh.texParams = texParams;
-    mesh.me = new mesh::Mesh();
 
     // load dense reconstruction
     const bfs::path reconstructionMeshFolder = bfs::path(inputDenseReconstruction).parent_path();
