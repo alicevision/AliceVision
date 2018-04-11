@@ -9,7 +9,7 @@ target_link_libraries(aliceVision_exportKeypoints
   aliceVision_system
   aliceVision_feature
   aliceVision_sfm
-  ${BOOST_LIBRARIES}
+  ${Boost_LIBRARIES}
 )
 
 set_property(TARGET aliceVision_exportKeypoints
@@ -28,7 +28,7 @@ target_link_libraries(aliceVision_exportMatches
   aliceVision_system
   aliceVision_feature
   aliceVision_sfm
-  ${BOOST_LIBRARIES}
+  ${Boost_LIBRARIES}
 )
 
 set_property(TARGET aliceVision_exportMatches
@@ -47,7 +47,7 @@ target_link_libraries(aliceVision_exportTracks
   aliceVision_system
   aliceVision_feature
   aliceVision_sfm
-  ${BOOST_LIBRARIES}
+  ${Boost_LIBRARIES}
 )
 
 set_property(TARGET aliceVision_exportTracks
@@ -67,7 +67,7 @@ target_link_libraries(aliceVision_exportUndistortedImages
   aliceVision_image
   aliceVision_feature
   aliceVision_sfm
-  ${BOOST_LIBRARIES}
+  ${Boost_LIBRARIES}
 )
 
 set_property(TARGET aliceVision_exportUndistortedImages
@@ -87,7 +87,7 @@ target_link_libraries(aliceVision_exportPMVS
   aliceVision_image
   aliceVision_feature
   aliceVision_sfm
-  ${BOOST_LIBRARIES}
+  ${Boost_LIBRARIES}
 )
 
 set_property(TARGET aliceVision_exportPMVS
@@ -108,7 +108,7 @@ if(ALICEVISION_HAVE_ALEMBIC) # maya can read alembic file
     aliceVision_image
     aliceVision_feature
     aliceVision_sfm
-    ${BOOST_LIBRARIES}
+    ${Boost_LIBRARIES}
     ${OPENIMAGEIO_LIBRARIES}
   )
 
@@ -130,7 +130,7 @@ target_link_libraries(aliceVision_exportMVE2
   aliceVision_image
   aliceVision_feature
   aliceVision_sfm
-  ${BOOST_LIBRARIES}
+  ${Boost_LIBRARIES}
 )
 
 set_property(TARGET aliceVision_exportMVE2
@@ -150,7 +150,7 @@ target_link_libraries(aliceVision_exportMeshlab
   aliceVision_image
   aliceVision_feature
   aliceVision_sfm
-  ${BOOST_LIBRARIES}
+  ${Boost_LIBRARIES}
 )
 
 set_property(TARGET aliceVision_exportMeshlab
@@ -170,7 +170,7 @@ target_link_libraries(aliceVision_exportMVSTexturing
   aliceVision_image
   aliceVision_feature
   aliceVision_sfm
-  ${BOOST_LIBRARIES}
+  ${Boost_LIBRARIES}
 )
 
 set_property(TARGET aliceVision_exportMVSTexturing
@@ -190,7 +190,7 @@ target_link_libraries(aliceVision_exportMatlab
   aliceVision_image
   aliceVision_feature
   aliceVision_sfm
-  ${BOOST_LIBRARIES}
+  ${Boost_LIBRARIES}
 )
 
 set_property(TARGET aliceVision_exportMatlab
@@ -209,7 +209,7 @@ target_link_libraries(aliceVision_exportCameraFrustums
   aliceVision_system
   aliceVision_feature
   aliceVision_sfm
-  ${BOOST_LIBRARIES}
+  ${Boost_LIBRARIES}
 )
 
 set_property(TARGET aliceVision_exportCameraFrustums
