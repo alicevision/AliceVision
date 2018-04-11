@@ -74,7 +74,7 @@ target_link_libraries(aliceVision_feature
          aliceVision_image
          aliceVision_multiview
          vlsift
-         ${BOOST_LIBRARIES}
+         ${Boost_LIBRARIES}
          ${LOG_LIB}
 
   PRIVATE ${Boost_FILESYSTEM_LIBRARIES}
