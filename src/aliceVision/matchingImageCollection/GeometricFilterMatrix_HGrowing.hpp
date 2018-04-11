@@ -63,7 +63,7 @@ struct GeometricFilterMatrix_HGrowing : public GeometricFilterMatrix
     const IndexT viewId_I = pairIndex.first;
     const IndexT viewId_J = pairIndex.second;
         
-    if (viewId_I == 200563944 && viewId_J == 1112206013) // MATLAB exemple
+    if (viewId_I == 200563944 && viewId_J == 1112206013) // [TEMP] MATLAB exemple
     {
       const std::vector<feature::EImageDescriberType> descTypes = regionsPerView.getCommonDescTypes(pairIndex);
       if(descTypes.empty())
@@ -75,13 +75,7 @@ struct GeometricFilterMatrix_HGrowing : public GeometricFilterMatrix
       const std::vector<feature::SIOPointFeature> allSIFTfeaturesJ = getSIOPointFeatures(regionsSIFT_J);
       
       matching::IndMatches remainingSIFTMatches = putativeMatchesPerType.at(feature::EImageDescriberType::SIFT);
-      
-      std::cout << "|- #matches: " << remainingSIFTMatches.size() << std::endl;
-      std::cout << "|- allSIFTFeaturesI : " << allSIFTFeaturesI.size() << std::endl;
-      std::cout << "|- allSIFTfeaturesJ : " << allSIFTfeaturesJ.size() << std::endl;
-      
-      std::vector<std::pair<Mat3, std::set<IndexT>>> planarMatchesPerH; // note: unable to create a std::map<Mat3,...>
-      
+            
       for (IndexT iH = 0; iH < _maxNbHomographies; ++iH)
       {
         ALICEVISION_LOG_DEBUG("Computing homography no. " << iH << "...");
@@ -96,7 +90,7 @@ struct GeometricFilterMatrix_HGrowing : public GeometricFilterMatrix
             continue;
           
           // Growing a homography from one match ([F.Srajer, 2016] algo. 1, p. 20)  
-          std::set<IndexT> planarMatchesId;
+          std::set<IndexT> planarMatchesId; // be careful: it contains the id. in the 'remainingMatches' vector not 'putativeMatches' vector.
           Mat3 homographie;
           
           if(!growHomography(allSIFTFeaturesI, allSIFTfeaturesJ, remainingSIFTMatches, iMatch, planarMatchesId, homographie) == EXIT_SUCCESS)
@@ -118,11 +112,9 @@ struct GeometricFilterMatrix_HGrowing : public GeometricFilterMatrix
           break;
         }
         
-        // { ...  
+        // { ...  remaining
         // [TODO] 3rd improvement: non lin optimization
         // ... }
-        
-        planarMatchesPerH.push_back(std::pair<Mat3, std::set<IndexT>>(bestHomographie, bestMatchesId));  
         
         // Remove used matches (/!\ Keep ordering):
         std::size_t cpt = 0;
@@ -133,14 +125,31 @@ struct GeometricFilterMatrix_HGrowing : public GeometricFilterMatrix
         }
         
         ALICEVISION_LOG_DEBUG("\t- best H found: \n" << bestHomographie);
-        ALICEVISION_LOG_DEBUG("\t- nb. corresponding planar matches: " << bestMatchesId.size());
         ALICEVISION_LOG_DEBUG("\t- nb. remaining matches: " << remainingSIFTMatches.size());
+        ALICEVISION_LOG_DEBUG("\t- nb. corresponding planar matches: " << bestMatchesId.size());
         
         // Stop when the number of remaining matches is too small   
         if (remainingSIFTMatches.size() < _minNbMatchesPerH)
         {
           ALICEVISION_LOG_TRACE("Stop: Not enought remaining matches (: " << remainingSIFTMatches.size() << "/" << _minNbMatchesPerH << " min.)");
           break;
+        }
+      }
+      
+      // Copy inliers // [Todo] Probably improvable
+      out_geometricInliersPerType[feature::EImageDescriberType::SIFT] =  putativeMatchesPerType.at(feature::EImageDescriberType::SIFT);
+      matching::IndMatches & outSiftMatches = out_geometricInliersPerType.at(feature::EImageDescriberType::SIFT);
+      for (IndexT iMatch = 0; iMatch < outSiftMatches.size(); ++iMatch)
+      {
+        const matching::IndMatch & match = outSiftMatches.at(iMatch);
+        std::vector<matching::IndMatch>::iterator it = std::find(remainingSIFTMatches.begin(), 
+                                                                 remainingSIFTMatches.end(), 
+                                                                 match);
+        if (it != remainingSIFTMatches.end()) // is not a verified match
+        {
+          outSiftMatches.erase(outSiftMatches.begin() + iMatch);
+          remainingSIFTMatches.erase(it); // to decrease complexity (does not used anymore)
+          --iMatch;
         }
       }
     }
