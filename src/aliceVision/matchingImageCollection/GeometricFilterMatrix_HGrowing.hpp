@@ -83,6 +83,7 @@ struct GeometricFilterMatrix_HGrowing : public GeometricFilterMatrix
         std::set<IndexT> visitedMatchesId, bestMatchesId;
         Mat3 bestHomographie;
         
+#pragma omp parallel for
         for (IndexT iMatch = 0; iMatch < remainingSIFTMatches.size(); ++iMatch)
         {
           // [1st improvement ([F.Srajer, 2016] p. 20) ] Each match is used once only per homography estimation (increases computation time)
@@ -98,8 +99,11 @@ struct GeometricFilterMatrix_HGrowing : public GeometricFilterMatrix
           
           if (planarMatchesId.size() > bestMatchesId.size())
           {
-            bestMatchesId = planarMatchesId;
-            bestHomographie = homographie;
+#pragma omp critical
+            {
+              bestMatchesId = planarMatchesId;
+              bestHomographie = homographie;
+            }
           }
           
           visitedMatchesId.insert(planarMatchesId.begin(), planarMatchesId.end());
@@ -422,7 +426,8 @@ private:
                                  std::set<IndexT> & planarMatchesIndices)
   {
     planarMatchesIndices.clear();
-
+  
+#pragma omp parallel for 
     for (IndexT iMatch = 0; iMatch < matches.size(); ++iMatch)
     {
       const feature::SIOPointFeature & featI = featuresI.at(matches.at(iMatch)._i);
@@ -436,7 +441,10 @@ private:
       float dist = (ptJ - ptIp_hom.hnormalized()).squaredNorm();   
       
       if (dist < Square(tolerance))
+      {
+#pragma omp critical
         planarMatchesIndices.insert(iMatch);
+      }
     }
   }
 
