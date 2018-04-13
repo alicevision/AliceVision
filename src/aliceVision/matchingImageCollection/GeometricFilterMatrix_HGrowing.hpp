@@ -55,22 +55,30 @@ struct GeometricFilterMatrix_HGrowing : public GeometricFilterMatrix
     const matching::MatchesPerDescType & putativeMatchesPerType,
     matching::MatchesPerDescType & out_geometricInliersPerType)
   {
-    using namespace aliceVision;
-    using namespace aliceVision::robustEstimation;
     out_geometricInliersPerType.clear();
     
-    // EOrdering - Ouput ordering : 
-    // * Putative: 'out_geometricInliersPerType' contains matches with the same ordering than 'putativeMatchesPerType'
-    // * Homographies: matches sharing the same homography are assembled. 
     enum EOrdering {PutativeLike, HGrouped}; 
+    // Defines the format of 'out_geometricInliersPerType'. 
+    // Considering the putative match:
+    //      [0(h0) 1(h2) 2(h1) 3(nan) 4(h2) 5(h0) 6(h1) 7(nan)]
+    // * 'PutativeLike' returns [0(h0) 1(h2) 2(h1) 4(h2) 5(h0) 6(h1)]: just remove (nan)
+    // * 'HGrouped' returns [0(h0) 5(h0) 2(h1) 6(h1) 1(h2) 4(h2)]: remove (nan) + H id. ordering
     EOrdering orderingMethod = HGrouped;
-        
 
 //    if (pairIndex.first == 200563944 && pairIndex.second == 1112206013) // [TEMP] MATLAB exemple
     {
       const std::vector<feature::EImageDescriberType> descTypes = regionsPerView.getCommonDescTypes(pairIndex);
       if(descTypes.empty())
         return EstimationStatus(false, false);
+
+#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_CCTAG)
+      if (std::find(descTypes.begin(), descTypes.end(),feature::EImageDescriberType::CCTAG3) != descTypes.end() ||
+          std::find(descTypes.begin(), descTypes.end(),feature::EImageDescriberType::CCTAG4) != descTypes.end())
+      {
+        ALICEVISION_LOG_ERROR("Geometric filtering by Homography Growing cannot handle CCTAG descriptors.");
+        return EstimationStatus(false, false);
+      }
+#endif
         
       for(size_t d = 0; d < descTypes.size(); ++d)
       {
@@ -96,7 +104,7 @@ struct GeometricFilterMatrix_HGrowing : public GeometricFilterMatrix
           std::set<IndexT> visitedMatchesId, bestMatchesId;
           Mat3 bestHomographie;
           
-#pragma omp parallel for
+#pragma omp parallel for // (: huge optimization but modify results a little)
           for (IndexT iMatch = 0; iMatch < remainingMatches.size(); ++iMatch)
           {
             // [1st improvement ([F.Srajer, 2016] p. 20) ] Each match is used once only per homography estimation (increases computation time)
@@ -130,7 +138,7 @@ struct GeometricFilterMatrix_HGrowing : public GeometricFilterMatrix
             break;
           }
           
-          // { ...  remaining
+          // { ...  
           // [TODO] 3rd improvement: non lin optimization
           // ... }
           
@@ -164,7 +172,6 @@ struct GeometricFilterMatrix_HGrowing : public GeometricFilterMatrix
             break;
           }
         } // IndexT iH
-        
         
         // Copy inliers -> putative matches ordering
         if (orderingMethod == EOrdering::PutativeLike)
