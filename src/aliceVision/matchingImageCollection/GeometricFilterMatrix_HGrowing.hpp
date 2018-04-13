@@ -54,7 +54,12 @@ struct GeometricFilterMatrix_HGrowing : public GeometricFilterMatrix
     const matching::MatchesPerDescType & putativeMatchesPerType,
     matching::MatchesPerDescType & out_geometricInliersPerType)
   {
-    
+    // EOrdering - Ouput ordering : 
+    // * Putative: 'out_geometricInliersPerType' contains matches with the same ordering than 'putativeMatchesPerType'
+    // * Homographies: matches sharing the same homography are assembled. 
+    enum EOrdering {PutativeLike, HGrouped}; 
+    EOrdering orderingMethod = HGrouped;
+     
     using namespace aliceVision;
     using namespace aliceVision::robustEstimation;
     out_geometricInliersPerType.clear();
@@ -62,7 +67,7 @@ struct GeometricFilterMatrix_HGrowing : public GeometricFilterMatrix
     // Get back corresponding view index
     const IndexT viewId_I = pairIndex.first;
     const IndexT viewId_J = pairIndex.second;
-        
+    
     if (viewId_I == 200563944 && viewId_J == 1112206013) // [TEMP] MATLAB exemple
     {
       const std::vector<feature::EImageDescriberType> descTypes = regionsPerView.getCommonDescTypes(pairIndex);
@@ -74,8 +79,10 @@ struct GeometricFilterMatrix_HGrowing : public GeometricFilterMatrix
       const std::vector<feature::SIOPointFeature> allSIFTFeaturesI = getSIOPointFeatures(regionsSIFT_I);
       const std::vector<feature::SIOPointFeature> allSIFTfeaturesJ = getSIOPointFeatures(regionsSIFT_J);
       
+      const std::size_t nbPutativeMatches = putativeMatchesPerType.at(feature::EImageDescriberType::SIFT).size();
+      
       matching::IndMatches remainingSIFTMatches = putativeMatchesPerType.at(feature::EImageDescriberType::SIFT);
-            
+                  
       for (IndexT iH = 0; iH < _maxNbHomographies; ++iH)
       {
         ALICEVISION_LOG_DEBUG("Computing homography no. " << iH << "...");
@@ -97,6 +104,9 @@ struct GeometricFilterMatrix_HGrowing : public GeometricFilterMatrix
           if(!growHomography(allSIFTFeaturesI, allSIFTfeaturesJ, remainingSIFTMatches, iMatch, planarMatchesId, homographie) == EXIT_SUCCESS)
             continue;
           
+#pragma omp critical
+          visitedMatchesId.insert(planarMatchesId.begin(), planarMatchesId.end());
+          
           if (planarMatchesId.size() > bestMatchesId.size())
           {
 #pragma omp critical
@@ -105,9 +115,7 @@ struct GeometricFilterMatrix_HGrowing : public GeometricFilterMatrix
               bestHomographie = homographie;
             }
           }
-          
-          visitedMatchesId.insert(planarMatchesId.begin(), planarMatchesId.end());
-        }
+        } // IndexT iMatch
         
         // Stop when the models get to small        
         if (bestMatchesId.size() < _minNbMatchesPerH)
@@ -120,17 +128,28 @@ struct GeometricFilterMatrix_HGrowing : public GeometricFilterMatrix
         // [TODO] 3rd improvement: non lin optimization
         // ... }
         
-        // Remove used matches (/!\ Keep ordering):
-        std::size_t cpt = 0;
-        for (IndexT id : bestMatchesId) // [Todo] Improve it (std::remove_if, lambda expression ?)
+        if (orderingMethod == EOrdering::HGrouped)
         {
+          for (IndexT id : bestMatchesId)
+          {
+            out_geometricInliersPerType[feature::EImageDescriberType::SIFT].push_back(remainingSIFTMatches.at(id));
+          }
+        }    
+        
+        // Update remaining matches (/!\ Keep ordering):
+        std::size_t cpt = 0;
+        for (IndexT id : bestMatchesId) 
+        {        
           remainingSIFTMatches.erase(remainingSIFTMatches.begin() + id - cpt);
           ++cpt;
         }
         
-        ALICEVISION_LOG_DEBUG("\t- best H found: \n" << bestHomographie);
-        ALICEVISION_LOG_DEBUG("\t- nb. remaining matches: " << remainingSIFTMatches.size());
-        ALICEVISION_LOG_DEBUG("\t- nb. corresponding planar matches: " << bestMatchesId.size());
+        ALICEVISION_LOG_DEBUG("\t- best H found: [ " 
+                              << bestHomographie(0,0) << " " << bestHomographie(0,1) << " " << bestHomographie(0,2) << " ; " 
+                              << bestHomographie(1,0) << " " << bestHomographie(1,1) << " " << bestHomographie(1,2) << " ; " 
+                              << bestHomographie(2,0) << " " << bestHomographie(2,1) << " " << bestHomographie(2,2) << " ]"); 
+        ALICEVISION_LOG_DEBUG("\t- " << bestMatchesId.size() << " corresponding planar matches.");
+        ALICEVISION_LOG_TRACE("\t- " << remainingSIFTMatches.size() << " remaining matches.");
         
         // Stop when the number of remaining matches is too small   
         if (remainingSIFTMatches.size() < _minNbMatchesPerH)
@@ -138,22 +157,26 @@ struct GeometricFilterMatrix_HGrowing : public GeometricFilterMatrix
           ALICEVISION_LOG_TRACE("Stop: Not enought remaining matches (: " << remainingSIFTMatches.size() << "/" << _minNbMatchesPerH << " min.)");
           break;
         }
-      }
+      } // IndexT iH
       
-      // Copy inliers // [Todo] Probably improvable
-      out_geometricInliersPerType[feature::EImageDescriberType::SIFT] =  putativeMatchesPerType.at(feature::EImageDescriberType::SIFT);
-      matching::IndMatches & outSiftMatches = out_geometricInliersPerType.at(feature::EImageDescriberType::SIFT);
-      for (IndexT iMatch = 0; iMatch < outSiftMatches.size(); ++iMatch)
+            
+      // Copy inliers -> putative matches ordering
+      if (orderingMethod == EOrdering::PutativeLike)
       {
-        const matching::IndMatch & match = outSiftMatches.at(iMatch);
-        std::vector<matching::IndMatch>::iterator it = std::find(remainingSIFTMatches.begin(), 
-                                                                 remainingSIFTMatches.end(), 
-                                                                 match);
-        if (it != remainingSIFTMatches.end()) // is not a verified match
+        out_geometricInliersPerType[feature::EImageDescriberType::SIFT] =  putativeMatchesPerType.at(feature::EImageDescriberType::SIFT);
+        matching::IndMatches & outSiftMatches = out_geometricInliersPerType.at(feature::EImageDescriberType::SIFT);
+        for (IndexT iMatch = 0; iMatch < outSiftMatches.size(); ++iMatch)
         {
-          outSiftMatches.erase(outSiftMatches.begin() + iMatch);
-          remainingSIFTMatches.erase(it); // to decrease complexity (does not used anymore)
-          --iMatch;
+          const matching::IndMatch & match = outSiftMatches.at(iMatch);
+          std::vector<matching::IndMatch>::iterator it = std::find(remainingSIFTMatches.begin(), 
+                                                                   remainingSIFTMatches.end(), 
+                                                                   match);
+          if (it != remainingSIFTMatches.end()) // is not a verified match
+          {
+            outSiftMatches.erase(outSiftMatches.begin() + iMatch);
+            remainingSIFTMatches.erase(it); // to decrease complexity (does not used anymore)
+            --iMatch;
+          }
         }
       }
     }
@@ -243,7 +266,7 @@ private:
       
       findTransformationInliers(featuresI, featuresJ, matches, transformation, currTolerance, planarMatchesIndices);
       
-      ALICEVISION_LOG_TRACE("|- Nb. of matches corresponding to the transformation = " << planarMatchesIndices.size());
+      ALICEVISION_LOG_TRACE("|- " << planarMatchesIndices.size() << " matches corresponding to the transformation." );
       
       if (planarMatchesIndices.size() < _minInliersToRefine)
       {
@@ -523,7 +546,7 @@ private:
   std::size_t _maxFractionPlanarMatches; // = StopInsFrac
   
   
-};
+}; // struct GeometricFilterMatrix_HGrowing
 
 } // namespace matchingImageCollection
 } // namespace aliceVision
