@@ -88,6 +88,10 @@ add_library(aliceVision_sfm
   ${sfm_files_sources}
 )
 
+set_property(TARGET aliceVision_sfm
+  PROPERTY FOLDER AliceVision
+)
+
 target_link_libraries(aliceVision_sfm
   PUBLIC
   aliceVision_numeric

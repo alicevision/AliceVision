@@ -42,7 +42,7 @@ target_link_libraries(aliceVision_mesh
 )
 
 set_property(TARGET aliceVision_mesh
-  PROPERTY FOLDER AliceVision/AliceVision
+  PROPERTY FOLDER AliceVision
 )
 
 install(TARGETS aliceVision_mesh

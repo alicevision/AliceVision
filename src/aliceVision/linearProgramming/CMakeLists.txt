@@ -11,6 +11,11 @@ set(linearProgramming_sources
   ""
 )
 
+# Tests
+set(linearProgramming_files_test
+  linearProgramming_test.cpp
+)
+
 # Dependencies
 set(aliceVision_linearProgramming_DEPS
   ${CLP_LIBRARIES}     # clp + solver wrapper
@@ -25,6 +30,11 @@ if (NOT MOSEK_FOUND)
 
   target_link_libraries(aliceVision_linearProgramming
     INTERFACE ${aliceVision_linearProgramming_DEPS}
+  )
+  add_custom_target(aliceVision_linearProgramming_ide SOURCES ${linearProgramming_headers} ${linearProgramming_files_test})
+
+  set_property(TARGET aliceVision_linearProgramming_ide
+    PROPERTY FOLDER AliceVision
   )
 
 else ()

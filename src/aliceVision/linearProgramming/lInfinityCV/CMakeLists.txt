@@ -27,6 +27,10 @@ add_library(aliceVision_lInftyComputerVision
   ${lInftycomputervision_sources}
 )
 
+set_property(TARGET aliceVision_lInftyComputerVision
+  PROPERTY FOLDER AliceVision
+)
+
 target_link_libraries(aliceVision_lInftyComputerVision
   aliceVision_linearProgramming
   ${CLP_LIBRARIES}     # clp + solver wrapper

@@ -22,7 +22,7 @@ add_library(aliceVision_system
 )
 
 set_property(TARGET aliceVision_system
-  PROPERTY FOLDER AliceVision/AliceVision
+  PROPERTY FOLDER AliceVision
 )
 
 target_link_libraries(aliceVision_system ${Boost_LIBRARIES})

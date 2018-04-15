@@ -26,7 +26,7 @@ target_link_libraries(aliceVision_kvld
 )
 
 set_property(TARGET aliceVision_kvld
-  PROPERTY FOLDER AliceVision/AliceVision
+  PROPERTY FOLDER AliceVision
 )
 
 install(TARGETS aliceVision_kvld

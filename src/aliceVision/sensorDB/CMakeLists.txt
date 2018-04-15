@@ -19,6 +19,10 @@ add_library(aliceVision_sensorDB
 
 target_include_directories(aliceVision_sensorDB PRIVATE ${Boost_INCLUDE_DIRS})
 
+set_property(TARGET aliceVision_sensorDB
+  PROPERTY FOLDER AliceVision
+)
+
 target_link_libraries(aliceVision_sensorDB
   PRIVATE
   ${Boost_LIBRARIES}

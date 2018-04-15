@@ -24,6 +24,10 @@ add_library(aliceVision_geometry
     ${geometry_files_sources}
 )
 
+set_property(TARGET aliceVision_geometry
+  PROPERTY FOLDER AliceVision
+)
+
 target_link_libraries(aliceVision_geometry
   INTERFACE aliceVision_numeric
             aliceVision_multiview
@@ -43,3 +47,7 @@ UNIT_TEST(aliceVision halfSpaceIntersection    "aliceVision_geometry")
 UNIT_TEST(aliceVision frustumIntersection      "aliceVision_geometry;aliceVision_multiview_test_data")
 
 add_custom_target(aliceVision_geometry_ide SOURCES ${geometry_files_headers} ${geometry_files_test})
+
+set_property(TARGET aliceVision_geometry_ide
+  PROPERTY FOLDER AliceVision
+)

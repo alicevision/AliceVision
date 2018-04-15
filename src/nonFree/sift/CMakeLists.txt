@@ -30,7 +30,7 @@ install(TARGETS vlsift
 )
 
 set_property(TARGET vlsift
-  PROPERTY FOLDER AliceVision/nonFree
+  PROPERTY FOLDER nonFree
 )
 
 install(

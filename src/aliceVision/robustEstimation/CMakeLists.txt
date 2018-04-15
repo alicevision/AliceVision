@@ -36,3 +36,7 @@ UNIT_TEST(aliceVision maxConsensus "aliceVision_robustEstimation")
 #UNIT_TEST(aliceVision leastMedianOfSquares        "aliceVision_robustEstimation")
 
 add_custom_target(aliceVision_robustEstimation_ide SOURCES ${robustEstimation_files_headers} ${robustEstimation_files_test})
+
+set_property(TARGET aliceVision_robustEstimation_ide
+  PROPERTY FOLDER AliceVision
+)

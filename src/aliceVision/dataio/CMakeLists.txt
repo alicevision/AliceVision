@@ -25,7 +25,7 @@ add_library(aliceVision_dataio
  )
 
 set_property(TARGET aliceVision_dataio
-  PROPERTY FOLDER AliceVision/AliceVision
+  PROPERTY FOLDER AliceVision
 )
 
 target_link_libraries(aliceVision_dataio

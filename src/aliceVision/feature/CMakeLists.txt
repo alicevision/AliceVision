@@ -106,7 +106,7 @@ install(TARGETS aliceVision_feature
 )
 
 set_property(TARGET aliceVision_feature
-  PROPERTY FOLDER AliceVision/AliceVision
+  PROPERTY FOLDER AliceVision
 )
 
 UNIT_TEST(aliceVision features "aliceVision_feature")

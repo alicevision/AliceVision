@@ -25,7 +25,7 @@ add_library(aliceVision_voctree
 )
 
 set_property(TARGET aliceVision_voctree
-  PROPERTY FOLDER AliceVision/AliceVision
+  PROPERTY FOLDER AliceVision
 )
 
 target_link_libraries(aliceVision_voctree

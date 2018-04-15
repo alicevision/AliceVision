@@ -13,6 +13,10 @@ add_library(aliceVision_keyframe
   ${keyframe_files_sources}
 )
 
+set_property(TARGET aliceVision_keyframe
+  PROPERTY FOLDER AliceVision
+)
+
 target_include_directories(aliceVision_keyframe
   PUBLIC ${OPENIMAGEIO_INCLUDE_DIRS}
 )

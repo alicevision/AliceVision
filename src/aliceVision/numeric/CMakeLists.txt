@@ -14,7 +14,7 @@ set_target_properties(aliceVision_numeric
 )
 
 set_property(TARGET aliceVision_numeric
-  PROPERTY FOLDER AliceVision/AliceVision
+  PROPERTY FOLDER AliceVision
 )
 
 install(TARGETS aliceVision_numeric

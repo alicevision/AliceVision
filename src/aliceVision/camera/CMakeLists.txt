@@ -33,3 +33,6 @@ UNIT_TEST(aliceVision pinholeRadial   "aliceVision_camera")
 
 add_custom_target(aliceVision_camera_ide SOURCES ${camera_files_headers} ${camera_files_test})
 
+set_property(TARGET aliceVision_camera_ide
+  PROPERTY FOLDER AliceVision
+)

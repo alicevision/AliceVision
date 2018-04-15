@@ -34,7 +34,7 @@ target_link_libraries(aliceVision_mvsUtils
 )
 
 set_property(TARGET aliceVision_mvsUtils
-  PROPERTY FOLDER AliceVision/AliceVision
+  PROPERTY FOLDER AliceVision
 )
 
 install(TARGETS aliceVision_mvsUtils

@@ -78,7 +78,7 @@ add_library(aliceVision_multiview_test_data
 )
 
 set_property(TARGET aliceVision_multiview_test_data
-  PROPERTY FOLDER AliceVision/AliceVision
+  PROPERTY FOLDER AliceVision
 )
 
 target_link_libraries(aliceVision_multiview

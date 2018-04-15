@@ -24,3 +24,7 @@ UNIT_TEST(aliceVision connectedComponent "aliceVision_graph")
 UNIT_TEST(aliceVision triplet            "aliceVision_graph")
 
 add_custom_target(aliceVision_graph_ide SOURCES ${graph_files_headers} ${graph_files_test})
+
+set_property(TARGET aliceVision_graph_ide
+  PROPERTY FOLDER AliceVision
+)

@@ -13,7 +13,7 @@ target_link_libraries(aliceVision_convertSfMFormat
 )
 
 set_property(TARGET aliceVision_convertSfMFormat
-	PROPERTY FOLDER AliceVision/Software/Convert
+	PROPERTY FOLDER Software/Convert
 )
 
 install(TARGETS aliceVision_convertSfMFormat
@@ -31,7 +31,7 @@ target_link_libraries(aliceVision_convertFloatDescriptorToUchar
 )
 
 set_property(TARGET aliceVision_convertFloatDescriptorToUchar
-	PROPERTY FOLDER AliceVision/Software/Convert
+	PROPERTY FOLDER Software/Convert
 )
 
 install(TARGETS aliceVision_convertFloatDescriptorToUchar
@@ -52,7 +52,7 @@ if(ALICEVISION_HAVE_ALEMBIC)
 	)
 
 	set_property(TARGET aliceVision_convertAnimatedCamera
-		PROPERTY FOLDER AliceVision/Software/Convert
+		PROPERTY FOLDER Software/Convert
 	)
 
 	install(TARGETS aliceVision_convertAnimatedCamera
@@ -71,7 +71,7 @@ target_link_libraries(aliceVision_convertRAW
 )
 
 set_property(TARGET aliceVision_convertRAW
-  PROPERTY FOLDER AliceVision/Software/Convert
+  PROPERTY FOLDER Software/Convert
 )
 
 install(TARGETS aliceVision_convertRAW

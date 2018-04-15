@@ -45,7 +45,7 @@ target_link_libraries(aliceVision_matching
 )
 
 set_property(TARGET aliceVision_matching
-  PROPERTY FOLDER AliceVision/AliceVision
+  PROPERTY FOLDER AliceVision
 )
 
 install(TARGETS aliceVision_matching

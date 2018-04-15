@@ -21,3 +21,7 @@ target_link_libraries(aliceVision_stl
 UNIT_TEST(aliceVision dynamicBitset "aliceVision_stl")
 
 add_custom_target(aliceVision_stl_ide SOURCES ${stl_files_headers})
+
+set_property(TARGET aliceVision_stl_ide
+  PROPERTY FOLDER AliceVision
+)

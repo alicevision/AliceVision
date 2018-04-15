@@ -30,6 +30,10 @@ add_library(aliceVision_image
   ${image_files_sources}
 )
 
+set_property(TARGET aliceVision_image
+  PROPERTY FOLDER AliceVision
+)
+
 target_include_directories(aliceVision_image
   PUBLIC ${OPENIMAGEIO_INCLUDE_DIRS}
   PRIVATE ${OPENEXR_INCLUDE_DIR}
