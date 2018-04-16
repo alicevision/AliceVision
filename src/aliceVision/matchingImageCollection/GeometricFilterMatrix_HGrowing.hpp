@@ -19,10 +19,62 @@
 #include "aliceVision/feature/RegionsPerView.hpp"
 #include "aliceVision/matchingImageCollection/GeometricFilterMatrix.hpp"
 #include "Eigen/Geometry"
+#include <ceres/ceres.h>
 
 
 namespace aliceVision {
 namespace matchingImageCollection {
+
+// https://github.com/fsrajer/yasfm/blob/3a09bc0ee69b7021910d646386cd92deab504a2c/YASFM/utils.h#L347
+template<typename T>
+T robustify(double softThresh,T x)
+{
+  const double t = 0.25;
+  const double sigma = softThresh / sqrt(-log(t*t));
+
+  return -log(exp(-(x*x)/T(2*sigma*sigma))+T(t)) + T(log(1+t));
+}
+
+// https://github.com/fsrajer/yasfm/blob/master/YASFM/relative_pose.cpp#L992
+struct RefineHRobustCostFunctor
+{
+  RefineHRobustCostFunctor(const Eigen::Vector2d& x1,const Eigen::Vector2d& x2,
+    double softThresh)
+    : x1(x1),x2(x2),softThresh(softThresh)
+  {
+  }
+
+  template<typename T>
+  bool operator()(const T* const parameters,T* residuals) const
+  {
+    Map<const Eigen::Matrix<T,3,3>> H(parameters);
+
+    Eigen::Matrix<T,3,1> pt = H * x1.homogeneous().cast<T>();
+
+    T errX = x2(0) - pt(0)/pt(2);
+    T errY = x2(1) - pt(1)/pt(2);
+
+    T errSq = errX*errX+errY*errY;
+    
+    // Avoid division by zero in derivatives computation
+    T err = (errSq==0.) ? errSq : sqrt(errSq);
+    residuals[0] = robustify(softThresh,err);
+    return true;
+  }
+
+  static ceres::CostFunction* createCostFunction(const Eigen::Vector2d& x1,const Eigen::Vector2d& x2,
+    double softThresh)
+  {
+    return new ceres::AutoDiffCostFunction<RefineHRobustCostFunctor,1,9>(
+      new RefineHRobustCostFunctor(x1,x2,softThresh));
+  }
+
+  const Eigen::Vector2d &x1,&x2;
+  double softThresh;
+};
+
+
+
 
 //-- Multiple homography matrices estimation template functor, based on homography growing, used for filter pair of putative correspondences
 struct GeometricFilterMatrix_HGrowing : public GeometricFilterMatrix
@@ -65,7 +117,7 @@ struct GeometricFilterMatrix_HGrowing : public GeometricFilterMatrix
     // * 'HGrouped' returns [0(h0) 5(h0) 2(h1) 6(h1) 1(h2) 4(h2)]: remove (nan) + H id. ordering
     EOrdering orderingMethod = HGrouped;
 
-//    if (pairIndex.first == 200563944 && pairIndex.second == 1112206013) // [TEMP] MATLAB exemple
+    if (pairIndex.first == 200563944 && pairIndex.second == 1112206013) // [TEMP] MATLAB exemple
     {
       const std::vector<feature::EImageDescriberType> descTypes = regionsPerView.getCommonDescTypes(pairIndex);
       if(descTypes.empty())
@@ -104,7 +156,8 @@ struct GeometricFilterMatrix_HGrowing : public GeometricFilterMatrix
           std::set<IndexT> visitedMatchesId, bestMatchesId;
           Mat3 bestHomographie;
           
-#pragma omp parallel for // (: huge optimization but modify results a little)
+          // Estimate H using homogeaphy-growing approach:
+          //#pragma omp parallel for // (: huge optimization but modify results a little)
           for (IndexT iMatch = 0; iMatch < remainingMatches.size(); ++iMatch)
           {
             // [1st improvement ([F.Srajer, 2016] p. 20) ] Each match is used once only per homography estimation (increases computation time)
@@ -117,6 +170,12 @@ struct GeometricFilterMatrix_HGrowing : public GeometricFilterMatrix
             
             if(!growHomography(siofeatures_I, siofeatures_J, remainingMatches, iMatch, planarMatchesId, homographie) == EXIT_SUCCESS)
               continue;
+              
+//            std::cout << "iMatch: " << iMatch << std::endl;
+//            std::cout << "input remaining matches : " << remainingMatches.size() << std::endl;
+//            std::cout << "H = \n" << homographie << std::endl;
+//            std::cout << "ouput planar matches : " << planarMatchesId.size() << std::endl;
+             
             
 #pragma omp critical
             visitedMatchesId.insert(planarMatchesId.begin(), planarMatchesId.end());
@@ -125,22 +184,57 @@ struct GeometricFilterMatrix_HGrowing : public GeometricFilterMatrix
             {
 #pragma omp critical
               {
-                bestMatchesId = planarMatchesId;
+                bestMatchesId = planarMatchesId; // be careful: it contains the id. in the 'remainingMatches' vector not 'putativeMatches' vector.
                 bestHomographie = homographie;
               }
             }
           } // IndexT iMatch
           
-          // Stop when the models get to small        
+          // stop when the models get to small        
           if (bestMatchesId.size() < _minNbMatchesPerH)
           {
             ALICEVISION_LOG_DEBUG("Stop: Planar models get to small: " << bestMatchesId.size() << "/" <<  _minNbMatchesPerH);
             break;
           }
           
-          // { ...  
-          // [TODO] 3rd improvement: non lin optimization
-          // ... }
+          // Refine H using Ceres minimizer 
+          { 
+            ceres::Problem problem;
+            ceres::Solver::Options solverOpt;
+            solverOpt.max_num_iterations = 10;
+            solverOpt.minimizer_progress_to_stdout = true;
+            ceres::LossFunction *lossFun = NULL; // NULL specifies squared loss
+            std::cout << "BestH befor: " << bestHomographie << std::endl;
+//            bestHomographie = Mat3::Identity();
+//            bestHomographie(0,0) += 1 ;
+//            std::cout << "Transformed BestH befor: " << bestHomographie << std::endl;
+
+                
+            for(IndexT matchId : bestMatchesId)
+            {
+              matching::IndMatch match = remainingMatches.at(matchId);
+              Vec2 xI = siofeatures_I.at(match._i).coords().cast<double>();
+              Vec2 xJ = siofeatures_J.at(match._j).coords().cast<double>();
+              
+              auto costFun = RefineHRobustCostFunctor::createCostFunction(xI, xJ, _homographyTolerance);
+              problem.AddResidualBlock(costFun, lossFun, bestHomographie.data());
+            }
+            
+            ceres::Solver::Summary summary;
+            ceres::Solve(solverOpt,&problem,&summary);
+            
+            std::cout <<summary.FullReport()  << std::endl;
+            
+            // If no error, get back refined parameters
+            if (!summary.IsSolutionUsable())
+            {
+              std::cout << "REFINEMENT FAILED" << std::endl;
+            }
+            
+            std::cout << "BestH after: " << bestHomographie << std::endl;
+            getchar();
+            
+          } // 3rd improvement
           
           if (orderingMethod == EOrdering::HGrouped)
           {
