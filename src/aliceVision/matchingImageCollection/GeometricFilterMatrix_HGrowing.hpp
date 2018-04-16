@@ -19,10 +19,114 @@
 #include "aliceVision/feature/RegionsPerView.hpp"
 #include "aliceVision/matchingImageCollection/GeometricFilterMatrix.hpp"
 #include "Eigen/Geometry"
+#include <ceres/ceres.h>
+#include <aliceVision/system/Timer.hpp>
 
 
 namespace aliceVision {
 namespace matchingImageCollection {
+
+class HomographySymmetricGeometricCostFunctor {
+ public:
+  HomographySymmetricGeometricCostFunctor(const Vec2 &x,
+                                          const Vec2 &y) {
+    xx_ = x(0);
+    xy_ = x(1);
+    yx_ = y(0);
+    yy_ = y(1);
+  }
+
+  template<typename T>
+  bool operator()(const T *homography_parameters, T *residuals) const {
+    typedef Eigen::Matrix<T, 3, 3> Mat3;
+    typedef Eigen::Matrix<T, 3, 1> Vec3;
+
+    Mat3 H(homography_parameters);
+
+    Vec3 x(T(xx_), T(xy_), T(1.0));
+    Vec3 y(T(yx_), T(yy_), T(1.0));
+    
+    std::cout << "*x1 = " << xx_ << "; " << xy_ << std::endl;
+    std::cout << "*x2 = " << yx_<< "; " << yy_ << std::endl;
+    std::cout << "*x = " << x(0) << "; " << x(1) << std::endl;
+    std::cout << "*y = " << y(0) << "; " << y(1) << std::endl;
+    getchar();
+
+    Vec3 H_x = H * x;
+    Vec3 Hinv_y = H.inverse() * y;
+
+    H_x /= H_x(2);
+    Hinv_y /= Hinv_y(2);
+
+    // This is a forward error.
+    residuals[0] = H_x(0) - T(yx_);
+    residuals[1] = H_x(1) - T(yy_);
+
+    // This is a backward error.
+    residuals[2] = Hinv_y(0) - T(xx_);
+    residuals[3] = Hinv_y(1) - T(xy_);
+
+    std::cout << "*residual = " << *residuals << std::endl;
+    return true;
+  }
+
+  // TODO(sergey): Think of better naming.
+  double xx_, xy_;
+  double yx_, yy_;
+};
+
+// https://github.com/fsrajer/yasfm/blob/3a09bc0ee69b7021910d646386cd92deab504a2c/YASFM/utils.h#L347
+template<typename T>
+T robustify(double softThresh,T x)
+{
+  const double t = 0.25;
+  const double sigma = softThresh / sqrt(-log(t*t));
+
+  return -log(exp(-(x*x)/T(2*sigma*sigma))+T(t)) + T(log(1+t));
+}
+
+// https://github.com/fsrajer/yasfm/blob/master/YASFM/relative_pose.cpp#L992
+class RefineHRobustCostFunctor
+{
+public:
+
+  RefineHRobustCostFunctor(const Vec2& x1,const Vec2& x2,
+    double softThresh)
+    : x1(x1),x2(x2),softThresh(softThresh)
+  {
+  }
+
+  template<typename T>
+  bool operator()(const T* const parameters, T* residuals) const
+  {
+    typedef Eigen::Matrix<T, 3, 3> Mat3T;
+    typedef Eigen::Matrix<T, 3, 1> Vec3T;
+    typedef Eigen::Matrix<T, 2, 1> Vec2T;
+
+    Vec2T x(T(x1(0)), T(x1(1)));
+    Vec2T y(T(x2(0)), T(x2(1)));
+    
+    Mat3T H(parameters);
+
+    Vec3T xp = H * x.homogeneous();
+
+    T errX = y(0) - xp(0)/xp(2);
+    T errY = y(1) - xp(1)/xp(2);
+    T errSq = errX*errX + errY*errY;
+    
+    // Avoid division by zero in derivatives computation
+    T err = (errSq==0.) ? T(errSq) : T(sqrt(errSq));
+    residuals[0] = robustify(softThresh,err);
+
+    return true;
+  }
+
+  Vec2 x1, x2;
+  double softThresh;
+};
+
+
+
 
 //-- Multiple homography matrices estimation template functor, based on homography growing, used for filter pair of putative correspondences
 struct GeometricFilterMatrix_HGrowing : public GeometricFilterMatrix
@@ -101,17 +205,19 @@ struct GeometricFilterMatrix_HGrowing : public GeometricFilterMatrix
         {
           ALICEVISION_LOG_DEBUG("Computing homography no. " << iH << "...");
           
-          std::set<IndexT> visitedMatchesId, bestMatchesId;
+          std::set<IndexT> usedMatchesId, bestMatchesId;
           Mat3 bestHomographie;
+          
+          // -- Estimate H using homogeaphy-growing approach:
           
 #pragma omp parallel for // (: huge optimization but modify results a little)
           for (IndexT iMatch = 0; iMatch < remainingMatches.size(); ++iMatch)
           {
-            // [1st improvement ([F.Srajer, 2016] p. 20) ] Each match is used once only per homography estimation (increases computation time)
-            if (visitedMatchesId.find(iMatch) != visitedMatchesId.end()) 
+            // Growing a homography from one match ([F.Srajer, 2016] algo. 1, p. 20)  
+            // each match is used once only per homography estimation (increases computation time) [1st improvement ([F.Srajer, 2016] p. 20) ] 
+            if (usedMatchesId.find(iMatch) != usedMatchesId.end()) 
               continue;
             
-            // Growing a homography from one match ([F.Srajer, 2016] algo. 1, p. 20)  
             std::set<IndexT> planarMatchesId; // be careful: it contains the id. in the 'remainingMatches' vector not 'putativeMatches' vector.
             Mat3 homographie;
             
@@ -119,38 +225,83 @@ struct GeometricFilterMatrix_HGrowing : public GeometricFilterMatrix
               continue;
             
 #pragma omp critical
-            visitedMatchesId.insert(planarMatchesId.begin(), planarMatchesId.end());
+            usedMatchesId.insert(planarMatchesId.begin(), planarMatchesId.end());
             
             if (planarMatchesId.size() > bestMatchesId.size())
             {
 #pragma omp critical
               {
-                bestMatchesId = planarMatchesId;
+                bestMatchesId = planarMatchesId; // be careful: it contains the id. in the 'remainingMatches' vector not 'putativeMatches' vector.
                 bestHomographie = homographie;
               }
             }
-          } // IndexT iMatch
+          } // 'iMatch'
           
-          // Stop when the models get to small        
+          // -- Refine H using Ceres minimizer:
+          {
+            ceres::Problem problem;
+            
+            for(IndexT matchId : bestMatchesId)
+            {
+              matching::IndMatch match = remainingMatches.at(matchId);
+              
+              Vec2 x1 = siofeatures_I.at(match._i).coords().cast<double>();
+              Vec2 x2 = siofeatures_J.at(match._j).coords().cast<double>();
+              
+              RefineHRobustCostFunctor 
+                  *costFun = 
+                  new RefineHRobustCostFunctor(x1, x2, _homographyTolerance);
+              
+              problem.AddResidualBlock(
+                    new ceres::AutoDiffCostFunction<
+                    RefineHRobustCostFunctor,
+                    1,
+                    9>(costFun), 
+                    NULL, 
+                    bestHomographie.data());
+            }
+            
+            ceres::Solver::Options solverOpt;
+            solverOpt.max_num_iterations = 10;
+            
+            ceres::Solver::Summary summary;
+            ceres::Solve(solverOpt,&problem,&summary);
+            
+            bestHomographie /= bestHomographie(2,2);
+            
+            ALICEVISION_LOG_TRACE(summary.FullReport());
+            
+            if (summary.IsSolutionUsable())
+            {
+              std::set<IndexT> inliers;
+              findTransformationInliers(siofeatures_I, siofeatures_J, remainingMatches, bestHomographie, _homographyTolerance, bestMatchesId);
+              
+              ALICEVISION_LOG_TRACE("H refinement keep (: " << inliers.size() << "(/" << bestMatchesId.size() << ") matches.");
+            }
+            else
+            {
+              ALICEVISION_LOG_DEBUG("Homography refinement failed: not usable solution.");
+            }
+          } // refinement part
+          
+          // stop when the models get to small        
           if (bestMatchesId.size() < _minNbMatchesPerH)
           {
             ALICEVISION_LOG_DEBUG("Stop: Planar models get to small: " << bestMatchesId.size() << "/" <<  _minNbMatchesPerH);
             break;
           }
           
-          // { ...  
-          // [TODO] 3rd improvement: non lin optimization
-          // ... }
+          // -- Update not used matches & Save geometrically rerified matches:
           
           if (orderingMethod == EOrdering::HGrouped)
-          {
+          { 
             for (IndexT id : bestMatchesId)
             {
               out_geometricInliersPerType[feature::EImageDescriberType::SIFT].push_back(remainingMatches.at(id));
             }
           }    
           
-          // Update remaining matches (/!\ Keep ordering):
+          // update remaining matches (/!\ Keep ordering)
           std::size_t cpt = 0;
           for (IndexT id : bestMatchesId) 
           {        
@@ -165,15 +316,15 @@ struct GeometricFilterMatrix_HGrowing : public GeometricFilterMatrix
           ALICEVISION_LOG_DEBUG("\t- " << bestMatchesId.size() << " corresponding planar matches.");
           ALICEVISION_LOG_TRACE("\t- " << remainingMatches.size() << " remaining matches.");
           
-          // Stop when the number of remaining matches is too small   
+          // stop when the number of remaining matches is too small   
           if (remainingMatches.size() < _minNbMatchesPerH)
           {
             ALICEVISION_LOG_TRACE("Stop: Not enought remaining matches (: " << remainingMatches.size() << "/" << _minNbMatchesPerH << " min.)");
             break;
           }
-        } // IndexT iH
+        } // 'iH'
         
-        // Copy inliers -> putative matches ordering
+        // copy inliers -> putative matches ordering
         if (orderingMethod == EOrdering::PutativeLike)
         {
           out_geometricInliersPerType[feature::EImageDescriberType::SIFT] =  putativeMatchesPerType.at(feature::EImageDescriberType::SIFT);
@@ -460,9 +611,9 @@ private:
                                  const matching::IndMatches & matches,
                                  const Mat3 & transformation,
                                  const std::size_t tolerance,
-                                 std::set<IndexT> & planarMatchesIndices)
+                                 std::set<IndexT> & inliersId)
   {
-    planarMatchesIndices.clear();
+    inliersId.clear();
   
 #pragma omp parallel for 
     for (IndexT iMatch = 0; iMatch < matches.size(); ++iMatch)
@@ -480,10 +631,11 @@ private:
       if (dist < Square(tolerance))
       {
 #pragma omp critical
-        planarMatchesIndices.insert(iMatch);
+        inliersId.insert(iMatch);
       }
     }
   }
+ 
 
   void centeringMatrices(const std::vector<feature::SIOPointFeature> & featuresI,
                          const std::vector<feature::SIOPointFeature> & featuresJ,
