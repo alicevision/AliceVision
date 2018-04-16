@@ -25,6 +25,55 @@
 namespace aliceVision {
 namespace matchingImageCollection {
 
+class HomographySymmetricGeometricCostFunctor {
+ public:
+  HomographySymmetricGeometricCostFunctor(const Vec2 &x,
+                                          const Vec2 &y) {
+    xx_ = x(0);
+    xy_ = x(1);
+    yx_ = y(0);
+    yy_ = y(1);
+  }
+
+  template<typename T>
+  bool operator()(const T *homography_parameters, T *residuals) const {
+    typedef Eigen::Matrix<T, 3, 3> Mat3;
+    typedef Eigen::Matrix<T, 3, 1> Vec3;
+
+    Mat3 H(homography_parameters);
+
+    Vec3 x(T(xx_), T(xy_), T(1.0));
+    Vec3 y(T(yx_), T(yy_), T(1.0));
+    
+    std::cout << "*x1 = " << xx_ << "; " << xy_ << std::endl;
+    std::cout << "*x2 = " << yx_<< "; " << yy_ << std::endl;
+    std::cout << "*x = " << x(0) << "; " << x(1) << std::endl;
+    std::cout << "*y = " << y(0) << "; " << y(1) << std::endl;
+    getchar();
+
+    Vec3 H_x = H * x;
+    Vec3 Hinv_y = H.inverse() * y;
+
+    H_x /= H_x(2);
+    Hinv_y /= Hinv_y(2);
+
+    // This is a forward error.
+    residuals[0] = H_x(0) - T(yx_);
+    residuals[1] = H_x(1) - T(yy_);
+
+    // This is a backward error.
+    residuals[2] = Hinv_y(0) - T(xx_);
+    residuals[3] = Hinv_y(1) - T(xy_);
+
+    std::cout << "*residual = " << *residuals << std::endl;
+    return true;
+  }
+
+  // TODO(sergey): Think of better naming.
+  double xx_, xy_;
+  double yx_, yy_;
+};
+
 // https://github.com/fsrajer/yasfm/blob/3a09bc0ee69b7021910d646386cd92deab504a2c/YASFM/utils.h#L347
 template<typename T>
 T robustify(double softThresh,T x)
@@ -36,40 +85,42 @@ T robustify(double softThresh,T x)
 }
 
 // https://github.com/fsrajer/yasfm/blob/master/YASFM/relative_pose.cpp#L992
-struct RefineHRobustCostFunctor
+class RefineHRobustCostFunctor
 {
-  RefineHRobustCostFunctor(const Eigen::Vector2d& x1,const Eigen::Vector2d& x2,
+public:
+
+  RefineHRobustCostFunctor(const Vec2& x1,const Vec2& x2,
     double softThresh)
     : x1(x1),x2(x2),softThresh(softThresh)
   {
   }
 
   template<typename T>
-  bool operator()(const T* const parameters,T* residuals) const
+  bool operator()(const T* const parameters, T* residuals) const
   {
-    Map<const Eigen::Matrix<T,3,3>> H(parameters);
+    typedef Eigen::Matrix<T, 3, 3> Mat3T;
+    typedef Eigen::Matrix<T, 3, 1> Vec3T;
+    typedef Eigen::Matrix<T, 2, 1> Vec2T;
 
-    Eigen::Matrix<T,3,1> pt = H * x1.homogeneous().cast<T>();
+    Vec2T x(T(x1(0)), T(x1(1)));
+    Vec2T y(T(x2(0)), T(x2(1)));
+    
+    Mat3T H(parameters);
 
-    T errX = x2(0) - pt(0)/pt(2);
-    T errY = x2(1) - pt(1)/pt(2);
+    Vec3T xp = H * x.homogeneous();
 
-    T errSq = errX*errX+errY*errY;
+    T errX = y(0) - xp(0)/xp(2);
+    T errY = y(1) - xp(1)/xp(2);
+    T errSq = errX*errX + errY*errY;
     
     // Avoid division by zero in derivatives computation
-    T err = (errSq==0.) ? errSq : sqrt(errSq);
+    T err = (errSq==0.) ? T(errSq) : T(sqrt(errSq));
     residuals[0] = robustify(softThresh,err);
+
     return true;
   }
 
-  static ceres::CostFunction* createCostFunction(const Eigen::Vector2d& x1,const Eigen::Vector2d& x2,
-    double softThresh)
-  {
-    return new ceres::AutoDiffCostFunction<RefineHRobustCostFunctor,1,9>(
-      new RefineHRobustCostFunctor(x1,x2,softThresh));
-  }
-
-  const Eigen::Vector2d &x1,&x2;
+  Vec2 x1, x2;
   double softThresh;
 };
 
@@ -199,41 +250,75 @@ struct GeometricFilterMatrix_HGrowing : public GeometricFilterMatrix
           
           // Refine H using Ceres minimizer 
           { 
-            ceres::Problem problem;
-            ceres::Solver::Options solverOpt;
-            solverOpt.max_num_iterations = 10;
-            solverOpt.minimizer_progress_to_stdout = true;
-            ceres::LossFunction *lossFun = NULL; // NULL specifies squared loss
             std::cout << "BestH befor: " << bestHomographie << std::endl;
-//            bestHomographie = Mat3::Identity();
-//            bestHomographie(0,0) += 1 ;
-//            std::cout << "Transformed BestH befor: " << bestHomographie << std::endl;
-
-                
+            
+            ceres::Problem problem;
+            // ------------------ OPENCV VERSION 
+            
+            
+//            for(IndexT matchId : bestMatchesId)
+//            {
+//              matching::IndMatch match = remainingMatches.at(matchId);
+//              Vec2 x1 = siofeatures_I.at(match._i).coords().cast<double>();
+//              Vec2 x2 = siofeatures_J.at(match._j).coords().cast<double>();
+              
+//              HomographySymmetricGeometricCostFunctor
+//                  *homography_symmetric_geometric_cost_function =
+//                  new HomographySymmetricGeometricCostFunctor(x1, x2);
+              
+//              problem.AddResidualBlock(
+//                    new ceres::AutoDiffCostFunction<
+//                    HomographySymmetricGeometricCostFunctor,
+//                    4,  // num_residuals
+//                    9>(homography_symmetric_geometric_cost_function),
+//                    NULL,
+//                    bestHomographie.data());
+//            }
+            
+            
+         // ------------------ YASM VERSION 
+         
             for(IndexT matchId : bestMatchesId)
             {
               matching::IndMatch match = remainingMatches.at(matchId);
-              Vec2 xI = siofeatures_I.at(match._i).coords().cast<double>();
-              Vec2 xJ = siofeatures_J.at(match._j).coords().cast<double>();
+              Vec2 x1 = siofeatures_I.at(match._i).coords().cast<double>();
+              Vec2 x2 = siofeatures_J.at(match._j).coords().cast<double>();
               
-              auto costFun = RefineHRobustCostFunctor::createCostFunction(xI, xJ, _homographyTolerance);
-              problem.AddResidualBlock(costFun, lossFun, bestHomographie.data());
-            }
+              RefineHRobustCostFunctor 
+                  *costFun = 
+                  new RefineHRobustCostFunctor(x1, x2, _homographyTolerance);
+              
+              problem.AddResidualBlock(
+                    new ceres::AutoDiffCostFunction<
+                    RefineHRobustCostFunctor,
+                    1,
+                    9>(costFun), 
+                    NULL, 
+                    bestHomographie.data());
+              }
+
+// -----------------------------------------
             
-            ceres::Solver::Summary summary;
-            ceres::Solve(solverOpt,&problem,&summary);
-            
-            std::cout <<summary.FullReport()  << std::endl;
-            
-            // If no error, get back refined parameters
-            if (!summary.IsSolutionUsable())
-            {
-              std::cout << "REFINEMENT FAILED" << std::endl;
-            }
-            
-            std::cout << "BestH after: " << bestHomographie << std::endl;
-            getchar();
-            
+          ceres::Solver::Options solverOpt;
+          solverOpt.max_num_iterations = 10;
+          solverOpt.minimizer_progress_to_stdout = true;
+          
+          ceres::Solver::Summary summary;
+          ceres::Solve(solverOpt,&problem,&summary);
+          
+          bestHomographie /= bestHomographie(2,2);
+          
+          std::cout <<summary.FullReport()  << std::endl;
+          
+          //             If no error, get back refined parameters
+          if (!summary.IsSolutionUsable())
+          {
+            std::cout << "REFINEMENT FAILED" << std::endl;
+          }
+          
+          std::cout << "BestH after: " << bestHomographie << std::endl;
+          getchar();
+          
           } // 3rd improvement
           
           if (orderingMethod == EOrdering::HGrouped)
