@@ -20,6 +20,7 @@
 #include "aliceVision/matchingImageCollection/GeometricFilterMatrix.hpp"
 #include "Eigen/Geometry"
 #include <ceres/ceres.h>
+#include <aliceVision/system/Timer.hpp>
 
 
 namespace aliceVision {
@@ -168,7 +169,7 @@ struct GeometricFilterMatrix_HGrowing : public GeometricFilterMatrix
     // * 'HGrouped' returns [0(h0) 5(h0) 2(h1) 6(h1) 1(h2) 4(h2)]: remove (nan) + H id. ordering
     EOrdering orderingMethod = HGrouped;
 
-    if (pairIndex.first == 200563944 && pairIndex.second == 1112206013) // [TEMP] MATLAB exemple
+//    if (pairIndex.first == 200563944 && pairIndex.second == 1112206013) // [TEMP] MATLAB exemple
     {
       const std::vector<feature::EImageDescriberType> descTypes = regionsPerView.getCommonDescTypes(pairIndex);
       if(descTypes.empty())
@@ -204,32 +205,27 @@ struct GeometricFilterMatrix_HGrowing : public GeometricFilterMatrix
         {
           ALICEVISION_LOG_DEBUG("Computing homography no. " << iH << "...");
           
-          std::set<IndexT> visitedMatchesId, bestMatchesId;
+          std::set<IndexT> usedMatchesId, bestMatchesId;
           Mat3 bestHomographie;
           
-          // Estimate H using homogeaphy-growing approach:
-          //#pragma omp parallel for // (: huge optimization but modify results a little)
+          // -- Estimate H using homogeaphy-growing approach:
+          
+#pragma omp parallel for // (: huge optimization but modify results a little)
           for (IndexT iMatch = 0; iMatch < remainingMatches.size(); ++iMatch)
           {
-            // [1st improvement ([F.Srajer, 2016] p. 20) ] Each match is used once only per homography estimation (increases computation time)
-            if (visitedMatchesId.find(iMatch) != visitedMatchesId.end()) 
+            // Growing a homography from one match ([F.Srajer, 2016] algo. 1, p. 20)  
+            // each match is used once only per homography estimation (increases computation time) [1st improvement ([F.Srajer, 2016] p. 20) ] 
+            if (usedMatchesId.find(iMatch) != usedMatchesId.end()) 
               continue;
             
-            // Growing a homography from one match ([F.Srajer, 2016] algo. 1, p. 20)  
             std::set<IndexT> planarMatchesId; // be careful: it contains the id. in the 'remainingMatches' vector not 'putativeMatches' vector.
             Mat3 homographie;
             
             if(!growHomography(siofeatures_I, siofeatures_J, remainingMatches, iMatch, planarMatchesId, homographie) == EXIT_SUCCESS)
               continue;
-              
-//            std::cout << "iMatch: " << iMatch << std::endl;
-//            std::cout << "input remaining matches : " << remainingMatches.size() << std::endl;
-//            std::cout << "H = \n" << homographie << std::endl;
-//            std::cout << "ouput planar matches : " << planarMatchesId.size() << std::endl;
-             
             
 #pragma omp critical
-            visitedMatchesId.insert(planarMatchesId.begin(), planarMatchesId.end());
+            usedMatchesId.insert(planarMatchesId.begin(), planarMatchesId.end());
             
             if (planarMatchesId.size() > bestMatchesId.size())
             {
@@ -239,48 +235,16 @@ struct GeometricFilterMatrix_HGrowing : public GeometricFilterMatrix
                 bestHomographie = homographie;
               }
             }
-          } // IndexT iMatch
+          } // 'iMatch'
           
-          // stop when the models get to small        
-          if (bestMatchesId.size() < _minNbMatchesPerH)
+          // -- Refine H using Ceres minimizer:
           {
-            ALICEVISION_LOG_DEBUG("Stop: Planar models get to small: " << bestMatchesId.size() << "/" <<  _minNbMatchesPerH);
-            break;
-          }
-          
-          // Refine H using Ceres minimizer 
-          { 
-            std::cout << "BestH befor: " << bestHomographie << std::endl;
-            
             ceres::Problem problem;
-            // ------------------ OPENCV VERSION 
             
-            
-//            for(IndexT matchId : bestMatchesId)
-//            {
-//              matching::IndMatch match = remainingMatches.at(matchId);
-//              Vec2 x1 = siofeatures_I.at(match._i).coords().cast<double>();
-//              Vec2 x2 = siofeatures_J.at(match._j).coords().cast<double>();
-              
-//              HomographySymmetricGeometricCostFunctor
-//                  *homography_symmetric_geometric_cost_function =
-//                  new HomographySymmetricGeometricCostFunctor(x1, x2);
-              
-//              problem.AddResidualBlock(
-//                    new ceres::AutoDiffCostFunction<
-//                    HomographySymmetricGeometricCostFunctor,
-//                    4,  // num_residuals
-//                    9>(homography_symmetric_geometric_cost_function),
-//                    NULL,
-//                    bestHomographie.data());
-//            }
-            
-            
-         // ------------------ YASM VERSION 
-         
             for(IndexT matchId : bestMatchesId)
             {
               matching::IndMatch match = remainingMatches.at(matchId);
+              
               Vec2 x1 = siofeatures_I.at(match._i).coords().cast<double>();
               Vec2 x2 = siofeatures_J.at(match._j).coords().cast<double>();
               
@@ -295,41 +259,49 @@ struct GeometricFilterMatrix_HGrowing : public GeometricFilterMatrix
                     9>(costFun), 
                     NULL, 
                     bestHomographie.data());
-              }
-
-// -----------------------------------------
+            }
             
-          ceres::Solver::Options solverOpt;
-          solverOpt.max_num_iterations = 10;
-          solverOpt.minimizer_progress_to_stdout = true;
+            ceres::Solver::Options solverOpt;
+            solverOpt.max_num_iterations = 10;
+            
+            ceres::Solver::Summary summary;
+            ceres::Solve(solverOpt,&problem,&summary);
+            
+            bestHomographie /= bestHomographie(2,2);
+            
+            ALICEVISION_LOG_TRACE(summary.FullReport());
+            
+            if (summary.IsSolutionUsable())
+            {
+              std::set<IndexT> inliers;
+              findTransformationInliers(siofeatures_I, siofeatures_J, remainingMatches, bestHomographie, _homographyTolerance, bestMatchesId);
+              
+              ALICEVISION_LOG_TRACE("H refinement keep (: " << inliers.size() << "(/" << bestMatchesId.size() << ") matches.");
+            }
+            else
+            {
+              ALICEVISION_LOG_DEBUG("Homography refinement failed: not usable solution.");
+            }
+          } // refinement part
           
-          ceres::Solver::Summary summary;
-          ceres::Solve(solverOpt,&problem,&summary);
-          
-          bestHomographie /= bestHomographie(2,2);
-          
-          std::cout <<summary.FullReport()  << std::endl;
-          
-          //             If no error, get back refined parameters
-          if (!summary.IsSolutionUsable())
+          // stop when the models get to small        
+          if (bestMatchesId.size() < _minNbMatchesPerH)
           {
-            std::cout << "REFINEMENT FAILED" << std::endl;
+            ALICEVISION_LOG_DEBUG("Stop: Planar models get to small: " << bestMatchesId.size() << "/" <<  _minNbMatchesPerH);
+            break;
           }
           
-          std::cout << "BestH after: " << bestHomographie << std::endl;
-          getchar();
-          
-          } // 3rd improvement
+          // -- Update not used matches & Save geometrically rerified matches:
           
           if (orderingMethod == EOrdering::HGrouped)
-          {
+          { 
             for (IndexT id : bestMatchesId)
             {
               out_geometricInliersPerType[feature::EImageDescriberType::SIFT].push_back(remainingMatches.at(id));
             }
           }    
           
-          // Update remaining matches (/!\ Keep ordering):
+          // update remaining matches (/!\ Keep ordering)
           std::size_t cpt = 0;
           for (IndexT id : bestMatchesId) 
           {        
@@ -344,15 +316,15 @@ struct GeometricFilterMatrix_HGrowing : public GeometricFilterMatrix
           ALICEVISION_LOG_DEBUG("\t- " << bestMatchesId.size() << " corresponding planar matches.");
           ALICEVISION_LOG_TRACE("\t- " << remainingMatches.size() << " remaining matches.");
           
-          // Stop when the number of remaining matches is too small   
+          // stop when the number of remaining matches is too small   
           if (remainingMatches.size() < _minNbMatchesPerH)
           {
             ALICEVISION_LOG_TRACE("Stop: Not enought remaining matches (: " << remainingMatches.size() << "/" << _minNbMatchesPerH << " min.)");
             break;
           }
-        } // IndexT iH
+        } // 'iH'
         
-        // Copy inliers -> putative matches ordering
+        // copy inliers -> putative matches ordering
         if (orderingMethod == EOrdering::PutativeLike)
         {
           out_geometricInliersPerType[feature::EImageDescriberType::SIFT] =  putativeMatchesPerType.at(feature::EImageDescriberType::SIFT);
@@ -639,9 +611,9 @@ private:
                                  const matching::IndMatches & matches,
                                  const Mat3 & transformation,
                                  const std::size_t tolerance,
-                                 std::set<IndexT> & planarMatchesIndices)
+                                 std::set<IndexT> & inliersId)
   {
-    planarMatchesIndices.clear();
+    inliersId.clear();
   
 #pragma omp parallel for 
     for (IndexT iMatch = 0; iMatch < matches.size(); ++iMatch)
@@ -659,10 +631,11 @@ private:
       if (dist < Square(tolerance))
       {
 #pragma omp critical
-        planarMatchesIndices.insert(iMatch);
+        inliersId.insert(iMatch);
       }
     }
   }
+ 
 
   void centeringMatrices(const std::vector<feature::SIOPointFeature> & featuresI,
                          const std::vector<feature::SIOPointFeature> & featuresJ,
