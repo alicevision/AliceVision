@@ -297,7 +297,7 @@ struct GeometricFilterMatrix_HGrowing : public GeometricFilterMatrix
           { 
             for (IndexT id : bestMatchesId)
             {
-              out_geometricInliersPerType[feature::EImageDescriberType::SIFT].push_back(remainingMatches.at(id));
+              out_geometricInliersPerType[descType].push_back(remainingMatches.at(id));
             }
           }    
           
@@ -327,25 +327,25 @@ struct GeometricFilterMatrix_HGrowing : public GeometricFilterMatrix
         // copy inliers -> putative matches ordering
         if (orderingMethod == EOrdering::PutativeLike)
         {
-          out_geometricInliersPerType[feature::EImageDescriberType::SIFT] =  putativeMatchesPerType.at(feature::EImageDescriberType::SIFT);
-          matching::IndMatches & outSiftMatches = out_geometricInliersPerType.at(feature::EImageDescriberType::SIFT);
-          for (IndexT iMatch = 0; iMatch < outSiftMatches.size(); ++iMatch)
+          out_geometricInliersPerType[descType] =  putativeMatchesPerType.at(descType);
+          matching::IndMatches & outMatches = out_geometricInliersPerType.at(descType);
+          for (IndexT iMatch = 0; iMatch < outMatches.size(); ++iMatch)
           {
-            const matching::IndMatch & match = outSiftMatches.at(iMatch);
+            const matching::IndMatch & match = outMatches.at(iMatch);
             std::vector<matching::IndMatch>::iterator it = std::find(remainingMatches.begin(), 
                                                                      remainingMatches.end(), 
                                                                      match);
             if (it != remainingMatches.end()) // is not a verified match
             {
-              outSiftMatches.erase(outSiftMatches.begin() + iMatch);
+              outMatches.erase(outMatches.begin() + iMatch);
               remainingMatches.erase(it); // to decrease complexity (does not used anymore)
               --iMatch;
             }
           }
-        }
-      }
-    }
-    
+        }             
+      } // 'descriptor'
+    } //  [TEMP] MATLAB exemple
+
     // Check if resection has strong support
     const bool hasStrongSupport = true;
     return EstimationStatus(true, hasStrongSupport);
