@@ -7,23 +7,14 @@
 
 #pragma once
 
-#include "aliceVision/multiview/homographyKernelSolver.hpp"
-//#include "aliceVision/multiview/affineSolver.hpp"
-#include "aliceVision/robustEstimation/ACRansac.hpp"
-#include "aliceVision/robustEstimation/ACRansacKernelAdaptator.hpp"
-//#include "aliceVision/robustEstimation/guidedMatching.hpp"
-
-#include "aliceVision/matching/IndMatch.hpp"
-//#include "aliceVision/matching/IndMatchDecorator.hpp"
-#include "aliceVision/sfm/SfMData.hpp"
 #include "aliceVision/feature/RegionsPerView.hpp"
+#include "aliceVision/matching/IndMatch.hpp"
 #include "aliceVision/matchingImageCollection/GeometricFilterMatrix.hpp"
-#include "Eigen/Geometry"
-#include <ceres/ceres.h>
-#include <aliceVision/system/Timer.hpp>
-
+#include "aliceVision/sfm/SfMData.hpp"
 #include "dependencies/vectorGraphics/svgDrawer.hpp"
-#include "aliceVision/image/all.hpp"
+
+#include <Eigen/Geometry>
+#include <ceres/ceres.h>
 #include <boost/filesystem.hpp>
 
 namespace aliceVision {
