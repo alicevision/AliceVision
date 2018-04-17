@@ -29,55 +29,6 @@
 namespace aliceVision {
 namespace matchingImageCollection {
 
-class HomographySymmetricGeometricCostFunctor {
- public:
-  HomographySymmetricGeometricCostFunctor(const Vec2 &x,
-                                          const Vec2 &y) {
-    xx_ = x(0);
-    xy_ = x(1);
-    yx_ = y(0);
-    yy_ = y(1);
-  }
-
-  template<typename T>
-  bool operator()(const T *homography_parameters, T *residuals) const {
-    typedef Eigen::Matrix<T, 3, 3> Mat3;
-    typedef Eigen::Matrix<T, 3, 1> Vec3;
-
-    Mat3 H(homography_parameters);
-
-    Vec3 x(T(xx_), T(xy_), T(1.0));
-    Vec3 y(T(yx_), T(yy_), T(1.0));
-    
-    std::cout << "*x1 = " << xx_ << "; " << xy_ << std::endl;
-    std::cout << "*x2 = " << yx_<< "; " << yy_ << std::endl;
-    std::cout << "*x = " << x(0) << "; " << x(1) << std::endl;
-    std::cout << "*y = " << y(0) << "; " << y(1) << std::endl;
-    getchar();
-
-    Vec3 H_x = H * x;
-    Vec3 Hinv_y = H.inverse() * y;
-
-    H_x /= H_x(2);
-    Hinv_y /= Hinv_y(2);
-
-    // This is a forward error.
-    residuals[0] = H_x(0) - T(yx_);
-    residuals[1] = H_x(1) - T(yy_);
-
-    // This is a backward error.
-    residuals[2] = Hinv_y(0) - T(xx_);
-    residuals[3] = Hinv_y(1) - T(xy_);
-
-    std::cout << "*residual = " << *residuals << std::endl;
-    return true;
-  }
-
-  // TODO(sergey): Think of better naming.
-  double xx_, xy_;
-  double yx_, yy_;
-};
-
 // https://github.com/fsrajer/yasfm/blob/3a09bc0ee69b7021910d646386cd92deab504a2c/YASFM/utils.h#L347
 template<typename T>
 T robustify(double softThresh,T x)
@@ -127,9 +78,6 @@ public:
   Vec2 x1, x2;
   double softThresh;
 };
-
-
-
 
 //-- Multiple homography matrices estimation template functor, based on homography growing, used for filter pair of putative correspondences
 struct GeometricFilterMatrix_HGrowing : public GeometricFilterMatrix
@@ -236,7 +184,6 @@ struct GeometricFilterMatrix_HGrowing : public GeometricFilterMatrix
           svgStream->drawImage(viewI.getImagePath(), viewI.getWidth(), viewI.getHeight());
           svgStream->drawImage(viewJ.getImagePath(), viewJ.getWidth(), viewJ.getHeight(),  viewI.getWidth());
         }
-        
         
         for (IndexT iH = 0; iH < _maxNbHomographies; ++iH)
         {
