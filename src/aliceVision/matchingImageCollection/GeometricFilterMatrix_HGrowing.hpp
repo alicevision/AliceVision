@@ -188,8 +188,6 @@ struct GeometricFilterMatrix_HGrowing : public GeometricFilterMatrix
       
       for (IndexT iH = 0; iH < _maxNbHomographies; ++iH)
       {
-        ALICEVISION_LOG_DEBUG("Computing homography no. " << iH << "...");
-        
         std::set<IndexT> usedMatchesId, bestMatchesId;
         Mat3 bestHomographie;
         
@@ -254,27 +252,14 @@ struct GeometricFilterMatrix_HGrowing : public GeometricFilterMatrix
           
           bestHomographie /= bestHomographie(2,2);
           
-          ALICEVISION_LOG_TRACE(summary.FullReport());
-          
           if (summary.IsSolutionUsable())
-          {
-            std::set<IndexT> inliers;
             findTransformationInliers(siofeatures_I, siofeatures_J, remainingMatches, bestHomographie, _homographyTolerance, bestMatchesId);
             
-            ALICEVISION_LOG_TRACE("H refinement keep (: " << inliers.size() << "(/" << bestMatchesId.size() << ") matches.");
-          }
-          else
-          {
-            ALICEVISION_LOG_DEBUG("Homography refinement failed: not usable solution.");
-          }
         } // refinement part
         
         // stop when the models get to small        
         if (bestMatchesId.size() < _minNbMatchesPerH)
-        {
-          ALICEVISION_LOG_DEBUG("Stop: Planar models get to small: " << bestMatchesId.size() << "/" <<  _minNbMatchesPerH);
           break;
-        }
         
         if (drawGroupedMatches)
         {
@@ -310,19 +295,10 @@ struct GeometricFilterMatrix_HGrowing : public GeometricFilterMatrix
           ++cpt;
         }
         
-        ALICEVISION_LOG_DEBUG("\t- best H found: [ " 
-                              << bestHomographie(0,0) << " " << bestHomographie(0,1) << " " << bestHomographie(0,2) << " ; " 
-                              << bestHomographie(1,0) << " " << bestHomographie(1,1) << " " << bestHomographie(1,2) << " ; " 
-                              << bestHomographie(2,0) << " " << bestHomographie(2,1) << " " << bestHomographie(2,2) << " ]"); 
-        ALICEVISION_LOG_DEBUG("\t- " << bestMatchesId.size() << " corresponding planar matches.");
-        ALICEVISION_LOG_TRACE("\t- " << remainingMatches.size() << " remaining matches.");
-        
         // stop when the number of remaining matches is too small   
         if (remainingMatches.size() < _minNbMatchesPerH)
-        {
-          ALICEVISION_LOG_TRACE("Stop: Not enought remaining matches (: " << remainingMatches.size() << "/" << _minNbMatchesPerH << " min.)");
           break;
-        }
+          
       } // 'iH'
       
       if (drawGroupedMatches)
@@ -401,10 +377,6 @@ private:
                       std::set<IndexT> & planarMatchesIndices, 
                       Mat3 & transformation)
   {
-    ALICEVISION_LOG_TRACE("Growing homography:"
-                          "\n- #matches = " << matches.size() <<
-                          "\n- seed match id. = " << seedMatchId);
-                          
     assert(seedMatchId <= matches.size());
    
     planarMatchesIndices.clear();
@@ -420,41 +392,24 @@ private:
     {
       if (iRefineStep == 0)
       {
-        ALICEVISION_LOG_TRACE("Step " << iRefineStep << "/" << _nbIterations << ": Similarity");
-          
         computeSimilarity(seedFeatureI, seedFeatureJ, transformation);
         currTolerance = _similarityTolerance;
-
-        ALICEVISION_LOG_TRACE("|- T_similarity = \n" << transformation);
       }
       else if (iRefineStep <= 4)
       {
-        ALICEVISION_LOG_TRACE("Step " << iRefineStep << "/" << _nbIterations << ": Affinity");
-
         estimateAffinity(featuresI, featuresJ, matches, transformation, planarMatchesIndices);
         currTolerance = _affinityTolerance;
-
-        ALICEVISION_LOG_TRACE("|- T_affinity= \n" << transformation);
       }
       else
       {
-        ALICEVISION_LOG_TRACE("Step " << iRefineStep << "/" << _nbIterations << ": Homography");
-                
         estimateHomography(featuresI, featuresJ, matches, transformation, planarMatchesIndices);
         currTolerance = _homographyTolerance;
-
-        ALICEVISION_LOG_TRACE("|- T_homography =  \n" << transformation);
       }
       
       findTransformationInliers(featuresI, featuresJ, matches, transformation, currTolerance, planarMatchesIndices);
       
-      ALICEVISION_LOG_TRACE("|- " << planarMatchesIndices.size() << " matches corresponding to the transformation." );
-      
       if (planarMatchesIndices.size() < _minInliersToRefine)
-      {
-        ALICEVISION_LOG_TRACE("Stop: Not enought planar matches to estimate H (: " << planarMatchesIndices.size() << "/" << _minInliersToRefine << ").");
         return EXIT_FAILURE;
-      }
       
 //      // Note: the following statement is present in the MATLAB code but not implemented in YASM
 //      if (planarMatchesIndices.size() >= _maxFractionPlanarMatches * matches.size())
