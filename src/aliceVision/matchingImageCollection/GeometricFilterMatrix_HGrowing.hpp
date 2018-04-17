@@ -22,6 +22,9 @@
 #include <ceres/ceres.h>
 #include <aliceVision/system/Timer.hpp>
 
+#include "dependencies/vectorGraphics/svgDrawer.hpp"
+#include "aliceVision/image/all.hpp"
+#include <boost/filesystem.hpp>
 
 namespace aliceVision {
 namespace matchingImageCollection {
@@ -159,6 +162,11 @@ struct GeometricFilterMatrix_HGrowing : public GeometricFilterMatrix
     const matching::MatchesPerDescType & putativeMatchesPerType,
     matching::MatchesPerDescType & out_geometricInliersPerType)
   {
+    // To draw & save matches groups into .svg images:
+    //    enter an existing folder in the following variable ('outputSvgDir'). 
+    // Format: hmatches_<viewId_I>_<viewId_J>_<descType>.svg
+    std::string outputSvgDir = "/home/cdebize/Documents/Multibody/data/2nd_version/fountain/output/drawSVG/"; 
+      
     out_geometricInliersPerType.clear();
     
     enum EOrdering {PutativeLike, HGrouped}; 
@@ -183,7 +191,32 @@ struct GeometricFilterMatrix_HGrowing : public GeometricFilterMatrix
         return EstimationStatus(false, false);
       }
 #endif
-        
+
+      // Get back corresponding view index
+      const IndexT viewId_I = pairIndex.first;
+      const IndexT viewId_J = pairIndex.second;
+      
+      const sfm::View & viewI = *(sfmData->GetViews().at(viewId_I));
+      const sfm::View & viewJ = *(sfmData->GetViews().at(viewId_J));
+
+      // Setup optional drawer tool:
+      bool drawGroupedMatches = false;
+      std::vector<std::string> colors {"red","cyan","purple","green","black","pink","brown","red","green","blue","white"};
+      svg::svgDrawer * svgStream;
+      if (!outputSvgDir.empty())
+      {
+        if (boost::filesystem::exists(outputSvgDir))
+        {
+          drawGroupedMatches = true;
+          svgStream = new svg::svgDrawer(viewI.getWidth() + viewJ.getWidth() , std::max(viewI.getHeight(), viewJ.getHeight()));
+        }
+        else
+        {
+          drawGroupedMatches = false;
+          ALICEVISION_LOG_WARNING("Cannot save homography-growing matches into '" << outputSvgDir << "': folder does not exist.");
+        }
+      }
+      
       for(size_t d = 0; d < descTypes.size(); ++d)
       {
         const feature::EImageDescriberType& descType = descTypes[d];
@@ -191,15 +224,19 @@ struct GeometricFilterMatrix_HGrowing : public GeometricFilterMatrix
         if(!putativeMatchesPerType.count(descType))
           continue; // we may have 0 feature for some descriptor types
         
-        // Get back corresponding view index
-        const IndexT viewId_I = pairIndex.first;
-        const IndexT viewId_J = pairIndex.second;
         const feature::Regions & regions_I = regionsPerView.getRegions(viewId_I, descType);
         const feature::Regions & regions_J = regionsPerView.getRegions(viewId_J, descType);
         const std::vector<feature::SIOPointFeature> siofeatures_I = getSIOPointFeatures(regions_I);
         const std::vector<feature::SIOPointFeature> siofeatures_J = getSIOPointFeatures(regions_J);
         
         matching::IndMatches remainingMatches = putativeMatchesPerType.at(descType);
+        
+        if (drawGroupedMatches)
+        {
+          svgStream->drawImage(viewI.getImagePath(), viewI.getWidth(), viewI.getHeight());
+          svgStream->drawImage(viewJ.getImagePath(), viewJ.getWidth(), viewJ.getHeight(),  viewI.getWidth());
+        }
+        
         
         for (IndexT iH = 0; iH < _maxNbHomographies; ++iH)
         {
@@ -291,7 +328,23 @@ struct GeometricFilterMatrix_HGrowing : public GeometricFilterMatrix
             break;
           }
           
-          // -- Update not used matches & Save geometrically rerified matches:
+          if (drawGroupedMatches)
+          {
+            for (IndexT id : bestMatchesId)
+            {
+              const matching::IndMatch & match = remainingMatches.at(id);
+              const feature::SIOPointFeature & fI = siofeatures_I.at(match._i);
+              const feature::SIOPointFeature & fJ  = siofeatures_J.at(match._j);
+              std::string color = "white"; // 0 < iH <= 8: colored; iH > 8  are white (not enougth colors)
+              if (iH <= colors.size())
+                color = colors.at(iH);
+              
+              svgStream->drawCircle(fI.x(), fI.y(), 5, svg::svgStyle().stroke(color, 5.0));
+              svgStream->drawCircle(fJ.x() + viewI.getWidth(), fJ.y(), 5, svg::svgStyle().stroke(color, 5.0));
+            }
+          }
+          
+          // -- Update not used matches & Save geometrically verified matches:
           
           if (orderingMethod == EOrdering::HGrouped)
           { 
@@ -323,6 +376,14 @@ struct GeometricFilterMatrix_HGrowing : public GeometricFilterMatrix
             break;
           }
         } // 'iH'
+        
+        if (drawGroupedMatches)
+        {
+          std::ofstream svgFile(outputSvgDir + "hmatches_" + std::to_string(viewI.getViewId()) + "_" + std::to_string(viewJ.getViewId()) + 
+                                "_" + feature::EImageDescriberType_enumToString(descType) + ".svg");
+          svgFile << svgStream->closeSvgFile().str();
+          svgFile.close();
+        }
         
         // copy inliers -> putative matches ordering
         if (orderingMethod == EOrdering::PutativeLike)
