@@ -20,17 +20,12 @@
 namespace aliceVision {
 namespace matchingImageCollection {
 
-// https://github.com/fsrajer/yasfm/blob/3a09bc0ee69b7021910d646386cd92deab504a2c/YASFM/utils.h#L347
-template<typename T>
-T robustify(double softThresh,T x)
-{
-  const double t = 0.25;
-  const double sigma = softThresh / sqrt(-log(t*t));
-
-  return -log(exp(-(x*x)/T(2*sigma*sigma))+T(t)) + T(log(1+t));
-}
-
-// https://github.com/fsrajer/yasfm/blob/master/YASFM/relative_pose.cpp#L992
+/**
+ * @brief This fonctor allow to optimize an Homography.
+ * Based on: https://github.com/fsrajer/yasfm/blob/master/YASFM/relative_pose.cpp#L992
+ * @details It is based on [F.Srajer, 2016] p.20, 21.
+ * "The optimization takes into account points with error close to the threshold and does not care about high-error ones."
+ */
 class RefineHRobustCostFunctor
 {
 public:
@@ -64,6 +59,22 @@ public:
     residuals[0] = robustify(softThresh,err);
 
     return true;
+  }
+  
+  template<typename T>
+  /**
+   * @brief robustify
+   * Based on: https://github.com/fsrajer/yasfm/blob/3a09bc0ee69b7021910d646386cd92deab504a2c/YASFM/utils.h#L347
+   * @param softThresh
+   * @param x
+   * @return 
+   */
+  static T robustify(double softThresh,T x)
+  {
+    const double t = 0.25;
+    const double sigma = softThresh / sqrt(-log(t*t));
+  
+    return -log(exp(-(x*x)/T(2*sigma*sigma))+T(t)) + T(log(1+t));
   }
 
   Vec2 x1, x2;
@@ -101,20 +112,21 @@ struct GeometricFilterMatrix_HGrowing : public GeometricFilterMatrix
     const matching::MatchesPerDescType & putativeMatchesPerType,
     matching::MatchesPerDescType & out_geometricInliersPerType)
   {
+
     // To draw & save matches groups into .svg images:
     //    enter an existing folder in the following variable ('outputSvgDir'). 
     // Format: hmatches_<viewId_I>_<viewId_J>_<descType>.svg
-    std::string outputSvgDir = "/home/cdebize/Documents/Multibody/data/2nd_version/fountain/output/drawSVG/"; 
+    std::string outputSvgDir = ""; 
       
-    out_geometricInliersPerType.clear();
-    
-    enum EOrdering {PutativeLike, HGrouped}; 
     // Defines the format of 'out_geometricInliersPerType'. 
     // Considering the putative match:
     //      [0(h0) 1(h2) 2(h1) 3(nan) 4(h2) 5(h0) 6(h1) 7(nan)]
     // * 'PutativeLike' returns [0(h0) 1(h2) 2(h1) 4(h2) 5(h0) 6(h1)]: just remove (nan)
     // * 'HGrouped' returns [0(h0) 5(h0) 2(h1) 6(h1) 1(h2) 4(h2)]: remove (nan) + H id. ordering
+    enum EOrdering {PutativeLike, HGrouped}; 
     EOrdering orderingMethod = HGrouped;
+    
+    out_geometricInliersPerType.clear();
     
     const std::vector<feature::EImageDescriberType> descTypes = regionsPerView.getCommonDescTypes(pairIndex);
     if(descTypes.empty())
@@ -370,9 +382,18 @@ struct GeometricFilterMatrix_HGrowing : public GeometricFilterMatrix
   }
 
 private:
-
-  // Growing a homography from one match ([F.Srajer, 2016] algo. 1, p. 20)  
-  //-- See: YASM/relative_pose.h
+  
+  /**
+   * @brief Return all the matches in the same plane as the match \c seedMatchId with the correponding homography.
+   * @details This algorithm is detailed in [F.Srajer, 2016] algo. 1, p. 20.
+   * @param[in] featuresI
+   * @param[in] featuresJ
+   * @param[in] matches All the putative planar matches.
+   * @param[in] seedMatchId The match used to estimate the plane and the correponding matches.
+   * @param[out] planarMatchesIndices The indices (in the \c matches vector) of the really planar matches.
+   * @param[out] transformation The homography associated to the plane.
+   * @return EXIT_SUCCESS if the \c transformation is different than the identity matrix.
+   */
   int growHomography(const std::vector<feature::SIOPointFeature> & featuresI, 
                       const std::vector<feature::SIOPointFeature> & featuresJ, 
                       const matching::IndMatches & matches,
@@ -444,10 +465,13 @@ private:
   }
   
   /**
-   * @brief estimateHomography
-   * see: by DLT: alicevision::homography::kernel::FourPointSolver::Solve() [multiview/homographyKernelSolver.hpp]
-   *      by RANSAC: alicevision::matchingImageCOllection::geometricEstimation() [matchingImageCollection/GeometricFilterMatrix_H_AC.hpp]
-   *      [git] https://github.com/fsrajer/yasfm/blob/master/YASFM/relative_pose.cpp#L1694
+   * @brief estimateHomography Estimate (using SVD) the Homography transformation from a set of matches.
+   * Based on: https://github.com/fsrajer/yasfm/blob/master/YASFM/relative_pose.cpp#L1694
+   * @param[in] featuresI
+   * @param[in] featuresJ
+   * @param[in] matches The matches to consider for the estimation.
+   * @param[out] H The estimated Homography transformation.
+   * @param[in] usefulMatchesId To consider a subpart of \c matches only. 
    */
   void estimateHomography(const std::vector<feature::SIOPointFeature> & featuresI,
                           const std::vector<feature::SIOPointFeature> & featuresJ,
@@ -506,13 +530,15 @@ private:
     H = CJ.inverse() * H0 * CI;
     H /= H(2,2);
   }
-    
+      
   /**
-   * @brief estimateAffinity
-   * see: 
-   * https://eigen.tuxfamily.org/dox/group__LeastSquares.html
-   * [ppt] https://www.google.fr/url?sa=t&rct=j&q=&esrc=s&source=web&cd=5&ved=0ahUKEwjg4JrL66PaAhWOyKQKHRz_BJ0QFghKMAQ&url=https%3A%2F%2Fcourses.cs.washington.edu%2Fcourses%2Fcse576%2F02au%2Flectures%2FMatching2D.ppt&usg=AOvVaw3dEP3al4Y-27r6e9FMYGrz
-   * [git] https://github.com/fsrajer/yasfm/blob/master/YASFM/relative_pose.cpp#L1669
+   * @brief Estimate (using SVD) the Affinity transformation from a set of matches.
+   * Based on: https://github.com/fsrajer/yasfm/blob/master/YASFM/relative_pose.cpp#L1669
+   * @param[in] featuresI 
+   * @param[in] featuresJ
+   * @param[in] matches The matches to consider for the estimation.
+   * @param[out] affineTransformation The estimated Affine transformation.
+   * @param[in] usefulMatchesId To consider a subpart of \c matches only. 
    */
   void estimateAffinity(const std::vector<feature::SIOPointFeature> & featuresI,
                         const std::vector<feature::SIOPointFeature> & featuresJ,
@@ -564,11 +590,13 @@ private:
     affineTransformation(2,2) = 1.;
   }
 
-  /**
-   * @brief computeSimilarityFromMatch
-   * see: alicevision::sfm::computeSimilarity() [sfm/utils/alignment.cpp]
-   *      alicevision::geometry::ACRansac_FindRTS() [geometry/rigidTransformation3D(_test).hpp]
-   */   
+   /**
+   * @brief Compute the similarity transformation between 2 features (using their scale & orientation).
+   * Based on: https://github.com/fsrajer/yasfm/blob/3a09bc0ee69b7021910d646386cd92deab504a2c/YASFM/relative_pose.cpp#L1649
+   * @param[in] feat1 The first feature with known scale & orientation.
+   * @param[in] feat2 The second feature with known scale & orientation.
+   * @param[out] S The similarity transformation between f1 et f2.
+   */
   void computeSimilarity(const feature::SIOPointFeature & feat1,
                          const feature::SIOPointFeature & feat2,
                          Mat3 & S)
@@ -599,8 +627,15 @@ private:
     S = A2*A1.inverse();                               
   }
   
+
   /**
-   * @brief findHomographyInliers Test the reprojection error
+   * @brief Return the id. of the matches with a reprojection error < to the desirered \c tolerance.
+   * @param[in] featuresI
+   * @param[in] featuresJ
+   * @param[in] matches The matches to test.
+   * @param[in] transformation The 3x3 transformation matrix.
+   * @param[in] tolerance The tolerated pixel error.
+   * @param[in] inliersId The index in the \c matches vector.
    */
   void findTransformationInliers(const std::vector<feature::SIOPointFeature> & featuresI, 
                                  const std::vector<feature::SIOPointFeature> & featuresJ, 
@@ -631,8 +666,17 @@ private:
       }
     }
   }
- 
 
+  /**
+   * @brief Compute the matrices to get a centered and normalized the features.
+   * Based on: https://github.com/fsrajer/yasfm/blob/3a09bc0ee69b7021910d646386cd92deab504a2c/YASFM/relative_pose.h#L1075
+   * @param[in] featuresI
+   * @param[in] featuresJ
+   * @param[in] matches Indicate which feature is conserned about the returned matrices.
+   * @param[out] cI The matrice to apply to (the subpart of) \c featuresI
+   * @param[out] cJ The matrice to apply to (the subpart of) \c featuresJ
+   * @param[in] usefulMatchesId To consider a subpart of \c matches only.
+   */
   void centeringMatrices(const std::vector<feature::SIOPointFeature> & featuresI,
                          const std::vector<feature::SIOPointFeature> & featuresJ,
                          const matching::IndMatches & matches,
@@ -706,7 +750,6 @@ private:
   std::size_t _minInliersToRefine; // = MinIns
   std::size_t _nbIterations; // = RefIterNum
   std::size_t _maxFractionPlanarMatches; // = StopInsFrac
-  
   
 }; // struct GeometricFilterMatrix_HGrowing
 
