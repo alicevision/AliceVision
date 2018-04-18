@@ -204,10 +204,10 @@ std::size_t ReconstructionEngine_sequentialSfM::fuseMatchesIntoTracks()
 
   {
     // list of features matches for each couple of images
-    const aliceVision::matching::PairwiseMatches& map_Matches = *_pairwiseMatches;
+    const aliceVision::matching::PairwiseMatches& matches = *_pairwiseMatches;
 
     ALICEVISION_LOG_DEBUG("Track building");
-    tracksBuilder.build(map_Matches);
+    tracksBuilder.build(matches);
     ALICEVISION_LOG_DEBUG("Track filtering");
     tracksBuilder.filter(_minInputTrackLength);
 
@@ -281,35 +281,52 @@ void ReconstructionEngine_sequentialSfM::remapLandmarkIdsToTrackIds()
 
   // get unmap landmarks
   Landmarks landmarks;
+
   // clear sfmData structure and store them locally
   std::swap(landmarks, _sfmData.getLandmarks());
 
-  // find new landmark id in tracks
-  for(const std::pair<IndexT, Landmark>& landmarkPair : landmarks)
+  // builds landmarks temporary comparison structure
+  // ObsKey <ViewId, FeatId, decType>
+  // ObsToLandmark <ObsKey, LandmarkId>
+  using ObsKey = std::tuple<IndexT, IndexT, feature::EImageDescriberType>;
+  using ObsToLandmark = std::map<ObsKey, IndexT>;
+
+  ObsToLandmark obsToLandmark;
+
+  ALICEVISION_LOG_DEBUG("Builds landmarks temporary comparison structure");
+
+  for(const auto& landmarkPair : landmarks)
   {
-    const Landmark& landmark = landmarkPair.second;
+    const IndexT landmarkId = landmarkPair.first;
+    const IndexT firstViewId = landmarkPair.second.observations.begin()->first;
+    const IndexT firstFeatureId = landmarkPair.second.observations.begin()->second.id_feat;
+    const feature::EImageDescriberType descType = landmarkPair.second.descType;
 
-    // try to find the first observation in tracks
-    const IndexT firstViewId = landmark.observations.begin()->first;
-    const IndexT firstFeatureId = landmark.observations.begin()->second.id_feat;
+    obsToLandmark.emplace(ObsKey(firstViewId, firstFeatureId, descType), landmarkId);
+  }
 
-    for(const std::pair<IndexT, Track>& trackPair : _map_tracks)
+  ALICEVISION_LOG_DEBUG("Find corresponding landmark id per track id");
+
+  // find corresponding landmark id per track id
+  for(const auto& trackPair : _map_tracks)
+  {
+    const IndexT trackId = trackPair.first;
+    const Track& track = trackPair.second;
+
+    for(const auto& featView : track.featPerView)
     {
-      const IndexT trackId = trackPair.first;
-      const Track& track = trackPair.second;
+      const ObsToLandmark::const_iterator it = obsToLandmark.find(ObsKey(featView.first, featView.second, track.descType));
 
-      const Track::FeatureIdPerView::const_iterator it = track.featPerView.find(firstViewId);
-
-      if(it != track.featPerView.end() &&
-         it->second == firstFeatureId)
+      if(it != obsToLandmark.end())
       {
-        // insert the landmark in the sfmData structure with the track id
-        _sfmData.getLandmarks().emplace(trackId, landmark);
-        break;
+        // re-insert the landmark with the new id
+        _sfmData.getLandmarks().emplace(trackId, landmarks.find(it->second)->second);
+        break; //one landmark per track
       }
     }
   }
-  ALICEVISION_LOG_INFO("Remap landmark ids to track ids: " << std::endl
+
+  ALICEVISION_LOG_INFO("Landmark ids to track ids reampping: " << std::endl
                         << "\t- # tracks: " << _map_tracks.size() << std::endl
                         << "\t- # input landmarks: " << landmarks.size() << std::endl
                         << "\t- # output landmarks: " << _sfmData.getLandmarks().size());
