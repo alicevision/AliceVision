@@ -305,7 +305,7 @@ struct TracksUtilsMap
       tracksIds->insert(iterT->first);
   }
 
-  using FeatureId = std::pair<feature::EImageDescriberType, size_t>;
+  using FeatureId = std::pair<feature::EImageDescriberType, std::size_t>;
   
   /**
    * @brief Get feature id (with associated describer type) in the specified view for each TrackId
