@@ -401,10 +401,21 @@ int main(int argc, char** argv)
     return EXIT_FAILURE;
   }
 
-  if(useMultiSfM && !sfm::Load(sfmDataB, sfmDataFilenameB, sfm::ESfMData::ALL))
+  if(useMultiSfM)
   {
-    ALICEVISION_LOG_ERROR("The input SfMData file '" + sfmDataFilenameB + "' cannot be read.");
-    return EXIT_FAILURE;
+    if(!sfm::Load(sfmDataB, sfmDataFilenameB, sfm::ESfMData::ALL))
+    {
+      ALICEVISION_LOG_ERROR("The input SfMData file '" + sfmDataFilenameB + "' cannot be read.");
+      return EXIT_FAILURE;
+    }
+
+    // remove duplicated view
+    for(const auto& viewPair : sfmDataB.getViews())
+    {
+      sfm::Views::iterator it = sfmDataA.getViews().find(viewPair.first);
+      if(it != sfmDataA.getViews().end())
+        sfmDataA.getViews().erase(it);
+    }
   }
 
   OrderedPairList selectedPairs;
