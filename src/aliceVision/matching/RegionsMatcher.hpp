@@ -146,6 +146,7 @@ public:
       return false;
 
     std::vector<int> vec_nn_ratio_idx;
+    std::vector<float> vec_distanceRatio;
     // Filter the matches using a distance ratio test:
     //   The probability that a match is correct is determined by taking
     //   the ratio of distance from the closest neighbor to the distance
@@ -155,13 +156,15 @@ public:
       vec_fDistance.end(),   // distance end
       NNN__, // Number of neighbor in iterator sequence (minimum required 2)
       vec_nn_ratio_idx, // output (indices that respect the distance Ratio)
-      b_squared_metric_ ? Square(f_dist_ratio) : f_dist_ratio);
+      b_squared_metric_ ? Square(f_dist_ratio) : f_dist_ratio,
+      &vec_distanceRatio);
 
     vec_putative_matches.reserve(vec_nn_ratio_idx.size());
     for (size_t k=0; k < vec_nn_ratio_idx.size(); ++k)
     {
       const size_t index = vec_nn_ratio_idx[k];
       vec_putative_matches.emplace_back(vec_nIndice[index*NNN__]._j, vec_nIndice[index*NNN__]._i
+          , vec_distanceRatio[k]
   #ifdef ALICEVISION_DEBUG_MATCHING
           , (float) vec_fDistance[vec_nn_ratio_idx[0]]
   #endif

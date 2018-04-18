@@ -321,6 +321,21 @@ int main(int argc, char **argv)
     return rangeSize ? EXIT_SUCCESS : EXIT_FAILURE;
   }
 
+  if (matchingImageCollection::EGeometricFilterType_stringToEnum(geometricModel) == matchingImageCollection::HOMOGRAPHY_GROWING)
+  {
+    // sort putative matches according to their Lowe ratio 
+    // This is suggested by [F.Srajer, 2016]: the matches used to be the seeds of the homographies growing are chosen according 
+    // to the putative matches order. This modification should improve recall.
+    for(auto it_imgPair = mapPutativesMatches.begin(); it_imgPair != mapPutativesMatches.end(); ++it_imgPair) 
+    { 
+      for(auto it_descType = it_imgPair->second.begin(); it_descType != it_imgPair->second.end(); ++it_descType) 
+      { 
+        IndMatches & matches = it_descType->second; 
+        sortMatches_byDistanceRatio(matches); 
+      } 
+    }
+  }
+
   ALICEVISION_LOG_INFO(std::to_string(mapPutativesMatches.size()) << " putative image pair matches");
 
   for(const auto& imageMatch: mapPutativesMatches)
@@ -457,7 +472,7 @@ int main(int argc, char **argv)
         {
           // sorting function:
           aliceVision::matching::IndMatches outMatches;
-          sortMatches(inputMatches, *lRegions, *rRegions, outMatches);
+          sortMatches_byFeaturesScale(inputMatches, *lRegions, *rRegions, outMatches);
 
           if(useGridSort)
           {
