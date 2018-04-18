@@ -135,7 +135,7 @@ int main(int argc, char** argv)
 
   unsigned int firstFrame = viewToFrame.begin()->first;
 
-  for(unsigned int frame = 0; frame <= viewToFrame.rbegin()->first; ++frame)
+  for(unsigned int frame = 1; frame <= viewToFrame.rbegin()->first; ++frame)
   {
     if(frame >= firstFrame)
     {
