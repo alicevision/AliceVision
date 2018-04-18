@@ -66,15 +66,29 @@ EGeometricFilterType EGeometricFilterType_stringToEnum(const std::string& geomet
 
 /**
  * @brief converte a geometricFilterType name to a short notation.
- * @param geometricFilterType standart/long name
+ * @param[in] geometricFilterType long or short name
  * @return geometricFilterType short notation
  */
-std::string fromLongToShortNotation(const std::string& geometricFilterType)
+std::string shortNotation(const std::string& geometricFilterType)
 {
   if(geometricFilterType == "FUNDAMENTAL_MATRIX" || geometricFilterType == "f")  return "f"; 
   if(geometricFilterType == "ESSENTIAL_MATRIX" || geometricFilterType == "e")    return "e";
   if(geometricFilterType == "HOMOGRAPHY_MATRIX" || geometricFilterType == "h")   return "h";
   if(geometricFilterType == "HOMOGRAPHY_GROWING" || geometricFilterType == "hg") return "hg";
+  throw std::out_of_range("Invalid geometricFilterType : " + geometricFilterType);
+}
+
+/**
+ * @brief converte a geometricFilterType name to a long notation.
+ * @param[in] geometricFilterType long or short name
+ * @return geometricFilterType long notation
+ */
+std::string longNotation(const std::string& geometricFilterType)
+{
+  if(geometricFilterType == "FUNDAMENTAL_MATRIX" || geometricFilterType == "f")  return "FUNDAMENTAL_MATRIX"; 
+  if(geometricFilterType == "ESSENTIAL_MATRIX" || geometricFilterType == "e")    return "ESSENTIAL_MATRIX";
+  if(geometricFilterType == "HOMOGRAPHY_MATRIX" || geometricFilterType == "h")   return "HOMOGRAPHY_MATRIX";
+  if(geometricFilterType == "HOMOGRAPHY_GROWING" || geometricFilterType == "hg") return "HOMOGRAPHY_GROWING";
   throw std::out_of_range("Invalid geometricFilterType : " + geometricFilterType);
 }
 

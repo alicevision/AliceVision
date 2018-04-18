@@ -370,7 +370,7 @@ int main(int argc, char **argv)
   GeometricFilter geometricFilter(&sfmData, regionPerView);
 
   timer.reset();
-  ALICEVISION_LOG_INFO("Geometric filtering");
+  ALICEVISION_LOG_INFO("Geometric filtering [method: " << matchingImageCollection::longNotation(geometricModel) << "]" );
 
   matching::PairwiseMatches map_GeometricMatches;
   switch(matchingImageCollection::EGeometricFilterType_stringToEnum(geometricModel))
@@ -489,7 +489,7 @@ int main(int argc, char **argv)
   // export geometric filtered matches
 
   ALICEVISION_LOG_INFO("Save geometric matches.");
-  Save(finalMatches, matchesFolder, fromLongToShortNotation(geometricModel), fileExtension, matchFilePerImage);
+  Save(finalMatches, matchesFolder, matchingImageCollection::shortNotation(geometricModel), fileExtension, matchFilePerImage);
   ALICEVISION_LOG_INFO("Task done in (s): " + std::to_string(timer.elapsed()));
 
   // d. Export some statistics
