@@ -347,7 +347,7 @@ struct GeometricFilterMatrix_HGrowing : public GeometricFilterMatrix
     } // 'descriptor'
 
     // Check if resection has strong support
-    const bool hasStrongSupport = true;
+    const bool hasStrongSupport = false;
     return EstimationStatus(true, hasStrongSupport);
   }
     
