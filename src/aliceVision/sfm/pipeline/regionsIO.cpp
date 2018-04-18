@@ -89,7 +89,7 @@ std::unique_ptr<feature::Regions> loadFeatures(const std::vector<std::string>& f
       featFilename = featPath.string();
   }
 
-  if(featFilename.empty() )
+  if(featFilename.empty())
     throw std::runtime_error("Can't find view " + basename + " features file");
 
   ALICEVISION_LOG_TRACE("Features filename: " << featFilename);
@@ -132,25 +132,24 @@ bool loadRegionsPerView(feature::RegionsPerView& regionsPerView,
   std::vector<std::unique_ptr<feature::ImageDescriber>> imageDescribers;
   imageDescribers.resize(imageDescriberTypes.size());
 
-  for(std::size_t i =0; i < imageDescriberTypes.size(); ++i)
-    imageDescribers[i] = createImageDescriber(imageDescriberTypes[i]);
+  for(std::size_t i = 0; i < imageDescriberTypes.size(); ++i)
+    imageDescribers.at(i) = createImageDescriber(imageDescriberTypes.at(i));
 
 #pragma omp parallel num_threads(3)
- for (auto iter = sfmData.getViews().begin(); iter != sfmData.getViews().end() && !invalid; ++iter)
+ for(auto iter = sfmData.getViews().begin(); iter != sfmData.getViews().end() && !invalid; ++iter)
  {
-  #pragma omp single nowait
+#pragma omp single nowait
    {
      for(std::size_t i = 0; i < imageDescriberTypes.size(); ++i)
      {
        if(viewIdFilter.empty() || viewIdFilter.find(iter->second.get()->getViewId()) != viewIdFilter.end())
        {
-         std::unique_ptr<feature::Regions> regionsPtr = loadRegions(featuresFolders, iter->second.get()->getViewId(), *imageDescribers[i]);
-
+         std::unique_ptr<feature::Regions> regionsPtr = loadRegions(featuresFolders, iter->second.get()->getViewId(), *(imageDescribers.at(i)));
          if(regionsPtr)
          {
-  #pragma omp critical
+#pragma omp critical
            {
-             regionsPerView.addRegions(iter->second.get()->getViewId(), imageDescriberTypes[i], regionsPtr.release());
+             regionsPerView.addRegions(iter->second.get()->getViewId(), imageDescriberTypes.at(i), regionsPtr.release());
              ++progressBar;
            }
          }
