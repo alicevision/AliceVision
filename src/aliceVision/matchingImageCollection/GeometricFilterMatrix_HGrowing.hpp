@@ -112,7 +112,9 @@ struct GeometricFilterMatrix_HGrowing : public GeometricFilterMatrix
     const matching::MatchesPerDescType & putativeMatchesPerType,
     matching::MatchesPerDescType & out_geometricInliersPerType)
   {
-
+    using namespace aliceVision::feature;
+    using namespace aliceVision::matching;
+    
     // To draw & save matches groups into .svg images:
     //    enter an existing folder in the following variable ('outputSvgDir'). 
     // File format: <nbHMatches>hmatches_<viewId_I>_<viewId_J>_<descType>.svg
@@ -170,27 +172,27 @@ struct GeometricFilterMatrix_HGrowing : public GeometricFilterMatrix
     
     for(size_t d = 0; d < descTypes.size(); ++d)
     {
-      const feature::EImageDescriberType& descType = descTypes[d];
+      const EImageDescriberType& descType = descTypes[d];
       
       if(!putativeMatchesPerType.count(descType))
         continue; // we may have 0 feature for some descriptor types
       
-      const feature::Regions & regions_I = regionsPerView.getRegions(viewId_I, descType);
-      const feature::Regions & regions_J = regionsPerView.getRegions(viewId_J, descType);
-      const std::vector<feature::SIOPointFeature> siofeatures_I = getSIOPointFeatures(regions_I);
-      const std::vector<feature::SIOPointFeature> siofeatures_J = getSIOPointFeatures(regions_J);
+      const Regions & regions_I = regionsPerView.getRegions(viewId_I, descType);
+      const Regions & regions_J = regionsPerView.getRegions(viewId_J, descType);
+      const std::vector<SIOPointFeature> siofeatures_I = getSIOPointFeatures(regions_I);
+      const std::vector<SIOPointFeature> siofeatures_J = getSIOPointFeatures(regions_J);
       
-      matching::IndMatches remainingMatches = putativeMatchesPerType.at(descType);
+      IndMatches remainingMatches = putativeMatchesPerType.at(descType);
       
       if (drawGroupedMatches)
       {
         svgStream->drawImage(viewI.getImagePath(), viewI.getWidth(), viewI.getHeight());
         svgStream->drawImage(viewJ.getImagePath(), viewJ.getWidth(), viewJ.getHeight(),  viewI.getWidth());
         // draw little white dots representing putative matches
-        for (matching::IndMatch match : remainingMatches)
+        for (IndMatch match : remainingMatches)
         {
-          const feature::SIOPointFeature & fI = siofeatures_I.at(match._i);
-          const feature::SIOPointFeature & fJ  = siofeatures_J.at(match._j);
+          const SIOPointFeature & fI = siofeatures_I.at(match._i);
+          const SIOPointFeature & fJ  = siofeatures_J.at(match._j);
           svgStream->drawCircle(fI.x(), fI.y(), 1, svg::svgStyle().stroke("white",2.0));
           svgStream->drawCircle(fJ.x() + viewI.getWidth(), fJ.y(), 1, svg::svgStyle().stroke("white", 2.0));
         }
@@ -236,7 +238,7 @@ struct GeometricFilterMatrix_HGrowing : public GeometricFilterMatrix
           
           for(IndexT matchId : bestMatchesId)
           {
-            matching::IndMatch match = remainingMatches.at(matchId);
+            IndMatch match = remainingMatches.at(matchId);
             
             Vec2 x1 = siofeatures_I.at(match._i).coords().cast<double>();
             Vec2 x2 = siofeatures_J.at(match._j).coords().cast<double>();
@@ -275,9 +277,9 @@ struct GeometricFilterMatrix_HGrowing : public GeometricFilterMatrix
         {
           for (IndexT id : bestMatchesId)
           {
-            const matching::IndMatch & match = remainingMatches.at(id);
-            const feature::SIOPointFeature & fI = siofeatures_I.at(match._i);
-            const feature::SIOPointFeature & fJ  = siofeatures_J.at(match._j);
+            const IndMatch & match = remainingMatches.at(id);
+            const SIOPointFeature & fI = siofeatures_I.at(match._i);
+            const SIOPointFeature & fJ  = siofeatures_J.at(match._j);
             std::string color = "grey"; // 0 < iH <= 8: colored; iH > 8  are white (not enougth colors)
             if (iH <= colors.size() - 1)
               color = colors.at(iH);
@@ -317,7 +319,7 @@ struct GeometricFilterMatrix_HGrowing : public GeometricFilterMatrix
         if (nbMatches > 0)
         {
           std::ofstream svgFile(outputSvgDir + "/" + std::to_string(nbMatches) +"hmatches_" + std::to_string(viewI.getViewId()) + "_" + std::to_string(viewJ.getViewId()) + 
-                                "_" + feature::EImageDescriberType_enumToString(descType) + ".svg");
+                                "_" + EImageDescriberType_enumToString(descType) + ".svg");
           svgFile << svgStream->closeSvgFile().str();
           svgFile.close();
         }
@@ -327,11 +329,11 @@ struct GeometricFilterMatrix_HGrowing : public GeometricFilterMatrix
       if (orderingMethod == EOrdering::PutativeLike)
       {
         out_geometricInliersPerType[descType] =  putativeMatchesPerType.at(descType);
-        matching::IndMatches & outMatches = out_geometricInliersPerType.at(descType);
+        IndMatches & outMatches = out_geometricInliersPerType.at(descType);
         for (IndexT iMatch = 0; iMatch < outMatches.size(); ++iMatch)
         {
-          const matching::IndMatch & match = outMatches.at(iMatch);
-          std::vector<matching::IndMatch>::iterator it = std::find(remainingMatches.begin(), 
+          const IndMatch & match = outMatches.at(iMatch);
+          std::vector<IndMatch>::iterator it = std::find(remainingMatches.begin(), 
                                                                    remainingMatches.end(), 
                                                                    match);
           if (it != remainingMatches.end()) // is not a verified match
