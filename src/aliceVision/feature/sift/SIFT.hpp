@@ -111,6 +111,31 @@ struct SiftParams
   }
 };
 
+// VLFeat Instance management
+class VLFeatInstance
+{
+public:
+
+  static void initialize()
+  {
+    assert(nbInstances >= 0);
+    if(nbInstances <= 0)
+      vl_constructor();
+    ++nbInstances;
+  }
+
+  static void destroy()
+  {
+    assert(nbInstances > 0);
+    --nbInstances;
+    if(nbInstances <= 0)
+      vl_destructor();
+  }
+
+private:
+  static int nbInstances;
+};
+
 //convertSIFT
 //////////////////////////////
 template < typename TOut > 
@@ -166,26 +191,7 @@ inline void convertSIFT<unsigned char>(
  * @param[in] height The image height
  * @return total amount of memory needed
  */
-inline std::size_t getMemoryConsumptionVLFeat(std::size_t width, std::size_t height, const SiftParams& params)
-{
-  double scaleFactor = 1.0;
-  if(params._firstOctave > 0)
-    scaleFactor = 1.0/params._firstOctave;
-  else if(params._firstOctave < 0)
-    scaleFactor = 2.0 * -params._firstOctave;
-  std::size_t fullImgSize = width * height * scaleFactor * scaleFactor;
-
-  std::size_t pyramidMemoryConsuption = 0;
-  double downscale = 1.0;
-  for(int octave = 0; octave < params._numOctaves; ++octave)
-  {
-    pyramidMemoryConsuption += fullImgSize / (downscale*downscale);
-    downscale *= 2.0;
-  }
-  pyramidMemoryConsuption *= params._numScales * sizeof(float);
-
-  return 4 * pyramidMemoryConsuption + (3 * width * height * sizeof(float)) + (params._maxTotalKeypoints * 128 * sizeof(float));
-}
+std::size_t getMemoryConsumptionVLFeat(std::size_t width, std::size_t height, const SiftParams& params);
 
 /**
  * @brief Extract SIFT regions (in float or unsigned char).

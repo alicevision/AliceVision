@@ -34,12 +34,12 @@ public:
     , _isOriented(isOriented)
   {
     // Configure VLFeat
-    vl_constructor();
+    VLFeatInstance::initialize();
   }
 
   ~ImageDescriber_SIFT_vlfeat()
   {
-    vl_destructor();
+    VLFeatInstance::destroy();
   }
 
   /**
