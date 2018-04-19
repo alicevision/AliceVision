@@ -422,7 +422,7 @@ int main(int argc, char** argv)
 
   std::map<IndexT, std::string> descriptorsFilesA, descriptorsFilesB;
 
-    // load descriptor filenames
+  // load descriptor filenames
   aliceVision::voctree::getListOfDescriptorFiles(sfmDataA, featuresFolders, descriptorsFilesA);
 
   if(useMultiSfM)
@@ -445,8 +445,8 @@ int main(int argc, char** argv)
   if(selectedPairs.empty())
   {
     // load vocabulary tree
-
     ALICEVISION_LOG_INFO("Loading vocabulary tree");
+
     auto loadVoctree_start = std::chrono::steady_clock::now();
     aliceVision::voctree::VocabularyTree<DescriptorFloat> tree(treeName);
     auto loadVoctree_elapsed = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::steady_clock::now() - loadVoctree_start);
@@ -519,7 +519,6 @@ int main(int argc, char** argv)
     }
 
     // query the database to get all the pair list
-
     if(numImageQuery == 0)
     {
       // if 0 retrieve the score for all the documents of the database
@@ -612,8 +611,8 @@ int main(int argc, char** argv)
 
   if(useMultiSfM && !outputCombinedSfM.empty())
   {
-    // Combine A to B
-    // Should not loose B data
+    // combine A to B
+    // should not loose B data
     sfmDataB.combine(sfmDataA);
 
     if(!sfm::Save(sfmDataB, outputCombinedSfM, sfm::ESfMData::ALL))

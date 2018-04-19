@@ -399,7 +399,6 @@ int main(int argc, char **argv)
       if(getInfo(make, model, sensorDatabase, datasheet))
       {
         sensorWidth = datasheet._sensorSize; // sensor is in the database
-        ALICEVISION_COUT("sensorWidth: " << sensorWidth);
       }
       else
       {
