@@ -89,7 +89,7 @@ struct GeometricFilterMatrix_HGrowing : public GeometricFilterMatrix
     : GeometricFilterMatrix(dPrecision, std::numeric_limits<double>::infinity(), iteration)
     , _maxNbHomographies(10)
     , _minNbMatchesPerH(20)
-    , _similarityTolerance(10)
+    , _similarityTolerance(20)
     , _affinityTolerance(10)
     , _homographyTolerance(5)
     , _minInliersToRefine(6)
