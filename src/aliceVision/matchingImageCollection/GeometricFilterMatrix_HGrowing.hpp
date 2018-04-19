@@ -283,7 +283,6 @@ struct GeometricFilterMatrix_HGrowing : public GeometricFilterMatrix
           _HsAndMatchesPerDesc[descType].push_back({H, matches});
         }
         
-        
         if (drawGroupedMatches)
         {
           for (IndexT id : bestMatchesId)
@@ -384,6 +383,97 @@ struct GeometricFilterMatrix_HGrowing : public GeometricFilterMatrix
     
     /* ... */
     return matches.getNbAllMatches() != 0;
+  }
+  
+  /**
+   * @brief Get the number of descriptor types including verified matches by the
+   * homography growing method.
+   * @return The number of descriptor types
+   */
+  inline std::size_t getNbDescTypes() const {return _HsAndMatchesPerDesc.size();}
+  
+  /**
+   * @brief The number of estimated homographies for the given descriptor.
+   * @param[in] descType The wished descriptor type
+   * @return The number of estimated homographies (= planes). Return 0 if there is
+   * no homographies of if the descriptor type does not exist.
+   */
+  std::size_t getNbHomographies(const feature::EImageDescriberType & descType) const 
+  {
+    if (_HsAndMatchesPerDesc.find(descType) != _HsAndMatchesPerDesc.end())
+    {
+      return _HsAndMatchesPerDesc.at(descType).size();
+    }
+    else
+      return 0;
+  }
+  
+  /**
+   * @brief Get the number of matches asssociated to the given descriptor type & homography index.
+   * @param[in] descType Descriptor type.
+   * @param[in] homographyId The id. of the wished homography / plane.
+   * @return The number of matches. Return 0 if the descriptor type or the homography 
+   * index do not exist in the result.
+   */
+  std::size_t getNbVerifiedMatches(const feature::EImageDescriberType & descType, const IndexT homographyId) const
+  {
+    if (_HsAndMatchesPerDesc.find(descType) == _HsAndMatchesPerDesc.end())
+    {
+      return 0;
+    }
+    else 
+    {
+      if (homographyId > _HsAndMatchesPerDesc.at(descType).size() - 1)
+        return 0;
+      else
+        return _HsAndMatchesPerDesc.at(descType).at(homographyId).second.size();
+    }
+  }
+  
+  /**
+   * @brief Get the number of verified matches for every descriptor and associated homographies.
+   * @return The nb of verified matches
+   */
+  std::size_t getNbAllVerifiedMatches() const
+  {
+    std::size_t counter = 0;
+    for (const auto & HnMs : _HsAndMatchesPerDesc)
+    {
+      for (const auto & HnM : _HsAndMatchesPerDesc.at(HnMs.first))
+      {
+        counter += HnM.second.size();
+      }
+    }
+    return counter;
+  }
+  
+  /**
+   * @brief Get a capy of the matches for a given desc. type & homography index.
+   * @param[in] descType The descriptor type.
+   * @param[in] homographyId The id. of the wished homography / plane.
+   * @param[in] matches Contains the matches.
+   * @return EXIT_SUCCESS the number of matches is up to 0.
+   */
+  int getMatches(const feature::EImageDescriberType & descType, const IndexT homographyId, matching::IndMatches & matches) const
+  {
+    matches.clear();
+    
+    if (_HsAndMatchesPerDesc.find(descType) == _HsAndMatchesPerDesc.end())
+    {
+      return EXIT_FAILURE;
+    }
+    else 
+    {
+      if (homographyId > _HsAndMatchesPerDesc.at(descType).size() - 1)
+        return EXIT_FAILURE;
+      else
+        matches = _HsAndMatchesPerDesc.at(descType).at(homographyId).second;
+    }
+    
+    if (matches.size() > 0)
+      return EXIT_SUCCESS;
+    else
+      return EXIT_FAILURE;
   }
 
 private:
