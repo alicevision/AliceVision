@@ -131,7 +131,7 @@ int main(int argc, char* argv[])
         StaticVectorBool* ptsCanMove = nullptr;
         meOpt.optimizeSmooth(lambda, smoothNIter, ptsCanMove);
 
-        ALICEVISION_LOG_INFO("Mesh filtering done.");
+        ALICEVISION_LOG_INFO("Mesh filtering done: " << meOpt.pts->size() << " vertices and " << meOpt.tris->size() << " facets.");
     }
 
     if(keepLargestMeshOnly)
@@ -139,7 +139,7 @@ int main(int argc, char* argv[])
         StaticVector<int>* trisIdsToStay = meOpt.getLargestConnectedComponentTrisIds();
         meOpt.letJustTringlesIdsInMesh(trisIdsToStay);
         delete trisIdsToStay;
-        ALICEVISION_LOG_INFO("Mesh after keepLargestMeshOnly: " << mesh->pts->size() << " vertices and " << mesh->tris->size() << " facets.");
+        ALICEVISION_LOG_INFO("Mesh after keepLargestMeshOnly: " << meOpt.pts->size() << " vertices and " << meOpt.tris->size() << " facets.");
     }
 
     mesh::Mesh outMesh;

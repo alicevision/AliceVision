@@ -46,6 +46,7 @@ void meshPostProcessing(Mesh*& inout_mesh, StaticVector<StaticVector<int>*>*& in
 
         inout_mesh->removeFreePointsFromMesh(&ptIdToNewPtId);
 
+        // remap visibilities
         inout_ptsCams = new StaticVector<StaticVector<int>*>();
         inout_ptsCams->resize(inout_mesh->pts->size(), nullptr);
         for(int i = 0; i < ptIdToNewPtId->size(); ++i)
@@ -84,7 +85,7 @@ void meshPostProcessing(Mesh*& inout_mesh, StaticVector<StaticVector<int>*>*& in
         /////////////////////////////
         {
             // Update pointCams after clean
-            inout_ptsCams->resizeAdd(meOpt.newPtsOldPtId->size());
+            inout_ptsCams->reserveAdd(meOpt.newPtsOldPtId->size());
             for(int i = 0; i < meOpt.newPtsOldPtId->size(); i++)
             {
                 int oldPtId = (*meOpt.newPtsOldPtId)[i];
