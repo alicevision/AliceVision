@@ -87,6 +87,7 @@ int main(int argc, char **argv)
   bool refineIntrinsics = true;
   bool useLocalBundleAdjustment = false;
   bool useOnlyMatchesFromInputFolder = false;
+  bool useTrackFiltering = true;
   std::size_t localBundelAdjustementGraphDistanceLimit = 1;
   std::string localizerEstimatorName = robustEstimation::ERobustEstimator_enumToString(robustEstimation::ERobustEstimator::ACRANSAC);
 
@@ -144,13 +145,15 @@ int main(int argc, char **argv)
     ("useLocalBA,l", po::value<bool>(&useLocalBundleAdjustment)->default_value(useLocalBundleAdjustment),
       "Enable/Disable the Local bundle adjustment strategy.\n"
       "It reduces the reconstruction time, especially for big datasets (500+ images).")
-    ("useOnlyMatchesFromInputFolder", po::value<bool>(&useOnlyMatchesFromInputFolder)->default_value(useOnlyMatchesFromInputFolder),
-      "Use only matches from the input matchesFolder parameter.\n"
-      "Matches folders previously added to the SfMData file will be ignored.")
     ("localBAGraphDistance", po::value<std::size_t>(&localBundelAdjustementGraphDistanceLimit)->default_value(localBundelAdjustementGraphDistanceLimit),
       "Graph-distance limit setting the Active region in the Local Bundle Adjustment strategy.")
     ("localizerEstimator", po::value<std::string>(&localizerEstimatorName)->default_value(localizerEstimatorName),
-      "Estimator type used to localize cameras (acransac (default), ransac, lsmeds, loransac, maxconsensus)");
+      "Estimator type used to localize cameras (acransac (default), ransac, lsmeds, loransac, maxconsensus)")
+    ("useOnlyMatchesFromInputFolder", po::value<bool>(&useOnlyMatchesFromInputFolder)->default_value(useOnlyMatchesFromInputFolder),
+      "Use only matches from the input matchesFolder parameter.\n"
+      "Matches folders previously added to the SfMData file will be ignored.")
+    ("useTrackFiltering", po::value<bool>(&useTrackFiltering)->default_value(useTrackFiltering),
+      "Enable/Disable the track filtering.\n");
 
   po::options_description logParams("Log parameters");
   logParams.add_options()
@@ -248,6 +251,7 @@ int main(int argc, char **argv)
   sfmEngine.setUseLocalBundleAdjustmentStrategy(useLocalBundleAdjustment);
   sfmEngine.setLocalBundleAdjustmentGraphDistance(localBundelAdjustementGraphDistanceLimit);
   sfmEngine.setLocalizerEstimator(robustEstimation::ERobustEstimator_stringToEnum(localizerEstimatorName));
+  sfmEngine.useTrackFiltering(useTrackFiltering);
 
   if(minNbObservationsForTriangulation < 2)
   {

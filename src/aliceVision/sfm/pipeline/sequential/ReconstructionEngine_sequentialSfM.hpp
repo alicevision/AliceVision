@@ -96,6 +96,11 @@ public:
     _maxAngleInitialPair = maxAngleInitialPair;
   }
 
+  void useTrackFiltering(bool useTrackFiltering)
+  {
+    _useTrackFiltering = useTrackFiltering;
+  }
+
   void setLocalizerEstimator(robustEstimation::ERobustEstimator estimator)
   {
     _localizerEstimator = estimator;
@@ -374,6 +379,7 @@ private:
   double _maxReprojectionError = 4.0;
   double _minAngleInitialPair = 5.0;
   double _maxAngleInitialPair = 40.0;
+  bool _useTrackFiltering = true;
   robustEstimation::ERobustEstimator _localizerEstimator = robustEstimation::ERobustEstimator::ACRANSAC;
 
   // Data providers
