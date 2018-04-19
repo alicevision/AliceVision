@@ -21,9 +21,8 @@ namespace aliceVision {
 namespace matchingImageCollection {
 
 /**
- * @brief This fonctor allow to optimize an Homography.
- * Based on: https://github.com/fsrajer/yasfm/blob/master/YASFM/relative_pose.cpp#L992
- * @details It is based on [F.Srajer, 2016] p.20, 21.
+ * @brief This fonctor allows to optimize an Homography.
+ * @details It is based on [F.Srajer, 2016] p.20, 21 and its C++ implementation: https://github.com/fsrajer/yasfm/blob/master/YASFM/relative_pose.cpp#L992
  * "The optimization takes into account points with error close to the threshold and does not care about high-error ones."
  */
 class RefineHRobustCostFunctor
@@ -347,8 +346,10 @@ struct GeometricFilterMatrix_HGrowing : public GeometricFilterMatrix
     } // 'descriptor'
 
     // Check if resection has strong support
-    const bool hasStrongSupport = false;
-    return EstimationStatus(true, hasStrongSupport);
+    if (out_geometricInliersPerType.empty())
+      return EstimationStatus(true, false);
+    else
+      return EstimationStatus(true, true);
   }
     
   /**
