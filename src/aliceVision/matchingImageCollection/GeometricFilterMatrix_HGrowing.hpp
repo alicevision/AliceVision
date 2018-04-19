@@ -93,10 +93,10 @@ struct GeometricFilterMatrix_HGrowing : public GeometricFilterMatrix
     , _affinityTolerance(10)
     , _homographyTolerance(5)
     , _minInliersToRefine(6)
-    , _nbIterations(8)
+    , _nbRefiningIterations(8)
     , _maxFractionPlanarMatches(0.7)
   {
-    _Hs.push_back(Mat3::Identity());
+    assert(_maxFractionPlanarMatches >= 0 && _maxFractionPlanarMatches <= 1);
   }
   
   /**
@@ -356,7 +356,7 @@ struct GeometricFilterMatrix_HGrowing : public GeometricFilterMatrix
         }
       }             
     } // 'descriptor'
-
+    
     // Check if resection has strong support
     if (out_geometricInliersPerType.empty())
       return EstimationStatus(true, false);
@@ -417,7 +417,7 @@ private:
 
     std::size_t currTolerance;
 
-    for (IndexT iRefineStep = 0; iRefineStep < _nbIterations; ++iRefineStep)
+    for (IndexT iRefineStep = 0; iRefineStep < _nbRefiningIterations; ++iRefineStep)
     {
       if (iRefineStep == 0)
       {
@@ -440,9 +440,9 @@ private:
       if (planarMatchesIndices.size() < _minInliersToRefine)
         return EXIT_FAILURE;
       
-//      // Note: the following statement is present in the MATLAB code but not implemented in YASM
-//      if (planarMatchesIndices.size() >= _maxFractionPlanarMatches * matches.size())
-//        break;
+      // Note: the following statement is present in the MATLAB code but not implemented in YASM
+      if (planarMatchesIndices.size() >= _maxFractionPlanarMatches * matches.size())
+        break;
     }
     
     return (transformation != Mat3::Identity()) ? EXIT_SUCCESS : EXIT_FAILURE;
@@ -457,17 +457,37 @@ private:
   
   //-- Options
   
-  std::size_t _maxNbHomographies; // = MaxHoms
-  std::size_t _minNbMatchesPerH; // = MinInsNum
+  /// Max. number of homographies to estimate.
+  std::size_t _maxNbHomographies; 
   
-  // growHomography function:
-  std::size_t _similarityTolerance; // = SimTol
-  std::size_t _affinityTolerance;   // = AffTol
-  std::size_t _homographyTolerance; // = HomTol
+  /// Min. number of matches corresponding to a homographie. 
+  /// The homographie-growing is interrupted when the value is reached.
+  std::size_t _minNbMatchesPerH;
   
-  std::size_t _minInliersToRefine; // = MinIns
-  std::size_t _nbIterations; // = RefIterNum
-  std::size_t _maxFractionPlanarMatches; // = StopInsFrac
+  /// The maximal reprojection (pixel) error for matches estimated 
+  /// from a Similarity transformation.
+  std::size_t _similarityTolerance; 
+  
+  /// The maximal reprojection (pixel) error for matches estimated 
+  /// from an Affine transformation.
+  std::size_t _affinityTolerance;   
+  
+  /// The maximal reprojection (pixel) error for matches estimated 
+  /// from a Homography.
+  std::size_t _homographyTolerance; 
+  
+  /// Minimum number of inliers to continue in further refining.
+  std::size_t _minInliersToRefine; 
+  
+  /// Number of refine iterations that should be done to a transformation.
+  /// 1st iteration is estimated using key coordinates, scale and orientation.
+  /// 2-4th iterations are affinities
+  /// 5+th iterations are homographies
+  std::size_t _nbRefiningIterations; 
+  
+  /// Value in [0,1]. If there is this fraction of inliers found the
+  /// refine phase is terminated.
+  std::size_t _maxFractionPlanarMatches; 
   
 }; // struct GeometricFilterMatrix_HGrowing
 
