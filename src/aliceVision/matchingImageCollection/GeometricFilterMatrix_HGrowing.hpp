@@ -271,6 +271,18 @@ struct GeometricFilterMatrix_HGrowing : public GeometricFilterMatrix
         // stop when the models get to small        
         if (bestMatchesId.size() < _minNbMatchesPerH)
           break;
+
+        // Store validated results:
+        {
+          IndMatches matches;
+          Mat3 H = bestHomographie;
+          for (IndexT id : bestMatchesId) 
+          {
+            matches.push_back(remainingMatches.at(id));
+          }
+          _HsAndMatchesPerDesc[descType].push_back({H, matches});
+        }
+        
         
         if (drawGroupedMatches)
         {
@@ -436,8 +448,12 @@ private:
     return (transformation != Mat3::Identity()) ? EXIT_SUCCESS : EXIT_FAILURE;
   }
   
-  //-- Stored data
-  std::vector<Mat3> _Hs;
+  // -- Results container
+  
+  /// The estimated homographies and their associated planar matches, 
+  /// for each descriptor type.
+  std::map<feature::EImageDescriberType, std::vector<std::pair<Mat3, matching::IndMatches>>> 
+  _HsAndMatchesPerDesc; 
   
   //-- Options
   
