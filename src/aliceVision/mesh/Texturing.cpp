@@ -305,16 +305,12 @@ void Texturing::generateTexture(const mvsUtils::MultiViewParams& mp,
     ALICEVISION_LOG_INFO("Reading pixel color.");
 
     std::vector<AccuColor> perPixelColors(textureSize);
-    int camId = 0;
 
     // iterate over triangles for each camera
-    for(std::vector<unsigned int>& triangles : camTriangles)
+    int camId = 0;
+    for(const std::vector<unsigned int>& triangles : camTriangles)
     {
-        // no triangles in this atlas seen by this camera, continue
-        if(triangles.empty())
-            continue;
-
-        ALICEVISION_LOG_INFO(" - camera " << camId + 1 << "/" << mp.ncams);
+        ALICEVISION_LOG_INFO(" - camera " << camId + 1 << "/" << mp.ncams << " (" << triangles.size() << " triangles)");
 
         for(const auto& triangleId : triangles)
         {
@@ -380,6 +376,7 @@ void Texturing::generateTexture(const mvsUtils::MultiViewParams& mp,
                 }
             }
         }
+        // increment current cam index
         camId++;
     }
     camTriangles.clear();
