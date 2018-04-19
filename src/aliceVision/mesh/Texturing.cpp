@@ -539,18 +539,19 @@ void Texturing::replaceMesh(const std::string& otherMeshPath, bool flipNormals)
 {
     // keep previous mesh/visibilities as reference
     Mesh* refMesh = me;
-    PointsVisibility* visibilities = pointsVisibilities;
-    // load input obj file
+    PointsVisibility* refVisibilities = pointsVisibilities;
+    // set pointers to null to avoid deallocation by 'loadFromObj'
     me = nullptr;
     pointsVisibilities = nullptr;
+    // load input obj file
     loadFromOBJ(otherMeshPath, flipNormals);
+    // allocate pointsVisibilities for new internal mesh
+    pointsVisibilities = new PointsVisibility();
     // remap visibilities from reconstruction onto input mesh
-    PointsVisibility otherPtsVisibilities;
-    remapMeshVisibilities(*refMesh, *visibilities, *me, otherPtsVisibilities);
-    // delete src mesh
+    remapMeshVisibilities(*refMesh, *refVisibilities, *me, *pointsVisibilities);
+    // delete ref mesh and visibilities
     delete refMesh;
-    visibilities->swap(otherPtsVisibilities);
-    pointsVisibilities = visibilities;
+    deleteArrayOfArrays(&refVisibilities);
 }
 
 void Texturing::unwrap(mvsUtils::MultiViewParams& mp, EUnwrapMethod method)
