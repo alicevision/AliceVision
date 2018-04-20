@@ -329,6 +329,7 @@ struct GeometricFilterMatrix_HGrowing : public GeometricFilterMatrix
                                 "_" + EImageDescriberType_enumToString(descType) + ".svg");
           svgFile << svgStream->closeSvgFile().str();
           svgFile.close();
+          delete svgStream;
         }
       }         
     } // 'descriptor'
