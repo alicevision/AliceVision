@@ -305,16 +305,12 @@ void Texturing::generateTexture(const mvsUtils::MultiViewParams& mp,
     ALICEVISION_LOG_INFO("Reading pixel color.");
 
     std::vector<AccuColor> perPixelColors(textureSize);
-    int camId = 0;
 
     // iterate over triangles for each camera
-    for(std::vector<unsigned int>& triangles : camTriangles)
+    int camId = 0;
+    for(const std::vector<unsigned int>& triangles : camTriangles)
     {
-        // no triangles in this atlas seen by this camera, continue
-        if(triangles.empty())
-            continue;
-
-        ALICEVISION_LOG_INFO(" - camera " << camId + 1 << "/" << mp.ncams);
+        ALICEVISION_LOG_INFO(" - camera " << camId + 1 << "/" << mp.ncams << " (" << triangles.size() << " triangles)");
 
         for(const auto& triangleId : triangles)
         {
@@ -380,6 +376,7 @@ void Texturing::generateTexture(const mvsUtils::MultiViewParams& mp,
                 }
             }
         }
+        // increment current cam index
         camId++;
     }
     camTriangles.clear();
@@ -542,18 +539,19 @@ void Texturing::replaceMesh(const std::string& otherMeshPath, bool flipNormals)
 {
     // keep previous mesh/visibilities as reference
     Mesh* refMesh = me;
-    PointsVisibility* visibilities = pointsVisibilities;
-    // load input obj file
+    PointsVisibility* refVisibilities = pointsVisibilities;
+    // set pointers to null to avoid deallocation by 'loadFromObj'
     me = nullptr;
     pointsVisibilities = nullptr;
+    // load input obj file
     loadFromOBJ(otherMeshPath, flipNormals);
+    // allocate pointsVisibilities for new internal mesh
+    pointsVisibilities = new PointsVisibility();
     // remap visibilities from reconstruction onto input mesh
-    PointsVisibility otherPtsVisibilities;
-    remapMeshVisibilities(*refMesh, *visibilities, *me, otherPtsVisibilities);
-    // delete src mesh
+    remapMeshVisibilities(*refMesh, *refVisibilities, *me, *pointsVisibilities);
+    // delete ref mesh and visibilities
     delete refMesh;
-    visibilities->swap(otherPtsVisibilities);
-    pointsVisibilities = visibilities;
+    deleteArrayOfArrays(&refVisibilities);
 }
 
 void Texturing::unwrap(mvsUtils::MultiViewParams& mp, EUnwrapMethod method)
