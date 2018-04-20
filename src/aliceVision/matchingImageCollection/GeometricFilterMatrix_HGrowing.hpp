@@ -102,6 +102,12 @@ struct GeometricFilterMatrix_HGrowing : public GeometricFilterMatrix
   /**
    * @brief Given two sets of image points, it estimates the homography matrix
    * relating them using a robust method (like A Contrario Ransac).
+   * @details It return matches grouped by estimated homographies!
+   * Example:
+   * - Putative matches id:         [0 1 2 3 4 5 6 7]
+   * - Estimated homographies:      [0(h0) 1(h2) 2(h1) 3(nan) 4(h2) 5(h0) 6(h1) 7(nan)]
+   * - Sorted matches               [0(h0) 5(h0) 2(h1) 6(h1) 1(h2) 4(h2)]
+   * - out_geometricInliersPerType  [0 5 2 6 1 4]
    */
   template<typename Regions_or_Features_ProviderT>
   EstimationStatus geometricEstimation(
@@ -114,22 +120,16 @@ struct GeometricFilterMatrix_HGrowing : public GeometricFilterMatrix
     using namespace aliceVision::feature;
     using namespace aliceVision::matching;
     
+    out_geometricInliersPerType.clear();
+    
+    // ------------------------
     // To draw & save matches groups into .svg images:
     //    enter an existing folder in the following variable ('outputSvgDir'). 
     // File format: <nbHMatches>hmatches_<viewId_I>_<viewId_J>_<descType>.svg
     // * Little white dots = putative matches
     // * Colored dots = geometrically verified matches (1 color per estimated plane)
     std::string outputSvgDir = ""; 
-      
-    // Defines the format of 'out_geometricInliersPerType'. 
-    // Considering the putative match:
-    //      [0(h0) 1(h2) 2(h1) 3(nan) 4(h2) 5(h0) 6(h1) 7(nan)]
-    // * 'PutativeLike' returns [0(h0) 1(h2) 2(h1) 4(h2) 5(h0) 6(h1)]: just remove (nan)
-    // * 'HGrouped' returns [0(h0) 5(h0) 2(h1) 6(h1) 1(h2) 4(h2)]: remove (nan) + H id. ordering
-    enum EOrdering {PutativeLike, HGrouped}; 
-    EOrdering orderingMethod = HGrouped;
-    
-    out_geometricInliersPerType.clear();
+    // ------------------------
     
     const std::vector<feature::EImageDescriberType> descTypes = regionsPerView.getCommonDescTypes(pairIndex);
     if(descTypes.empty())
@@ -301,13 +301,10 @@ struct GeometricFilterMatrix_HGrowing : public GeometricFilterMatrix
         
         // -- Update not used matches & Save geometrically verified matches:
         
-        if (orderingMethod == EOrdering::HGrouped)
-        { 
-          for (IndexT id : bestMatchesId)
-          {
-            out_geometricInliersPerType[descType].push_back(remainingMatches.at(id));
-          }
-        }    
+        for (IndexT id : bestMatchesId)
+        {
+          out_geometricInliersPerType[descType].push_back(remainingMatches.at(id));
+        }
         
         // update remaining matches (/!\ Keep ordering)
         std::size_t cpt = 0;
@@ -333,27 +330,7 @@ struct GeometricFilterMatrix_HGrowing : public GeometricFilterMatrix
           svgFile << svgStream->closeSvgFile().str();
           svgFile.close();
         }
-      }
-      
-      // copy inliers -> putative matches ordering
-      if (orderingMethod == EOrdering::PutativeLike)
-      {
-        out_geometricInliersPerType[descType] =  putativeMatchesPerType.at(descType);
-        IndMatches & outMatches = out_geometricInliersPerType.at(descType);
-        for (IndexT iMatch = 0; iMatch < outMatches.size(); ++iMatch)
-        {
-          const IndMatch & match = outMatches.at(iMatch);
-          std::vector<IndMatch>::iterator it = std::find(remainingMatches.begin(), 
-                                                                   remainingMatches.end(), 
-                                                                   match);
-          if (it != remainingMatches.end()) // is not a verified match
-          {
-            outMatches.erase(outMatches.begin() + iMatch);
-            remainingMatches.erase(it); // to decrease complexity (does not used anymore)
-            --iMatch;
-          }
-        }
-      }             
+      }         
     } // 'descriptor'
     
     // Check if resection has strong support
@@ -439,7 +416,7 @@ struct GeometricFilterMatrix_HGrowing : public GeometricFilterMatrix
     std::size_t counter = 0;
     for (const auto & HnMs : _HsAndMatchesPerDesc)
     {
-      for (const auto & HnM : _HsAndMatchesPerDesc.at(HnMs.first))
+      for (const std::pair<Mat3, matching::IndMatches> & HnM : HnMs.second)
       {
         counter += HnM.second.size();
       }
@@ -475,7 +452,7 @@ struct GeometricFilterMatrix_HGrowing : public GeometricFilterMatrix
     else
       return EXIT_FAILURE;
   }
-
+  
 private:
   
   /**
