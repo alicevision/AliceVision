@@ -508,8 +508,8 @@ private:
         return EXIT_FAILURE;
       
       // Note: the following statement is present in the MATLAB code but not implemented in YASM
-      if (planarMatchesIndices.size() >= _maxFractionPlanarMatches * matches.size())
-        break;
+//      if (planarMatchesIndices.size() >= _maxFractionPlanarMatches * matches.size())
+//        break;
     }
     
     return (transformation != Mat3::Identity()) ? EXIT_SUCCESS : EXIT_FAILURE;
