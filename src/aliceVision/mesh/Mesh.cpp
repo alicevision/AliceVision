@@ -32,6 +32,9 @@ Mesh::~Mesh()
 void Mesh::saveToObj(const std::string& filename)
 {
   ALICEVISION_LOG_INFO("Save mesh to obj: " << filename);
+  ALICEVISION_LOG_INFO("Nb points: " << pts->size());
+  ALICEVISION_LOG_INFO("Nb triangles: " << tris->size());
+
   FILE* f = fopen(filename.c_str(), "w");
 
   fprintf(f, "# \n");
@@ -1339,7 +1342,7 @@ Point3d Mesh::computeTriangleCenterOfGravity(int idTri) const
     return ((*pts)[(*tris)[idTri].i[0]] + (*pts)[(*tris)[idTri].i[1]] + (*pts)[(*tris)[idTri].i[2]]) / 3.0f;
 }
 
-float Mesh::computeTriangleMaxEdgeLength(int idTri) const
+double Mesh::computeTriangleMaxEdgeLength(int idTri) const
 {
     return std::max(std::max(((*pts)[(*tris)[idTri].i[0]] - (*pts)[(*tris)[idTri].i[1]]).size(),
                              ((*pts)[(*tris)[idTri].i[1]] - (*pts)[(*tris)[idTri].i[2]]).size()),
@@ -1983,40 +1986,18 @@ int Mesh::subdivideMesh(const mvsUtils::MultiViewParams* mp, float maxTriArea, f
     return nTrisToSubdivide;
 }
 
-float Mesh::computeAverageEdgeLength() const
+double Mesh::computeAverageEdgeLength() const
 {
-    /*
-    StaticVector<StaticVector<int>*> *edgesNeighTris;
-    StaticVector<pixel> *edgesPointsPairs;
-    getNotOrientedEdges(&edgesNeighTris, &edgesPointsPairs);
-
-    float s=0.0f;
-    float n=0.0f;
-    for (int i=0;i<edgesPointsPairs->size();i++) {
-            s += ((*pts)[(*edgesPointsPairs)[i].x]-(*pts)[(*edgesPointsPairs)[i].y]).size();
-            n += 1.0f;
-    };
-
-    deleteArrayOfArrays<int>(&edgesNeighTris);
-    delete edgesPointsPairs;
-
-    if (n==0.0f) {
-            return 0.0f;
-    }else{
-            return (s/n);
-    };
-    */
-
-    float s = 0.0f;
-    float n = 0.0f;
-    for(int i = 0; i < tris->size(); i++)
+    double s = 0.0;
+    double n = 0.0;
+    for(int i = 0; i < tris->size(); ++i)
     {
         s += computeTriangleMaxEdgeLength(i);
-        n += 1.0f;
+        n += 1.0;
     }
-    if(n == 0.0f)
+    if(n == 0.0)
     {
-        return 0.0f;
+        return 0.0;
     }
 
     return (s / n);
@@ -2286,18 +2267,18 @@ void Mesh::removeTrianglesOutsideHexahedron(Point3d* hexah)
     delete trisIdsToStay;
 }
 
-void Mesh::filterLargeEdgeTriangles(float maxEdgelengthThr)
+void Mesh::filterLargeEdgeTriangles(double cutAverageEdgeLengthFactor)
 {
-    float averageEdgeLength = computeAverageEdgeLength();
-    float avelthr = maxEdgelengthThr;
+    double averageEdgeLength = computeAverageEdgeLength();
+    double avelthr = averageEdgeLength * cutAverageEdgeLengthFactor;
 
     StaticVector<int>* trisIdsToStay = new StaticVector<int>();
     trisIdsToStay->reserve(tris->size());
 
     for(int i = 0; i < tris->size(); i++)
     {
-        float triMaxEdgelength = computeTriangleMaxEdgeLength(i);
-        if(triMaxEdgelength < averageEdgeLength * avelthr)
+        double triMaxEdgelength = computeTriangleMaxEdgeLength(i);
+        if(triMaxEdgelength < avelthr)
         {
             trisIdsToStay->push_back(i);
         }
@@ -2390,7 +2371,7 @@ bool Mesh::isTriangleObtuse(int triId)
            (isTriangleAngleAtVetexObtuse(2, triId));
 }
 
-StaticVector<int>* Mesh::getLargestConnectedComponentTrisIds(const mvsUtils::MultiViewParams& mp)
+StaticVector<int>* Mesh::getLargestConnectedComponentTrisIds()
 {
     StaticVector<StaticVector<int>*>* ptsNeighPtsOrdered = getPtsNeighPtsOrdered();
 
@@ -2469,9 +2450,9 @@ StaticVector<int>* Mesh::getLargestConnectedComponentTrisIds(const mvsUtils::Mul
     return out;
 }
 
-bool Mesh::loadFromObjAscii(int& nmtls, StaticVector<int>** trisMtlIds, StaticVector<Point3d>** normals,
-                               StaticVector<Voxel>** trisNormalsIds, StaticVector<Point2d>** uvCoords,
-                               StaticVector<Voxel>** trisUvIds, std::string objAsciiFileName)
+bool Mesh::loadFromObjAscii(int& nmtls, StaticVector<int>& trisMtlIds, StaticVector<Point3d>& normals,
+                               StaticVector<Voxel>& trisNormalsIds, StaticVector<Point2d>& uvCoords,
+                               StaticVector<Voxel>& trisUvIds, std::string objAsciiFileName)
 {
     ALICEVISION_LOG_INFO("Loading mesh from obj file: " << objAsciiFileName);
     // read number of points, triangles, uvcoords
@@ -2524,16 +2505,11 @@ bool Mesh::loadFromObjAscii(int& nmtls, StaticVector<int>** trisMtlIds, StaticVe
     pts->reserve(npts);
     tris = new StaticVector<Mesh::triangle>();
     tris->reserve(ntris);
-    *uvCoords = new StaticVector<Point2d>();
-    (*uvCoords)->reserve(nuvs);
-    *trisUvIds = new StaticVector<Voxel>();
-    (*trisUvIds)->reserve(ntris);
-    *normals = new StaticVector<Point3d>();
-    (*normals)->reserve(nnorms);
-    *trisNormalsIds = new StaticVector<Voxel>();
-    (*trisNormalsIds)->reserve(ntris);
-    *trisMtlIds = new StaticVector<int>();
-    (*trisMtlIds)->reserve(ntris);
+    uvCoords.reserve(nuvs);
+    trisUvIds.reserve(ntris);
+    normals.reserve(nnorms);
+    trisNormalsIds.reserve(ntris);
+    trisMtlIds.reserve(ntris);
 
     std::map<std::string, int> materialCache;
 
@@ -2571,13 +2547,13 @@ bool Mesh::loadFromObjAscii(int& nmtls, StaticVector<int>** trisMtlIds, StaticVe
                 Point3d pt;
                 sscanf(line.c_str(), "vn %lf %lf %lf", &pt.x, &pt.y, &pt.z);
                 // printf("%f %f %f\n", pt.x, pt.y, pt.z);
-                (*normals)->push_back(pt);
+                normals.push_back(pt);
             }
             else if((line[0] == 'v') && (line[1] == 't') && (line[2] == ' '))
             {
                 Point2d pt;
                 sscanf(line.c_str(), "vt %lf %lf", &pt.x, &pt.y);
-                (*uvCoords)->push_back(pt);
+                uvCoords.push_back(pt);
             }
             else if((line[0] == 'f') && (line[1] == ' '))
             {
@@ -2655,14 +2631,14 @@ bool Mesh::loadFromObjAscii(int& nmtls, StaticVector<int>** trisMtlIds, StaticVe
                     t.i[2] = vertex.z - 1;
                     t.alive = true;
                     tris->push_back(t);
-                    (*trisMtlIds)->push_back(mtlId);
+                    trisMtlIds.push_back(mtlId);
                     if(withUV)
                     {
-                        (*trisUvIds)->push_back(uvCoord - Voxel(1, 1, 1));
+                        trisUvIds.push_back(uvCoord - Voxel(1, 1, 1));
                     }
                     if(withNormal)
                     {
-                        (*trisNormalsIds)->push_back(vertexNormal - Voxel(1, 1, 1));
+                        trisNormalsIds.push_back(vertexNormal - Voxel(1, 1, 1));
                     }
                 }
 
@@ -2675,10 +2651,10 @@ bool Mesh::loadFromObjAscii(int& nmtls, StaticVector<int>** trisMtlIds, StaticVe
                     t.i[2] = vertex2.z - 1;
                     t.alive = true;
                     tris->push_back(t);
-                    (*trisMtlIds)->push_back(mtlId);
+                    trisMtlIds.push_back(mtlId);
                     if(withUV)
                     {
-                        (*trisUvIds)->push_back(uvCoord2 - Voxel(1, 1, 1));
+                        trisUvIds.push_back(uvCoord2 - Voxel(1, 1, 1));
                     }
 //                    if(withNormal)
 //                    {

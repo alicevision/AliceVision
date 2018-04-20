@@ -94,7 +94,7 @@ target_link_libraries(aliceVision_utils_frustumFiltering
   aliceVision_feature
   aliceVision_sfm
   aliceVision_matchingImageCollection
-  ${BOOST_LIBRARIES}
+  ${Boost_LIBRARIES}
 )
 
 set_property(TARGET aliceVision_utils_frustumFiltering
@@ -115,7 +115,7 @@ if(ALICEVISION_HAVE_ALEMBIC)
 		aliceVision_localization
 		aliceVision_dataio
 		aliceVision_rig
-		${BOOST_LIBRARIES}
+		${Boost_LIBRARIES}
 	)
 	
 	set_property(TARGET aliceVision_utils_rigTransform
@@ -136,7 +136,7 @@ target_link_libraries(aliceVision_utils_qualityEvaluation
   aliceVision_system
   aliceVision_feature
   aliceVision_sfm
-  ${BOOST_LIBRARIES}
+  ${Boost_LIBRARIES}
 )
 
 set_property(TARGET aliceVision_utils_qualityEvaluation
@@ -155,7 +155,7 @@ target_link_libraries(aliceVision_utils_sfmAlignment
   aliceVision_system
   aliceVision_feature
   aliceVision_sfm
-  ${BOOST_LIBRARIES}
+  ${Boost_LIBRARIES}
 )
 
 set_property(TARGET aliceVision_utils_sfmAlignment
@@ -174,7 +174,7 @@ target_link_libraries(aliceVision_utils_sfmTransform
   aliceVision_system
   aliceVision_feature
   aliceVision_sfm
-  ${BOOST_LIBRARIES}
+  ${Boost_LIBRARIES}
 )
 
 set_property(TARGET aliceVision_utils_sfmTransform
@@ -202,7 +202,7 @@ target_link_libraries(aliceVision_utils_sfmColorHarmonize
   ${CLP_LIBRARIES}
   ${COINUTILS_LIBRARY}
   ${OSI_LIBRARY}
-  ${BOOST_LIBRARIES}
+  ${Boost_LIBRARIES}
 )
 
 set_property(TARGET aliceVision_utils_sfmColorHarmonize
@@ -221,7 +221,7 @@ target_link_libraries(aliceVision_utils_sfmLocalization
   aliceVision_system
   aliceVision_feature
   aliceVision_sfm
-  ${BOOST_LIBRARIES}
+  ${Boost_LIBRARIES}
 )
 
 set_property(TARGET aliceVision_utils_sfmLocalization

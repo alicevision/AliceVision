@@ -48,7 +48,7 @@ if(ALICEVISION_HAVE_ALEMBIC)
 		aliceVision_system
 		aliceVision_feature
 		aliceVision_sfm
-    ${BOOST_LIBRARIES}
+    ${Boost_LIBRARIES}
 	)
 
 	set_property(TARGET aliceVision_convertAnimatedCamera

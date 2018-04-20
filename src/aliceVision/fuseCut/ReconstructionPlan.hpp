@@ -33,8 +33,7 @@ public:
 };
 
 void reconstructAccordingToOptimalReconstructionPlan(int gl, LargeScale* ls);
-void reconstructSpaceAccordingToVoxelsArray(const std::string& voxelsArrayFileName, LargeScale* ls,
-                                            bool doComputeColoredMeshes);
+void reconstructSpaceAccordingToVoxelsArray(const std::string& voxelsArrayFileName, LargeScale* ls);
 mesh::Mesh* joinMeshes(const std::vector<std::string>& recsDirs, StaticVector<Point3d>* voxelsArray, LargeScale* ls);
 mesh::Mesh* joinMeshes(int gl, LargeScale* ls);
 mesh::Mesh* joinMeshes(const std::string& voxelsArrayFileName, LargeScale* ls);

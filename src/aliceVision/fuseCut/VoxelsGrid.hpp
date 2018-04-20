@@ -28,7 +28,7 @@ public:
     bool doVisualize;
 
     VoxelsGrid();
-    VoxelsGrid(const Voxel& dimmensions, Point3d* _space, mvsUtils::MultiViewParams* _mp, mvsUtils::PreMatchCams* _pc,
+    VoxelsGrid(const Voxel& dimensions, Point3d* _space, mvsUtils::MultiViewParams* _mp, mvsUtils::PreMatchCams* _pc,
                const std::string& _spaceRootDir, bool _doVisualize = false);
     ~VoxelsGrid();
 

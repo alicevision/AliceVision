@@ -14,6 +14,9 @@
 namespace aliceVision {
 namespace fuseCut {
 
+unsigned long computeNumberOfAllPoints(const mvsUtils::MultiViewParams* mp, int scale);
+
+
 class Fuser
 {
 public:
@@ -34,7 +37,6 @@ public:
 
     /// @brief Compute average pixel size in the given hexahedron
     float computeAveragePixelSizeInHexahedron(Point3d* hexah, int step, int scale);
-    unsigned long computeNumberOfAllPoints(int scale);
 
     Voxel estimateDimensions(Point3d* vox, Point3d* newSpace, int scale, int maxOcTreeDim);
 

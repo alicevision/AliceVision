@@ -34,6 +34,13 @@ public:
         y = _y;
         z = _z;
     }
+    
+    inline Point3d(const double* const p)
+    {
+        x = p[0];
+        y = p[1];
+        z = p[2];
+    }
 
     inline Point3d& operator=(const Point3d& param)
     {

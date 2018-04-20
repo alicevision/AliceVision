@@ -113,9 +113,9 @@ public:
 
     bool loadFromBin(std::string binFileName);
     void saveToBin(std::string binFileName);
-    bool loadFromObjAscii(int& nmtls, StaticVector<int>** trisMtlIds, StaticVector<Point3d>** normals,
-                          StaticVector<Voxel>** trisNormalsIds, StaticVector<Point2d>** uvCoords,
-                          StaticVector<Voxel>** trisUvIds, std::string objAsciiFileName);
+    bool loadFromObjAscii(int& nmtls, StaticVector<int>& trisMtlIds, StaticVector<Point3d>& normals,
+                          StaticVector<Voxel>& trisNormalsIds, StaticVector<Point2d>& uvCoords,
+                          StaticVector<Voxel>& trisUvIds, std::string objAsciiFileName);
 
     void addMesh(Mesh* me);
 
@@ -152,13 +152,13 @@ public:
     void smoothNormals(StaticVector<Point3d>* nms, StaticVector<StaticVector<int>*>* ptsNeighPts);
     Point3d computeTriangleNormal(int idTri);
     Point3d computeTriangleCenterOfGravity(int idTri) const;
-    float computeTriangleMaxEdgeLength(int idTri) const;
+    double computeTriangleMaxEdgeLength(int idTri) const;
 
     void removeFreePointsFromMesh(StaticVector<int>** out_ptIdToNewPtId = nullptr);
 
     void letJustTringlesIdsInMesh(StaticVector<int>* trisIdsToStay);
 
-    float computeAverageEdgeLength() const;
+    double computeAverageEdgeLength() const;
 
     bool isTriangleAngleAtVetexObtuse(int vertexIdInTriangle, int triId);
     bool isTriangleObtuse(int triId);
@@ -203,7 +203,7 @@ public:
                           float alpha);
     void removeTrianglesInHexahedrons(StaticVector<Point3d>* hexahsToExcludeFromResultingMesh);
     void removeTrianglesOutsideHexahedron(Point3d* hexah);
-    void filterLargeEdgeTriangles(float maxEdgelengthThr);
+    void filterLargeEdgeTriangles(double cutAverageEdgeLengthFactor);
     void invertTriangleOrientations();
     void changeTriPtId(int triId, int oldPtId, int newPtId);
     int getTriPtIndex(int triId, int ptId, bool failIfDoesNotExists = true);
@@ -212,7 +212,7 @@ public:
     bool areTwoTrisSameOriented(int triId1, int triId2, int edgePtId1, int edgePtId2);
     bool checkPtsForNaN();
     void filterWrongTriangles();
-    StaticVector<int>* getLargestConnectedComponentTrisIds(const mvsUtils::MultiViewParams& mp);
+    StaticVector<int>* getLargestConnectedComponentTrisIds();
 
     bool getEdgeNeighTrisInterval(Pixel& itr, Pixel edge, StaticVector<Voxel>* edgesXStat,
                                   StaticVector<Voxel>* edgesXYStat);
