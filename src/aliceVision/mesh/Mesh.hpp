@@ -21,31 +21,31 @@ class Mesh
 public:
     struct triangle
     {
-        int i[3];
+        int v[3]; ///< vertex indexes
         bool alive;
 
         triangle()
         {
-            i[0] = -1;
-            i[1] = -1;
-            i[2] = -1;
+            v[0] = -1;
+            v[1] = -1;
+            v[2] = -1;
             alive = true;
         }
 
         triangle(int a, int b, int c)
         {
-            i[0] = a;
-            i[1] = b;
-            i[2] = c;
+            v[0] = a;
+            v[1] = b;
+            v[2] = c;
             alive = true;
         }
 
-        triangle& operator=(const triangle param)
+        triangle& operator=(const triangle& other)
         {
-            i[0] = param.i[0];
-            i[1] = param.i[1];
-            i[2] = param.i[2];
-            alive = param.alive;
+            v[0] = other.v[0];
+            v[1] = other.v[1];
+            v[2] = other.v[2];
+            alive = other.alive;
             return *this;
         }
     };
@@ -126,7 +126,7 @@ public:
     void getDepthMap(StaticVector<float>* depthMap, StaticVector<StaticVector<int>*>* tmp, const mvsUtils::MultiViewParams* mp, int rc,
                      int scale, int w, int h);
 
-    StaticVector<StaticVector<int>*>* getPtsNeighTris();
+    StaticVector<StaticVector<int>*>* getPtsNeighborTriangles();
     StaticVector<StaticVector<int>*>* getPtsNeighPtsOrdered();
 
     StaticVector<int>* getVisibleTrianglesIndexes(std::string tmpDir, const mvsUtils::MultiViewParams* mp, int rc, int w, int h);

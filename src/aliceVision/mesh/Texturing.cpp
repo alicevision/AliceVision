@@ -106,7 +106,7 @@ void toGeoMesh(const Mesh& src, GEO::Mesh& dst)
     for(unsigned int i = 0; i < src.tris->size(); ++i)
     {
         const auto& tri = (*src.tris)[i];
-        facets.insert(facets.end(), std::begin(tri.i), std::end(tri.i));
+        facets.insert(facets.end(), std::begin(tri.v), std::end(tri.v));
     }
 
     dst.facets.assign_triangle_mesh(3, vertices, facets, true);
@@ -163,7 +163,7 @@ void Texturing::generateUVs(mvsUtils::MultiViewParams& mp)
                 // for each point
                 for(int k = 0; k < 3; ++k)
                 {
-                    int pointId = (*me->tris)[triangleID].i[k];
+                    int pointId = (*me->tris)[triangleID].v[k];
                     // get 3d triangle points
                     Point3d p = (*me->pts)[pointId];
                     Point2d uvPix;
@@ -201,7 +201,7 @@ void Texturing::generateUVs(mvsUtils::MultiViewParams& mp)
                     {
                         newPointIdx = it->second;
                     }
-                    t.i[k] = newPointIdx;
+                    t.v[k] = newPointIdx;
                     // store uv coord and triangle mapping
                     auto uvcacheIt = uvCache.find(newPointIdx);
                     if(uvcacheIt == uvCache.end())
@@ -290,7 +290,7 @@ void Texturing::generateTexture(const mvsUtils::MultiViewParams& mp,
         // retrieve triangle visibilities (set of triangle's points visibilities)
         for(int k = 0; k < 3; k++)
         {
-            const int pointIndex = (*me->tris)[triangleId].i[k];
+            const int pointIndex = (*me->tris)[triangleId].v[k];
             const StaticVector<int>* pointVisibilities = (*pointsVisibilities)[pointIndex];
             if(pointVisibilities != nullptr)
             {
@@ -320,7 +320,7 @@ void Texturing::generateTexture(const mvsUtils::MultiViewParams& mp,
 
             for(int k = 0; k < 3; k++)
             {
-                const int pointIndex = (*me->tris)[triangleId].i[k];
+                const int pointIndex = (*me->tris)[triangleId].v[k];
                 triPts[k] = (*me->pts)[pointIndex];                               // 3D coordinates
                 const int uvPointIndex = trisUvIds[triangleId].m[k];
                 triPixs[k] = uvCoords[uvPointIndex] * texParams.textureSide;   // UV coordinates
@@ -628,9 +628,9 @@ void Texturing::saveAsOBJ(const bfs::path& dir, const std::string& basename, EIm
         for(const auto triangleID : _atlases[atlasID])
         {
             // vertex IDs
-            int vertexID1 = (*me->tris)[triangleID].i[0];
-            int vertexID2 = (*me->tris)[triangleID].i[1];
-            int vertexID3 = (*me->tris)[triangleID].i[2];
+            int vertexID1 = (*me->tris)[triangleID].v[0];
+            int vertexID2 = (*me->tris)[triangleID].v[1];
+            int vertexID3 = (*me->tris)[triangleID].v[2];
 
             int uvID1 = trisUvIds[triangleID].m[0];
             int uvID2 = trisUvIds[triangleID].m[1];

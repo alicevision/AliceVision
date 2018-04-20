@@ -325,7 +325,7 @@ StaticVector<StaticVector<int>*>* loadLargeScalePtsCams(const std::vector<std::s
             throw std::runtime_error("Missing file: " + filePtsCamsFromDCTName);
         }
         StaticVector<StaticVector<int>*>* ptsCamsFromDcti = loadArrayOfArraysFromFile<int>(filePtsCamsFromDCTName);
-        ptsCamsFromDct->resizeAdd(ptsCamsFromDcti->size());
+        ptsCamsFromDct->reserveAdd(ptsCamsFromDcti->size());
         for(int i = 0; i < ptsCamsFromDcti->size(); i++)
         {
             ptsCamsFromDct->push_back((*ptsCamsFromDcti)[i]);
@@ -346,9 +346,9 @@ StaticVector<rgb>* getTrisColorsRgb(mesh::Mesh* me, StaticVector<rgb>* ptsColors
         float b = 0.0f;
         for(int j = 0; j < 3; j++)
         {
-            r += (float)(*ptsColors)[(*me->tris)[i].i[j]].r;
-            g += (float)(*ptsColors)[(*me->tris)[i].i[j]].g;
-            b += (float)(*ptsColors)[(*me->tris)[i].i[j]].b;
+            r += (float)(*ptsColors)[(*me->tris)[i].v[j]].r;
+            g += (float)(*ptsColors)[(*me->tris)[i].v[j]].g;
+            b += (float)(*ptsColors)[(*me->tris)[i].v[j]].b;
         }
         (*trisColors)[i].r = (unsigned char)(r / 3.0f);
         (*trisColors)[i].g = (unsigned char)(g / 3.0f);
