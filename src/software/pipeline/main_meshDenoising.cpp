@@ -114,10 +114,6 @@ int main(int argc, char* argv[])
     if(!bfs::is_directory(outDirectory))
         bfs::create_directory(outDirectory);
 
-    // OpenMesh::IO::IOManager();
-    // OpenMesh: Need to force the loading of the OBJ... when it's statically linked...
-    OpenMesh::IO::_OBJReader_();
-    OpenMesh::IO::_OBJWriter_();
 
     TriMesh inMesh;
     if(!OpenMesh::IO::read_mesh(inMesh, inputMeshPath.c_str()))
