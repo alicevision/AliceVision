@@ -154,13 +154,14 @@ struct GeometricFilterMatrix_HGrowing : public GeometricFilterMatrix
     // Setup optional drawer tool:
     bool drawGroupedMatches = false;
     std::vector<std::string> colors {"red","cyan","purple","green","black","brown","blue","pink","grey"};
-    svg::svgDrawer * svgStream;
+    
+    std::unique_ptr<svg::svgDrawer> svgStream;
     if (!outputSvgDir.empty())
     {
       if (boost::filesystem::exists(outputSvgDir))
       {
         drawGroupedMatches = true;
-        svgStream = new svg::svgDrawer(viewI.getWidth() + viewJ.getWidth() , std::max(viewI.getHeight(), viewJ.getHeight()));
+        svgStream.reset(new svg::svgDrawer(viewI.getWidth() + viewJ.getWidth() , std::max(viewI.getHeight(), viewJ.getHeight())));
       }
       else
       {
@@ -329,7 +330,6 @@ struct GeometricFilterMatrix_HGrowing : public GeometricFilterMatrix
                                 "_" + EImageDescriberType_enumToString(descType) + ".svg");
           svgFile << svgStream->closeSvgFile().str();
           svgFile.close();
-          delete svgStream;
         }
       }         
     } // 'descriptor'
