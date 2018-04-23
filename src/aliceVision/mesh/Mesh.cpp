@@ -2454,6 +2454,7 @@ bool Mesh::loadFromObjAscii(int& nmtls, StaticVector<int>& trisMtlIds, StaticVec
                    (n1 == 0 && n2 == 0))
                     ntris += 1;
                 else if((n1 == 4 && n2 == 0) ||
+                        (n1 == 8 && n2 == 0) ||
                         (n1 == 0 && n2 == 4))
                     ntris += 2;
             }
@@ -2526,7 +2527,7 @@ bool Mesh::loadFromObjAscii(int& nmtls, StaticVector<int>& trisMtlIds, StaticVec
                 int n1 = mvsUtils::findNSubstrsInString(line, "/");
                 int n2 = mvsUtils::findNSubstrsInString(line, "//");
                 Voxel vertex, uvCoord, vertexNormal;
-                Voxel vertex2, uvCoord2;
+                Voxel vertex2, uvCoord2, vertexNormal2;
                 bool ok = false;
                 bool withNormal = false;
                 bool withUV = false;
@@ -2563,6 +2564,24 @@ bool Mesh::loadFromObjAscii(int& nmtls, StaticVector<int>& trisMtlIds, StaticVec
                         withUV = true;
                         withQuad = true;
                     }
+                    else if(n1 == 8)
+                    {
+                        sscanf(line.c_str(), "f %i/%i/%i %i/%i/%i %i/%i/%i %i/%i/%i",
+                               &vertex.x, &uvCoord.x, &vertexNormal.x,
+                               &vertex.y, &uvCoord.y, &vertexNormal.y,
+                               &vertex.z, &uvCoord.z, &vertexNormal.z,
+                               &vertex2.z, &uvCoord2.z, &vertexNormal2.z);
+                        vertex2.x = vertex.x; // same first point
+                        uvCoord2.x = uvCoord.x;
+                        vertexNormal2.x = vertexNormal.x;
+                        vertex2.y = vertex.z; // 3rd point of the 1st triangle is the 2nd of the 2nd triangle.
+                        uvCoord2.y = uvCoord.z;
+                        vertexNormal2.y = vertexNormal.z;
+                        ok = true;
+                        withUV = true;
+                        withNormal = true;
+                        withQuad = true;
+                    }
                 }
                 else
                 {
@@ -2574,13 +2593,17 @@ bool Mesh::loadFromObjAscii(int& nmtls, StaticVector<int>& trisMtlIds, StaticVec
                     }
                     else if(n2 == 4)
                     {
-                        sscanf(line.c_str(), "f %i/%i %i/%i %i/%i %i/%i", &vertex.x, &uvCoord.x, &vertex.y, &uvCoord.y, &vertex.z, &uvCoord.z, &vertex2.z, &uvCoord2.z);
+                        sscanf(line.c_str(), "f %i//%i %i//%i %i//%i %i//%i",
+                               &vertex.x, &vertexNormal.x,
+                               &vertex.y, &vertexNormal.y,
+                               &vertex.z, &vertexNormal.z,
+                               &vertex2.z, &vertexNormal2.z);
                         vertex2.x = vertex.x; // same first point
-                        uvCoord2.x = uvCoord.x;
+                        vertexNormal2.x = vertexNormal.x;
                         vertex2.y = vertex.z; // 3rd point of the 1st triangle is the 2nd of the 2nd triangle.
-                        uvCoord2.y = uvCoord.z;
+                        vertexNormal2.y = vertexNormal.z;
                         ok = true;
-                        withUV = true;
+                        withNormal = true;
                         withQuad = true;
                     }
                 }
@@ -2622,10 +2645,10 @@ bool Mesh::loadFromObjAscii(int& nmtls, StaticVector<int>& trisMtlIds, StaticVec
                     {
                         trisUvIds.push_back(uvCoord2 - Voxel(1, 1, 1));
                     }
-//                    if(withNormal)
-//                    {
-//                        (*trisNormalsIds)->push_back(vertexNormal2 - Voxel(1, 1, 1));
-//                    }
+                    if(withNormal)
+                    {
+                        trisNormalsIds.push_back(vertexNormal2 - Voxel(1, 1, 1));
+                    }
                 }
             }
 
