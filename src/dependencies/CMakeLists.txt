@@ -2,9 +2,9 @@
 
 # Add nanoflann (header-only)
 add_library(nanoflann INTERFACE IMPORTED GLOBAL)
+set(NANOFLANN_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/nanoflann/include")
 set_target_properties(nanoflann PROPERTIES
-    INTERFACE_INCLUDE_DIRECTORIES "${CMAKE_CURRENT_SOURCE_DIR}/nanoflann/include"
-)
+    INTERFACE_INCLUDE_DIRECTORIES "${NANOFLANN_INCLUDE_DIR}")
 
 # libs should be static
 set(BUILD_SHARED_LIBS OFF)
