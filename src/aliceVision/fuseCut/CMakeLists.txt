@@ -32,6 +32,7 @@ target_include_directories(aliceVision_fuseCut
   PUBLIC $<BUILD_INTERFACE:${ALICEVISION_INCLUDE_DIR}>
          $<BUILD_INTERFACE:${generatedDir}>
          $<INSTALL_INTERFACE:include>
+  PRIVATE $<BUILD_INTERFACE:${NANOFLANN_INCLUDE_DIR}>
 )
 
 target_link_libraries(aliceVision_fuseCut
