@@ -211,7 +211,7 @@ ExternalProject_Add(openimageio
        BINARY_DIR ${BUILD_DIR}/openimageio_build
        INSTALL_DIR ${BUILD_DIR}/openimageio_build
        CONFIGURE_COMMAND ${CMAKE_COMMAND} -DCMAKE_BUILD_TYPE=${DEPS_CMAKE_BUILD_TYPE} -DCMAKE_PREFIX_PATH="${BUILD_DIR}/png_build;${BUILD_DIR}/turbojpeg_build" -DBOOST_ROOT=${BUILD_DIR}/boost_build -DILMBASE_HOME=${BUILD_DIR}/openexr_build -DOPENEXR_HOME=${BUILD_DIR}/openexr_build -DTIFF_INCLUDE_DIR=${BUILD_DIR}/tiff_build/include -DTIFF_LIBRARIES=${BUILD_DIR}/tiff_build/lib/libtiff.so ${PNG_CMAKE_FLAGS} ${JPEG_CMAKE_FLAGS} -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR> <SOURCE_DIR> -DUSE_PYTHON=OFF -DUSE_OPENCV=OFF -DUSE_OPENGL=OFF
-       DEPENDS boost openexr tiff png ${JPEG_TARGET}
+       DEPENDS boost openexr tiff ${PNG_TARGET} ${JPEG_TARGET}
        )
 # TODO: Raw, openjpeg
 #  -DLibRaw_INCLUDE_DIR=$LIBRAW_INCLUDE_DIR
