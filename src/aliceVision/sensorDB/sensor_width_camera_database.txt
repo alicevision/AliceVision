@@ -292,6 +292,7 @@ Canon;Canon EOS 1000D;22.2
 Canon;Canon EOS 100D;22.3
 Canon;Canon EOS 10D;22.7
 Canon;Canon EOS 1100D;22.2
+Canon;Canon EOS 1300D;22.3
 Canon;Canon EOS 20D;22.5
 Canon;Canon EOS 20Da;22.5
 Canon;Canon EOS 300D;22.7
@@ -1297,6 +1298,7 @@ HP;HP R607 BMW;5.75
 HP;HP R607 Harajuku;5.75
 HP;HP SB360;6.16
 HP;HP SW450;6.16
+IDS;UI 3360CP;8.8
 Jenoptik;Jenoptik JD 1300 D;6.4
 Jenoptik;Jenoptik JD 1300 F;6.4
 Jenoptik;Jenoptik JD 1500 z3;6.4
@@ -1735,8 +1737,8 @@ Minox;Minox DD200;6.4
 Minox;Minox DM 1;6.4
 Minox;Minox Mobi DV;6.4
 Minox;Minox Rolleiflex MiniDigi;6.4
-Motorola;XT1033;3.8
 Motorola;Moto G (4);6.06
+Motorola;XT1033;3.8
 Nikon;Nikon 1 AW1;13.2
 Nikon;Nikon 1 J1;13.2
 Nikon;Nikon 1 J2;13.2
@@ -3403,8 +3405,10 @@ Sigma;Sigma SD14;20.7
 Sigma;Sigma SD15;20.7
 Sigma;Sigma SD9;20.7
 Sony;A7SM2;25.8
+SONY;DSC-HX60V;7.76
 SONY;DSC-P200;7.11
 Sony;DSC-RX100M4;13.2
+SONY;ILCE-7RM2;35.9
 Sony;ILCE-7S;35.6
 SONY;NEX-3N;23.5
 Sony;Sony A77 II;23.5
