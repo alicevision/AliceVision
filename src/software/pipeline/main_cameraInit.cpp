@@ -468,7 +468,7 @@ int main(int argc, char **argv)
       ALICEVISION_LOG_WARNING("\t- '" << imagePath << "'");
   }
 
-  if(!unknownSensors.empty() && !allowIncompleteOutput)
+  if(!unknownSensors.empty())
   {
     ALICEVISION_LOG_ERROR("Sensor width doesn't exist in the database for image(s) :");
     for(const auto& unknownSensor : unknownSensors)
@@ -476,7 +476,8 @@ int main(int argc, char **argv)
                         << "\t- camera brand: " << unknownSensor.first.first <<  std::endl
                         << "\t- camera model: " << unknownSensor.first.second <<  std::endl);
     ALICEVISION_LOG_ERROR("Please add camera model(s) and sensor width(s) in the database." << std::endl);
-    return EXIT_FAILURE;
+    if(!allowIncompleteOutput)
+      return EXIT_FAILURE;
   }
 
   if(!allowIncompleteOutput && (completeViewCount < 1 || (completeViewCount < 2 && !allowSingleView)))
