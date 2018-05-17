@@ -114,7 +114,14 @@ ExternalProject_Add(ceres
        CONFIGURE_COMMAND ${CMAKE_COMMAND} -DCMAKE_BUILD_TYPE=${DEPS_CMAKE_BUILD_TYPE} -DEigen3_DIR:PATH=${BUILD_DIR}/eigen_build/share/eigen3/cmake -DEIGEN_INCLUDE_DIR=${BUILD_DIR}/eigen_build/include/eigen3 -DMINIGLOG=ON -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR> <SOURCE_DIR>
        DEPENDS eigen
        )
-set(CERES_CMAKE_FLAGS -DCeres_DIR=${BUILD_DIR}/ceres_build/lib64/cmake/Ceres)
+# Test 32/64 bits
+if("${CMAKE_SIZEOF_VOID_P}" EQUAL "8")
+    # message(STATUS "Target is 64 bits")
+    set(CERES_CMAKE_FLAGS -DCeres_DIR=${BUILD_DIR}/ceres_build/lib64/cmake/Ceres )
+else()
+    # message(STATUS "Target is 32 bits")
+    set(CERES_CMAKE_FLAGS -DCeres_DIR=${BUILD_DIR}/ceres_build/lib/cmake/Ceres )
+endif()
 
 # Add IlmBase
 ExternalProject_Add(ilmbase
