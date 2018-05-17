@@ -157,8 +157,8 @@ if(AV_BUILD_PNG)
 set(PNG_TARGET png)
 ExternalProject_Add(${PNG_TARGET}
        URL http://github.com/glennrp/libpng-releases/raw/master/libpng-1.6.34.tar.gz
-           http://prdownloads.sourceforge.net/libpng/libpng-1.6.34.tar.gz
-           https://sourceforge.net/projects/libpng/files/libpng16/1.6.34/libpng-1.6.34.tar.gz
+       #    http://prdownloads.sourceforge.net/libpng/libpng-1.6.34.tar.gz
+       #    https://sourceforge.net/projects/libpng/files/libpng16/1.6.34/libpng-1.6.34.tar.gz
        PREFIX ${BUILD_DIR}
        BUILD_IN_SOURCE 0
        SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/png
@@ -187,8 +187,8 @@ endif()
 # Add Boost
 ExternalProject_Add(boost
        URL https://github.com/alicevision/AliceVisionDependencies/releases/download/boost-src.1.61.0/boost_1_61_0.tar.gz
-           http://sourceforge.net/projects/boost/files/boost/1.61.0/boost_1_61_0.tar.bz2
-           https://dl.bintray.com/boostorg/release/1.61.0/source/boost_1_61_0.tar.gz
+       #    http://sourceforge.net/projects/boost/files/boost/1.61.0/boost_1_61_0.tar.bz2
+       #    https://dl.bintray.com/boostorg/release/1.61.0/source/boost_1_61_0.tar.gz
        # GIT_REPOSITORY https://github.com/boostorg/boost.git
        # GIT_TAG boost-1.61.0
        PREFIX ${BUILD_DIR}
