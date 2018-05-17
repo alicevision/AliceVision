@@ -125,7 +125,9 @@ endif()
 
 # Add IlmBase
 ExternalProject_Add(ilmbase
-       URL https://github.com/openexr/openexr/archive/v2.2.1.tar.gz
+       #URL https://github.com/openexr/openexr/archive/v2.2.1.tar.gz
+       GIT_REPOSITORY https://github.com/openexr/openexr
+       GIT_TAG 305826b48de88b552488cf0c75dc52ab13fb7855
        PREFIX ${BUILD_DIR}
        BUILD_IN_SOURCE 0
        SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/openexr
@@ -137,7 +139,12 @@ set(ILMBASE_CMAKE_FLAGS -DILMBASE_ROOT=${BUILD_DIR}/openexr_build -DILMBASE_INCL
 
 # Add OpenEXR
 ExternalProject_Add(openexr
-       URL https://github.com/openexr/openexr/archive/v2.2.1.tar.gz
+       # URL https://github.com/openexr/openexr/archive/v2.2.1.tar.gz
+       # The release 2.2.1 has troubles with C++17, which breaks compilation with recent compilers.
+       # The problem has been fixed https://github.com/openexr/openexr/issues/235
+       # but there is no release yet, so we use the development version.
+       GIT_REPOSITORY https://github.com/openexr/openexr
+       GIT_TAG 305826b48de88b552488cf0c75dc52ab13fb7855
        PREFIX ${BUILD_DIR}
        BUILD_IN_SOURCE 0
        SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/openexr
