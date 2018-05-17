@@ -127,7 +127,8 @@ endif()
 ExternalProject_Add(ilmbase
        #URL https://github.com/openexr/openexr/archive/v2.2.1.tar.gz
        GIT_REPOSITORY https://github.com/openexr/openexr
-       GIT_TAG 305826b48de88b552488cf0c75dc52ab13fb7855
+       # Use the latest commit with g++4.X compatibility
+       GIT_TAG 74b5c1dc2dfbdce74987a57f5e011dc711f9ca65
        PREFIX ${BUILD_DIR}
        BUILD_IN_SOURCE 0
        SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/openexr
@@ -144,7 +145,8 @@ ExternalProject_Add(openexr
        # The problem has been fixed https://github.com/openexr/openexr/issues/235
        # but there is no release yet, so we use the development version.
        GIT_REPOSITORY https://github.com/openexr/openexr
-       GIT_TAG 305826b48de88b552488cf0c75dc52ab13fb7855
+       # Use the latest commit with g++4.X compatibility
+       GIT_TAG 74b5c1dc2dfbdce74987a57f5e011dc711f9ca65
        PREFIX ${BUILD_DIR}
        BUILD_IN_SOURCE 0
        SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/openexr
