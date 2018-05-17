@@ -204,7 +204,7 @@ set(BOOST_CMAKE_FLAGS -DBOOST_ROOT=${BUILD_DIR}/boost_build)
 
 # Add OpenImageIO
 ExternalProject_Add(openimageio
-       URL https://github.com/OpenImageIO/oiio/archive/Release-1.8.8.tar.gz
+       URL https://github.com/OpenImageIO/oiio/archive/Release-1.8.11.tar.gz
        PREFIX ${BUILD_DIR}
        BUILD_IN_SOURCE 0
        SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/openimageio
