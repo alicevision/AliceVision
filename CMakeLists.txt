@@ -244,6 +244,7 @@ set(AV_DEPS_CMAKE_PREFIX_PATH "${BUILD_DIR}/boost_build;${BUILD_DIR}/openimageio
 ExternalProject_Add(aliceVision
        PREFIX ${CMAKE_CURRENT_SOURCE_DIR}
        BUILD_IN_SOURCE 0
+       BUILD_ALWAYS 1
        SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src
        BINARY_DIR ${BUILD_DIR}/aliceVision_build
        INSTALL_DIR ${BUILD_DIR}/aliceVision_build
