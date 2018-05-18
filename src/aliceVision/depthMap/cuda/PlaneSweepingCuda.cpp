@@ -1538,10 +1538,14 @@ bool PlaneSweepingCuda::refineRcTcDepthMap(bool useTcOrRcPixSize, int nStepsToRe
     }
 
     // sweep
-    ps_refineRcDepthMap((CudaArray<uchar4, 2>**)ps_texs_arr, simMap->getDataWritable().data(), rcDepthMap->getDataWritable().data(), nStepsToRefine,
-                        ttcams, camsids->size(), w, h, mp->getWidth(rc) / scale,
-                        mp->getHeight(rc) / scale, scale - 1, CUDADeviceNo, nImgsInGPUAtTime, scales, verbose, wsh,
-                        gammaC, gammaP, epipShift, useTcOrRcPixSize, xFrom);
+    ps_refineRcDepthMap(
+        (CudaArray<uchar4, 2>**)ps_texs_arr,
+        simMap->getDataWritable().data(),
+        rcDepthMap->getDataWritable().data(),
+        nStepsToRefine,
+        ttcams, camsids->size(), w, h, mp->getWidth(rc) / scale,
+        mp->getHeight(rc) / scale, scale - 1, CUDADeviceNo, nImgsInGPUAtTime, scales, verbose, wsh,
+        gammaC, gammaP, epipShift, useTcOrRcPixSize, xFrom);
 
     /*
     CudaHostMemoryHeap<float, 3> tmpSimVolume_hmh(CudaSize<3>(201, 201, nStepsToRefine));

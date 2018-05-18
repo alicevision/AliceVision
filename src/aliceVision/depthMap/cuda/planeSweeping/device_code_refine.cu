@@ -490,11 +490,15 @@ __global__ void refine_fuseThreeDepthSimMaps_kernel(float* osim, int osim_p, flo
     };
 }
 
-__global__ void refine_compUpdateYKNCCSimMapPatch_kernel(float* osimMap, int osimMap_p, float* odptMap, int odptMap_p,
-                                                         float* depthMap, int depthMap_p, int width, int height,
-                                                         int wsh, const float gammaC, const float gammaP,
-                                                         const float epipShift, const float tcStep, int id,
-                                                         bool moveByTcOrRc, int xFrom, int imWidth, int imHeight)
+__global__ void refine_compUpdateYKNCCSimMapPatch_kernel(
+    float* osimMap, int osimMap_p,
+    float* odptMap, int odptMap_p,
+    const float* depthMap, int depthMap_p, int width, int height,
+    int wsh, const float gammaC, const float gammaP,
+    const float epipShift,
+    const float tcStep,    // changing in loop
+    int id,                // changing in loop
+    bool moveByTcOrRc, int xFrom, int imWidth, int imHeight)
 {
     int x = blockIdx.x * blockDim.x + threadIdx.x;
     int y = blockIdx.y * blockDim.y + threadIdx.y;
