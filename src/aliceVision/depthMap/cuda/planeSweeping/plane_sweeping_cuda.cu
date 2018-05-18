@@ -4,39 +4,29 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
-#include <aliceVision/depthMap/cuda/commonStructures.hpp>
-#include <aliceVision/depthMap/cuda/deviceCommon/device_color.cu>
-#include <aliceVision/depthMap/cuda/deviceCommon/device_patch_es.cu>
-#include <aliceVision/depthMap/cuda/deviceCommon/device_eig33.cu>
-#include <aliceVision/depthMap/cuda/planeSweeping/device_code.cu>
-#include <aliceVision/depthMap/cuda/planeSweeping/device_code_refine.cu>
-#include <aliceVision/depthMap/cuda/planeSweeping/device_code_volume.cu>
-#include <aliceVision/depthMap/cuda/planeSweeping/device_code_fuse.cu>
+#include "aliceVision/depthMap/cuda/planeSweeping/plane_sweeping_cuda.hpp"
+
+#include "aliceVision/depthMap/cuda/commonStructures.hpp"
+
+#include "aliceVision/depthMap/cuda/planeSweeping/cuda_global_data.cuh"
+#include "aliceVision/depthMap/cuda/planeSweeping/device_code.cuh"
+#include "aliceVision/depthMap/cuda/planeSweeping/device_code_refine.cuh"
+#include "aliceVision/depthMap/cuda/planeSweeping/device_code_volume.cuh"
+#include "aliceVision/depthMap/cuda/planeSweeping/device_code_fuse.cuh"
+
+#include "aliceVision/depthMap/cuda/deviceCommon/device_color.cuh"
+#include "aliceVision/depthMap/cuda/deviceCommon/device_patch_es.cuh"
+#include "aliceVision/depthMap/cuda/deviceCommon/device_eig33.cuh"
+#include "aliceVision/depthMap/cuda/deviceCommon/device_global.cuh"
 
 #include <math_constants.h>
+#include <iostream>
+#include <map>
 
 #include <algorithm>
 
 namespace aliceVision {
 namespace depthMap {
-
-// Macro for checking cuda errors
-#define CHECK_CUDA_ERROR()                                                    \
-    if(cudaError_t err = cudaGetLastError())                                  \
-                                                                              \
-{                                                                             \
-        fprintf(stderr, "\n\nCUDAError: %s\n", cudaGetErrorString(err));      \
-        fprintf(stderr, "  file:       %s\n", __FILE__);                      \
-        fprintf(stderr, "  function:   %s\n", __FUNCTION__);                  \
-        fprintf(stderr, "  line:       %d\n\n", __LINE__);                    \
-                                                                              \
-}
-
-
-// Round a / b to nearest higher integer value.
-inline unsigned int divUp(unsigned int a, unsigned int b) {
-  return (a % b != 0) ? (a / b + 1) : (a / b);
-}
 
 __host__ float3 ps_M3x3mulV3(float* M3x3, const float3& V)
 {
@@ -157,47 +147,10 @@ __host__ void ps_init_target_camera_matrices(float* _P, float* _iP, float* _R, f
     cudaMemcpyToSymbol(sg_s_tZVect, &_tZVect, sizeof(float) * 3);
 }
 
-/*
-void calcDCTCoefficients(void)
+__host__ GaussianArray* ps_create_gaussian_arr(float delta, int radius)
 {
-  float dctCoefficientsLoc[DCT_DIMENSION][DCT_DIMENSION][DCT_DIMENSION][DCT_DIMENSION];
-  for (int p = 0; p < DCT_DIMENSION; p ++)
-       for (int q = 0; q < DCT_DIMENSION; q ++)
-           {
-             double factor = (p == 0 ? 1 : sqrt (2.0)) * (q == 0 ? 1 : sqrt (2.0));
-             for (int m = 0; m < DCT_DIMENSION; m ++)
-                  for (int n = 0; n < DCT_DIMENSION; n ++)
-                      {
-                        dctCoefficientsLoc[p][q][m][n] = cos(CUDART_PI_F*(2*m + 1)*p/2/DCT_DIMENSION) *
-cos(CUDART_PI_F*(2*n+1)*q/2/DCT_DIMENSION) * factor;
-                      }
-           }
-
-   cudaMemcpyToSymbol(dctCoefficients, dctCoefficientsLoc,
-sizeof(float)*DCT_DIMENSION*DCT_DIMENSION*DCT_DIMENSION*DCT_DIMENSION);
-}
-*/
-
-__host__ cudaArray* ps_create_gaussian_arr(float delta, int radius)
-{
-    int size = 2 * radius + 1;
-
-    float* d_gaussian;
-    cudaMalloc((void**)&d_gaussian, (2 * radius + 1) * sizeof(float));
-
-    // generate gaussian array
-    generateGaussian_kernel<<<1, size>>>(d_gaussian, delta, radius);
-    cudaThreadSynchronize();
-
-    cudaArray* d_gaussianArray = NULL;
-
-    // create cuda array
-    cudaChannelFormatDesc channelDesc = cudaCreateChannelDesc(32, 0, 0, 0, cudaChannelFormatKindFloat);
-    cudaMallocArray(&d_gaussianArray, &channelDesc, size, 1);
-    cudaMemcpyToArray(d_gaussianArray, 0, 0, d_gaussian, size * sizeof(float), cudaMemcpyDeviceToDevice);
-    cudaFree(d_gaussian);
-
-    return d_gaussianArray;
+    std::cerr << "Fetching Gaussian table for radius " << radius << " and delta " << delta << std::endl;
+    return global_data.getGaussianArray( delta, radius );
 }
 
 int ps_listCUDADevices(bool verbose)
@@ -232,11 +185,13 @@ int ps_listCUDADevices(bool verbose)
     }
 
     return num_gpus;
-};
+}
 
-void ps_deviceAllocate(CudaArray<uchar4, 2>*** ps_texs_arr, int ncams, int width, int height, int scales,
-                       int deviceId)
+void ps_deviceAllocate( int ncams, int width, int height, int scales,
+                        int deviceId)
 {
+    static int counter = 1;
+    std::cerr << "    INFO " << __FUNCTION__ << " Call " << counter++ << " to ps_deviceAllocate" << std::endl;
     int num_gpus = 0;
     cudaGetDeviceCount(&num_gpus);
 
@@ -247,71 +202,31 @@ void ps_deviceAllocate(CudaArray<uchar4, 2>*** ps_texs_arr, int ncams, int width
     // printf("ps_deviceAllocate\n");
     // pr_printfDeviceMemoryInfo();
 
-    ///////////////////////////////////////////////////////////////////////////////
-    // setup textures parameters
-    rtex.filterMode = cudaFilterModeLinear;
-    rtex.normalized = false;
-    ttex.filterMode = cudaFilterModeLinear;
-    ttex.normalized = false;
-
-    r4tex.filterMode = cudaFilterModeLinear;
-    r4tex.normalized = false;
-    t4tex.filterMode = cudaFilterModeLinear;
-    t4tex.normalized = false;
-
-    rTexU4.filterMode = cudaFilterModePoint;
-    rTexU4.normalized = false;
-    tTexU4.filterMode = cudaFilterModePoint;
-    tTexU4.normalized = false;
-
-    volPixsTex.filterMode = cudaFilterModePoint;
-    volPixsTex.normalized = false;
-    pixsTex.filterMode = cudaFilterModePoint;
-    pixsTex.normalized = false;
-    gradTex.filterMode = cudaFilterModePoint;
-    gradTex.normalized = false;
-    depthsTex.filterMode = cudaFilterModePoint;
-    depthsTex.normalized = false;
-    depthsTex1.filterMode = cudaFilterModePoint;
-    depthsTex1.normalized = false;
-    normalsTex.filterMode = cudaFilterModePoint;
-    normalsTex.normalized = false;
-    sliceTex.filterMode = cudaFilterModePoint;
-    sliceTex.normalized = false;
-    sliceTexFloat2.filterMode = cudaFilterModePoint;
-    sliceTexFloat2.normalized = false;
-    sliceTexUChar.filterMode = cudaFilterModePoint;
-    sliceTexUChar.normalized = false;
-    sliceTexUInt2.filterMode = cudaFilterModePoint;
-    sliceTexUInt2.normalized = false;
-    sliceTexUInt.filterMode = cudaFilterModePoint;
-    sliceTexUInt.normalized = false;
-    f4Tex.filterMode = cudaFilterModePoint;
-    f4Tex.normalized = false;
-
     pr_printfDeviceMemoryInfo();
 
     ///////////////////////////////////////////////////////////////////////////////
     // copy textures to the device
-    int allBytes = 0;
-    (*ps_texs_arr) = new CudaArray<uchar4, 2>*[scales * ncams];
-    for(int c = 0; c < ncams; c++)
-    {
-        for(int s = 0; s < scales; s++)
-        {
-            int w = width / (s + 1);
-            int h = height / (s + 1);
-            (*ps_texs_arr)[c * scales + s] = new CudaArray<uchar4, 2>(CudaSize<2>(w, h));
-            allBytes += (*ps_texs_arr)[c * scales + s]->getBytes();
-        };
-    };
-    CHECK_CUDA_ERROR();
+    global_data.allocScaledPictureArrays( scales, ncams, width, height );
+
+    // int allBytes = 0;
+    // (*ps_texs_arr) = new CudaArray<uchar4, 2>*[scales * ncams];
+    // for(int c = 0; c < ncams; c++)
+    // {
+    //     for(int s = 0; s < scales; s++)
+    //     {
+    //         int w = width / (s + 1);
+    //         int h = height / (s + 1);
+    //         (*ps_texs_arr)[c * scales + s] = new CudaArray<uchar4, 2>(CudaSize<2>(w, h));
+    //         allBytes += (*ps_texs_arr)[c * scales + s]->getBytes();
+    //     }
+    // }
+    // CHECK_CUDA_ERROR();
 
     // calcDCTCoefficients();
     // CHECK_CUDA_ERROR();
 
     // printf("scales %i\n",scales);
-    cudaThreadSynchronize();
+    // cudaThreadSynchronize();
 
     // printf("total size of preallocated images in GPU memory: %f\n",(float)allBytes/(1024.0f*1024.0f));
 
@@ -326,213 +241,92 @@ void testCUDAdeviceNo(int CUDAdeviceNo)
     if(myCUDAdeviceNo != CUDAdeviceNo)
     {
         printf("WARNING different device %i %i\n", myCUDAdeviceNo, CUDAdeviceNo);
-    };
+    }
 }
 
-void ps_deviceUpdateCam(CudaArray<uchar4, 2>** ps_texs_arr, cameraStruct* cam, int camId, int CUDAdeviceNo,
-                        int ncamsAllocated, int scales, int w, int h, int varianceWsh)
+void ps_deviceUpdateCam( cameraStruct* cam, int camId, int CUDAdeviceNo,
+                         int ncamsAllocated, int scales, int w, int h, int varianceWsh)
 {
+    std::cerr << "    INFO " << __FUNCTION__ << " Calling with scales=" << scales << std::endl;
     testCUDAdeviceNo(CUDAdeviceNo);
+
+    CudaArray<uchar4,2>& array0 = global_data.getScaledPictureArray( 0, camId );
+    cudaTextureObject_t r4tex;
 
     // compute gradient
     {
         CudaDeviceMemoryPitched<uchar4, 2> tex_lab_dmp(CudaSize<2>(w, h));
-        copy(tex_lab_dmp, (*cam->tex_rgba_hmh));
+        std::cerr << "    INFO " << __FUNCTION__ << " Allocating pitch memory with " << w << "X" << h << " entries" << std::endl;
+        copy(tex_lab_dmp, (*cam->tex_rgba_hmh)); // copy host to device
 
         int block_size = 8;
         dim3 block(block_size, block_size, 1);
         dim3 grid(divUp(w, block_size), divUp(h, block_size), 1);
         rgb2lab_kernel<<<grid, block>>>(tex_lab_dmp.getBuffer(), tex_lab_dmp.stride()[0], w, h);
-        cudaThreadSynchronize();
-        copy((*ps_texs_arr[camId * scales + 0]), tex_lab_dmp);
+
+        // copy((*ps_texs_arr[camId * scales + 0]), tex_lab_dmp);
+        copy( array0, tex_lab_dmp );
 
         if(varianceWsh > 0)
         {
-            cudaBindTextureToArray(r4tex, ps_texs_arr[camId * scales + 0]->getArray(), cudaCreateChannelDesc<uchar4>());
-            compute_varLofLABtoW_kernel<<<grid, block>>>(tex_lab_dmp.getBuffer(), tex_lab_dmp.stride()[0], w, h,
-                                                         varianceWsh);
-            cudaThreadSynchronize();
-            cudaUnbindTexture(r4tex);
-            copy((*ps_texs_arr[camId * scales + 0]), tex_lab_dmp);
-        };
+            r4tex = global_data.getScaledPictureTex( 0, camId );
+            compute_varLofLABtoW_kernel<<<grid, block>>>(
+                    r4tex,
+                    tex_lab_dmp.getBuffer(), tex_lab_dmp.stride()[0], w, h,
+                    varianceWsh);
+            copy( array0, tex_lab_dmp );
+        }
     }
 
-    cudaBindTextureToArray(r4tex, ps_texs_arr[camId * scales + 0]->getArray(), cudaCreateChannelDesc<uchar4>());
+    r4tex = global_data.getScaledPictureTex( 0, camId );
 
     // for each scale
     for(int scale = 1; scale < scales; scale++)
     {
         int radius = scale + 1;
-        cudaArray* gaussian_arr = ps_create_gaussian_arr(1.0f, radius);
-        cudaBindTextureToArray(gaussianTex, gaussian_arr, cudaCreateChannelDesc<float>());
+        GaussianArray* gaussian_arr = ps_create_gaussian_arr(1.0f, radius);
 
         int block_size = 8;
         dim3 block(block_size, block_size, 1);
         dim3 grid(divUp(w / (scale + 1), block_size), divUp(h / (scale + 1), block_size), 1);
 
         CudaDeviceMemoryPitched<uchar4, 2> tex_lab_dmp(CudaSize<2>(w / (scale + 1), h / (scale + 1)));
-        // downscale_bilateral_smooth_lab_kernel<<<grid, block>>>(
+        std::cerr << "    INFO " << __FUNCTION__ << " Allocating pitch memory with " << w / (scale + 1) << "X" << h / (scale + 1) << " entries" << std::endl;
+        // downscale_bilateral_smooth_lab_kernel<<<grid, block>>>
+        // downscale_mean_smooth_lab_kernel<<<grid, block>>>
         downscale_gauss_smooth_lab_kernel<<<grid, block>>>(
-            // downscale_mean_smooth_lab_kernel<<<grid, block>>>(
+            gaussian_arr->tex,
+            r4tex,
             tex_lab_dmp.getBuffer(), tex_lab_dmp.stride()[0], w / (scale + 1), h / (scale + 1), scale + 1,
             radius //, 15.5f
             );
-        cudaThreadSynchronize();
-        copy((*ps_texs_arr[camId * scales + scale]), tex_lab_dmp);
+
+        CudaArray<uchar4,2>& array = global_data.getScaledPictureArray( scale, camId );
+
+        // copy((*ps_texs_arr[camId * scales + scale]), tex_lab_dmp);
+        copy( array, tex_lab_dmp);
 
         if(varianceWsh > 0)
         {
-            cudaUnbindTexture(r4tex);
-            cudaBindTextureToArray(r4tex, ps_texs_arr[camId * scales + scale]->getArray(),
-                                   cudaCreateChannelDesc<uchar4>());
-            compute_varLofLABtoW_kernel<<<grid, block>>>(tex_lab_dmp.getBuffer(), tex_lab_dmp.stride()[0],
-                                                         w / (scale + 1), h / (scale + 1), varianceWsh);
-            cudaThreadSynchronize();
-            cudaUnbindTexture(r4tex);
-            copy((*ps_texs_arr[camId * scales + scale]), tex_lab_dmp);
-            cudaBindTextureToArray(r4tex, ps_texs_arr[camId * scales + 0]->getArray(), cudaCreateChannelDesc<uchar4>());
-        };
-
-        cudaUnbindTexture(gaussianTex);
-        cudaFreeArray(gaussian_arr);
-    };
-
-    cudaUnbindTexture(r4tex);
+            r4tex = global_data.getScaledPictureTex( scale, camId );
+            compute_varLofLABtoW_kernel<<<grid, block>>>(
+                r4tex,
+                tex_lab_dmp.getBuffer(), tex_lab_dmp.stride()[0],
+                w / (scale + 1), h / (scale + 1), varianceWsh);
+            // copy((*ps_texs_arr[camId * scales + scale]), tex_lab_dmp);
+            copy( array, tex_lab_dmp );
+            r4tex = global_data.getScaledPictureTex( 0, camId );
+        }
+    }
 
     CHECK_CUDA_ERROR();
 }
 
-void ps_deviceDeallocate(CudaArray<uchar4, 2>*** ps_texs_arr, int CUDAdeviceNo, int ncams, int scales)
+void ps_deviceDeallocate( int CUDAdeviceNo, int ncams, int scales)
 {
     testCUDAdeviceNo(CUDAdeviceNo);
 
-    for(int c = 0; c < ncams * scales; c++)
-    {
-        delete(*ps_texs_arr)[c];
-    };
-    delete[](*ps_texs_arr);
-}
-
-void ps_planeSweepingGPUPixels(CudaArray<uchar4, 2>** ps_texs_arr, CudaHostMemoryHeap<float, 2>* odpt_hmh,
-                               CudaHostMemoryHeap<float, 2>* osim_hmh, cameraStruct** cams, int ncams, int width,
-                               int height, CudaHostMemoryHeap<int2, 2>& pixs_hmh,
-                               CudaHostMemoryHeap<float, 2>& depths_hmh, int slicesAtTime, int ntimes, int npixs,
-                               int wsh, int kernelSizeHalf, int nPlanes, int scale, int CUDAdeviceNo,
-                               int ncamsAllocated, int scales, bool verbose, bool doUsePixelsDepths, int nbest,
-                               bool useTcOrRcPixSize, float gammaC, float gammaP, bool subPixel, float epipShift = 0.0f
-                               /*,
-                               CudaHostMemoryHeap<float,2>  &sliceRef_hmh,
-                               CudaHostMemoryHeap<float3,2>  &slicePts_hmh,
-                               CudaHostMemoryHeap<float,2>  &sliceLocMin_hmh,
-                               CudaHostMemoryHeap<int,2>  &bdid_hmh*/
-                               )
-{
-    clock_t tall = tic();
-    testCUDAdeviceNo(CUDAdeviceNo);
-
-    ///////////////////////////////////////////////////////////////////////////////
-    // copy textures to the device
-    CudaArray<int2, 2> pixs_arr(pixs_hmh);
-    CudaArray<float, 2> depths_arr(depths_hmh);
-
-    ///////////////////////////////////////////////////////////////////////////////
-    // allocate temp memory
-    CudaDeviceMemoryPitched<float, 2> slice_dmp(CudaSize<2>(nPlanes, slicesAtTime));
-    // CudaDeviceMemoryPitched<float3,2>  slicePts_dmp(CudaSize<2>(nPlanes, slicesAtTime));
-    CudaArray<float, 2> slice_arr(CudaSize<2>(nPlanes, slicesAtTime));
-
-    CudaDeviceMemoryPitched<float, 2> bs_dmp(CudaSize<2>(npixs, nbest));
-    CudaDeviceMemoryPitched<float, 2> bd_dmp(CudaSize<2>(npixs, nbest));
-    // CudaDeviceMemoryPitched<int,2>    bdid_dmp(CudaSize<2>(npixs, nbest));
-
-    ///////////////////////////////////////////////////////////////////////////////
-    // setup block and grid
-    // int block_size = 16*16;
-    // dim3 block(block_size,1,1);
-    // dim3 grid(divUp(nPlanes, block_size),divUp(slicesAtTime,1),1);
-    int block_size = 8;
-    dim3 block(block_size, block_size, 1);
-    dim3 grid(divUp(nPlanes, block_size), divUp(slicesAtTime, block_size), 1);
-    // int block_size = 64;
-    // dim3 block(1,block_size,1);
-    // dim3 grid(nPlanes, divUp(slicesAtTime,block_size),1);
-
-    int block_sizenmxs = 64;
-    dim3 blocknmxs(block_sizenmxs, 1, 1);
-    dim3 gridnmxs(divUp(slicesAtTime, block_sizenmxs), 1, 1);
-
-    /*
-    int block_sizegbs = 512;
-    dim3 blockgbs(block_sizegbs,1,1);
-    dim3 gridgbs(divUp(nPlanes, block_sizegbs),slicesAtTime,1);
-    */
-
-    if(verbose)
-        printf("nPlanes: %i \n", nPlanes);
-
-    cudaBindTextureToArray(pixsTex, pixs_arr.getArray(), cudaCreateChannelDesc<int2>());
-    cudaBindTextureToArray(depthsTex, depths_arr.getArray(), cudaCreateChannelDesc<float>());
-
-    // setup cameras matrices to the constant memory
-    ps_init_reference_camera_matrices(cams[0]->P, cams[0]->iP, cams[0]->R, cams[0]->iR, cams[0]->K, cams[0]->iK,
-                                      cams[0]->C);
-    cudaBindTextureToArray(r4tex, ps_texs_arr[cams[0]->camId * scales + scale]->getArray(),
-                           cudaCreateChannelDesc<uchar4>());
-
-    /*
-    CudaDeviceMemoryPitched<int2,2>   pixs_dmp(pixs_hmh);
-    CudaDeviceMemoryPitched<float2,2> grad_dmp(CudaSize<2>(slicesAtTime, ntimes));
-    ps_computeGradients_hmh(grad_dmp,pixs_dmp,width,height,slicesAtTime,ntimes,npixs,wsh);
-    CudaArray<float2,2> grad_arr(grad_dmp);
-    cudaBindTextureToArray(gradTex, grad_arr.getArray(), cudaCreateChannelDesc<float2>());
-    */
-
-    int c = 1;
-    ps_init_target_camera_matrices(cams[c]->P, cams[c]->iP, cams[c]->R, cams[c]->iR, cams[c]->K, cams[c]->iK,
-                                   cams[c]->C);
-    cudaBindTextureToArray(t4tex, ps_texs_arr[cams[c]->camId * scales + scale]->getArray(),
-                           cudaCreateChannelDesc<uchar4>());
-
-    // setup cameras matrices to the constant memory
-    for(int t = 0; t < ntimes; t++)
-    {
-        slice_kernel<<<grid, block>>>(slice_dmp.getBuffer(), slice_dmp.stride()[0],
-                                      // slicePts_dmp.getBuffer(), slicePts_dmp.stride()[0],
-                                      nPlanes, slicesAtTime, width, height, wsh, t, npixs, nPlanes, doUsePixelsDepths,
-                                      useTcOrRcPixSize, gammaC, gammaP, epipShift);
-        cudaThreadSynchronize();
-
-        copy((slice_arr), slice_dmp);
-        cudaBindTextureToArray(sliceTex, slice_arr.getArray(), cudaCreateChannelDesc<float>());
-
-        getBest_kernel<<<gridnmxs, blocknmxs>>>(slice_dmp.getBuffer(), slice_dmp.stride()[0],
-                                                // bdid_dmp.getBuffer(), bdid_dmp.stride()[0],
-                                                bd_dmp.getBuffer(), bd_dmp.stride()[0], bs_dmp.getBuffer(),
-                                                bs_dmp.stride()[0], slicesAtTime, nPlanes, t, npixs, wsh, width, height,
-                                                doUsePixelsDepths, nbest, useTcOrRcPixSize, subPixel);
-        cudaThreadSynchronize();
-
-        cudaUnbindTexture(sliceTex);
-
-        /*
-                        if (t==450) {
-                                copy(sliceLocMin_hmh, slice_dmp);
-                        };
-                        */
-    };
-
-    // copy(bdid_hmh, bdid_dmp);
-
-    copy((*odpt_hmh), bd_dmp);
-    copy((*osim_hmh), bs_dmp);
-
-    cudaUnbindTexture(r4tex);
-    cudaUnbindTexture(t4tex);
-    cudaUnbindTexture(pixsTex);
-    cudaUnbindTexture(depthsTex);
-
-    if(verbose)
-        printf("gpu elapsed time: %f ms \n", toc(tall));
+    global_data.freeScaledPictureArrays();
 }
 
 void ps_aggregatePathVolume2(CudaDeviceMemoryPitched<unsigned char, 3>& vol_dmp, int volDimX, int volDimY,
@@ -550,45 +344,43 @@ void ps_aggregatePathVolume2(CudaDeviceMemoryPitched<unsigned char, 3>& vol_dmp,
     dim3 gridvolrow(divUp(volDimX, block_sizenmxs), 1, 1);
     dim3 gridvolrowAllCols(divUp(volDimX, block_sizenmxs), volDimY, 1);
 
-    CudaDeviceMemoryPitched<unsigned char, 2> xyslice_dmp(CudaSize<2>(volDimX, volDimY));
-    CudaArray<unsigned char, 2> xyslice_arr(CudaSize<2>(volDimX, volDimY));
+    auto xyslice_dmp = global_data.pitched_mem_uchar_point_tex_cache.get( volDimX, volDimY );
+
     CudaDeviceMemoryPitched<unsigned char, 2> xsliceBestInColSim_dmp(CudaSize<2>(volDimX, 1));
-    // CudaDeviceMemoryPitched<int,2>    xsliceBestInColRow_dmp(CudaSize<2>(volDimX, 1));
 
     for(int z = 0; z < volDimZ; z++)
     {
         volume_agregateCostVolumeAtZ_kernel<<<gridvolrowAllCols, blockvolrow>>>(
             vol_dmp.getBuffer(), vol_dmp.stride()[1], vol_dmp.stride()[0], xsliceBestInColSim_dmp.getBuffer(), volDimX,
             volDimY, volDimZ, z, P1, P2, transfer);
-        cudaThreadSynchronize();
         CHECK_CUDA_ERROR();
 
         volume_getVolumeXYSliceAtZ_kernel<unsigned char, unsigned char><<<gridvol, blockvol>>>(
-            xyslice_dmp.getBuffer(), xyslice_dmp.stride()[0], vol_dmp.getBuffer(), vol_dmp.stride()[1], vol_dmp.stride()[0],
+            xyslice_dmp->mem->getBuffer(), xyslice_dmp->mem->stride()[0], vol_dmp.getBuffer(), vol_dmp.stride()[1], vol_dmp.stride()[0],
             volDimX, volDimY, volDimZ, z);
-        cudaThreadSynchronize();
         CHECK_CUDA_ERROR();
-        copy((xyslice_arr), xyslice_dmp);
-        cudaBindTextureToArray(sliceTexUChar, xyslice_arr.getArray(), cudaCreateChannelDesc<unsigned char>());
-        volume_computeBestXSlice_kernel<<<gridvolrow, blockvolrow>>>(xsliceBestInColSim_dmp.getBuffer(),
-                                                                     // xsliceBestInColRow_dmp.getBuffer(),
-                                                                     volDimX, volDimY);
-        cudaThreadSynchronize();
+
+        volume_computeBestXSlice_kernel<<<gridvolrow, blockvolrow>>>(
+            xyslice_dmp->tex,
+            xsliceBestInColSim_dmp.getBuffer(),
+            volDimX, volDimY);
         CHECK_CUDA_ERROR();
-        cudaUnbindTexture(sliceTexUChar);
-    };
+    }
 
     // pr_printfDeviceMemoryInfo();
+    global_data.pitched_mem_uchar_point_tex_cache.put( xyslice_dmp );
 }
 
 /**
  * @param[inout] d_volSimT similarity volume with some transposition applied
  */
-void ps_aggregatePathVolume(CudaDeviceMemoryPitched<unsigned char, 3>& d_volSimT,
-                            int volDimX, int volDimY, int volDimZ,
-                            float P1, float P2, bool transfer,
-                            int volLUX, int volLUY,
-                            int dimTrnX, bool doInvZ, bool verbose)
+void ps_aggregatePathVolume(
+    cudaTextureObject_t r4tex,
+    CudaDeviceMemoryPitched<unsigned char, 3>& d_volSimT,
+    int volDimX, int volDimY, int volDimZ,
+    float P1, float P2, bool transfer,
+    int volLUX, int volLUY,
+    int dimTrnX, bool doInvZ, bool verbose)
 {
     if(verbose)
         printf("ps_aggregatePathVolume\n");
@@ -606,46 +398,44 @@ void ps_aggregatePathVolume(CudaDeviceMemoryPitched<unsigned char, 3>& d_volSimT
 
     CudaDeviceMemoryPitched<unsigned int, 2> d_xySliceForZ(CudaSize<2>(volDimX, volDimY));
     CudaDeviceMemoryPitched<unsigned int, 2> d_xySliceForZM1(CudaSize<2>(volDimX, volDimY));
-    CudaArray<unsigned int, 2> xySliceForZM1_arr(CudaSize<2>(volDimX, volDimY));
+    // CudaArray<unsigned int, 2> xySliceForZM1_arr(CudaSize<2>(volDimX, volDimY));
+    auto xySliceForZM1_arr = global_data.pitched_mem_uint_point_tex_cache.get( volDimX, volDimY );
+    cudaTextureObject_t sliceTexUInt = xySliceForZM1_arr->tex;
     CudaDeviceMemoryPitched<unsigned int, 2> d_xSliceBestInColSimForZM1(CudaSize<2>(volDimX, 1));
 
     // Copy the first Z plane from 'd_volSimT' into 'xysliceForZ_dmp'
     volume_getVolumeXYSliceAtZ_kernel<unsigned int, unsigned char><<<gridvol, blockvol>>>(
         d_xySliceForZ.getBuffer(), d_xySliceForZ.stride()[0], d_volSimT.getBuffer(), d_volSimT.stride()[1],
         d_volSimT.stride()[0], volDimX, volDimY, volDimZ, 0); // Z=0
-    cudaThreadSynchronize();
     CHECK_CUDA_ERROR();
 
     // Set the first Z plane from 'd_volSimT' to 255
     volume_initVolume_kernel<unsigned char><<<gridvol, blockvol>>>(
         d_volSimT.getBuffer(), d_volSimT.stride()[1], d_volSimT.stride()[0], volDimX, volDimY, volDimZ, 0, 255);
-    cudaThreadSynchronize();
     CHECK_CUDA_ERROR();
 
     for(int z = 1; z < volDimZ; z++)
     {
         copy(d_xySliceForZM1, d_xySliceForZ);
-        copy((xySliceForZM1_arr), d_xySliceForZM1);
-        cudaBindTextureToArray(sliceTexUInt, xySliceForZM1_arr.getArray(), cudaCreateChannelDesc<unsigned int>());
+        copy( *xySliceForZM1_arr->mem, d_xySliceForZM1 );
         // For each column: compute the best score
         // Foreach x:
         //   d_xSliceBestInColSimForZM1[x] = min(d_xySliceForZ[1:height])
         volume_computeBestXSliceUInt_kernel<<<gridvolrow, blockvolrow>>>(
+            sliceTexUInt,
             d_xSliceBestInColSimForZM1.getBuffer(),
             volDimX, volDimY);
-        cudaThreadSynchronize();
         CHECK_CUDA_ERROR();
-        cudaUnbindTexture(sliceTexUInt);
 
         // Copy the 'z' plane from 'd_volSimT' into 'd_xySliceForZ'
         volume_getVolumeXYSliceAtZ_kernel<unsigned int, unsigned char><<<gridvol, blockvol>>>(
             d_xySliceForZ.getBuffer(), d_xySliceForZ.stride()[0],
             d_volSimT.getBuffer(), d_volSimT.stride()[1], d_volSimT.stride()[0],
             volDimX, volDimY, volDimZ, z);
-        cudaThreadSynchronize();
         CHECK_CUDA_ERROR();
 
         volume_agregateCostVolumeAtZinSlices_kernel<<<gridvolrowAllCols, blockvolrow>>>(
+            r4tex,
             d_xySliceForZ.getBuffer(), d_xySliceForZ.stride()[0],              // inout: xySliceForZ
             d_xySliceForZM1.getBuffer(), d_xySliceForZM1.stride()[0],          // in:    xySliceForZM1
             d_xSliceBestInColSimForZM1.getBuffer(),                          // in:    xSliceBestInColSimForZM1
@@ -653,9 +443,10 @@ void ps_aggregatePathVolume(CudaDeviceMemoryPitched<unsigned char, 3>& d_volSimT
             volDimX, volDimY, volDimZ,
             z, P1, P2, transfer, volLUX,
             volLUY, dimTrnX, doInvZ);
-        cudaThreadSynchronize();
         CHECK_CUDA_ERROR();
     }
+
+    global_data.pitched_mem_uint_point_tex_cache.put( xySliceForZM1_arr );
 
     if(verbose)
         printf("ps_aggregatePathVolume done\n");
@@ -665,13 +456,15 @@ void ps_aggregatePathVolume(CudaDeviceMemoryPitched<unsigned char, 3>& d_volSimT
  * @param[out] volAgr_dmp output volume where we will aggregate the best XXX
  * @param[in] d_volSim input similarity volume
  */
-void ps_updateAggrVolume(CudaDeviceMemoryPitched<unsigned char, 3>& volAgr_dmp,
-                         const CudaDeviceMemoryPitched<unsigned char, 3>& d_volSim,
-                         int volDimX, int volDimY, int volDimZ,
-                         int volStepXY, int volLUX, int volLUY,
-                         int dimTrnX, int dimTrnY, int dimTrnZ,
-                         unsigned char P1, unsigned char P2, 
-                         bool verbose, bool doInvZ, int lastN)
+void ps_updateAggrVolume(
+    cudaTextureObject_t r4tex,
+    CudaDeviceMemoryPitched<unsigned char, 3>& volAgr_dmp,
+    const CudaDeviceMemoryPitched<unsigned char, 3>& d_volSim,
+    int volDimX, int volDimY, int volDimZ,
+    int volStepXY, int volLUX, int volLUY,
+    int dimTrnX, int dimTrnY, int dimTrnZ,
+    unsigned char P1, unsigned char P2, 
+    bool verbose, bool doInvZ, int lastN)
 {
     if(verbose)
         printf("ps_updateAggrVolume\n");
@@ -712,8 +505,7 @@ void ps_updateAggrVolume(CudaDeviceMemoryPitched<unsigned char, 3>& volAgr_dmp,
             volDimX, volDimY, volDimZ,
             dimTrnX, dimTrnY, dimTrnZ,
             z);
-    };
-    cudaThreadSynchronize();
+    }
     CHECK_CUDA_ERROR();
     // if (verbose) printf("transpose volume gpu elapsed time: %f ms \n", toc(tall));
     // pr_printfDeviceMemoryInfo();
@@ -727,14 +519,14 @@ void ps_updateAggrVolume(CudaDeviceMemoryPitched<unsigned char, 3>& volAgr_dmp,
                 d_volSimT.getBuffer(), d_volSimT.stride()[1], d_volSimT.stride()[0],
                 volDims[dimsTrn[0]], volDims[dimsTrn[1]], volDims[dimsTrn[2]],
                 z);
-        };
-        cudaThreadSynchronize();
+        }
         CHECK_CUDA_ERROR();
         // if (verbose) printf("shift z volume gpu elapsed time: %f ms \n", toc(tall));
-    };
+    }
 
     // clock_t tall = tic();
     ps_aggregatePathVolume(
+        r4tex,
         d_volSimT, volDims[dimsTrn[0]], volDims[dimsTrn[1]], volDims[dimsTrn[2]],
         P1, P2, false,
         volLUX, volLUY,
@@ -750,11 +542,10 @@ void ps_updateAggrVolume(CudaDeviceMemoryPitched<unsigned char, 3>& volAgr_dmp,
             volume_shiftZVolumeTempl_kernel<unsigned char><<<gridT, blockT>>>(
                 d_volSimT.getBuffer(), d_volSimT.stride()[1], d_volSimT.stride()[0], volDims[dimsTrn[0]],
                 volDims[dimsTrn[1]], volDims[dimsTrn[2]], z);
-        };
-        cudaThreadSynchronize();
+        }
         CHECK_CUDA_ERROR();
         // if (verbose) printf("shift z volume gpu elapsed time: %f ms \n", toc(tall));
-    };
+    }
 
     // clock_t tall = tic();
     for(int zT = 0; zT < volDims[dimsTrn[2]]; zT++)
@@ -764,15 +555,14 @@ void ps_updateAggrVolume(CudaDeviceMemoryPitched<unsigned char, 3>& volAgr_dmp,
             d_volSimT.getBuffer(), d_volSimT.stride()[1], d_volSimT.stride()[0],
             volDims[dimsTrn[0]], volDims[dimsTrn[1]], volDims[dimsTrn[2]],
             dimsTri[0], dimsTri[1], dimsTri[2], zT, lastN);
-    };
-    cudaThreadSynchronize();
+    }
     CHECK_CUDA_ERROR();
     // if (verbose) printf("transpose volume gpu elapsed time: %f ms \n", toc(tall));
     // pr_printfDeviceMemoryInfo();
 
     if(verbose)
         printf("ps_updateAggrVolume done\n");
-};
+}
 
 
 /**
@@ -780,7 +570,7 @@ void ps_updateAggrVolume(CudaDeviceMemoryPitched<unsigned char, 3>& volAgr_dmp,
 * @param[in] rccam RC camera
 * @param[inout] iovol_hmh input similarity volume (after Z reduction)
 */
-void ps_SGMoptimizeSimVolume(CudaArray<uchar4, 2>** ps_texs_arr,
+void ps_SGMoptimizeSimVolume(
                              cameraStruct* rccam,
                              unsigned char* iovol_hmh,
                              int volDimX, int volDimY, int volDimZ,
@@ -795,10 +585,9 @@ void ps_SGMoptimizeSimVolume(CudaArray<uchar4, 2>** ps_texs_arr,
     ps_init_reference_camera_matrices(rccam->P, rccam->iP, rccam->R, rccam->iR, rccam->K, rccam->iK, rccam->C);
 
     // bind 'r4tex' from the image in Lab colorspace at the scale used
-    cudaBindTextureToArray(r4tex, ps_texs_arr[rccam->camId * scales + scale]->getArray(),
-                           cudaCreateChannelDesc<uchar4>());
+    CudaArray<uchar4,2>& array = global_data.getScaledPictureArray( scale, rccam->camId );
+    cudaTextureObject_t  r4tex = global_data.getScaledPictureTex( scale, rccam->camId );
 
-    //CudaDeviceMemoryPitched<unsigned char, 3> volSim_dmp(*iovol_hmh);
     CudaDeviceMemoryPitched<unsigned char, 3> volSim_dmp(CudaSize<3>(volDimX, volDimY, volDimZ));
     copy(volSim_dmp, iovol_hmh, volDimX, volDimY, volDimZ);
 
@@ -821,7 +610,8 @@ void ps_SGMoptimizeSimVolume(CudaArray<uchar4, 2>** ps_texs_arr,
 
     const auto updateAggrVolume = [&](int dimTrnX, int dimTrnY, int dimTrnZ, bool invZ) 
                                   {
-                                      ps_updateAggrVolume(volAgr_dmp,
+                                      ps_updateAggrVolume(r4tex,
+                                                          volAgr_dmp,
                                                           volSim_dmp,
                                                           volDimX, volDimY, volDimZ,
                                                           volStepXY, volLUX, volLUY,
@@ -850,7 +640,7 @@ void ps_SGMoptimizeSimVolume(CudaArray<uchar4, 2>** ps_texs_arr,
     //copy((*iovol_hmh), volAgr_dmp);
     copy(iovol_hmh, volDimX, volDimY, volDimZ, volAgr_dmp);
 
-    cudaUnbindTexture(r4tex);
+    // cudaUnbindTexture(r4tex);
 
     if(verbose)
         printf("ps_SGMoptimizeSimVolume done\n");
@@ -885,86 +675,40 @@ void ps_transposeVolume(CudaHostMemoryHeap<unsigned char, 3>* ovol_hmh,
                                                        volTra_dmp.stride()[0], volSim_dmp.getBuffer(),
                                                        volSim_dmp.stride()[1], volSim_dmp.stride()[0], volDimX,
                                                        volDimY, volDimZ, dimTrnX, dimTrnY, dimTrnZ, z);
-        cudaThreadSynchronize();
         CHECK_CUDA_ERROR();
-    };
+    }
 
     if(verbose)
         printf("gpu elapsed time: %f ms \n", toc(tall));
 
     copy((*ovol_hmh), volTra_dmp);
-};
+}
 
-/*
-void ps_SGMAggregateVolumeDir(
-                CudaHostMemoryHeap<unsigned char, 3>* iovol_hmh,
-                int volDimX, int volDimY, int volDimZ,
-                unsigned char P1, unsigned char P2, bool verbose, bool doInvZ, bool transfer
-        )
-{
-        clock_t tall = tic();
-
-        ///////////////////////////////////////////////////////////////////////////////
-        // setup block and grid
-        int block_size = 8;
-        dim3 block(block_size,block_size,1);
-        dim3 grid(divUp(volDimX, block_size),divUp(volDimY,block_size),1);
-
-
-        CudaDeviceMemoryPitched<unsigned char,3>  vol_dmp(*iovol_hmh);
-
-        if (doInvZ==true)
-        {
-                for (int z=0;z<volDimZ/2;z++) {
-                        volume_shiftZVolumeTempl_kernel<unsigned char><<<grid, block>>>(
-                                vol_dmp.getBuffer(), vol_dmp.stride()[1], vol_dmp.stride()[0],
-                                volDimX, volDimY, volDimZ, z);
-                        cudaThreadSynchronize();
-                        CHECK_CUDA_ERROR();
-                };
-        };
-
-        ps_aggregatePathVolume(vol_dmp, volDimX, volDimY, volDimZ, P1, P2, transfer);
-
-
-        if (doInvZ==true)
-        {
-                for (int z=0;z<volDimZ/2;z++) {
-                        volume_shiftZVolumeTempl_kernel<unsigned char><<<grid, block>>>(
-                                vol_dmp.getBuffer(), vol_dmp.stride()[1], vol_dmp.stride()[0],
-                                volDimX, volDimY, volDimZ, z);
-                        cudaThreadSynchronize();
-                        CHECK_CUDA_ERROR();
-                };
-        };
-
-
-        copy((*iovol_hmh), vol_dmp);
-
-        if (verbose) printf("aggregate volume gpu elapsed time: %f ms \n", toc(tall));
-};
-*/
-
-void ps_computeSimilarityVolume(CudaArray<uchar4, 2>** ps_texs_arr,
-                                CudaDeviceMemoryPitched<unsigned char, 3>& vol_dmp, cameraStruct** cams, int ncams,
-                                int width, int height, int volStepXY, int volDimX, int volDimY, int volDimZ, int volLUX,
-                                int volLUY, int volLUZ, CudaHostMemoryHeap<int4, 2>& volPixs_hmh,
-                                CudaHostMemoryHeap<float, 2>& depths_hmh, int nDepthsToSearch, int slicesAtTime,
-                                int ntimes, int npixs, int wsh, int kernelSizeHalf, int nDepths, int scale,
-                                int CUDAdeviceNo, int ncamsAllocated, int scales, bool verbose, bool doUsePixelsDepths,
-                                int nbest, bool useTcOrRcPixSize, float gammaC, float gammaP, bool subPixel,
-                                float epipShift)
+void ps_computeSimilarityVolume(
+    CudaDeviceMemoryPitched<unsigned char, 3>& vol_dmp, cameraStruct** cams, int ncams,
+    int width, int height, int volStepXY, int volDimX, int volDimY, int volDimZ, int volLUX,
+    int volLUY, int volLUZ, CudaHostMemoryHeap<int4, 2>& volPixs_hmh,
+    CudaHostMemoryHeap<float, 2>& depths_hmh, int nDepthsToSearch, int slicesAtTime,
+    int ntimes, int npixs, int wsh, int kernelSizeHalf, int nDepths, int scale,
+    int CUDAdeviceNo, int ncamsAllocated, int scales, bool verbose, bool doUsePixelsDepths,
+    int nbest, bool useTcOrRcPixSize, float gammaC, float gammaP, bool subPixel,
+    float epipShift )
 {
     clock_t tall = tic();
     testCUDAdeviceNo(CUDAdeviceNo);
 
     if(verbose)
         printf("nDepths %i, nDepthsToSearch %i \n", nDepths, nDepthsToSearch);
-    CudaArray<int4, 2> volPixs_arr(volPixs_hmh);
-    CudaArray<float, 2> depths_arr(depths_hmh);
 
-    cudaBindTextureToArray(volPixsTex, volPixs_arr.getArray(), cudaCreateChannelDesc<int4>());
-    cudaBindTextureToArray(depthsTex, depths_arr.getArray(), cudaCreateChannelDesc<float>());
+    auto volPixs_arr = global_data.pitched_mem_int4_point_tex_cache.get(
+        volPixs_hmh.getSize()[0],
+        volPixs_hmh.getSize()[1] );
+    copy( *volPixs_arr->mem, volPixs_hmh );
+
+    auto depths_arr = global_data.pitched_mem_float_point_tex_cache.get(
+        depths_hmh.getSize()[0],
+        depths_hmh.getSize()[1] );
+    copy( *depths_arr->mem, depths_hmh );
 
     int block_size = 8;
     dim3 block(block_size, block_size, 1);
@@ -975,51 +719,55 @@ void ps_computeSimilarityVolume(CudaArray<uchar4, 2>** ps_texs_arr,
     // setup cameras matrices to the constant memory
     ps_init_reference_camera_matrices(cams[0]->P, cams[0]->iP, cams[0]->R, cams[0]->iR, cams[0]->K, cams[0]->iK,
                                       cams[0]->C);
-    cudaBindTextureToArray(r4tex, ps_texs_arr[cams[0]->camId * scales + scale]->getArray(),
-                           cudaCreateChannelDesc<uchar4>());
+    cudaTextureObject_t r4tex = global_data.getScaledPictureTex( scale, cams[0]->camId );
 
     int c = 1;
     ps_init_target_camera_matrices(cams[c]->P, cams[c]->iP, cams[c]->R, cams[c]->iR, cams[c]->K, cams[c]->iK,
                                    cams[c]->C);
-    cudaBindTextureToArray(t4tex, ps_texs_arr[cams[c]->camId * scales + scale]->getArray(),
-                           cudaCreateChannelDesc<uchar4>());
+    cudaTextureObject_t t4tex = global_data.getScaledPictureTex( scale, cams[c]->camId );
 
     //--------------------------------------------------------------------------------------------------
     // init similarity volume
     for(int z = 0; z < volDimZ; z++)
     {
         volume_initVolume_kernel<unsigned char><<<gridvol, blockvol>>>(
-            vol_dmp.getBuffer(), vol_dmp.stride()[1], vol_dmp.stride()[0], volDimX, volDimY, volDimZ, z, 255);
-        cudaThreadSynchronize();
-    };
+            vol_dmp.getBuffer(), vol_dmp.stride()[1], vol_dmp.stride()[0],
+            volDimX, volDimY, volDimZ, z, 255 );
+        CHECK_CUDA_ERROR();
+    }
 
     //--------------------------------------------------------------------------------------------------
     // compute similarity volume
     CudaDeviceMemoryPitched<unsigned char, 2> slice_dmp(CudaSize<2>(nDepthsToSearch, slicesAtTime));
     for(int t = 0; t < ntimes; t++)
     {
-        volume_slice_kernel<<<grid, block>>>(slice_dmp.getBuffer(), slice_dmp.stride()[0], nDepthsToSearch, nDepths,
-                                             slicesAtTime, width, height, wsh, t, npixs, gammaC, gammaP, epipShift);
-        cudaThreadSynchronize();
+        volume_slice_kernel<<<grid, block>>>(
+            r4tex,
+            t4tex,
+            depths_arr->tex,
+            volPixs_arr->tex,
+            slice_dmp.getBuffer(), slice_dmp.stride()[0],
+            nDepthsToSearch, nDepths,
+            slicesAtTime, width, height, wsh, t, npixs, gammaC, gammaP, epipShift);
 
-        volume_saveSliceToVolume_kernel<<<grid, block>>>(vol_dmp.getBuffer(), vol_dmp.stride()[1], vol_dmp.stride()[0],
-                                                         slice_dmp.getBuffer(), slice_dmp.stride()[0], nDepthsToSearch,
-                                                         nDepths, slicesAtTime, width, height, t, npixs, volStepXY,
-                                                         volDimX, volDimY, volDimZ, volLUX, volLUY, volLUZ);
-        cudaThreadSynchronize();
+        volume_saveSliceToVolume_kernel<<<grid, block>>>(
+            volPixs_arr->tex,
+            vol_dmp.getBuffer(), vol_dmp.stride()[1], vol_dmp.stride()[0],
+            slice_dmp.getBuffer(), slice_dmp.stride()[0],
+            nDepthsToSearch, nDepths,
+            slicesAtTime, width, height, t, npixs, volStepXY,
+            volDimX, volDimY, volDimZ, volLUX, volLUY, volLUZ);
         CHECK_CUDA_ERROR();
-    };
+    }
 
-    cudaUnbindTexture(r4tex);
-    cudaUnbindTexture(t4tex);
-    cudaUnbindTexture(volPixsTex);
-    cudaUnbindTexture(depthsTex);
+    global_data.pitched_mem_float_point_tex_cache.put( depths_arr );
+    global_data.pitched_mem_int4_point_tex_cache .put( volPixs_arr );
 
     if(verbose)
         printf("ps_computeSimilarityVolume elapsed time: %f ms \n", toc(tall));
-};
+}
 
-float ps_planeSweepingGPUPixelsVolume(CudaArray<uchar4, 2>** ps_texs_arr,
+float ps_planeSweepingGPUPixelsVolume(
                                       unsigned char* ovol_hmh, cameraStruct** cams, int ncams,
                                       int width, int height, int volStepXY, int volDimX, int volDimY, int volDimZ,
                                       int volLUX, int volLUY, int volLUZ, CudaHostMemoryHeap<int4, 2>& volPixs_hmh,
@@ -1040,10 +788,11 @@ float ps_planeSweepingGPUPixelsVolume(CudaArray<uchar4, 2>** ps_texs_arr,
 
     //--------------------------------------------------------------------------------------------------
     // compute similarity volume
-    ps_computeSimilarityVolume(ps_texs_arr, volSim_dmp, cams, ncams, width, height, volStepXY, volDimX, volDimY,
-                               volDimZ, volLUX, volLUY, volLUZ, volPixs_hmh, depths_hmh, nDepthsToSearch, slicesAtTime,
-                               ntimes, npixs, wsh, kernelSizeHalf, nDepths, scale, CUDAdeviceNo, ncamsAllocated, scales,
-                               verbose, doUsePixelsDepths, nbest, useTcOrRcPixSize, gammaC, gammaP, subPixel, epipShift);
+    ps_computeSimilarityVolume(
+        volSim_dmp, cams, ncams, width, height, volStepXY, volDimX, volDimY,
+        volDimZ, volLUX, volLUY, volLUZ, volPixs_hmh, depths_hmh, nDepthsToSearch, slicesAtTime,
+        ntimes, npixs, wsh, kernelSizeHalf, nDepths, scale, CUDAdeviceNo, ncamsAllocated, scales,
+        verbose, doUsePixelsDepths, nbest, useTcOrRcPixSize, gammaC, gammaP, subPixel, epipShift );
 
     //--------------------------------------------------------------------------------------------------
     // copy to host
@@ -1067,11 +816,12 @@ void ps_filterVisTVolume(CudaHostMemoryHeap<unsigned int, 3>* iovol_hmh, int vol
     CudaDeviceMemoryPitched<int2, 2> xySlice_dmp(CudaSize<2>(volDimX, volDimY));
 
     CudaDeviceMemoryPitched<unsigned int, 3> ivol_dmp(*iovol_hmh);
-    // CudaDeviceMemoryPitched<unsigned int,3>  ovol_dmp(CudaSize<3>(volDimX, volDimY, volDimZ));
     CudaDeviceMemoryPitched<unsigned int, 3> ovol_dmp(ivol_dmp);
 
     CudaDeviceMemoryPitched<unsigned int, 2> xyslice_dmp(CudaSize<2>(volDimX, volDimY));
-    CudaArray<unsigned int, 2> xyslice_arr(CudaSize<2>(volDimX, volDimY));
+
+    auto xyslice_arr = global_data.pitched_mem_uint_point_tex_cache.get( volDimX, volDimY );
+    cudaTextureObject_t sliceTexUInt = xyslice_arr->tex;
 
     /*
     //--------------------------------------------------------------------------------------------------
@@ -1081,7 +831,7 @@ void ps_filterVisTVolume(CudaHostMemoryHeap<unsigned int, 3>* iovol_hmh, int vol
                     ovol_dmp.getBuffer(), ovol_dmp.stride()[1], ovol_dmp.stride()[0],
                     volDimX, volDimY, volDimZ, z, 0);
             cudaThreadSynchronize();
-    };
+    }
     */
 
     for(int K = -3; K <= 3; K++)
@@ -1091,28 +841,29 @@ void ps_filterVisTVolume(CudaHostMemoryHeap<unsigned int, 3>* iovol_hmh, int vol
             if((z + K >= 0) && (z + K < volDimZ))
             {
                 volume_getVolumeXYSliceAtZ_kernel<unsigned int, unsigned int><<<gridvol, blockvol>>>(
-                    xyslice_dmp.getBuffer(), xyslice_dmp.stride()[0], ivol_dmp.getBuffer(), ivol_dmp.stride()[1],
-                    ivol_dmp.stride()[0], volDimX, volDimY, volDimZ, z + K);
-                cudaThreadSynchronize();
+                    xyslice_dmp.getBuffer(), xyslice_dmp.stride()[0],
+                    ivol_dmp.getBuffer(), ivol_dmp.stride()[1], ivol_dmp.stride()[0],
+                    volDimX, volDimY, volDimZ, z + K );
 
-                copy((xyslice_arr), xyslice_dmp);
-                cudaBindTextureToArray(sliceTexUInt, xyslice_arr.getArray(), cudaCreateChannelDesc<unsigned int>());
+                copy( *xyslice_arr->mem, xyslice_dmp );
                 volume_filter_VisTVolume_kernel<<<gridvol, blockvol>>>(
-                    ovol_dmp.getBuffer(), ovol_dmp.stride()[1], ovol_dmp.stride()[0], volDimX, volDimY, volDimZ, z, K);
+                    sliceTexUInt,
+                    ovol_dmp.getBuffer(), ovol_dmp.stride()[1], ovol_dmp.stride()[0],
+                    volDimX, volDimY, volDimZ, z, K );
                 cudaThreadSynchronize();
                 CHECK_CUDA_ERROR();
-                cudaUnbindTexture(sliceTexUInt);
-            };
-        };
-    };
+            }
+        }
+    }
 
+    global_data.pitched_mem_uint_point_tex_cache.put( xyslice_arr );
     //--------------------------------------------------------------------------------------------------
     // copy to host
     copy((*iovol_hmh), ovol_dmp);
 
     if(verbose)
         printf("elapsed time: %f ms \n", toc(tall));
-};
+}
 
 void ps_enforceTweigthInVolumeInternal(CudaDeviceMemoryPitched<unsigned int, 3>& ivol_dmp,
                                        CudaDeviceMemoryPitched<unsigned int, 3>& ovol_dmp, int volDimX, int volDimY,
@@ -1123,23 +874,25 @@ void ps_enforceTweigthInVolumeInternal(CudaDeviceMemoryPitched<unsigned int, 3>&
     dim3 gridvol(divUp(volDimX, block_size), divUp(volDimY, block_size), 1);
 
     CudaDeviceMemoryPitched<unsigned int, 2> xyslice_dmp(CudaSize<2>(volDimX, volDimY));
-    CudaArray<unsigned int, 2> xyslice_arr(CudaSize<2>(volDimX, volDimY));
+    auto xyslice_arr = global_data.pitched_mem_uint_point_tex_cache.get( volDimX, volDimY );
+    cudaTextureObject_t sliceTexUInt = xyslice_arr->tex;
 
     for(int z = 0; z < volDimZ; z++)
     {
         volume_getVolumeXYSliceAtZ_kernel<unsigned int, unsigned int><<<gridvol, blockvol>>>(
-            xyslice_dmp.getBuffer(), xyslice_dmp.stride()[0], ivol_dmp.getBuffer(), ivol_dmp.stride()[1],
-            ivol_dmp.stride()[0], volDimX, volDimY, volDimZ, z);
-        cudaThreadSynchronize();
+            xyslice_dmp.getBuffer(), xyslice_dmp.stride()[0],
+            ivol_dmp.getBuffer(), ivol_dmp.stride()[1], ivol_dmp.stride()[0],
+            volDimX, volDimY, volDimZ, z );
 
-        copy((xyslice_arr), xyslice_dmp);
-        cudaBindTextureToArray(sliceTexUInt, xyslice_arr.getArray(), cudaCreateChannelDesc<unsigned int>());
+        copy( *xyslice_arr->mem, xyslice_dmp );
         volume_filter_enforceTWeightInVolume_kernel<<<gridvol, blockvol>>>(
-            ovol_dmp.getBuffer(), ovol_dmp.stride()[1], ovol_dmp.stride()[0], volDimX, volDimY, volDimZ, z, 3);
-        cudaThreadSynchronize();
+            sliceTexUInt,
+            ovol_dmp.getBuffer(), ovol_dmp.stride()[1], ovol_dmp.stride()[0],
+            volDimX, volDimY, volDimZ, z, 3 );
         CHECK_CUDA_ERROR();
-        cudaUnbindTexture(sliceTexUInt);
-    };
+    }
+
+    global_data.pitched_mem_uint_point_tex_cache.put( xyslice_arr );
 }
 
 void ps_enforceTweigthInVolume(CudaHostMemoryHeap<unsigned int, 3>* iovol_hmh, int volDimX, int volDimY, int volDimZ,
@@ -1184,7 +937,7 @@ void ps_enforceTweigthInVolume(CudaHostMemoryHeap<unsigned int, 3>* iovol_hmh, i
         volume_transposeVolume_kernel<unsigned int><<<grid, block>>>(
             tvol_dmp.getBuffer(), tvol_dmp.stride()[1], tvol_dmp.stride()[0], ivol_dmp.getBuffer(), ivol_dmp.stride()[1],
             ivol_dmp.stride()[0], volDimX, volDimY, volDimZ, dimTrnX, dimTrnY, dimTrnZ, z);
-    };
+    }
     cudaThreadSynchronize();
     CHECK_CUDA_ERROR();
 
@@ -1198,7 +951,7 @@ void ps_enforceTweigthInVolume(CudaHostMemoryHeap<unsigned int, 3>* iovol_hmh, i
             ivol_dmp.getBuffer(), ivol_dmp.stride()[1], ivol_dmp.stride()[0], otvol_dmp.getBuffer(), otvol_dmp.stride()[1],
             otvol_dmp.stride()[0], volDims[dimsTrn[0]], volDims[dimsTrn[1]], volDims[dimsTrn[2]], dimsTri[0], dimsTri[1],
             dimsTri[2], zT);
-    };
+    }
     cudaThreadSynchronize();
     CHECK_CUDA_ERROR();
 
@@ -1208,7 +961,7 @@ void ps_enforceTweigthInVolume(CudaHostMemoryHeap<unsigned int, 3>* iovol_hmh, i
 
     if(verbose)
         printf("elapsed time: %f ms \n", toc(tall));
-};
+}
 
 void ps_computeDP1Volume(CudaHostMemoryHeap<int, 3>* ovol_hmh, CudaHostMemoryHeap<unsigned int, 3>* ivol_hmh,
                          int volDimX, int volDimY, int volDimZ, bool verbose)
@@ -1231,7 +984,7 @@ void ps_computeDP1Volume(CudaHostMemoryHeap<int, 3>* ovol_hmh, CudaHostMemoryHea
                                                           ivol_dmp.getBuffer(), ivol_dmp.stride()[1], ivol_dmp.stride()[0],
                                                           volDimX, volDimY, volDimZ, z);
         cudaThreadSynchronize();
-    };
+    }
 
     /*
     for (int z=0;z<volDimZ;z++)
@@ -1242,7 +995,7 @@ void ps_computeDP1Volume(CudaHostMemoryHeap<int, 3>* ovol_hmh, CudaHostMemoryHea
                     ivol_dmp.getBuffer(), ivol_dmp.stride()[1], ivol_dmp.stride()[0],
                     volDimX, volDimY, volDimZ, z);
             cudaThreadSynchronize();
-    };
+    }
     */
 
     //--------------------------------------------------------------------------------------------------
@@ -1251,7 +1004,7 @@ void ps_computeDP1Volume(CudaHostMemoryHeap<int, 3>* ovol_hmh, CudaHostMemoryHea
 
     if(verbose)
         printf("elapsed time: %f ms \n", toc(tall));
-};
+}
 
 void ps_normalizeDP1Volume(CudaHostMemoryHeap<int, 3>** iovols_hmh, int nZparts, int volDimZpart, int volDimX,
                            int volDimY, int volDimZ, bool verbose)
@@ -1275,9 +1028,9 @@ void ps_normalizeDP1Volume(CudaHostMemoryHeap<int, 3>** iovols_hmh, int nZparts,
                 xySlice_dmp.getBuffer(), xySlice_dmp.stride()[0], iovol_dmp.getBuffer(), iovol_dmp.stride()[1],
                 iovol_dmp.stride()[0], volDimX, volDimY, volDimZpart, z, zPart, volDimZ);
             cudaThreadSynchronize();
-        };
+        }
 
-    }; // for zPart
+    } // for zPart
 
     for(int zPart = 0; zPart < nZparts; zPart++)
     {
@@ -1291,97 +1044,17 @@ void ps_normalizeDP1Volume(CudaHostMemoryHeap<int, 3>** iovols_hmh, int nZparts,
                 xySlice_dmp.getBuffer(), xySlice_dmp.stride()[0], iovol_dmp.getBuffer(), iovol_dmp.stride()[1],
                 iovol_dmp.stride()[0], volDimX, volDimY, volDimZpart, z, zPart, volDimZ);
             cudaThreadSynchronize();
-        };
+        }
 
         //--------------------------------------------------------------------------------------------------
         // copy to host
         copy((*iovols_hmh[zPart]), iovol_dmp);
 
-    }; // for zPart
+    } // for zPart
 
     if(verbose)
         printf("elapsed time: %f ms \n", toc(tall));
-};
-
-/*
-void ps_computeRcVolumeForTcDepthMaps(
-                CudaHostMemoryHeap<unsigned int, 3> **ovols_hmh,
-                int nZparts, int volDimZpart,
-                cameraStruct **cams, int ncams, float2 *camsMinMaxFpDepths,
-                int width, int height,
-                int volStepXY, int volDimX, int volDimY, int volDimZ,
-                CudaHostMemoryHeap<float, 2> &depths_hmh,
-                int nDepths,
-                int scale,
-                int scales,
-                CudaHostMemoryHeap<float, 2> **rcTcsDepthMaps_hmh,
-                bool verbose, float maxTcRcPixSizeInVoxRatio, bool considerNegativeDepthAsInfinity
-        )
-{
-        clock_t tall = tic();
-        int block_size = 8;
-        dim3 blockvol(block_size,block_size,1);
-        dim3 gridvol(divUp(volDimX, block_size),divUp(volDimY,block_size),1);
-        ps_init_reference_camera_matrices(cams[0]->P,cams[0]->iP,cams[0]->R,cams[0]->iR,cams[0]->K,cams[0]->iK,cams[0]->C);
-
-        for (int zPart = 0; zPart < nZparts; zPart++)
-        {
-                CudaDeviceMemoryPitched<unsigned int,3>  vol_dmp(CudaSize<3>(volDimX, volDimY, volDimZpart));
-
-                //--------------------------------------------------------------------------------------------------
-                //init volume
-                for (int z=0;z<volDimZpart;z++)	{
-                        volume_initVolume_kernel<unsigned int><<<gridvol, blockvol>>>(
-                                vol_dmp.getBuffer(), vol_dmp.stride()[1], vol_dmp.stride()[0],
-                                volDimX, volDimY, volDimZ, z, 0);
-                };
-                cudaThreadSynchronize();
-
-
-                //indexing from 0 is right ... because we want include RC depth map as well
-                for (int c = 0; c < ncams; c++)
-                {
-                        ps_init_target_camera_matrices
-(cams[c]->P,cams[c]->iP,cams[c]->R,cams[c]->iR,cams[c]->K,cams[c]->iK,cams[c]->C);
-
-                        CudaArray<float,2> tcDepthMap_arr(*rcTcsDepthMaps_hmh[c]);
-                        cudaBindTextureToArray(sliceTex, tcDepthMap_arr.getArray(), cudaCreateChannelDesc<float>());
-
-                        //--------------------------------------------------------------------------------------------------
-                        //update volume
-                        int zFrom = (zPart==0)?1:0;
-                        for (int z=zFrom;z<volDimZpart;z++)
-                        {
-                                float fpPlaneDepth  = depths_hmh.getBuffer()[zPart*volDimZpart+z];
-//tex2D(depthsTex,vz,0);
-                                float fpPlaneDepthP = depths_hmh.getBuffer()[zPart*volDimZpart+z-1];
-//tex2D(depthsTex,vz-1,0);
-                                float stepInDepth = fabs(fpPlaneDepthP-fpPlaneDepth)*1.5f;
-                                //float stepInDepth = fabs(fpPlaneDepthP-fpPlaneDepth);
-
-                                float2 tcMinMaxFpDepth = camsMinMaxFpDepths[c];
-
-                                volume_updateRcVolumeForTcDepthMap_kernel<<<gridvol, blockvol>>>(
-                                        vol_dmp.getBuffer(), vol_dmp.stride()[1], vol_dmp.stride()[0],
-                                        volDimX, volDimY, volDimZpart, z, volStepXY, volStepXY, width, height,
-fpPlaneDepth, stepInDepth, zPart, volDimZ,
-                                        maxTcRcPixSizeInVoxRatio, considerNegativeDepthAsInfinity, tcMinMaxFpDepth,
-false);
-                        };
-                        cudaThreadSynchronize();
-
-                        cudaUnbindTexture(sliceTex);
-                };
-
-                //--------------------------------------------------------------------------------------------------
-                //copy to host
-                copy((*ovols_hmh[zPart]), vol_dmp);
-
-        }; // for zPart
-
-        if (verbose) printf("elapsed time: %f ms \n", toc(tall));
-};
-*/
+}
 
 void ps_computeRcVolumeForTcDepthSimMaps(CudaHostMemoryHeap<unsigned int, 3>** ovols_hmh, int nZparts,
                                          int volDimZpart, cameraStruct** cams, int ncams, float2* camsMinMaxFpDepths,
@@ -1410,7 +1083,7 @@ void ps_computeRcVolumeForTcDepthSimMaps(CudaHostMemoryHeap<unsigned int, 3>** o
         {
             volume_initVolume_kernel<unsigned int><<<gridvol, blockvol>>>(
                 vol_dmp.getBuffer(), vol_dmp.stride()[1], vol_dmp.stride()[0], volDimX, volDimY, volDimZ, z, 0);
-        };
+        }
         cudaThreadSynchronize();
 
         clock_t t1 = tic();
@@ -1421,8 +1094,11 @@ void ps_computeRcVolumeForTcDepthSimMaps(CudaHostMemoryHeap<unsigned int, 3>** o
             ps_init_target_camera_matrices(cams[c]->P, cams[c]->iP, cams[c]->R, cams[c]->iR, cams[c]->K, cams[c]->iK,
                                            cams[c]->C);
 
-            CudaArray<float2, 2> tcDepthSimMap_arr(*rcTcsDepthSimMaps_hmh[c]);
-            cudaBindTextureToArray(sliceTexFloat2, tcDepthSimMap_arr.getArray(), cudaCreateChannelDesc<float2>());
+            auto tcDepthSimMap_dmp = global_data.pitched_mem_float2_point_tex_cache.get(
+                rcTcsDepthSimMaps_hmh[c]->getSize()[0],
+                rcTcsDepthSimMaps_hmh[c]->getSize()[1] );
+            copy( *tcDepthSimMap_dmp->mem, *rcTcsDepthSimMaps_hmh[c] );
+            cudaTextureObject_t sliceTexFloat2 = tcDepthSimMap_dmp->tex;
 
             //--------------------------------------------------------------------------------------------------
             // update volume
@@ -1437,13 +1113,15 @@ void ps_computeRcVolumeForTcDepthSimMaps(CudaHostMemoryHeap<unsigned int, 3>** o
                 float2 tcMinMaxFpDepth = camsMinMaxFpDepths[c];
 
                 volume_updateRcVolumeForTcDepthMap_kernel<<<gridvol, blockvol>>>(
-                    vol_dmp.getBuffer(), vol_dmp.stride()[1], vol_dmp.stride()[0], volDimX, volDimY, volDimZpart, z,
+                    sliceTexFloat2,
+                    vol_dmp.getBuffer(), vol_dmp.stride()[1], vol_dmp.stride()[0],
+                    volDimX, volDimY, volDimZpart, z,
                     volStepXY, volStepXY, width, height, fpPlaneDepth, stepInDepth, zPart, volDimZ,
-                    maxTcRcPixSizeInVoxRatio, considerNegativeDepthAsInfinity, tcMinMaxFpDepth, true);
-            };
-            cudaThreadSynchronize();
-            cudaUnbindTexture(sliceTexFloat2);
-        };
+                    maxTcRcPixSizeInVoxRatio, considerNegativeDepthAsInfinity, tcMinMaxFpDepth );
+            }
+
+            global_data.pitched_mem_float2_point_tex_cache.put( tcDepthSimMap_dmp );
+        }
 
         if(verbose)
             printf("elapsed time: %f ms, ncams %i \n", toc(t1), ncams);
@@ -1452,11 +1130,11 @@ void ps_computeRcVolumeForTcDepthSimMaps(CudaHostMemoryHeap<unsigned int, 3>** o
         // copy to host
         copy((*ovols_hmh[zPart]), vol_dmp);
 
-    }; // for zPart
+    } // for zPart
 
     if(verbose)
         printf("elapsed time: %f ms \n", toc(tall));
-};
+}
 
 /*
 void ps_computeRcVolumeForTcDepthMap(
@@ -1503,7 +1181,7 @@ void ps_computeRcVolumeForTcDepthMap(
                 volume_initVolume_kernel<unsigned char><<<gridvol, blockvol>>>(
                         vol_dmp.getBuffer(), vol_dmp.stride()[1], vol_dmp.stride()[0],
                         volDimX, volDimY, volDimZ, z, 0);
-        };
+        }
         cudaThreadSynchronize();
 
         if (verbose) printf("init volume gpu elapsed time: %f ms \n", toc(tall));
@@ -1522,7 +1200,7 @@ void ps_computeRcVolumeForTcDepthMap(
                         vol_dmp.getBuffer(), vol_dmp.stride()[1], vol_dmp.stride()[0],
                         volDimX, volDimY, volDimZ, z, volStepXY, volStepXY, width, height, fpPlaneDepth, step,
 maxTcRcPixSizeInVoxRatio);
-        };
+        }
         cudaThreadSynchronize();
 
 
@@ -1539,7 +1217,7 @@ maxTcRcPixSizeInVoxRatio);
         cudaUnbindTexture(sliceTex);
 
         if (verbose) printf("save to host gpu elapsed time: %f ms \n", toc(tall));
-};
+}
 */
 
 void ps_filterRcIdDepthMapByTcDepthMap(CudaHostMemoryHeap<unsigned short, 2>* rcIdDepthMap_hmh, cameraStruct** cams,
@@ -1556,11 +1234,19 @@ void ps_filterRcIdDepthMapByTcDepthMap(CudaHostMemoryHeap<unsigned short, 2>* rc
 
     CudaDeviceMemoryPitched<unsigned short, 2> rcIdDepthMap_dmp(*rcIdDepthMap_hmh);
 
-    CudaArray<float, 2> tcDepthMap_arr(tcDepthMap_hmh);
-    cudaBindTextureToArray(sliceTex, tcDepthMap_arr.getArray(), cudaCreateChannelDesc<float>());
+    auto tcDepthMap_arr = global_data.pitched_mem_float_point_tex_cache.get(
+        tcDepthMap_hmh.getSize()[0],
+        tcDepthMap_hmh.getSize()[1] );
 
-    CudaArray<float, 2> depths_arr(depths_hmh);
-    cudaBindTextureToArray(depthsTex, depths_arr.getArray(), cudaCreateChannelDesc<float>());
+    auto depths_arr = global_data.pitched_mem_float_point_tex_cache.get(
+        depths_hmh.getSize()[0],
+        depths_hmh.getSize()[1] );
+
+    copy( *tcDepthMap_arr->mem, tcDepthMap_hmh );
+    copy( *depths_arr->mem, depths_hmh );
+
+    cudaTextureObject_t sliceTex  = tcDepthMap_arr->tex;
+    cudaTextureObject_t depthsTex = depths_arr->tex;
 
     int block_size = 8;
     dim3 blockvol(block_size, block_size, 1);
@@ -1575,20 +1261,21 @@ void ps_filterRcIdDepthMapByTcDepthMap(CudaHostMemoryHeap<unsigned short, 2>* rc
     //--------------------------------------------------------------------------------------------------
     // init volume
     volume_filterRcIdDepthMapByTcDepthMap_kernel<<<gridvol, blockvol>>>(
+        depthsTex,
+        sliceTex,
         rcIdDepthMap_dmp.getBuffer(), rcIdDepthMap_dmp.stride()[0], volDimX, volDimY, volDimZ, volStepXY, volStepXY,
         width, height, distLimit);
-    cudaThreadSynchronize();
 
     //--------------------------------------------------------------------------------------------------
     // copy to host
     copy((*rcIdDepthMap_hmh), rcIdDepthMap_dmp);
 
-    cudaUnbindTexture(depthsTex);
-    cudaUnbindTexture(sliceTex);
+    global_data.pitched_mem_float_point_tex_cache.put( tcDepthMap_arr );
+    global_data.pitched_mem_float_point_tex_cache.put( depths_arr );
 
     if(verbose)
         printf("gpu elapsed time: %f ms \n", toc(tall));
-};
+}
 
 void ps_filterRcIdDepthMapByTcDepthMaps(CudaHostMemoryHeap<unsigned short, 2>* nModalsMap_hmh,
                                         CudaHostMemoryHeap<unsigned short, 2>* rcIdDepthMap_hmh, cameraStruct** cams,
@@ -1604,8 +1291,11 @@ void ps_filterRcIdDepthMapByTcDepthMaps(CudaHostMemoryHeap<unsigned short, 2>* n
     CudaDeviceMemoryPitched<unsigned short, 2> nModalsMap_dmp(CudaSize<2>(volDimX, volDimY));
     // CudaArray<float,2>						tcDepthMap_arr(CudaSize<2>(volDimX, volDimY));
 
-    CudaArray<float, 2> depths_arr(depths_hmh);
-    cudaBindTextureToArray(depthsTex, depths_arr.getArray(), cudaCreateChannelDesc<float>());
+    auto depths_arr = global_data.pitched_mem_float_point_tex_cache.get(
+        depths_hmh.getSize()[0],
+        depths_hmh.getSize()[1] );
+    copy( *depths_arr->mem, depths_hmh );
+    cudaTextureObject_t depthsTex = depths_arr->tex;
 
     int block_size = 8;
     dim3 blockvol(block_size, block_size, 1);
@@ -1615,125 +1305,43 @@ void ps_filterRcIdDepthMapByTcDepthMaps(CudaHostMemoryHeap<unsigned short, 2>* n
     ps_init_reference_camera_matrices(cams[0]->P, cams[0]->iP, cams[0]->R, cams[0]->iR, cams[0]->K, cams[0]->iK,
                                       cams[0]->C);
 
-    volume_update_nModalsMap_kernel<<<gridvol, blockvol>>>(
-        nModalsMap_dmp.getBuffer(), nModalsMap_dmp.stride()[0], rcIdDepthMap_dmp.getBuffer(), rcIdDepthMap_dmp.stride()[0],
-        volDimX, volDimY, volDimZ, volStepXY, volStepXY, width, height, distLimit, 0);
-    cudaThreadSynchronize();
+    volume_update_nModalsMap_kernel_id0<<<gridvol, blockvol>>>(
+        nModalsMap_dmp.getBuffer(), nModalsMap_dmp.stride()[0],
+        volDimX, volDimY );
 
     for(int c = 1; c < ncams; c++)
     {
         ps_init_target_camera_matrices(cams[c]->P, cams[c]->iP, cams[c]->R, cams[c]->iR, cams[c]->K, cams[c]->iK,
                                        cams[c]->C);
-        // copy(tcDepthMap_arr,*tcDepthMaps_hmh[c-1]);
-        CudaArray<float, 2> tcDepthMap_arr(*tcDepthMaps_hmh[c - 1]);
-        cudaBindTextureToArray(sliceTex, tcDepthMap_arr.getArray(), cudaCreateChannelDesc<float>());
+
+        auto tcDepthMap_arr = global_data.pitched_mem_float_point_tex_cache.get(
+            tcDepthMaps_hmh[c - 1]->getSize()[0],
+            tcDepthMaps_hmh[c - 1]->getSize()[1] );
+        copy( *tcDepthMap_arr->mem, *tcDepthMaps_hmh[c - 1] );
+        cudaTextureObject_t sliceTex = tcDepthMap_arr->tex;
 
         volume_update_nModalsMap_kernel<<<gridvol, blockvol>>>(
-            nModalsMap_dmp.getBuffer(), nModalsMap_dmp.stride()[0], rcIdDepthMap_dmp.getBuffer(),
-            rcIdDepthMap_dmp.stride()[0], volDimX, volDimY, volDimZ, volStepXY, volStepXY, width, height, distLimit, c);
-        cudaThreadSynchronize();
+            depthsTex,
+            sliceTex,
+            nModalsMap_dmp.getBuffer(), nModalsMap_dmp.stride()[0],
+            rcIdDepthMap_dmp.getBuffer(), rcIdDepthMap_dmp.stride()[0],
+            volDimX, volDimY, volDimZ, volStepXY, volStepXY, width, height, distLimit, c );
 
-        cudaUnbindTexture(sliceTex);
-    };
+        global_data.pitched_mem_float_point_tex_cache.put( tcDepthMap_arr );
+    }
 
     //--------------------------------------------------------------------------------------------------
     // copy to host
     copy((*nModalsMap_hmh), nModalsMap_dmp);
 
-    cudaUnbindTexture(depthsTex);
-
-    if(verbose)
-        printf("gpu elapsed time: %f ms \n", toc(tall));
-};
-
-void ps_planeSweepingGPUPixelsFine(CudaArray<uchar4, 2>** ps_texs_arr, CudaHostMemoryHeap<float, 2>* odpt_hmh,
-                                   CudaHostMemoryHeap<float, 2>* osim_hmh, cameraStruct** cams, int ncams, int width,
-                                   int height, CudaHostMemoryHeap<int2, 2>& pixs_hmh,
-                                   CudaHostMemoryHeap<float, 2>& depths_hmh,
-                                   CudaHostMemoryHeap<float4, 2>& normals_hmh, int slicesAtTime, int ntimes,
-                                   int npixs, int wsh, int kernelSizeHalf, int nPlanes, int scale, int CUDAdeviceNo,
-                                   int ncamsAllocated, int scales, bool verbose, float gammaC, float gammaP,
-                                   float epipShift = 0.0f)
-{
-    clock_t tall = tic();
-    testCUDAdeviceNo(CUDAdeviceNo);
-
-    ///////////////////////////////////////////////////////////////////////////////
-    // copy textures to the device
-    CudaArray<int2, 2> pixs_arr(pixs_hmh);
-    CudaArray<float, 2> depths_arr(depths_hmh);
-    CudaArray<float4, 2> normals_arr(normals_hmh);
-
-    ///////////////////////////////////////////////////////////////////////////////
-    // allocate temp memory
-    CudaDeviceMemoryPitched<float, 2> slice_dmp(CudaSize<2>(nPlanes, slicesAtTime));
-    // CudaDeviceMemoryPitched<float3,2>  slicePts_dmp(CudaSize<2>(nPlanes, slicesAtTime));
-    CudaArray<float, 2> slice_arr(CudaSize<2>(nPlanes, slicesAtTime));
-
-    CudaDeviceMemoryPitched<float, 2> bs_dmp(CudaSize<2>(npixs, 1));
-    CudaDeviceMemoryPitched<float, 2> bd_dmp(CudaSize<2>(npixs, 1));
-
-    ///////////////////////////////////////////////////////////////////////////////
-    // setup block and grid
-    int block_size = 8;
-    dim3 block(block_size, block_size, 1);
-    dim3 grid(divUp(nPlanes, block_size), divUp(slicesAtTime, block_size), 1);
-
-    int block_sizenmxs = 64;
-    dim3 blocknmxs(block_sizenmxs, 1, 1);
-    dim3 gridnmxs(divUp(slicesAtTime, block_sizenmxs), 1, 1);
-
-    if(verbose)
-        printf("nPlanes: %i \n", nPlanes);
-
-    cudaBindTextureToArray(pixsTex, pixs_arr.getArray(), cudaCreateChannelDesc<int2>());
-    cudaBindTextureToArray(depthsTex, depths_arr.getArray(), cudaCreateChannelDesc<float>());
-    cudaBindTextureToArray(normalsTex, normals_arr.getArray(), cudaCreateChannelDesc<float4>());
-
-    // setup cameras matrices to the constant memory
-    ps_init_reference_camera_matrices(cams[0]->P, cams[0]->iP, cams[0]->R, cams[0]->iR, cams[0]->K, cams[0]->iK,
-                                      cams[0]->C);
-    cudaBindTextureToArray(r4tex, ps_texs_arr[cams[0]->camId * scales + scale]->getArray(),
-                           cudaCreateChannelDesc<uchar4>());
-
-    int c = 1;
-    ps_init_target_camera_matrices(cams[c]->P, cams[c]->iP, cams[c]->R, cams[c]->iR, cams[c]->K, cams[c]->iK,
-                                   cams[c]->C);
-    cudaBindTextureToArray(t4tex, ps_texs_arr[cams[c]->camId * scales + scale]->getArray(),
-                           cudaCreateChannelDesc<uchar4>());
-
-    // setup cameras matrices to the constant memory
-    for(int t = 0; t < ntimes; t++)
-    {
-        slice_fine_kernel<<<grid, block>>>(slice_dmp.getBuffer(), slice_dmp.stride()[0], nPlanes, slicesAtTime, width,
-                                           height, wsh, t, npixs, nPlanes, gammaC, gammaP, epipShift);
-        cudaThreadSynchronize();
-
-        copy((slice_arr), slice_dmp);
-        cudaBindTextureToArray(sliceTex, slice_arr.getArray(), cudaCreateChannelDesc<float>());
-
-        getBest_fine_kernel<<<gridnmxs, blocknmxs>>>(slice_dmp.getBuffer(), slice_dmp.stride()[0], bd_dmp.getBuffer(),
-                                                     bd_dmp.stride()[0], bs_dmp.getBuffer(), bs_dmp.stride()[0],
-                                                     slicesAtTime, nPlanes, t, npixs, wsh, width, height);
-        cudaThreadSynchronize();
-
-        cudaUnbindTexture(sliceTex);
-    };
-
-    copy((*odpt_hmh), bd_dmp);
-    copy((*osim_hmh), bs_dmp);
-
-    cudaUnbindTexture(r4tex);
-    cudaUnbindTexture(t4tex);
-    cudaUnbindTexture(pixsTex);
-    cudaUnbindTexture(depthsTex);
-    cudaUnbindTexture(normalsTex);
+    global_data.pitched_mem_float_point_tex_cache.put( depths_arr );
 
     if(verbose)
         printf("gpu elapsed time: %f ms \n", toc(tall));
 }
 
-void ps_planeSweepNPlanes(CudaArray<uchar4, 2>** ps_texs_arr, CudaHostMemoryHeap<float, 2>* osim_hmh,
+// void ps_planeSweepNPlanes(CudaArray<uchar4, 2>** ps_texs_arr, CudaHostMemoryHeap<float, 2>* osim_hmh,
+void ps_planeSweepNPlanes( CudaHostMemoryHeap<float, 2>* osim_hmh,
                           CudaHostMemoryHeap<float, 2>* odpt_hmh, float* depths, int ndepths, cameraStruct** cams,
                           int ncams, int width, int height, int scale, int CUDAdeviceNo, int ncamsAllocated, int scales,
                           bool verbose, int step)
@@ -1748,28 +1356,26 @@ void ps_planeSweepNPlanes(CudaArray<uchar4, 2>** ps_texs_arr, CudaHostMemoryHeap
 
     ps_init_reference_camera_matrices(cams[0]->P, cams[0]->iP, cams[0]->R, cams[0]->iR, cams[0]->K, cams[0]->iK,
                                       cams[0]->C);
-    cudaBindTextureToArray(r4tex, ps_texs_arr[cams[0]->camId * scales + scale]->getArray(),
-                           cudaCreateChannelDesc<uchar4>());
+    cudaTextureObject_t r4tex = global_data.getScaledPictureTex( scale, cams[0]->camId );
 
     int c = 1;
     ps_init_target_camera_matrices(cams[c]->P, cams[c]->iP, cams[c]->R, cams[c]->iR, cams[c]->K, cams[c]->iK,
                                    cams[c]->C);
-    cudaBindTextureToArray(t4tex, ps_texs_arr[cams[c]->camId * scales + scale]->getArray(),
-                           cudaCreateChannelDesc<uchar4>());
+    cudaTextureObject_t t4tex = global_data.getScaledPictureTex( scale, cams[c]->camId );
 
-    CudaDeviceMemoryPitched<uchar4, 2> rimg_dmp(CudaSize<2>(width, height));
-    CudaDeviceMemoryPitched<uchar4, 2> timg_dmp(CudaSize<2>(width, height));
+    auto rimg_dmp = global_data.pitched_mem_uchar4_point_tex_cache.get( width, height );
+    auto timg_dmp = global_data.pitched_mem_uchar4_point_tex_cache.get( width, height );
 
-    getRefTexLAB_kernel<<<grid, block>>>(rimg_dmp.getBuffer(), rimg_dmp.stride()[0], width, height);
-    cudaThreadSynchronize();
+    getRefTexLAB_kernel<<<grid, block>>>(
+        r4tex,
+        t4tex,
+        rimg_dmp->mem->getBuffer(), rimg_dmp->mem->stride()[0],
+        width, height );
 
-    CudaArray<uchar4, 2> rTexU4_arr(CudaSize<2>(width, height));
-    CudaArray<uchar4, 2> tTexU4_arr(CudaSize<2>(width, height));
-    CudaArray<float, 2> sliceTex_arr(CudaSize<2>(width, height));
+    auto sliceTex_arr = global_data.pitched_mem_float_point_tex_cache.get( width, height );
 
-    copy((rTexU4_arr), rimg_dmp);
-    cudaBindTextureToArray(rTexU4, rTexU4_arr.getArray(), cudaCreateChannelDesc<uchar4>());
-    cudaBindTextureToArray(tTexU4, rTexU4_arr.getArray(), cudaCreateChannelDesc<uchar4>());
+    cudaTextureObject_t rTexU4 = rimg_dmp->tex;
+    cudaTextureObject_t tTexU4 = timg_dmp->tex;
 
     dim3 block_step(block_size, block_size, 1);
     dim3 grid_step(divUp(width / step, block_size), divUp(height / step, block_size), 1);
@@ -1779,8 +1385,8 @@ void ps_planeSweepNPlanes(CudaArray<uchar4, 2>** ps_texs_arr, CudaHostMemoryHeap
     CudaDeviceMemoryPitched<float, 2> bcst_dmp(CudaSize<2>(width / step, height / step));
     CudaDeviceMemoryPitched<float, 2> bdpt_dmp(CudaSize<2>(width / step, height / step));
 
-    copy((sliceTex_arr), sim_dmp);
-    cudaBindTextureToArray(sliceTex, sliceTex_arr.getArray(), cudaCreateChannelDesc<float>());
+    copy( *sliceTex_arr->mem, sim_dmp );
+    cudaTextureObject_t sliceTex = sliceTex_arr->tex;
 
     clock_t tall = tic();
 
@@ -1788,31 +1394,35 @@ void ps_planeSweepNPlanes(CudaArray<uchar4, 2>** ps_texs_arr, CudaHostMemoryHeap
     {
         float depth = depths[d];
 
-        reprojTarTexLAB_kernel<<<grid, block>>>(timg_dmp.getBuffer(), timg_dmp.stride()[0], width, height, depth);
+        reprojTarTexLAB_kernel<<<grid, block>>>(
+            t4tex,
+            timg_dmp->mem->getBuffer(), timg_dmp->mem->stride()[0],
+            width, height, depth);
         cudaThreadSynchronize();
 
-        cudaUnbindTexture(tTexU4);
-        copy((tTexU4_arr), timg_dmp);
-        cudaBindTextureToArray(tTexU4, tTexU4_arr.getArray(), cudaCreateChannelDesc<uchar4>());
+        compWshNccSim_kernel<<<grid, block>>>(
+            rTexU4,
+            tTexU4,
+            sim_dmp.getBuffer(), sim_dmp.stride()[0],
+            width, height, 2, 1);
         cudaThreadSynchronize();
 
-        compWshNccSim_kernel<<<grid, block>>>(sim_dmp.getBuffer(), sim_dmp.stride()[0], width, height, 2, 1);
-        cudaThreadSynchronize();
+        copy( *sliceTex_arr->mem, sim_dmp );
 
-        cudaUnbindTexture(sliceTex);
-        copy((sliceTex_arr), sim_dmp);
-        cudaBindTextureToArray(sliceTex, sliceTex_arr.getArray(), cudaCreateChannelDesc<float>());
-        cudaThreadSynchronize();
-
-        aggrYKNCCSim_kernel<<<grid_step, block_step>>>(cst_dmp.getBuffer(), cst_dmp.stride()[0], width, height, 8, step,
-                                                       15.5f, 8.0f);
+        aggrYKNCCSim_kernel<<<grid_step, block_step>>>(
+            rTexU4,
+            tTexU4,
+            sliceTex,
+            cst_dmp.getBuffer(), cst_dmp.stride()[0],
+            width, height, 8, step,
+            15.5f, 8.0f);
         cudaThreadSynchronize();
 
         updateBestDepth_kernel<<<grid_step, block_step>>>(bcst_dmp.getBuffer(), bcst_dmp.stride()[0],
                                                           bdpt_dmp.getBuffer(), bdpt_dmp.stride()[0], cst_dmp.getBuffer(),
                                                           cst_dmp.stride()[0], width, height, step, depth, d);
         cudaThreadSynchronize();
-    };
+    }
 
     if(verbose)
         printf("gpu comp ncc elapsed time: %f ms \n", toc(tall));
@@ -1820,14 +1430,10 @@ void ps_planeSweepNPlanes(CudaArray<uchar4, 2>** ps_texs_arr, CudaHostMemoryHeap
     copy((*osim_hmh), bcst_dmp);
     copy((*odpt_hmh), bdpt_dmp);
 
-    cudaUnbindTexture(sliceTex);
-
-    cudaUnbindTexture(rTexU4);
-    cudaUnbindTexture(tTexU4);
-
-    cudaUnbindTexture(r4tex);
-    cudaUnbindTexture(t4tex);
-};
+    global_data.pitched_mem_uchar4_point_tex_cache.put( rimg_dmp );
+    global_data.pitched_mem_uchar4_point_tex_cache.put( timg_dmp );
+    global_data.pitched_mem_float_point_tex_cache.put( sliceTex_arr );
+}
 
 void ps_planeSweepAggr(CudaHostMemoryHeap<uchar4, 2>& rimg_hmh, CudaHostMemoryHeap<uchar4, 2>& timg_hmh,
                        CudaHostMemoryHeap<float, 2>* osim_hmh, CudaHostMemoryHeap<float, 2>* odepth_hmh,
@@ -1856,33 +1462,26 @@ void ps_planeSweepAggr(CudaHostMemoryHeap<uchar4, 2>& rimg_hmh, CudaHostMemoryHe
     CudaDeviceMemoryPitched<uchar4, 2> timg_dmp(CudaSize<2>(width, height));
     copy(timg_dmp, timg_hmh);
 
-    CudaArray<unsigned char, 2> rtex_arr(CudaSize<2>(width, height));
-    CudaArray<unsigned char, 2> gtex_arr(CudaSize<2>(width, height));
-    CudaArray<unsigned char, 2> btex_arr(CudaSize<2>(width, height));
+    auto rtex = global_data.pitched_mem_uchar_linear_tex_cache.get( width, height );
+    auto gtex = global_data.pitched_mem_uchar_linear_tex_cache.get( width, height );
+    auto btex = global_data.pitched_mem_uchar_linear_tex_cache.get( width, height );
 
     CudaDeviceMemoryPitched<unsigned char, 2> tex_dmp(CudaSize<2>(width, height));
 
     copyUchar4Dim2uchar_kernel<<<grid, block>>>(0, timg_dmp.getBuffer(), timg_dmp.stride()[0], tex_dmp.getBuffer(),
                                                 tex_dmp.stride()[0], width, height);
-    cudaThreadSynchronize();
-    copy((rtex_arr), tex_dmp);
+    copy( *rtex->mem, tex_dmp );
 
     copyUchar4Dim2uchar_kernel<<<grid, block>>>(1, timg_dmp.getBuffer(), timg_dmp.stride()[0], tex_dmp.getBuffer(),
                                                 tex_dmp.stride()[0], width, height);
-    cudaThreadSynchronize();
-    copy((gtex_arr), tex_dmp);
+    copy( *gtex->mem, tex_dmp );
 
     copyUchar4Dim2uchar_kernel<<<grid, block>>>(2, timg_dmp.getBuffer(), timg_dmp.stride()[0], tex_dmp.getBuffer(),
                                                 tex_dmp.stride()[0], width, height);
-    cudaThreadSynchronize();
-    copy((btex_arr), tex_dmp);
+    copy( *btex->mem, tex_dmp );
 
     if(verbose)
         printf("bind\n");
-
-    cudaBindTextureToArray(rtex, rtex_arr.getArray(), cudaCreateChannelDesc<unsigned char>());
-    cudaBindTextureToArray(gtex, gtex_arr.getArray(), cudaCreateChannelDesc<unsigned char>());
-    cudaBindTextureToArray(btex, btex_arr.getArray(), cudaCreateChannelDesc<unsigned char>());
 
     // setup cameras matrices to the constant memory
     ps_init_reference_camera_matrices(rtcams[0]->P, rtcams[0]->iP, rtcams[0]->R, rtcams[0]->iR, rtcams[0]->K,
@@ -1909,93 +1508,117 @@ void ps_planeSweepAggr(CudaHostMemoryHeap<uchar4, 2>& rimg_hmh, CudaHostMemoryHe
     {
         float depth = depths[d];
 
-        reprojTarTexRgb_kernel<<<grid, block>>>(timg_dmp.getBuffer(), timg_dmp.stride()[0], width, height, depth);
-        cudaThreadSynchronize();
+        reprojTarTexRgb_kernel<<<grid, block>>>(
+            rtex->tex,
+            gtex->tex,
+            btex->tex,
+            timg_dmp.getBuffer(), timg_dmp.stride()[0],
+            width, height, depth);
 
-        transpose_uchar4_kernel<<<grid, block>>>(timg_dmp.getBuffer(), timg_dmp.stride()[0], timgT_dmp.getBuffer(),
-                                                 timgT_dmp.stride()[0], width, height);
-        cudaThreadSynchronize();
+        transpose_uchar4_kernel<<<grid, block>>>(
+            timg_dmp.getBuffer(), timg_dmp.stride()[0], timgT_dmp.getBuffer(),
+            timgT_dmp.stride()[0], width, height);
 
         compAggrNccSim_kernel<<<grid_row, block_row>>>(
-            stat1_dmp.getBuffer(), stat1_dmp.stride()[0], stat2_dmp.getBuffer(), stat2_dmp.stride()[0],
-            rimg_dmp.getBuffer(), rimg_dmp.stride()[0], timg_dmp.getBuffer(), timg_dmp.stride()[0], width, height, 0, 0);
-        cudaThreadSynchronize();
+            stat1_dmp.getBuffer(), stat1_dmp.stride()[0],
+            stat2_dmp.getBuffer(), stat2_dmp.stride()[0],
+            rimg_dmp.getBuffer(), rimg_dmp.stride()[0],
+            timg_dmp.getBuffer(), timg_dmp.stride()[0],
+            width, height, 0, 0);
 
         compAggrNccSim_kernel<<<grid_row, block_row>>>(
-            stat1_dmp.getBuffer(), stat1_dmp.stride()[0], stat2_dmp.getBuffer(), stat2_dmp.stride()[0],
-            rimg_dmp.getBuffer(), rimg_dmp.stride()[0], timg_dmp.getBuffer(), timg_dmp.stride()[0], width, height, 32, 0);
-        cudaThreadSynchronize();
+            stat1_dmp.getBuffer(), stat1_dmp.stride()[0],
+            stat2_dmp.getBuffer(), stat2_dmp.stride()[0],
+            rimg_dmp.getBuffer(), rimg_dmp.stride()[0],
+            timg_dmp.getBuffer(), timg_dmp.stride()[0],
+            width, height, 32, 0);
 
-        transpose_float4_kernel<<<grid, block>>>(stat1_dmp.getBuffer(), stat1_dmp.stride()[0], stat1T_dmp.getBuffer(),
-                                                 stat1T_dmp.stride()[0], width, height);
-        cudaThreadSynchronize();
+        transpose_float4_kernel<<<grid, block>>>(
+            stat1_dmp.getBuffer(), stat1_dmp.stride()[0],
+            stat1T_dmp.getBuffer(), stat1T_dmp.stride()[0],
+            width, height);
 
-        transpose_float4_kernel<<<grid, block>>>(stat2_dmp.getBuffer(), stat2_dmp.stride()[0], stat2T_dmp.getBuffer(),
-                                                 stat2T_dmp.stride()[0], width, height);
-        cudaThreadSynchronize();
+        transpose_float4_kernel<<<grid, block>>>(
+            stat2_dmp.getBuffer(), stat2_dmp.stride()[0],
+            stat2T_dmp.getBuffer(), stat2T_dmp.stride()[0],
+            width, height);
 
-        compAggrNccSim_kernel<<<grid_col, block_col>>>(stat1T_dmp.getBuffer(), stat1T_dmp.stride()[0],
-                                                       stat2T_dmp.getBuffer(), stat2T_dmp.stride()[0],
-                                                       rimgT_dmp.getBuffer(), rimgT_dmp.stride()[0],
-                                                       timgT_dmp.getBuffer(), timgT_dmp.stride()[0], height, width, 0, 1);
-        cudaThreadSynchronize();
         compAggrNccSim_kernel<<<grid_col, block_col>>>(
-            stat1T_dmp.getBuffer(), stat1T_dmp.stride()[0], stat2T_dmp.getBuffer(), stat2T_dmp.stride()[0],
-            rimgT_dmp.getBuffer(), rimgT_dmp.stride()[0], timgT_dmp.getBuffer(), timgT_dmp.stride()[0], height, width, 32,
+            stat1T_dmp.getBuffer(), stat1T_dmp.stride()[0],
+            stat2T_dmp.getBuffer(), stat2T_dmp.stride()[0],
+            rimgT_dmp.getBuffer(), rimgT_dmp.stride()[0],
+            timgT_dmp.getBuffer(), timgT_dmp.stride()[0],
+            height, width, 0, 1);
+
+        compAggrNccSim_kernel<<<grid_col, block_col>>>(
+            stat1T_dmp.getBuffer(), stat1T_dmp.stride()[0],
+            stat2T_dmp.getBuffer(), stat2T_dmp.stride()[0],
+            rimgT_dmp.getBuffer(), rimgT_dmp.stride()[0],
+            timgT_dmp.getBuffer(), timgT_dmp.stride()[0],
+            height, width, 32,
             1);
-        cudaThreadSynchronize();
 
-        transpose_float4_kernel<<<gridT, blockT>>>(stat1T_dmp.getBuffer(), stat1T_dmp.stride()[0], stat1_dmp.getBuffer(),
-                                                   stat1_dmp.stride()[0], height, width);
-        cudaThreadSynchronize();
+        transpose_float4_kernel<<<gridT, blockT>>>(
+            stat1T_dmp.getBuffer(), stat1T_dmp.stride()[0],
+            stat1_dmp.getBuffer(), stat1_dmp.stride()[0],
+            height, width);
 
-        transpose_float4_kernel<<<gridT, blockT>>>(stat2T_dmp.getBuffer(), stat2T_dmp.stride()[0], stat2_dmp.getBuffer(),
-                                                   stat2_dmp.stride()[0], height, width);
-        cudaThreadSynchronize();
+        transpose_float4_kernel<<<gridT, blockT>>>(
+            stat2T_dmp.getBuffer(), stat2T_dmp.stride()[0],
+            stat2_dmp.getBuffer(), stat2_dmp.stride()[0],
+            height, width);
 
         compNccSimFromStats_kernel<<<grid, block>>>(
-            depth_dmp.getBuffer(), depth_dmp.stride()[0], sim_dmp.getBuffer(), sim_dmp.stride()[0], stat1_dmp.getBuffer(),
-            stat1_dmp.stride()[0], stat2_dmp.getBuffer(), stat2_dmp.stride()[0], width, height, d, depth);
-        cudaThreadSynchronize();
-    };
+            depth_dmp.getBuffer(), depth_dmp.stride()[0],
+            sim_dmp.getBuffer(), sim_dmp.stride()[0],
+            stat1_dmp.getBuffer(), stat1_dmp.stride()[0],
+            stat2_dmp.getBuffer(), stat2_dmp.stride()[0],
+            width, height, d, depth);
+    }
 
     copy((*osim_hmh), sim_dmp);
     copy((*odepth_hmh), depth_dmp);
 
-    cudaUnbindTexture(rtex);
-    cudaUnbindTexture(gtex);
-    cudaUnbindTexture(btex);
+    global_data.pitched_mem_uchar_linear_tex_cache.put( rtex );
+    global_data.pitched_mem_uchar_linear_tex_cache.put( gtex );
+    global_data.pitched_mem_uchar_linear_tex_cache.put( btex );
 
     if(verbose)
         printf("gpu elapsed time: %f ms \n", toc(tall));
-};
+}
 
-void ps_getTexture(CudaArray<uchar4, 2>** ps_texs_arr, CudaHostMemoryHeap<uchar4, 2>* oimg_hmh, int camId,
+// void ps_getTexture(CudaArray<uchar4, 2>** ps_texs_arr, CudaHostMemoryHeap<uchar4, 2>* oimg_hmh, int camId,
+void ps_getTexture( CudaHostMemoryHeap<uchar4, 2>* oimg_hmh, int camId,
                    int scale, int CUDAdeviceNo, int ncamsAllocated, int scales)
 {
     clock_t tall = tic();
     testCUDAdeviceNo(CUDAdeviceNo);
 
-    copy((*oimg_hmh), (*ps_texs_arr[camId * scales + scale]));
+    // copy((*oimg_hmh), (*ps_texs_arr[camId * scales + scale]));
+    copy( (*oimg_hmh), global_data.getScaledPictureArray( scale, camId ) );
     printf("gpu elapsed time: %f ms \n", toc(tall));
-};
+}
 
-void ps_smoothDepthMap(CudaArray<uchar4, 2>** ps_texs_arr, CudaHostMemoryHeap<float, 2>* depthMap_hmh,
+// void ps_smoothDepthMap(CudaArray<uchar4, 2>** ps_texs_arr, CudaHostMemoryHeap<float, 2>* depthMap_hmh,
+void ps_smoothDepthMap( CudaHostMemoryHeap<float, 2>* depthMap_hmh,
                        cameraStruct** cams, int width, int height, int scale, int CUDAdeviceNo, int ncamsAllocated,
                        int scales, int wsh, bool verbose, float gammaC, float gammaP)
 {
     clock_t tall = tic();
     testCUDAdeviceNo(CUDAdeviceNo);
 
-    CudaArray<float, 2> depthMap_arr(*depthMap_hmh);
-    cudaBindTextureToArray(depthsTex, depthMap_arr.getArray(), cudaCreateChannelDesc<float>());
+    auto depthMap_arr = global_data.pitched_mem_float_point_tex_cache.get(
+        depthMap_hmh->getSize()[0],
+        depthMap_hmh->getSize()[1] );
+    copy( *depthMap_arr->mem, *depthMap_hmh );
+    cudaTextureObject_t depthsTex = depthMap_arr->tex;
+
 
     ps_init_reference_camera_matrices(cams[0]->P, cams[0]->iP, cams[0]->R, cams[0]->iR, cams[0]->K, cams[0]->iK,
                                       cams[0]->C);
-    cudaBindTextureToArray(r4tex, ps_texs_arr[cams[0]->camId * scales + scale]->getArray(),
-                           cudaCreateChannelDesc<uchar4>());
+    cudaTextureObject_t r4tex = global_data.getScaledPictureTex( scale, cams[0]->camId );
 
-    CudaDeviceMemoryPitched<float, 2> depthMap_dmp(CudaSize<2>(width, height));
+    auto depthMap_dmp = global_data.pitched_mem_float_point_tex_cache.get( width, height );
 
     int block_size = 8;
     dim3 block(block_size, block_size, 1);
@@ -2006,39 +1629,48 @@ void ps_smoothDepthMap(CudaArray<uchar4, 2>** ps_texs_arr, CudaHostMemoryHeap<fl
 
     //------------------------------------------------------------------------------------------------
     // smooth depth map
-    smoothDepthMap_kernel<<<grid, block>>>(depthMap_dmp.getBuffer(), depthMap_dmp.stride()[0], width, height, wsh, gammaC,
-                                           gammaP);
+    smoothDepthMap_kernel<<<grid, block>>>(
+        r4tex,
+        depthsTex,
+        depthMap_dmp->mem->getBuffer(), depthMap_dmp->mem->stride()[0],
+        width, height, wsh, gammaC,
+        gammaP );
     cudaThreadSynchronize();
     CHECK_CUDA_ERROR();
 
     if(verbose)
         printf("copy depth map to host\n");
 
-    copy((*depthMap_hmh), depthMap_dmp);
+    copy( *depthMap_hmh, *depthMap_dmp->mem );
 
-    cudaUnbindTexture(r4tex);
-    cudaUnbindTexture(depthsTex);
+    global_data.pitched_mem_float_point_tex_cache.put( depthMap_dmp );
+    global_data.pitched_mem_float_point_tex_cache.put( depthMap_arr );
 
     if(verbose)
         printf("gpu elapsed time: %f ms \n", toc(tall));
-};
+}
 
-void ps_filterDepthMap(CudaArray<uchar4, 2>** ps_texs_arr, CudaHostMemoryHeap<float, 2>* depthMap_hmh,
+// void ps_filterDepthMap(CudaArray<uchar4, 2>** ps_texs_arr, CudaHostMemoryHeap<float, 2>* depthMap_hmh,
+void ps_filterDepthMap( CudaHostMemoryHeap<float, 2>* depthMap_hmh,
                        cameraStruct** cams, int width, int height, int scale, int CUDAdeviceNo, int ncamsAllocated,
                        int scales, int wsh, bool verbose, float gammaC, float minCostThr)
 {
     clock_t tall = tic();
     testCUDAdeviceNo(CUDAdeviceNo);
 
-    CudaArray<float, 2> depthMap_arr(*depthMap_hmh);
-    cudaBindTextureToArray(depthsTex, depthMap_arr.getArray(), cudaCreateChannelDesc<float>());
+    auto depthMap_arr = global_data.pitched_mem_float_point_tex_cache.get(
+        depthMap_hmh->getSize()[0],
+        depthMap_hmh->getSize()[1] );
+    copy( *depthMap_arr->mem, *depthMap_hmh );
+    cudaTextureObject_t depthsTex = depthMap_arr->tex;
 
     ps_init_reference_camera_matrices(cams[0]->P, cams[0]->iP, cams[0]->R, cams[0]->iR, cams[0]->K, cams[0]->iK,
                                       cams[0]->C);
-    cudaBindTextureToArray(r4tex, ps_texs_arr[cams[0]->camId * scales + scale]->getArray(),
-                           cudaCreateChannelDesc<uchar4>());
 
-    CudaDeviceMemoryPitched<float, 2> depthMap_dmp(CudaSize<2>(width, height));
+    cudaTextureObject_t r4tex = global_data.getScaledPictureTex( scale, cams[0]->camId );
+
+    // CudaDeviceMemoryPitched<float, 2> depthMap_dmp(CudaSize<2>(width, height));
+    auto depthMap_dmp = global_data.pitched_mem_float_point_tex_cache.get( width, height );
 
     int block_size = 8;
     dim3 block(block_size, block_size, 1);
@@ -2049,24 +1681,29 @@ void ps_filterDepthMap(CudaArray<uchar4, 2>** ps_texs_arr, CudaHostMemoryHeap<fl
 
     //------------------------------------------------------------------------------------------------
     // smooth depth map
-    filterDepthMap_kernel<<<grid, block>>>(depthMap_dmp.getBuffer(), depthMap_dmp.stride()[0], width, height, wsh, gammaC,
-                                           minCostThr);
+    filterDepthMap_kernel<<<grid, block>>>(
+        r4tex,
+        depthsTex,
+        depthMap_dmp->mem->getBuffer(), depthMap_dmp->mem->stride()[0],
+        width, height, wsh, gammaC,
+        minCostThr );
     cudaThreadSynchronize();
     CHECK_CUDA_ERROR();
 
     if(verbose)
         printf("copy depth map to host\n");
 
-    copy((*depthMap_hmh), depthMap_dmp);
+    copy( *depthMap_hmh, *depthMap_dmp->mem );
 
-    cudaUnbindTexture(r4tex);
-    cudaUnbindTexture(depthsTex);
+    global_data.pitched_mem_float_point_tex_cache.put( depthMap_dmp );
+    global_data.pitched_mem_float_point_tex_cache.put( depthMap_arr );
 
     if(verbose)
         printf("gpu elapsed time: %f ms \n", toc(tall));
-};
+}
 
-void ps_computeNormalMap(CudaArray<uchar4, 2>** ps_texs_arr, CudaHostMemoryHeap<float3, 2>* normalMap_hmh,
+// void ps_computeNormalMap(CudaArray<uchar4, 2>** ps_texs_arr, CudaHostMemoryHeap<float3, 2>* normalMap_hmh,
+void ps_computeNormalMap( CudaHostMemoryHeap<float3, 2>* normalMap_hmh,
                          CudaHostMemoryHeap<float, 2>* depthMap_hmh, cameraStruct** cams, int width, int height,
                          int scale, int CUDAdeviceNo, int ncamsAllocated, int scales, int wsh, bool verbose,
                          float gammaC, float gammaP)
@@ -2074,16 +1711,18 @@ void ps_computeNormalMap(CudaArray<uchar4, 2>** ps_texs_arr, CudaHostMemoryHeap<
     clock_t tall = tic();
     testCUDAdeviceNo(CUDAdeviceNo);
 
-    CudaArray<float, 2> depthMap_arr(*depthMap_hmh);
-    cudaBindTextureToArray(depthsTex, depthMap_arr.getArray(), cudaCreateChannelDesc<float>());
+    auto depthMap_arr = global_data.pitched_mem_float_point_tex_cache.get(
+        depthMap_hmh->getSize()[0],
+        depthMap_hmh->getSize()[1] );
+    copy( *depthMap_arr->mem, *depthMap_hmh );
+    cudaTextureObject_t depthsTex = depthMap_arr->tex;
 
     ps_init_reference_camera_matrices(cams[0]->P, cams[0]->iP, cams[0]->R, cams[0]->iR, cams[0]->K, cams[0]->iK,
                                       cams[0]->C);
-    cudaBindTextureToArray(r4tex, ps_texs_arr[cams[0]->camId * scales + scale]->getArray(),
-                           cudaCreateChannelDesc<uchar4>());
+
+    cudaTextureObject_t r4tex = global_data.getScaledPictureTex( scale, cams[0]->camId );
 
     CudaDeviceMemoryPitched<float3, 2> normalMap_dmp(*normalMap_hmh);
-    CudaDeviceMemoryPitched<float, 2> depthMap_dmp(CudaSize<2>(width, height));
 
     int block_size = 8;
     dim3 block(block_size, block_size, 1);
@@ -2094,9 +1733,12 @@ void ps_computeNormalMap(CudaArray<uchar4, 2>** ps_texs_arr, CudaHostMemoryHeap<
 
     //------------------------------------------------------------------------------------------------
     // compute normal map
-    computeNormalMap_kernel<<<grid, block>>>(normalMap_dmp.getBuffer(), normalMap_dmp.stride()[0], width, height, wsh,
-                                             gammaC, gammaP);
-    cudaThreadSynchronize();
+    computeNormalMap_kernel<<<grid, block>>>(
+        r4tex,
+        depthsTex,
+        normalMap_dmp.getBuffer(), normalMap_dmp.stride()[0],
+        width, height, wsh,
+        gammaC, gammaP );
     CHECK_CUDA_ERROR();
 
     if(verbose)
@@ -2108,11 +1750,11 @@ void ps_computeNormalMap(CudaArray<uchar4, 2>** ps_texs_arr, CudaHostMemoryHeap<
     if(verbose)
         printf("gpu elapsed time: %f ms \n", toc(tall));
 
-    cudaUnbindTexture(r4tex);
-    cudaUnbindTexture(depthsTex);
-};
+    global_data.pitched_mem_float_point_tex_cache.put( depthMap_arr );
+}
 
-void ps_alignSourceDepthMapToTarget(CudaArray<uchar4, 2>** ps_texs_arr,
+// void ps_alignSourceDepthMapToTarget(CudaArray<uchar4, 2>** ps_texs_arr,
+void ps_alignSourceDepthMapToTarget(
                                     CudaHostMemoryHeap<float, 2>* sourceDepthMap_hmh,
                                     CudaHostMemoryHeap<float, 2>* targetDepthMap_hmh, cameraStruct** cams, int width,
                                     int height, int scale, int CUDAdeviceNo, int ncamsAllocated, int scales, int wsh,
@@ -2121,18 +1763,24 @@ void ps_alignSourceDepthMapToTarget(CudaArray<uchar4, 2>** ps_texs_arr,
     clock_t tall = tic();
     testCUDAdeviceNo(CUDAdeviceNo);
 
-    CudaArray<float, 2> sourceDepthMap_arr(*sourceDepthMap_hmh);
-    cudaBindTextureToArray(depthsTex, sourceDepthMap_arr.getArray(), cudaCreateChannelDesc<float>());
+    auto sourceDepthMap_arr = global_data.pitched_mem_float_point_tex_cache.get(
+        sourceDepthMap_hmh->getSize()[0],
+        sourceDepthMap_hmh->getSize()[1] );
+    copy( *sourceDepthMap_arr->mem, *sourceDepthMap_hmh );
+    cudaTextureObject_t depthsTex = sourceDepthMap_arr->tex;
 
-    CudaArray<float, 2> targetDepthMap_arr(*targetDepthMap_hmh);
-    cudaBindTextureToArray(depthsTex1, targetDepthMap_arr.getArray(), cudaCreateChannelDesc<float>());
+    auto targetDepthMap_arr = global_data.pitched_mem_float_point_tex_cache.get(
+        targetDepthMap_hmh->getSize()[0],
+        targetDepthMap_hmh->getSize()[1] );
+    copy( *targetDepthMap_arr->mem, *targetDepthMap_hmh );
+    cudaTextureObject_t depthsTex1 = targetDepthMap_arr->tex;
 
     CudaDeviceMemoryPitched<float, 2> outDepthMap_dmp(CudaSize<2>(width, height));
 
     ps_init_reference_camera_matrices(cams[0]->P, cams[0]->iP, cams[0]->R, cams[0]->iR, cams[0]->K, cams[0]->iK,
                                       cams[0]->C);
-    cudaBindTextureToArray(r4tex, ps_texs_arr[cams[0]->camId * scales + scale]->getArray(),
-                           cudaCreateChannelDesc<uchar4>());
+
+    cudaTextureObject_t r4tex = global_data.getScaledPictureTex( scale, cams[0]->camId );
 
     int block_size = 8;
     dim3 block(block_size, block_size, 1);
@@ -2143,9 +1791,12 @@ void ps_alignSourceDepthMapToTarget(CudaArray<uchar4, 2>** ps_texs_arr,
 
     //------------------------------------------------------------------------------------------------
     // smooth depth map
-    alignSourceDepthMapToTarget_kernel<<<grid, block>>>(outDepthMap_dmp.getBuffer(), outDepthMap_dmp.stride()[0], width,
-                                                        height, wsh, gammaC, maxPixelSizeDist);
-    cudaThreadSynchronize();
+    alignSourceDepthMapToTarget_kernel<<<grid, block>>>(
+        r4tex,
+        depthsTex,
+        depthsTex1,
+        outDepthMap_dmp.getBuffer(), outDepthMap_dmp.stride()[0],
+        width, height, wsh, gammaC, maxPixelSizeDist);
     CHECK_CUDA_ERROR();
 
     if(verbose)
@@ -2153,13 +1804,12 @@ void ps_alignSourceDepthMapToTarget(CudaArray<uchar4, 2>** ps_texs_arr,
 
     copy((*sourceDepthMap_hmh), outDepthMap_dmp);
 
-    cudaUnbindTexture(r4tex);
-    cudaUnbindTexture(depthsTex);
-    cudaUnbindTexture(depthsTex1);
+    global_data.pitched_mem_float_point_tex_cache.put( sourceDepthMap_arr );
+    global_data.pitched_mem_float_point_tex_cache.put( targetDepthMap_arr );
 
     if(verbose)
         printf("gpu elapsed time: %f ms \n", toc(tall));
-};
+}
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -2175,15 +1825,22 @@ void ps_dilateDepthMap(CudaDeviceMemoryPitched<float, 2>& odepthMap_dmp,
 
     copy(odepthMap_dmp, idepthMap_dmp);
 
+    auto sourceDepthMap_arr = global_data.pitched_mem_float_point_tex_cache.get(
+        odepthMap_dmp.getSize()[0],
+        odepthMap_dmp.getSize()[1] );
+    cudaTextureObject_t depthsTex = sourceDepthMap_arr->tex;
+
     for(int iter = 0; iter <= niters; iter++)
     {
-        CudaArray<float, 2> sourceDepthMap_arr(odepthMap_dmp);
-        cudaBindTextureToArray(depthsTex, sourceDepthMap_arr.getArray(), cudaCreateChannelDesc<float>());
-        refine_dilateDepthMap_kernel<<<grid, block>>>(odepthMap_dmp.getBuffer(), odepthMap_dmp.stride()[0], width, height,
-                                                      gammaC);
-        cudaThreadSynchronize();
-        cudaUnbindTexture(depthsTex);
-    };
+        copy( *sourceDepthMap_arr->mem, odepthMap_dmp );
+
+        refine_dilateDepthMap_kernel<<<grid, block>>>(
+            depthsTex,
+            odepthMap_dmp.getBuffer(), odepthMap_dmp.stride()[0],
+            width, height, gammaC );
+    }
+
+    global_data.pitched_mem_float_point_tex_cache.put( sourceDepthMap_arr );
 }
 
 void ps_dilateMaskMap(CudaDeviceMemoryPitched<float, 2>& depthMap_dmp, int width, int height, bool verbose,
@@ -2217,7 +1874,7 @@ void ps_dilateMaskMap(CudaDeviceMemoryPitched<float, 2>& depthMap_dmp, int width
                                                                  depthMap_dmp.getBuffer(), depthMap_dmp.stride()[0],
                                                                  width, height, 0, +1, fpPlaneDepth);
         cudaThreadSynchronize();
-    };
+    }
 
     refine_convertFPPlaneDepthMapToDepthMap_kernel<<<grid, block>>>(depthMap_dmp.getBuffer(), depthMap_dmp.stride()[0],
                                                                     depthMap_dmp.getBuffer(), depthMap_dmp.stride()[0],
@@ -2225,14 +1882,21 @@ void ps_dilateMaskMap(CudaDeviceMemoryPitched<float, 2>& depthMap_dmp, int width
     cudaThreadSynchronize();
 }
 
-void ps_refineDepthMapInternal(CudaDeviceMemoryPitched<float, 2>& osimMap_dmp,
-                               CudaDeviceMemoryPitched<float, 2>& odepthMap_dmp,
-                               CudaDeviceMemoryPitched<float, 2>& idepthMap_dmp,
-                               CudaDeviceMemoryPitched<float, 2>& idepthMapMask_dmp, int width, int height,
-                               bool verbose, int wsh, float gammaC, float gammaP, float simThr,
-                               CudaDeviceMemoryPitched<float3, 2>& dsm_dmp,
-                               CudaDeviceMemoryPitched<float3, 2>& ssm_dmp, CudaArray<uchar4, 2>& tTexU4_arr,
-                               CudaDeviceMemoryPitched<uchar4, 2>& timg_dmp, bool moveByTcOrRc, float step)
+void ps_refineDepthMapInternal(
+    cudaTextureObject_t t4tex,
+    CudaDeviceMemoryPitched<float, 2>& osimMap_dmp,
+    CudaDeviceMemoryPitched<float, 2>& odepthMap_dmp,
+    CudaDeviceMemoryPitched<float, 2>& idepthMap_dmp,
+    CudaDeviceMemoryPitched<float, 2>& idepthMapMask_dmp, int width, int height,
+    bool verbose, int wsh, float gammaC, float gammaP, float simThr,
+    CudaDeviceMemoryPitched<float3, 2>& dsm_dmp,
+    CudaDeviceMemoryPitched<float3, 2>& ssm_dmp,
+    cudaTextureObject_t  rTexU4,
+    cudaTextureObject_t& tTexU4,
+    PitchedMem_Texture<uchar4,cudaFilterModePoint,cudaReadModeElementType>* timg_dmp,
+    // CudaArray<uchar4, 2>& tTexU4_arr,
+    // CudaDeviceMemoryPitched<uchar4, 2>& timg_dmp,
+    bool moveByTcOrRc, float step)
 {
     ///////////////////////////////////////////////////////////////////////////////
     // setup block and grid
@@ -2241,42 +1905,54 @@ void ps_refineDepthMapInternal(CudaDeviceMemoryPitched<float, 2>& osimMap_dmp,
     dim3 grid(divUp(width, block_size), divUp(height, block_size), 1);
 
     // computed three depths map ... -1,0,1 ... from dilated input depth map .. and add last
-    refine_computeDepthsMapFromDepthMap_kernel<<<grid, block>>>(dsm_dmp.getBuffer(), dsm_dmp.stride()[0],
-                                                                idepthMap_dmp.getBuffer(), idepthMap_dmp.stride()[0],
-                                                                width, height, moveByTcOrRc, step);
-    cudaThreadSynchronize();
+    refine_computeDepthsMapFromDepthMap_kernel<<<grid, block>>>(
+        dsm_dmp.getBuffer(), dsm_dmp.stride()[0],
+        idepthMap_dmp.getBuffer(), idepthMap_dmp.stride()[0],
+        width, height, moveByTcOrRc, step);
+    // cudaThreadSynchronize();
 
     // for each depth map compute sim map in pixels where depthMap is defined
     // int id = 1;
     for(int id = 0; id < 3; id++)
     {
         refine_reprojTarTexLABByDepthsMap_kernel<<<grid, block>>>(
-            dsm_dmp.getBuffer(), dsm_dmp.stride()[0], timg_dmp.getBuffer(), timg_dmp.stride()[0], width, height, id);
-        cudaThreadSynchronize();
+            t4tex,
+            dsm_dmp.getBuffer(), dsm_dmp.stride()[0],
+            timg_dmp->mem->getBuffer(), timg_dmp->mem->stride()[0],
+            width, height, id );
 
-        cudaUnbindTexture(tTexU4);
-        copy((tTexU4_arr), timg_dmp);
-        cudaBindTextureToArray(tTexU4, tTexU4_arr.getArray(), cudaCreateChannelDesc<uchar4>());
-        cudaThreadSynchronize();
+        tTexU4 = timg_dmp->tex;
 
-        refine_compYKNCCSim_kernel<<<grid, block>>>(ssm_dmp.getBuffer(), ssm_dmp.stride()[0], id,
-                                                    idepthMapMask_dmp.getBuffer(), idepthMapMask_dmp.stride()[0], width,
-                                                    height, wsh, gammaC, gammaP);
+        refine_compYKNCCSim_kernel<<<grid, block>>>(
+            rTexU4,
+            tTexU4,
+            ssm_dmp.getBuffer(), ssm_dmp.stride()[0],
+            id,
+            idepthMapMask_dmp.getBuffer(), idepthMapMask_dmp.stride()[0],
+            width, height, wsh, gammaC, gammaP);
 
-        cudaThreadSynchronize();
-    };
+    }
 
     refine_computeBestDepthSimMaps_kernel<<<grid, block>>>(
-        osimMap_dmp.getBuffer(), osimMap_dmp.stride()[0], odepthMap_dmp.getBuffer(), odepthMap_dmp.stride()[0],
-        ssm_dmp.getBuffer(), ssm_dmp.stride()[0], dsm_dmp.getBuffer(), dsm_dmp.stride()[0], width, height, simThr);
-    cudaThreadSynchronize();
+        osimMap_dmp.getBuffer(), osimMap_dmp.stride()[0],
+        odepthMap_dmp.getBuffer(), odepthMap_dmp.stride()[0],
+        ssm_dmp.getBuffer(), ssm_dmp.stride()[0],
+        dsm_dmp.getBuffer(), dsm_dmp.stride()[0],
+        width, height, simThr);
 }
 
-void ps_computeSimMapForDepthMapInternal(CudaDeviceMemoryPitched<float, 2>& osimMap_dmp,
-                                         CudaDeviceMemoryPitched<float, 2>& idepthMapMask_dmp, int width, int height,
-                                         bool verbose, int wsh, float gammaC, float gammaP,
-                                         CudaArray<uchar4, 2>& tTexU4_arr,
-                                         CudaDeviceMemoryPitched<uchar4, 2>& timg_dmp, float fpPlaneDepth)
+void ps_computeSimMapForDepthMapInternal(
+    cudaTextureObject_t t4tex,
+    CudaDeviceMemoryPitched<float, 2>& osimMap_dmp,
+    CudaDeviceMemoryPitched<float, 2>& idepthMapMask_dmp,
+    int width, int height,
+    bool verbose, int wsh, float gammaC, float gammaP,
+    cudaTextureObject_t  rTexU4,
+    cudaTextureObject_t& tTexU4,
+    // CudaArray<uchar4, 2>& tTexU4_arr,
+    // CudaDeviceMemoryPitched<uchar4, 2>& timg_dmp,
+    PitchedMem_Texture<uchar4,cudaFilterModePoint,cudaReadModeElementType>* timg_dmp,
+    float fpPlaneDepth)
 {
     ///////////////////////////////////////////////////////////////////////////////
     // setup block and grid
@@ -2284,21 +1960,23 @@ void ps_computeSimMapForDepthMapInternal(CudaDeviceMemoryPitched<float, 2>& osim
     dim3 block(block_size, block_size, 1);
     dim3 grid(divUp(width, block_size), divUp(height, block_size), 1);
 
-    reprojTarTexLAB_kernel<<<grid, block>>>(timg_dmp.getBuffer(), timg_dmp.stride()[0], width, height, fpPlaneDepth);
-    cudaThreadSynchronize();
+    reprojTarTexLAB_kernel<<<grid, block>>>(
+        t4tex,
+        timg_dmp->mem->getBuffer(), timg_dmp->mem->stride()[0],
+        width, height, fpPlaneDepth);
 
-    cudaUnbindTexture(tTexU4);
-    copy((tTexU4_arr), timg_dmp);
-    cudaBindTextureToArray(tTexU4, tTexU4_arr.getArray(), cudaCreateChannelDesc<uchar4>());
-    cudaThreadSynchronize();
+    tTexU4 = timg_dmp->tex;
 
-    refine_compYKNCCSimMap_kernel<<<grid, block>>>(osimMap_dmp.getBuffer(), osimMap_dmp.stride()[0],
-                                                   idepthMapMask_dmp.getBuffer(), idepthMapMask_dmp.stride()[0], width,
-                                                   height, wsh, gammaC, gammaP);
-    cudaThreadSynchronize();
+    refine_compYKNCCSimMap_kernel<<<grid, block>>>(
+        rTexU4,
+        tTexU4,
+        osimMap_dmp.getBuffer(), osimMap_dmp.stride()[0],
+        idepthMapMask_dmp.getBuffer(), idepthMapMask_dmp.stride()[0],
+        width, height, wsh, gammaC, gammaP);
 }
 
-void ps_growDepthMap(CudaArray<uchar4, 2>** ps_texs_arr, CudaHostMemoryHeap<uchar4, 2>* otimg_hmh,
+// void ps_growDepthMap(CudaArray<uchar4, 2>** ps_texs_arr, CudaHostMemoryHeap<uchar4, 2>* otimg_hmh,
+void ps_growDepthMap( CudaHostMemoryHeap<uchar4, 2>* otimg_hmh,
                      CudaHostMemoryHeap<float, 2>* osim_hmh, CudaHostMemoryHeap<float, 2>* odpt_hmh,
                      CudaHostMemoryHeap<float, 2>& depthMap_hmh, cameraStruct** cams, int ncams, float* depths,
                      int ndepths, int width, int height, int scale, int CUDAdeviceNo, int ncamsAllocated, int scales,
@@ -2314,41 +1992,41 @@ void ps_growDepthMap(CudaArray<uchar4, 2>** ps_texs_arr, CudaHostMemoryHeap<ucha
 
     ps_init_reference_camera_matrices(cams[0]->P, cams[0]->iP, cams[0]->R, cams[0]->iR, cams[0]->K, cams[0]->iK,
                                       cams[0]->C);
-    cudaBindTextureToArray(r4tex, ps_texs_arr[cams[0]->camId * scales + scale]->getArray(),
-                           cudaCreateChannelDesc<uchar4>());
+    cudaTextureObject_t r4tex = global_data.getScaledPictureTex( scale, cams[0]->camId );
 
     int c = 1;
     ps_init_target_camera_matrices(cams[c]->P, cams[c]->iP, cams[c]->R, cams[c]->iR, cams[c]->K, cams[c]->iK,
                                    cams[c]->C);
-    cudaBindTextureToArray(t4tex, ps_texs_arr[cams[c]->camId * scales + scale]->getArray(),
-                           cudaCreateChannelDesc<uchar4>());
+    cudaTextureObject_t t4tex = global_data.getScaledPictureTex( scale, cams[c]->camId );
 
-    CudaDeviceMemoryPitched<uchar4, 2> rimg_dmp(CudaSize<2>(width, height));
-    CudaDeviceMemoryPitched<uchar4, 2> timg_dmp(CudaSize<2>(width, height));
+    auto rimg_dmp = global_data.pitched_mem_uchar4_point_tex_cache.get( width, height );
+    auto timg_dmp = global_data.pitched_mem_uchar4_point_tex_cache.get( width, height );
 
-    getRefTexLAB_kernel<<<grid, block>>>(rimg_dmp.getBuffer(), rimg_dmp.stride()[0], width, height);
-    cudaThreadSynchronize();
+    getRefTexLAB_kernel<<<grid, block>>>(
+        r4tex, t4tex,
+        rimg_dmp->mem->getBuffer(), rimg_dmp->mem->stride()[0],
+        width, height );
 
-    CudaArray<uchar4, 2> rTexU4_arr(CudaSize<2>(width, height));
-    CudaArray<uchar4, 2> tTexU4_arr(CudaSize<2>(width, height));
+    cudaTextureObject_t rTexU4 = rimg_dmp->tex;
+    cudaTextureObject_t tTexU4 = rimg_dmp->tex; // set to rimg_dmp, timg_dmp still uninitialized
 
-    copy((rTexU4_arr), rimg_dmp);
-    cudaBindTextureToArray(rTexU4, rTexU4_arr.getArray(), cudaCreateChannelDesc<uchar4>());
-    cudaBindTextureToArray(tTexU4, rTexU4_arr.getArray(), cudaCreateChannelDesc<uchar4>());
+    /* GRIFF Note:
+     * setting tTexU4 to rimg_dmp->tex seems to imply that something in
+     * ps_computeSimMapForDepthMapInternal() is first done for rimg_dmp and
+     * later for timg_dmp, which is undefined at this point.
+     * This does not appear to happen. tTexU4 is actually set again inside
+     * that function before it is needed.
+     */
 
     clock_t tall = tic();
 
     CudaDeviceMemoryPitched<float, 2> finDptMap_dmp(depthMap_hmh);
     CudaDeviceMemoryPitched<float, 2> finSimMap_dmp(CudaSize<2>(width, height));
 
-    // CudaDeviceMemoryPitched<float,2> tmp0DptMap_dmp(CudaSize<2>(width, height));
-    // CudaDeviceMemoryPitched<float,2> tmp1DptMap_dmp(CudaSize<2>(width, height));
     CudaDeviceMemoryPitched<float, 2> actDptMap_dmp(CudaSize<2>(width, height));
     CudaDeviceMemoryPitched<float, 2> actSimMap_dmp(CudaSize<2>(width, height));
     CudaDeviceMemoryPitched<float, 2> lstDptMap_dmp(CudaSize<2>(width, height));
     CudaDeviceMemoryPitched<float, 2> lstSimMap_dmp(CudaSize<2>(width, height));
-    // CudaDeviceMemoryPitched<float,2> actDilDptMap_dmp(CudaSize<2>(width, height));
-    // CudaDeviceMemoryPitched<float,2> lstDilDptMap_dmp(CudaSize<2>(width, height));
 
     for(int d = 1; d < ndepths; d++)
     {
@@ -2356,42 +2034,43 @@ void ps_growDepthMap(CudaArray<uchar4, 2>** ps_texs_arr, CudaHostMemoryHeap<ucha
         float fpPlaneDepthAct = depths[d];
 
         refine_selectPartOfDepthMapNearFPPlaneDepth_kernel<<<grid, block>>>(
-            lstDptMap_dmp.getBuffer(), lstDptMap_dmp.stride()[0], actDptMap_dmp.getBuffer(), actDptMap_dmp.stride()[0],
-            finDptMap_dmp.getBuffer(), finDptMap_dmp.stride()[0], width, height, fpPlaneDepthLast, fpPlaneDepthAct);
+            lstDptMap_dmp.getBuffer(), lstDptMap_dmp.stride()[0],
+            actDptMap_dmp.getBuffer(), actDptMap_dmp.stride()[0],
+            finDptMap_dmp.getBuffer(), finDptMap_dmp.stride()[0],
+            width, height, fpPlaneDepthLast, fpPlaneDepthAct);
         cudaThreadSynchronize();
 
         ps_dilateMaskMap(lstDptMap_dmp, width, height, verbose, 1, fpPlaneDepthLast);
         ps_dilateMaskMap(actDptMap_dmp, width, height, verbose, 1, fpPlaneDepthAct);
 
-        ps_computeSimMapForDepthMapInternal(lstSimMap_dmp, lstDptMap_dmp, width, height, verbose, wsh, gammaC, gammaP,
-                                            tTexU4_arr, timg_dmp, fpPlaneDepthLast);
+        ps_computeSimMapForDepthMapInternal(
+            t4tex,
+            lstSimMap_dmp, lstDptMap_dmp, width, height, verbose, wsh, gammaC, gammaP,
+            rTexU4, tTexU4,
+            timg_dmp, fpPlaneDepthLast );
 
-        ps_computeSimMapForDepthMapInternal(actSimMap_dmp, actDptMap_dmp, width, height, verbose, wsh, gammaC, gammaP,
-                                            tTexU4_arr, timg_dmp, fpPlaneDepthAct);
+        ps_computeSimMapForDepthMapInternal(
+            t4tex,
+            actSimMap_dmp, actDptMap_dmp, width, height, verbose, wsh, gammaC, gammaP,
+            rTexU4, tTexU4,
+            timg_dmp, fpPlaneDepthAct );
 
         refine_fuseThreeDepthSimMaps_kernel<<<grid, block>>>(
-            finSimMap_dmp.getBuffer(), finSimMap_dmp.stride()[0], finDptMap_dmp.getBuffer(), finDptMap_dmp.stride()[0],
-            lstSimMap_dmp.getBuffer(), lstSimMap_dmp.stride()[0], lstDptMap_dmp.getBuffer(), lstDptMap_dmp.stride()[0],
-            actSimMap_dmp.getBuffer(), actSimMap_dmp.stride()[0], actDptMap_dmp.getBuffer(), actDptMap_dmp.stride()[0],
+            finSimMap_dmp.getBuffer(), finSimMap_dmp.stride()[0],
+            finDptMap_dmp.getBuffer(), finDptMap_dmp.stride()[0],
+            lstSimMap_dmp.getBuffer(), lstSimMap_dmp.stride()[0],
+            lstDptMap_dmp.getBuffer(), lstDptMap_dmp.stride()[0],
+            actSimMap_dmp.getBuffer(), actSimMap_dmp.stride()[0],
+            actDptMap_dmp.getBuffer(), actDptMap_dmp.stride()[0],
             width, height, simThr);
-        cudaThreadSynchronize();
-    };
+    }
 
     /*
-            //------------------------------------------------------------------------------------------------
             //smooth depth map
-            CudaArray<float,2> depthMap_arr(depthMap_dmp);
-            cudaBindTextureToArray(depthsTex, depthMap_arr.getArray(), cudaCreateChannelDesc<float>());
-
             smoothDepthMap_kernel<<<grid, block>>>(
                     depthMap_dmp.getBuffer(),  depthMap_dmp.stride()[0],
                     width, height, wsh, gammaC, gammaP
             );
-            cudaThreadSynchronize();
-            CHECK_CUDA_ERROR();
-
-            cudaUnbindTexture(depthsTex);
-            //------------------------------------------------------------------------------------------------
     */
 
     if(verbose)
@@ -2400,14 +2079,11 @@ void ps_growDepthMap(CudaArray<uchar4, 2>** ps_texs_arr, CudaHostMemoryHeap<ucha
     copy((*osim_hmh), finSimMap_dmp);
     copy((*odpt_hmh), finDptMap_dmp);
 
-    cudaUnbindTexture(rTexU4);
-    cudaUnbindTexture(tTexU4);
+    global_data.pitched_mem_uchar4_point_tex_cache.put( rimg_dmp );
+    global_data.pitched_mem_uchar4_point_tex_cache.put( timg_dmp );
+}
 
-    cudaUnbindTexture(r4tex);
-    cudaUnbindTexture(t4tex);
-};
-
-void ps_refineDepthMapReproject(CudaArray<uchar4, 2>** ps_texs_arr, CudaHostMemoryHeap<uchar4, 2>* otimg_hmh,
+void ps_refineDepthMapReproject( CudaHostMemoryHeap<uchar4, 2>* otimg_hmh,
                                 CudaHostMemoryHeap<float, 2>* osim_hmh, CudaHostMemoryHeap<float, 2>* odpt_hmh,
                                 CudaHostMemoryHeap<float, 2>& depthMap_hmh, cameraStruct** cams, int ncams, int width,
                                 int height, int scale, int CUDAdeviceNo, int ncamsAllocated, int scales, bool verbose,
@@ -2423,27 +2099,24 @@ void ps_refineDepthMapReproject(CudaArray<uchar4, 2>** ps_texs_arr, CudaHostMemo
 
     ps_init_reference_camera_matrices(cams[0]->P, cams[0]->iP, cams[0]->R, cams[0]->iR, cams[0]->K, cams[0]->iK,
                                       cams[0]->C);
-    cudaBindTextureToArray(r4tex, ps_texs_arr[cams[0]->camId * scales + scale]->getArray(),
-                           cudaCreateChannelDesc<uchar4>());
+    cudaTextureObject_t r4tex = global_data.getScaledPictureTex( scale, cams[0]->camId );
 
     int c = 1;
     ps_init_target_camera_matrices(cams[c]->P, cams[c]->iP, cams[c]->R, cams[c]->iR, cams[c]->K, cams[c]->iK,
                                    cams[c]->C);
-    cudaBindTextureToArray(t4tex, ps_texs_arr[cams[c]->camId * scales + scale]->getArray(),
-                           cudaCreateChannelDesc<uchar4>());
+    cudaTextureObject_t t4tex = global_data.getScaledPictureTex( scale, cams[c]->camId );
 
-    CudaDeviceMemoryPitched<uchar4, 2> rimg_dmp(CudaSize<2>(width, height));
-    CudaDeviceMemoryPitched<uchar4, 2> timg_dmp(CudaSize<2>(width, height));
+    auto rimg_dmp = global_data.pitched_mem_uchar4_point_tex_cache.get( width, height );
+    auto timg_dmp = global_data.pitched_mem_uchar4_point_tex_cache.get( width, height );
 
-    getRefTexLAB_kernel<<<grid, block>>>(rimg_dmp.getBuffer(), rimg_dmp.stride()[0], width, height);
-    cudaThreadSynchronize();
+    getRefTexLAB_kernel<<<grid, block>>>(
+        r4tex,
+        t4tex,
+        rimg_dmp->mem->getBuffer(), rimg_dmp->mem->stride()[0],
+        width, height );
 
-    CudaArray<uchar4, 2> rTexU4_arr(CudaSize<2>(width, height));
-    CudaArray<uchar4, 2> tTexU4_arr(CudaSize<2>(width, height));
-
-    copy((rTexU4_arr), rimg_dmp);
-    cudaBindTextureToArray(rTexU4, rTexU4_arr.getArray(), cudaCreateChannelDesc<uchar4>());
-    cudaBindTextureToArray(tTexU4, rTexU4_arr.getArray(), cudaCreateChannelDesc<uchar4>());
+    cudaTextureObject_t rTexU4 = rimg_dmp->tex;
+    cudaTextureObject_t tTexU4 = rimg_dmp->tex;
 
     clock_t tall = tic();
 
@@ -2456,27 +2129,26 @@ void ps_refineDepthMapReproject(CudaArray<uchar4, 2>** ps_texs_arr, CudaHostMemo
 
     for(int iter = 1; iter <= niters; iter++)
     {
-        ps_refineDepthMapInternal(bsim_dmp, bdpt_dmp,
-                                  // depthMap_dmp,
-                                  bdpt_dmp, bdpt_dmp, width, height, verbose, wsh, gammaC, gammaP, simThr, dsm_dmp,
-                                  ssm_dmp, tTexU4_arr, timg_dmp, moveByTcOrRc, (float)iter);
+        ps_refineDepthMapInternal(
+            t4tex,
+            bsim_dmp, bdpt_dmp,
+            // depthMap_dmp,
+            bdpt_dmp, bdpt_dmp, width, height, verbose, wsh, gammaC, gammaP, simThr, dsm_dmp,
+            ssm_dmp,
+            rTexU4,
+            tTexU4,
+            timg_dmp,
+            moveByTcOrRc, (float)iter);
 
         /*
                         //------------------------------------------------------------------------------------------------
                         //smooth depth map
-                        CudaArray<float,2> depthMap_arr(bdpt_dmp);
-                        cudaBindTextureToArray(depthsTex, depthMap_arr.getArray(), cudaCreateChannelDesc<float>());
-
                         smoothDepthMap_kernel<<<grid, block>>>(
                                 bdpt_dmp.getBuffer(),  bdpt_dmp.stride()[0],
                                 width, height, wsh, gammaC, gammaP
                         );
-                        cudaThreadSynchronize();
-                        CHECK_CUDA_ERROR();
-
-                        cudaUnbindTexture(depthsTex);
         */
-    };
+    }
 
     if(verbose)
         printf("gpu refine depth map elapsed time: %f ms \n", toc(tall));
@@ -2484,135 +2156,12 @@ void ps_refineDepthMapReproject(CudaArray<uchar4, 2>** ps_texs_arr, CudaHostMemo
     copy((*osim_hmh), bsim_dmp);
     copy((*odpt_hmh), bdpt_dmp);
 
-    cudaUnbindTexture(rTexU4);
-    cudaUnbindTexture(tTexU4);
-
-    cudaUnbindTexture(r4tex);
-    cudaUnbindTexture(t4tex);
-};
-
-#if 0
-void ps_computeRcTcPhotoErrMapReproject(
-    CudaArray<uchar4, 2>** ps_texs_arr, CudaHostMemoryHeap<float4, 2>* osdpi_hmh,
-    CudaHostMemoryHeap<float, 2>* oerr_hmh, CudaHostMemoryHeap<float, 2>* oderr_hmh,
-    CudaHostMemoryHeap<float, 2>& rcDepthMap_hmh, CudaHostMemoryHeap<float, 2>& tcDepthMap_hmh, cameraStruct** cams,
-    int ncams, int width, int height, int scale, int CUDAdeviceNo, int ncamsAllocated, int scales, bool verbose,
-    int wsh, float gammaC, float gammaP, float depthMapShift)
-{
-    clock_t tall = tic();
-    testCUDAdeviceNo(CUDAdeviceNo);
-
-    ///////////////////////////////////////////////////////////////////////////////
-    // setup block and grid
-    int block_size = 16;
-    dim3 block(block_size, block_size, 1);
-    dim3 grid(divUp(width, block_size), divUp(height, block_size), 1);
-
-    ps_init_reference_camera_matrices(cams[0]->P, cams[0]->iP, cams[0]->R, cams[0]->iR, cams[0]->K, cams[0]->iK,
-                                      cams[0]->C);
-    cudaBindTextureToArray(r4tex, ps_texs_arr[cams[0]->camId * scales + scale]->getArray(),
-                           cudaCreateChannelDesc<uchar4>());
-
-    int c = 1;
-    ps_init_target_camera_matrices(cams[c]->P, cams[c]->iP, cams[c]->R, cams[c]->iR, cams[c]->K, cams[c]->iK,
-                                   cams[c]->C);
-    cudaBindTextureToArray(t4tex, ps_texs_arr[cams[c]->camId * scales + scale]->getArray(),
-                           cudaCreateChannelDesc<uchar4>());
-
-    CudaDeviceMemoryPitched<uchar4, 2> rimg_dmp(CudaSize<2>(width, height));
-    CudaDeviceMemoryPitched<uchar4, 2> timg_dmp(CudaSize<2>(width, height));
-
-    getRefTexLAB_kernel<<<grid, block>>>(rimg_dmp.getBuffer(), rimg_dmp.stride()[0], width, height);
-    cudaThreadSynchronize();
-
-    getTarTexLAB_kernel<<<grid, block>>>(timg_dmp.getBuffer(), timg_dmp.stride()[0], width, height);
-    cudaThreadSynchronize();
-
-    CudaArray<uchar4, 2> rTexU4_arr(CudaSize<2>(width, height));
-    CudaArray<uchar4, 2> tTexU4_arr(CudaSize<2>(width, height));
-
-    copy((rTexU4_arr), rimg_dmp);
-    cudaBindTextureToArray(rTexU4, rTexU4_arr.getArray(), cudaCreateChannelDesc<uchar4>());
-
-    copy((tTexU4_arr), timg_dmp);
-    cudaBindTextureToArray(tTexU4, tTexU4_arr.getArray(), cudaCreateChannelDesc<uchar4>());
-
-    CudaDeviceMemoryPitched<float, 2> rcDepthMap_dmp(rcDepthMap_hmh);
-    CudaArray<float, 2> depthMap_arr(tcDepthMap_hmh);
-    cudaBindTextureToArray(depthsTex, depthMap_arr.getArray(), cudaCreateChannelDesc<float>());
-
-    CudaDeviceMemoryPitched<float4, 2> sdpi_dmp(CudaSize<2>(width, height));
-
-    refine_reprojTarSobelAndDPIXTCDRCRcTcDepthsMap_kernel<<<grid, block>>>(
-        sdpi_dmp.getBuffer(), sdpi_dmp.stride()[0], rcDepthMap_dmp.getBuffer(), rcDepthMap_dmp.stride()[0], width, height,
-        depthMapShift);
-    cudaThreadSynchronize();
-
-    copy((*osdpi_hmh), sdpi_dmp);
-
-    refine_reprojTarTexLABByRcTcDepthsMap_kernel<<<grid, block>>>(timg_dmp.getBuffer(), timg_dmp.stride()[0],
-                                                                  rcDepthMap_dmp.getBuffer(), rcDepthMap_dmp.stride()[0],
-                                                                  width, height, depthMapShift);
-    cudaThreadSynchronize();
-
-    cudaUnbindTexture(tTexU4);
-    copy((tTexU4_arr), timg_dmp);
-    cudaBindTextureToArray(tTexU4, tTexU4_arr.getArray(), cudaCreateChannelDesc<uchar4>());
-    cudaThreadSynchronize();
-
-    // images are in rTexU4 and tTexU4
-
-    /*
-    refine_compPhotoErr_kernel<<<grid, block>>>(
-            err_dmp.getBuffer(), err_dmp.stride()[0],
-            rcDepthMap_dmp.getBuffer(), rcDepthMap_dmp.stride()[0],
-            width, height, 0.00001
-    );
-    cudaThreadSynchronize();
-    */
-
-    CudaDeviceMemoryPitched<float4, 2> statMap_dmp(CudaSize<2>(width, height));
-    CudaDeviceMemoryPitched<float, 2> err_dmp(CudaSize<2>(width, height));
-    refine_compPhotoErrStat_kernel<<<grid, block>>>(err_dmp.getBuffer(), err_dmp.stride()[0], statMap_dmp.getBuffer(),
-                                                    statMap_dmp.stride()[0], rcDepthMap_dmp.getBuffer(),
-                                                    rcDepthMap_dmp.stride()[0], width, height, 0.00001);
-    cudaThreadSynchronize();
-
-    /*
-    refine_compYKNCCSimMapPatch_kernel<<<grid, block>>>(
-            err_dmp.getBuffer(), err_dmp.stride()[0],
-            rcDepthMap_dmp.getBuffer(), rcDepthMap_dmp.stride()[0],
-            width, height, 2, 15.5f, 2.0f, 0.0f, depthMapShift
-    );
-    */
-
-    copy((*oerr_hmh), err_dmp);
-
-    CudaArray<float4, 2> statMap_arr(statMap_dmp);
-    cudaBindTextureToArray(f4Tex, statMap_arr.getArray(), cudaCreateChannelDesc<float4>());
-
-    CudaDeviceMemoryPitched<float, 2> derr_dmp(CudaSize<2>(width, height));
-    refine_compPhotoErrABG_kernel<<<grid, block>>>(derr_dmp.getBuffer(), derr_dmp.stride()[0], width, height);
-    cudaThreadSynchronize();
-
-    copy((*oderr_hmh), derr_dmp);
-
-    cudaUnbindTexture(rTexU4);
-
-    cudaUnbindTexture(f4Tex);
-
-    cudaUnbindTexture(rTexU4);
-    cudaUnbindTexture(tTexU4);
-
-    cudaUnbindTexture(r4tex);
-    cudaUnbindTexture(t4tex);
-
-    if(verbose)
-        printf("gpu elapsed time: %f ms \n", toc(tall));
+    global_data.pitched_mem_uchar4_point_tex_cache.put( rimg_dmp );
+    global_data.pitched_mem_uchar4_point_tex_cache.put( timg_dmp );
 }
-#endif
 
-void ps_computeSimMapsForNShiftsOfRcTcDepthMap(CudaArray<uchar4, 2>** ps_texs_arr,
+// void ps_computeSimMapsForNShiftsOfRcTcDepthMap(CudaArray<uchar4, 2>** ps_texs_arr,
+void ps_computeSimMapsForNShiftsOfRcTcDepthMap(
                                                CudaHostMemoryHeap<float2, 2>** odepthSimMaps_hmh, int ntcsteps,
                                                CudaHostMemoryHeap<float, 2>& rcDepthMap_hmh, cameraStruct** cams,
                                                int ncams, int width, int height, int scale, int CUDAdeviceNo,
@@ -2629,14 +2178,13 @@ void ps_computeSimMapsForNShiftsOfRcTcDepthMap(CudaArray<uchar4, 2>** ps_texs_ar
 
     ps_init_reference_camera_matrices(cams[0]->P, cams[0]->iP, cams[0]->R, cams[0]->iR, cams[0]->K, cams[0]->iK,
                                       cams[0]->C);
-    cudaBindTextureToArray(r4tex, ps_texs_arr[cams[0]->camId * scales + scale]->getArray(),
-                           cudaCreateChannelDesc<uchar4>());
 
     int c = 1;
     ps_init_target_camera_matrices(cams[c]->P, cams[c]->iP, cams[c]->R, cams[c]->iR, cams[c]->K, cams[c]->iK,
                                    cams[c]->C);
-    cudaBindTextureToArray(t4tex, ps_texs_arr[cams[c]->camId * scales + scale]->getArray(),
-                           cudaCreateChannelDesc<uchar4>());
+
+    cudaTextureObject_t r4tex = global_data.getScaledPictureTex( scale, cams[0]->camId );
+    cudaTextureObject_t t4tex = global_data.getScaledPictureTex( scale, cams[c]->camId );
 
     CudaDeviceMemoryPitched<float2, 2> dsm_dmp(CudaSize<2>(width, height));
     CudaDeviceMemoryPitched<float, 2> rcDepthMap_dmp(rcDepthMap_hmh);
@@ -2646,17 +2194,22 @@ void ps_computeSimMapsForNShiftsOfRcTcDepthMap(CudaArray<uchar4, 2>** ps_texs_ar
     for(int i = 0; i < ntcsteps; i++)
     {
         refine_compYKNCCDepthSimMapPatch_kernel<<<grid, block>>>(
-            dsm_dmp.getBuffer(), dsm_dmp.stride()[0], rcDepthMap_dmp.getBuffer(), rcDepthMap_dmp.stride()[0], width, height,
+            r4tex,
+            t4tex,
+            dsm_dmp.getBuffer(), dsm_dmp.stride()[0],
+            rcDepthMap_dmp.getBuffer(), rcDepthMap_dmp.stride()[0],
+            width, height,
             wsh, gammaC, gammaP, epipShift, (float)(i - ntcsteps / 2), true);
         cudaThreadSynchronize();
         copy((*odepthSimMaps_hmh[i]), dsm_dmp);
-    };
+    }
 
     if(verbose)
         printf("gpu elapsed time: %f ms \n", toc(tall));
-};
+}
 
-void ps_computeSimMapForRcTcDepthMap(CudaArray<uchar4, 2>** ps_texs_arr, CudaHostMemoryHeap<float, 2>* osimMap_hmh,
+// void ps_computeSimMapForRcTcDepthMap(CudaArray<uchar4, 2>** ps_texs_arr, CudaHostMemoryHeap<float, 2>* osimMap_hmh,
+void ps_computeSimMapForRcTcDepthMap( CudaHostMemoryHeap<float, 2>* osimMap_hmh,
                                      CudaHostMemoryHeap<float, 2>& rcTcDepthMap_hmh, cameraStruct** cams, int ncams,
                                      int width, int height, int scale, int CUDAdeviceNo, int ncamsAllocated, int scales,
                                      bool verbose, int wsh, float gammaC, float gammaP, float epipShift)
@@ -2671,14 +2224,13 @@ void ps_computeSimMapForRcTcDepthMap(CudaArray<uchar4, 2>** ps_texs_arr, CudaHos
 
     ps_init_reference_camera_matrices(cams[0]->P, cams[0]->iP, cams[0]->R, cams[0]->iR, cams[0]->K, cams[0]->iK,
                                       cams[0]->C);
-    cudaBindTextureToArray(r4tex, ps_texs_arr[cams[0]->camId * scales + scale]->getArray(),
-                           cudaCreateChannelDesc<uchar4>());
 
     int c = 1;
     ps_init_target_camera_matrices(cams[c]->P, cams[c]->iP, cams[c]->R, cams[c]->iR, cams[c]->K, cams[c]->iK,
                                    cams[c]->C);
-    cudaBindTextureToArray(t4tex, ps_texs_arr[cams[c]->camId * scales + scale]->getArray(),
-                           cudaCreateChannelDesc<uchar4>());
+
+    cudaTextureObject_t r4tex = global_data.getScaledPictureTex( scale, cams[0]->camId );
+    cudaTextureObject_t t4tex = global_data.getScaledPictureTex( scale, cams[c]->camId );
 
     CudaDeviceMemoryPitched<float, 2> osimMap_dmp(CudaSize<2>(width, height));
     CudaDeviceMemoryPitched<float, 2> rcTcDepthMap_dmp(rcTcDepthMap_hmh);
@@ -2686,6 +2238,8 @@ void ps_computeSimMapForRcTcDepthMap(CudaArray<uchar4, 2>** ps_texs_arr, CudaHos
     clock_t tall = tic();
 
     refine_compYKNCCSimMapPatch_kernel<<<grid, block>>>(
+        r4tex,
+        t4tex,
         osimMap_dmp.getBuffer(), osimMap_dmp.stride()[0], rcTcDepthMap_dmp.getBuffer(), rcTcDepthMap_dmp.stride()[0], width,
         height, wsh, gammaC, gammaP, epipShift, 0.0f, false, 0, width, height);
     cudaThreadSynchronize();
@@ -2694,9 +2248,10 @@ void ps_computeSimMapForRcTcDepthMap(CudaArray<uchar4, 2>** ps_texs_arr, CudaHos
 
     if(verbose)
         printf("gpu elapsed time: %f ms \n", toc(tall));
-};
+}
 
-void ps_refineRcDepthMap(CudaArray<uchar4, 2>** ps_texs_arr, float* osimMap_hmh,
+// void ps_refineRcDepthMap(CudaArray<uchar4, 2>** ps_texs_arr, float* osimMap_hmh,
+void ps_refineRcDepthMap( float* osimMap_hmh,
                          float* rcDepthMap_hmh, int ntcsteps,
                          cameraStruct** cams, int ncams, int width,
                          int height, int imWidth, int imHeight, int scale, int CUDAdeviceNo, int ncamsAllocated,
@@ -2713,14 +2268,13 @@ void ps_refineRcDepthMap(CudaArray<uchar4, 2>** ps_texs_arr, float* osimMap_hmh,
 
     ps_init_reference_camera_matrices(cams[0]->P, cams[0]->iP, cams[0]->R, cams[0]->iR, cams[0]->K, cams[0]->iK,
                                       cams[0]->C);
-    cudaBindTextureToArray(r4tex, ps_texs_arr[cams[0]->camId * scales + scale]->getArray(),
-                           cudaCreateChannelDesc<uchar4>());
 
     int c = 1;
     ps_init_target_camera_matrices(cams[c]->P, cams[c]->iP, cams[c]->R, cams[c]->iR, cams[c]->K, cams[c]->iK,
                                    cams[c]->C);
-    cudaBindTextureToArray(t4tex, ps_texs_arr[cams[c]->camId * scales + scale]->getArray(),
-                           cudaCreateChannelDesc<uchar4>());
+
+    cudaTextureObject_t r4tex = global_data.getScaledPictureTex( scale, cams[0]->camId );
+    cudaTextureObject_t t4tex = global_data.getScaledPictureTex( scale, cams[c]->camId );
 
     CudaDeviceMemoryPitched<float3, 2> lastThreeSimsMap(CudaSize<2>(width, height));
     CudaDeviceMemoryPitched<float, 2> simMap_dmp(CudaSize<2>(width, height));
@@ -2731,41 +2285,71 @@ void ps_refineRcDepthMap(CudaArray<uchar4, 2>** ps_texs_arr, float* osimMap_hmh,
 
     clock_t tall = tic();
 
-#define GRIFF_TEST
 #ifdef GRIFF_TEST
     refine_compUpdateYKNCCSimMapPatch_kernel<<<grid, block>>>(
+        r4tex,
+        t4tex,
         bestSimMap_dmp.getBuffer(), bestSimMap_dmp.stride()[0], // output
         bestDptMap_dmp.getBuffer(), bestDptMap_dmp.stride()[0], // output
         rcDepthMap_dmp.getBuffer(), rcDepthMap_dmp.stride()[0],
-        width, height, wsh, gammaC, gammaP, epipShift,
+        width, height,
+        wsh, gammaC, gammaP, epipShift,
         ntcsteps,
         moveByTcOrRc, xFrom, imWidth, imHeight,
-        lastThreeSimsMap.getBuffer(), lastThreeSimsMap.stride()[0], 1 );
+        lastThreeSimsMap.getBuffer(), lastThreeSimsMap.stride()[0] );
+
+    cudaThreadSynchronize();
+
+    refine_compYKNCCSimMapPatch_kernel_A<<<grid, block>>>(
+        r4tex,
+        t4tex,
+        bestDptMap_dmp.getBuffer(), bestDptMap_dmp.stride()[0],
+        width, height,
+        wsh, gammaC, gammaP, epipShift,
+        -1.0f,
+        moveByTcOrRc, xFrom, imWidth, imHeight,
+        lastThreeSimsMap.getBuffer(), lastThreeSimsMap.stride()[0], 0 );
+
+    refine_compYKNCCSimMapPatch_kernel_A<<<grid, block>>>(
+        r4tex,
+        t4tex,
+        bestDptMap_dmp.getBuffer(), bestDptMap_dmp.stride()[0],
+        width, height,
+        wsh, gammaC, gammaP, epipShift,
+        +1.0f,
+        moveByTcOrRc, xFrom, imWidth, imHeight,
+        lastThreeSimsMap.getBuffer(), lastThreeSimsMap.stride()[0], 2 );
+
     cudaThreadSynchronize();
 #else
     for(int i = 0; i < ntcsteps; i++) // Default ntcsteps = 31
     {
         refine_compUpdateYKNCCSimMapPatch_kernel<<<grid, block>>>(
+            r4tex,
+            t4tex,
             bestSimMap_dmp.getBuffer(), bestSimMap_dmp.stride()[0],
             bestDptMap_dmp.getBuffer(), bestDptMap_dmp.stride()[0],
             rcDepthMap_dmp.getBuffer(), rcDepthMap_dmp.stride()[0],
             width, height, wsh, gammaC, gammaP, epipShift,
             (float)(i - (ntcsteps - 1) / 2), i, moveByTcOrRc, xFrom, imWidth, imHeight);
         cudaThreadSynchronize();
-    };
+    }
 
     refine_setLastThreeSimsMap_kernel<<<grid, block>>>(
         lastThreeSimsMap.getBuffer(), lastThreeSimsMap.stride()[0],
         bestSimMap_dmp.getBuffer(), bestSimMap_dmp.stride()[0],
         width, height, 1);
     cudaThreadSynchronize();
-#endif
 
     refine_compYKNCCSimMapPatch_kernel<<<grid, block>>>(
+        r4tex,
+        t4tex,
         simMap_dmp.getBuffer(), simMap_dmp.stride()[0],
         bestDptMap_dmp.getBuffer(), bestDptMap_dmp.stride()[0],
         width, height,
-        wsh, gammaC, gammaP, epipShift, -1.0f, moveByTcOrRc, xFrom, imWidth, imHeight);
+        wsh, gammaC, gammaP, epipShift,
+        -1.0f,
+        moveByTcOrRc, xFrom, imWidth, imHeight);
     cudaThreadSynchronize();
     refine_setLastThreeSimsMap_kernel<<<grid, block>>>(
         lastThreeSimsMap.getBuffer(), lastThreeSimsMap.stride()[0],
@@ -2774,6 +2358,8 @@ void ps_refineRcDepthMap(CudaArray<uchar4, 2>** ps_texs_arr, float* osimMap_hmh,
     cudaThreadSynchronize();
 
     refine_compYKNCCSimMapPatch_kernel<<<grid, block>>>(
+        r4tex,
+        t4tex,
         simMap_dmp.getBuffer(), simMap_dmp.stride()[0],
         bestDptMap_dmp.getBuffer(), bestDptMap_dmp.stride()[0],
         width, height,
@@ -2784,17 +2370,21 @@ void ps_refineRcDepthMap(CudaArray<uchar4, 2>** ps_texs_arr, float* osimMap_hmh,
         simMap_dmp.getBuffer(), simMap_dmp.stride()[0],
         width, height, 2);
     cudaThreadSynchronize();
+#endif
 
     refine_computeDepthSimMapFromLastThreeSimsMap_kernel<<<grid, block>>>(
-        bestSimMap_dmp.getBuffer(), bestSimMap_dmp.stride()[0], bestDptMap_dmp.getBuffer(), bestDptMap_dmp.stride()[0],
-        lastThreeSimsMap.getBuffer(), lastThreeSimsMap.stride()[0], width, height, moveByTcOrRc, xFrom);
+        bestSimMap_dmp.getBuffer(), bestSimMap_dmp.stride()[0],
+        bestDptMap_dmp.getBuffer(), bestDptMap_dmp.stride()[0],
+        lastThreeSimsMap.getBuffer(), lastThreeSimsMap.stride()[0],
+        width, height,
+        moveByTcOrRc, xFrom);
 
     copy(osimMap_hmh, width, height, bestSimMap_dmp);
     copy(rcDepthMap_hmh, width, height, bestDptMap_dmp);
 
     if(verbose)
         printf("gpu elapsed time: %f ms \n", toc(tall));
-};
+}
 
 /**
  * @brief ps_fuseDepthSimMapsGaussianKernelVoting
@@ -2834,7 +2424,7 @@ void ps_fuseDepthSimMapsGaussianKernelVoting(CudaHostMemoryHeap<float2, 2>* odep
     {
         depthSimMaps_dmp[i] = new CudaDeviceMemoryPitched<float2, 2>(CudaSize<2>(width, height));
         copy((*depthSimMaps_dmp[i]), (*depthSimMaps_hmh[i]));
-    };
+    }
 
     for(int s = -nSamplesHalf; s <= nSamplesHalf; s++) // (-150, 150)
     {
@@ -2846,12 +2436,12 @@ void ps_fuseDepthSimMapsGaussianKernelVoting(CudaHostMemoryHeap<float2, 2>* odep
                 depthSimMaps_dmp[0]->getBuffer(), depthSimMaps_dmp[0]->stride()[0],
                 width, height, (float)s, c - 1, samplesPerPixSize, twoTimesSigmaPowerTwo);
             cudaThreadSynchronize();
-        };
+        }
         fuse_updateBestGaussianKernelVotingSampleMap_kernel<<<grid, block>>>(
             bestGsvSampleMap_dmp.getBuffer(), bestGsvSampleMap_dmp.stride()[0], gsvSampleMap_dmp.getBuffer(),
             gsvSampleMap_dmp.stride()[0], width, height, (float)s, s + nSamplesHalf);
         cudaThreadSynchronize();
-    };
+    }
 
     fuse_computeFusedDepthSimMapFromBestGaussianKernelVotingSampleMap_kernel<<<grid, block>>>(
         bestDepthSimMap_dmp.getBuffer(), bestDepthSimMap_dmp.stride()[0], bestGsvSampleMap_dmp.getBuffer(),
@@ -2864,15 +2454,16 @@ void ps_fuseDepthSimMapsGaussianKernelVoting(CudaHostMemoryHeap<float2, 2>* odep
     for(int i = 0; i < ndepthSimMaps; i++)
     {
         delete depthSimMaps_dmp[i];
-    };
+    }
     delete[] depthSimMaps_dmp;
 
     if(verbose)
         printf("gpu elapsed time: %f ms \n", toc(tall));
-};
+}
 
 
-void ps_optimizeDepthSimMapGradientDescent(CudaArray<uchar4, 2>** ps_texs_arr,
+// void ps_optimizeDepthSimMapGradientDescent(CudaArray<uchar4, 2>** ps_texs_arr,
+void ps_optimizeDepthSimMapGradientDescent(
                                            CudaHostMemoryHeap<float2, 2>* odepthSimMap_hmh,
                                            CudaHostMemoryHeap<float2, 2>** dataMaps_hmh, int ndataMaps,
                                            int nSamplesHalf, int nDepthsToRefine, int nIters, float sigma,
@@ -2892,8 +2483,8 @@ void ps_optimizeDepthSimMapGradientDescent(CudaArray<uchar4, 2>** ps_texs_arr,
 
     ps_init_reference_camera_matrices(cams[0]->P, cams[0]->iP, cams[0]->R, cams[0]->iR, cams[0]->K, cams[0]->iK,
                                       cams[0]->C);
-    cudaBindTextureToArray(r4tex, ps_texs_arr[cams[0]->camId * scales + scale]->getArray(),
-                           cudaCreateChannelDesc<uchar4>());
+
+    cudaTextureObject_t r4tex = global_data.getScaledPictureTex( scale, cams[0]->camId );
 
     CudaDeviceMemoryPitched<float2, 2>** dataMaps_dmp;
     dataMaps_dmp = new CudaDeviceMemoryPitched<float2, 2>*[ndataMaps];
@@ -2901,12 +2492,13 @@ void ps_optimizeDepthSimMapGradientDescent(CudaArray<uchar4, 2>** ps_texs_arr,
     {
         dataMaps_dmp[i] = new CudaDeviceMemoryPitched<float2, 2>(CudaSize<2>(width, height));
         copy((*dataMaps_dmp[i]), (*dataMaps_hmh[i]));
-    };
+    }
 
     CudaDeviceMemoryPitched<float, 2> optDepthMap_dmp(CudaSize<2>(width, height));
     CudaDeviceMemoryPitched<float2, 2> optDepthSimMap_dmp(CudaSize<2>(width, height));
-    CudaArray<float, 2> optDepthMap_arr(CudaSize<2>(width, height));
     copy(optDepthSimMap_dmp, (*dataMaps_dmp[0]));
+
+    auto optDepthMap_arr = global_data.pitched_mem_float_point_tex_cache.get( width, height );
 
     for(int iter = 0; iter < nIters; iter++) // nIters: 100 by default
     {
@@ -2914,34 +2506,33 @@ void ps_optimizeDepthSimMapGradientDescent(CudaArray<uchar4, 2>** ps_texs_arr,
         fuse_getOptDeptMapFromOPtDepthSimMap_kernel<<<grid, block>>>(
             optDepthMap_dmp.getBuffer(), optDepthMap_dmp.stride()[0], optDepthSimMap_dmp.getBuffer(),
             optDepthSimMap_dmp.stride()[0], width, height);
-        cudaThreadSynchronize();
-        copy((optDepthMap_arr), optDepthMap_dmp);
-        // Bind those depth values as a texture
-        cudaBindTextureToArray(depthsTex, optDepthMap_arr.getArray(), cudaCreateChannelDesc<float>());
+
+        copy( *optDepthMap_arr->mem, optDepthMap_dmp );
 
         // Adjust depth/sim by using previously computed depths (depthTex is accessed inside this kernel)
-        fuse_optimizeDepthSimMap_kernel<<<grid, block>>>(optDepthSimMap_dmp.getBuffer(), optDepthSimMap_dmp.stride()[0],
-                                                         dataMaps_dmp[0]->getBuffer(), dataMaps_dmp[0]->stride()[0],
-                                                         dataMaps_dmp[1]->getBuffer(), dataMaps_dmp[1]->stride()[0],
-                                                         width, height, iter, samplesPerPixSize, yFrom);
+        fuse_optimizeDepthSimMap_kernel<<<grid, block>>>(
+            r4tex,
+            optDepthMap_arr->tex,
+            optDepthSimMap_dmp.getBuffer(), optDepthSimMap_dmp.stride()[0],
+            dataMaps_dmp[0]->getBuffer(), dataMaps_dmp[0]->stride()[0],
+            dataMaps_dmp[1]->getBuffer(), dataMaps_dmp[1]->stride()[0],
+            width, height, iter, samplesPerPixSize, yFrom);
         cudaThreadSynchronize();
-
-        cudaUnbindTexture(depthsTex);
-    };
+    }
 
     copy((*odepthSimMap_hmh), optDepthSimMap_dmp);
 
     for(int i = 0; i < ndataMaps; i++)
     {
         delete dataMaps_dmp[i];
-    };
+    }
     delete[] dataMaps_dmp;
 
-    cudaUnbindTexture(r4tex);
+    global_data.pitched_mem_float_point_tex_cache.put( optDepthMap_arr );
 
     if(verbose)
         printf("gpu elapsed time: %f ms \n", toc(tall));
-};
+}
 
 void ps_GC_aggregatePathVolume(CudaHostMemoryHeap<unsigned int, 2>* ftid_hmh, // f-irst t-label id
                                CudaHostMemoryHeap<unsigned int, 3>& ivol_hmh, int volDimX, int volDimY, int volDimZ)
@@ -2970,7 +2561,7 @@ void ps_GC_aggregatePathVolume(CudaHostMemoryHeap<unsigned int, 2>* ftid_hmh, //
                                                                      vol_dmp.stride()[0], volDimX, volDimY, volDimZ, z);
         cudaThreadSynchronize();
         CHECK_CUDA_ERROR();
-    };
+    }
 
     volume_GC_K_getVolumeXYSliceInt4ToUintDimZ_kernel<<<gridvol, blockvol>>>(
         oxyslice_dmp.getBuffer(), oxyslice_dmp.stride()[0], xyslice_dmp.getBuffer(), xyslice_dmp.stride()[0], volDimX,
@@ -3002,7 +2593,7 @@ void ps_GC_K_aggregatePathVolume(CudaHostMemoryHeap<unsigned int, 2>* ftid_hmh, 
                                                                   vol_dmp.stride()[0], volDimX, volDimY, z);
         cudaThreadSynchronize();
         CHECK_CUDA_ERROR();
-    };
+    }
 
     for(int z = 0; z <= volDimZ - K - 1; z++)
     {
@@ -3011,7 +2602,7 @@ void ps_GC_K_aggregatePathVolume(CudaHostMemoryHeap<unsigned int, 2>* ftid_hmh, 
             volDimX, volDimY, volDimZ, z, K);
         cudaThreadSynchronize();
         CHECK_CUDA_ERROR();
-    };
+    }
 
     volume_GC_K_getVolumeXYSliceInt4ToUintDimZ_kernel<<<gridvol, blockvol>>>(
         oxyslice_dmp.getBuffer(), oxyslice_dmp.stride()[0], xyslice_dmp.getBuffer(), xyslice_dmp.stride()[0], volDimX,
@@ -3021,7 +2612,8 @@ void ps_GC_K_aggregatePathVolume(CudaHostMemoryHeap<unsigned int, 2>* ftid_hmh, 
     // pr_printfDeviceMemoryInfo();
 }
 
-void ps_ptsStatForRcDepthMap(CudaArray<uchar4, 2>** ps_texs_arr, CudaHostMemoryHeap<float, 2>* depthMap_hmh,
+// void ps_ptsStatForRcDepthMap(CudaArray<uchar4, 2>** ps_texs_arr, CudaHostMemoryHeap<float, 2>* depthMap_hmh,
+void ps_ptsStatForRcDepthMap( CudaHostMemoryHeap<float, 2>* depthMap_hmh,
                              cameraStruct** cams, CudaHostMemoryHeap<float3, 2>& pts_hmh,
                              CudaHostMemoryHeap<float2, 2>& out_hmh, int npts, int width, int height, int scale,
                              int CUDAdeviceNo, int ncamsAllocated, int scales, int maxNPixSize, int wsh, float gammaC,
@@ -3030,13 +2622,16 @@ void ps_ptsStatForRcDepthMap(CudaArray<uchar4, 2>** ps_texs_arr, CudaHostMemoryH
     clock_t tall = tic();
     testCUDAdeviceNo(CUDAdeviceNo);
 
-    CudaArray<float, 2> depthMap_arr(*depthMap_hmh);
-    cudaBindTextureToArray(depthsTex, depthMap_arr.getArray(), cudaCreateChannelDesc<float>());
+    auto depthMap_arr = global_data.pitched_mem_float_point_tex_cache.get(
+        depthMap_hmh->getSize()[0],
+        depthMap_hmh->getSize()[1] );
+    copy( *depthMap_arr->mem, *depthMap_hmh );
+    cudaTextureObject_t depthsTex = depthMap_arr->tex;
 
     ps_init_reference_camera_matrices(cams[0]->P, cams[0]->iP, cams[0]->R, cams[0]->iR, cams[0]->K, cams[0]->iK,
                                       cams[0]->C);
-    cudaBindTextureToArray(r4tex, ps_texs_arr[cams[0]->camId * scales + scale]->getArray(),
-                           cudaCreateChannelDesc<uchar4>());
+
+    cudaTextureObject_t r4tex = global_data.getScaledPictureTex( scale, cams[0]->camId );
 
     CudaDeviceMemoryPitched<float3, 2> pts_dmp(pts_hmh);
     CudaDeviceMemoryPitched<float2, 2> out_dmp(CudaSize<2>(npts, 1));
@@ -3059,28 +2654,32 @@ void ps_ptsStatForRcDepthMap(CudaArray<uchar4, 2>** ps_texs_arr, CudaHostMemoryH
         int block_size = 64;
         dim3 block(block_size, 1, 1);
         dim3 grid(divUp(npts, block_size), 1, 1);
-        ptsStatForRcDepthMap_kernel<<<grid, block>>>(out_dmp.getBuffer(), out_dmp.stride()[0], pts_dmp.getBuffer(),
-                                                     pts_dmp.stride()[0], npts, width, height, maxNPixSize, wsh, gammaC,
-                                                     gammaP);
+        ptsStatForRcDepthMap_kernel<<<grid, block>>>(
+            r4tex,
+            depthsTex,
+            out_dmp.getBuffer(), out_dmp.stride()[0], pts_dmp.getBuffer(),
+            pts_dmp.stride()[0], npts, width, height, maxNPixSize, wsh, gammaC,
+            gammaP);
         cudaThreadSynchronize();
         CHECK_CUDA_ERROR();
     }
 
     copy(out_hmh, out_dmp);
 
-    cudaUnbindTexture(r4tex);
-    cudaUnbindTexture(depthsTex);
+    global_data.pitched_mem_float_point_tex_cache.put( depthMap_arr );
 
     if(verbose)
         printf("gpu elapsed time: %f ms \n", toc(tall));
-};
+}
 
-void ps_computeSimMapReprojectByDepthMapMovedByStep(CudaArray<uchar4, 2>** ps_texs_arr,
-                                                    CudaHostMemoryHeap<float, 2>* osimMap_hmh,
-                                                    CudaHostMemoryHeap<float, 2>* iodepthMap_hmh, cameraStruct** cams,
-                                                    int ncams, int width, int height, int scale, int CUDAdeviceNo,
-                                                    int ncamsAllocated, int scales, bool verbose, int wsh, float gammaC,
-                                                    float gammaP, bool moveByTcOrRc, float step)
+// void ps_computeSimMapReprojectByDepthMapMovedByStep(CudaArray<uchar4, 2>** ps_texs_arr,
+void ps_computeSimMapReprojectByDepthMapMovedByStep(
+    CudaHostMemoryHeap<float, 2>* osimMap_hmh,
+    CudaHostMemoryHeap<float, 2>* iodepthMap_hmh,
+    cameraStruct** cams,
+    int ncams, int width, int height, int scale, int CUDAdeviceNo,
+    int ncamsAllocated, int scales, bool verbose, int wsh, float gammaC,
+    float gammaP, bool moveByTcOrRc, float step )
 {
     testCUDAdeviceNo(CUDAdeviceNo);
 
@@ -3092,53 +2691,51 @@ void ps_computeSimMapReprojectByDepthMapMovedByStep(CudaArray<uchar4, 2>** ps_te
 
     ps_init_reference_camera_matrices(cams[0]->P, cams[0]->iP, cams[0]->R, cams[0]->iR, cams[0]->K, cams[0]->iK,
                                       cams[0]->C);
-    cudaBindTextureToArray(r4tex, ps_texs_arr[cams[0]->camId * scales + scale]->getArray(),
-                           cudaCreateChannelDesc<uchar4>());
 
     int c = 1;
     ps_init_target_camera_matrices(cams[c]->P, cams[c]->iP, cams[c]->R, cams[c]->iR, cams[c]->K, cams[c]->iK,
                                    cams[c]->C);
-    cudaBindTextureToArray(t4tex, ps_texs_arr[cams[c]->camId * scales + scale]->getArray(),
-                           cudaCreateChannelDesc<uchar4>());
+
+    cudaTextureObject_t r4tex = global_data.getScaledPictureTex( scale, cams[0]->camId );
+    cudaTextureObject_t t4tex = global_data.getScaledPictureTex( scale, cams[c]->camId );
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    CudaDeviceMemoryPitched<uchar4, 2> rimg_dmp(CudaSize<2>(width, height));
-    getRefTexLAB_kernel<<<grid, block>>>(rimg_dmp.getBuffer(), rimg_dmp.stride()[0], width, height);
-    cudaThreadSynchronize();
-    // CudaArray<uchar4, 2> rTexU4_arr(CudaSize<2>(width,height));
-    // copy(rTexU4_arr,rimg_dmp);
-    CudaArray<uchar4, 2> rTexU4_arr(rimg_dmp);
-    cudaBindTextureToArray(rTexU4, rTexU4_arr.getArray(), cudaCreateChannelDesc<uchar4>());
-    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    auto rimg_dmp = global_data.pitched_mem_uchar4_point_tex_cache.get( width, height );
+    getRefTexLAB_kernel<<<grid, block>>>(
+        r4tex,
+        t4tex,
+        rimg_dmp->mem->getBuffer(), rimg_dmp->mem->stride()[0],
+        width, height );
 
+    cudaTextureObject_t rTexU4 = rimg_dmp->tex;
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    CudaDeviceMemoryPitched<uchar4, 2> timg_dmp(CudaSize<2>(width, height));
+    auto timg_dmp = global_data.pitched_mem_uchar4_point_tex_cache.get( width, height );
     CudaDeviceMemoryPitched<float, 2> iodepthMap_dmp(*iodepthMap_hmh);
     refine_reprojTarTexLABByDepthMapMovedByStep_kernel<<<grid, block>>>(
-        iodepthMap_dmp.getBuffer(), iodepthMap_dmp.stride()[0], timg_dmp.getBuffer(), timg_dmp.stride()[0], width, height,
-        moveByTcOrRc, step);
-    cudaThreadSynchronize();
-    // CudaArray<uchar4, 2> tTexU4_arr(CudaSize<2>(width,height));
-    // copy(tTexU4_arr,timg_dmp);
-    CudaArray<uchar4, 2> tTexU4_arr(timg_dmp);
-    cudaBindTextureToArray(tTexU4, tTexU4_arr.getArray(), cudaCreateChannelDesc<uchar4>());
+        t4tex,
+        iodepthMap_dmp.getBuffer(), iodepthMap_dmp.stride()[0],
+        timg_dmp->mem->getBuffer(), timg_dmp->mem->stride()[0],
+        width, height, moveByTcOrRc, step);
+
+    cudaTextureObject_t tTexU4 = timg_dmp->tex;
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     CudaDeviceMemoryPitched<float, 2> osimMap_dmp(CudaSize<2>(width, height));
-    refine_compYKNCCSimMap_kernel<<<grid, block>>>(osimMap_dmp.getBuffer(), osimMap_dmp.stride()[0],
-                                                   iodepthMap_dmp.getBuffer(), iodepthMap_dmp.stride()[0], width, height,
-                                                   wsh, gammaC, gammaP);
-    cudaThreadSynchronize();
+
+    refine_compYKNCCSimMap_kernel<<<grid, block>>>(
+        rTexU4,
+        tTexU4,
+        osimMap_dmp.getBuffer(), osimMap_dmp.stride()[0],
+        iodepthMap_dmp.getBuffer(), iodepthMap_dmp.stride()[0],
+        width, height,
+        wsh, gammaC, gammaP);
 
     copy((*iodepthMap_hmh), iodepthMap_dmp);
     copy((*osimMap_hmh), osimMap_dmp);
 
-    cudaUnbindTexture(rTexU4);
-    cudaUnbindTexture(tTexU4);
-
-    cudaUnbindTexture(r4tex);
-    cudaUnbindTexture(t4tex);
-};
+    global_data.pitched_mem_uchar4_point_tex_cache.put( rimg_dmp );
+    global_data.pitched_mem_uchar4_point_tex_cache.put( timg_dmp );
+}
 
 void ps_reprojectRGBTcImageByDepthMap(CudaHostMemoryHeap<uchar4, 2>* iTcoRcRgbImage_hmh,
                                       CudaHostMemoryHeap<float, 2>* rcDepthMap_hmh, cameraStruct** cams, int ncams,
@@ -3161,25 +2758,35 @@ void ps_reprojectRGBTcImageByDepthMap(CudaHostMemoryHeap<uchar4, 2>* iTcoRcRgbIm
                                    cams[c]->C);
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    CudaDeviceMemoryPitched<uchar4, 2> iTcoRcimg_dmp(*iTcoRcRgbImage_hmh);
-    CudaArray<uchar4, 2> tTexU4_arr(iTcoRcimg_dmp);
-    cudaBindTextureToArray(t4tex, tTexU4_arr.getArray(), cudaCreateChannelDesc<uchar4>());
+    // CudaDeviceMemoryPitched<uchar4, 2> iTcoRcimg_dmp(*iTcoRcRgbImage_hmh);
+    auto iTcoRcimg_dmp =
+        global_data.pitched_mem_uchar4_linear_tex_cache.get(
+            iTcoRcRgbImage_hmh->getSize()[0],
+            iTcoRcRgbImage_hmh->getSize()[1] );
+    copy( *iTcoRcRgbImage_hmh, *iTcoRcimg_dmp->mem );
+    // CudaArray<uchar4, 2> tTexU4_arr(iTcoRcimg_dmp);
+    // cudaBindTextureToArray(t4tex, tTexU4_arr.getArray(), cudaCreateChannelDesc<uchar4>());
+    cudaTextureObject_t t4tex = iTcoRcimg_dmp->tex;
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     CudaDeviceMemoryPitched<float, 2> rcDepthMap_dmp(*rcDepthMap_hmh);
     refine_reprojTarTexLABByDepthMapMovedByStep_kernel<<<grid, block>>>(
-        rcDepthMap_dmp.getBuffer(), rcDepthMap_dmp.stride()[0], iTcoRcimg_dmp.getBuffer(), iTcoRcimg_dmp.stride()[0], width,
-        height, false, 0.0f);
-    cudaThreadSynchronize();
+        t4tex,
+        rcDepthMap_dmp.getBuffer(), rcDepthMap_dmp.stride()[0],
+        iTcoRcimg_dmp->mem->getBuffer(), iTcoRcimg_dmp->mem->stride()[0],
+        width, height, false, 0.0f);
+
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-    copy((*iTcoRcRgbImage_hmh), iTcoRcimg_dmp);
-    cudaUnbindTexture(t4tex);
+    copy((*iTcoRcRgbImage_hmh), *iTcoRcimg_dmp->mem );
+
+    // cudaUnbindTexture(t4tex);
+    global_data.pitched_mem_uchar4_linear_tex_cache.put( iTcoRcimg_dmp );
 
     if(verbose)
         printf("gpu elapsed time: %f ms \n", toc(tall));
-};
+}
 
 void ps_computeRcTcDepthMap(CudaHostMemoryHeap<float, 2>& iRcDepthMap_oRcTcDepthMap_hmh,
                             CudaHostMemoryHeap<float, 2>& tcDepthMap_hmh, float pixSizeRatioThr, cameraStruct** cams,
@@ -3202,22 +2809,30 @@ void ps_computeRcTcDepthMap(CudaHostMemoryHeap<float, 2>& iRcDepthMap_oRcTcDepth
                                    cams[c]->C);
 
     CudaDeviceMemoryPitched<float, 2> rcDepthMap_dmp(iRcDepthMap_oRcTcDepthMap_hmh);
-    CudaArray<float, 2> depthMap_arr(tcDepthMap_hmh);
-    cudaBindTextureToArray(depthsTex, depthMap_arr.getArray(), cudaCreateChannelDesc<float>());
+    // CudaArray<float, 2> depthMap_arr(tcDepthMap_hmh);
+    // cudaBindTextureToArray(depthsTex, depthMap_arr.getArray(), cudaCreateChannelDesc<float>());
+    auto depthMap_arr = global_data.pitched_mem_float_point_tex_cache.get(
+        tcDepthMap_hmh.getSize()[0],
+        tcDepthMap_hmh.getSize()[1] );
+    copy( *depthMap_arr->mem, tcDepthMap_hmh );
+    cudaTextureObject_t depthsTex = depthMap_arr->tex;
 
-    refine_computeRcTcDepthMap_kernel<<<grid, block>>>(rcDepthMap_dmp.getBuffer(), rcDepthMap_dmp.stride()[0], width,
-                                                       height, pixSizeRatioThr);
-    cudaThreadSynchronize();
+    refine_computeRcTcDepthMap_kernel<<<grid, block>>>(
+        depthsTex,
+        rcDepthMap_dmp.getBuffer(), rcDepthMap_dmp.stride()[0],
+        width, height, pixSizeRatioThr);
 
     copy(iRcDepthMap_oRcTcDepthMap_hmh, rcDepthMap_dmp);
 
-    cudaUnbindTexture(depthsTex);
+    // cudaUnbindTexture(depthsTex);
+    global_data.pitched_mem_float_point_tex_cache.put( depthMap_arr );
 
     if(verbose)
         printf("gpu elapsed time: %f ms \n", toc(tall));
-};
+}
 
-void ps_getSilhoueteMap(CudaArray<uchar4, 2>** ps_texs_arr, CudaHostMemoryHeap<bool, 2>* omap_hmh, int width,
+// void ps_getSilhoueteMap(CudaArray<uchar4, 2>** ps_texs_arr, CudaHostMemoryHeap<bool, 2>* omap_hmh, int width,
+void ps_getSilhoueteMap( CudaHostMemoryHeap<bool, 2>* omap_hmh, int width,
                         int height, int scale, int CUDAdeviceNo, int ncamsAllocated, int scales, int step, int camId,
                         uchar4 maskColorRgb, bool verbose)
 {
@@ -3225,7 +2840,7 @@ void ps_getSilhoueteMap(CudaArray<uchar4, 2>** ps_texs_arr, CudaHostMemoryHeap<b
     testCUDAdeviceNo(CUDAdeviceNo);
 
     uchar4 maskColorLab;
-    float3 flab = h_xyz2lab(h_rgb2xyz(uchar4_to_float3(maskColorRgb)));
+    float3 flab = xyz2lab(rgb2xyz(uchar4_to_float3(maskColorRgb)));
     maskColorLab.x = (unsigned char)(flab.x);
     maskColorLab.y = (unsigned char)(flab.y);
     maskColorLab.z = (unsigned char)(flab.z);
@@ -3237,20 +2852,24 @@ void ps_getSilhoueteMap(CudaArray<uchar4, 2>** ps_texs_arr, CudaHostMemoryHeap<b
     dim3 block(block_size, block_size, 1);
     dim3 grid(divUp(width / step, block_size), divUp(height / step, block_size), 1);
 
-    cudaBindTextureToArray(rTexU4, ps_texs_arr[camId * scales + scale]->getArray(), cudaCreateChannelDesc<uchar4>());
+    // cudaBindTextureToArray(rTexU4, ps_texs_arr[camId * scales + scale]->getArray(), cudaCreateChannelDesc<uchar4>());
+    cudaTextureObject_t rTexU4 = global_data.getScaledPictureTexPoint( scale, camId );
 
     CudaDeviceMemoryPitched<bool, 2> map_dmp(CudaSize<2>(width / step, height / step));
-    getSilhoueteMap_kernel<<<grid, block>>>(map_dmp.getBuffer(), map_dmp.stride()[0], step, width, height, maskColorLab);
+    getSilhoueteMap_kernel<<<grid, block>>>(
+        rTexU4,
+        map_dmp.getBuffer(), map_dmp.stride()[0],
+        step, width, height, maskColorLab );
     cudaThreadSynchronize();
     CHECK_CUDA_ERROR();
 
-    cudaUnbindTexture(rTexU4);
+    // cudaUnbindTexture(rTexU4);
 
     copy((*omap_hmh), map_dmp);
 
     if(verbose)
         printf("gpu elapsed time: %f ms \n", toc(tall));
-};
+}
 
 void ps_retexture(CudaHostMemoryHeap<uchar4, 2>* bmpOrig_hmh, CudaHostMemoryHeap<uchar4, 2>* bmpObj_hmh,
                   CudaHostMemoryHeap<float4, 2>* retexturePixs_hmh, int wObj, int hObj, int wOrig, int hOrig,
@@ -3259,8 +2878,14 @@ void ps_retexture(CudaHostMemoryHeap<uchar4, 2>* bmpOrig_hmh, CudaHostMemoryHeap
     clock_t tall = tic();
     testCUDAdeviceNo(CUDAdeviceNo);
 
-    CudaArray<uchar4, 2> bmpOrig_arr(*bmpOrig_hmh);
-    cudaBindTextureToArray(r4tex, bmpOrig_arr.getArray(), cudaCreateChannelDesc<uchar4>());
+    // CudaArray<uchar4, 2> bmpOrig_arr(*bmpOrig_hmh);
+    // cudaBindTextureToArray(r4tex, bmpOrig_arr.getArray(), cudaCreateChannelDesc<uchar4>());
+    auto bmpOrig_arr =
+        global_data.pitched_mem_uchar4_linear_tex_cache.get(
+            bmpOrig_hmh->getSize()[0],
+            bmpOrig_hmh->getSize()[1] );
+    copy( *bmpOrig_hmh, *bmpOrig_arr->mem );
+    cudaTextureObject_t r4tex = bmpOrig_arr->tex;
 
     CudaDeviceMemoryPitched<uchar4, 2> bmpObj_dmp(*bmpObj_hmh);
     CudaDeviceMemoryPitched<float4, 2> retexturePixs_dmp(*retexturePixs_hmh);
@@ -3271,18 +2896,21 @@ void ps_retexture(CudaHostMemoryHeap<uchar4, 2>* bmpOrig_hmh, CudaHostMemoryHeap
     dim3 block(block_size, block_size, 1);
     dim3 grid(divUp(slicesAtTime, block_size), divUp(ntimes, block_size), 1);
 
-    retexture_kernel<<<grid, block>>>(bmpObj_dmp.getBuffer(), bmpObj_dmp.stride()[0], retexturePixs_dmp.getBuffer(),
-                                      retexturePixs_dmp.stride()[0], slicesAtTime, ntimes, npixs);
-    cudaThreadSynchronize();
+    retexture_kernel<<<grid, block>>>(
+        r4tex,
+        bmpObj_dmp.getBuffer(), bmpObj_dmp.stride()[0],
+        retexturePixs_dmp.getBuffer(), retexturePixs_dmp.stride()[0],
+        slicesAtTime, ntimes, npixs);
     CHECK_CUDA_ERROR();
 
-    cudaUnbindTexture(r4tex);
+    // cudaUnbindTexture(r4tex);
 
-    copy((*bmpObj_hmh), bmpObj_dmp);
+    copy( *bmpObj_hmh, bmpObj_dmp);
+    global_data.pitched_mem_uchar4_linear_tex_cache.put( bmpOrig_arr );
 
     if(verbose)
         printf("gpu elapsed time: %f ms \n", toc(tall));
-};
+}
 
 void ps_retextureComputeNormalMap(CudaHostMemoryHeap<uchar4, 2>* bmpObj_hmh,
                                   CudaHostMemoryHeap<float2, 2>* retexturePixs_hmh,
@@ -3312,7 +2940,7 @@ void ps_retextureComputeNormalMap(CudaHostMemoryHeap<uchar4, 2>* bmpObj_hmh,
 
     if(verbose)
         printf("gpu elapsed time: %f ms \n", toc(tall));
-};
+}
 
 void ps_colorExtractionPushPull(CudaHostMemoryHeap<uchar4, 2>* bmp_hmh, int w, int h, int CUDAdeviceNo, bool verbose)
 {
@@ -3322,74 +2950,75 @@ void ps_colorExtractionPushPull(CudaHostMemoryHeap<uchar4, 2>* bmp_hmh, int w, i
     int block_size = 16;
     int npyramidLevels = 10;
 
+    global_data.allocPyramidArrays( npyramidLevels, w, h );
+
     // pyramid arr
-    CudaArray<uchar4, 2>** pyramid_arr = new CudaArray<uchar4, 2>*[npyramidLevels];
+    // CudaArray<uchar4, 2>** pyramid_arr = new CudaArray<uchar4, 2>*[npyramidLevels];
     int wact = w;
     int hact = h;
-    int* wLevels = new int[npyramidLevels];
-    int* hLevels = new int[npyramidLevels];
+    int wLevels[npyramidLevels];
+    int hLevels[npyramidLevels];
 
     // push
     for(int i = 0; i < npyramidLevels; i++)
     {
-        pyramid_arr[i] = new CudaArray<uchar4, 2>(CudaSize<2>(wact, hact));
+        // pyramid_arr[i] = new CudaArray<uchar4, 2>(CudaSize<2>(wact, hact));
         wLevels[i] = wact;
         hLevels[i] = hact;
 
         if(i == 0)
         {
-            copy((*pyramid_arr[i]), (*bmp_hmh));
-            wact = wact / 2;
-            hact = hact / 2;
+            // copy((*pyramid_arr[i]), (*bmp_hmh));
+            copy( global_data.getPyramidArray(i), (*bmp_hmh));
         }
         else
         {
-            cudaBindTextureToArray(r4tex, pyramid_arr[i - 1]->getArray(), cudaCreateChannelDesc<uchar4>());
-            CudaDeviceMemoryPitched<uchar4, 2> bmpNextLevel_dmp(CudaSize<2>(wact, hact));
+            // cudaBindTextureToArray(r4tex, pyramid_arr[i - 1]->getArray(), cudaCreateChannelDesc<uchar4>());
+            cudaTextureObject_t r4tex = global_data.getPyramidTex( i-1 );
+
+            // CudaDeviceMemoryPitched<uchar4, 2> bmpNextLevel_dmp(CudaSize<2>(wact, hact));
+            CudaDeviceMemoryPitched<uchar4, 2>& bmpNextLevel_dmp = global_data.getPyramidArray( i );
             dim3 block(block_size, block_size, 1);
             dim3 grid(divUp(wact, block_size), divUp(hact, block_size), 1);
-            pushPull_Push_kernel<<<grid, block>>>(bmpNextLevel_dmp.getBuffer(), bmpNextLevel_dmp.stride()[0], wact, hact);
-            cudaThreadSynchronize();
+            pushPull_Push_kernel<<<grid, block>>>( r4tex, bmpNextLevel_dmp.getBuffer(), bmpNextLevel_dmp.stride()[0], wact, hact);
+            // cudaThreadSynchronize();
             CHECK_CUDA_ERROR();
-            cudaUnbindTexture(r4tex);
+            // cudaUnbindTexture(r4tex);
 
-            copy((*pyramid_arr[i]), bmpNextLevel_dmp);
-
-            wact = wact / 2;
-            hact = hact / 2;
-        };
+            // copy((*pyramid_arr[i]), bmpNextLevel_dmp);
+            // copy( global_data.getPyramidArray(i), bmpNextLevel_dmp);
+        }
+        wact = wact / 2;
+        hact = hact / 2;
         printf("push level %i\n", i);
-    };
+    }
 
     // pull
     for(int i = npyramidLevels - 1; i >= 1; i--)
     {
-        cudaBindTextureToArray(r4tex, pyramid_arr[i]->getArray(), cudaCreateChannelDesc<uchar4>());
-        CudaDeviceMemoryPitched<uchar4, 2> bmpNextLevel_dmp(CudaSize<2>(wLevels[i - 1], hLevels[i - 1]));
-        copy(bmpNextLevel_dmp, (*pyramid_arr[i - 1]));
+        // cudaBindTextureToArray(r4tex, pyramid_arr[i]->getArray(), cudaCreateChannelDesc<uchar4>());
+        cudaTextureObject_t r4tex = global_data.getPyramidTex( i );
+
+        // CudaDeviceMemoryPitched<uchar4, 2> bmpNextLevel_dmp(CudaSize<2>(wLevels[i - 1], hLevels[i - 1]));
+        // copy(bmpNextLevel_dmp, (*pyramid_arr[i - 1]));
+        CudaDeviceMemoryPitched<uchar4, 2>& bmpNextLevel_dmp = global_data.getPyramidArray( i-1 );
 
         dim3 block(block_size, block_size, 1);
         dim3 grid(divUp(wLevels[i - 1], block_size), divUp(hLevels[i - 1], block_size), 1);
-        pushPull_Pull_kernel<<<grid, block>>>(bmpNextLevel_dmp.getBuffer(), bmpNextLevel_dmp.stride()[0], wLevels[i - 1],
+        pushPull_Pull_kernel<<<grid, block>>>( r4tex, bmpNextLevel_dmp.getBuffer(), bmpNextLevel_dmp.stride()[0], wLevels[i - 1],
                                               hLevels[i - 1]);
-        cudaThreadSynchronize();
         CHECK_CUDA_ERROR();
-        cudaUnbindTexture(r4tex);
+        // cudaUnbindTexture(r4tex);
 
-        copy((*pyramid_arr[i - 1]), bmpNextLevel_dmp);
+        // copy((*pyramid_arr[i - 1]), bmpNextLevel_dmp);
         printf("pull level %i\n", i);
-    };
+    }
 
-    copy((*bmp_hmh), (*pyramid_arr[0]));
+    // copy((*bmp_hmh), (*pyramid_arr[0]));
+    CudaDeviceMemoryPitched<uchar4, 2>& bmp = global_data.getPyramidArray( 0 );
+    copy((*bmp_hmh), bmp );
 
-    delete[] wLevels;
-    delete[] hLevels;
-
-    for(int i = 0; i < npyramidLevels; i++)
-    {
-        delete pyramid_arr[i];
-    };
-    delete[] pyramid_arr;
+    global_data.freePyramidArrays();
 }
 
 } // namespace depthMap
