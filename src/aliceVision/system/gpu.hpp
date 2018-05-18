@@ -33,23 +33,34 @@ inline bool gpuSupportCUDA(int minComputeCapabilityMajor,
 {
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_CUDA)
   int nbDevices = 0;
-  cudaGetDeviceCount(&nbDevices);
+  cudaError_t success;
+  success = cudaGetDeviceCount(&nbDevices);
+  if( success != cudaSuccess )
+  {
+    std::string errmsg = std::string("cudaGetDeviceCount failed: ") + cudaGetErrorString(success);
+    ALICEVISION_LOG_ERROR( errmsg );
+  }
 
   if(nbDevices > 0)
   {
     for(int i = 0; i < nbDevices; ++i)
     {
-      std::unique_ptr<cudaDeviceProp> deviceProperties(new cudaDeviceProp);
-      if(cudaGetDeviceProperties(deviceProperties.get(), i) != cudaSuccess)
+      cudaDeviceProp deviceProperties;
+
+      if(cudaGetDeviceProperties(&deviceProperties, i) != cudaSuccess)
         throw std::runtime_error("Cannot get properties for CUDA gpu device " + std::to_string(i));
 
-      if((deviceProperties->major > minComputeCapabilityMajor ||
-         (deviceProperties->major == minComputeCapabilityMajor &&
-          deviceProperties->minor >= minComputeCapabilityMinor)) &&
-         deviceProperties->totalGlobalMem >= (minTotalDeviceMemory*1024*1024))
+      if((deviceProperties.major > minComputeCapabilityMajor ||
+         (deviceProperties.major == minComputeCapabilityMajor &&
+          deviceProperties.minor >= minComputeCapabilityMinor)) &&
+          deviceProperties.totalGlobalMem >= (minTotalDeviceMemory*1024*1024))
       {
         ALICEVISION_LOG_INFO("Supported CUDA-Enabled GPU detected.");
         return true;
+      }
+      else
+      {
+        ALICEVISION_LOG_ERROR("BAD CUDA-Enabled GPU detected.");
       }
     }
     ALICEVISION_LOG_INFO("CUDA-Enabled GPU not supported.");
