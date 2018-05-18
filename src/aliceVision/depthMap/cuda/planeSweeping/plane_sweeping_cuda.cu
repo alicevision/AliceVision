@@ -2734,31 +2734,42 @@ void ps_refineRcDepthMap(CudaArray<uchar4, 2>** ps_texs_arr, float* osimMap_hmh,
     for(int i = 0; i < ntcsteps; i++) // Default ntcsteps = 31
     {
         refine_compUpdateYKNCCSimMapPatch_kernel<<<grid, block>>>(
-            bestSimMap_dmp.getBuffer(), bestSimMap_dmp.stride()[0], bestDptMap_dmp.getBuffer(), bestDptMap_dmp.stride()[0],
-            rcDepthMap_dmp.getBuffer(), rcDepthMap_dmp.stride()[0], width, height, wsh, gammaC, gammaP, epipShift,
+            bestSimMap_dmp.getBuffer(), bestSimMap_dmp.stride()[0],
+            bestDptMap_dmp.getBuffer(), bestDptMap_dmp.stride()[0],
+            rcDepthMap_dmp.getBuffer(), rcDepthMap_dmp.stride()[0],
+            width, height, wsh, gammaC, gammaP, epipShift,
             (float)(i - (ntcsteps - 1) / 2), i, moveByTcOrRc, xFrom, imWidth, imHeight);
         cudaThreadSynchronize();
     };
 
-    refine_setLastThreeSimsMap_kernel<<<grid, block>>>(lastThreeSimsMap.getBuffer(), lastThreeSimsMap.stride()[0],
-                                                       bestSimMap_dmp.getBuffer(), bestSimMap_dmp.stride()[0], width,
-                                                       height, 1);
+    refine_setLastThreeSimsMap_kernel<<<grid, block>>>(
+        lastThreeSimsMap.getBuffer(), lastThreeSimsMap.stride()[0],
+        bestSimMap_dmp.getBuffer(), bestSimMap_dmp.stride()[0],
+        width, height, 1);
     cudaThreadSynchronize();
 
     refine_compYKNCCSimMapPatch_kernel<<<grid, block>>>(
-        simMap_dmp.getBuffer(), simMap_dmp.stride()[0], bestDptMap_dmp.getBuffer(), bestDptMap_dmp.stride()[0], width,
-        height, wsh, gammaC, gammaP, epipShift, -1.0f, moveByTcOrRc, xFrom, imWidth, imHeight);
+        simMap_dmp.getBuffer(), simMap_dmp.stride()[0],
+        bestDptMap_dmp.getBuffer(), bestDptMap_dmp.stride()[0],
+        width, height,
+        wsh, gammaC, gammaP, epipShift, -1.0f, moveByTcOrRc, xFrom, imWidth, imHeight);
     cudaThreadSynchronize();
-    refine_setLastThreeSimsMap_kernel<<<grid, block>>>(lastThreeSimsMap.getBuffer(), lastThreeSimsMap.stride()[0],
-                                                       simMap_dmp.getBuffer(), simMap_dmp.stride()[0], width, height, 0);
+    refine_setLastThreeSimsMap_kernel<<<grid, block>>>(
+        lastThreeSimsMap.getBuffer(), lastThreeSimsMap.stride()[0],
+        simMap_dmp.getBuffer(), simMap_dmp.stride()[0],
+        width, height, 0);
     cudaThreadSynchronize();
 
     refine_compYKNCCSimMapPatch_kernel<<<grid, block>>>(
-        simMap_dmp.getBuffer(), simMap_dmp.stride()[0], bestDptMap_dmp.getBuffer(), bestDptMap_dmp.stride()[0], width,
-        height, wsh, gammaC, gammaP, epipShift, +1.0f, moveByTcOrRc, xFrom, imWidth, imHeight);
+        simMap_dmp.getBuffer(), simMap_dmp.stride()[0],
+        bestDptMap_dmp.getBuffer(), bestDptMap_dmp.stride()[0],
+        width, height,
+        wsh, gammaC, gammaP, epipShift, +1.0f, moveByTcOrRc, xFrom, imWidth, imHeight);
     cudaThreadSynchronize();
-    refine_setLastThreeSimsMap_kernel<<<grid, block>>>(lastThreeSimsMap.getBuffer(), lastThreeSimsMap.stride()[0],
-                                                       simMap_dmp.getBuffer(), simMap_dmp.stride()[0], width, height, 2);
+    refine_setLastThreeSimsMap_kernel<<<grid, block>>>(
+        lastThreeSimsMap.getBuffer(), lastThreeSimsMap.stride()[0],
+        simMap_dmp.getBuffer(), simMap_dmp.stride()[0],
+        width, height, 2);
     cudaThreadSynchronize();
 
     refine_computeDepthSimMapFromLastThreeSimsMap_kernel<<<grid, block>>>(
