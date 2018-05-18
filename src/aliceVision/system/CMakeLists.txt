@@ -6,6 +6,7 @@ set(system_files_headers
   system.hpp
   Timer.hpp
   Logger.hpp
+  nvtx.hpp
 )
 
 # Sources
@@ -14,6 +15,7 @@ set(system_files_sources
   MemoryInfo.cpp
   Timer.cpp
   Logger.cpp
+  nvtx.cpp
 )
 
 add_library(aliceVision_system
@@ -35,6 +37,11 @@ target_link_libraries(aliceVision_system
     ${Boost_DATE_TIME_LIBRARY}
     ${Boost_PROGRAM_OPTIONS_LIBRARY}
 )
+
+if(ALICEVISION_USE_NVTX_PROFILING)
+target_link_libraries(aliceVision_system ${CUDA_NVTX_LIBRARY})
+endif()
+
 
 set_target_properties(aliceVision_system
   PROPERTIES SOVERSION ${ALICEVISION_VERSION_MAJOR}
