@@ -490,6 +490,19 @@ __global__ void refine_fuseThreeDepthSimMaps_kernel(float* osim, int osim_p, flo
     };
 }
 
+#define GRIFF_TEST
+
+#ifdef GRIFF_TEST
+__global__ void refine_compUpdateYKNCCSimMapPatch_kernel(
+    float* osimMap, int osimMap_p,
+    float* odptMap, int odptMap_p,
+    const float* depthMap, int depthMap_p, int width, int height,
+    int wsh, const float gammaC, const float gammaP,
+    const float epipShift,
+    const int ntcsteps,
+    bool moveByTcOrRc, int xFrom, int imWidth, int imHeight,
+    float3* lastThreeSimsMap, int lastThreeSimsMap_p, const int dimension )
+#else
 __global__ void refine_compUpdateYKNCCSimMapPatch_kernel(
     float* osimMap, int osimMap_p,
     float* odptMap, int odptMap_p,
@@ -499,6 +512,7 @@ __global__ void refine_compUpdateYKNCCSimMapPatch_kernel(
     const float tcStep,    // changing in loop
     int id,                // changing in loop
     bool moveByTcOrRc, int xFrom, int imWidth, int imHeight)
+#endif
 {
     int x = blockIdx.x * blockDim.x + threadIdx.x;
     int y = blockIdx.y * blockDim.y + threadIdx.y;
@@ -509,6 +523,15 @@ __global__ void refine_compUpdateYKNCCSimMapPatch_kernel(
     // if ((pix.x>wsh)&&(pix.y>wsh)&&(pix.x<width-wsh)&&(pix.y<height-wsh))
     if((x >= 0) && (y >= 0) && (x < width) && (y < height))
     {
+#ifdef GRIFF_TEST
+      float* const osim_ptr = get2DBufferAt(osimMap, osimMap_p, x, y);
+      float* const odpt_ptr = get2DBufferAt(odptMap, odptMap_p, x, y);
+      float best_osim = 1.0f;
+      float best_odpt;
+      for( int id=0; id<ntcsteps; id++ )
+      {
+        const float tcStep = (float)(id - (ntcsteps - 1) / 2);
+#endif
         float odpt = *get2DBufferAt(depthMap, depthMap_p, x, y);
         float osim = 1.0f;
 
@@ -529,8 +552,44 @@ __global__ void refine_compUpdateYKNCCSimMapPatch_kernel(
             osim = compNCCby3DptsYK(ptch, wsh, imWidth, imHeight, gammaC, gammaP, epipShift);
         }
 
-        float* osim_ptr = get2DBufferAt(osimMap, osimMap_p, x, y);
-        float* odpt_ptr = get2DBufferAt(odptMap, odptMap_p, x, y);
+#ifdef GRIFF_TEST
+        if(id == 0)
+        {
+            // For the first iteration, we initialize the values
+            best_osim = osim;
+            best_odpt = odpt;
+        }
+        else
+        {
+            // Then we update the similarity value if it's better
+            if(osim < best_osim)
+            {
+                best_osim = osim;
+                best_odpt = odpt;
+            }
+        }
+      }
+
+      *osim_ptr = best_osim;
+      *odpt_ptr = best_odpt;
+
+      float3* lastThreeSims_ptr = get2DBufferAt(lastThreeSimsMap, lastThreeSimsMap_p, x, y);
+
+      if( dimension == 0 )
+      {
+        lastThreeSims_ptr->x = best_osim;
+      }
+      else if( dimension == 1 )
+      {
+        lastThreeSims_ptr->y = best_osim;
+      }
+      else if( dimension == 2 )
+      {
+        lastThreeSims_ptr->z = best_osim;
+      }
+#else
+        float* const osim_ptr = get2DBufferAt(osimMap, osimMap_p, x, y);
+        float* const odpt_ptr = get2DBufferAt(odptMap, odptMap_p, x, y);
         if(id == 0)
         {
             // For the first iteration, we initialize the values
@@ -547,6 +606,7 @@ __global__ void refine_compUpdateYKNCCSimMapPatch_kernel(
                 *odpt_ptr = odpt;
             }
         }
+#endif
     }
 }
 
