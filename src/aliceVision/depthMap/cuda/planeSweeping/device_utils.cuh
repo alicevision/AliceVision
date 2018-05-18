@@ -11,13 +11,13 @@ namespace depthMap {
 
 // Helper functions
 
-clock_t tic()
+inline static __host__ clock_t tic()
 {
     return clock();
 }
 
 // returns the ms passed after last call to tic()
-float toc(clock_t ticClk)
+inline static __host__ float toc(clock_t ticClk)
 {
     return (float)((clock() - ticClk) * 1000.0 / CLOCKS_PER_SEC);
 }
@@ -31,7 +31,7 @@ float toc(clock_t ticClk)
 * @return
 */
 template <typename T>
-__device__ T* get2DBufferAt(T* ptr, int pitch, int x, int y)
+inline __device__ T* get2DBufferAt(T* ptr, int pitch, int x, int y)
 {
 
     return ((T*)(((char*)ptr) + y * pitch)) + x;
@@ -47,7 +47,7 @@ __device__ T* get2DBufferAt(T* ptr, int pitch, int x, int y)
 * @return
 */
 template <typename T>
-__device__ T* get3DBufferAt(T* ptr, int spitch, int pitch, int x, int y, int z)
+inline __device__ T* get3DBufferAt(T* ptr, int spitch, int pitch, int x, int y, int z)
 {
 
     return ((T*)(((char*)ptr) + z * spitch + y * pitch)) + x;

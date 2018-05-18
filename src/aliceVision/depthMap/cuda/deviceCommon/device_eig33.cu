@@ -4,7 +4,9 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
-#pragma once
+#include "aliceVision/depthMap/cuda/deviceCommon/device_eig33.cuh"
+
+#include "aliceVision/depthMap/cuda/deviceCommon/device_matrix.cuh"
 
 namespace aliceVision {
 namespace depthMap {
@@ -348,101 +350,87 @@ __device__ void cuda_eigen_decomposition(double A[3][3], double V0[], double V1[
     cuda_tql2(V0, V1, V2, d, e);
 }
 
-struct cuda_stat3d
+__device__ cuda_stat3d::cuda_stat3d()
 {
-    double xsum;
-    double ysum;
-    double zsum;
-    double xxsum;
-    double yysum;
-    double zzsum;
-    double xysum;
-    double xzsum;
-    double yzsum;
-    double count;
+    xsum = 0.0;
+    ysum = 0.0;
+    zsum = 0.0;
+    xxsum = 0.0;
+    yysum = 0.0;
+    zzsum = 0.0;
+    xysum = 0.0;
+    xzsum = 0.0;
+    yzsum = 0.0;
+    count = 0;
+}
 
-    __device__ cuda_stat3d()
+__device__ void cuda_stat3d::update(const float3& p, const float& w)
+{
+    xxsum += (double)p.x * (double)p.x;
+    yysum += (double)p.y * (double)p.y;
+    zzsum += (double)p.z * (double)p.z;
+    xysum += (double)p.x * (double)p.y;
+    xzsum += (double)p.x * (double)p.z;
+    yzsum += (double)p.y * (double)p.z;
+    xsum += (double)p.x;
+    ysum += (double)p.y;
+    zsum += (double)p.z;
+    count += w;
+}
+
+__device__ void cuda_stat3d::getEigenVectorsDesc(float3& cg, float3& v1, float3& v2, float3& v3, float& d1, float& d2, float& d3)
+{
+    double A[3][3], V[3][3], d[3];
+
+    double xmean = xsum / count;
+    double ymean = ysum / count;
+    double zmean = zsum / count;
+
+    A[0][0] = (xxsum - xsum * xmean - xsum * xmean + xmean * xmean * count) / (double)(count);
+    A[0][1] = (xysum - ysum * xmean - xsum * ymean + xmean * ymean * count) / (double)(count);
+    A[0][2] = (xzsum - zsum * xmean - xsum * zmean + xmean * zmean * count) / (double)(count);
+    A[1][0] = (xysum - xsum * ymean - ysum * xmean + ymean * xmean * count) / (double)(count);
+    A[1][1] = (yysum - ysum * ymean - ysum * ymean + ymean * ymean * count) / (double)(count);
+    A[1][2] = (yzsum - zsum * ymean - ysum * zmean + ymean * zmean * count) / (double)(count);
+    A[2][0] = (xzsum - xsum * zmean - zsum * xmean + zmean * xmean * count) / (double)(count);
+    A[2][1] = (yzsum - ysum * zmean - zsum * ymean + zmean * ymean * count) / (double)(count);
+    A[2][2] = (zzsum - zsum * zmean - zsum * zmean + zmean * zmean * count) / (double)(count);
+
+    // should be sorted
+    cuda_eigen_decomposition(A, V[0], V[1], V[2], d);
+
+    v1 = make_float3((float)V[0][2], (float)V[1][2], (float)V[2][2]);
+    normalize(v1);
+    v2 = make_float3((float)V[0][1], (float)V[1][1], (float)V[2][1]);
+    normalize(v2);
+    v3 = make_float3((float)V[0][0], (float)V[1][0], (float)V[2][0]);
+    normalize(v3);
+
+    cg.x = (float)(xsum / count);
+    cg.y = (float)(ysum / count);
+    cg.z = (float)(zsum / count);
+
+    d1 = (float)d[2];
+    d2 = (float)d[1];
+    d3 = (float)d[0];
+}
+
+__device__ bool cuda_stat3d::computePlaneByPCA(float3& p, float3& n)
+{
+    if(count < 3.0)
     {
-        xsum = 0.0;
-        ysum = 0.0;
-        zsum = 0.0;
-        xxsum = 0.0;
-        yysum = 0.0;
-        zzsum = 0.0;
-        xysum = 0.0;
-        xzsum = 0.0;
-        yzsum = 0.0;
-        count = 0;
-    }
+        return false;
+    };
 
-    __device__ void update(const float3& p, const float& w)
-    {
-        xxsum += (double)p.x * (double)p.x;
-        yysum += (double)p.y * (double)p.y;
-        zzsum += (double)p.z * (double)p.z;
-        xysum += (double)p.x * (double)p.y;
-        xzsum += (double)p.x * (double)p.z;
-        yzsum += (double)p.y * (double)p.z;
-        xsum += (double)p.x;
-        ysum += (double)p.y;
-        zsum += (double)p.z;
-        count += w;
-    }
+    float3 cg, v1, v2, v3;
+    float d1, d2, d3;
+    getEigenVectorsDesc(cg, v1, v2, v3, d1, d2, d3);
 
-    __device__ void getEigenVectorsDesc(float3& cg, float3& v1, float3& v2, float3& v3, float& d1, float& d2, float& d3)
-    {
-        double A[3][3], V[3][3], d[3];
+    p = cg;
+    n = v3;
 
-        double xmean = xsum / count;
-        double ymean = ysum / count;
-        double zmean = zsum / count;
-
-        A[0][0] = (xxsum - xsum * xmean - xsum * xmean + xmean * xmean * count) / (double)(count);
-        A[0][1] = (xysum - ysum * xmean - xsum * ymean + xmean * ymean * count) / (double)(count);
-        A[0][2] = (xzsum - zsum * xmean - xsum * zmean + xmean * zmean * count) / (double)(count);
-        A[1][0] = (xysum - xsum * ymean - ysum * xmean + ymean * xmean * count) / (double)(count);
-        A[1][1] = (yysum - ysum * ymean - ysum * ymean + ymean * ymean * count) / (double)(count);
-        A[1][2] = (yzsum - zsum * ymean - ysum * zmean + ymean * zmean * count) / (double)(count);
-        A[2][0] = (xzsum - xsum * zmean - zsum * xmean + zmean * xmean * count) / (double)(count);
-        A[2][1] = (yzsum - ysum * zmean - zsum * ymean + zmean * ymean * count) / (double)(count);
-        A[2][2] = (zzsum - zsum * zmean - zsum * zmean + zmean * zmean * count) / (double)(count);
-
-        // should be sorted
-        cuda_eigen_decomposition(A, V[0], V[1], V[2], d);
-
-        v1 = make_float3((float)V[0][2], (float)V[1][2], (float)V[2][2]);
-        normalize(v1);
-        v2 = make_float3((float)V[0][1], (float)V[1][1], (float)V[2][1]);
-        normalize(v2);
-        v3 = make_float3((float)V[0][0], (float)V[1][0], (float)V[2][0]);
-        normalize(v3);
-
-        cg.x = (float)(xsum / count);
-        cg.y = (float)(ysum / count);
-        cg.z = (float)(zsum / count);
-
-        d1 = (float)d[2];
-        d2 = (float)d[1];
-        d3 = (float)d[0];
-    }
-
-    __device__ bool computePlaneByPCA(float3& p, float3& n)
-    {
-        if(count < 3.0)
-        {
-            return false;
-        };
-
-        float3 cg, v1, v2, v3;
-        float d1, d2, d3;
-        getEigenVectorsDesc(cg, v1, v2, v3, d1, d2, d3);
-
-        p = cg;
-        n = v3;
-
-        return true;
-    }
-};
+    return true;
+}
 
 } // namespace depthMap
 } // namespace aliceVision
