@@ -156,9 +156,15 @@ namespace aliceVision
       template <typename Z>
       inline Rgb operator /( const Z& val ) const
       {
-        return Rgb( T( ( Z )( ( *this )( 0 ) ) / val ),
-                    T( ( Z )( ( *this )( 1 ) ) / val ),
-                    T( ( Z )( ( *this )( 2 ) ) / val ) );
+        return Rgb( T( r() / val ),
+                    T( g() / val ),
+                    T( b() / val ) );
+      }
+      inline Rgb operator /(const Rgb& val) const
+      {
+          return Rgb(r() / val.r(),
+                     g() / val.g(),
+                     b() / val.b());
       }
 
       /**
@@ -170,9 +176,15 @@ namespace aliceVision
       template <typename Z>
       inline Rgb operator *( const Z& val ) const
       {
-        return Rgb( T( ( Z )( *this )( 0 ) * val ),
-                    T( ( Z )( *this )( 1 ) * val ),
-                    T( ( Z )( *this )( 2 ) * val ) );
+        return Rgb( T( r() * val ),
+                    T( g() * val ),
+                    T( b() * val ) );
+      }
+      inline Rgb operator *(const Rgb& val) const
+      {
+          return Rgb(r() * val.r(),
+                     g() * val.g(),
+                     b() * val.b());
       }
     };
 
