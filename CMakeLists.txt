@@ -61,6 +61,7 @@ ExternalProject_Add(geogram
        URL https://github.com/alicevision/geogram/archive/v1.6.0.tar.gz
        PREFIX ${BUILD_DIR}
        BUILD_IN_SOURCE 0
+       BUILD_ALWAYS 0
        SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/geogram
        BINARY_DIR ${BUILD_DIR}/geogram_build
        INSTALL_DIR ${BUILD_DIR}/geogram_install
@@ -75,6 +76,7 @@ ExternalProject_Add(${CUDA_TARGET}
        # URL https://developer.nvidia.com/compute/cuda/8.0/Prod2/local_installers/cuda_8.0.61_375.26_linux-run
        PREFIX ${BUILD_DIR}
        BUILD_IN_SOURCE 0
+       BUILD_ALWAYS 0
        SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/cuda
        BINARY_DIR ${BUILD_DIR}/cuda_build
        INSTALL_DIR ${BUILD_DIR}/cuda_build
@@ -96,6 +98,7 @@ ExternalProject_Add(eigen
        URL https://github.com/alicevision/eigen-git-mirror/archive/3.3.4.tar.gz
        PREFIX ${BUILD_DIR}
        BUILD_IN_SOURCE 0
+       BUILD_ALWAYS 0
        SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/eigen
        BINARY_DIR ${BUILD_DIR}/eigen_build
        INSTALL_DIR ${BUILD_DIR}/eigen_build
@@ -108,6 +111,7 @@ ExternalProject_Add(ceres
        URL https://github.com/ceres-solver/ceres-solver/archive/1.13.0.tar.gz
        PREFIX ${BUILD_DIR}
        BUILD_IN_SOURCE 0
+       BUILD_ALWAYS 0
        SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/ceres-solver
        BINARY_DIR ${BUILD_DIR}/ceres_build
        INSTALL_DIR ${BUILD_DIR}/ceres_build
@@ -129,6 +133,7 @@ ExternalProject_Add(ilmbase
        GIT_TAG develop_compatibility_gxx4
        PREFIX ${BUILD_DIR}
        BUILD_IN_SOURCE 0
+       BUILD_ALWAYS 0
        SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/openexr
        BINARY_DIR ${BUILD_DIR}/ilmbase_build
        INSTALL_DIR ${BUILD_DIR}/openexr_build # Note: Need to install in the same folder than OpenEXR to get valid include paths
@@ -150,6 +155,7 @@ ExternalProject_Add(openexr
        GIT_TAG develop_compatibility_gxx4
        PREFIX ${BUILD_DIR}
        BUILD_IN_SOURCE 0
+       BUILD_ALWAYS 0
        SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/openexr
        BINARY_DIR ${BUILD_DIR}/openexr_build
        INSTALL_DIR ${BUILD_DIR}/openexr_build
@@ -163,6 +169,7 @@ ExternalProject_Add(tiff
        URL http://download.osgeo.org/libtiff/tiff-4.0.9.tar.gz
        PREFIX ${BUILD_DIR}
        BUILD_IN_SOURCE 0
+       BUILD_ALWAYS 0
        SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/tiff
        BINARY_DIR ${BUILD_DIR}/tiff_build
        INSTALL_DIR ${BUILD_DIR}/tiff_build
@@ -178,6 +185,7 @@ ExternalProject_Add(${PNG_TARGET}
        #    https://sourceforge.net/projects/libpng/files/libpng16/1.6.34/libpng-1.6.34.tar.gz
        PREFIX ${BUILD_DIR}
        BUILD_IN_SOURCE 0
+       BUILD_ALWAYS 0
        SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/png
        BINARY_DIR ${BUILD_DIR}/png_build
        INSTALL_DIR ${BUILD_DIR}/png_build
@@ -193,6 +201,7 @@ ExternalProject_Add(${JPEG_TARGET}
        URL https://github.com/libjpeg-turbo/libjpeg-turbo/archive/1.5.3.tar.gz
        PREFIX ${BUILD_DIR}
        BUILD_IN_SOURCE 0
+       BUILD_ALWAYS 0
        SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/turbojpeg
        BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/turbojpeg
        INSTALL_DIR ${BUILD_DIR}/turbojpeg_build
@@ -210,6 +219,7 @@ ExternalProject_Add(boost
        # GIT_TAG boost-1.61.0
        PREFIX ${BUILD_DIR}
        BUILD_IN_SOURCE 0
+       BUILD_ALWAYS 0
        SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/boost
        BINARY_DIR ${BUILD_DIR}/boost_build
        INSTALL_DIR ${BUILD_DIR}/boost_build
@@ -224,6 +234,7 @@ ExternalProject_Add(openimageio
        URL https://github.com/OpenImageIO/oiio/archive/Release-1.8.11.tar.gz
        PREFIX ${BUILD_DIR}
        BUILD_IN_SOURCE 0
+       BUILD_ALWAYS 0
        SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/openimageio
        BINARY_DIR ${BUILD_DIR}/openimageio_build
        INSTALL_DIR ${BUILD_DIR}/openimageio_build
@@ -240,6 +251,7 @@ ExternalProject_Add(alembic
        URL https://github.com/alembic/alembic/archive/1.7.5.tar.gz
        PREFIX ${BUILD_DIR}
        BUILD_IN_SOURCE 0
+       BUILD_ALWAYS 0
        SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/alembic
        BINARY_DIR ${BUILD_DIR}/alembic_build
        INSTALL_DIR ${BUILD_DIR}/alembic_build
