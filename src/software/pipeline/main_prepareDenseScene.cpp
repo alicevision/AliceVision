@@ -249,21 +249,20 @@ bool prepareDenseScene(const SfMData& sfmData, const std::string& outFolder)
       std::string dstColorImage = (fs::path(outFolder) / (baseFilename + ".exr")).string();
 
       const IntrinsicBase* cam = iterIntrinsic->second.get();
-      Image<RGBfColor> image, image_ud;
+      Image<RGBfColor> image;
 
       readImage(srcImage, image);
       
       // Undistort
       if(cam->isValid() && cam->have_disto())
       {
+        Image<RGBfColor> image_ud;
         // undistort the image and save it
         UndistortImage(image, cam, image_ud, FBLACK);
-        writeImage(dstColorImage, image_ud, metadata);
+        image.swap(image_ud);
       }
-      else
-      {
-        writeImage(dstColorImage, image, metadata);
-      }
+
+      writeImage(dstColorImage, image, metadata);
     }
     
     // Export Seeds
