@@ -123,7 +123,12 @@ ExternalProject_Add(ceres
        DEPENDS eigen
        )
 # Test 32/64 bits
-if("${CMAKE_SIZEOF_VOID_P}" EQUAL "8")
+if (CMAKE_SYSTEM_NAME MATCHES "Linux" AND
+    NOT DEFINED LIB_SUFFIX AND
+    NOT CMAKE_CROSSCOMPILING AND
+    CMAKE_SIZEOF_VOID_P EQUAL "8" AND
+    NOT EXISTS "/etc/debian_version" AND
+    NOT EXISTS "/etc/arch-release")
     # message(STATUS "Target is 64 bits")
     set(CERES_CMAKE_FLAGS -DCeres_DIR=${BUILD_DIR}/ceres_build/lib64/cmake/Ceres )
 else()
