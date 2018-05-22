@@ -42,7 +42,7 @@ Use [Meshroom](https://github.com/alicevision/meshroom) to launch the AliceVisio
  - Meshroom provides a command line to launch all the steps of the pipeline.
  - Meshroom is written in python and can be used to create your own python scripts to customize the pipeline or create custom automation.
 
-The Meshroom User Interface rely on Qt and PySide. The Meshroom engine and command line has no dependency to Qt.
+The User Interface of Meshroom relies on Qt and PySide. The Meshroom engine and command line has no dependency to Qt.
 
 
 ## Contact
