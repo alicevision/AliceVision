@@ -11,6 +11,7 @@ configuration:
 
 environment:
   VCPKG_DEFAULT_TRIPLET: x64-windows
+  VCPKG_BUILD_TYPE: release
 
 install:
     - git submodule update --init --recursive
