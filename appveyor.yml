@@ -22,7 +22,7 @@ before_build:
     - cmake -G "Visual Studio 14 2015 Win64" -DCMAKE_BUILD_TYPE=%configuration% -DALICEVISION_USE_INTERNAL_CERES:BOOL=ON -DCMAKE_TOOLCHAIN_FILE=c:/tools/vcpkg/scripts/buildsystems/vcpkg.cmake ..
     - ls -l
 
- build:
+build:
   project: $(APPVEYOR_BUILD_FOLDER)\build\aliceVision.sln
   parallel: true
 
