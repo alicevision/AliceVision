@@ -14,7 +14,7 @@ install:
 #    - cmd: >-
 #          call cudaInstallAppveyor.cmd
     - vcpkg upgrade
-    - vcpkg install --featurepackages boost-system:x64-windows boost-program-options:x64-windows boost-thread:x64-windows boost-filesystem:x64-windows boost-serialization:x64-windows boost-log:x64-windows openexr:x64-windows openimageio:x64-windows alembic:x64-windows
+    - vcpkg install --featurepackages boost-atomic:x64-windows boost-container:x64-windows boost-date-time:x64-windows boost-exception:x64-windows boost-filesystem:x64-windows boost-graph:x64-windows boost-log:x64-windows boost-program-options:x64-windows boost-regex:x64-windows boost-serialization:x64-windows boost-system:x64-windows boost-thread:x64-windows openexr:x64-windows openimageio:x64-windows alembic:x64-windows
 
 before_build:
     - md build
