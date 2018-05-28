@@ -21,8 +21,8 @@ install:
           openexr
           openimageio
           alembic
+          geogram
           --triplet %PLATFORM%-windows
-          # geogram
           # eigen3
           # ceres
     - vcpkg list
