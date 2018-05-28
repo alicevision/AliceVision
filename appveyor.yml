@@ -9,6 +9,11 @@ configuration:
   - Release
   # - Debug
 
+init:
+# init runs before cache setup
+# Force "release" or "debug" build in vcpkg at cmake level:  VCPKG_BUILD_TYPE=release
+  - echo.set(VCPKG_BUILD_TYPE %CONFIGURATION%)>> %VCPKG_DIR%\triplets\%PLATFORM%-windows.cmake
+
 install:
     - git submodule update --init --recursive
 #    - cmd: >-
