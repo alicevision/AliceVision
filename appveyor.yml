@@ -22,9 +22,9 @@ install:
           openimageio
           alembic
           geogram
+          eigen3
+          ceres
           --triplet %PLATFORM%-windows
-          # eigen3
-          # ceres
     - vcpkg list
 
 
