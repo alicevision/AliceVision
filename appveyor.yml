@@ -9,21 +9,32 @@ configuration:
   - Release
   # - Debug
 
-environment:
-  VCPKG_DEFAULT_TRIPLET: x64-windows
-  VCPKG_BUILD_TYPE: release
 
 install:
     - git submodule update --init --recursive
 #    - cmd: >-
 #          call cudaInstallAppveyor.cmd
     - vcpkg upgrade
-    - vcpkg install --featurepackages boost-atomic boost-container boost-date-time boost-exception boost-filesystem boost-graph boost-log boost-program-options boost-regex boost-serialization boost-system boost-thread openexr openimageio alembic geogram eigen3 ceres
+    - vcpkg list
+    - vcpkg install
+          boost-atomic boost-container boost-date-time boost-exception boost-filesystem boost-graph boost-log boost-program-options boost-regex boost-serialization boost-system boost-thread
+          openexr
+          openimageio
+          alembic
+          --triplet %PLATFORM%-windows
+          # geogram
+          # eigen3
+          # ceres
+    - vcpkg list
+
 
 before_build:
     - md build
     - cd build
-    - cmake -G "Visual Studio 14 2015 Win64" -DCMAKE_BUILD_TYPE=%configuration% -DALICEVISION_USE_INTERNAL_CERES:BOOL=OFF -DCMAKE_TOOLCHAIN_FILE=c:/tools/vcpkg/scripts/buildsystems/vcpkg.cmake ..
+#    - cmake .. -G "Visual Studio 14 2015 Win64"
+#            -DCMAKE_BUILD_TYPE=%CONFIGURATION%
+#            -DALICEVISION_USE_INTERNAL_CERES:BOOL=OFF
+#            -DCMAKE_TOOLCHAIN_FILE=c:/tools/vcpkg/scripts/buildsystems/vcpkg.cmake
     - ls -l
 
 #build:
