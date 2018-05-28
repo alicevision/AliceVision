@@ -18,7 +18,7 @@ install:
 #    - cmd: >-
 #          call cudaInstallAppveyor.cmd
     - vcpkg upgrade
-    - vcpkg install --featurepackages boost-atomic boost-container boost-date-time boost-exception boost-filesystem boost-graph boost-log boost-program-options boost-regex boost-serialization boost-system boost-thread zlib openexr openimageio alembic geogram eigen3 ceres
+    - vcpkg install --featurepackages boost-atomic boost-container boost-date-time boost-exception boost-filesystem boost-graph boost-log boost-program-options boost-regex boost-serialization boost-system boost-thread openexr openimageio alembic geogram eigen3 ceres
 
 before_build:
     - md build
@@ -26,13 +26,13 @@ before_build:
     - cmake -G "Visual Studio 14 2015 Win64" -DCMAKE_BUILD_TYPE=%configuration% -DALICEVISION_USE_INTERNAL_CERES:BOOL=OFF -DCMAKE_TOOLCHAIN_FILE=c:/tools/vcpkg/scripts/buildsystems/vcpkg.cmake ..
     - ls -l
 
-build:
-  project: $(APPVEYOR_BUILD_FOLDER)\build\aliceVision.sln
-  parallel: true
+#build:
+#  project: $(APPVEYOR_BUILD_FOLDER)\build\aliceVision.sln
+#  parallel: true
 
 # comment the above and uncomment the following to just build the dependencies
-#build_script:
-#  - echo "Done!"
+build_script:
+  - echo "Dependencies installed."
 
 cache:
   c:\tools\vcpkg\installed\
