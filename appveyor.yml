@@ -13,6 +13,11 @@ init:
 # init runs before cache setup
 # Force "release" or "debug" build in vcpkg at cmake level:  VCPKG_BUILD_TYPE=release
   - echo.set(VCPKG_BUILD_TYPE %CONFIGURATION%)>> %VCPKG_DIR%\triplets\%PLATFORM%-windows.cmake
+  - cd %VCPKG_DIR%
+  - git pull
+  - .\bootstrap-vcpkg.bat
+  - vcpkg version
+  - cd %APPVEYOR_BUILD_FOLDER%
 
 install:
     - git submodule update --init --recursive
