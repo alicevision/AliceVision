@@ -37,13 +37,13 @@ before_build:
             -DCMAKE_TOOLCHAIN_FILE=c:/tools/vcpkg/scripts/buildsystems/vcpkg.cmake
     - ls -l
 
-#build:
-#  project: $(APPVEYOR_BUILD_FOLDER)\build\aliceVision.sln
-#  parallel: true
+build:
+  project: $(APPVEYOR_BUILD_FOLDER)\build\aliceVision.sln
+  parallel: true
 
 # comment the above and uncomment the following to just build the dependencies
-build_script:
-  - echo "Dependencies installed."
+#build_script:
+#  - echo "Dependencies installed."
 
 cache:
   c:\tools\vcpkg\installed\
