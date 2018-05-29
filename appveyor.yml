@@ -30,10 +30,10 @@ install:
 before_build:
     - md build
     - cd build
-#    - cmake .. -G "Visual Studio 14 2015 Win64"
-#            -DCMAKE_BUILD_TYPE=%CONFIGURATION%
-#            -DALICEVISION_USE_INTERNAL_CERES:BOOL=OFF
-#            -DCMAKE_TOOLCHAIN_FILE=c:/tools/vcpkg/scripts/buildsystems/vcpkg.cmake
+    - cmake .. -G "Visual Studio 14 2015 Win64"
+            -DCMAKE_BUILD_TYPE=%CONFIGURATION%
+            -DALICEVISION_USE_INTERNAL_CERES:BOOL=OFF
+            -DCMAKE_TOOLCHAIN_FILE=c:/tools/vcpkg/scripts/buildsystems/vcpkg.cmake
     - ls -l
 
 #build:
