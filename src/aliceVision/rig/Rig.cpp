@@ -25,34 +25,34 @@ Rig::~Rig()
 {
 }
 
-const std::size_t Rig::getRelativePosesSize() const 
-{ 
-  return _vRelativePoses.size(); 
+const std::size_t Rig::getRelativePosesSize() const
+{
+  return _vRelativePoses.size();
 }
 
-const geometry::Pose3& Rig::getRelativePose(std::size_t i) const 
-{ 
-  return _vRelativePoses.at(i-1); 
+const geometry::Pose3& Rig::getRelativePose(std::size_t i) const
+{
+  return _vRelativePoses.at(i-1);
 }
 
-const std::vector<geometry::Pose3>& Rig::getRelativePoses() const 
-{ 
-  return _vRelativePoses; 
+const std::vector<geometry::Pose3>& Rig::getRelativePoses() const
+{
+  return _vRelativePoses;
 }
 
-const geometry::Pose3 & Rig::getPose(std::size_t i) const 
-{ 
-  return _vPoses.at(i); 
+const geometry::Pose3 & Rig::getPose(std::size_t i) const
+{
+  return _vPoses.at(i);
 }
 
-const std::size_t Rig::getPosesSize( ) const 
-{ 
-  return _vPoses.size(); 
+const std::size_t Rig::getPosesSize( ) const
+{
+  return _vPoses.size();
 }
 
-const std::vector<geometry::Pose3> & Rig::getPoses( ) const 
-{ 
-  return _vPoses; 
+const std::vector<geometry::Pose3> & Rig::getPoses( ) const
+{
+  return _vPoses;
 }
 
 void Rig::setTrackingResult(
@@ -71,7 +71,7 @@ bool Rig::initializeCalibration()
   }
   // check that there are cameras
   assert(_vLocalizationResults.size()>0);
-  
+
   // make all the cameras have the same number of localizationResults (equal to the shortest clip)
   const std::size_t nCams = _vLocalizationResults.size();
   {
@@ -80,42 +80,42 @@ bool Rig::initializeCalibration()
       shortestSeqLength = std::min(shortestSeqLength, v.second.size());
     for (auto& v: _vLocalizationResults)
       v.second.resize(shortestSeqLength);
-  
+
     if(shortestSeqLength == 0)
     {
         ALICEVISION_LOG_DEBUG("The calibration results are empty!");
         return false;
     }
   }
-  
+
   // Tracker of the main cameras
   std::vector<localization::LocalizationResult> & resMainCamera = _vLocalizationResults[0];
-  
+
   // Clear all relative poses
   _vRelativePoses.clear();
   _vRelativePoses.reserve(nCams-1);
-  
+
   // Loop over all witness cameras
   for(std::size_t iLocalizer=1 ; iLocalizer < nCams ; ++iLocalizer)
   {
     // Perform the pose averaging over all relative pose between the main camera
     // (index 0) and the witness camera (index i)
     std::vector<localization::LocalizationResult> & resWitnessCamera = _vLocalizationResults[iLocalizer];
-    
+
     // vRelativePoses will store all the relative poses overall frames where both
     // the pose computation of the main camera and witness camera succeed
     std::vector<geometry::Pose3> vRelativePoses;
     vRelativePoses.reserve(resWitnessCamera.size());
-    
+
     for(std::size_t iView=0 ; iView < resWitnessCamera.size() ; ++iView )
     {
-      // Check that both pose computations succeeded 
+      // Check that both pose computations succeeded
       if ( resMainCamera[iView].isValid() && resWitnessCamera[iView].isValid() )
       {
         // q0 ~ [poseMain] Q
         // q1 ~ [relative][poseMain] Q = [poseWitness]Q
         // [relative] = [poseWitness]*inv([poseMain])
-        vRelativePoses.push_back(computeRelativePose(resMainCamera[iView].getPose(), 
+        vRelativePoses.push_back(computeRelativePose(resMainCamera[iView].getPose(),
                                                      resWitnessCamera[iView].getPose()));
       }
     }
@@ -127,11 +127,11 @@ bool Rig::initializeCalibration()
     }
     geometry::Pose3 optimalRelativePose;
     findBestRelativePose(vRelativePoses, iLocalizer, optimalRelativePose );
-  
+
     //poseAveraging(vRelativePoses, averageRelativePose);
     _vRelativePoses.push_back(optimalRelativePose);
   }
-  
+
   // Update all poses in all localization results
   for(std::size_t iRelativePose = 0 ; iRelativePose < _vRelativePoses.size() ; ++iRelativePose )
   {
@@ -141,10 +141,10 @@ bool Rig::initializeCalibration()
       if(  _vLocalizationResults[0][iView].isValid() )
       {
         const geometry::Pose3 & relativePose = _vRelativePoses[iRelativePose];
-        
+
         const geometry::Pose3 poseWitnessCamera = poseFromMainToWitness(_vLocalizationResults[0][iView].getPose(), relativePose);
         _vLocalizationResults[iRes][iView].setPose(poseWitnessCamera);
-        
+
       }
     }
   }
@@ -161,15 +161,15 @@ void Rig::findBestRelativePose(
 {
   assert(iLocalizer < _vLocalizationResults.size());
   assert(_vLocalizationResults.size() > 0);
-  
+
   const std::vector<localization::LocalizationResult> & resMainCamera = _vLocalizationResults[0];
   const std::vector<localization::LocalizationResult> & resWitnessCamera = _vLocalizationResults[iLocalizer];
-  
+
   double minReprojError = std::numeric_limits<double>::max();
   std::size_t iMin = 0;
-  
+
   assert(vPoses.size() > 0);
-  
+
   for(std::size_t i=0 ; i < vPoses.size() ; ++i)
   {
     const geometry::Pose3 & relativePose = vPoses[i];
@@ -177,7 +177,7 @@ void Rig::findBestRelativePose(
     double error = 0;
     for(std::size_t j=0 ; j < resWitnessCamera.size() ; ++j )
     {
-      // Check that both pose computations succeeded 
+      // Check that both pose computations succeeded
       if ( ( resMainCamera[j].isValid() ) && ( resWitnessCamera[j].isValid() ) )
       {
         // [poseWitness] = [relativePose]*[poseMainCamera]
@@ -189,10 +189,10 @@ void Rig::findBestRelativePose(
     {
       iMin = i;
       minReprojError = error;
-    }           
+    }
   }
   result = vPoses[iMin];
-  
+
   displayRelativePoseReprojection(geometry::Pose3(aliceVision::Mat3::Identity(), aliceVision::Vec3::Zero()), 0);
   displayRelativePoseReprojection(result, iLocalizer);
 }
@@ -207,10 +207,10 @@ void Rig::displayRelativePoseReprojection(const geometry::Pose3 & relativePose, 
   // Set the marker size
   std::size_t semiWidth = 3.0;
   std::size_t marginUndisto = 200;
-          
+
   for(int iView=0 ; iView < witnessLocalizerResults.size() ; ++iView )
   {
-        // Check that both pose computations succeed 
+        // Check that both pose computations succeed
     if ( witnessLocalizerResults[iView].isValid() )
     {
       const std::size_t width = witnessLocalizerResults[iView].getIntrinsics()._w;
@@ -223,12 +223,12 @@ void Rig::displayRelativePoseReprojection(const geometry::Pose3 & relativePose, 
       cv::moveWindow("Reprojection",0,0);
       cv::resizeWindow("Reprojection", width/2, height/2);
       cv::imshow("Reprojection", imgRes);
-      
+
       const geometry::Pose3 poseWitnessCamera = poseFromMainToWitness(mainLocalizerResults[iView].getPose(), relativePose);
-        
+
       const aliceVision::Mat points2D = witnessLocalizerResults[iView].getPt2D();
       const aliceVision::Mat points3D = witnessLocalizerResults[iView].getPt3D();
-      
+
       for(const IndexT iInlier : witnessLocalizerResults[iView].getInliers())
       {
         // Reprojections
@@ -237,13 +237,13 @@ void Rig::displayRelativePoseReprojection(const geometry::Pose3 & relativePose, 
         Vec2 itsReprojection = witnessLocalizerResults[iView].getIntrinsics().project(poseWitnessCamera, point3D);
         // Its associated observation location
         const Vec2 & point2D = points2D.col(iInlier);
- 
+
         // Display reprojections and observations
-        cv::rectangle(imgRes, 
+        cv::rectangle(imgRes,
                 cvPoint(marginUndisto+point2D(0)-semiWidth,marginUndisto+point2D(1)-semiWidth),
                 cvPoint(marginUndisto+point2D(0)+semiWidth,marginUndisto+point2D(1)+semiWidth),
                 cv::Scalar(0,255,0));
-        
+
         cv::rectangle(imgRes,
                 cvPoint(marginUndisto+itsReprojection(0)-semiWidth,marginUndisto+itsReprojection(1)-semiWidth),
                 cvPoint(marginUndisto+itsReprojection(0)+semiWidth,marginUndisto+itsReprojection(1)+semiWidth),
@@ -263,10 +263,10 @@ bool Rig::optimizeCalibration()
     ALICEVISION_LOG_DEBUG("The rig is yet initialized");
     return _isInitialized;
   }
-  
+
   assert(_vRelativePoses.size() > 0);
   assert(_vLocalizationResults.size() > 0);
-  
+
   ceres::Problem problem;
 
   // Add relative pose as a parameter block over all witness cameras.
@@ -275,13 +275,13 @@ bool Rig::optimizeCalibration()
   for(std::size_t iRelativePose = 0 ; iRelativePose < _vRelativePoses.size() ; ++iRelativePose )
   {
     geometry::Pose3 & pose = _vRelativePoses[iRelativePose];
-    
+
     const aliceVision::Mat3 & R = pose.rotation();
     const aliceVision::Vec3 & t = pose.translation();
 
     double angleAxis[3];
     ceres::RotationMatrixToAngleAxis((const double*)R.data(), angleAxis);
-    
+
     std::vector<double> relativePose;
     relativePose.reserve(6); //angleAxis + translation
     relativePose.push_back(angleAxis[0]);
@@ -299,14 +299,14 @@ bool Rig::optimizeCalibration()
     assert(parameter_block && "parameter_block is null in vRelativePoses");
     problem.AddParameterBlock(parameter_block, 6);
   }
-  
+
   // Add rig pose (i.e. main camera pose) as a parameter block over all views (i.e. timestamps).
   std::map<std::size_t, std::vector<double> > vMainPoses;
   for(std::size_t iView = 0 ; iView < _vLocalizationResults[0].size() ; ++iView )
   {
     if(!_vLocalizationResults[0][iView].isValid())
       continue;
-    
+
     const geometry::Pose3 & pose = _vLocalizationResults[0][iView].getPose();
     const aliceVision::Mat3 & R = pose.rotation();
     const aliceVision::Vec3 & t = pose.translation();
@@ -335,17 +335,17 @@ bool Rig::optimizeCalibration()
   }
 
 // The following code can be used if the intrinsics have to be refined in the bundle adjustment
-  
+
 //for (Intrinsics::const_iterator itIntrinsic = sfm_data.intrinsics.begin();
 //                      itIntrinsic != sfm_data.intrinsics.end(); ++itIntrinsic)
 //{
 //  for (int iLocalizer = 0 ; iLocalizer < _vLocalizationResults.size() ; ++iLocalizer )
 //  {
-//    
+//
 //    for (int iView = 0 ; iView < _vLocalizationResults[iLocalizer].size() ; ++iView )
 //    {
 //      const localization::LocalizationResult & localizationResult = _vLocalizationResults[iLocalizer][iView];
-//      
+//
 //      if ( localizationResult.isValid() )
 //      {
 //        std::vector<double> intrinsics;
@@ -401,23 +401,23 @@ bool Rig::optimizeCalibration()
   for(std::size_t iLocalizer = 0 ; iLocalizer < _vLocalizationResults.size() ; ++iLocalizer)
   {
     const std::vector<localization::LocalizationResult> & currentResult = _vLocalizationResults[iLocalizer];
-    
+
     for(std::size_t iView = 0 ; iView < currentResult.size() ; ++iView)
     {
       // if the current localization is not valid skip it
       if(!currentResult[iView].isValid())
         continue;
-      
-      // if it is not the main camera and the same view was not localized for the 
+
+      // if it is not the main camera and the same view was not localized for the
       // main camera, skip it
       if( (iLocalizer != 0) && (!_vLocalizationResults[0][iView].isValid()) )
         continue;
-      
+
       // Get the inliers 3D points
       const Mat & points3D = currentResult[iView].getPt3D();
       // Get their image locations (also referred as observations)
       const Mat & points2D = currentResult[iView].getPt2D();
-      
+
       // Add a residual block for all inliers
       for(const IndexT iPoint : currentResult[iView].getInliers() )
       {
@@ -432,7 +432,7 @@ bool Rig::optimizeCalibration()
           // Vector-2 residual, pose of the rig parameterized by 6 parameters
           cost_function = new ceres::AutoDiffCostFunction<ResidualErrorMainCameraFunctor, 2, 6>(
           new ResidualErrorMainCameraFunctor(currentResult[iView].getIntrinsics(), points2D.col(iPoint), points3D.col(iPoint) ));
-            
+
           if (cost_function)
           {
             assert(vMainPoses.find(iView) != vMainPoses.end());
@@ -449,10 +449,10 @@ bool Rig::optimizeCalibration()
         {
             // Vector-2 residual, pose of the rig parameterized by 6 parameters
             //                  + relative pose of the secondary camera parameterized by 6 parameters
-            
+
             cost_function = new ceres::AutoDiffCostFunction<ResidualErrorSecondaryCameraFunctor, 2, 6, 6>(
           new ResidualErrorSecondaryCameraFunctor(currentResult[iView].getIntrinsics(), points2D.col(iPoint), points3D.col(iPoint)));
-          
+
           if (cost_function)
           {
             assert(vMainPoses.find(iView) != vMainPoses.end());
@@ -474,21 +474,23 @@ bool Rig::optimizeCalibration()
   // todo: Set the most appropriate options
   aliceVision::sfm::BundleAdjustmentCeres::BA_options aliceVision_options(true); // Set all
   // the options field in our owm struct - unnecessary dependancy to aliceVision here
-  
+
   ceres::Solver::Options options;
-  
+
   options.preconditioner_type = aliceVision_options._preconditioner_type;
   options.linear_solver_type = aliceVision_options._linear_solver_type;
   options.sparse_linear_algebra_library_type = aliceVision_options._sparse_linear_algebra_library_type;
   options.minimizer_progress_to_stdout = aliceVision_options._bVerbose;
   options.logging_type = ceres::SILENT;
   options.num_threads = 1;//aliceVision_options._nbThreads;
-  options.num_linear_solver_threads = 1;//aliceVision_options._nbThreads;
-  
+  #if CERES_VERSION_MAJOR < 2
+    options.num_linear_solver_threads = 1;//aliceVision_options._nbThreads;
+  #endif
+
   // Solve BA
   ceres::Solver::Summary summary;
   ceres::Solve(options, &problem, &summary);
-  
+
   if (aliceVision_options._bCeres_Summary)
     ALICEVISION_LOG_DEBUG(summary.FullReport());
 
@@ -523,7 +525,7 @@ bool Rig::optimizeCalibration()
     geometry::Pose3 & pose = _vRelativePoses[iRelativePose];
     pose = geometry::Pose3(R_refined, -R_refined.transpose() * t_refined);
   }
-    
+
     // Update the main camera pose after optimization
   for(std::size_t iView = 0 ; iView < _vLocalizationResults[0].size() ; ++iView)
   {
@@ -540,9 +542,9 @@ bool Rig::optimizeCalibration()
       _vPoses.push_back(pose);
     }
   }
-    
+
   displayRelativePoseReprojection(geometry::Pose3(aliceVision::Mat3::Identity(), aliceVision::Vec3::Zero()), 0);
-    
+
     // Update all poses over all witness cameras after optimization
   for(std::size_t iRelativePose = 0; iRelativePose < _vRelativePoses.size(); ++iRelativePose)
   {
@@ -550,7 +552,7 @@ bool Rig::optimizeCalibration()
     // Loop over all views
     for(std::size_t iView = 0; iView < _vLocalizationResults[iLocalizer].size(); ++iView)
     {
-      // If the localization has succeeded then if the witness camera localization succeeded 
+      // If the localization has succeeded then if the witness camera localization succeeded
       // then update the pose else continue.
       if( _vLocalizationResults[0][iView].isValid() && _vLocalizationResults[iLocalizer][iView].isValid() )
       {
@@ -595,7 +597,7 @@ geometry::Pose3 computeRelativePose(const geometry::Pose3 &poseMainCamera, const
 
   return geometry::Pose3( R12 , -R12.transpose()*t12 );
 }
-        
+
 
 // it returns relativePose*poseMainCamera
 geometry::Pose3 poseFromMainToWitness(const geometry::Pose3 &poseMainCamera, const geometry::Pose3 &relativePose)
@@ -608,14 +610,14 @@ geometry::Pose3 poseFromMainToWitness(const geometry::Pose3 &poseMainCamera, con
 
   const aliceVision::Mat3 R2 = R12 * R1;
   const aliceVision::Vec3 t2 = R12 * t1 + t12 ;
-  
+
   return geometry::Pose3( R2 , -R2.transpose() * t2 );
 }
 
 double reprojectionError(const localization::LocalizationResult & localizationResult, const geometry::Pose3 & pose)
 {
   double residual = 0;
-  
+
   for(const IndexT iInliers : localizationResult.getInliers())
   {
     // Inlier 3D point
@@ -653,14 +655,14 @@ bool loadRigCalibration(const std::string &filename, std::vector<geometry::Pose3
   {
     ALICEVISION_CERR("Unable to load the calibration file " << filename);
     throw std::invalid_argument("Unable to load the calibration file "+filename);
-  }  
-  
+  }
+
   // first read the number of cameras subposes stores
   std::size_t numCameras = 0;
   fs >> numCameras;
   ALICEVISION_LOG_DEBUG("Found " << numCameras << " cameras");
   subposes.reserve(numCameras);
-  
+
   for(std::size_t cam = 0; cam < numCameras; ++cam)
   {
     // load the rotation part
@@ -668,17 +670,17 @@ bool loadRigCalibration(const std::string &filename, std::vector<geometry::Pose3
     for(std::size_t i = 0; i < 3; ++i)
       for(std::size_t j = 0; j < 3; ++j)
         fs >> rot(i,j);
-    
+
     // load the center
     Vec3 center;
     fs >> center(0);
     fs >> center(1);
     fs >> center(2);
-    
+
     // add the pose in the vector
     subposes.emplace_back(rot, center);
   }
-  
+
   bool isOk = fs.good();
   fs.close();
   return isOk;
@@ -702,7 +704,7 @@ bool saveRigCalibration(const std::string &filename, const std::vector<geometry:
     throw std::invalid_argument("Unable to create the calibration file "+filename);
   }
   fs << subposes.size() << std::endl;
-  
+
   for(const geometry::Pose3 & p : subposes)
   {
     // write the rotatiop part
@@ -710,7 +712,7 @@ bool saveRigCalibration(const std::string &filename, const std::vector<geometry:
     for(std::size_t i = 0; i < 3; ++i)
       for(std::size_t j = 0; j < 3; ++j)
         fs << rot(i,j) << std::endl;
-    
+
     // write the center
     const Vec3 &center = p.center();
     fs << center(0) << std::endl;

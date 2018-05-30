@@ -272,7 +272,11 @@ bool L2RotationAveraging_Refine(
   }
   // set number of threads, 1 if openMP is not enabled
   solverOptions.num_threads = omp_get_max_threads();
-  solverOptions.num_linear_solver_threads = omp_get_max_threads();
+
+  #if CERES_VERSION_MAJOR < 2
+    solverOptions.num_linear_solver_threads = omp_get_max_threads();
+  #endif
+
 
 
   ceres::Solver::Summary summary;
@@ -294,5 +298,3 @@ bool L2RotationAveraging_Refine(
 } // namespace l2
 } // namespace rotationAveraging
 } // namespace aliceVision
-
-

@@ -147,7 +147,7 @@ BundleAdjustmentCeres::BA_options::BA_options(const bool bVerbose, bool bmultith
     _nbThreads = 1;
 
   _bCeres_Summary = false;
-  
+
   // Use dense BA by default
   setDenseBA();
 }
@@ -201,7 +201,7 @@ void BundleAdjustmentCeres::createProblem(SfMData & sfm_data, BA_Refine refineOp
   // Ensure we are not using incompatible options:
   //  - BA_REFINE_INTRINSICS_OPTICALCENTER_ALWAYS and BA_REFINE_INTRINSICS_OPTICALCENTER_IF_ENOUGH_DATA cannot be used at the same time
   assert(!((refineOptions & BA_REFINE_INTRINSICS_OPTICALCENTER_ALWAYS) && (refineOptions & BA_REFINE_INTRINSICS_OPTICALCENTER_IF_ENOUGH_DATA)));
-  
+
   //----------
   // Add camera parameters
   // - intrinsics
@@ -319,10 +319,10 @@ void BundleAdjustmentCeres::createProblem(SfMData & sfm_data, BA_Refine refineOp
       {
         // Refine optical center within 10% of the image size.
         assert(map_intrinsics[idIntrinsics].size() >= 3);
-        
+
         const double opticalCenterMinPercent = 0.45;
         const double opticalCenterMaxPercent = 0.55;
-        
+
         // Add bounds to the principal point
         problem.SetParameterLowerBound(parameter_block, 1, opticalCenterMinPercent * itIntrinsic.second->w());
         problem.SetParameterUpperBound(parameter_block, 1, opticalCenterMaxPercent * itIntrinsic.second->w());
@@ -442,7 +442,10 @@ bool BundleAdjustmentCeres::Adjust(
   options.minimizer_progress_to_stdout = _aliceVision_options._bVerbose;
   options.logging_type = ceres::SILENT;
   options.num_threads = _aliceVision_options._nbThreads;
-  options.num_linear_solver_threads = _aliceVision_options._nbThreads;
+  #if CERES_VERSION_MAJOR < 2
+    options.num_linear_solver_threads = _aliceVision_options._nbThreads;
+  #endif
+
 
   // Solve BA
   ceres::Solver::Summary summary;
@@ -524,4 +527,3 @@ bool BundleAdjustmentCeres::Adjust(
 
 } // namespace sfm
 } // namespace aliceVision
-
