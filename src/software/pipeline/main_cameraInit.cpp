@@ -369,7 +369,7 @@ int main(int argc, char **argv)
       camera::Pinhole* intrinsic = dynamic_cast<camera::Pinhole*>(intrinsicBase);
       if(intrinsic != nullptr)
       {
-        if(intrinsic->getPxFocalLength() > 0)
+        if(intrinsic->getFocalLengthPix() > 0)
         {
           // the view intrinsic is initialized
           #pragma omp atomic
@@ -423,7 +423,7 @@ int main(int argc, char **argv)
     std::shared_ptr<camera::IntrinsicBase> intrinsicBase = getViewIntrinsic(view, sensorWidth, defaultFocalLengthPixel, defaultFieldOfView, defaultCameraModel, defaultPPx, defaultPPy);
     camera::Pinhole* intrinsic = dynamic_cast<camera::Pinhole*>(intrinsicBase.get());
 
-    if(intrinsic && intrinsic->getPxFocalLength() > 0)
+    if(intrinsic && intrinsic->getFocalLengthPix() > 0)
     {
       // the view intrinsic is initialized
       #pragma omp atomic
