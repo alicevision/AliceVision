@@ -39,7 +39,6 @@ before_build:
 
 build:
   project: $(APPVEYOR_BUILD_FOLDER)\build\aliceVision.sln
-  parallel: true
   verbosity: minimal
 
 # comment the above and uncomment the following to just build the dependencies
