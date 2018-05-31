@@ -442,7 +442,10 @@ bool BundleAdjustmentCeres::Adjust(
   options.minimizer_progress_to_stdout = _aliceVision_options._bVerbose;
   options.logging_type = ceres::SILENT;
   options.num_threads = _aliceVision_options._nbThreads;
-  options.num_linear_solver_threads = _aliceVision_options._nbThreads;
+  #if CERES_VERSION_MAJOR < 2
+    options.num_linear_solver_threads = _aliceVision_options._nbThreads;
+  #endif
+
 
   // Solve BA
   ceres::Solver::Summary summary;
