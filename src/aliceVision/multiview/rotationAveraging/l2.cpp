@@ -298,5 +298,3 @@ bool L2RotationAveraging_Refine(
 } // namespace l2
 } // namespace rotationAveraging
 } // namespace aliceVision
-
-
