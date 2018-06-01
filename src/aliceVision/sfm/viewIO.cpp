@@ -83,6 +83,7 @@ std::shared_ptr<camera::IntrinsicBase> getViewIntrinsic(const View& view,
 
   float mmFocalLength = view.hasMetadata("Exif:FocalLength") ? std::stof(view.getMetadata("Exif:FocalLength")) : -1;
   double pxFocalLength;
+  bool hasFocalLengthInput = false;
 
   if(defaultFocalLengthPx > 0)
   {
@@ -138,6 +139,7 @@ std::shared_ptr<camera::IntrinsicBase> getViewIntrinsic(const View& view,
   {
     // Retrieve the focal from the metadata in mm and convert to pixel.
     pxFocalLength = std::max(view.getWidth(), view.getHeight()) * mmFocalLength / sensorWidth;
+    hasFocalLengthInput = true;
   }
 
   // choose intrinsic type
@@ -165,7 +167,8 @@ std::shared_ptr<camera::IntrinsicBase> getViewIntrinsic(const View& view,
 
   // create the desired intrinsic
   std::shared_ptr<camera::IntrinsicBase> intrinsic = camera::createPinholeIntrinsic(intrinsicType, view.getWidth(), view.getHeight(), pxFocalLength, ppx, ppy);
-  intrinsic->setInitialFocalLengthPix(pxFocalLength);
+  if(hasFocalLengthInput)
+    intrinsic->setInitialFocalLengthPix(pxFocalLength);
 
   // initialize distortion parameters
   switch(intrinsicType)

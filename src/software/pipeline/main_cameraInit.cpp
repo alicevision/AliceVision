@@ -249,7 +249,7 @@ int main(int argc, char **argv)
     return EXIT_FAILURE;
   }
 
-  // check if output folder exists, if no create it
+  // ensure output folder exists
   {
     const std::string outputFolderPart = fs::path(outputFilePath).parent_path().string();
 
@@ -365,10 +365,11 @@ int main(int argc, char **argv)
     // check if the view intrinsic is already defined
     if(intrinsicId != UndefinedIndexT)
     {
-      std::shared_ptr<camera::IntrinsicBase> intrinsic = sfmData.GetIntrinsicSharedPtr(view.getIntrinsicId());
+      camera::IntrinsicBase* intrinsicBase = sfmData.GetIntrinsicPtr(view.getIntrinsicId());
+      camera::Pinhole* intrinsic = dynamic_cast<camera::Pinhole*>(intrinsicBase);
       if(intrinsic != nullptr)
       {
-        if(intrinsic->initialFocalLengthPix() > 0)
+        if(intrinsic->getFocalLengthPix() > 0)
         {
           // the view intrinsic is initialized
           #pragma omp atomic
@@ -419,9 +420,10 @@ int main(int argc, char **argv)
     }
 
     // build intrinsic
-    std::shared_ptr<camera::IntrinsicBase> intrinsic = getViewIntrinsic(view, sensorWidth, defaultFocalLengthPixel, defaultFieldOfView, defaultCameraModel, defaultPPx, defaultPPy);
+    std::shared_ptr<camera::IntrinsicBase> intrinsicBase = getViewIntrinsic(view, sensorWidth, defaultFocalLengthPixel, defaultFieldOfView, defaultCameraModel, defaultPPx, defaultPPy);
+    camera::Pinhole* intrinsic = dynamic_cast<camera::Pinhole*>(intrinsicBase.get());
 
-    if(intrinsic->initialFocalLengthPix() > 0)
+    if(intrinsic && intrinsic->getFocalLengthPix() > 0)
     {
       // the view intrinsic is initialized
       #pragma omp atomic
@@ -457,7 +459,7 @@ int main(int argc, char **argv)
     #pragma omp critical
     {
       view.setIntrinsicId(intrinsicId);
-      sfmData.GetIntrinsics().emplace(intrinsicId, intrinsic);
+      sfmData.GetIntrinsics().emplace(intrinsicId, intrinsicBase);
     }
   }
 
