@@ -182,9 +182,9 @@ void MatchesPairToMat(
  */
 void copyInlierMatches(
   const std::vector<size_t>& inliers,
-  const matching::MatchesPerDescType & putativeMatchesPerType,
-  const std::vector<feature::EImageDescriberType> descTypes,
-  matching::MatchesPerDescType & out_geometricInliersPerType)
+  const matching::MatchesPerDescType& putativeMatchesPerType,
+  const std::vector<feature::EImageDescriberType>& descTypes,
+  matching::MatchesPerDescType& out_geometricInliersPerType)
 {
   std::vector<size_t> orderedInliers = inliers;
   std::sort(orderedInliers.begin(), orderedInliers.end());
