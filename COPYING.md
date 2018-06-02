@@ -76,10 +76,6 @@ This program is based on works distributed under the terms of another license(s)
     Copyright (c) Lemon authors.
     Licensed under the [Boost License 1.0](http://www.boost.org/LICENSE_1_0.txt).
 
-*   __stlplus3__
-    Copyright (c) 1999-2004 Southampton University, 2004 onwards Andy Rushton. All rights reserved.
-    Licensed under the [BSD license](http://opensource.org/licenses/bsd-license.php).
-
 *   __vectorGraphics__
     Copyright (c) Pierre Moulon
     Licensed under the [MPL2 license](http://opensource.org/licenses/MPL-2.0).

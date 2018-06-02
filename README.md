@@ -35,6 +35,16 @@ See [**INSTALL.md**](INSTALL.md) to build the project.
 Continuous integration status: [![Build Status](https://travis-ci.org/alicevision/AliceVision.png?branch=develop)](https://travis-ci.org/alicevision/AliceVision) [![Coverage Status](https://coveralls.io/repos/github/alicevision/AliceVision/badge.png?branch=develop)](https://coveralls.io/github/alicevision/AliceVision?branch=develop).
 
 
+## Launch 3D reconstructions
+
+Use [Meshroom](https://github.com/alicevision/meshroom) to launch the AliceVision pipeline.
+ - Meshroom provides a User Interface to create 3D reconstructions.
+ - Meshroom provides a command line to launch all the steps of the pipeline.
+ - Meshroom is written in python and can be used to create your own python scripts to customize the pipeline or create custom automation.
+
+The User Interface of Meshroom relies on Qt and PySide. The Meshroom engine and command line has no dependency to Qt.
+
+
 ## Contact
 
 Use the public mailing-list to ask questions or request features. It is also a good place for informal discussions like sharing results, interesting related technologies or publications:

@@ -69,15 +69,15 @@ public:
         _data.shrink_to_fit();
     }
 
-    void resizeAddIfNeeded(int nplanned, int ntoallocated)
+    void reserveAddIfNeeded(int nplanned, int ntoallocated)
     {
         if(size() + nplanned > capacity())
         {
-            resizeAdd(nplanned + ntoallocated);
+            reserveAdd(nplanned + ntoallocated);
         }
     }
 
-    void resizeAdd(int ntoallocated)
+    void reserveAdd(int ntoallocated)
     {
         _data.reserve(capacity() + ntoallocated);
     }

@@ -110,9 +110,6 @@ int main(int argc, char* argv[])
     // Decimation Module Handle type
     typedef OpenMesh::Decimater::ModQuadricT< Mesh >::Handle HModQuadric;
 
-    OpenMesh::IO::_OBJReader_();
-    OpenMesh::IO::_OBJWriter_();
-
     Mesh mesh;
     if(!OpenMesh::IO::read_mesh(mesh, inputMeshPath.c_str()))
     {

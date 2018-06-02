@@ -2825,18 +2825,18 @@ mesh::Mesh* DelaunayGraphCut::createMesh(bool filterHelperPointsTriangles)
             {
                 mesh::Mesh::triangle t;
                 t.alive = true;
-                t.i[0] = vertices[0];
-                t.i[1] = vertices[1];
-                t.i[2] = vertices[2];
+                t.v[0] = vertices[0];
+                t.v[1] = vertices[1];
+                t.v[2] = vertices[2];
                 me->tris->push_back(t);
             }
             else
             {
                 mesh::Mesh::triangle t;
                 t.alive = true;
-                t.i[0] = vertices[0];
-                t.i[1] = vertices[2];
-                t.i[2] = vertices[1];
+                t.v[0] = vertices[0];
+                t.v[1] = vertices[2];
+                t.v[2] = vertices[1];
                 me->tris->push_back(t);
             }
         }
