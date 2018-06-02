@@ -460,7 +460,7 @@ void findTransformationInliers(const std::vector<feature::SIOPointFeature> & fea
   inliersId.clear();
   
 #pragma omp parallel for 
-  for (IndexT iMatch = 0; iMatch < matches.size(); ++iMatch)
+  for (int iMatch = 0; iMatch < matches.size(); ++iMatch)
   {
     const feature::SIOPointFeature & featI = featuresI.at(matches.at(iMatch)._i);
     const feature::SIOPointFeature & featJ = featuresJ.at(matches.at(iMatch)._j);

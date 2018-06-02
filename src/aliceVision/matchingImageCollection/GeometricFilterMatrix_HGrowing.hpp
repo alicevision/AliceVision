@@ -206,7 +206,7 @@ struct GeometricFilterMatrix_HGrowing : public GeometricFilterMatrix
         // -- Estimate H using homogeaphy-growing approach:
         
 #pragma omp parallel for // (: huge optimization but modify results a little)
-        for (IndexT iMatch = 0; iMatch < remainingMatches.size(); ++iMatch)
+        for (int iMatch = 0; iMatch < remainingMatches.size(); ++iMatch)
         {
           // Growing a homography from one match ([F.Srajer, 2016] algo. 1, p. 20)  
           // each match is used once only per homography estimation (increases computation time) [1st improvement ([F.Srajer, 2016] p. 20) ] 
