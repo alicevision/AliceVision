@@ -37,7 +37,6 @@ public:
     const std::string & sSfMData_Filename,
     const std::string & featuresFolder,
     const std::string & sMatchesPath,
-    const std::string & sMatchesGeometricModel,
     const std::string & sOutDirectory,
     const std::vector<feature::EImageDescriberType>& descTypes,
     int selectionMethod = -1,

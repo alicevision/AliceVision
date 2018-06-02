@@ -29,8 +29,7 @@ int main( int argc, char **argv )
   std::string featuresFolder;
   std::string matchesFolder;
   std::string describerTypesName = feature::EImageDescriberType_enumToString(feature::EImageDescriberType::SIFT);
-  std::string matchesGeometricModel = "f";
-  std::string outputFolder ;
+  std::string outputFolder;
   int selectionMethod;
   int imgRef;
 
@@ -57,11 +56,6 @@ int main( int argc, char **argv )
   optionalParams.add_options()
     ("describerTypes,d", po::value<std::string>(&describerTypesName)->default_value(describerTypesName),
       feature::EImageDescriberType_informations().c_str());
-    ("matchesGeometricModel,g", po::value<std::string>(&matchesGeometricModel)->default_value(matchesGeometricModel),
-      "Matches geometric Model :\n"
-      "- f: fundamental matrix\n"
-      "- e: essential matrix\n"
-      "- h: homography matrix");
 
   po::options_description logParams("Log parameters");
   logParams.add_options()
@@ -120,7 +114,6 @@ int main( int argc, char **argv )
   ColorHarmonizationEngineGlobal colorHarmonizeEngine(sfmDataFilename,
     featuresFolder,
     matchesFolder,
-    matchesGeometricModel,
     outputFolder,
     describerTypes,
     selectionMethod,

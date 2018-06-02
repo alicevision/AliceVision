@@ -42,7 +42,6 @@ int main(int argc, char ** argv)
   std::string featuresFolder;
   std::string matchesFolder;
   std::string describerTypesName = feature::EImageDescriberType_enumToString(feature::EImageDescriberType::SIFT);
-  std::string matchesGeometricModel = "f";
 
   po::options_description allParams("AliceVision exportTracks");
 
@@ -61,11 +60,6 @@ int main(int argc, char ** argv)
   optionalParams.add_options()
     ("describerTypes,d", po::value<std::string>(&describerTypesName)->default_value(describerTypesName),
       feature::EImageDescriberType_informations().c_str());
-    ("matchesGeometricModel,g", po::value<std::string>(&matchesGeometricModel)->default_value(matchesGeometricModel),
-      "Matches geometric Model :\n"
-      "- f: fundamental matrix\n"
-      "- e: essential matrix\n"
-      "- h: homography matrix");
 
   po::options_description logParams("Log parameters");
   logParams.add_options()
@@ -132,7 +126,7 @@ int main(int argc, char ** argv)
 
   // read the matches
   matching::PairwiseMatches pairwiseMatches;
-  if(!sfm::loadPairwiseMatches(pairwiseMatches, sfmData, matchesFolder, describerMethodTypes, matchesGeometricModel))
+  if(!sfm::loadPairwiseMatches(pairwiseMatches, sfmData, matchesFolder, describerMethodTypes))
   {
     ALICEVISION_LOG_ERROR("Invalid matches file");
     return EXIT_FAILURE;
