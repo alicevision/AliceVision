@@ -441,6 +441,9 @@ int main(int argc, char **argv)
       }
     }
     break;
+    case matchingImageCollection::NO_FILTERING:
+        map_GeometricMatches = mapPutativesMatches;
+    break;
   }
 
   ALICEVISION_LOG_INFO(std::to_string(map_GeometricMatches.size()) + " geometric image pair matches:");

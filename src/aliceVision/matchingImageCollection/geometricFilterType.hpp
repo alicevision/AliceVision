@@ -17,7 +17,8 @@ enum EGeometricFilterType
   FUNDAMENTAL_MATRIX,
   ESSENTIAL_MATRIX,
   HOMOGRAPHY_MATRIX,
-  HOMOGRAPHY_GROWING 
+  HOMOGRAPHY_GROWING,
+  NO_FILTERING
 };
 
 std::string EGeometricFilterType_informations()
@@ -26,7 +27,8 @@ std::string EGeometricFilterType_informations()
          "* f  - FUNDAMENTAL_MATRIX:  fundamental matrix\n"
          "* e  - ESSENTIAL_MATRIX:    essential matrix\n"
          "* h  - HOMOGRAPHY_MATRIX:   homography matrix\n"
-         "* hg - HOMOGRAPHY_GROWING:  multiple homography matrices [F.Srajer, 2016]\n";
+         "* hg - HOMOGRAPHY_GROWING:  multiple homography matrices [F.Srajer, 2016]\n"
+         "* none - NO_FILTERING:      no geometric filtering\n";
 }
 
 /**
@@ -42,6 +44,7 @@ std::string EGeometricFilterType_enumToString(const EGeometricFilterType geometr
     case EGeometricFilterType::ESSENTIAL_MATRIX:   return "ESSENTIAL_MATRIX";
     case EGeometricFilterType::HOMOGRAPHY_MATRIX:  return "HOMOGRAPHY_MATRIX";
     case EGeometricFilterType::HOMOGRAPHY_GROWING: return "HOMOGRAPHY_GROWING";
+    case EGeometricFilterType::NO_FILTERING: return "NO_FLITERING";
   }
   throw std::out_of_range("Invalid geometricFilterType enum");
 }
@@ -59,8 +62,10 @@ EGeometricFilterType EGeometricFilterType_stringToEnum(const std::string& geomet
     return EGeometricFilterType::ESSENTIAL_MATRIX;
   if(geometricFilterType == "HOMOGRAPHY_MATRIX" || geometricFilterType == "h")   
     return EGeometricFilterType::HOMOGRAPHY_MATRIX;
-  if(geometricFilterType == "HOMOGRAPHY_GROWING" || geometricFilterType == "hg")  
-    return EGeometricFilterType::HOMOGRAPHY_GROWING;
+  if (geometricFilterType == "HOMOGRAPHY_GROWING" || geometricFilterType == "hg")
+      return EGeometricFilterType::HOMOGRAPHY_GROWING;
+  if (geometricFilterType == "NO_FILTERING" || geometricFilterType == "none")
+      return EGeometricFilterType::NO_FILTERING;
   throw std::out_of_range("Invalid geometricFilterType : " + geometricFilterType);
 }
 
@@ -75,6 +80,7 @@ std::string shortNotation(const std::string& geometricFilterType)
   if(geometricFilterType == "ESSENTIAL_MATRIX" || geometricFilterType == "e")    return "e";
   if(geometricFilterType == "HOMOGRAPHY_MATRIX" || geometricFilterType == "h")   return "h";
   if(geometricFilterType == "HOMOGRAPHY_GROWING" || geometricFilterType == "hg") return "hg";
+  if(geometricFilterType == "NO_FILTERING" || geometricFilterType == "none")     return "none";
   throw std::out_of_range("Invalid geometricFilterType : " + geometricFilterType);
 }
 
@@ -88,7 +94,8 @@ std::string longNotation(const std::string& geometricFilterType)
   if(geometricFilterType == "FUNDAMENTAL_MATRIX" || geometricFilterType == "f")  return "FUNDAMENTAL_MATRIX"; 
   if(geometricFilterType == "ESSENTIAL_MATRIX" || geometricFilterType == "e")    return "ESSENTIAL_MATRIX";
   if(geometricFilterType == "HOMOGRAPHY_MATRIX" || geometricFilterType == "h")   return "HOMOGRAPHY_MATRIX";
-  if(geometricFilterType == "HOMOGRAPHY_GROWING" || geometricFilterType == "hg") return "HOMOGRAPHY_GROWING";
+  if (geometricFilterType == "HOMOGRAPHY_GROWING" || geometricFilterType == "hg") return "HOMOGRAPHY_GROWING";
+  if (geometricFilterType == "NO_FILTERING" || geometricFilterType == "none") return "NO_FILTERING";
   throw std::out_of_range("Invalid geometricFilterType : " + geometricFilterType);
 }
 
