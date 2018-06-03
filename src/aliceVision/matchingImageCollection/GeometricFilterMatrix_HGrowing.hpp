@@ -17,11 +17,14 @@
 #include <ceres/ceres.h>
 #include <boost/filesystem.hpp>
 
+#include <cmath>
+
+
 namespace aliceVision {
 namespace matchingImageCollection {
 
 /**
- * @brief This fonctor allows to optimize an Homography.
+ * @brief This functor allows to optimize an Homography.
  * @details It is based on [F.Srajer, 2016] p.20, 21 and its C++ implementation: https://github.com/fsrajer/yasfm/blob/master/YASFM/relative_pose.cpp#L992
  * "The optimization takes into account points with error close to the threshold and does not care about high-error ones."
  */
@@ -29,33 +32,33 @@ class RefineHRobustCostFunctor
 {
 public:
 
-  RefineHRobustCostFunctor(const Vec2& x1,const Vec2& x2,
+  RefineHRobustCostFunctor(const Vec2& x1, const Vec2& x2,
     double softThresh)
-    : x1(x1),x2(x2),softThresh(softThresh)
+    : x1(x1),x2(x2),_softThresh(softThresh)
   {
   }
 
   template<typename T>
   bool operator()(const T* const parameters, T* residuals) const
   {
-    typedef Eigen::Matrix<T, 3, 3> Mat3T;
-    typedef Eigen::Matrix<T, 3, 1> Vec3T;
-    typedef Eigen::Matrix<T, 2, 1> Vec2T;
+    using Mat3T = Eigen::Matrix<T, 3, 3>;
+    using Vec3T = Eigen::Matrix<T, 3, 1>;
+    using Vec2T = Eigen::Matrix<T, 2, 1>;
 
-    Vec2T x(T(x1(0)), T(x1(1)));
-    Vec2T y(T(x2(0)), T(x2(1)));
+    const Vec2T x(T(x1(0)), T(x1(1)));
+    const Vec2T y(T(x2(0)), T(x2(1)));
     
-    Mat3T H(parameters);
+    const Mat3T H(parameters);
 
-    Vec3T xp = H * x.homogeneous();
+    const Vec3T xp = H * x.homogeneous();
 
-    T errX = y(0) - xp(0)/xp(2);
-    T errY = y(1) - xp(1)/xp(2);
-    T errSq = errX*errX + errY*errY;
+    const T errX = y(0) - xp(0)/xp(2);
+    const T errY = y(1) - xp(1)/xp(2);
+    const T errSq = errX*errX + errY*errY;
     
     // Avoid division by zero in derivatives computation
-    T err = (errSq==0.) ? T(errSq) : T(sqrt(errSq));
-    residuals[0] = robustify(softThresh,err);
+    const T err = (errSq==0.) ? T(errSq) : T(sqrt(errSq));
+    residuals[0] = robustify(_softThresh, err);
 
     return true;
   }
@@ -68,16 +71,16 @@ public:
    * @param x
    * @return 
    */
-  static T robustify(double softThresh,T x)
+  static T robustify(double softThresh, T x)
   {
     const double t = 0.25;
-    const double sigma = softThresh / sqrt(-log(t*t));
-  
-    return -log(exp(-(x*x)/T(2*sigma*sigma))+T(t)) + T(log(1+t));
+    const double sigma = softThresh / std::sqrt(-std::log(t * t));
+
+    return -ceres::log(ceres::exp(-(x * x) / T(2.0 * sigma * sigma)) + T(t)) + T(std::log(1.0 + t));
   }
 
   Vec2 x1, x2;
-  double softThresh;
+  double _softThresh;
 };
 
 //-- Multiple homography matrices estimation template functor, based on homography growing, used for filter pair of putative correspondences
@@ -102,7 +105,7 @@ struct GeometricFilterMatrix_HGrowing : public GeometricFilterMatrix
   /**
    * @brief Given two sets of image points, it estimates the homography matrix
    * relating them using a robust method (like A Contrario Ransac).
-   * @details It return matches grouped by estimated homographies!
+   * @details It return matches grouped by estimated homographies.
    * Example:
    * - Putative matches id:         [0 1 2 3 4 5 6 7]
    * - Estimated homographies:      [0(h0) 1(h2) 2(h1) 3(nan) 4(h2) 5(h0) 6(h1) 7(nan)]
@@ -113,7 +116,7 @@ struct GeometricFilterMatrix_HGrowing : public GeometricFilterMatrix
   EstimationStatus geometricEstimation(
     const sfm::SfMData * sfmData,
     const Regions_or_Features_ProviderT& regionsPerView,
-    const Pair pairIndex,
+    const Pair& pairIndex,
     const matching::MatchesPerDescType & putativeMatchesPerType,
     matching::MatchesPerDescType & out_geometricInliersPerType)
   {
@@ -184,12 +187,12 @@ struct GeometricFilterMatrix_HGrowing : public GeometricFilterMatrix
       
       IndMatches remainingMatches = putativeMatchesPerType.at(descType);
       
-      if (drawGroupedMatches)
+      if(drawGroupedMatches)
       {
         svgStream->drawImage(viewI.getImagePath(), viewI.getWidth(), viewI.getHeight());
         svgStream->drawImage(viewJ.getImagePath(), viewJ.getWidth(), viewJ.getHeight(),  viewI.getWidth());
         // draw little white dots representing putative matches
-        for (IndMatch match : remainingMatches)
+        for(const IndMatch& match : remainingMatches)
         {
           const SIOPointFeature & fI = siofeatures_I.at(match._i);
           const SIOPointFeature & fJ  = siofeatures_J.at(match._j);
@@ -198,15 +201,14 @@ struct GeometricFilterMatrix_HGrowing : public GeometricFilterMatrix
         }
       }
       
-      for (IndexT iH = 0; iH < _maxNbHomographies; ++iH)
+      for(IndexT iH = 0; iH < _maxNbHomographies; ++iH)
       {
         std::set<IndexT> usedMatchesId, bestMatchesId;
-        Mat3 bestHomographie;
+        Mat3 bestHomography;
         
-        // -- Estimate H using homogeaphy-growing approach:
-        
-#pragma omp parallel for // (: huge optimization but modify results a little)
-        for (int iMatch = 0; iMatch < remainingMatches.size(); ++iMatch)
+        // -- Estimate H using homography-growing approach
+        #pragma omp parallel for // (huge optimization but modify results a little)
+        for(int iMatch = 0; iMatch < remainingMatches.size(); ++iMatch)
         {
           // Growing a homography from one match ([F.Srajer, 2016] algo. 1, p. 20)  
           // each match is used once only per homography estimation (increases computation time) [1st improvement ([F.Srajer, 2016] p. 20) ] 
@@ -214,25 +216,25 @@ struct GeometricFilterMatrix_HGrowing : public GeometricFilterMatrix
             continue;
           
           std::set<IndexT> planarMatchesId; // be careful: it contains the id. in the 'remainingMatches' vector not 'putativeMatches' vector.
-          Mat3 homographie;
+          Mat3 homography;
           
-          if(!growHomography(siofeatures_I, siofeatures_J, remainingMatches, iMatch, planarMatchesId, homographie) == EXIT_SUCCESS)
+          if(!growHomography(siofeatures_I, siofeatures_J, remainingMatches, iMatch, planarMatchesId, homography) == EXIT_SUCCESS)
             continue;
           
-#pragma omp critical
+          #pragma omp critical
           usedMatchesId.insert(planarMatchesId.begin(), planarMatchesId.end());
           
           if (planarMatchesId.size() > bestMatchesId.size())
           {
-#pragma omp critical
+            #pragma omp critical
             {
               bestMatchesId = planarMatchesId; // be careful: it contains the id. in the 'remainingMatches' vector not 'putativeMatches' vector.
-              bestHomographie = homographie;
+              bestHomography = homography;
             }
           }
         } // 'iMatch'
         
-        // -- Refine H using Ceres minimizer:
+        // -- Refine H using Ceres minimizer
         {
           ceres::Problem problem;
           
@@ -240,20 +242,19 @@ struct GeometricFilterMatrix_HGrowing : public GeometricFilterMatrix
           {
             IndMatch match = remainingMatches.at(matchId);
             
-            Vec2 x1 = siofeatures_I.at(match._i).coords().cast<double>();
-            Vec2 x2 = siofeatures_J.at(match._j).coords().cast<double>();
+            const Vec2 x1 = siofeatures_I.at(match._i).coords().cast<double>();
+            const Vec2 x2 = siofeatures_J.at(match._j).coords().cast<double>();
             
-            RefineHRobustCostFunctor 
-                *costFun = 
+            RefineHRobustCostFunctor* costFun = 
                 new RefineHRobustCostFunctor(x1, x2, _homographyTolerance);
             
             problem.AddResidualBlock(
-                  new ceres::AutoDiffCostFunction<
-                  RefineHRobustCostFunctor,
-                  1,
-                  9>(costFun), 
-                  NULL, 
-                  bestHomographie.data());
+                new ceres::AutoDiffCostFunction<
+                    RefineHRobustCostFunctor,
+                    1,
+                    9>(costFun), 
+                NULL, 
+                bestHomography.data());
           }
           
           ceres::Solver::Options solverOpt;
@@ -262,10 +263,11 @@ struct GeometricFilterMatrix_HGrowing : public GeometricFilterMatrix
           ceres::Solver::Summary summary;
           ceres::Solve(solverOpt,&problem,&summary);
           
-          bestHomographie /= bestHomographie(2,2);
+          if(std::fabs(bestHomography(2, 2)) > std::numeric_limits<double>::epsilon())
+            bestHomography /= bestHomography(2,2);
           
           if (summary.IsSolutionUsable())
-            findTransformationInliers(siofeatures_I, siofeatures_J, remainingMatches, bestHomographie, _homographyTolerance, bestMatchesId);
+            findTransformationInliers(siofeatures_I, siofeatures_J, remainingMatches, bestHomography, _homographyTolerance, bestMatchesId);
             
         } // refinement part
         
@@ -276,12 +278,12 @@ struct GeometricFilterMatrix_HGrowing : public GeometricFilterMatrix
         // Store validated results:
         {
           IndMatches matches;
-          Mat3 H = bestHomographie;
+          Mat3 H = bestHomography;
           for (IndexT id : bestMatchesId) 
           {
             matches.push_back(remainingMatches.at(id));
           }
-          _HsAndMatchesPerDesc[descType].push_back({H, matches});
+          _HsAndMatchesPerDesc[descType].emplace_back(H, matches);
         }
         
         if (drawGroupedMatches)
@@ -300,8 +302,7 @@ struct GeometricFilterMatrix_HGrowing : public GeometricFilterMatrix
           }
         }
         
-        // -- Update not used matches & Save geometrically verified matches:
-        
+        // -- Update not used matches & Save geometrically verified matches
         for (IndexT id : bestMatchesId)
         {
           out_geometricInliersPerType[descType].push_back(remainingMatches.at(id));
@@ -323,7 +324,7 @@ struct GeometricFilterMatrix_HGrowing : public GeometricFilterMatrix
       
       if (drawGroupedMatches)
       {
-        std::size_t nbMatches = putativeMatchesPerType.at(descType).size() - remainingMatches.size();
+        const std::size_t nbMatches = putativeMatchesPerType.at(descType).size() - remainingMatches.size();
         if (nbMatches > 0)
         {
           std::ofstream svgFile(outputSvgDir + "/" + std::to_string(nbMatches) +"hmatches_" + std::to_string(viewI.getViewId()) + "_" + std::to_string(viewJ.getViewId()) + 
@@ -374,16 +375,13 @@ struct GeometricFilterMatrix_HGrowing : public GeometricFilterMatrix
    * @brief The number of estimated homographies for the given descriptor.
    * @param[in] descType The wished descriptor type
    * @return The number of estimated homographies (= planes). Return 0 if there is
-   * no homographies of if the descriptor type does not exist.
+   * no homography or if the descriptor type does not exist.
    */
   std::size_t getNbHomographies(const feature::EImageDescriberType & descType) const 
   {
-    if (_HsAndMatchesPerDesc.find(descType) != _HsAndMatchesPerDesc.end())
-    {
-      return _HsAndMatchesPerDesc.at(descType).size();
-    }
-    else
-      return 0;
+    if (_HsAndMatchesPerDesc.find(descType) == _HsAndMatchesPerDesc.end())
+        return 0;
+    return _HsAndMatchesPerDesc.at(descType).size();
   }
   
   /**
@@ -396,16 +394,11 @@ struct GeometricFilterMatrix_HGrowing : public GeometricFilterMatrix
   std::size_t getNbVerifiedMatches(const feature::EImageDescriberType & descType, const IndexT homographyId) const
   {
     if (_HsAndMatchesPerDesc.find(descType) == _HsAndMatchesPerDesc.end())
-    {
       return 0;
-    }
-    else 
-    {
-      if (homographyId > _HsAndMatchesPerDesc.at(descType).size() - 1)
-        return 0;
-      else
-        return _HsAndMatchesPerDesc.at(descType).at(homographyId).second.size();
-    }
+    if (homographyId > _HsAndMatchesPerDesc.at(descType).size() - 1)
+      return 0;
+
+    return _HsAndMatchesPerDesc.at(descType).at(homographyId).second.size();
   }
   
   /**
@@ -437,21 +430,16 @@ struct GeometricFilterMatrix_HGrowing : public GeometricFilterMatrix
     matches.clear();
     
     if (_HsAndMatchesPerDesc.find(descType) == _HsAndMatchesPerDesc.end())
-    {
       return EXIT_FAILURE;
-    }
-    else 
-    {
-      if (homographyId > _HsAndMatchesPerDesc.at(descType).size() - 1)
-        return EXIT_FAILURE;
-      else
-        matches = _HsAndMatchesPerDesc.at(descType).at(homographyId).second;
-    }
+    if (homographyId > _HsAndMatchesPerDesc.at(descType).size() - 1)
+      return EXIT_FAILURE;
+
+    matches = _HsAndMatchesPerDesc.at(descType).at(homographyId).second;
     
-    if (matches.size() > 0)
-      return EXIT_SUCCESS;
-    else
+    if (matches.size() <= 0)
       return EXIT_FAILURE;
+
+    return EXIT_SUCCESS;
   }
   
 private:
@@ -483,7 +471,7 @@ private:
     const feature::SIOPointFeature & seedFeatureI = featuresI.at(seedMatch._i);
     const feature::SIOPointFeature & seedFeatureJ = featuresJ.at(seedMatch._j);
 
-    std::size_t currTolerance;
+    double currTolerance;
 
     for (IndexT iRefineStep = 0; iRefineStep < _nbRefiningIterations; ++iRefineStep)
     {
@@ -528,21 +516,21 @@ private:
   /// Max. number of homographies to estimate.
   std::size_t _maxNbHomographies; 
   
-  /// Min. number of matches corresponding to a homographie. 
-  /// The homographie-growing is interrupted when the value is reached.
+  /// Min. number of matches corresponding to a homography. 
+  /// The homography-growing is interrupted when the value is reached.
   std::size_t _minNbMatchesPerH;
   
   /// The maximal reprojection (pixel) error for matches estimated 
   /// from a Similarity transformation.
-  std::size_t _similarityTolerance; 
+  double _similarityTolerance; 
   
   /// The maximal reprojection (pixel) error for matches estimated 
   /// from an Affine transformation.
-  std::size_t _affinityTolerance;   
+  double _affinityTolerance;   
   
   /// The maximal reprojection (pixel) error for matches estimated 
   /// from a Homography.
-  std::size_t _homographyTolerance; 
+  double _homographyTolerance; 
   
   /// Minimum number of inliers to continue in further refining.
   std::size_t _minInliersToRefine; 

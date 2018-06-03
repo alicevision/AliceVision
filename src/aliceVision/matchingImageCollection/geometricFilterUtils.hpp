@@ -149,7 +149,7 @@ void MatchesPairToMat(
 */
 template<typename MatT >
 void MatchesPairToMat(
-  const Pair pairIndex,
+  const Pair& pairIndex,
   const matching::MatchesPerDescType & putativeMatchesPerType,
   const sfm::SfMData * sfmData,
   const feature::RegionsPerView& regionsPerView,
@@ -180,7 +180,7 @@ void MatchesPairToMat(
  * @param[in] descTypes
  * @param[out] out_geometricInliersPerType
  */
-void copyInlierMatches(
+inline void copyInlierMatches(
   const std::vector<size_t>& inliers,
   const matching::MatchesPerDescType& putativeMatchesPerType,
   const std::vector<feature::EImageDescriberType>& descTypes,
@@ -211,13 +211,13 @@ void copyInlierMatches(
  * @param[in] points2d
  * @param[out] c
  */
-void centerMatrix(const Eigen::Matrix2Xf & points2d, Mat3 & c)
+inline void centerMatrix(const Eigen::Matrix2Xf & points2d, Mat3 & c)
 {
   c = Mat3::Identity();
   
-  Vec2f mean = points2d.rowwise().mean();
-  std::size_t nbPoints = points2d.cols();
-  
+  const Vec2f mean = points2d.rowwise().mean();
+  const std::size_t nbPoints = points2d.cols();
+
   Vec2f stdDev = ((points2d.colwise() - mean).cwiseAbs2().rowwise().sum()/(nbPoints - 1)).cwiseSqrt();
   
   if(stdDev(0) < 0.1)
@@ -240,7 +240,7 @@ void centerMatrix(const Eigen::Matrix2Xf & points2d, Mat3 & c)
    * @param[out] cJ The matrice to apply to (the subpart of) \c featuresJ
    * @param[in] usefulMatchesId To consider a subpart of \c matches only.
    */
-void centeringMatrices(const std::vector<feature::SIOPointFeature> & featuresI,
+inline void centeringMatrices(const std::vector<feature::SIOPointFeature> & featuresI,
                        const std::vector<feature::SIOPointFeature> & featuresJ,
                        const matching::IndMatches & matches,
                        Mat3 & cI,
@@ -285,34 +285,35 @@ void centeringMatrices(const std::vector<feature::SIOPointFeature> & featuresI,
    * @param[in] feat2 The second feature with known scale & orientation.
    * @param[out] S The similarity transformation between f1 et f2.
    */
-void computeSimilarity(const feature::SIOPointFeature & feat1,
+inline void computeSimilarity(const feature::SIOPointFeature & feat1,
                        const feature::SIOPointFeature & feat2,
                        Mat3 & S)
 {
   S = Mat3::Identity(); 
   
   const Vec2f & coord1 = feat1.coords();
-  const double & scale1 = feat1.scale();
-  const double & orientation1 = feat1.orientation();
+  const double scale1 = feat1.scale();
+  const double orientation1 = feat1.orientation();
   
   const Vec2f & coord2 = feat2.coords();
-  const double & scale2 =  feat2.scale();
-  const double & orientation2 = feat2.orientation();              
+  const double scale2 =  feat2.scale();
+  const double orientation2 = feat2.orientation();              
   
-  double c1 = cos(orientation1),
-      s1 = sin(orientation1),
-      c2 = cos(orientation2),
-      s2 = sin(orientation2);
+  const double c1 = cos(orientation1);
+  const double s1 = sin(orientation1);
+  const double c2 = cos(orientation2);
+  const double s2 = sin(orientation2);
   
-  Mat3 A1,A2;
-  A1 << scale1*c1,scale1*(-s1),coord1(0),
-      scale1*s1,scale1*c1,coord1(1),
-      0,0,1;
-  A2 << scale2*c2,scale2*(-s2),coord2(0),
-      scale2*s2,scale2*c2,coord2(1),
-      0,0,1;
+  Mat3 A1;
+  A1 << scale1 * c1, scale1 * (-s1), coord1(0),
+        scale1 * s1, scale1 * c1, coord1(1),
+        0, 0, 1;
+  Mat3 A2;
+  A2 << scale2 * c2, scale2 * (-s2), coord2(0),
+        scale2 * s2, scale2 * c2, coord2(1),
+        0, 0, 1;
   
-  S = A2*A1.inverse();                               
+  S = A2 * A1.inverse();                               
 }
 
 /**
@@ -324,7 +325,7 @@ void computeSimilarity(const feature::SIOPointFeature & feat1,
    * @param[out] affineTransformation The estimated Affine transformation.
    * @param[in] usefulMatchesId To consider a subpart of \c matches only. 
    */
-void estimateAffinity(const std::vector<feature::SIOPointFeature> & featuresI,
+inline void estimateAffinity(const std::vector<feature::SIOPointFeature> & featuresI,
                       const std::vector<feature::SIOPointFeature> & featuresJ,
                       const matching::IndMatches & matches,
                       Mat3 & affineTransformation,
@@ -356,7 +357,7 @@ void estimateAffinity(const std::vector<feature::SIOPointFeature> & featuresI,
   {
     const feature::SIOPointFeature & featI = featuresI.at(matches.at(matchId)._i);
     const feature::SIOPointFeature & featJ = featuresJ.at(matches.at(matchId)._j);
-    Vec2 featICoords (featI.x(), featI.y());
+    const Vec2 featICoords (featI.x(), featI.y());
     
     M.block(iMatch,0,1,3) = featICoords.homogeneous().transpose();
     M.block(iMatch+nbMatches,3,1,3) = featICoords.homogeneous().transpose();
@@ -366,7 +367,7 @@ void estimateAffinity(const std::vector<feature::SIOPointFeature> & featuresI,
     ++iMatch;
   }
   
-  Vec a = M.jacobiSvd(Eigen::ComputeThinU | Eigen::ComputeThinV).solve(b);
+  const Vec a = M.jacobiSvd(Eigen::ComputeThinU | Eigen::ComputeThinV).solve(b);
   affineTransformation.row(0) = a.topRows(3).transpose();
   affineTransformation.row(1) = a.bottomRows(3).transpose();
   affineTransformation(2,0) = 0.;
@@ -383,7 +384,7 @@ void estimateAffinity(const std::vector<feature::SIOPointFeature> & featuresI,
    * @param[out] H The estimated Homography transformation.
    * @param[in] usefulMatchesId To consider a subpart of \c matches only. 
    */
-void estimateHomography(const std::vector<feature::SIOPointFeature> & featuresI,
+inline void estimateHomography(const std::vector<feature::SIOPointFeature> & featuresI,
                         const std::vector<feature::SIOPointFeature> & featuresJ,
                         const matching::IndMatches & matches,
                         Mat3 &H,
@@ -438,7 +439,8 @@ void estimateHomography(const std::vector<feature::SIOPointFeature> & featuresI,
   H0.row(2) = h.bottomRows(3).transpose();
   
   H = CJ.inverse() * H0 * CI;
-  H /= H(2,2);
+  if(std::fabs(H(2, 2)) > std::numeric_limits<double>::epsilon())
+    H /= H(2,2);
 }
 
 /**
@@ -450,29 +452,30 @@ void estimateHomography(const std::vector<feature::SIOPointFeature> & featuresI,
    * @param[in] tolerance The tolerated pixel error.
    * @param[in] inliersId The index in the \c matches vector.
    */
-void findTransformationInliers(const std::vector<feature::SIOPointFeature> & featuresI, 
+inline void findTransformationInliers(const std::vector<feature::SIOPointFeature> & featuresI, 
                                const std::vector<feature::SIOPointFeature> & featuresJ, 
                                const matching::IndMatches & matches,
                                const Mat3 & transformation,
-                               const std::size_t tolerance,
+                               const double tolerance,
                                std::set<IndexT> & inliersId)
 {
   inliersId.clear();
-  
+  const double squaredTolerance = Square(tolerance);
+
 #pragma omp parallel for 
   for (int iMatch = 0; iMatch < matches.size(); ++iMatch)
   {
     const feature::SIOPointFeature & featI = featuresI.at(matches.at(iMatch)._i);
     const feature::SIOPointFeature & featJ = featuresJ.at(matches.at(iMatch)._j);
     
-    Vec2 ptI(featI.x(), featI.y());
-    Vec2 ptJ(featJ.x(), featJ.y());
+    const Vec2 ptI(featI.x(), featI.y());
+    const Vec2 ptJ(featJ.x(), featJ.y());
     
-    Vec3 ptIp_hom = transformation * ptI.homogeneous();
+    const Vec3 ptIp_hom = transformation * ptI.homogeneous();
     
-    float dist = (ptJ - ptIp_hom.hnormalized()).squaredNorm();   
+    const double dist = (ptJ - ptIp_hom.hnormalized()).squaredNorm();
     
-    if (dist < Square(tolerance))
+    if (dist < squaredTolerance)
     {
 #pragma omp critical
       inliersId.insert(iMatch);

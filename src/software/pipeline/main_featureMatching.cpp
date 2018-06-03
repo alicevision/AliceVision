@@ -326,11 +326,11 @@ int main(int argc, char **argv)
     // sort putative matches according to their Lowe ratio 
     // This is suggested by [F.Srajer, 2016]: the matches used to be the seeds of the homographies growing are chosen according 
     // to the putative matches order. This modification should improve recall.
-    for(auto it_imgPair = mapPutativesMatches.begin(); it_imgPair != mapPutativesMatches.end(); ++it_imgPair) 
-    { 
-      for(auto it_descType = it_imgPair->second.begin(); it_descType != it_imgPair->second.end(); ++it_descType) 
+    for(auto& imgPair: mapPutativesMatches) 
+    {
+      for(auto& descType: imgPair.second) 
       { 
-        IndMatches & matches = it_descType->second; 
+        IndMatches & matches = descType.second; 
         sortMatches_byDistanceRatio(matches); 
       } 
     }
