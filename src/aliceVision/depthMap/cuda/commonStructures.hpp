@@ -670,12 +670,12 @@ template<class Type, unsigned Dim> void copy(CudaDeviceMemoryPitched<Type, Dim>&
 struct cameraStruct
 {
     float P[12], iP[9], R[9], iR[9], K[9], iK[9], C[3];
-    CudaHostMemoryHeap<uchar4, 2>* tex_rgba_hmh;
-    int camId;
-    int rc;
-    float* H;
-    int scale;
-    int blurid;
+    CudaHostMemoryHeap<uchar4, 2>* tex_rgba_hmh = nullptr;
+    int camId = -1;
+    int rc = -1;
+    float* H = nullptr;
+    int scale = -1;
+    int blurid = -1;
 };
 
 struct ps_parameters
