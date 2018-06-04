@@ -235,9 +235,9 @@ inline void centerMatrix(const Eigen::Matrix2Xf & points2d, Mat3 & c)
    * Based on: https://github.com/fsrajer/yasfm/blob/3a09bc0ee69b7021910d646386cd92deab504a2c/YASFM/relative_pose.h#L1075
    * @param[in] featuresI
    * @param[in] featuresJ
-   * @param[in] matches Indicate which feature is conserned about the returned matrices.
-   * @param[out] cI The matrice to apply to (the subpart of) \c featuresI
-   * @param[out] cJ The matrice to apply to (the subpart of) \c featuresJ
+   * @param[in] matches Indicate which feature is concerned about the returned matrices.
+   * @param[out] cI The matrix to apply to (the subpart of) \c featuresI
+   * @param[out] cJ The matrix to apply to (the subpart of) \c featuresJ
    * @param[in] usefulMatchesId To consider a subpart of \c matches only.
    */
 inline void centeringMatrices(const std::vector<feature::SIOPointFeature> & featuresI,
