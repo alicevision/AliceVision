@@ -24,10 +24,8 @@ bool aliceVision::matchingImageCollection::GeometricFilterMatrix_HGrowing::getMa
 
   matches = _HsAndMatchesPerDesc.at(descType).at(homographyId).second;
 
-  if (matches.empty())
-    return false;
+  return !matches.empty();
 
-  return true;
 }
 
 std::size_t GeometricFilterMatrix_HGrowing::getNbHomographies(const feature::EImageDescriberType &descType) const
