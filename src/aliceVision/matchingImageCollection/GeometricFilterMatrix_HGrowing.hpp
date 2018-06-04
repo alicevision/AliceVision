@@ -436,7 +436,7 @@ struct GeometricFilterMatrix_HGrowing : public GeometricFilterMatrix
 
     matches = _HsAndMatchesPerDesc.at(descType).at(homographyId).second;
     
-    if (matches.size() <= 0)
+    if (matches.empty())
       return EXIT_FAILURE;
 
     return EXIT_SUCCESS;
