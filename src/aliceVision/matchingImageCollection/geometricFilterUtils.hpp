@@ -100,12 +100,14 @@ void MatchesPairToMat(
   x_J.resize(2, n);
 
   size_t y = 0;
-  for(size_t d = 0; d < descTypes.size(); ++d)
+  for (const auto& descType : descTypes)
   {
-    const feature::EImageDescriberType& descType = descTypes[d];
-
     if(!putativeMatchesPerType.count(descType))
-      continue; // we may have 0 feature for some descriptor types
+    {
+      // we may have 0 feature for some descriptor types
+      continue;
+    }
+
     const matching::IndMatches& putativeMatches = putativeMatchesPerType.at(descType);
 
     const auto& feature_I = features_I.at(descType);
