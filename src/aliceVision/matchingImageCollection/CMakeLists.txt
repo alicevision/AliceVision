@@ -30,6 +30,7 @@ add_library(aliceVision_matchingImageCollection
 
 target_link_libraries(aliceVision_matchingImageCollection
   aliceVision_matching
+  aliceVision_camera
   ${Boost_LIBRARIES}
   ${LOG_LIB}
 )
