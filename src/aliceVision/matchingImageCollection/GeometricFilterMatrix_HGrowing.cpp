@@ -12,7 +12,9 @@ namespace matchingImageCollection {
 
 
 int aliceVision::matchingImageCollection::GeometricFilterMatrix_HGrowing::getMatches(
-        const feature::EImageDescriberType &descType, const IndexT homographyId, matching::IndMatches &matches) const {
+        const feature::EImageDescriberType &descType,
+        const IndexT homographyId, matching::IndMatches &matches) const
+{
   matches.clear();
 
   if (_HsAndMatchesPerDesc.find(descType) == _HsAndMatchesPerDesc.end())
@@ -28,7 +30,8 @@ int aliceVision::matchingImageCollection::GeometricFilterMatrix_HGrowing::getMat
   return EXIT_SUCCESS;
 }
 
-std::size_t GeometricFilterMatrix_HGrowing::getNbHomographies(const feature::EImageDescriberType &descType) const {
+std::size_t GeometricFilterMatrix_HGrowing::getNbHomographies(const feature::EImageDescriberType &descType) const
+{
   if (_HsAndMatchesPerDesc.find(descType) == _HsAndMatchesPerDesc.end())
     return 0;
   return _HsAndMatchesPerDesc.at(descType).size();
@@ -36,7 +39,8 @@ std::size_t GeometricFilterMatrix_HGrowing::getNbHomographies(const feature::EIm
 
 
 std::size_t GeometricFilterMatrix_HGrowing::getNbVerifiedMatches(const feature::EImageDescriberType &descType,
-                                                                 const IndexT homographyId) const {
+                                                                 const IndexT homographyId) const
+{
   if (_HsAndMatchesPerDesc.find(descType) == _HsAndMatchesPerDesc.end())
     return 0;
   if (homographyId > _HsAndMatchesPerDesc.at(descType).size() - 1)
@@ -45,7 +49,8 @@ std::size_t GeometricFilterMatrix_HGrowing::getNbVerifiedMatches(const feature::
   return _HsAndMatchesPerDesc.at(descType).at(homographyId).second.size();
 }
 
-std::size_t GeometricFilterMatrix_HGrowing::getNbAllVerifiedMatches() const {
+std::size_t GeometricFilterMatrix_HGrowing::getNbAllVerifiedMatches() const
+{
   std::size_t counter = 0;
   for (const auto & HnMs : _HsAndMatchesPerDesc)
   {
@@ -60,7 +65,8 @@ std::size_t GeometricFilterMatrix_HGrowing::getNbAllVerifiedMatches() const {
 int GeometricFilterMatrix_HGrowing::growHomography(const std::vector<feature::SIOPointFeature> &featuresI,
                                                    const std::vector<feature::SIOPointFeature> &featuresJ,
                                                    const matching::IndMatches &matches, const IndexT &seedMatchId,
-                                                   std::set<IndexT> &planarMatchesIndices, Mat3 &transformation) const {
+                                                   std::set<IndexT> &planarMatchesIndices, Mat3 &transformation) const
+{
   assert(seedMatchId <= matches.size());
 
   planarMatchesIndices.clear();
@@ -102,5 +108,6 @@ int GeometricFilterMatrix_HGrowing::growHomography(const std::vector<feature::SI
 
   return (transformation != Mat3::Identity()) ? EXIT_SUCCESS : EXIT_FAILURE;
 }
+
 }
 }
