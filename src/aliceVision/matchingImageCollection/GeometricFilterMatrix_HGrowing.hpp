@@ -173,10 +173,8 @@ struct GeometricFilterMatrix_HGrowing : public GeometricFilterMatrix
       }
     }
     
-    for(size_t d = 0; d < descTypes.size(); ++d)
+    for (const EImageDescriberType& descType : descTypes)
     {
-      const EImageDescriberType& descType = descTypes[d];
-      
       if(!putativeMatchesPerType.count(descType))
         continue; // we may have 0 feature for some descriptor types
       
