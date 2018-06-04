@@ -252,8 +252,8 @@ struct GeometricFilterMatrix_HGrowing : public GeometricFilterMatrix
                 new ceres::AutoDiffCostFunction<
                     RefineHRobustCostFunctor,
                     1,
-                    9>(costFun), 
-                NULL, 
+                    9>(costFun),
+                nullptr,
                 bestHomography.data());
           }
           
