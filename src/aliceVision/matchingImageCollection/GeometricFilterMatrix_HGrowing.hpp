@@ -385,7 +385,7 @@ struct GeometricFilterMatrix_HGrowing : public GeometricFilterMatrix
   }
   
   /**
-   * @brief Get the number of matches asssociated to the given descriptor type & homography index.
+   * @brief Get the number of matches associated to the given descriptor type & homography index.
    * @param[in] descType Descriptor type.
    * @param[in] homographyId The id. of the wished homography / plane.
    * @return The number of matches. Return 0 if the descriptor type or the homography 
@@ -419,7 +419,7 @@ struct GeometricFilterMatrix_HGrowing : public GeometricFilterMatrix
   }
   
   /**
-   * @brief Get a capy of the matches for a given desc. type & homography index.
+   * @brief Get a copy of the matches for a given desc. type & homography index.
    * @param[in] descType The descriptor type.
    * @param[in] homographyId The id. of the wished homography / plane.
    * @param[in] matches Contains the matches.
@@ -445,12 +445,12 @@ struct GeometricFilterMatrix_HGrowing : public GeometricFilterMatrix
 private:
   
   /**
-   * @brief Return all the matches in the same plane as the match \c seedMatchId with the correponding homography.
+   * @brief Return all the matches in the same plane as the match \c seedMatchId with the corresponding homography.
    * @details This algorithm is detailed in [F.Srajer, 2016] algo. 1, p. 20.
    * @param[in] featuresI
    * @param[in] featuresJ
    * @param[in] matches All the putative planar matches.
-   * @param[in] seedMatchId The match used to estimate the plane and the correponding matches.
+   * @param[in] seedMatchId The match used to estimate the plane and the corresponding matches.
    * @param[out] planarMatchesIndices The indices (in the \c matches vector) of the really planar matches.
    * @param[out] transformation The homography associated to the plane.
    * @return EXIT_SUCCESS if the \c transformation is different than the identity matrix.
