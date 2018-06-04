@@ -131,7 +131,7 @@ struct GeometricFilterMatrix_HGrowing : public GeometricFilterMatrix
     // File format: <nbHMatches>hmatches_<viewId_I>_<viewId_J>_<descType>.svg
     // * Little white dots = putative matches
     // * Colored dots = geometrically verified matches (1 color per estimated plane)
-    std::string outputSvgDir = ""; 
+    std::string outputSvgDir;
     // ------------------------
     
     const std::vector<feature::EImageDescriberType> descTypes = regionsPerView.getCommonDescTypes(pairIndex);
