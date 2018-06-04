@@ -1039,12 +1039,12 @@ void ps_computeSimilarityVolume(CudaArray<uchar4, 2>** ps_texs_arr,
 
     //--------------------------------------------------------------------------------------------------
     // init similarity volume
-    for(int z = 0; z < volDimZ; z++)
     {
-        volume_initVolume_kernel<unsigned char><<<gridvol, blockvol>>>(
-            vol_dmp.getBuffer(), vol_dmp.stride()[1], vol_dmp.stride()[0], volDimX, volDimY, volDimZ, z, 255);
-        cudaThreadSynchronize();
-        CHECK_CUDA_ERROR();
+        int blockSize3d = 8;
+        dim3 blockvol3d(blockSize3d, blockSize3d, blockSize3d);
+        dim3 gridvol3d(divUp(volDimX, blockSize3d), divUp(volDimY, blockSize3d), divUp(volDimZ, blockSize3d));
+        volume_initFullVolume_kernel<unsigned char><<<gridvol3d, blockvol3d >>>(
+            vol_dmp.getBuffer(), vol_dmp.stride()[1], vol_dmp.stride()[0], volDimX, volDimY, volDimZ, 255);
     }
 
     //--------------------------------------------------------------------------------------------------
