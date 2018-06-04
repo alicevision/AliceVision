@@ -217,7 +217,7 @@ struct GeometricFilterMatrix_HGrowing : public GeometricFilterMatrix
           std::set<IndexT> planarMatchesId; // be careful: it contains the id. in the 'remainingMatches' vector not 'putativeMatches' vector.
           Mat3 homography;
           
-          if(growHomography(siofeatures_I, siofeatures_J, remainingMatches, iMatch, planarMatchesId, homography) != EXIT_SUCCESS)
+          if(!growHomography(siofeatures_I, siofeatures_J, remainingMatches, iMatch, planarMatchesId, homography))
             continue;
           
           #pragma omp critical
@@ -398,9 +398,9 @@ struct GeometricFilterMatrix_HGrowing : public GeometricFilterMatrix
    * @param[in] descType The descriptor type.
    * @param[in] homographyId The id. of the wished homography / plane.
    * @param[in] matches Contains the matches.
-   * @return EXIT_SUCCESS the number of matches is up to 0.
+   * @return true the number of matches is up to 0.
    */
-  int getMatches(const feature::EImageDescriberType & descType, const IndexT homographyId, matching::IndMatches & matches) const;
+  bool getMatches(const feature::EImageDescriberType & descType, const IndexT homographyId, matching::IndMatches & matches) const;
   
 private:
   
@@ -413,14 +413,14 @@ private:
    * @param[in] seedMatchId The match used to estimate the plane and the corresponding matches.
    * @param[out] planarMatchesIndices The indices (in the \c matches vector) of the really planar matches.
    * @param[out] transformation The homography associated to the plane.
-   * @return EXIT_SUCCESS if the \c transformation is different than the identity matrix.
+   * @return true if the \c transformation is different than the identity matrix.
    */
-  int growHomography(const std::vector<feature::SIOPointFeature> & featuresI, 
-                      const std::vector<feature::SIOPointFeature> & featuresJ, 
-                      const matching::IndMatches & matches,
-                      const IndexT & seedMatchId,
-                      std::set<IndexT> & planarMatchesIndices, 
-                      Mat3 & transformation) const;
+  bool growHomography(const std::vector<feature::SIOPointFeature> &featuresI,
+                      const std::vector<feature::SIOPointFeature> &featuresJ,
+                      const matching::IndMatches &matches,
+                      const IndexT &seedMatchId,
+                      std::set<IndexT> &planarMatchesIndices,
+                      Mat3 &transformation) const;
   
   // -- Results container
   

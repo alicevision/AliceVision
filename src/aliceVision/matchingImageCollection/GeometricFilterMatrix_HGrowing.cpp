@@ -11,23 +11,23 @@ namespace aliceVision {
 namespace matchingImageCollection {
 
 
-int aliceVision::matchingImageCollection::GeometricFilterMatrix_HGrowing::getMatches(
+bool aliceVision::matchingImageCollection::GeometricFilterMatrix_HGrowing::getMatches(
         const feature::EImageDescriberType &descType,
         const IndexT homographyId, matching::IndMatches &matches) const
 {
   matches.clear();
 
   if (_HsAndMatchesPerDesc.find(descType) == _HsAndMatchesPerDesc.end())
-    return EXIT_FAILURE;
+    return false;
   if (homographyId > _HsAndMatchesPerDesc.at(descType).size() - 1)
-    return EXIT_FAILURE;
+    return false;
 
   matches = _HsAndMatchesPerDesc.at(descType).at(homographyId).second;
 
   if (matches.empty())
-    return EXIT_FAILURE;
+    return false;
 
-  return EXIT_SUCCESS;
+  return true;
 }
 
 std::size_t GeometricFilterMatrix_HGrowing::getNbHomographies(const feature::EImageDescriberType &descType) const
@@ -62,10 +62,10 @@ std::size_t GeometricFilterMatrix_HGrowing::getNbAllVerifiedMatches() const
   return counter;
 }
 
-int GeometricFilterMatrix_HGrowing::growHomography(const std::vector<feature::SIOPointFeature> &featuresI,
-                                                   const std::vector<feature::SIOPointFeature> &featuresJ,
-                                                   const matching::IndMatches &matches, const IndexT &seedMatchId,
-                                                   std::set<IndexT> &planarMatchesIndices, Mat3 &transformation) const
+bool GeometricFilterMatrix_HGrowing::growHomography(const std::vector<feature::SIOPointFeature> &featuresI,
+                                                    const std::vector<feature::SIOPointFeature> &featuresJ,
+                                                    const matching::IndMatches &matches, const IndexT &seedMatchId,
+                                                    std::set<IndexT> &planarMatchesIndices, Mat3 &transformation) const
 {
   assert(seedMatchId <= matches.size());
 
@@ -99,14 +99,14 @@ int GeometricFilterMatrix_HGrowing::growHomography(const std::vector<feature::SI
     findTransformationInliers(featuresI, featuresJ, matches, transformation, currTolerance, planarMatchesIndices);
 
     if (planarMatchesIndices.size() < _minInliersToRefine)
-      return EXIT_FAILURE;
+      return false;
 
     // Note: the following statement is present in the MATLAB code but not implemented in YASM
 //      if (planarMatchesIndices.size() >= _maxFractionPlanarMatches * matches.size())
 //        break;
   }
 
-  return (transformation != Mat3::Identity()) ? EXIT_SUCCESS : EXIT_FAILURE;
+  return (transformation != Mat3::Identity());
 }
 
 }
