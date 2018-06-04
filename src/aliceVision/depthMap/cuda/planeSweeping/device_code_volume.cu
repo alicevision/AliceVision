@@ -99,9 +99,9 @@ __global__ void volume_saveSliceToVolume_kernel(
             {
                 unsigned char* volsim = get3DBufferAt(volume, volume_s, volume_p, vx, vy, vz);
                 *volsim = min(sim, *volsim);
-            };
-        };
-    };
+            }
+        }
+    }
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
