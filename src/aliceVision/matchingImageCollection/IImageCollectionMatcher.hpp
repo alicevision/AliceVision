@@ -27,9 +27,9 @@ namespace matchingImageCollection {
 class IImageCollectionMatcher
 {
   public:
-  IImageCollectionMatcher() {};
+  IImageCollectionMatcher() = default;
 
-  virtual ~IImageCollectionMatcher() {}
+  virtual ~IImageCollectionMatcher() = default;
 
   /// Find corresponding points between some pair of view Ids
   virtual void Match(
