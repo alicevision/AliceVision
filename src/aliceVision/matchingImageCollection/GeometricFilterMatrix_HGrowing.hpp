@@ -218,7 +218,7 @@ struct GeometricFilterMatrix_HGrowing : public GeometricFilterMatrix
           std::set<IndexT> planarMatchesId; // be careful: it contains the id. in the 'remainingMatches' vector not 'putativeMatches' vector.
           Mat3 homography;
           
-          if(!growHomography(siofeatures_I, siofeatures_J, remainingMatches, iMatch, planarMatchesId, homography) == EXIT_SUCCESS)
+          if(growHomography(siofeatures_I, siofeatures_J, remainingMatches, iMatch, planarMatchesId, homography) != EXIT_SUCCESS)
             continue;
           
           #pragma omp critical
