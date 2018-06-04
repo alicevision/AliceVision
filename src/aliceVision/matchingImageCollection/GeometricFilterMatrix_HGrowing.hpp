@@ -156,7 +156,7 @@ struct GeometricFilterMatrix_HGrowing : public GeometricFilterMatrix
     
     // Setup optional drawer tool:
     bool drawGroupedMatches = false;
-    std::vector<std::string> colors {"red","cyan","purple","green","black","brown","blue","pink","grey"};
+    const std::vector<std::string> colors {"red","cyan","purple","green","black","brown","blue","pink","grey"};
     
     std::unique_ptr<svg::svgDrawer> svgStream;
     if (!outputSvgDir.empty())
