@@ -543,7 +543,7 @@ private:
   
   /// Value in [0,1]. If there is this fraction of inliers found the
   /// refine phase is terminated.
-  std::size_t _maxFractionPlanarMatches; 
+  double _maxFractionPlanarMatches;
   
 }; // struct GeometricFilterMatrix_HGrowing
 
