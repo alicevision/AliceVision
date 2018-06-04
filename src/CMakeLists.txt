@@ -301,7 +301,7 @@ endif()
 # Eigen
 # ==============================================================================
 find_package(Eigen3 3.3 REQUIRED)
-if(Eigen3_FOUND)
+if(Eigen3_FOUND OR EIGEN3_FOUND)
   # message(FATAL_ERROR "EIGEN_INCLUDE_DIR: ${EIGEN_INCLUDE_DIR}")
   include_directories(${EIGEN_INCLUDE_DIR})
   # See https://eigen.tuxfamily.org/dox/group__TopicUnalignedArrayAssert.html
