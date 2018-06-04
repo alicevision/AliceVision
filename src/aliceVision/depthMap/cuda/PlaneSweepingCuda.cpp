@@ -18,6 +18,22 @@
 namespace aliceVision {
 namespace depthMap {
 
+
+inline double getMaxGPUMemoryMB(int cudaDeviceNum, double defaultSize = 100.0)
+{
+    try {
+        std::unique_ptr<cudaDeviceProp> deviceProperties(new cudaDeviceProp);
+        if (cudaGetDeviceProperties(deviceProperties.get(), cudaDeviceNum) != cudaSuccess)
+            throw std::runtime_error("Cannot get properties for CUDA gpu device " + std::to_string(cudaDeviceNum));
+        return 0.8 * (deviceProperties->totalGlobalMem) / (1024. * 1024.); // convert to MB and remove some margin
+    }
+    catch (const std::exception& e)
+    {
+        ALICEVISION_LOG_WARNING(e.what());
+    }
+    return defaultSize;
+}
+
 extern float3 ps_getDeviceMemoryInfo();
 
 /*
@@ -388,12 +404,12 @@ PlaneSweepingCuda::PlaneSweepingCuda(int _CUDADeviceNo, mvsUtils::ImagesCache* _
 
     verbose = mp->verbose;
 
-    float oneimagemb = 4.0f * (((float)(maxImageWidth * maxImageHeight) / 1024.0f) / 1024.0f);
+    double oneimagemb = 4.0 * (((double)(maxImageWidth * maxImageHeight) / 1024.0) / 1024.0);
     for(int scale = 2; scale <= scales; ++scale)
     {
-        oneimagemb += 4.0 * (((float)((maxImageWidth / scale) * (maxImageHeight / scale)) / 1024.0) / 1024.0);
+        oneimagemb += 4.0 * (((double)((maxImageWidth / scale) * (maxImageHeight / scale)) / 1024.0) / 1024.0);
     }
-    float maxmbGPU = 100.0f;
+    double maxmbGPU = getMaxGPUMemoryMB(CUDADeviceNo);
     nImgsInGPUAtTime = (int)(maxmbGPU / oneimagemb);
     nImgsInGPUAtTime = std::max(2, std::min(mp->ncams, nImgsInGPUAtTime));
 
@@ -410,10 +426,11 @@ PlaneSweepingCuda::PlaneSweepingCuda(int _CUDADeviceNo, mvsUtils::ImagesCache* _
     subPixel = mp->_ini.get<bool>("global.subPixel", true);
 
     ALICEVISION_LOG_INFO("PlaneSweepingCuda:" << std::endl
-                         << "\t- nImgsInGPUAtTime: " << nImgsInGPUAtTime << std::endl
-                         << "\t- scales: " << scales << std::endl
-                         << "\t- subPixel: " << (subPixel ? "Yes" : "No") << std::endl
-                         << "\t- varianceWSH: ", varianceWSH);
+        << "\t- max GPU Memory (MB): " << maxmbGPU << std::endl
+        << "\t- nImgsInGPUAtTime: " << nImgsInGPUAtTime << std::endl
+        << "\t- scales: " << scales << std::endl
+        << "\t- subPixel: " << (subPixel ? "Yes" : "No") << std::endl
+        << "\t- varianceWSH: " << varianceWSH);
 
     // allocate global on the device
     ps_deviceAllocate((CudaArray<uchar4, 2>***)&ps_texs_arr, nImgsInGPUAtTime, maxImageWidth, maxImageHeight, scales, CUDADeviceNo);
