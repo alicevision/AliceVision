@@ -52,38 +52,25 @@ void fillMatricesWithUndistortFeaturesMatches(
   const bool I_hasValidIntrinsics = cam_I && cam_I->isValid();
   const bool J_hasValidIntrinsics = cam_J && cam_J->isValid();
 
-  if (I_hasValidIntrinsics)
+
+  for (size_t i = 0; i < putativeMatches.size(); ++i)
   {
-    for (size_t i=0; i < putativeMatches.size(); ++i)
-    {
-      const Vec2 pt_I = getFeaturePosition(feature_I, putativeMatches[i]._i);
+    const Vec2 pt_I = getFeaturePosition(feature_I, putativeMatches[i]._i);
+    if (I_hasValidIntrinsics)
       x_I.col(i) = cam_I->get_ud_pixel(pt_I);
-    }
-  }
-  else
-  {
-    for (size_t i=0; i < putativeMatches.size(); ++i)
-    {
-      const Vec2 pt_I = getFeaturePosition(feature_I, putativeMatches[i]._i);
+    else
       x_I.col(i) = pt_I;
-    }
   }
-  if (J_hasValidIntrinsics)
+
+  for (size_t i = 0; i < putativeMatches.size(); ++i)
   {
-    for (size_t i=0; i < putativeMatches.size(); ++i)
-    {
-      const Vec2 pt_J = getFeaturePosition(feature_J, putativeMatches[i]._j);
+    const Vec2 pt_J = getFeaturePosition(feature_J, putativeMatches[i]._j);
+    if (J_hasValidIntrinsics)
       x_J.col(i) = cam_J->get_ud_pixel(pt_J);
-    }
-  }
-  else
-  {
-    for (size_t i=0; i < putativeMatches.size(); ++i)
-    {
-      const Vec2 pt_J = getFeaturePosition(feature_J, putativeMatches[i]._j);
+    else
       x_J.col(i) = pt_J;
-    }
   }
+
 }
 
 /**
