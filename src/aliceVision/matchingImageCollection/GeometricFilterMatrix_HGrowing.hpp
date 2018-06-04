@@ -182,8 +182,8 @@ struct GeometricFilterMatrix_HGrowing : public GeometricFilterMatrix
       
       const Regions & regions_I = regionsPerView.getRegions(viewId_I, descType);
       const Regions & regions_J = regionsPerView.getRegions(viewId_J, descType);
-      const std::vector<SIOPointFeature> siofeatures_I = getSIOPointFeatures(regions_I);
-      const std::vector<SIOPointFeature> siofeatures_J = getSIOPointFeatures(regions_J);
+      const std::vector<SIOPointFeature>& siofeatures_I = getSIOPointFeatures(regions_I);
+      const std::vector<SIOPointFeature>& siofeatures_J = getSIOPointFeatures(regions_J);
       
       IndMatches remainingMatches = putativeMatchesPerType.at(descType);
       
