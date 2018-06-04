@@ -10,6 +10,7 @@
 #include "aliceVision/feature/RegionsPerView.hpp"
 #include "aliceVision/matching/IndMatch.hpp"
 #include "aliceVision/matchingImageCollection/GeometricFilterMatrix.hpp"
+#include "aliceVision/matchingImageCollection/geometricFilterUtils.hpp"
 #include "aliceVision/sfm/SfMData.hpp"
 #include "dependencies/vectorGraphics/svgDrawer.hpp"
 
@@ -375,12 +376,7 @@ struct GeometricFilterMatrix_HGrowing : public GeometricFilterMatrix
    * @return The number of estimated homographies (= planes). Return 0 if there is
    * no homography or if the descriptor type does not exist.
    */
-  std::size_t getNbHomographies(const feature::EImageDescriberType & descType) const 
-  {
-    if (_HsAndMatchesPerDesc.find(descType) == _HsAndMatchesPerDesc.end())
-        return 0;
-    return _HsAndMatchesPerDesc.at(descType).size();
-  }
+  std::size_t getNbHomographies(const feature::EImageDescriberType & descType) const;
   
   /**
    * @brief Get the number of matches associated to the given descriptor type & homography index.
@@ -389,32 +385,13 @@ struct GeometricFilterMatrix_HGrowing : public GeometricFilterMatrix
    * @return The number of matches. Return 0 if the descriptor type or the homography 
    * index do not exist in the result.
    */
-  std::size_t getNbVerifiedMatches(const feature::EImageDescriberType & descType, const IndexT homographyId) const
-  {
-    if (_HsAndMatchesPerDesc.find(descType) == _HsAndMatchesPerDesc.end())
-      return 0;
-    if (homographyId > _HsAndMatchesPerDesc.at(descType).size() - 1)
-      return 0;
-
-    return _HsAndMatchesPerDesc.at(descType).at(homographyId).second.size();
-  }
+  std::size_t getNbVerifiedMatches(const feature::EImageDescriberType & descType, const IndexT homographyId) const;
   
   /**
    * @brief Get the number of verified matches for every descriptor and associated homographies.
    * @return The nb of verified matches
    */
-  std::size_t getNbAllVerifiedMatches() const
-  {
-    std::size_t counter = 0;
-    for (const auto & HnMs : _HsAndMatchesPerDesc)
-    {
-      for (const std::pair<Mat3, matching::IndMatches> & HnM : HnMs.second)
-      {
-        counter += HnM.second.size();
-      }
-    }
-    return counter;
-  }
+  std::size_t getNbAllVerifiedMatches() const;
   
   /**
    * @brief Get a copy of the matches for a given desc. type & homography index.
@@ -423,22 +400,7 @@ struct GeometricFilterMatrix_HGrowing : public GeometricFilterMatrix
    * @param[in] matches Contains the matches.
    * @return EXIT_SUCCESS the number of matches is up to 0.
    */
-  int getMatches(const feature::EImageDescriberType & descType, const IndexT homographyId, matching::IndMatches & matches) const
-  {
-    matches.clear();
-    
-    if (_HsAndMatchesPerDesc.find(descType) == _HsAndMatchesPerDesc.end())
-      return EXIT_FAILURE;
-    if (homographyId > _HsAndMatchesPerDesc.at(descType).size() - 1)
-      return EXIT_FAILURE;
-
-    matches = _HsAndMatchesPerDesc.at(descType).at(homographyId).second;
-    
-    if (matches.empty())
-      return EXIT_FAILURE;
-
-    return EXIT_SUCCESS;
-  }
+  int getMatches(const feature::EImageDescriberType & descType, const IndexT homographyId, matching::IndMatches & matches) const;
   
 private:
   
@@ -458,49 +420,7 @@ private:
                       const matching::IndMatches & matches,
                       const IndexT & seedMatchId,
                       std::set<IndexT> & planarMatchesIndices, 
-                      Mat3 & transformation) const
-  {
-    assert(seedMatchId <= matches.size());
-   
-    planarMatchesIndices.clear();
-    transformation = Mat3::Identity();
-    
-    const matching::IndMatch & seedMatch = matches.at(seedMatchId);
-    const feature::SIOPointFeature & seedFeatureI = featuresI.at(seedMatch._i);
-    const feature::SIOPointFeature & seedFeatureJ = featuresJ.at(seedMatch._j);
-
-    double currTolerance;
-
-    for (IndexT iRefineStep = 0; iRefineStep < _nbRefiningIterations; ++iRefineStep)
-    {
-      if (iRefineStep == 0)
-      {
-        computeSimilarity(seedFeatureI, seedFeatureJ, transformation);
-        currTolerance = _similarityTolerance;
-      }
-      else if (iRefineStep <= 4)
-      {
-        estimateAffinity(featuresI, featuresJ, matches, transformation, planarMatchesIndices);
-        currTolerance = _affinityTolerance;
-      }
-      else
-      {
-        estimateHomography(featuresI, featuresJ, matches, transformation, planarMatchesIndices);
-        currTolerance = _homographyTolerance;
-      }
-      
-      findTransformationInliers(featuresI, featuresJ, matches, transformation, currTolerance, planarMatchesIndices);
-      
-      if (planarMatchesIndices.size() < _minInliersToRefine)
-        return EXIT_FAILURE;
-      
-      // Note: the following statement is present in the MATLAB code but not implemented in YASM
-//      if (planarMatchesIndices.size() >= _maxFractionPlanarMatches * matches.size())
-//        break;
-    }
-    
-    return (transformation != Mat3::Identity()) ? EXIT_SUCCESS : EXIT_FAILURE;
-  }
+                      Mat3 & transformation) const;
   
   // -- Results container
   
