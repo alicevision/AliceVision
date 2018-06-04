@@ -460,7 +460,7 @@ private:
                       const matching::IndMatches & matches,
                       const IndexT & seedMatchId,
                       std::set<IndexT> & planarMatchesIndices, 
-                      Mat3 & transformation)
+                      Mat3 & transformation) const
   {
     assert(seedMatchId <= matches.size());
    
