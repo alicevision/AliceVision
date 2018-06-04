@@ -377,7 +377,7 @@ void ps_deviceUpdateCam(CudaArray<uchar4, 2>** ps_texs_arr, cameraStruct* cam, i
         CudaDeviceMemoryPitched<uchar4, 2> tex_lab_dmp(CudaSize<2>(w, h));
         copy(tex_lab_dmp, (*cam->tex_rgba_hmh));
 
-        int block_size = 8;
+        int block_size = 16;
         dim3 block(block_size, block_size, 1);
         dim3 grid(divUp(w, block_size), divUp(h, block_size), 1);
         rgb2lab_kernel<<<grid, block>>>(tex_lab_dmp.getBuffer(), tex_lab_dmp.stride()[0], w, h);
@@ -404,7 +404,7 @@ void ps_deviceUpdateCam(CudaArray<uchar4, 2>** ps_texs_arr, cameraStruct* cam, i
         cudaArray* gaussian_arr = ps_create_gaussian_arr(1.0f, radius);
         cudaBindTextureToArray(gaussianTex, gaussian_arr, cudaCreateChannelDesc<float>());
 
-        int block_size = 8;
+        int block_size = 16;
         dim3 block(block_size, block_size, 1);
         dim3 grid(divUp(w / (scale + 1), block_size), divUp(h / (scale + 1), block_size), 1);
 
@@ -488,7 +488,7 @@ void ps_planeSweepingGPUPixels(CudaArray<uchar4, 2>** ps_texs_arr, CudaHostMemor
     // int block_size = 16*16;
     // dim3 block(block_size,1,1);
     // dim3 grid(divUp(nPlanes, block_size),divUp(slicesAtTime,1),1);
-    int block_size = 8;
+    int block_size = 16;
     dim3 block(block_size, block_size, 1);
     dim3 grid(divUp(nPlanes, block_size), divUp(slicesAtTime, block_size), 1);
     // int block_size = 64;
@@ -579,7 +579,7 @@ void ps_aggregatePathVolume2(CudaDeviceMemoryPitched<unsigned char, 3>& vol_dmp,
 
     ///////////////////////////////////////////////////////////////////////////////
     // setup block and grid
-    int block_size = 8;
+    int block_size = 16;
     dim3 blockvol(block_size, block_size, 1);
     dim3 gridvol(divUp(volDimX, block_size), divUp(volDimY, block_size), 1);
 
@@ -633,7 +633,7 @@ void ps_aggregatePathVolume(CudaDeviceMemoryPitched<unsigned char, 3>& d_volSimT
 
     ///////////////////////////////////////////////////////////////////////////////
     // setup block and grid
-    int block_size = 8;
+    int block_size = 16;
     dim3 blockvol(block_size, block_size, 1);
     dim3 gridvol(divUp(volDimX, block_size), divUp(volDimY, block_size), 1);
 
@@ -730,7 +730,7 @@ void ps_updateAggrVolume(CudaDeviceMemoryPitched<unsigned char, 3>& volAgr_dmp,
 
     ///////////////////////////////////////////////////////////////////////////////
     // setup block and grid
-    int block_size = 8;
+    int block_size = 16;
     dim3 block(block_size, block_size, 1);
     dim3 grid(divUp(volDimX, block_size), divUp(volDimY, block_size), 1);
 
@@ -844,7 +844,7 @@ void ps_SGMoptimizeSimVolume(CudaArray<uchar4, 2>** ps_texs_arr,
 
     ///////////////////////////////////////////////////////////////////////////////
     // setup block and grid
-    int block_size = 8;
+    int block_size = 16;
     dim3 blockvol(block_size, block_size, 1);
     dim3 gridvol(divUp(volDimX, block_size), divUp(volDimY, block_size), 1);
 
@@ -911,7 +911,7 @@ void ps_transposeVolume(CudaHostMemoryHeap<unsigned char, 3>* ovol_hmh,
     volDims[1] = volDimY;
     volDims[2] = volDimZ;
 
-    int block_size = 8;
+    int block_size = 16;
     dim3 block(block_size, block_size, 1);
     dim3 grid(divUp(volDimX, block_size), divUp(volDimY, block_size), 1);
 
@@ -944,7 +944,7 @@ void ps_SGMAggregateVolumeDir(
 
         ///////////////////////////////////////////////////////////////////////////////
         // setup block and grid
-        int block_size = 8;
+        int block_size = 16;
         dim3 block(block_size,block_size,1);
         dim3 grid(divUp(volDimX, block_size),divUp(volDimY,block_size),1);
 
@@ -1018,7 +1018,7 @@ void ps_computeSimilarityVolume(CudaArray<uchar4, 2>** ps_texs_arr,
     cudaBindTextureToArray(depthsTex, depths_arr.getArray(), cudaCreateChannelDesc<float>());
     CHECK_CUDA_ERROR();
 
-    int block_size = 8;
+    int block_size = 16;
     dim3 block(block_size, block_size, 1);
     dim3 grid(divUp(nDepthsToSearch, block_size), divUp(slicesAtTime, block_size), 1);
     dim3 blockvol(block_size, block_size, 1);
@@ -1130,7 +1130,7 @@ void ps_filterVisTVolume(CudaHostMemoryHeap<unsigned int, 3>* iovol_hmh, int vol
                          bool verbose)
 {
     clock_t tall = tic();
-    int block_size = 8;
+    int block_size = 16;
     dim3 blockvol(block_size, block_size, 1);
     dim3 gridvol(divUp(volDimX, block_size), divUp(volDimY, block_size), 1);
 
@@ -1188,7 +1188,7 @@ void ps_enforceTweigthInVolumeInternal(CudaDeviceMemoryPitched<unsigned int, 3>&
                                        CudaDeviceMemoryPitched<unsigned int, 3>& ovol_dmp, int volDimX, int volDimY,
                                        int volDimZ, bool verbose)
 {
-    int block_size = 8;
+    int block_size = 16;
     dim3 blockvol(block_size, block_size, 1);
     dim3 gridvol(divUp(volDimX, block_size), divUp(volDimY, block_size), 1);
 
@@ -1238,7 +1238,7 @@ void ps_enforceTweigthInVolume(CudaHostMemoryHeap<unsigned int, 3>* iovol_hmh, i
 
     ///////////////////////////////////////////////////////////////////////////////
     // setup block and grid
-    int block_size = 8;
+    int block_size = 16;
     dim3 block(block_size, block_size, 1);
     dim3 grid(divUp(volDimX, block_size), divUp(volDimY, block_size), 1);
 
@@ -1284,7 +1284,7 @@ void ps_computeDP1Volume(CudaHostMemoryHeap<int, 3>* ovol_hmh, CudaHostMemoryHea
                          int volDimX, int volDimY, int volDimZ, bool verbose)
 {
     clock_t tall = tic();
-    int block_size = 8;
+    int block_size = 16;
     dim3 blockvol(block_size, block_size, 1);
     dim3 gridvol(divUp(volDimX, block_size), divUp(volDimY, block_size), 1);
 
@@ -1327,7 +1327,7 @@ void ps_normalizeDP1Volume(CudaHostMemoryHeap<int, 3>** iovols_hmh, int nZparts,
                            int volDimY, int volDimZ, bool verbose)
 {
     clock_t tall = tic();
-    int block_size = 8;
+    int block_size = 16;
     dim3 blockvol(block_size, block_size, 1);
     dim3 gridvol(divUp(volDimX, block_size), divUp(volDimY, block_size), 1);
 
@@ -1389,7 +1389,7 @@ void ps_computeRcVolumeForTcDepthMaps(
         )
 {
         clock_t tall = tic();
-        int block_size = 8;
+        int block_size = 16;
         dim3 blockvol(block_size,block_size,1);
         dim3 gridvol(divUp(volDimX, block_size),divUp(volDimY,block_size),1);
         ps_init_reference_camera_matrices(cams[0]->P,cams[0]->iP,cams[0]->R,cams[0]->iR,cams[0]->K,cams[0]->iK,cams[0]->C);
@@ -1464,7 +1464,7 @@ void ps_computeRcVolumeForTcDepthSimMaps(CudaHostMemoryHeap<unsigned int, 3>** o
     clock_t tall = tic();
     testCUDAdeviceNo(CUDAdeviceNo);
 
-    int block_size = 8;
+    int block_size = 16;
     dim3 blockvol(block_size, block_size, 1);
     dim3 gridvol(divUp(volDimX, block_size), divUp(volDimY, block_size), 1);
     ps_init_reference_camera_matrices(cams[0]->P, cams[0]->iP, cams[0]->R, cams[0]->iR, cams[0]->K, cams[0]->iK,
@@ -1554,7 +1554,7 @@ void ps_computeRcVolumeForTcDepthMap(
         //CudaArray<float,2> depths_arr(depths_hmh);
         //cudaBindTextureToArray(depthsTex, depths_arr.getArray(), cudaCreateChannelDesc<float>());
 
-        int block_size = 8;
+        int block_size = 16;
         dim3 blockvol(block_size,block_size,1);
         dim3 gridvol(divUp(volDimX, block_size),divUp(volDimY,block_size),1);
 
@@ -1632,7 +1632,7 @@ void ps_filterRcIdDepthMapByTcDepthMap(CudaHostMemoryHeap<unsigned short, 2>* rc
     CudaArray<float, 2> depths_arr(depths_hmh);
     cudaBindTextureToArray(depthsTex, depths_arr.getArray(), cudaCreateChannelDesc<float>());
 
-    int block_size = 8;
+    int block_size = 16;
     dim3 blockvol(block_size, block_size, 1);
     dim3 gridvol(divUp(volDimX, block_size), divUp(volDimY, block_size), 1);
 
@@ -1677,7 +1677,7 @@ void ps_filterRcIdDepthMapByTcDepthMaps(CudaHostMemoryHeap<unsigned short, 2>* n
     CudaArray<float, 2> depths_arr(depths_hmh);
     cudaBindTextureToArray(depthsTex, depths_arr.getArray(), cudaCreateChannelDesc<float>());
 
-    int block_size = 8;
+    int block_size = 16;
     dim3 blockvol(block_size, block_size, 1);
     dim3 gridvol(divUp(volDimX, block_size), divUp(volDimY, block_size), 1);
 
@@ -1745,7 +1745,7 @@ void ps_planeSweepingGPUPixelsFine(CudaArray<uchar4, 2>** ps_texs_arr, CudaHostM
 
     ///////////////////////////////////////////////////////////////////////////////
     // setup block and grid
-    int block_size = 8;
+    int block_size = 16;
     dim3 block(block_size, block_size, 1);
     dim3 grid(divUp(nPlanes, block_size), divUp(slicesAtTime, block_size), 1);
 
@@ -2067,7 +2067,7 @@ void ps_smoothDepthMap(CudaArray<uchar4, 2>** ps_texs_arr, CudaHostMemoryHeap<fl
 
     CudaDeviceMemoryPitched<float, 2> depthMap_dmp(CudaSize<2>(width, height));
 
-    int block_size = 8;
+    int block_size = 16;
     dim3 block(block_size, block_size, 1);
     dim3 grid(divUp(width, block_size), divUp(height, block_size), 1);
 
@@ -2110,7 +2110,7 @@ void ps_filterDepthMap(CudaArray<uchar4, 2>** ps_texs_arr, CudaHostMemoryHeap<fl
 
     CudaDeviceMemoryPitched<float, 2> depthMap_dmp(CudaSize<2>(width, height));
 
-    int block_size = 8;
+    int block_size = 16;
     dim3 block(block_size, block_size, 1);
     dim3 grid(divUp(width, block_size), divUp(height, block_size), 1);
 
@@ -2155,7 +2155,7 @@ void ps_computeNormalMap(CudaArray<uchar4, 2>** ps_texs_arr, CudaHostMemoryHeap<
     CudaDeviceMemoryPitched<float3, 2> normalMap_dmp(*normalMap_hmh);
     CudaDeviceMemoryPitched<float, 2> depthMap_dmp(CudaSize<2>(width, height));
 
-    int block_size = 8;
+    int block_size = 16;
     dim3 block(block_size, block_size, 1);
     dim3 grid(divUp(width, block_size), divUp(height, block_size), 1);
 
@@ -2204,7 +2204,7 @@ void ps_alignSourceDepthMapToTarget(CudaArray<uchar4, 2>** ps_texs_arr,
     cudaBindTextureToArray(r4tex, ps_texs_arr[cams[0]->camId * scales + scale]->getArray(),
                            cudaCreateChannelDesc<uchar4>());
 
-    int block_size = 8;
+    int block_size = 16;
     dim3 block(block_size, block_size, 1);
     dim3 grid(divUp(width, block_size), divUp(height, block_size), 1);
 
@@ -2994,7 +2994,7 @@ void ps_GC_aggregatePathVolume(CudaHostMemoryHeap<unsigned int, 2>* ftid_hmh, //
 
     ///////////////////////////////////////////////////////////////////////////////
     // setup block and grid
-    int block_size = 8;
+    int block_size = 16;
     dim3 blockvol(block_size, block_size, 1);
     dim3 gridvol(divUp(volDimX, block_size), divUp(volDimY, block_size), 1);
 
@@ -3032,7 +3032,7 @@ void ps_GC_K_aggregatePathVolume(CudaHostMemoryHeap<unsigned int, 2>* ftid_hmh, 
 
     ///////////////////////////////////////////////////////////////////////////////
     // setup block and grid
-    int block_size = 8;
+    int block_size = 16;
     dim3 blockvol(block_size, block_size, 1);
     dim3 gridvol(divUp(volDimX, block_size), divUp(volDimY, block_size), 1);
 
@@ -3087,7 +3087,7 @@ void ps_ptsStatForRcDepthMap(CudaArray<uchar4, 2>** ps_texs_arr, CudaHostMemoryH
 
     /*
     {
-            int block_size = 8;
+            int block_size = 16;
             dim3 block(block_size,block_size,1);
             dim3 grid(divUp(width, block_size),divUp(height,block_size),1);
             smoothDepthMap_kernel<<<grid, block>>>(
