@@ -126,6 +126,22 @@ macro(UNIT_TEST NAMESPACE NAME EXTRA_LIBS)
 endmacro()
 
 # ==============================================================================
+# MACRO utility
+# ==============================================================================
+macro(add_target_properties _target _name)
+	set(_properties)
+	foreach(_prop ${ARGN})
+		set(_properties "${_properties} ${_prop}")
+	endforeach(_prop)
+	get_target_property(_old_properties ${_target} ${_name})
+	if(NOT _old_properties)
+		# in case it's NOTFOUND
+		set(_old_properties)
+	endif(NOT _old_properties)
+	set_target_properties(${_target} PROPERTIES ${_name} "${_old_properties} ${_properties}")
+endmacro(add_target_properties)
+
+# ==============================================================================
 # Check that submodule have been initialized and updated
 # ==============================================================================
 if(NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/dependencies/osi_clp/CoinUtils)
@@ -488,6 +504,10 @@ if(ALICEVISION_BUILD_SFM) # or ALICEVISION_BUILD_MVS
     if(Alembic_FOUND)
       set(ALICEVISION_HAVE_ALEMBIC 1)
       message(STATUS "Alembic version ${Alembic_VERSION} found.")
+      # There is a missing include dependency in Alembic cmake export.
+      add_target_properties(Alembic::Alembic PROPERTIES
+        INTERFACE_INCLUDE_DIRECTORIES "${ILMBASE_INCLUDE_DIR}"
+      )
     elseif(ALICEVISION_USE_ALEMBIC STREQUAL "ON")
       message(SEND_ERROR "Failed to find Alembic.")
     endif()

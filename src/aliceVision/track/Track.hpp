@@ -337,7 +337,7 @@ struct TracksUtilsMap
     {
       // Retrieve the track information from the current index i.
       TracksMap::const_iterator itF =
-        find_if(map_tracks.begin(), map_tracks.end(), FunctorMapFirstEqual(vec_filterIndex[i]));
+          std::find_if(map_tracks.begin(), map_tracks.end(), FunctorMapFirstEqual(vec_filterIndex[i]));
       // The current track.
       const Track & map_ref = itF->second;
 
