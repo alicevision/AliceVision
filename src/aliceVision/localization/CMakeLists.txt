@@ -32,6 +32,7 @@ target_link_libraries(aliceVision_localization
          aliceVision_voctree
          aliceVision_numeric
   PRIVATE aliceVision_system
+          aliceVision_matchingImageCollection
           ${Boost_LIBRARIES}
           ${LOG_LIB}
 )
