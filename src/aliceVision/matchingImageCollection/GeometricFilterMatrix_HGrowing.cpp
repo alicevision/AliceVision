@@ -105,8 +105,7 @@ bool GeometricFilterMatrix_HGrowing::growHomography(const std::vector<feature::S
 //      if (planarMatchesIndices.size() >= _maxFractionPlanarMatches * matches.size())
 //        break;
   }
-
-  return (transformation != Mat3::Identity());
+  return !transformation.isIdentity();
 }
 
 }
