@@ -86,7 +86,7 @@ public:
 //-- Multiple homography matrices estimation template functor, based on homography growing, used for filter pair of putative correspondences
 struct GeometricFilterMatrix_HGrowing : public GeometricFilterMatrix
 {
-  GeometricFilterMatrix_HGrowing(
+    explicit GeometricFilterMatrix_HGrowing(
     double dPrecision = std::numeric_limits<double>::infinity(),
     size_t iteration = 1024)
     : GeometricFilterMatrix(dPrecision, std::numeric_limits<double>::infinity(), iteration)
