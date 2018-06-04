@@ -553,20 +553,13 @@ StaticVector<float>* SemiGlobalMatchingRc::getSubDepthsForTCam(int tcamid)
     return out;
 }
 
-bool SemiGlobalMatchingRc::sgmrc(bool checkIfExists)
+bool SemiGlobalMatchingRc::sgmrc()
 {
     if(sp->mp->verbose)
         ALICEVISION_LOG_DEBUG("sgmrc: processing " << (rc + 1) << " of " << sp->mp->ncams << ".");
 
-    if(tcams->size() == 0)
-    {
+    if(tcams->empty())
         return false;
-    }
-
-    if((mvsUtils::FileExists(SGM_idDepthMapFileName)) && (checkIfExists))
-    {
-        return false;
-    }
 
     long tall = clock();
 
