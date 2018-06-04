@@ -271,7 +271,7 @@ struct GeometricFilterMatrix_HGrowing : public GeometricFilterMatrix
             
         } // refinement part
         
-        // stop when the models get to small        
+        // stop when the models get too small
         if (bestMatchesId.size() < _minNbMatchesPerH)
           break;
 
