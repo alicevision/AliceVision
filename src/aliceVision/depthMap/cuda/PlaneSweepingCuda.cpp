@@ -215,13 +215,10 @@ PlaneSweepingCuda::PlaneSweepingCuda(int _CUDADeviceNo, mvsUtils::ImagesCache* _
     ps_deviceAllocate( nImgsInGPUAtTime, maxImageWidth, maxImageHeight, scales, CUDADeviceNo);
 
     cams = new StaticVector<void*>();
-    cams->reserve(nImgsInGPUAtTime);
     cams->resize(nImgsInGPUAtTime);
     camsRcs = new StaticVector<int>();
-    camsRcs->reserve(nImgsInGPUAtTime);
     camsRcs->resize(nImgsInGPUAtTime);
     camsTimes = new StaticVector<long>();
-    camsTimes->reserve(nImgsInGPUAtTime);
     camsTimes->resize(nImgsInGPUAtTime);
 
     for(int rc = 0; rc < nImgsInGPUAtTime; ++rc)
