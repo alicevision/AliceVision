@@ -33,3 +33,7 @@ UNIT_TEST(aliceVision pinholeRadial   "aliceVision_camera")
 
 add_custom_target(aliceVision_camera_ide SOURCES ${camera_files_headers} ${camera_files_test})
 
+install(TARGETS aliceVision_camera
+		DESTINATION lib
+		EXPORT aliceVision-targets
+		)
