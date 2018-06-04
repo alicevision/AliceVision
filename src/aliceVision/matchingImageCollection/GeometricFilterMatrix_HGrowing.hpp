@@ -293,7 +293,7 @@ struct GeometricFilterMatrix_HGrowing : public GeometricFilterMatrix
             const IndMatch & match = remainingMatches.at(id);
             const SIOPointFeature & fI = siofeatures_I.at(match._i);
             const SIOPointFeature & fJ  = siofeatures_J.at(match._j);
-            std::string color = "grey"; // 0 < iH <= 8: colored; iH > 8  are white (not enougth colors)
+            std::string color = "grey"; // 0 < iH <= 8: colored; iH > 8  are white (not enough colors)
             if (iH <= colors.size() - 1)
               color = colors.at(iH);
             
