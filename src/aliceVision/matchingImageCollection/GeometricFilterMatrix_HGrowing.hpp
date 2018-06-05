@@ -87,17 +87,17 @@ public:
 struct GeometricFilterMatrix_HGrowing : public GeometricFilterMatrix
 {
     explicit GeometricFilterMatrix_HGrowing(
-    double dPrecision = std::numeric_limits<double>::infinity(),
-    size_t iteration = 1024)
-    : GeometricFilterMatrix(dPrecision, std::numeric_limits<double>::infinity(), iteration)
-    , _maxNbHomographies(10)
-    , _minNbMatchesPerH(20)
-    , _similarityTolerance(20)
-    , _affinityTolerance(10)
-    , _homographyTolerance(5)
-    , _minInliersToRefine(6)
-    , _nbRefiningIterations(8)
-    , _maxFractionPlanarMatches(0.7)
+          double dPrecision = std::numeric_limits<double>::infinity(),
+          size_t iteration = 1024)
+              : GeometricFilterMatrix(dPrecision, std::numeric_limits<double>::infinity(), iteration)
+              , _maxNbHomographies(10)
+              , _minNbMatchesPerH(20)
+              , _similarityTolerance(20)
+              , _affinityTolerance(10)
+              , _homographyTolerance(5)
+              , _minInliersToRefine(6)
+              , _nbRefiningIterations(8)
+              , _maxFractionPlanarMatches(0.7)
   {
     assert(_maxFractionPlanarMatches >= 0 && _maxFractionPlanarMatches <= 1);
   }
