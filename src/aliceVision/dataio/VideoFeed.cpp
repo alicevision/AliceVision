@@ -35,6 +35,11 @@ public:
                    camera::PinholeRadialK3 &camIntrinsics,
                    std::string &mediaPath,
                    bool &hasIntrinsics);
+
+  bool readImage(image::Image<float> &imageGray,
+                     camera::PinholeRadialK3 &camIntrinsics,
+                     std::string &mediaPath,
+                     bool &hasIntrinsics);
   
   bool readImage(image::Image<unsigned char> &imageGray,
                      camera::PinholeRadialK3 &camIntrinsics,
@@ -144,6 +149,20 @@ bool VideoFeed::FeederImpl::readImage(image::Image<image::RGBColor> &imageRGB,
   return true;
 }
 
+bool VideoFeed::FeederImpl::readImage(image::Image<float> &imageGray,
+          camera::PinholeRadialK3 &camIntrinsics,
+          std::string &mediaPath,
+          bool &hasIntrinsics)
+{
+  image::Image<unsigned char> imageGrayUChar;
+  if(FeederImpl::readImage(imageGrayUChar, camIntrinsics, mediaPath, hasIntrinsics))
+  {
+    imageGray = (imageGrayUChar.GetMat().cast<float>() / 255.f);
+    return true;
+  }
+  return false;
+}
+
 
 bool VideoFeed::FeederImpl::readImage(image::Image<unsigned char> &imageGray,
                    camera::PinholeRadialK3 &camIntrinsics,
@@ -238,6 +257,14 @@ bool VideoFeed::readImage(image::Image<image::RGBColor> &imageRGB,
                      bool &hasIntrinsics)
 {
   return(_feeder->readImage(imageRGB, camIntrinsics, mediaPath, hasIntrinsics));
+}
+
+bool VideoFeed::readImage(image::Image<float> &imageGray,
+                     camera::PinholeRadialK3 &camIntrinsics,
+                     std::string &mediaPath,
+                     bool &hasIntrinsics)
+{
+  return(_feeder->readImage(imageGray, camIntrinsics, mediaPath, hasIntrinsics));
 }
 
 bool VideoFeed::readImage(image::Image<unsigned char> &imageGray,

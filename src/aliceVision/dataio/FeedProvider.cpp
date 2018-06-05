@@ -81,6 +81,14 @@ bool FeedProvider::readImage(image::Image<image::RGBColor> &imageRGB,
   return(_feeder->readImage(imageRGB, camIntrinsics, mediaPath, hasIntrinsics));
 }
 
+bool FeedProvider::readImage(image::Image<float> &imageGray,
+      camera::PinholeRadialK3 &camIntrinsics,
+      std::string &mediaPath,
+      bool &hasIntrinsics)
+{
+  return(_feeder->readImage(imageGray, camIntrinsics, mediaPath, hasIntrinsics));
+}
+
 bool FeedProvider::readImage(image::Image<unsigned char> &imageGray,
       camera::PinholeRadialK3 &camIntrinsics,
       std::string &mediaPath,
