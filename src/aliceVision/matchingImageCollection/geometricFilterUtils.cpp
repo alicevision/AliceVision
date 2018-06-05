@@ -176,8 +176,11 @@ void estimateAffinity(const std::vector<feature::SIOPointFeature> & featuresI,
 }
 
 void estimateHomography(const std::vector<feature::SIOPointFeature> &featuresI,
-                        const std::vector<feature::SIOPointFeature> &featuresJ, const matching::IndMatches &matches,
-                        Mat3 &H, const std::set<IndexT> &usefulMatchesId) {
+                        const std::vector<feature::SIOPointFeature> &featuresJ,
+                        const matching::IndMatches &matches,
+                        Mat3 &H,
+                        const std::set<IndexT> &usefulMatchesId)
+{
   assert(!featuresI.empty());
   assert(!featuresJ.empty());
   assert(!matches.empty());
