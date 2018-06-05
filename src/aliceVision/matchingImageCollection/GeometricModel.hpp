@@ -45,7 +45,7 @@ inline std::string EGeometricModel_enumToString(EGeometricModel geometricModel)
     case EGeometricModel::ESSENTIAL_MATRIX:      return "essential_matrix";
     case EGeometricModel::HOMOGRAPHY_MATRIX:     return "homography_matrix";
   }
-  throw std::out_of_range("Invalid sharpnessPreset enum");
+  throw std::out_of_range("Invalid geometricModel enum");
 }
 
 /**
@@ -62,7 +62,7 @@ inline EGeometricModel EGeometricModel_stringToEnum(const std::string& geometric
   if(model == "essential_matrix")      return EGeometricModel::ESSENTIAL_MATRIX;
   if(model == "homography_matrix")     return EGeometricModel::HOMOGRAPHY_MATRIX;
 
-  throw std::out_of_range("Invalid sharpnessPreset : " + geometricModel);
+  throw std::out_of_range("Invalid geometricModel: " + geometricModel);
 }
 
 /**
