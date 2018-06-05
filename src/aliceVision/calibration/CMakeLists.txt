@@ -24,7 +24,7 @@ target_link_libraries(aliceVision_calibration
   PRIVATE aliceVision_image
           aliceVision_system
           aliceVision_dataio
-          ${BOOST_LIBRARIES}
+          ${Boost_LIBRARIES}
           ${LOG_LIB}
 )
 

@@ -45,8 +45,8 @@ bool parseDatabase(const std::string& databaseFilePath, std::vector<Datasheet>& 
         {
           const std::string brand = values[0];
           const std::string model = values[1];
-          const double sensorSize = atof(values[2].c_str());
-          databaseStructure.push_back(Datasheet(brand, model, sensorSize));
+          const double sensorSize = std::stod(values[2]);
+          databaseStructure.emplace_back(brand, model, sensorSize);
         }
       }
     }
@@ -59,7 +59,7 @@ bool getInfo(const std::string& brand, const std::string& model, const std::vect
   bool existInDatabase = false;
 
   Datasheet refDatasheet(brand, model, -1.);
-  std::vector<Datasheet>::const_iterator datasheet = std::find(databaseStructure.begin(), databaseStructure.end(), refDatasheet);
+  auto datasheet = std::find(databaseStructure.begin(), databaseStructure.end(), refDatasheet);
   if(datasheet != databaseStructure.end())
   {
     datasheetContent = *datasheet;

@@ -248,8 +248,7 @@ void ReconstructionPlan::getHexahedronForID(float dist, int id, Point3d* out)
     mvsUtils::inflateHexahedron(&(*voxels)[id * 8], out, dist);
 }
 
-void reconstructSpaceAccordingToVoxelsArray(const std::string& voxelsArrayFileName, LargeScale* ls,
-                                            bool doComputeColoredMeshes)
+void reconstructSpaceAccordingToVoxelsArray(const std::string& voxelsArrayFileName, LargeScale* ls)
 {
     StaticVector<Point3d>* voxelsArray = loadArrayFromFile<Point3d>(voxelsArrayFileName);
 
@@ -273,7 +272,7 @@ void reconstructSpaceAccordingToVoxelsArray(const std::string& voxelsArrayFileNa
             DelaunayGraphCut delaunayGC(ls->mp, ls->pc);
             Point3d* hexah = &(*voxelsArray)[i * 8];
             delaunayGC.reconstructVoxel(hexah, voxelsIds, folderName, ls->getSpaceCamsTracksDir(), false,
-                                  (VoxelsGrid*)rp, ls->getSpaceSteps());
+                                  (VoxelsGrid*)rp, ls->getSpaceSteps(), FuseParams());
             delete voxelsIds;
 
             // Save mesh as .bin and .obj
@@ -326,7 +325,7 @@ StaticVector<StaticVector<int>*>* loadLargeScalePtsCams(const std::vector<std::s
             throw std::runtime_error("Missing file: " + filePtsCamsFromDCTName);
         }
         StaticVector<StaticVector<int>*>* ptsCamsFromDcti = loadArrayOfArraysFromFile<int>(filePtsCamsFromDCTName);
-        ptsCamsFromDct->resizeAdd(ptsCamsFromDcti->size());
+        ptsCamsFromDct->reserveAdd(ptsCamsFromDcti->size());
         for(int i = 0; i < ptsCamsFromDcti->size(); i++)
         {
             ptsCamsFromDct->push_back((*ptsCamsFromDcti)[i]);
@@ -347,9 +346,9 @@ StaticVector<rgb>* getTrisColorsRgb(mesh::Mesh* me, StaticVector<rgb>* ptsColors
         float b = 0.0f;
         for(int j = 0; j < 3; j++)
         {
-            r += (float)(*ptsColors)[(*me->tris)[i].i[j]].r;
-            g += (float)(*ptsColors)[(*me->tris)[i].i[j]].g;
-            b += (float)(*ptsColors)[(*me->tris)[i].i[j]].b;
+            r += (float)(*ptsColors)[(*me->tris)[i].v[j]].r;
+            g += (float)(*ptsColors)[(*me->tris)[i].v[j]].g;
+            b += (float)(*ptsColors)[(*me->tris)[i].v[j]].b;
         }
         (*trisColors)[i].r = (unsigned char)(r / 3.0f);
         (*trisColors)[i].g = (unsigned char)(g / 3.0f);
@@ -363,8 +362,7 @@ mesh::Mesh* joinMeshes(const std::vector<std::string>& recsDirs, StaticVector<Po
 {
     ReconstructionPlan rp(ls->dimensions, &ls->space[0], ls->mp, ls->pc, ls->spaceVoxelsFolderName);
 
-    if(ls->mp->verbose)
-        ALICEVISION_LOG_DEBUG("Detecting size of merged mesh.");
+    ALICEVISION_LOG_DEBUG("Detecting size of merged mesh.");
     int npts = 0;
     int ntris = 0;
     for(int i = 0; i < recsDirs.size(); i++)
@@ -386,8 +384,7 @@ mesh::Mesh* joinMeshes(const std::vector<std::string>& recsDirs, StaticVector<Po
         }
     }
 
-    if(ls->mp->verbose)
-        ALICEVISION_LOG_DEBUG("Creating mesh.");
+    ALICEVISION_LOG_DEBUG("Creating mesh.");
 
     mesh::Mesh* me = new mesh::Mesh();
 
@@ -401,8 +398,7 @@ mesh::Mesh* joinMeshes(const std::vector<std::string>& recsDirs, StaticVector<Po
     StaticVector<rgb>* ptsCols = new StaticVector<rgb>();
     ptsCols->reserve(npts);
 
-    if(ls->mp->verbose)
-        ALICEVISION_LOG_DEBUG("Merging part to one mesh (but not connecting them).");
+    ALICEVISION_LOG_DEBUG("Merging part to one mesh without connecting them.");
     for(int i = 0; i < recsDirs.size(); i++)
     {
         if(ls->mp->verbose)
@@ -421,12 +417,10 @@ mesh::Mesh* joinMeshes(const std::vector<std::string>& recsDirs, StaticVector<Po
             mvsUtils::inflateHexahedron(&(*voxelsArray)[i * 8], hexah, inflateFactor);
             mei->removeTrianglesOutsideHexahedron(hexah);
 
-            if(ls->mp->verbose)
-                ALICEVISION_LOG_DEBUG("Adding mesh part "<< i << " to mesh");
+            ALICEVISION_LOG_DEBUG("Adding mesh part "<< i << " to mesh");
             me->addMesh(mei);
 
-            if(ls->mp->verbose)
-                ALICEVISION_LOG_DEBUG("Merging colors of part: s" << i);
+            ALICEVISION_LOG_DEBUG("Merging colors of part: s" << i);
             fileName = folderName + "meshAvImgCol.ply.ptsColors";
             if(mvsUtils::FileExists(fileName))
             {
@@ -450,9 +444,7 @@ mesh::Mesh* joinMeshes(const std::vector<std::string>& recsDirs, StaticVector<Po
     }
 
     // int gridLevel = ls->mp->_ini.get<int>("LargeScale.gridLevel0", 0);
-
-    if(ls->mp->verbose)
-        ALICEVISION_LOG_DEBUG("Deleting...");
+    ALICEVISION_LOG_DEBUG("Deleting...");
     delete ptsCols;
     delete trisCols;
 

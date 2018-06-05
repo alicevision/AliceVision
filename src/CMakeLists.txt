@@ -118,12 +118,28 @@ macro(UNIT_TEST NAMESPACE NAME EXTRA_LIBS)
 
     target_link_libraries(${NAMESPACE}_test_${NAME}
                           ${EXTRA_LIBS} # Extra libs MUST be first.
-                          ${BOOST_LIBRARIES} ${ALICEVISION_LIBRARY_DEPENDENCIES})
+                          ${Boost_LIBRARIES} ${ALICEVISION_LIBRARY_DEPENDENCIES})
     add_test(NAME ${NAMESPACE}_test_${NAME}
              WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
              COMMAND $<TARGET_FILE:${NAMESPACE}_test_${NAME}> --log_level=all)
   endif()
 endmacro()
+
+# ==============================================================================
+# MACRO utility
+# ==============================================================================
+macro(add_target_properties _target _name)
+	set(_properties)
+	foreach(_prop ${ARGN})
+		set(_properties "${_properties} ${_prop}")
+	endforeach(_prop)
+	get_target_property(_old_properties ${_target} ${_name})
+	if(NOT _old_properties)
+		# in case it's NOTFOUND
+		set(_old_properties)
+	endif(NOT _old_properties)
+	set_target_properties(${_target} PROPERTIES ${_name} "${_old_properties} ${_properties}")
+endmacro(add_target_properties)
 
 # ==============================================================================
 # Check that submodule have been initialized and updated
@@ -300,10 +316,8 @@ endif()
 # ==============================================================================
 # Eigen
 # ==============================================================================
-# - rely on EIGEN_INCLUDE_DIR_HINTS
-# ==============================================================================
 find_package(Eigen3 3.3 REQUIRED)
-if(Eigen3_FOUND)
+if(Eigen3_FOUND OR EIGEN3_FOUND)
   # message(FATAL_ERROR "EIGEN_INCLUDE_DIR: ${EIGEN_INCLUDE_DIR}")
   include_directories(${EIGEN_INCLUDE_DIR})
   # See https://eigen.tuxfamily.org/dox/group__TopicUnalignedArrayAssert.html
@@ -490,6 +504,10 @@ if(ALICEVISION_BUILD_SFM) # or ALICEVISION_BUILD_MVS
     if(Alembic_FOUND)
       set(ALICEVISION_HAVE_ALEMBIC 1)
       message(STATUS "Alembic version ${Alembic_VERSION} found.")
+      # There is a missing include dependency in Alembic cmake export.
+      add_target_properties(Alembic::Alembic PROPERTIES
+        INTERFACE_INCLUDE_DIRECTORIES "${ILMBASE_INCLUDE_DIR}"
+      )
     elseif(ALICEVISION_USE_ALEMBIC STREQUAL "ON")
       message(SEND_ERROR "Failed to find Alembic.")
     endif()

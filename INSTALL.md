@@ -57,6 +57,43 @@ Other optional libraries can enable specific features (check "CMake Options" for
 * Cuda >= 7.0 (feature extraction and depth map computation)
 * OpenGV (rig calibration and localization)
 
+Building the project using vcpkg (recommended on Windows)
+--------------------------------
+[Vcpkg](https://github.com/Microsoft/vcpkg) is a tool to ease the build and management of C/C++ libraries.
+AliceVision's required dependencies can be built with it. Follow the [installation guide](https://github.com/Microsoft/vcpkg/blob/master/README.md#quick-start) to setup vcpkg.
+
+**Note**: while started as a Windows only project, vcpkg recently became cross-platform. In the scope of AliceVision, it has only been tested on Windows.
+
+To build AliceVision (with Alembic support) using vcpkg:
+1. Setup the environment
+
+Windows: due to incompatibilities between CUDA and Visual Studio 2017, Visual 2015 toolset must be used to build AliceVision.
+Visual Studio 2017 can be used as an IDE, but v140 toolset must be installed and used for this to work.
+
+To setup a VS2017 command prompt using the v140 toolset:
+```bash
+"C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build\vcvarsall.bat" x64 -vcvars_ver=14.0
+nmake /version
+# should print Version 14.00.xxx
+```
+2. Build the required dependencies
+```bash
+# Windows: make sure to set the VCPKG_DEFAULT_TRIPLET environment variable to "x64-windows" or specify it after each package
+vcpkg install zlib boost openimageio openexr alembic geogram eigen3 ceres
+```
+3. Build AliceVision
+```bash
+# With VCPKG_ROOT being the path to the root of vcpkg installation
+cd /path/to/aliceVision/
+mkdir build && cd build
+
+# Windows: Visual 2015
+cmake .. -DCMAKE_TOOLCHAIN_FILE=%VCPKG_ROOT%\scripts\buildsystems\vcpkg.cmake -DVCPKG_TARGET_TRIPLET=x64-windows -G "Visual Studio 14 2015" -A x64 -T v140,host=x64
+# Windows: Visual 2017 v140 (Visual 2015 toolset)
+cmake .. -DCMAKE_TOOLCHAIN_FILE=%VCPKG_ROOT%\scripts\buildsystems\vcpkg.cmake -DVCPKG_TARGET_TRIPLET=x64-windows -G "Visual Studio 15 2017" -A x64 -T v140,host=x64
+
+# Windows: this generates a "aliceVision.sln" solution inside the build folder
+```
 
 Building the project with embedded dependencies
 -----------------------------------------------
@@ -88,8 +125,15 @@ In order to build the library with existing versions of the dependencies (e.g. s
 * For FLANN library, `FLANN_INCLUDE_DIR_HINTS` can be passed pointing to the include directory, e.g.
   `-DFLANN_INCLUDE_DIR_HINTS:PATH=/path/to/flann/1.8.4/include/`
 
-* For Eigen library, `EIGEN_INCLUDE_DIR_HINTS` can be passed pointing to the include directory, e.g.
-  `-DEIGEN_INCLUDE_DIR_HINTS:PATH=/usr/local/include/eigen3`
+* For Eigen library, `CMAKE_MODULE_PATH` should be passed pointing at the `<EigenInstallDir>/share/cmake/Modules/` directory of the Eigen installation, in which `Eigen-config.cmake` or `FindEigen3.cmake` can be found. 
+  In case only `FindEigen3.cmake` is available (e.g. Homebrew installations), an environment variable `EIGEN_ROOT_DIR` must be set pointing at Eigen install directory.
+  For example,
+  
+  `-DCMAKE_MODULE_PATH:PATH=/usr/local/Cellar/eigen/3.3.4/share/cmake/Modules/`
+
+  may require to set the environment variable if only `FindEigen3.cmake`, i.e.
+  
+  `export EIGEN_ROOT_DIR=/usr/local/Cellar/eigen/3.3.4/`
 
 * For OpenEXR library, `OPENEXR_HOME` can be passed pointing to the install directory, e.g.
   `-DOPENEXR_HOME:PATH=/path/to/openexr/install`
@@ -151,6 +195,7 @@ CMake Options
 
 * `ALICEVISION_USE_CUDA` (default: `ON`)
   Enable build with CUDA (for feature extraction and depth map computation)
+  `-DCUDA_TOOLKIT_ROOT_DIR:PATH=/usr/local/cuda-9.1` (adjust the path to your cuda installation)
 
 * `ALICEVISION_USE_POPSIFT` (default: `AUTO`)
   Enable GPU SIFT implementation.

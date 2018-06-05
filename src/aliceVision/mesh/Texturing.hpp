@@ -12,6 +12,7 @@
 #include <aliceVision/mvsData/Voxel.hpp>
 #include <aliceVision/mvsUtils/ImagesCache.hpp>
 #include <aliceVision/mesh/Mesh.hpp>
+#include <aliceVision/mesh/meshVisibility.hpp>
 
 #include <boost/filesystem.hpp>
 
@@ -20,11 +21,36 @@ namespace bfs = boost::filesystem;
 namespace aliceVision {
 namespace mesh {
 
+/**
+ * @brief Available mesh unwrapping methods
+ */
+enum class EUnwrapMethod {
+    Basic = 0, // Basic unwrapping based on visibilities
+    ABF = 1,   // Geogram: ABF++
+    LSCM = 2   // Geogram: Spectral LSCM
+};
+
+/**
+ * @brief returns the EUnwrapMethod enum from a string.
+ * @param[in] method the input string.
+ * @return the associated EUnwrapMethod enum.
+ */
+EUnwrapMethod EUnwrapMethod_stringToEnum(const std::string& method);
+
+/**
+ * @brief converts an EUnwrapMethod enum to a string.
+ * @param[in] method the EUnwrapMethod enum to convert.
+ * @return the string associated to the EUnwrapMethod enum.
+ */
+std::string EUnwrapMethod_enumToString(EUnwrapMethod method);
+
+
 struct TexturingParams
 {
     unsigned int textureSide = 8192;
     unsigned int padding = 15;
     unsigned int downscale = 2;
+    bool fillHoles = false;
 };
 
 struct Texturing
@@ -32,11 +58,12 @@ struct Texturing
     TexturingParams texParams;
 
     int nmtls = 0;
-    StaticVector<int>* trisMtlIds = nullptr;
-    StaticVector<Point2d>* uvCoords = nullptr;
-    StaticVector<Voxel>* trisUvIds = nullptr;
-    StaticVector<Point3d>* normals = nullptr;
-    StaticVector<Voxel>* trisNormalsIds = nullptr;
+    StaticVector<int> trisMtlIds;
+    StaticVector<Point2d> uvCoords;
+    StaticVector<Voxel> trisUvIds;
+    StaticVector<Point3d> normals;
+    StaticVector<Voxel> trisNormalsIds;
+    PointsVisibility* pointsVisibilities = nullptr;
     Mesh* me = nullptr;
 
     /// texture atlas to 3D triangle ids
@@ -44,38 +71,61 @@ struct Texturing
 
     ~Texturing()
     {
-        delete trisMtlIds;
-        delete uvCoords;
-        delete trisUvIds;
-        delete normals;
-        delete trisNormalsIds;
+        if(pointsVisibilities != nullptr)
+            deleteArrayOfArrays<int>(&pointsVisibilities);
         delete me;
     }
 
 public:
+
+    /// Clear internal mesh data
+    void clear();
+
     /// Load a mesh from a .obj file and initialize internal structures
     void loadFromOBJ(const std::string& filename, bool flipNormals=false);
 
-    inline bool hasUVs() const { return uvCoords != nullptr && !uvCoords->empty(); }
+    /**
+     * @brief Load a mesh from a dense reconstruction.
+     *
+     * @param meshFilepath the path to the .bin mesh file
+     * @param visibilitiesFilepath the path to the .bin points visibilities file
+     */
+    void loadFromMeshing(const std::string& meshFilepath, const std::string& visibilitiesFilepath);
+
+    /**
+     * @brief Replace inner mesh with the mesh loaded from 'otherMeshPath'
+     *        and remap visibilities from the first to the second
+     *
+     * @param otherMeshPath the mesh to load
+     * @param flipNormals whether to flip normals when loading the mesh
+     */
+    void replaceMesh(const std::string& otherMeshPath, bool flipNormals=false);
+
+    /// Returns whether UV coordinates are available
+    inline bool hasUVs() const { return !uvCoords.empty(); }
+
+    /**
+     * @brief Unwrap mesh with the given 'method'.
+     *
+     * Requires internal mesh 'me' to be initialized.
+     */
+    void unwrap(mvsUtils::MultiViewParams& mp, EUnwrapMethod method);
 
     /**
      * @brief Generate automatic texture atlasing and UV coordinates based on points visibilities
      *
      * Requires internal mesh 'me' to be initialized.
-     * Note that mesh data will be updated by this process so that only textured triangles are kept.
      *
      * @param mp
-     * @param ptsCams visibilities of internal mesh's points
-     * @return visibilities of new internal mesh's points
      */
-    StaticVector<StaticVector<int>*>* generateUVs(mvsUtils::MultiViewParams &mp, StaticVector<StaticVector<int> *> *ptsCams);
+    void generateUVs(mvsUtils::MultiViewParams &mp);
 
     /// Generate texture files for all texture atlases
-    void generateTextures(const mvsUtils::MultiViewParams& mp, StaticVector<StaticVector<int>*>* ptsCams,
+    void generateTextures(const mvsUtils::MultiViewParams& mp,
                           const bfs::path &outPath, EImageFileType textureFileType = EImageFileType::PNG);
 
     /// Generate texture files for the given texture atlas index
-    void generateTexture(const mvsUtils::MultiViewParams& mp, StaticVector<StaticVector<int>*>* ptsCams,
+    void generateTexture(const mvsUtils::MultiViewParams& mp,
                          size_t atlasID, mvsUtils::ImagesCache& imageCache,
                          const bfs::path &outPath, EImageFileType textureFileType = EImageFileType::PNG);
 

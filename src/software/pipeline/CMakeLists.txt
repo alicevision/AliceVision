@@ -14,7 +14,7 @@ if(ALICEVISION_BUILD_SFM)
     aliceVision_image
     aliceVision_feature
     aliceVision_sfm
-    ${BOOST_LIBRARIES}
+    ${Boost_LIBRARIES}
   )
 
   set_property(TARGET aliceVision_cameraInit
@@ -36,7 +36,7 @@ if(ALICEVISION_BUILD_SFM)
     aliceVision_multiview
     aliceVision_sfm
     vlsift
-    ${BOOST_LIBRARIES}
+    ${Boost_LIBRARIES}
   )
 
   if(ALICEVISION_HAVE_CCTAG)
@@ -80,7 +80,7 @@ if(ALICEVISION_BUILD_SFM)
     aliceVision_multiview
     aliceVision_sfm
     aliceVision_matchingImageCollection
-    ${BOOST_LIBRARIES}
+    ${Boost_LIBRARIES}
   )
 
   set_property(TARGET aliceVision_featureMatching
@@ -100,7 +100,7 @@ if(ALICEVISION_BUILD_SFM)
     aliceVision_image
     aliceVision_feature
     aliceVision_sfm
-    ${BOOST_LIBRARIES}
+    ${Boost_LIBRARIES}
   )
 
   set_property(TARGET aliceVision_incrementalSfM
@@ -120,7 +120,7 @@ if(ALICEVISION_BUILD_SFM)
     aliceVision_image
     aliceVision_feature
     aliceVision_sfm
-    ${BOOST_LIBRARIES}
+    ${Boost_LIBRARIES}
   )
 
   set_property(TARGET aliceVision_globalSfM
@@ -139,7 +139,7 @@ if(ALICEVISION_BUILD_SFM)
     aliceVision_system
     aliceVision_feature
     aliceVision_sfm
-    ${BOOST_LIBRARIES}
+    ${Boost_LIBRARIES}
   )
 
   set_property(TARGET aliceVision_computeStructureFromKnownPoses
@@ -159,7 +159,7 @@ if(ALICEVISION_BUILD_SFM)
     aliceVision_image
     aliceVision_feature
     aliceVision_sfm
-    ${BOOST_LIBRARIES}
+    ${Boost_LIBRARIES}
   )
 
   set_property(TARGET aliceVision_computeSfMColor
@@ -233,7 +233,7 @@ if(ALICEVISION_BUILD_SFM)
     aliceVision_image
     aliceVision_feature
     vlsift
-    ${BOOST_LIBRARIES}
+    ${Boost_LIBRARIES}
   )
 
   if(ALICEVISION_HAVE_CCTAG)
@@ -283,7 +283,7 @@ if(ALICEVISION_BUILD_SFM)
     aliceVision_image
     aliceVision_feature
     aliceVision_sfm
-    ${BOOST_LIBRARIES}
+    ${Boost_LIBRARIES}
   )
 
   set_property(TARGET aliceVision_prepareDenseScene

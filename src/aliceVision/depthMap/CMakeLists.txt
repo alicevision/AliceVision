@@ -93,6 +93,7 @@ target_link_libraries(aliceVision_depthMap
   aliceVision_mvsUtils
   ${Boost_FILESYSTEM_LIBRARIES}
   ${CUDA_CUDADEVRT_LIBRARY}
+  ${CUDA_CUBLAS_LIBRARIES}
 )
 
 set_property(TARGET aliceVision_depthMap

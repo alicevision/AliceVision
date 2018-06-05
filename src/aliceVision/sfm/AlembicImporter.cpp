@@ -124,7 +124,10 @@ bool readPointCloud(IObject iObj, M44d mat, sfm::SfMData &sfmdata, sfm::ESfMData
     if(sampleColors)
     {
       const P3fArraySamplePtr::element_type::value_type & color_i = sampleColors->get()[point3d_i];
-      landmark.rgb = image::RGBColor(color_i[0], color_i[1], color_i[2]);
+      landmark.rgb = image::RGBColor(static_cast<unsigned char>(color_i[0] * 255.0f),
+                                     static_cast<unsigned char>(color_i[1] * 255.0f),
+                                     static_cast<unsigned char>(color_i[2] * 255.0f)
+                                     );
     }
 
     if(sampleDescs)

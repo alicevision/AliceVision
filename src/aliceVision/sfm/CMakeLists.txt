@@ -113,6 +113,10 @@ if(ALICEVISION_HAVE_ALEMBIC)
   target_link_libraries(aliceVision_sfm
     PRIVATE Alembic::Alembic
   )
+  # There is a missing include dependency in Alembic cmake export.
+  target_include_directories(aliceVision_sfm
+    PRIVATE "${ILMBASE_INCLUDE_DIR}"
+  )
 endif()
 
 install(TARGETS aliceVision_sfm

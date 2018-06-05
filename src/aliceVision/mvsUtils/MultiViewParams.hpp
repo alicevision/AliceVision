@@ -144,6 +144,14 @@ public:
     {
         return _imagesParams.at(index).size / getDownscaleFactor(index);
     }
+    inline const std::vector<imageParams>& getImagesParams() const
+    {
+        return _imagesParams;
+    }
+    inline const imageParams& getImageParams(int i) const
+    {
+        return _imagesParams.at(i);
+    }
 
     inline int getDownscaleFactor(int index) const
     {
@@ -203,14 +211,14 @@ public:
     void getPixelFor3DPoint(Point2d* out, const Point3d& X, const Matrix3x4& P) const;
     void getPixelFor3DPoint(Point2d* out, const Point3d& X, int rc) const;
     void getPixelFor3DPoint(Pixel* out, const Point3d& X, int rc) const;
-    float getCamPixelSize(const Point3d& x0, int cam) const;
-    float getCamPixelSize(const Point3d& x0, int cam, float d) const;
-    float getCamPixelSizeRcTc(const Point3d& p, int rc, int tc, float d) const;
-    float getCamPixelSizePlaneSweepAlpha(const Point3d& p, int rc, int tc, int scale, int step) const;
-    float getCamPixelSizePlaneSweepAlpha(const Point3d& p, int rc, StaticVector<int>* tcams, int scale, int step) const;
+    double getCamPixelSize(const Point3d& x0, int cam) const;
+    double getCamPixelSize(const Point3d& x0, int cam, float d) const;
+    double getCamPixelSizeRcTc(const Point3d& p, int rc, int tc, float d) const;
+    double getCamPixelSizePlaneSweepAlpha(const Point3d& p, int rc, int tc, int scale, int step) const;
+    double getCamPixelSizePlaneSweepAlpha(const Point3d& p, int rc, StaticVector<int>* tcams, int scale, int step) const;
 
-    float getCamsMinPixelSize(const Point3d& x0, std::vector<unsigned short>* tcams) const;
-    float getCamsMinPixelSize(const Point3d& x0, StaticVector<int>& tcams) const;
+    double getCamsMinPixelSize(const Point3d& x0, std::vector<unsigned short>* tcams) const;
+    double getCamsMinPixelSize(const Point3d& x0, StaticVector<int>& tcams) const;
 
     bool isPixelInImage(const Pixel& pix, int d, int camId) const;
     bool isPixelInImage(const Pixel& pix, int camId) const;

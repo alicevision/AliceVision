@@ -43,8 +43,8 @@ public:
             }
         };
 
-        MeshClean* me;
-        int ptId;
+        MeshClean* m_me;
+        int m_ptId;
 
         path(MeshClean* _me, int _ptId);
         ~path();
