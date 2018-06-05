@@ -183,7 +183,7 @@ bool VoctreeLocalizer::localize(const feature::MapRegionsPerDesc & queryRegions,
   }
 }
 
-bool VoctreeLocalizer::localize(const image::Image<unsigned char> & imageGrey,
+bool VoctreeLocalizer::localize(const image::Image<float>& imageGrey,
                                 const LocalizerParameters *param,
                                 bool useInputIntrinsics,
                                 camera::PinholeRadialK3 &queryIntrinsics,
@@ -193,6 +193,8 @@ bool VoctreeLocalizer::localize(const image::Image<unsigned char> & imageGrey,
   // A. extract descriptors and features from image
   ALICEVISION_LOG_DEBUG("[features]\tExtract Regions from query image");
   feature::MapRegionsPerDesc queryRegionsPerDesc;
+
+  image::Image<unsigned char> imageGrayUChar; // uchar image copy for uchar image describer
 
   for(const auto& imageDescriber : _imageDescribers)
   {
@@ -204,7 +206,18 @@ bool VoctreeLocalizer::localize(const image::Image<unsigned char> & imageGrey,
     system::Timer timer;
     imageDescriber->setCudaPipe(_cudaPipe);
     imageDescriber->setConfigurationPreset(param->_featurePreset);
-    imageDescriber->describe(imageGrey, queryRegions, nullptr);
+
+    if(imageDescriber->useFloatImage())
+    {
+      imageDescriber->describe(imageGrey, queryRegions, nullptr);
+    }
+    else
+    {
+      // image descriptor can't use float image
+      if(imageGrayUChar.Width() == 0) // the first time, convert the float buffer to uchar
+        imageGrayUChar = (imageGrey.GetMat() * 255.f).cast<unsigned char>();
+      imageDescriber->describe(imageGrayUChar, queryRegions, nullptr);
+    }
 
     ALICEVISION_LOG_DEBUG("[features]\tExtract " << feature::EImageDescriberType_enumToString(descType) << " done: found " << queryRegions->RegionCount() << " features in " << timer.elapsedMs() << " [ms]");
   }
@@ -1135,7 +1148,7 @@ bool VoctreeLocalizer::robustMatching(matching::RegionsDatabaseMatcherPerDesc & 
   return true;
 }
 
-bool VoctreeLocalizer::localizeRig(const std::vector<image::Image<unsigned char> > & vec_imageGrey,
+bool VoctreeLocalizer::localizeRig(const std::vector<image::Image<float>> & vec_imageGrey,
                                    const LocalizerParameters *parameters,
                                    std::vector<camera::PinholeRadialK3 > &vec_queryIntrinsics,
                                    const std::vector<geometry::Pose3 > &vec_subPoses,
@@ -1148,18 +1161,32 @@ bool VoctreeLocalizer::localizeRig(const std::vector<image::Image<unsigned char>
 
   std::vector<feature::MapRegionsPerDesc> vec_queryRegions(numCams);
   std::vector<std::pair<std::size_t, std::size_t> > vec_imageSize;
-  
+
   //@todo parallelize?
   for(size_t i = 0; i < numCams; ++i)
   {
     // add the image size for this image
     vec_imageSize.emplace_back(vec_imageGrey[i].Width(), vec_imageGrey[i].Height());
 
+    image::Image<unsigned char> imageGrayUChar; // uchar image copy for uchar image describer
+
     // extract descriptors and features from each image
     for(auto& imageDescriber: _imageDescribers)
     {
       ALICEVISION_LOG_DEBUG("[features]\tExtract " << feature::EImageDescriberType_enumToString(imageDescriber->getDescriberType()) << " from query image...");
       imageDescriber->describe(vec_imageGrey[i], vec_queryRegions[i][imageDescriber->getDescriberType()]);
+
+      if(imageDescriber->useFloatImage())
+      {
+        imageDescriber->describe(vec_imageGrey[i], vec_queryRegions[i][imageDescriber->getDescriberType()]);
+      }
+      else
+      {
+        // image descriptor can't use float image
+        if(imageGrayUChar.Width() == 0) // the first time, convert the float buffer to uchar
+          imageGrayUChar = (vec_imageGrey.at(i).GetMat() * 255.f).cast<unsigned char>();
+        imageDescriber->describe(imageGrayUChar, vec_queryRegions[i][imageDescriber->getDescriberType()]);
+      }
       ALICEVISION_LOG_DEBUG("[features]\tExtract done: found " <<  vec_queryRegions[i][imageDescriber->getDescriberType()]->RegionCount() << " features");
     }
     ALICEVISION_LOG_DEBUG("[features]\tAll descriptors extracted. Found " <<  vec_queryRegions[i].getNbAllRegions() << " features");

@@ -6,10 +6,6 @@
 
 #pragma once
 
-#include "reconstructed_regions.hpp"
-#include "LocalizationResult.hpp"
-#include "ILocalizer.hpp"
-#include "BoundedBuffer.hpp"
 #include <aliceVision/config.hpp>
 #include <aliceVision/feature/ImageDescriber.hpp>
 #include <aliceVision/sfm/SfMData.hpp>
@@ -19,8 +15,12 @@
 #include <aliceVision/voctree/Database.hpp>
 #include <aliceVision/matching/ArrayMatcher_kdtreeFlann.hpp>
 #include <aliceVision/matching/RegionsMatcher.hpp>
-#include <flann/algorithms/dist.h>
+#include <aliceVision/localization/reconstructed_regions.hpp>
+#include <aliceVision/localization/LocalizationResult.hpp>
+#include <aliceVision/localization/ILocalizer.hpp>
+#include <aliceVision/localization/BoundedBuffer.hpp>
 
+#include <flann/algorithms/dist.h>
 
 namespace aliceVision {
 namespace localization {
@@ -36,26 +36,26 @@ struct FrameData
 
 class VoctreeLocalizer : public ILocalizer
 {
-
 public:
-  enum Algorithm : int { FirstBest=0, BestResult=1, AllResults=2, Cluster=3};
+  enum Algorithm : int {FirstBest=0, BestResult=1, AllResults=2, Cluster=3};
   static Algorithm initFromString(const std::string &value);
   
 public:
   struct Parameters : public LocalizerParameters
   {
 
-    Parameters() : LocalizerParameters(), 
-      _useGuidedMatching(false),
-      _useRobustMatching(true),
-      _algorithm(Algorithm::AllResults),
-      _numResults(4),
-      _maxResults(10),
-      _numCommonViews(3),
-      _ccTagUseCuda(true),
-      _matchingError(std::numeric_limits<double>::infinity()),
-      _nbFrameBufferMatching(10)
-    { }
+    Parameters()
+      : LocalizerParameters()
+      , _useGuidedMatching(false)
+      , _useRobustMatching(true)
+      , _algorithm(Algorithm::AllResults)
+      , _numResults(4)
+      , _maxResults(10)
+      , _numCommonViews(3)
+      , _ccTagUseCuda(true)
+      , _matchingError(std::numeric_limits<double>::infinity())
+      , _nbFrameBufferMatching(10)
+    {}
     
     /// Enable/disable guided matching when matching images
     bool _useGuidedMatching;
@@ -121,7 +121,7 @@ public:
    * @param[in] imagePath Optional complete path to the image, used only for debugging purposes.
    * @return  true if the image has been successfully localized.
    */
-  bool localize(const image::Image<unsigned char> & imageGrey,
+  bool localize(const image::Image<float> & imageGrey,
                 const LocalizerParameters *param,
                 bool useInputIntrinsics,
                 camera::PinholeRadialK3 &queryIntrinsics,
@@ -152,7 +152,7 @@ public:
                 const std::string& imagePath = std::string()) override;
   
   
-  bool localizeRig(const std::vector<image::Image<unsigned char> > & vec_imageGrey,
+  bool localizeRig(const std::vector<image::Image<float>> & vec_imageGrey,
                    const LocalizerParameters *param,
                    std::vector<camera::PinholeRadialK3 > &vec_queryIntrinsics,
                    const std::vector<geometry::Pose3 > &vec_subPoses,

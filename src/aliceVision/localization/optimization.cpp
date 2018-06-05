@@ -62,7 +62,7 @@ bool refineSequence(std::vector<LocalizationResult> & vec_localizationResult,
     
     ALICEVISION_CERR("allTheSameIntrinsics mode: using the intrinsics of the " << intrinsicIndex << " result");
     
-    camera::PinholeRadialK3* currIntrinsics = &vec_localizationResult[intrinsicIndex].getIntrinsics();
+    camera::PinholeRadialK3* currIntrinsics = &vec_localizationResult.at(intrinsicIndex).getIntrinsics();
     
     if(b_no_distortion)
     {

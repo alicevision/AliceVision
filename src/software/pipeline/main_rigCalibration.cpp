@@ -355,7 +355,7 @@ int main(int argc, char** argv)
     //result.open(cameraResultFile);
     //pointsFile = inputFolder + "/points.txt";
 
-    image::Image<unsigned char> imageGrey;
+    image::Image<float> imageGrey;
     camera::PinholeRadialK3 queryIntrinsics;
     bool hasIntrinsics = false;
 

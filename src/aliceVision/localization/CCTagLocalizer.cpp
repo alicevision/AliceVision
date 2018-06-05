@@ -186,7 +186,7 @@ bool CCTagLocalizer::loadReconstructionDescriptors(const sfm::SfMData & sfm_data
   return true;
 }
 
-bool CCTagLocalizer::localize(const image::Image<unsigned char> & imageGrey,
+bool CCTagLocalizer::localize(const image::Image<float> & imageGrey,
                               const LocalizerParameters *parameters,
                               bool useInputIntrinsics,
                               camera::PinholeRadialK3 &queryIntrinsics,
@@ -202,11 +202,15 @@ bool CCTagLocalizer::localize(const image::Image<unsigned char> & imageGrey,
   }
   // extract descriptors and features from image
   ALICEVISION_LOG_DEBUG("[features]\tExtract CCTag from query image");
+
+  image::Image<unsigned char> imageGrayUChar; // cctag image describer don't support float image
+  imageGrayUChar = (imageGrey.GetMat() * 255.f).cast<unsigned char>();
+
   feature::MapRegionsPerDesc tmpQueryRegions;
 
   _imageDescriber.setCudaPipe( _cudaPipe );
   _imageDescriber.setConfigurationPreset(param->_featurePreset);
-  _imageDescriber.describe(imageGrey, tmpQueryRegions[_cctagDescType]);
+  _imageDescriber.describe(imageGrayUChar, tmpQueryRegions[_cctagDescType]);
   ALICEVISION_LOG_DEBUG("[features]\tExtract CCTAG done: found " << tmpQueryRegions.at(_cctagDescType)->RegionCount() << " features");
   
   std::pair<std::size_t, std::size_t> imageSize = std::make_pair(imageGrey.Width(),imageGrey.Height());
@@ -378,7 +382,7 @@ CCTagLocalizer::~CCTagLocalizer()
 
 // subposes is n-1 as we consider the first camera as the main camera and the 
 // reference frame of the grid
-bool CCTagLocalizer::localizeRig(const std::vector<image::Image<unsigned char> > & vec_imageGrey,
+bool CCTagLocalizer::localizeRig(const std::vector<image::Image<float>> & vec_imageGrey,
                                  const LocalizerParameters *parameters,
                                  std::vector<camera::PinholeRadialK3 > &vec_queryIntrinsics,
                                  const std::vector<geometry::Pose3 > &vec_subPoses,
@@ -400,10 +404,13 @@ bool CCTagLocalizer::localizeRig(const std::vector<image::Image<unsigned char> >
   //@todo parallelize?
   for(size_t i = 0; i < numCams; ++i)
   {
+    image::Image<unsigned char> imageGrayUChar; // cctag image describer don't support float image
+    imageGrayUChar = (vec_imageGrey.at(i).GetMat() * 255.f).cast<unsigned char>();
+
     // extract descriptors and features from each image
     ALICEVISION_LOG_DEBUG("[features]\tExtract CCTag from query image...");
     _imageDescriber.setConfigurationPreset(param->_featurePreset);
-    _imageDescriber.describe(vec_imageGrey[i], vec_queryRegions[i][_imageDescriber.getDescriberType()]);
+    _imageDescriber.describe(imageGrayUChar, vec_queryRegions[i][_imageDescriber.getDescriberType()]);
     ALICEVISION_LOG_DEBUG("[features]\tExtract CCTAG done: found " <<  vec_queryRegions[i].at(_imageDescriber.getDescriberType())->RegionCount() << " features");
     // add the image size for this image
     vec_imageSize.emplace_back(vec_imageGrey[i].Width(), vec_imageGrey[i].Height());
