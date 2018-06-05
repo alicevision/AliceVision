@@ -150,7 +150,7 @@ private:
   unsigned int _currentImageIndex = 0;
 };
 
-const std::vector<std::string> ImageFeed::FeederImpl::supportedExtensions = { ".jpg", ".jpeg", ".png", ".ppm" };
+const std::vector<std::string> ImageFeed::FeederImpl::supportedExtensions = {".jpg", ".jpeg", ".png", ".ppm", ".tif", ".tiff", ".exr"};
 
 bool ImageFeed::FeederImpl::isSupported(const std::string &ext)
 {
