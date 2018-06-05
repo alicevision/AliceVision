@@ -238,7 +238,7 @@ struct GeometricFilterMatrix_HGrowing : public GeometricFilterMatrix
           
           for(IndexT matchId : bestMatchesId)
           {
-            IndMatch match = remainingMatches.at(matchId);
+            const IndMatch& match = remainingMatches.at(matchId);
             
             const Vec2 x1 = siofeatures_I.at(match._i).coords().cast<double>();
             const Vec2 x2 = siofeatures_J.at(match._j).coords().cast<double>();
