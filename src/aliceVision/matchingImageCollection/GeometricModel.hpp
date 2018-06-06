@@ -24,7 +24,7 @@ enum class EGeometricModel
  * @brief get informations about each geometric model
  * @return String
  */
-std::string EGeometricModel_informations()
+inline std::string EGeometricModel_informations()
 {
   return "Geometric model: Pairwise correspondences filtering thanks to robust model estimation:\n"
          "* fundamental_matrix\n"
