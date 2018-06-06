@@ -9,11 +9,10 @@
 namespace aliceVision {
 namespace matchingImageCollection {
 
-void copyInlierMatches(
-        const std::vector<size_t> &inliers,
-        const matching::MatchesPerDescType &putativeMatchesPerType,
-        const std::vector<feature::EImageDescriberType> &descTypes,
-        matching::MatchesPerDescType &out_geometricInliersPerType)
+void copyInlierMatches(const std::vector<size_t> &inliers,
+                       const matching::MatchesPerDescType &putativeMatchesPerType,
+                       const std::vector<feature::EImageDescriberType> &descTypes,
+                       matching::MatchesPerDescType &out_geometricInliersPerType)
 {
   std::vector<size_t> orderedInliers = inliers;
   std::sort(orderedInliers.begin(), orderedInliers.end());
@@ -36,9 +35,9 @@ void copyInlierMatches(
   }
 }
 
-void centerMatrix(const Eigen::Matrix2Xf & points2d, Mat3 & c)
+void centerMatrix(const Eigen::Matrix2Xf & points2d, Mat3 & t)
 {
-  c = Mat3::Identity();
+  t = Mat3::Identity();
 
   const Vec2f mean = points2d.rowwise().mean();
   const auto nbPoints = points2d.cols();
@@ -50,18 +49,18 @@ void centerMatrix(const Eigen::Matrix2Xf & points2d, Mat3 & c)
   if(stdDev(1) < 0.1)
     stdDev(1) = 0.1;
 
-  c << 1./stdDev(0), 0.,            -mean(0)/stdDev(0),
+  t << 1./stdDev(0), 0.,            -mean(0)/stdDev(0),
           0.,            1./stdDev(1),  -mean(1)/stdDev(1),
           0.,            0.,            1.;
 }
 
 
 void centeringMatrices(const std::vector<feature::SIOPointFeature> & featuresI,
-                              const std::vector<feature::SIOPointFeature> & featuresJ,
-                              const matching::IndMatches & matches,
-                              Mat3 & cI,
-                              Mat3 & cJ,
-                              const std::set<IndexT> & usefulMatchesId)
+                       const std::vector<feature::SIOPointFeature> & featuresJ,
+                       const matching::IndMatches & matches,
+                       Mat3 & cI,
+                       Mat3 & cJ,
+                       const std::set<IndexT> & usefulMatchesId)
 {
   assert(!featuresI.empty());
   assert(!featuresJ.empty());
@@ -95,8 +94,8 @@ void centeringMatrices(const std::vector<feature::SIOPointFeature> & featuresI,
 }
 
 void computeSimilarity(const feature::SIOPointFeature & feat1,
-                              const feature::SIOPointFeature & feat2,
-                              Mat3 & S)
+                       const feature::SIOPointFeature & feat2,
+                       Mat3 & S)
 {
   S = Mat3::Identity();
 
@@ -126,10 +125,10 @@ void computeSimilarity(const feature::SIOPointFeature & feat1,
 }
 
 void estimateAffinity(const std::vector<feature::SIOPointFeature> & featuresI,
-                             const std::vector<feature::SIOPointFeature> & featuresJ,
-                             const matching::IndMatches & matches,
-                             Mat3 & affineTransformation,
-                             const std::set<IndexT> & usefulMatchesId)
+                      const std::vector<feature::SIOPointFeature> & featuresJ,
+                      const matching::IndMatches & matches,
+                      Mat3 & affineTransformation,
+                      const std::set<IndexT> & usefulMatchesId)
 {
   assert(!featuresI.empty());
   assert(!featuresJ.empty());

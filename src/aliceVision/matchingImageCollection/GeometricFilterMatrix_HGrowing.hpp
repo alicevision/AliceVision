@@ -113,12 +113,11 @@ struct GeometricFilterMatrix_HGrowing : public GeometricFilterMatrix
    * - out_geometricInliersPerType  [0 5 2 6 1 4]
    */
   template<typename Regions_or_Features_ProviderT>
-  EstimationStatus geometricEstimation(
-    const sfm::SfMData * sfmData,
-    const Regions_or_Features_ProviderT& regionsPerView,
-    const Pair& pairIndex,
-    const matching::MatchesPerDescType & putativeMatchesPerType,
-    matching::MatchesPerDescType & out_geometricInliersPerType)
+  EstimationStatus geometricEstimation(const sfm::SfMData * sfmData,
+                                       const Regions_or_Features_ProviderT &regionsPerView,
+                                       const Pair &pairIndex,
+                                       const matching::MatchesPerDescType &putativeMatchesPerType,
+                                       matching::MatchesPerDescType &out_geometricInliersPerType)
   {
     using namespace aliceVision::feature;
     using namespace aliceVision::matching;
@@ -349,13 +348,11 @@ struct GeometricFilterMatrix_HGrowing : public GeometricFilterMatrix
    * @param matches
    * @return
    */
-  bool Geometry_guided_matching
-  (
-    const sfm::SfMData * sfmData,
-    const feature::RegionsPerView & regionsPerView,
-    const Pair imageIdsPair,
-    const double dDistanceRatio,
-    matching::MatchesPerDescType & matches) override
+  bool Geometry_guided_matching(const sfm::SfMData *sfmData,
+                                const feature::RegionsPerView &regionsPerView,
+                                const Pair imageIdsPair,
+                                const double dDistanceRatio,
+                                matching::MatchesPerDescType &matches) override
   {
     
     /* ... */

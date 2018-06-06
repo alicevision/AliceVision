@@ -62,8 +62,10 @@ std::size_t GeometricFilterMatrix_HGrowing::getNbAllVerifiedMatches() const
 
 bool GeometricFilterMatrix_HGrowing::growHomography(const std::vector<feature::SIOPointFeature> &featuresI,
                                                     const std::vector<feature::SIOPointFeature> &featuresJ,
-                                                    const matching::IndMatches &matches, const IndexT &seedMatchId,
-                                                    std::set<IndexT> &planarMatchesIndices, Mat3 &transformation) const
+                                                    const matching::IndMatches &matches,
+                                                    const IndexT &seedMatchId,
+                                                    std::set<IndexT> &planarMatchesIndices,
+                                                    Mat3 &transformation) const
 {
   assert(seedMatchId <= matches.size());
 

@@ -28,23 +28,22 @@ inline Vec2 getFeaturePosition(const feature::PointFeatures& features, std::size
 }
 
 /**
-* @brief Fill matrices with un-distorted feature positions
-*
-* @param[in] putativeMatches Selected corresponding features id (match)
-* @param[in] cam_I Inth Camera interface
-* @param[in] feature_I Inth view features
-* @param[in] cam_J Jnth Camera interface
-* @param[in] feature_J Jnth view features
-* @param[out] x_I Pixel perfect features from the Inth image putativeMatches matches
-* @param[out] x_J Pixel perfect features from the Jnth image putativeMatches matches
-*/
+ * @brief Fill matrices with un-distorted feature positions
+ *
+ * @param[in] putativeMatches Selected corresponding features id (match)
+ * @param[in] cam_I Inth Camera interface
+ * @param[in] feature_I Inth view features
+ * @param[in] cam_J Jnth Camera interface
+ * @param[in] feature_J Jnth view features
+ * @param[out] x_I Pixel perfect features from the Inth image putativeMatches matches
+ * @param[out] x_J Pixel perfect features from the Jnth image putativeMatches matches
+ */
 template<typename MatT, class FeatOrRegions>
-void fillMatricesWithUndistortFeaturesMatches(
-  const matching::IndMatches & putativeMatches,
-  const camera::IntrinsicBase * cam_I,
-  const FeatOrRegions & feature_I,
-  const camera::IntrinsicBase * cam_J,
-  const FeatOrRegions & feature_J,
+void fillMatricesWithUndistortFeaturesMatches(const matching::IndMatches &putativeMatches,
+                                              const camera::IntrinsicBase *cam_I,
+                                              const FeatOrRegions &feature_I,
+                                              const camera::IntrinsicBase *cam_J,
+                                              const FeatOrRegions &feature_J,
   MatT & x_I, MatT & x_J)
 {
   typedef typename MatT::Scalar Scalar; // Output matrix type
@@ -74,25 +73,24 @@ void fillMatricesWithUndistortFeaturesMatches(
 }
 
 /**
-* @brief Get un-distorted feature positions for the pair pairIndex from the Features_Provider interface
-* @param[in] putativeMatchesPerType Matches of the 'pairIndex' pair
-* @param[in] cam_I
-* @param[in] cam_J
-* @param[in] features_I
-* @param[in] features_J
-* @param[in] descTypes
-* @param[out] x_I Pixel perfect features from the Inth image putativeMatches matches
-* @param[out] x_J Pixel perfect features from the Jnth image putativeMatches matches
-*/
+ * @brief Get un-distorted feature positions for the pair pairIndex from the Features_Provider interface
+ * @param[in] putativeMatchesPerType Matches of the 'pairIndex' pair
+ * @param[in] cam_I
+ * @param[in] cam_J
+ * @param[in] features_I
+ * @param[in] features_J
+ * @param[in] descTypes
+ * @param[out] x_I Pixel perfect features from the Inth image putativeMatches matches
+ * @param[out] x_J Pixel perfect features from the Jnth image putativeMatches matches
+ */
 template<typename MatT, class MapFeatOrRegionPerDesc>
-void MatchesPairToMat(
-  const matching::MatchesPerDescType & putativeMatchesPerType,
-  const camera::IntrinsicBase * cam_I,
-  const camera::IntrinsicBase * cam_J,
-  const MapFeatOrRegionPerDesc& features_I,
-  const MapFeatOrRegionPerDesc& features_J,
-  const std::vector<feature::EImageDescriberType>& descTypes,
-  MatT & x_I, MatT & x_J)
+void MatchesPairToMat(const matching::MatchesPerDescType &putativeMatchesPerType,
+                      const camera::IntrinsicBase *cam_I,
+                      const camera::IntrinsicBase *cam_J,
+                      const MapFeatOrRegionPerDesc &features_I,
+                      const MapFeatOrRegionPerDesc &features_J,
+                      const std::vector<feature::EImageDescriberType> &descTypes,
+                      MatT &x_I, MatT &x_J)
 {
   // Create the output matrices with all matched features for images I and J
   const size_t n = putativeMatchesPerType.getNbAllMatches();
@@ -131,22 +129,21 @@ void MatchesPairToMat(
 }
 
 /**
-* @brief Get un-distorted feature positions for the pair pairIndex from the RegionsPerView interface
-* @param[in] pairIndex Pair from which you need to extract the corresponding points
-* @param[in] putativeMatches Matches of the 'pairIndex' pair
-* @param[in] sfm_data SfMData scene container
-* @param[in] regionsPerView Interface that provides the features positions
-* @param[out] x_I Pixel perfect features from the Inth image putativeMatches matches
-* @param[out] x_J Pixel perfect features from the Jnth image putativeMatches matches
-*/
+ * @brief Get un-distorted feature positions for the pair pairIndex from the RegionsPerView interface
+ * @param[in] pairIndex Pair from which you need to extract the corresponding points
+ * @param[in] putativeMatches Matches of the 'pairIndex' pair
+ * @param[in] sfm_data SfMData scene container
+ * @param[in] regionsPerView Interface that provides the features positions
+ * @param[out] x_I Pixel perfect features from the Inth image putativeMatches matches
+ * @param[out] x_J Pixel perfect features from the Jnth image putativeMatches matches
+ */
 template<typename MatT >
-void MatchesPairToMat(
-  const Pair& pairIndex,
-  const matching::MatchesPerDescType & putativeMatchesPerType,
-  const sfm::SfMData * sfmData,
-  const feature::RegionsPerView& regionsPerView,
-  const std::vector<feature::EImageDescriberType>& descTypes,
-  MatT & x_I, MatT & x_J)
+void MatchesPairToMat(const Pair &pairIndex,
+                      const matching::MatchesPerDescType &putativeMatchesPerType,
+                      const sfm::SfMData *sfmData,
+                      const feature::RegionsPerView &regionsPerView,
+                      const std::vector<feature::EImageDescriberType> &descTypes,
+                      MatT &x_I, MatT &x_J)
 {
   const sfm::View * view_I = sfmData->views.at(pairIndex.first).get();
   const sfm::View * view_J = sfmData->views.at(pairIndex.second).get();
@@ -166,35 +163,35 @@ void MatchesPairToMat(
 }
 
 /**
- * @brief copyInlierMatches
- * @param[in] inliers
- * @param[in] putativeMatchesPerType
- * @param[in] descTypes
- * @param[out] out_geometricInliersPerType
- */
-void copyInlierMatches(
-    const std::vector<size_t>& inliers,
-    const matching::MatchesPerDescType& putativeMatchesPerType,
-    const std::vector<feature::EImageDescriberType>& descTypes,
-    matching::MatchesPerDescType& out_geometricInliersPerType);
+* @brief copyInlierMatches
+* @param[in] inliers
+* @param[in] putativeMatchesPerType
+* @param[in] descTypes
+* @param[out] out_geometricInliersPerType
+*/
+void copyInlierMatches(const std::vector<size_t> &inliers,
+                       const matching::MatchesPerDescType &putativeMatchesPerType,
+                       const std::vector<feature::EImageDescriberType> &descTypes,
+                       matching::MatchesPerDescType &out_geometricInliersPerType);
 
 /**
- * @brief centerMatrix
- * @param[in] points2d
- * @param[out] c
+ * @brief Compute the transformation that standardize the input points so that
+ * they are z-scores (i.e. zero mean and unit standard deviation).
+ * @param[in] points2d The 2D inputs points.
+ * @param[out] t the transformation that standardize the points.
  */
-void centerMatrix(const Eigen::Matrix2Xf & points2d, Mat3 & c);
+void centerMatrix(const Eigen::Matrix2Xf & points2d, Mat3 & t);
 
 /**
-   * @brief Compute the matrices to get a centered and normalized the features.
-   * Based on: https://github.com/fsrajer/yasfm/blob/3a09bc0ee69b7021910d646386cd92deab504a2c/YASFM/relative_pose.h#L1075
-   * @param[in] featuresI
-   * @param[in] featuresJ
-   * @param[in] matches Indicate which feature is concerned about the returned matrices.
-   * @param[out] cI The matrix to apply to (the subpart of) \c featuresI
-   * @param[out] cJ The matrix to apply to (the subpart of) \c featuresJ
-   * @param[in] usefulMatchesId To consider a subpart of \c matches only.
-   */
+ * @brief Compute the standardizing tranformation for the input features.
+ * Based on: https://github.com/fsrajer/yasfm/blob/3a09bc0ee69b7021910d646386cd92deab504a2c/YASFM/relative_pose.h#L1075
+ * @param[in] featuresI The input matching features from the first image.
+ * @param[in] featuresJ The input matching features from the secong image.
+ * @param[in] matches Indicate which feature is concerned about the returned matrices.
+ * @param[out] cI The standardizing matrix to apply to (the subpart of) \c featuresI
+ * @param[out] cJ The standardizing matrix to apply to (the subpart of) \c featuresJ
+ * @param[in] usefulMatchesId To consider a subpart of \c matches only.
+ */
 void centeringMatrices(const std::vector<feature::SIOPointFeature> & featuresI,
                        const std::vector<feature::SIOPointFeature> & featuresJ,
                        const matching::IndMatches & matches,
@@ -202,25 +199,25 @@ void centeringMatrices(const std::vector<feature::SIOPointFeature> & featuresI,
                        Mat3 & cJ,
                        const std::set<IndexT> & usefulMatchesId = std::set<IndexT>());
 /**
-   * @brief Compute the similarity transformation between 2 features (using their scale & orientation).
-   * Based on: https://github.com/fsrajer/yasfm/blob/3a09bc0ee69b7021910d646386cd92deab504a2c/YASFM/relative_pose.cpp#L1649
-   * @param[in] feat1 The first feature with known scale & orientation.
-   * @param[in] feat2 The second feature with known scale & orientation.
-   * @param[out] S The similarity transformation between f1 et f2.
-   */
+ * @brief Compute the similarity transformation between 2 features (using their scale & orientation).
+ * Based on: https://github.com/fsrajer/yasfm/blob/3a09bc0ee69b7021910d646386cd92deab504a2c/YASFM/relative_pose.cpp#L1649
+ * @param[in] feat1 The first feature with known scale & orientation.
+ * @param[in] feat2 The second feature with known scale & orientation.
+ * @param[out] S The similarity transformation between f1 et f2 so that f2 = S * f1.
+ */
 void computeSimilarity(const feature::SIOPointFeature & feat1,
                        const feature::SIOPointFeature & feat2,
                        Mat3 & S);
 
 /**
-   * @brief Estimate (using SVD) the Affinity transformation from a set of matches.
-   * Based on: https://github.com/fsrajer/yasfm/blob/master/YASFM/relative_pose.cpp#L1669
-   * @param[in] featuresI 
-   * @param[in] featuresJ
-   * @param[in] matches The matches to consider for the estimation.
-   * @param[out] affineTransformation The estimated Affine transformation.
-   * @param[in] usefulMatchesId To consider a subpart of \c matches only. 
-   */
+ * @brief Estimate (using SVD) the Affinity transformation from a set of matches.
+ * Based on: https://github.com/fsrajer/yasfm/blob/master/YASFM/relative_pose.cpp#L1669
+ * @param[in] featuresI
+ * @param[in] featuresJ
+ * @param[in] matches The matches to consider for the estimation.
+ * @param[out] affineTransformation The estimated Affine transformation.
+ * @param[in] usefulMatchesId To consider a subpart of \c matches only.
+ */
 void estimateAffinity(const std::vector<feature::SIOPointFeature> & featuresI,
                       const std::vector<feature::SIOPointFeature> & featuresJ,
                       const matching::IndMatches & matches,
@@ -228,14 +225,14 @@ void estimateAffinity(const std::vector<feature::SIOPointFeature> & featuresI,
                       const std::set<IndexT> & usefulMatchesId = std::set<IndexT>());
 
 /**
-   * @brief estimateHomography Estimate (using SVD) the Homography transformation from a set of matches.
-   * Based on: https://github.com/fsrajer/yasfm/blob/master/YASFM/relative_pose.cpp#L1694
-   * @param[in] featuresI
-   * @param[in] featuresJ
-   * @param[in] matches The matches to consider for the estimation.
-   * @param[out] H The estimated Homography transformation.
-   * @param[in] usefulMatchesId To consider a subpart of \c matches only. 
-   */
+ * @brief estimateHomography Estimate (using SVD) the Homography transformation from a set of matches.
+ * Based on: https://github.com/fsrajer/yasfm/blob/master/YASFM/relative_pose.cpp#L1694
+ * @param[in] featuresI
+ * @param[in] featuresJ
+ * @param[in] matches The matches to consider for the estimation.
+ * @param[out] H The estimated Homography transformation.
+ * @param[in] usefulMatchesId To consider a subpart of \c matches only.
+ */
 void estimateHomography(const std::vector<feature::SIOPointFeature> & featuresI,
                         const std::vector<feature::SIOPointFeature> & featuresJ,
                         const matching::IndMatches & matches,
@@ -243,14 +240,14 @@ void estimateHomography(const std::vector<feature::SIOPointFeature> & featuresI,
                         const std::set<IndexT> & usefulMatchesId = std::set<IndexT>());
 
 /**
-   * @brief Return the id. of the matches with a reprojection error < to the desirered \c tolerance.
-   * @param[in] featuresI
-   * @param[in] featuresJ
-   * @param[in] matches The matches to test.
-   * @param[in] transformation The 3x3 transformation matrix.
-   * @param[in] tolerance The tolerated pixel error.
-   * @param[in] inliersId The index in the \c matches vector.
-   */
+ * @brief Return the id. of the matches with a reprojection error < to the desirered \c tolerance.
+ * @param[in] featuresI
+ * @param[in] featuresJ
+ * @param[in] matches The matches to test.
+ * @param[in] transformation The 3x3 transformation matrix.
+ * @param[in] tolerance The tolerated pixel error.
+ * @param[in] inliersId The index in the \c matches vector.
+ */
 void findTransformationInliers(const std::vector<feature::SIOPointFeature> & featuresI,
                                const std::vector<feature::SIOPointFeature> & featuresJ, 
                                const matching::IndMatches & matches,
