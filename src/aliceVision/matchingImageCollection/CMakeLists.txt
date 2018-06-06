@@ -52,3 +52,4 @@ install(TARGETS aliceVision_matchingImageCollection
 )
 
 UNIT_TEST(aliceVision pairBuilder "aliceVision_matchingImageCollection")
+UNIT_TEST(aliceVision geometricFilterUtils "aliceVision_matchingImageCollection")
