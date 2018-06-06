@@ -291,7 +291,7 @@ private:
    * @param[in] tileSharpSubset number of sharp tiles
    * @return sharpness score
    */
-  float computeSharpness(const image::Image<unsigned char>& imageGray,
+  float computeSharpness(const image::Image<float>& imageGray,
                          const unsigned int tileHeight,
                          const unsigned int tileWidth,
                          const unsigned int tileSharpSubset) const;
