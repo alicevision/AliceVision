@@ -1138,32 +1138,21 @@ float PlaneSweepingCuda::sweepPixelsToVolume(int nDepthsToSearch, StaticVector<u
 
     int4 *_volPixs = volPixs_hmh.getBuffer();
     const Voxel *_pixels = pixels->getData().data();
-    if(ntimes * slicesAtTime <= npixs)
+
+    for(int y = 0; y < ntimes; ++y)
     {
-        for(int i = 0; i < ntimes * slicesAtTime; ++i)
+        for(int x = 0; x < slicesAtTime; ++x)
         {
-            _volPixs->x = _pixels->x;
-            _volPixs->y = _pixels->y;
-            _volPixs->z = _pixels->z;
-            _volPixs->w = 1;
-            ++_pixels;
-            ++_volPixs;
+            int index = y * slicesAtTime + x;
+            if(index >= npixs)
+                break;
+            int4 &volPix = _volPixs[index];
+            const Voxel &pixel = _pixels[index];
+            volPix.x = pixel.x;
+            volPix.y = pixel.y;
+            volPix.z = pixel.z;
+            volPix.w = 1;
         }
-    }
-    else
-    {
-        for(int y = 0; y < ntimes; ++y)
-            for(int x = 0; x < slicesAtTime; ++x) {
-                int index = y * slicesAtTime + x;
-                if(index >= npixs)
-                    break;
-                int4 &volPix = _volPixs[index];
-                const Voxel &pixel = _pixels[index];
-                volPix.x = pixel.x;
-                volPix.y = pixel.y;
-                volPix.z = pixel.z;
-                volPix.w = 1;
-            }
     }
 
     CudaHostMemoryHeap<float, 2> depths_hmh(CudaSize<2>(depths->size(), 1));
