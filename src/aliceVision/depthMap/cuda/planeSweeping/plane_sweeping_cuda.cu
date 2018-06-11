@@ -1024,28 +1024,20 @@ void ps_computeSimilarityVolume(CudaArray<uchar4, 2>** ps_texs_arr,
 
     //--------------------------------------------------------------------------------------------------
     // compute similarity volume
-    CudaDeviceMemoryPitched<unsigned char, 2> slice_dmp(CudaSize<2>(nDepthsToSearch, slicesAtTime));
     for(int t = 0; t < ntimes; t++)
     {
-        volume_slice_kernel<<<grid, block>>>(
+        volume_ncc_kernel<<<grid, block >>>(
 #ifdef USE_VOL_PIX_TEXTURE
 #else
-                                             volPixs_arr.getBuffer(),
-                                             volPixs_arr.getPitch(),
+            volPixs_arr.getBuffer(),
+            volPixs_arr.getPitch(),
 #endif
-                                             slice_dmp.getBuffer(), slice_dmp.stride()[0], nDepthsToSearch, nDepths,
-                                             slicesAtTime, width, height, wsh, t, npixs, gammaC, gammaP, epipShift);
-
-        volume_saveSliceToVolume_kernel<<<grid, block>>>(
-#ifdef USE_VOL_PIX_TEXTURE
-#else
-                                             volPixs_arr.getBuffer(),
-                                             volPixs_arr.getPitch(),
-#endif
-                                                         vol_dmp.getBuffer(), vol_dmp.stride()[1], vol_dmp.stride()[0],
-                                                         slice_dmp.getBuffer(), slice_dmp.stride()[0], nDepthsToSearch,
-                                                         nDepths, slicesAtTime, width, height, t, npixs, volStepXY,
-                                                         volDimX, volDimY, volDimZ, volLUX, volLUY, volLUZ);
+            vol_dmp.getBuffer(), vol_dmp.stride()[1], vol_dmp.stride()[0],
+            nDepthsToSearch, nDepths, slicesAtTime,
+            width, height, wsh, t, npixs,
+            gammaC, gammaP, epipShift,
+            volStepXY, volDimX, volDimY, volDimZ,
+            volLUX, volLUY, volLUZ);
     }
     CHECK_CUDA_ERROR();
 
