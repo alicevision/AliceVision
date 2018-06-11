@@ -22,11 +22,13 @@ namespace depthMap {
 
 inline double getMaxGPUMemoryMB(int cudaDeviceNum, double defaultSize = 100.0)
 {
-    try {
-        std::unique_ptr<cudaDeviceProp> deviceProperties(new cudaDeviceProp);
-        if (cudaGetDeviceProperties(deviceProperties.get(), cudaDeviceNum) != cudaSuccess)
-            throw std::runtime_error("Cannot get properties for CUDA gpu device " + std::to_string(cudaDeviceNum));
-        return 0.8 * (deviceProperties->totalGlobalMem) / (1024. * 1024.); // convert to MB and remove some margin
+    try
+    {
+        size_t avail;
+        size_t total;
+        if (cudaMemGetInfo(&avail, &total) != cudaSuccess)
+            throw std::runtime_error("Cannot get memory information for CUDA gpu device " + std::to_string(cudaDeviceNum));
+        return 0.9 * avail / (1024. * 1024.); // convert to MB and remove some margin
     }
     catch (const std::exception& e)
     {
