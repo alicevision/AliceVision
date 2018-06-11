@@ -593,8 +593,13 @@ bool SemiGlobalMatchingRc::sgmrc()
     svol->copyVolume(simVolume, (*depthsTcamsLimits)[0].x, (*depthsTcamsLimits)[0].y);
     delete simVolume;
 
+    std::future<void> cacheFuture;
     for(int c = 1; c < tcams->size(); c++)
     {
+        // launch an async preload of the next image
+        if (c < tcams->size() - 1)
+            cacheFuture = sp->cps->ic->refreshData_async((*tcams)[c + 1]);
+
         StaticVector<float>* subDepths = getSubDepthsForTCam(c);
         SemiGlobalMatchingRcTc* srt = new SemiGlobalMatchingRcTc(subDepths, rc, (*tcams)[c], scale, step, sp, rcSilhoueteMap);
         simVolume = srt->computeDepthSimMapVolume(volumeMBinGPUMem, wsh, gammaC, gammaP);
@@ -704,15 +709,19 @@ void computeDepthMapsPSSGM(int CUDADeviceNo, mvsUtils::MultiViewParams* mp, mvsU
     
     // load images from files into RAM 
     mvsUtils::ImagesCache ic(mp, bandType, true);
-    // load stuff on GPU memory and creates multi-level images and computes gradients
+    std::future<void> cacheFuture;
+    // init structures for GPU memory and multi-level images
     PlaneSweepingCuda cps(CUDADeviceNo, &ic, mp, pc, sgmScale);
     // init plane sweeping parameters
     SemiGlobalMatchingParams sp(mp, pc, &cps);
 
-    //////////////////////////////////////////////////////////////////////////////////////////
-
-    for(const int rc : cams)
+    for(int i = 0; i < cams.size(); i++)
     {
+        const int rc = cams[i];
+        // launch an async preload of the next image
+        if(i < cams.size() - 1)
+            cacheFuture = ic.refreshData_async(cams[i+1]);
+
         std::string depthMapFilepath = sp.getSGM_idDepthMapFileName(mp->getViewId(rc), sgmScale, sgmStep);
         if(!mvsUtils::FileExists(depthMapFilepath))
         {
