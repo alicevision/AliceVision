@@ -11,6 +11,9 @@
 #include <aliceVision/mvsData/StaticVector.hpp>
 #include <aliceVision/mvsUtils/MultiViewParams.hpp>
 
+#include <future>
+#include <mutex>
+
 namespace aliceVision {
 namespace mvsUtils {
 
@@ -19,12 +22,15 @@ class ImagesCache
 public:
     const MultiViewParams* mp;
 
+    ImagesCache(const ImagesCache&) = delete;
+
     int N_PRELOADED_IMAGES;
     Color** imgs;
 
     StaticVector<int>* camIdMapId;
     StaticVector<int>* mapIdCamId;
     StaticVector<long>* mapIdClock;
+    std::vector<std::mutex> imagesMutexes;
     std::vector<std::string> imagesNames;
 
     int bandType;
@@ -38,6 +44,8 @@ public:
 
     int getPixelId(int x, int y, int imgid);
     void refreshData(int camId);
+    std::future<void> refreshData_async(int camId);
+
     Color getPixelValueInterpolated(const Point2d* pix, int camId);
     rgb getPixelValue(const Pixel& pix, int camId);
 };

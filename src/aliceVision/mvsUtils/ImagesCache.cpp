@@ -7,6 +7,8 @@
 #include <aliceVision/mvsUtils/common.hpp>
 #include <aliceVision/mvsUtils/fileIO.hpp>
 
+#include <future>
+
 namespace aliceVision {
 namespace mvsUtils {
 
@@ -65,6 +67,14 @@ void ImagesCache::initIC(int _bandType, std::vector<std::string>& _imagesNames,
         camIdMapId->push_back(-1);
     }
 
+    {
+        // Cannot resize the vector<mutex> directly, as mutex class is not move-constructible.
+        // imagesMutexes.resize(mp->ncams); // cannot compile
+        // So, we do the same with a new vector and swap.
+        std::vector<std::mutex> imagesMutexesTmp(mp->ncams);
+        imagesMutexes.swap(imagesMutexesTmp);
+    }
+
     for (int ni = 0; ni < N_PRELOADED_IMAGES; ++ni)
     {
         imgs[ni] = nullptr;
@@ -90,6 +100,8 @@ ImagesCache::~ImagesCache()
 
 void ImagesCache::refreshData(int camId)
 {
+    std::lock_guard<std::mutex> lock(imagesMutexes[camId]);
+
     // printf("camId %i\n",camId);
     // test if the image is in the memory
     if((*camIdMapId)[camId] == -1)
@@ -122,6 +134,11 @@ void ImagesCache::refreshData(int camId)
             printfElapsedTime(t1, "add "+ basename +" to image cache");
         }
     }
+}
+
+std::future<void> ImagesCache::refreshData_async(int camId)
+{
+    return std::async(&ImagesCache::refreshData, this, camId);
 }
 
 Color ImagesCache::getPixelValueInterpolated(const Point2d* pix, int camId)
