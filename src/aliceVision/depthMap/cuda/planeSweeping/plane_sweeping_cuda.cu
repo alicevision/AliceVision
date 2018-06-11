@@ -891,7 +891,9 @@ void ps_computeSimilarityVolume(
     // init similarity volume
     {
         dim3 blockvol3d(8, 8, 8);
-        dim3 gridvol3d(divUp(volDimX, blockvol3d.x), divUp(volDimY, blockvol3d.y), divUp(volDimZ, blockvol3d.z));
+        dim3 gridvol3d( divUp(volDimX, blockvol3d.x),
+                        divUp(volDimY, blockvol3d.y),
+                        divUp(volDimZ, blockvol3d.z) );
         volume_initFullVolume_kernel<unsigned char><<<gridvol3d, blockvol3d >>>(
             vol_dmp.getBuffer(), vol_dmp.stride()[1], vol_dmp.stride()[0],
             volDimX, volDimY, volDimZ, 255 );
@@ -900,26 +902,19 @@ void ps_computeSimilarityVolume(
 
     //--------------------------------------------------------------------------------------------------
     // compute similarity volume
-    CudaDeviceMemoryPitched<unsigned char, 2> slice_dmp(CudaSize<2>(nDepthsToSearch, slicesAtTime));
     for(int t = 0; t < ntimes; t++)
     {
-        volume_slice_kernel<<<grid, block>>>(
+        volume_ncc_kernel<<<grid, block>>>(
             r4tex,
             t4tex,
             depths_arr->tex,
             volPixs_arr->tex,
-            slice_dmp.getBuffer(), slice_dmp.stride()[0],
-            nDepthsToSearch, nDepths,
-            slicesAtTime, width, height, wsh, t, npixs, gammaC, gammaP, epipShift);
-
-        volume_saveSliceToVolume_kernel<<<grid, block>>>(
-            volPixs_arr->tex,
             vol_dmp.getBuffer(), vol_dmp.stride()[1], vol_dmp.stride()[0],
-            slice_dmp.getBuffer(), slice_dmp.stride()[0],
-            nDepthsToSearch, nDepths,
-            slicesAtTime, width, height, t, npixs, volStepXY,
-            volDimX, volDimY, volDimZ, volLUX, volLUY, volLUZ);
-        CHECK_CUDA_ERROR();
+            nDepthsToSearch, nDepths, slicesAtTime,
+            width, height, wsh, t, npixs,
+            gammaC, gammaP, epipShift,
+            volStepXY, volDimX, volDimY, volDimZ,
+            volLUX, volLUY, volLUZ);
     }
     CHECK_CUDA_ERROR();
 

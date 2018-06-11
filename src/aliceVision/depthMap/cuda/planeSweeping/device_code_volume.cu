@@ -16,7 +16,9 @@
 namespace aliceVision {
 namespace depthMap {
 
-static __device__ void volume_computePatch( cudaTextureObject_t depthsTex, patch& ptch, int depthid, int2& pix)
+static __device__ void volume_computePatch(
+    cudaTextureObject_t depthsTex,
+    patch& ptch, int depthid, int2& pix)
 {
     float3 p;
     float pixSize;
@@ -64,8 +66,6 @@ __global__ void volume_slice_kernel(
             unsigned char sim = (unsigned char)(fsim * 255.0f);
 
             // coalescent
-            /*int sliceid = pixid * slice_p + sdptid;
-            slice[sliceid] = sim;*/
             *get2DBufferAt(slice, slice_p, sdptid, pixid) = sim;
         }
     }
@@ -103,6 +103,56 @@ __global__ void volume_saveSliceToVolume_kernel(
         }
     }
 }
+
+
+__global__ void volume_ncc_kernel(
+    cudaTextureObject_t r4tex,
+    cudaTextureObject_t t4tex,
+    cudaTextureObject_t depthsTex,
+    cudaTextureObject_t volPixsTex,
+    unsigned char* volume, int volume_s, int volume_p,
+    int nsearchdepths, int ndepths, int slicesAtTime,
+    int width, int height, int wsh, int t, int npixs,
+    const float gammaC, const float gammaP, const float epipShift,
+    int volStepXY, int volDimX, int volDimY, int volDimZ,
+    int volLUX, int volLUY, int volLUZ)
+{
+    int sdptid = blockIdx.x * blockDim.x + threadIdx.x;
+    int pixid = blockIdx.y * blockDim.y + threadIdx.y;
+
+    if ((sdptid < nsearchdepths) && (pixid < slicesAtTime) && (slicesAtTime * t + pixid < npixs))
+    {
+        int4 volPix = tex2D<int4>(volPixsTex, pixid, t);
+        int2 pix = make_int2(volPix.x, volPix.y);
+        int depthid = sdptid + volPix.z;
+
+        if (depthid < ndepths)
+        {
+            patch ptcho;
+            volume_computePatch( depthsTex, ptcho, depthid, pix );
+
+            float fsim = compNCCby3DptsYK( r4tex, t4tex, ptcho, wsh, width, height, gammaC, gammaP, epipShift);
+            // unsigned char sim = (unsigned char)(((fsim+1.0f)/2.0f)*255.0f);
+
+            float fminVal = -1.0f;
+            float fmaxVal = 1.0f;
+            fsim = (fsim - fminVal) / (fmaxVal - fminVal);
+            fsim = fminf(1.0f, fmaxf(0.0f, fsim));
+            unsigned char sim = (unsigned char)(fsim * 255.0f);
+
+            int vx = (pix.x - volLUX) / volStepXY;
+            int vy = (pix.y - volLUY) / volStepXY;
+            // int vz = sdptid;//depthid;
+            int vz = depthid - volLUZ;
+            if ((vx >= 0) && (vx < volDimX) && (vy >= 0) && (vy < volDimY) && (vz >= 0) && (vz < volDimZ))
+            {
+                unsigned char* volsim = get3DBufferAt(volume, volume_s, volume_p, vx, vy, vz);
+                *volsim = min(sim, *volsim);
+            }
+        }
+    }
+}
+
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 

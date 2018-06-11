@@ -8,6 +8,8 @@
 
 #include "aliceVision/depthMap/cuda/deviceCommon/device_patch_es.cuh"
 
+#undef USE_VOL_PIX_TEXTURE
+
 namespace aliceVision {
 namespace depthMap {
 
@@ -28,6 +30,18 @@ __global__ void volume_saveSliceToVolume_kernel(
     int slice_p, int nsearchdepths, int ndepths, int slicesAtTime,
     int width, int height, int t, int npixs, int volStepXY, int volDimX,
     int volDimY, int volDimZ, int volLUX, int volLUY, int volLUZ );
+
+__global__ void volume_ncc_kernel(
+    cudaTextureObject_t r4tex,
+    cudaTextureObject_t t4tex,
+    cudaTextureObject_t depthsTex,
+    cudaTextureObject_t volPixsTex,
+    unsigned char* volume, int volume_s, int volume_p,
+    int nsearchdepths, int ndepths, int slicesAtTime,
+    int width, int height, int wsh, int t, int npixs,
+    const float gammaC, const float gammaP, const float epipShift,
+    int volStepXY, int volDimX, int volDimY, int volDimZ,
+    int volLUX, int volLUY, int volLUZ);
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
