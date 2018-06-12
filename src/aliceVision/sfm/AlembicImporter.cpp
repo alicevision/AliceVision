@@ -217,6 +217,7 @@ bool readCamera(const ICamera& camera, const M44d& mat, sfm::SfMData& sfmData, s
   std::vector<unsigned int> sensorSize_pix = {0, 0};
   std::string mvg_intrinsicType = EINTRINSIC_enumToString(PINHOLE_CAMERA);
   std::vector<double> mvg_intrinsicParams;
+  double initialFocalLengthPix = -1;
   std::vector<std::string> rawMetadata;
   IndexT viewId = sfmData.getViews().size();
   IndexT poseId = sfmData.getViews().size();
@@ -329,6 +330,10 @@ bool readCamera(const ICamera& camera, const M44d& mat, sfm::SfMData& sfmData, s
       {
         mvg_intrinsicType = getAbcProp<Alembic::Abc::IStringProperty>(userProps, *propHeader, "mvg_intrinsicType", sampleFrame);
       }
+      if(const Alembic::Abc::PropertyHeader *propHeader = userProps.getPropertyHeader("mvg_initialFocalLengthPix"))
+      {
+        initialFocalLengthPix = getAbcProp<Alembic::Abc::IDoubleProperty>(userProps, *propHeader, "mvg_initialFocalLengthPix", sampleFrame);
+      }
       if(userProps.getPropertyHeader("mvg_intrinsicParams"))
       {
         Alembic::Abc::IDoubleArrayProperty prop(userProps, "mvg_intrinsicParams");
@@ -356,6 +361,8 @@ bool readCamera(const ICamera& camera, const M44d& mat, sfm::SfMData& sfmData, s
     pinholeIntrinsic->setWidth(sensorSize_pix.at(0));
     pinholeIntrinsic->setHeight(sensorSize_pix.at(1));
     pinholeIntrinsic->updateFromParams(mvg_intrinsicParams);
+    pinholeIntrinsic->setInitialFocalLengthPix(initialFocalLengthPix);
+
     if(intrinsicLocked)
       pinholeIntrinsic->lock();
     else
