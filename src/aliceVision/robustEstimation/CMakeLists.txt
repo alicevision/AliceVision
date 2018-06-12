@@ -24,7 +24,12 @@ set(robustEstimation_files_test
 add_library(aliceVision_robustEstimation INTERFACE)
 
 target_link_libraries(aliceVision_robustEstimation
-  INTERFACE ${LOG_LIB}
+  INTERFACE
+    aliceVision_camera
+    aliceVision_feature
+    aliceVision_matching
+    aliceVision_numeric
+    aliceVision_system
 )
 
 install(TARGETS aliceVision_robustEstimation 

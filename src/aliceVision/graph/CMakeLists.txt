@@ -16,8 +16,9 @@ set(graph_files_test
 add_library(aliceVision_graph INTERFACE)
 
 target_link_libraries(aliceVision_graph
-  INTERFACE ${LEMON_LIBRARY}
-            ${LOG_LIB}
+  INTERFACE
+    aliceVision_system 
+    ${LEMON_LIBRARY}
 )
 
 install(TARGETS aliceVision_graph 

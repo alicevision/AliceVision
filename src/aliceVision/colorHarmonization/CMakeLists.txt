@@ -27,11 +27,11 @@ set_property(TARGET aliceVision_colorHarmonization
 )
 
 target_link_libraries(aliceVision_colorHarmonization
-  INTERFACE aliceVision_image
-            ${CLP_LIBRARIES}
-            ${COINUTILS_LIBRARY}
-            ${OSI_LIBRARY}
-            ${LOG_LIB}
+  PUBLIC
+    aliceVision_feature
+    aliceVision_image
+    aliceVision_linearProgramming
+    aliceVision_matching
 )
 
 install(TARGETS aliceVision_colorHarmonization

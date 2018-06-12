@@ -15,7 +15,8 @@ add_library(aliceVision_stl INTERFACE)
 # target_sources(aliceVision_stl INTERFACE ${stl_files_headers}) # TODO
 
 target_link_libraries(aliceVision_stl
-  INTERFACE ${LOG_LIB}
+  INTERFACE
+    ${Boost_CONTAINER_LIBRARIES}
 )
 
 install(TARGETS aliceVision_stl 

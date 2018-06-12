@@ -22,8 +22,13 @@ set(camera_files_test
 add_library(aliceVision_camera INTERFACE)
 
 target_link_libraries(aliceVision_camera
-	INTERFACE aliceVision_multiview
-			  ${LOG_LIB}
+  INTERFACE 
+    aliceVision_geometry
+    aliceVision_multiview
+    aliceVision_image
+    aliceVision_numeric
+    aliceVision_stl
+    aliceVision_system
 )
 
 install(TARGETS aliceVision_camera 

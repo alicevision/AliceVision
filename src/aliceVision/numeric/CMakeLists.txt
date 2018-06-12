@@ -5,7 +5,7 @@ add_library(aliceVision_numeric
 
 target_link_libraries(aliceVision_numeric
   PUBLIC
-    ${LOG_LIB}
+    Eigen3::Eigen
 )
 
 set_target_properties(aliceVision_numeric

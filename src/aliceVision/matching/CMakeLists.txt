@@ -36,12 +36,14 @@ set_target_properties(aliceVision_matching
 )
 
 target_link_libraries(aliceVision_matching
-  aliceVision_feature
-  ${Boost_FILESYSTEM_LIBRARIES}
-  # dependency of Boost filesystem, not always declared depending on CMake version
-  ${Boost_SYSTEM_LIBRARIES}
-  ${FLANN_LIBRARY}
-  ${LOG_LIB}
+  PUBLIC
+    aliceVision_feature
+    aliceVision_numeric
+    aliceVision_stl
+    aliceVision_system
+  PRIVATE
+    ${Boost_FILESYSTEM_LIBRARY}
+    ${FLANN_LIBRARY}
 )
 
 set_property(TARGET aliceVision_matching

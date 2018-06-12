@@ -48,8 +48,10 @@ target_include_directories(aliceVision_mvsData
 )
 
 target_link_libraries(aliceVision_mvsData
-  PUBLIC ${ZLIB_LIBRARIES}
-         ${Boost_FILESYSTEM_LIBRARIES}
+  PUBLIC 
+    aliceVision_system
+    ${ZLIB_LIBRARIES}
+    ${Boost_FILESYSTEM_LIBRARY}
 )
 
 set_property(TARGET aliceVision_mvsData

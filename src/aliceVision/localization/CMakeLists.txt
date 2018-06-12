@@ -28,12 +28,18 @@ add_library(aliceVision_localization
 )
 
 target_link_libraries(aliceVision_localization
-  PUBLIC aliceVision_sfm
-         aliceVision_voctree
-         aliceVision_numeric
-  PRIVATE aliceVision_system
-          ${Boost_LIBRARIES}
-          ${LOG_LIB}
+  PUBLIC 
+    aliceVision_camera
+    aliceVision_feature
+    aliceVision_geometry
+    aliceVision_image
+    aliceVision_numeric
+    aliceVision_robustEstimation
+    aliceVision_sfm
+    aliceVision_voctree
+  PRIVATE
+    aliceVision_system
+    ${Boost_FILESYSTEM_LIBRARY}
 )
 
 if(ALICEVISION_HAVE_CCTAG)

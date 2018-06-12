@@ -18,6 +18,8 @@ set(linearProgramming_files_test
 
 # Dependencies
 set(aliceVision_linearProgramming_DEPS
+  aliceVision_numeric
+  aliceVision_system
   ${CLP_LIBRARIES}     # clp + solver wrapper
   ${COINUTILS_LIBRARY} # container tools
   ${OSI_LIBRARY}       # generic LP

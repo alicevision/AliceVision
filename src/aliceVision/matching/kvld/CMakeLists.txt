@@ -22,7 +22,11 @@ set_target_properties(aliceVision_kvld
 )
 
 target_link_libraries(aliceVision_kvld
-  PUBLIC aliceVision_image
+  PUBLIC 
+    aliceVision_image
+    aliceVision_feature
+    aliceVision_numeric
+    aliceVision_system
 )
 
 set_property(TARGET aliceVision_kvld

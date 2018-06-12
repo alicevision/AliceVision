@@ -94,18 +94,22 @@ set_property(TARGET aliceVision_sfm
 
 target_link_libraries(aliceVision_sfm
   PUBLIC
-  aliceVision_numeric
-  aliceVision_track
-  aliceVision_multiview
-  ${CERES_LIBRARIES}
-  aliceVision_lInftyComputerVision
-  aliceVision_system
-  aliceVision_matching
-  aliceVision_feature
-  aliceVision_geometry
-  aliceVision_track
-  ${Boost_LIBRARIES}
-  ${LOG_LIB}
+    aliceVision_numeric
+    aliceVision_track
+    aliceVision_multiview
+    ${CERES_LIBRARIES}
+    aliceVision_lInftyComputerVision
+    aliceVision_system
+    aliceVision_matching
+    aliceVision_feature
+    aliceVision_geometry
+    aliceVision_track
+    aliceVision_camera
+    aliceVision_graph
+    aliceVision_linearProgramming
+    ${Boost_FILESYSTEM_LIBRARY}
+  PRIVATE
+    ${Boost_REGEX_LIBRARY}
 )
 
 set_target_properties(aliceVision_sfm

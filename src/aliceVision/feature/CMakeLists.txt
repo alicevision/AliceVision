@@ -70,14 +70,13 @@ add_library(aliceVision_feature
 )
 
 target_link_libraries(aliceVision_feature
-  PUBLIC aliceVision_numeric
-         aliceVision_image
-         aliceVision_multiview
-         vlsift
-         ${Boost_LIBRARIES}
-         ${LOG_LIB}
-
-  PRIVATE ${Boost_FILESYSTEM_LIBRARIES}
+  PUBLIC
+    aliceVision_image
+    aliceVision_numeric
+    aliceVision_system
+    vlsift
+  PRIVATE
+    ${Boost_FILESYSTEM_LIBRARY}
 )
 
 # Link CCTAG library

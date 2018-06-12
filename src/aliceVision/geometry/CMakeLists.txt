@@ -29,12 +29,12 @@ set_property(TARGET aliceVision_geometry
 )
 
 target_link_libraries(aliceVision_geometry
-  INTERFACE aliceVision_numeric
-            aliceVision_multiview
-            ${CLP_LIBRARIES}
-            ${COINUTILS_LIBRARY}
-            ${OSI_LIBRARY}
-            ${LOG_LIB}
+  PUBLIC
+    aliceVision_numeric
+    aliceVision_linearProgramming
+  PRIVATE
+    # TODO: fix cross-dependency
+    # aliceVision_robustEstimation
 )
 
 install(TARGETS aliceVision_geometry
@@ -44,7 +44,7 @@ install(TARGETS aliceVision_geometry
 
 UNIT_TEST(aliceVision rigidTransformation3D    "aliceVision_geometry")
 UNIT_TEST(aliceVision halfSpaceIntersection    "aliceVision_geometry")
-UNIT_TEST(aliceVision frustumIntersection      "aliceVision_geometry;aliceVision_multiview_test_data")
+UNIT_TEST(aliceVision frustumIntersection      "aliceVision_geometry;aliceVision_multiview;aliceVision_multiview_test_data")
 
 add_custom_target(aliceVision_geometry_ide SOURCES ${geometry_files_headers} ${geometry_files_test})
 
