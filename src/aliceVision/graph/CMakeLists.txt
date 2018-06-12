@@ -20,6 +20,10 @@ target_link_libraries(aliceVision_graph
             ${LOG_LIB}
 )
 
+install(TARGETS aliceVision_graph 
+  EXPORT aliceVision-targets 
+)
+
 UNIT_TEST(aliceVision connectedComponent "aliceVision_graph")
 UNIT_TEST(aliceVision triplet            "aliceVision_graph")
 

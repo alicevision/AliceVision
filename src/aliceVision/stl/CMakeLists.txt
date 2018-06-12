@@ -18,6 +18,10 @@ target_link_libraries(aliceVision_stl
   INTERFACE ${LOG_LIB}
 )
 
+install(TARGETS aliceVision_stl 
+  EXPORT aliceVision-targets 
+)
+
 UNIT_TEST(aliceVision dynamicBitset "aliceVision_stl")
 
 add_custom_target(aliceVision_stl_ide SOURCES ${stl_files_headers})

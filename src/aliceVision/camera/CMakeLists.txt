@@ -26,6 +26,10 @@ target_link_libraries(aliceVision_camera
 			  ${LOG_LIB}
 )
 
+install(TARGETS aliceVision_camera 
+  EXPORT aliceVision-targets 
+)
+
 UNIT_TEST(aliceVision pinholeBrown    "aliceVision_camera")
 UNIT_TEST(aliceVision pinholeFisheye  "aliceVision_camera")
 UNIT_TEST(aliceVision pinholeFisheye1 "aliceVision_camera")

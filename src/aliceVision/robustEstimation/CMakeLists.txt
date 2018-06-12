@@ -27,6 +27,10 @@ target_link_libraries(aliceVision_robustEstimation
   INTERFACE ${LOG_LIB}
 )
 
+install(TARGETS aliceVision_robustEstimation 
+  EXPORT aliceVision-targets
+)
+
 UNIT_TEST(aliceVision randSampling "aliceVision_robustEstimation")
 UNIT_TEST(aliceVision lineKernel   "aliceVision_robustEstimation")
 UNIT_TEST(aliceVision ransac       "aliceVision_robustEstimation")
