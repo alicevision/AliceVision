@@ -190,18 +190,18 @@ bool SfMLocalizer::RefinePose
 )
 {
   // Setup a tiny SfM scene with the corresponding 2D-3D data
-  SfMData sfm_data;
+  SfMData tinyScene;
 
   // view
   std::shared_ptr<View> view = std::make_shared<View>("", 0, 0, 0);
-  sfm_data.views.insert( std::make_pair(0, view));
+  tinyScene.views.insert( std::make_pair(0, view));
 
   // pose
-  sfm_data.setPose(*view, pose);
+  tinyScene.setPose(*view, CameraPose(pose));
 
   // intrinsic (the shared_ptr does not take the ownership, will not release the input pointer)
   std::shared_ptr<camera::IntrinsicBase> localIntrinsics(intrinsics->clone());
-  sfm_data.intrinsics[0] = localIntrinsics;
+  tinyScene.intrinsics[0] = localIntrinsics;
 
   // structure data (2D-3D correspondences)
   for (size_t i = 0; i < matching_data.vec_inliers.size(); ++i)
@@ -210,7 +210,7 @@ bool SfMLocalizer::RefinePose
     Landmark landmark;
     landmark.X = matching_data.pt3D.col(idx);
     landmark.observations[0] = Observation(matching_data.pt2D.col(idx), UndefinedIndexT);
-    sfm_data.structure[i] = std::move(landmark);
+    tinyScene.structure[i] = std::move(landmark);
   }
 
   BundleAdjustmentCeres bundle_adjustment_obj;
@@ -220,11 +220,12 @@ bool SfMLocalizer::RefinePose
   if(b_refine_intrinsic)
     refineOptions |= BA_REFINE_INTRINSICS_ALL;
 
-  const bool b_BA_Status = bundle_adjustment_obj.Adjust(sfm_data, refineOptions);
+  const bool b_BA_Status = bundle_adjustment_obj.Adjust(tinyScene, refineOptions);
   if (!b_BA_Status)
     return false;
 
-  pose = sfm_data.getPose(*view);
+  pose = tinyScene.getPose(*view).getTransform();
+
   if(b_refine_intrinsic)
     intrinsics->assign(*localIntrinsics);
   return true;

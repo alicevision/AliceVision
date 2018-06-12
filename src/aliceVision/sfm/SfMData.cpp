@@ -141,15 +141,15 @@ std::set<IndexT> SfMData::getReconstructedIntrinsics() const
   return valid_idx;
 }
 
-void SfMData::setPose(const View& view, const geometry::Pose3& absolutePose)
+void SfMData::setPose(const View& view, const CameraPose& absolutePose)
 {
   const bool knownPose = existsPose(view);
-  Pose3& viewPose = _poses[view.getPoseId()];
+  CameraPose& viewPose = _poses[view.getPoseId()];
 
   // view is not part of a rig
   if(!view.isPartOfRig())
   {
-    viewPose = absolutePose;
+    viewPose.setTransform(absolutePose.getTransform());//todo locked
     return;
   }
 
@@ -163,7 +163,7 @@ void SfMData::setPose(const View& view, const geometry::Pose3& absolutePose)
 
     subPose.status = ERigSubPoseStatus::ESTIMATED; // sub-pose initialized
     subPose.pose = Pose3();  // the first sub-pose is set to identity
-    viewPose = absolutePose; // so the pose of the rig is the same than the pose
+    viewPose.setTransform(absolutePose.getTransform()); // so the pose of the rig is the same than the pose
   }
   else
   {
@@ -180,7 +180,7 @@ void SfMData::setPose(const View& view, const geometry::Pose3& absolutePose)
       subPose.status = ERigSubPoseStatus::ESTIMATED;
 
       // convert absolute pose to RigSubPose
-      subPose.pose = absolutePose * viewPose.inverse();
+      subPose.pose = absolutePose.getTransform() * viewPose.getTransform().inverse();
 
     }
     else
@@ -193,7 +193,7 @@ void SfMData::setPose(const View& view, const geometry::Pose3& absolutePose)
       }
 
       //convert absolute pose to rig Pose
-      viewPose = subPose.pose.inverse() * absolutePose;
+      viewPose.setTransform(subPose.pose.inverse() * absolutePose.getTransform());
     }
   }
 }

@@ -95,6 +95,41 @@ inline void loadPose3(const std::string& name, geometry::Pose3& pose, bpt::ptree
 }
 
 /**
+ * @brief Save a Pose3 in a boost property tree.
+ * @param[in] name The node name ( "" = no name )
+ * @param[in] pose The input pose3
+ * @param[out] parentTree The parent tree
+ */
+inline void saveCameraPose(const std::string& name, const CameraPose& cameraPose, bpt::ptree& parentTree)
+{
+  bpt::ptree cameraPoseTree;
+
+  savePose3("transform", cameraPose.getTransform(), cameraPoseTree);
+  cameraPoseTree.put("locked", cameraPose.isLocked());
+
+  parentTree.add_child(name, cameraPoseTree);
+}
+
+/**
+ * @brief Load a Pose3 from a boost property tree.
+ * @param[in] name The Pose3 name ( "" = no name )
+ * @param[out] pose The output Pose3
+ * @param[in,out] pose3Tree The input tree
+ */
+inline void loadCameraPose(const std::string& name, CameraPose& cameraPose, bpt::ptree& cameraPoseTree)
+{
+  geometry::Pose3 pose;
+
+  loadPose3(name + ".transform", pose, cameraPoseTree);
+  cameraPose.setTransform(pose);
+
+  if(cameraPoseTree.get<bool>("locked", false))
+    cameraPose.lock();
+  else
+    cameraPose.unlock();
+}
+
+/**
  * @brief Save a View in a boost property tree.
  * @param[in] name The node name ( "" = no name )
  * @param[in] view The input View

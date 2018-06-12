@@ -224,6 +224,7 @@ bool readCamera(const ICamera& camera, const M44d& mat, sfm::SfMData& sfmData, s
   IndexT rigId = UndefinedIndexT;
   IndexT subPoseId = UndefinedIndexT;
   IndexT resectionId = UndefinedIndexT;
+  bool poseLocked = false;
 
   if(userProps)
   {
@@ -297,6 +298,10 @@ bool readCamera(const ICamera& camera, const M44d& mat, sfm::SfMData& sfmData, s
         {
           resectionId = getAbcProp<Alembic::Abc::IInt32Property>(userProps, *propHeader, "mvg_resectionId", sampleFrame);
         }
+      }
+      if(const Alembic::Abc::PropertyHeader *propHeader = userProps.getPropertyHeader("mvg_poseLocked"))
+      {
+        poseLocked = getAbcProp<Alembic::Abc::IBoolProperty>(userProps, *propHeader, "mvg_poseLocked", sampleFrame);
       }
       if(userProps.getPropertyHeader("mvg_sensorSizePix"))
       {
@@ -409,7 +414,7 @@ bool readCamera(const ICamera& camera, const M44d& mat, sfm::SfMData& sfmData, s
     }
     else
     {
-      sfmData.setPose(*view, pose);
+      sfmData.setPose(*view, CameraPose(pose, poseLocked));
     }
   }
 
@@ -450,6 +455,7 @@ bool readXform(IXform& xform, M44d& mat, sfm::SfMData& sfmData, sfm::ESfMData fl
   IndexT rigId = UndefinedIndexT;
   IndexT poseId = UndefinedIndexT;
   std::size_t nbSubPoses = 0;
+  bool rigPoseLocked = false;
 
   if(userProps)
   {
@@ -488,6 +494,11 @@ bool readXform(IXform& xform, M44d& mat, sfm::SfMData& sfmData, sfm::ESfMData fl
         nbSubPoses = getAbcProp<Alembic::Abc::IInt16Property>(userProps, *propHeader, "mvg_nbSubPoses", 0);
       }
     }
+
+    if(const Alembic::Abc::PropertyHeader *propHeader = userProps.getPropertyHeader("mvg_rigPoseLocked"))
+    {
+      rigPoseLocked = getAbcProp<Alembic::Abc::IBoolProperty>(userProps, *propHeader, "mvg_rigPoseLocked", 0);
+    }
   }
 
   if((rigId == UndefinedIndexT) && (poseId == UndefinedIndexT))
@@ -516,7 +527,7 @@ bool readXform(IXform& xform, M44d& mat, sfm::SfMData& sfmData, sfm::ESfMData fl
     Pose3 pose(matR, matT);
 
     if(sfmData.getPoses().find(poseId) == sfmData.getPoses().end())
-      sfmData.getPoses().emplace(poseId, pose);
+      sfmData.getPoses().emplace(poseId, CameraPose(pose, rigPoseLocked));
   }
 
   if(sfmData.getRigs().find(rigId) == sfmData.getRigs().end())

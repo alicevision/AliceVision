@@ -112,7 +112,7 @@ void retrieveSeedsPerView(
       if(obsACamId_it == viewIds.end())
         continue; // this view cannot be exported to mvs, so we skip the observation
       const View& viewA = *sfmData.getViews().at(obsA.first).get();
-      const geometry::Pose3& poseA = sfmData.getPoses().at(viewA.getPoseId());
+      const geometry::Pose3 poseA = sfmData.getPose(viewA).getTransform();
       const Pinhole * intrinsicsA = dynamic_cast<const Pinhole*>(sfmData.getIntrinsics().at(viewA.getIntrinsicId()).get());
       
       for(const auto& obsB: landmark.observations)
@@ -125,7 +125,7 @@ void retrieveSeedsPerView(
           continue; // this view cannot be exported to mvs, so we skip the observation
         const unsigned short indexB = std::distance(viewIds.begin(), obsBCamId_it);
         const View& viewB = *sfmData.getViews().at(obsB.first).get();
-        const geometry::Pose3& poseB = sfmData.getPoses().at(viewB.getPoseId());
+        const geometry::Pose3 poseB = sfmData.getPose(viewB).getTransform();
         const Pinhole * intrinsicsB = dynamic_cast<const Pinhole*>(sfmData.getIntrinsics().at(viewB.getIntrinsicId()).get());
 
         const double angle = AngleBetweenRays(
@@ -192,7 +192,7 @@ bool prepareDenseScene(const SfMData& sfmData, const std::string& outFolder)
     // Export camera
     {
       // Export camera pose
-      const Pose3 pose = sfmData.getPose(*view);
+      const Pose3 pose = sfmData.getPose(*view).getTransform();
       Mat34 P = iterIntrinsic->second.get()->get_projective_equivalent(pose);
       std::ofstream fileP((fs::path(outFolder) / (baseFilename + "_P.txt")).string());
       fileP << std::setprecision(10)
@@ -210,8 +210,8 @@ bool prepareDenseScene(const SfMData& sfmData, const std::string& outFolder)
 
       // Export camera intrinsics
       const Mat3 K = dynamic_cast<const Pinhole*>(sfmData.getIntrinsicPtr(view->getIntrinsicId()))->K();
-      const Mat3 R = pose.rotation();
-      const Vec3 t = pose.translation();
+      const Mat3& R = pose.rotation();
+      const Vec3& t = pose.translation();
       std::ofstream fileKRt((fs::path(outFolder) / (baseFilename + "_KRt.txt")).string());
       fileKRt << std::setprecision(10)
            << K(0, 0) << " " << K(0, 1) << " " << K(0, 2) << "\n"

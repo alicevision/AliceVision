@@ -76,7 +76,7 @@ public:
    */
   void addCamera(const std::string& name,
                  const View& view,
-                 const geometry::Pose3* pose = nullptr,
+                 const CameraPose* pose = nullptr,
                  const camera::IntrinsicBase* intrinsic = nullptr,
                  const Vec6* uncertainty = nullptr);
 

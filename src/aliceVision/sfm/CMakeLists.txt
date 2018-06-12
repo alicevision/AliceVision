@@ -34,6 +34,7 @@ set(sfm_files_headers
   generateReport.hpp
   View.hpp
   viewIO.hpp
+  CameraPose.hpp
   Rig.hpp
   utils/alignment.hpp
   utils/uid.hpp

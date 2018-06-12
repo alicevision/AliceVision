@@ -25,7 +25,7 @@ double RMSE(const SfMData& sfmData)
       itObs != obs.end(); ++itObs)
     {
       const View * view = sfmData.getViews().find(itObs->first)->second.get();
-      const geometry::Pose3 pose = sfmData.getPose(*view);
+      const geometry::Pose3 pose = sfmData.getPose(*view).getTransform();
       const std::shared_ptr<camera::IntrinsicBase> intrinsic = sfmData.getIntrinsics().at(view->getIntrinsicId());
       const Vec2 residual = intrinsic->residual(pose, iterTracks->second.X, itObs->second.x);
       //ALICEVISION_LOG_DEBUG(residual);

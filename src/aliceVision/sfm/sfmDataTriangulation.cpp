@@ -62,7 +62,7 @@ void StructureComputation_blind::triangulate(SfMData & sfm_data) const
         if (sfm_data.isPoseAndIntrinsicDefined(view))
         {
           const IntrinsicBase * cam = sfm_data.getIntrinsics().at(view->getIntrinsicId()).get();
-          const Pose3 pose = sfm_data.getPose(*view);
+          const Pose3 pose = sfm_data.getPose(*view).getTransform();
           trianObj.add(
             cam->get_projective_equivalent(pose),
             cam->get_ud_pixel(itObs.second.x));
@@ -200,7 +200,7 @@ bool StructureComputation_robust::robust_triangulation(
       std::advance(itObs, it);
       const View * view = sfm_data.views.at(itObs->first).get();
       const IntrinsicBase * cam = sfm_data.getIntrinsics().at(view->getIntrinsicId()).get();
-      const Pose3 pose = sfm_data.getPose(*view);
+      const Pose3 pose = sfm_data.getPose(*view).getTransform();
       const double z = pose.depth(current_model); // TODO: cam->depth(pose(X));
       bChierality &= z > 0;
     }
@@ -216,7 +216,7 @@ bool StructureComputation_robust::robust_triangulation(
     {
       const View * view = sfm_data.views.at(itObs.first).get();
       const IntrinsicBase * intrinsic = sfm_data.getIntrinsics().at(view->getIntrinsicId()).get();
-      const Pose3 pose = sfm_data.getPose(*view);
+      const Pose3 pose = sfm_data.getPose(*view).getTransform();
       const Vec2 residual = intrinsic->residual(pose, current_model, itObs.second.x);
       const double residual_d = residual.norm();
 
@@ -256,7 +256,7 @@ Vec3 StructureComputation_robust::track_sample_triangulation(
     std::advance(itObs, idx);
     const View * view = sfm_data.views.at(itObs->first).get();
     const IntrinsicBase * cam = sfm_data.getIntrinsics().at(view->getIntrinsicId()).get();
-    const Pose3 pose = sfm_data.getPose(*view);
+    const Pose3 pose = sfm_data.getPose(*view).getTransform();
     trianObj.add(
       cam->get_projective_equivalent(pose),
       cam->get_ud_pixel(itObs->second.x));

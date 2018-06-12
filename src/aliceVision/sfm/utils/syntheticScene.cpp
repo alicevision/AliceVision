@@ -74,7 +74,7 @@ SfMData getInputScene
   // 2. Poses
   for (int i = 0; i < nviews; ++i)
   {
-    sfm_data.setPose(*sfm_data.views.at(i), geometry::Pose3(d._R[i], d._C[i]));
+    sfm_data.setPose(*sfm_data.views.at(i), CameraPose(geometry::Pose3(d._R[i], d._C[i])));
   }
 
   // 3. Intrinsic data (shared, so only one camera intrinsic is defined)
@@ -161,9 +161,9 @@ SfMData getInputRigScene(const NViewDataSet& d,
   const std::size_t nbViews = sfmData.views.size();
 
   // 3. Poses
-  for (int poseId = 0; poseId < nbPoses; ++poseId)
+  for(int poseId = 0; poseId < nbPoses; ++poseId)
   {
-    sfmData.getPoses()[poseId] = geometry::Pose3(d._R[poseId], d._C[poseId]);
+    sfmData.setAbsolutePose(static_cast<IndexT>(poseId), CameraPose(geometry::Pose3(d._R[poseId], d._C[poseId])));
   }
 
   // 4. Intrinsic data (shared, so only one camera intrinsic is defined)
@@ -198,7 +198,7 @@ SfMData getInputRigScene(const NViewDataSet& d,
     for(int viewId = 0; viewId < nbViews; ++viewId)
     {
       const View& view = *sfmData.views.at(viewId);
-      geometry::Pose3 camPose = sfmData.getPose(view);
+      const geometry::Pose3 camPose = sfmData.getPose(view).getTransform();
       const Vec2 pt = Project(sfmData.intrinsics.at(0)->get_projective_equivalent(camPose), landmark.X);
       landmark.observations[viewId] = Observation(pt, landmarkId);
     }
