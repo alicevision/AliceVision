@@ -225,6 +225,7 @@ bool readCamera(const ICamera& camera, const M44d& mat, sfm::SfMData& sfmData, s
   IndexT subPoseId = UndefinedIndexT;
   IndexT resectionId = UndefinedIndexT;
   bool poseLocked = false;
+  bool intrinsicLocked = false;
 
   if(userProps)
   {
@@ -303,6 +304,10 @@ bool readCamera(const ICamera& camera, const M44d& mat, sfm::SfMData& sfmData, s
       {
         poseLocked = getAbcProp<Alembic::Abc::IBoolProperty>(userProps, *propHeader, "mvg_poseLocked", sampleFrame);
       }
+      if(const Alembic::Abc::PropertyHeader *propHeader = userProps.getPropertyHeader("mvg_poseLocked"))
+      {
+        intrinsicLocked = getAbcProp<Alembic::Abc::IBoolProperty>(userProps, *propHeader, "mvg_intrinsicLocked", sampleFrame);
+      }
       if(userProps.getPropertyHeader("mvg_sensorSizePix"))
       {
         getAbcArrayProp<Alembic::Abc::IStringArrayProperty>(userProps, "mvg_metadata", sampleFrame, rawMetadata);
@@ -351,6 +356,10 @@ bool readCamera(const ICamera& camera, const M44d& mat, sfm::SfMData& sfmData, s
     pinholeIntrinsic->setWidth(sensorSize_pix.at(0));
     pinholeIntrinsic->setHeight(sensorSize_pix.at(1));
     pinholeIntrinsic->updateFromParams(mvg_intrinsicParams);
+    if(intrinsicLocked)
+      pinholeIntrinsic->lock();
+    else
+      pinholeIntrinsic->unlock();
 
     sfmData.intrinsics[intrinsicId] = pinholeIntrinsic;
   }

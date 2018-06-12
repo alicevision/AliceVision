@@ -373,7 +373,14 @@ std::map<IndexT, std::vector<double>> LocalBundleAdjustmentCeres::addIntrinsicsT
     
     double * parameter_block = &map_intrinsics[intrinsicIds][0];
     problem.AddParameterBlock(parameter_block, map_intrinsics[intrinsicIds].size());
-    
+
+    if(itIntrinsic.second->isLocked())
+    {
+      //set the whole parameter block as constant.
+      problem.SetParameterBlockConstant(parameter_block);
+      continue;
+    }
+
     // Refine the focal length
     if(itIntrinsic.second->initialFocalLengthPix() > 0)
     {

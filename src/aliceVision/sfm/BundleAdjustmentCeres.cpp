@@ -110,7 +110,7 @@ void addPose(ceres::Problem& problem,
      (!(refineOptions & BA_REFINE_TRANSLATION) &&
      !(refineOptions & BA_REFINE_ROTATION)))
   {
-    //set the whole parameter block as constant for best performance or if it's locked.
+    //set the whole parameter block as constant for best performance or because it's locked.
     problem.SetParameterBlockConstant(parameter_block);
   }
   else
@@ -281,10 +281,10 @@ void BundleAdjustmentCeres::createProblem(SfMData & sfm_data, BA_Refine refineOp
 
     double * parameter_block = &map_intrinsics[idIntrinsics][0];
     problem.AddParameterBlock(parameter_block, map_intrinsics[idIntrinsics].size());
-    if (!refineIntrinsics)
+    if((!refineIntrinsics) || itIntrinsic.second->isLocked())
     {
       // Nothing to refine in the intrinsics,
-      // so set the whole parameter block as constant with better performances.
+      //set the whole parameter block as constant for best performance or because it's locked.
       problem.SetParameterBlockConstant(parameter_block);
     }
     else

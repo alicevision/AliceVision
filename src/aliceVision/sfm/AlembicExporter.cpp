@@ -212,6 +212,7 @@ void AlembicExporter::DataImpl::addCamera(const std::string& name,
     OUInt32ArrayProperty(userProps, "mvg_sensorSizePix").set(sensorSize_pix);
     OStringProperty(userProps, "mvg_intrinsicType").set(pinhole->getTypeStr());
     ODoubleArrayProperty(userProps, "mvg_intrinsicParams").set(pinhole->getParams());
+    OBoolProperty(userProps, "mvg_intrinsicLocked").set(pinhole->isLocked());
 
     camObj.getSchema().set(camSample);
   }

@@ -34,6 +34,15 @@ struct IntrinsicBase
   virtual void assign(const IntrinsicBase& other) = 0;
 
   virtual bool isValid() const { return _w != 0 && _h != 0; }
+
+  /**
+   * @brief Get the lock state of the intrinsic
+   * @return true if the intrinsic is locked
+   */
+  inline bool isLocked() const
+  {
+    return _locked;
+  }
   
   unsigned int w() const {return _w;}
   unsigned int h() const {return _h;}
@@ -148,6 +157,26 @@ struct IntrinsicBase
       stl::hash_combine(seed, params[i]);
     return seed;
   }
+
+  /**
+   * @brief lock the intrinsic
+   */
+  inline void lock()
+  {
+    _locked  = true;
+  }
+
+  /**
+   * @brief unlock the intrinsic
+   */
+  inline void unlock()
+  {
+    _locked  = false;
+  }
+
+private:
+  /// intrinsic lock
+  bool _locked = false;
 };
 
 /// Return the angle (degree) between two bearing vector rays
