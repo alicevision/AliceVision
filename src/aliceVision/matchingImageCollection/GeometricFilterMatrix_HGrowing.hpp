@@ -452,7 +452,7 @@ struct GeometricFilterMatrix_HGrowing : public GeometricFilterMatrix
    * @return The number of matches. Return 0 if the descriptor type or the homography 
    * index do not exist in the result.
    */
-  std::size_t getNbVerifiedMatches(const feature::EImageDescriberType & descType, const IndexT homographyId) const;
+  std::size_t getNbVerifiedMatches(const feature::EImageDescriberType & descType, IndexT homographyId) const;
   
   /**
    * @brief Get the number of verified matches for every descriptor and associated homographies.
