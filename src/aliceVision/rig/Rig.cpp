@@ -483,8 +483,9 @@ bool Rig::optimizeCalibration()
   options.minimizer_progress_to_stdout = aliceVision_options._bVerbose;
   options.logging_type = ceres::SILENT;
   options.num_threads = 1;//aliceVision_options._nbThreads;
+#if CERES_VERSION_MAJOR < 2
   options.num_linear_solver_threads = 1;//aliceVision_options._nbThreads;
-  
+#endif
   // Solve BA
   ceres::Solver::Summary summary;
   ceres::Solve(options, &problem, &summary);

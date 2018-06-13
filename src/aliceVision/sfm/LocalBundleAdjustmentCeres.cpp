@@ -414,7 +414,9 @@ void LocalBundleAdjustmentCeres::setSolverOptions(ceres::Solver::Options& solver
   solver_options.minimizer_progress_to_stdout = _LBAOptions._bVerbose;
   solver_options.logging_type = ceres::SILENT;
   solver_options.num_threads = _LBAOptions._nbThreads;
+#if CERES_VERSION_MAJOR < 2
   solver_options.num_linear_solver_threads = _LBAOptions._nbThreads;
+#endif
 }
 
 bool LocalBundleAdjustmentCeres::solveBA(
