@@ -34,7 +34,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # ==============================================================================
 # AliceVision build options
 # ==============================================================================
-option(ALICEVISION_BUILD_SHARED "Build AliceVision shared libs" OFF)
+option(ALICEVISION_BUILD_SHARED "Build AliceVision shared libs" ON)
 option(ALICEVISION_BUILD_SFM "Build AliceVision SfM part" ON)
 option(ALICEVISION_BUILD_MVS "Build AliceVision MVS part" ON)
 option(ALICEVISION_BUILD_EXAMPLES "Build AliceVision samples applications." OFF)
