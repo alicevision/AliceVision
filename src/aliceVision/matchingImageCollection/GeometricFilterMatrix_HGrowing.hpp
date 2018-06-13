@@ -70,11 +70,24 @@ struct GrowParameters
     double _maxFractionPlanarMatches{0.7};
 };
 
+/**
+ * @brief Return all the matches in the same plane as the match \c seedMatchId with the corresponding homography.
+ * @details This algorithm is detailed in [F.Srajer, 2016] algo. 1, p. 20.
+ * @param[in] featuresI The features of the first view.
+ * @param[in] featuresJ The features of the second view.
+ * @param[in] matches All the putative planar matches.
+ * @param[in] seedMatchId The match used to estimate the plane and the corresponding matches.
+ * @param[out] planarMatchesIndices The indices (in the \c matches vector) of the really planar matches.
+ * @param[out] transformation The homography associated to the plane.
+ * @param[in] param The parameters of the algorihm.
+ * @return true if the \c transformation is different than the identity matrix.
+ */
 bool growHomography(const std::vector<feature::SIOPointFeature> &featuresI,
                     const std::vector<feature::SIOPointFeature> &featuresJ,
                     const matching::IndMatches &matches,
                     const IndexT &seedMatchId,
-                    std::set<IndexT> &planarMatchesIndices, Mat3 &transformation,
+                    std::set<IndexT> &planarMatchesIndices,
+                    Mat3 &transformation,
                     const GrowParameters& param);
 
 struct HGrowingFilteringParam
@@ -96,13 +109,34 @@ struct HGrowingFilteringParam
     GrowParameters _growParam{};
 };
 
+/**
+ * @brief Filter the matches between two images using a growing homography approach.
+ * @param[in] featuresI The features of the first view.
+ * @param[in] featuresJ The features of the second view.
+ * @param[in] putativeMatches The putative matches.
+ * @param[out] homographiesAndMatches Contains each found homography and the relevant supporting matches.
+ * @param[out] outGeometricInliers All the matches that supports one of the found homographies.
+ * @param[in] param The parameters of the algorithm.
+ */
 void filterMatchesByHGrowing(const std::vector<feature::SIOPointFeature>& siofeatures_I,
                              const std::vector<feature::SIOPointFeature>& siofeatures_J,
                              const matching::IndMatches& putativeMatches,
-                             std::vector<std::pair<Mat3, matching::IndMatches>>& homographiesAndMatches,
+                             std::vector<std::pair<Mat3,
+                             matching::IndMatches>>& homographiesAndMatches,
                              matching::IndMatches& outGeometricInliers,
                              const HGrowingFilteringParam& param);
 
+/**
+ * @brief Generate a svg file with the two images and the matches grouped in different color
+ * according to their supporting homography.
+ * @param[in] outFilename The filename of the svg file to generate.
+ * @param[in] viewI The first view.
+ * @param[in] viewJ The second view.
+ * @param[in] featuresI The features of the first view.
+ * @param[in] featuresJ The features of the second view.
+ * @param[in] homographiesAndMatches Contains each found homography and the relevant supporting matches.
+ * @param[in] putativeMatches The putative matches.
+ */
 void drawHomographyMatches(const std::string& outFilename,
                       const sfm::View & viewI,
                       const sfm::View & viewJ,
@@ -110,6 +144,7 @@ void drawHomographyMatches(const std::string& outFilename,
                       const std::vector<feature::SIOPointFeature>& siofeatures_J,
                       const std::vector<std::pair<Mat3, matching::IndMatches>>& homographiesAndMatches,
                       const matching::IndMatches& putativeMatches);
+
 //-- Multiple homography matrices estimation template functor, based on homography growing, used for filter pair of putative correspondences
 struct GeometricFilterMatrix_HGrowing : public GeometricFilterMatrix
 {
