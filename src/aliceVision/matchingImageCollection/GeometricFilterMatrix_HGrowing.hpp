@@ -117,17 +117,7 @@ struct GeometricFilterMatrix_HGrowing : public GeometricFilterMatrix
           double dPrecision = std::numeric_limits<double>::infinity(),
           size_t iteration = 1024)
               : GeometricFilterMatrix(dPrecision, std::numeric_limits<double>::infinity(), iteration)
-              , _maxNbHomographies(10)
-              , _minNbMatchesPerH(20)
-              , _similarityTolerance(20)
-              , _affinityTolerance(10)
-              , _homographyTolerance(5)
-              , _minInliersToRefine(6)
-              , _nbRefiningIterations(8)
-              , _maxFractionPlanarMatches(0.7)
-  {
-    assert(_maxFractionPlanarMatches >= 0 && _maxFractionPlanarMatches <= 1);
-  }
+  { }
   
   /**
    * @brief Given two sets of image points, it estimates the homography matrix
@@ -179,184 +169,58 @@ struct GeometricFilterMatrix_HGrowing : public GeometricFilterMatrix
     
     const sfm::View & viewI = *(sfmData->GetViews().at(viewId_I));
     const sfm::View & viewJ = *(sfmData->GetViews().at(viewId_J));
-    
-    // Setup optional drawer tool:
-    bool drawGroupedMatches = false;
-    const std::vector<std::string> colors {"red","cyan","purple","green","black","brown","blue","pink","grey"};
-    
-    std::unique_ptr<svg::svgDrawer> svgStream;
-    if (!outputSvgDir.empty())
-    {
-      if (boost::filesystem::exists(outputSvgDir))
-      {
-        drawGroupedMatches = true;
-        svgStream.reset(new svg::svgDrawer(viewI.getWidth() + viewJ.getWidth() , std::max(viewI.getHeight(), viewJ.getHeight())));
-      }
-      else
-      {
-        drawGroupedMatches = false;
-        ALICEVISION_LOG_WARNING("Cannot save homography-growing matches into '" << outputSvgDir << "': folder does not exist.");
-      }
-    }
-    
+
+
     for (const EImageDescriberType& descType : descTypes)
     {
       if(!putativeMatchesPerType.count(descType))
-        continue; // we may have 0 feature for some descriptor types
-      
+      {
+        continue;
+      } // we may have 0 feature for some descriptor types
+
       const Regions & regions_I = regionsPerView.getRegions(viewId_I, descType);
       const Regions & regions_J = regionsPerView.getRegions(viewId_J, descType);
       const std::vector<SIOPointFeature>& siofeatures_I = getSIOPointFeatures(regions_I);
       const std::vector<SIOPointFeature>& siofeatures_J = getSIOPointFeatures(regions_J);
-      
-      IndMatches remainingMatches = putativeMatchesPerType.at(descType);
-      
-      if(drawGroupedMatches)
-      {
-        svgStream->drawImage(viewI.getImagePath(), viewI.getWidth(), viewI.getHeight());
-        svgStream->drawImage(viewJ.getImagePath(), viewJ.getWidth(), viewJ.getHeight(),  viewI.getWidth());
-        // draw little white dots representing putative matches
-        for(const IndMatch& match : remainingMatches)
-        {
-          const SIOPointFeature & fI = siofeatures_I.at(match._i);
-          const SIOPointFeature & fJ  = siofeatures_J.at(match._j);
-          svgStream->drawCircle(fI.x(), fI.y(), 1, svg::svgStyle().stroke("white",2.0));
-          svgStream->drawCircle(fJ.x() + viewI.getWidth(), fJ.y(), 1, svg::svgStyle().stroke("white", 2.0));
-        }
-      }
-      
-      for(IndexT iH = 0; iH < _maxNbHomographies; ++iH)
-      {
-        std::set<IndexT> usedMatchesId, bestMatchesId;
-        Mat3 bestHomography;
-        
-        // -- Estimate H using homography-growing approach
-        #pragma omp parallel for // (huge optimization but modify results a little)
-        for(int iMatch = 0; iMatch < remainingMatches.size(); ++iMatch)
-        {
-          // Growing a homography from one match ([F.Srajer, 2016] algo. 1, p. 20)  
-          // each match is used once only per homography estimation (increases computation time) [1st improvement ([F.Srajer, 2016] p. 20) ] 
-          if (usedMatchesId.find(iMatch) != usedMatchesId.end()) 
-            continue;
-          
-          std::set<IndexT> planarMatchesId; // be careful: it contains the id. in the 'remainingMatches' vector not 'putativeMatches' vector.
-          Mat3 homography;
-          
-          if(!growHomography(siofeatures_I, siofeatures_J, remainingMatches, iMatch, planarMatchesId, homography))
-            continue;
-          
-          #pragma omp critical
-          usedMatchesId.insert(planarMatchesId.begin(), planarMatchesId.end());
-          
-          if (planarMatchesId.size() > bestMatchesId.size())
-          {
-            #pragma omp critical
-            {
-              bestMatchesId = planarMatchesId; // be careful: it contains the id. in the 'remainingMatches' vector not 'putativeMatches' vector.
-              bestHomography = homography;
-            }
-          }
-        } // 'iMatch'
-        
-        // -- Refine H using Ceres minimizer
-        {
-          ceres::Problem problem;
-          
-          for(IndexT matchId : bestMatchesId)
-          {
-            const IndMatch& match = remainingMatches.at(matchId);
-            
-            const Vec2 x1 = siofeatures_I.at(match._i).coords().cast<double>();
-            const Vec2 x2 = siofeatures_J.at(match._j).coords().cast<double>();
-            
-            RefineHRobustCostFunctor* costFun = 
-                new RefineHRobustCostFunctor(x1, x2, _homographyTolerance);
-            
-            problem.AddResidualBlock(
-                new ceres::AutoDiffCostFunction<
-                    RefineHRobustCostFunctor,
-                    1,
-                    9>(costFun),
-                nullptr,
-                bestHomography.data());
-          }
-          
-          ceres::Solver::Options solverOpt;
-          solverOpt.max_num_iterations = 10;
-          
-          ceres::Solver::Summary summary;
-          ceres::Solve(solverOpt,&problem,&summary);
-          
-          if(std::fabs(bestHomography(2, 2)) > std::numeric_limits<double>::epsilon())
-            bestHomography /= bestHomography(2,2);
-          
-          if (summary.IsSolutionUsable())
-            findTransformationInliers(siofeatures_I, siofeatures_J, remainingMatches, bestHomography, _homographyTolerance, bestMatchesId);
-            
-        } // refinement part
-        
-        // stop when the models get too small
-        if (bestMatchesId.size() < _minNbMatchesPerH)
-          break;
 
-        // Store validated results:
-        {
-          IndMatches matches;
-          Mat3 H = bestHomography;
-          for (IndexT id : bestMatchesId) 
-          {
-            matches.push_back(remainingMatches.at(id));
-          }
-          _HsAndMatchesPerDesc[descType].emplace_back(H, matches);
-        }
-        
-        if (drawGroupedMatches)
-        {
-          for (IndexT id : bestMatchesId)
-          {
-            const IndMatch & match = remainingMatches.at(id);
-            const SIOPointFeature & fI = siofeatures_I.at(match._i);
-            const SIOPointFeature & fJ  = siofeatures_J.at(match._j);
-            std::string color = "grey"; // 0 < iH <= 8: colored; iH > 8  are white (not enough colors)
-            if (iH <= colors.size() - 1)
-              color = colors.at(iH);
-            
-            svgStream->drawCircle(fI.x(), fI.y(), 5, svg::svgStyle().stroke(color, 5.0));
-            svgStream->drawCircle(fJ.x() + viewI.getWidth(), fJ.y(), 5, svg::svgStyle().stroke(color, 5.0));
-          }
-        }
-        
-        // -- Update not used matches & Save geometrically verified matches
-        for (IndexT id : bestMatchesId)
-        {
-          out_geometricInliersPerType[descType].push_back(remainingMatches.at(id));
-        }
-        
-        // update remaining matches (/!\ Keep ordering)
-        std::size_t cpt = 0;
-        for (IndexT id : bestMatchesId) 
-        {        
-          remainingMatches.erase(remainingMatches.begin() + id - cpt);
-          ++cpt;
-        }
-        
-        // stop when the number of remaining matches is too small   
-        if (remainingMatches.size() < _minNbMatchesPerH)
-          break;
-          
-      } // 'iH'
-      
-      if (drawGroupedMatches)
+      std::vector<std::pair<Mat3, matching::IndMatches>> homographiesAndMatches;
+      matching::IndMatches outGeometricInliers;
+      filterMatchesByHGrowing(siofeatures_I,
+                              siofeatures_J,
+                              putativeMatchesPerType.at(descType),
+                              homographiesAndMatches,
+                              outGeometricInliers,
+                              _parameters);
+
+      out_geometricInliersPerType.emplace(descType, outGeometricInliers);
+      _HsAndMatchesPerDesc.emplace(descType, homographiesAndMatches);
+
+      if (outputSvgDir.empty())
       {
-        const std::size_t nbMatches = putativeMatchesPerType.at(descType).size() - remainingMatches.size();
-        if (nbMatches > 0)
-        {
-          std::ofstream svgFile(outputSvgDir + "/" + std::to_string(nbMatches) +"hmatches_" + std::to_string(viewI.getViewId()) + "_" + std::to_string(viewJ.getViewId()) + 
-                                "_" + EImageDescriberType_enumToString(descType) + ".svg");
-          svgFile << svgStream->closeSvgFile().str();
-          svgFile.close();
-        }
-      }         
+        continue;
+      }
+
+      if (boost::filesystem::exists(outputSvgDir))
+      {
+        const std::size_t nbMatches = outGeometricInliers.size();
+        const std::string name = std::to_string(nbMatches) + "hmatches_" + std::to_string(viewI.getViewId()) + "_" +
+                                 std::to_string(viewJ.getViewId()) +
+                                 "_" + EImageDescriberType_enumToString(descType) + ".svg";
+        // @FIXME not worth it having boost::filesystem in a header
+        const std::string outFilename = (boost::filesystem::path(outputSvgDir) / boost::filesystem::path(name)).string();
+        drawHomographyMatches(outFilename,
+                              viewI,
+                              viewJ,
+                              siofeatures_I,
+                              siofeatures_J,
+                              homographiesAndMatches,
+                              putativeMatchesPerType.at(descType));
+      }
+      else
+      {
+        ALICEVISION_LOG_WARNING("Cannot save homography-growing matches into '" << outputSvgDir << "': folder does not exist.");
+      }
+
     } // 'descriptor'
     
     // Check if resection has strong support
@@ -427,24 +291,6 @@ struct GeometricFilterMatrix_HGrowing : public GeometricFilterMatrix
   
 private:
   
-  /**
-   * @brief Return all the matches in the same plane as the match \c seedMatchId with the corresponding homography.
-   * @details This algorithm is detailed in [F.Srajer, 2016] algo. 1, p. 20.
-   * @param[in] featuresI
-   * @param[in] featuresJ
-   * @param[in] matches All the putative planar matches.
-   * @param[in] seedMatchId The match used to estimate the plane and the corresponding matches.
-   * @param[out] planarMatchesIndices The indices (in the \c matches vector) of the really planar matches.
-   * @param[out] transformation The homography associated to the plane.
-   * @return true if the \c transformation is different than the identity matrix.
-   */
-  bool growHomography(const std::vector<feature::SIOPointFeature> &featuresI,
-                      const std::vector<feature::SIOPointFeature> &featuresJ,
-                      const matching::IndMatches &matches,
-                      const IndexT &seedMatchId,
-                      std::set<IndexT> &planarMatchesIndices,
-                      Mat3 &transformation) const;
-  
   // -- Results container
   
   /// The estimated homographies and their associated planar matches, 
@@ -452,40 +298,9 @@ private:
   std::map<feature::EImageDescriberType, std::vector<std::pair<Mat3, matching::IndMatches>>> 
   _HsAndMatchesPerDesc; 
   
-  //-- Options
-  
-  /// Max. number of homographies to estimate.
-  std::size_t _maxNbHomographies; 
-  
-  /// Min. number of matches corresponding to a homography. 
-  /// The homography-growing is interrupted when the value is reached.
-  std::size_t _minNbMatchesPerH;
-  
-  /// The maximal reprojection (pixel) error for matches estimated 
-  /// from a Similarity transformation.
-  double _similarityTolerance; 
-  
-  /// The maximal reprojection (pixel) error for matches estimated 
-  /// from an Affine transformation.
-  double _affinityTolerance;   
-  
-  /// The maximal reprojection (pixel) error for matches estimated 
-  /// from a Homography.
-  double _homographyTolerance; 
-  
-  /// Minimum number of inliers to continue in further refining.
-  std::size_t _minInliersToRefine; 
-  
-  /// Number of refine iterations that should be done to a transformation.
-  /// 1st iteration is estimated using key coordinates, scale and orientation.
-  /// 2-4th iterations are affinities
-  /// 5+th iterations are homographies
-  std::size_t _nbRefiningIterations; 
-  
-  /// Value in [0,1]. If there is this fraction of inliers found the
-  /// refine phase is terminated.
-  double _maxFractionPlanarMatches;
-  
+  //-- Parameters
+  HGrowingFilteringParam _parameters{};
+
 }; // struct GeometricFilterMatrix_HGrowing
 
 

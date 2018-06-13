@@ -59,54 +59,6 @@ std::size_t GeometricFilterMatrix_HGrowing::getNbAllVerifiedMatches() const
   return counter;
 }
 
-bool GeometricFilterMatrix_HGrowing::growHomography(const std::vector<feature::SIOPointFeature> &featuresI,
-                                                    const std::vector<feature::SIOPointFeature> &featuresJ,
-                                                    const matching::IndMatches &matches,
-                                                    const IndexT &seedMatchId,
-                                                    std::set<IndexT> &planarMatchesIndices,
-                                                    Mat3 &transformation) const
-{
-  assert(seedMatchId <= matches.size());
-
-  planarMatchesIndices.clear();
-  transformation = Mat3::Identity();
-
-  const matching::IndMatch & seedMatch = matches.at(seedMatchId);
-  const feature::SIOPointFeature & seedFeatureI = featuresI.at(seedMatch._i);
-  const feature::SIOPointFeature & seedFeatureJ = featuresJ.at(seedMatch._j);
-
-  double currTolerance;
-
-  for (IndexT iRefineStep = 0; iRefineStep < _nbRefiningIterations; ++iRefineStep)
-  {
-    if (iRefineStep == 0)
-    {
-      computeSimilarity(seedFeatureI, seedFeatureJ, transformation);
-      currTolerance = _similarityTolerance;
-    }
-    else if (iRefineStep <= 4)
-    {
-      estimateAffinity(featuresI, featuresJ, matches, transformation, planarMatchesIndices);
-      currTolerance = _affinityTolerance;
-    }
-    else
-    {
-      estimateHomography(featuresI, featuresJ, matches, transformation, planarMatchesIndices);
-      currTolerance = _homographyTolerance;
-    }
-
-    findTransformationInliers(featuresI, featuresJ, matches, transformation, currTolerance, planarMatchesIndices);
-
-    if (planarMatchesIndices.size() < _minInliersToRefine)
-      return false;
-
-    // Note: the following statement is present in the MATLAB code but not implemented in YASM
-//      if (planarMatchesIndices.size() >= _maxFractionPlanarMatches * matches.size())
-//        break;
-  }
-  return !transformation.isIdentity();
-}
-
 
 
 bool growHomography(const std::vector<feature::SIOPointFeature> &featuresI,
@@ -213,8 +165,10 @@ void filterMatchesByHGrowing(const std::vector<feature::SIOPointFeature>& siofea
         }
       }
     } // 'iMatch'
+
     // -- Refine H using Ceres minimizer
     refineHomography(siofeatures_I, siofeatures_J, remainingMatches, bestHomography, bestMatchesId, param._growParam._homographyTolerance);
+
     // stop when the models get too small
     if (bestMatchesId.size() < param._minNbMatchesPerH)
       break;
@@ -243,6 +197,7 @@ void filterMatchesByHGrowing(const std::vector<feature::SIOPointFeature>& siofea
       remainingMatches.erase(remainingMatches.begin() + id - cpt);
       ++cpt;
     }
+
     // stop when the number of remaining matches is too small
     if (remainingMatches.size() < param._minNbMatchesPerH)
       break;
