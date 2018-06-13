@@ -254,6 +254,21 @@ void findTransformationInliers(const std::vector<feature::SIOPointFeature> & fea
                                const Mat3 & transformation,
                                double tolerance,
                                std::set<IndexT> & inliersId);
+/**
+ * @brief Return the id. of the matches with a reprojection error < to the desirered \c tolerance.
+ * @param[in] featuresI
+ * @param[in] featuresJ
+ * @param[in] matches The matches to test.
+ * @param[in] transformation The 3x3 transformation matrix.
+ * @param[in] tolerance The tolerated pixel error.
+ * @param[in] inliersId The index in the \c matches vector.
+ */
+void findTransformationInliers(const Mat2X& featuresI,
+                               const Mat2X& featuresJ,
+                               const matching::IndMatches &matches,
+                               const Mat3 &transformation,
+                               double tolerance,
+                               std::set<IndexT> &inliersId);
 
 } // namespace aliceVision
 } // namespace matchingImageCollection

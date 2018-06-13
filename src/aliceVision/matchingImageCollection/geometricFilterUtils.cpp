@@ -264,6 +264,34 @@ void findTransformationInliers(const std::vector<feature::SIOPointFeature> &feat
   }
 }
 
+void findTransformationInliers(const Mat2X& featuresI,
+                               const Mat2X& featuresJ,
+                               const matching::IndMatches &matches,
+                               const Mat3 &transformation,
+                               double tolerance,
+                               std::set<IndexT> &inliersId)
+{
+  inliersId.clear();
+  const double squaredTolerance = Square(tolerance);
+
+#pragma omp parallel for
+  for (int iMatch = 0; iMatch < matches.size(); ++iMatch)
+  {
+    const matching::IndMatch& match = matches.at(iMatch);
+    const Vec2 & ptI = featuresI.col(match._i);
+    const Vec2 & ptJ = featuresJ.col(match._j);
+
+    const Vec3 ptIp_hom = transformation * ptI.homogeneous();
+
+    const double dist = (ptJ - ptIp_hom.hnormalized()).squaredNorm();
+
+    if (dist < squaredTolerance)
+    {
+#pragma omp critical
+      inliersId.insert(iMatch);
+    }
+  }
+}
 
 }
 }

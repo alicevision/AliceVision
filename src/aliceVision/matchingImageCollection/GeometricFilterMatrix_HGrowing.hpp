@@ -83,6 +83,77 @@ public:
   double _softThresh;
 };
 
+
+struct GrowParameters
+{
+    GrowParameters() = default;
+
+    GrowParameters(double similarityTolerance,
+                   double affinityTolerance,
+                   double homographyTolerance,
+                   std::size_t minInliersToRefine,
+                   std::size_t nbRefiningIterations)
+            : _similarityTolerance(similarityTolerance),
+              _affinityTolerance(affinityTolerance),
+              _homographyTolerance(homographyTolerance),
+              _minInliersToRefine(minInliersToRefine),
+              _nbRefiningIterations(nbRefiningIterations) { };
+
+    /// The maximal reprojection (pixel) error for matches estimated
+    /// from a Similarity transformation.
+    double _similarityTolerance{20};
+
+    /// The maximal reprojection (pixel) error for matches estimated
+    /// from an Affine transformation.
+    double _affinityTolerance{10};
+
+    /// The maximal reprojection (pixel) error for matches estimated
+    /// from a Homography.
+    double _homographyTolerance{5};
+
+    /// Minimum number of inliers to continue in further refining.
+    std::size_t _minInliersToRefine{6};
+
+    /// Number of refine iterations that should be done to a transformation.
+    /// 1st iteration is estimated using key coordinates, scale and orientation.
+    /// 2-4th iterations are affinities
+    /// 5+th iterations are homographies
+    std::size_t _nbRefiningIterations{8};
+};
+
+bool growHomography(const std::vector<feature::SIOPointFeature> &featuresI,
+                    const std::vector<feature::SIOPointFeature> &featuresJ,
+                    const matching::IndMatches &matches,
+                    const IndexT &seedMatchId,
+                    std::set<IndexT> &planarMatchesIndices, Mat3 &transformation,
+                    const GrowParameters& param);
+
+struct HGrowingFilteringParam
+{
+    HGrowingFilteringParam() = default;
+    HGrowingFilteringParam(std::size_t maxNbHomographies, std::size_t minNbMatchesPerH, const GrowParameters& growParam)
+            : _maxNbHomographies(maxNbHomographies),
+              _minNbMatchesPerH(minNbMatchesPerH),
+              _growParam(growParam) {} ;
+
+    /// Max. number of homographies to estimate.
+    std::size_t _maxNbHomographies{10};
+
+    /// Min. number of matches corresponding to a homography.
+    /// The homography-growing is interrupted when the value is reached.
+    std::size_t _minNbMatchesPerH{20};
+
+    /// Parameters for the growing algorithm
+    GrowParameters _growParam{};
+};
+
+void filterMatchesByHGrowing(const std::vector<feature::SIOPointFeature>& siofeatures_I,
+                             const std::vector<feature::SIOPointFeature>& siofeatures_J,
+                             const matching::IndMatches& putativeMatches,
+                             std::vector<std::pair<Mat3, matching::IndMatches>>& homographiesAndMatches,
+                             matching::IndMatches& outGeometricInliers,
+                             const HGrowingFilteringParam& param);
+
 //-- Multiple homography matrices estimation template functor, based on homography growing, used for filter pair of putative correspondences
 struct GeometricFilterMatrix_HGrowing : public GeometricFilterMatrix
 {
@@ -461,6 +532,20 @@ private:
   
 }; // struct GeometricFilterMatrix_HGrowing
 
+
+bool refineHomography(const std::vector<feature::SIOPointFeature> &featuresI,
+                      const std::vector<feature::SIOPointFeature> &featuresJ,
+                      const matching::IndMatches& remainingMatches,
+                      Mat3& homography,
+                      std::set<IndexT>& bestMatchesId,
+                      double homographyTolerance);
+
+bool refineHomography(const Mat2X& features_I,
+                      const Mat2X& features_J,
+                      const matching::IndMatches& remainingMatches,
+                      Mat3& homography,
+                      std::set<IndexT>& bestMatchesId,
+                      double homographyTolerance);
 } // namespace matchingImageCollection
 } // namespace aliceVision
 
