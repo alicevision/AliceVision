@@ -95,6 +95,13 @@ void filterMatchesByHGrowing(const std::vector<feature::SIOPointFeature>& siofea
                              matching::IndMatches& outGeometricInliers,
                              const HGrowingFilteringParam& param);
 
+void drawHomographyMatches(const std::string& outFilename,
+                      const sfm::View & viewI,
+                      const sfm::View & viewJ,
+                      const std::vector<feature::SIOPointFeature>& siofeatures_I,
+                      const std::vector<feature::SIOPointFeature>& siofeatures_J,
+                      const std::vector<std::pair<Mat3, matching::IndMatches>>& homographiesAndMatches,
+                      const matching::IndMatches& putativeMatches);
 //-- Multiple homography matrices estimation template functor, based on homography growing, used for filter pair of putative correspondences
 struct GeometricFilterMatrix_HGrowing : public GeometricFilterMatrix
 {

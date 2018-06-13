@@ -252,14 +252,72 @@ void filterMatchesByHGrowing(const std::vector<feature::SIOPointFeature>& siofea
 
 
 
+void drawHomographyMatches(const std::string& outFilename,
+                           const sfm::View & viewI,
+                           const sfm::View & viewJ,
+                           const std::vector<feature::SIOPointFeature>& siofeatures_I,
+                           const std::vector<feature::SIOPointFeature>& siofeatures_J,
+                           const std::vector<std::pair<Mat3, matching::IndMatches>>& homographiesAndMatches,
+                           const matching::IndMatches& putativeMatches)
+{
+  const std::vector<std::string> colors{"red", "cyan", "purple", "green", "black", "brown", "blue", "pink", "grey"};
 
+  svg::svgDrawer svgStream(viewI.getWidth() + viewJ.getWidth() , std::max(viewI.getHeight(), viewJ.getHeight()));
 
+  const std::size_t offset{viewI.getWidth()};
 
+  svgStream.drawImage(viewI.getImagePath(), viewI.getWidth(), viewI.getHeight());
+  svgStream.drawImage(viewJ.getImagePath(), viewJ.getWidth(), viewJ.getHeight(), offset);
 
+// draw little white dots representing putative matches
+  for (const auto& match : putativeMatches)
+  {
+    const float radius{1.f};
+    const float strokeSize{2.f};
+    const feature::SIOPointFeature &fI = siofeatures_I.at(match._i);
+    const feature::SIOPointFeature &fJ = siofeatures_J.at(match._j);
+    const svg::svgStyle style = svg::svgStyle().stroke("white", strokeSize);
 
+    svgStream.drawCircle(fI.x(), fI.y(), radius, style);
+    svgStream.drawCircle(fJ.x() + offset, fJ.y(), radius, style);
+  }
 
+  for (const auto &currRes : homographiesAndMatches)
+  {
+    std::size_t iH{0};
+    const auto &bestMatchesId = currRes.second;
+    for (const auto &match : bestMatchesId)
+    {
+      const float radius{5.f};
+      const float strokeSize{5.f};
+      const feature::SIOPointFeature &fI = siofeatures_I.at(match._i);
+      const feature::SIOPointFeature &fJ = siofeatures_J.at(match._j);
+      // 0 < iH <= 8: colored; iH > 8  are white (not enough colors)
+      std::string color = "grey";
+      if (iH <= colors.size() - 1)
+        color = colors.at(iH);
+      const svg::svgStyle style = svg::svgStyle().stroke(color, strokeSize);
 
+      svgStream.drawCircle(fI.x(), fI.y(), radius, style);
+      svgStream.drawCircle(fJ.x() + offset, fJ.y(), radius, style);
+      ++iH;
+    }
+  }
 
+    std::ofstream svgFile(outFilename);
+    if(!svgFile.is_open())
+    {
+      ALICEVISION_CERR("Unable to open file "+outFilename);
+      return;
+    }
+    svgFile << svgStream.closeSvgFile().str();
+    if(!svgFile.good())
+    {
+      ALICEVISION_CERR("Something wrong happened while writing file "+outFilename);
+      return;
+    }
+    svgFile << svgStream.closeSvgFile().str();
+    svgFile.close();
 
 }
 
