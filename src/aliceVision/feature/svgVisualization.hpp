@@ -21,6 +21,18 @@
 namespace aliceVision {
 namespace feature {
 
+/**
+ * The Sixteen Named Colors
+   HTML 3.2 specifications identified sixteen color names for use in an HTML attribute.
+   These have become "the sixteen named colors" that can be used by name to define color
+   in HTML and now in Cascading Style Sheets.
+   https://www.w3schools.com/colors/colors_names.asp
+ */
+static const std::array<std::string,16> sixteenColors {"aqua","blue","fuchsia","yellow",
+                                                       "green","red","purple","lime",
+                                                       "teal","maroon","navy","olive",
+                                                       "gray","silver","white","black"};
+
 std::string describerTypeColor(feature::EImageDescriberType descType);
 
 /**
