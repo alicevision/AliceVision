@@ -6,7 +6,6 @@
 
 #include <aliceVision/feature/svgVisualization.hpp>
 #include "GeometricFilterMatrix_HGrowing.hpp"
-#include "dependencies/vectorGraphics/svgDrawer.hpp"
 
 namespace aliceVision {
 namespace matchingImageCollection {
@@ -209,75 +208,29 @@ void filterMatchesByHGrowing(const std::vector<feature::SIOPointFeature>& siofea
 
 
 
-void drawHomographyMatches(const std::string& outFilename,
-                           const sfm::View & viewI,
-                           const sfm::View & viewJ,
-                           const std::vector<feature::SIOPointFeature>& siofeatures_I,
-                           const std::vector<feature::SIOPointFeature>& siofeatures_J,
-                           const std::vector<std::pair<Mat3, matching::IndMatches>>& homographiesAndMatches,
-                           const matching::IndMatches& putativeMatches)
+void drawHomographyMatches(const sfm::View &viewI,
+                           const sfm::View &viewJ,
+                           const std::vector<feature::SIOPointFeature> &siofeatures_I,
+                           const std::vector<feature::SIOPointFeature> &siofeatures_J,
+                           const std::vector<std::pair<Mat3, matching::IndMatches>> &homographiesAndMatches,
+                           const matching::IndMatches &putativeMatches,
+                           const std::string &outFilename)
 {
-  const auto& colors = feature::sixteenColors;
 
-  svg::svgDrawer svgStream(viewI.getWidth() + viewJ.getWidth() , std::max(viewI.getHeight(), viewJ.getHeight()));
+  const std::string& imagePathLeft = viewI.getImagePath();
+  const std::string& imagePathRight = viewJ.getImagePath();
+  const auto imageSizeLeft = std::make_pair(viewI.getWidth(), viewI.getHeight());
+  const auto imageSizeRight = std::make_pair(viewJ.getWidth(), viewJ.getHeight());
 
-  const std::size_t offset{viewI.getWidth()};
-
-  svgStream.drawImage(viewI.getImagePath(), viewI.getWidth(), viewI.getHeight());
-  svgStream.drawImage(viewJ.getImagePath(), viewJ.getWidth(), viewJ.getHeight(), offset);
-
-// draw little white dots representing putative matches
-  for (const auto& match : putativeMatches)
-  {
-    const float radius{1.f};
-    const float strokeSize{2.f};
-    const feature::SIOPointFeature &fI = siofeatures_I.at(match._i);
-    const feature::SIOPointFeature &fJ = siofeatures_J.at(match._j);
-    const svg::svgStyle style = svg::svgStyle().stroke("white", strokeSize);
-
-    svgStream.drawCircle(fI.x(), fI.y(), radius, style);
-    svgStream.drawCircle(fJ.x() + offset, fJ.y(), radius, style);
-  }
-
-  {
-    // for each homography draw the associated matches in a different color
-    std::size_t iH{0};
-    const float radius{5.f};
-    const float strokeSize{5.f};
-    for (const auto &currRes : homographiesAndMatches)
-    {
-      const auto &bestMatchesId = currRes.second;
-      // 0 < iH <= 8: colored; iH > 8  are white (not enough colors)
-      const std::string color = (iH < colors.size()) ? colors.at(iH) : "grey";
-
-      for (const auto &match : bestMatchesId)
-      {
-        const feature::SIOPointFeature &fI = siofeatures_I.at(match._i);
-        const feature::SIOPointFeature &fJ = siofeatures_J.at(match._j);
-
-        const svg::svgStyle style = svg::svgStyle().stroke(color, strokeSize);
-
-        svgStream.drawCircle(fI.x(), fI.y(), radius, style);
-        svgStream.drawCircle(fJ.x() + offset, fJ.y(), radius, style);
-      }
-      ++iH;
-    }
-  }
-
-  std::ofstream svgFile(outFilename);
-  if(!svgFile.is_open())
-  {
-    ALICEVISION_CERR("Unable to open file "+outFilename);
-    return;
-  }
-  svgFile << svgStream.closeSvgFile().str();
-  if(!svgFile.good())
-  {
-    ALICEVISION_CERR("Something wrong happened while writing file "+outFilename);
-    return;
-  }
-  svgFile.close();
-
+  drawHomographyMatches(imagePathLeft,
+                        imageSizeLeft,
+                        siofeatures_I,
+                        imagePathRight,
+                        imageSizeRight,
+                        siofeatures_J,
+                        homographiesAndMatches,
+                        putativeMatches,
+                        outFilename);
 }
 
 }

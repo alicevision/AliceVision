@@ -137,13 +137,13 @@ void filterMatchesByHGrowing(const std::vector<feature::SIOPointFeature>& siofea
  * @param[in] homographiesAndMatches Contains each found homography and the relevant supporting matches.
  * @param[in] putativeMatches The putative matches.
  */
-void drawHomographyMatches(const std::string& outFilename,
-                      const sfm::View & viewI,
-                      const sfm::View & viewJ,
-                      const std::vector<feature::SIOPointFeature>& siofeatures_I,
-                      const std::vector<feature::SIOPointFeature>& siofeatures_J,
-                      const std::vector<std::pair<Mat3, matching::IndMatches>>& homographiesAndMatches,
-                      const matching::IndMatches& putativeMatches);
+void drawHomographyMatches(const sfm::View &viewI,
+                           const sfm::View &viewJ,
+                           const std::vector<feature::SIOPointFeature> &siofeatures_I,
+                           const std::vector<feature::SIOPointFeature> &siofeatures_J,
+                           const std::vector<std::pair<Mat3, matching::IndMatches>> &homographiesAndMatches,
+                           const matching::IndMatches &putativeMatches,
+                           const std::string &outFilename);
 
 //-- Multiple homography matrices estimation template functor, based on homography growing, used for filter pair of putative correspondences
 struct GeometricFilterMatrix_HGrowing : public GeometricFilterMatrix
@@ -243,13 +243,13 @@ struct GeometricFilterMatrix_HGrowing : public GeometricFilterMatrix
                                  "_" + EImageDescriberType_enumToString(descType) + ".svg";
         // @FIXME not worth it having boost::filesystem in a header
         const std::string outFilename = (boost::filesystem::path(outputSvgDir) / boost::filesystem::path(name)).string();
-        drawHomographyMatches(outFilename,
-                              viewI,
+        drawHomographyMatches(viewI,
                               viewJ,
                               siofeatures_I,
                               siofeatures_J,
                               homographiesAndMatches,
-                              putativeMatchesPerType.at(descType));
+                              putativeMatchesPerType.at(descType),
+                              outFilename);
       }
       else
       {
