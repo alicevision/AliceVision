@@ -250,74 +250,17 @@ void filterMatchesByHGrowing(const std::vector<feature::SIOPointFeature>& siofea
 
 }
 
-bool refineHomography(const std::vector<feature::SIOPointFeature> &featuresI,
-                      const std::vector<feature::SIOPointFeature> &featuresJ,
-                      const matching::IndMatches& remainingMatches,
-                      Mat3& homography,
-                      std::set<IndexT>& bestMatchesId,
-                      double homographyTolerance)
-{
-  Mat2X pointsI;
-  Mat2X pointsJ;
-  feature::PointsToMat(featuresI, pointsI);
-  feature::PointsToMat(featuresJ, pointsJ);
-  return refineHomography(pointsI,
-                          pointsJ,
-                          remainingMatches,
-                          homography,
-                          bestMatchesId,
-                          homographyTolerance);
-}
 
-bool refineHomography(const Mat2X& features_I,
-                      const Mat2X& features_J,
-                      const matching::IndMatches& remainingMatches,
-                      Mat3& homography,
-                      std::set<IndexT>& bestMatchesId,
-                      double homographyTolerance)
-{
-  ceres::Problem problem;
-  // use a copy for the optimization to avoid changes in the input one
-  Mat3 tempHomography = homography;
 
-  for(IndexT matchId : bestMatchesId)
-  {
-    const matching::IndMatch& match = remainingMatches.at(matchId);
 
-    const Vec2& x1 = features_I.col(match._i);
-    const Vec2& x2 = features_J.col(match._j);
 
-    RefineHRobustCostFunctor* costFun =
-            new RefineHRobustCostFunctor(x1, x2, homographyTolerance);
 
-    problem.AddResidualBlock(
-            new ceres::AutoDiffCostFunction<
-                    RefineHRobustCostFunctor,
-                    1,
-                    9>(costFun),
-            nullptr,
-            tempHomography.data());
-  }
 
-  ceres::Solver::Options solverOpt;
-  solverOpt.max_num_iterations = 10;
 
-  ceres::Solver::Summary summary;
-  ceres::Solve(solverOpt,&problem,&summary);
 
-  // if the optimization did not succeed return without changing
-  if(!summary.IsSolutionUsable())
-    return false;
 
-  homography = tempHomography;
 
-  // normalize the homography
-  if(std::fabs(homography(2, 2)) > std::numeric_limits<double>::epsilon())
-    homography /= homography(2,2);
 
-  findTransformationInliers(features_I, features_J, remainingMatches, homography, homographyTolerance, bestMatchesId);
-
-  return true;
 }
 
 }

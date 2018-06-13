@@ -5,6 +5,7 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "geometricFilterUtils.hpp"
+#include <ceres/ceres.h>
 
 namespace aliceVision {
 namespace matchingImageCollection {
@@ -293,5 +294,134 @@ void findTransformationInliers(const Mat2X& featuresI,
   }
 }
 
+/**
+ * @brief This functor allows to optimize an Homography.
+ * @details It is based on [F.Srajer, 2016] p.20, 21 and its C++ implementation: https://github.com/fsrajer/yasfm/blob/master/YASFM/relative_pose.cpp#L992
+ * "The optimization takes into account points with error close to the threshold and does not care about high-error ones."
+ */
+class RefineHRobustCostFunctor
+{
+public:
+
+    RefineHRobustCostFunctor(const Vec2& x1, const Vec2& x2,
+                             double softThresh)
+            : x1(x1),x2(x2),_softThresh(softThresh)
+    {
+    }
+
+    template<typename T>
+    bool operator()(const T* const parameters, T* residuals) const
+    {
+      using Mat3T = Eigen::Matrix<T, 3, 3>;
+      using Vec3T = Eigen::Matrix<T, 3, 1>;
+      using Vec2T = Eigen::Matrix<T, 2, 1>;
+
+      const Vec2T x(T(x1(0)), T(x1(1)));
+      const Vec2T y(T(x2(0)), T(x2(1)));
+
+      const Mat3T H(parameters);
+
+      const Vec3T xp = H * x.homogeneous();
+
+      const T errX = y(0) - xp(0)/xp(2);
+      const T errY = y(1) - xp(1)/xp(2);
+      const T errSq = errX*errX + errY*errY;
+
+      // Avoid division by zero in derivatives computation
+      const T err = (errSq==0.) ? T(errSq) : T(sqrt(errSq));
+      residuals[0] = robustify(_softThresh, err);
+
+      return true;
+    }
+
+    template<typename T>
+    /**
+     * @brief robustify
+     * Based on: https://github.com/fsrajer/yasfm/blob/3a09bc0ee69b7021910d646386cd92deab504a2c/YASFM/utils.h#L347
+     * @param softThresh
+     * @param x
+     * @return
+     */
+    static T robustify(double softThresh, T x)
+    {
+      const double t = 0.25;
+      const double sigma = softThresh / std::sqrt(-std::log(t * t));
+
+      return -ceres::log(ceres::exp(-(x * x) / T(2.0 * sigma * sigma)) + T(t)) + T(std::log(1.0 + t));
+    }
+
+    Vec2 x1, x2;
+    double _softThresh;
+};
+
+bool refineHomography(const std::vector<feature::SIOPointFeature> &featuresI,
+                      const std::vector<feature::SIOPointFeature> &featuresJ,
+                      const matching::IndMatches& remainingMatches,
+                      Mat3& homography,
+                      std::set<IndexT>& bestMatchesId,
+                      double homographyTolerance)
+{
+  Mat2X pointsI;
+  Mat2X pointsJ;
+  feature::PointsToMat(featuresI, pointsI);
+  feature::PointsToMat(featuresJ, pointsJ);
+  return refineHomography(pointsI,
+                          pointsJ,
+                          remainingMatches,
+                          homography,
+                          bestMatchesId,
+                          homographyTolerance);
+}
+
+bool refineHomography(const Mat2X& features_I,
+                      const Mat2X& features_J,
+                      const matching::IndMatches& remainingMatches,
+                      Mat3& homography,
+                      std::set<IndexT>& bestMatchesId,
+                      double homographyTolerance)
+{
+  ceres::Problem problem;
+  // use a copy for the optimization to avoid changes in the input one
+  Mat3 tempHomography = homography;
+
+  for(IndexT matchId : bestMatchesId)
+  {
+    const matching::IndMatch& match = remainingMatches.at(matchId);
+
+    const Vec2& x1 = features_I.col(match._i);
+    const Vec2& x2 = features_J.col(match._j);
+
+    RefineHRobustCostFunctor* costFun =
+            new RefineHRobustCostFunctor(x1, x2, homographyTolerance);
+
+    problem.AddResidualBlock(
+            new ceres::AutoDiffCostFunction<
+                    RefineHRobustCostFunctor,
+                    1,
+                    9>(costFun),
+            nullptr,
+            tempHomography.data());
+  }
+
+  ceres::Solver::Options solverOpt;
+  solverOpt.max_num_iterations = 10;
+
+  ceres::Solver::Summary summary;
+  ceres::Solve(solverOpt,&problem,&summary);
+
+  // if the optimization did not succeed return without changing
+  if(!summary.IsSolutionUsable())
+    return false;
+
+  homography = tempHomography;
+
+  // normalize the homography
+  if(std::fabs(homography(2, 2)) > std::numeric_limits<double>::epsilon())
+    homography /= homography(2,2);
+
+  findTransformationInliers(features_I, features_J, remainingMatches, homography, homographyTolerance, bestMatchesId);
+
+  return true;
+}
 }
 }

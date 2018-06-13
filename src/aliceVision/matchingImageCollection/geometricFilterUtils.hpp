@@ -270,5 +270,20 @@ void findTransformationInliers(const Mat2X& featuresI,
                                double tolerance,
                                std::set<IndexT> &inliersId);
 
+
+bool refineHomography(const std::vector<feature::SIOPointFeature> &featuresI,
+                      const std::vector<feature::SIOPointFeature> &featuresJ,
+                      const matching::IndMatches& remainingMatches,
+                      Mat3& homography,
+                      std::set<IndexT>& bestMatchesId,
+                      double homographyTolerance);
+
+bool refineHomography(const Mat2X& features_I,
+                      const Mat2X& features_J,
+                      const matching::IndMatches& remainingMatches,
+                      Mat3& homography,
+                      std::set<IndexT>& bestMatchesId,
+                      double homographyTolerance);
+
 } // namespace aliceVision
 } // namespace matchingImageCollection
