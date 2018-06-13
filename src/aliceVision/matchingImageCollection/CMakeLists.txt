@@ -34,6 +34,7 @@ target_link_libraries(aliceVision_matchingImageCollection
 PUBLIC
   aliceVision_matching
   aliceVision_camera
+  aliceVision_feature
   ${Boost_LIBRARIES}
   ${LOG_LIB}
 PRIVATE
