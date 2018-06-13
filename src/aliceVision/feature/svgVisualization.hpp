@@ -21,7 +21,7 @@
 namespace aliceVision {
 namespace feature {
 
-std::string describerTypeColor(const feature::EImageDescriberType descType);
+std::string describerTypeColor(feature::EImageDescriberType descType);
 
 /**
  * @brief It saves a svg file containing two images (as linked images) and their

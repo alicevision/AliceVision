@@ -15,7 +15,7 @@
 namespace aliceVision {
 namespace feature {
 
-std::string describerTypeColor(const feature::EImageDescriberType descType )
+std::string describerTypeColor(feature::EImageDescriberType descType )
 {
   switch(descType)
   {
