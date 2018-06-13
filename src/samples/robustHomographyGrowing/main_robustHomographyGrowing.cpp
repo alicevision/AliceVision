@@ -242,7 +242,7 @@ int main(int argc, char **argv)
                           imageRightSize,
                           feature::getSIOPointFeatures(*regions_perImage.at(1)),
                           vec_PutativeMatches,
-                          "02.PutativeMatchesSideBySide." + describerTypesName + ".svg");
+                          "02.putativeMatchesSideBySide." + describerTypesName + ".svg");
   }
   {
     // draw the matches over one of the images as they were tracks
@@ -254,7 +254,7 @@ int main(int argc, char **argv)
                         feature::getSIOPointFeatures(*regions_perImage.at(0)),
                         feature::getSIOPointFeatures(*regions_perImage.at(1)),
                         vec_PutativeMatches,
-                        "02.PutativeMatchesMotion."+describerTypesName+".svg",
+                        "03.putativeMatchesMotion."+describerTypesName+".svg",
                         isLeft, richKpts);
     // Display some statistics
     std::cout
@@ -305,7 +305,7 @@ int main(int argc, char **argv)
                         feature::getSIOPointFeatures(*regions_perImage.at(0)),
                         feature::getSIOPointFeatures(*regions_perImage.at(1)),
                         outGeometricInliers,
-                        "03.allGrownMatchesMotion."+describerTypesName+".svg",
+                        "04.allGrownMatchesMotion."+describerTypesName+".svg",
                         isLeft, richKpts);
 
     // now visualize the matches grouped by homography with different colors
@@ -314,8 +314,19 @@ int main(int argc, char **argv)
                         feature::getSIOPointFeatures(*regions_perImage.at(0)),
                         feature::getSIOPointFeatures(*regions_perImage.at(1)),
                         homographiesAndMatches,
-                        "04.allGrownMatchesByHomographyMotion."+describerTypesName+".svg",
+                        "05.allGrownMatchesByHomographyMotion."+describerTypesName+".svg",
                         isLeft, richKpts);
+
+    // finally we can visualize the pair of images size by size with the matches grouped by color
+    drawHomographyMatches(filenameLeft,
+                          imageLeftSize,
+                          feature::getSIOPointFeatures(*regions_perImage.at(0)),
+                          filenameRight,
+                          imageRightSize,
+                          feature::getSIOPointFeatures(*regions_perImage.at(1)),
+                          homographiesAndMatches,
+                          vec_PutativeMatches,
+                          "06.allGrownMatchesByHomography."+describerTypesName+".svg");
 
   }
 
