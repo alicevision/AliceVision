@@ -63,6 +63,34 @@ void drawMatchesSideBySide(const std::string& imagePathLeft,
 
 /**
  * @brief It saves a svg file containing two images (as linked images) and their
+ * feature matches coming from the homography growing algorithm: the two images
+ * are showed side by side and each group of corresponding features belonging to the
+ * same homography is depicted with the same color.
+ *
+ * @param[in] imagePathLeft The full path to the left image. The image is only
+ * saved as a link, no image data is stored in the svg.
+ * @param[in] imageSizeLeft The size of the image <width,height>.
+ * @param[in] keypointsLeft The keypoints of the left image.
+ * @param[in] imagePathRight The full path to the left image. The image is only
+ * saved as a link, no image data is stored in the svg.
+ * @param[in] imageSizeRight The size of the image <width,height>.
+ * @param[in] keypointsRight The keypoints of the right image.
+ * @param[in] homographiesAndMatches A map containing for each homography the corresponding matches
+ * @param[in] putativeMatches  The set of all matches.
+ * @param[in] outFilename The name of the svg file to generate.
+ */
+void drawHomographyMatches(const std::string& imagePathLeft,
+                           const std::pair<size_t,size_t>& imageSizeLeft,
+                           const std::vector<feature::SIOPointFeature>& siofeatures_I,
+                           const std::string& imagePathRight,
+                           const std::pair<size_t,size_t>& imageSizeRight,
+                           const std::vector<feature::SIOPointFeature>& siofeatures_J,
+                           const std::vector<std::pair<Mat3, matching::IndMatches>>& homographiesAndMatches,
+                           const matching::IndMatches& putativeMatches,
+                           const std::string& outFilename);
+
+/**
+ * @brief It saves a svg file containing two images (as linked images) and their
  * feature matches: the two images are showed side by side and each feature in each
  * image (depicted as a circle) is connected to the corresponding feature on the 
  * other image through a line.

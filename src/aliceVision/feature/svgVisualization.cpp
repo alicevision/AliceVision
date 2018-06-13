@@ -110,6 +110,79 @@ void drawMatchesSideBySide(const std::string& imagePathLeft,
   svgFile.close();
 }
 
+void drawHomographyMatches(const std::string& imagePathLeft,
+                           const std::pair<size_t,size_t>& imageSizeLeft,
+                           const std::vector<feature::SIOPointFeature>& siofeatures_I,
+                           const std::string& imagePathRight,
+                           const std::pair<size_t,size_t>& imageSizeRight,
+                           const std::vector<feature::SIOPointFeature>& siofeatures_J,
+                           const std::vector<std::pair<Mat3, matching::IndMatches>>& homographiesAndMatches,
+                           const matching::IndMatches& putativeMatches,
+                           const std::string& outFilename)
+{
+  const auto& colors = feature::sixteenColors;
+
+  svg::svgDrawer svgStream(imageSizeLeft.first + imageSizeRight.first,
+                           std::max(imageSizeLeft.second, imageSizeRight.second));
+  const std::size_t offset = imageSizeLeft.first;
+
+  svgStream.drawImage(imagePathLeft, imageSizeLeft.first, imageSizeLeft.second);
+  svgStream.drawImage(imagePathRight, imageSizeRight.first, imageSizeRight.second, offset);
+
+// draw little white dots representing putative matches
+  for (const auto& match : putativeMatches)
+  {
+    const float radius{1.f};
+    const float strokeSize{2.f};
+    const feature::SIOPointFeature &fI = siofeatures_I.at(match._i);
+    const feature::SIOPointFeature &fJ = siofeatures_J.at(match._j);
+    const svg::svgStyle style = svg::svgStyle().stroke("white", strokeSize);
+
+    svgStream.drawCircle(fI.x(), fI.y(), radius, style);
+    svgStream.drawCircle(fJ.x() + offset, fJ.y(), radius, style);
+  }
+
+  {
+    // for each homography draw the associated matches in a different color
+    std::size_t iH{0};
+    const float radius{5.f};
+    const float strokeSize{5.f};
+    for (const auto &currRes : homographiesAndMatches)
+    {
+      const auto &bestMatchesId = currRes.second;
+      // 0 < iH <= 8: colored; iH > 8  are white (not enough colors)
+      const std::string color = (iH < colors.size()) ? colors.at(iH) : "grey";
+
+      for (const auto &match : bestMatchesId)
+      {
+        const feature::SIOPointFeature &fI = siofeatures_I.at(match._i);
+        const feature::SIOPointFeature &fJ = siofeatures_J.at(match._j);
+
+        const svg::svgStyle style = svg::svgStyle().stroke(color, strokeSize);
+
+        svgStream.drawCircle(fI.x(), fI.y(), radius, style);
+        svgStream.drawCircle(fJ.x() + offset, fJ.y(), radius, style);
+      }
+      ++iH;
+    }
+  }
+
+  std::ofstream svgFile(outFilename);
+  if(!svgFile.is_open())
+  {
+    ALICEVISION_CERR("Unable to open file "+outFilename);
+    return;
+  }
+  svgFile << svgStream.closeSvgFile().str();
+  if(!svgFile.good())
+  {
+    ALICEVISION_CERR("Something wrong happened while writing file "+outFilename);
+    return;
+  }
+  svgFile.close();
+
+}
+
 void saveMatches2SVG(const std::string &imagePathLeft,
                      const std::pair<size_t,size_t> & imageSizeLeft,
                      const feature::MapRegionsPerDesc &keypointsLeft,
