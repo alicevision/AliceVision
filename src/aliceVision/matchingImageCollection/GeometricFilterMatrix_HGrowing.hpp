@@ -32,12 +32,17 @@ struct GrowParameters
                    double affinityTolerance,
                    double homographyTolerance,
                    std::size_t minInliersToRefine,
-                   std::size_t nbRefiningIterations)
+                   std::size_t nbRefiningIterations,
+                   double maxFractionPlanarMatches)
             : _similarityTolerance(similarityTolerance),
               _affinityTolerance(affinityTolerance),
               _homographyTolerance(homographyTolerance),
               _minInliersToRefine(minInliersToRefine),
-              _nbRefiningIterations(nbRefiningIterations) { };
+              _nbRefiningIterations(nbRefiningIterations),
+              _maxFractionPlanarMatches(maxFractionPlanarMatches)
+    {
+      assert(_maxFractionPlanarMatches >= 0 && _maxFractionPlanarMatches <= 1);
+    }
 
     /// The maximal reprojection (pixel) error for matches estimated
     /// from a Similarity transformation.
@@ -59,6 +64,10 @@ struct GrowParameters
     /// 2-4th iterations are affinities
     /// 5+th iterations are homographies
     std::size_t _nbRefiningIterations{8};
+
+    /// Value in [0,1]. If there is this fraction of inliers found the
+    /// refine phase is terminated.
+    double _maxFractionPlanarMatches{0.7};
 };
 
 bool growHomography(const std::vector<feature::SIOPointFeature> &featuresI,

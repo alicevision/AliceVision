@@ -151,7 +151,7 @@ bool growHomography(const std::vector<feature::SIOPointFeature> &featuresI,
       return false;
 
     // Note: the following statement is present in the MATLAB code but not implemented in YASM
-//      if (planarMatchesIndices.size() >= _maxFractionPlanarMatches * matches.size())
+//      if (planarMatchesIndices.size() >= param._maxFractionPlanarMatches * matches.size())
 //        break;
   }
   return !transformation.isIdentity();
