@@ -142,7 +142,7 @@ public:
                         std::unique_ptr<Regions>& regions,
                         const image::Image<unsigned char>* mask = nullptr)
   {
-    throw std::logic_error("Can't use" + EImageDescriberType_enumToString(getDescriberType()) + " image describer with an 8-bit image.");
+    throw std::logic_error("Cannot use " + EImageDescriberType_enumToString(getDescriberType()) + " image describer with an 8-bit image.");
     return false;
   }
 
@@ -157,7 +157,7 @@ public:
                         std::unique_ptr<Regions>& regions,
                         const image::Image<unsigned char>* mask = nullptr)
   {
-    throw std::logic_error("Can't use" + EImageDescriberType_enumToString(getDescriberType()) + " image describer with a float image.");
+    throw std::logic_error("Cannot use " + EImageDescriberType_enumToString(getDescriberType()) + " image describer with a float image.");
     return false;
   }
 
