@@ -4,6 +4,7 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
+#include <aliceVision/feature/svgVisualization.hpp>
 #include "GeometricFilterMatrix_HGrowing.hpp"
 #include "dependencies/vectorGraphics/svgDrawer.hpp"
 
@@ -216,7 +217,7 @@ void drawHomographyMatches(const std::string& outFilename,
                            const std::vector<std::pair<Mat3, matching::IndMatches>>& homographiesAndMatches,
                            const matching::IndMatches& putativeMatches)
 {
-  const std::vector<std::string> colors{"red", "cyan", "purple", "green", "black", "brown", "blue", "pink", "grey"};
+  const auto& colors = feature::sixteenColors;
 
   svg::svgDrawer svgStream(viewI.getWidth() + viewJ.getWidth() , std::max(viewI.getHeight(), viewJ.getHeight()));
 
