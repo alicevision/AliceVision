@@ -5,6 +5,7 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "GeometricFilterMatrix_HGrowing.hpp"
+#include "dependencies/vectorGraphics/svgDrawer.hpp"
 
 namespace aliceVision {
 namespace matchingImageCollection {
