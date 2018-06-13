@@ -31,10 +31,13 @@ add_library(aliceVision_matchingImageCollection
 )
 
 target_link_libraries(aliceVision_matchingImageCollection
+PUBLIC
   aliceVision_matching
   aliceVision_camera
   ${Boost_LIBRARIES}
   ${LOG_LIB}
+PRIVATE
+  ${CERES_LIBRARIES}
 )
 
 set_target_properties(aliceVision_matchingImageCollection
