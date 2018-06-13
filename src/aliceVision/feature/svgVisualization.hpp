@@ -26,14 +26,40 @@ std::string describerTypeColor(feature::EImageDescriberType descType);
 /**
  * @brief It saves a svg file containing two images (as linked images) and their
  * feature matches: the two images are showed side by side and each feature in each
- * image (depicted as a circle) is connected to the corresponding feature on the 
+ * image (depicted as a circle) is connected to the corresponding feature on the
  * other image through a line.
- * 
- * @param[in] imagePathLeft The full path to the left iamge. The image is only 
+ *
+ * @param[in] imagePathLeft The full path to the left image. The image is only
  * saved as a link, no image data is stored in the svg.
  * @param[in] imageSizeLeft The size of the image <width,height>.
  * @param[in] keypointsLeft The keypoints of the left image.
- * @param[in] imagePathRight The full path to the left iamge. The image is only 
+ * @param[in] imagePathRight The full path to the left image. The image is only
+ * saved as a link, no image data is stored in the svg.
+ * @param[in] imageSizeRight The size of the image <width,height>.
+ * @param[in] keypointsRight The keypoints of the right image.
+ * @param[in] matches The vector containing the indices of matching features for each descriptor type.
+ * @param[in] outputSVGPath The name of the svg file to generate.
+ */
+void drawMatchesSideBySide(const std::string& imagePathLeft,
+                           const std::pair<size_t,size_t>& imageSizeLeft,
+                           const std::vector<feature::SIOPointFeature>& keypointsLeft,
+                           const std::string& imagePathRight,
+                           const std::pair<size_t,size_t>& imageSizeRight,
+                           const std::vector<feature::SIOPointFeature>& keypointsRight,
+                           const matching::IndMatches& matches,
+                           const std::string &outputSVGPath);
+
+/**
+ * @brief It saves a svg file containing two images (as linked images) and their
+ * feature matches: the two images are showed side by side and each feature in each
+ * image (depicted as a circle) is connected to the corresponding feature on the 
+ * other image through a line.
+ * 
+ * @param[in] imagePathLeft The full path to the left image. The image is only
+ * saved as a link, no image data is stored in the svg.
+ * @param[in] imageSizeLeft The size of the image <width,height>.
+ * @param[in] keypointsLeft The keypoints of the left image.
+ * @param[in] imagePathRight The full path to the left image. The image is only
  * saved as a link, no image data is stored in the svg.
  * @param[in] imageSizeRight The size of the image <width,height>.
  * @param[in] keypointsRight The keypoints of the right image.
@@ -48,6 +74,56 @@ void saveMatches2SVG(const std::string &imagePathLeft,
                      const feature::MapRegionsPerDesc &keypointsRight,
                      const matching::MatchesPerDescType & matches,
                      const std::string &outputSVGPath);
+
+/**
+ * @brief It saves a svg file containing two images (as linked images) and their
+ * feature matches: the two images are showed side by side and each feature in each
+ * image (depicted as a circle) is connected to the corresponding feature on the
+ * other image through a line.
+ *
+ * @param[in] imagePathLeft The full path to the left image. The image is only
+ * saved as a link, no image data is stored in the svg.
+ * @param[in] imageSizeLeft The size of the image <width,height>.
+ * @param[in] keypointsLeft The keypoints of the left image.
+ * @param[in] imagePathRight The full path to the left image. The image is only
+ * saved as a link, no image data is stored in the svg.
+ * @param[in] imageSizeRight The size of the image <width,height>.
+ * @param[in] keypointsRight The keypoints of the right image.
+ * @param[in] matches The vector containing the indices of matching features for each descriptor type.
+ * @param[in] outputSVGPath The name of the svg file to generate.
+ */
+void saveMatches2SVG(const std::string &imagePathLeft,
+                     const std::pair<size_t,size_t> & imageSizeLeft,
+                     const feature::MapRegionsPerDesc &keypointsLeft,
+                     const std::string &imagePathRight,
+                     const std::pair<size_t,size_t> & imageSizeRight,
+                     const feature::MapRegionsPerDesc &keypointsRight,
+                     const matching::MatchesPerDescType & matches,
+                     const std::string &outputSVGPath);
+
+/**
+ * @brief It saves a svg file containing an image (as linked image) and its detected
+ * features.
+ *
+ * @param[in] imagePathLeft The full path to the left image. The image is only
+ * saved as a link, no image data is stored in the svg.
+ * @param[in] imageSizeLeft The size of the image <width,height>.
+ * @param[in] keypointsLeft The keypoints of the left image.
+ * @param[in] imagePathRight The full path to the left image. The image is only
+ * saved as a link, no image data is stored in the svg.
+ * @param[in] imageSizeRight The size of the image <width,height>.
+ * @param[in] keypointsRight The keypoints of the right image.
+ * @param[in] richKeypoint Draw rich keypoints with a circle proportional to the
+ * octave in which the point has been detected.
+ */
+void drawKeypointsSideBySide(const std::string&imagePathLeft,
+                             const std::pair<size_t,size_t>& imageSizeLeft,
+                             const std::vector<feature::SIOPointFeature>& keypointsLeft,
+                             const std::string &imagePathRight,
+                             const std::pair<size_t,size_t>& imageSizeRight,
+                             const std::vector<feature::SIOPointFeature>& keypointsRight,
+                             const std::string &outputSVGPath,
+                             bool richKeypoint = true);
 
 /**
  * @brief It saves a svg file containing an image (as linked image) and its detected
@@ -149,6 +225,15 @@ void saveMatchesAsMotion(const std::string &imagePath,
                          const std::string &outputSVGPath,
                          bool left,
                          bool richKeypoint = true);
+
+void saveMatchesAsMotion(const std::string &imagePath,
+                         const std::pair<size_t, size_t> & imageSize,
+                         const std::vector<feature::SIOPointFeature> &keypoints,
+                         const std::vector<feature::SIOPointFeature> &otherKeypoints,
+                         const std::vector<std::pair<Mat3, matching::IndMatches>>& homographiesAndMatches,
+                         const std::string &outputSVGPath,
+                         bool left,
+                         bool richKeypoint);
 
 /**
  * @brief Given a 2d line and an image size it returns the intersection points 
