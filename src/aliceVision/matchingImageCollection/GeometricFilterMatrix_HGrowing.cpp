@@ -10,9 +10,8 @@ namespace aliceVision {
 namespace matchingImageCollection {
 
 
-bool aliceVision::matchingImageCollection::GeometricFilterMatrix_HGrowing::getMatches(
-        const feature::EImageDescriberType &descType,
-        const IndexT homographyId, matching::IndMatches &matches) const
+bool GeometricFilterMatrix_HGrowing::getMatches(const feature::EImageDescriberType &descType,
+                                                const IndexT homographyId, matching::IndMatches &matches) const
 {
   matches.clear();
 
