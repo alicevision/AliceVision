@@ -112,7 +112,7 @@ macro(UNIT_TEST NAMESPACE NAME EXTRA_LIBS)
   if(ALICEVISION_BUILD_TESTS)
     add_executable(${NAMESPACE}_test_${NAME} ${NAME}_test.cpp)
 
-    set_property(TARGET ${NAMESPACE}_test_${NAME} PROPERTY FOLDER test)
+    set_property(TARGET ${NAMESPACE}_test_${NAME} PROPERTY FOLDER Test)
 
     target_link_libraries(${NAMESPACE}_test_${NAME}
                           ${EXTRA_LIBS} # Extra libs MUST be first.

@@ -14,5 +14,5 @@ target_link_libraries(aliceVision_samples_kvldFilter
 )
 
 set_property(TARGET aliceVision_samples_kvldFilter
-  PROPERTY FOLDER AliceVision/Samples
+  PROPERTY FOLDER Samples
 )

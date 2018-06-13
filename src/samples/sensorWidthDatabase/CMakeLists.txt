@@ -7,6 +7,6 @@ target_link_libraries(aliceVision_samples_parseDatabase
 )
 
 set_property(TARGET aliceVision_samples_parseDatabase
-  PROPERTY FOLDER AliceVision/Samples
+  PROPERTY FOLDER Samples
 )
 
