@@ -238,24 +238,27 @@ void drawHomographyMatches(const std::string& outFilename,
     svgStream.drawCircle(fJ.x() + offset, fJ.y(), radius, style);
   }
 
-  for (const auto &currRes : homographiesAndMatches)
   {
+    // for each homography draw the associated matches in a different color
     std::size_t iH{0};
-    const auto &bestMatchesId = currRes.second;
-    for (const auto &match : bestMatchesId)
+    const float radius{5.f};
+    const float strokeSize{5.f};
+    for (const auto &currRes : homographiesAndMatches)
     {
-      const float radius{5.f};
-      const float strokeSize{5.f};
-      const feature::SIOPointFeature &fI = siofeatures_I.at(match._i);
-      const feature::SIOPointFeature &fJ = siofeatures_J.at(match._j);
+      const auto &bestMatchesId = currRes.second;
       // 0 < iH <= 8: colored; iH > 8  are white (not enough colors)
-      std::string color = "grey";
-      if (iH <= colors.size() - 1)
-        color = colors.at(iH);
-      const svg::svgStyle style = svg::svgStyle().stroke(color, strokeSize);
+      const std::string color = (iH < colors.size()) ? colors.at(iH) : "grey";
 
-      svgStream.drawCircle(fI.x(), fI.y(), radius, style);
-      svgStream.drawCircle(fJ.x() + offset, fJ.y(), radius, style);
+      for (const auto &match : bestMatchesId)
+      {
+        const feature::SIOPointFeature &fI = siofeatures_I.at(match._i);
+        const feature::SIOPointFeature &fJ = siofeatures_J.at(match._j);
+
+        const svg::svgStyle style = svg::svgStyle().stroke(color, strokeSize);
+
+        svgStream.drawCircle(fI.x(), fI.y(), radius, style);
+        svgStream.drawCircle(fJ.x() + offset, fJ.y(), radius, style);
+      }
       ++iH;
     }
   }
