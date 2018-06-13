@@ -260,20 +260,19 @@ void drawHomographyMatches(const std::string& outFilename,
     }
   }
 
-    std::ofstream svgFile(outFilename);
-    if(!svgFile.is_open())
-    {
-      ALICEVISION_CERR("Unable to open file "+outFilename);
-      return;
-    }
-    svgFile << svgStream.closeSvgFile().str();
-    if(!svgFile.good())
-    {
-      ALICEVISION_CERR("Something wrong happened while writing file "+outFilename);
-      return;
-    }
-    svgFile << svgStream.closeSvgFile().str();
-    svgFile.close();
+  std::ofstream svgFile(outFilename);
+  if(!svgFile.is_open())
+  {
+    ALICEVISION_CERR("Unable to open file "+outFilename);
+    return;
+  }
+  svgFile << svgStream.closeSvgFile().str();
+  if(!svgFile.good())
+  {
+    ALICEVISION_CERR("Something wrong happened while writing file "+outFilename);
+    return;
+  }
+  svgFile.close();
 
 }
 
