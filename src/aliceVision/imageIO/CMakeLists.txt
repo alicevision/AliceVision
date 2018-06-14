@@ -23,16 +23,16 @@ target_include_directories(aliceVision_imageIO
 )
 
 target_link_libraries(aliceVision_imageIO
-  PUBLIC aliceVision_mvsData
-         ${OPENIMAGEIO_LIBRARIES}
-
-  PRIVATE ${Boost_FILESYSTEM_LIBRARIES}
-          # dependency of Boost filesystem, not always declared depending on CMake version
-          ${Boost_SYSTEM_LIBRARIES}
+  PUBLIC 
+    ${OPENIMAGEIO_LIBRARIES}
+  PRIVATE 
+    aliceVision_mvsData
+    aliceVision_system
+    ${Boost_FILESYSTEM_LIBRARY}
 )
 
 set_property(TARGET aliceVision_imageIO
-  PROPERTY FOLDER AliceVision/AliceVision
+  PROPERTY FOLDER AliceVision
 )
 
 install(TARGETS aliceVision_imageIO

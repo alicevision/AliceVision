@@ -7,6 +7,8 @@
 
 #include "svgVisualization.hpp"
 #include <aliceVision/config.hpp>
+#include <aliceVision/system/Logger.hpp>
+
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_CCTAG)
 #include "cctag/ImageDescriber_CCTAG.hpp"
 #endif

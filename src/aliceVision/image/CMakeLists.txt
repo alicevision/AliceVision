@@ -30,20 +30,23 @@ add_library(aliceVision_image
   ${image_files_sources}
 )
 
+set_property(TARGET aliceVision_image
+  PROPERTY FOLDER AliceVision
+)
+
 target_include_directories(aliceVision_image
   PUBLIC ${OPENIMAGEIO_INCLUDE_DIRS}
   PRIVATE ${OPENEXR_INCLUDE_DIR}
 )
 
 target_link_libraries(aliceVision_image
-  PUBLIC aliceVision_numeric
-         ${OPENIMAGEIO_LIBRARIES}
-
-  PRIVATE ${OPENEXR_LIBRARIES}
-          ${LOG_LIB}
-          ${Boost_FILESYSTEM_LIBRARIES}
-          # dependency of Boost filesystem, not always declared depending on CMake version
-          ${Boost_SYSTEM_LIBRARIES}
+  PUBLIC 
+    aliceVision_numeric
+    ${OPENIMAGEIO_LIBRARIES}
+  PRIVATE 
+    aliceVision_system  
+    ${OPENEXR_LIBRARIES}
+    ${Boost_FILESYSTEM_LIBRARY}
 )
 
 set_target_properties(aliceVision_image

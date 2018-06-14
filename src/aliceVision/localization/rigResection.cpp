@@ -6,6 +6,7 @@
 
 #include "rigResection.hpp"
 #include "aliceVision/robustEstimation/ACRansacKernelAdaptator.hpp"
+#include <aliceVision/system/Logger.hpp>
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_OPENGV)
 #include <Eigen/Eigen>
 #include <opengv/absolute_pose/methods.hpp>

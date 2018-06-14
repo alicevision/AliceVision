@@ -27,15 +27,16 @@ add_library(aliceVision_lInftyComputerVision
   ${lInftycomputervision_sources}
 )
 
+set_property(TARGET aliceVision_lInftyComputerVision
+  PROPERTY FOLDER AliceVision
+)
+
 target_link_libraries(aliceVision_lInftyComputerVision
-  aliceVision_linearProgramming
-  ${CLP_LIBRARIES}     # clp + solver wrapper
-  ${COINUTILS_LIBRARY} # container tools
-  ${OSI_LIBRARY}       # generic LP
+  PUBLIC aliceVision_linearProgramming
 )
 
 if(MOSEK_FOUND)  
-    target_link_libraries(aliceVision_lInftyComputerVision ${MOSEK_LIB})
+    target_link_libraries(aliceVision_lInftyComputerVision PUBLIC ${MOSEK_LIB})
 endif()
 
 set_target_properties(aliceVision_lInftyComputerVision

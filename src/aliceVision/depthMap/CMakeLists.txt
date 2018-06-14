@@ -91,13 +91,14 @@ target_link_libraries(aliceVision_depthMap
   aliceVision_mvsData
   aliceVision_imageIO
   aliceVision_mvsUtils
-  ${Boost_FILESYSTEM_LIBRARIES}
+  aliceVision_system
+  ${Boost_FILESYSTEM_LIBRARY}
   ${CUDA_CUDADEVRT_LIBRARY}
   ${CUDA_CUBLAS_LIBRARIES}
 )
 
 set_property(TARGET aliceVision_depthMap
-  PROPERTY FOLDER AliceVision/AliceVision
+  PROPERTY FOLDER AliceVision
 )
 
 install(TARGETS aliceVision_depthMap

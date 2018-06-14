@@ -29,9 +29,15 @@ add_library(aliceVision_matchingImageCollection
 )
 
 target_link_libraries(aliceVision_matchingImageCollection
+PUBLIC
+  aliceVision_feature
   aliceVision_matching
+  aliceVision_multiview
+  aliceVision_robustEstimation
+  aliceVision_sfm
   ${Boost_LIBRARIES}
-  ${LOG_LIB}
+PRIVATE
+  aliceVision_system
 )
 
 set_target_properties(aliceVision_matchingImageCollection

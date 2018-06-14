@@ -12,7 +12,6 @@
 #include <aliceVision/matching/IndMatch.hpp>
 #include <aliceVision/stl/FlatMap.hpp>
 #include <aliceVision/stl/FlatSet.hpp>
-#include <aliceVision/config.hpp>
 
 #include <lemon/list_graph.h>
 #include <lemon/unionfind.h>

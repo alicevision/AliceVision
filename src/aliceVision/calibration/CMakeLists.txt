@@ -20,12 +20,14 @@ add_library(aliceVision_calibration
 )
 
 target_link_libraries(aliceVision_calibration
-  PUBLIC ${OpenCV_LIBS}
-  PRIVATE aliceVision_image
-          aliceVision_system
-          aliceVision_dataio
-          ${Boost_LIBRARIES}
-          ${LOG_LIB}
+  PUBLIC 
+    ${OpenCV_LIBS}
+  PRIVATE 
+    aliceVision_image
+    aliceVision_system
+    aliceVision_dataio
+    ${Boost_FILESYSTEM_LIBRARY}
+    ${Boost_PROGRAM_OPTIONS_LIBRARY}
 )
 
 if(ALICEVISION_HAVE_CCTAG)

@@ -13,6 +13,6 @@ target_link_libraries(aliceVision_samples_robustEssentialSpherical
 )
 
 set_property(TARGET aliceVision_samples_robustEssentialSpherical 
-	PROPERTY FOLDER AliceVision/Samples
+	PROPERTY FOLDER Samples
 )
 

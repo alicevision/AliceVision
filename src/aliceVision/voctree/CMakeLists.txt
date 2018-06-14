@@ -25,14 +25,17 @@ add_library(aliceVision_voctree
 )
 
 set_property(TARGET aliceVision_voctree
-  PROPERTY FOLDER AliceVision/AliceVision
+  PROPERTY FOLDER AliceVision
 )
 
 target_link_libraries(aliceVision_voctree
-  aliceVision_feature
-  aliceVision_sfm
-  ${Boost_LIBRARIES}
-  ${LOG_LIB}
+  PUBLIC
+    aliceVision_feature
+    aliceVision_sfm
+    aliceVision_system
+    Eigen3::Eigen
+  PRIVATE
+    ${Boost_FILESYSTEM_LIBRARY}
 )
 
 set_target_properties(aliceVision_voctree

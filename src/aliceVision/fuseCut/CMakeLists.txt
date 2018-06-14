@@ -36,18 +36,22 @@ target_include_directories(aliceVision_fuseCut
 )
 
 target_link_libraries(aliceVision_fuseCut
-  PUBLIC aliceVision_mvsData
-         aliceVision_mvsUtils
-         aliceVision_imageIO
-         aliceVision_mesh
-         Geogram::geogram
-         ${Boost_LIBRARIES}
+  PUBLIC 
+    aliceVision_mvsData
+    aliceVision_mvsUtils
+    aliceVision_imageIO
+    aliceVision_mesh
+    aliceVision_system
+    Geogram::geogram
+    ${Boost_FILESYSTEM_LIBRARY}
+    ${Boost_GRAPH_LIBRARY}
+    ${Boost_CONTAINER_LIBRARY}
   PRIVATE
-         nanoflann
+    nanoflann
 )
 
 set_property(TARGET aliceVision_fuseCut
-  PROPERTY FOLDER AliceVision/AliceVision
+  PROPERTY FOLDER AliceVision
 )
 
 install(TARGETS aliceVision_fuseCut

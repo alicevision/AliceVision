@@ -13,5 +13,5 @@ target_link_libraries(aliceVision_samples_robustEssential
 )
 
 set_property(TARGET aliceVision_samples_robustEssential
-  PROPERTY FOLDER AliceVision/Samples
+  PROPERTY FOLDER Samples
 )
