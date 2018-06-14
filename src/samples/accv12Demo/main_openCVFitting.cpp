@@ -1,5 +1,9 @@
-// This file is part of the AliceVision project and is made available under
-// the terms of the MPL2 license (see the COPYING.md file).
+// This file is part of the AliceVision project.
+// Copyright (c) 2017 AliceVision contributors.
+// Copyright (c) 2012 openMVG contributors.
+// This Source Code Form is subject to the terms of the Mozilla Public License,
+// v. 2.0. If a copy of the MPL was not distributed with this file,
+// You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "aliceVision/numeric/numeric.hpp"
 #include "aliceVision/multiview/homographyKernelSolver.hpp"
@@ -10,7 +14,6 @@
 #include "aliceVision/robustEstimation/ACRansacKernelAdaptator.hpp"
 
 #include "dependencies/vectorGraphics/svgDrawer.hpp"
-
 
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
