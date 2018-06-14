@@ -18,7 +18,7 @@ if(ALICEVISION_BUILD_SFM)
   )
 
   set_property(TARGET aliceVision_cameraInit
-    PROPERTY FOLDER AliceVision/Software/Pipeline
+    PROPERTY FOLDER Software/Pipeline
   )
 
   install(TARGETS aliceVision_cameraInit
@@ -44,7 +44,7 @@ if(ALICEVISION_BUILD_SFM)
   endif()
 
   set_property(TARGET aliceVision_featureExtraction
-    PROPERTY FOLDER AliceVision/Software/Pipeline
+    PROPERTY FOLDER Software/Pipeline
   )
 
   install(TARGETS aliceVision_featureExtraction
@@ -62,7 +62,7 @@ if(ALICEVISION_BUILD_SFM)
   )
 
   set_property(TARGET aliceVision_imageMatching
-    PROPERTY FOLDER AliceVision/Software/Pipeline
+    PROPERTY FOLDER Software/Pipeline
   )
 
   install(TARGETS aliceVision_imageMatching
@@ -84,7 +84,7 @@ if(ALICEVISION_BUILD_SFM)
   )
 
   set_property(TARGET aliceVision_featureMatching
-    PROPERTY FOLDER AliceVision/Software/Pipeline
+    PROPERTY FOLDER Software/Pipeline
   )
 
   install(TARGETS aliceVision_featureMatching
@@ -104,7 +104,7 @@ if(ALICEVISION_BUILD_SFM)
   )
 
   set_property(TARGET aliceVision_incrementalSfM
-    PROPERTY FOLDER AliceVision/Software/Pipeline
+    PROPERTY FOLDER Software/Pipeline
   )
 
   install(TARGETS aliceVision_incrementalSfM
@@ -124,7 +124,7 @@ if(ALICEVISION_BUILD_SFM)
   )
 
   set_property(TARGET aliceVision_globalSfM
-    PROPERTY FOLDER AliceVision/Software/Pipeline
+    PROPERTY FOLDER Software/Pipeline
   )
 
   install(TARGETS aliceVision_globalSfM
@@ -143,7 +143,7 @@ if(ALICEVISION_BUILD_SFM)
   )
 
   set_property(TARGET aliceVision_computeStructureFromKnownPoses
-    PROPERTY FOLDER AliceVision/Software/Pipeline
+    PROPERTY FOLDER Software/Pipeline
   )
 
   install(TARGETS aliceVision_computeStructureFromKnownPoses
@@ -163,7 +163,7 @@ if(ALICEVISION_BUILD_SFM)
   )
 
   set_property(TARGET aliceVision_computeSfMColor
-    PROPERTY FOLDER AliceVision/Software/Pipeline
+    PROPERTY FOLDER Software/Pipeline
   )
 
   install(TARGETS aliceVision_computeSfMColor
@@ -189,7 +189,7 @@ if(ALICEVISION_BUILD_SFM)
     endif()
 
     set_property(TARGET aliceVision_cameraCalibration
-    PROPERTY FOLDER AliceVision/Software/Pipeline
+    PROPERTY FOLDER Software/Pipeline
     )
 
     install(TARGETS aliceVision_cameraCalibration
@@ -216,7 +216,7 @@ if(ALICEVISION_BUILD_SFM)
   endif()
 
   set_property(TARGET aliceVision_rigCalibration
-    PROPERTY FOLDER AliceVision/Software/Pipeline
+    PROPERTY FOLDER Software/Pipeline
   )
 
   install(TARGETS aliceVision_rigCalibration
@@ -241,7 +241,7 @@ if(ALICEVISION_BUILD_SFM)
   endif()
 
   set_property(TARGET aliceVision_cameraLocalization
-    PROPERTY FOLDER AliceVision/Software/Pipeline
+    PROPERTY FOLDER Software/Pipeline
   )
 
   install(TARGETS aliceVision_cameraLocalization
@@ -267,7 +267,7 @@ if(ALICEVISION_BUILD_SFM)
   endif()
 
   set_property(TARGET aliceVision_rigLocalization
-    PROPERTY FOLDER AliceVision/Software/Pipeline
+    PROPERTY FOLDER Software/Pipeline
   )
 
   install(TARGETS aliceVision_rigLocalization
@@ -287,7 +287,7 @@ if(ALICEVISION_BUILD_SFM)
   )
 
   set_property(TARGET aliceVision_prepareDenseScene
-    PROPERTY FOLDER AliceVision/Software/Pipeline
+    PROPERTY FOLDER Software/Pipeline
   )
 
   install(TARGETS aliceVision_prepareDenseScene
@@ -310,7 +310,7 @@ if(ALICEVISION_BUILD_MVS)
   )
 
   set_property(TARGET aliceVision_cameraConnection
-    PROPERTY FOLDER AliceVision/Software/Pipeline
+    PROPERTY FOLDER Software/Pipeline
   )
 
   install(TARGETS aliceVision_cameraConnection
@@ -331,7 +331,7 @@ if(ALICEVISION_BUILD_MVS)
     )
 
     set_property(TARGET aliceVision_depthMapEstimation
-      PROPERTY FOLDER AliceVision/Software/Pipeline
+      PROPERTY FOLDER Software/Pipeline
     )
 
     install(TARGETS aliceVision_depthMapEstimation
@@ -352,7 +352,7 @@ if(ALICEVISION_BUILD_MVS)
   )
 
   set_property(TARGET aliceVision_depthMapFiltering
-    PROPERTY FOLDER AliceVision/Software/Pipeline
+    PROPERTY FOLDER Software/Pipeline
   )
 
   install(TARGETS aliceVision_depthMapFiltering
@@ -373,7 +373,7 @@ if(ALICEVISION_BUILD_MVS)
   )
 
   set_property(TARGET aliceVision_meshing
-    PROPERTY FOLDER AliceVision/Software/Pipeline
+    PROPERTY FOLDER Software/Pipeline
   )
 
   install(TARGETS aliceVision_meshing
@@ -395,7 +395,7 @@ if(ALICEVISION_BUILD_MVS)
     )
 
     set_property(TARGET aliceVision_meshDenoising
-      PROPERTY FOLDER AliceVision/Software/Pipeline
+      PROPERTY FOLDER Software/Pipeline
     )
 
     install(TARGETS aliceVision_meshDenoising DESTINATION bin/)
@@ -412,7 +412,7 @@ if(ALICEVISION_BUILD_MVS)
     )
 
     set_property(TARGET aliceVision_meshDecimate
-      PROPERTY FOLDER AliceVision/Software/Pipeline
+      PROPERTY FOLDER Software/Pipeline
     )
 
     install(TARGETS aliceVision_meshDecimate DESTINATION bin/)
@@ -431,7 +431,7 @@ if(ALICEVISION_BUILD_MVS)
   )
 
   set_property(TARGET aliceVision_meshFiltering
-    PROPERTY FOLDER AliceVision/Software/Pipeline
+    PROPERTY FOLDER Software/Pipeline
   )
 
   install(TARGETS aliceVision_meshFiltering DESTINATION bin/)
@@ -448,7 +448,7 @@ if(ALICEVISION_BUILD_MVS)
   )
 
   set_property(TARGET aliceVision_meshResampling
-    PROPERTY FOLDER AliceVision/Software/Pipeline
+    PROPERTY FOLDER Software/Pipeline
   )
 
   install(TARGETS aliceVision_meshResampling
@@ -468,7 +468,7 @@ if(ALICEVISION_BUILD_MVS)
   )
 
   set_property(TARGET aliceVision_texturing
-    PROPERTY FOLDER AliceVision/Software/Pipeline
+    PROPERTY FOLDER Software/Pipeline
   )
 
   install(TARGETS aliceVision_texturing

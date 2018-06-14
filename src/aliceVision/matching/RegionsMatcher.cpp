@@ -11,6 +11,8 @@
 #include "aliceVision/matching/ArrayMatcher_kdtreeFlann.hpp"
 #include "aliceVision/matching/ArrayMatcher_cascadeHashing.hpp"
 
+#include <aliceVision/system/Logger.hpp>
+
 namespace aliceVision {
 namespace matching {
 

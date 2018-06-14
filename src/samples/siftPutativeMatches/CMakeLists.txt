@@ -10,5 +10,5 @@ target_link_libraries(aliceVision_samples_siftMatching
 )
 
 set_property(TARGET aliceVision_samples_siftMatching
-  PROPERTY FOLDER AliceVision/Samples
+  PROPERTY FOLDER Samples
 )

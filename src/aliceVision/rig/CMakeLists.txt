@@ -10,13 +10,21 @@ set(rig_files_sources
 )
 
 add_library(aliceVision_rig
-  ${rig_files_header}
+  ${rig_files_headers}
   ${rig_files_sources}
 )
 
 target_link_libraries(aliceVision_rig
+PUBLIC
+  aliceVision_camera
+  aliceVision_geometry
   aliceVision_localization
-  ${LOG_LIB}
+  aliceVision_numeric
+  ${CERES_LIBRARIES}
+  Eigen3::Eigen
+PRIVATE
+  aliceVision_sfm
+  aliceVision_system
 )
 
 set_target_properties(aliceVision_rig

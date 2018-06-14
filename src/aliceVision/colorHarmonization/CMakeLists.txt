@@ -22,12 +22,16 @@ add_library(aliceVision_colorHarmonization
   ${colorHarmonization_files_sources}
 )
 
+set_property(TARGET aliceVision_colorHarmonization
+  PROPERTY FOLDER AliceVision
+)
+
 target_link_libraries(aliceVision_colorHarmonization
-  INTERFACE aliceVision_image
-            ${CLP_LIBRARIES}
-            ${COINUTILS_LIBRARY}
-            ${OSI_LIBRARY}
-            ${LOG_LIB}
+  PUBLIC
+    aliceVision_feature
+    aliceVision_image
+    aliceVision_linearProgramming
+    aliceVision_matching
 )
 
 install(TARGETS aliceVision_colorHarmonization
@@ -38,3 +42,7 @@ install(TARGETS aliceVision_colorHarmonization
 UNIT_TEST(aliceVision gainOffsetConstraintBuilder "aliceVision_colorHarmonization")
 
 add_custom_target(aliceVision_colorHarmonization_ide SOURCES ${colorHarmonization_files_headers} ${colorHarmonization_files_test})
+
+set_property(TARGET aliceVision_colorHarmonization_ide
+  PROPERTY FOLDER AliceVision
+)

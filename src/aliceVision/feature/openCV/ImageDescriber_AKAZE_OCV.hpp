@@ -11,6 +11,8 @@
 #include <aliceVision/feature/ImageDescriber.hpp>
 #include <aliceVision/feature/regionsFactory.hpp>
 
+#include <aliceVision/system/Logger.hpp>
+
 namespace aliceVision {
 
 namespace image {

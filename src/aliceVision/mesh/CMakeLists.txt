@@ -34,15 +34,18 @@ target_include_directories(aliceVision_mesh
 )
 
 target_link_libraries(aliceVision_mesh
-  PUBLIC aliceVision_mvsData
-         aliceVision_mvsUtils
-         aliceVision_imageIO
-         Geogram::geogram
-         ${Boost_FILESYSTEM_LIBRARIES}
+  PUBLIC 
+    aliceVision_mvsData
+    aliceVision_mvsUtils
+    aliceVision_imageIO
+    Geogram::geogram
+    ${Boost_FILESYSTEM_LIBRARY}
+  PRIVATE 
+    aliceVision_system
 )
 
 set_property(TARGET aliceVision_mesh
-  PROPERTY FOLDER AliceVision/AliceVision
+  PROPERTY FOLDER AliceVision
 )
 
 install(TARGETS aliceVision_mesh

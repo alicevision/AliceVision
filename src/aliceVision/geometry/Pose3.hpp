@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include <aliceVision/multiview/projection.hpp>
+#include <aliceVision/numeric/numeric.hpp>
 
 namespace aliceVision {
 namespace geometry {

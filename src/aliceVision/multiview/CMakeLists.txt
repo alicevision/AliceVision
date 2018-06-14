@@ -68,8 +68,13 @@ install(TARGETS aliceVision_multiview
 )
 
 target_link_libraries(aliceVision_multiview
-  ${LEMON_LIBRARY}
-  ${LOG_LIB}
+  PUBLIC 
+    aliceVision_numeric
+    aliceVision_robustEstimation
+    ${CERES_LIBRARIES}
+  PRIVATE
+    aliceVision_system
+    ${LEMON_LIBRARY}
 )
 
 # Make multiview library integrate numeric library
@@ -78,12 +83,12 @@ add_library(aliceVision_multiview_test_data
 )
 
 set_property(TARGET aliceVision_multiview_test_data
-  PROPERTY FOLDER AliceVision/AliceVision
+  PROPERTY FOLDER AliceVision
 )
 
-target_link_libraries(aliceVision_multiview
-  aliceVision_numeric
-  ${CERES_LIBRARIES}
+target_link_libraries(aliceVision_multiview_test_data
+  PUBLIC aliceVision_numeric
+  PRIVATE aliceVision_multiview
 )
 
 set_target_properties(aliceVision_multiview

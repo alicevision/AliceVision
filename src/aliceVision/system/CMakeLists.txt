@@ -22,10 +22,19 @@ add_library(aliceVision_system
 )
 
 set_property(TARGET aliceVision_system
-  PROPERTY FOLDER AliceVision/AliceVision
+  PROPERTY FOLDER AliceVision
 )
 
-target_link_libraries(aliceVision_system ${Boost_LIBRARIES})
+target_link_libraries(aliceVision_system
+  PUBLIC
+    ${Boost_LOG_LIBRARY}
+    ${Boost_THREAD_LIBRARY}
+    ${Boost_LOG_SETUP_LIBRARY}
+    ${Boost_DETAIL_LIBRARY}
+    ${Boost_SYSTEM_LIBRARY}
+    ${Boost_DATE_TIME_LIBRARY}
+    ${Boost_PROGRAM_OPTIONS_LIBRARY}
+)
 
 set_target_properties(aliceVision_system
   PROPERTIES SOVERSION ${ALICEVISION_VERSION_MAJOR}

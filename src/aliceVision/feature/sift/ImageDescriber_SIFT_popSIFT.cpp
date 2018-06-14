@@ -56,5 +56,21 @@ bool ImageDescriber_SIFT_popSIFT::describe(const image::Image<float>& image,
   return true;
 }
 
+void ImageDescriber_SIFT_popSIFT::resetConfiguration()
+{
+  popsift::Config config;
+  config.setOctaves(_params._numOctaves);
+  config.setLevels(_params._numScales);
+  config.setDownsampling(_params._firstOctave);
+  config.setThreshold(_params._peakThreshold);
+  config.setEdgeLimit(_params._edgeThreshold);
+  config.setNormalizationMultiplier(9); // 2^9 = 512
+  config.setNormMode(_params._rootSift ? popsift::Config::RootSift : popsift::Config::Classic);
+  config.setFilterMaxExtrema(_params._maxTotalKeypoints);
+  config.setFilterSorting(popsift::Config::LargestScaleFirst);
+
+  _popSift.reset(new PopSift(config, popsift::Config::ExtractingMode, PopSift::FloatImages));
+}
+
 } // namespace feature
 } // namespace aliceVision

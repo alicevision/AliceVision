@@ -7,6 +7,8 @@
 
 #include "rigidTransformation3D.hpp"
 
+#include <aliceVision/robustEstimation/ACRansac.hpp>
+
 namespace aliceVision {
 namespace geometry {
 

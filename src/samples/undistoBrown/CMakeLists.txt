@@ -9,5 +9,5 @@ target_link_libraries(aliceVision_samples_undistoBrown
 )
 
 set_property(TARGET aliceVision_samples_undistoBrown
-  PROPERTY FOLDER AliceVision/Samples
+  PROPERTY FOLDER Samples
 )
