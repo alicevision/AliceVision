@@ -33,12 +33,14 @@ target_link_libraries(aliceVision_localization
     aliceVision_feature
     aliceVision_geometry
     aliceVision_image
+    aliceVision_matching
     aliceVision_numeric
     aliceVision_robustEstimation
     aliceVision_sfm
     aliceVision_voctree
   PRIVATE
     aliceVision_system
+    aliceVision_matchingImageCollection
     ${Boost_FILESYSTEM_LIBRARY}
 )
 
