@@ -125,8 +125,15 @@ In order to build the library with existing versions of the dependencies (e.g. s
 * For FLANN library, `FLANN_INCLUDE_DIR_HINTS` can be passed pointing to the include directory, e.g.
   `-DFLANN_INCLUDE_DIR_HINTS:PATH=/path/to/flann/1.8.4/include/`
 
-* For Eigen library, `EIGEN_INCLUDE_DIR_HINTS` can be passed pointing to the include directory, e.g.
-  `-DEIGEN_INCLUDE_DIR_HINTS:PATH=/usr/local/include/eigen3`
+* For Eigen library, `CMAKE_MODULE_PATH` should be passed pointing at the `<EigenInstallDir>/share/cmake/Modules/` directory of the Eigen installation, in which `Eigen-config.cmake` or `FindEigen3.cmake` can be found. 
+  In case only `FindEigen3.cmake` is available (e.g. Homebrew installations), an environment variable `EIGEN_ROOT_DIR` must be set pointing at Eigen install directory.
+  For example,
+  
+  `-DCMAKE_MODULE_PATH:PATH=/usr/local/Cellar/eigen/3.3.4/share/cmake/Modules/`
+
+  may require to set the environment variable if only `FindEigen3.cmake`, i.e.
+  
+  `export EIGEN_ROOT_DIR=/usr/local/Cellar/eigen/3.3.4/`
 
 * For OpenEXR library, `OPENEXR_HOME` can be passed pointing to the install directory, e.g.
   `-DOPENEXR_HOME:PATH=/path/to/openexr/install`
@@ -188,6 +195,7 @@ CMake Options
 
 * `ALICEVISION_USE_CUDA` (default: `ON`)
   Enable build with CUDA (for feature extraction and depth map computation)
+  `-DCUDA_TOOLKIT_ROOT_DIR:PATH=/usr/local/cuda-9.1` (adjust the path to your cuda installation)
 
 * `ALICEVISION_USE_POPSIFT` (default: `AUTO`)
   Enable GPU SIFT implementation.

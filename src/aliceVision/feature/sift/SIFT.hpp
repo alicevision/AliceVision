@@ -11,6 +11,7 @@
 #include <aliceVision/feature/ImageDescriber.hpp>
 #include <aliceVision/feature/regionsFactory.hpp>
 #include <aliceVision/config.hpp>
+#include <aliceVision/system/Logger.hpp>
 
 extern "C" {
 #include "nonFree/sift/vl/sift.h"

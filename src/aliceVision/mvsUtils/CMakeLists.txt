@@ -28,13 +28,16 @@ target_include_directories(aliceVision_mvsUtils
 )
 
 target_link_libraries(aliceVision_mvsUtils
-  PUBLIC aliceVision_mvsData
-         aliceVision_imageIO
-         ${Boost_FILESYSTEM_LIBRARIES}
+  PUBLIC 
+    aliceVision_mvsData
+    aliceVision_imageIO
+  PRIVATE 
+    aliceVision_system
+    ${Boost_FILESYSTEM_LIBRARY}
 )
 
 set_property(TARGET aliceVision_mvsUtils
-  PROPERTY FOLDER AliceVision/AliceVision
+  PROPERTY FOLDER AliceVision
 )
 
 install(TARGETS aliceVision_mvsUtils

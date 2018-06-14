@@ -16,6 +16,8 @@
 #include <string>
 #include <cstddef>
 #include <typeinfo>
+#include <memory>
+
 
 namespace aliceVision {
 namespace feature {

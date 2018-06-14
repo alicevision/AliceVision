@@ -9,7 +9,6 @@
 
 #include <aliceVision/numeric/numeric.hpp>
 #include <aliceVision/numeric/LMFunctor.hpp>
-#include <aliceVision/robustEstimation/ACRansac.hpp>
 
 namespace aliceVision {
 namespace geometry {

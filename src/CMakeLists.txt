@@ -27,9 +27,6 @@ function(trilean_option NAME DESCRIPTION DEFAULT_VALUE)
   endif()
 endfunction()
 
-# Enable folders in supported IDEs
-set_property(GLOBAL PROPERTY USE_FOLDERS ON)
-
 # C++11
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -37,10 +34,10 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # ==============================================================================
 # AliceVision build options
 # ==============================================================================
-option(ALICEVISION_BUILD_SHARED "Build AliceVision shared libs" OFF)
+option(ALICEVISION_BUILD_SHARED "Build AliceVision shared libs" ON)
 option(ALICEVISION_BUILD_SFM "Build AliceVision SfM part" ON)
 option(ALICEVISION_BUILD_MVS "Build AliceVision MVS part" ON)
-option(ALICEVISION_BUILD_EXAMPLES "Build AliceVision samples applications." ON)
+option(ALICEVISION_BUILD_EXAMPLES "Build AliceVision samples applications." OFF)
 option(ALICEVISION_BUILD_COVERAGE "Enable code coverage generation (gcc only)" OFF)
 trilean_option(ALICEVISION_BUILD_DOC "Build AliceVision documentation" AUTO)
 
@@ -68,8 +65,8 @@ if(NOT CMAKE_BUILD_TYPE AND NOT MSVC)
 endif()
 
 # Set build path
-set(EXECUTABLE_OUTPUT_PATH "${ALICEVISION_ROOT}/${CMAKE_SYSTEM_NAME}-${CMAKE_SYSTEM_PROCESSOR}-${CMAKE_BUILD_TYPE}")
-set(LIBRARY_OUTPUT_PATH "${ALICEVISION_ROOT}/${CMAKE_SYSTEM_NAME}-${CMAKE_SYSTEM_PROCESSOR}-${CMAKE_BUILD_TYPE}")
+set(EXECUTABLE_OUTPUT_PATH "${ALICEVISION_ROOT}/${CMAKE_SYSTEM_NAME}-${CMAKE_SYSTEM_PROCESSOR}")
+set(LIBRARY_OUTPUT_PATH "${ALICEVISION_ROOT}/${CMAKE_SYSTEM_NAME}-${CMAKE_SYSTEM_PROCESSOR}")
 
 # Windows specific defines
 if(WIN32)
@@ -82,7 +79,8 @@ if(WIN32)
 endif()
 
 # Folders
-SET_PROPERTY(GLOBAL PROPERTY USE_FOLDERS ON)
+set_property(GLOBAL PROPERTY USE_FOLDERS ON)
+set_property(GLOBAL PROPERTY PREDEFINED_TARGETS_FOLDER "_CMakePredefinedTargets")
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 
@@ -114,7 +112,7 @@ macro(UNIT_TEST NAMESPACE NAME EXTRA_LIBS)
   if(ALICEVISION_BUILD_TESTS)
     add_executable(${NAMESPACE}_test_${NAME} ${NAME}_test.cpp)
 
-    set_property(TARGET ${NAMESPACE}_test_${NAME} PROPERTY FOLDER AliceVision/test)
+    set_property(TARGET ${NAMESPACE}_test_${NAME} PROPERTY FOLDER Test)
 
     target_link_libraries(${NAMESPACE}_test_${NAME}
                           ${EXTRA_LIBS} # Extra libs MUST be first.
@@ -124,6 +122,22 @@ macro(UNIT_TEST NAMESPACE NAME EXTRA_LIBS)
              COMMAND $<TARGET_FILE:${NAMESPACE}_test_${NAME}> --log_level=all)
   endif()
 endmacro()
+
+# ==============================================================================
+# MACRO utility
+# ==============================================================================
+macro(add_target_properties _target _name)
+	set(_properties)
+	foreach(_prop ${ARGN})
+		set(_properties "${_properties} ${_prop}")
+	endforeach(_prop)
+	get_target_property(_old_properties ${_target} ${_name})
+	if(NOT _old_properties)
+		# in case it's NOTFOUND
+		set(_old_properties)
+	endif(NOT _old_properties)
+	set_target_properties(${_target} PROPERTIES ${_name} "${_old_properties} ${_properties}")
+endmacro(add_target_properties)
 
 # ==============================================================================
 # Check that submodule have been initialized and updated
@@ -246,7 +260,6 @@ endif()
 include_directories(${Boost_INCLUDE_DIRS})
 link_directories(${Boost_LIBRARY_DIRS})
 add_definitions(${Boost_DEFINITIONS})
-set(LOG_LIB ${Boost_LOG_LIBRARY} ${Boost_LOG_SETUP_LIBRARY})
 
 # ==============================================================================
 # OpenEXR
@@ -300,10 +313,8 @@ endif()
 # ==============================================================================
 # Eigen
 # ==============================================================================
-# - rely on EIGEN_INCLUDE_DIR_HINTS
-# ==============================================================================
 find_package(Eigen3 3.3 REQUIRED)
-if(Eigen3_FOUND)
+if(Eigen3_FOUND OR EIGEN3_FOUND)
   # message(FATAL_ERROR "EIGEN_INCLUDE_DIR: ${EIGEN_INCLUDE_DIR}")
   include_directories(${EIGEN_INCLUDE_DIR})
   # See https://eigen.tuxfamily.org/dox/group__TopicUnalignedArrayAssert.html
@@ -420,10 +431,10 @@ endif()
 if(ALICEVISION_BUILD_SFM)
   if(ALICEVISION_USE_INTERNAL_OSI AND ALICEVISION_USE_INTERNAL_CLP AND ALICEVISION_USE_INTERNAL_COINUTILS)
     add_subdirectory(dependencies/osi_clp/)
-    set_property(TARGET lib_clp PROPERTY FOLDER AliceVision/Dependencies/Lib_clp)
-    set_property(TARGET lib_CoinUtils PROPERTY FOLDER AliceVision/Dependencies/Lib_CoinUtils)
-    set_property(TARGET lib_Osi PROPERTY FOLDER AliceVision/Dependencies/Lib_Osi)
-    set_property(TARGET lib_OsiClpSolver PROPERTY FOLDER AliceVision/Dependencies/Lib_OsiClpSolver)
+    set_property(TARGET lib_clp PROPERTY FOLDER Dependencies/Lib_clp)
+    set_property(TARGET lib_CoinUtils PROPERTY FOLDER Dependencies/Lib_CoinUtils)
+    set_property(TARGET lib_Osi PROPERTY FOLDER Dependencies/Lib_Osi)
+    set_property(TARGET lib_OsiClpSolver PROPERTY FOLDER Dependencies/Lib_OsiClpSolver)
   endif()
 endif()
 
@@ -490,6 +501,10 @@ if(ALICEVISION_BUILD_SFM) # or ALICEVISION_BUILD_MVS
     if(Alembic_FOUND)
       set(ALICEVISION_HAVE_ALEMBIC 1)
       message(STATUS "Alembic version ${Alembic_VERSION} found.")
+      # There is a missing include dependency in Alembic cmake export.
+      add_target_properties(Alembic::Alembic PROPERTIES
+        INTERFACE_INCLUDE_DIRECTORIES "${ILMBASE_INCLUDE_DIR}"
+      )
     elseif(ALICEVISION_USE_ALEMBIC STREQUAL "ON")
       message(SEND_ERROR "Failed to find Alembic.")
     endif()

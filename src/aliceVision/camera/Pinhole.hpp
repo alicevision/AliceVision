@@ -11,6 +11,7 @@
 #include <aliceVision/camera/cameraCommon.hpp>
 #include <aliceVision/camera/IntrinsicBase.hpp>
 #include <aliceVision/geometry/Pose3.hpp>
+#include <aliceVision/multiview/projection.hpp>
 
 #include <vector>
 

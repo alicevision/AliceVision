@@ -13,7 +13,7 @@ target_link_libraries(aliceVision_exportKeypoints
 )
 
 set_property(TARGET aliceVision_exportKeypoints
-  PROPERTY FOLDER AliceVision/Software/Export
+  PROPERTY FOLDER Software/Export
 )
 
 install(TARGETS aliceVision_exportKeypoints
@@ -32,7 +32,7 @@ target_link_libraries(aliceVision_exportMatches
 )
 
 set_property(TARGET aliceVision_exportMatches
-  PROPERTY FOLDER AliceVision/Software/Export
+  PROPERTY FOLDER Software/Export
 )
 
 install(TARGETS aliceVision_exportMatches
@@ -51,7 +51,7 @@ target_link_libraries(aliceVision_exportTracks
 )
 
 set_property(TARGET aliceVision_exportTracks
-  PROPERTY FOLDER AliceVision/Software/Export
+  PROPERTY FOLDER Software/Export
 )
 
 install(TARGETS aliceVision_exportTracks
@@ -71,7 +71,7 @@ target_link_libraries(aliceVision_exportUndistortedImages
 )
 
 set_property(TARGET aliceVision_exportUndistortedImages
-  PROPERTY FOLDER AliceVision/Software/Export
+  PROPERTY FOLDER Software/Export
 )
 
 install(TARGETS aliceVision_exportUndistortedImages
@@ -91,7 +91,7 @@ target_link_libraries(aliceVision_exportPMVS
 )
 
 set_property(TARGET aliceVision_exportPMVS
-  PROPERTY FOLDER AliceVision/Software/Export
+  PROPERTY FOLDER Software/Export
 )
 
 install(TARGETS aliceVision_exportPMVS
@@ -113,7 +113,7 @@ if(ALICEVISION_HAVE_ALEMBIC) # maya can read alembic file
   )
 
   set_property(TARGET aliceVision_exportMayaMVG
-    PROPERTY FOLDER AliceVision/Software/Export
+    PROPERTY FOLDER Software/Export
   )
 
   install(TARGETS aliceVision_exportMayaMVG
@@ -134,7 +134,7 @@ target_link_libraries(aliceVision_exportMVE2
 )
 
 set_property(TARGET aliceVision_exportMVE2
-  PROPERTY FOLDER AliceVision/Software/Export
+  PROPERTY FOLDER Software/Export
 )
 
 install(TARGETS aliceVision_exportMVE2
@@ -154,7 +154,7 @@ target_link_libraries(aliceVision_exportMeshlab
 )
 
 set_property(TARGET aliceVision_exportMeshlab
-  PROPERTY FOLDER AliceVision/Software/Export
+  PROPERTY FOLDER Software/Export
 )
 
 install(TARGETS aliceVision_exportMeshlab
@@ -174,7 +174,7 @@ target_link_libraries(aliceVision_exportMVSTexturing
 )
 
 set_property(TARGET aliceVision_exportMVSTexturing
-  PROPERTY FOLDER AliceVision/Software/Export
+  PROPERTY FOLDER Software/Export
 )
 
 install(TARGETS aliceVision_exportMVSTexturing
@@ -194,7 +194,7 @@ target_link_libraries(aliceVision_exportMatlab
 )
 
 set_property(TARGET aliceVision_exportMatlab
-  PROPERTY FOLDER AliceVision/Software/Export
+  PROPERTY FOLDER Software/Export
 )
 
 install(TARGETS aliceVision_exportMatlab
@@ -213,7 +213,7 @@ target_link_libraries(aliceVision_exportCameraFrustums
 )
 
 set_property(TARGET aliceVision_exportCameraFrustums
-  PROPERTY FOLDER AliceVision/Software/Export
+  PROPERTY FOLDER Software/Export
 )
 
 install(TARGETS aliceVision_exportCameraFrustums

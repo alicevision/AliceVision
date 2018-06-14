@@ -11,5 +11,5 @@ target_link_libraries(aliceVision_samples_robustFundamentalGuided
 )
 
 set_property(TARGET aliceVision_samples_robustFundamentalGuided
-  PROPERTY FOLDER AliceVision/Samples
+  PROPERTY FOLDER Samples
 )

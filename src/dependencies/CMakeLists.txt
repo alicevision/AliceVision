@@ -18,10 +18,10 @@ endif(UNIX)
 if(DEFINED ALICEVISION_USE_INTERNAL_LEMON)
   add_subdirectory(lemon)
   set_property(TARGET lemon
-    PROPERTY FOLDER AliceVision/Dependencies/Lemon
+    PROPERTY FOLDER Dependencies/Lemon
   )
   set_property(TARGET check
-    PROPERTY FOLDER AliceVision/Dependencies/Lemon
+    PROPERTY FOLDER Dependencies/Lemon
   )
 endif()
 
@@ -33,7 +33,7 @@ if(DEFINED ALICEVISION_USE_INTERNAL_FLANN)
   set(FLANN_INCLUDE_INSTALL_DIR ${CMAKE_INSTALL_PREFIX}/include/aliceVision/dependencies/flann/src/cpp)
   add_subdirectory(flann)
   set_property(TARGET flann_cpp_s
-    PROPERTY FOLDER AliceVision/Dependencies/Flann
+    PROPERTY FOLDER Dependencies/Flann
   )
 endif()
 

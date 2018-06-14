@@ -11,5 +11,5 @@ target_link_libraries(aliceVision_samples_robustHomography
 )
 
 set_property(TARGET aliceVision_samples_robustHomography
-  PROPERTY FOLDER AliceVision/Samples
+  PROPERTY FOLDER Samples
 )
