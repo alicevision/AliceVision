@@ -41,20 +41,31 @@ inline void NNdistanceRatio
   DataInputIterator last,  // distance end
   int NN, // Number of neighbor in iterator sequence (minimum required 2)
   std::vector<int> & vec_ratioOkIndex, // output (index that respect NN dist Ratio)
-  float fratio = 0.6f) // ratio value
+  float fratio = 0.6f, // ratio value
+  std::vector<float> * vec_distanceRatio = nullptr // output (ratio between best and second best matches: valid ratio (< fratio) only) 
+) 
 {
   assert( NN >= 2);
 
   const size_t n = std::distance(first,last);
   vec_ratioOkIndex.clear();
   vec_ratioOkIndex.reserve(n/NN);
+  if (vec_distanceRatio != nullptr)
+  {
+    vec_distanceRatio->clear();
+    vec_distanceRatio->reserve(n/NN);
+  }
   DataInputIterator iter = first;
   for(size_t i=0; i < n/NN; ++i, std::advance(iter, NN))
   {
     DataInputIterator iter2 = iter;
     std::advance(iter2, 1);
     if ( (*iter) < fratio * (*iter2))
+    {
       vec_ratioOkIndex.push_back(static_cast<int>(i));
+      if (vec_distanceRatio != nullptr)
+        vec_distanceRatio->push_back((*iter)/(*iter2)); 
+    }
   }
 }
 

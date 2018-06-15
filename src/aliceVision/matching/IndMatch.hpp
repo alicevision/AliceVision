@@ -26,6 +26,7 @@ struct IndMatch
 {
   IndMatch(
           IndexT i = 0, IndexT j = 0
+          , float distanceRatio = 0.0
 #ifdef ALICEVISION_DEBUG_MATCHING
           , float distance = 0.0
 #endif
@@ -33,6 +34,7 @@ struct IndMatch
   {
     _i = i;
     _j = j;
+    _distanceRatio = distanceRatio;
 #ifdef ALICEVISION_DEBUG_MATCHING
     _distance = distance;
 #endif
@@ -61,6 +63,7 @@ struct IndMatch
   }
 
   IndexT _i, _j;  // Left, right index
+  float _distanceRatio; // Ratio between the best and second best matches 
 #ifdef ALICEVISION_DEBUG_MATCHING
   float _distance;
 #endif

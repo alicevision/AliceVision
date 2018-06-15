@@ -8,6 +8,8 @@
 #include "aliceVision/matching/IndMatch.hpp"
 #include "aliceVision/matching/io.hpp"
 
+#include <boost/filesystem/operations.hpp>
+
 #define BOOST_TEST_MODULE IndMatch
 #include <boost/test/included/unit_test.hpp>
 #include <boost/test/floating_point_comparison.hpp>
@@ -18,24 +20,30 @@ using namespace aliceVision::feature;
 
 BOOST_AUTO_TEST_CASE(IndMatch_IO)
 {
+  const std::string testFolder = "matchingTest";
+  boost::filesystem::create_directory(testFolder);
   {
     std::set<IndexT> viewsKeys;
     PairwiseMatches matches;
 
     // Test save + load of empty data
-    BOOST_CHECK(Save(matches, ".", "test_txt", "txt", false));
-    BOOST_CHECK(Load(matches, viewsKeys, {"."}, {},"test_txt"));
+    BOOST_CHECK(Save(matches, testFolder, "txt", false));
+    BOOST_CHECK(Load(matches, viewsKeys, {testFolder}, {}));
     BOOST_CHECK_EQUAL(0, matches.size());
   }
+  boost::filesystem::remove_all(testFolder);
+  boost::filesystem::create_directory(testFolder);
   {
     std::set<IndexT> viewsKeys;
     PairwiseMatches matches;
 
     // Test save + load of empty data
-    BOOST_CHECK(Save(matches, ".", "test_txt_2", "txt", true));
-    BOOST_CHECK(!Load(matches, viewsKeys, {"."}, {}, "test_text_2"));
+    BOOST_CHECK(Save(matches, testFolder, "txt", true));
+    BOOST_CHECK(!Load(matches, viewsKeys, {testFolder}, {}));
     BOOST_CHECK_EQUAL(0, matches.size());
   }
+  boost::filesystem::remove_all(testFolder);
+  boost::filesystem::create_directory(testFolder);
   {
     std::set<IndexT> viewsKeys = {0, 1, 2};
     PairwiseMatches matches;
@@ -43,15 +51,17 @@ BOOST_AUTO_TEST_CASE(IndMatch_IO)
     matches[std::make_pair(0,1)][EImageDescriberType::UNKNOWN] = {{0,0},{1,1}};
     matches[std::make_pair(1,2)][EImageDescriberType::UNKNOWN] = {{0,0},{1,1}, {2,2}};
 
-    BOOST_CHECK(Save(matches, ".", "test_txt_3", "txt", false));
+    BOOST_CHECK(Save(matches, testFolder, "txt", false));
     matches.clear();
-    BOOST_CHECK(Load(matches, viewsKeys, {"."}, {EImageDescriberType::UNKNOWN}, "test_txt_3"));
+    BOOST_CHECK(Load(matches, viewsKeys, {testFolder}, {EImageDescriberType::UNKNOWN}));
     BOOST_CHECK_EQUAL(2, matches.size());
     BOOST_CHECK_EQUAL(1, matches.count(std::make_pair(0,1)));
     BOOST_CHECK_EQUAL(1, matches.count(std::make_pair(1,2)));
     BOOST_CHECK_EQUAL(2, matches.at(std::make_pair(0,1)).at(EImageDescriberType::UNKNOWN).size());
     BOOST_CHECK_EQUAL(3, matches.at(std::make_pair(1,2)).at(EImageDescriberType::UNKNOWN).size());
   }
+  boost::filesystem::remove_all(testFolder);
+  boost::filesystem::create_directory(testFolder);
   {
     std::set<IndexT> viewsKeys = {0, 1, 2};
     PairwiseMatches matches;
@@ -59,14 +69,15 @@ BOOST_AUTO_TEST_CASE(IndMatch_IO)
     matches[std::make_pair(0,1)][EImageDescriberType::UNKNOWN] = {{0,0},{1,1}};
     matches[std::make_pair(1,2)][EImageDescriberType::UNKNOWN] = {{0,0},{1,1}, {2,2}};
 
-    BOOST_CHECK(Save(matches, ".", "test_txt_4", "txt", true));
-    BOOST_CHECK(Load(matches, viewsKeys, {"."}, {EImageDescriberType::UNKNOWN}, "test_txt_4"));
+    BOOST_CHECK(Save(matches, testFolder, "txt", true));
+    BOOST_CHECK(Load(matches, viewsKeys, {testFolder}, {EImageDescriberType::UNKNOWN}));
     BOOST_CHECK_EQUAL(2, matches.size());
     BOOST_CHECK_EQUAL(1, matches.count(std::make_pair(0,1)));
     BOOST_CHECK_EQUAL(1, matches.count(std::make_pair(1,2)));
     BOOST_CHECK_EQUAL(2, matches.at(std::make_pair(0,1)).at(EImageDescriberType::UNKNOWN).size());
     BOOST_CHECK_EQUAL(3, matches.at(std::make_pair(1,2)).at(EImageDescriberType::UNKNOWN).size());
   }
+  boost::filesystem::remove_all(testFolder);
 }
 
 BOOST_AUTO_TEST_CASE(IndMatch_DuplicateRemoval_NoRemoval)

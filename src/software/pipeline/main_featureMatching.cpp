@@ -20,6 +20,8 @@
 #include <aliceVision/matchingImageCollection/GeometricFilterMatrix_F_AC.hpp>
 #include <aliceVision/matchingImageCollection/GeometricFilterMatrix_E_AC.hpp>
 #include <aliceVision/matchingImageCollection/GeometricFilterMatrix_H_AC.hpp>
+#include <aliceVision/matchingImageCollection/GeometricFilterMatrix_HGrowing.hpp>
+#include <aliceVision/matchingImageCollection/geometricFilterType.hpp>
 #include <aliceVision/matching/pairwiseAdjacencyDisplay.hpp>
 #include <aliceVision/matching/io.hpp>
 #include <aliceVision/system/Timer.hpp>
@@ -46,13 +48,6 @@ using namespace std;
 
 namespace po = boost::program_options;
 namespace fs = boost::filesystem;
-
-enum EGeometricModel
-{
-  FUNDAMENTAL_MATRIX = 0,
-  ESSENTIAL_MATRIX   = 1,
-  HOMOGRAPHY_MATRIX  = 2
-};
 
 void getStatsMap(const PairwiseMatches& map)
 {
@@ -95,7 +90,7 @@ int main(int argc, char **argv)
   // user optional parameters
 
   std::string featuresFolder = "";
-  std::string geometricModel = "f";
+  std::string geometricModel = matchingImageCollection::EGeometricFilterType_enumToString(matchingImageCollection::EGeometricFilterType::FUNDAMENTAL_MATRIX);
   std::string describerTypesName = feature::EImageDescriberType_enumToString(feature::EImageDescriberType::SIFT);
   float distRatio = 0.8f;
   std::string predefinedPairList;
@@ -131,10 +126,7 @@ int main(int argc, char **argv)
   po::options_description optionalParams("Optional parameters");
   optionalParams.add_options()
     ("geometricModel,g", po::value<std::string>(&geometricModel)->default_value(geometricModel),
-      "Pairwise correspondences filtering thanks to robust model estimation:\n"
-      "* f: fundamental matrix\n"
-      "* e: essential matrix\n"
-      "* h: homography matrix")
+      matchingImageCollection::EGeometricFilterType_informations().c_str())
     ("describerTypes,d", po::value<std::string>(&describerTypesName)->default_value(describerTypesName),
       feature::EImageDescriberType_informations().c_str())
     ("featuresFolder,f", po::value<std::string>(&featuresFolder)->default_value(featuresFolder),
@@ -239,30 +231,6 @@ int main(int argc, char **argv)
     return EXIT_FAILURE;
   }
 
-  EGeometricModel geometricModelToCompute = FUNDAMENTAL_MATRIX;
-  if(geometricModel.size() != 1)
-  {
-      ALICEVISION_LOG_ERROR("Unknown geometric model: " + geometricModel);
-      return EXIT_FAILURE;
-  }
-
-  const std::string geometricMode = std::string(1, std::tolower(geometricModel[0]));
-  switch(geometricMode[0])
-  {
-    case 'f':
-      geometricModelToCompute = FUNDAMENTAL_MATRIX;
-      break;
-    case 'e':
-      geometricModelToCompute = ESSENTIAL_MATRIX;
-      break;
-    case 'h':
-      geometricModelToCompute = HOMOGRAPHY_MATRIX;
-      break;
-    default:
-      ALICEVISION_LOG_ERROR("Unknown geometric model: " + geometricMode);
-      return EXIT_FAILURE;
-  }
-
   // Feature matching
   // a. Load SfMData Views & intrinsics data
   // b. Compute putative descriptor matches
@@ -326,7 +294,7 @@ int main(int argc, char **argv)
   ALICEVISION_LOG_INFO("There are " + std::to_string(sfmData.GetViews().size()) + " views and " + std::to_string(pairs.size()) + " image pairs.");
 
   // load the corresponding view regions
-  RegionsPerView regionPerView;;
+  RegionsPerView regionPerView;
   if(!sfm::loadRegionsPerView(regionPerView, sfmData, featuresFolder, describerTypes, filter))
   {
     ALICEVISION_LOG_ERROR("Invalid regions in '" + sfmDataFilename + "'");
@@ -355,6 +323,21 @@ int main(int argc, char **argv)
     return rangeSize ? EXIT_SUCCESS : EXIT_FAILURE;
   }
 
+  if (matchingImageCollection::EGeometricFilterType_stringToEnum(geometricModel) == matchingImageCollection::HOMOGRAPHY_GROWING)
+  {
+    // sort putative matches according to their Lowe ratio 
+    // This is suggested by [F.Srajer, 2016]: the matches used to be the seeds of the homographies growing are chosen according 
+    // to the putative matches order. This modification should improve recall.
+    for(auto& imgPair: mapPutativesMatches) 
+    {
+      for(auto& descType: imgPair.second) 
+      { 
+        IndMatches & matches = descType.second; 
+        sortMatches_byDistanceRatio(matches); 
+      } 
+    }
+  }
+
   ALICEVISION_LOG_INFO(std::to_string(mapPutativesMatches.size()) << " putative image pair matches");
 
   for(const auto& imageMatch: mapPutativesMatches)
@@ -362,7 +345,7 @@ int main(int argc, char **argv)
 
   // export putative matches
   if(savePutativeMatches)
-    Save(mapPutativesMatches, matchesFolder, "putative", fileExtension, matchFilePerImage);
+    Save(mapPutativesMatches, matchesFolder, "putative." + fileExtension, matchFilePerImage);
 
   ALICEVISION_LOG_INFO("Task (Regions Matching) done in (s): " + std::to_string(timer.elapsed()));
 
@@ -404,12 +387,12 @@ int main(int argc, char **argv)
   GeometricFilter geometricFilter(&sfmData, regionPerView);
 
   timer.reset();
-  ALICEVISION_LOG_INFO("Geometric filtering");
+  ALICEVISION_LOG_INFO("Geometric filtering [method: " << matchingImageCollection::longNotation(geometricModel) << "]" );
 
   matching::PairwiseMatches map_GeometricMatches;
-  switch(geometricModelToCompute)
+  switch(matchingImageCollection::EGeometricFilterType_stringToEnum(geometricModel))
   {
-    case HOMOGRAPHY_MATRIX:
+    case matchingImageCollection::HOMOGRAPHY_MATRIX:
     {
       const bool bGeometric_only_guided_matching = true;
       geometricFilter.Robust_model_estimation(GeometricFilterMatrix_H_AC(std::numeric_limits<double>::infinity(), maxIteration),
@@ -418,14 +401,21 @@ int main(int argc, char **argv)
       map_GeometricMatches = geometricFilter.Get_geometric_matches();
     }
     break;
-    case FUNDAMENTAL_MATRIX:
+    case matchingImageCollection::HOMOGRAPHY_GROWING:
+    {
+      geometricFilter.Robust_model_estimation(GeometricFilterMatrix_HGrowing(std::numeric_limits<double>::infinity(), maxIteration),
+        mapPutativesMatches, guidedMatching);
+      map_GeometricMatches = geometricFilter.Get_geometric_matches();
+    }
+    break;
+    case matchingImageCollection::FUNDAMENTAL_MATRIX:
     {
       geometricFilter.Robust_model_estimation(GeometricFilterMatrix_F_AC(geometricErrorMax, maxIteration, geometricEstimator),
         mapPutativesMatches, guidedMatching);
       map_GeometricMatches = geometricFilter.Get_geometric_matches();
     }
     break;
-    case ESSENTIAL_MATRIX:
+    case matchingImageCollection::ESSENTIAL_MATRIX:
     {
       geometricFilter.Robust_model_estimation(GeometricFilterMatrix_E_AC(std::numeric_limits<double>::infinity(), maxIteration),
         mapPutativesMatches, guidedMatching);
@@ -452,6 +442,9 @@ int main(int argc, char **argv)
         map_GeometricMatches.erase(*iter);
       }
     }
+    break;
+    case matchingImageCollection::NO_FILTERING:
+        map_GeometricMatches = mapPutativesMatches;
     break;
   }
 
@@ -484,7 +477,7 @@ int main(int argc, char **argv)
         {
           // sorting function:
           aliceVision::matching::IndMatches outMatches;
-          sortMatches(inputMatches, *lRegions, *rRegions, outMatches);
+          sortMatches_byFeaturesScale(inputMatches, *lRegions, *rRegions, outMatches);
 
           if(useGridSort)
           {
@@ -516,7 +509,7 @@ int main(int argc, char **argv)
   // export geometric filtered matches
 
   ALICEVISION_LOG_INFO("Save geometric matches.");
-  Save(finalMatches, matchesFolder, geometricMode, fileExtension, matchFilePerImage);
+  Save(finalMatches, matchesFolder, fileExtension, matchFilePerImage);
   ALICEVISION_LOG_INFO("Task done in (s): " + std::to_string(timer.elapsed()));
 
   // d. Export some statistics

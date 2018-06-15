@@ -17,7 +17,8 @@
 namespace aliceVision {
 namespace feature {
 
-std::string describerTypeColor(const feature::EImageDescriberType descType )
+
+std::string describerTypeColor(feature::EImageDescriberType descType )
 {
   switch(descType)
   {
@@ -56,6 +57,132 @@ float getRadiusEstimate(const std::pair<size_t,size_t> & imgSize)
 float getStrokeEstimate(const std::pair<size_t,size_t> & imgSize)
 {
   return std::max(std::max(imgSize.first, imgSize.second) / float(2200), 2.0f);
+}
+
+void drawMatchesSideBySide(const std::string& imagePathLeft,
+                           const std::pair<size_t,size_t>& imageSizeLeft,
+                           const std::vector<feature::SIOPointFeature>& keypointsLeft,
+                           const std::string& imagePathRight,
+                           const std::pair<size_t,size_t>& imageSizeRight,
+                           const std::vector<feature::SIOPointFeature>& keypointsRight,
+                           const matching::IndMatches& matches,
+                           const std::string &outputSVGPath)
+{
+  svg::svgDrawer svgStream(imageSizeLeft.first + imageSizeRight.first,
+                           std::max(imageSizeLeft.second, imageSizeRight.second));
+  const std::size_t offset = imageSizeLeft.first;
+  svgStream.drawImage(imagePathLeft, imageSizeLeft.first, imageSizeLeft.second);
+  svgStream.drawImage(imagePathRight, imageSizeRight.first, imageSizeRight.second, offset);
+
+  const float radiusLeft = getRadiusEstimate(imageSizeLeft);
+  const float radiusRight = getRadiusEstimate(imageSizeRight);
+  const float strokeLeft = getStrokeEstimate(imageSizeLeft);
+  const float strokeRight = getStrokeEstimate(imageSizeRight);
+  const std::string color = "green";
+  const svg::svgStyle lineStyle = svg::svgStyle().stroke(color, std::min(strokeRight, strokeLeft));
+  const svg::svgStyle leftStyle = svg::svgStyle().stroke(color, strokeLeft);
+  const svg::svgStyle rightStyle = svg::svgStyle().stroke(color, strokeRight);
+
+
+  for (const matching::IndMatch &m : matches)
+  {
+    //Get back linked feature, draw a circle and link them by a line
+    const feature::PointFeature &L = keypointsLeft[m._i];
+    const feature::PointFeature &R = keypointsRight[m._j];
+    const float xRight = R.x() + offset;
+
+    svgStream.drawLine(L.x(), L.y(), xRight, R.y(), lineStyle);
+    svgStream.drawCircle(L.x(), L.y(), radiusLeft, leftStyle);
+    svgStream.drawCircle(xRight, R.y(), radiusRight, rightStyle);
+  }
+
+
+  std::ofstream svgFile(outputSVGPath);
+  if (!svgFile.is_open())
+  {
+    ALICEVISION_CERR("Unable to open file " + outputSVGPath);
+    return;
+  }
+  svgFile << svgStream.closeSvgFile().str();
+  if (!svgFile.good())
+  {
+    ALICEVISION_CERR("Something wrong while writing file " + outputSVGPath);
+    return;
+  }
+  svgFile.close();
+}
+
+void drawHomographyMatches(const std::string& imagePathLeft,
+                           const std::pair<size_t,size_t>& imageSizeLeft,
+                           const std::vector<feature::SIOPointFeature>& siofeatures_I,
+                           const std::string& imagePathRight,
+                           const std::pair<size_t,size_t>& imageSizeRight,
+                           const std::vector<feature::SIOPointFeature>& siofeatures_J,
+                           const std::vector<std::pair<Mat3, matching::IndMatches>>& homographiesAndMatches,
+                           const matching::IndMatches& putativeMatches,
+                           const std::string& outFilename)
+{
+  const auto& colors = feature::sixteenColors;
+
+  svg::svgDrawer svgStream(imageSizeLeft.first + imageSizeRight.first,
+                           std::max(imageSizeLeft.second, imageSizeRight.second));
+  const std::size_t offset = imageSizeLeft.first;
+
+  svgStream.drawImage(imagePathLeft, imageSizeLeft.first, imageSizeLeft.second);
+  svgStream.drawImage(imagePathRight, imageSizeRight.first, imageSizeRight.second, offset);
+
+// draw little white dots representing putative matches
+  for (const auto& match : putativeMatches)
+  {
+    const float radius{1.f};
+    const float strokeSize{2.f};
+    const feature::SIOPointFeature &fI = siofeatures_I.at(match._i);
+    const feature::SIOPointFeature &fJ = siofeatures_J.at(match._j);
+    const svg::svgStyle style = svg::svgStyle().stroke("white", strokeSize);
+
+    svgStream.drawCircle(fI.x(), fI.y(), radius, style);
+    svgStream.drawCircle(fJ.x() + offset, fJ.y(), radius, style);
+  }
+
+  {
+    // for each homography draw the associated matches in a different color
+    std::size_t iH{0};
+    const float radius{5.f};
+    const float strokeSize{5.f};
+    for (const auto &currRes : homographiesAndMatches)
+    {
+      const auto &bestMatchesId = currRes.second;
+      // 0 < iH <= 8: colored; iH > 8  are white (not enough colors)
+      const std::string color = (iH < colors.size()) ? colors.at(iH) : "grey";
+
+      for (const auto &match : bestMatchesId)
+      {
+        const feature::SIOPointFeature &fI = siofeatures_I.at(match._i);
+        const feature::SIOPointFeature &fJ = siofeatures_J.at(match._j);
+
+        const svg::svgStyle style = svg::svgStyle().stroke(color, strokeSize);
+
+        svgStream.drawCircle(fI.x(), fI.y(), radius, style);
+        svgStream.drawCircle(fJ.x() + offset, fJ.y(), radius, style);
+      }
+      ++iH;
+    }
+  }
+
+  std::ofstream svgFile(outFilename);
+  if(!svgFile.is_open())
+  {
+    ALICEVISION_CERR("Unable to open file "+outFilename);
+    return;
+  }
+  svgFile << svgStream.closeSvgFile().str();
+  if(!svgFile.good())
+  {
+    ALICEVISION_CERR("Something wrong happened while writing file "+outFilename);
+    return;
+  }
+  svgFile.close();
+
 }
 
 void saveMatches2SVG(const std::string &imagePathLeft,
@@ -133,6 +260,66 @@ void saveKeypoints2SVG(const std::string &inputImagePath,
   std::ofstream svgFile( outputSVGPath );
   svgFile << svgStream.closeSvgFile().str();
   svgFile.close();  
+}
+
+/**
+ * @brief It saves a svg file containing an image (as linked image) and its detected
+ * features.
+ *
+ * @param[in] imagePathLeft The full path to the left image. The image is only
+ * saved as a link, no image data is stored in the svg.
+ * @param[in] imageSizeLeft The size of the image <width,height>.
+ * @param[in] keypointsLeft The keypoints of the left image.
+ * @param[in] imagePathRight The full path to the left image. The image is only
+ * saved as a link, no image data is stored in the svg.
+ * @param[in] imageSizeRight The size of the image <width,height>.
+ * @param[in] keypointsRight The keypoints of the right image.
+ * @param[in] richKeypoint Draw rich keypoints with a circle proportional to the
+ * octave in which the point has been detected.
+ */
+void drawKeypointsSideBySide(const std::string&imagePathLeft,
+                             const std::pair<size_t,size_t>& imageSizeLeft,
+                             const std::vector<feature::SIOPointFeature>& keypointsLeft,
+                             const std::string &imagePathRight,
+                             const std::pair<size_t,size_t>& imageSizeRight,
+                             const std::vector<feature::SIOPointFeature>& keypointsRight,
+                             const std::string &outputSVGPath,
+                             bool richKeypoint)
+{
+  svg::svgDrawer svgStream( imageSizeLeft.first + imageSizeRight.first, std::max(imageSizeLeft.second, imageSizeRight.second));
+  const std::size_t offset = imageSizeLeft.first;
+  svgStream.drawImage(imagePathLeft, imageSizeLeft.first, imageSizeLeft.second);
+  svgStream.drawImage(imagePathRight, imageSizeRight.first, imageSizeRight.second, offset);
+
+  const float radiusLeft = getRadiusEstimate(imageSizeLeft);
+  const float radiusRight = getRadiusEstimate(imageSizeRight);
+  const float strokeLeft = getStrokeEstimate(imageSizeLeft);
+  const float strokeRight = getStrokeEstimate(imageSizeRight);
+  const svg::svgStyle styleLeft = svg::svgStyle().stroke("green", strokeLeft);
+  const svg::svgStyle styleRight = svg::svgStyle().stroke("green", strokeRight);
+
+  for(const auto& kpt : keypointsLeft)
+  {
+    svgStream.drawCircle(kpt.x(), kpt.y(), (richKeypoint) ? kpt.scale()*radiusLeft : radiusLeft, styleLeft);
+  }
+  for(const auto& kpt : keypointsRight)
+  {
+    svgStream.drawCircle(kpt.x()+offset, kpt.y(), (richKeypoint) ? kpt.scale()*radiusRight : radiusRight, styleRight);
+  }
+
+  std::ofstream svgFile(outputSVGPath);
+  if(!svgFile.is_open())
+  {
+    ALICEVISION_CERR("Unable to open file " + outputSVGPath);
+    return;
+  }
+  svgFile << svgStream.closeSvgFile().str();
+  if(!svgFile.good())
+  {
+    ALICEVISION_CERR("Something wrong while writing file " + outputSVGPath);
+    return;
+  }
+  svgFile.close();
 }
 
 void saveFeatures2SVG(const std::string &inputImagePath,
@@ -402,6 +589,66 @@ void saveMatchesAsMotion(const std::string &imagePath,
   }
   std::ofstream svgFile(outputSVGPath.c_str());
   svgFile << svgStream.closeSvgFile().str();
+  svgFile.close();
+}
+
+void saveMatchesAsMotion(const std::string &imagePath,
+                         const std::pair<size_t, size_t> & imageSize,
+                         const std::vector<feature::SIOPointFeature> &keypoints,
+                         const std::vector<feature::SIOPointFeature> &otherKeypoints,
+                         const std::vector<std::pair<Mat3, matching::IndMatches>>& homographiesAndMatches,
+                         const std::string &outputSVGPath,
+                         bool left,
+                         bool richKeypoint)
+{
+  svg::svgDrawer svgStream(imageSize.first, imageSize.second);
+  svgStream.drawImage(imagePath, imageSize.first, imageSize.second);
+
+  const float radius = getRadiusEstimate(imageSize);
+  const float strokeWidth = getStrokeEstimate(imageSize);
+
+  std::size_t count{0};
+  const std::size_t numMaxColor{sixteenColors.size()};
+
+  for(const auto& h : homographiesAndMatches)
+  {
+    const auto& matches = h.second;
+    const auto strokeColor = sixteenColors[count++ % numMaxColor];
+    const svg::svgStyle lineStyle = svg::svgStyle().stroke(strokeColor, strokeWidth);
+    const svg::svgStyle otherStyle = svg::svgStyle().stroke(strokeColor, 2.f);
+
+    for (const auto& match : matches)
+    {
+      //Get back linked feature, draw a circle and link them by a line
+      const auto L = keypoints[match._i];
+      const auto R = otherKeypoints[match._j];
+      if(left)
+      {
+        svgStream.drawLine(L.x(), L.y(), R.x(), R.y(), lineStyle);
+        svgStream.drawCircle(L.x(), L.y(), (richKeypoint) ? L.scale()*radius : radius, otherStyle);
+        svgStream.drawCircle(R.x(), R.y(), (richKeypoint) ? R.scale()*radius : radius, lineStyle);
+      }
+      else
+      {
+        svgStream.drawLine(L.x(), L.y(), R.x(), R.y(), lineStyle);
+        svgStream.drawCircle(R.x(), R.y(), (richKeypoint) ? R.scale()*radius : radius, otherStyle);
+        svgStream.drawCircle(L.x(), L.y(), (richKeypoint) ? L.scale()*radius : radius, lineStyle);
+
+      }
+    }
+  }
+  std::ofstream svgFile(outputSVGPath);
+  if(!svgFile.is_open())
+  {
+    ALICEVISION_CERR("Unable to open file " + outputSVGPath);
+    return;
+  }
+  svgFile << svgStream.closeSvgFile().str();
+  if(!svgFile.good())
+  {
+    ALICEVISION_CERR("Something wrong while writing file " + outputSVGPath);
+    return;
+  }
   svgFile.close();
 }
 
