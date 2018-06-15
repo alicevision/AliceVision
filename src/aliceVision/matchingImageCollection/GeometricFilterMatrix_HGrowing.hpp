@@ -163,28 +163,36 @@ struct GeometricFilterMatrix_HGrowing : public GeometricFilterMatrix
    * - Estimated homographies:      [0(h0) 1(h2) 2(h1) 3(nan) 4(h2) 5(h0) 6(h1) 7(nan)]
    * - Sorted matches               [0(h0) 5(h0) 2(h1) 6(h1) 1(h2) 4(h2)]
    * - out_geometricInliersPerType  [0 5 2 6 1 4]
+   *
+   * To draw & save matches groups into .svg images:
+   *     enter an existing folder in the following variable ('outputSvgDir').
+   *  File format: <nbHMatches>hmatches_<viewId_I>_<viewId_J>_<descType>.svg
+   *  Little white dots = putative matches
+   *  Colored dots = geometrically verified matches (1 color per estimated plane)
+   *
+   *
+   * @tparam Regions_or_Features_ProviderT The Region provider.
+   * @param sfmData The sfmData containing the info about the scene.
+   * @param regionsPerView The region provider.
+   * @param pairIndex The pair of view for which the geometric validation is computed.
+   * @param putativeMatchesPerType The putative matches for the considerec views.
+   * @param out_geometricInliersPerType The filtered matches validated by the growing homography approach.
+   * @param[in] outputSvgDir An existing folder where to save the images.
+   * @return The estimation status.
    */
   template<typename Regions_or_Features_ProviderT>
   EstimationStatus geometricEstimation(const sfm::SfMData * sfmData,
                                        const Regions_or_Features_ProviderT &regionsPerView,
                                        const Pair &pairIndex,
                                        const matching::MatchesPerDescType &putativeMatchesPerType,
-                                       matching::MatchesPerDescType &out_geometricInliersPerType)
+                                       matching::MatchesPerDescType &out_geometricInliersPerType,
+                                       const std::string& outputSvgDir = "")
   {
     using namespace aliceVision::feature;
     using namespace aliceVision::matching;
     
     out_geometricInliersPerType.clear();
-    
-    // ------------------------
-    // To draw & save matches groups into .svg images:
-    //    enter an existing folder in the following variable ('outputSvgDir'). 
-    // File format: <nbHMatches>hmatches_<viewId_I>_<viewId_J>_<descType>.svg
-    // * Little white dots = putative matches
-    // * Colored dots = geometrically verified matches (1 color per estimated plane)
-    std::string outputSvgDir;
-    // ------------------------
-    
+
     const std::vector<feature::EImageDescriberType> descTypes = regionsPerView.getCommonDescTypes(pairIndex);
     if(descTypes.empty())
       return EstimationStatus(false, false);
@@ -234,6 +242,7 @@ struct GeometricFilterMatrix_HGrowing : public GeometricFilterMatrix
       {
         continue;
       }
+
 
       if (boost::filesystem::exists(outputSvgDir))
       {
