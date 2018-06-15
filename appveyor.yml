@@ -34,6 +34,7 @@ before_build:
             -DCMAKE_BUILD_TYPE=%CONFIGURATION%
             -DALICEVISION_USE_INTERNAL_CERES:BOOL=OFF
             -DALICEVISION_USE_CUDA:BOOL=OFF
+            -DALICEVISION_BUILD_EXAMPLES:BOOL=ON
             -DCMAKE_TOOLCHAIN_FILE=c:/tools/vcpkg/scripts/buildsystems/vcpkg.cmake
     - ls -l
 
