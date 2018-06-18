@@ -27,6 +27,12 @@ set_property(TARGET aliceVision_system
   PROPERTY FOLDER AliceVision
 )
 
+if(ALICEVISION_USE_NVTX_PROFILING)
+    set(ALICEVISION_NVTX_LIBRARY ${CUDA_NVTX_LIBRARY})
+else()
+    set(ALICEVISION_NVTX_LIBRARY "")
+endif()
+
 target_link_libraries(aliceVision_system
   PUBLIC
     ${Boost_LOG_LIBRARY}
@@ -36,12 +42,8 @@ target_link_libraries(aliceVision_system
     ${Boost_SYSTEM_LIBRARY}
     ${Boost_DATE_TIME_LIBRARY}
     ${Boost_PROGRAM_OPTIONS_LIBRARY}
+    ${ALICEVISION_NVTX_LIBRARY}
 )
-
-if(ALICEVISION_USE_NVTX_PROFILING)
-target_link_libraries(aliceVision_system ${CUDA_NVTX_LIBRARY})
-endif()
-
 
 set_target_properties(aliceVision_system
   PROPERTIES SOVERSION ${ALICEVISION_VERSION_MAJOR}
