@@ -2491,6 +2491,7 @@ void ps_refineDepthMapReproject(CudaArray<uchar4, 2>** ps_texs_arr, CudaHostMemo
     cudaUnbindTexture(t4tex);
 };
 
+#if 0
 void ps_computeRcTcPhotoErrMapReproject(
     CudaArray<uchar4, 2>** ps_texs_arr, CudaHostMemoryHeap<float4, 2>* osdpi_hmh,
     CudaHostMemoryHeap<float, 2>* oerr_hmh, CudaHostMemoryHeap<float, 2>* oderr_hmh,
@@ -2608,7 +2609,8 @@ void ps_computeRcTcPhotoErrMapReproject(
 
     if(verbose)
         printf("gpu elapsed time: %f ms \n", toc(tall));
-};
+}
+#endif
 
 void ps_computeSimMapsForNShiftsOfRcTcDepthMap(CudaArray<uchar4, 2>** ps_texs_arr,
                                                CudaHostMemoryHeap<float2, 2>** odepthSimMaps_hmh, int ntcsteps,

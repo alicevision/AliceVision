@@ -100,10 +100,10 @@ public:
                                      int scale, float igammaC, int wsh, float maxPixelSizeDist);
     bool refineDepthMapReproject(StaticVector<float>* depthMap, StaticVector<float>* simMap, int rc, int tc, int wsh,
                                  float gammaC, float gammaP, float simThr, int niters, bool moveByTcOrRc);
-    bool computeRcTcPhotoErrMapReproject(StaticVector<Point4d>* sdpiMap, StaticVector<float>* errMap,
-                                         StaticVector<float>* derrMap, StaticVector<float>* rcDepthMap,
-                                         StaticVector<float>* tcDepthMap, int rc, int tc, int wsh, float gammaC,
-                                         float gammaP, float depthMapShift);
+    // bool computeRcTcPhotoErrMapReproject(StaticVector<Point4d>* sdpiMap, StaticVector<float>* errMap,
+    //                                      StaticVector<float>* derrMap, StaticVector<float>* rcDepthMap,
+    //                                      StaticVector<float>* tcDepthMap, int rc, int tc, int wsh, float gammaC,
+    //                                      float gammaP, float depthMapShift);
 
     bool computeSimMapForRcTcDepthMap(StaticVector<float>* oSimMap, StaticVector<float>* rcTcDepthMap, int rc, int tc,
                                       int wsh, float gammaC, float gammaP, float epipShift);
