@@ -10,6 +10,8 @@
 
 #include <math_constants.h>
 
+#undef USE_VOL_PIX_TEXTURE
+
 namespace aliceVision {
 namespace depthMap {
 
@@ -25,7 +27,9 @@ texture<unsigned char, 2, cudaReadModeNormalizedFloat> ttex;
 
 #define MAX_CUDA_DEVICES 10
 
+#ifdef USE_VOL_PIX_TEXTURE
 texture<int4, 2, cudaReadModeElementType> volPixsTex;
+#endif
 
 texture<int2, 2, cudaReadModeElementType> pixsTex;
 

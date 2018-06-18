@@ -76,7 +76,6 @@ StaticVector<unsigned char>* SemiGlobalMatchingRcTc::computeDepthSimMapVolume(fl
     volume->resize_with(volDimX * volDimY * volDimZ, 255);
 
     StaticVector<int>* tcams = new StaticVector<int>();
-    tcams->reserve(1);
     tcams->push_back(tc);
 
     StaticVector<Voxel>* pixels = getPixels();

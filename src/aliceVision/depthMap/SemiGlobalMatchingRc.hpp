@@ -17,9 +17,9 @@ class SemiGlobalMatchingRc
 {
 public:
     SemiGlobalMatchingRc(bool doComputeDepthsAndResetTCams, int _rc, int _scale, int _step, SemiGlobalMatchingParams* _sp);
-    ~SemiGlobalMatchingRc(void);
+    ~SemiGlobalMatchingRc();
 
-    bool sgmrc(bool checkIfExists = true);
+    bool sgmrc();
     StaticVector<int>* tcams;
 
 protected:

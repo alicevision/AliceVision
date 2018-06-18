@@ -19,6 +19,24 @@
 namespace aliceVision {
 namespace depthMap {
 
+
+inline double getMaxGPUMemoryMB(int cudaDeviceNum, double defaultSize = 100.0)
+{
+    try
+    {
+        size_t avail;
+        size_t total;
+        if (cudaMemGetInfo(&avail, &total) != cudaSuccess)
+            throw std::runtime_error("Cannot get memory information for CUDA gpu device " + std::to_string(cudaDeviceNum));
+        return 0.9 * avail / (1024. * 1024.); // convert to MB and remove some margin
+    }
+    catch (const std::exception& e)
+    {
+        ALICEVISION_LOG_WARNING(e.what());
+    }
+    return defaultSize;
+}
+
 extern float3 ps_getDeviceMemoryInfo();
 
 /*
@@ -341,13 +359,10 @@ void cps_fillCamera(cameraStruct* cam, int c, mvsUtils::MultiViewParams* mp, flo
 
 void cps_fillCameraData(mvsUtils::ImagesCache* ic, cameraStruct* cam, int c, mvsUtils::MultiViewParams* mp)
 {
-    // memcpyGrayImageFromFileToArr(cam->tex_hmh->getBuffer(), mp->indexes[c], mp, true, 1, 0);
-    // memcpyRGBImageFromFileToArr(
-    //	cam->tex_hmh_r->getBuffer(),
-    //	cam->tex_hmh_g->getBuffer(),
-    //	cam->tex_hmh_b->getBuffer(), mp->indexes[c], mp, true, 1, 0);
-
     ic->refreshData(c);
+
+    if(cam->tex_rgba_hmh == nullptr)
+        cam->tex_rgba_hmh = new CudaHostMemoryHeap<uchar4, 2>(CudaSize<2>(mp->getMaxImageWidth(), mp->getMaxImageHeight()));
 
     Pixel pix;
     for(pix.y = 0; pix.y < mp->getHeight(c); pix.y++)
@@ -392,12 +407,12 @@ PlaneSweepingCuda::PlaneSweepingCuda(int _CUDADeviceNo, mvsUtils::ImagesCache* _
 
     verbose = mp->verbose;
 
-    float oneimagemb = 4.0f * (((float)(maxImageWidth * maxImageHeight) / 1024.0f) / 1024.0f);
+    double oneimagemb = 4.0 * (((double)(maxImageWidth * maxImageHeight) / 1024.0) / 1024.0);
     for(int scale = 2; scale <= scales; ++scale)
     {
-        oneimagemb += 4.0 * (((float)((maxImageWidth / scale) * (maxImageHeight / scale)) / 1024.0) / 1024.0);
+        oneimagemb += 4.0 * (((double)((maxImageWidth / scale) * (maxImageHeight / scale)) / 1024.0) / 1024.0);
     }
-    float maxmbGPU = 100.0f;
+    double maxmbGPU = getMaxGPUMemoryMB(CUDADeviceNo);
     nImgsInGPUAtTime = (int)(maxmbGPU / oneimagemb);
     nImgsInGPUAtTime = std::max(2, std::min(mp->ncams, nImgsInGPUAtTime));
 
@@ -414,46 +429,37 @@ PlaneSweepingCuda::PlaneSweepingCuda(int _CUDADeviceNo, mvsUtils::ImagesCache* _
     subPixel = mp->_ini.get<bool>("global.subPixel", true);
 
     ALICEVISION_LOG_INFO("PlaneSweepingCuda:" << std::endl
-                         << "\t- nImgsInGPUAtTime: " << nImgsInGPUAtTime << std::endl
-                         << "\t- scales: " << scales << std::endl
-                         << "\t- subPixel: " << (subPixel ? "Yes" : "No") << std::endl
-                         << "\t- varianceWSH: ", varianceWSH);
+        << "\t- max GPU Memory (MB): " << maxmbGPU << std::endl
+        << "\t- nImgsInGPUAtTime: " << nImgsInGPUAtTime << std::endl
+        << "\t- scales: " << scales << std::endl
+        << "\t- subPixel: " << (subPixel ? "Yes" : "No") << std::endl
+        << "\t- varianceWSH: " << varianceWSH);
 
     // allocate global on the device
     ps_deviceAllocate((CudaArray<uchar4, 2>***)&ps_texs_arr, nImgsInGPUAtTime, maxImageWidth, maxImageHeight, scales, CUDADeviceNo);
 
     cams = new StaticVector<void*>();
-    cams->reserve(nImgsInGPUAtTime);
     cams->resize(nImgsInGPUAtTime);
     camsRcs = new StaticVector<int>();
-    camsRcs->reserve(nImgsInGPUAtTime);
     camsRcs->resize(nImgsInGPUAtTime);
     camsTimes = new StaticVector<long>();
-    camsTimes->reserve(nImgsInGPUAtTime);
     camsTimes->resize(nImgsInGPUAtTime);
 
     for(int rc = 0; rc < nImgsInGPUAtTime; ++rc)
     {
         (*cams)[rc] = new cameraStruct();
-        ((cameraStruct*)(*cams)[rc])->tex_rgba_hmh =
-            new CudaHostMemoryHeap<uchar4, 2>(CudaSize<2>(maxImageWidth, maxImageHeight));
-
-        ((cameraStruct*)(*cams)[rc])->H = NULL;
-        cps_fillCamera((cameraStruct*)(*cams)[rc], rc, mp, NULL, 1);
-        cps_fillCameraData(ic, (cameraStruct*)(*cams)[rc], rc, mp);
-        (*camsRcs)[rc] = rc;
+        (*camsRcs)[rc] = -1;
         (*camsTimes)[rc] = clock();
-        ps_deviceUpdateCam((CudaArray<uchar4, 2>**)ps_texs_arr, (cameraStruct*)(*cams)[rc], rc, CUDADeviceNo,
-                           nImgsInGPUAtTime, scales, maxImageWidth, maxImageHeight, varianceWSH);
     }
 }
 
 int PlaneSweepingCuda::addCam(int rc, float** H, int scale)
 {
-    // fist is oldest
+    // first is oldest
     int id = camsRcs->indexOf(rc);
     if(id == -1)
     {
+        ALICEVISION_LOG_INFO("Camera id " << rc << " was not in the cache, so it loads the image from disk.");
         // get oldest id
         int oldestId = camsTimes->minValId();
 
@@ -473,7 +479,7 @@ int PlaneSweepingCuda::addCam(int rc, float** H, int scale)
     }
     else
     {
-
+        ALICEVISION_LOG_INFO("Camera id " << rc << " is in the cache.");
         cps_fillCamera((cameraStruct*)(*cams)[id], rc, mp, H, scale);
         // cps_fillCameraData((cameraStruct*)(*cams)[id], rc, mp, H, scales);
         // ps_deviceUpdateCam((cameraStruct*)(*cams)[id], id, scales);
@@ -1616,42 +1622,32 @@ float PlaneSweepingCuda::sweepPixelsToVolume(int nDepthsToSearch, StaticVector<u
         }
     }
 
-    int slicesAtTime = std::min(pixels->size(), 4096); //TODO
+    int slicesAtTime = std::min(pixels->size(), 4096*16); //TODO
     // int slicesAtTime = 480/scale;
-    //int slicesAtTime = pixels->size();
+    // int slicesAtTime = pixels->size();
 
     int npixs = pixels->size();
     int ntimes = npixs / slicesAtTime + 1;
+    ALICEVISION_LOG_INFO("Split processing in N blocks (ntimes): " << ntimes);
     CudaHostMemoryHeap<int4, 2> volPixs_hmh(CudaSize<2>(slicesAtTime, ntimes));
 
     int4 *_volPixs = volPixs_hmh.getBuffer();
     const Voxel *_pixels = pixels->getData().data();
-    if(ntimes * slicesAtTime <= npixs)
+
+    for(int y = 0; y < ntimes; ++y)
     {
-        for(int i = 0; i < ntimes * slicesAtTime; ++i)
+        for(int x = 0; x < slicesAtTime; ++x)
         {
-            _volPixs->x = _pixels->x;
-            _volPixs->y = _pixels->y;
-            _volPixs->z = _pixels->z;
-            _volPixs->w = 1;
-            ++_pixels;
-            ++_volPixs;
+            int index = y * slicesAtTime + x;
+            if(index >= npixs)
+                break;
+            int4 &volPix = _volPixs[index];
+            const Voxel &pixel = _pixels[index];
+            volPix.x = pixel.x;
+            volPix.y = pixel.y;
+            volPix.z = pixel.z;
+            volPix.w = 1;
         }
-    }
-    else
-    {
-        for(int y = 0; y < ntimes; ++y)
-            for(int x = 0; x < slicesAtTime; ++x) {
-                int index = y * slicesAtTime + x;
-                if(index >= npixs)
-                    break;
-                int4 &volPix = _volPixs[index];
-                const Voxel &pixel = _pixels[index];
-                volPix.x = pixel.x;
-                volPix.y = pixel.y;
-                volPix.z = pixel.z;
-                volPix.w = 1;
-            }
     }
 
     CudaHostMemoryHeap<float, 2> depths_hmh(CudaSize<2>(depths->size(), 1));
