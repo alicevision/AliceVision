@@ -23,7 +23,7 @@ ImageDescriber_CCTAG::CCTagParameters::CCTagParameters(size_t nRings)
 {
 #ifdef WITH_CUDA // CCTAG_WITH_CUDA
   _internalParams->_useCuda = system::gpuSupportCUDA(3,5);
-else
+#else
   _internalParams->_useCuda = false;
 #endif
 }
