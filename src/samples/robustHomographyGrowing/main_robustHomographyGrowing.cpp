@@ -122,7 +122,7 @@ int main(int argc, char **argv)
   std::string filenameRight;
   std::string describerTypesName = feature::EImageDescriberType_enumToString(feature::EImageDescriberType::SIFT);
   std::string describerPreset = "NORMAL";
-  float ratioThreshold{0.8};
+  float ratioThreshold{0.8f};
 
 
   po::options_description allParams("AliceVision Sample robustHomographyGrowing: it shows how "
