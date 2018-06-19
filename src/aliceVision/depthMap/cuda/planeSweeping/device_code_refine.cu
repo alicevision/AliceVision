@@ -1191,6 +1191,9 @@ __global__ void refine_compPhotoErrABG_kernel(float* osimMap, int osimMap_p, int
     };
 }
 
+/*
+ * Buggy code: tTexU4 returns unsigned char and not normalized float
+ *
 __device__ float2 ComputeSobelTarIm(int x, int y)
 {
     unsigned char ul = 255.0f * tex2D(tTexU4, x - 1, y - 1).x; // upper left
@@ -1207,6 +1210,7 @@ __device__ float2 ComputeSobelTarIm(int x, int y)
     int Vert = ul + 2 * um + ur - ll - 2 * lm - lr;
     return make_float2((float)Vert, (float)Horz);
 }
+*/
 
 __device__ float2 DPIXTCDRC(const float3& P)
 {
@@ -1248,6 +1252,9 @@ __device__ float2 DPIXTCDRC(const float3& P)
     return op;
 };
 
+/*
+ * Note: ComputeSobelTarIm called from here is buggy
+ *
 __global__ void refine_reprojTarSobelAndDPIXTCDRCRcTcDepthsMap_kernel(float4* tex, int tex_p, float* rcDepthMap,
                                                                       int rcDepthMap_p, int width, int height,
                                                                       float depthMapShift)
@@ -1285,13 +1292,14 @@ __global__ void refine_reprojTarSobelAndDPIXTCDRCRcTcDepthsMap_kernel(float4* te
                     float2 op = DPIXTCDRC(rpS);
                     float2 so = ComputeSobelTarIm(tpix.x, tpix.y);
                     col = make_float4(op.x, op.y, so.x, so.y);
-                };
-            };
-        };
+                }
+            }
+        }
 
         tex[y * tex_p + x] = col;
-    };
+    }
 }
+*/
 
 __global__ void refine_computeRcTcDepthMap_kernel(float* rcDepthMap, int rcDepthMap_p, int width, int height,
                                                   float pixSizeRatioThr)
