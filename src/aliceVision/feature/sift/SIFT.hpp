@@ -117,21 +117,9 @@ class VLFeatInstance
 {
 public:
 
-  static void initialize()
-  {
-    assert(nbInstances >= 0);
-    if(nbInstances <= 0)
-      vl_constructor();
-    ++nbInstances;
-  }
+  static void initialize();
 
-  static void destroy()
-  {
-    assert(nbInstances > 0);
-    --nbInstances;
-    if(nbInstances <= 0)
-      vl_destructor();
-  }
+  static void destroy();
 
 private:
   static int nbInstances;
@@ -367,6 +355,5 @@ bool extractSIFT(const image::Image<float>& image,
   return true;
 }
 
-} //namespace aliceVision
 } //namespace feature
-
+} //namespace aliceVision
