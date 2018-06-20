@@ -37,8 +37,8 @@ KeyframeSelector::KeyframeSelector(const std::vector<std::string>& mediaPaths,
   // check number of input media filePaths
   if(mediaPaths.empty())
   {
-    ALICEVISION_LOG_ERROR("Can't create KeyframeSelector without a media file path !");
-    throw std::invalid_argument("Can't create KeyframeSelector without a media file path !");
+    ALICEVISION_LOG_ERROR("Cannot create KeyframeSelector without a media file path !");
+    throw std::invalid_argument("Cannot create KeyframeSelector without a media file path !");
   }
 
   // resize mediasInfo container
@@ -56,8 +56,8 @@ KeyframeSelector::KeyframeSelector(const std::vector<std::string>& mediaPaths,
     // check if feed is initialized
     if(!feed.isInit())
     {
-      ALICEVISION_LOG_ERROR("Can't initialize the FeedProvider with " << path);
-      throw std::invalid_argument("Can't while initialize the FeedProvider with " + path);
+      ALICEVISION_LOG_ERROR("Cannot initialize the FeedProvider with " << path);
+      throw std::invalid_argument("Cannot while initialize the FeedProvider with " + path);
     }
 
     // update minimum number of frames
@@ -95,8 +95,8 @@ void KeyframeSelector::process()
     // first frame
     if(!_feeds.at(mediaIndex)->readImage(image, queryIntrinsics, currentImgName, hasIntrinsics))
     {
-      ALICEVISION_LOG_ERROR("Can't read media first frame " << _mediaPaths[mediaIndex]);
-      throw std::invalid_argument("Can't read media first frame " + _mediaPaths[mediaIndex]);
+      ALICEVISION_LOG_ERROR("Cannot read media first frame " << _mediaPaths[mediaIndex]);
+      throw std::invalid_argument("Cannot read media first frame " + _mediaPaths[mediaIndex]);
     }
 
     // define output image metadata
@@ -138,8 +138,8 @@ void KeyframeSelector::process()
       {
         if(!feed.readImage(image, queryIntrinsics, currentImgName, hasIntrinsics))
         {
-          ALICEVISION_LOG_ERROR("Can't read frame '" << currentImgName << "' !");
-          throw std::invalid_argument("Can't read frame '" + currentImgName + "' !");
+          ALICEVISION_LOG_ERROR("Cannot read frame '" << currentImgName << "' !");
+          throw std::invalid_argument("Cannot read frame '" + currentImgName + "' !");
         }
 
         // compute sharpness and sparse distance
@@ -353,12 +353,12 @@ void KeyframeSelector::writeKeyframe(const image::Image<image::RGBColor>& image,
   
   if(out.get() == nullptr)
   {
-    throw std::invalid_argument("Can't create image file : " + filepath);
+    throw std::invalid_argument("Cannot create image file : " + filepath);
   }
   
   if(!out->open(filepath, mediaInfo.spec))
   {
-    throw std::invalid_argument("Can't open image file : " + filepath);
+    throw std::invalid_argument("Cannot open image file : " + filepath);
   }
 
   out->write_image(oiio::TypeDesc::UINT8, image.data()); // always jpeg
@@ -381,7 +381,7 @@ void KeyframeSelector::convertFocalLengthInMM(CameraInfo& cameraInfo, int imageW
   }
   else
   {
-    ALICEVISION_LOG_WARNING("Can't convert focal length in mm  : " << cameraInfo.brand << " / " << cameraInfo.model);
+    ALICEVISION_LOG_WARNING("Cannot convert focal length in mm  : " << cameraInfo.brand << " / " << cameraInfo.model);
   }
 }
 

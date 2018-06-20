@@ -123,7 +123,7 @@ int main(int argc, char** argv)
 
   if(viewToFrame.empty())
   {
-    ALICEVISION_LOG_ERROR("Can find sequence pattern in image paths.");
+    ALICEVISION_LOG_ERROR("Cannot find sequence pattern in image paths.");
     return EXIT_FAILURE;
   }
 
