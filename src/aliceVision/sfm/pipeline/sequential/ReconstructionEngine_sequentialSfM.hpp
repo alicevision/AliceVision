@@ -86,12 +86,12 @@ public:
     _maxReprojectionError = maxReprojectionError;
   }
 
-  void setMinAngleInitialPair(double minAngleInitialPair)
+  void setMinAngleInitialPair(float minAngleInitialPair)
   {
     _minAngleInitialPair = minAngleInitialPair;
   }
 
-  void setMaxAngleInitialPair(double maxAngleInitialPair)
+  void setMaxAngleInitialPair(float maxAngleInitialPair)
   {
     _maxAngleInitialPair = maxAngleInitialPair;
   }
@@ -377,8 +377,8 @@ private:
   double _minAngleForTriangulation = 3.0;
   double _minAngleForLandmark = 2.0;
   double _maxReprojectionError = 4.0;
-  double _minAngleInitialPair = 5.0;
-  double _maxAngleInitialPair = 40.0;
+  float _minAngleInitialPair = 5.0f;
+  float _maxAngleInitialPair = 40.0f;
   bool _useTrackFiltering = true;
   robustEstimation::ERobustEstimator _localizerEstimator = robustEstimation::ERobustEstimator::ACRANSAC;
 

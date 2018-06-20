@@ -84,8 +84,8 @@ int main(int argc, char **argv)
   double minAngleForTriangulation = 3.0;
   double minAngleForLandmark = 2.0;
   double maxReprojectionError = 4.0;
-  double minAngleInitialPair = 5.0;
-  double maxAngleInitialPair = 40.0;
+  float minAngleInitialPair = 5.0f;
+  float maxAngleInitialPair = 40.0f;
   bool refineIntrinsics = true;
   bool useLocalBundleAdjustment = false;
   bool useOnlyMatchesFromInputFolder = false;
@@ -130,9 +130,9 @@ int main(int argc, char **argv)
       "Minimum angle for landmark.")
     ("maxReprojectionError", po::value<double>(&maxReprojectionError)->default_value(maxReprojectionError),
       "Maximum reprojection error.")
-    ("minAngleInitialPair", po::value<double>(&minAngleInitialPair)->default_value(minAngleInitialPair),
+    ("minAngleInitialPair", po::value<float>(&minAngleInitialPair)->default_value(minAngleInitialPair),
       "Minimum angle for the initial pair.")
-    ("maxAngleInitialPair", po::value<double>(&maxAngleInitialPair)->default_value(maxAngleInitialPair),
+    ("maxAngleInitialPair", po::value<float>(&maxAngleInitialPair)->default_value(maxAngleInitialPair),
       "Maximum angle for the initial pair.")
     ("minNumberOfObservationsForTriangulation", po::value<std::size_t>(&minNbObservationsForTriangulation)->default_value(minNbObservationsForTriangulation),
       "Minimum number of observations to triangulate a point.\n"
