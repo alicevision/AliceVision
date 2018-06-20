@@ -56,7 +56,7 @@ void robustModelEstimation(
     PairwiseMatches::const_iterator iter = putativeMatches.begin();
     std::advance(iter, i);
 
-    Pair currentPair = iter->first;
+    const Pair currentPair = iter->first;
     const MatchesPerDescType& putativeMatchesPerType = iter->second;
     const Pair& imagePair = iter->first;
 
@@ -90,7 +90,7 @@ void robustModelEstimation(
   }
 }
 
-} // namespace aliceVision
 } // namespace matchingImageCollection
+} // namespace aliceVision
 
 
