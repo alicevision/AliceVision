@@ -21,7 +21,7 @@ const size_t gridSize = 3;
 * @param[in] regionsJ Reference to the regions of the right image.
 * @param[out] outputMatches Subset of inputMatches containing the best n matches, sorted.
 */
-void sortMatches(
+void sortMatches_byFeaturesScale(
 	const aliceVision::matching::IndMatches& inputMatches,
 	const aliceVision::feature::FeatRegions<aliceVision::feature::SIOPointFeature>& regionsI,
 	const aliceVision::feature::FeatRegions<aliceVision::feature::SIOPointFeature>& regionsJ,
@@ -52,6 +52,18 @@ void sortMatches(
 		outputMatches.push_back(inputMatches[vecFeatureScale[i].second]);
 	}
 }
+
+void sortMatches_byDistanceRatio(aliceVision::matching::IndMatches& matches) 
+{ 
+  struct { 
+    bool operator() (const matching::IndMatch & m1, const matching::IndMatch & m2) const  
+    { 
+      return m1._distanceRatio < m2._distanceRatio; 
+    } 
+  } increasingLoweRatio; 
+ 
+  std::sort(matches.begin(), matches.end(), increasingLoweRatio); 
+} 
 
 /**
 * @brief Compare method used in the match sorting.

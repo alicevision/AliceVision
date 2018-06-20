@@ -39,7 +39,7 @@ struct GeometricFilterMatrix_H_AC : public GeometricFilterMatrix
   EstimationStatus geometricEstimation(
     const sfm::SfMData * sfmData,
     const Regions_or_Features_ProviderT& regionsPerView,
-    const Pair pairIndex,
+    const Pair& pairIndex,
     const matching::MatchesPerDescType & putativeMatchesPerType,
     matching::MatchesPerDescType & out_geometricInliersPerType)
   {

@@ -111,7 +111,7 @@ public:
    */
   bool describe(const image::Image<float>& image,
     std::unique_ptr<Regions>& regions,
-    const image::Image<unsigned char>* mask = NULL) override
+    const image::Image<unsigned char>* mask = nullptr) override
   {
     return extractSIFT<unsigned char>(image, regions, _params, _isOriented, mask);
   }

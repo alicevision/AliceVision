@@ -1,4 +1,6 @@
 // This file is part of the AliceVision project.
+// Copyright (c) 2017 AliceVision contributors.
+// Copyright (c) 2013 openMVG contributors.
 // This Source Code Form is subject to the terms of the Mozilla Public License,
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
@@ -29,12 +31,11 @@ int main( int argc, char **argv )
   std::string outputFolder ;
   std::vector<std::string> featuresFolders;
   std::vector<std::string> matchesFolders;
+  std::string describerTypesName = feature::EImageDescriberType_enumToString(feature::EImageDescriberType::SIFT);
   int selectionMethod;
   int imgRef;
 
   // user optional parameters
-
-  std::string describerTypesName = feature::EImageDescriberType_enumToString(feature::EImageDescriberType::SIFT);
 
   po::options_description allParams("AliceVision sfmColorHarmonize");
 

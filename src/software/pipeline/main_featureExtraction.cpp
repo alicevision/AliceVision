@@ -1,4 +1,6 @@
 ﻿// This file is part of the AliceVision project.
+// Copyright (c) 2015 AliceVision contributors.
+// Copyright (c) 2012 openMVG contributors.
 // This Source Code Form is subject to the terms of the Mozilla Public License,
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
@@ -159,13 +161,13 @@ public:
       ALICEVISION_LOG_DEBUG("Memory information: " << std::endl <<memoryInformation);
 
       if(jobMaxMemoryConsuption == 0)
-        throw std::runtime_error("Can't compute feature extraction job max memory consuption.");
+        throw std::runtime_error("Cannot compute feature extraction job max memory consumption.");
 
       std::size_t nbThreads =  (0.9 * memoryInformation.freeRam) / jobMaxMemoryConsuption;
 
       if(memoryInformation.freeRam == 0)
       {
-        ALICEVISION_LOG_WARNING("Can't find available system memory, this can be due to OS limitations.\n"
+        ALICEVISION_LOG_WARNING("Cannot find available system memory, this can be due to OS limitations.\n"
                                 "Use only one thread for CPU feature extraction.");
         nbThreads = 1;
       }

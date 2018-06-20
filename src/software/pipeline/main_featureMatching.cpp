@@ -1,4 +1,6 @@
 // This file is part of the AliceVision project.
+// Copyright (c) 2015 AliceVision contributors.
+// Copyright (c) 2012 openMVG contributors.
 // This Source Code Form is subject to the terms of the Mozilla Public License,
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
@@ -14,11 +16,12 @@
 #include <aliceVision/matchingImageCollection/matchingCommon.hpp>
 #include <aliceVision/matchingImageCollection/ImageCollectionMatcher_generic.hpp>
 #include <aliceVision/matchingImageCollection/ImageCollectionMatcher_cascadeHashing.hpp>
-#include <aliceVision/matchingImageCollection/GeometricModel.hpp>
 #include <aliceVision/matchingImageCollection/GeometricFilter.hpp>
 #include <aliceVision/matchingImageCollection/GeometricFilterMatrix_F_AC.hpp>
 #include <aliceVision/matchingImageCollection/GeometricFilterMatrix_E_AC.hpp>
 #include <aliceVision/matchingImageCollection/GeometricFilterMatrix_H_AC.hpp>
+#include <aliceVision/matchingImageCollection/GeometricFilterMatrix_HGrowing.hpp>
+#include <aliceVision/matchingImageCollection/GeometricFilterType.hpp>
 #include <aliceVision/matching/pairwiseAdjacencyDisplay.hpp>
 #include <aliceVision/matching/io.hpp>
 #include <aliceVision/system/Timer.hpp>
@@ -87,7 +90,7 @@ int main(int argc, char **argv)
 
   // user optional parameters
 
-  std::string geometricModelsName = matchingImageCollection::EGeometricModel_enumToString(matchingImageCollection::EGeometricModel::FUNDAMENTAL_MATRIX);
+  std::string geometricFilterTypeName = matchingImageCollection::EGeometricFilterType_enumToString(matchingImageCollection::EGeometricFilterType::FUNDAMENTAL_MATRIX);
   std::string describerTypesName = feature::EImageDescriberType_enumToString(feature::EImageDescriberType::SIFT);
   float distRatio = 0.8f;
   std::string predefinedPairList;
@@ -124,8 +127,8 @@ int main(int argc, char **argv)
 
   po::options_description optionalParams("Optional parameters");
   optionalParams.add_options()
-    ("geometricModel,g", po::value<std::string>(&geometricModelsName)->default_value(geometricModelsName),
-      matchingImageCollection::EGeometricModel_informations().c_str())
+    ("geometricFilterType,g", po::value<std::string>(&geometricFilterTypeName)->default_value(geometricFilterTypeName),
+      matchingImageCollection::EGeometricFilterType_informations().c_str())
     ("describerTypes,d", po::value<std::string>(&describerTypesName)->default_value(describerTypesName),
       feature::EImageDescriberType_informations().c_str())
     ("imagePairsList,l", po::value<std::string>(&predefinedPairList)->default_value(predefinedPairList),
@@ -216,7 +219,13 @@ int main(int argc, char **argv)
     return EXIT_FAILURE;
   }
 
-  const std::vector<matchingImageCollection::EGeometricModel> geometricModelsToCompute = matchingImageCollection::EGeometricModel_stringToEnums(geometricModelsName);
+  const matchingImageCollection::EGeometricFilterType geometricFilterType = matchingImageCollection::EGeometricFilterType_stringToEnum(geometricFilterTypeName);
+
+  if(describerTypesName.empty())
+  {
+    ALICEVISION_LOG_ERROR("Empty option: --describerMethods");
+    return EXIT_FAILURE;
+  }
 
   // Feature matching
   // a. Load SfMData Views & intrinsics data
@@ -310,6 +319,21 @@ int main(int argc, char **argv)
     return rangeSize ? EXIT_SUCCESS : EXIT_FAILURE;
   }
 
+  if(geometricFilterType == EGeometricFilterType::HOMOGRAPHY_GROWING)
+  {
+    // sort putative matches according to their Lowe ratio
+    // This is suggested by [F.Srajer, 2016]: the matches used to be the seeds of the homographies growing are chosen according
+    // to the putative matches order. This modification should improve recall.
+    for(auto& imgPair: mapPutativesMatches)
+    {
+      for(auto& descType: imgPair.second)
+      {
+        IndMatches & matches = descType.second;
+        sortMatches_byDistanceRatio(matches);
+      }
+    }
+  }
+
   ALICEVISION_LOG_INFO(std::to_string(mapPutativesMatches.size()) << " putative image pair matches");
 
   for(const auto& imageMatch: mapPutativesMatches)
@@ -357,88 +381,90 @@ int main(int argc, char **argv)
   //    - Use an upper bound for the a contrario estimated threshold
 
   timer.reset();
-  ALICEVISION_LOG_INFO("Geometric filtering");
 
   matching::PairwiseMatches geometricMatches;
 
-  for(const matchingImageCollection::EGeometricModel geometricModel : geometricModelsToCompute)
+  ALICEVISION_LOG_INFO("Geometric filtering: using " << matchingImageCollection::EGeometricFilterType_enumToString(geometricFilterType));
+
+  switch(geometricFilterType)
   {
-    matching::PairwiseMatches geometricModelMatches;
 
-    ALICEVISION_LOG_INFO("Using geometric model: " << matchingImageCollection::EGeometricModel_enumToString(geometricModel));
+    case EGeometricFilterType::NO_FILTERING:
+      geometricMatches = mapPutativesMatches;
+    break;
 
-    switch(geometricModel)
+    case EGeometricFilterType::FUNDAMENTAL_MATRIX:
     {
-      case EGeometricModel::HOMOGRAPHY_MATRIX:
-      {
-        const bool onlyGuidedMatching = true;
-        matchingImageCollection::robustModelEstimation(geometricModelMatches,
-          &sfmData,
-          regionPerView,
-          GeometricFilterMatrix_H_AC(std::numeric_limits<double>::infinity(), maxIteration),
-          mapPutativesMatches, guidedMatching,
-          onlyGuidedMatching ? -1.0 : 0.6);
-      }
-      break;
-      case EGeometricModel::FUNDAMENTAL_MATRIX:
-      {
-        matchingImageCollection::robustModelEstimation(geometricModelMatches,
-          &sfmData,
-          regionPerView,
-          GeometricFilterMatrix_F_AC(geometricErrorMax, maxIteration, geometricEstimator),
-          mapPutativesMatches,
-          guidedMatching);
-      }
-      break;
-      case EGeometricModel::ESSENTIAL_MATRIX:
-      {
-        matchingImageCollection::robustModelEstimation(geometricModelMatches,
-          &sfmData,
-          regionPerView,
-          GeometricFilterMatrix_E_AC(std::numeric_limits<double>::infinity(), maxIteration),
-          mapPutativesMatches,
-          guidedMatching);
-
-        // perform an additional check to remove pairs with poor overlap
-        std::vector<PairwiseMatches::key_type> toRemoveVec;
-        for(PairwiseMatches::const_iterator iterMap = geometricModelMatches.begin();
-          iterMap != geometricModelMatches.end(); ++iterMap)
-        {
-          const size_t putativePhotometricCount = mapPutativesMatches.find(iterMap->first)->second.getNbAllMatches();
-          const size_t putativeGeometricCount = iterMap->second.getNbAllMatches();
-          const float ratio = putativeGeometricCount / (float)putativePhotometricCount;
-          if (putativeGeometricCount < 50 || ratio < .3f)
-            toRemoveVec.push_back(iterMap->first); // the image pair will be removed
-        }
-
-        // remove discarded pairs
-        for(std::vector<PairwiseMatches::key_type>::const_iterator iter = toRemoveVec.begin();
-            iter != toRemoveVec.end(); ++iter)
-          geometricModelMatches.erase(*iter);
-      }
-      break;
+      matchingImageCollection::robustModelEstimation(geometricMatches,
+        &sfmData,
+        regionPerView,
+        GeometricFilterMatrix_F_AC(geometricErrorMax, maxIteration, geometricEstimator),
+        mapPutativesMatches,
+        guidedMatching);
     }
+    break;
 
-    ALICEVISION_LOG_INFO(std::to_string(geometricModelMatches.size()) + " geometric image pair matches:");
-    for(const auto& matchGeo: geometricModelMatches)
-      ALICEVISION_LOG_INFO("\t- image pair (" + std::to_string(matchGeo.first.first) + ", " + std::to_string(matchGeo.first.second) + ") contains " + std::to_string(matchGeo.second.getNbAllMatches()) + " geometric matches.");
-
-    for(const auto& matchesPerView: geometricModelMatches)
+    case EGeometricFilterType::ESSENTIAL_MATRIX:
     {
-      for(const auto& matchesPerDesc : matchesPerView.second)
+      matchingImageCollection::robustModelEstimation(geometricMatches,
+        &sfmData,
+        regionPerView,
+        GeometricFilterMatrix_E_AC(std::numeric_limits<double>::infinity(), maxIteration),
+        mapPutativesMatches,
+        guidedMatching);
+
+      // perform an additional check to remove pairs with poor overlap
+      std::vector<PairwiseMatches::key_type> toRemoveVec;
+      for(PairwiseMatches::const_iterator iterMap = geometricMatches.begin();
+        iterMap != geometricMatches.end(); ++iterMap)
       {
-        IndMatches& dstMatches = geometricMatches[matchesPerView.first][matchesPerDesc.first];
-        dstMatches.insert(dstMatches.end(), matchesPerDesc.second.begin(), matchesPerDesc.second.end());
-        IndMatch::getDeduplicated(dstMatches);
+        const size_t putativePhotometricCount = mapPutativesMatches.find(iterMap->first)->second.getNbAllMatches();
+        const size_t putativeGeometricCount = iterMap->second.getNbAllMatches();
+        const float ratio = putativeGeometricCount / (float)putativePhotometricCount;
+        if (putativeGeometricCount < 50 || ratio < .3f)
+          toRemoveVec.push_back(iterMap->first); // the image pair will be removed
       }
+
+      // remove discarded pairs
+      for(std::vector<PairwiseMatches::key_type>::const_iterator iter = toRemoveVec.begin();
+          iter != toRemoveVec.end(); ++iter)
+        geometricMatches.erase(*iter);
     }
+    break;
+
+    case EGeometricFilterType::HOMOGRAPHY_MATRIX:
+    {
+      const bool onlyGuidedMatching = true;
+      matchingImageCollection::robustModelEstimation(geometricMatches,
+        &sfmData,
+        regionPerView,
+        GeometricFilterMatrix_H_AC(std::numeric_limits<double>::infinity(), maxIteration),
+        mapPutativesMatches, guidedMatching,
+        onlyGuidedMatching ? -1.0 : 0.6);
+    }
+    break;
+
+    case EGeometricFilterType::HOMOGRAPHY_GROWING:
+    {
+      matchingImageCollection::robustModelEstimation(geometricMatches,
+        &sfmData,
+        regionPerView,
+        GeometricFilterMatrix_HGrowing(std::numeric_limits<double>::infinity(), maxIteration),
+        mapPutativesMatches,
+        guidedMatching);
+    }
+    break;
   }
+
+  ALICEVISION_LOG_INFO(std::to_string(geometricMatches.size()) + " geometric image pair matches:");
+  for(const auto& matchGeo: geometricMatches)
+    ALICEVISION_LOG_INFO("\t- image pair (" + std::to_string(matchGeo.first.first) + ", " + std::to_string(matchGeo.first.second) + ") contains " + std::to_string(matchGeo.second.getNbAllMatches()) + " geometric matches.");
 
   // grid filtering
   ALICEVISION_LOG_INFO("Grid filtering");
 
   PairwiseMatches finalMatches;
-
+  
   {
     for(const auto& geometricMatch: geometricMatches)
     {
@@ -460,7 +486,7 @@ int main(int argc, char **argv)
         {
           // sorting function:
           aliceVision::matching::IndMatches outMatches;
-          sortMatches(inputMatches, *lRegions, *rRegions, outMatches);
+          sortMatches_byFeaturesScale(inputMatches, *lRegions, *rRegions, outMatches);
 
           if(useGridSort)
           {

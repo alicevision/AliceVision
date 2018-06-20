@@ -137,7 +137,7 @@ public:
    */
   bool describe(const image::Image<unsigned char>& image,
                 std::unique_ptr<Regions>& regions,
-                const image::Image<unsigned char>* mask = NULL) override
+                const image::Image<unsigned char>* mask = nullptr) override
   {
     return _imageDescriberImpl->describe(image, regions, mask);
   }
@@ -152,7 +152,7 @@ public:
    */
   bool describe(const image::Image<float>& image,
                 std::unique_ptr<Regions>& regions,
-                const image::Image<unsigned char>* mask = NULL) override
+                const image::Image<unsigned char>* mask = nullptr) override
   {
     return _imageDescriberImpl->describe(image, regions, mask);
   }

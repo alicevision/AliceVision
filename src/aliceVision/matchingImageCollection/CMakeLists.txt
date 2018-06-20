@@ -4,12 +4,13 @@ set(matching_collection_images_files_headers
   IImageCollectionMatcher.hpp
   ImageCollectionMatcher_generic.hpp
   ImageCollectionMatcher_cascadeHashing.hpp
-  GeometricModel.hpp
   GeometricFilter.hpp
   GeometricFilterMatrix.hpp
   GeometricFilterMatrix_E_AC.hpp
   GeometricFilterMatrix_F_AC.hpp
   GeometricFilterMatrix_H_AC.hpp
+  GeometricFilterMatrix_HGrowing.hpp
+  GeometricFilterType.hpp
   geometricFilterUtils.hpp
   pairBuilder.hpp
 )
@@ -19,7 +20,8 @@ set(matching_collection_images_files_sources
   matchingCommon.cpp
   ImageCollectionMatcher_generic.cpp
   ImageCollectionMatcher_cascadeHashing.cpp
-  GeometricModel.cpp
+  GeometricFilterMatrix_HGrowing.cpp
+  geometricFilterUtils.cpp
   pairBuilder.cpp
 )
 
@@ -38,6 +40,7 @@ PUBLIC
   ${Boost_LIBRARIES}
 PRIVATE
   aliceVision_system
+  ${CERES_LIBRARIES}
 )
 
 set_target_properties(aliceVision_matchingImageCollection
@@ -55,3 +58,4 @@ install(TARGETS aliceVision_matchingImageCollection
 )
 
 UNIT_TEST(aliceVision pairBuilder "aliceVision_matchingImageCollection")
+UNIT_TEST(aliceVision geometricFilterUtils "aliceVision_matchingImageCollection")

@@ -1,4 +1,6 @@
 // This file is part of the AliceVision project.
+// Copyright (c) 2015 AliceVision contributors.
+// Copyright (c) 2012 openMVG contributors.
 // This Source Code Form is subject to the terms of the Mozilla Public License,
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
@@ -142,9 +144,9 @@ int main(int argc, char **argv)
   po::options_description requiredParams("Required parameters");
   requiredParams.add_options()
     ("input,i", po::value<std::string>(&sfmFilePath)->default_value(sfmFilePath),
-      "a SfMData file (*.sfm).")
+      "A SfMData file (*.sfm) [if specified, --imageFolder cannot be used].")
     ("imageFolder", po::value<std::string>(&imageFolder)->default_value(imageFolder),
-      "Input images folder.")
+      "Input images folder [if specified, --input cannot be used].")
     ("sensorDatabase,s", po::value<std::string>(&sensorDatabasePath)->required(),
       "Camera sensor width database path.")
     ("output,o", po::value<std::string>(&outputFilePath)->default_value("cameraInit.sfm"),
@@ -217,14 +219,14 @@ int main(int argc, char **argv)
   // check user choose at least one input option
   if(imageFolder.empty() && sfmFilePath.empty())
   {
-    ALICEVISION_LOG_ERROR("Program need -i or -f option");
+    ALICEVISION_LOG_ERROR("Program need -i or --imageFolder option");
     return EXIT_FAILURE;
   }
 
   // check user don't choose both input options
   if(!imageFolder.empty() && !sfmFilePath.empty())
   {
-    ALICEVISION_LOG_ERROR("Cannot combine -i and -f options");
+    ALICEVISION_LOG_ERROR("Cannot combine -i and --imageFolder options");
     return EXIT_FAILURE;
   }
 

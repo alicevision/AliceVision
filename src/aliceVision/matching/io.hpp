@@ -20,7 +20,6 @@ namespace matching {
  *
  * @param[out] matches: container for the output matches
  * @param[in] folder: folder containing the match files
- * @param[in] mode: type of matching, it could be: "f", "e" or "putative".
  */
 bool LoadMatchFile(
   PairwiseMatches& matches,
@@ -32,7 +31,6 @@ bool LoadMatchFile(
  *
  * @param[out] matches: container for the output matches
  * @param[in] folder: folder containing the match files
- * @param[in] mode: type of matching, it could be: "f", "e" or "putative".
  */
 bool LoadMatchFilePerImage(
   PairwiseMatches& matches,
@@ -46,7 +44,6 @@ bool LoadMatchFilePerImage(
  * @param[in] sfm_data
  * @param[in] folder: folder containing the match files
  * @param[in] descTypes
- * @param[in] mode: type of matching, it could be: "f", "e" or "putative".
  * @param[in] maxNbMatches: to load the N first matches for each desc. type. Load all the matches by default (: 0)
  */
 bool Load(PairwiseMatches& matches,
@@ -75,7 +72,6 @@ void filterTopMatches(
  * @param[in] matches: container for the output matches
  * @param[in] sfm_data
  * @param[in] folder: folder containing the match files
- * @param[in] mode: type of matching, it could be: "f", "e" or "putative".
  * @param[in] extension: txt or bin file format
  * @param[in] matchFilePerImage: do we store a global match file
  *            or one match file per image

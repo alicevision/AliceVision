@@ -34,7 +34,7 @@ inline bool loadPairwiseMatches(
     const SfMData& sfmData,
     const std::vector<std::string>& folders,
     const std::vector<feature::EImageDescriberType>& descTypes,
-    int maxNbMatches = 0,
+    const int maxNbMatches = 0,
     bool useOnlyMatchesFromFolder = false)
 {
   std::vector<std::string> matchesFolders;
