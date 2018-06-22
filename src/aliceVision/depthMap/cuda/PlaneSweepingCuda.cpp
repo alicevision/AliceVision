@@ -20,7 +20,7 @@
 namespace aliceVision {
 namespace depthMap {
 
-void cps_fillCamera(cameraStruct* cam, int c, mvsUtils::MultiViewParams* mp, float** H, int scale)
+static void cps_fillCamera(cameraStruct* cam, int c, mvsUtils::MultiViewParams* mp, float** H, int scale)
 {
     cam->scale = scale;
 
@@ -118,7 +118,7 @@ void cps_fillCamera(cameraStruct* cam, int c, mvsUtils::MultiViewParams* mp, flo
     }
 }
 
-void cps_fillCameraData(mvsUtils::ImagesCache* ic, cameraStruct* cam, int c, mvsUtils::MultiViewParams* mp)
+static void cps_fillCameraData(mvsUtils::ImagesCache* ic, cameraStruct* cam, int c, mvsUtils::MultiViewParams* mp)
 {
     // memcpyGrayImageFromFileToArr(cam->tex_hmh->getBuffer(), mp->indexes[c], mp, true, 1, 0);
     // memcpyRGBImageFromFileToArr(
@@ -143,7 +143,7 @@ void cps_fillCameraData(mvsUtils::ImagesCache* ic, cameraStruct* cam, int c, mvs
     }
 }
 
-void cps_updateCamH(cameraStruct* cam, float** H)
+static void cps_updateCamH(cameraStruct* cam, float** H)
 {
     if(cam->H != NULL)
     {
