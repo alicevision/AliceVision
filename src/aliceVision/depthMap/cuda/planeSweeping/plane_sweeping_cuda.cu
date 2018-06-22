@@ -3052,17 +3052,15 @@ void ps_getSilhoueteMap( CudaHostMemoryHeap<bool, 2>* omap_hmh, int width,
     dim3 block(block_size, block_size, 1);
     dim3 grid(divUp(width / step, block_size), divUp(height / step, block_size), 1);
 
-    // cudaBindTextureToArray(rTexU4, ps_texs_arr[camId * scales + scale]->getArray(), cudaCreateChannelDesc<uchar4>());
     cudaTextureObject_t rTexU4 = global_data.getScaledPictureTexPoint( scale, camId );
 
     CudaDeviceMemoryPitched<bool, 2> map_dmp(CudaSize<2>(width / step, height / step));
+
     getSilhoueteMap_kernel<<<grid, block>>>(
         rTexU4,
         map_dmp.getBuffer(), map_dmp.stride()[0],
         step, width, height, maskColorLab );
     CHECK_CUDA_ERROR();
-
-    // cudaUnbindTexture(rTexU4);
 
     omap_hmh->copyFrom( map_dmp );
 

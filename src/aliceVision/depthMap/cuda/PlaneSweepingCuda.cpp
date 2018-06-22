@@ -1683,7 +1683,6 @@ bool PlaneSweepingCuda::optimizeDepthSimMapGradientDescent(StaticVector<DepthSim
     long t1 = clock();
 
     StaticVector<int>* camsids = new StaticVector<int>();
-    camsids->reserve(1);
     camsids->push_back(addCam(rc, NULL, scale));
     if(verbose)
         printf("rc: %i, ", rc);
@@ -1716,10 +1715,6 @@ bool PlaneSweepingCuda::optimizeDepthSimMapGradientDescent(StaticVector<DepthSim
 
     CudaHostMemoryHeap<float2, 2> oDepthSimMap_hmh(CudaSize<2>(w, h));
 
-    // ps_optimizeDepthSimMapGradientDescent((CudaArray<uchar4, 2>**)ps_texs_arr, &oDepthSimMap_hmh, dataMaps_hmh,
-    //                                       dataMaps->size(), nSamplesHalf, nDepthsToRefine, nIters, sigma, ttcams,
-    //                                       camsids->size(), w, h, scale - 1, CUDADeviceNo, nImgsInGPUAtTime, scales,
-    //                                       verbose, yFrom);
     ps_optimizeDepthSimMapGradientDescent( &oDepthSimMap_hmh, dataMaps_hmh,
                                            dataMaps->size(), nSamplesHalf, nDepthsToRefine, nIters,
                                            sigma, ttcams,
@@ -1953,8 +1948,6 @@ bool PlaneSweepingCuda::getSilhoueteMap(StaticVectorBool* oMap, int scale, int s
 
     CudaHostMemoryHeap<bool, 2> omap_hmh(CudaSize<2>(w / step, h / step));
 
-    // ps_getSilhoueteMap((CudaArray<uchar4, 2>**)ps_texs_arr, &omap_hmh, w, h, scale - 1, CUDADeviceNo,
-    //                    nImgsInGPUAtTime, scales, step, camId, maskColorRgb, verbose);
     ps_getSilhoueteMap( &omap_hmh, w, h, scale - 1,
                         CUDADeviceNo,
                         nImgsInGPUAtTime, scales, step, camId, maskColorRgb, verbose );
