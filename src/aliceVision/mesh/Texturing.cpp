@@ -625,7 +625,7 @@ void Texturing::saveAsOBJ(const bfs::path& dir, const std::string& basename, EIm
     // write faces per texture atlas
     for(size_t atlasID=0; atlasID < _atlases.size(); ++atlasID)
     {
-        fprintf(fobj, "usemtl TextureAtlas_%i\n", atlasID);
+        fprintf(fobj, "usemtl TextureAtlas_%li\n", long(atlasID));
         for(const auto triangleID : _atlases[atlasID])
         {
             // vertex IDs
@@ -656,7 +656,7 @@ void Texturing::saveAsOBJ(const bfs::path& dir, const std::string& basename, EIm
     {
         std::string textureName = "texture_" + std::to_string(atlasID) + "." + EImageFileType_enumToString(textureFileType);
         fprintf(fmtl, "\n");
-        fprintf(fmtl, "newmtl TextureAtlas_%i\n", atlasID);
+        fprintf(fmtl, "newmtl TextureAtlas_%li\n", long(atlasID));
         fprintf(fmtl, "Ka  0.6 0.6 0.6\n");
         fprintf(fmtl, "Kd  0.6 0.6 0.6\n");
         fprintf(fmtl, "Ks  0.0 0.0 0.0\n");

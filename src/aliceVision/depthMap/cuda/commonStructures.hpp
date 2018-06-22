@@ -22,6 +22,7 @@ public:
     for(int i = Dim; i--;)
       size[i] = 0;
   }
+  inline size_t dim() const { return Dim; }
   inline size_t operator[](size_t i) const { return size[i]; }
   inline size_t &operator[](size_t i) { return size[i]; }
   inline CudaSizeBase operator+(const CudaSizeBase<Dim> &s) const {
@@ -135,8 +136,12 @@ public:
     sz = 1;
     if (Dim >= 1) sx = _size[0];
     if (Dim >= 2) sy = _size[1];
-    if (Dim >= 3) sx = _size[2];
+    if (Dim >= 3) sz = _size[2];
     buffer = (Type*)malloc(sx * sy * sz * sizeof (Type));
+    if( buffer == 0 ) {
+        printf("%d malloc failed\n", __LINE__ );
+        exit(-1);
+    }
     memset(buffer, 0, sx * sy * sz * sizeof (Type));
   }
   CudaHostMemoryHeap<Type,Dim>& operator=(const CudaHostMemoryHeap<Type,Dim>& rhs)
@@ -147,8 +152,12 @@ public:
     sz = 1;
     if (Dim >= 1) sx = rhs.sx;
     if (Dim >= 2) sy = rhs.sy;
-    if (Dim >= 3) sx = rhs.sz;
+    if (Dim >= 3) sz = rhs.sz;
     buffer = (Type*)malloc(sx * sy * sz * sizeof (Type));
+    if( buffer == 0 ) {
+        printf("%d malloc failed\n", __LINE__ );
+        exit(-1);
+    }
     memcpy(buffer, rhs.buffer, sx * sy * sz * sizeof (Type));
     return *this;
   }
@@ -293,21 +302,31 @@ template <class Type, unsigned Dim> class CudaArray
 public:
   explicit CudaArray(const CudaSize<Dim> &_size)
   {
+    cudaError_t err;
+
     size = _size;
     sx = 1;
     sy = 1;
     sz = 1;
     if (Dim >= 1) sx = _size[0];
     if (Dim >= 2) sy = _size[1];
-    if (Dim >= 3) sx = _size[2];
+    if (Dim >= 3) sz = _size[2];
     cudaChannelFormatDesc channelDesc = cudaCreateChannelDesc<Type>();
     if(Dim == 1)
     {
-      cudaMallocArray(&array, &channelDesc, _size[0], 1, cudaArraySurfaceLoadStore);
+      err = cudaMallocArray(&array, &channelDesc, _size[0], 1, cudaArraySurfaceLoadStore);
+      if( err != cudaSuccess )
+      {
+          printf( "Failed to allocate CUDA Array in line %d, size=%li\n", __LINE__-3, long(_size[0]) );
+      }
     }
     else if(Dim == 2)
     {
-      cudaMallocArray(&array, &channelDesc, _size[0], _size[1], cudaArraySurfaceLoadStore);
+      err = cudaMallocArray(&array, &channelDesc, _size[0], _size[1], cudaArraySurfaceLoadStore);
+      if( err != cudaSuccess )
+      {
+          printf( "Failed to allocate CUDA Array in line %d, size=(%li, %li)\n", __LINE__-3, long(_size[0]), long(_size[1]) );
+      }
     }
     else
     {
@@ -317,26 +336,40 @@ public:
       extent.depth = _size[2];
       for(unsigned i = 3; i < Dim; ++i)
         extent.depth *= _size[i];
-      cudaMalloc3DArray(&array, &channelDesc, extent);
+      err = cudaMalloc3DArray(&array, &channelDesc, extent);
+      if( err != cudaSuccess )
+      {
+          printf( "Failed to allocate CUDA Array in line %d, size=(%li, %li, %li)\n", __LINE__-3, long(_size[0]), long(_size[1]), long(_size[2]) );
+      }
     }
   }
   explicit inline CudaArray(const CudaDeviceMemoryPitched<Type, Dim> &rhs)
   {
+    cudaError_t err;
+
     size = rhs.getSize();
     sx = 1;
     sy = 1;
     sz = 1;
     if (Dim >= 1) sx = rhs.getSize()[0];
     if (Dim >= 2) sy = rhs.getSize()[1];
-    if (Dim >= 3) sx = rhs.getSize()[2];
+    if (Dim >= 3) sz = rhs.getSize()[2];
     cudaChannelFormatDesc channelDesc = cudaCreateChannelDesc<Type>();
     if(Dim == 1)
     {
-      cudaMallocArray(&array, &channelDesc, size[0], 1, cudaArraySurfaceLoadStore);
+      err = cudaMallocArray(&array, &channelDesc, size[0], 1, cudaArraySurfaceLoadStore);
+      if( err != cudaSuccess )
+      {
+        printf( "Failed to allocate CUDA Array in line %d, size=(%i)\n", __LINE__-3, size[0] );
+      }
     }
     else if(Dim == 2)
     {
-      cudaMallocArray(&array, &channelDesc, size[0], size[1], cudaArraySurfaceLoadStore);
+      err = cudaMallocArray(&array, &channelDesc, size[0], size[1], cudaArraySurfaceLoadStore);
+      if( err != cudaSuccess )
+      {
+        printf( "Failed to allocate CUDA Array in line %d, size=(%i, %i)\n", __LINE__-3, size[0], size[1] );
+      }
     }
     else
     {
@@ -346,27 +379,41 @@ public:
       extent.depth = size[2];
       for(unsigned i = 3; i < Dim; ++i)
         extent.depth *= size[i];
-      cudaMalloc3DArray(&array, &channelDesc, extent);
+      err = cudaMalloc3DArray(&array, &channelDesc, extent);
+      if( err != cudaSuccess )
+      {
+        printf( "Failed to allocate CUDA Array in line %d, size=(%i, %i, %i)\n", __LINE__-3, size[0], size[1], size[2] );
+      }
     }
     copy(*this, rhs);
   }
   explicit inline CudaArray(const CudaHostMemoryHeap<Type, Dim> &rhs)
   {
+    cudaError_t err;
+
     size = rhs.getSize();
     sx = 1;
     sy = 1;
     sz = 1;
     if (Dim >= 1) sx = rhs.getSize()[0];
     if (Dim >= 2) sy = rhs.getSize()[1];
-    if (Dim >= 3) sx = rhs.getSize()[2];
+    if (Dim >= 3) sz = rhs.getSize()[2];
     cudaChannelFormatDesc channelDesc = cudaCreateChannelDesc<Type>();
     if(Dim == 1)
     {
-      cudaMallocArray(&array, &channelDesc, size[0], 1, cudaArraySurfaceLoadStore);
+      err = cudaMallocArray(&array, &channelDesc, size[0], 1, cudaArraySurfaceLoadStore);
+      if( err != cudaSuccess )
+      {
+          printf( "Failed to allocate CUDA Array of size %i in line %s,%d - reason %s\n", size[0], __FILE__, __LINE__-3, cudaGetErrorString(err) );
+      }
     }
     else if(Dim == 2)
     {
-      cudaMallocArray(&array, &channelDesc, size[0], size[1], cudaArraySurfaceLoadStore);
+      err = cudaMallocArray(&array, &channelDesc, size[0], size[1], cudaArraySurfaceLoadStore);
+      if( err != cudaSuccess )
+      {
+          printf( "Failed to allocate CUDA Array of size (%i,%i) in line %s,%d - reason %s\n", size[0], size[1], __FILE__, __LINE__-3, cudaGetErrorString(err) );
+      }
     }
     else
     {
@@ -376,7 +423,11 @@ public:
       extent.depth = size[2];
       for(unsigned i = 3; i < Dim; ++i)
         extent.depth *= size[i];
-      cudaMalloc3DArray(&array, &channelDesc, extent);
+      err = cudaMalloc3DArray(&array, &channelDesc, extent);
+      if( err != cudaSuccess )
+      {
+          printf( "Failed to allocate CUDA Array of size (%i,%i,%i) in line %s,%d - reason %s\n", size[0], size[1], size[2], __FILE__, __LINE__-3, cudaGetErrorString(err) );
+      }
     }
     copy(*this, rhs);
   }
@@ -521,12 +572,14 @@ template<class Type, unsigned Dim> void copy(CudaDeviceMemoryPitched<Type, Dim>&
 
 template<class Type, unsigned Dim> void copy(CudaArray<Type, Dim>& _dst, const CudaHostMemoryHeap<Type, Dim>& _src)
 {
+  cudaError_t err;
+
   cudaMemcpyKind kind = cudaMemcpyHostToDevice;
   if(Dim == 1) {
-    cudaMemcpyToArray(_dst.getArray(), 0, 0, _src.getBuffer(), _src.getSize()[0] * sizeof (Type), kind);
+    err = cudaMemcpyToArray(_dst.getArray(), 0, 0, _src.getBuffer(), _src.getSize()[0] * sizeof (Type), kind);
   }
   else if(Dim == 2) {
-    cudaMemcpy2DToArray(_dst.getArray(), 0, 0, _src.getBuffer(), _src.getSize()[0] * sizeof (Type), _src.getSize()[0] * sizeof (Type), _src.getSize()[1], kind);
+    err = cudaMemcpy2DToArray(_dst.getArray(), 0, 0, _src.getBuffer(), _src.getSize()[0] * sizeof (Type), _src.getSize()[0] * sizeof (Type), _src.getSize()[1], kind);
   }
   else if(Dim == 3) {
     cudaMemcpy3DParms p = { 0 };
@@ -544,7 +597,11 @@ template<class Type, unsigned Dim> void copy(CudaArray<Type, Dim>& _dst, const C
     for(unsigned i = 3; i < Dim; ++i)
       p.extent.depth *= _src.getSize()[i];
     p.kind = kind;
-    cudaMemcpy3D(&p);
+    err = cudaMemcpy3D(&p);
+  }
+  if( err != cudaSuccess )
+  {
+    printf("Failed to copy heap memory to CUDA array in %s:%d, reason %s\n", __FILE__, __LINE__, cudaGetErrorString(err) );
   }
 }
 
@@ -614,12 +671,12 @@ template<class Type, unsigned Dim> void copy(CudaDeviceMemoryPitched<Type, Dim>&
 struct cameraStruct
 {
     float P[12], iP[9], R[9], iR[9], K[9], iK[9], C[3];
-    CudaHostMemoryHeap<uchar4, 2>* tex_rgba_hmh;
-    int camId;
-    int rc;
-    float* H;
-    int scale;
-    int blurid;
+    CudaHostMemoryHeap<uchar4, 2>* tex_rgba_hmh = nullptr;
+    int camId = -1;
+    int rc = -1;
+    float* H = nullptr;
+    int scale = -1;
+    int blurid = -1;
 };
 
 struct ps_parameters
