@@ -333,12 +333,6 @@ bool Save(
   const std::string & extension,
   bool matchFilePerImage)
 {
-  if(!fs::exists(folder))
-  {
-    ALICEVISION_LOG_DEBUG("Create directory: " << folder);
-    fs::create_directories(folder);
-  }
-
   const std::string filename = "matches." + extension;
   MatchExporter exporter(matches, folder, filename);
 
