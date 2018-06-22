@@ -122,6 +122,18 @@ CudaSize<Dim> operator-(const CudaSize<Dim> &lhs, const CudaSize<Dim> &rhs) {
   return out;
 }
 
+/*********************************************************************************
+ * declarations
+ *********************************************************************************/
+
+template <class Type, unsigned Dim> class CudaHostMemoryHeap;
+template <class Type, unsigned Dim> class CudaDeviceMemoryPitched;
+template <class Type, unsigned Dim> class CudaArray;
+
+/*********************************************************************************
+ * CudaHostMemoryHeap
+ *********************************************************************************/
+
 template <class Type, unsigned Dim> class CudaHostMemoryHeap
 {
   Type* buffer;
@@ -186,6 +198,10 @@ public:
     return buffer[y * sx + x];
   }
 };
+
+/*********************************************************************************
+ * CudaDeviceMemoryPitched
+ *********************************************************************************/
 
 template <class Type, unsigned Dim> class CudaDeviceMemoryPitched
 {
@@ -293,6 +309,10 @@ public:
   }
 
 };
+
+/*********************************************************************************
+ * CudaArray
+ *********************************************************************************/
 
 template <class Type, unsigned Dim> class CudaArray
 {
