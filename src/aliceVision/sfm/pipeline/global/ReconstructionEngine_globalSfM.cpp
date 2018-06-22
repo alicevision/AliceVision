@@ -336,7 +336,7 @@ bool ReconstructionEngine_globalSfM::Compute_Initial_Structure
       //    - number of images
       //    - number of tracks
       std::set<size_t> set_imagesId;
-      TracksUtilsMap::imageIdInTracks(map_selectedTracks, set_imagesId);
+      tracksUtilsMap::imageIdInTracks(map_selectedTracks, set_imagesId);
       osTrack << "------------------" << "\n"
         << "-- Tracks Stats --" << "\n"
         << " Tracks number: " << tracksBuilder.nbTracks() << "\n"
@@ -347,7 +347,7 @@ bool ReconstructionEngine_globalSfM::Compute_Initial_Structure
       osTrack << "\n------------------" << "\n";
 
       std::map<size_t, size_t> map_Occurence_TrackLength;
-      TracksUtilsMap::tracksLength(map_selectedTracks, map_Occurence_TrackLength);
+      tracksUtilsMap::tracksLength(map_selectedTracks, map_Occurence_TrackLength);
       osTrack << "TrackLength, Occurrence" << "\n";
       for (std::map<size_t, size_t>::const_iterator iter = map_Occurence_TrackLength.begin();
         iter != map_Occurence_TrackLength.end(); ++iter)  {

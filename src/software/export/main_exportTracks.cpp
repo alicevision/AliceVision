@@ -183,7 +183,7 @@ int main(int argc, char ** argv)
       setImageIndex.insert(viewI->getViewId());
       setImageIndex.insert(viewJ->getViewId());
 
-      TracksUtilsMap::getCommonTracksInImages(setImageIndex, mapTracks, mapTracksCommon);
+      tracksUtilsMap::getCommonTracksInImages(setImageIndex, mapTracks, mapTracksCommon);
 
       if(mapTracksCommon.empty())
       {

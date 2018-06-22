@@ -161,9 +161,11 @@ void TracksBuilder::exportToSTL(TracksMap& allTracks) const
   }
 }
 
-bool TracksUtilsMap::getCommonTracksInImages(const std::set<std::size_t>& imageIndexes,
-                                             const TracksMap& tracksIn,
-                                             TracksMap& map_tracksOut)
+namespace tracksUtilsMap {
+
+bool getCommonTracksInImages(const std::set<std::size_t>& imageIndexes,
+                             const TracksMap& tracksIn,
+                             TracksMap& map_tracksOut)
 {
   assert(!imageIndexes.empty());
   map_tracksOut.clear();
@@ -190,9 +192,9 @@ bool TracksUtilsMap::getCommonTracksInImages(const std::set<std::size_t>& imageI
 }
 
 
-void TracksUtilsMap::getCommonTracksInImages(const std::set<std::size_t>& imageIndexes,
-                                             const TracksPerView& tracksPerView,
-                                             std::set<std::size_t>& visibleTracks)
+void getCommonTracksInImages(const std::set<std::size_t>& imageIndexes,
+                             const TracksPerView& tracksPerView,
+                             std::set<std::size_t>& visibleTracks)
 {
   assert(!imageIndexes.empty());
   visibleTracks.clear();
@@ -235,10 +237,10 @@ void TracksUtilsMap::getCommonTracksInImages(const std::set<std::size_t>& imageI
   }
 }
 
-bool TracksUtilsMap::getCommonTracksInImagesFast(const std::set<std::size_t>& imageIndexes,
-                                                 const TracksMap& tracksIn,
-                                                 const TracksPerView& tracksPerView,
-                                                 TracksMap& tracksOut)
+bool getCommonTracksInImagesFast(const std::set<std::size_t>& imageIndexes,
+                                 const TracksMap& tracksIn,
+                                 const TracksPerView& tracksPerView,
+                                 TracksMap& tracksOut)
 {
   assert(!imageIndexes.empty());
   tracksOut.clear();
@@ -266,9 +268,9 @@ bool TracksUtilsMap::getCommonTracksInImagesFast(const std::set<std::size_t>& im
   return !tracksOut.empty();
 }
 
-void TracksUtilsMap::getTracksInImages(const std::set<std::size_t>& imagesId,
-                                       const TracksMap& tracks,
-                                       std::set<std::size_t>& tracksId)
+void getTracksInImages(const std::set<std::size_t>& imagesId,
+                       const TracksMap& tracks,
+                       std::set<std::size_t>& tracksId)
 {
   tracksId.clear();
   for(const std::size_t id : imagesId)
@@ -279,9 +281,9 @@ void TracksUtilsMap::getTracksInImages(const std::set<std::size_t>& imagesId,
   }
 }
 
-void TracksUtilsMap::getTracksInImagesFast(const std::set<IndexT>& imagesId,
-                                           const TracksPerView& tracksPerView,
-                                           std::set<IndexT>& tracksIds)
+void getTracksInImagesFast(const std::set<IndexT>& imagesId,
+                           const TracksPerView& tracksPerView,
+                           std::set<IndexT>& tracksIds)
 {
   tracksIds.clear();
   for(const std::size_t id : imagesId)
@@ -292,7 +294,7 @@ void TracksUtilsMap::getTracksInImagesFast(const std::set<IndexT>& imagesId,
   }
 }
   
-void TracksUtilsMap::computeTracksPerView(const TracksMap& tracks, TracksPerView& tracksPerView)
+void computeTracksPerView(const TracksMap& tracks, TracksPerView& tracksPerView)
 {
   for(const auto& track: tracks)
   {
@@ -315,5 +317,6 @@ void TracksUtilsMap::computeTracksPerView(const TracksMap& tracks, TracksPerView
   }
 }
 
+} // namespace tracksUtilsMap
 } // namespace track
 } // namespace aliceVision
