@@ -870,11 +870,10 @@ void ps_computeSimilarityVolume(
         depths_hmh.getSize()[1] );
     copy( *depths_arr->mem, depths_hmh );
 
-    int block_size = 16;
-    dim3 block(block_size, block_size, 1);
-    dim3 grid(divUp(nDepthsToSearch, block_size), divUp(slicesAtTime, block_size), 1);
-    dim3 blockvol(block_size, block_size, 1);
-    dim3 gridvol(divUp(volDimX, block_size), divUp(volDimY, block_size), 1);
+    dim3 block(32, 16, 1);
+    dim3 grid(divUp(nDepthsToSearch, block.x), divUp(slicesAtTime, block.y), 1);
+    dim3 blockvol(block.x, block.y, 1);
+    dim3 gridvol(divUp(volDimX, block.x), divUp(volDimY, block.y), 1);
 
     // setup cameras matrices to the constant memory
     ps_init_reference_camera_matrices(cams[0]->P, cams[0]->iP, cams[0]->R, cams[0]->iR, cams[0]->K, cams[0]->iK,
@@ -889,11 +888,12 @@ void ps_computeSimilarityVolume(
 
     //--------------------------------------------------------------------------------------------------
     // init similarity volume
-    for(int z = 0; z < volDimZ; z++)
     {
-        volume_initVolume_kernel<unsigned char><<<gridvol, blockvol>>>(
+        dim3 blockvol3d(8, 8, 8);
+        dim3 gridvol3d(divUp(volDimX, blockvol3d.x), divUp(volDimY, blockvol3d.y), divUp(volDimZ, blockvol3d.z));
+        volume_initFullVolume_kernel<unsigned char><<<gridvol3d, blockvol3d >>>(
             vol_dmp.getBuffer(), vol_dmp.stride()[1], vol_dmp.stride()[0],
-            volDimX, volDimY, volDimZ, z, 255 );
+            volDimX, volDimY, volDimZ, 255 );
         CHECK_CUDA_ERROR();
     }
 

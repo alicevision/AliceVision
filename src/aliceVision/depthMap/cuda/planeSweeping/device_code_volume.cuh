@@ -101,6 +101,21 @@ __global__ void volume_initVolume_kernel(T* volume, int volume_s, int volume_p, 
     }
 }
 
+template <typename T>
+__global__ void volume_initFullVolume_kernel(T* volume, int volume_s, int volume_p, int volDimX, int volDimY, int volDimZ,
+    T cst)
+{
+    int vx = blockIdx.x * blockDim.x + threadIdx.x;
+    int vy = blockIdx.y * blockDim.y + threadIdx.y;
+    int vz = blockIdx.z * blockDim.z + threadIdx.z;
+
+    if ((vx >= 0) && (vx < volDimX) && (vy >= 0) && (vy < volDimY) && (vz >= 0) && (vz < volDimZ))
+    {
+        T* volume_zyx = get3DBufferAt(volume, volume_s, volume_p, vx, vy, vz);
+        *volume_zyx = cst;
+    }
+}
+
 __global__ void volume_updateMinXSlice_kernel(unsigned char* volume, int volume_s, int volume_p,
                                               unsigned char* xySliceBestSim, int xySliceBestSim_p, int* xySliceBestZ,
                                               int xySliceBestZ_p, int volDimX, int volDimY, int volDimZ, int vz);
