@@ -856,9 +856,10 @@ void ps_computeSimilarityVolume(
 
     // if(verbose)
     printf("nDepths %i, nDepthsToSearch %i \n", nDepths, nDepthsToSearch);
-    printf("volPixs_hmh.getBytes(): %i\n", volPixs_hmh.getBytes());
-    printf("volPixs_hmh.getSize().dim(): %i\n", volPixs_hmh.getSize().dim());
-    printf("volPixs_hmh.getSize(): (%i, %i)\n", volPixs_hmh.getSize()[0], volPixs_hmh.getSize()[1]);     printf("nDepths %i, nDepthsToSearch %i \n", nDepths, nDepthsToSearch);
+    printf("volPixs_hmh.getBytes(): %li\n", long(volPixs_hmh.getBytes()));
+    printf("volPixs_hmh.getSize().dim(): %li\n", long(volPixs_hmh.getSize().dim()));
+    printf("volPixs_hmh.getSize(): (%li, %li)\n", long(volPixs_hmh.getSize()[0]), long(volPixs_hmh.getSize()[1]));
+    printf("nDepths %i, nDepthsToSearch %i \n", nDepths, nDepthsToSearch);
 
     auto volPixs_arr = global_data.pitched_mem_int4_point_tex_cache.get(
         volPixs_hmh.getSize()[0],
