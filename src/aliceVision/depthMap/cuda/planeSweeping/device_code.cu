@@ -890,6 +890,7 @@ __global__ void getSilhoueteMap_kernel(
     }
 }
 
+#if 0
 __global__ void retexture_kernel(
     cudaTextureObject_t r4tex,
     uchar4* out, int out_p, float4* retexturePixs, int retexturePixs_p, int width,
@@ -909,7 +910,9 @@ __global__ void retexture_kernel(
             make_uchar4((unsigned char)colf4.x, (unsigned char)colf4.y, (unsigned char)colf4.z, (unsigned char)colf4.w);
     }
 }
+#endif
 
+#if 0
 __global__ void retextureComputeNormalMap_kernel(
     uchar4* out, int out_p,
     float2* retexturePixs, int retexturePixs_p,
@@ -929,6 +932,7 @@ __global__ void retextureComputeNormalMap_kernel(
                         (unsigned char)(objPixNorm.z * 127.0f + 128.0f), 0);
     }
 }
+#endif
 
 __global__ void pushPull_Push_kernel(
     cudaTextureObject_t r4tex,

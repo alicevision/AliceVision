@@ -404,18 +404,22 @@ void ps_getSilhoueteMap(
                     int height, int scale, int CUDAdeviceNo, int ncamsAllocated, int scales, int step, int camId,
                     uchar4 maskColorRgb, bool verbose);
 
+#if 0
 void ps_retexture(
                     CudaHostMemoryHeap<uchar4, 2>* bmpOrig_hmh,
                     CudaHostMemoryHeap<uchar4, 2>* bmpObj_hmh,
                     CudaHostMemoryHeap<float4, 2>* retexturePixs_hmh,
                     int wObj, int hObj, int wOrig, int hOrig,
                     int slicesAtTime, int ntimes, int npixs, int CUDAdeviceNo, bool verbose);
+#endif
 
+#if 0
 void ps_retextureComputeNormalMap(
                     CudaHostMemoryHeap<uchar4, 2>* bmpObj_hmh,
                     CudaHostMemoryHeap<float2, 2>* retexturePixs_hmh,
                     CudaHostMemoryHeap<float3, 2>* retextureNorms_hmh, int wObj, int hObj,
                     int slicesAtTime, int ntimes, int npixs, int CUDAdeviceNo, bool verbose);
+#endif
 
 void ps_colorExtractionPushPull(
                     CudaHostMemoryHeap<uchar4, 2>* bmp_hmh,
