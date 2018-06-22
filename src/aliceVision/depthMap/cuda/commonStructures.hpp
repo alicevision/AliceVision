@@ -676,7 +676,6 @@ struct cameraStruct
     int rc = -1;
     float* H = nullptr;
     int scale = -1;
-    int blurid = -1;
 };
 
 struct ps_parameters
