@@ -1128,12 +1128,13 @@ float PlaneSweepingCuda::sweepPixelsToVolume(int nDepthsToSearch, StaticVector<u
         }
     }
 
-    //int slicesAtTime = std::min(pixels->size(), 4096); //TODO
+    int slicesAtTime = std::min(pixels->size(), 4096*16); //TODO
     // int slicesAtTime = 480/scale;
-    int slicesAtTime = pixels->size();
+    // int slicesAtTime = pixels->size();
 
     int npixs = pixels->size();
     int ntimes = npixs / slicesAtTime + 1;
+    ALICEVISION_LOG_INFO("Split processing in N blocks (ntimes): " << ntimes);
     CudaHostMemoryHeap<int4, 2> volPixs_hmh(CudaSize<2>(slicesAtTime, ntimes));
 
     int4 *_volPixs = volPixs_hmh.getBuffer();
