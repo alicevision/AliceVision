@@ -182,7 +182,7 @@ public:
  * We keep data in this array that is frequently allocated and freed, as well
  * as recomputed in the original code without a decent need.
  */
-extern GlobalData global_data;
+extern thread_local GlobalData global_data;
 
 }; // namespace depthMap
 }; // namespace aliceVision

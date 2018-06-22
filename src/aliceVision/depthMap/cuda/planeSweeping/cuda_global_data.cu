@@ -33,7 +33,7 @@ namespace depthMap {
  * The code is not capable of dealing with multiple GPUs yet (on multiple GPUs,
  * multiple allocations are probably required).
  */
-GlobalData global_data;
+thread_local GlobalData global_data;
 
 void GaussianArray::create( float delta, int radius )
 {
