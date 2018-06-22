@@ -3070,6 +3070,7 @@ void ps_getSilhoueteMap( CudaHostMemoryHeap<bool, 2>* omap_hmh, int width,
         printf("gpu elapsed time: %f ms \n", toc(tall));
 }
 
+#if 0
 void ps_retexture(CudaHostMemoryHeap<uchar4, 2>* bmpOrig_hmh, CudaHostMemoryHeap<uchar4, 2>* bmpObj_hmh,
                   CudaHostMemoryHeap<float4, 2>* retexturePixs_hmh, int wObj, int hObj, int wOrig, int hOrig,
                   int slicesAtTime, int ntimes, int npixs, int CUDAdeviceNo, bool verbose)
@@ -3077,8 +3078,6 @@ void ps_retexture(CudaHostMemoryHeap<uchar4, 2>* bmpOrig_hmh, CudaHostMemoryHeap
     clock_t tall = tic();
     testCUDAdeviceNo(CUDAdeviceNo);
 
-    // CudaArray<uchar4, 2> bmpOrig_arr(*bmpOrig_hmh);
-    // cudaBindTextureToArray(r4tex, bmpOrig_arr.getArray(), cudaCreateChannelDesc<uchar4>());
     auto bmpOrig_arr =
         global_data.pitched_mem_uchar4_linear_tex_cache.get(
             bmpOrig_hmh->getSize()[0],
@@ -3102,15 +3101,15 @@ void ps_retexture(CudaHostMemoryHeap<uchar4, 2>* bmpOrig_hmh, CudaHostMemoryHeap
         slicesAtTime, ntimes, npixs);
     CHECK_CUDA_ERROR();
 
-    // cudaUnbindTexture(r4tex);
-
     bmpObj_hmh->copyFrom( bmpObj_dmp );
     global_data.pitched_mem_uchar4_linear_tex_cache.put( bmpOrig_arr );
 
     if(verbose)
         printf("gpu elapsed time: %f ms \n", toc(tall));
 }
+#endif
 
+#if 0
 void ps_retextureComputeNormalMap(CudaHostMemoryHeap<uchar4, 2>* bmpObj_hmh,
                                   CudaHostMemoryHeap<float2, 2>* retexturePixs_hmh,
                                   CudaHostMemoryHeap<float3, 2>* retextureNorms_hmh, int wObj, int hObj,
@@ -3130,8 +3129,10 @@ void ps_retextureComputeNormalMap(CudaHostMemoryHeap<uchar4, 2>* bmpObj_hmh,
     dim3 grid(divUp(slicesAtTime, block_size), divUp(ntimes, block_size), 1);
 
     retextureComputeNormalMap_kernel<<<grid, block>>>(
-        bmpObj_dmp.getBuffer(), bmpObj_dmp.stride()[0], retexturePixs_dmp.getBuffer(), retexturePixs_dmp.stride()[0],
-        retexturePixsNorms_dmp.getBuffer(), retexturePixsNorms_dmp.stride()[0], slicesAtTime, ntimes, npixs);
+        bmpObj_dmp.getBuffer(), bmpObj_dmp.stride()[0],
+        retexturePixs_dmp.getBuffer(), retexturePixs_dmp.stride()[0],
+        retexturePixsNorms_dmp.getBuffer(), retexturePixsNorms_dmp.stride()[0],
+        slicesAtTime, ntimes, npixs);
     CHECK_CUDA_ERROR();
 
     bmpObj_hmh->copyFrom( bmpObj_dmp );
@@ -3139,6 +3140,7 @@ void ps_retextureComputeNormalMap(CudaHostMemoryHeap<uchar4, 2>* bmpObj_hmh,
     if(verbose)
         printf("gpu elapsed time: %f ms \n", toc(tall));
 }
+#endif
 
 void ps_colorExtractionPushPull(CudaHostMemoryHeap<uchar4, 2>* bmp_hmh, int w, int h, int CUDAdeviceNo, bool verbose)
 {
