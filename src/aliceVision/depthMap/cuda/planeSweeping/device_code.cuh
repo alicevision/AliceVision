@@ -184,6 +184,7 @@ __global__ void downscale_mean_smooth_lab_kernel(
     uchar4* texLab, int texLab_p,
     int width, int height, int scale );
 
+#if 0
 __global__ void ptsStatForRcDepthMap_kernel(
     cudaTextureObject_t r4tex,
     cudaTextureObject_t depthsTex,
@@ -191,6 +192,7 @@ __global__ void ptsStatForRcDepthMap_kernel(
     float3* pts, int pts_p,
     int npts, int width, int height,
     int maxNPixSize, int wsh, const float gammaC, const float gammaP );
+#endif
 
 __global__ void getSilhoueteMap_kernel(
     cudaTextureObject_t rTexU4,

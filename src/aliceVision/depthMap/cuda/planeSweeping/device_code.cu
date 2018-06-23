@@ -842,6 +842,7 @@ __global__ void downscale_mean_smooth_lab_kernel(
     }
 }
 
+#if 0
 __global__ void ptsStatForRcDepthMap_kernel(
     cudaTextureObject_t r4tex,
     cudaTextureObject_t depthsTex,
@@ -874,6 +875,7 @@ __global__ void ptsStatForRcDepthMap_kernel(
         out[ptid] = depthVarianceGray;
     }
 }
+#endif
 
 __global__ void getSilhoueteMap_kernel(
     cudaTextureObject_t rTexU4,
