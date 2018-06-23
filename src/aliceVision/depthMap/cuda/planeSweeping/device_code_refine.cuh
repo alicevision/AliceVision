@@ -209,10 +209,12 @@ __global__ void refine_reprojTarSobelAndDPIXTCDRCRcTcDepthsMap_kernel(
     float* rcDepthMap, int rcDepthMap_p,
     int width, int height, float depthMapShift);
 
+#if 0
 __global__ void refine_computeRcTcDepthMap_kernel(
     cudaTextureObject_t depthsTex,
     float* rcDepthMap, int rcDepthMap_p,
     int width, int height, float pixSizeRatioThr );
+#endif
 
 } // namespace depthMap
 } // namespace aliceVision

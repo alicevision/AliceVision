@@ -1448,6 +1448,7 @@ __device__ float2 DPIXTCDRC(const float3& P)
     return op;
 };
 
+#if 0
 __global__ void refine_computeRcTcDepthMap_kernel(
     cudaTextureObject_t depthsTex,
     float* rcDepthMap, int rcDepthMap_p,
@@ -1485,6 +1486,7 @@ __global__ void refine_computeRcTcDepthMap_kernel(
         rcDepthMap[y * rcDepthMap_p + x] = rcDepthOut;
     };
 }
+#endif
 
 } // namespace depthMap
 } // namespace aliceVision

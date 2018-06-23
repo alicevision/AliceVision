@@ -392,11 +392,13 @@ void ps_reprojectRGBTcImageByDepthMap(
                     int width, int height, int scale, int CUDAdeviceNo, int ncamsAllocated,
                     int scales, bool verbose);
 
+#if 0
 void ps_computeRcTcDepthMap(
                     CudaHostMemoryHeap<float, 2>& iRcDepthMap_oRcTcDepthMap_hmh,
                     CudaHostMemoryHeap<float, 2>& tcDepthMap_hmh, float pixSizeRatioThr, cameraStruct** cams,
                     int ncams, int width, int height, int scale, int CUDAdeviceNo, int ncamsAllocated,
                     int scales, bool verbose);
+#endif
 
 void ps_getSilhoueteMap(
                     // CudaArray<uchar4, 2>** ps_texs_arr,
