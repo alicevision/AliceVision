@@ -66,6 +66,7 @@ void ps_deviceUpdateCam(
 void ps_deviceDeallocate(
                     int CUDAdeviceNo, int ncams, int scales);
 
+#if 0
 void ps_aggregatePathVolume2(
                     CudaDeviceMemoryPitched<unsigned char, 3>& vol_dmp, int volDimX, int volDimY,
                     int volDimZ, float P1, float P2, bool transfer);
@@ -79,7 +80,9 @@ void ps_aggregatePathVolume(
                     float P1, float P2, bool transfer,
                     int volLUX, int volLUY,
                     int dimTrnX, bool doInvZ, bool verbose);
+#endif
 
+#if 0
 /**
  * @param[out] volAgr_dmp output volume where we will aggregate the best XXX
  * @param[in] d_volSim input similarity volume
@@ -92,6 +95,7 @@ void ps_updateAggrVolume(
                     int dimTrnX, int dimTrnY, int dimTrnZ,
                     unsigned char P1, unsigned char P2, 
                     bool verbose, bool doInvZ, int lastN);
+#endif
 
 /**
 * @param[in] ps_texs_arr table of image (in Lab colorspace) for all scales
@@ -244,16 +248,6 @@ void ps_dilateMaskMap(
                     CudaDeviceMemoryPitched<float, 2>& depthMap_dmp,
                     int width, int height, bool verbose,
                     int niters, float fpPlaneDepth);
-
-void ps_refineDepthMapInternal(
-                    CudaDeviceMemoryPitched<float, 2>& osimMap_dmp,
-                    CudaDeviceMemoryPitched<float, 2>& odepthMap_dmp,
-                    CudaDeviceMemoryPitched<float, 2>& idepthMap_dmp,
-                    CudaDeviceMemoryPitched<float, 2>& idepthMapMask_dmp, int width, int height,
-                    bool verbose, int wsh, float gammaC, float gammaP, float simThr,
-                    CudaDeviceMemoryPitched<float3, 2>& dsm_dmp,
-                    CudaDeviceMemoryPitched<float3, 2>& ssm_dmp, CudaArray<uchar4, 2>& tTexU4_arr,
-                    CudaDeviceMemoryPitched<uchar4, 2>& timg_dmp, bool moveByTcOrRc, float step);
 
 void ps_computeSimMapForDepthMapInternal(
                     cudaTextureObject_t t4tex,

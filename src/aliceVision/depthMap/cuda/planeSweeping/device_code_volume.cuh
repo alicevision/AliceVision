@@ -135,6 +135,7 @@ __global__ void volume_getVolumeXYSliceAtZ_kernel(T1* xySlice, int xySlice_p, T2
     }
 }
 
+#if 0
 __global__ void volume_computeBestXSlice_kernel( cudaTextureObject_t sliceTexUChar,
                                                  unsigned char* xsliceBestInColCst,
                                                  int volDimX, int volDimY );
@@ -143,6 +144,7 @@ __global__ void volume_agregateCostVolumeAtZ_kernel(unsigned char* volume, int v
                                                     unsigned char* xsliceBestInColCst, int volDimX, int volDimY,
                                                     int volDimZ, int vz, unsigned char P1, unsigned char P2,
                                                     bool transfer);
+#endif
 
 __global__ void volume_computeBestXSliceUInt_kernel(
     cudaTextureObject_t sliceTexUInt,
@@ -230,9 +232,11 @@ __global__ void update_GC_K_volumeXYSliceAtZInt4_kernel(int4* xySlice, int xySli
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+#if 0
 __global__ void volume_compute_rDP1_kernel(int2* xySlice, int xySlice_p, int* ovolume, int ovolume_s, int ovolume_p,
                                            unsigned int* volume, int volume_s, int volume_p, int volDimX, int volDimY,
                                            int volDimZ, int vz);
+#endif
 
 __global__ void volume_compute_DP1_kernel(int2* xySlice, int xySlice_p, int* ovolume, int ovolume_s, int ovolume_p,
                                           unsigned int* volume, int volume_s, int volume_p, int volDimX, int volDimY,
@@ -248,19 +252,23 @@ __global__ void volume_normalize_rDP1_volume_by_minMaxMap_kernel(int2* xySlice, 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+#if 0
 __global__ void volume_filter_VisTVolume_kernel(
     cudaTextureObject_t sliceTexUInt,
     unsigned int* ovolume, int ovolume_s, int ovolume_p,
     int volDimX, int volDimY, int volDimZ,
     int vz, int K );
+#endif
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+#if 0
 __global__ void volume_filter_enforceTWeightInVolume_kernel(
     cudaTextureObject_t sliceTexUInt,
     unsigned int* ovolume, int ovolume_s, int ovolume_p,
     int volDimX, int volDimY, int volDimZ,
     int vz, int K );
+#endif
 
 } // namespace depthMap
 } // namespace aliceVision
