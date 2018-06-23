@@ -370,6 +370,7 @@ void ps_GC_K_aggregatePathVolume(
                     int volDimX, int volDimY, int volDimZ,
                     int K);
 
+#if 0
 void ps_ptsStatForRcDepthMap(
                     // CudaArray<uchar4, 2>** ps_texs_arr,
                     CudaHostMemoryHeap<float, 2>* depthMap_hmh,
@@ -377,7 +378,9 @@ void ps_ptsStatForRcDepthMap(
                     CudaHostMemoryHeap<float2, 2>& out_hmh, int npts, int width, int height, int scale,
                     int CUDAdeviceNo, int ncamsAllocated, int scales, int maxNPixSize, int wsh, float gammaC,
                     float gammaP, bool verbose);
+#endif
 
+#if 0
 void ps_computeSimMapReprojectByDepthMapMovedByStep(
                     // CudaArray<uchar4, 2>** ps_texs_arr,
                     CudaHostMemoryHeap<float, 2>* osimMap_hmh,
@@ -385,12 +388,15 @@ void ps_computeSimMapReprojectByDepthMapMovedByStep(
                     int ncams, int width, int height, int scale, int CUDAdeviceNo,
                     int ncamsAllocated, int scales, bool verbose, int wsh, float gammaC,
                     float gammaP, bool moveByTcOrRc, float step);
+#endif
 
+#if 0
 void ps_reprojectRGBTcImageByDepthMap(
                     CudaHostMemoryHeap<uchar4, 2>* iTcoRcRgbImage_hmh,
                     CudaHostMemoryHeap<float, 2>* rcDepthMap_hmh, cameraStruct** cams, int ncams,
                     int width, int height, int scale, int CUDAdeviceNo, int ncamsAllocated,
                     int scales, bool verbose);
+#endif
 
 #if 0
 void ps_computeRcTcDepthMap(

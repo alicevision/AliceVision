@@ -49,12 +49,14 @@ __global__ void refine_reprojTarTexLABByDepthMap_kernel(
     uchar4* tex, int tex_p,
     int width, int height);
 
+#if 0
 __global__ void refine_reprojTarTexLABByDepthMapMovedByStep_kernel(
     cudaTextureObject_t t4tex,
     float* depthMap, int depthMap_p,
     uchar4* tex, int tex_p,
     int width, int height, bool moveByTcOrRc,
     float step);
+#endif
 
 __global__ void refine_compYKNCCSimMap_kernel(
     cudaTextureObject_t rTexU4,

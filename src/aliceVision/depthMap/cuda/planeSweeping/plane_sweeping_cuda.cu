@@ -2814,6 +2814,7 @@ void ps_GC_K_aggregatePathVolume(CudaHostMemoryHeap<unsigned int, 2>* ftid_hmh, 
     // pr_printfDeviceMemoryInfo();
 }
 
+#if 0
 // void ps_ptsStatForRcDepthMap(CudaArray<uchar4, 2>** ps_texs_arr, CudaHostMemoryHeap<float, 2>* depthMap_hmh,
 void ps_ptsStatForRcDepthMap( CudaHostMemoryHeap<float, 2>* depthMap_hmh,
                              cameraStruct** cams, CudaHostMemoryHeap<float3, 2>& pts_hmh,
@@ -2871,7 +2872,9 @@ void ps_ptsStatForRcDepthMap( CudaHostMemoryHeap<float, 2>* depthMap_hmh,
     if(verbose)
         printf("gpu elapsed time: %f ms \n", toc(tall));
 }
+#endif
 
+#if 0
 // void ps_computeSimMapReprojectByDepthMapMovedByStep(CudaArray<uchar4, 2>** ps_texs_arr,
 void ps_computeSimMapReprojectByDepthMapMovedByStep(
     CudaHostMemoryHeap<float, 2>* osimMap_hmh,
@@ -2936,11 +2939,14 @@ void ps_computeSimMapReprojectByDepthMapMovedByStep(
     global_data.pitched_mem_uchar4_point_tex_cache.put( rimg_dmp );
     global_data.pitched_mem_uchar4_point_tex_cache.put( timg_dmp );
 }
+#endif
 
-void ps_reprojectRGBTcImageByDepthMap(CudaHostMemoryHeap<uchar4, 2>* iTcoRcRgbImage_hmh,
-                                      CudaHostMemoryHeap<float, 2>* rcDepthMap_hmh, cameraStruct** cams, int ncams,
-                                      int width, int height, int scale, int CUDAdeviceNo, int ncamsAllocated,
-                                      int scales, bool verbose)
+#if 0
+void ps_reprojectRGBTcImageByDepthMap(
+    CudaHostMemoryHeap<uchar4, 2>* iTcoRcRgbImage_hmh,
+    CudaHostMemoryHeap<float, 2>* rcDepthMap_hmh, cameraStruct** cams, int ncams,
+    int width, int height, int scale, int CUDAdeviceNo, int ncamsAllocated,
+    int scales, bool verbose)
 {
     clock_t tall = tic();
     testCUDAdeviceNo(CUDAdeviceNo);
@@ -2987,6 +2993,7 @@ void ps_reprojectRGBTcImageByDepthMap(CudaHostMemoryHeap<uchar4, 2>* iTcoRcRgbIm
     if(verbose)
         printf("gpu elapsed time: %f ms \n", toc(tall));
 }
+#endif
 
 #if 0
 void ps_computeRcTcDepthMap(

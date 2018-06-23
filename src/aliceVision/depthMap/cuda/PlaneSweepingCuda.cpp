@@ -1754,7 +1754,7 @@ bool PlaneSweepingCuda::optimizeDepthSimMapGradientDescent(StaticVector<DepthSim
     return true;
 }
 
-/*
+#if 0
 bool PlaneSweepingCuda::computeDP1Volume(StaticVector<int>* ovolume, StaticVector<unsigned int>* ivolume,
                                            int _volDimX, int volDimY, int volDimZ, int xFrom, int xTo)
 {
@@ -1802,7 +1802,9 @@ bool PlaneSweepingCuda::computeDP1Volume(StaticVector<int>* ovolume, StaticVecto
 
     return true;
 }
+#endif
 
+/*
 bool PlaneSweepingCuda::computeSimMapReprojectByDepthMapMovedByStep(StaticVector<float>* osimMap,
                                                                       StaticVector<float>* iodepthMap, int rc, int tc,
                                                                       int _wsh, float _gammaC, float _gammaP,
