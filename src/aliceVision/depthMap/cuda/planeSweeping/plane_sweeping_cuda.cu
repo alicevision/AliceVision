@@ -2988,10 +2988,12 @@ void ps_reprojectRGBTcImageByDepthMap(CudaHostMemoryHeap<uchar4, 2>* iTcoRcRgbIm
         printf("gpu elapsed time: %f ms \n", toc(tall));
 }
 
-void ps_computeRcTcDepthMap(CudaHostMemoryHeap<float, 2>& iRcDepthMap_oRcTcDepthMap_hmh,
-                            CudaHostMemoryHeap<float, 2>& tcDepthMap_hmh, float pixSizeRatioThr, cameraStruct** cams,
-                            int ncams, int width, int height, int scale, int CUDAdeviceNo, int ncamsAllocated,
-                            int scales, bool verbose)
+#if 0
+void ps_computeRcTcDepthMap(
+    CudaHostMemoryHeap<float, 2>& iRcDepthMap_oRcTcDepthMap_hmh,
+    CudaHostMemoryHeap<float, 2>& tcDepthMap_hmh, float pixSizeRatioThr, cameraStruct** cams,
+    int ncams, int width, int height, int scale, int CUDAdeviceNo, int ncamsAllocated,
+    int scales, bool verbose)
 {
     clock_t tall = tic();
     testCUDAdeviceNo(CUDAdeviceNo);
@@ -3009,8 +3011,7 @@ void ps_computeRcTcDepthMap(CudaHostMemoryHeap<float, 2>& iRcDepthMap_oRcTcDepth
                                    cams[c]->C);
 
     CudaDeviceMemoryPitched<float, 2> rcDepthMap_dmp(iRcDepthMap_oRcTcDepthMap_hmh);
-    // CudaArray<float, 2> depthMap_arr(tcDepthMap_hmh);
-    // cudaBindTextureToArray(depthsTex, depthMap_arr.getArray(), cudaCreateChannelDesc<float>());
+
     auto depthMap_arr = global_data.pitched_mem_float_point_tex_cache.get(
         tcDepthMap_hmh.getSize()[0],
         tcDepthMap_hmh.getSize()[1] );
@@ -3024,12 +3025,12 @@ void ps_computeRcTcDepthMap(CudaHostMemoryHeap<float, 2>& iRcDepthMap_oRcTcDepth
 
     iRcDepthMap_oRcTcDepthMap_hmh.copyFrom( rcDepthMap_dmp );
 
-    // cudaUnbindTexture(depthsTex);
     global_data.pitched_mem_float_point_tex_cache.put( depthMap_arr );
 
     if(verbose)
         printf("gpu elapsed time: %f ms \n", toc(tall));
 }
+#endif
 
 // void ps_getSilhoueteMap(CudaArray<uchar4, 2>** ps_texs_arr, CudaHostMemoryHeap<bool, 2>* omap_hmh, int width,
 void ps_getSilhoueteMap( CudaHostMemoryHeap<bool, 2>* omap_hmh, int width,
