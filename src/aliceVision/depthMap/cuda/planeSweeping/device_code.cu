@@ -399,6 +399,7 @@ __global__ void reprojTarTexLAB_kernel(
     }
 }
 
+#if 0
 __global__ void reprojTarTexRgb_kernel(
     cudaTextureObject_t rtex,
     cudaTextureObject_t gtex,
@@ -435,7 +436,9 @@ __global__ void reprojTarTexRgb_kernel(
         }
     }
 }
+#endif
 
+#if 0
 __global__ void copyUchar4Dim2uchar_kernel(int dim, uchar4* src, int src_p, unsigned char* tar, int tar_p, int width,
                                            int height)
 {
@@ -459,7 +462,9 @@ __global__ void copyUchar4Dim2uchar_kernel(int dim, uchar4* src, int src_p, unsi
         }
     }
 }
+#endif
 
+#if 0
 __global__ void transpose_uchar4_kernel(uchar4* input, int input_p, uchar4* output, int output_p, int width, int height)
 {
     __shared__ uchar4 temp[BLOCK_DIM][BLOCK_DIM];
@@ -479,7 +484,9 @@ __global__ void transpose_uchar4_kernel(uchar4* input, int input_p, uchar4* outp
         *get2DBufferAt(output, output_p, xIndex, yIndex) = temp[threadIdx.x][threadIdx.y];
     }
 }
+#endif
 
+#if 0
 __global__ void transpose_float4_kernel(float4* input, int input_p, float4* output, int output_p, int width, int height)
 {
     __shared__ float4 temp[BLOCK_DIM][BLOCK_DIM];
@@ -502,7 +509,9 @@ __global__ void transpose_float4_kernel(float4* input, int input_p, float4* outp
         *get2DBufferAt(output, output_p, xIndex, yIndex) = temp[threadIdx.x][threadIdx.y];
     }
 }
+#endif
 
+#if 0
 __global__ void compAggrNccSim_kernel(
     float4* ostat1, int ostat1_p,
     float4* ostat2, int ostat2_p,
@@ -585,7 +594,9 @@ __global__ void compAggrNccSim_kernel(
         }
     }
 }
+#endif
 
+#if 0
 __global__ void compNccSimFromStats_kernel(
     float* odepth, int odepth_p,
     float* osim, int osim_p,
@@ -641,7 +652,9 @@ __global__ void compNccSimFromStats_kernel(
         }
     }
 }
+#endif
 
+#if 0
 __global__ void compWshNccSim_kernel(
     cudaTextureObject_t rTexU4,
     cudaTextureObject_t tTexU4,
@@ -669,7 +682,9 @@ __global__ void compWshNccSim_kernel(
         *get2DBufferAt(osim, osim_p, x, y) = sst.sim;
     }
 }
+#endif
 
+#if 0
 __global__ void aggrYKNCCSim_kernel(
     cudaTextureObject_t rTexU4,
     cudaTextureObject_t tTexU4,
@@ -708,7 +723,9 @@ __global__ void aggrYKNCCSim_kernel(
         *get2DBufferAt(osim, osim_p, x, y) = sums / sumw;
     }
 }
+#endif
 
+#if 0
 __global__ void updateBestDepth_kernel(
     float* osim, int osim_p,
     float* odpt, int odpt_p,
@@ -734,6 +751,7 @@ __global__ void updateBestDepth_kernel(
         }
     }
 }
+#endif
 
 __global__ void downscale_bilateral_smooth_lab_kernel(
     cudaTextureObject_t gaussianTex,
