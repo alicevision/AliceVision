@@ -10,6 +10,8 @@
 
 #include <math_constants.h>
 
+#define DEVICE_MATRIX_CUH_NO_ROUNDING_DIFFERENCES
+
 namespace aliceVision {
 namespace depthMap {
 
@@ -28,7 +30,7 @@ inline static __device__ float3 M3x3mulV3(float* M3x3, const float3& V)
 
 inline static __device__ float3 M3x3mulV2(float* M3x3, const float2& V)
 {
-#if 0
+#ifdef DEVICE_MATRIX_CUH_NO_ROUNDING_DIFFERENCES
     return make_float3(M3x3[0] * V.x + M3x3[3] * V.y + M3x3[6], M3x3[1] * V.x + M3x3[4] * V.y + M3x3[7],
                        M3x3[2] * V.x + M3x3[5] * V.y + M3x3[8]);
 #else
@@ -41,7 +43,7 @@ inline static __device__ float3 M3x3mulV2(float* M3x3, const float2& V)
 
 inline static __device__ float3 M3x4mulV3(float* M3x4, const float3& V)
 {
-#if 0
+#ifdef DEVICE_MATRIX_CUH_NO_ROUNDING_DIFFERENCES
     return make_float3(M3x4[0] * V.x + M3x4[3] * V.y + M3x4[6] * V.z + M3x4[9],
                        M3x4[1] * V.x + M3x4[4] * V.y + M3x4[7] * V.z + M3x4[10],
                        M3x4[2] * V.x + M3x4[5] * V.y + M3x4[8] * V.z + M3x4[11]);
@@ -55,7 +57,7 @@ inline static __device__ float3 M3x4mulV3(float* M3x4, const float3& V)
 
 inline static __device__ float2 V2M3x3mulV2(float* M3x3, float2& V)
 {
-#if 0
+#ifdef DEVICE_MATRIX_CUH_NO_ROUNDING_DIFFERENCES
     float d = M3x3[2] * V.x + M3x3[5] * V.y + M3x3[8];
     return make_float2((M3x3[0] * V.x + M3x3[3] * V.y + M3x3[6]) / d, (M3x3[1] * V.x + M3x3[4] * V.y + M3x3[7]) / d);
 #else
@@ -68,12 +70,13 @@ inline static __device__ float2 V2M3x3mulV2(float* M3x3, float2& V)
 
 inline static __device__ float2 project3DPoint(float* M3x4, const float3& V)
 {
-#if 0
+#ifdef DEVICE_MATRIX_CUH_NO_ROUNDING_DIFFERENCES
     float3 p = M3x4mulV3(M3x4, V);
     return make_float2(p.x / p.z, p.y / p.z);
 #else
+    // Rounds differently
     const float3 p = M3x4mulV3(M3x4, V);
-    const float  z = 1.0 / p.z;
+    const float  z = 1.0f / p.z;
     return make_float2( p.x * z, p.y * z );
 #endif
 }
@@ -158,7 +161,7 @@ inline static __device__ float2 operator-(const float2& a, const float2& b)
 
 inline static __device__ float dot(const float3& a, const float3& b)
 {
-#if 0
+#ifdef DEVICE_MATRIX_CUH_NO_ROUNDING_DIFFERENCES
     return a.x * b.x + a.y * b.y + a.z * b.z;
 #else
     return fmaf( a.x, b.x, fmaf( a.y, b.y, a.z * b.z ) );
@@ -181,7 +184,7 @@ inline static __device__ float size(const float3& a)
 
 inline static __device__ float size(const float2& a)
 {
-#if 0
+#ifdef DEVICE_MATRIX_CUH_NO_ROUNDING_DIFFERENCES
     return sqrtf(a.x * a.x + a.y * a.y);
 #else
     return hypotf( a.x, a.y );
@@ -209,7 +212,7 @@ inline static __device__ float3 cross(const float3& a, const float3& b)
 
 inline static __device__ void normalize(float3& a)
 {
-#if 0
+#ifdef DEVICE_MATRIX_CUH_NO_ROUNDING_DIFFERENCES
     float d = sqrtf(dot(a, a));
     a.x /= d;
     a.y /= d;
@@ -224,7 +227,7 @@ inline static __device__ void normalize(float3& a)
 
 inline static __device__ void normalize(float2& a)
 {
-#if 0
+#ifdef DEVICE_MATRIX_CUH_NO_ROUNDING_DIFFERENCES
     float d = sqrtf(dot(a, a));
     a.x /= d;
     a.y /= d;
