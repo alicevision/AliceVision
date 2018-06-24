@@ -11,8 +11,8 @@ configuration:
 
 install:
     - git submodule update --init --recursive
-#    - cmd: >-
-#          call cudaInstallAppveyor.cmd
+    - cmd: >-
+          call cudaInstallAppveyor.cmd
     - vcpkg upgrade --no-dry-run
     - vcpkg list
     - vcpkg install
@@ -23,6 +23,7 @@ install:
           geogram
           eigen3
           ceres
+          cuda
           --triplet %PLATFORM%-windows
     - vcpkg list
 
@@ -33,7 +34,7 @@ before_build:
     - cmake .. -G "Visual Studio 14 2015 Win64"
             -DCMAKE_BUILD_TYPE=%CONFIGURATION%
             -DALICEVISION_USE_INTERNAL_CERES:BOOL=OFF
-            -DALICEVISION_USE_CUDA:BOOL=OFF
+            -DALICEVISION_USE_CUDA:BOOL=ON
             -DALICEVISION_BUILD_EXAMPLES:BOOL=ON
             -DCMAKE_TOOLCHAIN_FILE=c:/tools/vcpkg/scripts/buildsystems/vcpkg.cmake
     - ls -l
