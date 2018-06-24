@@ -132,6 +132,7 @@ template <class Type, unsigned Dim> class CudaArray;
 
 /*********************************************************************************
  * CudaHostMemoryHeap
+ * unspecialized template
  *********************************************************************************/
 
 template <class Type, unsigned Dim> class CudaHostMemoryHeap
@@ -248,6 +249,83 @@ public:
     }
   }
 };
+
+/*********************************************************************************
+ * CudaHostMemoryHeap
+ * Dim=1
+ *********************************************************************************/
+
+template <class Type> class CudaHostMemoryHeap<Type,1>
+{
+  Type* buffer;
+  size_t sx, sy, sz;
+  CudaSize<1> size;
+public:
+  explicit CudaHostMemoryHeap(const CudaSize<1> &_size)
+  {
+    size = _size;
+    sx = _size[0];
+    sy = 1;
+    sz = 1;
+    buffer = (Type*)malloc(sx * sy * sz * sizeof (Type));
+    if( buffer == 0 ) {
+        printf("%d malloc failed\n", __LINE__ );
+        exit(-1);
+    }
+    memset(buffer, 0, sx * sy * sz * sizeof (Type));
+  }
+  CudaHostMemoryHeap<Type,1>& operator=(const CudaHostMemoryHeap<Type,1>& rhs)
+  {
+    size = rhs.size;
+    sx = rhs.sx;
+    sy = 1;
+    sz = 1;
+    buffer = (Type*)malloc(sx * sy * sz * sizeof (Type));
+    if( buffer == 0 ) {
+        printf("%d malloc failed\n", __LINE__ );
+        exit(-1);
+    }
+    memcpy(buffer, rhs.buffer, sx * sy * sz * sizeof (Type));
+    return *this;
+  }
+  ~CudaHostMemoryHeap()
+  {
+    free(buffer);
+  }
+  const CudaSize<1>& getSize() const
+  {
+    return size;
+  }
+  size_t getBytes() const
+  {
+    return sx * sy * sz * sizeof (Type);
+  }
+  Type *getBuffer()
+  {
+    return buffer;
+  }
+  const Type *getBuffer() const
+  {
+    return buffer;
+  }
+  Type& operator()(size_t x, size_t y)
+  {
+    return buffer[y * sx + x];
+  }
+
+  void copyFrom(const CudaDeviceMemoryPitched<Type, 1>& _src)
+  {
+    const cudaMemcpyKind kind = cudaMemcpyDeviceToHost;
+    cudaMemcpy(this->getBuffer(), _src.getBuffer(), _src.getBytes(), kind);
+  }
+
+  void copyFrom(const CudaArray<Type, 1>& _src)
+  {
+    const cudaMemcpyKind kind = cudaMemcpyDeviceToHost;
+    cudaMemcpyFromArray(this->getBuffer(), _src.getArray(), 0, 0, this->getSize()[0] * sizeof (Type), kind);
+  }
+};
+
 /*********************************************************************************
  * CudaDeviceMemoryPitched
  *********************************************************************************/
