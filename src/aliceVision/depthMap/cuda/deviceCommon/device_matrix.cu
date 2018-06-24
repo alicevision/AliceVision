@@ -13,6 +13,7 @@
 namespace aliceVision {
 namespace depthMap {
 
+#if 0
 __device__ void M3x3mulM3x3(float* O3x3, float* A3x3, float* B3x3)
 {
     O3x3[0] = A3x3[0] * B3x3[0] + A3x3[3] * B3x3[1] + A3x3[6] * B3x3[2];
@@ -49,7 +50,9 @@ __device__ void M3x3transpose(float* O3x3, float* A3x3)
     O3x3[7] = A3x3[5];
     O3x3[8] = A3x3[8];
 }
+#endif
 
+#if 0
 __device__ void outerMultiply(float* O3x3, const float3& a, const float3& b)
 {
     O3x3[0] = a.x * b.x;
@@ -62,6 +65,7 @@ __device__ void outerMultiply(float* O3x3, const float3& a, const float3& b)
     O3x3[5] = a.z * b.y;
     O3x3[8] = a.z * b.z;
 }
+#endif
 
 __device__ float3 linePlaneIntersect(const float3& linePoint, const float3& lineVect, const float3& planePoint,
                                      const float3& planeNormal)
@@ -76,11 +80,13 @@ __device__ float orientedPointPlaneDistanceNormalizedNormal(const float3& point,
     return (dot(point, planeNormalNormalized) - dot(planePoint, planeNormalNormalized));
 }
 
+#if 0
 __device__ float3 closestPointOnPlaneToPoint(const float3& point, const float3& planePoint,
                                              const float3& planeNormalNormalized)
 {
     return point - planeNormalNormalized * dot(planeNormalNormalized, point - planePoint);
 }
+#endif
 
 __device__ float3 closestPointToLine3D(const float3& point, const float3& linePoint, const float3& lineVectNormalized)
 {
@@ -92,6 +98,7 @@ __device__ float pointLineDistance3D(const float3& point, const float3& linePoin
     return size(cross(lineVectNormalized, linePoint - point));
 }
 
+#if 0
 // v1,v2 dot not have to be normalized
 __device__ float angleBetwV1andV2(const float3& iV1, const float3& iV2)
 {
@@ -103,6 +110,7 @@ __device__ float angleBetwV1andV2(const float3& iV1, const float3& iV2)
 
     return fabsf(acosf(V1.x * V2.x + V1.y * V2.y + V1.z * V2.z) / (CUDART_PI_F / 180.0f));
 }
+#endif
 
 __device__ float angleBetwABandAC(const float3& A, const float3& B, const float3& C)
 {
