@@ -294,6 +294,7 @@ __global__ void volume_agregateCostVolumeAtZinSlices_kernel(
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+#if 0
 __global__ void volume_updateRcVolumeForTcDepthMap_kernel(
     cudaTextureObject_t sliceTexFloat2,
     unsigned int* volume, int volume_s, int volume_p,
@@ -375,6 +376,7 @@ __global__ void volume_updateRcVolumeForTcDepthMap_kernel(
         }
     }
 }
+#endif
 
 #if 0
 __global__ void volume_updateRcVolumeForTcDepthMap2_kernel(
@@ -475,6 +477,7 @@ __global__ void volume_updateRcVolumeForTcDepthMap2_kernel(
 }
 #endif
 
+#if 0
 __global__ void volume_update_nModalsMap_kernel_id0(
     unsigned short* nModalsMap, int nModalsMap_p,
     int volDimX, int volDimY )
@@ -489,7 +492,9 @@ __global__ void volume_update_nModalsMap_kernel_id0(
         *nModalsMap_yx = val;
     }
 }
+#endif
 
+#if 0
 __global__ void volume_update_nModalsMap_kernel(
     cudaTextureObject_t depthsTex,
     cudaTextureObject_t sliceTex,
@@ -536,7 +541,9 @@ __global__ void volume_update_nModalsMap_kernel(
         *nModalsMap_yx = val;
     }
 }
+#endif
 
+#if 0
 __global__ void volume_filterRcIdDepthMapByTcDepthMap_kernel(
     cudaTextureObject_t depthsTex,
     cudaTextureObject_t sliceTex,
@@ -574,6 +581,7 @@ __global__ void volume_filterRcIdDepthMapByTcDepthMap_kernel(
         }
     }
 }
+#endif
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -944,6 +952,7 @@ __global__ void volume_compute_DP1_kernel(int2* xySlice, int xySlice_p, int* ovo
     }
 }
 
+#if 0
 __global__ void volume_compute_rDP1_volume_minMaxMap_kernel(int2* xySlice, int xySlice_p, int* volume, int volume_s,
                                                             int volume_p, int volDimX, int volDimY, int volDimZ, int z,
                                                             int zPart, int volDimZGlob)
@@ -974,7 +983,9 @@ __global__ void volume_compute_rDP1_volume_minMaxMap_kernel(int2* xySlice, int x
         }
     }
 }
+#endif
 
+#if 0
 __global__ void volume_normalize_rDP1_volume_by_minMaxMap_kernel(int2* xySlice, int xySlice_p, int* volume,
                                                                  int volume_s, int volume_p, int volDimX, int volDimY,
                                                                  int volDimZ, int z, int zPart, int volDimZGlob)
@@ -1004,6 +1015,7 @@ __global__ void volume_normalize_rDP1_volume_by_minMaxMap_kernel(int2* xySlice, 
         *volume_zyx = val;
     }
 }
+#endif
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 

@@ -169,6 +169,7 @@ __global__ void volume_agregateCostVolumeAtZinSlices_kernel(
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+#if 0
 __global__ void volume_updateRcVolumeForTcDepthMap_kernel(
     cudaTextureObject_t sliceTexFloat2,
     unsigned int* volume, int volume_s, int volume_p,
@@ -179,6 +180,7 @@ __global__ void volume_updateRcVolumeForTcDepthMap_kernel(
     const int vilDimZGlob, const float maxTcRcPixSizeInVoxRatio,
     const bool considerNegativeDepthAsInfinity,
     const float2 tcMinMaxFpDepth );
+#endif
 
 #if 0
 __global__ void volume_updateRcVolumeForTcDepthMap2_kernel(
@@ -193,10 +195,13 @@ __global__ void volume_updateRcVolumeForTcDepthMap2_kernel(
     const float2 tcMinMaxFpDepth, const bool useSimilarity );
 #endif
 
+#if 0
 __global__ void volume_update_nModalsMap_kernel_id0(
     unsigned short* nModalsMap, int nModalsMap_p,
     int volDimX, int volDimY );
+#endif
 
+#if 0
 __global__ void volume_update_nModalsMap_kernel(
     cudaTextureObject_t depthsTex,
     cudaTextureObject_t sliceTex,
@@ -204,13 +209,16 @@ __global__ void volume_update_nModalsMap_kernel(
     unsigned short* rcIdDepthMap, int rcIdDepthMap_p, int volDimX,
     int volDimY, int volDimZ, int volStepXY, int tcDepthMapStep, int width,
     int height, int distLimit, int id );
+#endif
 
+#if 0
 __global__ void volume_filterRcIdDepthMapByTcDepthMap_kernel(
     cudaTextureObject_t depthsTex,
     cudaTextureObject_t sliceTex,
     unsigned short* rcIdDepthMap, int rcIdDepthMap_p,
     int volDimX, int volDimY, int volDimZ, int volStepXY,
     int tcDepthMapStep, int width, int height, int distLimit );
+#endif
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -242,13 +250,17 @@ __global__ void volume_compute_DP1_kernel(int2* xySlice, int xySlice_p, int* ovo
                                           unsigned int* volume, int volume_s, int volume_p, int volDimX, int volDimY,
                                           int volDimZ, int vz);
 
+#if 0
 __global__ void volume_compute_rDP1_volume_minMaxMap_kernel(int2* xySlice, int xySlice_p, int* volume, int volume_s,
                                                             int volume_p, int volDimX, int volDimY, int volDimZ, int z,
                                                             int zPart, int volDimZGlob);
+#endif
 
+#if 0
 __global__ void volume_normalize_rDP1_volume_by_minMaxMap_kernel(int2* xySlice, int xySlice_p, int* volume,
                                                                  int volume_s, int volume_p, int volDimX, int volDimY,
                                                                  int volDimZ, int z, int zPart, int volDimZGlob);
+#endif
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
