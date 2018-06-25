@@ -56,6 +56,7 @@ before_install:
 install:
  - ./ci/install-cmake.sh
  - ./ci/install-dependencies.sh
+ - ./ci/install-cuda-travis.sh
 
 
 before_script:
@@ -72,7 +73,7 @@ before_script:
        -DALICEVISION_BUILD_TESTS=ON \
        -DALICEVISION_BUILD_EXAMPLES=ON \
        -DALICEVISION_USE_OPENCV=ON \
-       -DALICEVISION_USE_CUDA=OFF \
+       -DALICEVISION_USE_CUDA=ON \
        -DOpenCV_DIR="${DEPS_INSTALL_PATH}/share/OpenCV" \
        -DALICEVISION_USE_OPENGV=ON \
        -DOPENGV_DIR="${DEPS_INSTALL_PATH}" \
