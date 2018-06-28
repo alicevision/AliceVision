@@ -253,7 +253,7 @@ public:
       err = cudaMallocPitch<Type>(&buffer, &pitch, size[0] * sizeof(Type), size[1]);
       if( err != cudaSuccess )
       {
-          printf( "Failed to allocate CUDA Pitched Memory in line %d, size=%li x %li\n", __LINE__-3, long(_size[0]), long(_size[1]) );
+          printf( "Failed to allocate CUDA Pitched Memory in line %d, size=%li x %li\n", __LINE__-3, long(size[0]), long(size[1]) );
           exit( -1 );
       }
     }
@@ -269,7 +269,7 @@ public:
       err = cudaMalloc3D(&pitchDevPtr, extent);
       if( err != cudaSuccess )
       {
-          printf( "Failed to allocate CUDA 3D Memory in line %d, size=%li x %li x %li\n", __LINE__-3, long(_size[0]), long(_size[1]), long(_size[2]) );
+          printf( "Failed to allocate CUDA 3D Memory in line %d, size=%li x %li x %li\n", __LINE__-3, long(size[0]), long(size[1]), long(size[2]) );
           exit( -1 );
       }
       buffer = (Type*)pitchDevPtr.ptr;
