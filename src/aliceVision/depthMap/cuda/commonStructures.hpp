@@ -339,6 +339,8 @@ template <class Type, unsigned Dim> class CudaDeviceMemoryPitched
 public:
   explicit CudaDeviceMemoryPitched(const CudaSize<Dim> &_size)
   {
+    cudaError_t err;
+
     size = _size;
     sx = 1;
     sy = 1;
@@ -348,9 +350,14 @@ public:
     if (Dim >= 3) sx = _size[2];
     if(Dim == 2)
     {
-      cudaMallocPitch<Type>(&buffer, &pitch, _size[0] * sizeof(Type), _size[1]);
+      err = cudaMallocPitch<Type>(&buffer, &pitch, _size[0] * sizeof(Type), _size[1]);
+      if( err != cudaSuccess )
+      {
+          printf( "Failed to allocate CUDA Pitched Memory in line %d, size=%li x %li\n", __LINE__-3, long(_size[0]), long(_size[1]) );
+          exit( -1 );
+      }
     }
-    if(Dim >= 3)
+    else if(Dim >= 3)
     {
       cudaExtent extent;
       extent.width = _size[0] * sizeof(Type);
@@ -359,7 +366,12 @@ public:
       for(unsigned i = 3; i < Dim; ++i)
         extent.depth *= _size[i];
       cudaPitchedPtr pitchDevPtr;
-      cudaMalloc3D(&pitchDevPtr, extent);
+      err = cudaMalloc3D(&pitchDevPtr, extent);
+      if( err != cudaSuccess )
+      {
+          printf( "Failed to allocate CUDA 3D Memory in line %d, size=%li x %li x %li\n", __LINE__-3, long(_size[0]), long(_size[1]), long(_size[2]) );
+          exit( -1 );
+      }
       buffer = (Type*)pitchDevPtr.ptr;
       pitch = pitchDevPtr.pitch;
     }
@@ -370,6 +382,8 @@ public:
   }
   explicit inline CudaDeviceMemoryPitched(const CudaHostMemoryHeap<Type, Dim> &rhs)
   {
+    cudaError_t err;
+
     size = rhs.getSize();
     sx = 1;
     sy = 1;
@@ -379,7 +393,12 @@ public:
     if (Dim >= 3) sx = rhs.getSize()[2];
     if(Dim == 2)
     {
-      cudaMallocPitch<Type>(&buffer, &pitch, size[0] * sizeof(Type), size[1]);
+      err = cudaMallocPitch<Type>(&buffer, &pitch, size[0] * sizeof(Type), size[1]);
+      if( err != cudaSuccess )
+      {
+          printf( "Failed to allocate CUDA Pitched Memory in line %d, size=%li x %li\n", __LINE__-3, long(_size[0]), long(_size[1]) );
+          exit( -1 );
+      }
     }
     if(Dim >= 3)
     {
@@ -390,7 +409,12 @@ public:
       for(unsigned i = 3; i < Dim; ++i)
         extent.depth *= size[i];
       cudaPitchedPtr pitchDevPtr;
-      cudaMalloc3D(&pitchDevPtr, extent);
+      err = cudaMalloc3D(&pitchDevPtr, extent);
+      if( err != cudaSuccess )
+      {
+          printf( "Failed to allocate CUDA 3D Memory in line %d, size=%li x %li x %li\n", __LINE__-3, long(_size[0]), long(_size[1]), long(_size[2]) );
+          exit( -1 );
+      }
       buffer = (Type*)pitchDevPtr.ptr;
       pitch = pitchDevPtr.pitch;
     }
@@ -544,6 +568,7 @@ public:
       if( err != cudaSuccess )
       {
           printf( "Failed to allocate CUDA Array in line %d, size=%li\n", __LINE__-3, long(_size[0]) );
+          exit( -1 );
       }
     }
     else if(Dim == 2)
@@ -552,6 +577,7 @@ public:
       if( err != cudaSuccess )
       {
           printf( "Failed to allocate CUDA Array in line %d, size=(%li, %li)\n", __LINE__-3, long(_size[0]), long(_size[1]) );
+          exit( -1 );
       }
     }
     else
@@ -566,6 +592,7 @@ public:
       if( err != cudaSuccess )
       {
           printf( "Failed to allocate CUDA Array in line %d, size=(%li, %li, %li)\n", __LINE__-3, long(_size[0]), long(_size[1]), long(_size[2]) );
+          exit( -1 );
       }
     }
   }
@@ -587,6 +614,7 @@ public:
       if( err != cudaSuccess )
       {
         printf( "Failed to allocate CUDA Array in line %d, size=(%i)\n", __LINE__-3, size[0] );
+          exit( -1 );
       }
     }
     else if(Dim == 2)
@@ -595,6 +623,7 @@ public:
       if( err != cudaSuccess )
       {
         printf( "Failed to allocate CUDA Array in line %d, size=(%i, %i)\n", __LINE__-3, size[0], size[1] );
+          exit( -1 );
       }
     }
     else
@@ -609,6 +638,7 @@ public:
       if( err != cudaSuccess )
       {
         printf( "Failed to allocate CUDA Array in line %d, size=(%i, %i, %i)\n", __LINE__-3, size[0], size[1], size[2] );
+          exit( -1 );
       }
     }
     copyFrom( rhs );
@@ -631,6 +661,7 @@ public:
       if( err != cudaSuccess )
       {
           printf( "Failed to allocate CUDA Array of size %i in line %s,%d - reason %s\n", size[0], __FILE__, __LINE__-3, cudaGetErrorString(err) );
+          exit( -1 );
       }
     }
     else if(Dim == 2)
@@ -639,6 +670,7 @@ public:
       if( err != cudaSuccess )
       {
           printf( "Failed to allocate CUDA Array of size (%i,%i) in line %s,%d - reason %s\n", size[0], size[1], __FILE__, __LINE__-3, cudaGetErrorString(err) );
+          exit( -1 );
       }
     }
     else
@@ -653,6 +685,7 @@ public:
       if( err != cudaSuccess )
       {
           printf( "Failed to allocate CUDA Array of size (%i,%i,%i) in line %s,%d - reason %s\n", size[0], size[1], size[2], __FILE__, __LINE__-3, cudaGetErrorString(err) );
+          exit( -1 );
       }
     }
     copyFrom( rhs );
