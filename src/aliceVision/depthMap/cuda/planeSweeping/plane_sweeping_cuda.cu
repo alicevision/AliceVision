@@ -1576,6 +1576,19 @@ void ps_fuseDepthSimMapsGaussianKernelVoting(CudaHostMemoryHeap<float2, 2>* odep
         depthSimMaps_dmp[i]->copyFrom( *depthSimMaps_hmh[i] );
     }
 
+#if 0
+    /* Hint: device-specific ideal block sizes can be found by passing functions
+     * to cudaOccupancyMaxPotentialBlockSize()
+     * The result doesn't change, you could keep it in a static variable.
+     */
+
+    {
+        int minGridSize;
+        int blockSize;
+        cudaError_t err = cudaOccupancyMaxPotentialBlockSize( &minGridSize, &blockSize, fuse_computeGaussianKernelVotingSampleMap_kernel );
+    }
+#endif
+
     for(int s = -nSamplesHalf; s <= nSamplesHalf; s++) // (-150, 150)
     {
         for(int c = 1; c < ndepthSimMaps; c++) // number of Tc cameras
