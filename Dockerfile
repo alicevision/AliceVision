@@ -1,33 +1,37 @@
-FROM ubuntu:14.04
+ARG CUDA_TAG=9.2-devel
+FROM nvidia/cuda:$CUDA_TAG
+LABEL maintainer="AliceVision Team alicevision@googlegroups.com"
 
-# Add openMVG binaries to path
-ENV PATH $PATH:/opt/openMVG_Build/install/bin
+# use CUDA_TAG to select the image version to use
+# see https://hub.docker.com/r/nvidia/cuda/
+#
+# For example, to create a ubuntu 16.04 with cuda 8.0 for development, use
+# docker build --build-arg CUDA_TAG=8.0-devel --tag alicevision .
+#
+# then execute with nvidia docker (https://github.com/nvidia/nvidia-docker/wiki/Installation-(version-2.0))
+# docker run -it --runtime=nvidia alicevision
 
-# Get dependencies
-RUN apt-get update && apt-get install -y \
-  build-essential \
-  cmake \
-  graphviz \
-  git \
-  gcc-4.8 \ 
-  gcc-4.8-multilib \  
-  libpng-dev \
-  libjpeg-dev \
-  libtiff-dev \
-  libxxf86vm1 \
-  libxxf86vm-dev \
-  libxi-dev \
-  libxrandr-dev \
-  python-dev \  
-  python-pip
 
-# Clone the openvMVG repo 
-ADD . /opt/openMVG
-RUN cd /opt/openMVG && git submodule update --init --recursive
+# OS/Version (FILE): cat /etc/issue.net
+# Cuda version (ENV): $CUDA_VERSION
 
-# Build
-RUN mkdir /opt/openMVG_Build && cd /opt/openMVG_Build && cmake -DCMAKE_BUILD_TYPE=RELEASE \
-  -DCMAKE_INSTALL_PREFIX="/opt/openMVG_Build/install" -DOpenMVG_BUILD_TESTS=ON \
-  -DOpenMVG_BUILD_EXAMPLES=ON . ../openMVG/src/ && make
+# System update
+RUN apt-get clean && apt-get update && apt-get install -y --no-install-recommends\
+				build-essential \
+				cmake \
+				git \
+				wget \
+				unzip \
+				yasm \
+				pkg-config \
+				libtool \
+				nasm \
+				automake \
+				zlib1g-dev \
+ && rm -rf /var/lib/apt/lists/*
 
-RUN cd /opt/openMVG_Build && make test
+COPY . /opt/alicevision
+WORKDIR /opt/alicevision/build
+RUN cmake .. -DCMAKE_BUILD_TYPE=Release -DALICEVISION_BUILD_DEPENDENCIES:BOOL=ON && make aliceVision -j
+# temporary fix, there is maybe something to do with the rpath in cmake
+ENV LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib
