@@ -76,8 +76,9 @@ set(GEOGRAM_CMAKE_FLAGS -DGEOGRAM_INSTALL_PREFIX=${BUILD_DIR}/geogram_build -DGE
 if(AV_USE_CUDA AND AV_BUILD_CUDA)
 set(CUDA_TARGET cuda)
 ExternalProject_Add(${CUDA_TARGET}
-       # URL https://developer.nvidia.com/compute/cuda/8.0/Prod2/local_installers/cuda_8.0.61_375.26_linux-run
-       URL https://developer.nvidia.com/compute/cuda/9.2/Prod/local_installers/cuda_9.2.88_396.26_linux
+       URL https://developer.nvidia.com/compute/cuda/8.0/Prod2/local_installers/cuda_8.0.61_375.26_linux-run
+       # URL https://developer.nvidia.com/compute/cuda/9.2/Prod/local_installers/cuda_9.2.88_396.26_linux
+       DOWNLOAD_NO_EXTRACT 1
        PREFIX ${BUILD_DIR}
        BUILD_IN_SOURCE 0
        BUILD_ALWAYS 0
@@ -86,7 +87,7 @@ ExternalProject_Add(${CUDA_TARGET}
        INSTALL_DIR ${BUILD_DIR}/cuda_build
        CONFIGURE_COMMAND ""
        BUILD_COMMAND ""
-       INSTALL_COMMAND sh <SOURCE_DIR>/cuda_8.0.61_375.26_linux.run --silent --no-opengl-libs --toolkit --toolkitpath=<INSTALL_DIR>
+       INSTALL_COMMAND sh ${BUILD_DIR}/src/cuda_8.0.61_375.26_linux-run --silent --no-opengl-libs --toolkit --toolkitpath=<INSTALL_DIR>
        )
 set(CUDA_CUDART_LIBRARY "")
 set(CUDA_CMAKE_FLAGS -DCUDA_TOOLKIT_ROOT_DIR=${BUILD_DIR}/cuda_build)
