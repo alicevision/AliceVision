@@ -21,6 +21,8 @@ string(TOLOWER ${DEPS_CMAKE_BUILD_TYPE} DEPS_CMAKE_BUILD_TYPE_LOWERCASE)
 
 option(ALICEVISION_BUILD_TESTS "Build AliceVision tests" OFF)
 
+option(ALICEVISION_BUNDLE_PREFIX "Path for bundle installation" "${CMAKE_INSTALL_PREFIX}/bundle")
+
 set(ALICEVISION_ROOT ${PROJECT_BINARY_DIR})
 
 message(STATUS "----------------------------------------")
@@ -322,3 +324,17 @@ else()
 add_subdirectory(src)
 
 endif()
+
+# Bundle target (see src/cmake/MakeBundle.cmake)
+# Note: require that the install rule has been executed
+add_custom_target(bundle
+                  ${CMAKE_COMMAND}
+                    # Script arguments:
+                    -DALICEVISION_BUNDLE_PREFIX=${ALICEVISION_BUNDLE_PREFIX}
+                    -DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX}
+                    # Script:
+                    -P ${CMAKE_CURRENT_SOURCE_DIR}/src/cmake/MakeBundle.cmake
+                  )
+set_target_properties(bundle PROPERTIES FOLDER Packaging)
+
+
