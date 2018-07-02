@@ -103,7 +103,7 @@ int main(int argc, char **argv)
     ALICEVISION_LOG_ERROR("The input SfMData file '"<< gtFilename << "' cannot be read");
     return EXIT_FAILURE;
   }
-  ALICEVISION_LOG_INFO(sfmData_gt.GetPoses().size() << " gt cameras have been found");
+  ALICEVISION_LOG_INFO(sfmData_gt.getPoses().size() << " gt cameras have been found");
 
   // load the camera that we have to evaluate
   SfMData sfmData;
@@ -116,31 +116,31 @@ int main(int argc, char **argv)
   // fill vectors of valid views for evaluation
   std::vector<Vec3> vec_camPosGT, vec_C;
   std::vector<Mat3> vec_camRotGT, vec_camRot;
-  for(const auto &iter : sfmData.GetViews())
+  for(const auto &iter : sfmData.getViews())
   {
     const auto &view = iter.second;
     // jump to next view if there is no correponding pose in reconstruction
-    if(sfmData.GetPoses().find(view->getPoseId()) == sfmData.GetPoses().end())
+    if(sfmData.getPoses().find(view->getPoseId()) == sfmData.getPoses().end())
     {
       ALICEVISION_LOG_INFO("no pose in input for view " << view->getPoseId());
       continue;
     }
 
     // jump to next view if there is no corresponding view in GT
-    if(sfmData_gt.GetViews().find(view->getViewId()) == sfmData_gt.GetViews().end())
+    if(sfmData_gt.getViews().find(view->getViewId()) == sfmData_gt.getViews().end())
     {
       ALICEVISION_LOG_INFO("no view in GT for viewId " << view->getViewId());
       continue;
     }
-    const int idPoseGT = sfmData_gt.GetViews().at(view->getViewId())->getPoseId();
+    const int idPoseGT = sfmData_gt.getViews().at(view->getViewId())->getPoseId();
 
     // gt
-    const geometry::Pose3 pose_gt = sfmData_gt.GetPoses().at(idPoseGT);
+    const geometry::Pose3 pose_gt = sfmData_gt.getPoses().at(idPoseGT);
     vec_camPosGT.push_back(pose_gt.center());
     vec_camRotGT.push_back(pose_gt.rotation());
 
     // data to evaluate
-    const geometry::Pose3 pose_eval = sfmData.GetPoses().at(view->getPoseId());
+    const geometry::Pose3 pose_eval = sfmData.getPoses().at(view->getPoseId());
     vec_C.push_back(pose_eval.center());
     vec_camRot.push_back(pose_eval.rotation());
   }

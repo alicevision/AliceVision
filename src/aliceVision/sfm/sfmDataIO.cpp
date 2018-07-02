@@ -32,17 +32,17 @@ bool ValidIds(const SfMData& sfmData, ESfMData partFlag)
   const bool bCheck_Extrinsic = (partFlag & EXTRINSICS);
 
   std::set<IndexT> intrinsicIdsDeclared;
-  transform(sfmData.GetIntrinsics().begin(), sfmData.GetIntrinsics().end(),
+  transform(sfmData.getIntrinsics().begin(), sfmData.getIntrinsics().end(),
     std::inserter(intrinsicIdsDeclared, intrinsicIdsDeclared.begin()), stl::RetrieveKey());
 
   std::set<IndexT> extrinsicIdsDeclared; //unique so can use a set
-  transform(sfmData.GetPoses().begin(), sfmData.GetPoses().end(),
+  transform(sfmData.getPoses().begin(), sfmData.getPoses().end(),
     std::inserter(extrinsicIdsDeclared, extrinsicIdsDeclared.begin()), stl::RetrieveKey());
 
   // Collect id_intrinsic and id_extrinsic referenced from views
   std::set<IndexT> intrinsicIdsReferenced;
   std::set<IndexT> extrinsicIdsReferenced;
-  for(const auto& v: sfmData.GetViews())
+  for(const auto& v: sfmData.getViews())
   {
     const IndexT id_intrinsic = v.second.get()->getIntrinsicId();
     intrinsicIdsReferenced.insert(id_intrinsic);

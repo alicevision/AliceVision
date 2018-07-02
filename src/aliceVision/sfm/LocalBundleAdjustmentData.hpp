@@ -32,10 +32,10 @@ public:
   std::map<int, std::size_t> getDistancesHistogram() const;
     
   /// Return the \c EState for a specific pose.
-  EState getPoseState(const IndexT poseId) const           {return _mapLBAStatePerPoseId.at(poseId);}
+  EState getPosestate(const IndexT poseId) const           {return _mapLBAStatePerPoseId.at(poseId);}
  
   /// Return the \c EState for a specific intrinsic.
-  EState getIntrinsicState(const IndexT intrinsicId) const {return _mapLBAStatePerIntrinsicId.at(intrinsicId);}
+  EState getIntrinsicstate(const IndexT intrinsicId) const {return _mapLBAStatePerIntrinsicId.at(intrinsicId);}
 
   /// Return the \c EState for a specific landmark.
   EState getLandmarkState(const IndexT landmarkId) const   {return _mapLBAStatePerLandmarkId.at(landmarkId);}

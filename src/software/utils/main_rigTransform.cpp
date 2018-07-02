@@ -126,13 +126,13 @@ int main(int argc, char** argv)
   exporter.initAnimatedCamera("camera");
 
   std::size_t idx = 0;
-  for (auto &p : sfmData.GetPoses())
+  for (auto &p : sfmData.getPoses())
   {
     const aliceVision::geometry::Pose3 rigPose = extrinsics[0].inverse() * p.second;
     exporter.addCameraKeyframe(rigPose, &intrinsics, "", idx, idx);
     ++idx;
   }
-  exporter.addLandmarks(sfmData.GetLandmarks());
+  exporter.addLandmarks(sfmData.getLandmarks());
 
   return EXIT_SUCCESS;
 }

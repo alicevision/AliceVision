@@ -18,11 +18,14 @@ namespace aliceVision {
 namespace voctree {
 
 template<class DescriptorT, class FileDescriptorT>
-size_t readDescFromFiles(const sfm::SfMData &sfmData, const std::string &descFolder, std::vector<DescriptorT>& descriptors, std::vector<size_t> &numFeatures)
+size_t readDescFromFiles(const sfm::SfMData& sfmData,
+                         const std::vector<std::string>& featuresFolders,
+                         std::vector<DescriptorT>& descriptors,
+                         std::vector<size_t> &numFeatures)
 {
   namespace bfs = boost::filesystem;
   std::map<IndexT, std::string> descriptorsFiles;
-  getListOfDescriptorFiles(sfmData, descFolder, descriptorsFiles);
+  getListOfDescriptorFiles(sfmData, featuresFolders, descriptorsFiles);
   std::size_t numDescriptors = 0;
 
   // Allocate the memory by reading in a first time the files to get the number

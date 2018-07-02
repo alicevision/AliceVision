@@ -210,8 +210,8 @@ struct GeometricFilterMatrix_HGrowing : public GeometricFilterMatrix
     const IndexT viewId_I = pairIndex.first;
     const IndexT viewId_J = pairIndex.second;
     
-    const sfm::View & viewI = *(sfmData->GetViews().at(viewId_I));
-    const sfm::View & viewJ = *(sfmData->GetViews().at(viewId_J));
+    const sfm::View & viewI = *(sfmData->getViews().at(viewId_I));
+    const sfm::View & viewJ = *(sfmData->getViews().at(viewId_J));
 
 
     for (const EImageDescriberType& descType : descTypes)

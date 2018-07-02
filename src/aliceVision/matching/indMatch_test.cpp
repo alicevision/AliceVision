@@ -13,10 +13,13 @@
 #define BOOST_TEST_MODULE IndMatch
 #include <boost/test/included/unit_test.hpp>
 #include <boost/test/floating_point_comparison.hpp>
+#include <boost/filesystem.hpp>
 
 using namespace aliceVision;
 using namespace aliceVision::matching;
 using namespace aliceVision::feature;
+
+namespace fs = boost::filesystem;
 
 BOOST_AUTO_TEST_CASE(IndMatch_IO)
 {
@@ -30,6 +33,7 @@ BOOST_AUTO_TEST_CASE(IndMatch_IO)
     BOOST_CHECK(Save(matches, testFolder, "txt", false));
     BOOST_CHECK(Load(matches, viewsKeys, {testFolder}, {}));
     BOOST_CHECK_EQUAL(0, matches.size());
+    fs::remove_all("./1/");
   }
   boost::filesystem::remove_all(testFolder);
   boost::filesystem::create_directory(testFolder);
@@ -41,6 +45,7 @@ BOOST_AUTO_TEST_CASE(IndMatch_IO)
     BOOST_CHECK(Save(matches, testFolder, "txt", true));
     BOOST_CHECK(!Load(matches, viewsKeys, {testFolder}, {}));
     BOOST_CHECK_EQUAL(0, matches.size());
+    fs::remove_all("./2/");
   }
   boost::filesystem::remove_all(testFolder);
   boost::filesystem::create_directory(testFolder);
@@ -59,6 +64,7 @@ BOOST_AUTO_TEST_CASE(IndMatch_IO)
     BOOST_CHECK_EQUAL(1, matches.count(std::make_pair(1,2)));
     BOOST_CHECK_EQUAL(2, matches.at(std::make_pair(0,1)).at(EImageDescriberType::UNKNOWN).size());
     BOOST_CHECK_EQUAL(3, matches.at(std::make_pair(1,2)).at(EImageDescriberType::UNKNOWN).size());
+    fs::remove_all("./3/");
   }
   boost::filesystem::remove_all(testFolder);
   boost::filesystem::create_directory(testFolder);
@@ -76,6 +82,7 @@ BOOST_AUTO_TEST_CASE(IndMatch_IO)
     BOOST_CHECK_EQUAL(1, matches.count(std::make_pair(1,2)));
     BOOST_CHECK_EQUAL(2, matches.at(std::make_pair(0,1)).at(EImageDescriberType::UNKNOWN).size());
     BOOST_CHECK_EQUAL(3, matches.at(std::make_pair(1,2)).at(EImageDescriberType::UNKNOWN).size());
+    fs::remove_all("./4/");
   }
   boost::filesystem::remove_all(testFolder);
 }

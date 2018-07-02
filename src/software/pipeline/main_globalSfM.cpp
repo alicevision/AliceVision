@@ -31,8 +31,8 @@ int main(int argc, char **argv)
 
   std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
   std::string sfmDataFilename;
-  std::string featuresFolder;
-  std::string matchesFolder;
+  std::vector<std::string> featuresFolders;
+  std::vector<std::string> matchesFolders;
   std::string outDirectory;
 
   // user optional parameters
@@ -55,10 +55,10 @@ int main(int argc, char **argv)
       "SfMData file.")
     ("output,o", po::value<std::string>(&outDirectory)->required(),
       "Path of the output folder.")
-    ("featuresFolder,f", po::value<std::string>(&featuresFolder)->required(),
-      "Path to a folder containing the extracted features.")
-    ("matchesFolder,m", po::value<std::string>(&matchesFolder)->required(),
-      "Path to a folder in which computed matches are stored.");
+    ("featuresFolders,f", po::value<std::vector<std::string>>(&featuresFolders)->multitoken()->required(),
+      "Path to folder(s) containing the extracted features.")
+    ("matchesFolders,m", po::value<std::vector<std::string>>(&matchesFolders)->multitoken()->required(),
+      "Path to folder(s) in which computed matches are stored.");
 
   po::options_description optionalParams("Optional parameters");
   optionalParams.add_options()
@@ -152,7 +152,7 @@ int main(int argc, char **argv)
 
   // features reading
   FeaturesPerView featuresPerView;
-  if(!sfm::loadFeaturesPerView(featuresPerView, sfmData, featuresFolder, describerTypes))
+  if(!sfm::loadFeaturesPerView(featuresPerView, sfmData, featuresFolders, describerTypes))
   {
     ALICEVISION_LOG_ERROR("Invalid features");
     return EXIT_FAILURE;
@@ -161,9 +161,9 @@ int main(int argc, char **argv)
   // matches reading
   // Load the match file (try to read the two matches file formats).
   matching::PairwiseMatches pairwiseMatches;
-  if(!sfm::loadPairwiseMatches(pairwiseMatches, sfmData, matchesFolder, describerTypes))
+  if(!sfm::loadPairwiseMatches(pairwiseMatches, sfmData, matchesFolders, describerTypes))
   {
-    ALICEVISION_LOG_ERROR("Unable to load matches files from: " << matchesFolder);
+    ALICEVISION_LOG_ERROR("Unable to load matches files from: " << matchesFolders);
     return EXIT_FAILURE;
   }
 
@@ -188,31 +188,45 @@ int main(int argc, char **argv)
   sfmEngine.SetMatchesProvider(&pairwiseMatches);
 
   // configure reconstruction parameters
-  sfmEngine.Set_bFixedIntrinsics(!refineIntrinsics);
+  sfmEngine.setFixedIntrinsics(!refineIntrinsics);
 
   // configure motion averaging method
   sfmEngine.SetRotationAveragingMethod(ERotationAveragingMethod(rotationAveragingMethod));
   sfmEngine.SetTranslationAveragingMethod(ETranslationAveragingMethod(translationAveragingMethod));
 
-  if(!sfmEngine.Process())
-  {
+  if(!sfmEngine.process())
     return EXIT_FAILURE;
-  }
 
   // get the color for the 3D points
-  if(!sfmEngine.Colorize())
+  if(!sfmEngine.colorize())
+    ALICEVISION_LOG_ERROR("SfM Colorization failed.");
+
+  // set featuresFolders and matchesFolders relative paths
   {
-    ALICEVISION_LOG_ERROR("Colorize failed!");
+    for(const std::string& featuresFolder : featuresFolders)
+       sfmEngine.getSfMData().addFeaturesFolder(fs::relative(fs::path(featuresFolder), outDirectory).string());
+
+    for(const std::string& matchesFolder : matchesFolders)
+       sfmEngine.getSfMData().addMatchesFolder(fs::relative(fs::path(matchesFolder), outDirectory).string());
+
+    sfmEngine.getSfMData().setAbsolutePath(outDirectory);
   }
 
-  ALICEVISION_LOG_INFO("Total Ac-Global-Sfm took (s): " << timer.elapsed());
-  ALICEVISION_LOG_INFO("Generating HTML report");
-  Generate_SfM_Report(sfmEngine.Get_SfMData(), (fs::path(outDirectory) / "sfm_report.html").string());
+  ALICEVISION_LOG_INFO("Global structure from motion took (s): " << timer.elapsed());
+  ALICEVISION_LOG_INFO("Generating HTML report...");
+
+  generateSfMReport(sfmEngine.getSfMData(), (fs::path(outDirectory) / "sfm_report.html").string());
 
   // export to disk computed scene (data & visualizable results)
   ALICEVISION_LOG_INFO("Export SfMData to disk");
-  Save(sfmEngine.Get_SfMData(), outSfMDataFilename, ESfMData::ALL);
-  Save(sfmEngine.Get_SfMData(), (fs::path(outDirectory) / "cloud_and_poses.ply").string(), ESfMData::ALL);
+
+  Save(sfmEngine.getSfMData(), outSfMDataFilename, ESfMData::ALL);
+  Save(sfmEngine.getSfMData(), (fs::path(outDirectory) / "cloud_and_poses.ply").string(), ESfMData::ALL);
+
+  ALICEVISION_LOG_INFO("Structure from Motion results:" << std::endl
+    << "\t- # input images: " << sfmEngine.getSfMData().getViews().size() << std::endl
+    << "\t- # cameras calibrated: " << sfmEngine.getSfMData().getPoses().size() << std::endl
+    << "\t- # landmarks: " << sfmEngine.getSfMData().getLandmarks().size());
 
   return EXIT_SUCCESS;
 }

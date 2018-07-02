@@ -98,8 +98,8 @@ bool eraseUnstablePoses(SfMData& sfm_data, const IndexT min_points_per_pose, std
   // Count the observation poses occurrence
   HashMap<IndexT, IndexT> map_PoseId_Count; // TODO: add subpose
   // Init with 0 count (in order to be able to remove non referenced elements)
-  for (Poses::const_iterator itPoses = sfm_data.GetPoses().begin();
-    itPoses != sfm_data.GetPoses().end(); ++itPoses)
+  for (Poses::const_iterator itPoses = sfm_data.getPoses().begin();
+    itPoses != sfm_data.getPoses().end(); ++itPoses)
   {
     map_PoseId_Count[itPoses->first] = 0;
   }
@@ -113,7 +113,7 @@ bool eraseUnstablePoses(SfMData& sfm_data, const IndexT min_points_per_pose, std
       itObs != observations.end(); ++itObs)
     {
       const IndexT ViewId = itObs->first;
-      const View * v = sfm_data.GetViews().at(ViewId).get();
+      const View * v = sfm_data.getViews().at(ViewId).get();
       if (map_PoseId_Count.count(v->getPoseId()))
         map_PoseId_Count.at(v->getPoseId()) += 1;
       else
@@ -142,7 +142,7 @@ bool eraseObservationsWithMissingPoses(SfMData& sfm_data, const IndexT min_point
   IndexT removed_elements = 0;
 
   std::set<IndexT> reconstructedPoseIndexes;
-  std::transform(sfm_data.GetPoses().begin(), sfm_data.GetPoses().end(),
+  std::transform(sfm_data.getPoses().begin(), sfm_data.getPoses().end(),
     std::inserter(reconstructedPoseIndexes, reconstructedPoseIndexes.begin()), stl::RetrieveKey());
 
   // For each landmark:
@@ -155,7 +155,7 @@ bool eraseObservationsWithMissingPoses(SfMData& sfm_data, const IndexT min_point
     while (itObs != observations.end())
     {
       const IndexT ViewId = itObs->first;
-      const View * v = sfm_data.GetViews().at(ViewId).get();
+      const View * v = sfm_data.getViews().at(ViewId).get();
       if (reconstructedPoseIndexes.count(v->getPoseId()) == 0)
       {
         itObs = observations.erase(itObs);

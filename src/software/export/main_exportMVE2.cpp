@@ -82,11 +82,11 @@ bool exportToMVE2Format(
     // Prepare to write bundle file
     // Get cameras and features from AliceVision
     size_t cameraCount = 0;
-    for(const auto& view: sfm_data.GetViews())
-        if(sfm_data.IsPoseAndIntrinsicDefined(view.second.get()))
+    for(const auto& view: sfm_data.getViews())
+        if(sfm_data.isPoseAndIntrinsicDefined(view.second.get()))
             ++cameraCount;
     // Tally global set of feature landmarks
-    const Landmarks & landmarks = sfm_data.GetLandmarks();
+    const Landmarks & landmarks = sfm_data.getLandmarks();
     const size_t featureCount = std::distance(landmarks.begin(), landmarks.end());
     const std::string filename = "synth_0.out";
     std::cout << "Writing bundle (" << cameraCount << " cameras, "
@@ -96,18 +96,18 @@ bool exportToMVE2Format(
     out << cameraCount << " " << featureCount << "\n";
 
     // Export (calibrated) views as undistorted images
-    boost::progress_display my_progress_bar(sfm_data.GetViews().size());
+    boost::progress_display my_progress_bar(sfm_data.getViews().size());
     std::pair<int,int> w_h_image_size;
     Image<RGBColor> image, image_ud, thumbnail;
     std::string sOutViewIteratorDirectory;
     std::size_t view_index = 0;
     std::map<std::size_t, IndexT> viewIdToviewIndex;
-    for(Views::const_iterator iter = sfm_data.GetViews().begin();
-      iter != sfm_data.GetViews().end(); ++iter, ++my_progress_bar)
+    for(Views::const_iterator iter = sfm_data.getViews().begin();
+      iter != sfm_data.getViews().end(); ++iter, ++my_progress_bar)
     {
       const View * view = iter->second.get();
 
-      if (!sfm_data.IsPoseAndIntrinsicDefined(view))
+      if (!sfm_data.isPoseAndIntrinsicDefined(view))
         continue;
 
       viewIdToviewIndex[view->getViewId()] = view_index;
@@ -126,7 +126,7 @@ bool exportToMVE2Format(
       const std::string srcImage = view->getImagePath();
       const std::string dstImage = (fs::path(sOutViewIteratorDirectory) / "undistorted.png").string();
 
-      Intrinsics::const_iterator iterIntrinsic = sfm_data.GetIntrinsics().find(view->getIntrinsicId());
+      Intrinsics::const_iterator iterIntrinsic = sfm_data.getIntrinsics().find(view->getIntrinsicId());
       const IntrinsicBase * cam = iterIntrinsic->second.get();
       if (cam->isValid() && cam->have_disto())
       {

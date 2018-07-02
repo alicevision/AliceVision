@@ -86,16 +86,16 @@ int main(int argc, char **argv)
     return EXIT_FAILURE;
   }
 
-  for(Views::const_iterator iter = sfm_data.GetViews().begin();
-      iter != sfm_data.GetViews().end(); ++iter)
+  for(Views::const_iterator iter = sfm_data.getViews().begin();
+      iter != sfm_data.getViews().end(); ++iter)
   {
     const View * view = iter->second.get();
-    if (!sfm_data.IsPoseAndIntrinsicDefined(view))
+    if (!sfm_data.isPoseAndIntrinsicDefined(view))
         continue;
     
     // Valid view, we can ask a pose & intrinsic data
     const Pose3 pose = sfm_data.getPose(*view);
-    Intrinsics::const_iterator iterIntrinsic = sfm_data.GetIntrinsics().find(view->getIntrinsicId());
+    Intrinsics::const_iterator iterIntrinsic = sfm_data.getIntrinsics().find(view->getIntrinsicId());
     const IntrinsicBase * cam = iterIntrinsic->second.get();
     
     if (!camera::isPinhole(cam->getType()))

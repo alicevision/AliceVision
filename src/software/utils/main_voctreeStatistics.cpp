@@ -79,7 +79,7 @@ int main(int argc, char** argv)
   bool withWeights = false;            // flag for the optional weights file
   std::string treeName;                     // the filename of the voctree
   std::string sfmDataFilename;              // the file containing the list of features to use to build the database
-  std::string featuresFolder;
+  std::vector<std::string> featuresFolders;
   std::string querySfmDataFilename = "";    // the file containing the list of features to use as query
   std::string distance;
 
@@ -95,8 +95,8 @@ int main(int argc, char** argv)
   po::options_description optionalParams("Optional parameters");
   optionalParams.add_options()
     ("weights,w", po::value<std::string>(&weightsName), "Input name for the weight file, if not provided the weights will be computed on the database built with the provided set")
-    ("featuresFolder,f", po::value<std::string>(&featuresFolder),
-        "Path to a folder containing the extracted features and descriptors. By default, it is the folder containing the SfMData.")
+    ("featuresFolders,f", po::value<std::vector<std::string>>(&featuresFolders)->multitoken(),
+      "Path to folder(s) containing the extracted features.")
     ("querySfmDataFilename,q", po::value<std::string>(&querySfmDataFilename), "Path to the SfMData file to be used for querying the database")
     ("distance,d",po::value<std::string>(&distance)->default_value(""), "Method used to compute distance between histograms: \n "
                                                                           "-classic: eucledian distance \n"
@@ -182,7 +182,7 @@ int main(int argc, char** argv)
   // read the descriptors and populate the database
   ALICEVISION_LOG_INFO("Reading descriptors from " << sfmDataFilename);
   auto detect_start = std::chrono::steady_clock::now();
-  size_t numTotFeatures = aliceVision::voctree::populateDatabase<DescriptorUChar>(sfmData, featuresFolder, tree, db);
+  size_t numTotFeatures = aliceVision::voctree::populateDatabase<DescriptorUChar>(sfmData, featuresFolders, tree, db);
   auto detect_end = std::chrono::steady_clock::now();
   auto detect_elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(detect_end - detect_start);
 
@@ -214,7 +214,7 @@ int main(int argc, char** argv)
     return EXIT_FAILURE;
   }
   
-  aliceVision::voctree::voctreeStatistics<DescriptorUChar>(querySfmData, featuresFolder, tree, db, distance, globalHisto);
+  aliceVision::voctree::voctreeStatistics<DescriptorUChar>(querySfmData, featuresFolders, tree, db, distance, globalHisto);
   
   std::cout << "-----------------" << std::endl;
   

@@ -309,7 +309,7 @@ int main(int argc, char** argv)
 
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_ALEMBIC)
   sfm::AlembicExporter exporter(exportFile);
-  exporter.addLandmarks(localizer->getSfMData().GetLandmarks());
+  exporter.addLandmarks(localizer->getSfMData().getLandmarks());
 #endif
 
   // Create a camera rig
@@ -356,7 +356,7 @@ int main(int argc, char** argv)
     //result.open(cameraResultFile);
     //pointsFile = inputFolder + "/points.txt";
 
-    image::Image<unsigned char> imageGrey;
+    image::Image<float> imageGrey;
     camera::PinholeRadialK3 queryIntrinsics;
     bool hasIntrinsics = false;
 

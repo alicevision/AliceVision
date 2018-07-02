@@ -25,27 +25,32 @@ namespace voctree {
  * @param[out] numDescriptors The number of descriptors stored in the file
  * @param[out] bytesPerElement The number of bytes used to store each element of the descriptor
  */
-void getInfoBinFile(const std::string &path, int dim, size_t &numDescriptors, int &bytesPerElement);
+void getInfoBinFile(const std::string& path, int dim, size_t& numDescriptors, int& bytesPerElement);
 
 /**
  * @brief Extract a list of decriptor files from a sfmData.
  * @param[in] sfmDataPath The input sfmData
- * @param[in] descFolder The folder containing the descriptor files
+ * @param[in] featuresFolders The folder(s) containing the descriptor files
  * @param[out] descriptorsFiles A list of descriptor files 
  */
-void getListOfDescriptorFiles(const sfm::SfMData& sfmData, const std::string& descFolder, std::map<IndexT, std::string>& descriptorsFiles);
+void getListOfDescriptorFiles(const sfm::SfMData& sfmData,
+                              const std::vector<std::string>& featuresFolders,
+                              std::map<IndexT, std::string>& descriptorsFiles);
 
 /**
  * @brief Read a set of descriptors from a file containing the path to the descriptor files.
  * @param[in] sfmDataPath The input sfmData
- * @param[in] descFolder The folder containing the descriptor files (optional)
+ * @param[in] featuresFolders The folder(s) containing the descriptor files (optional)
  * @param[in,out] descriptors the vector to which append all the read descriptors
  * @param[in,out] numFeatures a vector collecting for each file read the number of features read
  * @return the total number of features read
  *
  */
 template<class DescriptorT, class FileDescriptorT>
-size_t readDescFromFiles(const sfm::SfMData &sfmData, const std::string &descFolder, std::vector<DescriptorT>& descriptors, std::vector<size_t> &numFeatures);
+size_t readDescFromFiles(const sfm::SfMData& sfmData,
+                         const std::vector<std::string>& featuresFolders,
+                         std::vector<DescriptorT>& descriptors,
+                         std::vector<size_t>& numFeatures);
 
 } // namespace voctree
 } // namespace aliceVision

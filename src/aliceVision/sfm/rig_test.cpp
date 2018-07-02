@@ -246,7 +246,7 @@ BOOST_AUTO_TEST_CASE(rig_getPose)
         }
 
         // the view absolute pose is the sub-pose multiply by the rig pose
-        BOOST_CHECK(sfmData.getPose(view) == (subPose.pose * sfmData.GetPoses().at(view.getPoseId())));
+        BOOST_CHECK(sfmData.getPose(view) == (subPose.pose * sfmData.getPoses().at(view.getPoseId())));
       }
     }
   }

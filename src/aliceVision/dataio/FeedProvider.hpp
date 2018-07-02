@@ -35,6 +35,22 @@ public:
         camera::PinholeRadialK3 &camIntrinsics,
         std::string &mediaPath,
         bool &hasIntrinsics);
+
+  /**
+   * @brief Provide a new float grayscale image from the feed.
+   *
+   * @param[out] imageGray The new image from the feed.
+   * @param[out] camIntrinsics The associated camera intrinsics.
+   * @param[out] mediaPath The original media path, for a video is the path to the
+   * file, for an image sequence is the path to the single image.
+   * @param[out] hasIntrinsics True if \p camIntrinsics is valid, otherwise there
+   * is no intrinsics associated to \p imageGray.
+   * @return True if there is a new image, false otherwise.
+   */
+  bool readImage(image::Image<float> &imageGray,
+        camera::PinholeRadialK3 &camIntrinsics,
+        std::string &mediaPath,
+        bool &hasIntrinsics);
   
   /**
    * @brief Provide a new grayscale image from the feed.

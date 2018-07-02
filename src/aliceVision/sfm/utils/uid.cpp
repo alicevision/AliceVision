@@ -20,13 +20,16 @@ std::size_t computeUID(const View& view)
 {
   std::size_t uid = 0;
 
+  const std::string& bodySerialNumber = view.getMetadataBodySerialNumber();
+  const std::string& lensSerialNumber = view.getMetadataLensSerialNumber();
+
   if(view.hasMetadata("Exif:ImageUniqueID") ||
-     view.hasMetadata("Exif:BodySerialNumber") ||
-     view.hasMetadata("Exif:LensSerialNumber"))
+     !bodySerialNumber.empty() ||
+     !lensSerialNumber.empty())
   {
     stl::hash_combine(uid, view.getMetadataOrEmpty("Exif:ImageUniqueID"));
-    stl::hash_combine(uid, view.getMetadataOrEmpty("Exif:BodySerialNumber"));
-    stl::hash_combine(uid, view.getMetadataOrEmpty("Exif:LensSerialNumber"));
+    stl::hash_combine(uid, bodySerialNumber);
+    stl::hash_combine(uid, lensSerialNumber);
   }
   else
   {
@@ -39,6 +42,11 @@ std::size_t computeUID(const View& view)
   {
     stl::hash_combine(uid, view.getMetadataOrEmpty("Exif:DateTimeOriginal"));
     stl::hash_combine(uid, view.getMetadataOrEmpty("Exif:SubsecTimeOriginal"));
+  }
+  else if(view.hasMetadata("imageCounter"))
+  {
+    // if the view is from a video camera
+    stl::hash_combine(uid, view.getMetadataOrEmpty("imageCounter"));
   }
   else
   {
@@ -107,7 +115,7 @@ void sanityCheckLandmarks(const Landmarks &landmarks, const Views &views)
 void regenerateUID(SfMData &sfmdata, std::map<std::size_t, std::size_t> &oldIdToNew, bool sanityCheck)
 {
   // if the views are empty, nothing to be done. 
-  if(sfmdata.GetViews().empty())
+  if(sfmdata.getViews().empty())
     return;
   
   regenerateViewUIDs(sfmdata.views, oldIdToNew);
@@ -115,9 +123,9 @@ void regenerateUID(SfMData &sfmdata, std::map<std::size_t, std::size_t> &oldIdTo
   if(!sanityCheck)
     return;
   
-  sanityCheckLandmarks(sfmdata.GetLandmarks(), sfmdata.GetViews());
+  sanityCheckLandmarks(sfmdata.getLandmarks(), sfmdata.getViews());
   
-  sanityCheckLandmarks(sfmdata.GetControl_Points(), sfmdata.GetViews());
+  sanityCheckLandmarks(sfmdata.getControlPoints(), sfmdata.getViews());
   
 }
 

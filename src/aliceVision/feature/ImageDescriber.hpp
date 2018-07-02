@@ -24,26 +24,26 @@ namespace feature {
  */
 enum class EImageDescriberPreset
 {
-  LOW = 0,
-  MEDIUM,
-  NORMAL,
-  HIGH,
-  ULTRA
+  LOW = 0
+  , MEDIUM
+  , NORMAL
+  , HIGH
+  , ULTRA
 };
 
 /**
  * @brief It returns the preset from a string.
- * @param[in] preset the input string.
+ * @param[in] imageDescriberPreset the input string.
  * @return the associated describer preset.
  */
-EImageDescriberPreset EImageDescriberPreset_stringToEnum(const std::string& preset);
+EImageDescriberPreset EImageDescriberPreset_stringToEnum(const std::string& imageDescriberPreset);
 
 /**
  * @brief It converts a preset to a string.
- * @param[in] preset the describer preset enum to convert.
+ * @param[in] imageDescriberPreset the describer preset enum to convert.
  * @return the string associated to the describer preset.
  */
-std::string EImageDescriberPreset_enumToString(const EImageDescriberPreset preset);
+std::string EImageDescriberPreset_enumToString(const EImageDescriberPreset imageDescriberPreset);
 
 /**
  * @brief It write a describer preset into a stream by converting it to a string. 

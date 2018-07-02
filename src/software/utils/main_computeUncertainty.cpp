@@ -137,7 +137,7 @@ int main(int argc, char **argv)
       const std::vector<double> posesUncertainty = uncertainty.getCamerasUncEigenValues();
 
       std::size_t indexPose = 0;
-      for (Poses::const_iterator itPose = sfmData.GetPoses().begin(); itPose != sfmData.GetPoses().end(); ++itPose, ++indexPose)
+      for (Poses::const_iterator itPose = sfmData.getPoses().begin(); itPose != sfmData.getPoses().end(); ++itPose, ++indexPose)
       {
         const IndexT idPose = itPose->first;
         Vec6& u = sfmData._posesUncertainty[idPose]; // create uncertainty entry
@@ -149,7 +149,7 @@ int main(int argc, char **argv)
       const std::vector<double> landmarksUncertainty = uncertainty.getPointsUncEigenValues();
 
       std::size_t indexLandmark = 0;
-      for (Landmarks::const_iterator itLandmark = sfmData.GetLandmarks().begin(); itLandmark != sfmData.GetLandmarks().end(); ++itLandmark, ++indexLandmark)
+      for (Landmarks::const_iterator itLandmark = sfmData.getLandmarks().begin(); itLandmark != sfmData.getLandmarks().end(); ++itLandmark, ++indexLandmark)
       {
         const IndexT idLandmark = itLandmark->first;
         Vec3& u = sfmData._landmarksUncertainty[idLandmark]; // create uncertainty entry

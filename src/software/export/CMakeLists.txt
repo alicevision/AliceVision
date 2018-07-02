@@ -1,6 +1,26 @@
 ## AliceVision
 ## Exportation software
 
+# Export an alembic animated camera from a SfMData file
+
+if(ALICEVISION_HAVE_ALEMBIC)
+  add_executable(aliceVision_exportAnimatedCamera main_exportAnimatedCamera.cpp)
+
+  target_link_libraries(aliceVision_exportAnimatedCamera
+    aliceVision_system
+    aliceVision_sfm
+    ${BOOST_LIBRARIES}
+  )
+
+  set_property(TARGET aliceVision_exportAnimatedCamera
+    PROPERTY FOLDER AliceVision/Software/Export
+  )
+
+  install(TARGETS aliceVision_exportAnimatedCamera
+    DESTINATION bin/
+  )
+endif()
+
 # Export view extracted keypoints
 
 add_executable(aliceVision_exportKeypoints main_exportKeypoints.cpp)

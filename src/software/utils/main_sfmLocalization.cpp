@@ -25,25 +25,24 @@ using namespace std;
 namespace po = boost::program_options;
 namespace fs = boost::filesystem;
 
-// ---------------------------------------------------------------------------
 // Image localization API sample:
-// ---------------------------------------------------------------------------
 // - Allow to locate an image to an existing SfM_reconstruction
 //   if 3D-2D matches are found
 // - A demonstration mode (default):
 //   - try to locate all the view of the SfM_Data reconstruction
-// ---------------------------------------------------------------------------
-//
 int main(int argc, char **argv)
 {
   // command-line parameters
 
   std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
   std::string sfmDataFilename;
-  std::string describerTypesName = feature::EImageDescriberType_enumToString(feature::EImageDescriberType::SIFT);
-  std::string featuresFolder;
+  std::vector<std::string> featuresFolders;
   std::string outputFolder;
   std::string queryImage;
+
+  // user optional parameters
+
+  std::string describerTypesName = feature::EImageDescriberType_enumToString(feature::EImageDescriberType::SIFT);
   double maxResidualError = std::numeric_limits<double>::infinity();
 
   po::options_description allParams(
@@ -56,8 +55,8 @@ int main(int argc, char **argv)
       "SfMData file.")
     ("output,o", po::value<std::string>(&outputFolder)->required(),
       "Output path.")
-    ("featuresFolder,f", po::value<std::string>(&featuresFolder)->required(),
-      "Path to a folder containing the extracted features.")
+    ("featuresFolders,f", po::value<std::vector<std::string>>(&featuresFolders)->multitoken()->required(),
+      "Path to folder(s) containing the extracted features.")
     ("queryImage", po::value<std::string>(&queryImage)->required(),
       "Path to the image that must be localized.");
 
@@ -108,13 +107,13 @@ int main(int argc, char **argv)
 
   // Load input SfM_Data scene
   SfMData sfmData;
-  if (!Load(sfmData, sfmDataFilename, ESfMData(ALL)))
+  if(!Load(sfmData, sfmDataFilename, ESfMData::ALL))
   {
     ALICEVISION_LOG_ERROR("The input SfMData file '"<< sfmDataFilename << "' cannot be read");
     return EXIT_FAILURE;
   }
 
-  if (sfmData.GetPoses().empty() || sfmData.GetLandmarks().empty())
+  if(sfmData.getPoses().empty() || sfmData.getLandmarks().empty())
   {
     ALICEVISION_LOG_ERROR("The input SfM_Data file have not 3D content to match with.");
     return EXIT_FAILURE;
@@ -144,7 +143,7 @@ int main(int argc, char **argv)
   sfm::SfMLocalizationSingle3DTrackObservationDatabase localizer;
   {
     RegionsPerView regionsPerView;
-    if (!sfm::loadRegionsPerView(regionsPerView, sfmData, featuresFolder, {describerType}))
+    if (!sfm::loadRegionsPerView(regionsPerView, sfmData, featuresFolders, {describerType}))
     {
       ALICEVISION_LOG_ERROR("Invalid regions.");
       return EXIT_FAILURE;
@@ -167,155 +166,65 @@ int main(int argc, char **argv)
   
   std::vector<Vec3> vec_found_poses;
 
-  if (!queryImage.empty())
+  ALICEVISION_LOG_INFO("SfM::localization => try with image: " << queryImage);
+  std::unique_ptr<Regions> query_regions;
+  image::Image<unsigned char> imageGray;
   {
-    ALICEVISION_LOG_INFO("SfM::localization => try with image: " << queryImage);
-    std::unique_ptr<Regions> query_regions;
-    image::Image<unsigned char> imageGray;
-    {
-      image::readImage(queryImage, imageGray);
+    image::readImage(queryImage, imageGray);
 
-      // Compute features and descriptors
-      imageDescribers->describe(imageGray, query_regions);
-      ALICEVISION_LOG_INFO("# regions detected in query image: " << query_regions->RegionCount());
-    }
+    // Compute features and descriptors
+    imageDescribers->describe(imageGray, query_regions);
+    ALICEVISION_LOG_INFO("# regions detected in query image: " << query_regions->RegionCount());
+  }
 
-    // Suppose intrinsic as unknown
-    std::shared_ptr<camera::IntrinsicBase> optional_intrinsic (nullptr);
+  // Suppose intrinsic as unknown
+  std::shared_ptr<camera::IntrinsicBase> optional_intrinsic (nullptr);
 
-    geometry::Pose3 pose;
-    sfm::ImageLocalizerMatchData matching_data;
-    matching_data.error_max = maxResidualError;
+  geometry::Pose3 pose;
+  sfm::ImageLocalizerMatchData matching_data;
+  matching_data.error_max = maxResidualError;
 
-    // Try to localize the image in the database thanks to its regions
-    if (!localizer.Localize(
-      Pair(imageGray.Width(), imageGray.Height()),
-      optional_intrinsic.get(),
-      *(query_regions.get()),
-      pose,
-      &matching_data))
-    {
-      ALICEVISION_LOG_ERROR("Cannot locate the image");
-    }
-    else
-    {
-      const bool b_new_intrinsic = (optional_intrinsic == nullptr);
-      // A valid pose has been found (try to refine it):
-      // If not intrinsic as input:
-      //  init a new one from the projection matrix decomposition
-      // Else use the existing one and consider as static.
-      if (b_new_intrinsic)
-      {
-        // setup a default camera model from the found projection matrix
-        Mat3 K, R;
-        Vec3 t;
-        KRt_From_P(matching_data.projection_matrix, &K, &R, &t);
-
-        const double focal = (K(0,0) + K(1,1))/2.0;
-        const Vec2 principal_point(K(0,2), K(1,2));
-        optional_intrinsic = std::make_shared<camera::PinholeRadialK3>(
-          imageGray.Width(), imageGray.Height(),
-          focal, principal_point(0), principal_point(1));
-      }
-      sfm::SfMLocalizer::RefinePose
-      (
-        optional_intrinsic.get(),
-        pose, matching_data,
-        true, b_new_intrinsic
-      );
-
-      vec_found_poses.push_back(pose.center());
-    }
+  // Try to localize the image in the database thanks to its regions
+  if (!localizer.Localize(
+    Pair(imageGray.Width(), imageGray.Height()),
+    optional_intrinsic.get(),
+    *(query_regions.get()),
+    pose,
+    &matching_data))
+  {
+    ALICEVISION_LOG_ERROR("Cannot locate the image");
   }
   else
   {
-    ALICEVISION_LOG_INFO("DEMONSTRATION" << std::endl << "Will try to locate all the view of the loaded sfm_data file.");
-
-    for (const auto & viewIter : sfmData.GetViews())
+    const bool b_new_intrinsic = (optional_intrinsic == nullptr);
+    // A valid pose has been found (try to refine it):
+    // If not intrinsic as input:
+    //  init a new one from the projection matrix decomposition
+    // Else use the existing one and consider as static.
+    if (b_new_intrinsic)
     {
-      const View * view = viewIter.second.get();
-      // Load an image, extract the regions and match
-      const std::string sImagePath = view->getImagePath();
+      // setup a default camera model from the found projection matrix
+      Mat3 K, R;
+      Vec3 t;
+      KRt_From_P(matching_data.projection_matrix, &K, &R, &t);
 
-      ALICEVISION_LOG_INFO("SfM::localization => try with image: " << sImagePath);
-
-      std::unique_ptr<Regions> query_regions;
-      imageDescribers->allocate(query_regions);
-      const std::string basename = fs::path(sImagePath).stem().string();
-      const std::string featFile = (fs::path(featuresFolder) / (basename + ".SIFT.feat")).string();
-      const std::string descFile = (fs::path(featuresFolder) / (basename + ".SIFT.desc")).string();
-
-      try
-      {
-        query_regions->Load(featFile, descFile);
-      }
-      catch(const std::exception& e)
-      {
-        std::stringstream ss;
-        ss << "Invalid regions files for the view " << basename << " : \n";
-        ss << "\t- Features file : " << featFile << "\n";
-        ss << "\t- Descriptors file: " << descFile << "\n";
-        ss << "\t  " << e.what() << "\n";
-        ALICEVISION_LOG_WARNING(ss.str());
-        continue;
-      }
-
-      // Initialize intrinsics data for the view if any
-      std::shared_ptr<camera::IntrinsicBase> optional_intrinsic (nullptr);
-      if (sfmData.GetIntrinsics().count(view->getIntrinsicId()))
-      {
-        optional_intrinsic = sfmData.GetIntrinsics().at(view->getIntrinsicId());
-      }
-
-      geometry::Pose3 pose;
-      sfm::ImageLocalizerMatchData matching_data;
-      matching_data.error_max = maxResidualError;
-
-      // Try to localize the image in the database thanks to its regions
-      if (!localizer.Localize(
-        Pair(view->getWidth(), view->getHeight()),
-        optional_intrinsic.get(),
-        *(query_regions.get()),
-        pose,
-        &matching_data))
-      {
-        ALICEVISION_LOG_ERROR("Cannot locate the image");
-      }
-      else
-      {
-        const bool b_new_intrinsic = (optional_intrinsic == nullptr);
-        // A valid pose has been found (try to refine it):
-        // If no valid intrinsic as input:
-        //  init a new one from the projection matrix decomposition
-        // Else use the existing one and consider it as constant
-        if (b_new_intrinsic)
-        {
-          // setup a default camera model from the found projection matrix
-          Mat3 K, R;
-          Vec3 t;
-          KRt_From_P(matching_data.projection_matrix, &K, &R, &t);
-
-          const double focal = (K(0,0) + K(1,1))/2.0;
-          const Vec2 principal_point(K(0,2), K(1,2));
-          optional_intrinsic = std::make_shared<camera::PinholeRadialK3>(
-            view->getWidth(), view->getHeight(),
-            focal, principal_point(0), principal_point(1));
-        }
-        sfm::SfMLocalizer::RefinePose
-        (
-          optional_intrinsic.get(),
-          pose, matching_data,
-          true, b_new_intrinsic
-        );
-
-        vec_found_poses.push_back(pose.center());
-      }
+      const double focal = (K(0,0) + K(1,1))/2.0;
+      const Vec2 principal_point(K(0,2), K(1,2));
+      optional_intrinsic = std::make_shared<camera::PinholeRadialK3>(
+        imageGray.Width(), imageGray.Height(),
+        focal, principal_point(0), principal_point(1));
     }
-    ALICEVISION_LOG_INFO("# images found: " << vec_found_poses.size());
-    ALICEVISION_LOG_INFO("# sfmData view count: " << sfmData.GetViews().size());
+    sfm::SfMLocalizer::RefinePose
+    (
+      optional_intrinsic.get(),
+      pose, matching_data,
+      true, b_new_intrinsic
+    );
+
+    vec_found_poses.push_back(pose.center());
   }
 
-  // Export the found camera position
+  // export the found camera position
   const std::string out_file_name = (fs::path(outputFolder) / "found_pose_centers.ply").string();
   {
     std::ofstream outfile;
@@ -339,6 +248,5 @@ int main(int argc, char **argv)
       outfile.close();
     }
   }
-
   return EXIT_FAILURE;
 }

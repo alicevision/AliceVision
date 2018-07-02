@@ -91,7 +91,7 @@ bool LocalBundleAdjustmentCeres::Adjust(SfMData& sfm_data, const LocalBundleAdju
   
   // 1. Generate parameter block with all the poses & intrinsics
   // Add Poses data to the Ceres problem as Parameter Blocks (do not take care of Local BA strategy)
-  map_posesBlocks = addPosesToCeresProblem(sfm_data.GetPoses(), problem);
+  map_posesBlocks = addPosesToCeresProblem(sfm_data.getPoses(), problem);
   
   // Add Intrinsics data to the Ceres problem as Parameter Blocks (do not take care of Local BA strategy)
   map_intrinsicsBlocks = addIntrinsicsToCeresProblem(sfm_data, problem);
@@ -120,8 +120,8 @@ bool LocalBundleAdjustmentCeres::Adjust(SfMData& sfm_data, const LocalBundleAdju
       // have been set as Ignored by the Local BA strategy
       if (_LBAOptions.isLocalBAEnabled())
       {
-        if (localBA_data.getPoseState(poseId) == LocalBundleAdjustmentData::EState::ignored 
-            || localBA_data.getIntrinsicState(intrinsicId) == LocalBundleAdjustmentData::EState::ignored 
+        if (localBA_data.getPosestate(poseId) == LocalBundleAdjustmentData::EState::ignored 
+            || localBA_data.getIntrinsicstate(intrinsicId) == LocalBundleAdjustmentData::EState::ignored 
             || localBA_data.getLandmarkState(landmarkId) == LocalBundleAdjustmentData::EState::ignored)
         {
           continue;
@@ -151,8 +151,8 @@ bool LocalBundleAdjustmentCeres::Adjust(SfMData& sfm_data, const LocalBundleAdju
         // Set to constant parameters previoously set as Constant by the Local BA strategy
         if (_LBAOptions.isLocalBAEnabled())
         {
-          if (localBA_data.getIntrinsicState(intrinsicId) == LocalBundleAdjustmentData::EState::constant)  problem.SetParameterBlockConstant(intrinsicBlock);        
-          if (localBA_data.getPoseState(poseId) == LocalBundleAdjustmentData::EState::constant)            problem.SetParameterBlockConstant(poseBlock);
+          if (localBA_data.getIntrinsicstate(intrinsicId) == LocalBundleAdjustmentData::EState::constant)  problem.SetParameterBlockConstant(intrinsicBlock);        
+          if (localBA_data.getPosestate(poseId) == LocalBundleAdjustmentData::EState::constant)            problem.SetParameterBlockConstant(poseBlock);
           if (localBA_data.getLandmarkState(landmarkId) == LocalBundleAdjustmentData::EState::constant)    problem.SetParameterBlockConstant(landmarkBlock);
         } 
         // Create a residual block:
@@ -204,7 +204,7 @@ bool LocalBundleAdjustmentCeres::Adjust(SfMData& sfm_data, const LocalBundleAdju
   
   // 5. Update the scene with the new poses & intrinsics (set to Refine)  
   // Update camera poses with refined data
-  updateCameraPoses(map_posesBlocks, localBA_data, sfm_data.GetPoses());
+  updateCameraPoses(map_posesBlocks, localBA_data, sfm_data.getPoses());
   
   // Update camera intrinsics with refined data
   updateCameraIntrinsics(map_intrinsicsBlocks, localBA_data, sfm_data.intrinsics);
@@ -339,10 +339,10 @@ std::map<IndexT, std::vector<double>> LocalBundleAdjustmentCeres::addIntrinsicsT
   
   // Setup Intrinsics data 
   // Count the number of reconstructed views per intrinsic
-  for(const auto& itView: sfm_data.GetViews())
+  for(const auto& itView: sfm_data.getViews())
   {
     const View* view = itView.second.get();
-    if (sfm_data.IsPoseAndIntrinsicDefined(view))
+    if (sfm_data.isPoseAndIntrinsicDefined(view))
     {
       if(intrinsicsUsage.find(view->getIntrinsicId()) == intrinsicsUsage.end())
         intrinsicsUsage[view->getIntrinsicId()] = 1;
@@ -357,7 +357,7 @@ std::map<IndexT, std::vector<double>> LocalBundleAdjustmentCeres::addIntrinsicsT
   }
   
   std::map<IndexT, std::vector<double>> map_intrinsics;
-  for(const auto& itIntrinsic: sfm_data.GetIntrinsics())
+  for(const auto& itIntrinsic: sfm_data.getIntrinsics())
   {
     const IndexT intrinsicIds = itIntrinsic.first;
     
@@ -459,9 +459,9 @@ void LocalBundleAdjustmentCeres::updateCameraPoses(
     // Do not update a camera pose set as Ignored or Constant in the Local BA strategy
     if (_LBAOptions.isLocalBAEnabled() )
     {
-      if (localBA_data.getPoseState(poseId) == LocalBundleAdjustmentData::EState::ignored) 
+      if (localBA_data.getPosestate(poseId) == LocalBundleAdjustmentData::EState::ignored) 
         continue;
-      if (localBA_data.getPoseState(poseId) == LocalBundleAdjustmentData::EState::constant) 
+      if (localBA_data.getPosestate(poseId) == LocalBundleAdjustmentData::EState::constant) 
         continue;
     }
     
@@ -486,9 +486,9 @@ void LocalBundleAdjustmentCeres::updateCameraIntrinsics(
     // Do not update an camera intrinsic set as Ignored or Constant in the Local BA strategy
     if (_LBAOptions.isLocalBAEnabled() )
     {
-      if (localBA_data.getIntrinsicState(intrinsicId) == LocalBundleAdjustmentData::EState::ignored) 
+      if (localBA_data.getIntrinsicstate(intrinsicId) == LocalBundleAdjustmentData::EState::ignored) 
         continue;
-      if (localBA_data.getIntrinsicState(intrinsicId) == LocalBundleAdjustmentData::EState::constant) 
+      if (localBA_data.getIntrinsicstate(intrinsicId) == LocalBundleAdjustmentData::EState::constant) 
         continue;
     }
     

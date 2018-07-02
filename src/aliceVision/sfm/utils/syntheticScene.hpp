@@ -31,11 +31,11 @@ void generateSyntheticFeatures(feature::FeaturesPerView& out_featuresPerView, fe
   // precompute output feature vectors size and resize
   {
     std::map<IndexT, std::size_t> nbFeatPerView;
-    for(const auto& it: sfmData.GetViews())
+    for(const auto& it: sfmData.getViews())
     {
       nbFeatPerView[it.first] = 0;
     }
-    for(const auto& it: sfmData.GetLandmarks())
+    for(const auto& it: sfmData.getLandmarks())
     {
       const Landmark& landmark = it.second;
 
@@ -54,7 +54,7 @@ void generateSyntheticFeatures(feature::FeaturesPerView& out_featuresPerView, fe
     }
   }
   // Fill with the observation values
-  for(const auto& it: sfmData.GetLandmarks())
+  for(const auto& it: sfmData.getLandmarks())
   {
     const Landmark& landmark = it.second;
 

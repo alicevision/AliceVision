@@ -218,9 +218,9 @@ bool readCamera(const ICamera& camera, const M44d& mat, sfm::SfMData& sfmData, s
   std::string mvg_intrinsicType = EINTRINSIC_enumToString(PINHOLE_CAMERA);
   std::vector<double> mvg_intrinsicParams;
   std::vector<std::string> rawMetadata;
-  IndexT viewId = sfmData.GetViews().size();
-  IndexT poseId = sfmData.GetViews().size();
-  IndexT intrinsicId = sfmData.GetIntrinsics().size();
+  IndexT viewId = sfmData.getViews().size();
+  IndexT poseId = sfmData.getViews().size();
+  IndexT intrinsicId = sfmData.getIntrinsics().size();
   IndexT rigId = UndefinedIndexT;
   IndexT subPoseId = UndefinedIndexT;
   IndexT resectionId = UndefinedIndexT;
@@ -515,8 +515,8 @@ bool readXform(IXform& xform, M44d& mat, sfm::SfMData& sfmData, sfm::ESfMData fl
 
     Pose3 pose(matR, matT);
 
-    if(sfmData.GetPoses().find(poseId) == sfmData.GetPoses().end())
-      sfmData.GetPoses().emplace(poseId, pose);
+    if(sfmData.getPoses().find(poseId) == sfmData.getPoses().end())
+      sfmData.getPoses().emplace(poseId, pose);
   }
 
   if(sfmData.getRigs().find(rigId) == sfmData.getRigs().end())

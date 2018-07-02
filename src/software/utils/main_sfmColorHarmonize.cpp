@@ -28,12 +28,14 @@ int main( int argc, char **argv )
 
   std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
   std::string sfmDataFilename;
-  std::string featuresFolder;
-  std::string matchesFolder;
+  std::string outputFolder ;
+  std::vector<std::string> featuresFolders;
+  std::vector<std::string> matchesFolders;
   std::string describerTypesName = feature::EImageDescriberType_enumToString(feature::EImageDescriberType::SIFT);
-  std::string outputFolder;
   int selectionMethod;
   int imgRef;
+
+  // user optional parameters
 
   po::options_description allParams("AliceVision sfmColorHarmonize");
 
@@ -43,10 +45,10 @@ int main( int argc, char **argv )
       "SfMData file.")
     ("output,o", po::value<std::string>(&outputFolder)->required(),
       "Output path.")
-    ("featuresFolder,f", po::value<std::string>(&featuresFolder)->required(),
-      "Path to a folder containing the extracted features.")
-    ("matchesFolder,m", po::value<std::string>(&matchesFolder)->required(),
-      "Path to a folder in which computed matches are stored.")
+    ("featuresFolders,f", po::value<std::vector<std::string>>(&featuresFolders)->multitoken()->required(),
+      "Path to folder(s) containing the extracted features.")
+    ("matchesFolders,m", po::value<std::vector<std::string>>(&matchesFolders)->multitoken()->required(),
+      "Path to folder(s) in which computed matches are stored.")
     ("referenceImage", po::value<int>(&imgRef)->required(),
       "Reference image id.")
     ("selectionMethod", po::value<int>(&selectionMethod)->required(),
@@ -114,8 +116,8 @@ int main( int argc, char **argv )
   aliceVision::system::Timer timer;
 
   ColorHarmonizationEngineGlobal colorHarmonizeEngine(sfmDataFilename,
-    featuresFolder,
-    matchesFolder,
+    featuresFolders,
+    matchesFolders,
     outputFolder,
     describerTypes,
     selectionMethod,
@@ -123,12 +125,13 @@ int main( int argc, char **argv )
 
   if(colorHarmonizeEngine.Process())
   {
-    ALICEVISION_LOG_INFO(" ColorHarmonization took: " << timer.elapsed() << " s");
+    ALICEVISION_LOG_INFO("Color harmonization took: " << timer.elapsed() << " s");
     return EXIT_SUCCESS;
   }
   else
   {
-    ALICEVISION_LOG_ERROR("Something goes wrong in the process");
+    ALICEVISION_LOG_ERROR("Something goes wrong during the color harmonization process.");
   }
+
   return EXIT_FAILURE;
 }

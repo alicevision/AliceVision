@@ -102,10 +102,10 @@ void matchesGridFiltering(const aliceVision::feature::FeatRegions<aliceVision::f
         const aliceVision::sfm::SfMData sfm_data, 
         aliceVision::matching::IndMatches& outMatches)
 {
-  const std::size_t lWidth = sfm_data.GetViews().at(indexImagePair.first)->getWidth();
-  const std::size_t lHeight = sfm_data.GetViews().at(indexImagePair.first)->getHeight();
-  const std::size_t rWidth = sfm_data.GetViews().at(indexImagePair.second)->getWidth();
-  const std::size_t rHeight = sfm_data.GetViews().at(indexImagePair.second)->getHeight();
+  const std::size_t lWidth = sfm_data.getViews().at(indexImagePair.first)->getWidth();
+  const std::size_t lHeight = sfm_data.getViews().at(indexImagePair.first)->getHeight();
+  const std::size_t rWidth = sfm_data.getViews().at(indexImagePair.second)->getWidth();
+  const std::size_t rHeight = sfm_data.getViews().at(indexImagePair.second)->getHeight();
   
   const size_t leftCellHeight = std::ceil(lHeight / (float)gridSize);
   const size_t leftCellWidth = std::ceil(lWidth / (float)gridSize);

@@ -64,9 +64,9 @@ bool GlobalSfMTranslationAveragingSolver::Run(
   // Filter matches to keep only them link to view that have valid poses
   // (necessary since multiple components exists before translation averaging)
   std::set<IndexT> valid_view_ids;
-  for (const auto & view : sfm_data.GetViews())
+  for (const auto & view : sfm_data.getViews())
   {
-    if (sfm_data.IsPoseAndIntrinsicDefined(view.second.get()))
+    if (sfm_data.isPoseAndIntrinsicDefined(view.second.get()))
       valid_view_ids.insert(view.first);
   }
   KeepOnlyReferencedElement(valid_view_ids, tripletWise_matches);
@@ -331,8 +331,8 @@ void GlobalSfMTranslationAveragingSolver::ComputePutativeTranslation_EdgesCovera
   for (const auto & match_iterator : pairwiseMatches)
   {
     const Pair pair = match_iterator.first;
-    const View * v1 = sfm_data.GetViews().at(pair.first).get();
-    const View * v2 = sfm_data.GetViews().at(pair.second).get();
+    const View * v1 = sfm_data.getViews().at(pair.first).get();
+    const View * v2 = sfm_data.getViews().at(pair.second).get();
 
     if (// Consider the pair iff it is supported by the rotation graph
         (v1->getPoseId() != v2->getPoseId())
@@ -367,8 +367,8 @@ void GlobalSfMTranslationAveragingSolver::ComputePutativeTranslation_EdgesCovera
       for (const auto & match_iterator : pairwiseMatches)
       {
         const Pair pair = match_iterator.first;
-        const View * v1 = sfm_data.GetViews().at(pair.first).get();
-        const View * v2 = sfm_data.GetViews().at(pair.second).get();
+        const View * v1 = sfm_data.getViews().at(pair.first).get();
+        const View * v2 = sfm_data.getViews().at(pair.second).get();
         if (// Consider the pair iff it is supported by the triplet graph & 2 different pose id
             (v1->getPoseId() != v2->getPoseId())
             && set_triplet_pose_ids.count(v1->getPoseId())
@@ -380,11 +380,11 @@ void GlobalSfMTranslationAveragingSolver::ComputePutativeTranslation_EdgesCovera
       // Compute tracks:
       {
         aliceVision::track::TracksBuilder tracksBuilder;
-        tracksBuilder.Build(map_triplet_matches);
-        tracksBuilder.Filter(3);
+        tracksBuilder.build(map_triplet_matches);
+        tracksBuilder.filter(3);
 
         #pragma omp critical
-        map_tracksPerTriplets[i] = tracksBuilder.NbTracks(); //count the # of matches in the UF tree
+        map_tracksPerTriplets[i] = tracksBuilder.nbTracks(); //count the # of matches in the UF tree
       }
     }
 
@@ -607,8 +607,8 @@ bool GlobalSfMTranslationAveragingSolver::Estimate_T_triplet(
   for (const auto & match_iterator : pairwiseMatches)
   {
     const Pair & pair = match_iterator.first;
-    const View * v1 = sfm_data.GetViews().at(pair.first).get();
-    const View * v2 = sfm_data.GetViews().at(pair.second).get();
+    const View * v1 = sfm_data.getViews().at(pair.first).get();
+    const View * v2 = sfm_data.getViews().at(pair.second).get();
     if (// Consider the pair iff it is supported by the triplet graph & 2 different pose id
         (v1->getPoseId() != v2->getPoseId())
         && set_pose_ids.count(v1->getPoseId())
@@ -619,9 +619,9 @@ bool GlobalSfMTranslationAveragingSolver::Estimate_T_triplet(
   }
 
   aliceVision::track::TracksBuilder tracksBuilder;
-  tracksBuilder.Build(map_triplet_matches);
-  tracksBuilder.Filter(3);
-  tracksBuilder.ExportToSTL(tracks);
+  tracksBuilder.build(map_triplet_matches);
+  tracksBuilder.filter(3);
+  tracksBuilder.exportToSTL(tracks);
 
   if (tracks.size() < 30)
     return false;
@@ -652,7 +652,7 @@ bool GlobalSfMTranslationAveragingSolver::Estimate_T_triplet(
   double min_focal = std::numeric_limits<double>::max();
   for (const auto & ids : intrinsic_ids)
   {
-    const camera::IntrinsicBase * intrinsicPtr = sfm_data.GetIntrinsics().at(ids).get();
+    const camera::IntrinsicBase * intrinsicPtr = sfm_data.getIntrinsics().at(ids).get();
     const camera::Pinhole * intrinsic = dynamic_cast< const camera::Pinhole * > (intrinsicPtr);
     if (intrinsic && intrinsic->isValid())
     {
@@ -713,14 +713,14 @@ bool GlobalSfMTranslationAveragingSolver::Estimate_T_triplet(
     const IndexT J = pairIterator.first.second;
 
     // add views
-    tiny_scene.views.insert(*sfm_data.GetViews().find(I));
-    tiny_scene.views.insert(*sfm_data.GetViews().find(J));
+    tiny_scene.views.insert(*sfm_data.getViews().find(I));
+    tiny_scene.views.insert(*sfm_data.getViews().find(J));
 
     // add intrinsics
-    const View * view_I = sfm_data.GetViews().at(I).get();
-    const View * view_J = sfm_data.GetViews().at(J).get();
-    tiny_scene.intrinsics.insert(*sfm_data.GetIntrinsics().find(view_I->getIntrinsicId()));
-    tiny_scene.intrinsics.insert(*sfm_data.GetIntrinsics().find(view_J->getIntrinsicId()));
+    const View * view_I = sfm_data.getViews().at(I).get();
+    const View * view_J = sfm_data.getViews().at(J).get();
+    tiny_scene.intrinsics.insert(*sfm_data.getIntrinsics().find(view_I->getIntrinsicId()));
+    tiny_scene.intrinsics.insert(*sfm_data.getIntrinsics().find(view_J->getIntrinsicId()));
   }
 
   // Fill sfm_data with the inliers tracks. Feed image observations: no 3D yet.
@@ -737,8 +737,8 @@ bool GlobalSfMTranslationAveragingSolver::Estimate_T_triplet(
       const size_t featIndex = it->second;
 
       // initialize view and get intrinsics
-      const View * view = sfm_data.GetViews().at(viewIndex).get();
-      const camera::IntrinsicBase *  cam = sfm_data.GetIntrinsics().find(view->getIntrinsicId())->second.get();
+      const View * view = sfm_data.getViews().at(viewIndex).get();
+      const camera::IntrinsicBase *  cam = sfm_data.getIntrinsics().find(view->getIntrinsicId())->second.get();
       const camera::Pinhole * intrinsicPtr = dynamic_cast< const camera::Pinhole * >(cam);
       const Vec2 principal_point = intrinsicPtr->principal_point();
 

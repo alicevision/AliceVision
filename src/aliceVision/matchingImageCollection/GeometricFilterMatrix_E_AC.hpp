@@ -62,8 +62,8 @@ struct GeometricFilterMatrix_E_AC : public GeometricFilterMatrix
     const sfm::View * view_J = sfmData->views.at(jIndex).get();
 
     // Check that valid cameras can be retrieved for the pair of views
-    const camera::IntrinsicBase * cam_I = sfmData->GetIntrinsicPtr(view_I->getIntrinsicId());
-    const camera::IntrinsicBase * cam_J = sfmData->GetIntrinsicPtr(view_J->getIntrinsicId());
+    const camera::IntrinsicBase * cam_I = sfmData->getIntrinsicPtr(view_I->getIntrinsicId());
+    const camera::IntrinsicBase * cam_J = sfmData->getIntrinsicPtr(view_J->getIntrinsicId());
 
     if (!cam_I || !cam_J)
       return EstimationStatus(false, false);
@@ -86,8 +86,8 @@ struct GeometricFilterMatrix_E_AC : public GeometricFilterMatrix
     const camera::Pinhole * ptrPinhole_J = (const camera::Pinhole*)(cam_J);
 
     KernelType kernel(
-      xI, sfmData->GetViews().at(iIndex)->getWidth(), sfmData->GetViews().at(iIndex)->getHeight(),
-      xJ, sfmData->GetViews().at(jIndex)->getWidth(), sfmData->GetViews().at(jIndex)->getHeight(),
+      xI, sfmData->getViews().at(iIndex)->getWidth(), sfmData->getViews().at(iIndex)->getHeight(),
+      xJ, sfmData->getViews().at(jIndex)->getWidth(), sfmData->getViews().at(jIndex)->getHeight(),
       ptrPinhole_I->K(), ptrPinhole_J->K());
 
     // Robustly estimate the Essential matrix with A Contrario ransac
@@ -142,11 +142,11 @@ struct GeometricFilterMatrix_E_AC : public GeometricFilterMatrix
 
       // Check that valid cameras can be retrieved for the pair of views
       const camera::IntrinsicBase * cam_I =
-        sfmData->GetIntrinsics().count(view_I->getIntrinsicId()) ?
-          sfmData->GetIntrinsics().at(view_I->getIntrinsicId()).get() : nullptr;
+        sfmData->getIntrinsics().count(view_I->getIntrinsicId()) ?
+          sfmData->getIntrinsics().at(view_I->getIntrinsicId()).get() : nullptr;
       const camera::IntrinsicBase * cam_J =
-        sfmData->GetIntrinsics().count(view_J->getIntrinsicId()) ?
-          sfmData->GetIntrinsics().at(view_J->getIntrinsicId()).get() : nullptr;
+        sfmData->getIntrinsics().count(view_J->getIntrinsicId()) ?
+          sfmData->getIntrinsics().at(view_J->getIntrinsicId()).get() : nullptr;
 
       if (!cam_I || !cam_J)
         return false;

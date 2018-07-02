@@ -68,6 +68,8 @@ public:
    */
   EImageDescriberType getDescriberType() const override
   {
+    if(!_isOriented)
+      return EImageDescriberType::SIFT_UPRIGHT;
     return EImageDescriberType::SIFT;
   }
 

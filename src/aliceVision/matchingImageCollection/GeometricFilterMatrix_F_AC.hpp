@@ -60,11 +60,11 @@ struct GeometricFilterMatrix_F_AC: public GeometricFilterMatrix
     const sfm::View * view_I = sfmData->views.at(iIndex).get();
     const sfm::View * view_J = sfmData->views.at(jIndex).get();
 
-    const camera::IntrinsicBase * cam_I = sfmData->GetIntrinsicPtr(view_I->getIntrinsicId());
-    const camera::IntrinsicBase * cam_J = sfmData->GetIntrinsicPtr(view_J->getIntrinsicId());
+    const camera::IntrinsicBase * cam_I = sfmData->getIntrinsicPtr(view_I->getIntrinsicId());
+    const camera::IntrinsicBase * cam_J = sfmData->getIntrinsicPtr(view_J->getIntrinsicId());
 
-    const std::pair<size_t,size_t> imageSizeI(sfmData->GetViews().at(iIndex)->getWidth(), sfmData->GetViews().at(iIndex)->getHeight());
-    const std::pair<size_t,size_t> imageSizeJ(sfmData->GetViews().at(jIndex)->getWidth(), sfmData->GetViews().at(jIndex)->getHeight());
+    const std::pair<size_t,size_t> imageSizeI(sfmData->getViews().at(iIndex)->getWidth(), sfmData->getViews().at(iIndex)->getHeight());
+    const std::pair<size_t,size_t> imageSizeJ(sfmData->getViews().at(jIndex)->getWidth(), sfmData->getViews().at(jIndex)->getHeight());
 
     return geometricEstimation(
         regionsPerView.getDataPerDesc(pairIndex.first), regionsPerView.getDataPerDesc(pairIndex.second),
@@ -246,11 +246,11 @@ struct GeometricFilterMatrix_F_AC: public GeometricFilterMatrix
 
       // Retrieve corresponding pair camera intrinsic if any
       const camera::IntrinsicBase * cam_I =
-        sfmData->GetIntrinsics().count(view_I->getIntrinsicId()) ?
-          sfmData->GetIntrinsics().at(view_I->getIntrinsicId()).get() : nullptr;
+        sfmData->getIntrinsics().count(view_I->getIntrinsicId()) ?
+          sfmData->getIntrinsics().at(view_I->getIntrinsicId()).get() : nullptr;
       const camera::IntrinsicBase * cam_J =
-        sfmData->GetIntrinsics().count(view_J->getIntrinsicId()) ?
-          sfmData->GetIntrinsics().at(view_J->getIntrinsicId()).get() : nullptr;
+        sfmData->getIntrinsics().count(view_J->getIntrinsicId()) ?
+          sfmData->getIntrinsics().at(view_J->getIntrinsicId()).get() : nullptr;
 
       // Check the features correspondences that agree in the geometric and photometric domain
       robustEstimation::GuidedMatching<Mat3,

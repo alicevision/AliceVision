@@ -290,22 +290,22 @@ bool saveJSON(const SfMData& sfmData, const std::string& filename, ESfMData part
   }
 
   // views
-  if(saveViews && !sfmData.GetViews().empty())
+  if(saveViews && !sfmData.getViews().empty())
   {
     bpt::ptree viewsTree;
 
-    for(const auto& viewPair : sfmData.GetViews())
+    for(const auto& viewPair : sfmData.getViews())
       saveView("", *(viewPair.second), viewsTree);
 
     fileTree.add_child("views", viewsTree);
   }
 
   // intrinsics
-  if(saveIntrinsics && !sfmData.GetIntrinsics().empty())
+  if(saveIntrinsics && !sfmData.getIntrinsics().empty())
   {
     bpt::ptree intrinsicsTree;
 
-    for(const auto& intrinsicPair : sfmData.GetIntrinsics())
+    for(const auto& intrinsicPair : sfmData.getIntrinsics())
       saveIntrinsic("", intrinsicPair.first, intrinsicPair.second, intrinsicsTree);
 
     fileTree.add_child("intrinsics", intrinsicsTree);
@@ -315,11 +315,11 @@ bool saveJSON(const SfMData& sfmData, const std::string& filename, ESfMData part
   if(saveExtrinsics)
   {
     // poses
-    if(!sfmData.GetPoses().empty())
+    if(!sfmData.getPoses().empty())
     {
       bpt::ptree posesTree;
 
-      for(const auto& posePair : sfmData.GetPoses())
+      for(const auto& posePair : sfmData.getPoses())
       {
         bpt::ptree poseTree;
 
@@ -344,22 +344,22 @@ bool saveJSON(const SfMData& sfmData, const std::string& filename, ESfMData part
   }
 
   // structure
-  if(saveStructure && !sfmData.GetLandmarks().empty())
+  if(saveStructure && !sfmData.getLandmarks().empty())
   {
     bpt::ptree structureTree;
 
-    for(const auto& structurePair : sfmData.GetLandmarks())
+    for(const auto& structurePair : sfmData.getLandmarks())
       saveLandmark("", structurePair.first, structurePair.second, structureTree);
 
     fileTree.add_child("structure", structureTree);
   }
 
   // control points
-  if(saveControlPoints && !sfmData.GetControl_Points().empty())
+  if(saveControlPoints && !sfmData.getControlPoints().empty())
   {
     bpt::ptree controlPointTree;
 
-    for(const auto& controlPointPair : sfmData.GetControl_Points())
+    for(const auto& controlPointPair : sfmData.getControlPoints())
       saveLandmark("", controlPointPair.first, controlPointPair.second, controlPointTree);
 
     fileTree.add_child("controlPoints", controlPointTree);
@@ -404,7 +404,7 @@ bool loadJSON(SfMData& sfmData, const std::string& filename, ESfMData partFlag, 
   // views
   if(loadViews && fileTree.count("views"))
   {
-    Views& views = sfmData.GetViews();
+    Views& views = sfmData.getViews();
 
     if(incompleteViews)
     {
@@ -442,7 +442,7 @@ bool loadJSON(SfMData& sfmData, const std::string& filename, ESfMData partFlag, 
   // intrinsics
   if(loadIntrinsics && fileTree.count("intrinsics"))
   {
-    Intrinsics& intrinsics = sfmData.GetIntrinsics();
+    Intrinsics& intrinsics = sfmData.getIntrinsics();
 
     for(bpt::ptree::value_type &intrinsicNode : fileTree.get_child("intrinsics"))
     {
@@ -461,7 +461,7 @@ bool loadJSON(SfMData& sfmData, const std::string& filename, ESfMData partFlag, 
     // poses
     if(fileTree.count("poses"))
     {
-      Poses& poses = sfmData.GetPoses();
+      Poses& poses = sfmData.getPoses();
 
       for(bpt::ptree::value_type &poseNode : fileTree.get_child("poses"))
       {
@@ -494,7 +494,7 @@ bool loadJSON(SfMData& sfmData, const std::string& filename, ESfMData partFlag, 
   // structure
   if(loadStructure && fileTree.count("structure"))
   {
-    Landmarks& structure = sfmData.GetLandmarks();
+    Landmarks& structure = sfmData.getLandmarks();
 
     for(bpt::ptree::value_type &landmarkNode : fileTree.get_child("structure"))
     {
@@ -510,7 +510,7 @@ bool loadJSON(SfMData& sfmData, const std::string& filename, ESfMData partFlag, 
   // control points
   if(loadControlPoints && fileTree.count("controlPoints"))
   {
-    Landmarks& controlPoints = sfmData.GetControl_Points();
+    Landmarks& controlPoints = sfmData.getControlPoints();
 
     for(bpt::ptree::value_type &landmarkNode : fileTree.get_child("controlPoints"))
     {

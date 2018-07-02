@@ -380,11 +380,11 @@ int main(int argc, char** argv)
   
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_ALEMBIC)
   // init alembic exporter
-  sfm::AlembicExporter exporter( exportAlembicFile );
+  sfm::AlembicExporter exporter(exportAlembicFile);
   exporter.initAnimatedCamera("camera");
 #endif
   
-  image::Image<unsigned char> imageGrey;
+  image::Image<float> imageGrey;
   camera::PinholeRadialK3 queryIntrinsics;
   bool hasIntrinsics = false;
   

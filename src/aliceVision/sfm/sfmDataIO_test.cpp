@@ -94,7 +94,7 @@ BOOST_AUTO_TEST_CASE(SfMData_IO_SAVE_LOAD_JSON) {
     ESfMData flags_part = ALL;
     BOOST_CHECK( Load(sfm_data_load, filename, flags_part) );
     BOOST_CHECK_EQUAL( sfm_data_load.views.size(), sfmData.views.size());
-    BOOST_CHECK_EQUAL( sfm_data_load.GetPoses().size(), sfmData.GetPoses().size());
+    BOOST_CHECK_EQUAL( sfm_data_load.getPoses().size(), sfmData.getPoses().size());
     BOOST_CHECK_EQUAL( sfm_data_load.intrinsics.size(), sfmData.intrinsics.size());
     BOOST_CHECK_EQUAL( sfm_data_load.structure.size(), sfmData.structure.size());
     BOOST_CHECK_EQUAL( sfm_data_load.control_points.size(), sfmData.control_points.size());
@@ -108,7 +108,7 @@ BOOST_AUTO_TEST_CASE(SfMData_IO_SAVE_LOAD_JSON) {
     ESfMData flags_part = VIEWS;
     BOOST_CHECK( Load(sfm_data_load, filename, flags_part) );
     BOOST_CHECK_EQUAL( sfm_data_load.views.size(), sfmData.views.size());
-    BOOST_CHECK_EQUAL( sfm_data_load.GetPoses().size(), 0);
+    BOOST_CHECK_EQUAL( sfm_data_load.getPoses().size(), 0);
     BOOST_CHECK_EQUAL( sfm_data_load.intrinsics.size(), 0);
     BOOST_CHECK_EQUAL( sfm_data_load.structure.size(), 0);
     BOOST_CHECK_EQUAL( sfm_data_load.control_points.size(), 0);
@@ -122,7 +122,7 @@ BOOST_AUTO_TEST_CASE(SfMData_IO_SAVE_LOAD_JSON) {
     ESfMData flags_part = EXTRINSICS;
     BOOST_CHECK( Load(sfm_data_load, filename, flags_part) );
     BOOST_CHECK_EQUAL( sfm_data_load.views.size(), 0);
-    BOOST_CHECK_EQUAL( sfm_data_load.GetPoses().size(), sfmData.GetPoses().size());
+    BOOST_CHECK_EQUAL( sfm_data_load.getPoses().size(), sfmData.getPoses().size());
     BOOST_CHECK_EQUAL( sfm_data_load.intrinsics.size(), 0);
     BOOST_CHECK_EQUAL( sfm_data_load.structure.size(), 0);
     BOOST_CHECK_EQUAL( sfm_data_load.control_points.size(), 0);
@@ -136,7 +136,7 @@ BOOST_AUTO_TEST_CASE(SfMData_IO_SAVE_LOAD_JSON) {
     ESfMData flags_part = INTRINSICS;
     BOOST_CHECK( Load(sfm_data_load, filename, flags_part) );
     BOOST_CHECK_EQUAL( sfm_data_load.views.size(), 0);
-    BOOST_CHECK_EQUAL( sfm_data_load.GetPoses().size(), 0);
+    BOOST_CHECK_EQUAL( sfm_data_load.getPoses().size(), 0);
     BOOST_CHECK_EQUAL( sfm_data_load.intrinsics.size(), sfmData.intrinsics.size());
     BOOST_CHECK_EQUAL( sfm_data_load.structure.size(), 0);
     BOOST_CHECK_EQUAL( sfm_data_load.control_points.size(), 0);
@@ -150,7 +150,7 @@ BOOST_AUTO_TEST_CASE(SfMData_IO_SAVE_LOAD_JSON) {
     ESfMData flags_part = ESfMData(INTRINSICS | EXTRINSICS);
     BOOST_CHECK( Load(sfm_data_load, filename, flags_part) );
     BOOST_CHECK_EQUAL( sfm_data_load.views.size(), 0);
-    BOOST_CHECK_EQUAL( sfm_data_load.GetPoses().size(), sfmData.GetPoses().size());
+    BOOST_CHECK_EQUAL( sfm_data_load.getPoses().size(), sfmData.getPoses().size());
     BOOST_CHECK_EQUAL( sfm_data_load.intrinsics.size(), sfmData.intrinsics.size());
     BOOST_CHECK_EQUAL( sfm_data_load.structure.size(), 0);
     BOOST_CHECK_EQUAL( sfm_data_load.control_points.size(), 0);
@@ -164,7 +164,7 @@ BOOST_AUTO_TEST_CASE(SfMData_IO_SAVE_LOAD_JSON) {
     ESfMData flags_part = ESfMData(VIEWS | INTRINSICS | EXTRINSICS);
     BOOST_CHECK( Load(sfm_data_load, filename, flags_part) );
     BOOST_CHECK_EQUAL( sfm_data_load.views.size(), sfmData.views.size());
-    BOOST_CHECK_EQUAL( sfm_data_load.GetPoses().size(), sfmData.GetPoses().size());
+    BOOST_CHECK_EQUAL( sfm_data_load.getPoses().size(), sfmData.getPoses().size());
     BOOST_CHECK_EQUAL( sfm_data_load.intrinsics.size(), sfmData.intrinsics.size());
     BOOST_CHECK_EQUAL( sfm_data_load.structure.size(), 0);
     BOOST_CHECK_EQUAL( sfm_data_load.control_points.size(), 0);

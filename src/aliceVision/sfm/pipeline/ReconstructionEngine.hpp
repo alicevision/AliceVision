@@ -7,51 +7,92 @@
 
 #pragma once
 
-#include "aliceVision/sfm/SfMData.hpp"
+#include <aliceVision/sfm/SfMData.hpp>
+
 #include <string>
 
 namespace aliceVision {
 namespace sfm {
 
-/// Basic Reconstruction Engine.
-/// Process Function handle the reconstruction.
+/**
+ * @brief Basic Reconstruction Engine.
+ * Process Function handle the reconstruction.
+ */
 class ReconstructionEngine
 {
 public:
 
-  ReconstructionEngine(
-    const SfMData & sfm_data,
-    const std::string & soutDirectory)
-    :_sOutDirectory(soutDirectory),
-    _sfm_data(sfm_data),
-    _bFixedIntrinsics(false)
-  {
-  }
+  /**
+   * @brief ReconstructionEngine Constructor
+   * @param[in] sfmData The input SfMData of the scene
+   * @param[in] outFolder The folder where outputs will be stored
+   */
+  ReconstructionEngine(const SfMData& sfmData, const std::string& outFolder)
+    : _outputFolder(outFolder)
+    , _sfmData(sfmData)
+    , _hasFixedIntrinsics(false)
+  {}
 
   virtual ~ReconstructionEngine() {}
 
-  virtual bool Process() = 0;
+  /**
+   * @brief Reconstruction process
+   * @return true if the scene is reconstructed
+   */
+  virtual bool process() = 0;
 
-  bool Get_bFixedIntrinsics() const {return _bFixedIntrinsics;}
-  void Set_bFixedIntrinsics(bool bVal) {_bFixedIntrinsics = bVal;}
+  /**
+   * @brief Return true or false the intrinsics are fixed
+   * @return true if the intrinsics are fixed
+   */
+  inline bool hasFixedIntrinsics() const
+  {
+    return _hasFixedIntrinsics;
+  }
 
-  SfMData & Get_SfMData() { return _sfm_data; }
-  const SfMData & Get_SfMData() const { return _sfm_data; }
+  /**
+   * @brief Get the scene SfMData
+   * @return SfMData
+   */
+  inline const SfMData& getSfMData() const
+  {
+    return _sfmData;
+  }
 
-  bool Colorize() { return ColorizeTracks(_sfm_data); }
+  /**
+   * @brief Set true or false the intrinsics are fixed
+   * @param[in] fixed true if intrinsics are fixed
+   */
+  inline void setFixedIntrinsics(bool fixed)
+  {
+    _hasFixedIntrinsics = fixed;
+  }
+
+  /**
+   * @brief Get the scene SfMData
+   * @return SfMData
+   */
+  inline SfMData& getSfMData()
+  {
+    return _sfmData;
+  }
+
+  /**
+   * @brief Colorization of the reconstructed scene
+   * @return true if ok
+   */
+  inline bool colorize()
+  {
+    return colorizeTracks(_sfmData);
+  }
 
 protected:
-  std::string _sOutDirectory; // Output path where outputs will be stored
-
-  //-----
-  //-- Reconstruction data
-  //-----
-  SfMData _sfm_data; // internal SfMData
-
-  //-----
-  //-- Reconstruction parameters
-  //-----
-  bool _bFixedIntrinsics;
+  /// Output folder where outputs will be stored
+  std::string _outputFolder;
+  /// Internal SfMData
+  SfMData _sfmData;
+  /// Has fixed Intrinsics
+  bool _hasFixedIntrinsics;
 };
 
 } // namespace sfm

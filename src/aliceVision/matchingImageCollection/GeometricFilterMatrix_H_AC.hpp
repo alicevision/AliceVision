@@ -68,8 +68,8 @@ struct GeometricFilterMatrix_H_AC : public GeometricFilterMatrix
         KernelType;
 
     KernelType kernel(
-      xI, sfmData->GetViews().at(iIndex)->getWidth(), sfmData->GetViews().at(iIndex)->getHeight(),
-      xJ, sfmData->GetViews().at(jIndex)->getWidth(), sfmData->GetViews().at(jIndex)->getHeight(),
+      xI, sfmData->getViews().at(iIndex)->getWidth(), sfmData->getViews().at(iIndex)->getHeight(),
+      xJ, sfmData->getViews().at(jIndex)->getWidth(), sfmData->getViews().at(jIndex)->getHeight(),
       false); // configure as point to point error model.
 
     // Robustly estimate the Homography matrix with A Contrario ransac
@@ -200,11 +200,11 @@ struct GeometricFilterMatrix_H_AC : public GeometricFilterMatrix
 
       // Retrieve corresponding pair camera intrinsic if any
       const camera::IntrinsicBase * cam_I =
-        sfmData->GetIntrinsics().count(view_I->getIntrinsicId()) ?
-          sfmData->GetIntrinsics().at(view_I->getIntrinsicId()).get() : nullptr;
+        sfmData->getIntrinsics().count(view_I->getIntrinsicId()) ?
+          sfmData->getIntrinsics().at(view_I->getIntrinsicId()).get() : nullptr;
       const camera::IntrinsicBase * cam_J =
-        sfmData->GetIntrinsics().count(view_J->getIntrinsicId()) ?
-          sfmData->GetIntrinsics().at(view_J->getIntrinsicId()).get() : nullptr;
+        sfmData->getIntrinsics().count(view_J->getIntrinsicId()) ?
+          sfmData->getIntrinsics().at(view_J->getIntrinsicId()).get() : nullptr;
 
       if (dDistanceRatio < 0)
       {

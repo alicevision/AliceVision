@@ -5,8 +5,7 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
-#ifndef ALICEVISION_COLOR_HARMONIZATION_ENGINE_GLOBAL_H
-#define ALICEVISION_COLOR_HARMONIZATION_ENGINE_GLOBAL_H
+#pragma once
 
 #include <aliceVision/numeric/numeric.hpp>
 #include <aliceVision/feature/feature.hpp>
@@ -36,10 +35,10 @@ class ColorHarmonizationEngineGlobal
 {
 public:
   ColorHarmonizationEngineGlobal(
-    const std::string & sSfMData_Filename,
-    const std::string & featuresFolder,
-    const std::string & sMatchesPath,
-    const std::string & sOutDirectory,
+    const std::string& sfmDataFilename,
+    const std::vector<std::string>& featuresFolders,
+    const std::vector<std::string>& matchesFolders,
+    const std::string& outputDirectory,
     const std::vector<feature::EImageDescriberType>& descTypes,
     int selectionMethod = -1,
     int imgRef = -1);
@@ -50,44 +49,34 @@ public:
 
 private:
 
+  EHistogramSelectionMethod _selectionMethod;
+  int _imgRef;
+
+  // Input data
+
+  feature::RegionsPerView _regionsPerView;
+  /// considered images
+  std::vector<std::string> _fileNames;
+  /// size of each image
+  std::vector<std::pair<size_t, size_t>> _imageSize;
+  /// pairwise geometric matches
+  aliceVision::matching::PairwiseMatches _pairwiseMatches;
+  /// describer type use for color harmonizations
+  std::vector<feature::EImageDescriberType> _descTypes;
+  /// path to the Sfm Scene
+  std::string _sfmDataFilename;
+  /// path to matches
+  std::vector<std::string> _matchesFolders;
+  /// path to features
+  std::vector<std::string> _featuresFolders;
+  /// output path where outputs will be stored
+  std::string _outputDirectory;
+
+  /// Clean graph
   bool CleanGraph();
 
   /// Read input data (point correspondences)
   bool ReadInputData();
-
-public:
-
-  const std::vector< std::string > & getFilenamesVector() const { return _vec_fileNames; }
-
-  const std::vector< std::pair< size_t, size_t > > & getImagesSize() const { return _vec_imageSize; }
-
-private:
-
-  EHistogramSelectionMethod _selectionMethod;
-  int _imgRef;
-  std::string _sMatchesGeometricModel;
-
-  // -----
-  // Input data
-  // ----
-
-  std::vector< std::string > _vec_fileNames; // considered images
-
-  feature::RegionsPerView _regionsPerView;
-  std::vector< std::pair< size_t, size_t > > _vec_imageSize; // Size of each image
-
-  aliceVision::matching::PairwiseMatches _pairwiseMatches; // pairwise geometric matches
-
-  std::vector<feature::EImageDescriberType> _descTypes; //< describer type use for color harmonizations
-
-  //
-  std::string _sSfMData_Path;// Path to the Sfm_Scene
-  std::string _sMatchesPath;  // Path to matches
-  std::string _featuresFolder;  // Path to features
-  std::string _sOutDirectory; // Output path where outputs will be stored
 };
 
-
 } // namespace aliceVision
-
-#endif // ALICEVISION_COLOR_HARMONIZATION_ENGINE_GLOBAL_H

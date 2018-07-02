@@ -95,7 +95,7 @@ int main(int argc, char **argv)
   }
 
   // Compute the scene structure color
-  if (!ColorizeTracks(sfm_data))
+  if (!colorizeTracks(sfm_data))
   {
     ALICEVISION_LOG_ERROR("Error while trying to colorize the tracks! Aborting...");
   }

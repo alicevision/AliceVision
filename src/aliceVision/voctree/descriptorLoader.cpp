@@ -5,9 +5,7 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "descriptorLoader.hpp"
-
 #include <aliceVision/sfm/sfmDataIO.hpp>
-
 #include <aliceVision/system/Logger.hpp>
 
 #include <boost/algorithm/string/predicate.hpp>
@@ -57,47 +55,59 @@ void getInfoBinFile(const std::string &path, int dim, size_t &numDescriptors, in
   }
 }
 
-void getListOfDescriptorFiles(const sfm::SfMData& sfmData, const std::string& descFolder, std::map<IndexT, std::string>& descriptorsFiles)
+void getListOfDescriptorFiles(const sfm::SfMData& sfmData, const std::vector<std::string>& featuresFolders, std::map<IndexT, std::string>& descriptorsFiles)
 {
   namespace bfs = boost::filesystem;
 
   descriptorsFiles.clear();
 
-  if(sfmData.GetViews().empty())
+  if(sfmData.getViews().empty())
     throw std::runtime_error("Can't get list of descriptor files, no views found");
 
   // explore the sfm_data container to get the files path
-  for(const auto &view : sfmData.GetViews())
-  {     
-    // generate the equivalent .desc file path
-    const std::string filepath = bfs::path(bfs::path(descFolder) / (std::to_string(view.first) + ".SIFT.desc")).string();
-
-    if(bfs::exists(filepath))
-    {
-      descriptorsFiles[view.first] = filepath;
-      continue;
-    }
-
-    std::stringstream featureFoldersS;
+  for(const auto& view : sfmData.getViews())
+  {
     bool found = false;
 
-    for(const std::string& featureFolder : sfmData.getFeaturesFolders())
+    for(const std::string& featureFolder : featuresFolders)
     {
-      const std::string filepathFromSfMData = bfs::path(bfs::path(featureFolder) / (std::to_string(view.first) + ".SIFT.desc")).string();
+      // generate the equivalent .desc file path
+      const std::string filepath = bfs::path(bfs::path(featureFolder) / (std::to_string(view.first) + "." + feature::EImageDescriberType_enumToString(feature::EImageDescriberType::SIFT) + ".desc")).string();
 
-      if(bfs::exists(filepathFromSfMData))
+      if(bfs::exists(filepath))
       {
-        descriptorsFiles[view.first] = filepathFromSfMData;
+        descriptorsFiles[view.first] = filepath;
         found = true;
         break;
       }
-      featureFoldersS << "\n\t- " << filepathFromSfMData;
+    }
+
+    if(found)
+      continue;
+
+    for(const std::string& featureFolder : sfmData.getFeaturesFolders())
+    {
+      const std::string filepath = bfs::path(bfs::path(featureFolder) / (std::to_string(view.first) + "." + feature::EImageDescriberType_enumToString(feature::EImageDescriberType::SIFT) + ".desc")).string();
+
+      if(bfs::exists(filepath))
+      {
+        descriptorsFiles[view.first] = filepath;
+        found = true;
+        break;
+      }
     }
 
     if(!found)
     {
-      featureFoldersS << "\n\t- " << filepath;
-      throw std::runtime_error("Can't find descriptor " + std::to_string(view.first) + " in : " + featureFoldersS.str());
+      std::stringstream ss;
+
+      for(const std::string& featureFolder : featuresFolders)
+        ss << "\t- " << featureFolder << std::endl;
+
+      for(const std::string& featureFolder : sfmData.getFeaturesFolders())
+        ss << "\t- " << featureFolder << std::endl;
+
+      throw std::runtime_error("Can't find descriptor of view " + std::to_string(view.first) + " in:\n" + ss.str());
     }
   }
 }

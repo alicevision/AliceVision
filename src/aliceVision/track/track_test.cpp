@@ -46,12 +46,12 @@ BOOST_AUTO_TEST_CASE(Track_Simple) {
 
   //-- Build tracks using the interface tracksbuilder
   TracksBuilder trackBuilder;
-  trackBuilder.Build( map_pairwisematches );
+  trackBuilder.build( map_pairwisematches );
 
-  trackBuilder.ExportToStream(std::cout);
+  trackBuilder.exportToStream(std::cout);
 
   TracksMap map_tracks;
-  trackBuilder.ExportToSTL(map_tracks);
+  trackBuilder.exportToSTL(map_tracks);
 
   //-------------------
   // Unit Test check
@@ -110,10 +110,10 @@ BOOST_AUTO_TEST_CASE(Track_filter_3viewAtLeast) {
 
   //-- Build tracks using the interface tracksbuilder
   TracksBuilder trackBuilder;
-  trackBuilder.Build( map_pairwisematches );
-  BOOST_CHECK_EQUAL(3, trackBuilder.NbTracks());
-  trackBuilder.Filter(3);
-  BOOST_CHECK_EQUAL(2, trackBuilder.NbTracks());
+  trackBuilder.build( map_pairwisematches );
+  BOOST_CHECK_EQUAL(3, trackBuilder.nbTracks());
+  trackBuilder.filter(3);
+  BOOST_CHECK_EQUAL(2, trackBuilder.nbTracks());
 }
 
 BOOST_AUTO_TEST_CASE(Track_Conflict) {
@@ -142,14 +142,14 @@ BOOST_AUTO_TEST_CASE(Track_Conflict) {
 
   //-- Build tracks using the interface tracksbuilder
   TracksBuilder trackBuilder;
-  trackBuilder.Build( map_pairwisematches );
+  trackBuilder.build( map_pairwisematches );
 
-  BOOST_CHECK_EQUAL(3, trackBuilder.NbTracks());
-  trackBuilder.Filter(); // Key feature tested here to kill the conflicted track
-  BOOST_CHECK_EQUAL(2, trackBuilder.NbTracks());
+  BOOST_CHECK_EQUAL(3, trackBuilder.nbTracks());
+  trackBuilder.filter(); // Key feature tested here to kill the conflicted track
+  BOOST_CHECK_EQUAL(2, trackBuilder.nbTracks());
 
   TracksMap map_tracks;
-  trackBuilder.ExportToSTL(map_tracks);
+  trackBuilder.exportToSTL(map_tracks);
 
   //-------------------
   // Unit Test check
@@ -193,11 +193,11 @@ BOOST_AUTO_TEST_CASE(Track_GetCommonTracksInImages)
     map_tracksPerView[20].push_back(6);
 
     std::set<std::size_t> set_visibleTracks;
-    TracksUtilsMap::GetCommonTracksInImages(set_imageIndex, map_tracksPerView, set_visibleTracks);
+    tracksUtilsMap::getCommonTracksInImages(set_imageIndex, map_tracksPerView, set_visibleTracks);
     BOOST_CHECK_EQUAL(base.size(), set_visibleTracks.size());
     set_visibleTracks.clear();
     // test non-existing view index
-    TracksUtilsMap::GetCommonTracksInImages({15, 50}, map_tracksPerView, set_visibleTracks);
+    tracksUtilsMap::getCommonTracksInImages({15, 50}, map_tracksPerView, set_visibleTracks);
     BOOST_CHECK(set_visibleTracks.empty());
   }
   {
@@ -222,7 +222,7 @@ BOOST_AUTO_TEST_CASE(Track_GetCommonTracksInImages)
     map_tracksPerView[20].push_back(6);
 
     std::set<std::size_t> set_visibleTracks;
-    TracksUtilsMap::GetCommonTracksInImages(set_imageIndex, map_tracksPerView, set_visibleTracks);
+    tracksUtilsMap::getCommonTracksInImages(set_imageIndex, map_tracksPerView, set_visibleTracks);
     BOOST_CHECK_EQUAL(base.size(), set_visibleTracks.size());
   }
 }

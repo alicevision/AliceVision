@@ -90,15 +90,15 @@ void StructureEstimationFromKnownPoses::match(
     // Use the computed model to check valid correspondences
     // - by considering geometric error and descriptor distance ratio.
 
-    const View * viewL = sfm_data.GetViews().at(it->first).get();
+    const View * viewL = sfm_data.getViews().at(it->first).get();
     const Pose3 poseL = sfm_data.getPose(*viewL);
-    const Intrinsics::const_iterator iterIntrinsicL = sfm_data.GetIntrinsics().find(viewL->getIntrinsicId());
-    const View * viewR = sfm_data.GetViews().at(it->second).get();
+    const Intrinsics::const_iterator iterIntrinsicL = sfm_data.getIntrinsics().find(viewL->getIntrinsicId());
+    const View * viewR = sfm_data.getViews().at(it->second).get();
     const Pose3 poseR = sfm_data.getPose(*viewR);
-    const Intrinsics::const_iterator iterIntrinsicR = sfm_data.GetIntrinsics().find(viewR->getIntrinsicId());
+    const Intrinsics::const_iterator iterIntrinsicR = sfm_data.getIntrinsics().find(viewR->getIntrinsicId());
 
-    if (sfm_data.GetIntrinsics().count(viewL->getIntrinsicId()) != 0 ||
-        sfm_data.GetIntrinsics().count(viewR->getIntrinsicId()) != 0)
+    if (sfm_data.getIntrinsics().count(viewL->getIntrinsicId()) != 0 ||
+        sfm_data.getIntrinsics().count(viewR->getIntrinsicId()) != 0)
     {
       const Mat34 P_L = iterIntrinsicL->second.get()->get_projective_equivalent(poseL);
       const Mat34 P_R = iterIntrinsicR->second.get()->get_projective_equivalent(poseR);
@@ -196,9 +196,9 @@ void StructureEstimationFromKnownPoses::filter(
           map_matchesIJK.insert(*_putativeMatches.find(std::make_pair(J,K)));
 
         if (map_matchesIJK.size() >= 2) {
-          tracksBuilder.Build(map_matchesIJK);
-          tracksBuilder.Filter(3, false);
-          tracksBuilder.ExportToSTL(map_tracksCommon);
+          tracksBuilder.build(map_matchesIJK);
+          tracksBuilder.filter(3, false);
+          tracksBuilder.exportToSTL(map_tracksCommon);
         }
 
         // Triangulate the tracks
@@ -211,8 +211,8 @@ void StructureEstimationFromKnownPoses::filter(
             {
               const size_t imaIndex = iter->first;
               const size_t featIndex = iter->second;
-              const View * view = sfm_data.GetViews().at(imaIndex).get();
-              const IntrinsicBase * cam = sfm_data.GetIntrinsics().at(view->getIntrinsicId()).get();
+              const View * view = sfm_data.getViews().at(imaIndex).get();
+              const IntrinsicBase * cam = sfm_data.getIntrinsics().at(view->getIntrinsicId()).get();
               const Pose3 pose = sfm_data.getPose(*view);
               const Vec2 pt = regionsPerView.getRegions(imaIndex, subTrack.descType).GetRegionPosition(featIndex);
               trianObj.add(cam->get_projective_equivalent(pose), cam->get_ud_pixel(pt));
@@ -249,9 +249,9 @@ void StructureEstimationFromKnownPoses::triangulate(
 {
   track::TracksMap map_tracksCommon;
   track::TracksBuilder tracksBuilder;
-  tracksBuilder.Build(_tripletMatches);
-  tracksBuilder.Filter(3);
-  tracksBuilder.ExportToSTL(map_tracksCommon);
+  tracksBuilder.build(_tripletMatches);
+  tracksBuilder.filter(3);
+  tracksBuilder.exportToSTL(map_tracksCommon);
   matching::PairwiseMatches().swap(_tripletMatches);
 
   // Generate new Structure tracks

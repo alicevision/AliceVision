@@ -325,7 +325,7 @@ int main(int argc, char **argv)
   else
   {
     // fill SfMData with the images in the input folder
-    Views& views = sfmData.GetViews();
+    Views& views = sfmData.getViews();
     std::vector<std::string> imagePaths;
 
     if(listFiles(imageFolder, {".jpg", ".jpeg", ".tif", ".tiff", ".exr"},  imagePaths))
@@ -347,27 +347,29 @@ int main(int argc, char **argv)
       return EXIT_FAILURE;
   }
 
-  if(sfmData.GetViews().empty())
+  if(sfmData.getViews().empty())
   {
     ALICEVISION_LOG_ERROR("Can't find views in input.");
     return EXIT_FAILURE;
   }
 
   // create missing intrinsics
-  auto viewPairItBegin = sfmData.GetViews().begin();
+  auto viewPairItBegin = sfmData.getViews().begin();
 
   #pragma omp parallel for
-  for(int i = 0; i < sfmData.GetViews().size(); ++i)
+  for(int i = 0; i < sfmData.getViews().size(); ++i)
   {
     View& view = *(std::next(viewPairItBegin,i)->second);
     IndexT intrinsicId = view.getIntrinsicId();
     double sensorWidth = -1;
-    const bool hasCameraMetadata = (view.hasMetadata("Make") && view.hasMetadata("Model"));
+    const std::string& make = view.getMetadataMake();
+    const std::string& model = view.getMetadataModel();
+    const bool hasCameraMetadata = (!make.empty() || !model.empty());
 
     // check if the view intrinsic is already defined
     if(intrinsicId != UndefinedIndexT)
     {
-      camera::IntrinsicBase* intrinsicBase = sfmData.GetIntrinsicPtr(view.getIntrinsicId());
+      camera::IntrinsicBase* intrinsicBase = sfmData.getIntrinsicPtr(view.getIntrinsicId());
       camera::Pinhole* intrinsic = dynamic_cast<camera::Pinhole*>(intrinsicBase);
       if(intrinsic != nullptr)
       {
@@ -382,10 +384,10 @@ int main(int argc, char **argv)
           // intrinsic px focal length is undefined
           // check if it is because the sensor is not in the database
           aliceVision::sensorDB::Datasheet datasheet;
-          if(hasCameraMetadata && !getInfo(view.getMetadata("Make"), view.getMetadata("Model"), sensorDatabase, datasheet))
+          if(hasCameraMetadata && !getInfo(make, model, sensorDatabase, datasheet))
           {
             #pragma omp critical
-            unknownSensors.emplace(std::make_pair(view.getMetadata("Make"),view.getMetadata("Model")), view.getImagePath()); // will throw an error message
+            unknownSensors.emplace(std::make_pair(make, model), view.getImagePath()); // will throw an error message
           }
         }
         // don't need to build a new intrinsic
@@ -397,12 +399,14 @@ int main(int argc, char **argv)
     if(hasCameraMetadata)
     {
       aliceVision::sensorDB::Datasheet datasheet;
-      if(getInfo(view.getMetadata("Make"), view.getMetadata("Model"), sensorDatabase, datasheet))
+      if(getInfo(make, model, sensorDatabase, datasheet))
+      {
         sensorWidth = datasheet._sensorSize; // sensor is in the database
+      }
       else
       {
         #pragma omp critical
-        unknownSensors.emplace(std::make_pair(view.getMetadata("Make"),view.getMetadata("Model")), view.getImagePath()); // will throw an error message
+        unknownSensors.emplace(std::make_pair(make, model), view.getImagePath()); // will throw an error message
         if(!allowIncompleteOutput)
           continue;
       }
@@ -461,7 +465,7 @@ int main(int argc, char **argv)
     #pragma omp critical
     {
       view.setIntrinsicId(intrinsicId);
-      sfmData.GetIntrinsics().emplace(intrinsicId, intrinsicBase);
+      sfmData.getIntrinsics().emplace(intrinsicId, intrinsicBase);
     }
   }
 
@@ -499,9 +503,9 @@ int main(int argc, char **argv)
 
   // print report
   ALICEVISION_LOG_INFO("CameraInit report:" << std::endl
-                   << "\t- # views listed in SfMData: " << sfmData.GetViews().size() << std::endl
+                   << "\t- # views listed in SfMData: " << sfmData.getViews().size() << std::endl
                    << "\t- # views with an initialized intrinsic listed in SfMData: " << completeViewCount << std::endl
-                   << "\t- # intrinsics listed in SfMData: " << sfmData.GetIntrinsics().size());
+                   << "\t- # intrinsics listed in SfMData: " << sfmData.getIntrinsics().size());
 
   return EXIT_SUCCESS;
 }

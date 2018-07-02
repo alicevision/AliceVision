@@ -34,12 +34,12 @@ public:
     , _isOriented(isOriented)
   {
     // Configure VLFeat
-    vl_constructor();
+    VLFeatInstance::initialize();
   }
 
   ~ImageDescriber_SIFT_vlfeat()
   {
-    vl_destructor();
+    VLFeatInstance::destroy();
   }
 
   /**
@@ -66,6 +66,8 @@ public:
    */
   EImageDescriberType getDescriberType() const override
   {
+    if(!_isOriented)
+      return EImageDescriberType::SIFT_UPRIGHT;
     return EImageDescriberType::SIFT;
   }
 

@@ -90,12 +90,12 @@ int main(int argc, char **argv)
   sfm::AlembicExporter exporter(outputSfMDataFilename);
   exporter.initAnimatedCamera("camera");
 
-  for(const auto &iter : sfmData.GetViews())
+  for(const auto &iter : sfmData.getViews())
   {
     const auto &view = iter.second;
-    const geometry::Pose3 pose_gt = sfmData.GetPoses().at(view->getPoseId());
+    const geometry::Pose3 pose_gt = sfmData.getPoses().at(view->getPoseId());
     std::shared_ptr<camera::IntrinsicBase> intrinsic_gt = std::make_shared<camera::Pinhole>();
-    intrinsic_gt = sfmData.GetIntrinsics().at(view->getIntrinsicId());
+    intrinsic_gt = sfmData.getIntrinsics().at(view->getIntrinsicId());
     exporter.addCameraKeyframe(pose_gt, dynamic_cast<camera::Pinhole*>(intrinsic_gt.get()), view->getImagePath(), view->getViewId(), view->getIntrinsicId());
   }
   return EXIT_SUCCESS;

@@ -5,10 +5,10 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
-#include "aliceVision/sfm/SfMData.hpp"
-#include "aliceVision/sfm/sfmDataIO.hpp"
-#include "aliceVision/image/io.hpp"
-#include "aliceVision/stl/stl.hpp"
+#include <aliceVision/sfm/SfMData.hpp>
+#include <aliceVision/sfm/sfmDataIO.hpp>
+#include <aliceVision/image/io.hpp>
+#include <aliceVision/stl/stl.hpp>
 
 #include <boost/filesystem.hpp>
 #include <boost/progress.hpp>
@@ -118,7 +118,7 @@ std::set<IndexT> SfMData::getValidViews() const
     it != views.end(); ++it)
   {
     const View * v = it->second.get();
-    if (IsPoseAndIntrinsicDefined(v))
+    if (isPoseAndIntrinsicDefined(v))
     {
       valid_idx.insert(v->getViewId());
     }
@@ -133,7 +133,7 @@ std::set<IndexT> SfMData::getReconstructedIntrinsics() const
     it != views.end(); ++it)
   {
     const View * v = it->second.get();
-    if (IsPoseAndIntrinsicDefined(v))
+    if (isPoseAndIntrinsicDefined(v))
     {
       valid_idx.insert(v->getIntrinsicId());
     }
@@ -229,7 +229,7 @@ void SfMData::combine(const SfMData& sfmData)
 }
 
 /// Find the color of the SfMData Landmarks/structure
-bool ColorizeTracks( SfMData & sfm_data )
+bool colorizeTracks(SfMData& sfmData)
 {
   // Colorize each track
   //  Start with the most representative image
@@ -238,17 +238,17 @@ bool ColorizeTracks( SfMData & sfm_data )
   std::vector<Vec3> vec_3dPoints;
   std::vector<Vec3> vec_tracksColor;
 
-  boost::progress_display my_progress_bar(sfm_data.GetLandmarks().size(),
+  boost::progress_display my_progress_bar(sfmData.getLandmarks().size(),
                                      std::cout,
                                      "\nCompute scene structure color\n");
 
-  vec_3dPoints.resize(sfm_data.GetLandmarks().size());
+  vec_3dPoints.resize(sfmData.getLandmarks().size());
 
   //Build a list of contiguous index for the trackIds
   std::map<IndexT, IndexT> trackIds_to_contiguousIndexes;
   IndexT cpt = 0;
-  for (Landmarks::const_iterator it = sfm_data.GetLandmarks().begin();
-    it != sfm_data.GetLandmarks().end(); ++it, ++cpt)
+  for (Landmarks::const_iterator it = sfmData.getLandmarks().begin();
+    it != sfmData.getLandmarks().end(); ++it, ++cpt)
   {
     trackIds_to_contiguousIndexes[it->first] = cpt;
     vec_3dPoints[cpt] = it->second.X;
@@ -256,7 +256,7 @@ bool ColorizeTracks( SfMData & sfm_data )
 
   // The track list that will be colored (point removed during the process)
   std::set<IndexT> remainingTrackToColor;
-  std::transform(sfm_data.GetLandmarks().begin(), sfm_data.GetLandmarks().end(),
+  std::transform(sfmData.getLandmarks().begin(), sfmData.getLandmarks().end(),
     std::inserter(remainingTrackToColor, remainingTrackToColor.begin()),
     stl::RetrieveKey());
   
@@ -273,7 +273,7 @@ bool ColorizeTracks( SfMData & sfm_data )
       ++iterT)
     {
       const size_t trackId = *iterT;
-      const Observations & observations = sfm_data.GetLandmarks().at(trackId).observations;
+      const Observations & observations = sfmData.getLandmarks().at(trackId).observations;
       for( Observations::const_iterator iterObs = observations.begin();
         iterObs != observations.end(); ++iterObs)
       {
@@ -299,7 +299,7 @@ bool ColorizeTracks( SfMData & sfm_data )
     std::map<IndexT, IndexT>::const_iterator iterTT = map_IndexCardinal.begin();
     std::advance(iterTT, packet_vec[0].index);
     const size_t view_index = iterTT->first;
-    const View * view = sfm_data.GetViews().at(view_index).get();
+    const View * view = sfmData.getViews().at(view_index).get();
     const std::string sView_filename = view->getImagePath();
     Image<RGBColor> image;
 
@@ -314,7 +314,7 @@ bool ColorizeTracks( SfMData & sfm_data )
       ++iterT)
     {
       const size_t trackId = *iterT;
-      const Observations & observations = sfm_data.GetLandmarks().at(trackId).observations;
+      const Observations & observations = sfmData.getLandmarks().at(trackId).observations;
       Observations::const_iterator it = observations.find(view_index);
 
       if (it != observations.end())
@@ -324,7 +324,7 @@ bool ColorizeTracks( SfMData & sfm_data )
         // Clamp the pixel position if the feature/marker center is outside the image.
         pt.x() = clamp(pt.x(), 0.0, double(image.Width()-1));
         pt.y() = clamp(pt.y(), 0.0, double(image.Height()-1));
-        sfm_data.structure.at(trackId).rgb = image(pt.y(), pt.x());
+        sfmData.structure.at(trackId).rgb = image(pt.y(), pt.x());
         set_toRemove.insert(trackId);
         ++my_progress_bar;
       }

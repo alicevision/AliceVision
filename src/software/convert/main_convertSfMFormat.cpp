@@ -23,7 +23,7 @@ using namespace aliceVision::sfm;
 namespace po = boost::program_options;
 namespace fs = boost::filesystem;
 
-// Convert from a SfMData format to another
+// convert from a SfMData format to another
 int main(int argc, char **argv)
 {
   // command-line parameters
@@ -31,7 +31,6 @@ int main(int argc, char **argv)
   std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
   std::string sfmDataFilename;
   std::string outputSfMDataFilename;
-  std::string featuresFolder;
 
   // user optional parameters
 
@@ -61,9 +60,7 @@ int main(int argc, char **argv)
     ("structure", po::value<bool>(&flagStructure)->default_value(flagStructure),
       "Export structure.")
     ("observations", po::value<bool>(&flagObservations)->default_value(flagObservations),
-      "Export observations.")
-    ("featuresFolder,m", po::value<std::string>(&featuresFolder),
-      "Path to a folder in which computed features are stored to create links to files if 'regenerateUID' is used.");
+      "Export observations.");
 
   po::options_description logParams("Log parameters");
   logParams.add_options()
@@ -109,28 +106,28 @@ int main(int argc, char **argv)
     return EXIT_FAILURE;
   }
 
-  // OptionSwitch is cloned in cmd.add(),
-  // so we must use cmd.used() instead of testing OptionSwitch.used
-  int flags = (flagViews ? VIEWS      : 0)
-       | (flagIntrinsics ? INTRINSICS : 0)
-       | (flagExtrinsics ? EXTRINSICS : 0)
+  int flags = (flagViews   ? VIEWS        : 0)
+       | (flagIntrinsics   ? INTRINSICS   : 0)
+       | (flagExtrinsics   ? EXTRINSICS   : 0)
        | (flagObservations ? OBSERVATIONS : 0)
-       | (flagStructure ? STRUCTURE  : 0);
+       | (flagStructure    ? STRUCTURE    : 0);
+
   flags = (flags) ? flags : ALL;
 
   // load input SfMData scene
-  SfMData sfm_data;
-  if (!Load(sfm_data, sfmDataFilename, ESfMData(ALL)))
+  SfMData sfmData;
+  if (!Load(sfmData, sfmDataFilename, ESfMData::ALL))
   {
     ALICEVISION_LOG_ERROR("The input SfMData file '" << sfmDataFilename << "' cannot be read");
     return EXIT_FAILURE;
   }
 
   // export the SfMData scene in the expected format
-  if(!Save(sfm_data, outputSfMDataFilename, ESfMData(flags)))
+  if(!Save(sfmData, outputSfMDataFilename, ESfMData(flags)))
   {
     ALICEVISION_LOG_ERROR("An error occured while trying to save '" << outputSfMDataFilename << "'");
     return EXIT_FAILURE;
   }
+
   return EXIT_SUCCESS;
 }

@@ -6,29 +6,29 @@
 
 #pragma once
 
-#include "LocalizationResult.hpp"
-
 #include <aliceVision/image/Image.hpp>
-#include <aliceVision/feature/ImageDescriber.hpp>
-#include <aliceVision/camera/PinholeRadial.hpp>
-#include <aliceVision/robustEstimation/estimators.hpp>
 #include <aliceVision/numeric/numeric.hpp>
+#include <aliceVision/camera/PinholeRadial.hpp>
+#include <aliceVision/feature/ImageDescriber.hpp>
+#include <aliceVision/robustEstimation/estimators.hpp>
+#include <aliceVision/localization/LocalizationResult.hpp>
 
 namespace aliceVision {
 namespace localization {
 
 struct LocalizerParameters
 {
-  LocalizerParameters() :
-  _visualDebug(""),
-  _refineIntrinsics(false),
-  _fDistRatio(0.8),
-  _featurePreset(feature::EImageDescriberPreset::ULTRA),
-  _errorMax(std::numeric_limits<double>::infinity()),
-  _resectionEstimator(robustEstimation::ERobustEstimator::ACRANSAC),
-  _matchingEstimator(robustEstimation::ERobustEstimator::ACRANSAC),
-  _useLocalizeRigNaive(false),
-  _angularThreshold(degreeToRadian(0.1)) { }
+  LocalizerParameters()
+    : _visualDebug("")
+    , _refineIntrinsics(false)
+    , _fDistRatio(0.8)
+    , _featurePreset(feature::EImageDescriberPreset::ULTRA)
+    , _errorMax(std::numeric_limits<double>::infinity())
+    , _resectionEstimator(robustEstimation::ERobustEstimator::ACRANSAC)
+    , _matchingEstimator(robustEstimation::ERobustEstimator::ACRANSAC)
+    , _useLocalizeRigNaive(false)
+    , _angularThreshold(degreeToRadian(0.1))
+  {}
 
   virtual ~LocalizerParameters() = 0;
 
@@ -81,7 +81,7 @@ public:
    * @param[in] imagePath Optional complete path to the image, used only for debugging purposes.
    * @return  true if the image has been successfully localized.
    */
-  virtual bool localize(const image::Image<unsigned char> & imageGrey,
+  virtual bool localize(const image::Image<float> & imageGrey,
                         const LocalizerParameters *param,
                         bool useInputIntrinsics,
                         camera::PinholeRadialK3 &queryIntrinsics,
@@ -96,7 +96,7 @@ public:
                         LocalizationResult & localizationResult,
                         const std::string& imagePath = std::string()) = 0;
     
-  virtual bool localizeRig(const std::vector<image::Image<unsigned char> > & vec_imageGrey,
+  virtual bool localizeRig(const std::vector<image::Image<float>> & vec_imageGrey,
                            const LocalizerParameters *param,
                            std::vector<camera::PinholeRadialK3 > &vec_queryIntrinsics,
                            const std::vector<geometry::Pose3 > &vec_subPoses,

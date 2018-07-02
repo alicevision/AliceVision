@@ -66,14 +66,49 @@ public:
     _minInputTrackLength = minInputTrackLength;
   }
 
-  void setIntermediateFileExtension(const std::string& interFileExtension)
-  {
-    _sfmdataInterFileExtension = interFileExtension;
-  }
-
   void setNbOfObservationsForTriangulation(std::size_t minNbObservationsForTriangulation)
   {
     _minNbObservationsForTriangulation = minNbObservationsForTriangulation;
+  }
+
+  void setMinAngleForTriangulation(double minAngleForTriangulation)
+  {
+    _minAngleForTriangulation = minAngleForTriangulation;
+  }
+
+  void setMinAngleForLandmark(double minAngleForLandmark)
+  {
+    _minAngleForLandmark = minAngleForLandmark;
+  }
+
+  void setMaxReprojectionError(double maxReprojectionError)
+  {
+    _maxReprojectionError = maxReprojectionError;
+  }
+
+  void setMinAngleInitialPair(float minAngleInitialPair)
+  {
+    _minAngleInitialPair = minAngleInitialPair;
+  }
+
+  void setMaxAngleInitialPair(float maxAngleInitialPair)
+  {
+    _maxAngleInitialPair = maxAngleInitialPair;
+  }
+
+  void useTrackFiltering(bool useTrackFiltering)
+  {
+    _useTrackFiltering = useTrackFiltering;
+  }
+
+  void setLocalizerEstimator(robustEstimation::ERobustEstimator estimator)
+  {
+    _localizerEstimator = estimator;
+  }
+
+  void setIntermediateFileExtension(const std::string& interFileExtension)
+  {
+    _sfmdataInterFileExtension = interFileExtension;
   }
 
   void setLocalBundleAdjustmentGraphDistance(std::size_t distance)
@@ -87,8 +122,8 @@ public:
     _uselocalBundleAdjustment = v;
     if(v)
     {
-      _localBA_data = std::make_shared<LocalBundleAdjustmentData>(_sfm_data);
-      _localBA_data->setOutDirectory((fs::path(_sOutDirectory) / "localBA").string());
+      _localBA_data = std::make_shared<LocalBundleAdjustmentData>(_sfmData);
+      _localBA_data->setOutDirectory((fs::path(_outputFolder) / "localBA").string());
 
       // delete all the previous data about the Local BA.
       if(fs::exists(_localBA_data->getOutDirectory()))
@@ -97,16 +132,11 @@ public:
     }
   }
 
-  void setLocalizerEstimator(robustEstimation::ERobustEstimator estimator)
-  {
-    _localizerEstimator = estimator;
-  }
-
   /**
    * @brief Process the entire incremental reconstruction
    * @return true if done
    */
-  virtual bool Process();
+  virtual bool process();
 
   /**
    * @brief Initialize pyramid scoring
@@ -188,7 +218,7 @@ private:
     /// tracks index for resection
     std::set<std::size_t> tracksId;
     /// features index for resection
-    std::vector<track::TracksUtilsMap::FeatureId> featuresId;
+    std::vector<track::tracksUtilsMap::FeatureId> featuresId;
     /// pose estimated by the resection
     geometry::Pose3 pose;
     /// intrinsic estimated by resection
@@ -345,6 +375,11 @@ private:
   std::size_t _minNbObservationsForTriangulation = 2;
   /// a 3D point must have at least 2 obervations not too much aligned.
   double _minAngleForTriangulation = 3.0;
+  double _minAngleForLandmark = 2.0;
+  double _maxReprojectionError = 4.0;
+  float _minAngleInitialPair = 5.0f;
+  float _maxAngleInitialPair = 40.0f;
+  bool _useTrackFiltering = true;
   robustEstimation::ERobustEstimator _localizerEstimator = robustEstimation::ERobustEstimator::ACRANSAC;
 
   // Data providers

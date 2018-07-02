@@ -8,29 +8,25 @@
 #include "colorHarmonizeEngineGlobal.hpp"
 #include "software/utils/sfmHelper/sfmIOHelper.hpp"
 
-#include <aliceVision/image/all.hpp>
-//-- Load features per view
-#include <aliceVision/sfm/pipeline/regionsIO.hpp>
-//-- Feature matches
-#include <aliceVision/matching/IndMatch.hpp>
-#include <aliceVision/matching/io.hpp>
-#include <aliceVision/stl/stl.hpp>
-
+#include <aliceVision/system/Timer.hpp>
 #include <aliceVision/sfm/sfm.hpp>
 #include <aliceVision/graph/graph.hpp>
 #include <aliceVision/config.hpp>
-
-#include <dependencies/vectorGraphics/svgDrawer.hpp>
-
-//-- Selection Methods
+#include <aliceVision/image/all.hpp>
+//load features per view
+#include <aliceVision/sfm/pipeline/regionsIO.hpp>
+// feature matches
+#include <aliceVision/matching/IndMatch.hpp>
+#include <aliceVision/matching/io.hpp>
+#include <aliceVision/stl/stl.hpp>
+// selection Methods
 #include <aliceVision/colorHarmonization/CommonDataByPair_fullFrame.hpp>
 #include <aliceVision/colorHarmonization/CommonDataByPair_matchedPoints.hpp>
 #include <aliceVision/colorHarmonization/CommonDataByPair_vldSegment.hpp>
-
-//-- Color harmonization solver
+// color harmonization solver
 #include <aliceVision/colorHarmonization/GainOffsetConstraintBuilder.hpp>
 
-#include <aliceVision/system/Timer.hpp>
+#include <dependencies/vectorGraphics/svgDrawer.hpp>
 
 #include <boost/progress.hpp>
 
@@ -52,40 +48,38 @@ using namespace aliceVision::lInfinity;
 using namespace aliceVision::sfm;
 
 typedef feature::SIOPointFeature FeatureT;
-typedef vector< FeatureT > featsT;
+typedef vector<FeatureT> featsT;
 
 ColorHarmonizationEngineGlobal::ColorHarmonizationEngineGlobal(
-  const string & sSfMData_Filename,
-  const std::string & featuresFolder,
-  const string & sMatchesPath,
-  const string & sOutDirectory,
-  const std::vector<feature::EImageDescriberType>& descTypes,
-  int selectionMethod,
-  int imgRef):
-  _sSfMData_Path(sSfMData_Filename),
-  _featuresFolder(featuresFolder),
-  _sMatchesPath(sMatchesPath),
-  _sOutDirectory(sOutDirectory),
-  _descTypes(descTypes)
+    const string& sfmDataFilename,
+    const std::vector<std::string>& featuresFolders,
+    const std::vector<std::string>& matchesFolders,
+    const string& outputDirectory,
+    const std::vector<feature::EImageDescriberType>& descTypes,
+    int selectionMethod,
+    int imgRef)
+  : _sfmDataFilename(sfmDataFilename)
+  , _featuresFolders(featuresFolders)
+  , _matchesFolders(matchesFolders)
+  , _outputDirectory(outputDirectory)
+  , _descTypes(descTypes)
 {
-  if(!fs::exists(sOutDirectory))
-  {
-    fs::create_directory(sOutDirectory);
-  }
+  if(!fs::exists(outputDirectory))
+    fs::create_directory(outputDirectory);
 
-  //Choose image reference
-  while(imgRef < 0 || imgRef >= _vec_fileNames.size())
+  // choose image reference
+  while(imgRef < 0 || imgRef >= _fileNames.size())
   {
       cout << "Choose your reference image:\n";
-      for( int i = 0; i < _vec_fileNames.size(); ++i )
+      for( int i = 0; i < _fileNames.size(); ++i )
       {
-        cout << "id: " << i << "\t" << _vec_fileNames[ i ] << endl;
+        cout << "id: " << i << "\t" << _fileNames[ i ] << endl;
       }
       cin >> imgRef;
   }
   _imgRef = imgRef;
 
-  //Choose selection method
+  // choose selection method
   while(selectionMethod < 0 || selectionMethod > 2)
   {
     cout << "Choose your selection method:\n"
@@ -99,8 +93,7 @@ ColorHarmonizationEngineGlobal::ColorHarmonizationEngineGlobal(
 }
 
 ColorHarmonizationEngineGlobal::~ColorHarmonizationEngineGlobal()
-{
-}
+{}
 
 inline void pauseProcess()
 {
@@ -148,7 +141,7 @@ bool ColorHarmonizationEngineGlobal::Process()
 
     // Save the graph before cleaning:
     graph::exportToGraphvizData(
-      (fs::path(_sOutDirectory) / "input_graph_poor_supportRemoved").string(),
+      (fs::path(_outputDirectory) / "input_graph_poor_supportRemoved").string(),
       putativeGraph.g);
   }
 
@@ -188,7 +181,7 @@ bool ColorHarmonizationEngineGlobal::Process()
   }
 
   std::cout << "\n Remaining cameras after CC filter : \n"
-    << map_cameraIndexTocameraNode.size() << " from a total of " << _vec_fileNames.size() << std::endl;
+    << map_cameraIndexTocameraNode.size() << " from a total of " << _fileNames.size() << std::endl;
 
   size_t bin      = 256;
   double minvalue = 0.0;
@@ -213,14 +206,14 @@ bool ColorHarmonizationEngineGlobal::Process()
 
     //-- Edges names:
     std::pair< std::string, std::string > p_imaNames;
-    p_imaNames = make_pair( _vec_fileNames[ viewI ], _vec_fileNames[ viewJ ] );
+    p_imaNames = make_pair( _fileNames[ viewI ], _fileNames[ viewJ ] );
     std::cout << "Current edge : "
       << fs::path(p_imaNames.first).filename().string() << "\t"
       << fs::path(p_imaNames.second).filename().string() << std::endl;
 
     //-- Compute the masks from the data selection:
-    Image< unsigned char > maskI ( _vec_imageSize[ viewI ].first, _vec_imageSize[ viewI ].second );
-    Image< unsigned char > maskJ ( _vec_imageSize[ viewJ ].first, _vec_imageSize[ viewJ ].second );
+    Image< unsigned char > maskI ( _imageSize[ viewI ].first, _imageSize[ viewI ].second );
+    Image< unsigned char > maskJ ( _imageSize[ viewJ ].first, _imageSize[ viewJ ].second );
 
     switch(_selectionMethod)
     {
@@ -274,8 +267,8 @@ bool ColorHarmonizationEngineGlobal::Process()
     bool bExportMask = false;
     if (bExportMask)
     {
-      string sEdge = _vec_fileNames[ viewI ] + "_" + _vec_fileNames[ viewJ ];
-      sEdge = (fs::path(_sOutDirectory) / sEdge ).string();
+      string sEdge = _fileNames[ viewI ] + "_" + _fileNames[ viewJ ];
+      sEdge = (fs::path(_outputDirectory) / sEdge ).string();
 
       if( !fs::exists(sEdge) )
         fs::create_directory(sEdge);
@@ -328,9 +321,9 @@ bool ColorHarmonizationEngineGlobal::Process()
 
   using namespace aliceVision::linearProgramming;
 
-  std::vector<double> vec_solution_r(_vec_fileNames.size() * 2 + 1);
-  std::vector<double> vec_solution_g(_vec_fileNames.size() * 2 + 1);
-  std::vector<double> vec_solution_b(_vec_fileNames.size() * 2 + 1);
+  std::vector<double> vec_solution_r(_fileNames.size() * 2 + 1);
+  std::vector<double> vec_solution_g(_fileNames.size() * 2 + 1);
+  std::vector<double> vec_solution_b(_fileNames.size() * 2 + 1);
 
   aliceVision::system::Timer timer;
 
@@ -419,7 +412,7 @@ bool ColorHarmonizationEngineGlobal::Process()
     }
 
     Image< RGBColor > image_c;
-    readImage( _vec_fileNames[ imaNum ], image_c );
+    readImage( _fileNames[ imaNum ], image_c );
 
     #pragma omp parallel for
     for( int j = 0; j < image_c.Height(); ++j )
@@ -432,10 +425,10 @@ bool ColorHarmonizationEngineGlobal::Process()
       }
     }
 
-    const std::string out_folder = (fs::path(_sOutDirectory) / (vec_selectionMethod[ _selectionMethod ] + "_" + vec_harmonizeMethod[ harmonizeMethod ])).string();
+    const std::string out_folder = (fs::path(_outputDirectory) / (vec_selectionMethod[ _selectionMethod ] + "_" + vec_harmonizeMethod[ harmonizeMethod ])).string();
     if(!fs::exists(out_folder))
       fs::create_directory(out_folder);
-    const std::string out_filename = (fs::path(out_folder) / fs::path(_vec_fileNames[ imaNum ]).filename() ).string();
+    const std::string out_filename = (fs::path(out_folder) / fs::path(_fileNames[ imaNum ]).filename() ).string();
 
     writeImage( out_filename, image_c );
   }
@@ -444,53 +437,53 @@ bool ColorHarmonizationEngineGlobal::Process()
 
 bool ColorHarmonizationEngineGlobal::ReadInputData()
 {
-  if ( !fs::is_directory(_sMatchesPath) ||
-      !fs::is_directory( _sOutDirectory) )
+  if(!fs::is_directory( _outputDirectory))
   {
-    std::cerr << std::endl
-      << "One of the required folder is not a valid folder" << std::endl;
+    std::cerr << "The output folder is not a valid folder" << std::endl;
     return false;
   }
 
-  if ( !fs::is_regular_file(_sSfMData_Path ))
+  if(!fs::is_regular_file(_sfmDataFilename ))
   {
-    std::cerr << std::endl
-      << "Invalid input sfm_data file: (" << _sSfMData_Path << ")" << std::endl;
+    std::cerr << "Invalid input sfm_data file: " << _sfmDataFilename << std::endl;
     return false;
   }
 
   // a. Read input scenes views
-  SfMData sfm_data;
-  if (!Load(sfm_data, _sSfMData_Path, ESfMData(VIEWS))) {
-    std::cerr << std::endl
-      << "The input file \""<< _sSfMData_Path << "\" cannot be read" << std::endl;
+  SfMData sfmData;
+  if(!Load(sfmData, _sfmDataFilename, ESfMData::VIEWS))
+  {
+    std::cerr << "The input file \""<< _sfmDataFilename << "\" cannot be read" << std::endl;
     return false;
   }
 
   // Read images names
-  for (Views::const_iterator iter = sfm_data.GetViews().begin();
-    iter != sfm_data.GetViews().end(); ++iter)
+  for(Views::const_iterator iter = sfmData.getViews().begin();
+    iter != sfmData.getViews().end(); ++iter)
   {
-    const View * v = iter->second.get();
-    _vec_fileNames.push_back(v->getImagePath());
-    _vec_imageSize.push_back( std::make_pair( v->getWidth(), v->getHeight() ));
+    const View* v = iter->second.get();
+    _fileNames.push_back(v->getImagePath());
+    _imageSize.push_back( std::make_pair( v->getWidth(), v->getHeight() ));
   }
 
   // b. Read matches
-  if ( !sfm::loadPairwiseMatches(_pairwiseMatches, sfm_data, _sMatchesPath, _descTypes) )
+  if(!sfm::loadPairwiseMatches(_pairwiseMatches, sfmData, _matchesFolders, _descTypes))
+  {
+    std::cerr << "Can't load matches files" << std::endl;
     return false;
+  }
 
   // Read features:
-  if(!sfm::loadRegionsPerView(_regionsPerView, sfm_data, _featuresFolder, _descTypes))
+  if(!sfm::loadRegionsPerView(_regionsPerView, sfmData, _featuresFolders, _descTypes))
   {
-    cerr << "Can't load feature files" << endl;
+    std::cerr << "Can't load feature files" << std::endl;
     return false;
   }
 
   graph::indexedGraph putativeGraph(getImagePairs(_pairwiseMatches));
 
   // Save the graph before cleaning:
-  graph::exportToGraphvizData((fs::path(_sOutDirectory) / "initialGraph" ).string(),putativeGraph.g );
+  graph::exportToGraphvizData((fs::path(_outputDirectory) / "initialGraph" ).string(),putativeGraph.g );
 
   return true;
 }
@@ -503,7 +496,7 @@ bool ColorHarmonizationEngineGlobal::CleanGraph()
   graph::indexedGraph putativeGraph(getImagePairs(_pairwiseMatches));
 
   // Save the graph before cleaning:
-  graph::exportToGraphvizData((fs::path(_sOutDirectory) / "initialGraph").string(), putativeGraph.g);
+  graph::exportToGraphvizData((fs::path(_outputDirectory) / "initialGraph").string(), putativeGraph.g);
 
   const int connectedComponentCount = lemon::countConnectedComponents(putativeGraph.g);
   std::cout << "\n"
@@ -561,7 +554,7 @@ bool ColorHarmonizationEngineGlobal::CleanGraph()
   }
 
   // Save the graph after cleaning:
-  graph::exportToGraphvizData((fs::path(_sOutDirectory) / "cleanedGraph").string(), putativeGraph.g);
+  graph::exportToGraphvizData((fs::path(_outputDirectory) / "cleanedGraph").string(), putativeGraph.g);
 
   std::cout << "\n"
     << "Cardinal of nodes: " << lemon::countNodes(putativeGraph.g) << "\n"

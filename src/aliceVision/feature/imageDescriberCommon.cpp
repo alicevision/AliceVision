@@ -6,7 +6,6 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "imageDescriberCommon.hpp"
-
 #include <aliceVision/types.hpp>
 
 #include <boost/algorithm/string.hpp>
@@ -20,20 +19,21 @@ namespace feature {
 std::string EImageDescriberType_informations()
 {
   return  "Describer types used to describe an image:\n"
-          "* SIFT: Scale-invariant feature transform\n"
-          "* SIFT_FLOAT: SIFT stored as float\n"
-          "* AKAZE: A-KAZE with floating point descriptors\n"
-          "* AKAZE_LIOP: A-KAZE with Local Intensity Order Pattern descriptors\n"
-          "* AKAZE_MLDB: A-KAZE with Modified-Local Difference Binary descriptors\n"
+          "* sift: Scale-invariant feature transform.\n"
+          "* sift_float: SIFT stored as float.\n"
+          "* sift_upright: SIFT with upright feature.\n"
+          "* akaze: A-KAZE with floating point descriptors.\n"
+          "* akaze_liop: A-KAZE with Local Intensity Order Pattern descriptors.\n"
+          "* akaze_mldb: A-KAZE with Modified-Local Difference Binary descriptors.\n"
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_CCTAG)
-          "* CCTAG3: Concentric circles markers with 3 crowns\n"
-          "* CCTAG4: Concentric circles markers with 4 crowns\n"
+          "* cctag3: Concentric circles markers with 3 crowns.\n"
+          "* cctag4: Concentric circles markers with 4 crowns.\n"
 #endif
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_OPENCV)
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_OCVSIFT)
-          "* SIFT_OCV: OpenCV implementation of SIFT describer\n"
+          "* sift_ocv: OpenCV implementation of SIFT describer.\n"
 #endif
-          "* AKAZE_OCV: OpenCV implementation of A-KAZE describer\n"
+          "* akaze_ocv: OpenCV implementation of A-KAZE describer.\n"
 #endif
           "";
 }
@@ -42,25 +42,26 @@ std::string EImageDescriberType_enumToString(EImageDescriberType imageDescriberT
 {
   switch(imageDescriberType)
   {
-    case EImageDescriberType::SIFT:          return "SIFT";
-    case EImageDescriberType::SIFT_FLOAT:    return "SIFT_FLOAT";
-    case EImageDescriberType::AKAZE:         return "AKAZE";
-    case EImageDescriberType::AKAZE_LIOP:    return "AKAZE_LIOP";
-    case EImageDescriberType::AKAZE_MLDB:    return "AKAZE_MLDB";
+    case EImageDescriberType::SIFT:          return "sift";
+    case EImageDescriberType::SIFT_FLOAT:    return "sift_float";
+    case EImageDescriberType::SIFT_UPRIGHT:  return "sift_upright";
+    case EImageDescriberType::AKAZE:         return "akaze";
+    case EImageDescriberType::AKAZE_LIOP:    return "akaze_liop";
+    case EImageDescriberType::AKAZE_MLDB:    return "akaze_mldb";
     
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_CCTAG)
-    case EImageDescriberType::CCTAG3:        return "CCTAG3";
-    case EImageDescriberType::CCTAG4:        return "CCTAG4";
+    case EImageDescriberType::CCTAG3:        return "cctag3";
+    case EImageDescriberType::CCTAG4:        return "cctag4";
 #endif
 
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_OPENCV)
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_OCVSIFT)
-    case EImageDescriberType::SIFT_OCV:      return "SIFT_OCV";
+    case EImageDescriberType::SIFT_OCV:      return "sift_ocv";
 #endif //ALICEVISION_HAVE_OCVSIFT
-    case EImageDescriberType::AKAZE_OCV:     return "AKAZE_OCV";
+    case EImageDescriberType::AKAZE_OCV:     return "akaze_ocv";
 #endif //ALICEVISION_HAVE_OPENCV
 
-    case EImageDescriberType::UNKNOWN:       return "UNKNOWN";
+    case EImageDescriberType::UNKNOWN:       return "unknown";
     case EImageDescriberType::UNINITIALIZED: break; // Should throw an error.
   }
   throw std::out_of_range("Invalid imageDescriber enum");
@@ -68,25 +69,29 @@ std::string EImageDescriberType_enumToString(EImageDescriberType imageDescriberT
 
 EImageDescriberType EImageDescriberType_stringToEnum(const std::string& imageDescriberType)
 {
-  if(imageDescriberType == "SIFT")        return EImageDescriberType::SIFT;
-  if(imageDescriberType == "SIFT_FLOAT")  return EImageDescriberType::SIFT_FLOAT;
-  if(imageDescriberType == "AKAZE")       return EImageDescriberType::AKAZE;
-  if(imageDescriberType == "AKAZE_LIOP")  return EImageDescriberType::AKAZE_LIOP;
-  if(imageDescriberType == "AKAZE_MLDB")  return EImageDescriberType::AKAZE_MLDB;
+  std::string type = imageDescriberType;
+  std::transform(type.begin(), type.end(), type.begin(), ::tolower); //tolower
+
+  if(type == "sift")          return EImageDescriberType::SIFT;
+  if(type == "sift_float")    return EImageDescriberType::SIFT_FLOAT;
+  if(type == "sift_upright")  return EImageDescriberType::SIFT_UPRIGHT;
+  if(type == "akaze")         return EImageDescriberType::AKAZE;
+  if(type == "akaze_liop")    return EImageDescriberType::AKAZE_LIOP;
+  if(type == "akaze_mldb")    return EImageDescriberType::AKAZE_MLDB;
   
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_CCTAG)
-  if(imageDescriberType == "CCTAG3")      return EImageDescriberType::CCTAG3;
-  if(imageDescriberType == "CCTAG4")      return EImageDescriberType::CCTAG4;
+  if(type == "cctag3")        return EImageDescriberType::CCTAG3;
+  if(type == "cctag4")        return EImageDescriberType::CCTAG4;
 #endif
 
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_OPENCV)
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_OCVSIFT)
-  if(imageDescriberType == "SIFT_OCV")    return EImageDescriberType::SIFT_OCV;
+  if(type == "sift_ocv")      return EImageDescriberType::SIFT_OCV;
 #endif //ALICEVISION_HAVE_OCVSIFT
-  if(imageDescriberType == "AKAZE_OCV")   return EImageDescriberType::AKAZE_OCV;
+  if(type == "akaze_ocv")     return EImageDescriberType::AKAZE_OCV;
 #endif //ALICEVISION_HAVE_OPENCV
 
-  if(imageDescriberType == "UNKNOWN")     return EImageDescriberType::UNKNOWN;
+  if(type == "unknown")       return EImageDescriberType::UNKNOWN;
   // UNINITIALIZED should throw an error.
   throw std::out_of_range("Invalid imageDescriber : " + imageDescriberType);
 }

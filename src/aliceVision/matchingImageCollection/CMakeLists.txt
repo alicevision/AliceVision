@@ -10,8 +10,8 @@ set(matching_collection_images_files_headers
   GeometricFilterMatrix_F_AC.hpp
   GeometricFilterMatrix_H_AC.hpp
   GeometricFilterMatrix_HGrowing.hpp
+  GeometricFilterType.hpp
   geometricFilterUtils.hpp
-  geometricFilterType.hpp
   pairBuilder.hpp
 )
 

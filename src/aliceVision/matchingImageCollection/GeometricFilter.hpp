@@ -23,80 +23,74 @@ namespace matchingImageCollection {
 
 using namespace aliceVision::matching;
 
-/// Allow to keep only geometrically coherent matches
-/// -> It discards pairs that do not lead to a valid robust model estimation
-struct GeometricFilter
-{
-  GeometricFilter(
-    const sfm::SfMData * sfm_data,
-    const feature::RegionsPerView & regionsPerView
-  ):_sfm_data(sfm_data), _regionsPerView(regionsPerView)
-  {}
-
-  /// Perform robust model estimation (with optional guided_matching) for all the pairs and regions correspondences contained in the putative_matches set.
-  template<typename GeometryFunctor>
-  void Robust_model_estimation(
-    const GeometryFunctor & functor,
-    const PairwiseMatches & putative_matches,
-    const bool b_guided_matching = false,
-    const double d_distance_ratio = 0.6
-  );
-
-  const PairwiseMatches & Get_geometric_matches() const {return _map_GeometricMatches;}
-
-  // Data
-  const sfm::SfMData * _sfm_data;
-  const feature::RegionsPerView & _regionsPerView;
-  PairwiseMatches _map_GeometricMatches;
-};
-
+/**
+ * @brief Perform robust model estimation (with optional guided_matching)
+ * or all the pairs and regions correspondences contained in the putativeMatches set.
+ * Allow to keep only geometrically coherent matches.
+ * It discards pairs that do not lead to a valid robust model estimation.
+ * @param[out] geometricMatches
+ * @param[in] sfmData
+ * @param[in] regionsPerView
+ * @param[in] functor
+ * @param[in] putativeMatches
+ * @param[in] guidedMatching
+ * @param[in] distanceRatio
+ */
 template<typename GeometryFunctor>
-void GeometricFilter::Robust_model_estimation(
-  const GeometryFunctor & functor,
-  const PairwiseMatches & putative_matches,
-  const bool b_guided_matching,
-  const double d_distance_ratio)
+void robustModelEstimation(
+  PairwiseMatches& out_geometricMatches,
+  const sfm::SfMData* sfmData,
+  const feature::RegionsPerView& regionsPerView,
+  const GeometryFunctor& functor,
+  const PairwiseMatches& putativeMatches,
+  const bool guidedMatching = false,
+  const double distanceRatio = 0.6)
 {
-  boost::progress_display my_progress_bar( putative_matches.size() );
-  
-  #pragma omp parallel for schedule(dynamic)
-  for (int i = 0; i < (int)putative_matches.size(); ++i)
-  {
-    PairwiseMatches::const_iterator iter = putative_matches.begin();
-    advance(iter,i);
+  out_geometricMatches.clear();
 
-    Pair current_pair = iter->first;
-    const MatchesPerDescType & putativeMatchesPerType = iter->second;
+  boost::progress_display progressBar(putativeMatches.size(), std::cout, "Robust Model Estimation\n");
+  
+#pragma omp parallel for schedule(dynamic)
+  for (int i = 0; i < (int)putativeMatches.size(); ++i)
+  {
+    PairwiseMatches::const_iterator iter = putativeMatches.begin();
+    std::advance(iter, i);
+
+    const Pair currentPair = iter->first;
+    const MatchesPerDescType& putativeMatchesPerType = iter->second;
     const Pair& imagePair = iter->first;
 
-    //-- Apply the geometric filter (robust model estimation)
+    // apply the geometric filter (robust model estimation)
     {
       MatchesPerDescType inliers;
       GeometryFunctor geometricFilter = functor; // use a copy since we are in a multi-thread context
-      const EstimationStatus state = geometricFilter.geometricEstimation(_sfm_data, _regionsPerView, imagePair, putativeMatchesPerType, inliers);
-      if (state.hasStrongSupport)
+      const EstimationStatus state = geometricFilter.geometricEstimation(sfmData, regionsPerView, imagePair, putativeMatchesPerType, inliers);
+      if(state.hasStrongSupport)
       {
-        if (b_guided_matching)
+        if(guidedMatching)
         {
-          MatchesPerDescType guided_geometric_inliers;
-          geometricFilter.Geometry_guided_matching(_sfm_data, _regionsPerView, imagePair, d_distance_ratio, guided_geometric_inliers);
+          MatchesPerDescType guidedGeometricInliers;
+          geometricFilter.Geometry_guided_matching(sfmData, regionsPerView, imagePair, distanceRatio, guidedGeometricInliers);
           //ALICEVISION_LOG_DEBUG("#before/#after: " << putative_inliers.size() << "/" << guided_geometric_inliers.size());
-          std::swap(inliers, guided_geometric_inliers);
+          std::swap(inliers, guidedGeometricInliers);
         }
-        #pragma omp critical
+
+#pragma omp critical
         {
-          _map_GeometricMatches.insert(std::make_pair(current_pair, std::move(inliers)));
+          out_geometricMatches.insert(std::make_pair(currentPair, std::move(inliers)));
         }
+
       }
     }
-    #pragma omp critical
+
+#pragma omp critical
     {
-      ++my_progress_bar;
+      ++progressBar;
     }
   }
 }
 
-} // namespace aliceVision
 } // namespace matchingImageCollection
+} // namespace aliceVision
 
 
