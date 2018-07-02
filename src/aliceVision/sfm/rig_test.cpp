@@ -231,7 +231,7 @@ BOOST_AUTO_TEST_CASE(rig_getPose)
       }
       else
       {
-        const geometry::Pose3& rigPose = sfmData.getPose(view).getTransform();
+        const geometry::Pose3 rigPose = sfmData.getPose(view).getTransform();
 
         if(poseId == 0) //other poses are redundant
         {
