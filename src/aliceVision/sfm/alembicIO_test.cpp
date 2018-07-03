@@ -48,7 +48,7 @@ SfMData createTestScene(IndexT singleViewsCount,
     // Add poses
     const Mat3 r = Mat3::Random();
     const Vec3 c = Vec3::Random();
-    sfm_data.setPose(*view, geometry::Pose3(r, c));
+    sfm_data.setPose(*view, CameraPose(geometry::Pose3(r, c)));
 
     // Add intrinsics
     if (bSharedIntrinsic)
@@ -96,7 +96,7 @@ SfMData createTestScene(IndexT singleViewsCount,
         {
           const Mat3 r = Mat3::Random();
           const Vec3 c = Vec3::Random();
-          sfm_data.setPose(*view, geometry::Pose3(r, c));
+          sfm_data.setPose(*view, CameraPose(geometry::Pose3(r, c)));
         }
 
         sfm_data.views[nbViews] = view;

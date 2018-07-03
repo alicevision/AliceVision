@@ -151,11 +151,11 @@ bool exportToMVE2Format(
       }
 
       // Prepare to write an MVE 'meta.ini' file for the current view
-      const Pose3 pose = sfm_data.getPose(*view);
+      const Pose3 pose = sfm_data.getPose(*view).getTransform();
       const Pinhole * pinhole_cam = static_cast<const Pinhole *>(cam);
 
-      const Mat3 rotation = pose.rotation();
-      const Vec3 translation = pose.translation();
+      const Mat3& rotation = pose.rotation();
+      const Vec3& translation = pose.translation();
       // Pixel aspect: assuming square pixels
       const float pixelAspect = 1.f;
       // Focal length and principal point must be normalized (0..1)

@@ -62,9 +62,9 @@ bool saveBAF(
       else
       {
         // [Rotation col major 3x3; camera center 3x1]
-        const double * rotation = poses.at(view->getPoseId()).rotation().data();
+        const double * rotation = poses.at(view->getPoseId()).getTransform().rotation().data();
         std::copy(rotation, rotation+9, std::ostream_iterator<double>(stream, " "));
-        const double * center = poses.at(view->getPoseId()).center().data();
+        const double * center = poses.at(view->getPoseId()).getTransform().center().data();
         std::copy(center, center+3, std::ostream_iterator<double>(stream, " "));
         stream << '\n';
       }

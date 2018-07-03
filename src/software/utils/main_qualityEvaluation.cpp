@@ -135,12 +135,12 @@ int main(int argc, char **argv)
     const int idPoseGT = sfmData_gt.getViews().at(view->getViewId())->getPoseId();
 
     // gt
-    const geometry::Pose3 pose_gt = sfmData_gt.getPoses().at(idPoseGT);
+    const geometry::Pose3& pose_gt = sfmData_gt.getAbsolutePose(idPoseGT).getTransform();
     vec_camPosGT.push_back(pose_gt.center());
     vec_camRotGT.push_back(pose_gt.rotation());
 
     // data to evaluate
-    const geometry::Pose3 pose_eval = sfmData.getPoses().at(view->getPoseId());
+    const geometry::Pose3 pose_eval = sfmData.getPose(*view).getTransform();
     vec_C.push_back(pose_eval.center());
     vec_camRot.push_back(pose_eval.rotation());
   }

@@ -564,31 +564,32 @@ void ReconstructionEngine_globalSfM::Compute_Relative_Rotations
       const std::pair<size_t, size_t> imageSize(1., 1.);
       const Mat3 K  = Mat3::Identity();
 
-      if (!robustRelativePose(K, K, x1, x2, relativePose_info, imageSize, imageSize, 256))
+      if(!robustRelativePose(K, K, x1, x2, relativePose_info, imageSize, imageSize, 256))
       {
         continue;
       }
-      const bool bRefine_using_BA = true;
-      if (bRefine_using_BA)
+
+      const bool refineUsingBA = true;
+      if(refineUsingBA)
       {
         // Refine the defined scene
-        SfMData tiny_scene;
-        tiny_scene.views.insert(*_sfmData.getViews().find(view_I->getViewId()));
-        tiny_scene.views.insert(*_sfmData.getViews().find(view_J->getViewId()));
-        tiny_scene.intrinsics.insert(*_sfmData.getIntrinsics().find(view_I->getIntrinsicId()));
-        tiny_scene.intrinsics.insert(*_sfmData.getIntrinsics().find(view_J->getIntrinsicId()));
+        SfMData tinyScene;
+        tinyScene.views.insert(*_sfmData.getViews().find(view_I->getViewId()));
+        tinyScene.views.insert(*_sfmData.getViews().find(view_J->getViewId()));
+        tinyScene.intrinsics.insert(*_sfmData.getIntrinsics().find(view_I->getIntrinsicId()));
+        tinyScene.intrinsics.insert(*_sfmData.getIntrinsics().find(view_J->getIntrinsicId()));
 
         // Init poses
-        const Pose3& Pose_I = Pose3(Mat3::Identity(), Vec3::Zero());
-        const Pose3& Pose_J = relativePose_info.relativePose;
+        const Pose3& poseI = Pose3(Mat3::Identity(), Vec3::Zero());
+        const Pose3& poseJ = relativePose_info.relativePose;
 
-        tiny_scene.setPose(*view_I, Pose_I);
-        tiny_scene.setPose(*view_J, Pose_J);
+        tinyScene.setPose(*view_I, CameraPose(poseI));
+        tinyScene.setPose(*view_J, CameraPose(poseJ));
 
         // Init structure
-        const Mat34 P1 = cam_I->get_projective_equivalent(Pose_I);
-        const Mat34 P2 = cam_J->get_projective_equivalent(Pose_J);
-        Landmarks & landmarks = tiny_scene.structure;
+        const Mat34 P1 = cam_I->get_projective_equivalent(poseI);
+        const Mat34 P2 = cam_J->get_projective_equivalent(poseJ);
+        Landmarks & landmarks = tinyScene.structure;
 
         size_t landmarkId = 0;
         for(const auto& matchesPerDescIt: matchesPerDesc)
@@ -617,7 +618,7 @@ void ReconstructionEngine_globalSfM::Compute_Relative_Rotations
         BundleAdjustmentCeres::BA_options options(false, false);
         options._linear_solver_type = ceres::DENSE_SCHUR;
         BundleAdjustmentCeres bundle_adjustment_obj(options);
-        if (bundle_adjustment_obj.Adjust(tiny_scene, BA_REFINE_ROTATION | BA_REFINE_TRANSLATION | BA_REFINE_STRUCTURE))
+        if (bundle_adjustment_obj.Adjust(tinyScene, BA_REFINE_ROTATION | BA_REFINE_TRANSLATION | BA_REFINE_STRUCTURE))
         {
           // --> to debug: save relative pair geometry on disk
           // std::ostringstream os;
@@ -625,8 +626,8 @@ void ReconstructionEngine_globalSfM::Compute_Relative_Rotations
           // Save(tiny_scene, os.str(), ESfMData(STRUCTURE | EXTRINSICS));
           //
 
-          const geometry::Pose3& poseI = tiny_scene.getPose(*view_I);
-          const geometry::Pose3& poseJ = tiny_scene.getPose(*view_J);
+          const geometry::Pose3 poseI = tinyScene.getPose(*view_I).getTransform();
+          const geometry::Pose3 poseJ = tinyScene.getPose(*view_J).getTransform();
 
           const Mat3 R1 = poseI.rotation();
           const Mat3 R2 = poseJ.rotation();

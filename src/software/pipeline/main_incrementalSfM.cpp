@@ -90,6 +90,7 @@ int main(int argc, char **argv)
   bool useLocalBundleAdjustment = false;
   bool useOnlyMatchesFromInputFolder = false;
   bool useTrackFiltering = true;
+  bool lockScenePreviouslyReconstructed = true;
   std::size_t localBundelAdjustementGraphDistanceLimit = 1;
   std::string localizerEstimatorName = robustEstimation::ERobustEstimator_enumToString(robustEstimation::ERobustEstimator::ACRANSAC);
 
@@ -155,7 +156,9 @@ int main(int argc, char **argv)
       "Use only matches from the input matchesFolder parameter.\n"
       "Matches folders previously added to the SfMData file will be ignored.")
     ("useTrackFiltering", po::value<bool>(&useTrackFiltering)->default_value(useTrackFiltering),
-      "Enable/Disable the track filtering.\n");
+      "Enable/Disable the track filtering.\n")
+    ("lockScenePreviouslyReconstructed", po::value<bool>(&lockScenePreviouslyReconstructed)->default_value(lockScenePreviouslyReconstructed),
+      "Lock/Unlock scene previously reconstructed.\n");
 
   po::options_description logParams("Log parameters");
   logParams.add_options()
@@ -201,6 +204,22 @@ int main(int argc, char **argv)
   {
     ALICEVISION_LOG_ERROR("Error: The input SfMData file '" + sfmDataFilename + "' cannot be read.");
     return EXIT_FAILURE;
+  }
+
+  // lock scene previously reconstructed
+  if(lockScenePreviouslyReconstructed)
+  {
+    // lock all reconstructed camera poses
+    for(auto& cameraPosePair : sfmData.getPoses())
+      cameraPosePair.second.lock();
+
+    for(const auto& viewPair : sfmData.getViews())
+    {
+      // lock all reconstructed views intrinsics
+      const View& view = *(viewPair.second);
+      if(sfmData.isPoseAndIntrinsicDefined(&view))
+        sfmData.getIntrinsics().at(view.getIntrinsicId())->lock();
+    }
   }
 
   // get imageDescriber type

@@ -231,8 +231,8 @@ int main() {
     const Pose3 pose0 = Pose3(Mat3::Identity(), Vec3::Zero());
     const Pose3 pose1 = relativePose_info.relativePose;
 
-    tinyScene.setPose(*tinyScene.views.at(0), pose0);
-    tinyScene.setPose(*tinyScene.views.at(1), pose1);
+    tinyScene.setPose(*tinyScene.views.at(0), CameraPose(pose0));
+    tinyScene.setPose(*tinyScene.views.at(1), CameraPose(pose1));
 
     // Init structure by inlier triangulation
     const Mat34 P1 = tinyScene.intrinsics[tinyScene.views[0]->getIntrinsicId()]->get_projective_equivalent(pose0);

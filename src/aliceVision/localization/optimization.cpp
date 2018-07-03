@@ -5,13 +5,12 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "optimization.hpp"
-#include "aliceVision/sfm/sfmDataIO.hpp"
+#include <aliceVision/sfm/sfmDataIO.hpp>
 #include <aliceVision/sfm/BundleAdjustmentCeres.hpp>
 #include <aliceVision/numeric/numeric.hpp>
 #include <aliceVision/rig/ResidualError.hpp>
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/Timer.hpp>
-
 
 #include <boost/accumulators/accumulators.hpp>
 #include <boost/accumulators/statistics/stats.hpp>
@@ -116,7 +115,7 @@ bool refineSequence(std::vector<LocalizationResult> & vec_localizationResult,
     std::shared_ptr<sfm::View> view = std::make_shared<sfm::View>("",viewID, intrinsicID, viewID);
     tinyScene.views.insert( std::make_pair(viewID, view));
     // pose
-    tinyScene.setPose(*view, currResult.getPose());
+    tinyScene.setPose(*view, sfm::CameraPose(currResult.getPose()));
 
     
     if(!allTheSameIntrinsics)
@@ -281,7 +280,7 @@ bool refineSequence(std::vector<LocalizationResult> & vec_localizationResult,
     for(const auto &pose : tinyScene.getPoses())
     {
       const IndexT idPose = pose.first;
-      vec_localizationResult[idPose].setPose(pose.second);
+      vec_localizationResult[idPose].setPose(pose.second.getTransform());
     }
 
     if(!outputFilename.empty())

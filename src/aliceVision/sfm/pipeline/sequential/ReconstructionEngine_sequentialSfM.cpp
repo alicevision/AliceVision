@@ -925,8 +925,8 @@ bool ReconstructionEngine_sequentialSfM::makeInitialPair3D(const Pair& current_p
     const Pose3& initPoseI = Pose3(Mat3::Identity(), Vec3::Zero());
     const Pose3& initPoseJ = relativePose_info.relativePose;
 
-    _sfmData.setPose(*viewI, initPoseI);
-    _sfmData.setPose(*viewJ, initPoseJ);
+    _sfmData.setPose(*viewI, CameraPose(initPoseI));
+    _sfmData.setPose(*viewJ, CameraPose(initPoseJ));
 
     // Triangulate
     const std::set<IndexT> prevImageIndex = {static_cast<IndexT>(I)};
@@ -1216,7 +1216,7 @@ double ReconstructionEngine_sequentialSfM::computeResidualsHistogram(Histogram<d
     for(const auto& obs: observations)
     {
       const View* view = _sfmData.getViews().find(obs.first)->second.get();
-      const Pose3 pose = _sfmData.getPose(*view);
+      const Pose3 pose = _sfmData.getPose(*view).getTransform();
       const std::shared_ptr<IntrinsicBase> intrinsic = _sfmData.getIntrinsics().find(view->getIntrinsicId())->second;
       const Vec2 residual = intrinsic->residual(pose, track.second.X, obs.second.x);
       vec_residuals.push_back( fabs(residual(0)) );
@@ -1455,7 +1455,7 @@ void ReconstructionEngine_sequentialSfM::updateScene(const IndexT viewIndex, con
   _map_ACThreshold.insert(std::make_pair(viewIndex, resectionData.error_max));
 
   const View& view = *_sfmData.views.at(viewIndex);
-  _sfmData.setPose(view, resectionData.pose);
+  _sfmData.setPose(view, CameraPose(resectionData.pose));
 
   // B. Update the observations into the global scene structure
   // - Add the new 2D observations to the reconstructed tracks
@@ -1482,7 +1482,7 @@ bool ReconstructionEngine_sequentialSfM::checkChieralities(
   for (const IndexT & viewId : viewsId)
   {
     const View* view = scene.getViews().at(viewId).get();
-    const Pose3 pose = scene.getPose(*view);
+    const Pose3 pose = scene.getPose(*view).getTransform();
     // Check that the point is in front of all the cameras.
     if (pose.depth(pt3D) < 0) 
       return false;
@@ -1498,8 +1498,8 @@ bool ReconstructionEngine_sequentialSfM::checkAngles(const Vec3 &pt3D, const std
     {
       if (viewIdA < viewIdB)
       {
-        double angle_deg = AngleBetweenRays(scene.getPose(*scene.getViews().at(viewIdA).get()),
-                                           scene.getPose(*scene.getViews().at(viewIdB).get()),
+        double angle_deg = AngleBetweenRays(scene.getPose(*scene.getViews().at(viewIdA).get()).getTransform(),
+                                           scene.getPose(*scene.getViews().at(viewIdB).get()).getTransform(),
                                            pt3D);
         if (angle_deg >= kMinAngle)
           return true;
@@ -1596,8 +1596,8 @@ void ReconstructionEngine_sequentialSfM::triangulateMultiViews_LORANSAC(SfMData&
       const View* viewJ = scene.getViews().at(J).get();
       const IntrinsicBase* camI = scene.getIntrinsics().at(viewI->getIntrinsicId()).get();
       const IntrinsicBase* camJ = scene.getIntrinsics().at(viewJ->getIntrinsicId()).get();
-      const Pose3 poseI = scene.getPose(*viewI);
-      const Pose3 poseJ = scene.getPose(*viewJ);
+      const Pose3 poseI = scene.getPose(*viewI).getTransform();
+      const Pose3 poseJ = scene.getPose(*viewJ).getTransform();
       const Vec2 xI = _featuresPerView->getFeatures(I, track.descType)[track.featPerView.at(I)].coords().cast<double>();
       const Vec2 xJ = _featuresPerView->getFeatures(J, track.descType)[track.featPerView.at(J)].coords().cast<double>();
   
@@ -1645,7 +1645,7 @@ void ReconstructionEngine_sequentialSfM::triangulateMultiViews_LORANSAC(SfMData&
           const Vec2 x_ud = cam->get_ud_pixel(_featuresPerView->getFeatures(viewId, track.descType)[track.featPerView.at(viewId)].coords().cast<double>()); // undistorted 2D point
           features(0,i) = x_ud(0); 
           features(1,i) = x_ud(1);  
-          Ps.push_back(cam->get_projective_equivalent(scene.getPose(*view)));
+          Ps.push_back(cam->get_projective_equivalent(scene.getPose(*view).getTransform()));
           i++;
         }
       }
@@ -1741,8 +1741,8 @@ void ReconstructionEngine_sequentialSfM::triangulate(SfMData& scene, const std::
       const View* viewJ = scene.getViews().at(J).get();
       const IntrinsicBase* camI = scene.getIntrinsics().at(viewI->getIntrinsicId()).get();
       const IntrinsicBase* camJ = scene.getIntrinsics().at(viewJ->getIntrinsicId()).get();
-      const Pose3 poseI = scene.getPose(*viewI);
-      const Pose3 poseJ = scene.getPose(*viewJ);
+      const Pose3 poseI = scene.getPose(*viewI).getTransform();
+      const Pose3 poseJ = scene.getPose(*viewJ).getTransform();
       
       std::size_t new_putative_track = 0, new_added_track = 0, extented_track = 0;
       for (const std::pair<std::size_t, track::Track >& trackIt : map_tracksCommonIJ)

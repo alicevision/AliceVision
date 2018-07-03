@@ -82,9 +82,9 @@ inline void applyTransform(SfMData& sfmData,
     const View& view = *viewPair.second;
     if(sfmData.existsPose(view))
     {
-      geometry::Pose3 pose = sfmData.getPose(view);
+      geometry::Pose3 pose = sfmData.getPose(view).getTransform();
       pose = pose.transformSRt(S, R, t);
-      sfmData.setPose(view, pose);
+      sfmData.setPose(view, CameraPose(pose));
     }
   }
   

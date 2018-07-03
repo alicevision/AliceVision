@@ -34,7 +34,7 @@ bool generateSfMReport(const SfMData& sfmData,
       itObs != observations.end(); ++itObs)
     {
       const View * view = sfmData.getViews().at(itObs->first).get();
-      const geometry::Pose3 pose = sfmData.getPose(*view);
+      const geometry::Pose3 pose = sfmData.getPose(*view).getTransform();
       const camera::IntrinsicBase * intrinsic = sfmData.getIntrinsics().at(view->getIntrinsicId()).get();
       // Use absolute values
       const Vec2 residual = intrinsic->residual(pose, iterTracks->second.X, itObs->second.x).array().abs();

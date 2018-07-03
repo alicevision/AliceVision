@@ -128,7 +128,7 @@ int main(int argc, char** argv)
   std::size_t idx = 0;
   for (auto &p : sfmData.getPoses())
   {
-    const aliceVision::geometry::Pose3 rigPose = extrinsics[0].inverse() * p.second;
+    const aliceVision::geometry::Pose3 rigPose = extrinsics[0].inverse() * p.second.getTransform();
     exporter.addCameraKeyframe(rigPose, &intrinsics, "", idx, idx);
     ++idx;
   }

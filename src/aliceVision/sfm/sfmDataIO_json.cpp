@@ -113,6 +113,8 @@ void saveIntrinsic(const std::string& name, IndexT intrinsicId, const std::share
     intrinsicTree.add_child("distortionParams", distParamsTree);
   }
 
+  intrinsicTree.put("locked", intrinsic->isLocked());
+
   parentTree.push_back(std::make_pair(name, intrinsicTree));
 }
 
@@ -144,6 +146,12 @@ void loadIntrinsic(IndexT& intrinsicId, std::shared_ptr<camera::IntrinsicBase>& 
 
   pinholeIntrinsic->setDistortionParams(distortionParams);
   intrinsic = std::static_pointer_cast<camera::IntrinsicBase>(pinholeIntrinsic);
+
+  // intrinsic lock
+  if(intrinsicTree.get<bool>("locked", false))
+    intrinsic->lock();
+  else
+    intrinsic->unlock();
 }
 
 void saveRig(const std::string& name, IndexT rigId, const Rig& rig, bpt::ptree& parentTree)
@@ -324,7 +332,7 @@ bool saveJSON(const SfMData& sfmData, const std::string& filename, ESfMData part
         bpt::ptree poseTree;
 
         poseTree.put("poseId", posePair.first);
-        savePose3("pose", posePair.second, poseTree);
+        saveCameraPose("pose", posePair.second, poseTree);
         posesTree.push_back(std::make_pair("", poseTree));
       }
 
@@ -466,9 +474,9 @@ bool loadJSON(SfMData& sfmData, const std::string& filename, ESfMData partFlag, 
       for(bpt::ptree::value_type &poseNode : fileTree.get_child("poses"))
       {
         bpt::ptree& poseTree = poseNode.second;
-        geometry::Pose3 pose;
+        CameraPose pose;
 
-        loadPose3("pose", pose, poseTree);
+        loadCameraPose("pose", pose, poseTree);
 
         poses.emplace(poseTree.get<IndexT>("poseId"), pose);
       }

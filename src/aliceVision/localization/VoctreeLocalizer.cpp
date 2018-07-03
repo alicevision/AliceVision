@@ -586,7 +586,7 @@ bool VoctreeLocalizer::localizeFirstBestResult(const feature::MapRegionsPerDesc 
     
     {
       // just temporary code to evaluate the estimated pose @todo remove it
-      const geometry::Pose3 &referencePose = _sfm_data.getPose(*_sfm_data.views.at(matchedViewId));
+      const geometry::Pose3 referencePose = _sfm_data.getPose(*_sfm_data.views.at(matchedViewId)).getTransform();
       ALICEVISION_LOG_DEBUG("R refined\n" << pose.rotation());
       ALICEVISION_LOG_DEBUG("t refined\n" << pose.translation());
       ALICEVISION_LOG_DEBUG("K refined\n" << queryIntrinsics.K());

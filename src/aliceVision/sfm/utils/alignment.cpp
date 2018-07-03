@@ -45,8 +45,8 @@ bool computeSimilarity(const SfMData & sfmDataA,
   for (size_t i = 0; i  < commonViewIds.size(); ++i)
   {
     IndexT viewId = commonViewIds[i];
-    xA.col(i) = sfmDataA.getPoses().at(sfmDataA.getViews().at(viewId)->getPoseId()).center();
-    xB.col(i) = sfmDataB.getPoses().at(sfmDataB.getViews().at(viewId)->getPoseId()).center();
+    xA.col(i) = sfmDataA.getAbsolutePose(sfmDataA.getViews().at(viewId)->getPoseId()).getTransform().center();
+    xB.col(i) = sfmDataB.getAbsolutePose(sfmDataB.getViews().at(viewId)->getPoseId()).getTransform().center();
   }
 
   // Compute rigid transformation p'i = S R pi + t
@@ -87,8 +87,9 @@ void computeNewCoordinateSystemFromCameras(const SfMData& sfmData,
   i=0;
   for(const auto & pose : sfmData.getPoses())
   {
-    vCamCenter.col(i) = pose.second.center();
-    meanPoints +=  pose.second.center();
+    const Vec3 center = pose.second.getTransform().center();
+    vCamCenter.col(i) = center;
+    meanPoints +=  center;
     ++i;
   }
 
@@ -103,7 +104,7 @@ void computeNewCoordinateSystemFromCameras(const SfMData& sfmData,
     Vec3 camCenterMean = vCamCenter.col(i) - meanPoints;
     rms += camCenterMean.transpose() * camCenterMean; // squared dist to the mean of camera centers
 
-    vCamRotation.push_back(pose.second.rotation().transpose()); // Rotation in the world coordinate system
+    vCamRotation.push_back(pose.second.getTransform().rotation().transpose()); // Rotation in the world coordinate system
     ++i;
   }
   rms /= nbCameras;

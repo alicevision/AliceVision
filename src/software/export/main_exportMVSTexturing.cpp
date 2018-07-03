@@ -94,7 +94,7 @@ int main(int argc, char **argv)
         continue;
     
     // Valid view, we can ask a pose & intrinsic data
-    const Pose3 pose = sfm_data.getPose(*view);
+    const Pose3 pose = sfm_data.getPose(*view).getTransform();
     Intrinsics::const_iterator iterIntrinsic = sfm_data.getIntrinsics().find(view->getIntrinsicId());
     const IntrinsicBase * cam = iterIntrinsic->second.get();
     
@@ -103,8 +103,8 @@ int main(int argc, char **argv)
     const Pinhole * pinhole_cam = static_cast<const Pinhole *>(cam);
     
     // Extrinsic
-    const Vec3 t = pose.translation();
-    const Mat3 R = pose.rotation();
+    const Vec3& t = pose.translation();
+    const Mat3& R = pose.rotation();
     // Intrinsic
     const double f = pinhole_cam->focal();
     const Vec2 pp = pinhole_cam->principal_point();

@@ -79,7 +79,8 @@ bool exportToMatlab(
       const View& view = *v.second.get();
       if(!sfm_data.isPoseAndIntrinsicDefined(&view))
         continue;
-      const Pose3& pose = sfm_data.getPoses().at(view.getPoseId());
+
+      const Pose3 pose = sfm_data.getPose(view).getTransform();
       cameraPosesFile << view.getViewId()
         << " " << pose.rotation()(0, 0)
         << " " << pose.rotation()(0, 1)

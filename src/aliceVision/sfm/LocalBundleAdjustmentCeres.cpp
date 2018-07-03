@@ -311,9 +311,9 @@ std::map<IndexT, std::vector<double> > LocalBundleAdjustmentCeres::addPosesToCer
   {
     const IndexT poseId = itPose->first;
     
-    const Pose3 & pose = itPose->second;
-    const Mat3 R = pose.rotation();
-    const Vec3 t = pose.translation();
+    const CameraPose& cameraPose = itPose->second;
+    const Mat3& R = cameraPose.getTransform().rotation();
+    const Vec3& t = cameraPose.getTransform().translation();
     
     double angleAxis[3];
     ceres::RotationMatrixToAngleAxis((const double*)R.data(), angleAxis);
@@ -327,6 +327,9 @@ std::map<IndexT, std::vector<double> > LocalBundleAdjustmentCeres::addPosesToCer
     
     double * parameter_block = &map_poses[poseId][0];
     problem.AddParameterBlock(parameter_block, 6);
+
+    if(cameraPose.isLocked()) //set the whole parameter block as constant.
+      problem.SetParameterBlockConstant(parameter_block);
   }
   return map_poses;
 }
@@ -370,7 +373,14 @@ std::map<IndexT, std::vector<double>> LocalBundleAdjustmentCeres::addIntrinsicsT
     
     double * parameter_block = &map_intrinsics[intrinsicIds][0];
     problem.AddParameterBlock(parameter_block, map_intrinsics[intrinsicIds].size());
-    
+
+    if(itIntrinsic.second->isLocked())
+    {
+      //set the whole parameter block as constant.
+      problem.SetParameterBlockConstant(parameter_block);
+      continue;
+    }
+
     // Refine the focal length
     if(itIntrinsic.second->initialFocalLengthPix() > 0)
     {
@@ -468,9 +478,9 @@ void LocalBundleAdjustmentCeres::updateCameraPoses(
     Mat3 R_refined;
     ceres::AngleAxisToRotationMatrix(&map_poseblocks.at(poseId)[0], R_refined.data());
     Vec3 t_refined(map_poseblocks.at(poseId)[3], map_poseblocks.at(poseId)[4], map_poseblocks.at(poseId)[5]);
+
     // Update the pose
-    Pose3 & pose = itPose->second;
-    pose = Pose3(R_refined, -R_refined.transpose() * t_refined);
+    itPose->second.setTransform(Pose3(R_refined, -R_refined.transpose() * t_refined));
   }
 }
 

@@ -154,7 +154,7 @@ int main(int argc, char** argv)
             ALICEVISION_LOG_DEBUG("Add Camera Keyframe");
             const IndexT intrinsicId = findViewIt->second->getIntrinsicId();
             const camera::Pinhole* cam = dynamic_cast<camera::Pinhole*>(sfmData.getIntrinsicPtr(intrinsicId));
-            const geometry::Pose3 pose = sfmData.getPose(*findViewIt->second);
+            const geometry::Pose3 pose = sfmData.getPose(*findViewIt->second).getTransform();
             exporter.addCameraKeyframe(pose,
                                        cam,
                                        findViewIt->second->getImagePath(),

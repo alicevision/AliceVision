@@ -41,7 +41,7 @@ SfMData createTestScene(std::size_t viewsCount = 2, std::size_t observationCount
     sfm_data.views[id_view] = view;
 
     // Add poses
-    sfm_data.setPose(*view, Pose3());
+    sfm_data.setPose(*view, CameraPose());
 
     // Add intrinsics
     if (sharedIntrinsic)

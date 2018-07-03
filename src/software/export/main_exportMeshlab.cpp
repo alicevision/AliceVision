@@ -114,7 +114,7 @@ int main(int argc, char **argv)
     if (!sfm_data.isPoseAndIntrinsicDefined(view))
       continue;
 
-    const Pose3 pose = sfm_data.getPose(*view);
+    const Pose3 pose = sfm_data.getPose(*view).getTransform();
     Intrinsics::const_iterator iterIntrinsic = sfm_data.getIntrinsics().find(view->getIntrinsicId());
 
     // We have a valid view with a corresponding camera & pose

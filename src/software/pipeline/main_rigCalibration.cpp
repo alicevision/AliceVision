@@ -385,6 +385,7 @@ int main(int argc, char** argv)
                                           localizationResult);
       assert( ok == localizationResult.isValid() );
       vLocalizationResults.emplace_back(localizationResult);
+      sfm::CameraPose pose(localizationResult.getPose());
       auto detect_end = std::chrono::steady_clock::now();
       auto detect_elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(detect_end - detect_start);
       ALICEVISION_COUT("Localization took  " << detect_elapsed.count() << " [ms]");
@@ -395,7 +396,7 @@ int main(int argc, char** argv)
       {
         exporter.addCamera("camera"+std::to_string(idCamera)+"."+myToString(currentFrame,4),
                            sfm::View(subMediaFilepath, currentFrame, currentFrame),
-                           &localizationResult.getPose(),
+                           &pose,
                            &queryIntrinsics);
       }
       else
@@ -403,7 +404,7 @@ int main(int argc, char** argv)
         // @fixme for now just add a fake camera so that it still can be see in MAYA
         exporter.addCamera("camera"+std::to_string(idCamera)+".V."+myToString(currentFrame,4),
                            sfm::View(subMediaFilepath, currentFrame, currentFrame),
-                           &localizationResult.getPose(),
+                           &pose,
                            &queryIntrinsics);
       }
 #endif

@@ -39,7 +39,7 @@ BOOST_AUTO_TEST_CASE(rig_initialization)
 
   const Mat3 r = Mat3::Random();
   const Vec3 c = Vec3::Random();
-  const geometry::Pose3 firstPose = geometry::Pose3(r, c);
+  const geometry::Pose3 firstPose(r, c);
   const IndexT firstPoseId = std::rand() % nbSubPoses;
 
   const Rig& rig = sfmData.getRig(rigViews.front());
@@ -47,7 +47,7 @@ BOOST_AUTO_TEST_CASE(rig_initialization)
   // rig uninitialized
   BOOST_CHECK(!rig.isInitialized());
 
-  sfmData.setPose(rigViews.at(firstPoseId), firstPose);
+  sfmData.setPose(rigViews.at(firstPoseId), CameraPose(firstPose));
 
   // setPose done, rig initialized
   BOOST_CHECK(rig.isInitialized());
@@ -76,7 +76,7 @@ BOOST_AUTO_TEST_CASE(rig_initialization)
   for(std::size_t subPoseId = 0; subPoseId < nbSubPoses; ++subPoseId)
   {
     const View& view = rigViews.at(subPoseId);
-    BOOST_CHECK(sfmData.getPose(view) == firstPose);
+    BOOST_CHECK(sfmData.getPose(view).getTransform() == firstPose);
   }
 }
 
@@ -137,14 +137,14 @@ BOOST_AUTO_TEST_CASE(rig_setPose)
         const Vec3 c = Vec3::Random();
         const geometry::Pose3 firstPose = geometry::Pose3(r, c);
 
-        sfmData.setPose(view, firstPose);
+        sfmData.setPose(view, CameraPose(firstPose));
 
         // setPose done, sub-pose must be initialized
         BOOST_CHECK(subPose.status != ERigSubPoseStatus::UNINITIALIZED);
 
         // setPose done, rig initialized
         BOOST_CHECK(sfmData.existsPose(view));
-        BOOST_CHECK(sfmData.getPose(view) == firstPose);
+        BOOST_CHECK(sfmData.getPose(view).getTransform() == firstPose);
       }
       else
       {
@@ -161,7 +161,7 @@ BOOST_AUTO_TEST_CASE(rig_setPose)
           // first rig pose, sub-pose must be uninitialized
           BOOST_CHECK(subPose.status == ERigSubPoseStatus::UNINITIALIZED);
 
-          sfmData.setPose(view, pose);
+          sfmData.setPose(view, CameraPose(pose));
 
           // setPose done, sub-pose must be initialized
           BOOST_CHECK(subPose.status != ERigSubPoseStatus::UNINITIALIZED);
@@ -214,24 +214,24 @@ BOOST_AUTO_TEST_CASE(rig_getPose)
         const Vec3 c = Vec3::Random();
         const geometry::Pose3 firstPose = geometry::Pose3(r, c);
 
-        sfmData.setPose(view, firstPose);
+        sfmData.setPose(view, CameraPose(firstPose));
 
         // setPose done, rig initialized
         if(poseId == 0)
         {
           // the rig pose is the first pose
-          BOOST_CHECK(sfmData.getPose(view) == firstPose);
+          BOOST_CHECK(sfmData.getPose(view).getTransform() == firstPose);
         }
         else
         {
           // the rig pose is the sub-pose inverse multiply by the rig pose
-          BOOST_CHECK(sfmData.getPose(view) == (subPose.pose.inverse() * firstPose));
+          BOOST_CHECK(sfmData.getPose(view).getTransform() == (subPose.pose.inverse() * firstPose));
         }
 
       }
       else
       {
-        const geometry::Pose3& rigPose = sfmData.getPose(view);
+        const geometry::Pose3 rigPose = sfmData.getPose(view).getTransform();
 
         if(poseId == 0) //other poses are redundant
         {
@@ -239,14 +239,14 @@ BOOST_AUTO_TEST_CASE(rig_getPose)
           const Vec3 c = Vec3::Random();
           const geometry::Pose3 absolutePose = geometry::Pose3(r, c);
 
-          sfmData.setPose(view, absolutePose);
+          sfmData.setPose(view, CameraPose(absolutePose));
 
           // the view sub-pose is the absolute pose multiply by the rig pose inverse
           BOOST_CHECK(subPose.pose == (absolutePose * rigPose.inverse()));
         }
 
         // the view absolute pose is the sub-pose multiply by the rig pose
-        BOOST_CHECK(sfmData.getPose(view) == (subPose.pose * sfmData.getPoses().at(view.getPoseId())));
+        BOOST_CHECK(sfmData.getPose(view).getTransform() == (subPose.pose * sfmData.getAbsolutePose(view.getPoseId()).getTransform()));
       }
     }
   }
