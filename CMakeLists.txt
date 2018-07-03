@@ -327,11 +327,16 @@ endif()
 
 # Bundle target (see src/cmake/MakeBundle.cmake)
 # Note: require that the install rule has been executed
+
+# Include VCPKG installed dir for runtime dependencies lookup
+set(BUNDLE_LIBS_PATHS ${_VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}$<$<CONFIG:Debug>:/debug>/bin)
+
 add_custom_target(bundle
                   ${CMAKE_COMMAND}
                     # Script arguments:
                     -DBUNDLE_INSTALL_PREFIX=${ALICEVISION_BUNDLE_PREFIX}
                     -DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX}
+                    -DBUNDLE_LIBS_PATHS=${BUNDLE_LIBS_PATHS}
                     # Script:
                     -P ${CMAKE_CURRENT_SOURCE_DIR}/src/cmake/MakeBundle.cmake
                   )
