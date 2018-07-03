@@ -34,15 +34,7 @@ public:
     : ImageDescriber()
     , _params(params)
     , _isOriented(isOriented)
-  {
-    // Process SIFT computation
-    cudaDeviceReset();
-
-    popsift::cuda::device_prop_t deviceInfo;
-    deviceInfo.set(0, true); //Use only the first device
-    //deviceInfo.print();
-    resetConfiguration();
-  }
+  {}
 
   /**
    * @brief Check if the image describer use CUDA
@@ -101,7 +93,7 @@ public:
   void setConfigurationPreset(EImageDescriberPreset preset) override
   {
     _params.setPreset(preset);
-    resetConfiguration();
+    _popSift.reset(nullptr); // reset by describe method
   }
 
   /**

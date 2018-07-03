@@ -17,6 +17,9 @@ bool ImageDescriber_SIFT_popSIFT::describe(const image::Image<float>& image,
                                       std::unique_ptr<Regions>& regions,
                                       const image::Image<unsigned char>* mask)
 {
+  if(_popSift == nullptr)
+    resetConfiguration();
+
   std::unique_ptr<SiftJob> job(_popSift->enqueue(image.Width(), image.Height(), &image(0,0)));
   std::unique_ptr<popsift::Features> popFeatures(job->get());
 
@@ -58,6 +61,14 @@ bool ImageDescriber_SIFT_popSIFT::describe(const image::Image<float>& image,
 
 void ImageDescriber_SIFT_popSIFT::resetConfiguration()
 {
+  // destroy all allocations and reset all state
+  // on the current device in the current process
+  cudaDeviceReset();
+
+  popsift::cuda::device_prop_t deviceInfo;
+  deviceInfo.set(0, true); // use only the first device & print informations
+
+  // reset configuration
   popsift::Config config;
   config.setOctaves(_params._numOctaves);
   config.setLevels(_params._numScales);
