@@ -1,5 +1,3 @@
-include(BundleUtilities)
-
 # Perform bundle fixup on all executables of an install directory
 # and generates a standalone bundle with all required runtime dependencies.
 #
@@ -7,6 +5,20 @@ include(BundleUtilities)
 #   - CMAKE_INSTALL_PREFIX: install target path
 #   - BUNDLE_INSTALL_PREFIX: bundle installation path
 #   - BUNDLE_LIBS_PATHS: additional paths (colon separated) to look for runtime dependencies
+
+function(gp_resolve_item_override context item exepath dirs resolved_item_var resolved_var)
+  # avoid log flood for those system libraries with non-absolute path
+  if(item MATCHES "^(api-ms-win-)[^/]+dll")
+    # resolve item with fake absolute system path to keep them identified as system libs
+    # By doing this, fixup_bundle:
+    #   - won't complain about those libraries
+    #   - won't embed them in the bundle
+    set(${resolved_item_var} "$ENV{SystemRoot}/system/${item}" PARENT_SCOPE)
+    set(${resolved_var} TRUE PARENT_SCOPE)
+  endif()
+endfunction()
+
+include(BundleUtilities)
 
 message(STATUS "Starting Bundle")
 message(STATUS "CMAKE_INSTALL_PREFIX: ${CMAKE_INSTALL_PREFIX}")
