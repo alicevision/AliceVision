@@ -13,7 +13,7 @@ if(ALICEVISION_HAVE_ALEMBIC)
   )
 
   set_property(TARGET aliceVision_exportAnimatedCamera
-    PROPERTY FOLDER AliceVision/Software/Export
+    PROPERTY FOLDER Software/Export
   )
 
   install(TARGETS aliceVision_exportAnimatedCamera
