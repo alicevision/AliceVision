@@ -329,7 +329,10 @@ endif()
 # Note: require that the install rule has been executed
 
 # Include VCPKG installed dir for runtime dependencies lookup
-set(BUNDLE_LIBS_PATHS ${_VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}$<$<CONFIG:Debug>:/debug>/bin)
+set(BUNDLE_LIBS_PATHS "")
+if(_VCPKG_INSTALLED_DIR)
+  set(BUNDLE_LIBS_PATHS ${_VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}$<$<CONFIG:Debug>:/debug>/bin)
+endif()
 
 add_custom_target(bundle
                   ${CMAKE_COMMAND}
