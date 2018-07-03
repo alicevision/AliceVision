@@ -330,7 +330,7 @@ endif()
 add_custom_target(bundle
                   ${CMAKE_COMMAND}
                     # Script arguments:
-                    -DALICEVISION_BUNDLE_PREFIX=${ALICEVISION_BUNDLE_PREFIX}
+                    -DBUNDLE_INSTALL_PREFIX=${ALICEVISION_BUNDLE_PREFIX}
                     -DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX}
                     # Script:
                     -P ${CMAKE_CURRENT_SOURCE_DIR}/src/cmake/MakeBundle.cmake
