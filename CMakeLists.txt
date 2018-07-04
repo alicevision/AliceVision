@@ -21,6 +21,8 @@ string(TOLOWER ${DEPS_CMAKE_BUILD_TYPE} DEPS_CMAKE_BUILD_TYPE_LOWERCASE)
 
 option(ALICEVISION_BUILD_TESTS "Build AliceVision tests" OFF)
 
+set(ALICEVISION_BUNDLE_PREFIX "${CMAKE_INSTALL_PREFIX}/bundle" CACHE STRING "Path for bundle installation")
+
 set(ALICEVISION_ROOT ${PROJECT_BINARY_DIR})
 
 message(STATUS "----------------------------------------")
@@ -322,3 +324,25 @@ else()
 add_subdirectory(src)
 
 endif()
+
+# Bundle target (see src/cmake/MakeBundle.cmake)
+# Note: require that the install rule has been executed
+
+# Include VCPKG installed dir for runtime dependencies lookup
+set(BUNDLE_LIBS_PATHS "")
+if(_VCPKG_INSTALLED_DIR)
+  set(BUNDLE_LIBS_PATHS ${_VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}$<$<CONFIG:Debug>:/debug>/bin)
+endif()
+
+add_custom_target(bundle
+                  ${CMAKE_COMMAND}
+                    # Script arguments:
+                    -DBUNDLE_INSTALL_PREFIX=${ALICEVISION_BUNDLE_PREFIX}
+                    -DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX}
+                    -DBUNDLE_LIBS_PATHS=${BUNDLE_LIBS_PATHS}
+                    # Script:
+                    -P ${CMAKE_CURRENT_SOURCE_DIR}/src/cmake/MakeBundle.cmake
+                  )
+set_target_properties(bundle PROPERTIES FOLDER Packaging)
+
+
