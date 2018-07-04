@@ -235,7 +235,7 @@ endif()
 # Boost
 # ==============================================================================
 option(BOOST_NO_CXX11 "if Boost is compiled without C++11 support (as it is often the case in OS packages) this must be enabled to avoid symbol conflicts (SCOPED_ENUM)." OFF)
-find_package(Boost 1.60.0 QUIET COMPONENTS atomic container date_time exception filesystem graph log log_setup program_options regex serialization system thread)
+find_package(Boost 1.60.0 QUIET COMPONENTS atomic container date_time filesystem graph log log_setup program_options regex serialization system thread)
 
 if(Boost_FOUND)
   message(STATUS "Boost ${Boost_LIB_VERSION} found.")
