@@ -25,6 +25,13 @@ set(ALICEVISION_BUNDLE_PREFIX "${CMAKE_INSTALL_PREFIX}/bundle" CACHE STRING "Pat
 
 set(ALICEVISION_ROOT ${PROJECT_BINARY_DIR})
 
+if(APPLE)
+  set(CMAKE_MACOSX_RPATH 1)
+  set(CMAKE_INSTALL_RPATH "@loader_path/../lib:@loader_path")
+elseif(UNIX)
+  set(CMAKE_INSTALL_RPATH "\\$ORIGIN/../lib:\\$ORIGIN")
+endif()
+
 message(STATUS "----------------------------------------")
 message(STATUS "ALICEVISION_BUILD_DEPENDENCIES: ${ALICEVISION_BUILD_DEPENDENCIES}")
 message(STATUS "ALICEVISION_BUILD_TESTS: ${ALICEVISION_BUILD_TESTS}")
@@ -33,6 +40,7 @@ message(STATUS "AV_BUILD_PNG: ${AV_BUILD_PNG}")
 message(STATUS "CMAKE_BUILD_TYPE: ${CMAKE_BUILD_TYPE}")
 message(STATUS "DEPS_CMAKE_BUILD_TYPE: ${DEPS_CMAKE_BUILD_TYPE}")
 message(STATUS "CMAKE_INSTALL_PREFIX: ${CMAKE_INSTALL_PREFIX}")
+message(STATUS "CMAKE_INSTALL_RPATH: ${CMAKE_INSTALL_RPATH}")
 message(STATUS "----------------------------------------")
 
 # ==============================================================================
