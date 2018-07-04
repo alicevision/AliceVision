@@ -26,6 +26,7 @@ set_property(TARGET aliceVision_sensorDB
 target_link_libraries(aliceVision_sensorDB
   PRIVATE
   ${Boost_FILESYSTEM_LIBRARY}
+  ${Boost_SYSTEM_LIBRARY}
 )
 
 set_target_properties(aliceVision_sensorDB
