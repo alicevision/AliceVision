@@ -6,6 +6,7 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "aliceVision/linearProgramming/MOSEKSolver.hpp"
+#include "aliceVision/system/Logger.hpp"
 #include <iostream>
 
 namespace aliceVision {
@@ -72,7 +73,7 @@ inline MSKboundkey_enum convertSign(LPConstraints::eLP_SIGN sign) {
     case LPConstraints::LP_FREE:
       return MSK_BK_FR;
     default:
-      ALICEVISION_LOG_WARNING("Error unknow constraint sign : " << sign << "\n";
+      ALICEVISION_LOG_WARNING("Error unknown constraint sign: " << sign << "\n");
   }
 }
 
