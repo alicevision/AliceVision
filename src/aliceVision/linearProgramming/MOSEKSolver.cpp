@@ -72,9 +72,8 @@ inline MSKboundkey_enum convertSign(LPConstraints::eLP_SIGN sign) {
       return MSK_BK_FX;
     case LPConstraints::LP_FREE:
       return MSK_BK_FR;
-    default:
-      ALICEVISION_LOG_WARNING("Error unknown constraint sign: " << sign << "\n");
   }
+  throw std::out_of_range("Unknown constraint sign (LPConstraints enum): " + std::to_string(int(sign)));
 }
 
 bool MOSEKSolver::setup(const LPConstraints & cstraints) //cstraints <-> constraints
