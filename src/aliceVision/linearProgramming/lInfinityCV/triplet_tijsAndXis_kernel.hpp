@@ -10,6 +10,7 @@
 #include "aliceVision/numeric/numeric.hpp"
 #include <aliceVision/config.hpp>
 
+#include <aliceVision/multiview/projection.hpp>
 #include "aliceVision/multiview/conditioning.hpp"
 #include "aliceVision/multiview/triangulation/Triangulation.hpp"
 
