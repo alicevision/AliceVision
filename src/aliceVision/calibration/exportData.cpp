@@ -10,6 +10,11 @@
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/camera/cameraUndistortImage.hpp>
 
+#if CV_VERSION_MAJOR > 3
+#include <opencv2/calib3d/calib3d_c.h>
+#include <opencv2/imgcodecs/imgcodecs_c.h>
+#endif
+
 #include <boost/filesystem/path.hpp>
 
 #include <fstream>

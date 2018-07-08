@@ -27,6 +27,9 @@
 #include <opencv2/core/eigen.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/calib3d/calib3d.hpp>
+#if CV_VERSION_MAJOR > 3
+#include <opencv2/calib3d/calib3d_c.h>
+#endif
 
 #include <stdio.h>
 #include <ctime>

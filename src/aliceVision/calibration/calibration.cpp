@@ -6,6 +6,10 @@
 
 #include "aliceVision/calibration/calibration.hpp"
 
+#if CV_VERSION_MAJOR > 3
+#include "opencv2/calib3d/calib3d_c.h"
+#endif
+
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/Timer.hpp>
 

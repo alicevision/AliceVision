@@ -14,6 +14,10 @@
 #include <opencv2/core/eigen.hpp>
 #include <opencv2/highgui.hpp>
 
+#if CV_VERSION_MAJOR > 3
+#include <opencv2/imgproc/types_c.h>
+#endif
+
 #include <iostream>
 #include <exception>
 
