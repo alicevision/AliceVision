@@ -11,9 +11,10 @@
 #include <aliceVision/camera/cameraUndistortImage.hpp>
 
 #if CV_VERSION_MAJOR > 3
-#include <opencv2/calib3d/calib3d_c.h>
-#include <opencv2/imgcodecs/imgcodecs_c.h>
+#include <opencv2/core/core_c.h>
 #endif
+#include <opencv2/calib3d.hpp>
+#include <opencv2/imgcodecs.hpp>
 
 #include <boost/filesystem/path.hpp>
 
@@ -39,7 +40,7 @@ void exportImages(aliceVision::dataio::FeedProvider& feed,
   std::string currentImgName;
   aliceVision::camera::PinholeRadialK3 queryIntrinsics;
 
-  export_params.push_back(CV_IMWRITE_JPEG_QUALITY);
+  export_params.push_back(cv::IMWRITE_JPEG_QUALITY);
   export_params.push_back(100);
 
   aliceVision::camera::PinholeRadialK3 camera(imageSize.width, imageSize.height,
@@ -179,16 +180,16 @@ void saveCameraParams(const std::string& filename,
   fs << "board_height" << boardSize.height;
   fs << "square_size" << squareSize;
 
-  if (cvCalibFlags & CV_CALIB_FIX_ASPECT_RATIO)
+  if (cvCalibFlags & cv::CALIB_FIX_ASPECT_RATIO)
     fs << "aspectRatio" << aspectRatio;
 
   if (cvCalibFlags != 0)
   {
     sprintf(asctime(t2), "flags: %s%s%s%s",
-            cvCalibFlags & CV_CALIB_USE_INTRINSIC_GUESS ? "+use_intrinsic_guess" : "",
-            cvCalibFlags & CV_CALIB_FIX_ASPECT_RATIO ? "+fix_aspectRatio" : "",
-            cvCalibFlags & CV_CALIB_FIX_PRINCIPAL_POINT ? "+fix_principal_point" : "",
-            cvCalibFlags & CV_CALIB_ZERO_TANGENT_DIST ? "+zero_tangent_dist" : "");
+            cvCalibFlags & cv::CALIB_USE_INTRINSIC_GUESS ? "+use_intrinsic_guess" : "",
+            cvCalibFlags & cv::CALIB_FIX_ASPECT_RATIO ? "+fix_aspectRatio" : "",
+            cvCalibFlags & cv::CALIB_FIX_PRINCIPAL_POINT ? "+fix_principal_point" : "",
+            cvCalibFlags & cv::CALIB_ZERO_TANGENT_DIST ? "+zero_tangent_dist" : "");
     cvWriteComment(*fs, asctime(t2), 0);
   }
 
