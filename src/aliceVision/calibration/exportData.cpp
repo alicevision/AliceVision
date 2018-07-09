@@ -10,9 +10,6 @@
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/camera/cameraUndistortImage.hpp>
 
-#if CV_VERSION_MAJOR > 3
-#include <opencv2/core/core_c.h>
-#endif
 #include <opencv2/calib3d.hpp>
 #include <opencv2/imgcodecs.hpp>
 
@@ -190,7 +187,7 @@ void saveCameraParams(const std::string& filename,
             cvCalibFlags & cv::CALIB_FIX_ASPECT_RATIO ? "+fix_aspectRatio" : "",
             cvCalibFlags & cv::CALIB_FIX_PRINCIPAL_POINT ? "+fix_principal_point" : "",
             cvCalibFlags & cv::CALIB_ZERO_TANGENT_DIST ? "+zero_tangent_dist" : "");
-    cvWriteComment(*fs, asctime(t2), 0);
+    fs.writeComment(asctime(t2), 0);
   }
 
   fs << "flags" << cvCalibFlags;
@@ -217,7 +214,7 @@ void saveCameraParams(const std::string& filename,
       r = rvecs[i].t();
       t = tvecs[i].t();
     }
-    cvWriteComment(*fs, "a set of 6-tuples (rotation vector + translation vector) for each view", 0);
+    fs.writeComment("a set of 6-tuples (rotation vector + translation vector) for each view", 0);
     fs << "extrinsic_parameters" << bigmat;
   }
 
