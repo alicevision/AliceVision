@@ -16,21 +16,9 @@ set(system_files_sources
   Logger.cpp
 )
 
-add_library(aliceVision_system
-  ${system_files_headers}
-  ${system_files_sources}
-)
-
-set_property(TARGET aliceVision_system
-  PROPERTY FOLDER AliceVision
-)
-
-target_include_directories(aliceVision_system
-  PUBLIC ${Boost_INCLUDE_DIR}
-)
-
-target_link_libraries(aliceVision_system
-  PUBLIC
+alicevision_add_library(aliceVision_system
+  SOURCES ${system_files_headers} ${system_files_sources}
+  PUBLIC_LINKS
     ${Boost_LOG_LIBRARY}
     ${Boost_THREAD_LIBRARY}
     ${Boost_LOG_SETUP_LIBRARY}
@@ -38,15 +26,6 @@ target_link_libraries(aliceVision_system
     ${Boost_SYSTEM_LIBRARY}
     ${Boost_DATE_TIME_LIBRARY}
     ${Boost_PROGRAM_OPTIONS_LIBRARY}
+  PUBLIC_INCLUDE_DIRS
+    ${Boost_INCLUDE_DIR}
 )
-
-set_target_properties(aliceVision_system
-  PROPERTIES SOVERSION ${ALICEVISION_VERSION_MAJOR}
-  VERSION "${ALICEVISION_VERSION_MAJOR}.${ALICEVISION_VERSION_MINOR}"
-)
-
-install(TARGETS aliceVision_system
-  DESTINATION lib/
-  EXPORT aliceVision-targets
-)
-

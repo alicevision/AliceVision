@@ -25,37 +25,20 @@ set(matching_collection_images_files_sources
   pairBuilder.cpp
 )
 
-add_library(aliceVision_matchingImageCollection
-  ${matching_collection_images_files_headers}
-  ${matching_collection_images_files_sources}
+alicevision_add_library(aliceVision_matchingImageCollection
+  SOURCES ${matching_collection_images_files_headers} ${matching_collection_images_files_sources}
+  PUBLIC_LINKS
+    aliceVision_feature
+    aliceVision_matching
+    aliceVision_multiview
+    aliceVision_robustEstimation
+    aliceVision_sfm
+    ${Boost_LIBRARIES}
+  PRIVATE_LINKS
+    aliceVision_system
+    ${CERES_LIBRARIES}
 )
 
-target_link_libraries(aliceVision_matchingImageCollection
-PUBLIC
-  aliceVision_feature
-  aliceVision_matching
-  aliceVision_multiview
-  aliceVision_robustEstimation
-  aliceVision_sfm
-  ${Boost_LIBRARIES}
-PRIVATE
-  aliceVision_system
-  ${CERES_LIBRARIES}
-)
-
-set_target_properties(aliceVision_matchingImageCollection
-  PROPERTIES SOVERSION ${ALICEVISION_VERSION_MAJOR}
-  VERSION "${ALICEVISION_VERSION_MAJOR}.${ALICEVISION_VERSION_MINOR}"
-)
-
-set_property(TARGET aliceVision_matchingImageCollection
-  PROPERTY FOLDER AliceVision
-)
-
-install(TARGETS aliceVision_matchingImageCollection
-  DESTINATION lib
-  EXPORT aliceVision-targets
-)
-
-UNIT_TEST(aliceVision pairBuilder "aliceVision_matchingImageCollection")
-UNIT_TEST(aliceVision geometricFilterUtils "aliceVision_matchingImageCollection")
+# Unit tests
+alicevision_add_test(pairBuilder_test.cpp           NAME "matchingImageCollection_pairBuilder"           LINKS aliceVision_matchingImageCollection)
+alicevision_add_test(geometricFilterUtils_test.cpp  NAME "matchingImageCollection_geometricFilterUtils"  LINKS aliceVision_matchingImageCollection)

@@ -1,27 +1,20 @@
-add_library(aliceVision_numeric
-  numeric.cpp
+# Headers
+set(numeric_files_headers
   numeric.hpp
 )
 
-target_link_libraries(aliceVision_numeric
-  PUBLIC
+# Sources
+set(numeric_files_sources
+  numeric.cpp
+)
+
+alicevision_add_library(aliceVision_numeric
+  SOURCES ${numeric_files_headers} ${numeric_files_sources}
+  PUBLIC_LINKS
     Eigen3::Eigen
 )
 
-set_target_properties(aliceVision_numeric
-  PROPERTIES SOVERSION ${ALICEVISION_VERSION_MAJOR}
-  VERSION "${ALICEVISION_VERSION_MAJOR}.${ALICEVISION_VERSION_MINOR}"
-)
-
-set_property(TARGET aliceVision_numeric
-  PROPERTY FOLDER AliceVision
-)
-
-install(TARGETS aliceVision_numeric
-  DESTINATION lib
-  EXPORT aliceVision-targets
-)
-
-UNIT_TEST(aliceVision numeric       aliceVision_numeric)
-UNIT_TEST(aliceVision polynomial    aliceVision_numeric)
-UNIT_TEST(aliceVision lmFunctor     aliceVision_numeric)
+# Unit tests
+alicevision_add_test(numeric_test.cpp    NAME "numeric"            LINKS aliceVision_numeric)
+alicevision_add_test(polynomial_test.cpp NAME "numeric_polynomial" LINKS aliceVision_numeric)
+alicevision_add_test(lmFunctor_test.cpp  NAME "numeric_lmFunctor"  LINKS aliceVision_numeric)

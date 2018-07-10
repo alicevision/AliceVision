@@ -1,477 +1,283 @@
 ## AliceVision
+## Pipeline softwares
 
-## SfM softwares
+# Software PROPERTY FOLDER is 'Software/Pipeline'
+set(FOLDER_SOFTWARE_PIPELINE "Software/Pipeline")
 
+### SfM software
 if(ALICEVISION_BUILD_SFM)
 
   # Intrinsic image analysis and SfMData container initialization
-
-  add_executable(aliceVision_cameraInit main_cameraInit.cpp)
-
-  target_link_libraries(aliceVision_cameraInit
-    aliceVision_system
-    aliceVision_sensorDB
-    aliceVision_image
-    aliceVision_feature
-    aliceVision_sfm
-    ${Boost_LIBRARIES}
-  )
-
-  set_property(TARGET aliceVision_cameraInit
-    PROPERTY FOLDER Software/Pipeline
-  )
-
-  install(TARGETS aliceVision_cameraInit
-    DESTINATION bin/
+  alicevision_add_software(aliceVision_cameraInit
+    SOURCE main_cameraInit.cpp
+    FOLDER ${FOLDER_SOFTWARE_PIPELINE}
+    LINKS aliceVision_system
+          aliceVision_sensorDB
+          aliceVision_image
+          aliceVision_feature
+          aliceVision_sfm
+          ${Boost_LIBRARIES}
   )
 
   # Feature extraction
-
-  add_executable(aliceVision_featureExtraction main_featureExtraction.cpp)
-
-  target_link_libraries(aliceVision_featureExtraction
-    aliceVision_system
-    aliceVision_image
-    aliceVision_feature
-    aliceVision_multiview
-    aliceVision_sfm
-    vlsift
-    ${Boost_LIBRARIES}
+  alicevision_add_software(aliceVision_featureExtraction
+    SOURCE main_featureExtraction.cpp
+    FOLDER ${FOLDER_SOFTWARE_PIPELINE}
+    LINKS aliceVision_system
+          aliceVision_image
+          aliceVision_feature
+          aliceVision_multiview
+          aliceVision_sfm
+          vlsift
+          ${Boost_LIBRARIES}
   )
 
   if(ALICEVISION_HAVE_CCTAG)
-    target_link_libraries(aliceVision_featureExtraction CCTag::CCTag)
+    target_link_libraries(aliceVision_featureExtraction PUBLIC CCTag::CCTag)
   endif()
 
-  set_property(TARGET aliceVision_featureExtraction
-    PROPERTY FOLDER Software/Pipeline
-  )
-
-  install(TARGETS aliceVision_featureExtraction
-    DESTINATION bin/
-  )
 
   # Image matching
-  # - generate the pair lists
-
-  add_executable(aliceVision_imageMatching main_imageMatching.cpp)
-
-  target_link_libraries(aliceVision_imageMatching
-    aliceVision_voctree
-    ${Boost_LIBRARIES}
-  )
-
-  set_property(TARGET aliceVision_imageMatching
-    PROPERTY FOLDER Software/Pipeline
-  )
-
-  install(TARGETS aliceVision_imageMatching
-    DESTINATION bin/
+  # - generate the image pair lists
+  alicevision_add_software(aliceVision_imageMatching
+    SOURCE main_imageMatching.cpp
+    FOLDER ${FOLDER_SOFTWARE_PIPELINE}
+    LINKS aliceVision_voctree
+          ${Boost_LIBRARIES}
   )
 
   # Feature matching
   # - putative matches and geometric filtered matches
-
-  add_executable(aliceVision_featureMatching main_featureMatching.cpp)
-
-  target_link_libraries(aliceVision_featureMatching
-    aliceVision_system
-    aliceVision_feature
-    aliceVision_multiview
-    aliceVision_sfm
-    aliceVision_matchingImageCollection
-    ${Boost_LIBRARIES}
-  )
-
-  set_property(TARGET aliceVision_featureMatching
-    PROPERTY FOLDER Software/Pipeline
-  )
-
-  install(TARGETS aliceVision_featureMatching
-    DESTINATION bin/
+  alicevision_add_software(aliceVision_featureMatching
+    SOURCE main_featureMatching.cpp
+    FOLDER ${FOLDER_SOFTWARE_PIPELINE}
+    LINKS aliceVision_system
+          aliceVision_feature
+          aliceVision_multiview
+          aliceVision_matchingImageCollection
+          aliceVision_sfm
+          ${Boost_LIBRARIES}
   )
 
   # Incremental / Sequential SfM
-
-  add_executable(aliceVision_incrementalSfM main_incrementalSfM.cpp)
-
-  target_link_libraries(aliceVision_incrementalSfM
-    aliceVision_system
-    aliceVision_image
-    aliceVision_feature
-    aliceVision_sfm
-    ${Boost_LIBRARIES}
-  )
-
-  set_property(TARGET aliceVision_incrementalSfM
-    PROPERTY FOLDER Software/Pipeline
-  )
-
-  install(TARGETS aliceVision_incrementalSfM
-    DESTINATION bin/
+  alicevision_add_software(aliceVision_incrementalSfM
+    SOURCE main_incrementalSfM.cpp
+    FOLDER ${FOLDER_SOFTWARE_PIPELINE}
+    LINKS aliceVision_system
+          aliceVision_image
+          aliceVision_feature
+          aliceVision_sfm
+          ${Boost_LIBRARIES}
   )
 
   # Global SfM
-
-  add_executable(aliceVision_globalSfM main_globalSfM.cpp)
-
-  target_link_libraries(aliceVision_globalSfM
-    aliceVision_system
-    aliceVision_image
-    aliceVision_feature
-    aliceVision_sfm
-    ${Boost_LIBRARIES}
-  )
-
-  set_property(TARGET aliceVision_globalSfM
-    PROPERTY FOLDER Software/Pipeline
-  )
-
-  install(TARGETS aliceVision_globalSfM
-    DESTINATION bin/
+  alicevision_add_software(aliceVision_globalSfM
+    SOURCE main_globalSfM.cpp
+    FOLDER ${FOLDER_SOFTWARE_PIPELINE}
+    LINKS aliceVision_system
+          aliceVision_image
+          aliceVision_feature
+          aliceVision_sfm
+          ${Boost_LIBRARIES}
   )
 
   # Compute structure from known camera poses
-
-  add_executable(aliceVision_computeStructureFromKnownPoses main_computeStructureFromKnownPoses.cpp)
-
-  target_link_libraries(aliceVision_computeStructureFromKnownPoses
-    aliceVision_system
-    aliceVision_feature
-    aliceVision_sfm
-    ${Boost_LIBRARIES}
-  )
-
-  set_property(TARGET aliceVision_computeStructureFromKnownPoses
-    PROPERTY FOLDER Software/Pipeline
-  )
-
-  install(TARGETS aliceVision_computeStructureFromKnownPoses
-    DESTINATION bin/
+  alicevision_add_software(aliceVision_computeStructureFromKnownPoses
+    SOURCE main_computeStructureFromKnownPoses.cpp
+    FOLDER ${FOLDER_SOFTWARE_PIPELINE}
+    LINKS aliceVision_system
+          aliceVision_feature
+          aliceVision_sfm
+          ${Boost_LIBRARIES}
   )
 
   # Compute structure color
-
-  add_executable(aliceVision_computeSfMColor main_computeSfMColor.cpp)
-
-  target_link_libraries(aliceVision_computeSfMColor
-    aliceVision_system
-    aliceVision_image
-    aliceVision_feature
-    aliceVision_sfm
-    ${Boost_LIBRARIES}
-  )
-
-  set_property(TARGET aliceVision_computeSfMColor
-    PROPERTY FOLDER Software/Pipeline
-  )
-
-  install(TARGETS aliceVision_computeSfMColor
-    DESTINATION bin/
+  alicevision_add_software(aliceVision_computeSfMColor
+    SOURCE main_computeSfMColor.cpp
+    FOLDER ${FOLDER_SOFTWARE_PIPELINE}
+    LINKS aliceVision_system
+          aliceVision_image
+          aliceVision_feature
+          aliceVision_sfm
+          ${Boost_LIBRARIES}
   )
 
   # Calibrate a camera
-
   if(ALICEVISION_HAVE_OPENCV)
-    add_executable(aliceVision_cameraCalibration main_cameraCalibration.cpp)
-
-    target_link_libraries(aliceVision_cameraCalibration # PUBLIC
-      aliceVision_dataio
-      aliceVision_image
-      aliceVision_calibration
-      aliceVision_system
-      ${OpenCV_LIBRARIES}
-      ${Boost_LIBRARIES}
-    )
-
-    if(ALICEVISION_HAVE_CCTAG)
-      target_link_libraries(aliceVision_cameraCalibration CCTag::CCTag)
-    endif()
-
-    set_property(TARGET aliceVision_cameraCalibration
-    PROPERTY FOLDER Software/Pipeline
-    )
-
-    install(TARGETS aliceVision_cameraCalibration
-    DESTINATION bin/
+    alicevision_add_software(aliceVision_cameraCalibration
+      SOURCE main_cameraCalibration.cpp
+      FOLDER ${FOLDER_SOFTWARE_PIPELINE}
+      LINKS aliceVision_dataio
+            aliceVision_image
+            aliceVision_calibration
+            aliceVision_system
+            ${OpenCV_LIBRARIES}
+            ${Boost_LIBRARIES}
     )
   endif()
 
   # Calibrate a rig
-
-  add_executable(aliceVision_rigCalibration main_rigCalibration.cpp)
-
-  target_link_libraries(aliceVision_rigCalibration
-    aliceVision_rig
-    aliceVision_localization
-    aliceVision_dataio
-    aliceVision_image
-    aliceVision_feature
-    vlsift  #TODO: delete vlsift
-    ${Boost_LIBRARIES}
+  alicevision_add_software(aliceVision_rigCalibration
+    SOURCE main_rigCalibration.cpp
+    FOLDER ${FOLDER_SOFTWARE_PIPELINE}
+    LINKS aliceVision_rig
+          aliceVision_localization
+          aliceVision_dataio
+          aliceVision_image
+          aliceVision_feature
+          vlsift # TODO: delete vlsift
+          ${Boost_LIBRARIES}
   )
 
   if(ALICEVISION_HAVE_CCTAG)
-    target_link_libraries(aliceVision_rigCalibration CCTag::CCTag)
+    target_link_libraries(aliceVision_rigCalibration PUBLIC CCTag::CCTag)
   endif()
-
-  set_property(TARGET aliceVision_rigCalibration
-    PROPERTY FOLDER Software/Pipeline
-  )
-
-  install(TARGETS aliceVision_rigCalibration
-    DESTINATION bin/
-  )
 
   # Localize a camera
-
-  add_executable(aliceVision_cameraLocalization main_cameraLocalization.cpp)
-
-  target_link_libraries(aliceVision_cameraLocalization
-    aliceVision_localization
-    aliceVision_dataio
-    aliceVision_image
-    aliceVision_feature
-    vlsift
-    ${Boost_LIBRARIES}
+  alicevision_add_software(aliceVision_cameraLocalization
+    SOURCE main_cameraLocalization.cpp
+    FOLDER ${FOLDER_SOFTWARE_PIPELINE}
+    LINKS aliceVision_localization
+          aliceVision_dataio
+          aliceVision_image
+          aliceVision_feature
+          vlsift
+          ${Boost_LIBRARIES}
   )
 
   if(ALICEVISION_HAVE_CCTAG)
-    target_link_libraries(aliceVision_cameraLocalization CCTag::CCTag)
+    target_link_libraries(aliceVision_cameraLocalization PUBLIC CCTag::CCTag)
   endif()
-
-  set_property(TARGET aliceVision_cameraLocalization
-    PROPERTY FOLDER Software/Pipeline
-  )
-
-  install(TARGETS aliceVision_cameraLocalization
-    DESTINATION bin/
-  )
 
   # Localize a rig
-
-  add_executable(aliceVision_rigLocalization main_rigLocalization.cpp)
-
-  target_link_libraries(aliceVision_rigLocalization
-    aliceVision_localization
-    aliceVision_dataio
-    aliceVision_rig
-    aliceVision_image
-    aliceVision_feature
-    vlsift
-    ${Boost_LIBRARIES}
+  alicevision_add_software(aliceVision_rigLocalization
+    SOURCE main_rigLocalization.cpp
+    FOLDER ${FOLDER_SOFTWARE_PIPELINE}
+    LINKS aliceVision_localization
+          aliceVision_dataio
+          aliceVision_rig
+          aliceVision_image
+          aliceVision_feature
+          vlsift
+          ${Boost_LIBRARIES}
   )
 
   if(ALICEVISION_HAVE_CCTAG)
-    target_link_libraries(aliceVision_rigLocalization CCTag::CCTag)
+    target_link_libraries(aliceVision_rigLocalization PUBLIC CCTag::CCTag)
   endif()
 
-  set_property(TARGET aliceVision_rigLocalization
-    PROPERTY FOLDER Software/Pipeline
-  )
-
-  install(TARGETS aliceVision_rigLocalization
-    DESTINATION bin/
-  )
-
   # Prepare dense scene for MVS
-
-  add_executable(aliceVision_prepareDenseScene main_prepareDenseScene.cpp)
-
-  target_link_libraries(aliceVision_prepareDenseScene
-    aliceVision_system
-    aliceVision_image
-    aliceVision_feature
-    aliceVision_sfm
-    ${Boost_LIBRARIES}
+  alicevision_add_software(aliceVision_prepareDenseScene
+    SOURCE main_prepareDenseScene.cpp
+    FOLDER ${FOLDER_SOFTWARE_PIPELINE}
+    LINKS aliceVision_system
+          aliceVision_image
+          aliceVision_feature
+          aliceVision_sfm
+          ${Boost_LIBRARIES}
   )
+endif() # if(ALICEVISION_BUILD_SFM)
 
-  set_property(TARGET aliceVision_prepareDenseScene
-    PROPERTY FOLDER Software/Pipeline
-  )
-
-  install(TARGETS aliceVision_prepareDenseScene
-    DESTINATION bin/
-  )
-endif() #ALICEVISION_BUILD_SFM
-
-## MVS software
-
+### MVS software
 if(ALICEVISION_BUILD_MVS)
 
   # Compute Nearby Cameras
-
-  add_executable(aliceVision_cameraConnection main_cameraConnection.cpp)
-
-  target_link_libraries(aliceVision_cameraConnection
-    PUBLIC aliceVision_system
-           aliceVision_mvsUtils
-           ${Boost_LIBRARIES}
-  )
-
-  set_property(TARGET aliceVision_cameraConnection
-    PROPERTY FOLDER Software/Pipeline
-  )
-
-  install(TARGETS aliceVision_cameraConnection
-    DESTINATION bin/
+  alicevision_add_software(aliceVision_cameraConnection
+    SOURCE main_cameraConnection.cpp
+    FOLDER ${FOLDER_SOFTWARE_PIPELINE}
+    LINKS aliceVision_system
+          aliceVision_mvsUtils
+          ${Boost_LIBRARIES}
   )
 
   # Depth Map Estimation
-
   if(ALICEVISION_HAVE_CUDA) # Depth map computation need CUDA
-    add_executable(aliceVision_depthMapEstimation main_depthMapEstimation.cpp)
-
-    target_link_libraries(aliceVision_depthMapEstimation
-      PUBLIC aliceVision_system
-             aliceVision_mvsData
-             aliceVision_mvsUtils
-             aliceVision_depthMap
-             ${Boost_LIBRARIES}
-    )
-
-    set_property(TARGET aliceVision_depthMapEstimation
-      PROPERTY FOLDER Software/Pipeline
-    )
-
-    install(TARGETS aliceVision_depthMapEstimation
-      DESTINATION bin/
+    alicevision_add_software(aliceVision_depthMapEstimation
+      SOURCE main_depthMapEstimation.cpp
+      FOLDER ${FOLDER_SOFTWARE_PIPELINE}
+      LINKS aliceVision_system
+            aliceVision_mvsData
+            aliceVision_mvsUtils
+            aliceVision_depthMap
+            ${Boost_LIBRARIES}
     )
   endif()
 
   # Depth Map Filtering
-
-  add_executable(aliceVision_depthMapFiltering main_depthMapFiltering.cpp)
-
-  target_link_libraries(aliceVision_depthMapFiltering
-    PUBLIC aliceVision_system
-           aliceVision_mvsData
-           aliceVision_mvsUtils
-           aliceVision_fuseCut
-           ${Boost_LIBRARIES}
-  )
-
-  set_property(TARGET aliceVision_depthMapFiltering
-    PROPERTY FOLDER Software/Pipeline
-  )
-
-  install(TARGETS aliceVision_depthMapFiltering
-    DESTINATION bin/
+  alicevision_add_software(aliceVision_depthMapFiltering
+    SOURCE main_depthMapFiltering.cpp
+    FOLDER ${FOLDER_SOFTWARE_PIPELINE}
+    LINKS aliceVision_system
+          aliceVision_mvsData
+          aliceVision_mvsUtils
+          aliceVision_fuseCut
+          ${Boost_LIBRARIES}
   )
 
   # Meshing
-
-  add_executable(aliceVision_meshing main_meshing.cpp)
-
-  target_link_libraries(aliceVision_meshing
-    PUBLIC aliceVision_system
-           aliceVision_mvsData
-           aliceVision_mvsUtils
-           aliceVision_mesh
-           aliceVision_fuseCut
-           ${Boost_LIBRARIES}
-  )
-
-  set_property(TARGET aliceVision_meshing
-    PROPERTY FOLDER Software/Pipeline
-  )
-
-  install(TARGETS aliceVision_meshing
-    DESTINATION bin/
+  alicevision_add_software(aliceVision_meshing
+    SOURCE main_meshing.cpp
+    FOLDER ${FOLDER_SOFTWARE_PIPELINE}
+    LINKS aliceVision_system
+          aliceVision_mvsData
+          aliceVision_mvsUtils
+          aliceVision_mesh
+          aliceVision_fuseCut
+          ${Boost_LIBRARIES}
   )
 
   if(ALICEVISION_HAVE_MESHSDFILTER)
 
     # Mesh Denoising
-
-    add_executable(aliceVision_meshDenoising main_meshDenoising.cpp)
-
-    target_link_libraries(aliceVision_meshDenoising
-      PUBLIC aliceVision_system
-             aliceVision_mvsUtils
-             MeshSDLibrary
-             ${Boost_LIBRARIES}
-             Eigen3::Eigen
+    alicevision_add_software(aliceVision_meshDenoising
+      SOURCE main_meshDenoising.cpp
+      FOLDER ${FOLDER_SOFTWARE_PIPELINE}
+      LINKS aliceVision_system
+            aliceVision_mvsUtils
+            MeshSDLibrary
+            Eigen3::Eigen
+            ${Boost_LIBRARIES}
     )
-
-    set_property(TARGET aliceVision_meshDenoising
-      PROPERTY FOLDER Software/Pipeline
-    )
-
-    install(TARGETS aliceVision_meshDenoising DESTINATION bin/)
 
     # Mesh Decimate
-
-    add_executable(aliceVision_meshDecimate main_meshDecimate.cpp)
-
-    target_link_libraries(aliceVision_meshDecimate
-      PUBLIC aliceVision_system
-             aliceVision_mvsUtils
-             OpenMesh
-             ${Boost_LIBRARIES}
+    alicevision_add_software(aliceVision_meshDecimate
+      SOURCE main_meshDecimate.cpp
+      FOLDER ${FOLDER_SOFTWARE_PIPELINE}
+      LINKS aliceVision_system
+            aliceVision_mvsUtils
+            OpenMesh
+            ${Boost_LIBRARIES}
     )
-
-    set_property(TARGET aliceVision_meshDecimate
-      PROPERTY FOLDER Software/Pipeline
-    )
-
-    install(TARGETS aliceVision_meshDecimate DESTINATION bin/)
-
   endif()
 
   # Mesh Filtering
-
-  add_executable(aliceVision_meshFiltering main_meshFiltering.cpp)
-
-  target_link_libraries(aliceVision_meshFiltering
-    PUBLIC aliceVision_system
-           aliceVision_mvsUtils
-           aliceVision_mesh
-           ${Boost_LIBRARIES}
+  alicevision_add_software(aliceVision_meshFiltering
+    SOURCE main_meshFiltering.cpp
+    FOLDER ${FOLDER_SOFTWARE_PIPELINE}
+    LINKS aliceVision_system
+          aliceVision_mvsUtils
+          aliceVision_mesh
+          ${Boost_LIBRARIES}
   )
-
-  set_property(TARGET aliceVision_meshFiltering
-    PROPERTY FOLDER Software/Pipeline
-  )
-
-  install(TARGETS aliceVision_meshFiltering DESTINATION bin/)
 
   # Mesh Resampling
-
-  add_executable(aliceVision_meshResampling main_meshResampling.cpp)
-
-  target_link_libraries(aliceVision_meshResampling
-    PUBLIC aliceVision_system
-           aliceVision_mvsUtils
-           Geogram::geogram
-           ${Boost_LIBRARIES}
-  )
-
-  set_property(TARGET aliceVision_meshResampling
-    PROPERTY FOLDER Software/Pipeline
-  )
-
-  install(TARGETS aliceVision_meshResampling
-    DESTINATION bin/
+  alicevision_add_software(aliceVision_meshResampling
+    SOURCE main_meshResampling.cpp
+    FOLDER ${FOLDER_SOFTWARE_PIPELINE}
+    LINKS aliceVision_system
+          aliceVision_mvsUtils
+          Geogram::geogram
+          ${Boost_LIBRARIES}
   )
 
   # Texturing
-
-  add_executable(aliceVision_texturing main_texturing.cpp)
-
-  target_link_libraries(aliceVision_texturing
-    PUBLIC aliceVision_system
-           aliceVision_mvsData
-           aliceVision_mvsUtils
-           aliceVision_mesh
-           ${Boost_LIBRARIES}
+  alicevision_add_software(aliceVision_texturing
+    SOURCE main_texturing.cpp
+    FOLDER ${FOLDER_SOFTWARE_PIPELINE}
+    LINKS aliceVision_system
+          aliceVision_mvsData
+          aliceVision_mvsUtils
+          aliceVision_mesh
+          ${Boost_LIBRARIES}
   )
-
-  set_property(TARGET aliceVision_texturing
-    PROPERTY FOLDER Software/Pipeline
-  )
-
-  install(TARGETS aliceVision_texturing
-    DESTINATION bin/
-  )
-endif() #if(ALICEVISION_BUILD_MVS)
+endif() # if(ALICEVISION_BUILD_MVS)

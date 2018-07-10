@@ -47,66 +47,41 @@ set(multiview_files_sources
   triangulation/Triangulation.cpp
 )
 
-# Test data
+# Test Data Sources
 set(multiview_files_test_data
   NViewDataSet.hpp
   NViewDataSet.cpp
 )
 
-add_library(aliceVision_multiview
-  ${multiview_files_headers}
-  ${multiview_files_sources}
-)
-
-set_property(TARGET aliceVision_multiview
-  PROPERTY FOLDER AliceVision
-)
-
-install(TARGETS aliceVision_multiview
-  DESTINATION lib
-  EXPORT aliceVision-targets
-)
-
-target_link_libraries(aliceVision_multiview
-  PUBLIC 
+alicevision_add_library(aliceVision_multiview
+  SOURCES ${multiview_files_headers} ${multiview_files_sources}
+  PUBLIC_LINKS
     aliceVision_numeric
     aliceVision_robustEstimation
     ${CERES_LIBRARIES}
-  PRIVATE
+  PRIVATE_LINKS
     aliceVision_system
     ${LEMON_LIBRARY}
 )
 
-# Make multiview library integrate numeric library
-add_library(aliceVision_multiview_test_data
-  ${multiview_files_test_data}
+alicevision_add_library(aliceVision_multiview_test_data
+  SOURCES ${multiview_files_test_data}
+  PUBLIC_LINKS
+    aliceVision_numeric
+  PRIVATE_LINKS
+    aliceVision_multiview
 )
 
-set_property(TARGET aliceVision_multiview_test_data
-  PROPERTY FOLDER AliceVision
-)
-
-target_link_libraries(aliceVision_multiview_test_data
-  PUBLIC aliceVision_numeric
-  PRIVATE aliceVision_multiview
-)
-
-set_target_properties(aliceVision_multiview
-  PROPERTIES SOVERSION ${ALICEVISION_VERSION_MAJOR}
-  VERSION "${ALICEVISION_VERSION_MAJOR}.${ALICEVISION_VERSION_MINOR}"
-)
-
-# Unit test
-
+# Unit tests
 add_subdirectory(resection)
 add_subdirectory(rotationAveraging)
 add_subdirectory(translationAveraging)
 add_subdirectory(triangulation)
 
+alicevision_add_test(affineSolver_test.cpp                   NAME "multiview_affineSolver"                    LINKS aliceVision_multiview)
+alicevision_add_test(fundamentalKernelSolver_test.cpp        NAME "multiview_fundamentalKernelSolver"         LINKS aliceVision_multiview)
+alicevision_add_test(essentialFivePointSolver_test.cpp       NAME "multiview_essentialFivePointSolver"        LINKS aliceVision_multiview aliceVision_multiview_test_data)
+alicevision_add_test(essentialKernelSolver_test.cpp          NAME "multiview_essentialKernelSolver"           LINKS aliceVision_multiview aliceVision_multiview_test_data)
+alicevision_add_test(homographyKernelSolver_test.cpp         NAME "multiview_homographyKernelSolver"          LINKS aliceVision_multiview aliceVision_multiview_test_data)
+alicevision_add_test(knownRotationTranslationKernel_test.cpp NAME "multiview_knownRotationTranslationKernel"  LINKS aliceVision_multiview aliceVision_multiview_test_data)
 
-UNIT_TEST(aliceVision affineSolver                    "aliceVision_multiview")
-UNIT_TEST(aliceVision fundamentalKernelSolver         "aliceVision_multiview")
-UNIT_TEST(aliceVision essentialFivePointSolver        "aliceVision_multiview;aliceVision_multiview_test_data")
-UNIT_TEST(aliceVision essentialKernelSolver           "aliceVision_multiview;aliceVision_multiview_test_data")
-UNIT_TEST(aliceVision homographyKernelSolver          "aliceVision_multiview;aliceVision_multiview_test_data")
-UNIT_TEST(aliceVision knownRotationTranslationKernel  "aliceVision_multiview;aliceVision_multiview_test_data")

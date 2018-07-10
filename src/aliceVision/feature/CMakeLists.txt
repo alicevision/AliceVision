@@ -52,7 +52,6 @@ endif()
 
 # OpenCV ImageDescriber
 if(ALICEVISION_HAVE_OPENCV)
-
   list(APPEND features_files_headers openCV/ImageDescriber_AKAZE_OCV.hpp)
   list(APPEND features_files_sources openCV/ImageDescriber_AKAZE_OCV.cpp)
 
@@ -60,23 +59,17 @@ if(ALICEVISION_HAVE_OPENCV)
     list(APPEND features_files_headers openCV/ImageDescriber_SIFT_OCV.hpp)
     list(APPEND features_files_sources openCV/ImageDescriber_SIFT_OCV.cpp)
   endif()
-
 endif()
 
-set_source_files_properties(${features_files_sources} PROPERTIES LANGUAGE CXX)
 
-add_library(aliceVision_feature
-  ${features_files_headers}
-  ${features_files_sources}
-)
-
-target_link_libraries(aliceVision_feature
-  PUBLIC
+alicevision_add_library(aliceVision_feature
+  SOURCES ${features_files_headers} ${features_files_sources}
+  PUBLIC_LINKS
     aliceVision_image
     aliceVision_numeric
     aliceVision_system
     vlsift
-  PRIVATE
+  PRIVATE_LINKS
     ${Boost_FILESYSTEM_LIBRARY}
 )
 
@@ -95,18 +88,5 @@ if(ALICEVISION_HAVE_OPENCV)
   target_link_libraries(aliceVision_feature PUBLIC ${OpenCV_LIBS})
 endif()
 
-set_target_properties(aliceVision_feature
-  PROPERTIES SOVERSION ${ALICEVISION_VERSION_MAJOR}
-  VERSION "${ALICEVISION_VERSION_MAJOR}.${ALICEVISION_VERSION_MINOR}"
-)
-
-install(TARGETS aliceVision_feature
-  DESTINATION lib
-  EXPORT aliceVision-targets
-)
-
-set_property(TARGET aliceVision_feature
-  PROPERTY FOLDER AliceVision
-)
-
-UNIT_TEST(aliceVision features "aliceVision_feature")
+# Unit tests
+alicevision_add_test(features_test.cpp NAME "features" LINKS aliceVision_feature)

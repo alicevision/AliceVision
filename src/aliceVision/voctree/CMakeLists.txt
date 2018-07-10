@@ -19,35 +19,18 @@ set(voctree_sources
   VocabularyTree.cpp
 )
 
-add_library(aliceVision_voctree
-  ${voctree_headers}
-  ${voctree_sources}
-)
-
-set_property(TARGET aliceVision_voctree
-  PROPERTY FOLDER AliceVision
-)
-
-target_link_libraries(aliceVision_voctree
-  PUBLIC
+alicevision_add_library(aliceVision_voctree
+  SOURCES ${voctree_headers} ${voctree_sources}
+  PUBLIC_LINKS
     aliceVision_feature
     aliceVision_sfm
     aliceVision_system
     Eigen3::Eigen
-  PRIVATE
+  PRIVATE_LINKS
     ${Boost_FILESYSTEM_LIBRARY}
 )
 
-set_target_properties(aliceVision_voctree
-  PROPERTIES SOVERSION ${ALICEVISION_VERSION_MAJOR}
-  VERSION "${ALICEVISION_VERSION_MAJOR}.${ALICEVISION_VERSION_MINOR}"
-)
-
-install(TARGETS aliceVision_voctree
-  DESTINATION lib/
-  EXPORT aliceVision-targets
-)
-
-UNIT_TEST(aliceVision kmeans               "aliceVision_voctree")
-UNIT_TEST(aliceVision vocabularyTree       "aliceVision_voctree")
-UNIT_TEST(aliceVision vocabularyTreeBuild  "aliceVision_voctree")
+# Unit tests
+alicevision_add_test(kmeans_test.cpp              NAME "voctree_kmeans"              LINKS aliceVision_voctree)
+alicevision_add_test(vocabularyTree_test.cpp      NAME "voctree_vocabularyTree"      LINKS aliceVision_voctree)
+alicevision_add_test(vocabularyTreeBuild_test.cpp NAME "voctree_vocabularyTreeBuild" LINKS aliceVision_voctree)

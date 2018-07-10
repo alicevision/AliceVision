@@ -1,5 +1,5 @@
 # Headers
-set(lInftycomputervision_headers
+set(lInftycomputervision_files_headers
   lInfinityCV.hpp
   resection.hpp
   resection_kernel.hpp
@@ -12,7 +12,7 @@ set(lInftycomputervision_headers
 )
 
 # Sources
-set(lInftycomputervision_sources
+set(lInftycomputervision_files_sources
   resection_kernel.cpp
 )
 
@@ -22,55 +22,66 @@ if (MSVC)
   add_definitions("/wd4267")
 endif()
 
-add_library(aliceVision_lInftyComputerVision
-  ${lInftycomputervision_headers}
-  ${lInftycomputervision_sources}
+alicevision_add_library(aliceVision_lInftyComputerVision
+  SOURCES ${lInftycomputervision_files_headers} ${lInftycomputervision_files_sources}
+  PUBLIC_LINKS
+    aliceVision_linearProgramming
 )
 
-set_property(TARGET aliceVision_lInftyComputerVision
-  PROPERTY FOLDER AliceVision
-)
-
-target_link_libraries(aliceVision_lInftyComputerVision
-  PUBLIC aliceVision_linearProgramming
-)
 
 if(MOSEK_FOUND)  
     target_link_libraries(aliceVision_lInftyComputerVision PUBLIC ${MOSEK_LIB})
 endif()
 
-set_target_properties(aliceVision_lInftyComputerVision
-  PROPERTIES SOVERSION ${ALICEVISION_VERSION_MAJOR}
-  VERSION "${ALICEVISION_VERSION_MAJOR}.${ALICEVISION_VERSION_MINOR}"
-)
-
-install(TARGETS aliceVision_lInftyComputerVision
-  DESTINATION lib
-  EXPORT aliceVision-targets
-)
-
-set(LOCAL_LIBS
-  aliceVision_multiview_test_data
-  aliceVision_multiview
-  aliceVision_lInftyComputerVision
-)
-
+# Unit tests
 # Linfinity Triangulation
-UNIT_TEST(aliceVision lInftyCV_triangulation "${LOCAL_LIBS}")
+alicevision_add_test(lInftyCV_triangulation_test.cpp
+  NAME "lInftyCV_triangulation"
+  LINKS aliceVision_multiview_test_data
+        aliceVision_multiview
+        aliceVision_lInftyComputerVision
+)
 
 # Linfinity Pose/Resection estimation
-UNIT_TEST(aliceVision lInftyCV_resection        "${LOCAL_LIBS}")
-UNIT_TEST(aliceVision lInftyCV_resection_robust "${LOCAL_LIBS}")
-
+alicevision_add_test(lInftyCV_resection_test.cpp
+  NAME "lInftyCV_resection"
+  LINKS aliceVision_multiview_test_data
+        aliceVision_multiview
+        aliceVision_lInftyComputerVision
+)
+alicevision_add_test(lInftyCV_resection_robust_test.cpp
+  NAME "lInftyCV_resectionRobust"
+  LINKS aliceVision_multiview_test_data
+        aliceVision_multiview
+        aliceVision_lInftyComputerVision
+)
 # Linfinity Global translations from triplets of heading directions
-UNIT_TEST(aliceVision lInftyCV_global_translations_fromTriplets "${LOCAL_LIBS}")
+alicevision_add_test(lInftyCV_global_translations_fromTriplets_test.cpp
+  NAME "lInftyCV_globalTranslationsFromTriplets"
+  LINKS aliceVision_multiview_test_data
+        aliceVision_multiview
+        aliceVision_lInftyComputerVision
+)
 
 # Linfinity Global translations from heading directions
-UNIT_TEST(aliceVision lInftyCV_global_translations_fromTij "${LOCAL_LIBS}")
-
+alicevision_add_test(lInftyCV_global_translations_fromTij_test.cpp
+  NAME "lInftyCV_globalTranslationsFromTij"
+  LINKS aliceVision_multiview_test_data
+        aliceVision_multiview
+        aliceVision_lInftyComputerVision
+)
 # Linfinity Translation and Structure 
-UNIT_TEST(aliceVision lInftyCV_tijsAndXis "${LOCAL_LIBS}")
+alicevision_add_test(lInftyCV_tijsAndXis_test.cpp
+  NAME "lInftyCV_tijsAndXis"
+  LINKS aliceVision_multiview_test_data
+        aliceVision_multiview
+        aliceVision_lInftyComputerVision
+)
 
 # Linfinity Translation and Structure with noise handling
-UNIT_TEST(aliceVision lInftyCV_tijsAndXis_outlier "${LOCAL_LIBS}")
-
+alicevision_add_test(lInftyCV_tijsAndXis_outlier_test.cpp
+  NAME "lInftyCV_tijsAndXisOutlier"
+  LINKS aliceVision_multiview_test_data
+        aliceVision_multiview
+        aliceVision_lInftyComputerVision
+)

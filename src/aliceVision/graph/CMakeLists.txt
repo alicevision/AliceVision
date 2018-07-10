@@ -13,23 +13,13 @@ set(graph_files_test
   triplet_test.cpp
 )
 
-add_library(aliceVision_graph INTERFACE)
-
-target_link_libraries(aliceVision_graph
-  INTERFACE
-    aliceVision_system 
+alicevision_add_interface(aliceVision_graph
+  SOURCES ${graph_files_headers} ${graph_files_test}
+  LINKS
+    aliceVision_system
     ${LEMON_LIBRARY}
 )
 
-install(TARGETS aliceVision_graph 
-  EXPORT aliceVision-targets 
-)
-
-UNIT_TEST(aliceVision connectedComponent "aliceVision_graph")
-UNIT_TEST(aliceVision triplet            "aliceVision_graph")
-
-add_custom_target(aliceVision_graph_ide SOURCES ${graph_files_headers} ${graph_files_test})
-
-set_property(TARGET aliceVision_graph_ide
-  PROPERTY FOLDER AliceVision
-)
+# Unit tests
+alicevision_add_test(connectedComponent_test.cpp NAME "graph_connectedComponent" LINKS aliceVision_graph)
+alicevision_add_test(triplet_test.cpp            NAME "graph_triplet"            LINKS aliceVision_graph)

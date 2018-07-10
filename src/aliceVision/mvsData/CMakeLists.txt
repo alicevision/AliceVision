@@ -1,5 +1,5 @@
 # Headers
-set(structures_files_headers
+set(mvsData_files_headers
   Color.hpp
   geometry.hpp
   geometryTriTri.hpp
@@ -23,7 +23,7 @@ set(structures_files_headers
 )
 
 # Sources
-set(structures_files_sources
+set(mvsData_files_sources
   jetColorMap.cpp
   image.cpp
   geometry.cpp
@@ -34,31 +34,13 @@ set(structures_files_sources
   Universe.cpp
 )
 
-add_library(aliceVision_mvsData
-  ${structures_files_headers}
-  ${structures_files_sources}
-)
-
-target_include_directories(aliceVision_mvsData
-  PUBLIC $<BUILD_INTERFACE:${ALICEVISION_INCLUDE_DIR}>
-         $<BUILD_INTERFACE:${generatedDir}>
-         $<INSTALL_INTERFACE:include>
-         ${ZLIB_INCLUDE_DIR}
-         ${Boost_INCLUDE_DIR}
-)
-
-target_link_libraries(aliceVision_mvsData
-  PUBLIC 
+alicevision_add_library(aliceVision_mvsData
+  SOURCES ${mvsData_files_headers} ${mvsData_files_sources}
+  PUBLIC_LINKS
     aliceVision_system
     ${ZLIB_LIBRARIES}
     ${Boost_FILESYSTEM_LIBRARY}
-)
-
-set_property(TARGET aliceVision_mvsData
-  PROPERTY FOLDER AliceVision
-)
-
-install(TARGETS aliceVision_mvsData
-  DESTINATION lib
-  EXPORT aliceVision-targets
+  PUBLIC_INCLUDE_DIRS
+    ${ZLIB_INCLUDE_DIR}
+    ${Boost_INCLUDE_DIR}
 )
