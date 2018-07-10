@@ -25,11 +25,18 @@ set(ALICEVISION_BUNDLE_PREFIX "${CMAKE_INSTALL_PREFIX}/bundle" CACHE STRING "Pat
 
 set(ALICEVISION_ROOT ${PROJECT_BINARY_DIR})
 
+# ==============================================================================
+# GNUInstallDirs CMake module
+# - Define GNU standard installation directories
+# - Provides install directory variables as defined by the GNU Coding Standards.
+# ==============================================================================
+include(GNUInstallDirs)
+
 if(APPLE)
   set(CMAKE_MACOSX_RPATH 1)
-  set(CMAKE_INSTALL_RPATH "@loader_path/../lib:@loader_path")
+  set(CMAKE_INSTALL_RPATH "@loader_path/../${CMAKE_INSTALL_LIBDIR}:@loader_path")
 elseif(UNIX)
-  set(CMAKE_INSTALL_RPATH "\\$ORIGIN/../lib:\\$ORIGIN")
+  set(CMAKE_INSTALL_RPATH "\\$ORIGIN/../${CMAKE_INSTALL_LIBDIR}:\\$ORIGIN")
 endif()
 
 message(STATUS "----------------------------------------")

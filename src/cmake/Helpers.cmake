@@ -57,8 +57,13 @@ function(alicevision_add_library library_name)
   )
 
   install(TARGETS ${library_name}
-    DESTINATION lib
     EXPORT aliceVision-targets
+    ARCHIVE
+        DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    LIBRARY
+        DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    RUNTIME
+        DESTINATION ${CMAKE_INSTALL_BINDIR}
   )
 endfunction()
 
@@ -136,7 +141,7 @@ function(alicevision_add_software software_name)
   # )
 
   install(TARGETS ${software_name}
-    DESTINATION bin/
+    DESTINATION ${CMAKE_INSTALL_BINDIR}
   )
 endfunction()
 
