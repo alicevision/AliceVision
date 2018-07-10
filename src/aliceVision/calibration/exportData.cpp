@@ -183,10 +183,10 @@ void saveCameraParams(const std::string& filename,
   if (cvCalibFlags != 0)
   {
     sprintf(asctime(t2), "flags: %s%s%s%s",
-            cvCalibFlags & cv::CALIB_USE_INTRINSIC_GUESS ? "+use_intrinsic_guess" : "",
-            cvCalibFlags & cv::CALIB_FIX_ASPECT_RATIO ? "+fix_aspectRatio" : "",
-            cvCalibFlags & cv::CALIB_FIX_PRINCIPAL_POINT ? "+fix_principal_point" : "",
-            cvCalibFlags & cv::CALIB_ZERO_TANGENT_DIST ? "+zero_tangent_dist" : "");
+            (cvCalibFlags & cv::CALIB_USE_INTRINSIC_GUESS) ? "+use_intrinsic_guess" : "",
+            (cvCalibFlags & cv::CALIB_FIX_ASPECT_RATIO) ? "+fix_aspectRatio" : "",
+            (cvCalibFlags & cv::CALIB_FIX_PRINCIPAL_POINT) ? "+fix_principal_point" : "",
+            (cvCalibFlags & cv::CALIB_ZERO_TANGENT_DIST) ? "+zero_tangent_dist" : "");
     fs.writeComment(asctime(t2), 0);
   }
 
