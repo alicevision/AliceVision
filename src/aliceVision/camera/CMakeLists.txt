@@ -11,16 +11,8 @@ set(camera_files_headers
 	PinholeRadial.hpp
 )
 
-# Sources
-set(camera_files_test
-  pinholeBrown_test.cpp
-  pinholeFisheye1_test.cpp
-  pinholeFisheye_test.cpp
-  pinholeRadial_test.cpp
-)
-
 alicevision_add_interface(aliceVision_camera
-  SOURCES ${camera_files_headers} ${camera_files_test}
+  SOURCES ${camera_files_headers}
   LINKS
     aliceVision_geometry
     aliceVision_multiview

@@ -7,14 +7,8 @@ set(graph_files_headers
   Triplet.hpp
 )
 
-# Sources
-set(graph_files_test
-  connectedComponent_test.cpp
-  triplet_test.cpp
-)
-
 alicevision_add_interface(aliceVision_graph
-  SOURCES ${graph_files_headers} ${graph_files_test}
+  SOURCES ${graph_files_headers}
   LINKS
     aliceVision_system
     ${LEMON_LIBRARY}

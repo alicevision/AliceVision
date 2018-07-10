@@ -12,11 +12,6 @@ set(colorHarmonization_files_sources
   GainOffsetConstraintBuilder.cpp
 )
 
-# Tests
-set(colorHarmonization_files_test
-  gainOffsetConstraintBuilder_test.cpp
-)
-
 alicevision_add_library(aliceVision_colorHarmonization
   SOURCES ${colorHarmonization_files_headers} ${colorHarmonization_files_sources}
   PUBLIC_LINKS

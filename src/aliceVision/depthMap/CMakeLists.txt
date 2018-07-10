@@ -71,10 +71,3 @@ alicevision_add_library(aliceVision_depthMap
   PUBLIC_INCLUDE_DIRS
     ${CUDA_INCLUDE_DIRS}
 )
-
-# TODO : PUBLIC
-#target_link_libraries(aliceVision_depthMap
-#  ${CUDA_CUDADEVRT_LIBRARY}
-#  ${CUDA_CUBLAS_LIBRARIES}
-#)
-

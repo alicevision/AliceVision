@@ -12,13 +12,6 @@ set(geometry_files_sources
     rigidTransformation3D.cpp
 )
 
-# Tests
-set(geometry_files_test
-    frustumIntersection_test.cpp
-    halfSpaceIntersection_test.cpp
-    rigidTransformation3D_test.cpp
-)
-
 alicevision_add_library(aliceVision_geometry
   SOURCES ${geometry_files_headers} ${geometry_files_sources}
   PUBLIC_LINKS

@@ -16,13 +16,8 @@ set(robustEstimation_files_headers
   ScoreEvaluator.hpp
 )
 
-# Sources
-set(robustEstimation_files_test
-  ""
-)
-
 alicevision_add_interface(aliceVision_robustEstimation
-  SOURCES ${robustEstimation_files_headers} ${robustEstimation_files_test}
+  SOURCES ${robustEstimation_files_headers}
   LINKS
     aliceVision_camera
     aliceVision_feature
