@@ -7,70 +7,43 @@
 
 #include "Datasheet.hpp"
 
-#include <boost/algorithm/string.hpp>
-
-#include <iterator>
+#include <string>
 #include <algorithm>
-#include <vector>
+
+#include <boost/algorithm/string/predicate.hpp>
 
 namespace aliceVision {
 namespace sensorDB {
 
-bool Datasheet::operator==(const Datasheet& ds) const
+bool Datasheet::operator==(const Datasheet& other) const
 {
-  bool isEqual = false;
-  std::vector<std::string> vec_brand;
-  boost::split(vec_brand, ds._brand, boost::is_any_of(" "));
+  std::string brandA = _brand;
+  std::string brandB = other._brand;
 
-  std::string brandlower = _brand;
-  boost::algorithm::to_lower(brandlower);
+  std::transform(brandA.begin(), brandA.end(), brandA.begin(), ::tolower); //tolower
+  std::transform(brandB.begin(), brandB.end(), brandB.begin(), ::tolower); //tolower
 
-  for(const auto& brand : vec_brand)
+  brandA.erase(std::remove_if(brandA.begin(), brandA.end(), ::ispunct), brandA.end()); //remove punctuation
+  brandB.erase(std::remove_if(brandB.begin(), brandB.end(), ::ispunct), brandB.end()); //remove punctuation
+
+  if(brandA == brandB)
   {
-    std::string brandlower2 = brand;
-    boost::algorithm::to_lower(brandlower2);
+    std::string modelA = _model;
+    std::string modelB = other._model;
 
-    //ALICEVISION_LOG_DEBUG(brandlower << "\t" << brandlower2);
-    if (brandlower == brandlower2)
-    {
-      std::vector<std::string> vec_model1;
-      boost::split(vec_model1, ds._model, boost::is_any_of(" "));
-      std::vector<std::string> vec_model2;
-      boost::split(vec_model2, _model, boost::is_any_of(" "));
-      bool isAllFound = true;
+    std::transform(modelA.begin(), modelA.end(), modelA.begin(), ::tolower); //tolower
+    std::transform(modelB.begin(), modelB.end(), modelB.begin(), ::tolower); //tolower
 
-      for(const auto& model1 : vec_model1)
-      {
-        if(!std::any_of(model1.begin(), model1.end(), ::isdigit))
-        {
-          continue;
-        }
+    modelA.erase(std::remove_if(modelA.begin(), modelA.end(), ::ispunct), modelA.end()); //remove punctuation
+    modelB.erase(std::remove_if(modelB.begin(), modelB.end(), ::ispunct), modelB.end()); //remove punctuation
 
-        std::string modellower1 = model1;
-        boost::algorithm::to_lower(modellower1);
-
-        bool isFound = false;
-        for(const auto& model2 : vec_model2)
-        {
-          std::string modellower2 = model2;
-          boost::algorithm::to_lower(modellower2);
-
-          if (modellower2 == modellower1)
-          {
-            isFound = true;
-          }
-        }
-        if ( !isFound )
-        {
-          isAllFound = false;
-          break;
-        }
-      }
-      if ( isAllFound )
-        isEqual = true;
-    }
+    if((modelA == modelB) ||
+       (boost::algorithm::ends_with(modelA, modelB)) ||
+       (boost::algorithm::ends_with(modelB, modelA)))
+      return true;
   }
-  return isEqual;
+
+  return false;
 }
 
 } // namespace sensorDB
