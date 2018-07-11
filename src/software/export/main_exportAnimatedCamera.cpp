@@ -1,18 +1,24 @@
 // This file is part of the AliceVision project.
+// Copyright (c) 2018 AliceVision contributors.
 // This Source Code Form is subject to the terms of the Mozilla Public License,
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/cmdline.hpp>
+#include <aliceVision/system/Timer.hpp>
 #include <aliceVision/sfm/sfmDataIO.hpp>
 #include <aliceVision/sfm/AlembicExporter.hpp>
+#include <aliceVision/image/all.hpp>
 
 #include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>
+#include <boost/progress.hpp>
 
 #include <cstdlib>
+#include <limits>
 #include <string>
+#include <regex>
 
 using namespace aliceVision;
 namespace po = boost::program_options;
@@ -24,8 +30,13 @@ int main(int argc, char** argv)
 
   std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
   std::string sfmDataFilename;
-  std::string sfmDataFilterFilename;
-  std::string outFilename;
+  std::string outFolder;
+  std::string outImageFileTypeName = image::EImageFileType_enumToString(image::EImageFileType::JPEG);
+  bool undistortedImages = true;
+
+  // user optional parameters
+
+  std::string viewFilter;
 
   po::options_description allParams("AliceVision exportAnimatedCamera");
 
@@ -33,17 +44,25 @@ int main(int argc, char** argv)
   requiredParams.add_options()
     ("input,i", po::value<std::string>(&sfmDataFilename)->required(),
       "SfMData file containing a complete SfM.")
-    ("filter", po::value<std::string>(&sfmDataFilterFilename)->required(),
-      "A SfMData file use as filter.")
-    ("output,o", po::value<std::string>(&outFilename)->required(),
-      "Output file path for the alembic animated camera.");
+    ("output,o", po::value<std::string>(&outFolder)->required(),
+      "Output folder.");
+
+  po::options_description optionalParams("Optional parameters");
+  optionalParams.add_options()
+    ("exportUndistortedImages", po::value<bool>(&undistortedImages)->default_value(undistortedImages),
+      "Export undistorted images for the animated camera(s).\n"
+      "If false, animated camera(s) exported with original frame paths.")
+    ("viewFilter", po::value<std::string>(&viewFilter)->default_value(viewFilter),
+      "Path to the output SfMData file (with only views and poses).")
+    ("undistortedImageType", po::value<std::string>(&outImageFileTypeName)->default_value(outImageFileTypeName),
+      image::EImageFileType_informations().c_str());
 
   po::options_description logParams("Log parameters");
   logParams.add_options()
     ("verboseLevel,v", po::value<std::string>(&verboseLevel)->default_value(verboseLevel),
       "verbosity level (fatal,  error, warning, info, debug, trace).");
 
-  allParams.add(requiredParams).add(logParams);
+  allParams.add(requiredParams).add(optionalParams).add(logParams);
 
   po::variables_map vm;
   try
@@ -89,86 +108,174 @@ int main(int argc, char** argv)
     ALICEVISION_LOG_ERROR("The input SfMData file '" << sfmDataFilename << "' is empty.");
     return EXIT_FAILURE;
   }
+  system::Timer timer;
+  std::regex regexFilter;
 
-  sfm::SfMData sfmDataFilter;
-  if(!sfm::Load(sfmDataFilter, sfmDataFilterFilename, sfm::ESfMData::VIEWS))
+  if(!viewFilter.empty())
+    regexFilter = std::regex(viewFilter);
+
+  // set output file type
+  image::EImageFileType outputFileType = image::EImageFileType_stringToEnum(outImageFileTypeName);
+
+  const fs::path undistortedImagesFolderPath = fs::path(outFolder) / "undistort";
+
+  if(undistortedImages && !fs::exists(undistortedImagesFolderPath))
+    fs::create_directory(undistortedImagesFolderPath);
+
+  std::map<std::string, std::map<std::size_t, IndexT>> videoViewPerFrame;
+  std::map<std::string, std::vector<std::pair<std::size_t, IndexT>> > dslrViewPerKey;
+
+  ALICEVISION_LOG_INFO("Build animated camera(s)...");
+
+  image::Image<image::RGBfColor> image, image_ud;
+  boost::progress_display progressBar(sfmData.getViews().size());
+
+  for(const auto& viewPair : sfmData.getViews())
   {
-    ALICEVISION_LOG_ERROR("The input SfMData file '" << sfmDataFilterFilename << "' cannot be read.");
-    return EXIT_FAILURE;
-  }
+    const sfm::View& view = *(viewPair.second);
 
-  if(sfmDataFilter.getViews().empty())
-  {
-    ALICEVISION_LOG_ERROR("The input SfMData file '" << sfmDataFilterFilename << "' is empty.");
-    return EXIT_FAILURE;
-  }
+    ++progressBar;
 
-  const std::string cameraName = fs::path(outFilename).filename().string();
-
-  std::map<unsigned int, IndexT> viewToFrame;
-
-  for(const auto& viewPair : sfmDataFilter.getViews())
-  {
-    const std::string imagePath = fs::path(viewPair.second->getImagePath()).stem().string();
-
-    const std::size_t lastCharIndex = imagePath.find_last_not_of("0123456789");
-
-    if(lastCharIndex >= imagePath.size())
+    // regex filter
+    if(!viewFilter.empty() &&
+       !std::regex_match(view.getImagePath(), regexFilter))
       continue;
 
-    const unsigned int frame = std::stoul(imagePath.substr(lastCharIndex + 1));
+    // pose and intrinsic defined
+    if(!sfmData.isPoseAndIntrinsicDefined(&view))
+      continue;
 
-    viewToFrame.emplace(frame, viewPair.first);
-  }
+    const std::string imagePathStem = fs::path(viewPair.second->getImagePath()).stem().string();
+    std::size_t lastCharIndex = imagePathStem.find_last_not_of("0123456789");
 
-  if(viewToFrame.empty())
-  {
-    ALICEVISION_LOG_ERROR("Cannot find sequence pattern in image paths.");
-    return EXIT_FAILURE;
-  }
+    if(lastCharIndex == std::string::npos) //no char
+      lastCharIndex = 0;
 
+    std::string cameraName = imagePathStem.substr(0, lastCharIndex) + "_"+ view.getMetadataMake() + "_" + view.getMetadataModel();
 
-  ALICEVISION_LOG_DEBUG("Begin export.");
+    if(cameraName.size() <= 2)
+      cameraName = "Undefined";
 
-  sfm::AlembicExporter exporter(outFilename);
-  exporter.initAnimatedCamera(cameraName);
+    std::string dateTimeMetadata = view.getMetadataOrEmpty("Exif:DateTimeOriginal");
 
-  unsigned int firstFrame = viewToFrame.begin()->first;
-
-  for(unsigned int frame = 1; frame <= viewToFrame.rbegin()->first; ++frame)
-  {
-    if(frame >= firstFrame)
+    if(!dateTimeMetadata.empty()) // picture
     {
-      ALICEVISION_LOG_DEBUG("Frame: " << frame);
+      dateTimeMetadata.erase(std::remove_if(dateTimeMetadata.begin(),dateTimeMetadata.end(), ::isspace), dateTimeMetadata.end());
+      dateTimeMetadata.erase(std::remove_if(dateTimeMetadata.begin(),dateTimeMetadata.end(), ::ispunct), dateTimeMetadata.end());
 
-      const auto findFrameIt = viewToFrame.find(frame);
-      if(findFrameIt != viewToFrame.end())
+      std::size_t key = std::numeric_limits<unsigned char>::max();
+
+      if(!dateTimeMetadata.empty())
+          key = std::stoul(dateTimeMetadata);
+
+      dslrViewPerKey[cameraName].push_back({key, view.getViewId()});
+    }
+    else if(lastCharIndex < imagePathStem.size()) // video
+    {
+        const std::size_t frame = std::stoul(imagePathStem.substr(lastCharIndex + 1));
+        videoViewPerFrame[cameraName][frame] = view.getViewId();
+    }
+    else // no time or sequence information
+    {
+      dslrViewPerKey[cameraName].push_back({0, view.getViewId()});
+    }
+
+    // undistort camera images
+    if(undistortedImages)
+    {
+      sfm::Intrinsics::const_iterator iterIntrinsic = sfmData.getIntrinsics().find(view.getIntrinsicId());
+
+      const std::string dstImage = (undistortedImagesFolderPath / (imagePathStem + "." + image::EImageFileType_enumToString(outputFileType))).string();
+      const camera::IntrinsicBase * cam = iterIntrinsic->second.get();
+
+      image::readImage(view.getImagePath(), image);
+
+      if (cam->isValid() && cam->have_disto())
+      {
+        // undistort the image and save it
+        camera::UndistortImage(image, cam, image_ud, image::FBLACK, true); // correct principal point
+        image::writeImage(dstImage, image_ud);
+      }
+      else // (no distortion)
+      {
+        // copy the image since there is no distortion
+        image::writeImage(dstImage, image);
+      }
+    }
+  }
+
+  // print results
+  {
+    std::stringstream ss;
+
+    ss << "Camera(s) found:" << std::endl << "\t- # video camera(s): " << videoViewPerFrame.size() << std::endl;
+
+    for(const auto& camera : videoViewPerFrame)
+      ss << "\t    - " << camera.first << " | " << camera.second.size() << " frame(s)" << std::endl;
+
+    ss << "\t- # dslr camera(s): " << dslrViewPerKey.size() << std::endl;
+
+    for(const auto& camera : dslrViewPerKey)
+      ss << "\t    - " << camera.first << " | " << camera.second.size() << " image(s)" << std::endl;
+
+    ALICEVISION_LOG_INFO(ss.str());
+  }
+
+  ALICEVISION_LOG_INFO("Export animated camera(s)...");
+
+  sfm::AlembicExporter exporter((fs::path(outFolder) / "camera.abc").string());
+
+  for(const auto& cameraViews : videoViewPerFrame)
+  {
+    const std::map<std::size_t, IndexT>& frameToView = cameraViews.second;
+    const std::size_t firstFrame = cameraViews.second.begin()->first;
+
+    exporter.initAnimatedCamera(cameraViews.first, firstFrame);
+
+    for(std::size_t frame = firstFrame; frame <= frameToView.rbegin()->first; ++frame)
+    {
+      const auto findFrameIt = frameToView.find(frame);
+
+      if(findFrameIt != frameToView.end())
       {
         const IndexT viewId = findFrameIt->second;
 
         const auto findViewIt = sfmData.getViews().find(viewId);
         if(findViewIt != sfmData.getViews().end())
         {
-          if(sfmData.isPoseAndIntrinsicDefined(findViewIt->second.get()))
-          {
-            ALICEVISION_LOG_DEBUG("Add Camera Keyframe");
+            ALICEVISION_LOG_DEBUG("[" + cameraViews.first +"][video] Keyframe added");
             const IndexT intrinsicId = findViewIt->second->getIntrinsicId();
             const camera::Pinhole* cam = dynamic_cast<camera::Pinhole*>(sfmData.getIntrinsicPtr(intrinsicId));
-            const geometry::Pose3 pose = sfmData.getPose(*findViewIt->second).getTransform();
-            exporter.addCameraKeyframe(pose,
-                                       cam,
-                                       findViewIt->second->getImagePath(),
-                                       viewId,
-                                       intrinsicId);
+            const sfm::CameraPose pose = sfmData.getPose(*findViewIt->second);
+            const std::string& imagePath = findViewIt->second->getImagePath();
+            const std::string undistortedImagePath = (undistortedImagesFolderPath / (fs::path(imagePath).stem().string() + "." + image::EImageFileType_enumToString(outputFileType))).string();
+
+            exporter.addCameraKeyframe(pose.getTransform(), cam, (undistortedImages) ? undistortedImagePath : imagePath, viewId, intrinsicId);
             continue;
-          }
         }
       }
+      exporter.jumpKeyframe(std::to_string(frame));
     }
-    exporter.jumpKeyframe(std::to_string(frame));
   }
 
+  for(auto& cameraViews : dslrViewPerKey)
+  {
+    exporter.initAnimatedCamera(cameraViews.first);
+    std::sort(cameraViews.second.begin(), cameraViews.second.end());
+
+    for(const auto& cameraView : cameraViews.second)
+    {
+        ALICEVISION_LOG_DEBUG("[" + cameraViews.first +"][dslr] Keyframe added");
+        const sfm::View& view = *(sfmData.getViews().at(cameraView.second));
+        const camera::Pinhole* cam = dynamic_cast<camera::Pinhole*>(sfmData.getIntrinsicPtr(view.getIntrinsicId()));
+        const sfm::CameraPose pose = sfmData.getPose(view);
+        const std::string& imagePath = view.getImagePath();
+        const std::string undistortedImagePath = (undistortedImagesFolderPath / (fs::path(imagePath).stem().string() + "." + image::EImageFileType_enumToString(outputFileType))).string();
+
+        exporter.addCameraKeyframe(pose.getTransform(), cam, (undistortedImages) ? undistortedImagePath : imagePath, view.getViewId(), view.getIntrinsicId());
+    }
+  }
+
+  ALICEVISION_LOG_INFO("Task done in (s): " + std::to_string(timer.elapsed()));
   return EXIT_SUCCESS;
 }
-
-
