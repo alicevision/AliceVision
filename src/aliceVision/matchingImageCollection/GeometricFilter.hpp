@@ -77,7 +77,7 @@ void robustModelEstimation(
 
 #pragma omp critical
         {
-          out_geometricMatches.insert(std::make_pair(currentPair, std::move(inliers)));
+          out_geometricMatches.emplace(currentPair, std::move(inliers));
         }
 
       }
