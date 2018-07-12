@@ -409,6 +409,22 @@ bool loadJSON(SfMData& sfmData, const std::string& filename, ESfMData partFlag, 
     for(bpt::ptree::value_type& matchingFolderNode : fileTree.get_child("matchesFolders"))
       sfmData.addMatchesFolder(matchingFolderNode.second.get_value<std::string>());
 
+  // intrinsics
+  if(loadIntrinsics && fileTree.count("intrinsics"))
+  {
+    Intrinsics& intrinsics = sfmData.getIntrinsics();
+
+    for(bpt::ptree::value_type &intrinsicNode : fileTree.get_child("intrinsics"))
+    {
+      IndexT intrinsicId;
+      std::shared_ptr<camera::IntrinsicBase> intrinsic;
+
+      loadIntrinsic(intrinsicId, intrinsic, intrinsicNode.second);
+
+      intrinsics.emplace(intrinsicId, intrinsic);
+    }
+  }
+
   // views
   if(loadViews && fileTree.count("views"))
   {
@@ -444,22 +460,6 @@ bool loadJSON(SfMData& sfmData, const std::string& filename, ESfMData partFlag, 
         loadView(view, viewNode.second);
         views.emplace(view.getViewId(), std::make_shared<View>(view));
       }
-    }
-  }
-
-  // intrinsics
-  if(loadIntrinsics && fileTree.count("intrinsics"))
-  {
-    Intrinsics& intrinsics = sfmData.getIntrinsics();
-
-    for(bpt::ptree::value_type &intrinsicNode : fileTree.get_child("intrinsics"))
-    {
-      IndexT intrinsicId;
-      std::shared_ptr<camera::IntrinsicBase> intrinsic;
-
-      loadIntrinsic(intrinsicId, intrinsic, intrinsicNode.second);
-
-      intrinsics.emplace(intrinsicId, intrinsic);
     }
   }
 
