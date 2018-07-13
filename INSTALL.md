@@ -47,7 +47,7 @@ AliceVision depends on:
 Other optional libraries can enable specific features (check "CMake Options" for enabling them):
 
 * OpenMP (enable multi-threading)
-* Mosek (linear programming)
+* Mosek 5 (linear programming)
 * OpenCV >= 3.2 (feature extraction, calibration module, video IO)
 * Alembic (data I/O)
 * CCTag (feature extraction/matching and localization on CPU or GPU)
