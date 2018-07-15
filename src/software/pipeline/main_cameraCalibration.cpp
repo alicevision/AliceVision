@@ -25,8 +25,8 @@
 #include <opencv2/opencv.hpp>
 #include <opencv2/core/core.hpp>
 #include <opencv2/core/eigen.hpp>
-#include <opencv2/imgproc/imgproc.hpp>
-#include <opencv2/calib3d/calib3d.hpp>
+#include <opencv2/imgproc.hpp>
+#include <opencv2/calib3d.hpp>
 
 #include <stdio.h>
 #include <ctime>
@@ -112,10 +112,10 @@ int main(int argc, char** argv)
       return EXIT_SUCCESS;
     }
     
-    cvCalibFlags |= CV_CALIB_ZERO_TANGENT_DIST;
+    cvCalibFlags |= cv::CALIB_ZERO_TANGENT_DIST;
     if (nbDistortionCoef < 1 || nbDistortionCoef > 6)
       throw boost::program_options::invalid_option_value(std::string("Only supports 2 or 3 radial coefs: ") + std::to_string(nbDistortionCoef));
-    const std::array<int, 6> fixDistortionCoefs = {CV_CALIB_FIX_K1, CV_CALIB_FIX_K2, CV_CALIB_FIX_K3, CV_CALIB_FIX_K4, CV_CALIB_FIX_K5, CV_CALIB_FIX_K6};
+    const std::array<int, 6> fixDistortionCoefs = {cv::CALIB_FIX_K1, cv::CALIB_FIX_K2, cv::CALIB_FIX_K3, cv::CALIB_FIX_K4, cv::CALIB_FIX_K5, cv::CALIB_FIX_K6};
     for (int i = nbDistortionCoef; i < 6; ++i)
       cvCalibFlags |= fixDistortionCoefs[i];
 
