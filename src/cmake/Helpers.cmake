@@ -17,6 +17,21 @@ function(alicevision_add_library library_name)
     message(FATAL_ERROR "You must provide the library SOURCES in 'alicevision_add_library'")
   endif()
 
+  # Generate Windows versioning information
+  if(MSVC)
+    set(ALICEVISION_INSTALL_VERSION_MAJOR ${ALICEVISION_VERSION_MAJOR})
+    set(ALICEVISION_INSTALL_VERSION_MINOR ${ALICEVISION_VERSION_MINOR})
+    set(ALICEVISION_INSTALL_VERSION_REVISION ${ALICEVISION_VERSION_REVISION})
+    set(ALICEVISION_INSTALL_NAME ${library_name})
+    set(ALICEVISION_INSTALL_LIBRARY 1)
+    configure_file(
+      "${CMAKE_SOURCE_DIR}/src/cmake/version.rc.in"
+      "${CMAKE_CURRENT_BINARY_DIR}/${library_name}_version.rc"
+      @ONLY
+    )
+    list(APPEND LIBRARY_SOURCES "${CMAKE_CURRENT_BINARY_DIR}/${library_name}_version.rc")
+  endif()
+
   if(NOT LIBRARY_USE_CUDA)
     add_library(${library_name} ${LIBRARY_SOURCES})
   elseif(BUILD_SHARED_LIBS)
@@ -131,6 +146,21 @@ function(alicevision_add_software software_name)
       message(FATAL_ERROR "Failed to retrieve the AliceVision software version the source code. Missing ALICEVISION_SOFTWARE_VERSION_${v}.")
     endif()
   endforeach()
+
+  # Generate Windows versioning information
+  if(MSVC)
+    set(ALICEVISION_INSTALL_VERSION_MAJOR ${ALICEVISION_SOFTWARE_VERSION_MAJOR})
+    set(ALICEVISION_INSTALL_VERSION_MINOR ${ALICEVISION_SOFTWARE_VERSION_MINOR})
+    set(ALICEVISION_INSTALL_VERSION_REVISION 0)
+    set(ALICEVISION_INSTALL_NAME ${software_name})
+    set(ALICEVISION_INSTALL_LIBRARY 0) # software
+    configure_file(
+      "${CMAKE_SOURCE_DIR}/src/cmake/version.rc.in"
+      "${CMAKE_CURRENT_BINARY_DIR}/${software_name}_version.rc"
+      @ONLY
+    )
+    list(APPEND SOFTWARE_SOURCE "${CMAKE_CURRENT_BINARY_DIR}/${software_name}_version.rc")
+  endif()
 
   add_executable(${software_name} ${SOFTWARE_SOURCE})
 
