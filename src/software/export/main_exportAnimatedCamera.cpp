@@ -112,7 +112,14 @@ int main(int argc, char** argv)
   std::regex regexFilter;
 
   if(!viewFilter.empty())
-    regexFilter = std::regex(viewFilter);
+  {
+    std::string filterToRegex = viewFilter;
+    filterToRegex = std::regex_replace(filterToRegex, std::regex("\\*"), std::string("(.*)"));
+    filterToRegex = std::regex_replace(filterToRegex, std::regex("\\?"), std::string("(.)"));
+    filterToRegex = std::regex_replace(filterToRegex, std::regex("\\@"), std::string("[0-9]+")); // one @ correspond to one or more digits
+    filterToRegex = std::regex_replace(filterToRegex, std::regex("\\#"), std::string("[0-9]"));  // each # in pattern correspond to a digit
+    regexFilter = std::regex(filterToRegex);
+  }
 
   // set output file type
   image::EImageFileType outputFileType = image::EImageFileType_stringToEnum(outImageFileTypeName);
@@ -146,15 +153,33 @@ int main(int argc, char** argv)
       continue;
 
     const std::string imagePathStem = fs::path(viewPair.second->getImagePath()).stem().string();
-    std::size_t lastCharIndex = imagePathStem.find_last_not_of("0123456789");
+    std::string cameraName =  view.getMetadataMake() + "_" + view.getMetadataModel();
+    std::size_t frameN = 0;
+    bool isSequence = false;
 
-    if(lastCharIndex == std::string::npos) //no char
-      lastCharIndex = 0;
+    // check if the image is in a sequence
+    // regexFrame: ^(.*\D)?([0-9]+)([\-_\.].*[[:alpha:]].*)?$
+    std::regex regexFrame("^(.*\\D)?"    // the optional prefix which end with a non digit character
+                      "([0-9]+)"         // the sequence frame number
+                      "([\\-_\\.]"       // the suffix start with a separator
+                      ".*[[:alpha:]].*"  // at least one letter in the suffix
+                      ")?$"              // suffix is optional
+                      );
 
-    std::string cameraName = imagePathStem.substr(0, lastCharIndex) + "_"+ view.getMetadataMake() + "_" + view.getMetadataModel();
+    std::smatch matches;
+    if(std::regex_search(imagePathStem, matches, regexFrame))
+    {
+       const std::string prefix = matches[1];
+       const std::string suffix = matches[3];
+       frameN = std::stoi(matches[2]);
 
-    if(cameraName.size() <= 2)
-      cameraName = "Undefined";
+       if(prefix.empty() && suffix.empty())
+         cameraName = std::string("Undefined") + "_" + cameraName;
+       else
+         cameraName = prefix + "frame" + suffix + "_" + cameraName;
+
+       isSequence = true;
+    }
 
     std::string dateTimeMetadata = view.getMetadataOrEmpty("Exif:DateTimeOriginal");
 
@@ -170,9 +195,9 @@ int main(int argc, char** argv)
 
       dslrViewPerKey[cameraName].push_back({key, view.getViewId()});
     }
-    else if(lastCharIndex < imagePathStem.size()) // video
+    else if(isSequence) // video
     {
-        const std::size_t frame = std::stoul(imagePathStem.substr(lastCharIndex + 1));
+        const std::size_t frame = frameN;
         videoViewPerFrame[cameraName][frame] = view.getViewId();
     }
     else // no time or sequence information
