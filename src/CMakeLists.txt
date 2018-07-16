@@ -55,7 +55,7 @@ trilean_option(ALICEVISION_USE_OPENCV "Build opencv+aliceVision samples programs
 # Enable this to be able to use OpenCV SIFT in main_ComputeFeatures_OpenCV.
 option(ALICEVISION_USE_OCVSIFT "Add or not OpenCV SIFT in available features" OFF)
 
-option(ALICEVISION_USE_MESHSDFILTER "Use MeshSDFilter library (enable MeshDenoising and MeshDecimate)." ON)
+option(ALICEVISION_USE_MESHSDFILTER "Use MeshSDFilter library (enable MeshDenoising and MeshDecimate)" ON)
 
 option(ALICEVISION_REQUIRE_CERES_WITH_SUITESPARSE ON)
 
