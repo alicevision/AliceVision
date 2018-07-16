@@ -24,6 +24,11 @@
 #include <boost/filesystem.hpp>
 #include <boost/progress.hpp>
 
+// These constants define the current software version.
+// They must be updated when the command line is changed.
+#define ALICEVISION_SOFTWARE_VERSION_MAJOR 1
+#define ALICEVISION_SOFTWARE_VERSION_MINOR 0
+
 using namespace aliceVision;
 using namespace aliceVision::feature;
 using namespace aliceVision::matching;

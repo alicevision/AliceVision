@@ -21,12 +21,18 @@
 #include <string>
 #include <iostream>
 
+// These constants define the current software version.
+// They must be updated when the command line is changed.
+#define ALICEVISION_SOFTWARE_VERSION_MAJOR 1
+#define ALICEVISION_SOFTWARE_VERSION_MINOR 0
+
 using namespace svg;
 using namespace std;
 using namespace aliceVision;
 using namespace aliceVision::image;
 using namespace aliceVision::matching;
 using namespace aliceVision::robustEstimation;
+
 namespace po = boost::program_options;
 
 int main(int argc, char **argv) 

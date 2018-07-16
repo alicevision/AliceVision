@@ -14,7 +14,13 @@
 #include <cstdlib>
 #include <string>
 
+// These constants define the current software version.
+// They must be updated when the command line is changed.
+#define ALICEVISION_SOFTWARE_VERSION_MAJOR 1
+#define ALICEVISION_SOFTWARE_VERSION_MINOR 0
+
 using namespace aliceVision;
+
 namespace po = boost::program_options;
 namespace fs = boost::filesystem;
 

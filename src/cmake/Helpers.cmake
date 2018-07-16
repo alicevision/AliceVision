@@ -121,6 +121,17 @@ function(alicevision_add_software software_name)
     message(FATAL_ERROR "You must provide the software FOLDER in 'alicevision_add_software'")
   endif()
 
+  list(GET SOFTWARE_SOURCE 0 SOFTWARE_MAIN_CPP)
+  file(STRINGS ${SOFTWARE_MAIN_CPP} _ALICEVISION_SOFTWARE_CONTENTS REGEX "#define ALICEVISION_SOFTWARE_VERSION_")
+
+  foreach(v MAJOR MINOR)
+    if("${_ALICEVISION_SOFTWARE_CONTENTS}" MATCHES "#define ALICEVISION_SOFTWARE_VERSION_${v} ([0-9]+)")
+      set(ALICEVISION_SOFTWARE_VERSION_${v} "${CMAKE_MATCH_1}")
+    else()
+      message(FATAL_ERROR "Failed to retrieve the AliceVision software version the source code. Missing ALICEVISION_SOFTWARE_VERSION_${v}.")
+    endif()
+  endforeach()
+
   add_executable(${software_name} ${SOFTWARE_SOURCE})
 
   target_link_libraries(${software_name}
@@ -135,10 +146,10 @@ function(alicevision_add_software software_name)
     PROPERTY FOLDER ${SOFTWARE_FOLDER}
   )
 
-  # set_target_properties(${software_name}
-  #   PROPERTIES SOVERSION ${ALICEVISION_VERSION_MAJOR}
-  #   VERSION "${ALICEVISION_VERSION_MAJOR}.${ALICEVISION_VERSION_MINOR}"
-  # )
+  set_target_properties(${software_name}
+     PROPERTIES SOVERSION ${ALICEVISION_SOFTWARE_VERSION_MAJOR}
+     VERSION "${ALICEVISION_SOFTWARE_VERSION_MAJOR}.${ALICEVISION_SOFTWARE_VERSION_MINOR}"
+  )
 
   install(TARGETS ${software_name}
     DESTINATION ${CMAKE_INSTALL_BINDIR}

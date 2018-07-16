@@ -13,8 +13,14 @@
 #include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>
 
+// These constants define the current software version.
+// They must be updated when the command line is changed.
+#define ALICEVISION_SOFTWARE_VERSION_MAJOR 1
+#define ALICEVISION_SOFTWARE_VERSION_MINOR 0
+
 using namespace aliceVision;
 using namespace aliceVision::sfm;
+
 namespace po = boost::program_options;
 namespace fs = boost::filesystem;
 

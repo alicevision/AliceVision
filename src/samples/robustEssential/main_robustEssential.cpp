@@ -17,6 +17,11 @@
 #include <string>
 #include <iostream>
 
+// These constants define the current software version.
+// They must be updated when the command line is changed.
+#define ALICEVISION_SOFTWARE_VERSION_MAJOR 1
+#define ALICEVISION_SOFTWARE_VERSION_MINOR 0
+
 using namespace aliceVision;
 using namespace aliceVision::matching;
 using namespace aliceVision::image;
@@ -24,6 +29,7 @@ using namespace aliceVision::camera;
 using namespace aliceVision::geometry;
 using namespace svg;
 using namespace std;
+
 namespace fs = boost::filesystem;
 
 /// Read intrinsic K matrix from a file (ASCII)
