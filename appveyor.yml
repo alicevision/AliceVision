@@ -9,6 +9,7 @@ configuration:
   - Release
   # - Debug
 
+# TODO: openimageio[libraw] (not available yet on pre-installed vcpkg)
 install:
     - git submodule update --init --recursive
     - cmd: >-
@@ -22,7 +23,7 @@ install:
           alembic
           geogram
           eigen3
-          ceres
+          ceres[suitesparse]
           cuda
           --triplet %PLATFORM%-windows
     - vcpkg list
