@@ -78,8 +78,20 @@ nmake /version
 ```
 2. Build the required dependencies
 ```bash
-# Windows: make sure to set the VCPKG_DEFAULT_TRIPLET environment variable to "x64-windows" or specify it after each package
-vcpkg install zlib boost openimageio openexr alembic geogram eigen3 ceres
+cd <VCPKG_INSTALL_DIR>
+set VCPKG_ROOT=%cd%
+
+vcpkg install ^
+          boost-algorithm boost-accumulators boost-atomic boost-container boost-date-time boost-exception boost-filesystem boost-graph boost-log ^
+          boost-program-options boost-property-tree boost-ptr-container boost-regex boost-serialization boost-system boost-test boost-thread ^
+          openexr ^
+          openimageio[libraw] ^
+          alembic ^
+          geogram ^
+          eigen3 ^
+          ceres[suitesparse] ^
+          cuda ^
+          --triplet x64-windows
 ```
 3. Build AliceVision
 ```bash

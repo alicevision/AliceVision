@@ -57,7 +57,7 @@ option(ALICEVISION_USE_OCVSIFT "Add or not OpenCV SIFT in available features" OF
 
 option(ALICEVISION_USE_MESHSDFILTER "Use MeshSDFilter library (enable MeshDenoising and MeshDecimate)." ON)
 
-option(ALICEVISION_REQUIRE_CERES_WITH_SUITESPARSE ON)
+option(ALICEVISION_REQUIRE_CERES_WITH_SUITESPARSE "Require Ceres with SuiteSparse (ensure best performances)" ON)
 
 # Default build is in Release mode
 if(NOT CMAKE_BUILD_TYPE AND NOT MSVC)
@@ -333,7 +333,7 @@ if(ALICEVISION_BUILD_SFM)
   message(STATUS "Trying to find package Ceres for aliceVision: ${Ceres_DIR}")
   if(ALICEVISION_REQUIRE_CERES_WITH_SUITESPARSE)
     message(STATUS "By default, Ceres required SuiteSparse to ensure best performances. if you explicitly need to build without it, you can use the option: -DALICEVISION_REQUIRE_CERES_WITH_SUITESPARSE=OFF")
-    find_package(Ceres QUIET REQUIRED SuiteSparse CONFIG)
+    find_package(Ceres QUIET REQUIRED COMPONENTS SuiteSparse CONFIG)
   else()
     find_package(Ceres CONFIG QUIET CONFIG)
   endif()
