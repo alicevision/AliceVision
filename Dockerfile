@@ -32,6 +32,6 @@ RUN apt-get clean && apt-get update && apt-get install -y --no-install-recommend
 
 COPY . /opt/alicevision
 WORKDIR /opt/alicevision/build
-RUN cmake .. -DCMAKE_BUILD_TYPE=Release -DALICEVISION_BUILD_DEPENDENCIES:BOOL=ON && make aliceVision -j 2
+RUN cmake .. -DCMAKE_BUILD_TYPE=Release -DALICEVISION_BUILD_DEPENDENCIES:BOOL=ON && make aliceVision 
 # temporary fix, there is maybe something to do with the rpath in cmake
 ENV LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib
