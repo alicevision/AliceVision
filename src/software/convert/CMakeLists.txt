@@ -38,28 +38,6 @@ install(TARGETS aliceVision_convertFloatDescriptorToUchar
 	DESTINATION bin/
 )
 
-  
-# Convert to an alembic animated camera
-
-if(ALICEVISION_HAVE_ALEMBIC)
-	add_executable(aliceVision_convertAnimatedCamera main_convertAnimatedCamera.cpp)
-
-	target_link_libraries(aliceVision_convertAnimatedCamera
-		aliceVision_system
-		aliceVision_feature
-		aliceVision_sfm
-    ${Boost_LIBRARIES}
-	)
-
-	set_property(TARGET aliceVision_convertAnimatedCamera
-		PROPERTY FOLDER Software/Convert
-	)
-
-	install(TARGETS aliceVision_convertAnimatedCamera
-		DESTINATION bin/
-	)
-endif()
-
 # Convert image to EXR
 
 add_executable(aliceVision_convertRAW main_convertRAW.cpp)
