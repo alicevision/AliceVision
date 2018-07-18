@@ -26,6 +26,7 @@ install:
           ceres[suitesparse]
           cuda
           --triplet %PLATFORM%-windows
+          --recurse
     - vcpkg list
 
 
