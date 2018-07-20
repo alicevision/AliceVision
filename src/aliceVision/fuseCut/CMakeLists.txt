@@ -37,6 +37,4 @@ alicevision_add_library(aliceVision_fuseCut
     ${Boost_CONTAINER_LIBRARY}
   PRIVATE_LINKS
     nanoflann
-  PRIVATE_INCLUDE_DIRS
-    $<BUILD_INTERFACE:${NANOFLANN_INCLUDE_DIR}>
 )
