@@ -100,7 +100,7 @@ public:
    * @brief Initiate an animated camera
    * @param[in] name The camera identifier
    */
-  void initAnimatedCamera(const std::string &name);
+  void initAnimatedCamera(const std::string &name, std::size_t startFrame = 1);
   
 
 

@@ -6,6 +6,8 @@
 
 #include "aliceVision/calibration/calibration.hpp"
 
+#include <opencv2/calib3d.hpp>
+
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/Timer.hpp>
 
@@ -31,7 +33,7 @@ double computeReprojectionErrors(const std::vector<std::vector<cv::Point3f> >& o
   {
     cv::projectPoints(cv::Mat(objectPoints[i]), rvecs[i], tvecs[i],
                       cameraMatrix, distCoeffs, imagePoints2);
-    const double err = cv::norm(cv::Mat(imagePoints[i]), cv::Mat(imagePoints2), CV_L2);
+    const double err = cv::norm(cv::Mat(imagePoints[i]), cv::Mat(imagePoints2), cv::NORM_L2);
     const std::size_t n = (int) objectPoints[i].size();
     perViewErrors[i] = (float) std::sqrt(err * err / n);
     totalErr += err*err;
@@ -56,7 +58,7 @@ bool runCalibration(const std::vector<std::vector<cv::Point2f> >& imagePoints,
   tvecs.resize(0);
   reprojErrs.resize(0);
   cameraMatrix = cv::Mat::eye(3, 3, CV_64F);
-  if (cvCalibFlags & CV_CALIB_FIX_ASPECT_RATIO)
+  if (cvCalibFlags & cv::CALIB_FIX_ASPECT_RATIO)
     cameraMatrix.at<double>(0, 0) = aspectRatio;
 
   distCoeffs = cv::Mat::zeros(8, 1, CV_64F);
@@ -64,7 +66,7 @@ bool runCalibration(const std::vector<std::vector<cv::Point2f> >& imagePoints,
   system::Timer durationrC;
 
   const double rms = cv::calibrateCamera(objectPoints, imagePoints, imageSize, cameraMatrix,
-                                         distCoeffs, rvecs, tvecs, cvCalibFlags | CV_CALIB_FIX_K4 | CV_CALIB_FIX_K5 | CV_CALIB_FIX_K6);
+                                         distCoeffs, rvecs, tvecs, cvCalibFlags | cv::CALIB_FIX_K4 | cv::CALIB_FIX_K5 | cv::CALIB_FIX_K6);
   ALICEVISION_LOG_DEBUG("\tcalibrateCamera duration: " << system::prettyTime(durationrC.elapsedMs()));
 
   ALICEVISION_LOG_DEBUG("\tRMS error reported by calibrateCamera: " << rms);

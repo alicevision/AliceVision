@@ -122,7 +122,7 @@ bool VideoFeed::FeederImpl::readImage(image::Image<image::RGBColor> &imageRGB,
     cv::Mat color;
     resize(frame, color, cv::Size(frame.cols, frame.rows));
     
-    cv::cvtColor(frame, color, CV_BGR2RGB);
+    cv::cvtColor(frame, color, cv::COLOR_BGR2RGB);
     imageRGB.resize(color.cols, color.rows);
     
     unsigned char* pixelPtr = (unsigned char*)color.data;
@@ -181,7 +181,7 @@ bool VideoFeed::FeederImpl::readImage(image::Image<unsigned char> &imageGray,
   {
     // convert to gray
     cv::Mat grey;
-    cv::cvtColor(frame, grey, CV_BGR2GRAY);
+    cv::cvtColor(frame, grey, cv::COLOR_BGR2GRAY);
     imageGray.resize(grey.cols, grey.rows);
     cv::cv2eigen(grey, imageGray);
 //      ALICEVISION_LOG_DEBUG(grey.channels() << " " << grey.rows << " " << grey.cols);

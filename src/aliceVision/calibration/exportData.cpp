@@ -10,6 +10,9 @@
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/camera/cameraUndistortImage.hpp>
 
+#include <opencv2/calib3d.hpp>
+#include <opencv2/imgcodecs.hpp>
+
 #include <boost/filesystem/path.hpp>
 
 #include <fstream>
@@ -34,7 +37,7 @@ void exportImages(aliceVision::dataio::FeedProvider& feed,
   std::string currentImgName;
   aliceVision::camera::PinholeRadialK3 queryIntrinsics;
 
-  export_params.push_back(CV_IMWRITE_JPEG_QUALITY);
+  export_params.push_back(cv::IMWRITE_JPEG_QUALITY);
   export_params.push_back(100);
 
   aliceVision::camera::PinholeRadialK3 camera(imageSize.width, imageSize.height,
@@ -174,17 +177,17 @@ void saveCameraParams(const std::string& filename,
   fs << "board_height" << boardSize.height;
   fs << "square_size" << squareSize;
 
-  if (cvCalibFlags & CV_CALIB_FIX_ASPECT_RATIO)
+  if (cvCalibFlags & cv::CALIB_FIX_ASPECT_RATIO)
     fs << "aspectRatio" << aspectRatio;
 
   if (cvCalibFlags != 0)
   {
     sprintf(asctime(t2), "flags: %s%s%s%s",
-            cvCalibFlags & CV_CALIB_USE_INTRINSIC_GUESS ? "+use_intrinsic_guess" : "",
-            cvCalibFlags & CV_CALIB_FIX_ASPECT_RATIO ? "+fix_aspectRatio" : "",
-            cvCalibFlags & CV_CALIB_FIX_PRINCIPAL_POINT ? "+fix_principal_point" : "",
-            cvCalibFlags & CV_CALIB_ZERO_TANGENT_DIST ? "+zero_tangent_dist" : "");
-    cvWriteComment(*fs, asctime(t2), 0);
+            (cvCalibFlags & cv::CALIB_USE_INTRINSIC_GUESS) ? "+use_intrinsic_guess" : "",
+            (cvCalibFlags & cv::CALIB_FIX_ASPECT_RATIO) ? "+fix_aspectRatio" : "",
+            (cvCalibFlags & cv::CALIB_FIX_PRINCIPAL_POINT) ? "+fix_principal_point" : "",
+            (cvCalibFlags & cv::CALIB_ZERO_TANGENT_DIST) ? "+zero_tangent_dist" : "");
+    fs.writeComment(asctime(t2), 0);
   }
 
   fs << "flags" << cvCalibFlags;
@@ -211,7 +214,7 @@ void saveCameraParams(const std::string& filename,
       r = rvecs[i].t();
       t = tvecs[i].t();
     }
-    cvWriteComment(*fs, "a set of 6-tuples (rotation vector + translation vector) for each view", 0);
+    fs.writeComment("a set of 6-tuples (rotation vector + translation vector) for each view", 0);
     fs << "extrinsic_parameters" << bigmat;
   }
 

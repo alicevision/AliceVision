@@ -23,18 +23,6 @@ alicevision_add_software(aliceVision_convertFloatDescriptorToUchar
         ${Boost_LIBRARIES}
 )
 
-# Convert to an alembic animated camera
-if(ALICEVISION_HAVE_ALEMBIC)
-  alicevision_add_software(aliceVision_convertAnimatedCamera
-    SOURCE main_convertAnimatedCamera.cpp
-    FOLDER ${FOLDER_SOFTWARE_CONVERT}
-    LINKS aliceVision_system
-          aliceVision_feature
-          aliceVision_sfm
-          ${Boost_LIBRARIES}
-  )
-endif()
-
 # Convert image to EXR
 alicevision_add_software(aliceVision_convertRAW
   SOURCE main_convertRAW.cpp

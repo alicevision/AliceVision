@@ -490,11 +490,11 @@ void AlembicExporter::addCamera(const std::string& name,
   _dataImpl->addCamera(name, view, pose, intrinsic, uncertainty);
 }
 
-void AlembicExporter::initAnimatedCamera(const std::string& cameraName)
+void AlembicExporter::initAnimatedCamera(const std::string& cameraName, std::size_t startFrame)
 {
   // Sample the time in order to have one keyframe every frame
   // nb: it HAS TO be attached to EACH keyframed properties
-  TimeSamplingPtr tsp( new TimeSampling(1.0 / 24.0, 1.0 / 24.0) );
+  TimeSamplingPtr tsp( new TimeSampling(1.0 / 24.0, startFrame / 24.0) );
   
   // Create the camera transform object
   std::stringstream ss;
@@ -509,17 +509,23 @@ void AlembicExporter::initAnimatedCamera(const std::string& cameraName)
   // Add the custom properties
   auto userProps = _dataImpl->_camObj.getSchema().getUserProperties();
   // Sensor size
-  _dataImpl->_propSensorSize_pix = OUInt32ArrayProperty(userProps, "mvg_sensorSizePix", tsp);
+  _dataImpl->_propSensorSize_pix = OUInt32ArrayProperty(userProps, "mvg_sensorSizePix");
+  _dataImpl->_propSensorSize_pix.setTimeSampling(tsp);
   // Image path
-  _dataImpl->_imagePlane = OStringProperty(userProps, "mvg_imagePath", tsp);
+  _dataImpl->_imagePlane = OStringProperty(userProps, "mvg_imagePath");
+  _dataImpl->_imagePlane.setTimeSampling(tsp);
   // View id
-  _dataImpl->_propViewId = OUInt32Property(userProps, "mvg_viewId", tsp);
+  _dataImpl->_propViewId = OUInt32Property(userProps, "mvg_viewId");
+  _dataImpl->_propViewId.setTimeSampling(tsp);
   // Intrinsic id
-  _dataImpl->_propIntrinsicId = OUInt32Property(userProps, "mvg_intrinsicId", tsp);
+  _dataImpl->_propIntrinsicId = OUInt32Property(userProps, "mvg_intrinsicId");
+  _dataImpl->_propIntrinsicId.setTimeSampling(tsp);
   // Intrinsic type (ex: PINHOLE_CAMERA_RADIAL3)
-  _dataImpl->_mvgIntrinsicType = OStringProperty(userProps, "mvg_intrinsicType", tsp);
+  _dataImpl->_mvgIntrinsicType = OStringProperty(userProps, "mvg_intrinsicType");
+  _dataImpl->_mvgIntrinsicType.setTimeSampling(tsp);
   // Intrinsic parameters
-  _dataImpl->_mvgIntrinsicParams = ODoubleArrayProperty(userProps, "mvg_intrinsicParams", tsp);
+  _dataImpl->_mvgIntrinsicParams = ODoubleArrayProperty(userProps, "mvg_intrinsicParams");
+  _dataImpl->_mvgIntrinsicParams.setTimeSampling(tsp);
 }
 
 void AlembicExporter::addCameraKeyframe(const geometry::Pose3& pose,
