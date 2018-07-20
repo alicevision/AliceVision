@@ -17,9 +17,9 @@ alicevision_add_library(aliceVision_geometry
   PUBLIC_LINKS
     aliceVision_numeric
     aliceVision_linearProgramming
-  PRIVATE_LINKS
-    # TODO: fix cross-dependency
-    # aliceVision_robustEstimation
+  # PRIVATE_LINKS
+  # TODO: fix cross-dependency
+  # aliceVision_robustEstimation
 )
 
 # Unit tests
