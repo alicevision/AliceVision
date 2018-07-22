@@ -338,19 +338,17 @@ int PointcloudRegistration::align()
 ////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
-Eigen::Matrix4f PointcloudRegistration::moveToOrigin(pcl::PointCloud<pcl::PointXYZ> & cloud)
+Eigen::Matrix4d PointcloudRegistration::moveToOrigin(pcl::PointCloud<pcl::PointXYZ> & cloud)
 {
-  pcl::PointCloud<pcl::PointXYZ> moved_cloud;
-  Eigen::Matrix4f T = Eigen::Matrix4f(Eigen::Matrix4f::Identity());
-    
-  Eigen::Vector4f centroid;
+  Eigen::Matrix4d T = Eigen::Matrix4d::Identity();
+
+  Eigen::Vector4d centroid;
   pcl::compute3DCentroid(cloud, centroid);
   T(0, 3) = -centroid(0);
   T(1, 3) = -centroid(1);
   T(2, 3) = -centroid(2);
-  
-  pcl::transformPointCloud(cloud, moved_cloud, T);
-  cloud.swap(moved_cloud);
+
+  pcl::transformPointCloud(cloud, cloud, T);
   return T;
 }
 
