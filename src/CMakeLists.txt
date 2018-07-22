@@ -55,7 +55,7 @@ trilean_option(ALICEVISION_USE_OPENCV "Build opencv+aliceVision samples programs
 # Enable this to be able to use OpenCV SIFT in main_ComputeFeatures_OpenCV.
 option(ALICEVISION_USE_OCVSIFT "Add or not OpenCV SIFT in available features" OFF)
 
-option(ALICEVISION_USE_MESHSDFILTER "Use MeshSDFilter library (enable MeshDenoising and MeshDecimate)." ON)
+option(ALICEVISION_USE_MESHSDFILTER "Use MeshSDFilter library (enable MeshDenoising and MeshDecimate)" ON)
 
 option(ALICEVISION_REQUIRE_CERES_WITH_SUITESPARSE "Require Ceres with SuiteSparse (ensure best performances)" ON)
 
@@ -106,37 +106,19 @@ elseif()
 endif()
 
 # ==============================================================================
-# MACRO to ease UnitTesting
-# ==============================================================================
-macro(UNIT_TEST NAMESPACE NAME EXTRA_LIBS)
-  if(ALICEVISION_BUILD_TESTS)
-    add_executable(${NAMESPACE}_test_${NAME} ${NAME}_test.cpp)
-
-    set_property(TARGET ${NAMESPACE}_test_${NAME} PROPERTY FOLDER Test)
-
-    target_link_libraries(${NAMESPACE}_test_${NAME}
-                          ${EXTRA_LIBS} # Extra libs MUST be first.
-                          ${Boost_LIBRARIES} ${ALICEVISION_LIBRARY_DEPENDENCIES})
-    add_test(NAME ${NAMESPACE}_test_${NAME}
-             WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
-             COMMAND $<TARGET_FILE:${NAMESPACE}_test_${NAME}> --log_level=all)
-  endif()
-endmacro()
-
-# ==============================================================================
 # MACRO utility
 # ==============================================================================
 macro(add_target_properties _target _name)
-	set(_properties)
-	foreach(_prop ${ARGN})
-		set(_properties "${_properties} ${_prop}")
-	endforeach(_prop)
-	get_target_property(_old_properties ${_target} ${_name})
-	if(NOT _old_properties)
-		# in case it's NOTFOUND
-		set(_old_properties)
-	endif(NOT _old_properties)
-	set_target_properties(${_target} PROPERTIES ${_name} "${_old_properties} ${_properties}")
+  set(_properties)
+  foreach(_prop ${ARGN})
+    set(_properties "${_properties} ${_prop}")
+  endforeach(_prop)
+  get_target_property(_old_properties ${_target} ${_name})
+  if(NOT _old_properties)
+    # in case it's NOTFOUND
+    set(_old_properties)
+  endif(NOT _old_properties)
+  set_target_properties(${_target} PROPERTIES ${_name} "${_old_properties} ${_properties}")
 endmacro(add_target_properties)
 
 # ==============================================================================
@@ -715,6 +697,7 @@ if(ALICEVISION_HAVE_CUDA)
 
   # library required for CUDA dynamic parallelism, forgotten by CMake 3.4
   cuda_find_library_local_first(CUDA_CUDADEVRT_LIBRARY cudadevrt "\"cudadevrt\" library")
+
 endif()
 
 # ==============================================================================
@@ -860,10 +843,14 @@ endif()
 message("\n")
 
 # ==============================================================================
+# AliceVision CMake Helpers
+# ==============================================================================
+include(Helpers)
+
+# ==============================================================================
 # Internal libraries dependencies
 # ==============================================================================
 add_subdirectory(dependencies)
-
 
 # ==============================================================================
 # AliceVision modules

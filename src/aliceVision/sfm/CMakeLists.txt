@@ -84,21 +84,12 @@ if(ALICEVISION_HAVE_ALEMBIC)
   )
 endif()
 
-add_library(aliceVision_sfm
-  ${sfm_files_headers}
-  ${sfm_files_sources}
-)
-
-set_property(TARGET aliceVision_sfm
-  PROPERTY FOLDER AliceVision
-)
-
-target_link_libraries(aliceVision_sfm
-  PUBLIC
+alicevision_add_library(aliceVision_sfm
+  SOURCES ${sfm_files_headers} ${sfm_files_sources}
+  PUBLIC_LINKS
     aliceVision_numeric
     aliceVision_track
     aliceVision_multiview
-    ${CERES_LIBRARIES}
     aliceVision_lInftyComputerVision
     aliceVision_system
     aliceVision_matching
@@ -109,14 +100,11 @@ target_link_libraries(aliceVision_sfm
     aliceVision_graph
     aliceVision_linearProgramming
     ${Boost_FILESYSTEM_LIBRARY}
-  PRIVATE
+    ${CERES_LIBRARIES}
+  PRIVATE_LINKS
     ${Boost_REGEX_LIBRARY}
 )
 
-set_target_properties(aliceVision_sfm
-  PROPERTIES SOVERSION ${ALICEVISION_VERSION_MAJOR}
-  VERSION "${ALICEVISION_VERSION_MAJOR}.${ALICEVISION_VERSION_MINOR}"
-)
 
 if(ALICEVISION_HAVE_ALEMBIC)
   target_link_libraries(aliceVision_sfm
@@ -128,18 +116,33 @@ if(ALICEVISION_HAVE_ALEMBIC)
   )
 endif()
 
-install(TARGETS aliceVision_sfm
-  DESTINATION lib
-  EXPORT aliceVision-targets
+# Unit tests
+if(ALICEVISION_HAVE_ALEMBIC)
+  alicevision_add_test(alembicIO_test.cpp NAME "sfm_alembicIO" LINKS aliceVision_sfm Alembic::Alembic)
+endif()
+
+alicevision_add_test(sfmDataIO_test.cpp
+  NAME "sfm_sfmDataIO"
+  LINKS aliceVision_sfm
+        aliceVision_feature
+        aliceVision_system
 )
 
-UNIT_TEST(aliceVision sfmDataIO          "aliceVision_feature;aliceVision_sfm;aliceVision_system")
-UNIT_TEST(aliceVision bundleAdjustment   "aliceVision_multiview_test_data;aliceVision_feature;aliceVision_multiview;aliceVision_sfm;aliceVision_system")
-UNIT_TEST(aliceVision rig                "aliceVision_feature;aliceVision_sfm;aliceVision_system")
+alicevision_add_test(bundleAdjustment_test.cpp
+  NAME "sfm_bundleAdjustment"
+  LINKS aliceVision_sfm
+        aliceVision_multiview
+        aliceVision_multiview_test_data
+        aliceVision_feature
+        aliceVision_system
+)
 
-if(ALICEVISION_HAVE_ALEMBIC)
-  UNIT_TEST(aliceVision alembicIO "aliceVision_sfm;Alembic::Alembic")
-endif()
+alicevision_add_test(rig_test.cpp
+  NAME "sfm_rig"
+  LINKS aliceVision_sfm
+        aliceVision_feature
+        aliceVision_system
+)
 
 add_subdirectory(pipeline)
 

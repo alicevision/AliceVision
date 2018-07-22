@@ -1,19 +1,9 @@
 # Headers
-set(linearProgramming_headers
+set(linearProgramming_files_headers
     bisectionLP.hpp
     linearProgramming.hpp
     ISolver.hpp
     OSIXSolver.hpp
-)
-
-# Sources
-set(linearProgramming_sources
-  ""
-)
-
-# Tests
-set(linearProgramming_files_test
-  linearProgramming_test.cpp
 )
 
 # Dependencies
@@ -25,49 +15,26 @@ set(aliceVision_linearProgramming_DEPS
   ${OSI_LIBRARY}       # generic LP
 )
 
-set_source_files_properties(${linearProgramming_headers} PROPERTIES LANGUAGE CXX)
-
 if (NOT MOSEK_FOUND)
-  add_library(aliceVision_linearProgramming INTERFACE)
-
-  target_link_libraries(aliceVision_linearProgramming
-    INTERFACE ${aliceVision_linearProgramming_DEPS}
-  )
-  add_custom_target(aliceVision_linearProgramming_ide SOURCES ${linearProgramming_headers} ${linearProgramming_files_test})
-
-  set_property(TARGET aliceVision_linearProgramming_ide
-    PROPERTY FOLDER AliceVision
-  )
-
+alicevision_add_interface(aliceVision_linearProgramming
+  SOURCES ${linearProgramming_files_headers} ${linearProgramming_files_sources}
+  LINKS ${aliceVision_linearProgramming_DEPS}
+)
 else ()
-
   # Add MOSEK related sources
-  list(APPEND linearProgramming_sources MOSEKSolver.cpp)
-  list(APPEND linearProgramming_headers MOSEKSolver.hpp)
-
-  # MOSEK_FOUND is true
-  add_library(aliceVision_linearProgramming
-    ${linearProgramming_headers}
-    ${linearProgramming_sources}
-  )
-
-  set_property(TARGET aliceVision_linearProgramming
-    PROPERTY FOLDER AliceVision/AliceVision
-  )
-
-  target_link_libraries(aliceVision_linearProgramming
+  list(APPEND linearProgramming_files_sources MOSEKSolver.cpp)
+  list(APPEND linearProgramming_files_headers MOSEKSolver.hpp)
+  alicevision_add_library(aliceVision_linearProgramming
+    SOURCES ${linearProgramming_files_headers}
+    PUBLIC_LINKS
       ${aliceVision_linearProgramming_DEPS}
       lib_Osi_Msk   # OSI solver wrapper for the Mosek backend
       ${MOSEK_LIB}  # Mosek lib
   )
-
 endif()
 
-install(TARGETS aliceVision_linearProgramming
-  DESTINATION lib
-  EXPORT aliceVision-targets
-)
+# Unit tests
+alicevision_add_test(linearProgramming_test.cpp NAME "linearProgramming" LINKS aliceVision_linearProgramming)
 
-UNIT_TEST(aliceVision linearProgramming "aliceVision_linearProgramming")
-
+# lInfinityCV library
 add_subdirectory(lInfinityCV)

@@ -22,33 +22,14 @@ set(mesh_files_sources
   UVAtlas.cpp
 )
 
-add_library(aliceVision_mesh
-  ${mesh_files_headers}
-  ${mesh_files_sources}
-)
-
-target_include_directories(aliceVision_mesh
-  PUBLIC $<BUILD_INTERFACE:${ALICEVISION_INCLUDE_DIR}>
-         $<BUILD_INTERFACE:${generatedDir}>
-         $<INSTALL_INTERFACE:include>
-)
-
-target_link_libraries(aliceVision_mesh
-  PUBLIC 
+alicevision_add_library(aliceVision_mesh
+  SOURCES ${mesh_files_headers} ${mesh_files_sources}
+  PUBLIC_LINKS
     aliceVision_mvsData
     aliceVision_mvsUtils
     aliceVision_imageIO
     Geogram::geogram
     ${Boost_FILESYSTEM_LIBRARY}
-  PRIVATE 
+  PRIVATE_LINKS
     aliceVision_system
-)
-
-set_property(TARGET aliceVision_mesh
-  PROPERTY FOLDER AliceVision
-)
-
-install(TARGETS aliceVision_mesh
-  DESTINATION lib
-  EXPORT aliceVision-targets
 )

@@ -12,40 +12,22 @@ set(sensorDB_files_sources
   parseDatabase.cpp
 )
 
-add_library(aliceVision_sensorDB 
-  ${sensorDB_files_headers}
-  ${sensorDB_files_sources}
+alicevision_add_library(aliceVision_sensorDB
+  SOURCES ${sensorDB_files_headers} ${sensorDB_files_sources}
+  PRIVATE_LINKS
+    ${Boost_FILESYSTEM_LIBRARY}
+    ${Boost_SYSTEM_LIBRARY}
+  PRIVATE_INCLUDE_DIRS
+    ${Boost_INCLUDE_DIRS}
 )
 
-target_include_directories(aliceVision_sensorDB PRIVATE ${Boost_INCLUDE_DIRS})
-
-set_property(TARGET aliceVision_sensorDB
-  PROPERTY FOLDER AliceVision
-)
-
-target_link_libraries(aliceVision_sensorDB
-  PRIVATE
-  ${Boost_FILESYSTEM_LIBRARY}
-  ${Boost_SYSTEM_LIBRARY}
-)
-
-set_target_properties(aliceVision_sensorDB
-  PROPERTIES SOVERSION ${ALICEVISION_VERSION_MAJOR}
-  VERSION "${ALICEVISION_VERSION_MAJOR}.${ALICEVISION_VERSION_MINOR}"
-)
-
-# Installation rules
+# Install sensor_width_camera_database.txt
 install(FILES sensor_width_camera_database.txt
   DESTINATION share/aliceVision
 )
 
-install(TARGETS aliceVision_sensorDB
-  DESTINATION lib
-  EXPORT aliceVision-targets
-)
-
-UNIT_TEST(aliceVision parseDatabase aliceVision_sensorDB)
-
+# Unit tests
+alicevision_add_test(parseDatabase_test.cpp NAME "sensorDB_parseDatabase" LINKS aliceVision_sensorDB)
 
 
 

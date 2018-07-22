@@ -23,41 +23,22 @@ set(matching_files_sources
   RegionsMatcher.cpp
 )
 
-set_source_files_properties(${matching_files_sources} PROPERTIES LANGUAGE CXX)
-
-add_library(aliceVision_matching
-  ${matching_files_headers}
-  ${matching_files_sources}
-)
-
-set_target_properties(aliceVision_matching
-  PROPERTIES SOVERSION ${ALICEVISION_VERSION_MAJOR}
-  VERSION "${ALICEVISION_VERSION_MAJOR}.${ALICEVISION_VERSION_MINOR}"
-)
-
-target_link_libraries(aliceVision_matching
-  PUBLIC
+alicevision_add_library(aliceVision_matching
+  SOURCES ${matching_files_headers} ${matching_files_sources}
+  PUBLIC_LINKS
     aliceVision_feature
     aliceVision_numeric
     aliceVision_stl
     aliceVision_system
-  PRIVATE
+  PRIVATE_LINKS
     ${Boost_FILESYSTEM_LIBRARY}
     ${FLANN_LIBRARY}
 )
 
-set_property(TARGET aliceVision_matching
-  PROPERTY FOLDER AliceVision
-)
-
-install(TARGETS aliceVision_matching
-  DESTINATION lib
-  EXPORT aliceVision-targets
-)
-
-UNIT_TEST(aliceVision matching  "aliceVision_matching")
-UNIT_TEST(aliceVision filters   "aliceVision_matching")
-UNIT_TEST(aliceVision indMatch  "aliceVision_matching")
-UNIT_TEST(aliceVision metric    "aliceVision_matching")
+# Unit tests
+alicevision_add_test(matching_test.cpp NAME "matching"          LINKS aliceVision_matching)
+alicevision_add_test(filters_test.cpp  NAME "matching_filters"  LINKS aliceVision_matching)
+alicevision_add_test(indMatch_test.cpp NAME "matching_indMatch" LINKS aliceVision_matching)
+alicevision_add_test(metric_test.cpp   NAME "matching_metric"   LINKS aliceVision_matching)
 
 add_subdirectory(kvld)

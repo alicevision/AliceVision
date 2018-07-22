@@ -1,0 +1,37 @@
+1 VERSIONINFO
+FILEVERSION     @ALICEVISION_INSTALL_VERSION_MAJOR@,@ALICEVISION_INSTALL_VERSION_MINOR@,@ALICEVISION_INSTALL_VERSION_REVISION@,0
+PRODUCTVERSION  @ALICEVISION_INSTALL_VERSION_MAJOR@,@ALICEVISION_INSTALL_VERSION_MINOR@,@ALICEVISION_INSTALL_VERSION_REVISION@,0
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "040904E4"
+        BEGIN
+            VALUE "CompanyName",      "AliceVision Organization\0"
+#if @ALICEVISION_INSTALL_LIBRARY@
+            VALUE "FileDescription",  "@ALICEVISION_INSTALL_NAME@ - AliceVision with @CMAKE_CXX_COMPILER_ID@ @CMAKE_CXX_COMPILER_VERSION@\0"
+#else // software
+            VALUE "FileDescription",  "@ALICEVISION_INSTALL_NAME@ - AliceVision @ALICEVISION_VERSION_MAJOR@.@ALICEVISION_VERSION_MINOR@.@ALICEVISION_VERSION_REVISION@\0"
+#endif
+            VALUE "FileVersion",      "@ALICEVISION_INSTALL_VERSION_MAJOR@.@ALICEVISION_INSTALL_VERSION_MINOR@.@ALICEVISION_INSTALL_VERSION_REVISION@.0\0"
+            VALUE "InternalName",     "@ALICEVISION_INSTALL_NAME@\0"
+            VALUE "LegalCopyright",   "Copyright (c) 2018 AliceVision contributors\0"
+            VALUE "ProductName",      "AliceVision Library | @ALICEVISION_INSTALL_NAME@\0"
+            VALUE "ProductVersion",   "@ALICEVISION_INSTALL_VERSION_MAJOR@.@ALICEVISION_INSTALL_VERSION_MINOR@.@ALICEVISION_INSTALL_VERSION_REVISION@.0\0"
+            VALUE "Licence", "Mozilla Public License Version 2.0\0"
+            VALUE "Info", "https://alicevision.github.io\0"
+        END
+    END
+
+    BLOCK "VarFileInfo"
+    BEGIN
+        /* The following line should only be modified for localized versions.     */
+        /* It consists of any number of WORD,WORD pairs, with each pair           */
+        /* describing a language,codepage combination supported by the file.      */
+        /*                                                                        */
+        /* For example, a file might have values "0x409,1252" indicating that it  */
+        /* supports English language (0x409) in the Windows ANSI codepage (1252). */
+
+        VALUE "Translation", 0x409, 1252
+
+    END
+END

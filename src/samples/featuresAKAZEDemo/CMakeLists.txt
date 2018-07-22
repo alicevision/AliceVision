@@ -1,27 +1,19 @@
 add_definitions(-DTHIS_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
 
-add_executable(aliceVision_samples_demoAKAZE main_demoAKAZE.cpp)
-
-target_link_libraries(aliceVision_samples_demoAKAZE
-  aliceVision_image
-  aliceVision_feature
-  ${ALICEVISION_LIBRARY_DEPENDENCIES}
+alicevision_add_software(aliceVision_samples_demoAKAZE
+  SOURCE main_demoAKAZE.cpp
+  FOLDER ${FOLDER_SAMPLES}
+  LINKS aliceVision_image
+        aliceVision_feature
+        ${ALICEVISION_LIBRARY_DEPENDENCIES}
 )
 
-set_property(TARGET aliceVision_samples_demoAKAZE 
-	PROPERTY FOLDER AliceVision/Samples
-)
-
-add_executable( aliceVision_samples_computeAKAZE main_computeAKAZE.cpp)
-
-target_link_libraries( aliceVision_samples_computeAKAZE
-  aliceVision_image
-  aliceVision_feature
-  aliceVision_system
-  ${ALICEVISION_LIBRARY_DEPENDENCIES}
-  ${Boost_FILESYSTEM_LIBRARIES}
-)
-  
-set_property(TARGET aliceVision_samples_computeAKAZE 
-	PROPERTY FOLDER AliceVision/Samples
+alicevision_add_software(aliceVision_samples_computeAKAZE
+  SOURCE main_computeAKAZE.cpp
+  FOLDER ${FOLDER_SAMPLES}
+  LINKS aliceVision_image
+        aliceVision_feature
+        aliceVision_system
+        ${ALICEVISION_LIBRARY_DEPENDENCIES}
+        ${Boost_FILESYSTEM_LIBRARIES}
 )

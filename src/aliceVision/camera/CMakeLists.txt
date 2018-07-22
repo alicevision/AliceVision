@@ -11,18 +11,9 @@ set(camera_files_headers
 	PinholeRadial.hpp
 )
 
-# Sources
-set(camera_files_test
-  pinholeBrown_test.cpp
-  pinholeFisheye1_test.cpp
-  pinholeFisheye_test.cpp
-  pinholeRadial_test.cpp
-)
-
-add_library(aliceVision_camera INTERFACE)
-
-target_link_libraries(aliceVision_camera
-  INTERFACE 
+alicevision_add_interface(aliceVision_camera
+  SOURCES ${camera_files_headers}
+  LINKS
     aliceVision_geometry
     aliceVision_multiview
     aliceVision_image
@@ -31,17 +22,8 @@ target_link_libraries(aliceVision_camera
     aliceVision_system
 )
 
-install(TARGETS aliceVision_camera 
-  EXPORT aliceVision-targets 
-)
-
-UNIT_TEST(aliceVision pinholeBrown    "aliceVision_camera")
-UNIT_TEST(aliceVision pinholeFisheye  "aliceVision_camera")
-UNIT_TEST(aliceVision pinholeFisheye1 "aliceVision_camera")
-UNIT_TEST(aliceVision pinholeRadial   "aliceVision_camera")
-
-add_custom_target(aliceVision_camera_ide SOURCES ${camera_files_headers} ${camera_files_test})
-
-set_property(TARGET aliceVision_camera_ide
-  PROPERTY FOLDER AliceVision
-)
+# Unit tests
+alicevision_add_test(pinholeBrown_test.cpp    NAME "camera_pinholeBrown"    LINKS aliceVision_camera)
+alicevision_add_test(pinholeFisheye_test.cpp  NAME "camera_pinholeFisheye"  LINKS aliceVision_camera)
+alicevision_add_test(pinholeFisheye1_test.cpp NAME "camera_pinholeFisheye1" LINKS aliceVision_camera)
+alicevision_add_test(pinholeRadial_test.cpp   NAME "camera_pinholeRadial"   LINKS aliceVision_camera)

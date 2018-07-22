@@ -1,5 +1,5 @@
 # Headers
-set(common_files_headers
+set(mvsUtils_files_headers
   common.hpp
   fileIO.hpp
   ImagesCache.hpp
@@ -8,7 +8,7 @@ set(common_files_headers
 )
 
 # Sources
-set(common_files_sources
+set(mvsUtils_files_sources
   common.cpp
   fileIO.cpp
   ImagesCache.cpp
@@ -16,31 +16,12 @@ set(common_files_sources
   PreMatchCams.cpp
 )
 
-add_library(aliceVision_mvsUtils
-  ${common_files_headers}
-  ${common_files_sources}
-)
-
-target_include_directories(aliceVision_mvsUtils
-  PUBLIC $<BUILD_INTERFACE:${ALICEVISION_INCLUDE_DIR}>
-         $<BUILD_INTERFACE:${generatedDir}>
-         $<INSTALL_INTERFACE:include>
-)
-
-target_link_libraries(aliceVision_mvsUtils
-  PUBLIC 
+alicevision_add_library(aliceVision_mvsUtils
+  SOURCES ${mvsUtils_files_headers} ${mvsUtils_files_sources}
+  PUBLIC_LINKS
     aliceVision_mvsData
     aliceVision_imageIO
-  PRIVATE 
+  PRIVATE_LINKS
     aliceVision_system
     ${Boost_FILESYSTEM_LIBRARY}
-)
-
-set_property(TARGET aliceVision_mvsUtils
-  PROPERTY FOLDER AliceVision
-)
-
-install(TARGETS aliceVision_mvsUtils
-  DESTINATION lib
-  EXPORT aliceVision-targets
 )

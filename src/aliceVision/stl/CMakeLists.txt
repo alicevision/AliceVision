@@ -10,23 +10,12 @@ set(stl_files_headers
   mapUtils.hpp
 )
 
-add_library(aliceVision_stl INTERFACE)
-
 # target_sources(aliceVision_stl INTERFACE ${stl_files_headers}) # TODO
 
-target_link_libraries(aliceVision_stl
-  INTERFACE
-    ${Boost_CONTAINER_LIBRARIES}
+alicevision_add_interface(aliceVision_stl
+  SOURCES ${stl_files_headers}
+  LINKS ${Boost_CONTAINER_LIBRARIES}
 )
 
-install(TARGETS aliceVision_stl 
-  EXPORT aliceVision-targets 
-)
-
-UNIT_TEST(aliceVision dynamicBitset "aliceVision_stl")
-
-add_custom_target(aliceVision_stl_ide SOURCES ${stl_files_headers})
-
-set_property(TARGET aliceVision_stl_ide
-  PROPERTY FOLDER AliceVision
-)
+# Unit tests
+alicevision_add_test(dynamicBitset_test.cpp NAME "stl_dynamicBitset" LINKS aliceVision_stl)
