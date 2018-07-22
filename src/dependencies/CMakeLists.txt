@@ -15,7 +15,7 @@ if(UNIX)
 endif(UNIX)
 
 # Add graph library
-if(DEFINED ALICEVISION_USE_INTERNAL_LEMON)
+if(ALICEVISION_USE_INTERNAL_LEMON)
   add_subdirectory(lemon)
   set_property(TARGET lemon
     PROPERTY FOLDER Dependencies/Lemon
@@ -29,7 +29,7 @@ endif()
 add_subdirectory(vectorGraphics)
 
 # Add an Approximate Nearest Neighbor library
-if(DEFINED ALICEVISION_USE_INTERNAL_FLANN)
+if(ALICEVISION_USE_INTERNAL_FLANN)
   set(FLANN_INCLUDE_INSTALL_DIR ${CMAKE_INSTALL_PREFIX}/include/aliceVision/dependencies/flann/src/cpp)
   add_subdirectory(flann)
   set_property(TARGET flann_cpp_s
