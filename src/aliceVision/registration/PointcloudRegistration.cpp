@@ -172,70 +172,75 @@ Eigen::Matrix4d PointcloudRegistration::align(EAlignmentMethod mode)
 {
     ALICEVISION_LOG_INFO("|- Input source: " << sourceCloud.size());
     ALICEVISION_LOG_INFO("|- Input target: " << targetCloud.size());
+    pcl::PointCloud<pcl::PointXYZ> mutableSourceCloud;
+    pcl::PointCloud<pcl::PointXYZ> mutableTargetCloud;
+    pcl::copyPointCloud(sourceCloud, mutableSourceCloud);
+    pcl::copyPointCloud(targetCloud, mutableTargetCloud);
 
+    ALICEVISION_LOG_INFO("-- Move source to the target position");
+
+    auto tic = std::chrono::steady_clock::now();
+
+    // ===========================================================
+    // -- Coarse registration: Move source & target to origin
+    // Could be replaced by:
+    // - correspondences matching
+    // - eigen vectors based
+    // - ...
+    // ===========================================================
+    Eigen::Matrix4d sourceInitialTransform = moveToOrigin(mutableSourceCloud);
+    Eigen::Matrix4d targetInitialTransform = moveToOrigin(mutableTargetCloud);
+
+    duration.coarseAlignment = std::chrono::duration <double, std::milli>(std::chrono::steady_clock::now() - tic).count();
+
+    ALICEVISION_LOG_INFO("|- T_origin_source = \n" << sourceInitialTransform);
+    ALICEVISION_LOG_INFO("|- T_origin_target = \n" << targetInitialTransform);
+
+    Eigen::Matrix4d Ts = preparePointClouds(mutableSourceCloud, mutableTargetCloud);
+
+    Eigen::Matrix4d transform;
     switch (mode)
     {
         case EAlignmentMethod::GICP:
         {
-            return alignGICP();
+            transform = alignGICP(mutableSourceCloud, mutableTargetCloud);
         }
         case EAlignmentMethod::ICP:
         {
             ICP::Parameters par;
-            return alignICP(par);
+            transform = alignICP(mutableSourceCloud, mutableTargetCloud, par);
         }
         case EAlignmentMethod::ICP_sim:
         {
             ICP::Parameters par;
             par.useDirectSimilarity = true;
-            return alignICP(par);
+            transform = alignICP(mutableSourceCloud, mutableTargetCloud, par);
         }
         case EAlignmentMethod::SICP:
         {
             SICP::Parameters par;
-            return alignSICP(par);
+            transform = alignSICP(mutableSourceCloud, mutableTargetCloud, par);
         }
         case EAlignmentMethod::SICP_sim:
         {
             SICP::Parameters par;
             par.useDirectSimilarity = true;
-            return alignSICP(par);
+            transform = alignSICP(mutableSourceCloud, mutableTargetCloud, par);
         }
         case EAlignmentMethod::Undefined:
             throw std::runtime_error("Undefined alignment method");
     }
-    throw std::runtime_error("Unknown alignment method");
+
+    finalTransformation = targetInitialTransform.inverse() * transform * Ts * sourceInitialTransform;
+    return finalTransformation;
 }
 
-Eigen::Matrix4d PointcloudRegistration::alignGICP()
+Eigen::Matrix4d PointcloudRegistration::preparePointClouds(
+    pcl::PointCloud<pcl::PointXYZ>& mutableSourceCloud,
+    pcl::PointCloud<pcl::PointXYZ>& mutableTargetCloud)
 {
-  pcl::PointCloud<pcl::PointXYZ> mutableSourceCloud;
-  pcl::PointCloud<pcl::PointXYZ> mutableTargetCloud;
-  pcl::copyPointCloud(sourceCloud, mutableSourceCloud);
-  pcl::copyPointCloud(targetCloud, mutableTargetCloud);
-
   ALICEVISION_LOG_INFO("|- Input source: " << mutableSourceCloud.size());
   ALICEVISION_LOG_INFO("|- Input target: " << mutableTargetCloud.size());
-
-  // ===========================================================
-  // -- Coarse registration: Move source & target to origin
-  // Could be replaced by:
-  // - correspondences matching
-  // - eigen vectors based
-  // - ...
-  // ===========================================================
-
-  ALICEVISION_LOG_INFO("-- Move source to the target position");
-
-  auto tic = std::chrono::steady_clock::now();
-
-  Eigen::Matrix4d To_source = moveToOrigin(mutableSourceCloud);
-  Eigen::Matrix4d To_target = moveToOrigin(mutableTargetCloud);
-
-  duration.coarseAlignment = std::chrono::duration <double, std::milli> (std::chrono::steady_clock::now()-tic).count();
-
-  ALICEVISION_LOG_INFO("|- T_origin_source = \n" << To_source);
-  ALICEVISION_LOG_INFO("|- T_origin_target = \n" << To_target);
 
   // ===========================================================
   // --  Rescale source cloud
@@ -243,7 +248,7 @@ Eigen::Matrix4d PointcloudRegistration::alignGICP()
 
   ALICEVISION_LOG_INFO("-- Rescaling step");
 
-  tic = std::chrono::steady_clock::now();
+  auto tic = std::chrono::steady_clock::now();
 
   Eigen::Matrix4d Ts = Eigen::Matrix4d(Eigen::Matrix4d::Identity());
   if (rescaleMode == ERescaleMode::Manual)
@@ -297,6 +302,14 @@ Eigen::Matrix4d PointcloudRegistration::alignGICP()
   ALICEVISION_LOG_INFO("|- Voxel source: " << mutableSourceCloud.size() << " pts");
   ALICEVISION_LOG_INFO("|- Voxel target: " << mutableTargetCloud.size() << " pts");
 
+  return Ts;
+}
+
+Eigen::Matrix4d PointcloudRegistration::alignGICP(
+    pcl::PointCloud<pcl::PointXYZ>& mutableSourceCloud,
+    pcl::PointCloud<pcl::PointXYZ>& mutableTargetCloud)
+{
+
   // ===========================================================
   // -- Compute normals
   // ===========================================================
@@ -305,7 +318,7 @@ Eigen::Matrix4d PointcloudRegistration::alignGICP()
 
   pcl::PointCloud<pcl::Normal> sourceNormals, targetNormals;
 
-  tic = std::chrono::steady_clock::now();
+  auto tic = std::chrono::steady_clock::now();
 
   estimateNormals(mutableSourceCloud, sourceNormals, kSearchNormals);
   estimateNormals(mutableTargetCloud, targetNormals, kSearchNormals);
@@ -340,67 +353,76 @@ Eigen::Matrix4d PointcloudRegistration::alignGICP()
 
   ALICEVISION_LOG_INFO("-- Compute global transformation");
 
-  Eigen::Matrix4d To_target_inv = To_target.inverse();
-  finalTransformation = To_target_inv * Ti * Ts * To_source;
-
-  ALICEVISION_LOG_INFO("|- finalTransformation = \n" << finalTransformation);
-
-  return finalTransformation;
+  return Ti;
 }
 
-Eigen::Matrix4d PointcloudRegistration::alignICP(const ICP::Parameters& par)
+Eigen::Matrix4d PointcloudRegistration::alignICP(
+    pcl::PointCloud<pcl::PointXYZ>& mutableSourceCloud,
+    pcl::PointCloud<pcl::PointXYZ>& mutableTargetCloud,
+    const ICP::Parameters& par)
 {
     std::cout << "PointcloudRegistration::alignICP" << std::endl;
 
-    Eigen::Matrix3Xd X(3, sourceCloud.size()); // source, transformed
-    for (int i = 0; i < sourceCloud.size(); i++)
+    Eigen::Matrix3Xd X(3, mutableSourceCloud.size()); // source, transformed
+    for (int i = 0; i < mutableSourceCloud.size(); i++)
     {
-        X(0, i) = sourceCloud.points[i].x;
-        X(1, i) = sourceCloud.points[i].y;
-        X(2, i) = sourceCloud.points[i].z;
+        X(0, i) = mutableSourceCloud.points[i].x;
+        X(1, i) = mutableSourceCloud.points[i].y;
+        X(2, i) = mutableSourceCloud.points[i].z;
     }
-    Eigen::Matrix3Xd Y(3, targetCloud.size()); // target
-    for (int i = 0; i < targetCloud.size(); i++)
+    Eigen::Matrix3Xd Y(3, mutableTargetCloud.size()); // target
+    for (int i = 0; i < mutableTargetCloud.size(); i++)
     {
-        Y(0, i) = targetCloud.points[i].x;
-        Y(1, i) = targetCloud.points[i].y;
-        Y(2, i) = targetCloud.points[i].z;
+        Y(0, i) = mutableTargetCloud.points[i].x;
+        Y(1, i) = mutableTargetCloud.points[i].y;
+        Y(2, i) = mutableTargetCloud.points[i].z;
     }
 
     Eigen::Affine3d transform = ICP::point_to_point(X, Y, par); // standard ICP
     finalTransformation = transform.matrix();
 
-    for (int i = 0; i < sourceCloud.size(); i++)
+    for (int i = 0; i < mutableSourceCloud.size(); i++)
     {
-        sourceCloud.points[i].x = X(0, i);
-        sourceCloud.points[i].y = X(1, i);
-        sourceCloud.points[i].z = X(2, i);
+        mutableSourceCloud.points[i].x = X(0, i);
+        mutableSourceCloud.points[i].y = X(1, i);
+        mutableSourceCloud.points[i].z = X(2, i);
     }
 
     return finalTransformation;
 }
 
-Eigen::Matrix4d PointcloudRegistration::alignSICP(const SICP::Parameters& par)
+Eigen::Matrix4d PointcloudRegistration::alignSICP(
+    pcl::PointCloud<pcl::PointXYZ>& mutableSourceCloud,
+    pcl::PointCloud<pcl::PointXYZ>& mutableTargetCloud,
+    const SICP::Parameters& par)
 {
     std::cout << "PointcloudRegistration::alignSICP" << std::endl;
 
-    Eigen::Matrix3Xd X(3, sourceCloud.size()); // source, transformed
-    for (int i = 0; i < sourceCloud.size(); i++)
+    Eigen::Matrix3Xd X(3, mutableSourceCloud.size()); // source, transformed
+    for (int i = 0; i < mutableSourceCloud.size(); i++)
     {
-        X(0, i) = sourceCloud.points[i].x;
-        X(1, i) = sourceCloud.points[i].y;
-        X(2, i) = sourceCloud.points[i].z;
+        X(0, i) = mutableSourceCloud.points[i].x;
+        X(1, i) = mutableSourceCloud.points[i].y;
+        X(2, i) = mutableSourceCloud.points[i].z;
     }
-    Eigen::Matrix3Xd Y(3, targetCloud.size()); // target
-    for (int i = 0; i < targetCloud.size(); i++)
+    Eigen::Matrix3Xd Y(3, mutableTargetCloud.size()); // target
+    for (int i = 0; i < mutableTargetCloud.size(); i++)
     {
-        Y(0, i) = targetCloud.points[i].x;
-        Y(1, i) = targetCloud.points[i].y;
-        Y(2, i) = targetCloud.points[i].z;
+        Y(0, i) = mutableTargetCloud.points[i].x;
+        Y(1, i) = mutableTargetCloud.points[i].y;
+        Y(2, i) = mutableTargetCloud.points[i].z;
     }
 
     Eigen::Affine3d transform = SICP::point_to_point(X, Y, par); // sparse ICP
     finalTransformation = transform.matrix();
+
+    for (int i = 0; i < mutableSourceCloud.size(); i++)
+    {
+        mutableSourceCloud.points[i].x = X(0, i);
+        mutableSourceCloud.points[i].y = X(1, i);
+        mutableSourceCloud.points[i].z = X(2, i);
+    }
+
     return finalTransformation;
 }
 

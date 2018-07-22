@@ -198,6 +198,10 @@ public:
    */
   void showTimeline();
 
+  Eigen::Matrix4d preparePointClouds(
+      pcl::PointCloud<pcl::PointXYZ>& mutableSourceCloud,
+      pcl::PointCloud<pcl::PointXYZ>& mutableTargetCloud);
+
   Eigen::Matrix4d align(EAlignmentMethod mode);
 
   /**
@@ -205,14 +209,22 @@ public:
    * you the registered source cloud.
    * The transformation matrix is available using: \c getFinalTransformation().
    */
-  Eigen::Matrix4d alignGICP();
+  Eigen::Matrix4d alignGICP(
+      pcl::PointCloud<pcl::PointXYZ>& mutableSourceCloud,
+      pcl::PointCloud<pcl::PointXYZ>& mutableTargetCloud);
 
-  Eigen::Matrix4d alignICP(const ICP::Parameters& par);
+  Eigen::Matrix4d alignICP(
+      pcl::PointCloud<pcl::PointXYZ>& mutableSourceCloud,
+      pcl::PointCloud<pcl::PointXYZ>& mutableTargetCloud,
+      const ICP::Parameters& par);
 
   /**
    * @brief Alignment based on sparseICP library.
    */
-  Eigen::Matrix4d alignSICP(const SICP::Parameters& par);
+  Eigen::Matrix4d alignSICP(
+      pcl::PointCloud<pcl::PointXYZ>& mutableSourceCloud,
+      pcl::PointCloud<pcl::PointXYZ>& mutableTargetCloud,
+      const SICP::Parameters& par);
 
 private:
   
