@@ -1,10 +1,83 @@
+// This file is part of the AliceVision project.
+// Copyright (c) 2018 AliceVision contributors.
+// This Source Code Form is subject to the terms of the Mozilla Public License,
+// v. 2.0. If a copy of the MPL was not distributed with this file,
+// You can obtain one at https://mozilla.org/MPL/2.0/.
 #pragma once
 
 #include <pcl/point_types.h>
 #include <pcl/common/projection_matrix.h>
 
+#include <boost/algorithm/string/case_conv.hpp>
+
 namespace aliceVision {
 namespace registration {
+
+namespace ICP {
+struct Parameters;
+}
+namespace SICP {
+struct Parameters;
+}
+
+enum class EAlignmentMethod
+{
+    GICP,
+    SICP,
+    SICP_sim,
+    ICP,
+    ICP_sim,
+    Undefined
+};
+
+inline std::string EAlignmentMethod_enumToString(EAlignmentMethod mode)
+{
+    switch (mode)
+    {
+    case EAlignmentMethod::GICP:
+        return "GICP";
+    case EAlignmentMethod::SICP:
+        return "SICP";
+    case EAlignmentMethod::SICP_sim:
+        return "SICP_sim";
+    case EAlignmentMethod::ICP:
+        return "ICP";
+    case EAlignmentMethod::ICP_sim:
+        return "ICP_sim";
+    case EAlignmentMethod::Undefined:
+        return "Undefined";
+    }
+}
+
+inline EAlignmentMethod EAlignmentMethod_stringToEnum(const std::string& mode)
+{
+    std::string m = mode;
+    boost::algorithm::to_lower(m);
+    if (m == "gicp")
+        return EAlignmentMethod::GICP;
+    if (m == "sicp")
+        return EAlignmentMethod::SICP;
+    if (m == "sicp_sim")
+        return EAlignmentMethod::SICP_sim;
+    if (m == "icp")
+        return EAlignmentMethod::ICP;
+    if (m == "icp_sim")
+        return EAlignmentMethod::ICP_sim;
+    throw std::out_of_range("Invalid AlignmentMethod: " + mode);
+}
+
+inline std::string EAlignmentMethod_information()
+{
+    return  "Point cloud aligment method:\n"
+        "* GICP: Generalized ICP.\n"
+        "* SICP: Sparse ICP.\n"
+        "* SICP_sim: Sparse ICP with scale.\n"
+        "* ICP: ICP.\n"
+        "* ICP_sim: ICP with scale.\n"
+        "";
+}
+
+
 /**
  * @brief This class allowed to register a source (moving) cloud  to a target (fixed) cloud using an
  * approach based on the Generalized Iterative Closest Point algorithm.
@@ -48,8 +121,8 @@ public:
    * @param[in] outputFile: The transformed & saved file.
    * @return EXIT_FAILURE if something wrong happens, else EXIT_SUCCESS.
    */
-  static int tranformAndSaveCloud(const std::string & inputFile, 
-                                  const Eigen::Matrix4f & T, 
+  int tranformAndSaveCloud(const std::string & inputFile, 
+                                  const Eigen::Matrix4d & T, 
                                   const std::string & outputFile);
   
   /**
@@ -114,32 +187,33 @@ public:
   inline void setKSeachNormals(const int k) {kSearchNormals = k;}
   
   /**
-   * @brief To display or not the 3D visulisation of the different step of the registering.
-   * Set to \c false by default.
-   * @param[in] show A boolean.
-   */
-  inline void setShowPipeline(const bool show) {showPipeline = show;}
-  
-  /**
    * @brief Return the transformation matrix obtains at the end of the alignment, such as: 
    * T * sourceCloud = targetCloud
    * @return A 4x4 matrix ([R|t]).
    */
-  inline Eigen::Matrix4f getFinalTransformation() const {return finalTransformation;}
+  inline Eigen::Matrix4d getFinalTransformation() const {return finalTransformation;}
   
   /**
    * @brief Show the duration of each time of the alignment pipeline.
    */
   void showTimeline();
 
+  Eigen::Matrix4d align(EAlignmentMethod mode);
+
   /**
    * @brief Perform the alignment of the source cloud on the target cloud and gives
    * you the registered source cloud.
    * The transformation matrix is available using: \c getFinalTransformation().
-   * @return EXIT_FAILURE if something wrong happens, else EXIT_SUCCESS.
    */
-  int align();
-  
+  Eigen::Matrix4d alignGICP();
+
+  Eigen::Matrix4d alignICP(const ICP::Parameters& par);
+
+  /**
+   * @brief Alignment based on sparseICP library.
+   */
+  Eigen::Matrix4d alignSICP(const SICP::Parameters& par);
+
 private:
   
   /**
@@ -147,7 +221,7 @@ private:
    * @param[in,out] cloud The cloud to move.
    * @return The 4x4 transformation matrix associated to this translation.
    */
-  static Eigen::Matrix4f moveToOrigin(pcl::PointCloud<pcl::PointXYZ> & cloud);
+  static Eigen::Matrix4d moveToOrigin(pcl::PointCloud<pcl::PointXYZ> & cloud);
   
   /**
    * @brief Apply the PCL's 'Generalized Iterative Closest Point' algorithm refining the source cloud
@@ -159,7 +233,7 @@ private:
    * @param registered_source_cloud[out]
    * @return 
    */
-  static Eigen::Matrix4f applyGeneralizedICP(const pcl::PointCloud<pcl::PointXYZ> & source_cloud,
+  static Eigen::Matrix4d applyGeneralizedICP(const pcl::PointCloud<pcl::PointXYZ> & source_cloud,
                                              const pcl::PointCloud<pcl::PointXYZ> & target_cloud,
                                              const pcl::PointCloud<pcl::Normal> & source_normals,
                                              const pcl::PointCloud<pcl::Normal> & target_normals,
@@ -200,13 +274,13 @@ private:
    * @param[in] scale The scale s.
    * @return The 4x4 transformation matrix T.
    */
-  Eigen::Matrix4f getPureScaleTransformation(const float scale);
+  Eigen::Matrix4d getPureScaleTransformation(const float scale);
   
   /**
    * @brief [TODO] Compute the scale ratio between the source and the target clouds using SVD (1st eigen value).
    * @return The 4x4 transformation matrix T associated to the estimated scale.
    */
-  Eigen::Matrix4f rescaleAuto() { return Eigen::Matrix4f(Eigen::Matrix4f::Identity()); } 
+  Eigen::Matrix4d rescaleAuto() { return Eigen::Matrix4d(Eigen::Matrix4d::Identity()); } 
   
   /**
    * @brief Load a cloud from a file name (tolerated formats: .ply, .pcd and .obj)
@@ -221,8 +295,8 @@ private:
    * @brief Move the \c sourceCloud to the \c targetCloud position.
    * @return The 4x4 transformation matrix associated to the translation.
    */
-  Eigen::Matrix4f moveSourceToTargetPosition();  
-  
+  Eigen::Matrix4d moveSourceToTargetPosition();  
+  #if 0
   /**
    * @brief 3D visualizer for 2 pointclouds. Source is green, target is red.
    * @param[in] windowName The name of the window.
@@ -291,6 +365,7 @@ private:
    * @brief To activate the visualizers.
    */
   void goDraw() const; 
+#endif
   
   // -- Data member
   
@@ -310,9 +385,7 @@ private:
   
   int kSearchNormals; /**< The number of closest neighbours used to compute normals. */
   
-  bool showPipeline; /**< Vizualise (or not) each step of the alignement. */
-    
-  Eigen::Matrix4f finalTransformation; /**< Is the computed transformation such as: T * sourceCloud = targetCloud/ */
+  Eigen::Matrix4d finalTransformation; /**< Is the computed transformation such as: T * sourceCloud = targetCloud/ */
   
   struct DurationsSummary
   {

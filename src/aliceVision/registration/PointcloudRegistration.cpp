@@ -1,4 +1,12 @@
-#include <aliceVision/registration/PointcloudRegistration.hpp>
+// This file is part of the AliceVision project.
+// Copyright (c) 2018 AliceVision contributors.
+// This Source Code Form is subject to the terms of the Mozilla Public License,
+// v. 2.0. If a copy of the MPL was not distributed with this file,
+// You can obtain one at https://mozilla.org/MPL/2.0/.
+
+#include "PointcloudRegistration.hpp"
+#include "ICP.hpp"
+#include "SICP.hpp"
 
 #include <aliceVision/system/Logger.hpp>
 #include <pcl/Vertices.h>
@@ -13,7 +21,7 @@
 #include <pcl/octree/octree_pointcloud.h>
 #include <pcl/registration/gicp.h>
 #include <pcl/search/kdtree.h>
-#include <pcl/visualization/cloud_viewer.h>
+
 #include <chrono>
 
 namespace aliceVision {
@@ -27,15 +35,14 @@ PointcloudRegistration::PointcloudRegistration()
   , voxelSize(0.1f)
   , kSearchNormals(10)
 {
-  /* ... */
 }
 
 int PointcloudRegistration::loadSourceCloud(const std::string & file)
 {
-  auto tic = std::chrono::steady_clock::now(); 
+  auto tic = std::chrono::steady_clock::now();
 
   int res = loadCloud(file, sourceCloud);
-  
+
   duration.loadSourceCloud = std::chrono::duration <double, std::milli> (std::chrono::steady_clock::now()-tic).count();
 
   return res;
@@ -43,18 +50,18 @@ int PointcloudRegistration::loadSourceCloud(const std::string & file)
 
 int PointcloudRegistration::loadTargetCloud(const std::string & file)
 {
-  auto tic = std::chrono::steady_clock::now(); 
-  
+  auto tic = std::chrono::steady_clock::now();
+
   int res = loadCloud(file, targetCloud);
-  
+
   duration.loadTargetCloud = std::chrono::duration <double, std::milli> (std::chrono::steady_clock::now()-tic).count();
-  
+
   return res;
 }
 
 int PointcloudRegistration::tranformAndSaveCloud(
-    const std::string & inputFile, 
-    const Eigen::Matrix4f & T, 
+    const std::string & inputFile,
+    const Eigen::Matrix4d & T,
     const std::string & outputFile)
 {
   if (!boost::filesystem::exists(inputFile))
@@ -62,7 +69,7 @@ int PointcloudRegistration::tranformAndSaveCloud(
     ALICEVISION_LOG_ERROR("PointcloudRegistration::saveCloud: The file does not exist '" << inputFile << "'");
     return EXIT_FAILURE;
   }
-  
+
   pcl::PointCloud<pcl::PointXYZRGB> inputCloud, outputCloud;
 
   // load input cloud:
@@ -86,10 +93,11 @@ int PointcloudRegistration::tranformAndSaveCloud(
 
   // transform input pointcloud according to T:
   pcl::transformPointCloud(inputCloud, outputCloud, T);
-  
+
   // save the transformed pointcloud:
   if (outputFile.substr(outputFile.find_last_of(".") + 1) == "ply")
   {
+    // pcl::io::savePLYFile(outputFile + "_src.ply", sourceCloud); // save the input point cloud for debug
     pcl::io::savePLYFile(outputFile, outputCloud);
   }
   else
@@ -97,7 +105,7 @@ int PointcloudRegistration::tranformAndSaveCloud(
     ALICEVISION_LOG_ERROR("PointcloudRegistration::saveCloud: Unknown extension: " << outputFile);
     return EXIT_FAILURE;
   }
-  
+
   if (outputCloud.width == inputCloud.width)
   {
     ALICEVISION_LOG_INFO("Transformation & saving succeed: '" << outputFile << "'");
@@ -110,69 +118,105 @@ int PointcloudRegistration::tranformAndSaveCloud(
   }
 }
 
-void PointcloudRegistration::setSourceMeasurement(const float measurement) 
+void PointcloudRegistration::setSourceMeasurement(const float measurement)
 {
   if (scaleRatio != 1.f)
   {
     ALICEVISION_LOG_WARNING("Cannot set the source measurement to " << measurement << ": the scale ratio is already set to " << scaleRatio << " (!= 1)." );
     return;
   }
-  
+
   assert(measurement != 0);
-  
-  sourceMeasurements = measurement; 
+
+  sourceMeasurements = measurement;
   rescaleMode = ERescaleMode::Manual;
 }
 
-void PointcloudRegistration::setTargetMeasurement(const float measurement) 
+void PointcloudRegistration::setTargetMeasurement(const float measurement)
 {
   if (scaleRatio != 1.f)
   {
     ALICEVISION_LOG_WARNING("Cannot set the target measurement to " << measurement << ": the scale ratio is already set to " << scaleRatio << " (!= 1)." );
     return;
   }
-  
+
   assert(measurement != 0);
-  
-  targetMeasurements = measurement; 
+
+  targetMeasurements = measurement;
   rescaleMode = ERescaleMode::Manual;
 }
 
-void PointcloudRegistration::setScaleRatio(const float ratio) 
+void PointcloudRegistration::setScaleRatio(const float ratio)
 {
   assert(ratio > 0);
 
-  scaleRatio = ratio; 
+  scaleRatio = ratio;
   rescaleMode = ERescaleMode::Manual;
 }
 
 void PointcloudRegistration::showTimeline()
 {
-  ALICEVISION_LOG_TRACE("Steps duration:\n" 
-                        "\t| - load target cloud: " << duration.loadTargetCloud << " ms \n" 
-                        "\t| - load source cloud: " << duration.loadSourceCloud << " ms \n" 
-                        "\t| - coarse alignment: " << duration.coarseAlignment << " ms \n" 
-                        "\t| - rescaling: " << duration.rescaling << " ms \n" 
-                        "\t| - downsampling: " << duration.downsampling << " ms \n" 
-                        "\t| - normals computation: " << duration.computeNormals << " ms \n" 
-                        "\t| - refined alignment (gicp): " << duration.refinedAlignment << " ms \n" 
+  ALICEVISION_LOG_TRACE("Steps duration:\n"
+                        "\t| - load target cloud: " << duration.loadTargetCloud << " ms \n"
+                        "\t| - load source cloud: " << duration.loadSourceCloud << " ms \n"
+                        "\t| - coarse alignment: " << duration.coarseAlignment << " ms \n"
+                        "\t| - rescaling: " << duration.rescaling << " ms \n"
+                        "\t| - downsampling: " << duration.downsampling << " ms \n"
+                        "\t| - normals computation: " << duration.computeNormals << " ms \n"
+                        "\t| - refined alignment (gicp): " << duration.refinedAlignment << " ms \n"
                         "\t| -------------------------------------------"
                         );
 }
 
-int PointcloudRegistration::align()
+Eigen::Matrix4d PointcloudRegistration::align(EAlignmentMethod mode)
 {
-  pcl::PointCloud<pcl::PointXYZ> mutableSourceCloud, mutableTargetCloud;
+    ALICEVISION_LOG_INFO("|- Input source: " << sourceCloud.size());
+    ALICEVISION_LOG_INFO("|- Input target: " << targetCloud.size());
+
+    switch (mode)
+    {
+        case EAlignmentMethod::GICP:
+        {
+            return alignGICP();
+        }
+        case EAlignmentMethod::ICP:
+        {
+            ICP::Parameters par;
+            return alignICP(par);
+        }
+        case EAlignmentMethod::ICP_sim:
+        {
+            ICP::Parameters par;
+            par.useDirectSimilarity = true;
+            return alignICP(par);
+        }
+        case EAlignmentMethod::SICP:
+        {
+            SICP::Parameters par;
+            return alignSICP(par);
+        }
+        case EAlignmentMethod::SICP_sim:
+        {
+            SICP::Parameters par;
+            par.useDirectSimilarity = true;
+            return alignSICP(par);
+        }
+        case EAlignmentMethod::Undefined:
+            throw std::runtime_error("Undefined alignment method");
+    }
+    throw std::runtime_error("Unknown alignment method");
+}
+
+Eigen::Matrix4d PointcloudRegistration::alignGICP()
+{
+  pcl::PointCloud<pcl::PointXYZ> mutableSourceCloud;
+  pcl::PointCloud<pcl::PointXYZ> mutableTargetCloud;
   pcl::copyPointCloud(sourceCloud, mutableSourceCloud);
   pcl::copyPointCloud(targetCloud, mutableTargetCloud);
-  
+
   ALICEVISION_LOG_INFO("|- Input source: " << mutableSourceCloud.size());
   ALICEVISION_LOG_INFO("|- Input target: " << mutableTargetCloud.size());
-  
-  if (showPipeline)
-  {
-    drawCentered("1. Input", sourceCloud, targetCloud);
-  }
+
   // ===========================================================
   // -- Coarse registration: Move source & target to origin
   // Could be replaced by:
@@ -182,154 +226,182 @@ int PointcloudRegistration::align()
   // ===========================================================
 
   ALICEVISION_LOG_INFO("-- Move source to the target position");
-  
-  auto tic = std::chrono::steady_clock::now(); 
 
-  Eigen::Matrix4f To_source = moveToOrigin(mutableSourceCloud);
-  Eigen::Matrix4f To_target = moveToOrigin(mutableTargetCloud);
-  
+  auto tic = std::chrono::steady_clock::now();
+
+  Eigen::Matrix4d To_source = moveToOrigin(mutableSourceCloud);
+  Eigen::Matrix4d To_target = moveToOrigin(mutableTargetCloud);
+
   duration.coarseAlignment = std::chrono::duration <double, std::milli> (std::chrono::steady_clock::now()-tic).count();
 
   ALICEVISION_LOG_INFO("|- T_origin_source = \n" << To_source);
   ALICEVISION_LOG_INFO("|- T_origin_target = \n" << To_target);
 
-  if (showPipeline)
-  {
-    draw("2. Move to origin", mutableSourceCloud, mutableTargetCloud);
-  }
-  
   // ===========================================================
-  // --  Rescale source cloud 
+  // --  Rescale source cloud
   // ===========================================================
 
   ALICEVISION_LOG_INFO("-- Rescaling step");
-  
-  tic = std::chrono::steady_clock::now(); 
 
-  Eigen::Matrix4f Ts = Eigen::Matrix4f(Eigen::Matrix4f::Identity());
+  tic = std::chrono::steady_clock::now();
+
+  Eigen::Matrix4d Ts = Eigen::Matrix4d(Eigen::Matrix4d::Identity());
   if (rescaleMode == ERescaleMode::Manual)
   {
-    ALICEVISION_LOG_INFO("|- Mode: Manual");  
-    
-    if (scaleRatio == 1.f ) 
+    ALICEVISION_LOG_INFO("|- Mode: Manual");
+
+    if (scaleRatio == 1.f )
     {
       if (targetMeasurements == 1.f && sourceMeasurements == 1.f)
         ALICEVISION_LOG_WARNING("Manual rescaling mode desired but 'scaleRatio' == 1");
       else
         scaleRatio = targetMeasurements / sourceMeasurements;
     }
-    
+
     ALICEVISION_LOG_INFO("|- scaleRatio: " << scaleRatio);
     Ts = getPureScaleTransformation(scaleRatio);
-    
-    if (scaleRatio != 1.f ) 
+
+    if (scaleRatio != 1.f )
       pcl::transformPointCloud(mutableSourceCloud, mutableSourceCloud, Ts);
   }
   else if (rescaleMode == ERescaleMode::Auto)
   {
-    Ts = rescaleAuto();		
+    Ts = rescaleAuto();
     pcl::transformPointCloud(mutableSourceCloud, mutableSourceCloud, Ts);
-    
-    ALICEVISION_LOG_INFO("|- Mode: Auto");  
 
-    if (showPipeline)
-    {
-      draw("3. Rescaling", mutableSourceCloud, mutableTargetCloud);
-    }
+    ALICEVISION_LOG_INFO("|- Mode: Auto");
   }
   else // Not rescaled
   {
-    ALICEVISION_LOG_INFO("|- Mode: *not rescaled*");  
+    ALICEVISION_LOG_INFO("|- Mode: *not rescaled*");
   }
-  
+
   duration.rescaling = std::chrono::duration <double, std::milli> (std::chrono::steady_clock::now()-tic).count();
-  
+
   ALICEVISION_LOG_INFO("T_rescaling = \n" << Ts);
-  
+
   // ===========================================================
   // -- VoxelGrid Subsampling
   // ===========================================================
-  
+
   ALICEVISION_LOG_INFO("-- Apply voxel grid");
-  
-  tic = std::chrono::steady_clock::now(); 
+
+  tic = std::chrono::steady_clock::now();
 
   applyVoxelGrid(mutableSourceCloud, voxelSize);
   applyVoxelGrid(mutableTargetCloud, voxelSize);
-  
+
   duration.downsampling = std::chrono::duration <double, std::milli> (std::chrono::steady_clock::now()-tic).count();
 
   ALICEVISION_LOG_INFO("|- Voxel size: " << voxelSize);
   ALICEVISION_LOG_INFO("|- Voxel source: " << mutableSourceCloud.size() << " pts");
   ALICEVISION_LOG_INFO("|- Voxel target: " << mutableTargetCloud.size() << " pts");
-      
-  if (showPipeline)
-  {
-    draw("3. Voxel grid", mutableSourceCloud, mutableTargetCloud);
-  }
-  
+
   // ===========================================================
   // -- Compute normals
   // ===========================================================
-  
+
   ALICEVISION_LOG_INFO("-- Compute normals");
-  
+
   pcl::PointCloud<pcl::Normal> sourceNormals, targetNormals;
-  
-  tic = std::chrono::steady_clock::now(); 
+
+  tic = std::chrono::steady_clock::now();
 
   estimateNormals(mutableSourceCloud, sourceNormals, kSearchNormals);
   estimateNormals(mutableTargetCloud, targetNormals, kSearchNormals);
-  
+
   duration.computeNormals = std::chrono::duration <double, std::milli> (std::chrono::steady_clock::now()-tic).count();
 
   ALICEVISION_LOG_INFO("|- Normals source: " << sourceNormals.size() << " pts");
   ALICEVISION_LOG_INFO("|- Normals target: " << targetNormals.size() << " pts");
-  
-  if (showPipeline)
-  {
-    draw("4. Normals", mutableSourceCloud, mutableTargetCloud, sourceNormals, targetNormals);
-  }
-  
+
   // ===========================================================
   // -- Generalized-ICP
   // ===========================================================
-  
+
   ALICEVISION_LOG_INFO("-- Apply Generalized-ICP");
-  
-  Eigen::Matrix4f Ti;
+
+  Eigen::Matrix4d Ti;
   std::clock_t start;
   start = std::clock();
-  
-  duration.computeNormals = std::chrono::duration <double, std::milli> (std::chrono::steady_clock::now()-tic).count();
+
+  duration.computeNormals = std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now()-tic).count();
 
   Ti = applyGeneralizedICP(mutableSourceCloud, mutableTargetCloud, sourceNormals, targetNormals, mutableSourceCloud);
-  
-  duration.refinedAlignment = std::chrono::duration <double, std::milli> (std::chrono::steady_clock::now()-tic).count();
+
+  duration.refinedAlignment = std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now()-tic).count();
 
   ALICEVISION_LOG_INFO("|- G-ICP took " << (std::clock() - start) / (double)CLOCKS_PER_SEC << " sec.");
   ALICEVISION_LOG_INFO("|- T_gicp = \n" << Ti);
 
-  if (showPipeline)
-  {
-    draw("5. Result G-ICP", mutableSourceCloud, mutableTargetCloud);
-  }
-
   // ===========================================================
   // -- Compute complete transformation
   // ===========================================================
-  
+
   ALICEVISION_LOG_INFO("-- Compute global transformation");
-  
-  Eigen::Matrix4f To_target_inv = To_target.inverse();
+
+  Eigen::Matrix4d To_target_inv = To_target.inverse();
   finalTransformation = To_target_inv * Ti * Ts * To_source;
-  
+
   ALICEVISION_LOG_INFO("|- finalTransformation = \n" << finalTransformation);
-    
-  if (showPipeline)
-    goDraw();
-  
-  return EXIT_SUCCESS;
+
+  return finalTransformation;
+}
+
+Eigen::Matrix4d PointcloudRegistration::alignICP(const ICP::Parameters& par)
+{
+    std::cout << "PointcloudRegistration::alignICP" << std::endl;
+
+    Eigen::Matrix3Xd X(3, sourceCloud.size()); // source, transformed
+    for (int i = 0; i < sourceCloud.size(); i++)
+    {
+        X(0, i) = sourceCloud.points[i].x;
+        X(1, i) = sourceCloud.points[i].y;
+        X(2, i) = sourceCloud.points[i].z;
+    }
+    Eigen::Matrix3Xd Y(3, targetCloud.size()); // target
+    for (int i = 0; i < targetCloud.size(); i++)
+    {
+        Y(0, i) = targetCloud.points[i].x;
+        Y(1, i) = targetCloud.points[i].y;
+        Y(2, i) = targetCloud.points[i].z;
+    }
+
+    Eigen::Affine3d transform = ICP::point_to_point(X, Y, par); // standard ICP
+    finalTransformation = transform.matrix();
+
+    for (int i = 0; i < sourceCloud.size(); i++)
+    {
+        sourceCloud.points[i].x = X(0, i);
+        sourceCloud.points[i].y = X(1, i);
+        sourceCloud.points[i].z = X(2, i);
+    }
+
+    return finalTransformation;
+}
+
+Eigen::Matrix4d PointcloudRegistration::alignSICP(const SICP::Parameters& par)
+{
+    std::cout << "PointcloudRegistration::alignSICP" << std::endl;
+
+    Eigen::Matrix3Xd X(3, sourceCloud.size()); // source, transformed
+    for (int i = 0; i < sourceCloud.size(); i++)
+    {
+        X(0, i) = sourceCloud.points[i].x;
+        X(1, i) = sourceCloud.points[i].y;
+        X(2, i) = sourceCloud.points[i].z;
+    }
+    Eigen::Matrix3Xd Y(3, targetCloud.size()); // target
+    for (int i = 0; i < targetCloud.size(); i++)
+    {
+        Y(0, i) = targetCloud.points[i].x;
+        Y(1, i) = targetCloud.points[i].y;
+        Y(2, i) = targetCloud.points[i].z;
+    }
+
+    Eigen::Affine3d transform = SICP::point_to_point(X, Y, par); // sparse ICP
+    finalTransformation = transform.matrix();
+    return finalTransformation;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -352,40 +424,52 @@ Eigen::Matrix4d PointcloudRegistration::moveToOrigin(pcl::PointCloud<pcl::PointX
   return T;
 }
 
-Eigen::Matrix4f PointcloudRegistration::applyGeneralizedICP(
+Eigen::Matrix4d PointcloudRegistration::applyGeneralizedICP(
     const pcl::PointCloud <pcl::PointXYZ> & source_cloud,
     const pcl::PointCloud <pcl::PointXYZ> & target_cloud,
     const pcl::PointCloud<pcl::Normal> & source_normals,
     const pcl::PointCloud<pcl::Normal> & target_normals,
     pcl::PointCloud <pcl::PointXYZ> & registered_source_cloud)
 {
-  
+
   boost::shared_ptr< std::vector<Eigen::Matrix3d, Eigen::aligned_allocator<Eigen::Matrix3d> > > source_covs(new std::vector<Eigen::Matrix3d, Eigen::aligned_allocator<Eigen::Matrix3d> >);
   boost::shared_ptr< std::vector<Eigen::Matrix3d, Eigen::aligned_allocator<Eigen::Matrix3d> > > target_covs(new std::vector<Eigen::Matrix3d, Eigen::aligned_allocator<Eigen::Matrix3d> >);
   pcl::features::computeApproximateCovariances(source_cloud, source_normals, *source_covs);
   pcl::features::computeApproximateCovariances(target_cloud, target_normals, *target_covs);
-  
+
   //// setup Generalized-ICP
   pcl::GeneralizedIterativeClosestPoint<pcl::PointXYZ, pcl::PointXYZ> gicp;
   //gicp.setMaxCorrespondenceDistance(1);
   pcl::search::KdTree<pcl::PointXYZ>::Ptr target_tree(new pcl::search::KdTree<pcl::PointXYZ>);
   target_tree->setInputCloud(target_cloud.makeShared());
   gicp.setSearchMethodTarget(target_tree);
-  
+
   pcl::search::KdTree<pcl::PointXYZ>::Ptr source_tree(new pcl::search::KdTree<pcl::PointXYZ>);
   source_tree->setInputCloud(source_cloud.makeShared());
   gicp.setSearchMethodSource(source_tree);
-  
-  gicp.setMaxCorrespondenceDistance(1000000);
+
   //gicp.setMaximumIterations(1000000);
   //gicp.setMaximumOptimizerIterations(1000000);
   gicp.setInputSource(source_cloud.makeShared());
   gicp.setInputTarget(target_cloud.makeShared());
   gicp.setSourceCovariances(source_covs);
   gicp.setTargetCovariances(target_covs);
+
+  // gicp.setMaxCorrespondenceDistance(1000000);
+
+  // Set the max correspondence distance to 5cm (e.g., correspondences with higher distances will be ignored)
+  // gicp.setMaxCorrespondenceDistance(0.05);
+  // Set the maximum number of iterations (criterion 1)
+  // gicp.setMaximumIterations(50);
+  // Set the transformation epsilon (criterion 2)
+  gicp.setTransformationEpsilon(1e-8);
+  // Set the euclidean distance difference epsilon (criterion 3)
+  // gicp.setEuclideanFitnessEpsilon(1);
+
   // run registration and get transformation
   gicp.align(registered_source_cloud);
-  return gicp.getFinalTransformation();
+
+  return gicp.getFinalTransformation().cast<double>();
 }
 
 double PointcloudRegistration::computeCloudResolution(const pcl::PointCloud<pcl::PointXYZ>::ConstPtr &cloud)
@@ -398,7 +482,7 @@ double PointcloudRegistration::computeCloudResolution(const pcl::PointCloud<pcl:
   pcl::search::KdTree<pcl::PointXYZ> tree;
 
   tree.setInputCloud(cloud);
-  
+
   for (size_t i = 0; i < cloud->size(); ++i)
   {
     if (!pcl_isfinite((*cloud)[i].x))
@@ -421,11 +505,11 @@ double PointcloudRegistration::computeCloudResolution(const pcl::PointCloud<pcl:
 }
 
 void PointcloudRegistration::estimateNormals(const pcl::PointCloud<pcl::PointXYZ> & cloud,
-                                          pcl::PointCloud<pcl::Normal> & normals, 
+                                          pcl::PointCloud<pcl::Normal> & normals,
                                           int ksearch)
 {
   pcl::search::KdTree<pcl::PointXYZ>::Ptr tree(new pcl::search::KdTree<pcl::PointXYZ>());
-  
+
   // Compute the normals source
   pcl::NormalEstimationOMP<pcl::PointXYZ, pcl::Normal> normalEstimation;
   normalEstimation.setInputCloud(cloud.makeShared());
@@ -436,18 +520,21 @@ void PointcloudRegistration::estimateNormals(const pcl::PointCloud<pcl::PointXYZ
 
 void PointcloudRegistration::applyVoxelGrid(pcl::PointCloud<pcl::PointXYZ> & cloud, const float voxelSize)
 {
-  pcl::PointCloud<pcl::PointXYZ> voxCloud;// Create the filtering object
+  pcl::PointCloud<pcl::PointXYZ>::Ptr tmpInputCloud(new pcl::PointCloud<pcl::PointXYZ>());
+  pcl::copyPointCloud(cloud, *tmpInputCloud);
+
+//  pcl::PointCloud<pcl::PointXYZ> voxCloud;// Create the filtering object
   pcl::VoxelGrid<pcl::PointXYZ> vg;
-  vg.setInputCloud(cloud.makeShared());
+  vg.setInputCloud(tmpInputCloud);
   vg.setLeafSize(voxelSize, voxelSize, voxelSize);
-  vg.filter(voxCloud);
-  cloud.swap(voxCloud);
+  vg.filter(cloud);
+  // cloud.swap(voxCloud);
 }
 
-Eigen::Matrix4f PointcloudRegistration::getPureScaleTransformation(const float scale)
+Eigen::Matrix4d PointcloudRegistration::getPureScaleTransformation(const float scale)
 {
-  Eigen::Matrix4f T = Eigen::Matrix4f(Eigen::Matrix4f::Identity());
-  T.topLeftCorner(3, 3) *= Eigen::Matrix3f::Identity()*(scale);
+  Eigen::Matrix4d T = Eigen::Matrix4d(Eigen::Matrix4d::Identity());
+  T.topLeftCorner(3, 3) *= Eigen::Matrix3d::Identity()*(scale);
   return T;
 }
 
@@ -459,7 +546,7 @@ int PointcloudRegistration::loadCloud(const std::string & file, pcl::PointCloud<
     ALICEVISION_LOG_ERROR("PointcloudRegistration::loadCloud: The file does not exist '" << file << "'");
     return EXIT_FAILURE;
   }
-  
+
   int res;
   if (file.substr(file.find_last_of(".") + 1) == "pcd")
     res = pcl::io::loadPCDFile<PointT>(file, cloud);
@@ -472,14 +559,14 @@ int PointcloudRegistration::loadCloud(const std::string & file, pcl::PointCloud<
     ALICEVISION_LOG_ERROR("PointcloudRegistration::loadCloud: Unknown extension: " << file);
     return EXIT_FAILURE;
   }
-  
+
   if (res == 0 && cloud.width > 0)
     return EXIT_SUCCESS;
   else
     return EXIT_FAILURE;
 }
 
-Eigen::Matrix4f PointcloudRegistration::moveSourceToTargetPosition()
+Eigen::Matrix4d PointcloudRegistration::moveSourceToTargetPosition()
 {
   pcl::PointXYZ sourceMinPoint, sourceMaxPoint, sourcePosition, targetMinPoint, targetMaxPoint, targetPosition;
   pcl::getMinMax3D(sourceCloud, sourceMinPoint, sourceMaxPoint);
@@ -490,114 +577,18 @@ Eigen::Matrix4f PointcloudRegistration::moveSourceToTargetPosition()
   targetPosition.x = (targetMinPoint.x + targetMaxPoint.x) / 2.f;
   targetPosition.y = (targetMinPoint.y + targetMaxPoint.y) / 2.f;
   targetPosition.z = (targetMinPoint.z + targetMaxPoint.z) / 2.f;
-  
-  Eigen::Matrix4f T = Eigen::Matrix4f(Eigen::Matrix4f::Identity());
+
+  Eigen::Matrix4d T = Eigen::Matrix4d(Eigen::Matrix4d::Identity());
   T(0, 3) = targetPosition.x - sourcePosition.x;
   T(1, 3) = targetPosition.y - sourcePosition.y;
   T(2, 3) = targetPosition.z - sourcePosition.z;
-  
+
   pcl::PointCloud<pcl::PointXYZ> movedCloud;
   pcl::transformPointCloud(sourceCloud, movedCloud, T);
   sourceCloud.swap(movedCloud);
   return T;
 }
 
-void PointcloudRegistration::draw(
-    const std::string & windowName,
-    const pcl::PointCloud<pcl::PointXYZ> & source,
-    const pcl::PointCloud<pcl::PointXYZ> & target,
-    const float voxelSize)
-{
-  if (voxelSize != 0)
-  {
-    pcl::PointCloud<pcl::PointXYZ> mutableSourceCloud, mutableTargetCloud;
-    pcl::copyPointCloud(source, mutableSourceCloud);
-    pcl::copyPointCloud(target, mutableTargetCloud);
-    
-    applyVoxelGrid(mutableSourceCloud, voxelSize);
-    applyVoxelGrid(mutableTargetCloud, voxelSize);
-    draw(windowName, mutableSourceCloud, mutableTargetCloud);
-  }
-  else 
-    draw(windowName, source, target);	
-}
-
-void PointcloudRegistration::draw(
-    const std::string & windowName,
-    const pcl::PointCloud<pcl::PointXYZ> & source,
-    const pcl::PointCloud<pcl::PointXYZ> & target)
-{
-  pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ> handler_source_cloud(source.makeShared(), 80, 150, 80);
-  pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ> handler_target_cloud(target.makeShared(), 150, 80, 80);
-  
-  pcl::visualization::PCLVisualizer viewer(windowName);
-  viewer.addPointCloud<pcl::PointXYZ>(source.makeShared(), handler_source_cloud, "Final_cloud");
-  viewer.setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1, "Final_cloud");
-  viewer.addPointCloud<pcl::PointXYZ>(target.makeShared(), handler_target_cloud, "target_cloud");
-  viewer.setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1, "target_cloud");
-  viewer.addCoordinateSystem(1.0f);
-}
-
-void PointcloudRegistration::drawCentered(
-    const std::string & windowName,
-    const pcl::PointCloud<pcl::PointXYZ> & source,
-    const pcl::PointCloud<pcl::PointXYZ> & target,
-    const float voxelSize)
-{
-  pcl::PointCloud<pcl::PointXYZ> mutableSourceCloud, mutableTargetCloud;
-  pcl::copyPointCloud(target, mutableTargetCloud);
-  
-  Eigen::Matrix4f To_target = moveToOrigin(mutableTargetCloud);
-  pcl::transformPointCloud(source, mutableSourceCloud, To_target);
-  
-  draw(windowName, mutableSourceCloud, mutableTargetCloud, voxelSize);
-}
-
-void PointcloudRegistration::drawCentered(
-    const std::string & windowName,
-    const pcl::PointCloud<pcl::PointXYZ> & source,
-    const pcl::PointCloud<pcl::PointXYZ> & target)
-{
-  pcl::PointCloud<pcl::PointXYZ> mutableSourceCloud, mutableTargetCloud;
-  pcl::copyPointCloud(target, mutableTargetCloud);
-  
-  Eigen::Matrix4f To_target = moveToOrigin(mutableTargetCloud);
-  pcl::transformPointCloud(source, mutableSourceCloud, To_target);
-  
-  draw(windowName, mutableSourceCloud, mutableTargetCloud);
-}
-
-void PointcloudRegistration::draw(const std::string & windowName, 
-                               const pcl::PointCloud<pcl::PointXYZ> & source,
-                               const pcl::PointCloud<pcl::PointXYZ> & target,
-                               const pcl::PointCloud<pcl::Normal> & sourceNormals, 
-                               const pcl::PointCloud<pcl::Normal> & targetNormals)
-{
-  
-  double source_resolution = computeCloudResolution(source.makeShared());
-  pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ> handler_source_cloud(source.makeShared(), 80, 150, 80);
-  pcl::visualization::PCLVisualizer viewer(windowName + " source");
-  viewer.addPointCloud<pcl::PointXYZ>(source.makeShared(), handler_source_cloud, "Final_cloud");
-  viewer.setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 3, "Final_cloud");
-  viewer.addPointCloudNormals<pcl::PointXYZ, pcl::Normal>(source.makeShared(), sourceNormals.makeShared(), 1, source_resolution*3.0, "normals");
-  
-  double target_resolution = computeCloudResolution(target.makeShared());
-  pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ> handler_target_cloud(target.makeShared(), 150, 80, 80);
-  pcl::visualization::PCLVisualizer viewert(windowName + " target");
-  viewert.addPointCloud<pcl::PointXYZ>(target.makeShared(), handler_target_cloud, "Final_cloud");
-  viewert.setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 3, "Final_cloud");
-  viewert.addPointCloudNormals<pcl::PointXYZ, pcl::Normal>(target.makeShared(), targetNormals.makeShared(), 1, target_resolution*3.0, "normals");
-}
-
-void PointcloudRegistration::goDraw() const 
-{
-  pcl::visualization::PCLVisualizer viewer("Waiting...");
-  while (!viewer.wasStopped())
-  {
-    viewer.spinOnce(100);
-    boost::this_thread::sleep(boost::posix_time::microseconds(100000));
-  }
-}
 
 } // namespace registration
 } // namespace aliceVision
