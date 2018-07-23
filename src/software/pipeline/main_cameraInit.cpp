@@ -420,15 +420,15 @@ int main(int argc, char **argv)
       }
 
       // try to find / compute with 'FocalLengthIn35mmFilm' metadata
-      if(sensorWidth == -1 && hasFocalIn35mmMetadata)
+      if(sensorWidth == -1.0 && hasFocalIn35mmMetadata)
       {
         const float focalIn35mm = std::stof(view.getMetadata("Exif:FocalLengthIn35mmFilm"));
         const float imageRatio = std::max(view.getWidth(), view.getHeight()) / std::min(view.getWidth(), view.getHeight());
 
-        if(focalLength > 0)
+        if(focalLength > 0.0f)
         {
           const float sensorDiag = (focalLength * 43.3) / focalIn35mm; // 43.3 is the diagonal of 35mm film
-          sensorWidth = std::sqrt((1/(1 + imageRatio * imageRatio)) * sensorDiag * sensorDiag);
+          sensorWidth = std::sqrt((1.0/(1.0 + imageRatio * imageRatio)) * sensorDiag * sensorDiag);
 
 
           ALICEVISION_LOG_INFO("Sensor width computed from 'FocalLength' and 'FocalLengthIn35mmFilm' metadata." << std::endl
@@ -437,8 +437,8 @@ int main(int argc, char **argv)
         }
         else
         {
-          sensorWidth = std::sqrt((1/(1 + imageRatio * imageRatio)) * 43.3 * 43.3);
-          focalLength = sensorWidth * (focalIn35mm ) / 36;
+          sensorWidth = std::sqrt((1.0/(1.0 + imageRatio * imageRatio)) * 43.3 * 43.3);
+          focalLength = sensorWidth * (focalIn35mm ) / 36.0f;
           ALICEVISION_LOG_INFO("Sensor width and focal length computed from 'FocalLengthIn35mmFilm' metadata." << std::endl
                                << "\t- sensor width: " << sensorWidth << " mm" << std::endl
                                << "\t- focal length: " << focalLength << " mm");
@@ -446,7 +446,7 @@ int main(int argc, char **argv)
       }
 
       // error handling
-      if(sensorWidth == -1)
+      if(sensorWidth == -1.0)
       {
   #pragma omp critical
         if(hasCameraMetadata)
