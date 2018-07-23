@@ -51,8 +51,7 @@ typedef std::map<ImageID, ListOfImageID> PairList;
 typedef std::map<ImageID, OrderedListOfImageID> OrderedPairList;
 
 /**
- * Function that prints a PairList
- *
+ * @brief Function that prints a PairList
  * @param os The stream on which to print
  * @param pl The pair list
  * @return the stream
@@ -72,8 +71,7 @@ std::ostream& operator<<(std::ostream& os, const PairList & pl)
 }
 
 /**
- * Function that prints a OrderedPairList
- *
+ * @brief Function that prints a OrderedPairList
  * @param os The stream on which to print
  * @param pl The pair list
  * @return the stream
@@ -92,12 +90,15 @@ std::ostream& operator<<(std::ostream& os, const OrderedPairList & pl)
   return os;
 }
 
+/**
+ * @brief Mode to combine image matching between two SfMDatas
+ */
 enum class EImageMatchingMode
 {
+  A_A_AND_A_B,
   A_AB,
-  AAB,
-  AB,
-  A
+  A_B,
+  A_A
 };
 
 
@@ -107,11 +108,11 @@ enum class EImageMatchingMode
  */
 std::string EImageMatchingMode_description()
 {
-  return "The mode to combine matching: \n"
-         "* a+ab : image matching of images in SfMData A plus image matching between images of A and B\n"
-         "* aab  : image matching of images in SfMData A and between images of A and B\n"
-         "* ab   : image matching between images of SfMData A and B\n"
-         "* a    : image matching of images in SfMData A";
+  return "The mode to combine image matching between the input SfMData A and B: \n"
+             "* a/a+a/b : A with A + A with B\n"
+             "* a/ab    : A with A and B\n"
+             "* a/b     : A with B\n"
+             "* a/a     : A with A";
 }
 
 /**
@@ -123,10 +124,10 @@ std::string EImageMatchingMode_enumToString(EImageMatchingMode modeMultiSfM)
 {
   switch(modeMultiSfM)
   {
-    case EImageMatchingMode::A_AB: return "a+ab";
-    case EImageMatchingMode::AAB:  return "aab";
-    case EImageMatchingMode::AB:   return "ab";
-    case EImageMatchingMode::A:    return "a";
+    case EImageMatchingMode::A_A_AND_A_B: return "a/a+a/b";
+    case EImageMatchingMode::A_AB:        return "a/ab";
+    case EImageMatchingMode::A_B:         return "a/b";
+    case EImageMatchingMode::A_A:         return "a/a";
   }
   throw std::out_of_range("Invalid modeMultiSfM enum");
 }
@@ -141,10 +142,10 @@ std::string EImageMatchingMode_enumToString(EImageMatchingMode modeMultiSfM)
   std::string mode = modeMultiSfM;
   std::transform(mode.begin(), mode.end(), mode.begin(), ::tolower); //tolower
 
-  if(mode == "a+ab") return EImageMatchingMode::A_AB;
-  if(mode == "aab")  return EImageMatchingMode::AAB;
-  if(mode == "ab")   return EImageMatchingMode::AB;
-  if(mode == "a")    return EImageMatchingMode::A;
+  if(mode == "a/a+a/b") return EImageMatchingMode::A_A_AND_A_B;
+  if(mode == "a/ab")    return EImageMatchingMode::A_AB;
+  if(mode == "a/b")     return EImageMatchingMode::A_B;
+  if(mode == "a/a")     return EImageMatchingMode::A_A;
 
   throw std::out_of_range("Invalid modeMultiSfM : " + modeMultiSfM);
 }
@@ -316,7 +317,7 @@ void generateFromVoctree(PairList& allMatches,
 
     aliceVision::voctree::SparseHistogram imageSH;
 
-    if(modeMultiSfM != EImageMatchingMode::AB)
+    if(modeMultiSfM != EImageMatchingMode::A_B)
     {
       // sparse histogram of A is already computed in the DB
       imageSH = db.getSparseHistogramPerImage().at(viewIdA);
@@ -376,7 +377,7 @@ int main(int argc, char** argv)
   /// a second file containing a list of features
   std::string sfmDataFilenameB;
   /// the multiple SfM mode
-  std::string matchingModeName = EImageMatchingMode_enumToString(EImageMatchingMode::A);
+  std::string matchingModeName = EImageMatchingMode_enumToString(EImageMatchingMode::A_A);
   /// the combine SfM output
   std::string outputCombinedSfM;
 
@@ -464,8 +465,8 @@ int main(int argc, char** argv)
   const bool useMultiSfM = !sfmDataFilenameB.empty();
   const EImageMatchingMode matchingMode = EImageMatchingMode_stringToEnum(matchingModeName);
 
-  if((useMultiSfM && (matchingMode == EImageMatchingMode::A)) ||
-     (!useMultiSfM && (matchingMode != EImageMatchingMode::A)))
+  if((useMultiSfM && (matchingMode == EImageMatchingMode::A_A)) ||
+     (!useMultiSfM && (matchingMode != EImageMatchingMode::A_A)))
   {
     ALICEVISION_LOG_ERROR("The number of SfMData inputs is not compatible with the selected mode.");
     return EXIT_FAILURE;
@@ -514,14 +515,14 @@ int main(int argc, char** argv)
   {
     ALICEVISION_LOG_INFO("Brute force generation");
 
-    if((matchingMode == EImageMatchingMode::A_AB) ||
-       (matchingMode == EImageMatchingMode::AAB)  ||
-       (matchingMode == EImageMatchingMode::A))
+    if((matchingMode == EImageMatchingMode::A_A_AND_A_B) ||
+       (matchingMode == EImageMatchingMode::A_AB) ||
+       (matchingMode == EImageMatchingMode::A_A))
       generateAllMatchesInOneMap(descriptorsFilesA, selectedPairs);
 
-    if((matchingMode == EImageMatchingMode::A_AB) ||
-       (matchingMode == EImageMatchingMode::AAB)  ||
-       (matchingMode == EImageMatchingMode::AB))
+    if((matchingMode == EImageMatchingMode::A_A_AND_A_B) ||
+       (matchingMode == EImageMatchingMode::A_AB) ||
+       (matchingMode == EImageMatchingMode::A_B))
       generateAllMatchesBetweenTwoMap(descriptorsFilesA, descriptorsFilesB, selectedPairs);
   }
 
@@ -579,9 +580,9 @@ int main(int argc, char** argv)
       auto detect_start = std::chrono::steady_clock::now();
       {
 
-        if((matchingMode == EImageMatchingMode::A_AB) ||
-           (matchingMode == EImageMatchingMode::AAB)  ||
-           (matchingMode == EImageMatchingMode::A))
+        if((matchingMode == EImageMatchingMode::A_A_AND_A_B) ||
+           (matchingMode == EImageMatchingMode::A_AB) ||
+           (matchingMode == EImageMatchingMode::A_A))
         {
           nbFeaturesLoadedInputA = aliceVision::voctree::populateDatabase<DescriptorUChar>(sfmDataA, featuresFolders, tree, dbA, nbMaxDescriptors);
           nbSetDescriptors +=  dbA.getSparseHistogramPerImage().size();
@@ -593,14 +594,14 @@ int main(int argc, char** argv)
           }
         }
 
-        if((matchingMode == EImageMatchingMode::A_AB) ||
-           (matchingMode == EImageMatchingMode::AB))
+        if((matchingMode == EImageMatchingMode::A_A_AND_A_B) ||
+           (matchingMode == EImageMatchingMode::A_B))
         {
           nbFeaturesLoadedInputB = aliceVision::voctree::populateDatabase<DescriptorUChar>(sfmDataB, featuresFolders, tree, dbB, nbMaxDescriptors);
           nbSetDescriptors +=  dbB.getSparseHistogramPerImage().size();
         }
 
-        if(matchingMode == EImageMatchingMode::AAB)
+        if(matchingMode == EImageMatchingMode::A_AB)
         {
           dbAB = dbA; // initialize AB database with A database
           nbFeaturesLoadedInputB = aliceVision::voctree::populateDatabase<DescriptorUChar>(sfmDataB, featuresFolders, tree, dbAB, nbMaxDescriptors);
@@ -627,16 +628,16 @@ int main(int argc, char** argv)
 
       switch(matchingMode)
       {
-        case EImageMatchingMode::A_AB:
+        case EImageMatchingMode::A_A_AND_A_B:
         {
           dbA.computeTfIdfWeights();
           dbB.computeTfIdfWeights();
         }
         break;
 
-        case EImageMatchingMode::AAB: dbAB.computeTfIdfWeights(); break;
-        case EImageMatchingMode::AB:  dbB.computeTfIdfWeights();  break;
-        case EImageMatchingMode::A:   dbA.computeTfIdfWeights();  break;
+        case EImageMatchingMode::A_AB: dbAB.computeTfIdfWeights(); break;
+        case EImageMatchingMode::A_B:  dbB.computeTfIdfWeights();  break;
+        case EImageMatchingMode::A_A:  dbA.computeTfIdfWeights();  break;
       }
     }
 
@@ -649,16 +650,16 @@ int main(int argc, char** argv)
 
       switch(matchingMode)
       {
-        case EImageMatchingMode::A_AB:
+        case EImageMatchingMode::A_A_AND_A_B:
         {
-          generateFromVoctree(allMatches, descriptorsFilesA, dbA,  tree, EImageMatchingMode::A,  nbMaxDescriptors, numImageQuery);
-          generateFromVoctree(allMatches, descriptorsFilesA, dbB,  tree, EImageMatchingMode::AB, nbMaxDescriptors, numImageQuery);
+          generateFromVoctree(allMatches, descriptorsFilesA, dbA,  tree, EImageMatchingMode::A_A, nbMaxDescriptors, numImageQuery);
+          generateFromVoctree(allMatches, descriptorsFilesA, dbB,  tree, EImageMatchingMode::A_B, nbMaxDescriptors, numImageQuery);
         }
         break;
 
-        case EImageMatchingMode::AAB: generateFromVoctree(allMatches, descriptorsFilesA, dbAB, tree, EImageMatchingMode::AAB, nbMaxDescriptors, numImageQuery); break;
-        case EImageMatchingMode::AB:  generateFromVoctree(allMatches, descriptorsFilesA, dbB,  tree, EImageMatchingMode::AB,  nbMaxDescriptors, numImageQuery); break;
-        case EImageMatchingMode::A:   generateFromVoctree(allMatches, descriptorsFilesA, dbA,  tree, EImageMatchingMode::A,   nbMaxDescriptors, numImageQuery); break;
+        case EImageMatchingMode::A_AB: generateFromVoctree(allMatches, descriptorsFilesA, dbAB, tree, EImageMatchingMode::A_AB, nbMaxDescriptors, numImageQuery); break;
+        case EImageMatchingMode::A_B:  generateFromVoctree(allMatches, descriptorsFilesA, dbB,  tree, EImageMatchingMode::A_B,  nbMaxDescriptors, numImageQuery); break;
+        case EImageMatchingMode::A_A:  generateFromVoctree(allMatches, descriptorsFilesA, dbA,  tree, EImageMatchingMode::A_A,  nbMaxDescriptors, numImageQuery); break;
       }
 
       auto detect_elapsed = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::steady_clock::now() - detect_start);
