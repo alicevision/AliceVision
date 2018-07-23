@@ -66,8 +66,8 @@ alicevision_add_library(aliceVision_depthMap
     aliceVision_mvsUtils
     aliceVision_system
     ${Boost_FILESYSTEM_LIBRARY}
-    # ${CUDA_CUDADEVRT_LIBRARY}
-    # ${CUDA_CUBLAS_LIBRARIES}
+    ${CUDA_CUDADEVRT_LIBRARY}
+    ${CUDA_CUBLAS_LIBRARIES} #TODO shouldn't be here, but required to build on some machines
   PUBLIC_INCLUDE_DIRS
     ${CUDA_INCLUDE_DIRS}
 )
