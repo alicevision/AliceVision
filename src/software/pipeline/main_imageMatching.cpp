@@ -585,7 +585,7 @@ int main(int argc, char** argv)
            (matchingMode == EImageMatchingMode::A_A))
         {
           nbFeaturesLoadedInputA = aliceVision::voctree::populateDatabase<DescriptorUChar>(sfmDataA, featuresFolders, tree, db, nbMaxDescriptors);
-          nbSetDescriptors +=  db.getSparseHistogramPerImage().size();
+          nbSetDescriptors = db.getSparseHistogramPerImage().size();
 
           if(nbFeaturesLoadedInputA == 0)
           {
@@ -598,7 +598,7 @@ int main(int argc, char** argv)
            (matchingMode == EImageMatchingMode::A_B))
         {
           nbFeaturesLoadedInputB = aliceVision::voctree::populateDatabase<DescriptorUChar>(sfmDataB, featuresFolders, tree, db, nbMaxDescriptors);
-          nbSetDescriptors +=  db.getSparseHistogramPerImage().size();
+          nbSetDescriptors = db.getSparseHistogramPerImage().size();
         }
 
         if(matchingMode == EImageMatchingMode::A_A_AND_A_B)
@@ -638,18 +638,14 @@ int main(int argc, char** argv)
 
       auto detect_start = std::chrono::steady_clock::now();
 
-      switch(matchingMode)
+      if(matchingMode == EImageMatchingMode::A_A_AND_A_B)
       {
-        case EImageMatchingMode::A_A_AND_A_B:
-        {
-          generateFromVoctree(allMatches, descriptorsFilesA, db,  tree, EImageMatchingMode::A_A, nbMaxDescriptors, numImageQuery);
-          generateFromVoctree(allMatches, descriptorsFilesA, db2, tree, EImageMatchingMode::A_B, nbMaxDescriptors, numImageQuery);
-        }
-        break;
-
-        case EImageMatchingMode::A_AB: generateFromVoctree(allMatches, descriptorsFilesA, db, tree, EImageMatchingMode::A_AB, nbMaxDescriptors, numImageQuery); break;
-        case EImageMatchingMode::A_B:  generateFromVoctree(allMatches, descriptorsFilesA, db, tree, EImageMatchingMode::A_B,  nbMaxDescriptors, numImageQuery); break;
-        case EImageMatchingMode::A_A:  generateFromVoctree(allMatches, descriptorsFilesA, db, tree, EImageMatchingMode::A_A,  nbMaxDescriptors, numImageQuery); break;
+        generateFromVoctree(allMatches, descriptorsFilesA, db,  tree, EImageMatchingMode::A_A, nbMaxDescriptors, numImageQuery);
+        generateFromVoctree(allMatches, descriptorsFilesA, db2, tree, EImageMatchingMode::A_B, nbMaxDescriptors, numImageQuery);
+      }
+      else
+      {
+        generateFromVoctree(allMatches, descriptorsFilesA, db, tree, matchingMode,  nbMaxDescriptors, numImageQuery);
       }
 
       auto detect_elapsed = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::steady_clock::now() - detect_start);
