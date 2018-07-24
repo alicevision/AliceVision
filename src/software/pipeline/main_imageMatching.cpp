@@ -283,7 +283,7 @@ void generateAllMatchesBetweenTwoMap(const std::map<IndexT, std::string>& descri
 
 
 void generateFromVoctree(PairList& allMatches,
-                         const std::map<IndexT, std::string>& descriptorsFilesA,
+                         const std::map<IndexT, std::string>& descriptorsFiles,
                          const aliceVision::voctree::Database& db,
                          const aliceVision::voctree::VocabularyTree<DescriptorFloat>& tree,
                          EImageMatchingMode modeMultiSfM,
@@ -300,7 +300,7 @@ void generateFromVoctree(PairList& allMatches,
 
   //initialize allMatches
 
-  for(const auto& descriptorPair : descriptorsFilesA)
+  for(const auto& descriptorPair : descriptorsFiles)
   {
     if(allMatches.find(descriptorPair.first) == allMatches.end())
       allMatches[descriptorPair.first] = {};
@@ -308,9 +308,9 @@ void generateFromVoctree(PairList& allMatches,
 
   // query each document
   #pragma omp parallel for
-  for(ptrdiff_t i = 0; i < static_cast<ptrdiff_t>(descriptorsFilesA.size()); ++i)
+  for(ptrdiff_t i = 0; i < static_cast<ptrdiff_t>(descriptorsFiles.size()); ++i)
   {
-    auto itA = descriptorsFilesA.cbegin();
+    auto itA = descriptorsFiles.cbegin();
     std::advance(itA, i);
     const IndexT viewIdA = itA->first;
     const std::string featuresPathA = itA->second;
@@ -335,11 +335,12 @@ void generateFromVoctree(PairList& allMatches,
 
     db.find(imageSH, numImageQuery, matches);
 
-    allMatches.at(viewIdA).reserve(allMatches.at(viewIdA).size() + matches.size());
+    ListOfImageID& imgMatches = allMatches.at(viewIdA);
+    imgMatches.reserve(imgMatches.size() + matches.size());
 
     for(const aliceVision::voctree::DocMatch& m : matches)
     {
-      allMatches.at(viewIdA).push_back(m.id);
+      imgMatches.push_back(m.id);
     }
   }
 }
@@ -465,8 +466,7 @@ int main(int argc, char** argv)
   const bool useMultiSfM = !sfmDataFilenameB.empty();
   const EImageMatchingMode matchingMode = EImageMatchingMode_stringToEnum(matchingModeName);
 
-  if((useMultiSfM && (matchingMode == EImageMatchingMode::A_A)) ||
-     (!useMultiSfM && (matchingMode != EImageMatchingMode::A_A)))
+  if(useMultiSfM == (matchingMode == EImageMatchingMode::A_A))
   {
     ALICEVISION_LOG_ERROR("The number of SfMData inputs is not compatible with the selected mode.");
     return EXIT_FAILURE;
