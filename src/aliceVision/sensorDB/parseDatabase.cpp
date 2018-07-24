@@ -58,12 +58,12 @@ bool getInfo(const std::string& brand, const std::string& model, const std::vect
 {
   Datasheet refDatasheet(brand, model, -1.);
   auto datasheet = std::find(databaseStructure.begin(), databaseStructure.end(), refDatasheet);
-  if(datasheet != databaseStructure.end())
-  {
-    datasheetContent = *datasheet;
-    return true;
-  }
-  return false;
+
+  if(datasheet == databaseStructure.end())
+    return false;
+
+  datasheetContent = *datasheet;
+  return true;
 }
 
 } // namespace sensorDB
