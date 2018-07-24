@@ -10,6 +10,7 @@
 #include <string>
 #include <algorithm>
 
+#include <boost/algorithm/string.hpp>
 #include <boost/algorithm/string/predicate.hpp>
 
 namespace aliceVision {
@@ -20,8 +21,8 @@ bool Datasheet::operator==(const Datasheet& other) const
   std::string brandA = _brand;
   std::string brandB = other._brand;
 
-  std::transform(brandA.begin(), brandA.end(), brandA.begin(), ::tolower); //tolower
-  std::transform(brandB.begin(), brandB.end(), brandB.begin(), ::tolower); //tolower
+  boost::algorithm::to_lower(brandA);
+  boost::algorithm::to_lower(brandB);
 
   brandA.erase(std::remove_if(brandA.begin(), brandA.end(), ::ispunct), brandA.end()); //remove punctuation
   brandB.erase(std::remove_if(brandB.begin(), brandB.end(), ::ispunct), brandB.end()); //remove punctuation
@@ -31,8 +32,8 @@ bool Datasheet::operator==(const Datasheet& other) const
     std::string modelA = _model;
     std::string modelB = other._model;
 
-    std::transform(modelA.begin(), modelA.end(), modelA.begin(), ::tolower); //tolower
-    std::transform(modelB.begin(), modelB.end(), modelB.begin(), ::tolower); //tolower
+    boost::algorithm::to_lower(modelA);
+    boost::algorithm::to_lower(modelB);
 
     modelA.erase(std::remove_if(modelA.begin(), modelA.end(), ::ispunct), modelA.end()); //remove punctuation
     modelB.erase(std::remove_if(modelB.begin(), modelB.end(), ::ispunct), modelB.end()); //remove punctuation
