@@ -548,21 +548,21 @@ int main(int argc, char** argv)
     ALICEVISION_LOG_INFO("Creating the databases...");
 
     // add each object (document) to the database
-    aliceVision::voctree::Database dbA(tree.words());
-    aliceVision::voctree::Database dbB;
-    aliceVision::voctree::Database dbAB;
+    aliceVision::voctree::Database db(tree.words());
+    aliceVision::voctree::Database db2;
 
     if(withWeights)
     {
       ALICEVISION_LOG_INFO("Loading weights...");
-      dbA.loadWeights(weightsName);
+      db.loadWeights(weightsName);
     }
     else
     {
       ALICEVISION_LOG_INFO("No weights specified, skipping...");
     }
 
-    dbB = dbA; // initialize database B with database A initialization
+    if(matchingMode == EImageMatchingMode::A_A_AND_A_B)
+      db2 = db; // initialize database2 with database1 initialization
 
     // read the descriptors and populate the databases
     {
@@ -584,8 +584,8 @@ int main(int argc, char** argv)
            (matchingMode == EImageMatchingMode::A_AB) ||
            (matchingMode == EImageMatchingMode::A_A))
         {
-          nbFeaturesLoadedInputA = aliceVision::voctree::populateDatabase<DescriptorUChar>(sfmDataA, featuresFolders, tree, dbA, nbMaxDescriptors);
-          nbSetDescriptors +=  dbA.getSparseHistogramPerImage().size();
+          nbFeaturesLoadedInputA = aliceVision::voctree::populateDatabase<DescriptorUChar>(sfmDataA, featuresFolders, tree, db, nbMaxDescriptors);
+          nbSetDescriptors +=  db.getSparseHistogramPerImage().size();
 
           if(nbFeaturesLoadedInputA == 0)
           {
@@ -594,18 +594,17 @@ int main(int argc, char** argv)
           }
         }
 
-        if((matchingMode == EImageMatchingMode::A_A_AND_A_B) ||
+        if((matchingMode == EImageMatchingMode::A_AB) ||
            (matchingMode == EImageMatchingMode::A_B))
         {
-          nbFeaturesLoadedInputB = aliceVision::voctree::populateDatabase<DescriptorUChar>(sfmDataB, featuresFolders, tree, dbB, nbMaxDescriptors);
-          nbSetDescriptors +=  dbB.getSparseHistogramPerImage().size();
+          nbFeaturesLoadedInputB = aliceVision::voctree::populateDatabase<DescriptorUChar>(sfmDataB, featuresFolders, tree, db, nbMaxDescriptors);
+          nbSetDescriptors +=  db.getSparseHistogramPerImage().size();
         }
 
-        if(matchingMode == EImageMatchingMode::A_AB)
+        if(matchingMode == EImageMatchingMode::A_A_AND_A_B)
         {
-          dbAB = dbA; // initialize AB database with A database
-          nbFeaturesLoadedInputB = aliceVision::voctree::populateDatabase<DescriptorUChar>(sfmDataB, featuresFolders, tree, dbAB, nbMaxDescriptors);
-          nbSetDescriptors = dbAB.getSparseHistogramPerImage().size();
+          nbFeaturesLoadedInputB = aliceVision::voctree::populateDatabase<DescriptorUChar>(sfmDataB, featuresFolders, tree, db2, nbMaxDescriptors);
+          nbSetDescriptors += db2.getSparseHistogramPerImage().size();
         }
 
         if(useMultiSfM && (nbFeaturesLoadedInputB == 0))
@@ -626,19 +625,10 @@ int main(int argc, char** argv)
       // compute and save the word weights
       ALICEVISION_LOG_INFO("Computing weights...");
 
-      switch(matchingMode)
-      {
-        case EImageMatchingMode::A_A_AND_A_B:
-        {
-          dbA.computeTfIdfWeights();
-          dbB.computeTfIdfWeights();
-        }
-        break;
+      db.computeTfIdfWeights();
 
-        case EImageMatchingMode::A_AB: dbAB.computeTfIdfWeights(); break;
-        case EImageMatchingMode::A_B:  dbB.computeTfIdfWeights();  break;
-        case EImageMatchingMode::A_A:  dbA.computeTfIdfWeights();  break;
-      }
+      if(matchingMode == EImageMatchingMode::A_A_AND_A_B)
+        db2.computeTfIdfWeights();
     }
 
     {
@@ -652,14 +642,14 @@ int main(int argc, char** argv)
       {
         case EImageMatchingMode::A_A_AND_A_B:
         {
-          generateFromVoctree(allMatches, descriptorsFilesA, dbA,  tree, EImageMatchingMode::A_A, nbMaxDescriptors, numImageQuery);
-          generateFromVoctree(allMatches, descriptorsFilesA, dbB,  tree, EImageMatchingMode::A_B, nbMaxDescriptors, numImageQuery);
+          generateFromVoctree(allMatches, descriptorsFilesA, db,  tree, EImageMatchingMode::A_A, nbMaxDescriptors, numImageQuery);
+          generateFromVoctree(allMatches, descriptorsFilesA, db2, tree, EImageMatchingMode::A_B, nbMaxDescriptors, numImageQuery);
         }
         break;
 
-        case EImageMatchingMode::A_AB: generateFromVoctree(allMatches, descriptorsFilesA, dbAB, tree, EImageMatchingMode::A_AB, nbMaxDescriptors, numImageQuery); break;
-        case EImageMatchingMode::A_B:  generateFromVoctree(allMatches, descriptorsFilesA, dbB,  tree, EImageMatchingMode::A_B,  nbMaxDescriptors, numImageQuery); break;
-        case EImageMatchingMode::A_A:  generateFromVoctree(allMatches, descriptorsFilesA, dbA,  tree, EImageMatchingMode::A_A,  nbMaxDescriptors, numImageQuery); break;
+        case EImageMatchingMode::A_AB: generateFromVoctree(allMatches, descriptorsFilesA, db, tree, EImageMatchingMode::A_AB, nbMaxDescriptors, numImageQuery); break;
+        case EImageMatchingMode::A_B:  generateFromVoctree(allMatches, descriptorsFilesA, db, tree, EImageMatchingMode::A_B,  nbMaxDescriptors, numImageQuery); break;
+        case EImageMatchingMode::A_A:  generateFromVoctree(allMatches, descriptorsFilesA, db, tree, EImageMatchingMode::A_A,  nbMaxDescriptors, numImageQuery); break;
       }
 
       auto detect_elapsed = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::steady_clock::now() - detect_start);
