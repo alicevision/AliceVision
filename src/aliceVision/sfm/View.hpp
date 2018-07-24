@@ -251,12 +251,12 @@ public:
    * @brief Get the corresponding "FocalLength" metadata value
    * @return the metadata value float or -1 if no corresponding value
    */
-  float getMetadataFocalLength() const
+  double getMetadataFocalLength() const
   {
     if(hasMetadata("Exif:FocalLength"))
-      return std::stof(getMetadata("Exif:FocalLength"));
+      return std::stod(getMetadata("Exif:FocalLength"));
     if(hasMetadata("focalLength"))
-      return std::stof(getMetadata("focalLength"));
+      return std::stod(getMetadata("focalLength"));
     return -1;
   }
 

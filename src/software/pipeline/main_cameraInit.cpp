@@ -363,7 +363,7 @@ int main(int argc, char **argv)
     View& view = *(std::next(viewPairItBegin,i)->second);
     IndexT intrinsicId = view.getIntrinsicId();
     double sensorWidth = -1;
-    float focalLength = view.getMetadataFocalLength();
+    double focalLength = view.getMetadataFocalLength();
     const std::string& make = view.getMetadataMake();
     const std::string& model = view.getMetadataModel();
     const bool hasCameraMetadata = (!make.empty() || !model.empty());
@@ -422,12 +422,12 @@ int main(int argc, char **argv)
       // try to find / compute with 'FocalLengthIn35mmFilm' metadata
       if(sensorWidth == -1.0 && hasFocalIn35mmMetadata)
       {
-        const float focalIn35mm = std::stof(view.getMetadata("Exif:FocalLengthIn35mmFilm"));
-        const float imageRatio = std::max(view.getWidth(), view.getHeight()) / std::min(view.getWidth(), view.getHeight());
+        const double focalIn35mm = std::stod(view.getMetadata("Exif:FocalLengthIn35mmFilm"));
+        const double imageRatio = std::max(view.getWidth(), view.getHeight()) / std::min(view.getWidth(), view.getHeight());
 
-        if(focalLength > 0.0f)
+        if(focalLength > 0.0)
         {
-          const float sensorDiag = (focalLength * 43.3) / focalIn35mm; // 43.3 is the diagonal of 35mm film
+          const double sensorDiag = (focalLength * 43.3) / focalIn35mm; // 43.3 is the diagonal of 35mm film
           sensorWidth = std::sqrt((1.0/(1.0 + imageRatio * imageRatio)) * sensorDiag * sensorDiag);
 
 
@@ -438,7 +438,7 @@ int main(int argc, char **argv)
         else
         {
           sensorWidth = std::sqrt((1.0/(1.0 + imageRatio * imageRatio)) * 43.3 * 43.3);
-          focalLength = sensorWidth * (focalIn35mm ) / 36.0f;
+          focalLength = sensorWidth * (focalIn35mm ) / 36.0;
           ALICEVISION_LOG_INFO("Sensor width and focal length computed from 'FocalLengthIn35mmFilm' metadata." << std::endl
                                << "\t- sensor width: " << sensorWidth << " mm" << std::endl
                                << "\t- focal length: " << focalLength << " mm");
@@ -526,11 +526,11 @@ int main(int argc, char **argv)
     ALICEVISION_LOG_WARNING("The camera found in the database is slightly different for image(s):");
     for(const auto& unsureSensor : unsureSensors)
       ALICEVISION_LOG_WARNING("image: '" << fs::path(unsureSensor.second.first).filename().string() << "'" << std::endl
-                        << "\t- camera brand: " << unsureSensor.first.first <<  std::endl
-                        << "\t- camera model: " << unsureSensor.first.second <<  std::endl
-                        << "\t- database brand: " << unsureSensor.second.second._brand <<  std::endl
-                        << "\t- database model: " << unsureSensor.second.second._model << std::endl
-                        << "\t- database sensor size: " << unsureSensor.second.second._sensorSize << " mm");
+                        << "\t- image camera brand: " << unsureSensor.first.first <<  std::endl
+                        << "\t- image camera model: " << unsureSensor.first.second <<  std::endl
+                        << "\t- database camera brand: " << unsureSensor.second.second._brand <<  std::endl
+                        << "\t- database camera model: " << unsureSensor.second.second._model << std::endl
+                        << "\t- database camera sensor size: " << unsureSensor.second.second._sensorSize << " mm");
     ALICEVISION_LOG_WARNING("Please check and correct camera model(s) name in the database." << std::endl);
   }
 

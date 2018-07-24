@@ -34,7 +34,7 @@ void updateIncompleteView(View& view);
  * @return shared_ptr IntrinsicBase
  */
 std::shared_ptr<camera::IntrinsicBase> getViewIntrinsic(const View& view,
-                                                float mmFocalLength = -1.0f,
+                                                double mmFocalLength = -1.0,
                                                 double sensorWidth = -1,
                                                 double defaultFocalLengthPx = -1,
                                                 double defaultFieldOfView = -1,
