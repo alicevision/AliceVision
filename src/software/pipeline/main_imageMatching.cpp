@@ -56,8 +56,7 @@ typedef std::map<ImageID, ListOfImageID> PairList;
 typedef std::map<ImageID, OrderedListOfImageID> OrderedPairList;
 
 /**
- * Function that prints a PairList
- *
+ * @brief Function that prints a PairList
  * @param os The stream on which to print
  * @param pl The pair list
  * @return the stream
@@ -77,8 +76,7 @@ std::ostream& operator<<(std::ostream& os, const PairList & pl)
 }
 
 /**
- * Function that prints a OrderedPairList
- *
+ * @brief Function that prints a OrderedPairList
  * @param os The stream on which to print
  * @param pl The pair list
  * @return the stream
@@ -97,35 +95,44 @@ std::ostream& operator<<(std::ostream& os, const OrderedPairList & pl)
   return os;
 }
 
-enum class EImageMatchingMultiSfM
+/**
+ * @brief Mode to combine image matching between two SfMDatas
+ */
+enum class EImageMatchingMode
 {
+  A_A_AND_A_B,
   A_AB,
-  A_B
+  A_B,
+  A_A
 };
 
 
 /**
- * @brief get informations about each EImageMatchingMultiSfM
+ * @brief get informations about each EImageMatchingMode
  * @return String
  */
-std::string EImageMatchingMultiSfM_description()
+std::string EImageMatchingMode_description()
 {
-  return "The mode to combine matching between multiple SfM: \n"
-         "* a_ab : image matching for images in input SfMData A plus between A and B\n"
-         "* a_b  : image matching between input SfMData A and B\n";
+  return "The mode to combine image matching between the input SfMData A and B: \n"
+             "* a/a+a/b : A with A + A with B\n"
+             "* a/ab    : A with A and B\n"
+             "* a/b     : A with B\n"
+             "* a/a     : A with A";
 }
 
 /**
- * @brief convert an enum EImageMatchingMultiSfM to its corresponding string
+ * @brief convert an enum EImageMatchingMode to its corresponding string
  * @param modeMultiSfM
  * @return String
  */
-std::string EImageMatchingMultiSfM_enumToString(EImageMatchingMultiSfM modeMultiSfM)
+std::string EImageMatchingMode_enumToString(EImageMatchingMode modeMultiSfM)
 {
   switch(modeMultiSfM)
   {
-    case EImageMatchingMultiSfM::A_AB: return "a_ab";
-    case EImageMatchingMultiSfM::A_B:  return "a_b";
+    case EImageMatchingMode::A_A_AND_A_B: return "a/a+a/b";
+    case EImageMatchingMode::A_AB:        return "a/ab";
+    case EImageMatchingMode::A_B:         return "a/b";
+    case EImageMatchingMode::A_A:         return "a/a";
   }
   throw std::out_of_range("Invalid modeMultiSfM enum");
 }
@@ -133,15 +140,17 @@ std::string EImageMatchingMultiSfM_enumToString(EImageMatchingMultiSfM modeMulti
 /**
  * @brief convert a string modeMultiSfM to its corresponding enum modeMultiSfM
  * @param String
- * @return EImageMatchingMultiSfM
+ * @return EImageMatchingMode
  */
- EImageMatchingMultiSfM EImageMatchingMultiSfM_stringToEnum(const std::string& modeMultiSfM)
+ EImageMatchingMode EImageMatchingMode_stringToEnum(const std::string& modeMultiSfM)
 {
   std::string mode = modeMultiSfM;
   std::transform(mode.begin(), mode.end(), mode.begin(), ::tolower); //tolower
 
-  if(mode == "a_ab") return EImageMatchingMultiSfM::A_AB;
-  if(mode == "a_b")  return EImageMatchingMultiSfM::A_B;
+  if(mode == "a/a+a/b") return EImageMatchingMode::A_A_AND_A_B;
+  if(mode == "a/ab")    return EImageMatchingMode::A_AB;
+  if(mode == "a/b")     return EImageMatchingMode::A_B;
+  if(mode == "a/a")     return EImageMatchingMode::A_A;
 
   throw std::out_of_range("Invalid modeMultiSfM : " + modeMultiSfM);
 }
@@ -277,6 +286,70 @@ void generateAllMatchesBetweenTwoMap(const std::map<IndexT, std::string>& descri
   }
 }
 
+
+void generateFromVoctree(PairList& allMatches,
+                         const std::map<IndexT, std::string>& descriptorsFiles,
+                         const aliceVision::voctree::Database& db,
+                         const aliceVision::voctree::VocabularyTree<DescriptorFloat>& tree,
+                         EImageMatchingMode modeMultiSfM,
+                         std::size_t nbMaxDescriptors,
+                         std::size_t numImageQuery)
+{
+  ALICEVISION_LOG_INFO("Generate matches in mode: " + EImageMatchingMode_enumToString(modeMultiSfM));
+
+  if(numImageQuery == 0)
+  {
+    // if 0 retrieve the score for all the documents of the database
+    numImageQuery = db.size();
+  }
+
+  //initialize allMatches
+
+  for(const auto& descriptorPair : descriptorsFiles)
+  {
+    if(allMatches.find(descriptorPair.first) == allMatches.end())
+      allMatches[descriptorPair.first] = {};
+  }
+
+  // query each document
+  #pragma omp parallel for
+  for(ptrdiff_t i = 0; i < static_cast<ptrdiff_t>(descriptorsFiles.size()); ++i)
+  {
+    auto itA = descriptorsFiles.cbegin();
+    std::advance(itA, i);
+    const IndexT viewIdA = itA->first;
+    const std::string featuresPathA = itA->second;
+
+    aliceVision::voctree::SparseHistogram imageSH;
+
+    if(modeMultiSfM != EImageMatchingMode::A_B)
+    {
+      // sparse histogram of A is already computed in the DB
+      imageSH = db.getSparseHistogramPerImage().at(viewIdA);
+    }
+    else // mode AB
+    {
+      // compute the sparse histogram of each image A
+      std::vector<DescriptorUChar> descriptors;
+      // read the descriptors
+      loadDescsFromBinFile(featuresPathA, descriptors, false, nbMaxDescriptors);
+      imageSH = tree.quantizeToSparse(descriptors);
+    }
+
+    std::vector<aliceVision::voctree::DocMatch> matches;
+
+    db.find(imageSH, numImageQuery, matches);
+
+    ListOfImageID& imgMatches = allMatches.at(viewIdA);
+    imgMatches.reserve(imgMatches.size() + matches.size());
+
+    for(const aliceVision::voctree::DocMatch& m : matches)
+    {
+      imgMatches.push_back(m.id);
+    }
+  }
+}
+
 int main(int argc, char** argv)
 {
   // command-line parameters
@@ -310,7 +383,7 @@ int main(int argc, char** argv)
   /// a second file containing a list of features
   std::string sfmDataFilenameB;
   /// the multiple SfM mode
-  std::string modeMultiSfMName = EImageMatchingMultiSfM_enumToString(EImageMatchingMultiSfM::A_AB);
+  std::string matchingModeName = EImageMatchingMode_enumToString(EImageMatchingMode::A_A);
   /// the combine SfM output
   std::string outputCombinedSfM;
 
@@ -351,8 +424,8 @@ int main(int argc, char** argv)
   multiSfMParams.add_options()
       ("inputB", po::value<std::string>(&sfmDataFilenameB),
         "SfMData file.")
-      ("modeMultiSfM", po::value<std::string>(&modeMultiSfMName)->default_value(modeMultiSfMName),
-        EImageMatchingMultiSfM_description().c_str())
+      ("matchingMode", po::value<std::string>(&matchingModeName)->default_value(matchingModeName),
+        EImageMatchingMode_description().c_str())
       ("outputCombinedSfM", po::value<std::string>(&outputCombinedSfM)->default_value(outputCombinedSfM),
         "Output file path for the combined SfMData file (if empty, don't combine).");
 
@@ -396,7 +469,13 @@ int main(int argc, char** argv)
 
   // multiple SfM
   const bool useMultiSfM = !sfmDataFilenameB.empty();
-  const EImageMatchingMultiSfM modeMultiSfM = EImageMatchingMultiSfM_stringToEnum(modeMultiSfMName);
+  const EImageMatchingMode matchingMode = EImageMatchingMode_stringToEnum(matchingModeName);
+
+  if(useMultiSfM == (matchingMode == EImageMatchingMode::A_A))
+  {
+    ALICEVISION_LOG_ERROR("The number of SfMData inputs is not compatible with the selected mode.");
+    return EXIT_FAILURE;
+  }
 
   // load SfMData
   sfm::SfMData sfmDataA, sfmDataB;
@@ -440,9 +519,15 @@ int main(int argc, char** argv)
   if(treeName.empty() || (descriptorsFilesA.size() + descriptorsFilesB.size()) < minNbImages)
   {
     ALICEVISION_LOG_INFO("Brute force generation");
-    if(modeMultiSfM == EImageMatchingMultiSfM::A_AB)
+
+    if((matchingMode == EImageMatchingMode::A_A_AND_A_B) ||
+       (matchingMode == EImageMatchingMode::A_AB) ||
+       (matchingMode == EImageMatchingMode::A_A))
       generateAllMatchesInOneMap(descriptorsFilesA, selectedPairs);
-    if(useMultiSfM)
+
+    if((matchingMode == EImageMatchingMode::A_A_AND_A_B) ||
+       (matchingMode == EImageMatchingMode::A_AB) ||
+       (matchingMode == EImageMatchingMode::A_B))
       generateAllMatchesBetweenTwoMap(descriptorsFilesA, descriptorsFilesB, selectedPairs);
   }
 
@@ -464,11 +549,12 @@ int main(int argc, char** argv)
       ALICEVISION_LOG_INFO(ss.str());
     }
 
-    // create the database
-    ALICEVISION_LOG_INFO("Creating the database...");
+    // create the databases
+    ALICEVISION_LOG_INFO("Creating the databases...");
 
     // add each object (document) to the database
     aliceVision::voctree::Database db(tree.words());
+    aliceVision::voctree::Database db2;
 
     if(withWeights)
     {
@@ -480,7 +566,10 @@ int main(int argc, char** argv)
       ALICEVISION_LOG_INFO("No weights specified, skipping...");
     }
 
-    // read the descriptors and populate the database
+    if(matchingMode == EImageMatchingMode::A_A_AND_A_B)
+      db2 = db; // initialize database2 with database1 initialization
+
+    // read the descriptors and populate the databases
     {
       std::stringstream ss;
 
@@ -488,111 +577,93 @@ int main(int argc, char** argv)
         ss << "\t- " << featuresFolder << std::endl;
 
       ALICEVISION_LOG_INFO("Reading descriptors from: " << std::endl << ss.str());
+
+      std::size_t nbFeaturesLoadedInputA = 0;
+      std::size_t nbFeaturesLoadedInputB = 0;
+      std::size_t nbSetDescriptors = 0;
+
+      auto detect_start = std::chrono::steady_clock::now();
+      {
+
+        if((matchingMode == EImageMatchingMode::A_A_AND_A_B) ||
+           (matchingMode == EImageMatchingMode::A_AB) ||
+           (matchingMode == EImageMatchingMode::A_A))
+        {
+          nbFeaturesLoadedInputA = aliceVision::voctree::populateDatabase<DescriptorUChar>(sfmDataA, featuresFolders, tree, db, nbMaxDescriptors);
+          nbSetDescriptors = db.getSparseHistogramPerImage().size();
+
+          if(nbFeaturesLoadedInputA == 0)
+          {
+            ALICEVISION_LOG_ERROR("No descriptors loaded in '" + sfmDataFilenameA + "'");
+            return EXIT_FAILURE;
+          }
+        }
+
+        if((matchingMode == EImageMatchingMode::A_AB) ||
+           (matchingMode == EImageMatchingMode::A_B))
+        {
+          nbFeaturesLoadedInputB = aliceVision::voctree::populateDatabase<DescriptorUChar>(sfmDataB, featuresFolders, tree, db, nbMaxDescriptors);
+          nbSetDescriptors = db.getSparseHistogramPerImage().size();
+        }
+
+        if(matchingMode == EImageMatchingMode::A_A_AND_A_B)
+        {
+          nbFeaturesLoadedInputB = aliceVision::voctree::populateDatabase<DescriptorUChar>(sfmDataB, featuresFolders, tree, db2, nbMaxDescriptors);
+          nbSetDescriptors += db2.getSparseHistogramPerImage().size();
+        }
+
+        if(useMultiSfM && (nbFeaturesLoadedInputB == 0))
+        {
+          ALICEVISION_LOG_ERROR("No descriptors loaded in '" + sfmDataFilenameB + "'");
+          return EXIT_FAILURE;
+        }
+      }
+
+      auto detect_elapsed = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::steady_clock::now() - detect_start);
+
+      ALICEVISION_LOG_INFO("Read " << nbSetDescriptors << " sets of descriptors for a total of " << (nbFeaturesLoadedInputA + nbFeaturesLoadedInputB) << " features");
+      ALICEVISION_LOG_INFO("Reading took " << detect_elapsed.count() << " sec.");
     }
-
-    std::size_t nbFeaturesLoadedInputA = 0;
-    std::size_t nbFeaturesLoadedInputB = 0;
-
-    auto detect_start = std::chrono::steady_clock::now();
-    {
-      if(modeMultiSfM == EImageMatchingMultiSfM::A_AB)
-        nbFeaturesLoadedInputA = aliceVision::voctree::populateDatabase<DescriptorUChar>(sfmDataA, featuresFolders, tree, db, nbMaxDescriptors);
-      if(useMultiSfM)
-        nbFeaturesLoadedInputB = aliceVision::voctree::populateDatabase<DescriptorUChar>(sfmDataB, featuresFolders, tree, db, nbMaxDescriptors);
-    }
-    auto detect_elapsed = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::steady_clock::now() - detect_start);
-
-    if((nbFeaturesLoadedInputA == 0) && (modeMultiSfM == EImageMatchingMultiSfM::A_AB))
-    {
-      ALICEVISION_LOG_ERROR("No descriptors loaded in '" + sfmDataFilenameA + "'");
-      return EXIT_FAILURE;
-    }
-
-    if(useMultiSfM && nbFeaturesLoadedInputB == 0)
-    {
-      ALICEVISION_LOG_ERROR("No descriptors loaded in '" + sfmDataFilenameB + "'");
-      return EXIT_FAILURE;
-    }
-
-    ALICEVISION_LOG_INFO("Read " << db.getSparseHistogramPerImage().size() << " sets of descriptors for a total of " << (nbFeaturesLoadedInputA + nbFeaturesLoadedInputB) << " features");
-    ALICEVISION_LOG_INFO("Reading took " << detect_elapsed.count() << " sec.");
 
     if(!withWeights)
     {
       // compute and save the word weights
       ALICEVISION_LOG_INFO("Computing weights...");
+
       db.computeTfIdfWeights();
+
+      if(matchingMode == EImageMatchingMode::A_A_AND_A_B)
+        db2.computeTfIdfWeights();
     }
 
-    // query the database to get all the pair list
-    if(numImageQuery == 0)
     {
-      // if 0 retrieve the score for all the documents of the database
-      numImageQuery = db.size();
-    }
+      PairList allMatches;
 
-    PairList allMatches;
+      ALICEVISION_LOG_INFO("Query all documents");
 
-    ALICEVISION_LOG_INFO("Query all documents");
-    detect_start = std::chrono::steady_clock::now();
+      auto detect_start = std::chrono::steady_clock::now();
 
-    // now query each document
-    #pragma omp parallel for
-    for(ptrdiff_t i = 0; i < static_cast<ptrdiff_t>(descriptorsFilesA.size()); ++i)
-    {
-      auto itA = descriptorsFilesA.cbegin();
-      std::advance(itA, i);
-      const IndexT viewIdA = itA->first;
-      const std::string featuresPathA = itA->second;
-
-      aliceVision::voctree::SparseHistogram imageSH;
-      if(modeMultiSfM == EImageMatchingMultiSfM::A_AB)
+      if(matchingMode == EImageMatchingMode::A_A_AND_A_B)
       {
-        // sparse histogram of A is already computed in the DB
-        imageSH = db.getSparseHistogramPerImage().at(viewIdA);
+        generateFromVoctree(allMatches, descriptorsFilesA, db,  tree, EImageMatchingMode::A_A, nbMaxDescriptors, numImageQuery);
+        generateFromVoctree(allMatches, descriptorsFilesA, db2, tree, EImageMatchingMode::A_B, nbMaxDescriptors, numImageQuery);
       }
       else
       {
-        // compute the sparse histogram of each image A
-        std::vector<DescriptorUChar> descriptors;
-        // read the descriptors
-        loadDescsFromBinFile(featuresPathA, descriptors, false, nbMaxDescriptors);
-        imageSH = tree.quantizeToSparse(descriptors);
+        generateFromVoctree(allMatches, descriptorsFilesA, db, tree, matchingMode,  nbMaxDescriptors, numImageQuery);
       }
 
-      std::vector<aliceVision::voctree::DocMatch> matches;
+      auto detect_elapsed = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::steady_clock::now() - detect_start);
+      ALICEVISION_LOG_INFO("Query all documents took " << detect_elapsed.count() << " sec.");
 
-      db.find(imageSH, numImageQuery, matches);
-      //    ALICEVISION_COUT("query document " << docIt->first
-      //                  << " took " << detect_elapsed.count()
-      //                  << " ms and has " << matches.size()
-      //                  << " matches\tBest " << matches[0].id
-      //                  << " with score " << matches[0].score);
+      // process pair list
+      detect_start = std::chrono::steady_clock::now();
 
-      ListOfImageID idMatches;
-      idMatches.reserve(matches.size());
-
-      for(const aliceVision::voctree::DocMatch& m : matches)
-      {
-        idMatches.push_back(m.id);
-      }
-
-      #pragma omp critical
-      {
-        allMatches[ viewIdA ] = idMatches;
-      }
+      ALICEVISION_LOG_INFO("Convert all matches to pairList");
+      convertAllMatchesToPairList(allMatches, numImageQuery, selectedPairs);
+      detect_elapsed = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::steady_clock::now() - detect_start);
+      ALICEVISION_LOG_INFO("Convert all matches to pairList took " << detect_elapsed.count() << " sec.");
     }
-    detect_elapsed = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::steady_clock::now() - detect_start);
-    ALICEVISION_LOG_INFO("Query all documents took " << detect_elapsed.count() << " sec.");
-
-    // process pair list
-
-    detect_start = std::chrono::steady_clock::now();
-
-    ALICEVISION_LOG_INFO("Convert all matches to pairList");
-    convertAllMatchesToPairList(allMatches, numImageQuery, selectedPairs);
-    detect_elapsed = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::steady_clock::now() - detect_start);
-    ALICEVISION_LOG_INFO("Convert all matches to pairList took " << detect_elapsed.count() << " sec.");
   }
 
   // check if the output folder exists
