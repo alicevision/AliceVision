@@ -423,7 +423,7 @@ int main(int argc, char **argv)
       if(sensorWidth == -1.0 && hasFocalIn35mmMetadata)
       {
         const double focalIn35mm = std::stod(view.getMetadata("Exif:FocalLengthIn35mmFilm"));
-        const double imageRatio = std::max(view.getWidth(), view.getHeight()) / std::min(view.getWidth(), view.getHeight());
+        const double imageRatio = std::min(view.getWidth(), view.getHeight()) / std::max(view.getWidth(), view.getHeight());
 
         if(focalLength > 0.0)
         {
