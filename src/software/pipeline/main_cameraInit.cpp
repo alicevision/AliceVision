@@ -470,6 +470,16 @@ int main(int argc, char **argv)
       }
     }
 
+    // try to compute focalLength with 'FocalLengthIn35mmFilm' metadata
+    if(focalLength <= 0 && sensorWidth > 0 && hasFocalIn35mmMetadata)
+    {
+      const double sensorDiag = std::sqrt(std::pow(sensorWidth, 2) +  std::pow(sensorWidth / imageRatio,2));
+      focalLength = (sensorDiag * focalIn35mm) / diag24x36;
+
+      ALICEVISION_LOG_INFO("focalLength computed from sensor size and 'FocalLengthIn35mmFilm' metadata." << std::endl
+                           << "\t- focal length: " << focalLength << " mm");
+    }
+
     // build intrinsic
     std::shared_ptr<camera::IntrinsicBase> intrinsicBase = getViewIntrinsic(view, focalLength, sensorWidth, defaultFocalLengthPixel, defaultFieldOfView, defaultCameraModel, defaultPPx, defaultPPy);
     camera::Pinhole* intrinsic = dynamic_cast<camera::Pinhole*>(intrinsicBase.get());
