@@ -250,24 +250,22 @@ Eigen::Matrix4d PointcloudRegistration::preparePointClouds(
 
   auto tic = std::chrono::steady_clock::now();
 
-  Eigen::Matrix4d Ts = Eigen::Matrix4d(Eigen::Matrix4d::Identity());
+  Eigen::Matrix4d Ts = Eigen::Matrix4d::Identity();
   if (rescaleMode == ERescaleMode::Manual)
   {
     ALICEVISION_LOG_INFO("|- Mode: Manual");
-
-    if (scaleRatio == 1.f )
+    float realScaleRatio = scaleRatio;
+    if (scaleRatio == 1.f && (targetMeasurements != 1.f || sourceMeasurements != 1.f))
     {
-      if (targetMeasurements == 1.f && sourceMeasurements == 1.f)
-        ALICEVISION_LOG_WARNING("Manual rescaling mode desired but 'scaleRatio' == 1");
-      else
-        scaleRatio = targetMeasurements / sourceMeasurements;
+      realScaleRatio = targetMeasurements / sourceMeasurements;
     }
 
-    ALICEVISION_LOG_INFO("|- scaleRatio: " << scaleRatio);
-    Ts = getPureScaleTransformation(scaleRatio);
-
-    if (scaleRatio != 1.f )
+    ALICEVISION_LOG_INFO("|- scaleRatio: " << realScaleRatio);
+    if (realScaleRatio != 1.f )
+    {
+      Ts = getPureScaleTransformation(realScaleRatio);
       pcl::transformPointCloud(mutableSourceCloud, mutableSourceCloud, Ts);
+    }
   }
   else if (rescaleMode == ERescaleMode::Auto)
   {
