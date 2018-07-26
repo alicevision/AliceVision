@@ -293,14 +293,17 @@ Eigen::Matrix4d PointcloudRegistration::preparePointClouds(
 
   tic = std::chrono::steady_clock::now();
 
-  applyVoxelGrid(mutableSourceCloud, voxelSize);
-  applyVoxelGrid(mutableTargetCloud, voxelSize);
+  if (voxelSize > 0.0f)
+  {
+    applyVoxelGrid(mutableSourceCloud, voxelSize);
+    applyVoxelGrid(mutableTargetCloud, voxelSize);
+
+    ALICEVISION_LOG_INFO("|- Voxel size: " << voxelSize);
+    ALICEVISION_LOG_INFO("|- Voxel source: " << mutableSourceCloud.size() << " pts");
+    ALICEVISION_LOG_INFO("|- Voxel target: " << mutableTargetCloud.size() << " pts");
+  }
 
   duration.downsampling = std::chrono::duration <double, std::milli> (std::chrono::steady_clock::now()-tic).count();
-
-  ALICEVISION_LOG_INFO("|- Voxel size: " << voxelSize);
-  ALICEVISION_LOG_INFO("|- Voxel source: " << mutableSourceCloud.size() << " pts");
-  ALICEVISION_LOG_INFO("|- Voxel target: " << mutableTargetCloud.size() << " pts");
 
   return Ts;
 }
@@ -545,12 +548,10 @@ void PointcloudRegistration::applyVoxelGrid(pcl::PointCloud<pcl::PointXYZ> & clo
   pcl::PointCloud<pcl::PointXYZ>::Ptr tmpInputCloud(new pcl::PointCloud<pcl::PointXYZ>());
   pcl::copyPointCloud(cloud, *tmpInputCloud);
 
-//  pcl::PointCloud<pcl::PointXYZ> voxCloud;// Create the filtering object
   pcl::VoxelGrid<pcl::PointXYZ> vg;
   vg.setInputCloud(tmpInputCloud);
   vg.setLeafSize(voxelSize, voxelSize, voxelSize);
   vg.filter(cloud);
-  // cloud.swap(voxCloud);
 }
 
 Eigen::Matrix4d PointcloudRegistration::getPureScaleTransformation(const float scale)
