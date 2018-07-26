@@ -367,7 +367,10 @@ int main(int argc, char **argv)
     const std::string& make = view.getMetadataMake();
     const std::string& model = view.getMetadataModel();
     const bool hasCameraMetadata = (!make.empty() || !model.empty());
-    const bool hasFocalIn35mmMetadata = view.hasMetadata("Exif:FocalLengthIn35mmFilm");
+    const bool hasFocalIn35mmMetadata = view.hasDigitMetadata("Exif:FocalLengthIn35mmFilm");
+    const double focalIn35mm = hasFocalIn35mmMetadata ? std::stod(view.getMetadata("Exif:FocalLengthIn35mmFilm")) : -1.0;
+    const double imageRatio = static_cast<double>(view.getWidth()) / static_cast<double>(view.getHeight());
+    const double diag24x36 = std::sqrt(36.0 * 36.0 + 24.0 * 24.0);
 
     // check if the view intrinsic is already defined
     if(intrinsicId != UndefinedIndexT)
@@ -422,14 +425,12 @@ int main(int argc, char **argv)
       // try to find / compute with 'FocalLengthIn35mmFilm' metadata
       if(sensorWidth == -1.0 && hasFocalIn35mmMetadata)
       {
-        const double focalIn35mm = std::stod(view.getMetadata("Exif:FocalLengthIn35mmFilm"));
-        const double imageRatio = std::min(view.getWidth(), view.getHeight()) / std::max(view.getWidth(), view.getHeight());
+        const double invRatio = 1.0 / imageRatio;
 
         if(focalLength > 0.0)
         {
-          const double sensorDiag = (focalLength * 43.3) / focalIn35mm; // 43.3 is the diagonal of 35mm film
-          sensorWidth = std::sqrt((1.0/(1.0 + imageRatio * imageRatio)) * sensorDiag * sensorDiag);
-
+          const double sensorDiag = (focalLength * diag24x36) / focalIn35mm; // 43.3 is the diagonal of 35mm film
+          sensorWidth = sensorDiag * std::sqrt(1.0 / (1.0 + invRatio * invRatio));
 
           ALICEVISION_LOG_INFO("Sensor width computed from 'FocalLength' and 'FocalLengthIn35mmFilm' metadata." << std::endl
                                << "\t- sensor width: " << sensorWidth << " mm" << std::endl
@@ -437,7 +438,7 @@ int main(int argc, char **argv)
         }
         else
         {
-          sensorWidth = std::sqrt((1.0/(1.0 + imageRatio * imageRatio)) * 43.3 * 43.3);
+          sensorWidth = diag24x36 * std::sqrt(1.0 / (1.0 + invRatio * invRatio));
           focalLength = sensorWidth * (focalIn35mm ) / 36.0;
           ALICEVISION_LOG_INFO("Sensor width and focal length computed from 'FocalLengthIn35mmFilm' metadata." << std::endl
                                << "\t- sensor width: " << sensorWidth << " mm" << std::endl
