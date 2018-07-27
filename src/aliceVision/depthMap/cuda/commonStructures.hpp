@@ -10,6 +10,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
+#include <stdexcept>
 
 namespace aliceVision {
 namespace depthMap {
@@ -152,7 +153,7 @@ public:
     buffer = (Type*)malloc(sx * sy * sz * sizeof (Type));
     if( buffer == 0 ) {
         printf("%d malloc failed\n", __LINE__ );
-        exit(-1);
+        throw std::runtime_error("Malloc mem allocation error");
     }
     memset(buffer, 0, sx * sy * sz * sizeof (Type));
   }
@@ -168,7 +169,7 @@ public:
     buffer = (Type*)malloc(sx * sy * sz * sizeof (Type));
     if( buffer == 0 ) {
         printf("%d malloc failed\n", __LINE__ );
-        exit(-1);
+        throw std::runtime_error("Malloc mem allocation error");
     }
     memcpy(buffer, rhs.buffer, sx * sy * sz * sizeof (Type));
     return *this;
@@ -200,33 +201,61 @@ public:
 
   void copyFrom(const CudaDeviceMemoryPitched<Type, Dim>& _src)
   {
+    cudaError_t err;
     cudaMemcpyKind kind = cudaMemcpyDeviceToHost;
     if(Dim == 1) {
-      cudaMemcpy(this->getBuffer(), _src.getBuffer(), _src.getBytes(), kind);
+      err = cudaMemcpy(this->getBuffer(), _src.getBuffer(), _src.getBytes(), kind);
+      if( err != cudaSuccess )
+      {
+        printf( "Failed to copy CUDA memory before line %d - %s\n", __LINE__-3, cudaGetErrorString(err) );
+        throw std::runtime_error("CUDA Mem allocation error");
+      }
     }
     else if(Dim == 2) {
-      cudaMemcpy2D(this->getBuffer(), size[0] * sizeof (Type), _src.getBuffer(), _src.getPitch(), size[0] * sizeof (Type), size[1], kind);
+      err = cudaMemcpy2D(this->getBuffer(), size[0] * sizeof (Type), _src.getBuffer(), _src.getPitch(), size[0] * sizeof (Type), size[1], kind);
+      if( err != cudaSuccess )
+      {
+        printf( "Failed to copy CUDA memory before line %d - %s\n", __LINE__-3, cudaGetErrorString(err) );
+        throw std::runtime_error("CUDA Mem allocation error");
+      }
     }
     else if(Dim >= 3) {
       for (unsigned int slice=0; slice<size[2]; slice++)
       {
-        cudaMemcpy2D( this->getBuffer() + slice * size[0] * size[1],
-                      size[0] * sizeof (Type),
-                      &_src.getBuffer()[slice * _src.stride()[1]],
-                      _src.getPitch(),
-                      size[0] * sizeof (Type), size[1], kind);
+        err = cudaMemcpy2D( this->getBuffer() + slice * size[0] * size[1],
+                            size[0] * sizeof (Type),
+                            &_src.getBuffer()[slice * _src.stride()[1]],
+                            _src.getPitch(),
+                            size[0] * sizeof (Type), size[1], kind);
+        if( err != cudaSuccess )
+        {
+          printf( "Failed to copy CUDA memory before line %d - %s\n", __LINE__-7, cudaGetErrorString(err) );
+          throw std::runtime_error("CUDA Mem allocation error");
+        }
       }
     }
   }
 
   void copyFrom(const CudaArray<Type, Dim>& _src)
   {
+    cudaError_t err;
+
     cudaMemcpyKind kind = cudaMemcpyDeviceToHost;
     if(Dim == 1) {
-      cudaMemcpyFromArray(this->getBuffer(), _src.getArray(), 0, 0, this->getSize()[0] * sizeof (Type), kind);
+      err = cudaMemcpyFromArray(this->getBuffer(), _src.getArray(), 0, 0, this->getSize()[0] * sizeof (Type), kind);
+      if( err != cudaSuccess )
+      {
+        printf( "Failed to copy CUDA memory before line %d - %s\n", __LINE__-3, cudaGetErrorString(err) );
+        throw std::runtime_error("CUDA Mem allocation error");
+      }
     }
     else if(Dim == 2) {
-      cudaMemcpy2DFromArray(this->getBuffer(), size[0] * sizeof (Type), _src.getArray(), 0, 0, size[0] * sizeof (Type), size[1], kind);
+      err = cudaMemcpy2DFromArray(this->getBuffer(), size[0] * sizeof (Type), _src.getArray(), 0, 0, size[0] * sizeof (Type), size[1], kind);
+      if( err != cudaSuccess )
+      {
+        printf( "Failed to copy CUDA memory before line %d - %s\n", __LINE__-3, cudaGetErrorString(err) );
+        throw std::runtime_error("CUDA Mem allocation error");
+      }
     }
     else if(Dim == 3) {
       cudaMemcpy3DParms p = { 0 };
@@ -244,7 +273,12 @@ public:
       for(unsigned i = 3; i < Dim; ++i)
         p.extent.depth *= _src.getSize()[i];
       p.kind = kind;
-      cudaMemcpy3D(&p);
+      err = cudaMemcpy3D(&p);
+      if( err != cudaSuccess )
+      {
+        printf( "Failed to copy CUDA memory before line %d - %s\n", __LINE__-3, cudaGetErrorString(err) );
+        throw std::runtime_error("CUDA Mem allocation error");
+      }
     }
   }
 };
@@ -261,6 +295,8 @@ template <class Type, unsigned Dim> class CudaDeviceMemoryPitched
 public:
   explicit CudaDeviceMemoryPitched(const CudaSize<Dim> &_size)
   {
+    cudaError_t err;
+
     size = _size;
     sx = 1;
     sy = 1;
@@ -270,7 +306,12 @@ public:
     if (Dim >= 3) sx = _size[2];
     if(Dim == 2)
     {
-      cudaMallocPitch<Type>(&buffer, &pitch, _size[0] * sizeof(Type), _size[1]);
+      err = cudaMallocPitch<Type>(&buffer, &pitch, _size[0] * sizeof(Type), _size[1]);
+      if( err != cudaSuccess )
+      {
+          printf( "Failed to allocate CUDA Pitched Memory in line %d, size=%li - %s\n", __LINE__-3, long(_size[0]), cudaGetErrorString(err) );
+          throw std::runtime_error("CUDA Mem allocation error");
+      }
     }
     if(Dim >= 3)
     {
@@ -281,7 +322,12 @@ public:
       for(unsigned i = 3; i < Dim; ++i)
         extent.depth *= _size[i];
       cudaPitchedPtr pitchDevPtr;
-      cudaMalloc3D(&pitchDevPtr, extent);
+      err = cudaMalloc3D(&pitchDevPtr, extent);
+      if( err != cudaSuccess )
+      {
+          printf( "Failed to allocate CUDA Pitched Memory in line %d, size=%li - %s\n", __LINE__-3, long(_size[0]), cudaGetErrorString(err) );
+          throw std::runtime_error("CUDA Mem allocation error");
+      }
       buffer = (Type*)pitchDevPtr.ptr;
       pitch = pitchDevPtr.pitch;
     }
@@ -292,6 +338,7 @@ public:
   }
   explicit inline CudaDeviceMemoryPitched(const CudaHostMemoryHeap<Type, Dim> &rhs)
   {
+    cudaError_t err;
     size = rhs.getSize();
     sx = 1;
     sy = 1;
@@ -301,7 +348,12 @@ public:
     if (Dim >= 3) sx = rhs.getSize()[2];
     if(Dim == 2)
     {
-      cudaMallocPitch<Type>(&buffer, &pitch, size[0] * sizeof(Type), size[1]);
+      err = cudaMallocPitch<Type>(&buffer, &pitch, size[0] * sizeof(Type), size[1]);
+      if( err != cudaSuccess )
+      {
+          printf( "Failed to allocate CUDA Pitched Memory in line %d, size=%li - %s\n", __LINE__-3, long(size[0]*size[1]), cudaGetErrorString(err) );
+          throw std::runtime_error("CUDA Mem allocation error");
+      }
     }
     if(Dim >= 3)
     {
@@ -312,7 +364,12 @@ public:
       for(unsigned i = 3; i < Dim; ++i)
         extent.depth *= size[i];
       cudaPitchedPtr pitchDevPtr;
-      cudaMalloc3D(&pitchDevPtr, extent);
+      err = cudaMalloc3D(&pitchDevPtr, extent);
+      if( err != cudaSuccess )
+      {
+          printf( "Failed to allocate CUDA 3D Memory in line %d - %s\n", __LINE__-3, cudaGetErrorString(err) );
+          throw std::runtime_error("CUDA Mem allocation error");
+      }
       buffer = (Type*)pitchDevPtr.ptr;
       pitch = pitchDevPtr.pitch;
     }

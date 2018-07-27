@@ -13,6 +13,20 @@
 #include <vector>
 #include <algorithm>
 #include <iostream>
+#include <stdexcept>
+
+// Macro for checking cuda errors
+#define CHECK_CUDA_ERROR()                                                    \
+    cudaDeviceSynchronize();                                                  \
+    if(cudaError_t err = cudaGetLastError())                                  \
+                                                                              \
+{                                                                             \
+        fprintf(stderr, "\n\nCUDAError: %s\n", cudaGetErrorString(err));      \
+        fprintf(stderr, "  file:       %s\n", __FILE__);                      \
+        fprintf(stderr, "  function:   %s\n", __FUNCTION__);                  \
+        fprintf(stderr, "  line:       %d\n\n", __LINE__);                    \
+                                                                              \
+}
 
 namespace aliceVision {
 namespace depthMap {
@@ -37,7 +51,10 @@ struct PitchedMem_Texture
 
     PitchedMem_Texture( int w, int h )
     {
+	cudaError_t err;
+
         mem = new CudaDeviceMemoryPitched<T,2>( CudaSize<2>( w, h ) );
+        CHECK_CUDA_ERROR();
 
         cudaTextureDesc      tex_desc;
         memset(&tex_desc, 0, sizeof(cudaTextureDesc));
@@ -56,10 +73,15 @@ struct PitchedMem_Texture
         res_desc.res.pitch2D.height       = mem->getSize()[1];
         res_desc.res.pitch2D.pitchInBytes = mem->getPitch();
 
-        cudaCreateTextureObject( &tex,
-                                 &res_desc,
-                                 &tex_desc,
-                                 0 );
+        err = cudaCreateTextureObject( &tex,
+                                       &res_desc,
+                                       &tex_desc,
+                                       0 );
+        if( err != cudaSuccess )
+        {
+	    printf("Failed to allocate a CUDA Texture object in %s %d - %s (%s)\n", __FILE__, __LINE__-6, cudaGetErrorString(err), __PRETTY_FUNCTION__ );
+	    throw std::runtime_error("Failed to allocate texture object");
+        }
     }
 
     ~PitchedMem_Texture( )
@@ -85,6 +107,7 @@ public:
         {
             std::cerr << "Allocate textured pitched mem " << width << "X" << height << std::endl;
             PitchedMem_Texture<T,fMode,rMode>* ptr = new PitchedMem_Texture<T,fMode,rMode>( width, height );
+            CHECK_CUDA_ERROR();
             return ptr;
         }
         else
