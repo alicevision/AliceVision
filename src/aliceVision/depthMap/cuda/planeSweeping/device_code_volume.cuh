@@ -16,14 +16,18 @@ __global__ void volume_slice_kernel(
     cudaTextureObject_t r4tex,
     cudaTextureObject_t t4tex,
     cudaTextureObject_t depthsTex,
-    cudaTextureObject_t volPixsTex,
+    cudaTextureObject_t volPixs_x_Tex,
+    cudaTextureObject_t volPixs_y_Tex,
+    cudaTextureObject_t volPixs_z_Tex,
     unsigned char* slice, int slice_p,
     // float3* slicePts, int slicePts_p,
     int nsearchdepths, int ndepths, int slicesAtTime, int width, int height, int wsh,
     int t, int npixs, const float gammaC, const float gammaP, const float epipShift );
 
 __global__ void volume_saveSliceToVolume_kernel(
-    cudaTextureObject_t volPixsTex,
+    cudaTextureObject_t volPixsTex_x,
+    cudaTextureObject_t volPixsTex_y,
+    cudaTextureObject_t volPixsTex_z,
     unsigned char* volume, int volume_s, int volume_p, unsigned char* slice,
     int slice_p, int nsearchdepths, int ndepths, int slicesAtTime,
     int width, int height, int t, int npixs, int volStepXY, int volDimX,
@@ -136,14 +140,14 @@ __global__ void volume_getVolumeXYSliceAtZ_kernel(T1* xySlice, int xySlice_p, T2
 }
 
 #if 0
-__global__ void volume_computeBestXSlice_kernel( cudaTextureObject_t sliceTexUChar,
-                                                 unsigned char* xsliceBestInColCst,
-                                                 int volDimX, int volDimY );
-
-__global__ void volume_agregateCostVolumeAtZ_kernel(unsigned char* volume, int volume_s, int volume_p,
-                                                    unsigned char* xsliceBestInColCst, int volDimX, int volDimY,
-                                                    int volDimZ, int vz, unsigned char P1, unsigned char P2,
-                                                    bool transfer);
+// __global__ void volume_computeBestXSlice_kernel( cudaTextureObject_t sliceTexUChar,
+//                                                  unsigned char* xsliceBestInColCst,
+//                                                  int volDimX, int volDimY );
+// 
+// __global__ void volume_agregateCostVolumeAtZ_kernel(unsigned char* volume, int volume_s, int volume_p,
+//                                                     unsigned char* xsliceBestInColCst, int volDimX, int volDimY,
+//                                                     int volDimZ, int vz, unsigned char P1, unsigned char P2,
+//                                                     bool transfer);
 #endif
 
 __global__ void volume_computeBestXSliceUInt_kernel(
@@ -170,80 +174,98 @@ __global__ void volume_agregateCostVolumeAtZinSlices_kernel(
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 #if 0
-__global__ void volume_updateRcVolumeForTcDepthMap_kernel(
-    cudaTextureObject_t sliceTexFloat2,
-    unsigned int* volume, int volume_s, int volume_p,
-    const int volDimX, const int volDimY, const int volDimZ,
-    const int vz, const int volStepXY, const int tcDepthMapStep,
-    const int width, const int height, const float fpPlaneDepth,
-    const float stepInDepth, const int zPart,
-    const int vilDimZGlob, const float maxTcRcPixSizeInVoxRatio,
-    const bool considerNegativeDepthAsInfinity,
-    const float2 tcMinMaxFpDepth );
+// __global__ void volume_updateRcVolumeForTcDepthMap_kernel(
+//     cudaTextureObject_t sliceTexFloat2,
+//     unsigned int* volume, int volume_s, int volume_p,
+//     const int volDimX, const int volDimY, const int volDimZ,
+//     const int vz, const int volStepXY, const int tcDepthMapStep,
+//     const int width, const int height, const float fpPlaneDepth,
+//     const float stepInDepth, const int zPart,
+//     const int vilDimZGlob, const float maxTcRcPixSizeInVoxRatio,
+//     const bool considerNegativeDepthAsInfinity,
+//     const float2 tcMinMaxFpDepth );
 #endif
 
 #if 0
-__global__ void volume_updateRcVolumeForTcDepthMap2_kernel(
-    cudaTextureObject_t sliceTexFloat2,
-    unsigned int* volume, int volume_s, int volume_p,
-    const int volDimX, const int volDimY, const int volDimZ,
-    const int vz, const int volStepXY, const int tcDepthMapStep,
-    const int width, const int height, const float fpPlaneDepth,
-    const float stepInDepth, const int zPart,
-    const int vilDimZGlob, const float maxTcRcPixSizeInVoxRatio,
-    const bool considerNegativeDepthAsInfinity,
-    const float2 tcMinMaxFpDepth, const bool useSimilarity );
+// __global__ void volume_updateRcVolumeForTcDepthMap2_kernel(
+//     cudaTextureObject_t sliceTexFloat2,
+//     unsigned int* volume, int volume_s, int volume_p,
+//     const int volDimX, const int volDimY, const int volDimZ,
+//     const int vz, const int volStepXY, const int tcDepthMapStep,
+//     const int width, const int height, const float fpPlaneDepth,
+//     const float stepInDepth, const int zPart,
+//     const int vilDimZGlob, const float maxTcRcPixSizeInVoxRatio,
+//     const bool considerNegativeDepthAsInfinity,
+//     const float2 tcMinMaxFpDepth, const bool useSimilarity );
 #endif
 
 #if 0
-__global__ void volume_update_nModalsMap_kernel_id0(
-    unsigned short* nModalsMap, int nModalsMap_p,
-    int volDimX, int volDimY );
+// __global__ void volume_update_nModalsMap_kernel_id0(
+//     unsigned short* nModalsMap, int nModalsMap_p,
+//     int volDimX, int volDimY );
 #endif
 
 #if 0
-__global__ void volume_update_nModalsMap_kernel(
-    cudaTextureObject_t depthsTex,
-    cudaTextureObject_t sliceTex,
-    unsigned short* nModalsMap, int nModalsMap_p,
-    unsigned short* rcIdDepthMap, int rcIdDepthMap_p, int volDimX,
-    int volDimY, int volDimZ, int volStepXY, int tcDepthMapStep, int width,
-    int height, int distLimit, int id );
+// __global__ void volume_update_nModalsMap_kernel(
+//     cudaTextureObject_t depthsTex,
+//     cudaTextureObject_t sliceTex,
+//     unsigned short* nModalsMap, int nModalsMap_p,
+//     unsigned short* rcIdDepthMap, int rcIdDepthMap_p, int volDimX,
+//     int volDimY, int volDimZ, int volStepXY, int tcDepthMapStep, int width,
+//     int height, int distLimit, int id );
 #endif
 
 #if 0
-__global__ void volume_filterRcIdDepthMapByTcDepthMap_kernel(
-    cudaTextureObject_t depthsTex,
-    cudaTextureObject_t sliceTex,
-    unsigned short* rcIdDepthMap, int rcIdDepthMap_p,
-    int volDimX, int volDimY, int volDimZ, int volStepXY,
-    int tcDepthMapStep, int width, int height, int distLimit );
+// __global__ void volume_filterRcIdDepthMapByTcDepthMap_kernel(
+//     cudaTextureObject_t depthsTex,
+//     cudaTextureObject_t sliceTex,
+//     unsigned short* rcIdDepthMap, int rcIdDepthMap_p,
+//     int volDimX, int volDimY, int volDimZ, int volStepXY,
+//     int tcDepthMapStep, int width, int height, int distLimit );
 #endif
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-__global__ void update_GC_volumeXYSliceAtZInt4_kernel(int4* xySlice, int xySlice_p, unsigned int* volume, int volume_s,
+__global__ void update_GC_volumeXYSliceAtZInt4_kernel(int* xySlice_x, int xySlice_x_p,
+	                                              int* xySlice_y, int xySlice_y_p,
+						      int* xySlice_z, int xySlice_z_p,
+						      int* xySlice_w, int xySlice_w_p,
+						      unsigned int* volume, int volume_s,
                                                       int volume_p, int volDimX, int volDimY, int volDimZ, int vz);
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-__global__ void volume_GC_K_getVolumeXYSliceInt4ToUintDimZ_kernel(unsigned int* oxySlice, int oxySlice_p,
-                                                                  int4* ixySlice, int ixySlice_p, int volDimX,
-                                                                  int volDimY);
+#if 0
+// __global__ void volume_GC_K_getVolumeXYSliceInt4ToUintDimZ_kernel(unsigned int* oxySlice, int oxySlice_p,
+//                                                                   int* ixySlice_z, int ixySlice_z_p,
+// 								  int volDimX, int volDimY);
+#endif
 
-__global__ void volume_GC_K_initXYSliceInt4_kernel(int4* xySlice, int xySlice_p, unsigned int* volume, int volume_s,
-                                                   int volume_p, int volDimX, int volDimY, int vz);
+#if 0
+// __global__ void volume_GC_K_initXYSliceInt4_kernel(int* xySlice_x, int xySlice_x_p,
+//                                                    int* xySlice_y, int xySlice_y_p,
+//                                                    int* xySlice_z, int xySlice_z_p,
+//                                                    int* xySlice_w, int xySlice_w_p,
+// 						   unsigned int* volume, int volume_s,
+//                                                    int volume_p, int volDimX, int volDimY, int vz);
+#endif
 
-__global__ void update_GC_K_volumeXYSliceAtZInt4_kernel(int4* xySlice, int xySlice_p, unsigned int* volume,
-                                                        int volume_s, int volume_p, int volDimX, int volDimY,
-                                                        int volDimZ, int vz, int K);
+#if 0
+// __global__ void update_GC_K_volumeXYSliceAtZInt4_kernel(int* xySlice_x, int xySlice_x_p,
+//                                                         int* xySlice_y, int xySlice_y_p,
+//                                                         int* xySlice_z, int xySlice_z_p,
+//                                                         int* xySlice_w, int xySlice_w_p,
+//                                                         unsigned int* volume,
+//                                                         int volume_s, int volume_p, int volDimX, int volDimY,
+//                                                         int volDimZ, int vz, int K);
+#endif
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 #if 0
-__global__ void volume_compute_rDP1_kernel(int2* xySlice, int xySlice_p, int* ovolume, int ovolume_s, int ovolume_p,
-                                           unsigned int* volume, int volume_s, int volume_p, int volDimX, int volDimY,
-                                           int volDimZ, int vz);
+// __global__ void volume_compute_rDP1_kernel(int2* xySlice, int xySlice_p, int* ovolume, int ovolume_s, int ovolume_p,
+//                                            unsigned int* volume, int volume_s, int volume_p, int volDimX, int volDimY,
+//                                            int volDimZ, int vz);
 #endif
 
 __global__ void volume_compute_DP1_kernel(int2* xySlice, int xySlice_p, int* ovolume, int ovolume_s, int ovolume_p,
@@ -251,35 +273,35 @@ __global__ void volume_compute_DP1_kernel(int2* xySlice, int xySlice_p, int* ovo
                                           int volDimZ, int vz);
 
 #if 0
-__global__ void volume_compute_rDP1_volume_minMaxMap_kernel(int2* xySlice, int xySlice_p, int* volume, int volume_s,
-                                                            int volume_p, int volDimX, int volDimY, int volDimZ, int z,
-                                                            int zPart, int volDimZGlob);
+// __global__ void volume_compute_rDP1_volume_minMaxMap_kernel(int2* xySlice, int xySlice_p, int* volume, int volume_s,
+//                                                             int volume_p, int volDimX, int volDimY, int volDimZ, int z,
+//                                                             int zPart, int volDimZGlob);
 #endif
 
 #if 0
-__global__ void volume_normalize_rDP1_volume_by_minMaxMap_kernel(int2* xySlice, int xySlice_p, int* volume,
-                                                                 int volume_s, int volume_p, int volDimX, int volDimY,
-                                                                 int volDimZ, int z, int zPart, int volDimZGlob);
-#endif
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-#if 0
-__global__ void volume_filter_VisTVolume_kernel(
-    cudaTextureObject_t sliceTexUInt,
-    unsigned int* ovolume, int ovolume_s, int ovolume_p,
-    int volDimX, int volDimY, int volDimZ,
-    int vz, int K );
+// __global__ void volume_normalize_rDP1_volume_by_minMaxMap_kernel(int2* xySlice, int xySlice_p, int* volume,
+//                                                                  int volume_s, int volume_p, int volDimX, int volDimY,
+//                                                                  int volDimZ, int z, int zPart, int volDimZGlob);
 #endif
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 #if 0
-__global__ void volume_filter_enforceTWeightInVolume_kernel(
-    cudaTextureObject_t sliceTexUInt,
-    unsigned int* ovolume, int ovolume_s, int ovolume_p,
-    int volDimX, int volDimY, int volDimZ,
-    int vz, int K );
+// __global__ void volume_filter_VisTVolume_kernel(
+//     cudaTextureObject_t sliceTexUInt,
+//     unsigned int* ovolume, int ovolume_s, int ovolume_p,
+//     int volDimX, int volDimY, int volDimZ,
+//     int vz, int K );
+#endif
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+#if 0
+// __global__ void volume_filter_enforceTWeightInVolume_kernel(
+//     cudaTextureObject_t sliceTexUInt,
+//     unsigned int* ovolume, int ovolume_s, int ovolume_p,
+//     int volDimX, int volDimY, int volDimZ,
+//     int vz, int K );
 #endif
 
 } // namespace depthMap
