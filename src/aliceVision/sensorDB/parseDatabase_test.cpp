@@ -97,7 +97,7 @@ BOOST_AUTO_TEST_CASE(ParseDatabaseCanon_EOS_5D_Mark_II)
 
   BOOST_CHECK( parseDatabase( sDatabase, vec_database ) );
   BOOST_CHECK( getInfo( sBrand, sModel, vec_database, datasheet ) );
-  BOOST_CHECK_EQUAL( 35.8, datasheet._sensorSize );
+  BOOST_CHECK_EQUAL( 36, datasheet._sensorSize );
 }
 
 BOOST_AUTO_TEST_CASE(ParseDatabaseCanon_EOS_1100D)

@@ -224,7 +224,7 @@ int main(int argc, char **argv)
   // check user choose at least one input option
   if(imageFolder.empty() && sfmFilePath.empty())
   {
-    ALICEVISION_LOG_ERROR("Program need -i or --imageFolder option");
+    ALICEVISION_LOG_ERROR("Program need -i or --imageFolder option" << std::endl << "No input images.");
     return EXIT_FAILURE;
   }
 
@@ -315,6 +315,7 @@ int main(int argc, char **argv)
 
   std::vector<std::string> noMetadataImagePaths;
   std::map<std::pair<std::string, std::string>, std::string> unknownSensors; // key (make,model) value (first imagePath)
+  std::map<std::pair<std::string, std::string>, std::pair<std::string, aliceVision::sensorDB::Datasheet>> unsureSensors; // key (make,model) value (first imagePath,datasheet)
 
   SfMData sfmData;
 
@@ -367,9 +368,14 @@ int main(int argc, char **argv)
     View& view = *(std::next(viewPairItBegin,i)->second);
     IndexT intrinsicId = view.getIntrinsicId();
     double sensorWidth = -1;
+    double focalLength = view.getMetadataFocalLength();
     const std::string& make = view.getMetadataMake();
     const std::string& model = view.getMetadataModel();
     const bool hasCameraMetadata = (!make.empty() || !model.empty());
+    const bool hasFocalIn35mmMetadata = view.hasDigitMetadata("Exif:FocalLengthIn35mmFilm");
+    const double focalIn35mm = hasFocalIn35mmMetadata ? std::stod(view.getMetadata("Exif:FocalLengthIn35mmFilm")) : -1.0;
+    const double imageRatio = static_cast<double>(view.getWidth()) / static_cast<double>(view.getHeight());
+    const double diag24x36 = std::sqrt(36.0 * 36.0 + 24.0 * 24.0);
 
     // check if the view intrinsic is already defined
     if(intrinsicId != UndefinedIndexT)
@@ -401,37 +407,86 @@ int main(int argc, char **argv)
     }
 
     // get view intrinsic sensor width
-    if(hasCameraMetadata)
     {
-      aliceVision::sensorDB::Datasheet datasheet;
-      if(getInfo(make, model, sensorDatabase, datasheet))
+      // try to find in the sensor database
+      if(hasCameraMetadata)
       {
-        sensorWidth = datasheet._sensorSize; // sensor is in the database
+        aliceVision::sensorDB::Datasheet datasheet;
+        if(getInfo(make, model, sensorDatabase, datasheet))
+        {
+          // sensor is in the database
+          ALICEVISION_LOG_DEBUG("Sensor width found in database: " << std::endl
+                                << "\t- brand: " << make << std::endl
+                                << "\t- model: " << model << std::endl
+                                << "\t- sensor width: " << datasheet._sensorSize << " mm");
+
+          if(datasheet._model != model) // the camera model in database is slightly different
+            unsureSensors.emplace(std::make_pair(make, model), std::make_pair(view.getImagePath(), datasheet)); // will throw a warning message
+
+          sensorWidth = datasheet._sensorSize;
+        }
       }
-      else
+
+      // try to find / compute with 'FocalLengthIn35mmFilm' metadata
+      if(sensorWidth == -1.0 && hasFocalIn35mmMetadata)
       {
-        #pragma omp critical
-        unknownSensors.emplace(std::make_pair(make, model), view.getImagePath()); // will throw an error message
-        if(!allowIncompleteOutput)
+        const double invRatio = 1.0 / imageRatio;
+
+        if(focalLength > 0.0)
+        {
+          const double sensorDiag = (focalLength * diag24x36) / focalIn35mm; // 43.3 is the diagonal of 35mm film
+          sensorWidth = sensorDiag * std::sqrt(1.0 / (1.0 + invRatio * invRatio));
+
+          ALICEVISION_LOG_INFO("Sensor width computed from 'FocalLength' and 'FocalLengthIn35mmFilm' metadata." << std::endl
+                               << "\t- sensor width: " << sensorWidth << " mm" << std::endl
+                               << "\t- focal length: " << focalLength << " mm");
+        }
+        else
+        {
+          sensorWidth = diag24x36 * std::sqrt(1.0 / (1.0 + invRatio * invRatio));
+          focalLength = sensorWidth * (focalIn35mm ) / 36.0;
+          ALICEVISION_LOG_INFO("Sensor width and focal length computed from 'FocalLengthIn35mmFilm' metadata." << std::endl
+                               << "\t- sensor width: " << sensorWidth << " mm" << std::endl
+                               << "\t- focal length: " << focalLength << " mm");
+        }
+      }
+
+      // error handling
+      if(sensorWidth == -1.0)
+      {
+  #pragma omp critical
+        if(hasCameraMetadata)
+        {
+          // sensor is not in the database
+          unknownSensors.emplace(std::make_pair(make, model), view.getImagePath()); // will throw an error message
+        }
+        else
+        {
+          // no metadata 'Make' and 'Model' can't find sensor width
+          noMetadataImagePaths.emplace_back(view.getImagePath()); // will throw a warning message
+        }
+
+        if(allowIncompleteOutput)
+        {
+          view.setIntrinsicId(UndefinedIndexT);
+          // don't build an intrinsic
           continue;
+        }
       }
     }
-    else
-    {
-      // no metadata 'Make' and 'Model' can't find sensor width
-      #pragma omp critical
-      noMetadataImagePaths.emplace_back(view.getImagePath()); // will throw a warning message
 
-      if(allowIncompleteOutput)
-      {
-        view.setIntrinsicId(UndefinedIndexT);
-        // don't build an intrinsic
-        continue;
-      }
+    // try to compute focalLength with 'FocalLengthIn35mmFilm' metadata
+    if(focalLength <= 0 && sensorWidth > 0 && hasFocalIn35mmMetadata)
+    {
+      const double sensorDiag = std::sqrt(std::pow(sensorWidth, 2) +  std::pow(sensorWidth / imageRatio,2));
+      focalLength = (sensorDiag * focalIn35mm) / diag24x36;
+
+      ALICEVISION_LOG_INFO("focalLength computed from sensor size and 'FocalLengthIn35mmFilm' metadata." << std::endl
+                           << "\t- focal length: " << focalLength << " mm");
     }
 
     // build intrinsic
-    std::shared_ptr<camera::IntrinsicBase> intrinsicBase = getViewIntrinsic(view, sensorWidth, defaultFocalLengthPixel, defaultFieldOfView, defaultCameraModel, defaultPPx, defaultPPy);
+    std::shared_ptr<camera::IntrinsicBase> intrinsicBase = getViewIntrinsic(view, focalLength, sensorWidth, defaultFocalLengthPixel, defaultFieldOfView, defaultCameraModel, defaultPPx, defaultPPy);
     camera::Pinhole* intrinsic = dynamic_cast<camera::Pinhole*>(intrinsicBase.get());
 
     if(intrinsic && intrinsic->getFocalLengthPix() > 0)
@@ -479,6 +534,20 @@ int main(int argc, char **argv)
     ALICEVISION_LOG_WARNING("No metadata in image(s) :");
     for(const auto& imagePath : noMetadataImagePaths)
       ALICEVISION_LOG_WARNING("\t- '" << imagePath << "'");
+  }
+
+
+  if(!unsureSensors.empty())
+  {
+    ALICEVISION_LOG_WARNING("The camera found in the database is slightly different for image(s):");
+    for(const auto& unsureSensor : unsureSensors)
+      ALICEVISION_LOG_WARNING("image: '" << fs::path(unsureSensor.second.first).filename().string() << "'" << std::endl
+                        << "\t- image camera brand: " << unsureSensor.first.first <<  std::endl
+                        << "\t- image camera model: " << unsureSensor.first.second <<  std::endl
+                        << "\t- database camera brand: " << unsureSensor.second.second._brand <<  std::endl
+                        << "\t- database camera model: " << unsureSensor.second.second._model << std::endl
+                        << "\t- database camera sensor size: " << unsureSensor.second.second._sensorSize << " mm");
+    ALICEVISION_LOG_WARNING("Please check and correct camera model(s) name in the database." << std::endl);
   }
 
   if(!unknownSensors.empty())

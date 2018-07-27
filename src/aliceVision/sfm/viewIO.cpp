@@ -64,6 +64,7 @@ void updateIncompleteView(View& view)
 }
 
 std::shared_ptr<camera::IntrinsicBase> getViewIntrinsic(const View& view,
+                                                        double mmFocalLength,
                                                         double sensorWidth,
                                                         double defaultFocalLengthPx,
                                                         double defaultFieldOfView,
@@ -80,7 +81,6 @@ std::shared_ptr<camera::IntrinsicBase> getViewIntrinsic(const View& view,
   const std::string& bodySerialNumber = view.getMetadataBodySerialNumber();
   const std::string& lensSerialNumber = view.getMetadataLensSerialNumber();
 
-  float mmFocalLength = view.getMetadataFocalLength();
   double pxFocalLength;
   bool hasFocalLengthInput = false;
 
@@ -116,7 +116,7 @@ std::shared_ptr<camera::IntrinsicBase> getViewIntrinsic(const View& view,
     if(exifWidth > 0 && exifHeight > 0 &&
        (exifWidth != view.getWidth() || exifHeight != view.getHeight()))
     {
-      ALICEVISION_LOG_WARNING("Warning: Resized image detected: " << fs::path(view.getImagePath()).filename().string() << std::endl
+      ALICEVISION_LOG_WARNING("Resized image detected: " << fs::path(view.getImagePath()).filename().string() << std::endl
                           << "\t- real image size: " <<  view.getWidth() << "x" <<  view.getHeight() << std::endl
                           << "\t- image size from exif metadata is: " << exifWidth << "x" << exifHeight << std::endl);
       isResized = true;
@@ -129,10 +129,10 @@ std::shared_ptr<camera::IntrinsicBase> getViewIntrinsic(const View& view,
   }
 
   // handle case where focal length (mm) is unset or false
-  if(mmFocalLength <= .0f)
+  if(mmFocalLength <= 0.0)
   {
-    ALICEVISION_LOG_WARNING("Warning: image '" << fs::path(view.getImagePath()).filename().string() << "' focal length (in mm) metadata is missing." << std::endl
-                                               << "Can't compute focal length (px), use default." << std::endl);
+    ALICEVISION_LOG_WARNING("Image '" << fs::path(view.getImagePath()).filename().string() << "' focal length (in mm) metadata is missing." << std::endl
+                             << "Can't compute focal length (px), use default." << std::endl);
   }
   else if(sensorWidth > 0)
   {
@@ -152,7 +152,7 @@ std::shared_ptr<camera::IntrinsicBase> getViewIntrinsic(const View& view,
     // and we use a camera without lens distortion.
     intrinsicType = camera::PINHOLE_CAMERA;
   }
-  else if((mmFocalLength > 0.0 && mmFocalLength < 15) || (defaultFieldOfView > 95))
+  else if((mmFocalLength > 0.0 && mmFocalLength < 15.0) || (defaultFieldOfView > 95.0))
   {
     // if the focal lens is short, the fisheye model should fit better.
     intrinsicType = camera::PINHOLE_CAMERA_FISHEYE;

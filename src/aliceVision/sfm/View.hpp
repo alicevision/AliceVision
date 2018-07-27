@@ -168,6 +168,31 @@ public:
   }
 
   /**
+   * @brief Return true if the given metadata name exists and is a digit
+   * @param[in] name The metadata name
+   * @param[in] isPositive true if the metadata must be positive
+   * @return true if the corresponding metadata value exists
+   */
+  bool hasDigitMetadata(const std::string& name, bool isPositive = true) const
+  {
+    double value = -1.0;
+    const auto it = _metadata.find(name);
+
+    if(it == _metadata.end() || it->second.empty())
+      return false;
+
+    try
+    {
+      value = std::stod(it->second);
+    }
+    catch(std::exception &)
+    {
+      return false;
+    }
+    return (!isPositive || (value > 0));
+  }
+
+  /**
    * @brief Get the corresponding metadata value for the given name
    * @param[in] name The metadata name
    * @return the metadata value string
@@ -251,12 +276,12 @@ public:
    * @brief Get the corresponding "FocalLength" metadata value
    * @return the metadata value float or -1 if no corresponding value
    */
-  float getMetadataFocalLength() const
+  double getMetadataFocalLength() const
   {
-    if(hasMetadata("Exif:FocalLength"))
-      return std::stof(getMetadata("Exif:FocalLength"));
-    if(hasMetadata("focalLength"))
-      return std::stof(getMetadata("focalLength"));
+    if(hasDigitMetadata("Exif:FocalLength"))
+      return std::stod(getMetadata("Exif:FocalLength"));
+    if(hasDigitMetadata("focalLength"))
+      return std::stod(getMetadata("focalLength"));
     return -1;
   }
 
