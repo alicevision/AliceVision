@@ -1137,9 +1137,13 @@ float PlaneSweepingCuda::sweepPixelsToVolume(int nDepthsToSearch, StaticVector<u
     int npixs = pixels->size();
     int ntimes = npixs / slicesAtTime + 1;
     ALICEVISION_LOG_INFO("Split processing in N blocks (ntimes): " << ntimes);
-    CudaHostMemoryHeap<int4, 2> volPixs_hmh(CudaSize<2>(slicesAtTime, ntimes));
+    CudaHostMemoryHeap<int, 2> volPixs_hmh_x(CudaSize<2>(slicesAtTime, ntimes));
+    CudaHostMemoryHeap<int, 2> volPixs_hmh_y(CudaSize<2>(slicesAtTime, ntimes));
+    CudaHostMemoryHeap<int, 2> volPixs_hmh_z(CudaSize<2>(slicesAtTime, ntimes));
 
-    int4 *_volPixs = volPixs_hmh.getBuffer();
+    int *volPixs_x = volPixs_hmh_x.getBuffer();
+    int *volPixs_y = volPixs_hmh_y.getBuffer();
+    int *volPixs_z = volPixs_hmh_z.getBuffer();
     const Voxel *_pixels = pixels->getData().data();
 
     for(int y = 0; y < ntimes; ++y)
@@ -1149,12 +1153,11 @@ float PlaneSweepingCuda::sweepPixelsToVolume(int nDepthsToSearch, StaticVector<u
             int index = y * slicesAtTime + x;
             if(index >= npixs)
                 break;
-            int4 &volPix = _volPixs[index];
             const Voxel &pixel = _pixels[index];
-            volPix.x = pixel.x;
-            volPix.y = pixel.y;
-            volPix.z = pixel.z;
-            volPix.w = 1;
+            volPixs_x[index] = pixel.x;
+            volPixs_y[index] = pixel.y;
+            volPixs_z[index] = pixel.z;
+            // volPixs_w[index] = 1;
         }
     }
 
@@ -1173,7 +1176,11 @@ float PlaneSweepingCuda::sweepPixelsToVolume(int nDepthsToSearch, StaticVector<u
     //     true, gammaC, gammaP, subPixel, epipShift);
     float volumeMBinGPUMem = ps_planeSweepingGPUPixelsVolume(
         volume->getDataWritable().data(), ttcams, camsids->size(), w, h, volStepXY, volDimX, volDimY,
-        volDimZ, volLUX, volLUY, volLUZ, volPixs_hmh, depths_hmh, nDepthsToSearch, slicesAtTime, ntimes, npixs, wsh,
+        volDimZ, volLUX, volLUY, volLUZ,
+	volPixs_hmh_x,
+	volPixs_hmh_y,
+	volPixs_hmh_z,
+	depths_hmh, nDepthsToSearch, slicesAtTime, ntimes, npixs, wsh,
         nbestkernelSizeHalf, depths->size(), scale - 1,
         CUDADeviceNo, nImgsInGPUAtTime, scales, verbose, false, nbest,
         true, gammaC, gammaP, subPixel, epipShift);
