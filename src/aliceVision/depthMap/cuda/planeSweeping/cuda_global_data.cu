@@ -9,19 +9,6 @@
 
 #include <iostream>
 
-// Macro for checking cuda errors
-#define CHECK_CUDA_ERROR()                                                    \
-    cudaDeviceSynchronize();                                                  \
-    if(cudaError_t err = cudaGetLastError())                                  \
-                                                                              \
-{                                                                             \
-        fprintf(stderr, "\n\nCUDAError: %s\n", cudaGetErrorString(err));      \
-        fprintf(stderr, "  file:       %s\n", __FILE__);                      \
-        fprintf(stderr, "  function:   %s\n", __FUNCTION__);                  \
-        fprintf(stderr, "  line:       %d\n\n", __LINE__);                    \
-                                                                              \
-}
-
 
 namespace aliceVision {
 namespace depthMap {
@@ -33,7 +20,7 @@ namespace depthMap {
  * The code is not capable of dealing with multiple GPUs yet (on multiple GPUs,
  * multiple allocations are probably required).
  */
-GlobalData global_data;
+thread_local GlobalData global_data;
 
 void GaussianArray::create( float delta, int radius )
 {

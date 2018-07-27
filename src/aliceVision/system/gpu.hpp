@@ -93,6 +93,11 @@ inline std::string gpuInformationCUDA()
       if(cudaGetDeviceProperties(deviceProperties.get(), i) != cudaSuccess)
         throw std::runtime_error("Cannot get properties for CUDA gpu device " + std::to_string(i));
 
+      size_t avail;
+      size_t total;
+      if (cudaMemGetInfo(&avail, &total) != cudaSuccess)
+          throw std::runtime_error("Cannot get memory information for CUDA gpu device " + std::to_string(i));
+
       std::stringstream deviceSS;
 
       deviceSS << "Device information:" << std::endl
@@ -100,6 +105,7 @@ inline std::string gpuInformationCUDA()
                << "\t- name:                    " << deviceProperties->name << std::endl
                << "\t- compute capability:      " << deviceProperties->major << "." << deviceProperties->minor << std::endl
                << "\t- total device memory:     " << deviceProperties->totalGlobalMem / (1024 * 1024) << " MB " << std::endl
+               << "\t- device memory available: " << avail / (1024 * 1024) << " MB " << std::endl
                << "\t- per-block shared memory: " << deviceProperties->sharedMemPerBlock << std::endl
                << "\t- warp size:               " << deviceProperties->warpSize << std::endl
                << "\t- max threads per block:   " << deviceProperties->maxThreadsPerBlock << std::endl
