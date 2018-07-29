@@ -282,8 +282,11 @@ void Texturing::generateTexture(const mvsUtils::MultiViewParams& mp,
     {
         ALICEVISION_LOG_INFO(" - camera " << camId + 1 << "/" << mp.ncams << " (" << triangles.size() << " triangles)");
 
-        for(const auto& triangleId : triangles)
+        imageCache.refreshData(camId);
+        #pragma omp parallel for
+        for(int ti = 0; ti < triangles.size(); ++ti)
         {
+            const unsigned int triangleId = triangles[ti];
             // retrieve triangle 3D and UV coordinates
             Point2d triPixs[3];
             Point3d triPts[3];
