@@ -256,7 +256,9 @@ void Texturing::generateTexture(const mvsUtils::MultiViewParams& mp,
     for(size_t i = 0; i < _atlases[atlasID].size(); ++i)
     {
         int triangleId = _atlases[atlasID][i];
-
+        std::vector<int> selectedTriCams;
+ #ifdef ALICEVISION_TEXTURING_USE_VISIBILITY_UNION
+        // Union of the visibilities of the 3 verticies
         std::set<int> triCams;
         // retrieve triangle visibilities (set of triangle's points visibilities)
         for(int k = 0; k < 3; k++)
@@ -270,6 +272,50 @@ void Texturing::generateTexture(const mvsUtils::MultiViewParams& mp,
         }
         // register this triangle in cameras seeing it
         for(int camId : triCams)
+            selectedTriCams.push_back(camId);
+#else
+        // Intersection of visibilities of the 3 vertices
+        std::vector<int> triCams;
+        for (int k = 0; k < 3; k++)
+        {
+            const int pointIndex = (*me->tris)[triangleId].v[k];
+            const StaticVector<int>* pointVisibilities = (*pointsVisibilities)[pointIndex];
+            if (pointVisibilities != nullptr)
+            {
+                std::copy(pointVisibilities->begin(), pointVisibilities->end(), std::inserter(triCams, triCams.end()));
+            }
+        }
+        std::sort(triCams.begin(), triCams.end());
+        unsigned int prevCamId = std::numeric_limits<int>::max();
+        unsigned int prevCamCount = 0;
+        for (int j = 0; j < triCams.size(); ++j)
+        {
+            unsigned int camId = triCams[j];
+            if (camId == prevCamId)
+            {
+                ++prevCamCount;
+            }
+            else
+            {
+                assert(prevCamCount < 3);
+                if (prevCamCount > 1)
+                {
+                    // append if camId has been visible by the 3 vertices
+                    selectedTriCams.push_back(prevCamId);
+                }
+                prevCamId = camId;
+                prevCamCount = 0;
+            }
+        }
+        if (prevCamCount > 1 && (selectedTriCams.empty() || selectedTriCams.back() != prevCamId))
+        {
+            selectedTriCams.push_back(prevCamId);
+        }
+#endif
+        if(selectedTriCams.empty())
+            // triangle without visibility
+            continue;
+        for (int camId: selectedTriCams)
             camTriangles[camId].push_back(triangleId);
     }
 
