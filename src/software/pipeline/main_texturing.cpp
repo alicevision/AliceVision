@@ -77,7 +77,15 @@ int main(int argc, char* argv[])
         ("inputMesh", po::value<std::string>(&inputMeshFilepath),
             "Optional input mesh to texture. By default, it will texture the inputReconstructionMesh.")
         ("flipNormals", po::value<bool>(&flipNormals)->default_value(flipNormals),
-            "Option to flip face normals. It can be needed as it depends on the vertices order in triangles and the convention change from one software to another.");
+            "Option to flip face normals. It can be needed as it depends on the vertices order in triangles and the convention change from one software to another.")
+        ("maxNbImagesForFusion", po::value<int>(&texParams.maxNbImagesForFusion)->default_value(texParams.maxNbImagesForFusion),
+            "Max number of images to combine to create the final texture.")
+        ("bestScoreThreshold", po::value<double>(&texParams.bestScoreThreshold)->default_value(texParams.bestScoreThreshold),
+            "(0.0 to disable filtering based on threshold to relative best score).")
+        ("angleHardThreshold", po::value<double>(&texParams.angleHardThreshold)->default_value(texParams.angleHardThreshold),
+            "(0.0 to disable angle hard threshold filtering).")
+        ("forceVisibleByAllVertices", po::value<bool>(&texParams.forceVisibleByAllVertices)->default_value(texParams.forceVisibleByAllVertices),
+            "triangle visibility is based on the union of vertices visiblity.");
 
     po::options_description logParams("Log parameters");
     logParams.add_options()
