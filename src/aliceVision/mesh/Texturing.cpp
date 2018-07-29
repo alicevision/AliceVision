@@ -15,6 +15,7 @@
 #include <aliceVision/mvsData/Pixel.hpp>
 #include <aliceVision/imageIO/image.hpp>
 
+#include <geogram/basic/common.h>
 #include <geogram/basic/geometry_nd.h>
 #include <geogram/mesh/mesh.h>
 #include <geogram/mesh/mesh_io.h>
@@ -221,7 +222,7 @@ struct AccuColor {
     }
 
     Color average() const {
-        return count > 0 ? colorSum / count : colorSum;
+        return count > 0 ? colorSum / (float)count : colorSum;
     }
 
     void operator+(const Color& other)
