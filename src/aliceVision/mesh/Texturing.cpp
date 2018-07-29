@@ -315,8 +315,44 @@ void Texturing::generateTexture(const mvsUtils::MultiViewParams& mp,
         if(selectedTriCams.empty())
             // triangle without visibility
             continue;
+
+#ifdef ALICEVISION_TEXTURING_USE_ALL_IMAGES
         for (int camId: selectedTriCams)
+        {
             camTriangles[camId].push_back(triangleId);
+        }
+#else
+        // Select the N best views for texturing
+        std::vector<std::pair<double, int>> scorePerCamId;
+        for (int camId : selectedTriCams)
+        {
+            int w = mp.getWidth(camId);
+            int h = mp.getHeight(camId);
+
+            const Mesh::triangle_proj tProj = me->getTriangleProjection(triangleId, &mp, camId, w, h);
+            int nbVertex = me->getTriangleNbVertexInImage(tProj, w, h);
+            if(nbVertex == 0)
+                // No triangle vertex in the image
+                continue;
+
+            const double area = me->computeTriangleProjectionArea(tProj);
+            const double score = area * (double)nbVertex;
+            scorePerCamId.emplace_back(score, camId);
+        }
+        if (scorePerCamId.empty())
+            // triangle without visibility
+            continue;
+        std::sort(scorePerCamId.begin(), scorePerCamId.end(), std::greater<std::pair<double, int>>());
+        double minScore = 0.8 * scorePerCamId.front().first; // bestScoreThreshold * bestScore
+        for(int i = 0; i < scorePerCamId.size() && i < 3; ++i)
+        {
+            if(scorePerCamId[i].first < minScore)
+                // The best image has a much better score, so only rely on the first ones
+                break;
+            const int camId = scorePerCamId[i].second;
+            camTriangles[camId].push_back(triangleId);
+        }
+#endif
     }
 
     ALICEVISION_LOG_INFO("Reading pixel color.");
