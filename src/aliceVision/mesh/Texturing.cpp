@@ -256,95 +256,79 @@ void Texturing::generateTexture(const mvsUtils::MultiViewParams& mp,
     for(size_t i = 0; i < _atlases[atlasID].size(); ++i)
     {
         int triangleId = _atlases[atlasID][i];
-        std::vector<int> selectedTriCams;
- #ifdef ALICEVISION_TEXTURING_USE_VISIBILITY_UNION
-        // Union of the visibilities of the 3 verticies
-        std::set<int> triCams;
-        // retrieve triangle visibilities (set of triangle's points visibilities)
-        for(int k = 0; k < 3; k++)
-        {
-            const int pointIndex = (*me->tris)[triangleId].v[k];
-            const StaticVector<int>* pointVisibilities = (*pointsVisibilities)[pointIndex];
-            if(pointVisibilities != nullptr)
-            {
-                std::copy(pointVisibilities->begin(), pointVisibilities->end(), std::inserter(triCams, triCams.end()));
-            }
-        }
-        // register this triangle in cameras seeing it
-        for(int camId : triCams)
-            selectedTriCams.push_back(camId);
-#else
-        // Intersection of visibilities of the 3 vertices
-        std::vector<int> triCams;
+        std::vector<std::pair<int, int>> selectedTriCams;
+
+        // Fuse visibilities of the 3 vertices
+        std::vector<int> allTriCams;
         for (int k = 0; k < 3; k++)
         {
             const int pointIndex = (*me->tris)[triangleId].v[k];
             const StaticVector<int>* pointVisibilities = (*pointsVisibilities)[pointIndex];
             if (pointVisibilities != nullptr)
             {
-                std::copy(pointVisibilities->begin(), pointVisibilities->end(), std::inserter(triCams, triCams.end()));
+                std::copy(pointVisibilities->begin(), pointVisibilities->end(), std::inserter(allTriCams, allTriCams.end()));
             }
         }
-        std::sort(triCams.begin(), triCams.end());
-        unsigned int prevCamId = std::numeric_limits<int>::max();
-        unsigned int prevCamCount = 0;
-        for (int j = 0; j < triCams.size(); ++j)
+        if (allTriCams.empty())
+            // triangle without visibility
+            continue;
+
+        std::sort(allTriCams.begin(), allTriCams.end());
+        selectedTriCams.emplace_back(allTriCams.front(), 1);
+        for (int j = 1; j < allTriCams.size(); ++j)
         {
-            unsigned int camId = triCams[j];
-            if (camId == prevCamId)
+            const unsigned int camId = allTriCams[j];
+            if(selectedTriCams.back().first == camId)
             {
-                ++prevCamCount;
+                ++selectedTriCams.back().second;
             }
             else
             {
-                assert(prevCamCount < 3);
-                if (prevCamCount > 1)
-                {
-                    // append if camId has been visible by the 3 vertices
-                    selectedTriCams.push_back(prevCamId);
-                }
-                prevCamId = camId;
-                prevCamCount = 0;
+                selectedTriCams.emplace_back(camId, 1);
             }
         }
-        if (prevCamCount > 1 && (selectedTriCams.empty() || selectedTriCams.back() != prevCamId))
-        {
-            selectedTriCams.push_back(prevCamId);
-        }
-#endif
+
         if(selectedTriCams.empty())
             // triangle without visibility
             continue;
 
-#ifdef ALICEVISION_TEXTURING_USE_ALL_IMAGES
-        for (int camId: selectedTriCams)
-        {
-            camTriangles[camId].push_back(triangleId);
-        }
-#else
         // Select the N best views for texturing
+        Point3d triangleNormal = me->computeTriangleNormal(triangleId);
         std::vector<std::pair<double, int>> scorePerCamId;
-        for (int camId : selectedTriCams)
+        for (const auto& itCamVis: selectedTriCams)
         {
-            int w = mp.getWidth(camId);
-            int h = mp.getHeight(camId);
+            const int camId = itCamVis.first;
+            const int verticesSupport = itCamVis.second;
+            if(texParams.forceVisibleByAllVertices && verticesSupport < 3)
+                continue;
+
+            if (texParams.angleHardThreshold != 0.0)
+            {
+                const Point3d camInvDir = mp.RArr[camId] * Point3d(0.0, 0.0, -1.0);
+                const double angle = angleBetwV1andV2(triangleNormal, camInvDir);
+                if(angle > texParams.angleHardThreshold)
+                    continue;
+            }
+
+            const int w = mp.getWidth(camId);
+            const int h = mp.getHeight(camId);
 
             const Mesh::triangle_proj tProj = me->getTriangleProjection(triangleId, &mp, camId, w, h);
-            int nbVertex = me->getTriangleNbVertexInImage(tProj, w, h);
+            const int nbVertex = me->getTriangleNbVertexInImage(tProj, w, h);
             if(nbVertex == 0)
                 // No triangle vertex in the image
                 continue;
 
             const double area = me->computeTriangleProjectionArea(tProj);
-            const double score = area * (double)nbVertex;
+            const double score = area * double(nbVertex) * double(verticesSupport);
             scorePerCamId.emplace_back(score, camId);
         }
         if (scorePerCamId.empty())
             // triangle without visibility
             continue;
         std::sort(scorePerCamId.begin(), scorePerCamId.end(), std::greater<std::pair<double, int>>());
-        double minScore = 0.8 * scorePerCamId.front().first; // bestScoreThreshold * bestScore
-        for(int i = 0; i < scorePerCamId.size() && i < 3; ++i)
+        double minScore = texParams.bestScoreThreshold * scorePerCamId.front().first; // bestScoreThreshold * bestScore
+        for(int i = 0; i < scorePerCamId.size() && i < texParams.maxNbImagesForFusion; ++i)
         {
             if(scorePerCamId[i].first < minScore)
                 // The best image has a much better score, so only rely on the first ones
@@ -352,7 +336,6 @@ void Texturing::generateTexture(const mvsUtils::MultiViewParams& mp,
             const int camId = scorePerCamId[i].second;
             camTriangles[camId].push_back(triangleId);
         }
-#endif
     }
 
     ALICEVISION_LOG_INFO("Reading pixel color.");
