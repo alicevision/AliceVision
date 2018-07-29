@@ -165,13 +165,12 @@ public:
     bool isTriangleObtuse(int triId);
 
 public:
-    float computeTriangleProjectionArea(triangle_proj& tp);
-    float computeTriangleArea(int idTri);
+    double computeTriangleProjectionArea(const triangle_proj& tp);
+    double computeTriangleArea(int idTri);
     Mesh::triangle_proj getTriangleProjection(int triid, const mvsUtils::MultiViewParams* mp, int rc, int w, int h) const;
-    bool isTriangleProjectionInImage(Mesh::triangle_proj tp, int w, int h) const;
+    bool isTriangleProjectionInImage(const Mesh::triangle_proj& tp, int w, int h) const;
+    int getTriangleNbVertexInImage(const Mesh::triangle_proj& tp, int w, int h) const;
     bool doesTriangleIntersectsRectangle(Mesh::triangle_proj* tp, Mesh::rectangle* re);
-    bool doesTriangleIntersect4Poly(Point2d* _p, Point2d* A, Point2d* B, Point2d* C, Point2d* P0, Point2d* P1,
-                                    Point2d* P2, Point2d* P3);
     StaticVector<Point2d>* getTrianglePixelIntersectionsAndInternalPoints(Mesh::triangle_proj* tp,
                                                                           Mesh::rectangle* re);
     StaticVector<Point3d>* getTrianglePixelIntersectionsAndInternalPoints(const mvsUtils::MultiViewParams* mp, int idTri, Pixel& pix,
@@ -209,15 +208,11 @@ public:
     void changeTriPtId(int triId, int oldPtId, int newPtId);
     int getTriPtIndex(int triId, int ptId, bool failIfDoesNotExists = true);
     Pixel getTriOtherPtsIds(int triId, int _ptId);
-    int getTri1EdgeIdWRTNeighTri2(int triId1, int triId2);
     bool areTwoTrisSameOriented(int triId1, int triId2, int edgePtId1, int edgePtId2);
-    bool checkPtsForNaN();
-    void filterWrongTriangles();
     StaticVector<int>* getLargestConnectedComponentTrisIds();
 
     bool getEdgeNeighTrisInterval(Pixel& itr, Pixel edge, StaticVector<Voxel>* edgesXStat,
                                   StaticVector<Voxel>* edgesXYStat);
-    void Transform(Matrix3x3 Rs, Point3d t);
 };
 
 } // namespace mesh
