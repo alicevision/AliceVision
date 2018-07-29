@@ -5,13 +5,15 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "Texturing.hpp"
+#include "geoMesh.hpp"
+#include "UVAtlas.hpp"
+
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/numeric/numeric.hpp>
 #include <aliceVision/mvsData/Color.hpp>
 #include <aliceVision/mvsData/geometry.hpp>
 #include <aliceVision/mvsData/Pixel.hpp>
 #include <aliceVision/imageIO/image.hpp>
-#include <aliceVision/mesh/UVAtlas.hpp>
 
 #include <geogram/basic/geometry_nd.h>
 #include <geogram/mesh/mesh.h>
@@ -82,39 +84,6 @@ Point2d barycentricToCartesian(const Point2d* triangle, const Point2d& coords)
 Point3d barycentricToCartesian(const Point3d* triangle, const Point2d& coords)
 {
     return triangle[0] + (triangle[2] - triangle[0]) * coords.x + (triangle[1] - triangle[0]) * coords.y;
-}
-
-/**
- * @brief Create a Geogram GEO::Mesh from an aliceVision::Mesh
- *
- * @note only initialize vertices and facets
- * @param[in] the source aliceVision mesh
- * @param[out] the destination GEO::Mesh
- */
-void toGeoMesh(const Mesh& src, GEO::Mesh& dst)
-{
-    GEO::vector<double> vertices;
-    vertices.reserve(src.pts->size() * 3);
-    GEO::vector<GEO::index_t> facets;
-    facets.reserve(src.tris->size() * 3);
-
-    for(unsigned int i = 0; i < src.pts->size(); ++i)
-    {
-        const auto& point = (*src.pts)[i];
-        vertices.insert(vertices.end(), std::begin(point.m), std::end(point.m));
-    }
-
-    for(unsigned int i = 0; i < src.tris->size(); ++i)
-    {
-        const auto& tri = (*src.tris)[i];
-        facets.insert(facets.end(), std::begin(tri.v), std::end(tri.v));
-    }
-
-    dst.facets.assign_triangle_mesh(3, vertices, facets, true);
-    dst.facets.connect();
-
-    assert(src.pts->size() == dst.vertices.nb());
-    assert(src.tris->size() == dst.facets.nb());
 }
 
 void Texturing::generateUVs(mvsUtils::MultiViewParams& mp)
@@ -549,7 +518,8 @@ void Texturing::replaceMesh(const std::string& otherMeshPath, bool flipNormals)
     // allocate pointsVisibilities for new internal mesh
     pointsVisibilities = new PointsVisibility();
     // remap visibilities from reconstruction onto input mesh
-    remapMeshVisibilities(*refMesh, *refVisibilities, *me, *pointsVisibilities);
+    // remapMeshVisibilities_pullVerticesVisibility(*refMesh, *refVisibilities, *me, *pointsVisibilities);
+    remapMeshVisibilities_pushVerticesVisibilityToTriangles(*refMesh, *refVisibilities, *me, *pointsVisibilities);
     // delete ref mesh and visibilities
     delete refMesh;
     deleteArrayOfArrays(&refVisibilities);
