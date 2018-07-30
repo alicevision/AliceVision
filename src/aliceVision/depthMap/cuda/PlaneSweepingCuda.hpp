@@ -82,8 +82,8 @@ public:
     ~PlaneSweepingCuda(void);
 
 private:
-    PlaneSweepingCuda( const PlaneSweepingCuda& );            // disable copy consttructor
-    PlaneSweepingCuda& operator=( const PlaneSweepingCuda& ); // disable assignment operator
+    PlaneSweepingCuda( const PlaneSweepingCuda& ) = delete;            // disable copy consttructor
+    PlaneSweepingCuda& operator=( const PlaneSweepingCuda& ) = delete; // disable assignment operator
 
 public:
     int addCam(int rc, float** H, int scale);
