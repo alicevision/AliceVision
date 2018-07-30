@@ -16,8 +16,6 @@
 #include <aliceVision/feature/akaze/descriptorMLDB.hpp>
 #include <aliceVision/feature/akaze/descriptorMSURF.hpp>
 
-using namespace std;
-
 namespace aliceVision {
 namespace feature {
 
