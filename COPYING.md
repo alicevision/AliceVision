@@ -30,48 +30,68 @@ This program is based on works distributed under the terms of another license(s)
     [http://www.boost.org](http://www.boost.org)
     Distributed under the [Boost Software License](http://www.boost.org/users/license.html).
 
-*   __ceres-solver__
+*   __CCTag__ (optional)
+    Copyright 2016, Simula Research Laboratory
+    Distributed under the [MPL2 license](http://opensource.org/licenses/MPL-2.0).
+
+*   __Ceres-Solver__
     [http://ceres-solver.org](http://ceres-solver.org)
     Copyright 2015 Google Inc. All rights reserved.
     Distributed under the [New BSD licence](http://ceres-solver.org/license.html).
+
+*   __Clp__
+    Copyright (C) 2002, 2003 International Business Machines Corporation
+    and others.  All Rights Reserved.
+    Distributed under the terms of the Eclipse Public License (EPL).
+
+*   __CoinUtils__
+    Copyright (C) 1987, 2009 International Business Machines Corporation
+    and others.  All Rights Reserved.
+    Distributed under the terms of the Eclipse Public License (EPL).
+
+*   __CUDA__ (required for the depth map computation)
+    See https://docs.nvidia.com/cuda/eula/index.html#license-driver
 
 *   __cxsparse__  (optional)
     Copyright (c) 2006-2012, Timothy A. Davis.
     Distributed under the [GNU LGPL license](http://opensource.org/licenses/lgpl-license).
 
-*   __eigen__
+*   __Eigen__
+    http://eigen.tuxfamily.org
     Copyright (c) Eigen authors.
     Distributed under the [MPL2 license](http://opensource.org/licenses/MPL-2.0).
     Compiled with EIGEN_MPL2_ONLY to ensure MPL2 compatible code.
 
-*   __flann__
+*   __Flann__
+    https://www.cs.ubc.ca/research/flann
     Copyright (c) 2008-2011  Marius Muja (mariusm@cs.ubc.ca). All rights reserved.
     Copyright (c) 2008-2011  David G. Lowe (lowe@cs.ubc.ca). All rights reserved.
     Distributed under the [BSD License](http://www.opensource.org/licenses/bsd-license.php).
 
-*   __geogram__
+*   __Geogram__
     [geogram](http://alice.loria.fr/software/geogram/doc/html/index.html)
     Copyright (c) 2012-2014 Bruno Levy. All rights reserved.
     Distributed under the [BSD-3-Clause](https://opensource.org/licenses/BSD-3-Clause)
 
-*   __histogram__
+*   __Histogram__
     Copyright (c) Jansson Consulting & Pierre Moulon.
     Distributed under the [MPL2 license](http://opensource.org/licenses/MPL-2.0).
 
-*   __htmlDoc__
+*   __HtmlDoc__
     Copyright (c) Pierre Moulon.
     Distributed under the [MPL2 license](http://opensource.org/licenses/MPL-2.0).
 
-*   __lemon__
+*   __Lemon__
+    http://lemon.cs.elte.hu/trac/lemon
     Copyright (c) Lemon authors.
     Distributed under the [Boost License 1.0](http://www.boost.org/LICENSE_1_0.txt).
 
-*   __meshsdfilter__
+*   __MeshSDFilter__
     [MeshSDFilter](https://github.com/bldeng/MeshSDFilter)
     Copyright (c) 2017, Bailin Deng. All rights reserved.
     Distributed under the [BSD-3-Clause](https://opensource.org/licenses/BSD-3-Clause)
 
-*   __nanoflann__
+*   __Nanoflann__
     [nanoflann](https://github.com/jlblancoc/nanoflann)
     Copyright 2008-2009  Marius Muja (mariusm@cs.ubc.ca). All rights reserved.
     Copyright 2008-2009  David G. Lowe (lowe@cs.ubc.ca). All rights reserved.
@@ -88,6 +108,11 @@ This program is based on works distributed under the terms of another license(s)
     Copyright (C) 2015-2016, Itseez Inc., all rights reserved.
     Distributed under the [BSD-3-Clause](https://opensource.org/licenses/BSD-3-Clause)
 
+*   __OpenGV__ (optional)
+    https://laurentkneip.github.io/opengv
+    Copyright (c) 2013 Laurent Kneip, The Australian National University ANU. All rights reserved
+    Distributed under the [BSD-3-Clause](https://opensource.org/licenses/BSD-3-Clause)
+
 *   __OpenImageIO__
     [https://openimageio.org](https://openimageio.org)
     Copyright 2008-2016 Larry Gritz et al.
@@ -99,11 +124,26 @@ This program is based on works distributed under the terms of another license(s)
     Department of Computer Graphics and Multimedia. All rights reserved.
     Distributed under the [BSD-3-Clause](https://opensource.org/licenses/BSD-3-Clause)
 
+*   __Osi__
+    Copyright (C) 2000 International Business Machines Corporation
+    and others.  All Rights Reserved.
+    Distributed under the terms of the Eclipse Public License (EPL).
+
+*   __PopSift__ (optional)
+    Copyright 2016, Simula Research Laboratory
+    Distributed under the [MPL2 license](http://opensource.org/licenses/MPL-2.0).
+
 *   __vectorGraphics__
     Copyright (c) Pierre Moulon
     Distributed under the [MPL2 license](http://opensource.org/licenses/MPL-2.0).
 
+*   __vlfeat__
+    http://www.vlfeat.org
+    Copyright (C) 2007-12 Andrea Vedaldi and Brian Fulkerson. All rights reserved.
+    Distributed under the [BSD License](http://www.opensource.org/licenses/bsd-license.php).
+
 *   __zlib__  (optional)
+    https://zlib.net
     Copyright (C) 1995-2005 Jean-loup Gailly
     Distributed under the [zlib license](http://opensource.org/licenses/Zlib).
 
