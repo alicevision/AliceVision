@@ -698,12 +698,11 @@ bool PlaneSweepingCuda::filterDepthMap(StaticVector<float>* depthMap, int rc, in
 
     if(verbose)
         ALICEVISION_LOG_DEBUG("filterDepthMap rc: " << rc);
-    StaticVector<int> camsids;
-    camsids.push_back(addCam(rc, NULL, scale));
-    cameraStruct** ttcams = new cameraStruct*[1];
-    ttcams[0] = _cams[camsids[0]];
-    ttcams[0]->camId = camsids[0];
-    ttcams[0]->rc = rc;
+    int camsids = addCam(rc, NULL, scale);
+
+    cameraStruct ttcams = *_cams[camsids];
+    ttcams.camId = camsids;
+    ttcams.rc = rc;
 
     CudaHostMemoryHeap<float, 2> depthMap_hmh(CudaSize<2>(w, h));
 
@@ -715,18 +714,13 @@ bool PlaneSweepingCuda::filterDepthMap(StaticVector<float>* depthMap, int rc, in
     // ps_filterDepthMap((CudaArray<uchar4, 2>**)ps_texs_arr, &depthMap_hmh, ttcams, w, h, scale - 1, CUDADeviceNo,
     //                   nImgsInGPUAtTime, scales, wsh, verbose, igammaC, minCostThr);
     ps_filterDepthMap( &depthMap_hmh, ttcams, w, h, scale - 1, CUDADeviceNo,
-                       nImgsInGPUAtTime, scales, wsh, verbose, igammaC, minCostThr );
+                       // nImgsInGPUAtTime,
+                       scales, wsh, verbose, igammaC, minCostThr );
 
     for(int i = 0; i < w * h; i++)
     {
         (*depthMap)[i] = depthMap_hmh.getBuffer()[i];
     }
-
-    for(int i = 0; i < camsids.size(); i++)
-    {
-        ttcams[i] = NULL;
-    }
-    delete[] ttcams;
 
     if(verbose)
         mvsUtils::printfElapsedTime(t1);
@@ -744,12 +738,12 @@ bool PlaneSweepingCuda::computeNormalMap(StaticVector<float>* depthMap, StaticVe
 
     if(verbose)
         ALICEVISION_LOG_DEBUG("computeNormalMap rc: " << rc);
-    StaticVector<int> camsids;
-    camsids.push_back(addCam(rc, NULL, scale));
-    cameraStruct** ttcams = new cameraStruct*[1];
-    ttcams[0] = _cams[camsids[0]];
-    ttcams[0]->camId = camsids[0];
-    ttcams[0]->rc = rc;
+
+    int camsids = addCam(rc, NULL, scale);
+
+    cameraStruct ttcams = *_cams[camsids];
+    ttcams.camId = camsids;
+    ttcams.rc = rc;
 
     CudaHostMemoryHeap<float3, 2> normalMap_hmh(CudaSize<2>(w, h));
     CudaHostMemoryHeap<float, 2> depthMap_hmh(CudaSize<2>(w, h));
@@ -762,7 +756,9 @@ bool PlaneSweepingCuda::computeNormalMap(StaticVector<float>* depthMap, StaticVe
     // ps_computeNormalMap((CudaArray<uchar4, 2>**)ps_texs_arr, &normalMap_hmh, &depthMap_hmh, ttcams, w, h, scale - 1,
     //                     CUDADeviceNo, nImgsInGPUAtTime, scales, wsh, verbose, igammaC, igammaP);
     ps_computeNormalMap( &normalMap_hmh, &depthMap_hmh, ttcams, w, h, scale - 1,
-                         CUDADeviceNo, nImgsInGPUAtTime, scales, wsh, verbose, igammaC, igammaP);
+                         CUDADeviceNo,
+                         // nImgsInGPUAtTime,
+                         scales, wsh, verbose, igammaC, igammaP);
 
     for(int i = 0; i < w * h; i++)
     {
@@ -770,12 +766,6 @@ bool PlaneSweepingCuda::computeNormalMap(StaticVector<float>* depthMap, StaticVe
         (*normalMap)[i].g = normalMap_hmh.getBuffer()[i].y;
         (*normalMap)[i].b = normalMap_hmh.getBuffer()[i].z;
     }
-
-    for(int i = 0; i < camsids.size(); i++)
-    {
-        ttcams[i] = NULL;
-    }
-    delete[] ttcams;
 
     if(verbose)
         mvsUtils::printfElapsedTime(t1);
@@ -794,13 +784,12 @@ void PlaneSweepingCuda::alignSourceDepthMapToTarget(StaticVector<float>* sourceD
 
     if(verbose)
         ALICEVISION_LOG_DEBUG("alignSourceDepthMapToTarget rc: " << rc);
-    StaticVector<int> camsids;
-    camsids.reserve(1);
-    camsids.push_back(addCam(rc, NULL, scale));
-    cameraStruct** ttcams = new cameraStruct*[1];
-    ttcams[0] = _cams[camsids[0]];
-    ttcams[0]->camId = camsids[0];
-    ttcams[0]->rc = rc;
+
+    int camsids = addCam(rc, NULL, scale);
+
+    cameraStruct ttcams = *_cams[camsids];
+    ttcams.camId = camsids;
+    ttcams.rc = rc;
 
     CudaHostMemoryHeap<float, 2> sourceDepthMap_hmh(CudaSize<2>(w, h));
     CudaHostMemoryHeap<float, 2> targetDepthMap_hmh(CudaSize<2>(w, h));
@@ -816,19 +805,15 @@ void PlaneSweepingCuda::alignSourceDepthMapToTarget(StaticVector<float>* sourceD
     //                                igammaC, maxPixelSizeDist);
     ps_alignSourceDepthMapToTarget( &sourceDepthMap_hmh, &targetDepthMap_hmh,
                                     ttcams, w, h, scale - 1,
-                                    CUDADeviceNo, nImgsInGPUAtTime, scales, wsh, verbose,
+                                    CUDADeviceNo,
+                                    // nImgsInGPUAtTime,
+                                    scales, wsh, verbose,
                                     igammaC, maxPixelSizeDist);
 
     for(int i = 0; i < w * h; i++)
     {
         (*sourceDepthMap)[i] = sourceDepthMap_hmh.getBuffer()[i];
     }
-
-    for(int i = 0; i < camsids.size(); i++)
-    {
-        ttcams[i] = NULL;
-    }
-    delete[] ttcams;
 
     if(verbose)
         mvsUtils::printfElapsedTime(t1);
@@ -1214,398 +1199,398 @@ Point3d PlaneSweepingCuda::getDeviceMemoryInfo()
     float3 dmif3 = ps_getDeviceMemoryInfo();
     return Point3d(dmif3.x, dmif3.y, dmif3.z);
 }
+
 /*
-
-bool PlaneSweepingCuda::transposeVolume(StaticVector<unsigned char>* volume, const voxel& dimIn, const voxel& dimTrn,
-                                          voxel& dimOut)
-{
-    if(verbose)
-        printf("\n transposing volume volDimX %i volDimY %i volDimZ %i \n", dimIn.x, dimIn.y, dimIn.z);
-    long t1 = clock();
-
-    CudaHostMemoryHeap<unsigned char, 3> ivol_hmh(CudaSize<3>(dimIn.x, dimIn.y, dimIn.z));
-
-#pragma omp parallel for
-    for(int z = 0; z < dimIn.z; z++)
-    {
-        for(int y = 0; y < dimIn.y; y++)
-        {
-            for(int x = 0; x < dimIn.x; x++)
-            {
-                ivol_hmh.getBuffer()[z * dimIn.x * dimIn.y + y * dimIn.x + x] =
-                    (*volume)[z * dimIn.x * dimIn.y + y * dimIn.x + x];
-            }
-        }
-    }
-
-    dimOut = voxel(dimIn.m[dimTrn.x], dimIn.m[dimTrn.y], dimIn.m[dimTrn.z]);
-
-    CudaHostMemoryHeap<unsigned char, 3> ovol_hmh(CudaSize<3>(dimOut.x, dimOut.y, dimOut.z));
-
-    ps_transposeVolume(&ovol_hmh, &ivol_hmh, dimIn.x, dimIn.y, dimIn.z, dimTrn.x, dimTrn.y, dimTrn.z, verbose);
-
-#pragma omp parallel for
-    for(int z = 0; z < dimOut.z; z++)
-    {
-        for(int y = 0; y < dimOut.y; y++)
-        {
-            for(int x = 0; x < dimOut.x; x++)
-            {
-                (*volume)[z * dimOut.x * dimOut.y + y * dimOut.x + x] =
-                    ovol_hmh.getBuffer()[z * dimOut.x * dimOut.y + y * dimOut.x + x];
-            }
-        }
-    }
-
-    if(verbose)
-        printfElapsedTime(t1);
-
-    return true;
-}
-
-bool PlaneSweepingCuda::computeRcVolumeForRcTcsDepthSimMaps(
-    StaticVector<unsigned int>* volume, StaticVector<StaticVector<Point2d>*>* rcTcsDepthSimMaps, int volDimX,
-    int volDimY, int volDimZ, int volStepXY, StaticVector<float>* depths, int scale, int step,
-    StaticVector<int>* rtcams, StaticVector<Point2d>* rtCamsMinMaxFpDepths, const float maxTcRcPixSizeInVoxRatio,
-    bool considerNegativeDepthAsInfinity)
-{
-    if(verbose)
-        printf(
-            "\n computeRcVolumeForTcDepthMap scale %i step %i volStepXY %i volDimX %i volDimY %i volDimZ %i cams %i\n",
-            scale, step, volStepXY, volDimX, volDimY, volDimZ, rtcams->size());
-
-    int w = mp->getMaxImageWidth() / scale;
-    int h = mp->getMaxImageHeight() / scale;
-
-    long t1 = clock();
-
-    if(rtcams->size() == 0)
-    {
-        return false;
-    }
-
-    cameraStruct** ttcams = new cameraStruct*[rtcams->size()];
-    for(int i = 0; i < rtcams->size(); i++)
-    {
-        cameraStruct* tcam = new cameraStruct;
-        tcam->init();
-        cps_fillCamera(tcam, (*rtcams)[i], mp, NULL, scale);
-        ttcams[i] = tcam;
-    }
-
-    CudaHostMemoryHeap<float, 2> depths_hmh(CudaSize<2>(depths->size(), 1));
-#pragma omp parallel for
-    for(int i = 0; i < depths->size(); i++)
-    {
-        depths_hmh.getBuffer()[i] = (*depths)[i];
-    }
-
-    CudaHostMemoryHeap<float2, 2>** rcTcsDepthSimMaps_hmh = new CudaHostMemoryHeap<float2, 2>*[rtcams->size()];
-    for(int c = 0; c < rtcams->size(); c++)
-    {
-        rcTcsDepthSimMaps_hmh[c] = new CudaHostMemoryHeap<float2, 2>(CudaSize<2>(w / volStepXY, h / volStepXY));
-#pragma omp parallel for
-        for(int i = 0; i < (w / volStepXY) * (h / volStepXY); i++)
-        {
-            rcTcsDepthSimMaps_hmh[c]->getBuffer()[i].x = (*(*rcTcsDepthSimMaps)[c])[i].x;
-            rcTcsDepthSimMaps_hmh[c]->getBuffer()[i].y = (*(*rcTcsDepthSimMaps)[c])[i].y;
-        }
-    }
-
-    int nZparts = 4;
-    int volDimZpart = (int)ceil((float)volDimZ / (float)nZparts);
-    CudaHostMemoryHeap<unsigned int, 3>** vols_hmh = new CudaHostMemoryHeap<unsigned int, 3>*[nZparts];
-    for(int zPart = 0; zPart < nZparts; zPart++)
-    {
-        vols_hmh[zPart] = new CudaHostMemoryHeap<unsigned int, 3>(CudaSize<3>(volDimX, volDimY, volDimZpart));
-    }
-
-    float2* camsMinMaxFpDepths = new float2[rtcams->size()];
-    for(int c = 0; c < rtcams->size(); c++)
-    {
-        camsMinMaxFpDepths[c].x = (*rtCamsMinMaxFpDepths)[c].x;
-        camsMinMaxFpDepths[c].y = (*rtCamsMinMaxFpDepths)[c].y;
-    }
-
-    // sweep
-    ps_computeRcVolumeForTcDepthSimMaps(vols_hmh, nZparts, volDimZpart, ttcams, rtcams->size(), camsMinMaxFpDepths, w,
-                                        h, volStepXY, volDimX, volDimY, volDimZ, depths_hmh, depths->size(), scale - 1,
-                                        CUDADeviceNo, nImgsInGPUAtTime, scales, rcTcsDepthSimMaps_hmh, verbose,
-                                        maxTcRcPixSizeInVoxRatio, considerNegativeDepthAsInfinity);
-
-    for(int zPart = 0; zPart < nZparts; zPart++)
-    {
-#pragma omp parallel for
-        for(int z = 0; z < std::min(volDimZ - zPart * volDimZpart, volDimZpart); z++)
-        {
-            for(int y = 0; y < volDimY; y++)
-            {
-                for(int x = 0; x < volDimX; x++)
-                {
-                    (*volume)[(zPart * volDimZpart + z) * volDimX * volDimY + y * volDimX + x] =
-                        vols_hmh[zPart]->getBuffer()[z * volDimX * volDimY + y * volDimX + x];
-                }
-            }
-        }
-    }
-
-    for(int c = 0; c < rtcams->size(); c++)
-    {
-        delete rcTcsDepthSimMaps_hmh[c];
-    }
-    delete[] rcTcsDepthSimMaps_hmh;
-
-    for(int zPart = 0; zPart < nZparts; zPart++)
-    {
-        delete vols_hmh[zPart];
-    }
-    delete[] vols_hmh;
-
-    for(int i = 0; i < rtcams->size(); i++)
-    {
-        ttcams[i] = NULL;
-    }
-    delete[] ttcams;
-
-    delete[] camsMinMaxFpDepths;
-
-    if(verbose)
-        printfElapsedTime(t1);
-
-    return true;
-}
-*
-bool PlaneSweepingCuda::filterRcIdDepthMapByTcDepthMap(StaticVector<unsigned short>* rcIdDepthMap,
-                                                         StaticVector<float>* tcDepthMap, int volDimX, int volDimY,
-                                                         int volDimZ, int volStepXY, StaticVector<float>* depths,
-                                                         int scale, int step, StaticVector<int>* rtcams, int distLimit)
-{
-    if(verbose)
-        printf("\n filterRcIdDepthMapByTcDepthMap scale %i step %i volStepXY %i volDimX %i volDimY %i volDimZ %i\n",
-               scale, step, volStepXY, volDimX, volDimY, volDimZ);
-
-    int w = mp->getWidth(rc) / scale;
-    int h = mp->getHeight(rc) / scale;
-
-    long t1 = clock();
-
-    if(rtcams->size() <= 1)
-    {
-        return false;
-    }
-
-    // WE DONT NEED IMAGES
-    cameraStruct** ttcams = new cameraStruct*[rtcams->size()];
-    for(int i = 0; i < rtcams->size(); i++)
-    {
-        cameraStruct* tcam = new cameraStruct;
-        tcam->init();
-        cps_fillCamera(tcam, (*rtcams)[i], mp, NULL, scale);
-        ttcams[i] = tcam;
-    }
-
-    CudaHostMemoryHeap<float, 2> tcDepthMap_hmh(CudaSize<2>(w / volStepXY, h / volStepXY));
-
-#pragma omp parallel for
-    for(int i = 0; i < (w / volStepXY) * (h / volStepXY); i++)
-    {
-        tcDepthMap_hmh.getBuffer()[i] = (*tcDepthMap)[i];
-    }
-
-    CudaHostMemoryHeap<float, 2> depths_hmh(CudaSize<2>(depths->size(), 1));
-
-#pragma omp parallel for
-    for(int i = 0; i < depths->size(); i++)
-    {
-        depths_hmh.getBuffer()[i] = (*depths)[i];
-        // printf("%f\n",depths_hmh.getBuffer()[i]);
-    }
-
-    CudaHostMemoryHeap<unsigned short, 2> rcIdDepthMap_hmh(CudaSize<2>(volDimX, volDimY));
-
-#pragma omp parallel for
-    for(int y = 0; y < volDimY; y++)
-    {
-        for(int x = 0; x < volDimX; x++)
-        {
-            rcIdDepthMap_hmh.getBuffer()[y * volDimX + x] = (*rcIdDepthMap)[y * volDimX + x];
-        }
-    }
-
-    // sweep
-    ps_filterRcIdDepthMapByTcDepthMap(&rcIdDepthMap_hmh, ttcams, rtcams->size(), w, h, volStepXY, volDimX, volDimY,
-                                      volDimZ, depths_hmh, depths->size(), scale - 1, CUDADeviceNo, nImgsInGPUAtTime,
-                                      scales, tcDepthMap_hmh, verbose, distLimit);
-
-#pragma omp parallel for
-    for(int y = 0; y < volDimY; y++)
-    {
-        for(int x = 0; x < volDimX; x++)
-        {
-            (*rcIdDepthMap)[y * volDimX + x] = rcIdDepthMap_hmh.getBuffer()[y * volDimX + x];
-        }
-    }
-
-    for(int i = 0; i < rtcams->size(); i++)
-    {
-        ttcams[i] = NULL;
-    }
-    delete[] ttcams;
-
-    if(verbose)
-        printfElapsedTime(t1);
-
-    return true;
-}
-*
-bool PlaneSweepingCuda::filterRcIdDepthMapByTcDepthMaps(StaticVector<unsigned short>* nModalsMap,
-                                                          StaticVector<unsigned short>* rcIdDepthMap,
-                                                          StaticVector<StaticVector<float>*>* tcDepthMaps, int volDimX,
-                                                          int volDimY, int volDimZ, int volStepXY,
-                                                          StaticVector<float>* depths, int scale, int step,
-                                                          StaticVector<int>* rtcams, int distLimit)
-{
-    if(verbose)
-        printf("\n filterRcIdDepthMapByTcDepthMaps scale %i step %i volStepXY %i volDimX %i volDimY %i volDimZ %i cams "
-               "%i\n",
-               scale, step, volStepXY, volDimX, volDimY, volDimZ, rtcams->size());
-
-    int w = mp->getMaxImageWidth() / scale;
-    int h = mp->getMaxImageHeight() / scale;
-
-    long t1 = clock();
-
-    if(rtcams->size() <= 1)
-    {
-        return false;
-    }
-
-    // WE DONT NEED IMAGES
-    cameraStruct** ttcams = new cameraStruct*[rtcams->size()];
-    for(int i = 0; i < rtcams->size(); i++)
-    {
-        cameraStruct* tcam = new cameraStruct;
-        tcam->init();
-        cps_fillCamera(tcam, (*rtcams)[i], mp, NULL, scale);
-        ttcams[i] = tcam;
-    }
-
-    CudaHostMemoryHeap<float, 2> depths_hmh(CudaSize<2>(depths->size(), 1));
-#pragma omp parallel for
-    for(int i = 0; i < depths->size(); i++)
-    {
-        depths_hmh.getBuffer()[i] = (*depths)[i];
-    }
-
-    CudaHostMemoryHeap<float, 2>** tcDepthMaps_hmh = new CudaHostMemoryHeap<float, 2>*[rtcams->size() - 1];
-    for(int c = 0; c < rtcams->size() - 1; c++)
-    {
-        tcDepthMaps_hmh[c] = new CudaHostMemoryHeap<float, 2>(CudaSize<2>(volDimX, volDimY));
-#pragma omp parallel for
-        for(int i = 0; i < volDimX * volDimY; i++)
-        {
-            tcDepthMaps_hmh[c]->getBuffer()[i] = (*(*tcDepthMaps)[c])[i];
-        }
-    }
-
-    CudaHostMemoryHeap<unsigned short, 2> rcIdDepthMap_hmh(CudaSize<2>(volDimX, volDimY));
-#pragma omp parallel for
-    for(int y = 0; y < volDimY; y++)
-    {
-        for(int x = 0; x < volDimX; x++)
-        {
-            rcIdDepthMap_hmh.getBuffer()[y * volDimX + x] = (*rcIdDepthMap)[y * volDimX + x];
-        }
-    }
-
-    CudaHostMemoryHeap<unsigned short, 2> nModalsMap_hmh(CudaSize<2>(volDimX, volDimY));
-
-    ps_filterRcIdDepthMapByTcDepthMaps(&nModalsMap_hmh, &rcIdDepthMap_hmh, ttcams, rtcams->size(), w, h, volStepXY,
-                                       volDimX, volDimY, volDimZ, depths_hmh, depths->size(), scale - 1, CUDADeviceNo,
-                                       nImgsInGPUAtTime, scales, tcDepthMaps_hmh, verbose, distLimit);
-
-#pragma omp parallel for
-    for(int y = 0; y < volDimY; y++)
-    {
-        for(int x = 0; x < volDimX; x++)
-        {
-            (*nModalsMap)[y * volDimX + x] = nModalsMap_hmh.getBuffer()[y * volDimX + x];
-        }
-    }
-
-    for(int c = 0; c < rtcams->size() - 1; c++)
-    {
-        delete tcDepthMaps_hmh[c];
-    }
-    delete[] tcDepthMaps_hmh;
-
-    for(int i = 0; i < rtcams->size(); i++)
-    {
-        ttcams[i] = NULL;
-    }
-    delete[] ttcams;
-
-    if(verbose)
-        printfElapsedTime(t1);
-
-    return true;
-}
-
-bool PlaneSweepingCuda::SGGCoptimizeSimVolume(StaticVector<unsigned short>* ftidMap,
-                                                StaticVector<unsigned int>* ivolume, int _volDimX, int volDimY,
-                                                int volDimZ, int xFrom, int xTo, int K)
-{
-    int volDimX = xTo - xFrom + 1;
-
-    if(verbose)
-        printf("\n SGGC optimizing volume volDimX %i volDimY %i volDimZ %i K %i \n", volDimX, volDimY, volDimZ, K);
-
-    long t1 = clock();
-
-    CudaHostMemoryHeap<unsigned int, 3> vol_hmh(CudaSize<3>(volDimX, volDimY, volDimZ));
-
-#pragma omp parallel for
-    for(int z = 0; z < volDimZ; z++)
-    {
-        for(int y = 0; y < volDimY; y++)
-        {
-            for(int x = xFrom; x <= xTo; x++)
-            {
-                vol_hmh.getBuffer()[z * volDimX * volDimY + y * volDimX + (x - xFrom)] =
-                    (*ivolume)[z * _volDimX * volDimY + y * _volDimX + x];
-            }
-        }
-    }
-
-    CudaHostMemoryHeap<unsigned int, 2> ftid_hmh(CudaSize<2>(volDimX, volDimY));
-
-    if(K == 0)
-    {
-        ps_GC_aggregatePathVolume(&ftid_hmh, // f-irst t-label id
-                                  vol_hmh, volDimX, volDimY, volDimZ);
-    }
-    else
-    {
-        ps_GC_K_aggregatePathVolume(&ftid_hmh, // f-irst t-label id
-                                    vol_hmh, volDimX, volDimY, volDimZ, K);
-    }
-
-#pragma omp parallel for
-    for(int y = 0; y < volDimY; y++)
-    {
-        for(int x = 0; x < volDimX; x++)
-        {
-            (*ftidMap)[y * _volDimX + (x + xFrom)] = ftid_hmh.getBuffer()[y * volDimX + x];
-        }
-    }
-
-    if(verbose)
-        printfElapsedTime(t1);
-
-    return true;
-}
-
+// bool PlaneSweepingCuda::transposeVolume(StaticVector<unsigned char>* volume, const voxel& dimIn, const voxel& dimTrn,
+//                                           voxel& dimOut)
+// {
+//     if(verbose)
+//         printf("\n transposing volume volDimX %i volDimY %i volDimZ %i \n", dimIn.x, dimIn.y, dimIn.z);
+//     long t1 = clock();
+// 
+//     CudaHostMemoryHeap<unsigned char, 3> ivol_hmh(CudaSize<3>(dimIn.x, dimIn.y, dimIn.z));
+// 
+// #pragma omp parallel for
+//     for(int z = 0; z < dimIn.z; z++)
+//     {
+//         for(int y = 0; y < dimIn.y; y++)
+//         {
+//             for(int x = 0; x < dimIn.x; x++)
+//             {
+//                 ivol_hmh.getBuffer()[z * dimIn.x * dimIn.y + y * dimIn.x + x] =
+//                     (*volume)[z * dimIn.x * dimIn.y + y * dimIn.x + x];
+//             }
+//         }
+//     }
+// 
+//     dimOut = voxel(dimIn.m[dimTrn.x], dimIn.m[dimTrn.y], dimIn.m[dimTrn.z]);
+// 
+//     CudaHostMemoryHeap<unsigned char, 3> ovol_hmh(CudaSize<3>(dimOut.x, dimOut.y, dimOut.z));
+// 
+//     ps_transposeVolume(&ovol_hmh, &ivol_hmh, dimIn.x, dimIn.y, dimIn.z, dimTrn.x, dimTrn.y, dimTrn.z, verbose);
+// 
+// #pragma omp parallel for
+//     for(int z = 0; z < dimOut.z; z++)
+//     {
+//         for(int y = 0; y < dimOut.y; y++)
+//         {
+//             for(int x = 0; x < dimOut.x; x++)
+//             {
+//                 (*volume)[z * dimOut.x * dimOut.y + y * dimOut.x + x] =
+//                     ovol_hmh.getBuffer()[z * dimOut.x * dimOut.y + y * dimOut.x + x];
+//             }
+//         }
+//     }
+// 
+//     if(verbose)
+//         printfElapsedTime(t1);
+// 
+//     return true;
+// }
+// 
+// bool PlaneSweepingCuda::computeRcVolumeForRcTcsDepthSimMaps(
+//     StaticVector<unsigned int>* volume, StaticVector<StaticVector<Point2d>*>* rcTcsDepthSimMaps, int volDimX,
+//     int volDimY, int volDimZ, int volStepXY, StaticVector<float>* depths, int scale, int step,
+//     StaticVector<int>* rtcams, StaticVector<Point2d>* rtCamsMinMaxFpDepths, const float maxTcRcPixSizeInVoxRatio,
+//     bool considerNegativeDepthAsInfinity)
+// {
+//     if(verbose)
+//         printf(
+//             "\n computeRcVolumeForTcDepthMap scale %i step %i volStepXY %i volDimX %i volDimY %i volDimZ %i cams %i\n",
+//             scale, step, volStepXY, volDimX, volDimY, volDimZ, rtcams->size());
+// 
+//     int w = mp->getMaxImageWidth() / scale;
+//     int h = mp->getMaxImageHeight() / scale;
+// 
+//     long t1 = clock();
+// 
+//     if(rtcams->size() == 0)
+//     {
+//         return false;
+//     }
+// 
+//     cameraStruct** ttcams = new cameraStruct*[rtcams->size()];
+//     for(int i = 0; i < rtcams->size(); i++)
+//     {
+//         cameraStruct* tcam = new cameraStruct;
+//         tcam->init();
+//         cps_fillCamera(tcam, (*rtcams)[i], mp, NULL, scale);
+//         ttcams[i] = tcam;
+//     }
+// 
+//     CudaHostMemoryHeap<float, 2> depths_hmh(CudaSize<2>(depths->size(), 1));
+// #pragma omp parallel for
+//     for(int i = 0; i < depths->size(); i++)
+//     {
+//         depths_hmh.getBuffer()[i] = (*depths)[i];
+//     }
+// 
+//     CudaHostMemoryHeap<float2, 2>** rcTcsDepthSimMaps_hmh = new CudaHostMemoryHeap<float2, 2>*[rtcams->size()];
+//     for(int c = 0; c < rtcams->size(); c++)
+//     {
+//         rcTcsDepthSimMaps_hmh[c] = new CudaHostMemoryHeap<float2, 2>(CudaSize<2>(w / volStepXY, h / volStepXY));
+// #pragma omp parallel for
+//         for(int i = 0; i < (w / volStepXY) * (h / volStepXY); i++)
+//         {
+//             rcTcsDepthSimMaps_hmh[c]->getBuffer()[i].x = (*(*rcTcsDepthSimMaps)[c])[i].x;
+//             rcTcsDepthSimMaps_hmh[c]->getBuffer()[i].y = (*(*rcTcsDepthSimMaps)[c])[i].y;
+//         }
+//     }
+// 
+//     int nZparts = 4;
+//     int volDimZpart = (int)ceil((float)volDimZ / (float)nZparts);
+//     CudaHostMemoryHeap<unsigned int, 3>** vols_hmh = new CudaHostMemoryHeap<unsigned int, 3>*[nZparts];
+//     for(int zPart = 0; zPart < nZparts; zPart++)
+//     {
+//         vols_hmh[zPart] = new CudaHostMemoryHeap<unsigned int, 3>(CudaSize<3>(volDimX, volDimY, volDimZpart));
+//     }
+// 
+//     float2* camsMinMaxFpDepths = new float2[rtcams->size()];
+//     for(int c = 0; c < rtcams->size(); c++)
+//     {
+//         camsMinMaxFpDepths[c].x = (*rtCamsMinMaxFpDepths)[c].x;
+//         camsMinMaxFpDepths[c].y = (*rtCamsMinMaxFpDepths)[c].y;
+//     }
+// 
+//     // sweep
+//     ps_computeRcVolumeForTcDepthSimMaps(vols_hmh, nZparts, volDimZpart, ttcams, rtcams->size(), camsMinMaxFpDepths, w,
+//                                         h, volStepXY, volDimX, volDimY, volDimZ, depths_hmh, depths->size(), scale - 1,
+//                                         CUDADeviceNo, nImgsInGPUAtTime, scales, rcTcsDepthSimMaps_hmh, verbose,
+//                                         maxTcRcPixSizeInVoxRatio, considerNegativeDepthAsInfinity);
+// 
+//     for(int zPart = 0; zPart < nZparts; zPart++)
+//     {
+// #pragma omp parallel for
+//         for(int z = 0; z < std::min(volDimZ - zPart * volDimZpart, volDimZpart); z++)
+//         {
+//             for(int y = 0; y < volDimY; y++)
+//             {
+//                 for(int x = 0; x < volDimX; x++)
+//                 {
+//                     (*volume)[(zPart * volDimZpart + z) * volDimX * volDimY + y * volDimX + x] =
+//                         vols_hmh[zPart]->getBuffer()[z * volDimX * volDimY + y * volDimX + x];
+//                 }
+//             }
+//         }
+//     }
+// 
+//     for(int c = 0; c < rtcams->size(); c++)
+//     {
+//         delete rcTcsDepthSimMaps_hmh[c];
+//     }
+//     delete[] rcTcsDepthSimMaps_hmh;
+// 
+//     for(int zPart = 0; zPart < nZparts; zPart++)
+//     {
+//         delete vols_hmh[zPart];
+//     }
+//     delete[] vols_hmh;
+// 
+//     for(int i = 0; i < rtcams->size(); i++)
+//     {
+//         ttcams[i] = NULL;
+//     }
+//     delete[] ttcams;
+// 
+//     delete[] camsMinMaxFpDepths;
+// 
+//     if(verbose)
+//         printfElapsedTime(t1);
+// 
+//     return true;
+// }
+// *
+// bool PlaneSweepingCuda::filterRcIdDepthMapByTcDepthMap(StaticVector<unsigned short>* rcIdDepthMap,
+//                                                          StaticVector<float>* tcDepthMap, int volDimX, int volDimY,
+//                                                          int volDimZ, int volStepXY, StaticVector<float>* depths,
+//                                                          int scale, int step, StaticVector<int>* rtcams, int distLimit)
+// {
+//     if(verbose)
+//         printf("\n filterRcIdDepthMapByTcDepthMap scale %i step %i volStepXY %i volDimX %i volDimY %i volDimZ %i\n",
+//                scale, step, volStepXY, volDimX, volDimY, volDimZ);
+// 
+//     int w = mp->getWidth(rc) / scale;
+//     int h = mp->getHeight(rc) / scale;
+// 
+//     long t1 = clock();
+// 
+//     if(rtcams->size() <= 1)
+//     {
+//         return false;
+//     }
+// 
+//     // WE DONT NEED IMAGES
+//     cameraStruct** ttcams = new cameraStruct*[rtcams->size()];
+//     for(int i = 0; i < rtcams->size(); i++)
+//     {
+//         cameraStruct* tcam = new cameraStruct;
+//         tcam->init();
+//         cps_fillCamera(tcam, (*rtcams)[i], mp, NULL, scale);
+//         ttcams[i] = tcam;
+//     }
+// 
+//     CudaHostMemoryHeap<float, 2> tcDepthMap_hmh(CudaSize<2>(w / volStepXY, h / volStepXY));
+// 
+// #pragma omp parallel for
+//     for(int i = 0; i < (w / volStepXY) * (h / volStepXY); i++)
+//     {
+//         tcDepthMap_hmh.getBuffer()[i] = (*tcDepthMap)[i];
+//     }
+// 
+//     CudaHostMemoryHeap<float, 2> depths_hmh(CudaSize<2>(depths->size(), 1));
+// 
+// #pragma omp parallel for
+//     for(int i = 0; i < depths->size(); i++)
+//     {
+//         depths_hmh.getBuffer()[i] = (*depths)[i];
+//         // printf("%f\n",depths_hmh.getBuffer()[i]);
+//     }
+// 
+//     CudaHostMemoryHeap<unsigned short, 2> rcIdDepthMap_hmh(CudaSize<2>(volDimX, volDimY));
+// 
+// #pragma omp parallel for
+//     for(int y = 0; y < volDimY; y++)
+//     {
+//         for(int x = 0; x < volDimX; x++)
+//         {
+//             rcIdDepthMap_hmh.getBuffer()[y * volDimX + x] = (*rcIdDepthMap)[y * volDimX + x];
+//         }
+//     }
+// 
+//     // sweep
+//     ps_filterRcIdDepthMapByTcDepthMap(&rcIdDepthMap_hmh, ttcams, rtcams->size(), w, h, volStepXY, volDimX, volDimY,
+//                                       volDimZ, depths_hmh, depths->size(), scale - 1, CUDADeviceNo, nImgsInGPUAtTime,
+//                                       scales, tcDepthMap_hmh, verbose, distLimit);
+// 
+// #pragma omp parallel for
+//     for(int y = 0; y < volDimY; y++)
+//     {
+//         for(int x = 0; x < volDimX; x++)
+//         {
+//             (*rcIdDepthMap)[y * volDimX + x] = rcIdDepthMap_hmh.getBuffer()[y * volDimX + x];
+//         }
+//     }
+// 
+//     for(int i = 0; i < rtcams->size(); i++)
+//     {
+//         ttcams[i] = NULL;
+//     }
+//     delete[] ttcams;
+// 
+//     if(verbose)
+//         printfElapsedTime(t1);
+// 
+//     return true;
+// }
+// *
+// bool PlaneSweepingCuda::filterRcIdDepthMapByTcDepthMaps(StaticVector<unsigned short>* nModalsMap,
+//                                                           StaticVector<unsigned short>* rcIdDepthMap,
+//                                                           StaticVector<StaticVector<float>*>* tcDepthMaps, int volDimX,
+//                                                           int volDimY, int volDimZ, int volStepXY,
+//                                                           StaticVector<float>* depths, int scale, int step,
+//                                                           StaticVector<int>* rtcams, int distLimit)
+// {
+//     if(verbose)
+//         printf("\n filterRcIdDepthMapByTcDepthMaps scale %i step %i volStepXY %i volDimX %i volDimY %i volDimZ %i cams "
+//                "%i\n",
+//                scale, step, volStepXY, volDimX, volDimY, volDimZ, rtcams->size());
+// 
+//     int w = mp->getMaxImageWidth() / scale;
+//     int h = mp->getMaxImageHeight() / scale;
+// 
+//     long t1 = clock();
+// 
+//     if(rtcams->size() <= 1)
+//     {
+//         return false;
+//     }
+// 
+//     // WE DONT NEED IMAGES
+//     cameraStruct** ttcams = new cameraStruct*[rtcams->size()];
+//     for(int i = 0; i < rtcams->size(); i++)
+//     {
+//         cameraStruct* tcam = new cameraStruct;
+//         tcam->init();
+//         cps_fillCamera(tcam, (*rtcams)[i], mp, NULL, scale);
+//         ttcams[i] = tcam;
+//     }
+// 
+//     CudaHostMemoryHeap<float, 2> depths_hmh(CudaSize<2>(depths->size(), 1));
+// #pragma omp parallel for
+//     for(int i = 0; i < depths->size(); i++)
+//     {
+//         depths_hmh.getBuffer()[i] = (*depths)[i];
+//     }
+// 
+//     CudaHostMemoryHeap<float, 2>** tcDepthMaps_hmh = new CudaHostMemoryHeap<float, 2>*[rtcams->size() - 1];
+//     for(int c = 0; c < rtcams->size() - 1; c++)
+//     {
+//         tcDepthMaps_hmh[c] = new CudaHostMemoryHeap<float, 2>(CudaSize<2>(volDimX, volDimY));
+// #pragma omp parallel for
+//         for(int i = 0; i < volDimX * volDimY; i++)
+//         {
+//             tcDepthMaps_hmh[c]->getBuffer()[i] = (*(*tcDepthMaps)[c])[i];
+//         }
+//     }
+// 
+//     CudaHostMemoryHeap<unsigned short, 2> rcIdDepthMap_hmh(CudaSize<2>(volDimX, volDimY));
+// #pragma omp parallel for
+//     for(int y = 0; y < volDimY; y++)
+//     {
+//         for(int x = 0; x < volDimX; x++)
+//         {
+//             rcIdDepthMap_hmh.getBuffer()[y * volDimX + x] = (*rcIdDepthMap)[y * volDimX + x];
+//         }
+//     }
+// 
+//     CudaHostMemoryHeap<unsigned short, 2> nModalsMap_hmh(CudaSize<2>(volDimX, volDimY));
+// 
+//     ps_filterRcIdDepthMapByTcDepthMaps(&nModalsMap_hmh, &rcIdDepthMap_hmh, ttcams, rtcams->size(), w, h, volStepXY,
+//                                        volDimX, volDimY, volDimZ, depths_hmh, depths->size(), scale - 1, CUDADeviceNo,
+//                                        nImgsInGPUAtTime, scales, tcDepthMaps_hmh, verbose, distLimit);
+// 
+// #pragma omp parallel for
+//     for(int y = 0; y < volDimY; y++)
+//     {
+//         for(int x = 0; x < volDimX; x++)
+//         {
+//             (*nModalsMap)[y * volDimX + x] = nModalsMap_hmh.getBuffer()[y * volDimX + x];
+//         }
+//     }
+// 
+//     for(int c = 0; c < rtcams->size() - 1; c++)
+//     {
+//         delete tcDepthMaps_hmh[c];
+//     }
+//     delete[] tcDepthMaps_hmh;
+// 
+//     for(int i = 0; i < rtcams->size(); i++)
+//     {
+//         ttcams[i] = NULL;
+//     }
+//     delete[] ttcams;
+// 
+//     if(verbose)
+//         printfElapsedTime(t1);
+// 
+//     return true;
+// }
+// 
+// bool PlaneSweepingCuda::SGGCoptimizeSimVolume(StaticVector<unsigned short>* ftidMap,
+//                                                 StaticVector<unsigned int>* ivolume, int _volDimX, int volDimY,
+//                                                 int volDimZ, int xFrom, int xTo, int K)
+// {
+//     int volDimX = xTo - xFrom + 1;
+// 
+//     if(verbose)
+//         printf("\n SGGC optimizing volume volDimX %i volDimY %i volDimZ %i K %i \n", volDimX, volDimY, volDimZ, K);
+// 
+//     long t1 = clock();
+// 
+//     CudaHostMemoryHeap<unsigned int, 3> vol_hmh(CudaSize<3>(volDimX, volDimY, volDimZ));
+// 
+// #pragma omp parallel for
+//     for(int z = 0; z < volDimZ; z++)
+//     {
+//         for(int y = 0; y < volDimY; y++)
+//         {
+//             for(int x = xFrom; x <= xTo; x++)
+//             {
+//                 vol_hmh.getBuffer()[z * volDimX * volDimY + y * volDimX + (x - xFrom)] =
+//                     (*ivolume)[z * _volDimX * volDimY + y * _volDimX + x];
+//             }
+//         }
+//     }
+// 
+//     CudaHostMemoryHeap<unsigned int, 2> ftid_hmh(CudaSize<2>(volDimX, volDimY));
+// 
+//     if(K == 0)
+//     {
+//         ps_GC_aggregatePathVolume(&ftid_hmh, // f-irst t-label id
+//                                   vol_hmh, volDimX, volDimY, volDimZ);
+//     }
+//     else
+//     {
+//         ps_GC_K_aggregatePathVolume(&ftid_hmh, // f-irst t-label id
+//                                     vol_hmh, volDimX, volDimY, volDimZ, K);
+//     }
+// 
+// #pragma omp parallel for
+//     for(int y = 0; y < volDimY; y++)
+//     {
+//         for(int x = 0; x < volDimX; x++)
+//         {
+//             (*ftidMap)[y * _volDimX + (x + xFrom)] = ftid_hmh.getBuffer()[y * volDimX + x];
+//         }
+//     }
+// 
+//     if(verbose)
+//         printfElapsedTime(t1);
+// 
+//     return true;
+// }
 */
+
 bool PlaneSweepingCuda::fuseDepthSimMapsGaussianKernelVoting(int w, int h, StaticVector<DepthSim>* oDepthSimMap,
                                                                const StaticVector<StaticVector<DepthSim>*>* dataMaps,
                                                                int nSamplesHalf, int nDepthsToRefine, float sigma)

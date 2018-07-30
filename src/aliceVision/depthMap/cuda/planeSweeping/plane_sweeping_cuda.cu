@@ -840,7 +840,9 @@ void ps_smoothDepthMap( CudaHostMemoryHeap<float, 2>* depthMap_hmh,
 
 // void ps_filterDepthMap(CudaArray<uchar4, 2>** ps_texs_arr, CudaHostMemoryHeap<float, 2>* depthMap_hmh,
 void ps_filterDepthMap( CudaHostMemoryHeap<float, 2>* depthMap_hmh,
-                       cameraStruct** cams, int width, int height, int scale, int CUDAdeviceNo, int ncamsAllocated,
+                       const cameraStruct& cams,
+                       int width, int height, int scale, int CUDAdeviceNo,
+                       // int ncamsAllocated,
                        int scales, int wsh, bool verbose, float gammaC, float minCostThr)
 {
     clock_t tall = tic();
@@ -852,10 +854,10 @@ void ps_filterDepthMap( CudaHostMemoryHeap<float, 2>* depthMap_hmh,
     depthMap_arr->mem->copyFrom( *depthMap_hmh );
     cudaTextureObject_t depthsTex = depthMap_arr->tex;
 
-    ps_init_reference_camera_matrices(cams[0]->P, cams[0]->iP, cams[0]->R, cams[0]->iR, cams[0]->K, cams[0]->iK,
-                                      cams[0]->C);
+    ps_init_reference_camera_matrices(cams.P, cams.iP, cams.R, cams.iR, cams.K, cams.iK,
+                                      cams.C);
 
-    cudaTextureObject_t r4tex = global_data.getScaledPictureTex( scale, cams[0]->camId );
+    cudaTextureObject_t r4tex = global_data.getScaledPictureTex( scale, cams.camId );
 
     // CudaDeviceMemoryPitched<float, 2> depthMap_dmp(CudaSize<2>(width, height));
     auto depthMap_dmp = global_data.pitched_mem_float_point_tex_cache.get( width, height );
@@ -891,8 +893,11 @@ void ps_filterDepthMap( CudaHostMemoryHeap<float, 2>* depthMap_hmh,
 
 // void ps_computeNormalMap(CudaArray<uchar4, 2>** ps_texs_arr, CudaHostMemoryHeap<float3, 2>* normalMap_hmh,
 void ps_computeNormalMap( CudaHostMemoryHeap<float3, 2>* normalMap_hmh,
-                         CudaHostMemoryHeap<float, 2>* depthMap_hmh, cameraStruct** cams, int width, int height,
-                         int scale, int CUDAdeviceNo, int ncamsAllocated, int scales, int wsh, bool verbose,
+                         CudaHostMemoryHeap<float, 2>* depthMap_hmh,
+                         const cameraStruct& cams, int width, int height,
+                         int scale, int CUDAdeviceNo,
+                         // int ncamsAllocated,
+                         int scales, int wsh, bool verbose,
                          float gammaC, float gammaP)
 {
     clock_t tall = tic();
@@ -904,10 +909,10 @@ void ps_computeNormalMap( CudaHostMemoryHeap<float3, 2>* normalMap_hmh,
     depthMap_arr->mem->copyFrom( *depthMap_hmh );
     cudaTextureObject_t depthsTex = depthMap_arr->tex;
 
-    ps_init_reference_camera_matrices(cams[0]->P, cams[0]->iP, cams[0]->R, cams[0]->iR, cams[0]->K, cams[0]->iK,
-                                      cams[0]->C);
+    ps_init_reference_camera_matrices(cams.P, cams.iP, cams.R, cams.iR, cams.K, cams.iK,
+                                      cams.C);
 
-    cudaTextureObject_t r4tex = global_data.getScaledPictureTex( scale, cams[0]->camId );
+    cudaTextureObject_t r4tex = global_data.getScaledPictureTex( scale, cams.camId );
 
     CudaDeviceMemoryPitched<float3, 2> normalMap_dmp(*normalMap_hmh);
 
@@ -943,8 +948,11 @@ void ps_computeNormalMap( CudaHostMemoryHeap<float3, 2>* normalMap_hmh,
 // void ps_alignSourceDepthMapToTarget(CudaArray<uchar4, 2>** ps_texs_arr,
 void ps_alignSourceDepthMapToTarget(
                                     CudaHostMemoryHeap<float, 2>* sourceDepthMap_hmh,
-                                    CudaHostMemoryHeap<float, 2>* targetDepthMap_hmh, cameraStruct** cams, int width,
-                                    int height, int scale, int CUDAdeviceNo, int ncamsAllocated, int scales, int wsh,
+                                    CudaHostMemoryHeap<float, 2>* targetDepthMap_hmh,
+                                    const cameraStruct& cams, int width,
+                                    int height, int scale, int CUDAdeviceNo,
+                                    // int ncamsAllocated,
+                                    int scales, int wsh,
                                     bool verbose, float gammaC, float maxPixelSizeDist)
 {
     clock_t tall = tic();
@@ -964,10 +972,10 @@ void ps_alignSourceDepthMapToTarget(
 
     CudaDeviceMemoryPitched<float, 2> outDepthMap_dmp(CudaSize<2>(width, height));
 
-    ps_init_reference_camera_matrices(cams[0]->P, cams[0]->iP, cams[0]->R, cams[0]->iR, cams[0]->K, cams[0]->iK,
-                                      cams[0]->C);
+    ps_init_reference_camera_matrices(cams.P, cams.iP, cams.R, cams.iR, cams.K, cams.iK,
+                                      cams.C);
 
-    cudaTextureObject_t r4tex = global_data.getScaledPictureTex( scale, cams[0]->camId );
+    cudaTextureObject_t r4tex = global_data.getScaledPictureTex( scale, cams.camId );
 
     int block_size = 16;
     dim3 block(block_size, block_size, 1);
