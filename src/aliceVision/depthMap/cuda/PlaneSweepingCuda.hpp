@@ -22,6 +22,9 @@
 namespace aliceVision {
 namespace depthMap {
 
+/* forward declaration, defined in depthMap/cuda/commonStructures.hpp */
+struct cameraStruct;
+
 class PlaneSweepingCuda
 {
 public:
@@ -56,7 +59,7 @@ public:
     int CUDADeviceNo;
     // void** ps_texs_arr;
 
-    StaticVector<void*>* cams;
+    StaticVector<cameraStruct*>* cams;
     StaticVector<int>* camsRcs;
     StaticVector<long>* camsTimes;
 

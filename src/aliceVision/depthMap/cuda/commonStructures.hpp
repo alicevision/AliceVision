@@ -902,13 +902,14 @@ struct cameraStruct
     float* H;
     int scale;
 
-    cameraStruct() :
-        tex_rgba_hmh(nullptr),
-        camId(-1),
-        rc(-1),
-        H(nullptr),
-        scale(-1)
-    { }
+    inline void init()
+    {
+        tex_rgba_hmh = nullptr;
+        camId = -1;
+        rc = -1;
+        H = nullptr;
+        scale = -1;
+    }
 };
 
 struct ps_parameters
