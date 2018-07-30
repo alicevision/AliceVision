@@ -48,14 +48,14 @@ private:
 BOOST_AUTO_TEST_CASE(ColorHarmonisation_Simple_offset) {
 
   Histogram< double > histo( 0, 256, 255);
-  for (size_t i=0; i < 6000; i++)
+  for (std::size_t i=0; i < 6000; i++)
   {
     histo.Add(normal_distribution(127, 10)());
   }
 
   const size_t OFFET_VALUE = 20;
-  std::vector<size_t> vec_reference = histo.GetHist();
-  std::vector<size_t> vec_shifted = vec_reference;
+  std::vector<std::size_t> vec_reference = histo.GetHist();
+  std::vector<std::size_t> vec_shifted = vec_reference;
   rotate(vec_shifted.begin(), vec_shifted.begin() + OFFET_VALUE, vec_shifted.end());
 
   //-- Try to solve the color consistency between the two histograms
@@ -67,7 +67,7 @@ BOOST_AUTO_TEST_CASE(ColorHarmonisation_Simple_offset) {
   std::vector<relativeColorHistogramEdge > vec_relativeHistograms;
   vec_relativeHistograms.push_back(relativeColorHistogramEdge(0,1, vec_reference, vec_shifted));
   //-- First image will be considered as reference and don't move
-  std::vector<size_t> vec_indexToFix(1,0);
+  std::vector<std::size_t> vec_indexToFix(1,0);
 
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_MOSEK)
   typedef MOSEKSolver SOLVER_LP_T;
@@ -111,14 +111,14 @@ BOOST_AUTO_TEST_CASE(ColorHarmonisation_Offset_gain) {
   const double OFFSET = 160;
   //const double GAIN = 2.0;
   //const double OFFSET = 50;
-  for (size_t i=0; i < 10000; i++)
+  for (std::size_t i=0; i < 10000; i++)
   {
     double val = normal_distribution(127, 10)();
     histo_ref.Add(val);
     histo_offset_gain.Add( (val-127) * GAIN + OFFSET);
   }
-  std::vector<size_t> vec_reference = histo_ref.GetHist();
-  std::vector<size_t> vec_shifted = histo_offset_gain.GetHist();
+  std::vector<std::size_t> vec_reference = histo_ref.GetHist();
+  std::vector<std::size_t> vec_shifted = histo_offset_gain.GetHist();
 
   //-- Try to solve the color consistency between the two histograms
   //-- We are looking for gain and offet parameter for each image {g;o}

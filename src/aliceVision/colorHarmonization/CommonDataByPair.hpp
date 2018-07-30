@@ -14,8 +14,6 @@
 namespace aliceVision {
 namespace colorHarmonization {
 
-using namespace std;
-
 class CommonDataByPair
 {
 public:
@@ -49,7 +47,7 @@ public:
   static void computeHisto(
     Histogram< double > & histo,
     const image::Image< unsigned char >& mask,
-    size_t channelIndex,
+    std::size_t channelIndex,
     const image::Image< ImageType >& image )
   {
     for(int j = 0; j < mask.Height(); ++j)

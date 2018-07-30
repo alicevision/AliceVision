@@ -20,15 +20,15 @@ namespace lInfinity {
 
 struct relativeColorHistogramEdge
 {
-  size_t I,J;
+  std::size_t I,J;
   std::vector<size_t> histoI, histoJ;
 
   relativeColorHistogramEdge() {}
 
   relativeColorHistogramEdge(
     size_t i, size_t j,
-    const std::vector<size_t> & histogramI,
-    const std::vector<size_t> & histogramJ):
+    const std::vector<std::size_t> & histogramI,
+    const std::vector<std::size_t> & histogramJ):
       I(i), J(j),
       histoI(histogramI),
       histoJ(histogramJ)
@@ -43,7 +43,7 @@ inline void normalizeHisto(const std::vector<T> & vec_df, std::vector<double> & 
 {
   double totalCount = static_cast<double>(std::accumulate(vec_df.begin(), vec_df.end(), 0));
   vec_normalized_df.resize(vec_df.size(), 0.0);
-  for(size_t i=0; i<vec_df.size(); i++)
+  for(std::size_t i=0; i<vec_df.size(); ++i)
     vec_normalized_df[i] = vec_df[i] / totalCount;
 }
 
@@ -60,9 +60,9 @@ inline void cdf(const std::vector<T> & vec_df, std::vector<T> & vec_cdf)
 
 // Implementation of the formula (1) of [1] with 10 quantiles.
 //-- L_infinity alignment of pair of histograms over a graph thanks to a linear program.
-void Encode_histo_relation(const size_t nImage,
+void Encode_histo_relation(const std::size_t nImage,
     const std::vector<relativeColorHistogramEdge > & vec_relativeHistograms,
-    const std::vector<size_t> & vec_indexToFix,
+    const std::vector<std::size_t> & vec_indexToFix,
     sRMat & A, Vec & C,
     std::vector<linearProgramming::LPConstraints::eLP_SIGN> & vec_sign,
     std::vector<double> & vec_costs,
@@ -72,12 +72,12 @@ struct GainOffsetConstraintBuilder
 {
   GainOffsetConstraintBuilder(
     const std::vector<relativeColorHistogramEdge > & vec_relativeHistograms,
-    const std::vector<size_t> & vec_indexToFix):
+    const std::vector<std::size_t> & vec_indexToFix):
     _vec_relative(vec_relativeHistograms),
     _vec_indexToFix(vec_indexToFix)
   {
     //Count the number of images
-    std::set<size_t> countSet;
+    std::set<std::size_t> countSet;
     for (int i = 0; i  < _vec_relative.size(); ++i)
     {
       countSet.insert(_vec_relative[i].I);
@@ -110,7 +110,7 @@ struct GainOffsetConstraintBuilder
   // Internal data
   size_t _Nima;
   const std::vector< relativeColorHistogramEdge > & _vec_relative;
-  const std::vector<size_t> & _vec_indexToFix;
+  const std::vector<std::size_t> & _vec_indexToFix;
 };
 
 
