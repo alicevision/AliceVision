@@ -216,19 +216,18 @@ PlaneSweepingCuda::PlaneSweepingCuda(int _CUDADeviceNo, mvsUtils::ImagesCache* _
     // allocate global on the device
     ps_deviceAllocate( nImgsInGPUAtTime, maxImageWidth, maxImageHeight, scales, CUDADeviceNo);
 
-    cams = new StaticVector<cameraStruct*>;
-    cams->resize(nImgsInGPUAtTime);
-    camsRcs = new StaticVector<int>();
+    _cams.resize(nImgsInGPUAtTime);
+    camsRcs = new StaticVector<int>;
     camsRcs->resize(nImgsInGPUAtTime);
-    camsTimes = new StaticVector<long>();
+    camsTimes = new StaticVector<long>;
     camsTimes->resize(nImgsInGPUAtTime);
 
     for(int rc = 0; rc < nImgsInGPUAtTime; ++rc)
     {
-        (*cams)[rc] = new cameraStruct;
+        _cams[rc] = new cameraStruct;
+        _cams[rc]->init();
         (*camsRcs)[rc] = -1;
         (*camsTimes)[rc] = clock();
-        (*cams)[rc]->init();
     }
 }
 
@@ -244,11 +243,11 @@ int PlaneSweepingCuda::addCam(int rc, float** H, int scale)
 
         long t1 = clock();
 
-        cps_fillCamera((*cams)[oldestId], rc, mp, H, scale);
-        cps_fillCameraData(ic, (*cams)[oldestId], rc, mp);
-        // ps_deviceUpdateCam((CudaArray<uchar4, 2>**)ps_texs_arr, (*cams)[oldestId], oldestId,
+        cps_fillCamera( _cams[oldestId], rc, mp, H, scale);
+        cps_fillCameraData(ic, _cams[oldestId], rc, mp);
+        // ps_deviceUpdateCam((CudaArray<uchar4, 2>**)ps_texs_arr, _cams[oldestId], oldestId,
         //                    CUDADeviceNo, nImgsInGPUAtTime, scales, mp->getMaxImageWidth(), mp->getMaxImageHeight(), varianceWSH);
-        ps_deviceUpdateCam( (*cams)[oldestId], oldestId,
+        ps_deviceUpdateCam( _cams[oldestId], oldestId,
                             CUDADeviceNo, nImgsInGPUAtTime, scales,
                             mp->getMaxImageWidth(), mp->getMaxImageHeight(), varianceWSH );
 
@@ -262,12 +261,12 @@ int PlaneSweepingCuda::addCam(int rc, float** H, int scale)
     else
     {
         ALICEVISION_LOG_INFO("Camera id " << rc << " is in the cache.");
-        cps_fillCamera((*cams)[id], rc, mp, H, scale);
-        // cps_fillCameraData((*cams)[id], rc, mp, H, scales);
-        // ps_deviceUpdateCam((*cams)[id], id, scales);
+        cps_fillCamera( _cams[id], rc, mp, H, scale);
+        // cps_fillCameraData( _cams[id], rc, mp, H, scales);
+        // ps_deviceUpdateCam( _cams[id], id, scales);
 
         (*camsTimes)[id] = clock();
-        cps_updateCamH((*cams)[id], H);
+        cps_updateCamH( _cams[id], H);
     }
     return id;
 }
@@ -278,16 +277,15 @@ PlaneSweepingCuda::~PlaneSweepingCuda(void)
     // deallocate global on the device
     ps_deviceDeallocate( CUDADeviceNo, nImgsInGPUAtTime, scales);
 
-    for(int c = 0; c < cams->size(); c++)
+    for(int c = 0; c < _cams.size(); c++)
     {
-        delete ((*cams)[c])->tex_rgba_hmh;
-        if( ((*cams)[c])->H != NULL )
+        delete _cams[c]->tex_rgba_hmh;
+        if( _cams[c]->H != NULL )
         {
-            delete [] ((*cams)[c])->H;
+            delete [] _cams[c]->H;
         }
-        delete (*cams)[c];
+        delete _cams[c];
     }
-    delete cams;
     delete camsRcs;
     delete camsTimes;
 
@@ -329,7 +327,7 @@ void PlaneSweepingCuda::getMinMaxdepths(int rc, StaticVector<int>* tcams, float&
         minDepth = std::numeric_limits<float>::max();
         maxDepth = -std::numeric_limits<float>::max();
 
-        // StaticVector<sortedId> *sos = new StaticVector<sortedId>();
+        // StaticVector<sortedId> *sos = new StaticVector<sortedId>;
         // sos->reserve(seeds->size());
         // for (int i=0;i<seeds->size();i++) {
         //	sos->push_back(sortedId(i,pointPlaneDistance((*seeds)[i].op.p,rcplane.p,rcplane.n)));
@@ -398,7 +396,7 @@ StaticVector<float>* PlaneSweepingCuda::getDepthsByPixelSize(int rc, float minDe
         ndepths++;
     }
 
-    StaticVector<float>* out = new StaticVector<float>();
+    StaticVector<float>* out = new StaticVector<float>;
     out->reserve(ndepths);
 
     // fill
@@ -476,7 +474,7 @@ StaticVector<float>* PlaneSweepingCuda::getDepthsRcTc(int rc, int tc, int scale,
     }
     if(ncg == 0)
     {
-        return new StaticVector<float>();
+        return new StaticVector<float>;
     }
     cg = cg / (float)ncg;
     cg3 = cg3 / (float)ncg;
@@ -500,7 +498,7 @@ StaticVector<float>* PlaneSweepingCuda::getDepthsRcTc(int rc, int tc, int scale,
         Point3d p;
         if(!triangulateMatch(p, rmid, midpoint, rc, tc, mp))
         {
-            StaticVector<float>* out = new StaticVector<float>();
+            StaticVector<float>* out = new StaticVector<float>;
             return out;
         }
 
@@ -508,7 +506,7 @@ StaticVector<float>* PlaneSweepingCuda::getDepthsRcTc(int rc, int tc, int scale,
 
         if(!triangulateMatch(p, rmid, midpoint + pixelVect, rc, tc, mp))
         {
-            StaticVector<float>* out = new StaticVector<float>();
+            StaticVector<float>* out = new StaticVector<float>;
             return out;
         }
 
@@ -519,7 +517,7 @@ StaticVector<float>* PlaneSweepingCuda::getDepthsRcTc(int rc, int tc, int scale,
         }
     }
 
-    StaticVector<float>* out1 = new StaticVector<float>();
+    StaticVector<float>* out1 = new StaticVector<float>;
     out1->reserve(2 * maxDepthsHalf);
 
     Point2d tpix = midpoint;
@@ -560,7 +558,7 @@ StaticVector<float>* PlaneSweepingCuda::getDepthsRcTc(int rc, int tc, int scale,
         istep++;
     }
 
-    StaticVector<float>* out2 = new StaticVector<float>();
+    StaticVector<float>* out2 = new StaticVector<float>;
     out2->reserve(2 * maxDepthsHalf);
     tpix = midpoint;
     istep = 0;
@@ -596,7 +594,7 @@ StaticVector<float>* PlaneSweepingCuda::getDepthsRcTc(int rc, int tc, int scale,
     }
 
     // printf("out2\n");
-    StaticVector<float>* out = new StaticVector<float>();
+    StaticVector<float>* out = new StaticVector<float>;
     out->reserve(2 * maxDepthsHalf);
     for(int i = out2->size() - 1; i >= 0; i--)
     {
@@ -616,7 +614,7 @@ StaticVector<float>* PlaneSweepingCuda::getDepthsRcTc(int rc, int tc, int scale,
     // we want to have it in ascending order
     if((*out)[0] > (*out)[out->size() - 1])
     {
-        StaticVector<float>* outTmp = new StaticVector<float>();
+        StaticVector<float>* outTmp = new StaticVector<float>;
         outTmp->reserve(out->size());
         for(int i = out->size() - 1; i >= 0; i--)
         {
@@ -663,12 +661,11 @@ bool PlaneSweepingCuda::smoothDepthMap(StaticVector<float>* depthMap, int rc, in
 
     if(verbose)
         ALICEVISION_LOG_DEBUG("smoothDepthMap rc: " << rc);
-    StaticVector<int>* camsids = new StaticVector<int>();
-    camsids->reserve(1);
-    camsids->push_back(addCam(rc, NULL, scale));
+    StaticVector<int> camsids;
+    camsids.push_back(addCam(rc, NULL, scale));
     cameraStruct** ttcams = new cameraStruct*[1];
-    ttcams[0] = (*cams)[(*camsids)[0]];
-    ttcams[0]->camId = (*camsids)[0];
+    ttcams[0] = _cams[camsids[0]];
+    ttcams[0]->camId = camsids[0];
     ttcams[0]->rc = rc;
 
     CudaHostMemoryHeap<float, 2> depthMap_hmh(CudaSize<2>(w, h));
@@ -688,12 +685,11 @@ bool PlaneSweepingCuda::smoothDepthMap(StaticVector<float>* depthMap, int rc, in
         (*depthMap)[i] = depthMap_hmh.getBuffer()[i];
     }
 
-    for(int i = 0; i < camsids->size(); i++)
+    for(int i = 0; i < camsids.size(); i++)
     {
         ttcams[i] = NULL;
     }
     delete[] ttcams;
-    delete camsids;
 
     if(verbose)
         mvsUtils::printfElapsedTime(t1);
@@ -711,12 +707,11 @@ bool PlaneSweepingCuda::filterDepthMap(StaticVector<float>* depthMap, int rc, in
 
     if(verbose)
         ALICEVISION_LOG_DEBUG("filterDepthMap rc: " << rc);
-    StaticVector<int>* camsids = new StaticVector<int>();
-    camsids->reserve(1);
-    camsids->push_back(addCam(rc, NULL, scale));
+    StaticVector<int> camsids;
+    camsids.push_back(addCam(rc, NULL, scale));
     cameraStruct** ttcams = new cameraStruct*[1];
-    ttcams[0] = (*cams)[(*camsids)[0]];
-    ttcams[0]->camId = (*camsids)[0];
+    ttcams[0] = _cams[camsids[0]];
+    ttcams[0]->camId = camsids[0];
     ttcams[0]->rc = rc;
 
     CudaHostMemoryHeap<float, 2> depthMap_hmh(CudaSize<2>(w, h));
@@ -736,12 +731,11 @@ bool PlaneSweepingCuda::filterDepthMap(StaticVector<float>* depthMap, int rc, in
         (*depthMap)[i] = depthMap_hmh.getBuffer()[i];
     }
 
-    for(int i = 0; i < camsids->size(); i++)
+    for(int i = 0; i < camsids.size(); i++)
     {
         ttcams[i] = NULL;
     }
     delete[] ttcams;
-    delete camsids;
 
     if(verbose)
         mvsUtils::printfElapsedTime(t1);
@@ -759,12 +753,11 @@ bool PlaneSweepingCuda::computeNormalMap(StaticVector<float>* depthMap, StaticVe
 
     if(verbose)
         ALICEVISION_LOG_DEBUG("computeNormalMap rc: " << rc);
-    StaticVector<int>* camsids = new StaticVector<int>();
-    camsids->reserve(1);
-    camsids->push_back(addCam(rc, NULL, scale));
+    StaticVector<int> camsids;
+    camsids.push_back(addCam(rc, NULL, scale));
     cameraStruct** ttcams = new cameraStruct*[1];
-    ttcams[0] = (*cams)[(*camsids)[0]];
-    ttcams[0]->camId = (*camsids)[0];
+    ttcams[0] = _cams[camsids[0]];
+    ttcams[0]->camId = camsids[0];
     ttcams[0]->rc = rc;
 
     CudaHostMemoryHeap<float3, 2> normalMap_hmh(CudaSize<2>(w, h));
@@ -787,12 +780,11 @@ bool PlaneSweepingCuda::computeNormalMap(StaticVector<float>* depthMap, StaticVe
         (*normalMap)[i].b = normalMap_hmh.getBuffer()[i].z;
     }
 
-    for(int i = 0; i < camsids->size(); i++)
+    for(int i = 0; i < camsids.size(); i++)
     {
         ttcams[i] = NULL;
     }
     delete[] ttcams;
-    delete camsids;
 
     if(verbose)
         mvsUtils::printfElapsedTime(t1);
@@ -811,12 +803,12 @@ void PlaneSweepingCuda::alignSourceDepthMapToTarget(StaticVector<float>* sourceD
 
     if(verbose)
         ALICEVISION_LOG_DEBUG("alignSourceDepthMapToTarget rc: " << rc);
-    StaticVector<int>* camsids = new StaticVector<int>();
-    camsids->reserve(1);
-    camsids->push_back(addCam(rc, NULL, scale));
+    StaticVector<int> camsids;
+    camsids.reserve(1);
+    camsids.push_back(addCam(rc, NULL, scale));
     cameraStruct** ttcams = new cameraStruct*[1];
-    ttcams[0] = (*cams)[(*camsids)[0]];
-    ttcams[0]->camId = (*camsids)[0];
+    ttcams[0] = _cams[camsids[0]];
+    ttcams[0]->camId = camsids[0];
     ttcams[0]->rc = rc;
 
     CudaHostMemoryHeap<float, 2> sourceDepthMap_hmh(CudaSize<2>(w, h));
@@ -841,12 +833,11 @@ void PlaneSweepingCuda::alignSourceDepthMapToTarget(StaticVector<float>* sourceD
         (*sourceDepthMap)[i] = sourceDepthMap_hmh.getBuffer()[i];
     }
 
-    for(int i = 0; i < camsids->size(); i++)
+    for(int i = 0; i < camsids.size(); i++)
     {
         ttcams[i] = NULL;
     }
     delete[] ttcams;
-    delete camsids;
 
     if(verbose)
         mvsUtils::printfElapsedTime(t1);
@@ -862,20 +853,20 @@ bool PlaneSweepingCuda::refineDepthMapReproject(StaticVector<float>* depthMap, S
 
     long t1 = clock();
 
-    StaticVector<int>* camsids = new StaticVector<int>();
-    camsids->reserve(2);
-    camsids->push_back(addCam(rc, NULL, scale));
+    StaticVector<int> camsids;
+    camsids.reserve(2);
+    camsids.push_back(addCam(rc, NULL, scale));
 
     if(verbose)
         ALICEVISION_LOG_DEBUG("\t- rc: " << rc << std::endl << "\t- tcams: " << tc);
 
-    camsids->push_back(addCam(tc, NULL, scale));
+    camsids.push_back(addCam(tc, NULL, scale));
 
-    cameraStruct** ttcams = new cameraStruct*[camsids->size()];
-    for(int i = 0; i < camsids->size(); i++)
+    cameraStruct** ttcams = new cameraStruct*[camsids.size()];
+    for(int i = 0; i < camsids.size(); i++)
     {
-        ttcams[i] = (*cams)[(*camsids)[i]];
-        ttcams[i]->camId = (*camsids)[i];
+        ttcams[i] = _cams[camsids[i]];
+        ttcams[i]->camId = camsids[i];
         if(i == 0)
         {
             ttcams[i]->rc = rc;
@@ -898,10 +889,10 @@ bool PlaneSweepingCuda::refineDepthMapReproject(StaticVector<float>* depthMap, S
     CudaHostMemoryHeap<uchar4, 2> otimg_hmh(CudaSize<2>(w, h));
 
     // ps_refineDepthMapReproject((CudaArray<uchar4, 2>**)ps_texs_arr, &otimg_hmh, &osim_hmh, &odpt_hmh, depthMap_hmh,
-    //                            ttcams, camsids->size(), w, h, scale - 1, CUDADeviceNo, nImgsInGPUAtTime, scales,
+    //                            ttcams, camsids.size(), w, h, scale - 1, CUDADeviceNo, nImgsInGPUAtTime, scales,
     //                            verbose, wsh, gammaC, gammaP, simThr, niters, moveByTcOrRc);
     ps_refineDepthMapReproject( &otimg_hmh, &osim_hmh, &odpt_hmh, depthMap_hmh,
-                                ttcams, camsids->size(), w, h, scale - 1,
+                                ttcams, camsids.size(), w, h, scale - 1,
                                 CUDADeviceNo, nImgsInGPUAtTime, scales,
                                 verbose, wsh, gammaC, gammaP, simThr, niters, moveByTcOrRc );
 
@@ -915,12 +906,11 @@ bool PlaneSweepingCuda::refineDepthMapReproject(StaticVector<float>* depthMap, S
         (*simMap)[i] = osim_hmh.getBuffer()[i];
     }
 
-    for(int i = 0; i < camsids->size(); i++)
+    for(int i = 0; i < camsids.size(); i++)
     {
         ttcams[i] = NULL;
     }
     delete[] ttcams;
-    delete camsids;
 
     if(verbose)
         mvsUtils::printfElapsedTime(t1);
@@ -943,20 +933,20 @@ bool PlaneSweepingCuda::computeSimMapForRcTcDepthMap(StaticVector<float>* oSimMa
 
     long t1 = clock();
 
-    StaticVector<int>* camsids = new StaticVector<int>();
-    camsids->reserve(2);
-    camsids->push_back(addCam(rc, NULL, scale));
+    StaticVector<int> camsids;
+    camsids.reserve(2);
+    camsids.push_back(addCam(rc, NULL, scale));
 
     if(verbose)
         ALICEVISION_LOG_DEBUG("\t- rc: " << rc << std::endl << "\t- tcams: " << tc);
 
-    camsids->push_back(addCam(tc, NULL, scale));
+    camsids.push_back(addCam(tc, NULL, scale));
 
-    cameraStruct** ttcams = new cameraStruct*[camsids->size()];
-    for(int i = 0; i < camsids->size(); i++)
+    cameraStruct** ttcams = new cameraStruct*[camsids.size()];
+    for(int i = 0; i < camsids.size(); i++)
     {
-        ttcams[i] = (*cams)[(*camsids)[i]];
-        ttcams[i]->camId = (*camsids)[i];
+        ttcams[i] = _cams[camsids[i]];
+        ttcams[i]->camId = camsids[i];
         if(i == 0)
         {
             ttcams[i]->rc = rc;
@@ -976,10 +966,10 @@ bool PlaneSweepingCuda::computeSimMapForRcTcDepthMap(StaticVector<float>* oSimMa
     }
 
     // ps_computeSimMapForRcTcDepthMap((CudaArray<uchar4, 2>**)ps_texs_arr, &simMap_hmh, rcTcDepthMap_hmh, ttcams,
-    //                                 camsids->size(), w, h, scale - 1, CUDADeviceNo, nImgsInGPUAtTime, scales, verbose,
+    //                                 camsids.size(), w, h, scale - 1, CUDADeviceNo, nImgsInGPUAtTime, scales, verbose,
     //                                 wsh, gammaC, gammaP, epipShift);
     ps_computeSimMapForRcTcDepthMap( &simMap_hmh, rcTcDepthMap_hmh, ttcams,
-                                     camsids->size(), w, h, scale - 1,
+                                     camsids.size(), w, h, scale - 1,
                                      CUDADeviceNo, nImgsInGPUAtTime, scales, verbose,
                                      wsh, gammaC, gammaP, epipShift );
 
@@ -988,12 +978,11 @@ bool PlaneSweepingCuda::computeSimMapForRcTcDepthMap(StaticVector<float>* oSimMa
         (*oSimMap)[j] = simMap_hmh.getBuffer()[j];
     }
 
-    for(int i = 0; i < camsids->size(); i++)
+    for(int i = 0; i < camsids.size(); i++)
     {
         ttcams[i] = NULL;
     }
     delete[] ttcams;
-    delete camsids;
 
     if(verbose)
         mvsUtils::printfElapsedTime(t1);
@@ -1011,20 +1000,20 @@ bool PlaneSweepingCuda::refineRcTcDepthMap(bool useTcOrRcPixSize, int nStepsToRe
 
     long t1 = clock();
 
-    StaticVector<int>* camsids = new StaticVector<int>();
-    camsids->reserve(2);
-    camsids->push_back(addCam(rc, NULL, scale));
+    StaticVector<int> camsids;
+    camsids.reserve(2);
+    camsids.push_back(addCam(rc, NULL, scale));
 
     if(verbose)
         ALICEVISION_LOG_DEBUG("\t- rc: " << rc << std::endl << "\t- tcams: " << tc);
 
-    camsids->push_back(addCam(tc, NULL, scale));
+    camsids.push_back(addCam(tc, NULL, scale));
 
-    cameraStruct** ttcams = new cameraStruct*[camsids->size()];
-    for(int i = 0; i < camsids->size(); i++)
+    cameraStruct** ttcams = new cameraStruct*[camsids.size()];
+    for(int i = 0; i < camsids.size(); i++)
     {
-        ttcams[i] = (*cams)[(*camsids)[i]];
-        ttcams[i]->camId = (*camsids)[i];
+        ttcams[i] = _cams[camsids[i]];
+        ttcams[i]->camId = camsids[i];
         if(i == 0)
         {
             ttcams[i]->rc = rc;
@@ -1041,14 +1030,14 @@ bool PlaneSweepingCuda::refineRcTcDepthMap(bool useTcOrRcPixSize, int nStepsToRe
     //     simMap->getDataWritable().data(),
     //     rcDepthMap->getDataWritable().data(),
     //     nStepsToRefine,
-    //     ttcams, camsids->size(), w, h, mp->getWidth(rc) / scale,
+    //     ttcams, camsids.size(), w, h, mp->getWidth(rc) / scale,
     //     mp->getHeight(rc) / scale, scale - 1, CUDADeviceNo, nImgsInGPUAtTime, scales, verbose, wsh,
     //     gammaC, gammaP, epipShift, useTcOrRcPixSize, xFrom);
     ps_refineRcDepthMap(
         simMap->getDataWritable().data(),
         rcDepthMap->getDataWritable().data(),
         nStepsToRefine,
-        ttcams, camsids->size(), w, h, mp->getWidth(rc) / scale,
+        ttcams, camsids.size(), w, h, mp->getWidth(rc) / scale,
         mp->getHeight(rc) / scale, scale - 1, CUDADeviceNo, nImgsInGPUAtTime, scales, verbose, wsh,
         gammaC, gammaP, epipShift, useTcOrRcPixSize, xFrom);
 
@@ -1061,7 +1050,7 @@ bool PlaneSweepingCuda::refineRcTcDepthMap(bool useTcOrRcPixSize, int nStepsToRe
             &rcDepthMap_hmh,
             nStepsToRefine,
             rcDepthMap_hmh,
-            ttcams, camsids->size(),
+            ttcams, camsids.size(),
             w, h,
             scale-1, scales,
             verbose, wsh, gammaC, gammaP, epipShift,
@@ -1069,12 +1058,11 @@ bool PlaneSweepingCuda::refineRcTcDepthMap(bool useTcOrRcPixSize, int nStepsToRe
     );
     */
 
-    for(int i = 0; i < camsids->size(); i++)
+    for(int i = 0; i < camsids.size(); i++)
     {
         ttcams[i] = NULL;
     }
     delete[] ttcams;
-    delete camsids;
 
     if(verbose)
         mvsUtils::printfElapsedTime(t1);
@@ -1106,9 +1094,9 @@ float PlaneSweepingCuda::sweepPixelsToVolume(int nDepthsToSearch, StaticVector<u
         return -1.0f;
     }
 
-    StaticVector<int> *camsids = new StaticVector<int>();
-    camsids->reserve(tcams->size() + 1);
-    camsids->push_back(addCam(rc, NULL, scale));
+    StaticVector<int> camsids;
+    camsids.reserve(tcams->size() + 1);
+    camsids.push_back(addCam(rc, NULL, scale));
     if(verbose)
         ALICEVISION_LOG_DEBUG("rc: " << rc << std::endl << "tcams: ");
 
@@ -1117,13 +1105,13 @@ float PlaneSweepingCuda::sweepPixelsToVolume(int nDepthsToSearch, StaticVector<u
         int tc = (*tcams)[c];
         if(verbose)
             ALICEVISION_LOG_DEBUG("\t- " << tc);
-        camsids->push_back(addCam(tc, NULL, scale));
+        camsids.push_back(addCam(tc, NULL, scale));
     }
 
-    cameraStruct **ttcams = new cameraStruct *[camsids->size()];
-    for(int i = 0; i < camsids->size(); i++) {
-        ttcams[i] = (*cams)[(*camsids)[i]];
-        ttcams[i]->camId = (*camsids)[i];
+    cameraStruct **ttcams = new cameraStruct *[camsids.size()];
+    for(int i = 0; i < camsids.size(); i++) {
+        ttcams[i] = _cams[camsids[i]];
+        ttcams[i]->camId = camsids[i];
         if (i == 0) {
             ttcams[i]->rc = rc;
         } else {
@@ -1171,12 +1159,12 @@ float PlaneSweepingCuda::sweepPixelsToVolume(int nDepthsToSearch, StaticVector<u
 
     // sweep
     // float volumeMBinGPUMem = ps_planeSweepingGPUPixelsVolume(
-    //     (CudaArray<uchar4, 2>**)ps_texs_arr, volume->getDataWritable().data(), ttcams, camsids->size(), w, h, volStepXY, volDimX, volDimY,
+    //     (CudaArray<uchar4, 2>**)ps_texs_arr, volume->getDataWritable().data(), ttcams, camsids.size(), w, h, volStepXY, volDimX, volDimY,
     //     volDimZ, volLUX, volLUY, volLUZ, volPixs_hmh, depths_hmh, nDepthsToSearch, slicesAtTime, ntimes, npixs, wsh,
     //     nbestkernelSizeHalf, depths->size(), scale - 1, CUDADeviceNo, nImgsInGPUAtTime, scales, verbose, false, nbest,
     //     true, gammaC, gammaP, subPixel, epipShift);
     float volumeMBinGPUMem = ps_planeSweepingGPUPixelsVolume(
-        volume->getDataWritable().data(), ttcams, camsids->size(), w, h, volStepXY, volDimX, volDimY,
+        volume->getDataWritable().data(), ttcams, camsids.size(), w, h, volStepXY, volDimX, volDimY,
         volDimZ, volLUX, volLUY, volLUZ,
 	volPixs_hmh_x,
 	volPixs_hmh_y,
@@ -1186,12 +1174,11 @@ float PlaneSweepingCuda::sweepPixelsToVolume(int nDepthsToSearch, StaticVector<u
         CUDADeviceNo, nImgsInGPUAtTime, scales, verbose, false, nbest,
         true, gammaC, gammaP, subPixel, epipShift);
 
-    for(int i = 0; i < camsids->size(); i++)
+    for(int i = 0; i < camsids.size(); i++)
     {
         ttcams[i] = NULL;
     }
     delete[] ttcams;
-    delete camsids;
 
     if(verbose)
         mvsUtils::printfElapsedTime(t1);
@@ -1215,10 +1202,10 @@ bool PlaneSweepingCuda::SGMoptimizeSimVolume(int rc, StaticVector<unsigned char>
 
     long t1 = clock();
 
-    // ps_SGMoptimizeSimVolume((CudaArray<uchar4, 2>**)ps_texs_arr, (*cams)[addCam(rc, NULL, scale)],
+    // ps_SGMoptimizeSimVolume((CudaArray<uchar4, 2>**)ps_texs_arr, _cams[addCam(rc, NULL, scale)],
     //                         volume->getDataWritable().data(), volDimX, volDimY, volDimZ, volStepXY, volLUX, volLUY, verbose, P1, P2, scale - 1, // TODO: move the '- 1' inside the function
     //                         CUDADeviceNo, nImgsInGPUAtTime, scales);
-    ps_SGMoptimizeSimVolume( (*cams)[addCam(rc, NULL, scale)],
+    ps_SGMoptimizeSimVolume( _cams[addCam(rc, NULL, scale)],
                              volume->getDataWritable().data(),
                              volDimX, volDimY, volDimZ, volStepXY, volLUX, volLUY,
                              verbose, P1, P2, scale - 1, // TODO: move the '- 1' inside the function
@@ -1693,16 +1680,16 @@ bool PlaneSweepingCuda::optimizeDepthSimMapGradientDescent(StaticVector<DepthSim
 
     long t1 = clock();
 
-    StaticVector<int>* camsids = new StaticVector<int>();
-    camsids->push_back(addCam(rc, NULL, scale));
+    StaticVector<int> camsids;
+    camsids.push_back(addCam(rc, NULL, scale));
     if(verbose)
         printf("rc: %i, ", rc);
 
-    cameraStruct** ttcams = new cameraStruct*[camsids->size()];
-    for(int i = 0; i < camsids->size(); i++)
+    cameraStruct** ttcams = new cameraStruct*[camsids.size()];
+    for(int i = 0; i < camsids.size(); i++)
     {
-        ttcams[i] = (*cams)[(*camsids)[i]];
-        ttcams[i]->camId = (*camsids)[i];
+        ttcams[i] = _cams[camsids[i]];
+        ttcams[i]->camId = camsids[i];
         ttcams[i]->rc = rc;
     }
 
@@ -1729,7 +1716,7 @@ bool PlaneSweepingCuda::optimizeDepthSimMapGradientDescent(StaticVector<DepthSim
     ps_optimizeDepthSimMapGradientDescent( &oDepthSimMap_hmh, dataMaps_hmh,
                                            dataMaps->size(), nSamplesHalf, nDepthsToRefine, nIters,
                                            sigma, ttcams,
-                                           camsids->size(), w, h, scale - 1,
+                                           camsids.size(), w, h, scale - 1,
                                            CUDADeviceNo, nImgsInGPUAtTime, scales,
                                            verbose, yFrom );
 
@@ -1752,12 +1739,11 @@ bool PlaneSweepingCuda::optimizeDepthSimMapGradientDescent(StaticVector<DepthSim
     }
     delete[] dataMaps_hmh;
 
-    for(int i = 0; i < camsids->size(); i++)
+    for(int i = 0; i < camsids.size(); i++)
     {
         ttcams[i] = NULL;
     }
     delete[] ttcams;
-    delete camsids;
 
     if(verbose)
         mvsUtils::printfElapsedTime(t1);
@@ -1830,24 +1816,24 @@ bool PlaneSweepingCuda::computeSimMapReprojectByDepthMapMovedByStep(StaticVector
 
     long t1 = clock();
 
-    StaticVector<int>* camsids = new StaticVector<int>();
-    camsids->reserve(2);
-    camsids->push_back(addCam(rc, NULL, scale));
+    StaticVector<int> camsids;
+    camsids.reserve(2);
+    camsids.push_back(addCam(rc, NULL, scale));
     if(verbose)
         printf("rc: %i, ", rc);
     if(verbose)
         printf("tcams: ");
     if(verbose)
         printf("%i ", tc);
-    camsids->push_back(addCam(tc, NULL, scale));
+    camsids.push_back(addCam(tc, NULL, scale));
     if(verbose)
         printf("\n");
 
-    cameraStruct** ttcams = new cameraStruct*[camsids->size()];
-    for(int i = 0; i < camsids->size(); i++)
+    cameraStruct** ttcams = new cameraStruct*[camsids.size()];
+    for(int i = 0; i < camsids.size(); i++)
     {
-        ttcams[i] = (*cams)[(*camsids)[i]];
-        ttcams[i]->camId = (*camsids)[i];
+        ttcams[i] = _cams[camsids[i]];
+        ttcams[i]->camId = camsids[i];
         if(i == 0)
         {
             ttcams[i]->rc = rc;
@@ -1867,7 +1853,7 @@ bool PlaneSweepingCuda::computeSimMapReprojectByDepthMapMovedByStep(StaticVector
     }
 
     ps_computeSimMapReprojectByDepthMapMovedByStep(
-        (CudaArray<uchar4, 2>**)ps_texs_arr, &osimMap_hmh, &iodepthMap_hmh, ttcams, camsids->size(), w, h, scale - 1,
+        (CudaArray<uchar4, 2>**)ps_texs_arr, &osimMap_hmh, &iodepthMap_hmh, ttcams, camsids.size(), w, h, scale - 1,
         CUDADeviceNo, nImgsInGPUAtTime, scales, verbose, _wsh, _gammaC, _gammaP, moveByTcOrRc, moveStep);
 
     for(int i = 0; i < w * h; i++)
@@ -1876,12 +1862,11 @@ bool PlaneSweepingCuda::computeSimMapReprojectByDepthMapMovedByStep(StaticVector
         (*iodepthMap)[i] = iodepthMap_hmh.getBuffer()[i];
     }
 
-    for(int i = 0; i < camsids->size(); i++)
+    for(int i = 0; i < camsids.size(); i++)
     {
         ttcams[i] = NULL;
     }
     delete[] ttcams;
-    delete camsids;
 
     if(verbose)
         printfElapsedTime(t1);

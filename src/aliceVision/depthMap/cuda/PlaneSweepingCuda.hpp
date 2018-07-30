@@ -59,7 +59,7 @@ public:
     int CUDADeviceNo;
     // void** ps_texs_arr;
 
-    StaticVector<cameraStruct*>* cams;
+    StaticVector<cameraStruct*> _cams;
     StaticVector<int>* camsRcs;
     StaticVector<long>* camsTimes;
 
