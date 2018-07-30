@@ -58,8 +58,8 @@ void queryDatabase(const sfmData::SfMData& sfmData,
                    const std::vector<std::string>& featuresFolders,
                    const VocabularyTree<VocDescriptorT>& tree,
                    const Database& db,
-                   size_t numResults,
-                   std::map<size_t, DocMatches>& allMatches,
+                   std::size_t numResults,
+                   std::map<std::size_t, DocMatches>& allMatches,
                    const std::string& distanceMethod,
                    const int Nmax = 0);
 
@@ -83,9 +83,9 @@ void queryDatabase(const sfmData::SfMData& sfmData,
                    const std::vector<std::string>& featuresFolders,
                    const VocabularyTree<VocDescriptorT>& tree,
                    const Database& db,
-                   size_t numResults,
-                   std::map<size_t, DocMatches>& allMatches,
-                   std::map<size_t, Document>& documents,
+                   std::size_t numResults,
+                   std::map<std::size_t, DocMatches>& allMatches,
+                   std::map<std::size_t, Document>& documents,
                    const std::string& distanceMethod,
                    const int Nmax = 0);
 

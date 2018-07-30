@@ -186,7 +186,7 @@ struct InitGiven
 {
 
   template<class Feature, class Distance, class FeatureAllocator>
-  void operator()(const std::vector<Feature*>& features, size_t k, std::vector<Feature, FeatureAllocator>& centers, Distance distance, const int verbose = 0)
+  void operator()(const std::vector<Feature*>& features, std::size_t k, std::vector<Feature, FeatureAllocator>& centers, Distance distance, const int verbose = 0)
   {
     // Do nothing!
   }
@@ -201,7 +201,7 @@ inline void printFeat(const Feature &f)
 template<class Feature, class FeatureAllocator = typename DefaultAllocator<Feature>::type>
 void printFeatVector(const std::vector<Feature, FeatureAllocator> &f)
 {
-  for(size_t j = 0; j < f.size(); ++j)
+  for(std::size_t j = 0; j < f.size(); ++j)
   {
     printFeat(f[j]);
   }
@@ -220,7 +220,7 @@ bool checkElements(const Feature &f, const char* str)
 {
   bool correct = true;
   // here we are supposing that Feature has a size method... (bleah!)
-  for(size_t i = 0; i < f.size(); ++i)
+  for(std::size_t i = 0; i < f.size(); ++i)
   {
     if(f[i] > 10e6 || std::isnan(f[i]))
     {
@@ -245,7 +245,7 @@ template<class Feature, class FeatureAllocator = typename DefaultAllocator<Featu
 bool checkVectorElements(const std::vector<Feature, FeatureAllocator> &f, const char* str)
 {
   bool correct = true;
-  for(size_t i = 0; i < f.size(); ++i)
+  for(std::size_t i = 0; i < f.size(); ++i)
   {
     if(!checkElements(f[i], str))
       correct = false;
@@ -265,7 +265,7 @@ class SimpleKmeans
 {
 public:
   typedef typename Distance::result_type squared_distance_type;
-  typedef boost::function<void(const std::vector<Feature*>&, size_t, std::vector<Feature, FeatureAllocator>&, Distance, const int verbose) > Initializer;
+  typedef boost::function<void(const std::vector<Feature*>&, std::size_t, std::vector<Feature, FeatureAllocator>&, Distance, const int verbose) > Initializer;
 
   /**
    * @brief Constructor
@@ -284,22 +284,22 @@ public:
     choose_centers_ = init;
   }
 
-  size_t getMaxIterations() const
+  std::size_t getMaxIterations() const
   {
     return max_iterations_;
   }
 
-  void setMaxIterations(size_t iters)
+  void setMaxIterations(std::size_t iters)
   {
     max_iterations_ = iters;
   }
 
-  size_t getRestarts() const
+  std::size_t getRestarts() const
   {
     return restarts_;
   }
 
-  void setRestarts(size_t restarts)
+  void setRestarts(std::size_t restarts)
   {
     restarts_ = restarts;
   }
@@ -322,7 +322,7 @@ public:
    * @param[out] centers    A set of k cluster centers.
    * @param[out] membership Cluster assignment for each feature
    */
-  squared_distance_type cluster(const std::vector<Feature, FeatureAllocator>& features, size_t k,
+  squared_distance_type cluster(const std::vector<Feature, FeatureAllocator>& features, std::size_t k,
                                 std::vector<Feature, FeatureAllocator>& centers,
                                 std::vector<unsigned int>& membership) const;
 
@@ -337,21 +337,21 @@ public:
    * @param[out] centers    A set of k cluster centers.
    * @param[out] membership Cluster assignment for each feature
    */
-  squared_distance_type clusterPointers(const std::vector<Feature*>& features, size_t k,
+  squared_distance_type clusterPointers(const std::vector<Feature*>& features, std::size_t k,
                                         std::vector<Feature, FeatureAllocator>& centers,
                                         std::vector<unsigned int>& membership) const;
 
 private:
 
-  squared_distance_type clusterOnce(const std::vector<Feature*>& features, size_t k,
+  squared_distance_type clusterOnce(const std::vector<Feature*>& features, std::size_t k,
                                     std::vector<Feature, FeatureAllocator>& centers,
                                     std::vector<unsigned int>& membership) const;
 
   Feature zero_;
   Distance distance_;
   Initializer choose_centers_;
-  size_t max_iterations_;
-  size_t restarts_;
+  std::size_t max_iterations_;
+  std::size_t restarts_;
   int verbose_;
 };
 
@@ -392,7 +392,7 @@ SimpleKmeans<Feature, Distance, FeatureAllocator>::clusterPointers(const std::ve
 
   squared_distance_type least_sse = std::numeric_limits<squared_distance_type>::max();
   assert(restarts_ > 0);
-  for(size_t starts = 0; starts < restarts_; ++starts)
+  for(std::size_t starts = 0; starts < restarts_; ++starts)
   {
     if(verbose_ > 0) ALICEVISION_LOG_DEBUG("Trial " << starts + 1 << "/" << restarts_);
     choose_centers_(features, k, new_centers, distance_, verbose_);
@@ -413,26 +413,26 @@ SimpleKmeans<Feature, Distance, FeatureAllocator>::clusterPointers(const std::ve
 
 template < class Feature, class Distance, class FeatureAllocator >
 typename SimpleKmeans<Feature, Distance, FeatureAllocator>::squared_distance_type
-SimpleKmeans<Feature, Distance, FeatureAllocator>::clusterOnce(const std::vector<Feature*>& features, size_t k,
+SimpleKmeans<Feature, Distance, FeatureAllocator>::clusterOnce(const std::vector<Feature*>& features, std::size_t k,
                                                                std::vector<Feature, FeatureAllocator>& centers,
                                                                std::vector<unsigned int>& membership) const
 {
   typedef typename std::vector<Feature, FeatureAllocator>::value_type centerType;
   typedef typename Distance::value_type feature_value_type;
 
-  std::vector<size_t> new_center_counts(k);
+  std::vector<std::size_t> new_center_counts(k);
   std::vector<Feature, FeatureAllocator> new_centers(k);
   squared_distance_type max_center_shift = std::numeric_limits<squared_distance_type>::max();
 
   if(verbose_ > 0) ALICEVISION_LOG_DEBUG("Iterations");
-  for(size_t iter = 0; iter < max_iterations_; ++iter)
+  for(std::size_t iter = 0; iter < max_iterations_; ++iter)
   {
     if(verbose_ > 0) ALICEVISION_LOG_DEBUG("*");
     // Zero out new centers and counts
     std::fill(new_center_counts.begin(), new_center_counts.end(), 0);
-    //		for(size_t i = 0; i < k; checkElements(new_centers[i++], "bef"));
+    //		for(std::size_t i = 0; i < k; checkElements(new_centers[i++], "bef"));
     std::fill(new_centers.begin(), new_centers.end(), zero_);
-    //		for(size_t i = 0; i < k; checkElements(new_centers[i++], "aft"));
+    //		for(std::size_t i = 0; i < k; checkElements(new_centers[i++], "aft"));
     assert(checkVectorElements(new_centers, "newcenters init"));
     bool is_stable = true;
 
@@ -487,7 +487,7 @@ SimpleKmeans<Feature, Distance, FeatureAllocator>::clusterOnce(const std::vector
     if(iter > 0)
       max_center_shift = 0;
     // Assign new centers
-    for(size_t i = 0; i < k; ++i)
+    for(std::size_t i = 0; i < k; ++i)
     {
       if(new_center_counts[i] > 0)
       {
@@ -523,7 +523,7 @@ SimpleKmeans<Feature, Distance, FeatureAllocator>::clusterOnce(const std::vector
   /// @todo Kahan summation?
   squared_distance_type sse = squared_distance_type(0);
   assert(features.size() > 0);
-  for(size_t i = 0; i < features.size(); ++i)
+  for(std::size_t i = 0; i < features.size(); ++i)
   {
     sse += distance_(*features[i], centers[membership[i]]);
   }

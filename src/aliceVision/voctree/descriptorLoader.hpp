@@ -25,7 +25,7 @@ namespace voctree {
  * @param[out] numDescriptors The number of descriptors stored in the file
  * @param[out] bytesPerElement The number of bytes used to store each element of the descriptor
  */
-void getInfoBinFile(const std::string& path, int dim, size_t& numDescriptors, int& bytesPerElement);
+void getInfoBinFile(const std::string& path, int dim, std::size_t& numDescriptors, int& bytesPerElement);
 
 /**
  * @brief Extract a list of decriptor files from a sfmData.
@@ -47,10 +47,10 @@ void getListOfDescriptorFiles(const sfmData::SfMData& sfmData,
  *
  */
 template<class DescriptorT, class FileDescriptorT>
-size_t readDescFromFiles(const sfmData::SfMData& sfmData,
+std::size_t readDescFromFiles(const sfmData::SfMData& sfmData,
                          const std::vector<std::string>& featuresFolders,
                          std::vector<DescriptorT>& descriptors,
-                         std::vector<size_t>& numFeatures);
+                         std::vector<std::size_t>& numFeatures);
 
 } // namespace voctree
 } // namespace aliceVision

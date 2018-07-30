@@ -13,7 +13,7 @@
 namespace aliceVision {
 namespace voctree {
 
-void getInfoBinFile(const std::string &path, int dim, size_t &numDescriptors, int &bytesPerElement)
+void getInfoBinFile(const std::string &path, int dim, std::size_t &numDescriptors, int &bytesPerElement)
 {
   std::fstream fs;
 
@@ -42,7 +42,7 @@ void getInfoBinFile(const std::string &path, int dim, size_t &numDescriptors, in
   fs.seekg(0, fs.beg);
 
   // get the number of descriptors
-  fs.read((char*) &numDescriptors, sizeof (size_t));
+  fs.read((char*) &numDescriptors, sizeof (std::size_t));
 
   if(numDescriptors > 0)
   {
