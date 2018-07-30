@@ -29,7 +29,7 @@ inline unsigned int divUp(unsigned int a, unsigned int b) {
   return (a % b != 0) ? (a / b + 1) : (a / b);
 }
 
-float3 ps_M3x3mulV3(float* M3x3, const float3& V);
+float3 ps_M3x3mulV3(const float* M3x3, const float3& V);
 
 void ps_normalize(float3& a);
 
@@ -38,8 +38,9 @@ void pr_printfDeviceMemoryInfo();
 float3 ps_getDeviceMemoryInfo();
 
 void ps_init_reference_camera_matrices(
-                    float* _P, float* _iP, float* _R, float* _iR, float* _K, float* _iK,
-                    float* _C);
+                    const float* _P, const float* _iP, const float* _R,
+                    const float* _iR, const float* _K, const float* _iK,
+                    const float* _C);
 
 void ps_init_target_camera_matrices(
                     float* _P, float* _iP, float* _R, float* _iR, float* _K, float* _iK,
@@ -218,7 +219,8 @@ void ps_getTexture(
 void ps_smoothDepthMap(
                     // CudaArray<uchar4, 2>** ps_texs_arr,
                     CudaHostMemoryHeap<float, 2>* depthMap_hmh,
-                    cameraStruct** cams, int width, int height, int scale, int CUDAdeviceNo, int ncamsAllocated,
+                    const cameraStruct& cams, int width, int height, int scale, int CUDAdeviceNo,
+                    // int ncamsAllocated,
                     int scales, int wsh, bool verbose, float gammaC, float gammaP);
 
 void ps_filterDepthMap(
@@ -336,8 +338,12 @@ void ps_optimizeDepthSimMapGradientDescent(
                     CudaHostMemoryHeap<float2, 2>* odepthSimMap_hmh,
                     CudaHostMemoryHeap<float2, 2>** dataMaps_hmh, int ndataMaps,
                     int nSamplesHalf, int nDepthsToRefine, int nIters, float sigma,
-                    cameraStruct** cams, int ncams, int width, int height, int scale,
-                    int CUDAdeviceNo, int ncamsAllocated, int scales, bool verbose, int yFrom);
+                    const cameraStruct& cams,
+                    // int ncams,
+                    int width, int height, int scale,
+                    int CUDAdeviceNo,
+                    // int ncamsAllocated,
+                    int scales, bool verbose, int yFrom);
 
 void ps_GC_aggregatePathVolume(
                     CudaHostMemoryHeap<unsigned int, 2>* ftid_hmh, // f-irst t-label id

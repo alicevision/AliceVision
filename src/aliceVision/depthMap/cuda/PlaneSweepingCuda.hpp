@@ -60,8 +60,8 @@ public:
     // void** ps_texs_arr;
 
     StaticVector<cameraStruct*> _cams;
-    StaticVector<int>* camsRcs;
-    StaticVector<long>* camsTimes;
+    StaticVector<int>           _camsRcs;
+    StaticVector<long>          _camsTimes;
 
     bool verbose;
     bool doVizualizePartialDepthMaps;
