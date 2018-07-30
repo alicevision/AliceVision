@@ -18,12 +18,6 @@ set(system_files_sources
   nvtx.cpp
 )
 
-if(DONTUSETHIS_ALICEVISION_USE_NVTX_PROFILING)
-    set(DONTUSETHIS_ALICEVISION_NVTX_LIBRARY ${CUDA_NVTX_LIBRARY})
-else()
-    set(DONTUSETHIS_ALICEVISION_NVTX_LIBRARY "")
-endif()
-
 alicevision_add_library(aliceVision_system
   SOURCES ${system_files_headers} ${system_files_sources}
   PUBLIC_LINKS
