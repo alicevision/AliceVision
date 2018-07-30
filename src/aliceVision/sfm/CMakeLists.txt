@@ -58,20 +58,19 @@ set(sfm_files_sources
 alicevision_add_library(aliceVision_sfm
   SOURCES ${sfm_files_headers} ${sfm_files_sources}
   PUBLIC_LINKS
-    aliceVision_sfmData
-    aliceVision_sfmDataIO
-    aliceVision_numeric
-    aliceVision_track
-    aliceVision_multiview
-    aliceVision_lInftyComputerVision
     aliceVision_system
+    aliceVision_numeric
+    aliceVision_multiview
+    aliceVision_geometry
+    aliceVision_camera
     aliceVision_matching
     aliceVision_feature
-    aliceVision_geometry
-    aliceVision_track
-    aliceVision_camera
     aliceVision_graph
+    aliceVision_track
+    aliceVision_lInftyComputerVision
     aliceVision_linearProgramming
+    aliceVision_sfmData
+    aliceVision_sfmDataIO
     ${Boost_FILESYSTEM_LIBRARY}
     ${CERES_LIBRARIES}
   PRIVATE_LINKS

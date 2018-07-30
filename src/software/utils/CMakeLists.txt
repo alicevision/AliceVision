@@ -29,6 +29,8 @@ alicevision_add_software(aliceVision_utils_voctreeCreation
   FOLDER ${FOLDER_SOFTWARE_UTILS}
   LINKS aliceVision_voctree
         aliceVision_feature
+        aliceVision_sfmData
+        aliceVision_sfmDataIO
         ${Boost_LIBRARIES}
 )
 
@@ -37,6 +39,9 @@ alicevision_add_software(aliceVision_utils_voctreeQueryUtility
   SOURCE main_voctreeQueryUtility.cpp
   FOLDER ${FOLDER_SOFTWARE_UTILS}
   LINKS aliceVision_voctree
+        aliceVision_sfm
+        aliceVision_sfmData
+        aliceVision_sfmDataIO
         ${Boost_LIBRARIES}
 )
 
@@ -45,6 +50,8 @@ alicevision_add_software(aliceVision_utils_voctreeStatistics
   SOURCE main_voctreeStatistics.cpp
   FOLDER ${FOLDER_SOFTWARE_UTILS}
   LINKS aliceVision_voctree
+        aliceVision_sfmData
+        aliceVision_sfmDataIO
         ${Boost_LIBRARIES}
 )
 
