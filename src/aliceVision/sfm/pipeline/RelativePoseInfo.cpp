@@ -5,14 +5,14 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
-#include "aliceVision/sfm/pipeline/RelativePoseInfo.hpp"
+#include "RelativePoseInfo.hpp"
 
-#include "aliceVision/multiview/essentialKernelSolver.hpp"
-#include "aliceVision/multiview/projection.hpp"
-#include "aliceVision/multiview/triangulation/triangulationDLT.hpp"
+#include <aliceVision/multiview/essentialKernelSolver.hpp>
+#include <aliceVision/multiview/projection.hpp>
+#include <aliceVision/multiview/triangulation/triangulationDLT.hpp>
 
-#include "aliceVision/robustEstimation/ACRansac.hpp"
-#include "aliceVision/robustEstimation/ACRansacKernelAdaptator.hpp"
+#include <aliceVision/robustEstimation/ACRansac.hpp>
+#include <aliceVision/robustEstimation/ACRansacKernelAdaptator.hpp>
 
 namespace aliceVision {
 namespace sfm {

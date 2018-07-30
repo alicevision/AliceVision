@@ -22,7 +22,10 @@ namespace sfmData {
 struct Observation
 {
   Observation(): id_feat(UndefinedIndexT) {}
-  Observation(const Vec2 & p, IndexT idFeat): x(p), id_feat(idFeat) {}
+  Observation(const Vec2 & p, IndexT idFeat)
+    : x(p)
+    , id_feat(idFeat)
+  {}
 
   Vec2 x;
   IndexT id_feat;
