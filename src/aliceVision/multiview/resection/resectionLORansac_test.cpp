@@ -14,6 +14,7 @@
 #include <aliceVision/multiview/conditioning.hpp>
 #include <aliceVision/camera/camera.hpp>
 #include <aliceVision/sfm/sfm.hpp>
+#include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/geometry/Pose3.hpp>
 #include <aliceVision/numeric/numeric.hpp>
 
@@ -48,6 +49,7 @@ bool refinePoseAsItShouldbe(const Mat & pt3D,
                             bool b_refine_intrinsic)
 {
   using namespace sfm;
+  using namespace sfmData;
 
   // Setup a tiny SfM scene with the corresponding 2D-3D data
   SfMData sfm_data;

@@ -5,7 +5,7 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "LocalizationResult.hpp"
-#include <aliceVision/sfm/sfmDataIO_json.hpp>
+#include <aliceVision/sfmDataIO/jsonIO.hpp>
 
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
@@ -169,7 +169,7 @@ void LocalizationResult::load(std::vector<LocalizationResult>& localizationResul
   bpt::read_json(filename, fileTree);
 
   // version
-  loadMatrix("version", version, fileTree);
+  sfmDataIO::loadMatrix("version", version, fileTree);
 
   if(fileTree.count("localizationResults"))
   {
@@ -181,7 +181,7 @@ void LocalizationResult::load(std::vector<LocalizationResult>& localizationResul
       LocalizationResult lr;
 
       lr._isValid = lrTree.get<bool>("isValid");
-      loadPose3("pose", lr._pose, lrTree);
+      sfmDataIO::loadPose3("pose", lr._pose, lrTree);
 
       // indMatch3D2D
       if(lrTree.count("indMatch3D2D"))
@@ -204,7 +204,7 @@ void LocalizationResult::load(std::vector<LocalizationResult>& localizationResul
       {
         IndexT intrinsicId;
         std::shared_ptr<camera::IntrinsicBase> intrinsicPtr;
-        loadIntrinsic(intrinsicId, intrinsicPtr, lrTree.get_child("intrinsic"));
+        sfmDataIO::loadIntrinsic(intrinsicId, intrinsicPtr, lrTree.get_child("intrinsic"));
         lr._intrinsics = *(dynamic_cast<camera::PinholeRadialK3*>(intrinsicPtr.get()));
       }
 
@@ -220,9 +220,9 @@ void LocalizationResult::load(std::vector<LocalizationResult>& localizationResul
       lr._matchData.pt3D = Mat(3, nbPts);
       lr._matchData.pt2D = Mat(2, nbPts);
 
-      loadMatrix("pt3D", lr._matchData.pt3D, lrTree);
-      loadMatrix("pt2D", lr._matchData.pt2D, lrTree);
-      loadMatrix("projectionMatrix", lr._matchData.projection_matrix, lrTree);
+      sfmDataIO::loadMatrix("pt3D", lr._matchData.pt3D, lrTree);
+      sfmDataIO::loadMatrix("pt2D", lr._matchData.pt2D, lrTree);
+      sfmDataIO::loadMatrix("projectionMatrix", lr._matchData.projection_matrix, lrTree);
 
       lr._matchData.error_max = std::stod(lrTree.get<std::string>("errorMax"));
       lr._matchData.max_iteration = lrTree.get<std::size_t>("maxIteration");
@@ -257,7 +257,7 @@ void LocalizationResult::save(const std::vector<LocalizationResult>& localizatio
   bpt::ptree fileTree;
 
   // file version
-  saveMatrix("version", version, fileTree);
+  sfmDataIO::saveMatrix("version", version, fileTree);
 
   // localizationResults tree
   bpt::ptree localizationResultsTree;
@@ -267,7 +267,7 @@ void LocalizationResult::save(const std::vector<LocalizationResult>& localizatio
     bpt::ptree lrTree;
 
     lrTree.put("isValid", lr._isValid);
-    savePose3("pose", lr._pose, lrTree);
+    sfmDataIO::savePose3("pose", lr._pose, lrTree);
 
     // indMatch3D2D
     {
@@ -288,7 +288,7 @@ void LocalizationResult::save(const std::vector<LocalizationResult>& localizatio
     {
       std::shared_ptr<camera::PinholeRadialK3> intrinsicPtr(new camera::PinholeRadialK3());
       *intrinsicPtr = lr._intrinsics;
-      saveIntrinsic("intrinsic", UndefinedIndexT, std::dynamic_pointer_cast<camera::IntrinsicBase>(intrinsicPtr), lrTree);
+      sfmDataIO::saveIntrinsic("intrinsic", UndefinedIndexT, std::dynamic_pointer_cast<camera::IntrinsicBase>(intrinsicPtr), lrTree);
     }
 
     // inliers
@@ -306,9 +306,9 @@ void LocalizationResult::save(const std::vector<LocalizationResult>& localizatio
     // needed for loading
     lrTree.put("nbPts", lr._matchData.pt3D.cols());
 
-    saveMatrix("pt3D", lr._matchData.pt3D, lrTree);
-    saveMatrix("pt2D", lr._matchData.pt2D, lrTree);
-    saveMatrix("projectionMatrix", lr._matchData.projection_matrix, lrTree);
+    sfmDataIO::saveMatrix("pt3D", lr._matchData.pt3D, lrTree);
+    sfmDataIO::saveMatrix("pt2D", lr._matchData.pt2D, lrTree);
+    sfmDataIO::saveMatrix("projectionMatrix", lr._matchData.projection_matrix, lrTree);
 
     lrTree.put("errorMax", lr._matchData.error_max);
     lrTree.put("maxIteration", lr._matchData.max_iteration);

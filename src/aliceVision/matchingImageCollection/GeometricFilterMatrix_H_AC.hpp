@@ -14,7 +14,7 @@
 
 #include "aliceVision/matching/IndMatch.hpp"
 #include "aliceVision/matching/IndMatchDecorator.hpp"
-#include "aliceVision/sfm/SfMData.hpp"
+#include "aliceVision/sfmData/SfMData.hpp"
 #include "aliceVision/feature/RegionsPerView.hpp"
 #include "aliceVision/matchingImageCollection/GeometricFilterMatrix.hpp"
 
@@ -37,7 +37,7 @@ struct GeometricFilterMatrix_H_AC : public GeometricFilterMatrix
    */
   template<typename Regions_or_Features_ProviderT>
   EstimationStatus geometricEstimation(
-    const sfm::SfMData * sfmData,
+    const sfmData::SfMData * sfmData,
     const Regions_or_Features_ProviderT& regionsPerView,
     const Pair& pairIndex,
     const matching::MatchesPerDescType & putativeMatchesPerType,
@@ -179,7 +179,7 @@ struct GeometricFilterMatrix_H_AC : public GeometricFilterMatrix
    */
   bool Geometry_guided_matching
   (
-    const sfm::SfMData * sfmData,
+    const sfmData::SfMData * sfmData,
     const feature::RegionsPerView& regionsPerView,
     const Pair imageIdsPair,
     const double dDistanceRatio,
@@ -195,8 +195,8 @@ struct GeometricFilterMatrix_H_AC : public GeometricFilterMatrix
       const IndexT viewId_I = imageIdsPair.first;
       const IndexT viewId_J = imageIdsPair.second;
 
-      const sfm::View * view_I = sfmData->views.at(viewId_I).get();
-      const sfm::View * view_J = sfmData->views.at(viewId_J).get();
+      const sfmData::View * view_I = sfmData->views.at(viewId_I).get();
+      const sfmData::View * view_J = sfmData->views.at(viewId_J).get();
 
       // Retrieve corresponding pair camera intrinsic if any
       const camera::IntrinsicBase * cam_I =

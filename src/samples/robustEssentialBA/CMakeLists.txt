@@ -7,6 +7,8 @@ alicevision_add_software(aliceVision_samples_robustEssentialBA
         aliceVision_feature
         aliceVision_matching
         aliceVision_sfm
+        aliceVision_sfmData
+        aliceVision_sfmDataIO
         vlsift
         ${Boost_FILESYSTEM_LIBRARIES}
 )

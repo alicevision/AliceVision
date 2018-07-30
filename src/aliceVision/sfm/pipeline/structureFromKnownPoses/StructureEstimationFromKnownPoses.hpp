@@ -7,10 +7,9 @@
 
 #pragma once
 
-#include "aliceVision/sfm/SfMData.hpp"
-
-#include "aliceVision/feature/RegionsPerView.hpp"
-#include "aliceVision/matching/IndMatch.hpp"
+#include <aliceVision/sfmData/SfMData.hpp>
+#include <aliceVision/feature/RegionsPerView.hpp>
+#include <aliceVision/matching/IndMatch.hpp>
 
 namespace aliceVision {
 namespace sfm {
@@ -21,27 +20,27 @@ public:
 
   /// Use geometry of the views to compute a putative structure from features and descriptors.
   void run(
-    SfMData & sfm_data,
-    const PairSet & pairs,
+    sfmData::SfMData& sfmData,
+    const PairSet& pairs,
     const feature::RegionsPerView& regionsPerView);
 
 public:
 
   /// Use guided matching to find corresponding 2-view correspondences
   void match(
-    const SfMData & sfm_data,
-    const PairSet & pairs,
+    const sfmData::SfMData& sfmData,
+    const PairSet& pairs,
     const feature::RegionsPerView& regionsPerView);
 
   /// Filter inconsistent correspondences by using 3-view correspondences on view triplets
   void filter(
-    const SfMData & sfm_data,
-    const PairSet & pairs,
+    const sfmData::SfMData& sfmData,
+    const PairSet& pairs,
     const feature::RegionsPerView& regionsPerView);
 
   /// Init & triangulate landmark observations from validated 3-view correspondences
   void triangulate(
-    SfMData & sfm_data,
+    sfmData::SfMData& sfmData,
     const feature::RegionsPerView& regionsPerView);
 
 private:

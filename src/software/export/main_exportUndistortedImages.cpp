@@ -5,7 +5,8 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
-#include <aliceVision/sfm/sfm.hpp>
+#include <aliceVision/sfmData/SfMData.hpp>
+#include <aliceVision/sfmDataIO/sfmDataIO.hpp>
 #include <aliceVision/image/all.hpp>
 
 #include <boost/program_options.hpp>
@@ -20,10 +21,6 @@
 #define ALICEVISION_SOFTWARE_VERSION_MINOR 0
 
 using namespace aliceVision;
-using namespace aliceVision::camera;
-using namespace aliceVision::geometry;
-using namespace aliceVision::image;
-using namespace aliceVision::sfm;
 
 namespace po = boost::program_options;
 namespace fs = boost::filesystem;
@@ -92,38 +89,37 @@ int main(int argc, char *argv[])
   image::EImageFileType outputFileType = image::EImageFileType_stringToEnum(outImageFileTypeName);
 
   // Create output dir
-  if (!fs::exists(outDirectory))
+  if(!fs::exists(outDirectory))
     fs::create_directory(outDirectory);
 
-  SfMData sfmData;
-  if (!Load(sfmData, sfmDataFilename, ESfMData(VIEWS | INTRINSICS)))
+  sfmData::SfMData sfmData;
+  if(!sfmDataIO::Load(sfmData, sfmDataFilename, sfmDataIO::ESfMData(sfmDataIO::VIEWS|sfmDataIO::INTRINSICS)))
   {
     ALICEVISION_LOG_ERROR("The input SfMData file \""<< sfmDataFilename << "\" cannot be read.");
     return EXIT_FAILURE;
   }
 
-  // Export views as undistorted images (those with valid Intrinsics)
-  Image<RGBfColor> image, image_ud;
-  boost::progress_display my_progress_bar( sfmData.getViews().size() );
-  for(Views::const_iterator iter = sfmData.getViews().begin();
-    iter != sfmData.getViews().end(); ++iter, ++my_progress_bar)
+  // export views as undistorted images (those with valid Intrinsics)
+  image::Image<image::RGBfColor> image, image_ud;
+  boost::progress_display progressBar(sfmData.getViews().size());
+  for(sfmData::Views::const_iterator iter = sfmData.getViews().begin(); iter != sfmData.getViews().end(); ++iter, ++progressBar)
   {
-    const View* view = iter->second.get();
-    bool bIntrinsicDefined = view->getIntrinsicId() != UndefinedIndexT &&
-      sfmData.getIntrinsics().find(view->getIntrinsicId()) != sfmData.getIntrinsics().end();
+    const sfmData::View* view = iter->second.get();
+    //bool intrinsicDefined = view->getIntrinsicId() != UndefinedIndexT &&
+    //  sfmData.getIntrinsics().find(view->getIntrinsicId()) != sfmData.getIntrinsics().end();
 
-    Intrinsics::const_iterator iterIntrinsic = sfmData.getIntrinsics().find(view->getIntrinsicId());
+    sfmData::Intrinsics::const_iterator iterIntrinsic = sfmData.getIntrinsics().find(view->getIntrinsicId());
 
     const std::string srcImage = view->getImagePath();
     const std::string dstImage = (fs::path(outDirectory) / (fs::path(srcImage).stem().string() + "." + image::EImageFileType_enumToString(outputFileType))).string();
 
-    const IntrinsicBase * cam = iterIntrinsic->second.get();
+    const camera::IntrinsicBase * cam = iterIntrinsic->second.get();
     if (cam->isValid() && cam->have_disto())
     {
       // undistort the image and save it
-      readImage(srcImage, image);
-      UndistortImage(image, cam, image_ud, FBLACK);
-      writeImage(dstImage, image_ud);
+      image::readImage(srcImage, image);
+      camera::UndistortImage(image, cam, image_ud, image::FBLACK);
+      image::writeImage(dstImage, image_ud);
     }
     else // (no distortion)
     {

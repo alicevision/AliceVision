@@ -5,7 +5,8 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
-#include <aliceVision/sfm/sfm.hpp>
+#include <aliceVision/sfmData/SfMData.hpp>
+#include <aliceVision/sfmDataIO/sfmDataIO.hpp>
 #include <aliceVision/image/all.hpp>
 
 #include <boost/program_options.hpp>
@@ -27,7 +28,7 @@ using namespace aliceVision;
 using namespace aliceVision::camera;
 using namespace aliceVision::geometry;
 using namespace aliceVision::image;
-using namespace aliceVision::sfm;
+using namespace aliceVision::sfmData;
 using namespace aliceVision::feature;
 
 namespace po = boost::program_options;
@@ -297,17 +298,18 @@ int main(int argc, char *argv[])
     fs::create_directory(outDirectory);
 
   // Read the input SfM scene
-  SfMData sfm_data;
-  if (!Load(sfm_data, sfmDataFilename, ESfMData(ALL))) {
+  SfMData sfmData;
+  if(!sfmDataIO::Load(sfmData, sfmDataFilename, sfmDataIO::ESfMData::ALL))
+  {
     std::cerr << std::endl
       << "The input SfMData file \""<< sfmDataFilename << "\" cannot be read." << std::endl;
     return EXIT_FAILURE;
   }
 
-  if (exportToMVE2Format(sfm_data, (fs::path(outDirectory) / "MVE").string()))
-    return( EXIT_SUCCESS );
+  if (exportToMVE2Format(sfmData, (fs::path(outDirectory) / "MVE").string()))
+    return EXIT_SUCCESS;
   else
-    return( EXIT_FAILURE );
+    return EXIT_FAILURE;
 }
 
 /// Naive image bilinear resampling of an image for thumbnail generation

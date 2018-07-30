@@ -9,6 +9,8 @@
 #include <aliceVision/image/all.hpp>
 #include <aliceVision/feature/feature.hpp>
 #include <aliceVision/feature/sift/ImageDescriber_SIFT.hpp>
+#include <aliceVision/sfmData/SfMData.hpp>
+#include <aliceVision/sfmDataIO/sfmDataIO.hpp>
 #include <aliceVision/sfm/sfm.hpp>
 #include <aliceVision/matching/ArrayMatcher_bruteForce.hpp>
 #include <aliceVision/matching/IndMatchDecorator.hpp>
@@ -212,9 +214,9 @@ int main() {
     const bool bSharedIntrinsic = (iBAType == 2 || iBAType == 3) ? true : false;
 
     // Setup a SfM scene with two view corresponding the pictures
-    SfMData tinyScene;
-    tinyScene.views[0].reset(new View("", 0, bSharedIntrinsic ? 0 : 1, 0, imageL.Width(), imageL.Height()));
-    tinyScene.views[1].reset(new View("", 1, bSharedIntrinsic ? 0 : 1, 1, imageR.Width(), imageR.Height()));
+    sfmData::SfMData tinyScene;
+    tinyScene.views[0].reset(new sfmData::View("", 0, bSharedIntrinsic ? 0 : 1, 0, imageL.Width(), imageL.Height()));
+    tinyScene.views[1].reset(new sfmData::View("", 1, bSharedIntrinsic ? 0 : 1, 1, imageR.Width(), imageR.Height()));
     // Setup intrinsics camera data
     switch (iBAType)
     {
@@ -237,13 +239,13 @@ int main() {
     const Pose3 pose0 = Pose3(Mat3::Identity(), Vec3::Zero());
     const Pose3 pose1 = relativePose_info.relativePose;
 
-    tinyScene.setPose(*tinyScene.views.at(0), CameraPose(pose0));
-    tinyScene.setPose(*tinyScene.views.at(1), CameraPose(pose1));
+    tinyScene.setPose(*tinyScene.views.at(0), sfmData::CameraPose(pose0));
+    tinyScene.setPose(*tinyScene.views.at(1), sfmData::CameraPose(pose1));
 
     // Init structure by inlier triangulation
     const Mat34 P1 = tinyScene.intrinsics[tinyScene.views[0]->getIntrinsicId()]->get_projective_equivalent(pose0);
     const Mat34 P2 = tinyScene.intrinsics[tinyScene.views[1]->getIntrinsicId()]->get_projective_equivalent(pose1);
-    Landmarks & landmarks = tinyScene.structure;
+    sfmData::Landmarks & landmarks = tinyScene.structure;
     for (size_t i = 0; i < relativePose_info.vec_inliers.size(); ++i)  {
       const SIOPointFeature & LL = regionsL->Features()[vec_PutativeMatches[relativePose_info.vec_inliers[i]]._i];
       const SIOPointFeature & RR = regionsR->Features()[vec_PutativeMatches[relativePose_info.vec_inliers[i]]._j];
@@ -254,18 +256,18 @@ int main() {
       if (pose0.depth(X) < 0 && pose1.depth(X) < 0)
           continue;
       // Add a new landmark (3D point with it's 2d observations)
-      landmarks[i].observations[tinyScene.views[0]->getViewId()] = Observation(LL.coords().cast<double>(), vec_PutativeMatches[relativePose_info.vec_inliers[i]]._i);
-      landmarks[i].observations[tinyScene.views[1]->getViewId()] = Observation(RR.coords().cast<double>(), vec_PutativeMatches[relativePose_info.vec_inliers[i]]._j);
+      landmarks[i].observations[tinyScene.views[0]->getViewId()] = sfmData::Observation(LL.coords().cast<double>(), vec_PutativeMatches[relativePose_info.vec_inliers[i]]._i);
+      landmarks[i].observations[tinyScene.views[1]->getViewId()] = sfmData::Observation(RR.coords().cast<double>(), vec_PutativeMatches[relativePose_info.vec_inliers[i]]._j);
       landmarks[i].X = X;
     }
-    Save(tinyScene, "EssentialGeometry_start.ply", ESfMData(ALL));
+    sfmDataIO::Save(tinyScene, "EssentialGeometry_start.ply", sfmDataIO::ESfMData::ALL);
 
     //D. Perform Bundle Adjustment of the scene
 
     BundleAdjustmentCeres bundle_adjustment_obj;
     bundle_adjustment_obj.Adjust(tinyScene);
 
-    Save(tinyScene, "EssentialGeometry_refined.ply", ESfMData(ALL));
+    sfmDataIO::Save(tinyScene, "EssentialGeometry_refined.ply", sfmDataIO::ESfMData::ALL);
   }
   return EXIT_SUCCESS;
 }

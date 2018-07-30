@@ -14,8 +14,8 @@
 #include <aliceVision/feature/feature.hpp>
 #include <aliceVision/matchingImageCollection/ImageCollectionMatcher_generic.hpp>
 
-#include "aliceVision/sfm/SfMData.hpp"
-#include "aliceVision/sfm/sfmDataIO.hpp"
+#include "aliceVision/sfmData/SfMData.hpp"
+#include "aliceVision/sfmDataIO/sfmDataIO.hpp"
 
 namespace aliceVision {
 namespace feature {
@@ -65,7 +65,7 @@ void thresholdMatches(aliceVision::matching::IndMatches& outputMatches, const st
 void matchesGridFiltering(const aliceVision::feature::FeatRegions<aliceVision::feature::SIOPointFeature>& lRegions, 
         const aliceVision::feature::FeatRegions<aliceVision::feature::SIOPointFeature>& rRegions, 
         const aliceVision::Pair& indexImagePair,
-        const aliceVision::sfm::SfMData sfm_data, 
+        const aliceVision::sfmData::SfMData sfm_data, 
         aliceVision::matching::IndMatches& outMatches);
 
 }

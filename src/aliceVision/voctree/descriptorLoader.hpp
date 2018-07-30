@@ -7,7 +7,7 @@
 #pragma once
 
 #include <aliceVision/types.hpp>
-#include <aliceVision/sfm/SfMData.hpp>
+#include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/voctree/Database.hpp>
 #include <aliceVision/voctree/VocabularyTree.hpp>
 
@@ -33,7 +33,7 @@ void getInfoBinFile(const std::string& path, int dim, size_t& numDescriptors, in
  * @param[in] featuresFolders The folder(s) containing the descriptor files
  * @param[out] descriptorsFiles A list of descriptor files 
  */
-void getListOfDescriptorFiles(const sfm::SfMData& sfmData,
+void getListOfDescriptorFiles(const sfmData::SfMData& sfmData,
                               const std::vector<std::string>& featuresFolders,
                               std::map<IndexT, std::string>& descriptorsFiles);
 
@@ -47,7 +47,7 @@ void getListOfDescriptorFiles(const sfm::SfMData& sfmData,
  *
  */
 template<class DescriptorT, class FileDescriptorT>
-size_t readDescFromFiles(const sfm::SfMData& sfmData,
+size_t readDescFromFiles(const sfmData::SfMData& sfmData,
                          const std::vector<std::string>& featuresFolders,
                          std::vector<DescriptorT>& descriptors,
                          std::vector<size_t>& numFeatures);

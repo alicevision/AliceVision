@@ -7,8 +7,8 @@
 
 #pragma once
 
-namespace aliceVision{
-namespace sfm{
+namespace aliceVision {
+namespace sfm {
 
 enum ERotationAveragingMethod
 {
@@ -25,34 +25,36 @@ enum ERelativeRotationInferenceMethod
 } // namespace sfm
 } // namespace aliceVision
 
-#include "aliceVision/sfm/sfm.hpp"
-#include "aliceVision/graph/graph.hpp"
-#include "aliceVision/multiview/rotationAveraging/common.hpp"
+#include <aliceVision/sfm/sfm.hpp>
+#include <aliceVision/graph/graph.hpp>
+#include <aliceVision/multiview/rotationAveraging/common.hpp>
 
-namespace aliceVision{
-namespace sfm{
+namespace aliceVision {
+namespace sfm {
 
 class GlobalSfMRotationAveragingSolver
 {
 private:
-  mutable PairSet used_pairs; // pair that are considered as valid by the rotation averaging solver
+  /// pair that are considered as valid by the rotation averaging solver
+  mutable PairSet used_pairs;
 
 public:
-  bool Run(
-    ERotationAveragingMethod eRotationAveragingMethod,
-    ERelativeRotationInferenceMethod eRelativeRotationInferenceMethod,
-    const rotationAveraging::RelativeRotations & relativeRot_In,
-    HashMap<IndexT, Mat3> & map_globalR
-  ) const;
+  bool Run(ERotationAveragingMethod eRotationAveragingMethod,
+           ERelativeRotationInferenceMethod eRelativeRotationInferenceMethod,
+           const rotationAveraging::RelativeRotations& relativeRot_In,
+           HashMap<IndexT, Mat3>& map_globalR) const;
 
-  /// Reject edges of the view graph that do not produce triplets with tiny
-  ///  angular error once rotation composition have been computed.
-  void TripletRotationRejection(
-    const double max_angular_error,
-    std::vector< graph::Triplet > & vec_triplets,
-    rotationAveraging::RelativeRotations & relativeRotations) const;
-
-  /// Return the pairs validated by the GlobalRotation routine (inference can remove some)
+  /**
+   * @brief Reject edges of the view graph that do not produce triplets with tiny
+   * angular error once rotation composition have been computed.
+   */
+  void TripletRotationRejection(const double max_angular_error,
+                                std::vector<graph::Triplet>& vec_triplets,
+                                rotationAveraging::RelativeRotations& relativeRotations) const;
+  /**
+   * @brief Return the pairs validated by the GlobalRotation routine (inference can remove some)
+   * @return pairs validated by the GlobalRotation routine
+   */
   PairSet GetUsedPairs() const;
 };
 

@@ -15,14 +15,10 @@
 #include "aliceVision/sfm/BundleAdjustmentCeres.hpp"
 #include "aliceVision/sfm/LocalBundleAdjustmentCeres.hpp"
 #include "aliceVision/sfm/LocalBundleAdjustmentData.hpp"
+#include "aliceVision/sfm/colorizeTracks.hpp"
 #include "aliceVision/sfm/generateReport.hpp"
-
-// SfM data
-
-#include "aliceVision/sfm/SfMData.hpp"
-#include "aliceVision/sfm/sfmDataIO.hpp"
-#include "aliceVision/sfm/sfmDataFilters.hpp"
-#include "aliceVision/sfm/sfmDataTriangulation.hpp"
+#include "aliceVision/sfm/sfmFilters.hpp"
+#include "aliceVision/sfm/sfmTriangulation.hpp"
 
 // SfM pipeline
 

@@ -6,8 +6,9 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include <aliceVision/sfm/BundleAdjustmentCeres.hpp>
-#include <aliceVision/config.hpp>
+#include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/alicevision_omp.hpp>
+#include <aliceVision/config.hpp>
 
 #include <ceres/rotation.h>
 
@@ -18,7 +19,7 @@ using namespace aliceVision::camera;
 using namespace aliceVision::geometry;
 
 /// Create the appropriate cost functor according the provided input camera intrinsic model
-ceres::CostFunction * createCostFunctionFromIntrinsics(IntrinsicBase * intrinsic, const Vec2 & observation)
+ceres::CostFunction* createCostFunctionFromIntrinsics(IntrinsicBase* intrinsic, const Vec2& observation)
 {
   switch(intrinsic->getType())
   {
@@ -50,7 +51,7 @@ ceres::CostFunction * createCostFunctionFromIntrinsics(IntrinsicBase * intrinsic
 }
 
 /// Create the appropriate cost functor according the provided input rig camera intrinsic model
-ceres::CostFunction * createRigCostFunctionFromIntrinsics(IntrinsicBase * intrinsic, const Vec2 & observation)
+ceres::CostFunction* createRigCostFunctionFromIntrinsics(IntrinsicBase* intrinsic, const Vec2& observation)
 {
   switch(intrinsic->getType())
   {
@@ -84,7 +85,7 @@ ceres::CostFunction * createRigCostFunctionFromIntrinsics(IntrinsicBase * intrin
 
 void addPose(ceres::Problem& problem,
              BA_Refine refineOptions,
-             const CameraPose& cameraPose,
+             const sfmData::CameraPose& cameraPose,
              std::vector<double*>& out_parameterBlocks,
              std::vector<double>& out_poseParams)
 {
@@ -140,13 +141,13 @@ void addPose(ceres::Problem& problem,
   }
 }
 
-BundleAdjustmentCeres::BA_options::BA_options(const bool bVerbose, bool bmultithreaded)
-  :_bVerbose(bVerbose)
+BundleAdjustmentCeres::BA_options::BA_options(const bool verbose, bool multithreaded)
+  :_bVerbose(verbose)
 {
   // set number of threads, 1 if openMP is not enabled
   _nbThreads = omp_get_max_threads();
 
-  if (!bmultithreaded)
+  if (!multithreaded)
     _nbThreads = 1;
 
   _bCeres_Summary = false;
@@ -160,7 +161,7 @@ void BundleAdjustmentCeres::BA_options::setDenseBA()
   // Default configuration use a DENSE representation
   _preconditioner_type = ceres::JACOBI;
   _linear_solver_type = ceres::DENSE_SCHUR;
-    ALICEVISION_LOG_DEBUG("BundleAdjustmentCeres: DENSE_SCHUR");
+  ALICEVISION_LOG_DEBUG("BundleAdjustmentCeres: DENSE_SCHUR");
 }
 
 void BundleAdjustmentCeres::BA_options::setSparseBA()
@@ -193,13 +194,14 @@ void BundleAdjustmentCeres::BA_options::setSparseBA()
   }
 }
 
-
 BundleAdjustmentCeres::BundleAdjustmentCeres(
   BundleAdjustmentCeres::BA_options options)
   : _aliceVision_options(options)
 {}
 
-void BundleAdjustmentCeres::createProblem(SfMData & sfm_data, BA_Refine refineOptions, ceres::Problem& problem)
+void BundleAdjustmentCeres::createProblem(sfmData::SfMData& sfmData,
+                                          BA_Refine refineOptions,
+                                          ceres::Problem& problem)
 {
   // Ensure we are not using incompatible options:
   //  - BA_REFINE_INTRINSICS_OPTICALCENTER_ALWAYS and BA_REFINE_INTRINSICS_OPTICALCENTER_IF_ENOUGH_DATA cannot be used at the same time
@@ -214,33 +216,33 @@ void BundleAdjustmentCeres::createProblem(SfMData & sfm_data, BA_Refine refineOp
   // parameters for cameras and points are added automatically.
   //----------
 
-  parameterBlocks.reserve(sfm_data.getPoses().size() + sfm_data.structure.size());
+  parameterBlocks.reserve(sfmData.getPoses().size() + sfmData.structure.size());
 
   // Setup Poses data & subparametrization
-  for (Poses::const_iterator itPose = sfm_data.getPoses().begin(); itPose != sfm_data.getPoses().end(); ++itPose)
+  for(sfmData::Poses::const_iterator itPose = sfmData.getPoses().begin(); itPose != sfmData.getPoses().end(); ++itPose)
   {
     const IndexT indexPose = itPose->first;
-    const CameraPose& cameraPose = itPose->second;
+    const sfmData::CameraPose& cameraPose = itPose->second;
 
     addPose(problem, refineOptions, cameraPose, parameterBlocks, map_poses[indexPose]);
   }
 
-  for(const auto& rigIt : sfm_data.getRigs())
+  for(const auto& rigIt : sfmData.getRigs())
   {
     const IndexT rigId = rigIt.first;
-    const Rig& rig = rigIt.second;
+    const sfmData::Rig& rig = rigIt.second;
     const std::size_t nbSubPoses = rig.getNbSubPoses();
 
     for(std::size_t subPoseId = 0 ; subPoseId < nbSubPoses; ++subPoseId)
     {
-      const RigSubPose& rigSubPose = rig.getSubPose(subPoseId);
+      const sfmData::RigSubPose& rigSubPose = rig.getSubPose(subPoseId);
 
-      if(rigSubPose.status == ERigSubPoseStatus::UNINITIALIZED)
+      if(rigSubPose.status == sfmData::ERigSubPoseStatus::UNINITIALIZED)
         continue;
 
-     const bool locked = (rigSubPose.status == ERigSubPoseStatus::CONSTANT);
+     const bool locked = (rigSubPose.status == sfmData::ERigSubPoseStatus::CONSTANT);
 
-      addPose(problem, refineOptions, CameraPose(rigSubPose.pose, locked), parameterBlocks, map_subposes[rigId][subPoseId]);
+      addPose(problem, refineOptions, sfmData::CameraPose(rigSubPose.pose, locked), parameterBlocks, map_subposes[rigId][subPoseId]);
     }
   }
 
@@ -251,10 +253,10 @@ void BundleAdjustmentCeres::createProblem(SfMData & sfm_data, BA_Refine refineOp
   const bool refineIntrinsics = (refineOptions & BA_REFINE_INTRINSICS_FOCAL) ||
                                 (refineOptions & BA_REFINE_INTRINSICS_DISTORTION) ||
                                 refineIntrinsicsOpticalCenter;
-  for(const auto& itView: sfm_data.getViews())
+  for(const auto& itView: sfmData.getViews())
   {
-    const View* v = itView.second.get();
-    if (sfm_data.isPoseAndIntrinsicDefined(v))
+    const sfmData::View* v = itView.second.get();
+    if (sfmData.isPoseAndIntrinsicDefined(v))
     {
       if(intrinsicsUsage.find(v->getIntrinsicId()) == intrinsicsUsage.end())
         intrinsicsUsage[v->getIntrinsicId()] = 1;
@@ -269,7 +271,7 @@ void BundleAdjustmentCeres::createProblem(SfMData & sfm_data, BA_Refine refineOp
   }
 
   // Setup Intrinsics data & subparametrization
-  for(const auto& itIntrinsic: sfm_data.getIntrinsics())
+  for(const auto& itIntrinsic: sfmData.getIntrinsics())
   {
     const IndexT idIntrinsics = itIntrinsic.first;
     if(intrinsicsUsage[idIntrinsics] == 0)
@@ -366,14 +368,14 @@ void BundleAdjustmentCeres::createProblem(SfMData & sfm_data, BA_Refine refineOp
   // TODO: make the LOSS function and the parameter an option
 
   // For all visibility add reprojections errors:
-  for(auto& landmarkIt: sfm_data.structure)
+  for(auto& landmarkIt: sfmData.structure)
   {
-    const Observations & observations = landmarkIt.second.observations;
+    const sfmData::Observations & observations = landmarkIt.second.observations;
     // Iterate over 2D observation associated to the 3D landmark
-    for (const auto& observationIt: observations)
+    for(const auto& observationIt: observations)
     {
       // Build the residual block corresponding to the track observation:
-      const View * view = sfm_data.views.at(observationIt.first).get();
+      const sfmData::View * view = sfmData.views.at(observationIt.first).get();
 
       // Each Residual block takes a point and a camera as input and outputs a 2
       // dimensional residual. Internally, the cost function stores the observed
@@ -381,11 +383,11 @@ void BundleAdjustmentCeres::createProblem(SfMData & sfm_data, BA_Refine refineOp
 
       if(view->isPartOfRig())
       {
-        ceres::CostFunction* costFunction = createRigCostFunctionFromIntrinsics(sfm_data.intrinsics[view->getIntrinsicId()].get(), observationIt.second.x);
+        ceres::CostFunction* costFunction = createRigCostFunctionFromIntrinsics(sfmData.intrinsics[view->getIntrinsicId()].get(), observationIt.second.x);
 
-        const Rig& rig = sfm_data.getRig(*view);
-        const RigSubPose& rigSubPose = rig.getSubPose(view->getSubPoseId());
-        assert(rigSubPose.status != ERigSubPoseStatus::UNINITIALIZED);
+        const sfmData::Rig& rig = sfmData.getRig(*view);
+        const sfmData::RigSubPose& rigSubPose = rig.getSubPose(view->getSubPoseId());
+        assert(rigSubPose.status != sfmData::ERigSubPoseStatus::UNINITIALIZED);
 
         double* subpose_ptr = &map_subposes.at(view->getRigId()).at(view->getSubPoseId())[0];
 
@@ -399,7 +401,7 @@ void BundleAdjustmentCeres::createProblem(SfMData & sfm_data, BA_Refine refineOp
       }
       else
       {
-        ceres::CostFunction* costFunction = createCostFunctionFromIntrinsics(sfm_data.intrinsics[view->getIntrinsicId()].get(), observationIt.second.x);
+        ceres::CostFunction* costFunction = createCostFunctionFromIntrinsics(sfmData.intrinsics[view->getIntrinsicId()].get(), observationIt.second.x);
 
         problem.AddResidualBlock(
           costFunction,
@@ -415,10 +417,12 @@ void BundleAdjustmentCeres::createProblem(SfMData & sfm_data, BA_Refine refineOp
   }
 }
 
-void BundleAdjustmentCeres::createJacobian(SfMData & sfm_data, BA_Refine refineOptions, ceres::CRSMatrix &jacobian)
+void BundleAdjustmentCeres::createJacobian(sfmData::SfMData& sfmData,
+                                           BA_Refine refineOptions,
+                                           ceres::CRSMatrix& jacobian)
 {
   ceres::Problem problem;
-  createProblem(sfm_data, refineOptions, problem);
+  createProblem(sfmData, refineOptions, problem);
 
   // Configure Jacobian engine
   double cost = 0.0;
@@ -431,12 +435,11 @@ void BundleAdjustmentCeres::createJacobian(SfMData & sfm_data, BA_Refine refineO
   problem.Evaluate(evalOpt, &cost, NULL, NULL, &jacobian);
 }
 
-bool BundleAdjustmentCeres::Adjust(
-  SfMData & sfm_data,     // the SfM scene to refine
-  BA_Refine refineOptions)
+bool BundleAdjustmentCeres::Adjust(sfmData::SfMData& sfmData,     // the SfM scene to refine
+                                   BA_Refine refineOptions)
 {
   ceres::Problem problem;
-  createProblem(sfm_data, refineOptions, problem);
+  createProblem(sfmData, refineOptions, problem);
 
   // Configure a BA engine and run it
   //  Make Ceres automatically detect the bundle structure.
@@ -468,10 +471,10 @@ bool BundleAdjustmentCeres::Adjust(
     // Display statistics about the minimization
     ALICEVISION_LOG_DEBUG(
       "Bundle Adjustment statistics (approximated RMSE):\n"
-      "\t- # views: " << sfm_data.views.size() << "\n"
-      "\t- # poses: " << sfm_data.getPoses().size() << "\n"
-      "\t- # intrinsics: " << sfm_data.intrinsics.size() << "\n"
-      "\t- # tracks: " << sfm_data.structure.size() << "\n"
+      "\t- # views: " << sfmData.views.size() << "\n"
+      "\t- # poses: " << sfmData.getPoses().size() << "\n"
+      "\t- # intrinsics: " << sfmData.intrinsics.size() << "\n"
+      "\t- # tracks: " << sfmData.structure.size() << "\n"
       "\t- # residuals: " << summary.num_residuals << "\n"
       "\t- initial RMSE: " << std::sqrt( summary.initial_cost / summary.num_residuals) << "\n"
       "\t- final RMSE: " << std::sqrt( summary.final_cost / summary.num_residuals) << "\n"
@@ -481,8 +484,7 @@ bool BundleAdjustmentCeres::Adjust(
   // Update camera poses with refined data
   if ((refineOptions & BA_REFINE_ROTATION) || (refineOptions & BA_REFINE_TRANSLATION))
   {
-    for (Poses::iterator itPose = sfm_data.getPoses().begin();
-      itPose != sfm_data.getPoses().end(); ++itPose)
+    for (sfmData::Poses::iterator itPose = sfmData.getPoses().begin(); itPose != sfmData.getPoses().end(); ++itPose)
     {
       const IndexT indexPose = itPose->first;
 
@@ -495,11 +497,11 @@ bool BundleAdjustmentCeres::Adjust(
 
     for(const auto& rigIt : map_subposes)
     {
-      Rig& rig = sfm_data.getRigs().at(rigIt.first);
+      sfmData::Rig& rig = sfmData.getRigs().at(rigIt.first);
 
       for(const auto& subPoseit : rigIt.second)
       {
-        RigSubPose& subpose = rig.getSubPose(subPoseit.first);
+        sfmData::RigSubPose& subpose = rig.getSubPose(subPoseit.first);
 
         Mat3 R_refined;
         ceres::AngleAxisToRotationMatrix(&subPoseit.second[0], R_refined.data());
@@ -516,11 +518,11 @@ bool BundleAdjustmentCeres::Adjust(
   const bool refineIntrinsics = (refineOptions & BA_REFINE_INTRINSICS_FOCAL) ||
                                 (refineOptions & BA_REFINE_INTRINSICS_DISTORTION) ||
                                 refineIntrinsicsOpticalCenter;
-  if (refineIntrinsics)
+  if(refineIntrinsics)
   {
-    for (const auto& intrinsicsV: map_intrinsics)
+    for(const auto& intrinsicsV: map_intrinsics)
     {
-      sfm_data.intrinsics[intrinsicsV.first]->updateFromParams(intrinsicsV.second);
+      sfmData.intrinsics[intrinsicsV.first]->updateFromParams(intrinsicsV.second);
     }
   }
   return true;

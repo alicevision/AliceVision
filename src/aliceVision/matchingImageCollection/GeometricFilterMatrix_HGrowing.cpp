@@ -208,8 +208,8 @@ void filterMatchesByHGrowing(const std::vector<feature::SIOPointFeature>& siofea
 
 
 
-void drawHomographyMatches(const sfm::View &viewI,
-                           const sfm::View &viewJ,
+void drawHomographyMatches(const sfmData::View &viewI,
+                           const sfmData::View &viewJ,
                            const std::vector<feature::SIOPointFeature> &siofeatures_I,
                            const std::vector<feature::SIOPointFeature> &siofeatures_J,
                            const std::vector<std::pair<Mat3, matching::IndMatches>> &homographiesAndMatches,

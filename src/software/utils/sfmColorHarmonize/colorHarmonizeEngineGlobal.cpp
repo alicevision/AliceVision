@@ -9,6 +9,8 @@
 #include "software/utils/sfmHelper/sfmIOHelper.hpp"
 
 #include <aliceVision/system/Timer.hpp>
+#include <aliceVision/sfmData/SfMData.hpp>
+#include <aliceVision/sfmDataIO/sfmDataIO.hpp>
 #include <aliceVision/sfm/sfm.hpp>
 #include <aliceVision/graph/graph.hpp>
 #include <aliceVision/config.hpp>
@@ -46,6 +48,7 @@ using namespace aliceVision::image;
 using namespace aliceVision::matching;
 using namespace aliceVision::lInfinity;
 using namespace aliceVision::sfm;
+using namespace aliceVision::sfmData;
 
 typedef feature::SIOPointFeature FeatureT;
 typedef vector<FeatureT> featsT;
@@ -451,7 +454,7 @@ bool ColorHarmonizationEngineGlobal::ReadInputData()
 
   // a. Read input scenes views
   SfMData sfmData;
-  if(!Load(sfmData, _sfmDataFilename, ESfMData::VIEWS))
+  if(!sfmDataIO::Load(sfmData, _sfmDataFilename, sfmDataIO::ESfMData::VIEWS))
   {
     std::cerr << "The input file \""<< _sfmDataFilename << "\" cannot be read" << std::endl;
     return false;

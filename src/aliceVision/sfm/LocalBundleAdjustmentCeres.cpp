@@ -66,7 +66,7 @@ LocalBundleAdjustmentCeres::LocalBundleAdjustmentCeres(const LocalBundleAdjustme
     _LBAStatistics(newReconstructedViews, localBA_data.getDistancesHistogram())
 {}
 
-bool LocalBundleAdjustmentCeres::Adjust(SfMData& sfm_data, const LocalBundleAdjustmentData& localBA_data)
+bool LocalBundleAdjustmentCeres::Adjust(sfmData::SfMData& sfm_data, const LocalBundleAdjustmentData& localBA_data)
 {
   //----------
   // Steps:
@@ -107,12 +107,12 @@ bool LocalBundleAdjustmentCeres::Adjust(SfMData& sfm_data, const LocalBundleAdju
   {             
     IndexT landmarkId = landmarkIt.first;
     
-    const Observations & observations = landmarkIt.second.observations;
+    const sfmData::Observations & observations = landmarkIt.second.observations;
     // Iterate over 2D observation associated to the 3D landmark
-    for (const auto& observationIt: observations)
+    for(const auto& observationIt: observations)
     {
       // Build the residual block corresponding to the track observation:
-      const View * view = sfm_data.views.at(observationIt.first).get();
+      const sfmData::View * view = sfm_data.views.at(observationIt.first).get();
       IndexT intrinsicId = view->getIntrinsicId();
       IndexT poseId = view->getPoseId();
       
@@ -300,18 +300,18 @@ bool LocalBundleAdjustmentCeres::exportStatistics(const std::string& dir, const 
 }
 
 std::map<IndexT, std::vector<double> > LocalBundleAdjustmentCeres::addPosesToCeresProblem(
-    const Poses & poses,
+    const sfmData::Poses & poses,
     ceres::Problem & problem)
 {
   // Data wrapper for refinement:
   std::map<IndexT, std::vector<double> > map_poses;
   
   // Setup Poses data 
-  for (Poses::const_iterator itPose = poses.begin(); itPose != poses.end(); ++itPose)
+  for (sfmData::Poses::const_iterator itPose = poses.begin(); itPose != poses.end(); ++itPose)
   {
     const IndexT poseId = itPose->first;
     
-    const CameraPose& cameraPose = itPose->second;
+    const sfmData::CameraPose& cameraPose = itPose->second;
     const Mat3& R = cameraPose.getTransform().rotation();
     const Vec3& t = cameraPose.getTransform().translation();
     
@@ -335,7 +335,7 @@ std::map<IndexT, std::vector<double> > LocalBundleAdjustmentCeres::addPosesToCer
 }
 
 std::map<IndexT, std::vector<double>> LocalBundleAdjustmentCeres::addIntrinsicsToCeresProblem(
-    const SfMData & sfm_data,
+    const sfmData::SfMData & sfm_data,
     ceres::Problem & problem)
 {
   std::map<IndexT, std::size_t> intrinsicsUsage;
@@ -344,7 +344,7 @@ std::map<IndexT, std::vector<double>> LocalBundleAdjustmentCeres::addIntrinsicsT
   // Count the number of reconstructed views per intrinsic
   for(const auto& itView: sfm_data.getViews())
   {
-    const View* view = itView.second.get();
+    const sfmData::View* view = itView.second.get();
     if (sfm_data.isPoseAndIntrinsicDefined(view))
     {
       if(intrinsicsUsage.find(view->getIntrinsicId()) == intrinsicsUsage.end())
@@ -459,9 +459,9 @@ bool LocalBundleAdjustmentCeres::solveBA(
 void LocalBundleAdjustmentCeres::updateCameraPoses(
     const std::map<IndexT, std::vector<double>> & map_poseblocks,
     const LocalBundleAdjustmentData& localBA_data,
-    Poses & poses)
+    sfmData::Poses & poses)
 {
-  for (Poses::iterator itPose = poses.begin();
+  for (sfmData::Poses::iterator itPose = poses.begin();
        itPose != poses.end(); ++itPose)
   {
     const IndexT poseId = itPose->first;
@@ -487,7 +487,7 @@ void LocalBundleAdjustmentCeres::updateCameraPoses(
 void LocalBundleAdjustmentCeres::updateCameraIntrinsics(
     const std::map<IndexT, std::vector<double>> & map_intrinsicblocks,
     const LocalBundleAdjustmentData& localBA_data, 
-    Intrinsics & intrinsics)
+    sfmData::Intrinsics & intrinsics)
 {
   for (const auto& intrinsicsV: map_intrinsicblocks)
   {

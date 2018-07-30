@@ -9,7 +9,7 @@
 
 #include <aliceVision/types.hpp>
 #include <aliceVision/system/Logger.hpp>
-#include <aliceVision/sfm/SfMData.hpp>
+#include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/matching/IndMatch.hpp>
 #include <aliceVision/matching/io.hpp>
 
@@ -31,7 +31,7 @@ namespace sfm {
  */
 inline bool loadPairwiseMatches(
     matching::PairwiseMatches& out_pairwiseMatches,
-    const SfMData& sfmData,
+    const sfmData::SfMData& sfmData,
     const std::vector<std::string>& folders,
     const std::vector<feature::EImageDescriberType>& descTypes,
     const int maxNbMatches = 0,

@@ -5,15 +5,15 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
-#include "aliceVision/sfm/pipeline/structureFromKnownPoses/StructureEstimationFromKnownPoses.hpp"
-#include "aliceVision/matching/IndMatch.hpp"
-#include "aliceVision/matching/metric.hpp"
-#include "aliceVision/robustEstimation/guidedMatching.hpp"
-#include "aliceVision/multiview/fundamentalKernelSolver.hpp"
-#include "aliceVision/multiview/triangulation/Triangulation.hpp"
-#include "aliceVision/graph/graph.hpp"
-#include "aliceVision/track/Track.hpp"
-#include "aliceVision/sfm/sfmDataTriangulation.hpp"
+#include "StructureEstimationFromKnownPoses.hpp"
+#include <aliceVision/matching/IndMatch.hpp>
+#include <aliceVision/matching/metric.hpp>
+#include <aliceVision/robustEstimation/guidedMatching.hpp>
+#include <aliceVision/multiview/fundamentalKernelSolver.hpp>
+#include <aliceVision/multiview/triangulation/Triangulation.hpp>
+#include <aliceVision/graph/graph.hpp>
+#include <aliceVision/track/Track.hpp>
+#include <aliceVision/sfm/sfmTriangulation.hpp>
 #include <aliceVision/config.hpp>
 
 #include <boost/progress.hpp>
@@ -21,10 +21,10 @@
 namespace aliceVision {
 namespace sfm {
 
-using namespace camera;
-using namespace feature;
-using namespace geometry;
-
+using namespace aliceVision::camera;
+using namespace aliceVision::feature;
+using namespace aliceVision::geometry;
+using namespace aliceVision::sfmData;
 
 /// Camera pair epipole (Projection of camera center 2 in the image plane 1)
 inline Vec3 epipole_from_P(const Mat34& P1, const Pose3& P2)
@@ -59,21 +59,21 @@ void PointsToMat(
 
 /// Use geometry of the views to compute a putative structure from features and descriptors.
 void StructureEstimationFromKnownPoses::run(
-  SfMData & sfm_data,
-  const PairSet & pairs,
+  SfMData& sfmData,
+  const PairSet& pairs,
   const feature::RegionsPerView& regionsPerView)
 {
-  sfm_data.structure.clear();
+  sfmData.structure.clear();
 
-  match(sfm_data, pairs, regionsPerView);
-  filter(sfm_data, pairs, regionsPerView);
-  triangulate(sfm_data, regionsPerView);
+  match(sfmData, pairs, regionsPerView);
+  filter(sfmData, pairs, regionsPerView);
+  triangulate(sfmData, regionsPerView);
 }
 
 /// Use guided matching to find corresponding 2-view correspondences
 void StructureEstimationFromKnownPoses::match(
-  const SfMData & sfm_data,
-  const PairSet & pairs,
+  const SfMData& sfmData,
+  const PairSet& pairs,
   const feature::RegionsPerView& regionsPerView)
 {
   boost::progress_display my_progress_bar( pairs.size(), std::cout,
@@ -90,15 +90,15 @@ void StructureEstimationFromKnownPoses::match(
     // Use the computed model to check valid correspondences
     // - by considering geometric error and descriptor distance ratio.
 
-    const View * viewL = sfm_data.getViews().at(it->first).get();
-    const Pose3 poseL = sfm_data.getPose(*viewL).getTransform();
-    const Intrinsics::const_iterator iterIntrinsicL = sfm_data.getIntrinsics().find(viewL->getIntrinsicId());
-    const View * viewR = sfm_data.getViews().at(it->second).get();
-    const Pose3 poseR = sfm_data.getPose(*viewR).getTransform();
-    const Intrinsics::const_iterator iterIntrinsicR = sfm_data.getIntrinsics().find(viewR->getIntrinsicId());
+    const View * viewL = sfmData.getViews().at(it->first).get();
+    const Pose3 poseL = sfmData.getPose(*viewL).getTransform();
+    const Intrinsics::const_iterator iterIntrinsicL = sfmData.getIntrinsics().find(viewL->getIntrinsicId());
+    const View * viewR = sfmData.getViews().at(it->second).get();
+    const Pose3 poseR = sfmData.getPose(*viewR).getTransform();
+    const Intrinsics::const_iterator iterIntrinsicR = sfmData.getIntrinsics().find(viewR->getIntrinsicId());
 
-    if (sfm_data.getIntrinsics().count(viewL->getIntrinsicId()) != 0 ||
-        sfm_data.getIntrinsics().count(viewR->getIntrinsicId()) != 0)
+    if (sfmData.getIntrinsics().count(viewL->getIntrinsicId()) != 0 ||
+        sfmData.getIntrinsics().count(viewR->getIntrinsicId()) != 0)
     {
       const Mat34 P_L = iterIntrinsicL->second.get()->get_projective_equivalent(poseL);
       const Mat34 P_R = iterIntrinsicR->second.get()->get_projective_equivalent(poseR);
@@ -158,8 +158,8 @@ void StructureEstimationFromKnownPoses::match(
 
 /// Filter inconsistent correspondences by using 3-view correspondences on view triplets
 void StructureEstimationFromKnownPoses::filter(
-  const SfMData & sfm_data,
-  const PairSet & pairs,
+  const SfMData& sfmData,
+  const PairSet& pairs,
   const feature::RegionsPerView& regionsPerView)
 {
   // Compute triplets
@@ -211,9 +211,9 @@ void StructureEstimationFromKnownPoses::filter(
             {
               const size_t imaIndex = iter->first;
               const size_t featIndex = iter->second;
-              const View * view = sfm_data.getViews().at(imaIndex).get();
-              const IntrinsicBase * cam = sfm_data.getIntrinsics().at(view->getIntrinsicId()).get();
-              const Pose3 pose = sfm_data.getPose(*view).getTransform();
+              const View * view = sfmData.getViews().at(imaIndex).get();
+              const IntrinsicBase * cam = sfmData.getIntrinsics().at(view->getIntrinsicId()).get();
+              const Pose3 pose = sfmData.getPose(*view).getTransform();
               const Vec2 pt = regionsPerView.getRegions(imaIndex, subTrack.descType).GetRegionPosition(featIndex);
               trianObj.add(cam->get_projective_equivalent(pose), cam->get_ud_pixel(pt));
             }
@@ -244,7 +244,7 @@ void StructureEstimationFromKnownPoses::filter(
 
 /// Init & triangulate landmark observations from validated 3-view correspondences
 void StructureEstimationFromKnownPoses::triangulate(
-  SfMData & sfm_data,
+  SfMData& sfmData,
   const feature::RegionsPerView& regionsPerView)
 {
   track::TracksMap map_tracksCommon;
@@ -255,10 +255,10 @@ void StructureEstimationFromKnownPoses::triangulate(
   matching::PairwiseMatches().swap(_tripletMatches);
 
   // Generate new Structure tracks
-  sfm_data.structure.clear();
+  sfmData.structure.clear();
 
   // Fill sfm_data with the computed tracks (no 3D yet)
-  Landmarks & structure = sfm_data.structure;
+  Landmarks & structure = sfmData.structure;
   IndexT idx(0);
   for (track::TracksMap::const_iterator itTracks = map_tracksCommon.begin();
     itTracks != map_tracksCommon.end();
@@ -278,7 +278,7 @@ void StructureEstimationFromKnownPoses::triangulate(
 
   // Triangulate them using a robust triangulation scheme
   StructureComputation_robust structure_estimator(true);
-  structure_estimator.triangulate(sfm_data);
+  structure_estimator.triangulate(sfmData);
 }
 
 } // namespace sfm

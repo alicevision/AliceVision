@@ -22,7 +22,6 @@
 #define ALICEVISION_SOFTWARE_VERSION_MAJOR 1
 #define ALICEVISION_SOFTWARE_VERSION_MINOR 0
 
-using namespace std;
 using namespace aliceVision;
 
 namespace po = boost::program_options;

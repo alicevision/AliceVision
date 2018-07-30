@@ -5,7 +5,7 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "descriptorLoader.hpp"
-#include <aliceVision/sfm/sfmDataIO.hpp>
+#include <aliceVision/sfmDataIO/sfmDataIO.hpp>
 #include <aliceVision/system/Logger.hpp>
 
 #include <boost/algorithm/string/predicate.hpp>
@@ -55,7 +55,7 @@ void getInfoBinFile(const std::string &path, int dim, size_t &numDescriptors, in
   }
 }
 
-void getListOfDescriptorFiles(const sfm::SfMData& sfmData, const std::vector<std::string>& featuresFolders, std::map<IndexT, std::string>& descriptorsFiles)
+void getListOfDescriptorFiles(const sfmData::SfMData& sfmData, const std::vector<std::string>& featuresFolders, std::map<IndexT, std::string>& descriptorsFiles)
 {
   namespace bfs = boost::filesystem;
 

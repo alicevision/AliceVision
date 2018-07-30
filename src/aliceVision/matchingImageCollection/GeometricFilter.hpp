@@ -39,7 +39,7 @@ using namespace aliceVision::matching;
 template<typename GeometryFunctor>
 void robustModelEstimation(
   PairwiseMatches& out_geometricMatches,
-  const sfm::SfMData* sfmData,
+  const sfmData::SfMData* sfmData,
   const feature::RegionsPerView& regionsPerView,
   const GeometryFunctor& functor,
   const PairwiseMatches& putativeMatches,

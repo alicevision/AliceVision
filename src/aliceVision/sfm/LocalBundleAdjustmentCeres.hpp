@@ -8,6 +8,7 @@
 
 #include <aliceVision/sfm/BundleAdjustmentCeres.hpp>
 #include <aliceVision/sfm/LocalBundleAdjustmentData.hpp>
+#include <aliceVision/sfmData/SfMData.hpp>
 
 namespace aliceVision {
 namespace sfm {
@@ -94,7 +95,7 @@ public :
   /// @param[in] localBA_data contains all the information about the Local BA approach, notably
   /// the state of each parameter of the solver (refined, constant, ignored)
   /// @return \c false if the refinement failed else \c true
-  bool Adjust(SfMData & sfm_data, const LocalBundleAdjustmentData& localBA_data);
+  bool Adjust(sfmData::SfMData& sfm_data, const LocalBundleAdjustmentData& localBA_data);
   
   /// @brief Export statistics about bundle adjustment in a TXT file  \a BaStats_<nameComplement>.txt
   /// The contents of the file have been writen such that it is easy to handle it with
@@ -114,7 +115,7 @@ private:
   /// @param[in] problem The Ceres problem
   /// @return The map including all the poses blocks added to the Ceres problem
   std::map<IndexT, std::vector<double>> addPosesToCeresProblem(
-      const Poses & poses, 
+      const sfmData::Poses & poses,
       ceres::Problem & problem);
   
   /// @brief Create a parameter block for each intrinsic according to the Ceres format
@@ -122,7 +123,7 @@ private:
   /// @param[in] problem The Ceres problem
   /// @return The map including all the intrinsics blocks added to the Ceres problem
   std::map<IndexT, std::vector<double>> addIntrinsicsToCeresProblem(
-      const SfMData & sfm_data, 
+      const sfmData::SfMData & sfm_data,
       ceres::Problem & problem);
   
   /// @brief Run the Ceres solver
@@ -142,7 +143,7 @@ private:
   void updateCameraPoses(
       const std::map<IndexT, std::vector<double>> & map_poseblocks, 
       const LocalBundleAdjustmentData & localBA_data,
-      Poses & poses);
+      sfmData::Poses & poses);
   
   /// @brief Update camera intrinsics with refined data
   /// @param[in] map_intrinsicblocks The refined blocks
@@ -151,7 +152,7 @@ private:
   void updateCameraIntrinsics(
       const std::map<IndexT, std::vector<double>> & map_intrinsicblocks,
       const LocalBundleAdjustmentData & localBA_data,
-      Intrinsics & intrinsics);
+      sfmData::Intrinsics & intrinsics);
 };
 
 } // namespace sfm

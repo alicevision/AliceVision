@@ -10,6 +10,11 @@
 #include <aliceVision/stl/bitmask.hpp>
 
 namespace aliceVision {
+
+namespace sfmData {
+class SfMData;
+} // namespace sfmData
+
 namespace sfm {
 
 enum BA_Refine
@@ -36,13 +41,11 @@ class BundleAdjustment
   /**
    * @brief Perform a Bundle Adjustment on the SfM scene with refinement of the requested parameters
    * 
-   * @param[in,out] sfm_data: sfm data scene to modify with the BA
+   * @param[in,out] sfmData: sfmData scene to modify with the BA
    * @param[in] refineOptions: choose what you want to refine
    * @return 
    */
-  virtual bool Adjust(
-    SfMData & sfm_data,
-    BA_Refine refineOptions = BA_REFINE_ALL) = 0;
+  virtual bool Adjust(sfmData::SfMData& sfmData, BA_Refine refineOptions = BA_REFINE_ALL) = 0;
 
   // TODO: Use filter to say wich parameter is const or not (allow to refine only a subpart of the intrinsics or the poses)
 };

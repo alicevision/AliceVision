@@ -5,8 +5,8 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
-#include <aliceVision/sfm/SfMData.hpp>
-#include <aliceVision/sfm/sfmDataIO.hpp>
+#include <aliceVision/sfmData/SfMData.hpp>
+#include <aliceVision/sfmDataIO/sfmDataIO.hpp>
 #include <aliceVision/sfm/pipeline/regionsIO.hpp>
 #include <aliceVision/sfm/pipeline/ReconstructionEngine.hpp>
 #include <aliceVision/feature/FeaturesPerView.hpp>
@@ -48,6 +48,7 @@ using namespace aliceVision::feature;
 using namespace aliceVision::matching;
 using namespace aliceVision::robustEstimation;
 using namespace aliceVision::sfm;
+using namespace aliceVision::sfmData;
 using namespace aliceVision::matchingImageCollection;
 using namespace std;
 
@@ -241,7 +242,7 @@ int main(int argc, char **argv)
   // a. Load SfMData (image view & intrinsics data)
 
   SfMData sfmData;
-  if(!Load(sfmData, sfmDataFilename, ESfMData(VIEWS|INTRINSICS)))
+  if(!sfmDataIO::Load(sfmData, sfmDataFilename, sfmDataIO::ESfMData(sfmDataIO::VIEWS|sfmDataIO::INTRINSICS)))
   {
     ALICEVISION_LOG_ERROR("The input SfMData file '" << sfmDataFilename << "' cannot be read.");
     return EXIT_FAILURE;

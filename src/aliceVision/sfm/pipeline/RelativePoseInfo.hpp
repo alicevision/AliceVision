@@ -7,8 +7,8 @@
 
 #pragma once
 
-#include "aliceVision/numeric/numeric.hpp"
-#include "aliceVision/geometry/Pose3.hpp"
+#include <aliceVision/numeric/numeric.hpp>
+#include <aliceVision/geometry/Pose3.hpp>
 
 #include <vector>
 

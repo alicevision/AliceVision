@@ -56,6 +56,8 @@ alicevision_add_software(aliceVision_utils_frustumFiltering
         aliceVision_feature
         aliceVision_matchingImageCollection
         aliceVision_sfm
+        aliceVision_sfmData
+        aliceVision_sfmDataIO
         ${Boost_LIBRARIES}
 )
 
@@ -64,7 +66,8 @@ if(ALICEVISION_HAVE_ALEMBIC)
   alicevision_add_software(aliceVision_utils_rigTransform
     SOURCE main_rigTransform.cpp
     FOLDER ${FOLDER_SOFTWARE_UTILS}
-    LINKS aliceVision_sfm
+    LINKS aliceVision_sfmData
+          aliceVision_sfmDataIO
           aliceVision_localization
           aliceVision_dataio
           aliceVision_rig
@@ -79,7 +82,8 @@ alicevision_add_software(aliceVision_utils_qualityEvaluation
   FOLDER ${FOLDER_SOFTWARE_UTILS}
   LINKS aliceVision_system
         aliceVision_feature
-        aliceVision_sfm
+        aliceVision_sfmData
+        aliceVision_sfmDataIO
         ${Boost_LIBRARIES}
 )
 
@@ -90,6 +94,8 @@ alicevision_add_software(aliceVision_utils_sfmAlignment
   LINKS aliceVision_system
         aliceVision_feature
         aliceVision_sfm
+        aliceVision_sfmData
+        aliceVision_sfmDataIO
         ${Boost_LIBRARIES}
 )
 
@@ -100,6 +106,8 @@ alicevision_add_software(aliceVision_utils_sfmTransform
   LINKS aliceVision_system
         aliceVision_feature
         aliceVision_sfm
+        aliceVision_sfmData
+        aliceVision_sfmDataIO
         ${Boost_LIBRARIES}
 )
 
@@ -113,6 +121,8 @@ alicevision_add_software(aliceVision_utils_sfmColorHarmonize
         aliceVision_feature
         aliceVision_kvld
         aliceVision_sfm
+        aliceVision_sfmData
+        aliceVision_sfmDataIO
         aliceVision_colorHarmonization
         ${CLP_LIBRARIES}
         ${COINUTILS_LIBRARY}
@@ -127,6 +137,8 @@ alicevision_add_software(aliceVision_utils_sfmLocalization
   LINKS aliceVision_system
         aliceVision_feature
         aliceVision_sfm
+        aliceVision_sfmData
+        aliceVision_sfmDataIO
         ${Boost_LIBRARIES}
 )
 

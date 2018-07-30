@@ -32,7 +32,7 @@ namespace voctree {
  * @return the number of overall features read
  */
 template<class DescriptorT, class VocDescriptorT>
-std::size_t populateDatabase(const sfm::SfMData& sfmData,
+std::size_t populateDatabase(const sfmData::SfMData& sfmData,
                              const std::vector<std::string>& featuresFolders,
                              const VocabularyTree<VocDescriptorT>& tree,
                              Database& db,
@@ -54,7 +54,7 @@ std::size_t populateDatabase(const sfm::SfMData& sfmData,
  * @see queryDatabase()
  */
 template<class DescriptorT, class VocDescriptorT>
-void queryDatabase(const sfm::SfMData& sfmData,
+void queryDatabase(const sfmData::SfMData& sfmData,
                    const std::vector<std::string>& featuresFolders,
                    const VocabularyTree<VocDescriptorT>& tree,
                    const Database& db,
@@ -79,7 +79,7 @@ void queryDatabase(const sfm::SfMData& sfmData,
  * @param[in] Nmax The maximum number of features loaded in each desc file. For Nmax = 0 (default), all the descriptors are loaded.
  */
 template<class DescriptorT, class VocDescriptorT>
-void queryDatabase(const sfm::SfMData& sfmData,
+void queryDatabase(const sfmData::SfMData& sfmData,
                    const std::vector<std::string>& featuresFolders,
                    const VocabularyTree<VocDescriptorT>& tree,
                    const Database& db,
@@ -101,7 +101,7 @@ void queryDatabase(const sfm::SfMData& sfmData,
  * @see queryDatabase()
  */
 template<class DescriptorT, class VocDescriptorT>
-void voctreeStatistics(const sfm::SfMData& sfmData,
+void voctreeStatistics(const sfmData::SfMData& sfmData,
                        const std::vector<std::string>& featuresFolders,
                        const VocabularyTree<VocDescriptorT>& tree,
                        const Database& db,

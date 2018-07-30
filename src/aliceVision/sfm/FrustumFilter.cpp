@@ -7,6 +7,7 @@
 
 #include <aliceVision/sfm/FrustumFilter.hpp>
 #include <aliceVision/sfm/sfm.hpp>
+#include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/stl/mapUtils.hpp>
 #include <aliceVision/types.hpp>
 #include <aliceVision/geometry/HalfPlane.hpp>
@@ -24,30 +25,29 @@ using namespace aliceVision::geometry;
 using namespace aliceVision::geometry::halfPlane;
 
 // Constructor
-FrustumFilter::FrustumFilter(const SfMData & sfm_data,
-  const double zNear, const double zFar)
+FrustumFilter::FrustumFilter(const sfmData::SfMData& sfmData, const double zNear, const double zFar)
 {
   //-- Init Z_Near & Z_Far for all valid views
-  init_z_near_z_far_depth(sfm_data, zNear, zFar);
-  const bool bComputed_Z = (zNear == -1. && zFar == -1.) && !sfm_data.structure.empty();
+  init_z_near_z_far_depth(sfmData, zNear, zFar);
+  const bool bComputed_Z = (zNear == -1. && zFar == -1.) && !sfmData.structure.empty();
   _bTruncated = (zNear != -1. && zFar != -1.) || bComputed_Z;
-  initFrustum(sfm_data);
+  initFrustum(sfmData);
 }
 
 // Init a frustum for each valid views of the SfM scene
-void FrustumFilter::initFrustum(const SfMData & sfm_data)
+void FrustumFilter::initFrustum(const sfmData::SfMData& sfmData)
 {
   for (NearFarPlanesT::const_iterator it = z_near_z_far_perView.begin();
       it != z_near_z_far_perView.end(); ++it)
   {
-    const View * view = sfm_data.getViews().at(it->first).get();
-    if (!sfm_data.isPoseAndIntrinsicDefined(view))
+    const sfmData::View * view = sfmData.getViews().at(it->first).get();
+    if (!sfmData.isPoseAndIntrinsicDefined(view))
       continue;
-    Intrinsics::const_iterator iterIntrinsic = sfm_data.getIntrinsics().find(view->getIntrinsicId());
+    sfmData::Intrinsics::const_iterator iterIntrinsic = sfmData.getIntrinsics().find(view->getIntrinsicId());
     if (!isPinhole(iterIntrinsic->second.get()->getType()))
       continue;
 
-    const Pose3 pose = sfm_data.getPose(*view).getTransform();
+    const Pose3 pose = sfmData.getPose(*view).getTransform();
 
     const Pinhole * cam = dynamic_cast<const Pinhole*>(iterIntrinsic->second.get());
     if (cam == nullptr)
@@ -113,8 +113,8 @@ bool FrustumFilter::export_Ply(const std::string & filename) const
     return false;
   // Vertex count evaluation
   // Faces count evaluation
-  size_t vertex_count = 0;
-  size_t face_count = 0;
+  std::size_t vertex_count = 0;
+  std::size_t face_count = 0;
   for (FrustumsT::const_iterator it = frustum_perView.begin();
     it != frustum_perView.end(); ++it)
   {
@@ -180,30 +180,29 @@ bool FrustumFilter::export_Ply(const std::string & filename) const
   return bOk;
 }
 
-void FrustumFilter::init_z_near_z_far_depth(const SfMData & sfm_data,
-  const double zNear, const double zFar)
+void FrustumFilter::init_z_near_z_far_depth(const sfmData::SfMData& sfmData, const double zNear, const double zFar)
 {
   // If z_near & z_far are -1 and structure if not empty,
   //  compute the values for each camera and the structure
-  const bool bComputed_Z = (zNear == -1. && zFar == -1.) && !sfm_data.structure.empty();
-  if (bComputed_Z)  // Compute the near & far planes from the structure and view observations
+  const bool bComputed_Z = (zNear == -1. && zFar == -1.) && !sfmData.structure.empty();
+  if(bComputed_Z)  // Compute the near & far planes from the structure and view observations
   {
-    for (Landmarks::const_iterator itL = sfm_data.getLandmarks().begin();
-      itL != sfm_data.getLandmarks().end(); ++itL)
+    for(sfmData::Landmarks::const_iterator itL = sfmData.getLandmarks().begin();
+      itL != sfmData.getLandmarks().end(); ++itL)
     {
-      const Landmark & landmark = itL->second;
+      const sfmData::Landmark & landmark = itL->second;
       const Vec3 & X = landmark.X;
-      for (Observations::const_iterator iterO = landmark.observations.begin();
+      for(sfmData::Observations::const_iterator iterO = landmark.observations.begin();
         iterO != landmark.observations.end(); ++iterO)
       {
         const IndexT id_view = iterO->first;
-        const Observation & ob = iterO->second;
-        const View * view = sfm_data.getViews().at(id_view).get();
-        if (!sfm_data.isPoseAndIntrinsicDefined(view))
+        const sfmData::Observation & ob = iterO->second;
+        const sfmData::View * view = sfmData.getViews().at(id_view).get();
+        if (!sfmData.isPoseAndIntrinsicDefined(view))
           continue;
 
-        Intrinsics::const_iterator iterIntrinsic = sfm_data.getIntrinsics().find(view->getIntrinsicId());
-        const Pose3 pose = sfm_data.getPose(*view).getTransform();
+        sfmData::Intrinsics::const_iterator iterIntrinsic = sfmData.getIntrinsics().find(view->getIntrinsicId());
+        const Pose3 pose = sfmData.getPose(*view).getTransform();
         const double z = pose.depth(X);
         NearFarPlanesT::iterator itZ = z_near_z_far_perView.find(id_view);
         if (itZ != z_near_z_far_perView.end())
@@ -222,11 +221,11 @@ void FrustumFilter::init_z_near_z_far_depth(const SfMData & sfm_data,
   else
   {
     // Init the same near & far limit for all the valid views
-    for (Views::const_iterator it = sfm_data.getViews().begin();
-    it != sfm_data.getViews().end(); ++it)
+    for(sfmData::Views::const_iterator it = sfmData.getViews().begin();
+    it != sfmData.getViews().end(); ++it)
     {
-      const View * view = it->second.get();
-      if (!sfm_data.isPoseAndIntrinsicDefined(view))
+      const sfmData::View * view = it->second.get();
+      if(!sfmData.isPoseAndIntrinsicDefined(view))
         continue;
       z_near_z_far_perView[view->getViewId()] = std::make_pair(zNear, zFar);
     }

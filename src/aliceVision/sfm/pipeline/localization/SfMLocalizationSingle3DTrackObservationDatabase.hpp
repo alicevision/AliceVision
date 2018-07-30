@@ -7,9 +7,9 @@
 
 #pragma once
 
-#include "aliceVision/feature/FeaturesPerView.hpp"
-#include "aliceVision/sfm/pipeline/localization/SfMLocalizer.hpp"
-#include "aliceVision/matching/RegionsMatcher.hpp"
+#include <aliceVision/sfm/pipeline/localization/SfMLocalizer.hpp>
+#include <aliceVision/feature/FeaturesPerView.hpp>
+#include <aliceVision/matching/RegionsMatcher.hpp>
 
 namespace aliceVision {
 namespace sfm {
@@ -29,45 +29,40 @@ public:
   /**
   * @brief Build the retrieval database (3D points descriptors)
   *
-  * @param[in] sfm_data the SfM scene that have to be described
+  * @param[in] sfmData the SfM scene that have to be described
   * @param[in] regionPerView regions provider
   * @return True if the database has been correctly setup
   */
-  bool Init
-  (
-    const SfMData & sfm_data,
-    const feature::RegionsPerView & regionsPerView
-  );
+  bool Init(const sfmData::SfMData& sfmData,
+            const feature::RegionsPerView& regionsPerView);
 
   /**
   * @brief Try to localize an image in the database
   *
-  * @param[in] image_size the w,h image size
-  * @param[in] optional_intrinsics camera intrinsic if known (else nullptr)
-  * @param[in] query_regions the image regions (type must be the same as the database)
+  * @param[in] imageSize the w,h image size
+  * @param[in] optionalIntrinsics camera intrinsic if known (else nullptr)
+  * @param[in] queryRegions the image regions (type must be the same as the database)
   * @param[out] pose found pose
-  * @param[out] resection_data matching data (2D-3D and inliers; optional)
+  * @param[out] resectionData matching data (2D-3D and inliers; optional)
   * @return True if a putative pose has been estimated
   */
-  bool Localize
-  (
-    const Pair & image_size,
-    const camera::IntrinsicBase * optional_intrinsics,
-    const feature::Regions & query_regions,
-    geometry::Pose3 & pose,
-    ImageLocalizerMatchData * resection_data_ptr = nullptr // optional
-  ) const;
+  bool Localize(const Pair& imageSize,
+                const camera::IntrinsicBase* optionalIntrinsics,
+                const feature::Regions& queryRegions,
+                geometry::Pose3& pose,
+                ImageLocalizerMatchData* resectionDataPtr = nullptr // optional
+                ) const;
 
 private:
   // Reference to the scene
-  const SfMData * sfm_data_;
+  const sfmData::SfMData* _sfmData;
   /// Association of a regions to a landmark observation
-  std::unique_ptr<feature::Regions> landmark_observations_descriptors_;
+  std::unique_ptr<feature::Regions> _landmarkObservationsDescriptors;
   /// Association of a track observation to a track Id (used for retrieval)
-  std::vector<IndexT> index_to_landmark_id_;
+  std::vector<IndexT> _indexToLandmarkId;
   /// A matching interface to find matches between 2D descriptor matches
   ///  and 3D points observation descriptors
-  std::unique_ptr<matching::RegionsDatabaseMatcher> matching_interface_;
+  std::unique_ptr<matching::RegionsDatabaseMatcher> _matchingInterface;
 };
 
 } // namespace sfm

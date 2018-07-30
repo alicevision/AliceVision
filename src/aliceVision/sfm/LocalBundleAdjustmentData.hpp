@@ -8,9 +8,13 @@
 
 #include <aliceVision/types.hpp>
 #include <aliceVision/track/Track.hpp>
-#include <aliceVision/sfm/SfMData.hpp>
 
 namespace aliceVision {
+
+namespace sfmData {
+class SfMData;
+} // namespace sfmData
+
 namespace sfm {
 
 /// Contains all the data needed to apply a Local Bundle Adjustment.
@@ -26,7 +30,7 @@ public:
     ignored   ///< will not be set into the BA solver
   };
 
-  explicit LocalBundleAdjustmentData(const SfMData& sfm_data);
+  explicit LocalBundleAdjustmentData(const sfmData::SfMData& sfm_data);
 
   /// Return the number of posed views for each graph-distance <distance, numViews>
   std::map<int, std::size_t> getDistancesHistogram() const;
@@ -81,11 +85,11 @@ public:
     
   /// @brief Set every parameters of the BA problem to Refine: the Local BA becomes a classic BA.
   /// @param[in] sfm_data contains all the data about the reconstruction.
-  void setAllParametersToRefine(const SfMData& sfm_data);
+  void setAllParametersToRefine(const sfmData::SfMData& sfm_data);
  
   /// @brief Save all the focal lengths to the memory to retain the evolution of each focal length during the reconstruction.
   /// @param[in] sfm_data contains all the information about the reconstruction, notably current focal lengths
-  void saveFocallengthsToHistory(const SfMData& sfm_data);
+  void saveFocallengthsToHistory(const sfmData::SfMData& sfm_data);
   
   /// @brief Export the history of each focal length. It create a file \a K<intrinsic_index>.txt in \c folder.
   /// @param[in] folder The folder in which the \a K*.txt files are saved.
@@ -101,7 +105,7 @@ public:
   /// @param[in] map_tracksPerView A map giving the tracks for each view
   /// @param[in] newReconstructedViews The list of the newly resected views
   /// @param[in] kMinNbOfMatches The min. number of shared matches to create an edge between two views (nodes)
-  void updateGraphWithNewViews(const SfMData& sfm_data, 
+  void updateGraphWithNewViews(const sfmData::SfMData& sfm_data,
       const track::TracksPerView& map_tracksPerView, 
       const std::set<IndexT> &newReconstructedViews, 
       const std::size_t kMinNbOfMatches = 50);
@@ -111,7 +115,7 @@ public:
   /// @details The graph-distances are computed using a Breadth-first Search (BFS) method.
   /// @param[in] sfm_data contains all the information about the reconstruction, notably the posed views
   /// @param[in] newReconstructedViews The list of the newly resected views used (used as source in the BFS algorithm)
-  void computeGraphDistances(const SfMData& sfm_data, const std::set<IndexT> &newReconstructedViews);
+  void computeGraphDistances(const sfmData::SfMData& sfm_data, const std::set<IndexT> &newReconstructedViews);
   
   /// @brief Use the graph-distances of each posed view to set each parameter of the problem (poses, intrinsics, landmarks)
   /// as Refined (will be refined during the adjustment), Constant (will be set as constant in the adjustment) 
@@ -133,7 +137,7 @@ public:
   ///       - \a Refined <=> its connected to a refined camera
   /// @param[in] sfm_data
   /// @param[in] kLimitDistance the distance of the active region
-  void convertDistancesToLBAStates(const SfMData & sfm_data);
+  void convertDistancesToLBAStates(const sfmData::SfMData & sfm_data);
    
 private:
    
@@ -166,7 +170,7 @@ private:
   /// @param[in] sfm_data 
   /// @param[in] dir 
   /// @param[in] nameComplement 
-  void drawGraph(const SfMData &sfm_data, const std::string& dir, const std::string& nameComplement = "");
+  void drawGraph(const sfmData::SfMData &sfm_data, const std::string& dir, const std::string& nameComplement = "");
 
   /// Return the number of parameters \c EParameter being in the \c EState state.
   std::size_t getNumberOf(EParameter param, EState state) const {return _parametersCounter.at(std::make_pair(param, state));}
@@ -189,7 +193,7 @@ private:
   /// @param[in] newViewsId A set with the views index that we want to count matches with resected cameras. 
   /// @return A map giving the number of matches for each images pair.
   static std::map<Pair, std::size_t> countSharedLandmarksPerImagesPair(
-      const SfMData& sfm_data,
+      const sfmData::SfMData& sfm_data,
       const track::TracksPerView& map_tracksPerView,
       const std::set<IndexT>& newViewsId);
   
@@ -206,7 +210,7 @@ private:
     
   /// @brief Add an edge in the graph when 2 views share a same intrinsic not considered as Constant
   /// @details (no longer used)
-  std::size_t addIntrinsicEdgesToTheGraph(const SfMData& sfm_data, const std::set<IndexT> &newReconstructedViews);
+  std::size_t addIntrinsicEdgesToTheGraph(const sfmData::SfMData& sfm_data, const std::set<IndexT> &newReconstructedViews);
   
   /// @brief Remove all the edges added by the \c addIntrinsicEdgesToTheGraph function.
   /// @details (no longer used)

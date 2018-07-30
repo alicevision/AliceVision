@@ -4,7 +4,8 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
-#include <aliceVision/sfm/sfmDataIO.hpp>
+#include <aliceVision/sfmData/SfMData.hpp>
+#include <aliceVision/sfmDataIO/sfmDataIO.hpp>
 #include <aliceVision/voctree/Database.hpp>
 #include <aliceVision/voctree/databaseIO.hpp>
 #include <aliceVision/voctree/VocabularyTree.hpp>
@@ -161,8 +162,8 @@ int main(int argc, char** argv)
           << tree.splits() << " branching factor");
 
   // load SfMData
-  sfm::SfMData sfmData;
-  if(!sfm::Load(sfmData, sfmDataFilename, sfm::ESfMData::ALL))
+  sfmData::SfMData sfmData;
+  if(!sfmDataIO::Load(sfmData, sfmDataFilename, sfmDataIO::ESfMData::ALL))
   {
     ALICEVISION_LOG_ERROR("The input SfMData file '" + sfmDataFilename + "' cannot be read.");
     return EXIT_FAILURE;
@@ -212,8 +213,8 @@ int main(int argc, char** argv)
 
   ALICEVISION_LOG_INFO("Getting some stats for " << querySfmDataFilename);
 
-  sfm::SfMData querySfmData;
-  if(!sfm::Load(querySfmData, querySfmDataFilename, sfm::ESfMData::ALL))
+  sfmData::SfMData querySfmData;
+  if(!sfmDataIO::Load(querySfmData, querySfmDataFilename, sfmDataIO::ESfMData::ALL))
   {
     ALICEVISION_LOG_ERROR("The input SfMData file '" + querySfmDataFilename + "' cannot be read.");
     return EXIT_FAILURE;

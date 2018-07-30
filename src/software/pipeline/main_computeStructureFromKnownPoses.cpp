@@ -5,13 +5,15 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
-#include <aliceVision/config.hpp>
+#include <aliceVision/sfmData/SfMData.hpp>
+#include <aliceVision/sfmDataIO/sfmDataIO.hpp>
 #include <aliceVision/sfm/sfm.hpp>
 #include <aliceVision/sfm/pipeline/regionsIO.hpp>
 #include <aliceVision/matching/IndMatch.hpp>
 #include <aliceVision/system/Timer.hpp>
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/cmdline.hpp>
+#include <aliceVision/config.hpp>
 
 #include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>
@@ -22,8 +24,6 @@
 #define ALICEVISION_SOFTWARE_VERSION_MINOR 0
 
 using namespace aliceVision;
-using namespace aliceVision::sfm;
-using namespace std;
 
 namespace po = boost::program_options;
 namespace fs = boost::filesystem;
@@ -100,8 +100,8 @@ int main(int argc, char **argv)
   system::Logger::get()->setLogLevel(verboseLevel);
   
   // load input SfMData scene
-  SfMData sfmData;
-  if (!Load(sfmData, sfmDataFilename, ESfMData(VIEWS|INTRINSICS|EXTRINSICS)))
+  sfmData::SfMData sfmData;
+  if(!sfmDataIO::Load(sfmData, sfmDataFilename, sfmDataIO::ESfMData(sfmDataIO::VIEWS|sfmDataIO::INTRINSICS|sfmDataIO::EXTRINSICS)))
   {
     ALICEVISION_LOG_ERROR("The input SfMData file '" << sfmDataFilename << "' cannot be read.");
     return EXIT_FAILURE;
@@ -114,7 +114,7 @@ int main(int argc, char **argv)
   std::vector<EImageDescriberType> describerMethodTypes = EImageDescriberType_stringToEnums(describerTypesName);
 
   // prepare the Regions provider
-  RegionsPerView regionsPerView;
+  feature::RegionsPerView regionsPerView;
   if(!sfm::loadRegionsPerView(regionsPerView, sfmData, featuresFolders, describerMethodTypes))
   {
     ALICEVISION_LOG_ERROR("Invalid regions.");
@@ -130,7 +130,7 @@ int main(int argc, char **argv)
   {
     // no image pair provided, so we use cameras frustum intersection.
     // build the list of connected images pairs from frustum intersections
-    pairs = FrustumFilter(sfmData).getFrustumIntersectionPairs();
+    pairs = sfm::FrustumFilter(sfmData).getFrustumIntersectionPairs();
   }
   else
   {
@@ -142,7 +142,7 @@ int main(int argc, char **argv)
     pairs = matching::getImagePairs(matches);
     // keep only Pairs that belong to valid view indexes.
     const std::set<IndexT> valid_viewIdx = sfmData.getValidViews();
-    pairs = Pair_filter(pairs, valid_viewIdx);
+    pairs = sfm::Pair_filter(pairs, valid_viewIdx);
   }
 
   aliceVision::system::Timer timer;
@@ -151,7 +151,7 @@ int main(int argc, char **argv)
   sfmData.structure.clear();
 
   // compute Structure from known camera poses
-  StructureEstimationFromKnownPoses structureEstimator;
+  sfm::StructureEstimationFromKnownPoses structureEstimator;
   structureEstimator.match(sfmData, pairs, regionsPerView);
 
   // unload descriptors before triangulation
@@ -163,19 +163,19 @@ int main(int argc, char **argv)
   // create 3D landmarks
   structureEstimator.triangulate(sfmData, regionsPerView);
 
-  RemoveOutliers_AngleError(sfmData, 2.0);
+  sfm::RemoveOutliers_AngleError(sfmData, 2.0);
 
   ALICEVISION_LOG_INFO("Structure estimation took (s): " << timer.elapsed() << "." << std::endl
     << "\t- # landmarks found: " << sfmData.getLandmarks().size());
 
   if(fs::extension(outSfMDataFilename) != ".ply")
   {
-    Save(sfmData,
+    sfmDataIO::Save(sfmData,
          (fs::path(outSfMDataFilename).parent_path() / (fs::path(outSfMDataFilename).stem().string() + ".ply")).string(),
-         ESfMData(ALL));
+         sfmDataIO::ESfMData::ALL);
   }
 
-  if(Save(sfmData, outSfMDataFilename, ESfMData::ALL))
+  if(sfmDataIO::Save(sfmData, outSfMDataFilename, sfmDataIO::ESfMData::ALL))
     return EXIT_SUCCESS;
   
   ALICEVISION_LOG_ERROR("Can't save the output SfMData.");

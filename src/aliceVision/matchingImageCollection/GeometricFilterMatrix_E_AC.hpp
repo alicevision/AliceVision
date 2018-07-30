@@ -16,7 +16,7 @@
 #include <limits>
 
 #include "aliceVision/matching/IndMatch.hpp"
-#include "aliceVision/sfm/SfMData.hpp"
+#include "aliceVision/sfmData/SfMData.hpp"
 #include "aliceVision/feature/RegionsPerView.hpp"
 #include "aliceVision/matchingImageCollection/GeometricFilterMatrix.hpp"
 
@@ -39,7 +39,7 @@ struct GeometricFilterMatrix_E_AC : public GeometricFilterMatrix
    */
   template<typename Regions_or_Features_ProviderT>
   EstimationStatus geometricEstimation(
-    const sfm::SfMData * sfmData,
+    const sfmData::SfMData * sfmData,
     const Regions_or_Features_ProviderT& regionsPerView,
     const Pair& pairIndex,
     const matching::MatchesPerDescType & putativeMatchesPerType,
@@ -58,8 +58,8 @@ struct GeometricFilterMatrix_E_AC : public GeometricFilterMatrix
       return EstimationStatus(false, false);
 
     // Reject pair with missing Intrinsic information
-    const sfm::View * view_I = sfmData->views.at(iIndex).get();
-    const sfm::View * view_J = sfmData->views.at(jIndex).get();
+    const sfmData::View * view_I = sfmData->views.at(iIndex).get();
+    const sfmData::View * view_J = sfmData->views.at(jIndex).get();
 
     // Check that valid cameras can be retrieved for the pair of views
     const camera::IntrinsicBase * cam_I = sfmData->getIntrinsicPtr(view_I->getIntrinsicId());
@@ -125,7 +125,7 @@ struct GeometricFilterMatrix_E_AC : public GeometricFilterMatrix
    */
   bool Geometry_guided_matching
   (
-    const sfm::SfMData * sfmData,
+    const sfmData::SfMData * sfmData,
     const feature::RegionsPerView& regionsPerView,
     const Pair imageIdsPair,
     const double dDistanceRatio,
@@ -137,8 +137,8 @@ struct GeometricFilterMatrix_E_AC : public GeometricFilterMatrix
       const IndexT viewId_I = imageIdsPair.first;
       const IndexT viewId_J = imageIdsPair.second;
 
-      const sfm::View * view_I = sfmData->views.at(viewId_I).get();
-      const sfm::View * view_J = sfmData->views.at(viewId_J).get();
+      const sfmData::View * view_I = sfmData->views.at(viewId_I).get();
+      const sfmData::View * view_J = sfmData->views.at(viewId_J).get();
 
       // Check that valid cameras can be retrieved for the pair of views
       const camera::IntrinsicBase * cam_I =

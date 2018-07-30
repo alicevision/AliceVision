@@ -11,7 +11,7 @@
 #include <aliceVision/sfm/LocalBundleAdjustmentData.hpp>
 #include <aliceVision/sfm/pipeline/localization/SfMLocalizer.hpp>
 #include <aliceVision/sfm/pipeline/pairwiseMatchesIO.hpp>
-#include <aliceVision/sfm/sfmDataIO.hpp>
+#include <aliceVision/sfmDataIO/sfmDataIO.hpp>
 #include <aliceVision/feature/FeaturesPerView.hpp>
 #include <aliceVision/track/Track.hpp>
 
@@ -37,7 +37,7 @@ class ReconstructionEngine_sequentialSfM : public ReconstructionEngine
 {
 public:
 
-  ReconstructionEngine_sequentialSfM(const SfMData& sfmData,
+  ReconstructionEngine_sequentialSfM(const sfmData::SfMData& sfmData,
                                      const std::string& soutDirectory,
                                      const std::string& loggingFile = "");
 
@@ -297,7 +297,7 @@ private:
    * @param previousReconstructedViews
    * @param newReconstructedViews
    */
-  void triangulate(SfMData& scene, const std::set<IndexT>& previousReconstructedViews, const std::set<IndexT>& newReconstructedViews);
+  void triangulate(sfmData::SfMData& scene, const std::set<IndexT>& previousReconstructedViews, const std::set<IndexT>& newReconstructedViews);
   
   /**
    * @brief Triangulate new possible 2D tracks
@@ -306,7 +306,7 @@ private:
    * @param[in] previousReconstructedViews The list of the old reconstructed views (views index).
    * @param[in] newReconstructedViews The list of the new reconstructed views (views index).
    */
-  void triangulateMultiViews_LORANSAC(SfMData& scene, const std::set<IndexT>& previousReconstructedViews, const std::set<IndexT>& newReconstructedViews);
+  void triangulateMultiViews_LORANSAC(sfmData::SfMData& scene, const std::set<IndexT>& previousReconstructedViews, const std::set<IndexT>& newReconstructedViews);
   
   /**
    * @brief Check if a 3D points is well located in front of a set of views.
@@ -315,7 +315,7 @@ private:
    * @param[in] scene All the data about the 3D reconstruction. 
    * @return false if the 3D points is located behind one view (or more), else \c true.
    */
-  bool checkChieralities(const Vec3& pt3D, const std::set<IndexT>& viewsId, const SfMData& scene);
+  bool checkChieralities(const Vec3& pt3D, const std::set<IndexT>& viewsId, const sfmData::SfMData& scene);
   
   /**
    * @brief Check if the maximal angle formed by a 3D points and 2 views exceeds a min. angle, among a set of views.
@@ -325,7 +325,7 @@ private:
    * @param[in] kMinAngle The angle limit.
    * @return false if the maximal angle does not exceed the limit, else \c true.
    */
-  bool checkAngles(const Vec3& pt3D, const std::set<IndexT>& viewsId, const SfMData& scene, const double& kMinAngle);
+  bool checkAngles(const Vec3& pt3D, const std::set<IndexT>& viewsId, const sfmData::SfMData& scene, const double& kMinAngle);
 
   /**
    * @brief Bundle adjustment to refine Structure; Motion and Intrinsics
@@ -350,8 +350,8 @@ private:
    * @param[out] mapTracksToTriangulate A map with the tracks to triangulate and the observations to do it.
    */
   void getTracksToTriangulate(
-      const std::set<IndexT> & previousReconstructedViews, 
-      const std::set<IndexT> & newReconstructedViews, 
+      const std::set<IndexT>& previousReconstructedViews,
+      const std::set<IndexT>& newReconstructedViews,
       std::map<IndexT, std::set<IndexT> > & mapTracksToTriangulate) const;
 
   /**
@@ -416,7 +416,11 @@ private:
   /// extension of the intermediate reconstruction files
   std::string _sfmdataInterFileExtension = ".ply";
   /// filter for the intermediate reconstruction files
-  ESfMData _sfmdataInterFilter = ESfMData(EXTRINSICS | INTRINSICS | STRUCTURE | OBSERVATIONS | CONTROL_POINTS);
+  sfmDataIO::ESfMData _sfmdataInterFilter = sfmDataIO::ESfMData(sfmDataIO::EXTRINSICS |
+                                                                sfmDataIO::INTRINSICS |
+                                                                sfmDataIO::STRUCTURE |
+                                                                sfmDataIO::OBSERVATIONS |
+                                                                sfmDataIO::CONTROL_POINTS);
 
   // Log
 

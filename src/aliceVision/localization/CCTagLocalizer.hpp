@@ -13,7 +13,7 @@
 #include <aliceVision/feature/feature.hpp>
 #include <aliceVision/feature/ImageDescriber.hpp>
 #include <aliceVision/feature/cctag/ImageDescriber_CCTAG.hpp>
-#include <aliceVision/sfm/SfMData.hpp>
+#include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/sfm/pipeline/localization/SfMLocalizer.hpp>
 #include <aliceVision/voctree/Database.hpp>
 
@@ -42,7 +42,7 @@ class CCTagLocalizer : public ILocalizer
   
 public:
   
-  CCTagLocalizer(const sfm::SfMData &sfmData,
+  CCTagLocalizer(const sfmData::SfMData &sfmData,
                  const std::string &descriptorsFolder);
    
   void setCudaPipe(int i) override;
@@ -151,7 +151,7 @@ public:
 private:
   
   bool loadReconstructionDescriptors(
-    const sfm::SfMData & sfm_data,
+    const sfmData::SfMData & sfm_data,
     const std::string & feat_directory);
   
   // for each view index, it contains the cctag features and descriptors that have an

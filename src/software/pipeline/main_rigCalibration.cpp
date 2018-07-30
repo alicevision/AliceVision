@@ -13,8 +13,8 @@
 #include <aliceVision/image/io.hpp>
 #include <aliceVision/dataio/FeedProvider.hpp>
 #include <aliceVision/feature/ImageDescriber.hpp>
-#include <aliceVision/sfm/SfMData.hpp>
-#include <aliceVision/sfm/sfmDataIO.hpp>
+#include <aliceVision/sfmData/SfMData.hpp>
+#include <aliceVision/sfmDataIO/sfmDataIO.hpp>
 #include <aliceVision/robustEstimation/estimators.hpp>
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/cmdline.hpp>
@@ -36,7 +36,7 @@
 #include <memory>
 
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_ALEMBIC)
-#include <aliceVision/sfm/AlembicExporter.hpp>
+#include <aliceVision/sfmDataIO/AlembicExporter.hpp>
 #endif // ALICEVISION_HAVE_ALEMBIC
 
 // These constants define the current software version.
@@ -255,8 +255,8 @@ int main(int argc, char** argv)
   std::unique_ptr<localization::ILocalizer> localizer;
 
   // load SfMData
-  sfm::SfMData sfmData;
-  if(!sfm::Load(sfmData, sfmFilePath, sfm::ESfMData::ALL))
+  sfmData::SfMData sfmData;
+  if(!sfmDataIO::Load(sfmData, sfmFilePath, sfmDataIO::ESfMData::ALL))
   {
     ALICEVISION_LOG_ERROR("The input SfMData file '" + sfmFilePath + "' cannot be read.");
     return EXIT_FAILURE;
@@ -312,7 +312,7 @@ int main(int argc, char** argv)
   }
 
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_ALEMBIC)
-  sfm::AlembicExporter exporter(exportFile);
+  sfmDataIO::AlembicExporter exporter(exportFile);
   exporter.addLandmarks(localizer->getSfMData().getLandmarks());
 #endif
 
@@ -389,7 +389,7 @@ int main(int argc, char** argv)
                                           localizationResult);
       assert( ok == localizationResult.isValid() );
       vLocalizationResults.emplace_back(localizationResult);
-      sfm::CameraPose pose(localizationResult.getPose());
+      sfmData::CameraPose pose(localizationResult.getPose());
       auto detect_end = std::chrono::steady_clock::now();
       auto detect_elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(detect_end - detect_start);
       ALICEVISION_COUT("Localization took  " << detect_elapsed.count() << " [ms]");
@@ -399,7 +399,7 @@ int main(int argc, char** argv)
       if(localizationResult.isValid())
       {
         exporter.addCamera("camera"+std::to_string(idCamera)+"."+myToString(currentFrame,4),
-                           sfm::View(subMediaFilepath, currentFrame, currentFrame),
+                           sfmData::View(subMediaFilepath, currentFrame, currentFrame),
                            &pose,
                            &queryIntrinsics);
       }
@@ -407,7 +407,7 @@ int main(int argc, char** argv)
       {
         // @fixme for now just add a fake camera so that it still can be see in MAYA
         exporter.addCamera("camera"+std::to_string(idCamera)+".V."+myToString(currentFrame,4),
-                           sfm::View(subMediaFilepath, currentFrame, currentFrame),
+                           sfmData::View(subMediaFilepath, currentFrame, currentFrame),
                            &pose,
                            &queryIntrinsics);
       }

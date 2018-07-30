@@ -7,8 +7,8 @@
 
 #include <aliceVision/sfm/pipeline/global/GlobalSfMTranslationAveragingSolver.hpp>
 #include <aliceVision/sfm/filters.hpp>
-#include <aliceVision/sfm/sfmDataTriangulation.hpp>
-#include <aliceVision/sfm/sfmDataIO.hpp>
+#include <aliceVision/sfm/sfmTriangulation.hpp>
+#include <aliceVision/sfmDataIO/sfmDataIO.hpp>
 #include <aliceVision/sfm/BundleAdjustmentCeres.hpp>
 #include <aliceVision/sfm/pipeline/global/reindexGlobalSfM.hpp>
 #include <aliceVision/sfm/pipeline/global/MutexSet.hpp>
@@ -32,52 +32,46 @@
 
 #include <boost/progress.hpp>
 
-namespace aliceVision{
-namespace sfm{
+namespace aliceVision {
+namespace sfm {
 
 using namespace aliceVision::camera;
 using namespace aliceVision::geometry;
+using namespace aliceVision::sfmData;
 
 /// Use features in normalized camera frames
-bool GlobalSfMTranslationAveragingSolver::Run(
-  ETranslationAveragingMethod eTranslationAveragingMethod,
-  SfMData & sfm_data,
-  const feature::FeaturesPerView & normalizedFeaturesPerView,
-  const matching::PairwiseMatches & pairwiseMatches,
-  const HashMap<IndexT, Mat3> & map_globalR,
-  matching::PairwiseMatches & tripletWise_matches
-)
+bool GlobalSfMTranslationAveragingSolver::Run(ETranslationAveragingMethod eTranslationAveragingMethod,
+                    SfMData& sfmData,
+                    const feature::FeaturesPerView& normalizedFeaturesPerView,
+                    const matching::PairwiseMatches& pairwiseMatches,
+                    const HashMap<IndexT, Mat3>& map_globalR,
+                    matching::PairwiseMatches& tripletWise_matches)
 {
   // Compute the relative translations and save them to vec_initialRijTijEstimates:
-  Compute_translations(
-    sfm_data,
-    normalizedFeaturesPerView,
-    pairwiseMatches,
-    map_globalR,
-    tripletWise_matches);
+  Compute_translations(sfmData,
+        normalizedFeaturesPerView,
+        pairwiseMatches,
+        map_globalR,
+        tripletWise_matches);
 
-  const bool b_translation = Translation_averaging(
-    eTranslationAveragingMethod,
-    sfm_data,
-    map_globalR);
+  const bool translation = Translation_averaging(eTranslationAveragingMethod, sfmData, map_globalR);
 
   // Filter matches to keep only them link to view that have valid poses
   // (necessary since multiple components exists before translation averaging)
   std::set<IndexT> valid_view_ids;
-  for (const auto & view : sfm_data.getViews())
+  for(const auto & view : sfmData.getViews())
   {
-    if (sfm_data.isPoseAndIntrinsicDefined(view.second.get()))
+    if(sfmData.isPoseAndIntrinsicDefined(view.second.get()))
       valid_view_ids.insert(view.first);
   }
   KeepOnlyReferencedElement(valid_view_ids, tripletWise_matches);
 
-  return b_translation;
+  return translation;
 }
 
-bool GlobalSfMTranslationAveragingSolver::Translation_averaging(
-  ETranslationAveragingMethod eTranslationAveragingMethod,
-  SfMData & sfm_data,
-  const HashMap<IndexT, Mat3> & map_globalR)
+bool GlobalSfMTranslationAveragingSolver::Translation_averaging(ETranslationAveragingMethod eTranslationAveragingMethod,
+                      SfMData& sfmData,
+                      const HashMap<IndexT, Mat3>& map_globalR)
 {
   //-------------------
   //-- GLOBAL TRANSLATIONS ESTIMATION from initial triplets t_ij guess
@@ -101,7 +95,7 @@ bool GlobalSfMTranslationAveragingSolver::Translation_averaging(
       "   - Ready to compute " << iNview << " global translations." << "\n"
       "     from #relative translations: " << m_vec_initialRijTijEstimates.size());
 
-    if (iNview < 3)
+    if(iNview < 3)
     {
       // Too tiny image set to perform motion averaging
       return false;
@@ -181,12 +175,12 @@ bool GlobalSfMTranslationAveragingSolver::Translation_averaging(
         ALICEVISION_LOG_DEBUG("cam Lambdas: " << vec_camRelLambdas);
 
         // Update the view poses according the found camera centers
-        for (size_t i = 0; i < iNview; ++i)
+        for(std::size_t i = 0; i < iNview; ++i)
         {
           const Vec3 t(vec_camTranslation[i*3], vec_camTranslation[i*3+1], vec_camTranslation[i*3+2]);
           const IndexT pose_id = _reindexBackward[i];
           const Mat3 & Ri = map_globalR.at(pose_id);
-          sfm_data.setAbsolutePose(pose_id, CameraPose(Pose3(Ri, -Ri.transpose()*t)));
+          sfmData.setAbsolutePose(pose_id, CameraPose(Pose3(Ri, -Ri.transpose()*t)));
         }
       }
       break;
@@ -203,12 +197,12 @@ bool GlobalSfMTranslationAveragingSolver::Translation_averaging(
 
         // A valid solution was found:
         // - Update the view poses according the found camera translations
-        for (size_t i = 0; i < iNview; ++i)
+        for (std::size_t i = 0; i < iNview; ++i)
         {
           const Vec3 & t = vec_translations[i];
           const IndexT pose_id = _reindexBackward[i];
           const Mat3 & Ri = map_globalR.at(pose_id);
-          sfm_data.setAbsolutePose(pose_id, CameraPose(Pose3(Ri, -Ri.transpose()*t)));
+          sfmData.setAbsolutePose(pose_id, CameraPose(Pose3(Ri, -Ri.transpose()*t)));
         }
       }
       break;
@@ -230,7 +224,7 @@ bool GlobalSfMTranslationAveragingSolver::Translation_averaging(
           // Since index have been remapped
           // (use the backward indexing to retrieve the second global rotation)
           const IndexT secondId = _reindexBackward[rel.first.second];
-          const View * view = sfm_data.views.at(secondId).get();
+          const View * view = sfmData.views.at(secondId).get();
           const Mat3 & Ri = map_globalR.at(view->getPoseId());
           const Vec3 direction = -(Ri.transpose() * rel.second.second.normalized());
 
@@ -262,12 +256,12 @@ bool GlobalSfMTranslationAveragingSolver::Translation_averaging(
         }
 
         // Update camera center for each view
-        for (size_t i = 0; i < iNview; ++i)
+        for(std::size_t i = 0; i < iNview; ++i)
         {
           const Vec3 C(X[i*3], X[i*3+1], X[i*3+2]);
           const IndexT pose_id = _reindexBackward[i]; // undo the reindexing
           const Mat3 & Ri = map_globalR.at(pose_id);
-          sfm_data.setAbsolutePose(pose_id, CameraPose(Pose3(Ri, C)));
+          sfmData.setAbsolutePose(pose_id, CameraPose(Pose3(Ri, C)));
         }
       }
       break;
@@ -281,12 +275,11 @@ bool GlobalSfMTranslationAveragingSolver::Translation_averaging(
   return true;
 }
 
-void GlobalSfMTranslationAveragingSolver::Compute_translations(
-  const SfMData & sfm_data,
-  const feature::FeaturesPerView & normalizedFeaturesPerView,
-  const matching::PairwiseMatches & pairwiseMatches,
-  const HashMap<IndexT, Mat3> & map_globalR,
-  matching::PairwiseMatches & tripletWise_matches)
+void GlobalSfMTranslationAveragingSolver::Compute_translations(const SfMData& sfmData,
+          const feature::FeaturesPerView & normalizedFeaturesPerView,
+          const matching::PairwiseMatches & pairwiseMatches,
+          const HashMap<IndexT, Mat3> & map_globalR,
+          matching::PairwiseMatches & tripletWise_matches)
 {
   ALICEVISION_LOG_DEBUG(
     "-------------------------------\n"
@@ -296,7 +289,7 @@ void GlobalSfMTranslationAveragingSolver::Compute_translations(
   // Compute relative translations over the graph of global rotations
   //  thanks to an edge coverage algorithm
   ComputePutativeTranslation_EdgesCoverage(
-    sfm_data,
+    sfmData,
     map_globalR,
     normalizedFeaturesPerView,
     pairwiseMatches,
@@ -306,8 +299,7 @@ void GlobalSfMTranslationAveragingSolver::Compute_translations(
 
 //-- Perform a trifocal estimation of the graph contained in vec_triplets with an
 // edge coverage algorithm. Its complexity is sub-linear in term of edges count.
-void GlobalSfMTranslationAveragingSolver::ComputePutativeTranslation_EdgesCoverage(
-  const SfMData & sfm_data,
+void GlobalSfMTranslationAveragingSolver::ComputePutativeTranslation_EdgesCoverage(const SfMData & sfmData,
   const HashMap<IndexT, Mat3> & map_globalR,
   const feature::FeaturesPerView & normalizedFeaturesPerView,
   const matching::PairwiseMatches & pairwiseMatches,
@@ -331,8 +323,8 @@ void GlobalSfMTranslationAveragingSolver::ComputePutativeTranslation_EdgesCovera
   for (const auto & match_iterator : pairwiseMatches)
   {
     const Pair pair = match_iterator.first;
-    const View * v1 = sfm_data.getViews().at(pair.first).get();
-    const View * v2 = sfm_data.getViews().at(pair.second).get();
+    const View * v1 = sfmData.getViews().at(pair.first).get();
+    const View * v2 = sfmData.getViews().at(pair.second).get();
 
     if (// Consider the pair iff it is supported by the rotation graph
         (v1->getPoseId() != v2->getPoseId())
@@ -367,8 +359,8 @@ void GlobalSfMTranslationAveragingSolver::ComputePutativeTranslation_EdgesCovera
       for (const auto & match_iterator : pairwiseMatches)
       {
         const Pair pair = match_iterator.first;
-        const View * v1 = sfm_data.getViews().at(pair.first).get();
-        const View * v2 = sfm_data.getViews().at(pair.second).get();
+        const View * v1 = sfmData.getViews().at(pair.first).get();
+        const View * v2 = sfmData.getViews().at(pair.second).get();
         if (// Consider the pair iff it is supported by the triplet graph & 2 different pose id
             (v1->getPoseId() != v2->getPoseId())
             && set_triplet_pose_ids.count(v1->getPoseId())
@@ -468,7 +460,7 @@ void GlobalSfMTranslationAveragingSolver::ComputePutativeTranslation_EdgesCovera
 
           const std::string sOutDirectory = "./";
           const bool bTriplet_estimation = Estimate_T_triplet(
-              sfm_data,
+              sfmData,
               map_globalR,
               normalizedFeaturesPerView,
               pairwiseMatches,
@@ -565,9 +557,9 @@ void GlobalSfMTranslationAveragingSolver::ComputePutativeTranslation_EdgesCovera
       }
     }
     // Merge thread estimates
-    for (const auto vec : initial_estimates)
+    for(const auto vec : initial_estimates)
     {
-      for (const auto val : vec)
+      for(const auto val : vec)
       {
         vec_initialEstimates.emplace_back(val);
       }
@@ -589,16 +581,16 @@ void GlobalSfMTranslationAveragingSolver::ComputePutativeTranslation_EdgesCovera
 
 // Robust estimation and refinement of a translation and 3D points of an image triplets.
 bool GlobalSfMTranslationAveragingSolver::Estimate_T_triplet(
-  const SfMData & sfm_data,
-  const HashMap<IndexT, Mat3> & map_globalR,
-  const feature::FeaturesPerView & normalizedFeaturesPerView,
-  const matching::PairwiseMatches & pairwiseMatches,
-  const graph::Triplet & poses_id,
-  std::vector<Vec3> & vec_tis,
-  double & dPrecision, // UpperBound of the precision found by the AContrario estimator
-  std::vector<size_t> & vec_inliers,
-  aliceVision::track::TracksMap & tracks,
-  const std::string & sOutDirectory) const
+  const SfMData& sfmData,
+  const HashMap<IndexT, Mat3>& map_globalR,
+  const feature::FeaturesPerView& normalizedFeaturesPerView,
+  const matching::PairwiseMatches& pairwiseMatches,
+  const graph::Triplet& poses_id,
+  std::vector<Vec3>& vec_tis,
+  double& precision, // UpperBound of the precision found by the AContrario estimator
+  std::vector<std::size_t>& vec_inliers,
+  aliceVision::track::TracksMap& tracks,
+  const std::string& outDirectory) const
 {
   // List matches that belong to the triplet of poses
   matching::PairwiseMatches map_triplet_matches;
@@ -606,9 +598,9 @@ bool GlobalSfMTranslationAveragingSolver::Estimate_T_triplet(
   // List shared correspondences (pairs) between poses
   for (const auto & match_iterator : pairwiseMatches)
   {
-    const Pair & pair = match_iterator.first;
-    const View * v1 = sfm_data.getViews().at(pair.first).get();
-    const View * v2 = sfm_data.getViews().at(pair.second).get();
+    const Pair& pair = match_iterator.first;
+    const View* v1 = sfmData.getViews().at(pair.first).get();
+    const View* v2 = sfmData.getViews().at(pair.second).get();
     if (// Consider the pair iff it is supported by the triplet graph & 2 different pose id
         (v1->getPoseId() != v2->getPoseId())
         && set_pose_ids.count(v1->getPoseId())
@@ -644,7 +636,7 @@ bool GlobalSfMTranslationAveragingSolver::Estimate_T_triplet(
       const size_t idx_view = iter->first;
       const feature::PointFeature pt = normalizedFeaturesPerView.getFeatures(idx_view, track.descType)[iter->second];
       xxx[index]->col(cpt) = pt.coords().cast<double>();
-      const View * view = sfm_data.views.at(idx_view).get();
+      const View * view = sfmData.views.at(idx_view).get();
       intrinsic_ids.insert(view->getIntrinsicId());
     }
   }
@@ -652,7 +644,7 @@ bool GlobalSfMTranslationAveragingSolver::Estimate_T_triplet(
   double min_focal = std::numeric_limits<double>::max();
   for (const auto & ids : intrinsic_ids)
   {
-    const camera::IntrinsicBase * intrinsicPtr = sfm_data.getIntrinsics().at(ids).get();
+    const camera::IntrinsicBase * intrinsicPtr = sfmData.getIntrinsics().at(ids).get();
     const camera::Pinhole * intrinsic = dynamic_cast< const camera::Pinhole * > (intrinsicPtr);
     if (intrinsic && intrinsic->isValid())
     {
@@ -682,13 +674,13 @@ bool GlobalSfMTranslationAveragingSolver::Estimate_T_triplet(
 
   TrifocalTensorModel T;
   const std::pair<double,double> acStat =
-    robustEstimation::ACRANSAC(kernel, vec_inliers, ORSA_ITER, &T, dPrecision/min_focal, false);
+    robustEstimation::ACRANSAC(kernel, vec_inliers, ORSA_ITER, &T, precision/min_focal, false);
   // If robust estimation fails => stop.
-  if (dPrecision == std::numeric_limits<double>::infinity())
+  if (precision == std::numeric_limits<double>::infinity())
     return false;
 
   // Update output parameters
-  dPrecision = acStat.first * min_focal;
+  precision = acStat.first * min_focal;
 
   vec_tis.resize(3);
   Mat3 K, R;
@@ -698,7 +690,7 @@ bool GlobalSfMTranslationAveragingSolver::Estimate_T_triplet(
 
 #ifdef DEBUG_TRIPLET
   // compute 3D scene base on motion estimation
-  SfMData    tiny_scene;
+  SfMData tiny_scene;
 
   // intialize poses (which are now shared by a group of images)
   tiny_scene.poses[poses_id.i] = Pose3(vec_global_R_Triplet[0], -vec_global_R_Triplet[0].transpose() * vec_tis[0]);
@@ -725,7 +717,7 @@ bool GlobalSfMTranslationAveragingSolver::Estimate_T_triplet(
 
   // Fill sfm_data with the inliers tracks. Feed image observations: no 3D yet.
   Landmarks & structure = tiny_scene.structure;
-  for (size_t idx=0; idx < vec_inliers.size(); ++idx)
+  for(size_t idx=0; idx < vec_inliers.size(); ++idx)
   {
     const size_t trackId = vec_inliers[idx];
     const track::submapTrack & track = tracks.at(trackId);

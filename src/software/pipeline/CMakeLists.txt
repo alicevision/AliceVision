@@ -15,7 +15,8 @@ if(ALICEVISION_BUILD_SFM)
           aliceVision_sensorDB
           aliceVision_image
           aliceVision_feature
-          aliceVision_sfm
+          aliceVision_sfmData
+          aliceVision_sfmDataIO
           ${Boost_LIBRARIES}
   )
 
@@ -27,7 +28,8 @@ if(ALICEVISION_BUILD_SFM)
           aliceVision_image
           aliceVision_feature
           aliceVision_multiview
-          aliceVision_sfm
+          aliceVision_sfmData
+          aliceVision_sfmDataIO
           vlsift
           ${Boost_LIBRARIES}
   )
@@ -42,7 +44,10 @@ if(ALICEVISION_BUILD_SFM)
   alicevision_add_software(aliceVision_imageMatching
     SOURCE main_imageMatching.cpp
     FOLDER ${FOLDER_SOFTWARE_PIPELINE}
-    LINKS aliceVision_voctree
+    LINKS aliceVision_system
+          aliceVision_sfmData
+          aliceVision_sfmDataIO
+          aliceVision_voctree
           ${Boost_LIBRARIES}
   )
 
@@ -56,6 +61,8 @@ if(ALICEVISION_BUILD_SFM)
           aliceVision_multiview
           aliceVision_matchingImageCollection
           aliceVision_sfm
+          aliceVision_sfmData
+          aliceVision_sfmDataIO
           ${Boost_LIBRARIES}
   )
 
@@ -67,6 +74,8 @@ if(ALICEVISION_BUILD_SFM)
           aliceVision_image
           aliceVision_feature
           aliceVision_sfm
+          aliceVision_sfmData
+          aliceVision_sfmDataIO
           ${Boost_LIBRARIES}
   )
 
@@ -78,6 +87,8 @@ if(ALICEVISION_BUILD_SFM)
           aliceVision_image
           aliceVision_feature
           aliceVision_sfm
+          aliceVision_sfmData
+          aliceVision_sfmDataIO
           ${Boost_LIBRARIES}
   )
 
@@ -88,6 +99,8 @@ if(ALICEVISION_BUILD_SFM)
     LINKS aliceVision_system
           aliceVision_feature
           aliceVision_sfm
+          aliceVision_sfmData
+          aliceVision_sfmDataIO
           ${Boost_LIBRARIES}
   )
 
@@ -99,6 +112,8 @@ if(ALICEVISION_BUILD_SFM)
           aliceVision_image
           aliceVision_feature
           aliceVision_sfm
+          aliceVision_sfmData
+          aliceVision_sfmDataIO
           ${Boost_LIBRARIES}
   )
 
@@ -173,7 +188,8 @@ if(ALICEVISION_BUILD_SFM)
     LINKS aliceVision_system
           aliceVision_image
           aliceVision_feature
-          aliceVision_sfm
+          aliceVision_sfmData
+          aliceVision_sfmDataIO
           ${Boost_LIBRARIES}
   )
 endif() # if(ALICEVISION_BUILD_SFM)

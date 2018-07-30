@@ -4,7 +4,8 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
-#include <aliceVision/sfm/sfm.hpp>
+#include <aliceVision/sfmData/SfMData.hpp>
+#include <aliceVision/sfmDataIO/sfmDataIO.hpp>
 #include <aliceVision/image/all.hpp>
 
 #include <boost/program_options.hpp>
@@ -90,8 +91,8 @@ int main(int argc, char **argv)
     fs::create_directory(outputFolder + "/undistort/thumbnail/");
 
   // read the SfM scene
-  sfm::SfMData sfmData;
-  if(!sfm::Load(sfmData, sfmDataFilename, sfm::ESfMData::ALL))
+  sfmData::SfMData sfmData;
+  if(!sfmDataIO::Load(sfmData, sfmDataFilename, sfmDataIO::ESfMData::ALL))
   {
     ALICEVISION_LOG_ERROR("Error: The input SfMData file '" + sfmDataFilename + "' cannot be read.");
     return EXIT_FAILURE;
@@ -99,13 +100,13 @@ int main(int argc, char **argv)
 
   // export the SfM scene to an alembic at the root of the output folder
   ALICEVISION_LOG_INFO("Exporting SfM scene for MayaMVG ...");
-  sfm::Save(sfmData, outputFolder + "/scene.abc", sfm::ESfMData::ALL);
+  sfmDataIO::Save(sfmData, outputFolder + "/scene.abc", sfmDataIO::ESfMData::ALL);
 
   // export undistorted images and thumbnail images
   boost::progress_display progressBar(sfmData.getViews().size(), std::cout, "Exporting Images for MayaMVG\n");
   for(auto& viewPair : sfmData.getViews())
   {
-    const sfm::View& view = *viewPair.second;
+    const sfmData::View& view = *viewPair.second;
     const std::shared_ptr<camera::IntrinsicBase> intrinsicPtr = sfmData.getIntrinsicsharedPtr(view.getIntrinsicId());
 
     if(intrinsicPtr == nullptr)

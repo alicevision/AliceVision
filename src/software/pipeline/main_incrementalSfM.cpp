@@ -5,12 +5,16 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
-#include <aliceVision/feature/imageDescriberCommon.hpp>
+#include <aliceVision/sfmData/SfMData.hpp>
+#include <aliceVision/sfmDataIO/sfmDataIO.hpp>
 #include <aliceVision/sfm/sfm.hpp>
 #include <aliceVision/sfm/pipeline/regionsIO.hpp>
+#include <aliceVision/feature/imageDescriberCommon.hpp>
 #include <aliceVision/system/Timer.hpp>
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/cmdline.hpp>
+#include <aliceVision/types.hpp>
+#include <aliceVision/config.hpp>
 
 #include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>
@@ -23,10 +27,6 @@
 #define ALICEVISION_SOFTWARE_VERSION_MINOR 0
 
 using namespace aliceVision;
-using namespace aliceVision::camera;
-using namespace aliceVision::sfm;
-using namespace aliceVision::feature;
-using namespace std;
 
 namespace po = boost::program_options;
 namespace fs = boost::filesystem;
@@ -38,17 +38,16 @@ namespace fs = boost::filesystem;
  * @param[out] out_viewId the id found
  * @return if a view is found
  */
-bool retrieveViewIdFromImageName(
-  const SfMData& sfmData,
-  const std::string& name,
-  IndexT& out_viewId)
+bool retrieveViewIdFromImageName(const sfmData::SfMData& sfmData,
+                                 const std::string& name,
+                                 IndexT& out_viewId)
 {
   out_viewId = UndefinedIndexT;
 
   // list views uid / filenames and find the one that correspond to the user ones
   for(const auto& viewPair : sfmData.getViews())
   {
-    const View& v = *(viewPair.second.get());
+    const sfmData::View& v = *(viewPair.second.get());
     
     if(name == std::to_string(v.getViewId()) ||
        name == fs::path(v.getImagePath()).filename().string() ||
@@ -204,8 +203,8 @@ int main(int argc, char **argv)
   system::Logger::get()->setLogLevel(verboseLevel);
 
   // load input SfMData scene
-  SfMData sfmData;
-  if(!Load(sfmData, sfmDataFilename, ESfMData::ALL))
+  sfmData::SfMData sfmData;
+  if(!sfmDataIO::Load(sfmData, sfmDataFilename, sfmDataIO::ESfMData::ALL))
   {
     ALICEVISION_LOG_ERROR("Error: The input SfMData file '" + sfmDataFilename + "' cannot be read.");
     return EXIT_FAILURE;
@@ -221,7 +220,7 @@ int main(int argc, char **argv)
     for(const auto& viewPair : sfmData.getViews())
     {
       // lock all reconstructed views intrinsics
-      const View& view = *(viewPair.second);
+      const sfmData::View& view = *(viewPair.second);
       if(sfmData.isPoseAndIntrinsicDefined(&view))
         sfmData.getIntrinsics().at(view.getIntrinsicId())->lock();
     }
@@ -247,16 +246,14 @@ int main(int argc, char **argv)
   }
 
   if(extraInfoFolder.empty())
-  {
     extraInfoFolder = fs::path(outputSfM).parent_path().string();
-  }
 
   if (!fs::exists(extraInfoFolder))
     fs::create_directory(extraInfoFolder);
 
   // sequential reconstruction process
   aliceVision::system::Timer timer;
-  ReconstructionEngine_sequentialSfM sfmEngine(
+  sfm::ReconstructionEngine_sequentialSfM sfmEngine(
     sfmData,
     extraInfoFolder,
     (fs::path(extraInfoFolder) / "sfm_log.html").string());
@@ -331,16 +328,16 @@ int main(int argc, char **argv)
   ALICEVISION_LOG_INFO("Structure from motion took (s): " + std::to_string(timer.elapsed()));
   ALICEVISION_LOG_INFO("Generating HTML report...");
 
-  generateSfMReport(sfmEngine.getSfMData(), (fs::path(extraInfoFolder) / "sfm_report.html").string());
+  sfm::generateSfMReport(sfmEngine.getSfMData(), (fs::path(extraInfoFolder) / "sfm_report.html").string());
 
   // export to disk computed scene (data & visualizable results)
   ALICEVISION_LOG_INFO("Export SfMData to disk: " + outputSfM);
 
-  Save(sfmEngine.getSfMData(), (fs::path(extraInfoFolder) / ("cloud_and_poses" + outInterFileExtension)).string(), ESfMData(VIEWS|EXTRINSICS|INTRINSICS|STRUCTURE));
-  Save(sfmEngine.getSfMData(), outputSfM, ESfMData::ALL);
+  sfmDataIO::Save(sfmEngine.getSfMData(), (fs::path(extraInfoFolder) / ("cloud_and_poses" + outInterFileExtension)).string(), sfmDataIO::ESfMData(sfmDataIO::VIEWS|sfmDataIO::EXTRINSICS|sfmDataIO::INTRINSICS|sfmDataIO::STRUCTURE));
+  sfmDataIO::Save(sfmEngine.getSfMData(), outputSfM, sfmDataIO::ESfMData::ALL);
 
   if(!outputSfMViewsAndPoses.empty())
-    Save(sfmEngine.getSfMData(), outputSfMViewsAndPoses, ESfMData(VIEWS|EXTRINSICS|INTRINSICS));
+   sfmDataIO:: Save(sfmEngine.getSfMData(), outputSfMViewsAndPoses, sfmDataIO::ESfMData(sfmDataIO::VIEWS|sfmDataIO::EXTRINSICS|sfmDataIO::INTRINSICS));
 
   ALICEVISION_LOG_INFO("Structure from Motion results:" << std::endl
     << "\t- # input images: " << sfmEngine.getSfMData().getViews().size() << std::endl

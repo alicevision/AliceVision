@@ -6,31 +6,29 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "statistics.hpp"
-
-#include <aliceVision/sfm/SfMData.hpp>
+#include <aliceVision/sfmData/SfMData.hpp>
 
 namespace aliceVision {
 namespace sfm {
 
-double RMSE(const SfMData& sfmData)
+double RMSE(const sfmData::SfMData& sfmData)
 {
   // Compute residuals for each observation
   std::vector<double> vec;
-  for(Landmarks::const_iterator iterTracks = sfmData.getLandmarks().begin();
+  for(sfmData::Landmarks::const_iterator iterTracks = sfmData.getLandmarks().begin();
       iterTracks != sfmData.getLandmarks().end();
       ++iterTracks)
   {
-    const Observations & obs = iterTracks->second.observations;
-    for(Observations::const_iterator itObs = obs.begin();
+    const sfmData::Observations& obs = iterTracks->second.observations;
+    for(sfmData::Observations::const_iterator itObs = obs.begin();
       itObs != obs.end(); ++itObs)
     {
-      const View * view = sfmData.getViews().find(itObs->first)->second.get();
+      const sfmData::View* view = sfmData.getViews().find(itObs->first)->second.get();
       const geometry::Pose3 pose = sfmData.getPose(*view).getTransform();
       const std::shared_ptr<camera::IntrinsicBase> intrinsic = sfmData.getIntrinsics().at(view->getIntrinsicId());
       const Vec2 residual = intrinsic->residual(pose, iterTracks->second.X, itObs->second.x);
-      //ALICEVISION_LOG_DEBUG(residual);
-      vec.push_back( residual(0) );
-      vec.push_back( residual(1) );
+      vec.push_back(residual(0));
+      vec.push_back(residual(1));
     }
   }
   const Eigen::Map<Eigen::RowVectorXd> residuals(&vec[0], vec.size());

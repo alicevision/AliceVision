@@ -10,7 +10,8 @@ alicevision_add_software(aliceVision_convertSfMFormat
   FOLDER ${FOLDER_SOFTWARE_CONVERT}
   LINKS aliceVision_system
         aliceVision_feature
-        aliceVision_sfm
+        aliceVision_sfmData
+        aliceVision_sfmDataIO
         ${Boost_LIBRARIES}
 )
 

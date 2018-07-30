@@ -5,6 +5,8 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
+#include <aliceVision/sfmData/SfMData.hpp>
+#include <aliceVision/sfmDataIO/sfmDataIO.hpp>
 #include <aliceVision/sfm/pipeline/regionsIO.hpp>
 #include <aliceVision/feature/imageDescriberCommon.hpp>
 #include <aliceVision/sfm/pipeline/global/ReconstructionEngine_globalSfM.hpp>
@@ -23,9 +25,6 @@
 #define ALICEVISION_SOFTWARE_VERSION_MINOR 0
 
 using namespace aliceVision;
-using namespace aliceVision::sfm;
-using namespace aliceVision::feature;
-using namespace std;
 
 namespace po = boost::program_options;
 namespace fs = boost::filesystem;
@@ -44,8 +43,8 @@ int main(int argc, char **argv)
 
   std::string outSfMDataFilename = "SfmData.json";
   std::string describerTypesName = feature::EImageDescriberType_enumToString(feature::EImageDescriberType::SIFT);
-  int rotationAveragingMethod = static_cast<int>(ROTATION_AVERAGING_L2);
-  int translationAveragingMethod = static_cast<int>(TRANSLATION_AVERAGING_SOFTL1);
+  int rotationAveragingMethod = static_cast<int>(sfm::ROTATION_AVERAGING_L2);
+  int translationAveragingMethod = static_cast<int>(sfm::TRANSLATION_AVERAGING_SOFTL1);
   bool refineIntrinsics = true;
 
   po::options_description allParams("Implementation of the paper\n"
@@ -118,23 +117,23 @@ int main(int argc, char **argv)
   // set verbose level
   system::Logger::get()->setLogLevel(verboseLevel);
 
-  if (rotationAveragingMethod < ROTATION_AVERAGING_L1 ||
-      rotationAveragingMethod > ROTATION_AVERAGING_L2 )
+  if (rotationAveragingMethod < sfm::ROTATION_AVERAGING_L1 ||
+      rotationAveragingMethod > sfm::ROTATION_AVERAGING_L2 )
   {
     ALICEVISION_LOG_ERROR("Rotation averaging method is invalid");
     return EXIT_FAILURE;
   }
 
-  if (translationAveragingMethod < TRANSLATION_AVERAGING_L1 ||
-      translationAveragingMethod > TRANSLATION_AVERAGING_SOFTL1 )
+  if (translationAveragingMethod < sfm::TRANSLATION_AVERAGING_L1 ||
+      translationAveragingMethod > sfm::TRANSLATION_AVERAGING_SOFTL1 )
   {
     ALICEVISION_LOG_ERROR("Translation averaging method is invalid");
     return EXIT_FAILURE;
   }
 
   // load input SfMData scene
-  SfMData sfmData;
-  if (!Load(sfmData, sfmDataFilename, ESfMData(VIEWS|INTRINSICS)))
+  sfmData::SfMData sfmData;
+  if(!sfmDataIO::Load(sfmData, sfmDataFilename, sfmDataIO::ESfMData(sfmDataIO::VIEWS|sfmDataIO::INTRINSICS)))
   {
     ALICEVISION_LOG_ERROR("The input SfMData file '" << sfmDataFilename << "' cannot be read.");
     return EXIT_FAILURE;
@@ -156,7 +155,7 @@ int main(int argc, char **argv)
   const std::vector<feature::EImageDescriberType> describerTypes = feature::EImageDescriberType_stringToEnums(describerTypesName);
 
   // features reading
-  FeaturesPerView featuresPerView;
+  feature::FeaturesPerView featuresPerView;
   if(!sfm::loadFeaturesPerView(featuresPerView, sfmData, featuresFolders, describerTypes))
   {
     ALICEVISION_LOG_ERROR("Invalid features");
@@ -172,18 +171,18 @@ int main(int argc, char **argv)
     return EXIT_FAILURE;
   }
 
-  if (outDirectory.empty())
+  if(outDirectory.empty())
   {
     ALICEVISION_LOG_ERROR("It is an invalid output folder");
     return EXIT_FAILURE;
   }
 
-  if (!fs::exists(outDirectory))
+  if(!fs::exists(outDirectory))
     fs::create_directory(outDirectory);
 
   // global SfM reconstruction process
   aliceVision::system::Timer timer;
-  ReconstructionEngine_globalSfM sfmEngine(
+  sfm::ReconstructionEngine_globalSfM sfmEngine(
     sfmData,
     outDirectory,
     (fs::path(outDirectory) / "sfm_log.html").string());
@@ -196,8 +195,8 @@ int main(int argc, char **argv)
   sfmEngine.setFixedIntrinsics(!refineIntrinsics);
 
   // configure motion averaging method
-  sfmEngine.SetRotationAveragingMethod(ERotationAveragingMethod(rotationAveragingMethod));
-  sfmEngine.SetTranslationAveragingMethod(ETranslationAveragingMethod(translationAveragingMethod));
+  sfmEngine.SetRotationAveragingMethod(sfm::ERotationAveragingMethod(rotationAveragingMethod));
+  sfmEngine.SetTranslationAveragingMethod(sfm::ETranslationAveragingMethod(translationAveragingMethod));
 
   if(!sfmEngine.process())
     return EXIT_FAILURE;
@@ -220,13 +219,13 @@ int main(int argc, char **argv)
   ALICEVISION_LOG_INFO("Global structure from motion took (s): " << timer.elapsed());
   ALICEVISION_LOG_INFO("Generating HTML report...");
 
-  generateSfMReport(sfmEngine.getSfMData(), (fs::path(outDirectory) / "sfm_report.html").string());
+  sfm::generateSfMReport(sfmEngine.getSfMData(), (fs::path(outDirectory) / "sfm_report.html").string());
 
   // export to disk computed scene (data & visualizable results)
   ALICEVISION_LOG_INFO("Export SfMData to disk");
 
-  Save(sfmEngine.getSfMData(), outSfMDataFilename, ESfMData::ALL);
-  Save(sfmEngine.getSfMData(), (fs::path(outDirectory) / "cloud_and_poses.ply").string(), ESfMData::ALL);
+  sfmDataIO::Save(sfmEngine.getSfMData(), outSfMDataFilename, sfmDataIO::ESfMData::ALL);
+  sfmDataIO::Save(sfmEngine.getSfMData(), (fs::path(outDirectory) / "cloud_and_poses.ply").string(), sfmDataIO::ESfMData::ALL);
 
   ALICEVISION_LOG_INFO("Structure from Motion results:" << std::endl
     << "\t- # input images: " << sfmEngine.getSfMData().getViews().size() << std::endl

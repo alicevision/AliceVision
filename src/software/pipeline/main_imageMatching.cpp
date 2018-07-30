@@ -4,11 +4,13 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
-#include <aliceVision/system/Logger.hpp>
-#include <aliceVision/system/cmdline.hpp>
+#include <aliceVision/sfmData/SfMData.hpp>
+#include <aliceVision/sfmDataIO/sfmDataIO.hpp>
 #include <aliceVision/voctree/Database.hpp>
 #include <aliceVision/voctree/VocabularyTree.hpp>
 #include <aliceVision/voctree/databaseIO.hpp>
+#include <aliceVision/system/Logger.hpp>
+#include <aliceVision/system/cmdline.hpp>
 #include <aliceVision/config.hpp>
 
 #include <Eigen/Core>
@@ -30,7 +32,6 @@
 
 static const int DIMENSION = 128;
 
-using namespace std;
 using namespace aliceVision;
 
 namespace po = boost::program_options;
@@ -478,9 +479,9 @@ int main(int argc, char** argv)
   }
 
   // load SfMData
-  sfm::SfMData sfmDataA, sfmDataB;
+  sfmData::SfMData sfmDataA, sfmDataB;
 
-  if(!sfm::Load(sfmDataA, sfmDataFilenameA, sfm::ESfMData::ALL))
+  if(!sfmDataIO::Load(sfmDataA, sfmDataFilenameA, sfmDataIO::ESfMData::ALL))
   {
     ALICEVISION_LOG_ERROR("The input SfMData file '" + sfmDataFilenameA + "' cannot be read.");
     return EXIT_FAILURE;
@@ -488,7 +489,7 @@ int main(int argc, char** argv)
 
   if(useMultiSfM)
   {
-    if(!sfm::Load(sfmDataB, sfmDataFilenameB, sfm::ESfMData::ALL))
+    if(!sfmDataIO::Load(sfmDataB, sfmDataFilenameB, sfmDataIO::ESfMData::ALL))
     {
       ALICEVISION_LOG_ERROR("The input SfMData file '" + sfmDataFilenameB + "' cannot be read.");
       return EXIT_FAILURE;
@@ -497,7 +498,7 @@ int main(int argc, char** argv)
     // remove duplicated view
     for(const auto& viewPair : sfmDataB.getViews())
     {
-      sfm::Views::iterator it = sfmDataA.getViews().find(viewPair.first);
+      sfmData::Views::iterator it = sfmDataA.getViews().find(viewPair.first);
       if(it != sfmDataA.getViews().end())
         sfmDataA.getViews().erase(it);
     }
@@ -589,7 +590,7 @@ int main(int argc, char** argv)
            (matchingMode == EImageMatchingMode::A_AB) ||
            (matchingMode == EImageMatchingMode::A_A))
         {
-          nbFeaturesLoadedInputA = aliceVision::voctree::populateDatabase<DescriptorUChar>(sfmDataA, featuresFolders, tree, db, nbMaxDescriptors);
+          nbFeaturesLoadedInputA = voctree::populateDatabase<DescriptorUChar>(sfmDataA, featuresFolders, tree, db, nbMaxDescriptors);
           nbSetDescriptors = db.getSparseHistogramPerImage().size();
 
           if(nbFeaturesLoadedInputA == 0)
@@ -602,13 +603,13 @@ int main(int argc, char** argv)
         if((matchingMode == EImageMatchingMode::A_AB) ||
            (matchingMode == EImageMatchingMode::A_B))
         {
-          nbFeaturesLoadedInputB = aliceVision::voctree::populateDatabase<DescriptorUChar>(sfmDataB, featuresFolders, tree, db, nbMaxDescriptors);
+          nbFeaturesLoadedInputB = voctree::populateDatabase<DescriptorUChar>(sfmDataB, featuresFolders, tree, db, nbMaxDescriptors);
           nbSetDescriptors = db.getSparseHistogramPerImage().size();
         }
 
         if(matchingMode == EImageMatchingMode::A_A_AND_A_B)
         {
-          nbFeaturesLoadedInputB = aliceVision::voctree::populateDatabase<DescriptorUChar>(sfmDataB, featuresFolders, tree, db2, nbMaxDescriptors);
+          nbFeaturesLoadedInputB = voctree::populateDatabase<DescriptorUChar>(sfmDataB, featuresFolders, tree, db2, nbMaxDescriptors);
           nbSetDescriptors += db2.getSparseHistogramPerImage().size();
         }
 
@@ -680,7 +681,7 @@ int main(int argc, char** argv)
 
   // write it to file
   std::ofstream fileout;
-  fileout.open(outputFile, ofstream::out);
+  fileout.open(outputFile, std::ofstream::out);
   fileout << selectedPairs;
   fileout.close();
 
@@ -692,7 +693,7 @@ int main(int argc, char** argv)
     // should not loose B data
     sfmDataB.combine(sfmDataA);
 
-    if(!sfm::Save(sfmDataB, outputCombinedSfM, sfm::ESfMData::ALL))
+    if(!sfmDataIO::Save(sfmDataB, outputCombinedSfM, sfmDataIO::ESfMData::ALL))
     {
       ALICEVISION_LOG_ERROR("Unable to save combined SfM: " << outputCombinedSfM);
       return EXIT_FAILURE;

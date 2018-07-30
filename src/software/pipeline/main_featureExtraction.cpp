@@ -5,10 +5,9 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
-#include <aliceVision/config.hpp>
 #include <aliceVision/alicevision_omp.hpp>
-#include <aliceVision/image/all.hpp>
-#include <aliceVision/sfm/sfm.hpp>
+#include <aliceVision/sfmData/SfMData.hpp>
+#include <aliceVision/sfmDataIO/sfmDataIO.hpp>
 #include <aliceVision/feature/imageDescriberCommon.hpp>
 #include <aliceVision/feature/feature.hpp>
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_POPSIFT) \
@@ -16,10 +15,12 @@
 #define ALICEVISION_HAVE_GPU_FEATURES
 #include <aliceVision/system/gpu.hpp>
 #endif
+#include <aliceVision/image/all.hpp>
 #include <aliceVision/system/MemoryInfo.hpp>
 #include <aliceVision/system/Timer.hpp>
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/cmdline.hpp>
+#include <aliceVision/config.hpp>
 
 #include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>
@@ -47,13 +48,13 @@ class FeatureExtractor
 {
   struct ViewJob
   {
-    const sfm::View& view;
+    const sfmData::View& view;
     std::size_t memoryConsuption = 0;
     std::string outputBasename;
     std::vector<std::size_t> cpuImageDescriberIndexes;
     std::vector<std::size_t> gpuImageDescriberIndexes;
 
-    ViewJob(const sfm::View& view,
+    ViewJob(const sfmData::View& view,
             const std::string& outputFolder)
       : view(view)
       , outputBasename(fs::path(fs::path(outputFolder) / fs::path(std::to_string(view.getViewId()))).string())
@@ -102,7 +103,7 @@ class FeatureExtractor
 
 public:
 
-  explicit FeatureExtractor(const sfm::SfMData& sfmData)
+  explicit FeatureExtractor(const sfmData::SfMData& sfmData)
     : _sfmData(sfmData)
   {}
 
@@ -131,8 +132,8 @@ public:
   {
     // iteration on each view in the range in order
     // to prepare viewJob stack
-    sfm::Views::const_iterator itViewBegin = _sfmData.getViews().begin();
-    sfm::Views::const_iterator itViewEnd = _sfmData.getViews().end();
+    sfmData::Views::const_iterator itViewBegin = _sfmData.getViews().begin();
+    sfmData::Views::const_iterator itViewEnd = _sfmData.getViews().end();
 
     if(_rangeStart != -1)
     {
@@ -145,7 +146,7 @@ public:
 
     for(auto it = itViewBegin; it != itViewEnd; ++it)
     {
-      const sfm::View& view = *(it->second.get());
+      const sfmData::View& view = *(it->second.get());
       ViewJob viewJob(view, _outputFolder);
 
       viewJob.setImageDescribers(_imageDescribers);
@@ -240,7 +241,7 @@ private:
     }
   }
 
-  const sfm::SfMData& _sfmData;
+  const sfmData::SfMData& _sfmData;
   std::vector<std::shared_ptr<feature::ImageDescriber>> _imageDescribers;
   std::string _outputFolder;
   int _rangeStart = -1;
@@ -355,8 +356,8 @@ int main(int argc, char **argv)
 #endif
 
   // load input scene
-  sfm::SfMData sfmData;
-  if(!sfm::Load(sfmData, sfmDataFilename, sfm::ESfMData(sfm::VIEWS|sfm::INTRINSICS)))
+  sfmData::SfMData sfmData;
+  if(!sfmDataIO::Load(sfmData, sfmDataFilename, sfmDataIO::ESfMData(sfmDataIO::VIEWS|sfmDataIO::INTRINSICS)))
   {
     ALICEVISION_LOG_ERROR("The input file '" + sfmDataFilename + "' cannot be read");
     return EXIT_FAILURE;

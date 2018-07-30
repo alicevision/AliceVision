@@ -18,7 +18,7 @@ namespace aliceVision {
 namespace voctree {
 
 template<class DescriptorT, class FileDescriptorT>
-size_t readDescFromFiles(const sfm::SfMData& sfmData,
+size_t readDescFromFiles(const sfmData::SfMData& sfmData,
                          const std::vector<std::string>& featuresFolders,
                          std::vector<DescriptorT>& descriptors,
                          std::vector<size_t> &numFeatures)

@@ -9,5 +9,7 @@ alicevision_add_software(aliceVision_samples_robustEssential
         aliceVision_feature
         aliceVision_matching
         aliceVision_sfm
+        aliceVision_sfmData
+        aliceVision_sfmDataIO
         vlsift
 )

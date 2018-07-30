@@ -5,35 +5,33 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
-#include "aliceVision/sfm/pipeline/localization/SfMLocalizationSingle3DTrackObservationDatabase.hpp"
-#include "aliceVision/matching/IndMatch.hpp"
-#include "aliceVision/matching/RegionsMatcher.hpp"
+#include "SfMLocalizationSingle3DTrackObservationDatabase.hpp"
+#include <aliceVision/matching/IndMatch.hpp>
+#include <aliceVision/matching/RegionsMatcher.hpp>
 
 namespace aliceVision {
 namespace sfm {
 
-  SfMLocalizationSingle3DTrackObservationDatabase::
-  SfMLocalizationSingle3DTrackObservationDatabase()
-  :SfMLocalizer(), sfm_data_(nullptr), matching_interface_(nullptr)
+  SfMLocalizationSingle3DTrackObservationDatabase::SfMLocalizationSingle3DTrackObservationDatabase()
+    : SfMLocalizer()
+    , _sfmData(nullptr)
+    , _matchingInterface(nullptr)
   {}
 
-  bool
-  SfMLocalizationSingle3DTrackObservationDatabase::Init
-  (
-    const SfMData & sfm_data,
-    const feature::RegionsPerView & regionsPerView
-  )
+  bool SfMLocalizationSingle3DTrackObservationDatabase::Init(const sfmData::SfMData& sfmData,
+                                                             const feature::RegionsPerView& regionsPerView)
   {
     if (regionsPerView.isEmpty())
     {
       return false;
     }
 
-    if (sfm_data.getPoses().empty() || sfm_data.getLandmarks().empty())
+    if (sfmData.getPoses().empty() || sfmData.getLandmarks().empty())
     {
       ALICEVISION_LOG_WARNING("The input SfMData file have not 3D content to match with.");
       return false;
     }
+
     /*
     TODO: DELI
 
@@ -67,52 +65,46 @@ namespace sfm {
 
     sfm_data_ = &sfm_data;
     */
+
     return true;
   }
 
-  bool
-  SfMLocalizationSingle3DTrackObservationDatabase::Localize
-  (
-    const Pair & image_size,
-    const camera::IntrinsicBase * optional_intrinsics,
-    const feature::Regions & query_regions,
-    geometry::Pose3 & pose,
-    ImageLocalizerMatchData * resection_data_ptr
-  ) const
+  bool SfMLocalizationSingle3DTrackObservationDatabase::Localize(const Pair& imageSize,
+                               const camera::IntrinsicBase* optionalIntrinsics,
+                               const feature::Regions& queryRegions,
+                               geometry::Pose3& pose,
+                               ImageLocalizerMatchData* resectionDataPtr) const
   {
-    if (sfm_data_ == nullptr || matching_interface_ == nullptr)
-    {
+    if(_sfmData == nullptr || _matchingInterface == nullptr)
       return false;
-    }
 
-    matching::IndMatches vec_putative_matches;
-    if (!matching_interface_->Match(0.8, query_regions, vec_putative_matches))
-    {
+    matching::IndMatches putativeMatches;
+    if(!_matchingInterface->Match(0.8, queryRegions, putativeMatches))
       return false;
-    }
 
-    ALICEVISION_LOG_DEBUG("#3D2d putative correspondences: " << vec_putative_matches.size());
+    ALICEVISION_LOG_DEBUG("#3D2d putative correspondences: " << putativeMatches.size());
+
     // Init the 3D-2d correspondences array
-    ImageLocalizerMatchData resection_data;
-    if (resection_data_ptr)
+    ImageLocalizerMatchData resectionData;
+
+    if(resectionDataPtr)
+      resectionData.error_max = resectionDataPtr->error_max;
+
+    resectionData.pt3D.resize(3, putativeMatches.size());
+    resectionData.pt2D.resize(2, putativeMatches.size());
+
+    for(std::size_t i = 0; i < putativeMatches.size(); ++i)
     {
-      resection_data.error_max = resection_data_ptr->error_max;
-    }
-    resection_data.pt3D.resize(3, vec_putative_matches.size());
-    resection_data.pt2D.resize(2, vec_putative_matches.size());
-    for (size_t i = 0; i < vec_putative_matches.size(); ++i)
-    {
-      resection_data.pt3D.col(i) = sfm_data_->getLandmarks().at(index_to_landmark_id_[vec_putative_matches[i]._i]).X;
-      resection_data.pt2D.col(i) = query_regions.GetRegionPosition(vec_putative_matches[i]._j);
+      resectionData.pt3D.col(i) = _sfmData->getLandmarks().at(_indexToLandmarkId[putativeMatches[i]._i]).X;
+      resectionData.pt2D.col(i) = queryRegions.GetRegionPosition(putativeMatches[i]._j);
     }
 
-    const bool bResection =  SfMLocalizer::Localize(
-      image_size, optional_intrinsics, resection_data, pose);
+    const bool resection =  SfMLocalizer::Localize(imageSize, optionalIntrinsics, resectionData, pose);
 
-    if (resection_data_ptr != nullptr)
-      (*resection_data_ptr) = std::move(resection_data);
+    if(resectionDataPtr != nullptr)
+      (*resectionDataPtr) = std::move(resectionData);
 
-    return bResection;
+    return resection;
   }
 
 } // namespace sfm

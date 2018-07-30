@@ -8,17 +8,19 @@
 #pragma once
 
 namespace aliceVision {
-namespace sfm {
 
+namespace sfmData {
 class SfMData;
+} // namespace sfmData
+
+namespace sfm {
 
 /**
  * @brief Compute the Root Mean Square Error of the residuals
  * @param[in] sfmData The given input SfMData
  * @return RMSE value
  */
-double RMSE(const SfMData& sfmData);
-
+double RMSE(const sfmData::SfMData& sfmData);
 
 } // namespace sfm
 } // namespace aliceVision

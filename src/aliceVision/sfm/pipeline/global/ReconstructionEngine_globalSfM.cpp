@@ -5,18 +5,19 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
-#include "aliceVision/sfm/pipeline/global/ReconstructionEngine_globalSfM.hpp"
-#include "aliceVision/sfm/SfMData.hpp"
-#include "aliceVision/config.hpp"
-#include "aliceVision/multiview/triangulation/triangulationDLT.hpp"
-#include "aliceVision/multiview/triangulation/Triangulation.hpp"
-#include "aliceVision/graph/connectedComponent.hpp"
-#include "aliceVision/system/Timer.hpp"
-#include "aliceVision/stl/stl.hpp"
-#include "aliceVision/multiview/essential.hpp"
-#include "aliceVision/track/Track.hpp"
+#include "ReconstructionEngine_globalSfM.hpp"
+#include <aliceVision/sfmData/SfMData.hpp>
+#include <aliceVision/sfmDataIO/sfmDataIO.hpp>
+#include <aliceVision/multiview/triangulation/triangulationDLT.hpp>
+#include <aliceVision/multiview/triangulation/Triangulation.hpp>
+#include <aliceVision/graph/connectedComponent.hpp>
+#include <aliceVision/system/Timer.hpp>
+#include <aliceVision/stl/stl.hpp>
+#include <aliceVision/multiview/essential.hpp>
+#include <aliceVision/track/Track.hpp>
+#include <aliceVision/config.hpp>
 
-#include "dependencies/htmlDoc/htmlDoc.hpp"
+#include <dependencies/htmlDoc/htmlDoc.hpp>
 
 #include <boost/progress.hpp>
 
@@ -24,30 +25,29 @@
 #pragma warning( once : 4267 ) //warning C4267: 'argument' : conversion from 'size_t' to 'const int', possible loss of data
 #endif
 
-namespace aliceVision{
-namespace sfm{
+namespace aliceVision {
+namespace sfm {
 
 using namespace aliceVision::camera;
 using namespace aliceVision::geometry;
 using namespace aliceVision::feature;
+using namespace aliceVision::sfmData;
 
-ReconstructionEngine_globalSfM::ReconstructionEngine_globalSfM(
-  const SfMData & sfm_data,
-  const std::string & soutDirectory,
-  const std::string & sloggingFile)
-  : ReconstructionEngine(sfm_data, soutDirectory), _sLoggingFile(sloggingFile), _normalizedFeaturesPerView(nullptr) {
-
-  if (!_sLoggingFile.empty())
+ReconstructionEngine_globalSfM::ReconstructionEngine_globalSfM(const SfMData& sfmData,
+                                                               const std::string& outDirectory,
+                                                               const std::string& loggingFile)
+  : ReconstructionEngine(sfmData, outDirectory)
+  , _loggingFile(loggingFile)
+  , _normalizedFeaturesPerView(nullptr)
+{
+  if(!_loggingFile.empty())
   {
     // setup HTML logger
     _htmlDocStream = std::make_shared<htmlDocument::htmlDocumentStream>("GlobalReconstructionEngine SFM report.");
-    _htmlDocStream->pushInfo(
-      htmlDocument::htmlMarkup("h1", std::string("ReconstructionEngine_globalSfM")));
+    _htmlDocStream->pushInfo(htmlDocument::htmlMarkup("h1", std::string("ReconstructionEngine_globalSfM")));
     _htmlDocStream->pushInfo("<hr>");
-
     _htmlDocStream->pushInfo( "Dataset info:");
-    _htmlDocStream->pushInfo( "Views count: " +
-      htmlDocument::toString( sfm_data.getViews().size()) + "<br>");
+    _htmlDocStream->pushInfo( "Views count: " + htmlDocument::toString( sfmData.getViews().size()) + "<br>");
   }
 
   // Set default motion Averaging methods
@@ -57,29 +57,29 @@ ReconstructionEngine_globalSfM::ReconstructionEngine_globalSfM(
 
 ReconstructionEngine_globalSfM::~ReconstructionEngine_globalSfM()
 {
-  if (!_sLoggingFile.empty())
+  if(!_loggingFile.empty())
   {
     // Save the reconstruction Log
-    std::ofstream htmlFileStream(_sLoggingFile.c_str());
+    std::ofstream htmlFileStream(_loggingFile.c_str());
     htmlFileStream << _htmlDocStream->getDoc();
   }
 }
 
-void ReconstructionEngine_globalSfM::SetFeaturesProvider(feature::FeaturesPerView * featuresPerView)
+void ReconstructionEngine_globalSfM::SetFeaturesProvider(feature::FeaturesPerView* featuresPerView)
 {
   _featuresPerView = featuresPerView;
 
   // Copy features and save a normalized version
   _normalizedFeaturesPerView = std::make_shared<FeaturesPerView>(*featuresPerView);
   #pragma omp parallel
-  for (MapFeaturesPerView::iterator iter = _normalizedFeaturesPerView->getData().begin();
+  for(MapFeaturesPerView::iterator iter = _normalizedFeaturesPerView->getData().begin();
     iter != _normalizedFeaturesPerView->getData().end(); ++iter)
   {
     #pragma omp single nowait
     {
       // get the related view & camera intrinsic and compute the corresponding bearing vectors
       const View * view = _sfmData.getViews().at(iter->first).get();
-      if (_sfmData.getIntrinsics().count(view->getIntrinsicId()))
+      if(_sfmData.getIntrinsics().count(view->getIntrinsicId()))
       {
         const std::shared_ptr<IntrinsicBase> cam = _sfmData.getIntrinsics().find(view->getIntrinsicId())->second;
         for(auto& iterFeatPerDesc: iter->second)
@@ -96,32 +96,24 @@ void ReconstructionEngine_globalSfM::SetFeaturesProvider(feature::FeaturesPerVie
   }
 }
 
-void ReconstructionEngine_globalSfM::SetMatchesProvider(matching::PairwiseMatches * provider)
+void ReconstructionEngine_globalSfM::SetMatchesProvider(matching::PairwiseMatches* provider)
 {
   _pairwiseMatches = provider;
 }
 
-void ReconstructionEngine_globalSfM::SetRotationAveragingMethod
-(
-  ERotationAveragingMethod eRotationAveragingMethod
-)
+void ReconstructionEngine_globalSfM::SetRotationAveragingMethod(ERotationAveragingMethod eRotationAveragingMethod)
 {
   _eRotationAveragingMethod = eRotationAveragingMethod;
 }
 
-void ReconstructionEngine_globalSfM::SetTranslationAveragingMethod
-(
-  ETranslationAveragingMethod eTranslationAveragingMethod
-)
+void ReconstructionEngine_globalSfM::SetTranslationAveragingMethod(ETranslationAveragingMethod eTranslationAveragingMethod)
 {
   _eTranslationAveragingMethod = eTranslationAveragingMethod;
 }
 
-bool ReconstructionEngine_globalSfM::process() {
-
-  //-------------------
-  // Keep only the largest biedge connected subgraph
-  //-------------------
+bool ReconstructionEngine_globalSfM::process()
+{
+  // keep only the largest biedge connected subgraph
   {
     const PairSet pairs = matching::getImagePairs(*_pairwiseMatches);
     const std::set<IndexT> set_remainingIds = graph::CleanGraph_KeepLargestBiEdge_Nodes<PairSet, IndexT>(pairs, _outputFolder);
@@ -137,30 +129,30 @@ bool ReconstructionEngine_globalSfM::process() {
   Compute_Relative_Rotations(relatives_R);
 
   HashMap<IndexT, Mat3> global_rotations;
-  if (!Compute_Global_Rotations(relatives_R, global_rotations))
+  if(!Compute_Global_Rotations(relatives_R, global_rotations))
   {
     ALICEVISION_LOG_WARNING("GlobalSfM:: Rotation Averaging failure!");
     return false;
   }
   matching::PairwiseMatches tripletWise_matches;
-  if (!Compute_Global_Translations(global_rotations, tripletWise_matches))
+  if(!Compute_Global_Translations(global_rotations, tripletWise_matches))
   {
     ALICEVISION_LOG_WARNING("GlobalSfM:: Translation Averaging failure!");
     return false;
   }
-  if (!Compute_Initial_Structure(tripletWise_matches))
+  if(!Compute_Initial_Structure(tripletWise_matches))
   {
     ALICEVISION_LOG_WARNING("GlobalSfM:: Cannot initialize an initial structure!");
     return false;
   }
-  if (!Adjust())
+  if(!Adjust())
   {
     ALICEVISION_LOG_WARNING("GlobalSfM:: Non-linear adjustment failure!");
     return false;
   }
 
   //-- Export statistics about the SfM process
-  if (!_sLoggingFile.empty())
+  if (!_loggingFile.empty())
   {
     using namespace htmlDocument;
     std::ostringstream os;
@@ -182,11 +174,8 @@ bool ReconstructionEngine_globalSfM::process() {
 }
 
 /// Compute from relative rotations the global rotations of the camera poses
-bool ReconstructionEngine_globalSfM::Compute_Global_Rotations
-(
-  const rotationAveraging::RelativeRotations & relatives_R,
-  HashMap<IndexT, Mat3> & global_rotations
-)
+bool ReconstructionEngine_globalSfM::Compute_Global_Rotations(const rotationAveraging::RelativeRotations& relatives_R,
+                                                              HashMap<IndexT, Mat3>& global_rotations)
 {
   if(relatives_R.empty())
     return false;
@@ -199,35 +188,29 @@ bool ReconstructionEngine_globalSfM::Compute_Global_Rotations
       set_pose_ids.insert(relative_R.j);
     }
 
-    ALICEVISION_LOG_DEBUG(
-      "-------------------------------\n"
-      " Global rotations computation: " << "\n"
-      "  #relative rotations: " << relatives_R.size() << "\n"
-      "  #global rotations: " << set_pose_ids.size());
+    ALICEVISION_LOG_DEBUG("Global rotations computation: " << "\n"
+                          "\t- relative rotations: " << relatives_R.size() << "\n"
+                          "\t- global rotations: " << set_pose_ids.size());
   }
 
   // Global Rotation solver:
-  const ERelativeRotationInferenceMethod eRelativeRotationInferenceMethod =
-    TRIPLET_ROTATION_INFERENCE_COMPOSITION_ERROR;
-    //TRIPLET_ROTATION_INFERENCE_NONE;
+  const ERelativeRotationInferenceMethod eRelativeRotationInferenceMethod = TRIPLET_ROTATION_INFERENCE_COMPOSITION_ERROR; //TRIPLET_ROTATION_INFERENCE_NONE;
 
   GlobalSfMRotationAveragingSolver rotationAveraging_solver;
-  const bool b_rotationAveraging = rotationAveraging_solver.Run(
-    _eRotationAveragingMethod, eRelativeRotationInferenceMethod,
-    relatives_R, global_rotations);
+  const bool b_rotationAveraging = rotationAveraging_solver.Run(_eRotationAveragingMethod, eRelativeRotationInferenceMethod, relatives_R, global_rotations);
 
   ALICEVISION_LOG_DEBUG("Found #global_rotations: " << global_rotations.size());
 
-  if (b_rotationAveraging)
+  if(b_rotationAveraging)
   {
     // Log input graph to the HTML report
-    if (!_sLoggingFile.empty() && !_outputFolder.empty())
+    if(!_loggingFile.empty() && !_outputFolder.empty())
     {
       // Log a relative pose graph
       {
         std::set<IndexT> set_pose_ids;
         PairSet relative_pose_pairs;
-        for (const auto & view : _sfmData.getViews())
+        for(const auto & view : _sfmData.getViews())
         {
           const IndexT pose_id = view.second->getPoseId();
           set_pose_ids.insert(pose_id);
@@ -253,11 +236,8 @@ bool ReconstructionEngine_globalSfM::Compute_Global_Rotations
 }
 
 /// Compute/refine relative translations and compute global translations
-bool ReconstructionEngine_globalSfM::Compute_Global_Translations
-(
-  const HashMap<IndexT, Mat3> & global_rotations,
-  matching::PairwiseMatches & tripletWise_matches
-)
+bool ReconstructionEngine_globalSfM::Compute_Global_Translations(const HashMap<IndexT, Mat3>& global_rotations,
+                                                                 matching::PairwiseMatches& tripletWise_matches)
 {
   // Translation averaging (compute translations & update them to a global common coordinates system)
   GlobalSfMTranslationAveragingSolver translation_averaging_solver;
@@ -269,21 +249,16 @@ bool ReconstructionEngine_globalSfM::Compute_Global_Translations
     global_rotations,
     tripletWise_matches);
 
-  if (!_sLoggingFile.empty())
+  if(!_loggingFile.empty())
   {
-    Save(_sfmData,
-         (fs::path(_sLoggingFile).parent_path() / "cameraPath_translation_averaging.ply").string(),
-         ESfMData(EXTRINSICS));
+    sfmDataIO::Save(_sfmData,(fs::path(_loggingFile).parent_path() / "cameraPath_translation_averaging.ply").string(), sfmDataIO::ESfMData(sfmDataIO::EXTRINSICS));
   }
 
   return bTranslationAveraging;
 }
 
 /// Compute the initial structure of the scene
-bool ReconstructionEngine_globalSfM::Compute_Initial_Structure
-(
-  matching::PairwiseMatches & tripletWise_matches
-)
+bool ReconstructionEngine_globalSfM::Compute_Initial_Structure(matching::PairwiseMatches& tripletWise_matches)
 {
   // Build tracks from selected triplets (Union of all the validated triplet tracks (_tripletWise_matches))
   {
@@ -371,11 +346,11 @@ bool ReconstructionEngine_globalSfM::Compute_Initial_Structure
     ALICEVISION_LOG_DEBUG("  Triangulation took (s): " << timer.elapsed());
 
     // Export initial structure
-    if (!_sLoggingFile.empty())
+    if (!_loggingFile.empty())
     {
-      Save(_sfmData,
-           (fs::path(_sLoggingFile).parent_path() / "initial_structure.ply").string(),
-           ESfMData(EXTRINSICS | STRUCTURE));
+      sfmDataIO::Save(_sfmData,
+                     (fs::path(_loggingFile).parent_path() / "initial_structure.ply").string(),
+                     sfmDataIO::ESfMData(sfmDataIO::EXTRINSICS | sfmDataIO::STRUCTURE));
     }
   }
   return !_sfmData.structure.empty();
@@ -391,31 +366,31 @@ bool ReconstructionEngine_globalSfM::Adjust()
   bool b_BA_Status = bundle_adjustment_obj.Adjust(_sfmData, BA_REFINE_TRANSLATION | BA_REFINE_STRUCTURE);
   if (b_BA_Status)
   {
-    if (!_sLoggingFile.empty())
+    if (!_loggingFile.empty())
     {
-      Save(_sfmData,
-           (fs::path(_sLoggingFile).parent_path() / "structure_00_refine_T_Xi.ply").string(),
-           ESfMData(EXTRINSICS | STRUCTURE));
+      sfmDataIO::Save(_sfmData,
+                     (fs::path(_loggingFile).parent_path() / "structure_00_refine_T_Xi.ply").string(),
+                     sfmDataIO::ESfMData(sfmDataIO::EXTRINSICS | sfmDataIO::STRUCTURE));
     }
 
     // - refine only Structure and Rotations & translations
     b_BA_Status = bundle_adjustment_obj.Adjust(_sfmData, BA_REFINE_ROTATION | BA_REFINE_TRANSLATION | BA_REFINE_STRUCTURE);
-    if (b_BA_Status && !_sLoggingFile.empty())
+    if (b_BA_Status && !_loggingFile.empty())
     {
-      Save(_sfmData,
-           (fs::path(_sLoggingFile).parent_path() / "structure_01_refine_RT_Xi.ply").string(),
-           ESfMData(EXTRINSICS | STRUCTURE));
+      sfmDataIO::Save(_sfmData,
+                     (fs::path(_loggingFile).parent_path() / "structure_01_refine_RT_Xi.ply").string(),
+                     sfmDataIO::ESfMData(sfmDataIO::EXTRINSICS | sfmDataIO::STRUCTURE));
     }
   }
 
   if (b_BA_Status && !_hasFixedIntrinsics) {
     // - refine all: Structure, motion:{rotations, translations} and optics:{intrinsics}
     b_BA_Status = bundle_adjustment_obj.Adjust(_sfmData, BA_REFINE_ALL);
-    if (b_BA_Status && !_sLoggingFile.empty())
+    if (b_BA_Status && !_loggingFile.empty())
     {
-      Save(_sfmData,
-           (fs::path(_sLoggingFile).parent_path() / "structure_02_refine_KRT_Xi.ply").string(),
-           ESfMData(EXTRINSICS | STRUCTURE));
+      sfmDataIO::Save(_sfmData,
+                     (fs::path(_loggingFile).parent_path() / "structure_02_refine_KRT_Xi.ply").string(),
+                     sfmDataIO::ESfMData(sfmDataIO::EXTRINSICS | sfmDataIO::STRUCTURE));
     }
   }
 
@@ -431,11 +406,9 @@ bool ReconstructionEngine_globalSfM::Adjust()
     "\t\t pixel residual filter  #3DPoints: " << pointcount_pixelresidual_filter << "\n"
     "\t\t angular filter         #3DPoints: " << pointcount_angular_filter);
 
-  if (!_sLoggingFile.empty())
+  if (!_loggingFile.empty())
   {
-    Save(_sfmData,
-         (fs::path(_sLoggingFile).parent_path() / "structure_03_outlier_removed.ply").string(),
-         ESfMData(EXTRINSICS | STRUCTURE));
+    sfmDataIO::Save(_sfmData, (fs::path(_loggingFile).parent_path() / "structure_03_outlier_removed.ply").string(), sfmDataIO::ESfMData(sfmDataIO::EXTRINSICS | sfmDataIO::STRUCTURE));
   }
 
   // Check that poses & intrinsic cover some measures (after outlier removal)
@@ -455,26 +428,21 @@ bool ReconstructionEngine_globalSfM::Adjust()
   if(!_hasFixedIntrinsics)
     refineOptions |= BA_REFINE_INTRINSICS_ALL;
   b_BA_Status = bundle_adjustment_obj.Adjust(_sfmData, refineOptions);
-  if (b_BA_Status && !_sLoggingFile.empty())
+  if(b_BA_Status && !_loggingFile.empty())
   {
-    Save(_sfmData,
-      (fs::path(_sLoggingFile).parent_path() / "structure_04_outlier_removed.ply").string(),
-      ESfMData(EXTRINSICS | STRUCTURE));
+    sfmDataIO::Save(_sfmData, (fs::path(_loggingFile).parent_path() / "structure_04_outlier_removed.ply").string(), sfmDataIO::ESfMData(sfmDataIO::EXTRINSICS | sfmDataIO::STRUCTURE));
   }
 
   return b_BA_Status;
 }
 
-void ReconstructionEngine_globalSfM::Compute_Relative_Rotations
-(
-  rotationAveraging::RelativeRotations & vec_relatives_R
-)
+void ReconstructionEngine_globalSfM::Compute_Relative_Rotations(rotationAveraging::RelativeRotations& vec_relatives_R)
 {
   //
   // Build the Relative pose graph from matches:
   //
   /// pairwise view relation between poseIds
-  typedef std::map< Pair, PairSet > PoseWiseMatches;
+  typedef std::map<Pair, PairSet> PoseWiseMatches;
 
   // List shared correspondences (pairs) between poses
   PoseWiseMatches poseWiseMatches;
@@ -482,27 +450,26 @@ void ReconstructionEngine_globalSfM::Compute_Relative_Rotations
     iterMatches != _pairwiseMatches->end(); ++iterMatches)
   {
     const Pair pair = iterMatches->first;
-    const View * v1 = _sfmData.getViews().at(pair.first).get();
-    const View * v2 = _sfmData.getViews().at(pair.second).get();
+    const View* v1 = _sfmData.getViews().at(pair.first).get();
+    const View* v2 = _sfmData.getViews().at(pair.second).get();
     poseWiseMatches[Pair(v1->getPoseId(), v2->getPoseId())].insert(pair);
   }
 
-  boost::progress_display my_progress_bar( poseWiseMatches.size(),
-      std::cout, "\n- Relative pose computation -\n" );
+  boost::progress_display progressBar( poseWiseMatches.size(), std::cout, "\n- Relative pose computation -\n" );
   #pragma omp parallel for schedule(dynamic)
   // Compute the relative pose from pairwise point matches:
   for (int i = 0; i < poseWiseMatches.size(); ++i)
   {
     #pragma omp critical
     {
-      ++my_progress_bar;
+      ++progressBar;
     }
     {
       PoseWiseMatches::const_iterator iter (poseWiseMatches.begin());
       std::advance(iter, i);
-      const auto & relative_pose_iterator(*iter);
+      const auto& relative_pose_iterator(*iter);
       const Pair relative_pose_pair = relative_pose_iterator.first;
-      const PairSet & match_pairs = relative_pose_iterator.second;
+      const PairSet& match_pairs = relative_pose_iterator.second;
 
       // If a pair has the same ID, discard it
       if (relative_pose_pair.first == relative_pose_pair.second)
@@ -522,8 +489,8 @@ void ReconstructionEngine_globalSfM::Compute_Relative_Rotations
       const IndexT I = pairIterator.first;
       const IndexT J = pairIterator.second;
 
-      const View * view_I = _sfmData.views[I].get();
-      const View * view_J = _sfmData.views[J].get();
+      const View* view_I = _sfmData.views[I].get();
+      const View* view_J = _sfmData.views[J].get();
 
       // Check that valid cameras are existing for the pair of view
       if (_sfmData.getIntrinsics().count(view_I->getIntrinsicId()) == 0 ||
@@ -532,8 +499,8 @@ void ReconstructionEngine_globalSfM::Compute_Relative_Rotations
 
       // Setup corresponding bearing vector
       const matching::MatchesPerDescType & matchesPerDesc = _pairwiseMatches->at(pairIterator);
-      const size_t nbBearing = matchesPerDesc.getNbAllMatches();
-      size_t iBearing = 0;
+      const std::size_t nbBearing = matchesPerDesc.getNbAllMatches();
+      std::size_t iBearing = 0;
       Mat x1(2, nbBearing), x2(2, nbBearing);
 
       for(const auto& matchesPerDescIt: matchesPerDesc)
@@ -550,8 +517,8 @@ void ReconstructionEngine_globalSfM::Compute_Relative_Rotations
       }
       assert(nbBearing == iBearing);
 
-      const IntrinsicBase * cam_I = _sfmData.getIntrinsics().at(view_I->getIntrinsicId()).get();
-      const IntrinsicBase * cam_J = _sfmData.getIntrinsics().at(view_J->getIntrinsicId()).get();
+      const IntrinsicBase* cam_I = _sfmData.getIntrinsics().at(view_I->getIntrinsicId()).get();
+      const IntrinsicBase* cam_J = _sfmData.getIntrinsics().at(view_J->getIntrinsicId()).get();
 
       RelativePoseInfo relativePose_info;
       // Compute max authorized error as geometric mean of camera plane tolerated residual error
@@ -670,13 +637,12 @@ void ReconstructionEngine_globalSfM::Compute_Relative_Rotations
   }
 
   // Log input graph to the HTML report
-  if (!_sLoggingFile.empty() && !_outputFolder.empty())
+  if (!_loggingFile.empty() && !_outputFolder.empty())
   {
     // Log a relative view graph
     {
       std::set<IndexT> set_ViewIds;
-      std::transform(_sfmData.getViews().begin(), _sfmData.getViews().end(),
-        std::inserter(set_ViewIds, set_ViewIds.begin()), stl::RetrieveKey());
+      std::transform(_sfmData.getViews().begin(), _sfmData.getViews().end(), std::inserter(set_ViewIds, set_ViewIds.begin()), stl::RetrieveKey());
       graph::indexedGraph putativeGraph(set_ViewIds, getImagePairs(*_pairwiseMatches));
       graph::exportToGraphvizData((fs::path(_outputFolder) / "global_relative_rotation_view_graph.dot").string(), putativeGraph.g);
     }
@@ -685,7 +651,7 @@ void ReconstructionEngine_globalSfM::Compute_Relative_Rotations
     {
       std::set<IndexT> set_pose_ids;
       PairSet relative_pose_pairs;
-      for (const auto & relative_R : vec_relatives_R)
+      for(const auto& relative_R : vec_relatives_R)
       {
         const Pair relative_pose_indices(relative_R.i, relative_R.j);
         relative_pose_pairs.insert(relative_pose_indices);

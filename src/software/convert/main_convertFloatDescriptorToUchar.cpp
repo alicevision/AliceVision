@@ -100,8 +100,8 @@ int main( int argc, char** argv )
     fs::create_directories(outputFolder);
   }
   
-  size_t countFeat = 0;
-  size_t countDesc = 0;
+  std::size_t countFeat = 0;
+  std::size_t countDesc = 0;
 
   fs::directory_iterator iterator(inputFolder);
   for(; iterator != fs::directory_iterator(); ++iterator)

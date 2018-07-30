@@ -4,7 +4,8 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
-#include <aliceVision/sfm/sfmDataIO.hpp>
+#include <aliceVision/sfmData/SfMData.hpp>
+#include <aliceVision/sfmDataIO/sfmDataIO.hpp>
 #include <aliceVision/sfm/pipeline/regionsIO.hpp>
 #include <aliceVision/voctree/Database.hpp>
 #include <aliceVision/voctree/databaseIO.hpp>
@@ -12,16 +13,8 @@
 #include <aliceVision/voctree/descriptorLoader.hpp>
 #include <aliceVision/matching/IndMatch.hpp>
 #include <aliceVision/system/Logger.hpp>
-#include <aliceVision/types.hpp>
-#include <aliceVision/voctree/databaseIO.hpp>
-#include <aliceVision/sfm/SfMData.hpp>
-#include <aliceVision/sfm/sfmDataIO.hpp>
-#include <aliceVision/sfm/pipeline/regionsIO.hpp>
-#include <aliceVision/sfm/pipeline/ReconstructionEngine.hpp>
-#include <aliceVision/feature/FeaturesPerView.hpp>
-#include <aliceVision/feature/RegionsPerView.hpp>
-#include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/cmdline.hpp>
+#include <aliceVision/types.hpp>
 
 #include <Eigen/Core>
 
@@ -148,8 +141,8 @@ int main(int argc, char** argv)
   std::string distance;
   int Nmax = 0;
 
-  aliceVision::sfm::SfMData sfmData;
-  aliceVision::sfm::SfMData *querySfmData;
+  aliceVision::sfmData::SfMData sfmData;
+  aliceVision::sfmData::SfMData *querySfmData;
 
   po::options_description allParams(programDescription + "AliceVision voctreeQueryUtility");
 
@@ -268,7 +261,7 @@ int main(int argc, char** argv)
   if(withOutDir)
   {
     // load the json for the dataset used to build the database
-    if(sfm::Load(sfmData, sfmDataFilename, sfm::ESfMData(sfm::VIEWS|sfm::INTRINSICS)))
+    if(sfmDataIO::Load(sfmData, sfmDataFilename, sfmDataIO::ESfMData(sfmDataIO::VIEWS|sfmDataIO::INTRINSICS)))
     {
       ALICEVISION_LOG_INFO("SfMData loaded from " << sfmDataFilename << " containing: ");
       ALICEVISION_LOG_INFO("\tnumber of views: " << sfmData.getViews().size());
@@ -282,8 +275,8 @@ int main(int argc, char** argv)
     // load the json for the dataset used to query the database
     if(withQuery)
     {
-      querySfmData = new aliceVision::sfm::SfMData();
-      if(sfm::Load(*querySfmData, querySfmDataFilename, sfm::ESfMData(sfm::VIEWS|sfm::INTRINSICS)))
+      querySfmData = new aliceVision::sfmData::SfMData();
+      if(sfmDataIO::Load(*querySfmData, querySfmDataFilename, sfmDataIO::ESfMData(sfmDataIO::VIEWS|sfmDataIO::INTRINSICS)))
       {
         ALICEVISION_LOG_INFO("SfMData loaded from " << querySfmDataFilename << " containing: ");
         ALICEVISION_LOG_INFO("\tnumber of views: " << querySfmData->getViews().size());
@@ -421,7 +414,7 @@ int main(int argc, char** argv)
 
       // get the dirname from the filename
       
-      aliceVision::sfm::Views::const_iterator it = querySfmData->getViews().find(docMatches.first);
+      aliceVision::sfmData::Views::const_iterator it = querySfmData->getViews().find(docMatches.first);
       if(it == querySfmData->getViews().end())
       {
         // this is very wrong
@@ -498,7 +491,7 @@ int main(int argc, char** argv)
         fs::path sylinkName; //< the name used for the symbolic link
 
         // get the dirname from the filename
-        aliceVision::sfm::Views::const_iterator it = sfmData.getViews().find(matches[j].id);
+        aliceVision::sfmData::Views::const_iterator it = sfmData.getViews().find(matches[j].id);
         if(it != sfmData.getViews().end())
         {
           absoluteFilename = it->second->getImagePath();

@@ -7,9 +7,14 @@
 
 #pragma once
 
-#include <aliceVision/sfm/sfmDataIO.hpp>
+#include <string>
 
 namespace aliceVision {
+
+namespace sfmData {
+class SfMData;
+} // namespace sfmData
+
 namespace sfm {
 
 /**
@@ -18,7 +23,7 @@ namespace sfm {
  * @param htmlFilename The filename of the HTML report
  * @return true if ok
  */
-bool generateSfMReport(const SfMData& sfmData, const std::string& htmlFilename);
+bool generateSfMReport(const sfmData::SfMData& sfmData, const std::string& htmlFilename);
 
 } // namespace sfm
 } // namespace aliceVision
