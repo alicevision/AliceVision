@@ -43,8 +43,8 @@ set_target_properties(aliceVision_system
   VERSION "${ALICEVISION_VERSION_MAJOR}.${ALICEVISION_VERSION_MINOR}"
 )
 
-install(TARGETS aliceVision_system
-  DESTINATION lib/
-  EXPORT aliceVision-targets
-)
+# install(TARGETS aliceVision_system
+#   DESTINATION lib/
+#   EXPORT aliceVision-targets
+# )
 
