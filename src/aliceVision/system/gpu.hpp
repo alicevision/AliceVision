@@ -37,8 +37,7 @@ inline bool gpuSupportCUDA(int minComputeCapabilityMajor,
   success = cudaGetDeviceCount(&nbDevices);
   if( success != cudaSuccess )
   {
-    std::string errmsg = std::string("cudaGetDeviceCount failed: ") + cudaGetErrorString(success);
-    ALICEVISION_LOG_ERROR( errmsg );
+    ALICEVISION_LOG_ERROR("cudaGetDeviceCount failed: " << cudaGetErrorString(success));
   }
 
   if(nbDevices > 0)
@@ -60,14 +59,17 @@ inline bool gpuSupportCUDA(int minComputeCapabilityMajor,
       }
       else
       {
-        ALICEVISION_LOG_ERROR("BAD CUDA-Enabled GPU detected.");
+        ALICEVISION_LOG_ERROR("CUDA-Enabled GPU detected, but the compute capabilities is not enough.\n"
+          << " - Device " << i << ": " << deviceProperties.major << "." << deviceProperties.minor << ", global memory: " << int(deviceProperties.totalGlobalMem / (1024*1024)) << "MB\n"
+          << " - Requirements: " << minComputeCapabilityMajor << "." << minComputeCapabilityMinor << ", global memory: " << minTotalDeviceMemory << "MB\n"
+          );
       }
     }
     ALICEVISION_LOG_INFO("CUDA-Enabled GPU not supported.");
   }
   else
   {
-    ALICEVISION_LOG_DEBUG("Can't find CUDA-Enabled GPU.");
+    ALICEVISION_LOG_INFO("Can't find CUDA-Enabled GPU.");
   }
 #endif
   return false;
@@ -93,11 +95,15 @@ inline std::string gpuInformationCUDA()
       if(cudaGetDeviceProperties(deviceProperties.get(), i) != cudaSuccess)
         throw std::runtime_error("Cannot get properties for CUDA gpu device " + std::to_string(i));
 
-      size_t avail;
-      size_t total;
-      if (cudaMemGetInfo(&avail, &total) != cudaSuccess)
-          throw std::runtime_error("Cannot get memory information for CUDA gpu device " + std::to_string(i));
-
+      std::size_t avail;
+      std::size_t total;
+      if(cudaMemGetInfo(&avail, &total) != cudaSuccess)
+      {
+          // if the card does not provide this information.
+          avail = 0;
+          total = 0;
+          ALICEVISION_LOG_WARNING("Cannot get available memory information for CUDA gpu device " << i << ".");
+      }
       std::stringstream deviceSS;
 
       deviceSS << "Device information:" << std::endl
