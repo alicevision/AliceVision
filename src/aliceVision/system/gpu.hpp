@@ -84,7 +84,11 @@ inline std::string gpuInformationCUDA()
   std::string information;
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_CUDA)
   int nbDevices = 0;
-  cudaGetDeviceCount(&nbDevices);
+  if( cudaGetDeviceCount(&nbDevices) != cudaSuccess )
+  {
+    ALICEVISION_LOG_WARNING( "Could not determine number of CUDA cards in this system" );
+    nbDevices = 0;
+  }
 
   if(nbDevices > 0)
   {
@@ -94,6 +98,12 @@ inline std::string gpuInformationCUDA()
       cudaDeviceProp deviceProperties;
       if(cudaGetDeviceProperties( &deviceProperties, i) != cudaSuccess )
         throw std::runtime_error("Cannot get properties for CUDA gpu device " + std::to_string(i));
+
+      if( cudaSetDevice( i ) != cudaSuccess )
+      {
+        ALICEVISION_LOG_WARNING( "Device with number " << i << " does not exist" );
+        continue;
+      }
 
       std::size_t avail;
       std::size_t total;
