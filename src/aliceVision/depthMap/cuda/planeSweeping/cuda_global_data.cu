@@ -208,6 +208,15 @@ void GlobalData::allocPyramidArrays( int levels, int w, int h )
     tex_desc.readMode         = cudaReadModeNormalizedFloat;
     tex_desc.filterMode       = cudaFilterModeLinear;
 
+    if( w > global_data.dev_properties.maxTexture2DLinear[0] )
+    {
+        ALICEVISION_LOG_DEBUG( "X dimension of input image exceeds texture limits of this device." );
+    }
+    if( h > global_data.dev_properties.maxTexture2DLinear[1] )
+    {
+        ALICEVISION_LOG_DEBUG( "Y dimension of input image exceeds texture limits of this device." );
+    }
+
     for( int lvl=0; lvl<levels; lvl++ )
     {
         _pyramid_array[ lvl ] = new CudaDeviceMemoryPitched<uchar4, 2>( CudaSize<2>( w, h ) );

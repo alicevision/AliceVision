@@ -244,6 +244,8 @@ void ps_deviceAllocate( int ncams, int width, int height, int scales,
         {
             printf("Could not select CUDA device no %d\n", deviceId);
         }
+
+        outval = cudaGetDeviceProperties( &global_data.dev_properties, deviceId );
     }
 
     // printf("ps_deviceAllocate\n");
@@ -278,6 +280,11 @@ void ps_deviceAllocate( int ncams, int width, int height, int scales,
 
     pr_printfDeviceMemoryInfo();
     // printf("ps_deviceAllocate - done\n");
+}
+
+int ps_getTexture2DLinear()
+{
+    return global_data.dev_properties.maxTexture2DLinear[0];
 }
 
 void testCUDAdeviceNo(int CUDAdeviceNo)

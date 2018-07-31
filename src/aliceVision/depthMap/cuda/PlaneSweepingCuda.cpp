@@ -175,11 +175,6 @@ PlaneSweepingCuda::PlaneSweepingCuda(int _CUDADeviceNo, mvsUtils::ImagesCache* _
 {
     CUDADeviceNo = _CUDADeviceNo;
 
-    if( cudaGetDeviceProperties( &_dev_properties, _CUDADeviceNo ) != cudaSuccess )
-    {
-        ALICEVISION_LOG_INFO("PlaneSweepingCuda: failed to store CUDA device properties for " << CUDADeviceNo << std::endl);
-    }
-
     ic = _ic;
     scales = _scales;
     mp = _mp;
@@ -1103,7 +1098,7 @@ float PlaneSweepingCuda::sweepPixelsToVolume(int nDepthsToSearch, StaticVector<u
     // hard-coded for CC 3.0 and 3.5
     // int slicesAtTime = std::min(pixels->size(), 65000 );
     // dynamically extracted slice size from cudaDeviceProp structure
-    int slicesAtTime = std::min(pixels->size(), _dev_properties.maxTexture2DLinear[0]);
+    int slicesAtTime = std::min( pixels->size(), ps_getTexture2DLinear() );
     // hard-coded value
     // int slicesAtTime = std::min(pixels->size(), 4096*16); //TODO
     // int slicesAtTime = 480/scale;

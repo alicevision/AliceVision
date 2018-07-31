@@ -6,8 +6,6 @@
 
 #pragma once
 
-#include <cuda_runtime.h>
-
 #include <aliceVision/mvsData/Color.hpp>
 #include <aliceVision/mvsData/geometry.hpp>
 #include <aliceVision/mvsData/Pixel.hpp>
@@ -75,8 +73,6 @@ public:
     int nImgsInGPUAtTime;
     bool subPixel;
     int varianceWSH;
-
-    cudaDeviceProp _dev_properties;
 
     // float gammaC,gammaP;
     mvsUtils::ImagesCache* ic;

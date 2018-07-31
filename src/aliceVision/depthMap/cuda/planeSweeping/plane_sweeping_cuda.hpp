@@ -37,6 +37,8 @@ void pr_printfDeviceMemoryInfo();
 
 float3 ps_getDeviceMemoryInfo();
 
+int ps_getTexture2DLinear();
+
 void ps_init_reference_camera_matrices(
                     const float* _P, const float* _iP, const float* _R,
                     const float* _iR, const float* _K, const float* _iK,

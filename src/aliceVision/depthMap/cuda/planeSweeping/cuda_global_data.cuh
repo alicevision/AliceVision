@@ -6,6 +6,7 @@
 #pragma once
 
 #include "aliceVision/depthMap/cuda/commonStructures.hpp"
+#include "aliceVision/system/Logger.hpp"
 
 #include <cuda_runtime.h>
 
@@ -49,36 +50,7 @@ struct PitchedMem_Texture
     CudaDeviceMemoryPitched<T,2>* mem;
     cudaTextureObject_t           tex;
 
-    PitchedMem_Texture( int w, int h )
-    {
-	cudaError_t err;
-
-        mem = new CudaDeviceMemoryPitched<T,2>( CudaSize<2>( w, h ) );
-        CHECK_CUDA_ERROR();
-
-        cudaTextureDesc      tex_desc;
-        memset(&tex_desc, 0, sizeof(cudaTextureDesc));
-        tex_desc.normalizedCoords = 0; // addressed (x,y) in [width,height]
-        tex_desc.addressMode[0]   = cudaAddressModeClamp;
-        tex_desc.addressMode[1]   = cudaAddressModeClamp;
-        tex_desc.addressMode[2]   = cudaAddressModeClamp;
-        tex_desc.readMode         = rMode;
-        tex_desc.filterMode       = fMode;
-
-        cudaResourceDesc res_desc;
-        res_desc.resType = cudaResourceTypePitch2D;
-        res_desc.res.pitch2D.desc         = cudaCreateChannelDesc<T>();
-        res_desc.res.pitch2D.devPtr       = mem->getBuffer();
-        res_desc.res.pitch2D.width        = mem->getSize()[0];
-        res_desc.res.pitch2D.height       = mem->getSize()[1];
-        res_desc.res.pitch2D.pitchInBytes = mem->getPitch();
-
-        err = cudaCreateTextureObject( &tex,
-                                       &res_desc,
-                                       &tex_desc,
-                                       0 );
-        memOpErrorCheck( err, __FILE__, __LINE__, "Failed to allocate a CUDA Texture object" );
-    }
+    PitchedMem_Texture( int w, int h ); // Function body after GlobalData definition
 
     ~PitchedMem_Texture( )
     {
@@ -194,7 +166,9 @@ public:
     TexturedPitchedMemFloatPoint   pitched_mem_float_point_tex_cache;
 
     TexturedPitchedMemUintPoint    pitched_mem_uint_point_tex_cache;
-    TexturedPitchedMemIntPoint    pitched_mem_int_point_tex_cache;
+    TexturedPitchedMemIntPoint     pitched_mem_int_point_tex_cache;
+
+    cudaDeviceProp                 dev_properties;
 };
 
 /*
@@ -202,6 +176,47 @@ public:
  * as recomputed in the original code without a decent need.
  */
 extern thread_local GlobalData global_data;
+
+template<typename T,cudaTextureFilterMode fMode,cudaTextureReadMode rMode>
+PitchedMem_Texture<T,fMode,rMode>::PitchedMem_Texture( int w, int h )
+{
+    cudaError_t err;
+
+    if( w > global_data.dev_properties.maxTexture2DLinear[0] )
+    {
+        ALICEVISION_LOG_DEBUG( "X dimension of input image exceeds texture limits of this device." );
+    }
+    if( h > global_data.dev_properties.maxTexture2DLinear[1] )
+    {
+        ALICEVISION_LOG_DEBUG( "Y dimension of input image exceeds texture limits of this device." );
+    }
+
+    mem = new CudaDeviceMemoryPitched<T,2>( CudaSize<2>( w, h ) );
+    CHECK_CUDA_ERROR();
+
+    cudaTextureDesc      tex_desc;
+    memset(&tex_desc, 0, sizeof(cudaTextureDesc));
+    tex_desc.normalizedCoords = 0; // addressed (x,y) in [width,height]
+    tex_desc.addressMode[0]   = cudaAddressModeClamp;
+    tex_desc.addressMode[1]   = cudaAddressModeClamp;
+    tex_desc.addressMode[2]   = cudaAddressModeClamp;
+    tex_desc.readMode         = rMode;
+    tex_desc.filterMode       = fMode;
+
+    cudaResourceDesc res_desc;
+    res_desc.resType = cudaResourceTypePitch2D;
+    res_desc.res.pitch2D.desc         = cudaCreateChannelDesc<T>();
+    res_desc.res.pitch2D.devPtr       = mem->getBuffer();
+    res_desc.res.pitch2D.width        = mem->getSize()[0];
+    res_desc.res.pitch2D.height       = mem->getSize()[1];
+    res_desc.res.pitch2D.pitchInBytes = mem->getPitch();
+
+    err = cudaCreateTextureObject( &tex,
+                                   &res_desc,
+                                   &tex_desc,
+                                   0 );
+    memOpErrorCheck( err, __FILE__, __LINE__, "Failed to allocate a CUDA Texture object" );
+}
 
 }; // namespace depthMap
 }; // namespace aliceVision
