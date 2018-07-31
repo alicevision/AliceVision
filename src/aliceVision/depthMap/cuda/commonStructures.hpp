@@ -374,7 +374,7 @@ public:
     if (Dim >= 3) sx = _size[2];
     if(Dim == 2)
     {
-      err = cudaMallocPitch<Type>(&buffer, &pitch, _size[0] * sizeof(Type), _size[1]);
+      err = cudaMallocPitch(&buffer, &pitch, _size[0] * sizeof(Type), _size[1]);
       memOpErrorCheck( err, __FILE__, __LINE__, "Failed to alloc CUDA pitched mem" );
     }
     else if(Dim >= 3)
@@ -411,7 +411,7 @@ public:
     if (Dim >= 3) sx = rhs.getSize()[2];
     if(Dim == 2)
     {
-      err = cudaMallocPitch<Type>(&buffer, &pitch, size[0] * sizeof(Type), size[1]);
+      err = cudaMallocPitch(&buffer, &pitch, size[0] * sizeof(Type), size[1]);
       memOpErrorCheck( err, __FILE__, __LINE__, "Failed to alloc CUDA pitched mem" );
     }
     if(Dim >= 3)
