@@ -74,6 +74,8 @@ public:
     bool subPixel;
     int varianceWSH;
 
+    cudaDeviceProperties _dev_properties;
+
     // float gammaC,gammaP;
     mvsUtils::ImagesCache* ic;
 

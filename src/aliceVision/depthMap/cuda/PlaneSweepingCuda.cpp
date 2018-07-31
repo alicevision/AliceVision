@@ -175,6 +175,11 @@ PlaneSweepingCuda::PlaneSweepingCuda(int _CUDADeviceNo, mvsUtils::ImagesCache* _
 {
     CUDADeviceNo = _CUDADeviceNo;
 
+    if( cudaGetDeviceProperties( &_dev_properties, _CUDADeviceNo ) != cudaSuccess )
+    {
+        ALICEVISION_LOG_INFO("PlaneSweepingCuda: failed to store CUDA device properties for " << CUDADeviceNo << std::endl);
+    }
+
     ic = _ic;
     scales = _scales;
     mp = _mp;
