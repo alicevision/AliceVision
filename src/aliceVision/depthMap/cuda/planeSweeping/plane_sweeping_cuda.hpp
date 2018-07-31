@@ -29,24 +29,27 @@ inline unsigned int divUp(unsigned int a, unsigned int b) {
   return (a % b != 0) ? (a / b + 1) : (a / b);
 }
 
-float3 ps_M3x3mulV3(const float* M3x3, const float3& V);
+// float3 ps_M3x3mulV3(const float* M3x3, const float3& V);
 
-void ps_normalize(float3& a);
+// void ps_normalize(float3& a);
+
+void ps_init_camera_vectors( CameraBaseStruct& cam );
 
 void pr_printfDeviceMemoryInfo();
 
-float3 ps_getDeviceMemoryInfo();
-
+// Get the 0-dimension of the 2D linear texture limit for the current CUDA device
 int ps_getTexture2DLinear();
 
-void ps_init_reference_camera_matrices(
-                    const float* _P, const float* _iP, const float* _R,
-                    const float* _iR, const float* _K, const float* _iK,
-                    const float* _C);
+float3 ps_getDeviceMemoryInfo();
 
-void ps_init_target_camera_matrices(
-                    float* _P, float* _iP, float* _R, float* _iR, float* _K, float* _iK,
-                    float* _C);
+// void ps_init_reference_camera_matrices(
+//                     const float* _P, const float* _iP, const float* _R,
+//                     const float* _iR, const float* _K, const float* _iK,
+//                     const float* _C);
+
+// void ps_init_target_camera_matrices(
+//                     float* _P, float* _iP, float* _R, float* _iR, float* _K, float* _iK,
+//                     float* _C);
 
 // opaque declaration
 struct GaussianArray;

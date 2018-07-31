@@ -12,6 +12,8 @@
 #include <assert.h>
 #include <stdexcept>
 
+#include "cameraStruct.hpp"
+
 namespace aliceVision {
 namespace depthMap {
 
@@ -879,7 +881,7 @@ template<class Type, unsigned Dim> void copy(CudaDeviceMemoryPitched<Type, Dim>&
 
 struct cameraStruct
 {
-    float P[12], iP[9], R[9], iR[9], K[9], iK[9], C[3];
+    CameraBaseStruct cam;
     CudaHostMemoryHeap<uchar4, 2>* tex_rgba_hmh;
     int camId;
     int rc;

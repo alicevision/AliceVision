@@ -42,6 +42,30 @@ __host__ void ps_normalize(float3& a)
     a.z /= d;
 }
 
+__host__ void ps_init_camera_vectors( CameraBaseStruct& cam )
+{
+    float3 z;
+    z.x = 0.0f;
+    z.y = 0.0f;
+    z.z = 1.0f;
+    cam.ZVect = ps_M3x3mulV3(cam.iR, z);
+    ps_normalize(cam.ZVect);
+
+    float3 y;
+    y.x = 0.0f;
+    y.y = 1.0f;
+    y.z = 0.0f;
+    cam.YVect = ps_M3x3mulV3(cam.iR, y);
+    ps_normalize(cam.YVect);
+
+    float3 x;
+    x.x = 1.0f;
+    x.y = 0.0f;
+    x.z = 0.0f;
+    cam.XVect = ps_M3x3mulV3(cam.iR, x);
+    ps_normalize(cam.XVect);
+}
+
 void pr_printfDeviceMemoryInfo()
 {
     size_t iavail;
@@ -76,102 +100,57 @@ float3 ps_getDeviceMemoryInfo()
     return make_float3(avail, total, used);
 }
 
-__host__ void ps_init_reference_camera_matrices( const float* _P, const float* _iP, const float* _R,
-                                                 const float* _iR, const float* _K, const float* _iK,
-                                                 const float* _C )
+static __host__ void ps_init_reference_camera_matrices( const CameraBaseStruct& cam )
 {
     cudaError_t err;
 
-    err = cudaMemcpyToSymbol(sg_s_rP, _P, sizeof(float) * 3 * 4);
+    err = cudaMemcpyToSymbol(sg_s_rP, cam.P, sizeof(float) * 3 * 4);
     memOpErrorCheck( err, __FILE__, __LINE__, "Failed copying to symbol" );
-    err = cudaMemcpyToSymbol(sg_s_riP, _iP, sizeof(float) * 3 * 3);
+    err = cudaMemcpyToSymbol(sg_s_riP, cam.iP, sizeof(float) * 3 * 3);
     memOpErrorCheck( err, __FILE__, __LINE__, "Failed copying to symbol" );
-    err = cudaMemcpyToSymbol(sg_s_rR, _R, sizeof(float) * 3 * 3);
+    err = cudaMemcpyToSymbol(sg_s_rR, cam.R, sizeof(float) * 3 * 3);
     memOpErrorCheck( err, __FILE__, __LINE__, "Failed copying to symbol" );
-    err = cudaMemcpyToSymbol(sg_s_riR, _iR, sizeof(float) * 3 * 3);
+    err = cudaMemcpyToSymbol(sg_s_riR, cam.iR, sizeof(float) * 3 * 3);
     memOpErrorCheck( err, __FILE__, __LINE__, "Failed copying to symbol" );
-    err = cudaMemcpyToSymbol(sg_s_rK, _K, sizeof(float) * 3 * 3);
+    err = cudaMemcpyToSymbol(sg_s_rK, cam.K, sizeof(float) * 3 * 3);
     memOpErrorCheck( err, __FILE__, __LINE__, "Failed copying to symbol" );
-    err = cudaMemcpyToSymbol(sg_s_riK, _iK, sizeof(float) * 3 * 3);
+    err = cudaMemcpyToSymbol(sg_s_riK, cam.iK, sizeof(float) * 3 * 3);
     memOpErrorCheck( err, __FILE__, __LINE__, "Failed copying to symbol" );
-    err = cudaMemcpyToSymbol(sg_s_rC, _C, sizeof(float) * 3);
+    err = cudaMemcpyToSymbol(sg_s_rC, &cam.C, sizeof(float) * 3);
     memOpErrorCheck( err, __FILE__, __LINE__, "Failed copying to symbol" );
 
-    float3 z;
-    z.x = 0.0f;
-    z.y = 0.0f;
-    z.z = 1.0f;
-    float3 _rZVect = ps_M3x3mulV3(_iR, z);
-    ps_normalize(_rZVect);
-
-    float3 y;
-    y.x = 0.0f;
-    y.y = 1.0f;
-    y.z = 0.0f;
-    float3 _rYVect = ps_M3x3mulV3(_iR, y);
-    ps_normalize(_rYVect);
-
-    float3 x;
-    x.x = 1.0f;
-    x.y = 0.0f;
-    x.z = 0.0f;
-    float3 _rXVect = ps_M3x3mulV3(_iR, x);
-    ps_normalize(_rXVect);
-
-    err = cudaMemcpyToSymbol(sg_s_rXVect, &_rXVect, sizeof(float) * 3);
+    err = cudaMemcpyToSymbol(sg_s_rXVect, &cam.XVect, sizeof(float) * 3);
     memOpErrorCheck( err, __FILE__, __LINE__, "Failed copying to symbol" );
-    err = cudaMemcpyToSymbol(sg_s_rYVect, &_rYVect, sizeof(float) * 3);
+    err = cudaMemcpyToSymbol(sg_s_rYVect, &cam.YVect, sizeof(float) * 3);
     memOpErrorCheck( err, __FILE__, __LINE__, "Failed copying to symbol" );
-    err = cudaMemcpyToSymbol(sg_s_rZVect, &_rZVect, sizeof(float) * 3);
+    err = cudaMemcpyToSymbol(sg_s_rZVect, &cam.ZVect, sizeof(float) * 3);
     memOpErrorCheck( err, __FILE__, __LINE__, "Failed copying to symbol" );
 }
 
-__host__ void ps_init_target_camera_matrices(float* _P, float* _iP, float* _R, float* _iR, float* _K, float* _iK,
-                                             float* _C)
+static __host__ void ps_init_target_camera_matrices( const CameraBaseStruct& cam )
 {
     cudaError_t err;
 
-    err = cudaMemcpyToSymbol(sg_s_tP, _P, sizeof(float) * 3 * 4);
+    err = cudaMemcpyToSymbol(sg_s_tP, cam.P, sizeof(float) * 3 * 4);
     memOpErrorCheck( err, __FILE__, __LINE__, "Failed copying to symbol" );
-    err = cudaMemcpyToSymbol(sg_s_tiP, _iP, sizeof(float) * 3 * 3);
+    err = cudaMemcpyToSymbol(sg_s_tiP, cam.iP, sizeof(float) * 3 * 3);
     memOpErrorCheck( err, __FILE__, __LINE__, "Failed copying to symbol" );
-    err = cudaMemcpyToSymbol(sg_s_tR, _R, sizeof(float) * 3 * 3);
+    err = cudaMemcpyToSymbol(sg_s_tR, cam.R, sizeof(float) * 3 * 3);
     memOpErrorCheck( err, __FILE__, __LINE__, "Failed copying to symbol" );
-    err = cudaMemcpyToSymbol(sg_s_tiR, _iR, sizeof(float) * 3 * 3);
+    err = cudaMemcpyToSymbol(sg_s_tiR, cam.iR, sizeof(float) * 3 * 3);
     memOpErrorCheck( err, __FILE__, __LINE__, "Failed copying to symbol" );
-    err = cudaMemcpyToSymbol(sg_s_tK, _K, sizeof(float) * 3 * 3);
+    err = cudaMemcpyToSymbol(sg_s_tK, cam.K, sizeof(float) * 3 * 3);
     memOpErrorCheck( err, __FILE__, __LINE__, "Failed copying to symbol" );
-    err = cudaMemcpyToSymbol(sg_s_tiK, _iK, sizeof(float) * 3 * 3);
+    err = cudaMemcpyToSymbol(sg_s_tiK, cam.iK, sizeof(float) * 3 * 3);
     memOpErrorCheck( err, __FILE__, __LINE__, "Failed copying to symbol" );
-    err = cudaMemcpyToSymbol(sg_s_tC, _C, sizeof(float) * 3);
+    err = cudaMemcpyToSymbol(sg_s_tC, &cam.C, sizeof(float) * 3);
     memOpErrorCheck( err, __FILE__, __LINE__, "Failed copying to symbol" );
 
-    float3 z;
-    z.x = 0.0f;
-    z.y = 0.0f;
-    z.z = 1.0f;
-    float3 _tZVect = ps_M3x3mulV3(_iR, z);
-    ps_normalize(_tZVect);
-
-    float3 y;
-    y.x = 0.0f;
-    y.y = 1.0f;
-    y.z = 0.0f;
-    float3 _tYVect = ps_M3x3mulV3(_iR, y);
-    ps_normalize(_tYVect);
-
-    float3 x;
-    x.x = 1.0f;
-    x.y = 0.0f;
-    x.z = 0.0f;
-    float3 _tXVect = ps_M3x3mulV3(_iR, x);
-    ps_normalize(_tXVect);
-
-    err = cudaMemcpyToSymbol(sg_s_tXVect, &_tXVect, sizeof(float) * 3);
+    err = cudaMemcpyToSymbol(sg_s_tXVect, &cam.XVect, sizeof(float) * 3);
     memOpErrorCheck( err, __FILE__, __LINE__, "Failed copying to symbol" );
-    err = cudaMemcpyToSymbol(sg_s_tYVect, &_tYVect, sizeof(float) * 3);
+    err = cudaMemcpyToSymbol(sg_s_tYVect, &cam.YVect, sizeof(float) * 3);
     memOpErrorCheck( err, __FILE__, __LINE__, "Failed copying to symbol" );
-    err = cudaMemcpyToSymbol(sg_s_tZVect, &_tZVect, sizeof(float) * 3);
+    err = cudaMemcpyToSymbol(sg_s_tZVect, &cam.ZVect, sizeof(float) * 3);
     memOpErrorCheck( err, __FILE__, __LINE__, "Failed copying to symbol" );
 }
 
@@ -613,7 +592,7 @@ void ps_SGMoptimizeSimVolume(
     if(verbose)
         printf("ps_SGMoptimizeSimVolume\n");
 
-    ps_init_reference_camera_matrices(rccam->P, rccam->iP, rccam->R, rccam->iR, rccam->K, rccam->iK, rccam->C);
+    ps_init_reference_camera_matrices( rccam->cam );
 
     // bind 'r4tex' from the image in Lab colorspace at the scale used
     CudaArray<uchar4,2>& array = global_data.getScaledPictureArray( scale, rccam->camId );
@@ -727,13 +706,11 @@ void ps_computeSimilarityVolume(
     dim3 gridvol(divUp(volDimX, block.x), divUp(volDimY, block.y), 1);
 
     // setup cameras matrices to the constant memory
-    ps_init_reference_camera_matrices(cams[0]->P, cams[0]->iP, cams[0]->R, cams[0]->iR, cams[0]->K, cams[0]->iK,
-                                      cams[0]->C);
+    ps_init_reference_camera_matrices(cams[0]->cam );
     cudaTextureObject_t r4tex = global_data.getScaledPictureTex( scale, cams[0]->camId );
 
     int c = 1;
-    ps_init_target_camera_matrices(cams[c]->P, cams[c]->iP, cams[c]->R, cams[c]->iR, cams[c]->K, cams[c]->iK,
-                                   cams[c]->C);
+    ps_init_target_camera_matrices(cams[c]->cam );
     cudaTextureObject_t t4tex = global_data.getScaledPictureTex( scale, cams[c]->camId );
     CHECK_CUDA_ERROR();
 
@@ -848,8 +825,7 @@ void ps_smoothDepthMap( CudaHostMemoryHeap<float, 2>* depthMap_hmh,
     cudaTextureObject_t depthsTex = depthMap_arr->tex;
 
 
-    ps_init_reference_camera_matrices(cams.P, cams.iP, cams.R, cams.iR, cams.K, cams.iK,
-                                      cams.C);
+    ps_init_reference_camera_matrices(cams.cam);
     cudaTextureObject_t r4tex = global_data.getScaledPictureTex( scale, cams.camId );
 
     auto depthMap_dmp = global_data.pitched_mem_float_point_tex_cache.get( width, height );
@@ -899,8 +875,7 @@ void ps_filterDepthMap( CudaHostMemoryHeap<float, 2>* depthMap_hmh,
     depthMap_arr->mem->copyFrom( *depthMap_hmh );
     cudaTextureObject_t depthsTex = depthMap_arr->tex;
 
-    ps_init_reference_camera_matrices(cams.P, cams.iP, cams.R, cams.iR, cams.K, cams.iK,
-                                      cams.C);
+    ps_init_reference_camera_matrices(cams.cam);
 
     cudaTextureObject_t r4tex = global_data.getScaledPictureTex( scale, cams.camId );
 
@@ -954,8 +929,7 @@ void ps_computeNormalMap( CudaHostMemoryHeap<float3, 2>* normalMap_hmh,
     depthMap_arr->mem->copyFrom( *depthMap_hmh );
     cudaTextureObject_t depthsTex = depthMap_arr->tex;
 
-    ps_init_reference_camera_matrices(cams.P, cams.iP, cams.R, cams.iR, cams.K, cams.iK,
-                                      cams.C);
+    ps_init_reference_camera_matrices(cams.cam);
 
     cudaTextureObject_t r4tex = global_data.getScaledPictureTex( scale, cams.camId );
 
@@ -1017,8 +991,7 @@ void ps_alignSourceDepthMapToTarget(
 
     CudaDeviceMemoryPitched<float, 2> outDepthMap_dmp(CudaSize<2>(width, height));
 
-    ps_init_reference_camera_matrices(cams.P, cams.iP, cams.R, cams.iR, cams.K, cams.iK,
-                                      cams.C);
+    ps_init_reference_camera_matrices(cams.cam);
 
     cudaTextureObject_t r4tex = global_data.getScaledPictureTex( scale, cams.camId );
 
@@ -1231,13 +1204,11 @@ void ps_growDepthMap( CudaHostMemoryHeap<uchar4, 2>* otimg_hmh,
     dim3 block(block_size, block_size, 1);
     dim3 grid(divUp(width, block_size), divUp(height, block_size), 1);
 
-    ps_init_reference_camera_matrices(cams[0]->P, cams[0]->iP, cams[0]->R, cams[0]->iR, cams[0]->K, cams[0]->iK,
-                                      cams[0]->C);
+    ps_init_reference_camera_matrices(cams[0]->cam );
     cudaTextureObject_t r4tex = global_data.getScaledPictureTex( scale, cams[0]->camId );
 
     int c = 1;
-    ps_init_target_camera_matrices(cams[c]->P, cams[c]->iP, cams[c]->R, cams[c]->iR, cams[c]->K, cams[c]->iK,
-                                   cams[c]->C);
+    ps_init_target_camera_matrices(cams[c]->cam );
     cudaTextureObject_t t4tex = global_data.getScaledPictureTex( scale, cams[c]->camId );
 
     auto rimg_dmp = global_data.pitched_mem_uchar4_point_tex_cache.get( width, height );
@@ -1338,13 +1309,11 @@ void ps_refineDepthMapReproject( CudaHostMemoryHeap<uchar4, 2>* otimg_hmh,
     dim3 block(block_size, block_size, 1);
     dim3 grid(divUp(width, block_size), divUp(height, block_size), 1);
 
-    ps_init_reference_camera_matrices(cams[0]->P, cams[0]->iP, cams[0]->R, cams[0]->iR, cams[0]->K, cams[0]->iK,
-                                      cams[0]->C);
+    ps_init_reference_camera_matrices( cams[0]->cam );
     cudaTextureObject_t r4tex = global_data.getScaledPictureTex( scale, cams[0]->camId );
 
     int c = 1;
-    ps_init_target_camera_matrices(cams[c]->P, cams[c]->iP, cams[c]->R, cams[c]->iR, cams[c]->K, cams[c]->iK,
-                                   cams[c]->C);
+    ps_init_target_camera_matrices( cams[c]->cam );
     cudaTextureObject_t t4tex = global_data.getScaledPictureTex( scale, cams[c]->camId );
 
     auto rimg_dmp = global_data.pitched_mem_uchar4_point_tex_cache.get( width, height );
@@ -1419,12 +1388,10 @@ void ps_computeSimMapsForNShiftsOfRcTcDepthMap(
     dim3 block(block_size, block_size, 1);
     dim3 grid(divUp(width, block_size), divUp(height, block_size), 1);
 
-    ps_init_reference_camera_matrices(cams[0]->P, cams[0]->iP, cams[0]->R, cams[0]->iR, cams[0]->K, cams[0]->iK,
-                                      cams[0]->C);
+    ps_init_reference_camera_matrices(cams[0]->cam);
 
     int c = 1;
-    ps_init_target_camera_matrices(cams[c]->P, cams[c]->iP, cams[c]->R, cams[c]->iR, cams[c]->K, cams[c]->iK,
-                                   cams[c]->C);
+    ps_init_target_camera_matrices(cams[c]->cam);
 
     cudaTextureObject_t r4tex = global_data.getScaledPictureTex( scale, cams[0]->camId );
     cudaTextureObject_t t4tex = global_data.getScaledPictureTex( scale, cams[c]->camId );
@@ -1465,12 +1432,10 @@ void ps_computeSimMapForRcTcDepthMap( CudaHostMemoryHeap<float, 2>* osimMap_hmh,
     dim3 block(block_size, block_size, 1);
     dim3 grid(divUp(width, block_size), divUp(height, block_size), 1);
 
-    ps_init_reference_camera_matrices(cams[0]->P, cams[0]->iP, cams[0]->R, cams[0]->iR, cams[0]->K, cams[0]->iK,
-                                      cams[0]->C);
+    ps_init_reference_camera_matrices(cams[0]->cam);
 
     int c = 1;
-    ps_init_target_camera_matrices(cams[c]->P, cams[c]->iP, cams[c]->R, cams[c]->iR, cams[c]->K, cams[c]->iK,
-                                   cams[c]->C);
+    ps_init_target_camera_matrices(cams[c]->cam);
 
     cudaTextureObject_t r4tex = global_data.getScaledPictureTex( scale, cams[0]->camId );
     cudaTextureObject_t t4tex = global_data.getScaledPictureTex( scale, cams[c]->camId );
@@ -1508,12 +1473,10 @@ void ps_refineRcDepthMap( float* osimMap_hmh,
     dim3 block(block_size, block_size, 1);
     dim3 grid(divUp(width, block_size), divUp(height, block_size), 1);
 
-    ps_init_reference_camera_matrices(cams[0]->P, cams[0]->iP, cams[0]->R, cams[0]->iR, cams[0]->K, cams[0]->iK,
-                                      cams[0]->C);
+    ps_init_reference_camera_matrices(cams[0]->cam);
 
     int c = 1;
-    ps_init_target_camera_matrices(cams[c]->P, cams[c]->iP, cams[c]->R, cams[c]->iR, cams[c]->K, cams[c]->iK,
-                                   cams[c]->C);
+    ps_init_target_camera_matrices(cams[c]->cam);
 
     cudaTextureObject_t r4tex = global_data.getScaledPictureTex( scale, cams[0]->camId );
     cudaTextureObject_t t4tex = global_data.getScaledPictureTex( scale, cams[c]->camId );
@@ -1743,8 +1706,7 @@ void ps_optimizeDepthSimMapGradientDescent(
     dim3 block(block_size, block_size, 1);
     dim3 grid(divUp(width, block_size), divUp(height, block_size), 1);
 
-    ps_init_reference_camera_matrices(cams.P, cams.iP, cams.R, cams.iR, cams.K, cams.iK,
-                                      cams.C);
+    ps_init_reference_camera_matrices(cams.cam);
 
     cudaTextureObject_t r4tex = global_data.getScaledPictureTex( scale, cams.camId );
 
