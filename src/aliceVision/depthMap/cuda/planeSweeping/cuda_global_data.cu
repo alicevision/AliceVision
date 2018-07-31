@@ -31,8 +31,8 @@ void GaussianArray::create( float delta, int radius )
     int size = 2 * radius + 1;
 
     float* d_gaussian;
-    cudaMalloc((void**)&d_gaussian, (2 * radius + 1) * sizeof(float));
-    CHECK_CUDA_ERROR();
+    err = cudaMalloc((void**)&d_gaussian, (2 * radius + 1) * sizeof(float));
+    memOpErrorCheck( err, __FILE__, __LINE__, "Failed to get alloc CUDA mem" );
 
     // generate gaussian array
     generateGaussian_kernel<<<1, size>>>(d_gaussian, delta, radius);
@@ -40,12 +40,12 @@ void GaussianArray::create( float delta, int radius )
 
     // create cuda array
     cudaChannelFormatDesc channelDesc = cudaCreateChannelDesc(32, 0, 0, 0, cudaChannelFormatKindFloat);
-    cudaMallocArray(&arr, &channelDesc, size, 1);
-    CHECK_CUDA_ERROR();
-    cudaMemcpyToArray(arr, 0, 0, d_gaussian, size * sizeof(float), cudaMemcpyDeviceToDevice);
-    CHECK_CUDA_ERROR();
-    cudaFree(d_gaussian);
-    CHECK_CUDA_ERROR();
+    err = cudaMallocArray(&arr, &channelDesc, size, 1);
+    memOpErrorCheck( err, __FILE__, __LINE__, "Failed to get alloc CUDA mem" );
+    err = cudaMemcpyToArray(arr, 0, 0, d_gaussian, size * sizeof(float), cudaMemcpyDeviceToDevice);
+    memOpErrorCheck( err, __FILE__, __LINE__, "Failed to copy flat CUDA mem to CUDA array" );
+    err = cudaFree(d_gaussian);
+    memOpErrorCheck( err, __FILE__, __LINE__, "Failed to free CUDA mem" );
 
     cudaResourceDesc res_desc;
     res_desc.resType = cudaResourceTypeArray;
@@ -62,12 +62,7 @@ void GaussianArray::create( float delta, int radius )
     // tex_desc.filterMode       = cudaFilterModeLinear; // no interpolation
 
     err = cudaCreateTextureObject( &tex, &res_desc, &tex_desc, 0 );
-    if( err != cudaSuccess )
-    {
-        printf( "Failed to create a point texture object for a gaussian array in line %s,%d - reason %s\n", __FILE__, __LINE__-3, cudaGetErrorString(err) );
-        exit( -1 );
-    }
-    CHECK_CUDA_ERROR();
+    memOpErrorCheck( err, __FILE__, __LINE__, "Failed to create CUDA texture object for Gaussian array" );
 }
 
 GlobalData::~GlobalData( )
@@ -76,7 +71,8 @@ GlobalData::~GlobalData( )
     for( auto it=_gaussian_arr_table.begin(); it!=end;it++ )
     {
         // cudaDestroyTexture( it->second->tex );
-        cudaFreeArray( it->second->arr );
+        cudaError_t err = cudaFreeArray( it->second->arr );
+        memOpErrorCheck( err, __FILE__, __LINE__, "Failed to free CUDA array" );
     }
 }
 
@@ -132,12 +128,7 @@ void GlobalData::allocScaledPictureArrays( int scales, int ncams, int width, int
                                      &res_desc,
                                      &tex_desc,
                                      0 );
-            if( err != cudaSuccess )
-            {
-                printf( "Failed to create a linear texture object for an array in line %s,%d - reason %s\n", __FILE__, __LINE__-3, cudaGetErrorString(err) );
-                exit( -1 );
-            }
-
+            memOpErrorCheck( err, __FILE__, __LINE__, "Failed to get create CUDA texture object" );
 
             tex_desc.readMode         = cudaReadModeElementType;
             tex_desc.filterMode       = cudaFilterModePoint;
@@ -145,11 +136,7 @@ void GlobalData::allocScaledPictureArrays( int scales, int ncams, int width, int
                                      &res_desc,
                                      &tex_desc,
                                      0 );
-            if( err != cudaSuccess )
-            {
-                printf( "Failed to create a point texture object for an array in line %s,%d - reason %s\n", __FILE__, __LINE__-3, cudaGetErrorString(err) );
-                exit( -1 );
-            }
+            memOpErrorCheck( err, __FILE__, __LINE__, "Failed to get create CUDA texture object" );
         }
     }
 
@@ -168,14 +155,16 @@ void GlobalData::freeScaledPictureArrays( )
 
     for( cudaTextureObject_t& obj : _scaled_picture_tex )
     {
-        cudaDestroyTextureObject( obj );
+        cudaError_t err = cudaDestroyTextureObject( obj );
+        memOpErrorCheck( err, __FILE__, __LINE__, "Failed to get destroy CUDA texture object" );
     }
 
     _scaled_picture_tex.clear();
 
     for( cudaTextureObject_t& obj : _scaled_picture_tex_point )
     {
-        cudaDestroyTextureObject( obj );
+        cudaError_t err = cudaDestroyTextureObject( obj );
+        memOpErrorCheck( err, __FILE__, __LINE__, "Failed to get destroy CUDA texture object" );
     }
 
     _scaled_picture_tex_point.clear();
@@ -235,11 +224,8 @@ void GlobalData::allocPyramidArrays( int levels, int w, int h )
                                  &res_desc,
                                  &tex_desc,
                                  0 );
-        if( err != cudaSuccess )
-        {
-            printf( "Failed to create a linear texture object for a pyramid layer in line %s,%d - reason %s\n", __FILE__, __LINE__-3, cudaGetErrorString(err) );
-            exit( -1 );
-        }
+        memOpErrorCheck( err, __FILE__, __LINE__, "Failed to get create CUDA texture object" );
+
         w /= 2;
         h /= 2;
     }
@@ -258,7 +244,8 @@ void GlobalData::freePyramidArrays( )
 
     for( cudaTextureObject_t& obj : _pyramid_tex )
     {
-        cudaDestroyTextureObject( obj );
+        cudaError_t err = cudaDestroyTextureObject( obj );
+        memOpErrorCheck( err, __FILE__, __LINE__, "Failed to get destroy CUDA texture object" );
     }
 
     _pyramid_tex.clear();

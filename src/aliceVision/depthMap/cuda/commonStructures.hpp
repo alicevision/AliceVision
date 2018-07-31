@@ -15,6 +15,14 @@
 namespace aliceVision {
 namespace depthMap {
 
+static inline void memOpErrorCheck( cudaError_t err, const char* file, int line, const char* info )
+{
+    if( err == cudaSuccess ) return;
+
+    printf( "%s in %s:%d, reason %s\n", info, file, line, cudaGetErrorString(err) );
+    throw std::runtime_error( info );
+}
+
 template <unsigned Dim> class CudaSizeBase
 {
 public:
@@ -206,19 +214,11 @@ public:
     cudaMemcpyKind kind = cudaMemcpyDeviceToHost;
     if(Dim == 1) {
       err = cudaMemcpy(this->getBuffer(), _src.getBuffer(), _src.getBytes(), kind);
-      if( err != cudaSuccess )
-      {
-        printf( "Failed to copy CUDA memory before line %d - %s\n", __LINE__-3, cudaGetErrorString(err) );
-        throw std::runtime_error("CUDA Mem allocation error");
-      }
+      memOpErrorCheck( err, __FILE__, __LINE__, "Failed to copy from CUDA flat mem to host flat mem" );
     }
     else if(Dim == 2) {
       err = cudaMemcpy2D(this->getBuffer(), size[0] * sizeof (Type), _src.getBuffer(), _src.getPitch(), size[0] * sizeof (Type), size[1], kind);
-      if( err != cudaSuccess )
-      {
-        printf( "Failed to copy CUDA memory before line %d - %s\n", __LINE__-3, cudaGetErrorString(err) );
-        throw std::runtime_error("CUDA Mem allocation error");
-      }
+      memOpErrorCheck( err, __FILE__, __LINE__, "Failed to copy from CUDA 2D mem to host flat mem" );
     }
     else if(Dim >= 3) {
       for (unsigned int slice=0; slice<size[2]; slice++)
@@ -228,11 +228,7 @@ public:
                             &_src.getBuffer()[slice * _src.stride()[1]],
                             _src.getPitch(),
                             size[0] * sizeof (Type), size[1], kind);
-        if( err != cudaSuccess )
-        {
-          printf( "Failed to copy CUDA memory before line %d - %s\n", __LINE__-7, cudaGetErrorString(err) );
-          throw std::runtime_error("CUDA Mem allocation error");
-        }
+        memOpErrorCheck( err, __FILE__, __LINE__, "Failed to copy from sliced CUDA 3D mem to host flat mem" );
       }
     }
   }
@@ -243,43 +239,31 @@ public:
 
     cudaMemcpyKind kind = cudaMemcpyDeviceToHost;
     if(Dim == 1) {
-      err = cudaMemcpyFromArray(this->getBuffer(), _src.getArray(), 0, 0, this->getSize()[0] * sizeof (Type), kind);
-      if( err != cudaSuccess )
-      {
-        printf( "Failed to copy CUDA memory before line %d - %s\n", __LINE__-3, cudaGetErrorString(err) );
-        throw std::runtime_error("CUDA Mem allocation error");
-      }
+        err = cudaMemcpyFromArray(this->getBuffer(), _src.getArray(), 0, 0, this->getSize()[0] * sizeof (Type), kind);
+        memOpErrorCheck( err, __FILE__, __LINE__, "Failed to copy from CUDA 1D array to host flat mem" );
     }
     else if(Dim == 2) {
-      err = cudaMemcpy2DFromArray(this->getBuffer(), size[0] * sizeof (Type), _src.getArray(), 0, 0, size[0] * sizeof (Type), size[1], kind);
-      if( err != cudaSuccess )
-      {
-        printf( "Failed to copy CUDA memory before line %d - %s\n", __LINE__-3, cudaGetErrorString(err) );
-        throw std::runtime_error("CUDA Mem allocation error");
-      }
+        err = cudaMemcpy2DFromArray(this->getBuffer(), size[0] * sizeof (Type), _src.getArray(), 0, 0, size[0] * sizeof (Type), size[1], kind);
+        memOpErrorCheck( err, __FILE__, __LINE__, "Failed to copy from CUDA 2D array to host flat mem" );
     }
     else if(Dim == 3) {
-      cudaMemcpy3DParms p = { 0 };
-      p.srcArray = const_cast<cudaArray *>(_src.getArray());
-      p.srcPtr.pitch = _src.getPitch();
-      p.srcPtr.xsize = _src.getSize()[0];
-      p.srcPtr.ysize = _src.getSize()[1];
-      p.dstPtr.ptr = (void *)this->getBuffer();
-      p.dstPtr.pitch = size[0] * sizeof (Type);
-      p.dstPtr.xsize = size[0];
-      p.dstPtr.ysize = size[1];
-      p.extent.width = size[0];
-      p.extent.height = size[1];
-      p.extent.depth = size[2];
-      for(unsigned i = 3; i < Dim; ++i)
-        p.extent.depth *= _src.getSize()[i];
-      p.kind = kind;
-      err = cudaMemcpy3D(&p);
-      if( err != cudaSuccess )
-      {
-        printf( "Failed to copy CUDA memory before line %d - %s\n", __LINE__-3, cudaGetErrorString(err) );
-        throw std::runtime_error("CUDA Mem allocation error");
-      }
+        cudaMemcpy3DParms p = { 0 };
+        p.srcArray = const_cast<cudaArray *>(_src.getArray());
+        p.srcPtr.pitch = _src.getPitch();
+        p.srcPtr.xsize = _src.getSize()[0];
+        p.srcPtr.ysize = _src.getSize()[1];
+        p.dstPtr.ptr = (void *)this->getBuffer();
+        p.dstPtr.pitch = size[0] * sizeof (Type);
+        p.dstPtr.xsize = size[0];
+        p.dstPtr.ysize = size[1];
+        p.extent.width = size[0];
+        p.extent.height = size[1];
+        p.extent.depth = size[2];
+        for(unsigned i = 3; i < Dim; ++i)
+            p.extent.depth *= _src.getSize()[i];
+        p.kind = kind;
+        err = cudaMemcpy3D(&p);
+        memOpErrorCheck( err, __FILE__, __LINE__, "Failed to copy from CUDA 3D array to host flat mem" );
     }
   }
 };
@@ -304,7 +288,7 @@ public:
     buffer = (Type*)malloc(sx * sy * sz * sizeof (Type));
     if( buffer == 0 ) {
         printf("%d malloc failed\n", __LINE__ );
-        exit(-1);
+        throw std::runtime_error("Malloc mem allocation error");
     }
     memset(buffer, 0, sx * sy * sz * sizeof (Type));
   }
@@ -317,7 +301,7 @@ public:
     buffer = (Type*)malloc(sx * sy * sz * sizeof (Type));
     if( buffer == 0 ) {
         printf("%d malloc failed\n", __LINE__ );
-        exit(-1);
+        throw std::runtime_error("Malloc mem allocation error");
     }
     memcpy(buffer, rhs.buffer, sx * sy * sz * sizeof (Type));
     return *this;
@@ -349,14 +333,20 @@ public:
 
   void copyFrom(const CudaDeviceMemoryPitched<Type, 1>& _src)
   {
-    const cudaMemcpyKind kind = cudaMemcpyDeviceToHost;
-    cudaMemcpy(this->getBuffer(), _src.getBuffer(), _src.getBytes(), kind);
+      cudaError_t err;
+
+      const cudaMemcpyKind kind = cudaMemcpyDeviceToHost;
+      err = cudaMemcpy(this->getBuffer(), _src.getBuffer(), _src.getBytes(), kind);
+      memOpErrorCheck( err, __FILE__, __LINE__, "Failed to copy from CUDA flat mem to host flat mem" );
   }
 
   void copyFrom(const CudaArray<Type, 1>& _src)
   {
-    const cudaMemcpyKind kind = cudaMemcpyDeviceToHost;
-    cudaMemcpyFromArray(this->getBuffer(), _src.getArray(), 0, 0, this->getSize()[0] * sizeof (Type), kind);
+      cudaError_t err;
+
+      const cudaMemcpyKind kind = cudaMemcpyDeviceToHost;
+      err = cudaMemcpyFromArray(this->getBuffer(), _src.getArray(), 0, 0, this->getSize()[0] * sizeof (Type), kind);
+      memOpErrorCheck( err, __FILE__, __LINE__, "Failed to copy from CUDA 1D array to host flat mem" );
   }
 };
 
@@ -385,11 +375,7 @@ public:
     if(Dim == 2)
     {
       err = cudaMallocPitch<Type>(&buffer, &pitch, _size[0] * sizeof(Type), _size[1]);
-      if( err != cudaSuccess )
-      {
-          printf( "Failed to allocate CUDA Pitched Memory in line %d, size=%li - %s\n", __LINE__-3, long(_size[0]), cudaGetErrorString(err) );
-          throw std::runtime_error("CUDA Mem allocation error");
-      }
+      memOpErrorCheck( err, __FILE__, __LINE__, "Failed to alloc CUDA pitched mem" );
     }
     else if(Dim >= 3)
     {
@@ -401,18 +387,16 @@ public:
         extent.depth *= _size[i];
       cudaPitchedPtr pitchDevPtr;
       err = cudaMalloc3D(&pitchDevPtr, extent);
-      if( err != cudaSuccess )
-      {
-          printf( "Failed to allocate CUDA Pitched Memory in line %d, size=%li - %s\n", __LINE__-3, long(_size[0]), cudaGetErrorString(err) );
-          throw std::runtime_error("CUDA Mem allocation error");
-      }
+      memOpErrorCheck( err, __FILE__, __LINE__, "Failed to alloc CUDA 3D mem" );
       buffer = (Type*)pitchDevPtr.ptr;
       pitch = pitchDevPtr.pitch;
     }
   }
   ~CudaDeviceMemoryPitched()
   {
-    cudaFree(buffer);
+      cudaError_t err;
+      err = cudaFree(buffer);
+      memOpErrorCheck( err, __FILE__, __LINE__, "Failed to free CUDA mem" );
   }
   explicit inline CudaDeviceMemoryPitched(const CudaHostMemoryHeap<Type, Dim> &rhs)
   {
@@ -428,11 +412,7 @@ public:
     if(Dim == 2)
     {
       err = cudaMallocPitch<Type>(&buffer, &pitch, size[0] * sizeof(Type), size[1]);
-      if( err != cudaSuccess )
-      {
-          printf( "Failed to allocate CUDA Pitched Memory in line %d, size=%li - %s\n", __LINE__-3, long(size[0]*size[1]), cudaGetErrorString(err) );
-          throw std::runtime_error("CUDA Mem allocation error");
-      }
+      memOpErrorCheck( err, __FILE__, __LINE__, "Failed to alloc CUDA pitched mem" );
     }
     if(Dim >= 3)
     {
@@ -444,11 +424,7 @@ public:
         extent.depth *= size[i];
       cudaPitchedPtr pitchDevPtr;
       err = cudaMalloc3D(&pitchDevPtr, extent);
-      if( err != cudaSuccess )
-      {
-          printf( "Failed to allocate CUDA 3D Memory in line %d - %s\n", __LINE__-3, cudaGetErrorString(err) );
-          throw std::runtime_error("CUDA Mem allocation error");
-      }
+      memOpErrorCheck( err, __FILE__, __LINE__, "Failed to alloc CUDA 3D mem" );
       buffer = (Type*)pitchDevPtr.ptr;
       pitch = pitchDevPtr.pitch;
     }
@@ -495,63 +471,79 @@ public:
 
   void copyFrom(const CudaHostMemoryHeap<Type, Dim>& _src)
   {
+    cudaError_t err;
+
     cudaMemcpyKind kind = cudaMemcpyHostToDevice;
     if(Dim == 1) {
-      cudaMemcpy(this->getBuffer(), _src.getBuffer(), _src.getBytes(), kind);
+      err = cudaMemcpy(this->getBuffer(), _src.getBuffer(), _src.getBytes(), kind);
+      memOpErrorCheck( err, __FILE__, __LINE__, "Failed to copy host mem to CUDA flat mem" );
     }
-    else if(Dim == 2) {
-      cudaMemcpy2D(this->getBuffer(), this->getPitch(), _src.getBuffer(),
-                   _src.getSize()[0] * sizeof (Type), _src.getSize()[0] * sizeof (Type),
-                   _src.getSize()[1], kind);
+    else if(Dim == 2)
+    {
+      err = cudaMemcpy2D( this->getBuffer(), this->getPitch(), _src.getBuffer(),
+                          _src.getSize()[0] * sizeof (Type), _src.getSize()[0] * sizeof (Type),
+                          _src.getSize()[1], kind);
+      memOpErrorCheck( err, __FILE__, __LINE__, "Failed to copy host mem to CUDA pitched mem" );
     }
-    else if(Dim >= 3) {
+    else if(Dim >= 3)
+    {
       for (unsigned int slice=0; slice<_src.getSize()[2]; slice++)
       {
-        cudaMemcpy2D( &this->getBuffer()[slice * this->stride()[1]],
-                      this->getPitch(),
-                      _src.getBuffer() + slice * _src.getSize()[0] * _src.getSize()[1],
-                      _src.getSize()[0] * sizeof (Type),
-                      _src.getSize()[0] * sizeof (Type),
-                      _src.getSize()[1], kind);
+        err = cudaMemcpy2D( &this->getBuffer()[slice * this->stride()[1]],
+                            this->getPitch(),
+                            _src.getBuffer() + slice * _src.getSize()[0] * _src.getSize()[1],
+                            _src.getSize()[0] * sizeof (Type),
+                            _src.getSize()[0] * sizeof (Type),
+                            _src.getSize()[1], kind);
+        memOpErrorCheck( err, __FILE__, __LINE__, "Failed to copy host mem to sliced CUDA 3D mem" );
       }
     }
   }
 
   void copyFrom(const CudaDeviceMemoryPitched<Type, Dim>& _src)
   {
+    cudaError_t err;
+
     cudaMemcpyKind kind = cudaMemcpyDeviceToDevice;
     if(Dim == 1)
     {
-      cudaMemcpy(this->getBuffer(), _src.getBuffer(), _src.getBytes(), kind);
+      err = cudaMemcpy(this->getBuffer(), _src.getBuffer(), _src.getBytes(), kind);
+      memOpErrorCheck( err, __FILE__, __LINE__, "Failed to copy CUDA pitched mem to CUDA flat mem" );
     }
     else if(Dim == 2)
     {
-      cudaMemcpy2D(this->getBuffer(), this->getPitch(),
-                   _src.getBuffer(), _src.getPitch(),
-                   _src.getSize()[0] * sizeof(Type),
-                   _src.getSize()[1], kind);
+      err = cudaMemcpy2D( this->getBuffer(), this->getPitch(),
+                          _src.getBuffer(), _src.getPitch(),
+                          _src.getSize()[0] * sizeof(Type),
+                          _src.getSize()[1], kind);
+      memOpErrorCheck( err, __FILE__, __LINE__, "Failed to copy CUDA pitched mem to CUDA pitched mem" );
     }
     else if(Dim >= 3)
     {
       for (unsigned int slice=0; slice<_src.getSize()[2]; slice++)
       {
-        cudaMemcpy2D( &this->getBuffer()[slice * this->stride()[1]],
-                      this->getPitch(),
-                      &_src.getBuffer()[slice * _src.stride()[1]], _src.getPitch(),
-                      _src.getSize()[0] * sizeof(Type),
-                      _src.getSize()[1], kind);
+        err = cudaMemcpy2D( &this->getBuffer()[slice * this->stride()[1]],
+                            this->getPitch(),
+                            &_src.getBuffer()[slice * _src.stride()[1]], _src.getPitch(),
+                            _src.getSize()[0] * sizeof(Type),
+                            _src.getSize()[1], kind);
+        memOpErrorCheck( err, __FILE__, __LINE__, "Failed to copy CUDA pitched mem to sliced CUDA 3D mem" );
       }
     }
   }
 
   void copyFrom(const CudaArray<Type, Dim>& _src)
   {
+    cudaError_t err;
+
     cudaMemcpyKind kind = cudaMemcpyDeviceToDevice;
     if(Dim == 1) {
-      cudaMemcpyFromArray(this->getBuffer(), _src.getArray(), 0, 0, _src.getSize()[0] * sizeof(Type), kind);
+      err = cudaMemcpyFromArray(this->getBuffer(), _src.getArray(), 0, 0, _src.getSize()[0] * sizeof(Type), kind);
+      memOpErrorCheck( err, __FILE__, __LINE__, "Failed to copy CUDA array to CUDA 1D mem" );
     }
     else if(Dim == 2) {
-      cudaMemcpy2DFromArray(this->getBuffer(), this->getPitch(), _src.getArray(), 0, 0, _src.getSize()[0] * sizeof(Type), _src.getSize()[1], kind);
+      err = cudaMemcpy2DFromArray(this->getBuffer(), this->getPitch(), _src.getArray(), 0, 0, _src.getSize()[0] * sizeof(Type), _src.getSize()[1], kind);
+      memOpErrorCheck( err, __FILE__, __LINE__, "Failed to copy CUDA array to CUDA 2D mem" );
     }
     else if(Dim == 3) {
       cudaMemcpy3DParms p = { 0 };
@@ -569,7 +561,8 @@ public:
       for(unsigned i = 3; i < Dim; ++i)
         p.extent.depth *= _src.getSize()[i];
       p.kind = kind;
-      cudaMemcpy3D(&p);
+      err = cudaMemcpy3D(&p);
+      memOpErrorCheck( err, __FILE__, __LINE__, "Failed to copy CUDA array to CUDA 3D mem" );
     }
   }
 };
@@ -599,20 +592,12 @@ public:
     if(Dim == 1)
     {
       err = cudaMallocArray(&array, &channelDesc, _size[0], 1, cudaArraySurfaceLoadStore);
-      if( err != cudaSuccess )
-      {
-          printf( "Failed to allocate CUDA Array in line %d, size=%li\n", __LINE__-3, long(_size[0]) );
-          exit( -1 );
-      }
+      memOpErrorCheck( err, __FILE__, __LINE__, "Failed to allocate CUDA 1D array" );
     }
     else if(Dim == 2)
     {
       err = cudaMallocArray(&array, &channelDesc, _size[0], _size[1], cudaArraySurfaceLoadStore);
-      if( err != cudaSuccess )
-      {
-          printf( "Failed to allocate CUDA Array in line %d, size=(%li, %li)\n", __LINE__-3, long(_size[0]), long(_size[1]) );
-          exit( -1 );
-      }
+      memOpErrorCheck( err, __FILE__, __LINE__, "Failed to allocate CUDA 2D array" );
     }
     else
     {
@@ -623,11 +608,7 @@ public:
       for(unsigned i = 3; i < Dim; ++i)
         extent.depth *= _size[i];
       err = cudaMalloc3DArray(&array, &channelDesc, extent);
-      if( err != cudaSuccess )
-      {
-          printf( "Failed to allocate CUDA Array in line %d, size=(%li, %li, %li)\n", __LINE__-3, long(_size[0]), long(_size[1]), long(_size[2]) );
-          exit( -1 );
-      }
+      memOpErrorCheck( err, __FILE__, __LINE__, "Failed to allocate CUDA 3D array" );
     }
   }
   explicit inline CudaArray(const CudaDeviceMemoryPitched<Type, Dim> &rhs)
@@ -645,20 +626,12 @@ public:
     if(Dim == 1)
     {
       err = cudaMallocArray(&array, &channelDesc, size[0], 1, cudaArraySurfaceLoadStore);
-      if( err != cudaSuccess )
-      {
-        printf( "Failed to allocate CUDA Array in line %d, size=(%i)\n", __LINE__-3, size[0] );
-          exit( -1 );
-      }
+      memOpErrorCheck( err, __FILE__, __LINE__, "Failed to allocate CUDA 1D array" );
     }
     else if(Dim == 2)
     {
       err = cudaMallocArray(&array, &channelDesc, size[0], size[1], cudaArraySurfaceLoadStore);
-      if( err != cudaSuccess )
-      {
-        printf( "Failed to allocate CUDA Array in line %d, size=(%i, %i)\n", __LINE__-3, size[0], size[1] );
-          exit( -1 );
-      }
+      memOpErrorCheck( err, __FILE__, __LINE__, "Failed to allocate CUDA 2D array" );
     }
     else
     {
@@ -669,11 +642,7 @@ public:
       for(unsigned i = 3; i < Dim; ++i)
         extent.depth *= size[i];
       err = cudaMalloc3DArray(&array, &channelDesc, extent);
-      if( err != cudaSuccess )
-      {
-        printf( "Failed to allocate CUDA Array in line %d, size=(%i, %i, %i)\n", __LINE__-3, size[0], size[1], size[2] );
-          exit( -1 );
-      }
+      memOpErrorCheck( err, __FILE__, __LINE__, "Failed to allocate CUDA 3D array" );
     }
     copyFrom( rhs );
   }
@@ -692,20 +661,12 @@ public:
     if(Dim == 1)
     {
       err = cudaMallocArray(&array, &channelDesc, size[0], 1, cudaArraySurfaceLoadStore);
-      if( err != cudaSuccess )
-      {
-          printf( "Failed to allocate CUDA Array of size %i in line %s,%d - reason %s\n", size[0], __FILE__, __LINE__-3, cudaGetErrorString(err) );
-          exit( -1 );
-      }
+      memOpErrorCheck( err, __FILE__, __LINE__, "Failed to allocate CUDA 1D array" );
     }
     else if(Dim == 2)
     {
       err = cudaMallocArray(&array, &channelDesc, size[0], size[1], cudaArraySurfaceLoadStore);
-      if( err != cudaSuccess )
-      {
-          printf( "Failed to allocate CUDA Array of size (%i,%i) in line %s,%d - reason %s\n", size[0], size[1], __FILE__, __LINE__-3, cudaGetErrorString(err) );
-          exit( -1 );
-      }
+      memOpErrorCheck( err, __FILE__, __LINE__, "Failed to allocate CUDA 2D array" );
     }
     else
     {
@@ -716,17 +677,15 @@ public:
       for(unsigned i = 3; i < Dim; ++i)
         extent.depth *= size[i];
       err = cudaMalloc3DArray(&array, &channelDesc, extent);
-      if( err != cudaSuccess )
-      {
-          printf( "Failed to allocate CUDA Array of size (%i,%i,%i) in line %s,%d - reason %s\n", size[0], size[1], size[2], __FILE__, __LINE__-3, cudaGetErrorString(err) );
-          exit( -1 );
-      }
+      memOpErrorCheck( err, __FILE__, __LINE__, "Failed to allocate CUDA 3D array" );
     }
     copyFrom( rhs );
   }
   virtual ~CudaArray()
   {
-    cudaFreeArray(array);
+      cudaError_t err;
+      err = cudaFreeArray(array);
+      memOpErrorCheck( err, __FILE__, __LINE__, "Failed to free CUDA array" );
   }
   size_t getBytes() const
   {
@@ -760,9 +719,11 @@ public:
     cudaMemcpyKind kind = cudaMemcpyHostToDevice;
     if(Dim == 1) {
       err = cudaMemcpyToArray(this->getArray(), 0, 0, _src.getBuffer(), _src.getSize()[0] * sizeof (Type), kind);
+      memOpErrorCheck( err, __FILE__, __LINE__, "Failed to copy host mem to CUDA 1D array" );
     }
     else if(Dim == 2) {
       err = cudaMemcpy2DToArray(this->getArray(), 0, 0, _src.getBuffer(), _src.getSize()[0] * sizeof (Type), _src.getSize()[0] * sizeof (Type), _src.getSize()[1], kind);
+      memOpErrorCheck( err, __FILE__, __LINE__, "Failed to copy host mem to CUDA 2D array" );
     }
     else if(Dim == 3) {
       cudaMemcpy3DParms p = { 0 };
@@ -781,21 +742,22 @@ public:
         p.extent.depth *= _src.getSize()[i];
       p.kind = kind;
       err = cudaMemcpy3D(&p);
-    }
-    if( err != cudaSuccess )
-    {
-      printf("Failed to copy heap memory to CUDA array in %s:%d, reason %s\n", __FILE__, __LINE__, cudaGetErrorString(err) );
+      memOpErrorCheck( err, __FILE__, __LINE__, "Failed to copy host mem to CUDA 3D array" );
     }
   }
 
   void copyFrom(const CudaDeviceMemoryPitched<Type, Dim>& _src)
   {
+    cudaError_t err;
+
     cudaMemcpyKind kind = cudaMemcpyDeviceToDevice;
     if(Dim == 1) {
-      cudaMemcpyToArray(this->getArray(), 0, 0, _src.getBuffer(), _src.getSize()[0] * sizeof(Type), kind);
+      err = cudaMemcpyToArray(this->getArray(), 0, 0, _src.getBuffer(), _src.getSize()[0] * sizeof(Type), kind);
+      memOpErrorCheck( err, __FILE__, __LINE__, "Failed to copy CUDA pitched mem to CUDA 1D array" );
     }
     else if(Dim == 2) {
-      cudaMemcpy2DToArray(this->getArray(), 0, 0, _src.getBuffer(), _src.getPitch(), _src.getSize()[0] * sizeof(Type), _src.getSize()[1], kind);
+      err = cudaMemcpy2DToArray(this->getArray(), 0, 0, _src.getBuffer(), _src.getPitch(), _src.getSize()[0] * sizeof(Type), _src.getSize()[1], kind);
+      memOpErrorCheck( err, __FILE__, __LINE__, "Failed to copy CUDA pitched mem to CUDA 2D array" );
     }
     else if(Dim == 3) {
       cudaMemcpy3DParms p = { 0 };
@@ -813,7 +775,8 @@ public:
       for(unsigned i = 3; i < Dim; ++i)
         p.extent.depth *= _src.getSize()[i];
       p.kind = kind;
-      cudaMemcpy3D(&p);
+      err = cudaMemcpy3D(&p);
+      memOpErrorCheck( err, __FILE__, __LINE__, "Failed to copy CUDA pitched mem to CUDA 3D array" );
     }
   }
 };
@@ -861,34 +824,55 @@ template<class Type, unsigned Dim> void copy(CudaArray<Type, Dim>& _dst, const C
 
 template<class Type, unsigned Dim> void copy(Type* _dst, size_t sx, size_t sy, const CudaDeviceMemoryPitched<Type, Dim>& _src)
 {
-  if(Dim == 2) {
-    cudaMemcpy2D(_dst, sx * sizeof (Type), _src.getBuffer(), _src.getPitch(), sx * sizeof (Type), sy, cudaMemcpyDeviceToHost);
+  cudaError_t err;
+  if(Dim == 2)
+  {
+    err = cudaMemcpy2D(_dst, sx * sizeof (Type), _src.getBuffer(), _src.getPitch(), sx * sizeof (Type), sy, cudaMemcpyDeviceToHost);
+    memOpErrorCheck( err, __FILE__, __LINE__, "Failed to copy from CUDA 2D mem to host flat mem" );
+  }
+  else
+  {
+    throw std::runtime_error( "Called copy function with wrong dimensionality" );
   }
 }
 
 template<class Type, unsigned Dim> void copy(CudaDeviceMemoryPitched<Type, Dim>& _dst, const Type* _src, size_t sx, size_t sy)
 {
+  cudaError_t err;
   if(Dim == 2) {
-    cudaMemcpy2D(_dst.getBuffer(), _dst.getPitch(), _src, sx * sizeof (Type), sx * sizeof(Type), sy, cudaMemcpyHostToDevice);
+    err = cudaMemcpy2D(_dst.getBuffer(), _dst.getPitch(), _src, sx * sizeof (Type), sx * sizeof(Type), sy, cudaMemcpyHostToDevice);
+    memOpErrorCheck( err, __FILE__, __LINE__, "Failed to copy from host flat mem to CUDA 2D mem" );
+  }
+  else
+  {
+    throw std::runtime_error( "Called copy function with wrong dimensionality" );
   }
 }
 
 template<class Type, unsigned Dim> void copy(Type* _dst, size_t sx, size_t sy, size_t sz, const CudaDeviceMemoryPitched<Type, Dim>& _src)
 {
-  if(Dim >= 3) {
-    for (unsigned int slice=0; slice<sz; slice++)
-    {
-      cudaMemcpy2D( _dst + sx * sy * slice, sx * sizeof (Type), &_src.getBuffer()[slice * _src.stride()[1]], _src.getPitch(), sx * sizeof (Type), sy, cudaMemcpyDeviceToHost);
+    cudaError_t err;
+    if(Dim >= 3) {
+        for (unsigned int slice=0; slice<sz; slice++)
+        {
+            err = cudaMemcpy2D( _dst + sx * sy * slice, sx * sizeof (Type), &_src.getBuffer()[slice * _src.stride()[1]], _src.getPitch(), sx * sizeof (Type), sy, cudaMemcpyDeviceToHost);
+            memOpErrorCheck( err, __FILE__, __LINE__, "Failed to copy from sliced CUDA 3D mem to host flat mem" );
+        }
     }
-  }
+    else
+    {
+      throw std::runtime_error( "Called copy function with wrong dimensionality" );
+    }
 }
 
 template<class Type, unsigned Dim> void copy(CudaDeviceMemoryPitched<Type, Dim>& _dst, const Type* _src, size_t sx, size_t sy, size_t sz)
 {
+  cudaError_t err;
   if(Dim >= 3) {
     for (unsigned int slice=0; slice<sz; slice++)
     {
-      cudaMemcpy2D( &_dst.getBuffer()[slice * _dst.stride()[1]], _dst.getPitch(), _src + sx * sy * slice, sx * sizeof (Type), sx * sizeof(Type), sy, cudaMemcpyHostToDevice);
+      err = cudaMemcpy2D( &_dst.getBuffer()[slice * _dst.stride()[1]], _dst.getPitch(), _src + sx * sy * slice, sx * sizeof (Type), sx * sizeof(Type), sy, cudaMemcpyHostToDevice);
+      memOpErrorCheck( err, __FILE__, __LINE__, "Failed to copy from host flat mem to sliced CUDA 3D mem" );
     }
   }
 }

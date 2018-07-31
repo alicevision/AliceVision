@@ -46,7 +46,8 @@ void pr_printfDeviceMemoryInfo()
 {
     size_t iavail;
     size_t itotal;
-    cudaMemGetInfo(&iavail, &itotal);
+    cudaError_t err = cudaMemGetInfo(&iavail, &itotal);
+    memOpErrorCheck( err, __FILE__, __LINE__, "Failed to get CUDA memory info" );
     size_t iused = itotal - iavail;
 
     float avail = (float)iavail / (1024.0f * 1024.0f);
@@ -54,7 +55,8 @@ void pr_printfDeviceMemoryInfo()
     float used = (float)iused / (1024.0f * 1024.0f);
 
     int CUDAdeviceNo;
-    cudaGetDevice(&CUDAdeviceNo);
+    err = cudaGetDevice(&CUDAdeviceNo);
+    memOpErrorCheck( err, __FILE__, __LINE__, "Failed to get current CUDA device" );
 
     printf("Device %i memory - used: %f, free: %f, total: %f\n", CUDAdeviceNo, used, avail, total);
 }
@@ -63,7 +65,8 @@ float3 ps_getDeviceMemoryInfo()
 {
     size_t iavail;
     size_t itotal;
-    cudaMemGetInfo(&iavail, &itotal);
+    cudaError_t err = cudaMemGetInfo(&iavail, &itotal);
+    memOpErrorCheck( err, __FILE__, __LINE__, "Failed to get CUDA memory info" );
     size_t iused = itotal - iavail;
 
     float avail = (float)iavail / (1024.0f * 1024.0f);
@@ -77,13 +80,22 @@ __host__ void ps_init_reference_camera_matrices( const float* _P, const float* _
                                                  const float* _iR, const float* _K, const float* _iK,
                                                  const float* _C )
 {
-    cudaMemcpyToSymbol(sg_s_rP, _P, sizeof(float) * 3 * 4);
-    cudaMemcpyToSymbol(sg_s_riP, _iP, sizeof(float) * 3 * 3);
-    cudaMemcpyToSymbol(sg_s_rR, _R, sizeof(float) * 3 * 3);
-    cudaMemcpyToSymbol(sg_s_riR, _iR, sizeof(float) * 3 * 3);
-    cudaMemcpyToSymbol(sg_s_rK, _K, sizeof(float) * 3 * 3);
-    cudaMemcpyToSymbol(sg_s_riK, _iK, sizeof(float) * 3 * 3);
-    cudaMemcpyToSymbol(sg_s_rC, _C, sizeof(float) * 3);
+    cudaError_t err;
+
+    err = cudaMemcpyToSymbol(sg_s_rP, _P, sizeof(float) * 3 * 4);
+    memOpErrorCheck( err, __FILE__, __LINE__, "Failed copying to symbol" );
+    err = cudaMemcpyToSymbol(sg_s_riP, _iP, sizeof(float) * 3 * 3);
+    memOpErrorCheck( err, __FILE__, __LINE__, "Failed copying to symbol" );
+    err = cudaMemcpyToSymbol(sg_s_rR, _R, sizeof(float) * 3 * 3);
+    memOpErrorCheck( err, __FILE__, __LINE__, "Failed copying to symbol" );
+    err = cudaMemcpyToSymbol(sg_s_riR, _iR, sizeof(float) * 3 * 3);
+    memOpErrorCheck( err, __FILE__, __LINE__, "Failed copying to symbol" );
+    err = cudaMemcpyToSymbol(sg_s_rK, _K, sizeof(float) * 3 * 3);
+    memOpErrorCheck( err, __FILE__, __LINE__, "Failed copying to symbol" );
+    err = cudaMemcpyToSymbol(sg_s_riK, _iK, sizeof(float) * 3 * 3);
+    memOpErrorCheck( err, __FILE__, __LINE__, "Failed copying to symbol" );
+    err = cudaMemcpyToSymbol(sg_s_rC, _C, sizeof(float) * 3);
+    memOpErrorCheck( err, __FILE__, __LINE__, "Failed copying to symbol" );
 
     float3 z;
     z.x = 0.0f;
@@ -106,21 +118,33 @@ __host__ void ps_init_reference_camera_matrices( const float* _P, const float* _
     float3 _rXVect = ps_M3x3mulV3(_iR, x);
     ps_normalize(_rXVect);
 
-    cudaMemcpyToSymbol(sg_s_rXVect, &_rXVect, sizeof(float) * 3);
-    cudaMemcpyToSymbol(sg_s_rYVect, &_rYVect, sizeof(float) * 3);
-    cudaMemcpyToSymbol(sg_s_rZVect, &_rZVect, sizeof(float) * 3);
+    err = cudaMemcpyToSymbol(sg_s_rXVect, &_rXVect, sizeof(float) * 3);
+    memOpErrorCheck( err, __FILE__, __LINE__, "Failed copying to symbol" );
+    err = cudaMemcpyToSymbol(sg_s_rYVect, &_rYVect, sizeof(float) * 3);
+    memOpErrorCheck( err, __FILE__, __LINE__, "Failed copying to symbol" );
+    err = cudaMemcpyToSymbol(sg_s_rZVect, &_rZVect, sizeof(float) * 3);
+    memOpErrorCheck( err, __FILE__, __LINE__, "Failed copying to symbol" );
 }
 
 __host__ void ps_init_target_camera_matrices(float* _P, float* _iP, float* _R, float* _iR, float* _K, float* _iK,
                                              float* _C)
 {
-    cudaMemcpyToSymbol(sg_s_tP, _P, sizeof(float) * 3 * 4);
-    cudaMemcpyToSymbol(sg_s_tiP, _iP, sizeof(float) * 3 * 3);
-    cudaMemcpyToSymbol(sg_s_tR, _R, sizeof(float) * 3 * 3);
-    cudaMemcpyToSymbol(sg_s_tiR, _iR, sizeof(float) * 3 * 3);
-    cudaMemcpyToSymbol(sg_s_tK, _K, sizeof(float) * 3 * 3);
-    cudaMemcpyToSymbol(sg_s_tiK, _iK, sizeof(float) * 3 * 3);
-    cudaMemcpyToSymbol(sg_s_tC, _C, sizeof(float) * 3);
+    cudaError_t err;
+
+    err = cudaMemcpyToSymbol(sg_s_tP, _P, sizeof(float) * 3 * 4);
+    memOpErrorCheck( err, __FILE__, __LINE__, "Failed copying to symbol" );
+    err = cudaMemcpyToSymbol(sg_s_tiP, _iP, sizeof(float) * 3 * 3);
+    memOpErrorCheck( err, __FILE__, __LINE__, "Failed copying to symbol" );
+    err = cudaMemcpyToSymbol(sg_s_tR, _R, sizeof(float) * 3 * 3);
+    memOpErrorCheck( err, __FILE__, __LINE__, "Failed copying to symbol" );
+    err = cudaMemcpyToSymbol(sg_s_tiR, _iR, sizeof(float) * 3 * 3);
+    memOpErrorCheck( err, __FILE__, __LINE__, "Failed copying to symbol" );
+    err = cudaMemcpyToSymbol(sg_s_tK, _K, sizeof(float) * 3 * 3);
+    memOpErrorCheck( err, __FILE__, __LINE__, "Failed copying to symbol" );
+    err = cudaMemcpyToSymbol(sg_s_tiK, _iK, sizeof(float) * 3 * 3);
+    memOpErrorCheck( err, __FILE__, __LINE__, "Failed copying to symbol" );
+    err = cudaMemcpyToSymbol(sg_s_tC, _C, sizeof(float) * 3);
+    memOpErrorCheck( err, __FILE__, __LINE__, "Failed copying to symbol" );
 
     float3 z;
     z.x = 0.0f;
@@ -143,9 +167,12 @@ __host__ void ps_init_target_camera_matrices(float* _P, float* _iP, float* _R, f
     float3 _tXVect = ps_M3x3mulV3(_iR, x);
     ps_normalize(_tXVect);
 
-    cudaMemcpyToSymbol(sg_s_tXVect, &_tXVect, sizeof(float) * 3);
-    cudaMemcpyToSymbol(sg_s_tYVect, &_tYVect, sizeof(float) * 3);
-    cudaMemcpyToSymbol(sg_s_tZVect, &_tZVect, sizeof(float) * 3);
+    err = cudaMemcpyToSymbol(sg_s_tXVect, &_tXVect, sizeof(float) * 3);
+    memOpErrorCheck( err, __FILE__, __LINE__, "Failed copying to symbol" );
+    err = cudaMemcpyToSymbol(sg_s_tYVect, &_tYVect, sizeof(float) * 3);
+    memOpErrorCheck( err, __FILE__, __LINE__, "Failed copying to symbol" );
+    err = cudaMemcpyToSymbol(sg_s_tZVect, &_tZVect, sizeof(float) * 3);
+    memOpErrorCheck( err, __FILE__, __LINE__, "Failed copying to symbol" );
 }
 
 __host__ GaussianArray* ps_create_gaussian_arr(float delta, int radius)
@@ -180,7 +207,8 @@ int ps_listCUDADevices(bool verbose)
         for(int i = 0; i < num_gpus; i++)
         {
             cudaDeviceProp dprop;
-            cudaGetDeviceProperties(&dprop, i);
+            err = cudaGetDeviceProperties(&dprop, i);
+            memOpErrorCheck( err, __FILE__, __LINE__, "Failed to get current CUDA device properties" );
             printf("   %d: %s\n", i, dprop.name);
             printf("       max 1D texture size: %d bytes\n", dprop.maxTexture1D );
             printf("       max 1D surface size: %d bytes\n", dprop.maxSurface1D );
@@ -198,7 +226,8 @@ void ps_deviceAllocate( int ncams, int width, int height, int scales,
     static int counter = 1;
     std::cerr << "    INFO " << __FUNCTION__ << " Call " << counter++ << " to ps_deviceAllocate" << std::endl;
     int num_gpus = 0;
-    cudaGetDeviceCount(&num_gpus);
+    cudaError_t err = cudaGetDeviceCount(&num_gpus);
+    memOpErrorCheck( err, __FILE__, __LINE__, "Failed to get current CUDA device count" );
 
     if( deviceId >= num_gpus )
     {
@@ -269,7 +298,7 @@ void testCUDAdeviceNo(int CUDAdeviceNo)
     	err = cudaGetDevice(&myCUDAdeviceNo);
     	if( err != cudaSuccess )
     	{
-	    printf( "Could not retrieve own device number\n" );
+	        printf( "Could not retrieve own device number\n" );
     	}
 
     	if(myCUDAdeviceNo != CUDAdeviceNo)
@@ -298,6 +327,8 @@ void ps_deviceUpdateCam( cameraStruct* cam, int camId, int CUDAdeviceNo,
         dim3 block(block_size, block_size, 1);
         dim3 grid(divUp(w, block_size), divUp(h, block_size), 1);
         rgb2lab_kernel<<<grid, block>>>(tex_lab_dmp.getBuffer(), tex_lab_dmp.stride()[0], w, h);
+        cudaDeviceSynchronize();
+        memOpErrorCheck( cudaGetLastError(), __FILE__, __LINE__, "Failed to execute kernel" );
 
         array0.copyFrom( tex_lab_dmp );
 
@@ -307,6 +338,8 @@ void ps_deviceUpdateCam( cameraStruct* cam, int camId, int CUDAdeviceNo,
                     r4tex,
                     tex_lab_dmp.getBuffer(), tex_lab_dmp.stride()[0], w, h,
                     varianceWsh);
+            memOpErrorCheck( cudaGetLastError(), __FILE__, __LINE__, "Failed to execute kernel" );
+
             array0.copyFrom( tex_lab_dmp );
         }
     }
@@ -332,6 +365,8 @@ void ps_deviceUpdateCam( cameraStruct* cam, int camId, int CUDAdeviceNo,
             radius //, 15.5f
             );
 
+        memOpErrorCheck( cudaGetLastError(), __FILE__, __LINE__, "Failed to execute kernel" );
+
         CudaArray<uchar4,2>& array = global_data.getScaledPictureArray( scale, camId );
 
         array.copyFrom( tex_lab_dmp );
@@ -343,6 +378,8 @@ void ps_deviceUpdateCam( cameraStruct* cam, int camId, int CUDAdeviceNo,
                 r4tex,
                 tex_lab_dmp.getBuffer(), tex_lab_dmp.stride()[0],
                 w / (scale + 1), h / (scale + 1), varianceWsh);
+            memOpErrorCheck( cudaGetLastError(), __FILE__, __LINE__, "Failed to execute kernel" );
+
             array.copyFrom( tex_lab_dmp );
             r4tex = global_data.getScaledPictureTex( 0, camId );
         }
@@ -394,12 +431,12 @@ static void ps_aggregatePathVolume(
     volume_getVolumeXYSliceAtZ_kernel<unsigned int, unsigned char><<<gridvol, blockvol>>>(
         d_xySliceForZ.getBuffer(), d_xySliceForZ.stride()[0], d_volSimT.getBuffer(), d_volSimT.stride()[1],
         d_volSimT.stride()[0], volDimX, volDimY, volDimZ, 0); // Z=0
-    CHECK_CUDA_ERROR();
+    memOpErrorCheck( cudaGetLastError(), __FILE__, __LINE__, "Failed to execute kernel" );
 
     // Set the first Z plane from 'd_volSimT' to 255
     volume_initVolume_kernel<unsigned char><<<gridvol, blockvol>>>(
         d_volSimT.getBuffer(), d_volSimT.stride()[1], d_volSimT.stride()[0], volDimX, volDimY, volDimZ, 0, 255);
-    CHECK_CUDA_ERROR();
+    memOpErrorCheck( cudaGetLastError(), __FILE__, __LINE__, "Failed to execute kernel" );
 
     for(int z = 1; z < volDimZ; z++)
     {
@@ -413,14 +450,14 @@ static void ps_aggregatePathVolume(
             sliceTexUInt,
             d_xSliceBestInColSimForZM1.getBuffer(),
             volDimX, volDimY);
-        CHECK_CUDA_ERROR();
+        memOpErrorCheck( cudaGetLastError(), __FILE__, __LINE__, "Failed to execute kernel" );
 
         // Copy the 'z' plane from 'd_volSimT' into 'd_xySliceForZ'
         volume_getVolumeXYSliceAtZ_kernel<unsigned int, unsigned char><<<gridvol, blockvol>>>(
             d_xySliceForZ.getBuffer(), d_xySliceForZ.stride()[0],
             d_volSimT.getBuffer(), d_volSimT.stride()[1], d_volSimT.stride()[0],
             volDimX, volDimY, volDimZ, z);
-        CHECK_CUDA_ERROR();
+        memOpErrorCheck( cudaGetLastError(), __FILE__, __LINE__, "Failed to execute kernel" );
 
         volume_agregateCostVolumeAtZinSlices_kernel<<<gridvolrowAllCols, blockvolrow>>>(
             r4tex,
@@ -431,7 +468,7 @@ static void ps_aggregatePathVolume(
             volDimX, volDimY, volDimZ,
             z, P1, P2, transfer, volLUX,
             volLUY, dimTrnX, doInvZ);
-        CHECK_CUDA_ERROR();
+        memOpErrorCheck( cudaGetLastError(), __FILE__, __LINE__, "Failed to execute kernel" );
     }
 
     global_data.pitched_mem_uint_point_tex_cache.put( xySliceForZM1_arr );
@@ -493,8 +530,8 @@ static void ps_updateAggrVolume(
             volDimX, volDimY, volDimZ,
             dimTrnX, dimTrnY, dimTrnZ,
             z);
+        memOpErrorCheck( cudaGetLastError(), __FILE__, __LINE__, "Failed to execute kernel" );
     }
-    CHECK_CUDA_ERROR();
     // if (verbose) printf("transpose volume gpu elapsed time: %f ms \n", toc(tall));
     // pr_printfDeviceMemoryInfo();
 
@@ -507,8 +544,8 @@ static void ps_updateAggrVolume(
                 d_volSimT.getBuffer(), d_volSimT.stride()[1], d_volSimT.stride()[0],
                 volDims[dimsTrn[0]], volDims[dimsTrn[1]], volDims[dimsTrn[2]],
                 z);
+            memOpErrorCheck( cudaGetLastError(), __FILE__, __LINE__, "Failed to execute kernel" );
         }
-        CHECK_CUDA_ERROR();
         // if (verbose) printf("shift z volume gpu elapsed time: %f ms \n", toc(tall));
     }
 
@@ -530,8 +567,8 @@ static void ps_updateAggrVolume(
             volume_shiftZVolumeTempl_kernel<unsigned char><<<gridT, blockT>>>(
                 d_volSimT.getBuffer(), d_volSimT.stride()[1], d_volSimT.stride()[0], volDims[dimsTrn[0]],
                 volDims[dimsTrn[1]], volDims[dimsTrn[2]], z);
+            memOpErrorCheck( cudaGetLastError(), __FILE__, __LINE__, "Failed to execute kernel" );
         }
-        CHECK_CUDA_ERROR();
         // if (verbose) printf("shift z volume gpu elapsed time: %f ms \n", toc(tall));
     }
 
@@ -543,8 +580,8 @@ static void ps_updateAggrVolume(
             d_volSimT.getBuffer(), d_volSimT.stride()[1], d_volSimT.stride()[0],
             volDims[dimsTrn[0]], volDims[dimsTrn[1]], volDims[dimsTrn[2]],
             dimsTri[0], dimsTri[1], dimsTri[2], zT, lastN);
+        memOpErrorCheck( cudaGetLastError(), __FILE__, __LINE__, "Failed to execute kernel" );
     }
-    CHECK_CUDA_ERROR();
     // if (verbose) printf("transpose volume gpu elapsed time: %f ms \n", toc(tall));
     // pr_printfDeviceMemoryInfo();
 
@@ -701,7 +738,7 @@ void ps_computeSimilarityVolume(
         volume_initFullVolume_kernel<unsigned char><<<gridvol3d, blockvol3d >>>(
             vol_dmp.getBuffer(), vol_dmp.stride()[1], vol_dmp.stride()[0],
             volDimX, volDimY, volDimZ, 255 );
-        CHECK_CUDA_ERROR();
+        memOpErrorCheck( cudaGetLastError(), __FILE__, __LINE__, "Failed to execute kernel" );
     }
 
     //--------------------------------------------------------------------------------------------------
@@ -719,6 +756,7 @@ void ps_computeSimilarityVolume(
             slice_dmp.getBuffer(), slice_dmp.stride()[0],
             nDepthsToSearch, nDepths,
             slicesAtTime, width, height, wsh, t, npixs, gammaC, gammaP, epipShift);
+        memOpErrorCheck( cudaGetLastError(), __FILE__, __LINE__, "Failed to execute kernel" );
 
         volume_saveSliceToVolume_kernel<<<grid, block>>>(
             volPixs_arr_x->tex,
@@ -729,7 +767,7 @@ void ps_computeSimilarityVolume(
             nDepthsToSearch, nDepths,
             slicesAtTime, width, height, t, npixs, volStepXY,
             volDimX, volDimY, volDimZ, volLUX, volLUY, volLUZ);
-        CHECK_CUDA_ERROR();
+        memOpErrorCheck( cudaGetLastError(), __FILE__, __LINE__, "Failed to execute kernel" );
     }
     CHECK_CUDA_ERROR();
 
@@ -824,7 +862,7 @@ void ps_smoothDepthMap( CudaHostMemoryHeap<float, 2>* depthMap_hmh,
         depthMap_dmp->mem->getBuffer(), depthMap_dmp->mem->stride()[0],
         width, height, wsh, gammaC,
         gammaP );
-    CHECK_CUDA_ERROR();
+    memOpErrorCheck( cudaGetLastError(), __FILE__, __LINE__, "Failed to execute kernel" );
 
     if(verbose)
         printf("copy depth map to host\n");
@@ -877,7 +915,7 @@ void ps_filterDepthMap( CudaHostMemoryHeap<float, 2>* depthMap_hmh,
         depthMap_dmp->mem->getBuffer(), depthMap_dmp->mem->stride()[0],
         width, height, wsh, gammaC,
         minCostThr );
-    CHECK_CUDA_ERROR();
+    memOpErrorCheck( cudaGetLastError(), __FILE__, __LINE__, "Failed to execute kernel" );
 
     if(verbose)
         printf("copy depth map to host\n");
@@ -931,7 +969,7 @@ void ps_computeNormalMap( CudaHostMemoryHeap<float3, 2>* normalMap_hmh,
         normalMap_dmp.getBuffer(), normalMap_dmp.stride()[0],
         width, height, wsh,
         gammaC, gammaP );
-    CHECK_CUDA_ERROR();
+    memOpErrorCheck( cudaGetLastError(), __FILE__, __LINE__, "Failed to execute kernel" );
 
     if(verbose)
         printf("copy normal map to host\n");
@@ -992,7 +1030,7 @@ void ps_alignSourceDepthMapToTarget(
         depthsTex1,
         outDepthMap_dmp.getBuffer(), outDepthMap_dmp.stride()[0],
         width, height, wsh, gammaC, maxPixelSizeDist);
-    CHECK_CUDA_ERROR();
+    memOpErrorCheck( cudaGetLastError(), __FILE__, __LINE__, "Failed to execute kernel" );
 
     if(verbose)
         printf("copy depth map to host\n");
@@ -1100,6 +1138,7 @@ static void ps_refineDepthMapInternal(
         dsm_dmp.getBuffer(), dsm_dmp.stride()[0],
         idepthMap_dmp.getBuffer(), idepthMap_dmp.stride()[0],
         width, height, moveByTcOrRc, step);
+    memOpErrorCheck( cudaGetLastError(), __FILE__, __LINE__, "Failed to execute kernel" );
     // cudaThreadSynchronize();
 
     // for each depth map compute sim map in pixels where depthMap is defined
@@ -1111,6 +1150,7 @@ static void ps_refineDepthMapInternal(
             dsm_dmp.getBuffer(), dsm_dmp.stride()[0],
             timg_dmp->mem->getBuffer(), timg_dmp->mem->stride()[0],
             width, height, id );
+        memOpErrorCheck( cudaGetLastError(), __FILE__, __LINE__, "Failed to execute kernel" );
 
         tTexU4 = timg_dmp->tex;
 
@@ -1121,6 +1161,7 @@ static void ps_refineDepthMapInternal(
             id,
             idepthMapMask_dmp.getBuffer(), idepthMapMask_dmp.stride()[0],
             width, height, wsh, gammaC, gammaP);
+        memOpErrorCheck( cudaGetLastError(), __FILE__, __LINE__, "Failed to execute kernel" );
 
     }
 
@@ -1130,6 +1171,7 @@ static void ps_refineDepthMapInternal(
         ssm_dmp.getBuffer(), ssm_dmp.stride()[0],
         dsm_dmp.getBuffer(), dsm_dmp.stride()[0],
         width, height, simThr);
+    memOpErrorCheck( cudaGetLastError(), __FILE__, __LINE__, "Failed to execute kernel" );
 }
 
 #if 0
@@ -1306,6 +1348,7 @@ void ps_refineDepthMapReproject( CudaHostMemoryHeap<uchar4, 2>* otimg_hmh,
         t4tex,
         rimg_dmp->mem->getBuffer(), rimg_dmp->mem->stride()[0],
         width, height );
+    memOpErrorCheck( cudaGetLastError(), __FILE__, __LINE__, "Failed to execute kernel" );
 
     cudaTextureObject_t rTexU4 = rimg_dmp->tex;
     cudaTextureObject_t tTexU4 = rimg_dmp->tex;
@@ -1489,6 +1532,7 @@ void ps_refineRcDepthMap( float* osimMap_hmh,
         ntcsteps,
         moveByTcOrRc, xFrom, imWidth, imHeight,
         lastThreeSimsMap.getBuffer(), lastThreeSimsMap.stride()[0] );
+    memOpErrorCheck( cudaGetLastError(), __FILE__, __LINE__, "Failed to execute kernel" );
 
     refine_compYKNCCSimMapPatch_kernel_A<<<grid, block>>>(
         r4tex,
@@ -1499,6 +1543,7 @@ void ps_refineRcDepthMap( float* osimMap_hmh,
         -1.0f,
         moveByTcOrRc, xFrom, imWidth, imHeight,
         lastThreeSimsMap.getBuffer(), lastThreeSimsMap.stride()[0], 0 );
+    memOpErrorCheck( cudaGetLastError(), __FILE__, __LINE__, "Failed to execute kernel" );
 
     refine_compYKNCCSimMapPatch_kernel_A<<<grid, block>>>(
         r4tex,
@@ -1509,6 +1554,7 @@ void ps_refineRcDepthMap( float* osimMap_hmh,
         +1.0f,
         moveByTcOrRc, xFrom, imWidth, imHeight,
         lastThreeSimsMap.getBuffer(), lastThreeSimsMap.stride()[0], 2 );
+    memOpErrorCheck( cudaGetLastError(), __FILE__, __LINE__, "Failed to execute kernel" );
 
     cudaThreadSynchronize();
 #else
@@ -1522,12 +1568,14 @@ void ps_refineRcDepthMap( float* osimMap_hmh,
             rcDepthMap_dmp.getBuffer(), rcDepthMap_dmp.stride()[0],
             width, height, wsh, gammaC, gammaP, epipShift,
             (float)(i - (ntcsteps - 1) / 2), i, moveByTcOrRc, xFrom, imWidth, imHeight);
+        memOpErrorCheck( cudaGetLastError(), __FILE__, __LINE__, "Failed to execute kernel" );
     }
 
     refine_setLastThreeSimsMap_kernel<<<grid, block>>>(
         lastThreeSimsMap.getBuffer(), lastThreeSimsMap.stride()[0],
         bestSimMap_dmp.getBuffer(), bestSimMap_dmp.stride()[0],
         width, height, 1);
+    memOpErrorCheck( cudaGetLastError(), __FILE__, __LINE__, "Failed to execute kernel" );
 
     refine_compYKNCCSimMapPatch_kernel<<<grid, block>>>(
         r4tex,
@@ -1538,11 +1586,13 @@ void ps_refineRcDepthMap( float* osimMap_hmh,
         wsh, gammaC, gammaP, epipShift,
         -1.0f,
         moveByTcOrRc, xFrom, imWidth, imHeight);
+    memOpErrorCheck( cudaGetLastError(), __FILE__, __LINE__, "Failed to execute kernel" );
 
     refine_setLastThreeSimsMap_kernel<<<grid, block>>>(
         lastThreeSimsMap.getBuffer(), lastThreeSimsMap.stride()[0],
         simMap_dmp.getBuffer(), simMap_dmp.stride()[0],
         width, height, 0);
+    memOpErrorCheck( cudaGetLastError(), __FILE__, __LINE__, "Failed to execute kernel" );
 
     refine_compYKNCCSimMapPatch_kernel<<<grid, block>>>(
         r4tex,
@@ -1551,11 +1601,13 @@ void ps_refineRcDepthMap( float* osimMap_hmh,
         bestDptMap_dmp.getBuffer(), bestDptMap_dmp.stride()[0],
         width, height,
         wsh, gammaC, gammaP, epipShift, +1.0f, moveByTcOrRc, xFrom, imWidth, imHeight);
+    memOpErrorCheck( cudaGetLastError(), __FILE__, __LINE__, "Failed to execute kernel" );
 
     refine_setLastThreeSimsMap_kernel<<<grid, block>>>(
         lastThreeSimsMap.getBuffer(), lastThreeSimsMap.stride()[0],
         simMap_dmp.getBuffer(), simMap_dmp.stride()[0],
         width, height, 2);
+    memOpErrorCheck( cudaGetLastError(), __FILE__, __LINE__, "Failed to execute kernel" );
 #endif
 
     refine_computeDepthSimMapFromLastThreeSimsMap_kernel<<<grid, block>>>(
@@ -1564,6 +1616,7 @@ void ps_refineRcDepthMap( float* osimMap_hmh,
         lastThreeSimsMap.getBuffer(), lastThreeSimsMap.stride()[0],
         width, height,
         moveByTcOrRc, xFrom);
+    memOpErrorCheck( cudaGetLastError(), __FILE__, __LINE__, "Failed to execute kernel" );
 
     copy(osimMap_hmh, width, height, bestSimMap_dmp);
     copy(rcDepthMap_hmh, width, height, bestDptMap_dmp);
@@ -1634,16 +1687,19 @@ void ps_fuseDepthSimMapsGaussianKernelVoting(CudaHostMemoryHeap<float2, 2>* odep
                 depthSimMaps_dmp[c]->getBuffer(), depthSimMaps_dmp[c]->stride()[0],
                 depthSimMaps_dmp[0]->getBuffer(), depthSimMaps_dmp[0]->stride()[0],
                 width, height, (float)s, c - 1, samplesPerPixSize, twoTimesSigmaPowerTwo);
+            memOpErrorCheck( cudaGetLastError(), __FILE__, __LINE__, "Failed to execute kernel" );
         }
         fuse_updateBestGaussianKernelVotingSampleMap_kernel<<<grid, block>>>(
             bestGsvSampleMap_dmp.getBuffer(), bestGsvSampleMap_dmp.stride()[0], gsvSampleMap_dmp.getBuffer(),
             gsvSampleMap_dmp.stride()[0], width, height, (float)s, s + nSamplesHalf);
+        memOpErrorCheck( cudaGetLastError(), __FILE__, __LINE__, "Failed to execute kernel" );
     }
 
     fuse_computeFusedDepthSimMapFromBestGaussianKernelVotingSampleMap_kernel<<<grid, block>>>(
         bestDepthSimMap_dmp.getBuffer(), bestDepthSimMap_dmp.stride()[0], bestGsvSampleMap_dmp.getBuffer(),
         bestGsvSampleMap_dmp.stride()[0], depthSimMaps_dmp[0]->getBuffer(), depthSimMaps_dmp[0]->stride()[0], width, height,
         samplesPerPixSize);
+    memOpErrorCheck( cudaGetLastError(), __FILE__, __LINE__, "Failed to execute kernel" );
 
     odepthSimMap_hmh->copyFrom( bestDepthSimMap_dmp );
 
@@ -1705,6 +1761,7 @@ void ps_optimizeDepthSimMapGradientDescent(
         fuse_getOptDeptMapFromOPtDepthSimMap_kernel<<<grid, block>>>(
             optDepthMap_dmp.getBuffer(), optDepthMap_dmp.stride()[0], optDepthSimMap_dmp.getBuffer(),
             optDepthSimMap_dmp.stride()[0], width, height);
+        memOpErrorCheck( cudaGetLastError(), __FILE__, __LINE__, "Failed to execute kernel" );
 
         optDepthMap_arr->mem->copyFrom( optDepthMap_dmp );
 
@@ -1716,6 +1773,7 @@ void ps_optimizeDepthSimMapGradientDescent(
             dataMaps_dmp[0]->getBuffer(), dataMaps_dmp[0]->stride()[0],
             dataMaps_dmp[1]->getBuffer(), dataMaps_dmp[1]->stride()[0],
             width, height, iter, samplesPerPixSize, yFrom);
+        memOpErrorCheck( cudaGetLastError(), __FILE__, __LINE__, "Failed to execute kernel" );
     }
 
     odepthSimMap_hmh->copyFrom( optDepthSimMap_dmp );
@@ -1866,7 +1924,7 @@ void ps_getSilhoueteMap( CudaHostMemoryHeap<bool, 2>* omap_hmh, int width,
         rTexU4,
         map_dmp.getBuffer(), map_dmp.stride()[0],
         step, width, height, maskColorLab );
-    CHECK_CUDA_ERROR();
+    memOpErrorCheck( cudaGetLastError(), __FILE__, __LINE__, "Failed to execute kernel" );
 
     omap_hmh->copyFrom( map_dmp );
 

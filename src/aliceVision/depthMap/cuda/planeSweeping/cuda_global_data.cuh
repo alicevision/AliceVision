@@ -77,11 +77,7 @@ struct PitchedMem_Texture
                                        &res_desc,
                                        &tex_desc,
                                        0 );
-        if( err != cudaSuccess )
-        {
-	    printf("Failed to allocate a CUDA Texture object in %s %d - %s (%s)\n", __FILE__, __LINE__-6, cudaGetErrorString(err), __PRETTY_FUNCTION__ );
-	    throw std::runtime_error("Failed to allocate texture object");
-        }
+        memOpErrorCheck( err, __FILE__, __LINE__, "Failed to allocate a CUDA Texture object" );
     }
 
     ~PitchedMem_Texture( )
