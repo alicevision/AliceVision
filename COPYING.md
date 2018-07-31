@@ -108,6 +108,11 @@ This program is based on works distributed under the terms of another license(s)
     Copyright (C) 2015-2016, Itseez Inc., all rights reserved.
     Distributed under the [BSD-3-Clause](https://opensource.org/licenses/BSD-3-Clause)
 
+*   __OpenEXR__ (required by OpenImageIO and used in the pipeline)
+    http://www.openexr.com
+    Copyright (c) 2002, Industrial Light & Magic, a division of Lucas Digital Ltd. LLC
+    Distributed under the [BSD-3-Clause](https://opensource.org/licenses/BSD-3-Clause)
+
 *   __OpenGV__ (optional)
     https://laurentkneip.github.io/opengv
     Copyright (c) 2013 Laurent Kneip, The Australian National University ANU. All rights reserved
@@ -118,7 +123,7 @@ This program is based on works distributed under the terms of another license(s)
     Copyright 2008-2016 Larry Gritz et al.
     Distributed under the [BSD-3-Clause](https://github.com/OpenImageIO/oiio/blob/master/LICENSE).
 
-*   __OpenMesh__
+*   __OpenMesh__ (required by MeshSDFilter)
     [OpenMesh](www.openmesh.org)
     Copyright (c) 2001-2015, RWTH-Aachen University.
     Department of Computer Graphics and Multimedia. All rights reserved.
