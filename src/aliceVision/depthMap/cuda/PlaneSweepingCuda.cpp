@@ -1100,7 +1100,12 @@ float PlaneSweepingCuda::sweepPixelsToVolume(int nDepthsToSearch, StaticVector<u
         }
     }
 
-    int slicesAtTime = std::min(pixels->size(), 4096*16); //TODO
+    // hard-coded for CC 3.0 and 3.5
+    // int slicesAtTime = std::min(pixels->size(), 65000 );
+    // dynamically extracted slice size from cudaDeviceProp structure
+    int slicesAtTime = std::min(pixels->size(), _dev_properties.maxTexture2DLinear[0]);
+    // hard-coded value
+    // int slicesAtTime = std::min(pixels->size(), 4096*16); //TODO
     // int slicesAtTime = 480/scale;
     // int slicesAtTime = pixels->size();
 
