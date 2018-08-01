@@ -31,6 +31,7 @@ This program is based on works distributed under the terms of another license(s)
     Distributed under the [Boost Software License](http://www.boost.org/users/license.html).
 
 *   __CCTag__ (optional)  
+    [https://github.com/alicevision/CCTag](https://github.com/alicevision/CCTag)  
     Copyright 2016, Simula Research Laboratory  
     Distributed under the [MPL2 license](http://opensource.org/licenses/MPL-2.0).
 
@@ -135,6 +136,7 @@ This program is based on works distributed under the terms of another license(s)
     Distributed under the terms of the Eclipse Public License (EPL).
 
 *   __PopSift__ (optional)  
+    [https://github.com/alicevision/popsift](https://github.com/alicevision/popsift)  
     Copyright 2016, Simula Research Laboratory  
     Distributed under the [MPL2 license](http://opensource.org/licenses/MPL-2.0).
 
