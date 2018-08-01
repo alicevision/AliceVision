@@ -56,9 +56,8 @@ class PinholeRadialK1 : public Pinhole
     int w = 0, int h = 0,
     double focal = 0.0, double ppx = 0, double ppy = 0,
     double k1 = 0.0)
-      :Pinhole(w, h, focal, ppx, ppy)
+      :Pinhole(w, h, focal, ppx, ppy, {k1})
   {
-    setDistortionParams({k1});
   }
 
   PinholeRadialK1* clone() const { return new PinholeRadialK1(*this); }
@@ -123,9 +122,8 @@ class PinholeRadialK3 : public Pinhole
     int w = 0, int h = 0,
     double focal = 0.0, double ppx = 0, double ppy = 0,
     double k1 = 0.0, double k2 = 0.0, double k3 = 0.0)
-      :Pinhole(w, h, focal, ppx, ppy)
+      :Pinhole(w, h, focal, ppx, ppy, {k1, k2, k3})
   {
-    setDistortionParams({k1, k2, k3});
   }
 
   PinholeRadialK3* clone() const { return new PinholeRadialK3(*this); }
