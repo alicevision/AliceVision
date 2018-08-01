@@ -26,8 +26,7 @@ class Pinhole : public IntrinsicBase
 {
   public:
 
-  Pinhole()
-    {}
+  Pinhole() = default;
 
   Pinhole(
     unsigned int w, unsigned int h,
