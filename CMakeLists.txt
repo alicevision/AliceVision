@@ -8,6 +8,7 @@ option(AV_BUILD_CUDA "Enable building an embedded Cuda" OFF)
 option(AV_BUILD_TIFF "Enable building an embedded Tiff" ON)
 option(AV_BUILD_JPEG "Enable building an embedded Jpeg" ON)
 option(AV_BUILD_PNG "Enable building an embedded Png" ON)
+option(AV_BUILD_LIBRAW "Enable building an embedded libraw" ON)
 option(AV_BUILD_POPSIFT "Enable building an embedded PopSift" ON)
 
 option(AV_USE_CUDA "Enable CUDA" ON)
@@ -71,7 +72,10 @@ else()
 endif()
 
 if(ALICEVISION_BUILD_DEPENDENCIES)
+
+# ==============================================================================
 # Use CMake ExternalProject to build all dependencies
+# ==============================================================================
 include(ExternalProject)
 
 set(BUILD_DIR ${CMAKE_CURRENT_BINARY_DIR}/external)
@@ -301,18 +305,35 @@ endif()
 
 if(AV_BUILD_LIBRAW)
 set(LIBRAW_TARGET libraw)
-# Add turbojpeg
+# Add libraw
+ExternalProject_Add(libraw_cmake
+      GIT_REPOSITORY https://github.com/LibRaw/LibRaw-cmake
+      GIT_TAG master
+      PREFIX ${BUILD_DIR}
+      BUILD_IN_SOURCE 0
+      BUILD_ALWAYS 0
+      SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/libraw_cmake
+      BINARY_DIR ${BUILD_DIR}/libraw_build
+      INSTALL_DIR ${BUILD_DIR}/libraw_build
+      CONFIGURE_COMMAND ""
+      BUILD_COMMAND ""
+      INSTALL_COMMAND ""
+      )
 ExternalProject_Add(${LIBRAW_TARGET}
-       URL https://github.com/LibRaw/LibRaw/archive/0.19.0.tar.gz
-       PREFIX ${BUILD_DIR}
-       BUILD_IN_SOURCE 0
-       BUILD_ALWAYS 0
-       SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/libraw
-       BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/libraw
-       INSTALL_DIR ${BUILD_DIR}/libraw_build
-       CONFIGURE_COMMAND ${CMAKE_COMMAND} -DCMAKE_BUILD_TYPE=${DEPS_CMAKE_BUILD_TYPE} -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR> <SOURCE_DIR>
-       )
-SET(LIBRAW_CMAKE_FLAGS -DLIBRAW_ROOT=${BUILD_DIR}/libraw_build)
+      URL https://github.com/LibRaw/LibRaw/archive/0.19.0.tar.gz
+      PREFIX ${BUILD_DIR}
+      BUILD_IN_SOURCE 0
+      BUILD_ALWAYS 0
+      SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/libraw
+      BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/libraw
+      INSTALL_DIR ${BUILD_DIR}/libraw_build
+      # Native libraw configure script doesn't work on centos 7 (autoconf 2.69)
+      # CONFIGURE_COMMAND autoconf && ./configure --enable-jpeg --enable-openmp --disable-examples --prefix=<INSTALL_DIR>
+      # Use cmake build system (not maintained by libraw devs)
+      CONFIGURE_COMMAND cp <SOURCE_DIR>_cmake/CMakeLists.txt . && cp -rf <SOURCE_DIR>_cmake/cmake . && ${CMAKE_COMMAND} -DCMAKE_BUILD_TYPE=${DEPS_CMAKE_BUILD_TYPE} -DENABLE_OPENMP=ON -DENABLE_LCMS=ON -DENABLE_EXAMPLES=OFF -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR> <SOURCE_DIR>
+      DEPENDS libraw_cmake
+      )
+SET(LIBRAW_CMAKE_FLAGS -DLIBRAW_PATH=${BUILD_DIR}/libraw_build -DPC_LIBRAW_INCLUDEDIR=${BUILD_DIR}/libraw_build/include -DPC_LIBRAW_LIBDIR=${BUILD_DIR}/libraw_build/lib -DPC_LIBRAW_R_LIBDIR=${BUILD_DIR}/libraw_build/lib)
 endif()
 
 # Add Boost
@@ -345,11 +366,10 @@ ExternalProject_Add(${OPENIMAGEIO_TARGET}
       SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/openimageio
       BINARY_DIR ${BUILD_DIR}/openimageio_build
       INSTALL_DIR ${BUILD_DIR}/openimageio_build
-      CONFIGURE_COMMAND ${CMAKE_COMMAND} -DCMAKE_BUILD_TYPE=${DEPS_CMAKE_BUILD_TYPE} -DCMAKE_PREFIX_PATH="${BUILD_DIR}/png_build;${BUILD_DIR}/turbojpeg_build" -DBOOST_ROOT=${BUILD_DIR}/boost_build -DILMBASE_HOME=${BUILD_DIR}/openexr_build -DOPENEXR_HOME=${BUILD_DIR}/openexr_build -DTIFF_INCLUDE_DIR=${BUILD_DIR}/tiff_build/include -DTIFF_LIBRARIES=${BUILD_DIR}/tiff_build/lib/libtiff.so ${PNG_CMAKE_FLAGS} ${JPEG_CMAKE_FLAGS} -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR> <SOURCE_DIR> -DUSE_PYTHON=OFF -DUSE_OPENCV=OFF -DUSE_OPENGL=OFF
+      CONFIGURE_COMMAND ${CMAKE_COMMAND} -DCMAKE_CXX_FLAGS="-Wno-deprecated-declarations" -DCMAKE_BUILD_TYPE=${DEPS_CMAKE_BUILD_TYPE} -DCMAKE_PREFIX_PATH="${BUILD_DIR}/png_build;${BUILD_DIR}/turbojpeg_build;${BUILD_DIR}/libraw_build" -DBOOST_ROOT=${BUILD_DIR}/boost_build -DILMBASE_HOME=${BUILD_DIR}/openexr_build -DOPENEXR_HOME=${BUILD_DIR}/openexr_build -DTIFF_INCLUDE_DIR=${BUILD_DIR}/tiff_build/include -DTIFF_LIBRARIES=${BUILD_DIR}/tiff_build/lib/libtiff.so ${PNG_CMAKE_FLAGS} ${JPEG_CMAKE_FLAGS} ${LIBRAW_CMAKE_FLAGS} -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR> <SOURCE_DIR> -DUSE_PYTHON=OFF -DUSE_OPENCV=OFF -DUSE_OPENGL=OFF
       DEPENDS ${BOOST_TARGET} ${OPENEXR_TARGET} ${TIFF_TARGET} ${PNG_TARGET} ${JPEG_TARGET} ${LIBRAW_TARGET}
       )
-#TODO: Raw, openjpeg
-# -DLibRaw_INCLUDE_DIR=$LIBRAW_INCLUDE_DIR
+# TODO: openjpeg
 # -DOPENJPEG_INCLUDE_DIR=$OPENJPEG_INCLUDE_DIR/openjpeg-2.0 -DOPENJPEG_OPENJP2_LIBRARIES=$OPENJPEG_OPENJP2_LIBRARIES
 set(OPENIMAGEIO_CMAKE_FLAGS -DOPENIMAGEIO_LIBRARY_DIR_HINTS=${BUILD_DIR}/openimageio_build -DOPENIMAGEIO_INCLUDE_DIR_HINTS=${BUILD_DIR}/openimageio_build)
 
@@ -384,7 +404,6 @@ ExternalProject_Add(${POPSIFT_TARGET}
       DEPENDS ${BOOST_TARGET} ${CUDA_TARGET}
       )
 endif()
-
 
 ExternalProject_Add(aliceVision
        PREFIX ${CMAKE_CURRENT_SOURCE_DIR}
@@ -427,11 +446,12 @@ if(CMAKE_INSTALL_PREFIX)
 endif()
 
 else()
-# Standard cmake project without internal support for dependencies
 
 # ==============================================================================
-# Add sources
+# Standard cmake project without internal support for dependencies
 # ==============================================================================
+
+# Add sources
 add_subdirectory(src)
 
 endif()
