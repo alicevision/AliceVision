@@ -25,13 +25,21 @@ message(STATUS "CMAKE_INSTALL_PREFIX: ${CMAKE_INSTALL_PREFIX}")
 message(STATUS "BUNDLE_INSTALL_PREFIX: ${BUNDLE_INSTALL_PREFIX}")
 message(STATUS "BUNDLE_LIBS_PATHS: ${BUNDLE_LIBS_PATHS}")
 
-# Add installed 'lib' folder to dependencies lookup path
-set(LIBS_LOOKUPS_PATHS "${CMAKE_INSTALL_PREFIX}/lib")
+include(GNUInstallDirs)
+
+# Add installed runtime library folder to dependencies lookup path
+if(WIN32)  # installed next to binaries on Windows
+    set(LIBS_LOOKUPS_PATHS "${CMAKE_INSTALL_FULL_BINDIR}")
+else()     # installed in library dir everywhere else
+    set(LIBS_LOOKUPS_PATHS "${CMAKE_INSTALL_FULL_LIBDIR}")
+endif()
+
 list(APPEND LIBS_LOOKUPS_PATHS ${BUNDLE_LIBS_PATHS})
+message(STATUS "LIBS_LOOKUPS_PATHS: ${LIBS_LOOKUPS_PATHS}")
 
 # Get all executables in installed 'bin' folder
 # and copy them in the bundle installation path
-get_bundle_all_executables(${CMAKE_INSTALL_PREFIX}/bin BUNDLE_APPS)
+get_bundle_all_executables(${CMAKE_INSTALL_FULL_BINDIR} BUNDLE_APPS)
 file(INSTALL ${BUNDLE_APPS} DESTINATION ${BUNDLE_INSTALL_PREFIX} USE_SOURCE_PERMISSIONS)
 
 # Get first bundled executable as reference app
