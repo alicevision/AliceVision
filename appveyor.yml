@@ -10,8 +10,8 @@ branches:
 platform:
   - x64
 
-environment: 
-  APPVEYOR_SAVE_CACHE_ON_ERROR: true
+# environment: 
+#   APPVEYOR_SAVE_CACHE_ON_ERROR: true
 
 configuration:
   - Release
@@ -19,8 +19,8 @@ configuration:
 
 install:
     - git submodule update --init --recursive
-    # - cmd: >-
-    #      call cudaInstallAppveyor.cmd
+    - cmd: >-
+         call cudaInstallAppveyor.cmd
     - cd c:\tools\vcpkg\
     - git fetch https://github.com/aliceVision/vcpkg.git alicevision_master:alicevision_master
     - git checkout alicevision_master
@@ -34,11 +34,11 @@ install:
           alembic 
           geogram 
           eigen3 
-          ceres[suitesparse] 
+          ceres[suitesparse]
+          cuda
           --triplet %PLATFORM%-windows
           --recurse
     - vcpkg list
-        # cuda
 
 before_build:
     - cd %APPVEYOR_BUILD_FOLDER%
@@ -52,13 +52,13 @@ before_build:
             -DCMAKE_TOOLCHAIN_FILE=c:/tools/vcpkg/scripts/buildsystems/vcpkg.cmake
     - ls -l
 
-# build:
-#   project: $(APPVEYOR_BUILD_FOLDER)\build\aliceVision.sln
-#   verbosity: minimal
+build:
+  project: $(APPVEYOR_BUILD_FOLDER)\build\aliceVision.sln
+  verbosity: minimal
 
 #comment the above and uncomment the following to just build the dependencies
-build_script:
- - echo "Dependencies installed."
+# build_script:
+#  - echo "Dependencies installed."
 
 cache:
   c:\tools\vcpkg\installed\
