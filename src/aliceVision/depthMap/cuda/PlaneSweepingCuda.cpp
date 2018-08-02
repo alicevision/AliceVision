@@ -13,6 +13,7 @@
 #include <aliceVision/mvsUtils/common.hpp>
 #include <aliceVision/mvsUtils/fileIO.hpp>
 #include <aliceVision/depthMap/cuda/commonStructures.hpp>
+#include <aliceVision/depthMap/cuda/cameraStruct.hpp>
 #include <aliceVision/depthMap/cuda/planeSweeping/plane_sweeping_cuda.hpp>
 
 #include <iostream>
@@ -57,72 +58,74 @@ static void cps_fillCamera(cameraStruct* cam, int c, mvsUtils::MultiViewParams* 
     Matrix3x4 P = K * (mp->RArr[c] | (Point3d(0.0, 0.0, 0.0) - mp->RArr[c] * mp->CArr[c]));
     Matrix3x3 iP = mp->iRArr[c] * iK;
 
-    cam->cam.C[0] = mp->CArr[c].x;
-    cam->cam.C[1] = mp->CArr[c].y;
-    cam->cam.C[2] = mp->CArr[c].z;
+    CameraBaseStruct& base = cam->cam;
 
-    cam->cam.P[0] = P.m11;
-    cam->cam.P[1] = P.m21;
-    cam->cam.P[2] = P.m31;
-    cam->cam.P[3] = P.m12;
-    cam->cam.P[4] = P.m22;
-    cam->cam.P[5] = P.m32;
-    cam->cam.P[6] = P.m13;
-    cam->cam.P[7] = P.m23;
-    cam->cam.P[8] = P.m33;
-    cam->cam.P[9] = P.m14;
-    cam->cam.P[10] = P.m24;
-    cam->cam.P[11] = P.m34;
+    base.C[0] = mp->CArr[c].x;
+    base.C[1] = mp->CArr[c].y;
+    base.C[2] = mp->CArr[c].z;
 
-    cam->cam.iP[0] = iP.m11;
-    cam->cam.iP[1] = iP.m21;
-    cam->cam.iP[2] = iP.m31;
-    cam->cam.iP[3] = iP.m12;
-    cam->cam.iP[4] = iP.m22;
-    cam->cam.iP[5] = iP.m32;
-    cam->cam.iP[6] = iP.m13;
-    cam->cam.iP[7] = iP.m23;
-    cam->cam.iP[8] = iP.m33;
+    base.P[0] = P.m11;
+    base.P[1] = P.m21;
+    base.P[2] = P.m31;
+    base.P[3] = P.m12;
+    base.P[4] = P.m22;
+    base.P[5] = P.m32;
+    base.P[6] = P.m13;
+    base.P[7] = P.m23;
+    base.P[8] = P.m33;
+    base.P[9] = P.m14;
+    base.P[10] = P.m24;
+    base.P[11] = P.m34;
 
-    cam->cam.R[0] = mp->RArr[c].m11;
-    cam->cam.R[1] = mp->RArr[c].m21;
-    cam->cam.R[2] = mp->RArr[c].m31;
-    cam->cam.R[3] = mp->RArr[c].m12;
-    cam->cam.R[4] = mp->RArr[c].m22;
-    cam->cam.R[5] = mp->RArr[c].m32;
-    cam->cam.R[6] = mp->RArr[c].m13;
-    cam->cam.R[7] = mp->RArr[c].m23;
-    cam->cam.R[8] = mp->RArr[c].m33;
+    base.iP[0] = iP.m11;
+    base.iP[1] = iP.m21;
+    base.iP[2] = iP.m31;
+    base.iP[3] = iP.m12;
+    base.iP[4] = iP.m22;
+    base.iP[5] = iP.m32;
+    base.iP[6] = iP.m13;
+    base.iP[7] = iP.m23;
+    base.iP[8] = iP.m33;
 
-    cam->cam.iR[0] = mp->iRArr[c].m11;
-    cam->cam.iR[1] = mp->iRArr[c].m21;
-    cam->cam.iR[2] = mp->iRArr[c].m31;
-    cam->cam.iR[3] = mp->iRArr[c].m12;
-    cam->cam.iR[4] = mp->iRArr[c].m22;
-    cam->cam.iR[5] = mp->iRArr[c].m32;
-    cam->cam.iR[6] = mp->iRArr[c].m13;
-    cam->cam.iR[7] = mp->iRArr[c].m23;
-    cam->cam.iR[8] = mp->iRArr[c].m33;
+    base.R[0] = mp->RArr[c].m11;
+    base.R[1] = mp->RArr[c].m21;
+    base.R[2] = mp->RArr[c].m31;
+    base.R[3] = mp->RArr[c].m12;
+    base.R[4] = mp->RArr[c].m22;
+    base.R[5] = mp->RArr[c].m32;
+    base.R[6] = mp->RArr[c].m13;
+    base.R[7] = mp->RArr[c].m23;
+    base.R[8] = mp->RArr[c].m33;
 
-    cam->cam.K[0] = K.m11;
-    cam->cam.K[1] = K.m21;
-    cam->cam.K[2] = K.m31;
-    cam->cam.K[3] = K.m12;
-    cam->cam.K[4] = K.m22;
-    cam->cam.K[5] = K.m32;
-    cam->cam.K[6] = K.m13;
-    cam->cam.K[7] = K.m23;
-    cam->cam.K[8] = K.m33;
+    base.iR[0] = mp->iRArr[c].m11;
+    base.iR[1] = mp->iRArr[c].m21;
+    base.iR[2] = mp->iRArr[c].m31;
+    base.iR[3] = mp->iRArr[c].m12;
+    base.iR[4] = mp->iRArr[c].m22;
+    base.iR[5] = mp->iRArr[c].m32;
+    base.iR[6] = mp->iRArr[c].m13;
+    base.iR[7] = mp->iRArr[c].m23;
+    base.iR[8] = mp->iRArr[c].m33;
 
-    cam->cam.iK[0] = iK.m11;
-    cam->cam.iK[1] = iK.m21;
-    cam->cam.iK[2] = iK.m31;
-    cam->cam.iK[3] = iK.m12;
-    cam->cam.iK[4] = iK.m22;
-    cam->cam.iK[5] = iK.m32;
-    cam->cam.iK[6] = iK.m13;
-    cam->cam.iK[7] = iK.m23;
-    cam->cam.iK[8] = iK.m33;
+    base.K[0] = K.m11;
+    base.K[1] = K.m21;
+    base.K[2] = K.m31;
+    base.K[3] = K.m12;
+    base.K[4] = K.m22;
+    base.K[5] = K.m32;
+    base.K[6] = K.m13;
+    base.K[7] = K.m23;
+    base.K[8] = K.m33;
+
+    base.iK[0] = iK.m11;
+    base.iK[1] = iK.m21;
+    base.iK[2] = iK.m31;
+    base.iK[3] = iK.m12;
+    base.iK[4] = iK.m22;
+    base.iK[5] = iK.m32;
+    base.iK[6] = iK.m13;
+    base.iK[7] = iK.m23;
+    base.iK[8] = iK.m33;
 
     if(cam->H != NULL)
     {
@@ -134,7 +137,7 @@ static void cps_fillCamera(cameraStruct* cam, int c, mvsUtils::MultiViewParams* 
         cam->H = (*H);
     }
 
-    ps_init_camera_vectors( cam->cam );
+    ps_init_camera_vectors( base );
 }
 
 static void cps_fillCameraData( mvsUtils::ImagesCache* ic, cameraStruct* cam, int c, const mvsUtils::MultiViewParams* mp)
