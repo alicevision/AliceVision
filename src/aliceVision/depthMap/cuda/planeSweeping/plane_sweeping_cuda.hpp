@@ -29,21 +29,27 @@ inline unsigned int divUp(unsigned int a, unsigned int b) {
   return (a % b != 0) ? (a / b + 1) : (a / b);
 }
 
-float3 ps_M3x3mulV3(float* M3x3, const float3& V);
+// float3 ps_M3x3mulV3(const float* M3x3, const float3& V);
 
-void ps_normalize(float3& a);
+// void ps_normalize(float3& a);
+
+void ps_init_camera_vectors( CameraBaseStruct& cam );
 
 void pr_printfDeviceMemoryInfo();
 
+// Get the 0-dimension of the 2D linear texture limit for the current CUDA device
+int ps_getTexture2DLinear();
+
 float3 ps_getDeviceMemoryInfo();
 
-void ps_init_reference_camera_matrices(
-                    float* _P, float* _iP, float* _R, float* _iR, float* _K, float* _iK,
-                    float* _C);
+// void ps_init_reference_camera_matrices(
+//                     const float* _P, const float* _iP, const float* _R,
+//                     const float* _iR, const float* _K, const float* _iK,
+//                     const float* _C);
 
-void ps_init_target_camera_matrices(
-                    float* _P, float* _iP, float* _R, float* _iR, float* _K, float* _iK,
-                    float* _C);
+// void ps_init_target_camera_matrices(
+//                     float* _P, float* _iP, float* _R, float* _iR, float* _K, float* _iK,
+//                     float* _C);
 
 // opaque declaration
 struct GaussianArray;
@@ -218,29 +224,36 @@ void ps_getTexture(
 void ps_smoothDepthMap(
                     // CudaArray<uchar4, 2>** ps_texs_arr,
                     CudaHostMemoryHeap<float, 2>* depthMap_hmh,
-                    cameraStruct** cams, int width, int height, int scale, int CUDAdeviceNo, int ncamsAllocated,
+                    const cameraStruct& cams, int width, int height, int scale, int CUDAdeviceNo,
+                    // int ncamsAllocated,
                     int scales, int wsh, bool verbose, float gammaC, float gammaP);
 
 void ps_filterDepthMap(
                     // CudaArray<uchar4, 2>** ps_texs_arr,
                     CudaHostMemoryHeap<float, 2>* depthMap_hmh,
-                    cameraStruct** cams, int width, int height, int scale, int CUDAdeviceNo, int ncamsAllocated,
+                    const cameraStruct& cams, int width, int height, int scale, int CUDAdeviceNo,
+                    // int ncamsAllocated,
                     int scales, int wsh, bool verbose, float gammaC, float minCostThr);
 
 void ps_computeNormalMap(
                     // CudaArray<uchar4, 2>** ps_texs_arr,
                     CudaHostMemoryHeap<float3, 2>* normalMap_hmh,
                     CudaHostMemoryHeap<float, 2>* depthMap_hmh,
-                    cameraStruct** cams, int width, int height,
-                    int scale, int CUDAdeviceNo, int ncamsAllocated, int scales, int wsh, bool verbose,
+                    const cameraStruct& cams, int width, int height,
+                    int scale, int CUDAdeviceNo,
+                    // int ncamsAllocated,
+                    int scales, int wsh, bool verbose,
                     float gammaC, float gammaP);
 ;
 
 void ps_alignSourceDepthMapToTarget(
                     // CudaArray<uchar4, 2>** ps_texs_arr,
                     CudaHostMemoryHeap<float, 2>* sourceDepthMap_hmh,
-                    CudaHostMemoryHeap<float, 2>* targetDepthMap_hmh, cameraStruct** cams, int width,
-                    int height, int scale, int CUDAdeviceNo, int ncamsAllocated, int scales, int wsh,
+                    CudaHostMemoryHeap<float, 2>* targetDepthMap_hmh,
+                    const cameraStruct& cams, int width,
+                    int height, int scale, int CUDAdeviceNo,
+                    // int ncamsAllocated,
+                    int scales, int wsh,
                     bool verbose, float gammaC, float maxPixelSizeDist);
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -336,8 +349,12 @@ void ps_optimizeDepthSimMapGradientDescent(
                     CudaHostMemoryHeap<float2, 2>* odepthSimMap_hmh,
                     CudaHostMemoryHeap<float2, 2>** dataMaps_hmh, int ndataMaps,
                     int nSamplesHalf, int nDepthsToRefine, int nIters, float sigma,
-                    cameraStruct** cams, int ncams, int width, int height, int scale,
-                    int CUDAdeviceNo, int ncamsAllocated, int scales, bool verbose, int yFrom);
+                    const cameraStruct& cams,
+                    // int ncams,
+                    int width, int height, int scale,
+                    int CUDAdeviceNo,
+                    // int ncamsAllocated,
+                    int scales, bool verbose, int yFrom);
 
 void ps_GC_aggregatePathVolume(
                     CudaHostMemoryHeap<unsigned int, 2>* ftid_hmh, // f-irst t-label id

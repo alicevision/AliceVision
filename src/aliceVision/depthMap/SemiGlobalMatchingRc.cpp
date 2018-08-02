@@ -709,7 +709,6 @@ void computeDepthMapsPSSGM(int CUDADeviceNo, mvsUtils::MultiViewParams* mp, mvsU
     
     // load images from files into RAM 
     mvsUtils::ImagesCache ic(mp, bandType, true);
-    std::future<void> cacheFuture;
     // init structures for GPU memory and multi-level images
     PlaneSweepingCuda cps(CUDADeviceNo, &ic, mp, pc, sgmScale);
     // init plane sweeping parameters
@@ -720,7 +719,11 @@ void computeDepthMapsPSSGM(int CUDADeviceNo, mvsUtils::MultiViewParams* mp, mvsU
         const int rc = cams[i];
         // launch an async preload of the next image
         if(i < cams.size() - 1)
-            cacheFuture = ic.refreshData_async(cams[i+1]);
+        {
+            // std::future<void> cacheFuture;
+            // cacheFuture = ic.refreshData_async(cams[i+1]);
+            ic.refreshData_async(cams[i+1]);
+        }
 
         std::string depthMapFilepath = sp.getSGM_idDepthMapFileName(mp->getViewId(rc), sgmScale, sgmStep);
         if(!mvsUtils::FileExists(depthMapFilepath))
