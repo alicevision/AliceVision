@@ -86,9 +86,13 @@ struct Pixel
         };
     }
 
-    inline float size()
+    inline double size()
     {
-        return sqrt((float)(x * x + y * y));
+        return sqrt((double)(x * x + y * y));
+    }
+    inline int size2()
+    {
+        return x * x + y * y;
     }
 
     friend int dot(const Pixel& p1, const Pixel& p2)
