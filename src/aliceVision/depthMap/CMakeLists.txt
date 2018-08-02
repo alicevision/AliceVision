@@ -22,7 +22,7 @@ set(depthMap_files_sources
 
 # Cuda Sources
 set(depthMap_cuda_files_sources
-  cuda/commonStructures.hpp
+  cuda/commonStructures.cpp                 cuda/commonStructures.hpp
   cuda/PlaneSweepingCuda.cpp                cuda/PlaneSweepingCuda.hpp
   cuda/planeSweeping/plane_sweeping_cuda.cu cuda/planeSweeping/plane_sweeping_cuda.hpp
   cuda/planeSweeping/cuda_global_data.cu    cuda/planeSweeping/cuda_global_data.cuh

@@ -4,30 +4,17 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
-#pragma once
+#include "commonStructures.hpp"
 
-#ifdef __CUDACC__
-#include <cuda_runtime.h>
-#endif
+#include <aliceVision/depthMap/cuda/planeSweeping/plane_sweeping_cuda.hpp>
 
 namespace aliceVision {
 namespace depthMap {
 
-struct CameraBaseStruct
+cameraStruct::~cameraStruct()
 {
-    float  P[12], iP[9], R[9], iR[9], K[9], iK[9];
-#ifdef __CUDACC__
-    float3 C;
-    float3 XVect;
-    float3 YVect;
-    float3 ZVect;
-#else
-    float  C[3];
-    float  XVect[3];
-    float  YVect[3];
-    float  ZVect[3];
-#endif
-};
+    delete cam;
+}
 
 } // namespace depthMap
 } // namespace aliceVision

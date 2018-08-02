@@ -7,6 +7,9 @@
 
 #include "aliceVision/depthMap/cuda/commonStructures.hpp"
 
+#include <aliceVision/mvsData/Matrix3x3.hpp>
+#include <aliceVision/mvsData/Matrix3x4.hpp>
+
 namespace aliceVision {
 namespace depthMap {
 
@@ -23,6 +26,21 @@ namespace depthMap {
                                                                               \
 }
 
+struct CameraBaseStruct
+{
+    float  P[12], iP[9], R[9], iR[9], K[9], iK[9];
+#ifdef __CUDACC__
+    float3 C;
+    float3 XVect;
+    float3 YVect;
+    float3 ZVect;
+#else
+    float  C[3];
+    float  XVect[3];
+    float  YVect[3];
+    float  ZVect[3];
+#endif
+};
 
 // Round a / b to nearest higher integer value.
 inline unsigned int divUp(unsigned int a, unsigned int b) {
@@ -33,7 +51,13 @@ inline unsigned int divUp(unsigned int a, unsigned int b) {
 
 // void ps_normalize(float3& a);
 
-void ps_init_camera_vectors( CameraBaseStruct& cam );
+CameraBaseStruct* ps_init_camera_vectors( const Point3d&    CA,
+                                          const Matrix3x4&  P,
+                                          const Matrix3x3&  iP,
+                                          const Matrix3x3&  RA,
+                                          const Matrix3x3&  iRA,
+                                          const Matrix3x3&  K,
+                                          const Matrix3x3&  iK );
 
 void pr_printfDeviceMemoryInfo();
 

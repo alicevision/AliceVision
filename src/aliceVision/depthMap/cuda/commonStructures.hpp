@@ -12,8 +12,6 @@
 #include <assert.h>
 #include <stdexcept>
 
-#include "cameraStruct.hpp"
-
 namespace aliceVision {
 namespace depthMap {
 
@@ -879,23 +877,27 @@ template<class Type, unsigned Dim> void copy(CudaDeviceMemoryPitched<Type, Dim>&
   }
 }
 
+struct CameraBaseStruct; // forward reference, include only for destructor
+
 struct cameraStruct
 {
-    CameraBaseStruct cam;
+    CameraBaseStruct* cam;
     CudaHostMemoryHeap<uchar4, 2>* tex_rgba_hmh;
     int camId;
     int rc;
     float* H;
     int scale;
 
-    inline void init()
-    {
-        tex_rgba_hmh = nullptr;
-        camId = -1;
-        rc = -1;
-        H = nullptr;
-        scale = -1;
-    }
+    cameraStruct() :
+        cam( nullptr ),
+        tex_rgba_hmh( nullptr ),
+        camId( -1 ),
+        rc( -1 ),
+        H( nullptr ),
+        scale( -1 )
+    { }
+
+    ~cameraStruct();
 };
 
 struct ps_parameters

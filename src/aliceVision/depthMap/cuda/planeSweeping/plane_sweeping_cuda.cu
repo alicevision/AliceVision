@@ -42,28 +42,106 @@ __host__ void ps_normalize(float3& a)
     a.z /= d;
 }
 
-__host__ void ps_init_camera_vectors( CameraBaseStruct& cam )
+__host__ CameraBaseStruct* ps_init_camera_vectors( const Point3d&    CA,
+                                                   const Matrix3x4&  P,
+                                                   const Matrix3x3&  iP,
+                                                   const Matrix3x3&  RA,
+                                                   const Matrix3x3&  iRA,
+                                                   const Matrix3x3&  K,
+                                                   const Matrix3x3&  iK )
 {
+    CameraBaseStruct* cam = new CameraBaseStruct;
+
+    cam->C.x = CA.x;
+    cam->C.y = CA.y;
+    cam->C.z = CA.z;
+
+    cam->P[0] = P.m11;
+    cam->P[1] = P.m21;
+    cam->P[2] = P.m31;
+    cam->P[3] = P.m12;
+    cam->P[4] = P.m22;
+    cam->P[5] = P.m32;
+    cam->P[6] = P.m13;
+    cam->P[7] = P.m23;
+    cam->P[8] = P.m33;
+    cam->P[9] = P.m14;
+    cam->P[10] = P.m24;
+    cam->P[11] = P.m34;
+
+    cam->iP[0] = iP.m11;
+    cam->iP[1] = iP.m21;
+    cam->iP[2] = iP.m31;
+    cam->iP[3] = iP.m12;
+    cam->iP[4] = iP.m22;
+    cam->iP[5] = iP.m32;
+    cam->iP[6] = iP.m13;
+    cam->iP[7] = iP.m23;
+    cam->iP[8] = iP.m33;
+
+    cam->R[0] = RA.m11;
+    cam->R[1] = RA.m21;
+    cam->R[2] = RA.m31;
+    cam->R[3] = RA.m12;
+    cam->R[4] = RA.m22;
+    cam->R[5] = RA.m32;
+    cam->R[6] = RA.m13;
+    cam->R[7] = RA.m23;
+    cam->R[8] = RA.m33;
+
+    cam->iR[0] = iRA.m11;
+    cam->iR[1] = iRA.m21;
+    cam->iR[2] = iRA.m31;
+    cam->iR[3] = iRA.m12;
+    cam->iR[4] = iRA.m22;
+    cam->iR[5] = iRA.m32;
+    cam->iR[6] = iRA.m13;
+    cam->iR[7] = iRA.m23;
+    cam->iR[8] = iRA.m33;
+
+    cam->K[0] = K.m11;
+    cam->K[1] = K.m21;
+    cam->K[2] = K.m31;
+    cam->K[3] = K.m12;
+    cam->K[4] = K.m22;
+    cam->K[5] = K.m32;
+    cam->K[6] = K.m13;
+    cam->K[7] = K.m23;
+    cam->K[8] = K.m33;
+
+    cam->iK[0] = iK.m11;
+    cam->iK[1] = iK.m21;
+    cam->iK[2] = iK.m31;
+    cam->iK[3] = iK.m12;
+    cam->iK[4] = iK.m22;
+    cam->iK[5] = iK.m32;
+    cam->iK[6] = iK.m13;
+    cam->iK[7] = iK.m23;
+    cam->iK[8] = iK.m33;
+
+
     float3 z;
     z.x = 0.0f;
     z.y = 0.0f;
     z.z = 1.0f;
-    cam.ZVect = ps_M3x3mulV3(cam.iR, z);
-    ps_normalize(cam.ZVect);
+    cam->ZVect = ps_M3x3mulV3(cam->iR, z);
+    ps_normalize(cam->ZVect);
 
     float3 y;
     y.x = 0.0f;
     y.y = 1.0f;
     y.z = 0.0f;
-    cam.YVect = ps_M3x3mulV3(cam.iR, y);
-    ps_normalize(cam.YVect);
+    cam->YVect = ps_M3x3mulV3(cam->iR, y);
+    ps_normalize(cam->YVect);
 
     float3 x;
     x.x = 1.0f;
     x.y = 0.0f;
     x.z = 0.0f;
-    cam.XVect = ps_M3x3mulV3(cam.iR, x);
-    ps_normalize(cam.XVect);
+    cam->XVect = ps_M3x3mulV3(cam->iR, x);
+    ps_normalize(cam->XVect);
+
+    return cam;
 }
 
 void pr_printfDeviceMemoryInfo()
@@ -592,7 +670,7 @@ void ps_SGMoptimizeSimVolume(
     if(verbose)
         printf("ps_SGMoptimizeSimVolume\n");
 
-    ps_init_reference_camera_matrices( rccam->cam );
+    ps_init_reference_camera_matrices( *rccam->cam );
 
     // bind 'r4tex' from the image in Lab colorspace at the scale used
     CudaArray<uchar4,2>& array = global_data.getScaledPictureArray( scale, rccam->camId );
@@ -706,11 +784,11 @@ void ps_computeSimilarityVolume(
     dim3 gridvol(divUp(volDimX, block.x), divUp(volDimY, block.y), 1);
 
     // setup cameras matrices to the constant memory
-    ps_init_reference_camera_matrices(cams[0]->cam );
+    ps_init_reference_camera_matrices( *cams[0]->cam );
     cudaTextureObject_t r4tex = global_data.getScaledPictureTex( scale, cams[0]->camId );
 
     int c = 1;
-    ps_init_target_camera_matrices(cams[c]->cam );
+    ps_init_target_camera_matrices( *cams[c]->cam );
     cudaTextureObject_t t4tex = global_data.getScaledPictureTex( scale, cams[c]->camId );
     CHECK_CUDA_ERROR();
 
@@ -718,7 +796,9 @@ void ps_computeSimilarityVolume(
     // init similarity volume
     {
         dim3 blockvol3d(8, 8, 8);
-        dim3 gridvol3d(divUp(volDimX, blockvol3d.x), divUp(volDimY, blockvol3d.y), divUp(volDimZ, blockvol3d.z));
+        dim3 gridvol3d( divUp(volDimX, blockvol3d.x),
+                        divUp(volDimY, blockvol3d.y),
+                        divUp(volDimZ, blockvol3d.z) );
         volume_initFullVolume_kernel<unsigned char><<<gridvol3d, blockvol3d >>>(
             vol_dmp.getBuffer(), vol_dmp.stride()[1], vol_dmp.stride()[0],
             volDimX, volDimY, volDimZ, 255 );
@@ -825,7 +905,7 @@ void ps_smoothDepthMap( CudaHostMemoryHeap<float, 2>* depthMap_hmh,
     cudaTextureObject_t depthsTex = depthMap_arr->tex;
 
 
-    ps_init_reference_camera_matrices(cams.cam);
+    ps_init_reference_camera_matrices(*cams.cam);
     cudaTextureObject_t r4tex = global_data.getScaledPictureTex( scale, cams.camId );
 
     auto depthMap_dmp = global_data.pitched_mem_float_point_tex_cache.get( width, height );
@@ -875,7 +955,7 @@ void ps_filterDepthMap( CudaHostMemoryHeap<float, 2>* depthMap_hmh,
     depthMap_arr->mem->copyFrom( *depthMap_hmh );
     cudaTextureObject_t depthsTex = depthMap_arr->tex;
 
-    ps_init_reference_camera_matrices(cams.cam);
+    ps_init_reference_camera_matrices( *cams.cam );
 
     cudaTextureObject_t r4tex = global_data.getScaledPictureTex( scale, cams.camId );
 
@@ -929,7 +1009,7 @@ void ps_computeNormalMap( CudaHostMemoryHeap<float3, 2>* normalMap_hmh,
     depthMap_arr->mem->copyFrom( *depthMap_hmh );
     cudaTextureObject_t depthsTex = depthMap_arr->tex;
 
-    ps_init_reference_camera_matrices(cams.cam);
+    ps_init_reference_camera_matrices(*cams.cam);
 
     cudaTextureObject_t r4tex = global_data.getScaledPictureTex( scale, cams.camId );
 
@@ -991,7 +1071,7 @@ void ps_alignSourceDepthMapToTarget(
 
     CudaDeviceMemoryPitched<float, 2> outDepthMap_dmp(CudaSize<2>(width, height));
 
-    ps_init_reference_camera_matrices(cams.cam);
+    ps_init_reference_camera_matrices( *cams.cam );
 
     cudaTextureObject_t r4tex = global_data.getScaledPictureTex( scale, cams.camId );
 
@@ -1309,11 +1389,11 @@ void ps_refineDepthMapReproject( CudaHostMemoryHeap<uchar4, 2>* otimg_hmh,
     dim3 block(block_size, block_size, 1);
     dim3 grid(divUp(width, block_size), divUp(height, block_size), 1);
 
-    ps_init_reference_camera_matrices( cams[0]->cam );
+    ps_init_reference_camera_matrices( *cams[0]->cam );
     cudaTextureObject_t r4tex = global_data.getScaledPictureTex( scale, cams[0]->camId );
 
     int c = 1;
-    ps_init_target_camera_matrices( cams[c]->cam );
+    ps_init_target_camera_matrices( *cams[c]->cam );
     cudaTextureObject_t t4tex = global_data.getScaledPictureTex( scale, cams[c]->camId );
 
     auto rimg_dmp = global_data.pitched_mem_uchar4_point_tex_cache.get( width, height );
@@ -1432,10 +1512,10 @@ void ps_computeSimMapForRcTcDepthMap( CudaHostMemoryHeap<float, 2>* osimMap_hmh,
     dim3 block(block_size, block_size, 1);
     dim3 grid(divUp(width, block_size), divUp(height, block_size), 1);
 
-    ps_init_reference_camera_matrices(cams[0]->cam);
+    ps_init_reference_camera_matrices(*cams[0]->cam);
 
     int c = 1;
-    ps_init_target_camera_matrices(cams[c]->cam);
+    ps_init_target_camera_matrices(*cams[c]->cam);
 
     cudaTextureObject_t r4tex = global_data.getScaledPictureTex( scale, cams[0]->camId );
     cudaTextureObject_t t4tex = global_data.getScaledPictureTex( scale, cams[c]->camId );
@@ -1473,10 +1553,10 @@ void ps_refineRcDepthMap( float* osimMap_hmh,
     dim3 block(block_size, block_size, 1);
     dim3 grid(divUp(width, block_size), divUp(height, block_size), 1);
 
-    ps_init_reference_camera_matrices(cams[0]->cam);
+    ps_init_reference_camera_matrices(*cams[0]->cam);
 
     int c = 1;
-    ps_init_target_camera_matrices(cams[c]->cam);
+    ps_init_target_camera_matrices(*cams[c]->cam);
 
     cudaTextureObject_t r4tex = global_data.getScaledPictureTex( scale, cams[0]->camId );
     cudaTextureObject_t t4tex = global_data.getScaledPictureTex( scale, cams[c]->camId );
@@ -1706,7 +1786,7 @@ void ps_optimizeDepthSimMapGradientDescent(
     dim3 block(block_size, block_size, 1);
     dim3 grid(divUp(width, block_size), divUp(height, block_size), 1);
 
-    ps_init_reference_camera_matrices(cams.cam);
+    ps_init_reference_camera_matrices(*cams.cam);
 
     cudaTextureObject_t r4tex = global_data.getScaledPictureTex( scale, cams.camId );
 
