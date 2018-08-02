@@ -4,6 +4,10 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
+#include "aliceVision/depthMap/cuda/planeSweeping/device_code_fuse.cuh"
+
+#include "aliceVision/depthMap/cuda/planeSweeping/device_code.cuh"
+
 namespace aliceVision {
 namespace depthMap {
 
@@ -93,12 +97,14 @@ __global__ void fuse_getOptDeptMapFromOPtDepthSimMap_kernel(float* optDepthMap, 
 /**
  * @return (smoothStep, energy)
  */
-__device__ float2 getCellSmoothStepEnergy(const int2& cell0)
+static __device__ float2 getCellSmoothStepEnergy(
+    cudaTextureObject_t depthsTex,
+    const int2& cell0 )
 {
     float2 out = make_float2(0.0f, 180.0f);
 
     // Get pixel depth from the depth texture
-    float d0 = tex2D(depthsTex, cell0.x, cell0.y);
+    float d0 = tex2D<float>(depthsTex, cell0.x, cell0.y);
 
     // Early exit: depth is <= 0
     if(d0 <= 0.0f)
@@ -111,10 +117,10 @@ __device__ float2 getCellSmoothStepEnergy(const int2& cell0)
     int2 cellB = cell0 + make_int2(1, 0);	// Bottom
 
     // Get associated depths from depth texture
-    float dL = tex2D(depthsTex, cellL.x, cellL.y);
-    float dR = tex2D(depthsTex, cellR.x, cellR.y);
-    float dU = tex2D(depthsTex, cellU.x, cellU.y);
-    float dB = tex2D(depthsTex, cellB.x, cellB.y);
+    float dL = tex2D<float>(depthsTex, cellL.x, cellL.y);
+    float dR = tex2D<float>(depthsTex, cellR.x, cellR.y);
+    float dU = tex2D<float>(depthsTex, cellU.x, cellU.y);
+    float dB = tex2D<float>(depthsTex, cellB.x, cellB.y);
 
     // Get associated 3D points
     float3 p0 = get3DPointForPixelAndDepthFromRC(cell0, d0);
@@ -166,10 +172,13 @@ __device__ float2 getCellSmoothStepEnergy(const int2& cell0)
     return out;
 }
 
-__global__ void fuse_optimizeDepthSimMap_kernel(float2* out_optDepthSimMap, int optDepthSimMap_p,
-                                                float2* midDepthPixSizeMap, int midDepthPixSizeMap_p,
-                                                float2* fusedDepthSimMap, int fusedDepthSimMap_p, int width, int height,
-                                                int iter, float samplesPerPixSize, int yFrom)
+__global__ void fuse_optimizeDepthSimMap_kernel(
+    cudaTextureObject_t r4tex,
+    cudaTextureObject_t depthsTex,
+    float2* out_optDepthSimMap, int optDepthSimMap_p,
+    float2* midDepthPixSizeMap, int midDepthPixSizeMap_p,
+    float2* fusedDepthSimMap, int fusedDepthSimMap_p, int width, int height,
+    int iter, float samplesPerPixSize, int yFrom)
 {
     int x = blockIdx.x * blockDim.x + threadIdx.x;
     int y = blockIdx.y * blockDim.y + threadIdx.y;
@@ -186,7 +195,7 @@ __global__ void fuse_optimizeDepthSimMap_kernel(float2* out_optDepthSimMap, int 
 
         if(depthOpt > 0.0f)
         {
-            float2 depthSmoothStepEnergy = getCellSmoothStepEnergy(pix);
+            float2 depthSmoothStepEnergy = getCellSmoothStepEnergy( depthsTex, pix );
             float depthSmoothStep = depthSmoothStepEnergy.x;
             if(depthSmoothStep < 0.0f)
             {
@@ -212,7 +221,7 @@ __global__ void fuse_optimizeDepthSimMap_kernel(float2* out_optDepthSimMap, int 
             float depthSmoothVal = depthSmoothStepEnergy.y;
             float depthPhotoStepVal = fusedDepthSim.y;
 
-            float varianceGray = 255.0f*tex2D(r4tex, (float)x + 0.5f, (float)(y + yFrom) + 0.5f).w;
+            float varianceGray = 255.0f*tex2D<float4>(r4tex, (float)x + 0.5f, (float)(y + yFrom) + 0.5f).w;
 
             // archive: 
             // float varianceGrayAndleWeight = sigmoid2(5.0f, 60.0f, 10.0f, 5.0f, varianceGray);

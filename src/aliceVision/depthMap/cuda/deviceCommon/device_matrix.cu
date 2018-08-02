@@ -4,7 +4,7 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
-#pragma once
+#include "aliceVision/depthMap/cuda/deviceCommon/device_matrix.cuh"
 
 // mn MATRIX ADDRESSING: mxy = x*n+y (x-row,y-col), (m-number of rows, n-number of columns)
 
@@ -12,37 +12,6 @@
 
 namespace aliceVision {
 namespace depthMap {
-
-__device__ float3 M3x3mulV3(float* M3x3, const float3& V)
-{
-    return make_float3(M3x3[0] * V.x + M3x3[3] * V.y + M3x3[6] * V.z, M3x3[1] * V.x + M3x3[4] * V.y + M3x3[7] * V.z,
-                       M3x3[2] * V.x + M3x3[5] * V.y + M3x3[8] * V.z);
-}
-
-__device__ float3 M3x3mulV2(float* M3x3, const float2& V)
-{
-    return make_float3(M3x3[0] * V.x + M3x3[3] * V.y + M3x3[6], M3x3[1] * V.x + M3x3[4] * V.y + M3x3[7],
-                       M3x3[2] * V.x + M3x3[5] * V.y + M3x3[8]);
-}
-
-__device__ float3 M3x4mulV3(float* M3x4, const float3& V)
-{
-    return make_float3(M3x4[0] * V.x + M3x4[3] * V.y + M3x4[6] * V.z + M3x4[9],
-                       M3x4[1] * V.x + M3x4[4] * V.y + M3x4[7] * V.z + M3x4[10],
-                       M3x4[2] * V.x + M3x4[5] * V.y + M3x4[8] * V.z + M3x4[11]);
-}
-
-__device__ float2 V2M3x3mulV2(float* M3x3, float2& V)
-{
-    float d = M3x3[2] * V.x + M3x3[5] * V.y + M3x3[8];
-    return make_float2((M3x3[0] * V.x + M3x3[3] * V.y + M3x3[6]) / d, (M3x3[1] * V.x + M3x3[4] * V.y + M3x3[7]) / d);
-}
-
-__device__ float2 project3DPoint(float* M3x4, const float3& V)
-{
-    float3 p = M3x4mulV3(M3x4, V);
-    return make_float2(p.x / p.z, p.y / p.z);
-}
 
 __device__ void M3x3mulM3x3(float* O3x3, float* A3x3, float* B3x3)
 {
@@ -61,6 +30,7 @@ __device__ void M3x3mulM3x3(float* O3x3, float* A3x3, float* B3x3)
 
 __device__ void M3x3minusM3x3(float* O3x3, float* A3x3, float* B3x3)
 {
+    #pragma unroll
     for(int i = 0; i < 9; i++)
     {
         O3x3[i] = A3x3[i] - B3x3[i];
@@ -78,129 +48,6 @@ __device__ void M3x3transpose(float* O3x3, float* A3x3)
     O3x3[6] = A3x3[2];
     O3x3[7] = A3x3[5];
     O3x3[8] = A3x3[8];
-}
-
-__device__ uchar4 float4_to_uchar4(const float4& a)
-{
-    return make_uchar4((unsigned char)a.x, (unsigned char)a.y, (unsigned char)a.z, (unsigned char)a.w);
-}
-
-__device__ float4 uchar4_to_float4(const uchar4& a)
-{
-    return make_float4((float)a.x, (float)a.y, (float)a.z, (float)a.w);
-}
-
-__device__ float4 operator*(const float4& a, const float& d)
-{
-    return make_float4(a.x * d, a.y * d, a.z * d, a.w * d);
-}
-
-__device__ float4 operator+(const float4& a, const float4& d)
-{
-    return make_float4(a.x + d.x, a.y + d.y, a.z + d.z, a.w + d.w);
-}
-
-__device__ float4 operator*(const float& d, const float4& a)
-{
-    return make_float4(a.x * d, a.y * d, a.z * d, a.w * d);
-}
-
-__device__ float3 operator*(const float3& a, const float& d)
-{
-    return make_float3(a.x * d, a.y * d, a.z * d);
-}
-
-__device__ float3 operator/(const float3& a, const float& d)
-{
-    return make_float3(a.x / d, a.y / d, a.z / d);
-}
-
-__device__ float3 operator+(const float3& a, const float3& b)
-{
-    return make_float3(a.x + b.x, a.y + b.y, a.z + b.z);
-}
-
-__device__ float3 operator-(const float3& a, const float3& b)
-{
-    return make_float3(a.x - b.x, a.y - b.y, a.z - b.z);
-}
-
-__device__ int2 operator+(const int2& a, const int2& b)
-{
-    return make_int2(a.x + b.x, a.y + b.y);
-}
-
-__device__ float2 operator*(const float2& a, const float& d)
-{
-    return make_float2(a.x * d, a.y * d);
-}
-
-__device__ float2 operator/(const float2& a, const float& d)
-{
-    return make_float2(a.x / d, a.y / d);
-}
-
-__device__ float2 operator+(const float2& a, const float2& b)
-{
-    return make_float2(a.x + b.x, a.y + b.y);
-}
-
-__device__ float2 operator-(const float2& a, const float2& b)
-{
-    return make_float2(a.x - b.x, a.y - b.y);
-}
-
-__device__ float dot(const float3& a, const float3& b)
-{
-    return a.x * b.x + a.y * b.y + a.z * b.z;
-}
-
-__device__ float dot(const float2& a, const float2& b)
-{
-    return a.x * b.x + a.y * b.y;
-}
-
-__device__ float size(const float3& a)
-{
-    return sqrtf(a.x * a.x + a.y * a.y + a.z * a.z);
-}
-
-__device__ float size(const float2& a)
-{
-    return sqrtf(a.x * a.x + a.y * a.y);
-}
-
-__device__ float dist(const float3& a, const float3& b)
-{
-    float3 ab = a - b;
-    return size(ab);
-}
-
-__device__ float dist(const float2& a, const float2& b)
-{
-    float2 ab;
-    ab.x = a.x - b.x;
-    ab.y = a.y - b.y;
-    return size(ab);
-}
-
-__device__ float3 cross(const float3& a, const float3& b)
-{
-    return make_float3(a.y * b.z - a.z * b.y, a.z * b.x - a.x * b.z, a.x * b.y - a.y * b.x);
-}
-__device__ void normalize(float3& a)
-{
-    float d = sqrtf(dot(a, a));
-    a.x /= d;
-    a.y /= d;
-    a.z /= d;
-}
-
-__device__ void normalize(float2& a)
-{
-    float d = sqrtf(dot(a, a));
-    a.x /= d;
-    a.y /= d;
 }
 
 __device__ void outerMultiply(float* O3x3, const float3& a, const float3& b)
@@ -368,18 +215,6 @@ __device__ float3 lineLineIntersect(float* k, float* l, float3* lli1, float3* ll
     return S;
 }
 
-/**
- * f(x)=min + (max-min) * \frac{1}{1 + e^{10 * (x - mid) / width}}
- */
-__device__ float sigmoid(float zeroVal, float endVal, float sigwidth, float sigMid, float xval)
-{
-    return zeroVal + (endVal - zeroVal) * (1.0f / (1.0f + expf(10.0f * ((xval - sigMid) / sigwidth))));
-}
-
-__device__ float sigmoid2(float zeroVal, float endVal, float sigwidth, float sigMid, float xval)
-{
-    return zeroVal + (endVal - zeroVal) * (1.0f / (1.0f + expf(10.0f * ((sigMid - xval) / sigwidth))));
-}
-
 } // namespace depthMap
 } // namespace aliceVision
+
