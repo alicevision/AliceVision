@@ -304,7 +304,7 @@ void Texturing::generateTexture(const mvsUtils::MultiViewParams& mp,
 
             if (texParams.angleHardThreshold != 0.0)
             {
-                const Point3d camInvDir = mp.RArr[camId] * Point3d(0.0, 0.0, -1.0);
+                const Point3d camInvDir = mp.iRArr[camId] * Point3d(0.0, 0.0, -1.0);
                 const double angle = angleBetwV1andV2(triangleNormal, camInvDir);
                 if(angle > texParams.angleHardThreshold)
                     continue;
