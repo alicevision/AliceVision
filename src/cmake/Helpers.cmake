@@ -182,8 +182,7 @@ function(alicevision_add_software software_name)
   )
 
   install(TARGETS ${software_name}
-    RUNTIME
-      DESTINATION ${CMAKE_INSTALL_BINDIR}
+    DESTINATION ${CMAKE_INSTALL_BINDIR}
   )
 endfunction()
 

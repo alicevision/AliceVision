@@ -21,7 +21,6 @@ set(depthMap_files_sources
 )
 
 # Cuda Sources
-
 set(depthMap_cuda_files_sources
   cuda/commonStructures.hpp
   cuda/PlaneSweepingCuda.cpp                cuda/PlaneSweepingCuda.hpp

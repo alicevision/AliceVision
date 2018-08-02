@@ -9,19 +9,6 @@
 
 #include <iostream>
 
-// Macro for checking cuda errors
-#define CHECK_CUDA_ERROR()                                                    \
-    cudaDeviceSynchronize();                                                  \
-    if(cudaError_t err = cudaGetLastError())                                  \
-                                                                              \
-{                                                                             \
-        fprintf(stderr, "\n\nCUDAError: %s\n", cudaGetErrorString(err));      \
-        fprintf(stderr, "  file:       %s\n", __FILE__);                      \
-        fprintf(stderr, "  function:   %s\n", __FUNCTION__);                  \
-        fprintf(stderr, "  line:       %d\n\n", __LINE__);                    \
-                                                                              \
-}
-
 
 namespace aliceVision {
 namespace depthMap {
@@ -33,10 +20,12 @@ namespace depthMap {
  * The code is not capable of dealing with multiple GPUs yet (on multiple GPUs,
  * multiple allocations are probably required).
  */
-GlobalData global_data;
+thread_local GlobalData global_data;
 
 void GaussianArray::create( float delta, int radius )
 {
+    cudaError_t err;
+
     std::cerr << "Computing Gaussian table for radius " << radius << " and delta " << delta << std::endl;
 
     int size = 2 * radius + 1;
@@ -72,7 +61,12 @@ void GaussianArray::create( float delta, int radius )
     tex_desc.filterMode       = cudaFilterModePoint; // apparently default for references
     // tex_desc.filterMode       = cudaFilterModeLinear; // no interpolation
 
-    cudaCreateTextureObject( &tex, &res_desc, &tex_desc, 0 );
+    err = cudaCreateTextureObject( &tex, &res_desc, &tex_desc, 0 );
+    if( err != cudaSuccess )
+    {
+        printf( "Failed to create a point texture object for a gaussian array in line %s,%d - reason %s\n", __FILE__, __LINE__-3, cudaGetErrorString(err) );
+        exit( -1 );
+    }
     CHECK_CUDA_ERROR();
 }
 
@@ -104,6 +98,8 @@ GaussianArray* GlobalData::getGaussianArray( float delta, int radius )
 
 void GlobalData::allocScaledPictureArrays( int scales, int ncams, int width, int height )
 {
+    cudaError_t err;
+
     _scaled_picture_scales = scales;
 
     _scaled_picture_array    .resize( scales * ncams );
@@ -132,17 +128,28 @@ void GlobalData::allocScaledPictureArrays( int scales, int ncams, int width, int
 
             tex_desc.readMode         = cudaReadModeNormalizedFloat;
             tex_desc.filterMode       = cudaFilterModeLinear;
-            cudaCreateTextureObject( &_scaled_picture_tex[ c * scales + s ],
+            err = cudaCreateTextureObject( &_scaled_picture_tex[ c * scales + s ],
                                      &res_desc,
                                      &tex_desc,
                                      0 );
+            if( err != cudaSuccess )
+            {
+                printf( "Failed to create a linear texture object for an array in line %s,%d - reason %s\n", __FILE__, __LINE__-3, cudaGetErrorString(err) );
+                exit( -1 );
+            }
+
 
             tex_desc.readMode         = cudaReadModeElementType;
             tex_desc.filterMode       = cudaFilterModePoint;
-            cudaCreateTextureObject( &_scaled_picture_tex_point[ c * scales + s ],
+            err = cudaCreateTextureObject( &_scaled_picture_tex_point[ c * scales + s ],
                                      &res_desc,
                                      &tex_desc,
                                      0 );
+            if( err != cudaSuccess )
+            {
+                printf( "Failed to create a point texture object for an array in line %s,%d - reason %s\n", __FILE__, __LINE__-3, cudaGetErrorString(err) );
+                exit( -1 );
+            }
         }
     }
 
@@ -196,6 +203,8 @@ cudaTextureObject_t GlobalData::getScaledPictureTexPoint( int scale, int cam )
 
 void GlobalData::allocPyramidArrays( int levels, int w, int h )
 {
+    cudaError_t err;
+
     _pyramid_levels = levels;
 
     _pyramid_array.resize( levels );
@@ -222,10 +231,15 @@ void GlobalData::allocPyramidArrays( int levels, int w, int h )
         res_desc.res.pitch2D.height       = _pyramid_array[ lvl ]->getSize()[1];
         res_desc.res.pitch2D.pitchInBytes = _pyramid_array[ lvl ]->getPitch();
 
-        cudaCreateTextureObject( &_pyramid_tex[ lvl ],
+        err = cudaCreateTextureObject( &_pyramid_tex[ lvl ],
                                  &res_desc,
                                  &tex_desc,
                                  0 );
+        if( err != cudaSuccess )
+        {
+            printf( "Failed to create a linear texture object for a pyramid layer in line %s,%d - reason %s\n", __FILE__, __LINE__-3, cudaGetErrorString(err) );
+            exit( -1 );
+        }
         w /= 2;
         h /= 2;
     }

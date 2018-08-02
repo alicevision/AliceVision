@@ -52,10 +52,6 @@ GaussianArray* ps_create_gaussian_arr(float delta, int radius);
 
 int ps_listCUDADevices(bool verbose);
 
-// void ps_deviceAllocate(
-//                     CudaArray<uchar4, 2>*** ps_texs_arr,
-//                     int ncams, int width, int height, int scales,
-//                     int deviceId);
 void ps_deviceAllocate(
                     int ncams, int width, int height, int scales,
                     int deviceId);
@@ -67,12 +63,10 @@ void ps_deviceUpdateCam(
                     cameraStruct* cam, int camId, int CUDAdeviceNo,
                     int ncamsAllocated, int scales, int w, int h, int varianceWsh);
 
-// void ps_deviceDeallocate(
-//                     CudaArray<uchar4, 2>*** ps_texs_arr,
-//                     int CUDAdeviceNo, int ncams, int scales);
 void ps_deviceDeallocate(
                     int CUDAdeviceNo, int ncams, int scales);
 
+#if 0
 void ps_aggregatePathVolume2(
                     CudaDeviceMemoryPitched<unsigned char, 3>& vol_dmp, int volDimX, int volDimY,
                     int volDimZ, float P1, float P2, bool transfer);
@@ -86,7 +80,9 @@ void ps_aggregatePathVolume(
                     float P1, float P2, bool transfer,
                     int volLUX, int volLUY,
                     int dimTrnX, bool doInvZ, bool verbose);
+#endif
 
+#if 0
 /**
  * @param[out] volAgr_dmp output volume where we will aggregate the best XXX
  * @param[in] d_volSim input similarity volume
@@ -99,6 +95,7 @@ void ps_updateAggrVolume(
                     int dimTrnX, int dimTrnY, int dimTrnZ,
                     unsigned char P1, unsigned char P2, 
                     bool verbose, bool doInvZ, int lastN);
+#endif
 
 /**
 * @param[in] ps_texs_arr table of image (in Lab colorspace) for all scales
@@ -126,7 +123,10 @@ void ps_computeSimilarityVolume(
                     CudaDeviceMemoryPitched<unsigned char, 3>& vol_dmp,
                     cameraStruct** cams, int ncams,
                     int width, int height, int volStepXY, int volDimX, int volDimY, int volDimZ, int volLUX,
-                    int volLUY, int volLUZ, CudaHostMemoryHeap<int4, 2>& volPixs_hmh,
+                    int volLUY, int volLUZ,
+                    CudaHostMemoryHeap<int, 2>& volPixs_hmh_x,
+                    CudaHostMemoryHeap<int, 2>& volPixs_hmh_y,
+                    CudaHostMemoryHeap<int, 2>& volPixs_hmh_z,
                     CudaHostMemoryHeap<float, 2>& depths_hmh, int nDepthsToSearch, int slicesAtTime,
                     int ntimes, int npixs, int wsh, int kernelSizeHalf, int nDepths, int scale,
                     int CUDAdeviceNo, int ncamsAllocated, int scales, bool verbose, bool doUsePixelsDepths,
@@ -137,7 +137,10 @@ float ps_planeSweepingGPUPixelsVolume(
                     // CudaArray<uchar4, 2>** ps_texs_arr,
                     unsigned char* ovol_hmh, cameraStruct** cams, int ncams,
                     int width, int height, int volStepXY, int volDimX, int volDimY, int volDimZ,
-                    int volLUX, int volLUY, int volLUZ, CudaHostMemoryHeap<int4, 2>& volPixs_hmh,
+                    int volLUX, int volLUY, int volLUZ,
+		    CudaHostMemoryHeap<int, 2>& volPixs_hmh_x,
+		    CudaHostMemoryHeap<int, 2>& volPixs_hmh_y,
+		    CudaHostMemoryHeap<int, 2>& volPixs_hmh_z,
                     CudaHostMemoryHeap<float, 2>& depths_hmh, int nDepthsToSearch, int slicesAtTime,
                     int ntimes, int npixs, int wsh, int kernelSizeHalf, int nDepths, int scale,
                     int CUDAdeviceNo, int ncamsAllocated, int scales, bool verbose,
@@ -192,19 +195,6 @@ void ps_filterRcIdDepthMapByTcDepthMaps(
                     int volDimZ, CudaHostMemoryHeap<float, 2>& depths_hmh, int nDepths, int scale,
                     int CUDAdeviceNo, int ncamsAllocated, int scales,
                     CudaHostMemoryHeap<float, 2>** tcDepthMaps_hmh, bool verbose, int distLimit);
-
-#if 0
-void ps_planeSweepingGPUPixelsFine(
-                    // CudaArray<uchar4, 2>** ps_texs_arr,
-                    CudaHostMemoryHeap<float, 2>* odpt_hmh,
-                    CudaHostMemoryHeap<float, 2>* osim_hmh, cameraStruct** cams, int ncams, int width,
-                    int height, CudaHostMemoryHeap<int2, 2>& pixs_hmh,
-                    CudaHostMemoryHeap<float, 2>& depths_hmh,
-                    CudaHostMemoryHeap<float4, 2>& normals_hmh, int slicesAtTime, int ntimes,
-                    int npixs, int wsh, int kernelSizeHalf, int nPlanes, int scale, int CUDAdeviceNo,
-                    int ncamsAllocated, int scales, bool verbose, float gammaC, float gammaP,
-                    float epipShift = 0.0f);
-#endif
 
 void ps_planeSweepNPlanes(
                     // CudaArray<uchar4, 2>** ps_texs_arr,
@@ -264,16 +254,6 @@ void ps_dilateMaskMap(
                     CudaDeviceMemoryPitched<float, 2>& depthMap_dmp,
                     int width, int height, bool verbose,
                     int niters, float fpPlaneDepth);
-
-void ps_refineDepthMapInternal(
-                    CudaDeviceMemoryPitched<float, 2>& osimMap_dmp,
-                    CudaDeviceMemoryPitched<float, 2>& odepthMap_dmp,
-                    CudaDeviceMemoryPitched<float, 2>& idepthMap_dmp,
-                    CudaDeviceMemoryPitched<float, 2>& idepthMapMask_dmp, int width, int height,
-                    bool verbose, int wsh, float gammaC, float gammaP, float simThr,
-                    CudaDeviceMemoryPitched<float3, 2>& dsm_dmp,
-                    CudaDeviceMemoryPitched<float3, 2>& ssm_dmp, CudaArray<uchar4, 2>& tTexU4_arr,
-                    CudaDeviceMemoryPitched<uchar4, 2>& timg_dmp, bool moveByTcOrRc, float step);
 
 void ps_computeSimMapForDepthMapInternal(
                     cudaTextureObject_t t4tex,
@@ -370,52 +350,11 @@ void ps_GC_K_aggregatePathVolume(
                     int volDimX, int volDimY, int volDimZ,
                     int K);
 
-void ps_ptsStatForRcDepthMap(
-                    // CudaArray<uchar4, 2>** ps_texs_arr,
-                    CudaHostMemoryHeap<float, 2>* depthMap_hmh,
-                    cameraStruct** cams, CudaHostMemoryHeap<float3, 2>& pts_hmh,
-                    CudaHostMemoryHeap<float2, 2>& out_hmh, int npts, int width, int height, int scale,
-                    int CUDAdeviceNo, int ncamsAllocated, int scales, int maxNPixSize, int wsh, float gammaC,
-                    float gammaP, bool verbose);
-
-void ps_computeSimMapReprojectByDepthMapMovedByStep(
-                    // CudaArray<uchar4, 2>** ps_texs_arr,
-                    CudaHostMemoryHeap<float, 2>* osimMap_hmh,
-                    CudaHostMemoryHeap<float, 2>* iodepthMap_hmh, cameraStruct** cams,
-                    int ncams, int width, int height, int scale, int CUDAdeviceNo,
-                    int ncamsAllocated, int scales, bool verbose, int wsh, float gammaC,
-                    float gammaP, bool moveByTcOrRc, float step);
-
-void ps_reprojectRGBTcImageByDepthMap(
-                    CudaHostMemoryHeap<uchar4, 2>* iTcoRcRgbImage_hmh,
-                    CudaHostMemoryHeap<float, 2>* rcDepthMap_hmh, cameraStruct** cams, int ncams,
-                    int width, int height, int scale, int CUDAdeviceNo, int ncamsAllocated,
-                    int scales, bool verbose);
-
-void ps_computeRcTcDepthMap(
-                    CudaHostMemoryHeap<float, 2>& iRcDepthMap_oRcTcDepthMap_hmh,
-                    CudaHostMemoryHeap<float, 2>& tcDepthMap_hmh, float pixSizeRatioThr, cameraStruct** cams,
-                    int ncams, int width, int height, int scale, int CUDAdeviceNo, int ncamsAllocated,
-                    int scales, bool verbose);
-
 void ps_getSilhoueteMap(
                     // CudaArray<uchar4, 2>** ps_texs_arr,
                     CudaHostMemoryHeap<bool, 2>* omap_hmh, int width,
                     int height, int scale, int CUDAdeviceNo, int ncamsAllocated, int scales, int step, int camId,
                     uchar4 maskColorRgb, bool verbose);
-
-void ps_retexture(
-                    CudaHostMemoryHeap<uchar4, 2>* bmpOrig_hmh,
-                    CudaHostMemoryHeap<uchar4, 2>* bmpObj_hmh,
-                    CudaHostMemoryHeap<float4, 2>* retexturePixs_hmh,
-                    int wObj, int hObj, int wOrig, int hOrig,
-                    int slicesAtTime, int ntimes, int npixs, int CUDAdeviceNo, bool verbose);
-
-void ps_retextureComputeNormalMap(
-                    CudaHostMemoryHeap<uchar4, 2>* bmpObj_hmh,
-                    CudaHostMemoryHeap<float2, 2>* retexturePixs_hmh,
-                    CudaHostMemoryHeap<float3, 2>* retextureNorms_hmh, int wObj, int hObj,
-                    int slicesAtTime, int ntimes, int npixs, int CUDAdeviceNo, bool verbose);
 
 void ps_colorExtractionPushPull(
                     CudaHostMemoryHeap<uchar4, 2>* bmp_hmh,
