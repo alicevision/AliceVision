@@ -41,7 +41,7 @@ install:
         # cuda
 
 before_build:
-    - cd $(APPVEYOR_BUILD_FOLDER)
+    - cd %APPVEYOR_BUILD_FOLDER%
     - md build
     - cd build
     - cmake .. -G "Visual Studio 14 2015 Win64"
