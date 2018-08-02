@@ -44,9 +44,13 @@ void UVAtlas::createCharts(vector<Chart>& charts, mvsUtils::MultiViewParams& mp,
 
     // create one chart per triangle
     _triangleCameraIDs.resize(_mesh.tris->size());
+    charts.resize(_mesh.tris->size());
+    #pragma omp parallel for
     for(int i = 0; i < trisCams->size(); ++i)
     {
-        Chart chart;
+        Chart& chart = charts[i];
+        std::vector<int>& tCamIds = _triangleCameraIDs[i];
+
         // project triangle in all cams
         auto cameras = (*trisCams)[i];
         for(int c = 0; c < cameras->size(); ++c)
@@ -60,14 +64,12 @@ void UVAtlas::createCharts(vector<Chart>& charts, mvsUtils::MultiViewParams& mp,
                 continue;
             // store this camera ID
             chart.commonCameraIDs.emplace_back(cameraID);
-            _triangleCameraIDs[i].emplace_back(cameraID);
+            tCamIds.emplace_back(cameraID);
         }
         // sort camera IDs
-        sort(chart.commonCameraIDs.begin(), chart.commonCameraIDs.end());
+        std::sort(chart.commonCameraIDs.begin(), chart.commonCameraIDs.end());
         // store triangle ID
         chart.triangleIDs.emplace_back(i);
-        // store chart
-        charts.emplace_back(chart);
     }
     deleteArrayOfArrays<int>(&trisCams);
 }
@@ -217,7 +219,7 @@ void UVAtlas::createTextureAtlases(vector<Chart>& charts, mvsUtils::MultiViewPar
     ALICEVISION_LOG_INFO("Creating texture atlases.");
 
     // sort charts by size, descending
-    sort(charts.begin(), charts.end(), [](const Chart& a, const Chart& b)
+    std::sort(charts.begin(), charts.end(), [](const Chart& a, const Chart& b)
     {
         int wa = a.width();
         int wb = b.width();
@@ -226,9 +228,9 @@ void UVAtlas::createTextureAtlases(vector<Chart>& charts, mvsUtils::MultiViewPar
         return wa > wb;
     });
 
-    size_t i = 0; // forward index
-    size_t j = charts.size() - 1; // backward index
-    size_t texCount = 0;
+    std::size_t i = 0; // forward index
+    std::size_t j = charts.size() - 1; // backward index
+    std::size_t texCount = 0;
 
     // insert charts into one or more texture atlas
     while(i <= j)
