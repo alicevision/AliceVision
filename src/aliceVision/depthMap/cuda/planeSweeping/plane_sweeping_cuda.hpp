@@ -10,6 +10,8 @@
 #include <aliceVision/mvsData/Matrix3x3.hpp>
 #include <aliceVision/mvsData/Matrix3x4.hpp>
 
+#include <memory>
+
 namespace aliceVision {
 namespace depthMap {
 
@@ -51,13 +53,13 @@ inline unsigned int divUp(unsigned int a, unsigned int b) {
 
 // void ps_normalize(float3& a);
 
-CameraBaseStruct* ps_init_camera_vectors( const Point3d&    CA,
-                                          const Matrix3x4&  P,
-                                          const Matrix3x3&  iP,
-                                          const Matrix3x3&  RA,
-                                          const Matrix3x3&  iRA,
-                                          const Matrix3x3&  K,
-                                          const Matrix3x3&  iK );
+std::shared_ptr<CameraBaseStruct> ps_init_camera_vectors( const Point3d&    CA,
+                                                          const Matrix3x4&  P,
+                                                          const Matrix3x3&  iP,
+                                                          const Matrix3x3&  RA,
+                                                          const Matrix3x3&  iRA,
+                                                          const Matrix3x3&  K,
+                                                          const Matrix3x3&  iK );
 
 void pr_printfDeviceMemoryInfo();
 

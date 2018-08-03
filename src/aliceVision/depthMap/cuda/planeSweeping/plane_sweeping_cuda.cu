@@ -42,15 +42,15 @@ __host__ void ps_normalize(float3& a)
     a.z /= d;
 }
 
-__host__ CameraBaseStruct* ps_init_camera_vectors( const Point3d&    CA,
-                                                   const Matrix3x4&  P,
-                                                   const Matrix3x3&  iP,
-                                                   const Matrix3x3&  RA,
-                                                   const Matrix3x3&  iRA,
-                                                   const Matrix3x3&  K,
-                                                   const Matrix3x3&  iK )
+__host__ std::shared_ptr<CameraBaseStruct> ps_init_camera_vectors( const Point3d&    CA,
+                                                                   const Matrix3x4&  P,
+                                                                   const Matrix3x3&  iP,
+                                                                   const Matrix3x3&  RA,
+                                                                   const Matrix3x3&  iRA,
+                                                                   const Matrix3x3&  K,
+                                                                   const Matrix3x3&  iK )
 {
-    CameraBaseStruct* cam = new CameraBaseStruct;
+    std::shared_ptr<CameraBaseStruct> cam( new CameraBaseStruct );
 
     cam->C.x = CA.x;
     cam->C.y = CA.y;
@@ -385,7 +385,8 @@ void ps_deviceUpdateCam( cameraStruct* cam, int camId, int CUDAdeviceNo,
     {
         CudaDeviceMemoryPitched<uchar4, 2> tex_lab_dmp(CudaSize<2>(w, h));
         std::cerr << "    INFO " << __FUNCTION__ << " Allocating pitch memory with " << w << "X" << h << " entries" << std::endl;
-        tex_lab_dmp.copyFrom( *cam->tex_rgba_hmh ); // copy host to device
+        // tex_lab_dmp.copyFrom( *cam->tex_rgba_hmh ); // copy host to device
+        tex_lab_dmp.copyFrom( cam->getRefTexRGBA() ); // copy host to device
 
         int block_size = 16;
         dim3 block(block_size, block_size, 1);

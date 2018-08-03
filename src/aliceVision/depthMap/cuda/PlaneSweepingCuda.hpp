@@ -84,7 +84,8 @@ public:
     PlaneSweepingCuda( const PlaneSweepingCuda& ) = delete;            // disable copy constructor
     PlaneSweepingCuda& operator=( const PlaneSweepingCuda& ) = delete; // disable assignment operator
 
-    int addCam(int rc, float** H, int scale);
+    // int addCam(int rc, float** H, int scale);
+    int addCam(int rc, int scale);
 
     void getMinMaxdepths(int rc, StaticVector<int>* tcams, float& minDepth, float& midDepth, float& maxDepth);
     void getAverageMinMaxdepths(float& avMinDist, float& avMaxDist);

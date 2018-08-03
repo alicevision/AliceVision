@@ -11,9 +11,45 @@
 namespace aliceVision {
 namespace depthMap {
 
+cameraStruct::cameraStruct()
+    : cam( nullptr ),
+      tex_rgba_hmh( nullptr ),
+      camId( -1 ),
+      rc( -1 ),
+      scale( -1 )
+{ }
+
+cameraStruct::cameraStruct( const cameraStruct& orig )
+    : cam( orig.cam ),
+      tex_rgba_hmh( orig.tex_rgba_hmh ),
+      camId( orig.camId ),
+      rc( orig.rc ),
+      scale( orig.scale )
+{ }
+
+cameraStruct& cameraStruct::operator=( const cameraStruct& orig )
+{
+    cam = orig.cam;
+    tex_rgba_hmh = orig.tex_rgba_hmh;
+    camId = orig.camId;
+    rc = orig.rc;
+    scale = orig.scale;
+
+    return *this;
+}
+
 cameraStruct::~cameraStruct()
 {
-    delete cam;
+}
+
+void cameraStruct::makeTexRGBA( int w, int h )
+{
+    tex_rgba_hmh.reset( new CudaHostMemoryHeap<uchar4, 2>(CudaSize<2>( w, h ) ) );
+}
+
+void cameraStruct::setTexRGBA( int x, int y, const uchar4& val )
+{
+    tex_rgba_hmh->operator()(x,y) = val;
 }
 
 } // namespace depthMap

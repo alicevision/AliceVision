@@ -11,6 +11,7 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <stdexcept>
+#include <memory>
 
 namespace aliceVision {
 namespace depthMap {
@@ -879,25 +880,35 @@ template<class Type, unsigned Dim> void copy(CudaDeviceMemoryPitched<Type, Dim>&
 
 struct CameraBaseStruct; // forward reference, include only for destructor
 
-struct cameraStruct
+class cameraStruct
 {
-    CameraBaseStruct* cam;
-    CudaHostMemoryHeap<uchar4, 2>* tex_rgba_hmh;
+private:
+    std::shared_ptr<CudaHostMemoryHeap<uchar4, 2> > tex_rgba_hmh;
+public:
+    std::shared_ptr<CameraBaseStruct> cam;
     int camId;
     int rc;
-    float* H;
     int scale;
 
-    cameraStruct() :
-        cam( nullptr ),
-        tex_rgba_hmh( nullptr ),
-        camId( -1 ),
-        rc( -1 ),
-        H( nullptr ),
-        scale( -1 )
-    { }
+    cameraStruct();
+    cameraStruct( const cameraStruct& );
+
+    cameraStruct& operator=( const cameraStruct& orig );
 
     ~cameraStruct();
+
+    inline bool haveTexRGBA() const
+    {
+        return (bool)tex_rgba_hmh;
+    }
+
+    inline const CudaHostMemoryHeap<uchar4, 2>& getRefTexRGBA( ) const
+    {
+        return *( tex_rgba_hmh.get() );
+    }
+
+    void makeTexRGBA( int w, int h );
+    void setTexRGBA( int x, int y, const uchar4& val );
 };
 
 struct ps_parameters
