@@ -396,7 +396,26 @@ ExternalProject_Add(${POPSIFT_TARGET}
       )
 endif()
 
-set(AV_DEPS ${JPEG_TARGET} ${PNG_TARGET} ${BOOST_TARGET} ${OPENIMAGEIO_TARGET} ${OPENEXR_TARGET} ${ALEMBIC_TARGET} ${GEOGRAM_TARGET} ${CUDA_TARGET} ${CERES_TARGET} ${POPSIFT_TARGET} ${EIGEN_TARGET})
+set(AV_DEPS
+  ${GEOGRAM_TARGET}
+  ${CUDA_TARGET}
+  ${TBB_TARGET}
+  ${EIGEN_TARGET}
+  ${LAPACK_TARGET}
+  ${SUITESPARSE_TARGET}
+  ${CERES_TARGET}
+  ${ILMBASE_TARGET}
+  ${OPENEXR_TARGET}
+  ${TIFF_TARGET}
+  ${PNG_TARGET}
+  ${JPEG_TARGET}
+  ${LIBRAW_TARGET}
+  ${BOOST_TARGET}
+  ${OPENIMAGEIO_TARGET}
+  ${ALEMBIC_TARGET}
+  ${POPSIFT_TARGET}
+)
+
 ExternalProject_Add(aliceVision
        PREFIX ${CMAKE_CURRENT_SOURCE_DIR}
        BUILD_IN_SOURCE 0
@@ -411,6 +430,7 @@ ExternalProject_Add(aliceVision
 if(CMAKE_INSTALL_PREFIX)
   foreach(LIBNAME ${AV_DEPS})
     set(DEP_FOLDER ${BUILD_DIR}/${LIBNAME}_build)
+    message(STATUS "Install ${DEP_FOLDER}/lib/ ${DEP_FOLDER}/lib64/ ===> ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}")
     # Install dependencies libraries
     if(INSTALL_DEPS_BUILD)
       # Install dependencies build files
