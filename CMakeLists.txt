@@ -38,15 +38,6 @@ set(ALICEVISION_ROOT ${PROJECT_BINARY_DIR})
 # ==============================================================================
 include(GNUInstallDirs)
 
-if(ALICEVISION_USE_RPATH)
-  if(APPLE)
-    set(CMAKE_MACOSX_RPATH 1)
-    set(CMAKE_INSTALL_RPATH "@loader_path/../${CMAKE_INSTALL_LIBDIR}:@loader_path")
-  elseif(UNIX)
-    set(CMAKE_INSTALL_RPATH "\\$ORIGIN/../${CMAKE_INSTALL_LIBDIR}:\\$ORIGIN")
-  endif()
-endif()
-
 message(STATUS "----------------------------------------")
 message(STATUS "ALICEVISION_BUILD_DEPENDENCIES: ${ALICEVISION_BUILD_DEPENDENCIES}")
 message(STATUS "ALICEVISION_BUILD_TESTS: ${ALICEVISION_BUILD_TESTS}")
