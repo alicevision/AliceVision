@@ -417,23 +417,27 @@ if(CMAKE_INSTALL_PREFIX)
       install(
         DIRECTORY ${DEP_FOLDER}/bin ${DEP_FOLDER}/include ${DEP_FOLDER}/share
         DESTINATION ${CMAKE_INSTALL_PREFIX}
+        USE_SOURCE_PERMISSIONS
         )
       install(
         DIRECTORY ${DEP_FOLDER}/lib/ ${DEP_FOLDER}/lib64/
-        DESTINATION ${CMAKE_INSTALL_PREFIX}/lib
+        DESTINATION ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}
+        USE_SOURCE_PERMISSIONS
         )
     else()
       install(
         DIRECTORY ${DEP_FOLDER}/lib/ ${DEP_FOLDER}/lib64/
-        DESTINATION ${CMAKE_INSTALL_PREFIX}/lib
+        DESTINATION ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}
+        USE_SOURCE_PERMISSIONS
         FILES_MATCHING PATTERN "lib*.so*"
         )
     endif()
   endforeach()
   # Install AliceVision's build files
   install(
-    DIRECTORY ${BUILD_DIR}/aliceVision_build/bin ${BUILD_DIR}/aliceVision_build/lib ${BUILD_DIR}/aliceVision_build/include ${BUILD_DIR}/aliceVision_build/share
+    DIRECTORY ${BUILD_DIR}/aliceVision_build/bin ${BUILD_DIR}/aliceVision_build/lib ${BUILD_DIR}/aliceVision_build/lib64 ${BUILD_DIR}/aliceVision_build/include ${BUILD_DIR}/aliceVision_build/share
     DESTINATION ${CMAKE_INSTALL_PREFIX}
+    USE_SOURCE_PERMISSIONS
     )
 endif()
 

@@ -48,7 +48,7 @@ message(STATUS "LIBS_LOOKUPS_PATHS: ${LIBS_LOOKUPS_PATHS}")
 # Get all executables in installed 'bin' folder
 # and copy them in the bundle installation path
 get_bundle_all_executables(${CMAKE_INSTALL_FULL_BINDIR} BUNDLE_APPS)
-file(INSTALL ${BUNDLE_APPS} DESTINATION ${BUNDLE_INSTALL_PREFIX} USE_SOURCE_PERMISSIONS)
+file(COPY ${BUNDLE_APPS} DESTINATION ${BUNDLE_INSTALL_PREFIX} USE_SOURCE_PERMISSIONS)
 
 # Get first bundled executable as reference app
 # fixup_bundle will automatically fixup all the others executable in the bundle
