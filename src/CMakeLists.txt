@@ -64,6 +64,13 @@ if(NOT CMAKE_BUILD_TYPE AND NOT MSVC)
   set(CMAKE_BUILD_TYPE "Release")
 endif()
 
+# ==============================================================================
+# GNUInstallDirs CMake module
+# - Define GNU standard installation directories
+# - Provides install directory variables as defined by the GNU Coding Standards.
+# ==============================================================================
+include(GNUInstallDirs)
+
 
 if(ALICEVISION_USE_RPATH)
   if(APPLE)
