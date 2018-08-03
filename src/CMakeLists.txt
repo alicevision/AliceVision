@@ -896,7 +896,6 @@ add_subdirectory(software)
 # Install rules
 # ==============================================================================
 
-install(EXPORT aliceVision-targets DESTINATION lib)
 install(EXPORT aliceVision-targets
         DESTINATION share/aliceVision/cmake FILE AliceVisionTargets.cmake)
 
