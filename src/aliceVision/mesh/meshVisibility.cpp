@@ -46,13 +46,17 @@ void remapMeshVisibilities_pullVerticesVisibility(
     GEO::AdaptiveKdTree refMesh_kdTree(3);
     refMesh_kdTree.set_points(refMesh.pts->size(), refMesh.pts->front().m);
 
-    out_ptsVisibilities.resize(mesh.pts->size());
+    out_ptsVisibilities.resize(mesh.pts->size(), nullptr);
 
     #pragma omp parallel for
     for(int i = 0; i < mesh.pts->size(); ++i)
     {
-        PointVisibility* pOut = new StaticVector<int>();
-        out_ptsVisibilities[i] = pOut; // give ownership
+        PointVisibility* pOut = out_ptsVisibilities[i];
+        if(pOut == nullptr)
+        {
+            pOut = new StaticVector<int>();
+            out_ptsVisibilities[i] = pOut; // give ownership
+        }
 
         int iRef = refMesh_kdTree.get_nearest_neighbor((*mesh.pts)[i].m);
         if(iRef == -1)
@@ -95,11 +99,14 @@ void remapMeshVisibilities_pushVerticesVisibilityToTriangles(
 
     GEO::vector<GEO::index_t> reorderedVertices = reorderedVerticesAttr.get_vector();
 
-    out_ptsVisibilities.resize(mesh.pts->size(), nullptr);
-    for (int vi = 0; vi < mesh.pts->size(); ++vi)
+    if (out_ptsVisibilities.size() != mesh.pts->size())
     {
-        if(out_ptsVisibilities[vi] == nullptr)
-            out_ptsVisibilities[vi] = new StaticVector<int>(); // create and give ownership
+        out_ptsVisibilities.resize(mesh.pts->size(), nullptr);
+        for (int vi = 0; vi < mesh.pts->size(); ++vi)
+        {
+            if(out_ptsVisibilities[vi] == nullptr)
+                out_ptsVisibilities[vi] = new StaticVector<int>(); // create and give ownership
+        }
     }
 
     #pragma omp parallel for
