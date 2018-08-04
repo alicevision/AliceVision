@@ -293,8 +293,13 @@ void Texturing::generateTexture(const mvsUtils::MultiViewParams& mp,
             continue;
 
         // Select the N best views for texturing
-        Point3d triangleNormal = me->computeTriangleNormal(triangleId);
-        std::vector<std::pair<double, int>> scorePerCamId;
+        Point3d triangleNormal;
+        Point3d triangleCenter;
+        if (texParams.angleHardThreshold != 0.0)
+        {
+            triangleNormal = me->computeTriangleNormal(triangleId);
+            triangleCenter = me->computeTriangleCenterOfGravity(triangleId);
+        }
         for (const auto& itCamVis: selectedTriCams)
         {
             const int camId = itCamVis.first;
@@ -304,8 +309,8 @@ void Texturing::generateTexture(const mvsUtils::MultiViewParams& mp,
 
             if (texParams.angleHardThreshold != 0.0)
             {
-                const Point3d camInvDir = mp.iRArr[camId] * Point3d(0.0, 0.0, -1.0);
-                const double angle = angleBetwV1andV2(triangleNormal, camInvDir);
+                const Point3d vecPointToCam = (mp.CArr[camId] - triangleCenter).normalize();
+                const double angle = angleBetwV1andV2(triangleNormal, vecPointToCam);
                 if(angle > texParams.angleHardThreshold)
                     continue;
             }
