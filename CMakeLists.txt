@@ -25,8 +25,6 @@ string(TOLOWER ${DEPS_CMAKE_BUILD_TYPE} DEPS_CMAKE_BUILD_TYPE_LOWERCASE)
 
 option(ALICEVISION_BUILD_TESTS "Build AliceVision tests" OFF)
 
-option(ALICEVISION_USE_RPATH "Add RPATH on software with relative paths to libraries" ON)
-
 set(ALICEVISION_BUNDLE_PREFIX "${CMAKE_INSTALL_PREFIX}/bundle" CACHE STRING "Path for bundle installation")
 
 set(ALICEVISION_ROOT ${PROJECT_BINARY_DIR})

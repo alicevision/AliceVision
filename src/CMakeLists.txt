@@ -59,6 +59,8 @@ option(ALICEVISION_USE_MESHSDFILTER "Use MeshSDFilter library (enable MeshDenois
 
 option(ALICEVISION_REQUIRE_CERES_WITH_SUITESPARSE "Require Ceres with SuiteSparse (ensure best performances)" ON)
 
+option(ALICEVISION_USE_RPATH "Add RPATH on software with relative paths to libraries" ON)
+
 # Default build is in Release mode
 if(NOT CMAKE_BUILD_TYPE AND NOT MSVC)
   set(CMAKE_BUILD_TYPE "Release")
