@@ -59,10 +59,30 @@ option(ALICEVISION_USE_MESHSDFILTER "Use MeshSDFilter library (enable MeshDenois
 
 option(ALICEVISION_REQUIRE_CERES_WITH_SUITESPARSE "Require Ceres with SuiteSparse (ensure best performances)" ON)
 
+option(ALICEVISION_USE_RPATH "Add RPATH on software with relative paths to libraries" ON)
+
 # Default build is in Release mode
 if(NOT CMAKE_BUILD_TYPE AND NOT MSVC)
   set(CMAKE_BUILD_TYPE "Release")
 endif()
+
+# ==============================================================================
+# GNUInstallDirs CMake module
+# - Define GNU standard installation directories
+# - Provides install directory variables as defined by the GNU Coding Standards.
+# ==============================================================================
+include(GNUInstallDirs)
+
+
+if(ALICEVISION_USE_RPATH)
+  if(APPLE)
+    set(CMAKE_MACOSX_RPATH 1)
+    set(CMAKE_INSTALL_RPATH "@loader_path/../${CMAKE_INSTALL_LIBDIR}:@loader_path")
+  elseif(UNIX)
+    set(CMAKE_INSTALL_RPATH "\\$ORIGIN/../${CMAKE_INSTALL_LIBDIR}:\\$ORIGIN")
+  endif()
+endif()
+ 
 
 # Set build path
 set(EXECUTABLE_OUTPUT_PATH "${ALICEVISION_ROOT}/${CMAKE_SYSTEM_NAME}-${CMAKE_SYSTEM_PROCESSOR}")
@@ -878,7 +898,6 @@ add_subdirectory(software)
 # Install rules
 # ==============================================================================
 
-install(EXPORT aliceVision-targets DESTINATION lib)
 install(EXPORT aliceVision-targets
         DESTINATION share/aliceVision/cmake FILE AliceVisionTargets.cmake)
 
