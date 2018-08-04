@@ -314,7 +314,7 @@ void Texturing::generateTexture(const mvsUtils::MultiViewParams& mp,
             const int h = mp.getHeight(camId);
 
             const Mesh::triangle_proj tProj = me->getTriangleProjection(triangleId, &mp, camId, w, h);
-            const int nbVertex = me->getTriangleNbVertexInImage(tProj, w, h);
+            const int nbVertex = me->getTriangleNbVertexInImage(tProj, w, h, 20);
             if(nbVertex == 0)
                 // No triangle vertex in the image
                 continue;
