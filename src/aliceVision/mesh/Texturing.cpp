@@ -256,7 +256,6 @@ void Texturing::generateTexture(const mvsUtils::MultiViewParams& mp,
     for(size_t i = 0; i < _atlases[atlasID].size(); ++i)
     {
         int triangleId = _atlases[atlasID][i];
-        std::vector<std::pair<int, int>> selectedTriCams;
 
         // Fuse visibilities of the 3 vertices
         std::vector<int> allTriCams;
@@ -270,10 +269,14 @@ void Texturing::generateTexture(const mvsUtils::MultiViewParams& mp,
             }
         }
         if (allTriCams.empty())
+        {
             // triangle without visibility
+            ALICEVISION_LOG_TRACE("No visibility for triangle " << triangleId << " in texture atlas " << atlasID << ".");
             continue;
-
+        }
         std::sort(allTriCams.begin(), allTriCams.end());
+
+        std::vector<std::pair<int, int>> selectedTriCams; // <camId, nbVertices>
         selectedTriCams.emplace_back(allTriCams.front(), 1);
         for (int j = 1; j < allTriCams.size(); ++j)
         {
@@ -288,9 +291,7 @@ void Texturing::generateTexture(const mvsUtils::MultiViewParams& mp,
             }
         }
 
-        if(selectedTriCams.empty())
-            // triangle without visibility
-            continue;
+        assert(!selectedTriCams.empty());
 
         // Select the N best views for texturing
         Point3d triangleNormal;
@@ -300,6 +301,8 @@ void Texturing::generateTexture(const mvsUtils::MultiViewParams& mp,
             triangleNormal = me->computeTriangleNormal(triangleId);
             triangleCenter = me->computeTriangleCenterOfGravity(triangleId);
         }
+        using ScoreCamId = std::tuple<int, double, int>;
+        std::vector<ScoreCamId> scorePerCamId; // <nbVertex, score, camId>
         for (const auto& itCamVis: selectedTriCams)
         {
             const int camId = itCamVis.first;
@@ -325,20 +328,35 @@ void Texturing::generateTexture(const mvsUtils::MultiViewParams& mp,
                 continue;
 
             const double area = me->computeTriangleProjectionArea(tProj);
-            const double score = area * double(nbVertex) * double(verticesSupport);
-            scorePerCamId.emplace_back(score, camId);
+            const double score = area * double(verticesSupport);
+            scorePerCamId.emplace_back(nbVertex, score, camId);
         }
         if (scorePerCamId.empty())
-            // triangle without visibility
-            continue;
-        std::sort(scorePerCamId.begin(), scorePerCamId.end(), std::greater<std::pair<double, int>>());
-        double minScore = texParams.bestScoreThreshold * scorePerCamId.front().first; // bestScoreThreshold * bestScore
-        for(int i = 0; i < scorePerCamId.size() && i < texParams.maxNbImagesForFusion; ++i)
         {
-            if(scorePerCamId[i].first < minScore)
-                // The best image has a much better score, so only rely on the first ones
-                break;
-            const int camId = scorePerCamId[i].second;
+            // triangle without visibility
+            ALICEVISION_LOG_TRACE("No visibility for triangle " << triangleId << " in texture atlas " << atlasID << " after scoring!!");
+            continue;
+        }
+
+        std::sort(scorePerCamId.begin(), scorePerCamId.end(), std::greater<ScoreCamId>());
+        const double minScore = texParams.bestScoreThreshold * std::get<1>(scorePerCamId.front()); // bestScoreThreshold * bestScore
+        const bool bestIsPartial = (std::get<0>(scorePerCamId.front()) < 3);
+        int nbCumulatedVertices = 0;
+        const int maxNbVerticesForFusion = texParams.maxNbImagesForFusion * 3;
+        for(int i = 0; i < scorePerCamId.size(); ++i)
+        {
+            if (!bestIsPartial && i > 0)
+            {
+                bool triVisIsPartial = (std::get<0>(scorePerCamId[i]) < 3);
+                nbCumulatedVertices += std::get<0>(scorePerCamId[i]);
+                if(maxNbVerticesForFusion != 0 && nbCumulatedVertices > maxNbVerticesForFusion)
+                    break;
+                if(std::get<1>(scorePerCamId[i]) < minScore)
+                    // The best image fully see the triangle and has a much better score, so only rely on the first ones
+                    break;
+            }
+
+            const int camId = std::get<2>(scorePerCamId[i]);
             camTriangles[camId].push_back(triangleId);
         }
     }
