@@ -45,6 +45,7 @@ int main(int argc, char* argv[])
     bool flipNormals = false;
     mesh::TexturingParams texParams;
     std::string unwrapMethod = mesh::EUnwrapMethod_enumToString(mesh::EUnwrapMethod::Basic);
+    std::string visibilityRemappingMethod = mesh::EVisibilityRemappingMethod_enumToString(texParams.visibilityRemappingMethod);
 
     po::options_description allParams("AliceVision texturing");
 
@@ -85,7 +86,12 @@ int main(int argc, char* argv[])
         ("angleHardThreshold", po::value<double>(&texParams.angleHardThreshold)->default_value(texParams.angleHardThreshold),
             "(0.0 to disable angle hard threshold filtering).")
         ("forceVisibleByAllVertices", po::value<bool>(&texParams.forceVisibleByAllVertices)->default_value(texParams.forceVisibleByAllVertices),
-            "triangle visibility is based on the union of vertices visiblity.");
+            "triangle visibility is based on the union of vertices visiblity.")
+        ("visibilityRemappingMethod", po::value<std::string>(&visibilityRemappingMethod)->default_value(visibilityRemappingMethod),
+            "Method to remap visibilities from the reconstruction to the input mesh.\n"
+            " * Pull: For each vertex of the input mesh, pull the visibilities from the closest vertex in the reconstruction.\n"
+            " * Push: For each vertex of the reconstruction, push the visibilities to the closest triangle in the input mesh.\n"
+            " * PullPush: Combine results from Pull and Push results.'");
 
     po::options_description logParams("Log parameters");
     logParams.add_options()
@@ -127,6 +133,7 @@ int main(int argc, char* argv[])
     // set verbose level
     system::Logger::get()->setLogLevel(verboseLevel);
 
+    texParams.visibilityRemappingMethod = mesh::EVisibilityRemappingMethod_stringToEnum(visibilityRemappingMethod);
     // set output texture file type
     const EImageFileType outputTextureFileType = EImageFileType_stringToEnum(outTextureFileTypeName);
 

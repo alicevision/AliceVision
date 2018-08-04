@@ -21,6 +21,8 @@
 #include <geogram/mesh/mesh_io.h>
 #include <geogram/parameterization/mesh_atlas_maker.h>
 
+#include <boost/algorithm/string/case_conv.hpp> 
+
 #include <map>
 #include <set>
 
@@ -29,11 +31,14 @@ namespace mesh {
 
 EUnwrapMethod EUnwrapMethod_stringToEnum(const std::string& method)
 {
-    if(method == "Basic")
+    std::string m = method;
+    boost::to_lower(m);
+
+    if(m == "basic")
         return EUnwrapMethod::Basic;
-    if(method == "ABF")
+    if(m == "abf")
         return EUnwrapMethod::ABF;
-    if(method == "LSCM")
+    if(m == "lscm")
         return EUnwrapMethod::LSCM;
     throw std::out_of_range("Invalid unwrap method " + method);
 }
@@ -51,6 +56,34 @@ std::string EUnwrapMethod_enumToString(EUnwrapMethod method)
     }
     throw std::out_of_range("Unrecognized EUnwrapMethod");
 }
+
+std::string EVisibilityRemappingMethod_enumToString(EVisibilityRemappingMethod method)
+{
+    switch (method)
+    {
+    case EVisibilityRemappingMethod::Pull:
+        return "Push";
+    case EVisibilityRemappingMethod::Push:
+        return "Pull";
+    case EVisibilityRemappingMethod::PullPush:
+        return "PullPush";
+    }
+    throw std::out_of_range("Unrecognized EVisibilityRemappingMethod");
+}
+
+EVisibilityRemappingMethod EVisibilityRemappingMethod_stringToEnum(const std::string& method)
+{
+    std::string m = method;
+    boost::to_lower(m);
+    if (m == "pull")
+        return EVisibilityRemappingMethod::Pull;
+    if (m == "push")
+        return EVisibilityRemappingMethod::Push;
+    if (m == "pullpush")
+        return EVisibilityRemappingMethod::PullPush;
+    throw std::out_of_range("Invalid unwrap method " + method);
+}
+
 
 /**
  * @brief Return whether a pixel is contained in or intersected by a 2D triangle.
@@ -610,8 +643,13 @@ void Texturing::replaceMesh(const std::string& otherMeshPath, bool flipNormals)
     // allocate pointsVisibilities for new internal mesh
     pointsVisibilities = new PointsVisibility();
     // remap visibilities from reconstruction onto input mesh
-    // remapMeshVisibilities_pullVerticesVisibility(*refMesh, *refVisibilities, *me, *pointsVisibilities);
-    remapMeshVisibilities_pushVerticesVisibilityToTriangles(*refMesh, *refVisibilities, *me, *pointsVisibilities);
+    if(texParams.visibilityRemappingMethod & EVisibilityRemappingMethod::Pull)
+        remapMeshVisibilities_pullVerticesVisibility(*refMesh, *refVisibilities, *me, *pointsVisibilities);
+    if (texParams.visibilityRemappingMethod & EVisibilityRemappingMethod::Push)
+        remapMeshVisibilities_pushVerticesVisibilityToTriangles(*refMesh, *refVisibilities, *me, *pointsVisibilities);
+    if(pointsVisibilities->empty())
+        throw std::runtime_error("No visibility after visibility remapping.");
+
     // delete ref mesh and visibilities
     delete refMesh;
     deleteArrayOfArrays(&refVisibilities);
