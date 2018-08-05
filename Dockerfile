@@ -1,5 +1,6 @@
-ARG CUDA_TAG=9.2-devel
-FROM nvidia/cuda:${CUDA_TAG}-centos7
+ARG CUDA_TAG=9.2
+ARG OS_TAG=7
+FROM nvidia/cuda:${CUDA_TAG}-devel-centos${OS_TAG}
 LABEL maintainer="AliceVision Team alicevision-team@googlegroups.com"
 
 # Install all compilation tools
