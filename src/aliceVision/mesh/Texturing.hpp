@@ -65,7 +65,7 @@ EVisibilityRemappingMethod EVisibilityRemappingMethod_stringToEnum(const std::st
 struct TexturingParams
 {
     int maxNbImagesForFusion = 3; //< max number of images to combine to create the final texture
-    double bestScoreThreshold = 0.8; //< 0.0 to disable filtering based on threshold to relative best score
+    double bestScoreThreshold = 0.0; //< 0.0 to disable filtering based on threshold to relative best score
     double angleHardThreshold = 90.0; //< 0.0 to disable angle hard threshold filtering
     bool forceVisibleByAllVertices = false; //< triangle visibility is based on the union of vertices visiblity
     EVisibilityRemappingMethod visibilityRemappingMethod = EVisibilityRemappingMethod::PullPush;
