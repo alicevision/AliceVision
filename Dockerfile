@@ -34,7 +34,8 @@ RUN yum -y install \
         gcc-gfortran
 
 # Manually install cmake 3.11
-RUN cd /opt && wget https://cmake.org/files/v3.11/cmake-3.11.0.tar.gz && tar zxvf cmake-3.11.0.tar.gz && cd cmake-3.11.0 && ./bootstrap --prefix=/usr/local  -- -DCMAKE_BUILD_TYPE:STRING=Release -DCMAKE_USE_OPENSSL:BOOL=ON && make -j8 && make install
+WORKDIR /opt
+RUN wget https://cmake.org/files/v3.11/cmake-3.11.0.tar.gz && tar zxvf cmake-3.11.0.tar.gz && cd cmake-3.11.0 && ./bootstrap --prefix=/usr/local  -- -DCMAKE_BUILD_TYPE:STRING=Release -DCMAKE_USE_OPENSSL:BOOL=ON && make -j8 && make install
 
 ENV AV_DEV=/opt/AliceVision_git \
     AV_BUILD=/tmp/AliceVision_build \
@@ -48,13 +49,13 @@ WORKDIR "${AV_DEV}"
 RUN git submodule update -i
 
 WORKDIR "${AV_BUILD}"
-RUN cmake ${AV_DEV} -DCMAKE_BUILD_TYPE=Release -DALICEVISION_BUILD_DEPENDENCIES:BOOL=ON -DCMAKE_INSTALL_PREFIX="${AV_INSTALL}" -DALICEVISION_BUNDLE_PREFIX="${AV_BUNDLE}"
+RUN cmake "${AV_DEV}" -DCMAKE_BUILD_TYPE=Release -DALICEVISION_BUILD_DEPENDENCIES:BOOL=ON -DCMAKE_INSTALL_PREFIX="${AV_INSTALL}" -DALICEVISION_BUNDLE_PREFIX="${AV_BUNDLE}"
 
 WORKDIR "${AV_BUILD}"
 RUN make -j8 install
 RUN make bundle
 
-WORKDIR "/opt"
+WORKDIR /opt
 RUN rm -rf "${AV_BUILD}"
 
 
