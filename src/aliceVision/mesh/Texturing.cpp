@@ -464,10 +464,13 @@ void Texturing::generateTexture(const mvsUtils::MultiViewParams& mp,
                     // exclude out of bounds pixels
                     if(!mp.isPixelInImage(pixRC, camId))
                         continue;
+                    Color color = imageCache.getPixelValueInterpolated(&pixRC, camId);
+                    if(color == Color(0.f, 0.f, 0.f))
+                        continue;
+                    // fill the accumulated color map for this pixel
+                    perPixelColors[xyoffset] += color;
                     // fill the colorID map
                     colorIDs[xyoffset] = xyoffset;
-                    // fill the accumulated color map for this pixel
-                    perPixelColors[xyoffset] += imageCache.getPixelValueInterpolated(&pixRC, camId);
                 }
             }
         }
