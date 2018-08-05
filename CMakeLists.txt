@@ -37,6 +37,11 @@ set(ALICEVISION_ROOT ${PROJECT_BINARY_DIR})
 # ==============================================================================
 include(GNUInstallDirs)
 
+if(CMAKE_BUILD_TYPE MATCHES Release)
+    message(STATUS "Force CMAKE_INSTALL_DO_STRIP in Release")
+    set(CMAKE_INSTALL_DO_STRIP TRUE)
+endif()
+
 message(STATUS "----------------------------------------")
 message(STATUS "ALICEVISION_BUILD_DEPENDENCIES: ${ALICEVISION_BUILD_DEPENDENCIES}")
 message(STATUS "ALICEVISION_BUILD_TESTS: ${ALICEVISION_BUILD_TESTS}")
@@ -49,8 +54,10 @@ message(STATUS "AV_BUILD_LIBRAW: ${AV_BUILD_LIBRAW}")
 message(STATUS "AV_BUILD_POPSIFT: ${AV_BUILD_POPSIFT}")
 message(STATUS "CMAKE_BUILD_TYPE: ${CMAKE_BUILD_TYPE}")
 message(STATUS "DEPS_CMAKE_BUILD_TYPE: ${DEPS_CMAKE_BUILD_TYPE}")
+message(STATUS "CMAKE_INSTALL_LIBDIR: ${CMAKE_INSTALL_LIBDIR}")
 message(STATUS "CMAKE_INSTALL_PREFIX: ${CMAKE_INSTALL_PREFIX}")
 message(STATUS "CMAKE_INSTALL_RPATH: ${CMAKE_INSTALL_RPATH}")
+message(STATUS "CMAKE_INSTALL_DO_STRIP: ${CMAKE_INSTALL_DO_STRIP}")
 message(STATUS "----------------------------------------")
 
 # ==============================================================================
@@ -75,7 +82,7 @@ include(ExternalProject)
 
 set(BUILD_DIR "${CMAKE_CURRENT_BINARY_DIR}/external")
 
-set(CMAKE_CORE_BUILD_FLAGS -DCMAKE_BUILD_TYPE=${DEPS_CMAKE_BUILD_TYPE} -DBUILD_SHARED_LIBS:BOOL=ON)
+set(CMAKE_CORE_BUILD_FLAGS -DCMAKE_BUILD_TYPE=${DEPS_CMAKE_BUILD_TYPE} -DBUILD_SHARED_LIBS:BOOL=ON -DCMAKE_INSTALL_DO_STRIP=${CMAKE_INSTALL_DO_STRIP})
 
 set(ZLIB_TARGET zlib)
 ExternalProject_Add(${ZLIB_TARGET}
@@ -150,7 +157,7 @@ ExternalProject_Add(${TBB_TARGET}
        INSTALL_DIR ${BUILD_DIR}/tbb_build
        CONFIGURE_COMMAND ""
        BUILD_COMMAND PREFIX=<INSTALL_DIR> make PREFIX=<INSTALL_DIR>
-       INSTALL_COMMAND mkdir <INSTALL_DIR>/lib && echo "cp <BINARY_DIR>/build/linux_*_release/*.so <INSTALL_DIR>/lib" > tbb_so_files.sh && sh tbb_so_files.sh && cp -r "<BINARY_DIR>/include" "<INSTALL_DIR>"
+       INSTALL_COMMAND mkdir <INSTALL_DIR>/${CMAKE_INSTALL_LIBDIR} && echo "cp <BINARY_DIR>/build/linux_*_release/*.so <INSTALL_DIR>/${CMAKE_INSTALL_LIBDIR}" > tbb_so_files.sh && sh tbb_so_files.sh && cp -r "<BINARY_DIR>/include" "<INSTALL_DIR>"
        )
 
 # Add Eigen
@@ -176,14 +183,16 @@ ExternalProject_Add(${LAPACK_TARGET}
        SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/lapack
        BINARY_DIR ${BUILD_DIR}/lapack_build
        INSTALL_DIR ${BUILD_DIR}/lapack_build
-       CONFIGURE_COMMAND ${CMAKE_COMMAND} ${CMAKE_CORE_BUILD_FLAGS} -DBUILD_SHARED_LIBS=ON -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR> <SOURCE_DIR>
+       CONFIGURE_COMMAND ${CMAKE_COMMAND} ${CMAKE_CORE_BUILD_FLAGS} -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR> <SOURCE_DIR>
+       BUILD_COMMAND echo "FACA: LAPACK BUILD COMMAND" && make -j8 VERBOSE=1
+       INSTALL_COMMAND echo "FACA: LAPACK INSTALL COMMAND" && make -j1 install VERBOSE=1
        DEPENDS ${TBB_TARGET}
        )
-set(BLAS_LIBRARIES ${BUILD_DIR}/lapack_build/lib64/libblas.so)
-set(LAPACK_LIBRARIES ${BUILD_DIR}/lapack_build/lib64/liblapack.so)
+set(BLAS_LIBRARIES ${BUILD_DIR}/lapack_build/${CMAKE_INSTALL_LIBDIR}/libblas.so)
+set(LAPACK_LIBRARIES ${BUILD_DIR}/lapack_build/${CMAKE_INSTALL_LIBDIR}/liblapack.so)
 
 set(SUITESPARSE_TARGET suitesparse)
-set(SUITESPARSE_INTERNAL_MAKE_CMD LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${BUILD_DIR}/lapack_build/lib:${BUILD_DIR}/lapack_build/lib64 make BLAS="${BLAS_LIBRARIES}" LAPACK="${LAPACK_LIBRARIES}")
+set(SUITESPARSE_INTERNAL_MAKE_CMD LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${BUILD_DIR}/lapack_build/${CMAKE_INSTALL_LIBDIR} make BLAS="${BLAS_LIBRARIES}" LAPACK="${LAPACK_LIBRARIES}")
 ExternalProject_Add(${SUITESPARSE_TARGET}
        URL https://github.com/jluttine/suitesparse/archive/v4.5.6.tar.gz
        PREFIX ${BUILD_DIR}
@@ -211,19 +220,7 @@ ExternalProject_Add(${CERES_TARGET}
        CONFIGURE_COMMAND ${CMAKE_COMMAND} ${CMAKE_CORE_BUILD_FLAGS} -DCMAKE_PREFIX_PATH=${BUILD_DIR}/suitesparse_build -DBLAS_LIBRARIES=${BLAS_LIBRARIES} -DLAPACK_LIBRARIES=${LAPACK_LIBRARIES} -DSUITESPARSE:BOOL=ON -DLAPACK:BOOL=ON -DEigen3_DIR:PATH=${BUILD_DIR}/eigen_build/share/eigen3/cmake -DEIGEN_INCLUDE_DIR=${BUILD_DIR}/eigen_build/include/eigen3 -DMINIGLOG=ON -DBUILD_EXAMPLES:BOOL=OFF -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR> <SOURCE_DIR>
        DEPENDS ${EIGEN_TARGET} ${SUITESPARSE_TARGET}
        )
-# Test 32/64 bits
-if (CMAKE_SYSTEM_NAME MATCHES "Linux" AND
-    NOT DEFINED LIB_SUFFIX AND
-    NOT CMAKE_CROSSCOMPILING AND
-    CMAKE_SIZEOF_VOID_P EQUAL "8" AND
-    NOT EXISTS "/etc/debian_version" AND
-    NOT EXISTS "/etc/arch-release")
-    # message(STATUS "Target is 64 bits")
-    set(CERES_CMAKE_FLAGS -DCeres_DIR=${BUILD_DIR}/ceres_build/lib64/cmake/Ceres )
-else()
-    # message(STATUS "Target is 32 bits")
-    set(CERES_CMAKE_FLAGS -DCeres_DIR=${BUILD_DIR}/ceres_build/lib/cmake/Ceres )
-endif()
+set(CERES_CMAKE_FLAGS -DCeres_DIR=${BUILD_DIR}/ceres_build/${CMAKE_INSTALL_LIBDIR}/cmake/Ceres )
 
 # Add OpenEXR
 set(OPENEXR_TARGET openexr)
