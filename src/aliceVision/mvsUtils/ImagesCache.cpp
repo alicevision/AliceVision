@@ -114,14 +114,10 @@ void ImagesCache::refreshData(int camId)
             imgs[mapId] = new Color[maxSize];
         }
 
-        std::string imagePath = imagesNames.at(camId);
+        const std::string imagePath = imagesNames.at(camId);
         memcpyRGBImageFromFileToArr(camId, imgs[mapId], imagePath, mp, transposed, bandType);
 
-        if(mp->verbose)
-        {
-            std::string basename = imagePath.substr(imagePath.find_last_of("/\\") + 1);
-            printfElapsedTime(t1, "add "+ basename +" to image cache");
-        }
+        ALICEVISION_LOG_DEBUG("Add " << imagePath << " to image cache. " << formatElapsedTime(t1));
     }
 }
 

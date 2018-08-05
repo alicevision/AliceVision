@@ -31,7 +31,11 @@ void printfPercent(int i, int n);
 long initEstimate();
 void printfEstimate(int i, int n, long startTime);
 void finishEstimate();
-std::string printfElapsedTime(long t1, std::string prefix = "");
+std::string formatElapsedTime(long t1);
+inline void printfElapsedTime(long t1, std::string prefix = "")
+{
+    ALICEVISION_LOG_DEBUG(prefix << " " << formatElapsedTime(t1));
+}
 // SampleCnt calculates number of samples needed to be done
 int gaussKernelVoting(StaticVector<OrientedPoint*>* pts, float sigma);
 float angularDistnace(OrientedPoint* op1, OrientedPoint* op2);
