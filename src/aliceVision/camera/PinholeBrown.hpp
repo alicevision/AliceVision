@@ -27,9 +27,8 @@ class PinholeBrownT2 : public Pinhole
         double focal = 0.0, double ppx = 0, double ppy = 0,
         double k1 = 0.0, double k2 = 0.0, double k3 = 0.0,
         double t1 = 0.0, double t2 = 0.0)
-            :Pinhole(w, h, focal, ppx, ppy)
+            :Pinhole(w, h, focal, ppx, ppy, {k1, k2, k3, t1, t2})
     {
-        setDistortionParams({k1, k2, k3, t1, t2});
     }
 
     PinholeBrownT2* clone() const { return new PinholeBrownT2(*this); }

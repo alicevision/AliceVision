@@ -140,9 +140,11 @@ void loadIntrinsic(IndexT& intrinsicId, std::shared_ptr<camera::IntrinsicBase>& 
   pinholeIntrinsic->setSerialNumber(intrinsicTree.get<std::string>("serialNumber"));
 
   std::vector<double> distortionParams;
-
   for(bpt::ptree::value_type &paramNode : intrinsicTree.get_child("distortionParams"))
     distortionParams.emplace_back(paramNode.second.get_value<double>());
+
+  // Ensure that we have the right number of params
+  distortionParams.resize(pinholeIntrinsic->getDistortionParams().size(), 0.0);
 
   pinholeIntrinsic->setDistortionParams(distortionParams);
   intrinsic = std::static_pointer_cast<camera::IntrinsicBase>(pinholeIntrinsic);

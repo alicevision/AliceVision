@@ -2,35 +2,46 @@ version: '1.0.{build}'
 
 image: Visual Studio 2015
 
+branches:
+  only:
+    - master
+    - develop  # PRs are built
+
 platform:
   - x64
+
+# environment: 
+#   APPVEYOR_SAVE_CACHE_ON_ERROR: true
 
 configuration:
   - Release
   # - Debug
 
-# TODO: openimageio[libraw] (not available yet on pre-installed vcpkg)
 install:
     - git submodule update --init --recursive
     - cmd: >-
-          call cudaInstallAppveyor.cmd
+         call cudaInstallAppveyor.cmd
+    - cd c:\tools\vcpkg\
+    - git fetch https://github.com/aliceVision/vcpkg.git alicevision_master:alicevision_master
+    - git checkout alicevision_master
+    - .\bootstrap-vcpkg.bat
     - vcpkg upgrade --no-dry-run
     - vcpkg list
     - vcpkg install
           boost-algorithm boost-accumulators boost-atomic boost-container boost-date-time boost-exception boost-filesystem boost-graph boost-log boost-program-options boost-property-tree boost-ptr-container boost-regex boost-serialization boost-system boost-test boost-thread
-          openexr
-          openimageio
-          alembic
-          geogram
-          eigen3
+          openexr 
+          openimageio[libraw] 
+          alembic 
+          geogram 
+          eigen3 
           ceres[suitesparse]
           cuda
           --triplet %PLATFORM%-windows
           --recurse
     - vcpkg list
 
-
 before_build:
+    - cd %APPVEYOR_BUILD_FOLDER%
     - md build
     - cd build
     - cmake .. -G "Visual Studio 14 2015 Win64"
@@ -45,8 +56,8 @@ build:
   project: $(APPVEYOR_BUILD_FOLDER)\build\aliceVision.sln
   verbosity: minimal
 
-# comment the above and uncomment the following to just build the dependencies
-#build_script:
+#comment the above and uncomment the following to just build the dependencies
+# build_script:
 #  - echo "Dependencies installed."
 
 cache:

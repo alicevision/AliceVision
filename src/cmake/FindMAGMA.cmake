@@ -17,6 +17,8 @@
 #If environment variable MAGMA_ROOT is specified, it has same effect as MAGMA_ROOT
 if( NOT MAGMA_ROOT AND NOT $ENV{MAGMA_ROOT} STREQUAL "" )
     set( MAGMA_ROOT $ENV{MAGMA_ROOT} )
+endif()
+if(MAGMA_ROOT)
     # set library directories
     set(MAGMA_LIBRARY_DIRS ${MAGMA_ROOT}/lib)
     # set include directories
