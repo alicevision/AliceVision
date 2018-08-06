@@ -23,7 +23,7 @@ alicevision_add_library(aliceVision_voctree
   SOURCES ${voctree_headers} ${voctree_sources}
   PUBLIC_LINKS
     aliceVision_feature
-    aliceVision_sfm
+    aliceVision_sfmData
     aliceVision_system
     Eigen3::Eigen
   PRIVATE_LINKS

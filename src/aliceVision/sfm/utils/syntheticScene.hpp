@@ -10,7 +10,7 @@
 #include <aliceVision/feature/FeaturesPerView.hpp>
 #include <aliceVision/matching/IndMatch.hpp>
 #include <aliceVision/multiview/NViewDataSet.hpp>
-#include <aliceVision/sfm/SfMData.hpp>
+#include <aliceVision/sfmData/SfMData.hpp>
 
 namespace aliceVision {
 namespace sfm {
@@ -23,7 +23,10 @@ namespace sfm {
  * @param[in] noise
  */
 template <typename NoiseGenerator>
-void generateSyntheticFeatures(feature::FeaturesPerView& out_featuresPerView, feature::EImageDescriberType descType, const SfMData& sfmData, NoiseGenerator& noise)
+void generateSyntheticFeatures(feature::FeaturesPerView& out_featuresPerView,
+                               feature::EImageDescriberType descType,
+                               const sfmData::SfMData& sfmData,
+                               NoiseGenerator& noise)
 {
   assert(descType != feature::EImageDescriberType::UNINITIALIZED);
   std::default_random_engine generator;
@@ -37,12 +40,12 @@ void generateSyntheticFeatures(feature::FeaturesPerView& out_featuresPerView, fe
     }
     for(const auto& it: sfmData.getLandmarks())
     {
-      const Landmark& landmark = it.second;
+      const sfmData::Landmark& landmark = it.second;
 
       for(const auto& obsIt: landmark.observations)
       {
         const IndexT viewId = obsIt.first;
-        const Observation& obs = obsIt.second;
+        const sfmData::Observation& obs = obsIt.second;
         nbFeatPerView[viewId] = std::max(nbFeatPerView[viewId], std::size_t(obs.id_feat+1));
       }
     }
@@ -56,12 +59,12 @@ void generateSyntheticFeatures(feature::FeaturesPerView& out_featuresPerView, fe
   // Fill with the observation values
   for(const auto& it: sfmData.getLandmarks())
   {
-    const Landmark& landmark = it.second;
+    const sfmData::Landmark& landmark = it.second;
 
     for(const auto& obsIt: landmark.observations)
     {
       const IndexT viewId = obsIt.first;
-      const Observation& obs = obsIt.second;
+      const sfmData::Observation& obs = obsIt.second;
 
       out_featuresPerView.getFeaturesPerDesc(viewId)[descType][obs.id_feat] = feature::PointFeature(obs.x(0) + noise(generator), obs.x(1) + noise(generator));
     }
@@ -74,15 +77,15 @@ void generateSyntheticFeatures(feature::FeaturesPerView& out_featuresPerView, fe
  * @param[in] sfmData The synthetic SfM dataset
  * @param[in] descType The desciptor type
  */
-void generateSyntheticMatches(matching::PairwiseMatches& out_pairwiseMatches, const SfMData& sfmData, feature::EImageDescriberType descType);
+void generateSyntheticMatches(matching::PairwiseMatches& out_pairwiseMatches, const sfmData::SfMData& sfmData, feature::EImageDescriberType descType);
 
 // Translate a synthetic scene into a valid SfMData scene
 // As only one intrinsic is defined we used shared intrinsic
-SfMData getInputScene(const NViewDataSet& d, const NViewDatasetConfigurator& config, camera::EINTRINSIC eintrinsic);
+sfmData::SfMData getInputScene(const NViewDataSet& d, const NViewDatasetConfigurator& config, camera::EINTRINSIC eintrinsic);
 
 // Translate a synthetic scene into a valid SfMData scene
 // As only one intrinsic is defined we used shared intrinsic
-SfMData getInputRigScene(const NViewDataSet& d, const NViewDatasetConfigurator& config, camera::EINTRINSIC eintrinsic);
+sfmData::SfMData getInputRigScene(const NViewDataSet& d, const NViewDatasetConfigurator& config, camera::EINTRINSIC eintrinsic);
 
 } // namespace sfm
 } // namespace aliceVision

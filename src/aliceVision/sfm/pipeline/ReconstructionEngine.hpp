@@ -7,7 +7,8 @@
 
 #pragma once
 
-#include <aliceVision/sfm/SfMData.hpp>
+#include <aliceVision/sfmData/SfMData.hpp>
+#include <aliceVision/sfm/colorizeTracks.hpp>
 
 #include <string>
 
@@ -27,7 +28,7 @@ public:
    * @param[in] sfmData The input SfMData of the scene
    * @param[in] outFolder The folder where outputs will be stored
    */
-  ReconstructionEngine(const SfMData& sfmData, const std::string& outFolder)
+  ReconstructionEngine(const sfmData::SfMData& sfmData, const std::string& outFolder)
     : _outputFolder(outFolder)
     , _sfmData(sfmData)
     , _hasFixedIntrinsics(false)
@@ -54,7 +55,7 @@ public:
    * @brief Get the scene SfMData
    * @return SfMData
    */
-  inline const SfMData& getSfMData() const
+  inline const sfmData::SfMData& getSfMData() const
   {
     return _sfmData;
   }
@@ -72,7 +73,7 @@ public:
    * @brief Get the scene SfMData
    * @return SfMData
    */
-  inline SfMData& getSfMData()
+  inline sfmData::SfMData& getSfMData()
   {
     return _sfmData;
   }
@@ -90,7 +91,7 @@ protected:
   /// Output folder where outputs will be stored
   std::string _outputFolder;
   /// Internal SfMData
-  SfMData _sfmData;
+  sfmData::SfMData _sfmData;
   /// Has fixed Intrinsics
   bool _hasFixedIntrinsics;
 };

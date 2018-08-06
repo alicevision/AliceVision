@@ -7,9 +7,9 @@
 
 #pragma once
 
-#include "aliceVision/types.hpp"
-#include "aliceVision/feature/feature.hpp"
-#include "aliceVision/feature/imageDescriberCommon.hpp"
+#include <aliceVision/types.hpp>
+#include <aliceVision/feature/feature.hpp>
+#include <aliceVision/feature/imageDescriberCommon.hpp>
 
 #include <memory>
 #include <random>

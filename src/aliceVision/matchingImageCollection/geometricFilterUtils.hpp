@@ -10,7 +10,7 @@
 #include <aliceVision/matching/IndMatch.hpp>
 #include <aliceVision/feature/FeaturesPerView.hpp>
 #include <aliceVision/camera/IntrinsicBase.hpp>
-#include <aliceVision/sfm/SfMData.hpp>
+#include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/feature/RegionsPerView.hpp>
 
 namespace aliceVision {
@@ -140,13 +140,13 @@ void MatchesPairToMat(const matching::MatchesPerDescType &putativeMatchesPerType
 template<typename MatT >
 void MatchesPairToMat(const Pair &pairIndex,
                       const matching::MatchesPerDescType &putativeMatchesPerType,
-                      const sfm::SfMData *sfmData,
+                      const sfmData::SfMData *sfmData,
                       const feature::RegionsPerView &regionsPerView,
                       const std::vector<feature::EImageDescriberType> &descTypes,
                       MatT &x_I, MatT &x_J)
 {
-  const sfm::View * view_I = sfmData->views.at(pairIndex.first).get();
-  const sfm::View * view_J = sfmData->views.at(pairIndex.second).get();
+  const sfmData::View * view_I = sfmData->views.at(pairIndex.first).get();
+  const sfmData::View * view_J = sfmData->views.at(pairIndex.second).get();
 
   // Retrieve corresponding pair camera intrinsic if any
   const camera::IntrinsicBase * cam_I = sfmData->getIntrinsicPtr(view_I->getIntrinsicId());

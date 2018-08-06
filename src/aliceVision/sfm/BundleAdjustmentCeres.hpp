@@ -7,17 +7,23 @@
 
 #pragma once
 
-#include <aliceVision/sfm/SfMData.hpp>
+#include <aliceVision/types.hpp>
 #include <aliceVision/sfm/BundleAdjustment.hpp>
 #include <aliceVision/sfm/ResidualErrorFunctor.hpp>
+
 #include <ceres/ceres.h>
 
 namespace aliceVision {
+
+namespace sfmData {
+class SfMData;
+} // namespace sfmData
+
 namespace sfm {
 
 /// Create the appropriate cost functor according the provided input camera intrinsic model
-ceres::CostFunction * createCostFunctionFromIntrinsics(camera::IntrinsicBase * intrinsic, const Vec2 & observation);
-ceres::CostFunction * createRigCostFunctionFromIntrinsics(camera::IntrinsicBase * intrinsic, const Vec2 & observation);
+ceres::CostFunction* createCostFunctionFromIntrinsics(camera::IntrinsicBase* intrinsic, const Vec2& observation);
+ceres::CostFunction* createRigCostFunctionFromIntrinsics(camera::IntrinsicBase* intrinsic, const Vec2& observation);
 
 class BundleAdjustmentCeres : public BundleAdjustment
 {
@@ -31,7 +37,8 @@ public:
     ceres::PreconditionerType _preconditioner_type;
     ceres::SparseLinearAlgebraLibraryType _sparse_linear_algebra_library_type;
 
-    BA_options(const bool bVerbose = true, bool bmultithreaded = true);
+    BA_options(const bool verbose = true, bool multithreaded = true);
+
     void setDenseBA();
     void setSparseBA();
   };
@@ -45,18 +52,15 @@ private:
     HashMap<IndexT, std::vector<double> > map_intrinsics;
 
 public:
+
   BundleAdjustmentCeres(BundleAdjustmentCeres::BA_options options = BA_options());
-
-  void createProblem(SfMData& sfm_data, BA_Refine refineOptions, ceres::Problem& problem);
-
-  void createJacobian(SfMData& sfm_data, BA_Refine refineOptions, ceres::CRSMatrix& jacobian);
+  void createProblem(sfmData::SfMData& sfmData, BA_Refine refineOptions, ceres::Problem& problem);
+  void createJacobian(sfmData::SfMData& sfmData, BA_Refine refineOptions, ceres::CRSMatrix& jacobian);
 
   /**
    * @see BundleAdjustment::Adjust
    */
-  bool Adjust(
-    SfMData & sfm_data,
-    BA_Refine refineOptions = BA_REFINE_ALL);
+  bool Adjust(sfmData::SfMData& sfmData, BA_Refine refineOptions = BA_REFINE_ALL);
 };
 
 } // namespace sfm

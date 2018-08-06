@@ -23,7 +23,8 @@ alicevision_add_library(aliceVision_dataio
     aliceVision_camera
     aliceVision_image
   PRIVATE_LINKS
-    aliceVision_sfm
+    aliceVision_sfmData
+    aliceVision_sfmDataIO
     aliceVision_system
     ${Boost_FILESYSTEM_LIBRARY}
 )

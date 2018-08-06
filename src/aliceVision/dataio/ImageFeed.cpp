@@ -5,8 +5,8 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "ImageFeed.hpp"
-#include <aliceVision/sfm/SfMData.hpp>
-#include <aliceVision/sfm/sfmDataIO.hpp>
+#include <aliceVision/sfmData/SfMData.hpp>
+#include <aliceVision/sfmDataIO/sfmDataIO.hpp>
 #include <aliceVision/image/io.hpp>
 
 #include <boost/filesystem.hpp>
@@ -103,7 +103,7 @@ private:
     namespace bf = boost::filesystem;
 
     // get the image
-    const sfm::View *view = _viewIterator->second.get();
+    const sfmData::View *view = _viewIterator->second.get();
     imageName = view->getImagePath();
     image::readImage(imageName, image);
 
@@ -145,8 +145,8 @@ private:
   camera::PinholeRadialK3 _camIntrinsics;
   
   bool _sfmMode = false;
-  sfm::SfMData _sfmdata;
-  sfm::Views::const_iterator _viewIterator;
+  sfmData::SfMData _sfmdata;
+  sfmData::Views::const_iterator _viewIterator;
   unsigned int _currentImageIndex = 0;
 };
 
@@ -173,7 +173,7 @@ ImageFeed::FeederImpl::FeederImpl(const std::string& imagePath, const std::strin
     if(ext == ".json")
     {
       // load the json
-      _isInit = sfm::Load(_sfmdata, imagePath, sfm::ESfMData(sfm::ESfMData::VIEWS | sfm::ESfMData::INTRINSICS));
+      _isInit = sfmDataIO::Load(_sfmdata, imagePath, sfmDataIO::ESfMData(sfmDataIO::ESfMData::VIEWS | sfmDataIO::ESfMData::INTRINSICS));
       _viewIterator = _sfmdata.getViews().begin();
       _sfmMode = true;
     }

@@ -51,7 +51,7 @@ DocId Database::insert(DocId doc_id, const SparseHistogram& document)
   return doc_id;
 }
 
-void Database::sanityCheck(size_t N, std::map<size_t, DocMatches>& matches) const
+void Database::sanityCheck(std::size_t N, std::map<std::size_t, DocMatches>& matches) const
 {
   // if N is equal to zero
   if(N == 0)
@@ -90,7 +90,7 @@ void Database::sanityCheck(size_t N, std::map<size_t, DocMatches>& matches) cons
  * @param[out] matches  IDs and scores for the top N matching database documents.
  * @param[in] distanceMethod the method used to compute distance between histograms.
  */
-void Database::find(const std::vector<Word>& document, size_t N, std::vector<DocMatch>& matches, const std::string &distanceMethod) const
+void Database::find(const std::vector<Word>& document, std::size_t N, std::vector<DocMatch>& matches, const std::string &distanceMethod) const
 {
   SparseHistogram query;
   // from the list of visual words associated with each feature in the document/image
@@ -108,7 +108,7 @@ void Database::find(const std::vector<Word>& document, size_t N, std::vector<Doc
  * @param[out] matches  IDs and scores for the top N matching database documents.
  * @param[in] distanceMethod the method used to compute distance between histograms.
  */
-void Database::find( const SparseHistogram& query, size_t N, std::vector<DocMatch>& matches, const std::string &distanceMethod) const
+void Database::find( const SparseHistogram& query, std::size_t N, std::vector<DocMatch>& matches, const std::string &distanceMethod) const
 {
   // Accumulate the best N matches
   using bestN_tag = boost::accumulators::tag::tail<boost::accumulators::left>;
@@ -138,10 +138,10 @@ void Database::find( const SparseHistogram& query, size_t N, std::vector<DocMatc
 void Database::computeTfIdfWeights(float default_weight)
 {
   float N = (float) database_.size();
-  size_t num_words = word_files_.size();
-  for(size_t i = 0; i < num_words; ++i)
+  std::size_t num_words = word_files_.size();
+  for(std::size_t i = 0; i < num_words; ++i)
   {
-    size_t Ni = word_files_[i].size();
+    std::size_t Ni = word_files_[i].size();
     if(Ni != 0)
       word_weights_[i] = std::log(N / Ni);
     else
@@ -196,7 +196,7 @@ void Database::loadWeights(const std::string& file)
  * @brief Return the size of the database in terms of number of documents
  * @return the number of documents
  */
-size_t Database::size() const
+std::size_t Database::size() const
 {
   return database_.size();
 }

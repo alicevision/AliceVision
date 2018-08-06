@@ -18,6 +18,8 @@ namespace fs = boost::filesystem;
 namespace aliceVision {
 namespace sfm {
 
+using namespace sfmData;
+
 std::unique_ptr<feature::Regions> loadRegions(const std::vector<std::string>& folders,
                                               IndexT viewId,
                                               const feature::ImageDescriber& imageDescriber)
@@ -205,6 +207,5 @@ bool loadFeaturesPerView(feature::FeaturesPerView& featuresPerView,
   return !invalid;
 }
 
-  
 } // namespace sfm
 } // namespace aliceVision

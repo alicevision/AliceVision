@@ -8,7 +8,7 @@
 
 #include <aliceVision/config.hpp>
 #include <aliceVision/feature/ImageDescriber.hpp>
-#include <aliceVision/sfm/SfMData.hpp>
+#include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/sfm/pipeline/localization/SfMLocalizer.hpp>
 #include <aliceVision/stl/mapUtils.hpp>
 #include <aliceVision/voctree/VocabularyTree.hpp>
@@ -95,7 +95,7 @@ public:
    *
    * It enable the use of combined SIFT and CCTAG features.
    */
-  VoctreeLocalizer(const sfm::SfMData &sfmData,
+  VoctreeLocalizer(const sfmData::SfMData &sfmData,
                    const std::string &descriptorsFolder,
                    const std::string &vocTreeFilepath,
                    const std::string &weightsFilepath,
@@ -324,7 +324,7 @@ private:
    * deprecated.. now inside initDatabase
    */
   bool loadReconstructionDescriptors(
-    const sfm::SfMData & sfm_data,
+    const sfmData::SfMData & sfm_data,
     const std::string & feat_directory);
   
   

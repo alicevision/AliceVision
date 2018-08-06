@@ -15,10 +15,10 @@
 #include <algorithm>
 #include <vector>
 
-using namespace lemon;
-
 namespace aliceVision {
 namespace graph {
+
+using namespace lemon;
 
 /// Simple container for tuple of three value
 /// It is used to store the node id of triplets of a graph.

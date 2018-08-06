@@ -8,7 +8,7 @@
 #pragma once
 
 #include <aliceVision/types.hpp>
-#include <aliceVision/sfm/SfMData.hpp>
+#include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/feature/ImageDescriber.hpp>
 #include <aliceVision/feature/imageDescriberCommon.hpp>
 #include <aliceVision/feature/RegionsPerView.hpp>
@@ -47,7 +47,7 @@ std::unique_ptr<feature::Regions> loadFeatures(const std::vector<std::string>& f
  * @return true if the regions are correctlty loaded
  */
 bool loadRegionsPerView(feature::RegionsPerView& regionsPerView,
-                        const SfMData& sfmData,
+                        const sfmData::SfMData& sfmData,
                         const std::vector<std::string>& folders,
                         const std::vector<feature::EImageDescriberType>& imageDescriberTypes,
                         const std::set<IndexT>& filter = std::set<IndexT>());
@@ -61,7 +61,7 @@ bool loadRegionsPerView(feature::RegionsPerView& regionsPerView,
  * @return true if the features are correctlty loaded
  */
 bool loadFeaturesPerView(feature::FeaturesPerView& featuresPerView,
-                         const SfMData& sfmData,
+                         const sfmData::SfMData& sfmData,
                          const std::vector<std::string>& folders,
                          const std::vector<feature::EImageDescriberType>& imageDescriberTypes);
 

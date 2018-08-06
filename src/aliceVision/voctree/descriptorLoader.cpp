@@ -5,7 +5,7 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "descriptorLoader.hpp"
-#include <aliceVision/sfm/sfmDataIO.hpp>
+#include <aliceVision/sfmDataIO/sfmDataIO.hpp>
 #include <aliceVision/system/Logger.hpp>
 
 #include <boost/algorithm/string/predicate.hpp>
@@ -13,7 +13,7 @@
 namespace aliceVision {
 namespace voctree {
 
-void getInfoBinFile(const std::string &path, int dim, size_t &numDescriptors, int &bytesPerElement)
+void getInfoBinFile(const std::string &path, int dim, std::size_t &numDescriptors, int &bytesPerElement)
 {
   std::fstream fs;
 
@@ -42,7 +42,7 @@ void getInfoBinFile(const std::string &path, int dim, size_t &numDescriptors, in
   fs.seekg(0, fs.beg);
 
   // get the number of descriptors
-  fs.read((char*) &numDescriptors, sizeof (size_t));
+  fs.read((char*) &numDescriptors, sizeof (std::size_t));
 
   if(numDescriptors > 0)
   {
@@ -55,7 +55,7 @@ void getInfoBinFile(const std::string &path, int dim, size_t &numDescriptors, in
   }
 }
 
-void getListOfDescriptorFiles(const sfm::SfMData& sfmData, const std::vector<std::string>& featuresFolders, std::map<IndexT, std::string>& descriptorsFiles)
+void getListOfDescriptorFiles(const sfmData::SfMData& sfmData, const std::vector<std::string>& featuresFolders, std::map<IndexT, std::string>& descriptorsFiles)
 {
   namespace bfs = boost::filesystem;
 

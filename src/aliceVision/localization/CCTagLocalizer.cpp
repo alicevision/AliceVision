@@ -12,7 +12,7 @@
 #include <aliceVision/config.hpp>
 #include <aliceVision/feature/svgVisualization.hpp>
 #include <aliceVision/matching/IndMatch.hpp>
-#include <aliceVision/sfm/sfmDataIO.hpp>
+#include <aliceVision/sfmDataIO/sfmDataIO.hpp>
 #include <aliceVision/sfm/pipeline/regionsIO.hpp>
 #include <aliceVision/sfm/pipeline/RelativePoseInfo.hpp>
 
@@ -30,7 +30,7 @@
 namespace aliceVision {
 namespace localization {
 
-CCTagLocalizer::CCTagLocalizer(const sfm::SfMData &sfmData,
+CCTagLocalizer::CCTagLocalizer(const sfmData::SfMData &sfmData,
                                const std::string &descriptorsFolder)
     : _cudaPipe( 0 )
 {
@@ -69,7 +69,7 @@ CCTagLocalizer::CCTagLocalizer(const sfm::SfMData &sfmData,
 }
 
 
-bool CCTagLocalizer::loadReconstructionDescriptors(const sfm::SfMData & sfm_data,
+bool CCTagLocalizer::loadReconstructionDescriptors(const sfmData::SfMData & sfm_data,
                                                    const std::string & feat_directory)
 {
   ALICEVISION_LOG_DEBUG("Build observations per view");
@@ -79,12 +79,12 @@ bool CCTagLocalizer::loadReconstructionDescriptors(const sfm::SfMData & sfm_data
   for(const auto& landmarkValue : _sfm_data.structure)
   {
     IndexT trackId = landmarkValue.first;
-    const sfm::Landmark& landmark = landmarkValue.second;
+    const sfmData::Landmark& landmark = landmarkValue.second;
 
     for(const auto& obs : landmark.observations)
     {
       const IndexT viewId = obs.first;
-      const sfm::Observation& obs2d = obs.second;
+      const sfmData::Observation& obs2d = obs.second;
       observationsPerView[viewId][landmark.descType].emplace_back(obs2d.id_feat, trackId);
     }
   }
@@ -791,7 +791,7 @@ void CCTagLocalizer::getAllAssociations(const feature::CCTAG_Regions &queryRegio
     if(!param._visualDebug.empty() && !imagePath.empty())
     {
       namespace bfs = boost::filesystem;
-      const sfm::View *mview = _sfm_data.getViews().at(keyframeId).get();
+      const sfmData::View *mview = _sfm_data.getViews().at(keyframeId).get();
       const std::string queryImage = bfs::path(imagePath).stem().string();
       const std::string matchedImage = bfs::path(mview->getImagePath()).stem().string();
       const std::string matchedPath = mview->getImagePath();

@@ -5,10 +5,12 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
+#include <aliceVision/sfmData/SfMData.hpp>
+#include <aliceVision/sfmDataIO/sfmDataIO.hpp>
 #include <aliceVision/sfm/sfm.hpp>
-#include <aliceVision/config.hpp>
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/cmdline.hpp>
+#include <aliceVision/config.hpp>
 
 #include <software/utils/precisionEvaluationToGt.hpp>
 #include <software/utils/sfmHelper/sfmPlyHelper.hpp>
@@ -26,9 +28,7 @@
 #define ALICEVISION_SOFTWARE_VERSION_MAJOR 1
 #define ALICEVISION_SOFTWARE_VERSION_MINOR 0
 
-using namespace std;
 using namespace aliceVision;
-using namespace aliceVision::sfm;
 
 namespace po = boost::program_options;
 namespace fs = boost::filesystem;
@@ -101,9 +101,9 @@ int main(int argc, char **argv)
     fs::create_directory(outputFolder);
 
   // load GT camera rotations & positions [R|C]:
-  SfMData sfmData_gt;
+  sfmData::SfMData sfmData_gt;
 
-  if (!Load(sfmData_gt, gtFilename, ESfMData(VIEWS|INTRINSICS|EXTRINSICS)))
+  if(!sfmDataIO::Load(sfmData_gt, gtFilename, sfmDataIO::ESfMData(sfmDataIO::VIEWS|sfmDataIO::INTRINSICS|sfmDataIO::EXTRINSICS)))
   {
     ALICEVISION_LOG_ERROR("The input SfMData file '"<< gtFilename << "' cannot be read");
     return EXIT_FAILURE;
@@ -111,8 +111,8 @@ int main(int argc, char **argv)
   ALICEVISION_LOG_INFO(sfmData_gt.getPoses().size() << " gt cameras have been found");
 
   // load the camera that we have to evaluate
-  SfMData sfmData;
-  if (!Load(sfmData, sfmDataFilename, ESfMData(VIEWS|INTRINSICS|EXTRINSICS)))
+  sfmData::SfMData sfmData;
+  if(!sfmDataIO::Load(sfmData, sfmDataFilename, sfmDataIO::ESfMData(sfmDataIO::VIEWS|sfmDataIO::INTRINSICS|sfmDataIO::EXTRINSICS)))
   {
     ALICEVISION_LOG_ERROR("The input SfMData file '"<< sfmDataFilename << "' cannot be read");
     return EXIT_FAILURE;
@@ -158,7 +158,7 @@ int main(int argc, char **argv)
   htmlDocument::htmlDocumentStream _htmlDocStream("aliceVision Quality evaluation.");
   EvaluteToGT(vec_camPosGT, vec_C, vec_camRotGT, vec_camRot, outputFolder, &_htmlDocStream);
 
-  ofstream htmlFileStream((fs::path(outputFolder) / "ExternalCalib_Report.html").string());
+  std::ofstream htmlFileStream((fs::path(outputFolder) / "ExternalCalib_Report.html").string());
   htmlFileStream << _htmlDocStream.getDoc();
 
   return EXIT_SUCCESS;

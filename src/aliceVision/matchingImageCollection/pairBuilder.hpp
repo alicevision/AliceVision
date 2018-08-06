@@ -8,14 +8,14 @@
 #pragma once
 
 #include <aliceVision/types.hpp>
-#include <aliceVision/sfm/SfMData.hpp>
+#include <aliceVision/sfmData/SfMData.hpp>
 
 #include <algorithm>
 
 namespace aliceVision {
 
 /// Generate all the (I,J) pairs of the upper diagonal of the NxN matrix
-PairSet exhaustivePairs(const sfm::Views& views, int rangeStart=-1, int rangeSize=0);
+PairSet exhaustivePairs(const sfmData::Views& views, int rangeStart=-1, int rangeSize=0);
 
 /// Load a set of PairSet from a file
 /// I J K L (pair that link I)

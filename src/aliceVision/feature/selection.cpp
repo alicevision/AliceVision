@@ -99,7 +99,7 @@ void thresholdMatches(aliceVision::matching::IndMatches& outputMatches, const st
 void matchesGridFiltering(const aliceVision::feature::FeatRegions<aliceVision::feature::SIOPointFeature>& lRegions, 
         const aliceVision::feature::FeatRegions<aliceVision::feature::SIOPointFeature>& rRegions, 
         const aliceVision::Pair& indexImagePair,
-        const aliceVision::sfm::SfMData sfm_data, 
+        const aliceVision::sfmData::SfMData sfm_data, 
         aliceVision::matching::IndMatches& outMatches)
 {
   const std::size_t lWidth = sfm_data.getViews().at(indexImagePair.first)->getWidth();

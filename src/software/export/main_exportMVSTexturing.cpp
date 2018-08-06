@@ -5,7 +5,8 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
-#include <aliceVision/sfm/sfm.hpp>
+#include <aliceVision/sfmData/SfMData.hpp>
+#include <aliceVision/sfmDataIO/sfmDataIO.hpp>
 #include <aliceVision/image/all.hpp>
 
 #include <boost/program_options.hpp>
@@ -21,7 +22,7 @@
 using namespace aliceVision;
 using namespace aliceVision::camera;
 using namespace aliceVision::geometry;
-using namespace aliceVision::sfm;
+using namespace aliceVision::sfmData;
 
 namespace po = boost::program_options;
 namespace fs = boost::filesystem;
@@ -86,7 +87,8 @@ int main(int argc, char **argv)
 
   // Read the SfM scene
   SfMData sfm_data;
-  if (!Load(sfm_data, sfmDataFilename, ESfMData(VIEWS|INTRINSICS|EXTRINSICS))) {
+  if(!sfmDataIO::Load(sfm_data, sfmDataFilename, sfmDataIO::ESfMData(sfmDataIO::VIEWS|sfmDataIO::INTRINSICS|sfmDataIO::EXTRINSICS)))
+  {
     std::cerr << std::endl
       << "The input SfMData file \""<< sfmDataFilename << "\" cannot be read." << std::endl;
     return EXIT_FAILURE;

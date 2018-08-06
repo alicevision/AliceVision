@@ -4,11 +4,12 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
-#include <aliceVision/sfm/sfm.hpp>
+#include <aliceVision/sfmData/SfMData.hpp>
+#include <aliceVision/sfmDataIO/sfmDataIO.hpp>
 #include <aliceVision/sfm/utils/alignment.hpp>
-#include <aliceVision/config.hpp>
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/cmdline.hpp>
+#include <aliceVision/config.hpp>
 
 #include <boost/program_options.hpp>
 
@@ -84,16 +85,16 @@ int main(int argc, char **argv)
   system::Logger::get()->setLogLevel(verboseLevel);
 
   // Load input scene
-  SfMData sfmDataIn;
-  if(!Load(sfmDataIn, sfmDataFilename, ESfMData(ALL)))
+  sfmData::SfMData sfmDataIn;
+  if(!sfmDataIO::Load(sfmDataIn, sfmDataFilename, sfmDataIO::ESfMData::ALL))
   {
     ALICEVISION_LOG_ERROR("The input SfMData file '" << sfmDataFilename << "' cannot be read");
     return EXIT_FAILURE;
   }
 
   // Load reference scene
-  SfMData sfmDataInRef;
-  if (!Load(sfmDataInRef, sfmDataReferenceFilename, ESfMData(ALL)))
+  sfmData::SfMData sfmDataInRef;
+  if(!sfmDataIO::Load(sfmDataInRef, sfmDataReferenceFilename, sfmDataIO::ESfMData::ALL))
   {
     ALICEVISION_LOG_ERROR("The reference SfMData file '" << sfmDataReferenceFilename << "' cannot be read");
     return EXIT_FAILURE;
@@ -104,7 +105,7 @@ int main(int argc, char **argv)
   double S;
   Mat3 R;
   Vec3 t;
-  bool hasValidSimilarity = computeSimilarity(sfmDataIn, sfmDataInRef, &S, &R, &t);
+  bool hasValidSimilarity = sfm::computeSimilarity(sfmDataIn, sfmDataInRef, &S, &R, &t);
 
   if(!hasValidSimilarity)
   {
@@ -125,12 +126,12 @@ int main(int argc, char **argv)
     ALICEVISION_LOG_INFO(ss.str());
   }
 
-  applyTransform(sfmDataIn, S, R, t);
+  sfm::applyTransform(sfmDataIn, S, R, t);
 
   ALICEVISION_LOG_INFO("Save into '" << outSfMDataFilename << "'");
   
   // Export the SfMData scene in the expected format
-  if(!Save(sfmDataIn, outSfMDataFilename, ESfMData::ALL))
+  if(!sfmDataIO::Save(sfmDataIn, outSfMDataFilename, sfmDataIO::ESfMData::ALL))
   {
     ALICEVISION_LOG_ERROR("An error occurred while trying to save '" << outSfMDataFilename << "'");
     return EXIT_FAILURE;

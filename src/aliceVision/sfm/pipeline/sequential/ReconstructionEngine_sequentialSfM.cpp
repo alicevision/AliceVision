@@ -8,10 +8,10 @@
 #include <aliceVision/sfm/pipeline/sequential/ReconstructionEngine_sequentialSfM.hpp>
 #include <aliceVision/sfm/pipeline/RelativePoseInfo.hpp>
 #include <aliceVision/sfm/utils/statistics.hpp>
-#include <aliceVision/sfm/sfmDataIO.hpp>
+#include <aliceVision/sfmDataIO/sfmDataIO.hpp>
 #include <aliceVision/sfm/BundleAdjustmentCeres.hpp>
 #include <aliceVision/sfm/LocalBundleAdjustmentCeres.hpp>
-#include <aliceVision/sfm/sfmDataFilters.hpp>
+#include <aliceVision/sfm/sfmFilters.hpp>
 #include <aliceVision/feature/FeaturesPerView.hpp>
 #include <aliceVision/matching/IndMatch.hpp>
 #include <aliceVision/multiview/essential.hpp>
@@ -48,6 +48,7 @@ namespace sfm {
 
 using namespace aliceVision::geometry;
 using namespace aliceVision::camera;
+using namespace aliceVision::sfmData;
 
 /**
  * @brief Compute indexes of all features in a fixed size pyramid grid.

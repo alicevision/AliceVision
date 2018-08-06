@@ -49,7 +49,7 @@ struct Track
 
 /// A track is a collection of {trackId, Track}
 typedef stl::flat_map<std::size_t, Track> TracksMap;
-typedef std::vector<size_t> TrackIdSet;
+typedef std::vector<std::size_t> TrackIdSet;
 
 /**
  * @brief Data structure that contains for each features of each view, its corresponding cell positions for each level of the pyramid, i.e.
@@ -338,9 +338,9 @@ inline bool getFeatureIdInViewPerTrack(const TracksMap& allTracks,
 
 struct FunctorMapFirstEqual : public std::unary_function <TracksMap , bool>
 {
-  size_t id;
-  FunctorMapFirstEqual(size_t val):id(val){};
-  bool operator()(const std::pair<size_t, Track > & val) {
+  std::size_t id;
+  FunctorMapFirstEqual(std::size_t val):id(val){};
+  bool operator()(const std::pair<std::size_t, Track > & val) {
     return ( id == val.first);
   }
 };
@@ -394,7 +394,7 @@ inline void tracksLength(const TracksMap& tracks,
 {
   for(TracksMap::const_iterator iterT = tracks.begin(); iterT != tracks.end(); ++iterT)
   {
-    const size_t trLength = iterT->second.featPerView.size();
+    const std::size_t trLength = iterT->second.featPerView.size();
 
     if(occurenceTrackLength.end() == occurenceTrackLength.find(trLength))
       occurenceTrackLength[trLength] = 1;

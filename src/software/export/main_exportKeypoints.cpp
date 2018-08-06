@@ -5,14 +5,15 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
+#include <aliceVision/sfmData/SfMData.hpp>
+#include <aliceVision/sfmDataIO/sfmDataIO.hpp>
 #include <aliceVision/matching/IndMatch.hpp>
 #include <aliceVision/matching/io.hpp>
 #include <aliceVision/feature/svgVisualization.hpp>
-#include <aliceVision/image/all.hpp>
-#include <aliceVision/sfm/sfm.hpp>
 #include <aliceVision/sfm/pipeline/regionsIO.hpp>
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/cmdline.hpp>
+#include <aliceVision/image/all.hpp>
 
 #include <dependencies/vectorGraphics/svgDrawer.hpp>
 
@@ -34,7 +35,7 @@
 using namespace aliceVision;
 using namespace aliceVision::feature;
 using namespace aliceVision::matching;
-using namespace aliceVision::sfm;
+using namespace aliceVision::sfmData;
 using namespace svg;
 
 namespace po = boost::program_options;
@@ -107,7 +108,7 @@ int main(int argc, char ** argv)
   // set verbose level
   system::Logger::get()->setLogLevel(verboseLevel);
 
-  if (outputFolder.empty())
+  if(outputFolder.empty())
   {
     ALICEVISION_LOG_ERROR("Invalid output folder");
     return EXIT_FAILURE;
@@ -116,7 +117,8 @@ int main(int argc, char ** argv)
   // read SfM Scene (image view names)
 
   SfMData sfmData;
-  if (!sfm::Load(sfmData, sfmDataFilename, sfm::ESfMData(VIEWS|INTRINSICS))) {
+  if(!sfmDataIO::Load(sfmData, sfmDataFilename, sfmDataIO::ESfMData(sfmDataIO::VIEWS|sfmDataIO::INTRINSICS)))
+  {
     ALICEVISION_LOG_ERROR("The input SfMData file '"<< sfmDataFilename << "' cannot be read.");
     return EXIT_FAILURE;
   }
@@ -127,7 +129,7 @@ int main(int argc, char ** argv)
 
   // read the features
   feature::FeaturesPerView featuresPerView;
-  if (!sfm::loadFeaturesPerView(featuresPerView, sfmData, featuresFolders, describerMethodTypes))
+  if(!sfm::loadFeaturesPerView(featuresPerView, sfmData, featuresFolders, describerMethodTypes))
   {
     ALICEVISION_LOG_ERROR("Invalid features");
     return EXIT_FAILURE;

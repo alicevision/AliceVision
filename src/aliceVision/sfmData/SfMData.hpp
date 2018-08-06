@@ -1,0 +1,431 @@
+// This file is part of the AliceVision project.
+// Copyright (c) 2016 AliceVision contributors.
+// Copyright (c) 2012 openMVG contributors.
+// This Source Code Form is subject to the terms of the Mozilla Public License,
+// v. 2.0. If a copy of the MPL was not distributed with this file,
+// You can obtain one at https://mozilla.org/MPL/2.0/.
+
+#pragma once
+
+#include <aliceVision/sfmData/CameraPose.hpp>
+#include <aliceVision/sfmData/Landmark.hpp>
+#include <aliceVision/sfmData/View.hpp>
+#include <aliceVision/sfmData/Rig.hpp>
+#include <aliceVision/camera/camera.hpp>
+#include <aliceVision/types.hpp>
+
+#include <stdexcept>
+#include <cassert>
+
+namespace aliceVision {
+namespace sfmData {
+
+/// Define a collection of View
+using Views = HashMap<IndexT, std::shared_ptr<View> >;
+
+/// Define a collection of Pose (indexed by view.getPoseId())
+using Poses = HashMap<IndexT, CameraPose>;
+
+/// Define a collection of IntrinsicParameter (indexed by view.getIntrinsicId())
+using Intrinsics = HashMap<IndexT, std::shared_ptr<camera::IntrinsicBase> >;
+
+/// Define a collection of landmarks are indexed by their TrackId
+using Landmarks = HashMap<IndexT, Landmark>;
+
+/// Define a collection of Rig
+using Rigs = std::map<IndexT, Rig>;
+
+/// Define uncertainty per pose
+using PosesUncertainty = HashMap<IndexT, Vec6>;
+
+/// Define uncertainty per landmark
+using LandmarksUncertainty = HashMap<IndexT, Vec3>;
+
+/**
+ * @brief SfMData container
+ * Store structure and camera properties
+ */
+class SfMData
+{
+public:
+  /// Considered views
+  Views views;
+  /// Considered camera intrinsics (indexed by view.getIntrinsicId())
+  Intrinsics intrinsics;
+  /// Structure (3D points with their 2D observations)
+  Landmarks structure;
+  /// Controls points (stored as Landmarks (id_feat has no meaning here))
+  Landmarks control_points;
+  /// Uncertainty per pose
+  PosesUncertainty _posesUncertainty;
+  /// Uncertainty per landmark
+  LandmarksUncertainty _landmarksUncertainty;
+
+  // Operators
+
+  bool operator==(const SfMData& other) const;
+
+  // Accessors
+
+  /**
+   * @brief Get views
+   * @return views
+   */
+  const Views& getViews() const {return views;}
+  Views& getViews() {return views;}
+
+  /**
+   * @brief Get poses
+   * @return poses
+   */
+  const Poses& getPoses() const {return _poses;}
+  Poses& getPoses() {return _poses;}
+
+  /**
+   * @brief Get rigs
+   * @return rigs
+   */
+  const Rigs& getRigs() const {return _rigs;}
+  Rigs& getRigs() {return _rigs;}
+
+  /**
+   * @brief Get intrinsics
+   * @return intrinsics
+   */
+  const Intrinsics& getIntrinsics() const {return intrinsics;}
+  Intrinsics& getIntrinsics() {return intrinsics;}
+
+  /**
+   * @brief Get landmarks
+   * @return landmarks
+   */
+  const Landmarks& getLandmarks() const {return structure;}
+  Landmarks& getLandmarks() {return structure;}
+
+  /**
+   * @brief Get control points
+   * @return control points
+   */
+  const Landmarks& getControlPoints() const {return control_points;}
+  Landmarks& getControlPoints() {return control_points;}
+
+  /**
+   * @brief Get relative features folder paths
+   * @return features folders paths
+   */
+  const std::vector<std::string>& getRelativeFeaturesFolders() const
+  {
+    return _featuresFolders;
+  }
+
+  /**
+   * @brief Get relative matches folder paths
+   * @return matches folder paths
+   */
+  const std::vector<std::string>& getRelativeMatchesFolders() const
+  {
+    return _matchesFolders;
+  }
+
+  /**
+   * @brief Get absolute features folder paths
+   * @return features folders paths
+   */
+  std::vector<std::string> getFeaturesFolders() const;
+
+  /**
+   * @brief Get absolute matches folder paths
+   * @return matches folder paths
+   */
+  std::vector<std::string> getMatchesFolders() const;
+
+  /**
+   * @brief List the view indexes that have valid camera intrinsic and pose.
+   * @return view indexes list
+   */
+  std::set<IndexT> getValidViews() const;
+
+  /**
+   * @brief List the intrinsic indexes that have valid camera intrinsic and pose.
+   * @return intrinsic indexes list
+   */
+  std::set<IndexT> getReconstructedIntrinsics() const;
+
+  /**
+   * @brief Return a pointer to an intrinsic if available or nullptr otherwise.
+   * @param[in] intrinsicId
+   */
+  const camera::IntrinsicBase* getIntrinsicPtr(IndexT intrinsicId) const
+  {
+    if(intrinsics.count(intrinsicId))
+      return intrinsics.at(intrinsicId).get();
+    return nullptr;
+  }
+
+  /**
+   * @brief Return a pointer to an intrinsic if available or nullptr otherwise.
+   * @param[in] intrinsicId
+   */
+  camera::IntrinsicBase* getIntrinsicPtr(IndexT intrinsicId)
+  {
+    if(intrinsics.count(intrinsicId))
+      return intrinsics.at(intrinsicId).get();
+    return nullptr;
+  }
+
+  /**
+   * @brief Return a shared pointer to an intrinsic if available or nullptr otherwise.
+   * @param[in] intrinsicId
+   */
+  std::shared_ptr<camera::IntrinsicBase> getIntrinsicsharedPtr(IndexT intrinsicId)
+  {
+    if(intrinsics.count(intrinsicId))
+      return intrinsics.at(intrinsicId);
+    return nullptr;
+  }
+
+  /**
+   * @brief Get a set of views keys
+   * @return set of views keys
+   */
+  std::set<IndexT> getViewsKeys() const
+  {
+    std::set<IndexT> viewKeys;
+    for(auto v: views)
+        viewKeys.insert(v.first);
+    return viewKeys;
+  }
+
+  /**
+   * @brief Check if the given view have defined intrinsic and pose
+   * @param[in] view The given view
+   * @return true if intrinsic and pose defined
+   */
+  bool isPoseAndIntrinsicDefined(const View* view) const
+  {
+    if (view == nullptr)
+      return false;
+    return (
+      view->getIntrinsicId() != UndefinedIndexT &&
+      view->getPoseId() != UndefinedIndexT &&
+      (!view->isPartOfRig() || getRigSubPose(*view).status != ERigSubPoseStatus::UNINITIALIZED) &&
+      intrinsics.find(view->getIntrinsicId()) != intrinsics.end() &&
+      _poses.find(view->getPoseId()) != _poses.end());
+  }
+  
+  /**
+   * @brief Check if the given view have defined intrinsic and pose
+   * @param[in] viewID The given viewID
+   * @return true if intrinsic and pose defined
+   */
+  bool isPoseAndIntrinsicDefined(IndexT viewId) const
+  { 
+    return isPoseAndIntrinsicDefined(views.at(viewId).get());
+  }
+
+  /**
+   * @brief Check if the given view has an existing pose
+   * @param[in] view The given view
+   * @return true if the pose exists
+   */
+  bool existsPose(const View& view) const
+  {
+     return (_poses.find(view.getPoseId()) != _poses.end());
+  }
+
+  /**
+   * @brief Gives the pose of the input view. If this view is part of a rig, it returns rigPose + rigSubPose.
+   * @param[in] view The given view
+   *
+   * @warning: This function returns a CameraPose (a temporary object and not a reference),
+   *           because in the RIG context, this pose is the composition of the rig pose and the sub-pose.
+   */
+  const CameraPose getPose(const View& view) const
+  {
+    // check the view has valid pose / rig etc
+    if(!view.isPartOfRig())
+    {
+      return _poses.at(view.getPoseId());
+    }
+
+    // get the pose of the rig
+    CameraPose pose = getRigPose(view);
+
+    // multiply rig pose by camera subpose
+    pose.setTransform(getRigSubPose(view).pose * pose.getTransform());
+
+    return  pose;
+  }
+
+  /**
+   * @brief  Gives the pose with the given pose id.
+   * @param[in] poseId The given pose id
+   */
+  const CameraPose& getAbsolutePose(IndexT poseId) const
+  {
+    return _poses.at(poseId);
+  }
+
+  /**
+   * @brief Get the rig of the given view
+   * @param[in] view The given view
+   * @return rig of the given view
+   */
+  const Rig& getRig(const View& view) const
+  {
+    assert(view.isPartOfRig());
+    return _rigs.at(view.getRigId());
+  }
+
+  /**
+   * @brief Add the given features Folder
+   * @param[in] featuresFolder The given features folder
+   */
+  void addFeaturesFolder(const std::string& featuresFolder)
+  {
+    _featuresFolders.emplace_back(featuresFolder);
+  }
+
+  /**
+   * @brief A the given matches Folder
+   * @param[in] matchesFolder The given mathes folder
+   */
+  void addMatchesFolder(const std::string& matchesFolder)
+  {
+    _matchesFolders.emplace_back(matchesFolder);
+  }
+
+  /**
+   * @brief Set the given features folders
+   * @param[in] featuresFolders The given features folders
+   */
+  void setFeaturesFolders(const std::vector<std::string>& featuresFolders)
+  {
+    _featuresFolders = featuresFolders;
+  }
+
+  /**
+   * @brief Set the given mathes folders
+   * @param[in] matchesFolders The given mathes folders
+   */
+  void setMatchesFolders(const std::vector<std::string>& matchesFolders)
+  {
+    _matchesFolders = matchesFolders;
+  }
+
+  /**
+   * @brief Set the SfMData file folder absolute path
+   * @param[in] path The absolute path to the SfMData file folder
+   */
+  void setAbsolutePath(const std::string& path)
+  {
+    _absolutePath = path;
+  }
+
+  /**
+   * @brief Set the given pose for the given view
+   * if the view is part of a rig, this method update rig pose/sub-pose
+   * @param[in] view The given view
+   * @param[in] pose The given pose
+   */
+  void setPose(const View& view, const CameraPose& pose);
+
+
+  /**
+   * @brief Set the given pose for the given poseId
+   * @param[in] poseId The given poseId
+   * @param[in] pose The given pose
+   */
+  void setAbsolutePose(IndexT poseId, const CameraPose& pose)
+  {
+    _poses[poseId] = pose;
+  }
+
+  /**
+   * @brief Erase yhe pose for the given poseId
+   * @param[in] poseId The given poseId
+   */
+  void erasePose(IndexT poseId)
+  {
+    auto it =_poses.find(poseId);
+    if(it != _poses.end())
+      _poses.erase(it);
+    else
+      throw std::out_of_range(std::string("Can't erase unfind pose ") + std::to_string(poseId));
+  }
+
+  /**
+   * @brief Reset rigs sub-poses parameters
+   */
+  void resetRigs()
+  {
+    for(auto rigIt : _rigs)
+      rigIt.second.reset();
+  }
+
+  /**
+   * @brief Insert data from the given sfmData if possible.
+   * note: This operation doesn't override existing data.
+   * @param[in] sfmData A given SfMData
+   */
+  void combine(const SfMData& sfmData);
+
+private:
+  /// Absolute path to the SfMData file (should not be saved)
+  std::string _absolutePath;
+  /// Features folders path
+  std::vector<std::string> _featuresFolders;
+  /// Matches folders path
+  std::vector<std::string> _matchesFolders;
+  /// Considered poses (indexed by view.getPoseId())
+  Poses _poses;
+  /// Considered rigs
+  Rigs _rigs;
+
+  /**
+   * @brief Get Rig pose of a given camera view
+   * @param[in] view The given view
+   * @return Rig pose of the given camera view
+   */
+  const CameraPose& getRigPose(const View& view) const
+  {
+    return _poses.at(view.getPoseId());
+  }
+
+  /**
+   * @brief Get Rig subPose of a given camera view
+   * @param[in] view The given view
+   * @return Rig subPose of the given camera view
+   */
+  const RigSubPose& getRigSubPose(const View& view) const
+  {
+    assert(view.isPartOfRig());
+    const Rig& rig = _rigs.at(view.getRigId());
+    return rig.getSubPose(view.getSubPoseId());
+  }
+
+  /**
+   * @brief Get Rig pose of a given camera view
+   * @param[in] view The given view
+   * @return Rig pose of the given camera view
+   */
+  CameraPose& getRigPose(const View& view)
+  {
+    return _poses.at(view.getPoseId());
+  }
+
+  /**
+   * @brief Get Rig subPose of a given camera view
+   * @param[in] view The given view
+   * @return Rig subPose of the given camera view
+   */
+  RigSubPose& getRigSubPose(const View& view)
+  {
+    assert(view.isPartOfRig());
+    Rig& rig = _rigs.at(view.getRigId());
+    return rig.getSubPose(view.getSubPoseId());
+  }
+};
+
+} // namespace sfmData
+} // namespace aliceVision

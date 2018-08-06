@@ -10,7 +10,7 @@
 #include "aliceVision/matching/IndMatch.hpp"
 #include "aliceVision/matchingImageCollection/GeometricFilterMatrix.hpp"
 #include "aliceVision/matchingImageCollection/geometricFilterUtils.hpp"
-#include "aliceVision/sfm/SfMData.hpp"
+#include "aliceVision/sfmData/SfMData.hpp"
 
 #include <Eigen/Geometry>
 #include <boost/filesystem.hpp>
@@ -137,8 +137,8 @@ void filterMatchesByHGrowing(const std::vector<feature::SIOPointFeature>& siofea
  * @param[in] homographiesAndMatches Contains each found homography and the relevant supporting matches.
  * @param[in] putativeMatches The putative matches.
  */
-void drawHomographyMatches(const sfm::View &viewI,
-                           const sfm::View &viewJ,
+void drawHomographyMatches(const sfmData::View &viewI,
+                           const sfmData::View &viewJ,
                            const std::vector<feature::SIOPointFeature> &siofeatures_I,
                            const std::vector<feature::SIOPointFeature> &siofeatures_J,
                            const std::vector<std::pair<Mat3, matching::IndMatches>> &homographiesAndMatches,
@@ -181,7 +181,7 @@ struct GeometricFilterMatrix_HGrowing : public GeometricFilterMatrix
    * @return The estimation status.
    */
   template<typename Regions_or_Features_ProviderT>
-  EstimationStatus geometricEstimation(const sfm::SfMData * sfmData,
+  EstimationStatus geometricEstimation(const sfmData::SfMData * sfmData,
                                        const Regions_or_Features_ProviderT &regionsPerView,
                                        const Pair &pairIndex,
                                        const matching::MatchesPerDescType &putativeMatchesPerType,
@@ -210,8 +210,8 @@ struct GeometricFilterMatrix_HGrowing : public GeometricFilterMatrix
     const IndexT viewId_I = pairIndex.first;
     const IndexT viewId_J = pairIndex.second;
     
-    const sfm::View & viewI = *(sfmData->getViews().at(viewId_I));
-    const sfm::View & viewJ = *(sfmData->getViews().at(viewId_J));
+    const sfmData::View & viewI = *(sfmData->getViews().at(viewId_I));
+    const sfmData::View & viewJ = *(sfmData->getViews().at(viewId_J));
 
 
     for (const EImageDescriberType& descType : descTypes)
@@ -283,7 +283,7 @@ struct GeometricFilterMatrix_HGrowing : public GeometricFilterMatrix
    * @param matches
    * @return
    */
-  bool Geometry_guided_matching(const sfm::SfMData *sfmData,
+  bool Geometry_guided_matching(const sfmData::SfMData *sfmData,
                                 const feature::RegionsPerView &regionsPerView,
                                 const Pair imageIdsPair,
                                 const double dDistanceRatio,

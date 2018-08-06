@@ -6,9 +6,8 @@
 
 #include "LocalBundleAdjustmentData.hpp"
 #include <aliceVision/stl/stl.hpp>
-
+#include <aliceVision/sfmData/SfMData.hpp>
 #include <boost/filesystem.hpp>
-
 #include <lemon/bfs.h>
 
 #include <fstream>
@@ -18,7 +17,7 @@ namespace fs = boost::filesystem;
 namespace aliceVision {
 namespace sfm {
 
-LocalBundleAdjustmentData::LocalBundleAdjustmentData(const SfMData& sfm_data)
+LocalBundleAdjustmentData::LocalBundleAdjustmentData(const sfmData::SfMData& sfm_data)
 {
   for (const auto& it : sfm_data.intrinsics)
   {
@@ -46,7 +45,7 @@ std::map<int, std::size_t> LocalBundleAdjustmentData::getDistancesHistogram() co
   return hist;
 }
 
-void LocalBundleAdjustmentData::setAllParametersToRefine(const SfMData& sfm_data)
+void LocalBundleAdjustmentData::setAllParametersToRefine(const sfmData::SfMData& sfm_data)
 {
   _mapDistancePerViewId.clear();
   _mapDistancePerPoseId.clear();
@@ -56,7 +55,7 @@ void LocalBundleAdjustmentData::setAllParametersToRefine(const SfMData& sfm_data
   resetParametersCounter();
   
   // -- Poses
-  for (Poses::const_iterator itPose = sfm_data.getPoses().begin(); itPose != sfm_data.getPoses().end(); ++itPose)
+  for(sfmData::Poses::const_iterator itPose = sfm_data.getPoses().begin(); itPose != sfm_data.getPoses().end(); ++itPose)
   {
     _mapLBAStatePerPoseId[itPose->first] = EState::refined;
     _parametersCounter.at(std::make_pair(EParameter::pose, EState::refined))++;
@@ -75,13 +74,13 @@ void LocalBundleAdjustmentData::setAllParametersToRefine(const SfMData& sfm_data
   }
 }
 
-void LocalBundleAdjustmentData::saveFocallengthsToHistory(const SfMData& sfm_data)
+void LocalBundleAdjustmentData::saveFocallengthsToHistory(const sfmData::SfMData& sfm_data)
 {
   // Count the number of poses for each intrinsic
   std::map<IndexT, std::size_t> map_intrinsicId_usageNum;
   for (const auto& itView : sfm_data.getViews())
   {
-    const View * view = itView.second.get();
+    const sfmData::View * view = itView.second.get();
     
     if (sfm_data.isPoseAndIntrinsicDefined(view))
     {
@@ -207,7 +206,7 @@ void LocalBundleAdjustmentData::resetParametersCounter()
 }
 
 void LocalBundleAdjustmentData::updateGraphWithNewViews(
-    const SfMData& sfm_data, 
+    const sfmData::SfMData& sfm_data,
     const track::TracksPerView& map_tracksPerView,
     const std::set<IndexT>& newReconstructedViews,
     const std::size_t kMinNbOfMatches)
@@ -292,7 +291,7 @@ void LocalBundleAdjustmentData::updateGraphWithNewViews(
   ALICEVISION_LOG_DEBUG("|- It contains " << _graph.maxNodeId() + 1 << " nodes & " << _graph.maxEdgeId() + 1 << " edges");                   
 }
 
-void LocalBundleAdjustmentData::computeGraphDistances(const SfMData& sfm_data, const std::set<IndexT>& newReconstructedViews)
+void LocalBundleAdjustmentData::computeGraphDistances(const sfmData::SfMData& sfm_data, const std::set<IndexT>& newReconstructedViews)
 { 
   ALICEVISION_LOG_DEBUG("Computing graph-distances...");
   // reset the maps
@@ -344,7 +343,7 @@ void LocalBundleAdjustmentData::computeGraphDistances(const SfMData& sfm_data, c
   } 
 }
 
-void LocalBundleAdjustmentData::convertDistancesToLBAStates(const SfMData & sfm_data)
+void LocalBundleAdjustmentData::convertDistancesToLBAStates(const sfmData::SfMData & sfm_data)
 {
   // reset the maps
   _mapLBAStatePerPoseId.clear();
@@ -372,7 +371,7 @@ void LocalBundleAdjustmentData::convertDistancesToLBAStates(const SfMData & sfm_
   //    - Refined <=> its connected to a refined camera
   // ----------------------------------------------------
   // -- Poses
-  for (Poses::const_iterator itPose = sfm_data.getPoses().begin(); itPose != sfm_data.getPoses().end(); ++itPose)
+  for(sfmData::Poses::const_iterator itPose = sfm_data.getPoses().begin(); itPose != sfm_data.getPoses().end(); ++itPose)
   {
     const IndexT poseId = itPose->first;
     int dist = getPoseDistance(poseId);
@@ -414,7 +413,7 @@ void LocalBundleAdjustmentData::convertDistancesToLBAStates(const SfMData & sfm_
   for(const auto& itLandmark: sfm_data.structure)
   {
     const IndexT landmarkId = itLandmark.first;
-    const Observations & observations = itLandmark.second.observations;
+    const sfmData::Observations & observations = itLandmark.second.observations;
     
     _mapLBAStatePerLandmarkId[landmarkId] = EState::ignored;
     _parametersCounter.at(std::make_pair(EParameter::landmark, EState::ignored))++;
@@ -435,7 +434,7 @@ void LocalBundleAdjustmentData::convertDistancesToLBAStates(const SfMData & sfm_
 }
 
 std::map<Pair, std::size_t> LocalBundleAdjustmentData::countSharedLandmarksPerImagesPair(
-    const SfMData& sfm_data,
+    const sfmData::SfMData& sfm_data,
     const track::TracksPerView& map_tracksPerView,
     const std::set<IndexT>& newViewsId)
 {
@@ -577,7 +576,7 @@ double LocalBundleAdjustmentData::standardDeviation(const std::vector<T>& data)
 
 
 
-void LocalBundleAdjustmentData::drawGraph(const SfMData& sfm_data, const std::string& dir, const std::string& nameComplement)
+void LocalBundleAdjustmentData::drawGraph(const sfmData::SfMData& sfm_data, const std::string& dir, const std::string& nameComplement)
 {
   if (!fs::exists(dir))
     fs::create_directory(dir);
@@ -622,7 +621,7 @@ void LocalBundleAdjustmentData::drawGraph(const SfMData& sfm_data, const std::st
   ALICEVISION_LOG_DEBUG("The graph '"<< dotFilepath << "' has been saved.");
 }
 
-std::size_t LocalBundleAdjustmentData::addIntrinsicEdgesToTheGraph(const SfMData& sfm_data, const std::set<IndexT>& newReconstructedViews)
+std::size_t LocalBundleAdjustmentData::addIntrinsicEdgesToTheGraph(const sfmData::SfMData& sfm_data, const std::set<IndexT>& newReconstructedViews)
 {
   std::size_t numAddedEdges = 0;
   

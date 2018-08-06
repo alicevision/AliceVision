@@ -8,7 +8,7 @@
 #include "rigResection.hpp"
 #include "optimization.hpp"
 #include <aliceVision/config.hpp>
-#include <aliceVision/sfm/sfmDataIO.hpp>
+#include <aliceVision/sfmDataIO/sfmDataIO.hpp>
 #include <aliceVision/sfm/pipeline/RelativePoseInfo.hpp>
 #include <aliceVision/sfm/BundleAdjustmentCeres.hpp>
 #include <aliceVision/sfm/pipeline/regionsIO.hpp>
@@ -117,7 +117,7 @@ VoctreeLocalizer::Algorithm VoctreeLocalizer::initFromString(const std::string &
 }
 
 
-VoctreeLocalizer::VoctreeLocalizer(const sfm::SfMData &sfmData,
+VoctreeLocalizer::VoctreeLocalizer(const sfmData::SfMData &sfmData,
                                    const std::string &descriptorsFolder,
                                    const std::string &vocTreeFilepath,
                                    const std::string &weightsFilepath,
@@ -251,7 +251,7 @@ bool VoctreeLocalizer::localize(const image::Image<float>& imageGrey,
                   imagePath);
 }
 
-bool VoctreeLocalizer::loadReconstructionDescriptors(const sfm::SfMData & sfm_data,
+bool VoctreeLocalizer::loadReconstructionDescriptors(const sfmData::SfMData & sfm_data,
                                                      const std::string & feat_directory)
 {
   //@fixme deprecated: now inside initDatabase
@@ -304,12 +304,12 @@ bool VoctreeLocalizer::initDatabase(const std::string & vocTreeFilepath,
   for(const auto& landmarkValue : _sfm_data.structure)
   {
     IndexT trackId = landmarkValue.first;
-    const sfm::Landmark& landmark = landmarkValue.second;
+    const sfmData::Landmark& landmark = landmarkValue.second;
 
     for(const auto& obs : landmark.observations)
     {
       const IndexT viewId = obs.first;
-      const sfm::Observation& obs2d = obs.second;
+      const sfmData::Observation& obs2d = obs.second;
       observationsPerView[viewId][landmark.descType].emplace_back(obs2d.id_feat, trackId);
     }
   }
@@ -410,7 +410,7 @@ bool VoctreeLocalizer::localizeFirstBestResult(const feature::MapRegionsPerDesc 
 //    // get the corresponding index of the view
 //    const IndexT matchedViewIndex = currMatch.id;
 //    // get the view handle
-//    const std::shared_ptr<sfm::View> matchedView = _sfm_data.views[matchedViewIndex];
+//    const std::shared_ptr<sfmData::View> matchedView = _sfm_data.views[matchedViewIndex];
 //    ALICEVISION_LOG_DEBUG( "[database]\t\t match " << matchedView->getImagePath()
 //            << " [docid: "<< currMatch.id << "]"
 //            << " with score " << currMatch.score 
@@ -435,7 +435,7 @@ bool VoctreeLocalizer::localizeFirstBestResult(const feature::MapRegionsPerDesc 
     // the view index of the current matched image
     const IndexT matchedViewId = matchedImage.id;
     // the handler to the current view
-    const std::shared_ptr<sfm::View> matchedView = _sfm_data.views.at(matchedViewId);
+    const std::shared_ptr<sfmData::View> matchedView = _sfm_data.views.at(matchedViewId);
 
     // safeguard: we should match the query image with an image that has at least
     // some 3D points visible --> if it has 0 3d points it is likely that it is an
@@ -481,7 +481,7 @@ bool VoctreeLocalizer::localizeFirstBestResult(const feature::MapRegionsPerDesc 
     if(!param._visualDebug.empty() && !imagePath.empty())
     {
       namespace bfs = boost::filesystem;
-      const sfm::View *mview = _sfm_data.getViews().at(matchedViewId).get();
+      const sfmData::View *mview = _sfm_data.getViews().at(matchedViewId).get();
       const std::string queryimage = bfs::path(imagePath).stem().string();
       const std::string matchedImage = bfs::path(mview->getImagePath()).stem().string();
       const std::string matchedPath = mview->getImagePath();
@@ -772,7 +772,7 @@ void VoctreeLocalizer::getAllAssociations(const feature::MapRegionsPerDesc &quer
 //  for(const voctree::DocMatch& currMatch : matchedImages )
 //  {
 //    // get the view handle
-//    const std::shared_ptr<sfm::View> matchedView = _sfm_data.views[currMatch.id];
+//    const std::shared_ptr<sfmData::View> matchedView = _sfm_data.views[currMatch.id];
 //    ALICEVISION_LOG_DEBUG( "[database]\t\t match " << matchedView->getImagePath()
 //            << " [docid: "<< currMatch.id << "]"
 //            << " with score " << currMatch.score 
@@ -796,7 +796,7 @@ void VoctreeLocalizer::getAllAssociations(const feature::MapRegionsPerDesc &quer
 
     const auto matchedViewId = matchedImage.id;
     // the handler to the current view
-    const std::shared_ptr<sfm::View> matchedView = _sfm_data.views.at(matchedViewId);
+    const std::shared_ptr<sfmData::View> matchedView = _sfm_data.views.at(matchedViewId);
     // its associated reconstructed regions
     const feature::MapRegionsPerDesc& matchedRegions = _regionsPerView.getRegionsPerDesc(matchedViewId);
     
@@ -853,7 +853,7 @@ void VoctreeLocalizer::getAllAssociations(const feature::MapRegionsPerDesc &quer
     if(!param._visualDebug.empty() && !imagePath.empty())
     {
       namespace bfs = boost::filesystem;
-      const sfm::View *mview = _sfm_data.getViews().at(matchedViewId).get();
+      const sfmData::View *mview = _sfm_data.getViews().at(matchedViewId).get();
       // the current query image without extension
       const auto queryImage = bfs::path(imagePath).stem();
       // the matching image without extension
@@ -963,7 +963,7 @@ void VoctreeLocalizer::getAllAssociations(const feature::MapRegionsPerDesc &quer
   {
      // recopy all the points in the matching structure
     const IndexT pt2D_id = idx.first.featId;
-    const sfm::Landmark& landmark = _sfm_data.getLandmarks().at(idx.first.landmarkId);
+    const sfmData::Landmark& landmark = _sfm_data.getLandmarks().at(idx.first.landmarkId);
     
 //    ALICEVISION_LOG_DEBUG("[matching]\tAssociation [" << idx.first.landmarkId << "," << pt2D_id << "] occurred " << idx.second << " times");
 

@@ -19,11 +19,11 @@
 namespace aliceVision {
 
 /// Generate all the (I,J) pairs of the upper diagonal of the NxN matrix
-PairSet exhaustivePairs(const sfm::Views& views, int rangeStart, int rangeSize)
+PairSet exhaustivePairs(const sfmData::Views& views, int rangeStart, int rangeSize)
 {
   PairSet pairs;
-  sfm::Views::const_iterator itA = views.begin();
-  sfm::Views::const_iterator itAEnd = views.end();
+  sfmData::Views::const_iterator itA = views.begin();
+  sfmData::Views::const_iterator itAEnd = views.end();
 
   // If we have a rangeStart, only compute the matching for (rangeStart, X).
   if(rangeStart != -1 && rangeSize != 0)
@@ -37,7 +37,7 @@ PairSet exhaustivePairs(const sfm::Views& views, int rangeStart, int rangeSize)
 
   for(; itA != itAEnd; ++itA)
   {
-    sfm::Views::const_iterator itB = itA;
+    sfmData::Views::const_iterator itB = itA;
     std::advance(itB, 1);
     for(; itB != views.end(); ++itB)
       pairs.insert(std::make_pair(itA->first, itB->first));

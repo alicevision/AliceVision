@@ -10,7 +10,8 @@ if(ALICEVISION_HAVE_ALEMBIC)
     SOURCE main_exportAnimatedCamera.cpp
     FOLDER ${FOLDER_SOFTWARE_EXPORT}
     LINKS aliceVision_system
-          aliceVision_sfm
+          aliceVision_sfmData
+          aliceVision_sfmDataIO
           ${Boost_LIBRARIES}
   )
 endif()
@@ -22,6 +23,8 @@ alicevision_add_software(aliceVision_exportKeypoints
   LINKS aliceVision_system
         aliceVision_feature
         aliceVision_sfm
+        aliceVision_sfmData
+        aliceVision_sfmDataIO
         ${Boost_LIBRARIES}
 )
 
@@ -32,6 +35,8 @@ alicevision_add_software(aliceVision_exportMatches
   LINKS aliceVision_system
         aliceVision_feature
         aliceVision_sfm
+        aliceVision_sfmData
+        aliceVision_sfmDataIO
         ${Boost_LIBRARIES}
 )
 
@@ -42,6 +47,8 @@ alicevision_add_software(aliceVision_exportTracks
   LINKS aliceVision_system
         aliceVision_feature
         aliceVision_sfm
+        aliceVision_sfmData
+        aliceVision_sfmDataIO
         ${Boost_LIBRARIES}
 )
 
@@ -51,8 +58,8 @@ alicevision_add_software(aliceVision_exportUndistortedImages
   FOLDER ${FOLDER_SOFTWARE_EXPORT}
   LINKS aliceVision_system
         aliceVision_image
-        aliceVision_feature
-        aliceVision_sfm
+        aliceVision_sfmData
+        aliceVision_sfmDataIO
         ${Boost_LIBRARIES}
 )
 
@@ -63,7 +70,8 @@ alicevision_add_software(aliceVision_exportPMVS
   LINKS aliceVision_system
         aliceVision_image
         aliceVision_feature
-        aliceVision_sfm
+        aliceVision_sfmData
+        aliceVision_sfmDataIO
         ${Boost_LIBRARIES}
 )
 
@@ -75,7 +83,8 @@ if(ALICEVISION_HAVE_ALEMBIC) # maya can read alembic file
     LINKS aliceVision_system
           aliceVision_image
           aliceVision_feature
-          aliceVision_sfm
+          aliceVision_sfmData
+          aliceVision_sfmDataIO
           ${Boost_LIBRARIES}
           ${OPENIMAGEIO_LIBRARIES}
   )
@@ -88,7 +97,8 @@ alicevision_add_software(aliceVision_exportMVE2
   LINKS aliceVision_system
         aliceVision_image
         aliceVision_feature
-        aliceVision_sfm
+        aliceVision_sfmData
+        aliceVision_sfmDataIO
         ${Boost_LIBRARIES}
 )
 
@@ -99,7 +109,8 @@ alicevision_add_software(aliceVision_exportMeshlab
   LINKS aliceVision_system
         aliceVision_image
         aliceVision_feature
-        aliceVision_sfm
+        aliceVision_sfmData
+        aliceVision_sfmDataIO
         ${Boost_LIBRARIES}
 )
 
@@ -110,7 +121,8 @@ alicevision_add_software(aliceVision_exportMVSTexturing
   LINKS aliceVision_system
         aliceVision_image
         aliceVision_feature
-        aliceVision_sfm
+        aliceVision_sfmData
+        aliceVision_sfmDataIO
         ${Boost_LIBRARIES}
 )
 
@@ -121,7 +133,8 @@ alicevision_add_software(aliceVision_exportMatlab
   LINKS aliceVision_system
         aliceVision_image
         aliceVision_feature
-        aliceVision_sfm
+        aliceVision_sfmData
+        aliceVision_sfmDataIO
         ${Boost_LIBRARIES}
 )
 
@@ -132,5 +145,7 @@ alicevision_add_software(aliceVision_exportCameraFrustums
   LINKS aliceVision_system
         aliceVision_feature
         aliceVision_sfm
+        aliceVision_sfmData
+        aliceVision_sfmDataIO
         ${Boost_LIBRARIES}
 )

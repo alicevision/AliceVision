@@ -124,7 +124,7 @@ void TreeBuilder<Feature, DistanceT, FeatureAllocator>::build(const FeatureVecto
     if(verbose_) printf("# Level %u\n", level);
     std::vector<unsigned int> membership;
 
-    for(size_t i = 0, ie = subset_queue.size(); i < ie; ++i)
+    for(std::size_t i = 0, ie = subset_queue.size(); i < ie; ++i)
     {
       std::vector<Feature*> &subset = subset_queue.front();
       if(verbose_ > 1) printf("#\tClustering subset %lu/%lu of size %lu\n", i + 1, ie, subset.size());
@@ -133,7 +133,7 @@ void TreeBuilder<Feature, DistanceT, FeatureAllocator>::build(const FeatureVecto
       if(subset.size() <= k)
       {
         if(verbose_ > 2) printf("#\tno need to cluster %lu elements\n", subset.size());
-        for(size_t j = 0; j < subset.size(); ++j)
+        for(std::size_t j = 0; j < subset.size(); ++j)
         {
           tree_.centers().push_back(*subset[j]);
           tree_.validCenters().push_back(1);
@@ -157,7 +157,7 @@ void TreeBuilder<Feature, DistanceT, FeatureAllocator>::build(const FeatureVecto
         // Partition the current subset into k new subsets based on the cluster assignments.
         std::vector< std::vector<Feature*> > new_subsets(k);
         assert(membership.size() >= subset.size());
-        for(size_t j = 0; j < subset.size(); ++j)
+        for(std::size_t j = 0; j < subset.size(); ++j)
         {
           assert(membership[j] < k);
           assert(membership[j] < new_subsets.size());

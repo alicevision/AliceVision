@@ -7,8 +7,8 @@
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/cmdline.hpp>
 #include <aliceVision/system/Timer.hpp>
-#include <aliceVision/sfm/sfmDataIO.hpp>
-#include <aliceVision/sfm/AlembicExporter.hpp>
+#include <aliceVision/sfmDataIO/sfmDataIO.hpp>
+#include <aliceVision/sfmDataIO/AlembicExporter.hpp>
 #include <aliceVision/image/all.hpp>
 
 #include <boost/program_options.hpp>
@@ -102,8 +102,8 @@ int main(int argc, char** argv)
   system::Logger::get()->setLogLevel(verboseLevel);
 
   // load SfMData files
-  sfm::SfMData sfmData;
-  if(!sfm::Load(sfmData, sfmDataFilename, sfm::ESfMData::ALL))
+  sfmData::SfMData sfmData;
+  if(!sfmDataIO::Load(sfmData, sfmDataFilename, sfmDataIO::ESfMData::ALL))
   {
     ALICEVISION_LOG_ERROR("The input SfMData file '" << sfmDataFilename << "' cannot be read.");
     return EXIT_FAILURE;
@@ -145,7 +145,7 @@ int main(int argc, char** argv)
 
   for(const auto& viewPair : sfmData.getViews())
   {
-    const sfm::View& view = *(viewPair.second);
+    const sfmData::View& view = *(viewPair.second);
 
     ++progressBar;
 
@@ -214,7 +214,7 @@ int main(int argc, char** argv)
     // undistort camera images
     if(undistortedImages)
     {
-      sfm::Intrinsics::const_iterator iterIntrinsic = sfmData.getIntrinsics().find(view.getIntrinsicId());
+      sfmData::Intrinsics::const_iterator iterIntrinsic = sfmData.getIntrinsics().find(view.getIntrinsicId());
 
       const std::string dstImage = (undistortedImagesFolderPath / (imagePathStem + "." + image::EImageFileType_enumToString(outputFileType))).string();
       const camera::IntrinsicBase * cam = iterIntrinsic->second.get();
@@ -254,7 +254,7 @@ int main(int argc, char** argv)
 
   ALICEVISION_LOG_INFO("Export animated camera(s)...");
 
-  sfm::AlembicExporter exporter((fs::path(outFolder) / "camera.abc").string());
+  sfmDataIO::AlembicExporter exporter((fs::path(outFolder) / "camera.abc").string());
 
   for(const auto& cameraViews : videoViewPerFrame)
   {
@@ -277,7 +277,7 @@ int main(int argc, char** argv)
             ALICEVISION_LOG_DEBUG("[" + cameraViews.first +"][video] Keyframe added");
             const IndexT intrinsicId = findViewIt->second->getIntrinsicId();
             const camera::Pinhole* cam = dynamic_cast<camera::Pinhole*>(sfmData.getIntrinsicPtr(intrinsicId));
-            const sfm::CameraPose pose = sfmData.getPose(*findViewIt->second);
+            const sfmData::CameraPose pose = sfmData.getPose(*findViewIt->second);
             const std::string& imagePath = findViewIt->second->getImagePath();
             const std::string undistortedImagePath = (undistortedImagesFolderPath / (fs::path(imagePath).stem().string() + "." + image::EImageFileType_enumToString(outputFileType))).string();
 
@@ -297,9 +297,9 @@ int main(int argc, char** argv)
     for(const auto& cameraView : cameraViews.second)
     {
         ALICEVISION_LOG_DEBUG("[" + cameraViews.first +"][dslr] Keyframe added");
-        const sfm::View& view = *(sfmData.getViews().at(cameraView.second));
+        const sfmData::View& view = *(sfmData.getViews().at(cameraView.second));
         const camera::Pinhole* cam = dynamic_cast<camera::Pinhole*>(sfmData.getIntrinsicPtr(view.getIntrinsicId()));
-        const sfm::CameraPose pose = sfmData.getPose(view);
+        const sfmData::CameraPose pose = sfmData.getPose(view);
         const std::string& imagePath = view.getImagePath();
         const std::string undistortedImagePath = (undistortedImagesFolderPath / (fs::path(imagePath).stem().string() + "." + image::EImageFileType_enumToString(outputFileType))).string();
 

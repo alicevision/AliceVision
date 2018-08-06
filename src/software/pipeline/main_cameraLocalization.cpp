@@ -16,8 +16,8 @@
 #include <aliceVision/dataio/FeedProvider.hpp>
 #include <aliceVision/feature/ImageDescriber.hpp>
 #include <aliceVision/feature/imageDescriberCommon.hpp>
-#include <aliceVision/sfm/SfMData.hpp>
-#include <aliceVision/sfm/sfmDataIO.hpp>
+#include <aliceVision/sfmData/SfMData.hpp>
+#include <aliceVision/sfmDataIO/sfmDataIO.hpp>
 #include <aliceVision/robustEstimation/estimators.hpp>
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/cmdline.hpp>
@@ -39,7 +39,7 @@
 #include <memory>
 
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_ALEMBIC)
-#include <aliceVision/sfm/AlembicExporter.hpp>
+#include <aliceVision/sfmDataIO/AlembicExporter.hpp>
 #endif // ALICEVISION_HAVE_ALEMBIC
 
 // These constants define the current software version.
@@ -264,8 +264,8 @@ int main(int argc, char** argv)
     return EXIT_FAILURE;
   }
   
-  if(!checkRobustEstimator(matchingEstimator, matchingErrorMax) || 
-     !checkRobustEstimator(resectionEstimator, resectionErrorMax))
+  if(!robustEstimation::checkRobustEstimator(matchingEstimator, matchingErrorMax) ||
+     !robustEstimation::checkRobustEstimator(resectionEstimator, resectionErrorMax))
   {
     return EXIT_FAILURE;
   }
@@ -304,8 +304,8 @@ int main(int argc, char** argv)
   }
 
   // load SfMData
-  sfm::SfMData sfmData;
-  if(!sfm::Load(sfmData, sfmFilePath, sfm::ESfMData::ALL))
+  sfmData::SfMData sfmData;
+  if(!sfmDataIO::Load(sfmData, sfmFilePath, sfmDataIO::ESfMData::ALL))
   {
     ALICEVISION_LOG_ERROR("The input SfMData file '" + sfmFilePath + "' cannot be read.");
     return EXIT_FAILURE;
@@ -383,7 +383,7 @@ int main(int argc, char** argv)
   
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_ALEMBIC)
   // init alembic exporter
-  sfm::AlembicExporter exporter(exportAlembicFile);
+  sfmDataIO::AlembicExporter exporter(exportAlembicFile);
   exporter.initAnimatedCamera("camera");
 #endif
   
@@ -481,7 +481,7 @@ int main(int argc, char** argv)
     {
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_ALEMBIC)
       // now copy back in a new abc with the same name file and BUNDLE appended at the end
-      sfm::AlembicExporter exporterBA( basenameAlembic +".BUNDLE.abc" );
+      sfmDataIO::AlembicExporter exporterBA( basenameAlembic +".BUNDLE.abc" );
       exporterBA.initAnimatedCamera("camera");
       std::size_t idx = 0;
       for(const localization::LocalizationResult &res : vec_localizationResults)

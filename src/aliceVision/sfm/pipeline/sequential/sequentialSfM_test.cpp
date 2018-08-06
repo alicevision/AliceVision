@@ -14,7 +14,6 @@
 #include <cstdio>
 #include <iostream>
 
-
 #define BOOST_TEST_MODULE SEQUENTIAL_SFM
 #include <boost/test/included/unit_test.hpp>
 #include <boost/test/floating_point_comparison.hpp>
@@ -23,6 +22,7 @@ using namespace aliceVision;
 using namespace aliceVision::camera;
 using namespace aliceVision::geometry;
 using namespace aliceVision::sfm;
+using namespace aliceVision::sfmData;
 
 // Test summary:
 // - Create features points and matching from the synthetic dataset
@@ -36,7 +36,6 @@ using namespace aliceVision::sfm;
 // Test a scene where all the camera intrinsics are known
 BOOST_AUTO_TEST_CASE(SEQUENTIAL_SFM_Known_Intrinsics)
 {
-
   const int nviews = 6;
   const int npoints = 128;
   const NViewDatasetConfigurator config;
@@ -77,9 +76,9 @@ BOOST_AUTO_TEST_CASE(SEQUENTIAL_SFM_Known_Intrinsics)
 
   BOOST_CHECK (sfmEngine.process());
 
-  const double dResidual = RMSE(sfmEngine.getSfMData());
-  ALICEVISION_LOG_DEBUG("RMSE residual: " << dResidual);
-  BOOST_CHECK_LT(dResidual, 0.5);
+  const double residual = RMSE(sfmEngine.getSfMData());
+  ALICEVISION_LOG_DEBUG("RMSE residual: " << residual);
+  BOOST_CHECK_LT(residual, 0.5);
   BOOST_CHECK_EQUAL(sfmEngine.getSfMData().getPoses().size(), nviews);
   BOOST_CHECK_EQUAL(sfmEngine.getSfMData().getLandmarks().size(), npoints);
 }
@@ -130,21 +129,20 @@ BOOST_AUTO_TEST_CASE(SEQUENTIAL_SFM_Partially_Known_Intrinsics)
   sfmEngine.setMatches(&pairwiseMatches);
 
   // Set an initial pair
-//  sfmEngine.setInitialPair(Pair(0,1)); // TODO: test without
+  // sfmEngine.setInitialPair(Pair(0,1)); // TODO: test without
 
   // Configure reconstruction parameters
   sfmEngine.setFixedIntrinsics(true);
   BOOST_CHECK (sfmEngine.process());
 
   const SfMData& finalSfMData = sfmEngine.getSfMData();
-  const double dResidual = RMSE(finalSfMData);
-  ALICEVISION_LOG_DEBUG("RMSE residual: " << dResidual);
-  BOOST_CHECK_LT(dResidual, 0.5);
+  const double residual = RMSE(finalSfMData);
+  ALICEVISION_LOG_DEBUG("RMSE residual: " << residual);
+  BOOST_CHECK_LT(residual, 0.5);
   BOOST_CHECK_EQUAL(nviews, finalSfMData.getPoses().size());
   BOOST_CHECK_EQUAL(npoints, finalSfMData.getLandmarks().size());
-  BOOST_CHECK_NE(
-      reinterpret_cast<const camera::Pinhole*>(finalSfMData.getIntrinsics().at(0).get())->getFocalLengthPix(),
-      reinterpret_cast<const camera::Pinhole*>(finalSfMData.getIntrinsics().at(1).get())->getFocalLengthPix());
+  BOOST_CHECK_NE(reinterpret_cast<const camera::Pinhole*>(finalSfMData.getIntrinsics().at(0).get())->getFocalLengthPix(),
+                 reinterpret_cast<const camera::Pinhole*>(finalSfMData.getIntrinsics().at(1).get())->getFocalLengthPix());
 }
 
 BOOST_AUTO_TEST_CASE(SEQUENTIAL_SFM_Known_Rig)
@@ -190,9 +188,9 @@ BOOST_AUTO_TEST_CASE(SEQUENTIAL_SFM_Known_Rig)
 
   BOOST_CHECK (sfmEngine.process());
 
-  const double dResidual = RMSE(sfmEngine.getSfMData());
-  ALICEVISION_LOG_DEBUG("RMSE residual: " << dResidual);
-  BOOST_CHECK_LT(dResidual, 0.5);
+  const double residual = RMSE(sfmEngine.getSfMData());
+  ALICEVISION_LOG_DEBUG("RMSE residual: " << residual);
+  BOOST_CHECK_LT(residual, 0.5);
   BOOST_CHECK_EQUAL(sfmEngine.getSfMData().getPoses().size(), nbPoses);
   BOOST_CHECK_EQUAL(sfmEngine.getSfMData().getLandmarks().size(), nbPoints);
 }

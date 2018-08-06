@@ -5,6 +5,8 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
+#include <aliceVision/sfmData/SfMData.hpp>
+#include <aliceVision/sfmDataIO/sfmDataIO.hpp>
 #include <aliceVision/sfm/sfm.hpp>
 #include <aliceVision/sfm/pipeline/regionsIO.hpp>
 #include <aliceVision/feature/feature.hpp>
@@ -24,8 +26,6 @@
 #define ALICEVISION_SOFTWARE_VERSION_MINOR 0
 
 using namespace aliceVision;
-using namespace aliceVision::sfm;
-using namespace std;
 
 namespace po = boost::program_options;
 namespace fs = boost::filesystem;
@@ -111,8 +111,8 @@ int main(int argc, char **argv)
   system::Logger::get()->setLogLevel(verboseLevel);
 
   // Load input SfM_Data scene
-  SfMData sfmData;
-  if(!Load(sfmData, sfmDataFilename, ESfMData::ALL))
+  sfmData::SfMData sfmData;
+  if(!sfmDataIO::Load(sfmData, sfmDataFilename, sfmDataIO::ESfMData::ALL))
   {
     ALICEVISION_LOG_ERROR("The input SfMData file '"<< sfmDataFilename << "' cannot be read");
     return EXIT_FAILURE;
@@ -147,7 +147,7 @@ int main(int argc, char **argv)
   //-
   sfm::SfMLocalizationSingle3DTrackObservationDatabase localizer;
   {
-    RegionsPerView regionsPerView;
+    feature::RegionsPerView regionsPerView;
     if (!sfm::loadRegionsPerView(regionsPerView, sfmData, featuresFolders, {describerType}))
     {
       ALICEVISION_LOG_ERROR("Invalid regions.");
@@ -246,7 +246,7 @@ int main(int argc, char **argv)
        << "\n" << "property uchar blue"
        << "\n" << "end_header" << "\n";
 
-      for (const Vec3 & pose_center: vec_found_poses) {
+      for(const Vec3 & pose_center: vec_found_poses) {
         outfile << pose_center.transpose() << " " << "255 0 0" << "\n";
       }
 

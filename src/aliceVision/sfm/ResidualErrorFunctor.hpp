@@ -7,8 +7,9 @@
 
 #pragma once
 
-#include "aliceVision/camera/camera.hpp"
-#include "ceres/rotation.h"
+#include <aliceVision/camera/camera.hpp>
+
+#include <ceres/rotation.h>
 
 // Define ceres Cost_functor for each AliceVision camera model
 

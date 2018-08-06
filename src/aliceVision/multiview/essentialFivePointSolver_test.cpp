@@ -157,9 +157,9 @@ BOOST_AUTO_TEST_CASE(FivePointsRelativePose_Random) {
 
   TestData d = SomeTestData();
 
-  vector<Mat3> Es;
-  vector<Mat3> Rs;
-  vector<Vec3> ts;
+  std::vector<Mat3> Es;
+  std::vector<Mat3> Rs;
+  std::vector<Vec3> ts;
   FivePointsRelativePose(d.x1, d.x2, &Es);
 
   // Recover rotation and translation from E
@@ -205,8 +205,8 @@ BOOST_AUTO_TEST_CASE(FivePointsRelativePose_test_data_sets) {
   // Compute pose [R|t] from 0 to [1;..;iNviews]
   for(int i=1; i <iNviews; ++i)
   {
-    vector<Mat3> Es, Rs;  // Essential, Rotation matrix.
-    vector<Vec3> ts;      // Translation matrix.
+    std::vector<Mat3> Es, Rs;  // Essential, Rotation matrix.
+    std::vector<Vec3> ts;      // Translation matrix.
     FivePointsRelativePose(d._x[0], d._x[i], &Es);
 
     // Recover rotation and translation from E.

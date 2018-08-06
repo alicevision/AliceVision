@@ -20,11 +20,11 @@ namespace bacc = boost::accumulators;
 namespace aliceVision {
 namespace sfm {
 
-bool computeSimilarity(const SfMData & sfmDataA,
-                       const SfMData & sfmDataB,
-                       double * out_S,
-                       Mat3 * out_R,
-                       Vec3 * out_t)
+bool computeSimilarity(const sfmData::SfMData& sfmDataA,
+                       const sfmData::SfMData& sfmDataB,
+                       double* out_S,
+                       Mat3* out_R,
+                       Vec3* out_t)
 {
   assert(out_S != nullptr);
   assert(out_R != nullptr);
@@ -42,7 +42,7 @@ bool computeSimilarity(const SfMData & sfmDataA,
   // Move input point in appropriate container
   Mat xA(3, commonViewIds.size());
   Mat xB(3, commonViewIds.size());
-  for (size_t i = 0; i  < commonViewIds.size(); ++i)
+  for(std::size_t i = 0; i  < commonViewIds.size(); ++i)
   {
     IndexT viewId = commonViewIds[i];
     xA.col(i) = sfmDataA.getAbsolutePose(sfmDataA.getViews().at(viewId)->getPoseId()).getTransform().center();
@@ -54,6 +54,7 @@ bool computeSimilarity(const SfMData & sfmDataA,
   Vec3 t;
   Mat3 R;
   std::vector<std::size_t> inliers;
+
   if(!aliceVision::geometry::ACRansac_FindRTS(xA, xB, S, t, R, inliers, true))
     return false;
 
@@ -62,10 +63,11 @@ bool computeSimilarity(const SfMData & sfmDataA,
   *out_S = S;
   *out_R = R;
   *out_t = t;
+
   return true;
 }
 
-void computeNewCoordinateSystemFromCameras(const SfMData& sfmData,
+void computeNewCoordinateSystemFromCameras(const sfmData::SfMData& sfmData,
                                            double& out_S,
                                            Mat3& out_R,
                                            Vec3& out_t)
@@ -85,6 +87,7 @@ void computeNewCoordinateSystemFromCameras(const SfMData& sfmData,
   // Compute the mean of the point cloud
   Vec3 meanPoints = Vec3::Zero(3,1);
   i=0;
+
   for(const auto & pose : sfmData.getPoses())
   {
     const Vec3 center = pose.second.getTransform().center();
@@ -136,7 +139,7 @@ void computeNewCoordinateSystemFromCameras(const SfMData& sfmData,
   out_t = - out_S * out_R * meanPoints;
 }
 
-void computeNewCoordinateSystemFromLandmarks(const SfMData& sfmData,
+void computeNewCoordinateSystemFromLandmarks(const sfmData::SfMData& sfmData,
                                     const std::vector<feature::EImageDescriberType>& imageDescriberTypes,
                                     double& out_S,
                                     Mat3& out_R,
@@ -153,7 +156,7 @@ void computeNewCoordinateSystemFromLandmarks(const SfMData& sfmData,
 
     bacc::accumulator_set<double, bacc::stats<bacc::tag::min, bacc::tag::max> > accX, accY, accZ;
 
-    for(const auto & landmark : sfmData.getLandmarks())
+    for(const auto& landmark : sfmData.getLandmarks())
     {
       const Vec3& position = landmark.second.X;
 
@@ -198,7 +201,6 @@ void computeNewCoordinateSystemFromLandmarks(const SfMData& sfmData,
     out_R = Eigen::AngleAxisd(degreeToRadian(90.0),  Vec3(1,0,0)) * out_R;
     out_t = - out_S * out_R * meanPoints;
 }
-
 
 } // namespace sfm
 } // namespace aliceVision

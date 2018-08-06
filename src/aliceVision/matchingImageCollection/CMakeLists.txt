@@ -32,7 +32,7 @@ alicevision_add_library(aliceVision_matchingImageCollection
     aliceVision_matching
     aliceVision_multiview
     aliceVision_robustEstimation
-    aliceVision_sfm
+    aliceVision_sfmData
     ${Boost_LIBRARIES}
   PRIVATE_LINKS
     aliceVision_system

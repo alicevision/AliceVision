@@ -6,8 +6,8 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "aliceVision/matchingImageCollection/pairBuilder.hpp"
-#include "aliceVision/sfm/SfMData.hpp"
-#include "aliceVision/sfm/View.hpp"
+#include "aliceVision/sfmData/SfMData.hpp"
+#include "aliceVision/sfmData/View.hpp"
 
 #include <iostream>
 #include <algorithm>
@@ -35,7 +35,7 @@ bool checkPairOrder(const IterablePairs & pairs)
 
 BOOST_AUTO_TEST_CASE(matchingImageCollection_exhaustivePairs)
 {
-  sfm::Views views;
+  sfmData::Views views;
   {
     // Empty
     PairSet pairSet = exhaustivePairs(views);
@@ -45,7 +45,7 @@ BOOST_AUTO_TEST_CASE(matchingImageCollection_exhaustivePairs)
     std::vector<IndexT> indexes = {{ 12, 54, 89, 65 }};
     for( IndexT i: indexes )
     {
-      views[i] = std::make_shared<sfm::View>("filepath", i);
+      views[i] = std::make_shared<sfmData::View>("filepath", i);
     }
 
 

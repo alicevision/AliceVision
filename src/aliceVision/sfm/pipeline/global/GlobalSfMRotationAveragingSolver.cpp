@@ -5,17 +5,16 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
-#include "aliceVision/sfm/pipeline/global/GlobalSfMRotationAveragingSolver.hpp"
+#include "GlobalSfMRotationAveragingSolver.hpp"
+#include <aliceVision/sfm/sfm.hpp>
+#include <aliceVision/graph/graph.hpp>
+#include <aliceVision/multiview/rotationAveraging/rotationAveraging.hpp>
+#include <aliceVision/stl/mapUtils.hpp>
 
-#include "aliceVision/sfm/sfm.hpp"
-#include "aliceVision/graph/graph.hpp"
-#include "aliceVision/multiview/rotationAveraging/rotationAveraging.hpp"
-#include "aliceVision/stl/mapUtils.hpp"
+#include <dependencies/histogram/histogram.hpp>
 
-#include "dependencies/histogram/histogram.hpp"
-
-namespace aliceVision{
-namespace sfm{
+namespace aliceVision {
+namespace sfm {
 
 using namespace aliceVision::rotationAveraging;
 
@@ -27,8 +26,8 @@ PairSet GlobalSfMRotationAveragingSolver::GetUsedPairs() const
 bool GlobalSfMRotationAveragingSolver::Run(
   ERotationAveragingMethod eRotationAveragingMethod,
   ERelativeRotationInferenceMethod eRelativeRotationInferenceMethod,
-  const RelativeRotations & relativeRot_In,
-  HashMap<IndexT, Mat3> & map_globalR
+  const RelativeRotations& relativeRot_In,
+  HashMap<IndexT, Mat3>& map_globalR
 ) const
 {
   RelativeRotations relativeRotations = relativeRot_In;

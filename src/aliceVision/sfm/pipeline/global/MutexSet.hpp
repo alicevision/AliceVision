@@ -10,35 +10,38 @@
 #include <mutex>
 #include <set>
 
-typedef std::mutex mutexT;
-typedef std::lock_guard<mutexT> lock_guardT;
-
 namespace aliceVision {
-namespace sfm{
+namespace sfm {
 
 /// ThreadSafe Set thanks to a mutex
 template <typename T>
 class MutexSet {
 
+  typedef std::mutex mutexT;
+  typedef std::lock_guard<mutexT> lockGuardT;
+
 public:
-    void insert(const T & value) {
-      lock_guardT guard(m_Mutex);
-      m_Set.insert(value);
-    }
+  void insert(const T& value)
+  {
+    lockGuardT guard(_mutex);
+    _set.insert(value);
+  }
 
-    int count(const T & value) const {
-      lock_guardT guard(m_Mutex);
-      return m_Set.count(value);
-    }
+  int count(const T& value) const
+  {
+    lockGuardT guard(_mutex);
+    return _set.count(value);
+  }
 
-    std::size_t size() const {
-      lock_guardT guard(m_Mutex);
-      return m_Set.size();
-    }
+  std::size_t size() const
+  {
+    lockGuardT guard(_mutex);
+    return _set.size();
+  }
 
 private:
-    std::set<T> m_Set;
-    mutable mutexT m_Mutex;
+  std::set<T> _set;
+  mutable mutexT _mutex;
 };
 
 } // namespace sfm

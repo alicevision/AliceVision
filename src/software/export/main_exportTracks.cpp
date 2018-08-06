@@ -5,14 +5,16 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
+#include <aliceVision/sfmData/SfMData.hpp>
+#include <aliceVision/sfmDataIO/sfmDataIO.hpp>
+#include <aliceVision/sfm/pipeline/regionsIO.hpp>
+#include <aliceVision/sfm/pipeline/pairwiseMatchesIO.hpp>
+#include <aliceVision/feature/svgVisualization.hpp>
+#include <aliceVision/feature/feature.hpp>
 #include <aliceVision/matching/IndMatch.hpp>
 #include <aliceVision/matching/io.hpp>
-#include <aliceVision/image/all.hpp>
-#include <aliceVision/feature/feature.hpp>
 #include <aliceVision/track/Track.hpp>
-#include <aliceVision/sfm/sfm.hpp>
-#include <aliceVision/sfm/pipeline/regionsIO.hpp>
-#include <aliceVision/feature/svgVisualization.hpp>
+#include <aliceVision/image/all.hpp>
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/cmdline.hpp>
 
@@ -32,7 +34,7 @@
 using namespace aliceVision;
 using namespace aliceVision::feature;
 using namespace aliceVision::matching;
-using namespace aliceVision::sfm;
+using namespace aliceVision::sfmData;
 using namespace aliceVision::track;
 using namespace svg;
 
@@ -117,7 +119,7 @@ int main(int argc, char ** argv)
 
   // read SfM Scene (image view names)
   SfMData sfmData;
-  if(!Load(sfmData, sfmDataFilename, ESfMData(VIEWS|INTRINSICS)))
+  if(!sfmDataIO::Load(sfmData, sfmDataFilename, sfmDataIO::ESfMData(sfmDataIO::VIEWS|sfmDataIO::INTRINSICS)))
   {
     ALICEVISION_LOG_ERROR("The input SfMData file '" << sfmDataFilename << "' cannot be read.");
     return EXIT_FAILURE;
@@ -196,7 +198,7 @@ int main(int argc, char ** argv)
       }
       else
       {
-        svgDrawer svgStream(dimImageI.first + dimImageJ.first, max(dimImageI.second, dimImageJ.second));
+        svgDrawer svgStream(dimImageI.first + dimImageJ.first, std::max(dimImageI.second, dimImageJ.second));
         svgStream.drawImage(viewImagePathI, dimImageI.first, dimImageI.second);
         svgStream.drawImage(viewImagePathJ, dimImageJ.first, dimImageJ.second, dimImageI.first);
 
@@ -241,7 +243,7 @@ int main(int argc, char ** argv)
 
         fs::path outputFilename = fs::path(outputFolder) / std::string(std::to_string(viewI->getViewId()) + "_" + std::to_string(viewJ->getViewId()) + "_" + std::to_string(mapTracksCommon.size()) + ".svg");
 
-        ofstream svgFile(outputFilename.string());
+        std::ofstream svgFile(outputFilename.string());
         svgFile << svgStream.closeSvgFile().str();
       }
     }

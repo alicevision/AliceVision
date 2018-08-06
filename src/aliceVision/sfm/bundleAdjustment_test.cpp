@@ -5,9 +5,9 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
-#include "aliceVision/multiview/NViewDataSet.hpp"
-#include "aliceVision/sfm/sfm.hpp"
-#include "../camera/cameraCommon.hpp"
+#include <aliceVision/sfm/sfm.hpp>
+#include <aliceVision/camera/cameraCommon.hpp>
+#include <aliceVision/multiview/NViewDataSet.hpp>
 
 #include <cmath>
 #include <cstdio>
@@ -21,10 +21,11 @@ using namespace aliceVision;
 using namespace aliceVision::camera;
 using namespace aliceVision::geometry;
 using namespace aliceVision::sfm;
+using namespace aliceVision::sfmData;
 
-double RMSE(const SfMData & sfmData);
+double RMSE(const SfMData& sfmData);
 
-SfMData getInputScene(const NViewDataSet & d, const NViewDatasetConfigurator & config, EINTRINSIC eintrinsic);
+SfMData getInputScene(const NViewDataSet& d, const NViewDatasetConfigurator& config, EINTRINSIC eintrinsic);
 
 track::TracksPerView getTracksPerViews(const SfMData& sfmData);
 
@@ -34,7 +35,8 @@ track::TracksPerView getTracksPerViews(const SfMData& sfmData);
 // - Check that residual is small once the generic Bundle Adjustment framework have been called.
 // - Perform the test for all the plausible intrinsic camera models
 
-BOOST_AUTO_TEST_CASE(BUNDLE_ADJUSTMENT_EffectiveMinimization_Pinhole) {
+BOOST_AUTO_TEST_CASE(BUNDLE_ADJUSTMENT_EffectiveMinimization_Pinhole)
+{
 
   const int nviews = 3;
   const int npoints = 6;
@@ -51,11 +53,11 @@ BOOST_AUTO_TEST_CASE(BUNDLE_ADJUSTMENT_EffectiveMinimization_Pinhole) {
   BOOST_CHECK( ba_object->Adjust(sfmData) );
 
   const double dResidual_after = RMSE(sfmData);
-  BOOST_CHECK( dResidual_before > dResidual_after);
+  BOOST_CHECK(dResidual_before > dResidual_after);
 }
 
-BOOST_AUTO_TEST_CASE(BUNDLE_ADJUSTMENT_EffectiveMinimization_PinholeRadialK1) {
-
+BOOST_AUTO_TEST_CASE(BUNDLE_ADJUSTMENT_EffectiveMinimization_PinholeRadialK1)
+{
   const int nviews = 3;
   const int npoints = 6;
   const NViewDatasetConfigurator config;
@@ -71,11 +73,11 @@ BOOST_AUTO_TEST_CASE(BUNDLE_ADJUSTMENT_EffectiveMinimization_PinholeRadialK1) {
   BOOST_CHECK( ba_object->Adjust(sfmData) );
 
   const double dResidual_after = RMSE(sfmData);
-  BOOST_CHECK( dResidual_before > dResidual_after);
+  BOOST_CHECK(dResidual_before > dResidual_after);
 }
 
-BOOST_AUTO_TEST_CASE(BUNDLE_ADJUSTMENT_EffectiveMinimization_PinholeRadialK3) {
-
+BOOST_AUTO_TEST_CASE(BUNDLE_ADJUSTMENT_EffectiveMinimization_PinholeRadialK3)
+{
   const int nviews = 3;
   const int npoints = 6;
   const NViewDatasetConfigurator config;
@@ -91,11 +93,11 @@ BOOST_AUTO_TEST_CASE(BUNDLE_ADJUSTMENT_EffectiveMinimization_PinholeRadialK3) {
   BOOST_CHECK( ba_object->Adjust(sfmData) );
 
   const double dResidual_after = RMSE(sfmData);
-  BOOST_CHECK( dResidual_before > dResidual_after);
+  BOOST_CHECK(dResidual_before > dResidual_after);
 }
 
-BOOST_AUTO_TEST_CASE(BUNDLE_ADJUSTMENT_EffectiveMinimization_PinholeBrownT2) {
-
+BOOST_AUTO_TEST_CASE(BUNDLE_ADJUSTMENT_EffectiveMinimization_PinholeBrownT2)
+{
   const int nviews = 3;
   const int npoints = 6;
   const NViewDatasetConfigurator config;
@@ -111,11 +113,11 @@ BOOST_AUTO_TEST_CASE(BUNDLE_ADJUSTMENT_EffectiveMinimization_PinholeBrownT2) {
   BOOST_CHECK( ba_object->Adjust(sfmData) );
 
   const double dResidual_after = RMSE(sfmData);
-  BOOST_CHECK( dResidual_before > dResidual_after);
+  BOOST_CHECK(dResidual_before > dResidual_after);
 }
 
-BOOST_AUTO_TEST_CASE(BUNDLE_ADJUSTMENT_EffectiveMinimization_PinholeFisheye) {
-
+BOOST_AUTO_TEST_CASE(BUNDLE_ADJUSTMENT_EffectiveMinimization_PinholeFisheye)
+{
   const int nviews = 3;
   const int npoints = 6;
   const NViewDatasetConfigurator config;
@@ -131,11 +133,11 @@ BOOST_AUTO_TEST_CASE(BUNDLE_ADJUSTMENT_EffectiveMinimization_PinholeFisheye) {
   BOOST_CHECK( ba_object->Adjust(sfmData) );
 
   const double dResidual_after = RMSE(sfmData);
-  BOOST_CHECK( dResidual_before > dResidual_after);
+  BOOST_CHECK(dResidual_before > dResidual_after);
 }
 
-BOOST_AUTO_TEST_CASE(LOCAL_BUNDLE_ADJUSTMENT_EffectiveMinimization_Pinhole_CamerasRing) {
-
+BOOST_AUTO_TEST_CASE(LOCAL_BUNDLE_ADJUSTMENT_EffectiveMinimization_Pinhole_CamerasRing)
+{
   const int nviews = 4;
   const int npoints = 3;
   const NViewDatasetConfigurator config;
@@ -202,12 +204,12 @@ BOOST_AUTO_TEST_CASE(LOCAL_BUNDLE_ADJUSTMENT_EffectiveMinimization_Pinhole_Camer
   // 3. Use the graph-distances to assign a LBA state (Refine, Constant & Ignore) for each parameter (poses, intrinsics & landmarks)
   localBAData.convertDistancesToLBAStates(sfmData); 
 
-  BOOST_CHECK( localBAData.getNumOfRefinedPoses() == 2 );     // v0 & v1
-  BOOST_CHECK( localBAData.getNumOfConstantPoses() == 1 );    // v2
-  BOOST_CHECK( localBAData.getNumOfIgnoredPoses() == 1 );     // v3
-  BOOST_CHECK( localBAData.getNumOfRefinedLandmarks() == 2 ); // p0 & p1
-  BOOST_CHECK( localBAData.getNumOfConstantLandmarks() == 0 );
-  BOOST_CHECK( localBAData.getNumOfIgnoredLandmarks() == 1 ); // p2
+  BOOST_CHECK(localBAData.getNumOfRefinedPoses() == 2);     // v0 & v1
+  BOOST_CHECK(localBAData.getNumOfConstantPoses() == 1);    // v2
+  BOOST_CHECK(localBAData.getNumOfIgnoredPoses() == 1);     // v3
+  BOOST_CHECK(localBAData.getNumOfRefinedLandmarks() == 2); // p0 & p1
+  BOOST_CHECK(localBAData.getNumOfConstantLandmarks() == 0);
+  BOOST_CHECK(localBAData.getNumOfIgnoredLandmarks() == 1); // p2
 
   std::shared_ptr<LocalBundleAdjustmentCeres> lba_object = std::make_shared<LocalBundleAdjustmentCeres>(localBAData, options, newReconstructedViews);
   BOOST_CHECK( lba_object->Adjust(sfmData, localBAData) );
@@ -231,7 +233,7 @@ BOOST_AUTO_TEST_CASE(LOCAL_BUNDLE_ADJUSTMENT_EffectiveMinimization_Pinhole_Camer
   BOOST_CHECK( sfmData.structure[2].X == sfmData_notRefined.structure[2].X );
 
   const double dResidual_after = RMSE(sfmData);
-  BOOST_CHECK( dResidual_before > dResidual_after);
+  BOOST_CHECK(dResidual_before > dResidual_after);
 }
 
 /// Compute the Root Mean Square Error of the residuals
@@ -247,7 +249,7 @@ double RMSE(const SfMData & sfm_data)
     for(Observations::const_iterator itObs = observations.begin();
       itObs != observations.end(); ++itObs)
     {
-      const View * view = sfm_data.getViews().find(itObs->first)->second.get();
+      const View* view = sfm_data.getViews().find(itObs->first)->second.get();
       const Pose3 pose = sfm_data.getPose(*view).getTransform();
       const std::shared_ptr<IntrinsicBase> intrinsic = sfm_data.getIntrinsics().find(view->getIntrinsicId())->second;
       const Vec2 residual = intrinsic->residual(pose, iterTracks->second.X, itObs->second.x);

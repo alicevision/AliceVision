@@ -25,6 +25,8 @@ using namespace aliceVision;
 using namespace aliceVision::camera;
 using namespace aliceVision::geometry;
 using namespace aliceVision::sfm;
+using namespace aliceVision::sfmData;
+
 namespace fs = boost::filesystem;
 
 // Test summary:
@@ -35,8 +37,8 @@ namespace fs = boost::filesystem;
 //   - mean residual error is below the gaussian noise added to observation
 //   - the desired number of tracks are found,
 //   - the desired number of poses are found.
-BOOST_AUTO_TEST_CASE(GLOBAL_SFM_RotationAveragingL2_TranslationAveragingL1) {
-
+BOOST_AUTO_TEST_CASE(GLOBAL_SFM_RotationAveragingL2_TranslationAveragingL1)
+{
   const int nviews = 6;
   const int npoints = 64;
   const NViewDatasetConfigurator config;
@@ -78,15 +80,15 @@ BOOST_AUTO_TEST_CASE(GLOBAL_SFM_RotationAveragingL2_TranslationAveragingL1) {
 
   BOOST_CHECK (sfmEngine.process());
 
-  const double dResidual = RMSE(sfmEngine.getSfMData());
-  ALICEVISION_LOG_DEBUG("RMSE residual: " << dResidual);
-  BOOST_CHECK( dResidual < 0.5);
-  BOOST_CHECK( sfmEngine.getSfMData().getPoses().size() == nviews);
-  BOOST_CHECK( sfmEngine.getSfMData().getLandmarks().size() == npoints);
+  const double residual = RMSE(sfmEngine.getSfMData());
+  ALICEVISION_LOG_DEBUG("RMSE residual: " << residual);
+  BOOST_CHECK(residual < 0.5);
+  BOOST_CHECK(sfmEngine.getSfMData().getPoses().size() == nviews);
+  BOOST_CHECK(sfmEngine.getSfMData().getLandmarks().size() == npoints);
 }
 
-BOOST_AUTO_TEST_CASE(GLOBAL_SFM_RotationAveragingL1_TranslationAveragingL1) {
-
+BOOST_AUTO_TEST_CASE(GLOBAL_SFM_RotationAveragingL1_TranslationAveragingL1)
+{
   const int nviews = 6;
   const int npoints = 64;
   const NViewDatasetConfigurator config;
@@ -128,15 +130,15 @@ BOOST_AUTO_TEST_CASE(GLOBAL_SFM_RotationAveragingL1_TranslationAveragingL1) {
 
   BOOST_CHECK (sfmEngine.process());
 
-  const double dResidual = RMSE(sfmEngine.getSfMData());
-  ALICEVISION_LOG_DEBUG("RMSE residual: " << dResidual);
-  BOOST_CHECK( dResidual < 0.5);
-  BOOST_CHECK( sfmEngine.getSfMData().getPoses().size() == nviews);
-  BOOST_CHECK( sfmEngine.getSfMData().getLandmarks().size() == npoints);
+  const double residual = RMSE(sfmEngine.getSfMData());
+  ALICEVISION_LOG_DEBUG("RMSE residual: " << residual);
+  BOOST_CHECK(residual < 0.5);
+  BOOST_CHECK(sfmEngine.getSfMData().getPoses().size() == nviews);
+  BOOST_CHECK(sfmEngine.getSfMData().getLandmarks().size() == npoints);
 }
 
-BOOST_AUTO_TEST_CASE(GLOBAL_SFM_RotationAveragingL2_TranslationAveragingL2_Chordal) {
-
+BOOST_AUTO_TEST_CASE(GLOBAL_SFM_RotationAveragingL2_TranslationAveragingL2_Chordal)
+{
   const int nviews = 6;
   const int npoints = 64;
   const NViewDatasetConfigurator config;
@@ -178,15 +180,15 @@ BOOST_AUTO_TEST_CASE(GLOBAL_SFM_RotationAveragingL2_TranslationAveragingL2_Chord
 
   BOOST_CHECK (sfmEngine.process());
 
-  const double dResidual = RMSE(sfmEngine.getSfMData());
-  ALICEVISION_LOG_DEBUG("RMSE residual: " << dResidual);
-  BOOST_CHECK( dResidual < 0.5);
-  BOOST_CHECK( sfmEngine.getSfMData().getPoses().size() == nviews);
-  BOOST_CHECK( sfmEngine.getSfMData().getLandmarks().size() == npoints);
+  const double residual = RMSE(sfmEngine.getSfMData());
+  ALICEVISION_LOG_DEBUG("RMSE residual: " << residual);
+  BOOST_CHECK(residual < 0.5);
+  BOOST_CHECK(sfmEngine.getSfMData().getPoses().size() == nviews);
+  BOOST_CHECK(sfmEngine.getSfMData().getLandmarks().size() == npoints);
 }
 
-BOOST_AUTO_TEST_CASE(GLOBAL_SFM_RotationAveragingL2_TranslationAveragingSoftL1) {
-
+BOOST_AUTO_TEST_CASE(GLOBAL_SFM_RotationAveragingL2_TranslationAveragingSoftL1)
+{
   const int nviews = 6;
   const int npoints = 64;
   const NViewDatasetConfigurator config;
@@ -228,9 +230,9 @@ BOOST_AUTO_TEST_CASE(GLOBAL_SFM_RotationAveragingL2_TranslationAveragingSoftL1) 
 
   BOOST_CHECK (sfmEngine.process());
 
-  const double dResidual = RMSE(sfmEngine.getSfMData());
-  ALICEVISION_LOG_DEBUG("RMSE residual: " << dResidual);
-  BOOST_CHECK( dResidual < 0.5);
-  BOOST_CHECK( sfmEngine.getSfMData().getPoses().size() == nviews);
-  BOOST_CHECK( sfmEngine.getSfMData().getLandmarks().size() == npoints);
+  const double residual = RMSE(sfmEngine.getSfMData());
+  ALICEVISION_LOG_DEBUG("RMSE residual: " << residual);
+  BOOST_CHECK(residual < 0.5);
+  BOOST_CHECK(sfmEngine.getSfMData().getPoses().size() == nviews);
+  BOOST_CHECK(sfmEngine.getSfMData().getLandmarks().size() == npoints);
 }

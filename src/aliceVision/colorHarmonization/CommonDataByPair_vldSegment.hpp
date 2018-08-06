@@ -104,8 +104,8 @@ class CommonDataByPair_vldSegment  : public CommonDataByPair
 
 private:
   // Left and Right features
-  const vector<feature::SIOPointFeature>& _featsL;
-  const vector<feature::SIOPointFeature>& _featsR;
+  const std::vector<feature::SIOPointFeature>& _featsL;
+  const std::vector<feature::SIOPointFeature>& _featsR;
   // Left and Right corresponding index (putatives matches)
   matching::IndMatches _matches;
 };

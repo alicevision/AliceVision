@@ -7,9 +7,9 @@
 
 #pragma once
 
-#include "aliceVision/numeric/numeric.hpp"
-#include "aliceVision/sfm/SfMData.hpp"
-#include "aliceVision/feature/RegionsPerView.hpp"
+#include <aliceVision/numeric/numeric.hpp>
+#include <aliceVision/sfmData/SfMData.hpp>
+#include <aliceVision/feature/RegionsPerView.hpp>
 #include <aliceVision/robustEstimation/estimators.hpp>
 
 #include <cstddef>
@@ -52,75 +52,63 @@ public:
   /**
   * @brief Build the retrieval database (3D points descriptors)
   *
-  * @param[in] sfm_data the SfM scene that have to be described
+  * @param[in] sfmData the SfM scene that have to be described
   * @param[in] regionPerView regions provider
   * @return True if the database has been correctly setup
   */
-  virtual bool Init
-  (
-    const SfMData & sfm_data,
-    const feature::RegionsPerView & regionPerView
-  ) = 0;
+  virtual bool Init(const sfmData::SfMData& sfmData, const feature::RegionsPerView& regionPerView) = 0;
 
   /**
   * @brief Try to localize an image in the database
   *
-  * @param[in] image_size the w,h image size
-  * @param[in] optional_intrinsics camera intrinsic if known (else nullptr)
-  * @param[in] query_regions the image regions (type must be the same as the database)
+  * @param[in] imageSize the w,h image size
+  * @param[in] optionalIntrinsics camera intrinsic if known (else nullptr)
+  * @param[in] queryRegions the image regions (type must be the same as the database)
   * @param[out] pose found pose
-  * @param[out] resection_data matching data (2D-3D and inliers; optional)
+  * @param[out] resectionData matching data (2D-3D and inliers; optional)
   * @return True if a putative pose has been estimated
   */
-  virtual bool Localize
-  (
-    const Pair & image_size,
-    const camera::IntrinsicBase * optional_intrinsics,
-    const feature::Regions & query_regions,
-    geometry::Pose3 & pose,
-    ImageLocalizerMatchData * resection_data = nullptr // optional
-  ) const = 0;
+  virtual bool Localize(const Pair& imageSize,
+                        const camera::IntrinsicBase* optionalIntrinsics,
+                        const feature::Regions& queryRegions,
+                        geometry::Pose3& pose,
+                        ImageLocalizerMatchData* resectionData = nullptr // optional
+                        ) const = 0;
 
 
   /**
   * @brief Try to localize an image from known 2D-3D matches
   *
-  * @param[in] image_size the w,h image size
-  * @param[in] optional_intrinsics camera intrinsic if known (else nullptr)
-  * @param[in,out] resection_data matching data (with filled 2D-3D correspondences). 
+  * @param[in] imageSize the w,h image size
+  * @param[in] optionalIntrinsics camera intrinsic if known (else nullptr)
+  * @param[in,out] resectionData matching data (with filled 2D-3D correspondences).
    * The 2D points are supposed to be the original distorted image points
   * @param[out] pose found pose
   * @param[in] estimator The type of robust estimator to use. The only supported 
    * frameworks are ERobustEstimator::ACRANSAC and ERobustEstimator::LORANSAC.
   * @return True if a putative pose has been estimated
   */
-  static bool Localize
-  (
-    const Pair & image_size,
-    const camera::IntrinsicBase * optional_intrinsics,
-    ImageLocalizerMatchData & resection_data,
-    geometry::Pose3 & pose,
-    robustEstimation::ERobustEstimator estimator = robustEstimation::ERobustEstimator::ACRANSAC
-  );
+  static bool Localize(const Pair& imageSize,
+                       const camera::IntrinsicBase* optionalIntrinsics,
+                       ImageLocalizerMatchData& resectionData,
+                       geometry::Pose3& pose,
+                       robustEstimation::ERobustEstimator estimator = robustEstimation::ERobustEstimator::ACRANSAC);
 
   /**
   * @brief Refine a pose according 2D-3D matching & camera model data
   *
   * @param[in,out] intrinsics Camera model
   * @param[in,out] pose Camera pose
-  * @param[in] matching_data Corresponding 2D-3D data
-  * @param[in] b_refine_pose tell if pose must be refined
-  * @param[in] b_refine_intrinsic tell if intrinsics must be refined
+  * @param[in] matchingData Corresponding 2D-3D data
+  * @param[in] refinePose tell if pose must be refined
+  * @param[in] refineIntrinsic tell if intrinsics must be refined
   * @return True if the refinement decreased the RMSE pixel residual error
   */
-  static bool RefinePose
-  (
-    camera::IntrinsicBase * intrinsics,
-    geometry::Pose3 & pose,
-    const ImageLocalizerMatchData & matching_data,
-    bool b_refine_pose,
-    bool b_refine_intrinsic
-  );
+  static bool RefinePose(camera::IntrinsicBase* intrinsics,
+                         geometry::Pose3& pose,
+                         const ImageLocalizerMatchData& matchingData,
+                         bool refinePose,
+                         bool refineIntrinsic);
 };
 
 
