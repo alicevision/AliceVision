@@ -5,18 +5,23 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "Texturing.hpp"
+#include "geoMesh.hpp"
+#include "UVAtlas.hpp"
+
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/numeric/numeric.hpp>
 #include <aliceVision/mvsData/Color.hpp>
 #include <aliceVision/mvsData/geometry.hpp>
 #include <aliceVision/mvsData/Pixel.hpp>
 #include <aliceVision/imageIO/image.hpp>
-#include <aliceVision/mesh/UVAtlas.hpp>
 
+#include <geogram/basic/common.h>
 #include <geogram/basic/geometry_nd.h>
 #include <geogram/mesh/mesh.h>
 #include <geogram/mesh/mesh_io.h>
 #include <geogram/parameterization/mesh_atlas_maker.h>
+
+#include <boost/algorithm/string/case_conv.hpp> 
 
 #include <map>
 #include <set>
@@ -26,11 +31,14 @@ namespace mesh {
 
 EUnwrapMethod EUnwrapMethod_stringToEnum(const std::string& method)
 {
-    if(method == "Basic")
+    std::string m = method;
+    boost::to_lower(m);
+
+    if(m == "basic")
         return EUnwrapMethod::Basic;
-    if(method == "ABF")
+    if(m == "abf")
         return EUnwrapMethod::ABF;
-    if(method == "LSCM")
+    if(m == "lscm")
         return EUnwrapMethod::LSCM;
     throw std::out_of_range("Invalid unwrap method " + method);
 }
@@ -48,6 +56,34 @@ std::string EUnwrapMethod_enumToString(EUnwrapMethod method)
     }
     throw std::out_of_range("Unrecognized EUnwrapMethod");
 }
+
+std::string EVisibilityRemappingMethod_enumToString(EVisibilityRemappingMethod method)
+{
+    switch (method)
+    {
+    case EVisibilityRemappingMethod::Pull:
+        return "Push";
+    case EVisibilityRemappingMethod::Push:
+        return "Pull";
+    case EVisibilityRemappingMethod::PullPush:
+        return "PullPush";
+    }
+    throw std::out_of_range("Unrecognized EVisibilityRemappingMethod");
+}
+
+EVisibilityRemappingMethod EVisibilityRemappingMethod_stringToEnum(const std::string& method)
+{
+    std::string m = method;
+    boost::to_lower(m);
+    if (m == "pull")
+        return EVisibilityRemappingMethod::Pull;
+    if (m == "push")
+        return EVisibilityRemappingMethod::Push;
+    if (m == "pullpush")
+        return EVisibilityRemappingMethod::PullPush;
+    throw std::out_of_range("Invalid unwrap method " + method);
+}
+
 
 /**
  * @brief Return whether a pixel is contained in or intersected by a 2D triangle.
@@ -82,39 +118,6 @@ Point2d barycentricToCartesian(const Point2d* triangle, const Point2d& coords)
 Point3d barycentricToCartesian(const Point3d* triangle, const Point2d& coords)
 {
     return triangle[0] + (triangle[2] - triangle[0]) * coords.x + (triangle[1] - triangle[0]) * coords.y;
-}
-
-/**
- * @brief Create a Geogram GEO::Mesh from an aliceVision::Mesh
- *
- * @note only initialize vertices and facets
- * @param[in] the source aliceVision mesh
- * @param[out] the destination GEO::Mesh
- */
-void toGeoMesh(const Mesh& src, GEO::Mesh& dst)
-{
-    GEO::vector<double> vertices;
-    vertices.reserve(src.pts->size() * 3);
-    GEO::vector<GEO::index_t> facets;
-    facets.reserve(src.tris->size() * 3);
-
-    for(unsigned int i = 0; i < src.pts->size(); ++i)
-    {
-        const auto& point = (*src.pts)[i];
-        vertices.insert(vertices.end(), std::begin(point.m), std::end(point.m));
-    }
-
-    for(unsigned int i = 0; i < src.tris->size(); ++i)
-    {
-        const auto& tri = (*src.tris)[i];
-        facets.insert(facets.end(), std::begin(tri.v), std::end(tri.v));
-    }
-
-    dst.facets.assign_triangle_mesh(3, vertices, facets, true);
-    dst.facets.connect();
-
-    assert(src.pts->size() == dst.vertices.nb());
-    assert(src.tris->size() == dst.facets.nb());
 }
 
 void Texturing::generateUVs(mvsUtils::MultiViewParams& mp)
@@ -252,7 +255,7 @@ struct AccuColor {
     }
 
     Color average() const {
-        return count > 0 ? colorSum / count : colorSum;
+        return count > 0 ? colorSum / (float)count : colorSum;
     }
 
     void operator+(const Color& other)
@@ -287,20 +290,108 @@ void Texturing::generateTexture(const mvsUtils::MultiViewParams& mp,
     {
         int triangleId = _atlases[atlasID][i];
 
-        std::set<int> triCams;
-        // retrieve triangle visibilities (set of triangle's points visibilities)
-        for(int k = 0; k < 3; k++)
+        // Fuse visibilities of the 3 vertices
+        std::vector<int> allTriCams;
+        for (int k = 0; k < 3; k++)
         {
             const int pointIndex = (*me->tris)[triangleId].v[k];
             const StaticVector<int>* pointVisibilities = (*pointsVisibilities)[pointIndex];
-            if(pointVisibilities != nullptr)
+            if (pointVisibilities != nullptr)
             {
-                std::copy(pointVisibilities->begin(), pointVisibilities->end(), std::inserter(triCams, triCams.end()));
+                std::copy(pointVisibilities->begin(), pointVisibilities->end(), std::inserter(allTriCams, allTriCams.end()));
             }
         }
-        // register this triangle in cameras seeing it
-        for(int camId : triCams)
+        if (allTriCams.empty())
+        {
+            // triangle without visibility
+            ALICEVISION_LOG_TRACE("No visibility for triangle " << triangleId << " in texture atlas " << atlasID << ".");
+            continue;
+        }
+        std::sort(allTriCams.begin(), allTriCams.end());
+
+        std::vector<std::pair<int, int>> selectedTriCams; // <camId, nbVertices>
+        selectedTriCams.emplace_back(allTriCams.front(), 1);
+        for (int j = 1; j < allTriCams.size(); ++j)
+        {
+            const unsigned int camId = allTriCams[j];
+            if(selectedTriCams.back().first == camId)
+            {
+                ++selectedTriCams.back().second;
+            }
+            else
+            {
+                selectedTriCams.emplace_back(camId, 1);
+            }
+        }
+
+        assert(!selectedTriCams.empty());
+
+        // Select the N best views for texturing
+        Point3d triangleNormal;
+        Point3d triangleCenter;
+        if (texParams.angleHardThreshold != 0.0)
+        {
+            triangleNormal = me->computeTriangleNormal(triangleId);
+            triangleCenter = me->computeTriangleCenterOfGravity(triangleId);
+        }
+        using ScoreCamId = std::tuple<int, double, int>;
+        std::vector<ScoreCamId> scorePerCamId; // <nbVertex, score, camId>
+        for (const auto& itCamVis: selectedTriCams)
+        {
+            const int camId = itCamVis.first;
+            const int verticesSupport = itCamVis.second;
+            if(texParams.forceVisibleByAllVertices && verticesSupport < 3)
+                continue;
+
+            if (texParams.angleHardThreshold != 0.0)
+            {
+                const Point3d vecPointToCam = (mp.CArr[camId] - triangleCenter).normalize();
+                const double angle = angleBetwV1andV2(triangleNormal, vecPointToCam);
+                if(angle > texParams.angleHardThreshold)
+                    continue;
+            }
+
+            const int w = mp.getWidth(camId);
+            const int h = mp.getHeight(camId);
+
+            const Mesh::triangle_proj tProj = me->getTriangleProjection(triangleId, &mp, camId, w, h);
+            const int nbVertex = me->getTriangleNbVertexInImage(tProj, w, h, 20);
+            if(nbVertex == 0)
+                // No triangle vertex in the image
+                continue;
+
+            const double area = me->computeTriangleProjectionArea(tProj);
+            const double score = area * double(verticesSupport);
+            scorePerCamId.emplace_back(nbVertex, score, camId);
+        }
+        if (scorePerCamId.empty())
+        {
+            // triangle without visibility
+            ALICEVISION_LOG_TRACE("No visibility for triangle " << triangleId << " in texture atlas " << atlasID << " after scoring!!");
+            continue;
+        }
+
+        std::sort(scorePerCamId.begin(), scorePerCamId.end(), std::greater<ScoreCamId>());
+        const double minScore = texParams.bestScoreThreshold * std::get<1>(scorePerCamId.front()); // bestScoreThreshold * bestScore
+        const bool bestIsPartial = (std::get<0>(scorePerCamId.front()) < 3);
+        int nbCumulatedVertices = 0;
+        const int maxNbVerticesForFusion = texParams.maxNbImagesForFusion * 3;
+        for(int i = 0; i < scorePerCamId.size(); ++i)
+        {
+            if (!bestIsPartial && i > 0)
+            {
+                bool triVisIsPartial = (std::get<0>(scorePerCamId[i]) < 3);
+                nbCumulatedVertices += std::get<0>(scorePerCamId[i]);
+                if(maxNbVerticesForFusion != 0 && nbCumulatedVertices > maxNbVerticesForFusion)
+                    break;
+                if(std::get<1>(scorePerCamId[i]) < minScore)
+                    // The best image fully see the triangle and has a much better score, so only rely on the first ones
+                    break;
+            }
+
+            const int camId = std::get<2>(scorePerCamId[i]);
             camTriangles[camId].push_back(triangleId);
+        }
     }
 
     ALICEVISION_LOG_INFO("Reading pixel color.");
@@ -313,8 +404,11 @@ void Texturing::generateTexture(const mvsUtils::MultiViewParams& mp,
     {
         ALICEVISION_LOG_INFO(" - camera " << camId + 1 << "/" << mp.ncams << " (" << triangles.size() << " triangles)");
 
-        for(const auto& triangleId : triangles)
+        imageCache.refreshData(camId);
+        #pragma omp parallel for
+        for(int ti = 0; ti < triangles.size(); ++ti)
         {
+            const unsigned int triangleId = triangles[ti];
             // retrieve triangle 3D and UV coordinates
             Point2d triPixs[3];
             Point3d triPts[3];
@@ -370,10 +464,16 @@ void Texturing::generateTexture(const mvsUtils::MultiViewParams& mp,
                     // exclude out of bounds pixels
                     if(!mp.isPixelInImage(pixRC, camId))
                         continue;
+                    Color color = imageCache.getPixelValueInterpolated(&pixRC, camId);
+                    // If the color is pure zero, we consider it as an invalid pixel.
+                    // After correction of radial distortion, some pixels are invalid.
+                    // TODO: use an alpha channel instead.
+                    if(color == Color(0.f, 0.f, 0.f))
+                        continue;
+                    // fill the accumulated color map for this pixel
+                    perPixelColors[xyoffset] += color;
                     // fill the colorID map
                     colorIDs[xyoffset] = xyoffset;
-                    // fill the accumulated color map for this pixel
-                    perPixelColors[xyoffset] += imageCache.getPixelValueInterpolated(&pixRC, camId);
                 }
             }
         }
@@ -549,7 +649,13 @@ void Texturing::replaceMesh(const std::string& otherMeshPath, bool flipNormals)
     // allocate pointsVisibilities for new internal mesh
     pointsVisibilities = new PointsVisibility();
     // remap visibilities from reconstruction onto input mesh
-    remapMeshVisibilities(*refMesh, *refVisibilities, *me, *pointsVisibilities);
+    if(texParams.visibilityRemappingMethod & EVisibilityRemappingMethod::Pull)
+        remapMeshVisibilities_pullVerticesVisibility(*refMesh, *refVisibilities, *me, *pointsVisibilities);
+    if (texParams.visibilityRemappingMethod & EVisibilityRemappingMethod::Push)
+        remapMeshVisibilities_pushVerticesVisibilityToTriangles(*refMesh, *refVisibilities, *me, *pointsVisibilities);
+    if(pointsVisibilities->empty())
+        throw std::runtime_error("No visibility after visibility remapping.");
+
     // delete ref mesh and visibilities
     delete refMesh;
     deleteArrayOfArrays(&refVisibilities);

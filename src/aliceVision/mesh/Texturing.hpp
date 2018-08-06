@@ -14,6 +14,7 @@
 #include <aliceVision/mvsUtils/ImagesCache.hpp>
 #include <aliceVision/mesh/Mesh.hpp>
 #include <aliceVision/mesh/meshVisibility.hpp>
+#include <aliceVision/stl/bitmask.hpp>
 
 #include <boost/filesystem.hpp>
 
@@ -26,9 +27,9 @@ namespace mesh {
  * @brief Available mesh unwrapping methods
  */
 enum class EUnwrapMethod {
-    Basic = 0, // Basic unwrapping based on visibilities
-    ABF = 1,   // Geogram: ABF++
-    LSCM = 2   // Geogram: Spectral LSCM
+    Basic = 0, //< Basic unwrapping based on visibilities
+    ABF = 1,   //< Geogram: ABF++
+    LSCM = 2   //< Geogram: Spectral LSCM
 };
 
 /**
@@ -46,8 +47,29 @@ EUnwrapMethod EUnwrapMethod_stringToEnum(const std::string& method);
 std::string EUnwrapMethod_enumToString(EUnwrapMethod method);
 
 
+/**
+ * @brief Method to remap visibilities from the reconstruction onto an other mesh.
+ */
+enum EVisibilityRemappingMethod {
+    Pull = 1,    //< For each vertex of the input mesh, pull the visibilities from the closest vertex in the reconstruction.
+    Push = 2,    //< For each vertex of the reconstruction, push the visibilities to the closest triangle in the input mesh.
+    PullPush = Pull | Push  //< Combine results from Pull and Push results.
+};
+
+ALICEVISION_BITMASK(EVisibilityRemappingMethod);
+
+std::string EVisibilityRemappingMethod_enumToString(EVisibilityRemappingMethod method);
+EVisibilityRemappingMethod EVisibilityRemappingMethod_stringToEnum(const std::string& method);
+
+
 struct TexturingParams
 {
+    int maxNbImagesForFusion = 3; //< max number of images to combine to create the final texture
+    double bestScoreThreshold = 0.0; //< 0.0 to disable filtering based on threshold to relative best score
+    double angleHardThreshold = 90.0; //< 0.0 to disable angle hard threshold filtering
+    bool forceVisibleByAllVertices = false; //< triangle visibility is based on the union of vertices visiblity
+    EVisibilityRemappingMethod visibilityRemappingMethod = EVisibilityRemappingMethod::PullPush;
+
     unsigned int textureSide = 8192;
     unsigned int padding = 15;
     unsigned int downscale = 2;

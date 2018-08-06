@@ -206,7 +206,7 @@ void finishEstimate()
 {
 }
 
-std::string printfElapsedTime(long t1, std::string prefix)
+std::string formatElapsedTime(long t1)
 {
     long t2 = clock();
     float d1 = (float)(t2 - t1) / (float)CLOCKS_PER_SEC;
@@ -215,10 +215,9 @@ std::string printfElapsedTime(long t1, std::string prefix)
     int sec = (int)d1 - (int)floor(d1 / 60.0) * 60;
     int mil = (int)((d1 - (int)floor(d1)) * 1000);
 
-    std::string out = prefix + " elapsed time " + num2strTwoDecimal(min) + " minutes " + num2strTwoDecimal(sec) +
-                      " seconds " + num2strThreeDigits(mil) + " miliseconds\n";
-
-    ALICEVISION_LOG_DEBUG(out);
+    std::string out = "Elapsed time: " + num2strTwoDecimal(min) + " minutes " +
+                                         num2strTwoDecimal(sec) + " seconds " +
+                                         num2strThreeDigits(mil) + " miliseconds\n";
 
     return out;
 }

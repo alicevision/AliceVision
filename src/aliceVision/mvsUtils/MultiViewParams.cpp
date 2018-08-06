@@ -447,8 +447,8 @@ bool MultiViewParams::isPixelInImage(const Pixel& pix, int d, int camId) const
 }
 bool MultiViewParams::isPixelInImage(const Pixel& pix, int camId) const
 {
-    return ((pix.x >= g_border) && (pix.x < getWidth(camId) - g_border) && (pix.y >= g_border) &&
-            (pix.y < getHeight(camId) - g_border));
+    return ((pix.x >= g_border) && (pix.x < getWidth(camId) - g_border) &&
+            (pix.y >= g_border) && (pix.y < getHeight(camId) - g_border));
 }
 
 bool MultiViewParams::isPixelInImage(const Point2d& pix, int camId) const

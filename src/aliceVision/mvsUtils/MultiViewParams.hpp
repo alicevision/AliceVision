@@ -96,8 +96,7 @@ public:
     int CUDADeviceNo;
     ///
     float simThr;
-    int g_border = 10;
-    int g_maxPlaneNormalViewDirectionAngle = 70;
+    int g_border = 2;
     bool verbose;
 
     boost::property_tree::ptree _ini;

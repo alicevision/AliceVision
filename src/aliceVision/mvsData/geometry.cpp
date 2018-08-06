@@ -197,30 +197,18 @@ double angleBetwV1andV2(const Point3d& iV1, const Point3d& iV2)
     V1 = iV1.normalize();
     V2 = iV2.normalize();
 
-    double a = acos((double)(V1.x * V2.x + V1.y * V2.y + V1.z * V2.z));
+    const double a = acos((double)(V1.x * V2.x + V1.y * V2.y + V1.z * V2.z));
     if(std::isnan(a))
-    {
-        a = 0.0;
-    }
+        return 0.0;
 
     return fabs(a / (M_PI / 180.0));
 }
 
 double angleBetwABandAC(const Point3d& A, const Point3d& B, const Point3d& C)
 {
-    Point3d V1, V2;
-    V1 = B - A;
-    V2 = C - A;
-    V1 = V1.normalize();
-    V2 = V2.normalize();
-
-    double a = acos((double)(V1.x * V2.x + V1.y * V2.y + V1.z * V2.z));
-    if(std::isnan(a))
-    {
-        a = 0.0;
-    }
-
-    return fabs(a) / (M_PI / 180.0);
+    Point3d V1 = B - A;
+    Point3d V2 = C - A;
+    return angleBetwV1andV2(V1, V2);
 }
 
 void rotPointAroundVect(double* out, const double* X, const double* vect, const double angle)

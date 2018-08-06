@@ -19,7 +19,7 @@
 
 // These constants define the current software version.
 // They must be updated when the command line is changed.
-#define ALICEVISION_SOFTWARE_VERSION_MAJOR 1
+#define ALICEVISION_SOFTWARE_VERSION_MAJOR 2
 #define ALICEVISION_SOFTWARE_VERSION_MINOR 0
 
 using namespace aliceVision;
@@ -45,6 +45,7 @@ int main(int argc, char* argv[])
     bool flipNormals = false;
     mesh::TexturingParams texParams;
     std::string unwrapMethod = mesh::EUnwrapMethod_enumToString(mesh::EUnwrapMethod::Basic);
+    std::string visibilityRemappingMethod = mesh::EVisibilityRemappingMethod_enumToString(texParams.visibilityRemappingMethod);
 
     po::options_description allParams("AliceVision texturing");
 
@@ -77,7 +78,20 @@ int main(int argc, char* argv[])
         ("inputMesh", po::value<std::string>(&inputMeshFilepath),
             "Optional input mesh to texture. By default, it will texture the inputReconstructionMesh.")
         ("flipNormals", po::value<bool>(&flipNormals)->default_value(flipNormals),
-            "Option to flip face normals. It can be needed as it depends on the vertices order in triangles and the convention change from one software to another.");
+            "Option to flip face normals. It can be needed as it depends on the vertices order in triangles and the convention change from one software to another.")
+        ("maxNbImagesForFusion", po::value<int>(&texParams.maxNbImagesForFusion)->default_value(texParams.maxNbImagesForFusion),
+            "Max number of images to combine to create the final texture.")
+        ("bestScoreThreshold", po::value<double>(&texParams.bestScoreThreshold)->default_value(texParams.bestScoreThreshold),
+            "(0.0 to disable filtering based on threshold to relative best score).")
+        ("angleHardThreshold", po::value<double>(&texParams.angleHardThreshold)->default_value(texParams.angleHardThreshold),
+            "(0.0 to disable angle hard threshold filtering).")
+        ("forceVisibleByAllVertices", po::value<bool>(&texParams.forceVisibleByAllVertices)->default_value(texParams.forceVisibleByAllVertices),
+            "triangle visibility is based on the union of vertices visiblity.")
+        ("visibilityRemappingMethod", po::value<std::string>(&visibilityRemappingMethod)->default_value(visibilityRemappingMethod),
+            "Method to remap visibilities from the reconstruction to the input mesh.\n"
+            " * Pull: For each vertex of the input mesh, pull the visibilities from the closest vertex in the reconstruction.\n"
+            " * Push: For each vertex of the reconstruction, push the visibilities to the closest triangle in the input mesh.\n"
+            " * PullPush: Combine results from Pull and Push results.'");
 
     po::options_description logParams("Log parameters");
     logParams.add_options()
@@ -119,6 +133,7 @@ int main(int argc, char* argv[])
     // set verbose level
     system::Logger::get()->setLogLevel(verboseLevel);
 
+    texParams.visibilityRemappingMethod = mesh::EVisibilityRemappingMethod_stringToEnum(visibilityRemappingMethod);
     // set output texture file type
     const EImageFileType outputTextureFileType = EImageFileType_stringToEnum(outTextureFileTypeName);
 

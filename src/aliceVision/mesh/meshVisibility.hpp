@@ -27,16 +27,31 @@ int getNearestVertices(const Mesh& refMesh, const Mesh& mesh, StaticVector<int>&
 /**
  * @brief Transfer the visibility per vertex from one mesh to another.
  * For each vertex of the @p mesh, we search the nearest neighbor vertex in the @p refMesh and copy its visibility information.
- * @note The visibility information is a list of camera IDs which are seeing the vertex.
+ * @note The visibility information is a list of camera IDs seeing the vertex.
  *
  * @param[in] refMesh input reference mesh
  * @param[in] refPtsVisibilities visibility array per vertex of @p refMesh
  * @param[in] mesh input target mesh
  * @param[out] out_ptsVisibilities visibility array per vertex of @p mesh
  */
-void remapMeshVisibilities(
+void remapMeshVisibilities_pullVerticesVisibility(
     const Mesh& refMesh, const PointsVisibility& refPtsVisibilities,
     const Mesh& mesh, PointsVisibility& out_ptsVisibilities);
+
+/**
+* @brief Transfer the visibility per vertex from one mesh to another.
+* For each vertex of the @p refMesh, we search the closest triangle in the @p mesh and copy its visibility information to each vertex of the triangle.
+* @note The visibility information is a list of camera IDs seeing the vertex.
+*
+* @param[in] refMesh input reference mesh
+* @param[in] refPtsVisibilities visibility array per vertex of @p refMesh
+* @param[in] mesh input target mesh
+* @param[out] out_ptsVisibilities visibility array per vertex of @p mesh
+*/
+void remapMeshVisibilities_pushVerticesVisibilityToTriangles(
+    const Mesh& refMesh, const PointsVisibility& refPtsVisibilities,
+    const Mesh& mesh, PointsVisibility& out_ptsVisibilities);
+
 
 } // namespace mesh
 } // namespace aliceVision

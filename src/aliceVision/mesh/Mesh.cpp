@@ -227,16 +227,33 @@ Mesh::triangle_proj Mesh::getTriangleProjection(int triid, const mvsUtils::Multi
     return tp;
 }
 
-bool Mesh::isTriangleProjectionInImage(Mesh::triangle_proj tp, int w, int h) const
+bool Mesh::isTriangleProjectionInImage(const Mesh::triangle_proj& tp, int width, int height, int margin) const
 {
+    int w = width - margin;
+    int h = height - margin;
     for(int j = 0; j < 3; j++)
     {
-        if(!((tp.tpixs[j].x > 0) && (tp.tpixs[j].x < w) && (tp.tpixs[j].y > 0) && (tp.tpixs[j].y < h)))
+        if(!((tp.tpixs[j].x > margin) && (tp.tpixs[j].x < w) && (tp.tpixs[j].y > margin) && (tp.tpixs[j].y < h)))
         {
             return false;
         }
     }
     return true;
+}
+
+int Mesh::getTriangleNbVertexInImage(const Mesh::triangle_proj& tp, int width, int height, int margin) const
+{
+    int nbVertexInImage = 0;
+    int w = width - margin;
+    int h = height - margin;
+    for (int j = 0; j < 3; j++)
+    {
+        if ((tp.tpixs[j].x > margin) && (tp.tpixs[j].x < w) && (tp.tpixs[j].y > margin) && (tp.tpixs[j].y < h))
+        {
+            ++nbVertexInImage;
+        }
+    }
+    return nbVertexInImage;
 }
 
 StaticVector<Point2d>* Mesh::getTrianglePixelIntersectionsAndInternalPoints(Mesh::triangle_proj* tp,
@@ -648,7 +665,7 @@ StaticVector<StaticVector<int>*>* Mesh::getTrisMap(const mvsUtils::MultiViewPara
     for(int i = 0; i < tris->size(); i++)
     {
         triangle_proj tp = getTriangleProjection(i, mp, rc, w, h);
-        if((isTriangleProjectionInImage(tp, w, h)))
+        if((isTriangleProjectionInImage(tp, w, h, 0)))
         {
             Pixel pix;
             for(pix.x = tp.lu.x; pix.x <= tp.rd.x; pix.x++)
@@ -688,7 +705,7 @@ StaticVector<StaticVector<int>*>* Mesh::getTrisMap(const mvsUtils::MultiViewPara
     for(int i = 0; i < tris->size(); i++)
     {
         triangle_proj tp = getTriangleProjection(i, mp, rc, w, h);
-        if((isTriangleProjectionInImage(tp, w, h)))
+        if((isTriangleProjectionInImage(tp, w, h, 0)))
         {
             Pixel pix;
             for(pix.x = tp.lu.x; pix.x <= tp.rd.x; pix.x++)
@@ -727,7 +744,7 @@ StaticVector<StaticVector<int>*>* Mesh::getTrisMap(StaticVector<int>* visTris, c
     {
         int i = (*visTris)[m];
         triangle_proj tp = getTriangleProjection(i, mp, rc, w, h);
-        if((isTriangleProjectionInImage(tp, w, h)))
+        if((isTriangleProjectionInImage(tp, w, h, 0)))
         {
             Pixel pix;
             for(pix.x = tp.lu.x; pix.x <= tp.rd.x; pix.x++)
@@ -768,7 +785,7 @@ StaticVector<StaticVector<int>*>* Mesh::getTrisMap(StaticVector<int>* visTris, c
     {
         int i = (*visTris)[m];
         triangle_proj tp = getTriangleProjection(i, mp, rc, w, h);
-        if((isTriangleProjectionInImage(tp, w, h)))
+        if((isTriangleProjectionInImage(tp, w, h, 0)))
         {
             Pixel pix;
             for(pix.x = tp.lu.x; pix.x <= tp.rd.x; pix.x++)
@@ -1417,17 +1434,17 @@ void Mesh::removeFreePointsFromMesh(StaticVector<int>** out_ptIdToNewPtId)
     delete cleanedMesh;
 }
 
-float Mesh::computeTriangleProjectionArea(triangle_proj& tp)
+double Mesh::computeTriangleProjectionArea(const triangle_proj& tp)
 {
     // return (float)((tp.rd.x-tp.lu.x+1)*(tp.rd.y-tp.lu.y+1));
 
     Point2d pa = tp.tp2ds[0];
     Point2d pb = tp.tp2ds[1];
     Point2d pc = tp.tp2ds[2];
-    float a = (pb - pa).size();
-    float b = (pc - pa).size();
-    float c = (pc - pb).size();
-    float p = (a + b + c) / 2.0;
+    double a = (pb - pa).size();
+    double b = (pc - pa).size();
+    double c = (pc - pb).size();
+    double p = (a + b + c) / 2.0;
 
     return sqrt(p * (p - a) * (p - b) * (p - c));
 
@@ -1436,15 +1453,15 @@ float Mesh::computeTriangleProjectionArea(triangle_proj& tp)
     //	return  cross(e1,e2).size()/2.0f;
 }
 
-float Mesh::computeTriangleArea(int idTri)
+double Mesh::computeTriangleArea(int idTri)
 {
     Point3d pa = (*pts)[(*tris)[idTri].v[0]];
     Point3d pb = (*pts)[(*tris)[idTri].v[1]];
     Point3d pc = (*pts)[(*tris)[idTri].v[2]];
-    float a = (pb - pa).size();
-    float b = (pc - pa).size();
-    float c = (pc - pb).size();
-    float p = (a + b + c) / 2.0;
+    double a = (pb - pa).size();
+    double b = (pc - pa).size();
+    double c = (pc - pb).size();
+    double p = (a + b + c) / 2.0;
 
     return sqrt(p * (p - a) * (p - b) * (p - c));
 }
