@@ -439,15 +439,13 @@ void ps_deviceUpdateCam( const cameraStruct* const cam, int camId, int CUDAdevic
 
         if(varianceWsh > 0)
         {
-            r4tex = global_data.getScaledPictureTex( scale, camId );
             compute_varLofLABtoW_kernel<<<grid, block>>>(
-                r4tex,
+                global_data.getScaledPictureTex( scale, camId ),
                 tex_lab_dmp.getBuffer(), tex_lab_dmp.stride()[0],
                 w / (scale + 1), h / (scale + 1), varianceWsh);
             memOpErrorCheck( cudaGetLastError(), __FILE__, __LINE__, "Failed to execute kernel" );
 
             array.copyFrom( tex_lab_dmp );
-            r4tex = global_data.getScaledPictureTex( 0, camId );
         }
     }
 
