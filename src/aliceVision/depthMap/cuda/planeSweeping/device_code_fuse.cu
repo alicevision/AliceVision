@@ -180,7 +180,7 @@ static __device__ float2 getCellSmoothStepEnergy( cudaTextureObject_t depthsTex,
 }
 
 __global__ void fuse_optimizeDepthSimMap_kernel(
-    cudaTextureObject_t r4tex,
+    NormLinearTex<uchar4> r4tex,
     cudaTextureObject_t depthsTex,
     float2* out_optDepthSimMap, int optDepthSimMap_p,
     float2* midDepthPixSizeMap, int midDepthPixSizeMap_p,
@@ -231,7 +231,7 @@ __global__ void fuse_optimizeDepthSimMap_kernel(
         float depthSmoothVal = depthSmoothStepEnergy.y;
         float depthPhotoStepVal = fusedDepthSim.y;
 
-        float varianceGray = 255.0f*tex2D<float4>(r4tex, (float)x + 0.5f, (float)(y + yFrom) + 0.5f).w;
+        float varianceGray = 255.0f*tex2D<float4>(r4tex.obj, (float)x + 0.5f, (float)(y + yFrom) + 0.5f).w;
 
         // archive: 
         // float varianceGrayAndleWeight = sigmoid2(5.0f, 60.0f, 10.0f, 5.0f, varianceGray);

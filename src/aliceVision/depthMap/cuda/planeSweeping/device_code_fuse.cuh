@@ -6,6 +6,8 @@
 
 #pragma once
 
+#include "aliceVision/depthMap/cuda/deviceCommon/device_tex_types.cuh"
+
 namespace aliceVision {
 namespace depthMap {
 
@@ -34,7 +36,7 @@ __global__ void fuse_getOptDeptMapFromOPtDepthSimMap_kernel(
                     int width, int height);
 
 __global__ void fuse_optimizeDepthSimMap_kernel(
-                    cudaTextureObject_t r4tex,
+                    NormLinearTex<uchar4> r4tex,
                     cudaTextureObject_t depthsTex,
                     float2* out_optDepthSimMap, int optDepthSimMap_p,
                     float2* midDepthPixSizeMap, int midDepthPixSizeMap_p,

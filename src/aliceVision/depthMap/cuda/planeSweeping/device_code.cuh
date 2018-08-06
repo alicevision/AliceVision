@@ -8,6 +8,7 @@
 
 #include "aliceVision/depthMap/cuda/planeSweeping/device_utils.cuh"
 
+#include "aliceVision/depthMap/cuda/deviceCommon/device_tex_types.cuh"
 #include "aliceVision/depthMap/cuda/deviceCommon/device_patch_es.cuh"
 
 #include <math_constants.h>
@@ -23,7 +24,7 @@ namespace depthMap {
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////
 
-__global__ void compute_varLofLABtoW_kernel( cudaTextureObject_t r4tex, uchar4* labMap, int labMap_p, int width, int height, int wsh);
+__global__ void compute_varLofLABtoW_kernel( NormLinearTex<uchar4> r4tex, uchar4* labMap, int labMap_p, int width, int height, int wsh);
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -74,26 +75,26 @@ static __device__ float move3DPointByTcOrRcPixStep(float3& p, float pixStep, boo
 }
 
 __global__ void smoothDepthMap_kernel(
-    cudaTextureObject_t r4tex,
+    NormLinearTex<uchar4> r4tex,
     cudaTextureObject_t depthsTex,
     float* dmap, int dmap_p,
     int width, int height, int wsh, const float gammaC, const float gammaP);
 
 __global__ void filterDepthMap_kernel(
-    cudaTextureObject_t r4tex,
+    NormLinearTex<uchar4> r4tex,
     cudaTextureObject_t depthsTex,
     float* dmap, int dmap_p,
     int width, int height, int wsh, const float gammaC, const float minCostThr );
 
 __global__ void alignSourceDepthMapToTarget_kernel(
-    cudaTextureObject_t r4tex,
+    NormLinearTex<uchar4> r4tex,
     cudaTextureObject_t depthsTex,
     cudaTextureObject_t depthsTex1,
     float* dmap, int dmap_p,
     int width, int height, int wsh, const float gammaC, const float maxPixelSizeDist );
 
 __global__ void computeNormalMap_kernel(
-    cudaTextureObject_t r4tex,
+    NormLinearTex<uchar4> r4tex,
     cudaTextureObject_t depthsTex,
     float3* nmap, int nmap_p,
     int width, int height, int wsh, const float gammaC, const float gammaP );
@@ -106,8 +107,8 @@ __global__ void locmin_kernel(
     bool doUsePixelsDepths, int kernelSizeHalf );
 
 __global__ void getRefTexLAB_kernel(
-    cudaTextureObject_t r4tex,
-    cudaTextureObject_t t4tex,
+    NormLinearTex<uchar4> r4tex,
+    NormLinearTex<uchar4> t4tex,
     uchar4* texs, int texs_p, int width, int height);
 
 __global__ void getTarTexLAB_kernel(
@@ -193,7 +194,7 @@ __global__ void downscale_bilateral_smooth_lab_kernel(
 
 __global__ void downscale_gauss_smooth_lab_kernel(
     cudaTextureObject_t gaussianTex,
-    cudaTextureObject_t r4tex,
+    NormLinearTex<uchar4> r4tex,
     uchar4* texLab, int texLab_p,
     int width, int height, int scale, int radius );
 

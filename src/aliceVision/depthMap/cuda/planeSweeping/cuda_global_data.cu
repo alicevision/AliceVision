@@ -98,9 +98,9 @@ void GlobalData::allocScaledPictureArrays( int scales, int ncams, int width, int
 
     _scaled_picture_scales = scales;
 
-    _scaled_picture_array    .resize( scales * ncams );
-    _scaled_picture_tex      .resize( scales * ncams );
-    _scaled_picture_tex_point.resize( scales * ncams );
+    _scaled_picture_array          .resize( scales * ncams );
+    _scaled_picture_tex_point      .resize( scales * ncams );
+    _scaled_picture_tex_norm_linear.resize( scales * ncams );
 
     cudaResourceDesc res_desc;
     res_desc.resType = cudaResourceTypeArray;
@@ -122,17 +122,17 @@ void GlobalData::allocScaledPictureArrays( int scales, int ncams, int width, int
 
             res_desc.res.array.array = _scaled_picture_array[ c * scales + s ]->getArray();
 
-            tex_desc.readMode         = cudaReadModeNormalizedFloat;
-            tex_desc.filterMode       = cudaFilterModeLinear;
-            err = cudaCreateTextureObject( &_scaled_picture_tex[ c * scales + s ],
+            tex_desc.readMode         = cudaReadModeElementType;
+            tex_desc.filterMode       = cudaFilterModePoint;
+            err = cudaCreateTextureObject( &_scaled_picture_tex_point[ c * scales + s ],
                                      &res_desc,
                                      &tex_desc,
                                      0 );
             memOpErrorCheck( err, __FILE__, __LINE__, "Failed to get create CUDA texture object" );
 
-            tex_desc.readMode         = cudaReadModeElementType;
-            tex_desc.filterMode       = cudaFilterModePoint;
-            err = cudaCreateTextureObject( &_scaled_picture_tex_point[ c * scales + s ],
+            tex_desc.readMode         = cudaReadModeNormalizedFloat;
+            tex_desc.filterMode       = cudaFilterModeLinear;
+            err = cudaCreateTextureObject( &_scaled_picture_tex_norm_linear[ c * scales + s ].obj,
                                      &res_desc,
                                      &tex_desc,
                                      0 );
@@ -153,13 +153,13 @@ void GlobalData::freeScaledPictureArrays( )
 
     _scaled_picture_array.clear();
 
-    for( cudaTextureObject_t& obj : _scaled_picture_tex )
+    for( NormLinearTex<uchar4>& tex : _scaled_picture_tex_norm_linear )
     {
-        cudaError_t err = cudaDestroyTextureObject( obj );
+        cudaError_t err = cudaDestroyTextureObject( tex.obj );
         memOpErrorCheck( err, __FILE__, __LINE__, "Failed to get destroy CUDA texture object" );
     }
 
-    _scaled_picture_tex.clear();
+    _scaled_picture_tex_norm_linear.clear();
 
     for( cudaTextureObject_t& obj : _scaled_picture_tex_point )
     {
@@ -180,14 +180,14 @@ CudaArray<uchar4,2>& GlobalData::getScaledPictureArray( int scale, int cam )
     return *_scaled_picture_array[ cam * _scaled_picture_scales + scale ];
 }
 
-cudaTextureObject_t GlobalData::getScaledPictureTex( int scale, int cam )
-{
-    return _scaled_picture_tex[ cam * _scaled_picture_scales + scale ];
-}
-
 cudaTextureObject_t GlobalData::getScaledPictureTexPoint( int scale, int cam )
 {
     return _scaled_picture_tex_point[ cam * _scaled_picture_scales + scale ];
+}
+
+NormLinearTex<uchar4> GlobalData::getScaledPictureTexNorm( int scale, int cam )
+{
+    return _scaled_picture_tex_norm_linear[ cam * _scaled_picture_scales + scale ];
 }
 
 void GlobalData::allocPyramidArrays( int levels, int w, int h )

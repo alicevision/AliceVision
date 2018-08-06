@@ -8,6 +8,7 @@
 
 #include "aliceVision/depthMap/cuda/deviceCommon/device_matrix.cuh"
 #include "aliceVision/depthMap/cuda/deviceCommon/device_color.cuh"
+#include "aliceVision/depthMap/cuda/deviceCommon/device_tex_types.cuh"
 
 namespace aliceVision {
 namespace depthMap {
@@ -35,7 +36,7 @@ __global__ void refine_computeDepthsMapFromDepthMap_kernel(float3* depthsMap, in
                                                            float step);
 
 __global__ void refine_reprojTarTexLABByDepthsMap_kernel(
-    cudaTextureObject_t t4tex,
+    NormLinearTex<uchar4> t4tex,
     float3* depthsMap, int depthsMap_p,
     uchar4* tex, int tex_p,
     int width, int height, int id);
@@ -90,8 +91,8 @@ __global__ void refine_fuseThreeDepthSimMaps_kernel(float* osim, int osim_p, flo
 
 #ifdef MERGE_REFINE_KERNELS
 __global__ void refine_compYKNCCSimMapPatch_kernel_A(
-    cudaTextureObject_t r4tex,
-    cudaTextureObject_t t4tex,
+    NormLinearTex<uchar4> r4tex,
+    NormLinearTex<uchar4> t4tex,
     const float* depthMap, int depthMap_p,
     int width, int height, int wsh, const float gammaC,
     const float gammaP, const float epipShift, const float tcStep,
@@ -99,8 +100,8 @@ __global__ void refine_compYKNCCSimMapPatch_kernel_A(
     float3* lastThreeSimsMap, int lastThreeSimsMap_p, const int dimension );
 
 __global__ void refine_compUpdateYKNCCSimMapPatch_kernel(
-    cudaTextureObject_t r4tex,
-    cudaTextureObject_t t4tex,
+    NormLinearTex<uchar4> r4tex,
+    NormLinearTex<uchar4> t4tex,
     float* osimMap, int osimMap_p,
     float* odptMap, int odptMap_p,
     const float* depthMap, int depthMap_p, int width, int height,
@@ -111,8 +112,8 @@ __global__ void refine_compUpdateYKNCCSimMapPatch_kernel(
     float3* lastThreeSimsMap, int lastThreeSimsMap_p );
 #else
 __global__ void refine_compUpdateYKNCCSimMapPatch_kernel(
-    cudaTextureObject_t r4tex,
-    cudaTextureObject_t t4tex,
+    NormLinearTex<uchar4> r4tex,
+    NormLinearTex<uchar4> t4tex,
     float* osimMap, int osimMap_p,
     float* odptMap, int odptMap_p,
     const float* depthMap, int depthMap_p, int width, int height,
@@ -126,31 +127,31 @@ __global__ void refine_compUpdateYKNCCSimMapPatch_kernel(
 __global__ void refine_coputeDepthStepMap_kernel(float* depthStepMap, int depthStepMap_p, float* depthMap,
                                                  int depthMap_p, int width, int height, bool moveByTcOrRc);
 
-__global__ void refine_compYKNCCDepthSimMapPatch_kernel(
-    cudaTextureObject_t r4tex,
-    cudaTextureObject_t t4tex,
-    float2* oDepthSimMap, int oDepthSimMap_p, float* depthMap,
-    int depthMap_p, int width, int height, int wsh,
-    const float gammaC, const float gammaP, const float epipShift,
-    const float tcStep, bool moveByTcOrRc);
+// __global__ void refine_compYKNCCDepthSimMapPatch_kernel(
+//     NormLinearTex<uchar4> r4tex,
+//     NormLinearTex<uchar4> t4tex,
+//     float2* oDepthSimMap, int oDepthSimMap_p, float* depthMap,
+//     int depthMap_p, int width, int height, int wsh,
+//     const float gammaC, const float gammaP, const float epipShift,
+//     const float tcStep, bool moveByTcOrRc);
 
 __global__ void refine_compYKNCCSimMapPatch_kernel(
-    cudaTextureObject_t r4tex,
-    cudaTextureObject_t t4tex,
+    NormLinearTex<uchar4> r4tex,
+    NormLinearTex<uchar4> t4tex,
     float* osimMap, int osimMap_p,
     const float* depthMap, int depthMap_p,
     int width, int height, int wsh, const float gammaC,
     const float gammaP, const float epipShift, const float tcStep,
     bool moveByTcOrRc, int xFrom, int imWidth, int imHeight);
 
-__global__ void refine_compYKNCCSimMapPatchDMS_kernel(
-    cudaTextureObject_t r4tex,
-    cudaTextureObject_t t4tex,
-    float* osimMap, int osimMap_p,
-    float* depthMap, int depthMap_p,
-    int width, int height, int wsh, const float gammaC,
-    const float gammaP, const float epipShift,
-    const float depthMapShift);
+// __global__ void refine_compYKNCCSimMapPatchDMS_kernel(
+//     NormLinearTex<uchar4> r4tex,
+//     NormLinearTex<uchar4> t4tex,
+//     float* osimMap, int osimMap_p,
+//     float* depthMap, int depthMap_p,
+//     int width, int height, int wsh, const float gammaC,
+//     const float gammaP, const float epipShift,
+//     const float depthMapShift);
 
 __global__ void refine_setLastThreeSimsMap_kernel(float3* lastThreeSimsMap, int lastThreeSimsMap_p, float* simMap,
                                                   int simMap_p, int width, int height, int id);

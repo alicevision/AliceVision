@@ -31,13 +31,13 @@ static __device__ void volume_computePatch( cudaTextureObject_t depthsTex, patch
 }
 
 __global__ void volume_slice_kernel(
-    cudaTextureObject_t r4tex,
-    cudaTextureObject_t t4tex,
+    NormLinearTex<uchar4> r4tex,
+    NormLinearTex<uchar4> t4tex,
     cudaTextureObject_t depthsTex,
     cudaTextureObject_t volPixs_x_Tex,
     cudaTextureObject_t volPixs_y_Tex,
     cudaTextureObject_t volPixs_z_Tex,
-    unsigned char* slice, int slice_p,
+    unsigned char* out_slice, int out_slice_p,
     // float3* slicePts, int slicePts_p,
     int nsearchdepths, int ndepths, int slicesAtTime, int width, int height, int wsh,
     int t, int npixs, const float gammaC, const float gammaP, const float epipShift )
@@ -70,7 +70,7 @@ __global__ void volume_slice_kernel(
             // coalescent
             /*int sliceid = pixid * slice_p + sdptid;
             slice[sliceid] = sim;*/
-            Plane<unsigned char>( slice, slice_p ).set( sdptid, pixid, sim );
+            Plane<unsigned char>( out_slice, out_slice_p ).set( sdptid, pixid, sim );
         }
     }
 }
@@ -250,7 +250,7 @@ __global__ void volume_computeBestXSliceUInt_kernel(
  * @param[out] volSimT output similarity volume
  */
 __global__ void volume_agregateCostVolumeAtZinSlices_kernel(
-    cudaTextureObject_t r4tex,
+    NormLinearTex<uchar4> r4tex,
     unsigned int* xySliceForZ, int xySliceForZ_p,
     const unsigned int* xySliceForZM1, int xySliceForZM1_p,
     const unsigned int* xSliceBestInColSimForZM1,
@@ -278,8 +278,8 @@ __global__ void volume_agregateCostVolumeAtZinSlices_kernel(
         int imY0 = volLUY + (dimTrnX == 0) ?  z : vx;
         int imX1 = volLUX + (dimTrnX == 0) ? vx : z1; // M1
         int imY1 = volLUY + (dimTrnX == 0) ? z1 : vx;
-        float4 gcr0 = 255.0f * tex2D<float4>(r4tex, (float)imX0 + 0.5f, (float)imY0 + 0.5f);
-        float4 gcr1 = 255.0f * tex2D<float4>(r4tex, (float)imX1 + 0.5f, (float)imY1 + 0.5f);
+        float4 gcr0 = 255.0f * tex2D<float4>(r4tex.obj, (float)imX0 + 0.5f, (float)imY0 + 0.5f);
+        float4 gcr1 = 255.0f * tex2D<float4>(r4tex.obj, (float)imX1 + 0.5f, (float)imY1 + 0.5f);
         float deltaC = Euclidean3(gcr0, gcr1);
         // unsigned int P1 = (unsigned int)sigmoid(5.0f,20.0f,60.0f,10.0f,deltaC);
         unsigned int P1 = _P1;

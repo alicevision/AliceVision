@@ -6,6 +6,7 @@
 #pragma once
 
 #include "aliceVision/depthMap/cuda/commonStructures.hpp"
+#include "aliceVision/depthMap/cuda/deviceCommon/device_tex_types.cuh"
 #include "aliceVision/system/Logger.hpp"
 
 #include <cuda_runtime.h>
@@ -111,12 +112,12 @@ public:
 
     GaussianArray* getGaussianArray( float delta, int radius );
 
-    void                 allocScaledPictureArrays( int scales, int ncams, int width, int height );
-    void                 freeScaledPictureArrays( );
-    CudaArray<uchar4,2>* getScaledPictureArrayPtr( int scale, int cam );
-    CudaArray<uchar4,2>& getScaledPictureArray( int scale, int cam );
-    cudaTextureObject_t  getScaledPictureTex( int scale, int cam );
-    cudaTextureObject_t  getScaledPictureTexPoint( int scale, int cam );
+    void                  allocScaledPictureArrays( int scales, int ncams, int width, int height );
+    void                  freeScaledPictureArrays( );
+    CudaArray<uchar4,2>*  getScaledPictureArrayPtr( int scale, int cam );
+    CudaArray<uchar4,2>&  getScaledPictureArray( int scale, int cam );
+    cudaTextureObject_t   getScaledPictureTexPoint( int scale, int cam );
+    NormLinearTex<uchar4> getScaledPictureTexNorm( int scale, int cam );
 
     void                               allocPyramidArrays( int levels, int width, int height );
     void                               freePyramidArrays( );
@@ -127,8 +128,8 @@ private:
     std::map<GaussianArrayIndex,GaussianArray*> _gaussian_arr_table;
 
     std::vector<CudaArray<uchar4, 2>*>          _scaled_picture_array;
-    std::vector<cudaTextureObject_t>            _scaled_picture_tex;
     std::vector<cudaTextureObject_t>            _scaled_picture_tex_point;
+    std::vector<NormLinearTex<uchar4> >         _scaled_picture_tex_norm_linear;
     int                                         _scaled_picture_scales;
 
     std::vector<CudaDeviceMemoryPitched<uchar4, 2>*> _pyramid_array;

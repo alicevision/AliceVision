@@ -10,6 +10,7 @@
 #include "aliceVision/depthMap/cuda/deviceCommon/device_matrix.cuh"
 #include "aliceVision/depthMap/cuda/deviceCommon/device_simStat.cuh"
 #include "aliceVision/depthMap/cuda/deviceCommon/device_color.cuh"
+#include "aliceVision/depthMap/cuda/deviceCommon/device_tex_types.cuh"
 
 #include <math_constants.h>
 
@@ -81,8 +82,8 @@ inline __device__ void computeRotCSEpip(patch& ptch, const float3& p)
  * @return similarity value
  */
 inline __device__ float compNCCby3DptsYK(
-    cudaTextureObject_t r4tex,
-    cudaTextureObject_t t4tex,
+    NormLinearTex<uchar4> r4tex,
+    NormLinearTex<uchar4> t4tex,
     patch& ptch, int wsh, int width, int height, const float _gammaC, const float _gammaP,
     const float epipShift)
 {
@@ -108,8 +109,8 @@ inline __device__ float compNCCby3DptsYK(
 
     // see CUDA_C_Programming_Guide.pdf ... E.2 pp132-133 ... adding 0.5 caises that tex2D return for point i,j exactly
     // value od I(i,j) ... it is what we want
-    float4 gcr = 255.0f * tex2D<float4>(r4tex, rp.x + 0.5f, rp.y + 0.5f);
-    float4 gct = 255.0f * tex2D<float4>(t4tex, tp.x + 0.5f, tp.y + 0.5f);
+    float4 gcr = 255.0f * tex2D<float4>(r4tex.obj, rp.x + 0.5f, rp.y + 0.5f);
+    float4 gct = 255.0f * tex2D<float4>(t4tex.obj, tp.x + 0.5f, tp.y + 0.5f);
     // gcr = 255.0f*tex2D<float4>(r4tex, rp.x, rp.y);
     // gct = 255.0f*tex2D<float4>(t4tex, tp.x, tp.y);
 
@@ -131,8 +132,8 @@ inline __device__ float compNCCby3DptsYK(
 
             // see CUDA_C_Programming_Guide.pdf ... E.2 pp132-133 ... adding 0.5 caises that tex2D return for point i,j
             // exactly value od I(i,j) ... it is what we want
-            float4 gcr1f = tex2D<float4>(r4tex, rp1.x + 0.5f, rp1.y + 0.5f);
-            float4 gct1f = tex2D<float4>(t4tex, tp1.x + 0.5f, tp1.y + 0.5f);
+            float4 gcr1f = tex2D<float4>(r4tex.obj, rp1.x + 0.5f, rp1.y + 0.5f);
+            float4 gct1f = tex2D<float4>(t4tex.obj, tp1.x + 0.5f, tp1.y + 0.5f);
             float4 gcr1 = 255.0f * gcr1f;
             float4 gct1 = 255.0f * gct1f;
             // gcr1 = 255.0f*tex2D(r4tex, rp1.x, rp1.y);

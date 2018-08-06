@@ -14,8 +14,8 @@ namespace depthMap {
 
 
 __global__ void volume_slice_kernel(
-    cudaTextureObject_t r4tex,
-    cudaTextureObject_t t4tex,
+    NormLinearTex<uchar4> r4tex,
+    NormLinearTex<uchar4> t4tex,
     cudaTextureObject_t depthsTex,
     cudaTextureObject_t volPixs_x_Tex,
     cudaTextureObject_t volPixs_y_Tex,
@@ -169,7 +169,7 @@ __global__ void volume_computeBestXSliceUInt_kernel(
  * @param[out] volSimT output similarity volume
  */
 __global__ void volume_agregateCostVolumeAtZinSlices_kernel(
-                    cudaTextureObject_t r4tex,
+                    NormLinearTex<uchar4> r4tex,
                     unsigned int* xySliceForZ, int xySliceForZ_p,
                     const unsigned int* xySliceForZM1, int xySliceForZM1_p,
                     const unsigned int* xSliceBestInColSimForZM1,
