@@ -17,6 +17,9 @@
 #include <iostream>
 #include <stdexcept>
 
+#include <boost/filesystem.hpp>
+#include <boost/filesystem/path.hpp>
+
 namespace aliceVision {
 
 template <class T>
@@ -259,12 +262,45 @@ void saveArrayToFile(std::string fileName, StaticVector<T>* a, bool docompress =
 {
     ALICEVISION_LOG_DEBUG("[IO] saveArrayToFile: " << fileName);
 
+    boost::filesystem::path filepath = fileName;
+    boost::filesystem::create_directories( filepath.parent_path() );
+
+    if( !a )
+    {
+        ALICEVISION_LOG_DEBUG("[IO] saveArrayToFile called with NULL static vector");
+        return;
+    }
+
+    if( a->size() == 0 )
+    {
+        ALICEVISION_LOG_WARNING("[IO] saveArrayToFile called with 0-sized static vector");
+        return;
+    }
+
     if((docompress == false) || (a->size() < 1000))
     {
         FILE* f = fopen(fileName.c_str(), "wb");
+        if( f == NULL )
+        {
+            ALICEVISION_LOG_ERROR( "[IO] file " << fileName << " could not be opened, msg: " << strerror(errno) );
+            return;
+        }
         int n = a->size();
-        fwrite(&n, sizeof(int), 1, f);
-        fwrite(&(*a)[0], sizeof(T), n, f);
+        if( n == 0 )
+        {
+            fclose(f);
+            return;
+        }
+        int items = fwrite(&n, sizeof(int), 1, f);
+        if( items < 1 && ferror(f) != 0 )
+        {
+            ALICEVISION_LOG_ERROR( "[IO] failed to write 1 int to " << fileName << ", msg: " << strerror(errno) );
+        }
+        items = fwrite(&(*a)[0], sizeof(T), n, f);
+        if( items < n && ferror(f) != 0 )
+        {
+            ALICEVISION_LOG_ERROR( "[IO] failed to write n items to " << fileName << ", msg: " << strerror(errno) );
+        }
         fclose(f);
     }
     else
@@ -293,20 +329,77 @@ void saveArrayToFile(std::string fileName, StaticVector<T>* a, bool docompress =
             ALICEVISION_LOG_ERROR("compress error " << err << " : " << (sizeof(T) * a->size()) << " -> " << comprLen << ", n " << a->size());
 
             FILE* f = fopen(fileName.c_str(), "wb");
+            if( f == NULL )
+            {
+                ALICEVISION_LOG_ERROR( "[IO] file " << fileName << " could not be opened, msg: " << strerror(errno) );
+                free(compr);
+                return;
+            }
             int n = a->size();
-            fwrite(&n, sizeof(int), 1, f);
-            fwrite(&(*a)[0], sizeof(T), n, f);
+            if( n > 0 )
+            {
+                int items = fwrite(&n, sizeof(int), 1, f);
+                if( items < 1 && ferror(f) != 0 )
+                {
+                    ALICEVISION_LOG_ERROR( "[IO] failed to write 1 int to " << fileName << ", msg: " << strerror(errno) );
+                    fclose(f);
+                    free(compr);
+                    return;
+                }
+                items = fwrite(&(*a)[0], sizeof(T), n, f);
+                if( items < 1 && ferror(f) != 0 )
+                {
+                    ALICEVISION_LOG_ERROR( "[IO] failed to write " << n << " items to " << fileName << ", msg: " << strerror(errno) );
+                    fclose(f);
+                    free(compr);
+                    return;
+                }
+            }
             fclose(f);
         }
         else
         {
             FILE* f = fopen(fileName.c_str(), "wb");
+            if( f == NULL )
+            {
+                ALICEVISION_LOG_ERROR( "[IO] file " << fileName << " could not be opened, msg: " << strerror(errno) );
+                free(compr);
+                return;
+            }
             int n = -1;
-            fwrite(&n, sizeof(int), 1, f);
+            int items = fwrite(&n, sizeof(int), 1, f);
+            if( items < 1 && ferror(f) != 0 )
+            {
+                ALICEVISION_LOG_ERROR( "[IO] failed to write 1 int to " << fileName << ", msg: " << strerror(errno) );
+                fclose(f);
+                free(compr);
+                return;
+            }
             n = a->size();
-            fwrite(&n, sizeof(int), 1, f);
-            fwrite(&comprLen, sizeof(uLong), 1, f);
-            fwrite(compr, sizeof(Byte), comprLen, f);
+            items = fwrite(&n, sizeof(int), 1, f);
+            if( items < 1 && ferror(f) != 0 )
+            {
+                ALICEVISION_LOG_ERROR( "[IO] failed to write 1 int to " << fileName << ", msg: " << strerror(errno) );
+                fclose(f);
+                free(compr);
+                return;
+            }
+            items = fwrite(&comprLen, sizeof(uLong), 1, f);
+            if( items < 1 && ferror(f) != 0 )
+            {
+                ALICEVISION_LOG_ERROR( "[IO] failed to write 1 uLong to " << fileName << ", msg: " << strerror(errno) );
+                fclose(f);
+                free(compr);
+                return;
+            }
+            items = fwrite(compr, sizeof(Byte), comprLen, f);
+            if( items < 1 && ferror(f) != 0 )
+            {
+                ALICEVISION_LOG_ERROR( "[IO] failed to write " << comprLen << " items to " << fileName << ", msg: " << strerror(errno) );
+                fclose(f);
+                free(compr);
+                return;
+            }
             fclose(f);
         };
 
