@@ -1,3 +1,4 @@
+cmake_minimum_required(VERSION 3.3)
 # Perform bundle fixup on all executables of an install directory
 # and generates a standalone bundle with all required runtime dependencies.
 #
@@ -5,6 +6,63 @@
 #   - CMAKE_INSTALL_PREFIX: install target path
 #   - BUNDLE_INSTALL_PREFIX: bundle installation path
 #   - BUNDLE_LIBS_PATHS: additional paths (colon separated) to look for runtime dependencies
+
+# Blacklist from AppImage: https://github.com/AppImage/AppImages/blob/master/excludelist
+set(LINUX_OS_LIB_BLACKLIST
+ld-linux
+ld-linux-x86-64
+libanl
+libBrokenLocale
+libcidn
+libcrypt
+libc
+libdl
+libm
+libmvec
+libnsl
+libnss_compat
+libnss_db
+libnss_dns
+libnss_files
+libnss_hesiod
+libnss_nisplus
+libnss_nis
+libpthread
+libresolv
+librt
+libthread_db
+libutil
+libstdc++
+libGL
+libdrm
+libglapi
+libX11
+libgio-2.0
+libasound
+libgdk_pixbuf-2.0
+libfontconfig
+libthai
+libfreetype
+libharfbuzz
+libcom_err
+libexpat
+libgcc_s
+libglib-2.0
+libgpg-error
+libICE
+libkeyutils
+libp11-kit
+libSM
+libusb-1.0
+libuuid
+libz
+libgobject-2.0
+libpangoft2-1.0
+libpangocairo-1.0
+libpango-1.0
+libgpg-error
+libjack
+    )
 
 function(gp_resolve_item_override context item exepath dirs resolved_item_var resolved_var)
   # avoid log flood for those system libraries with non-absolute path
@@ -17,6 +75,21 @@ function(gp_resolve_item_override context item exepath dirs resolved_item_var re
     set(${resolved_var} TRUE PARENT_SCOPE)
   endif()
 endfunction()
+
+if(UNIX)
+  function(gp_resolved_file_type_override resolved_file type_var)
+    # We would like to embed all non-blacklisted "system" libs,
+    # based on the AppImage blacklist.
+    if("${${type_var}}" STREQUAL "system")
+      get_filename_component(basename ${resolved_file} NAME_WE)
+      # message(STATUS "SYSTEM LIB: ${resolved_file} [${basename}]")
+      if(NOT basename IN_LIST LINUX_OS_LIB_BLACKLIST)
+        # message(STATUS "${resolved_file} [${basename}]: SYSTEM => EMBEDDED")
+        set(${type_var} "embedded" PARENT_SCOPE)
+      endif()
+    endif()
+  endfunction()
+endif()
 
 include(BundleUtilities)
 include(GNUInstallDirs)
