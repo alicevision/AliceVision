@@ -266,7 +266,7 @@ add_definitions(${Boost_DEFINITIONS})
 # ==============================================================================
 # OpenEXR
 # ==============================================================================
-find_package(OpenEXR)
+find_package(OpenEXR REQUIRED)
 if(OPENEXR_FOUND)
   message(STATUS "OpenEXR found. (Version ${OPENEXR_VERSION})")
 else()
@@ -276,7 +276,7 @@ endif()
 # ==============================================================================
 # OpenImageIO
 # ==============================================================================
-find_package(OpenImageIO)
+find_package(OpenImageIO 1.8 REQUIRED)
 if(OPENIMAGEIO_FOUND)
   message(STATUS "OpenImageIO found.")
   if(UNIX)
