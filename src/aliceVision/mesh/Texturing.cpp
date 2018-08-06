@@ -465,6 +465,9 @@ void Texturing::generateTexture(const mvsUtils::MultiViewParams& mp,
                     if(!mp.isPixelInImage(pixRC, camId))
                         continue;
                     Color color = imageCache.getPixelValueInterpolated(&pixRC, camId);
+                    // If the color is pure zero, we consider it as an invalid pixel.
+                    // After correction of radial distortion, some pixels are invalid.
+                    // TODO: use an alpha channel instead.
                     if(color == Color(0.f, 0.f, 0.f))
                         continue;
                     // fill the accumulated color map for this pixel
