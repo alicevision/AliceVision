@@ -12,11 +12,12 @@ namespace depthMap {
 /**
  * @param[in] s: iteration over nSamplesHalf
  */
-__global__ void fuse_computeGaussianKernelVotingSampleMap_kernel(float* out_gsvSampleMap, int out_gsvSampleMap_p,
-                                                                 float2* depthSimMap, int depthSimMap_p,
-                                                                 float2* midDepthPixSizeMap, int midDepthPixSizeMap_p,
-                                                                 int width, int height, float s, int idCam,
-                                                                 float samplesPerPixSize, float twoTimesSigmaPowerTwo);
+__global__ void fuse_computeGaussianKernelVotingSampleMap_kernel(
+                    float* out_gsvSampleMap, int out_gsvSampleMap_p,
+                    const float2* depthSimMap, int depthSimMap_p,
+                    const float2* midDepthPixSizeMap, int midDepthPixSizeMap_p,
+                    int width, int height, float s, int idCam,
+                    float samplesPerPixSize, float twoTimesSigmaPowerTwo );
 
 
 __global__ void fuse_updateBestGaussianKernelVotingSampleMap_kernel(float2* bestGsvSampleMap, int bestGsvSampleMap_p,

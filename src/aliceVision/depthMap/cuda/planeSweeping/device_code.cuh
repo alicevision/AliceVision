@@ -202,45 +202,39 @@ __global__ void downscale_mean_smooth_lab_kernel(
     uchar4* texLab, int texLab_p,
     int width, int height, int scale );
 
-#if 0
-__global__ void ptsStatForRcDepthMap_kernel(
-    cudaTextureObject_t r4tex,
-    cudaTextureObject_t depthsTex,
-    float2* out, int out_p,
-    float3* pts, int pts_p,
-    int npts, int width, int height,
-    int maxNPixSize, int wsh, const float gammaC, const float gammaP );
-#endif
+// __global__ void ptsStatForRcDepthMap_kernel(
+//     cudaTextureObject_t r4tex,
+//     cudaTextureObject_t depthsTex,
+//     float2* out, int out_p,
+//     float3* pts, int pts_p,
+//     int npts, int width, int height,
+//     int maxNPixSize, int wsh, const float gammaC, const float gammaP );
 
 __global__ void getSilhoueteMap_kernel(
     cudaTextureObject_t rTexU4,
     bool* out, int out_p,
     int step, int width, int height, const uchar4 maskColorLab );
 
-#if 0
-__global__ void retexture_kernel(
-    cudaTextureObject_t r4tex,
-    uchar4* out, int out_p,
-    float4* retexturePixs, int retexturePixs_p,
-    int width,
-    int height, int npixs);
-#endif
-
-#if 0
-__global__ void retextureComputeNormalMap_kernel(
-    uchar4* out, int out_p,
-    float2* retexturePixs, int retexturePixs_p,
-    float3* retexturePixsNorms, int retexturePixsNorms_p,
-    int width, int height, int npixs);
-#endif
-
-__global__ void pushPull_Push_kernel(
-    cudaTextureObject_t r4tex,
-    uchar4* out, int out_p, int width, int height);
-
-__global__ void pushPull_Pull_kernel(
-    cudaTextureObject_t r4tex,
-    uchar4* out, int out_p, int width, int height);
+// __global__ void retexture_kernel(
+//     cudaTextureObject_t r4tex,
+//     uchar4* out, int out_p,
+//     float4* retexturePixs, int retexturePixs_p,
+//     int width,
+//     int height, int npixs);
+// 
+// __global__ void retextureComputeNormalMap_kernel(
+//     uchar4* out, int out_p,
+//     float2* retexturePixs, int retexturePixs_p,
+//     float3* retexturePixsNorms, int retexturePixsNorms_p,
+//     int width, int height, int npixs);
+// 
+// __global__ void pushPull_Push_kernel(
+//     cudaTextureObject_t r4tex,
+//     uchar4* out, int out_p, int width, int height);
+// 
+// __global__ void pushPull_Pull_kernel(
+//     cudaTextureObject_t r4tex,
+//     uchar4* out, int out_p, int width, int height);
 
 } // namespace depthMap
 } // namespace aliceVision

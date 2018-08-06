@@ -92,7 +92,7 @@ void testCUDAdeviceNo(int CUDAdeviceNo);
 
 void ps_deviceUpdateCam(
                     // CudaArray<uchar4, 2>** ps_texs_arr,
-                    cameraStruct* cam, int camId, int CUDAdeviceNo,
+                    const cameraStruct* const cam, int camId, int CUDAdeviceNo,
                     int ncamsAllocated, int scales, int w, int h, int varianceWsh);
 
 void ps_deviceDeallocate(

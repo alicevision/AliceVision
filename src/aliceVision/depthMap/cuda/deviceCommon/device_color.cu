@@ -16,19 +16,18 @@ __global__ void rgb2lab_kernel(uchar4* irgbaOlab, int irgbaOlab_p, int width, in
     int x = blockIdx.x * blockDim.x + threadIdx.x;
     int y = blockIdx.y * blockDim.y + threadIdx.y;
 
-    if((x < width) && (y < height))
-    {
-        uchar4* rgb = get2DBufferAt(irgbaOlab, irgbaOlab_p, x, y);
-        float3 flab = xyz2lab(rgb2xyz(uchar4_to_float3(*rgb)));
+    if( x >= width )  return;
+    if( y >= height ) return;
 
-        uchar4 lab;
-        lab.x = (unsigned char)(flab.x);
-        lab.y = (unsigned char)(flab.y);
-        lab.z = (unsigned char)(flab.z);
-        lab.w = 0;
+    uchar4 rgb = Plane<uchar4>( irgbaOlab, irgbaOlab_p ).get( x, y );
+    float3 flab = xyz2lab(rgb2xyz(uchar4_to_float3(rgb)));
 
-        *rgb = lab;
-    }
+    uchar4 lab = make_uchar4( (unsigned char)flab.x,
+                              (unsigned char)flab.y,
+                              (unsigned char)flab.z,
+                              0 );
+
+    Plane<uchar4>( irgbaOlab, irgbaOlab_p ).set( x, y, lab );
 }
 
 /*

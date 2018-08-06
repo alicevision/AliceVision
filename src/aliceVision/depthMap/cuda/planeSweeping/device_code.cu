@@ -68,16 +68,16 @@ __global__ void compute_varLofLABtoW_kernel(
     int x = blockIdx.x * blockDim.x + threadIdx.x;
     int y = blockIdx.y * blockDim.y + threadIdx.y;
 
-    if(x < width && y < height)
-    {
-        uchar4* val = get2DBufferAt(labMap, labMap_p, x, y);
+    if( x >= width )  return;
+    if( y >= height ) return;
 
-        // unsigned char sigma = computeSigmaOfL(x, y, wsh);
-        // val->w = sigma;
-        unsigned char grad = computeGradientSizeOfL( r4tex, x, y );
+    // unsigned char sigma = computeSigmaOfL(x, y, wsh);
+    // val->w = sigma;
+    unsigned char grad = computeGradientSizeOfL( r4tex, x, y );
 
-        val->w = grad;
-    }
+    // uchar4* val = get2DBufferAt(labMap, labMap_p, x, y);
+    // val->w = grad;
+    Plane<uchar4>( labMap, labMap_p ).getRef( x, y ).w = grad;
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -123,7 +123,7 @@ __global__ void smoothDepthMap_kernel(
                 }
             }
         }
-        *get2DBufferAt(dmap, dmap_p, x, y) = ((depth > 0.0f) ? depthUp / depthDown : depth);
+        Plane<float>(dmap, dmap_p).set( x, y, (depth > 0.0f) ? depthUp / depthDown : depth );
     }
 }
 
@@ -166,7 +166,7 @@ __global__ void filterDepthMap_kernel(
                 }
             }
         }
-        *get2DBufferAt(dmap, dmap_p, x, y) = (depthDown < minCostThr) ? -1.0f : depth;
+        Plane<float>(dmap, dmap_p).set( x, y, (depthDown < minCostThr) ? -1.0f : depth );
     }
 }
 
@@ -216,8 +216,8 @@ __global__ void alignSourceDepthMapToTarget_kernel(
                 }
             }
         }
-        *get2DBufferAt(dmap, dmap_p, x, y) =
-            (((navdist == 0.0f) || (sourceDepthMid < 0.0f)) ? sourceDepthMid : (sourceDepthMid + avdist / navdist));
+        Plane<float>(dmap, dmap_p).set( x, y,
+            (((navdist == 0.0f) || (sourceDepthMid < 0.0f)) ? sourceDepthMid : (sourceDepthMid + avdist / navdist)) );
     }
 }
 
@@ -279,7 +279,7 @@ __global__ void computeNormalMap_kernel(
             nn.y = -nn.y;
             nn.z = -nn.z;
         }
-        *get2DBufferAt(nmap, nmap_p, x, y) = nn;
+        Plane<float3>(nmap, nmap_p).set( x, y, nn );
     }
 }
 
@@ -317,8 +317,9 @@ __global__ void locmin_kernel(
         }
 
         // coalescent
-        float* s = get2DBufferAt(slice, slice_p, depthid, pixid);
-        *s = sim;
+        Plane<float>( slice, slice_p ).set( depthid, pixid, sim );
+        // float* s = get2DBufferAt(slice, slice_p, depthid, pixid);
+        // *s = sim;
     }
 }
 
@@ -348,10 +349,11 @@ __global__ void getRefTexLAB_kernel(
     int x = blockIdx.x * blockDim.x + threadIdx.x;
     int y = blockIdx.y * blockDim.y + threadIdx.y;
 
-    if((x < width) && (y < height))
-    {
-        *get2DBufferAt(texs, texs_p, x, y) = float4_to_uchar4(255.0f * tex2D<float4>(r4tex, (float)x + 0.5f, (float)y + 0.5f));
-    }
+    if( x >= width )  return;
+    if( y >= height ) return;
+
+    Plane<uchar4>(texs, texs_p).set( x, y,
+        float4_to_uchar4(255.0f * tex2D<float4>(r4tex, (float)x + 0.5f, (float)y + 0.5f)) );
 }
 
 __global__ void getTarTexLAB_kernel(
@@ -362,10 +364,11 @@ __global__ void getTarTexLAB_kernel(
     int x = blockIdx.x * blockDim.x + threadIdx.x;
     int y = blockIdx.y * blockDim.y + threadIdx.y;
 
-    if((x < width) && (y < height))
-    {
-        *get2DBufferAt(texs, texs_p, x, y) = float4_to_uchar4(255.0f * tex2D<float4>(t4tex, (float)x + 0.5f, (float)y + 0.5f));
-    }
+    if( x >= width )  return;
+    if( y >= height ) return;
+
+    Plane<uchar4>(texs, texs_p).set( x, y,
+        float4_to_uchar4(255.0f * tex2D<float4>(t4tex, (float)x + 0.5f, (float)y + 0.5f)) );
 }
 
 __global__ void reprojTarTexLAB_kernel(
@@ -379,24 +382,22 @@ __global__ void reprojTarTexLAB_kernel(
     pix.x = x;
     pix.y = y;
 
-    if((x < width) && (y < height))
+    if( x >= width )  return;
+    if( y >= height ) return;
+
+    float3 p = get3DPointForPixelAndFrontoParellePlaneRC(pix, fpPlaneDepth);
+    float2 tpc = project3DPoint(sg_s_tP, p);
+    uchar4 tex = make_uchar4( 0, 0, 0, 0 );
+
+    if( ((tpc.x + 0.5f) > 0.0f) &&
+        ((tpc.y + 0.5f) > 0.0f) &&
+        ((tpc.x + 0.5f) < (float)width - 1.0f) &&
+        ((tpc.y + 0.5f) < (float)height - 1.0f) )
     {
-        float3 p = get3DPointForPixelAndFrontoParellePlaneRC(pix, fpPlaneDepth);
-        float2 tpc = project3DPoint(sg_s_tP, p);
-        uchar4* tex = get2DBufferAt(texs, texs_p, x, y);
-        if(((tpc.x + 0.5f) > 0.0f) && ((tpc.y + 0.5f) > 0.0f) &&
-           ((tpc.x + 0.5f) < (float)width - 1.0f) && ((tpc.y + 0.5f) < (float)height - 1.0f))
-        {
-            *tex = float4_to_uchar4(255.0f * tex2D<float4>(t4tex, (float)tpc.x + 0.5f, (float)tpc.y + 0.5f));
-        }
-        else
-        {
-            tex->x = 0;
-            tex->y = 0;
-            tex->z = 0;
-            tex->w = 0;
-        }
+        tex = float4_to_uchar4(255.0f * tex2D<float4>(t4tex, (float)tpc.x + 0.5f, (float)tpc.y + 0.5f));
     }
+
+    Plane<uchar4>(texs, texs_p).set( x, y, tex );
 }
 
 #if 0
@@ -789,7 +790,7 @@ __global__ void downscale_bilateral_smooth_lab_kernel(
 
         uchar4 tu4 = make_uchar4((unsigned char)t.x, (unsigned char)t.y, (unsigned char)t.z, (unsigned char)t.w);
 
-        *get2DBufferAt(texLab, texLab_p, x, y) = tu4;
+        Plane<uchar4>(texLab, texLab_p).set (x, y, tu4 );
     }
 }
 
@@ -824,7 +825,7 @@ __global__ void downscale_gauss_smooth_lab_kernel(
 
         uchar4 tu4 = make_uchar4((unsigned char)t.x, (unsigned char)t.y, (unsigned char)t.z, (unsigned char)t.w);
 
-        *get2DBufferAt(texLab, texLab_p, x, y) = tu4; 
+        Plane<uchar4>(texLab, texLab_p).set(x, y, tu4);
     }
 }
 
@@ -856,44 +857,42 @@ __global__ void downscale_mean_smooth_lab_kernel(
 
         uchar4 tu4 = make_uchar4((unsigned char)t.x, (unsigned char)t.y, (unsigned char)t.z, (unsigned char)t.w);
 
-        *get2DBufferAt(texLab, texLab_p, x, y) = tu4;
+        Plane<uchar4>(texLab, texLab_p).set(x, y, tu4);
     }
 }
 
-#if 0
-__global__ void ptsStatForRcDepthMap_kernel(
-    cudaTextureObject_t r4tex,
-    cudaTextureObject_t depthsTex,
-    float2* out, int out_p,
-    float3* pts, int pts_p,
-    int npts, int width, int height,
-    int maxNPixSize, int wsh, const float gammaC, const float gammaP)
-{
-    int ptid = blockIdx.x * blockDim.x + threadIdx.x;
-
-    if(ptid < npts)
-    {
-        float3 p = pts[ptid];
-        float depthP = size(sg_s_rC - p);
-        float2 pixf;
-
-        getPixelFor3DPointRC(pixf, p);
-
-        int2 pix = make_int2((int)pixf.x, (int)pixf.y);
-        float2 depthVarianceGray = make_float2(0.0f, 0.0f);
-
-        if((pix.x > wsh) && (pix.x < width - wsh) && (pix.y > wsh) && (pix.y < height - wsh))
-        {
-            float varianceGray = 255.0f * tex2D<float4>(r4tex, (float)pix.x + 0.5f, (float)pix.y + 0.5f).w;
-            float depth = tex2D<float>(depthsTex, pix.x, pix.y);
-            depthVarianceGray = make_float2(depth, varianceGray);
-        }
-
-        // TODO!
-        out[ptid] = depthVarianceGray;
-    }
-}
-#endif
+// __global__ void ptsStatForRcDepthMap_kernel(
+//     cudaTextureObject_t r4tex,
+//     cudaTextureObject_t depthsTex,
+//     float2* out, int out_p,
+//     float3* pts, int pts_p,
+//     int npts, int width, int height,
+//     int maxNPixSize, int wsh, const float gammaC, const float gammaP)
+// {
+//     int ptid = blockIdx.x * blockDim.x + threadIdx.x;
+// 
+//     if(ptid < npts)
+//     {
+//         float3 p = pts[ptid];
+//         float depthP = size(sg_s_rC - p);
+//         float2 pixf;
+// 
+//         getPixelFor3DPointRC(pixf, p);
+// 
+//         int2 pix = make_int2((int)pixf.x, (int)pixf.y);
+//         float2 depthVarianceGray = make_float2(0.0f, 0.0f);
+// 
+//         if((pix.x > wsh) && (pix.x < width - wsh) && (pix.y > wsh) && (pix.y < height - wsh))
+//         {
+//             float varianceGray = 255.0f * tex2D<float4>(r4tex, (float)pix.x + 0.5f, (float)pix.y + 0.5f).w;
+//             float depth = tex2D<float>(depthsTex, pix.x, pix.y);
+//             depthVarianceGray = make_float2(depth, varianceGray);
+//         }
+// 
+//         // TODO!
+//         out[ptid] = depthVarianceGray;
+//     }
+// }
 
 __global__ void getSilhoueteMap_kernel(
     cudaTextureObject_t rTexU4,
@@ -903,113 +902,115 @@ __global__ void getSilhoueteMap_kernel(
     int x = blockIdx.x * blockDim.x + threadIdx.x;
     int y = blockIdx.y * blockDim.y + threadIdx.y;
 
-    if((x * step < width) && (y * step < height))
-    {
-        uchar4 col = tex2D<uchar4>(rTexU4, x * step, y * step);
-        *get2DBufferAt(out, out_p, x, y) = ((maskColorLab.x == col.x) && (maskColorLab.y == col.y) && (maskColorLab.z == col.z));
-    }
+    if( x * step >= width )  return;
+    if( y * step >= height ) return;
+
+    uchar4 col = tex2D<uchar4>(rTexU4, x * step, y * step);
+    Plane<bool>( out, out_p ).set( x, y, (maskColorLab.x == col.x) &&
+                                         (maskColorLab.y == col.y) &&
+                                         (maskColorLab.z == col.z) );
 }
 
-#if 0
-__global__ void retexture_kernel(
-    cudaTextureObject_t r4tex,
-    uchar4* out, int out_p, float4* retexturePixs, int retexturePixs_p, int width,
-    int height, int npixs)
-{
-    int x = blockIdx.x * blockDim.x + threadIdx.x;
-    int y = blockIdx.y * blockDim.y + threadIdx.y;
+// __global__ void retexture_kernel(
+//     cudaTextureObject_t r4tex,
+//     uchar4* out, int out_p, float4* retexturePixs, int retexturePixs_p, int width,
+//     int height, int npixs)
+// {
+//     int x = blockIdx.x * blockDim.x + threadIdx.x;
+//     int y = blockIdx.y * blockDim.y + threadIdx.y;
+// 
+//     if((x < width) && (y < height) && (y * width + x < npixs))
+//     {
+//         float4 retPixs = *get2DBufferAt(retexturePixs, retexturePixs_p, x, y);
+//         int2 objPix = make_int2((int)retPixs.x, (int)retPixs.y);
+//         float2 origPix = make_float2(retPixs.z, retPixs.w);
+//         float4 colf4 = 255.0f * tex2D<float4>(r4tex, origPix.x, origPix.y);
+// 
+//         *get2DBufferAt(out, out_p, objPix.x, objPix.y) =
+//             make_uchar4((unsigned char)colf4.x, (unsigned char)colf4.y, (unsigned char)colf4.z, (unsigned char)colf4.w);
+//     }
+// }
 
-    if((x < width) && (y < height) && (y * width + x < npixs))
-    {
-        float4 retPixs = *get2DBufferAt(retexturePixs, retexturePixs_p, x, y);
-        int2 objPix = make_int2((int)retPixs.x, (int)retPixs.y);
-        float2 origPix = make_float2(retPixs.z, retPixs.w);
-        float4 colf4 = 255.0f * tex2D<float4>(r4tex, origPix.x, origPix.y);
+// __global__ void retextureComputeNormalMap_kernel(
+//     uchar4* out, int out_p,
+//     float2* retexturePixs, int retexturePixs_p,
+//     float3* retexturePixsNorms, int retexturePixsNorms_p,
+//     int width, int height, int npixs)
+// {
+//     int x = blockIdx.x * blockDim.x + threadIdx.x;
+//     int y = blockIdx.y * blockDim.y + threadIdx.y;
+// 
+//     if((x < width) && (y < height) && (y * width + x < npixs))
+//     {
+//         float2 objPix = *get2DBufferAt(retexturePixs, retexturePixs_p, x, y);
+//         float3 objPixNorm = *get2DBufferAt(retexturePixsNorms, retexturePixsNorms_p, x, y);
+//         *get2DBufferAt(out, out_p, objPix.x, objPix.y) =
+//             make_uchar4((unsigned char)(objPixNorm.x * 127.0f + 128.0f),
+//                         (unsigned char)(objPixNorm.y * 127.0f + 128.0f),
+//                         (unsigned char)(objPixNorm.z * 127.0f + 128.0f), 0);
+//     }
+// }
 
-        *get2DBufferAt(out, out_p, objPix.x, objPix.y) =
-            make_uchar4((unsigned char)colf4.x, (unsigned char)colf4.y, (unsigned char)colf4.z, (unsigned char)colf4.w);
-    }
-}
-#endif
-
-#if 0
-__global__ void retextureComputeNormalMap_kernel(
-    uchar4* out, int out_p,
-    float2* retexturePixs, int retexturePixs_p,
-    float3* retexturePixsNorms, int retexturePixsNorms_p,
-    int width, int height, int npixs)
-{
-    int x = blockIdx.x * blockDim.x + threadIdx.x;
-    int y = blockIdx.y * blockDim.y + threadIdx.y;
-
-    if((x < width) && (y < height) && (y * width + x < npixs))
-    {
-        float2 objPix = *get2DBufferAt(retexturePixs, retexturePixs_p, x, y);
-        float3 objPixNorm = *get2DBufferAt(retexturePixsNorms, retexturePixsNorms_p, x, y);
-        *get2DBufferAt(out, out_p, objPix.x, objPix.y) =
-            make_uchar4((unsigned char)(objPixNorm.x * 127.0f + 128.0f),
-                        (unsigned char)(objPixNorm.y * 127.0f + 128.0f),
-                        (unsigned char)(objPixNorm.z * 127.0f + 128.0f), 0);
-    }
-}
-#endif
-
-__global__ void pushPull_Push_kernel(
-    cudaTextureObject_t r4tex,
-    uchar4* out, int out_p, int width, int height)
-{
-    int x = blockIdx.x * blockDim.x + threadIdx.x;
-    int y = blockIdx.y * blockDim.y + threadIdx.y;
-
-    if((x < width) && (y < height))
-    {
-        float4 colf4res = make_float4(0.0f, 0.0f, 0.0f, 0.0f);
-        int nres = 0;
-
-        for(int yp = y * 2; yp <= y * 2 + 1; yp++)
-        {
-            for(int xp = x * 2; xp <= x * 2 + 1; xp++)
-            {
-                float4 colf4 = 255.0f * tex2D<float4>(r4tex, (float)xp + 0.5f, (float)yp + 0.5f);
-                uchar4 col4 = make_uchar4((unsigned char)colf4.x, (unsigned char)colf4.y, (unsigned char)colf4.z,
-                                          (unsigned char)colf4.w);
-
-                if(!((col4.x == 0) && (col4.y == 0) && (col4.z == 0)))
-                {
-                    colf4res = colf4res + colf4;
-                    nres = nres + 1;
-                }
-            }
-        }
-
-        if(nres > 0)
-        {
-            colf4res.x = colf4res.x / (float)nres;
-            colf4res.y = colf4res.y / (float)nres;
-            colf4res.z = colf4res.z / (float)nres;
-        }
-
-        *get2DBufferAt(out, out_p, x, y) =
-            make_uchar4((unsigned char)colf4res.x, (unsigned char)colf4res.y, (unsigned char)colf4res.z, 0.0f);
-    }
-}
-
-__global__ void pushPull_Pull_kernel(
-    cudaTextureObject_t r4tex,
-    uchar4* out, int out_p, int width, int height)
-{
-    int x = blockIdx.x * blockDim.x + threadIdx.x;
-    int y = blockIdx.y * blockDim.y + threadIdx.y;
-    if((x < width) && (y < height))
-    {
-        uchar4* col4 = get2DBufferAt(out, out_p, x, y);
-        if((col4->x == 0) && (col4->y == 0) && (col4->z == 0))
-        {
-            float4 colf4 = 255.0f * tex2D<float4>(r4tex, ((float)x + 0.5f) / 2.0f, ((float)y + 0.5f) / 2.0f);
-            *col4 = make_uchar4((unsigned char)colf4.x, (unsigned char)colf4.y, (unsigned char)colf4.z, 0);
-        }
-    }
-}
+// __global__ void pushPull_Push_kernel(
+//     cudaTextureObject_t r4tex,
+//     uchar4* out, int out_p, int width, int height)
+// {
+//     int x = blockIdx.x * blockDim.x + threadIdx.x;
+//     int y = blockIdx.y * blockDim.y + threadIdx.y;
+// 
+//     if( x >= width )  return;
+//     if( y >= height ) return;
+// 
+//     float4 colf4res = make_float4(0.0f, 0.0f, 0.0f, 0.0f);
+//     int nres = 0;
+// 
+//     for(int yp = y * 2; yp <= y * 2 + 1; yp++)
+//     {
+//         for(int xp = x * 2; xp <= x * 2 + 1; xp++)
+//         {
+//             float4 colf4 = 255.0f * tex2D<float4>(r4tex, (float)xp + 0.5f, (float)yp + 0.5f);
+//             uchar4 col4 = make_uchar4( (unsigned char)colf4.x,
+//                                        (unsigned char)colf4.y,
+//                                        (unsigned char)colf4.z,
+//                                        (unsigned char)colf4.w);
+// 
+//             if(!((col4.x == 0) && (col4.y == 0) && (col4.z == 0)))
+//             {
+//                 colf4res = colf4res + colf4;
+//                 nres = nres + 1;
+//             }
+//         }
+//     }
+// 
+//     if(nres > 0)
+//     {
+//         colf4res.x = colf4res.x / (float)nres;
+//         colf4res.y = colf4res.y / (float)nres;
+//         colf4res.z = colf4res.z / (float)nres;
+//     }
+// 
+//     Plane<uchar4>( out, out_p ).set( x, y, make_uchar4( (unsigned char)colf4res.x,
+//                                                         (unsigned char)colf4res.y,
+//                                                         (unsigned char)colf4res.z,
+//                                                         0 );
+// }
+// 
+// __global__ void pushPull_Pull_kernel(
+//     cudaTextureObject_t r4tex,
+//     uchar4* out, int out_p, int width, int height)
+// {
+//     int x = blockIdx.x * blockDim.x + threadIdx.x;
+//     int y = blockIdx.y * blockDim.y + threadIdx.y;
+//     if((x < width) && (y < height))
+//     {
+//         uchar4* col4 = get2DBufferAt(out, out_p, x, y);
+//         if((col4->x == 0) && (col4->y == 0) && (col4->z == 0))
+//         {
+//             float4 colf4 = 255.0f * tex2D<float4>(r4tex, ((float)x + 0.5f) / 2.0f, ((float)y + 0.5f) / 2.0f);
+//             *col4 = make_uchar4((unsigned char)colf4.x, (unsigned char)colf4.y, (unsigned char)colf4.z, 0);
+//         }
+//     }
+// }
 
 } // namespace depthMap
 } // namespace aliceVision

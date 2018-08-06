@@ -4,6 +4,7 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
+#include "aliceVision/depthMap/cuda/planeSweeping/onoff.cuh"
 #include "aliceVision/depthMap/cuda/planeSweeping/device_code_refine.cuh"
 
 #include "aliceVision/depthMap/cuda/planeSweeping/device_code.cuh"
@@ -526,7 +527,7 @@ __global__ void refine_fuseThreeDepthSimMaps_kernel(float* osim, int osim_p, flo
     };
 }
 
-#ifdef GRIFF_TEST
+#ifdef MERGE_REFINE_KERNELS
 
 __device__ inline void inline_refine_setLastThreeSimsMap_kernel(
     float3*      lastThreeSimsMap, int lastThreeSimsMap_p,
@@ -537,24 +538,24 @@ __device__ inline void inline_refine_setLastThreeSimsMap_kernel(
 {
     if( lastThreeSimsMap == 0 ) return;
 
-    float3* lastThreeSims_ptr = get2DBufferAt(lastThreeSimsMap, lastThreeSimsMap_p, x, y);
+    float3& lastThreeSims = Plane<float3>(lastThreeSimsMap, lastThreeSimsMap_p).getRef(x, y);
 
     if( id == 0 )
     {
-        lastThreeSims_ptr->x = sim;
+        lastThreeSims.x = sim;
     }
     else if( id == 1 )
     {
-        lastThreeSims_ptr->y = sim;
+        lastThreeSims.y = sim;
     }
     else if( id == 2 )
     {
-        lastThreeSims_ptr->z = sim;
+        lastThreeSims.z = sim;
     }
 }
 #endif
 
-#ifdef GRIFF_TEST
+#ifdef MERGE_REFINE_KERNELS
 __global__ void refine_compYKNCCSimMapPatch_kernel_A(
     cudaTextureObject_t r4tex,
     cudaTextureObject_t t4tex,
@@ -573,7 +574,7 @@ __global__ void refine_compYKNCCSimMapPatch_kernel_A(
     // if ((x>wsh)&&(y>wsh)&&(x<width-wsh)&&(y<height-wsh))
     if((x >= 0) && (y >= 0) && (x < width) && (y < height))
     {
-        float depth = *get2DBufferAt(depthMap, depthMap_p, x, y);
+        float depth = Plane<const float>(depthMap, depthMap_p).get(x, y);
         float osim = 1.1f;
 
         if(depth > 0.0f)
@@ -598,7 +599,7 @@ __global__ void refine_compYKNCCSimMapPatch_kernel_A(
 }
 #endif
 
-#ifdef GRIFF_TEST
+#ifdef MERGE_REFINE_KERNELS
 __global__ void refine_compUpdateYKNCCSimMapPatch_kernel(
     cudaTextureObject_t r4tex,
     cudaTextureObject_t t4tex,
@@ -617,17 +618,15 @@ __global__ void refine_compUpdateYKNCCSimMapPatch_kernel(
     pix.x = x + xFrom;
     pix.y = y;
 
-    // if ((pix.x>wsh)&&(pix.y>wsh)&&(pix.x<width-wsh)&&(pix.y<height-wsh))
-    if((x >= 0) && (y >= 0) && (x < width) && (y < height))
+    if( x >= width )  return;
+    if( y >= height ) return;
+
+    float best_osim = 1.0f;
+    float best_odpt;
+    for( int id=0; id<ntcsteps; id++ )
     {
-      float* const osim_ptr = get2DBufferAt(osimMap, osimMap_p, x, y);
-      float* const odpt_ptr = get2DBufferAt(odptMap, odptMap_p, x, y);
-      float best_osim = 1.0f;
-      float best_odpt;
-      for( int id=0; id<ntcsteps; id++ )
-      {
         const float tcStep = (float)(id - (ntcsteps - 1) / 2);
-        float odpt = *get2DBufferAt(depthMap, depthMap_p, x, y);
+        float odpt = Plane<const float>(depthMap, depthMap_p).get(x, y);
         float osim = 1.0f;
 
         // If we have an initial depth value, we can refine it
@@ -662,16 +661,15 @@ __global__ void refine_compUpdateYKNCCSimMapPatch_kernel(
                 best_odpt = odpt;
             }
         }
-      }
-
-      *osim_ptr = best_osim;
-      *odpt_ptr = best_odpt;
-
-      inline_refine_setLastThreeSimsMap_kernel(
-          lastThreeSimsMap, lastThreeSimsMap_p,
-          x, y, 1,
-          best_osim );
     }
+
+    Plane<float>(osimMap, osimMap_p).set(x, y, best_osim);
+    Plane<float>(odptMap, odptMap_p).set(x, y, best_odpt);
+
+    inline_refine_setLastThreeSimsMap_kernel(
+        lastThreeSimsMap, lastThreeSimsMap_p,
+        x, y, 1,
+        best_osim );
 }
 #else
 __global__ void refine_compUpdateYKNCCSimMapPatch_kernel(
@@ -695,7 +693,7 @@ __global__ void refine_compUpdateYKNCCSimMapPatch_kernel(
     // if ((pix.x>wsh)&&(pix.y>wsh)&&(pix.x<width-wsh)&&(pix.y<height-wsh))
     if((x >= 0) && (y >= 0) && (x < width) && (y < height))
     {
-        float odpt = *get2DBufferAt(depthMap, depthMap_p, x, y);
+        float odpt = Plane<float>(depthMap, depthMap_p).get(x, y);
         float osim = 1.0f;
 
         // If we have an initial depth value, we can refine it
@@ -715,23 +713,15 @@ __global__ void refine_compUpdateYKNCCSimMapPatch_kernel(
             osim = compNCCby3DptsYK( r4tex, t4tex, ptch, wsh, imWidth, imHeight, gammaC, gammaP, epipShift);
         }
 
-        float* const osim_ptr = get2DBufferAt(osimMap, osimMap_p, x, y);
-        float* const odpt_ptr = get2DBufferAt(odptMap, odptMap_p, x, y);
-        if(id == 0)
+        float actsim = 0.0f;
+        if(id != 0)
+            actsim = Plane<float>(osimMap, osimMap_p).get(x, y);
+
+        if( id == 0 || ( osim < actim ) )
         {
             // For the first iteration, we initialize the values
-            *osim_ptr = osim;
-            *odpt_ptr = odpt;
-        }
-        else
-        {
-            // Then we update the similarity value if it's better
-            float actsim = *osim_ptr;
-            if(osim < actsim)
-            {
-                *osim_ptr = osim;
-                *odpt_ptr = odpt;
-            }
+            Plane<float>(osimMap, osimMap_p.set(x, y, osim);
+            Plane<float>(odptMap, odptMap_p.set(x, y, odpt);
         }
     }
 }
@@ -819,7 +809,7 @@ __global__ void refine_compYKNCCSimMapPatch_kernel(
     // if ((x>wsh)&&(y>wsh)&&(x<width-wsh)&&(y<height-wsh))
     if((x >= 0) && (y >= 0) && (x < width) && (y < height))
     {
-        float depth = *get2DBufferAt(depthMap, depthMap_p, x, y);
+        float depth = Plane<const float>(depthMap, depthMap_p).get(x, y);
         float osim = 1.1f;
 
         if(depth > 0.0f)
@@ -834,7 +824,7 @@ __global__ void refine_compYKNCCSimMapPatch_kernel(
             computeRotCSEpip(ptch, p);
             osim = compNCCby3DptsYK( r4tex, t4tex, ptch, wsh, imWidth, imHeight, gammaC, gammaP, epipShift);
         };
-        *get2DBufferAt(osimMap, osimMap_p, x, y) = osim;
+        Plane<float>(osimMap, osimMap_p).set(x, y, osim);
     }
 }
 
@@ -880,28 +870,30 @@ __global__ void refine_setLastThreeSimsMap_kernel(float3* lastThreeSimsMap, int 
 
     if((x < width) && (y < height))
     {
-        float sim = *get2DBufferAt(simMap, simMap_p, x, y);
-        float3* lastThreeSims_ptr = get2DBufferAt(lastThreeSimsMap, lastThreeSimsMap_p, x, y);
+        float sim = Plane<float>(simMap, simMap_p).get(x, y);
+        float3& lastThreeSims = Plane<float3>(lastThreeSimsMap, lastThreeSimsMap_p).getRef(x, y);
 
         if(id == 0)
         {
-            lastThreeSims_ptr->x = sim;
+            lastThreeSims.x = sim;
         }
         if(id == 1)
         {
-            lastThreeSims_ptr->y = sim;
+            lastThreeSims.y = sim;
         }
         if(id == 2)
         {
-            lastThreeSims_ptr->z = sim;
+            lastThreeSims.z = sim;
         }
     }
 }
 
-__global__ void refine_computeDepthSimMapFromLastThreeSimsMap_kernel(float* osimMap, int osimMap_p, float* iodepthMap,
-                                                                     int iodepthMap_p, float3* lastThreeSimsMap,
-                                                                     int lastThreeSimsMap_p, int width, int height,
-                                                                     bool moveByTcOrRc, int xFrom)
+__global__ void refine_computeDepthSimMapFromLastThreeSimsMap_kernel(
+                            float* osimMap, int osimMap_p,
+                            float* iodepthMap, int iodepthMap_p,
+                            float3* lastThreeSimsMap, int lastThreeSimsMap_p,
+                            int width, int height,
+                            bool moveByTcOrRc, int xFrom)
 {
     int x = blockIdx.x * blockDim.x + threadIdx.x;
     int y = blockIdx.y * blockDim.y + threadIdx.y;
@@ -911,8 +903,8 @@ __global__ void refine_computeDepthSimMapFromLastThreeSimsMap_kernel(float* osim
 
     if((x < width) && (y < height))
     {
-        float midDepth = *get2DBufferAt(iodepthMap, iodepthMap_p, x, y);
-        float3 sims = *get2DBufferAt(lastThreeSimsMap, lastThreeSimsMap_p, x, y);
+        float midDepth = Plane<float>(iodepthMap, iodepthMap_p).get(x, y);
+        float3 sims = Plane<float3>(lastThreeSimsMap, lastThreeSimsMap_p).get(x, y);
         float outDepth = midDepth;
         float outSim = sims.y;
 
@@ -936,8 +928,8 @@ __global__ void refine_computeDepthSimMapFromLastThreeSimsMap_kernel(float* osim
             };
         };
 
-        *get2DBufferAt(osimMap, osimMap_p, x, y) = outSim;
-        *get2DBufferAt(iodepthMap, iodepthMap_p, x, y) = outDepth;
+        Plane<float>(osimMap, osimMap_p).set(x, y, outSim);
+        Plane<float>(iodepthMap, iodepthMap_p).set(x, y, outDepth);
     };
 }
 
@@ -949,15 +941,17 @@ __global__ void refine_updateLastThreeSimsMap_kernel(float3* lastThreeSimsMap, i
 
     if((x < width) && (y < height))
     {
-        float sim = *get2DBufferAt(simMap, simMap_p, x, y);
-        float3* lastThreeSims = get2DBufferAt(lastThreeSimsMap, lastThreeSimsMap_p, x, y);
+        float sim = Plane<float>(simMap, simMap_p).get(x, y);
 
         if(id == 0)
         {
-            *lastThreeSims = make_float3(1.1f, 1.1f, 1.1f);
+            float3 lastThreeSim = make_float3( 1.1f, 1.1f, sim );
+            Plane<float3>(lastThreeSimsMap, lastThreeSimsMap_p).set(x, y, lastThreeSim );
         }
-
-        lastThreeSims->z = sim;
+        else
+        {
+            Plane<float3>(lastThreeSimsMap, lastThreeSimsMap_p).getRef(x, y).z = sim;
+        }
     };
 }
 

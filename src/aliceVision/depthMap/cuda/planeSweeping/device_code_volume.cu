@@ -70,7 +70,7 @@ __global__ void volume_slice_kernel(
             // coalescent
             /*int sliceid = pixid * slice_p + sdptid;
             slice[sliceid] = sim;*/
-            *get2DBufferAt(slice, slice_p, sdptid, pixid) = sim;
+            Plane<unsigned char>( slice, slice_p ).set( sdptid, pixid, sim );
         }
     }
 }
@@ -84,31 +84,34 @@ __global__ void volume_saveSliceToVolume_kernel(
     int width, int height, int t, int npixs, int volStepXY, int volDimX,
     int volDimY, int volDimZ, int volLUX, int volLUY, int volLUZ )
 {
+// #warning do not iterate this kernel, avoid several non-atomic min writes by running over all planes at once
     int sdptid = blockIdx.x * blockDim.x + threadIdx.x;
     int pixid = blockIdx.y * blockDim.y + threadIdx.y;
 
-    if((sdptid < nsearchdepths) && (pixid < slicesAtTime) && (slicesAtTime * t + pixid < npixs))
+    if(sdptid >= nsearchdepths) return;
+    if(pixid >= slicesAtTime) return;
+    if(slicesAtTime * t + pixid >= npixs) return;
+
+    int volPix_x = tex2D<int>(volPixsTex_x, pixid, t);
+    int volPix_y = tex2D<int>(volPixsTex_y, pixid, t);
+    int volPix_z = tex2D<int>(volPixsTex_z, pixid, t);
+    int depthid = sdptid + volPix_z;
+
+    if(depthid >= ndepths) return;
+
+    // unsigned char sim = *get2DBufferAt(slice, slice_p, sdptid, pixid);
+    unsigned char sim = Plane<unsigned char>( slice, slice_p ).get( sdptid, pixid );
+
+    int vx = (volPix_x - volLUX) / volStepXY;
+    int vy = (volPix_y - volLUY) / volStepXY;
+    // int vz = sdptid;//depthid;
+    int vz = depthid - volLUZ;
+    if((vx >= 0) && (vx < volDimX) && (vy >= 0) && (vy < volDimY) && (vz >= 0) && (vz < volDimZ))
     {
-        int volPix_x = tex2D<int>(volPixsTex_x, pixid, t);
-        int volPix_y = tex2D<int>(volPixsTex_y, pixid, t);
-        int volPix_z = tex2D<int>(volPixsTex_z, pixid, t);
-        int2 pix = make_int2(volPix_x, volPix_y);
-        int depthid = sdptid + volPix_z;
+        Block<unsigned char> block( volume, volume_s, volume_p );
 
-        if(depthid < ndepths)
-        {
-            unsigned char sim = *get2DBufferAt(slice, slice_p, sdptid, pixid);
-
-            int vx = (pix.x - volLUX) / volStepXY;
-            int vy = (pix.y - volLUY) / volStepXY;
-            // int vz = sdptid;//depthid;
-            int vz = depthid - volLUZ;
-            if((vx >= 0) && (vx < volDimX) && (vy >= 0) && (vy < volDimY) && (vz >= 0) && (vz < volDimZ))
-            {
-                unsigned char* volsim = get3DBufferAt(volume, volume_s, volume_p, vx, vy, vz);
-                *volsim = min(sim, *volsim);
-            }
-        }
+        unsigned char volsim = block.get( vx, vy, vz);
+        block.set( vx, vy, vz, min( sim, volsim ) );
     }
 }
 
@@ -123,46 +126,48 @@ __global__ void volume_transposeAddAvgVolume_kernel(unsigned char* volumeT, int 
     int vy = blockIdx.y * blockDim.y + threadIdx.y;
     int vz = z;
 
-    if((vx >= 0) && (vx < volDimX) && (vy >= 0) && (vy < volDimY) && (vz >= 0) && (vz < volDimZ))
-    {
-        int v[3];
-        v[0] = vx;
-        v[1] = vy;
-        v[2] = vz;
+    if( vx >= volDimX ) return;
+    if( vy >= volDimY ) return;
+    if( vz >= volDimZ ) return;
 
-        int dimsTrn[3];
-        dimsTrn[0] = dimTrnX;
-        dimsTrn[1] = dimTrnY;
-        dimsTrn[2] = dimTrnZ;
+    int v[3];
+    v[0] = vx;
+    v[1] = vy;
+    v[2] = vz;
 
-        int vTx = v[dimsTrn[0]];
-        int vTy = v[dimsTrn[1]];
-        int vTz = v[dimsTrn[2]];
+    int vTx = v[dimTrnX];
+    int vTy = v[dimTrnY];
+    int vTz = v[dimTrnZ];
 
-        unsigned char* oldVal_ptr = get3DBufferAt(volumeT, volumeT_s, volumeT_p, vTx, vTy, vTz);
-        unsigned char newVal = *get3DBufferAt(volume, volume_s, volume_p, vx, vy, vz);
-        float val = (*oldVal_ptr * (float)lastN + (float)newVal) / (float)(lastN + 1);
+    unsigned char newVal = Block<const unsigned char>( volume, volume_s, volume_p ).get( vx, vy, vz );
 
-        *oldVal_ptr = (unsigned char)(fminf(255.0f, val));
-    }
+    Block<unsigned char> io_block( volumeT, volumeT_s, volumeT_p );
+    unsigned char oldVal_ptr = io_block.get( vTx, vTy, vTz );
+
+    float val = (oldVal_ptr * (float)lastN + (float)newVal) / (float)(lastN + 1);
+
+    io_block.set( vTx, vTy, vTz, (unsigned char)(fminf(255.0f, val)) );
 }
 
 __global__ void volume_updateMinXSlice_kernel(unsigned char* volume, int volume_s, int volume_p,
-                                              unsigned char* xySliceBestSim, int xySliceBestSim_p, int* xySliceBestZ,
-                                              int xySliceBestZ_p, int volDimX, int volDimY, int volDimZ, int vz)
+                                              unsigned char* xySliceBestSim, int xySliceBestSim_p,
+                                              int* xySliceBestZ, int xySliceBestZ_p,
+                                              int volDimX, int volDimY, int volDimZ, int vz)
 {
     int vx = blockIdx.x * blockDim.x + threadIdx.x;
     int vy = blockIdx.y * blockDim.y + threadIdx.y;
 
-    if((vx >= 0) && (vx < volDimX) && (vy >= 0) && (vy < volDimY) && (vz >= 0) && (vz < volDimZ))
+    if( vx >= volDimX ) return;
+    if( vy >= volDimY ) return;
+    if( vz >= volDimZ ) return;
+
+    unsigned char sim = Block<unsigned char>(volume, volume_s, volume_p).get(vx, vy, vz);
+    unsigned char actSim = Plane<unsigned char>( xySliceBestSim, xySliceBestSim_p ).get( vx, vy );
+
+    if((sim < actSim) || (vz == 0))
     {
-        unsigned char sim = *get3DBufferAt(volume, volume_s, volume_p, vx, vy, vz);
-        unsigned char* actSim_ptr = get2DBufferAt(xySliceBestSim, xySliceBestSim_p, vx, vy);
-        if((sim < *actSim_ptr) || (vz == 0))
-        {
-            *actSim_ptr = sim;
-            *get2DBufferAt(xySliceBestZ, xySliceBestZ_p, vx, vy) = vz;
-        }
+        Plane<unsigned char>( xySliceBestSim, xySliceBestSim_p ).set( vx, vy, sim );
+        Plane<int>( xySliceBestZ, xySliceBestZ_p ).set( vx, vy, vz );
     }
 }
 
@@ -258,46 +263,46 @@ __global__ void volume_agregateCostVolumeAtZinSlices_kernel(
     int vx = blockIdx.x * blockDim.x + threadIdx.x;
     int vy = blockIdx.y * blockDim.y + threadIdx.y;
 
-    if((vx >= 0) && (vx < volDimX) && (vy >= 0) && (vy < volDimY) && (vz >= 0) && (vz < volDimZ))
+    if( vx >= volDimX ) return;
+    if( vy >= volDimY ) return;
+    if( vz >= volDimZ ) return;
+
+    unsigned int sim = Plane<unsigned int>(xySliceForZ, xySliceForZ_p).get(vx, vy);
+    unsigned int pathCost = transfer ? sim : 255;
+
+    if((vz >= 1) && (vy >= 1) && (vy < volDimY - 1))
     {
-        unsigned int* sim_yx = get2DBufferAt(xySliceForZ, xySliceForZ_p, vx, vy);
-        unsigned int sim = *sim_yx;
-        unsigned int pathCost = transfer ? sim : 255;
+        int z = doInvZ ? volDimZ - vz : vz;
+        int z1 = doInvZ ? z + 1 : z - 1; // M1
+        int imX0 = volLUX + (dimTrnX == 0) ? vx : z; // current
+        int imY0 = volLUY + (dimTrnX == 0) ?  z : vx;
+        int imX1 = volLUX + (dimTrnX == 0) ? vx : z1; // M1
+        int imY1 = volLUY + (dimTrnX == 0) ? z1 : vx;
+        float4 gcr0 = 255.0f * tex2D<float4>(r4tex, (float)imX0 + 0.5f, (float)imY0 + 0.5f);
+        float4 gcr1 = 255.0f * tex2D<float4>(r4tex, (float)imX1 + 0.5f, (float)imY1 + 0.5f);
+        float deltaC = Euclidean3(gcr0, gcr1);
+        // unsigned int P1 = (unsigned int)sigmoid(5.0f,20.0f,60.0f,10.0f,deltaC);
+        unsigned int P1 = _P1;
+        // 15.0 + (255.0 - 15.0) * (1.0 / (1.0 + exp(10.0 * ((x - 20.) / 80.))))
+        unsigned int P2 = (unsigned int)sigmoid(15.0f, 255.0f, 80.0f, 20.0f, deltaC);
+        // unsigned int P2 = _P2;
 
-        if((vz >= 1) && (vy >= 1) && (vy < volDimY - 1))
-        {
-            int z = doInvZ ? volDimZ - vz : vz;
-            int z1 = doInvZ ? z + 1 : z - 1; // M1
-            int imX0 = volLUX + (dimTrnX == 0) ? vx : z; // current
-            int imY0 = volLUY + (dimTrnX == 0) ?  z : vx;
-            int imX1 = volLUX + (dimTrnX == 0) ? vx : z1; // M1
-            int imY1 = volLUY + (dimTrnX == 0) ? z1 : vx;
-            float4 gcr0 = 255.0f * tex2D<float4>(r4tex, (float)imX0 + 0.5f, (float)imY0 + 0.5f);
-            float4 gcr1 = 255.0f * tex2D<float4>(r4tex, (float)imX1 + 0.5f, (float)imY1 + 0.5f);
-            float deltaC = Euclidean3(gcr0, gcr1);
-            // unsigned int P1 = (unsigned int)sigmoid(5.0f,20.0f,60.0f,10.0f,deltaC);
-            unsigned int P1 = _P1;
-            // 15.0 + (255.0 - 15.0) * (1.0 / (1.0 + exp(10.0 * ((x - 20.) / 80.))))
-            unsigned int P2 = (unsigned int)sigmoid(15.0f, 255.0f, 80.0f, 20.0f, deltaC);
-            // unsigned int P2 = _P2;
+        unsigned int bestCostInColM1 = xSliceBestInColSimForZM1[vx];
+        Plane<const unsigned int> plane(xySliceForZM1, xySliceForZM1_p);
+        unsigned int pathCostMDM1 = plane.get( vx, vy - 1); // M1: minus 1 over depths
+        unsigned int pathCostMD   = plane.get( vx, vy ); 
+        unsigned int pathCostMDP1 = plane.get( vx, vy + 1); // P1: plus 1 over depths
+        // pathCost = (unsigned char)(fminf(255.0f,(float)sim +
+        // fminf(fminf(fminf((float)pathCostMD,(float)pathCostMDM1+(float)P1),(float)pathCostMDP1+(float)P1),(float)bestCostM+(float)P2)
+        unsigned int minCost = min(pathCostMD, pathCostMDM1    + P1);
+        minCost              = min(minCost,    pathCostMDP1    + P1);
+        minCost              = min(minCost,    bestCostInColM1 + P2);
 
-            unsigned int bestCostInColM1 = xSliceBestInColSimForZM1[vx];
-            unsigned int pathCostMDM1 = *get2DBufferAt(xySliceForZM1, xySliceForZM1_p, vx, vy - 1); // M1: minus 1 over depths
-            unsigned int pathCostMD   = *get2DBufferAt(xySliceForZM1, xySliceForZM1_p, vx, vy); 
-            unsigned int pathCostMDP1 = *get2DBufferAt(xySliceForZM1, xySliceForZM1_p, vx, vy + 1); // P1: plus 1 over depths
-            // pathCost = (unsigned char)(fminf(255.0f,(float)sim +
-            // fminf(fminf(fminf((float)pathCostMD,(float)pathCostMDM1+(float)P1),(float)pathCostMDP1+(float)P1),(float)bestCostM+(float)P2)
-            unsigned int minCost = min(pathCostMD, pathCostMDM1    + P1);
-            minCost              = min(minCost,    pathCostMDP1    + P1);
-            minCost              = min(minCost,    bestCostInColM1 + P2);
-
-            // if 'pathCostMD' is the minimal value of the depth
-            pathCost = sim + minCost - bestCostInColM1;
-        }
-        unsigned char* volume_zyx = get3DBufferAt(volSimT, volSimT_s, volSimT_p, vx, vy, vz);
-        *volume_zyx = (unsigned char)(min(255, pathCost));
-        *sim_yx = pathCost;
+        // if 'pathCostMD' is the minimal value of the depth
+        pathCost = sim + minCost - bestCostInColM1;
     }
+    Block<unsigned char>(volSimT, volSimT_s, volSimT_p).set(vx, vy, vz, (unsigned char)(min(255, pathCost)) );
+    Plane<unsigned int>(xySliceForZ, xySliceForZ_p).set(vx, vy, pathCost);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -602,63 +607,64 @@ __global__ void update_GC_volumeXYSliceAtZInt4_kernel(int* xySlice_x, int xySlic
 {
     int vx = blockIdx.x * blockDim.x + threadIdx.x;
     int vy = blockIdx.y * blockDim.y + threadIdx.y;
-    if((vx >= 0) && (vx < volDimX) && (vy >= 0) && (vy < volDimY) && (vz >= 0) && (vz < volDimZ))
+
+    if( vx >= volDimX ) return;
+    if( vy >= volDimY ) return;
+    if( vz >= volDimZ ) return;
+
+	int xySlice_yx_x = Plane<int>(xySlice_x, xySlice_x_p).get(vx, vy);
+	int xySlice_yx_y = Plane<int>(xySlice_y, xySlice_y_p).get(vx, vy);
+	int xySlice_yx_z = Plane<int>(xySlice_z, xySlice_z_p).get(vx, vy);
+	int xySlice_yx_w = Plane<int>(xySlice_w, xySlice_w_p).get(vx, vy);
+
+    int4 M1 = make_int4( xySlice_yx_x,  xySlice_yx_y,  xySlice_yx_z,  xySlice_yx_w );
+    int R = M1.x;
+    int dQ = M1.y;
+    int first = M1.z;
+    int wasReached = M1.w;
+
+    if(wasReached == 0)
     {
-	int* xySlice_yx_x = get2DBufferAt(xySlice_x, xySlice_x_p, vx, vy);
-	int* xySlice_yx_y = get2DBufferAt(xySlice_y, xySlice_y_p, vx, vy);
-	int* xySlice_yx_z = get2DBufferAt(xySlice_z, xySlice_z_p, vx, vy);
-	int* xySlice_yx_w = get2DBufferAt(xySlice_w, xySlice_w_p, vx, vy);
+        unsigned int val = Block<unsigned int>(volume, volume_s, volume_p).get(vx, vy, vz);
+        int Ti = (int)(val >> 16);    // T - edge
+        int Si = (int)(val & 0xFFFF); // visibility
 
-        int4 M1 = make_int4( *xySlice_yx_x,  *xySlice_yx_y,  *xySlice_yx_z,  *xySlice_yx_w );
-        int R = M1.x;
-        int dQ = M1.y;
-        int first = M1.z;
-        int wasReached = M1.w;
+        //			val = volume[(vz-1)*volume_s+vy*volume_p+vx];
+        // int TiM1 = (int)(val >> 16); //T - edge
+        // int SiM1 = (int)(val & 0xFFFF); //visibility
 
-        if(wasReached == 0)
+        int EiM1 = Si;
+
+        if(dQ < 0)
         {
-            unsigned int* volume_zyx = get3DBufferAt(volume, volume_s, volume_p, vx, vy, vz);
-            unsigned int val = *volume_zyx;
-            int Ti = (int)(val >> 16);    // T - edge
-            int Si = (int)(val & 0xFFFF); // visibility
+            wasReached = 1;
+        }
+        else
+        {
+            if(dQ > EiM1)
+            {
+                first = vz;
+                dQ = EiM1;
+            }
+            dQ = dQ + (Si - Ti);
+        }
 
-            //			val = volume[(vz-1)*volume_s+vy*volume_p+vx];
-            // int TiM1 = (int)(val >> 16); //T - edge
-            // int SiM1 = (int)(val & 0xFFFF); //visibility
-
-            int EiM1 = Si;
-
+        if(vz == volDimZ - 1)
+        {
             if(dQ < 0)
             {
                 wasReached = 1;
             }
-            else
+            if(wasReached == 0)
             {
-                if(dQ > EiM1)
-                {
-                    first = vz;
-                    dQ = EiM1;
-                }
-                dQ = dQ + (Si - Ti);
+                first = volDimZ - 1;
             }
-
-            if(vz == volDimZ - 1)
-            {
-                if(dQ < 0)
-                {
-                    wasReached = 1;
-                }
-                if(wasReached == 0)
-                {
-                    first = volDimZ - 1;
-                }
-            }
-
-            *xySlice_yx_x = R;
-            *xySlice_yx_y = dQ;
-            *xySlice_yx_z = first;
-            *xySlice_yx_w = wasReached;
         }
+
+        Plane<int>(xySlice_x, xySlice_x_p).set( vx, vy, R );
+        Plane<int>(xySlice_y, xySlice_y_p).set( vx, vy, dQ );
+        Plane<int>(xySlice_z, xySlice_z_p).set( vx, vy, first );
+        Plane<int>(xySlice_w, xySlice_w_p).set( vx, vy, wasReached );
     }
 }
 
@@ -935,66 +941,70 @@ __global__ void volume_compute_DP1_kernel(int2* xySlice, int xySlice_p, int* ovo
     int vx = blockIdx.x * blockDim.x + threadIdx.x;
     int vy = blockIdx.y * blockDim.y + threadIdx.y;
 
-    if((vx >= 0) && (vx < volDimX) && (vy >= 0) && (vy < volDimY) && (vz >= 0) && (vz < volDimZ))
+    if( vx >= volDimX ) return;
+    if( vy >= volDimY ) return;
+    if( vz >= volDimZ ) return;
+
+    Block<unsigned int> volume_block ( volume, volume_s, volume_p );
+    Block<int>          ovolume_block( ovolume, ovolume_s, ovolume_p );
+
+    unsigned int val = volume_block.get(vx, vy, vz);
+
+    int Ti = (int)(val >> 16);    // T - edge
+    int Si = (int)(val & 0xFFFF); // visibility
+    int EiM1 = Si;
+
+    int Ei = EiM1;
+    if(vz < volDimZ - 1)
     {
-        unsigned int* volume_zyx = get3DBufferAt(volume, volume_s, volume_p, vx, vy, vz);
-        unsigned int val = *volume_zyx;
+        val = volume_block.get(vx, vy, vz+1);
+        int Si1 = (int)(val & 0xFFFF); // visibility
+        Ei = Si1;
+    }
 
-        int* ovolume_zyx = get3DBufferAt(ovolume, ovolume_s, ovolume_p, vx, vy, vz);;
+    int2 xySlice_yx;
+    if(vz == 0)
+    {
+        int Q0 = 0;
+        int dQ = Si - Ti;
+        xySlice_yx = make_int2(Q0, dQ);
+        Plane<int2>(xySlice, xySlice_p).set( vx, vy, xySlice_yx );
+        ovolume_block.set( vx, vy, vz, Q0 + dQ + EiM1 );
+    }
+    else
+    {
+        xySlice_yx = Plane<int2>(xySlice, xySlice_p).get( vx, vy );
+    }
 
-        int2* xySlice_yx = get2DBufferAt(xySlice, xySlice_p, vx, vy); 
+    if((vz > 0) && (vz <= volDimZ - 1))
+    {
+        int Q0 = xySlice_yx.x;
+        int dQ = xySlice_yx.y;
 
-        int Ti = (int)(val >> 16);    // T - edge
-        int Si = (int)(val & 0xFFFF); // visibility
-        int EiM1 = Si;
+        if(dQ + Ei < 0)
+        {
+            Q0 = Q0 + dQ + Ei;
+            dQ = -Ei;
+        }
+        else
+        {
+            if(dQ > 0)
+            {
+                dQ = 0;
+            }
+        }
+        dQ = dQ + (Si - Ti);
 
-        int Ei = EiM1;
         if(vz < volDimZ - 1)
         {
-            volume_zyx = get3DBufferAt(volume, volume_s, volume_p, vx, vy, vz + 1);
-            val = *volume_zyx;
-            int Si1 = (int)(val & 0xFFFF); // visibility
-            Ei = Si1;
+            ovolume_block.set( vx, vy, vz, Q0 + dQ + EiM1 );
         }
 
-        if(vz == 0)
+        Plane<int2>(xySlice, xySlice_p).set( vx, vy, make_int2(Q0, dQ) ); // Ei = S(i+1)
+
+        if(vz == volDimZ - 1)
         {
-            int Q0 = 0;
-            int dQ = Si - Ti;
-            *xySlice_yx = make_int2(Q0, dQ);
-            *ovolume_zyx = Q0 + dQ + EiM1;
-        }
-
-        if((vz > 0) && (vz <= volDimZ - 1))
-        {
-            int Q0 = xySlice_yx->x;
-            int dQ = xySlice_yx->y;
-
-            if(dQ + Ei < 0)
-            {
-                Q0 = Q0 + dQ + Ei;
-                dQ = -Ei;
-            }
-            else
-            {
-                if(dQ > 0)
-                {
-                    dQ = 0;
-                }
-            }
-            dQ = dQ + (Si - Ti);
-
-            if(vz < volDimZ - 1)
-            {
-                *ovolume_zyx = Q0 + dQ + EiM1;
-            }
-
-            *xySlice_yx = make_int2(Q0, dQ); // Ei = S(i+1)
-
-            if(vz == volDimZ - 1)
-            {
-                *ovolume_zyx = Q0 + dQ;
-            }
+            ovolume_block.set( vx, vy, vz, Q0 + dQ );
         }
     }
 }

@@ -4,6 +4,7 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
+#include "aliceVision/depthMap/cuda/planeSweeping/onoff.cuh"
 #include "aliceVision/depthMap/cuda/planeSweeping/plane_sweeping_cuda.hpp"
 
 #include "aliceVision/depthMap/cuda/commonStructures.hpp"
@@ -372,7 +373,7 @@ void testCUDAdeviceNo(int CUDAdeviceNo)
     }
 }
 
-void ps_deviceUpdateCam( cameraStruct* cam, int camId, int CUDAdeviceNo,
+void ps_deviceUpdateCam( const cameraStruct* const cam, int camId, int CUDAdeviceNo,
                          int ncamsAllocated, int scales, int w, int h, int varianceWsh)
 {
     std::cerr << "    INFO " << __FUNCTION__ << " Calling with scales=" << scales << std::endl;
@@ -1571,7 +1572,7 @@ void ps_refineRcDepthMap( float* osimMap_hmh,
 
     clock_t tall = tic();
 
-#ifdef GRIFF_TEST
+#ifdef MERGE_REFINE_KERNELS
     refine_compUpdateYKNCCSimMapPatch_kernel<<<grid, block>>>(
         r4tex,
         t4tex,
@@ -1983,79 +1984,79 @@ void ps_getSilhoueteMap( CudaHostMemoryHeap<bool, 2>* omap_hmh, int width,
 }
 
 #if 0
-void ps_colorExtractionPushPull(CudaHostMemoryHeap<uchar4, 2>* bmp_hmh, int w, int h, int CUDAdeviceNo, bool verbose)
-{
-    clock_t tall = tic();
-    testCUDAdeviceNo(CUDAdeviceNo);
-
-    int block_size = 16;
-    int npyramidLevels = 10;
-
-    global_data.allocPyramidArrays( npyramidLevels, w, h );
-
-    // pyramid arr
-    // CudaArray<uchar4, 2>** pyramid_arr = new CudaArray<uchar4, 2>*[npyramidLevels];
-    int wact = w;
-    int hact = h;
-    int wLevels[npyramidLevels];
-    int hLevels[npyramidLevels];
-
-    // push
-    for(int i = 0; i < npyramidLevels; i++)
-    {
-        // pyramid_arr[i] = new CudaArray<uchar4, 2>(CudaSize<2>(wact, hact));
-        wLevels[i] = wact;
-        hLevels[i] = hact;
-
-        if(i == 0)
-        {
-            global_data.getPyramidArray(i).copyFrom( *bmp_hmh );
-        }
-        else
-        {
-            // cudaBindTextureToArray(r4tex, pyramid_arr[i - 1]->getArray(), cudaCreateChannelDesc<uchar4>());
-            cudaTextureObject_t r4tex = global_data.getPyramidTex( i-1 );
-
-            // CudaDeviceMemoryPitched<uchar4, 2> bmpNextLevel_dmp(CudaSize<2>(wact, hact));
-            CudaDeviceMemoryPitched<uchar4, 2>& bmpNextLevel_dmp = global_data.getPyramidArray( i );
-            dim3 block(block_size, block_size, 1);
-            dim3 grid(divUp(wact, block_size), divUp(hact, block_size), 1);
-            pushPull_Push_kernel<<<grid, block>>>( r4tex, bmpNextLevel_dmp.getBuffer(), bmpNextLevel_dmp.stride()[0], wact, hact);
-            CHECK_CUDA_ERROR();
-
-            // copy((*pyramid_arr[i]), bmpNextLevel_dmp);
-            // copy( global_data.getPyramidArray(i), bmpNextLevel_dmp);
-        }
-        wact = wact / 2;
-        hact = hact / 2;
-        printf("push level %i\n", i);
-    }
-
-    // pull
-    for(int i = npyramidLevels - 1; i >= 1; i--)
-    {
-        // cudaBindTextureToArray(r4tex, pyramid_arr[i]->getArray(), cudaCreateChannelDesc<uchar4>());
-        cudaTextureObject_t r4tex = global_data.getPyramidTex( i );
-
-        // CudaDeviceMemoryPitched<uchar4, 2> bmpNextLevel_dmp(CudaSize<2>(wLevels[i - 1], hLevels[i - 1]));
-        // copy(bmpNextLevel_dmp, (*pyramid_arr[i - 1]));
-        CudaDeviceMemoryPitched<uchar4, 2>& bmpNextLevel_dmp = global_data.getPyramidArray( i-1 );
-
-        dim3 block(block_size, block_size, 1);
-        dim3 grid(divUp(wLevels[i - 1], block_size), divUp(hLevels[i - 1], block_size), 1);
-        pushPull_Pull_kernel<<<grid, block>>>( r4tex, bmpNextLevel_dmp.getBuffer(), bmpNextLevel_dmp.stride()[0], wLevels[i - 1],
-                                              hLevels[i - 1]);
-        CHECK_CUDA_ERROR();
-        // cudaUnbindTexture(r4tex);
-
-        // copy((*pyramid_arr[i - 1]), bmpNextLevel_dmp);
-        printf("pull level %i\n", i);
-    }
-
-    bmp_hmh->copyFrom( global_data.getPyramidArray( 0 ) );
-
-    global_data.freePyramidArrays();
-}
+// void ps_colorExtractionPushPull(CudaHostMemoryHeap<uchar4, 2>* bmp_hmh, int w, int h, int CUDAdeviceNo, bool verbose)
+// {
+//     clock_t tall = tic();
+//     testCUDAdeviceNo(CUDAdeviceNo);
+// 
+//     int block_size = 16;
+//     int npyramidLevels = 10;
+// 
+//     global_data.allocPyramidArrays( npyramidLevels, w, h );
+// 
+//     // pyramid arr
+//     // CudaArray<uchar4, 2>** pyramid_arr = new CudaArray<uchar4, 2>*[npyramidLevels];
+//     int wact = w;
+//     int hact = h;
+//     int wLevels[npyramidLevels];
+//     int hLevels[npyramidLevels];
+// 
+//     // push
+//     for(int i = 0; i < npyramidLevels; i++)
+//     {
+//         // pyramid_arr[i] = new CudaArray<uchar4, 2>(CudaSize<2>(wact, hact));
+//         wLevels[i] = wact;
+//         hLevels[i] = hact;
+// 
+//         if(i == 0)
+//         {
+//             global_data.getPyramidArray(i).copyFrom( *bmp_hmh );
+//         }
+//         else
+//         {
+//             // cudaBindTextureToArray(r4tex, pyramid_arr[i - 1]->getArray(), cudaCreateChannelDesc<uchar4>());
+//             cudaTextureObject_t r4tex = global_data.getPyramidTex( i-1 );
+// 
+//             // CudaDeviceMemoryPitched<uchar4, 2> bmpNextLevel_dmp(CudaSize<2>(wact, hact));
+//             CudaDeviceMemoryPitched<uchar4, 2>& bmpNextLevel_dmp = global_data.getPyramidArray( i );
+//             dim3 block(block_size, block_size, 1);
+//             dim3 grid(divUp(wact, block_size), divUp(hact, block_size), 1);
+//             pushPull_Push_kernel<<<grid, block>>>( r4tex, bmpNextLevel_dmp.getBuffer(), bmpNextLevel_dmp.stride()[0], wact, hact);
+//             CHECK_CUDA_ERROR();
+// 
+//             // copy((*pyramid_arr[i]), bmpNextLevel_dmp);
+//             // copy( global_data.getPyramidArray(i), bmpNextLevel_dmp);
+//         }
+//         wact = wact / 2;
+//         hact = hact / 2;
+//         printf("push level %i\n", i);
+//     }
+// 
+//     // pull
+//     for(int i = npyramidLevels - 1; i >= 1; i--)
+//     {
+//         // cudaBindTextureToArray(r4tex, pyramid_arr[i]->getArray(), cudaCreateChannelDesc<uchar4>());
+//         cudaTextureObject_t r4tex = global_data.getPyramidTex( i );
+// 
+//         // CudaDeviceMemoryPitched<uchar4, 2> bmpNextLevel_dmp(CudaSize<2>(wLevels[i - 1], hLevels[i - 1]));
+//         // copy(bmpNextLevel_dmp, (*pyramid_arr[i - 1]));
+//         CudaDeviceMemoryPitched<uchar4, 2>& bmpNextLevel_dmp = global_data.getPyramidArray( i-1 );
+// 
+//         dim3 block(block_size, block_size, 1);
+//         dim3 grid(divUp(wLevels[i - 1], block_size), divUp(hLevels[i - 1], block_size), 1);
+//         pushPull_Pull_kernel<<<grid, block>>>( r4tex, bmpNextLevel_dmp.getBuffer(), bmpNextLevel_dmp.stride()[0], wLevels[i - 1],
+//                                               hLevels[i - 1]);
+//         CHECK_CUDA_ERROR();
+//         // cudaUnbindTexture(r4tex);
+// 
+//         // copy((*pyramid_arr[i - 1]), bmpNextLevel_dmp);
+//         printf("pull level %i\n", i);
+//     }
+// 
+//     bmp_hmh->copyFrom( global_data.getPyramidArray( 0 ) );
+// 
+//     global_data.freePyramidArrays();
+// }
 #endif
 
 } // namespace depthMap

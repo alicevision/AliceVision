@@ -7,6 +7,7 @@
 #pragma once
 
 #include "aliceVision/depthMap/cuda/deviceCommon/device_patch_es.cuh"
+#include "aliceVision/depthMap/cuda/planeSweeping/device_utils.cuh"
 
 namespace aliceVision {
 namespace depthMap {
@@ -51,26 +52,32 @@ __global__ void volume_transposeVolume_kernel(T* volumeT, int volumeT_s, int vol
     int vy = blockIdx.y * blockDim.y + threadIdx.y;
     int vz = z;
 
-    if((vx >= 0) && (vx < volDimX) && (vy >= 0) && (vy < volDimY) && (vz >= 0) && (vz < volDimZ))
-    {
-        int v[3];
-        v[0] = vx;
-        v[1] = vy;
-        v[2] = vz;
+    if( vx >= volDimX ) return;
+    if( vy >= volDimY ) return;
+    if( vz >= volDimZ ) return;
 
-        int dimsTrn[3];
-        dimsTrn[0] = dimTrnX;
-        dimsTrn[1] = dimTrnY;
-        dimsTrn[2] = dimTrnZ;
+    int v[3];
+    v[0] = vx;
+    v[1] = vy;
+    v[2] = vz;
 
-        int vTx = v[dimsTrn[0]];
-        int vTy = v[dimsTrn[1]];
-        int vTz = v[dimsTrn[2]];
+#if 0
+    int dimsTrn[3];
+    dimsTrn[0] = dimTrnX;
+    dimsTrn[1] = dimTrnY;
+    dimsTrn[2] = dimTrnZ;
 
-        T* oldVal_ptr = get3DBufferAt(volumeT, volumeT_s, volumeT_p, vTx, vTy, vTz);
-        T newVal = *get3DBufferAt(volume, volume_s, volume_p, vx, vy, vz);
-        *oldVal_ptr = newVal;
-    }
+    int vTx = v[dimsTrn[0]];
+    int vTy = v[dimsTrn[1]];
+    int vTz = v[dimsTrn[2]];
+#else
+    int vTx = v[dimTrnX];
+    int vTy = v[dimTrnY];
+    int vTz = v[dimTrnZ];
+#endif
+
+    T newVal = Block<const T>(volume, volume_s, volume_p).get(vx, vy, vz);
+    Block<T>(volumeT, volumeT_s, volumeT_p).set( vTx, vTy, vTz, newVal );
 }
 
 template <typename T>
@@ -80,15 +87,15 @@ __global__ void volume_shiftZVolumeTempl_kernel(T* volume, int volume_s, int vol
     int vx = blockIdx.x * blockDim.x + threadIdx.x;
     int vy = blockIdx.y * blockDim.y + threadIdx.y;
 
-    if((vx >= 0) && (vx < volDimX) && (vy >= 0) && (vy < volDimY) && (vz >= 0) && (vz < volDimZ))
-    {
-        T* v1_ptr = get3DBufferAt(volume, volume_s, volume_p, vx, vy, vz);
-        T* v2_ptr = get3DBufferAt(volume, volume_s, volume_p, vx, vy, volDimZ - 1 - vz);
-        T v1 = *v1_ptr;
-        T v2 = *v2_ptr;
-        *v1_ptr = v2;
-        *v2_ptr = v1;
-    }
+    if( vx >= volDimX ) return;
+    if( vy >= volDimY ) return;
+    if( vz >= volDimZ ) return;
+
+    Block<T> block( volume, volume_s, volume_p );
+    T v1 = block.get( vx, vy, vz );
+    T v2 = block.get( vx, vy, volDimZ - 1 - vz );
+    block.set( vx, vy, vz,               v2 );
+    block.set( vx, vy, volDimZ - 1 - vz, v1 );
 }
 
 template <typename T>
@@ -98,11 +105,11 @@ __global__ void volume_initVolume_kernel(T* volume, int volume_s, int volume_p, 
     int vx = blockIdx.x * blockDim.x + threadIdx.x;
     int vy = blockIdx.y * blockDim.y + threadIdx.y;
 
-    if((vx >= 0) && (vx < volDimX) && (vy >= 0) && (vy < volDimY) && (vz >= 0) && (vz < volDimZ))
-    {
-        T* volume_zyx = get3DBufferAt(volume, volume_s, volume_p, vx, vy, vz);
-        *volume_zyx = cst;
-    }
+    if( vx >= volDimX ) return;
+    if( vy >= volDimY ) return;
+    if( vz >= volDimZ ) return;
+
+    Block<T>(volume, volume_s, volume_p).set( vx, vy, vz, cst );
 }
 
 template <typename T>
@@ -113,11 +120,11 @@ __global__ void volume_initFullVolume_kernel(T* volume, int volume_s, int volume
     int vy = blockIdx.y * blockDim.y + threadIdx.y;
     int vz = blockIdx.z * blockDim.z + threadIdx.z;
 
-    if ((vx >= 0) && (vx < volDimX) && (vy >= 0) && (vy < volDimY) && (vz >= 0) && (vz < volDimZ))
-    {
-        T* volume_zyx = get3DBufferAt(volume, volume_s, volume_p, vx, vy, vz);
-        *volume_zyx = cst;
-    }
+    if( vx >= volDimX ) return;
+    if( vy >= volDimY ) return;
+    if( vz >= volDimZ ) return;
+
+    Block<T>(volume, volume_s, volume_p).set( vx, vy, vz, cst );
 }
 
 __global__ void volume_updateMinXSlice_kernel(unsigned char* volume, int volume_s, int volume_p,
@@ -131,12 +138,13 @@ __global__ void volume_getVolumeXYSliceAtZ_kernel(T1* xySlice, int xySlice_p, T2
     int vx = blockIdx.x * blockDim.x + threadIdx.x;
     int vy = blockIdx.y * blockDim.y + threadIdx.y;
 
-    if((vx >= 0) && (vx < volDimX) && (vy >= 0) && (vy < volDimY) && (vz >= 0) && (vz < volDimZ))
-    {
-        T2* volume_zyx = get3DBufferAt(volume, volume_s, volume_p, vx, vy, vz);
-        T1* xySlice_yx = get2DBufferAt(xySlice, xySlice_p, vx, vy);
-        *xySlice_yx = (T1)(*volume_zyx);
-    }
+    if( vx >= volDimX ) return;
+    if( vy >= volDimY ) return;
+    if( vz >= volDimZ ) return;
+
+    T2 volume_zyx = Block<T2>(volume, volume_s, volume_p).get( vx, vy, vz );
+
+    Plane<T1>(xySlice, xySlice_p).set(vx, vy, (T1)volume_zyx );
 }
 
 #if 0

@@ -9,8 +9,6 @@
 #include "aliceVision/depthMap/cuda/deviceCommon/device_matrix.cuh"
 #include "aliceVision/depthMap/cuda/deviceCommon/device_color.cuh"
 
-#define GRIFF_TEST
-
 namespace aliceVision {
 namespace depthMap {
 
@@ -90,7 +88,7 @@ __global__ void refine_fuseThreeDepthSimMaps_kernel(float* osim, int osim_p, flo
                                                     int isimAct_p, float* idptAct, int idptAct_p, int width, int height,
                                                     float simThr);
 
-#ifdef GRIFF_TEST
+#ifdef MERGE_REFINE_KERNELS
 __global__ void refine_compYKNCCSimMapPatch_kernel_A(
     cudaTextureObject_t r4tex,
     cudaTextureObject_t t4tex,
@@ -99,9 +97,7 @@ __global__ void refine_compYKNCCSimMapPatch_kernel_A(
     const float gammaP, const float epipShift, const float tcStep,
     bool moveByTcOrRc, int xFrom, int imWidth, int imHeight,
     float3* lastThreeSimsMap, int lastThreeSimsMap_p, const int dimension );
-#endif
 
-#ifdef GRIFF_TEST
 __global__ void refine_compUpdateYKNCCSimMapPatch_kernel(
     cudaTextureObject_t r4tex,
     cudaTextureObject_t t4tex,

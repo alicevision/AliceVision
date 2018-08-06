@@ -22,21 +22,118 @@ inline static __host__ float toc(clock_t ticClk)
     return (float)((clock() - ticClk) * 1000.0 / CLOCKS_PER_SEC);
 }
 
-/**
-* @brief
-* @param[int] ptr
-* @param[int] pitch raw length of a line in bytes
-* @param[int] x
-* @param[int] y
-* @return
-*/
 template <typename T>
-inline __device__ T* get2DBufferAt(T* ptr, int pitch, int x, int y)
+class Plane
 {
+    inline __device__
+    T* getLine( int y )
+    {
+        return ((T*)(((char*)_ptr) + y * _pitch));
+    }
 
-    return ((T*)(((char*)ptr) + y * pitch)) + x;
-}
+    inline __device__
+    const T* getLine( int y ) const
+    {
+        return ((const T*)(((char*)_ptr) + y * _pitch));
+    }
 
+public:
+    inline __device__
+    Plane( T* ptr, int pitch ) : _ptr(ptr), _pitch(pitch) { }
+
+    inline __device__
+    const T& get( int x, int y ) const
+    {
+        return getLine(y)[x];
+    }
+
+    inline __device__
+    T& getRef( int x, int y )
+    {
+        return getLine(y)[x];
+    }
+
+    inline __device__
+    void set( int x, int y, const T& val )
+    {
+        getLine(y)[x] = val;
+    }
+
+    inline __device__
+    T* getPtr( int x, int y )
+    {
+        return getLine(y) + x;
+    }
+
+private:
+    T*  _ptr;
+    int _pitch;
+};
+
+// /**
+// * @brief
+// * @param[int] ptr
+// * @param[int] pitch raw length of a line in bytes
+// * @param[int] x
+// * @param[int] y
+// * @return
+// */
+// template <typename T>
+// inline __device__ T* get2DBufferAt(T* ptr, int pitch, int x, int y)
+// {
+//     return Plane<T>(ptr,pitch).getPtr(x,y);
+// 
+//     // return ((T*)(((char*)ptr) + y * pitch)) + x;
+// }
+
+template <typename T>
+class Block
+{
+    inline __device__
+    T* getLine( int y, int z )
+    {
+        return (T*)(((char*)_ptr) + z * _spitch + y * _pitch);
+    }
+
+    inline __device__
+    const T* getLine( int y, int z ) const
+    {
+        return (const T*)(((char*)_ptr) + z * _spitch + y * _pitch);
+    }
+
+public:
+    inline __device__
+    Block( T* ptr, int spitch, int pitch ) : _ptr(ptr), _spitch(spitch), _pitch(pitch) { }
+
+    inline __device__
+    const T& get( int x, int y, int z ) const
+    {
+        return getLine(y,z)[x];
+    }
+
+    inline __device__
+    T& getRef( int x, int y, int z )
+    {
+        return getLine(y,z)[x];
+    }
+
+    inline __device__
+    void set( int x, int y, int z, const T& val )
+    {
+        getLine(y,z)[x] = val;
+    }
+
+    inline __device__
+    T* getPtr( int x, int y, int z )
+    {
+        return getLine(y,z) + x;
+    }
+
+private:
+    T*  _ptr;
+    int _spitch;
+    int _pitch;
+};
 /**
 * @brief
 * @param[int] ptr
@@ -46,12 +143,12 @@ inline __device__ T* get2DBufferAt(T* ptr, int pitch, int x, int y)
 * @param[int] y
 * @return
 */
-template <typename T>
-inline __device__ T* get3DBufferAt(T* ptr, int spitch, int pitch, int x, int y, int z)
-{
-
-    return ((T*)(((char*)ptr) + z * spitch + y * pitch)) + x;
-}
+// template <typename T>
+// inline __device__ T* get3DBufferAt(T* ptr, int spitch, int pitch, int x, int y, int z)
+// {
+//     // return ((T*)(((char*)ptr) + z * spitch + y * pitch)) + x;
+//     return Block<T>(ptr,spitch,pitch).getPtr(x,y,z);
+// }
 
 /*
 
