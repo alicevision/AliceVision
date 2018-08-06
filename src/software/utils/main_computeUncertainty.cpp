@@ -5,6 +5,8 @@
 
 #include <aliceVision/sfm/sfm.hpp>
 #include <aliceVision/sfm/BundleAdjustmentCeres.hpp>
+#include <aliceVision/sfmData/SfMData.hpp>
+#include <aliceVision/sfmDataIO/sfmDataIO.hpp>
 #include <aliceVision/system/cmdline.hpp>
 #include <aliceVision/config.hpp>
 
@@ -24,6 +26,8 @@
 
 using namespace aliceVision;
 using namespace aliceVision::sfm;
+using namespace aliceVision::sfmData;
+using namespace aliceVision::sfmDataIO;
 namespace po = boost::program_options;
 
 
