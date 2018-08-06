@@ -6,6 +6,7 @@
 
 #include "PlaneSweepingCuda.hpp"
 #include <aliceVision/system/Logger.hpp>
+#include <aliceVision/system/nvtx.hpp>
 #include <aliceVision/mvsData/Matrix3x3.hpp>
 #include <aliceVision/mvsData/Matrix3x4.hpp>
 #include <aliceVision/mvsData/OrientedPoint.hpp>
@@ -966,7 +967,9 @@ float PlaneSweepingCuda::sweepPixelsToVolume(int nDepthsToSearch, StaticVector<u
                                                int volDimY, int volDimZ, int volStepXY, int volLUX, int volLUY,
                                                int volLUZ, StaticVector<float>* depths, int rc, int wsh, float gammaC,
                                                float gammaP, StaticVector<Voxel>* pixels, int scale, int step,
-                                               StaticVector<int>* tcams, float epipShift) {
+                                               StaticVector<int>* tcams, float epipShift)
+{
+    nvtxPushA( "enter PlaneSweepingCuda::sweepPixelsToVolume", __FILE__, __LINE__ );
     if(verbose)
         ALICEVISION_LOG_DEBUG("sweepPixelsVolume:" << std::endl
                               << "\t- scale: " << scale << std::endl
@@ -983,15 +986,20 @@ float PlaneSweepingCuda::sweepPixelsToVolume(int nDepthsToSearch, StaticVector<u
     long t1 = clock();
 
     if((tcams->size() == 0) || (pixels->size() == 0)) {
+        nvtxPop( "enter PlaneSweepingCuda::sweepPixelsToVolume" );
         return -1.0f;
     }
 
+    nvtxPushA( "in sweepPixelsToVolume cam init", __FILE__, __LINE__ );
+    nvtxPushA( "step 1", __FILE__, __LINE__ );
     StaticVector<int> camsids;
     camsids.reserve(tcams->size() + 1);
     camsids.push_back(addCam(rc, scale));
     if(verbose)
         ALICEVISION_LOG_DEBUG("rc: " << rc << std::endl << "tcams: ");
+    nvtxPop( "step 1" );
 
+    nvtxPushA( "step 2", __FILE__, __LINE__ );
     for(int c = 0; c < tcams->size(); ++c)
     {
         int tc = (*tcams)[c];
@@ -999,7 +1007,9 @@ float PlaneSweepingCuda::sweepPixelsToVolume(int nDepthsToSearch, StaticVector<u
             ALICEVISION_LOG_DEBUG("\t- " << tc);
         camsids.push_back(addCam(tc, scale));
     }
+    nvtxPop( "step 2" );
 
+    nvtxPushA( "step 3", __FILE__, __LINE__ );
     cameraStruct **ttcams = new cameraStruct *[camsids.size()];
     for(int i = 0; i < camsids.size(); i++) {
         ttcams[i] = _cams[camsids[i]];
@@ -1010,7 +1020,10 @@ float PlaneSweepingCuda::sweepPixelsToVolume(int nDepthsToSearch, StaticVector<u
             ttcams[i]->rc = (*tcams)[i - 1];
         }
     }
+    nvtxPop( "step 3" );
+    nvtxPop( "in sweepPixelsToVolume cam init" );
 
+    nvtxPushA( "in sweepPixelsToVolume init host mem", __FILE__, __LINE__ );
     // hard-coded for CC 3.0 and 3.5
     // int slicesAtTime = std::min(pixels->size(), 65000 );
     // dynamically extracted slice size from cudaDeviceProp structure
@@ -1053,6 +1066,7 @@ float PlaneSweepingCuda::sweepPixelsToVolume(int nDepthsToSearch, StaticVector<u
     {
         depths_hmh(x, 0) = (*depths)[x];
     }
+    nvtxPop( "in sweepPixelsToVolume init host mem" );
 
     // sweep
     // float volumeMBinGPUMem = ps_planeSweepingGPUPixelsVolume(
@@ -1080,6 +1094,7 @@ float PlaneSweepingCuda::sweepPixelsToVolume(int nDepthsToSearch, StaticVector<u
     if(verbose)
         mvsUtils::printfElapsedTime(t1);
 
+    nvtxPop( "enter PlaneSweepingCuda::sweepPixelsToVolume" );
     return volumeMBinGPUMem;
 }
 

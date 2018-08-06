@@ -20,6 +20,8 @@
 #include "aliceVision/depthMap/cuda/deviceCommon/device_eig33.cuh"
 #include "aliceVision/depthMap/cuda/deviceCommon/device_global.cuh"
 
+#include "aliceVision/system/nvtx.hpp"
+
 #include <math_constants.h>
 #include <iostream>
 #include <map>
@@ -748,6 +750,8 @@ void ps_computeSimilarityVolume(
     int nbest, bool useTcOrRcPixSize, float gammaC, float gammaP, bool subPixel,
     float epipShift )
 {
+    nvtxPushA( "enter ps_computeSimilarityVolume", __FILE__, __LINE__ );
+
     clock_t tall = tic();
     testCUDAdeviceNo(CUDAdeviceNo);
     CHECK_CUDA_ERROR();
@@ -811,6 +815,7 @@ void ps_computeSimilarityVolume(
     CudaDeviceMemoryPitched<unsigned char, 2> slice_dmp(CudaSize<2>(nDepthsToSearch, slicesAtTime));
     for(int t = 0; t < ntimes; t++)
     {
+        nvtxPushA( "volume_slice_kernel", __FILE__, __LINE__ );
         volume_slice_kernel<<<grid, block>>>(
             r4tex,
             t4tex,
@@ -822,7 +827,9 @@ void ps_computeSimilarityVolume(
             nDepthsToSearch, nDepths,
             slicesAtTime, width, height, wsh, t, npixs, gammaC, gammaP, epipShift);
         memOpErrorCheck( cudaGetLastError(), __FILE__, __LINE__, "Failed to execute kernel" );
+        nvtxPop( "volume_slice_kernel" );
 
+        nvtxPushA( "save slice to volume", __FILE__, __LINE__ );
         volume_saveSliceToVolume_kernel<<<grid, block>>>(
             volPixs_arr_x->tex,
             volPixs_arr_y->tex,
@@ -833,6 +840,7 @@ void ps_computeSimilarityVolume(
             slicesAtTime, width, height, t, npixs, volStepXY,
             volDimX, volDimY, volDimZ, volLUX, volLUY, volLUZ);
         memOpErrorCheck( cudaGetLastError(), __FILE__, __LINE__, "Failed to execute kernel" );
+        nvtxPop( "save slice to volume" );
     }
     CHECK_CUDA_ERROR();
 
@@ -843,6 +851,7 @@ void ps_computeSimilarityVolume(
 
     if(verbose)
         printf("ps_computeSimilarityVolume elapsed time: %f ms \n", toc(tall));
+    nvtxPop( "enter ps_computeSimilarityVolume" );
 }
 
 float ps_planeSweepingGPUPixelsVolume(
@@ -858,6 +867,7 @@ float ps_planeSweepingGPUPixelsVolume(
                                       bool doUsePixelsDepths, int nbest, bool useTcOrRcPixSize, float gammaC,
                                       float gammaP, bool subPixel, float epipShift)
 {
+    nvtxPushA( "enter ps_planeSweepingGPUPixelsVolume", __FILE__, __LINE__ );
     testCUDAdeviceNo(CUDAdeviceNo);
 
     CudaDeviceMemoryPitched<unsigned char, 3> volSim_dmp(CudaSize<3>(volDimX, volDimY, volDimZ));
@@ -887,6 +897,7 @@ float ps_planeSweepingGPUPixelsVolume(
     // pr_printfDeviceMemoryInfo();
     // printf("total size of volume map in GPU memory: %f\n",(float)d_volSim.getBytes()/(1024.0f*1024.0f));
 
+    nvtxPop( "enter ps_planeSweepingGPUPixelsVolume" );
     return (float)volSim_dmp.getBytes() / (1024.0f * 1024.0f);
 }
 
