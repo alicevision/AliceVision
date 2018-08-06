@@ -17,3 +17,9 @@ struct NormLinearTex
     cudaTextureObject_t obj;
 };
 
+template<typename T>
+struct PointTex
+{
+    cudaTextureObject_t obj;
+};
+

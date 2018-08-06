@@ -895,7 +895,7 @@ __global__ void downscale_mean_smooth_lab_kernel(
 // }
 
 __global__ void getSilhoueteMap_kernel(
-    cudaTextureObject_t rTexU4,
+    PointTex<uchar4> rTexU4,
     bool* out, int out_p,
     int step, int width, int height, const uchar4 maskColorLab )
 {
@@ -905,7 +905,7 @@ __global__ void getSilhoueteMap_kernel(
     if( x * step >= width )  return;
     if( y * step >= height ) return;
 
-    uchar4 col = tex2D<uchar4>(rTexU4, x * step, y * step);
+    uchar4 col = tex2D<uchar4>(rTexU4.obj, x * step, y * step);
     Plane<bool>( out, out_p ).set( x, y, (maskColorLab.x == col.x) &&
                                          (maskColorLab.y == col.y) &&
                                          (maskColorLab.z == col.z) );

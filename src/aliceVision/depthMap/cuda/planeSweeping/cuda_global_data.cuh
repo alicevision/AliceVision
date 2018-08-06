@@ -116,7 +116,7 @@ public:
     void                  freeScaledPictureArrays( );
     CudaArray<uchar4,2>*  getScaledPictureArrayPtr( int scale, int cam );
     CudaArray<uchar4,2>&  getScaledPictureArray( int scale, int cam );
-    cudaTextureObject_t   getScaledPictureTexPoint( int scale, int cam );
+    PointTex<uchar4>      getScaledPictureTexPoint( int scale, int cam );
     NormLinearTex<uchar4> getScaledPictureTexNorm( int scale, int cam );
 
     void                               allocPyramidArrays( int levels, int width, int height );
@@ -128,7 +128,7 @@ private:
     std::map<GaussianArrayIndex,GaussianArray*> _gaussian_arr_table;
 
     std::vector<CudaArray<uchar4, 2>*>          _scaled_picture_array;
-    std::vector<cudaTextureObject_t>            _scaled_picture_tex_point;
+    std::vector<PointTex<uchar4> >              _scaled_picture_tex_point;
     std::vector<NormLinearTex<uchar4> >         _scaled_picture_tex_norm_linear;
     int                                         _scaled_picture_scales;
 

@@ -212,7 +212,7 @@ __global__ void downscale_mean_smooth_lab_kernel(
 //     int maxNPixSize, int wsh, const float gammaC, const float gammaP );
 
 __global__ void getSilhoueteMap_kernel(
-    cudaTextureObject_t rTexU4,
+    PointTex<uchar4> rTexU4,
     bool* out, int out_p,
     int step, int width, int height, const uchar4 maskColorLab );
 

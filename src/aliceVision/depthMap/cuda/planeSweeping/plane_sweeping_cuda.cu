@@ -380,7 +380,8 @@ void ps_deviceUpdateCam( const cameraStruct* const cam, int camId, int CUDAdevic
     testCUDAdeviceNo(CUDAdeviceNo);
 
     CudaArray<uchar4,2>&  array0 = global_data.getScaledPictureArray( 0, camId );
-    NormLinearTex<uchar4> r4tex  = global_data.getScaledPictureTexNorm  ( 0, camId );
+    NormLinearTex<uchar4> r4tex  = global_data.getScaledPictureTexNorm( 0, camId );
+    PointTex<uchar4> r4texU      = global_data.getScaledPictureTexPoint( 0, camId );
 
     // compute gradient
     {
@@ -1963,7 +1964,7 @@ void ps_getSilhoueteMap( CudaHostMemoryHeap<bool, 2>* omap_hmh, int width,
     dim3 block(block_size, block_size, 1);
     dim3 grid(divUp(width / step, block_size), divUp(height / step, block_size), 1);
 
-    cudaTextureObject_t rTexU4 = global_data.getScaledPictureTexPoint( scale, camId );
+    PointTex<uchar4> rTexU4 = global_data.getScaledPictureTexPoint( scale, camId );
 
     CudaDeviceMemoryPitched<bool, 2> map_dmp(CudaSize<2>(width / step, height / step));
 

@@ -124,7 +124,7 @@ void GlobalData::allocScaledPictureArrays( int scales, int ncams, int width, int
 
             tex_desc.readMode         = cudaReadModeElementType;
             tex_desc.filterMode       = cudaFilterModePoint;
-            err = cudaCreateTextureObject( &_scaled_picture_tex_point[ c * scales + s ],
+            err = cudaCreateTextureObject( &_scaled_picture_tex_point[ c * scales + s ].obj,
                                      &res_desc,
                                      &tex_desc,
                                      0 );
@@ -161,9 +161,9 @@ void GlobalData::freeScaledPictureArrays( )
 
     _scaled_picture_tex_norm_linear.clear();
 
-    for( cudaTextureObject_t& obj : _scaled_picture_tex_point )
+    for( PointTex<uchar4>& tex : _scaled_picture_tex_point )
     {
-        cudaError_t err = cudaDestroyTextureObject( obj );
+        cudaError_t err = cudaDestroyTextureObject( tex.obj );
         memOpErrorCheck( err, __FILE__, __LINE__, "Failed to get destroy CUDA texture object" );
     }
 
@@ -180,7 +180,7 @@ CudaArray<uchar4,2>& GlobalData::getScaledPictureArray( int scale, int cam )
     return *_scaled_picture_array[ cam * _scaled_picture_scales + scale ];
 }
 
-cudaTextureObject_t GlobalData::getScaledPictureTexPoint( int scale, int cam )
+PointTex<uchar4> GlobalData::getScaledPictureTexPoint( int scale, int cam )
 {
     return _scaled_picture_tex_point[ cam * _scaled_picture_scales + scale ];
 }
