@@ -30,6 +30,7 @@ static __device__ void volume_computePatch( cudaTextureObject_t depthsTex, patch
     computeRotCSEpip(ptch, p);
 }
 
+#if 1
 __global__ void volume_slice_kernel(
     NormLinearTex<uchar4> r4tex,
     NormLinearTex<uchar4> t4tex,
@@ -37,21 +38,22 @@ __global__ void volume_slice_kernel(
     cudaTextureObject_t volPixs_x_Tex,
     cudaTextureObject_t volPixs_y_Tex,
     cudaTextureObject_t volPixs_z_Tex,
-    unsigned char* out_slice, int out_slice_p,
-    // float3* slicePts, int slicePts_p,
-    int nsearchdepths, int ndepths, int slicesAtTime, int width, int height, int wsh,
-    int t, int npixs, const float gammaC, const float gammaP, const float epipShift )
+    unsigned char* slice, const int slice_p,
+    const int nsearchdepths, const int ndepths, const int slicesAtTime,
+    const int width, const int height, const int wsh,
+    const int t, const int npixs,
+    const float gammaC, const float gammaP, const float epipShift )
 {
     int sdptid = blockIdx.x * blockDim.x + threadIdx.x;
     int pixid = blockIdx.y * blockDim.y + threadIdx.y;
 
     if((sdptid < nsearchdepths) && (pixid < slicesAtTime) && (slicesAtTime * t + pixid < npixs))
     {
-        int volPix_x = tex2D<int>(volPixs_x_Tex, pixid, t);
-        int volPix_y = tex2D<int>(volPixs_y_Tex, pixid, t);
-        int volPix_z = tex2D<int>(volPixs_z_Tex, pixid, t);
+        const int volPix_x = tex2D<int>(volPixs_x_Tex, pixid, t);
+        const int volPix_y = tex2D<int>(volPixs_y_Tex, pixid, t);
+        const int volPix_z = tex2D<int>(volPixs_z_Tex, pixid, t);
+        const int depthid = sdptid + volPix_z;
         int2 pix = make_int2(volPix_x, volPix_y);
-        int depthid = sdptid + volPix_z;
 
         if(depthid < ndepths)
         {
@@ -59,18 +61,14 @@ __global__ void volume_slice_kernel(
             volume_computePatch( depthsTex, ptcho, depthid, pix);
 
             float fsim = compNCCby3DptsYK( r4tex, t4tex, ptcho, wsh, width, height, gammaC, gammaP, epipShift);
-            // unsigned char sim = (unsigned char)(((fsim+1.0f)/2.0f)*255.0f);
-
-            float fminVal = -1.0f;
-            float fmaxVal = 1.0f;
+            const float fminVal = -1.0f;
+            const float fmaxVal = 1.0f;
             fsim = (fsim - fminVal) / (fmaxVal - fminVal);
             fsim = fminf(1.0f, fmaxf(0.0f, fsim));
-            unsigned char sim = (unsigned char)(fsim * 255.0f);
+            const unsigned char sim = (unsigned char)(floorf(fsim * 255.0f));
 
             // coalescent
-            /*int sliceid = pixid * slice_p + sdptid;
-            slice[sliceid] = sim;*/
-            Plane<unsigned char>( out_slice, out_slice_p ).set( sdptid, pixid, sim );
+            Plane<unsigned char>( slice, slice_p ).set( sdptid, pixid, sim );
         }
     }
 }
@@ -79,33 +77,114 @@ __global__ void volume_saveSliceToVolume_kernel(
     cudaTextureObject_t volPixsTex_x,
     cudaTextureObject_t volPixsTex_y,
     cudaTextureObject_t volPixsTex_z,
-    unsigned char* volume, int volume_s, int volume_p, unsigned char* slice,
-    int slice_p, int nsearchdepths, int ndepths, int slicesAtTime,
-    int width, int height, int t, int npixs, int volStepXY, int volDimX,
-    int volDimY, int volDimZ, int volLUX, int volLUY, int volLUZ )
+    unsigned char* volume, const int volume_s, const int volume_p,
+    const unsigned char* slice, const int slice_p,
+    const int nsearchdepths, const int ndepths, const int slicesAtTime,
+    const int width, const int height,
+    const int t, const int npixs,
+    const int volStepXY,
+    const int volDimX, const int volDimY, const int volDimZ,
+    const int volLUX, const int volLUY, const int volLUZ )
 {
 // #warning do not iterate this kernel, avoid several non-atomic min writes by running over all planes at once
-    int sdptid = blockIdx.x * blockDim.x + threadIdx.x;
-    int pixid = blockIdx.y * blockDim.y + threadIdx.y;
+    const int sdptid = blockIdx.x * blockDim.x + threadIdx.x;
+    const int pixid = blockIdx.y * blockDim.y + threadIdx.y;
 
     if(sdptid >= nsearchdepths) return;
     if(pixid >= slicesAtTime) return;
     if(slicesAtTime * t + pixid >= npixs) return;
 
-    int volPix_x = tex2D<int>(volPixsTex_x, pixid, t);
-    int volPix_y = tex2D<int>(volPixsTex_y, pixid, t);
-    int volPix_z = tex2D<int>(volPixsTex_z, pixid, t);
-    int depthid = sdptid + volPix_z;
+    const int volPix_x = tex2D<int>(volPixsTex_x, pixid, t);
+    const int volPix_y = tex2D<int>(volPixsTex_y, pixid, t);
+    const int volPix_z = tex2D<int>(volPixsTex_z, pixid, t);
+    const int depthid = sdptid + volPix_z;
 
     if(depthid >= ndepths) return;
 
     // unsigned char sim = *get2DBufferAt(slice, slice_p, sdptid, pixid);
-    unsigned char sim = Plane<unsigned char>( slice, slice_p ).get( sdptid, pixid );
+    const unsigned char sim = Plane<const unsigned char>( slice, slice_p ).get( sdptid, pixid );
+
+    const int vx = (volPix_x - volLUX) / volStepXY;
+    const int vy = (volPix_y - volLUY) / volStepXY;
+    // int vz = sdptid;//depthid;
+    const int vz = depthid - volLUZ;
+    if((vx >= 0) && (vx < volDimX) && (vy >= 0) && (vy < volDimY) && (vz >= 0) && (vz < volDimZ))
+    {
+        Block<unsigned char> block( volume, volume_s, volume_p );
+
+        const unsigned char volsim = block.get( vx, vy, vz);
+        block.set( vx, vy, vz, min( sim, volsim ) );
+    }
+}
+#endif
+
+#if 1
+__global__ void volume_slice_kernel_2(
+    NormLinearTex<uchar4> r4tex,
+    NormLinearTex<uchar4> t4tex,
+    cudaTextureObject_t depthsTex,
+    cudaTextureObject_t volPixs_x_Tex,
+    cudaTextureObject_t volPixs_y_Tex,
+    cudaTextureObject_t volPixs_z_Tex,
+    unsigned char* slice, const int slice_p,
+    const int nsearchdepths, const int ndepths,
+    const int slicesAtTime, const int width, const int height,
+    const int wsh,
+    const int t, const int npixs,
+    const float gammaC, const float gammaP, const float epipShift,
+    unsigned char* volume, const int volume_s, const int volume_p,
+    int volStepXY, int volDimX,
+    int volDimY, int volDimZ, int volLUX, int volLUY, int volLUZ )
+{
+    const int sdptid = blockIdx.x * blockDim.x + threadIdx.x;
+    const int pixid = blockIdx.y * blockDim.y + threadIdx.y;
+
+    if(sdptid >= nsearchdepths) return;
+    if(pixid >= slicesAtTime) return;
+    if(slicesAtTime * t + pixid >= npixs) return;
+
+    int volPix_x = tex2D<int>(volPixs_x_Tex, pixid, t);
+    int volPix_y = tex2D<int>(volPixs_y_Tex, pixid, t);
+    int volPix_z = tex2D<int>(volPixs_z_Tex, pixid, t);
+    int depthid = sdptid + volPix_z;
+
+    if(depthid >= ndepths) return;
+
+    unsigned char sim;
+
+    {
+        int2 pix = make_int2(volPix_x, volPix_y);
+
+        patch ptcho;
+        volume_computePatch( depthsTex, ptcho, depthid, pix);
+
+        float fsim = compNCCby3DptsYK( r4tex, t4tex, ptcho, wsh, width, height, gammaC, gammaP, epipShift);
+        // unsigned char sim = (unsigned char)(((fsim+1.0f)/2.0f)*255.0f);
+
+        float fminVal = -1.0f;
+        float fmaxVal = 1.0f;
+        fsim = (fsim - fminVal) / (fmaxVal - fminVal);
+        fsim = fminf(1.0f, fmaxf(0.0f, fsim));
+        sim = (unsigned char)(floorf(fsim * 255.0f));
+
+        // coalescent
+        /*int sliceid = pixid * slice_p + sdptid;
+        slice[sliceid] = sim;*/
+        // Plane<unsigned char>( slice, slice_p ).set( sdptid, pixid, sim );
+    }
+
+  {
+// #warning do not iterate this kernel, avoid several non-atomic min writes by running over all planes at once
+
+
+    // unsigned char sim = *get2DBufferAt(slice, slice_p, sdptid, pixid);
+    // unsigned char sim = Plane<const unsigned char>( slice, slice_p ).get( sdptid, pixid );
 
     int vx = (volPix_x - volLUX) / volStepXY;
     int vy = (volPix_y - volLUY) / volStepXY;
     // int vz = sdptid;//depthid;
     int vz = depthid - volLUZ;
+
     if((vx >= 0) && (vx < volDimX) && (vy >= 0) && (vy < volDimY) && (vz >= 0) && (vz < volDimZ))
     {
         Block<unsigned char> block( volume, volume_s, volume_p );
@@ -113,7 +192,9 @@ __global__ void volume_saveSliceToVolume_kernel(
         unsigned char volsim = block.get( vx, vy, vz);
         block.set( vx, vy, vz, min( sim, volsim ) );
     }
+  }
 }
+#endif
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 

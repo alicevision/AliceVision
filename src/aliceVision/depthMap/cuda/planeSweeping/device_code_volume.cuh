@@ -13,6 +13,7 @@ namespace aliceVision {
 namespace depthMap {
 
 
+#if 1
 __global__ void volume_slice_kernel(
     NormLinearTex<uchar4> r4tex,
     NormLinearTex<uchar4> t4tex,
@@ -20,19 +21,44 @@ __global__ void volume_slice_kernel(
     cudaTextureObject_t volPixs_x_Tex,
     cudaTextureObject_t volPixs_y_Tex,
     cudaTextureObject_t volPixs_z_Tex,
-    unsigned char* slice, int slice_p,
-    // float3* slicePts, int slicePts_p,
-    int nsearchdepths, int ndepths, int slicesAtTime, int width, int height, int wsh,
-    int t, int npixs, const float gammaC, const float gammaP, const float epipShift );
+    unsigned char* slice, const int slice_p,
+    const int nsearchdepths, const int ndepths, const int slicesAtTime,
+    const int width, const int height, const int wsh,
+    const int t, const int npixs,
+    const float gammaC, const float gammaP, const float epipShift );
 
 __global__ void volume_saveSliceToVolume_kernel(
     cudaTextureObject_t volPixsTex_x,
     cudaTextureObject_t volPixsTex_y,
     cudaTextureObject_t volPixsTex_z,
-    unsigned char* volume, int volume_s, int volume_p, unsigned char* slice,
-    int slice_p, int nsearchdepths, int ndepths, int slicesAtTime,
-    int width, int height, int t, int npixs, int volStepXY, int volDimX,
+    unsigned char* volume, const int volume_s, const int volume_p,
+    const unsigned char* slice, const int slice_p,
+    const int nsearchdepths, const int ndepths, const int slicesAtTime,
+    const int width, const int height,
+    const int t, const int npixs,
+    const int volStepXY,
+    const int volDimX, const int volDimY, const int volDimZ,
+    const int volLUX, const int volLUY, const int volLUZ );
+#endif
+
+#if 1
+__global__ void volume_slice_kernel_2(
+    NormLinearTex<uchar4> r4tex,
+    NormLinearTex<uchar4> t4tex,
+    cudaTextureObject_t depthsTex,
+    cudaTextureObject_t volPixs_x_Tex,
+    cudaTextureObject_t volPixs_y_Tex,
+    cudaTextureObject_t volPixs_z_Tex,
+    unsigned char* slice, const int slice_p,
+    const int nsearchdepths, const int ndepths,
+    const int slicesAtTime, const int width, const int height,
+    const int wsh,
+    const int t, const int npixs,
+    const float gammaC, const float gammaP, const float epipShift,
+    unsigned char* volume, const int volume_s, const int volume_p,
+    int volStepXY, int volDimX,
     int volDimY, int volDimZ, int volLUX, int volLUY, int volLUZ );
+#endif
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -112,20 +138,20 @@ __global__ void volume_initVolume_kernel(T* volume, int volume_s, int volume_p, 
     Block<T>(volume, volume_s, volume_p).set( vx, vy, vz, cst );
 }
 
-template <typename T>
-__global__ void volume_initFullVolume_kernel(T* volume, int volume_s, int volume_p, int volDimX, int volDimY, int volDimZ,
-    T cst)
-{
-    int vx = blockIdx.x * blockDim.x + threadIdx.x;
-    int vy = blockIdx.y * blockDim.y + threadIdx.y;
-    int vz = blockIdx.z * blockDim.z + threadIdx.z;
-
-    if( vx >= volDimX ) return;
-    if( vy >= volDimY ) return;
-    if( vz >= volDimZ ) return;
-
-    Block<T>(volume, volume_s, volume_p).set( vx, vy, vz, cst );
-}
+// template <typename T>
+// __global__ void volume_initFullVolume_kernel(T* volume, int volume_s, int volume_p, int volDimX, int volDimY, int volDimZ,
+//     T cst)
+// {
+//     int vx = blockIdx.x * blockDim.x + threadIdx.x;
+//     int vy = blockIdx.y * blockDim.y + threadIdx.y;
+//     int vz = blockIdx.z * blockDim.z + threadIdx.z;
+// 
+//     if( vx >= volDimX ) return;
+//     if( vy >= volDimY ) return;
+//     if( vz >= volDimZ ) return;
+// 
+//     Block<T>(volume, volume_s, volume_p).set( vx, vy, vz, cst );
+// }
 
 __global__ void volume_updateMinXSlice_kernel(unsigned char* volume, int volume_s, int volume_p,
                                               unsigned char* xySliceBestSim, int xySliceBestSim_p, int* xySliceBestZ,

@@ -737,6 +737,89 @@ void ps_SGMoptimizeSimVolume(
         printf("ps_SGMoptimizeSimVolume done\n");
 }
 
+#if 0
+__global__ static void debug_compare_uchar(
+    const unsigned char* l, int l_s,
+    const unsigned char* r, int r_s,
+    int w, int h )
+{
+    for( int row=0; row<h; row++ )
+    {
+        for( int col=threadIdx.x; col<w; col+=1024 )
+        {
+            if( col < w )
+            {
+                Plane<const unsigned char> left( l, l_s );
+                Plane<const unsigned char> right( r, r_s );
+                if( left.get( col, row ) != right.get( col, row ) )
+                {
+                    printf("Difference in %d,%d\n", row, col );
+                }
+            }
+        }
+        __syncthreads();
+    }
+}
+#endif
+
+#if 1
+__global__ static void debug_compare_uchar(
+    const unsigned char* l, int l_s1, int l_s0,
+    const unsigned char* r, int r_s1, int r_s0,
+    int w, int h, int d )
+{
+    Block<const unsigned char> left( l, l_s1, l_s0 );
+    Block<const unsigned char> right( r, r_s1, r_s0 );
+    for( int depth=0; depth<d; depth++ )
+    {
+        for( int row=blockIdx.x; row<h; row+=gridDim.x )
+        {
+            if( row < h )
+            {
+                for( int col=threadIdx.x; col<w; col+=blockDim.x )
+                {
+                    if( col < w )
+                    {
+                        unsigned char l = left.get( col, row, depth );
+                        unsigned char r = right.get( col, row, depth );
+                        if( abs(l-r)>1 )
+                        {
+                            int ln[8];
+                            int rn[8];
+                            ln[0] = (int)left.get( col-1, row-1, depth );
+                            ln[1] = (int)left.get( col  , row-1, depth );
+                            ln[2] = (int)left.get( col+1, row-1, depth );
+                            ln[3] = (int)left.get( col-1, row  , depth );
+                            ln[4] = (int)left.get( col+1, row  , depth );
+                            ln[5] = (int)left.get( col-1, row+1, depth );
+                            ln[6] = (int)left.get( col  , row+1, depth );
+                            ln[7] = (int)left.get( col+1, row+1, depth );
+                            rn[0] = (int)right.get( col-1, row-1, depth );
+                            rn[1] = (int)right.get( col  , row-1, depth );
+                            rn[2] = (int)right.get( col+1, row-1, depth );
+                            rn[3] = (int)right.get( col-1, row  , depth );
+                            rn[4] = (int)right.get( col+1, row  , depth );
+                            rn[5] = (int)right.get( col-1, row+1, depth );
+                            rn[6] = (int)right.get( col  , row+1, depth );
+                            rn[7] = (int)right.get( col+1, row+1, depth );
+                            printf("w=%d h=%d d=%d Difference in %d,%d,%d : %d vs %d\n"
+                                   "               l=| %d %d %d | %d %d | %d %d %d\n"
+                                   "               r=| %d %d %d | %d %d | %d %d %d\n",
+                                w,h,d,
+                                col, row, depth, (int)l, (int)r,
+                                ln[0], ln[1], ln[2], ln[3], ln[4], ln[5], ln[6], ln[7],
+                                rn[0], rn[1], rn[2], rn[3], rn[4], rn[5], rn[6], rn[7] );
+                            return;
+                        }
+                    }
+                }
+                __syncthreads();
+            }
+        }
+    }
+}
+#endif
+
 void ps_computeSimilarityVolume(
     CudaDeviceMemoryPitched<unsigned char, 3>& vol_dmp, cameraStruct** cams, int ncams,
     int width, int height, int volStepXY, int volDimX, int volDimY, int volDimZ, int volLUX,
@@ -751,6 +834,15 @@ void ps_computeSimilarityVolume(
     float epipShift )
 {
     nvtxPushA( "enter ps_computeSimilarityVolume", __FILE__, __LINE__ );
+
+    if( vol_dmp.getSize()[0] != volDimX ||
+        vol_dmp.getSize()[1] != volDimY ||
+        vol_dmp.getSize()[2] != volDimZ )
+    {
+        ALICEVISION_LOG_ERROR( "vol_dmp sz: " << vol_dmp.getSize()[0] << " " << vol_dmp.getSize()[1] << " " << vol_dmp.getSize()[2] << " conflicts with input params: " << volDimX << " " << volDimY << " " << volDimZ );
+    }
+
+    cudaError_t err;
 
     clock_t tall = tic();
     testCUDAdeviceNo(CUDAdeviceNo);
@@ -798,23 +890,94 @@ void ps_computeSimilarityVolume(
     CHECK_CUDA_ERROR();
 
     //--------------------------------------------------------------------------------------------------
+#if 1
+    CudaDeviceMemoryPitched<unsigned char, 3> volSim_dmp(CudaSize<3>(volDimX, volDimY, volDimZ));
+    std::cerr << "Creating volSim_dmp with X=" << volDimX << " Y=" << volDimY << " Z=" << volDimZ << std::endl
+              << "    Result pitch: " << volSim_dmp.getPitch() << std::endl
+              << "    Result stride: " << volSim_dmp.stride()[0] << " " << volSim_dmp.stride()[1] << " " << volSim_dmp.stride()[2] << std::endl;
+#endif
     // init similarity volume
     {
-        dim3 blockvol3d(8, 8, 8);
-        dim3 gridvol3d( divUp(volDimX, blockvol3d.x),
-                        divUp(volDimY, blockvol3d.y),
-                        divUp(volDimZ, blockvol3d.z) );
-        volume_initFullVolume_kernel<unsigned char><<<gridvol3d, blockvol3d >>>(
-            vol_dmp.getBuffer(), vol_dmp.stride()[1], vol_dmp.stride()[0],
-            volDimX, volDimY, volDimZ, 255 );
-        memOpErrorCheck( cudaGetLastError(), __FILE__, __LINE__, "Failed to execute kernel" );
+//         dim3 blockvol3d(8, 8, 8);
+//         dim3 gridvol3d( divUp(volDimX, blockvol3d.x),
+//                         divUp(volDimY, blockvol3d.y),
+//                         divUp(volDimZ, blockvol3d.z) );
+//         volume_initFullVolume_kernel<unsigned char><<<gridvol3d, blockvol3d >>>(
+//             vol_dmp.getBuffer(), vol_dmp.stride()[1], vol_dmp.stride()[0],
+//             volDimX, volDimY, volDimZ, 255 );
+//         memOpErrorCheck( cudaGetLastError(), __FILE__, __LINE__, "Failed to execute kernel" );
+        err = cudaMemset( vol_dmp.getBuffer(), 255, vol_dmp.stride()[2] );
+        if( err != cudaSuccess )
+        {
+            ALICEVISION_LOG_ERROR( "Failed to initialize volume memory " << cudaGetErrorString(err) );
+        }
+        CHECK_CUDA_ERROR();
+#if 1
+//         volume_initFullVolume_kernel<unsigned char><<<gridvol3d, blockvol3d >>>(
+//             volSim_dmp.getBuffer(), volSim_dmp.stride()[1], volSim_dmp.stride()[0],
+//             volDimX, volDimY, volDimZ, 255 );
+//         memOpErrorCheck( cudaGetLastError(), __FILE__, __LINE__, "Failed to execute kernel" );
+        err = cudaMemset( volSim_dmp.getBuffer(), 255, volSim_dmp.stride()[2] );
+        if( err != cudaSuccess )
+        {
+            ALICEVISION_LOG_ERROR( "Failed to initialize volume memory " << cudaGetErrorString(err) );
+        }
+        CHECK_CUDA_ERROR();
+#endif
     }
 
     //--------------------------------------------------------------------------------------------------
     // compute similarity volume
     CudaDeviceMemoryPitched<unsigned char, 2> slice_dmp(CudaSize<2>(nDepthsToSearch, slicesAtTime));
+#if 1
+    CudaDeviceMemoryPitched<unsigned char, 2> sliceSim_dmp(CudaSize<2>(nDepthsToSearch, slicesAtTime));
+#endif
+#if 1
+    std::cerr << "Comparing volumes before loop start" << std::endl;
+    debug_compare_uchar<<<32,512>>>(
+        volSim_dmp.getBuffer(), volSim_dmp.stride()[1], volSim_dmp.stride()[0],
+        vol_dmp.getBuffer(), vol_dmp.stride()[1], vol_dmp.stride()[0],
+        volDimX, volDimY, volDimZ );
+    cudaDeviceSynchronize();
+    std::cerr << "done" << std::endl;
+#endif
     for(int t = 0; t < ntimes; t++)
     {
+#if 0
+        std::cerr << "Comparing volumes in loop " << t << " before volume_saveSliceToVolume_kernel" << std::endl;
+        debug_compare_uchar<<<32,512>>>(
+            volSim_dmp.getBuffer(), volSim_dmp.stride()[1], volSim_dmp.stride()[0],
+            vol_dmp.getBuffer(), vol_dmp.stride()[1], vol_dmp.stride()[0],
+            volDimX, volDimY, volDimZ );
+        cudaDeviceSynchronize();
+        std::cerr << "done" << std::endl;
+#endif
+
+#if 0
+        nvtxPushA( "volume_slice_kernel_2", __FILE__, __LINE__ );
+        volume_slice_kernel_2<<<grid, block>>>(
+            r4tex,
+            t4tex,
+            depths_arr->tex,
+            volPixs_arr_x->tex,
+            volPixs_arr_y->tex,
+            volPixs_arr_z->tex,
+            sliceSim_dmp.getBuffer(), sliceSim_dmp.stride()[0],
+            nDepthsToSearch, nDepths,
+            slicesAtTime, width, height,
+            wsh,
+            t, npixs,
+            gammaC, gammaP, epipShift,
+            volSim_dmp.getBuffer(), volSim_dmp.stride()[1], volSim_dmp.stride()[0],
+            volStepXY,
+            volDimX, volDimY, volDimZ,
+            volLUX, volLUY, volLUZ);
+        CHECK_CUDA_ERROR();
+        memOpErrorCheck( cudaGetLastError(), __FILE__, __LINE__, "Failed to execute kernel" );
+        nvtxPop( "volume_slice_kernel_2" );
+        memOpErrorCheck( cudaGetLastError(), __FILE__, __LINE__, "Failed to execute kernel" );
+#endif
+#if 1
         nvtxPushA( "volume_slice_kernel", __FILE__, __LINE__ );
         volume_slice_kernel<<<grid, block>>>(
             r4tex,
@@ -826,9 +989,16 @@ void ps_computeSimilarityVolume(
             slice_dmp.getBuffer(), slice_dmp.stride()[0],
             nDepthsToSearch, nDepths,
             slicesAtTime, width, height, wsh, t, npixs, gammaC, gammaP, epipShift);
+        CHECK_CUDA_ERROR();
         memOpErrorCheck( cudaGetLastError(), __FILE__, __LINE__, "Failed to execute kernel" );
         nvtxPop( "volume_slice_kernel" );
 
+//         std::cerr << "Comparing slices" << std::endl;
+//         debug_compare_uchar<<<32,32>>>(
+//             slice_dmp.getBuffer(), slice_dmp.stride()[0],
+//             sliceSim_dmp.getBuffer(), sliceSim_dmp.stride()[0],
+//             nDepthsToSearch, slicesAtTime );
+//         CHECK_CUDA_ERROR();
         nvtxPushA( "save slice to volume", __FILE__, __LINE__ );
         volume_saveSliceToVolume_kernel<<<grid, block>>>(
             volPixs_arr_x->tex,
@@ -839,15 +1009,41 @@ void ps_computeSimilarityVolume(
             nDepthsToSearch, nDepths,
             slicesAtTime, width, height, t, npixs, volStepXY,
             volDimX, volDimY, volDimZ, volLUX, volLUY, volLUZ);
+        CHECK_CUDA_ERROR();
         memOpErrorCheck( cudaGetLastError(), __FILE__, __LINE__, "Failed to execute kernel" );
         nvtxPop( "save slice to volume" );
+
+#if 1
+        volume_saveSliceToVolume_kernel<<<grid, block>>>(
+            volPixs_arr_x->tex,
+            volPixs_arr_y->tex,
+            volPixs_arr_z->tex,
+            volSim_dmp.getBuffer(), volSim_dmp.stride()[1], volSim_dmp.stride()[0],
+            slice_dmp.getBuffer(), slice_dmp.stride()[0],
+            nDepthsToSearch, nDepths,
+            slicesAtTime, width, height, t, npixs, volStepXY,
+            volDimX, volDimY, volDimZ, volLUX, volLUY, volLUZ);
+        CHECK_CUDA_ERROR();
+        memOpErrorCheck( cudaGetLastError(), __FILE__, __LINE__, "Failed to execute kernel" );
+#endif
+
+#if 1
+        std::cerr << "Comparing volumes in loop " << t << " after volume_saveSliceToVolume_kernel" << std::endl;
+        debug_compare_uchar<<<32,512>>>(
+            volSim_dmp.getBuffer(), volSim_dmp.stride()[1], volSim_dmp.stride()[0],
+            vol_dmp.getBuffer(), vol_dmp.stride()[1], vol_dmp.stride()[0],
+            volDimX, volDimY, volDimZ );
+        cudaDeviceSynchronize();
+        std::cerr << "done" << std::endl;
+#endif
+#endif
     }
     CHECK_CUDA_ERROR();
 
     global_data.pitched_mem_float_point_tex_cache.put( depths_arr );
-    global_data.pitched_mem_int_point_tex_cache .put( volPixs_arr_x );
-    global_data.pitched_mem_int_point_tex_cache .put( volPixs_arr_y );
-    global_data.pitched_mem_int_point_tex_cache .put( volPixs_arr_z );
+    global_data.pitched_mem_int_point_tex_cache  .put( volPixs_arr_x );
+    global_data.pitched_mem_int_point_tex_cache  .put( volPixs_arr_y );
+    global_data.pitched_mem_int_point_tex_cache  .put( volPixs_arr_z );
 
     if(verbose)
         printf("ps_computeSimilarityVolume elapsed time: %f ms \n", toc(tall));
@@ -858,10 +1054,11 @@ float ps_planeSweepingGPUPixelsVolume(
                                       unsigned char* ovol_hmh, cameraStruct** cams, int ncams,
                                       int width, int height, int volStepXY, int volDimX, int volDimY, int volDimZ,
                                       int volLUX, int volLUY, int volLUZ,
-				      CudaHostMemoryHeap<int, 2>& volPixs_hmh_x,
-				      CudaHostMemoryHeap<int, 2>& volPixs_hmh_y,
-				      CudaHostMemoryHeap<int, 2>& volPixs_hmh_z,
-                                      CudaHostMemoryHeap<float, 2>& depths_hmh, int nDepthsToSearch, int slicesAtTime,
+                                      CudaHostMemoryHeap<int, 2>& volPixs_hmh_x,
+                                      CudaHostMemoryHeap<int, 2>& volPixs_hmh_y,
+                                      CudaHostMemoryHeap<int, 2>& volPixs_hmh_z,
+                                      CudaHostMemoryHeap<float, 2>& depths_hmh,
+                                      int nDepthsToSearch, int slicesAtTime,
                                       int ntimes, int npixs, int wsh, int kernelSizeHalf, int nDepths, int scale,
                                       int CUDAdeviceNo, int ncamsAllocated, int scales, bool verbose,
                                       bool doUsePixelsDepths, int nbest, bool useTcOrRcPixSize, float gammaC,

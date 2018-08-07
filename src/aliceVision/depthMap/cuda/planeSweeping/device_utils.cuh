@@ -25,41 +25,41 @@ inline static __host__ float toc(clock_t ticClk)
 template <typename T>
 class Plane
 {
-    inline __device__
+    inline __device__ __host__
     T* getLine( int y )
     {
         return ((T*)(((char*)_ptr) + y * _pitch));
     }
 
-    inline __device__
+    inline __device__ __host__
     const T* getLine( int y ) const
     {
         return ((const T*)(((char*)_ptr) + y * _pitch));
     }
 
 public:
-    inline __device__
+    inline __device__ __host__
     Plane( T* ptr, int pitch ) : _ptr(ptr), _pitch(pitch) { }
 
-    inline __device__
+    inline __device__ __host__
     const T& get( int x, int y ) const
     {
         return getLine(y)[x];
     }
 
-    inline __device__
+    inline __device__ __host__
     T& getRef( int x, int y )
     {
         return getLine(y)[x];
     }
 
-    inline __device__
+    inline __device__ __host__
     void set( int x, int y, const T& val )
     {
         getLine(y)[x] = val;
     }
 
-    inline __device__
+    inline __device__ __host__
     T* getPtr( int x, int y )
     {
         return getLine(y) + x;
@@ -89,41 +89,41 @@ private:
 template <typename T>
 class Block
 {
-    inline __device__
+    inline __device__ __host__
     T* getLine( int y, int z )
     {
         return (T*)(((char*)_ptr) + z * _spitch + y * _pitch);
     }
 
-    inline __device__
+    inline __device__ __host__
     const T* getLine( int y, int z ) const
     {
-        return (const T*)(((char*)_ptr) + z * _spitch + y * _pitch);
+        return (const T*)(((const char*)_ptr) + z * _spitch + y * _pitch);
     }
 
 public:
-    inline __device__
+    inline __device__ __host__
     Block( T* ptr, int spitch, int pitch ) : _ptr(ptr), _spitch(spitch), _pitch(pitch) { }
 
-    inline __device__
+    inline __device__ __host__
     const T& get( int x, int y, int z ) const
     {
         return getLine(y,z)[x];
     }
 
-    inline __device__
+    inline __device__ __host__
     T& getRef( int x, int y, int z )
     {
         return getLine(y,z)[x];
     }
 
-    inline __device__
+    inline __device__ __host__
     void set( int x, int y, int z, const T& val )
     {
         getLine(y,z)[x] = val;
     }
 
-    inline __device__
+    inline __device__ __host__
     T* getPtr( int x, int y, int z )
     {
         return getLine(y,z) + x;
