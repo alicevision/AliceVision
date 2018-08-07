@@ -953,7 +953,7 @@ void ps_computeSimilarityVolume(
         std::cerr << "done" << std::endl;
 #endif
 
-#if 0
+#if 1
         nvtxPushA( "volume_slice_kernel_2", __FILE__, __LINE__ );
         volume_slice_kernel_2<<<grid, block>>>(
             r4tex,
@@ -962,13 +962,13 @@ void ps_computeSimilarityVolume(
             volPixs_arr_x->tex,
             volPixs_arr_y->tex,
             volPixs_arr_z->tex,
-            sliceSim_dmp.getBuffer(), sliceSim_dmp.stride()[0],
+            slice_dmp.getBuffer(), slice_dmp.stride()[0],
             nDepthsToSearch, nDepths,
             slicesAtTime, width, height,
             wsh,
             t, npixs,
             gammaC, gammaP, epipShift,
-            volSim_dmp.getBuffer(), volSim_dmp.stride()[1], volSim_dmp.stride()[0],
+            vol_dmp.getBuffer(), vol_dmp.stride()[1], vol_dmp.stride()[0],
             volStepXY,
             volDimX, volDimY, volDimZ,
             volLUX, volLUY, volLUZ);
@@ -977,7 +977,7 @@ void ps_computeSimilarityVolume(
         nvtxPop( "volume_slice_kernel_2" );
         memOpErrorCheck( cudaGetLastError(), __FILE__, __LINE__, "Failed to execute kernel" );
 #endif
-#if 1
+#if 0
         nvtxPushA( "volume_slice_kernel", __FILE__, __LINE__ );
         volume_slice_kernel<<<grid, block>>>(
             r4tex,

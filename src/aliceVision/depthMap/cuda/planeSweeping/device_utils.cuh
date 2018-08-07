@@ -143,12 +143,12 @@ private:
 * @param[int] y
 * @return
 */
-// template <typename T>
-// inline __device__ T* get3DBufferAt(T* ptr, int spitch, int pitch, int x, int y, int z)
-// {
-//     // return ((T*)(((char*)ptr) + z * spitch + y * pitch)) + x;
-//     return Block<T>(ptr,spitch,pitch).getPtr(x,y,z);
-// }
+template <typename T>
+inline __device__ T* get3DBufferAt(T* ptr, int spitch, int pitch, int x, int y, int z)
+{
+    return ((T*)(((char*)ptr) + z * spitch + y * pitch)) + x;
+    // return Block<T>(ptr,spitch,pitch).getPtr(x,y,z);
+}
 
 /*
 

@@ -40,7 +40,8 @@ __global__ void volume_slice_kernel(
     cudaTextureObject_t volPixs_z_Tex,
     unsigned char* slice, const int slice_p,
     const int nsearchdepths, const int ndepths, const int slicesAtTime,
-    const int width, const int height, const int wsh,
+    const int width, const int height,
+    const int wsh,
     const int t, const int npixs,
     const float gammaC, const float gammaP, const float epipShift )
 {
@@ -79,9 +80,9 @@ __global__ void volume_slice_kernel(
 }
 
 __global__ void volume_saveSliceToVolume_kernel(
-    cudaTextureObject_t volPixsTex_x,
-    cudaTextureObject_t volPixsTex_y,
-    cudaTextureObject_t volPixsTex_z,
+    cudaTextureObject_t volPixs_x_Tex,
+    cudaTextureObject_t volPixs_y_Tex,
+    cudaTextureObject_t volPixs_z_Tex,
     unsigned char* volume, const int volume_s, const int volume_p,
     const unsigned char* slice, const int slice_p,
     const int nsearchdepths, const int ndepths, const int slicesAtTime,
@@ -99,9 +100,9 @@ __global__ void volume_saveSliceToVolume_kernel(
     if(pixid >= slicesAtTime) return;
     if(slicesAtTime * t + pixid >= npixs) return;
 
-    const int volPix_x = tex2D<int>(volPixsTex_x, pixid, t);
-    const int volPix_y = tex2D<int>(volPixsTex_y, pixid, t);
-    const int volPix_z = tex2D<int>(volPixsTex_z, pixid, t);
+    const int volPix_x = tex2D<int>(volPixs_x_Tex, pixid, t);
+    const int volPix_y = tex2D<int>(volPixs_y_Tex, pixid, t);
+    const int volPix_z = tex2D<int>(volPixs_z_Tex, pixid, t);
     const int depthid = sdptid + volPix_z;
 
     if(depthid >= ndepths) return;
@@ -148,56 +149,45 @@ __global__ void volume_slice_kernel_2(
     if(pixid >= slicesAtTime) return;
     if(slicesAtTime * t + pixid >= npixs) return;
 
-    int volPix_x = tex2D<int>(volPixs_x_Tex, pixid, t);
-    int volPix_y = tex2D<int>(volPixs_y_Tex, pixid, t);
-    int volPix_z = tex2D<int>(volPixs_z_Tex, pixid, t);
-    int depthid = sdptid + volPix_z;
+    const int volPix_x = tex2D<int>(volPixs_x_Tex, pixid, t);
+    const int volPix_y = tex2D<int>(volPixs_y_Tex, pixid, t);
+    const int volPix_z = tex2D<int>(volPixs_z_Tex, pixid, t);
+    const int depthid = sdptid + volPix_z;
+    int2 pix = make_int2(volPix_x, volPix_y);
 
     if(depthid >= ndepths) return;
 
-    unsigned char sim;
+    patch ptcho;
+    volume_computePatch( depthsTex, ptcho, depthid, pix);
 
-    {
-        int2 pix = make_int2(volPix_x, volPix_y);
+    float fsim = compNCCby3DptsYK( r4tex, t4tex, ptcho, wsh, width, height, gammaC, gammaP, epipShift);
+    const float fminVal = -1.0f;
+    const float fmaxVal = 1.0f;
+    fsim = (fsim - fminVal) / (fmaxVal - fminVal);
+    fsim = fminf(1.0f, fmaxf(0.0f, fsim));
+    const unsigned char sim = (unsigned char)(fsim * 255.0f);
 
-        patch ptcho;
-        volume_computePatch( depthsTex, ptcho, depthid, pix);
-
-        float fsim = compNCCby3DptsYK( r4tex, t4tex, ptcho, wsh, width, height, gammaC, gammaP, epipShift);
-        // unsigned char sim = (unsigned char)(((fsim+1.0f)/2.0f)*255.0f);
-
-        float fminVal = -1.0f;
-        float fmaxVal = 1.0f;
-        fsim = (fsim - fminVal) / (fmaxVal - fminVal);
-        fsim = fminf(1.0f, fmaxf(0.0f, fsim));
-        sim = (unsigned char)(floorf(fsim * 255.0f));
-
-        // coalescent
-        /*int sliceid = pixid * slice_p + sdptid;
-        slice[sliceid] = sim;*/
-        // Plane<unsigned char>( slice, slice_p ).set( sdptid, pixid, sim );
-    }
-
-  {
-// #warning do not iterate this kernel, avoid several non-atomic min writes by running over all planes at once
-
+    // coalescent
+    // Plane<unsigned char>( slice, slice_p ).set( sdptid, pixid, sim );
+    // *get2DBufferAt( slice, slice_p, sdptid, pixid ) = sim;
 
     // unsigned char sim = *get2DBufferAt(slice, slice_p, sdptid, pixid);
-    // unsigned char sim = Plane<const unsigned char>( slice, slice_p ).get( sdptid, pixid );
+    // const unsigned char sim = Plane<const unsigned char>( slice, slice_p ).get( sdptid, pixid );
 
-    int vx = (volPix_x - volLUX) / volStepXY;
-    int vy = (volPix_y - volLUY) / volStepXY;
-    // int vz = sdptid;//depthid;
-    int vz = depthid - volLUZ;
+    pix = make_int2(volPix_x, volPix_y);
 
+    const int vx = (volPix_x - volLUX) / volStepXY;
+    const int vy = (volPix_y - volLUY) / volStepXY;
+    const int vz = depthid - volLUZ;
     if((vx >= 0) && (vx < volDimX) && (vy >= 0) && (vy < volDimY) && (vz >= 0) && (vz < volDimZ))
     {
-        Block<unsigned char> block( volume, volume_s, volume_p );
+        // Block<unsigned char> block( volume, volume_s, volume_p );
 
-        unsigned char volsim = block.get( vx, vy, vz);
-        block.set( vx, vy, vz, min( sim, volsim ) );
+        // const unsigned char volsim = block.get( vx, vy, vz);
+        unsigned char* volsim = get3DBufferAt( volume, volume_s, volume_p, vx, vy, vz );
+        // block.set( vx, vy, vz, min( sim, volsim ) );
+        *volsim = min( sim, *volsim );
     }
-  }
 }
 #endif
 
