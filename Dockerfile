@@ -53,6 +53,6 @@ WORKDIR "${AV_BUILD}"
 RUN make -j${NPROC} install && make bundle && cd /opt && rm -rf "${AV_BUILD}"
 
 # Finalize the INSTALL lib folder from the bundle
-RUN cp -rf "{AV_BUNDLE}/*.so*" "${AV_INSTALL}/lib64/"
+RUN cp -nrf ${AV_BUNDLE}/*.so* "${AV_INSTALL}/lib64/"
 
 
