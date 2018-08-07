@@ -73,8 +73,6 @@ alicevision_add_library(aliceVision_sfm
     aliceVision_sfmDataIO
     ${Boost_FILESYSTEM_LIBRARY}
     ${CERES_LIBRARIES}
-  PRIVATE_LINKS
-    ${Boost_REGEX_LIBRARY}
 )
 
 # Unit tests
