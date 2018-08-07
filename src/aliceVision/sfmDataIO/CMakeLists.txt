@@ -34,6 +34,8 @@ alicevision_add_library(aliceVision_sfmDataIO
   PUBLIC_LINKS
     aliceVision_sfmData
     ${Boost_FILESYSTEM_LIBRARY}
+  PRIVATE_LINKS
+    ${Boost_REGEX_LIBRARY}
 )
 
 
