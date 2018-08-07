@@ -492,8 +492,8 @@ if(CMAKE_INSTALL_PREFIX)
         DIRECTORY ${DEP_FOLDER}/lib/ ${DEP_FOLDER}/lib64/
         DESTINATION ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}
         USE_SOURCE_PERMISSIONS
-        FILES_MATCHING PATTERN "lib*.so*"
         OPTIONAL
+        FILES_MATCHING PATTERN "lib*.so*"
         )
     endif()
   endforeach()
