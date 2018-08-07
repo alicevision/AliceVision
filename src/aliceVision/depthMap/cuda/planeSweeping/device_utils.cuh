@@ -78,13 +78,13 @@ private:
 // * @param[int] y
 // * @return
 // */
-// template <typename T>
-// inline __device__ T* get2DBufferAt(T* ptr, int pitch, int x, int y)
-// {
-//     return Plane<T>(ptr,pitch).getPtr(x,y);
+template <typename T>
+inline __device__ T* get2DBufferAt(T* ptr, int pitch, int x, int y)
+{
+    return Plane<T>(ptr,pitch).getPtr(x,y);
 // 
 //     // return ((T*)(((char*)ptr) + y * pitch)) + x;
-// }
+}
 
 template <typename T>
 class Block

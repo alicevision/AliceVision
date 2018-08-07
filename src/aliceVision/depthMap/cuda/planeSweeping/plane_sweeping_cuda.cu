@@ -932,7 +932,7 @@ void ps_computeSimilarityVolume(
 #if 1
     CudaDeviceMemoryPitched<unsigned char, 2> sliceSim_dmp(CudaSize<2>(nDepthsToSearch, slicesAtTime));
 #endif
-#if 1
+#if 0
     std::cerr << "Comparing volumes before loop start" << std::endl;
     debug_compare_uchar<<<32,512>>>(
         volSim_dmp.getBuffer(), volSim_dmp.stride()[1], volSim_dmp.stride()[0],
@@ -1013,7 +1013,7 @@ void ps_computeSimilarityVolume(
         memOpErrorCheck( cudaGetLastError(), __FILE__, __LINE__, "Failed to execute kernel" );
         nvtxPop( "save slice to volume" );
 
-#if 1
+#if 0
         volume_saveSliceToVolume_kernel<<<grid, block>>>(
             volPixs_arr_x->tex,
             volPixs_arr_y->tex,
@@ -1027,7 +1027,7 @@ void ps_computeSimilarityVolume(
         memOpErrorCheck( cudaGetLastError(), __FILE__, __LINE__, "Failed to execute kernel" );
 #endif
 
-#if 1
+#if 0
         std::cerr << "Comparing volumes in loop " << t << " after volume_saveSliceToVolume_kernel" << std::endl;
         debug_compare_uchar<<<32,512>>>(
             volSim_dmp.getBuffer(), volSim_dmp.stride()[1], volSim_dmp.stride()[0],

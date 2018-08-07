@@ -47,6 +47,10 @@ __global__ void volume_slice_kernel(
     int sdptid = blockIdx.x * blockDim.x + threadIdx.x;
     int pixid = blockIdx.y * blockDim.y + threadIdx.y;
 
+#if 0
+    __syncthreads();
+#endif
+
     if((sdptid < nsearchdepths) && (pixid < slicesAtTime) && (slicesAtTime * t + pixid < npixs))
     {
         const int volPix_x = tex2D<int>(volPixs_x_Tex, pixid, t);
@@ -65,10 +69,11 @@ __global__ void volume_slice_kernel(
             const float fmaxVal = 1.0f;
             fsim = (fsim - fminVal) / (fmaxVal - fminVal);
             fsim = fminf(1.0f, fmaxf(0.0f, fsim));
-            const unsigned char sim = (unsigned char)(floorf(fsim * 255.0f));
+            const unsigned char sim = (unsigned char)(fsim * 255.0f);
 
             // coalescent
-            Plane<unsigned char>( slice, slice_p ).set( sdptid, pixid, sim );
+            // Plane<unsigned char>( slice, slice_p ).set( sdptid, pixid, sim );
+            *get2DBufferAt( slice, slice_p, sdptid, pixid ) = sim;
         }
     }
 }
