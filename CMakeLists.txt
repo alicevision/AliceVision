@@ -483,14 +483,14 @@ if(CMAKE_INSTALL_PREFIX)
         )
       install(
         DIRECTORY ${DEP_FOLDER}/lib/ ${DEP_FOLDER}/lib64/
-        DESTINATION ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}
+        DESTINATION ${CMAKE_INSTALL_LIBDIR}
         USE_SOURCE_PERMISSIONS
         OPTIONAL
         )
     else()
       install(
         DIRECTORY ${DEP_FOLDER}/lib/ ${DEP_FOLDER}/lib64/
-        DESTINATION ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}
+        DESTINATION ${CMAKE_INSTALL_LIBDIR}
         USE_SOURCE_PERMISSIONS
         OPTIONAL
         FILES_MATCHING PATTERN "lib*.so*"
@@ -515,6 +515,11 @@ else()
 add_subdirectory(src)
 
 endif()
+
+install(
+    FILES LICENSE-MPL2.md LICENSE-MIT-libmv.md COPYING.md CONTRIBUTORS.md
+    DESTINATION ${CMAKE_INSTALL_DATADIR}/aliceVision
+    )
 
 # Bundle target (see src/cmake/MakeBundle.cmake)
 # Note: require that the install rule has been executed

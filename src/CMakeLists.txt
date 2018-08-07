@@ -910,7 +910,7 @@ add_subdirectory(software)
 # ==============================================================================
 
 install(EXPORT aliceVision-targets
-        DESTINATION share/aliceVision/cmake FILE AliceVisionTargets.cmake)
+    DESTINATION ${CMAKE_INSTALL_DATADIR}/aliceVision/cmake FILE AliceVisionTargets.cmake)
 
 #Adapt build include paths to install path
 set(ALICEVISION_INCLUDE_DIRS
@@ -939,7 +939,7 @@ configure_file("${CMAKE_CURRENT_SOURCE_DIR}/cmake/AliceVisionConfig.cmake.in"
                "${CMAKE_CURRENT_BINARY_DIR}/AliceVisionConfig.cmake" @ONLY)
 
 install(FILES "${CMAKE_CURRENT_BINARY_DIR}/AliceVisionConfig.cmake"
-        DESTINATION share/aliceVision/cmake)
+        DESTINATION ${CMAKE_INSTALL_DATADIR}/aliceVision/cmake)
 
 # create the config.hpp file containing all the preprocessor definitions
 set(configfile "${generatedDir}/aliceVision/config.hpp")
@@ -948,7 +948,7 @@ configure_file("${CMAKE_CURRENT_SOURCE_DIR}/cmake/config.hpp.in"
 
 
 install(FILES "${configfile}"
-        DESTINATION "include/aliceVision")
+        DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/aliceVision")
 
 # Add uninstall target
 configure_file(

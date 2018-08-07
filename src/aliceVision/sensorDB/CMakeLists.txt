@@ -23,7 +23,7 @@ alicevision_add_library(aliceVision_sensorDB
 
 # Install DB
 install(FILES cameraSensors.db
-  DESTINATION share/aliceVision
+        DESTINATION ${CMAKE_INSTALL_DATADIR}/aliceVision
 )
 
 # Unit tests
