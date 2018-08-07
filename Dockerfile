@@ -1,4 +1,4 @@
-ARG CUDA_TAG=9.2
+ARG CUDA_TAG=7.0
 ARG OS_TAG=7
 FROM nvidia/cuda:${CUDA_TAG}-devel-centos${OS_TAG}
 LABEL maintainer="AliceVision Team alicevision-team@googlegroups.com"
@@ -49,10 +49,9 @@ WORKDIR "${AV_BUILD}"
 RUN cmake "${AV_DEV}" -DCMAKE_BUILD_TYPE=Release -DALICEVISION_BUILD_DEPENDENCIES:BOOL=ON -DCMAKE_INSTALL_PREFIX="${AV_INSTALL}" -DALICEVISION_BUNDLE_PREFIX="${AV_BUNDLE}"
 
 WORKDIR "${AV_BUILD}"
-RUN make -j8 install
-RUN make bundle
+RUN make -j8 install && make bundle && cd /opt && rm -rf "${AV_BUILD}"
 
-WORKDIR /opt
-RUN rm -rf "${AV_BUILD}"
+# Finalize the INSTALL lib folder from the bundle
+RUN cp -rf "{AV_BUNDLE}/*.so*" "${AV_INSTALL}/lib64/"
 
 

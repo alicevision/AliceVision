@@ -366,16 +366,16 @@ A docker image can be built using the CentOS 7 or Ubuntu 18 Dockerfiles.
 The Dockerfiles are based on `nvidia/cuda` images (https://hub.docker.com/r/nvidia/cuda/)
 
 ```
-docker build --tag alicevision:centos7-cuda9.2 .
+docker build --tag alicevision:centos7-cuda7.0 .
 docker build --tag alicevision:ubuntu18.04-cuda9.2 -f Dockerfile_ubuntu .
 ```
 
 Parameters `OS_TAG` and `CUDA_TAG` can be passed to build the image with a specific OS and CUDA version.
-For example, in order to create a CentOS 7 with Cuda 8.0, use:
+For example, in order to create a CentOS 7 with Cuda 9.2, use:
 
 ```
-docker build --build-arg OS_TAG=7 CUDA_TAG=8.0 --tag alicevision:centos7-cuda8.0 .
-docker build --build-arg OS_TAG=16.04 CUDA_TAG=7.0 --tag alicevision:ubuntu16.04-cuda7.0 -f Dockerfile_ubuntu .
+docker build --build-arg OS_TAG=7 CUDA_TAG=9.2 --tag alicevision:centos7-cuda9.2 .
+docker build --build-arg OS_TAG=16.04 CUDA_TAG=8.0 --tag alicevision:ubuntu16.04-cuda8.0 -f Dockerfile_ubuntu .
 ```
 
 In order to run the image [nvidia docker](https://github.com/nvidia/nvidia-docker/wiki/Installation-(version-2.0)) is needed.
