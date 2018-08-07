@@ -476,14 +476,16 @@ if(CMAKE_INSTALL_PREFIX)
     if(INSTALL_DEPS_BUILD)
       # Install dependencies build files
       install(
-        DIRECTORY ${DEP_FOLDER}/bin ${DEP_FOLDER}/include ${DEP_FOLDER}/share
+        DIRECTORY ${DEP_FOLDER}/include ${DEP_FOLDER}/share
         DESTINATION ${CMAKE_INSTALL_PREFIX}
         USE_SOURCE_PERMISSIONS
+        OPTIONAL
         )
       install(
         DIRECTORY ${DEP_FOLDER}/lib/ ${DEP_FOLDER}/lib64/
         DESTINATION ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}
         USE_SOURCE_PERMISSIONS
+        OPTIONAL
         )
     else()
       install(
@@ -491,6 +493,7 @@ if(CMAKE_INSTALL_PREFIX)
         DESTINATION ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}
         USE_SOURCE_PERMISSIONS
         FILES_MATCHING PATTERN "lib*.so*"
+        OPTIONAL
         )
     endif()
   endforeach()
