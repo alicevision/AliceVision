@@ -875,7 +875,7 @@ void ps_computeSimilarityVolume(
         depths_hmh.getSize()[1] );
     depths_arr->mem->copyFrom( depths_hmh );
 
-    dim3 block(32, 16, 1);
+    dim3 block(8, 8, 1);
     dim3 grid(divUp(nDepthsToSearch, block.x), divUp(slicesAtTime, block.y), 1);
     dim3 blockvol(block.x, block.y, 1);
     dim3 gridvol(divUp(volDimX, block.x), divUp(volDimY, block.y), 1);
@@ -953,7 +953,7 @@ void ps_computeSimilarityVolume(
         std::cerr << "done" << std::endl;
 #endif
 
-#if 1
+#if 0
         nvtxPushA( "volume_slice_kernel_2", __FILE__, __LINE__ );
         volume_slice_kernel_2<<<grid, block>>>(
             r4tex,
@@ -977,7 +977,7 @@ void ps_computeSimilarityVolume(
         nvtxPop( "volume_slice_kernel_2" );
         memOpErrorCheck( cudaGetLastError(), __FILE__, __LINE__, "Failed to execute kernel" );
 #endif
-#if 0
+#if 1
         nvtxPushA( "volume_slice_kernel", __FILE__, __LINE__ );
         volume_slice_kernel<<<grid, block>>>(
             r4tex,
@@ -988,7 +988,11 @@ void ps_computeSimilarityVolume(
             volPixs_arr_z->tex,
             slice_dmp.getBuffer(), slice_dmp.stride()[0],
             nDepthsToSearch, nDepths,
-            slicesAtTime, width, height, wsh, t, npixs, gammaC, gammaP, epipShift);
+            slicesAtTime, width, height, wsh, t, npixs, gammaC, gammaP, epipShift,
+            vol_dmp.getBuffer(), vol_dmp.stride()[1], vol_dmp.stride()[0],
+            volStepXY,
+            volDimX, volDimY, volDimZ,
+            volLUX, volLUY, volLUZ);
         CHECK_CUDA_ERROR();
         memOpErrorCheck( cudaGetLastError(), __FILE__, __LINE__, "Failed to execute kernel" );
         nvtxPop( "volume_slice_kernel" );

@@ -43,7 +43,10 @@ __global__ void volume_slice_kernel(
     const int width, const int height,
     const int wsh,
     const int t, const int npixs,
-    const float gammaC, const float gammaP, const float epipShift )
+    const float gammaC, const float gammaP, const float epipShift,
+    unsigned char* volume, const int volume_s, const int volume_p,
+    int volStepXY, int volDimX,
+    int volDimY, int volDimZ, int volLUX, int volLUY, int volLUZ )
 {
     int sdptid = blockIdx.x * blockDim.x + threadIdx.x;
     int pixid = blockIdx.y * blockDim.y + threadIdx.y;
@@ -75,6 +78,23 @@ __global__ void volume_slice_kernel(
             // coalescent
             // Plane<unsigned char>( slice, slice_p ).set( sdptid, pixid, sim );
             *get2DBufferAt( slice, slice_p, sdptid, pixid ) = sim;
+
+#if 0
+            const int vx = (volPix_x - volLUX) / volStepXY;
+            const int vy = (volPix_y - volLUY) / volStepXY;
+            const int vz = depthid - volLUZ;
+            if((vx >= 0) && (vx < volDimX) && (vy >= 0) && (vy < volDimY) && (vz >= 0) && (vz < volDimZ))
+            {
+                // unsigned char* volsim = get3DBufferAt( volume, volume_s, volume_p, vx, vy, vz );
+                // const unsigned char mval = min( sim, *volsim );
+                const unsigned char mval = sim;
+                if( vy == 100 && vz == 100 )
+                {
+                    printf( "A: %d %d %d writes %d for %d %d\n", vx, vy, vz, (int)mval, sdptid, pixid );
+                }
+                // *volsim = min( sim, *volsim );
+            }
+#endif
         }
     }
 }
@@ -109,6 +129,7 @@ __global__ void volume_saveSliceToVolume_kernel(
 
     // unsigned char sim = *get2DBufferAt(slice, slice_p, sdptid, pixid);
     const unsigned char sim = Plane<const unsigned char>( slice, slice_p ).get( sdptid, pixid );
+#if 1
 
     const int vx = (volPix_x - volLUX) / volStepXY;
     const int vy = (volPix_y - volLUY) / volStepXY;
@@ -119,8 +140,14 @@ __global__ void volume_saveSliceToVolume_kernel(
         Block<unsigned char> block( volume, volume_s, volume_p );
 
         const unsigned char volsim = block.get( vx, vy, vz);
+        // const unsigned char mval = min( sim, volsim );
         block.set( vx, vy, vz, min( sim, volsim ) );
+        // if( vy == 100 && vz == 100 )
+        // {
+        //     printf( "B: %d %d %d writes %d for %d %d\n", vx, vy, vz, (int)mval, sdptid, pixid );
+        // }
     }
+#endif
 }
 #endif
 

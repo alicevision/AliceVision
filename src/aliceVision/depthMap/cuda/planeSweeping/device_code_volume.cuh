@@ -25,7 +25,10 @@ __global__ void volume_slice_kernel(
     const int nsearchdepths, const int ndepths, const int slicesAtTime,
     const int width, const int height, const int wsh,
     const int t, const int npixs,
-    const float gammaC, const float gammaP, const float epipShift );
+    const float gammaC, const float gammaP, const float epipShift,
+    unsigned char* volume, const int volume_s, const int volume_p,
+    int volStepXY, int volDimX,
+    int volDimY, int volDimZ, int volLUX, int volLUY, int volLUZ );
 
 __global__ void volume_saveSliceToVolume_kernel(
     cudaTextureObject_t volPixsTex_x,
