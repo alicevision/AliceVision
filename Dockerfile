@@ -50,7 +50,8 @@ WORKDIR "${AV_BUILD}"
 RUN cmake "${AV_DEV}" -DCMAKE_BUILD_TYPE=Release -DALICEVISION_BUILD_DEPENDENCIES:BOOL=ON -DINSTALL_DEPS_BUILD:BOOL=ON -DCMAKE_INSTALL_PREFIX="${AV_INSTALL}" -DALICEVISION_BUNDLE_PREFIX="${AV_BUNDLE}"
 
 WORKDIR "${AV_BUILD}"
-RUN make -j${NPROC} install && make bundle && cd /opt && rm -rf "${AV_BUILD}"
+RUN make -j${NPROC} install && make bundle && cd /opt
+# && rm -rf "${AV_BUILD}"
 
 # Finalize the INSTALL lib folder from the bundle
 RUN cp -nrf ${AV_BUNDLE}/*.so* "${AV_INSTALL}/lib64/"
