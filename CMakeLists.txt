@@ -12,6 +12,8 @@ option(AV_BUILD_PNG "Enable building an embedded Png" ON)
 option(AV_BUILD_LIBRAW "Enable building an embedded libraw" ON)
 option(AV_BUILD_POPSIFT "Enable building an embedded PopSift" ON)
 option(AV_BUILD_OPENGV "Enable building an embedded OpenGV" ON)
+option(AV_BUILD_LAPACK "Enable building an embedded Lapack" ON)
+option(AV_BUILD_SUITESPARSE "Enable building an embedded SuiteSparse" ON)
 
 option(AV_USE_CUDA "Enable CUDA" ON)
 
@@ -197,6 +199,7 @@ set(OPENGV_CMAKE_FLAGS -DOPENGV_DIR=${BUILD_DIR}/opengv_install)
 endif()
 
 
+if(AV_BUILD_LAPACK)
 set(LAPACK_TARGET lapack)
 ExternalProject_Add(${LAPACK_TARGET}
        URL http://www.netlib.org/lapack/lapack-3.8.0.tar.gz
@@ -212,7 +215,9 @@ ExternalProject_Add(${LAPACK_TARGET}
 set(BLAS_LIBRARIES ${BUILD_DIR}/lapack_build/${CMAKE_INSTALL_LIBDIR}/libblas.so)
 set(LAPACK_LIBRARIES ${BUILD_DIR}/lapack_build/${CMAKE_INSTALL_LIBDIR}/liblapack.so)
 set(LAPACK_CMAKE_FLAGS -DBLAS_LIBRARIES=${BLAS_LIBRARIES} -DLAPACK_LIBRARIES=${LAPACK_LIBRARIES})
+endif()
 
+if(AV_BUILD_SUITESPARSE)
 set(SUITESPARSE_TARGET suitesparse)
 set(SUITESPARSE_INTERNAL_MAKE_CMD LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${BUILD_DIR}/lapack_build/${CMAKE_INSTALL_LIBDIR} make BLAS="${BLAS_LIBRARIES}" LAPACK="${LAPACK_LIBRARIES}")
 ExternalProject_Add(${SUITESPARSE_TARGET}
@@ -229,6 +234,7 @@ ExternalProject_Add(${SUITESPARSE_TARGET}
        DEPENDS ${LAPACK_TARGET}
        )
 set(SUITESPARSE_CMAKE_FLAGS ${LAPACK_CMAKE_FLAGS} -DSUITESPARSE_INCLUDE_DIR_HINTS=${BUILD_DIR}/suitesparse_build/include -DSUITESPARSE_LIBRARY_DIR_HINTS=${BUILD_DIR}/suitesparse_build/lib)
+endif()
 
 # Add ceres-solver: A Nonlinear Least Squares Minimizer
 set(CERES_TARGET ceres)
