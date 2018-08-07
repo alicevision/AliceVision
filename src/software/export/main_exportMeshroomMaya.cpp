@@ -36,7 +36,7 @@ int main(int argc, char **argv)
   std::string sfmDataFilename;
   std::string outputFolder;
 
-  po::options_description allParams("AliceVision exportMayaMVG");
+  po::options_description allParams("AliceVision exportMeshroomMaya");
 
   po::options_description requiredParams("Required parameters");
   requiredParams.add_options()
@@ -99,11 +99,11 @@ int main(int argc, char **argv)
   }
 
   // export the SfM scene to an alembic at the root of the output folder
-  ALICEVISION_LOG_INFO("Exporting SfM scene for MayaMVG ...");
+  ALICEVISION_LOG_INFO("Exporting SfM scene for MeshroomMaya ...");
   sfmDataIO::Save(sfmData, outputFolder + "/scene.abc", sfmDataIO::ESfMData::ALL);
 
   // export undistorted images and thumbnail images
-  boost::progress_display progressBar(sfmData.getViews().size(), std::cout, "Exporting Images for MayaMVG\n");
+  boost::progress_display progressBar(sfmData.getViews().size(), std::cout, "Exporting Images for MeshroomMaya\n");
   for(auto& viewPair : sfmData.getViews())
   {
     const sfmData::View& view = *viewPair.second;

@@ -77,8 +77,8 @@ alicevision_add_software(aliceVision_exportPMVS
 
 # Export a SfM aliceVision scene to MayaMVG
 if(ALICEVISION_HAVE_ALEMBIC) # maya can read alembic file
-  alicevision_add_software(aliceVision_exportMayaMVG
-    SOURCE main_exportMayaMVG.cpp
+  alicevision_add_software(aliceVision_exportMeshroomMaya
+    SOURCE main_exportMeshroomMaya.cpp
     FOLDER ${FOLDER_SOFTWARE_EXPORT}
     LINKS aliceVision_system
           aliceVision_image
