@@ -502,6 +502,7 @@ if(CMAKE_INSTALL_PREFIX)
     DIRECTORY ${BUILD_DIR}/aliceVision_build/bin ${BUILD_DIR}/aliceVision_build/lib ${BUILD_DIR}/aliceVision_build/lib64 ${BUILD_DIR}/aliceVision_build/include ${BUILD_DIR}/aliceVision_build/share
     DESTINATION ${CMAKE_INSTALL_PREFIX}
     USE_SOURCE_PERMISSIONS
+    OPTIONAL
     )
 endif()
 
