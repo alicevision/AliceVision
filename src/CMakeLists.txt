@@ -343,6 +343,17 @@ if(ALICEVISION_BUILD_SFM)
   if(Ceres_FOUND)
     message(STATUS "Ceres include dirs ${CERES_INCLUDE_DIRS}")
     message(STATUS "Ceres libraries ${CERES_LIBRARIES}")
+    if(ALICEVISION_REQUIRE_CERES_WITH_SUITESPARSE)
+        # Ceres export include dirs but doesn't export suitesparse lib dependencies in CeresConfig.cmake
+        # So here is a workaround:
+        find_package(SuiteSparse)
+        message(STATUS "SUITESPARSE_LIBRARIES: ${SUITESPARSE_LIBRARIES}")
+        if(SUITESPARSE_LIBRARIES)
+            list(APPEND CERES_LIBRARIES ${SUITESPARSE_LIBRARIES})
+        endif()
+    endif()
+    message(STATUS "CERES_LIBRARIES: ${CERES_LIBRARIES}")
+    message(STATUS "CERES_INCLUDE_DIRS: ${CERES_INCLUDE_DIRS}")
     if(WIN32)
         # avoid 'ERROR' macro clashing on Windows 
         add_definitions(-DGLOG_NO_ABBREVIATED_SEVERITIES)
@@ -899,7 +910,7 @@ add_subdirectory(software)
 # ==============================================================================
 
 install(EXPORT aliceVision-targets
-        DESTINATION share/aliceVision/cmake FILE AliceVisionTargets.cmake)
+    DESTINATION ${CMAKE_INSTALL_DATADIR}/aliceVision/cmake FILE AliceVisionTargets.cmake)
 
 #Adapt build include paths to install path
 set(ALICEVISION_INCLUDE_DIRS
@@ -928,7 +939,7 @@ configure_file("${CMAKE_CURRENT_SOURCE_DIR}/cmake/AliceVisionConfig.cmake.in"
                "${CMAKE_CURRENT_BINARY_DIR}/AliceVisionConfig.cmake" @ONLY)
 
 install(FILES "${CMAKE_CURRENT_BINARY_DIR}/AliceVisionConfig.cmake"
-        DESTINATION share/aliceVision/cmake)
+        DESTINATION ${CMAKE_INSTALL_DATADIR}/aliceVision/cmake)
 
 # create the config.hpp file containing all the preprocessor definitions
 set(configfile "${generatedDir}/aliceVision/config.hpp")
@@ -937,7 +948,7 @@ configure_file("${CMAKE_CURRENT_SOURCE_DIR}/cmake/config.hpp.in"
 
 
 install(FILES "${configfile}"
-        DESTINATION "include/aliceVision")
+        DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/aliceVision")
 
 # Add uninstall target
 configure_file(

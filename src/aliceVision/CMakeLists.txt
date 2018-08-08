@@ -52,7 +52,7 @@ endif()
 
 install(
   DIRECTORY .
-  DESTINATION include/aliceVision
+  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/aliceVision
   COMPONENT headers
   FILES_MATCHING PATTERN "*.hpp" PATTERN "*.h" PATTERN "*.tcc"
 )

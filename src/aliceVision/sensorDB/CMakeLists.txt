@@ -21,9 +21,9 @@ alicevision_add_library(aliceVision_sensorDB
     ${Boost_INCLUDE_DIRS}
 )
 
-# Install sensor_width_camera_database.txt
-install(FILES sensor_width_camera_database.txt
-  DESTINATION share/aliceVision
+# Install DB
+install(FILES cameraSensors.db
+        DESTINATION ${CMAKE_INSTALL_DATADIR}/aliceVision
 )
 
 # Unit tests
