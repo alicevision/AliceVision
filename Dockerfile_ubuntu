@@ -57,9 +57,9 @@ WORKDIR "${AV_BUILD}"
 RUN cmake "${AV_DEV}" -DCMAKE_BUILD_TYPE=Release -DALICEVISION_BUILD_DEPENDENCIES:BOOL=ON -DAV_BUILD_LAPACK:BOOL=OFF -DAV_BUILD_SUITESPARSE:BOOL=OFF -DCMAKE_INSTALL_PREFIX="${AV_INSTALL}" -DALICEVISION_BUNDLE_PREFIX="${AV_BUNDLE}"
 
 WORKDIR "${AV_BUILD}"
-RUN make -j${NPROC} install && make bundle && cd /opt && rm -rf "${AV_BUILD}"
+RUN make -j${NPROC} install && make bundle
+# && cd /opt && rm -rf "${AV_BUILD}"
 
-# Finalize the INSTALL lib folder from the bundle
-RUN cp -rf "{AV_BUNDLE}/*.so*" "${AV_INSTALL}/lib/"
-
+WORKDIR "${AV_BUNDLE}/share/aliceVision"
+RUN wget https://gitlab.com/alicevision/trainedVocabularyTreeData/raw/master/vlfeat_K80L3.SIFT.tree
 
