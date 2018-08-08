@@ -6,15 +6,14 @@
 
 #pragma once
 
-#define ALICEVISION_VERSION_MAJOR 0
-#define ALICEVISION_VERSION_MINOR 9
-#define ALICEVISION_VERSION_REVISION 5
+#define ALICEVISION_VERSION_MAJOR 1
+#define ALICEVISION_VERSION_MINOR 0
+#define ALICEVISION_VERSION_REVISION 0
 
-// Preprocessor to string conversion
+// preprocessor to string conversion
 #define ALICEVISION_TO_STRING_HELPER(x) #x
 #define ALICEVISION_TO_STRING(x) ALICEVISION_TO_STRING_HELPER(x)
 
-// AliceVision version as a string; for example "0.9.0".
 #define ALICEVISION_VERSION_STRING ALICEVISION_TO_STRING(ALICEVISION_VERSION_MAJOR) "." \
-                             ALICEVISION_TO_STRING(ALICEVISION_VERSION_MINOR) "." \
-                             ALICEVISION_TO_STRING(ALICEVISION_VERSION_REVISION)
+                                   ALICEVISION_TO_STRING(ALICEVISION_VERSION_MINOR) "." \
+                                   ALICEVISION_TO_STRING(ALICEVISION_VERSION_REVISION)
