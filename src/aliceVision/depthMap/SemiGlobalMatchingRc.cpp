@@ -37,13 +37,13 @@ SemiGlobalMatchingRc::SemiGlobalMatchingRc(bool doComputeDepthsAndResetTCams, in
     w = sp->mp->getWidth(rc) / (scale * step);
     h = sp->mp->getHeight(rc) / (scale * step);
 
-    int nnearestcams = sp->mp->_ini.get<int>("semiGlobalMatching.maxTCams", 10);
+    int nnearestcams = sp->mp->userParams.get<int>("semiGlobalMatching.maxTCams", 10);
     tcams = new StaticVector<int>();
     *tcams = sp->pc->findNearestCamsFromSeeds(rc, nnearestcams);
 
-    wsh = sp->mp->_ini.get<int>("semiGlobalMatching.wsh", 4);
-    gammaC = (float)sp->mp->_ini.get<double>("semiGlobalMatching.gammaC", 5.5);
-    gammaP = (float)sp->mp->_ini.get<double>("semiGlobalMatching.gammaP", 8.0);
+    wsh = sp->mp->userParams.get<int>("semiGlobalMatching.wsh", 4);
+    gammaC = (float)sp->mp->userParams.get<double>("semiGlobalMatching.gammaC", 5.5);
+    gammaP = (float)sp->mp->userParams.get<double>("semiGlobalMatching.gammaP", 8.0);
 
     sp->cps->verbose = sp->mp->verbose;
 
@@ -692,8 +692,8 @@ bool SemiGlobalMatchingRc::sgmrc(bool checkIfExists)
 void computeDepthMapsPSSGM(int CUDADeviceNo, mvsUtils::MultiViewParams* mp, mvsUtils::PreMatchCams* pc, const StaticVector<int>& cams)
 {
     const int fileScale = 1; // input images scale (should be one)
-    int sgmScale = mp->_ini.get<int>("semiGlobalMatching.scale", -1);
-    int sgmStep = mp->_ini.get<int>("semiGlobalMatching.step", -1);
+    int sgmScale = mp->userParams.get<int>("semiGlobalMatching.scale", -1);
+    int sgmStep = mp->userParams.get<int>("semiGlobalMatching.step", -1);
 
     if(sgmScale == -1)
     {
@@ -741,7 +741,7 @@ void computeDepthMapsPSSGM(mvsUtils::MultiViewParams* mp, mvsUtils::PreMatchCams
     ALICEVISION_LOG_INFO("Number of GPU devices: " << num_gpus << ", number of CPU threads: " << num_cpu_threads);
     int numthreads = std::min(num_gpus, num_cpu_threads);
 
-    int num_gpus_to_use = mp->_ini.get<int>("semiGlobalMatching.num_gpus_to_use", 1);
+    int num_gpus_to_use = mp->userParams.get<int>("semiGlobalMatching.num_gpus_to_use", 1);
     if(num_gpus_to_use > 0)
     {
         numthreads = num_gpus_to_use;

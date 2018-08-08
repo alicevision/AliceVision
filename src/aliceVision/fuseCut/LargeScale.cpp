@@ -27,7 +27,7 @@ LargeScale::LargeScale(mvsUtils::MultiViewParams* _mp, mvsUtils::PreMatchCams* _
     bfs::create_directory(spaceFolderName);
     bfs::create_directory(spaceVoxelsFolderName);
 
-    doVisualize = mp->_ini.get<bool>("LargeScale.doVisualizeOctreeTracks", false);
+    doVisualize = mp->userParams.get<bool>("LargeScale.doVisualizeOctreeTracks", false);
 }
 
 LargeScale::~LargeScale()
@@ -155,11 +155,11 @@ bool LargeScale::generateSpace(int maxPts, int ocTreeDim, bool generateTracks)
 
     if(generateTracks)
     {
-        bool addRandomNoise = mp->_ini.get<bool>("LargeScale.addRandomNoise", false);
+        bool addRandomNoise = mp->userParams.get<bool>("LargeScale.addRandomNoise", false);
         float addRandomNoisePercNoisePts =
-            (float)mp->_ini.get<double>("LargeScale.addRandomNoisePercNoisePts", 10.0);
+            (float)mp->userParams.get<double>("LargeScale.addRandomNoisePercNoisePts", 10.0);
         int addRandomNoiseNoisPixSizeDistHalfThr =
-            (float)mp->_ini.get<int>("LargeScale.addRandomNoiseNoisPixSizeDistHalfThr", 10);
+            (float)mp->userParams.get<int>("LargeScale.addRandomNoiseNoisPixSizeDistHalfThr", 10);
 
         std::string depthMapsPtsSimsTmpDir = generateTempPtsSimsFiles(
             spaceFolderName, mp, addRandomNoise, addRandomNoisePercNoisePts, addRandomNoiseNoisPixSizeDistHalfThr);

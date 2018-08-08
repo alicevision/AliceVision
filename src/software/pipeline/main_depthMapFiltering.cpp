@@ -4,26 +4,27 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
-#include <aliceVision/system/cmdline.hpp>
-#include <aliceVision/system/Logger.hpp>
-#include <aliceVision/system/Timer.hpp>
+#include <aliceVision/sfmData/SfMData.hpp>
+#include <aliceVision/sfmDataIO/sfmDataIO.hpp>
+#include <aliceVision/fuseCut/Fuser.hpp>
 #include <aliceVision/mvsData/StaticVector.hpp>
 #include <aliceVision/mvsUtils/common.hpp>
 #include <aliceVision/mvsUtils/MultiViewParams.hpp>
 #include <aliceVision/mvsUtils/PreMatchCams.hpp>
-#include <aliceVision/fuseCut/Fuser.hpp>
+#include <aliceVision/system/cmdline.hpp>
+#include <aliceVision/system/Logger.hpp>
+#include <aliceVision/system/Timer.hpp>
 
 #include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>
 
 // These constants define the current software version.
 // They must be updated when the command line is changed.
-#define ALICEVISION_SOFTWARE_VERSION_MAJOR 1
+#define ALICEVISION_SOFTWARE_VERSION_MAJOR 2
 #define ALICEVISION_SOFTWARE_VERSION_MINOR 0
 
 using namespace aliceVision;
 
-namespace bfs = boost::filesystem;
 namespace po = boost::program_options;
 
 int main(int argc, char* argv[])
@@ -31,9 +32,11 @@ int main(int argc, char* argv[])
     system::Timer timer;
 
     std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
-    std::string iniFilepath;
+    std::string sfmDataFilename;
+    std::string cameraPairsMatrixFolder;
     std::string depthMapFolder;
     std::string outputFolder;
+
     int rangeStart = -1;
     int rangeSize = -1;
 
@@ -48,8 +51,10 @@ int main(int argc, char* argv[])
 
     po::options_description requiredParams("Required parameters");
     requiredParams.add_options()
-        ("ini", po::value<std::string>(&iniFilepath)->required(),
-            "Configuration file (mvs.ini).")
+        ("input,i", po::value<std::string>(&sfmDataFilename)->required(),
+            "SfMData file.")
+        ("cameraPairsMatrixFolder", po::value<std::string>(&cameraPairsMatrixFolder)->required(),
+            "Camera pairs matrix folder.")
         ("depthMapFolder", po::value<std::string>(&depthMapFolder)->required(),
             "Input depth map folder.")
         ("output,o", po::value<std::string>(&outputFolder)->required(),
@@ -112,9 +117,17 @@ int main(int argc, char* argv[])
     // set verbose level
     system::Logger::get()->setLogLevel(verboseLevel);
 
-    // .ini and files parsing
-    mvsUtils::MultiViewParams mp(iniFilepath, depthMapFolder, outputFolder, true);
-    mvsUtils::PreMatchCams pc(&mp);
+    // read the input SfM scene
+    sfmData::SfMData sfmData;
+    if(!sfmDataIO::Load(sfmData, sfmDataFilename, sfmDataIO::ESfMData::ALL))
+    {
+      ALICEVISION_LOG_ERROR("The input SfMData file '" << sfmDataFilename << "' cannot be read.");
+      return EXIT_FAILURE;
+    }
+
+    // initialization
+    mvsUtils::MultiViewParams mp(sfmData, "", depthMapFolder, outputFolder, "", true);
+    mvsUtils::PreMatchCams pc(mp, cameraPairsMatrixFolder);
 
     StaticVector<int> cams;
     cams.reserve(mp.ncams);

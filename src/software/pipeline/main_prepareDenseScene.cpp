@@ -154,14 +154,26 @@ void retrieveSeedsPerView(
   }
 }
 
-bool prepareDenseScene(const SfMData& sfmData, const std::string& outFolder)
+bool prepareDenseScene(const SfMData& sfmData, int beginIndex, int endIndex, const std::string& outFolder)
 {
   // defined view Ids
   std::set<IndexT> viewIds;
-  // Export valid views as Projective Cameras:
-  for(const auto &iter : sfmData.getViews())
+
+  sfmData::Views::const_iterator itViewBegin = sfmData.getViews().begin();
+  sfmData::Views::const_iterator itViewEnd = sfmData.getViews().end();
+
+  if(endIndex > 0)
   {
-    const View* view = iter.second.get();
+    itViewEnd = itViewBegin;
+    std::advance(itViewEnd, endIndex);
+  }
+
+  std::advance(itViewBegin, (beginIndex < 0) ? 0 : beginIndex);
+
+  // Export valid views as Projective Cameras
+  for(auto it = itViewBegin; it != itViewEnd; ++it)
+  {
+    const View* view = it->second.get();
     if (!sfmData.isPoseAndIntrinsicDefined(view))
       continue;
     viewIds.insert(view->getViewId());
@@ -171,7 +183,7 @@ bool prepareDenseScene(const SfMData& sfmData, const std::string& outFolder)
   retrieveSeedsPerView(sfmData, viewIds, seedsPerView);
   
   // Export data
-  boost::progress_display my_progress_bar(viewIds.size(), std::cout, "Exporting Scene Data\n");
+  boost::progress_display progressBar(viewIds.size(), std::cout, "Exporting Scene Data\n");
 
   // Export views:
   //   - viewId_P.txt (Pose of the reconstructed camera)
@@ -288,27 +300,8 @@ bool prepareDenseScene(const SfMData& sfmData, const std::string& outFolder)
       seedsFile.close();
     }
    #pragma omp critical
-    ++my_progress_bar;
+    ++progressBar;
   }
-
-  // Write the mvs ini file
-  std::ostringstream os;
-  os << "[global]" << os.widen('\n')
-  << "ncams=" << viewIds.size() << os.widen('\n')
-  << "imgExt=exr" << os.widen('\n')
-  << "verbose=TRUE" << os.widen('\n')
-  << os.widen('\n')
-  << "[imageResolutions]" << os.widen('\n');
-
-  for(const IndexT viewId : viewIds)
-  {
-    const View* view = sfmData.getViews().at(viewId).get();
-    os << viewId << "=" << static_cast<int>(view->getWidth()) << "x" << static_cast<int>(view->getHeight()) << os.widen('\n');
-  }
-
-  std::ofstream file2((fs::path(outFolder) / "mvs.ini").string());
-  file2 << os.str();
-  file2.close();
 
   return true;
 }
@@ -320,6 +313,8 @@ int main(int argc, char *argv[])
   std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
   std::string sfmDataFilename;
   std::string outFolder;
+  int rangeStart = -1;
+  int rangeSize = 1;
 
   po::options_description allParams("AliceVision prepareDenseScene");
 
@@ -330,12 +325,19 @@ int main(int argc, char *argv[])
     ("output,o", po::value<std::string>(&outFolder)->required(),
       "Output folder.");
 
+  po::options_description optionalParams("Optional parameters");
+  optionalParams.add_options()
+    ("rangeStart", po::value<int>(&rangeStart)->default_value(rangeStart),
+      "Range image index start.")
+    ("rangeSize", po::value<int>(&rangeSize)->default_value(rangeSize),
+      "Range size.");
+
   po::options_description logParams("Log parameters");
   logParams.add_options()
     ("verboseLevel,v", po::value<std::string>(&verboseLevel)->default_value(verboseLevel),
       "verbosity level (fatal, error, warning, info, debug, trace).");
 
-  allParams.add(requiredParams).add(logParams);
+  allParams.add(requiredParams).add(optionalParams).add(logParams);
 
   po::variables_map vm;
   try
@@ -368,23 +370,43 @@ int main(int argc, char *argv[])
   // set verbose level
   system::Logger::get()->setLogLevel(verboseLevel);
 
-  // export
-  {
-    // Create output dir
-    if(!fs::exists(outFolder))
-      fs::create_directory(outFolder);
+  // Create output dir
+  if(!fs::exists(outFolder))
+    fs::create_directory(outFolder);
 
-    // Read the input SfM scene
-    SfMData sfmData;
-    if(!sfmDataIO::Load(sfmData, sfmDataFilename, sfmDataIO::ESfMData::ALL))
+  // Read the input SfM scene
+  SfMData sfmData;
+  if(!sfmDataIO::Load(sfmData, sfmDataFilename, sfmDataIO::ESfMData::ALL))
+  {
+    ALICEVISION_LOG_ERROR("The input SfMData file '" << sfmDataFilename << "' cannot be read.");
+    return EXIT_FAILURE;
+  }
+ 
+  int rangeEnd = sfmData.getViews().size();
+
+  // set range
+  if(rangeStart != -1)
+  {
+    if(rangeStart < 0 || rangeSize < 0 ||
+        rangeStart > sfmData.getViews().size())
     {
-      ALICEVISION_LOG_ERROR("The input SfMData file '" << sfmDataFilename << "' cannot be read.");
+      ALICEVISION_LOG_ERROR("Range is incorrect");
       return EXIT_FAILURE;
     }
 
-    if(!prepareDenseScene(sfmData, outFolder))
-      return EXIT_FAILURE;
+    if(rangeStart + rangeSize > sfmData.views.size())
+        rangeSize = sfmData.views.size() - rangeStart;
+
+    rangeEnd = rangeStart + rangeSize;
+  }
+  else
+  {
+    rangeStart = 0;
   }
 
-  return EXIT_SUCCESS;
+  // export
+  if(prepareDenseScene(sfmData, rangeStart, rangeEnd, outFolder))
+    return EXIT_SUCCESS;
+
+  return EXIT_FAILURE;
 }

@@ -409,13 +409,13 @@ PlaneSweepingCuda::PlaneSweepingCuda(int _CUDADeviceNo, mvsUtils::ImagesCache* _
     nbest = 1;
     nbestkernelSizeHalf = 1;
 
-    doVizualizePartialDepthMaps = mp->_ini.get<bool>("grow.visualizePartialDepthMaps", false);
-    useRcDepthsOrRcTcDepths = mp->_ini.get<bool>("grow.useRcDepthsOrRcTcDepths", false);
+    doVizualizePartialDepthMaps = mp->userParams.get<bool>("grow.visualizePartialDepthMaps", false);
+    useRcDepthsOrRcTcDepths = mp->userParams.get<bool>("grow.useRcDepthsOrRcTcDepths", false);
 
-    minSegSize = mp->_ini.get<int>("fuse.minSegSize", 100);
-    varianceWSH = mp->_ini.get<int>("global.varianceWSH", 4);
+    minSegSize = mp->userParams.get<int>("fuse.minSegSize", 100);
+    varianceWSH = mp->userParams.get<int>("global.varianceWSH", 4);
 
-    subPixel = mp->_ini.get<bool>("global.subPixel", true);
+    subPixel = mp->userParams.get<bool>("global.subPixel", true);
 
     ALICEVISION_LOG_INFO("PlaneSweepingCuda:" << std::endl
                          << "\t- nImgsInGPUAtTime: " << nImgsInGPUAtTime << std::endl
@@ -516,10 +516,10 @@ void PlaneSweepingCuda::getMinMaxdepths(int rc, StaticVector<int>* tcams, float&
     StaticVector<SeedPoint>* seeds;
     mvsUtils::loadSeedsFromFile(&seeds, rc, mp, mvsUtils::EFileType::seeds);
 
-    float minCamDist = (float)mp->_ini.get<double>("prematching.minCamDist", 0.0f);
-    float maxCamDist = (float)mp->_ini.get<double>("prematching.maxCamDist", 15.0f);
-    float maxDepthScale = (float)mp->_ini.get<double>("prematching.maxDepthScale", 1.5f);
-    bool minMaxDepthDontUseSeeds = mp->_ini.get<bool>("prematching.minMaxDepthDontUseSeeds", false);
+    float minCamDist = (float)mp->userParams.get<double>("prematching.minCamDist", 0.0f);
+    float maxCamDist = (float)mp->userParams.get<double>("prematching.maxCamDist", 15.0f);
+    float maxDepthScale = (float)mp->userParams.get<double>("prematching.maxDepthScale", 1.5f);
+    bool minMaxDepthDontUseSeeds = mp->userParams.get<bool>("prematching.minMaxDepthDontUseSeeds", false);
 
     if((seeds->empty()) || minMaxDepthDontUseSeeds)
     {

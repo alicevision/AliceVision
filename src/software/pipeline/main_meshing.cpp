@@ -4,31 +4,33 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
-#include <aliceVision/system/cmdline.hpp>
-#include <aliceVision/system/Logger.hpp>
-#include <aliceVision/system/Timer.hpp>
+#include <aliceVision/sfmData/SfMData.hpp>
+#include <aliceVision/sfmDataIO/sfmDataIO.hpp>
+#include <aliceVision/fuseCut/LargeScale.hpp>
+#include <aliceVision/fuseCut/ReconstructionPlan.hpp>
+#include <aliceVision/fuseCut/DelaunayGraphCut.hpp>
+#include <aliceVision/mesh/meshPostProcessing.hpp>
 #include <aliceVision/mvsData/Point3d.hpp>
 #include <aliceVision/mvsData/StaticVector.hpp>
 #include <aliceVision/mvsUtils/common.hpp>
 #include <aliceVision/mvsUtils/MultiViewParams.hpp>
 #include <aliceVision/mvsUtils/PreMatchCams.hpp>
-#include <aliceVision/mesh/meshPostProcessing.hpp>
-#include <aliceVision/fuseCut/LargeScale.hpp>
-#include <aliceVision/fuseCut/ReconstructionPlan.hpp>
-#include <aliceVision/fuseCut/DelaunayGraphCut.hpp>
 #include <aliceVision/mvsUtils/fileIO.hpp>
+#include <aliceVision/system/cmdline.hpp>
+#include <aliceVision/system/Logger.hpp>
+#include <aliceVision/system/Timer.hpp>
 
 #include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>
 
 // These constants define the current software version.
 // They must be updated when the command line is changed.
-#define ALICEVISION_SOFTWARE_VERSION_MAJOR 1
+#define ALICEVISION_SOFTWARE_VERSION_MAJOR 2
 #define ALICEVISION_SOFTWARE_VERSION_MINOR 0
 
 using namespace aliceVision;
 
-namespace bfs = boost::filesystem;
+namespace fs = boost::filesystem;
 namespace po = boost::program_options;
 
 enum EPartitioningMode
@@ -85,11 +87,11 @@ int main(int argc, char* argv[])
     system::Timer timer;
 
     std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
-    std::string iniFilepath;
+    std::string sfmDataFilename;
+    std::string cameraPairsMatrixFolder;
     std::string outputMesh;
     std::string depthMapFolder;
     std::string depthMapFilterFolder;
-
     EPartitioningMode partitioningMode = ePartitioningSingleBlock;
     ERepartitionMode repartitionMode = eRepartitionMultiResolution;
     po::options_description inputParams;
@@ -101,8 +103,10 @@ int main(int argc, char* argv[])
 
     po::options_description requiredParams("Required parameters");
     requiredParams.add_options()
-        ("ini", po::value<std::string>(&iniFilepath)->required(),
-            "Configuration file (mvs.ini).")
+        ("input,i", po::value<std::string>(&sfmDataFilename)->required(),
+          "SfMData file.")
+        ("cameraPairsMatrixFolder", po::value<std::string>(&cameraPairsMatrixFolder)->required(),
+            "Camera pairs matrix folder.")
         ("depthMapFolder", po::value<std::string>(&depthMapFolder)->required(),
             "Input depth maps folder.")
         ("depthMapFilterFolder", po::value<std::string>(&depthMapFilterFolder)->required(),
@@ -132,22 +136,22 @@ int main(int argc, char* argv[])
 
     po::options_description advancedParams("Advanced parameters");
     advancedParams.add_options()
-            ("pixSizeMarginInitCoef", po::value<double>(&fuseParams.pixSizeMarginInitCoef)->default_value(fuseParams.pixSizeMarginInitCoef),
-                "pixSizeMarginInitCoef")
-            ("pixSizeMarginFinalCoef", po::value<double>(&fuseParams.pixSizeMarginFinalCoef)->default_value(fuseParams.pixSizeMarginFinalCoef),
-                "pixSizeMarginFinalCoef")
-            ("voteMarginFactor", po::value<float>(&fuseParams.voteMarginFactor)->default_value(fuseParams.voteMarginFactor),
-                "voteMarginFactor")
-            ("contributeMarginFactor", po::value<float>(&fuseParams.contributeMarginFactor)->default_value(fuseParams.contributeMarginFactor),
-                "contributeMarginFactor")
-            ("simGaussianSizeInit", po::value<float>(&fuseParams.simGaussianSizeInit)->default_value(fuseParams.simGaussianSizeInit),
-                "simGaussianSizeInit")
-            ("simGaussianSize", po::value<float>(&fuseParams.simGaussianSize)->default_value(fuseParams.simGaussianSize),
-                "simGaussianSize")
-            ("minAngleThreshold", po::value<double>(&fuseParams.minAngleThreshold)->default_value(fuseParams.minAngleThreshold),
-                "minAngleThreshold")
-            ("refineFuse", po::value<bool>(&fuseParams.refineFuse)->default_value(fuseParams.refineFuse),
-                "refineFuse");
+        ("pixSizeMarginInitCoef", po::value<double>(&fuseParams.pixSizeMarginInitCoef)->default_value(fuseParams.pixSizeMarginInitCoef),
+            "pixSizeMarginInitCoef")
+        ("pixSizeMarginFinalCoef", po::value<double>(&fuseParams.pixSizeMarginFinalCoef)->default_value(fuseParams.pixSizeMarginFinalCoef),
+            "pixSizeMarginFinalCoef")
+        ("voteMarginFactor", po::value<float>(&fuseParams.voteMarginFactor)->default_value(fuseParams.voteMarginFactor),
+            "voteMarginFactor")
+        ("contributeMarginFactor", po::value<float>(&fuseParams.contributeMarginFactor)->default_value(fuseParams.contributeMarginFactor),
+            "contributeMarginFactor")
+        ("simGaussianSizeInit", po::value<float>(&fuseParams.simGaussianSizeInit)->default_value(fuseParams.simGaussianSizeInit),
+            "simGaussianSizeInit")
+        ("simGaussianSize", po::value<float>(&fuseParams.simGaussianSize)->default_value(fuseParams.simGaussianSize),
+            "simGaussianSize")
+        ("minAngleThreshold", po::value<double>(&fuseParams.minAngleThreshold)->default_value(fuseParams.minAngleThreshold),
+            "minAngleThreshold")
+        ("refineFuse", po::value<bool>(&fuseParams.refineFuse)->default_value(fuseParams.refineFuse),
+            "refineFuse");
 
     po::options_description logParams("Log parameters");
     logParams.add_options()
@@ -189,18 +193,26 @@ int main(int argc, char* argv[])
     // set verbose level
     system::Logger::get()->setLogLevel(verboseLevel);
 
-    // .ini and files parsing
-    mvsUtils::MultiViewParams mp(iniFilepath, depthMapFolder, depthMapFilterFolder, true);
-    mvsUtils::PreMatchCams pc(&mp);
+    // read the input SfM scene
+    sfmData::SfMData sfmData;
+    if(!sfmDataIO::Load(sfmData, sfmDataFilename, sfmDataIO::ESfMData::ALL))
+    {
+      ALICEVISION_LOG_ERROR("The input SfMData file '" << sfmDataFilename << "' cannot be read.");
+      return EXIT_FAILURE;
+    }
 
-    int ocTreeDim = mp._ini.get<int>("LargeScale.gridLevel0", 1024);
-    const auto baseDir = mp._ini.get<std::string>("LargeScale.baseDirName", "root01024");
+    // initialization
+    mvsUtils::MultiViewParams mp(sfmData, "", depthMapFolder, depthMapFilterFolder, true);
+    mvsUtils::PreMatchCams pc(mp, cameraPairsMatrixFolder);
 
-    bfs::path outDirectory = bfs::path(outputMesh).parent_path();
-    if(!bfs::is_directory(outDirectory))
-        bfs::create_directory(outDirectory);
+    int ocTreeDim = mp.userParams.get<int>("LargeScale.gridLevel0", 1024);
+    const auto baseDir = mp.userParams.get<std::string>("LargeScale.baseDirName", "root01024");
 
-    bfs::path tmpDirectory = outDirectory / "tmp";
+    fs::path outDirectory = fs::path(outputMesh).parent_path();
+    if(!fs::is_directory(outDirectory))
+        fs::create_directory(outDirectory);
+
+    fs::path tmpDirectory = outDirectory / "tmp";
 
     ALICEVISION_LOG_WARNING("repartitionMode: " << repartitionMode);
     ALICEVISION_LOG_WARNING("partitioningMode: " << partitioningMode);
@@ -218,7 +230,7 @@ int main(int argc, char* argv[])
                     lsbase.generateSpace(maxPtsPerVoxel, ocTreeDim, true);
                     std::string voxelsArrayFileName = lsbase.spaceFolderName + "hexahsToReconstruct.bin";
                     StaticVector<Point3d>* voxelsArray = nullptr;
-                    if(bfs::exists(voxelsArrayFileName))
+                    if(fs::exists(voxelsArrayFileName))
                     {
                         // If already computed reload it.
                         ALICEVISION_LOG_INFO("Voxels array already computed, reload from file: " << voxelsArrayFileName);
@@ -240,7 +252,7 @@ int main(int argc, char* argv[])
 
                     ALICEVISION_LOG_INFO("Saving joined meshes...");
 
-                    bfs::path spaceBinFileName = outDirectory/"denseReconstruction.bin";
+                    fs::path spaceBinFileName = outDirectory/"denseReconstruction.bin";
                     mesh->saveToBin(spaceBinFileName.string());
 
                     // Export joined mesh to obj
@@ -262,7 +274,7 @@ int main(int argc, char* argv[])
                     unsigned long ntracks = std::numeric_limits<unsigned long>::max();
                     while(ntracks > fuseParams.maxPoints)
                     {
-                        bfs::path dirName = outDirectory/("LargeScaleMaxPts" + mvsUtils::num2strFourDecimal(ocTreeDim));
+                        fs::path dirName = outDirectory/("LargeScaleMaxPts" + mvsUtils::num2strFourDecimal(ocTreeDim));
                         fuseCut::LargeScale* ls = ls0.cloneSpaceIfDoesNotExists(ocTreeDim, dirName.string() + "/");
                         fuseCut::VoxelsGrid vg(ls->dimensions, &ls->space[0], ls->mp, ls->pc, ls->spaceVoxelsFolderName);
                         ntracks = vg.getNTracks();
@@ -278,7 +290,7 @@ int main(int argc, char* argv[])
                     }
                     ALICEVISION_LOG_INFO("Number of tracks: " << ntracks);
                     ALICEVISION_LOG_INFO("ocTreeDim: " << ocTreeDim);
-                    bfs::path dirName = outDirectory/("LargeScaleMaxPts" + mvsUtils::num2strFourDecimal(ocTreeDim));
+                    fs::path dirName = outDirectory/("LargeScaleMaxPts" + mvsUtils::num2strFourDecimal(ocTreeDim));
                     fuseCut::LargeScale lsbase(&mp, &pc, dirName.string()+"/");
                     lsbase.loadSpaceFromFile();
                     fuseCut::ReconstructionPlan rp(lsbase.dimensions, &lsbase.space[0], lsbase.mp, lsbase.pc, lsbase.spaceVoxelsFolderName);

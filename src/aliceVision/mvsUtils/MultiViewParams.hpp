@@ -20,6 +20,13 @@
 #include <string>
 
 namespace aliceVision {
+
+namespace bpt = boost::property_tree;
+
+namespace sfmData {
+class SfMData;
+} // namespace sfmData
+
 namespace mvsUtils {
 
 enum class EFileType {
@@ -71,9 +78,7 @@ class MultiViewParams
 {
 public:
     /// prepareDenseScene data
-    std::string mvDir;
-    /// global data prefix
-    std::string prefix;
+    std::string _imagesFolder;
     /// camera projection matrix P
     std::vector<Matrix3x4> camArr;
     /// camera intrinsics matrix K: [focalx skew u; 0 focaly v; 0 0 1]
@@ -99,9 +104,10 @@ public:
     int g_border = 2;
     bool verbose;
 
-    boost::property_tree::ptree _ini;
+    boost::property_tree::ptree userParams;
 
-    MultiViewParams(const std::string& iniFile,
+    MultiViewParams(const sfmData::SfMData& sfmData,
+                    const std::string& imagesFolder = "",
                     const std::string& depthMapFolder = "",
                     const std::string& depthMapFilterFolder = "",
                     bool readFromDepthMaps = false,
@@ -109,6 +115,12 @@ public:
                     StaticVector<CameraMatrices>* cameras = nullptr);
 
     ~MultiViewParams();
+
+    inline const std::string& getImagePath(int index) const
+    {
+        return _imagesParams.at(index).path;
+    }
+
 
     inline int getViewId(int index) const
     {
@@ -144,11 +156,11 @@ public:
     {
         return _imagesParams.at(index).size / getDownscaleFactor(index);
     }
-    inline const std::vector<imageParams>& getImagesParams() const
+    inline const std::vector<ImageParams>& getImagesParams() const
     {
         return _imagesParams;
     }
-    inline const imageParams& getImageParams(int i) const
+    inline const ImageParams& getImageParams(int i) const
     {
         return _imagesParams.at(i);
     }
@@ -192,11 +204,6 @@ public:
         return p44;
     }
 
-    inline const std::string& getImageExtension() const
-    {
-        return _imageExt;
-    }
-
     inline const std::string& getDepthMapFolder() const
     {
         return _depthMapFolder;
@@ -205,6 +212,11 @@ public:
     inline const std::string& getDepthMapFilterFolder() const
     {
         return _depthMapFilterFolder;
+    }
+
+    inline const sfmData::SfMData& getInputSfMData() const
+    {
+        return _sfmData;
     }
 
     bool is3DPointInFrontOfCam(const Point3d* X, int rc) const;
@@ -227,7 +239,7 @@ public:
 
 private:
     /// image params list (width, height, size)
-    std::vector<imageParams> _imagesParams;
+    std::vector<ImageParams> _imagesParams;
     /// image scale list
     std::vector<int> _imagesScale;
     /// downscale apply to input images during process
@@ -236,16 +248,15 @@ private:
     int _maxImageWidth = 0;
     /// maximum height
     int _maxImageHeight = 0;
-    /// images extension
-    std::string _imageExt = ".exr";
     /// depthMapEstimate data folder
     std::string _depthMapFolder;
     /// depthMapFilter data folder
     std::string _depthMapFilterFolder;
     /// use silhouettes
     bool _useSil = false;
+    /// input sfmData
+    const sfmData::SfMData& _sfmData;
 
-    void initFromConfigFile(const std::string& iniFile);
     void loadCameraFile(int i, const std::string& fileNameP, const std::string& fileNameD);
 
     inline void resizeCams(int _ncams)

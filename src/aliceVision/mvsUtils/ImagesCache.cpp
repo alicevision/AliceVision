@@ -22,9 +22,9 @@ ImagesCache::ImagesCache(const MultiViewParams* _mp, int _bandType, bool _transp
   : mp(_mp)
 {
     std::vector<std::string> _imagesNames;
-    for(int rc = 0; rc < _mp->ncams; rc++)
+    for(int rc = 0; rc < _mp->getNbCameras(); rc++)
     {
-        _imagesNames.push_back(mv_getFileNamePrefix(_mp->mvDir, _mp, rc) + "." + _mp->getImageExtension());
+        _imagesNames.push_back(_mp->getImagePath(rc));
     }
     initIC(_bandType, _imagesNames, _transposed);
 }
@@ -40,8 +40,8 @@ void ImagesCache::initIC(int _bandType, std::vector<std::string>& _imagesNames,
                              bool _transposed)
 {
     float oneimagemb = (sizeof(Color) * mp->getMaxImageWidth() * mp->getMaxImageHeight()) / 1024.f / 1024.f;
-    float maxmbCPU = (float)mp->_ini.get<int>("images_cache.maxmbCPU", 5000);
-    int _npreload = std::max((int)(maxmbCPU / oneimagemb), mp->_ini.get<int>("grow.minNumOfConsistentCams", 10));
+    float maxmbCPU = (float)mp->userParams.get<int>("images_cache.maxmbCPU", 5000);
+    int _npreload = std::max((int)(maxmbCPU / oneimagemb), mp->userParams.get<int>("grow.minNumOfConsistentCams", 10));
     N_PRELOADED_IMAGES = std::min(mp->ncams, _npreload);
 
     transposed = _transposed;

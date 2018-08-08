@@ -203,6 +203,8 @@ if(ALICEVISION_BUILD_MVS)
     FOLDER ${FOLDER_SOFTWARE_PIPELINE}
     LINKS aliceVision_system
           aliceVision_mvsUtils
+          aliceVision_sfmData
+          aliceVision_sfmDataIO
           ${Boost_LIBRARIES}
   )
 
@@ -215,6 +217,8 @@ if(ALICEVISION_BUILD_MVS)
             aliceVision_mvsData
             aliceVision_mvsUtils
             aliceVision_depthMap
+            aliceVision_sfmData
+            aliceVision_sfmDataIO
             ${Boost_LIBRARIES}
     )
   endif()
@@ -227,6 +231,8 @@ if(ALICEVISION_BUILD_MVS)
           aliceVision_mvsData
           aliceVision_mvsUtils
           aliceVision_fuseCut
+          aliceVision_sfmData
+          aliceVision_sfmDataIO
           ${Boost_LIBRARIES}
   )
 
@@ -239,6 +245,8 @@ if(ALICEVISION_BUILD_MVS)
           aliceVision_mvsUtils
           aliceVision_mesh
           aliceVision_fuseCut
+          aliceVision_sfmData
+          aliceVision_sfmDataIO
           ${Boost_LIBRARIES}
   )
 
@@ -294,6 +302,8 @@ if(ALICEVISION_BUILD_MVS)
           aliceVision_mvsData
           aliceVision_mvsUtils
           aliceVision_mesh
+          aliceVision_sfmData
+          aliceVision_sfmDataIO
           ${Boost_LIBRARIES}
   )
 endif() # if(ALICEVISION_BUILD_MVS)

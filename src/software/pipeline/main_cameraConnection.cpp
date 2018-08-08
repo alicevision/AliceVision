@@ -4,20 +4,22 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
-#include <aliceVision/system/cmdline.hpp>
-#include <aliceVision/system/Logger.hpp>
-#include <aliceVision/system/Timer.hpp>
+#include <aliceVision/sfmData/SfMData.hpp>
+#include <aliceVision/sfmDataIO/sfmDataIO.hpp>
 #include <aliceVision/mvsUtils/common.hpp>
 #include <aliceVision/mvsUtils/fileIO.hpp>
 #include <aliceVision/mvsUtils/MultiViewParams.hpp>
 #include <aliceVision/mvsUtils/PreMatchCams.hpp>
+#include <aliceVision/system/cmdline.hpp>
+#include <aliceVision/system/Logger.hpp>
+#include <aliceVision/system/Timer.hpp>
 
 #include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>
 
 // These constants define the current software version.
 // They must be updated when the command line is changed.
-#define ALICEVISION_SOFTWARE_VERSION_MAJOR 1
+#define ALICEVISION_SOFTWARE_VERSION_MAJOR 2
 #define ALICEVISION_SOFTWARE_VERSION_MINOR 0
 
 using namespace aliceVision;
@@ -30,22 +32,32 @@ int main(int argc, char* argv[])
     system::Timer timer;
 
     std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
-    std::string iniFilepath;
+    std::string sfmDataFilename;
+    std::string outputFolder;
+    std::string imagesFolder;
 
     po::options_description allParams("AliceVision cameraConnection\n"
                                       "Select best neighboring cameras of each camera");
 
     po::options_description requiredParams("Required parameters");
     requiredParams.add_options()
-        ("ini", po::value<std::string>(&iniFilepath)->required(),
-            "Configuration file (mvs.ini).");
+      ("input,i", po::value<std::string>(&sfmDataFilename)->required(),
+        "SfMData file.")
+      ("output,o", po::value<std::string>(&outputFolder)->required(),
+        "Output folder for the camera pairs matrix file.");
+
+    po::options_description optionalParams("Optional parameters");
+    optionalParams.add_options()
+      ("imagesFolder", po::value<std::string>(&imagesFolder),
+        "Use images from a specific folder instead of those specify in the SfMData file.\n"
+        "Filename should be the image uid.");
 
     po::options_description logParams("Log parameters");
     logParams.add_options()
       ("verboseLevel,v", po::value<std::string>(&verboseLevel)->default_value(verboseLevel),
         "verbosity level (fatal, error, warning, info, debug, trace).");
 
-    allParams.add(requiredParams).add(logParams);
+    allParams.add(requiredParams).add(optionalParams).add(logParams);
 
     po::variables_map vm;
 
@@ -80,9 +92,17 @@ int main(int argc, char* argv[])
     // set verbose level
     system::Logger::get()->setLogLevel(verboseLevel);
 
-    // .ini and files parsing
-    mvsUtils::MultiViewParams mp(iniFilepath);
-    mvsUtils::PreMatchCams pc(&mp);
+    // read the input SfM scene
+    sfmData::SfMData sfmData;
+    if(!sfmDataIO::Load(sfmData, sfmDataFilename, sfmDataIO::ESfMData::ALL))
+    {
+      ALICEVISION_LOG_ERROR("The input SfMData file '" << sfmDataFilename << "' cannot be read.");
+      return EXIT_FAILURE;
+    }
+
+    // initialization
+    mvsUtils::MultiViewParams mp(sfmData, imagesFolder);
+    mvsUtils::PreMatchCams pc(mp, outputFolder);
 
     ALICEVISION_LOG_INFO("Compute camera pairs.");
     pc.precomputeIncidentMatrixCamsFromSeeds();

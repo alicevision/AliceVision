@@ -25,7 +25,7 @@ void filterLargeEdgeTriangles(Mesh* me, float avelthr);
 
 void meshPostProcessing(Mesh*& inout_mesh, StaticVector<StaticVector<int>*>*& inout_ptsCams, StaticVector<int>& usedCams,
                       mvsUtils::MultiViewParams& mp, mvsUtils::PreMatchCams& pc,
-                      const std::string& resultFolderName,
+                      const std::string& debugFolderName,
                       StaticVector<Point3d>* hexahsToExcludeFromResultingMesh, Point3d* hexah);
 
 } // namespace mesh

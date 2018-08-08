@@ -487,11 +487,11 @@ OctreeTracks::OctreeTracks(const Point3d* _voxel, mvsUtils::MultiViewParams* _mp
     sy = svy / (float)numSubVoxsY;
     sz = svz / (float)numSubVoxsZ;
 
-    doFilterOctreeTracks = mp->_ini.get<bool>("LargeScale.doFilterOctreeTracks", true);
-    doUseWeaklySupportedPoints = mp->_ini.get<bool>("LargeScale.doUseWeaklySupportedPoints", false);
-    doUseWeaklySupportedPointCam = mp->_ini.get<bool>("LargeScale.doUseWeaklySupportedPointCam", false);
-    minNumOfConsistentCams = mp->_ini.get<int>("filter.minNumOfConsistentCams", 2);
-    simWspThr = (float)mp->_ini.get<double>("LargeScale.simWspThr", -0.0f);
+    doFilterOctreeTracks = mp->userParams.get<bool>("LargeScale.doFilterOctreeTracks", true);
+    doUseWeaklySupportedPoints = mp->userParams.get<bool>("LargeScale.doUseWeaklySupportedPoints", false);
+    doUseWeaklySupportedPointCam = mp->userParams.get<bool>("LargeScale.doUseWeaklySupportedPointCam", false);
+    minNumOfConsistentCams = mp->userParams.get<int>("filter.minNumOfConsistentCams", 2);
+    simWspThr = (float)mp->userParams.get<double>("LargeScale.simWspThr", -0.0f);
 
     int maxNumSubVoxs = std::max(std::max(numSubVoxsX, numSubVoxsY), numSubVoxsZ);
     size_ = 2;
@@ -623,7 +623,7 @@ void OctreeTracks::filterOctreeTracks2(StaticVector<trackStruct*>* tracks)
     StaticVector<trackStruct*> tracksOut;
     tracksOut.reserve(tracks->size());
 
-    float clusterSizeThr = mp->_ini.get<double>("OctreeTracks.clusterSizeThr", 2.0f);
+    float clusterSizeThr = mp->userParams.get<double>("OctreeTracks.clusterSizeThr", 2.0f);
 
     // long t1 = initEstimate();
     for(int i = 0; i < tracks->size(); i++)
