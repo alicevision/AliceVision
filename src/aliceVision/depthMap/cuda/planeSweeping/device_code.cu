@@ -25,33 +25,20 @@ texture<unsigned char, 2, cudaReadModeNormalizedFloat> ttex;
 
 #define MAX_CUDA_DEVICES 10
 
-texture<int4, 2, cudaReadModeElementType> volPixsTex;
-
-texture<int2, 2, cudaReadModeElementType> pixsTex;
-
-texture<float2, 2, cudaReadModeElementType> gradTex;
-
-texture<float, 2, cudaReadModeElementType> depthsTex;
-
-texture<float, 2, cudaReadModeElementType> depthsTex1;
-
-texture<float4, 2, cudaReadModeElementType> normalsTex;
-
-texture<float, 2, cudaReadModeElementType> sliceTex;
-
-texture<float2, 2, cudaReadModeElementType> sliceTexFloat2;
-
-texture<unsigned char, 2, cudaReadModeElementType> sliceTexUChar;
-
-texture<uint2, 2, cudaReadModeElementType> sliceTexUInt2;
-
-texture<unsigned int, 2, cudaReadModeElementType> sliceTexUInt;
-
-texture<uchar4, 2, cudaReadModeElementType> rTexU4;
-
-texture<uchar4, 2, cudaReadModeElementType> tTexU4;
-
-texture<float4, 2, cudaReadModeElementType> f4Tex;
+texture<int4,          cudaTextureType2D, cudaReadModeElementType> volPixsTex;
+texture<int2,          cudaTextureType2D, cudaReadModeElementType> pixsTex;
+texture<float2,        cudaTextureType2D, cudaReadModeElementType> gradTex;
+texture<float,         cudaTextureType2D, cudaReadModeElementType> depthsTex;
+texture<float,         cudaTextureType2D, cudaReadModeElementType> depthsTex1;
+texture<float4,        cudaTextureType2D, cudaReadModeElementType> normalsTex;
+texture<float,         cudaTextureType2D, cudaReadModeElementType> sliceTex;
+texture<float2,        cudaTextureType2D, cudaReadModeElementType> sliceTexFloat2;
+texture<unsigned char, cudaTextureType2D, cudaReadModeElementType> sliceTexUChar;
+texture<uint2,         cudaTextureType2D, cudaReadModeElementType> sliceTexUInt2;
+texture<unsigned int,  cudaTextureType2D, cudaReadModeElementType> sliceTexUInt;
+texture<uchar4,        cudaTextureType2D, cudaReadModeElementType> rTexU4;
+texture<uchar4,        cudaTextureType2D, cudaReadModeElementType> tTexU4;
+texture<float4,        cudaTextureType2D, cudaReadModeElementType> f4Tex;
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////
 

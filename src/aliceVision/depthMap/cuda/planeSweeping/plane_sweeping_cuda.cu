@@ -12,6 +12,7 @@
 #include <aliceVision/depthMap/cuda/planeSweeping/device_code_refine.cu>
 #include <aliceVision/depthMap/cuda/planeSweeping/device_code_volume.cu>
 #include <aliceVision/depthMap/cuda/planeSweeping/device_code_fuse.cu>
+#include <aliceVision/depthMap/cuda/planeSweeping/plane_sweeping_cuda.hpp>
 
 #include <math_constants.h>
 
@@ -945,65 +946,78 @@ void ps_SGMAggregateVolumeDir(
 };
 */
 
-void ps_computeSimilarityVolume(CudaArray<uchar4, 2>** ps_texs_arr,
-                                CudaDeviceMemoryPitched<unsigned char, 3>& vol_dmp, cameraStruct** cams, int ncams,
+static void ps_computeSimilarityVolume(CudaArray<uchar4, 2>** ps_texs_arr,
+                                CudaDeviceMemoryPitched<int, 3>& vol_dmp, cameraStruct** cams, int ncams,
                                 int width, int height, int volStepXY, int volDimX, int volDimY, int volDimZ, int volLUX,
                                 int volLUY, int volLUZ, CudaHostMemoryHeap<int4, 2>& volPixs_hmh,
-                                CudaHostMemoryHeap<float, 2>& depths_hmh, int nDepthsToSearch, int slicesAtTime,
-                                int ntimes, int npixs, int wsh, int kernelSizeHalf, int nDepths, int scale,
+                                CudaDeviceMemory<float>& depths_dev,
+                                int nDepthsToSearch, int slicesAtTime,
+                                int ntimes, int npixs, int wsh, int kernelSizeHalf,
+                                int scale,
                                 int CUDAdeviceNo, int ncamsAllocated, int scales, bool verbose, bool doUsePixelsDepths,
                                 int nbest, bool useTcOrRcPixSize, float gammaC, float gammaP, bool subPixel,
                                 float epipShift)
 {
     clock_t tall = tic();
     testCUDAdeviceNo(CUDAdeviceNo);
+    cudaError_t err;
+    CHECK_CUDA_ERROR();
 
     if(verbose)
-        printf("nDepths %i, nDepthsToSearch %i \n", nDepths, nDepthsToSearch);
-    CudaArray<int4, 2> volPixs_arr(volPixs_hmh);
-    CudaArray<float, 2> depths_arr(depths_hmh);
+        printf("nDepths %i, nDepthsToSearch %i \n", (int)depths_dev.getSize(), (int)nDepthsToSearch);
 
-    cudaBindTextureToArray(volPixsTex, volPixs_arr.getArray(), cudaCreateChannelDesc<int4>());
-    cudaBindTextureToArray(depthsTex, depths_arr.getArray(), cudaCreateChannelDesc<float>());
+    CudaArray<int4, 2> volPixs_arr(volPixs_hmh);
+    CHECK_CUDA_ERROR();
+    err = cudaBindTextureToArray(volPixsTex, volPixs_arr.getArray(), cudaCreateChannelDesc<int4>());
+    if( err != cudaSuccess )
+    {
+        ALICEVISION_LOG_ERROR( "Failed to bind texture, " << cudaGetErrorString(err) );
+    }
 
     int block_size = 8;
-    dim3 block(block_size, block_size, 1);
-    dim3 grid(divUp(nDepthsToSearch, block_size), divUp(slicesAtTime, block_size), 1);
     dim3 blockvol(block_size, block_size, 1);
     dim3 gridvol(divUp(volDimX, block_size), divUp(volDimY, block_size), 1);
 
     // setup cameras matrices to the constant memory
     ps_init_reference_camera_matrices(cams[0]->P, cams[0]->iP, cams[0]->R, cams[0]->iR, cams[0]->K, cams[0]->iK,
                                       cams[0]->C);
-    cudaBindTextureToArray(r4tex, ps_texs_arr[cams[0]->camId * scales + scale]->getArray(),
+    CHECK_CUDA_ERROR();
+    err = cudaBindTextureToArray(r4tex, ps_texs_arr[cams[0]->camId * scales + scale]->getArray(),
                            cudaCreateChannelDesc<uchar4>());
+    if( err != cudaSuccess )
+    {
+        ALICEVISION_LOG_ERROR( "Failed to bind texture, " << cudaGetErrorString(err) );
+    }
 
     int c = 1;
     ps_init_target_camera_matrices(cams[c]->P, cams[c]->iP, cams[c]->R, cams[c]->iR, cams[c]->K, cams[c]->iK,
                                    cams[c]->C);
-    cudaBindTextureToArray(t4tex, ps_texs_arr[cams[c]->camId * scales + scale]->getArray(),
+    CHECK_CUDA_ERROR();
+    err = cudaBindTextureToArray(t4tex, ps_texs_arr[cams[c]->camId * scales + scale]->getArray(),
                            cudaCreateChannelDesc<uchar4>());
+    if( err != cudaSuccess )
+    {
+        ALICEVISION_LOG_ERROR( "Failed to bind texture, " << cudaGetErrorString(err) );
+    }
 
     //--------------------------------------------------------------------------------------------------
     // init similarity volume
-#if 1
     for(int z = 0; z < volDimZ; z++)
     {
-        volume_initVolume_kernel<unsigned char><<<gridvol, blockvol>>>(
+        volume_initVolume_kernel<int><<<gridvol, blockvol>>>(
             vol_dmp.getBuffer(), vol_dmp.stride()[1], vol_dmp.stride()[0], volDimX, volDimY, volDimZ, z, 255);
+        CHECK_CUDA_ERROR();
         cudaThreadSynchronize();
     };
-#else
-    cudaMemset( vol_dmp.getBuffer(), 255, vol_dmp.stride()[2] );
-#endif
 
     //--------------------------------------------------------------------------------------------------
     // compute similarity volume
-    // CudaDeviceMemoryPitched<unsigned char, 2> slice_dmp(CudaSize<2>(nDepthsToSearch, slicesAtTime));
-    CudaDeviceMemoryPitched<unsigned char, 2> slice_dmp(CudaSize<2>(nDepthsToSearch, slicesAtTime));
     for(int t = 0; t < ntimes; t++)
     {
-        volume_slice_kernel<<<grid, block>>>( nDepthsToSearch, nDepths,
+        dim3 block(8, 8, 1);
+        dim3 grid(divUp(nDepthsToSearch, block.x), divUp(slicesAtTime, block.y), 1);
+        volume_slice_kernel<<<grid, block>>>( nDepthsToSearch,
+                                              depths_dev.getBuffer(), depths_dev.getSize(),
                                               slicesAtTime, width, height, wsh, t, npixs, gammaC, gammaP, epipShift,
                                               vol_dmp.getBuffer(), vol_dmp.stride()[1], vol_dmp.stride()[0],
                                               volStepXY,
@@ -1014,25 +1028,26 @@ void ps_computeSimilarityVolume(CudaArray<uchar4, 2>** ps_texs_arr,
     cudaUnbindTexture(r4tex);
     cudaUnbindTexture(t4tex);
     cudaUnbindTexture(volPixsTex);
-    cudaUnbindTexture(depthsTex);
 
     if(verbose)
         printf("ps_computeSimilarityVolume elapsed time: %f ms \n", toc(tall));
 };
 
 float ps_planeSweepingGPUPixelsVolume(CudaArray<uchar4, 2>** ps_texs_arr,
-                                      unsigned char* ovol_hmh, cameraStruct** cams, int ncams,
+                                      int* ovol_hmh, cameraStruct** cams, int ncams,
                                       int width, int height, int volStepXY, int volDimX, int volDimY, int volDimZ,
                                       int volLUX, int volLUY, int volLUZ, CudaHostMemoryHeap<int4, 2>& volPixs_hmh,
-                                      CudaHostMemoryHeap<float, 2>& depths_hmh, int nDepthsToSearch, int slicesAtTime,
-                                      int ntimes, int npixs, int wsh, int kernelSizeHalf, int nDepths, int scale,
+                                      CudaDeviceMemory<float>& depths_dev,
+                                      int nDepthsToSearch, int slicesAtTime,
+                                      int ntimes, int npixs, int wsh, int kernelSizeHalf,
+                                      int scale,
                                       int CUDAdeviceNo, int ncamsAllocated, int scales, bool verbose,
                                       bool doUsePixelsDepths, int nbest, bool useTcOrRcPixSize, float gammaC,
                                       float gammaP, bool subPixel, float epipShift)
 {
     testCUDAdeviceNo(CUDAdeviceNo);
 
-    CudaDeviceMemoryPitched<unsigned char, 3> volSim_dmp(CudaSize<3>(volDimX, volDimY, volDimZ));
+    CudaDeviceMemoryPitched<int, 3> volSim_dmp(CudaSize<3>(volDimX, volDimY, volDimZ));
 
     if(verbose)
         pr_printfDeviceMemoryInfo();
@@ -1042,8 +1057,11 @@ float ps_planeSweepingGPUPixelsVolume(CudaArray<uchar4, 2>** ps_texs_arr,
     //--------------------------------------------------------------------------------------------------
     // compute similarity volume
     ps_computeSimilarityVolume(ps_texs_arr, volSim_dmp, cams, ncams, width, height, volStepXY, volDimX, volDimY,
-                               volDimZ, volLUX, volLUY, volLUZ, volPixs_hmh, depths_hmh, nDepthsToSearch, slicesAtTime,
-                               ntimes, npixs, wsh, kernelSizeHalf, nDepths, scale, CUDAdeviceNo, ncamsAllocated, scales,
+                               volDimZ, volLUX, volLUY, volLUZ, volPixs_hmh,
+                               depths_dev,
+                               nDepthsToSearch, slicesAtTime,
+                               ntimes, npixs, wsh, kernelSizeHalf,
+                               scale, CUDAdeviceNo, ncamsAllocated, scales,
                                verbose, doUsePixelsDepths, nbest, useTcOrRcPixSize, gammaC, gammaP, subPixel, epipShift);
 
     //--------------------------------------------------------------------------------------------------

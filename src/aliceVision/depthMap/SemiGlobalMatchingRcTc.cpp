@@ -75,6 +75,10 @@ StaticVector<unsigned char>* SemiGlobalMatchingRcTc::computeDepthSimMapVolume(fl
     volume->reserve(volDimX * volDimY * volDimZ);
     volume->resize_with(volDimX * volDimY * volDimZ, 255);
 
+    StaticVector<int>* volume_tmp = new StaticVector<int>();
+    volume_tmp->reserve(volDimX * volDimY * volDimZ);
+    volume_tmp->resize_with(volDimX * volDimY * volDimZ, 255.0f);
+
     StaticVector<int>* tcams = new StaticVector<int>();
     tcams->reserve(1);
     tcams->push_back(tc);
@@ -82,10 +86,17 @@ StaticVector<unsigned char>* SemiGlobalMatchingRcTc::computeDepthSimMapVolume(fl
     StaticVector<Voxel>* pixels = getPixels();
 
     volumeMBinGPUMem =
-        sp->cps->sweepPixelsToVolume(rcTcDepths->size(), volume, volDimX, volDimY, volDimZ, volStepXY, 0, 0, 0,
+        sp->cps->sweepPixelsToVolume(rcTcDepths->size(), volume_tmp, volDimX, volDimY, volDimZ, volStepXY, 0, 0, 0,
                                      rcTcDepths, rc, wsh, gammaC, gammaP, pixels, scale, 1, tcams, 0.0f);
     delete pixels;
     delete tcams;
+
+    for( int i=0; i<volDimX * volDimY * volDimZ; i++ )
+    {
+        (*volume)[i] = (unsigned char)((*volume_tmp)[i]);
+    }
+
+    delete volume_tmp;
 
     if(sp->mp->verbose)
         mvsUtils::printfElapsedTime(tall, "SemiGlobalMatchingRcTc::computeDepthSimMapVolume ");

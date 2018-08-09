@@ -21,10 +21,26 @@ __device__ void volume_computePatch(patch& ptch, int depthid, const int2& pix)
     computeRotCSEpip(ptch, p);
 }
 
+__device__ void volume_computePatch( float* depths_dev, patch& ptch, int depthid, const int2& pix)
+{
+    float3 p;
+    float pixSize;
+
+    float fpPlaneDepth = depths_dev[depthid];
+    p = get3DPointForPixelAndFrontoParellePlaneRC(pix, fpPlaneDepth);
+    pixSize = computePixSize(p);
+
+    ptch.p = p;
+    ptch.d = pixSize;
+    computeRotCSEpip(ptch, p);
+}
+
 __global__ void volume_slice_kernel(
-                                    int nsearchdepths, int ndepths, int slicesAtTime, int width, int height, int wsh,
+                                    int nsearchdepths,
+                                    float* depths_dev, int ndepths,
+                                    int slicesAtTime, int width, int height, int wsh,
                                     int t, int npixs, const float gammaC, const float gammaP, const float epipShift,
-                                    unsigned char* volume, int volume_s, int volume_p,
+                                    int* volume, int volume_s, int volume_p,
                                     int volStepXY, int volDimX, int volDimY, int volDimZ, int volLUX, int volLUY, int volLUZ)
 {
     int sdptid = blockIdx.x * blockDim.x + threadIdx.x;
@@ -39,7 +55,7 @@ __global__ void volume_slice_kernel(
         if(depthid < ndepths)
         {
             patch ptcho;
-            volume_computePatch(ptcho, depthid, pix);
+            volume_computePatch(depths_dev, ptcho, depthid, pix);
 
             float fsim = compNCCby3DptsYK(ptcho, wsh, width, height, gammaC, gammaP, epipShift);
             // unsigned char sim = (unsigned char)(((fsim+1.0f)/2.0f)*255.0f);
@@ -48,11 +64,9 @@ __global__ void volume_slice_kernel(
             float fmaxVal = 1.0f;
             fsim = (fsim - fminVal) / (fmaxVal - fminVal);
             fsim = fminf(1.0f, fmaxf(0.0f, fsim));
-            unsigned char sim = (unsigned char)(fsim * 255.0f);
+            int sim = (unsigned char)(fsim * 255.0f); // upcast to int due to atomicMin
 
             // coalescent
-            /*int sliceid = pixid * slice_p + sdptid;
-            slice[sliceid] = sim;*/
 
             int vx = (pix.x - volLUX) / volStepXY;
             int vy = (pix.y - volLUY) / volStepXY;
@@ -60,8 +74,8 @@ __global__ void volume_slice_kernel(
             int vz = depthid - volLUZ;
             if((vx >= 0) && (vx < volDimX) && (vy >= 0) && (vy < volDimY) && (vz >= 0) && (vz < volDimZ))
             {
-                unsigned char* volsim = get3DBufferAt(volume, volume_s, volume_p, vx, vy, vz);
-                *volsim = min(sim, *volsim);
+                int* volsim = get3DBufferAt(volume, volume_s, volume_p, vx, vy, vz);
+                atomicMin( volsim, sim );
             }
         }
     }
@@ -342,6 +356,8 @@ __global__ void volume_updateRcVolumeForTcDepthMap_kernel(unsigned int* volume, 
     {
         int2 pixi = make_int2(vx * volStepXY, vy * volStepXY);
         // float2 pixf = make_float2(vx*volStepXY+0.5f,vy*volStepXY+0.5f);
+
+        // get3DPointForPixelAndFrontoParellePlaneRC uses __constant__ sg_s_r*
         float3 p = get3DPointForPixelAndFrontoParellePlaneRC(pixi, fpPlaneDepth);
 
         float depthTcP = size(sg_s_tC - p);
@@ -433,6 +449,8 @@ __global__ void volume_updateRcVolumeForTcDepthMap2_kernel(unsigned int* volume,
         float depthTcP = size(sg_s_tC - p);
         float fpDepthTcP = frontoParellePlaneTCDepthFor3DPoint(p);
         float2 tpixf;
+
+        // getPixelFor3DPointTC uses __constant__ sg_s_t*
         getPixelFor3DPointTC(tpixf, p);
         int2 tpix = make_int2((int)(tpixf.x + 0.5f), (int)(tpixf.y + 0.5f));
         int2 tpixMap =
@@ -542,6 +560,7 @@ __global__ void volume_update_nModalsMap_kernel(unsigned short* nModalsMap, int 
 
                 float3 p = get3DPointForPixelAndFrontoParellePlaneRC(pix, fpPlaneDepth);
                 float2 tpixf;
+                // getPixelFor3DPointTC uses __constant__ sg_s_t*
                 getPixelFor3DPointTC(tpixf, p);
                 int2 tpix = make_int2((int)(tpixf.x + 0.5f), (int)(tpixf.y + 0.5f));
 

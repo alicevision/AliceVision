@@ -13,8 +13,10 @@
 #include <aliceVision/mvsUtils/common.hpp>
 #include <aliceVision/mvsUtils/fileIO.hpp>
 #include <aliceVision/depthMap/cuda/commonStructures.hpp>
+#include <aliceVision/depthMap/cuda/planeSweeping/plane_sweeping_cuda.hpp>
 
 #include <iostream>
+#include <stdexcept>
 
 namespace aliceVision {
 namespace depthMap {
@@ -37,13 +39,6 @@ extern void ps_SGMoptimizeSimVolume(CudaArray<uchar4, 2>** ps_texs_arr, cameraSt
                                     int volDimZ, int volStepXY, int volLUX, int volLUY, bool verbose, unsigned char P1,
                                     unsigned char P2, int scale, int CUDAdeviceNo, int ncamsAllocated, int scales);
 
-extern float ps_planeSweepingGPUPixelsVolume(
-    CudaArray<uchar4, 2>** ps_texs_arr, unsigned char* ovol_hmh, cameraStruct** cams,
-    int ncams, int width, int height, int volStepXY, int volDimX, int volDimY, int volDimZ, int volLUX, int volLUY,
-    int volLUZ, CudaHostMemoryHeap<int4, 2>& volPixs_hmh, CudaHostMemoryHeap<float, 2>& depths_hmh,
-    int nDepthsToSearch, int slicesAtTime, int ntimes, int npixs, int wsh, int kernelSizeHalf, int nPlanes, int scale,
-    int CUDAdeviceNo, int ncamsAllocated, int scales, bool verbose, bool doUsePixelsDepths, int nbest,
-    bool useTcOrRcPixSize, float gammaC, float gammaP, bool subPixel, float epipShift);
 /*
 
 extern void ps_computeRcVolumeForTcDepthSimMaps(
@@ -1573,7 +1568,7 @@ bool PlaneSweepingCuda::refineRcTcDepthMap(bool useTcOrRcPixSize, int nStepsToRe
     return true;
 }
 
-float PlaneSweepingCuda::sweepPixelsToVolume(int nDepthsToSearch, StaticVector<unsigned char>* volume, int volDimX,
+float PlaneSweepingCuda::sweepPixelsToVolume(int nDepthsToSearch, StaticVector<int>* volume, int volDimX,
                                                int volDimY, int volDimZ, int volStepXY, int volLUX, int volLUY,
                                                int volLUZ, StaticVector<float>* depths, int rc, int wsh, float gammaC,
                                                float gammaP,
@@ -1668,21 +1663,26 @@ float PlaneSweepingCuda::sweepPixelsToVolume(int nDepthsToSearch, StaticVector<u
             }
     }
 
-    CudaHostMemoryHeap<float, 2> depths_hmh(CudaSize<2>(depths->size(), 1));
+    CudaHostMemoryHeap<float, 1> depths_hmh(CudaSize<1>(depths->size()));
 
     for(int x = 0; x < depths->size(); x++)
     {
-        depths_hmh(x, 0) = (*depths)[x];
+        depths_hmh(x) = (*depths)[x];
     }
+
+    CudaDeviceMemory<float> depths_dev( depths_hmh );
 
     // sweep
     float volumeMBinGPUMem = ps_planeSweepingGPUPixelsVolume(
         (CudaArray<uchar4, 2>**)ps_texs_arr,
-        volume->getDataWritable().data(), // rcam image's width, height, depth
+        volume->getDataWritable().data(),
         ttcams, camsids->size(), w, h, volStepXY,
         volDimX, volDimY, volDimZ,
-        volLUX, volLUY, volLUZ, volPixs_hmh, depths_hmh, nDepthsToSearch, slicesAtTime, ntimes, npixs, wsh,
-        nbestkernelSizeHalf, depths->size(), scale - 1, CUDADeviceNo, nImgsInGPUAtTime, scales, verbose, false, nbest,
+        volLUX, volLUY, volLUZ, volPixs_hmh,
+        depths_dev,
+        nDepthsToSearch, slicesAtTime, ntimes, npixs, wsh,
+        nbestkernelSizeHalf,
+        scale - 1, CUDADeviceNo, nImgsInGPUAtTime, scales, verbose, false, nbest,
         true, gammaC, gammaP, subPixel, epipShift);
 
     for(int i = 0; i < camsids->size(); i++)
