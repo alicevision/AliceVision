@@ -948,11 +948,13 @@ void ps_SGMAggregateVolumeDir(
 
 static void ps_computeSimilarityVolume(CudaArray<uchar4, 2>** ps_texs_arr,
                                 CudaDeviceMemoryPitched<int, 3>& vol_dmp, cameraStruct** cams, int ncams,
-                                int width, int height, int volStepXY, int volDimX, int volDimY, int volDimZ, int volLUX,
-                                int volLUY, int volLUZ, CudaHostMemoryHeap<int4, 2>& volPixs_hmh,
+                                int width, int height,
+                                int volStepXY,
+                                int volDimX, int volDimY, int volDimZ,
+                                int volLUX, int volLUY, int volLUZ,
                                 CudaDeviceMemory<float>& depths_dev,
-                                int nDepthsToSearch, int slicesAtTime,
-                                int ntimes, int npixs, int wsh, int kernelSizeHalf,
+                                int nDepthsToSearch,
+                                int wsh, int kernelSizeHalf,
                                 int scale,
                                 int CUDAdeviceNo, int ncamsAllocated, int scales, bool verbose, bool doUsePixelsDepths,
                                 int nbest, bool useTcOrRcPixSize, float gammaC, float gammaP, bool subPixel,
@@ -965,18 +967,6 @@ static void ps_computeSimilarityVolume(CudaArray<uchar4, 2>** ps_texs_arr,
 
     if(verbose)
         printf("nDepths %i, nDepthsToSearch %i \n", (int)depths_dev.getSize(), (int)nDepthsToSearch);
-
-    CudaArray<int4, 2> volPixs_arr(volPixs_hmh);
-    CHECK_CUDA_ERROR();
-    err = cudaBindTextureToArray(volPixsTex, volPixs_arr.getArray(), cudaCreateChannelDesc<int4>());
-    if( err != cudaSuccess )
-    {
-        ALICEVISION_LOG_ERROR( "Failed to bind texture, " << cudaGetErrorString(err) );
-    }
-
-    int block_size = 8;
-    dim3 blockvol(block_size, block_size, 1);
-    dim3 gridvol(divUp(volDimX, block_size), divUp(volDimY, block_size), 1);
 
     // setup cameras matrices to the constant memory
     ps_init_reference_camera_matrices(cams[0]->P, cams[0]->iP, cams[0]->R, cams[0]->iR, cams[0]->K, cams[0]->iK,
@@ -1004,6 +994,9 @@ static void ps_computeSimilarityVolume(CudaArray<uchar4, 2>** ps_texs_arr,
     // init similarity volume
     for(int z = 0; z < volDimZ; z++)
     {
+        dim3 blockvol(8, 8, 1);
+        dim3 gridvol(divUp(volDimX, blockvol.x), divUp(volDimY, blockvol.y), 1);
+
         volume_initVolume_kernel<int><<<gridvol, blockvol>>>(
             vol_dmp.getBuffer(), vol_dmp.stride()[1], vol_dmp.stride()[0], volDimX, volDimY, volDimZ, z, 255);
         CHECK_CUDA_ERROR();
@@ -1012,22 +1005,23 @@ static void ps_computeSimilarityVolume(CudaArray<uchar4, 2>** ps_texs_arr,
 
     //--------------------------------------------------------------------------------------------------
     // compute similarity volume
-    for(int t = 0; t < ntimes; t++)
-    {
-        dim3 block(8, 8, 1);
-        dim3 grid(divUp(nDepthsToSearch, block.x), divUp(slicesAtTime, block.y), 1);
-        volume_slice_kernel<<<grid, block>>>( nDepthsToSearch,
-                                              depths_dev.getBuffer(), depths_dev.getSize(),
-                                              slicesAtTime, width, height, wsh, t, npixs, gammaC, gammaP, epipShift,
-                                              vol_dmp.getBuffer(), vol_dmp.stride()[1], vol_dmp.stride()[0],
-                                              volStepXY,
-                                              volDimX, volDimY, volDimZ, volLUX, volLUY, volLUZ);
-        CHECK_CUDA_ERROR();
-    };
+    int xsteps = width / volStepXY;
+    int ysteps = height / volStepXY;
+    dim3 block(8, 8, 1);
+    dim3 grid(divUp(xsteps, block.x), divUp(ysteps, block.y), 1);
+    volume_slice_kernel<<<grid, block>>>( nDepthsToSearch,
+                                          depths_dev.getBuffer(), depths_dev.getSize(),
+                                          width, height,
+                                          wsh,
+                                          gammaC, gammaP, epipShift,
+                                          vol_dmp.getBuffer(), vol_dmp.stride()[1], vol_dmp.stride()[0],
+                                          volStepXY,
+                                          volDimX, volDimY, volDimZ );
+                                          // volLUX, volLUY, volLUZ); - no idea what these do
+    CHECK_CUDA_ERROR();
 
     cudaUnbindTexture(r4tex);
     cudaUnbindTexture(t4tex);
-    cudaUnbindTexture(volPixsTex);
 
     if(verbose)
         printf("ps_computeSimilarityVolume elapsed time: %f ms \n", toc(tall));
@@ -1036,10 +1030,10 @@ static void ps_computeSimilarityVolume(CudaArray<uchar4, 2>** ps_texs_arr,
 float ps_planeSweepingGPUPixelsVolume(CudaArray<uchar4, 2>** ps_texs_arr,
                                       int* ovol_hmh, cameraStruct** cams, int ncams,
                                       int width, int height, int volStepXY, int volDimX, int volDimY, int volDimZ,
-                                      int volLUX, int volLUY, int volLUZ, CudaHostMemoryHeap<int4, 2>& volPixs_hmh,
+                                      int volLUX, int volLUY, int volLUZ,
                                       CudaDeviceMemory<float>& depths_dev,
-                                      int nDepthsToSearch, int slicesAtTime,
-                                      int ntimes, int npixs, int wsh, int kernelSizeHalf,
+                                      int nDepthsToSearch,
+                                      int wsh, int kernelSizeHalf,
                                       int scale,
                                       int CUDAdeviceNo, int ncamsAllocated, int scales, bool verbose,
                                       bool doUsePixelsDepths, int nbest, bool useTcOrRcPixSize, float gammaC,
@@ -1057,16 +1051,15 @@ float ps_planeSweepingGPUPixelsVolume(CudaArray<uchar4, 2>** ps_texs_arr,
     //--------------------------------------------------------------------------------------------------
     // compute similarity volume
     ps_computeSimilarityVolume(ps_texs_arr, volSim_dmp, cams, ncams, width, height, volStepXY, volDimX, volDimY,
-                               volDimZ, volLUX, volLUY, volLUZ, volPixs_hmh,
+                               volDimZ, volLUX, volLUY, volLUZ,
                                depths_dev,
-                               nDepthsToSearch, slicesAtTime,
-                               ntimes, npixs, wsh, kernelSizeHalf,
+                               nDepthsToSearch,
+                               wsh, kernelSizeHalf,
                                scale, CUDAdeviceNo, ncamsAllocated, scales,
                                verbose, doUsePixelsDepths, nbest, useTcOrRcPixSize, gammaC, gammaP, subPixel, epipShift);
 
     //--------------------------------------------------------------------------------------------------
     // copy to host
-    //copy((*ovol_hmh), volSim_dmp);
     copy(ovol_hmh, volDimX, volDimY, volDimZ, volSim_dmp);
 
     // pr_printfDeviceMemoryInfo();

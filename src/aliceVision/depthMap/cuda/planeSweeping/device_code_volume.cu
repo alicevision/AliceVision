@@ -38,46 +38,48 @@ __device__ void volume_computePatch( float* depths_dev, patch& ptch, int depthid
 __global__ void volume_slice_kernel(
                                     int nsearchdepths,
                                     float* depths_dev, int ndepths,
-                                    int slicesAtTime, int width, int height, int wsh,
-                                    int t, int npixs, const float gammaC, const float gammaP, const float epipShift,
+                                    int width, int height, int wsh,
+                                    const float gammaC, const float gammaP, const float epipShift,
                                     int* volume, int volume_s, int volume_p,
-                                    int volStepXY, int volDimX, int volDimY, int volDimZ, int volLUX, int volLUY, int volLUZ)
+                                    int volStepXY,
+                                    int volDimX, int volDimY, int volDimZ )
+                                    // , int volLUX, int volLUY, int volLUZ) - no idea what this does
 {
-    int sdptid = blockIdx.x * blockDim.x + threadIdx.x;
-    int pixid = blockIdx.y * blockDim.y + threadIdx.y;
+    const int vx = blockIdx.x * blockDim.x + threadIdx.x;
+    const int vy = blockIdx.y * blockDim.y + threadIdx.y;
 
-    if((sdptid < nsearchdepths) && (pixid < slicesAtTime) && (slicesAtTime * t + pixid < npixs))
+    if( vx >= volDimX ) return;
+    if( vy >= volDimY ) return;
+
+    const int x = vx * volStepXY;
+    const int y = vy * volStepXY;
+
+    if( x >= width  ) return;
+    if( y >= height ) return;
+
+    const int2 pix = make_int2( x, y );
+    const int depthlimit = min(ndepths,volDimZ);
+    for( int depthid = 0; depthid < depthlimit; depthid++ )
     {
-        int4 volPix = tex2D(volPixsTex, pixid, t);
-        const int2 pix = make_int2(volPix.x, volPix.y);
-        int depthid = sdptid + volPix.z;
+        patch ptcho;
+        volume_computePatch(depths_dev, ptcho, depthid, pix);
 
-        if(depthid < ndepths)
-        {
-            patch ptcho;
-            volume_computePatch(depths_dev, ptcho, depthid, pix);
+        float fsim = compNCCby3DptsYK(ptcho, wsh, width, height, gammaC, gammaP, epipShift);
+        // unsigned char sim = (unsigned char)(((fsim+1.0f)/2.0f)*255.0f);
 
-            float fsim = compNCCby3DptsYK(ptcho, wsh, width, height, gammaC, gammaP, epipShift);
-            // unsigned char sim = (unsigned char)(((fsim+1.0f)/2.0f)*255.0f);
+        float fminVal = -1.0f;
+        float fmaxVal = 1.0f;
+        fsim = (fsim - fminVal) / (fmaxVal - fminVal);
+        fsim = fminf(1.0f, fmaxf(0.0f, fsim));
+        int sim = (unsigned char)(fsim * 255.0f); // upcast to int due to atomicMin
 
-            float fminVal = -1.0f;
-            float fmaxVal = 1.0f;
-            fsim = (fsim - fminVal) / (fmaxVal - fminVal);
-            fsim = fminf(1.0f, fmaxf(0.0f, fsim));
-            int sim = (unsigned char)(fsim * 255.0f); // upcast to int due to atomicMin
+        // coalescent
 
-            // coalescent
+        // int vz = sdptid;//depthid;
+        const int& vz = depthid;
 
-            int vx = (pix.x - volLUX) / volStepXY;
-            int vy = (pix.y - volLUY) / volStepXY;
-            // int vz = sdptid;//depthid;
-            int vz = depthid - volLUZ;
-            if((vx >= 0) && (vx < volDimX) && (vy >= 0) && (vy < volDimY) && (vz >= 0) && (vz < volDimZ))
-            {
-                int* volsim = get3DBufferAt(volume, volume_s, volume_p, vx, vy, vz);
-                atomicMin( volsim, sim );
-            }
-        }
+        int* volsim = get3DBufferAt(volume, volume_s, volume_p, vx, vy, vz);
+        atomicMin( volsim, sim );
     }
 }
 

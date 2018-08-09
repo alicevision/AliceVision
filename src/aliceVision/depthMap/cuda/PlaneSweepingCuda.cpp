@@ -1596,9 +1596,9 @@ float PlaneSweepingCuda::sweepPixelsToVolume(int nDepthsToSearch, StaticVector<i
         return -1.0f;
     }
 
-    StaticVector<int> *camsids = new StaticVector<int>();
-    camsids->reserve(tcams->size() + 1);
-    camsids->push_back(addCam(rc, NULL, scale));
+    StaticVector<int> camsids;
+    camsids.reserve(tcams->size() + 1);
+    camsids.push_back(addCam(rc, NULL, scale));
     if(verbose)
         ALICEVISION_LOG_DEBUG("rc: " << rc << std::endl << "tcams: ");
 
@@ -1607,60 +1607,18 @@ float PlaneSweepingCuda::sweepPixelsToVolume(int nDepthsToSearch, StaticVector<i
         int tc = (*tcams)[c];
         if(verbose)
             ALICEVISION_LOG_DEBUG("\t- " << tc);
-        camsids->push_back(addCam(tc, NULL, scale));
+        camsids.push_back(addCam(tc, NULL, scale));
     }
 
-    cameraStruct **ttcams = new cameraStruct *[camsids->size()];
-    for(int i = 0; i < camsids->size(); i++) {
-        ttcams[i] = (cameraStruct *) (*cams)[(*camsids)[i]];
-        ttcams[i]->camId = (*camsids)[i];
+    cameraStruct **ttcams = new cameraStruct *[camsids.size()];
+    for(int i = 0; i < camsids.size(); i++) {
+        ttcams[i] = (cameraStruct *) (*cams)[camsids[i]];
+        ttcams[i]->camId = camsids[i];
         if (i == 0) {
             ttcams[i]->rc = rc;
         } else {
             ttcams[i]->rc = (*tcams)[i - 1];
         }
-    }
-
-    int slicesAtTime = std::min(pixels->size(), 4096); //TODO
-    // int slicesAtTime = 480/scale;
-    //int slicesAtTime = pixels->size();
-
-    int npixs = pixels->size();
-    int ntimes = npixs / slicesAtTime + 1;
-    //
-    // instead of this copy, it could be the input image
-    // there is a step - we must take this into account in the kernels
-    //
-    CudaHostMemoryHeap<int4, 2> volPixs_hmh(CudaSize<2>(slicesAtTime, ntimes));
-
-    int4 *_volPixs = volPixs_hmh.getBuffer();
-    const Voxel *_pixels = pixels->getData().data();
-    if(ntimes * slicesAtTime <= npixs)
-    {
-        for(int i = 0; i < ntimes * slicesAtTime; ++i)
-        {
-            _volPixs->x = _pixels->x;
-            _volPixs->y = _pixels->y;
-            _volPixs->z = _pixels->z;
-            _volPixs->w = 1;
-            ++_pixels;
-            ++_volPixs;
-        }
-    }
-    else
-    {
-        for(int y = 0; y < ntimes; ++y)
-            for(int x = 0; x < slicesAtTime; ++x) {
-                int index = y * slicesAtTime + x;
-                if(index >= npixs)
-                    break;
-                int4 &volPix = _volPixs[index];
-                const Voxel &pixel = _pixels[index];
-                volPix.x = pixel.x;
-                volPix.y = pixel.y;
-                volPix.z = pixel.z;
-                volPix.w = 1;
-            }
     }
 
     CudaHostMemoryHeap<float, 1> depths_hmh(CudaSize<1>(depths->size()));
@@ -1676,21 +1634,21 @@ float PlaneSweepingCuda::sweepPixelsToVolume(int nDepthsToSearch, StaticVector<i
     float volumeMBinGPUMem = ps_planeSweepingGPUPixelsVolume(
         (CudaArray<uchar4, 2>**)ps_texs_arr,
         volume->getDataWritable().data(),
-        ttcams, camsids->size(), w, h, volStepXY,
+        ttcams, camsids.size(), w, h, volStepXY,
         volDimX, volDimY, volDimZ,
-        volLUX, volLUY, volLUZ, volPixs_hmh,
+        volLUX, volLUY, volLUZ,
         depths_dev,
-        nDepthsToSearch, slicesAtTime, ntimes, npixs, wsh,
+        nDepthsToSearch,
+        wsh,
         nbestkernelSizeHalf,
         scale - 1, CUDADeviceNo, nImgsInGPUAtTime, scales, verbose, false, nbest,
         true, gammaC, gammaP, subPixel, epipShift);
 
-    for(int i = 0; i < camsids->size(); i++)
+    for(int i = 0; i < camsids.size(); i++)
     {
         ttcams[i] = NULL;
     }
     delete[] ttcams;
-    delete camsids;
 
     if(verbose)
         mvsUtils::printfElapsedTime(t1);
