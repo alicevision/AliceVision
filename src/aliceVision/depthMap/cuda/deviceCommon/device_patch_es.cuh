@@ -125,16 +125,15 @@ inline __device__ float compNCCby3DptsYK(
         for(int xp = -wsh; xp <= wsh; xp++)
         {
             p = ptch.p + ptch.x * (float)(ptch.d * (float)xp) + ptch.y * (float)(ptch.d * (float)yp);
-            float2 rp1 = project3DPoint(sg_s_rP, p);
-            float2 tp1 = project3DPoint(sg_s_tP, p) + vEpipShift;
+
             // float2 rp1 = rp + rvLeft*(float)xp + rvUp*(float)yp;
             // float2 tp1 = tp + tvLeft*(float)xp + tvUp*((float)yp+epipShift);
-
-            // see CUDA_C_Programming_Guide.pdf ... E.2 pp132-133 ... adding 0.5 caises that tex2D return for point i,j
-            // exactly value od I(i,j) ... it is what we want
+            float2 rp1 = project3DPoint(sg_s_rP, p);
             float4 gcr1f = tex2D<float4>(r4tex.obj, rp1.x + 0.5f, rp1.y + 0.5f);
-            float4 gct1f = tex2D<float4>(t4tex.obj, tp1.x + 0.5f, tp1.y + 0.5f);
             float4 gcr1 = 255.0f * gcr1f;
+
+            float2 tp1 = project3DPoint(sg_s_tP, p) + vEpipShift;
+            float4 gct1f = tex2D<float4>(t4tex.obj, tp1.x + 0.5f, tp1.y + 0.5f);
             float4 gct1 = 255.0f * gct1f;
             // gcr1 = 255.0f*tex2D(r4tex, rp1.x, rp1.y);
             // gct1 = 255.0f*tex2D(t4tex, tp1.x, tp1.y);
@@ -147,6 +146,9 @@ inline __device__ float compNCCby3DptsYK(
             //    ** low value (close to 0) means that the pixel is close to the center of the patch
             //    ** high value (close to 1) means that the pixel is far from the center of the patch
             float w = CostYKfromLab(xp, yp, gcr, gcr1, gammaC, gammaP) * CostYKfromLab(xp, yp, gct, gct1, gammaC, gammaP);
+            //
+            // NOTE: remove the following assert leads to different results
+            //
             assert(w >= 0.f);
             assert(w <= 1.f);
             sst.update(gcr1.x, gct1.x, w); // TODO: try with gcr1f and gtc1f
