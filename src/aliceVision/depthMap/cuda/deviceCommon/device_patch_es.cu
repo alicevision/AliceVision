@@ -578,7 +578,7 @@ __device__ float frontoParellePlaneTCDepthFor3DPoint(const float3& p)
     return fabsf(orientedPointPlaneDistanceNormalizedNormal(p, sg_s_tC, sg_s_tZVect));
 }
 
-__device__ float3 get3DPointForPixelAndFrontoParellePlaneRC(float2& pix, float fpPlaneDepth)
+__device__ float3 get3DPointForPixelAndFrontoParellePlaneRC(const float2& pix, float fpPlaneDepth)
 {
     float3 planep = sg_s_rC + sg_s_rZVect * fpPlaneDepth;
     float3 v = M3x3mulV2(sg_s_riP, pix);
@@ -586,7 +586,7 @@ __device__ float3 get3DPointForPixelAndFrontoParellePlaneRC(float2& pix, float f
     return linePlaneIntersect(sg_s_rC, v, planep, sg_s_rZVect);
 }
 
-__device__ float3 get3DPointForPixelAndFrontoParellePlaneRC(int2& pixi, float fpPlaneDepth)
+__device__ float3 get3DPointForPixelAndFrontoParellePlaneRC(const int2& pixi, float fpPlaneDepth)
 {
     float2 pix;
     pix.x = (float)pixi.x;

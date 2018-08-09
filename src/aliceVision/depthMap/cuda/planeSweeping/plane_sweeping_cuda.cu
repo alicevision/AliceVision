@@ -986,27 +986,28 @@ void ps_computeSimilarityVolume(CudaArray<uchar4, 2>** ps_texs_arr,
 
     //--------------------------------------------------------------------------------------------------
     // init similarity volume
+#if 1
     for(int z = 0; z < volDimZ; z++)
     {
         volume_initVolume_kernel<unsigned char><<<gridvol, blockvol>>>(
             vol_dmp.getBuffer(), vol_dmp.stride()[1], vol_dmp.stride()[0], volDimX, volDimY, volDimZ, z, 255);
         cudaThreadSynchronize();
     };
+#else
+    cudaMemset( vol_dmp.getBuffer(), 255, vol_dmp.stride()[2] );
+#endif
 
     //--------------------------------------------------------------------------------------------------
     // compute similarity volume
+    // CudaDeviceMemoryPitched<unsigned char, 2> slice_dmp(CudaSize<2>(nDepthsToSearch, slicesAtTime));
     CudaDeviceMemoryPitched<unsigned char, 2> slice_dmp(CudaSize<2>(nDepthsToSearch, slicesAtTime));
     for(int t = 0; t < ntimes; t++)
     {
-        volume_slice_kernel<<<grid, block>>>(slice_dmp.getBuffer(), slice_dmp.stride()[0], nDepthsToSearch, nDepths,
-                                             slicesAtTime, width, height, wsh, t, npixs, gammaC, gammaP, epipShift);
-        cudaThreadSynchronize();
-
-        volume_saveSliceToVolume_kernel<<<grid, block>>>(vol_dmp.getBuffer(), vol_dmp.stride()[1], vol_dmp.stride()[0],
-                                                         slice_dmp.getBuffer(), slice_dmp.stride()[0], nDepthsToSearch,
-                                                         nDepths, slicesAtTime, width, height, t, npixs, volStepXY,
-                                                         volDimX, volDimY, volDimZ, volLUX, volLUY, volLUZ);
-        cudaThreadSynchronize();
+        volume_slice_kernel<<<grid, block>>>( nDepthsToSearch, nDepths,
+                                              slicesAtTime, width, height, wsh, t, npixs, gammaC, gammaP, epipShift,
+                                              vol_dmp.getBuffer(), vol_dmp.stride()[1], vol_dmp.stride()[0],
+                                              volStepXY,
+                                              volDimX, volDimY, volDimZ, volLUX, volLUY, volLUZ);
         CHECK_CUDA_ERROR();
     };
 

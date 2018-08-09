@@ -7,7 +7,7 @@
 namespace aliceVision {
 namespace depthMap {
 
-__device__ void volume_computePatch(patch& ptch, int depthid, int2& pix)
+__device__ void volume_computePatch(patch& ptch, int depthid, const int2& pix)
 {
     float3 p;
     float pixSize;
@@ -21,10 +21,11 @@ __device__ void volume_computePatch(patch& ptch, int depthid, int2& pix)
     computeRotCSEpip(ptch, p);
 }
 
-__global__ void volume_slice_kernel(unsigned char* slice, int slice_p,
-                                    // float3* slicePts, int slicePts_p,
+__global__ void volume_slice_kernel(
                                     int nsearchdepths, int ndepths, int slicesAtTime, int width, int height, int wsh,
-                                    int t, int npixs, const float gammaC, const float gammaP, const float epipShift)
+                                    int t, int npixs, const float gammaC, const float gammaP, const float epipShift,
+                                    unsigned char* volume, int volume_s, int volume_p,
+                                    int volStepXY, int volDimX, int volDimY, int volDimZ, int volLUX, int volLUY, int volLUZ)
 {
     int sdptid = blockIdx.x * blockDim.x + threadIdx.x;
     int pixid = blockIdx.y * blockDim.y + threadIdx.y;
@@ -32,7 +33,7 @@ __global__ void volume_slice_kernel(unsigned char* slice, int slice_p,
     if((sdptid < nsearchdepths) && (pixid < slicesAtTime) && (slicesAtTime * t + pixid < npixs))
     {
         int4 volPix = tex2D(volPixsTex, pixid, t);
-        int2 pix = make_int2(volPix.x, volPix.y);
+        const int2 pix = make_int2(volPix.x, volPix.y);
         int depthid = sdptid + volPix.z;
 
         if(depthid < ndepths)
@@ -52,28 +53,6 @@ __global__ void volume_slice_kernel(unsigned char* slice, int slice_p,
             // coalescent
             /*int sliceid = pixid * slice_p + sdptid;
             slice[sliceid] = sim;*/
-            *get2DBufferAt(slice, slice_p, sdptid, pixid) = sim;
-        }
-    }
-}
-
-__global__ void volume_saveSliceToVolume_kernel(unsigned char* volume, int volume_s, int volume_p, unsigned char* slice,
-                                                int slice_p, int nsearchdepths, int ndepths, int slicesAtTime,
-                                                int width, int height, int t, int npixs, int volStepXY, int volDimX,
-                                                int volDimY, int volDimZ, int volLUX, int volLUY, int volLUZ)
-{
-    int sdptid = blockIdx.x * blockDim.x + threadIdx.x;
-    int pixid = blockIdx.y * blockDim.y + threadIdx.y;
-
-    if((sdptid < nsearchdepths) && (pixid < slicesAtTime) && (slicesAtTime * t + pixid < npixs))
-    {
-        int4 volPix = tex2D(volPixsTex, pixid, t);
-        int2 pix = make_int2(volPix.x, volPix.y);
-        int depthid = sdptid + volPix.z;
-
-        if(depthid < ndepths)
-        {
-            unsigned char sim = *get2DBufferAt(slice, slice_p, sdptid, pixid);
 
             int vx = (pix.x - volLUX) / volStepXY;
             int vy = (pix.y - volLUY) / volStepXY;
@@ -83,9 +62,9 @@ __global__ void volume_saveSliceToVolume_kernel(unsigned char* volume, int volum
             {
                 unsigned char* volsim = get3DBufferAt(volume, volume_s, volume_p, vx, vy, vz);
                 *volsim = min(sim, *volsim);
-            };
-        };
-    };
+            }
+        }
+    }
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

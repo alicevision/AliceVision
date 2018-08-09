@@ -1576,8 +1576,12 @@ bool PlaneSweepingCuda::refineRcTcDepthMap(bool useTcOrRcPixSize, int nStepsToRe
 float PlaneSweepingCuda::sweepPixelsToVolume(int nDepthsToSearch, StaticVector<unsigned char>* volume, int volDimX,
                                                int volDimY, int volDimZ, int volStepXY, int volLUX, int volLUY,
                                                int volLUZ, StaticVector<float>* depths, int rc, int wsh, float gammaC,
-                                               float gammaP, StaticVector<Voxel>* pixels, int scale, int step,
-                                               StaticVector<int>* tcams, float epipShift) {
+                                               float gammaP,
+                                               StaticVector<Voxel>* pixels, // use rcam image
+                                               int scale, int step,
+                                               StaticVector<int>* tcams, // use tcam image
+                                               float epipShift)
+{
     if(verbose)
         ALICEVISION_LOG_DEBUG("sweepPixelsVolume:" << std::endl
                               << "\t- scale: " << scale << std::endl
@@ -1628,6 +1632,10 @@ float PlaneSweepingCuda::sweepPixelsToVolume(int nDepthsToSearch, StaticVector<u
 
     int npixs = pixels->size();
     int ntimes = npixs / slicesAtTime + 1;
+    //
+    // instead of this copy, it could be the input image
+    // there is a step - we must take this into account in the kernels
+    //
     CudaHostMemoryHeap<int4, 2> volPixs_hmh(CudaSize<2>(slicesAtTime, ntimes));
 
     int4 *_volPixs = volPixs_hmh.getBuffer();
@@ -1669,8 +1677,11 @@ float PlaneSweepingCuda::sweepPixelsToVolume(int nDepthsToSearch, StaticVector<u
 
     // sweep
     float volumeMBinGPUMem = ps_planeSweepingGPUPixelsVolume(
-        (CudaArray<uchar4, 2>**)ps_texs_arr, volume->getDataWritable().data(), ttcams, camsids->size(), w, h, volStepXY, volDimX, volDimY,
-        volDimZ, volLUX, volLUY, volLUZ, volPixs_hmh, depths_hmh, nDepthsToSearch, slicesAtTime, ntimes, npixs, wsh,
+        (CudaArray<uchar4, 2>**)ps_texs_arr,
+        volume->getDataWritable().data(), // rcam image's width, height, depth
+        ttcams, camsids->size(), w, h, volStepXY,
+        volDimX, volDimY, volDimZ,
+        volLUX, volLUY, volLUZ, volPixs_hmh, depths_hmh, nDepthsToSearch, slicesAtTime, ntimes, npixs, wsh,
         nbestkernelSizeHalf, depths->size(), scale - 1, CUDADeviceNo, nImgsInGPUAtTime, scales, verbose, false, nbest,
         true, gammaC, gammaP, subPixel, epipShift);
 
