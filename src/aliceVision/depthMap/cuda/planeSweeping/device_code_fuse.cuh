@@ -27,8 +27,10 @@ __global__ void fuse_updateBestGaussianKernelVotingSampleMap_kernel(float2* best
                                                                     int height, float s, int id);
 
 __global__ void fuse_computeFusedDepthSimMapFromBestGaussianKernelVotingSampleMap_kernel(
-    float2* oDepthSimMap, int oDepthSimMap_p, float2* bestGsvSampleMap, int bestGsvSampleMap_p,
-    float2* midDepthPixSizeMap, int midDepthPixSizeMap_p, int width, int height, float samplesPerPixSize);
+    float2* oDepthSimMap, int oDepthSimMap_p,
+    float2* bestGsvSampleMap, int bestGsvSampleMap_p,
+    float2* midDepthPixSizeMap, int midDepthPixSizeMap_p,
+    int width, int height, float samplesPerPixSize);
 
 __global__ void fuse_getOptDeptMapFromOPtDepthSimMap_kernel(
                     float* optDepthMap, int optDepthMap_p,
@@ -36,11 +38,12 @@ __global__ void fuse_getOptDeptMapFromOPtDepthSimMap_kernel(
                     int width, int height);
 
 __global__ void fuse_optimizeDepthSimMap_kernel(
-                    NormLinearTex<uchar4> r4tex,
-                    cudaTextureObject_t depthsTex,
+                    NormLinearTexUchar4 r4tex,
+                    ElemPointTexFloat depthsTex,
                     float2* out_optDepthSimMap, int optDepthSimMap_p,
                     float2* midDepthPixSizeMap, int midDepthPixSizeMap_p,
-                    float2* fusedDepthSimMap, int fusedDepthSimMap_p, int width, int height,
+                    float2* fusedDepthSimMap, int fusedDepthSimMap_p,
+                    int width, int height,
                     int iter, float samplesPerPixSize, int yFrom);
 
 } // namespace depthMap

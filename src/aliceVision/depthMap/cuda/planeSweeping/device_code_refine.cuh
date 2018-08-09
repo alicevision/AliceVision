@@ -36,17 +36,17 @@ __global__ void refine_computeDepthsMapFromDepthMap_kernel(float3* depthsMap, in
                                                            float step);
 
 __global__ void refine_reprojTarTexLABByDepthsMap_kernel(
-    NormLinearTex<uchar4> t4tex,
+    NormLinearTexUchar4 t4tex,
     float3* depthsMap, int depthsMap_p,
     uchar4* tex, int tex_p,
     int width, int height, int id);
 
 
-__global__ void refine_reprojTarTexLABByDepthMap_kernel(
-    cudaTextureObject_t t4tex,
-    float* depthMap, int depthMap_p,
-    uchar4* tex, int tex_p,
-    int width, int height);
+// __global__ void refine_reprojTarTexLABByDepthMap_kernel(
+//     cudaTextureObject_t t4tex,
+//     float* depthMap, int depthMap_p,
+//     uchar4* tex, int tex_p,
+//     int width, int height);
 
 #if 0
 __global__ void refine_reprojTarTexLABByDepthMapMovedByStep_kernel(
@@ -58,23 +58,23 @@ __global__ void refine_reprojTarTexLABByDepthMapMovedByStep_kernel(
 #endif
 
 __global__ void refine_compYKNCCSimMap_kernel(
-    cudaTextureObject_t rTexU4,
-    cudaTextureObject_t tTexU4,
+    ElemPointTexUchar4 rTexU4,
+    ElemPointTexUchar4 tTexU4,
     float* osimMap, int osimMap_p,
     float* depthMap, int depthMap_p,
     int width, int height, int wsh, const float gammaC, const float gammaP);
 
 __global__ void refine_compYKNCCSim_kernel(
-    cudaTextureObject_t rTexU4,
-    cudaTextureObject_t tTexU4,
+    ElemPointTexUchar4 rTexU4,
+    ElemPointTexUchar4 tTexU4,
     float3* osims, int osims_p,
     int id,
     float* depthMap, int depthMap_p,
     int width, int height, int wsh, const float gammaC, const float gammaP);
 
 __global__ void refine_compYKNCCSimOptGammaC_kernel(
-    cudaTextureObject_t rTexU4,
-    cudaTextureObject_t tTexU4,
+    ElemPointTexUchar4 rTexU4,
+    ElemPointTexUchar4 tTexU4,
     float3* osims, int osims_p,
     int id,
     float* depthMap, int depthMap_p,
@@ -91,8 +91,8 @@ __global__ void refine_fuseThreeDepthSimMaps_kernel(float* osim, int osim_p, flo
 
 #ifdef MERGE_REFINE_KERNELS
 __global__ void refine_compYKNCCSimMapPatch_kernel_A(
-    NormLinearTex<uchar4> r4tex,
-    NormLinearTex<uchar4> t4tex,
+    NormLinearTexUchar4 r4tex,
+    NormLinearTexUchar4 t4tex,
     const float* depthMap, int depthMap_p,
     int width, int height, int wsh, const float gammaC,
     const float gammaP, const float epipShift, const float tcStep,
@@ -100,8 +100,8 @@ __global__ void refine_compYKNCCSimMapPatch_kernel_A(
     float3* lastThreeSimsMap, int lastThreeSimsMap_p, const int dimension );
 
 __global__ void refine_compUpdateYKNCCSimMapPatch_kernel(
-    NormLinearTex<uchar4> r4tex,
-    NormLinearTex<uchar4> t4tex,
+    NormLinearTexUchar4 r4tex,
+    NormLinearTexUchar4 t4tex,
     float* osimMap, int osimMap_p,
     float* odptMap, int odptMap_p,
     const float* depthMap, int depthMap_p, int width, int height,
@@ -112,8 +112,8 @@ __global__ void refine_compUpdateYKNCCSimMapPatch_kernel(
     float3* lastThreeSimsMap, int lastThreeSimsMap_p );
 #else
 __global__ void refine_compUpdateYKNCCSimMapPatch_kernel(
-    NormLinearTex<uchar4> r4tex,
-    NormLinearTex<uchar4> t4tex,
+    NormLinearTexUchar4 r4tex,
+    NormLinearTexUchar4 t4tex,
     float* osimMap, int osimMap_p,
     float* odptMap, int odptMap_p,
     const float* depthMap, int depthMap_p, int width, int height,
@@ -128,16 +128,16 @@ __global__ void refine_coputeDepthStepMap_kernel(float* depthStepMap, int depthS
                                                  int depthMap_p, int width, int height, bool moveByTcOrRc);
 
 // __global__ void refine_compYKNCCDepthSimMapPatch_kernel(
-//     NormLinearTex<uchar4> r4tex,
-//     NormLinearTex<uchar4> t4tex,
+//     NormLinearTexUchar4 r4tex,
+//     NormLinearTexUchar4 t4tex,
 //     float2* oDepthSimMap, int oDepthSimMap_p, float* depthMap,
 //     int depthMap_p, int width, int height, int wsh,
 //     const float gammaC, const float gammaP, const float epipShift,
 //     const float tcStep, bool moveByTcOrRc);
 
 __global__ void refine_compYKNCCSimMapPatch_kernel(
-    NormLinearTex<uchar4> r4tex,
-    NormLinearTex<uchar4> t4tex,
+    NormLinearTexUchar4 r4tex,
+    NormLinearTexUchar4 t4tex,
     float* osimMap, int osimMap_p,
     const float* depthMap, int depthMap_p,
     int width, int height, int wsh, const float gammaC,
@@ -145,8 +145,8 @@ __global__ void refine_compYKNCCSimMapPatch_kernel(
     bool moveByTcOrRc, int xFrom, int imWidth, int imHeight);
 
 // __global__ void refine_compYKNCCSimMapPatchDMS_kernel(
-//     NormLinearTex<uchar4> r4tex,
-//     NormLinearTex<uchar4> t4tex,
+//     NormLinearTexUchar4 r4tex,
+//     NormLinearTexUchar4 t4tex,
 //     float* osimMap, int osimMap_p,
 //     float* depthMap, int depthMap_p,
 //     int width, int height, int wsh, const float gammaC,
@@ -181,15 +181,15 @@ __global__ void refine_reprojTarTexLABByRcTcDepthsMap_kernel(
     float depthMapShift);
 
 __global__ void refine_compPhotoErr_kernel(
-    cudaTextureObject_t rTexU4,
-    cudaTextureObject_t tTexU4,
+    ElemPointTexUchar4 rTexU4,
+    ElemPointTexUchar4 tTexU4,
     float* osimMap, int osimMap_p,
     float* depthMap, int depthMap_p,
     int width, int height, double beta );
 
 __global__ void refine_compPhotoErrStat_kernel(
-    cudaTextureObject_t rTexU4,
-    cudaTextureObject_t tTexU4,
+    ElemPointTexUchar4 rTexU4,
+    ElemPointTexUchar4 tTexU4,
     float* occMap, int occMap_p,
     float4* ostat1Map, int ostat1Map_p,
     float* depthMap, int depthMap_p,
@@ -197,13 +197,13 @@ __global__ void refine_compPhotoErrStat_kernel(
 
 __global__ void refine_compPhotoErrABG_kernel(
     cudaTextureObject_t f4Tex,
-    cudaTextureObject_t rTexU4,
-    cudaTextureObject_t tTexU4,
+    ElemPointTexUchar4 rTexU4,
+    ElemPointTexUchar4 tTexU4,
     float* osimMap, int osimMap_p,
     int width, int height );
 
 __global__ void refine_reprojTarSobelAndDPIXTCDRCRcTcDepthsMap_kernel(
-    cudaTextureObject_t tTexU4,
+    ElemPointTexUchar4 tTexU4,
     float4* tex, int tex_p,
     float* rcDepthMap, int rcDepthMap_p,
     int width, int height, float depthMapShift);

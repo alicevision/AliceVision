@@ -38,29 +38,33 @@ typedef std::pair<int,double> GaussianArrayIndex;
 struct GaussianArray
 {
     cudaArray*          arr;
-    cudaTextureObject_t tex;
+    ElemPointTexFloat tex;
 
-    void create( float delta, int radius );
+    GaussianArray( float delta, int radius );
+    ~GaussianArray();
+
+    GaussianArray( ) = delete;
+    GaussianArray( const GaussianArray& ) = delete;
 };
 
 typedef std::pair<int,int> PitchedMem_Tex_Index;
 
-template<typename T,cudaTextureFilterMode fMode,cudaTextureReadMode rMode>
+template<typename T>
 struct PitchedMem_Texture
 {
     CudaDeviceMemoryPitched<T,2>* mem;
-    cudaTextureObject_t           tex;
+    BaseTex<T,cudaFilterModePoint,cudaReadModeElementType> tex;
 
     PitchedMem_Texture( int w, int h ); // Function body after GlobalData definition
 
     ~PitchedMem_Texture( )
     {
-        cudaDestroyTextureObject( tex );
+        cudaDestroyTextureObject( tex.obj );
         delete mem;
     }
 };
 
-template<typename T,cudaTextureFilterMode fMode,cudaTextureReadMode rMode>
+template<typename T>
 class TexturedPitchedMem
 {
 public:
@@ -69,38 +73,38 @@ public:
         for( auto it : _mem ) delete it.second;
     }
 
-    PitchedMem_Texture<T,fMode,rMode>* get( int width, int height )
+    PitchedMem_Texture<T>* get( int width, int height )
     {
         auto it = _mem.find( PitchedMem_Tex_Index( width, height ) );
         if( it == _mem.end() )
         {
             std::cerr << "Allocate textured pitched mem " << width << "X" << height << std::endl;
-            PitchedMem_Texture<T,fMode,rMode>* ptr = new PitchedMem_Texture<T,fMode,rMode>( width, height );
+            PitchedMem_Texture<T>* ptr = new PitchedMem_Texture<T>( width, height );
             CHECK_CUDA_ERROR();
             return ptr;
         }
         else
         {
             std::cerr << "Getting textured pitched mem " << width << "X" << height << std::endl;
-            PitchedMem_Texture<T,fMode,rMode>* ptr = it->second;
+            PitchedMem_Texture<T>* ptr = it->second;
             _mem.erase( it );
             return ptr;
         }
     }
 
-    void put( PitchedMem_Texture<T,fMode,rMode>* ptr )
+    void put( PitchedMem_Texture<T>* ptr )
     {
         int width  = ptr->mem->getSize()[0];
         int height = ptr->mem->getSize()[1];
         std::cerr << "Putting textured pitched mem " << width << "X" << height << std::endl;
         PitchedMem_Tex_Index idx( width, height );
         _mem.insert(
-            std::pair<PitchedMem_Tex_Index,PitchedMem_Texture<T,fMode,rMode>*>(
+            std::pair<PitchedMem_Tex_Index,PitchedMem_Texture<T>*>(
                 idx, ptr ) );
     }
 
 private:
-    std::multimap<PitchedMem_Tex_Index,PitchedMem_Texture<T,fMode,rMode>*> _mem;
+    std::multimap<PitchedMem_Tex_Index,PitchedMem_Texture<T>*> _mem;
 };
 
 class GlobalData
@@ -116,8 +120,8 @@ public:
     void                  freeScaledPictureArrays( );
     CudaArray<uchar4,2>*  getScaledPictureArrayPtr( int scale, int cam );
     CudaArray<uchar4,2>&  getScaledPictureArray( int scale, int cam );
-    PointTex<uchar4>      getScaledPictureTexPoint( int scale, int cam );
-    NormLinearTex<uchar4> getScaledPictureTexNorm( int scale, int cam );
+    ElemPointTexUchar4    getScaledPictureTexPoint( int scale, int cam );
+    NormLinearTexUchar4   getScaledPictureTexNorm( int scale, int cam );
 
     void                               allocPyramidArrays( int levels, int width, int height );
     void                               freePyramidArrays( );
@@ -128,8 +132,8 @@ private:
     std::map<GaussianArrayIndex,GaussianArray*> _gaussian_arr_table;
 
     std::vector<CudaArray<uchar4, 2>*>          _scaled_picture_array;
-    std::vector<PointTex<uchar4> >              _scaled_picture_tex_point;
-    std::vector<NormLinearTex<uchar4> >         _scaled_picture_tex_norm_linear;
+    std::vector<ElemPointTexUchar4>             _scaled_picture_tex_point;
+    std::vector<NormLinearTexUchar4>            _scaled_picture_tex_norm_linear;
     int                                         _scaled_picture_scales;
 
     std::vector<CudaDeviceMemoryPitched<uchar4, 2>*> _pyramid_array;
@@ -137,35 +141,14 @@ private:
     int                                              _pyramid_levels;
 
 public:
-    typedef TexturedPitchedMem<uchar4,cudaFilterModeLinear,cudaReadModeNormalizedFloat>
-            TexturedPitchedMemUchar4Linear;
-    typedef TexturedPitchedMem<unsigned char,cudaFilterModeLinear,cudaReadModeNormalizedFloat>
-            TexturedPitchedMemUcharLinear;
-    typedef TexturedPitchedMem<uchar4,cudaFilterModePoint,cudaReadModeElementType>
-            TexturedPitchedMemUchar4Point;
-    typedef TexturedPitchedMem<uchar,cudaFilterModePoint,cudaReadModeElementType>
-            TexturedPitchedMemUcharPoint;
-    typedef TexturedPitchedMem<float4,cudaFilterModePoint,cudaReadModeElementType>
-            TexturedPitchedMemFloat4Point;
-    typedef TexturedPitchedMem<float2,cudaFilterModePoint,cudaReadModeElementType>
-            TexturedPitchedMemFloat2Point;
-    typedef TexturedPitchedMem<float,cudaFilterModePoint,cudaReadModeElementType>
-            TexturedPitchedMemFloatPoint;
-    typedef TexturedPitchedMem<unsigned int,cudaFilterModePoint,cudaReadModeElementType>
-            TexturedPitchedMemUintPoint;
-    typedef TexturedPitchedMem<int,cudaFilterModePoint,cudaReadModeElementType>
-            TexturedPitchedMemIntPoint;
-
-    TexturedPitchedMemUchar4Linear pitched_mem_uchar4_linear_tex_cache;
-    TexturedPitchedMemUcharLinear  pitched_mem_uchar_linear_tex_cache;
+    typedef TexturedPitchedMem<uchar4>       TexturedPitchedMemUchar4Point;
+    typedef TexturedPitchedMem<float>        TexturedPitchedMemFloatPoint;
+    typedef TexturedPitchedMem<unsigned int> TexturedPitchedMemUintPoint;
+    typedef TexturedPitchedMem<int>          TexturedPitchedMemIntPoint;
 
     TexturedPitchedMemUchar4Point  pitched_mem_uchar4_point_tex_cache;
-    TexturedPitchedMemUcharPoint   pitched_mem_uchar_point_tex_cache;
 
-    TexturedPitchedMemFloat4Point  pitched_mem_float4_point_tex_cache;
-    TexturedPitchedMemFloat2Point  pitched_mem_float2_point_tex_cache;
     TexturedPitchedMemFloatPoint   pitched_mem_float_point_tex_cache;
-
     TexturedPitchedMemUintPoint    pitched_mem_uint_point_tex_cache;
     TexturedPitchedMemIntPoint     pitched_mem_int_point_tex_cache;
 
@@ -178,8 +161,8 @@ public:
  */
 extern thread_local GlobalData global_data;
 
-template<typename T,cudaTextureFilterMode fMode,cudaTextureReadMode rMode>
-PitchedMem_Texture<T,fMode,rMode>::PitchedMem_Texture( int w, int h )
+template<typename T>
+PitchedMem_Texture<T>::PitchedMem_Texture( int w, int h )
 {
     cudaError_t err;
 
@@ -201,8 +184,8 @@ PitchedMem_Texture<T,fMode,rMode>::PitchedMem_Texture( int w, int h )
     tex_desc.addressMode[0]   = cudaAddressModeClamp;
     tex_desc.addressMode[1]   = cudaAddressModeClamp;
     tex_desc.addressMode[2]   = cudaAddressModeClamp;
-    tex_desc.readMode         = rMode;
-    tex_desc.filterMode       = fMode;
+    tex_desc.readMode         = cudaReadModeElementType;
+    tex_desc.filterMode       = cudaFilterModePoint;
 
     cudaResourceDesc res_desc;
     res_desc.resType = cudaResourceTypePitch2D;
@@ -212,7 +195,7 @@ PitchedMem_Texture<T,fMode,rMode>::PitchedMem_Texture( int w, int h )
     res_desc.res.pitch2D.height       = mem->getSize()[1];
     res_desc.res.pitch2D.pitchInBytes = mem->getPitch();
 
-    err = cudaCreateTextureObject( &tex,
+    err = cudaCreateTextureObject( &tex.obj,
                                    &res_desc,
                                    &tex_desc,
                                    0 );

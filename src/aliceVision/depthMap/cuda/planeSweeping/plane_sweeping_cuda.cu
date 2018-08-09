@@ -382,8 +382,8 @@ void ps_deviceUpdateCam( const cameraStruct* const cam, int camId, int CUDAdevic
     testCUDAdeviceNo(CUDAdeviceNo);
 
     CudaArray<uchar4,2>&  array0 = global_data.getScaledPictureArray( 0, camId );
-    NormLinearTex<uchar4> r4tex  = global_data.getScaledPictureTexNorm( 0, camId );
-    PointTex<uchar4> r4texU      = global_data.getScaledPictureTexPoint( 0, camId );
+    NormLinearTexUchar4 r4tex  = global_data.getScaledPictureTexNorm( 0, camId );
+    ElemPointTexUchar4 r4texU  = global_data.getScaledPictureTexPoint( 0, camId );
 
     // compute gradient
     {
@@ -466,7 +466,7 @@ void ps_deviceDeallocate( int CUDAdeviceNo, int ncams, int scales)
  * @param[inout] d_volSimT similarity volume with some transposition applied
  */
 static void ps_aggregatePathVolume(
-    NormLinearTex<uchar4> r4tex,
+    NormLinearTexUchar4 r4tex,
     CudaDeviceMemoryPitched<unsigned char, 3>& d_volSimT,
     int volDimX, int volDimY, int volDimZ,
     float P1, float P2, bool transfer,
@@ -491,7 +491,7 @@ static void ps_aggregatePathVolume(
     CudaDeviceMemoryPitched<unsigned int, 2> d_xySliceForZM1(CudaSize<2>(volDimX, volDimY));
     // CudaArray<unsigned int, 2> xySliceForZM1_arr(CudaSize<2>(volDimX, volDimY));
     auto xySliceForZM1_arr = global_data.pitched_mem_uint_point_tex_cache.get( volDimX, volDimY );
-    cudaTextureObject_t sliceTexUInt = xySliceForZM1_arr->tex;
+    ElemPointTexUint sliceTexUInt = xySliceForZM1_arr->tex;
     CudaDeviceMemoryPitched<unsigned int, 2> d_xSliceBestInColSimForZM1(CudaSize<2>(volDimX, 1));
 
     // Copy the first Z plane from 'd_volSimT' into 'xysliceForZ_dmp'
@@ -549,7 +549,7 @@ static void ps_aggregatePathVolume(
  * @param[in] d_volSim input similarity volume
  */
 static void ps_updateAggrVolume(
-    NormLinearTex<uchar4> r4tex,
+    NormLinearTexUchar4 r4tex,
     CudaDeviceMemoryPitched<unsigned char, 3>& volAgr_dmp,
     const CudaDeviceMemoryPitched<unsigned char, 3>& d_volSim,
     int volDimX, int volDimY, int volDimZ,
@@ -677,7 +677,7 @@ void ps_SGMoptimizeSimVolume(
 
     // bind 'r4tex' from the image in Lab colorspace at the scale used
     CudaArray<uchar4,2>& array = global_data.getScaledPictureArray( scale, rccam->camId );
-    NormLinearTex<uchar4>  r4tex = global_data.getScaledPictureTexNorm( scale, rccam->camId );
+    NormLinearTexUchar4  r4tex = global_data.getScaledPictureTexNorm( scale, rccam->camId );
 
     CudaDeviceMemoryPitched<unsigned char, 3> volSim_dmp(CudaSize<3>(volDimX, volDimY, volDimZ));
     copy(volSim_dmp, iovol_hmh, volDimX, volDimY, volDimZ);
@@ -882,11 +882,11 @@ void ps_computeSimilarityVolume(
 
     // setup cameras matrices to the constant memory
     ps_init_reference_camera_matrices( *cams[0]->cam );
-    NormLinearTex<uchar4> r4tex = global_data.getScaledPictureTexNorm( scale, cams[0]->camId );
+    NormLinearTexUchar4 r4tex = global_data.getScaledPictureTexNorm( scale, cams[0]->camId );
 
     int c = 1;
     ps_init_target_camera_matrices( *cams[c]->cam );
-    NormLinearTex<uchar4> t4tex = global_data.getScaledPictureTexNorm( scale, cams[c]->camId );
+    NormLinearTexUchar4 t4tex = global_data.getScaledPictureTexNorm( scale, cams[c]->camId );
     CHECK_CUDA_ERROR();
 
     //--------------------------------------------------------------------------------------------------
@@ -1115,11 +1115,11 @@ void ps_smoothDepthMap( CudaHostMemoryHeap<float, 2>* depthMap_hmh,
         depthMap_hmh->getSize()[0],
         depthMap_hmh->getSize()[1] );
     depthMap_arr->mem->copyFrom( *depthMap_hmh );
-    cudaTextureObject_t depthsTex = depthMap_arr->tex;
+    ElemPointTexFloat depthsTex = depthMap_arr->tex;
 
 
     ps_init_reference_camera_matrices(*cams.cam);
-    NormLinearTex<uchar4> r4tex = global_data.getScaledPictureTexNorm( scale, cams.camId );
+    NormLinearTexUchar4 r4tex = global_data.getScaledPictureTexNorm( scale, cams.camId );
 
     auto depthMap_dmp = global_data.pitched_mem_float_point_tex_cache.get( width, height );
 
@@ -1166,11 +1166,11 @@ void ps_filterDepthMap( CudaHostMemoryHeap<float, 2>* depthMap_hmh,
         depthMap_hmh->getSize()[0],
         depthMap_hmh->getSize()[1] );
     depthMap_arr->mem->copyFrom( *depthMap_hmh );
-    cudaTextureObject_t depthsTex = depthMap_arr->tex;
+    ElemPointTexFloat depthsTex = depthMap_arr->tex;
 
     ps_init_reference_camera_matrices( *cams.cam );
 
-    NormLinearTex<uchar4> r4tex = global_data.getScaledPictureTexNorm( scale, cams.camId );
+    NormLinearTexUchar4 r4tex = global_data.getScaledPictureTexNorm( scale, cams.camId );
 
     // CudaDeviceMemoryPitched<float, 2> depthMap_dmp(CudaSize<2>(width, height));
     auto depthMap_dmp = global_data.pitched_mem_float_point_tex_cache.get( width, height );
@@ -1220,11 +1220,11 @@ void ps_computeNormalMap( CudaHostMemoryHeap<float3, 2>* normalMap_hmh,
         depthMap_hmh->getSize()[0],
         depthMap_hmh->getSize()[1] );
     depthMap_arr->mem->copyFrom( *depthMap_hmh );
-    cudaTextureObject_t depthsTex = depthMap_arr->tex;
+    ElemPointTexFloat depthsTex = depthMap_arr->tex;
 
     ps_init_reference_camera_matrices(*cams.cam);
 
-    NormLinearTex<uchar4> r4tex = global_data.getScaledPictureTexNorm( scale, cams.camId );
+    NormLinearTexUchar4 r4tex = global_data.getScaledPictureTexNorm( scale, cams.camId );
 
     CudaDeviceMemoryPitched<float3, 2> normalMap_dmp(*normalMap_hmh);
 
@@ -1274,19 +1274,19 @@ void ps_alignSourceDepthMapToTarget(
         sourceDepthMap_hmh->getSize()[0],
         sourceDepthMap_hmh->getSize()[1] );
     sourceDepthMap_arr->mem->copyFrom( *sourceDepthMap_hmh );
-    cudaTextureObject_t depthsTex = sourceDepthMap_arr->tex;
+    ElemPointTexFloat depthsTex = sourceDepthMap_arr->tex;
 
     auto targetDepthMap_arr = global_data.pitched_mem_float_point_tex_cache.get(
         targetDepthMap_hmh->getSize()[0],
         targetDepthMap_hmh->getSize()[1] );
     targetDepthMap_arr->mem->copyFrom( *targetDepthMap_hmh );
-    cudaTextureObject_t depthsTex1 = targetDepthMap_arr->tex;
+    ElemPointTexFloat depthsTex1 = targetDepthMap_arr->tex;
 
     CudaDeviceMemoryPitched<float, 2> outDepthMap_dmp(CudaSize<2>(width, height));
 
     ps_init_reference_camera_matrices( *cams.cam );
 
-    NormLinearTex<uchar4> r4tex = global_data.getScaledPictureTexNorm( scale, cams.camId );
+    NormLinearTexUchar4 r4tex = global_data.getScaledPictureTexNorm( scale, cams.camId );
 
     int block_size = 16;
     dim3 block(block_size, block_size, 1);
@@ -1385,7 +1385,7 @@ void ps_dilateMaskMap(CudaDeviceMemoryPitched<float, 2>& depthMap_dmp, int width
 #endif
 
 static void ps_refineDepthMapInternal(
-    NormLinearTex<uchar4> t4tex,
+    NormLinearTexUchar4 t4tex,
     CudaDeviceMemoryPitched<float, 2>& osimMap_dmp,
     CudaDeviceMemoryPitched<float, 2>& odepthMap_dmp,
     CudaDeviceMemoryPitched<float, 2>& idepthMap_dmp,
@@ -1393,11 +1393,9 @@ static void ps_refineDepthMapInternal(
     bool verbose, int wsh, float gammaC, float gammaP, float simThr,
     CudaDeviceMemoryPitched<float3, 2>& dsm_dmp,
     CudaDeviceMemoryPitched<float3, 2>& ssm_dmp,
-    cudaTextureObject_t  rTexU4,
-    cudaTextureObject_t& tTexU4,
-    PitchedMem_Texture<uchar4,cudaFilterModePoint,cudaReadModeElementType>* timg_dmp,
-    // CudaArray<uchar4, 2>& tTexU4_arr,
-    // CudaDeviceMemoryPitched<uchar4, 2>& timg_dmp,
+    ElemPointTexUchar4  rTexU4,
+    ElemPointTexUchar4& tTexU4,
+    PitchedMem_Texture<uchar4>* timg_dmp,
     bool moveByTcOrRc, float step)
 {
     ///////////////////////////////////////////////////////////////////////////////
@@ -1603,11 +1601,11 @@ void ps_refineDepthMapReproject( CudaHostMemoryHeap<uchar4, 2>* otimg_hmh,
     dim3 grid(divUp(width, block_size), divUp(height, block_size), 1);
 
     ps_init_reference_camera_matrices( *cams[0]->cam );
-    NormLinearTex<uchar4> r4tex = global_data.getScaledPictureTexNorm( scale, cams[0]->camId );
+    NormLinearTexUchar4 r4tex = global_data.getScaledPictureTexNorm( scale, cams[0]->camId );
 
     int c = 1;
     ps_init_target_camera_matrices( *cams[c]->cam );
-    NormLinearTex<uchar4> t4tex = global_data.getScaledPictureTexNorm( scale, cams[c]->camId );
+    NormLinearTexUchar4 t4tex = global_data.getScaledPictureTexNorm( scale, cams[c]->camId );
 
     auto rimg_dmp = global_data.pitched_mem_uchar4_point_tex_cache.get( width, height );
     auto timg_dmp = global_data.pitched_mem_uchar4_point_tex_cache.get( width, height );
@@ -1619,8 +1617,8 @@ void ps_refineDepthMapReproject( CudaHostMemoryHeap<uchar4, 2>* otimg_hmh,
         width, height );
     memOpErrorCheck( cudaGetLastError(), __FILE__, __LINE__, "Failed to execute kernel" );
 
-    cudaTextureObject_t rTexU4 = rimg_dmp->tex;
-    cudaTextureObject_t tTexU4 = rimg_dmp->tex;
+    ElemPointTexUchar4 rTexU4 = rimg_dmp->tex;
+    ElemPointTexUchar4 tTexU4 = rimg_dmp->tex;
 
     clock_t tall = tic();
 
@@ -1728,8 +1726,8 @@ void ps_computeSimMapForRcTcDepthMap( CudaHostMemoryHeap<float, 2>* osimMap_hmh,
     int c = 1;
     ps_init_target_camera_matrices(*cams[c]->cam);
 
-    NormLinearTex<uchar4> r4tex = global_data.getScaledPictureTexNorm( scale, cams[0]->camId );
-    NormLinearTex<uchar4> t4tex = global_data.getScaledPictureTexNorm( scale, cams[c]->camId );
+    NormLinearTexUchar4 r4tex = global_data.getScaledPictureTexNorm( scale, cams[0]->camId );
+    NormLinearTexUchar4 t4tex = global_data.getScaledPictureTexNorm( scale, cams[c]->camId );
 
     CudaDeviceMemoryPitched<float, 2> osimMap_dmp(CudaSize<2>(width, height));
     CudaDeviceMemoryPitched<float, 2> rcTcDepthMap_dmp(rcTcDepthMap_hmh);
@@ -1769,8 +1767,8 @@ void ps_refineRcDepthMap( float* osimMap_hmh,
     int c = 1;
     ps_init_target_camera_matrices(*cams[c]->cam);
 
-    NormLinearTex<uchar4> r4tex = global_data.getScaledPictureTexNorm( scale, cams[0]->camId );
-    NormLinearTex<uchar4> t4tex = global_data.getScaledPictureTexNorm( scale, cams[c]->camId );
+    NormLinearTexUchar4 r4tex = global_data.getScaledPictureTexNorm( scale, cams[0]->camId );
+    NormLinearTexUchar4 t4tex = global_data.getScaledPictureTexNorm( scale, cams[c]->camId );
 
     CudaDeviceMemoryPitched<float3, 2> lastThreeSimsMap(CudaSize<2>(width, height));
     CudaDeviceMemoryPitched<float, 2> simMap_dmp(CudaSize<2>(width, height));
@@ -1999,7 +1997,7 @@ void ps_optimizeDepthSimMapGradientDescent(
 
     ps_init_reference_camera_matrices(*cams.cam);
 
-    NormLinearTex<uchar4> r4tex = global_data.getScaledPictureTexNorm( scale, cams.camId );
+    NormLinearTexUchar4 r4tex = global_data.getScaledPictureTexNorm( scale, cams.camId );
 
     CudaDeviceMemoryPitched<float2, 2>** dataMaps_dmp;
     dataMaps_dmp = new CudaDeviceMemoryPitched<float2, 2>*[ndataMaps];
@@ -2176,7 +2174,7 @@ void ps_getSilhoueteMap( CudaHostMemoryHeap<bool, 2>* omap_hmh, int width,
     dim3 block(block_size, block_size, 1);
     dim3 grid(divUp(width / step, block_size), divUp(height / step, block_size), 1);
 
-    PointTex<uchar4> rTexU4 = global_data.getScaledPictureTexPoint( scale, camId );
+    ElemPointTexUchar4 rTexU4 = global_data.getScaledPictureTexPoint( scale, camId );
 
     CudaDeviceMemoryPitched<bool, 2> map_dmp(CudaSize<2>(width / step, height / step));
 

@@ -24,7 +24,7 @@ namespace depthMap {
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////
 
-__global__ void compute_varLofLABtoW_kernel( NormLinearTex<uchar4> r4tex, uchar4* labMap, int labMap_p, int width, int height, int wsh);
+__global__ void compute_varLofLABtoW_kernel( NormLinearTexUchar4 r4tex, uchar4* labMap, int labMap_p, int width, int height, int wsh);
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -75,27 +75,27 @@ static __device__ float move3DPointByTcOrRcPixStep(float3& p, float pixStep, boo
 }
 
 __global__ void smoothDepthMap_kernel(
-    NormLinearTex<uchar4> r4tex,
-    cudaTextureObject_t depthsTex,
+    NormLinearTexUchar4 r4tex,
+    ElemPointTexFloat depthsTex,
     float* dmap, int dmap_p,
     int width, int height, int wsh, const float gammaC, const float gammaP);
 
 __global__ void filterDepthMap_kernel(
-    NormLinearTex<uchar4> r4tex,
-    cudaTextureObject_t depthsTex,
+    NormLinearTexUchar4 r4tex,
+    ElemPointTexFloat depthsTex,
     float* dmap, int dmap_p,
     int width, int height, int wsh, const float gammaC, const float minCostThr );
 
 __global__ void alignSourceDepthMapToTarget_kernel(
-    NormLinearTex<uchar4> r4tex,
-    cudaTextureObject_t depthsTex,
-    cudaTextureObject_t depthsTex1,
+    NormLinearTexUchar4 r4tex,
+    ElemPointTexFloat depthsTex,
+    ElemPointTexFloat depthsTex1,
     float* dmap, int dmap_p,
     int width, int height, int wsh, const float gammaC, const float maxPixelSizeDist );
 
 __global__ void computeNormalMap_kernel(
-    NormLinearTex<uchar4> r4tex,
-    cudaTextureObject_t depthsTex,
+    NormLinearTexUchar4 r4tex,
+    ElemPointTexFloat depthsTex,
     float3* nmap, int nmap_p,
     int width, int height, int wsh, const float gammaC, const float gammaP );
 
@@ -107,8 +107,8 @@ __global__ void locmin_kernel(
     bool doUsePixelsDepths, int kernelSizeHalf );
 
 __global__ void getRefTexLAB_kernel(
-    NormLinearTex<uchar4> r4tex,
-    NormLinearTex<uchar4> t4tex,
+    NormLinearTexUchar4 r4tex,
+    NormLinearTexUchar4 t4tex,
     uchar4* texs, int texs_p, int width, int height);
 
 __global__ void getTarTexLAB_kernel(
@@ -121,87 +121,87 @@ __global__ void reprojTarTexLAB_kernel(
     int width, int height, float fpPlaneDepth);
 
 #if 0
-__global__ void reprojTarTexRgb_kernel(
-    cudaTextureObject_t rtex,
-    cudaTextureObject_t gtex,
-    cudaTextureObject_t btex,
-    uchar4* texs, int texs_p,
-    int width, int height, float fpPlaneDepth);
+// __global__ void reprojTarTexRgb_kernel(
+//     cudaTextureObject_t rtex,
+//     cudaTextureObject_t gtex,
+//     cudaTextureObject_t btex,
+//     uchar4* texs, int texs_p,
+//     int width, int height, float fpPlaneDepth);
 #endif
 
 #if 0
-__global__ void copyUchar4Dim2uchar_kernel(int dim, uchar4* src, int src_p, unsigned char* tar, int tar_p, int width,
-                                           int height);
+// __global__ void copyUchar4Dim2uchar_kernel(int dim, uchar4* src, int src_p, unsigned char* tar, int tar_p, int width,
+//                                            int height);
 #endif
 
 #if 0
-__global__ void transpose_uchar4_kernel(uchar4* input, int input_p, uchar4* output, int output_p, int width, int height);
+// __global__ void transpose_uchar4_kernel(uchar4* input, int input_p, uchar4* output, int output_p, int width, int height);
 #endif
 
 #if 0
-__global__ void transpose_float4_kernel(float4* input, int input_p, float4* output, int output_p, int width, int height);
+// __global__ void transpose_float4_kernel(float4* input, int input_p, float4* output, int output_p, int width, int height);
 #endif
 
 #if 0
-__global__ void compAggrNccSim_kernel(
-    float4* ostat1, int ostat1_p,
-    float4* ostat2, int ostat2_p,
-    uchar4* rImIn, int rImIn_p,
-    uchar4* tImIn, int tImIn_p,
-    int width, int height, int step, int orintation);
+// __global__ void compAggrNccSim_kernel(
+//     float4* ostat1, int ostat1_p,
+//     float4* ostat2, int ostat2_p,
+//     uchar4* rImIn, int rImIn_p,
+//     uchar4* tImIn, int tImIn_p,
+//     int width, int height, int step, int orintation);
 #endif
 
 #if 0
-__global__ void compNccSimFromStats_kernel(
-    float* odepth, int odepth_p,
-    float* osim, int osim_p,
-    float4* stat1, int stat1_p,
-    float4* stat2, int stat2_p,
-    int width, int height, int d, float depth);
+// __global__ void compNccSimFromStats_kernel(
+//     float* odepth, int odepth_p,
+//     float* osim, int osim_p,
+//     float4* stat1, int stat1_p,
+//     float4* stat2, int stat2_p,
+//     int width, int height, int d, float depth);
 #endif
 
 #if 0
-__global__ void compWshNccSim_kernel(
-    cudaTextureObject_t rTexU4,
-    cudaTextureObject_t tTexU4,
-    float* osim, int osim_p,
-    int width, int height, int wsh, int step );
+// __global__ void compWshNccSim_kernel(
+//     cudaTextureObject_t rTexU4,
+//     cudaTextureObject_t tTexU4,
+//     float* osim, int osim_p,
+//     int width, int height, int wsh, int step );
 #endif
 
 #if 0
-__global__ void aggrYKNCCSim_kernel(
-    cudaTextureObject_t rTexU4,
-    cudaTextureObject_t tTexU4,
-    cudaTextureObject_t sliceTex,
-    float* osim, int osim_p,
-    int width, int height, int wsh, int step,
-    const float gammaC, const float gammaP );
+// __global__ void aggrYKNCCSim_kernel(
+//     cudaTextureObject_t rTexU4,
+//     cudaTextureObject_t tTexU4,
+//     cudaTextureObject_t sliceTex,
+//     float* osim, int osim_p,
+//     int width, int height, int wsh, int step,
+//     const float gammaC, const float gammaP );
 #endif
 
 #if 0
-__global__ void updateBestDepth_kernel(
-    float* osim, int osim_p,
-    float* odpt, int odpt_p,
-    float* isim, int isim_p,
-    int width, int height, int step, float fpPlaneDepth, int d);
+// __global__ void updateBestDepth_kernel(
+//     float* osim, int osim_p,
+//     float* odpt, int odpt_p,
+//     float* isim, int isim_p,
+//     int width, int height, int step, float fpPlaneDepth, int d);
 #endif
 
-__global__ void downscale_bilateral_smooth_lab_kernel(
-    cudaTextureObject_t gaussianTex,
-    cudaTextureObject_t r4tex,
-    uchar4* texLab, int texLab_p,
-    int width, int height, int scale, int radius, float gammaC );
+// __global__ void downscale_bilateral_smooth_lab_kernel(
+//     cudaTextureObject_t gaussianTex,
+//     cudaTextureObject_t r4tex,
+//     uchar4* texLab, int texLab_p,
+//     int width, int height, int scale, int radius, float gammaC );
 
 __global__ void downscale_gauss_smooth_lab_kernel(
-    cudaTextureObject_t gaussianTex,
-    NormLinearTex<uchar4> r4tex,
+    ElemPointTexFloat gaussianTex,
+    NormLinearTexUchar4 r4tex,
     uchar4* texLab, int texLab_p,
     int width, int height, int scale, int radius );
 
-__global__ void downscale_mean_smooth_lab_kernel(
-    cudaTextureObject_t r4tex,
-    uchar4* texLab, int texLab_p,
-    int width, int height, int scale );
+// __global__ void downscale_mean_smooth_lab_kernel(
+//     cudaTextureObject_t r4tex,
+//     uchar4* texLab, int texLab_p,
+//     int width, int height, int scale );
 
 // __global__ void ptsStatForRcDepthMap_kernel(
 //     cudaTextureObject_t r4tex,
@@ -212,7 +212,7 @@ __global__ void downscale_mean_smooth_lab_kernel(
 //     int maxNPixSize, int wsh, const float gammaC, const float gammaP );
 
 __global__ void getSilhoueteMap_kernel(
-    PointTex<uchar4> rTexU4,
+    ElemPointTexUchar4 rTexU4,
     bool* out, int out_p,
     int step, int width, int height, const uchar4 maskColorLab );
 

@@ -22,7 +22,7 @@ namespace depthMap {
  */
 thread_local GlobalData global_data;
 
-void GaussianArray::create( float delta, int radius )
+GaussianArray::GaussianArray( float delta, int radius )
 {
     cudaError_t err;
 
@@ -61,8 +61,18 @@ void GaussianArray::create( float delta, int radius )
     tex_desc.filterMode       = cudaFilterModePoint; // apparently default for references
     // tex_desc.filterMode       = cudaFilterModeLinear; // no interpolation
 
-    err = cudaCreateTextureObject( &tex, &res_desc, &tex_desc, 0 );
+    err = cudaCreateTextureObject( &tex.obj, &res_desc, &tex_desc, 0 );
     memOpErrorCheck( err, __FILE__, __LINE__, "Failed to create CUDA texture object for Gaussian array" );
+}
+
+GaussianArray::~GaussianArray()
+{
+    cudaError_t err;
+    err = cudaDestroyTextureObject( tex.obj );
+    memOpErrorCheck( err, __FILE__, __LINE__, "Failed to create CUDA texture object for Gaussian array" );
+
+    err = cudaFreeArray( arr );
+    memOpErrorCheck( err, __FILE__, __LINE__, "Failed to free CUDA array" );
 }
 
 GlobalData::~GlobalData( )
@@ -70,9 +80,7 @@ GlobalData::~GlobalData( )
     auto end = _gaussian_arr_table.end();
     for( auto it=_gaussian_arr_table.begin(); it!=end;it++ )
     {
-        // cudaDestroyTexture( it->second->tex );
-        cudaError_t err = cudaFreeArray( it->second->arr );
-        memOpErrorCheck( err, __FILE__, __LINE__, "Failed to free CUDA array" );
+        delete it->second;
     }
 }
 
@@ -84,8 +92,7 @@ GaussianArray* GlobalData::getGaussianArray( float delta, int radius )
         return it->second;
     }
 
-    GaussianArray* a = new GaussianArray;
-    a->create( delta, radius );
+    GaussianArray* a = new GaussianArray( delta, radius );
 
     _gaussian_arr_table.insert( std::pair<GaussianArrayIndex,GaussianArray*>( GaussianArrayIndex(radius,delta), a ) );
 
@@ -153,7 +160,7 @@ void GlobalData::freeScaledPictureArrays( )
 
     _scaled_picture_array.clear();
 
-    for( NormLinearTex<uchar4>& tex : _scaled_picture_tex_norm_linear )
+    for( NormLinearTexUchar4& tex : _scaled_picture_tex_norm_linear )
     {
         cudaError_t err = cudaDestroyTextureObject( tex.obj );
         memOpErrorCheck( err, __FILE__, __LINE__, "Failed to get destroy CUDA texture object" );
@@ -161,7 +168,7 @@ void GlobalData::freeScaledPictureArrays( )
 
     _scaled_picture_tex_norm_linear.clear();
 
-    for( PointTex<uchar4>& tex : _scaled_picture_tex_point )
+    for( ElemPointTexUchar4& tex : _scaled_picture_tex_point )
     {
         cudaError_t err = cudaDestroyTextureObject( tex.obj );
         memOpErrorCheck( err, __FILE__, __LINE__, "Failed to get destroy CUDA texture object" );
@@ -180,12 +187,12 @@ CudaArray<uchar4,2>& GlobalData::getScaledPictureArray( int scale, int cam )
     return *_scaled_picture_array[ cam * _scaled_picture_scales + scale ];
 }
 
-PointTex<uchar4> GlobalData::getScaledPictureTexPoint( int scale, int cam )
+ElemPointTexUchar4 GlobalData::getScaledPictureTexPoint( int scale, int cam )
 {
     return _scaled_picture_tex_point[ cam * _scaled_picture_scales + scale ];
 }
 
-NormLinearTex<uchar4> GlobalData::getScaledPictureTexNorm( int scale, int cam )
+NormLinearTexUchar4 GlobalData::getScaledPictureTexNorm( int scale, int cam )
 {
     return _scaled_picture_tex_norm_linear[ cam * _scaled_picture_scales + scale ];
 }

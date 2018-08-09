@@ -82,8 +82,8 @@ inline __device__ void computeRotCSEpip(patch& ptch, const float3& p)
  * @return similarity value
  */
 inline __device__ float compNCCby3DptsYK(
-    NormLinearTex<uchar4> r4tex,
-    NormLinearTex<uchar4> t4tex,
+    NormLinearTexUchar4 r4tex,
+    NormLinearTexUchar4 t4tex,
     patch& ptch, int wsh, int width, int height, const float _gammaC, const float _gammaP,
     const float epipShift)
 {

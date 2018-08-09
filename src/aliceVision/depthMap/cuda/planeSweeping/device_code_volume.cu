@@ -16,12 +16,12 @@
 namespace aliceVision {
 namespace depthMap {
 
-static __device__ void volume_computePatch( cudaTextureObject_t depthsTex, patch& ptch, int depthid, int2& pix)
+static __device__ void volume_computePatch( ElemPointTexFloat depthsTex, patch& ptch, int depthid, int2& pix)
 {
     float3 p;
     float pixSize;
 
-    float fpPlaneDepth = tex2D<float>(depthsTex, depthid, 0);
+    float fpPlaneDepth = tex2D<float>(depthsTex.obj, depthid, 0);
     p = get3DPointForPixelAndFrontoParellePlaneRC(pix, fpPlaneDepth);
     pixSize = computePixSize(p);
 
@@ -32,12 +32,12 @@ static __device__ void volume_computePatch( cudaTextureObject_t depthsTex, patch
 
 #if 1
 __global__ void volume_slice_kernel(
-    NormLinearTex<uchar4> r4tex,
-    NormLinearTex<uchar4> t4tex,
-    cudaTextureObject_t depthsTex,
-    cudaTextureObject_t volPixs_x_Tex,
-    cudaTextureObject_t volPixs_y_Tex,
-    cudaTextureObject_t volPixs_z_Tex,
+    NormLinearTexUchar4 r4tex,
+    NormLinearTexUchar4 t4tex,
+    ElemPointTexFloat depthsTex,
+    ElemPointTexInt volPixs_x_Tex,
+    ElemPointTexInt volPixs_y_Tex,
+    ElemPointTexInt volPixs_z_Tex,
     unsigned char* slice, const int slice_p,
     const int nsearchdepths, const int ndepths, const int slicesAtTime,
     const int width, const int height,
@@ -57,9 +57,9 @@ __global__ void volume_slice_kernel(
 
     if((sdptid < nsearchdepths) && (pixid < slicesAtTime) && (slicesAtTime * t + pixid < npixs))
     {
-        const int volPix_x = tex2D<int>(volPixs_x_Tex, pixid, t);
-        const int volPix_y = tex2D<int>(volPixs_y_Tex, pixid, t);
-        const int volPix_z = tex2D<int>(volPixs_z_Tex, pixid, t);
+        const int volPix_x = tex2D<int>(volPixs_x_Tex.obj, pixid, t);
+        const int volPix_y = tex2D<int>(volPixs_y_Tex.obj, pixid, t);
+        const int volPix_z = tex2D<int>(volPixs_z_Tex.obj, pixid, t);
         const int depthid = sdptid + volPix_z;
         int2 pix = make_int2(volPix_x, volPix_y);
 
@@ -100,9 +100,9 @@ __global__ void volume_slice_kernel(
 }
 
 __global__ void volume_saveSliceToVolume_kernel(
-    cudaTextureObject_t volPixs_x_Tex,
-    cudaTextureObject_t volPixs_y_Tex,
-    cudaTextureObject_t volPixs_z_Tex,
+    ElemPointTexInt volPixs_x_Tex,
+    ElemPointTexInt volPixs_y_Tex,
+    ElemPointTexInt volPixs_z_Tex,
     unsigned char* volume, const int volume_s, const int volume_p,
     const unsigned char* slice, const int slice_p,
     const int nsearchdepths, const int ndepths, const int slicesAtTime,
@@ -120,9 +120,9 @@ __global__ void volume_saveSliceToVolume_kernel(
     if(pixid >= slicesAtTime) return;
     if(slicesAtTime * t + pixid >= npixs) return;
 
-    const int volPix_x = tex2D<int>(volPixs_x_Tex, pixid, t);
-    const int volPix_y = tex2D<int>(volPixs_y_Tex, pixid, t);
-    const int volPix_z = tex2D<int>(volPixs_z_Tex, pixid, t);
+    const int volPix_x = tex2D<int>(volPixs_x_Tex.obj, pixid, t);
+    const int volPix_y = tex2D<int>(volPixs_y_Tex.obj, pixid, t);
+    const int volPix_z = tex2D<int>(volPixs_z_Tex.obj, pixid, t);
     const int depthid = sdptid + volPix_z;
 
     if(depthid >= ndepths) return;
@@ -153,12 +153,12 @@ __global__ void volume_saveSliceToVolume_kernel(
 
 #if 1
 __global__ void volume_slice_kernel_2(
-    NormLinearTex<uchar4> r4tex,
-    NormLinearTex<uchar4> t4tex,
-    cudaTextureObject_t depthsTex,
-    cudaTextureObject_t volPixs_x_Tex,
-    cudaTextureObject_t volPixs_y_Tex,
-    cudaTextureObject_t volPixs_z_Tex,
+    NormLinearTexUchar4 r4tex,
+    NormLinearTexUchar4 t4tex,
+    ElemPointTexFloat depthsTex,
+    ElemPointTexInt volPixs_x_Tex,
+    ElemPointTexInt volPixs_y_Tex,
+    ElemPointTexInt volPixs_z_Tex,
     unsigned char* slice, const int slice_p,
     const int nsearchdepths, const int ndepths,
     const int slicesAtTime, const int width, const int height,
@@ -176,9 +176,9 @@ __global__ void volume_slice_kernel_2(
     if(pixid >= slicesAtTime) return;
     if(slicesAtTime * t + pixid >= npixs) return;
 
-    const int volPix_x = tex2D<int>(volPixs_x_Tex, pixid, t);
-    const int volPix_y = tex2D<int>(volPixs_y_Tex, pixid, t);
-    const int volPix_z = tex2D<int>(volPixs_z_Tex, pixid, t);
+    const int volPix_x = tex2D<int>(volPixs_x_Tex.obj, pixid, t);
+    const int volPix_y = tex2D<int>(volPixs_y_Tex.obj, pixid, t);
+    const int volPix_z = tex2D<int>(volPixs_z_Tex.obj, pixid, t);
     const int depthid = sdptid + volPix_z;
     int2 pix = make_int2(volPix_x, volPix_y);
 
@@ -329,17 +329,17 @@ __global__ void volume_updateMinXSlice_kernel(unsigned char* volume, int volume_
 #endif
 
 __global__ void volume_computeBestXSliceUInt_kernel(
-    cudaTextureObject_t sliceTexUInt,
+    ElemPointTexUint sliceTexUInt,
     unsigned int* xsliceBestInColCst, int volDimX, int volDimY )
 {
     int vx = blockIdx.x * blockDim.x + threadIdx.x;
 
     if((vx >= 0) && (vx < volDimX))
     {
-        unsigned int bestCst = tex2D<unsigned int>(sliceTexUInt, vx, 0);
+        unsigned int bestCst = tex2D<unsigned int>(sliceTexUInt.obj, vx, 0);
         for(int vy = 0; vy < volDimY; vy++)
         {
-            unsigned int cst = tex2D<unsigned int>(sliceTexUInt, vx, vy);
+            unsigned int cst = tex2D<unsigned int>(sliceTexUInt.obj, vx, vy);
             bestCst = cst < bestCst ? cst : bestCst;
         }
         xsliceBestInColCst[vx] = bestCst;
@@ -353,7 +353,7 @@ __global__ void volume_computeBestXSliceUInt_kernel(
  * @param[out] volSimT output similarity volume
  */
 __global__ void volume_agregateCostVolumeAtZinSlices_kernel(
-    NormLinearTex<uchar4> r4tex,
+    NormLinearTexUchar4 r4tex,
     unsigned int* xySliceForZ, int xySliceForZ_p,
     const unsigned int* xySliceForZM1, int xySliceForZM1_p,
     const unsigned int* xSliceBestInColSimForZM1,

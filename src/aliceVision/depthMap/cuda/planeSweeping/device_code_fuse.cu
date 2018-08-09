@@ -105,13 +105,13 @@ __global__ void fuse_getOptDeptMapFromOPtDepthSimMap_kernel(float* optDepthMap, 
 /**
  * @return (smoothStep, energy)
  */
-static __device__ float2 getCellSmoothStepEnergy( cudaTextureObject_t depthsTex,
+static __device__ float2 getCellSmoothStepEnergy( ElemPointTexFloat depthsTex,
                                                   const int2& cell0 )
 {
     float2 out = make_float2(0.0f, 180.0f);
 
     // Get pixel depth from the depth texture
-    float d0 = tex2D<float>(depthsTex, cell0.x, cell0.y);
+    float d0 = tex2D<float>(depthsTex.obj, cell0.x, cell0.y);
 
     // Early exit: depth is <= 0
     if(d0 <= 0.0f)
@@ -124,10 +124,10 @@ static __device__ float2 getCellSmoothStepEnergy( cudaTextureObject_t depthsTex,
     int2 cellB = cell0 + make_int2(1, 0);	// Bottom
 
     // Get associated depths from depth texture
-    float dL = tex2D<float>(depthsTex, cellL.x, cellL.y);
-    float dR = tex2D<float>(depthsTex, cellR.x, cellR.y);
-    float dU = tex2D<float>(depthsTex, cellU.x, cellU.y);
-    float dB = tex2D<float>(depthsTex, cellB.x, cellB.y);
+    float dL = tex2D<float>(depthsTex.obj, cellL.x, cellL.y);
+    float dR = tex2D<float>(depthsTex.obj, cellR.x, cellR.y);
+    float dU = tex2D<float>(depthsTex.obj, cellU.x, cellU.y);
+    float dB = tex2D<float>(depthsTex.obj, cellB.x, cellB.y);
 
     // Get associated 3D points
     float3 p0 = get3DPointForPixelAndDepthFromRC(cell0, d0);
@@ -180,8 +180,8 @@ static __device__ float2 getCellSmoothStepEnergy( cudaTextureObject_t depthsTex,
 }
 
 __global__ void fuse_optimizeDepthSimMap_kernel(
-    NormLinearTex<uchar4> r4tex,
-    cudaTextureObject_t depthsTex,
+    NormLinearTexUchar4 r4tex,
+    ElemPointTexFloat depthsTex,
     float2* out_optDepthSimMap, int optDepthSimMap_p,
     float2* midDepthPixSizeMap, int midDepthPixSizeMap_p,
     float2* fusedDepthSimMap, int fusedDepthSimMap_p, int width, int height,

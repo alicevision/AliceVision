@@ -15,12 +15,12 @@ namespace depthMap {
 
 #if 1
 __global__ void volume_slice_kernel(
-    NormLinearTex<uchar4> r4tex,
-    NormLinearTex<uchar4> t4tex,
-    cudaTextureObject_t depthsTex,
-    cudaTextureObject_t volPixs_x_Tex,
-    cudaTextureObject_t volPixs_y_Tex,
-    cudaTextureObject_t volPixs_z_Tex,
+    NormLinearTexUchar4 r4tex,
+    NormLinearTexUchar4 t4tex,
+    ElemPointTexFloat depthsTex,
+    ElemPointTexInt volPixs_x_Tex,
+    ElemPointTexInt volPixs_y_Tex,
+    ElemPointTexInt volPixs_z_Tex,
     unsigned char* slice, const int slice_p,
     const int nsearchdepths, const int ndepths, const int slicesAtTime,
     const int width, const int height, const int wsh,
@@ -31,9 +31,9 @@ __global__ void volume_slice_kernel(
     int volDimY, int volDimZ, int volLUX, int volLUY, int volLUZ );
 
 __global__ void volume_saveSliceToVolume_kernel(
-    cudaTextureObject_t volPixsTex_x,
-    cudaTextureObject_t volPixsTex_y,
-    cudaTextureObject_t volPixsTex_z,
+    ElemPointTexInt volPixsTex_x,
+    ElemPointTexInt volPixsTex_y,
+    ElemPointTexInt volPixsTex_z,
     unsigned char* volume, const int volume_s, const int volume_p,
     const unsigned char* slice, const int slice_p,
     const int nsearchdepths, const int ndepths, const int slicesAtTime,
@@ -46,12 +46,12 @@ __global__ void volume_saveSliceToVolume_kernel(
 
 #if 1
 __global__ void volume_slice_kernel_2(
-    NormLinearTex<uchar4> r4tex,
-    NormLinearTex<uchar4> t4tex,
-    cudaTextureObject_t depthsTex,
-    cudaTextureObject_t volPixs_x_Tex,
-    cudaTextureObject_t volPixs_y_Tex,
-    cudaTextureObject_t volPixs_z_Tex,
+    NormLinearTexUchar4 r4tex,
+    NormLinearTexUchar4 t4tex,
+    ElemPointTexFloat depthsTex,
+    ElemPointTexInt volPixs_x_Tex,
+    ElemPointTexInt volPixs_y_Tex,
+    ElemPointTexInt volPixs_z_Tex,
     unsigned char* slice, const int slice_p,
     const int nsearchdepths, const int ndepths,
     const int slicesAtTime, const int width, const int height,
@@ -188,7 +188,7 @@ __global__ void volume_getVolumeXYSliceAtZ_kernel(T1* xySlice, int xySlice_p, T2
 #endif
 
 __global__ void volume_computeBestXSliceUInt_kernel(
-    cudaTextureObject_t sliceTexUInt,
+    ElemPointTexUint sliceTexUInt,
     unsigned int* xsliceBestInColCst, int volDimX, int volDimY );
 
 /**
@@ -198,7 +198,7 @@ __global__ void volume_computeBestXSliceUInt_kernel(
  * @param[out] volSimT output similarity volume
  */
 __global__ void volume_agregateCostVolumeAtZinSlices_kernel(
-                    NormLinearTex<uchar4> r4tex,
+                    NormLinearTexUchar4 r4tex,
                     unsigned int* xySliceForZ, int xySliceForZ_p,
                     const unsigned int* xySliceForZM1, int xySliceForZM1_p,
                     const unsigned int* xSliceBestInColSimForZM1,

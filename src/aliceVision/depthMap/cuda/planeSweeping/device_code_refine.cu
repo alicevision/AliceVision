@@ -163,7 +163,7 @@ __global__ void refine_computeDepthsMapFromDepthMap_kernel(float3* depthsMap, in
 }
 
 __global__ void refine_reprojTarTexLABByDepthsMap_kernel(
-    NormLinearTex<uchar4> t4tex,
+    NormLinearTexUchar4 t4tex,
     float3* depthsMap, int depthsMap_p,
     uchar4* tex, int tex_p,
     int width, int height, int id)
@@ -211,88 +211,88 @@ __global__ void refine_reprojTarTexLABByDepthsMap_kernel(
     };
 }
 
-__global__ void refine_reprojTarTexLABByDepthMap_kernel(
-    cudaTextureObject_t t4tex,
-    float* depthMap, int depthMap_p,
-    uchar4* tex, int tex_p,
-    int width, int height)
-{
-    int x = blockIdx.x * blockDim.x + threadIdx.x;
-    int y = blockIdx.y * blockDim.y + threadIdx.y;
-    int2 pix;
-    pix.x = x;
-    pix.y = y;
-
-    if((x < width) && (y < height))
-    {
-        float depth = depthMap[y * depthMap_p + x];
-        uchar4 ocol = make_uchar4(0, 0, 0, 0);
-
-        if(depth > 0.0f)
-        {
-            float3 p = get3DPointForPixelAndDepthFromRC(pix, depth);
-            float2 tpc = project3DPoint(sg_s_tP, p);
-            if(((tpc.x + 0.5f) > 0.0f) && ((tpc.y + 0.5f) > 0.0f) && ((tpc.x + 0.5f) < (float)width - 1.0f) &&
-               ((tpc.y + 0.5f) < (float)height - 1.0f))
-            {
-                ocol = float4_to_uchar4(255.0f * tex2D<float4>(t4tex, (float)tpc.x + 0.5f, (float)tpc.y + 0.5f));
-            };
-        };
-
-        tex[y * tex_p + x] = ocol;
-    };
-}
+// __global__ void refine_reprojTarTexLABByDepthMap_kernel(
+//     cudaTextureObject_t t4tex,
+//     float* depthMap, int depthMap_p,
+//     uchar4* tex, int tex_p,
+//     int width, int height)
+// {
+//     int x = blockIdx.x * blockDim.x + threadIdx.x;
+//     int y = blockIdx.y * blockDim.y + threadIdx.y;
+//     int2 pix;
+//     pix.x = x;
+//     pix.y = y;
+// 
+//     if((x < width) && (y < height))
+//     {
+//         float depth = depthMap[y * depthMap_p + x];
+//         uchar4 ocol = make_uchar4(0, 0, 0, 0);
+// 
+//         if(depth > 0.0f)
+//         {
+//             float3 p = get3DPointForPixelAndDepthFromRC(pix, depth);
+//             float2 tpc = project3DPoint(sg_s_tP, p);
+//             if(((tpc.x + 0.5f) > 0.0f) && ((tpc.y + 0.5f) > 0.0f) && ((tpc.x + 0.5f) < (float)width - 1.0f) &&
+//                ((tpc.y + 0.5f) < (float)height - 1.0f))
+//             {
+//                 ocol = float4_to_uchar4(255.0f * tex2D<float4>(t4tex, (float)tpc.x + 0.5f, (float)tpc.y + 0.5f));
+//             };
+//         };
+// 
+//         tex[y * tex_p + x] = ocol;
+//     };
+// }
 
 #if 0
-__global__ void refine_reprojTarTexLABByDepthMapMovedByStep_kernel(
-    cudaTextureObject_t t4tex,
-    float* depthMap, int depthMap_p,
-    uchar4* tex, int tex_p,
-    int width, int height, bool moveByTcOrRc,
-    float step)
-{
-    int x = blockIdx.x * blockDim.x + threadIdx.x;
-    int y = blockIdx.y * blockDim.y + threadIdx.y;
-    int2 pix;
-    pix.x = x;
-    pix.y = y;
-
-    if((x < width) && (y < height))
-    {
-        float depth = depthMap[y * depthMap_p + x];
-        uchar4 ocol = make_uchar4(0, 0, 0, 0);
-
-        if(depth > 0.0f)
-        {
-            float3 p = get3DPointForPixelAndDepthFromRC(pix, depth);
-
-            if(step != 0.0f)
-            {
-                if(moveByTcOrRc == true)
-                {
-                    move3DPointByTcPixStep(p, step);
-                }
-                else
-                {
-                    float pixSize = step * computePixSize(p);
-                    move3DPointByRcPixSize(p, pixSize);
-                };
-
-                depth = size(p - sg_s_rC);
-            };
-
-            float2 tpc = project3DPoint(sg_s_tP, p);
-            if(((tpc.x + 0.5f) > 0.0f) && ((tpc.y + 0.5f) > 0.0f) && ((tpc.x + 0.5f) < (float)width - 1.0f) &&
-               ((tpc.y + 0.5f) < (float)height - 1.0f))
-            {
-                ocol = float4_to_uchar4(255.0f * tex2D<float4>(t4tex, (float)tpc.x + 0.5f, (float)tpc.y + 0.5f));
-            };
-        };
-
-        depthMap[y * depthMap_p + x] = depth;
-        tex[y * tex_p + x] = ocol;
-    };
-}
+// __global__ void refine_reprojTarTexLABByDepthMapMovedByStep_kernel(
+//     cudaTextureObject_t t4tex,
+//     float* depthMap, int depthMap_p,
+//     uchar4* tex, int tex_p,
+//     int width, int height, bool moveByTcOrRc,
+//     float step)
+// {
+//     int x = blockIdx.x * blockDim.x + threadIdx.x;
+//     int y = blockIdx.y * blockDim.y + threadIdx.y;
+//     int2 pix;
+//     pix.x = x;
+//     pix.y = y;
+// 
+//     if((x < width) && (y < height))
+//     {
+//         float depth = depthMap[y * depthMap_p + x];
+//         uchar4 ocol = make_uchar4(0, 0, 0, 0);
+// 
+//         if(depth > 0.0f)
+//         {
+//             float3 p = get3DPointForPixelAndDepthFromRC(pix, depth);
+// 
+//             if(step != 0.0f)
+//             {
+//                 if(moveByTcOrRc == true)
+//                 {
+//                     move3DPointByTcPixStep(p, step);
+//                 }
+//                 else
+//                 {
+//                     float pixSize = step * computePixSize(p);
+//                     move3DPointByRcPixSize(p, pixSize);
+//                 };
+// 
+//                 depth = size(p - sg_s_rC);
+//             };
+// 
+//             float2 tpc = project3DPoint(sg_s_tP, p);
+//             if(((tpc.x + 0.5f) > 0.0f) && ((tpc.y + 0.5f) > 0.0f) && ((tpc.x + 0.5f) < (float)width - 1.0f) &&
+//                ((tpc.y + 0.5f) < (float)height - 1.0f))
+//             {
+//                 ocol = float4_to_uchar4(255.0f * tex2D<float4>(t4tex, (float)tpc.x + 0.5f, (float)tpc.y + 0.5f));
+//             };
+//         };
+// 
+//         depthMap[y * depthMap_p + x] = depth;
+//         tex[y * tex_p + x] = ocol;
+//     };
+// }
 #endif
 
 __global__ void refine_compYKNCCSimMap_kernel(
@@ -335,8 +335,8 @@ __global__ void refine_compYKNCCSimMap_kernel(
 }
 
 __global__ void refine_compYKNCCSim_kernel(
-    cudaTextureObject_t rTexU4,
-    cudaTextureObject_t tTexU4,
+    ElemPointTexUchar4 rTexU4,
+    ElemPointTexUchar4 tTexU4,
     float3* osims, int osims_p,
     int id,
     float* depthMap, int depthMap_p,
@@ -357,14 +357,14 @@ __global__ void refine_compYKNCCSim_kernel(
         if(depth > 0.0f)
         {
             simStat sst = simStat();
-            float4 rcm = uchar4_to_float4(tex2D<uchar4>(rTexU4, x, y));
-            float4 tcm = uchar4_to_float4(tex2D<uchar4>(tTexU4, x, y));
+            float4 rcm = uchar4_to_float4(tex2D<uchar4>(rTexU4.obj, x, y));
+            float4 tcm = uchar4_to_float4(tex2D<uchar4>(tTexU4.obj, x, y));
             for(int yp = -wsh; yp <= +wsh; yp++)
             {
                 for(int xp = -wsh; xp <= +wsh; xp++)
                 {
-                    float4 rc = uchar4_to_float4(tex2D<uchar4>(rTexU4, x + xp, y + yp));
-                    float4 tc = uchar4_to_float4(tex2D<uchar4>(tTexU4, x + xp, y + yp));
+                    float4 rc = uchar4_to_float4(tex2D<uchar4>(rTexU4.obj, x + xp, y + yp));
+                    float4 tc = uchar4_to_float4(tex2D<uchar4>(tTexU4.obj, x + xp, y + yp));
                     float w =
                         CostYKfromLab(xp, yp, rcm, rc, gammaC, gammaP) * CostYKfromLab(xp, yp, tcm, tc, gammaC, gammaP);
                     sst.update((float)rc.x, (float)tc.x, w);
@@ -390,8 +390,8 @@ __global__ void refine_compYKNCCSim_kernel(
 }
 
 __global__ void refine_compYKNCCSimOptGammaC_kernel(
-    cudaTextureObject_t rTexU4,
-    cudaTextureObject_t tTexU4,
+    ElemPointTexUchar4 rTexU4,
+    ElemPointTexUchar4 tTexU4,
     float3* osims, int osims_p,
     int id,
     float* depthMap, int depthMap_p,
@@ -421,14 +421,14 @@ __global__ void refine_compYKNCCSimOptGammaC_kernel(
             {
                 sst[k] = simStat();
             };
-            float4 rcm = uchar4_to_float4(tex2D<uchar4>(rTexU4, x, y));
-            float4 tcm = uchar4_to_float4(tex2D<uchar4>(tTexU4, x, y));
+            float4 rcm = uchar4_to_float4(tex2D<uchar4>(rTexU4.obj, x, y));
+            float4 tcm = uchar4_to_float4(tex2D<uchar4>(tTexU4.obj, x, y));
             for(int yp = -wsh; yp <= +wsh; yp++)
             {
                 for(int xp = -wsh; xp <= +wsh; xp++)
                 {
-                    float4 rc = uchar4_to_float4(tex2D<uchar4>(rTexU4, x + xp, y + yp));
-                    float4 tc = uchar4_to_float4(tex2D<uchar4>(tTexU4, x + xp, y + yp));
+                    float4 rc = uchar4_to_float4(tex2D<uchar4>(rTexU4.obj, x + xp, y + yp));
+                    float4 tc = uchar4_to_float4(tex2D<uchar4>(tTexU4.obj, x + xp, y + yp));
 
                     for(int k = 0; k < 4; k++)
                     {
@@ -557,8 +557,8 @@ __device__ inline void inline_refine_setLastThreeSimsMap_kernel(
 
 #ifdef MERGE_REFINE_KERNELS
 __global__ void refine_compYKNCCSimMapPatch_kernel_A(
-    NormLinearTex<uchar4> r4tex,
-    NormLinearTex<uchar4> t4tex,
+    NormLinearTexUchar4 r4tex,
+    NormLinearTexUchar4 t4tex,
     const float* depthMap, int depthMap_p,
     int width, int height, int wsh, const float gammaC,
     const float gammaP, const float epipShift, const float tcStep,
@@ -601,8 +601,8 @@ __global__ void refine_compYKNCCSimMapPatch_kernel_A(
 
 #ifdef MERGE_REFINE_KERNELS
 __global__ void refine_compUpdateYKNCCSimMapPatch_kernel(
-    NormLinearTex<uchar4> r4tex,
-    NormLinearTex<uchar4> t4tex,
+    NormLinearTexUchar4 r4tex,
+    NormLinearTexUchar4 t4tex,
     float* osimMap, int osimMap_p,
     float* odptMap, int odptMap_p,
     const float* depthMap, int depthMap_p, int width, int height,
@@ -673,8 +673,8 @@ __global__ void refine_compUpdateYKNCCSimMapPatch_kernel(
 }
 #else
 __global__ void refine_compUpdateYKNCCSimMapPatch_kernel(
-    NormLinearTex<uchar4> r4tex,
-    NormLinearTex<uchar4> t4tex,
+    NormLinearTexUchar4 r4tex,
+    NormLinearTexUchar4 t4tex,
     float* osimMap, int osimMap_p,
     float* odptMap, int odptMap_p,
     const float* depthMap, int depthMap_p, int width, int height,
@@ -753,8 +753,8 @@ __global__ void refine_coputeDepthStepMap_kernel(float* depthStepMap, int depthS
 }
 
 // __global__ void refine_compYKNCCDepthSimMapPatch_kernel(
-//     NormLinearTex<uchar4> r4tex,
-//     NormLinearTex<uchar4> t4tex,
+//     NormLinearTexUchar4 r4tex,
+//     NormLinearTexUchar4 t4tex,
 //     float2* oDepthSimMap, int oDepthSimMap_p,
 //     float* depthMap, int depthMap_p,
 //     int width, int height, int wsh,
@@ -792,8 +792,8 @@ __global__ void refine_coputeDepthStepMap_kernel(float* depthStepMap, int depthS
 // }
 
 __global__ void refine_compYKNCCSimMapPatch_kernel(
-    NormLinearTex<uchar4> r4tex,
-    NormLinearTex<uchar4> t4tex,
+    NormLinearTexUchar4 r4tex,
+    NormLinearTexUchar4 t4tex,
     float* osimMap, int osimMap_p,
     const float* depthMap, int depthMap_p,
     int width, int height, int wsh, const float gammaC,
@@ -1141,8 +1141,8 @@ inline static __device__ double refine_convolveGaussSigma2(float* Im)
 }
 
 __global__ void refine_compPhotoErr_kernel(
-    cudaTextureObject_t rTexU4,
-    cudaTextureObject_t tTexU4,
+    ElemPointTexUchar4 rTexU4,
+    ElemPointTexUchar4 tTexU4,
     float* osimMap, int osimMap_p,
     float* depthMap, int depthMap_p,
     int width, int height, double beta )
@@ -1160,15 +1160,15 @@ __global__ void refine_compPhotoErr_kernel(
         float depth = depthMap[y * depthMap_p + x];
         if(depth > 0.0f)
         {
-            float4 tcm = uchar4_to_float4(tex2D<uchar4>(tTexU4, x, y));
+            float4 tcm = uchar4_to_float4(tex2D<uchar4>(tTexU4.obj, x, y));
             if(tcm.w == 0)
             {
                 for(int yp = -2; yp <= +2; yp++)
                 {
                     for(int xp = -2; xp <= +2; xp++)
                     {
-                        rim[(xp + 2) * 5 + yp + 2] = (float)(tex2D<uchar4>(rTexU4, x + xp, y + yp).x);
-                        tim[(xp + 2) * 5 + yp + 2] = (float)(tex2D<uchar4>(tTexU4, x + xp, y + yp).x);
+                        rim[(xp + 2) * 5 + yp + 2] = (float)(tex2D<uchar4>(rTexU4.obj, x + xp, y + yp).x);
+                        tim[(xp + 2) * 5 + yp + 2] = (float)(tex2D<uchar4>(tTexU4.obj, x + xp, y + yp).x);
                     };
                 };
                 ok = true;
@@ -1225,8 +1225,8 @@ __global__ void refine_compPhotoErr_kernel(
 }
 
 __global__ void refine_compPhotoErrStat_kernel(
-    cudaTextureObject_t rTexU4,
-    cudaTextureObject_t tTexU4,
+    ElemPointTexUchar4 rTexU4,
+    ElemPointTexUchar4 tTexU4,
     float* occMap, int occMap_p,
     float4* ostat1Map, int ostat1Map_p,
     float* depthMap, int depthMap_p,
@@ -1246,15 +1246,15 @@ __global__ void refine_compPhotoErrStat_kernel(
         float depth = depthMap[y * depthMap_p + x];
         if(depth > 0.0f)
         {
-            float4 tcm = uchar4_to_float4(tex2D<uchar4>(tTexU4, x, y));
+            float4 tcm = uchar4_to_float4(tex2D<uchar4>(tTexU4.obj, x, y));
             if(tcm.w == 0)
             {
                 for(int yp = -2; yp <= +2; yp++)
                 {
                     for(int xp = -2; xp <= +2; xp++)
                     {
-                        rim[(xp + 2) * 5 + yp + 2] = (float)(tex2D<uchar4>(rTexU4, x + xp, y + yp).x);
-                        tim[(xp + 2) * 5 + yp + 2] = (float)(tex2D<uchar4>(tTexU4, x + xp, y + yp).x);
+                        rim[(xp + 2) * 5 + yp + 2] = (float)(tex2D<uchar4>(rTexU4.obj, x + xp, y + yp).x);
+                        tim[(xp + 2) * 5 + yp + 2] = (float)(tex2D<uchar4>(tTexU4.obj, x + xp, y + yp).x);
                     };
                 };
                 ok = true;
@@ -1324,8 +1324,8 @@ __global__ void refine_compPhotoErrStat_kernel(
 
 __global__ void refine_compPhotoErrABG_kernel(
     cudaTextureObject_t f4Tex,
-    cudaTextureObject_t rTexU4,
-    cudaTextureObject_t tTexU4,
+    ElemPointTexUchar4 rTexU4,
+    ElemPointTexUchar4 tTexU4,
     float* osimMap, int osimMap_p,
     int width, int height)
 {
@@ -1390,8 +1390,8 @@ __global__ void refine_compPhotoErrABG_kernel(
         oabg.z = refine_convolveGaussSigma2(tmpIm);
         oabg.w = 1.0f;
 
-        float ric = (float)(tex2D<uchar4>(rTexU4, x, y).x);
-        float tic = (float)(tex2D<uchar4>(tTexU4, x, y).x);
+        float ric = (float)(tex2D<uchar4>(rTexU4.obj, x, y).x);
+        float tic = (float)(tex2D<uchar4>(tTexU4.obj, x, y).x);
 
         osim = oabg.x * ric + oabg.y * tic + oabg.z;
         osim = isinf(osim) ? 1.0f : osim;
