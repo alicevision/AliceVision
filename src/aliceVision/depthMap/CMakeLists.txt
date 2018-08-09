@@ -33,10 +33,10 @@ set(depthMap_cuda_files_sources
   cuda/planeSweeping/device_code_fuse.cu    cuda/planeSweeping/device_code_fuse.cuh
   cuda/deviceCommon/device_patch_es.cuh
   cuda/deviceCommon/device_color.cu         cuda/deviceCommon/device_color.cuh
-  cuda/deviceCommon/device_eig33.cu         cuda/deviceCommon/device_eig33.cuh
+  cuda/deviceCommon/device_eig33.cuh
   cuda/deviceCommon/device_global.cu        cuda/deviceCommon/device_global.cuh
-  cuda/deviceCommon/device_matrix.cu        cuda/deviceCommon/device_matrix.cuh
-  cuda/deviceCommon/device_simStat.cu       cuda/deviceCommon/device_simStat.cuh
+  cuda/deviceCommon/device_matrix.cuh
+  cuda/deviceCommon/device_simStat.cuh
 )
 
 source_group("aliceVision_depthMap_cuda" FILES ${depthMap_cuda_files_sources})
