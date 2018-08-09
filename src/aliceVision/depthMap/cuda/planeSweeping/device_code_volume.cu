@@ -45,7 +45,9 @@ __global__ void volume_slice_kernel(
                                     int volDimX, int volDimY, int volDimZ )
 {
     const int vx = blockIdx.x * blockDim.x + threadIdx.x;
-    const int vy = blockIdx.y * blockDim.y + threadIdx.y;
+    const int& depth_init = threadIdx.y;
+    const int& depth_step = blockDim.y;
+    const int vy = blockIdx.z * blockDim.z + threadIdx.z;
 
     if( vx >= volDimX ) return;
     if( vy >= volDimY ) return;
@@ -58,8 +60,9 @@ __global__ void volume_slice_kernel(
 
     const int2 pix = make_int2( x, y );
     const int depthlimit = min(ndepths,volDimZ);
-    for( int depthid = 0; depthid < depthlimit; depthid++ )
+    for( int i = depth_init; i < depthlimit; i+=depth_step )
     {
+        const int depthid = i;
         patch ptcho;
         volume_computePatch(depths_dev, ptcho, depthid, pix);
 
@@ -77,8 +80,7 @@ __global__ void volume_slice_kernel(
         // int vz = sdptid;//depthid;
         const int& vz = depthid;
 
-        int* volsim = get3DBufferAt(volume, volume_s, volume_p, vx, vy, vz);
-        atomicMin( volsim, sim );
+        *get3DBufferAt(volume, volume_s, volume_p, vx, vy, vz) = sim;
     }
 }
 

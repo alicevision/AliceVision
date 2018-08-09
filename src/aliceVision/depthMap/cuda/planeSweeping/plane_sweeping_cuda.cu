@@ -1004,8 +1004,10 @@ static void ps_computeSimilarityVolume(CudaArray<uchar4, 2>** ps_texs_arr,
     // compute similarity volume
     int xsteps = width / volStepXY;
     int ysteps = height / volStepXY;
-    dim3 block(8, 8, 1);
-    dim3 grid(divUp(xsteps, block.x), divUp(ysteps, block.y), 1);
+    dim3 block(32, 8, 1);
+    dim3 grid( divUp(xsteps, block.x),
+               1,
+               divUp(ysteps, block.z) );
     volume_slice_kernel<<<grid, block>>>( nDepthsToSearch,
                                           depths_dev.getBuffer(), depths_dev.getSize(),
                                           width, height,
@@ -1021,7 +1023,7 @@ static void ps_computeSimilarityVolume(CudaArray<uchar4, 2>** ps_texs_arr,
 
     if(verbose)
         printf("ps_computeSimilarityVolume elapsed time: %f ms \n", toc(tall));
-};
+}
 
 float ps_planeSweepingGPUPixelsVolume(CudaArray<uchar4, 2>** ps_texs_arr,
                                       int* ovol_hmh, cameraStruct** cams, int ncams,
