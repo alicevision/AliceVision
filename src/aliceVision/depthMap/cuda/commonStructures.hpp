@@ -138,7 +138,12 @@ public:
     if (Dim >= 1) sx = _size[0];
     if (Dim >= 2) sy = _size[1];
     if (Dim >= 3) sx = _size[2];
-    buffer = (Type*)malloc(sx * sy * sz * sizeof (Type));
+    // buffer = (Type*)malloc(sx * sy * sz * sizeof (Type));
+    cudaError_t err = cudaMallocHost( &buffer, sx * sy * sz * sizeof (Type) );
+    if( err != cudaSuccess )
+    {
+        ALICEVISION_LOG_ERROR( "Could not allocate pinned host memory, " << cudaGetErrorString(err) );
+    }
     memset(buffer, 0, sx * sy * sz * sizeof (Type));
   }
   CudaHostMemoryHeap<Type,Dim>& operator=(const CudaHostMemoryHeap<Type,Dim>& rhs)
@@ -150,13 +155,18 @@ public:
     if (Dim >= 1) sx = rhs.sx;
     if (Dim >= 2) sy = rhs.sy;
     if (Dim >= 3) sx = rhs.sz;
-    buffer = (Type*)malloc(sx * sy * sz * sizeof (Type));
+    // buffer = (Type*)malloc(sx * sy * sz * sizeof (Type));
+    cudaError_t err = cudaMallocHost( &buffer, sx * sy * sz * sizeof (Type) );
+    if( err != cudaSuccess )
+    {
+        ALICEVISION_LOG_ERROR( "Could not allocate pinned host memory, " << cudaGetErrorString(err) );
+    }
     memcpy(buffer, rhs.buffer, sx * sy * sz * sizeof (Type));
     return *this;
   }
   ~CudaHostMemoryHeap()
   {
-    free(buffer);
+    cudaFreeHost(buffer);
   }
   const CudaSize<Dim>& getSize() const
   {
@@ -173,6 +183,10 @@ public:
   const Type *getBuffer() const
   {
     return buffer;
+  }
+  Type& operator()(size_t x)
+  {
+    return buffer[x];
   }
   Type& operator()(size_t x, size_t y)
   {
@@ -301,6 +315,66 @@ public:
     return s;
   }
 
+};
+
+template <class Type> class CudaDeviceMemory
+{
+  Type* buffer;
+  size_t sx;
+public:
+  explicit CudaDeviceMemory(const size_t size)
+  {
+    cudaError_t err;
+
+    sx = size;
+    err = cudaMalloc(&buffer, sx * sizeof(Type) );
+    if( err != cudaSuccess )
+    {
+        ALICEVISION_LOG_ERROR( "Could not allocate pinned host memory, " << cudaGetErrorString(err) );
+    }
+  }
+
+  ~CudaDeviceMemory()
+  {
+    cudaFree(buffer);
+  }
+
+  explicit inline CudaDeviceMemory(const CudaHostMemoryHeap<Type,1> &rhs)
+  {
+    cudaError_t err;
+
+    sx = rhs.getSize()[0];
+
+    err = cudaMalloc(&buffer, sx * sizeof(Type) );
+    if( err != cudaSuccess )
+    {
+        ALICEVISION_LOG_ERROR( "Could not allocate pinned host memory, " << cudaGetErrorString(err) );
+    }
+
+    copy(*this, rhs);
+  }
+
+  CudaDeviceMemory<Type> & operator=(const CudaDeviceMemory<Type> & rhs)
+  {
+    copy(*this, rhs);
+    return *this;
+  }
+  size_t getSize() const
+  {
+    return sx;
+  }
+  size_t getBytes() const
+  {
+    return sx*sizeof(Type);
+  }
+  Type *getBuffer()
+  {
+    return buffer;
+  }
+  const Type *getBuffer() const
+  {
+    return buffer;
+  }
 };
 
 template <class Type, unsigned Dim> class CudaArray
@@ -504,6 +578,16 @@ template<class Type, unsigned Dim> void copy(CudaHostMemoryHeap<Type, Dim>& _dst
   }
 }
 
+template<class Type> void copy(CudaHostMemoryHeap<Type,1>& _dst, const CudaDeviceMemory<Type>& _src)
+{
+  cudaMemcpyKind kind = cudaMemcpyDeviceToHost;
+  cudaError_t err = cudaMemcpy(_dst.getBuffer(), _src.getBuffer(), _src.getBytes(), kind);
+  if( err != cudaSuccess )
+  {
+    ALICEVISION_LOG_ERROR( "Failed to copy from CudaHostMemoryHeap to CudaDeviceMemory: " << cudaGetErrorString(err) );
+  }
+}
+
 template<class Type, unsigned Dim> void copy(CudaHostMemoryHeap<Type, Dim>& _dst, const CudaArray<Type, Dim>& _src)
 {
   cudaMemcpyKind kind = cudaMemcpyDeviceToHost;
@@ -631,6 +715,16 @@ template<class Type, unsigned Dim> void copy(CudaDeviceMemoryPitched<Type, Dim>&
         ALICEVISION_LOG_ERROR( "Failed to copy : " << __FILE__ << " " << __LINE__ << ", " << cudaGetErrorString(err) );
       }
     }
+  }
+}
+
+template<class Type> void copy(CudaDeviceMemory<Type>& _dst, const CudaHostMemoryHeap<Type,1>& _src)
+{
+  cudaMemcpyKind kind = cudaMemcpyHostToDevice;
+  cudaError_t err = cudaMemcpy(_dst.getBuffer(), _src.getBuffer(), _src.getBytes(), kind);
+  if( err != cudaSuccess )
+  {
+    ALICEVISION_LOG_ERROR( "Failed to copy from CudaHostMemoryHeap to CudaDeviceMemory: " << cudaGetErrorString(err) );
   }
 }
 
