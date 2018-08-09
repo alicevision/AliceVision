@@ -989,6 +989,7 @@ static void ps_computeSimilarityVolume(CudaArray<uchar4, 2>** ps_texs_arr,
 
     //--------------------------------------------------------------------------------------------------
     // init similarity volume
+#if 1
     for(int z = 0; z < volDimZ; z++)
     {
         dim3 blockvol(8, 8, 1);
@@ -999,6 +1000,9 @@ static void ps_computeSimilarityVolume(CudaArray<uchar4, 2>** ps_texs_arr,
         CHECK_CUDA_ERROR();
         cudaThreadSynchronize();
     };
+#else
+    cudaMemset( vol_dmp.getBuffer(), 255, vol_dmp.stride()[2] );
+#endif
 
     //--------------------------------------------------------------------------------------------------
     // compute similarity volume
