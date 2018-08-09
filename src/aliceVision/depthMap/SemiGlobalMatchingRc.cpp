@@ -619,7 +619,7 @@ bool SemiGlobalMatchingRc::sgmrc(bool checkIfExists)
     if(sp->doSGMoptimizeVolume) // this is here for experimental reason ... to show how SGGC work on non
                                 // optimized depthmaps ... it must equals to true in normal case
     {
-        svol->SGMoptimizeVolumeStepZ(rc, step, 0, 0, scale);
+        svol->SGMoptimizeVolumeStepZ(rc, step, scale);
     }
 
     // For each pixel: choose the voxel with the minimal similarity value

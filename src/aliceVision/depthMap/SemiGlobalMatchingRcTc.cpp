@@ -86,7 +86,9 @@ StaticVector<unsigned char>* SemiGlobalMatchingRcTc::computeDepthSimMapVolume(fl
     StaticVector<Voxel>* pixels = getPixels();
 
     volumeMBinGPUMem =
-        sp->cps->sweepPixelsToVolume(rcTcDepths->size(), volume_tmp, volDimX, volDimY, volDimZ, volStepXY, 0, 0, 0,
+        sp->cps->sweepPixelsToVolume(rcTcDepths->size(), volume_tmp,
+                                     volDimX, volDimY, volDimZ,
+                                     volStepXY,
                                      rcTcDepths, rc, wsh, gammaC, gammaP, pixels, scale, 1, tcams, 0.0f);
     delete pixels;
     delete tcams;

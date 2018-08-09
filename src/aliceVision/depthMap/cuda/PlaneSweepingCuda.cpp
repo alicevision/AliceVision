@@ -35,8 +35,10 @@ extern void ps_planeSweepingGPUPixels(CudaArray<uchar4, 2>** ps_texs_arr, CudaHo
 
 */
 extern void ps_SGMoptimizeSimVolume(CudaArray<uchar4, 2>** ps_texs_arr, cameraStruct* rccam,
-                                    unsigned char* iovol_hmh, int volDimX, int volDimY,
-                                    int volDimZ, int volStepXY, int volLUX, int volLUY, bool verbose, unsigned char P1,
+                                    unsigned char* iovol_hmh,
+                                    int volDimX, int volDimY, int volDimZ,
+                                    int volStepXY,
+                                    bool verbose, unsigned char P1,
                                     unsigned char P2, int scale, int CUDAdeviceNo, int ncamsAllocated, int scales);
 
 /*
@@ -1568,14 +1570,15 @@ bool PlaneSweepingCuda::refineRcTcDepthMap(bool useTcOrRcPixSize, int nStepsToRe
     return true;
 }
 
-float PlaneSweepingCuda::sweepPixelsToVolume(int nDepthsToSearch, StaticVector<int>* volume, int volDimX,
-                                               int volDimY, int volDimZ, int volStepXY, int volLUX, int volLUY,
-                                               int volLUZ, StaticVector<float>* depths, int rc, int wsh, float gammaC,
-                                               float gammaP,
-                                               StaticVector<Voxel>* pixels, // use rcam image
-                                               int scale, int step,
-                                               StaticVector<int>* tcams, // use tcam image
-                                               float epipShift)
+float PlaneSweepingCuda::sweepPixelsToVolume( int nDepthsToSearch, StaticVector<int>* volume,
+                                              int volDimX, int volDimY, int volDimZ,
+                                              int volStepXY,
+                                              StaticVector<float>* depths, int rc, int wsh, float gammaC,
+                                              float gammaP,
+                                              StaticVector<Voxel>* pixels, // use rcam image
+                                              int scale, int step,
+                                              StaticVector<int>* tcams, // use tcam image
+                                              float epipShift)
 {
     if(verbose)
         ALICEVISION_LOG_DEBUG("sweepPixelsVolume:" << std::endl
@@ -1636,7 +1639,6 @@ float PlaneSweepingCuda::sweepPixelsToVolume(int nDepthsToSearch, StaticVector<i
         volume->getDataWritable().data(),
         ttcams, camsids.size(), w, h, volStepXY,
         volDimX, volDimY, volDimZ,
-        volLUX, volLUY, volLUZ,
         depths_dev,
         nDepthsToSearch,
         wsh,
@@ -1661,7 +1663,7 @@ float PlaneSweepingCuda::sweepPixelsToVolume(int nDepthsToSearch, StaticVector<i
  */
 bool PlaneSweepingCuda::SGMoptimizeSimVolume(int rc, StaticVector<unsigned char>* volume, 
                                                int volDimX, int volDimY, int volDimZ, 
-                                               int volStepXY, int volLUX, int volLUY, int scale,
+                                               int volStepXY, int scale,
                                                unsigned char P1, unsigned char P2)
 {
     if(verbose)
@@ -1673,7 +1675,8 @@ bool PlaneSweepingCuda::SGMoptimizeSimVolume(int rc, StaticVector<unsigned char>
     long t1 = clock();
 
     ps_SGMoptimizeSimVolume((CudaArray<uchar4, 2>**)ps_texs_arr, (cameraStruct*)(*cams)[addCam(rc, NULL, scale)],
-                            volume->getDataWritable().data(), volDimX, volDimY, volDimZ, volStepXY, volLUX, volLUY, verbose, P1, P2, scale - 1, // TODO: move the '- 1' inside the function
+                            volume->getDataWritable().data(), volDimX, volDimY, volDimZ, volStepXY,
+                            verbose, P1, P2, scale - 1, // TODO: move the '- 1' inside the function
                             CUDADeviceNo, nImgsInGPUAtTime, scales);
 
     if(verbose)

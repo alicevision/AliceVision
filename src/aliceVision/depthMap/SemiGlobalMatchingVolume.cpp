@@ -147,11 +147,11 @@ void SemiGlobalMatchingVolume::cloneVolumeSecondStepZ()
 /**
  * @param[in] volStepXY step in the image space
  */
-void SemiGlobalMatchingVolume::SGMoptimizeVolumeStepZ(int rc, int volStepXY, int volLUX, int volLUY, int scale)
+void SemiGlobalMatchingVolume::SGMoptimizeVolumeStepZ(int rc, int volStepXY, int scale)
 {
     long tall = clock();
 
-    sp->cps->SGMoptimizeSimVolume(rc, _volumeStepZ, volDimX, volDimY, volDimZ / volStepZ, volStepXY, volLUX, volLUY,
+    sp->cps->SGMoptimizeSimVolume(rc, _volumeStepZ, volDimX, volDimY, volDimZ / volStepZ, volStepXY,
                                   scale, sp->P1, sp->P2);
 
     if(sp->mp->verbose)

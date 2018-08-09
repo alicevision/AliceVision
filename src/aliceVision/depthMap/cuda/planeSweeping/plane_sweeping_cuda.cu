@@ -588,7 +588,6 @@ void ps_aggregatePathVolume2(CudaDeviceMemoryPitched<unsigned char, 3>& vol_dmp,
 void ps_aggregatePathVolume(CudaDeviceMemoryPitched<unsigned char, 3>& d_volSimT,
                             int volDimX, int volDimY, int volDimZ,
                             float P1, float P2, bool transfer,
-                            int volLUX, int volLUY,
                             int dimTrnX, bool doInvZ, bool verbose)
 {
     if(verbose)
@@ -652,8 +651,8 @@ void ps_aggregatePathVolume(CudaDeviceMemoryPitched<unsigned char, 3>& d_volSimT
             d_xSliceBestInColSimForZM1.getBuffer(),                          // in:    xSliceBestInColSimForZM1
             d_volSimT.getBuffer(), d_volSimT.stride()[1], d_volSimT.stride()[0], // out:   volSimT
             volDimX, volDimY, volDimZ,
-            z, P1, P2, transfer, volLUX,
-            volLUY, dimTrnX, doInvZ);
+            z, P1, P2, transfer,
+            dimTrnX, doInvZ);
         cudaThreadSynchronize();
         CHECK_CUDA_ERROR();
     }
@@ -669,7 +668,7 @@ void ps_aggregatePathVolume(CudaDeviceMemoryPitched<unsigned char, 3>& d_volSimT
 void ps_updateAggrVolume(CudaDeviceMemoryPitched<unsigned char, 3>& volAgr_dmp,
                          const CudaDeviceMemoryPitched<unsigned char, 3>& d_volSim,
                          int volDimX, int volDimY, int volDimZ,
-                         int volStepXY, int volLUX, int volLUY,
+                         int volStepXY,
                          int dimTrnX, int dimTrnY, int dimTrnZ,
                          unsigned char P1, unsigned char P2, 
                          bool verbose, bool doInvZ, int lastN)
@@ -738,7 +737,6 @@ void ps_updateAggrVolume(CudaDeviceMemoryPitched<unsigned char, 3>& volAgr_dmp,
     ps_aggregatePathVolume(
         d_volSimT, volDims[dimsTrn[0]], volDims[dimsTrn[1]], volDims[dimsTrn[2]],
         P1, P2, false,
-        volLUX, volLUY,
         dimTrnX, doInvZ, verbose);
     // if (verbose) printf("aggregate volume gpu elapsed time: %f ms \n", toc(tall));
     // pr_printfDeviceMemoryInfo();
@@ -785,7 +783,7 @@ void ps_SGMoptimizeSimVolume(CudaArray<uchar4, 2>** ps_texs_arr,
                              cameraStruct* rccam,
                              unsigned char* iovol_hmh,
                              int volDimX, int volDimY, int volDimZ,
-                             int volStepXY, int volLUX, int volLUY,
+                             int volStepXY,
                              bool verbose, unsigned char P1, unsigned char P2,
                              int scale, int CUDAdeviceNo, int ncamsAllocated, int scales)
 {
@@ -825,7 +823,7 @@ void ps_SGMoptimizeSimVolume(CudaArray<uchar4, 2>** ps_texs_arr,
                                       ps_updateAggrVolume(volAgr_dmp,
                                                           volSim_dmp,
                                                           volDimX, volDimY, volDimZ,
-                                                          volStepXY, volLUX, volLUY,
+                                                          volStepXY,
                                                           dimTrnX, dimTrnY, dimTrnZ,
                                                           P1, P2, verbose,
                                                           invZ,
@@ -951,7 +949,6 @@ static void ps_computeSimilarityVolume(CudaArray<uchar4, 2>** ps_texs_arr,
                                 int width, int height,
                                 int volStepXY,
                                 int volDimX, int volDimY, int volDimZ,
-                                int volLUX, int volLUY, int volLUZ,
                                 CudaDeviceMemory<float>& depths_dev,
                                 int nDepthsToSearch,
                                 int wsh, int kernelSizeHalf,
@@ -1017,7 +1014,6 @@ static void ps_computeSimilarityVolume(CudaArray<uchar4, 2>** ps_texs_arr,
                                           vol_dmp.getBuffer(), vol_dmp.stride()[1], vol_dmp.stride()[0],
                                           volStepXY,
                                           volDimX, volDimY, volDimZ );
-                                          // volLUX, volLUY, volLUZ); - no idea what these do
     CHECK_CUDA_ERROR();
 
     cudaUnbindTexture(r4tex);
@@ -1029,8 +1025,8 @@ static void ps_computeSimilarityVolume(CudaArray<uchar4, 2>** ps_texs_arr,
 
 float ps_planeSweepingGPUPixelsVolume(CudaArray<uchar4, 2>** ps_texs_arr,
                                       int* ovol_hmh, cameraStruct** cams, int ncams,
-                                      int width, int height, int volStepXY, int volDimX, int volDimY, int volDimZ,
-                                      int volLUX, int volLUY, int volLUZ,
+                                      int width, int height,
+                                      int volStepXY, int volDimX, int volDimY, int volDimZ,
                                       CudaDeviceMemory<float>& depths_dev,
                                       int nDepthsToSearch,
                                       int wsh, int kernelSizeHalf,
@@ -1050,8 +1046,10 @@ float ps_planeSweepingGPUPixelsVolume(CudaArray<uchar4, 2>** ps_texs_arr,
 
     //--------------------------------------------------------------------------------------------------
     // compute similarity volume
-    ps_computeSimilarityVolume(ps_texs_arr, volSim_dmp, cams, ncams, width, height, volStepXY, volDimX, volDimY,
-                               volDimZ, volLUX, volLUY, volLUZ,
+    ps_computeSimilarityVolume(ps_texs_arr, volSim_dmp, cams, ncams,
+                               width, height,
+                               volStepXY,
+                               volDimX, volDimY, volDimZ,
                                depths_dev,
                                nDepthsToSearch,
                                wsh, kernelSizeHalf,

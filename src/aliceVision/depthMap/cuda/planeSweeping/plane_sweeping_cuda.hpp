@@ -13,8 +13,8 @@ namespace depthMap {
 
 float ps_planeSweepingGPUPixelsVolume(CudaArray<uchar4, 2>** ps_texs_arr,
                                       int* ovol_hmh, cameraStruct** cams, int ncams,
-                                      int width, int height, int volStepXY, int volDimX, int volDimY, int volDimZ,
-                                      int volLUX, int volLUY, int volLUZ,
+                                      int width, int height,
+                                      int volStepXY, int volDimX, int volDimY, int volDimZ,
                                       CudaDeviceMemory<float>& depths_dev,
                                       int nDepthsToSearch,
                                       int wsh, int kernelSizeHalf,

@@ -43,7 +43,6 @@ __global__ void volume_slice_kernel(
                                     int* volume, int volume_s, int volume_p,
                                     int volStepXY,
                                     int volDimX, int volDimY, int volDimZ )
-                                    // , int volLUX, int volLUY, int volLUZ) - no idea what this does
 {
     const int vx = blockIdx.x * blockDim.x + threadIdx.x;
     const int vy = blockIdx.y * blockDim.y + threadIdx.y;
@@ -292,7 +291,7 @@ __global__ void volume_agregateCostVolumeAtZinSlices_kernel(unsigned int* xySlic
                                                             unsigned char* volSimT, int volSimT_s, int volSimT_p, 
                                                             int volDimX, int volDimY, int volDimZ, 
                                                             int vz, unsigned int _P1, unsigned int _P2,
-                                                            bool transfer, int volLUX, int volLUY,
+                                                            bool transfer,
                                                             int dimTrnX, bool doInvZ)
 {
     int vx = blockIdx.x * blockDim.x + threadIdx.x;
@@ -308,10 +307,10 @@ __global__ void volume_agregateCostVolumeAtZinSlices_kernel(unsigned int* xySlic
         {
             int z = doInvZ ? volDimZ - vz : vz;
             int z1 = doInvZ ? z + 1 : z - 1; // M1
-            int imX0 = volLUX + (dimTrnX == 0) ? vx : z; // current
-            int imY0 = volLUY + (dimTrnX == 0) ?  z : vx;
-            int imX1 = volLUX + (dimTrnX == 0) ? vx : z1; // M1
-            int imY1 = volLUY + (dimTrnX == 0) ? z1 : vx;
+            int imX0 = (dimTrnX == 0) ? vx : z; // current
+            int imY0 = (dimTrnX == 0) ?  z : vx;
+            int imX1 = (dimTrnX == 0) ? vx : z1; // M1
+            int imY1 = (dimTrnX == 0) ? z1 : vx;
             float4 gcr0 = 255.0f * tex2D(r4tex, (float)imX0 + 0.5f, (float)imY0 + 0.5f);
             float4 gcr1 = 255.0f * tex2D(r4tex, (float)imX1 + 0.5f, (float)imY1 + 0.5f);
             float deltaC = Euclidean3(gcr0, gcr1);
