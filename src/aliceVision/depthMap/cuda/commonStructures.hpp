@@ -11,6 +11,8 @@
 #include <stdlib.h>
 #include <assert.h>
 
+#include <aliceVision/system/Logger.hpp>
+
 namespace aliceVision {
 namespace depthMap {
 
@@ -136,7 +138,12 @@ public:
     if (Dim >= 1) sx = _size[0];
     if (Dim >= 2) sy = _size[1];
     if (Dim >= 3) sx = _size[2];
-    buffer = (Type*)malloc(sx * sy * sz * sizeof (Type));
+    // buffer = (Type*)malloc(sx * sy * sz * sizeof (Type));
+    cudaError_t err = cudaMallocHost( &buffer, sx * sy * sz * sizeof (Type) );
+    if( err != cudaSuccess )
+    {
+        ALICEVISION_LOG_ERROR( "Could not allocate pinned host memory, " << cudaGetErrorString(err) );
+    }
     memset(buffer, 0, sx * sy * sz * sizeof (Type));
   }
   CudaHostMemoryHeap<Type,Dim>& operator=(const CudaHostMemoryHeap<Type,Dim>& rhs)
@@ -148,13 +155,18 @@ public:
     if (Dim >= 1) sx = rhs.sx;
     if (Dim >= 2) sy = rhs.sy;
     if (Dim >= 3) sx = rhs.sz;
-    buffer = (Type*)malloc(sx * sy * sz * sizeof (Type));
+    // buffer = (Type*)malloc(sx * sy * sz * sizeof (Type));
+    cudaError_t err = cudaMallocHost( &buffer, sx * sy * sz * sizeof (Type) );
+    if( err != cudaSuccess )
+    {
+        ALICEVISION_LOG_ERROR( "Could not allocate pinned host memory, " << cudaGetErrorString(err) );
+    }
     memcpy(buffer, rhs.buffer, sx * sy * sz * sizeof (Type));
     return *this;
   }
   ~CudaHostMemoryHeap()
   {
-    free(buffer);
+    cudaFreeHost(buffer);
   }
   const CudaSize<Dim>& getSize() const
   {
@@ -171,6 +183,10 @@ public:
   const Type *getBuffer() const
   {
     return buffer;
+  }
+  Type& operator()(size_t x)
+  {
+    return buffer[x];
   }
   Type& operator()(size_t x, size_t y)
   {
@@ -196,25 +212,35 @@ public:
     if (Dim >= 3) sx = _size[2];
     if(Dim == 2)
     {
-      cudaMallocPitch<Type>(&buffer, &pitch, _size[0] * sizeof(Type), _size[1]);
+      cudaError_t err = cudaMallocPitch<Type>(&buffer, &pitch, _size[0] * sizeof(Type), _size[1]);
+      if( err != cudaSuccess )
+      {
+        ALICEVISION_LOG_ERROR( "Device alloc failed, " << cudaGetErrorString(err) );
+      }
     }
-    if(Dim >= 3)
+    if(Dim == 3)
     {
       cudaExtent extent;
       extent.width = _size[0] * sizeof(Type);
       extent.height = _size[1];
       extent.depth = _size[2];
-      for(unsigned i = 3; i < Dim; ++i)
-        extent.depth *= _size[i];
       cudaPitchedPtr pitchDevPtr;
-      cudaMalloc3D(&pitchDevPtr, extent);
+      cudaError_t err = cudaMalloc3D(&pitchDevPtr, extent);
+      if( err != cudaSuccess )
+      {
+        ALICEVISION_LOG_ERROR( "Device alloc failed, " << cudaGetErrorString(err) );
+      }
       buffer = (Type*)pitchDevPtr.ptr;
       pitch = pitchDevPtr.pitch;
     }
   }
   ~CudaDeviceMemoryPitched()
   {
-    cudaFree(buffer);
+      cudaError_t err = cudaFree(buffer);
+      if( err != cudaSuccess )
+      {
+        ALICEVISION_LOG_ERROR( "Device free failed, " << cudaGetErrorString(err) );
+      }
   }
   explicit inline CudaDeviceMemoryPitched(const CudaHostMemoryHeap<Type, Dim> &rhs)
   {
@@ -227,18 +253,24 @@ public:
     if (Dim >= 3) sx = rhs.getSize()[2];
     if(Dim == 2)
     {
-      cudaMallocPitch<Type>(&buffer, &pitch, size[0] * sizeof(Type), size[1]);
+      cudaError_t err = cudaMallocPitch<Type>(&buffer, &pitch, size[0] * sizeof(Type), size[1]);
+      if( err != cudaSuccess )
+      {
+        ALICEVISION_LOG_ERROR( "Device alloc failed, " << cudaGetErrorString(err) );
+      }
     }
-    if(Dim >= 3)
+    if(Dim == 3)
     {
       cudaExtent extent;
       extent.width = size[0] * sizeof(Type);
       extent.height = size[1];
       extent.depth = size[2];
-      for(unsigned i = 3; i < Dim; ++i)
-        extent.depth *= size[i];
       cudaPitchedPtr pitchDevPtr;
-      cudaMalloc3D(&pitchDevPtr, extent);
+      cudaError_t err = cudaMalloc3D(&pitchDevPtr, extent);
+      if( err != cudaSuccess )
+      {
+        ALICEVISION_LOG_ERROR( "Device alloc failed, " << cudaGetErrorString(err) );
+      }
       buffer = (Type*)pitchDevPtr.ptr;
       pitch = pitchDevPtr.pitch;
     }
@@ -285,6 +317,66 @@ public:
 
 };
 
+template <class Type> class CudaDeviceMemory
+{
+  Type* buffer;
+  size_t sx;
+public:
+  explicit CudaDeviceMemory(const size_t size)
+  {
+    cudaError_t err;
+
+    sx = size;
+    err = cudaMalloc(&buffer, sx * sizeof(Type) );
+    if( err != cudaSuccess )
+    {
+        ALICEVISION_LOG_ERROR( "Could not allocate pinned host memory, " << cudaGetErrorString(err) );
+    }
+  }
+
+  ~CudaDeviceMemory()
+  {
+    cudaFree(buffer);
+  }
+
+  explicit inline CudaDeviceMemory(const CudaHostMemoryHeap<Type,1> &rhs)
+  {
+    cudaError_t err;
+
+    sx = rhs.getSize()[0];
+
+    err = cudaMalloc(&buffer, sx * sizeof(Type) );
+    if( err != cudaSuccess )
+    {
+        ALICEVISION_LOG_ERROR( "Could not allocate pinned host memory, " << cudaGetErrorString(err) );
+    }
+
+    copy(*this, rhs);
+  }
+
+  CudaDeviceMemory<Type> & operator=(const CudaDeviceMemory<Type> & rhs)
+  {
+    copy(*this, rhs);
+    return *this;
+  }
+  size_t getSize() const
+  {
+    return sx;
+  }
+  size_t getBytes() const
+  {
+    return sx*sizeof(Type);
+  }
+  Type *getBuffer()
+  {
+    return buffer;
+  }
+  const Type *getBuffer() const
+  {
+    return buffer;
+  }
+};
+
 template <class Type, unsigned Dim> class CudaArray
 {
   cudaArray *array;
@@ -303,11 +395,19 @@ public:
     cudaChannelFormatDesc channelDesc = cudaCreateChannelDesc<Type>();
     if(Dim == 1)
     {
-      cudaMallocArray(&array, &channelDesc, _size[0], 1, cudaArraySurfaceLoadStore);
+      cudaError_t err = cudaMallocArray(&array, &channelDesc, _size[0], 1, cudaArraySurfaceLoadStore);
+      if( err != cudaSuccess )
+      {
+        ALICEVISION_LOG_ERROR( "Device alloc 1D array failed, " << cudaGetErrorString(err) );
+      }
     }
     else if(Dim == 2)
     {
-      cudaMallocArray(&array, &channelDesc, _size[0], _size[1], cudaArraySurfaceLoadStore);
+      cudaError_t err = cudaMallocArray(&array, &channelDesc, _size[0], _size[1], cudaArraySurfaceLoadStore);
+      if( err != cudaSuccess )
+      {
+        ALICEVISION_LOG_ERROR( "Device alloc 2D array failed, " << cudaGetErrorString(err) );
+      }
     }
     else
     {
@@ -317,7 +417,11 @@ public:
       extent.depth = _size[2];
       for(unsigned i = 3; i < Dim; ++i)
         extent.depth *= _size[i];
-      cudaMalloc3DArray(&array, &channelDesc, extent);
+      cudaError_t err = cudaMalloc3DArray(&array, &channelDesc, extent);
+      if( err != cudaSuccess )
+      {
+        ALICEVISION_LOG_ERROR( "Device alloc 3D array failed, " << cudaGetErrorString(err) );
+      }
     }
   }
   explicit inline CudaArray(const CudaDeviceMemoryPitched<Type, Dim> &rhs)
@@ -332,11 +436,19 @@ public:
     cudaChannelFormatDesc channelDesc = cudaCreateChannelDesc<Type>();
     if(Dim == 1)
     {
-      cudaMallocArray(&array, &channelDesc, size[0], 1, cudaArraySurfaceLoadStore);
+      cudaError_t err = cudaMallocArray(&array, &channelDesc, size[0], 1, cudaArraySurfaceLoadStore);
+      if( err != cudaSuccess )
+      {
+        ALICEVISION_LOG_ERROR( "Device alloc 1D array failed, " << cudaGetErrorString(err) );
+      }
     }
     else if(Dim == 2)
     {
-      cudaMallocArray(&array, &channelDesc, size[0], size[1], cudaArraySurfaceLoadStore);
+      cudaError_t err = cudaMallocArray(&array, &channelDesc, size[0], size[1], cudaArraySurfaceLoadStore);
+      if( err != cudaSuccess )
+      {
+        ALICEVISION_LOG_ERROR( "Device alloc 2D array failed, " << cudaGetErrorString(err) );
+      }
     }
     else
     {
@@ -346,7 +458,11 @@ public:
       extent.depth = size[2];
       for(unsigned i = 3; i < Dim; ++i)
         extent.depth *= size[i];
-      cudaMalloc3DArray(&array, &channelDesc, extent);
+      cudaError_t err = cudaMalloc3DArray(&array, &channelDesc, extent);
+      if( err != cudaSuccess )
+      {
+        ALICEVISION_LOG_ERROR( "Device alloc 3D array failed, " << cudaGetErrorString(err) );
+      }
     }
     copy(*this, rhs);
   }
@@ -362,11 +478,19 @@ public:
     cudaChannelFormatDesc channelDesc = cudaCreateChannelDesc<Type>();
     if(Dim == 1)
     {
-      cudaMallocArray(&array, &channelDesc, size[0], 1, cudaArraySurfaceLoadStore);
+      cudaError_t err = cudaMallocArray(&array, &channelDesc, size[0], 1, cudaArraySurfaceLoadStore);
+      if( err != cudaSuccess )
+      {
+        ALICEVISION_LOG_ERROR( "Device alloc 1D array failed, " << cudaGetErrorString(err) );
+      }
     }
     else if(Dim == 2)
     {
-      cudaMallocArray(&array, &channelDesc, size[0], size[1], cudaArraySurfaceLoadStore);
+      cudaError_t err = cudaMallocArray(&array, &channelDesc, size[0], size[1], cudaArraySurfaceLoadStore);
+      if( err != cudaSuccess )
+      {
+        ALICEVISION_LOG_ERROR( "Device alloc 2D array failed, " << cudaGetErrorString(err) );
+      }
     }
     else
     {
@@ -376,7 +500,11 @@ public:
       extent.depth = size[2];
       for(unsigned i = 3; i < Dim; ++i)
         extent.depth *= size[i];
-      cudaMalloc3DArray(&array, &channelDesc, extent);
+      cudaError_t err = cudaMalloc3DArray(&array, &channelDesc, extent);
+      if( err != cudaSuccess )
+      {
+        ALICEVISION_LOG_ERROR( "Device alloc 3D array failed, " << cudaGetErrorString(err) );
+      }
     }
     copy(*this, rhs);
   }
@@ -414,16 +542,49 @@ template<class Type, unsigned Dim> void copy(CudaHostMemoryHeap<Type, Dim>& _dst
 {
   cudaMemcpyKind kind = cudaMemcpyDeviceToHost;
   if(Dim == 1) {
-    cudaMemcpy(_dst.getBuffer(), _src.getBuffer(), _src.getBytes(), kind);
+    cudaError_t err = cudaMemcpy(_dst.getBuffer(), _src.getBuffer(), _src.getBytes(), kind);
+    if( err != cudaSuccess )
+    {
+      ALICEVISION_LOG_ERROR( "Failed to copy : " << __FILE__ << " " << __LINE__ << ", " << cudaGetErrorString(err) );
+    }
   }
   else if(Dim == 2) {
-    cudaMemcpy2D(_dst.getBuffer(), _dst.getSize()[0] * sizeof (Type), _src.getBuffer(), _src.getPitch(), _dst.getSize()[0] * sizeof (Type), _dst.getSize()[1], kind);
+    cudaError_t err = cudaMemcpy2D(_dst.getBuffer(),
+                                   _dst.getSize()[0] * sizeof (Type),
+                                   _src.getBuffer(),
+                                   _src.getPitch(),
+                                   _dst.getSize()[0] * sizeof (Type),
+                                   _dst.getSize()[1], kind);
+    if( err != cudaSuccess )
+    {
+      ALICEVISION_LOG_ERROR( "Failed to copy : " << __FILE__ << " " << __LINE__ << ", " << cudaGetErrorString(err) );
+    }
   }
   else if(Dim >= 3) {
     for (unsigned int slice=0; slice<_dst.getSize()[2]; slice++)
     {
-      cudaMemcpy2D( _dst.getBuffer() + slice * _dst.getSize()[0] * _dst.getSize()[1], _dst.getSize()[0] * sizeof (Type), &_src.getBuffer()[slice * _src.stride()[1]], _src.getPitch(), _dst.getSize()[0] * sizeof (Type), _dst.getSize()[1], kind);
+      cudaError_t err = cudaMemcpy2D( _dst.getBuffer() + slice * _dst.getSize()[0] * _dst.getSize()[1],
+                                      _dst.getSize()[0] * sizeof (Type),
+                                      (unsigned char*)_src.getBuffer() + slice * _src.stride()[1],
+                                      _src.getPitch(),
+                                      _dst.getSize()[0] * sizeof (Type),
+                                      _dst.getSize()[1],
+                                      kind);
+      if( err != cudaSuccess )
+      {
+        ALICEVISION_LOG_ERROR( "Failed to copy : " << __FILE__ << " " << __LINE__ << ", " << cudaGetErrorString(err) );
+      }
     }
+  }
+}
+
+template<class Type> void copy(CudaHostMemoryHeap<Type,1>& _dst, const CudaDeviceMemory<Type>& _src)
+{
+  cudaMemcpyKind kind = cudaMemcpyDeviceToHost;
+  cudaError_t err = cudaMemcpy(_dst.getBuffer(), _src.getBuffer(), _src.getBytes(), kind);
+  if( err != cudaSuccess )
+  {
+    ALICEVISION_LOG_ERROR( "Failed to copy from CudaHostMemoryHeap to CudaDeviceMemory: " << cudaGetErrorString(err) );
   }
 }
 
@@ -431,10 +592,25 @@ template<class Type, unsigned Dim> void copy(CudaHostMemoryHeap<Type, Dim>& _dst
 {
   cudaMemcpyKind kind = cudaMemcpyDeviceToHost;
   if(Dim == 1) {
-    cudaMemcpyFromArray(_dst.getBuffer(), _src.getArray(), 0, 0, _dst.getSize()[0] * sizeof (Type), kind);
+    cudaError_t err = cudaMemcpyFromArray(_dst.getBuffer(), _src.getArray(), 0, 0, _dst.getSize()[0] * sizeof (Type), kind);
+    if( err != cudaSuccess )
+    {
+      ALICEVISION_LOG_ERROR( "Failed to copy : " << __FILE__ << " " << __LINE__ << ", " << cudaGetErrorString(err) );
+    }
   }
   else if(Dim == 2) {
-    cudaMemcpy2DFromArray(_dst.getBuffer(), _dst.getSize()[0] * sizeof (Type), _src.getArray(), 0, 0, _dst.getSize()[0] * sizeof (Type), _dst.getSize()[1], kind);
+    cudaError_t err = cudaMemcpy2DFromArray(_dst.getBuffer(),
+                                            _dst.getSize()[0] * sizeof (Type),
+                                            _src.getArray(),
+                                            0,
+                                            0,
+                                            _dst.getSize()[0] * sizeof (Type),
+                                            _dst.getSize()[1],
+                                            kind);
+    if( err != cudaSuccess )
+    {
+      ALICEVISION_LOG_ERROR( "Failed to copy : " << __FILE__ << " " << __LINE__ << ", " << cudaGetErrorString(err) );
+    }
   }
   else if(Dim == 3) {
     cudaMemcpy3DParms p = { 0 };
@@ -452,7 +628,11 @@ template<class Type, unsigned Dim> void copy(CudaHostMemoryHeap<Type, Dim>& _dst
     for(unsigned i = 3; i < Dim; ++i)
       p.extent.depth *= _src.getSize()[i];
     p.kind = kind;
-    cudaMemcpy3D(&p);
+    cudaError_t err = cudaMemcpy3D(&p);
+    if( err != cudaSuccess )
+    {
+      ALICEVISION_LOG_ERROR( "Failed to copy : " << __FILE__ << " " << __LINE__ << ", " << cudaGetErrorString(err) );
+    }
   }
 }
 
@@ -460,15 +640,39 @@ template<class Type, unsigned Dim> void copy(CudaDeviceMemoryPitched<Type, Dim>&
 {
   cudaMemcpyKind kind = cudaMemcpyHostToDevice;
   if(Dim == 1) {
-    cudaMemcpy(_dst.getBuffer(), _src.getBuffer(), _src.getBytes(), kind);
+    cudaError_t err = cudaMemcpy(_dst.getBuffer(), _src.getBuffer(), _src.getBytes(), kind);
+    if( err != cudaSuccess )
+    {
+      ALICEVISION_LOG_ERROR( "Failed to copy : " << __FILE__ << " " << __LINE__ << ", " << cudaGetErrorString(err) );
+    }
   }
   else if(Dim == 2) {
-    cudaMemcpy2D(_dst.getBuffer(), _dst.getPitch(), _src.getBuffer(), _src.getSize()[0] * sizeof (Type), _src.getSize()[0] * sizeof (Type), _src.getSize()[1], kind);
+    cudaError_t err = cudaMemcpy2D(_dst.getBuffer(),
+                                   _dst.getPitch(),
+                                   _src.getBuffer(),
+                                   _src.getSize()[0] * sizeof (Type),
+                                   _src.getSize()[0] * sizeof (Type),
+                                   _src.getSize()[1],
+                                   kind);
+    if( err != cudaSuccess )
+    {
+      ALICEVISION_LOG_ERROR( "Failed to copy : " << __FILE__ << " " << __LINE__ << ", " << cudaGetErrorString(err) );
+    }
   }
   else if(Dim >= 3) {
     for (unsigned int slice=0; slice<_src.getSize()[2]; slice++)
     {
-      cudaMemcpy2D( &_dst.getBuffer()[slice * _dst.stride()[1]], _dst.getPitch(), _src.getBuffer() + slice * _src.getSize()[0] * _src.getSize()[1], _src.getSize()[0] * sizeof (Type), _src.getSize()[0] * sizeof (Type), _src.getSize()[1], kind);
+      cudaError_t err = cudaMemcpy2D( &_dst.getBuffer()[slice * _dst.stride()[1]],
+                                      _dst.getPitch(),
+                                      _src.getBuffer() + slice * _src.getSize()[0] * _src.getSize()[1],
+                                      _src.getSize()[0] * sizeof (Type),
+                                      _src.getSize()[0] * sizeof (Type),
+                                      _src.getSize()[1],
+                                      kind);
+      if( err != cudaSuccess )
+      {
+        ALICEVISION_LOG_ERROR( "Failed to copy : " << __FILE__ << " " << __LINE__ << ", " << cudaGetErrorString(err) );
+      }
     }
   }
 }
@@ -477,16 +681,50 @@ template<class Type, unsigned Dim> void copy(CudaDeviceMemoryPitched<Type, Dim>&
 {
   cudaMemcpyKind kind = cudaMemcpyDeviceToDevice;
   if(Dim == 1) {
-    cudaMemcpy(_dst.getBuffer(), _src.getBuffer(), _src.getBytes(), kind);
+    cudaError_t err = cudaMemcpy(_dst.getBuffer(), _src.getBuffer(), _src.getBytes(), kind);
+    if( err != cudaSuccess )
+    {
+      ALICEVISION_LOG_ERROR( "Failed to copy : " << __FILE__ << " " << __LINE__ << ", " << cudaGetErrorString(err) );
+    }
   }
   else if(Dim == 2) {
-    cudaMemcpy2D(_dst.getBuffer(), _dst.getPitch(), _src.getBuffer(), _src.getPitch(), _src.getSize()[0] * sizeof(Type), _src.getSize()[1], kind);
+    cudaError_t err = cudaMemcpy2D(_dst.getBuffer(),
+                                   _dst.getPitch(),
+                                   _src.getBuffer(),
+                                   _src.getPitch(),
+                                   _src.getSize()[0] * sizeof(Type),
+                                   _src.getSize()[1],
+                                   kind);
+    if( err != cudaSuccess )
+    {
+      ALICEVISION_LOG_ERROR( "Failed to copy : " << __FILE__ << " " << __LINE__ << ", " << cudaGetErrorString(err) );
+    }
   }
   else if(Dim >= 3) {
     for (unsigned int slice=0; slice<_src.getSize()[2]; slice++)
     {
-      cudaMemcpy2D( &_dst.getBuffer()[slice * _dst.stride()[1]], _dst.getPitch(), &_src.getBuffer()[slice * _src.stride()[1]], _src.getPitch(), _src.getSize()[0] * sizeof(Type), _src.getSize()[1], kind);
+      cudaError_t err = cudaMemcpy2D( &_dst.getBuffer()[slice * _dst.stride()[1]],
+                                      _dst.getPitch(),
+                                      (unsigned char*)_src.getBuffer() + slice * _src.stride()[1],
+                                      _src.getPitch(),
+                                      _src.getSize()[0] * sizeof(Type),
+                                      _src.getSize()[1],
+                                      kind);
+      if( err != cudaSuccess )
+      {
+        ALICEVISION_LOG_ERROR( "Failed to copy : " << __FILE__ << " " << __LINE__ << ", " << cudaGetErrorString(err) );
+      }
     }
+  }
+}
+
+template<class Type> void copy(CudaDeviceMemory<Type>& _dst, const CudaHostMemoryHeap<Type,1>& _src)
+{
+  cudaMemcpyKind kind = cudaMemcpyHostToDevice;
+  cudaError_t err = cudaMemcpy(_dst.getBuffer(), _src.getBuffer(), _src.getBytes(), kind);
+  if( err != cudaSuccess )
+  {
+    ALICEVISION_LOG_ERROR( "Failed to copy from CudaHostMemoryHeap to CudaDeviceMemory: " << cudaGetErrorString(err) );
   }
 }
 
@@ -494,10 +732,25 @@ template<class Type, unsigned Dim> void copy(CudaDeviceMemoryPitched<Type, Dim>&
 {
   cudaMemcpyKind kind = cudaMemcpyDeviceToDevice;
   if(Dim == 1) {
-    cudaMemcpyFromArray(_dst.getBuffer(), _src.getArray(), 0, 0, _src.getSize()[0] * sizeof(Type), kind);
+    cudaError_t err = cudaMemcpyFromArray(_dst.getBuffer(), _src.getArray(), 0, 0, _src.getSize()[0] * sizeof(Type), kind);
+    if( err != cudaSuccess )
+    {
+      ALICEVISION_LOG_ERROR( "Failed to copy : " << __FILE__ << " " << __LINE__ << ", " << cudaGetErrorString(err) );
+    }
   }
   else if(Dim == 2) {
-    cudaMemcpy2DFromArray(_dst.getBuffer(), _dst.getPitch(), _src.getArray(), 0, 0, _src.getSize()[0] * sizeof(Type), _src.getSize()[1], kind);
+    cudaError_t err = cudaMemcpy2DFromArray(_dst.getBuffer(),
+                                            _dst.getPitch(),
+                                            _src.getArray(),
+                                            0,
+                                            0,
+                                            _src.getSize()[0] * sizeof(Type),
+                                            _src.getSize()[1],
+                                            kind);
+    if( err != cudaSuccess )
+    {
+      ALICEVISION_LOG_ERROR( "Failed to copy : " << __FILE__ << " " << __LINE__ << ", " << cudaGetErrorString(err) );
+    }
   }
   else if(Dim == 3) {
     cudaMemcpy3DParms p = { 0 };
@@ -515,7 +768,11 @@ template<class Type, unsigned Dim> void copy(CudaDeviceMemoryPitched<Type, Dim>&
     for(unsigned i = 3; i < Dim; ++i)
       p.extent.depth *= _src.getSize()[i];
     p.kind = kind;
-    cudaMemcpy3D(&p);
+    cudaError_t err = cudaMemcpy3D(&p);
+    if( err != cudaSuccess )
+    {
+      ALICEVISION_LOG_ERROR( "Failed to copy : " << __FILE__ << " " << __LINE__ << ", " << cudaGetErrorString(err) );
+    }
   }
 }
 
@@ -523,10 +780,25 @@ template<class Type, unsigned Dim> void copy(CudaArray<Type, Dim>& _dst, const C
 {
   cudaMemcpyKind kind = cudaMemcpyHostToDevice;
   if(Dim == 1) {
-    cudaMemcpyToArray(_dst.getArray(), 0, 0, _src.getBuffer(), _src.getSize()[0] * sizeof (Type), kind);
+    cudaError_t err = cudaMemcpyToArray(_dst.getArray(), 0, 0, _src.getBuffer(), _src.getSize()[0] * sizeof (Type), kind);
+    if( err != cudaSuccess )
+    {
+      ALICEVISION_LOG_ERROR( "Failed to copy : " << __FILE__ << " " << __LINE__ << ", " << cudaGetErrorString(err) );
+    }
   }
   else if(Dim == 2) {
-    cudaMemcpy2DToArray(_dst.getArray(), 0, 0, _src.getBuffer(), _src.getSize()[0] * sizeof (Type), _src.getSize()[0] * sizeof (Type), _src.getSize()[1], kind);
+    cudaError_t err = cudaMemcpy2DToArray(_dst.getArray(),
+                                          0,
+                                          0,
+                                          _src.getBuffer(),
+                                          _src.getSize()[0] * sizeof (Type),
+                                          _src.getSize()[0] * sizeof (Type),
+                                          _src.getSize()[1],
+                                          kind);
+    if( err != cudaSuccess )
+    {
+      ALICEVISION_LOG_ERROR( "Failed to copy : " << __FILE__ << " " << __LINE__ << ", " << cudaGetErrorString(err) );
+    }
   }
   else if(Dim == 3) {
     cudaMemcpy3DParms p = { 0 };
@@ -544,7 +816,11 @@ template<class Type, unsigned Dim> void copy(CudaArray<Type, Dim>& _dst, const C
     for(unsigned i = 3; i < Dim; ++i)
       p.extent.depth *= _src.getSize()[i];
     p.kind = kind;
-    cudaMemcpy3D(&p);
+    cudaError_t err = cudaMemcpy3D(&p);
+    if( err != cudaSuccess )
+    {
+      ALICEVISION_LOG_ERROR( "Failed to copy : " << __FILE__ << " " << __LINE__ << ", " << cudaGetErrorString(err) );
+    }
   }
 }
 
@@ -552,10 +828,25 @@ template<class Type, unsigned Dim> void copy(CudaArray<Type, Dim>& _dst, const C
 {
   cudaMemcpyKind kind = cudaMemcpyDeviceToDevice;
   if(Dim == 1) {
-    cudaMemcpyToArray(_dst.getArray(), 0, 0, _src.getBuffer(), _src.getSize()[0] * sizeof(Type), kind);
+    cudaError_t err = cudaMemcpyToArray(_dst.getArray(), 0, 0, _src.getBuffer(), _src.getSize()[0] * sizeof(Type), kind);
+    if( err != cudaSuccess )
+    {
+      ALICEVISION_LOG_ERROR( "Failed to copy : " << __FILE__ << " " << __LINE__ << ", " << cudaGetErrorString(err) );
+    }
   }
   else if(Dim == 2) {
-    cudaMemcpy2DToArray(_dst.getArray(), 0, 0, _src.getBuffer(), _src.getPitch(), _src.getSize()[0] * sizeof(Type), _src.getSize()[1], kind);
+    cudaError_t err = cudaMemcpy2DToArray(_dst.getArray(),
+                                          0,
+                                          0,
+                                          _src.getBuffer(),
+                                          _src.getPitch(),
+                                          _src.getSize()[0] * sizeof(Type),
+                                          _src.getSize()[1],
+                                          kind);
+    if( err != cudaSuccess )
+    {
+      ALICEVISION_LOG_ERROR( "Failed to copy : " << __FILE__ << " " << __LINE__ << ", " << cudaGetErrorString(err) );
+    }
   }
   else if(Dim == 3) {
     cudaMemcpy3DParms p = { 0 };
@@ -573,21 +864,33 @@ template<class Type, unsigned Dim> void copy(CudaArray<Type, Dim>& _dst, const C
     for(unsigned i = 3; i < Dim; ++i)
       p.extent.depth *= _src.getSize()[i];
     p.kind = kind;
-    cudaMemcpy3D(&p);
+    cudaError_t err = cudaMemcpy3D(&p);
+    if( err != cudaSuccess )
+    {
+      ALICEVISION_LOG_ERROR( "Failed to copy : " << __FILE__ << " " << __LINE__ << ", " << cudaGetErrorString(err) );
+    }
   }
 }
 
 template<class Type, unsigned Dim> void copy(Type* _dst, size_t sx, size_t sy, const CudaDeviceMemoryPitched<Type, Dim>& _src)
 {
   if(Dim == 2) {
-    cudaMemcpy2D(_dst, sx * sizeof (Type), _src.getBuffer(), _src.getPitch(), sx * sizeof (Type), sy, cudaMemcpyDeviceToHost);
+    cudaError_t err = cudaMemcpy2D(_dst, sx * sizeof (Type), _src.getBuffer(), _src.getPitch(), sx * sizeof (Type), sy, cudaMemcpyDeviceToHost);
+    if( err != cudaSuccess )
+    {
+      ALICEVISION_LOG_ERROR( "Failed to copy : " << __FILE__ << " " << __LINE__ << ", " << cudaGetErrorString(err) );
+    }
   }
 }
 
 template<class Type, unsigned Dim> void copy(CudaDeviceMemoryPitched<Type, Dim>& _dst, const Type* _src, size_t sx, size_t sy)
 {
   if(Dim == 2) {
-    cudaMemcpy2D(_dst.getBuffer(), _dst.getPitch(), _src, sx * sizeof (Type), sx * sizeof(Type), sy, cudaMemcpyHostToDevice);
+    cudaError_t err = cudaMemcpy2D(_dst.getBuffer(), _dst.getPitch(), _src, sx * sizeof (Type), sx * sizeof(Type), sy, cudaMemcpyHostToDevice);
+    if( err != cudaSuccess )
+    {
+      ALICEVISION_LOG_ERROR( "Failed to copy : " << __FILE__ << " " << __LINE__ << ", " << cudaGetErrorString(err) );
+    }
   }
 }
 
@@ -596,7 +899,19 @@ template<class Type, unsigned Dim> void copy(Type* _dst, size_t sx, size_t sy, s
   if(Dim >= 3) {
     for (unsigned int slice=0; slice<sz; slice++)
     {
-      cudaMemcpy2D( _dst + sx * sy * slice, sx * sizeof (Type), &_src.getBuffer()[slice * _src.stride()[1]], _src.getPitch(), sx * sizeof (Type), sy, cudaMemcpyDeviceToHost);
+      cudaError_t err = cudaMemcpy2D( _dst + sx * sy * slice,
+                                      sx * sizeof (Type),
+                                      (unsigned char*)_src.getBuffer() + slice * _src.stride()[1],
+                                      _src.stride()[0], // _src.getPitch(),
+                                      sx * sizeof (Type),
+                                      sy,
+                                      cudaMemcpyDeviceToHost);
+      if( err != cudaSuccess )
+      {
+        ALICEVISION_LOG_ERROR( "Failed to copy : " << std::endl
+            << "    " << __FILE__ << " " << __LINE__ << ", " << cudaGetErrorString(err) );
+        throw std::runtime_error("Failed to copy.");
+      }
     }
   }
 }
@@ -606,7 +921,17 @@ template<class Type, unsigned Dim> void copy(CudaDeviceMemoryPitched<Type, Dim>&
   if(Dim >= 3) {
     for (unsigned int slice=0; slice<sz; slice++)
     {
-      cudaMemcpy2D( &_dst.getBuffer()[slice * _dst.stride()[1]], _dst.getPitch(), _src + sx * sy * slice, sx * sizeof (Type), sx * sizeof(Type), sy, cudaMemcpyHostToDevice);
+      cudaError_t err = cudaMemcpy2D( (unsigned char*)_dst.getBuffer() + slice * _dst.stride()[1],
+                                      _dst.getPitch(),
+                                      _src + sx * sy * slice,
+                                      sx * sizeof (Type),
+                                      sx * sizeof(Type),
+                                      sy,
+                                      cudaMemcpyHostToDevice);
+      if( err != cudaSuccess )
+      {
+        ALICEVISION_LOG_ERROR( "Failed to copy : " << __FILE__ << " " << __LINE__ << ", " << cudaGetErrorString(err) );
+      }
     }
   }
 }
