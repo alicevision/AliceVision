@@ -4,39 +4,15 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
-#pragma once
+#include "aliceVision/depthMap/cuda/deviceCommon/device_global.cuh"
 
-#include <aliceVision/depthMap/cuda/commonStructures.hpp>
+#include "aliceVision/depthMap/cuda/commonStructures.hpp"
 
 namespace aliceVision {
 namespace depthMap {
 
-// Helper functions
-// function clamping x between a and b
-__device__ int clamp(int x, int a, int b)
-{
-    return max(a, min(b, x));
-}
-
-
 // Global data handlers and parameters
 // defines
-
-texture<unsigned char, 2, cudaReadModeNormalizedFloat> rtex;
-texture<unsigned char, 2, cudaReadModeNormalizedFloat> ttex;
-texture<unsigned char, 2, cudaReadModeNormalizedFloat> gtex;
-texture<unsigned char, 2, cudaReadModeNormalizedFloat> btex;
-
-texture<uchar4, 2, cudaReadModeNormalizedFloat> r4tex;
-texture<uchar4, 2, cudaReadModeNormalizedFloat> t4tex;
-texture<float, 1, cudaReadModeElementType> gaussianTex;
-
-texture<unsigned char, 2, cudaReadModeNormalizedFloat> wshtex;
-texture<float, 2, cudaReadModeElementType> watex;
-
-CudaArray<char4, 2>** texs_arr = NULL;
-CudaArray<unsigned char, 2>** wshs_arr = NULL;
-CudaArray<float, 2>* watex_arr = NULL;
 
 ////////////////////////////////////////////////////////////////////////////////
 // CONSTANT MEMORY

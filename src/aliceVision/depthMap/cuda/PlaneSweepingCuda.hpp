@@ -22,6 +22,9 @@
 namespace aliceVision {
 namespace depthMap {
 
+/* forward declaration, defined in depthMap/cuda/commonStructures.hpp */
+struct cameraStruct;
+
 class PlaneSweepingCuda
 {
 public:
@@ -54,11 +57,11 @@ public:
     mvsUtils::PreMatchCams* pc;
 
     int CUDADeviceNo;
-    void** ps_texs_arr;
+    // void** ps_texs_arr;
 
-    StaticVector<void*>* cams;
-    StaticVector<int>* camsRcs;
-    StaticVector<long>* camsTimes;
+    StaticVector<cameraStruct*> _cams;
+    StaticVector<int>           _camsRcs;
+    StaticVector<long>          _camsTimes;
 
     bool verbose;
     bool doVizualizePartialDepthMaps;
@@ -77,6 +80,9 @@ public:
     PlaneSweepingCuda(int _CUDADeviceNo, mvsUtils::ImagesCache* _ic, mvsUtils::MultiViewParams* _mp, mvsUtils::PreMatchCams* _pc,
                         int _scales);
     ~PlaneSweepingCuda(void);
+
+    PlaneSweepingCuda( const PlaneSweepingCuda& ) = delete;            // disable copy constructor
+    PlaneSweepingCuda& operator=( const PlaneSweepingCuda& ) = delete; // disable assignment operator
 
     int addCam(int rc, float** H, int scale);
 
