@@ -62,10 +62,11 @@ __device__ void M3x3mulM3x3(float* O3x3, float* A3x3, float* B3x3)
 
 __device__ void M3x3minusM3x3(float* O3x3, float* A3x3, float* B3x3)
 {
+    #pragma unroll
     for(int i = 0; i < 9; i++)
     {
         O3x3[i] = A3x3[i] - B3x3[i];
-    };
+    }
 }
 
 __device__ void M3x3transpose(float* O3x3, float* A3x3)
@@ -81,67 +82,165 @@ __device__ void M3x3transpose(float* O3x3, float* A3x3)
     O3x3[8] = A3x3[8];
 }
 
-__device__ uchar4 float4_to_uchar4(const float4& a)
+inline __device__ uchar4 float4_to_uchar4(const float4& a)
 {
     return make_uchar4((unsigned char)a.x, (unsigned char)a.y, (unsigned char)a.z, (unsigned char)a.w);
 }
 
-__device__ float4 uchar4_to_float4(const uchar4& a)
+inline __device__ float4 uchar4_to_float4(const uchar4& a)
 {
     return make_float4((float)a.x, (float)a.y, (float)a.z, (float)a.w);
 }
 
-__device__ float dot(const float3& a, const float3& b)
+inline __device__ float4 operator*(const float4& a, const float& d)
 {
+    return make_float4(a.x * d, a.y * d, a.z * d, a.w * d);
+}
+
+inline __device__ float4 operator+(const float4& a, const float4& d)
+{
+    return make_float4(a.x + d.x, a.y + d.y, a.z + d.z, a.w + d.w);
+}
+
+inline __device__ float4 operator*(const float& d, const float4& a)
+{
+    return make_float4(a.x * d, a.y * d, a.z * d, a.w * d);
+}
+
+inline __device__ float3 operator*(const float3& a, const float& d)
+{
+    return make_float3(a.x * d, a.y * d, a.z * d);
+}
+
+inline __device__ float3 operator/(const float3& a, const float& d)
+{
+    return make_float3(a.x / d, a.y / d, a.z / d);
+}
+
+inline __device__ float3 operator+(const float3& a, const float3& b)
+{
+    return make_float3(a.x + b.x, a.y + b.y, a.z + b.z);
+}
+
+inline __device__ float3 operator-(const float3& a, const float3& b)
+{
+    return make_float3(a.x - b.x, a.y - b.y, a.z - b.z);
+}
+
+inline __device__ int2 operator+(const int2& a, const int2& b)
+{
+    return make_int2(a.x + b.x, a.y + b.y);
+}
+
+inline __device__ float2 operator*(const float2& a, const float& d)
+{
+    return make_float2(a.x * d, a.y * d);
+}
+
+inline __device__ float2 operator/(const float2& a, const float& d)
+{
+    return make_float2(a.x / d, a.y / d);
+}
+
+inline __device__ float2 operator+(const float2& a, const float2& b)
+{
+    return make_float2(a.x + b.x, a.y + b.y);
+}
+
+inline __device__ float2 operator-(const float2& a, const float2& b)
+{
+    return make_float2(a.x - b.x, a.y - b.y);
+}
+
+inline __device__ float dot(const float3& a, const float3& b)
+{
+#if 1
     return a.x * b.x + a.y * b.y + a.z * b.z;
+#else
+    return fmaf( a.x, b.x, fmaf( a.y, b.y, a.z * b.z ) );
+#endif
 }
 
-__device__ float dot(const float2& a, const float2& b)
+inline __device__ float dot(const float2& a, const float2& b)
 {
+#if 1
     return a.x * b.x + a.y * b.y;
+#else
+    return fmaf( a.x, b.x, a.y * b.y );
+#endif
 }
 
-__device__ float size(const float3& a)
+inline __device__ float size(const float3& a)
 {
+#if 1
     return sqrtf(a.x * a.x + a.y * a.y + a.z * a.z);
+#else
+    return norm3df( a.x, a.y, a.z );
+#endif
 }
 
-__device__ float size(const float2& a)
+inline __device__ float size(const float2& a)
 {
+#if 1
     return sqrtf(a.x * a.x + a.y * a.y);
+#else
+    return hypotf( a.x, a.y );
+#endif
 }
 
-__device__ float dist(const float3& a, const float3& b)
+inline __device__ float dist(const float3& a, const float3& b)
 {
+#if 1
     float3 ab = a - b;
     return size(ab);
+#else
+    return norm3df( a.x - b.x, a.y - b.y, a.z - b.y );
+#endif
 }
 
 __device__ float dist(const float2& a, const float2& b)
 {
+#if 1
     float2 ab;
     ab.x = a.x - b.x;
     ab.y = a.y - b.y;
     return size(ab);
+#else
+    return hypotf( a.x - b.x, a.y - b.y );
+#endif
 }
 
 __device__ float3 cross(const float3& a, const float3& b)
 {
     return make_float3(a.y * b.z - a.z * b.y, a.z * b.x - a.x * b.z, a.x * b.y - a.y * b.x);
 }
-__device__ void normalize(float3& a)
+
+inline __device__ void normalize(float3& a)
 {
+#if 0
     float d = sqrtf(dot(a, a));
     a.x /= d;
     a.y /= d;
     a.z /= d;
+#else
+    float d = rnorm3df( a.x, a.y, a.z );
+    a.x *= d;
+    a.y *= d;
+    a.z *= d;
+#endif
 }
 
-__device__ void normalize(float2& a)
+inline __device__ void normalize(float2& a)
 {
+#if 0
     float d = sqrtf(dot(a, a));
     a.x /= d;
     a.y /= d;
+#else
+    float d = rhypotf( a.x, a.y );
+    a.x *= d;
+    a.y *= d;
+#endif
 }
 
 __device__ void outerMultiply(float* O3x3, const float3& a, const float3& b)
@@ -160,14 +259,22 @@ __device__ void outerMultiply(float* O3x3, const float3& a, const float3& b)
 __device__ float3 linePlaneIntersect(const float3& linePoint, const float3& lineVect, const float3& planePoint,
                                      const float3& planeNormal)
 {
+#if 1
     float k = (dot(planePoint, planeNormal) - dot(planeNormal, linePoint)) / dot(planeNormal, lineVect);
+#else
+    float k = dot(planePoint, planeNormal - linePoint) / dot(planeNormal, lineVect);
+#endif
     return linePoint + lineVect * k;
 }
 
-__device__ float orientedPointPlaneDistanceNormalizedNormal(const float3& point, const float3& planePoint,
+inline __device__ float orientedPointPlaneDistanceNormalizedNormal(const float3& point, const float3& planePoint,
                                                             const float3& planeNormalNormalized)
 {
+#if 1
     return (dot(point, planeNormalNormalized) - dot(planePoint, planeNormalNormalized));
+#else
+    return dot(point - planePoint, planeNormalNormalized);
+#endif
 }
 
 __device__ float3 closestPointOnPlaneToPoint(const float3& point, const float3& planePoint,
@@ -187,19 +294,23 @@ __device__ float pointLineDistance3D(const float3& point, const float3& linePoin
 }
 
 // v1,v2 dot not have to be normalized
-__device__ float angleBetwV1andV2(const float3& iV1, const float3& iV2)
+__device__ float angleBetwV1andV2(float3 V1, float3 V2)
 {
-    float3 V1, V2;
-    V1 = iV1;
+#if 0
     normalize(V1);
-    V2 = iV2;
     normalize(V2);
 
     return fabsf(acosf(V1.x * V2.x + V1.y * V2.y + V1.z * V2.z) / (CUDART_PI_F / 180.0f));
+#else
+    float d = rnorm3df( V1.x, V1.y, V1.z ) * rnorm3df( V2.x, V2.y, V2.z );
+
+    return fabsf(acosf( (V1.x * V2.x + V1.y * V2.y + V1.z * V2.z)/d ) * 180.0f / CUDART_PI_F);
+#endif
 }
 
-__device__ float angleBetwABandAC(const float3& A, const float3& B, const float3& C)
+__device__ float angleBetwABandAC(float3 A, float3 B, float3 C)
 {
+#if 0
     float3 V1, V2;
     V1 = B - A;
     V2 = C - A;
@@ -210,6 +321,17 @@ __device__ float angleBetwABandAC(const float3& A, const float3& B, const float3
     a = isinf(a) ? 0.0f : a;
 
     return fabsf(a) / (CUDART_PI_F / 180.0f);
+#else
+    float3 V1, V2;
+    V1 = B - A;
+    V2 = C - A;
+    float d = rnorm3df( V1.x, V1.y, V1.z ) * rnorm3df( V2.x, V2.y, V2.z );
+
+    float a = acosf( (V1.x * V2.x + V1.y * V2.y + V1.z * V2.z)/d );
+    a = isinf(a) ? 0.0f : a;
+
+    return fabsf(a) * 180.0f / CUDART_PI_F;
+#endif
 }
 
 __device__ float3 lineLineIntersect(float* k, float* l, float3* lli1, float3* lli2, float3& p1, float3& p2, float3& p3,
