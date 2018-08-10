@@ -650,6 +650,7 @@ endif()
 # ==============================================================================
 # CUDA
 # ==============================================================================
+option(ALICEVISION_NVCC_WARNINGS      "Switch on several additional warnings for CUDA nvcc." OFF)
 set(ALICEVISION_HAVE_CUDA 0)
 
 if(NOT ALICEVISION_USE_CUDA STREQUAL "OFF")
@@ -730,8 +731,12 @@ if(ALICEVISION_HAVE_CUDA)
     if(UNIX)
       set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};-D_FORCE_INLINES")
     endif()
-    set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};-Xptxas;--warn-on-local-memory-usage")
-    set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};-Xptxas;--warn-on-spills")
+    if(ALICEVISION_NVCC_WARNINGS)
+      set(CUDA_NVCC_FLAGS_RELEASE "${CUDA_NVCC_FLAGS_RELEASE};-Xptxas;-warn-lmem-usage")
+      set(CUDA_NVCC_FLAGS_RELEASE "${CUDA_NVCC_FLAGS_RELEASE};-Xptxas;-warn-spills")
+      set(CUDA_NVCC_FLAGS_RELEASE "${CUDA_NVCC_FLAGS_RELEASE};-Xptxas;--warn-on-local-memory-usage")
+      set(CUDA_NVCC_FLAGS_RELEASE "${CUDA_NVCC_FLAGS_RELEASE};-Xptxas;--warn-on-spills")
+    endif()
   endif()
 
   # library required for CUDA dynamic parallelism, forgotten by CMake 3.4
