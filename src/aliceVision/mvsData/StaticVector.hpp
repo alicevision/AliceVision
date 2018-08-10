@@ -17,6 +17,9 @@
 #include <iostream>
 #include <stdexcept>
 
+#include <boost/filesystem.hpp>
+#include <boost/filesystem/path.hpp>
+
 namespace aliceVision {
 
 template <class T>
@@ -269,6 +272,21 @@ template <class T>
 void saveArrayToFile(std::string fileName, StaticVector<T>* a, bool docompress = true)
 {
     ALICEVISION_LOG_DEBUG("[IO] saveArrayToFile: " << fileName);
+
+    boost::filesystem::path filepath = fileName;
+    boost::filesystem::create_directories( filepath.parent_path() );
+
+    if( !a )
+    {
+        ALICEVISION_LOG_DEBUG("[IO] saveArrayToFile called with NULL static vector");
+        return;
+    }
+
+    if( a->size() == 0 )
+    {
+        ALICEVISION_LOG_WARNING("[IO] saveArrayToFile called with 0-sized static vector");
+        return;
+    }
 
     if((docompress == false) || (a->size() < 1000))
     {
