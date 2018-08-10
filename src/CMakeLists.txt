@@ -650,7 +650,9 @@ endif()
 # ==============================================================================
 # CUDA
 # ==============================================================================
+option(ALICEVISION_USE_NVTX_PROFILING "Use CUDA NVTX for profiling." OFF)
 option(ALICEVISION_NVCC_WARNINGS      "Switch on several additional warnings for CUDA nvcc." OFF)
+
 set(ALICEVISION_HAVE_CUDA 0)
 
 if(NOT ALICEVISION_USE_CUDA STREQUAL "OFF")
@@ -742,6 +744,14 @@ if(ALICEVISION_HAVE_CUDA)
   # library required for CUDA dynamic parallelism, forgotten by CMake 3.4
   cuda_find_library_local_first(CUDA_CUDADEVRT_LIBRARY cudadevrt "\"cudadevrt\" library")
 
+  # If user activates NVTX profiling, add library and flags
+  if(ALICEVISION_USE_NVTX_PROFILING)
+    message(STATUS "PROFILING CPU/GPU CODE: NVTX is in use")
+    cuda_find_library_local_first(CUDA_NVTX_LIBRARY nvToolsExt "NVTX library")
+    add_definitions(-DUSE_NVTX)
+    include_directories(${CUDA_INCLUDE_DIRS})
+    set(ALICEVISION_NVTX_LIBRARY ${CUDA_NVTX_LIBRARY})
+  endif()
 endif()
 
 # ==============================================================================
