@@ -82,6 +82,7 @@ void readImageMetadata(const std::string& path, int& width, int& height, std::ma
  */
 void readImage(const std::string& path, Image<float>& image);
 void readImage(const std::string& path, Image<unsigned char>& image);
+void readImage(const std::string& path, Image<char16_t>& image);
 void readImage(const std::string& path, Image<RGBAColor>& image);
 void readImage(const std::string& path, Image<RGBfColor>& image);
 void readImage(const std::string& path, Image<RGBColor>& image);

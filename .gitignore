@@ -32,6 +32,7 @@ install
 lib
 bin
 x64
+dist
 
 # CMake
 CMakeFiles  # intermediate folders
@@ -71,4 +72,5 @@ Production
 *.gz
 *.tgz
 *.tar*
+
 

@@ -220,6 +220,11 @@ void readImage(const std::string& path, Image<unsigned char>& image)
   readImage(path, oiio::TypeDesc::UINT8, 1, image);
 }
 
+void readImage(const std::string& path, Image<char16_t>& image)
+{
+	readImage(path, oiio::TypeDesc::UINT16, 1, image);
+}
+
 void readImage(const std::string& path, Image<RGBAColor>& image)
 {
   readImage(path, oiio::TypeDesc::UINT8, 4, image);

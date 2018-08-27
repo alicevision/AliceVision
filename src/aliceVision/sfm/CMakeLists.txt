@@ -29,6 +29,7 @@ set(sfm_files_headers
   sfm.hpp
   sfmFilters.hpp
   sfmTriangulation.hpp
+  sfmKinectRegistration.hpp
 )
 
 # Sources
@@ -53,6 +54,7 @@ set(sfm_files_sources
   generateReport.cpp
   sfmFilters.cpp
   sfmTriangulation.cpp
+  sfmKinectRegistration.cpp
 )
 
 alicevision_add_library(aliceVision_sfm
@@ -85,6 +87,9 @@ alicevision_add_test(bundleAdjustment_test.cpp
         aliceVision_feature
         aliceVision_system
 )
+
+alicevision_add_test(scaleFromKinect_test.cpp        NAME "sfm_scaleFromKinect"         LINKS aliceVision_sfm)
+
 
 add_subdirectory(pipeline)
 
