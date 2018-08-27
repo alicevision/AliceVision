@@ -421,7 +421,7 @@ PlaneSweepingCuda::PlaneSweepingCuda(int _CUDADeviceNo, mvsUtils::ImagesCache* _
                          << "\t- nImgsInGPUAtTime: " << nImgsInGPUAtTime << std::endl
                          << "\t- scales: " << scales << std::endl
                          << "\t- subPixel: " << (subPixel ? "Yes" : "No") << std::endl
-                         << "\t- varianceWSH: ", varianceWSH);
+                         << "\t- varianceWSH: " << varianceWSH);
 
     // allocate global on the device
     ps_deviceAllocate((CudaArray<uchar4, 2>***)&ps_texs_arr, nImgsInGPUAtTime, maxImageWidth, maxImageHeight, scales, CUDADeviceNo);
