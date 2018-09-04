@@ -59,7 +59,7 @@ Other optional libraries can enable specific features (check "CMake Options" for
 
 Building the project using vcpkg (recommended on Windows)
 --------------------------------
-[Vcpkg](https://github.com/Microsoft/vcpkg) is a tool to ease the build and management of C/C++ libraries.
+[Vcpkg](https://github.com/Microsoft/vcpkg) is a tool that helps in acquiring, building, and managing C/C++ libraries.
 AliceVision's required dependencies can be built with it. Follow the [installation guide](https://github.com/Microsoft/vcpkg/blob/master/README.md#quick-start) to setup vcpkg.
 
 **Note**: while started as a Windows only project, vcpkg recently became cross-platform. In the scope of AliceVision, it has only been tested on Windows.
