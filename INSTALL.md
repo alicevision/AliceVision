@@ -38,7 +38,6 @@ AliceVision depends on:
 * OpenEXR >= 2.2.0
 * OpenImageIO >= 1.8.7
 * Geogram >= 1.5.4 (https://gforge.inria.fr/frs/?group_id=5833)
-* OpenImageIO >= 1.8
 * OpenEXR >= 2.2
 * MeshSDFilter (internal)
 * OpenMesh (internal)
