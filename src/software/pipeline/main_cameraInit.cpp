@@ -313,8 +313,9 @@ int main(int argc, char **argv)
   std::srand(std::time(0));
 
   std::vector<std::string> noMetadataImagePaths;
-  std::map<std::pair<std::string, std::string>, std::string> unknownSensors; // key (make,model) value (first imagePath)
-  std::map<std::pair<std::string, std::string>, std::pair<std::string, aliceVision::sensorDB::Datasheet>> unsureSensors; // key (make,model) value (first imagePath,datasheet)
+  std::map<std::pair<std::string, std::string>, std::string> unknownSensors; // key (make,model), value (first imagePath)
+  std::map<std::pair<std::string, std::string>, std::pair<std::string, aliceVision::sensorDB::Datasheet>> unsureSensors; // key (make,model), value (first imagePath,datasheet)
+  std::map<IndexT, std::map<int, std::size_t>> detectedRigs; // key rigId, value (subPoseId, nbPose)
 
   sfmData::SfMData sfmData;
 
@@ -365,6 +366,29 @@ int main(int argc, char **argv)
   for(int i = 0; i < sfmData.getViews().size(); ++i)
   {
     sfmData::View& view = *(std::next(viewPairItBegin,i)->second);
+
+    // try to detect rig structure in the input folder
+    const fs::path parentPath = fs::path(view.getImagePath()).parent_path();
+    if(parentPath.parent_path().stem() == "rig")
+    {
+      try
+      {
+        const int frame = std::stoi(fs::path(view.getImagePath()).stem().string());
+        const int subPoseId = std::stoi(parentPath.stem().string());
+        std::hash<std::string> hash;
+        view.setRigAndSubPoseId(hash(parentPath.parent_path().string()), subPoseId);
+        const IndexT rigPoseId = static_cast<IndexT>(view.getRigId() + frame);
+        view.setPoseId(rigPoseId);
+
+        #pragma omp critical
+        detectedRigs[view.getRigId()][view.getSubPoseId()]++;
+      }
+      catch(std::exception& e)
+      {
+        ALICEVISION_LOG_WARNING("Invalid structure for view: " << view.getImagePath() << std::endl << "Used as single image.");
+      }
+    }
+
     IndexT intrinsicId = view.getIntrinsicId();
     double sensorWidth = -1;
     double focalLength = view.getMetadataFocalLength();
@@ -525,6 +549,36 @@ int main(int argc, char **argv)
     {
       view.setIntrinsicId(intrinsicId);
       sfmData.getIntrinsics().emplace(intrinsicId, intrinsicBase);
+    }
+  }
+
+  // create detected rigs structures
+  if(!detectedRigs.empty())
+  {
+    for(const auto& subPosesPerRigId : detectedRigs)
+    {
+      const IndexT rigId = subPosesPerRigId.first;
+      const std::size_t nbSubPose = subPosesPerRigId.second.size();
+      const std::size_t nbPoses = subPosesPerRigId.second.begin()->second;
+
+      for(const auto& nbPosePerSubPoseId : subPosesPerRigId.second)
+      {
+        // check subPoseId
+        if((nbPosePerSubPoseId.first >= nbSubPose) || (nbPosePerSubPoseId.first < 0))
+        {
+          ALICEVISION_LOG_ERROR("Wrong subPoseId in detected rig structure.");
+          return EXIT_FAILURE;
+        }
+
+        // check nbPoses
+        if(nbPosePerSubPoseId.second != nbPoses)
+        {
+          ALICEVISION_LOG_ERROR("Wrong number of poses per subPose in detected rig structure (" << nbPosePerSubPoseId.second << " != " << nbPoses << ").");
+          return EXIT_FAILURE;
+        }
+      }
+
+      sfmData.getRigs().emplace(rigId, sfmData::Rig(nbSubPose));
     }
   }
 
