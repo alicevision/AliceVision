@@ -10,8 +10,13 @@
 #include <aliceVision/feature/sift/ImageDescriber_SIFT.hpp>
 #include <aliceVision/system/Logger.hpp>
 
+#include <boost/filesystem.hpp>
+
 #include <tuple>
 #include <cassert>
+#include <cstdlib>
+
+namespace fs = boost::filesystem;
 
 namespace aliceVision {
 namespace keyframe {
@@ -25,6 +30,14 @@ KeyframeSelector::KeyframeSelector(const std::vector<std::string>& mediaPaths,
   , _voctreeFilePath(voctreeFilePath)
   , _outputFolder(outputFolder)
 {
+  if((_maxOutFrame != 0) &&
+     !_hasSharpnessSelection &&
+     !_hasSparseDistanceSelection)
+  {
+      ALICEVISION_LOG_ERROR("KeyframeSelector needs at least one selection method if output frame limited !");
+      throw std::invalid_argument("KeyframeSelector needs at least one selection method if output frame limited !");
+  }
+
   // load vocabulary tree
   _voctree.reset(new aliceVision::voctree::VocabularyTree<DescriptorFloat>(voctreeFilePath));
 
@@ -44,10 +57,18 @@ KeyframeSelector::KeyframeSelector(const std::vector<std::string>& mediaPaths,
   // resize mediasInfo container
   _mediasInfo.resize(mediaPaths.size());
 
+  // create SIFT image describer
+  _imageDescriber.reset(new feature::ImageDescriber_SIFT());
+}
+
+void KeyframeSelector::process()
+{
   // create feeds and count minimum number of frames
   std::size_t nbFrames = std::numeric_limits<std::size_t>::max();
-  for(const auto& path : _mediaPaths)
+  for(std::size_t mediaIndex = 0; mediaIndex < _mediaPaths.size(); ++mediaIndex)
   {
+    const auto& path = _mediaPaths.at(mediaIndex);
+
     // create a feed provider per mediaPaths
     _feeds.emplace_back(new dataio::FeedProvider(path));
 
@@ -61,9 +82,9 @@ KeyframeSelector::KeyframeSelector(const std::vector<std::string>& mediaPaths,
     }
 
     // update minimum number of frames
-    nbFrames = std::min(nbFrames, feed.nbFrames());
+    nbFrames = std::min(nbFrames, feed.nbFrames() - static_cast<std::size_t>( _cameraInfos.at(mediaIndex).frameOffset));
   }
-  
+
   // check if minimum number of frame is zero
   if(nbFrames == 0)
   {
@@ -74,25 +95,37 @@ KeyframeSelector::KeyframeSelector(const std::vector<std::string>& mediaPaths,
   // resize selection data vector
   _framesData.resize(nbFrames);
 
-  // create SIFT image describer
-  _imageDescriber.reset(new feature::ImageDescriber_SIFT());
-}
-
-void KeyframeSelector::process()
-{
   // feed provider variables
-  image::Image< image::RGBColor> image;                 // original image
-  camera::PinholeRadialK3 queryIntrinsics;              // image associated camera intrinsics
-  bool hasIntrinsics = false;                           // true if queryIntrinsics is valid
-  std::string currentImgName;                           // current image name
-  
+  image::Image< image::RGBColor> image;    // original image
+  camera::PinholeRadialK3 queryIntrinsics; // image associated camera intrinsics
+  bool hasIntrinsics = false;              // true if queryIntrinsics is valid
+  std::string currentImgName;              // current image name
+
   // process variables
   const unsigned int frameStep = _maxFrameStep - _minFrameStep;
-  const unsigned int tileSharpSubset =  (_nbTileSide * _nbTileSide) / _sharpSubset;
+  const unsigned int tileSharpSubset = (_nbTileSide * _nbTileSide) / _sharpSubset;
+
+  // create output folders
+  if(_feeds.size() > 1)
+  {
+    const std::string rigFolder = _outputFolder + "/rig/";
+    if(!fs::exists(rigFolder))
+      fs::create_directory(rigFolder);
+
+    for(std::size_t mediaIndex = 0 ; mediaIndex < _feeds.size(); ++mediaIndex)
+    {
+      const std::string subPoseFolder = rigFolder + std::to_string(mediaIndex);
+      if(!fs::exists(subPoseFolder))
+        fs::create_directory(subPoseFolder);
+    }
+  }
   
+  // feed and metadata initialization
   for(std::size_t mediaIndex = 0 ; mediaIndex < _feeds.size(); ++mediaIndex)
   {
-    // first frame
+    // first frame with offset
+    _feeds.at(mediaIndex)->goToFrame(_cameraInfos.at(mediaIndex).frameOffset);
+
     if(!_feeds.at(mediaIndex)->readImage(image, queryIntrinsics, currentImgName, hasIntrinsics))
     {
       ALICEVISION_LOG_ERROR("Cannot read media first frame " << _mediaPaths[mediaIndex]);
@@ -105,7 +138,7 @@ void KeyframeSelector::process()
       convertFocalLengthInMM(_cameraInfos.at(mediaIndex), image.Width());
     }
 
-    // define media informations variables
+    // define media informations
     auto& mediaInfo =  _mediasInfo.at(mediaIndex);
     mediaInfo.tileHeight = (image.Height() / 2) / _nbTileSide;
     mediaInfo.tileWidth = (image.Width() / 2) / _nbTileSide;
@@ -115,23 +148,24 @@ void KeyframeSelector::process()
     mediaInfo.spec.attribute("oiio:ColorSpace", "sRGB");   // always sRGB
     mediaInfo.spec.attribute("Make",  _cameraInfos[mediaIndex].brand);
     mediaInfo.spec.attribute("Model", _cameraInfos[mediaIndex].model);
+    mediaInfo.spec.attribute("Exif:BodySerialNumber", std::to_string(rand() % 999999999999)); // TODO: use Exif:OriginalRawFileName instead
     mediaInfo.spec.attribute("Exif:FocalLength", _cameraInfos[mediaIndex].focalLength);
   }
 
   // iteration process
   _keyframeIndexes.clear();
-  std::size_t currentFrameStep = _minFrameStep; // start directly (dont skip minFrameStep first frames)
+  std::size_t currentFrameStep = _minFrameStep + 1; // start directly (dont skip minFrameStep first frames)
   
   for(std::size_t frameIndex = 0; frameIndex < _framesData.size(); ++frameIndex)
   {
-    ALICEVISION_LOG_TRACE("frame : " << frameIndex);
+    ALICEVISION_LOG_INFO("frame : " << frameIndex);
     bool frameSelected = true;
     auto& frameData = _framesData.at(frameIndex);
     frameData.mediasData.resize(_feeds.size());
 
     for(std::size_t mediaIndex = 0; mediaIndex < _feeds.size(); ++mediaIndex)
     {
-      ALICEVISION_LOG_TRACE("media : " << _mediaPaths.at(mediaIndex));
+      ALICEVISION_LOG_DEBUG("media : " << _mediaPaths.at(mediaIndex));
       auto& feed = *_feeds.at(mediaIndex);
 
       if(frameSelected) // false if a camera of a rig is not selected
@@ -155,13 +189,14 @@ void KeyframeSelector::process()
     {
       if(frameSelected)
       {
-        ALICEVISION_LOG_TRACE(" > selected" << std::endl);
+        ALICEVISION_LOG_INFO(" > selected" << std::endl);
         frameData.selected = true;
-        frameData.computeAvgSharpness();
+        if(_hasSharpnessSelection)
+          frameData.computeAvgSharpness();
       }
       else
       {
-        ALICEVISION_LOG_TRACE(" > skipped" << std::endl);
+        ALICEVISION_LOG_INFO(" > skipped" << std::endl);
         frameData.mediasData.clear(); // remove unselected mediasData
       }
     }
@@ -173,16 +208,40 @@ void KeyframeSelector::process()
       bool hasKeyframe = false;
       std::size_t keyframeIndex = 0;
       float maxSharpness = 0;
+      float minDistScore = std::numeric_limits<float>::max();
 
-      // find the sharpest selected frame
-      for(std::size_t index = frameIndex - (frameStep - 1); index <= frameIndex; ++index)
+      // find the best selected frame
+      if(_hasSharpnessSelection)
       {
-        if(_framesData[index].selected && (_framesData[index].avgSharpness > maxSharpness))
+        // find the sharpest selected frame
+        for(std::size_t index = frameIndex - (frameStep - 1); index <= frameIndex; ++index)
         {
-          hasKeyframe = true;
-          keyframeIndex = index;
-          maxSharpness = _framesData[index].avgSharpness;
+          if(_framesData[index].selected && (_framesData[index].avgSharpness > maxSharpness))
+          {
+            hasKeyframe = true;
+            keyframeIndex = index;
+            maxSharpness = _framesData[index].avgSharpness;
+          }
         }
+      }
+      else if(_hasSparseDistanceSelection)
+      {
+        // find the smallest sparseDistance selected frame
+        for(std::size_t index = frameIndex - (frameStep - 1); index <= frameIndex; ++index)
+        {
+          if(_framesData[index].selected && (_framesData[index].maxDistScore < minDistScore))
+          {
+            hasKeyframe = true;
+            keyframeIndex = index;
+            minDistScore = _framesData[index].maxDistScore;
+          }
+        }
+      }
+      else
+      {
+        // use the first frame of the step
+        hasKeyframe = true;
+        keyframeIndex = frameIndex - (frameStep - 1);
       }
 
       // save keyframe
@@ -195,7 +254,7 @@ void KeyframeSelector::process()
         {
           auto& feed = *_feeds.at(mediaIndex);
 
-          feed.goToFrame(keyframeIndex);
+          feed.goToFrame(keyframeIndex + _cameraInfos.at(mediaIndex).frameOffset);
 
           if(_maxOutFrame == 0) // no limit of keyframes (direct evaluation)
           {
@@ -221,7 +280,7 @@ void KeyframeSelector::process()
     return;
   }
 
-  // if limited number of keyframe select smallest sparse distance
+  // if limited number of keyframe, select smallest sparse distance
   {
     std::vector< std::tuple<float, float, std::size_t> > keyframes;
 
@@ -242,7 +301,7 @@ void KeyframeSelector::process()
       for(std::size_t mediaIndex = 0; mediaIndex < _feeds.size(); ++mediaIndex)
       {
         auto& feed = *_feeds.at(mediaIndex);
-        feed.goToFrame(frameIndex);
+        feed.goToFrame(frameIndex + _cameraInfos.at(mediaIndex).frameOffset);
         feed.readImage(image, queryIntrinsics, currentImgName, hasIntrinsics);
         writeKeyframe(image, frameIndex, mediaIndex);
       }
@@ -290,8 +349,11 @@ bool KeyframeSelector::computeFrameData(const image::Image<image::RGBColor>& ima
                                         std::size_t mediaIndex,
                                         unsigned int tileSharpSubset)
 {
-  image::Image<float> imageGray;                // grayscale image
-  image::Image<float> imageGrayHalfSample;      // half resolution grayscale image
+  if(!_hasSharpnessSelection && !_hasSparseDistanceSelection)
+    return true; // nothing to do
+
+  image::Image<float> imageGray;           // grayscale image
+  image::Image<float> imageGrayHalfSample; // half resolution grayscale image
   
   const auto& currMediaInfo = _mediasInfo.at(mediaIndex);
   auto& currframeData = _framesData.at(frameIndex);
@@ -302,14 +364,16 @@ bool KeyframeSelector::computeFrameData(const image::Image<image::RGBColor>& ima
   image::ImageHalfSample(imageGray, imageGrayHalfSample);
 
   // compute sharpness
-  currMediaData.sharpness = computeSharpness(imageGrayHalfSample,
-                                             currMediaInfo.tileHeight,
-                                             currMediaInfo.tileWidth,
-                                             tileSharpSubset);
+  if(_hasSharpnessSelection)
+  {
+    currMediaData.sharpness = computeSharpness(imageGrayHalfSample,
+                                               currMediaInfo.tileHeight,
+                                               currMediaInfo.tileWidth,
+                                               tileSharpSubset);
+    ALICEVISION_LOG_DEBUG( " - sharpness : " << currMediaData.sharpness);
+  }
 
-  ALICEVISION_LOG_TRACE( " - sharpness : " << currMediaData.sharpness);
-
-  if(currMediaData.sharpness > _sharpnessThreshold)
+  if((currMediaData.sharpness > _sharpnessThreshold) || !_hasSharpnessSelection)
   {
     bool noKeyframe = (_keyframeIndexes.empty());
 
@@ -319,7 +383,7 @@ bool KeyframeSelector::computeFrameData(const image::Image<image::RGBColor>& ima
     currMediaData.histogram = voctree::SparseHistogram(_voctree->quantizeToSparse(dynamic_cast<feature::SIFT_Regions*>(regions.get())->Descriptors()));
 
     // compute sparseDistance
-    if(!noKeyframe)
+    if(!noKeyframe && _hasSparseDistanceSelection)
     {
       unsigned int nbKeyframetoCompare = (_keyframeIndexes.size() < _nbKeyFrameDist)? _keyframeIndexes.size() : _nbKeyFrameDist;
 
@@ -331,7 +395,7 @@ bool KeyframeSelector::computeFrameData(const image::Image<image::RGBColor>& ima
         }
       }
       currframeData.maxDistScore = std::max(currframeData.maxDistScore, currMediaData.distScore);
-      ALICEVISION_LOG_TRACE(" - distScore : " << currMediaData.distScore);
+      ALICEVISION_LOG_DEBUG(" - distScore : " << currMediaData.distScore);
     }
 
     if(noKeyframe || (currMediaData.distScore < _distScoreMax))
@@ -346,8 +410,11 @@ void KeyframeSelector::writeKeyframe(const image::Image<image::RGBColor>& image,
                                      std::size_t frameIndex,
                                      std::size_t mediaIndex)
 {
-  const auto& mediaInfo = _mediasInfo.at(mediaIndex);
-  const auto filepath = _outputFolder + "/frame_" + std::to_string(frameIndex) + "_media_" + std::to_string(mediaIndex) + ".jpg";
+  auto& mediaInfo = _mediasInfo.at(mediaIndex);
+  const auto folder = _outputFolder + "/rig/" + ((_feeds.size() > 1) ? (std::to_string(mediaIndex) + "/" ): "");
+  const auto filepath = folder + std::to_string(frameIndex) + ".jpg";
+
+  mediaInfo.spec.attribute("Exif:ImageUniqueID", std::to_string(rand() % 999999999999));
 
   std::unique_ptr<oiio::ImageOutput> out(oiio::ImageOutput::create(filepath));
   
