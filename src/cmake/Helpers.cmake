@@ -176,11 +176,6 @@ function(alicevision_add_software software_name)
     PROPERTY FOLDER ${SOFTWARE_FOLDER}
   )
 
-  set_target_properties(${software_name}
-     PROPERTIES SOVERSION ${ALICEVISION_SOFTWARE_VERSION_MAJOR}
-     VERSION "${ALICEVISION_SOFTWARE_VERSION_MAJOR}.${ALICEVISION_SOFTWARE_VERSION_MINOR}"
-  )
-
   install(TARGETS ${software_name}
     RUNTIME
       DESTINATION ${CMAKE_INSTALL_BINDIR}
