@@ -140,6 +140,15 @@ public:
   }
 
   /**
+   * @brief Get the frame id
+   * @return frame id
+   */
+  IndexT getFrameId() const
+  {
+    return _frameId;
+  }
+
+  /**
    * @brief Get the resection id
    * @return resection id
    */
@@ -155,6 +164,15 @@ public:
   bool isPartOfRig() const
   {
     return _rigId != UndefinedIndexT;
+  }
+
+  /**
+   * @brief xxx
+   * @return true if the view is xxx
+   */
+  bool isPoseIndependant() const
+  {
+    return (!isPartOfRig() || _isIndependantPose);
   }
 
   /**
@@ -349,6 +367,15 @@ public:
   }
 
   /**
+   * @brief setIndependantPose
+   * @param independant
+   */
+  void setIndependantPose(bool independant)
+  {
+    _isIndependantPose = independant;
+  }
+
+  /**
    * @brief Set the given rig id and the given sub-pose id
    * @param[in] rigId The given rig id
    * @param[in] subPoseId The given sub-pose id
@@ -357,6 +384,16 @@ public:
   {
     _rigId = rigId;
     _subPoseId = subPoseId;
+  }
+
+
+  /**
+   * @brief Set the given frame id
+   * @param[in] frame The given frame id
+   */
+  void setFrameId(IndexT frameId)
+  {
+    _frameId = frameId;
   }
 
   /**
@@ -405,8 +442,12 @@ private:
   IndexT _rigId;
   /// corresponding sub-pose id or undefined
   IndexT _subPoseId;
+  /// corresponding frame id for synchronized views
+  IndexT _frameId = UndefinedIndexT;
   /// resection id
   IndexT _resectionId = UndefinedIndexT;
+  /// pose independant of other view(s)
+  bool _isIndependantPose = true;
   /// map for metadata
   std::map<std::string, std::string> _metadata;
 };

@@ -222,9 +222,11 @@ bool readCamera(const ICamera& camera, const M44d& mat, sfmData::SfMData& sfmDat
   IndexT intrinsicId = sfmData.getIntrinsics().size();
   IndexT rigId = UndefinedIndexT;
   IndexT subPoseId = UndefinedIndexT;
+  IndexT frameId = UndefinedIndexT;
   IndexT resectionId = UndefinedIndexT;
-  bool poseLocked = false;
   bool intrinsicLocked = false;
+  bool poseLocked = false;
+  bool poseIndependant = true;
 
   if(userProps)
   {
@@ -288,6 +290,17 @@ bool readCamera(const ICamera& camera, const M44d& mat, sfmData::SfMData& sfmDat
           subPoseId = getAbcProp<Alembic::Abc::IInt32Property>(userProps, *propHeader, "mvg_subPoseId", sampleFrame);
         }
       }
+      if(const Alembic::Abc::PropertyHeader *propHeader = userProps.getPropertyHeader("mvg_frameId"))
+      {
+        try
+        {
+          frameId = getAbcProp<Alembic::Abc::IUInt32Property>(userProps, *propHeader, "mvg_frameId", sampleFrame);
+        }
+        catch(Alembic::Util::Exception&)
+        {
+          frameId = getAbcProp<Alembic::Abc::IInt32Property>(userProps, *propHeader, "mvg_frameId", sampleFrame);
+        }
+      }
       if(const Alembic::Abc::PropertyHeader *propHeader = userProps.getPropertyHeader("mvg_resectionId"))
       {
         try
@@ -299,13 +312,17 @@ bool readCamera(const ICamera& camera, const M44d& mat, sfmData::SfMData& sfmDat
           resectionId = getAbcProp<Alembic::Abc::IInt32Property>(userProps, *propHeader, "mvg_resectionId", sampleFrame);
         }
       }
+      if(const Alembic::Abc::PropertyHeader *propHeader = userProps.getPropertyHeader("mvg_intrinsicLocked"))
+      {
+        intrinsicLocked = getAbcProp<Alembic::Abc::IBoolProperty>(userProps, *propHeader, "mvg_intrinsicLocked", sampleFrame);
+      }
       if(const Alembic::Abc::PropertyHeader *propHeader = userProps.getPropertyHeader("mvg_poseLocked"))
       {
         poseLocked = getAbcProp<Alembic::Abc::IBoolProperty>(userProps, *propHeader, "mvg_poseLocked", sampleFrame);
       }
-      if(const Alembic::Abc::PropertyHeader *propHeader = userProps.getPropertyHeader("mvg_poseLocked"))
+      if(const Alembic::Abc::PropertyHeader *propHeader = userProps.getPropertyHeader("mvg_poseIndependant"))
       {
-        intrinsicLocked = getAbcProp<Alembic::Abc::IBoolProperty>(userProps, *propHeader, "mvg_intrinsicLocked", sampleFrame);
+        poseIndependant = getAbcProp<Alembic::Abc::IBoolProperty>(userProps, *propHeader, "mvg_poseIndependant", sampleFrame);
       }
       if(userProps.getPropertyHeader("mvg_sensorSizePix"))
       {
@@ -382,6 +399,8 @@ bool readCamera(const ICamera& camera, const M44d& mat, sfmData::SfMData& sfmDat
   if(flagsPart & ESfMData::VIEWS)
   {
     view->setResectionId(resectionId);
+    view->setFrameId(frameId);
+    view->setIndependantPose(poseIndependant);
 
     // set metadata
     for(std::size_t i = 0; i < rawMetadata.size(); i+=2)

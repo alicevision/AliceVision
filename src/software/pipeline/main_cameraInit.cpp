@@ -373,12 +373,11 @@ int main(int argc, char **argv)
     {
       try
       {
-        const int frame = std::stoi(fs::path(view.getImagePath()).stem().string());
+        const int frameId = std::stoi(fs::path(view.getImagePath()).stem().string());
         const int subPoseId = std::stoi(parentPath.stem().string());
-        std::hash<std::string> hash;
+        std::hash<std::string> hash; // TODO use boost::hash_combine
         view.setRigAndSubPoseId(hash(parentPath.parent_path().string()), subPoseId);
-        const IndexT rigPoseId = static_cast<IndexT>(view.getRigId() + frame);
-        view.setPoseId(rigPoseId);
+        view.setFrameId(static_cast<IndexT>(frameId));
 
         #pragma omp critical
         detectedRigs[view.getRigId()][view.getSubPoseId()]++;

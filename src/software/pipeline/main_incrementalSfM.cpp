@@ -206,9 +206,13 @@ int main(int argc, char **argv)
   sfmData::SfMData sfmData;
   if(!sfmDataIO::Load(sfmData, sfmDataFilename, sfmDataIO::ESfMData::ALL))
   {
-    ALICEVISION_LOG_ERROR("Error: The input SfMData file '" + sfmDataFilename + "' cannot be read.");
+    ALICEVISION_LOG_ERROR("The input SfMData file '" + sfmDataFilename + "' cannot be read.");
     return EXIT_FAILURE;
   }
+
+  // cannot yet combine cameras rigs with local BA
+  if(useLocalBundleAdjustment && !sfmData.getRigs().empty())
+    throw std::invalid_argument("[Not implemented] Incremental SfM: cannot yet combine cameras rigs with local bundle ajustment.");
 
   // lock scene previously reconstructed
   if(lockScenePreviouslyReconstructed)

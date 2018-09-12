@@ -240,7 +240,7 @@ void BundleAdjustmentCeres::createProblem(sfmData::SfMData& sfmData,
       if(rigSubPose.status == sfmData::ERigSubPoseStatus::UNINITIALIZED)
         continue;
 
-     const bool locked = (rigSubPose.status == sfmData::ERigSubPoseStatus::CONSTANT);
+      const bool locked = (rigSubPose.status == sfmData::ERigSubPoseStatus::CONSTANT);
 
       addPose(problem, refineOptions, sfmData::CameraPose(rigSubPose.pose, locked), parameterBlocks, map_subposes[rigId][subPoseId]);
     }
@@ -381,7 +381,7 @@ void BundleAdjustmentCeres::createProblem(sfmData::SfMData& sfmData,
       // dimensional residual. Internally, the cost function stores the observed
       // image location and compares the reprojection against the observation.
 
-      if(view->isPartOfRig())
+      if(view->isPartOfRig() && !view->isPoseIndependant())
       {
         ceres::CostFunction* costFunction = createRigCostFunctionFromIntrinsics(sfmData.intrinsics[view->getIntrinsicId()].get(), observationIt.second.x);
 

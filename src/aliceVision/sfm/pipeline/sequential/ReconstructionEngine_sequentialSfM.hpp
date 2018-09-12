@@ -101,6 +101,11 @@ public:
     _useTrackFiltering = useTrackFiltering;
   }
 
+  void useRigsCalibration(bool useRigsCalibration)
+  {
+    _useRigsCalibration = useRigsCalibration;
+  }
+
   void setLocalizerEstimator(robustEstimation::ERobustEstimator estimator)
   {
     _localizerEstimator = estimator;
@@ -175,17 +180,44 @@ public:
 
   /**
    * @brief Update the reconstruction with a new resection group of images
-   * @param resectionId The resection id
-   * @param bestViewIds The best remaining view ids
-   * @param viewIds The remaining view ids
+   * @param[in] resectionId The resection id
+   * @param[in] bestViewIds The best remaining view ids
+   * @param[in] prevReconstructedViews The previously reconstructed view ids
+   * @param[in,out] viewIds The remaining view ids
+   * @return new reconstructed view ids
    */
-  void updateReconstruction(IndexT resectionId, const std::vector<IndexT>& bestViewIds, std::set<IndexT>& viewIds);
+  std::set<IndexT> resection(IndexT resectionId,
+                             const std::vector<IndexT>& bestViewIds,
+                             const std::set<IndexT>& prevReconstructedViews,
+                             std::set<IndexT>& viewIds);
+
+  /**
+   * @brief triangulate
+   * @param[in] prevReconstructedViews The previously reconstructed view ids
+   * @param[in] newReconstructedViews The newly reconstructed view ids
+   */
+  void triangulate(const std::set<IndexT>& prevReconstructedViews,
+                   const std::set<IndexT>& newReconstructedViews);
+
+  /**
+   * @brief bundleAdjustment
+   * @param[in] newReconstructedViews The newly reconstructed view ids
+   */
+  void bundleAdjustment(const std::set<IndexT>& newReconstructedViews);
 
   /**
    * @brief Export and print statistics of a complete reconstruction
    * @param[in] reconstructionTime The duration of the reconstruction
    */
   void exportStatistics(double reconstructionTime);
+
+
+  /**
+   * @brief calibrateRigs
+   * @param[in,out] updatedViews add the updated view ids to the list
+   * @return updatedViews view ids
+   */
+  void calibrateRigs(std::set<IndexT>& updatedViews);
 
   /**
    * @brief Return all the images containing matches with already reconstructed 3D points.
@@ -273,7 +305,7 @@ private:
    * @param[in] trackIds: set of track IDs contained in viewId
    * @return the computed score
    */
-  std::size_t computeImageScore(IndexT viewId, const std::vector<std::size_t>& trackIds) const;
+  std::size_t computeCandidateImageScore(IndexT viewId, const std::vector<std::size_t>& trackIds) const;
 
   /**
    * @brief Apply the resection on a single view.
@@ -297,7 +329,7 @@ private:
    * @param previousReconstructedViews
    * @param newReconstructedViews
    */
-  void triangulate(sfmData::SfMData& scene, const std::set<IndexT>& previousReconstructedViews, const std::set<IndexT>& newReconstructedViews);
+  void triangulate_2Views(sfmData::SfMData& scene, const std::set<IndexT>& previousReconstructedViews, const std::set<IndexT>& newReconstructedViews);
   
   /**
    * @brief Triangulate new possible 2D tracks
@@ -306,7 +338,7 @@ private:
    * @param[in] previousReconstructedViews The list of the old reconstructed views (views index).
    * @param[in] newReconstructedViews The list of the new reconstructed views (views index).
    */
-  void triangulateMultiViews_LORANSAC(sfmData::SfMData& scene, const std::set<IndexT>& previousReconstructedViews, const std::set<IndexT>& newReconstructedViews);
+  void triangulate_multiViewsLORANSAC(sfmData::SfMData& scene, const std::set<IndexT>& previousReconstructedViews, const std::set<IndexT>& newReconstructedViews);
   
   /**
    * @brief Check if a 3D points is well located in front of a set of views.
@@ -331,7 +363,7 @@ private:
    * @brief Bundle adjustment to refine Structure; Motion and Intrinsics
    * @param fixedIntrinsics
    */
-  bool BundleAdjustment(bool fixedIntrinsics);
+  bool bundleAdjustment_full(bool fixedIntrinsics);
   
   /**
    * @brief Apply the bundle adjustment choosing a small amount of parameters to reduce.
@@ -339,7 +371,7 @@ private:
    * @param The parameters to refine (landmarks, intrinsics, poses) are choosen according to the their
    * @details proximity to the cameras newly added to the reconstruction.
    */
-  bool localBundleAdjustment(const std::set<IndexT>& newReconstructedViews);
+  bool bundleAdjustment_local(const std::set<IndexT>& newReconstructedViews);
 
   /**
    * @brief Select the candidate tracks for the next triangulation step. 
@@ -371,6 +403,7 @@ private:
   int _minTrackLength = 2;
   int _minPointsPerPose = 30;
   bool _uselocalBundleAdjustment = false;
+  bool _useRigsCalibration = true;
   /// minimum number of obersvations to triangulate a 3d point.
   std::size_t _minNbObservationsForTriangulation = 2;
   /// a 3D point must have at least 2 obervations not too much aligned.

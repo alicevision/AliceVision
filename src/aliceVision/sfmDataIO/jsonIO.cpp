@@ -32,11 +32,17 @@ void saveView(const std::string& name, const sfmData::View& view, bpt::ptree& pa
     viewTree.put("subPoseId", view.getSubPoseId());
   }
 
+  if(view.getFrameId() != UndefinedIndexT)
+    viewTree.put("frameId", view.getFrameId());
+
   if(view.getIntrinsicId() != UndefinedIndexT)
     viewTree.put("intrinsicId", view.getIntrinsicId());
 
   if(view.getResectionId() != UndefinedIndexT)
     viewTree.put("resectionId", view.getResectionId());
+
+  if(view.isPoseIndependant() == false)
+    viewTree.put("isPoseIndependant", view.isPoseIndependant());
 
   viewTree.put("path", view.getImagePath());
   viewTree.put("width", view.getWidth());
@@ -67,8 +73,10 @@ void loadView(sfmData::View& view, bpt::ptree& viewTree)
       viewTree.get<IndexT>("subPoseId"));
   }
 
+  view.setFrameId(viewTree.get<IndexT>("frameId", UndefinedIndexT));
   view.setIntrinsicId(viewTree.get<IndexT>("intrinsicId", UndefinedIndexT));
   view.setResectionId(viewTree.get<IndexT>("resectionId", UndefinedIndexT));
+  view.setIndependantPose(viewTree.get<bool>("isPoseIndependant", true));
 
   view.setImagePath(viewTree.get<std::string>("path"));
   view.setWidth(viewTree.get<std::size_t>("width", 0));

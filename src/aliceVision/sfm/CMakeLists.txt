@@ -10,6 +10,7 @@ set(sfm_files_headers
   pipeline/localization/SfMLocalizationSingle3DTrackObservationDatabase.hpp
   pipeline/sequential/ReconstructionEngine_sequentialSfM.hpp
   pipeline/ReconstructionEngine.hpp
+  pipeline/RigSequence.hpp
   pipeline/pairwiseMatchesIO.hpp
   pipeline/RelativePoseInfo.hpp
   pipeline/structureFromKnownPoses/StructureEstimationFromKnownPoses.hpp
@@ -39,6 +40,7 @@ set(sfm_files_sources
   pipeline/localization/SfMLocalizer.cpp
   pipeline/localization/SfMLocalizationSingle3DTrackObservationDatabase.cpp
   pipeline/sequential/ReconstructionEngine_sequentialSfM.cpp
+  pipeline/RigSequence.cpp
   pipeline/RelativePoseInfo.cpp
   pipeline/structureFromKnownPoses/StructureEstimationFromKnownPoses.cpp
   pipeline/regionsIO.cpp

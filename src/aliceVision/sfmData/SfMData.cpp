@@ -142,24 +142,29 @@ void SfMData::setPose(const View& view, const CameraPose& absolutePose)
   const bool knownPose = existsPose(view);
   CameraPose& viewPose = _poses[view.getPoseId()];
 
-  // view is not part of a rig
-  if(!view.isPartOfRig())
+  // Pose dedicated for this view (independant from rig, even if it is potentially part of a rig)
+  if(view.isPoseIndependant())
   {
-    viewPose.setTransform(absolutePose.getTransform());//todo locked
+    viewPose.setTransform(absolutePose.getTransform());
     return;
   }
 
+  // view is not part of a rig
+  if(!view.isPartOfRig())
+    throw std::runtime_error("SfMData::setPose: Cannot be here if it is not part of a camera rig.");
+/*
   // view is part of a rig
   const Rig& rig = _rigs.at(view.getRigId());
   RigSubPose& subPose = getRigSubPose(view);
 
   if(!rig.isInitialized())
   {
-    // rig not initialized
-
-    subPose.status = ERigSubPoseStatus::ESTIMATED; // sub-pose initialized
-    subPose.pose = Pose3();  // the first sub-pose is set to identity
-    viewPose.setTransform(absolutePose.getTransform()); // so the pose of the rig is the same than the pose
+    viewPose.setTransform(absolutePose.getTransform());//todo locked
+    return;
+//    // rig not initialized
+//    subPose.status = ERigSubPoseStatus::ESTIMATED; // sub-pose initialized
+//    subPose.pose = Pose3();  // the first sub-pose is set to identity
+//    viewPose.setTransform(absolutePose.getTransform()); // so the pose of the rig is the same than the pose
   }
   else
   {
@@ -191,7 +196,7 @@ void SfMData::setPose(const View& view, const CameraPose& absolutePose)
       //convert absolute pose to rig Pose
       viewPose.setTransform(subPose.pose.inverse() * absolutePose.getTransform());
     }
-  }
+  }*/
 }
 
 void SfMData::combine(const SfMData& sfmData)

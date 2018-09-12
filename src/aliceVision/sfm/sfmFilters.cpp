@@ -96,7 +96,7 @@ bool eraseUnstablePoses(sfmData::SfMData& sfmData, const IndexT min_points_per_p
   const sfmData::Landmarks & landmarks = sfmData.structure;
 
   // Count the observation poses occurrence
-  HashMap<IndexT, IndexT> map_PoseId_Count; // TODO: add subpose
+  HashMap<IndexT, IndexT> map_PoseId_Count;
   // Init with 0 count (in order to be able to remove non referenced elements)
   for(sfmData::Poses::const_iterator itPoses = sfmData.getPoses().begin(); itPoses != sfmData.getPoses().end(); ++itPoses)
   {
@@ -109,8 +109,8 @@ bool eraseUnstablePoses(sfmData::SfMData& sfmData, const IndexT min_points_per_p
     const sfmData::Observations & observations = itLandmarks->second.observations;
     for(sfmData::Observations::const_iterator itObs = observations.begin(); itObs != observations.end(); ++itObs)
     {
-      const IndexT ViewId = itObs->first;
-      const sfmData::View * v = sfmData.getViews().at(ViewId).get();
+      const IndexT viewId = itObs->first;
+      const sfmData::View * v = sfmData.getViews().at(viewId).get();
       if (map_PoseId_Count.count(v->getPoseId()))
         map_PoseId_Count.at(v->getPoseId()) += 1;
       else
@@ -123,6 +123,7 @@ bool eraseUnstablePoses(sfmData::SfMData& sfmData, const IndexT min_points_per_p
   {
     if (it->second < min_points_per_pose)
     {
+      // TODO: check if it is a rig pose
       sfmData.erasePose(it->first);
       if (outRemovedPosedId != NULL)
         outRemovedPosedId->insert(it->first);
