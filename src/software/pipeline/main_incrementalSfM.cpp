@@ -23,7 +23,7 @@
 
 // These constants define the current software version.
 // They must be updated when the command line is changed.
-#define ALICEVISION_SOFTWARE_VERSION_MAJOR 1
+#define ALICEVISION_SOFTWARE_VERSION_MAJOR 2
 #define ALICEVISION_SOFTWARE_VERSION_MINOR 0
 
 using namespace aliceVision;
@@ -94,6 +94,7 @@ int main(int argc, char **argv)
   bool useLocalBundleAdjustment = false;
   bool useOnlyMatchesFromInputFolder = false;
   bool useTrackFiltering = true;
+  bool useRigsCalibration = true;
   bool lockScenePreviouslyReconstructed = true;
   std::size_t localBundelAdjustementGraphDistanceLimit = 1;
   std::string localizerEstimatorName = robustEstimation::ERobustEstimator_enumToString(robustEstimation::ERobustEstimator::ACRANSAC);
@@ -161,6 +162,8 @@ int main(int argc, char **argv)
       "Matches folders previously added to the SfMData file will be ignored.")
     ("useTrackFiltering", po::value<bool>(&useTrackFiltering)->default_value(useTrackFiltering),
       "Enable/Disable the track filtering.\n")
+    ("useRigsCalibration", po::value<bool>(&useRigsCalibration)->default_value(useRigsCalibration),
+      "Enable/Disable rigs calibration.\n")
     ("lockScenePreviouslyReconstructed", po::value<bool>(&lockScenePreviouslyReconstructed)->default_value(lockScenePreviouslyReconstructed),
       "Lock/Unlock scene previously reconstructed.\n");
 
@@ -279,6 +282,7 @@ int main(int argc, char **argv)
   sfmEngine.setLocalBundleAdjustmentGraphDistance(localBundelAdjustementGraphDistanceLimit);
   sfmEngine.setLocalizerEstimator(robustEstimation::ERobustEstimator_stringToEnum(localizerEstimatorName));
   sfmEngine.useTrackFiltering(useTrackFiltering);
+  sfmEngine.useRigsCalibration(useRigsCalibration);
 
   if(minNbObservationsForTriangulation < 2)
   {
