@@ -449,7 +449,8 @@ private:
   /// extension of the intermediate reconstruction files
   std::string _sfmdataInterFileExtension = ".ply";
   /// filter for the intermediate reconstruction files
-  sfmDataIO::ESfMData _sfmdataInterFilter = sfmDataIO::ESfMData(sfmDataIO::EXTRINSICS |
+  sfmDataIO::ESfMData _sfmdataInterFilter = sfmDataIO::ESfMData(sfmDataIO::VIEWS |
+                                                                sfmDataIO::EXTRINSICS |
                                                                 sfmDataIO::INTRINSICS |
                                                                 sfmDataIO::STRUCTURE |
                                                                 sfmDataIO::OBSERVATIONS |
