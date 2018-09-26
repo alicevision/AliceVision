@@ -345,7 +345,8 @@ int main(int argc, char **argv)
 
   ALICEVISION_LOG_INFO("Structure from Motion results:" << std::endl
     << "\t- # input images: " << sfmEngine.getSfMData().getViews().size() << std::endl
-    << "\t- # cameras calibrated: " << sfmEngine.getSfMData().getPoses().size() << std::endl
+    << "\t- # cameras calibrated: " << sfmEngine.getSfMData().getValidViews().size() << std::endl
+    << "\t- # poses: " << sfmEngine.getSfMData().getPoses().size() << std::endl
     << "\t- # landmarks: " << sfmEngine.getSfMData().getLandmarks().size());
 
   return EXIT_SUCCESS;

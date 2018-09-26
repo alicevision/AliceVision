@@ -616,10 +616,12 @@ void ReconstructionEngine_sequentialSfM::bundleAdjustment(const std::set<IndexT>
 void ReconstructionEngine_sequentialSfM::exportStatistics(double reconstructionTime)
 {
   const double residual = RMSE(_sfmData);
+  const std::size_t nbValidViews = _sfmData.getValidViews().size();
 
   ALICEVISION_LOG_INFO("Structure from Motion statistics:" << std::endl
     << "\t- # input images: " << _sfmData.getViews().size() << std::endl
-    << "\t- # cameras calibrated: " << _sfmData.getPoses().size() << std::endl
+    << "\t- # cameras calibrated: " << nbValidViews << std::endl
+    << "\t- # poses: " << _sfmData.getPoses().size() << std::endl
     << "\t- # landmarks: " << _sfmData.getLandmarks().size() << std::endl
     << "\t- elapsed time: " << reconstructionTime << std::endl
     << "\t- residual RMSE: " <<  residual);
@@ -646,7 +648,8 @@ void ReconstructionEngine_sequentialSfM::exportStatistics(double reconstructionT
     os.str("");
     os << "Structure from Motion statistics:"
        << "<br>- # input images: " << _sfmData.getViews().size()
-       << "<br>- # camera calibrated: " << _sfmData.getPoses().size()
+       << "<br>- # camera calibrated: " << nbValidViews
+       << "<br>- # poses: " << _sfmData.getPoses().size() << std::endl
        << "<br>- # landmarks: " << _sfmData.getLandmarks().size()
        << "<br>- elapsed time: " << reconstructionTime
        << "<br>- residual RMSE: " << residual;
