@@ -143,7 +143,10 @@ sfmData::SfMData getInputRigScene(const NViewDataSet& d,
       const IndexT viewId = poseId * nbSubposes + subposeI;
       const IndexT intrinsicId = 0; //(shared intrinsics)
 
-      sfmData.views[viewId] = std::make_shared<sfmData::View>("", viewId, intrinsicId, poseId, config._cx * 2, config._cy * 2, rigId, subposeI);
+      auto viewPtr = std::make_shared<sfmData::View>("", viewId, intrinsicId, poseId, config._cx * 2, config._cy * 2, rigId, subposeI);
+      viewPtr->setFrameId(poseId);
+      viewPtr->setIndependantPose(false);
+      sfmData.views[viewId] = viewPtr;
     }
   }
   const std::size_t nbViews = sfmData.views.size();
