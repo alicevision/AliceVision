@@ -411,8 +411,12 @@ void KeyframeSelector::writeKeyframe(const image::Image<image::RGBColor>& image,
                                      std::size_t mediaIndex)
 {
   auto& mediaInfo = _mediasInfo.at(mediaIndex);
-  const auto folder = _outputFolder + "/rig/" + ((_feeds.size() > 1) ? (std::to_string(mediaIndex) + "/" ): "");
-  const auto filepath = folder + std::to_string(frameIndex) + ".jpg";
+  fs::path folder{_outputFolder};
+
+  if(_feeds.size() > 1)
+     folder  /= fs::path("rig") / fs::path(std::to_string(mediaIndex));
+
+  const auto filepath = (folder / fs::path(std::to_string(frameIndex) + ".jpg")).string();
 
   mediaInfo.spec.attribute("Exif:ImageUniqueID", std::to_string(rand() % 999999999999));
 
