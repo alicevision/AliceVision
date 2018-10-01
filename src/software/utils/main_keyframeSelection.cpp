@@ -167,13 +167,13 @@ int main(int argc, char** argv)
   // debugging prints, print out all the parameters
   {
     if(nbCameras == 1)
-      ALICEVISION_LOG_INFO("\tSingle camera");
+      ALICEVISION_LOG_INFO("Single camera");
     else
-      ALICEVISION_LOG_INFO("\tCamera Rig");
+      ALICEVISION_LOG_INFO("Camera rig of " << nbCameras << " cameras.");
 
     for(std::size_t i = 0; i < nbCameras; ++i)
     {
-      ALICEVISION_LOG_INFO("\tcamera: "          << mediaPaths.at(i)   << std::endl
+      ALICEVISION_LOG_INFO("camera: "            << mediaPaths.at(i)   << std::endl
                         << "\t - brand: "        << brands.at(i)       << std::endl
                         << "\t - model: "        << models.at(i)       << std::endl
                         << "\t - focal (mm): "   << mmFocals.at(i)     << std::endl
