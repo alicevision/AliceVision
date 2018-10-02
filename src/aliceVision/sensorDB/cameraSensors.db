@@ -80,7 +80,11 @@ Apple;iPhone 6s;4.92
 Apple;iPhone 6s Plus;4.89
 Apple;iPhone 7;5.5
 Apple;iPhone SE;4.92
+ARRI;ARRI Alexa Mini;28.25
+ARRI;ARRI Alexa Plus 4:3 SXT;28.25
 ARRI;ARRI Alexa Plus 4:3 XT;23.76
+ARRI;ARRI Alexa SXT;28.25
+ARRI;ARRI Alexa SXT Plus;28.25
 ARRI;ARRI Alexa XT;23.76
 BenQ;BenQ AC100;6.16
 BenQ;BenQ AE100;6.16
@@ -283,15 +287,18 @@ Canon;Canon Digital IXUS IIs;5.33
 Canon;Canon Digital IXUS V;5.33
 Canon;Canon Digital IXUS v2;5.33
 Canon;Canon Digital IXUS v3;5.33
-Canon;Canon ELPH 135 / IXUS 145;6.16
-Canon;Canon ELPH 140 IS / IXUS 150;6.16
-Canon;Canon ELPH 150 IS / IXUS 155;6.16
-Canon;Canon ELPH 160 / IXUS 160;6.16
-Canon;Canon ELPH 170 IS / IXUS 170;6.16
+Canon;Canon ELPH 135;6.16
+Canon;Canon ELPH 140 IS;6.16
+Canon;Canon ELPH 150 IS;6.16
+Canon;Canon ELPH 160;6.16
+Canon;Canon ELPH 170 IS;6.16
 Canon;Canon EOS 1000D;22.2
+Canon;Canon EOS 100D;22.3
 Canon;Canon EOS 100D;22.3
 Canon;Canon EOS 10D;22.7
 Canon;Canon EOS 1100D;22.2
+Canon;Canon EOS 1100D;22.2
+Canon;Canon EOS 1200D;22.3
 Canon;Canon EOS 1300D;22.3
 Canon;Canon EOS 20D;22.5
 Canon;Canon EOS 20Da;22.5
@@ -304,6 +311,7 @@ Canon;Canon EOS 450D;22.2
 Canon;Canon EOS 500D;22.3
 Canon;Canon EOS 50D;22.3
 Canon;Canon EOS 550D;22.3
+Canon;Canon EOS 550D;22.3
 Canon;Canon EOS 5D;35.8
 Canon;Canon EOS 5D Mark II;36
 Canon;Canon EOS 5D Mark III;36
@@ -311,12 +319,17 @@ Canon;Canon EOS 5D Mark IV;36
 Canon;Canon EOS 5DS;36
 Canon;Canon EOS 5DS R;36
 Canon;Canon EOS 600D;22.3
+Canon;Canon EOS 600D;22.3
 Canon;Canon EOS 60D;22.3
 Canon;Canon EOS 60Da;22.3
 Canon;Canon EOS 650D;22.3
+Canon;Canon EOS 650D;22.3
 Canon;Canon EOS 6D;35.8
 Canon;Canon EOS 700D;22.3
+Canon;Canon EOS 700D;22.3
 Canon;Canon EOS 70D;22.5
+Canon;Canon EOS 750D;22.3
+Canon;Canon EOS 760D;22.3
 Canon;Canon EOS 7D;22.3
 Canon;Canon EOS 7D Mark II;22.4
 Canon;Canon EOS D30;22.7
@@ -324,16 +337,16 @@ Canon;Canon EOS D60;22.7
 Canon;Canon EOS Kiss X4;22.3
 Canon;Canon EOS M;22.3
 Canon;Canon EOS M3;22.3
-Canon;Canon EOS Rebel SL1 / 100D;22.3
+Canon;Canon EOS Rebel SL1;22.3
 Canon;Canon EOS Rebel T2i;22.3
-Canon;Canon EOS Rebel T2i / 550D;22.3
-Canon;Canon EOS Rebel T3 / 1100D;22.2
-Canon;Canon EOS Rebel T3i / 600D;22.3
-Canon;Canon EOS Rebel T4i / 650D;22.3
-Canon;Canon EOS Rebel T5 / 1200D;22.3
-Canon;Canon EOS Rebel T5i / 700D;22.3
-Canon;Canon EOS Rebel T6i / 750D;22.3
-Canon;Canon EOS Rebel T6s / 760D;22.3
+Canon;Canon EOS Rebel T2i;22.3
+Canon;Canon EOS Rebel T3;22.2
+Canon;Canon EOS Rebel T3i;22.3
+Canon;Canon EOS Rebel T4i;22.3
+Canon;Canon EOS Rebel T5;22.3
+Canon;Canon EOS Rebel T5i;22.3
+Canon;Canon EOS Rebel T6i;22.3
+Canon;Canon EOS Rebel T6s;22.3
 Canon;Canon EOS-1D;28.7
 Canon;Canon EOS-1D C;36
 Canon;Canon EOS-1D Mark II;28.7
@@ -351,7 +364,12 @@ Canon;Canon IXUS 115 HS;6.16
 Canon;Canon IXUS 125 HS;6.16
 Canon;Canon IXUS 130;6.16
 Canon;Canon IXUS 132;6.16
+Canon;Canon IXUS 145;6.16
+Canon;Canon IXUS 150;6.16
+Canon;Canon IXUS 155;6.16
+Canon;Canon IXUS 160;6.16
 Canon;Canon IXUS 165;6.16
+Canon;Canon IXUS 170;6.16
 Canon;Canon IXUS 210;6.16
 Canon;Canon IXUS 220 HS;6.16
 Canon;Canon IXUS 220HS;6.16
@@ -570,7 +588,6 @@ Canon;Canon PowerShot TX1;5.75
 Canon;Canon Pro90 IS;7.11
 Canon;Canon S200;7.53
 Canon;Canon SX220 HS;6.16
-Canon;Canon550D;22.3
 Casio;Casio EX-FR10;6.16
 Casio;Casio EX-N1;6.16
 Casio;Casio EX-N10;6.16
@@ -715,7 +732,7 @@ Casio;Casio QV-2900UX;5.33
 Casio;Casio QV-300;4.8
 Casio;Casio QV-3000EX;7.11
 Casio;Casio QV-3500EX;7.11
-Casio;Casio QV-3EX / XV-3;7.11
+Casio;Casio QV-3EX;7.11
 Casio;Casio QV-4000;7.11
 Casio;Casio QV-5000SX;4.8
 Casio;Casio QV-5500SX;4.8
@@ -732,6 +749,7 @@ Casio;Casio QV-R51;7.11
 Casio;Casio QV-R52;7.11
 Casio;Casio QV-R61;7.11
 Casio;Casio QV-R62;7.11
+Casio;Casio XV-3;7.11
 Concord;Concord 1500;6.4
 Concord;Concord 3043;6.4
 Concord;Concord 3045;6.4
@@ -788,6 +806,7 @@ DJI;DJI FC300S;6.16
 DJI;DJI FC300X;6.16
 DJI;DJI FC350;6.17
 DJI;DJI PHANTOM VISION FC200;6.17
+DJI;X3;6.17
 DJI;X5R;17.3
 Epson;Epson L-500V;5.75
 Epson;Epson PhotoPC 3000 Zoom;7.11
@@ -1230,9 +1249,12 @@ GE;GE X500;6.16
 GE;GE X550;6.16
 GE;GE X600;6.16
 Google;Google Pixel XL;6.25
-GoPro;HERO3+ Black Edition;6.2
-GoPro;HERO4 Black;5.75
-GoPro;HERO4 Silver;5.75
+GoPro;HERO;6.17
+GoPro;HERO3+ Black Edition;6.17
+GoPro;HERO4 Black;6.17
+GoPro;HERO4 Silver;6.17
+GoPro;HERO5 Black;6.17
+GoPro;HERO6 Black;6.17
 HP;HP CA350;6.16
 HP;HP CB350;6.16
 HP;HP CW450;6.16
@@ -1302,6 +1324,7 @@ HP;HP R607 BMW;5.75
 HP;HP R607 Harajuku;5.75
 HP;HP SB360;6.16
 HP;HP SW450;6.16
+HUAWEI;H60-L04;4.69
 IDS;UI 3360CP;8.8
 Jenoptik;Jenoptik JD 1300 D;6.4
 Jenoptik;Jenoptik JD 1300 F;6.4
@@ -1666,8 +1689,8 @@ Leica;Leica X Vario;23.6
 Leica;Leica X-E;23.6
 Leica;Leica X1;23.6
 Leica;Leica X2;23.6
-LGE;Nexus 5X;6.25
 LG Electronics;LG-H932;5.893
+LGE;Nexus 5X;6.25
 Microsoft;Lumia 950 Dual SIM;5.76
 Minolta;Minolta DiMAGE 2300;7.53
 Minolta;Minolta DiMAGE 2330;7.53
@@ -2117,17 +2140,21 @@ Olympus;Olympus E-100 RS;6.4
 Olympus;Olympus E-20;8.8
 Olympus;Olympus E-3;17.3
 Olympus;Olympus E-30;17.3
-Olympus;Olympus E-300 / EVOLT E-300;17.3
+Olympus;Olympus E-300;17.3
 Olympus;Olympus E-400;17.3
-Olympus;Olympus E-410 / EVOLT E-410;17.3
+Olympus;Olympus E-410;17.3
 Olympus;Olympus E-420;17.3
 Olympus;Olympus E-450;17.3
 Olympus;Olympus E-5;17.3
-Olympus;Olympus E-500 / EVOLT E-500;17.3
-Olympus;Olympus E-510 / EVOLT E-510;17.3
+Olympus;Olympus E-500;17.3
+Olympus;Olympus E-510;17.3
 Olympus;Olympus E-520;17.3
 Olympus;Olympus E-600;17.3
 Olympus;Olympus E-620;17.3
+Olympus;Olympus EVOLT E-300;17.3
+Olympus;Olympus EVOLT E-410;17.3
+Olympus;Olympus EVOLT E-500;17.3
+Olympus;Olympus EVOLT E-510;17.3
 Olympus;Olympus FE-100;5.75
 Olympus;Olympus FE-110;5.75
 Olympus;Olympus FE-115;5.75
@@ -2539,8 +2566,10 @@ Panasonic;Panasonic Lumix DMC-TZ31;6.08
 Panasonic;Panasonic Lumix DMC-TZ4;5.75
 Panasonic;Panasonic Lumix DMC-TZ5;6.08
 Panasonic;Panasonic Lumix DMC-TZ50;6.08
+Panasonic;Panasonic Lumix DMC-TZ55;6.08
 Panasonic;Panasonic Lumix DMC-TZ57;6.08
 Panasonic;Panasonic Lumix DMC-TZ6;5.75
+Panasonic;Panasonic Lumix DMC-TZ60;6.16
 Panasonic;Panasonic Lumix DMC-TZ7;6.08
 Panasonic;Panasonic Lumix DMC-TZ70;6.16
 Panasonic;Panasonic Lumix DMC-XS1;6.08
@@ -2554,8 +2583,8 @@ Panasonic;Panasonic Lumix DMC-ZS20;6.08
 Panasonic;Panasonic Lumix DMC-ZS25;6.08
 Panasonic;Panasonic Lumix DMC-ZS3;6.08
 Panasonic;Panasonic Lumix DMC-ZS30;6.16
-Panasonic;Panasonic Lumix DMC-ZS35 / TZ55;6.08
-Panasonic;Panasonic Lumix DMC-ZS40 / TZ60;6.16
+Panasonic;Panasonic Lumix DMC-ZS35;6.08
+Panasonic;Panasonic Lumix DMC-ZS40;6.16
 Panasonic;Panasonic Lumix DMC-ZS5;6.08
 Panasonic;Panasonic Lumix DMC-ZS7;6.08
 Panasonic;Panasonic Lumix DMC-ZS8;6.08
@@ -3318,6 +3347,7 @@ Samsung;Samsung WB850F;6.16
 Samsung;Samsung WP10;6.08
 Samsung;Samsung-SGH-I537;3.0
 samsung;SM-G920F;5.95
+samsung;SM-G930F;5.76
 SAMSUNG;SM-N9005;4.69
 Sanyo;Sanyo DSC S1;5.33
 Sanyo;Sanyo DSC S3;5.33
@@ -3412,11 +3442,13 @@ Sigma;Sigma SD10;20.7
 Sigma;Sigma SD14;20.7
 Sigma;Sigma SD15;20.7
 Sigma;Sigma SD9;20.7
-Sony;A7SM2;25.8
+Sony;A7SM2;35.6
 SONY;DSC-HX60V;7.76
 SONY;DSC-P200;7.11
 Sony;DSC-RX100M4;13.2
+Sony;H3113;6.17
 SONY;ILCE-7RM2;35.9
+SONY;ILCE-7RM3;35.9
 Sony;ILCE-7S;35.6
 SONY;NEX-3N;23.5
 Sony;Sony A77 II;23.5
@@ -3496,7 +3528,7 @@ Sony;Sony Cybershot DSC HX30V;6.16
 Sony;Sony Cybershot DSC HX5;5.9
 Sony;Sony Cybershot DSC HX50;6.16
 Sony;Sony Cybershot DSC HX60;6.16
-Sony;Sony CyberShot DSC-HX7V;6.16
+Sony;Sony CyberShot DSC HX7V;6.16
 Sony;Sony CyberShot DSC HX9V;6.16
 Sony;Sony Cybershot DSC J10;6.16
 Sony;Sony Cybershot DSC L1;5.33
@@ -3676,6 +3708,7 @@ Sony;Sony Cybershot DSC WX70;6.16
 Sony;Sony Cybershot DSC WX9;6.16
 Sony;Sony Cybershot DSC-HX300;6.16
 Sony;Sony Cybershot DSC-HX400;6.16
+Sony;Sony CyberShot DSC-HX7V;6.16
 Sony;Sony Cybershot DSC-HX90V;6.16
 Sony;Sony Cybershot DSC-QX10;6.16
 Sony;Sony Cybershot DSC-QX100;13.2

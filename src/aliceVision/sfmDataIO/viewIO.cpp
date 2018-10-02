@@ -64,7 +64,7 @@ void updateIncompleteView(sfmData::View& view)
 }
 
 std::shared_ptr<camera::IntrinsicBase> getViewIntrinsic(const sfmData::View& view,
-														double mmFocalLength,
+                                                        double mmFocalLength,
                                                         double sensorWidth,
                                                         double defaultFocalLengthPx,
                                                         double defaultFieldOfView,
@@ -81,15 +81,17 @@ std::shared_ptr<camera::IntrinsicBase> getViewIntrinsic(const sfmData::View& vie
   const std::string& bodySerialNumber = view.getMetadataBodySerialNumber();
   const std::string& lensSerialNumber = view.getMetadataLensSerialNumber();
 
+  double focalLengthIn35mm = mmFocalLength; // crop factor is apply later if sensor width is defined
+
   double pxFocalLength;
   bool hasFocalLengthInput = false;
 
-  if(defaultFocalLengthPx > 0)
+  if(defaultFocalLengthPx > 0.0)
   {
     pxFocalLength = defaultFocalLengthPx;
   }
 
-  if(defaultFieldOfView > 0)
+  if(defaultFieldOfView > 0.0)
   {
     const double focalRatio = 0.5 / std::tan(0.5 * degreeToRadian(defaultFieldOfView));
     pxFocalLength = focalRatio * std::max(view.getWidth(), view.getHeight());
@@ -122,7 +124,7 @@ std::shared_ptr<camera::IntrinsicBase> getViewIntrinsic(const sfmData::View& vie
       isResized = true;
     }
   }
-  else if(defaultPPx > 0 && defaultPPy > 0) // use default principal point
+  else if(defaultPPx > 0.0 && defaultPPy > 0.0) // use default principal point
   {
     ppx = defaultPPx;
     ppy = defaultPPy;
@@ -134,11 +136,16 @@ std::shared_ptr<camera::IntrinsicBase> getViewIntrinsic(const sfmData::View& vie
     ALICEVISION_LOG_WARNING("Image '" << fs::path(view.getImagePath()).filename().string() << "' focal length (in mm) metadata is missing." << std::endl
                              << "Can't compute focal length (px), use default." << std::endl);
   }
-  else if(sensorWidth > 0)
+  else if(sensorWidth > 0.0)
   {
     // Retrieve the focal from the metadata in mm and convert to pixel.
     pxFocalLength = std::max(view.getWidth(), view.getHeight()) * mmFocalLength / sensorWidth;
     hasFocalLengthInput = true;
+
+    //fieldOfView = radianToDegree(2.0 * std::atan(sensorWidth / (mmFocalLength * 2.0))); // [rectilinear] AFOV = 2 * arctan(sensorSize / (2 * focalLength))
+    //fieldOfView = radianToDegree(4.0 * std::asin(sensorWidth / (mmFocalLength * 4.0))); // [fisheye] AFOV = 4 * arcsin(sensorSize / (4 * focalLength))
+
+    focalLengthIn35mm *= 36.0 / sensorWidth; // multiply focal length by the crop factor
   }
 
   // choose intrinsic type
@@ -152,7 +159,7 @@ std::shared_ptr<camera::IntrinsicBase> getViewIntrinsic(const sfmData::View& vie
     // and we use a camera without lens distortion.
     intrinsicType = camera::PINHOLE_CAMERA;
   }
-  else if((mmFocalLength > 0.0 && mmFocalLength < 15.0) || (defaultFieldOfView > 95.0))
+  else if((focalLengthIn35mm > 0.0 && focalLengthIn35mm < 18.0) || (defaultFieldOfView > 100.0))
   {
     // if the focal lens is short, the fisheye model should fit better.
     intrinsicType = camera::PINHOLE_CAMERA_FISHEYE;
