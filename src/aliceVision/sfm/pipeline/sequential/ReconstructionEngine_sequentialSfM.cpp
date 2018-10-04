@@ -429,7 +429,7 @@ double ReconstructionEngine_sequentialSfM::incrementalReconstruction()
 
     if(_useRigsCalibration && !_sfmData.getRigs().empty())
     {
-      ALICEVISION_LOG_INFO("Rig calibration start");
+      ALICEVISION_LOG_INFO("Rig(s) calibration start");
 
       std::set<IndexT> updatedViews;
 
@@ -560,7 +560,7 @@ void ReconstructionEngine_sequentialSfM::triangulate(const std::set<IndexT>& pre
   ALICEVISION_LOG_DEBUG("Triangulation of the " << newReconstructedViews.size() << " newly reconstructed views took " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - chrono_start).count() << " msec.");
 }
 
-void ReconstructionEngine_sequentialSfM::bundleAdjustment(const std::set<IndexT>& newReconstructedViews)
+void ReconstructionEngine_sequentialSfM::bundleAdjustment(std::set<IndexT>& newReconstructedViews)
 {
   ALICEVISION_LOG_DEBUG("Global Bundle start");
 
@@ -587,28 +587,24 @@ void ReconstructionEngine_sequentialSfM::bundleAdjustment(const std::set<IndexT>
   ALICEVISION_LOG_DEBUG("Bundle adjustment with " << bundleAdjustmentIteration << " iterations took " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - chrono_start).count() << " msec.");
   chrono_start = std::chrono::steady_clock::now();
 
-  std::set<IndexT> removedPosesId;
-  bool contentRemoved = eraseUnstablePosesAndObservations(this->_sfmData, _minPointsPerPose, _minTrackLength, &removedPosesId);
+  std::set<IndexT> removedViewsId;
+  bool contentRemoved = eraseUnstablePosesAndObservations(this->_sfmData, _minPointsPerPose, _minTrackLength, &removedViewsId);
 
-  if (_uselocalBundleAdjustment && contentRemoved)
+  if(_uselocalBundleAdjustment && contentRemoved)
   {
-    // Get removed VIEWS index
-    std::set<IndexT> removedViewsId;
-    for (const auto& x : _sfmData.getViews())
-    {
-      if (removedPosesId.find(x.second->getPoseId()) != removedPosesId.end())
-      {
-        if (!_sfmData.isPoseAndIntrinsicDefined(x.second->getViewId()))
-          removedViewsId.insert(x.second->getViewId());
-        else
-          ALICEVISION_LOG_WARNING("The view #" << x.second->getViewId() << " is set as Removed while it is still in the scene.");
-      }
-    }
-
     // Remove removed views to the graph
     _localBA_data->removeViewsToTheGraph(removedViewsId);
-    ALICEVISION_LOG_INFO("Poses removed from the reconstruction: " << removedPosesId);
+    ALICEVISION_LOG_INFO("Poses removed from the reconstruction: " << removedViewsId);
   }
+
+  // Update newReconstructedViews set with removedPosesId
+  for(IndexT removedViewId : removedViewsId)
+  {
+    const auto it = newReconstructedViews.find(removedViewId);
+    if(it != newReconstructedViews.end())
+      newReconstructedViews.erase(it);
+  }
+
   ALICEVISION_LOG_DEBUG("eraseUnstablePosesAndObservations took " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - chrono_start).count() << " msec.");
 }
 

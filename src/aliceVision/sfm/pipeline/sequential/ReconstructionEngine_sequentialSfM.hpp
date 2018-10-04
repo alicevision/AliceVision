@@ -203,7 +203,7 @@ public:
    * @brief bundleAdjustment
    * @param[in] newReconstructedViews The newly reconstructed view ids
    */
-  void bundleAdjustment(const std::set<IndexT>& newReconstructedViews);
+  void bundleAdjustment(std::set<IndexT>& newReconstructedViews);
 
   /**
    * @brief Export and print statistics of a complete reconstruction

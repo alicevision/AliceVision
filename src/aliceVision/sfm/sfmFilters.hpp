@@ -40,7 +40,7 @@ IndexT RemoveOutliers_PixelResidualError(sfmData::SfMData& sfmData,
 // Return the number of removed tracks
 IndexT RemoveOutliers_AngleError(sfmData::SfMData& sfmData, const double dMinAcceptedAngle);
 
-bool eraseUnstablePoses(sfmData::SfMData& sfmData, const IndexT min_points_per_pose, std::set<IndexT> *outRemovedPosedId = NULL);
+bool eraseUnstablePoses(sfmData::SfMData& sfmData, const IndexT min_points_per_pose, std::set<IndexT> *outRemovedViewsId = NULL);
 
 bool eraseObservationsWithMissingPoses(sfmData::SfMData& sfmData, const IndexT min_points_per_landmark);
 
@@ -48,7 +48,7 @@ bool eraseObservationsWithMissingPoses(sfmData::SfMData& sfmData, const IndexT m
 bool eraseUnstablePosesAndObservations(sfmData::SfMData& sfmData,
                                        const IndexT min_points_per_pose = 6,
                                        const IndexT min_points_per_landmark = 2, 
-                                       std::set<IndexT> *outRemovedPosedId = NULL);
+                                       std::set<IndexT> *outRemovedViewsId = NULL);
 
 } // namespace sfm
 } // namespace aliceVision

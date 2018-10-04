@@ -364,13 +364,14 @@ public:
   /**
    * @brief Erase yhe pose for the given poseId
    * @param[in] poseId The given poseId
+   * @param[in] noThrow If false, throw exception if no pose found
    */
-  void erasePose(IndexT poseId)
+  void erasePose(IndexT poseId, bool noThrow = false)
   {
     auto it =_poses.find(poseId);
     if(it != _poses.end())
       _poses.erase(it);
-    else
+    else if(!noThrow)
       throw std::out_of_range(std::string("Can't erase unfind pose ") + std::to_string(poseId));
   }
 
