@@ -69,6 +69,8 @@ int main(int argc, char* argv[])
     requiredParams.add_options()
         ("input,i", po::value<std::string>(&sfmDataFilename)->required(),
             "SfMData file.")
+        ("imagesFolder", po::value<std::string>(&imagesFolder)->required(),
+            "Images folder. Filename should be the image uid.")
         ("cameraPairsMatrixFolder", po::value<std::string>(&cameraPairsMatrixFolder)->required(),
             "Camera pairs matrix folder.")
         ("output,o", po::value<std::string>(&outputFolder)->required(),
@@ -76,9 +78,6 @@ int main(int argc, char* argv[])
 
     po::options_description optionalParams("Optional parameters");
     optionalParams.add_options()
-        ("imagesFolder", po::value<std::string>(&imagesFolder)->required(),
-            "Use images from a specific folder instead of those specify in the SfMData file.\n"
-            "Filename should be the image uid.")
         ("rangeStart", po::value<int>(&rangeStart)->default_value(rangeStart),
             "Compute a sub-range of images from index rangeStart to rangeStart+rangeSize.")
         ("rangeSize", po::value<int>(&rangeSize)->default_value(rangeSize),

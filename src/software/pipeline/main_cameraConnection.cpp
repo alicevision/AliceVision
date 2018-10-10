@@ -49,8 +49,7 @@ int main(int argc, char* argv[])
     po::options_description optionalParams("Optional parameters");
     optionalParams.add_options()
       ("imagesFolder", po::value<std::string>(&imagesFolder),
-        "Use images from a specific folder instead of those specify in the SfMData file.\n"
-        "Filename should be the image uid.");
+        "Use images from a specific folder. Filename should be the image uid.");
 
     po::options_description logParams("Log parameters");
     logParams.add_options()
