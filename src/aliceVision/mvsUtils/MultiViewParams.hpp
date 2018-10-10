@@ -261,7 +261,9 @@ private:
     /// input sfmData
     const sfmData::SfMData& _sfmData;
 
-    void loadCameraFile(int i, const std::string& fileNameP, const std::string& fileNameD);
+    void loadMatricesFromTxtFile(int index, const std::string& fileNameP, const std::string& fileNameD);
+    void loadMatricesFromRawProjectionMatrix(int index, const double* rawProjMatix);
+    void loadMatricesFromSfM(int index);
 
     inline void resizeCams(int _ncams)
     {

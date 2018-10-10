@@ -13,6 +13,8 @@
 #include <aliceVision/mvsUtils/fileIO.hpp>
 #include <aliceVision/mvsUtils/common.hpp>
 #include <aliceVision/imageIO/image.hpp>
+#include <aliceVision/numeric/numeric.hpp>
+#include <aliceVision/multiview/projection.hpp>
 
 #include <boost/filesystem.hpp>
 #include <boost/accumulators/accumulators.hpp>
@@ -51,7 +53,6 @@ MultiViewParams::MultiViewParams(const sfmData::SfMData& sfmData,
     // load image uid, path and dimensions
     {
         std::set<std::pair<int, int>> dimensions; // for print only
-
         int i = 0;
         for(const auto& viewPair : sfmData.getViews())
         {
@@ -66,7 +67,7 @@ MultiViewParams::MultiViewParams(const sfmData::SfMData& sfmData,
           {
             path = getFileNameFromViewId(this, view.getViewId(), mvsUtils::EFileType::depthMap, 1);
           }
-          else if(!_imagesFolder.empty() && fs::is_directory(_imagesFolder) && !fs::is_empty(_imagesFolder))
+          else if(_imagesFolder != "/" && !_imagesFolder.empty() && fs::is_directory(_imagesFolder) && !fs::is_empty(_imagesFolder))
           {
             // find folder file extension
             const fs::recursive_directory_iterator end;
@@ -119,15 +120,17 @@ MultiViewParams::MultiViewParams(const sfmData::SfMData& sfmData,
         else
         {
             // use image dimension
-            ALICEVISION_LOG_WARNING("Reading '" << imgParams.path << "' downscale from file dimension" << std::endl
-                                  << "\t- No 'AliceVision:downscale' metadata found.");
             int w, h, channels;
             imageIO::readImageSpec(imgParams.path, w, h, channels);
             const int widthScale = imgParams.width / w;
             const int heightScale = imgParams.height / h;
 
+            if((widthScale != 1) && (heightScale != 1))
+                ALICEVISION_LOG_INFO("Reading '" << imgParams.path << "' x" << widthScale << "downscale from file dimension" << std::endl
+                                                 << "\t- No 'AliceVision:downscale' metadata found.");
+
             if(widthScale != heightScale)
-                throw std::runtime_error("Can't find image scale of file: '" + imgParams.path + "'");
+                throw std::runtime_error("Scale of file: '" + imgParams.path + "' is not unfirom, check image dimension ratio.");
 
             _imagesScale.at(i) = widthScale;
         }
@@ -149,35 +152,31 @@ MultiViewParams::MultiViewParams(const sfmData::SfMData& sfmData,
         }
         else if(pIt != metadata.end() && pIt->type() == oiio::TypeDesc(oiio::TypeDesc::DOUBLE, oiio::TypeDesc::MATRIX44))
         {
-            // use aliceVision image metadata
-            Matrix3x4& pMatrix = camArr.at(i);
-            std::copy_n(static_cast<const double*>(pIt->data()), 12, pMatrix.m);
-
-            // apply scale to camera matrix (camera matrix is scale 1)
-            const int imgScale = _imagesScale.at(i) * _processDownscale;
-            for(int i = 0; i < 8; ++i)
-                pMatrix.m[i] /= static_cast<double>(imgScale);
-
-            pMatrix.decomposeProjectionMatrix(KArr.at(i), RArr.at(i), CArr.at(i));
-            iKArr.at(i) = KArr.at(i).inverse();
-            iRArr.at(i) = RArr.at(i).inverse();
-            iCamArr.at(i) = iRArr.at(i) * iKArr.at(i);
+            ALICEVISION_LOG_DEBUG("Reading view " << getViewId(i) << " projection matrix from image metadata.");
+            loadMatricesFromRawProjectionMatrix(i, static_cast<const double*>(pIt->data()));
         }
         else
         {
             // use P matrix file
-            std::string fileNameP = getFileNameFromIndex(this, i, EFileType::P);
-            std::string fileNameD = getFileNameFromIndex(this, i, EFileType::D);
+            const std::string fileNameP = getFileNameFromIndex(this, i, EFileType::P);
+            const std::string fileNameD = getFileNameFromIndex(this, i, EFileType::D);
 
-            ALICEVISION_LOG_WARNING("Reading " << getViewId(i) << " P matrix from file '" << fileNameP << "'" << std::endl
-                                               << "\t- No 'AliceVision:P' metadata found.");
+            if(fs::exists(fileNameP), fs::exists(fileNameD))
+            {
+              ALICEVISION_LOG_DEBUG("Reading view " << getViewId(i) << " projection matrix from file '" << fileNameP << "'.");
 
-            loadCameraFile(i, fileNameP, fileNameD);
+              loadMatricesFromTxtFile(i, fileNameP, fileNameD);
+            }
+            else
+            {
+              ALICEVISION_LOG_DEBUG("Reading view " << getViewId(i) << " projection matrix from SfMData.");
+              loadMatricesFromSfM(i);
+            }
         }
 
         if(KArr[i].m11 > (float)(getWidth(i) * 100))
         {
-            ALICEVISION_LOG_WARNING("Camera " << i << " at infinity ... setting to zero");
+            ALICEVISION_LOG_WARNING("Camera " << i << " at infinity. Setting to zero");
 
             KArr[i].m11 = getWidth(i) / 2;
             KArr[i].m12 = 0;
@@ -227,7 +226,7 @@ MultiViewParams::MultiViewParams(const sfmData::SfMData& sfmData,
 }
 
 
-void MultiViewParams::loadCameraFile(int i, const std::string& fileNameP, const std::string& fileNameD)
+void MultiViewParams::loadMatricesFromTxtFile(int index, const std::string& fileNameP, const std::string& fileNameD)
 {
     if(!FileExists(fileNameP))
         throw std::runtime_error(std::string("mv_multiview_params: no such file: ") + fileNameP);
@@ -250,27 +249,56 @@ void MultiViewParams::loadCameraFile(int i, const std::string& fileNameP, const 
         f = fopen(fileNameP.c_str(), "r");
     }
 
-    Matrix3x4& pMatrix = camArr.at(i);
+    Matrix3x4& pMatrix = camArr.at(index);
 
     pMatrix = load3x4MatrixFromFile(f);
     fclose(f);
 
     // apply scale to camera matrix (camera matrix is scale 1)
-    const int imgScale = _imagesScale.at(i) * _processDownscale;
+    const int imgScale = _imagesScale.at(index) * _processDownscale;
     for(int i=0; i< 8; ++i)
       pMatrix.m[i] /= static_cast<double>(imgScale);
 
-    pMatrix.decomposeProjectionMatrix(KArr[i], RArr[i], CArr[i]);
-    iKArr[i] = KArr[i].inverse();
-    iRArr[i] = RArr[i].inverse();
-    iCamArr[i] = iRArr[i] * iKArr[i];
+    pMatrix.decomposeProjectionMatrix(KArr[index], RArr[index], CArr[index]);
+    iKArr[index] = KArr[index].inverse();
+    iRArr[index] = RArr[index].inverse();
+    iCamArr[index] = iRArr[index] * iKArr[index];
 
     if(FileExists(fileNameD))
     {
         FILE* f = fopen(fileNameD.c_str(), "r");
-        fscanf(f, "%f %f %f", &FocK1K2Arr[i].x, &FocK1K2Arr[i].y, &FocK1K2Arr[i].z);
+        fscanf(f, "%f %f %f", &FocK1K2Arr[index].x, &FocK1K2Arr[index].y, &FocK1K2Arr[index].z);
         fclose(f);
     }
+}
+
+void MultiViewParams::loadMatricesFromRawProjectionMatrix(int index, const double* rawProjMatix)
+{
+  Matrix3x4& pMatrix = camArr.at(index);
+  std::copy_n(rawProjMatix, 12, pMatrix.m);
+
+  // apply scale to camera matrix (camera matrix is scale 1)
+  const int imgScale = _imagesScale.at(index) * _processDownscale;
+  for(int i = 0; i < 8; ++i)
+      pMatrix.m[i] /= static_cast<double>(imgScale);
+
+  pMatrix.decomposeProjectionMatrix(KArr.at(index), RArr.at(index), CArr.at(index));
+  iKArr.at(index) = KArr.at(index).inverse();
+  iRArr.at(index) = RArr.at(index).inverse();
+  iCamArr.at(index) = iRArr.at(index) * iKArr.at(index);
+}
+
+void MultiViewParams::loadMatricesFromSfM(int index)
+{
+  using RowMatrixXd = Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
+
+  const sfmData::View& view = *(_sfmData.getViews().at(getViewId(index)));
+  sfmData::Intrinsics::const_iterator intrinsicIt = _sfmData.getIntrinsics().find(view.getIntrinsicId());
+  const Mat34 P = intrinsicIt->second.get()->get_projective_equivalent(_sfmData.getPose(view).getTransform());
+  std::vector<double> vP(P.size());
+  Eigen::Map<RowMatrixXd>(vP.data(), P.rows(), P.cols()) = P;
+
+  loadMatricesFromRawProjectionMatrix(index, vP.data());
 }
 
 MultiViewParams::~MultiViewParams()
