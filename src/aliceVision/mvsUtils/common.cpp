@@ -13,8 +13,6 @@
 #include <aliceVision/mvsData/Matrix3x4.hpp>
 #include <aliceVision/mvsData/OrientedPoint.hpp>
 #include <aliceVision/mvsData/Pixel.hpp>
-#include <aliceVision/mvsData/SeedPoint.hpp>
-
 
 namespace aliceVision {
 namespace mvsUtils {
@@ -767,35 +765,6 @@ StaticVector<int>* createRandomArrayOfIntegers(int n)
     */
 
     return tracksPointsRandomIds;
-}
-
-float getCGDepthFromSeeds(const MultiViewParams* mp, int rc)
-{
-    StaticVector<SeedPoint>* seeds;
-    loadSeedsFromFile(&seeds, rc, mp, EFileType::seeds);
-
-    float midDepth = -1.0f;
-
-    if(seeds->size() > 20)
-    {
-        OrientedPoint rcplane;
-        rcplane.p = mp->CArr[rc];
-        rcplane.n = mp->iRArr[rc] * Point3d(0.0, 0.0, 1.0);
-        rcplane.n = rcplane.n.normalize();
-
-        Point3d cg = Point3d(0.0f, 0.0f, 0.0f);
-        for(int i = 0; i < seeds->size(); i++)
-        {
-            SeedPoint* sp = &(*seeds)[i];
-            cg = cg + sp->op.p;
-        }
-        cg = cg / (float)seeds->size();
-        midDepth = pointPlaneDistance(cg, rcplane.p, rcplane.n);
-    }
-
-    delete seeds;
-
-    return midDepth;
 }
 
 int findNSubstrsInString(const std::string& str, const std::string& val)

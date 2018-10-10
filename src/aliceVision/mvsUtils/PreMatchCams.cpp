@@ -6,8 +6,8 @@
 
 #include "PreMatchCams.hpp"
 #include <aliceVision/system/Logger.hpp>
+#include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/mvsData/Point2d.hpp>
-#include <aliceVision/mvsData/SeedPoint.hpp>
 #include <aliceVision/mvsUtils/fileIO.hpp>
 #include <aliceVision/mvsUtils/common.hpp>
 
@@ -124,33 +124,42 @@ StaticVector<int> PreMatchCams::findNearestCams(int rc, int nbNearestCams)
 
 StaticVector<int>* PreMatchCams::precomputeIncidentMatrixCamsFromSeeds()
 {
-    std::string fn = _camsPairsMatrixFolder + "/camsPairsMatrixFromSeeds.bin";
-    if(FileExists(fn))
+  std::string fn = _camsPairsMatrixFolder + "/camsPairsMatrixFromSeeds.bin";
+  if(FileExists(fn))
+  {
+    ALICEVISION_LOG_INFO("Camera pairs matrix file already computed: " << fn);
+    return loadArrayFromFile<int>(fn);
+  }
+
+  ALICEVISION_LOG_INFO("Compute camera pairs matrix file: " << fn);
+  StaticVector<int>* camsmatrix = new StaticVector<int>();
+  camsmatrix->reserve(_mp.getNbCameras() * _mp.getNbCameras());
+  camsmatrix->resize_with(_mp.getNbCameras() * _mp.getNbCameras(), 0);
+
+  for(int rc = 0; rc < _mp.getNbCameras(); ++rc)
+  {
+    const IndexT viewId = _mp.getViewId(rc);
+
+    for(const auto& landmarkPair :_mp.getInputSfMData().getLandmarks())
     {
-        ALICEVISION_LOG_INFO("Camera pairs matrix file already computed: " << fn);
-        return loadArrayFromFile<int>(fn);
-    }
-    ALICEVISION_LOG_INFO("Compute camera pairs matrix file: " << fn);
-    StaticVector<int>* camsmatrix = new StaticVector<int>();
-    camsmatrix->reserve(_mp.getNbCameras() * _mp.getNbCameras());
-    camsmatrix->resize_with(_mp.getNbCameras() * _mp.getNbCameras(), 0);
-    for(int rc = 0; rc < _mp.getNbCameras(); ++rc)
-    {
-        StaticVector<SeedPoint>* seeds;
-        loadSeedsFromFile(&seeds, rc, &_mp, EFileType::seeds);
-        for(int i = 0; i < seeds->size(); i++)
+      const auto& observations = landmarkPair.second.observations;
+
+      if(observations.find(viewId) == observations.end())
+        continue;
+
+      for(const auto& observationPair : observations)
+      {
+        if(observationPair.first != viewId)
         {
-            SeedPoint* sp = &(*seeds)[i];
-            for(int c = 0; c < sp->cams.size(); c++)
-            {
-                int tc = sp->cams[c];
-                (*camsmatrix)[std::min(rc, tc) *_mp.getNbCameras() + std::max(rc, tc)] += 1;
-            }
+          const int tc = _mp.getIndexFromViewId(observationPair.first);
+          (*camsmatrix)[std::min(rc, tc) *_mp.getNbCameras() + std::max(rc, tc)]++;
         }
-        delete seeds;
+      }
     }
-    saveArrayToFile<int>(fn, camsmatrix);
-    return camsmatrix;    
+  }
+
+  saveArrayToFile<int>(fn, camsmatrix);
+  return camsmatrix;
 }
 
 StaticVector<int>* PreMatchCams::loadCamPairsMatrix()

@@ -10,7 +10,6 @@
 #include <aliceVision/depthMap/SemiGlobalMatchingVolume.hpp>
 #include <aliceVision/mvsData/OrientedPoint.hpp>
 #include <aliceVision/mvsData/Point3d.hpp>
-#include <aliceVision/mvsData/SeedPoint.hpp>
 #include <aliceVision/mvsUtils/common.hpp>
 #include <aliceVision/mvsUtils/fileIO.hpp>
 #include <aliceVision/imageIO/image.hpp>
@@ -83,42 +82,6 @@ SemiGlobalMatchingRc::~SemiGlobalMatchingRc()
     delete tcams;
     delete depths;
     delete depthsTcamsLimits;
-}
-
-/**
- * @brief Depths of all seeds (regarding the camera plane and not the camera center).
- */
-StaticVector<float>* SemiGlobalMatchingRc::getTcSeedsRcPlaneDists(int rc, StaticVector<int>* tcams)
-{
-    OrientedPoint rcplane;
-    rcplane.p = sp->mp->CArr[rc];
-    rcplane.n = sp->mp->iRArr[rc] * Point3d(0.0, 0.0, 1.0);
-    rcplane.n = rcplane.n.normalize();
-
-    int nTcSeeds = 0;
-    for(int c = 0; c < tcams->size(); c++)
-    {
-        StaticVector<SeedPoint>* seeds;
-        mvsUtils::loadSeedsFromFile(&seeds, (*tcams)[c], sp->mp, mvsUtils::EFileType::seeds);
-        nTcSeeds += seeds->size();
-        delete seeds;
-    } // for c
-
-    StaticVector<float>* rcDists = new StaticVector<float>();
-    rcDists->reserve(nTcSeeds);
-
-    for(int c = 0; c < tcams->size(); c++)
-    {
-        StaticVector<SeedPoint>* seeds;
-        mvsUtils::loadSeedsFromFile(&seeds, (*tcams)[c], sp->mp, mvsUtils::EFileType::seeds);
-        for(int i = 0; i < seeds->size(); i++)
-        {
-            rcDists->push_back(pointPlaneDistance((*seeds)[i].op.p, rcplane.p, rcplane.n));
-        }
-        delete seeds;
-    } // for c
-
-    return rcDists;
 }
 
 bool SemiGlobalMatchingRc::selectBestDepthsRange(int nDepthsThr, StaticVector<float>* rcSeedsDistsAsc)
@@ -287,22 +250,14 @@ void SemiGlobalMatchingRc::computeDepths(float minDepth, float maxDepth, StaticV
  * @brief Compute depths of the principal ray of reference camera rc visible by a pixel in a target camera tc
  *        providing meaningful 3d information.
  */
-StaticVector<StaticVector<float>*>* SemiGlobalMatchingRc::computeAllDepthsAndResetTCams()
+StaticVector<StaticVector<float>*>* SemiGlobalMatchingRc::computeAllDepthsAndResetTCams(float midDepth)
 {
-    /*
-    for (int c=0;c<tcams->size();c++) {
-            printf("%i %i\n",c,(*tcams)[c]);
-    };
-    */
-
     StaticVector<int>* tcamsNew = new StaticVector<int>();
     StaticVector<StaticVector<float>*>* alldepths = new StaticVector<StaticVector<float>*>();
     tcamsNew->reserve(tcams->size());
     alldepths->reserve(tcams->size());
 
-    float midDepth = getCGDepthFromSeeds(sp->mp, rc);
-
-    for(int c = 0; c < tcams->size(); c++)
+    for(int c = 0; c < tcams->size(); ++c)
     {
         // depths of all meaningful points on the principal ray of the reference camera regarding the target camera tc
         StaticVector<float>* tcdepths = sp->cps->getDepthsRcTc(rc, (*tcams)[c], scale, midDepth, sp->rcTcDepthsHalfLimit);
@@ -338,12 +293,6 @@ StaticVector<StaticVector<float>*>* SemiGlobalMatchingRc::computeAllDepthsAndRes
     delete tcams;
     tcams = tcamsNew;
 
-    /*
-    for (int c=0;c<tcams->size();c++) {
-            printf("%i %i\n",c,(*tcams)[c]);
-    };
-    */
-
     return alldepths;
 }
 
@@ -377,8 +326,17 @@ void SemiGlobalMatchingRc::computeDepthsTcamsLimits(StaticVector<StaticVector<fl
 
 void SemiGlobalMatchingRc::computeDepthsAndResetTCams()
 {
+    std::size_t nbObsDepths;
+    float minObsDepth, maxObsDepth, midObsDepth;
+    sp->mp->getMinMaxMidNbDepth(rc, minObsDepth, maxObsDepth, midObsDepth, nbObsDepths, sp->seedsRangePercentile);
+
+    StaticVector<StaticVector<float>*>* alldepths;
+
     // all depths from the principal ray provided by target cameras
-    StaticVector<StaticVector<float>*>* alldepths = computeAllDepthsAndResetTCams();
+    if(nbObsDepths < 20)
+      alldepths = computeAllDepthsAndResetTCams(-1);
+    else
+      alldepths = computeAllDepthsAndResetTCams(midObsDepth);
 
     float minDepthAll = std::numeric_limits<float>::max();
     float maxDepthAll = 0.0f;
@@ -410,20 +368,14 @@ void SemiGlobalMatchingRc::computeDepthsAndResetTCams()
     }
     else
     {
-        StaticVector<float>* rcSeedsDistsAsc = getTcSeedsRcPlaneDists(rc, tcams);
         float minDepth = minDepthAll;
         float maxDepth = maxDepthAll;
 
         // If we get enough information from seeds, adjust min/maxDepth
-        if(rcSeedsDistsAsc->size() > 100)
+        if(nbObsDepths > 100)
         {
-            qsort(&(*rcSeedsDistsAsc)[0], rcSeedsDistsAsc->size(), sizeof(float), qSortCompareFloatAsc);
-
-            minDepth = (*rcSeedsDistsAsc)[(int)(float)rcSeedsDistsAsc->size() * (sp->seedsRangePercentile)] *
-                (1.0f - sp->seedsRangeInflate);
-            
-            maxDepth = (*rcSeedsDistsAsc)[(int)(float)rcSeedsDistsAsc->size() * (1.0f - sp->seedsRangePercentile)] *
-                             (1.0f + sp->seedsRangeInflate);
+            minDepth = minObsDepth * (1.0f - sp->seedsRangeInflate);
+            maxDepth = maxObsDepth * (1.0f + sp->seedsRangeInflate);
 
             if(maxDepthAll < minDepth || minDepthAll > maxDepth)
             {
@@ -455,20 +407,6 @@ void SemiGlobalMatchingRc::computeDepthsAndResetTCams()
 
         // Filter out depths if computeDepths gave too many values
         selectBestDepthsRange(sp->maxDepthsToStore, alldepths);
-
-        if(sp->saveDepthsToSweepToTxtForVis)
-        {
-            std::string fn = tmpDir + std::to_string(sp->mp->getViewId(rc)) + "rcSeedsDists.txt";
-            FILE* f = fopen(fn.c_str(), "w");
-            for(int j = 0; j < rcSeedsDistsAsc->size(); j++)
-            {
-                float depth = (*rcSeedsDistsAsc)[j];
-                fprintf(f, "%f\n", depth);
-            }
-            fclose(f);
-        }
-
-        delete rcSeedsDistsAsc;
     }
 
     // fill depthsTcamsLimits member variable with index range of depths to sweep

@@ -10,7 +10,6 @@
 #include <aliceVision/mvsData/Point2d.hpp>
 #include <aliceVision/mvsData/Point3d.hpp>
 #include <aliceVision/mvsData/Pixel.hpp>
-#include <aliceVision/mvsData/SeedPointCams.hpp>
 #include <aliceVision/mvsData/StaticVector.hpp>
 #include <aliceVision/mvsData/structures.hpp>
 
@@ -40,16 +39,12 @@ enum class EFileType {
     iP = 6,
     har = 7,
     prematched = 8,
-    seeds = 9,
     growed = 10,
     op = 11,
     occMap = 12,
     wshed = 13,
     nearMap = 14,
-    seeds_prm = 15,
-    seeds_flt = 16,
     img = 17,
-    seeds_seg = 18,
     graphCutMap = 20,
     graphCutPts = 21,
     growedMap = 22,
@@ -121,7 +116,6 @@ public:
     {
         return _imagesParams.at(index).path;
     }
-
 
     inline int getViewId(int index) const
     {
@@ -226,6 +220,8 @@ public:
     }
 
     bool is3DPointInFrontOfCam(const Point3d* X, int rc) const;
+
+    void getMinMaxMidNbDepth(int index, float& min, float& max, float& mid, std::size_t& nbDepths, float percentile = 0.999f) const;
     void getPixelFor3DPoint(Point2d* out, const Point3d& X, const Matrix3x4& P) const;
     void getPixelFor3DPoint(Point2d* out, const Point3d& X, int rc) const;
     void getPixelFor3DPoint(Pixel* out, const Point3d& X, int rc) const;

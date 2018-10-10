@@ -49,7 +49,7 @@ SemiGlobalMatchingParams::SemiGlobalMatchingParams(mvsUtils::MultiViewParams* _m
 
     useSeedsToCompDepthsToSweep =
         mp->userParams.get<bool>("semiGlobalMatching.useSeedsToCompDepthsToSweep", true);
-    seedsRangePercentile = (float)mp->userParams.get<double>("semiGlobalMatching.seedsRangePercentile", 0.001);
+    seedsRangePercentile = (float)mp->userParams.get<double>("semiGlobalMatching.seedsRangePercentile", 0.999);
     seedsRangeInflate = (float)mp->userParams.get<double>("semiGlobalMatching.seedsRangeInflate", 0.2);
 
     saveDepthsToSweepToTxtForVis =

@@ -88,12 +88,6 @@ std::string getFileNameFromViewId(const MultiViewParams* mp, int viewId, EFileTy
           ext = "bin";
           break;
       }
-      case EFileType::seeds:
-      {
-          suffix = "_seeds";
-          ext = "bin";
-          break;
-      }
       case EFileType::growed:
       {
           suffix = "_growed";
@@ -124,18 +118,6 @@ std::string getFileNameFromViewId(const MultiViewParams* mp, int viewId, EFileTy
           ext = "bin";
           break;
       }
-      case EFileType::seeds_prm:
-      {
-          suffix = "_seeds_prm";
-          ext = "bin";
-          break;
-      }
-      case EFileType::seeds_flt:
-      {
-          suffix = "_seeds_flt";
-          ext = "bin";
-          break;
-      }
       case EFileType::img:
       {
           suffix = "_img";
@@ -145,12 +127,6 @@ std::string getFileNameFromViewId(const MultiViewParams* mp, int viewId, EFileTy
       case EFileType::imgT:
       {
           suffix = "_imgT";
-          ext = "bin";
-          break;
-      }
-      case EFileType::seeds_seg:
-      {
-          suffix = "_seeds_seg";
           ext = "bin";
           break;
       }
@@ -417,115 +393,6 @@ void memcpyRGBImageFromFileToArr(int camId, Color* imgArr, const std::string& fi
 
         }
     }
-}
-
-
-void saveSeedsToFile(StaticVector<SeedPoint>* seeds, const std::string& fileName)
-{
-    FILE* f = fopen(fileName.c_str(), "wb");
-    if(f == nullptr)
-    {
-        //
-    }
-    else
-    {
-        int size = seeds->size();
-        fwrite(&size, sizeof(int), 1, f);
-        for(int i = 0; i < size; i++)
-        {
-            SeedPoint* sp = &(*seeds)[i];
-            seed_io_block sb;
-            sb.area = sp->area;
-            sb.ncams = sp->cams.size();
-            sb.op = sp->op;
-            sb.pixSize = sp->pixSize;
-            sb.segId = sp->segId;
-            sb.xax = sp->xax;
-            sb.yax = sp->yax;
-
-            fwrite(&sb, sizeof(seed_io_block), 1, f);
-
-            for(int j = 0; j < sb.ncams; j++)
-            {
-                unsigned short c = sp->cams[j];
-                fwrite(&c, sizeof(unsigned short), 1, f);
-            }
-
-            for(int j = 0; j < sb.ncams + 1; j++)
-            {
-                Point2d sh = sp->cams.shifts[j];
-                fwrite(&sh, sizeof(Point2d), 1, f);
-            }
-        }
-        fclose(f);
-    }
-}
-
-void saveSeedsToFile(StaticVector<SeedPoint>* seeds, int refImgFileId, const MultiViewParams* mp, EFileType mv_file_type)
-{
-    std::string fileName = getFileNameFromIndex(mp, refImgFileId, mv_file_type);
-    saveSeedsToFile(seeds, fileName);
-}
-
-bool loadSeedsFromFile(StaticVector<SeedPoint>** seeds, const std::string& fileName)
-{
-    FILE* f = fopen(fileName.c_str(), "rb");
-    if(f == nullptr)
-    {
-        // printf("file does not exists \n");
-        *seeds = new StaticVector<SeedPoint>();
-        (*seeds)->reserve(1);
-        return false;
-    }
-
-    int size;
-    fread(&size, sizeof(int), 1, f);
-    *seeds = new StaticVector<SeedPoint>();
-    (*seeds)->reserve(std::max(1, size));
-
-    for(int i = 0; i < size; i++)
-    {
-        SeedPoint sp = SeedPoint();
-        seed_io_block sb;
-
-        fread(&sb, sizeof(seed_io_block), 1, f);
-
-        sp.area = sb.area;
-        sp.cams.reserve(sb.ncams);
-        sp.op = sb.op;
-
-        // printf("seed rx: %i, ry: %i \n", (int)sp->op.n.rx, (int)sp->op.n.ry);
-
-        sp.pixSize = sb.pixSize;
-        sp.segId = sb.segId;
-        sp.xax = sb.xax;
-        sp.yax = sb.yax;
-
-        for(int j = 0; j < sb.ncams; j++)
-        {
-            unsigned short c;
-            fread(&c, sizeof(unsigned short), 1, f);
-            sp.cams.push_back(c);
-        }
-
-        for(int j = 0; j < sb.ncams + 1; j++)
-        {
-            Point2d sh;
-            fread(&sh, sizeof(Point2d), 1, f);
-            sp.cams.shifts[j] = sh;
-        }
-
-        (*seeds)->push_back(sp);
-    }
-
-    fclose(f);
-    return true;
-}
-
-bool loadSeedsFromFile(StaticVector<SeedPoint>** seeds, int refImgFileId, const MultiViewParams* mp, EFileType mv_file_type)
-{
-    std::string fileName = getFileNameFromIndex(mp, refImgFileId, mv_file_type);
-    return loadSeedsFromFile(seeds, fileName);
 }
 
 bool getDepthMapInfo(int refImgFileId, const MultiViewParams* mp, float& mindepth, float& maxdepth,

@@ -10,7 +10,6 @@
 #include <aliceVision/mvsData/Matrix3x4.hpp>
 #include <aliceVision/mvsData/Point2d.hpp>
 #include <aliceVision/mvsData/Point3d.hpp>
-#include <aliceVision/mvsData/SeedPoint.hpp>
 #include <aliceVision/mvsData/StaticVector.hpp>
 #include <aliceVision/mvsUtils/MultiViewParams.hpp>
 
@@ -28,22 +27,7 @@ FILE* mv_openFile(const MultiViewParams* mp, int index, EFileType mv_file_type, 
 Matrix3x4 load3x4MatrixFromFile(FILE* fi);
 void memcpyRGBImageFromFileToArr(int camId, Color* imgArr, const std::string& fileNameOrigStr, const MultiViewParams* mp,
                                  bool transpose, int bandType);
-struct seed_io_block            // 80 bytes
-{
-    OrientedPoint op;           // 28 bytes
-    Point3d xax;                // 12 bytes
-    Point3d yax;                // 12 bytes
-    float pixSize;              // 4 bytes
-    uint64_t area;              // 8 bytes
-    uint64_t segId;             // 8 bytes
-    unsigned short ncams;       // 2 bytes
-    unsigned short padding[3];  // 6 bytes
-};
 
-void saveSeedsToFile(StaticVector<SeedPoint>* seeds, const std::string& fileName);
-void saveSeedsToFile(StaticVector<SeedPoint>* seeds, int refImgFileId, const MultiViewParams* mp, EFileType mv_file_type);
-bool loadSeedsFromFile(StaticVector<SeedPoint>** seeds, const std::string& fileName);
-bool loadSeedsFromFile(StaticVector<SeedPoint>** seeds, int refImgFileId, const MultiViewParams* mp, EFileType mv_file_type);
 bool getDepthMapInfo(int refImgFileId, const MultiViewParams* mp, float& mindepth, float& maxdepth,
                      StaticVector<int>** tcams);
 bool DeleteDirectory(const std::string& sPath);

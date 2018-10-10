@@ -9,7 +9,6 @@
 #include <aliceVision/mvsData/Matrix3x3.hpp>
 #include <aliceVision/mvsData/Matrix3x4.hpp>
 #include <aliceVision/mvsData/OrientedPoint.hpp>
-#include <aliceVision/mvsData/SeedPoint.hpp>
 #include <aliceVision/mvsUtils/common.hpp>
 #include <aliceVision/mvsUtils/fileIO.hpp>
 #include <aliceVision/depthMap/cuda/commonStructures.hpp>
@@ -513,63 +512,32 @@ PlaneSweepingCuda::~PlaneSweepingCuda(void)
 void PlaneSweepingCuda::getMinMaxdepths(int rc, StaticVector<int>* tcams, float& minDepth, float& midDepth,
                                           float& maxDepth)
 {
-    StaticVector<SeedPoint>* seeds;
-    mvsUtils::loadSeedsFromFile(&seeds, rc, mp, mvsUtils::EFileType::seeds);
+  const bool minMaxDepthDontUseSeeds = mp->userParams.get<bool>("prematching.minMaxDepthDontUseSeeds", false);
+  const float maxDepthScale = static_cast<float>(mp->userParams.get<double>("prematching.maxDepthScale", 1.5f));
 
-    float minCamDist = (float)mp->userParams.get<double>("prematching.minCamDist", 0.0f);
-    float maxCamDist = (float)mp->userParams.get<double>("prematching.maxCamDist", 15.0f);
-    float maxDepthScale = (float)mp->userParams.get<double>("prematching.maxDepthScale", 1.5f);
-    bool minMaxDepthDontUseSeeds = mp->userParams.get<bool>("prematching.minMaxDepthDontUseSeeds", false);
+  if(minMaxDepthDontUseSeeds)
+  {
+    const float minCamDist = static_cast<float>(mp->userParams.get<double>("prematching.minCamDist", 0.0f));
+    const float maxCamDist = static_cast<float>(mp->userParams.get<double>("prematching.maxCamDist", 15.0f));
 
-    if((seeds->empty()) || minMaxDepthDontUseSeeds)
+    minDepth = 0.0f;
+    maxDepth = 0.0f;
+    for(int c = 0; c < tcams->size(); c++)
     {
-        minDepth = 0.0f;
-        maxDepth = 0.0f;
-        for(int c = 0; c < tcams->size(); c++)
-        {
-            int tc = (*tcams)[c];
-            minDepth += (mp->CArr[rc] - mp->CArr[tc]).size() * minCamDist;
-            maxDepth += (mp->CArr[rc] - mp->CArr[tc]).size() * maxCamDist;
-        }
-        minDepth /= (float)tcams->size();
-        maxDepth /= (float)tcams->size();
-        midDepth = (minDepth + maxDepth) / 2.0f;
+        int tc = (*tcams)[c];
+        minDepth += (mp->CArr[rc] - mp->CArr[tc]).size() * minCamDist;
+        maxDepth += (mp->CArr[rc] - mp->CArr[tc]).size() * maxCamDist;
     }
-    else
-    {
-        OrientedPoint rcplane;
-        rcplane.p = mp->CArr[rc];
-        rcplane.n = mp->iRArr[rc] * Point3d(0.0, 0.0, 1.0);
-        rcplane.n = rcplane.n.normalize();
-
-        minDepth = std::numeric_limits<float>::max();
-        maxDepth = -std::numeric_limits<float>::max();
-
-        // StaticVector<sortedId> *sos = new StaticVector<sortedId>();
-        // sos->reserve(seeds->size());
-        // for (int i=0;i<seeds->size();i++) {
-        //	sos->push_back(sortedId(i,pointPlaneDistance((*seeds)[i].op.p,rcplane.p,rcplane.n)));
-        //};
-        // qsort(&(*sos)[0],sos->size(),sizeof(sortedId),qsortCompareSortedIdAsc);
-        // minDepth = (*sos)[(int)((float)sos->size()*0.1f)].value;
-        // maxDepth = (*sos)[(int)((float)sos->size()*0.9f)].value;
-
-        Point3d cg = Point3d(0.0f, 0.0f, 0.0f);
-        for(int i = 0; i < seeds->size(); i++)
-        {
-            SeedPoint* sp = &(*seeds)[i];
-            cg = cg + sp->op.p;
-            float depth = pointPlaneDistance(sp->op.p, rcplane.p, rcplane.n);
-            minDepth = std::min(minDepth, depth);
-            maxDepth = std::max(maxDepth, depth);
-        }
-        cg = cg / (float)seeds->size();
-        midDepth = pointPlaneDistance(cg, rcplane.p, rcplane.n);
-
-        maxDepth = maxDepth * maxDepthScale;
-    }
-
-    delete seeds;
+    minDepth /= static_cast<float>(tcams->size());
+    maxDepth /= static_cast<float>(tcams->size());
+    midDepth = (minDepth + maxDepth) / 2.0f;
+  }
+  else
+  {
+    std::size_t nbDepths;
+    mp->getMinMaxMidNbDepth(rc, minDepth, maxDepth, midDepth, nbDepths);
+    maxDepth = maxDepth * maxDepthScale;
+  }
 }
 
 StaticVector<float>* PlaneSweepingCuda::getDepthsByPixelSize(int rc, float minDepth, float midDepth, float maxDepth,
