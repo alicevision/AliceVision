@@ -13,10 +13,12 @@
 #include <aliceVision/mvsUtils/PreMatchCams.hpp>
 
 namespace aliceVision {
+
+namespace sfmData {
+class SfMData;
+}
+
 namespace fuseCut {
-
-unsigned long computeNumberOfAllPoints(const mvsUtils::MultiViewParams* mp, int scale);
-
 
 class Fuser
 {
@@ -34,17 +36,21 @@ public:
     void filterDepthMaps(const StaticVector<int>& cams, int minNumOfModals, int minNumOfModalsWSP2SSP);
     bool filterDepthMapsRC(int rc, int minNumOfModals, int minNumOfModalsWSP2SSP);
 
-    void divideSpace(Point3d* hexah, float& minPixSize);
+    void divideSpaceFromDepthMaps(Point3d* hexah, float& minPixSize);
+    void divideSpaceFromSfM(const sfmData::SfMData& sfmData, Point3d* hexah, float& minPixSize);
 
     /// @brief Compute average pixel size in the given hexahedron
     float computeAveragePixelSizeInHexahedron(Point3d* hexah, int step, int scale);
+    float computeAveragePixelSizeInHexahedron(Point3d* hexah, const sfmData::SfMData& sfmData);
 
-    Voxel estimateDimensions(Point3d* vox, Point3d* newSpace, int scale, int maxOcTreeDim);
+    Voxel estimateDimensions(Point3d* vox, Point3d* newSpace, int scale, int maxOcTreeDim, const sfmData::SfMData* sfmData = nullptr);
 
 private:
     bool updateInSurr(int pixSizeBall, int pixSizeBallWSP, Point3d& p, int rc, int tc, StaticVector<int>* numOfPtsMap,
                       StaticVector<float>* depthMap, StaticVector<float>* simMap, int scale);
 };
+
+unsigned long computeNumberOfAllPoints(const mvsUtils::MultiViewParams* mp, int scale);
 
 std::string generateTempPtsSimsFiles(std::string tmpDir, mvsUtils::MultiViewParams* mp, bool addRandomNoise = false,
                                      float percNoisePts = 0.0, int noisPixSizeDistHalfThr = 0);

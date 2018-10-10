@@ -90,12 +90,16 @@ int main(int argc, char* argv[])
     std::string sfmDataFilename;
     std::string cameraPairsMatrixFolder;
     std::string outputMesh;
+    std::string imagesFolder;
     std::string depthMapFolder;
     std::string depthMapFilterFolder;
     EPartitioningMode partitioningMode = ePartitioningSingleBlock;
     ERepartitionMode repartitionMode = eRepartitionMultiResolution;
     po::options_description inputParams;
+    double universePercentile = 0.999f;
     int maxPtsPerVoxel = 6000000;
+    bool meshingFromDepthMaps = true;
+    bool estimateSpaceFromSfM = false;
 
     fuseCut::FuseParams fuseParams;
 
@@ -107,15 +111,17 @@ int main(int argc, char* argv[])
           "SfMData file.")
         ("cameraPairsMatrixFolder", po::value<std::string>(&cameraPairsMatrixFolder)->required(),
             "Camera pairs matrix folder.")
-        ("depthMapFolder", po::value<std::string>(&depthMapFolder)->required(),
-            "Input depth maps folder.")
-        ("depthMapFilterFolder", po::value<std::string>(&depthMapFilterFolder)->required(),
-            "Input filtered depth maps folder.")
         ("output,o", po::value<std::string>(&outputMesh)->required(),
             "Output mesh (OBJ file format).");
 
     po::options_description optionalParams("Optional parameters");
     optionalParams.add_options()
+        ("imagesFolder", po::value<std::string>(&imagesFolder),
+          "Use images from a specific folder. Filename should be the image uid.")
+        ("depthMapFolder", po::value<std::string>(&depthMapFolder),
+            "Input depth maps folder.")
+        ("depthMapFilterFolder", po::value<std::string>(&depthMapFilterFolder),
+            "Input filtered depth maps folder.")
         ("maxInputPoints", po::value<int>(&fuseParams.maxInputPoints)->default_value(fuseParams.maxInputPoints),
             "Max input points loaded from images.")
         ("maxPoints", po::value<int>(&fuseParams.maxPoints)->default_value(fuseParams.maxPoints),
@@ -136,6 +142,8 @@ int main(int argc, char* argv[])
 
     po::options_description advancedParams("Advanced parameters");
     advancedParams.add_options()
+        ("universePercentile", po::value<double>(&universePercentile)->default_value(universePercentile),
+            "universePercentile")
         ("pixSizeMarginInitCoef", po::value<double>(&fuseParams.pixSizeMarginInitCoef)->default_value(fuseParams.pixSizeMarginInitCoef),
             "pixSizeMarginInitCoef")
         ("pixSizeMarginFinalCoef", po::value<double>(&fuseParams.pixSizeMarginFinalCoef)->default_value(fuseParams.pixSizeMarginFinalCoef),
@@ -193,6 +201,24 @@ int main(int argc, char* argv[])
     // set verbose level
     system::Logger::get()->setLogLevel(verboseLevel);
 
+    if(depthMapFolder.empty() || depthMapFilterFolder.empty())
+    {
+      if(depthMapFolder.empty() &&
+         depthMapFilterFolder.empty() &&
+         repartitionMode == eRepartitionMultiResolution &&
+         partitioningMode == ePartitioningSingleBlock)
+      {
+        meshingFromDepthMaps = false;
+      }
+      else
+      {
+        ALICEVISION_LOG_ERROR("Invalid input options:\n"
+                              "- Meshing from depth maps require --depthMapFolder and --depthMapFilterFolder options.\n"
+                              "- Meshing from SfM require option --partitioning set to 'singleBlock' and option --repartition set to 'multiResolution'.");
+        return EXIT_FAILURE;
+      }
+    }
+
     // read the input SfM scene
     sfmData::SfMData sfmData;
     if(!sfmDataIO::Load(sfmData, sfmDataFilename, sfmDataIO::ESfMData::ALL))
@@ -202,7 +228,10 @@ int main(int argc, char* argv[])
     }
 
     // initialization
-    mvsUtils::MultiViewParams mp(sfmData, "", depthMapFolder, depthMapFilterFolder, true);
+    mvsUtils::MultiViewParams mp(sfmData, imagesFolder, depthMapFolder, depthMapFilterFolder, meshingFromDepthMaps);
+
+    mp.userParams.put("LargeScale.universePercentile", universePercentile);
+
     mvsUtils::PreMatchCams pc(mp, cameraPairsMatrixFolder);
 
     int ocTreeDim = mp.userParams.get<int>("LargeScale.gridLevel0", 1024);
@@ -303,9 +332,24 @@ int main(int argc, char* argv[])
 
                     fuseCut::DelaunayGraphCut delaunayGC(lsbase.mp, lsbase.pc);
                     Point3d* hexah = &lsbase.space[0];
-                    delaunayGC.reconstructVoxel(hexah, &voxelNeighs, outDirectory.string()+"/", lsbase.getSpaceCamsTracksDir(), false,
-                                          (fuseCut::VoxelsGrid*)&rp, lsbase.getSpaceSteps(), fuseParams);
 
+                    StaticVector<int> cams;
+                    if(hexah)
+                    {
+                      cams = pc.findCamsWhichIntersectsHexahedron(hexah);
+                    }
+                    else
+                    {
+                      cams.resize(mp.getNbCameras());
+                      for(int i = 0; i < cams.size(); ++i)
+                          cams[i] = i;
+                    }
+
+                    if(cams.size() < 1)
+                        throw std::logic_error("No camera to make the reconstruction");
+
+                    delaunayGC.createDensePointCloudFromDepthMaps(hexah, cams, &voxelNeighs, (fuseCut::VoxelsGrid*)&rp, fuseParams);
+                    delaunayGC.createGraphCut(hexah, cams, (fuseCut::VoxelsGrid*)&rp, outDirectory.string()+"/", lsbase.getSpaceCamsTracksDir(), false, lsbase.getSpaceSteps());
                     delaunayGC.graphCutPostProcessing();
 
                     // Save mesh as .bin and .obj
@@ -350,15 +394,22 @@ int main(int argc, char* argv[])
 
                     float minPixSize;
                     fuseCut::Fuser fs(&mp, &pc);
-                    fs.divideSpace(&hexah[0], minPixSize);
-                    Voxel dimensions = fs.estimateDimensions(&hexah[0], &hexah[0], 0, ocTreeDim);
+
+                    if(meshingFromDepthMaps && !estimateSpaceFromSfM)
+                      fs.divideSpaceFromDepthMaps(&hexah[0], minPixSize);
+                    else
+                      fs.divideSpaceFromSfM(sfmData, &hexah[0], minPixSize);
+
+                    Voxel dimensions = fs.estimateDimensions(&hexah[0], &hexah[0], 0, ocTreeDim, (meshingFromDepthMaps) ? nullptr : &sfmData);
                     StaticVector<Point3d>* voxels = mvsUtils::computeVoxels(&hexah[0], dimensions);
 
                     StaticVector<int> voxelNeighs;
                     voxelNeighs.resize(voxels->size() / 8);
                     ALICEVISION_LOG_INFO("voxelNeighs.size(): " << voxelNeighs.size());
+
                     for(int i = 0; i < voxelNeighs.size(); ++i)
                         voxelNeighs[i] = i;
+
                     Point3d spaceSteps;
                     {
                         Point3d vx = hexah[1] - hexah[0];
@@ -368,10 +419,28 @@ int main(int argc, char* argv[])
                         spaceSteps.y = (vy.size() / (double)dimensions.y) / (double)ocTreeDim;
                         spaceSteps.z = (vz.size() / (double)dimensions.z) / (double)ocTreeDim;
                     }
-                    delaunayGC.reconstructVoxel(&hexah[0], &voxelNeighs, outDirectory.string()+"/", outDirectory.string()+"/SpaceCamsTracks/", false,
-                                                nullptr, spaceSteps, fuseParams);
-                    // TODO change the function name: reconstructFromDepthMaps(hexah);
 
+                    StaticVector<int> cams;
+                    if(meshingFromDepthMaps)
+                    {
+                      cams = pc.findCamsWhichIntersectsHexahedron(&hexah[0]);
+                    }
+                    else
+                    {
+                      cams.resize(mp.getNbCameras());
+                      for(int i = 0; i < cams.size(); ++i)
+                          cams[i] = i;
+                    }
+
+                    if(cams.size() < 1)
+                        throw std::logic_error("No camera to make the reconstruction");
+
+                    if(meshingFromDepthMaps)
+                      delaunayGC.createDensePointCloudFromDepthMaps(&hexah[0], cams, &voxelNeighs, nullptr, fuseParams);
+                    else
+                      delaunayGC.createDensePointCloudFromSfM(&hexah[0], cams, sfmData);
+
+                    delaunayGC.createGraphCut(&hexah[0], cams, nullptr, outDirectory.string()+"/", outDirectory.string()+"/SpaceCamsTracks/", false, spaceSteps);
                     delaunayGC.graphCutPostProcessing();
 
                     // Save mesh as .bin and .obj

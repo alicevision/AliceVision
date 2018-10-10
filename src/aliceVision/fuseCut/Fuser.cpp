@@ -6,6 +6,7 @@
 
 #include "Fuser.hpp"
 #include <aliceVision/system/Logger.hpp>
+#include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/mvsData/geometry.hpp>
 #include <aliceVision/mvsData/Pixel.hpp>
 #include <aliceVision/mvsData/Point2d.hpp>
@@ -400,13 +401,46 @@ float Fuser::computeAveragePixelSizeInHexahedron(Point3d* hexah, int step, int s
     // return minv;
 }
 
+
+
+float Fuser::computeAveragePixelSizeInHexahedron(Point3d* hexah, const sfmData::SfMData& sfmData)
+{
+  float av = 0.0f;
+  float nav = 0.0f;
+  float minv = std::numeric_limits<float>::max();
+
+  for(const auto& landmarkPair : sfmData.getLandmarks())
+  {
+    const sfmData::Landmark& landmark = landmarkPair.second;
+    const Point3d p(landmark.X(0), landmark.X(1), landmark.X(2));
+
+    for(const auto& observationPair : landmark.observations)
+    {
+      const IndexT viewId = observationPair.first;
+
+      if(mvsUtils::isPointInHexahedron(p, hexah))
+      {
+        float v = mp->getCamPixelSize(p, mp->getIndexFromViewId(viewId));
+        av += v; // WARNING: the value may be too big for a float
+        nav += 1.0f;
+        minv = std::min(minv, v);
+      }
+    }
+  }
+
+  if(nav == 0.0f)
+    return -1.0f;
+
+  return av / nav;
+}
+
 /**
  *@param[out] hexah: table of 8 values
  *@param[out] minPixSize
  */
-void Fuser::divideSpace(Point3d* hexah, float& minPixSize)
+void Fuser::divideSpaceFromDepthMaps(Point3d* hexah, float& minPixSize)
 {
-    ALICEVISION_LOG_INFO("Estimate space.");
+    ALICEVISION_LOG_INFO("Estimate space from depth maps.");
     int scale = 0;
 
     unsigned long npset = computeNumberOfAllPoints(mp, scale);
@@ -533,36 +567,87 @@ void Fuser::divideSpace(Point3d* hexah, float& minPixSize)
     ALICEVISION_LOG_INFO("Estimate space done.");
 }
 
-Voxel Fuser::estimateDimensions(Point3d* vox, Point3d* newSpace, int scale, int maxOcTreeDim)
+void Fuser::divideSpaceFromSfM(const sfmData::SfMData& sfmData, Point3d* hexah, float& minPixSize)
 {
-    Point3d O = (vox[0] + vox[1] + vox[2] + vox[3] + vox[4] + vox[5] + vox[6] + vox[7]) / 8.0f;
+  ALICEVISION_LOG_INFO("Estimate space from SfM.");
+  double xMax, yMax, zMax, xMin, yMin, zMin;
+
+  {
+    const sfmData::Landmark& firstLandmark = sfmData.getLandmarks().begin()->second;
+    xMax = xMin = firstLandmark.X(0);
+    yMax = yMin = firstLandmark.X(1);
+    zMax = zMin = firstLandmark.X(2);
+  }
+
+  for(const auto& landmarkPair : sfmData.getLandmarks())
+  {
+    const sfmData::Landmark& landmark = landmarkPair.second;
+
+    const double x = landmark.X(0);
+    const double y = landmark.X(1);
+    const double z = landmark.X(2);
+
+    xMax = std::max(xMax, x);
+    yMax = std::max(yMax, y);
+    zMax = std::max(zMax, z);
+    xMin = std::min(xMin, x);
+    yMin = std::min(yMin, y);
+    zMin = std::min(zMin, z);
+  }
+
+  hexah[0] = Point3d(xMax, yMax, zMax);
+  hexah[1] = Point3d(xMin, yMax, zMax);
+  hexah[2] = Point3d(xMin, yMin, zMax);
+  hexah[3] = Point3d(xMax, yMin, zMax);
+  hexah[4] = Point3d(xMax, yMax, zMin);
+  hexah[5] = Point3d(xMin, yMax, zMin);
+  hexah[6] = Point3d(xMin, yMin, zMin);
+  hexah[7] = Point3d(xMax, yMin, zMin);
+
+  ALICEVISION_LOG_INFO("Estimate space done.");
+}
+
+Voxel Fuser::estimateDimensions(Point3d* vox, Point3d* newSpace, int scale, int maxOcTreeDim, const sfmData::SfMData* sfmData)
+{
+    const Point3d O = (vox[0] + vox[1] + vox[2] + vox[3] + vox[4] + vox[5] + vox[6] + vox[7]) / 8.0f;
     Point3d vx = vox[1] - vox[0];
     Point3d vy = vox[3] - vox[0];
     Point3d vz = vox[4] - vox[0];
-    float svx = vx.size();
-    float svy = vy.size();
-    float svz = vz.size();
+    const float svx = vx.size();
+    const float svy = vy.size();
+    const float svz = vz.size();
     vx = vx.normalize();
     vy = vy.normalize();
     vz = vz.normalize();
 
-    int nAllPts = computeNumberOfAllPoints(mp, scale);
-    float pointToJoinPixSizeDist = (float)mp->userParams.get<double>("Fuser.pointToJoinPixSizeDist", 2.0f);
+    const float pointToJoinPixSizeDist = (float)mp->userParams.get<double>("Fuser.pointToJoinPixSizeDist", 2.0f);
     ALICEVISION_LOG_INFO("pointToJoinPixSizeDist: " << pointToJoinPixSizeDist);
-    int maxpts = 1000000;
-    int stepPts = nAllPts / maxpts + 1;
-    // WARNING perf: reload all depth maps to compute the minPixelSize (minPixelSize consider only points in the hexahedron)
-    // Average 3D size for each pixel from all 3D points in the current voxel
-    float aAvPixelSize = computeAveragePixelSizeInHexahedron(vox, stepPts, scale) * (float)std::max(scale, 1) * pointToJoinPixSizeDist;
+
+    float aAvPixelSize;
+
+    if(sfmData == nullptr)
+    {
+      // WARNING perf: reload all depth maps to compute the minPixelSize (minPixelSize consider only points in the hexahedron)
+      // Average 3D size for each pixel from all 3D points in the current voxel
+      const int maxPts = 1000000;
+      const int nAllPts = computeNumberOfAllPoints(mp, scale);
+      const int stepPts = nAllPts / maxPts + 1;
+      aAvPixelSize = computeAveragePixelSizeInHexahedron(vox, stepPts, scale) * (float)std::max(scale, 1) * pointToJoinPixSizeDist;
+    }
+    else
+    {
+      aAvPixelSize = computeAveragePixelSizeInHexahedron(vox, *sfmData) * pointToJoinPixSizeDist;
+    }
 
     Voxel maxDim;
     maxDim.x = (int)ceil(svx / (aAvPixelSize * (float)maxOcTreeDim));
     maxDim.y = (int)ceil(svy / (aAvPixelSize * (float)maxOcTreeDim));
     maxDim.z = (int)ceil(svz / (aAvPixelSize * (float)maxOcTreeDim));
 
-    Point3d vvx = vx * ((float)maxDim.x * ((aAvPixelSize * (float)maxOcTreeDim)));
-    Point3d vvy = vy * ((float)maxDim.y * ((aAvPixelSize * (float)maxOcTreeDim)));
-    Point3d vvz = vz * ((float)maxDim.z * ((aAvPixelSize * (float)maxOcTreeDim)));
+    const Point3d vvx = vx * ((float)maxDim.x * ((aAvPixelSize * (float)maxOcTreeDim)));
+    const Point3d vvy = vy * ((float)maxDim.y * ((aAvPixelSize * (float)maxOcTreeDim)));
+    const Point3d vvz = vz * ((float)maxDim.z * ((aAvPixelSize * (float)maxOcTreeDim)));
+
     newSpace[0] = O - vvx / 2.0f - vvy / 2.0f - vvz / 2.0f;
     newSpace[1] = O + vvx - vvx / 2.0f - vvy / 2.0f - vvz / 2.0f;
     newSpace[2] = O + vvx + vvy - vvx / 2.0f - vvy / 2.0f - vvz / 2.0f;

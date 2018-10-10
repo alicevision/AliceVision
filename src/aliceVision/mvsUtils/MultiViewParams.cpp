@@ -50,6 +50,7 @@ MultiViewParams::MultiViewParams(const sfmData::SfMData& sfmData,
     {
         std::set<std::pair<int, int>> dimensions; // for print only
 
+        int i = 0;
         for(const auto& viewPair : sfmData.getViews())
         {
           const sfmData::View& view = *(viewPair.second.get());
@@ -78,8 +79,10 @@ MultiViewParams::MultiViewParams(const sfmData::SfMData& sfmData,
             path = _imagesFolder + std::to_string(view.getViewId()) + findIt->path().extension().string();
           }
 
-          _imagesParams.emplace_back(view.getViewId(), view.getWidth(), view.getHeight(), path);
           dimensions.emplace(view.getWidth(), view.getHeight());
+          _imagesParams.emplace_back(view.getViewId(), view.getWidth(), view.getHeight(), path);
+          _imageIdsPerViewId[view.getViewId()] = i;
+          ++i;
         }
 
         if(getNbCameras() <= 0)

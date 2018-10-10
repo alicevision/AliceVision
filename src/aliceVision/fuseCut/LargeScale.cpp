@@ -74,7 +74,7 @@ void LargeScale::initialEstimateSpace(int maxOcTreeDim)
 {
     float minPixSize;
     Fuser* fs = new Fuser(mp, pc);
-    fs->divideSpace(&space[0], minPixSize);
+    fs->divideSpaceFromDepthMaps(&space[0], minPixSize);
     dimensions = fs->estimateDimensions(&space[0], &space[0], 0, maxOcTreeDim);
     delete fs;
 }

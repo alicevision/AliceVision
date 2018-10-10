@@ -272,8 +272,14 @@ void reconstructSpaceAccordingToVoxelsArray(const std::string& voxelsArrayFileNa
             StaticVector<int>* voxelsIds = rp->voxelsIdsIntersectingHexah(&(*voxelsArray)[i * 8]);
             DelaunayGraphCut delaunayGC(ls->mp, ls->pc);
             Point3d* hexah = &(*voxelsArray)[i * 8];
-            delaunayGC.reconstructVoxel(hexah, voxelsIds, folderName, ls->getSpaceCamsTracksDir(), false,
-                                  (VoxelsGrid*)rp, ls->getSpaceSteps(), FuseParams());
+
+            StaticVector<int> cams = ls->pc->findCamsWhichIntersectsHexahedron(hexah);
+
+            if(cams.size() < 1)
+                throw std::logic_error("No camera to make the reconstruction");
+
+            delaunayGC.createDensePointCloudFromDepthMaps(hexah, cams, voxelsIds, (VoxelsGrid*)rp, FuseParams());
+            delaunayGC.createGraphCut(hexah, cams, (VoxelsGrid*)rp, folderName, ls->getSpaceCamsTracksDir(), false, ls->getSpaceSteps());
             delete voxelsIds;
 
             // Save mesh as .bin and .obj

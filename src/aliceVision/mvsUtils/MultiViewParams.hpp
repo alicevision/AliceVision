@@ -16,8 +16,9 @@
 
 #include <boost/property_tree/ptree.hpp>
 
-#include <vector>
 #include <string>
+#include <vector>
+#include <map>
 
 namespace aliceVision {
 
@@ -190,6 +191,11 @@ public:
         return _imagesParams.size();
     }
 
+    inline int getIndexFromViewId(IndexT viewId) const
+    {
+        return _imageIdsPerViewId.at(viewId);
+    }
+
     inline std::vector<double> getOriginalP(int index) const
     {
         std::vector<double> p44; // projection matrix (4x4) scale 1
@@ -240,6 +246,8 @@ public:
 private:
     /// image params list (width, height, size)
     std::vector<ImageParams> _imagesParams;
+    /// image id per view id
+    std::map<IndexT, int> _imageIdsPerViewId;
     /// image scale list
     std::vector<int> _imagesScale;
     /// downscale apply to input images during process

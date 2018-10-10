@@ -7,6 +7,7 @@
 #include "DelaunayGraphCut.hpp"
 // #include <aliceVision/fuseCut/MaxFlow_CSR.hpp>
 #include <aliceVision/fuseCut/MaxFlow_AdjList.hpp>
+#include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/mvsData/geometry.hpp>
 #include <aliceVision/mvsData/jetColorMap.hpp>
 #include <aliceVision/mvsData/Pixel.hpp>
@@ -406,7 +407,7 @@ DelaunayGraphCut::~DelaunayGraphCut()
 {
 }
 
-void DelaunayGraphCut::saveDhInfo(std::string fileNameInfo)
+void DelaunayGraphCut::saveDhInfo(const std::string& fileNameInfo)
 {
     FILE* f = fopen(fileNameInfo.c_str(), "wb");
 
@@ -426,13 +427,14 @@ void DelaunayGraphCut::saveDhInfo(std::string fileNameInfo)
     fclose(f);
 }
 
-void DelaunayGraphCut::saveDh(std::string fileNameDh, std::string fileNameInfo)
+void DelaunayGraphCut::saveDh(const std::string& fileNameDh, const std::string& fileNameInfo)
 {
-    ALICEVISION_LOG_DEBUG("Saving triangulation");
+    ALICEVISION_LOG_DEBUG("Saving triangulation.");
 
     saveDhInfo(fileNameInfo);
 
     long t1 = clock();
+
     // std::ofstream oFileT(fileNameDh.c_str());
     // oFileT << *_tetrahedralization; // TODO GEOGRAM
 
@@ -666,7 +668,7 @@ void DelaunayGraphCut::addPointsFromCameraCenters(const StaticVector<int>& cams,
     }
 }
 
-void DelaunayGraphCut::addPointsToPreventSingularities(Point3d voxel[8], float minDist)
+void DelaunayGraphCut::addPointsToPreventSingularities(const Point3d voxel[8], float minDist)
 {
     ALICEVISION_LOG_DEBUG("Add points to prevent singularities");
 
@@ -709,7 +711,7 @@ void DelaunayGraphCut::addPointsToPreventSingularities(Point3d voxel[8], float m
     }
 }
 
-void DelaunayGraphCut::addHelperPoints(int nGridHelperVolumePointsDim, Point3d voxel[8], float minDist)
+void DelaunayGraphCut::addHelperPoints(int nGridHelperVolumePointsDim, const Point3d voxel[8], float minDist)
 {
     if(nGridHelperVolumePointsDim <= 0)
         return;
@@ -2369,80 +2371,116 @@ void DelaunayGraphCut::invertFullStatusForSmallLabels()
     delete buff;
 }
 
-void DelaunayGraphCut::reconstructVoxel(Point3d hexah[8], StaticVector<int>* voxelsIds, const std::string& folderName,
-                                      const std::string& tmpCamsPtsFolderName, bool removeSmallSegments,
-                                      VoxelsGrid* ls, const Point3d& spaceSteps, const FuseParams& fuseParams)
+void DelaunayGraphCut::createDensePointCloudFromDepthMaps(Point3d hexah[8], const StaticVector<int>& cams, StaticVector<int>* voxelsIds, VoxelsGrid* ls, const FuseParams& fuseParams)
 {
-    StaticVector<int> cams;
-    if(hexah)
+  // Load tracks
+  ALICEVISION_LOG_INFO("Creating delaunay tetrahedralization from depth maps voxel");
+
+  float minDist = hexah ? (hexah[0] - hexah[1]).size() / 1000.0f : 0.00001f;
+
+  // add points for cam centers
+  addPointsFromCameraCenters(cams, minDist);
+
+  // add 6 points to prevent singularities
+  addPointsToPreventSingularities(hexah, minDist);
+
+  if(ls)
+    loadPrecomputedDensePoints(voxelsIds, hexah, ls);
+  else
+    fuseFromDepthMaps(cams, hexah, fuseParams);
+
+  // initialize random seed
+  srand(time(nullptr));
+
+  int nGridHelperVolumePointsDim = mp->userParams.get<int>("LargeScale.nGridHelperVolumePointsDim", 10);
+
+  // add volume points to prevent singularities
+  addHelperPoints(nGridHelperVolumePointsDim, hexah, minDist);
+}
+
+void DelaunayGraphCut::createDensePointCloudFromSfM(const Point3d hexah[8], const StaticVector<int>& cams, const sfmData::SfMData& sfmData)
+{
+  // Load tracks
+  float minDist = hexah ? (hexah[0] - hexah[1]).size() / 1000.0f : 0.00001f;
+
+  // add points for cam centers
+  addPointsFromCameraCenters(cams, minDist);
+
+  // add 6 points to prevent singularities
+  addPointsToPreventSingularities(hexah, minDist);
+
+  const std::size_t nbPoints = sfmData.getLandmarks().size();
+  const std::size_t verticesOffset = _verticesCoords.size();
+
+  _verticesCoords.resize(verticesOffset + nbPoints);
+  _verticesAttr.resize(verticesOffset + nbPoints);
+
+  sfmData:: Landmarks::const_iterator landmarkIt = sfmData.getLandmarks().begin();
+  std::vector<Point3d>::iterator vCoordsIt = _verticesCoords.begin();
+  std::vector<GC_vertexInfo>::iterator vAttrIt = _verticesAttr.begin();
+
+  std::advance(vCoordsIt, verticesOffset);
+  std::advance(vAttrIt, verticesOffset);
+
+  for(std::size_t i = 0; i < nbPoints; ++i)
+  {
+    const sfmData::Landmark& landmark = landmarkIt->second;
+    const Point3d p(landmark.X(0), landmark.X(1), landmark.X(2));
+
+    if(mvsUtils::isPointInHexahedron(p, hexah))
     {
-        cams = pc->findCamsWhichIntersectsHexahedron(hexah);
-    }
-    else
-    {
-        cams.resize(mp->getNbCameras());
-        for(int i = 0; i < cams.size(); ++i)
-            cams[i] = i;
-    }
+      *vCoordsIt = p;
 
-    if(cams.size() < 1)
-        throw std::logic_error("No camera to make the reconstruction");
+      vAttrIt->nrc = landmark.observations.size();
+      vAttrIt->cams.reserve(vAttrIt->nrc);
 
-    // Load tracks
-    ALICEVISION_LOG_INFO("Creating delaunay tetrahedralization from depth maps voxel");
+      for(const auto& observationPair : landmark.observations)
+        vAttrIt->cams.push_back(mp->getIndexFromViewId(observationPair.first));
 
-    float minDist = hexah ? (hexah[0] - hexah[1]).size() / 1000.0f : 0.00001f;
-
-    // add points for cam centers
-    addPointsFromCameraCenters(cams, minDist);
-
-    // add 6 points to prevent singularities
-    addPointsToPreventSingularities(hexah, minDist);
-
-    if(ls)
-    {
-        loadPrecomputedDensePoints(voxelsIds, hexah, ls);
-    }
-    else
-    {
-        fuseFromDepthMaps(cams, hexah, fuseParams);
+      vCoordsIt++;
+      vAttrIt++;
     }
 
-    // initialize random seed
-    srand(time(nullptr));
+    landmarkIt++;
+  }
 
-    {
-        int nGridHelperVolumePointsDim = mp->userParams.get<int>("LargeScale.nGridHelperVolumePointsDim", 10);
-        // add volume points to prevent singularities
-        addHelperPoints(nGridHelperVolumePointsDim, hexah, minDist);
-    }
+  _verticesCoords.shrink_to_fit();
+  _verticesAttr.shrink_to_fit();
 
-    initVertices();
+  // initialize random seed
+  srand(time(nullptr));
 
-    // Create tetrahedralization (into T variable)
-    computeDelaunay();
+  const int nGridHelperVolumePointsDim = mp->userParams.get<int>("LargeScale.nGridHelperVolumePointsDim", 10);
 
-    displayStatistics();
+  // add volume points to prevent singularities
+  addHelperPoints(nGridHelperVolumePointsDim, hexah, minDist);
+}
 
-    computeVerticesSegSize(true, 0.0f); // TODO: could go into the "if(removeSmallSegments)"?
-    if(removeSmallSegments) // false
-    {
-        removeSmallSegs(2500); // TODO FACA: to decide
-    }
+void DelaunayGraphCut::createGraphCut(Point3d hexah[8], const StaticVector<int>& cams, VoxelsGrid* ls, const std::string& folderName, const std::string& tmpCamsPtsFolderName, bool removeSmallSegments, const Point3d& spaceSteps)
+{
+  initVertices();
 
-    bool updateLSC = ls ? mp->userParams.get<bool>("LargeScale.updateLSC", true) : false;
+  // Create tetrahedralization
+  computeDelaunay();
+  displayStatistics();
 
-    reconstructExpetiments(cams, folderName, updateLSC,
-                           hexah, tmpCamsPtsFolderName,
-                           spaceSteps);
+  computeVerticesSegSize(true, 0.0f); // TODO: could go into the "if(removeSmallSegments)"?
 
-    bool saveOrNot = mp->userParams.get<bool>("LargeScale.saveDelaunayTriangulation", false);
-    if(saveOrNot)
-    {
-        std::string fileNameDh = folderName + "delaunayTriangulation.bin";
-        std::string fileNameInfo = folderName + "delaunayTriangulationInfo.bin";
-        saveDh(fileNameDh, fileNameInfo);
-    }
+  if(removeSmallSegments) // false
+    removeSmallSegs(2500); // TODO FACA: to decide
+
+  const bool updateLSC = ls ? mp->userParams.get<bool>("LargeScale.updateLSC", true) : false;
+
+  reconstructExpetiments(cams, folderName, updateLSC,
+                         hexah, tmpCamsPtsFolderName,
+                         spaceSteps);
+
+  if(mp->userParams.get<bool>("LargeScale.saveDelaunayTriangulation", false))
+  {
+    const std::string fileNameDh = folderName + "delaunayTriangulation.bin";
+    const std::string fileNameInfo = folderName + "delaunayTriangulationInfo.bin";
+    saveDh(fileNameDh, fileNameInfo);
+  }
 }
 
 void DelaunayGraphCut::addToInfiniteSw(float sW)
