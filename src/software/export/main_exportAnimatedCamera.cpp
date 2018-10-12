@@ -22,7 +22,7 @@
 
 // These constants define the current software version.
 // They must be updated when the command line is changed.
-#define ALICEVISION_SOFTWARE_VERSION_MAJOR 1
+#define ALICEVISION_SOFTWARE_VERSION_MAJOR 2
 #define ALICEVISION_SOFTWARE_VERSION_MINOR 0
 
 using namespace aliceVision;
@@ -163,6 +163,9 @@ int main(int argc, char** argv)
     std::size_t frameN = 0;
     bool isSequence = false;
 
+    if(view.isPartOfRig())
+      cameraName += std::string("_") + std::to_string(view.getSubPoseId());
+
     // check if the image is in a sequence
     // regexFrame: ^(.*\D)?([0-9]+)([\-_\.].*[[:alpha:]].*)?$
     std::regex regexFrame("^(.*\\D)?"    // the optional prefix which end with a non digit character
@@ -216,7 +219,7 @@ int main(int argc, char** argv)
     {
       sfmData::Intrinsics::const_iterator iterIntrinsic = sfmData.getIntrinsics().find(view.getIntrinsicId());
 
-      const std::string dstImage = (undistortedImagesFolderPath / (imagePathStem + "." + image::EImageFileType_enumToString(outputFileType))).string();
+      const std::string dstImage = (undistortedImagesFolderPath / (std::to_string(view.getIntrinsicId()) + "_" + imagePathStem + "." + image::EImageFileType_enumToString(outputFileType))).string();
       const camera::IntrinsicBase * cam = iterIntrinsic->second.get();
 
       image::readImage(view.getImagePath(), image);
@@ -279,7 +282,7 @@ int main(int argc, char** argv)
             const camera::Pinhole* cam = dynamic_cast<camera::Pinhole*>(sfmData.getIntrinsicPtr(intrinsicId));
             const sfmData::CameraPose pose = sfmData.getPose(*findViewIt->second);
             const std::string& imagePath = findViewIt->second->getImagePath();
-            const std::string undistortedImagePath = (undistortedImagesFolderPath / (fs::path(imagePath).stem().string() + "." + image::EImageFileType_enumToString(outputFileType))).string();
+            const std::string undistortedImagePath = (undistortedImagesFolderPath / (std::to_string(intrinsicId) + "_" + fs::path(imagePath).stem().string() + "." + image::EImageFileType_enumToString(outputFileType))).string();
 
             exporter.addCameraKeyframe(pose.getTransform(), cam, (undistortedImages) ? undistortedImagePath : imagePath, viewId, intrinsicId);
             continue;
@@ -301,7 +304,7 @@ int main(int argc, char** argv)
         const camera::Pinhole* cam = dynamic_cast<camera::Pinhole*>(sfmData.getIntrinsicPtr(view.getIntrinsicId()));
         const sfmData::CameraPose pose = sfmData.getPose(view);
         const std::string& imagePath = view.getImagePath();
-        const std::string undistortedImagePath = (undistortedImagesFolderPath / (fs::path(imagePath).stem().string() + "." + image::EImageFileType_enumToString(outputFileType))).string();
+        const std::string undistortedImagePath = (undistortedImagesFolderPath / (std::to_string(view.getIntrinsicId()) + "_" + fs::path(imagePath).stem().string() + "." + image::EImageFileType_enumToString(outputFileType))).string();
 
         exporter.addCameraKeyframe(pose.getTransform(), cam, (undistortedImages) ? undistortedImagePath : imagePath, view.getViewId(), view.getIntrinsicId());
     }
