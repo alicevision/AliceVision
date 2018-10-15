@@ -71,8 +71,6 @@ int main(int argc, char* argv[])
             "SfMData file.")
         ("imagesFolder", po::value<std::string>(&imagesFolder)->required(),
             "Images folder. Filename should be the image uid.")
-        ("cameraPairsMatrixFolder", po::value<std::string>(&cameraPairsMatrixFolder)->required(),
-            "Camera pairs matrix folder.")
         ("output,o", po::value<std::string>(&outputFolder)->required(),
             "Output folder for generated depth maps.");
 
@@ -198,7 +196,7 @@ int main(int argc, char* argv[])
     mp.userParams.put("refineRc.gammaP", refineGammaP);
     mp.userParams.put("refineRc.useTcOrRcPixSize", refineUseTcOrRcPixSize);
 
-    mvsUtils::PreMatchCams pc(mp, cameraPairsMatrixFolder);
+    mvsUtils::PreMatchCams pc(mp);
 
     StaticVector<int> cams;
     cams.reserve(mp.ncams);

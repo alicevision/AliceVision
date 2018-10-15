@@ -187,8 +187,7 @@ bool Fuser::filterGroupsRC(int rc, int pixSizeBall, int pixSizeBallWSP, int nNea
     numOfPtsMap->reserve(w * h);
     numOfPtsMap->resize_with(w * h, 0);
 
-    // StaticVector<int> *tcams = pc->findNearestCams(rc);
-    StaticVector<int> tcams = pc->findNearestCamsFromSeeds(rc, nNearestCams);
+    StaticVector<int> tcams = pc->findNearestCamsFromLandmarks(rc, nNearestCams);
 
     for(int c = 0; c < tcams.size(); c++)
     {

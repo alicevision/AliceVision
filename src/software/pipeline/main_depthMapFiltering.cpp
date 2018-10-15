@@ -33,7 +33,6 @@ int main(int argc, char* argv[])
 
     std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
     std::string sfmDataFilename;
-    std::string cameraPairsMatrixFolder;
     std::string depthMapFolder;
     std::string outputFolder;
 
@@ -53,8 +52,6 @@ int main(int argc, char* argv[])
     requiredParams.add_options()
         ("input,i", po::value<std::string>(&sfmDataFilename)->required(),
             "SfMData file.")
-        ("cameraPairsMatrixFolder", po::value<std::string>(&cameraPairsMatrixFolder)->required(),
-            "Camera pairs matrix folder.")
         ("depthMapFolder", po::value<std::string>(&depthMapFolder)->required(),
             "Input depth map folder.")
         ("output,o", po::value<std::string>(&outputFolder)->required(),
@@ -127,7 +124,7 @@ int main(int argc, char* argv[])
 
     // initialization
     mvsUtils::MultiViewParams mp(sfmData, "", depthMapFolder, outputFolder, "", true);
-    mvsUtils::PreMatchCams pc(mp, cameraPairsMatrixFolder);
+    mvsUtils::PreMatchCams pc(mp);
 
     StaticVector<int> cams;
     cams.reserve(mp.ncams);

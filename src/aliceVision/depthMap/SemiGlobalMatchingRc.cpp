@@ -38,7 +38,7 @@ SemiGlobalMatchingRc::SemiGlobalMatchingRc(bool doComputeDepthsAndResetTCams, in
 
     int nnearestcams = sp->mp->userParams.get<int>("semiGlobalMatching.maxTCams", 10);
     tcams = new StaticVector<int>();
-    *tcams = sp->pc->findNearestCamsFromSeeds(rc, nnearestcams);
+    *tcams = sp->pc->findNearestCamsFromLandmarks(rc, nnearestcams);
 
     wsh = sp->mp->userParams.get<int>("semiGlobalMatching.wsh", 4);
     gammaC = (float)sp->mp->userParams.get<double>("semiGlobalMatching.gammaC", 5.5);

@@ -35,7 +35,7 @@ RefineRc::RefineRc(int _rc, int _scale, int _step, SemiGlobalMatchingParams* _sp
     
     int nnearestcams = sp->mp->userParams.get<int>("refineRc.maxTCams", 6);
     tcams = new StaticVector<int>();
-    *tcams = sp->pc->findNearestCamsFromSeeds(rc, nnearestcams);
+    *tcams = sp->pc->findNearestCamsFromLandmarks(rc, nnearestcams);
 }
 
 RefineRc::~RefineRc()

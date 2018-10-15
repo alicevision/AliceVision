@@ -18,25 +18,15 @@ class PreMatchCams
 public:
     float minang;
     float maxang;
-    float minCamsDistance;
 
-    explicit PreMatchCams(const MultiViewParams& mp, const std::string& camsPairsMatrixFolder);
-
-    float computeMinCamsDistance();
-    bool overlap(int rc, int tc);
-    StaticVector<int> findNearestCams(int rc, int nbNearestCams);
+    explicit PreMatchCams(const MultiViewParams& mp);
 
     StaticVector<int> findCamsWhichIntersectsHexahedron(const Point3d hexah[8], const std::string& minMaxDepthsFileName);
     StaticVector<int> findCamsWhichIntersectsHexahedron(const Point3d hexah[8]);
-
-    StaticVector<int>* precomputeIncidentMatrixCamsFromSeeds();
-    StaticVector<int>* loadCamPairsMatrix();
-    StaticVector<int> findNearestCamsFromSeeds(int rc, int nnearestcams);
+    StaticVector<int> findNearestCamsFromLandmarks(int rc, int nbNearestCams);
 
 private:
     const MultiViewParams& _mp;
-    const std::string& _camsPairsMatrixFolder;
-
 };
 
 } // namespace mvsUtils

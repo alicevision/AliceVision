@@ -197,17 +197,6 @@ endif() # if(ALICEVISION_BUILD_SFM)
 ### MVS software
 if(ALICEVISION_BUILD_MVS)
 
-  # Compute Nearby Cameras
-  alicevision_add_software(aliceVision_cameraConnection
-    SOURCE main_cameraConnection.cpp
-    FOLDER ${FOLDER_SOFTWARE_PIPELINE}
-    LINKS aliceVision_system
-          aliceVision_mvsUtils
-          aliceVision_sfmData
-          aliceVision_sfmDataIO
-          ${Boost_LIBRARIES}
-  )
-
   # Depth Map Estimation
   if(ALICEVISION_HAVE_CUDA) # Depth map computation need CUDA
     alicevision_add_software(aliceVision_depthMapEstimation

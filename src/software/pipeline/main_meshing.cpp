@@ -88,7 +88,6 @@ int main(int argc, char* argv[])
 
     std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
     std::string sfmDataFilename;
-    std::string cameraPairsMatrixFolder;
     std::string outputMesh;
     std::string imagesFolder;
     std::string depthMapFolder;
@@ -109,8 +108,6 @@ int main(int argc, char* argv[])
     requiredParams.add_options()
         ("input,i", po::value<std::string>(&sfmDataFilename)->required(),
           "SfMData file.")
-        ("cameraPairsMatrixFolder", po::value<std::string>(&cameraPairsMatrixFolder)->required(),
-            "Camera pairs matrix folder.")
         ("output,o", po::value<std::string>(&outputMesh)->required(),
             "Output mesh (OBJ file format).");
 
@@ -232,7 +229,7 @@ int main(int argc, char* argv[])
 
     mp.userParams.put("LargeScale.universePercentile", universePercentile);
 
-    mvsUtils::PreMatchCams pc(mp, cameraPairsMatrixFolder);
+    mvsUtils::PreMatchCams pc(mp);
 
     int ocTreeDim = mp.userParams.get<int>("LargeScale.gridLevel0", 1024);
     const auto baseDir = mp.userParams.get<std::string>("LargeScale.baseDirName", "root01024");
