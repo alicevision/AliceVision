@@ -66,6 +66,13 @@ std::ostream& operator<<(std::ostream& os, EImageQuality imageQuality);
 std::istream& operator>>(std::istream& in, EImageQuality& imageQuality);
 
 /**
+ * @brief convert a metadata string map into an oiio::ParamValueList
+ * @param[in] metadataMap string map
+ * @return oiio::ParamValueList
+ */
+oiio::ParamValueList getMetadataFromMap(const std::map<std::string, std::string>& metadataMap);
+
+/**
  * @brief read image dimension from a given path
  * @param[in] path The given path to the image
  * @param[out] width The image width

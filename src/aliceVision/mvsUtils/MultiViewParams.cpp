@@ -304,6 +304,11 @@ void MultiViewParams::loadMatricesFromSfM(int index)
 MultiViewParams::~MultiViewParams()
 {}
 
+const std::map<std::string, std::string>& MultiViewParams::getMetadata(int index) const
+{
+  return _sfmData.getViews().at(getViewId(index))->getMetadata();
+}
+
 bool MultiViewParams::is3DPointInFrontOfCam(const Point3d* X, int rc) const
 {
     Point3d XT = camArr[rc] * (*X);

@@ -219,6 +219,8 @@ public:
         return _sfmData;
     }
 
+    const std::map<std::string, std::string>& getMetadata(int index) const;
+
     bool is3DPointInFrontOfCam(const Point3d* X, int rc) const;
 
     void getMinMaxMidNbDepth(int index, float& min, float& max, float& mid, std::size_t& nbDepths, float percentile = 0.999f) const;

@@ -66,6 +66,14 @@ std::istream& operator>>(std::istream& in, EImageQuality& imageQuality)
   return in;
 }
 
+oiio::ParamValueList getMetadataFromMap(const std::map<std::string, std::string>& metadataMap)
+{
+  oiio::ParamValueList metadata;
+  for(const auto& metadataPair : metadataMap)
+    metadata.push_back(oiio::ParamValue(metadataPair.first, metadataPair.second));
+  return metadata;
+}
+
 void readImageSpec(const std::string& path,
                    int& width,
                    int& height,

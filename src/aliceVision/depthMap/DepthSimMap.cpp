@@ -399,7 +399,7 @@ void DepthSimMap::save(int rc, StaticVector<int>* tcams)
     const int width = mp->getWidth(rc) / scale;
     const int height = mp->getHeight(rc) / scale;
 
-    oiio::ParamValueList metadata;
+    oiio::ParamValueList metadata = imageIO::getMetadataFromMap(mp->getMetadata(rc));
     metadata.push_back(oiio::ParamValue("AliceVision:downscale", mp->getDownscaleFactor(rc)));
     metadata.push_back(oiio::ParamValue("AliceVision:CArr", oiio::TypeDesc(oiio::TypeDesc::DOUBLE, oiio::TypeDesc::VEC3), 1, mp->CArr[rc].m));
     metadata.push_back(oiio::ParamValue("AliceVision:iCamArr", oiio::TypeDesc(oiio::TypeDesc::DOUBLE, oiio::TypeDesc::MATRIX33), 1, mp->iCamArr[rc].m));
@@ -457,7 +457,7 @@ void DepthSimMap::saveRefine(int rc, std::string depthMapFileName, std::string s
         simMap.at(i) = (*dsm)[i].sim;
     }
 
-    oiio::ParamValueList metadata;
+    oiio::ParamValueList metadata = imageIO::getMetadataFromMap(mp->getMetadata(rc));
     metadata.push_back(oiio::ParamValue("AliceVision:downscale", mp->getDownscaleFactor(rc)));
     metadata.push_back(oiio::ParamValue("AliceVision:CArr", oiio::TypeDesc(oiio::TypeDesc::DOUBLE, oiio::TypeDesc::VEC3), 1, mp->CArr[rc].m));
     metadata.push_back(oiio::ParamValue("AliceVision:iCamArr", oiio::TypeDesc(oiio::TypeDesc::DOUBLE, oiio::TypeDesc::MATRIX33), 1, mp->iCamArr[rc].m));

@@ -313,7 +313,7 @@ bool Fuser::filterDepthMapsRC(int rc, int minNumOfModals, int minNumOfModalsWSP2
     imageIO::transposeImage(h, w, depthMap);
     imageIO::transposeImage(h, w, simMap);
 
-    oiio::ParamValueList metadata;
+    oiio::ParamValueList metadata = imageIO::getMetadataFromMap(mp->getMetadata(rc));
     metadata.push_back(oiio::ParamValue("AliceVision:nbDepthValues", oiio::TypeDesc::INT32, 1, &nbDepthValues));
     metadata.push_back(oiio::ParamValue("AliceVision:downscale", mp->getDownscaleFactor(rc)));
     metadata.push_back(oiio::ParamValue("AliceVision:CArr", oiio::TypeDesc(oiio::TypeDesc::DOUBLE, oiio::TypeDesc::VEC3), 1, mp->CArr[rc].m));
