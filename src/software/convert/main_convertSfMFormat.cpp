@@ -15,11 +15,12 @@
 #include <boost/system/error_code.hpp>
 #include <boost/filesystem.hpp>
 
+#include <algorithm>
 #include <string>
 
 // These constants define the current software version.
 // They must be updated when the command line is changed.
-#define ALICEVISION_SOFTWARE_VERSION_MAJOR 1
+#define ALICEVISION_SOFTWARE_VERSION_MAJOR 2
 #define ALICEVISION_SOFTWARE_VERSION_MINOR 0
 
 using namespace aliceVision;
@@ -38,6 +39,7 @@ int main(int argc, char **argv)
 
   // user optional parameters
 
+  std::string describerTypesName = feature::EImageDescriberType_enumToString(feature::EImageDescriberType::SIFT);
   bool flagViews = true;
   bool flagIntrinsics = true;
   bool flagExtrinsics = true;
@@ -55,6 +57,8 @@ int main(int argc, char **argv)
 
   po::options_description optionalParams("Optional parameters");
   optionalParams.add_options()
+    ("describerTypes,d", po::value<std::string>(&describerTypesName)->default_value(describerTypesName),
+      feature::EImageDescriberType_informations().c_str())
     ("views", po::value<bool>(&flagViews)->default_value(flagViews),
       "Export views.")
     ("intrinsics", po::value<bool>(&flagIntrinsics)->default_value(flagIntrinsics),
@@ -110,6 +114,12 @@ int main(int argc, char **argv)
     return EXIT_FAILURE;
   }
 
+  if(describerTypesName.empty())
+  {
+    ALICEVISION_LOG_ERROR("--describerTypes option is empty.");
+    return EXIT_FAILURE;
+  }
+
   int flags = (flagViews   ? sfmDataIO::VIEWS        : 0)
        | (flagIntrinsics   ? sfmDataIO::INTRINSICS   : 0)
        | (flagExtrinsics   ? sfmDataIO::EXTRINSICS   : 0)
@@ -126,6 +136,19 @@ int main(int argc, char **argv)
     return EXIT_FAILURE;
   }
 
+  // landmarks describer types filter
+  {
+    std::vector<feature::EImageDescriberType> imageDescriberTypes = feature::EImageDescriberType_stringToEnums(describerTypesName);
+
+    std::vector<IndexT> toRemove;
+    for(const auto& landmarkPair : sfmData.getLandmarks())
+    {
+      if(std::find(imageDescriberTypes.begin(), imageDescriberTypes.end(), landmarkPair.second.descType) == imageDescriberTypes.end())
+        toRemove.push_back(landmarkPair.first);
+    }
+    for(IndexT landmarkId : toRemove)
+      sfmData.getLandmarks().erase(landmarkId);
+  }
   // export the SfMData scene in the expected format
   if(!sfmDataIO::Save(sfmData, outputSfMDataFilename, sfmDataIO::ESfMData(flags)))
   {
