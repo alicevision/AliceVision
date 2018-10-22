@@ -20,6 +20,10 @@
 
 namespace bfs = boost::filesystem;
 
+namespace GEO {
+class MeshFacetsAABB;
+}
+
 namespace aliceVision {
 namespace mesh {
 
@@ -151,6 +155,16 @@ public:
     void generateTexture(const mvsUtils::MultiViewParams& mp,
                          size_t atlasID, mvsUtils::ImagesCache& imageCache,
                          const bfs::path &outPath, EImageFileType textureFileType = EImageFileType::PNG);
+
+
+    void generateHeightAndNormalMaps(const mvsUtils::MultiViewParams& mp,
+      const Mesh& denseMesh,
+      const bfs::path &outPath, EImageFileType textureFileType = EImageFileType::PNG);
+
+    void _generateHeightAndNormalMaps(const mvsUtils::MultiViewParams& mp,
+      const GEO::MeshFacetsAABB& denseMeshAABB,
+      size_t atlasID, mvsUtils::ImagesCache& imageCache,
+      const bfs::path &outPath, EImageFileType textureFileType);
 
     /// Save textured mesh as an OBJ + MTL file
     void saveAsOBJ(const bfs::path& dir, const std::string& basename, EImageFileType textureFileType = EImageFileType::PNG);

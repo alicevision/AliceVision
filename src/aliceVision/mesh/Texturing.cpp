@@ -21,6 +21,13 @@
 #include <geogram/mesh/mesh_io.h>
 #include <geogram/parameterization/mesh_atlas_maker.h>
 
+#include <geogram/basic/permutation.h>
+#include <geogram/basic/attributes.h>
+#include <geogram/points/kd_tree.h>
+#include <geogram/mesh/mesh_AABB.h>
+#include <geogram/mesh/mesh_reorder.h>
+#include <geogram/mesh/mesh_geometry.h>
+
 #include <boost/algorithm/string/case_conv.hpp> 
 
 #include <map>
@@ -242,6 +249,21 @@ void Texturing::generateTextures(const mvsUtils::MultiViewParams &mp,
         generateTexture(mp, atlasID, imageCache, outPath, textureFileType);
 }
 
+
+void Texturing::generateHeightAndNormalMaps(const mvsUtils::MultiViewParams& mp,
+  const Mesh& denseMesh,
+  const bfs::path &outPath, EImageFileType textureFileType)
+{
+  // GEO::initialize();
+  GEO::Mesh geoDenseMesh;
+  toGeoMesh(denseMesh, geoDenseMesh);
+
+  GEO::MeshFacetsAABB denseMeshAABB(geoDenseMesh);  // warning: mesh_reorder called inside
+
+  mvsUtils::ImagesCache imageCache(&mp, 0, false);
+  for (size_t atlasID = 0; atlasID < _atlases.size(); ++atlasID)
+    _generateHeightAndNormalMaps(mp, denseMeshAABB, atlasID, imageCache, outPath, textureFileType);
+}
 
 /// accumulates colors and keeps count for providing average
 struct AccuColor {
@@ -577,6 +599,145 @@ void Texturing::generateTexture(const mvsUtils::MultiViewParams& mp,
     imageIO::writeImage(texturePath.string(), outTextureSide, outTextureSide, colorBuffer);
 }
 
+void Texturing::_generateHeightAndNormalMaps(const mvsUtils::MultiViewParams& mp,
+  const GEO::MeshFacetsAABB& denseMeshAABB,
+  size_t atlasID, mvsUtils::ImagesCache& imageCache,
+  const bfs::path &outPath, EImageFileType textureFileType)
+{
+  ALICEVISION_LOG_INFO("Generating Height and Normal Maps for atlas " << atlasID + 1 << "/" << _atlases.size()
+    << " (" << _atlases[atlasID].size() << " triangles).");
+
+  std::vector<Color> normalMap(texParams.textureSide * texParams.textureSide);
+  std::vector<float> heightMap(texParams.textureSide * texParams.textureSide);
+  const auto& triangles = _atlases[atlasID];
+
+  // iterate over atlas' triangles
+#pragma omp parallel for
+  for (int ti = 0; ti < triangles.size(); ++ti)
+  {
+    const unsigned int triangleId = triangles[ti];
+    Point3d triangleNormal = me->computeTriangleNormal(triangleId);
+    double maxEdgeLength = me->computeTriangleMaxEdgeLength(triangleId);
+    triangleNormal = triangleNormal * 2.0 * maxEdgeLength;
+
+    // retrieve triangle 3D and UV coordinates
+    Point2d triPixs[3];
+    Point3d triPts[3];
+
+    for (int k = 0; k < 3; k++)
+    {
+      const int pointIndex = (*me->tris)[triangleId].v[k];
+      triPts[k] = (*me->pts)[pointIndex];                               // 3D coordinates
+      const int uvPointIndex = trisUvIds[triangleId].m[k];
+      triPixs[k] = uvCoords[uvPointIndex] * texParams.textureSide;   // UV coordinates
+    }
+
+    // compute triangle bounding box in pixel indexes
+    // min values: floor(value)
+    // max values: ceil(value)
+    Pixel LU, RD;
+    LU.x = static_cast<int>(std::floor(std::min(std::min(triPixs[0].x, triPixs[1].x), triPixs[2].x)));
+    LU.y = static_cast<int>(std::floor(std::min(std::min(triPixs[0].y, triPixs[1].y), triPixs[2].y)));
+    RD.x = static_cast<int>(std::ceil(std::max(std::max(triPixs[0].x, triPixs[1].x), triPixs[2].x)));
+    RD.y = static_cast<int>(std::ceil(std::max(std::max(triPixs[0].y, triPixs[1].y), triPixs[2].y)));
+
+    // sanity check: clamp values to [0; textureSide]
+    int texSide = static_cast<int>(texParams.textureSide);
+    LU.x = clamp(LU.x, 0, texSide);
+    LU.y = clamp(LU.y, 0, texSide);
+    RD.x = clamp(RD.x, 0, texSide);
+    RD.y = clamp(RD.y, 0, texSide);
+
+    // iterate over bounding box's pixels
+    for (int y = LU.y; y < RD.y; ++y)
+    {
+      for (int x = LU.x; x < RD.x; ++x)
+      {
+        Pixel pix(x, y); // top-left corner of the pixel
+        Point2d barycCoords;
+
+        // test if the pixel is inside triangle
+        // and retrieve its barycentric coordinates
+        if (!isPixelInTriangle(triPixs, pix, barycCoords))
+        {
+          continue;
+        }
+
+        // remap 'y' to image coordinates system (inverted Y axis)
+        const unsigned int y_ = (texParams.textureSide - 1) - y;
+        // 1D pixel index
+        unsigned int xyoffset = y_ * texParams.textureSide + x;
+        // get 3D coordinates
+        Point3d pt3d = barycentricToCartesian(triPts, barycCoords);
+
+        GEO::vec3 tNormal(triangleNormal.x, triangleNormal.y, triangleNormal.z);
+        GEO::vec3 q1(pt3d.x, pt3d.y, pt3d.z);
+        GEO::vec3 q2A = q1 + tNormal; // triangle normal is already scaled
+        double t = 0.0;
+        GEO::index_t f = 0.0;
+        bool intersection = denseMeshAABB.segment_nearest_intersection(q1, q2A, t, f);
+        if (intersection)
+        {
+          GEO::vec3 intersectionPoint = t * q2A + (1.0 - t)*q1;
+          heightMap[xyoffset] = q1.distance(intersectionPoint);
+
+          GEO::vec3 denseNormal = normalize(GEO::Geom::mesh_facet_normal(denseMeshAABB.mesh(), f));
+          normalMap[xyoffset] = Color(denseNormal.x, denseNormal.y, denseNormal.z);
+          //normalMap[xyoffset] = Color(1.0f, 0.0f, 0.0f);
+        }
+        else
+        {
+          GEO::vec3 q2B = q1 - tNormal; // triangle normal is already scaled
+          bool intersection = denseMeshAABB.segment_nearest_intersection(q1, q2B, t, f);
+
+          if (intersection)
+          {
+            GEO::vec3 intersectionPoint = t * q2B + (1.0 - t)*q1;
+            heightMap[xyoffset] = -q1.distance(intersectionPoint);
+
+            GEO::vec3 denseNormal = normalize(GEO::Geom::mesh_facet_normal(denseMeshAABB.mesh(), f));
+            normalMap[xyoffset] = Color(denseNormal.x, denseNormal.y, denseNormal.z);
+            //normalMap[xyoffset] = Color(0.0f, 1.0f, 0.0f);
+          }
+          else
+          {
+            heightMap[xyoffset] = 0.0f;
+            normalMap[xyoffset] = Color(0.0f, 0.0f, 0.0f);
+            // normalMap[xyoffset] = Color(0.0f, 0.0f, 1.0f);
+          }
+        }
+      }
+    }
+  }
+
+  // save texture image
+  std::string name = "_" + std::to_string(atlasID) + "." + EImageFileType_enumToString(textureFileType);
+  bfs::path normalMapPath = outPath / (std::string("normalMap") + name);
+  bfs::path heightMapPath = outPath / (std::string("heightMap") + name);
+  ALICEVISION_LOG_INFO("Writing normal map: " << normalMapPath.string() << " and height map: " << heightMapPath);
+
+  unsigned int outTextureSide = texParams.textureSide;
+
+  // downscale texture if required
+  if (texParams.downscale > 1)
+  {
+    ALICEVISION_LOG_INFO("Downscaling texture (" << texParams.downscale << "x).");
+    {
+      std::vector<Color> resizedBuffer;
+      outTextureSide = texParams.textureSide / texParams.downscale;
+      imageIO::resizeImage(texParams.textureSide, texParams.textureSide, texParams.downscale, normalMap, resizedBuffer);
+      std::swap(resizedBuffer, normalMap);
+    }
+    {
+      std::vector<float> resizedBuffer;
+      outTextureSide = texParams.textureSide / texParams.downscale;
+      imageIO::resizeImage(texParams.textureSide, texParams.textureSide, texParams.downscale, heightMap, resizedBuffer);
+      std::swap(resizedBuffer, heightMap);
+    }
+  }
+  imageIO::writeImage(normalMapPath.string(), outTextureSide, outTextureSide, normalMap);
+  imageIO::writeImage(heightMapPath.string(), outTextureSide, outTextureSide, heightMap);
+}
 
 void Texturing::clear()
 {

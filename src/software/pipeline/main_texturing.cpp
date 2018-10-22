@@ -154,34 +154,46 @@ int main(int argc, char* argv[])
     // initialization
     mvsUtils::MultiViewParams mp(sfmData, imagesFolder);
 
-    mesh::Texturing mesh;
-    mesh.texParams = texParams;
+    mesh::Texturing texturing;
+    texturing.texParams = texParams;
 
     // load dense reconstruction
     const fs::path reconstructionMeshFolder = fs::path(inputDenseReconstruction).parent_path();
-    mesh.loadFromMeshing(inputDenseReconstruction, (reconstructionMeshFolder/"meshPtsCamsFromDGC.bin").string());
+    texturing.loadFromMeshing(inputDenseReconstruction, (reconstructionMeshFolder/"meshPtsCamsFromDGC.bin").string());
 
     fs::create_directory(outputFolder);
 
     // texturing from input mesh
     if(!inputMeshFilepath.empty())
     {
-      mesh.replaceMesh(inputMeshFilepath, flipNormals);
+       texturing.replaceMesh(inputMeshFilepath, flipNormals);
     }
 
-    if(!mesh.hasUVs())
+    if(!texturing.hasUVs())
     {
-      ALICEVISION_LOG_INFO("Input mesh has no UV coordinates, start unwrapping (" + unwrapMethod +")");
-      mesh.unwrap(mp, mesh::EUnwrapMethod_stringToEnum(unwrapMethod));
-      ALICEVISION_LOG_INFO("Unwrapping done.");
+        ALICEVISION_LOG_INFO("Input texturing has no UV coordinates, start unwrapping (" + unwrapMethod +")");
+        texturing.unwrap(mp, mesh::EUnwrapMethod_stringToEnum(unwrapMethod));
+        ALICEVISION_LOG_INFO("Unwrapping done.");
     }
 
     // save final obj file
-    mesh.saveAsOBJ(outputFolder, "texturedMesh", outputTextureFileType);
+    texturing.saveAsOBJ(outputFolder, "texturedMesh", outputTextureFileType);
 
     // generate textures
     ALICEVISION_LOG_INFO("Generate textures.");
-    mesh.generateTextures(mp, outputFolder, outputTextureFileType);
+    texturing.generateTextures(mp, outputFolder, outputTextureFileType);
+
+    {
+      ALICEVISION_LOG_INFO("Generate height and normal maps.");
+      mesh::Mesh denseMesh;
+      if (!denseMesh.loadFromBin(inputDenseReconstruction))
+      {
+        throw std::runtime_error("Unable to load: " + inputDenseReconstruction);
+      }
+      ALICEVISION_LOG_INFO("Generate height and normal maps.");
+      texturing.generateHeightAndNormalMaps(mp,
+        denseMesh, outputFolder, outputTextureFileType);
+    }
 
     ALICEVISION_LOG_INFO("Task done in (s): " + std::to_string(timer.elapsed()));
     return EXIT_SUCCESS;
