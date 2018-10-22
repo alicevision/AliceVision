@@ -44,20 +44,13 @@ namespace feature {
 
 struct AKAZEConfig
 {
-  AKAZEConfig():
-    iNbOctave(4),
-    iNbSlicePerOctave(4),
-    fSigma0(1.6f),
-    fThreshold(0.0008f),
-    fDesc_factor(1.f)
-  {
-  }
-
-  int iNbOctave;          ///< Octave to process
-  int iNbSlicePerOctave;  ///< Levels per octave
-  float fSigma0;          ///< Initial sigma offset (used to suppress low level noise)
-  float fThreshold;       ///< Hessian determinant threshold
-  float fDesc_factor;     ///< Magnifier used to describe an interest point
+  int iNbOctave = 4;          ///< Octave to process
+  int iNbSlicePerOctave = 4;  ///< Levels per octave
+  float fSigma0 = 1.6f;       ///< Initial sigma offset (used to suppress low level noise)
+  float fThreshold = 0.0008f; ///< Hessian determinant threshold
+  float fDesc_factor = 1.f;   ///< Magnifier used to describe an interest point
+  std::size_t gridSize = 4;
+  std::size_t maxTotalKeypoints = 1000;
 };
 
 struct AKAZEKeypoint{
@@ -106,6 +99,9 @@ public:
 
   /// Detect AKAZE feature in the AKAZE scale space
   void Feature_Detection(std::vector<AKAZEKeypoint>& kpts) const;
+
+  /// Grid filtering of the detected keypoints
+  void gridFiltering(std::vector<AKAZEKeypoint>& kpts) const;
 
   /// Sub pixel refinement of the detected keypoints
   void Do_Subpixel_Refinement(std::vector<AKAZEKeypoint>& kpts) const;

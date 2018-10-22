@@ -42,10 +42,11 @@ struct AKAZEParams
 class ImageDescriber_AKAZE : public ImageDescriber
 {
 public:
-  ImageDescriber_AKAZE(
-    const AKAZEParams & params = AKAZEParams(),
-    bool bOrientation = true
-  ):ImageDescriber(), _params(params), _bOrientation(bOrientation) {}
+  ImageDescriber_AKAZE(const AKAZEParams& params = AKAZEParams(), bool bOrientation = true)
+    : ImageDescriber()
+    , _params(params)
+    , _bOrientation(bOrientation)
+  {}
 
   /**
    * @brief Check if the image describer use CUDA
@@ -119,16 +120,33 @@ public:
     switch(preset)
     {
       case EImageDescriberPreset::LOW:
+      {
+         _params._options.maxTotalKeypoints = 1000;
+         break;
+      }
       case EImageDescriberPreset::MEDIUM:
+      {
+         _params._options.maxTotalKeypoints = 5000;
+         break;
+      }
       case EImageDescriberPreset::NORMAL:
-        _params._options.fThreshold = AKAZEConfig().fThreshold;
-      break;
+      {
+         _params._options.maxTotalKeypoints = 10000;
+         _params._options.fThreshold = AKAZEConfig().fThreshold;
+        break;
+      }
       case EImageDescriberPreset::HIGH:
+      {
+        _params._options.maxTotalKeypoints = 50000;
         _params._options.fThreshold = AKAZEConfig().fThreshold/10.;
-      break;
+        break;
+      }
       case EImageDescriberPreset::ULTRA:
+      {
+       _params._options.maxTotalKeypoints = 100000;
        _params._options.fThreshold = AKAZEConfig().fThreshold/100.;
-      break;
+        break;
+      }
       default:
         throw std::out_of_range("Invalid image describer preset enum");
     }

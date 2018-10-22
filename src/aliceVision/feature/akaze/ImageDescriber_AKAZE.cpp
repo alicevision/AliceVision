@@ -27,6 +27,7 @@ bool ImageDescriber_AKAZE::describe(const image::Image<float>& image,
   kpts.reserve(5000);
   akaze.Feature_Detection(kpts);
   akaze.Do_Subpixel_Refinement(kpts);
+  akaze.gridFiltering(kpts);
 
   allocate(regions);
 

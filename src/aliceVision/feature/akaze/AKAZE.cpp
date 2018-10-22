@@ -6,6 +6,7 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "aliceVision/feature/akaze/AKAZE.hpp"
+#include <aliceVision/system/Logger.hpp>
 #include <aliceVision/config.hpp>
 
 namespace aliceVision {
@@ -306,6 +307,7 @@ void AKAZE::Feature_Detection(std::vector<AKAZEKeypoint>& kpts) const
           point.y = jx * ratio + 0.5 * (ratio-1);
           point.angle = 0.0f;
           point.class_id = p * options_.iNbSlicePerOctave + q;
+
           vec_kpts_perSlice[options_.iNbOctave * p + q].emplace_back( point,false );
         }
       }
@@ -320,14 +322,66 @@ void AKAZE::Feature_Detection(std::vector<AKAZEKeypoint>& kpts) const
     detectDuplicates(vec_kpts_perSlice[k-1], vec_kpts_perSlice[k]);  // detect duplicates using previous octave
   }
 
-  // Keep only the one marked as not duplicated
-  for (int k = 0; k < vec_kpts_perSlice.size(); ++k)
+  for(std::size_t k = 0; k < vec_kpts_perSlice.size(); ++k)
   {
-    const std::vector< std::pair<AKAZEKeypoint, bool> > & vec_kp = vec_kpts_perSlice[k];
-    for (int i = 0; i < vec_kp.size(); ++i)
-      if (!vec_kp[i].second)
-        kpts.emplace_back(vec_kp[i].first);
+    const std::vector< std::pair<AKAZEKeypoint, bool> >& vec_kp = vec_kpts_perSlice[k];
+    for(std::size_t i = 0; i < vec_kp.size(); ++i)
+    {
+      const auto& kp = vec_kp[i];
+
+      // Keep only the one marked as not duplicated
+      if(!kp.second)
+        kpts.emplace_back(kp.first);
+    }
   }
+}
+
+void AKAZE::gridFiltering(std::vector<AKAZEKeypoint>& kpts) const
+{
+  if(kpts.size() <= options_.maxTotalKeypoints)
+    return;
+
+  std::vector<AKAZEKeypoint> out_kpts;
+  out_kpts.reserve(kpts.size());
+
+  const std::size_t sizeMat = options_.gridSize * options_.gridSize;
+  const std::size_t keypointsPerCell = options_.maxTotalKeypoints / sizeMat;
+  const double regionWidth = in_.Width() / static_cast<double>(options_.gridSize);
+  const double regionHeight = in_.Height() / static_cast<double>(options_.gridSize);
+
+  std::vector<std::size_t> countFeatPerCell(sizeMat, 0);
+  std::vector<std::size_t> rejectedIndexes;
+
+  for(std::size_t i = 0; i < kpts.size(); ++i)
+  {
+    const AKAZEKeypoint& point = kpts.at(i);
+    const std::size_t cellX = std::min(std::size_t(point.x / regionWidth ), options_.gridSize);
+    const std::size_t cellY = std::min(std::size_t(point.y / regionHeight), options_.gridSize);
+
+    std::size_t& count = countFeatPerCell.at(cellX * options_.gridSize + cellY);
+    ++count;
+
+    if(count > keypointsPerCell)
+    {
+      rejectedIndexes.emplace_back(i);
+      continue;
+    }
+
+    out_kpts.emplace_back(point);
+  }
+
+  // if we don't have enough features (less than maxTotalKeypoints) after the grid filtering (empty regions in the grid for example).
+  // we add the best other ones, without repartition constraint.
+  if(out_kpts.size() < options_.maxTotalKeypoints)
+  {
+    const std::size_t remainingElements = std::min(rejectedIndexes.size(), options_.maxTotalKeypoints - out_kpts.size());
+    ALICEVISION_LOG_TRACE("Grid filtering copy " << remainingElements << " remaining points.");
+
+    for(std::size_t i = 0; i < remainingElements; ++i)
+      out_kpts.emplace_back(kpts.at(rejectedIndexes.at(i)));
+  }
+
+  out_kpts.swap(kpts);
 }
 
 /// This method performs sub pixel refinement of a keypoint
