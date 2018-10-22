@@ -384,7 +384,7 @@ int main(int argc, char **argv)
       }
       catch(std::exception& e)
       {
-        ALICEVISION_LOG_WARNING("Invalid structure for view: " << view.getImagePath() << std::endl << "Used as single image.");
+        ALICEVISION_LOG_WARNING("Invalid rig structure for view: " << view.getImagePath() << std::endl << "Used as single image.");
       }
     }
 
