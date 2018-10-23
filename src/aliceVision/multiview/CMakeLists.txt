@@ -4,6 +4,7 @@ set(multiview_files_headers
   conditioning.hpp
   essential.hpp
   projection.hpp
+  essentialF10Solver.hpp
   essentialFivePointSolver.hpp
   essentialKernelSolver.hpp
   fundamentalKernelSolver.hpp
@@ -31,6 +32,7 @@ set(multiview_files_sources
   conditioning.cpp
   essential.cpp
   projection.cpp
+  essentialF10Solver.cpp
   essentialFivePointSolver.cpp
   essentialKernelSolver.cpp
   fundamentalKernelSolver.cpp
@@ -81,7 +83,7 @@ add_subdirectory(triangulation)
 alicevision_add_test(affineSolver_test.cpp                   NAME "multiview_affineSolver"                    LINKS aliceVision_multiview)
 alicevision_add_test(fundamentalKernelSolver_test.cpp        NAME "multiview_fundamentalKernelSolver"         LINKS aliceVision_multiview)
 alicevision_add_test(essentialFivePointSolver_test.cpp       NAME "multiview_essentialFivePointSolver"        LINKS aliceVision_multiview aliceVision_multiview_test_data)
+alicevision_add_test(essentialF10Solver_test.cpp             NAME "multiview_essentialF10Solver"              LINKS aliceVision_multiview aliceVision_multiview_test_data)
 alicevision_add_test(essentialKernelSolver_test.cpp          NAME "multiview_essentialKernelSolver"           LINKS aliceVision_multiview aliceVision_multiview_test_data)
 alicevision_add_test(homographyKernelSolver_test.cpp         NAME "multiview_homographyKernelSolver"          LINKS aliceVision_multiview aliceVision_multiview_test_data)
 alicevision_add_test(knownRotationTranslationKernel_test.cpp NAME "multiview_knownRotationTranslationKernel"  LINKS aliceVision_multiview aliceVision_multiview_test_data)
-
