@@ -18,12 +18,12 @@ bool ImageDescriber_AKAZE::describe(const image::Image<float>& image,
 {
   _params.options.descFactor =
     (_params.akazeDescriptorType == AKAZE_MSURF ||
-    _params.akazeDescriptorType == AKAZE_LIOP) ? 10.f * sqrtf(2.f)
+     _params.akazeDescriptorType == AKAZE_LIOP) ? 10.f * sqrtf(2.f)
     : 11.f * sqrtf(2.f); // MLDB
 
 
   std::vector<AKAZEKeypoint> keypoints;
-  keypoints.reserve(_params.options.maxTotalKeypoints);
+  keypoints.reserve(_params.options.maxTotalKeypoints * 2);
 
   AKAZE akaze(image, _params.options);
   akaze.computeScaleSpace();
@@ -129,14 +129,14 @@ bool ImageDescriber_AKAZE::describe(const image::Image<float>& image,
         AKAZEKeypoint point = keypoints[i];
 
         // Feature masking
-        if (mask)
+        if(mask)
         {
           const image::Image<unsigned char> & maskIma = *mask;
           if (maskIma(point.y, point.x) > 0)
             continue;
         }
 
-        const AKAZE::TEvolution & cur_slice = akaze.getSlices()[point.class_id];
+        const AKAZE::TEvolution& cur_slice = akaze.getSlices()[point.class_id];
 
         if(_isOriented)
           akaze.computeMainOrientation(point, cur_slice.Lx, cur_slice.Ly);
