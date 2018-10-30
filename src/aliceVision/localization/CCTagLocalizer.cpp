@@ -135,7 +135,13 @@ bool CCTagLocalizer::loadReconstructionDescriptors(const sfmData::SfMData & sfm_
     for(const auto &iter : sfm_data.getViews())
     {
       const IndexT id_view = iter.second->getViewId();
-      const feature::Regions& regions = _regionsPerView.getRegions(id_view, _cctagDescType);
+      auto itViewRegions = _regionsPerView.getData().find(id_view);
+      if(itViewRegions == _regionsPerView.getData().end())
+        continue;
+      auto itViewRegion = itViewRegions->second.find(_cctagDescType);
+      if(itViewRegion == itViewRegions->second.end())
+        continue;
+      const feature::Regions& regions = *itViewRegion->second;
       const std::string &sImageName = iter.second.get()->getImagePath();
       std::stringstream ss;
 
