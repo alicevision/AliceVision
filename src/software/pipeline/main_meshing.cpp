@@ -136,7 +136,9 @@ int main(int argc, char* argv[])
         ("partitioning", po::value<EPartitioningMode>(&partitioningMode)->default_value(partitioningMode),
             "Partitioning: 'singleBlock' or 'auto'.")
         ("repartition", po::value<ERepartitionMode>(&repartitionMode)->default_value(repartitionMode),
-            "Repartition: 'multiResolution' or 'regularGrid'.");
+            "Repartition: 'multiResolution' or 'regularGrid'.")
+        ("estimateSpaceFromSfM", po::value<bool>(&estimateSpaceFromSfM)->default_value(estimateSpaceFromSfM),
+            "Estimate the 3d space from the SfM.");
 
     po::options_description advancedParams("Advanced parameters");
     advancedParams.add_options()
