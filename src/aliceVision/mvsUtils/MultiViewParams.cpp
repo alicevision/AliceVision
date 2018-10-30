@@ -354,7 +354,7 @@ void MultiViewParams::getMinMaxMidNbDepth(int index, float& min, float& max, flo
     }
   }
 
-  min = quantile(accDistanceMin, quantile_probability = percentile);
+  min = quantile(accDistanceMin, quantile_probability = 1.0 - percentile);
   max = quantile(accDistanceMax, quantile_probability = percentile);
   midDepthPoint = midDepthPoint / static_cast<float>(nbDepths);
   mid = pointPlaneDistance(midDepthPoint, cameraPlane.p, cameraPlane.n);
