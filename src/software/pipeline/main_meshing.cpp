@@ -429,7 +429,7 @@ int main(int argc, char* argv[])
                           cams[i] = i;
                     }
 
-                    if(cams.size() < 1)
+                    if(cams.empty())
                         throw std::logic_error("No camera to make the reconstruction");
 
                     if(meshingFromDepthMaps)

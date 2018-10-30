@@ -275,7 +275,7 @@ void reconstructSpaceAccordingToVoxelsArray(const std::string& voxelsArrayFileNa
 
             StaticVector<int> cams = ls->pc->findCamsWhichIntersectsHexahedron(hexah);
 
-            if(cams.size() < 1)
+            if(cams.empty())
                 throw std::logic_error("No camera to make the reconstruction");
 
             delaunayGC.createDensePointCloudFromDepthMaps(hexah, cams, voxelsIds, (VoxelsGrid*)rp, FuseParams());
