@@ -130,7 +130,7 @@ MultiViewParams::MultiViewParams(const sfmData::SfMData& sfmData,
                                                  << "\t- No 'AliceVision:downscale' metadata found.");
 
             if(widthScale != heightScale)
-                throw std::runtime_error("Scale of file: '" + imgParams.path + "' is not unfirom, check image dimension ratio.");
+                throw std::runtime_error("Scale of file: '" + imgParams.path + "' is not uniform, check image dimension ratio.");
 
             _imagesScale.at(i) = widthScale;
         }
