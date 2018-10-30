@@ -87,9 +87,9 @@ int main(int argc, char **argv)
   if (describerTypesName == "SIFT")
     image_describer = std::make_shared<ImageDescriber_SIFT>(SiftParams());
   else if (describerTypesName == "AKAZE")
-    image_describer = std::make_shared<ImageDescriber_AKAZE>(AKAZEParams(AKAZEConfig(), AKAZE_MSURF));
+    image_describer = std::make_shared<ImageDescriber_AKAZE>(AKAZEParams(AKAZEOptions(), AKAZE_MSURF));
   else if (describerTypesName == "AKAZE_MLDB")
-    image_describer = std::make_shared<ImageDescriber_AKAZE>(AKAZEParams(AKAZEConfig(), AKAZE_MLDB));
+    image_describer = std::make_shared<ImageDescriber_AKAZE>(AKAZEParams(AKAZEOptions(), AKAZE_MLDB));
 
   if(image_describer.use_count()==0)
   {
