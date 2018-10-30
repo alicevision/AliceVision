@@ -566,33 +566,49 @@ void Fuser::divideSpaceFromDepthMaps(Point3d* hexah, float& minPixSize)
     ALICEVISION_LOG_INFO("Estimate space done.");
 }
 
-void Fuser::divideSpaceFromSfM(const sfmData::SfMData& sfmData, Point3d* hexah, float& minPixSize)
+void Fuser::divideSpaceFromSfM(const sfmData::SfMData& sfmData, Point3d* hexah, std::size_t minObservations) const
 {
   ALICEVISION_LOG_INFO("Estimate space from SfM.");
-  double xMax, yMax, zMax, xMin, yMin, zMin;
 
-  {
-    const sfmData::Landmark& firstLandmark = sfmData.getLandmarks().begin()->second;
-    xMax = xMin = firstLandmark.X(0);
-    yMax = yMin = firstLandmark.X(1);
-    zMax = zMin = firstLandmark.X(2);
-  }
+  const std::size_t cacheSize =  10000;
+  const double percentile = mp->userParams.get<double>("LargeScale.universePercentile", 0.999);
+
+  using namespace boost::accumulators;
+  using AccumulatorMin = accumulator_set<double, stats<tag::tail_quantile<left>>>;
+  using AccumulatorMax = accumulator_set<double, stats<tag::tail_quantile<right>>>;
+
+  AccumulatorMin accMinX(tag::tail<left>::cache_size = cacheSize);
+  AccumulatorMin accMinY(tag::tail<left>::cache_size = cacheSize);
+  AccumulatorMin accMinZ(tag::tail<left>::cache_size = cacheSize);
+  AccumulatorMax accMaxX(tag::tail<right>::cache_size = cacheSize);
+  AccumulatorMax accMaxY(tag::tail<right>::cache_size = cacheSize);
+  AccumulatorMax accMaxZ(tag::tail<right>::cache_size = cacheSize);
 
   for(const auto& landmarkPair : sfmData.getLandmarks())
   {
     const sfmData::Landmark& landmark = landmarkPair.second;
 
+    if(landmark.observations.size() < minObservations)
+      continue;
+
     const double x = landmark.X(0);
     const double y = landmark.X(1);
     const double z = landmark.X(2);
 
-    xMax = std::max(xMax, x);
-    yMax = std::max(yMax, y);
-    zMax = std::max(zMax, z);
-    xMin = std::min(xMin, x);
-    yMin = std::min(yMin, y);
-    zMin = std::min(zMin, z);
+    accMinX(x);
+    accMinY(y);
+    accMinZ(z);
+    accMaxX(x);
+    accMaxY(y);
+    accMaxZ(z);
   }
+
+  const double xMin = quantile(accMinX, quantile_probability = 1.0 - percentile);
+  const double yMin = quantile(accMinY, quantile_probability = 1.0 - percentile);
+  const double zMin = quantile(accMinZ, quantile_probability = 1.0 - percentile);
+  const double xMax = quantile(accMaxX, quantile_probability = percentile);
+  const double yMax = quantile(accMaxY, quantile_probability = percentile);
+  const double zMax = quantile(accMaxZ, quantile_probability = percentile);
 
   hexah[0] = Point3d(xMax, yMax, zMax);
   hexah[1] = Point3d(xMin, yMax, zMax);

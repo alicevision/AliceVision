@@ -95,7 +95,8 @@ int main(int argc, char* argv[])
     EPartitioningMode partitioningMode = ePartitioningSingleBlock;
     ERepartitionMode repartitionMode = eRepartitionMultiResolution;
     po::options_description inputParams;
-    double universePercentile = 0.999f;
+    std::size_t minObservations = 3;
+    double universePercentile = 0.999;
     int maxPtsPerVoxel = 6000000;
     bool meshingFromDepthMaps = true;
     bool estimateSpaceFromSfM = false;
@@ -140,7 +141,9 @@ int main(int argc, char* argv[])
     po::options_description advancedParams("Advanced parameters");
     advancedParams.add_options()
         ("universePercentile", po::value<double>(&universePercentile)->default_value(universePercentile),
-            "universePercentile")
+            "universe percentile")
+        ("minObservations", po::value<std::size_t>(&minObservations)->default_value(minObservations),
+            "Minimum number of observations for SfM space estimation.")
         ("pixSizeMarginInitCoef", po::value<double>(&fuseParams.pixSizeMarginInitCoef)->default_value(fuseParams.pixSizeMarginInitCoef),
             "pixSizeMarginInitCoef")
         ("pixSizeMarginFinalCoef", po::value<double>(&fuseParams.pixSizeMarginFinalCoef)->default_value(fuseParams.pixSizeMarginFinalCoef),
@@ -395,7 +398,7 @@ int main(int argc, char* argv[])
                     if(meshingFromDepthMaps && !estimateSpaceFromSfM)
                       fs.divideSpaceFromDepthMaps(&hexah[0], minPixSize);
                     else
-                      fs.divideSpaceFromSfM(sfmData, &hexah[0], minPixSize);
+                      fs.divideSpaceFromSfM(sfmData, &hexah[0], minObservations);
 
                     Voxel dimensions = fs.estimateDimensions(&hexah[0], &hexah[0], 0, ocTreeDim, (meshingFromDepthMaps) ? nullptr : &sfmData);
                     StaticVector<Point3d>* voxels = mvsUtils::computeVoxels(&hexah[0], dimensions);
