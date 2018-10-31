@@ -17,7 +17,7 @@ namespace calibration{
 
 void precomputeCellIndexes(const std::vector<std::vector<cv::Point2f> >& imagePoints,
                            const cv::Size& imageSize,
-                           const std::size_t calibGridSize,
+                           std::size_t calibGridSize,
                            std::vector<std::vector<std::size_t> >& cellIndexesPerImage)
 {
   float cellWidth = float(imageSize.width) / float(calibGridSize);
@@ -41,7 +41,7 @@ void precomputeCellIndexes(const std::vector<std::vector<cv::Point2f> >& imagePo
 
 void computeCellsWeight(const std::vector<std::size_t>& imagesIndexes,
                         const std::vector<std::vector<std::size_t> >& cellIndexesPerImage,
-                        const std::size_t calibGridSize,
+                        std::size_t calibGridSize,
                         std::map<std::size_t, std::size_t>& cellsWeight)
 {
   //Init cell's weight to 0
@@ -49,9 +49,9 @@ void computeCellsWeight(const std::vector<std::size_t>& imagesIndexes,
     cellsWeight[i] = 0;
 
   // Add weight into cells
-  for (std::size_t i = 0; i < imagesIndexes.size(); ++i)
+  for (const auto& imagesIndex : imagesIndexes)
   {
-    std::vector<std::size_t> uniqueCellIndexes = cellIndexesPerImage[imagesIndexes[i]];
+    std::vector<std::size_t> uniqueCellIndexes = cellIndexesPerImage[imagesIndex];
     std::sort(uniqueCellIndexes.begin(), uniqueCellIndexes.end());
     auto last = std::unique(uniqueCellIndexes.begin(), uniqueCellIndexes.end());
     uniqueCellIndexes.erase(last, uniqueCellIndexes.end());
@@ -69,9 +69,9 @@ void computeImageScores(const std::vector<std::size_t>& inputImagesIndexes,
                         std::vector<std::pair<float, std::size_t> >& imageScores)
 {
   // Compute the score of each image
-  for (std::size_t i = 0; i < inputImagesIndexes.size(); ++i)
+  for (const auto& inputImagesIndex : inputImagesIndexes)
   {
-    const std::vector<std::size_t>& imageCellIndexes = cellIndexesPerImage[inputImagesIndexes[i]];
+    const std::vector<std::size_t>& imageCellIndexes = cellIndexesPerImage[inputImagesIndex];
     float imageScore = 0;
     for (std::size_t cellIndex : imageCellIndexes)
     {
@@ -80,14 +80,14 @@ void computeImageScores(const std::vector<std::size_t>& inputImagesIndexes,
     // Normalize by the number of checker items.
     // If the detector support occlusions of the checker the number of items may vary.
     imageScore /= float(imageCellIndexes.size());
-    imageScores.emplace_back(imageScore, inputImagesIndexes[i]);
+    imageScores.emplace_back(imageScore, inputImagesIndex);
   }
 }
 
 void selectBestImages(const std::vector<std::vector<cv::Point2f> >& imagePoints,
                       const cv::Size& imageSize,
-                      const std::size_t& maxCalibFrames,
-                      const std::size_t calibGridSize,
+                      std::size_t maxCalibFrames,
+                      std::size_t calibGridSize,
                       std::vector<float>& calibImageScore,
                       std::vector<std::size_t>& calibInputFrames,
                       std::vector<std::vector<cv::Point2f> >& calibImagePoints,
@@ -156,9 +156,8 @@ void selectBestImages(const std::vector<std::vector<cv::Point2f> >& imagePoints,
 
   assert(bestImagesIndexes.size() == std::min(maxCalibFrames, imagePoints.size()));
 
-  for(std::size_t i = 0; i < bestImagesIndexes.size(); ++i)
+  for (const auto& origI : bestImagesIndexes)
   {
-    const std::size_t origI = bestImagesIndexes[i];
     calibImagePoints.push_back(imagePoints[origI]);
     calibInputFrames.push_back(origI);
   }

@@ -142,7 +142,7 @@ bool calibrationIterativeOptimization(
         break;
       }
       // We only keep the frames with N% of the largest error.
-      const float errorThreshold = *minMaxError.first + 0.8 * (*minMaxError.second - *minMaxError.first);
+      const float errorThreshold = *minMaxError.first + 0.8f * (*minMaxError.second - *minMaxError.first);
       std::vector<std::vector<cv::Point2f> > filteredImagePoints;
       std::vector<std::vector<cv::Point3f> > filteredObjectPoints;
       std::vector<std::size_t> filteredInputFrames;

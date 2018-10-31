@@ -170,7 +170,7 @@ int main(int argc, char** argv)
     ALICEVISION_CERR("ERROR while initializing the FeedProvider!");
     return EXIT_FAILURE;
   }
-  aliceVision::image::Image<float> imageGrey;
+  aliceVision::image::Image<uchar> imageGrey;
   aliceVision::camera::PinholeRadialK3 queryIntrinsics;
   bool hasIntrinsics = false;
   std::string currentImgName;

@@ -23,7 +23,7 @@ namespace calibration{
  */
 void precomputeCellIndexes(const std::vector<std::vector<cv::Point2f> >& imagePoints,
                            const cv::Size& imageSize,
-                           const std::size_t calibGridSize,
+                           std::size_t calibGridSize,
                            std::vector<std::vector<std::size_t> >& cellIndexesPerImage);
 
 /**
@@ -36,7 +36,7 @@ void precomputeCellIndexes(const std::vector<std::vector<cv::Point2f> >& imagePo
  */
 void computeCellsWeight(const std::vector<std::size_t>& imagesIndexes,
                         const std::vector<std::vector<std::size_t> >& cellIndexesPerImage,
-                        const std::size_t calibGridSize,
+                        std::size_t calibGridSize,
                         std::map<std::size_t, std::size_t>& cellsWeight);
 
 /**
@@ -66,8 +66,8 @@ void computeImageScores(const std::vector<std::size_t>& inputImagesIndexes,
  */
 void selectBestImages(const std::vector<std::vector<cv::Point2f> >& imagePoints,
                       const cv::Size& imageSize,
-                      const std::size_t& maxCalibFrames,
-                      const std::size_t calibGridSize,
+                      std::size_t maxCalibFrames,
+                      std::size_t calibGridSize,
                       std::vector<float>& calibImageScore,
                       std::vector<std::size_t>& calibInputFrames,
                       std::vector<std::vector<cv::Point2f> >& calibImagePoints,
