@@ -9,6 +9,7 @@
 #include <cuda_runtime.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdexcept>
 #include <assert.h>
 #include <sstream>
 #include <iostream>
