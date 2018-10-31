@@ -2,7 +2,7 @@
 
 #define nvtxPush(a) nvtxPushA(a,__FILE__,__LINE__)
 
-#ifdef USE_NVTX
+#ifdef ALICEVISION_USE_NVTX
 void nvtxPushA( const char* label, const char* file, int line );
 void nvtxPop ( const char* label );
 #else

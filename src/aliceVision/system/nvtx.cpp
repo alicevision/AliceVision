@@ -1,4 +1,4 @@
-#ifdef USE_NVTX
+#ifdef ALICEVISION_USE_NVTX
 
 #include <sstream>
 #include <nvToolsExtCuda.h>
@@ -20,4 +20,5 @@ void nvtxPop ( const char* )
     nvtxRangePop( );
 }
 
-#endif /* USE_NVTX */
+#endif /* ALICEVISION_USE_NVTX */
+
