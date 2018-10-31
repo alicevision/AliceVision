@@ -323,7 +323,7 @@ int main(int argc, char **argv)
       else
       if (describerTypesName == "AKAZE_FLOAT")
       {
-        image_describer.reset(new ImageDescriber_AKAZE(AKAZEParams(AKAZEConfig(), AKAZE_MSURF)));
+        image_describer.reset(new ImageDescriber_AKAZE(AKAZEParams(AKAZEOptions(), AKAZE_MSURF)));
       }
 
       if (!image_describer)
