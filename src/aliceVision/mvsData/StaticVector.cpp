@@ -22,12 +22,16 @@ int getArrayLengthFromFile(std::string fileName)
     int n = 0;
     size_t retval = fread(&n, sizeof(int), 1, f);
     if( retval != sizeof(int) )
+    {
         ALICEVISION_LOG_WARNING("[IO] getArrayLengthFromFile: can't read array length (1)");
+    }
     if(n == -1)
     {
         retval = fread(&n, sizeof(int), 1, f);
         if( retval != sizeof(int) )
+        {
             ALICEVISION_LOG_WARNING("[IO] getArrayLengthFromFile: can't read array length (2)");
+        }
     }
     fclose(f);
     return n;
