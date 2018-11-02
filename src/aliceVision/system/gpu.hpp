@@ -38,6 +38,7 @@ inline bool gpuSupportCUDA(int minComputeCapabilityMajor,
   if( success != cudaSuccess )
   {
     ALICEVISION_LOG_ERROR("cudaGetDeviceCount failed: " << cudaGetErrorString(success));
+    nbDevices = 0;
   }
 
   if(nbDevices > 0)
@@ -47,7 +48,10 @@ inline bool gpuSupportCUDA(int minComputeCapabilityMajor,
       cudaDeviceProp deviceProperties;
 
       if(cudaGetDeviceProperties(&deviceProperties, i) != cudaSuccess)
-        throw std::runtime_error("Cannot get properties for CUDA gpu device " + std::to_string(i));
+      {
+        ALICEVISION_LOG_ERROR("Cannot get properties for CUDA gpu device " << i);
+        continue;
+      }
 
       if((deviceProperties.major > minComputeCapabilityMajor ||
          (deviceProperties.major == minComputeCapabilityMajor &&
@@ -97,7 +101,10 @@ inline std::string gpuInformationCUDA()
     {
       cudaDeviceProp deviceProperties;
       if(cudaGetDeviceProperties( &deviceProperties, i) != cudaSuccess )
-        throw std::runtime_error("Cannot get properties for CUDA gpu device " + std::to_string(i));
+      {
+        ALICEVISION_LOG_ERROR("Cannot get properties for CUDA gpu device " << i);
+        continue;
+      }
 
       if( cudaSetDevice( i ) != cudaSuccess )
       {
