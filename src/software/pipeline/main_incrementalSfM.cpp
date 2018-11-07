@@ -213,10 +213,6 @@ int main(int argc, char **argv)
     return EXIT_FAILURE;
   }
 
-  // cannot yet combine cameras rigs with local BA
-  if(useLocalBundleAdjustment && !sfmData.getRigs().empty())
-    throw std::invalid_argument("[Not implemented] Incremental SfM: cannot yet combine cameras rigs with local bundle ajustment.");
-
   // lock scene previously reconstructed
   if(lockScenePreviouslyReconstructed)
   {
