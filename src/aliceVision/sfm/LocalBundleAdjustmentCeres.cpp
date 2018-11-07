@@ -80,21 +80,21 @@ bool LocalBundleAdjustmentCeres::Adjust(sfmData::SfMData& sfm_data, const LocalB
   ceres::Solver::Options solver_options;
   setSolverOptions(solver_options);
   
-  if (_LBAOptions.isParameterOrderingEnabled()) 
+  if(_LBAOptions.isParameterOrderingEnabled())
     solver_options.linear_solver_ordering.reset(new ceres::ParameterBlockOrdering);
   
   ceres::Problem problem;
   
   // Data wrapper for refinement:
-  std::map<IndexT, std::vector<double> > map_posesBlocks;
-  std::map<IndexT, std::vector<double> > map_intrinsicsBlocks;
+  std::map<IndexT, std::vector<double>> map_posesBlocks;
+  std::map<IndexT, std::vector<double>> map_intrinsicsBlocks;
   
   // 1. Generate parameter block with all the poses & intrinsics
   // Add Poses data to the Ceres problem as Parameter Blocks (do not take care of Local BA strategy)
-  map_posesBlocks = addPosesToCeresProblem(sfm_data.getPoses(), problem);
+  addPosesToCeresProblem(sfm_data.getPoses(), map_posesBlocks, problem, localBA_data);
   
   // Add Intrinsics data to the Ceres problem as Parameter Blocks (do not take care of Local BA strategy)
-  map_intrinsicsBlocks = addIntrinsicsToCeresProblem(sfm_data, problem);
+  addIntrinsicsToCeresProblem(sfm_data, map_intrinsicsBlocks, problem, localBA_data);
   
   // 2. Create residuals for each observation in the bundle adjustment problem seen by a view with a non-"ignored" pose and intrinsic.
   // Set a LossFunction to be less penalized by false measurements
@@ -299,53 +299,62 @@ bool LocalBundleAdjustmentCeres::exportStatistics(const std::string& dir, const 
   return true;
 }
 
-std::map<IndexT, std::vector<double> > LocalBundleAdjustmentCeres::addPosesToCeresProblem(
-    const sfmData::Poses & poses,
-    ceres::Problem & problem)
+void LocalBundleAdjustmentCeres::addPosesToCeresProblem(
+    const sfmData::Poses& poses,
+    std::map<IndexT, std::vector<double>>& posesBlocks,
+    ceres::Problem& problem,
+    const LocalBundleAdjustmentData& localBA_data)
 {
-  // Data wrapper for refinement:
-  std::map<IndexT, std::vector<double> > map_poses;
-  
-  // Setup Poses data 
-  for (sfmData::Poses::const_iterator itPose = poses.begin(); itPose != poses.end(); ++itPose)
+  // setup Poses data
+  for (const auto& posePair : poses)
   {
-    const IndexT poseId = itPose->first;
+    const IndexT poseId = posePair.first;
+    const sfmData::CameraPose& cameraPose = posePair.second;
+
+    if(localBA_data.getPosestate(poseId) == LocalBundleAdjustmentData::EState::ignored)
+      continue;
     
-    const sfmData::CameraPose& cameraPose = itPose->second;
     const Mat3& R = cameraPose.getTransform().rotation();
     const Vec3& t = cameraPose.getTransform().translation();
     
     double angleAxis[3];
-    ceres::RotationMatrixToAngleAxis((const double*)R.data(), angleAxis);
-    map_poses[poseId].reserve(6); //angleAxis + translation
-    map_poses[poseId].push_back(angleAxis[0]);
-    map_poses[poseId].push_back(angleAxis[1]);
-    map_poses[poseId].push_back(angleAxis[2]);
-    map_poses[poseId].push_back(t(0));
-    map_poses[poseId].push_back(t(1));
-    map_poses[poseId].push_back(t(2));
-    
-    double * parameter_block = &map_poses[poseId][0];
-    problem.AddParameterBlock(parameter_block, 6);
+    ceres::RotationMatrixToAngleAxis(static_cast<const double *>(R.data()), angleAxis);
 
-    if(cameraPose.isLocked()) //set the whole parameter block as constant.
-      problem.SetParameterBlockConstant(parameter_block);
+    std::vector<double>& poseBlock = posesBlocks[poseId];
+    poseBlock.reserve(6); // angleAxis + translation
+    poseBlock.push_back(angleAxis[0]);
+    poseBlock.push_back(angleAxis[1]);
+    poseBlock.push_back(angleAxis[2]);
+    poseBlock.push_back(t(0));
+    poseBlock.push_back(t(1));
+    poseBlock.push_back(t(2));
+    
+    double* poseBlockPtr = poseBlock.data();
+    problem.AddParameterBlock(poseBlockPtr, 6);
+
+    if(cameraPose.isLocked() ||
+       localBA_data.getPosestate(poseId) == LocalBundleAdjustmentData::EState::constant)
+    {
+      //set the whole parameter block as constant.
+      problem.SetParameterBlockConstant(poseBlockPtr);
+    }
   }
-  return map_poses;
 }
 
-std::map<IndexT, std::vector<double>> LocalBundleAdjustmentCeres::addIntrinsicsToCeresProblem(
-    const sfmData::SfMData & sfm_data,
-    ceres::Problem & problem)
+void LocalBundleAdjustmentCeres::addIntrinsicsToCeresProblem(
+    const sfmData::SfMData& sfmData,
+    std::map<IndexT, std::vector<double>>& intrinsicsBlocks,
+    ceres::Problem& problem,
+    const LocalBundleAdjustmentData& localBA_data)
 {
   std::map<IndexT, std::size_t> intrinsicsUsage;
   
-  // Setup Intrinsics data 
-  // Count the number of reconstructed views per intrinsic
-  for(const auto& itView: sfm_data.getViews())
+  // setup Intrinsics data
+  // count the number of reconstructed views per intrinsic
+  for(const auto& itView: sfmData.getViews())
   {
     const sfmData::View* view = itView.second.get();
-    if (sfm_data.isPoseAndIntrinsicDefined(view))
+    if (sfmData.isPoseAndIntrinsicDefined(view))
     {
       if(intrinsicsUsage.find(view->getIntrinsicId()) == intrinsicsUsage.end())
         intrinsicsUsage[view->getIntrinsicId()] = 1;
@@ -359,59 +368,61 @@ std::map<IndexT, std::vector<double>> LocalBundleAdjustmentCeres::addIntrinsicsT
     }
   }
   
-  std::map<IndexT, std::vector<double>> map_intrinsics;
-  for(const auto& itIntrinsic: sfm_data.getIntrinsics())
+  for(const auto& intrinsicPair: sfmData.getIntrinsics())
   {
-    const IndexT intrinsicIds = itIntrinsic.first;
+    const IndexT intrinsicId = intrinsicPair.first;
+    const auto& intrinsicPtr = intrinsicPair.second;
     
-    // Do not refine an intrinsic does not used by any reconstructed view
-    if(intrinsicsUsage[intrinsicIds] == 0)
+    // do not refine an intrinsic does not used by any reconstructed view
+    if(intrinsicsUsage[intrinsicId] == 0 ||
+       localBA_data.getIntrinsicstate(intrinsicId) == LocalBundleAdjustmentData::EState::ignored)
       continue;
     
-    assert(isValid(itIntrinsic.second->getType()));
-    map_intrinsics[intrinsicIds] = itIntrinsic.second->getParams();
-    
-    double * parameter_block = &map_intrinsics[intrinsicIds][0];
-    problem.AddParameterBlock(parameter_block, map_intrinsics[intrinsicIds].size());
+    assert(isValid(intrinsicPtr->getType()));
 
-    if(itIntrinsic.second->isLocked())
+    std::vector<double>& intrinsicBlock = intrinsicsBlocks[intrinsicId];
+    intrinsicBlock = intrinsicPtr->getParams();
+    
+    double* intrinsicBlockPtr = intrinsicBlock.data();
+    problem.AddParameterBlock(intrinsicBlockPtr, intrinsicBlock.size());
+
+    if(intrinsicPtr->isLocked() ||
+       localBA_data.getIntrinsicstate(intrinsicId) == LocalBundleAdjustmentData::EState::constant)
     {
-      //set the whole parameter block as constant.
-      problem.SetParameterBlockConstant(parameter_block);
+      // set the whole parameter block as constant.
+      problem.SetParameterBlockConstant(intrinsicBlockPtr);
       continue;
     }
 
-    // Refine the focal length
-    if(itIntrinsic.second->initialFocalLengthPix() > 0)
+    // refine the focal length
+    if(intrinsicPtr->initialFocalLengthPix() > 0)
     {
-      // If we have an initial guess, we only authorize a margin around this value.
-      assert(map_intrinsics[intrinsicIds].size() >= 1);
-      const unsigned int maxFocalErr = 0.2 * std::max(itIntrinsic.second->w(), itIntrinsic.second->h());
-      problem.SetParameterLowerBound(parameter_block, 0, (double)itIntrinsic.second->initialFocalLengthPix() - maxFocalErr);
-      problem.SetParameterUpperBound(parameter_block, 0, (double)itIntrinsic.second->initialFocalLengthPix() + maxFocalErr);
+      // if we have an initial guess, we only authorize a margin around this value.
+      assert(intrinsicBlock.size() >= 1);
+      const unsigned int maxFocalErr = 0.2 * std::max(intrinsicPtr->w(), intrinsicPtr->h());
+      problem.SetParameterLowerBound(intrinsicBlockPtr, 0, (double)intrinsicPtr->initialFocalLengthPix() - maxFocalErr);
+      problem.SetParameterUpperBound(intrinsicBlockPtr, 0, (double)intrinsicPtr->initialFocalLengthPix() + maxFocalErr);
     }
     else // no initial guess
     {
-      // We don't have an initial guess, but we assume that we use
+      // we don't have an initial guess, but we assume that we use
       // a converging lens, so the focal length should be positive.
-      problem.SetParameterLowerBound(parameter_block, 0, 0.0);
+      problem.SetParameterLowerBound(intrinsicBlockPtr, 0, 0.0);
     }
     
-    // Optical center
-    // Refine optical center within 10% of the image size.
-    assert(map_intrinsics[intrinsicIds].size() >= 3);
+    // optical center
+    // refine optical center within 10% of the image size.
+    assert(intrinsicBlock.size() >= 3);
     
     const double opticalCenterMinPercent = 0.45;
     const double opticalCenterMaxPercent = 0.55;
     
-    // Add bounds to the principal point
-    problem.SetParameterLowerBound(parameter_block, 1, opticalCenterMinPercent * itIntrinsic.second->w());
-    problem.SetParameterUpperBound(parameter_block, 1, opticalCenterMaxPercent * itIntrinsic.second->w());
-    
-    problem.SetParameterLowerBound(parameter_block, 2, opticalCenterMinPercent * itIntrinsic.second->h());
-    problem.SetParameterUpperBound(parameter_block, 2, opticalCenterMaxPercent * itIntrinsic.second->h());
+    // add bounds to the principal point
+    problem.SetParameterLowerBound(intrinsicBlockPtr, 1, opticalCenterMinPercent * intrinsicPtr->w());
+    problem.SetParameterUpperBound(intrinsicBlockPtr, 1, opticalCenterMaxPercent * intrinsicPtr->w());
+    problem.SetParameterLowerBound(intrinsicBlockPtr, 2, opticalCenterMinPercent * intrinsicPtr->h());
+    problem.SetParameterUpperBound(intrinsicBlockPtr, 2, opticalCenterMaxPercent * intrinsicPtr->h());
   }
-  return map_intrinsics;
 } 
 
 /// Set BA options to Ceres

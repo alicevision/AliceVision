@@ -112,19 +112,23 @@ private:
   
   /// @brief Create a parameter block for each pose according to the Ceres format: [Rx, Ry, Rz, tx, ty, tz]
   /// @param[in] poses The poses to add in the BA problem
-  /// @param[in] problem The Ceres problem
-  /// @return The map including all the poses blocks added to the Ceres problem
-  std::map<IndexT, std::vector<double>> addPosesToCeresProblem(
+  /// @param[out] posesBlocks The map including all the poses blocks added to the Ceres problem
+  /// @param[in,out] problem The Ceres problem
+  void addPosesToCeresProblem(
       const sfmData::Poses & poses,
-      ceres::Problem & problem);
+      std::map<IndexT, std::vector<double>>& posesBlocks,
+      ceres::Problem & problem,
+      const LocalBundleAdjustmentData& localBA_data);
   
   /// @brief Create a parameter block for each intrinsic according to the Ceres format
   /// @param[in] sfm_data All the informations about the recontructions, notably the intrinsics
-  /// @param[in] problem The Ceres problem
-  /// @return The map including all the intrinsics blocks added to the Ceres problem
-  std::map<IndexT, std::vector<double>> addIntrinsicsToCeresProblem(
+  /// @param[out] intrinsicsBlocks The map including all the intrinsics blocks added to the Ceres problem
+  /// @param[in, out] problem The Ceres problem
+  void addIntrinsicsToCeresProblem(
       const sfmData::SfMData & sfm_data,
-      ceres::Problem & problem);
+      std::map<IndexT, std::vector<double>>& intrinsicsBlocks,
+      ceres::Problem & problem,
+      const LocalBundleAdjustmentData& localBA_data);
   
   /// @brief Run the Ceres solver
   /// @param problem The Ceres problem
