@@ -21,11 +21,10 @@ LocalBundleAdjustmentData::LocalBundleAdjustmentData(const sfmData::SfMData& sfm
 {
   for (const auto& it : sfm_data.intrinsics)
   {
-    _focalLengthsHistory[it.first];
-    _focalLengthsHistory.at(it.first).push_back(std::make_pair(0, sfm_data.getIntrinsicPtr(it.first)->getParams().at(0)));
-    _mapFocalIsConstant[it.first];
-    _mapFocalIsConstant.at(it.first) = false; 
-    
+    // create entries into the maps
+    _focalLengthsHistory[it.first].push_back(std::make_pair(0, sfm_data.getIntrinsicPtr(it.first)->getParams().at(0)));
+    _mapFocalIsConstant[it.first] = sfm_data.getIntrinsicPtr(it.first)->isLocked();
+
     resetParametersCounter();
   }
 }
@@ -285,6 +284,8 @@ void LocalBundleAdjustmentData::updateGraphWithNewViews(
         numAddedEdges++;
       }
     }
+
+    addIntrinsicEdgesToTheGraph(sfm_data, addedViewsId);
   }
   
   ALICEVISION_LOG_DEBUG("|- The distances graph has been completed with " << nbAddedNodes<< " nodes & " << numAddedEdges << " edges.");
@@ -490,7 +491,7 @@ void LocalBundleAdjustmentData::checkFocalLengthsConsistency(const std::size_t w
   {
     IndexT idIntr = x.first;
     
-    // Do not compute the variation, if the intrinsic has already be regarded as constant.
+    // Do not compute the variation, if the intrinsic has already be set as constant.
     if (isFocalLengthConstant(idIntr))
     {
       numOfConstFocal++;
@@ -555,11 +556,10 @@ void LocalBundleAdjustmentData::checkFocalLengthsConsistency(const std::size_t w
     if (normStdev*100.0 <= stdevPercentageLimit)
     {
       _mapFocalIsConstant.at(idIntr) = true;
+      removeIntrinsicEdgesFromTheGraph(idIntr);
       numOfConstFocal++;
       ALICEVISION_LOG_DEBUG("|- The intrinsic #" << idIntr << " is now considered to be stable.\n");
     }
-    else
-      _mapFocalIsConstant.at(idIntr) = false;
   }
   ALICEVISION_LOG_DEBUG("|- " << numOfConstFocal << "/" << _mapFocalIsConstant.size() << " intrinsics with a stable focal.");
 }
@@ -605,7 +605,7 @@ void LocalBundleAdjustmentData::drawGraph(const sfmData::SfMData& sfm_data, cons
   for(lemon::ListGraph::EdgeIt e(_graph); e!=lemon::INVALID; ++e)
   {
     dotStream << "  n" << _graph.id(_graph.u(e)) << " -> " << " n" << _graph.id(_graph.v(e));
-    if (_intrinsicEdgesId.find(_graph.id(e)) != _intrinsicEdgesId.end())
+    if (_intrinsicEdgesId.find(static_cast<IndexT>(_graph.id(e))) != _intrinsicEdgesId.end())
       dotStream << " [color=red]\n";
     else
       dotStream << "\n";
@@ -624,29 +624,29 @@ void LocalBundleAdjustmentData::drawGraph(const sfmData::SfMData& sfm_data, cons
 std::size_t LocalBundleAdjustmentData::addIntrinsicEdgesToTheGraph(const sfmData::SfMData& sfm_data, const std::set<IndexT>& newReconstructedViews)
 {
   std::size_t numAddedEdges = 0;
-  
-  // TODO: maintain a map<IntrinsicId, vector<ViewId>>
+
   for (IndexT newViewId : newReconstructedViews) // for each new view
   {
     IndexT newViewIntrinsicId = sfm_data.getViews().at(newViewId)->getIntrinsicId();
     
-    if (isFocalLengthConstant(newViewIntrinsicId)) // do not add edges for a consisitent intrinsic
+    if (isFocalLengthConstant(newViewIntrinsicId)) // do not add edges for a constant intrinsic
       continue;
-    
-    for (const auto& x : _mapNodePerViewId) // for each view in the graph
+
+    for (const auto& x : _mapNodePerViewId) // for each reconstructed view in the graph
     {
       if (newViewId == x.first)  // do not compare a view with itself
-        continue; 
+        continue;
       
-      IndexT oldViewIntrinsicId = sfm_data.getViews().at(x.first)->getIntrinsicId();
+      IndexT reconstructedViewIntrinsicId = sfm_data.getViews().at(x.first)->getIntrinsicId();
       
-      if (oldViewIntrinsicId == newViewIntrinsicId)
+      // if the new view share the same intrinsic than previously reconstructed views
+      if (reconstructedViewIntrinsicId == newViewIntrinsicId)
       {
         IndexT minId = std::min(x.first, newViewId);
         IndexT maxId = std::max(x.first, newViewId);
         
         lemon::ListGraph::Edge edge = _graph.addEdge(_mapNodePerViewId[minId], _mapNodePerViewId[maxId]);
-        _intrinsicEdgesId.insert(_graph.id(edge));
+        _intrinsicEdgesId[newViewIntrinsicId].push_back(_graph.id(edge));
         numAddedEdges++;
       }
     }
@@ -654,13 +654,64 @@ std::size_t LocalBundleAdjustmentData::addIntrinsicEdgesToTheGraph(const sfmData
   return numAddedEdges;
 }
 
-void LocalBundleAdjustmentData::removeIntrinsicEdgesToTheGraph()
+void LocalBundleAdjustmentData::removeIntrinsicEdgesFromTheGraph(IndexT intrinsicId)
 {
-  for(int edgeId : _intrinsicEdgesId)
+  if(_intrinsicEdgesId.count(intrinsicId) == 0)
+    return;
+  for(int edgeId : _intrinsicEdgesId.at(intrinsicId))
   {
     _graph.erase(_graph.fromId(edgeId, lemon::ListGraph::Edge()));
   }
-  _intrinsicEdgesId.clear();
+  _intrinsicEdgesId.erase(intrinsicId);
+}
+
+
+std::size_t LocalBundleAdjustmentData::updateRigEdgesToTheGraph(const sfmData::SfMData& sfmData)
+{
+  std::size_t numAddedEdges = 0;
+
+  // Remove all rig edges
+  for(auto& edgesPerRid: _rigEdgesId)
+  {
+    for(int edgeId : edgesPerRid.second)
+    {
+      _graph.erase(_graph.fromId(edgeId, lemon::ListGraph::Edge()));
+    }
+  }
+  _rigEdgesId.clear();
+
+  // Recreate rig edges
+  std::map<IndexT, std::vector<IndexT>> viewIdsPerRig;
+
+  for(const auto& viewNode : _mapNodePerViewId) // for each reconstructed view in the graph
+  {
+    const sfmData::View& view = sfmData.getView(viewNode.first);
+    if(view.isPoseIndependant())
+      continue;
+    viewIdsPerRig[view.getRigId()].push_back(viewNode.first);
+  }
+
+  for(auto& it : viewIdsPerRig)
+    std::sort(it.second.begin(), it.second.end());
+
+  for(const auto& it : viewIdsPerRig)
+  {
+    // if(sfmData.getRig(rigId).isLocked()) // TODO
+    //   continue;
+    const IndexT rigId = it.first;
+    const std::vector<IndexT>& views = it.second;
+    for(int i = 0; i < views.size(); ++i)
+    {
+      for(int j = i; j < views.size(); ++j)
+      {
+        lemon::ListGraph::Edge edge = _graph.addEdge(_mapNodePerViewId[views[i]], _mapNodePerViewId[views[j]]);
+        _rigEdgesId[rigId].push_back(_graph.id(edge));
+        numAddedEdges++;
+      }
+    }
+  }
+
+  return numAddedEdges;
 }
 
 } // namespace sfm

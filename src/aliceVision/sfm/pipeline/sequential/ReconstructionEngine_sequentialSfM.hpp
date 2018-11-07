@@ -441,6 +441,8 @@ private:
 
   // Local Bundle Adjustment data
 
+  /// The minimum number of shared matches to create an edge between two views (nodes)
+  const std::size_t _kMinNbOfMatches = 50;
   /// Contains all the data used by the Local BA approach
   std::shared_ptr<LocalBundleAdjustmentData> _localBA_data;
 

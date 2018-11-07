@@ -138,6 +138,9 @@ public:
   /// @param[in] sfm_data
   /// @param[in] kLimitDistance the distance of the active region
   void convertDistancesToLBAStates(const sfmData::SfMData & sfm_data);
+
+  /// @brief Update rigs edges.
+  std::size_t updateRigEdgesToTheGraph(const sfmData::SfMData& sfmData);
    
 private:
    
@@ -207,14 +210,13 @@ private:
   /// @return The standard deviation
   template<typename T> 
   static double standardDeviation(const std::vector<T>& data);
-    
+
   /// @brief Add an edge in the graph when 2 views share a same intrinsic not considered as Constant
-  /// @details (no longer used)
   std::size_t addIntrinsicEdgesToTheGraph(const sfmData::SfMData& sfm_data, const std::set<IndexT> &newReconstructedViews);
   
-  /// @brief Remove all the edges added by the \c addIntrinsicEdgesToTheGraph function.
-  /// @details (no longer used)
-  void removeIntrinsicEdgesToTheGraph();
+  /// @brief Remove all the edges added by the \c addIntrinsicEdgesToTheGraph function related to .
+  void removeIntrinsicEdgesFromTheGraph(IndexT intrinsicId);
+
   
   // ------------------------
   // - Distances data -
@@ -269,12 +271,16 @@ private:
   
   /// Indicates, for each intrinsic, if its focallength has been concidered as constant.
   /// <IntrinsicId, isConsideredAsConstant>
-  std::map<IndexT, bool> _mapFocalIsConstant; 
+  std::map<IndexT, bool> _mapFocalIsConstant;
   
-  /// @brief Store the Lemon index of the edges added thanks to the intrinsics "the intrinsic-edges" 
-  /// @details (no longer used)
-  std::set<int> _intrinsicEdgesId; 
-  
+  /// @brief Store the Lemon index of the edges added for the intrinsic links "the intrinsic-edges"
+  /// <IntrinsicId, [edgeId]>
+  std::map<IndexT, std::vector<int>> _intrinsicEdgesId;
+
+  /// @brief Store the Lemon index of the edges added for the rig links "the intrinsic-edges"
+  /// <rigId, [edgeId]>
+  std::map<IndexT, std::vector<int>> _rigEdgesId;
+
   /// Output path where Local BA outputs will be saved
   std::string _outFolder;
 };

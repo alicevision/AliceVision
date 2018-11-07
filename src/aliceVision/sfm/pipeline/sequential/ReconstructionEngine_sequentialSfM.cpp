@@ -133,7 +133,7 @@ ReconstructionEngine_sequentialSfM::ReconstructionEngine_sequentialSfM(
     _userInitialImagePair(Pair(0,0))
 {
   // setup HTML logger
-  if (!_htmlLogFile.empty())
+  if(!_htmlLogFile.empty())
   {
     _htmlDocStream = std::make_shared<htmlDocument::htmlDocumentStream>("[log] Sequential SfM reconstruction");
     _htmlDocStream->pushInfo(htmlDocument::htmlMarkup("h1", std::string("[log] Sequential SfM reconstruction")));
@@ -169,6 +169,17 @@ bool ReconstructionEngine_sequentialSfM::process()
     // and update the landmarkIds accordingly.
     // Note: each landmark has a corresponding track with the same id (landmarkId == trackId).
     remapLandmarkIdsToTrackIds();
+
+    if(_uselocalBundleAdjustment)
+    {
+      const std::set<IndexT> reconstructedViews = _sfmData.getValidViews();
+      if(!reconstructedViews.empty())
+      {
+        // Add the reconstructed views to the LocalBA graph
+        _localBA_data->updateGraphWithNewViews(_sfmData, _map_tracksPerView, reconstructedViews, _kMinNbOfMatches);
+        _localBA_data->updateRigEdgesToTheGraph(_sfmData);
+      }
+    }
   }
 
   // reconstruction
@@ -435,11 +446,15 @@ double ReconstructionEngine_sequentialSfM::incrementalReconstruction()
 
       calibrateRigs(updatedViews);
 
-      // After rig calibration, camera may have moved by replacing independant poses by a rig pose with a common subpose.
-      // So we need to perform a bundle adjustment, to ensure that 3D points and cameras poses are coherents.
+      // update rig edges in the local BA graph
+      if(_uselocalBundleAdjustment)
+        _localBA_data->updateRigEdgesToTheGraph(_sfmData);
+
+      // after rig calibration, camera may have moved by replacing independant poses by a rig pose with a common subpose.
+      // so we need to perform a bundle adjustment, to ensure that 3D points and cameras poses are coherents.
       bundleAdjustment(updatedViews);
       triangulate(_sfmData.getValidViews(), updatedViews);
-      // After triangulation of new 3D points, we need to make a bundle adjustment to
+      // after triangulation of new 3D points, we need to make a bundle adjustment to
       bundleAdjustment(updatedViews);
 
       ALICEVISION_LOG_WARNING("Rig calibration finished:\n\t- # updated views: " << updatedViews.size());
@@ -1955,12 +1970,11 @@ bool ReconstructionEngine_sequentialSfM::bundleAdjustment_local(const std::set<I
   {
     options.setDenseBA();
   }
-  
-  const std::size_t kMinNbOfMatches = 50; // default value: 50 
+
   bool isBaSucceed;
   
   // Add the new reconstructed views to the graph
-  _localBA_data->updateGraphWithNewViews(_sfmData, _map_tracksPerView, newReconstructedViews, kMinNbOfMatches);
+  _localBA_data->updateGraphWithNewViews(_sfmData, _map_tracksPerView, newReconstructedViews, _kMinNbOfMatches);
   
   // -- Prepare Local BA & Adjust
   LocalBundleAdjustmentCeres localBA_ceres;
@@ -2014,7 +2028,7 @@ bool ReconstructionEngine_sequentialSfM::bundleAdjustment_local(const std::set<I
   _localBA_data->exportFocalLengths(_localBA_data->getOutDirectory());
   
   // -- Export data about the refinement
-  std::string namecomplement = "_M" + std::to_string(kMinNbOfMatches) + "_D" + std::to_string(_localBA_data->getGraphDistanceLimit());
+  std::string namecomplement = "_M" + std::to_string(_kMinNbOfMatches) + "_D" + std::to_string(_localBA_data->getGraphDistanceLimit());
   std::string filename =  "BaStats" + namecomplement + ".txt";
   localBA_ceres.exportStatistics(_localBA_data->getOutDirectory(), filename);
   
