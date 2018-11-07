@@ -190,6 +190,17 @@ int LocalBundleAdjustmentData::getViewDistance(const IndexT viewId) const
   return _mapDistancePerViewId.at(viewId);
 }
 
+LocalBundleAdjustmentData::EState LocalBundleAdjustmentData::getStateFromDistance(int distance) const
+{
+  if(distance >= 0 && distance <= _graphDistanceLimit) // [0; D]
+    return EState::refined;
+  else if(distance == _graphDistanceLimit + 1)  // {D+1}
+    return EState::constant;
+
+  // [-inf; 0[ U [D+2; +inf.[  (-1: not connected to the new views)
+  return EState::ignored;
+}
+
 void LocalBundleAdjustmentData::resetParametersCounter()
 {
   _parametersCounter.clear();
@@ -261,11 +272,6 @@ void LocalBundleAdjustmentData::updateGraphWithNewViews(
     _mapViewIdPerNode[newNode] = viewId;
     ++nbAddedNodes;
   }
-  
-  // Check consistency between the map/graph & the scene   
-  if (_mapNodePerViewId.size() != sfm_data.getPoses().size())
-    ALICEVISION_LOG_WARNING("The number of poses in the map (summarizing the graph content) "
-                            "and in the scene is different (" << _mapNodePerViewId.size() << " vs. " << sfm_data.getPoses().size() << ")");
 
   // -------------------------- 
   // -- Add edges to the graph
@@ -371,29 +377,18 @@ void LocalBundleAdjustmentData::convertDistancesToLBAStates(const sfmData::SfMDa
   //    - Ignored by default
   //    - Refined <=> its connected to a refined camera
   // ----------------------------------------------------
-  // -- Poses
-  for(sfmData::Poses::const_iterator itPose = sfm_data.getPoses().begin(); itPose != sfm_data.getPoses().end(); ++itPose)
+  // poses
+  for(const auto& posePair : sfm_data.getPoses())
   {
-    const IndexT poseId = itPose->first;
-    int dist = getPoseDistance(poseId);
-    if (dist >= 0 && dist <= _graphDistanceLimit) // [0; D]
-    {
-      _mapLBAStatePerPoseId[poseId] = EState::refined;
-      _parametersCounter.at(std::make_pair(EParameter::pose, EState::refined))++;
-    }
-    else if (dist == _graphDistanceLimit + 1)  // {D+1}
-    {
-      _mapLBAStatePerPoseId[poseId] = EState::constant;
-      _parametersCounter.at(std::make_pair(EParameter::pose, EState::constant))++;
-    }
-    else // [-inf; 0[ U [D+2; +inf.[  (-1: not connected to the new views)
-    {
-      _mapLBAStatePerPoseId[poseId] = EState::ignored;
-      _parametersCounter.at(std::make_pair(EParameter::pose, EState::ignored))++;
-    }
+    const IndexT poseId = posePair.first;
+    const int distance = getPoseDistance(poseId);
+    const EState state = getStateFromDistance(distance);
+
+    _mapLBAStatePerPoseId[poseId] = state;
+    _parametersCounter.at(std::make_pair(EParameter::pose, state))++;
   }
   
-  // -- Instrinsics
+  // instrinsics
   checkFocalLengthsConsistency(kWindowSize, kStdevPercentage); 
   
   for(const auto& itIntrinsic: sfm_data.getIntrinsics())
@@ -410,27 +405,33 @@ void LocalBundleAdjustmentData::convertDistancesToLBAStates(const sfmData::SfMDa
     }
   }
   
-  // -- Landmarks
+  // landmarks
   for(const auto& itLandmark: sfm_data.structure)
   {
     const IndexT landmarkId = itLandmark.first;
     const sfmData::Observations & observations = itLandmark.second.observations;
     
-    _mapLBAStatePerLandmarkId[landmarkId] = EState::ignored;
-    _parametersCounter.at(std::make_pair(EParameter::landmark, EState::ignored))++;
-    
-    
+    assert(observations.size() >= 2);
+
+    std::array<bool, 3> states = {false, false, false};
     for(const auto& observationIt: observations)
     {
-      int dist = getViewDistance(observationIt.first);
-      if(dist >= 0 && dist <= _graphDistanceLimit) // [0; D]
-      {
-        _mapLBAStatePerLandmarkId[landmarkId] = EState::refined;
-        _parametersCounter.at(std::make_pair(EParameter::landmark, EState::refined))++;
-        _parametersCounter.at(std::make_pair(EParameter::landmark, EState::ignored))--;
-        break;
-      }
+      const int distance = getViewDistance(observationIt.first);
+      const EState viewState = getStateFromDistance(distance);
+      states.at(viewState) = true;
     }
+
+    // In the general case, a landmark can NOT have observations from refined AND ignored cameras.
+    // In pratice, there is a minimal number of common points to declare the connection between images.
+    // So we can have some points that are not declared in the graph of cameras connections.
+    // For these particular cases, we can have landmarks with refined AND ignored cameras.
+    // In this particular case, we prefer to ignore the landmark to avoid wrong/unconstraint refinements.
+    if(!states.at(EState::refined) || states.at(EState::ignored))
+      _mapLBAStatePerLandmarkId[landmarkId] = EState::ignored;
+    else
+      _mapLBAStatePerLandmarkId[landmarkId] = EState::refined;
+
+    _parametersCounter.at(std::make_pair(EParameter::landmark, _mapLBAStatePerLandmarkId.at(landmarkId)))++;
   }
 }
 

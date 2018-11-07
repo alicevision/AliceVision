@@ -105,66 +105,63 @@ bool LocalBundleAdjustmentCeres::Adjust(sfmData::SfMData& sfm_data, const LocalB
   // For all visibility add reprojections errors:
   for(auto& landmarkIt: sfm_data.structure)
   {             
-    IndexT landmarkId = landmarkIt.first;
-    
-    const sfmData::Observations & observations = landmarkIt.second.observations;
-    // Iterate over 2D observation associated to the 3D landmark
+    const IndexT landmarkId = landmarkIt.first;
+    const sfmData::Observations& observations = landmarkIt.second.observations;
+
+    // do not create a residual block if the landmark
+    // have been set as Ignored by the Local BA strategy
+    if(_LBAOptions.isLocalBAEnabled() &&
+       localBA_data.getLandmarkState(landmarkId) == LocalBundleAdjustmentData::EState::ignored)
+    {
+      continue;
+    }
+
+    // iterate over 2D observation associated to the 3D landmark
     for(const auto& observationIt: observations)
     {
-      // Build the residual block corresponding to the track observation:
-      const sfmData::View * view = sfm_data.views.at(observationIt.first).get();
-      IndexT intrinsicId = view->getIntrinsicId();
-      IndexT poseId = view->getPoseId();
+      // build the residual block corresponding to the track observation:
+      const sfmData::View& view = sfm_data.getView(observationIt.first);
+      const IndexT intrinsicId = view.getIntrinsicId();
+      const IndexT poseId = view.getPoseId();
       
-      // Do not create a residual block if the pose, the intrinsic or the landmark 
-      // have been set as Ignored by the Local BA strategy
-      if (_LBAOptions.isLocalBAEnabled())
-      {
-        if (localBA_data.getPosestate(poseId) == LocalBundleAdjustmentData::EState::ignored 
-            || localBA_data.getIntrinsicstate(intrinsicId) == LocalBundleAdjustmentData::EState::ignored 
-            || localBA_data.getLandmarkState(landmarkId) == LocalBundleAdjustmentData::EState::ignored)
-        {
-          continue;
-        }
-      }
-      
-      // Each Residual block takes a point and a camera as input and outputs a 2
+      // each Residual block takes a point and a camera as input and outputs a 2
       // dimensional residual. Internally, the cost function stores the observed
       // image location and compares the reprojection against the observation.
-      ceres::CostFunction* cost_function = 
+      ceres::CostFunction* costFunction =
           createCostFunctionFromIntrinsics(sfm_data.intrinsics[intrinsicId].get(), observationIt.second.x);
-      
-      if (cost_function)
+
+      assert(localBA_data.getPosestate(poseId) != LocalBundleAdjustmentData::EState::ignored);
+      assert(localBA_data.getIntrinsicstate(intrinsicId) != LocalBundleAdjustmentData::EState::ignored);
+
+      // needed parameters to create a residual block (K, pose & landmark)
+      double* landmarkBlock = landmarkIt.second.X.data();
+      double* poseBlock = map_posesBlocks.at(poseId).data();
+      double* intrinsicBlock = map_intrinsicsBlocks.at(intrinsicId).data();
+
+      // apply a specific parameter ordering:
+      if(_LBAOptions.isParameterOrderingEnabled())
       {
-        // Needed parameters to create a residual block (K, pose & landmark)
-        double* intrinsicBlock = &map_intrinsicsBlocks[intrinsicId][0];
-        double* poseBlock = &map_posesBlocks[poseId][0];
-        double* landmarkBlock = landmarkIt.second.X.data();
-        
-        // Apply a specific parameter ordering: 
-        if (_LBAOptions.isParameterOrderingEnabled()) 
-        {
-          solver_options.linear_solver_ordering->AddElementToGroup(landmarkBlock, 0);
-          solver_options.linear_solver_ordering->AddElementToGroup(poseBlock, 1);
-          solver_options.linear_solver_ordering->AddElementToGroup(intrinsicBlock, 2);
-        }
-        // Set to constant parameters previoously set as Constant by the Local BA strategy
-        if (_LBAOptions.isLocalBAEnabled())
-        {
-          if (localBA_data.getIntrinsicstate(intrinsicId) == LocalBundleAdjustmentData::EState::constant)  problem.SetParameterBlockConstant(intrinsicBlock);        
-          if (localBA_data.getPosestate(poseId) == LocalBundleAdjustmentData::EState::constant)            problem.SetParameterBlockConstant(poseBlock);
-          if (localBA_data.getLandmarkState(landmarkId) == LocalBundleAdjustmentData::EState::constant)    problem.SetParameterBlockConstant(landmarkBlock);
-        } 
-        // Create a residual block:
-        problem.AddResidualBlock(cost_function,
-                                 p_LossFunction,
-                                 intrinsicBlock,
-                                 poseBlock,
-                                 landmarkBlock); //Do we need to copy 3D point to avoid false motion, if failure ?
+        solver_options.linear_solver_ordering->AddElementToGroup(landmarkBlock, 0);
+        solver_options.linear_solver_ordering->AddElementToGroup(poseBlock, 1);
+        solver_options.linear_solver_ordering->AddElementToGroup(intrinsicBlock, 2);
       }
+
+      // set to constant parameters previously set as Constant by the Local BA strategy
+      if (_LBAOptions.isLocalBAEnabled() &&
+          localBA_data.getLandmarkState(landmarkId) == LocalBundleAdjustmentData::EState::constant)
+      {
+        problem.SetParameterBlockConstant(landmarkBlock);
+      }
+
+      // create a residual block:
+      problem.AddResidualBlock(costFunction,
+                               p_LossFunction,
+                               intrinsicBlock,
+                               poseBlock,
+                               landmarkBlock); //Do we need to copy 3D point to avoid false motion, if failure ?
     }
   }
-  
+
   // 3. Solve the minimization.
   ceres::Solver::Summary summary;
   if (!solveBA(problem, solver_options, summary))

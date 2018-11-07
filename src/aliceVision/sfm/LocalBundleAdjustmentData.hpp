@@ -25,9 +25,9 @@ public:
 
   /// Defines the state of the all parameter of the reconstruction (structure, poses, intrinsics) in the BA:
   enum EState { 
-    refined,  ///< will be adjusted by the BA solver
-    constant, ///< will be set as constant in the sover
-    ignored   ///< will not be set into the BA solver
+    refined = 0,  ///< will be adjusted by the BA solver
+    constant = 1, ///< will be set as constant in the sover
+    ignored = 2   ///< will not be set into the BA solver
   };
 
   explicit LocalBundleAdjustmentData(const sfmData::SfMData& sfm_data);
@@ -160,6 +160,8 @@ private:
   /// @param[in] viewId is the index of the view
   /// @details Return \c -1 if the view is not connected to any new posed view.
   int getViewDistance(const IndexT viewId) const;
+
+  EState getStateFromDistance(int distance) const;
       
   /// @brief All the values of the structure counting the number of parameters \c EParameter being in a specific state \c EState
   /// are set to 0.
