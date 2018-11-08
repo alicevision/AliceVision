@@ -95,7 +95,7 @@ public :
   /// @param[in] localBA_data contains all the information about the Local BA approach, notably
   /// the state of each parameter of the solver (refined, constant, ignored)
   /// @return \c false if the refinement failed else \c true
-  bool Adjust(sfmData::SfMData& sfm_data, const LocalBundleAdjustmentData& localBA_data);
+  bool adjust(sfmData::SfMData& sfm_data, const LocalBundleAdjustmentData& localBA_data);
   
   /// @brief Export statistics about bundle adjustment in a TXT file  \a BaStats_<nameComplement>.txt
   /// The contents of the file have been writen such that it is easy to handle it with

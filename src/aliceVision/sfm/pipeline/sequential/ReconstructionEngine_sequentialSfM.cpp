@@ -1015,7 +1015,7 @@ bool ReconstructionEngine_sequentialSfM::makeInitialPair3D(const Pair& current_p
     BundleAdjustmentCeres::BA_options options(true);
     options.setDenseBA();
     BundleAdjustmentCeres bundle_adjustment_obj(options);
-    if (!bundle_adjustment_obj.Adjust(_sfm_data, BA_REFINE_ROTATION | BA_REFINE_TRANSLATION | BA_REFINE_STRUCTURE))
+    if (!bundle_adjustment_obj.Adjust(_sfm_data, REFINE_ROTATION | REFINE_TRANSLATION | REFINE_STRUCTURE))
     {
       ALICEVISION_LOG_WARNING("BA of initial pair " << current_pair.first << ", " << current_pair.second << " failed.");
 
@@ -1947,10 +1947,10 @@ bool ReconstructionEngine_sequentialSfM::bundleAdjustment_full(bool fixedIntrins
     options.setDenseBA();
   }
   BundleAdjustmentCeres bundle_adjustment_obj(options);
-  BA_Refine refineOptions = BA_REFINE_ROTATION | BA_REFINE_TRANSLATION | BA_REFINE_STRUCTURE;
+  BundleAdjustment::ERefineOptions refineOptions = BundleAdjustment::REFINE_ROTATION | BundleAdjustment::REFINE_TRANSLATION | BundleAdjustment::REFINE_STRUCTURE;
   if(!fixedIntrinsics)
-    refineOptions |= BA_REFINE_INTRINSICS_ALL;
-  return bundle_adjustment_obj.Adjust(_sfmData, refineOptions);
+    refineOptions |= BundleAdjustment::REFINE_INTRINSICS_ALL;
+  return bundle_adjustment_obj.adjust(_sfmData, refineOptions);
 }
 
 bool ReconstructionEngine_sequentialSfM::bundleAdjustment_local(const std::set<IndexT>& newReconstructedViews)
@@ -2006,7 +2006,7 @@ bool ReconstructionEngine_sequentialSfM::bundleAdjustment_local(const std::set<I
     // - the number of cameras to refine cannot be < to the number of newly added cameras (set to 'refine' by default)
     if (_localBA_data->getNumOfRefinedPoses() > newReconstructedViews.size())
     {
-      isBaSucceed = localBA_ceres.Adjust(_sfmData, *_localBA_data);
+      isBaSucceed = localBA_ceres.adjust(_sfmData, *_localBA_data);
     }
     else
       ALICEVISION_LOG_WARNING("The refinement has not been done: the new cameras are not connected to the rest of the local BA graph.");
@@ -2019,7 +2019,7 @@ bool ReconstructionEngine_sequentialSfM::bundleAdjustment_local(const std::set<I
     
     localBA_ceres = LocalBundleAdjustmentCeres(*_localBA_data, options, newReconstructedViews);
     
-    isBaSucceed = localBA_ceres.Adjust(_sfmData, *_localBA_data);
+    isBaSucceed = localBA_ceres.adjust(_sfmData, *_localBA_data);
   }
   
   // Save the current focal lengths values (for each intrinsic) in the history  

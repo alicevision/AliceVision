@@ -208,14 +208,14 @@ bool SfMLocalizer::RefinePose(camera::IntrinsicBase* intrinsics,
   }
 
   BundleAdjustmentCeres bundle_adjustment_obj;
-  BA_Refine refineOptions = BA_REFINE_NONE;
+  BundleAdjustment::ERefineOptions refineOptions = BundleAdjustment::REFINE_NONE;
 
   if(refinePose)
-    refineOptions |= BA_REFINE_ROTATION | BA_REFINE_TRANSLATION;
+    refineOptions |= BundleAdjustment::REFINE_ROTATION | BundleAdjustment::REFINE_TRANSLATION;
   if(refineIntrinsic)
-    refineOptions |= BA_REFINE_INTRINSICS_ALL;
+    refineOptions |= BundleAdjustment::REFINE_INTRINSICS_ALL;
 
-  const bool baStatus = bundle_adjustment_obj.Adjust(tinyScene, refineOptions);
+  const bool baStatus = bundle_adjustment_obj.adjust(tinyScene, refineOptions);
 
   if(!baStatus)
     return false;

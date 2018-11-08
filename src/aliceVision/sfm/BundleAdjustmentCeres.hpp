@@ -54,13 +54,13 @@ private:
 public:
 
   BundleAdjustmentCeres(BundleAdjustmentCeres::BA_options options = BA_options());
-  void createProblem(sfmData::SfMData& sfmData, BA_Refine refineOptions, ceres::Problem& problem);
-  void createJacobian(sfmData::SfMData& sfmData, BA_Refine refineOptions, ceres::CRSMatrix& jacobian);
+  void createProblem(sfmData::SfMData& sfmData, ERefineOptions refineOptions, ceres::Problem& problem);
+  void createJacobian(sfmData::SfMData& sfmData, ERefineOptions refineOptions, ceres::CRSMatrix& jacobian);
 
   /**
    * @see BundleAdjustment::Adjust
    */
-  bool Adjust(sfmData::SfMData& sfmData, BA_Refine refineOptions = BA_REFINE_ALL);
+  bool adjust(sfmData::SfMData& sfmData, ERefineOptions refineOptions = REFINE_ALL);
 };
 
 } // namespace sfm

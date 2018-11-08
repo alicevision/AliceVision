@@ -363,7 +363,7 @@ bool ReconstructionEngine_globalSfM::Adjust()
 
   BundleAdjustmentCeres bundle_adjustment_obj;
   // - refine only Structure and translations
-  bool b_BA_Status = bundle_adjustment_obj.Adjust(_sfmData, BA_REFINE_TRANSLATION | BA_REFINE_STRUCTURE);
+  bool b_BA_Status = bundle_adjustment_obj.adjust(_sfmData, BundleAdjustment::REFINE_TRANSLATION | BundleAdjustment::REFINE_STRUCTURE);
   if (b_BA_Status)
   {
     if (!_loggingFile.empty())
@@ -374,7 +374,7 @@ bool ReconstructionEngine_globalSfM::Adjust()
     }
 
     // - refine only Structure and Rotations & translations
-    b_BA_Status = bundle_adjustment_obj.Adjust(_sfmData, BA_REFINE_ROTATION | BA_REFINE_TRANSLATION | BA_REFINE_STRUCTURE);
+    b_BA_Status = bundle_adjustment_obj.adjust(_sfmData, BundleAdjustment::REFINE_ROTATION | BundleAdjustment::REFINE_TRANSLATION | BundleAdjustment::REFINE_STRUCTURE);
     if (b_BA_Status && !_loggingFile.empty())
     {
       sfmDataIO::Save(_sfmData,
@@ -385,7 +385,7 @@ bool ReconstructionEngine_globalSfM::Adjust()
 
   if (b_BA_Status && !_hasFixedIntrinsics) {
     // - refine all: Structure, motion:{rotations, translations} and optics:{intrinsics}
-    b_BA_Status = bundle_adjustment_obj.Adjust(_sfmData, BA_REFINE_ALL);
+    b_BA_Status = bundle_adjustment_obj.adjust(_sfmData, BundleAdjustment::REFINE_ALL);
     if (b_BA_Status && !_loggingFile.empty())
     {
       sfmDataIO::Save(_sfmData,
@@ -424,10 +424,10 @@ bool ReconstructionEngine_globalSfM::Adjust()
     ALICEVISION_LOG_DEBUG("Point_cloud cleaning:\n"
       << "\t #3DPoints: " << pointcount_cleaning);
   }
-  BA_Refine refineOptions = BA_REFINE_ROTATION | BA_REFINE_TRANSLATION | BA_REFINE_STRUCTURE;
+  BundleAdjustment::ERefineOptions refineOptions = BundleAdjustment::REFINE_ROTATION | BundleAdjustment::REFINE_TRANSLATION | BundleAdjustment::REFINE_STRUCTURE;
   if(!_hasFixedIntrinsics)
-    refineOptions |= BA_REFINE_INTRINSICS_ALL;
-  b_BA_Status = bundle_adjustment_obj.Adjust(_sfmData, refineOptions);
+    refineOptions |= BundleAdjustment::REFINE_INTRINSICS_ALL;
+  b_BA_Status = bundle_adjustment_obj.adjust(_sfmData, refineOptions);
   if(b_BA_Status && !_loggingFile.empty())
   {
     sfmDataIO::Save(_sfmData, (fs::path(_loggingFile).parent_path() / "structure_04_outlier_removed.ply").string(), sfmDataIO::ESfMData(sfmDataIO::EXTRINSICS | sfmDataIO::STRUCTURE));
@@ -585,7 +585,7 @@ void ReconstructionEngine_globalSfM::Compute_Relative_Rotations(rotationAveragin
         BundleAdjustmentCeres::BA_options options(false, false);
         options._linear_solver_type = ceres::DENSE_SCHUR;
         BundleAdjustmentCeres bundle_adjustment_obj(options);
-        if (bundle_adjustment_obj.Adjust(tinyScene, BA_REFINE_ROTATION | BA_REFINE_TRANSLATION | BA_REFINE_STRUCTURE))
+        if(bundle_adjustment_obj.adjust(tinyScene, BundleAdjustment::REFINE_ROTATION | BundleAdjustment::REFINE_TRANSLATION | BundleAdjustment::REFINE_STRUCTURE))
         {
           // --> to debug: save relative pair geometry on disk
           // std::ostringstream os;

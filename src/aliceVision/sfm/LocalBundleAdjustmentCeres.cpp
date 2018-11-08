@@ -66,7 +66,7 @@ LocalBundleAdjustmentCeres::LocalBundleAdjustmentCeres(const LocalBundleAdjustme
     _LBAStatistics(newReconstructedViews, localBA_data.getDistancesHistogram())
 {}
 
-bool LocalBundleAdjustmentCeres::Adjust(sfmData::SfMData& sfm_data, const LocalBundleAdjustmentData& localBA_data)
+bool LocalBundleAdjustmentCeres::adjust(sfmData::SfMData& sfm_data, const LocalBundleAdjustmentData& localBA_data)
 {
   //----------
   // Steps:

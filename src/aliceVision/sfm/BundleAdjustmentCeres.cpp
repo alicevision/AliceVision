@@ -84,7 +84,7 @@ ceres::CostFunction* createRigCostFunctionFromIntrinsics(IntrinsicBase* intrinsi
 
 
 void addPose(ceres::Problem& problem,
-             BA_Refine refineOptions,
+             BundleAdjustment::ERefineOptions refineOptions,
              const sfmData::CameraPose& cameraPose,
              std::vector<double*>& out_parameterBlocks,
              std::vector<double>& out_poseParams)
@@ -108,8 +108,8 @@ void addPose(ceres::Problem& problem,
   // Keep the camera extrinsics constants
 
   if(cameraPose.isLocked() ||
-     (!(refineOptions & BA_REFINE_TRANSLATION) &&
-     !(refineOptions & BA_REFINE_ROTATION)))
+     (!(refineOptions & BundleAdjustment::REFINE_TRANSLATION) &&
+     !(refineOptions & BundleAdjustment::REFINE_ROTATION)))
   {
     //set the whole parameter block as constant for best performance or because it's locked.
     problem.SetParameterBlockConstant(parameter_block);
@@ -118,15 +118,15 @@ void addPose(ceres::Problem& problem,
   {
     // Subset parametrization
     std::vector<int> vec_constant_extrinsic;
-    // Don't refine rotations (if BA_REFINE_ROTATION is not specified)
-    if(!(refineOptions & BA_REFINE_ROTATION))
+    // Don't refine rotations (if REFINE_ROTATION is not specified)
+    if(!(refineOptions & BundleAdjustment::REFINE_ROTATION))
     {
       vec_constant_extrinsic.push_back(0);
       vec_constant_extrinsic.push_back(1);
       vec_constant_extrinsic.push_back(2);
     }
-    // Don't refine translations (if BA_REFINE_TRANSLATION is not specified)
-    if(!(refineOptions & BA_REFINE_TRANSLATION))
+    // Don't refine translations (if REFINE_TRANSLATION is not specified)
+    if(!(refineOptions & BundleAdjustment::REFINE_TRANSLATION))
     {
       vec_constant_extrinsic.push_back(3);
       vec_constant_extrinsic.push_back(4);
@@ -200,12 +200,12 @@ BundleAdjustmentCeres::BundleAdjustmentCeres(
 {}
 
 void BundleAdjustmentCeres::createProblem(sfmData::SfMData& sfmData,
-                                          BA_Refine refineOptions,
+                                          ERefineOptions refineOptions,
                                           ceres::Problem& problem)
 {
   // Ensure we are not using incompatible options:
-  //  - BA_REFINE_INTRINSICS_OPTICALCENTER_ALWAYS and BA_REFINE_INTRINSICS_OPTICALCENTER_IF_ENOUGH_DATA cannot be used at the same time
-  assert(!((refineOptions & BA_REFINE_INTRINSICS_OPTICALCENTER_ALWAYS) && (refineOptions & BA_REFINE_INTRINSICS_OPTICALCENTER_IF_ENOUGH_DATA)));
+  //  - REFINEINTRINSICS_OPTICALCENTER_ALWAYS and REFINEINTRINSICS_OPTICALCENTER_IF_ENOUGH_DATA cannot be used at the same time
+  assert(!((refineOptions & REFINE_INTRINSICS_OPTICALCENTER_ALWAYS) && (refineOptions & REFINE_INTRINSICS_OPTICALCENTER_IF_ENOUGH_DATA)));
   
   //----------
   // Add camera parameters
@@ -249,9 +249,9 @@ void BundleAdjustmentCeres::createProblem(sfmData::SfMData& sfmData,
   HashMap<IndexT, std::size_t> intrinsicsUsage;
 
   // Setup Intrinsics data & subparametrization
-  const bool refineIntrinsicsOpticalCenter = (refineOptions & BA_REFINE_INTRINSICS_OPTICALCENTER_ALWAYS) || (refineOptions & BA_REFINE_INTRINSICS_OPTICALCENTER_IF_ENOUGH_DATA);
-  const bool refineIntrinsics = (refineOptions & BA_REFINE_INTRINSICS_FOCAL) ||
-                                (refineOptions & BA_REFINE_INTRINSICS_DISTORTION) ||
+  const bool refineIntrinsicsOpticalCenter = (refineOptions & REFINE_INTRINSICS_OPTICALCENTER_ALWAYS) || (refineOptions & REFINE_INTRINSICS_OPTICALCENTER_IF_ENOUGH_DATA);
+  const bool refineIntrinsics = (refineOptions & REFINE_INTRINSICS_FOCAL) ||
+                                (refineOptions & REFINE_INTRINSICS_DISTORTION) ||
                                 refineIntrinsicsOpticalCenter;
   for(const auto& itView: sfmData.getViews())
   {
@@ -293,7 +293,7 @@ void BundleAdjustmentCeres::createProblem(sfmData::SfMData& sfmData,
     {
       std::vector<int> vec_constant_params;
       // Focal length
-      if(refineOptions & BA_REFINE_INTRINSICS_FOCAL)
+      if(refineOptions & REFINE_INTRINSICS_FOCAL)
       {
         // Refine the focal length
         if(itIntrinsic.second->initialFocalLengthPix() > 0)
@@ -320,8 +320,8 @@ void BundleAdjustmentCeres::createProblem(sfmData::SfMData& sfmData,
       const std::size_t minImagesForOpticalCenter = 3;
 
       // Optical center
-      if((refineOptions & BA_REFINE_INTRINSICS_OPTICALCENTER_ALWAYS) ||
-         ((refineOptions & BA_REFINE_INTRINSICS_OPTICALCENTER_IF_ENOUGH_DATA) && intrinsicsUsage[idIntrinsics] > minImagesForOpticalCenter)
+      if((refineOptions & REFINE_INTRINSICS_OPTICALCENTER_ALWAYS) ||
+         ((refineOptions & REFINE_INTRINSICS_OPTICALCENTER_IF_ENOUGH_DATA) && intrinsicsUsage[idIntrinsics] > minImagesForOpticalCenter)
          )
       {
         // Refine optical center within 10% of the image size.
@@ -345,7 +345,7 @@ void BundleAdjustmentCeres::createProblem(sfmData::SfMData& sfmData,
       }
 
       // Lens distortion
-      if(!(refineOptions & BA_REFINE_INTRINSICS_DISTORTION))
+      if(!(refineOptions & REFINE_INTRINSICS_DISTORTION))
       {
         for(std::size_t i = 3; i < map_intrinsics[idIntrinsics].size(); ++i)
         {
@@ -412,13 +412,13 @@ void BundleAdjustmentCeres::createProblem(sfmData::SfMData& sfmData,
       }
     }
     parameterBlocks.push_back(landmarkIt.second.X.data());
-    if (!(refineOptions & BA_REFINE_STRUCTURE))
+    if (!(refineOptions & REFINE_STRUCTURE))
       problem.SetParameterBlockConstant(landmarkIt.second.X.data());
   }
 }
 
 void BundleAdjustmentCeres::createJacobian(sfmData::SfMData& sfmData,
-                                           BA_Refine refineOptions,
+                                           ERefineOptions refineOptions,
                                            ceres::CRSMatrix& jacobian)
 {
   ceres::Problem problem;
@@ -435,8 +435,8 @@ void BundleAdjustmentCeres::createJacobian(sfmData::SfMData& sfmData,
   problem.Evaluate(evalOpt, &cost, NULL, NULL, &jacobian);
 }
 
-bool BundleAdjustmentCeres::Adjust(sfmData::SfMData& sfmData,     // the SfM scene to refine
-                                   BA_Refine refineOptions)
+bool BundleAdjustmentCeres::adjust(sfmData::SfMData& sfmData,     // the SfM scene to refine
+                                   ERefineOptions refineOptions)
 {
   ceres::Problem problem;
   createProblem(sfmData, refineOptions, problem);
@@ -482,7 +482,7 @@ bool BundleAdjustmentCeres::Adjust(sfmData::SfMData& sfmData,     // the SfM sce
   }
 
   // Update camera poses with refined data
-  if ((refineOptions & BA_REFINE_ROTATION) || (refineOptions & BA_REFINE_TRANSLATION))
+  if ((refineOptions & REFINE_ROTATION) || (refineOptions & REFINE_TRANSLATION))
   {
     for (sfmData::Poses::iterator itPose = sfmData.getPoses().begin(); itPose != sfmData.getPoses().end(); ++itPose)
     {
@@ -514,9 +514,9 @@ bool BundleAdjustmentCeres::Adjust(sfmData::SfMData& sfmData,     // the SfM sce
   }
 
   // Update camera intrinsics with refined data
-  const bool refineIntrinsicsOpticalCenter = (refineOptions & BA_REFINE_INTRINSICS_OPTICALCENTER_ALWAYS) || (refineOptions & BA_REFINE_INTRINSICS_OPTICALCENTER_IF_ENOUGH_DATA);
-  const bool refineIntrinsics = (refineOptions & BA_REFINE_INTRINSICS_FOCAL) ||
-                                (refineOptions & BA_REFINE_INTRINSICS_DISTORTION) ||
+  const bool refineIntrinsicsOpticalCenter = (refineOptions & REFINE_INTRINSICS_OPTICALCENTER_ALWAYS) || (refineOptions & REFINE_INTRINSICS_OPTICALCENTER_IF_ENOUGH_DATA);
+  const bool refineIntrinsics = (refineOptions & REFINE_INTRINSICS_FOCAL) ||
+                                (refineOptions & REFINE_INTRINSICS_DISTORTION) ||
                                 refineIntrinsicsOpticalCenter;
   if(refineIntrinsics)
   {
