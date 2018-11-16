@@ -36,11 +36,11 @@
 #define ALICEVISION_LOG_ERROR(a) ALICEVISION_LOG(ALICEVISION_LOG_ERROR_OBJ, a)
 #define ALICEVISION_LOG_FATAL(a) ALICEVISION_LOG(ALICEVISION_LOG_FATAL_OBJ, a)
 
-#define ALICEVISION_THROW(EXEPTION, x) \
+#define ALICEVISION_THROW(EXCEPTION, x) \
 { \
   std::stringstream s; \
   s << x; \
-  throw EXEPTION(s.str()); \
+  throw EXCEPTION(s.str()); \
 }
 #define ALICEVISION_THROW_ERROR(x) ALICEVISION_THROW(std::runtime_error, x)
 
