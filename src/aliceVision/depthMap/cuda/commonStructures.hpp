@@ -167,7 +167,7 @@ public:
     CudaMemorySizeBase( )
     { }
 
-    CudaMemorySizeBase( const CudaSize<Dim> &size )
+    explicit CudaMemorySizeBase( const CudaSize<Dim> &size )
         : _size( size )
         , _pitch( size[0] * sizeof(Type) )
     { }
