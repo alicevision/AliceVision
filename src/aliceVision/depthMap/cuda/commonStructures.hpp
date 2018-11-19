@@ -14,14 +14,12 @@
 #include <sstream>
 #include <iostream>
 
-#include <aliceVision/system/Logger.hpp>
+#define THROW_ON_CUDA_ERROR(rcode, message) \
+  if (rcode != cudaSuccess) {  \
+    std::stringstream s; s << message << ": " << cudaGetErrorString(err);  \
+    throw std::runtime_error(s.str());  \
+  }
 
-#define THROW_ON_CUDA_ERROR( err, str ) \
-    if( err != cudaSuccess ) \
-    { \
-        ALICEVISION_LOG_ERROR( str ); \
-        throw std::runtime_error("Failed to copy."); \
-    }
 
 namespace aliceVision {
 namespace depthMap {
@@ -488,8 +486,10 @@ private:
             {
                 int devid;
                 cudaGetDevice( &devid );
-                ALICEVISION_LOG_ERROR( "Device " << devid << " alloc " << this->getBytesUnpadded() << " bytes failed in " << __FILE__ << ":" << __LINE__ << ", " << cudaGetErrorString(err) );
-                throw std::runtime_error( "Could not allocate pitched device memory" );
+                std::stringstream ss;
+                ss << "Could not allocate pitched device memory.\n"
+                   << "Device " << devid << " alloc " << this->getBytesUnpadded() << " bytes failed in " << __FILE__ << ":" << __LINE__ << ", " << cudaGetErrorString(err);
+                throw std::runtime_error(ss.str());
             }
         }
         else if(Dim == 3)
@@ -508,11 +508,13 @@ private:
                 size_t sx    = this->getUnitsInDim(0);
                 size_t sy    = this->getUnitsInDim(1);
                 size_t sz    = this->getUnitsInDim(2);
-                ALICEVISION_LOG_ERROR( "Device " << devid << " alloc "
+                std::stringstream ss;
+                ss << "Could not allocate 3D device memory.\n"
+                   << "Device " << devid << " alloc "
                                     << sx << "x" << sy << "x" << sz << "x" << sizeof(Type) << " = "
                                     << bytes << " bytes ("
-                << (int)(bytes/1024.0f/1024.0f) << " MB) failed in " << __FILE__ << ":" << __LINE__ << ", " << cudaGetErrorString(err) );
-                throw std::runtime_error( "Could not allocate 3D device memory" );
+                << (int)(bytes/1024.0f/1024.0f) << " MB) failed in " << __FILE__ << ":" << __LINE__ << ", " << cudaGetErrorString(err);
+                throw std::runtime_error(ss.str());
             }
 
             buffer = (Type*)pitchDevPtr.ptr;
@@ -527,7 +529,9 @@ private:
         cudaError_t err = cudaFree(buffer);
         if( err != cudaSuccess )
         {
-            ALICEVISION_LOG_ERROR( "Device free failed, " << cudaGetErrorString(err) );
+            std::stringstream ss;
+            ss << "Device free failed, " << cudaGetErrorString(err);
+            throw std::runtime_error(ss.str());
         }
 
         buffer = nullptr;
@@ -621,7 +625,9 @@ public:
         cudaError_t err = cudaFree(buffer);
         if( err != cudaSuccess )
         {
-            ALICEVISION_LOG_ERROR( "Device free failed, " << cudaGetErrorString(err) );
+            std::stringstream ss;
+            ss << "Device free failed, " << cudaGetErrorString(err);
+            throw std::runtime_error(ss.str());
         }
 
         buffer = nullptr;
