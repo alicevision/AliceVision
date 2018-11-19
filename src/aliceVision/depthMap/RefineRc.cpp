@@ -6,6 +6,8 @@
 
 #include "RefineRc.hpp"
 #include <aliceVision/system/Logger.hpp>
+#include <aliceVision/system/gpu.hpp>
+
 #include <aliceVision/mvsData/Point2d.hpp>
 #include <aliceVision/mvsData/Point3d.hpp>
 #include <aliceVision/mvsUtils/common.hpp>
@@ -358,7 +360,9 @@ void refineDepthMaps(mvsUtils::MultiViewParams* mp, mvsUtils::PreMatchCams* pc, 
 
     if(numthreads == 1)
     {
-        refineDepthMaps(mp->CUDADeviceNo, mp, pc, cams);
+        int bestGpuId = system::getBestGpuDeviceId(2, 0);
+        int CUDADeviceNo = mp->_ini.get<int>("global.CUDADeviceNo", bestGpuId);
+        refineDepthMaps(CUDADeviceNo, mp, pc, cams);
     }
     else
     {

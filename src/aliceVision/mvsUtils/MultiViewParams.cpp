@@ -38,7 +38,7 @@ void MultiViewParams::initFromConfigFile(const std::string& iniFile)
     mvDir = rootPath;
     prefix = _ini.get<std::string>("global.prefix", prefix);
     verbose = _ini.get<bool>("global.verbose", true);
-    CUDADeviceNo = _ini.get<int>("global.CUDADeviceNo", 0);
+
     ncams = _ini.get<int>("global.ncams", 0);
     simThr = _ini.get<double>("global.simThr", 0.0);
     _imageExt = _ini.get<std::string>("global.imgExt", _imageExt);
