@@ -743,7 +743,7 @@ void computeDepthMapsPSSGM(mvsUtils::MultiViewParams* mp, mvsUtils::PreMatchCams
     ALICEVISION_LOG_INFO("Number of GPU devices: " << num_gpus << ", number of CPU threads: " << num_cpu_threads);
     int numthreads = std::min(num_gpus, num_cpu_threads);
 
-    int num_gpus_to_use = mp->_ini.get<int>("semiGlobalMatching.num_gpus_to_use", 1);
+    int num_gpus_to_use = mp->_ini.get<int>("semiGlobalMatching.num_gpus_to_use", 0);
     if(num_gpus_to_use > 0)
     {
         numthreads = num_gpus_to_use;
