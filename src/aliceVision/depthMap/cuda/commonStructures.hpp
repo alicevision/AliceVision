@@ -617,6 +617,10 @@ public:
 
         THROW_ON_CUDA_ERROR( err, "Could not allocate pinned host memory in " << __FILE__ << ":" << __LINE__ << ", " << cudaGetErrorString(err) );
     }
+    void allocate( const size_t size )
+    {
+        allocate(CudaSize<1>(size));
+    }
 
     void deallocate()
     {
