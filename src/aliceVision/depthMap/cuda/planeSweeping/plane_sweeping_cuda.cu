@@ -12,6 +12,7 @@
 #include <aliceVision/depthMap/cuda/planeSweeping/device_code_refine.cu>
 #include <aliceVision/depthMap/cuda/planeSweeping/device_code_volume.cu>
 #include <aliceVision/depthMap/cuda/planeSweeping/device_code_fuse.cu>
+#include <aliceVision/depthMap/cuda/planeSweeping/host_utils.h>
 
 #include <math_constants.h>
 
@@ -32,11 +33,6 @@ namespace depthMap {
                                                                               \
 }
 
-
-// Round a / b to nearest higher integer value.
-inline unsigned int divUp(unsigned int a, unsigned int b) {
-  return (a % b != 0) ? (a / b + 1) : (a / b);
-}
 
 __host__ float3 ps_M3x3mulV3(float* M3x3, const float3& V)
 {

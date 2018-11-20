@@ -11,16 +11,7 @@ namespace depthMap {
 
 // Helper functions
 
-clock_t tic()
-{
-    return clock();
-}
 
-// returns the ms passed after last call to tic()
-float toc(clock_t ticClk)
-{
-    return (float)((clock() - ticClk) * 1000.0 / CLOCKS_PER_SEC);
-}
 
 /**
 * @brief
