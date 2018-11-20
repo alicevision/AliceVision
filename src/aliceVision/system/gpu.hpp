@@ -63,8 +63,9 @@ inline std::vector<std::pair<cudaDeviceProp, int>> getSortedGpuDevices(int minCo
   int minComputeCapabilityMinor,
   int minTotalDeviceMemory = 0)
 {
-  std::vector<std::pair<cudaDeviceProp, int>> devices = getValidGpuDevices(minComputeCapabilityMajor, minComputeCapabilityMinor, minTotalDeviceMemory);
-  std::sort(devices.begin(), devices.end(), [](const auto& a, const auto& b) {
+  using DeviceAndIndex = std::pair<cudaDeviceProp, int>;
+  std::vector<DeviceAndIndex> devices = getValidGpuDevices(minComputeCapabilityMajor, minComputeCapabilityMinor, minTotalDeviceMemory);
+  std::sort(devices.begin(), devices.end(), [](const DeviceAndIndex& a, const DeviceAndIndex& b) {
     return a.first.multiProcessorCount > b.first.multiProcessorCount;
   });
   return devices;
