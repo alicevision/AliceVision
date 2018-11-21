@@ -6,12 +6,11 @@
 
 #pragma once
 
+#include <aliceVision/depthMap/cuda/planeSweeping/device_utils.h>
+
+
 namespace aliceVision {
 namespace depthMap {
-
-// Helper functions
-
-
 
 /**
 * @brief
@@ -24,8 +23,8 @@ namespace depthMap {
 template <typename T>
 __device__ T* get2DBufferAt(T* ptr, int pitch, int x, int y)
 {
-
-    return ((T*)(((char*)ptr) + y * pitch)) + x;
+    return &(BufPtr<T>(ptr,pitch).at(x,y));
+    // return ((T*)(((char*)ptr) + y * pitch)) + x;
 }
 
 /**

@@ -32,12 +32,14 @@ set(depthMap_cuda_files_headers
   cuda/deviceCommon/device_matrix.cu
   cuda/deviceCommon/device_patch_es.cu
   cuda/deviceCommon/device_simStat.cu
+  cuda/deviceCommon/device_operators.h
   # planeSweeping
   cuda/planeSweeping/device_code.cu
   cuda/planeSweeping/device_code_refine.cu
   cuda/planeSweeping/device_code_volume.cu
   cuda/planeSweeping/device_code_fuse.cu
   cuda/planeSweeping/device_utils.cu
+  cuda/planeSweeping/device_utils.h
 )
 
 set_source_files_properties(${depthMap_cuda_files_headers}

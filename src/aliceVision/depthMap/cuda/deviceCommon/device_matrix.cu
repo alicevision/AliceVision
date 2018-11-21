@@ -9,23 +9,24 @@
 // mn MATRIX ADDRESSING: mxy = x*n+y (x-row,y-col), (m-number of rows, n-number of columns)
 
 #include <math_constants.h>
+#include <aliceVision/depthMap/cuda/deviceCommon/device_operators.h>
 
 namespace aliceVision {
 namespace depthMap {
 
-__device__ float3 M3x3mulV3(float* M3x3, const float3& V)
+__device__ float3 M3x3mulV3( const float* M3x3, const float3& V)
 {
     return make_float3(M3x3[0] * V.x + M3x3[3] * V.y + M3x3[6] * V.z, M3x3[1] * V.x + M3x3[4] * V.y + M3x3[7] * V.z,
                        M3x3[2] * V.x + M3x3[5] * V.y + M3x3[8] * V.z);
 }
 
-__device__ float3 M3x3mulV2(float* M3x3, const float2& V)
+__device__ float3 M3x3mulV2( const float* M3x3, const float2& V)
 {
     return make_float3(M3x3[0] * V.x + M3x3[3] * V.y + M3x3[6], M3x3[1] * V.x + M3x3[4] * V.y + M3x3[7],
                        M3x3[2] * V.x + M3x3[5] * V.y + M3x3[8]);
 }
 
-__device__ float3 M3x4mulV3(float* M3x4, const float3& V)
+__device__ float3 M3x4mulV3(const float* M3x4, const float3& V)
 {
     return make_float3(M3x4[0] * V.x + M3x4[3] * V.y + M3x4[6] * V.z + M3x4[9],
                        M3x4[1] * V.x + M3x4[4] * V.y + M3x4[7] * V.z + M3x4[10],
@@ -38,7 +39,7 @@ __device__ float2 V2M3x3mulV2(float* M3x3, float2& V)
     return make_float2((M3x3[0] * V.x + M3x3[3] * V.y + M3x3[6]) / d, (M3x3[1] * V.x + M3x3[4] * V.y + M3x3[7]) / d);
 }
 
-__device__ float2 project3DPoint(float* M3x4, const float3& V)
+__device__ float2 project3DPoint( const float* M3x4, const float3& V)
 {
     float3 p = M3x4mulV3(M3x4, V);
     return make_float2(p.x / p.z, p.y / p.z);
@@ -88,66 +89,6 @@ __device__ uchar4 float4_to_uchar4(const float4& a)
 __device__ float4 uchar4_to_float4(const uchar4& a)
 {
     return make_float4((float)a.x, (float)a.y, (float)a.z, (float)a.w);
-}
-
-__device__ float4 operator*(const float4& a, const float& d)
-{
-    return make_float4(a.x * d, a.y * d, a.z * d, a.w * d);
-}
-
-__device__ float4 operator+(const float4& a, const float4& d)
-{
-    return make_float4(a.x + d.x, a.y + d.y, a.z + d.z, a.w + d.w);
-}
-
-__device__ float4 operator*(const float& d, const float4& a)
-{
-    return make_float4(a.x * d, a.y * d, a.z * d, a.w * d);
-}
-
-__device__ float3 operator*(const float3& a, const float& d)
-{
-    return make_float3(a.x * d, a.y * d, a.z * d);
-}
-
-__device__ float3 operator/(const float3& a, const float& d)
-{
-    return make_float3(a.x / d, a.y / d, a.z / d);
-}
-
-__device__ float3 operator+(const float3& a, const float3& b)
-{
-    return make_float3(a.x + b.x, a.y + b.y, a.z + b.z);
-}
-
-__device__ float3 operator-(const float3& a, const float3& b)
-{
-    return make_float3(a.x - b.x, a.y - b.y, a.z - b.z);
-}
-
-__device__ int2 operator+(const int2& a, const int2& b)
-{
-    return make_int2(a.x + b.x, a.y + b.y);
-}
-
-__device__ float2 operator*(const float2& a, const float& d)
-{
-    return make_float2(a.x * d, a.y * d);
-}
-
-__device__ float2 operator/(const float2& a, const float& d)
-{
-    return make_float2(a.x / d, a.y / d);
-}
-
-__device__ float2 operator+(const float2& a, const float2& b)
-{
-    return make_float2(a.x + b.x, a.y + b.y);
-}
-
-__device__ float2 operator-(const float2& a, const float2& b)
-{
-    return make_float2(a.x - b.x, a.y - b.y);
 }
 
 __device__ float dot(const float3& a, const float3& b)
