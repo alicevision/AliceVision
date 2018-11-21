@@ -12,9 +12,9 @@
 namespace aliceVision {
 namespace depthMap {
 
-RcTc::RcTc(mvsUtils::MultiViewParams* _mp, PlaneSweepingCuda* _cps)
+RcTc::RcTc(mvsUtils::MultiViewParams* _mp, PlaneSweepingCuda& _cps)
+    : cps( _cps )
 {
-    cps = _cps;
     mp = _mp;
     verbose = mp->verbose;
 }
@@ -40,7 +40,7 @@ void RcTc::refineRcTcDepthSimMap(bool useTcOrRcPixSize, DepthSimMap* depthSimMap
         StaticVector<float>* depthMap = depthSimMap->getDepthMapStep1XPart(xFrom, wPartAct);
         StaticVector<float>* simMap = depthSimMap->getSimMapStep1XPart(xFrom, wPartAct);
 
-        cps->refineRcTcDepthMap(useTcOrRcPixSize, ndepthsToRefine, simMap, depthMap, rc, tc, scale, wsh, gammaC, gammaP,
+        cps.refineRcTcDepthMap(useTcOrRcPixSize, ndepthsToRefine, simMap, depthMap, rc, tc, scale, wsh, gammaC, gammaP,
                                 epipShift, xFrom, wPartAct);
 
         for(int yp = 0; yp < h; yp++)

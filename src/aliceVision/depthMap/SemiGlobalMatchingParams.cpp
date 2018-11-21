@@ -18,11 +18,11 @@ namespace depthMap {
 
 namespace bfs = boost::filesystem;
 
-SemiGlobalMatchingParams::SemiGlobalMatchingParams(mvsUtils::MultiViewParams* _mp, mvsUtils::PreMatchCams* _pc, PlaneSweepingCuda* _cps)
+SemiGlobalMatchingParams::SemiGlobalMatchingParams(mvsUtils::MultiViewParams* _mp, mvsUtils::PreMatchCams* _pc, PlaneSweepingCuda& _cps)
+    : cps( _cps )
 {
     mp = _mp;
     pc = _pc;
-    cps = _cps;
     prt = new RcTc(mp, cps);
 
     visualizeDepthMaps = mp->_ini.get<bool>("semiGlobalMatching.visualizeDepthMaps", false);

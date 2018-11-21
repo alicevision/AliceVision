@@ -13,6 +13,7 @@
 #include <assert.h>
 #include <sstream>
 #include <iostream>
+#include <vector>
 
 #define THROW_ON_CUDA_ERROR(rcode, message) \
   if (rcode != cudaSuccess) {  \
@@ -224,6 +225,16 @@ public:
         return prod;
     }
 
+    /* Returns the number of items that have been allocated,
+     * ignoring padding.
+     */
+    inline size_t getUnitsTotal( ) const
+    {
+        size_t prod = _size[0];
+        for( int i=1; i<Dim; i++ ) prod *= _size[i];
+        return prod;
+    }
+
     /* Returns the number of items of class Type that is contained
      * in the given dimension. For dimensions >= Dim, return 1.
      */
@@ -355,6 +366,7 @@ private:
         return (Type*)ptr;
     }
 
+public:
     void allocate( const CudaSize<Dim> &size )
     {
         this->setSize( size, true );
@@ -472,7 +484,8 @@ private:
         return (Type*)ptr;
     }
 
-    void allocate( const CudaSize<Dim> &size )
+public:
+    void allocate( const CudaSize<Dim>& size )
     {
         this->setSize( size, false );
 

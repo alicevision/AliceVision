@@ -34,10 +34,10 @@ private:
     SemiGlobalMatchingParams* sp;
 
     float volGpuMB;
-    int volDimX;
-    int volDimY;
-    int volDimZ;
-    int volStepZ;
+    int   volDimX;
+    int   volDimY;
+    int   volDimZ;
+    int   volStepZ;
 
     /// Volume containing the second best value accross multiple input volumes
     StaticVector<unsigned char>* _volumeSecondBest;
