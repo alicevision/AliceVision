@@ -124,10 +124,10 @@ Color ImagesCache::getPixelValueInterpolated(const Point2d* pix, int camId)
     const float ui = pix->x - static_cast<float>(xp);
     const float vi = pix->y - static_cast<float>(yp);
 
-    const Color lu = img->at( xp  , yp   ); // img[getPixelId(xp,     yp,     camId)];
-    const Color ru = img->at( xp+1, yp   ); // img[getPixelId(xp + 1, yp,     camId)];
-    const Color rd = img->at( xp+1, yp+1 ); // img[getPixelId(xp + 1, yp + 1, camId)];
-    const Color ld = img->at( xp  , yp+1 ); // img[getPixelId(xp,     yp + 1, camId)];
+    const Color lu = img->at( xp  , yp   );
+    const Color ru = img->at( xp+1, yp   );
+    const Color rd = img->at( xp+1, yp+1 );
+    const Color ld = img->at( xp  , yp+1 );
 
     // bilinear interpolation of the pixel intensity value
     const Color u = lu + (ru - lu) * ui;

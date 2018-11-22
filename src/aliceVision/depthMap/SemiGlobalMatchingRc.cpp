@@ -35,10 +35,6 @@ SemiGlobalMatchingRc::SemiGlobalMatchingRc(bool doComputeDepthsAndResetTCams, in
 {
     sp = _sp;
 
-    // rc = _rc;
-    // scale = _scale;
-    // step = _step;
-
     w = sp->mp->getWidth(rc) / (scale * step);
     h = sp->mp->getHeight(rc) / (scale * step);
 
@@ -48,8 +44,6 @@ SemiGlobalMatchingRc::SemiGlobalMatchingRc(bool doComputeDepthsAndResetTCams, in
     wsh = sp->mp->_ini.get<int>("semiGlobalMatching.wsh", 4);
     gammaC = (float)sp->mp->_ini.get<double>("semiGlobalMatching.gammaC", 5.5);
     gammaP = (float)sp->mp->_ini.get<double>("semiGlobalMatching.gammaP", 8.0);
-
-    // sp->cps.verbose = sp->mp->verbose; - already set in PlaneSweeping class constructor
 
     const IndexT viewId = sp->mp->getViewId(rc);
 
@@ -83,7 +77,6 @@ SemiGlobalMatchingRc::SemiGlobalMatchingRc(bool doComputeDepthsAndResetTCams, in
 SemiGlobalMatchingRc::~SemiGlobalMatchingRc()
 {
     delete depths;
-    // delete depthsTcamsLimits;
 }
 
 /**
