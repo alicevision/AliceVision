@@ -18,6 +18,7 @@
 #include <aliceVision/mvsUtils/ImagesCache.hpp>
 #include <aliceVision/mvsUtils/PreMatchCams.hpp>
 #include <aliceVision/depthMap/DepthSimMap.hpp>
+#include <aliceVision/depthMap/cuda/commonStructures.hpp>
 
 namespace aliceVision {
 namespace depthMap {
@@ -54,11 +55,13 @@ public:
     mvsUtils::PreMatchCams* pc;
 
     const int _CUDADeviceNo;
-    void** ps_texs_arr;
+    Pyramid ps_texs_arr;
 
-    StaticVector<void*>* cams;
-    StaticVector<int>* camsRcs;
-    StaticVector<long>* camsTimes;
+    CudaDeviceMemoryPitched<cameraStructBase,2> _camsBasesDev;
+    CudaHostMemoryHeap<cameraStructBase,2>      _camsBasesHst;
+    std::vector<cameraStruct>                   cams;
+    StaticVector<int>                           camsRcs;
+    StaticVector<long>                          camsTimes;
 
     const bool _verbose;
     bool doVizualizePartialDepthMaps;
@@ -71,6 +74,8 @@ public:
     bool subPixel;
     int  varianceWSH;
 
+    inline int maxImagesInGPU() const { return _nImgsInGPUAtTime; }
+
     // float gammaC,gammaP;
     mvsUtils::ImagesCache& _ic;
 
@@ -78,7 +83,11 @@ public:
                         int scales);
     ~PlaneSweepingCuda(void);
 
-    int addCam(int rc, float** H, int scale);
+    void cameraToDevice( int rc, const StaticVector<int>& tcams );
+
+    int addCam( int rc, int scale,
+                StaticVectorBool* rcSilhoueteMap,
+                const char* calling_func );
 
     void getMinMaxdepths(int rc, const StaticVector<int>& tcams, float& minDepth, float& midDepth, float& maxDepth);
     void getAverageMinMaxdepths(float& avMinDist, float& avMaxDist);
@@ -92,32 +101,59 @@ public:
     bool refinePixelsAllFine(StaticVector<Color>* pxsnormals, StaticVector<float>* pxsdepths,
                              StaticVector<float>* pxssims, int rc, int wsh, float gammaC, float gammaP,
                              StaticVector<Pixel>* pixels, int scale, StaticVector<int>* tcams, float epipShift = 0.0f);
-    bool smoothDepthMap(StaticVector<float>* depthMap, int rc, int scale, float igammaC, float igammaP, int wsh);
-    bool filterDepthMap(StaticVector<float>* depthMap, int rc, int scale, float igammaC, float minCostThr, int wsh);
-    bool computeNormalMap(StaticVector<float>* depthMap, StaticVector<Color>* normalMap, int rc, int scale,
-                          float igammaC, float igammaP, int wsh);
-    void alignSourceDepthMapToTarget(StaticVector<float>* sourceDepthMap, StaticVector<float>* targetDepthMap, int rc,
-                                     int scale, float igammaC, int wsh, float maxPixelSizeDist);
-    bool refineDepthMapReproject(StaticVector<float>* depthMap, StaticVector<float>* simMap, int rc, int tc, int wsh,
-                                 float gammaC, float gammaP, float simThr, int niters, bool moveByTcOrRc);
     // bool computeRcTcPhotoErrMapReproject(StaticVector<Point4d>* sdpiMap, StaticVector<float>* errMap,
     //                                      StaticVector<float>* derrMap, StaticVector<float>* rcDepthMap,
     //                                      StaticVector<float>* tcDepthMap, int rc, int tc, int wsh, float gammaC,
     //                                      float gammaP, float depthMapShift);
 
-    bool computeSimMapForRcTcDepthMap(StaticVector<float>* oSimMap, StaticVector<float>* rcTcDepthMap, int rc, int tc,
-                                      int wsh, float gammaC, float gammaP, float epipShift);
     bool refineRcTcDepthMap(bool useTcOrRcPixSize, int nStepsToRefine, StaticVector<float>* simMap,
                             StaticVector<float>* rcDepthMap, int rc, int tc, int scale, int wsh, float gammaC,
                             float gammaP, float epipShift, int xFrom, int wPart);
 
-    float sweepPixelsToVolume(int nDepthsToSearch, StaticVector<unsigned char>* volume, int volDimX, int volDimY,
-                              int volDimZ, int volStepXY, int volLUX, int volLUY, int volLUZ,
-                              const std::vector<float>* depths, int rc, int wsh, float gammaC, float gammaP,
-                              StaticVector<Voxel>* pixels, int scale, int step, StaticVector<int>* tcams,
+private:
+    /* Needed to compensate for _nImgsInGPUAtTime that are smaller than |index_set|-1 */
+    void sweepPixelsToVolumeSubset(const std::vector<int>& index_set,
+                                   float* volume_out, const int volume_out_offset,
+                                   std::vector<CudaDeviceMemoryPitched<float, 3>*>& volume_buf,
+                                   const int volDimX,
+                                   const int volDimY,
+                                   const int volStepXY,
+                                   const int zDimsAtATime,
+                                   const std::vector<std::vector<float> >& depths,
+                                   int rc,
+                                   const StaticVector<int>& tcams,
+                                   StaticVectorBool* rcSilhoueteMap,
+                                   int wsh, float gammaC, float gammaP,
+                                   int scale, int step,
+                                   float epipShift);
+public:
+    /* pre-processing for sweepPixelsToVolume */
+    void allocTempVolume( std::vector<CudaDeviceMemoryPitched<float, 3>*>& volSim_dmp,
+                          const int max_tcs,
+                          const int volDimX,
+                          const int volDimY,
+                          const int zDimsAtATime );
+    /* post-processing for sweepPixelsToVolume */
+    void freeTempVolume( std::vector<CudaDeviceMemoryPitched<float, 3>*>& volSim_dmp );
+    void sweepPixelsToVolume( const std::vector<int>& index_set,
+                              float* volume_out, const int volume_buf,
+                              std::vector<CudaDeviceMemoryPitched<float, 3>*>& volSim_dmp,
+                              const int volDimX,
+                              const int volDimY,
+                              const int volStepXY,
+                              const int zDimsAtATime,
+                              const std::vector<std::vector<float> >& depths,
+                              int rc,
+                              const StaticVector<int>& tcams,
+                              StaticVectorBool* rcSilhoueteMap,
+                              int wsh, float gammaC, float gammaP,
+                              int scale, int step,
                               float epipShift);
-    bool SGMoptimizeSimVolume(int rc, StaticVector<unsigned char>* volume, int volDimX, int volDimY, int volDimZ,
-                              int volStepXY, int volLUX, int volLUY, int scale, unsigned char P1, unsigned char P2);
+
+    bool SGMoptimizeSimVolume(int rc, StaticVector<unsigned char>* volume,
+                              int volDimX, int volDimY, int volDimZ,
+                              int volStepXY,
+                              int scale, unsigned char P1, unsigned char P2);
     Point3d getDeviceMemoryInfo();
     bool transposeVolume(StaticVector<unsigned char>* volume, const Voxel& dimIn, const Voxel& dimTrn, Voxel& dimOut);
 

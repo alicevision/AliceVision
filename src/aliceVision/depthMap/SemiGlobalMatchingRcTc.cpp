@@ -11,22 +11,26 @@ namespace aliceVision {
 namespace depthMap {
 
 SemiGlobalMatchingRcTc::SemiGlobalMatchingRcTc(
-                         const std::vector<float>& _rcTcDepths,
-                         int _rc,
-                         int _tc,
-                         int scale,
-                         int step,
-                         SemiGlobalMatchingParams* _sp,
-                         StaticVectorBool* _rcSilhoueteMap)
-    : rcTcDepths(_rcTcDepths)
+            const std::vector<int>& index_set,
+            const std::vector<std::vector<float> >& _rcTcDepths,
+            int _rc,
+            const StaticVector<int>& _tc,
+            int scale,
+            int step,
+            int zDimsAtATime,
+            SemiGlobalMatchingParams* _sp,
+            StaticVectorBool* _rcSilhoueteMap)
+    : _index_set( index_set )
     , sp( _sp )
     , rc( _rc )
+    , tc( _tc )
     , _scale( scale )
     , _step( step )
     , _w( sp->mp->getWidth(rc) / (scale * step) )
     , _h( sp->mp->getHeight(rc) / (scale * step) )
+    , rcTcDepths( _rcTcDepths )
+    , _zDimsAtATime( zDimsAtATime )
 {
-    tc = _tc;
     epipShift = 0.0f;
 
     rcSilhoueteMap = _rcSilhoueteMap;
@@ -37,76 +41,99 @@ SemiGlobalMatchingRcTc::~SemiGlobalMatchingRcTc()
     //
 }
 
-StaticVector<Voxel>* SemiGlobalMatchingRcTc::getPixels()
+void SemiGlobalMatchingRcTc::computeDepthSimMapVolume(
+        std::vector<StaticVector<unsigned char> >& volume,
+        std::vector<CudaDeviceMemoryPitched<float, 3>*>& volume_tmp_on_gpu,
+        int wsh,
+        float gammaC,
+        float gammaP)
 {
-    StaticVector<Voxel>* pixels = new StaticVector<Voxel>();
+    const long tall = clock();
 
-    pixels->reserve(_w * _h);
+    const int volStepXY = _step;
+    const int volDimX   = _w;
+    const int volDimY   = _h;
+    int maxDimZ = *_index_set.begin();
 
-    for(int y = 0; y < _h; y++)
+    for( auto j : _index_set )
     {
-        for(int x = 0; x < _w; x++)
-        {
-            if(rcSilhoueteMap == nullptr)
-            {
-                pixels->push_back(Voxel(x * _step, y * _step, 0));
-            }
-            else
-            {
-                bool isBackgroundPixel = (*rcSilhoueteMap)[y * _w + x];
-                if(!isBackgroundPixel)
-                {
-                    pixels->push_back(Voxel(x * _step, y * _step, 0));
-                }
-            }
-        }
+        const int volDimZ = rcTcDepths[j].size();
+
+        volume[j].resize( volDimX * volDimY * volDimZ );
+
+        maxDimZ = std::max( maxDimZ, volDimZ );
     }
-    return pixels;
-}
 
-StaticVector<unsigned char>* SemiGlobalMatchingRcTc::computeDepthSimMapVolume(float& volumeMBinGPUMem, int wsh, float gammaC,
-                                                                   float gammaP)
-{
-    long tall = clock();
+    float* volume_buf;
+    bool   volume_buf_pinned = true;
+    cudaError_t err = cudaMallocHost( &volume_buf, _index_set.size() * volDimX * volDimY * maxDimZ * sizeof(float) );
+    if( err != cudaSuccess )
+    {
+        ALICEVISION_LOG_WARNING( "Failed to allocate " << _index_set.size() * volDimX * volDimY * maxDimZ * sizeof(float) << " bytes of CUDA host (pinned) memory, " << cudaGetErrorString(err) );
+        volume_buf = new float[ _index_set.size() * volDimX * volDimY * maxDimZ ];
+        volume_buf_pinned = false;
+    }
 
-    int volStepXY = _step;
-    int volDimX = _w;
-    int volDimY = _h;
-    int volDimZ = rcTcDepths.size();
 
-    StaticVector<unsigned char>* volume = new StaticVector<unsigned char>();
-    volume->reserve(volDimX * volDimY * volDimZ);
-    volume->resize_with(volDimX * volDimY * volDimZ, 255);
+    const int volume_offset = volDimX * volDimY * maxDimZ;
 
-    StaticVector<int>* tcams = new StaticVector<int>();
-    tcams->push_back(tc);
+    sp->cps.sweepPixelsToVolume( _index_set,
+                                 volume_buf,
+                                 volume_offset,
+                                 volume_tmp_on_gpu,
+                                 volDimX, volDimY,
+                                 volStepXY,
+                                 _zDimsAtATime,
+                                 rcTcDepths,
+                                 rc, tc,
+                                 rcSilhoueteMap,
+                                 wsh, gammaC, gammaP, _scale, 1,
+                                 0.0f);
 
-    StaticVector<Voxel>* pixels = getPixels();
+    /*
+     * TODO: This conversion operation on the host consumes a lot of time,
+     *       about 1/3 of the actual computation. Work to avoid it.
+     */
+    int ct = 0;
+    for( auto j : _index_set )
+    {
+        const int volDimZ = rcTcDepths[j].size();
 
-    volumeMBinGPUMem =
-        sp->cps.sweepPixelsToVolume(rcTcDepths.size(), volume, volDimX, volDimY, volDimZ, volStepXY, 0, 0, 0,
-                                     &rcTcDepths, rc, wsh, gammaC, gammaP, pixels, _scale, 1, tcams, 0.0f);
-    delete pixels;
+        for( int i=0; i<volDimX * volDimY * volDimZ; i++ )
+        {
+            float* ptr = &volume_buf[ct * volDimX * volDimY * maxDimZ];
+            volume[j][i] = (unsigned char)( 255.0f * std::max(std::min(ptr[i],1.0f),0.0f) );
+        }
+        ct++;
+    }
+
+    if( volume_buf_pinned )
+        cudaFreeHost( volume_buf );
+    else
+        delete [] volume_buf;
 
     if(sp->mp->verbose)
         mvsUtils::printfElapsedTime(tall, "SemiGlobalMatchingRcTc::computeDepthSimMapVolume ");
 
-    if(sp->P3 > 0)
+    for( auto j : _index_set )
     {
-#pragma omp parallel for
-        for(int y = 0; y < volDimY; y++)
+        const int volDimZ = rcTcDepths[j].size();
+
+        if(sp->P3 > 0)
         {
-            for(int x = 0; x < volDimX; x++)
+#pragma omp parallel for
+            for(int y = 0; y < volDimY; y++)
             {
-                (*volume)[(volDimZ - 1) * volDimY * volDimX + y * volDimX + x] = sp->P3;
-                (*volume)[(volDimZ - 2) * volDimY * volDimX + y * volDimX + x] = sp->P3;
-                (*volume)[(volDimZ - 3) * volDimY * volDimX + y * volDimX + x] = sp->P3;
-                (*volume)[(volDimZ - 4) * volDimY * volDimX + y * volDimX + x] = sp->P3;
+                for(int x = 0; x < volDimX; x++)
+                {
+                    volume[j][(volDimZ - 1) * volDimY * volDimX + y * volDimX + x] = sp->P3;
+                    volume[j][(volDimZ - 2) * volDimY * volDimX + y * volDimX + x] = sp->P3;
+                    volume[j][(volDimZ - 3) * volDimY * volDimX + y * volDimX + x] = sp->P3;
+                    volume[j][(volDimZ - 4) * volDimY * volDimX + y * volDimX + x] = sp->P3;
+                }
             }
         }
     }
-
-    return volume;
 }
 
 } // namespace depthMap

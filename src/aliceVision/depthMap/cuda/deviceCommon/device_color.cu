@@ -260,11 +260,6 @@ __global__ void rgb2lab_kernel(uchar4* irgbaOlab, int irgbaOlab_p, int width, in
              (total filter size = 2 * radius + 1)
 */
 // use only one block
-__global__ void generateGaussian_kernel(float* og, float delta, int radius)
-{
-    int x = threadIdx.x - radius;
-    og[threadIdx.x] = __expf(-(x * x) / (2 * delta * delta));
-}
 
 /*
 __global__ void downscale_kernel(unsigned char* tex, int tex_p, int width, int height, int scale)

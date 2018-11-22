@@ -11,28 +11,25 @@
 namespace aliceVision {
 namespace depthMap {
 
+void ps_initCameraMatrix( cameraStructBase& base );
+
 float3 ps_getDeviceMemoryInfo();
 
-float ps_planeSweepingGPUPixelsVolume(
-    CudaArray<uchar4, 2>** ps_texs_arr,
-    unsigned char* ovol_hmh,
-    cameraStruct** cams,
-    int ncams,
+void ps_planeSweepingGPUPixelsVolume(
+    Pyramid& ps_texs_arr,
+    const int max_ct,
+    float* volume_out,
+    const int volume_offset,
+    std::vector<CudaDeviceMemoryPitched<float, 3>*>& volSim_dmp,
+    const cameraStruct& rcam,
+    const std::vector<cameraStruct>& tcams,
     int width, int height,
     int volStepXY, int volDimX, int volDimY,
-    int volDimZ,
-    int volLUX,
-    int volLUY,
-    int volLUZ,
-    CudaHostMemoryHeap<int4, 2>& volPixs_hmh,
-    CudaHostMemoryHeap<float, 2>& depths_hmh,
-    int nDepthsToSearch,
-    int slicesAtTime,
-    int ntimes,
-    int npixs,
+    const int zDimsAtATime,
+    std::vector<CudaDeviceMemory<float>*> depths_dev,
+    const std::vector<int>& depths_to_search,
     int wsh,
     int kernelSizeHalf,
-    int nPlanes,
     int scale,
     int CUDAdeviceNo,
     int ncamsAllocated,
@@ -45,14 +42,14 @@ float ps_planeSweepingGPUPixelsVolume(
     bool subPixel,
     float epipShift);
 
+float3 ps_getDeviceMemoryInfo();
+
 void ps_SGMoptimizeSimVolume(
-    CudaArray<uchar4, 2>** ps_texs_arr,
-    cameraStruct* rccam,
+    Pyramid& ps_texs_arr,
+    const cameraStruct& rccam,
     unsigned char* iovol_hmh,
     int volDimX, int volDimY, int volDimZ,
     int volStepXY,
-    int volLUX,
-    int volLUY,
     bool verbose,
     unsigned char P1, unsigned char P2,
     int scale,
@@ -60,20 +57,20 @@ void ps_SGMoptimizeSimVolume(
     int ncamsAllocated,
     int scales);
 
-
-
 int ps_listCUDADevices(bool verbose);
 
 void ps_deviceAllocate(
-    CudaArray<uchar4, 2>*** ps_texs_arr,
+    Pyramid& ps_texs_arr,
     int ncams,
     int width, int height,
     int scales,
     int deviceId);
 
+void ps_testCUDAdeviceNo(int CUDAdeviceNo);
+
 void ps_deviceUpdateCam(
-    CudaArray<uchar4, 2>** ps_texs_arr,
-    cameraStruct* cam,
+    Pyramid& ps_texs_arr,
+    const cameraStruct& cam,
     int camId,
     int CUDAdeviceNo,
     int ncamsAllocated,
@@ -82,18 +79,15 @@ void ps_deviceUpdateCam(
     int varianceWsh);
 
 void ps_deviceDeallocate(
-    CudaArray<uchar4, 2>*** ps_texs_arr,
-    int CUDAdeviceNo,
-    int ncams,
-    int scales);
+    Pyramid& ps_texs_arr,
+    int CUDAdeviceNo, int ncams, int scales);
 
 void ps_refineRcDepthMap(
-    CudaArray<uchar4, 2>** ps_texs_arr,
+    Pyramid& ps_texs_arr,
     float* osimMap_hmh,
     float* rcDepthMap_hmh,
     int ntcsteps,
-    cameraStruct** cams,
-    int ncams,
+    const std::vector<cameraStruct>& cams,
     int width, int height,
     int imWidth, int imHeight,
     int scale,
@@ -118,7 +112,7 @@ void ps_fuseDepthSimMapsGaussianKernelVoting(
     bool verbose);
 
 void ps_optimizeDepthSimMapGradientDescent(
-    CudaArray<uchar4, 2>** ps_texs_arr,
+    Pyramid& ps_texs_arr,
     CudaHostMemoryHeap<float2, 2>* odepthSimMap_hmh,
     CudaHostMemoryHeap<float2, 2>** dataMaps_hmh,
     int ndataMaps,
@@ -126,7 +120,7 @@ void ps_optimizeDepthSimMapGradientDescent(
     int nDepthsToRefine,
     int nIters,
     float sigma,
-    cameraStruct** cams,
+    const std::vector<cameraStruct>& cams,
     int ncams,
     int width, int height,
     int scale,
@@ -137,76 +131,14 @@ void ps_optimizeDepthSimMapGradientDescent(
     int yFrom);
 
 void ps_getSilhoueteMap(
-    CudaArray<uchar4, 2>** ps_texs_arr,
+    Pyramid& ps_texs_arr,
     CudaHostMemoryHeap<bool, 2>* omap_hmh,
     int width, int height,
     int scale,
-    int CUDAdeviceNo,
-    int ncamsAllocated,
-    int scales,
     int step,
     int camId,
     uchar4 maskColorRgb,
     bool verbose);
-
-#if 0
-void ps_smoothDepthMap(
-    CudaArray<uchar4, 2>** ps_texs_arr,
-    CudaHostMemoryHeap<float, 2>* depthMap_hmh,
-    cameraStruct** cams,
-    int width, int height,
-    int scale,
-    int CUDAdeviceNo,
-    int ncamsAllocated,
-    int scales,
-    int wsh,
-    bool verbose,
-    float gammaC, float gammaP);
-
-void ps_filterDepthMap(
-    CudaArray<uchar4, 2>** ps_texs_arr,
-    CudaHostMemoryHeap<float, 2>* depthMap_hmh,
-    cameraStruct** cams,
-    int width, int height,
-    int scale,
-    int CUDAdeviceNo,
-    int ncamsAllocated,
-    int scales,
-    int wsh,
-    bool verbose,
-    float gammaC,
-    float minCostThr);
-
-void ps_computeNormalMap(
-    CudaArray<uchar4, 2>** ps_texs_arr,
-    CudaHostMemoryHeap<float3, 2>* normalMap_hmh,
-    CudaHostMemoryHeap<float, 2>* depthMap_hmh,
-    cameraStruct** cams,
-    int width, int height,
-    int scale,
-    int CUDAdeviceNo,
-    int ncamsAllocated,
-    int scales,
-    int wsh,
-    bool verbose,
-    float gammaC, float gammaP);
-
-void ps_alignSourceDepthMapToTarget(
-    CudaArray<uchar4, 2>** ps_texs_arr,
-    CudaHostMemoryHeap<float, 2>* sourceDepthMap_hmh,
-    CudaHostMemoryHeap<float, 2>* targetDepthMap_hmh,
-    cameraStruct** cams,
-    int width, int height,
-    int scale,
-    int CUDAdeviceNo,
-    int ncamsAllocated,
-    int scales,
-    int wsh,
-    bool verbose,
-    float gammaC,
-    float maxPixelSizeDist);
-
-#endif
 
 } // namespace depthMap
 } // namespace aliceVision
