@@ -65,11 +65,11 @@ public:
     const int  _nbestkernelSizeHalf;
 
     bool useRcDepthsOrRcTcDepths;
-    int minSegSize;
+    int  minSegSize;
     bool useSeg;
     int  _nImgsInGPUAtTime;
     bool subPixel;
-    int varianceWSH;
+    int  varianceWSH;
 
     // float gammaC,gammaP;
     mvsUtils::ImagesCache& _ic;

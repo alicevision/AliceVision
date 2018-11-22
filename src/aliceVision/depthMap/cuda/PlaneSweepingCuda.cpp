@@ -17,6 +17,7 @@
 #include <aliceVision/depthMap/cuda/planeSweeping/host_utils.h>
 
 #include <iostream>
+#include <stdexcept>
 
 namespace aliceVision {
 namespace depthMap {
