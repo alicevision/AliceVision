@@ -346,7 +346,7 @@ Matrix3x4 load3x4MatrixFromFile(FILE* fi)
     return m;
 }
 
-void memcpyRGBImageFromFileToArr(int camId, Color* imgArr, const std::string& fileNameOrigStr, const MultiViewParams* mp, bool transpose, int bandType)
+void memcpyRGBImageFromFileToArr(int camId, Color* imgArr, const std::string& fileNameOrigStr, const MultiViewParams* mp, int bandType)
 {
     int origWidth, origHeight;
     std::vector<Color> cimg;
@@ -410,10 +410,7 @@ void memcpyRGBImageFromFileToArr(int camId, Color* imgArr, const std::string& fi
         {
             const Color color = cimg.at(y * width + x);
 
-            if(transpose)
-                imgArr[y * width + x] = color;
-            else
-                imgArr[x * height + y] = color;
+            imgArr[x * height + y] = color;
 
         }
     }

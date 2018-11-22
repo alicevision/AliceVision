@@ -6,21 +6,11 @@
 
 #pragma once
 
+#include <aliceVision/depthMap/cuda/planeSweeping/device_utils.h>
+
+
 namespace aliceVision {
 namespace depthMap {
-
-// Helper functions
-
-clock_t tic()
-{
-    return clock();
-}
-
-// returns the ms passed after last call to tic()
-float toc(clock_t ticClk)
-{
-    return (float)((clock() - ticClk) * 1000.0 / CLOCKS_PER_SEC);
-}
 
 /**
 * @brief
@@ -33,8 +23,8 @@ float toc(clock_t ticClk)
 template <typename T>
 __device__ T* get2DBufferAt(T* ptr, int pitch, int x, int y)
 {
-
-    return ((T*)(((char*)ptr) + y * pitch)) + x;
+    return &(BufPtr<T>(ptr,pitch).at(x,y));
+    // return ((T*)(((char*)ptr) + y * pitch)) + x;
 }
 
 /**

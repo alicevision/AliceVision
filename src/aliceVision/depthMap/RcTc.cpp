@@ -12,9 +12,9 @@
 namespace aliceVision {
 namespace depthMap {
 
-RcTc::RcTc(mvsUtils::MultiViewParams* _mp, PlaneSweepingCuda* _cps)
+RcTc::RcTc(mvsUtils::MultiViewParams* _mp, PlaneSweepingCuda& _cps)
+    : cps( _cps )
 {
-    cps = _cps;
     mp = _mp;
     verbose = mp->verbose;
 }
@@ -40,7 +40,7 @@ void RcTc::refineRcTcDepthSimMap(bool useTcOrRcPixSize, DepthSimMap* depthSimMap
         StaticVector<float>* depthMap = depthSimMap->getDepthMapStep1XPart(xFrom, wPartAct);
         StaticVector<float>* simMap = depthSimMap->getSimMapStep1XPart(xFrom, wPartAct);
 
-        cps->refineRcTcDepthMap(useTcOrRcPixSize, ndepthsToRefine, simMap, depthMap, rc, tc, scale, wsh, gammaC, gammaP,
+        cps.refineRcTcDepthMap(useTcOrRcPixSize, ndepthsToRefine, simMap, depthMap, rc, tc, scale, wsh, gammaC, gammaP,
                                 epipShift, xFrom, wPartAct);
 
         for(int yp = 0; yp < h; yp++)
@@ -67,12 +67,13 @@ void RcTc::refineRcTcDepthSimMap(bool useTcOrRcPixSize, DepthSimMap* depthSimMap
     }
 }
 
+#if 0
 void RcTc::smoothDepthMap(DepthSimMap* depthSimMap, int rc, int wsh, float gammaC, float gammaP)
 {
     long t1 = clock();
 
     StaticVector<float>* depthMap = depthSimMap->getDepthMapStep1();
-    cps->smoothDepthMap(depthMap, rc, depthSimMap->scale, gammaC, gammaP, wsh);
+    cps.smoothDepthMap(depthMap, rc, depthSimMap->scale, gammaC, gammaP, wsh);
 
     for(int i = 0; i < depthSimMap->w * depthSimMap->h; i++)
     {
@@ -86,7 +87,9 @@ void RcTc::smoothDepthMap(DepthSimMap* depthSimMap, int rc, int wsh, float gamma
 
     delete depthMap;
 }
+#endif
 
+#if 0
 void RcTc::filterDepthMap(DepthSimMap* depthSimMap, int rc, int wsh, float gammaC)
 {
     long t1 = clock();
@@ -108,6 +111,7 @@ void RcTc::filterDepthMap(DepthSimMap* depthSimMap, int rc, int wsh, float gamma
 
     delete depthMap;
 }
+#endif
 
 } // namespace depthMap
 } // namespace aliceVision

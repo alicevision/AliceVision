@@ -17,6 +17,9 @@
 #include <iostream>
 #include <stdexcept>
 
+#include <boost/filesystem.hpp>
+#include <boost/filesystem/path.hpp>
+
 namespace aliceVision {
 
 template <class T>
@@ -31,6 +34,14 @@ class StaticVector
 
 public:
     StaticVector()
+    {}
+
+    StaticVector( int n )
+        : _data( n )
+    {}
+
+    StaticVector( int n, const T& value )
+        : _data( n, value )
     {}
 
     const T& operator[](int index) const
@@ -64,6 +75,7 @@ public:
     void resize(int n, T value) { _data.resize(n, value); }
     void resize_with(int n, const T& val) { _data.resize(n, val); }
     void swap( StaticVector& other ) { _data.swap(other._data); }
+    void assign(int n, T value) { _data.assign(n, value); }
 
     void shrink_to_fit()
     {
@@ -266,9 +278,30 @@ StaticVector<StaticVector<T>*>* loadArrayOfArraysFromFile(std::string fileName)
 }
 
 template <class T>
-void saveArrayToFile(std::string fileName, StaticVector<T>* a, bool docompress = true)
+void saveArrayToFile(std::string fileName, const StaticVector<T>& a, bool docompress = true)
+{
+    saveArrayToFile( fileName, &a, docompress );
+}
+
+template <class T>
+void saveArrayToFile(std::string fileName, const StaticVector<T>* a, bool docompress = true)
 {
     ALICEVISION_LOG_DEBUG("[IO] saveArrayToFile: " << fileName);
+
+    boost::filesystem::path filepath = fileName;
+    boost::filesystem::create_directories( filepath.parent_path() );
+
+    if( !a )
+    {
+        ALICEVISION_LOG_DEBUG("[IO] saveArrayToFile called with NULL static vector");
+        return;
+    }
+
+    if( a->size() == 0 )
+    {
+        ALICEVISION_LOG_WARNING("[IO] saveArrayToFile called with 0-sized static vector");
+        return;
+    }
 
     if((docompress == false) || (a->size() < 1000))
     {
@@ -477,6 +510,70 @@ StaticVector<T>* loadArrayFromFile(std::string fileName, bool printfWarning = fa
         fclose(f);
 
         return a;
+    }
+}
+
+template <class T>
+bool loadArrayFromFile( StaticVector<T>& out, std::string fileName, bool printfWarning = false)
+{
+    ALICEVISION_LOG_DEBUG("[IO] loadArrayFromFile: " << fileName);
+
+    FILE* f = fopen(fileName.c_str(), "rb");
+    if(f == NULL)
+    {
+        throw std::runtime_error("loadArrayFromFile : can't open file " + fileName);
+    }
+    else
+    {
+        int n = 0;
+        size_t retval = fread(&n, sizeof(int), 1, f);
+        if( retval != 1 )
+            ALICEVISION_LOG_WARNING("[IO] loadArrayFromFile: can't read array size (1) from " << fileName);
+        out.clear();
+
+        if(n == -1)
+        {
+            retval = fread(&n, sizeof(int), 1, f);
+            if( retval != 1 )
+                ALICEVISION_LOG_WARNING("[IO] loadArrayFromFile: can't read array size (2)");
+            out.resize(n);
+
+            uLong comprLen;
+            retval = fread(&comprLen, sizeof(uLong), 1, f);
+            if( retval != 1 )
+                ALICEVISION_LOG_WARNING("[IO] loadArrayFromFile: can't read ulong elem size");
+            Byte* compr = (Byte*)calloc((uInt)comprLen, 1);
+            retval = fread(compr, sizeof(Byte), comprLen, f);
+            if( retval != comprLen )
+                ALICEVISION_LOG_WARNING("[IO] loadArrayFromFile: can't read blob");
+
+            uLong uncomprLen = sizeof(T) * n;
+            int err = uncompress((Bytef*)out.getDataWritable().data(), &uncomprLen, compr, comprLen);
+
+            if(err != Z_OK)
+            {
+                ALICEVISION_LOG_ERROR("uncompress error " << err << " : " << (sizeof(T) * n) << " -> " << uncomprLen << ", n " << n);
+            }
+
+            if(uncomprLen != sizeof(T) * n)
+            {
+                fclose(f);
+                throw std::runtime_error("loadArrayFromFile: uncompression failed uncomprLen!=sizeof(T)*n");
+            }
+
+            free(compr);
+        }
+        else
+        {
+            out.resize(n);
+            size_t retval = fread(out.getDataWritable().data(), sizeof(T), n, f);
+            if( retval != n )
+                ALICEVISION_LOG_WARNING("[IO] loadArrayFromFile: can't read n elements");
+        }
+
+        fclose(f);
+
+        return true;
     }
 }
 

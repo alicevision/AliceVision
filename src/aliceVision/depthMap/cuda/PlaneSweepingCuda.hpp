@@ -47,40 +47,40 @@ public:
         }
     };
 
-    int scales;
-    int nbest;
+    const int _scales;
+    const int _nbest; // == 1
 
     mvsUtils::MultiViewParams* mp;
     mvsUtils::PreMatchCams* pc;
 
-    int CUDADeviceNo;
+    const int _CUDADeviceNo;
     void** ps_texs_arr;
 
     StaticVector<void*>* cams;
     StaticVector<int>* camsRcs;
     StaticVector<long>* camsTimes;
 
-    bool verbose;
+    const bool _verbose;
     bool doVizualizePartialDepthMaps;
-    int nbestkernelSizeHalf;
+    const int  _nbestkernelSizeHalf;
 
     bool useRcDepthsOrRcTcDepths;
-    int minSegSize;
+    int  minSegSize;
     bool useSeg;
-    int nImgsInGPUAtTime;
+    int  _nImgsInGPUAtTime;
     bool subPixel;
-    int varianceWSH;
+    int  varianceWSH;
 
     // float gammaC,gammaP;
-    mvsUtils::ImagesCache* ic;
+    mvsUtils::ImagesCache& _ic;
 
-    PlaneSweepingCuda(int _CUDADeviceNo, mvsUtils::ImagesCache* _ic, mvsUtils::MultiViewParams* _mp, mvsUtils::PreMatchCams* _pc,
-                        int _scales);
+    PlaneSweepingCuda(int CUDADeviceNo, mvsUtils::ImagesCache& _ic, mvsUtils::MultiViewParams* _mp, mvsUtils::PreMatchCams* _pc,
+                        int scales);
     ~PlaneSweepingCuda(void);
 
     int addCam(int rc, float** H, int scale);
 
-    void getMinMaxdepths(int rc, StaticVector<int>* tcams, float& minDepth, float& midDepth, float& maxDepth);
+    void getMinMaxdepths(int rc, const StaticVector<int>& tcams, float& minDepth, float& midDepth, float& maxDepth);
     void getAverageMinMaxdepths(float& avMinDist, float& avMaxDist);
     StaticVector<float>* getDepthsByPixelSize(int rc, float minDepth, float midDepth, float maxDepth, int scale,
                                               int step, int maxDepthsHalf = 1024);
@@ -113,7 +113,7 @@ public:
 
     float sweepPixelsToVolume(int nDepthsToSearch, StaticVector<unsigned char>* volume, int volDimX, int volDimY,
                               int volDimZ, int volStepXY, int volLUX, int volLUY, int volLUZ,
-                              StaticVector<float>* depths, int rc, int wsh, float gammaC, float gammaP,
+                              const std::vector<float>* depths, int rc, int wsh, float gammaC, float gammaP,
                               StaticVector<Voxel>* pixels, int scale, int step, StaticVector<int>* tcams,
                               float epipShift);
     bool SGMoptimizeSimVolume(int rc, StaticVector<unsigned char>* volume, int volDimX, int volDimY, int volDimZ,

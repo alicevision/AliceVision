@@ -13,60 +13,45 @@
 namespace aliceVision {
 namespace mvsUtils {
 
-int ImagesCache::getPixelId(int x, int y, int imgid)
-{
-    if(!transposed)
-        return x * mp->getHeight(imgid) + y;
-    return y * mp->getWidth(imgid) + x;
-}
-
 ImagesCache::ImagesCache(const MultiViewParams* _mp, int _bandType, bool _transposed)
   : mp(_mp)
+  , bandType( _bandType )
+  , transposed( _transposed )
 {
     std::vector<std::string> _imagesNames;
     for(int rc = 0; rc < _mp->ncams; rc++)
     {
         _imagesNames.push_back(mv_getFileNamePrefix(_mp->mvDir, _mp, rc) + "." + _mp->getImageExtension());
     }
-    initIC(_bandType, _imagesNames, _transposed);
+    initIC( _imagesNames );
 }
 
 ImagesCache::ImagesCache(const MultiViewParams* _mp, int _bandType, std::vector<std::string>& _imagesNames,
                                  bool _transposed)
   : mp(_mp)
+  , bandType( _bandType )
+  , transposed( _transposed )
 {
-    initIC(_bandType, _imagesNames, _transposed);
+    initIC( _imagesNames );
 }
 
-void ImagesCache::initIC(int _bandType, std::vector<std::string>& _imagesNames,
-                             bool _transposed)
+void ImagesCache::initIC( std::vector<std::string>& _imagesNames )
 {
     float oneimagemb = (sizeof(Color) * mp->getMaxImageWidth() * mp->getMaxImageHeight()) / 1024.f / 1024.f;
     float maxmbCPU = (float)mp->_ini.get<int>("images_cache.maxmbCPU", 5000);
     int _npreload = std::max((int)(maxmbCPU / oneimagemb), mp->_ini.get<int>("grow.minNumOfConsistentCams", 10));
     N_PRELOADED_IMAGES = std::min(mp->ncams, _npreload);
 
-    transposed = _transposed;
-    bandType = _bandType;
-
     for(int rc = 0; rc < mp->ncams; rc++)
     {
         imagesNames.push_back(_imagesNames[rc]);
     }
 
-    imgs = new Color*[N_PRELOADED_IMAGES];
+    imgs.resize(N_PRELOADED_IMAGES); // = new Color*[N_PRELOADED_IMAGES];
 
-    camIdMapId = new StaticVector<int>();
-    camIdMapId->reserve(mp->ncams);
-    mapIdCamId = new StaticVector<int>();
-    mapIdCamId->reserve(N_PRELOADED_IMAGES);
-    mapIdClock = new StaticVector<long>();
-    mapIdClock->reserve(N_PRELOADED_IMAGES);
-
-    for(int i = 0; i < mp->ncams; ++i)
-    {
-        camIdMapId->push_back(-1);
-    }
+    camIdMapId.resize( mp->ncams, -1 );
+    mapIdCamId.resize( N_PRELOADED_IMAGES, -1 );
+    mapIdClock.resize( N_PRELOADED_IMAGES, clock() );
 
     {
         // Cannot resize the vector<mutex> directly, as mutex class is not move-constructible.
@@ -76,27 +61,11 @@ void ImagesCache::initIC(int _bandType, std::vector<std::string>& _imagesNames,
         imagesMutexes.swap(imagesMutexesTmp);
     }
 
-    for (int ni = 0; ni < N_PRELOADED_IMAGES; ++ni)
-    {
-        imgs[ni] = nullptr;
 
-        (*camIdMapId)[ni] = -1;
-        mapIdCamId->push_back(-1);
-        mapIdClock->push_back(clock());
-    }
 }
 
 ImagesCache::~ImagesCache()
 {
-    for(int ni = 0; ni < N_PRELOADED_IMAGES; ni++)
-    {
-        delete[] imgs[ni];
-    }
-    delete[] imgs;
-
-    delete camIdMapId;
-    delete mapIdCamId;
-    delete mapIdClock;
 }
 
 void ImagesCache::refreshData(int camId)
@@ -105,29 +74,31 @@ void ImagesCache::refreshData(int camId)
 
     // printf("camId %i\n",camId);
     // test if the image is in the memory
-    if((*camIdMapId)[camId] == -1)
+    if(camIdMapId[camId] == -1)
     {
         // remove the oldest one
-        int mapId = mapIdClock->minValId();
-        int oldCamId = (*mapIdCamId)[mapId];
+        int mapId = mapIdClock.minValId();
+        int oldCamId = mapIdCamId[mapId];
         if(oldCamId>=0)
-            (*camIdMapId)[oldCamId] = -1;
+            camIdMapId[oldCamId] = -1;
 
         // replace with new new
-        (*camIdMapId)[camId] = mapId;
-        (*mapIdCamId)[mapId] = camId;
-        (*mapIdClock)[mapId] = clock();
+        camIdMapId[camId] = mapId;
+        mapIdCamId[mapId] = camId;
+        mapIdClock[mapId] = clock();
 
         // reload data from files
         long t1 = clock();
         if (imgs[mapId] == nullptr)
         {
             const std::size_t maxSize = mp->getMaxImageWidth() * mp->getMaxImageHeight();
-            imgs[mapId] = new Color[maxSize];
+            imgs[mapId] = std::make_shared<Img>( maxSize );
         }
 
         const std::string imagePath = imagesNames.at(camId);
-        memcpyRGBImageFromFileToArr(camId, imgs[mapId], imagePath, mp, transposed, bandType);
+        memcpyRGBImageFromFileToArr(camId, imgs[mapId]->data, imagePath, mp, bandType);
+        imgs[mapId]->setWidth(  mp->getWidth(camId) );
+        imgs[mapId]->setHeight( mp->getHeight(camId) );
 
         ALICEVISION_LOG_DEBUG("Add " << imagePath << " to image cache. " << formatElapsedTime(t1));
     }
@@ -143,8 +114,8 @@ Color ImagesCache::getPixelValueInterpolated(const Point2d* pix, int camId)
     refreshData(camId);
 
     // get the image index in the memory
-    const int i = (*camIdMapId)[camId];
-    const Color* img = imgs[i];
+    const int i = camIdMapId[camId];
+    const ImgPtr& img = imgs[i];
     
     const int xp = static_cast<int>(pix->x);
     const int yp = static_cast<int>(pix->y);
@@ -153,10 +124,10 @@ Color ImagesCache::getPixelValueInterpolated(const Point2d* pix, int camId)
     const float ui = pix->x - static_cast<float>(xp);
     const float vi = pix->y - static_cast<float>(yp);
 
-    const Color lu = img[getPixelId(xp,     yp,     camId)];
-    const Color ru = img[getPixelId(xp + 1, yp,     camId)];
-    const Color rd = img[getPixelId(xp + 1, yp + 1, camId)];
-    const Color ld = img[getPixelId(xp,     yp + 1, camId)];
+    const Color lu = img->at( xp  , yp   );
+    const Color ru = img->at( xp+1, yp   );
+    const Color rd = img->at( xp+1, yp+1 );
+    const Color ld = img->at( xp  , yp+1 );
 
     // bilinear interpolation of the pixel intensity value
     const Color u = lu + (ru - lu) * ui;
@@ -166,19 +137,6 @@ Color ImagesCache::getPixelValueInterpolated(const Point2d* pix, int camId)
     return out;
 }
 
-rgb ImagesCache::getPixelValue(const Pixel& pix, int camId)
-{
-    refreshData(camId);
-
-    // get the image index in the memory
-    const int imageId = (*camIdMapId)[camId];
-    const Color* img = imgs[imageId];
-    const Color floatRGB = img[getPixelId(pix.x, pix.y, camId)] * 255.0f;
-
-    return rgb(static_cast<unsigned char>(floatRGB.r),
-               static_cast<unsigned char>(floatRGB.g),
-               static_cast<unsigned char>(floatRGB.b));
-}
 
 } // namespace mvsUtils
 } // namespace aliceVision

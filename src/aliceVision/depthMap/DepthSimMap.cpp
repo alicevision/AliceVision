@@ -19,11 +19,11 @@ namespace aliceVision {
 namespace depthMap {
 
 DepthSimMap::DepthSimMap(int _rc, mvsUtils::MultiViewParams* _mp, int _scale, int _step)
+    : scale( _scale )
+    , step( _step )
 {
     rc = _rc;
     mp = _mp;
-    scale = _scale;
-    step = _step;
     w = mp->getWidth(rc) / (scale * step);
     h = mp->getHeight(rc) / (scale * step);
     dsm = new StaticVector<DepthSim>();
@@ -391,7 +391,7 @@ void DepthSimMap::saveToImage(std::string filename, float simThr)
     }
 }
 
-void DepthSimMap::save(int rc, StaticVector<int>* tcams)
+void DepthSimMap::save(int rc, const StaticVector<int>& tcams)
 {
     StaticVector<float>* depthMap = getDepthMapStep1();
     StaticVector<float>* simMap = getSimMapStep1();
@@ -415,11 +415,11 @@ void DepthSimMap::save(int rc, StaticVector<int>* tcams)
     {
         Point2d maxMinDepth = getMaxMinDepth();
         FILE* f = mv_openFile(mp, rc, mvsUtils::EFileType::depthMapInfo, "w");
-        int nbTCs = tcams ? tcams->size() : 0;
+        int nbTCs = tcams.size();
         fprintf(f, "minDepth %f, maxDepth %f, ntcams %i, tcams", maxMinDepth.y, maxMinDepth.x, nbTCs);
         for(int c = 0; c < nbTCs; c++)
         {
-            int tc = (*tcams)[c];
+            int tc = tcams[c];
             fprintf(f, " %i", tc);
         }
         fclose(f);

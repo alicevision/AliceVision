@@ -27,7 +27,7 @@ std::string mv_getFileName(const MultiViewParams* mp, int index, EFileType mv_fi
 FILE* mv_openFile(const MultiViewParams* mp, int index, EFileType mv_file_type, const char* readWrite);
 Matrix3x4 load3x4MatrixFromFile(FILE* fi);
 void memcpyRGBImageFromFileToArr(int camId, Color* imgArr, const std::string& fileNameOrigStr, const MultiViewParams* mp,
-                                 bool transpose, int bandType);
+                                 int bandType);
 struct seed_io_block            // 80 bytes
 {
     OrientedPoint op;           // 28 bytes
