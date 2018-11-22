@@ -632,6 +632,7 @@ bool SemiGlobalMatchingRc::sgmrc(bool checkIfExists)
             }
         }
         delete rcSilhoueteMap;
+        rcSilhoueteMap = nullptr;
     }
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

@@ -13,13 +13,13 @@ namespace aliceVision {
 namespace depthMap {
 
 SemiGlobalMatchingVolume::SemiGlobalMatchingVolume(float _volGpuMB, int _volDimX, int _volDimY, int _volDimZ, SemiGlobalMatchingParams* _sp)
+    : sp( _sp )
+    , volDimX(  _volDimX )
+    , volDimY(  _volDimY )
+    , volDimZ(  _volDimZ )
 {
-    sp = _sp;
 
     volGpuMB = _volGpuMB;
-    volDimX = _volDimX;
-    volDimY = _volDimY;
-    volDimZ = _volDimZ;
 
     {
         Point3d dmi = sp->cps.getDeviceMemoryInfo();
