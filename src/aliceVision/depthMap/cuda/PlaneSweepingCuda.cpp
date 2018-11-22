@@ -22,7 +22,15 @@
 namespace aliceVision {
 namespace depthMap {
 
+inline const uchar4 get( mvsUtils::ImagesCache::ImgPtr img, int x, int y )
+{
+    const Color floatRGB = img->at(x,y) * 255.0f;
 
+    return make_uchar4( static_cast<unsigned char>(floatRGB.r),
+                        static_cast<unsigned char>(floatRGB.g),
+                        static_cast<unsigned char>(floatRGB.b),
+                        0 );
+}
 
 
 void cps_fillCamera(cameraStruct* cam, int c, mvsUtils::MultiViewParams* mp, float** H, int scale)
@@ -131,19 +139,19 @@ void cps_fillCameraData(mvsUtils::ImagesCache* ic, cameraStruct* cam, int c, mvs
     //	cam->tex_hmh_g->getBuffer(),
     //	cam->tex_hmh_b->getBuffer(), mp->indexes[c], mp, true, 1, 0);
 
-    ic->refreshData(c);
+    // ic.refreshData(c);
+    mvsUtils::ImagesCache::ImgPtr img = ic->getImg( c );
 
     Pixel pix;
-    for(pix.y = 0; pix.y < mp->getHeight(c); pix.y++)
     {
-        for(pix.x = 0; pix.x < mp->getWidth(c); pix.x++)
+        for(pix.y = 0; pix.y < mp->getHeight(c); pix.y++)
         {
-             uchar4& pix_rgba = ic->transposed ? (*cam->tex_rgba_hmh)(pix.x, pix.y) : (*cam->tex_rgba_hmh)(pix.y, pix.x);
-             const rgb& pc = ic->getPixelValue(pix, c);
-             pix_rgba.x = pc.r;
-             pix_rgba.y = pc.g;
-             pix_rgba.z = pc.b;
-             pix_rgba.w = 0;
+            for(pix.x = 0; pix.x < mp->getWidth(c); pix.x++)
+            {
+                uchar4& pix_rgba = ic->transposed ? (*cam->tex_rgba_hmh)(pix.x, pix.y) : (*cam->tex_rgba_hmh)(pix.y, pix.x);
+                const uchar4 pc = get( img, pix.x, pix.y ); //  ic.getPixelValue(pix, c);
+                pix_rgba = pc;
+            }
         }
     }
 }

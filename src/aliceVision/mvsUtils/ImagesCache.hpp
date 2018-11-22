@@ -21,34 +21,82 @@ namespace mvsUtils {
 class ImagesCache
 {
 public:
+    class Img
+    {
+        int  _width;
+        int  _height;
+    public:
+        Img( )
+            : data(nullptr)
+        { }
+        Img( size_t sz )
+            : data( new Color[sz] )
+        { }
+
+        ~Img( )
+        {
+            delete [] data;
+        }
+
+        inline void setWidth(  int w ) { _width  = w; }
+        inline void setHeight( int h ) { _height = h; }
+
+        inline int  getWidth()  const { return _width;  }
+        inline int  getHeight() const { return _height; }
+
+        inline Color& at( int x, int y )
+        {
+            return data[x * _height + y];
+        }
+
+        inline const Color& at( int x, int y ) const
+        {
+            return data[x * _height + y];
+        }
+
+        Color* data;
+    };
+
+    typedef std::shared_ptr<Img> ImgPtr;
+
+public:
     const MultiViewParams* mp;
 
+private:
     ImagesCache(const ImagesCache&) = delete;
 
     int N_PRELOADED_IMAGES;
-    Color** imgs;
+    std::vector<ImgPtr> imgs;
 
-    StaticVector<int>* camIdMapId;
-    StaticVector<int>* mapIdCamId;
-    StaticVector<long>* mapIdClock;
+    std::vector<int> camIdMapId;
+    std::vector<int> mapIdCamId;
+    StaticVector<long> mapIdClock;
+
     std::vector<std::mutex> imagesMutexes;
     std::vector<std::string> imagesNames;
 
-    int bandType;
-    bool transposed;
+    const int  bandType;
+public:
+    const bool transposed;
 
-    ImagesCache(const MultiViewParams* _mp, int _bandType, bool _transposed = false);
-    ImagesCache(const MultiViewParams* _mp, int _bandType, std::vector<std::string>& _imagesNames,
-                    bool _transposed = false);
-    void initIC(int _bandType, std::vector<std::string>& _imagesNames, bool _transposed);
+public:
+    ImagesCache( const MultiViewParams* _mp, int _bandType,
+                 bool _transposed = false);
+    ImagesCache( const MultiViewParams* _mp, int _bandType, std::vector<std::string>& _imagesNames,
+                 bool _transposed = false);
+    void initIC( std::vector<std::string>& _imagesNames );
     ~ImagesCache();
 
-    int getPixelId(int x, int y, int imgid);
+    inline ImgPtr getImg( int camId ) {
+        refreshData(camId);
+        const int imageId = camIdMapId[camId];
+        return imgs[imageId];
+    }
+
     void refreshData(int camId);
     std::future<void> refreshData_async(int camId);
 
     Color getPixelValueInterpolated(const Point2d* pix, int camId);
-    rgb getPixelValue(const Pixel& pix, int camId);
 };
 
 } // namespace mvsUtils
