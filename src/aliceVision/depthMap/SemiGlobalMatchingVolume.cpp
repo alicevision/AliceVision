@@ -195,7 +195,7 @@ void SemiGlobalMatchingVolume::copyVolume(const StaticVector<unsigned char>& vol
 void SemiGlobalMatchingVolume::addVolumeSecondMin(
             const std::vector<int>& index_set, 
             const std::vector<StaticVector<unsigned char> >& vols,
-            StaticVector<Pixel> z )
+            const StaticVector<Pixel>& z )
 
 {
   for( auto i : index_set )

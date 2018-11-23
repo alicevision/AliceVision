@@ -469,16 +469,6 @@ void SemiGlobalMatchingRc::computeDepthsAndResetTCams()
     deleteArrayOfArrays<float>(&alldepths);
 }
 
-void SemiGlobalMatchingRc::getSubDepthsForTCam( int tcamid, std::vector<float>& out )
-{
-    out.resize(depthsTcamsLimits[tcamid].y);
-
-    for(int i = 0; i<depthsTcamsLimits[tcamid].y; i++ )
-    {
-        out[i] = (*depths)[depthsTcamsLimits[tcamid].x + i];
-    }
-}
-
 bool SemiGlobalMatchingRc::sgmrc(bool checkIfExists)
 {
     if(sp->mp->verbose)
@@ -537,12 +527,6 @@ bool SemiGlobalMatchingRc::sgmrc(bool checkIfExists)
         sp->cps.getSilhoueteMap(rcSilhoueteMap, scale, step, sp->silhouetteMaskColor, rc);
     }
 
-    std::vector<std::vector<float> > subDepths( tcams.size() );
-    for( int c = 0; c < tcams.size(); c++ )
-    {
-        getSubDepthsForTCam( c, subDepths[c] );
-    }
-
     if(sp->mp->verbose)
     {
         std::ostringstream ostr;
@@ -550,7 +534,7 @@ bool SemiGlobalMatchingRc::sgmrc(bool checkIfExists)
              << "    rc camera " << rc << " has depth " << depths->size() << std::endl;
         for( int c = 0; c < tcams.size(); c++ )
             ostr << "    tc camera " << tcams[c]
-                 << " uses " << subDepths[c].size() << " depths" << std::endl;
+                 << " uses " << depthsTcamsLimits[c].y << " depths" << std::endl;
 
         ALICEVISION_LOG_DEBUG( ostr.str() );
     }
@@ -564,7 +548,7 @@ bool SemiGlobalMatchingRc::sgmrc(bool checkIfExists)
      */
     int devid;
     cudaGetDevice( &devid );
-    printf("Allocating %d times %d %d %d on device %d\n", tcams.size(),
+    printf("Allocating %d times %d %d %d on device %d\n", (int)tcams.size(),
                                              volDimX,
                                              volDimY,
                                              zDimsAtATime, devid );
@@ -580,7 +564,10 @@ bool SemiGlobalMatchingRc::sgmrc(bool checkIfExists)
     {
         index_set[c] = c;
     }
-    SemiGlobalMatchingRcTc srt( index_set, subDepths, rc, tcams, scale, step, zDimsAtATime, sp, rcSilhoueteMap );
+    SemiGlobalMatchingRcTc srt( index_set,
+                                depths->getData(),
+                                depthsTcamsLimits.getData(),
+                                rc, tcams, scale, step, zDimsAtATime, sp, rcSilhoueteMap );
     srt.computeDepthSimMapVolume( simVolume, volume_tmp_on_gpu, wsh, gammaC, gammaP );
 
     sp->cps.freeTempVolume( volume_tmp_on_gpu );

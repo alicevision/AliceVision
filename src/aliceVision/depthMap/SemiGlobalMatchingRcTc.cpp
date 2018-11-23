@@ -12,7 +12,8 @@ namespace depthMap {
 
 SemiGlobalMatchingRcTc::SemiGlobalMatchingRcTc(
             const std::vector<int>& index_set,
-            const std::vector<std::vector<float> >& _rcTcDepths,
+            const std::vector<float>& rcTcDepths,
+            const std::vector<Pixel>&  rcTcDepthRanges,
             int _rc,
             const StaticVector<int>& _tc,
             int scale,
@@ -28,7 +29,8 @@ SemiGlobalMatchingRcTc::SemiGlobalMatchingRcTc(
     , _step( step )
     , _w( sp->mp->getWidth(rc) / (scale * step) )
     , _h( sp->mp->getHeight(rc) / (scale * step) )
-    , rcTcDepths( _rcTcDepths )
+    , _rcTcDepths( rcTcDepths )
+    , _rcTcDepthRanges( rcTcDepthRanges )
     , _zDimsAtATime( zDimsAtATime )
 {
     epipShift = 0.0f;
@@ -57,7 +59,7 @@ void SemiGlobalMatchingRcTc::computeDepthSimMapVolume(
 
     for( auto j : _index_set )
     {
-        const int volDimZ = rcTcDepths[j].size();
+        const int volDimZ = _rcTcDepthRanges[j].y;
 
         volume[j].resize( volDimX * volDimY * volDimZ );
 
@@ -84,7 +86,8 @@ void SemiGlobalMatchingRcTc::computeDepthSimMapVolume(
                                  volDimX, volDimY,
                                  volStepXY,
                                  _zDimsAtATime,
-                                 rcTcDepths,
+                                 _rcTcDepths,
+                                 _rcTcDepthRanges,
                                  rc, tc,
                                  rcSilhoueteMap,
                                  wsh, gammaC, gammaP, _scale, 1,
@@ -97,7 +100,7 @@ void SemiGlobalMatchingRcTc::computeDepthSimMapVolume(
     int ct = 0;
     for( auto j : _index_set )
     {
-        const int volDimZ = rcTcDepths[j].size();
+        const int volDimZ = _rcTcDepthRanges[j].y;
 
         for( int i=0; i<volDimX * volDimY * volDimZ; i++ )
         {
@@ -117,7 +120,7 @@ void SemiGlobalMatchingRcTc::computeDepthSimMapVolume(
 
     for( auto j : _index_set )
     {
-        const int volDimZ = rcTcDepths[j].size();
+        const int volDimZ = _rcTcDepthRanges[j].y;
 
         if(sp->P3 > 0)
         {

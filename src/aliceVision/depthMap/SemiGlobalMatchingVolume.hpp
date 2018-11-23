@@ -23,7 +23,7 @@ public:
     void copyVolume(const StaticVector<unsigned char>& volume, int zFrom, int nZSteps);
     void addVolumeSecondMin( const std::vector<int>& index_set, 
                              const std::vector<StaticVector<unsigned char> >& vols,
-                             StaticVector<Pixel> z );
+                             const StaticVector<Pixel>& z );
 
     void cloneVolumeSecondStepZ();
 

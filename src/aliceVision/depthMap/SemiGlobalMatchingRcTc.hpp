@@ -17,7 +17,8 @@ class SemiGlobalMatchingRcTc
 {
 public:
     SemiGlobalMatchingRcTc( const std::vector<int>& index_set,
-                            const std::vector<std::vector<float> >& _rcTcDepths,
+                            const std::vector<float>& rcTcDepths,
+                            const std::vector<Pixel>&  rcTcDepthRanges,
                             int _rc,
                             const StaticVector<int>& _tc,
                             int _scale,
@@ -45,7 +46,8 @@ private:
     const int _w;
     const int _h;
     const int _zDimsAtATime;
-    const std::vector<std::vector<float> >& rcTcDepths;
+    const std::vector<float>& _rcTcDepths;
+    const std::vector<Pixel>&  _rcTcDepthRanges;
     float epipShift;
     // int w, h;
     StaticVectorBool* rcSilhoueteMap;

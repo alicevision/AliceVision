@@ -736,7 +736,8 @@ void PlaneSweepingCuda::sweepPixelsToVolume( const std::vector<int>& index_set,
                                              const int volDimY,
                                              const int volStepXY,
                                              const int zDimsAtATime,
-                                             const std::vector<std::vector<float> >& depths_in,
+                                             const std::vector<float>& rc_depths,
+                                             const std::vector<Pixel>&  use_depths,
                                              int rc,
                                              const StaticVector<int>& tc_in,
                                              StaticVectorBool* rcSilhoueteMap,
@@ -765,7 +766,7 @@ void PlaneSweepingCuda::sweepPixelsToVolume( const std::vector<int>& index_set,
                                    volSim_dmp,
                                    volDimX, volDimY, volStepXY,
                                    zDimsAtATime,
-                                   depths_in,
+                                   rc_depths, use_depths,
                                    rc,
                                    tc_in,
                                    rcSilhoueteMap,
@@ -783,7 +784,8 @@ void PlaneSweepingCuda::sweepPixelsToVolumeSubset( const std::vector<int>& index
                                               const int volDimY,
                                               const int volStepXY,
                                               const int zDimsAtATime,
-                                              const std::vector<std::vector<float> >& depths_in,
+                                              const std::vector<float>& rc_depths,
+                                              const std::vector<Pixel>&  use_depths,
                                               int rc,
                                               const StaticVector<int>& tc_in,
                                               StaticVectorBool* rcSilhoueteMap,
@@ -797,14 +799,14 @@ void PlaneSweepingCuda::sweepPixelsToVolumeSubset( const std::vector<int>& index
     const int w = mp->getWidth(rc) / scale;
     const int h = mp->getHeight(rc) / scale;
 
-    std::vector<const std::vector<float>*> depths;
-    std::vector<int>                       tcs;
-    std::vector<int>                       nDepthsToSearch;
+    std::vector<int> depthsToStart;
+    std::vector<int> tcs;
+    std::vector<int> nDepthsToSearch;
     for( auto j : index_set )
     {
-        depths.push_back( &depths_in[j] );
+        depthsToStart.push_back( use_depths[j].x );
         tcs.push_back( tc_in[j] );
-        nDepthsToSearch.push_back( depths_in[j].size() );
+        nDepthsToSearch.push_back( use_depths[j].y );
     }
 
     const int max_ct = index_set.size();
@@ -840,12 +842,10 @@ void PlaneSweepingCuda::sweepPixelsToVolumeSubset( const std::vector<int>& index
     cudaDeviceSynchronize();
     _camsBasesDev.copyFrom( _camsBasesHst );
 
-    std::vector<CudaDeviceMemory<float>*> depths_dev( index_set.size() );
-    for( int ct=0; ct<max_ct; ct++ )
-    {
-        const float* depth_data = depths[ct]->data();
-        depths_dev[ct] = new CudaDeviceMemory<float>( depth_data, nDepthsToSearch[ct], tcams[ct].stream );
-    }
+    // copy the vector of depths to GPU
+    const float* depth_data = rc_depths.data();
+    CudaDeviceMemory<float> depths_dev( depth_data, rc_depths.size() );
+    // CudaDeviceMemory<float>* depths_dev = new CudaDeviceMemory<float>( depth_data, rc_depths.size() );
 
     ps_planeSweepingGPUPixelsVolume(
             ps_texs_arr, // indexed with tcams[].camId
@@ -857,6 +857,7 @@ void PlaneSweepingCuda::sweepPixelsToVolumeSubset( const std::vector<int>& index
             volDimX, volDimY,
             zDimsAtATime,
             depths_dev,
+            depthsToStart,
             nDepthsToSearch,
             wsh,
             _nbestkernelSizeHalf,
@@ -866,10 +867,7 @@ void PlaneSweepingCuda::sweepPixelsToVolumeSubset( const std::vector<int>& index
             _scales, _verbose, false, _nbest,
             true, gammaC, gammaP, subPixel, epipShift);
 
-    for( auto ptr : depths_dev )
-    {
-        delete ptr;
-    }
+    // delete depths_dev;
 
     if(_verbose)
     {

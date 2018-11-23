@@ -728,7 +728,8 @@ static void ps_computeSimilarityVolume(
                                 int volStepXY,
                                 int volDimX, int volDimY,
                                 const int zDimsAtATime,
-                                std::vector<CudaDeviceMemory<float>*> depths_dev,
+                                CudaDeviceMemory<float>& depths_dev,
+                                const std::vector<int>& depths_to_start,
                                 const std::vector<int>& nDepthsToSearch,
                                 int wsh, int kernelSizeHalf,
                                 int scale,
@@ -744,7 +745,7 @@ static void ps_computeSimilarityVolume(
         const int volDimZ = nDepthsToSearch[ct];
 
         if(verbose)
-            printf("nDepths %i, nDepthsToSearch %i \n", (int)depths_dev[ct]->getUnitsTotal(), (int)nDepthsToSearch[ct]);
+            printf("nDepths %i, nDepthsToSearch %i \n", (int)depths_dev.getUnitsTotal(), nDepthsToSearch[ct]);
 
         // setup cameras matrices to the constant memory
         // ps_init_reference_camera_matrices(cams[0].param_hst);
@@ -755,6 +756,8 @@ static void ps_computeSimilarityVolume(
         // compute similarity volume
         const int xsteps = width / volStepXY;
         const int ysteps = height / volStepXY;
+
+        const int offset = depths_to_start[ct];
 
         for( int startDepth=0; startDepth<volDimZ; startDepth+=zDimsAtATime )
         {
@@ -772,8 +775,8 @@ static void ps_computeSimilarityVolume(
               ps_texs_arr[tcams[ct].camId][scale].tex,
               rcam.param_dev,
               tcams[ct].param_dev,
-              depths_dev[ct]->getBuffer(),
-              startDepth,
+              depths_dev.getBuffer(),
+              offset + startDepth,
               width, height,
               wsh,
               gammaC, gammaP, epipShift,
@@ -808,7 +811,8 @@ void ps_planeSweepingGPUPixelsVolume( Pyramid& ps_texs_arr,
                                       int width, int height,
                                       int volStepXY, int volDimX, int volDimY,
                                       const int zDimsAtATime,
-                                      std::vector<CudaDeviceMemory<float>*> depths_dev,
+                                      CudaDeviceMemory<float>& depths_dev,
+                                      const std::vector<int>& depths_to_start,
                                       const std::vector<int>& nDepthsToSearch,
                                       int wsh, int kernelSizeHalf,
                                       int scale,
@@ -838,6 +842,7 @@ void ps_planeSweepingGPUPixelsVolume( Pyramid& ps_texs_arr,
                                volDimX, volDimY,
                                zDimsAtATime,
                                depths_dev,
+                               depths_to_start,
                                nDepthsToSearch,
                                wsh, kernelSizeHalf,
                                scale, CUDAdeviceNo, ncamsAllocated, scales,
