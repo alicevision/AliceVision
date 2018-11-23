@@ -2437,11 +2437,10 @@ void DelaunayGraphCut::createDensePointCloudFromSfM(const Point3d hexah[8], cons
       for(const auto& observationPair : landmark.observations)
         vAttrIt->cams.push_back(mp->getIndexFromViewId(observationPair.first));
 
-      vCoordsIt++;
-      vAttrIt++;
+      ++vCoordsIt;
+      ++vAttrIt;
     }
-
-    landmarkIt++;
+    ++landmarkIt;
   }
 
   _verticesCoords.shrink_to_fit();
