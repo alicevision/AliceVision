@@ -93,8 +93,6 @@ public:
     std::vector<Point3d> FocK1K2Arr;
     /// number of cameras
     int ncams;
-    /// cuda device id
-    int CUDADeviceNo;
     ///
     float simThr;
     int g_border = 2;

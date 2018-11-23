@@ -45,7 +45,6 @@ MultiViewParams::MultiViewParams(const sfmData::SfMData& sfmData,
     , _depthMapFilterFolder(depthMapFilterFolder + "/")
     , _processDownscale(downscale)
 {
-    CUDADeviceNo = userParams.get<int>("global.CUDADeviceNo", 0);
     verbose = userParams.get<bool>("global.verbose", true);
     simThr = userParams.get<double>("global.simThr", 0.0);
     _useSil = userParams.get<bool>("global.use_silhouettes", _useSil);

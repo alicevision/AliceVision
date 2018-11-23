@@ -26,6 +26,36 @@ See the [presentation of the pipeline steps](http://alicevision.github.io/#photo
 The project is released under MPLv2, see [**COPYING.md**](COPYING.md).
 
 
+## Citations
+
+If you use this project for research, please cite:
+
+- P. Moulon, P. Monasse and R. Marlet. [Adaptive Structure from Motion with a contrario model estimation](https://hal-enpc.archives-ouvertes.fr/file/index/docid/769266/filename/moulon_monasse_marlet_adaptive_sfm_accv2012.pdf). ACCV 2012.
+  ```
+  @inproceedings{Moulon2012,
+    doi = {10.1007/978-3-642-37447-0_20},
+    year  = {2012},
+    publisher = {Springer Berlin Heidelberg},
+    pages = {257--270},
+    author = {Pierre Moulon and Pascal Monasse and Renaud Marlet},
+    title = {Adaptive Structure from Motion with a~Contrario Model Estimation},
+    booktitle = {Proceedings of the Asian Computer Vision Conference (ACCV 2012)}
+  }
+  ```
+- M. Jancosek, T. Pajdla. [Multi-view reconstruction preserving weakly-supported surfaces](http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.225.6187&rep=rep1&type=pdf). CVPR 2011.
+  ```
+  @inproceedings{Jancosek2011,
+    doi = {10.1109/cvpr.2011.5995693},
+    url = {https://doi.org/10.1109/cvpr.2011.5995693},
+    year  = {2011},
+    month = {jun},
+    publisher = {{IEEE}},
+    author = {Michal Jancosek and Tomas Pajdla},
+    title = {Multi-view reconstruction preserving weakly-supported surfaces},
+    booktitle = {{CVPR} 2011}
+  }
+  ```
+
 ## Get the project
 
 Get the source code: `git clone --recursive git://github.com/alicevision/AliceVision`

@@ -23,7 +23,7 @@ public:
     mvsUtils::MultiViewParams* mp;
     mvsUtils::PreMatchCams* pc;
     RcTc* prt;
-    PlaneSweepingCuda* cps;
+    PlaneSweepingCuda& cps;
     bool visualizeDepthMaps;
     bool visualizePartialDepthMaps;
     bool doSmooth;
@@ -59,7 +59,7 @@ public:
     bool useSilhouetteMaskCodedByColor;
     rgb silhouetteMaskColor;
 
-    SemiGlobalMatchingParams(mvsUtils::MultiViewParams* _mp, mvsUtils::PreMatchCams* _pc, PlaneSweepingCuda* _cps);
+    SemiGlobalMatchingParams(mvsUtils::MultiViewParams* _mp, mvsUtils::PreMatchCams* _pc, PlaneSweepingCuda& _cps);
     ~SemiGlobalMatchingParams(void);
 
     DepthSimMap* getDepthSimMapFromBestIdVal(int w, int h, StaticVector<IdValue>* volumeBestIdVal, int scale,

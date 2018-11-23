@@ -343,6 +343,17 @@ if(ALICEVISION_BUILD_SFM)
   if(Ceres_FOUND)
     message(STATUS "Ceres include dirs ${CERES_INCLUDE_DIRS}")
     message(STATUS "Ceres libraries ${CERES_LIBRARIES}")
+    if(ALICEVISION_REQUIRE_CERES_WITH_SUITESPARSE)
+        # Ceres export include dirs but doesn't export suitesparse lib dependencies in CeresConfig.cmake
+        # So here is a workaround:
+        find_package(SuiteSparse)
+        message(STATUS "SUITESPARSE_LIBRARIES: ${SUITESPARSE_LIBRARIES}")
+        if(SUITESPARSE_LIBRARIES)
+            list(APPEND CERES_LIBRARIES ${SUITESPARSE_LIBRARIES})
+        endif()
+    endif()
+    message(STATUS "CERES_LIBRARIES: ${CERES_LIBRARIES}")
+    message(STATUS "CERES_INCLUDE_DIRS: ${CERES_INCLUDE_DIRS}")
     if(WIN32)
         # avoid 'ERROR' macro clashing on Windows 
         add_definitions(-DGLOG_NO_ABBREVIATED_SEVERITIES)
@@ -639,6 +650,9 @@ endif()
 # ==============================================================================
 # CUDA
 # ==============================================================================
+option(ALICEVISION_USE_NVTX_PROFILING "Use CUDA NVTX for profiling." OFF)
+option(ALICEVISION_NVCC_WARNINGS      "Switch on several additional warnings for CUDA nvcc." OFF)
+
 set(ALICEVISION_HAVE_CUDA 0)
 
 if(NOT ALICEVISION_USE_CUDA STREQUAL "OFF")
@@ -681,20 +695,28 @@ if(ALICEVISION_HAVE_CUDA)
 
   set(CUDA_NVCC_FLAGS_DEBUG   "${CUDA_NVCC_FLAGS_DEBUG};-G;-g")
   set(CUDA_NVCC_FLAGS_RELEASE "${CUDA_NVCC_FLAGS_RELEASE};-O3")
-  if(CUDA_VERSION VERSION_LESS 9.0) # cuda < 9.0
-    set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};-gencode;arch=compute_20,code=sm_20")
+  if(NOT CUDA_VERSION_MAJOR LESS 9)
+    set(ALICEVISION_CUDA_CC_LIST_BASIC 30 35 50 52 60 61 62)
+  elseif(CUDA_VERSION_MAJOR GREATER 7)
+    set(ALICEVISION_CUDA_CC_LIST_BASIC 20 30 35 50 52 60 61 62)
+  else()
+    set(ALICEVISION_CUDA_CC_LIST_BASIC 20 30 35 50 52 )
   endif()
-  set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};-gencode;arch=compute_30,code=sm_30")
-  set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};-gencode;arch=compute_35,code=sm_35")
-  set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};-gencode;arch=compute_50,code=sm_50")
-  set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};-gencode;arch=compute_52,code=sm_52")
-  set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};-gencode=arch=compute_52,code=compute_52")
+  set(ALICEVISION_CUDA_CC_LIST ${ALICEVISION_CUDA_CC_LIST_BASIC}
+      CACHE STRING "CUDA CC versions to compile")
 
-  if(NOT CUDA_VERSION VERSION_LESS 8.0) # cuda >= 8.0
-    set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};-gencode=arch=compute_60,code=sm_60")
-    set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};-gencode=arch=compute_61,code=sm_61")
-    set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};-gencode=arch=compute_62,code=sm_62")
-  endif()
+  # Add all requested CUDA CCs to the command line for offline compilation
+  list(SORT ALICEVISION_CUDA_CC_LIST)
+  foreach(ALICEVISION_CC_VERSION ${ALICEVISION_CUDA_CC_LIST})
+    set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS};-gencode;arch=compute_${ALICEVISION_CC_VERSION},code=sm_${ALICEVISION_CC_VERSION}")
+  endforeach()
+
+  # Use the highest request CUDA CC for CUDA JIT compilation
+  list(LENGTH ALICEVISION_CUDA_CC_LIST ALICEVISION_CC_LIST_LEN)
+  MATH(EXPR ALICEVISION_CC_LIST_LEN "${ALICEVISION_CC_LIST_LEN}-1")
+  list(GET ALICEVISION_CUDA_CC_LIST ${ALICEVISION_CC_LIST_LEN} ALICEVISION_CUDA_CC_LIST_LAST)
+  set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS};-gencode;arch=compute_${ALICEVISION_CUDA_CC_LIST_LAST},code=compute_${ALICEVISION_CUDA_CC_LIST_LAST}")
+
 
   if(NOT CUDA_VERSION VERSION_LESS 7.0) # cuda >= 7.0
     set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};-std=c++11")
@@ -711,13 +733,25 @@ if(ALICEVISION_HAVE_CUDA)
     if(UNIX)
       set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};-D_FORCE_INLINES")
     endif()
-    set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};-Xptxas;--warn-on-local-memory-usage")
-    set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};-Xptxas;--warn-on-spills")
+    if(ALICEVISION_NVCC_WARNINGS)
+      set(CUDA_NVCC_FLAGS_RELEASE "${CUDA_NVCC_FLAGS_RELEASE};-Xptxas;-warn-lmem-usage")
+      set(CUDA_NVCC_FLAGS_RELEASE "${CUDA_NVCC_FLAGS_RELEASE};-Xptxas;-warn-spills")
+      set(CUDA_NVCC_FLAGS_RELEASE "${CUDA_NVCC_FLAGS_RELEASE};-Xptxas;--warn-on-local-memory-usage")
+      set(CUDA_NVCC_FLAGS_RELEASE "${CUDA_NVCC_FLAGS_RELEASE};-Xptxas;--warn-on-spills")
+    endif()
   endif()
 
   # library required for CUDA dynamic parallelism, forgotten by CMake 3.4
   cuda_find_library_local_first(CUDA_CUDADEVRT_LIBRARY cudadevrt "\"cudadevrt\" library")
 
+  # If user activates NVTX profiling, add library and flags
+  if(ALICEVISION_USE_NVTX_PROFILING)
+    message(STATUS "PROFILING CPU/GPU CODE: NVTX is in use")
+    cuda_find_library_local_first(CUDA_NVTX_LIBRARY nvToolsExt "NVTX library")
+    add_definitions(-DALICEVISION_USE_NVTX)
+    include_directories(${CUDA_INCLUDE_DIRS})
+    set(ALICEVISION_NVTX_LIBRARY ${CUDA_NVTX_LIBRARY})
+  endif()
 endif()
 
 # ==============================================================================
@@ -899,7 +933,7 @@ add_subdirectory(software)
 # ==============================================================================
 
 install(EXPORT aliceVision-targets
-        DESTINATION share/aliceVision/cmake FILE AliceVisionTargets.cmake)
+    DESTINATION ${CMAKE_INSTALL_DATADIR}/aliceVision/cmake FILE AliceVisionTargets.cmake)
 
 #Adapt build include paths to install path
 set(ALICEVISION_INCLUDE_DIRS
@@ -928,7 +962,7 @@ configure_file("${CMAKE_CURRENT_SOURCE_DIR}/cmake/AliceVisionConfig.cmake.in"
                "${CMAKE_CURRENT_BINARY_DIR}/AliceVisionConfig.cmake" @ONLY)
 
 install(FILES "${CMAKE_CURRENT_BINARY_DIR}/AliceVisionConfig.cmake"
-        DESTINATION share/aliceVision/cmake)
+        DESTINATION ${CMAKE_INSTALL_DATADIR}/aliceVision/cmake)
 
 # create the config.hpp file containing all the preprocessor definitions
 set(configfile "${generatedDir}/aliceVision/config.hpp")
@@ -937,7 +971,7 @@ configure_file("${CMAKE_CURRENT_SOURCE_DIR}/cmake/config.hpp.in"
 
 
 install(FILES "${configfile}"
-        DESTINATION "include/aliceVision")
+        DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/aliceVision")
 
 # Add uninstall target
 configure_file(

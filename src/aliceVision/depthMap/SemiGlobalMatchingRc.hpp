@@ -20,7 +20,9 @@ public:
     ~SemiGlobalMatchingRc(void);
 
     bool sgmrc(bool checkIfExists = true);
-    StaticVector<int>* tcams;
+
+protected:
+    StaticVector<int> tcams;
 
 protected:
 
@@ -33,15 +35,19 @@ protected:
     void computeDepths(float minDepth, float maxDepth, StaticVector<StaticVector<float>*>* alldepths);
     void computeDepthsAndResetTCams();
 
-    StaticVector<float>* getSubDepthsForTCam(int tcamid);
+private:
+    void getSubDepthsForTCam( int tcamid, std::vector<float>& subDepths );
 
+protected:
     SemiGlobalMatchingParams* sp;
 
-    int rc, scale, step;
+    const int rc;
+    const int scale;
+    const int step;
     int wsh;
     float gammaC, gammaP;
     StaticVector<float>* depths;
-    StaticVector<Pixel>* depthsTcamsLimits;
+    StaticVector<Pixel> depthsTcamsLimits;
     int w, h;
 
     std::string outDir;
