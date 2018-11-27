@@ -1434,7 +1434,7 @@ void Mesh::removeFreePointsFromMesh(StaticVector<int>** out_ptIdToNewPtId)
     delete cleanedMesh;
 }
 
-double Mesh::computeTriangleProjectionArea(const triangle_proj& tp)
+double Mesh::computeTriangleProjectionArea(const triangle_proj& tp) const
 {
     // return (float)((tp.rd.x-tp.lu.x+1)*(tp.rd.y-tp.lu.y+1));
 
@@ -1453,7 +1453,7 @@ double Mesh::computeTriangleProjectionArea(const triangle_proj& tp)
     //	return  cross(e1,e2).size()/2.0f;
 }
 
-double Mesh::computeTriangleArea(int idTri)
+double Mesh::computeTriangleArea(int idTri) const
 {
     Point3d pa = (*pts)[(*tris)[idTri].v[0]];
     Point3d pb = (*pts)[(*tris)[idTri].v[1]];
