@@ -28,10 +28,9 @@ protected:
 
     float getMinTcStepAtDepth(float depth, float minDepth, float maxDepth,
                               StaticVector<StaticVector<float>*>* alldepths);
-    StaticVector<float>* getTcSeedsRcPlaneDists(int rc, const StaticVector<int>& tcams);
     bool selectBestDepthsRange(int nDepthsThr, StaticVector<float>* rcSeedsDistsAsc);
     bool selectBestDepthsRange(int nDepthsThr, StaticVector<StaticVector<float>*>* alldepths);
-    StaticVector<StaticVector<float>*>* computeAllDepthsAndResetTCams();
+    StaticVector<StaticVector<float>*>* computeAllDepthsAndResetTCams(float midDepth);
     void computeDepthsTcamsLimits(StaticVector<StaticVector<float>*>* alldepths);
     void computeDepths(float minDepth, float maxDepth, StaticVector<StaticVector<float>*>* alldepths);
     void computeDepthsAndResetTCams();

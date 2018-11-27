@@ -399,7 +399,7 @@ void DepthSimMap::save(int rc, const StaticVector<int>& tcams)
     const int width = mp->getWidth(rc) / scale;
     const int height = mp->getHeight(rc) / scale;
 
-    oiio::ParamValueList metadata;
+    oiio::ParamValueList metadata = imageIO::getMetadataFromMap(mp->getMetadata(rc));
     metadata.push_back(oiio::ParamValue("AliceVision:downscale", mp->getDownscaleFactor(rc)));
     metadata.push_back(oiio::ParamValue("AliceVision:CArr", oiio::TypeDesc(oiio::TypeDesc::DOUBLE, oiio::TypeDesc::VEC3), 1, mp->CArr[rc].m));
     metadata.push_back(oiio::ParamValue("AliceVision:iCamArr", oiio::TypeDesc(oiio::TypeDesc::DOUBLE, oiio::TypeDesc::MATRIX33), 1, mp->iCamArr[rc].m));
@@ -409,8 +409,8 @@ void DepthSimMap::save(int rc, const StaticVector<int>& tcams)
         metadata.push_back(oiio::ParamValue("AliceVision:P", oiio::TypeDesc(oiio::TypeDesc::DOUBLE, oiio::TypeDesc::MATRIX44), 1, matrixP.data()));
     }
 
-    imageIO::writeImage(mv_getFileName(mp, rc, mvsUtils::EFileType::depthMap, scale), width, height, depthMap->getDataWritable(), imageIO::EImageQuality::LOSSLESS, metadata);
-    imageIO::writeImage(mv_getFileName(mp, rc, mvsUtils::EFileType::simMap, scale), width, height, simMap->getDataWritable());
+    imageIO::writeImage(getFileNameFromIndex(mp, rc, mvsUtils::EFileType::depthMap, scale), width, height, depthMap->getDataWritable(), imageIO::EImageQuality::LOSSLESS, metadata);
+    imageIO::writeImage(getFileNameFromIndex(mp, rc, mvsUtils::EFileType::simMap, scale), width, height, simMap->getDataWritable());
 
     {
         Point2d maxMinDepth = getMaxMinDepth();
@@ -433,8 +433,8 @@ void DepthSimMap::load(int rc, int fromScale)
     StaticVector<float> depthMap;
     StaticVector<float> simMap;
 
-    imageIO::readImage(mv_getFileName(mp, rc, mvsUtils::EFileType::depthMap, fromScale), width, height, depthMap.getDataWritable());
-    imageIO::readImage(mv_getFileName(mp, rc, mvsUtils::EFileType::simMap, fromScale), width, height, simMap.getDataWritable());
+    imageIO::readImage(getFileNameFromIndex(mp, rc, mvsUtils::EFileType::depthMap, fromScale), width, height, depthMap.getDataWritable());
+    imageIO::readImage(getFileNameFromIndex(mp, rc, mvsUtils::EFileType::simMap, fromScale), width, height, simMap.getDataWritable());
 
     imageIO::transposeImage(width, height, depthMap.getDataWritable());
     imageIO::transposeImage(width, height, simMap.getDataWritable());
@@ -457,7 +457,7 @@ void DepthSimMap::saveRefine(int rc, std::string depthMapFileName, std::string s
         simMap.at(i) = (*dsm)[i].sim;
     }
 
-    oiio::ParamValueList metadata;
+    oiio::ParamValueList metadata = imageIO::getMetadataFromMap(mp->getMetadata(rc));
     metadata.push_back(oiio::ParamValue("AliceVision:downscale", mp->getDownscaleFactor(rc)));
     metadata.push_back(oiio::ParamValue("AliceVision:CArr", oiio::TypeDesc(oiio::TypeDesc::DOUBLE, oiio::TypeDesc::VEC3), 1, mp->CArr[rc].m));
     metadata.push_back(oiio::ParamValue("AliceVision:iCamArr", oiio::TypeDesc(oiio::TypeDesc::DOUBLE, oiio::TypeDesc::MATRIX33), 1, mp->iCamArr[rc].m));

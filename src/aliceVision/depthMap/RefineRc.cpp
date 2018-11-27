@@ -25,18 +25,18 @@ namespace bfs = boost::filesystem;
 RefineRc::RefineRc(int _rc, int _scale, int _step, SemiGlobalMatchingParams* _sp)
     : SemiGlobalMatchingRc(false, _rc, _scale, _step, _sp)
 {
-    _nSamplesHalf = sp->mp->_ini.get<int>("refineRc.nSamplesHalf", 150);
-    _ndepthsToRefine = sp->mp->_ini.get<int>("refineRc.ndepthsToRefine", 31);
-    _sigma = (float)sp->mp->_ini.get<double>("refineRc.sigma", 15.0);
-    _niters = sp->mp->_ini.get<int>("refineRc.niters", 100);
+    _nSamplesHalf = sp->mp->userParams.get<int>("refineRc.nSamplesHalf", 150);
+    _ndepthsToRefine = sp->mp->userParams.get<int>("refineRc.ndepthsToRefine", 31);
+    _sigma = (float)sp->mp->userParams.get<double>("refineRc.sigma", 15.0);
+    _niters = sp->mp->userParams.get<int>("refineRc.niters", 100);
 
-    _userTcOrPixSize = sp->mp->_ini.get<bool>("refineRc.useTcOrRcPixSize", false);
-    _wsh = sp->mp->_ini.get<int>("refineRc.wsh", 3);
-    _gammaC = (float)sp->mp->_ini.get<double>("refineRc.gammaC", 15.5);
-    _gammaP = (float)sp->mp->_ini.get<double>("refineRc.gammaP", 8.0);
+    _userTcOrPixSize = sp->mp->userParams.get<bool>("refineRc.useTcOrRcPixSize", false);
+    _wsh = sp->mp->userParams.get<int>("refineRc.wsh", 3);
+    _gammaC = (float)sp->mp->userParams.get<double>("refineRc.gammaC", 15.5);
+    _gammaP = (float)sp->mp->userParams.get<double>("refineRc.gammaP", 8.0);
     
-    int nnearestcams = sp->mp->_ini.get<int>("refineRc.maxTCams", 6);
-    tcams = sp->pc->findNearestCamsFromSeeds(rc, nnearestcams);
+    int nnearestcams = sp->mp->userParams.get<int>("refineRc.maxTCams", 6);
+    tcams = sp->pc->findNearestCamsFromLandmarks(rc, nnearestcams);
 }
 
 RefineRc::~RefineRc()
@@ -310,8 +310,8 @@ bool RefineRc::refinercCUDA(bool checkIfExists)
 void refineDepthMaps(int CUDADeviceNo, mvsUtils::MultiViewParams* mp, mvsUtils::PreMatchCams* pc, const StaticVector<int>& cams)
 {
     const int fileScale = 1; // input images scale (should be one)
-    int sgmScale = mp->_ini.get<int>("semiGlobalMatching.scale", -1);
-    int sgmStep = mp->_ini.get<int>("semiGlobalMatching.step", -1);
+    int sgmScale = mp->userParams.get<int>("semiGlobalMatching.scale", -1);
+    int sgmStep = mp->userParams.get<int>("semiGlobalMatching.step", -1);
 
     if(sgmScale == -1)
     {
@@ -348,7 +348,7 @@ void refineDepthMaps(mvsUtils::MultiViewParams* mp, mvsUtils::PreMatchCams* pc, 
     ALICEVISION_LOG_INFO("Number of GPU devices: " << num_gpus << ", number of CPU threads: " << num_cpu_threads);
     int numthreads = std::min(num_gpus, num_cpu_threads);
 
-    int num_gpus_to_use = mp->_ini.get<int>("refineRc.num_gpus_to_use", 0);
+    int num_gpus_to_use = mp->userParams.get<int>("refineRc.num_gpus_to_use", 0);
     if(num_gpus_to_use > 0)
     {
         numthreads = num_gpus_to_use;
@@ -357,7 +357,7 @@ void refineDepthMaps(mvsUtils::MultiViewParams* mp, mvsUtils::PreMatchCams* pc, 
     if(numthreads == 1)
     {
         int bestGpuId = system::getBestGpuDeviceId(2, 0);
-        int CUDADeviceNo = mp->_ini.get<int>("global.CUDADeviceNo", bestGpuId);
+        int CUDADeviceNo = mp->userParams.get<int>("global.CUDADeviceNo", bestGpuId);
         refineDepthMaps(CUDADeviceNo, mp, pc, cams);
     }
     else

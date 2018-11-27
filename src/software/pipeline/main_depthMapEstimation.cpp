@@ -4,15 +4,17 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
-#include <aliceVision/system/cmdline.hpp>
-#include <aliceVision/system/Logger.hpp>
-#include <aliceVision/system/Timer.hpp>
+#include <aliceVision/sfmData/SfMData.hpp>
+#include <aliceVision/sfmDataIO/sfmDataIO.hpp>
+#include <aliceVision/depthMap/RefineRc.hpp>
+#include <aliceVision/depthMap/SemiGlobalMatchingRc.hpp>
 #include <aliceVision/mvsData/StaticVector.hpp>
 #include <aliceVision/mvsUtils/common.hpp>
 #include <aliceVision/mvsUtils/MultiViewParams.hpp>
 #include <aliceVision/mvsUtils/PreMatchCams.hpp>
-#include <aliceVision/depthMap/RefineRc.hpp>
-#include <aliceVision/depthMap/SemiGlobalMatchingRc.hpp>
+#include <aliceVision/system/cmdline.hpp>
+#include <aliceVision/system/Logger.hpp>
+#include <aliceVision/system/Timer.hpp>
 #include <aliceVision/system/gpu.hpp>
 
 #include <boost/program_options.hpp>
@@ -20,12 +22,11 @@
 
 // These constants define the current software version.
 // They must be updated when the command line is changed.
-#define ALICEVISION_SOFTWARE_VERSION_MAJOR 1
+#define ALICEVISION_SOFTWARE_VERSION_MAJOR 2
 #define ALICEVISION_SOFTWARE_VERSION_MINOR 0
 
 using namespace aliceVision;
 
-namespace bfs = boost::filesystem;
 namespace po = boost::program_options;
 
 int main(int argc, char* argv[])
@@ -33,8 +34,10 @@ int main(int argc, char* argv[])
     system::Timer timer;
 
     std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
-    std::string iniFilepath;
+    std::string sfmDataFilename;
+    std::string cameraPairsMatrixFolder;
     std::string outputFolder;
+    std::string imagesFolder;
 
     int rangeStart = -1;
     int rangeSize = -1;
@@ -64,8 +67,10 @@ int main(int argc, char* argv[])
 
     po::options_description requiredParams("Required parameters");
     requiredParams.add_options()
-        ("ini", po::value<std::string>(&iniFilepath)->required(),
-            "Configuration file (mvs.ini).")
+        ("input,i", po::value<std::string>(&sfmDataFilename)->required(),
+            "SfMData file.")
+        ("imagesFolder", po::value<std::string>(&imagesFolder)->required(),
+            "Images folder. Filename should be the image uid.")
         ("output,o", po::value<std::string>(&outputFolder)->required(),
             "Output folder for generated depth maps.");
 
@@ -161,58 +166,66 @@ int main(int argc, char* argv[])
       return EXIT_FAILURE;
     }
 
-    // .ini and files parsing
-    mvsUtils::MultiViewParams mp(iniFilepath, outputFolder, "", false, downscale);
+    // read the input SfM scene
+    sfmData::SfMData sfmData;
+    if(!sfmDataIO::Load(sfmData, sfmDataFilename, sfmDataIO::ESfMData::ALL))
+    {
+      ALICEVISION_LOG_ERROR("The input SfMData file '" << sfmDataFilename << "' cannot be read.");
+      return EXIT_FAILURE;
+    }
+
+    // initialization
+    mvsUtils::MultiViewParams mp(sfmData, imagesFolder, outputFolder, "", false, downscale);
 
     // set params in bpt
 
     // semiGlobalMatching
-    mp._ini.put("semiGlobalMatching.maxTCams", sgmMaxTCams);
-    mp._ini.put("semiGlobalMatching.wsh", sgmWSH);
-    mp._ini.put("semiGlobalMatching.gammaC", sgmGammaC);
-    mp._ini.put("semiGlobalMatching.gammaP", sgmGammaP);
+    mp.userParams.put("semiGlobalMatching.maxTCams", sgmMaxTCams);
+    mp.userParams.put("semiGlobalMatching.wsh", sgmWSH);
+    mp.userParams.put("semiGlobalMatching.gammaC", sgmGammaC);
+    mp.userParams.put("semiGlobalMatching.gammaP", sgmGammaP);
 
     // refineRc
-    mp._ini.put("refineRc.nSamplesHalf", refineNSamplesHalf);
-    mp._ini.put("refineRc.ndepthsToRefine", refineNDepthsToRefine);
-    mp._ini.put("refineRc.niters", refineNiters);
-    mp._ini.put("refineRc.wsh", refineWSH);
-    mp._ini.put("refineRc.maxTCams", refineMaxTCams);
-    mp._ini.put("refineRc.sigma", refineSigma);
-    mp._ini.put("refineRc.gammaC", refineGammaC);
-    mp._ini.put("refineRc.gammaP", refineGammaP);
-    mp._ini.put("refineRc.useTcOrRcPixSize", refineUseTcOrRcPixSize);
+    mp.userParams.put("refineRc.nSamplesHalf", refineNSamplesHalf);
+    mp.userParams.put("refineRc.ndepthsToRefine", refineNDepthsToRefine);
+    mp.userParams.put("refineRc.niters", refineNiters);
+    mp.userParams.put("refineRc.wsh", refineWSH);
+    mp.userParams.put("refineRc.maxTCams", refineMaxTCams);
+    mp.userParams.put("refineRc.sigma", refineSigma);
+    mp.userParams.put("refineRc.gammaC", refineGammaC);
+    mp.userParams.put("refineRc.gammaP", refineGammaP);
+    mp.userParams.put("refineRc.useTcOrRcPixSize", refineUseTcOrRcPixSize);
 
-    mvsUtils::PreMatchCams pc(&mp);
+    mvsUtils::PreMatchCams pc(mp);
 
     StaticVector<int> cams;
     cams.reserve(mp.ncams);
     if(rangeSize == -1)
     {
-        for(int rc = 0; rc < mp.ncams; rc++) // process all cameras
-            cams.push_back(rc);
+      for(int rc = 0; rc < mp.ncams; ++rc) // process all cameras
+        cams.push_back(rc);
     }
     else
     {
-        if(rangeStart < 0)
-        {
-            ALICEVISION_LOG_ERROR("invalid subrange of cameras to process.");
-            return EXIT_FAILURE;
-        }
-        for(int rc = rangeStart; rc < std::min(rangeStart + rangeSize, mp.ncams); ++rc)
-            cams.push_back(rc);
-        if(cams.empty())
-        {
-            ALICEVISION_LOG_INFO("No camera to process.");
-            return EXIT_SUCCESS;
-        }
+      if(rangeStart < 0)
+      {
+        ALICEVISION_LOG_ERROR("invalid subrange of cameras to process.");
+        return EXIT_FAILURE;
+      }
+      for(int rc = rangeStart; rc < std::min(rangeStart + rangeSize, mp.ncams); ++rc)
+        cams.push_back(rc);
+      if(cams.empty())
+      {
+        ALICEVISION_LOG_INFO("No camera to process.");
+        return EXIT_SUCCESS;
+      }
     }
 
     ALICEVISION_LOG_INFO("Create depth maps.");
 
     {
-        depthMap::computeDepthMapsPSSGM(&mp, &pc, cams);
-        depthMap::refineDepthMaps(&mp, &pc, cams);
+      depthMap::computeDepthMapsPSSGM(&mp, &pc, cams);
+      depthMap::refineDepthMaps(&mp, &pc, cams);
     }
 
     ALICEVISION_LOG_INFO("Task done in (s): " + std::to_string(timer.elapsed()));

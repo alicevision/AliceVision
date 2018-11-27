@@ -19,21 +19,23 @@ struct Voxel;
 // TODO: Remove and replace with <aliceVision/types.hpp>
 typedef uint32_t IndexT;
 
-struct imageParams
+struct ImageParams
 {
     IndexT viewId;
     int width;
     int height;
     int size;
+    std::string path;
 
-    imageParams(IndexT _viewId, int _width, int _height)
+    ImageParams(IndexT _viewId, int _width, int _height, std::string _path)
       : viewId(_viewId)
       , width(_width)
       , height(_height)
       , size(_width * _height)
+      , path(_path)
     {}
 
-    imageParams& operator=(const imageParams& param)
+    ImageParams& operator=(const ImageParams& param)
     {
         viewId = param.viewId;
         width = param.width;

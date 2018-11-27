@@ -12,7 +12,6 @@
 #include <aliceVision/depthMap/SemiGlobalMatchingVolume.hpp>
 #include <aliceVision/mvsData/OrientedPoint.hpp>
 #include <aliceVision/mvsData/Point3d.hpp>
-#include <aliceVision/mvsData/SeedPoint.hpp>
 #include <aliceVision/mvsUtils/common.hpp>
 #include <aliceVision/mvsUtils/fileIO.hpp>
 #include <aliceVision/imageIO/image.hpp>
@@ -38,12 +37,12 @@ SemiGlobalMatchingRc::SemiGlobalMatchingRc(bool doComputeDepthsAndResetTCams, in
     w = sp->mp->getWidth(rc) / (scale * step);
     h = sp->mp->getHeight(rc) / (scale * step);
 
-    int nnearestcams = sp->mp->_ini.get<int>("semiGlobalMatching.maxTCams", 10);
-    tcams = sp->pc->findNearestCamsFromSeeds(rc, nnearestcams);
+    int nnearestcams = sp->mp->userParams.get<int>("semiGlobalMatching.maxTCams", 10);
+    tcams = sp->pc->findNearestCamsFromLandmarks(rc, nnearestcams);
 
-    wsh = sp->mp->_ini.get<int>("semiGlobalMatching.wsh", 4);
-    gammaC = (float)sp->mp->_ini.get<double>("semiGlobalMatching.gammaC", 5.5);
-    gammaP = (float)sp->mp->_ini.get<double>("semiGlobalMatching.gammaP", 8.0);
+    wsh = sp->mp->userParams.get<int>("semiGlobalMatching.wsh", 4);
+    gammaC = (float)sp->mp->userParams.get<double>("semiGlobalMatching.gammaC", 5.5);
+    gammaP = (float)sp->mp->userParams.get<double>("semiGlobalMatching.gammaP", 8.0);
 
     const IndexT viewId = sp->mp->getViewId(rc);
 
@@ -77,42 +76,6 @@ SemiGlobalMatchingRc::SemiGlobalMatchingRc(bool doComputeDepthsAndResetTCams, in
 SemiGlobalMatchingRc::~SemiGlobalMatchingRc()
 {
     delete depths;
-}
-
-/**
- * @brief Depths of all seeds (regarding the camera plane and not the camera center).
- */
-StaticVector<float>* SemiGlobalMatchingRc::getTcSeedsRcPlaneDists(int rc, const StaticVector<int>& tcams)
-{
-    OrientedPoint rcplane;
-    rcplane.p = sp->mp->CArr[rc];
-    rcplane.n = sp->mp->iRArr[rc] * Point3d(0.0, 0.0, 1.0);
-    rcplane.n = rcplane.n.normalize();
-
-    int nTcSeeds = 0;
-    for(int c = 0; c < tcams.size(); c++)
-    {
-        StaticVector<SeedPoint>* seeds;
-        mvsUtils::loadSeedsFromFile(&seeds, tcams[c], sp->mp, mvsUtils::EFileType::seeds);
-        nTcSeeds += seeds->size();
-        delete seeds;
-    } // for c
-
-    StaticVector<float>* rcDists = new StaticVector<float>();
-    rcDists->reserve(nTcSeeds);
-
-    for(int c = 0; c < tcams.size(); c++)
-    {
-        StaticVector<SeedPoint>* seeds;
-        mvsUtils::loadSeedsFromFile(&seeds, tcams[c], sp->mp, mvsUtils::EFileType::seeds);
-        for(int i = 0; i < seeds->size(); i++)
-        {
-            rcDists->push_back(pointPlaneDistance((*seeds)[i].op.p, rcplane.p, rcplane.n));
-        }
-        delete seeds;
-    } // for c
-
-    return rcDists;
 }
 
 bool SemiGlobalMatchingRc::selectBestDepthsRange(int nDepthsThr, StaticVector<float>* rcSeedsDistsAsc)
@@ -281,19 +244,11 @@ void SemiGlobalMatchingRc::computeDepths(float minDepth, float maxDepth, StaticV
  * @brief Compute depths of the principal ray of reference camera rc visible by a pixel in a target camera tc
  *        providing meaningful 3d information.
  */
-StaticVector<StaticVector<float>*>* SemiGlobalMatchingRc::computeAllDepthsAndResetTCams()
+StaticVector<StaticVector<float>*>* SemiGlobalMatchingRc::computeAllDepthsAndResetTCams(float midDepth)
 {
-    /*
-    for (int c=0;c<tcams->size();c++) {
-            printf("%i %i\n",c,(*tcams)[c]);
-    };
-    */
-
     StaticVector<int> tcamsNew;
     StaticVector<StaticVector<float>*>* alldepths = new StaticVector<StaticVector<float>*>();
     alldepths->reserve(tcams.size());
-
-    float midDepth = getCGDepthFromSeeds(sp->mp, rc);
 
     for(int c = 0; c < tcams.size(); c++)
     {
@@ -330,12 +285,6 @@ StaticVector<StaticVector<float>*>* SemiGlobalMatchingRc::computeAllDepthsAndRes
 
     tcams = tcamsNew;
 
-    /*
-    for (int c=0;c<tcams->size();c++) {
-            printf("%i %i\n",c,(*tcams)[c]);
-    };
-    */
-
     return alldepths;
 }
 
@@ -368,8 +317,17 @@ void SemiGlobalMatchingRc::computeDepthsTcamsLimits(StaticVector<StaticVector<fl
 
 void SemiGlobalMatchingRc::computeDepthsAndResetTCams()
 {
+    std::size_t nbObsDepths;
+    float minObsDepth, maxObsDepth, midObsDepth;
+    sp->mp->getMinMaxMidNbDepth(rc, minObsDepth, maxObsDepth, midObsDepth, nbObsDepths, sp->seedsRangePercentile);
+
+    StaticVector<StaticVector<float>*>* alldepths;
+
     // all depths from the principal ray provided by target cameras
-    StaticVector<StaticVector<float>*>* alldepths = computeAllDepthsAndResetTCams();
+    if(nbObsDepths < 20)
+      alldepths = computeAllDepthsAndResetTCams(-1);
+    else
+      alldepths = computeAllDepthsAndResetTCams(midObsDepth);
 
     float minDepthAll = std::numeric_limits<float>::max();
     float maxDepthAll = 0.0f;
@@ -401,20 +359,14 @@ void SemiGlobalMatchingRc::computeDepthsAndResetTCams()
     }
     else
     {
-        StaticVector<float>* rcSeedsDistsAsc = getTcSeedsRcPlaneDists(rc, tcams);
         float minDepth = minDepthAll;
         float maxDepth = maxDepthAll;
 
         // If we get enough information from seeds, adjust min/maxDepth
-        if(rcSeedsDistsAsc->size() > 100)
+        if(nbObsDepths > 100)
         {
-            qsort(&(*rcSeedsDistsAsc)[0], rcSeedsDistsAsc->size(), sizeof(float), qSortCompareFloatAsc);
-
-            minDepth = (*rcSeedsDistsAsc)[(int)(float)rcSeedsDistsAsc->size() * (sp->seedsRangePercentile)] *
-                (1.0f - sp->seedsRangeInflate);
-            
-            maxDepth = (*rcSeedsDistsAsc)[(int)(float)rcSeedsDistsAsc->size() * (1.0f - sp->seedsRangePercentile)] *
-                             (1.0f + sp->seedsRangeInflate);
+            minDepth = minObsDepth * (1.0f - sp->seedsRangeInflate);
+            maxDepth = maxObsDepth * (1.0f + sp->seedsRangeInflate);
 
             if(maxDepthAll < minDepth || minDepthAll > maxDepth)
             {
@@ -446,20 +398,6 @@ void SemiGlobalMatchingRc::computeDepthsAndResetTCams()
 
         // Filter out depths if computeDepths gave too many values
         selectBestDepthsRange(sp->maxDepthsToStore, alldepths);
-
-        if(sp->saveDepthsToSweepToTxtForVis)
-        {
-            std::string fn = tmpDir + std::to_string(sp->mp->getViewId(rc)) + "rcSeedsDists.txt";
-            FILE* f = fopen(fn.c_str(), "w");
-            for(int j = 0; j < rcSeedsDistsAsc->size(); j++)
-            {
-                float depth = (*rcSeedsDistsAsc)[j];
-                fprintf(f, "%f\n", depth);
-            }
-            fclose(f);
-        }
-
-        delete rcSeedsDistsAsc;
     }
 
     // fill depthsTcamsLimits member variable with index range of depths to sweep
@@ -680,8 +618,8 @@ bool SemiGlobalMatchingRc::sgmrc(bool checkIfExists)
 void computeDepthMapsPSSGM(int CUDADeviceNo, mvsUtils::MultiViewParams* mp, mvsUtils::PreMatchCams* pc, const StaticVector<int>& cams)
 {
     const int fileScale = 1; // input images scale (should be one)
-    int sgmScale = mp->_ini.get<int>("semiGlobalMatching.scale", -1);
-    int sgmStep = mp->_ini.get<int>("semiGlobalMatching.step", -1);
+    int sgmScale = mp->userParams.get<int>("semiGlobalMatching.scale", -1);
+    int sgmStep = mp->userParams.get<int>("semiGlobalMatching.step", -1);
 
     if(sgmScale == -1)
     {
@@ -729,7 +667,7 @@ void computeDepthMapsPSSGM(mvsUtils::MultiViewParams* mp, mvsUtils::PreMatchCams
     ALICEVISION_LOG_INFO("Number of GPU devices: " << num_gpus << ", number of CPU threads: " << num_cpu_threads);
     int numthreads = std::min(num_gpus, num_cpu_threads);
 
-    int num_gpus_to_use = mp->_ini.get<int>("semiGlobalMatching.num_gpus_to_use", 0);
+    int num_gpus_to_use = mp->userParams.get<int>("semiGlobalMatching.num_gpus_to_use", 0);
     if(num_gpus_to_use > 0)
     {
         numthreads = num_gpus_to_use;
@@ -738,7 +676,7 @@ void computeDepthMapsPSSGM(mvsUtils::MultiViewParams* mp, mvsUtils::PreMatchCams
     if(numthreads == 1)
     {
         int bestGpuId = system::getBestGpuDeviceId(2, 0);
-        int CUDADeviceNo = mp->_ini.get<int>("global.CUDADeviceNo", bestGpuId);
+        int CUDADeviceNo = mp->userParams.get<int>("global.CUDADeviceNo", bestGpuId);
         computeDepthMapsPSSGM(CUDADeviceNo, mp, pc, cams);
     }
     else

@@ -4,15 +4,17 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
-#include <aliceVision/system/cmdline.hpp>
-#include <aliceVision/system/Logger.hpp>
-#include <aliceVision/system/Timer.hpp>
-#include <aliceVision/mvsData/image.hpp>
-#include <aliceVision/mvsUtils/common.hpp>
-#include <aliceVision/mvsUtils/MultiViewParams.hpp>
+#include <aliceVision/sfmData/SfMData.hpp>
+#include <aliceVision/sfmDataIO/sfmDataIO.hpp>
 #include <aliceVision/mesh/Mesh.hpp>
 #include <aliceVision/mesh/Texturing.hpp>
 #include <aliceVision/mesh/meshVisibility.hpp>
+#include <aliceVision/mvsData/image.hpp>
+#include <aliceVision/mvsUtils/common.hpp>
+#include <aliceVision/mvsUtils/MultiViewParams.hpp>
+#include <aliceVision/system/cmdline.hpp>
+#include <aliceVision/system/Logger.hpp>
+#include <aliceVision/system/Timer.hpp>
 
 #include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>
@@ -24,7 +26,7 @@
 
 using namespace aliceVision;
 
-namespace bfs = boost::filesystem;
+namespace fs = boost::filesystem;
 namespace po = boost::program_options;
 
 bfs::path absolutePathNoExt(const bfs::path& p)
@@ -37,10 +39,11 @@ int main(int argc, char* argv[])
     system::Timer timer;
 
     std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
-    std::string iniFilepath;
+    std::string sfmDataFilename;
     std::string inputDenseReconstruction;
     std::string inputMeshFilepath;
     std::string outputFolder;
+    std::string imagesFolder;
     std::string outTextureFileTypeName = EImageFileType_enumToString(EImageFileType::PNG);
     bool flipNormals = false;
     mesh::TexturingParams texParams;
@@ -51,8 +54,8 @@ int main(int argc, char* argv[])
 
     po::options_description requiredParams("Required parameters");
     requiredParams.add_options()
-        ("ini", po::value<std::string>(&iniFilepath)->required(),
-            "Configuration file: mvs.ini (the undistorted images and camera poses should be in the same folder)).")
+        ("input,i", po::value<std::string>(&sfmDataFilename)->required(),
+          "SfMData file.")
         ("inputDenseReconstruction", po::value<std::string>(&inputDenseReconstruction)->required(),
             "Path to the dense reconstruction (mesh with per vertex visibility).")
         ("output,o", po::value<std::string>(&outputFolder)->required(),
@@ -60,6 +63,9 @@ int main(int argc, char* argv[])
 
     po::options_description optionalParams("Optional parameters");
     optionalParams.add_options()
+        ("imagesFolder", po::value<std::string>(&imagesFolder),
+          "Use images from a specific folder instead of those specify in the SfMData file.\n"
+          "Filename should be the image uid.")
         ("outputTextureFileType", po::value<std::string>(&outTextureFileTypeName)->default_value(outTextureFileTypeName),
           EImageFileType_informations().c_str())
         ("textureSide", po::value<unsigned int>(&texParams.textureSide)->default_value(texParams.textureSide),
@@ -137,29 +143,37 @@ int main(int argc, char* argv[])
     // set output texture file type
     const EImageFileType outputTextureFileType = EImageFileType_stringToEnum(outTextureFileTypeName);
 
-    // .ini and files parsing
-    mvsUtils::MultiViewParams mp(iniFilepath);
+    // read the input SfM scene
+    sfmData::SfMData sfmData;
+    if(!sfmDataIO::Load(sfmData, sfmDataFilename, sfmDataIO::ESfMData::ALL))
+    {
+      ALICEVISION_LOG_ERROR("The input SfMData file '" << sfmDataFilename << "' cannot be read.");
+      return EXIT_FAILURE;
+    }
+
+    // initialization
+    mvsUtils::MultiViewParams mp(sfmData, imagesFolder);
 
     mesh::Texturing mesh;
     mesh.texParams = texParams;
 
     // load dense reconstruction
-    const bfs::path reconstructionMeshFolder = bfs::path(inputDenseReconstruction).parent_path();
+    const fs::path reconstructionMeshFolder = fs::path(inputDenseReconstruction).parent_path();
     mesh.loadFromMeshing(inputDenseReconstruction, (reconstructionMeshFolder/"meshPtsCamsFromDGC.bin").string());
 
-    bfs::create_directory(outputFolder);
+    fs::create_directory(outputFolder);
 
     // texturing from input mesh
     if(!inputMeshFilepath.empty())
     {
-       mesh.replaceMesh(inputMeshFilepath, flipNormals);
+      mesh.replaceMesh(inputMeshFilepath, flipNormals);
     }
 
     if(!mesh.hasUVs())
     {
-        ALICEVISION_LOG_INFO("Input mesh has no UV coordinates, start unwrapping (" + unwrapMethod +")");
-        mesh.unwrap(mp, mesh::EUnwrapMethod_stringToEnum(unwrapMethod));
-        ALICEVISION_LOG_INFO("Unwrapping done.");
+      ALICEVISION_LOG_INFO("Input mesh has no UV coordinates, start unwrapping (" + unwrapMethod +")");
+      mesh.unwrap(mp, mesh::EUnwrapMethod_stringToEnum(unwrapMethod));
+      ALICEVISION_LOG_INFO("Unwrapping done.");
     }
 
     // save final obj file

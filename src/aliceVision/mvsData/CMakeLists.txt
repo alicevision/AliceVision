@@ -13,8 +13,6 @@ set(mvsData_files_headers
   Point4d.hpp
   Pixel.hpp
   Rgb.hpp
-  SeedPoint.hpp
-  SeedPointCams.hpp
   Stat3d.hpp
   StaticVector.hpp
   structures.hpp

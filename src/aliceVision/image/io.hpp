@@ -25,7 +25,7 @@ namespace image {
 enum class EImageFileType
 {
   JPEG,
-  PNG, // to remove : temporary used in prepareDenseScene
+  PNG,
   TIFF,
   EXR
 };

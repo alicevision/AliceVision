@@ -61,7 +61,6 @@ StaticVector<StaticVector<Pixel>*>* convertObjectsCamsToCamsObjects(const MultiV
 int computeStep(MultiViewParams* mp, int scale, int maxWidth, int maxHeight);
 
 StaticVector<Point3d>* computeVoxels(const Point3d* space, const Voxel& dimensions);
-float getCGDepthFromSeeds(const MultiViewParams* mp, int rc); // TODO: require seeds vector as input param
 StaticVector<int>* createRandomArrayOfIntegers(int n);
 
 int findNSubstrsInString(const std::string& str, const std::string& val);
