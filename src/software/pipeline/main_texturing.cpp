@@ -19,9 +19,11 @@
 #include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>
 
+#include <geogram/basic/common.h>
+
 // These constants define the current software version.
 // They must be updated when the command line is changed.
-#define ALICEVISION_SOFTWARE_VERSION_MAJOR 2
+#define ALICEVISION_SOFTWARE_VERSION_MAJOR 3
 #define ALICEVISION_SOFTWARE_VERSION_MINOR 0
 
 using namespace aliceVision;
@@ -42,9 +44,12 @@ int main(int argc, char* argv[])
     std::string sfmDataFilename;
     std::string inputDenseReconstruction;
     std::string inputMeshFilepath;
+    std::string inputRefMeshFilepath;
     std::string outputFolder;
     std::string imagesFolder;
     std::string outTextureFileTypeName = EImageFileType_enumToString(EImageFileType::PNG);
+    std::string outNormalMapFileTypeName = EImageFileType_enumToString(EImageFileType::PNG);
+    std::string outHeightMapFileTypeName = EImageFileType_enumToString(EImageFileType::NONE);
     bool flipNormals = false;
     mesh::TexturingParams texParams;
     std::string unwrapMethod = mesh::EUnwrapMethod_enumToString(mesh::EUnwrapMethod::Basic);
@@ -56,7 +61,7 @@ int main(int argc, char* argv[])
     requiredParams.add_options()
         ("input,i", po::value<std::string>(&sfmDataFilename)->required(),
           "SfMData file.")
-        ("inputDenseReconstruction", po::value<std::string>(&inputDenseReconstruction)->required(),
+        ("inputDenseReconstruction", po::value<std::string>(&inputDenseReconstruction),
             "Path to the dense reconstruction (mesh with per vertex visibility).")
         ("output,o", po::value<std::string>(&outputFolder)->required(),
             "Folder for output mesh: OBJ, material and texture files.");
@@ -68,8 +73,12 @@ int main(int argc, char* argv[])
           "Filename should be the image uid.")
         ("outputTextureFileType", po::value<std::string>(&outTextureFileTypeName)->default_value(outTextureFileTypeName),
           EImageFileType_informations().c_str())
+        ("outputNormalMapFileType", po::value<std::string>(&outNormalMapFileTypeName)->default_value(outNormalMapFileTypeName),
+          EImageFileType_informations().c_str())
+        ("outputHeightMapFileType", po::value<std::string>(&outHeightMapFileTypeName)->default_value(outHeightMapFileTypeName),
+          EImageFileType_informations().c_str())
         ("textureSide", po::value<unsigned int>(&texParams.textureSide)->default_value(texParams.textureSide),
-            "Output texture size")
+          "Output texture size")
         ("downscale", po::value<unsigned int>(&texParams.downscale)->default_value(texParams.downscale),
             "Texture downscale factor")
         ("unwrapMethod", po::value<std::string>(&unwrapMethod)->default_value(unwrapMethod),
@@ -83,6 +92,8 @@ int main(int argc, char* argv[])
             "Texture edge padding size in pixel")
         ("inputMesh", po::value<std::string>(&inputMeshFilepath),
             "Optional input mesh to texture. By default, it will texture the inputReconstructionMesh.")
+        ("inputRefMesh", po::value<std::string>(&inputRefMeshFilepath),
+          "Optional input mesh to compute height maps and normal maps. If not provided, no additional maps with geometric information will be generated.")
         ("flipNormals", po::value<bool>(&flipNormals)->default_value(flipNormals),
             "Option to flip face normals. It can be needed as it depends on the vertices order in triangles and the convention change from one software to another.")
         ("maxNbImagesForFusion", po::value<int>(&texParams.maxNbImagesForFusion)->default_value(texParams.maxNbImagesForFusion),
@@ -141,14 +152,19 @@ int main(int argc, char* argv[])
 
     texParams.visibilityRemappingMethod = mesh::EVisibilityRemappingMethod_stringToEnum(visibilityRemappingMethod);
     // set output texture file type
-    const EImageFileType outputTextureFileType = EImageFileType_stringToEnum(outTextureFileTypeName);
+    const EImageFileType outputTextureFileType = (inputDenseReconstruction.empty() || sfmDataFilename.empty()) ? EImageFileType::NONE : EImageFileType_stringToEnum(outTextureFileTypeName);
+    const EImageFileType outputNormalMapFileType = (inputRefMeshFilepath.empty()) ? EImageFileType::NONE : EImageFileType_stringToEnum(outNormalMapFileTypeName);
+    const EImageFileType outputHeightMapFileType = (inputRefMeshFilepath.empty()) ? EImageFileType::NONE : EImageFileType_stringToEnum(outHeightMapFileTypeName);
 
     // read the input SfM scene
     sfmData::SfMData sfmData;
-    if(!sfmDataIO::Load(sfmData, sfmDataFilename, sfmDataIO::ESfMData::ALL))
+    if (!sfmDataFilename.empty())
     {
-      ALICEVISION_LOG_ERROR("The input SfMData file '" << sfmDataFilename << "' cannot be read.");
-      return EXIT_FAILURE;
+      if (!sfmDataIO::Load(sfmData, sfmDataFilename, sfmDataIO::ESfMData::ALL))
+      {
+        ALICEVISION_LOG_ERROR("The input SfMData file '" << sfmDataFilename << "' cannot be read.");
+        return EXIT_FAILURE;
+      }
     }
 
     // initialization
@@ -157,42 +173,66 @@ int main(int argc, char* argv[])
     mesh::Texturing texturing;
     texturing.texParams = texParams;
 
+    GEO::initialize();
+
     // load dense reconstruction
-    const fs::path reconstructionMeshFolder = fs::path(inputDenseReconstruction).parent_path();
-    texturing.loadFromMeshing(inputDenseReconstruction, (reconstructionMeshFolder/"meshPtsCamsFromDGC.bin").string());
+    if (!inputDenseReconstruction.empty())
+    {
+      ALICEVISION_LOG_INFO("Load input dense reconstruction: " << inputDenseReconstruction);
+      const fs::path reconstructionMeshFolder = fs::path(inputDenseReconstruction).parent_path();
+      texturing.loadFromMeshing(inputDenseReconstruction, (reconstructionMeshFolder/"meshPtsCamsFromDGC.bin").string());
+    }
 
     fs::create_directory(outputFolder);
 
     // texturing from input mesh
     if(!inputMeshFilepath.empty())
     {
-       texturing.replaceMesh(inputMeshFilepath, flipNormals);
+      ALICEVISION_LOG_INFO("Load input Mesh to texture: " << inputMeshFilepath);
+      texturing.replaceMesh(inputMeshFilepath, flipNormals);
     }
 
     if(!texturing.hasUVs())
     {
-        ALICEVISION_LOG_INFO("Input texturing has no UV coordinates, start unwrapping (" + unwrapMethod +")");
-        texturing.unwrap(mp, mesh::EUnwrapMethod_stringToEnum(unwrapMethod));
-        ALICEVISION_LOG_INFO("Unwrapping done.");
+      ALICEVISION_LOG_INFO("Input texturing has no UV coordinates, start unwrapping (" << unwrapMethod << ")");
+      texturing.unwrap(mp, mesh::EUnwrapMethod_stringToEnum(unwrapMethod));
+      ALICEVISION_LOG_INFO("Unwrapping done.");
     }
 
     // save final obj file
-    texturing.saveAsOBJ(outputFolder, "texturedMesh", outputTextureFileType);
+    if (!inputDenseReconstruction.empty() || !inputMeshFilepath.empty())
+    {
+      ALICEVISION_LOG_INFO("Save mesh as OBJ: " << outputTextureFileType);
+      texturing.saveAsOBJ(outputFolder, "texturedMesh", outputTextureFileType, outputNormalMapFileType, outputHeightMapFileType);
+    }
 
     // generate textures
-    ALICEVISION_LOG_INFO("Generate textures.");
-    texturing.generateTextures(mp, outputFolder, outputTextureFileType);
+    if (!inputDenseReconstruction.empty() && !sfmDataFilename.empty())
+    {
+      ALICEVISION_LOG_INFO("Generate textures.");
+      texturing.generateTextures(mp, outputFolder, outputTextureFileType);
+    }
 
+    if(!inputRefMeshFilepath.empty() &&
+       (outputNormalMapFileType != EImageFileType::NONE || outputHeightMapFileType != EImageFileType::NONE))
     {
       ALICEVISION_LOG_INFO("Generate height and normal maps.");
       mesh::Mesh denseMesh;
-      if (!denseMesh.loadFromBin(inputDenseReconstruction))
       {
-        throw std::runtime_error("Unable to load: " + inputDenseReconstruction);
+        int nmtls;
+        StaticVector<int> trisMtlIds;
+        StaticVector<Point3d> normals;
+        StaticVector<Voxel> trisNormalsIds;
+        StaticVector<Point2d> uvCoords;
+        StaticVector<Voxel> trisUvIds;
+        if (!denseMesh.loadFromObjAscii(nmtls, trisMtlIds, normals, trisNormalsIds, uvCoords, trisUvIds, inputRefMeshFilepath))
+        {
+          throw std::runtime_error("Unable to load: " + inputRefMeshFilepath);
+        }
       }
       ALICEVISION_LOG_INFO("Generate height and normal maps.");
-      texturing.generateHeightAndNormalMaps(mp,
-        denseMesh, outputFolder, outputTextureFileType);
+      texturing.generateNormalAndHeightMaps(mp,
+        denseMesh, outputFolder, outputNormalMapFileType, outputHeightMapFileType);
     }
 
     ALICEVISION_LOG_INFO("Task done in (s): " + std::to_string(timer.elapsed()));

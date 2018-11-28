@@ -30,6 +30,7 @@ EImageFileType EImageFileType_stringToEnum(const std::string& imageFileType)
   if(type == "png")                   return EImageFileType::PNG;
   if(type == "tif" || type == "tiff") return EImageFileType::TIFF;
   if(type == "exr")                   return EImageFileType::EXR;
+  if(type == "none")                  return EImageFileType::NONE;
 
   throw std::out_of_range("Invalid image file type : " + imageFileType);
 }
@@ -42,6 +43,7 @@ std::string EImageFileType_enumToString(const EImageFileType imageFileType)
     case EImageFileType::PNG:   return "png";
     case EImageFileType::TIFF:  return "tif";
     case EImageFileType::EXR:   return "exr";
+    case EImageFileType::NONE:   return "none";
   }
   throw std::out_of_range("Invalid EImageType enum");
 }

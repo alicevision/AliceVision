@@ -23,10 +23,14 @@
 
 #include <geogram/basic/permutation.h>
 #include <geogram/basic/attributes.h>
+#include <geogram/basic/geometry_nd.h>
 #include <geogram/points/kd_tree.h>
 #include <geogram/mesh/mesh_AABB.h>
 #include <geogram/mesh/mesh_reorder.h>
 #include <geogram/mesh/mesh_geometry.h>
+
+#include <Eigen/Core>
+#include <Eigen/Geometry>
 
 #include <boost/algorithm/string/case_conv.hpp> 
 
@@ -100,7 +104,7 @@ EVisibilityRemappingMethod EVisibilityRemappingMethod_stringToEnum(const std::st
  *  coordinates of this pixel relative to \p triangle
  * @return
  */
-bool isPixelInTriangle(const Point2d* triangle, const Pixel& pixel, Point2d& barycentricCoords)
+bool isPixelInTriangle(const Point2d* triangle, const Pixel& pixel, Point3d& barycentricCoords)
 {
     // get pixel center
     GEO::vec2 p(pixel.x + 0.5, pixel.y + 0.5);
@@ -108,11 +112,7 @@ bool isPixelInTriangle(const Point2d* triangle, const Pixel& pixel, Point2d& bar
     GEO::vec2 V1(triangle[1].x, triangle[1].y);
     GEO::vec2 V2(triangle[2].x, triangle[2].y);
     GEO::vec2 closestPoint;
-    double l1, l2, l3;
-    double dist = GEO::Geom::point_triangle_squared_distance<GEO::vec2>(p, V0, V1, V2, closestPoint, l1, l2, l3);
-    // fill barycentric coordinates as expected by other internal methods
-    barycentricCoords.x = l3;
-    barycentricCoords.y = l2;
+    double dist = GEO::Geom::point_triangle_squared_distance<GEO::vec2>(p, V0, V1, V2, closestPoint, barycentricCoords.x, barycentricCoords.y, barycentricCoords.z);
     // tolerance threshold of 1/2 pixel for pixels on the edges of the triangle
     return dist < (0.5 * 0.5 + std::numeric_limits<double>::epsilon());
 }
@@ -250,19 +250,19 @@ void Texturing::generateTextures(const mvsUtils::MultiViewParams &mp,
 }
 
 
-void Texturing::generateHeightAndNormalMaps(const mvsUtils::MultiViewParams& mp,
+void Texturing::generateNormalAndHeightMaps(const mvsUtils::MultiViewParams& mp,
   const Mesh& denseMesh,
-  const bfs::path &outPath, EImageFileType textureFileType)
+  const bfs::path &outPath, EImageFileType normalMapFileType, EImageFileType heightMapFileType)
 {
-  // GEO::initialize();
   GEO::Mesh geoDenseMesh;
   toGeoMesh(denseMesh, geoDenseMesh);
 
+  GEO::compute_normals(geoDenseMesh);
   GEO::MeshFacetsAABB denseMeshAABB(geoDenseMesh);  // warning: mesh_reorder called inside
 
   mvsUtils::ImagesCache imageCache(&mp, 0, false);
   for (size_t atlasID = 0; atlasID < _atlases.size(); ++atlasID)
-    _generateHeightAndNormalMaps(mp, denseMeshAABB, atlasID, imageCache, outPath, textureFileType);
+    _generateNormalAndHeightMaps(mp, denseMeshAABB, atlasID, imageCache, outPath, normalMapFileType, heightMapFileType);
 }
 
 /// accumulates colors and keeps count for providing average
@@ -465,7 +465,7 @@ void Texturing::generateTexture(const mvsUtils::MultiViewParams& mp,
                 for(int x = LU.x; x < RD.x; x++)
                 {
                     Pixel pix(x, y); // top-left corner of the pixel
-                    Point2d barycCoords;
+                    Point3d barycCoords;
 
                     // test if the pixel is inside triangle
                     // and retrieve its barycentric coordinates
@@ -479,7 +479,7 @@ void Texturing::generateTexture(const mvsUtils::MultiViewParams& mp,
                     // 1D pixel index
                     unsigned int xyoffset = y_ * texParams.textureSide + x;
                     // get 3D coordinates
-                    Point3d pt3d = barycentricToCartesian(triPts, barycCoords);
+                    Point3d pt3d = barycentricToCartesian(triPts, Point2d(barycCoords.z, barycCoords.y));
                     // get 2D coordinates in source image
                     Point2d pixRC;
                     mp.getPixelFor3DPoint(&pixRC, pt3d, camId);
@@ -599,10 +599,56 @@ void Texturing::generateTexture(const mvsUtils::MultiViewParams& mp,
     imageIO::writeImage(texturePath.string(), outTextureSide, outTextureSide, colorBuffer);
 }
 
-void Texturing::_generateHeightAndNormalMaps(const mvsUtils::MultiViewParams& mp,
+inline GEO::vec3 mesh_facet_interpolate_normal_at_point(const GEO::Mesh& mesh, GEO::index_t f, const GEO::vec3& p)
+{
+  const GEO::index_t v0 = mesh.facets.vertex(f, 0);
+  const GEO::index_t v1 = mesh.facets.vertex(f, 1);
+  const GEO::index_t v2 = mesh.facets.vertex(f, 2);
+
+  const GEO::vec3 p0 = mesh.vertices.point(v0);
+  const GEO::vec3 p1 = mesh.vertices.point(v1);
+  const GEO::vec3 p2 = mesh.vertices.point(v2);
+
+  const GEO::vec3 n0 = GEO::Geom::mesh_vertex_normal(mesh, v0);
+  const GEO::vec3 n1 = GEO::Geom::mesh_vertex_normal(mesh, v1);
+  const GEO::vec3 n2 = GEO::Geom::mesh_vertex_normal(mesh, v2);
+
+  GEO::vec3 barycCoords;
+  GEO::vec3 closestPoint;
+  GEO::Geom::point_triangle_squared_distance<GEO::vec3>(p, p0, p1, p2, closestPoint, barycCoords.x, barycCoords.y, barycCoords.z);
+
+  const GEO::vec3 n = barycCoords.x * n0 + barycCoords.y * n1 + barycCoords.z * n2;
+
+  return n;
+}
+
+inline void computeNormalHeight(const GEO::Mesh& mesh, double orientation, double t, GEO::index_t f, const GEO::vec3& triangleNormal, const GEO::vec3& q, const GEO::vec3& qA, const GEO::vec3& qB, float& out_height, Color& out_normal)
+{
+  GEO::vec3 intersectionPoint = t * qB + (1.0 - t) * qA;
+  out_height = q.distance(intersectionPoint) * orientation;
+
+  // Use facet normal
+  // GEO::vec3 denseMeshNormal_f = normalize(GEO::Geom::mesh_facet_normal(mesh, f));
+  // Use per pixel normal using weighted interpolation of the facet vertex normals
+  const GEO::vec3 denseMeshNormal = mesh_facet_interpolate_normal_at_point(mesh, f, intersectionPoint);
+
+  const GEO::vec3 origNormal(0.0, 0.0, 1.0);
+  const double angle = GEO::Geom::angle(origNormal, triangleNormal);
+  const GEO::vec3 rotAxis = cross(triangleNormal, origNormal); // get the inverse rotation
+
+  Eigen::Vector3d axis = Eigen::Vector3d(rotAxis.x, rotAxis.y, rotAxis.z);
+  axis.normalize();
+  Eigen::Matrix3d transform(Eigen::AngleAxisd(angle, axis).toRotationMatrix());
+  Eigen::Vector3d n = transform * Eigen::Vector3d(denseMeshNormal.x, denseMeshNormal.y, denseMeshNormal.z);
+  n.normalize();
+
+  out_normal = Color(n(0), n(1), n(2));
+}
+
+void Texturing::_generateNormalAndHeightMaps(const mvsUtils::MultiViewParams& mp,
   const GEO::MeshFacetsAABB& denseMeshAABB,
   size_t atlasID, mvsUtils::ImagesCache& imageCache,
-  const bfs::path &outPath, EImageFileType textureFileType)
+  const bfs::path &outPath, EImageFileType normalMapFileType, EImageFileType heightMapFileType)
 {
   ALICEVISION_LOG_INFO("Generating Height and Normal Maps for atlas " << atlasID + 1 << "/" << _atlases.size()
     << " (" << _atlases[atlasID].size() << " triangles).");
@@ -616,9 +662,10 @@ void Texturing::_generateHeightAndNormalMaps(const mvsUtils::MultiViewParams& mp
   for (int ti = 0; ti < triangles.size(); ++ti)
   {
     const unsigned int triangleId = triangles[ti];
-    Point3d triangleNormal = me->computeTriangleNormal(triangleId);
-    double maxEdgeLength = me->computeTriangleMaxEdgeLength(triangleId);
-    triangleNormal = triangleNormal * 2.0 * maxEdgeLength;
+    const Point3d triangleNormal_ = me->computeTriangleNormal(triangleId).normalize();
+    const GEO::vec3 triangleNormal(triangleNormal_.x, triangleNormal_.y, triangleNormal_.z);
+    const double minEdgeLength = me->computeTriangleMinEdgeLength(triangleId);
+    const GEO::vec3 scaledTriangleNormal = triangleNormal * minEdgeLength;
 
     // retrieve triangle 3D and UV coordinates
     Point2d triPixs[3];
@@ -654,7 +701,7 @@ void Texturing::_generateHeightAndNormalMaps(const mvsUtils::MultiViewParams& mp
       for (int x = LU.x; x < RD.x; ++x)
       {
         Pixel pix(x, y); // top-left corner of the pixel
-        Point2d barycCoords;
+        Point3d barycCoords;
 
         // test if the pixel is inside triangle
         // and retrieve its barycentric coordinates
@@ -668,75 +715,97 @@ void Texturing::_generateHeightAndNormalMaps(const mvsUtils::MultiViewParams& mp
         // 1D pixel index
         unsigned int xyoffset = y_ * texParams.textureSide + x;
         // get 3D coordinates
-        Point3d pt3d = barycentricToCartesian(triPts, barycCoords);
-
-        GEO::vec3 tNormal(triangleNormal.x, triangleNormal.y, triangleNormal.z);
-        GEO::vec3 q1(pt3d.x, pt3d.y, pt3d.z);
-        GEO::vec3 q2A = q1 + tNormal; // triangle normal is already scaled
+        Point3d pt3d = barycentricToCartesian(triPts, Point2d(barycCoords.z, barycCoords.y));
+        
+        const double epsilon = 0.00001;
+        GEO::vec3 q(pt3d.x, pt3d.y, pt3d.z);
+        GEO::vec3 qA1 = q - (scaledTriangleNormal * epsilon);
+        GEO::vec3 qB1 = q + scaledTriangleNormal;
         double t = 0.0;
         GEO::index_t f = 0.0;
-        bool intersection = denseMeshAABB.segment_nearest_intersection(q1, q2A, t, f);
+        bool intersection = denseMeshAABB.segment_nearest_intersection(qA1, qB1, t, f);
         if (intersection)
         {
-          GEO::vec3 intersectionPoint = t * q2A + (1.0 - t)*q1;
-          heightMap[xyoffset] = q1.distance(intersectionPoint);
-
-          GEO::vec3 denseNormal = normalize(GEO::Geom::mesh_facet_normal(denseMeshAABB.mesh(), f));
-          normalMap[xyoffset] = Color(denseNormal.x, denseNormal.y, denseNormal.z);
-          //normalMap[xyoffset] = Color(1.0f, 0.0f, 0.0f);
+          computeNormalHeight(denseMeshAABB.mesh(), 1.0, t, f, triangleNormal, q, qA1, qB1,
+            heightMap[xyoffset], normalMap[xyoffset]);
         }
         else
         {
-          GEO::vec3 q2B = q1 - tNormal; // triangle normal is already scaled
-          bool intersection = denseMeshAABB.segment_nearest_intersection(q1, q2B, t, f);
-
+          GEO::vec3 qA2 = q + (scaledTriangleNormal * epsilon);
+          GEO::vec3 qB2 = q - scaledTriangleNormal;
+          bool intersection = denseMeshAABB.segment_nearest_intersection(qA2, qB2, t, f);
           if (intersection)
           {
-            GEO::vec3 intersectionPoint = t * q2B + (1.0 - t)*q1;
-            heightMap[xyoffset] = -q1.distance(intersectionPoint);
-
-            GEO::vec3 denseNormal = normalize(GEO::Geom::mesh_facet_normal(denseMeshAABB.mesh(), f));
-            normalMap[xyoffset] = Color(denseNormal.x, denseNormal.y, denseNormal.z);
-            //normalMap[xyoffset] = Color(0.0f, 1.0f, 0.0f);
+            computeNormalHeight(denseMeshAABB.mesh(), -1.0, t, f, triangleNormal, q, qA2, qB2,
+              heightMap[xyoffset], normalMap[xyoffset]);
           }
           else
           {
             heightMap[xyoffset] = 0.0f;
             normalMap[xyoffset] = Color(0.0f, 0.0f, 0.0f);
-            // normalMap[xyoffset] = Color(0.0f, 0.0f, 1.0f);
           }
         }
       }
     }
   }
 
-  // save texture image
-  std::string name = "_" + std::to_string(atlasID) + "." + EImageFileType_enumToString(textureFileType);
-  bfs::path normalMapPath = outPath / (std::string("normalMap") + name);
-  bfs::path heightMapPath = outPath / (std::string("heightMap") + name);
-  ALICEVISION_LOG_INFO("Writing normal map: " << normalMapPath.string() << " and height map: " << heightMapPath);
+  // save normal / height maps to images
 
-  unsigned int outTextureSide = texParams.textureSide;
-
-  // downscale texture if required
-  if (texParams.downscale > 1)
+  if (normalMapFileType != EImageFileType::NONE)
   {
-    ALICEVISION_LOG_INFO("Downscaling texture (" << texParams.downscale << "x).");
+    unsigned int outTextureSide = texParams.textureSide;
+    // downscale texture if required
+    if (texParams.downscale > 1)
     {
+      ALICEVISION_LOG_INFO("Downscaling normal map (" << texParams.downscale << "x).");
       std::vector<Color> resizedBuffer;
       outTextureSide = texParams.textureSide / texParams.downscale;
-      imageIO::resizeImage(texParams.textureSide, texParams.textureSide, texParams.downscale, normalMap, resizedBuffer);
+      // use nearest-neighbor interpolation to avoid meaningless interpolation of normals on edges.
+      const std::string interpolation = "box";
+      imageIO::resizeImage(texParams.textureSide, texParams.textureSide, texParams.downscale, normalMap, resizedBuffer, interpolation);
       std::swap(resizedBuffer, normalMap);
     }
+
+    if (normalMapFileType != EImageFileType::EXR)
     {
+      // X: -1 to + 1 : Red : 0 to 255
+      // Y: -1 to + 1 : Green : 0 to 255
+      // Z: 0 to - 1 : Blue : 128 to 255 OR 0 to 255 (like Blender)
+      for (unsigned int i = 0; i < normalMap.size(); ++i)
+        normalMap[i] = Color(normalMap[i].r * 0.5 + 0.5, normalMap[i].g * 0.5 + 0.5, normalMap[i].b); // * 0.5 + 0.5);
+    }
+
+    const std::string name = "normalMap_" + std::to_string(atlasID) + "." + EImageFileType_enumToString(normalMapFileType);
+    bfs::path normalMapPath = outPath / name;
+    ALICEVISION_LOG_INFO("Writing normal map: " << normalMapPath.string());
+
+    imageIO::writeImage(normalMapPath.string(), outTextureSide, outTextureSide, normalMap);
+  }
+  if (heightMapFileType != EImageFileType::NONE)
+  {
+    unsigned int outTextureSide = texParams.textureSide;
+    if (texParams.downscale > 1)
+    {
+      ALICEVISION_LOG_INFO("Downscaling height map (" << texParams.downscale << "x).");
       std::vector<float> resizedBuffer;
       outTextureSide = texParams.textureSide / texParams.downscale;
       imageIO::resizeImage(texParams.textureSide, texParams.textureSide, texParams.downscale, heightMap, resizedBuffer);
       std::swap(resizedBuffer, heightMap);
     }
+
+    if (heightMapFileType != EImageFileType::EXR)
+    {
+      // Y: [-1, 0, +1] => [0, 128, 255]
+      for (unsigned int i = 0; i < heightMap.size(); ++i)
+        heightMap[i] = heightMap[i] * 0.5 + 0.5;
+    }
+
+    const std::string name = "heightMap_" + std::to_string(atlasID) + "." + EImageFileType_enumToString(heightMapFileType);
+    bfs::path heightMapPath = outPath / name;
+    ALICEVISION_LOG_INFO("Writing height map: " << heightMapPath);
+
+    imageIO::writeImage(heightMapPath.string(), outTextureSide, outTextureSide, heightMap);
   }
-  imageIO::writeImage(normalMapPath.string(), outTextureSide, outTextureSide, normalMap);
-  imageIO::writeImage(heightMapPath.string(), outTextureSide, outTextureSide, heightMap);
 }
 
 void Texturing::clear()
@@ -810,16 +879,20 @@ void Texturing::replaceMesh(const std::string& otherMeshPath, bool flipNormals)
     // allocate pointsVisibilities for new internal mesh
     pointsVisibilities = new PointsVisibility();
     // remap visibilities from reconstruction onto input mesh
-    if(texParams.visibilityRemappingMethod & EVisibilityRemappingMethod::Pull)
+    if (refVisibilities)
+    {
+      if (texParams.visibilityRemappingMethod & EVisibilityRemappingMethod::Pull)
         remapMeshVisibilities_pullVerticesVisibility(*refMesh, *refVisibilities, *me, *pointsVisibilities);
-    if (texParams.visibilityRemappingMethod & EVisibilityRemappingMethod::Push)
+      if (texParams.visibilityRemappingMethod & EVisibilityRemappingMethod::Push)
         remapMeshVisibilities_pushVerticesVisibilityToTriangles(*refMesh, *refVisibilities, *me, *pointsVisibilities);
-    if(pointsVisibilities->empty())
+      if (pointsVisibilities->empty())
         throw std::runtime_error("No visibility after visibility remapping.");
+    }
 
     // delete ref mesh and visibilities
     delete refMesh;
-    deleteArrayOfArrays(&refVisibilities);
+    if(refVisibilities)
+      deleteArrayOfArrays(&refVisibilities);
 }
 
 void Texturing::unwrap(mvsUtils::MultiViewParams& mp, EUnwrapMethod method)
@@ -861,7 +934,7 @@ void Texturing::unwrap(mvsUtils::MultiViewParams& mp, EUnwrapMethod method)
     }
 }
 
-void Texturing::saveAsOBJ(const bfs::path& dir, const std::string& basename, EImageFileType textureFileType)
+void Texturing::saveAsOBJ(const bfs::path& dir, const std::string& basename, EImageFileType textureFileType, EImageFileType normalMapFileType, EImageFileType heightMapFileType)
 {
     ALICEVISION_LOG_INFO("Writing obj and mtl file.");
 
@@ -930,7 +1003,23 @@ void Texturing::saveAsOBJ(const bfs::path& dir, const std::string& basename, EIm
         fprintf(fmtl, "d  1.0\n");
         fprintf(fmtl, "Ns  0.0\n");
         fprintf(fmtl, "illum 2\n");
-        fprintf(fmtl, "map_Kd %s\n", textureName.c_str());
+        if(textureFileType != EImageFileType::NONE)
+        {
+          fprintf(fmtl, "map_Kd %s\n", textureName.c_str());
+        }
+        if (normalMapFileType != EImageFileType::NONE)
+        {
+          std::string normalMapName = "normalMap_" + std::to_string(atlasID) + "." + EImageFileType_enumToString(normalMapFileType);
+          // Not the same convention for normal maps in all softwares...
+          // So we export it twice to maximize compatibility.
+          fprintf(fmtl, "map_Kn %s\n", normalMapName.c_str());
+          fprintf(fmtl, "map_bump %s\n", normalMapName.c_str());
+        }
+        if (heightMapFileType != EImageFileType::NONE)
+        {
+          std::string heightMapName = "heightMap_" + std::to_string(atlasID) + "." + EImageFileType_enumToString(heightMapFileType);
+          fprintf(fmtl, "disp %s\n", heightMapName.c_str());
+        }
     }
     fclose(fmtl);
 

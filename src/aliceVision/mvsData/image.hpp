@@ -15,6 +15,7 @@ namespace aliceVision {
  */
 enum class EImageFileType
 {
+  NONE,
   JPEG,
   PNG,
   TIFF,

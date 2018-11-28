@@ -157,17 +157,17 @@ public:
                          const bfs::path &outPath, EImageFileType textureFileType = EImageFileType::PNG);
 
 
-    void generateHeightAndNormalMaps(const mvsUtils::MultiViewParams& mp,
+    void generateNormalAndHeightMaps(const mvsUtils::MultiViewParams& mp,
       const Mesh& denseMesh,
-      const bfs::path &outPath, EImageFileType textureFileType = EImageFileType::PNG);
+      const bfs::path &outPath, EImageFileType normalMapFileType, EImageFileType heightMapFileType);
 
-    void _generateHeightAndNormalMaps(const mvsUtils::MultiViewParams& mp,
+    void _generateNormalAndHeightMaps(const mvsUtils::MultiViewParams& mp,
       const GEO::MeshFacetsAABB& denseMeshAABB,
       size_t atlasID, mvsUtils::ImagesCache& imageCache,
-      const bfs::path &outPath, EImageFileType textureFileType);
+      const bfs::path &outPath, EImageFileType normalMapFileType, EImageFileType heightMapFileType);
 
     /// Save textured mesh as an OBJ + MTL file
-    void saveAsOBJ(const bfs::path& dir, const std::string& basename, EImageFileType textureFileType = EImageFileType::PNG);
+    void saveAsOBJ(const bfs::path& dir, const std::string& basename, EImageFileType textureFileType = EImageFileType::PNG, EImageFileType normalMapFileType = EImageFileType::NONE, EImageFileType heightMapFileType = EImageFileType::NONE);
 };
 
 } // namespace mesh
