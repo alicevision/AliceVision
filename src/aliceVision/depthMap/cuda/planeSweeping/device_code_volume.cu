@@ -7,85 +7,73 @@
 namespace aliceVision {
 namespace depthMap {
 
-__device__ void volume_computePatch(patch& ptch, int depthid, int2& pix)
+inline __device__ void volume_computePatch( const cameraStructBase* rc_cam_s,
+                                            const cameraStructBase* tc_cam_s,
+                                            patch& ptch,
+                                            const float fpPlaneDepth, const int2& pix )
 {
     float3 p;
     float pixSize;
 
-    float fpPlaneDepth = tex2D(depthsTex, depthid, 0);
-    p = get3DPointForPixelAndFrontoParellePlaneRC(pix, fpPlaneDepth);
-    pixSize = computePixSize(p);
+    p = get3DPointForPixelAndFrontoParellePlaneRC( rc_cam_s, pix, fpPlaneDepth); // no texture use
+    pixSize = computePixSize( rc_cam_s, p ); // no texture use
 
     ptch.p = p;
     ptch.d = pixSize;
-    computeRotCSEpip(ptch, p);
+    computeRotCSEpip( rc_cam_s, tc_cam_s, ptch, p ); // no texture use
 }
 
-__global__ void volume_slice_kernel(unsigned char* slice, int slice_p,
-                                    // float3* slicePts, int slicePts_p,
-                                    int nsearchdepths, int ndepths, int slicesAtTime, int width, int height, int wsh,
-                                    int t, int npixs, const float gammaC, const float gammaP, const float epipShift)
+__global__ void volume_slice_kernel(
+                                    cudaTextureObject_t rc_tex,
+                                    cudaTextureObject_t tc_tex,
+                                    const cameraStructBase* rc_cam_s,
+                                    const cameraStructBase* tc_cam_s,
+                                    float* depths_dev,
+                                    const int startDimZ,
+                                    int width, int height, int wsh,
+                                    const float gammaC, const float gammaP, const float epipShift,
+                                    float* volume, int volume_s, int volume_p,
+                                    int volStepXY,
+                                    int volDimX, int volDimY )
 {
-    int sdptid = blockIdx.x * blockDim.x + threadIdx.x;
-    int pixid = blockIdx.y * blockDim.y + threadIdx.y;
+    const int vx = blockIdx.x * blockDim.x + threadIdx.x;
+    const int vy = blockIdx.y * blockDim.y + threadIdx.y;
+    const int vz = blockIdx.z;
 
-    if((sdptid < nsearchdepths) && (pixid < slicesAtTime) && (slicesAtTime * t + pixid < npixs))
-    {
-        int4 volPix = tex2D(volPixsTex, pixid, t);
-        int2 pix = make_int2(volPix.x, volPix.y);
-        int depthid = sdptid + volPix.z;
+    if( vx >= volDimX ) return;
+    if( vy >= volDimY ) return;
 
-        if(depthid < ndepths)
-        {
-            patch ptcho;
-            volume_computePatch(ptcho, depthid, pix);
+    const int x = vx * volStepXY;
+    const int y = vy * volStepXY;
 
-            float fsim = compNCCby3DptsYK(ptcho, wsh, width, height, gammaC, gammaP, epipShift);
-            // unsigned char sim = (unsigned char)(((fsim+1.0f)/2.0f)*255.0f);
+    const float fpPlaneDepth = depths_dev[startDimZ+vz];
 
-            float fminVal = -1.0f;
-            float fmaxVal = 1.0f;
-            fsim = (fsim - fminVal) / (fmaxVal - fminVal);
-            fsim = fminf(1.0f, fmaxf(0.0f, fsim));
-            unsigned char sim = (unsigned char)(fsim * 255.0f);
+    if( x >= width  ) return;
+    if( y >= height ) return;
 
-            // coalescent
-            /*int sliceid = pixid * slice_p + sdptid;
-            slice[sliceid] = sim;*/
-            *get2DBufferAt(slice, slice_p, sdptid, pixid) = sim;
-        }
-    }
-}
+    // const unsigned char occluded = tex2D(r4tex, x+0.5f, y+0.5f).w;
+    const float occluded = tex2D<float4>(rc_tex, x+0.5f, y+0.5f).w;
+    if( occluded > 0.75f ) return;
 
-__global__ void volume_saveSliceToVolume_kernel(unsigned char* volume, int volume_s, int volume_p, unsigned char* slice,
-                                                int slice_p, int nsearchdepths, int ndepths, int slicesAtTime,
-                                                int width, int height, int t, int npixs, int volStepXY, int volDimX,
-                                                int volDimY, int volDimZ, int volLUX, int volLUY, int volLUZ)
-{
-    int sdptid = blockIdx.x * blockDim.x + threadIdx.x;
-    int pixid = blockIdx.y * blockDim.y + threadIdx.y;
+    const int2 pix = make_int2( x, y );
 
-    if((sdptid < nsearchdepths) && (pixid < slicesAtTime) && (slicesAtTime * t + pixid < npixs))
-    {
-        int4 volPix = tex2D(volPixsTex, pixid, t);
-        int2 pix = make_int2(volPix.x, volPix.y);
-        int depthid = sdptid + volPix.z;
+    patch ptcho;
+    volume_computePatch( rc_cam_s, tc_cam_s, ptcho, fpPlaneDepth, pix); // no texture use
 
-        if(depthid < ndepths)
-        {
-            unsigned char sim = *get2DBufferAt(slice, slice_p, sdptid, pixid);
+    float fsim = compNCCby3DptsYK( rc_tex, tc_tex,
+                                   rc_cam_s, tc_cam_s,
+                                   ptcho, wsh,
+                                   width, height,
+                                   gammaC, gammaP,
+                                   epipShift);
 
-            int vx = (pix.x - volLUX) / volStepXY;
-            int vy = (pix.y - volLUY) / volStepXY;
-            // int vz = sdptid;//depthid;
-            int vz = depthid - volLUZ;
-            if((vx >= 0) && (vx < volDimX) && (vy >= 0) && (vy < volDimY) && (vz >= 0) && (vz < volDimZ))
-            {
-                unsigned char* volsim = get3DBufferAt(volume, volume_s, volume_p, vx, vy, vz);
-                *volsim = min(sim, *volsim);
-            };
-        };
-    };
+    const float fminVal = -1.0f;
+    const float fmaxVal = 1.0f;
+    fsim = (fsim - fminVal) / (fmaxVal - fminVal);
+    fsim = fminf(1.0f, fmaxf(0.0f, fsim));
+    // int sim = (unsigned char)(fsim * 255.0f); // upcast to int due to atomicMin
+
+    *get3DBufferAt(volume, volume_s, volume_p, vx, vy, vz) = fsim;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -189,21 +177,22 @@ __global__ void volume_initVolume_kernel(T* volume, int volume_s, int volume_p, 
 }
 
 __global__ void volume_updateMinXSlice_kernel(unsigned char* volume, int volume_s, int volume_p,
-                                              unsigned char* xySliceBestSim, int xySliceBestSim_p, int* xySliceBestZ,
-                                              int xySliceBestZ_p, int volDimX, int volDimY, int volDimZ, int vz)
+                                              unsigned char* xySliceBestSim, int xySliceBestSim_p,
+                                              int* xySliceBestZ, int xySliceBestZ_p,
+                                              int volDimX, int volDimY, int volDimZ, int vz)
 {
     int vx = blockIdx.x * blockDim.x + threadIdx.x;
     int vy = blockIdx.y * blockDim.y + threadIdx.y;
 
-    if((vx >= 0) && (vx < volDimX) && (vy >= 0) && (vy < volDimY) && (vz >= 0) && (vz < volDimZ))
+    if( ( vx >= volDimX ) || ( vy >= volDimY ) || ( vz >= volDimZ ) || ( vz < 0 ) ) return;
+
+    unsigned char sim = *get3DBufferAt(volume, volume_s, volume_p, vx, vy, vz);
+    BufPtr<unsigned char> xySliceBest( xySliceBestSim, xySliceBestSim_p );
+    unsigned char actSim_ptr = xySliceBest.at(vx, vy);
+    if((sim < actSim_ptr) || (vz == 0))
     {
-        unsigned char sim = *get3DBufferAt(volume, volume_s, volume_p, vx, vy, vz);
-        unsigned char* actSim_ptr = get2DBufferAt(xySliceBestSim, xySliceBestSim_p, vx, vy);
-        if((sim < *actSim_ptr) || (vz == 0))
-        {
-            *actSim_ptr = sim;
-            *get2DBufferAt(xySliceBestZ, xySliceBestZ_p, vx, vy) = vz;
-        }
+        xySliceBest                              .at(vx,vy) = sim;
+        BufPtr<int>(xySliceBestZ, xySliceBestZ_p).at(vx,vy) = vz;
     }
 }
 
@@ -297,7 +286,7 @@ __global__ void volume_agregateCostVolumeAtZinSlices_kernel(unsigned int* xySlic
                                                             unsigned char* volSimT, int volSimT_s, int volSimT_p, 
                                                             int volDimX, int volDimY, int volDimZ, 
                                                             int vz, unsigned int _P1, unsigned int _P2,
-                                                            bool transfer, int volLUX, int volLUY,
+                                                            bool transfer,
                                                             int dimTrnX, bool doInvZ)
 {
     int vx = blockIdx.x * blockDim.x + threadIdx.x;
@@ -313,10 +302,10 @@ __global__ void volume_agregateCostVolumeAtZinSlices_kernel(unsigned int* xySlic
         {
             int z = doInvZ ? volDimZ - vz : vz;
             int z1 = doInvZ ? z + 1 : z - 1; // M1
-            int imX0 = volLUX + (dimTrnX == 0) ? vx : z; // current
-            int imY0 = volLUY + (dimTrnX == 0) ?  z : vx;
-            int imX1 = volLUX + (dimTrnX == 0) ? vx : z1; // M1
-            int imY1 = volLUY + (dimTrnX == 0) ? z1 : vx;
+            int imX0 = (dimTrnX == 0) ? vx : z; // current
+            int imY0 = (dimTrnX == 0) ?  z : vx;
+            int imX1 = (dimTrnX == 0) ? vx : z1; // M1
+            int imY1 = (dimTrnX == 0) ? z1 : vx;
             float4 gcr0 = 255.0f * tex2D(r4tex, (float)imX0 + 0.5f, (float)imY0 + 0.5f);
             float4 gcr1 = 255.0f * tex2D(r4tex, (float)imX1 + 0.5f, (float)imY1 + 0.5f);
             float deltaC = Euclidean3(gcr0, gcr1);
@@ -363,9 +352,11 @@ __global__ void volume_updateRcVolumeForTcDepthMap_kernel(unsigned int* volume, 
     {
         int2 pixi = make_int2(vx * volStepXY, vy * volStepXY);
         // float2 pixf = make_float2(vx*volStepXY+0.5f,vy*volStepXY+0.5f);
+
+        // get3DPointForPixelAndFrontoParellePlaneRC uses __constant__ sg_s_r.*
         float3 p = get3DPointForPixelAndFrontoParellePlaneRC(pixi, fpPlaneDepth);
 
-        float depthTcP = size(sg_s_tC - p);
+        float depthTcP = size(sg_s_t.C - p);
         float fpDepthTcP = frontoParellePlaneTCDepthFor3DPoint(p);
 
         float2 tpixf;
@@ -451,9 +442,11 @@ __global__ void volume_updateRcVolumeForTcDepthMap2_kernel(unsigned int* volume,
 
         int2 pixi = make_int2(vx * volStepXY, vy * volStepXY);
         float3 p = get3DPointForPixelAndFrontoParellePlaneRC(pixi, fpPlaneDepth);
-        float depthTcP = size(sg_s_tC - p);
+        float depthTcP = size(sg_s_t.C - p);
         float fpDepthTcP = frontoParellePlaneTCDepthFor3DPoint(p);
         float2 tpixf;
+
+        // getPixelFor3DPointTC uses __constant__ sg_s_t.*
         getPixelFor3DPointTC(tpixf, p);
         int2 tpix = make_int2((int)(tpixf.x + 0.5f), (int)(tpixf.y + 0.5f));
         int2 tpixMap =
@@ -563,11 +556,12 @@ __global__ void volume_update_nModalsMap_kernel(unsigned short* nModalsMap, int 
 
                 float3 p = get3DPointForPixelAndFrontoParellePlaneRC(pix, fpPlaneDepth);
                 float2 tpixf;
+                // getPixelFor3DPointTC uses __constant__ sg_s_t.*
                 getPixelFor3DPointTC(tpixf, p);
                 int2 tpix = make_int2((int)(tpixf.x + 0.5f), (int)(tpixf.y + 0.5f));
 
                 float depthTc = tex2D(sliceTex, tpix.x / tcDepthMapStep, tpix.y / tcDepthMapStep);
-                float depthTcP = size(sg_s_tC - p);
+                float depthTcP = size(sg_s_t.C - p);
                 int distid = (int)(fabsf(depthTc - depthTcP) / step + 0.5f);
 
                 if((depthTc > 0.0f)
@@ -604,7 +598,7 @@ __global__ void volume_filterRcIdDepthMapByTcDepthMap_kernel(unsigned short* rcI
             int2 tpix = make_int2((int)(tpixf.x + 0.5f), (int)(tpixf.y + 0.5f));
 
             float depthTc = tex2D(sliceTex, tpix.x / tcDepthMapStep, tpix.y / tcDepthMapStep);
-            float depthTcP = size(sg_s_tC - p);
+            float depthTcP = size(sg_s_t.C - p);
             int distid = (int)(fabsf(depthTc - depthTcP) / step + 0.5f);
 
             * rcIdDepthMap_yx =
@@ -1083,52 +1077,6 @@ __global__ void volume_filter_VisTVolume_kernel(unsigned int* ovolume, int ovolu
         }
 
         val = (Tval << 16) | (Vval & 0xFFFF);
-        *ovolume_zyx = val;
-    }
-}
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-__global__ void volume_filter_enforceTWeightInVolume_kernel(unsigned int* ovolume, int ovolume_s, int ovolume_p,
-                                                            int volDimX, int volDimY, int volDimZ, int vz, int K)
-{
-    int vx = blockIdx.x * blockDim.x + threadIdx.x;
-    int vy = blockIdx.y * blockDim.y + threadIdx.y;
-
-    if((vx >= 0) && (vx < volDimX) && (vy >= 0) && (vy < volDimY) && (vz >= 0) && (vz < volDimZ))
-    {
-        unsigned int* ovolume_zyx = get3DBufferAt(ovolume, ovolume_s, ovolume_p, vx, vy, vz);
-        unsigned int val = *ovolume_zyx;
-        unsigned int TvalOld = (unsigned int)(val >> 16);    // T - edge
-        unsigned int VvalOld = (unsigned int)(val & 0xFFFF); // visibility
-
-        unsigned int VvalFront = 0;
-        unsigned int VvalBack = 0;
-
-        for(int xp = vx - K; xp <= vx + K; xp++)
-        {
-            unsigned int valN = tex2D(sliceTexUInt, xp, vy);
-            // unsigned int TvalN = (unsigned  int)(valN >> 16); //T - edge
-            unsigned int VvalN = (unsigned int)(valN & 0xFFFF); // visibility
-            if(xp < vx)
-            {
-                VvalFront += VvalN;
-            }
-            if(xp > vx)
-            {
-                VvalBack += VvalN;
-            }
-        }
-
-        float fVvalFront = (float)VvalFront / (float)K;
-        float fVvalBack = (float)VvalBack / (float)K;
-
-        if((fVvalFront - fVvalBack > 500.0f) && (fVvalBack / fVvalFront) < 0.5f)
-        {
-            TvalOld = min(65534, TvalOld + 10000);
-        }
-
-        val = (TvalOld << 16) | (VvalOld & 0xFFFF);
         *ovolume_zyx = val;
     }
 }

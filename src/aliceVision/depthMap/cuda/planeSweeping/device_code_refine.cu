@@ -32,8 +32,8 @@ __global__ void refine_selectPartOfDepthMapNearFPPlaneDepth_kernel(float* o0dept
             float fpPlaneDepthPix = frontoParellePlaneRCDepthFor3DPoint(p);
             if((fpPlaneDepthPix >= fpPlaneDepth - step) && (fpPlaneDepthPix < fpPlaneDepthNext))
             {
-                o0depth = size(get3DPointForPixelAndFrontoParellePlaneRC(pix, fpPlaneDepth) - sg_s_rC);
-                o1depth = size(get3DPointForPixelAndFrontoParellePlaneRC(pix, fpPlaneDepthNext) - sg_s_rC);
+                o0depth = size(get3DPointForPixelAndFrontoParellePlaneRC(pix, fpPlaneDepth) - sg_s_r.C);
+                o1depth = size(get3DPointForPixelAndFrontoParellePlaneRC(pix, fpPlaneDepthNext) - sg_s_r.C);
             };
         };
 
@@ -106,7 +106,7 @@ __global__ void refine_convertFPPlaneDepthMapToDepthMap_kernel(float* depthMap, 
         float depth = -1.0f;
         if(fpPlaneDepth > 0.0f)
         {
-            depth = size(get3DPointForPixelAndFrontoParellePlaneRC(pix, fpPlaneDepth) - sg_s_rC);
+            depth = size(get3DPointForPixelAndFrontoParellePlaneRC(pix, fpPlaneDepth) - sg_s_r.C);
         };
         depthMap[y * depthMap_p + x] = depth;
     };
@@ -143,9 +143,9 @@ __global__ void refine_computeDepthsMapFromDepthMap_kernel(float3* depthsMap, in
                 move3DPointByRcPixSize(pp1, +pixSize);
             };
 
-            depthsMap[y * depthsMap_p + x].x = size(pm1 - sg_s_rC);
-            depthsMap[y * depthsMap_p + x].y = size(p - sg_s_rC);
-            depthsMap[y * depthsMap_p + x].z = size(pp1 - sg_s_rC);
+            depthsMap[y * depthsMap_p + x].x = size(pm1 - sg_s_r.C);
+            depthsMap[y * depthsMap_p + x].y = size(p - sg_s_r.C);
+            depthsMap[y * depthsMap_p + x].z = size(pp1 - sg_s_r.C);
         };
     };
 }
@@ -178,7 +178,7 @@ __global__ void refine_reprojTarTexLABByDepthsMap_kernel(float3* depthsMap, int 
         if(depth > 0.0f)
         {
             float3 p = get3DPointForPixelAndDepthFromRC(pix, depth);
-            float2 tpc = project3DPoint(sg_s_tP, p);
+            float2 tpc = project3DPoint(sg_s_t.P, p);
 
             if(((tpc.x + 0.5f) > 0.0f) && ((tpc.y + 0.5f) > 0.0f) && ((tpc.x + 0.5f) < (float)width - 1.0f) &&
                ((tpc.y + 0.5f) < (float)height - 1.0f))
@@ -213,7 +213,7 @@ __global__ void refine_reprojTarTexLABByDepthMap_kernel(float* depthMap, int dep
         if(depth > 0.0f)
         {
             float3 p = get3DPointForPixelAndDepthFromRC(pix, depth);
-            float2 tpc = project3DPoint(sg_s_tP, p);
+            float2 tpc = project3DPoint(sg_s_t.P, p);
             if(((tpc.x + 0.5f) > 0.0f) && ((tpc.y + 0.5f) > 0.0f) && ((tpc.x + 0.5f) < (float)width - 1.0f) &&
                ((tpc.y + 0.5f) < (float)height - 1.0f))
             {
@@ -256,10 +256,10 @@ __global__ void refine_reprojTarTexLABByDepthMapMovedByStep_kernel(float* depthM
                     move3DPointByRcPixSize(p, pixSize);
                 };
 
-                depth = size(p - sg_s_rC);
+                depth = size(p - sg_s_r.C);
             };
 
-            float2 tpc = project3DPoint(sg_s_tP, p);
+            float2 tpc = project3DPoint(sg_s_t.P, p);
             if(((tpc.x + 0.5f) > 0.0f) && ((tpc.y + 0.5f) > 0.0f) && ((tpc.x + 0.5f) < (float)width - 1.0f) &&
                ((tpc.y + 0.5f) < (float)height - 1.0f))
             {
@@ -515,7 +515,7 @@ __global__ void refine_compUpdateYKNCCSimMapPatch_kernel(float* osimMap, int osi
             // move3DPointByTcPixStep(p, tcStep);
             move3DPointByTcOrRcPixStep(pix, p, tcStep, moveByTcOrRc);
 
-            odpt = size(p - sg_s_rC);
+            odpt = size(p - sg_s_r.C);
 
             patch ptch;
             ptch.p = p;
@@ -598,7 +598,7 @@ __global__ void refine_compYKNCCDepthSimMapPatch_kernel(float2* oDepthSimMap, in
             ptch.d = computePixSize(p);
             computeRotCSEpip(ptch, p);
 
-            oDepthSim.x = size(sg_s_rC - ptch.p);
+            oDepthSim.x = size(sg_s_r.C - ptch.p);
             oDepthSim.y = compNCCby3DptsYK(ptch, wsh, width, height, gammaC, gammaP, epipShift);
         };
 
@@ -723,9 +723,9 @@ __global__ void refine_computeDepthSimMapFromLastThreeSimsMap_kernel(float* osim
             move3DPointByTcOrRcPixStep(pix, pp1, +1.0f, moveByTcOrRc);
 
             float3 depths;
-            depths.x = size(pm1 - sg_s_rC);
+            depths.x = size(pm1 - sg_s_r.C);
             depths.y = midDepth;
-            depths.z = size(pp1 - sg_s_rC);
+            depths.z = size(pp1 - sg_s_r.C);
 
             float refinedDepth = refineDepthSubPixel(depths, sims);
             if(refinedDepth > 0.0f)
@@ -830,7 +830,7 @@ __global__ void refine_computeDepthSimMapFromBestStatMap_kernel(float* simMap, i
             float3 p = porig;
             // move3DPointByTcPixStep(p, tcStep);
             move3DPointByTcOrRcPixStep(pix, p, tcStep, moveByTcOrRc);
-            outDepth = size(p - sg_s_rC);
+            outDepth = size(p - sg_s_r.C);
 
             if((stat.x < 1.1f) && (stat.z < 1.1f))
             {
@@ -842,9 +842,9 @@ __global__ void refine_computeDepthSimMapFromBestStatMap_kernel(float* simMap, i
                 // move3DPointByTcPixStep(pp1, tcStep+1.0f);
                 move3DPointByTcOrRcPixStep(pix, pp1, tcStep + 1.0f, moveByTcOrRc);
 
-                depths.x = size(pm1 - sg_s_rC);
+                depths.x = size(pm1 - sg_s_r.C);
                 depths.y = outDepth;
-                depths.z = size(pp1 - sg_s_rC);
+                depths.z = size(pp1 - sg_s_r.C);
 
                 float3 sims;
                 sims.x = stat.x;
@@ -903,8 +903,8 @@ __global__ void refine_reprojTarTexLABByRcTcDepthsMap_kernel(uchar4* tex, int te
             float3 rp = get3DPointForPixelAndDepthFromRC(rpix, rcDepth);
             float3 rpS = get3DPointForPixelAndDepthFromRC(rpix, rcDepth + depthMapShift);
 
-            float2 tpc = project3DPoint(sg_s_tP, rp);
-            float2 tpcS = project3DPoint(sg_s_tP, rpS);
+            float2 tpc = project3DPoint(sg_s_t.P, rp);
+            float2 tpcS = project3DPoint(sg_s_t.P, rpS);
 
             int2 tpix = make_int2((int)(tpc.x + 0.5f), (int)(tpc.y + 0.5f));
             float tcDepth = tex2D(depthsTex, tpix.x, tpix.y);
@@ -1214,36 +1214,36 @@ __device__ float2 ComputeSobelTarIm(int x, int y)
 
 __device__ float2 DPIXTCDRC(const float3& P)
 {
-    float M3P = sg_s_tP[2] * P.x + sg_s_tP[5] * P.y + sg_s_tP[8] * P.z + sg_s_tP[11];
+    float M3P = sg_s_t.P[2] * P.x + sg_s_t.P[5] * P.y + sg_s_t.P[8] * P.z + sg_s_t.P[11];
     float M3P2 = M3P * M3P;
 
-    float m11 = ((sg_s_tP[0] * sg_s_tP[5] - sg_s_tP[2] * sg_s_tP[3]) * P.y +
-                 (sg_s_tP[0] * sg_s_tP[8] - sg_s_tP[2] * sg_s_tP[6]) * P.z +
-                 (sg_s_tP[0] * sg_s_tP[11] - sg_s_tP[2] * sg_s_tP[9])) /
+    float m11 = ((sg_s_t.P[0] * sg_s_t.P[5] - sg_s_t.P[2] * sg_s_t.P[3]) * P.y +
+                 (sg_s_t.P[0] * sg_s_t.P[8] - sg_s_t.P[2] * sg_s_t.P[6]) * P.z +
+                 (sg_s_t.P[0] * sg_s_t.P[11] - sg_s_t.P[2] * sg_s_t.P[9])) /
                 M3P2;
-    float m12 = ((sg_s_tP[3] * sg_s_tP[2] - sg_s_tP[5] * sg_s_tP[0]) * P.x +
-                 (sg_s_tP[3] * sg_s_tP[8] - sg_s_tP[5] * sg_s_tP[6]) * P.z +
-                 (sg_s_tP[3] * sg_s_tP[11] - sg_s_tP[5] * sg_s_tP[9])) /
+    float m12 = ((sg_s_t.P[3] * sg_s_t.P[2] - sg_s_t.P[5] * sg_s_t.P[0]) * P.x +
+                 (sg_s_t.P[3] * sg_s_t.P[8] - sg_s_t.P[5] * sg_s_t.P[6]) * P.z +
+                 (sg_s_t.P[3] * sg_s_t.P[11] - sg_s_t.P[5] * sg_s_t.P[9])) /
                 M3P2;
-    float m13 = ((sg_s_tP[6] * sg_s_tP[2] - sg_s_tP[8] * sg_s_tP[0]) * P.x +
-                 (sg_s_tP[6] * sg_s_tP[5] - sg_s_tP[8] * sg_s_tP[3]) * P.y +
-                 (sg_s_tP[6] * sg_s_tP[11] - sg_s_tP[8] * sg_s_tP[9])) /
-                M3P2;
-
-    float m21 = ((sg_s_tP[1] * sg_s_tP[5] - sg_s_tP[2] * sg_s_tP[4]) * P.y +
-                 (sg_s_tP[1] * sg_s_tP[8] - sg_s_tP[2] * sg_s_tP[7]) * P.z +
-                 (sg_s_tP[1] * sg_s_tP[11] - sg_s_tP[2] * sg_s_tP[10])) /
-                M3P2;
-    float m22 = ((sg_s_tP[4] * sg_s_tP[2] - sg_s_tP[5] * sg_s_tP[1]) * P.x +
-                 (sg_s_tP[4] * sg_s_tP[8] - sg_s_tP[5] * sg_s_tP[7]) * P.z +
-                 (sg_s_tP[4] * sg_s_tP[11] - sg_s_tP[5] * sg_s_tP[10])) /
-                M3P2;
-    float m23 = ((sg_s_tP[7] * sg_s_tP[2] - sg_s_tP[8] * sg_s_tP[1]) * P.x +
-                 (sg_s_tP[7] * sg_s_tP[5] - sg_s_tP[8] * sg_s_tP[4]) * P.y +
-                 (sg_s_tP[7] * sg_s_tP[11] - sg_s_tP[8] * sg_s_tP[10])) /
+    float m13 = ((sg_s_t.P[6] * sg_s_t.P[2] - sg_s_t.P[8] * sg_s_t.P[0]) * P.x +
+                 (sg_s_t.P[6] * sg_s_t.P[5] - sg_s_t.P[8] * sg_s_t.P[3]) * P.y +
+                 (sg_s_t.P[6] * sg_s_t.P[11] - sg_s_t.P[8] * sg_s_t.P[9])) /
                 M3P2;
 
-    float3 _drc = P - sg_s_rC;
+    float m21 = ((sg_s_t.P[1] * sg_s_t.P[5] - sg_s_t.P[2] * sg_s_t.P[4]) * P.y +
+                 (sg_s_t.P[1] * sg_s_t.P[8] - sg_s_t.P[2] * sg_s_t.P[7]) * P.z +
+                 (sg_s_t.P[1] * sg_s_t.P[11] - sg_s_t.P[2] * sg_s_t.P[10])) /
+                M3P2;
+    float m22 = ((sg_s_t.P[4] * sg_s_t.P[2] - sg_s_t.P[5] * sg_s_t.P[1]) * P.x +
+                 (sg_s_t.P[4] * sg_s_t.P[8] - sg_s_t.P[5] * sg_s_t.P[7]) * P.z +
+                 (sg_s_t.P[4] * sg_s_t.P[11] - sg_s_t.P[5] * sg_s_t.P[10])) /
+                M3P2;
+    float m23 = ((sg_s_t.P[7] * sg_s_t.P[2] - sg_s_t.P[8] * sg_s_t.P[1]) * P.x +
+                 (sg_s_t.P[7] * sg_s_t.P[5] - sg_s_t.P[8] * sg_s_t.P[4]) * P.y +
+                 (sg_s_t.P[7] * sg_s_t.P[11] - sg_s_t.P[8] * sg_s_t.P[10])) /
+                M3P2;
+
+    float3 _drc = P - sg_s_r.C;
 
     float2 op;
     op.x = m11 * _drc.x + m12 * _drc.y + m13;
@@ -1275,7 +1275,7 @@ __global__ void refine_reprojTarSobelAndDPIXTCDRCRcTcDepthsMap_kernel(float4* te
             float3 rp = get3DPointForPixelAndDepthFromRC(rpix, rcDepth);
             float3 rpS = get3DPointForPixelAndDepthFromRC(rpix, rcDepth + depthMapShift);
 
-            float2 tpc = project3DPoint(sg_s_tP, rp);
+            float2 tpc = project3DPoint(sg_s_t.P, rp);
             int2 tpix = make_int2((int)(tpc.x + 0.5f), (int)(tpc.y + 0.5f));
             float tcDepth = tex2D(depthsTex, tpix.x, tpix.y);
 
@@ -1317,7 +1317,7 @@ __global__ void refine_computeRcTcDepthMap_kernel(float* rcDepthMap, int rcDepth
         if(rcDepth > 0.0f)
         {
             float3 rp = get3DPointForPixelAndDepthFromRC(rpix, rcDepth);
-            float2 tpc = project3DPoint(sg_s_tP, rp);
+            float2 tpc = project3DPoint(sg_s_t.P, rp);
             int2 tpix = make_int2((int)(tpc.x + 0.5f), (int)(tpc.y + 0.5f));
             float tcDepth = tex2D(depthsTex, tpc.x + 0.5f, tpc.y + 0.5f);
 
