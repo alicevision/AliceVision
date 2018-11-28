@@ -508,7 +508,7 @@ bool Mesh::doesTriangleIntersectsRectangle(Mesh::triangle_proj* tp, Mesh::rectan
     */
 }
 
-StaticVector<StaticVector<int>*>* Mesh::getPtsNeighborTriangles()
+StaticVector<StaticVector<int>*>* Mesh::getPtsNeighborTriangles() const
 {
     // array of tuples <x: vertexIndex, y: triangleIndex, z: numberOfNeighbors>
     StaticVector<Voxel> vertexNeighborhoodPairs;
@@ -566,7 +566,7 @@ StaticVector<StaticVector<int>*>* Mesh::getPtsNeighborTriangles()
     return out_ptsNeighTris;
 }
 
-StaticVector<StaticVector<int>*>* Mesh::getPtsNeighPtsOrdered()
+StaticVector<StaticVector<int>*>* Mesh::getPtsNeighPtsOrdered() const
 {
     StaticVector<StaticVector<int>*>* ptsNeighborTriangles = getPtsNeighborTriangles();
 
@@ -1331,6 +1331,13 @@ double Mesh::computeTriangleMaxEdgeLength(int idTri) const
                     ((*pts)[(*tris)[idTri].v[2]] - (*pts)[(*tris)[idTri].v[0]]).size());
 }
 
+double Mesh::computeTriangleMinEdgeLength(int idTri) const
+{
+  return std::min(std::min(((*pts)[(*tris)[idTri].v[0]] - (*pts)[(*tris)[idTri].v[1]]).size(),
+    ((*pts)[(*tris)[idTri].v[1]] - (*pts)[(*tris)[idTri].v[2]]).size()),
+    ((*pts)[(*tris)[idTri].v[2]] - (*pts)[(*tris)[idTri].v[0]]).size());
+}
+
 StaticVector<Point3d>* Mesh::computeNormalsForPts()
 {
     StaticVector<StaticVector<int>*>* ptsNeighTris = getPtsNeighborTriangles();
@@ -1466,7 +1473,7 @@ double Mesh::computeTriangleArea(int idTri) const
     return sqrt(p * (p - a) * (p - b) * (p - c));
 }
 
-StaticVector<Voxel>* Mesh::getTrianglesEdgesIds(StaticVector<StaticVector<int>*>* edgesNeighTris)
+StaticVector<Voxel>* Mesh::getTrianglesEdgesIds(StaticVector<StaticVector<int>*>* edgesNeighTris) const
 {
     StaticVector<Voxel>* out = new StaticVector<Voxel>();
     out->reserve(tris->size());
@@ -2290,7 +2297,7 @@ void Mesh::changeTriPtId(int triId, int oldPtId, int newPtId)
     }
 }
 
-int Mesh::getTriPtIndex(int triId, int ptId, bool failIfDoesNotExists)
+int Mesh::getTriPtIndex(int triId, int ptId, bool failIfDoesNotExists) const
 {
     for(int k = 0; k < 3; k++)
     {
@@ -2307,7 +2314,7 @@ int Mesh::getTriPtIndex(int triId, int ptId, bool failIfDoesNotExists)
     return -1;
 }
 
-Pixel Mesh::getTriOtherPtsIds(int triId, int _ptId)
+Pixel Mesh::getTriOtherPtsIds(int triId, int _ptId) const
 {
     int others[3];
     int nothers = 0;
@@ -2327,7 +2334,7 @@ Pixel Mesh::getTriOtherPtsIds(int triId, int _ptId)
 
     return Pixel(others[0], others[1]);
 }
-bool Mesh::areTwoTrisSameOriented(int triId1, int triId2, int edgePtId1, int edgePtId2)
+bool Mesh::areTwoTrisSameOriented(int triId1, int triId2, int edgePtId1, int edgePtId2) const
 {
     int t1ep1Index = getTriPtIndex(triId1, edgePtId1, true);
     int t1ep2Index = getTriPtIndex(triId1, edgePtId2, true);
@@ -2339,7 +2346,7 @@ bool Mesh::areTwoTrisSameOriented(int triId1, int triId2, int edgePtId1, int edg
     return (t1Orientation != t2Orientation);
 }
 
-bool Mesh::isTriangleAngleAtVetexObtuse(int vertexIdInTriangle, int triId)
+bool Mesh::isTriangleAngleAtVetexObtuse(int vertexIdInTriangle, int triId) const
 {
     Point3d A = (*pts)[(*tris)[triId].v[(vertexIdInTriangle + 0) % 3]];
     Point3d B = (*pts)[(*tris)[triId].v[(vertexIdInTriangle + 1) % 3]];
@@ -2347,13 +2354,13 @@ bool Mesh::isTriangleAngleAtVetexObtuse(int vertexIdInTriangle, int triId)
     return dot(B - A, C - A) < 0.0f;
 }
 
-bool Mesh::isTriangleObtuse(int triId)
+bool Mesh::isTriangleObtuse(int triId) const
 {
     return (isTriangleAngleAtVetexObtuse(0, triId)) || (isTriangleAngleAtVetexObtuse(1, triId)) ||
            (isTriangleAngleAtVetexObtuse(2, triId));
 }
 
-StaticVector<int>* Mesh::getLargestConnectedComponentTrisIds()
+StaticVector<int>* Mesh::getLargestConnectedComponentTrisIds() const
 {
     StaticVector<StaticVector<int>*>* ptsNeighPtsOrdered = getPtsNeighPtsOrdered();
 
