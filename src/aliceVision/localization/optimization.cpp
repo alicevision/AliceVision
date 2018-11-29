@@ -421,15 +421,15 @@ bool refineRigPose(const std::vector<geometry::Pose3 > &vec_subPoses,
 
   // Configure a BA engine and run it
   // todo: Set the most appropriate options
-  aliceVision::sfm::BundleAdjustmentCeres::BA_options aliceVision_options; // Set all
+  aliceVision::sfm::BundleAdjustmentCeres::CeresOptions aliceVision_options; // Set all
   // the options field in our owm struct - unnecessary dependancy to aliceVision here
   
   ceres::Solver::Options options;
   
-  options.preconditioner_type = aliceVision_options._preconditioner_type;
-  options.linear_solver_type = aliceVision_options._linear_solver_type;
-  options.sparse_linear_algebra_library_type = aliceVision_options._sparse_linear_algebra_library_type;
-  options.minimizer_progress_to_stdout = aliceVision_options._bVerbose;
+  options.preconditioner_type = aliceVision_options.preconditionerType;
+  options.linear_solver_type = aliceVision_options.linearSolverType;
+  options.sparse_linear_algebra_library_type = aliceVision_options.sparseLinearAlgebraLibraryType;
+  options.minimizer_progress_to_stdout = aliceVision_options.verbose;
   options.logging_type = ceres::SILENT;
   options.num_threads = 1;//aliceVision_options._nbThreads;
   options.num_linear_solver_threads = 1;//aliceVision_options._nbThreads;
@@ -438,18 +438,18 @@ bool refineRigPose(const std::vector<geometry::Pose3 > &vec_subPoses,
   ceres::Solver::Summary summary;
   ceres::Solve(options, &problem, &summary);
   
-  if (aliceVision_options._bCeres_Summary)
+  if (aliceVision_options.summary)
     ALICEVISION_LOG_DEBUG(summary.FullReport());
 
   // If no error, get back refined parameters
   if (!summary.IsSolutionUsable())
   {
-    if (aliceVision_options._bVerbose)
+    if (aliceVision_options.verbose)
       ALICEVISION_CERR("Bundle Adjustment failed.");
     return false;
   }
 
-  if(aliceVision_options._bVerbose)
+  if(aliceVision_options.verbose)
   {
     // Display statistics about the minimization
     ALICEVISION_LOG_DEBUG("Bundle Adjustment statistics (approximated RMSE");
@@ -564,14 +564,14 @@ bool refineRigPose(const std::vector<Mat> &pts2d,
 
   // Configure a BA engine and run it
   // todo: Set the most appropriate options
-  aliceVision::sfm::BundleAdjustmentCeres::BA_options aliceVision_options; // Set all
+  aliceVision::sfm::BundleAdjustmentCeres::CeresOptions aliceVision_options; // Set all
   // the options field in our owm struct - unnecessary dependancy to aliceVision here
   
   ceres::Solver::Options options;
   
-  options.preconditioner_type = aliceVision_options._preconditioner_type;
-  options.linear_solver_type = aliceVision_options._linear_solver_type;
-  options.sparse_linear_algebra_library_type = aliceVision_options._sparse_linear_algebra_library_type;
+  options.preconditioner_type = aliceVision_options.preconditionerType;
+  options.linear_solver_type = aliceVision_options.linearSolverType;
+  options.sparse_linear_algebra_library_type = aliceVision_options.sparseLinearAlgebraLibraryType;
   options.minimizer_progress_to_stdout = true;
   //options.logging_type = ceres::SILENT;
   options.num_threads = 1;//aliceVision_options._nbThreads;
@@ -581,18 +581,18 @@ bool refineRigPose(const std::vector<Mat> &pts2d,
   ceres::Solver::Summary summary;
   ceres::Solve(options, &problem, &summary);
   
-  if (aliceVision_options._bCeres_Summary)
+  if (aliceVision_options.summary)
     ALICEVISION_LOG_DEBUG(summary.FullReport());
 
   // If no error, get back refined parameters
   if (!summary.IsSolutionUsable())
   {
-    if (aliceVision_options._bVerbose)
+    if (aliceVision_options.verbose)
       ALICEVISION_LOG_DEBUG("Bundle Adjustment failed.");
     return false;
   }
 
-  if(aliceVision_options._bVerbose)
+  if(aliceVision_options.verbose)
   {
     // Display statistics about the minimization
     ALICEVISION_LOG_DEBUG(

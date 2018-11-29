@@ -207,7 +207,7 @@ bool SfMLocalizer::RefinePose(camera::IntrinsicBase* intrinsics,
     tinyScene.structure[i] = std::move(landmark);
   }
 
-  BundleAdjustmentCeres bundle_adjustment_obj;
+  BundleAdjustmentCeres BA;
   BundleAdjustment::ERefineOptions refineOptions = BundleAdjustment::REFINE_NONE;
 
   if(refinePose)
@@ -215,9 +215,9 @@ bool SfMLocalizer::RefinePose(camera::IntrinsicBase* intrinsics,
   if(refineIntrinsic)
     refineOptions |= BundleAdjustment::REFINE_INTRINSICS_ALL;
 
-  const bool baStatus = bundle_adjustment_obj.adjust(tinyScene, refineOptions);
+  const bool success = BA.adjust(tinyScene, refineOptions);
 
-  if(!baStatus)
+  if(!success)
     return false;
 
   pose = tinyScene.getPose(*view).getTransform();

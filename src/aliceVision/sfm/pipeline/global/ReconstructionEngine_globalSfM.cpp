@@ -582,8 +582,8 @@ void ReconstructionEngine_globalSfM::Compute_Relative_Rotations(rotationAveragin
           }
         }
         // - refine only Structure and Rotations & translations (keep intrinsic constant)
-        BundleAdjustmentCeres::BA_options options(false, false);
-        options._linear_solver_type = ceres::DENSE_SCHUR;
+        BundleAdjustmentCeres::CeresOptions options(false, false);
+        options.linearSolverType = ceres::DENSE_SCHUR;
         BundleAdjustmentCeres bundle_adjustment_obj(options);
         if(bundle_adjustment_obj.adjust(tinyScene, BundleAdjustment::REFINE_ROTATION | BundleAdjustment::REFINE_TRANSLATION | BundleAdjustment::REFINE_STRUCTURE))
         {

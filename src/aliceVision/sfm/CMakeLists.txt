@@ -20,8 +20,7 @@ set(sfm_files_headers
   utils/syntheticScene.hpp
   BundleAdjustment.hpp
   BundleAdjustmentCeres.hpp
-  LocalBundleAdjustmentCeres.hpp
-  LocalBundleAdjustmentData.hpp
+  LocalBundleAdjustmentGraph.hpp
   FrustumFilter.hpp
   ResidualErrorFunctor.hpp
   colorizeTracks.hpp
@@ -48,8 +47,7 @@ set(sfm_files_sources
   utils/statistics.cpp
   utils/syntheticScene.cpp
   BundleAdjustmentCeres.cpp
-  LocalBundleAdjustmentCeres.cpp
-  LocalBundleAdjustmentData.cpp
+  LocalBundleAdjustmentGraph.cpp
   FrustumFilter.cpp
   colorizeTracks.cpp
   generateReport.cpp

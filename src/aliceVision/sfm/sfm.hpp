@@ -13,8 +13,7 @@
 #include <aliceVision/sfm/FrustumFilter.hpp>
 #include <aliceVision/sfm/BundleAdjustment.hpp>
 #include <aliceVision/sfm/BundleAdjustmentCeres.hpp>
-#include <aliceVision/sfm/LocalBundleAdjustmentCeres.hpp>
-#include <aliceVision/sfm/LocalBundleAdjustmentData.hpp>
+#include <aliceVision/sfm/LocalBundleAdjustmentGraph.hpp>
 #include <aliceVision/sfm/colorizeTracks.hpp>
 #include <aliceVision/sfm/generateReport.hpp>
 #include <aliceVision/sfm/sfmFilters.hpp>

@@ -11,7 +11,6 @@
 #include <aliceVision/sfm/utils/statistics.hpp>
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
 #include <aliceVision/sfm/BundleAdjustmentCeres.hpp>
-#include <aliceVision/sfm/LocalBundleAdjustmentCeres.hpp>
 #include <aliceVision/sfm/sfmFilters.hpp>
 #include <aliceVision/feature/FeaturesPerView.hpp>
 #include <aliceVision/matching/IndMatch.hpp>
@@ -125,12 +124,13 @@ void computeTracksPyramidPerView(
 }
 
 ReconstructionEngine_sequentialSfM::ReconstructionEngine_sequentialSfM(
-  const SfMData & sfm_data,
-  const std::string & soutDirectory,
-  const std::string & sloggingFile)
-  : ReconstructionEngine(sfm_data, soutDirectory),
-    _htmlLogFile(sloggingFile),
-    _userInitialImagePair(Pair(0,0))
+  const SfMData& sfmData,
+  const std::string& outputFolder,
+  const std::string& loggingFile)
+  : ReconstructionEngine(sfmData, outputFolder),
+    _htmlLogFile(loggingFile),
+    _userInitialImagePair(Pair(0,0)),
+    _intrinsicsHistoryFolder((fs::path(outputFolder) / "intrinsics").string())
 {
   // setup HTML logger
   if(!_htmlLogFile.empty())
@@ -139,7 +139,7 @@ ReconstructionEngine_sequentialSfM::ReconstructionEngine_sequentialSfM(
     _htmlDocStream->pushInfo(htmlDocument::htmlMarkup("h1", std::string("[log] Sequential SfM reconstruction")));
     _htmlDocStream->pushInfo("<hr>");
     _htmlDocStream->pushInfo("Dataset info:");
-    _htmlDocStream->pushInfo("Views count: " + htmlDocument::toString( sfm_data.getViews().size()) + "<br>");
+    _htmlDocStream->pushInfo("Views count: " + htmlDocument::toString( sfmData.getViews().size()) + "<br>");
   }
 }
 
@@ -176,8 +176,8 @@ bool ReconstructionEngine_sequentialSfM::process()
       if(!reconstructedViews.empty())
       {
         // Add the reconstructed views to the LocalBA graph
-        _localBA_data->updateGraphWithNewViews(_sfmData, _map_tracksPerView, reconstructedViews, _kMinNbOfMatches);
-        _localBA_data->updateRigEdgesToTheGraph(_sfmData);
+        _localStrategyGraph->updateGraphWithNewViews(_sfmData, _map_tracksPerView, reconstructedViews, _kMinNbOfMatches);
+        _localStrategyGraph->updateRigEdgesToTheGraph(_sfmData);
       }
     }
   }
@@ -448,13 +448,14 @@ double ReconstructionEngine_sequentialSfM::incrementalReconstruction()
 
       // update rig edges in the local BA graph
       if(_uselocalBundleAdjustment)
-        _localBA_data->updateRigEdgesToTheGraph(_sfmData);
+        _localStrategyGraph->updateRigEdgesToTheGraph(_sfmData);
 
       // after rig calibration, camera may have moved by replacing independant poses by a rig pose with a common subpose.
       // so we need to perform a bundle adjustment, to ensure that 3D points and cameras poses are coherents.
       bundleAdjustment(updatedViews);
+
       triangulate(_sfmData.getValidViews(), updatedViews);
-      // after triangulation of new 3D points, we need to make a bundle adjustment to
+      // after triangulation of new 3D points, we need to make a bundle adjustment to take into account the new 3D points (potentially a high number)
       bundleAdjustment(updatedViews);
 
       ALICEVISION_LOG_WARNING("Rig calibration finished:\n\t- # updated views: " << updatedViews.size());
@@ -575,54 +576,120 @@ void ReconstructionEngine_sequentialSfM::triangulate(const std::set<IndexT>& pre
   ALICEVISION_LOG_DEBUG("Triangulation of the " << newReconstructedViews.size() << " newly reconstructed views took " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - chrono_start).count() << " msec.");
 }
 
-void ReconstructionEngine_sequentialSfM::bundleAdjustment(std::set<IndexT>& newReconstructedViews)
+bool ReconstructionEngine_sequentialSfM::bundleAdjustment(std::set<IndexT>& newReconstructedViews, bool isInitialPair)
 {
-  ALICEVISION_LOG_DEBUG("Global Bundle start");
+  ALICEVISION_LOG_INFO("Bundle adjustment start.");
+  auto chronoStart = std::chrono::steady_clock::now();
 
-  auto chrono_start = std::chrono::steady_clock::now();
-  std::size_t bundleAdjustmentIteration = 0;
+  BundleAdjustmentCeres::CeresOptions options;
+  BundleAdjustment::ERefineOptions refineOptions = BundleAdjustment::REFINE_ROTATION | BundleAdjustment::REFINE_TRANSLATION | BundleAdjustment::REFINE_STRUCTURE;
 
-  const std::size_t nbOutliersThreshold = 50;
-  // Perform BA until all point are under the given precision
+  if(!isInitialPair && !_hasFixedIntrinsics)
+    refineOptions |= BundleAdjustment::REFINE_INTRINSICS_ALL;
+
+  const std::size_t nbOutliersThreshold = (isInitialPair) ? 0 : 50;
+  std::size_t iteration = 0;
+  std::size_t nbOutliers = 0;
+  bool enableLocalStrategy = false;
+
+  // enable Sparse solver and local strategy
+  if(_sfmData.getPoses().size() > 100)
+  {
+    options.setSparseBA();
+    if(_uselocalBundleAdjustment) // local strategy enable if more than 100 poses
+      enableLocalStrategy = true;
+  }
+  else
+  {
+    options.setDenseBA();
+  }
+
+  // add the new reconstructed views to the graph
+  if(_uselocalBundleAdjustment)
+    _localStrategyGraph->updateGraphWithNewViews(_sfmData, _map_tracksPerView, newReconstructedViews, _kMinNbOfMatches);
+
+
+  if(enableLocalStrategy)
+  {
+    // compute the graph-distance between each newly reconstructed views and all the reconstructed views
+    _localStrategyGraph->computeGraphDistances(_sfmData, newReconstructedViews);
+
+    // use the graph-distances to assign a state (Refine, Constant & Ignore) for each parameter (poses, intrinsics & landmarks)
+    _localStrategyGraph->convertDistancesToStates(_sfmData);
+
+    const std::size_t nbRefinedPoses = _localStrategyGraph->getNbPosesPerState(BundleAdjustment::EParameterState::REFINED);
+    const std::size_t nbConstantPoses = _localStrategyGraph->getNbPosesPerState(BundleAdjustment::EParameterState::CONSTANT);
+
+    // restore the Dense linear solver type if the number of cameras in the solver is <= 100
+    if(nbRefinedPoses + nbConstantPoses <= 100)
+      options.setDenseBA();
+
+    // parameters are refined only if the number of cameras to refine is > to the number of newly added cameras.
+    // - if they are equal: it means that none of the new cameras is connected to the local BA graph,
+    //                      so the refinement would be done on those cameras only, without any constant parameters.
+    // - the number of cameras to refine cannot be < to the number of newly added cameras (set to 'refine' by default)
+    if((nbRefinedPoses <= newReconstructedViews.size()) && _sfmData.getRigs().empty())
+    {
+      throw std::runtime_error("The local bundle adjustment refinement has not been done: the new cameras are not connected to the rest of the graph.");
+    }
+  }
+
+  BundleAdjustmentCeres BA(options);
+
+  // give the local strategy graph is local strategy is enable
+  if(enableLocalStrategy)
+    BA.useLocalStrategyGraph(_localStrategyGraph);
+
+  // perform BA until all point are under the given precision
   do
   {
-    auto chrono2_start = std::chrono::steady_clock::now();
+    ALICEVISION_LOG_INFO("Start bundle adjustment iteration: " << iteration);
+    auto chronoItStart = std::chrono::steady_clock::now();
 
-    if (_uselocalBundleAdjustment)
-      bundleAdjustment_local(newReconstructedViews);
-    else
-      bundleAdjustment_full(_hasFixedIntrinsics);
+    // bundle adjustment iteration
+    {
+      const bool success = BA.adjust(_sfmData, refineOptions);
 
-    ALICEVISION_LOG_DEBUG("Bundle iteration: " << bundleAdjustmentIteration
-              << " took " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - chrono2_start).count() << " msec.");
-    ++bundleAdjustmentIteration;
+      if(!success)
+        return false; // not usable solution
+
+      if(_uselocalBundleAdjustment)
+      {
+        // save the current focal lengths values (for each intrinsic) in the history
+        _localStrategyGraph->saveIntrinsicsToHistory(_sfmData);
+        // (optional) export the current intrinsics value to a csv file.
+        _localStrategyGraph->exportIntrinsicsHistory(_intrinsicsHistoryFolder);
+      }
+
+      // export and print information about the refinement
+      const BundleAdjustmentCeres::Statistics& statistics = BA.getStatistics();
+      statistics.exportToFile(_outputFolder, "bundleAdjustment.csv");
+      statistics.show();
+    }
+
+    nbOutliers = removeOutliers(_maxReprojectionError);
+
+    std::set<IndexT> removedViewsIdIteration;
+    eraseUnstablePosesAndObservations(this->_sfmData, _minPointsPerPose, _minTrackLength, &removedViewsIdIteration);
+
+    for(IndexT v : removedViewsIdIteration)
+      newReconstructedViews.erase(v);
+
+    if(_uselocalBundleAdjustment && !removedViewsIdIteration.empty())
+    {
+      // remove removed views to the graph
+      _localStrategyGraph->removeViewsToTheGraph(removedViewsIdIteration);
+      ALICEVISION_LOG_DEBUG("Removed views to the local strategy graph: " << removedViewsIdIteration);
+    }
+
+    ALICEVISION_LOG_INFO("Bundle adjustment iteration: " << iteration << " took " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - chronoItStart).count() << " msec.");
+    ++iteration;
   }
-  while(removeOutliers(_maxReprojectionError) > nbOutliersThreshold);
+  while(nbOutliers > nbOutliersThreshold);
 
-  ALICEVISION_LOG_DEBUG("Bundle adjustment with " << bundleAdjustmentIteration << " iterations took " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - chrono_start).count() << " msec.");
-  chrono_start = std::chrono::steady_clock::now();
-
-  std::set<IndexT> removedViewsId;
-  bool contentRemoved = eraseUnstablePosesAndObservations(this->_sfmData, _minPointsPerPose, _minTrackLength, &removedViewsId);
-
-  if(_uselocalBundleAdjustment && contentRemoved)
-  {
-    // Remove removed views to the graph
-    _localBA_data->removeViewsToTheGraph(removedViewsId);
-    ALICEVISION_LOG_INFO("Poses removed from the reconstruction: " << removedViewsId);
-  }
-
-  // Update newReconstructedViews set with removedPosesId
-  for(IndexT removedViewId : removedViewsId)
-  {
-    const auto it = newReconstructedViews.find(removedViewId);
-    if(it != newReconstructedViews.end())
-      newReconstructedViews.erase(it);
-  }
-
-  ALICEVISION_LOG_DEBUG("eraseUnstablePosesAndObservations took " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - chrono_start).count() << " msec.");
+  ALICEVISION_LOG_INFO("Bundle adjustment with " << iteration << " iterations took " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - chronoStart).count() << " msec.");
+  return true;
 }
-
 
 void ReconstructionEngine_sequentialSfM::exportStatistics(double reconstructionTime)
 {
@@ -917,51 +984,50 @@ bool ReconstructionEngine_sequentialSfM::findNextBestViews(
   return (!out_selectedViewIds.empty());
 }
 
-bool ReconstructionEngine_sequentialSfM::makeInitialPair3D(const Pair& current_pair)
+bool ReconstructionEngine_sequentialSfM::makeInitialPair3D(const Pair& currentPair)
 {
-  // Compute robust Essential matrix for ImageId [I,J]
+  // compute robust Essential matrix for ImageId [I,J]
   // use min max to have I < J
-  const std::size_t I = std::min(current_pair.first, current_pair.second);
-  const std::size_t J = std::max(current_pair.first, current_pair.second);
+  const std::size_t I = std::min(currentPair.first, currentPair.second);
+  const std::size_t J = std::max(currentPair.first, currentPair.second);
 
-  // a. Assert we have valid pinhole cameras
-  const View * viewI = _sfmData.getViews().at(I).get();
-  const Intrinsics::const_iterator iterIntrinsicI = _sfmData.getIntrinsics().find(viewI->getIntrinsicId());
-  const View * viewJ = _sfmData.getViews().at(J).get();
-  const Intrinsics::const_iterator iterIntrinsicJ = _sfmData.getIntrinsics().find(viewJ->getIntrinsicId());
+  // a. assert we have valid pinhole cameras
+  const View& viewI = _sfmData.getView(I);
+  const Intrinsics::const_iterator itIntrinsicI = _sfmData.getIntrinsics().find(viewI.getIntrinsicId());
+  const View& viewJ = _sfmData.getView(J);
+  const Intrinsics::const_iterator itIntrinsicJ = _sfmData.getIntrinsics().find(viewJ.getIntrinsicId());
 
-  ALICEVISION_LOG_INFO("Initial pair is:" << std::endl
-          << "  A - view id: " << I << " - filepath: " << viewI->getImagePath() << std::endl
-          << "  B - view id: " << J << " - filepath: " << viewJ->getImagePath());
+  ALICEVISION_LOG_INFO("Initial pair is:\n"
+                       "\t- [A] view id: " << I << ", filepath: " << viewI.getImagePath() << "\n"
+                       "\t- [B] view id: " << J << ", filepath: " << viewJ.getImagePath());
 
-  if (iterIntrinsicI == _sfmData.getIntrinsics().end() ||
-      iterIntrinsicJ == _sfmData.getIntrinsics().end() )
+  if(itIntrinsicI == _sfmData.getIntrinsics().end() ||
+     itIntrinsicJ == _sfmData.getIntrinsics().end() )
   {
-    ALICEVISION_LOG_WARNING("Can't find initial image pair intrinsics: " << viewI->getIntrinsicId() << ", "  << viewJ->getIntrinsicId());
+    ALICEVISION_LOG_WARNING("Can't find initial image pair intrinsics: " << viewI.getIntrinsicId() << ", "  << viewJ.getIntrinsicId());
     return false;
   }
 
-  const Pinhole* camI = dynamic_cast<const Pinhole*>(iterIntrinsicI->second.get());
-  const Pinhole* camJ = dynamic_cast<const Pinhole*>(iterIntrinsicJ->second.get());
+  const Pinhole* camI = dynamic_cast<const Pinhole*>(itIntrinsicI->second.get());
+  const Pinhole* camJ = dynamic_cast<const Pinhole*>(itIntrinsicJ->second.get());
 
-  if (camI == nullptr || camJ == nullptr || !camI->isValid() || !camJ->isValid())
+  if(camI == nullptr || camJ == nullptr || !camI->isValid() || !camJ->isValid())
   {
-    ALICEVISION_LOG_WARNING("Can't find initial image pair intrinsics (NULL ptr): " << viewI->getIntrinsicId() << ", "  << viewJ->getIntrinsicId());
+    ALICEVISION_LOG_WARNING("Can't find initial image pair intrinsics (NULL ptr): " << viewI.getIntrinsicId() << ", "  << viewJ.getIntrinsicId());
     return false;
   }
 
-  // b. Get common features between the two views
+  // b. get common features between the two views
   // use the track to have a more dense match correspondence set
-  aliceVision::track::TracksMap map_tracksCommon;
-  const std::set<std::size_t> set_imageIndex= {I, J};
-  track::tracksUtilsMap::getCommonTracksInImagesFast(set_imageIndex, _map_tracks, _map_tracksPerView, map_tracksCommon);
+  aliceVision::track::TracksMap commonTracks;
+  track::tracksUtilsMap::getCommonTracksInImagesFast({I, J}, _map_tracks, _map_tracksPerView, commonTracks);
 
-  //-- Copy point to arrays
-  const std::size_t n = map_tracksCommon.size();
+  // copy point to arrays
+  const std::size_t n = commonTracks.size();
   Mat xI(2,n), xJ(2,n);
   std::size_t cptIndex = 0;
   for (aliceVision::track::TracksMap::const_iterator
-    iterT = map_tracksCommon.begin(); iterT != map_tracksCommon.end();
+    iterT = commonTracks.begin(); iterT != commonTracks.end();
     ++iterT, ++cptIndex)
   {
     assert(iterT->second.featPerView.size() == 2);
@@ -976,98 +1042,74 @@ bool ReconstructionEngine_sequentialSfM::makeInitialPair3D(const Pair& current_p
   }
   ALICEVISION_LOG_INFO(n << " matches in the image pair for the initial pose estimation.");
 
-  // c. Robust estimation of the relative pose
-  RelativePoseInfo relativePose_info;
-
+  // c. robust estimation of the relative pose
+  RelativePoseInfo relativePoseInfo;
   const std::pair<std::size_t, std::size_t> imageSizeI(camI->w(), camI->h());
   const std::pair<std::size_t, std::size_t> imageSizeJ(camJ->w(), camJ->h());
 
-  if (!robustRelativePose(
-        camI->K(), camJ->K(), xI, xJ, relativePose_info, imageSizeI, imageSizeJ, 4096))
+  if(!robustRelativePose(camI->K(), camJ->K(), xI, xJ, relativePoseInfo, imageSizeI, imageSizeJ, 4096))
   {
     ALICEVISION_LOG_WARNING("Robust estimation failed to compute E for this pair");
     return false;
   }
-  ALICEVISION_LOG_DEBUG("A-Contrario initial pair residual: "
-    << relativePose_info.found_residual_precision);
 
-  // Bound min precision at 1 pix.
-  relativePose_info.found_residual_precision = std::max(relativePose_info.found_residual_precision, 1.0);
+  ALICEVISION_LOG_DEBUG("A-Contrario initial pair residual: " << relativePoseInfo.found_residual_precision);
 
+  // bound min precision at 1 pix.
+  relativePoseInfo.found_residual_precision = std::max(relativePoseInfo.found_residual_precision, 1.0);
   {
-    // Init poses
+    // initialize poses
     const Pose3& initPoseI = Pose3(Mat3::Identity(), Vec3::Zero());
-    const Pose3& initPoseJ = relativePose_info.relativePose;
+    const Pose3& initPoseJ = relativePoseInfo.relativePose;
 
-    _sfmData.setPose(*viewI, CameraPose(initPoseI));
-    _sfmData.setPose(*viewJ, CameraPose(initPoseJ));
+    _sfmData.setPose(viewI, CameraPose(initPoseI));
+    _sfmData.setPose(viewJ, CameraPose(initPoseJ));
 
-    // Triangulate
+    // triangulate
     const std::set<IndexT> prevImageIndex = {static_cast<IndexT>(I)};
     const std::set<IndexT> newImageIndex = {static_cast<IndexT>(J)};
-
     triangulate_2Views(_sfmData, prevImageIndex, newImageIndex);
 
-    Save(_sfmData,(fs::path(_outputFolder) / ("initialPair" + _sfmdataInterFileExtension)).string(), _sfmdataInterFilter);
+    // save sfm before bundle adjustment
+    sfmDataIO::Save(_sfmData,(fs::path(_outputFolder) / ("initialPair" + _sfmdataInterFileExtension)).string(), _sfmdataInterFilter);
 
-    /*
-    // - refine only Structure and Rotations & translations (keep intrinsic constant)
-    BundleAdjustmentCeres::BA_options options(true);
-    options.setDenseBA();
-    BundleAdjustmentCeres bundle_adjustment_obj(options);
-    if (!bundle_adjustment_obj.Adjust(_sfm_data, REFINE_ROTATION | REFINE_TRANSLATION | REFINE_STRUCTURE))
+    // refine only structure & rotations & translations (keep intrinsic constant)
     {
-      ALICEVISION_LOG_WARNING("BA of initial pair " << current_pair.first << ", " << current_pair.second << " failed.");
+      std::set<IndexT> newReconstructedViews = {static_cast<IndexT>(I), static_cast<IndexT>(J)};
+      const bool isInitialPair = true;
+      const bool success = bundleAdjustment(newReconstructedViews, isInitialPair);
 
-      // Clear poses, RIGs, landmarks
-      _sfm_data.getPoses().clear();
-      _sfm_data.getLandmarks().clear();
-      _sfm_data.resetRigs();
-
-      return false;
-    }
-    */
-    std::size_t bundleAdjustmentIteration = 0;
-    const std::size_t nbOutliersThreshold = 0;
-
-    do
-    {
-      auto chrono2_start = std::chrono::steady_clock::now();
-      bool baStatus = bundleAdjustment_full(true);
-      if(baStatus == false)
+      if(!success)
       {
-          ALICEVISION_LOG_WARNING("BA of initial pair " << current_pair.first << ", " << current_pair.second << " failed.");
+        // bundle adjustment solution is not usable
+        // because it can failed after multiple iterations
+        // we need to clear poses & rigs & landmarks
+        _sfmData.getPoses().clear();
+        _sfmData.getLandmarks().clear();
+        _sfmData.resetRigs();
 
-          // Clear poses, RIGs, landmarks
-          _sfmData.getPoses().clear();
-          _sfmData.getLandmarks().clear();
-          _sfmData.resetRigs();
-
-          return false;
+        // this initial pair is not usable
+        return false;
       }
-      ALICEVISION_LOG_DEBUG("Initial Pair, bundle iteration: " << bundleAdjustmentIteration
-           << " took " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - chrono2_start).count() << " msec.");
-      ++bundleAdjustmentIteration;
     }
-    while(removeOutliers(_maxReprojectionError) > nbOutliersThreshold);
 
+    // save sfm after bundle adjustment
+    sfmDataIO::Save(_sfmData, (fs::path(_outputFolder) / ("initialPair_afterBA" + _sfmdataInterFileExtension)).string(), _sfmdataInterFilter);
 
-    Save(_sfmData, (fs::path(_outputFolder) / ("initialPair_afterBA" + _sfmdataInterFileExtension)).string(), _sfmdataInterFilter);
-
-    // Save outlier residual information
+    // save outlier residual information
     Histogram<double> histoResiduals;
     ALICEVISION_LOG_DEBUG("MSE Residual initial pair inlier: " << computeResidualsHistogram(&histoResiduals));
 
-    if (!_htmlLogFile.empty())
+    if(!_htmlLogFile.empty())
     {
       using namespace htmlDocument;
       _htmlDocStream->pushInfo(htmlMarkup("h3","Essential Matrix."));
       std::ostringstream os;
       os << std::endl
         << "<b>Robust Essential matrix:</b>" << "<br>"
-        << "-> View I:<br>id: " << I << "<br>image path: " << viewI->getImagePath() << "<br>"
-        << "-> View J:<br>id: " << J << "<br>image path: " << viewJ->getImagePath() << "<br><br>"
-        << "- Threshold: " << relativePose_info.found_residual_precision << "<br>"
+        << "-> View I:<br>id: " << I << "<br>image path: " << viewI.getImagePath() << "<br>"
+        << "-> View J:<br>id: " << J << "<br>image path: " << viewJ.getImagePath() << "<br><br>"
+        << "- Threshold: " << relativePoseInfo.found_residual_precision << "<br>"
         << "- Resection status: OK<br>"
         << "- # points used for robust Essential matrix estimation: " << xI.cols() << "<br>"
         << "- # points validated by robust estimation: " << _sfmData.structure.size() << "<br>"
@@ -1076,7 +1118,7 @@ bool ReconstructionEngine_sequentialSfM::makeInitialPair3D(const Pair& current_p
 
       _htmlDocStream->pushInfo(htmlMarkup("h3",
         "Initial triangulation - Residual of the robust estimation.<br>Thresholded at: "
-        + toString(relativePose_info.found_residual_precision)));
+        + toString(relativePoseInfo.found_residual_precision)));
 
       _htmlDocStream->pushInfo(htmlMarkup("h3","Histogram of residuals"));
 
@@ -1087,8 +1129,8 @@ bool ReconstructionEngine_sequentialSfM::makeInitialPair3D(const Pair& current_p
       htmlDocument::JSXGraphWrapper jsxGraph;
       jsxGraph.init("InitialPairTriangulationKeptInfo",600,300);
       jsxGraph.addXYChart(xBin, histoResiduals.GetHist(), "line,point");
-      jsxGraph.addLine(relativePose_info.found_residual_precision, 0,
-                       relativePose_info.found_residual_precision, histoResiduals.GetHist().front());
+      jsxGraph.addLine(relativePoseInfo.found_residual_precision, 0,
+                       relativePoseInfo.found_residual_precision, histoResiduals.GetHist().front());
       jsxGraph.UnsuspendUpdate();
       jsxGraph.setViewport(range);
       jsxGraph.close();
@@ -1096,12 +1138,11 @@ bool ReconstructionEngine_sequentialSfM::makeInitialPair3D(const Pair& current_p
       _htmlDocStream->pushInfo(jsxGraph.toStr());
       _htmlDocStream->pushInfo("<hr>");
 
-      std::ofstream htmlFileStream( (fs::path(_outputFolder) / _htmlLogFile).string());
+      std::ofstream htmlFileStream((fs::path(_outputFolder) / _htmlLogFile).string());
       htmlFileStream << _htmlDocStream->getDoc();
     }
   }
-
-  Save(_sfmData, (fs::path(_outputFolder) / ("initialPair_sfmData" + _sfmdataInterFileExtension)).string(), _sfmdataInterFilter);
+  sfmDataIO::Save(_sfmData, (fs::path(_outputFolder) / ("initialPair_sfmData" + _sfmdataInterFileExtension)).string(), _sfmdataInterFilter);
 
   return !_sfmData.structure.empty();
 }
@@ -1930,109 +1971,6 @@ void ReconstructionEngine_sequentialSfM::triangulate_2Views(SfMData& scene, cons
 //                      "\t#3DPoint for the entire scene: " << scene.getLandmarks().size());
 //  }
   }
-}
-
-/// Bundle adjustment to refine Structure; Motion and Intrinsics
-bool ReconstructionEngine_sequentialSfM::bundleAdjustment_full(bool fixedIntrinsics)
-{
-  BundleAdjustmentCeres::BA_options options;
-  if (_sfmData.getPoses().size() > 100)
-  {
-    ALICEVISION_LOG_DEBUG("Global BundleAdjustment sparse");
-    options.setSparseBA();
-  }
-  else
-  {
-    ALICEVISION_LOG_DEBUG("Global BundleAdjustment dense");
-    options.setDenseBA();
-  }
-  BundleAdjustmentCeres bundle_adjustment_obj(options);
-  BundleAdjustment::ERefineOptions refineOptions = BundleAdjustment::REFINE_ROTATION | BundleAdjustment::REFINE_TRANSLATION | BundleAdjustment::REFINE_STRUCTURE;
-  if(!fixedIntrinsics)
-    refineOptions |= BundleAdjustment::REFINE_INTRINSICS_ALL;
-  return bundle_adjustment_obj.adjust(_sfmData, refineOptions);
-}
-
-bool ReconstructionEngine_sequentialSfM::bundleAdjustment_local(const std::set<IndexT>& newReconstructedViews)
-{
-  
-  // -- Manage Ceres options (parameter ordering, local BA, sparse/dense mode, etc.)
-  
-  LocalBundleAdjustmentCeres::LocalBA_options options;
-  options.enableParametersOrdering();
-  
-  if (_sfmData.getPoses().size() > 100) // default value: 100 
-  {
-    options.setSparseBA();
-    options.enableLocalBA();
-  }
-  else
-  {
-    options.setDenseBA();
-  }
-
-  bool isBaSucceed;
-  
-  // Add the new reconstructed views to the graph
-  _localBA_data->updateGraphWithNewViews(_sfmData, _map_tracksPerView, newReconstructedViews, _kMinNbOfMatches);
-  
-  // -- Prepare Local BA & Adjust
-  LocalBundleAdjustmentCeres localBA_ceres;
-  
-  if (options.isLocalBAEnabled()) // Local Bundle Adjustment
-  {
-    ALICEVISION_LOG_DEBUG("Local BA is activated: YES");
-    
-    // Compute the graph-distance between each newly reconstructed views and all the reconstructed views
-    _localBA_data->computeGraphDistances(_sfmData, newReconstructedViews);
-
-    // Use the graph-distances to assign a LBA state (Refine, Constant & Ignore) for each parameter (poses, intrinsics & landmarks)
-    _localBA_data->convertDistancesToLBAStates(_sfmData); 
-
-    // Check Ceres mode: 
-    // Restore the Ceres Dense mode if the number of cameras in the solver is <= 100
-    if (_localBA_data->getNumOfRefinedPoses() + _localBA_data->getNumOfConstantPoses() <= 100)
-    {
-      options.setDenseBA();
-    }
-    
-    localBA_ceres = LocalBundleAdjustmentCeres(*_localBA_data, options, newReconstructedViews);
-    
-    // -- Refine:
-    
-    // Parameters are refined only if the number of cameras to refine is > to the number of newly added cameras.
-    // - if there are equal: it meens that none of the new cameras is connected to the local BA graph,
-    //    so the refinement would be done on those cameras only, without any constant parameters.
-    // - the number of cameras to refine cannot be < to the number of newly added cameras (set to 'refine' by default)
-    if (_localBA_data->getNumOfRefinedPoses() > newReconstructedViews.size())
-    {
-      isBaSucceed = localBA_ceres.adjust(_sfmData, *_localBA_data);
-    }
-    else
-      ALICEVISION_LOG_WARNING("The refinement has not been done: the new cameras are not connected to the rest of the local BA graph.");
-  }   
-  else // Classic Bundle Adjustment
-  {
-    ALICEVISION_LOG_DEBUG("Local BA is activated: NO");
-
-    _localBA_data->setAllParametersToRefine(_sfmData);
-    
-    localBA_ceres = LocalBundleAdjustmentCeres(*_localBA_data, options, newReconstructedViews);
-    
-    isBaSucceed = localBA_ceres.adjust(_sfmData, *_localBA_data);
-  }
-  
-  // Save the current focal lengths values (for each intrinsic) in the history  
-  _localBA_data->saveFocallengthsToHistory(_sfmData);
-  // (optional) Export the current focallengths value to a txt file. 
-  _localBA_data->exportFocalLengths(_localBA_data->getOutDirectory());
-  
-  // -- Export data about the refinement
-  std::string namecomplement = "_M" + std::to_string(_kMinNbOfMatches) + "_D" + std::to_string(_localBA_data->getGraphDistanceLimit());
-  std::string filename =  "BaStats" + namecomplement + ".txt";
-  localBA_ceres.exportStatistics(_localBA_data->getOutDirectory(), filename);
-  
-  return isBaSucceed;
 }
 
 std::size_t ReconstructionEngine_sequentialSfM::removeOutliers(double precision)

@@ -19,14 +19,37 @@ namespace sfm {
 
 class BundleAdjustment
 {
-  public:
+public:
 
+  /**
+   * @brief Defines all the types of parameter adjusted during bundle adjustment.
+   */
+  enum class EParameter : std::uint8_t
+  {
+    POSE = 0,      //< The pose
+    INTRINSIC = 1, //< The intrinsic
+    LANDMARK = 2   //< The landmark
+  };
+
+  /**
+   * @brief Defines the state of the all parameter of the reconstruction during bundle adjustment.
+   */
+  enum class EParameterState : std::uint8_t
+  {
+    REFINED = 0,  //< will be adjusted by the BA solver
+    CONSTANT = 1, //< will be set as constant in the sover
+    IGNORED = 2   //< will not be set into the BA solver
+  };
+
+  /**
+   * @brief Defines all the refine options that can be used in a bundle adjustment.
+   */
   enum ERefineOptions
   {
     REFINE_NONE = 0,
     REFINE_ROTATION = 1,                                  //< refine pose rotations
     REFINE_TRANSLATION = 2,                               //< refine pose translations
-    REFINE_STRUCTURE = 4,                                 //<  refine structure (i.e. 3D points)
+    REFINE_STRUCTURE = 4,                                 //< refine structure (i.e. 3D points)
     REFINE_INTRINSICS_FOCAL = 8,                          //< refine the focal length
     REFINE_INTRINSICS_OPTICALCENTER_ALWAYS = 16,          //< refine the optical center
     REFINE_INTRINSICS_OPTICALCENTER_IF_ENOUGH_DATA = 32,  //< refine the optical center only if we have a minimum number of cameras
@@ -39,9 +62,9 @@ class BundleAdjustment
 
   /**
    * @brief Perform a Bundle Adjustment on the SfM scene with refinement of the requested parameters
-   * @param[in,out] sfmData: sfmData scene to modify with the BA
+   * @param[in,out] sfmData The input SfMData contains all the information about the reconstruction
    * @param[in] refineOptions: choose what you want to refine
-   * @return 
+   * @return false if the bundle adjustment failed else true
    */
   virtual bool adjust(sfmData::SfMData& sfmData, ERefineOptions refineOptions = REFINE_ALL) = 0;
 

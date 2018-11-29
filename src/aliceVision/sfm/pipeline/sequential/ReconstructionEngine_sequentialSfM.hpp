@@ -8,13 +8,12 @@
 #pragma once
 
 #include <aliceVision/sfm/pipeline/ReconstructionEngine.hpp>
-#include <aliceVision/sfm/LocalBundleAdjustmentData.hpp>
+#include <aliceVision/sfm/LocalBundleAdjustmentGraph.hpp>
 #include <aliceVision/sfm/pipeline/localization/SfMLocalizer.hpp>
 #include <aliceVision/sfm/pipeline/pairwiseMatchesIO.hpp>
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
 #include <aliceVision/feature/FeaturesPerView.hpp>
 #include <aliceVision/track/Track.hpp>
-
 #include <dependencies/htmlDoc/htmlDoc.hpp>
 #include <dependencies/histogram/histogram.hpp>
 
@@ -38,7 +37,7 @@ class ReconstructionEngine_sequentialSfM : public ReconstructionEngine
 public:
 
   ReconstructionEngine_sequentialSfM(const sfmData::SfMData& sfmData,
-                                     const std::string& soutDirectory,
+                                     const std::string& outputFolder,
                                      const std::string& loggingFile = "");
 
   void setFeatures(feature::FeaturesPerView* featuresPerView)
@@ -119,21 +118,19 @@ public:
   void setLocalBundleAdjustmentGraphDistance(std::size_t distance)
   {
     if(_uselocalBundleAdjustment)
-      _localBA_data->setGraphDistanceLimit(distance);
+      _localStrategyGraph->setGraphDistanceLimit(distance);
   }
 
-  void setUseLocalBundleAdjustmentStrategy(bool v)
+  void setUseLocalBundleAdjustmentStrategy(bool useLocalStrategy)
   {
-    _uselocalBundleAdjustment = v;
-    if(v)
-    {
-      _localBA_data = std::make_shared<LocalBundleAdjustmentData>(_sfmData);
-      _localBA_data->setOutDirectory((fs::path(_outputFolder) / "localBA").string());
+    _uselocalBundleAdjustment = useLocalStrategy;
 
-      // delete all the previous data about the Local BA.
-      if(fs::exists(_localBA_data->getOutDirectory()))
-        fs::remove(_localBA_data->getOutDirectory());
-      fs::create_directory(_localBA_data->getOutDirectory());
+    if(useLocalStrategy)
+    {
+      _localStrategyGraph = std::make_shared<LocalBundleAdjustmentGraph>(_sfmData);
+
+      if(!fs::exists(_intrinsicsHistoryFolder))
+        fs::create_directory(_intrinsicsHistoryFolder);
     }
   }
 
@@ -201,9 +198,11 @@ public:
 
   /**
    * @brief bundleAdjustment
-   * @param[in] newReconstructedViews The newly reconstructed view ids
+   * @param[in,out] newReconstructedViews The newly reconstructed view ids
+   * @param[in] isInitialPair If true use fixed intrinsics an no nbOutliersThreshold
+   * @return true if the bundle adjustment solution is usable
    */
-  void bundleAdjustment(std::set<IndexT>& newReconstructedViews);
+  bool bundleAdjustment(std::set<IndexT>& newReconstructedViews, bool isInitialPair = false);
 
   /**
    * @brief Export and print statistics of a complete reconstruction
@@ -339,7 +338,7 @@ private:
    * @param[in] newReconstructedViews The list of the new reconstructed views (views index).
    */
   void triangulate_multiViewsLORANSAC(sfmData::SfMData& scene, const std::set<IndexT>& previousReconstructedViews, const std::set<IndexT>& newReconstructedViews);
-  
+
   /**
    * @brief Check if a 3D points is well located in front of a set of views.
    * @param[in] pt3D A 3D point (euclidian coordinates)
@@ -358,20 +357,6 @@ private:
    * @return false if the maximal angle does not exceed the limit, else \c true.
    */
   bool checkAngles(const Vec3& pt3D, const std::set<IndexT>& viewsId, const sfmData::SfMData& scene, const double& kMinAngle);
-
-  /**
-   * @brief Bundle adjustment to refine Structure; Motion and Intrinsics
-   * @param fixedIntrinsics
-   */
-  bool bundleAdjustment_full(bool fixedIntrinsics);
-  
-  /**
-   * @brief Apply the bundle adjustment choosing a small amount of parameters to reduce.
-   * It reduces drastically the reconstruction time for big dataset of images.
-   * @param The parameters to refine (landmarks, intrinsics, poses) are choosen according to the their
-   * @details proximity to the cameras newly added to the reconstruction.
-   */
-  bool bundleAdjustment_local(const std::set<IndexT>& newReconstructedViews);
 
   /**
    * @brief Select the candidate tracks for the next triangulation step. 
@@ -441,10 +426,11 @@ private:
 
   // Local Bundle Adjustment data
 
+  const std::string _intrinsicsHistoryFolder;
   /// The minimum number of shared matches to create an edge between two views (nodes)
   const std::size_t _kMinNbOfMatches = 50;
   /// Contains all the data used by the Local BA approach
-  std::shared_ptr<LocalBundleAdjustmentData> _localBA_data;
+  std::shared_ptr<LocalBundleAdjustmentGraph> _localStrategyGraph;
 
   // Intermediate reconstructions
 
