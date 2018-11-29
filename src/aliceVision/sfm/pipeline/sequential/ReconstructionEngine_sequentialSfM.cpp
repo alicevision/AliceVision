@@ -663,7 +663,7 @@ bool ReconstructionEngine_sequentialSfM::bundleAdjustment(std::set<IndexT>& newR
 
       // export and print information about the refinement
       const BundleAdjustmentCeres::Statistics& statistics = BA.getStatistics();
-      statistics.exportToFile(_outputFolder, "bundleAdjustment.csv");
+      statistics.exportToFile(_outputFolder, "bundle_adjustment.csv");
       statistics.show();
     }
 
