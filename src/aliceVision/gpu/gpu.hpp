@@ -11,10 +11,6 @@
 namespace aliceVision {
 namespace gpu {
 
-int getBestGpuDeviceId(int minComputeCapabilityMajor,
-  int minComputeCapabilityMinor,
-  int minTotalDeviceMemory = 0);
-
 /**
  * @brief Check if the system support CUDA with the given parameters
  * @param[in] minComputeCapabilityMajor The minimum compute capability major

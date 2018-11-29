@@ -13,57 +13,6 @@
 namespace aliceVision {
 namespace gpu {
 
-#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_CUDA)
-std::vector<std::pair<cudaDeviceProp, int>> getValidGpuDevices(int minComputeCapabilityMajor,
-    int minComputeCapabilityMinor,
-    int minTotalDeviceMemory = 0)
-{
-    int nbDevices = 0;
-    cudaError_t success;
-    success = cudaGetDeviceCount(&nbDevices);
-    if (success != cudaSuccess)
-    {
-        ALICEVISION_LOG_ERROR("cudaGetDeviceCount failed: " << cudaGetErrorString(success));
-        nbDevices = 0;
-    }
-    std::vector<std::pair<cudaDeviceProp, int>> devices;
-
-    if (nbDevices > 0)
-    {
-        for (int i = 0; i < nbDevices; ++i)
-        {
-            cudaDeviceProp deviceProperties;
-
-            if (cudaGetDeviceProperties(&deviceProperties, i) != cudaSuccess)
-            {
-                continue;
-            }
-
-            if ((deviceProperties.major > minComputeCapabilityMajor ||
-                (deviceProperties.major == minComputeCapabilityMajor &&
-                    deviceProperties.minor >= minComputeCapabilityMinor)) &&
-                deviceProperties.totalGlobalMem >= (minTotalDeviceMemory * 1024 * 1024))
-            {
-                devices.emplace_back(deviceProperties, i);
-            }
-        }
-    }
-    return devices;
-}
-
-std::vector<std::pair<cudaDeviceProp, int>> getSortedGpuDevices(int minComputeCapabilityMajor,
-    int minComputeCapabilityMinor,
-    int minTotalDeviceMemory)
-{
-    using DeviceAndIndex = std::pair<cudaDeviceProp, int>;
-    std::vector<DeviceAndIndex> devices = getValidGpuDevices(minComputeCapabilityMajor, minComputeCapabilityMinor, minTotalDeviceMemory);
-    std::sort(devices.begin(), devices.end(), [](const DeviceAndIndex& a, const DeviceAndIndex& b) {
-        return a.first.multiProcessorCount > b.first.multiProcessorCount;
-    });
-    return devices;
-}
-#endif
-
 bool gpuSupportCUDA(int minComputeCapabilityMajor,
     int minComputeCapabilityMinor,
     int minTotalDeviceMemory)
@@ -115,22 +64,6 @@ bool gpuSupportCUDA(int minComputeCapabilityMajor,
 #endif
     return false;
 }
-
-
-int getBestGpuDeviceId(int minComputeCapabilityMajor,
-    int minComputeCapabilityMinor,
-    int minTotalDeviceMemory)
-{
-#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_CUDA)
-    std::vector<std::pair<cudaDeviceProp, int>> devices = getSortedGpuDevices(minComputeCapabilityMajor, minComputeCapabilityMinor, minTotalDeviceMemory);
-    if(devices.empty())
-        return 0;
-    return devices.front().second;
-#else
-    return 0;
-#endif
-}
-
 
 std::string gpuInformationCUDA()
 {
