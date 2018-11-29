@@ -379,5 +379,89 @@ void estimateAndRefineDepthMaps(int cudaDeviceNo, mvsUtils::MultiViewParams* mp,
   }
 }
 
+
+
+
+void computeNormalMaps(int CUDADeviceNo, mvsUtils::MultiViewParams* mp, mvsUtils::PreMatchCams* pc, const StaticVector<int>& cams)
+{
+  const int fileScale = 1; // input images scale (should be one)
+
+  int bandType = 0;
+  mvsUtils::ImagesCache ic(mp, bandType, true);
+  PlaneSweepingCuda cps(CUDADeviceNo, ic, mp, pc, 1);
+  SemiGlobalMatchingParams sp(mp, pc, cps);
+
+  float igammaC = 1.0f;
+  float igammaP = 1.0f;
+  int wsh = 3;
+  for (const int rc : cams)
+  {
+    const std::string normalMapFilepath = getFileNameFromIndex(mp, rc, mvsUtils::EFileType::normalMap, 0);
+    if (!mvsUtils::FileExists(normalMapFilepath))
+    {
+      StaticVector<float> depthMap;
+      int w = 0;
+      int h = 0;
+      imageIO::readImage(getFileNameFromIndex(mp, rc, mvsUtils::EFileType::depthMap, 0), w, h, depthMap.getDataWritable());
+
+      StaticVector<Color> normalMap;
+      normalMap.resize(mp->getWidth(rc) * mp->getHeight(rc));
+      
+      cps.computeNormalMap(&depthMap, &normalMap, rc, 1, igammaC, igammaP, wsh);
+
+      imageIO::writeImage(normalMapFilepath, mp->getWidth(rc), mp->getHeight(rc), normalMap.getDataWritable(), imageIO::EImageQuality::LOSSLESS);
+    }
+  }
+}
+
+void computeNormalMaps(mvsUtils::MultiViewParams* mp, mvsUtils::PreMatchCams* pc, const StaticVector<int>& cams)
+{
+  int num_gpus = listCUDADevices(true);
+  int num_cpu_threads = omp_get_num_procs();
+  ALICEVISION_LOG_INFO("Number of GPU devices: " << num_gpus << ", number of CPU threads: " << num_cpu_threads);
+  int numthreads = std::min(num_gpus, num_cpu_threads);
+
+  int num_gpus_to_use = mp->userParams.get<int>("refineRc.num_gpus_to_use", 1);
+  if (num_gpus_to_use > 0)
+  {
+    numthreads = num_gpus_to_use;
+  }
+
+  if (numthreads == 1)
+  {
+    int bestGpuId = system::getBestGpuDeviceId(2, 0);
+    int CUDADeviceNo = mp->userParams.get<int>("global.CUDADeviceNo", bestGpuId);
+    computeNormalMaps(CUDADeviceNo, mp, pc, cams);
+  }
+  else
+  {
+    omp_set_num_threads(numthreads); // create as many CPU threads as there are CUDA devices
+#pragma omp parallel
+    {
+      int cpu_thread_id = omp_get_thread_num();
+      int CUDADeviceNo = cpu_thread_id % numthreads;
+      ALICEVISION_LOG_INFO("CPU thread " << cpu_thread_id << " (of " << numthreads << ") uses CUDA device: " << CUDADeviceNo);
+
+      int rcFrom = CUDADeviceNo * (cams.size() / numthreads);
+      int rcTo = (CUDADeviceNo + 1) * (cams.size() / numthreads);
+      if (CUDADeviceNo == numthreads - 1)
+      {
+        rcTo = cams.size();
+      }
+      StaticVector<int> subcams;
+      subcams.reserve(cams.size());
+      for (int rc = rcFrom; rc < rcTo; rc++)
+      {
+        subcams.push_back(cams[rc]);
+      }
+      computeNormalMaps(cpu_thread_id, mp, pc, subcams);
+    }
+  }
+}
+
+
+
+
+
 } // namespace depthMap
 } // namespace aliceVision

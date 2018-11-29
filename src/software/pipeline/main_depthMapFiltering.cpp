@@ -14,6 +14,8 @@
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/Timer.hpp>
 
+#include <aliceVision/depthMap/RefineRc.hpp>
+
 #include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>
 
@@ -167,6 +169,8 @@ int main(int argc, char* argv[])
         fs.filterGroups(cams, pixSizeBall, pixSizeBallWithLowSimilarity, nNearestCams);
         fs.filterDepthMaps(cams, minNumOfConsistentCams, minNumOfConsistentCamsWithLowSimilarity);
     }
+
+    depthMap::computeNormalMaps(&mp, &pc, cams);
 
     ALICEVISION_LOG_INFO("Task done in (s): " + std::to_string(timer.elapsed()));
     return EXIT_SUCCESS;

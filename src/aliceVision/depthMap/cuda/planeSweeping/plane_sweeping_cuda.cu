@@ -1482,5 +1482,55 @@ void ps_getSilhoueteMap(CudaArray<uchar4, 2>** ps_texs_arr, CudaHostMemoryHeap<b
         printf("gpu elapsed time: %f ms \n", toc(tall));
 }
 
+
+void ps_computeNormalMap(CudaArray<uchar4, 2>** ps_texs_arr, CudaHostMemoryHeap<float3, 2>* normalMap_hmh,
+  CudaHostMemoryHeap<float, 2>* depthMap_hmh, cameraStruct** cams, int width, int height,
+  int scale, int CUDAdeviceNo, int ncamsAllocated, int scales, int wsh, bool verbose,
+  float gammaC, float gammaP)
+{
+  clock_t tall = tic();
+  testCUDAdeviceNo(CUDAdeviceNo);
+
+  CudaArray<float, 2> depthMap_arr(*depthMap_hmh);
+  cudaBindTextureToArray(depthsTex, depthMap_arr.getArray(), cudaCreateChannelDesc<float>());
+
+  ps_init_reference_camera_matrices(cams[0]->P, cams[0]->iP, cams[0]->R, cams[0]->iR, cams[0]->K, cams[0]->iK,
+    cams[0]->C);
+  cudaBindTextureToArray(r4tex, ps_texs_arr[cams[0]->camId * scales + scale]->getArray(),
+    cudaCreateChannelDesc<uchar4>());
+
+  CudaDeviceMemoryPitched<float3, 2> normalMap_dmp(*normalMap_hmh);
+  CudaDeviceMemoryPitched<float, 2> depthMap_dmp(CudaSize<2>(width, height));
+
+  int block_size = 8;
+  dim3 block(block_size, block_size, 1);
+  dim3 grid(divUp(width, block_size), divUp(height, block_size), 1);
+
+  if (verbose)
+    printf("computeNormalMap_kernel\n");
+
+  //------------------------------------------------------------------------------------------------
+  // compute normal map
+  computeNormalMap_kernel<<<grid, block>>>(
+    normalMap_dmp.getBuffer(),
+    normalMap_dmp.getPitch(),
+    width, height, wsh,
+    gammaC, gammaP);
+  cudaThreadSynchronize();
+  CHECK_CUDA_ERROR();
+
+  if (verbose)
+    printf("copy normal map to host\n");
+
+  copy((*normalMap_hmh), normalMap_dmp);
+  CHECK_CUDA_ERROR();
+
+  if (verbose)
+    printf("gpu elapsed time: %f ms \n", toc(tall));
+
+  cudaUnbindTexture(r4tex);
+  cudaUnbindTexture(depthsTex);
+}
+
 } // namespace depthMap
 } // namespace aliceVision

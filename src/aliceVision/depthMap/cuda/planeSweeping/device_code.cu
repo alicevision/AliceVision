@@ -648,5 +648,65 @@ __global__ void getSilhoueteMap_kernel(bool* out, int out_p, int step, int width
     }
 }
 
+__global__ void computeNormalMap_kernel(
+  float3* nmap, int nmap_p,
+  int width, int height, int wsh, const float gammaC, const float gammaP)
+{
+  int x = blockIdx.x * blockDim.x + threadIdx.x;
+  int y = blockIdx.y * blockDim.y + threadIdx.y;
+
+  if ((x < width) && (y < height))
+  {
+    float depth = tex2D(depthsTex, x, y);
+    int2 pix1 = make_int2(x, y);
+    float3 p1 = get3DPointForPixelAndDepthFromRC(pix1, depth);
+    float pixSize = 0.0f;
+    {
+      int2 pix2 = make_int2(x + 1, y);
+      float3 p2 = get3DPointForPixelAndDepthFromRC(pix2, depth);
+      pixSize = size(p1 - p2);
+    }
+
+    float4 gcr = 255.0f * tex2D(r4tex, (float)x + 0.5f, (float)y + 0.5f);
+    cuda_stat3d s3d = cuda_stat3d();
+
+    for (int yp = -wsh; yp <= wsh; yp++)
+    {
+      for (int xp = -wsh; xp <= wsh; xp++)
+      {
+        float depthn = tex2D(depthsTex, x + xp, y + yp);
+        if ((depth > 0.0f) && (fabs(depthn - depth) < 30.0f * pixSize))
+        {
+          // float3 gcr1;
+          // gcr1.x = 255.0f*tex2D(rtex0, (float)(x+xp)+0.5f, (float)(y+yp)+0.5f);
+          // gcr1.y = 255.0f*tex2D(rtex1, (float)(x+xp)+0.5f, (float)(y+yp)+0.5f);
+          // gcr1.z = 255.0f*tex2D(rtex2, (float)(x+xp)+0.5f, (float)(y+yp)+0.5f);
+          // float w = CostYKfromLab(xp, yp, gcr, gcr1, gammaC, gammaP);
+
+          float w = 1.0f;
+          float2 pixn = make_float2(x + xp, y + yp);
+          float3 pn = get3DPointForPixelAndDepthFromRC(pixn, depthn);
+          s3d.update(pn, w);
+        }
+      }
+    }
+
+    float3 pp = p1;
+    float3 nn = sg_s_rC - p1;
+    normalize(nn);
+
+    float3 nc = nn;
+    s3d.computePlaneByPCA(pp, nn);
+
+    if (orientedPointPlaneDistanceNormalizedNormal(pp + nn, pp, nc) < 0.0f)
+    {
+      nn.x = -nn.x;
+      nn.y = -nn.y;
+      nn.z = -nn.z;
+    }
+    *get2DBufferAt(nmap, nmap_p, x, y) = nn;
+  }
+}
+
 } // namespace depthMap
 } // namespace aliceVision

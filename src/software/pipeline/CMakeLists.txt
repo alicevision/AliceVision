@@ -217,6 +217,7 @@ if(ALICEVISION_BUILD_MVS)
           aliceVision_mvsData
           aliceVision_mvsUtils
           aliceVision_fuseCut
+          aliceVision_depthMap
           aliceVision_sfmData
           aliceVision_sfmDataIO
           ${Boost_LIBRARIES}

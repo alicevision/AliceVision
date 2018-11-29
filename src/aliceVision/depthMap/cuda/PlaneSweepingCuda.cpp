@@ -967,6 +967,54 @@ bool PlaneSweepingCuda::optimizeDepthSimMapGradientDescent(StaticVector<DepthSim
     return true;
 }
 
+bool PlaneSweepingCuda::computeNormalMap(StaticVector<float>* depthMap, StaticVector<Color>* normalMap, int rc,
+  int scale, float igammaC, float igammaP, int wsh)
+{
+  int w = mp->getWidth(rc) / scale;
+  int h = mp->getHeight(rc) / scale;
+
+  long t1 = clock();
+
+  ALICEVISION_LOG_DEBUG("computeNormalMap rc: " << rc);
+  StaticVector<int>* camsids = new StaticVector<int>();
+  camsids->reserve(1);
+  camsids->push_back(addCam(rc, NULL, scale));
+  cameraStruct** ttcams = new cameraStruct*[1];
+  ttcams[0] = (cameraStruct*)(*cams)[(*camsids)[0]];
+  ttcams[0]->camId = (*camsids)[0];
+  ttcams[0]->rc = rc;
+
+  CudaHostMemoryHeap<float3, 2> normalMap_hmh(CudaSize<2>(w, h));
+  CudaHostMemoryHeap<float, 2> depthMap_hmh(CudaSize<2>(w, h));
+
+  for (int i = 0; i < w * h; i++)
+  {
+    depthMap_hmh.getBuffer()[i] = (*depthMap)[i];
+  }
+
+  ps_computeNormalMap((CudaArray<uchar4, 2>**)ps_texs_arr, &normalMap_hmh, &depthMap_hmh, ttcams, w, h, scale - 1,
+    _CUDADeviceNo, _nImgsInGPUAtTime, _scales, wsh, _verbose, igammaC, igammaP);
+
+  for (int i = 0; i < w * h; i++)
+  {
+    (*normalMap)[i].r = normalMap_hmh.getBuffer()[i].x;
+    (*normalMap)[i].g = normalMap_hmh.getBuffer()[i].y;
+    (*normalMap)[i].b = normalMap_hmh.getBuffer()[i].z;
+  }
+
+  for (int i = 0; i < camsids->size(); i++)
+  {
+    ttcams[i] = NULL;
+  }
+  delete[] ttcams;
+  delete camsids;
+
+  if (_verbose)
+    mvsUtils::printfElapsedTime(t1);
+
+  return true;
+}
+
 bool PlaneSweepingCuda::getSilhoueteMap(StaticVectorBool* oMap, int scale, int step, const rgb maskColor, int rc)
 {
     if(_verbose)

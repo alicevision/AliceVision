@@ -224,6 +224,13 @@ std::string getFileNameFromViewId(const MultiViewParams* mp, int viewId, EFileTy
           ext = "exr";
           break;
       }
+      case EFileType::normalMap:
+      {
+          folder = mp->getDepthMapFilterFolder();
+          suffix = "_normalMap";
+          ext = "exr";
+          break;
+      }
       case EFileType::simMap:
       {
           if(scale == 0)
