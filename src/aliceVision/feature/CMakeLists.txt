@@ -81,7 +81,7 @@ endif()
 
 # Link PopSIFT library
 if(ALICEVISION_HAVE_POPSIFT)
-  target_link_libraries(aliceVision_feature PUBLIC PopSift::popsift)
+  target_link_libraries(aliceVision_feature PRIVATE PopSift::popsift)
 endif()
 
 # Link OpenCV library
