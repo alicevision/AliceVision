@@ -1074,9 +1074,6 @@ bool ReconstructionEngine_sequentialSfM::makeInitialPair3D(const Pair& currentPa
     const std::set<IndexT> newImageIndex = {static_cast<IndexT>(J)};
     triangulate_2Views(_sfmData, prevImageIndex, newImageIndex);
 
-    // save sfm before bundle adjustment
-    sfmDataIO::Save(_sfmData,(fs::path(_outputFolder) / ("initialPair" + _sfmdataInterFileExtension)).string(), _sfmdataInterFilter);
-
     // refine only structure & rotations & translations (keep intrinsic constant)
     {
       std::set<IndexT> newReconstructedViews = {static_cast<IndexT>(I), static_cast<IndexT>(J)};
@@ -1096,9 +1093,6 @@ bool ReconstructionEngine_sequentialSfM::makeInitialPair3D(const Pair& currentPa
         return false;
       }
     }
-
-    // save sfm after bundle adjustment
-    sfmDataIO::Save(_sfmData, (fs::path(_outputFolder) / ("initialPair_afterBA" + _sfmdataInterFileExtension)).string(), _sfmdataInterFilter);
 
     // save outlier residual information
     Histogram<double> histoResiduals;
@@ -1146,7 +1140,6 @@ bool ReconstructionEngine_sequentialSfM::makeInitialPair3D(const Pair& currentPa
       htmlFileStream << _htmlDocStream->getDoc();
     }
   }
-  sfmDataIO::Save(_sfmData, (fs::path(_outputFolder) / ("initialPair_sfmData" + _sfmdataInterFileExtension)).string(), _sfmdataInterFilter);
 
   return !_sfmData.structure.empty();
 }
