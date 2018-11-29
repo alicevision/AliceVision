@@ -130,7 +130,6 @@ ReconstructionEngine_sequentialSfM::ReconstructionEngine_sequentialSfM(
   : ReconstructionEngine(sfmData, outputFolder),
     _htmlLogFile(loggingFile),
     _userInitialImagePair(Pair(0,0)),
-    _intrinsicsHistoryFolder((fs::path(outputFolder) / "intrinsics").string())
     _sfmStepFolder((fs::path(outputFolder) / "intermediate_steps").string())
 {
   // setup HTML logger
@@ -658,13 +657,9 @@ bool ReconstructionEngine_sequentialSfM::bundleAdjustment(std::set<IndexT>& newR
       if(!success)
         return false; // not usable solution
 
+      // save the current focal lengths values (for each intrinsic) in the history
       if(_uselocalBundleAdjustment)
-      {
-        // save the current focal lengths values (for each intrinsic) in the history
         _localStrategyGraph->saveIntrinsicsToHistory(_sfmData);
-        // (optional) export the current intrinsics value to a csv file.
-        _localStrategyGraph->exportIntrinsicsHistory(_intrinsicsHistoryFolder);
-      }
 
       // export and print information about the refinement
       const BundleAdjustmentCeres::Statistics& statistics = BA.getStatistics();
@@ -782,6 +777,10 @@ void ReconstructionEngine_sequentialSfM::exportStatistics(double reconstructionT
     // write json on disk
     pt::write_json((fs::path(_outputFolder) / "stats.json").string(), _jsonLogTree);
   }
+
+  // (optional) export the intrinsics history values to a csv file.
+  if(_uselocalBundleAdjustment)
+    _localStrategyGraph->exportIntrinsicsHistory(_outputFolder, "intrinsics_history.csv");
 }
 
 void ReconstructionEngine_sequentialSfM::calibrateRigs(std::set<IndexT>& updatedViews)

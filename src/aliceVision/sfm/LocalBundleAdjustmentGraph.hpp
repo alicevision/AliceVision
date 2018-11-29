@@ -139,9 +139,10 @@ public:
   
   /**
    * @brief Export the history of each intrinsics. It create a file \a K_<intrinsic_index>.csv in \c folder.
-   * @param [in] folder The folder in which the \a K_*.csv files are saved.
+   * @param [in] folder The folder where you want to save the intrinsic history file
+   * @param [in] filename  The filename of the intrinsic history file
    */
-  void exportIntrinsicsHistory(const std::string& folder);
+  void exportIntrinsicsHistory(const std::string& folder, const std::string& filename);
 
   /**
    * @brief Remove some views to the graph. It delete the node and all the incident edges for each removed view.
@@ -319,7 +320,14 @@ private:
   
   // Intrinsics data
   // - Local BA needs to know the evolution of all the intrinsics parameters.
-  // - When camera parameters are enought reffined (no variation) they are set to constant in the BA.
+  // - When camera parameters are enought refined (no variation) they are set to constant in the BA.
+
+  struct IntrinsicHistory
+  {
+    std::size_t nbPoses = 0;
+    double focalLength = 0.0;
+    bool isConstant = false;
+  };
 
   /**
    * @brief Save the progression for all the intrinsics parameters
@@ -331,7 +339,7 @@ private:
    *       K2:
    *        ...
    */
-  using IntrinsicsHistory = std::map<IndexT, std::vector<std::pair<std::size_t, double>>>;
+  using IntrinsicsHistory = std::map<IndexT, std::vector<IntrinsicHistory>>;
   
   /// Backup of the intrinsics focal length values
   IntrinsicsHistory _intrinsicsHistory;

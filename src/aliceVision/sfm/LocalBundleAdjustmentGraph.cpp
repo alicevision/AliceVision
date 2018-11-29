@@ -19,12 +19,19 @@ namespace sfm {
 
 LocalBundleAdjustmentGraph::LocalBundleAdjustmentGraph(const sfmData::SfMData& sfmData)
 {
-  for(const auto& it : sfmData.intrinsics)
+  for(const auto& it : sfmData.getIntrinsics())
   {
-    // create entries into the maps
-    _intrinsicsHistory[it.first].push_back(std::make_pair(0, sfmData.getIntrinsicPtr(it.first)->getParams().at(0)));
-    _mapFocalIsConstant[it.first] = sfmData.getIntrinsicPtr(it.first)->isLocked();
-  }
+    const IndexT intrinsicId = it.first;
+    const auto intrinsicPtr = it.second;
+
+    IntrinsicHistory intrinsicHistory;
+    intrinsicHistory.nbPoses = 0;
+    intrinsicHistory.focalLength = intrinsicPtr->getParams().at(0);
+    intrinsicHistory.isConstant = intrinsicPtr->isLocked();
+
+    _intrinsicsHistory[intrinsicId].push_back(intrinsicHistory);
+    _mapFocalIsConstant[intrinsicId] = intrinsicPtr->isLocked();
+   }
 }
 
 std::map<int, std::size_t> LocalBundleAdjustmentGraph::getDistancesHistogram() const
@@ -82,46 +89,47 @@ void LocalBundleAdjustmentGraph::saveIntrinsicsToHistory(const sfmData::SfMData&
   }
   
   // complete the intrinsics history with the current focal lengths
-  for(const auto& x : sfmData.intrinsics)
+  for(const auto& it : sfmData.getIntrinsics())
   {
-    _intrinsicsHistory.at(x.first).push_back(std::make_pair(intrinsicUsage[x.first], sfmData.getIntrinsicPtr(x.first)->getParams().at(0)));
+    const IndexT intrinsicId = it.first;
+    const auto intrinsicPtr = it.second;
+
+    IntrinsicHistory intrinsicHistory;
+    intrinsicHistory.nbPoses = intrinsicUsage[intrinsicId];
+    intrinsicHistory.focalLength = intrinsicPtr->getParams().at(0);
+    intrinsicHistory.isConstant = isFocalLengthConstant(intrinsicId);
+
+    _intrinsicsHistory.at(intrinsicId).push_back(intrinsicHistory);
   }
 }
 
-void LocalBundleAdjustmentGraph::exportIntrinsicsHistory(const std::string& folder)
+void LocalBundleAdjustmentGraph::exportIntrinsicsHistory(const std::string& folder, const std::string& filename)
 {
   ALICEVISION_LOG_DEBUG("Exporting intrinsics history...");
-  for(const auto& x : _intrinsicsHistory)
+  std::ofstream os;
+  os.open((fs::path(folder) / filename).string(), std::ios::app);
+  os.seekp(0, std::ios::end); // put the cursor at the end
+
+  for(const auto& intrinsicHistoryPair : _intrinsicsHistory)
+    os << intrinsicHistoryPair.first << ";;;;";
+  os << "\n";
+
+  for(const auto& intrinsicHistoryPair : _intrinsicsHistory)
+    os << "#poses;f;isConstant;;";
+  os << "\n";
+
+  const std::size_t nbIterations = _intrinsicsHistory.begin()->second.size();
+
+  for(std::size_t i = 0; i < nbIterations; ++i)
   {
-    const IndexT idIntr = x.first;
-    const std::string filename = (fs::path(folder) / ("K_" + std::to_string(idIntr) + std::string(".csv"))).string();
-    const bool isNewFile = !fs::exists(filename);
-    
-    std::ofstream os;
-    os.open(filename, std::ios::app);
-    os.seekp(0, std::ios::end); // put the cursor at the end
-    
-    if(isNewFile) // print Header + EXIF data .
+    for(const auto& intrinsicHistoryPair : _intrinsicsHistory)
     {
-      // header
-      if(os.tellp() == std::streampos(0)) // 'tellp' return the cursor's position
-        os <<"#poses;f;isConstant;\n";
-      
-      // exif data
-      os << 0 << ";";
-      os << _intrinsicsHistory.at(idIntr).at(0).second << ";"; // first focallength = EXIF
-      os << isFocalLengthConstant(idIntr) << ";\n";
+      const IntrinsicHistory& intrinsicsHistory = intrinsicHistoryPair.second.at(i);
+      os << intrinsicsHistory.nbPoses << ";"<< intrinsicsHistory.focalLength << ";" << intrinsicsHistory.isConstant << ";;";
     }
-    
-    // data
-    if(_intrinsicsHistory.at(idIntr).back().first != 0) // print EXIF once only
-    {
-      os << _intrinsicsHistory.at(idIntr).back().first << ";"; // num. of posed views with this intrinsic
-      os << _intrinsicsHistory.at(idIntr).back().second << ";"; // last focallength value
-      os << isFocalLengthConstant(idIntr) << ";\n";
-    }
-    os.close();
+    os << "\n";
   }
+  os.close();
 }
 
 bool LocalBundleAdjustmentGraph::removeViewsToTheGraph(const std::set<IndexT>& removedViewsId)
@@ -457,9 +465,10 @@ void LocalBundleAdjustmentGraph::checkFocalLengthsConsistency(const std::size_t 
 {
   ALICEVISION_LOG_DEBUG("Checking, for each camera, if the focal length is stable...");
   std::size_t numOfConstFocal = 0;
-  for(const auto& focalLengthEntry : _intrinsicsHistory)
+
+  for(const auto& intrinsicEntry : _intrinsicsHistory)
   {
-    const IndexT idIntrinsic = focalLengthEntry.first;
+    const IndexT idIntrinsic = intrinsicEntry.first;
     
     // do not compute the variation, if the intrinsic has already be set as constant.
     if(isFocalLengthConstant(idIntrinsic))
@@ -469,33 +478,33 @@ void LocalBundleAdjustmentGraph::checkFocalLengthsConsistency(const std::size_t 
     }
     
     // get the full history of intrinsic parameters
-    std::vector<std::size_t> allNumPosesVec;
-    std::vector<double> allValuesVec; 
+    std::vector<std::size_t> allNbPoses;
+    std::vector<double> allFocalLengths;
     
-    for(const auto& pair_uses_params : _intrinsicsHistory.at(idIntrinsic))
+    for(const IntrinsicHistory& intrinsicHistory : intrinsicEntry.second)
     {
-      allNumPosesVec.push_back(pair_uses_params.first);
-      allValuesVec.push_back(pair_uses_params.second);
+      allNbPoses.push_back(intrinsicHistory.nbPoses);
+      allFocalLengths.push_back(intrinsicHistory.focalLength);
     }
     
     // clean 'intrinsicsHistorical':
     //  [4 5 5 7 8 6 9]
     // - detect duplicates -> [4 (5) 5 7 8 6 9]
     // - detecting removed cameras -> [4 5 (7 8) 6 9]
-    std::vector<std::size_t> filteredNumPosesVec(allNumPosesVec);
-    std::vector<double> filteredValuesVec(allValuesVec);
+    std::vector<std::size_t> filteredNbPoses(allNbPoses);
+    std::vector<double> filteredFocalLengths(allFocalLengths);
     
-    std::size_t numPosesEndWindow = allNumPosesVec.back();
+    std::size_t numPosesEndWindow = allNbPoses.back();
     
-    for(int id = filteredNumPosesVec.size()-2; id > 0; --id)
+    for(int id = filteredNbPoses.size()-2; id > 0; --id)
     {
-      if(filteredNumPosesVec.size() < 2)
+      if(filteredNbPoses.size() < 2)
         break;
       
-      if(filteredNumPosesVec.at(id) >= filteredNumPosesVec.at(id+1))
+      if(filteredNbPoses.at(id) >= filteredNbPoses.at(id+1))
       {
-        filteredNumPosesVec.erase(filteredNumPosesVec.begin()+id);
-        filteredValuesVec.erase(filteredValuesVec.begin()+id);
+        filteredNbPoses.erase(filteredNbPoses.begin()+id);
+        filteredFocalLengths.erase(filteredFocalLengths.begin()+id);
       }
     }
     
@@ -504,9 +513,9 @@ void LocalBundleAdjustmentGraph::checkFocalLengthsConsistency(const std::size_t 
       continue;
     
     IndexT idStartWindow = 0;
-    for(int id = filteredNumPosesVec.size()-2; id > 0; --id)
+    for(int id = filteredNbPoses.size()-2; id > 0; --id)
     {
-      if(numPosesEndWindow - filteredNumPosesVec.at(id) >= windowSize)
+      if(numPosesEndWindow - filteredNbPoses.at(id) >= windowSize)
       {
         idStartWindow = id;
         break;
@@ -514,12 +523,12 @@ void LocalBundleAdjustmentGraph::checkFocalLengthsConsistency(const std::size_t 
     }
     
     // compute the standard deviation for each parameter, between [idLimit; end()]
-    std::vector<double> subValuesVec (filteredValuesVec.begin()+idStartWindow, filteredValuesVec.end());
+    std::vector<double> subValuesVec (filteredFocalLengths.begin()+idStartWindow, filteredFocalLengths.end());
     double stdev = standardDeviation(subValuesVec);
     
     // normalize stdev (: divide by the range of the values)
-    double minVal = *std::min_element(filteredValuesVec.begin(), filteredValuesVec.end());
-    double maxVal = *std::max_element(filteredValuesVec.begin(), filteredValuesVec.end());
+    double minVal = *std::min_element(filteredFocalLengths.begin(), filteredFocalLengths.end());
+    double maxVal = *std::max_element(filteredFocalLengths.begin(), filteredFocalLengths.end());
     double normStdev = stdev / (maxVal - minVal);
     
     // check if the normed standard deviation is < stdevPercentageLimit
