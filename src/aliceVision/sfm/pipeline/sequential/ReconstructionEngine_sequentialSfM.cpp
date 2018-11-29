@@ -131,6 +131,7 @@ ReconstructionEngine_sequentialSfM::ReconstructionEngine_sequentialSfM(
     _htmlLogFile(loggingFile),
     _userInitialImagePair(Pair(0,0)),
     _intrinsicsHistoryFolder((fs::path(outputFolder) / "intrinsics").string())
+    _sfmStepFolder((fs::path(outputFolder) / "intermediate_steps").string())
 {
   // setup HTML logger
   if(!_htmlLogFile.empty())
@@ -141,6 +142,10 @@ ReconstructionEngine_sequentialSfM::ReconstructionEngine_sequentialSfM(
     _htmlDocStream->pushInfo("Dataset info:");
     _htmlDocStream->pushInfo("Views count: " + htmlDocument::toString( sfmData.getViews().size()) + "<br>");
   }
+
+  // create sfm intermediate step folder
+  if(!fs::exists(_sfmStepFolder))
+    fs::create_directory(_sfmStepFolder);
 }
 
 bool ReconstructionEngine_sequentialSfM::process()
@@ -430,8 +435,8 @@ double ReconstructionEngine_sequentialSfM::incrementalReconstruction()
       {
         auto chrono_start = std::chrono::steady_clock::now();
         std::ostringstream os;
-        os << std::setw(8) << std::setfill('0') << resectionId << "_resection";
-        Save(_sfmData, (fs::path(_outputFolder) / (os.str() + _sfmdataInterFileExtension)).string(), _sfmdataInterFilter);
+        os << "sfm_" << std::setw(8) << std::setfill('0') << resectionId;
+        sfmDataIO::Save(_sfmData, (fs::path(_sfmStepFolder) / (os.str() + _sfmStepFileExtension)).string(), _sfmStepFilter);
         ALICEVISION_LOG_DEBUG("Save of file " << os.str() << " took " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - chrono_start).count() << " msec.");
       }
 

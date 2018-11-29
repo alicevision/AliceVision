@@ -110,9 +110,9 @@ public:
     _localizerEstimator = estimator;
   }
 
-  void setIntermediateFileExtension(const std::string& interFileExtension)
+  void setIntermediateFileExtension(const std::string& fileExtension)
   {
-    _sfmdataInterFileExtension = interFileExtension;
+    _sfmStepFileExtension = fileExtension;
   }
 
   void setLocalBundleAdjustmentGraphDistance(std::size_t distance)
@@ -433,16 +433,17 @@ private:
   std::shared_ptr<LocalBundleAdjustmentGraph> _localStrategyGraph;
 
   // Intermediate reconstructions
-
+  /// sfm intermediate reconstruction files
+  const std::string _sfmStepFolder;
   /// extension of the intermediate reconstruction files
-  std::string _sfmdataInterFileExtension = ".ply";
+  std::string _sfmStepFileExtension = ".ply";
   /// filter for the intermediate reconstruction files
-  sfmDataIO::ESfMData _sfmdataInterFilter = sfmDataIO::ESfMData(sfmDataIO::VIEWS |
-                                                                sfmDataIO::EXTRINSICS |
-                                                                sfmDataIO::INTRINSICS |
-                                                                sfmDataIO::STRUCTURE |
-                                                                sfmDataIO::OBSERVATIONS |
-                                                                sfmDataIO::CONTROL_POINTS);
+  sfmDataIO::ESfMData _sfmStepFilter = sfmDataIO::ESfMData(sfmDataIO::VIEWS |
+                                                           sfmDataIO::EXTRINSICS |
+                                                           sfmDataIO::INTRINSICS |
+                                                           sfmDataIO::STRUCTURE |
+                                                           sfmDataIO::OBSERVATIONS |
+                                                           sfmDataIO::CONTROL_POINTS);
 
   // Log
 
