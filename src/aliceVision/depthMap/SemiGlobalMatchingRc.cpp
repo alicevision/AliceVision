@@ -6,7 +6,7 @@
 
 #include "SemiGlobalMatchingRc.hpp"
 #include <aliceVision/system/Logger.hpp>
-#include <aliceVision/system/gpu.hpp>
+#include <aliceVision/gpu/gpu.hpp>
 
 #include <aliceVision/depthMap/SemiGlobalMatchingRcTc.hpp>
 #include <aliceVision/depthMap/SemiGlobalMatchingVolume.hpp>
@@ -675,7 +675,7 @@ void computeDepthMapsPSSGM(mvsUtils::MultiViewParams* mp, mvsUtils::PreMatchCams
 
     if(numthreads == 1)
     {
-        int bestGpuId = system::getBestGpuDeviceId(2, 0);
+        int bestGpuId = gpu::getBestGpuDeviceId(2, 0);
         int CUDADeviceNo = mp->userParams.get<int>("global.CUDADeviceNo", bestGpuId);
         computeDepthMapsPSSGM(CUDADeviceNo, mp, pc, cams);
     }
