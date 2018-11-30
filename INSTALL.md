@@ -63,14 +63,22 @@ AliceVision's required dependencies can be built with it. Follow the [installati
 
 **Note**: while started as a Windows only project, vcpkg recently became cross-platform. In the scope of AliceVision, it has only been tested on Windows.
 
-To build AliceVision (with Alembic support) using vcpkg:
+To build AliceVision using vcpkg:
 1. Setup the environment
 
-Windows: due to incompatibilities between CUDA and Visual Studio 2017, Visual 2015 toolset must be used to build AliceVision.
-Visual Studio 2017 can be used as an IDE, but v140 toolset must be installed and used for this to work.
+#### Windows: CUDA and Visual Studio
+* CUDA >= 10.0  
+CUDA 10.0 is fully compatible with **Visual Studio 2017 (Update 8)** which allows to use 
+the most recent compiler toolset (v141) to build AliceVision and its dependencies. 
+VS2015 can also be used in this configuration.  
+*This requires a recent version of CMake (tested with 3.12).*
 
+* CUDA < 10.0  
+Due to incompatibilities between CUDA and Visual Studio 2017, **Visual 2015 toolset** must be used to build AliceVision.
+Visual Studio 2017 can be used as an IDE, but v140 toolset must be installed and used for this to work. 
 To setup a VS2017 command prompt using the v140 toolset:
 ```bash
+# Windows: CUDA < 10.0 + VS2017 v140 toolset 
 "C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build\vcvarsall.bat" x64 -vcvars_ver=14.0
 nmake /version
 # should print Version 14.00.xxx
@@ -98,10 +106,14 @@ vcpkg install ^
 cd /path/to/aliceVision/
 mkdir build && cd build
 
-# Windows: Visual 2015
-cmake .. -DCMAKE_TOOLCHAIN_FILE=%VCPKG_ROOT%\scripts\buildsystems\vcpkg.cmake -DVCPKG_TARGET_TRIPLET=x64-windows -G "Visual Studio 14 2015" -A x64 -T v140,host=x64
-# Windows: Visual 2017 v140 (Visual 2015 toolset)
+# Windows: CUDA >= 10.0 + Visual 2017
+cmake .. -DCMAKE_TOOLCHAIN_FILE=%VCPKG_ROOT%\scripts\buildsystems\vcpkg.cmake -DVCPKG_TARGET_TRIPLET=x64-windows -G "Visual Studio 15 2017" -A x64 -T host=x64
+
+# Windows: CUDA < 10.0 + Visual 2017 v140 (Visual 2015 toolset)
 cmake .. -DCMAKE_TOOLCHAIN_FILE=%VCPKG_ROOT%\scripts\buildsystems\vcpkg.cmake -DVCPKG_TARGET_TRIPLET=x64-windows -G "Visual Studio 15 2017" -A x64 -T v140,host=x64
+
+# Windows: CUDA < 10.0 + Visual 2015
+cmake .. -DCMAKE_TOOLCHAIN_FILE=%VCPKG_ROOT%\scripts\buildsystems\vcpkg.cmake -DVCPKG_TARGET_TRIPLET=x64-windows -G "Visual Studio 14 2015" -A x64 -T v140,host=x64
 
 # Windows: this generates a "aliceVision.sln" solution inside the build folder
 ```
