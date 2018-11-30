@@ -156,12 +156,15 @@ BOOST_AUTO_TEST_CASE(LOCAL_BUNDLE_ADJUSTMENT_EffectiveMinimization_Pinhole_Camer
   //          |     |     =>     /  \ /  \ /  \
   //          v1 - v2           v0   v1   v2   v3
   // removing adequate observations:
-  sfmData.structure[0].observations.erase(2);
-  sfmData.structure[0].observations.erase(3);
-  sfmData.structure[1].observations.erase(0);
-  sfmData.structure[1].observations.erase(3);
-  sfmData.structure[2].observations.erase(0);
-  sfmData.structure[2].observations.erase(1);
+  sfmData.getLandmarks().at(0).observations.erase(2);
+  sfmData.getLandmarks().at(0).observations.erase(3);
+  sfmData.getLandmarks().at(1).observations.erase(0);
+  sfmData.getLandmarks().at(1).observations.erase(3);
+  sfmData.getLandmarks().at(2).observations.erase(0);
+  sfmData.getLandmarks().at(2).observations.erase(1);
+
+  // lock common intrinsic
+  sfmData.getIntrinsics().begin()->second->lock();
 
   track::TracksPerView tracksPerView = getTracksPerViews(sfmData);
 
@@ -204,12 +207,12 @@ BOOST_AUTO_TEST_CASE(LOCAL_BUNDLE_ADJUSTMENT_EffectiveMinimization_Pinhole_Camer
   // 3. Use the graph-distances to assign a LBA state (Refine, Constant & Ignore) for each parameter (poses, intrinsics & landmarks)
   localBAGraph->convertDistancesToStates(sfmData);
 
-  BOOST_CHECK(localBAGraph->getNbPosesPerState(BundleAdjustment::EParameterState::REFINED) == 2);     // v0 & v1
-  BOOST_CHECK(localBAGraph->getNbPosesPerState(BundleAdjustment::EParameterState::CONSTANT) == 1);    // v2
-  BOOST_CHECK(localBAGraph->getNbPosesPerState(BundleAdjustment::EParameterState::IGNORED) == 1);     // v3
-  BOOST_CHECK(localBAGraph->getNbLandmarksPerState(BundleAdjustment::EParameterState::REFINED) == 2); // p0 & p1
-  BOOST_CHECK(localBAGraph->getNbLandmarksPerState(BundleAdjustment::EParameterState::CONSTANT) == 0);
-  BOOST_CHECK(localBAGraph->getNbLandmarksPerState(BundleAdjustment::EParameterState::IGNORED) == 1); // p2
+  BOOST_CHECK_EQUAL(localBAGraph->getNbPosesPerState(BundleAdjustment::EParameterState::REFINED), 2);     // v0 & v1
+  BOOST_CHECK_EQUAL(localBAGraph->getNbPosesPerState(BundleAdjustment::EParameterState::CONSTANT), 1);    // v2
+  BOOST_CHECK_EQUAL(localBAGraph->getNbPosesPerState(BundleAdjustment::EParameterState::IGNORED), 1);     // v3
+  BOOST_CHECK_EQUAL(localBAGraph->getNbLandmarksPerState(BundleAdjustment::EParameterState::REFINED), 2); // p0 & p1
+  BOOST_CHECK_EQUAL(localBAGraph->getNbLandmarksPerState(BundleAdjustment::EParameterState::CONSTANT), 0);
+  BOOST_CHECK_EQUAL(localBAGraph->getNbLandmarksPerState(BundleAdjustment::EParameterState::IGNORED), 1); // p2
 
   std::shared_ptr<BundleAdjustmentCeres> BA = std::make_shared<BundleAdjustmentCeres>(options);
   BA->useLocalStrategyGraph(localBAGraph);
@@ -225,7 +228,7 @@ BOOST_AUTO_TEST_CASE(LOCAL_BUNDLE_ADJUSTMENT_EffectiveMinimization_Pinhole_Camer
   // Check 3D points
   BOOST_CHECK( sfmData.structure[0].X != sfmData_notRefined.structure[0].X ); // p0 refined
   BOOST_CHECK( sfmData.structure[1].X != sfmData_notRefined.structure[1].X ); // p1 refined
-  BOOST_CHECK( sfmData.structure[2].X == sfmData_notRefined.structure[2].X ); // p2 ignored
+  BOOST_CHECK_EQUAL( sfmData.structure[2].X, sfmData_notRefined.structure[2].X ); // p2 ignored
 
   // Not refined parameters:
   BOOST_CHECK( sfmData.structure[2].X == sfmData_notRefined.structure[2].X );
