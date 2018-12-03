@@ -10,7 +10,6 @@
 #include <aliceVision/mvsData/StaticVector.hpp>
 #include <aliceVision/mvsUtils/common.hpp>
 #include <aliceVision/mvsUtils/MultiViewParams.hpp>
-#include <aliceVision/mvsUtils/PreMatchCams.hpp>
 #include <aliceVision/system/cmdline.hpp>
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/Timer.hpp>
@@ -36,8 +35,13 @@ int main(int argc, char* argv[])
     std::string depthMapFolder;
     std::string outputFolder;
 
+    // program range
     int rangeStart = -1;
     int rangeSize = -1;
+
+    // min / max view angle
+    float minViewAngle = 2.0f;
+    float maxViewAngle = 70.0f;
 
     int minNumOfConsistensCams = 3;
     int minNumOfConsistensCamsWithLowSimilarity = 4;
@@ -63,6 +67,10 @@ int main(int argc, char* argv[])
             "Compute only a sub-range of images from index rangeStart to rangeStart+rangeSize.")
         ("rangeSize", po::value<int>(&rangeSize)->default_value(rangeSize),
             "Compute only a sub-range of N images (N=rangeSize).")
+        ("minViewAngle", po::value<float>(&minViewAngle)->default_value(minViewAngle),
+            "minimum angle between two views.")
+        ("maxViewAngle", po::value<float>(&maxViewAngle)->default_value(maxViewAngle),
+            "maximum angle between two views.")
         ("minNumOfConsistensCams", po::value<int>(&minNumOfConsistensCams)->default_value(minNumOfConsistensCams),
             "Minimal number of consistent cameras to consider the pixel.")
         ("minNumOfConsistensCamsWithLowSimilarity", po::value<int>(&minNumOfConsistensCamsWithLowSimilarity)->default_value(minNumOfConsistensCamsWithLowSimilarity),
@@ -124,7 +132,9 @@ int main(int argc, char* argv[])
 
     // initialization
     mvsUtils::MultiViewParams mp(sfmData, "", depthMapFolder, outputFolder, "", true);
-    mvsUtils::PreMatchCams pc(mp);
+
+    mp.setMinViewAngle(minViewAngle);
+    mp.setMaxViewAngle(maxViewAngle);
 
     StaticVector<int> cams;
     cams.reserve(mp.ncams);
@@ -153,7 +163,7 @@ int main(int argc, char* argv[])
     ALICEVISION_LOG_INFO("Filter depth maps.");
 
     {
-        fuseCut::Fuser fs(&mp, &pc);
+        fuseCut::Fuser fs(&mp);
         fs.filterGroups(cams, pixSizeBall, pixSizeBallWithLowSimilarity, nNearestCams);
         fs.filterDepthMaps(cams, minNumOfConsistensCams, minNumOfConsistensCamsWithLowSimilarity);
     }

@@ -37,8 +37,8 @@ private:
     DepthSimMap* optimizeDepthSimMapCUDA(DepthSimMap* depthPixSizeMapVis, DepthSimMap* depthSimMapPhoto);
 };
 
-void refineDepthMaps(mvsUtils::MultiViewParams* mp, mvsUtils::PreMatchCams* pc, const StaticVector<int>& cams);
-void refineDepthMaps(int CUDADeviceNo, mvsUtils::MultiViewParams* mp, mvsUtils::PreMatchCams* pc, const StaticVector<int>& cams);
+void refineDepthMaps(mvsUtils::MultiViewParams* mp, const StaticVector<int>& cams);
+void refineDepthMaps(int CUDADeviceNo, mvsUtils::MultiViewParams* mp, const StaticVector<int>& cams);
 
 } // namespace depthMap
 } // namespace aliceVision

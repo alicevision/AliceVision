@@ -387,10 +387,9 @@ void createVerticesWithVisibilities(const StaticVector<int>& cams, std::vector<P
 }
 
 
-DelaunayGraphCut::DelaunayGraphCut(mvsUtils::MultiViewParams* _mp, mvsUtils::PreMatchCams* _pc)
+DelaunayGraphCut::DelaunayGraphCut(mvsUtils::MultiViewParams* _mp)
 {
     mp = _mp;
-    pc = _pc;
 
     _camsVertexes.resize(mp->ncams, -1);
 

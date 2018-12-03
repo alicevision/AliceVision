@@ -149,10 +149,12 @@ public:
     {
         return _imagesParams.at(index).size / getDownscaleFactor(index);
     }
+
     inline const std::vector<ImageParams>& getImagesParams() const
     {
         return _imagesParams;
     }
+
     inline const ImageParams& getImageParams(int i) const
     {
         return _imagesParams.at(i);
@@ -186,6 +188,16 @@ public:
     inline int getIndexFromViewId(IndexT viewId) const
     {
         return _imageIdsPerViewId.at(viewId);
+    }
+
+    inline float getMinViewAngle() const
+    {
+        return _minViewAngle;
+    }
+
+    inline float getMaxViewAngle() const
+    {
+        return _maxViewAngle;
     }
 
     inline std::vector<double> getOriginalP(int index) const
@@ -239,6 +251,40 @@ public:
     bool isPixelInImage(const Point2d& pix, int camId) const;
     void decomposeProjectionMatrix(Point3d& Co, Matrix3x3& Ro, Matrix3x3& iRo, Matrix3x3& Ko, Matrix3x3& iKo, Matrix3x3& iPo, const Matrix3x4& P) const;
 
+    /**
+     * @brief findCamsWhichIntersectsHexahedron
+     * @param hexah 0-3 frontal face, 4-7 back face
+     * @param minMaxDepthsFileName
+     * @return
+     */
+    StaticVector<int> findCamsWhichIntersectsHexahedron(const Point3d hexah[8], const std::string& minMaxDepthsFileName) const;
+
+    /**
+     * @brief findCamsWhichIntersectsHexahedron
+     * @param hexah 0-3 frontal face, 4-7 back face
+     * @return
+     */
+    StaticVector<int> findCamsWhichIntersectsHexahedron(const Point3d hexah[8]) const;
+
+    /**
+     * @brief findNearestCamsFromLandmarks
+     * @param rc
+     * @param nbNearestCams
+     * @return
+     */
+    StaticVector<int> findNearestCamsFromLandmarks(int rc, int nbNearestCams) const;
+
+
+    inline void setMinViewAngle(float minViewAngle)
+    {
+      _minViewAngle = minViewAngle;
+    }
+
+    inline void setMaxViewAngle(float maxViewAngle)
+    {
+      _maxViewAngle = maxViewAngle;
+    }
+
 private:
     /// image params list (width, height, size)
     std::vector<ImageParams> _imagesParams;
@@ -258,6 +304,10 @@ private:
     std::string _depthMapFilterFolder;
     /// use silhouettes
     bool _useSil = false;
+    /// minimum view angle
+    float _minViewAngle = 2.0f;
+    /// maximum view angle
+    float _maxViewAngle = 70.0f;  // WARNING: may be too low, especially when using seeds from SfM
     /// input sfmData
     const sfmData::SfMData& _sfmData;
 

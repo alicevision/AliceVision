@@ -58,11 +58,9 @@ unsigned long computeNumberOfAllPoints(const mvsUtils::MultiViewParams* mp, int 
     return npts;
 }
 
-Fuser::Fuser(const mvsUtils::MultiViewParams* _mp, mvsUtils::PreMatchCams* _pc)
+Fuser::Fuser(const mvsUtils::MultiViewParams* _mp)
   : mp(_mp)
-  , pc(_pc)
-{
-}
+{}
 
 Fuser::~Fuser()
 {
@@ -187,7 +185,7 @@ bool Fuser::filterGroupsRC(int rc, int pixSizeBall, int pixSizeBallWSP, int nNea
     numOfPtsMap->reserve(w * h);
     numOfPtsMap->resize_with(w * h, 0);
 
-    StaticVector<int> tcams = pc->findNearestCamsFromLandmarks(rc, nNearestCams);
+    StaticVector<int> tcams = mp->findNearestCamsFromLandmarks(rc, nNearestCams);
 
     for(int c = 0; c < tcams.size(); c++)
     {
@@ -343,7 +341,7 @@ float Fuser::computeAveragePixelSizeInHexahedron(Point3d* hexah, int step, int s
 {
     int scaleuse = std::max(1, scale);
 
-    StaticVector<int> cams = pc->findCamsWhichIntersectsHexahedron(hexah);
+    StaticVector<int> cams = mp->findCamsWhichIntersectsHexahedron(hexah);
     int j = 0;
     float av = 0.0f;
     float nav = 0.0f;

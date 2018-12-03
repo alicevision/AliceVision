@@ -6,11 +6,11 @@
 
 #pragma once
 
+#include <aliceVision/mvsUtils/MultiViewParams.hpp>
 #include <aliceVision/mvsData/Point3d.hpp>
 #include <aliceVision/mvsData/StaticVector.hpp>
 #include <aliceVision/mvsData/Universe.hpp>
 #include <aliceVision/mvsData/Voxel.hpp>
-#include <aliceVision/mvsUtils/PreMatchCams.hpp>
 
 namespace aliceVision {
 
@@ -24,9 +24,8 @@ class Fuser
 {
 public:
     const mvsUtils::MultiViewParams* mp;
-    mvsUtils::PreMatchCams* pc;
 
-    Fuser(const mvsUtils::MultiViewParams* _mp, mvsUtils::PreMatchCams* _pc);
+    Fuser(const mvsUtils::MultiViewParams* _mp);
     ~Fuser(void);
 
     // minNumOfModals number of other cams including this cam ... minNumOfModals /in 2,3,... default 3
