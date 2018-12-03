@@ -104,7 +104,7 @@ void SemiGlobalMatchingRcTc::computeDepthSimMapVolume(
 
         for( int i=0; i<volDimX * volDimY * volDimZ; i++ )
         {
-            float* ptr = &volume_buf[ct * volDimX * volDimY * maxDimZ];
+            float* ptr = &volume_buf[ct * volume_offset];
             volume[j][i] = (unsigned char)( 255.0f * std::max(std::min(ptr[i],1.0f),0.0f) );
         }
         ct++;
