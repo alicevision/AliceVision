@@ -845,10 +845,9 @@ void PlaneSweepingCuda::sweepPixelsToVolumeSubset( const std::vector<int>& index
     // copy the vector of depths to GPU
     const float* depth_data = rc_depths.data();
     CudaDeviceMemory<float> depths_dev( depth_data, rc_depths.size() );
-    // CudaDeviceMemory<float>* depths_dev = new CudaDeviceMemory<float>( depth_data, rc_depths.size() );
 
     ps_planeSweepingGPUPixelsVolume(
-            ps_texs_arr, // indexed with tcams[].camId
+            ps_texs_arr,     // indexed with tcams[].camId
             max_ct,          // ct=0..max_ct ; volume=&volume_in[ct*volume_offset]
             volume_out,
             volume_out_offset,
@@ -862,10 +861,12 @@ void PlaneSweepingCuda::sweepPixelsToVolumeSubset( const std::vector<int>& index
             wsh,
             _nbestkernelSizeHalf,
             scale - 1,
-            _CUDADeviceNo,
-            _nImgsInGPUAtTime,
-            _scales, _verbose, false, _nbest,
-            true, gammaC, gammaP, subPixel, epipShift);
+            // _CUDADeviceNo,
+            // _nImgsInGPUAtTime,
+            _scales, _verbose,
+            false, _nbest,
+            // true,
+            gammaC, gammaP, subPixel, epipShift);
 
     // delete depths_dev;
 
