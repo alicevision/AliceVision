@@ -12,6 +12,7 @@
 
 #include <boost/filesystem.hpp>
 
+#include <random>
 #include <tuple>
 #include <cassert>
 #include <cstdlib>
@@ -20,6 +21,19 @@ namespace fs = boost::filesystem;
 
 namespace aliceVision {
 namespace keyframe {
+
+
+/**
+ * @brief Get a random int in order to generate uid
+ * @return int between 0 and std::numeric_limits<int>::max()
+ */
+int getRandomInt()
+{
+  std::random_device rd;  // will be used to obtain a seed for the random number engine
+  std::mt19937 randomTwEngine(rd()); // standard mersenne_twister_engine seeded with rd()
+  std::uniform_int_distribution<> randomDist(0, std::numeric_limits<int>::max());
+  return randomDist(randomTwEngine);
+}
 
 KeyframeSelector::KeyframeSelector(const std::vector<std::string>& mediaPaths,
                                    const std::string& sensorDbPath,
@@ -148,7 +162,7 @@ void KeyframeSelector::process()
     mediaInfo.spec.attribute("oiio:ColorSpace", "sRGB");   // always sRGB
     mediaInfo.spec.attribute("Make",  _cameraInfos[mediaIndex].brand);
     mediaInfo.spec.attribute("Model", _cameraInfos[mediaIndex].model);
-    mediaInfo.spec.attribute("Exif:BodySerialNumber", std::to_string(rand() % 999999999999)); // TODO: use Exif:OriginalRawFileName instead
+    mediaInfo.spec.attribute("Exif:BodySerialNumber", std::to_string(getRandomInt())); // TODO: use Exif:OriginalRawFileName instead
     mediaInfo.spec.attribute("Exif:FocalLength", _cameraInfos[mediaIndex].focalLength);
   }
 
@@ -418,7 +432,7 @@ void KeyframeSelector::writeKeyframe(const image::Image<image::RGBColor>& image,
 
   const auto filepath = (folder / fs::path(std::to_string(frameIndex) + ".jpg")).string();
 
-  mediaInfo.spec.attribute("Exif:ImageUniqueID", std::to_string(rand() % 999999999999));
+  mediaInfo.spec.attribute("Exif:ImageUniqueID", std::to_string(getRandomInt()));
 
   std::unique_ptr<oiio::ImageOutput> out(oiio::ImageOutput::create(filepath));
   
