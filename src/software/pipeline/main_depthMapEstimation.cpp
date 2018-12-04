@@ -15,7 +15,7 @@
 #include <aliceVision/system/cmdline.hpp>
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/Timer.hpp>
-#include <aliceVision/system/gpu.hpp>
+#include <aliceVision/gpu/gpu.hpp>
 
 #include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>
@@ -150,10 +150,10 @@ int main(int argc, char* argv[])
     system::Logger::get()->setLogLevel(verboseLevel);
 
     // print GPU Information
-    ALICEVISION_LOG_INFO(system::gpuInformationCUDA());
+    ALICEVISION_LOG_INFO(gpu::gpuInformationCUDA());
 
     // check if the gpu suppport CUDA compute capability 2.0
-    if(!system::gpuSupportCUDA(2,0))
+    if(!gpu::gpuSupportCUDA(2,0))
     {
       ALICEVISION_LOG_ERROR("This program needs a CUDA-Enabled GPU (with at least compute capablility 2.0).");
       return EXIT_FAILURE;

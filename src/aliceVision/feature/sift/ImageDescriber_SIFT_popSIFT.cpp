@@ -8,10 +8,22 @@
 #include "ImageDescriber_SIFT_popSIFT.hpp"
 #include <aliceVision/system/Logger.hpp>
 
+// PopSIFT includes
+#include <popsift/popsift.h>
+#include <popsift/sift_pyramid.h>
+#include <popsift/sift_octave.h>
+#include <popsift/common/device_prop.h>
+
 namespace aliceVision {
 namespace feature {
 
 std::unique_ptr<PopSift> ImageDescriber_SIFT_popSIFT::_popSift = nullptr;
+
+void ImageDescriber_SIFT_popSIFT::setConfigurationPreset(EImageDescriberPreset preset)
+{
+    _params.setPreset(preset);
+    _popSift.reset(nullptr); // reset by describe method
+}
 
 bool ImageDescriber_SIFT_popSIFT::describe(const image::Image<float>& image,
                                       std::unique_ptr<Regions>& regions,

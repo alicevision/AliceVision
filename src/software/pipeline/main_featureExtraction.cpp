@@ -13,7 +13,7 @@
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_POPSIFT) \
  || ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_CCTAG)
 #define ALICEVISION_HAVE_GPU_FEATURES
-#include <aliceVision/system/gpu.hpp>
+#include <aliceVision/gpu/gpu.hpp>
 #endif
 #include <aliceVision/image/all.hpp>
 #include <aliceVision/system/MemoryInfo.hpp>
@@ -352,7 +352,7 @@ int main(int argc, char **argv)
 
 #ifdef ALICEVISION_HAVE_GPU_FEATURES
   // Print GPU Information
-  ALICEVISION_LOG_INFO(system::gpuInformationCUDA());
+  ALICEVISION_LOG_INFO(gpu::gpuInformationCUDA());
 #endif
 
   // load input scene
