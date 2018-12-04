@@ -17,7 +17,7 @@ float3 ps_getDeviceMemoryInfo();
 
 void ps_planeSweepingGPUPixelsVolume(
     Pyramid& ps_texs_arr,
-    const int max_ct,
+    // const int max_ct,
     float* volume_out,
     const int volume_offset,
     std::vector<CudaDeviceMemoryPitched<float, 3>*>& volSim_dmp,

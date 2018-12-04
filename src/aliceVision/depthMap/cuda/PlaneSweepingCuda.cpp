@@ -753,7 +753,7 @@ void PlaneSweepingCuda::sweepPixelsToVolume( const std::vector<int>& index_set,
 
     while( it != end )
     {
-        /* avoid special case for index_set.size() <= max_ct */
+        /* avoid special case for index_set.size() <= max_tcs */
         index_subset.clear();
         for( int i=0; i<max_tcs && it!=end; i++ )
         {
@@ -777,21 +777,22 @@ void PlaneSweepingCuda::sweepPixelsToVolume( const std::vector<int>& index_set,
     cudaDeviceSynchronize();
 }
 
-void PlaneSweepingCuda::sweepPixelsToVolumeSubset( const std::vector<int>& index_set,
-                                              float* volume_out, const int volume_out_offset,
-                                              std::vector<CudaDeviceMemoryPitched<float, 3>*>& volSim_dmp,
-                                              const int volDimX,
-                                              const int volDimY,
-                                              const int volStepXY,
-                                              const int zDimsAtATime,
-                                              const std::vector<float>& rc_depths,
-                                              const std::vector<Pixel>&  use_depths,
-                                              int rc,
-                                              const StaticVector<int>& tc_in,
-                                              StaticVectorBool* rcSilhoueteMap,
-                                              int wsh, float gammaC, float gammaP,
-                                              int scale, int step,
-                                              float epipShift )
+void PlaneSweepingCuda::sweepPixelsToVolumeSubset(
+    const std::vector<int>& index_set,
+    float* volume_out, const int volume_out_offset,
+    std::vector<CudaDeviceMemoryPitched<float, 3>*>& volSim_dmp,
+    const int volDimX,
+    const int volDimY,
+    const int volStepXY,
+    const int zDimsAtATime,
+    const std::vector<float>& rc_depths,
+    const std::vector<Pixel>&  use_depths,
+    int rc,
+    const StaticVector<int>& tc_in,
+    StaticVectorBool* rcSilhoueteMap,
+    int wsh, float gammaC, float gammaP,
+    int scale, int step,
+    float epipShift )
 {
     // long t1 = clock();
     clock_t t1 = tic();
@@ -809,7 +810,7 @@ void PlaneSweepingCuda::sweepPixelsToVolumeSubset( const std::vector<int>& index
         nDepthsToSearch.push_back( use_depths[j].y );
     }
 
-    const int max_ct = index_set.size();
+    const int max_tcs = index_set.size();
 
     if(_verbose)
         ALICEVISION_LOG_DEBUG("sweepPixelsVolume:" << std::endl
@@ -820,11 +821,11 @@ void PlaneSweepingCuda::sweepPixelsToVolumeSubset( const std::vector<int>& index
                                 << "\t- volDimY: " << volDimY );
 
     cameraStruct              rcam;
-    std::vector<cameraStruct> tcams( max_ct );
+    std::vector<cameraStruct> tcams( max_tcs );
     const int camid = addCam(rc, scale, rcSilhoueteMap, __FUNCTION__ );
     cams[camid].camId = camid;
     rcam = cams[camid];
-    for( int ct=0; ct<max_ct; ct++ )
+    for( int ct=0; ct<max_tcs; ct++ )
     {
         const int camid = addCam(tcs[ct], scale, nullptr, __FUNCTION__ );
         cams[camid].camId = camid;
@@ -834,7 +835,7 @@ void PlaneSweepingCuda::sweepPixelsToVolumeSubset( const std::vector<int>& index
     if(_verbose)
     {
         ALICEVISION_LOG_DEBUG("rc: " << rc << std::endl << "tcams: ");
-        for( int ct=1; ct<max_ct; ct++ )
+        for( int ct=1; ct<max_tcs; ct++ )
             ALICEVISION_LOG_DEBUG( "\ttc: " << tcs[ct] );
     }
 
@@ -843,12 +844,13 @@ void PlaneSweepingCuda::sweepPixelsToVolumeSubset( const std::vector<int>& index
     _camsBasesDev.copyFrom( _camsBasesHst );
 
     // copy the vector of depths to GPU
+    // TODO - move out - don't do this here
     const float* depth_data = rc_depths.data();
     CudaDeviceMemory<float> depths_dev( depth_data, rc_depths.size() );
 
     ps_planeSweepingGPUPixelsVolume(
             ps_texs_arr,     // indexed with tcams[].camId
-            max_ct,          // ct=0..max_ct ; volume=&volume_in[ct*volume_offset]
+            // max_tcs,      == tcams.size()
             volume_out,
             volume_out_offset,
             volSim_dmp,

@@ -719,7 +719,7 @@ void ps_transposeVolume(CudaHostMemoryHeap<unsigned char, 3>* ovol_hmh,
 
 static void ps_computeSimilarityVolume(
                                 Pyramid& ps_texs_arr,
-                                const int max_ct,
+                                // const int max_tcs,
                                 float* volume_out, const int volume_offset,
                                 std::vector<CudaDeviceMemoryPitched<float, 3>*> vol_dmp,
                                 const cameraStruct& rcam,
@@ -743,7 +743,9 @@ static void ps_computeSimilarityVolume(
 {
     configure_volume_slice_kernel();
 
-    for( int ct=0; ct<max_ct; ct++ )
+    const int max_tcs = tcams.size();
+
+    for( int ct=0; ct<max_tcs; ct++ )
     {
         const int volDimZ = nDepthsToSearch[ct];
 
@@ -787,6 +789,7 @@ static void ps_computeSimilarityVolume(
           // src += ( d * vol_dmp[ct]->getPitch() * volDimY / sizeof(float) );
 
           float* dst = &volume_out[ct*volume_offset];
+
           dst += startDepth*volDimX*volDimY;
           copy2D( dst, volDimX, volDimY*numPlanesToCopy,
                   src, vol_dmp[ct]->getPitch(),
@@ -796,7 +799,6 @@ static void ps_computeSimilarityVolume(
 }
 
 void ps_planeSweepingGPUPixelsVolume( Pyramid& ps_texs_arr,
-                                      const int max_ct,
                                       float* volume_out,
                                       const int volume_offset,
                                       std::vector<CudaDeviceMemoryPitched<float, 3>*>& volSim_dmp,
@@ -820,17 +822,19 @@ void ps_planeSweepingGPUPixelsVolume( Pyramid& ps_texs_arr,
 {
     if(verbose)
     {
+        const int max_tcs = tcams.size();
+
         pr_printfDeviceMemoryInfo();
 
-        float mbytes = max_ct * volSim_dmp[0]->getBytesPadded();
+        float mbytes = max_tcs * volSim_dmp[0]->getBytesPadded();
         mbytes /= (1024.0f * 1024.0f);
-        printf("%s: total size of volume maps for %d images in GPU memory: approx %4.2f MB\n", __FUNCTION__, max_ct, mbytes );
+        printf("%s: total size of volume maps for %d images in GPU memory: approx %4.2f MB\n", __FUNCTION__, max_tcs, mbytes );
     }
 
     //--------------------------------------------------------------------------------------------------
     // compute similarity volume
     ps_computeSimilarityVolume(ps_texs_arr,
-                               max_ct,
+                               // max_ct,
                                volume_out,
                                volume_offset,
                                volSim_dmp,

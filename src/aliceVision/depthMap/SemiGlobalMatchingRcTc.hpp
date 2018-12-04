@@ -39,8 +39,8 @@ private:
     const std::vector<int> _index_set;
     const SemiGlobalMatchingParams* const sp;
 
-    const int rc;
-    const StaticVector<int>& tc;
+    const int _rc;
+    const StaticVector<int>& _tc;
     const int _scale;
     const int _step;
     const int _w;

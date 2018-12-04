@@ -1129,12 +1129,15 @@ template<class Type, unsigned Dim> void copy(CudaDeviceMemoryPitched<Type, Dim>&
 {
     if(Dim >= 3)
     {
+      const size_t src_pitch      = sx * sizeof(Type);
+      const size_t width_in_bytes = sx * sizeof(Type);
+      const size_t height         = sy * sz;
       cudaError_t err = cudaMemcpy2D( _dst.getBytePtr(),
                                       _dst.getPitch(),
                                       _src,
-                                      sx * sizeof(Type),
-                                      sx * sizeof(Type),
-                                      sy * sz,
+                                      src_pitch,
+                                      width_in_bytes,
+                                      height,
                                       cudaMemcpyHostToDevice);
       THROW_ON_CUDA_ERROR(err, "Failed to copy (" << __FILE__ << " " << __LINE__ << ")");
     }
@@ -1144,12 +1147,15 @@ template<class Type> void copy2D( Type* dst, size_t sx, size_t sy,
                                   Type* src, size_t src_pitch,
                                   cudaStream_t stream )
 {
+    const size_t dst_pitch      = sx * sizeof(Type);
+    const size_t width_in_bytes = sx * sizeof(Type);
+    const size_t height         = sy;
     cudaError_t err = cudaMemcpy2DAsync( dst,
-                                         sx * sizeof(Type),
+                                         dst_pitch,
                                          src,
                                          src_pitch,
-                                         sx * sizeof(Type),
-                                         sy,
+                                         width_in_bytes,
+                                         height,
                                          cudaMemcpyDeviceToHost,
                                          stream );
     THROW_ON_CUDA_ERROR( err, "Failed to copy (" << __FILE__ << " " << __LINE__ << ", " << cudaGetErrorString(err) << ")" );

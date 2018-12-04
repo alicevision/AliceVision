@@ -6,6 +6,7 @@
 
 #include "SemiGlobalMatchingRcTc.hpp"
 #include <aliceVision/mvsUtils/common.hpp>
+#include <algorithm>
 
 namespace aliceVision {
 namespace depthMap {
@@ -14,8 +15,8 @@ SemiGlobalMatchingRcTc::SemiGlobalMatchingRcTc(
             const std::vector<int>& index_set,
             const std::vector<float>& rcTcDepths,
             const std::vector<Pixel>&  rcTcDepthRanges,
-            int _rc,
-            const StaticVector<int>& _tc,
+            int rc,
+            const StaticVector<int>& tc,
             int scale,
             int step,
             int zDimsAtATime,
@@ -23,8 +24,8 @@ SemiGlobalMatchingRcTc::SemiGlobalMatchingRcTc(
             StaticVectorBool* _rcSilhoueteMap)
     : _index_set( index_set )
     , sp( _sp )
-    , rc( _rc )
-    , tc( _tc )
+    , _rc( rc )
+    , _tc( tc )
     , _scale( scale )
     , _step( step )
     , _w( sp->mp->getWidth(rc) / (scale * step) )
@@ -43,6 +44,22 @@ SemiGlobalMatchingRcTc::~SemiGlobalMatchingRcTc()
     //
 }
 
+struct MinOffX
+{
+    bool operator()( const Pixel& l, const Pixel& r ) const
+    {
+        return ( l.x < r.x );
+    }
+};
+
+struct MinOffXplusY
+{
+    bool operator()( const Pixel& l, const Pixel& r ) const
+    {
+        return ( l.x+l.y < r.x+r.y );
+    }
+};
+
 void SemiGlobalMatchingRcTc::computeDepthSimMapVolume(
         std::vector<StaticVector<unsigned char> >& volume,
         std::vector<CudaDeviceMemoryPitched<float, 3>*>& volume_tmp_on_gpu,
@@ -55,8 +72,22 @@ void SemiGlobalMatchingRcTc::computeDepthSimMapVolume(
     const int volStepXY = _step;
     const int volDimX   = _w;
     const int volDimY   = _h;
-    int maxDimZ = *_index_set.begin();
 
+    MinOffX      Pixel_x_comp;
+    MinOffXplusY Pixel_xy_comp;
+    const int startingDepth = std::min_element( _rcTcDepthRanges.begin(),
+                                                _rcTcDepthRanges.end(),
+                                                Pixel_x_comp )->x;
+    auto depth_it = std::max_element( _rcTcDepthRanges.begin(),
+                                      _rcTcDepthRanges.end(),
+                                      Pixel_xy_comp );
+    const int stoppingDepth = depth_it->x + depth_it->y;
+    
+#if 1
+    const int maxDimZ = stoppingDepth - startingDepth;
+
+#else
+    int       maxDimZ   = 0; // *_index_set.begin();
     for( auto j : _index_set )
     {
         const int volDimZ = _rcTcDepthRanges[j].y;
@@ -65,20 +96,41 @@ void SemiGlobalMatchingRcTc::computeDepthSimMapVolume(
 
         maxDimZ = std::max( maxDimZ, volDimZ );
     }
+#endif
+    
+    // volume size for 1 depth layer for 1 tcam
+    const int    layer_offset      = volDimX * volDimY;
+
+    // volume size for 1 tcam
+    const int    volume_offset     = volDimX * volDimY * maxDimZ;
+
+    // volume size for all tcams
+    const size_t volume_num_floats = volDimX * volDimY * maxDimZ * _index_set.size();
+
+    for( auto j : _index_set )
+    {
+        volume[j].resize( volume_offset );
+    }
 
     float* volume_buf;
     bool   volume_buf_pinned = true;
-    cudaError_t err = cudaMallocHost( &volume_buf, _index_set.size() * volDimX * volDimY * maxDimZ * sizeof(float) );
+    cudaError_t err = cudaMallocHost( &volume_buf, volume_num_floats * sizeof(float) );
     if( err != cudaSuccess )
     {
-        ALICEVISION_LOG_WARNING( "Failed to allocate " << _index_set.size() * volDimX * volDimY * maxDimZ * sizeof(float) << " bytes of CUDA host (pinned) memory, " << cudaGetErrorString(err) );
-        volume_buf = new float[ _index_set.size() * volDimX * volDimY * maxDimZ ];
+        ALICEVISION_LOG_WARNING( "Failed to allocate "
+            << volume_num_floats * sizeof(float)
+            << " bytes of CUDA host (pinned) memory, " << cudaGetErrorString(err)
+            << std::endl
+            << "Allocating slower unpinned memory instead." );
+        volume_buf = new float[ volume_num_floats ];
         volume_buf_pinned = false;
     }
 
+    // Initialize to a big value
+    // move to GPU eventually
+    std::fill_n( volume_buf, volume_num_floats, 255.0f );
 
-    const int volume_offset = volDimX * volDimY * maxDimZ;
-
+#warning change sweep to record depth data at _rcTcDepthRanges[j].x-startingDepth instead of 0
     sp->cps.sweepPixelsToVolume( _index_set,
                                  volume_buf,
                                  volume_offset,
@@ -88,7 +140,7 @@ void SemiGlobalMatchingRcTc::computeDepthSimMapVolume(
                                  _zDimsAtATime,
                                  _rcTcDepths,
                                  _rcTcDepthRanges,
-                                 rc, tc,
+                                 _rc, _tc,
                                  rcSilhoueteMap,
                                  wsh, gammaC, gammaP, _scale, 1,
                                  0.0f);
@@ -100,11 +152,15 @@ void SemiGlobalMatchingRcTc::computeDepthSimMapVolume(
     int ct = 0;
     for( auto j : _index_set )
     {
+        const int startLayer = _rcTcDepthRanges[j].x - startingDepth;
+
         const int volDimZ = _rcTcDepthRanges[j].y;
 
+#warning copy data from _rcTcDepthRanges[j].x - startingDepth instead of from 0
+        // float* ptr = &volume_buf[ct * volume_offset + startLayer * layer_offset];
+        float* ptr = &volume_buf[ct * volume_offset];
         for( int i=0; i<volDimX * volDimY * volDimZ; i++ )
         {
-            float* ptr = &volume_buf[ct * volume_offset];
             volume[j][i] = (unsigned char)( 255.0f * std::max(std::min(ptr[i],1.0f),0.0f) );
         }
         ct++;

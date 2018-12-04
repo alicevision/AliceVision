@@ -570,6 +570,8 @@ bool SemiGlobalMatchingRc::sgmrc(bool checkIfExists)
                                 rc, tcams, scale, step, zDimsAtATime, sp, rcSilhoueteMap );
     srt.computeDepthSimMapVolume( simVolume, volume_tmp_on_gpu, wsh, gammaC, gammaP );
 
+    simVolume.resize( tcams.size() );
+
     sp->cps.freeTempVolume( volume_tmp_on_gpu );
 
     index_set.erase( index_set.begin() );
