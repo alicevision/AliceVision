@@ -150,8 +150,12 @@ std::string gpuInformationCUDA()
             information += deviceSS.str();
         }
     }
+    else
+    {
+        information = "No CUDA-Enabled GPU.";
+    }
 #else
-    information = "No CUDA-Enabled GPU.";
+    information = "AliceVision built without CUDA support.";
 #endif
     return information;
 }
