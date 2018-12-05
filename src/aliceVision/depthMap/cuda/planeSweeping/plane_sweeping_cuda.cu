@@ -755,41 +755,40 @@ static void ps_computeSimilarityVolume(
 
         for( int startDepth=0; startDepth<volDimZ; startDepth+=zDimsAtATime )
         {
-          const int numPlanesToCopy = ( startDepth+zDimsAtATime < volDimZ )
+            const int numPlanesToCopy = ( startDepth+zDimsAtATime < volDimZ )
                                       ? zDimsAtATime
                                       : volDimZ - startDepth;
 
-          dim3 volume_slice_kernel_grid( divUp(xsteps, volume_slice_kernel_block.x),
-                                         divUp(ysteps, volume_slice_kernel_block.y),
-                                         numPlanesToCopy );
+            dim3 volume_slice_kernel_grid( divUp(xsteps, volume_slice_kernel_block.x),
+                                           divUp(ysteps, volume_slice_kernel_block.y),
+                                           numPlanesToCopy );
 
-          volume_slice_kernel
-            <<<volume_slice_kernel_grid, volume_slice_kernel_block,0,tcams[ct].stream>>>
-            ( ps_texs_arr[rcam.camId][scale].tex,
-              ps_texs_arr[tcams[ct].camId][scale].tex,
-              rcam.param_dev,
-              tcams[ct].param_dev,
-              depths_dev.getBuffer(),
-              offset + startDepth,
-              width, height,
-              wsh,
-              gammaC, gammaP, epipShift,
-              vol_dmp[ct]->getBuffer(),
-              vol_dmp[ct]->getBytesPaddedUpToDim(1),
-              vol_dmp[ct]->getBytesPaddedUpToDim(0),
-              volStepXY,
-              volDimX, volDimY );
+            volume_slice_kernel
+                <<<volume_slice_kernel_grid, volume_slice_kernel_block,0,tcams[ct].stream>>>
+                ( ps_texs_arr[rcam.camId][scale].tex,
+                  ps_texs_arr[tcams[ct].camId][scale].tex,
+                  rcam.param_dev,
+                  tcams[ct].param_dev,
+                  depths_dev.getBuffer(),
+                  offset + startDepth,
+                  width, height,
+                  wsh,
+                  gammaC, gammaP, epipShift,
+                  vol_dmp[ct]->getBuffer(),
+                  vol_dmp[ct]->getBytesPaddedUpToDim(1),
+                  vol_dmp[ct]->getBytesPaddedUpToDim(0),
+                  volStepXY,
+                  volDimX, volDimY );
 
-          float* src = vol_dmp[ct]->getBuffer();
-          // src += ( d * vol_dmp[ct]->getPitch() * volDimY / sizeof(float) );
+            float* src = vol_dmp[ct]->getBuffer();
 
-          float* dst = tcs[ct].getVolumeOutWithOffset();
+            float* dst = tcs[ct].getVolumeOutWithOffset();
 
-          dst += startDepth*volDimX*volDimY;
+            dst += startDepth*volDimX*volDimY;
 
-          copy2D( dst, volDimX, volDimY*numPlanesToCopy,
-                  src, vol_dmp[ct]->getPitch(),
-                  tcams[ct].stream );
+            copy2D( dst, volDimX, volDimY*numPlanesToCopy,
+                    src, vol_dmp[ct]->getPitch(),
+                    tcams[ct].stream );
         }
     }
 }
