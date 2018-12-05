@@ -719,8 +719,6 @@ void ps_transposeVolume(CudaHostMemoryHeap<unsigned char, 3>* ovol_hmh,
 
 static void ps_computeSimilarityVolume(
                                 Pyramid& ps_texs_arr,
-                                // const int max_tcs,
-                                float* volume_out, const int volume_offset,
                                 std::vector<CudaDeviceMemoryPitched<float, 3>*> vol_dmp,
                                 const cameraStruct& rcam,
                                 const std::vector<cameraStruct>& tcams,
@@ -729,15 +727,11 @@ static void ps_computeSimilarityVolume(
                                 int volDimX, int volDimY,
                                 const int zDimsAtATime,
                                 CudaDeviceMemory<float>& depths_dev,
-                                const std::vector<int>& depths_to_start,
-                                const std::vector<int>& nDepthsToSearch,
+                                std::vector<OneTC>&  tcs,
                                 int wsh, int kernelSizeHalf,
                                 int scale,
-                                // int CUDAdeviceNo,
-                                // int ncamsAllocated,
                                 int scales, bool verbose, bool doUsePixelsDepths,
                                 int nbest,
-                                // bool useTcOrRcPixSize,
                                 float gammaC, float gammaP, bool subPixel,
                                 float epipShift)
 {
@@ -747,16 +741,16 @@ static void ps_computeSimilarityVolume(
 
     for( int ct=0; ct<max_tcs; ct++ )
     {
-        const int volDimZ = nDepthsToSearch[ct];
+        const int volDimZ = tcs[ct].depths_to_search;
 
         if(verbose)
-            printf("nDepths %i, nDepthsToSearch %i \n", (int)depths_dev.getUnitsTotal(), nDepthsToSearch[ct]);
+            printf("nDepths %i, nDepthsToSearch %i \n", (int)depths_dev.getUnitsTotal(), tcs[ct].depths_to_search );
 
         // compute similarity volume
         const int xsteps = width / volStepXY;
         const int ysteps = height / volStepXY;
 
-        const int offset = depths_to_start[ct];
+        const int offset = tcs[ct].depth_to_start;
 
         for( int startDepth=0; startDepth<volDimZ; startDepth+=zDimsAtATime )
         {
@@ -788,7 +782,7 @@ static void ps_computeSimilarityVolume(
           float* src = vol_dmp[ct]->getBuffer();
           // src += ( d * vol_dmp[ct]->getPitch() * volDimY / sizeof(float) );
 
-          float* dst = &volume_out[ct*volume_offset];
+          float* dst = tcs[ct].getVolumeOut();
 
           dst += startDepth*volDimX*volDimY;
           copy2D( dst, volDimX, volDimY*numPlanesToCopy,
@@ -798,27 +792,22 @@ static void ps_computeSimilarityVolume(
     }
 }
 
-void ps_planeSweepingGPUPixelsVolume( Pyramid& ps_texs_arr,
-                                      float* volume_out,
-                                      const int volume_offset,
-                                      std::vector<CudaDeviceMemoryPitched<float, 3>*>& volSim_dmp,
-                                      const cameraStruct& rcam,
-                                      const std::vector<cameraStruct>& tcams,
-                                      int width, int height,
-                                      int volStepXY, int volDimX, int volDimY,
-                                      const int zDimsAtATime,
-                                      CudaDeviceMemory<float>& depths_dev,
-                                      const std::vector<int>& depths_to_start,
-                                      const std::vector<int>& nDepthsToSearch,
-                                      int wsh, int kernelSizeHalf,
-                                      int scale,
-                                      // int CUDAdeviceNo,
-                                      // int ncamsAllocated,
-                                      int scales, bool verbose,
-                                      bool doUsePixelsDepths, int nbest,
-                                      // bool useTcOrRcPixSize,
-                                      float gammaC,
-                                      float gammaP, bool subPixel, float epipShift)
+void ps_planeSweepingGPUPixelsVolume(
+        Pyramid& ps_texs_arr,
+        std::vector<CudaDeviceMemoryPitched<float, 3>*>& volSim_dmp,
+        const cameraStruct& rcam,
+        const std::vector<cameraStruct>& tcams,
+        int width, int height,
+        int volStepXY, int volDimX, int volDimY,
+        const int zDimsAtATime,
+        CudaDeviceMemory<float>& depths_dev,
+        std::vector<OneTC>&  tcs,
+        int wsh, int kernelSizeHalf,
+        int scale,
+        int scales, bool verbose,
+        bool doUsePixelsDepths, int nbest,
+        float gammaC, float gammaP,
+        bool subPixel, float epipShift)
 {
     if(verbose)
     {
@@ -834,9 +823,6 @@ void ps_planeSweepingGPUPixelsVolume( Pyramid& ps_texs_arr,
     //--------------------------------------------------------------------------------------------------
     // compute similarity volume
     ps_computeSimilarityVolume(ps_texs_arr,
-                               // max_ct,
-                               volume_out,
-                               volume_offset,
                                volSim_dmp,
                                rcam, tcams,
                                width, height,
@@ -844,15 +830,11 @@ void ps_planeSweepingGPUPixelsVolume( Pyramid& ps_texs_arr,
                                volDimX, volDimY,
                                zDimsAtATime,
                                depths_dev,
-                               depths_to_start,
-                               nDepthsToSearch,
+                               tcs,
                                wsh, kernelSizeHalf,
                                scale,
-                               // CUDAdeviceNo,
-                               // ncamsAllocated,
                                scales,
                                verbose, doUsePixelsDepths, nbest,
-                               // useTcOrRcPixSize,
                                gammaC, gammaP, subPixel, epipShift);
 }
 

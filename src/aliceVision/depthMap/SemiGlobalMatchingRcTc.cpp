@@ -6,6 +6,7 @@
 
 #include "SemiGlobalMatchingRcTc.hpp"
 #include <aliceVision/mvsUtils/common.hpp>
+#include <aliceVision/depthMap/cuda/tcinfo.hpp>
 #include <algorithm>
 
 namespace aliceVision {
@@ -129,15 +130,26 @@ void SemiGlobalMatchingRcTc::computeDepthSimMapVolume(
     std::fill_n( volume_buf, volume_num_floats, 255.0f );
 
 #warning change sweep to record depth data at _rcTcDepthRanges[j].x-startingDepth instead of 0
-    sp->cps.sweepPixelsToVolume( _index_set,
-                                 volume_buf,
-                                 volume_offset,
-                                 volume_tmp_on_gpu,
+    std::vector<OneTC> tcs;
+    for( auto j : _index_set )
+    {
+        tcs.push_back( OneTC( j,
+                              _tc[j],
+                              _rcTcDepthRanges[j].x,
+                              _rcTcDepthRanges[j].y ) );
+    }
+
+    for( int ct=0; ct<tcs.size(); ct++ )
+    {
+        tcs[ct].setVolumeOut( volume_buf + ct * volume_offset );
+    }
+
+    sp->cps.sweepPixelsToVolume( volume_tmp_on_gpu,
                                  volDimX, volDimY,
                                  volStepXY,
+                                 tcs,
                                  _zDimsAtATime,
                                  _rcTcDepths,
-                                 _rcTcDepthRanges,
                                  _rc, _tc,
                                  _rcSilhoueteMap,
                                  wsh, gammaC, gammaP, _scale, 1,
@@ -147,6 +159,7 @@ void SemiGlobalMatchingRcTc::computeDepthSimMapVolume(
      * TODO: This conversion operation on the host consumes a lot of time,
      *       about 1/3 of the actual computation. Work to avoid it.
      */
+#if 0
     int ct = 0;
     for( auto j : _index_set )
     {
@@ -157,12 +170,27 @@ void SemiGlobalMatchingRcTc::computeDepthSimMapVolume(
 #warning copy data from _rcTcDepthRanges[j].x - startingDepth instead of from 0
         // float* ptr = &volume_buf[ct * volume_offset + startLayer * layer_offset];
         float* ptr = &volume_buf[ct * volume_offset];
+
         for( int i=0; i<volDimX * volDimY * volDimZ; i++ )
         {
             volume[j][i] = (unsigned char)( 255.0f * std::max(std::min(ptr[i],1.0f),0.0f) );
         }
         ct++;
     }
+#else
+    for( int ct=0; ct<tcs.size(); ct++ )
+    {
+        const int j          = tcs[ct].getTCPerm();
+        const int startLayer = tcs[ct].depth_to_start - startingDepth;
+        const int volDimZ    = tcs[ct].depths_to_search;
+        float*    ptr        = tcs[ct].getVolumeOut();
+
+        for( int i=0; i<volDimX * volDimY * volDimZ; i++ )
+        {
+            volume[j][i] = (unsigned char)( 255.0f * std::max(std::min(ptr[i],1.0f),0.0f) );
+        }
+    }
+#endif
 
     if( volume_buf_pinned )
         cudaFreeHost( volume_buf );

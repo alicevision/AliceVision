@@ -7,6 +7,7 @@
 #pragma once
 
 #include <aliceVision/depthMap/cuda/commonStructures.hpp>
+#include <aliceVision/depthMap/cuda/tcinfo.hpp>
 
 namespace aliceVision {
 namespace depthMap {
@@ -17,9 +18,6 @@ float3 ps_getDeviceMemoryInfo();
 
 void ps_planeSweepingGPUPixelsVolume(
     Pyramid& ps_texs_arr,
-    // const int max_ct,
-    float* volume_out,
-    const int volume_offset,
     std::vector<CudaDeviceMemoryPitched<float, 3>*>& volSim_dmp,
     const cameraStruct& rcam,
     const std::vector<cameraStruct>& tcams,
@@ -27,18 +25,14 @@ void ps_planeSweepingGPUPixelsVolume(
     int volStepXY, int volDimX, int volDimY,
     const int zDimsAtATime,
     CudaDeviceMemory<float>& depths_dev,
-    const std::vector<int>&  depths_to_start,
-    const std::vector<int>&  depths_to_search,
+    std::vector<OneTC>&  tcs,
     int wsh,
     int kernelSizeHalf,
     int scale,
-    // int CUDAdeviceNo,
-    // int ncamsAllocated,
     int scales,
     bool verbose,
     bool doUsePixelsDepths,
     int nbest,
-    // bool useTcOrRcPixSize,
     float gammaC, float gammaP,
     bool subPixel,
     float epipShift);
