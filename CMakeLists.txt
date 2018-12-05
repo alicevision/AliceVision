@@ -98,6 +98,7 @@ ExternalProject_Add(${ZLIB_TARGET}
        PREFIX ${BUILD_DIR}
        BUILD_IN_SOURCE 0
        BUILD_ALWAYS 0
+       UPDATE_COMMAND ""
        SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/zlib
        BINARY_DIR ${BUILD_DIR}/zlib_build
        INSTALL_DIR ${BUILD_DIR}/zlib_build
@@ -121,6 +122,7 @@ ExternalProject_Add(${GEOGRAM_TARGET}
        PREFIX ${BUILD_DIR}
        BUILD_IN_SOURCE 0
        BUILD_ALWAYS 0
+       UPDATE_COMMAND ""
        SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/geogram
        BINARY_DIR ${BUILD_DIR}/geogram_internal_build
        INSTALL_DIR ${BUILD_DIR}/geogram_build
@@ -139,6 +141,7 @@ ExternalProject_Add(${CUDA_TARGET}
        PREFIX ${BUILD_DIR}
        BUILD_IN_SOURCE 0
        BUILD_ALWAYS 0
+       UPDATE_COMMAND ""
        SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/cuda
        BINARY_DIR ${BUILD_DIR}/cuda_build
        INSTALL_DIR ${BUILD_DIR}/cuda_build
@@ -162,6 +165,7 @@ ExternalProject_Add(${TBB_TARGET}
        PREFIX ${BUILD_DIR}
        BUILD_IN_SOURCE 0
        BUILD_ALWAYS 0
+       UPDATE_COMMAND ""
        SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/tbb
        BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/tbb
        INSTALL_DIR ${BUILD_DIR}/tbb_build
@@ -177,6 +181,7 @@ ExternalProject_Add(${EIGEN_TARGET}
        PREFIX ${BUILD_DIR}
        BUILD_IN_SOURCE 0
        BUILD_ALWAYS 0
+       UPDATE_COMMAND ""
        SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/eigen
        BINARY_DIR ${BUILD_DIR}/eigen_build
        INSTALL_DIR ${BUILD_DIR}/eigen_build
@@ -192,6 +197,7 @@ ExternalProject_Add(${OPENGV_TARGET}
        PREFIX ${BUILD_DIR}
        BUILD_IN_SOURCE 0
        BUILD_ALWAYS 0
+       UPDATE_COMMAND ""
        SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/opengv
        BINARY_DIR ${BUILD_DIR}/opengv_build
        INSTALL_DIR ${BUILD_DIR}/opengv_install
@@ -209,6 +215,7 @@ ExternalProject_Add(${LAPACK_TARGET}
        PREFIX ${BUILD_DIR}
        BUILD_IN_SOURCE 0
        BUILD_ALWAYS 0
+       UPDATE_COMMAND ""
        SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/lapack
        BINARY_DIR ${BUILD_DIR}/lapack_build
        INSTALL_DIR ${BUILD_DIR}/lapack_build
@@ -228,6 +235,7 @@ ExternalProject_Add(${SUITESPARSE_TARGET}
        PREFIX ${BUILD_DIR}
        BUILD_IN_SOURCE 0
        BUILD_ALWAYS 0
+       UPDATE_COMMAND ""
        SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/suitesparse
        BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/suitesparse
        INSTALL_DIR ${BUILD_DIR}/suitesparse_build
@@ -246,6 +254,7 @@ ExternalProject_Add(${CERES_TARGET}
        PREFIX ${BUILD_DIR}
        BUILD_IN_SOURCE 0
        BUILD_ALWAYS 0
+       UPDATE_COMMAND ""
        SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/ceres-solver
        BINARY_DIR ${BUILD_DIR}/ceres_build
        INSTALL_DIR ${BUILD_DIR}/ceres_build
@@ -272,6 +281,7 @@ ExternalProject_Add(${OPENEXR_TARGET}
       PREFIX ${BUILD_DIR}
       BUILD_IN_SOURCE 0
       BUILD_ALWAYS 0
+      UPDATE_COMMAND ""
       SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/openexr
       BINARY_DIR ${BUILD_DIR}/openexr_build
       INSTALL_DIR ${BUILD_DIR}/openexr_build
@@ -289,6 +299,7 @@ ExternalProject_Add(${TIFF_TARGET}
        PREFIX ${BUILD_DIR}
        BUILD_IN_SOURCE 0
        BUILD_ALWAYS 0
+       UPDATE_COMMAND ""
        SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/tiff
        BINARY_DIR ${BUILD_DIR}/tiff_build
        INSTALL_DIR ${BUILD_DIR}/tiff_build
@@ -308,6 +319,7 @@ ExternalProject_Add(${PNG_TARGET}
        PREFIX ${BUILD_DIR}
        BUILD_IN_SOURCE 0
        BUILD_ALWAYS 0
+       UPDATE_COMMAND ""
        SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/png
        BINARY_DIR ${BUILD_DIR}/png_build
        INSTALL_DIR ${BUILD_DIR}/png_build
@@ -326,6 +338,7 @@ ExternalProject_Add(${JPEG_TARGET}
        PREFIX ${BUILD_DIR}
        BUILD_IN_SOURCE 0
        BUILD_ALWAYS 0
+       UPDATE_COMMAND ""
        SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/turbojpeg
        BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/turbojpeg
        INSTALL_DIR ${BUILD_DIR}/turbojpeg_build
@@ -345,6 +358,7 @@ ExternalProject_Add(libraw_cmake
       PREFIX ${BUILD_DIR}
       BUILD_IN_SOURCE 0
       BUILD_ALWAYS 0
+      UPDATE_COMMAND ""
       SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/libraw_cmake
       BINARY_DIR ${BUILD_DIR}/libraw_build
       INSTALL_DIR ${BUILD_DIR}/libraw_build
@@ -357,6 +371,7 @@ ExternalProject_Add(${LIBRAW_TARGET}
       PREFIX ${BUILD_DIR}
       BUILD_IN_SOURCE 0
       BUILD_ALWAYS 0
+      UPDATE_COMMAND ""
       SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/libraw
       BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/libraw
       INSTALL_DIR ${BUILD_DIR}/libraw_build
@@ -380,6 +395,7 @@ ExternalProject_Add(${BOOST_TARGET}
        PREFIX ${BUILD_DIR}
        BUILD_IN_SOURCE 0
        BUILD_ALWAYS 0
+       UPDATE_COMMAND ""
        SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/boost
        BINARY_DIR ${BUILD_DIR}/boost_build
        INSTALL_DIR ${BUILD_DIR}/boost_build
@@ -397,6 +413,7 @@ ExternalProject_Add(${OPENIMAGEIO_TARGET}
       PREFIX ${BUILD_DIR}
       BUILD_IN_SOURCE 0
       BUILD_ALWAYS 0
+      UPDATE_COMMAND ""
       SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/openimageio
       BINARY_DIR ${BUILD_DIR}/openimageio_build
       INSTALL_DIR ${BUILD_DIR}/openimageio_build
@@ -414,6 +431,7 @@ ExternalProject_Add(${ALEMBIC_TARGET}
       PREFIX ${BUILD_DIR}
       BUILD_IN_SOURCE 0
       BUILD_ALWAYS 0
+      UPDATE_COMMAND ""
       SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/alembic
       BINARY_DIR ${BUILD_DIR}/alembic_build
       INSTALL_DIR ${BUILD_DIR}/alembic_build
@@ -431,6 +449,7 @@ ExternalProject_Add(${POPSIFT_TARGET}
       PREFIX ${BUILD_DIR}
       BUILD_IN_SOURCE 0
       BUILD_ALWAYS 0
+      UPDATE_COMMAND ""
       SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/popsift
       BINARY_DIR ${BUILD_DIR}/popsift_build
       INSTALL_DIR ${BUILD_DIR}/popsift_build
