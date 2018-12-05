@@ -492,6 +492,10 @@ bool SemiGlobalMatchingRc::sgmrc(bool checkIfExists)
 
     sp->cps.cameraToDevice( rc, tcams );
 
+//
+// FORCE_ZDIM_LIMIT exists only to test volume slicing for low-memory CUDA cards
+// also on high-memory cards. Make sure to #undef for releases.
+//
 // #define FORCE_ZDIM_LIMIT 32
 #undef  FORCE_ZDIM_LIMIT
 #ifndef FORCE_ZDIM_LIMIT
