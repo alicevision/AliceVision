@@ -306,7 +306,7 @@ ExternalProject_Add(${TIFF_TARGET}
        CONFIGURE_COMMAND <SOURCE_DIR>/configure --prefix=<INSTALL_DIR> 
        DEPENDS ${ZLIB_TARGET}
        )
-SET(TIFF_CMAKE_FLAGS -DTIFF_LIBRARY=${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}/libtiff.so -DTIFF_INCLUDE_DIR=${CMAKE_INSTALL_PREFIX}/include)
+SET(TIFF_CMAKE_FLAGS -DTIFF_LIBRARY=${BUILD_DIR}/tiff_build/lib/libtiff.so -DTIFF_INCLUDE_DIR=${BUILD_DIR}/tiff_build/include)
 endif()
 
 # Add LibPng
