@@ -576,7 +576,7 @@ bool SemiGlobalMatchingRc::sgmrc(bool checkIfExists)
 
     index_set.erase( index_set.begin() );
     SemiGlobalMatchingVolume svol( volDimX, volDimY, volDimZ, zDimsAtATime, sp );
-    svol.copyVolume( simVolume[0], depthsTcamsLimits[0].x, depthsTcamsLimits[0].y);
+    svol.copyVolume( simVolume[0], depthsTcamsLimits[0] );
     svol.addVolumeSecondMin( index_set, simVolume, depthsTcamsLimits );
 
     // Reduction of 'volume' (X, Y, Z) into 'volumeStepZ' (X, Y, Z/step)

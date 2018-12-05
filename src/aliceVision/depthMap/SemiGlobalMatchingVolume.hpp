@@ -20,7 +20,7 @@ public:
                              SemiGlobalMatchingParams* _sp);
     ~SemiGlobalMatchingVolume(void);
 
-    void copyVolume(const StaticVector<unsigned char>& volume, int zFrom, int nZSteps);
+    void copyVolume(const StaticVector<unsigned char>& volume, const Pixel& fromSteps );
     void addVolumeSecondMin( const std::vector<int>& index_set, 
                              const std::vector<StaticVector<unsigned char> >& vols,
                              const StaticVector<Pixel>& z );

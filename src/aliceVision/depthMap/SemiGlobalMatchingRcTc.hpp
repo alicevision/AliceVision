@@ -25,7 +25,7 @@ public:
                             int _step,
                             int zDimsAtATime,
                             SemiGlobalMatchingParams* _sp,
-                            StaticVectorBool* _rcSilhoueteMap = NULL );
+                            StaticVectorBool* rcSilhoueteMap = NULL );
     ~SemiGlobalMatchingRcTc(void);
 
     void computeDepthSimMapVolume( std::vector<StaticVector<unsigned char> >& volume,
@@ -47,10 +47,8 @@ private:
     const int _h;
     const int _zDimsAtATime;
     const std::vector<float>& _rcTcDepths;
-    const std::vector<Pixel>&  _rcTcDepthRanges;
-    float epipShift;
-    // int w, h;
-    StaticVectorBool* rcSilhoueteMap;
+    const std::vector<Pixel>& _rcTcDepthRanges;
+    StaticVectorBool*         _rcSilhoueteMap;
 };
 
 } // namespace depthMap

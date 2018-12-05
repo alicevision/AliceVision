@@ -173,8 +173,10 @@ StaticVector<IdValue>* SemiGlobalMatchingVolume::getOrigVolumeBestIdValFromVolum
     return volumeBestIdVal;
 }
 
-void SemiGlobalMatchingVolume::copyVolume(const StaticVector<unsigned char>& volume, int zFrom, int nZSteps)
+void SemiGlobalMatchingVolume::copyVolume(const StaticVector<unsigned char>& volume, const Pixel& fromSteps )
 {
+    const int zFrom   = fromSteps.x;
+    const int nZSteps = fromSteps.y;
     unsigned char*       _volumePtr = _volume->getDataWritable().data();
     const unsigned char* volumePtr  = volume.getData().data();
 #pragma omp parallel for

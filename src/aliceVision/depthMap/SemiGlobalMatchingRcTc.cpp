@@ -21,7 +21,7 @@ SemiGlobalMatchingRcTc::SemiGlobalMatchingRcTc(
             int step,
             int zDimsAtATime,
             SemiGlobalMatchingParams* _sp,
-            StaticVectorBool* _rcSilhoueteMap)
+            StaticVectorBool* rcSilhoueteMap)
     : _index_set( index_set )
     , sp( _sp )
     , _rc( rc )
@@ -34,9 +34,7 @@ SemiGlobalMatchingRcTc::SemiGlobalMatchingRcTc(
     , _rcTcDepthRanges( rcTcDepthRanges )
     , _zDimsAtATime( zDimsAtATime )
 {
-    epipShift = 0.0f;
-
-    rcSilhoueteMap = _rcSilhoueteMap;
+    _rcSilhoueteMap = rcSilhoueteMap;
 }
 
 SemiGlobalMatchingRcTc::~SemiGlobalMatchingRcTc()
@@ -141,7 +139,7 @@ void SemiGlobalMatchingRcTc::computeDepthSimMapVolume(
                                  _rcTcDepths,
                                  _rcTcDepthRanges,
                                  _rc, _tc,
-                                 rcSilhoueteMap,
+                                 _rcSilhoueteMap,
                                  wsh, gammaC, gammaP, _scale, 1,
                                  0.0f);
 
