@@ -27,6 +27,20 @@ public:
 private:
     float*    _volume_out;
 
+    /* This is possibly refundant information.
+     * It is the number of floats that are contained in a single depth
+     * level of a host-side volume.
+     * It is used to compute offsets from _volume_out.
+     */
+    int _depth_layer_size;
+
+    /* This is possibly refundant information.
+     * Host-side volume is allocated for all depths that are required for at
+     * least on TC's sweep. Some initial depths are not needed for any TCs,
+     * the number of those is kept here.
+     */
+    int _unallocated_low_depth;
+
 public:
     OneTC( int tcj, int tc, int start, int search )
         : _tcperm( tcj )
@@ -34,6 +48,8 @@ public:
         , depth_to_start( start )
         , depths_to_search( search )
         , _volume_out( 0 )
+        , _depth_layer_size( 0 )
+        , _unallocated_low_depth( 0 )
     { }
 
     OneTC( const OneTC& orig )
@@ -42,6 +58,8 @@ public:
         , depth_to_start( orig.depth_to_start )
         , depths_to_search( orig.depths_to_search )
         , _volume_out( orig._volume_out )
+        , _depth_layer_size( orig._depth_layer_size )
+        , _unallocated_low_depth( orig._unallocated_low_depth )
     { }
 
     inline int getTCPerm() const
@@ -54,15 +72,29 @@ public:
         return _tcidx;
     }
 
-    inline void setVolumeOut( float* ptr )
+    void setVolumeOut( float* ptr, int depthLayerSize, int unallocatedLowDepths )
     {
-        _volume_out = ptr;
+        _volume_out            = ptr;
+        _depth_layer_size      = depthLayerSize;
+        _unallocated_low_depth = unallocatedLowDepths;
     }
 
+    inline int getIgnoredLowLayers() const
+    {
+        return depth_to_start - _unallocated_low_depth;
+    }
+
+    inline float* getVolumeOutWithOffset()
+    {
+        return _volume_out + getIgnoredLowLayers() * _depth_layer_size;
+    }
+
+#if 0
     inline float* getVolumeOut()
     {
         return _volume_out;
     }
+#endif
 };
 
 } // namespace depthMap

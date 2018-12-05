@@ -98,7 +98,7 @@ void SemiGlobalMatchingRcTc::computeDepthSimMapVolume(
 #endif
     
     // volume size for 1 depth layer for 1 tcam
-    const int    layer_offset      = volDimX * volDimY;
+    const int    depth_layer_size  = volDimX * volDimY;
 
     // volume size for 1 tcam
     const int    volume_offset     = volDimX * volDimY * maxDimZ;
@@ -141,7 +141,9 @@ void SemiGlobalMatchingRcTc::computeDepthSimMapVolume(
 
     for( int ct=0; ct<tcs.size(); ct++ )
     {
-        tcs[ct].setVolumeOut( volume_buf + ct * volume_offset );
+        tcs[ct].setVolumeOut( volume_buf + ct * volume_offset,
+                              depth_layer_size,
+                              startingDepth );
     }
 
     sp->cps.sweepPixelsToVolume( volume_tmp_on_gpu,
@@ -159,38 +161,18 @@ void SemiGlobalMatchingRcTc::computeDepthSimMapVolume(
      * TODO: This conversion operation on the host consumes a lot of time,
      *       about 1/3 of the actual computation. Work to avoid it.
      */
-#if 0
-    int ct = 0;
-    for( auto j : _index_set )
-    {
-        const int startLayer = _rcTcDepthRanges[j].x - startingDepth;
-
-        const int volDimZ = _rcTcDepthRanges[j].y;
-
-#warning copy data from _rcTcDepthRanges[j].x - startingDepth instead of from 0
-        // float* ptr = &volume_buf[ct * volume_offset + startLayer * layer_offset];
-        float* ptr = &volume_buf[ct * volume_offset];
-
-        for( int i=0; i<volDimX * volDimY * volDimZ; i++ )
-        {
-            volume[j][i] = (unsigned char)( 255.0f * std::max(std::min(ptr[i],1.0f),0.0f) );
-        }
-        ct++;
-    }
-#else
     for( int ct=0; ct<tcs.size(); ct++ )
     {
         const int j          = tcs[ct].getTCPerm();
         const int startLayer = tcs[ct].depth_to_start - startingDepth;
         const int volDimZ    = tcs[ct].depths_to_search;
-        float*    ptr        = tcs[ct].getVolumeOut();
+        float*    ptr        = tcs[ct].getVolumeOutWithOffset();
 
         for( int i=0; i<volDimX * volDimY * volDimZ; i++ )
         {
             volume[j][i] = (unsigned char)( 255.0f * std::max(std::min(ptr[i],1.0f),0.0f) );
         }
     }
-#endif
 
     if( volume_buf_pinned )
         cudaFreeHost( volume_buf );

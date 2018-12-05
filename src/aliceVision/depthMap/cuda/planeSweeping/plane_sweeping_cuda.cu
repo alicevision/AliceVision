@@ -737,7 +737,7 @@ static void ps_computeSimilarityVolume(
 {
     configure_volume_slice_kernel();
 
-    const int max_tcs = tcams.size();
+    const int max_tcs = tcs.size();
 
     for( int ct=0; ct<max_tcs; ct++ )
     {
@@ -782,9 +782,10 @@ static void ps_computeSimilarityVolume(
           float* src = vol_dmp[ct]->getBuffer();
           // src += ( d * vol_dmp[ct]->getPitch() * volDimY / sizeof(float) );
 
-          float* dst = tcs[ct].getVolumeOut();
+          float* dst = tcs[ct].getVolumeOutWithOffset();
 
           dst += startDepth*volDimX*volDimY;
+
           copy2D( dst, volDimX, volDimY*numPlanesToCopy,
                   src, vol_dmp[ct]->getPitch(),
                   tcams[ct].stream );
@@ -820,7 +821,6 @@ void ps_planeSweepingGPUPixelsVolume(
         printf("%s: total size of volume maps for %d images in GPU memory: approx %4.2f MB\n", __FUNCTION__, max_tcs, mbytes );
     }
 
-    //--------------------------------------------------------------------------------------------------
     // compute similarity volume
     ps_computeSimilarityVolume(ps_texs_arr,
                                volSim_dmp,
