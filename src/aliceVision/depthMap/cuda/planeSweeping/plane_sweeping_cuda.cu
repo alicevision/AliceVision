@@ -737,20 +737,21 @@ static void ps_computeSimilarityVolume(
 {
     configure_volume_slice_kernel();
 
+    // compute similarity volume
+    const int xsteps = width / volStepXY;
+    const int ysteps = height / volStepXY;
+
     const int max_tcs = tcs.size();
 
     for( int ct=0; ct<max_tcs; ct++ )
     {
-        const int volDimZ = tcs[ct].depths_to_search;
+        const int volDimZ = tcs[ct].getDepthsToSearch();
 
         if(verbose)
-            printf("nDepths %i, nDepthsToSearch %i \n", (int)depths_dev.getUnitsTotal(), tcs[ct].depths_to_search );
+            printf("nDepths %i, nDepthsToSearch %i \n", (int)depths_dev.getUnitsTotal(), tcs[ct].getDepthsToSearch() );
 
-        // compute similarity volume
-        const int xsteps = width / volStepXY;
-        const int ysteps = height / volStepXY;
 
-        const int offset = tcs[ct].depth_to_start;
+        const int offset = tcs[ct].getDepthToStart();
 
         for( int startDepth=0; startDepth<volDimZ; startDepth+=zDimsAtATime )
         {

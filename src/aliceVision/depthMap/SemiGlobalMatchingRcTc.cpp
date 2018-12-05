@@ -164,8 +164,8 @@ void SemiGlobalMatchingRcTc::computeDepthSimMapVolume(
     for( int ct=0; ct<tcs.size(); ct++ )
     {
         const int j          = tcs[ct].getTCPerm();
-        const int startLayer = tcs[ct].depth_to_start - startingDepth;
-        const int volDimZ    = tcs[ct].depths_to_search;
+        // const int startLayer = tcs[ct].getDepthToStart() - startingDepth;
+        const int volDimZ    = tcs[ct].getDepthsToSearch(); // depths_to_search;
         float*    ptr        = tcs[ct].getVolumeOutWithOffset();
 
         for( int i=0; i<volDimX * volDimY * volDimZ; i++ )

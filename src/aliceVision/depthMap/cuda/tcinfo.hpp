@@ -21,10 +21,10 @@ private:
     /* tcidx is the local index of this TC for the computation of the current RC */
     const int _tcidx;
 
-public:
-    const int depth_to_start;
-    const int depths_to_search;
-private:
+    const int _depth_to_start;
+
+    const int _depths_to_search;
+
     float*    _volume_out;
 
     /* This is possibly refundant information.
@@ -45,8 +45,8 @@ public:
     OneTC( int tcj, int tc, int start, int search )
         : _tcperm( tcj )
         , _tcidx( tc )
-        , depth_to_start( start )
-        , depths_to_search( search )
+        , _depth_to_start( start )
+        , _depths_to_search( search )
         , _volume_out( 0 )
         , _depth_layer_size( 0 )
         , _unallocated_low_depth( 0 )
@@ -55,8 +55,8 @@ public:
     OneTC( const OneTC& orig )
         : _tcperm( orig._tcperm )
         , _tcidx( orig._tcidx )
-        , depth_to_start( orig.depth_to_start )
-        , depths_to_search( orig.depths_to_search )
+        , _depth_to_start( orig._depth_to_start )
+        , _depths_to_search( orig._depths_to_search )
         , _volume_out( orig._volume_out )
         , _depth_layer_size( orig._depth_layer_size )
         , _unallocated_low_depth( orig._unallocated_low_depth )
@@ -72,6 +72,21 @@ public:
         return _tcidx;
     }
 
+    inline int getDepthToStart() const
+    {
+        return _depth_to_start;
+    }
+
+    inline int getDepthsToSearch() const
+    {
+        return _depths_to_search;
+    }
+
+    inline int getDepthToStop() const
+    {
+        return _depth_to_start + _depths_to_search;
+    }
+
     void setVolumeOut( float* ptr, int depthLayerSize, int unallocatedLowDepths )
     {
         _volume_out            = ptr;
@@ -81,7 +96,7 @@ public:
 
     inline int getIgnoredLowLayers() const
     {
-        return depth_to_start - _unallocated_low_depth;
+        return _depth_to_start - _unallocated_low_depth;
     }
 
     inline float* getVolumeOutWithOffset()
