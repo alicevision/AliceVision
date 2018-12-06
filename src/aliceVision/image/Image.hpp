@@ -92,7 +92,7 @@ namespace aliceVision
       /**
       * @brief destructor
       */
-      virtual inline ~Image() {};
+      virtual inline ~Image() {}
       //-- Image construction method
       //------------------------------
 
@@ -163,6 +163,15 @@ namespace aliceVision
       inline T& operator()( int y, int x )
       {
         return Base::operator()( y, x );
+      }
+
+      inline const T& operator()( int i ) const
+      {
+        return Base::operator()( i );
+      }
+      inline T& operator()( int i )
+      {
+        return Base::operator()( i );
       }
 
       /**
