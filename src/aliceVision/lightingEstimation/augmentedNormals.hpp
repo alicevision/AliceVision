@@ -8,24 +8,137 @@
 
 
 namespace aliceVision {
-namespace inverseRendering {
+namespace lightingEstimation {
 
 using Eigen::MatrixXf;
 using namespace aliceVision::image;
 
-struct AugmentedNormals {
-	MatrixXf nx; 
-	MatrixXf ny; 
-	MatrixXf nz;
-	MatrixXf ambiant; 
-	MatrixXf nx_ny; 
-	MatrixXf nx_nz;
-	MatrixXf ny_nz; 
-	MatrixXf nx2_ny2; 
-	MatrixXf nz2;
+
+/**
+ * @brief Augmented normals
+ */
+class AugmentedNormal : public Eigen::Matrix<float, 9, 1, 0, 9, 1>
+{
+  using T = float;
+  typedef Eigen::Matrix<T, 9, 1, 0, 9, 1> BaseMatrix;
+  typedef T TBase;
+public:
+
+  inline AugmentedNormal()
+  {}
+
+  /**
+  * @brief Constructor from a normal value
+  */
+  inline AugmentedNormal(T nx, T ny, T nz)
+  {
+      (*this)(0) = nx;
+      (*this)(1) = ny;
+      (*this)(2) = nz;
+      (*this)(3) = 1;
+      (*this)(4) = nx*ny;
+      (*this)(5) = nx*nz;
+      (*this)(6) = ny*nz;
+      (*this)(7) = nx*nx - ny*ny;
+      (*this)(8) = 3 * nz * nz - 1;
+  }
+
+  /**
+  * @brief Constructor from eigen Matrix
+  */
+  explicit inline AugmentedNormal(const BaseMatrix& m)
+    : BaseMatrix(m)
+  {
+  }
+
+  explicit inline AugmentedNormal(const Eigen::Matrix<T, 3, 1, 0, 3, 1>& m)
+    : AugmentedNormal(m(0), m(1), m(2))
+  {
+  }
+
+  inline const T& nx() const
+  {
+    return ( *this )( 0 );
+  }
+  inline T& nx()
+  {
+    return ( *this )( 0 );
+  }
+
+  inline const T& ny() const
+  {
+    return ( *this )( 1 );
+  }
+  inline T& ny()
+  {
+    return ( *this )( 1 );
+  }
+
+  inline const T& nz() const
+  {
+    return ( *this )( 2 );
+  }
+  inline T& nz()
+  {
+    return ( *this )( 2 );
+  }
+
+  inline const T& nambiant() const
+  {
+    return ( *this )( 3 );
+  }
+  inline T& nambiant()
+  {
+    return ( *this )( 3 );
+  }
+
+  inline const T& nx_ny() const
+  {
+    return ( *this )( 4 );
+  }
+  inline T& nx_ny()
+  {
+    return ( *this )( 4 );
+  }
+
+  inline const T& nx_nz() const
+  {
+    return ( *this )( 5 );
+  }
+  inline T& nx_nz()
+  {
+    return ( *this )( 5 );
+  }
+
+  inline const T& ny_nz() const
+  {
+    return ( *this )( 6 );
+  }
+  inline T& ny_nz()
+  {
+    return ( *this )( 6 );
+  }
+
+  inline const T& nx2_ny2() const
+  {
+    return ( *this )( 7 );
+  }
+  inline T& nx2_ny2()
+  {
+    return ( *this )( 7 );
+  }
+
+  inline const T& nz2() const
+  {
+    return ( *this )( 8 );
+  }
+  inline T& nz2()
+  {
+    return ( *this )( 8 );
+  }
+
 };
 
-void getAugmentedNormals(AugmentedNormals& agmNormals, const Image<RGBfColor>& normals);
 
 }
 }

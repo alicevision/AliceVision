@@ -11,7 +11,7 @@
 #include <iostream>
 
 namespace aliceVision {
-namespace inverseRendering {
+namespace lightingEstimation {
 
 using Eigen::MatrixXf;
 

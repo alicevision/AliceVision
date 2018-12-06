@@ -18,3 +18,10 @@ alicevision_add_library(aliceVision_lightingEstimation
     Eigen3::Eigen
 )
 
+
+# Unit tests
+
+alicevision_add_test(lightingEstimation_test.cpp
+  NAME "lightingEstimation_lightingEstimation"
+  LINKS aliceVision_lightingEstimation
+)

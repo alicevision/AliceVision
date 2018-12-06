@@ -7,28 +7,28 @@
 
 
 namespace aliceVision {
-namespace inverseRendering {
+namespace lightingEstimation {
 
 
-void albedoNormalsProduct(MatrixXf& rhoTimesN, const MatrixXf& albedoChannel, const AugmentedNormals& augmentedNormals)
+void albedoNormalsProduct(MatrixXf& rhoTimesN, const MatrixXf& albedoChannel, const Image<AugmentedNormal>& augmentedNormals)
 {
-    for (int i = 0; i < augmentedNormals.ambiant.size(); ++i)
+    for (int i = 0; i < augmentedNormals.size(); ++i)
     {
-        rhoTimesN(i, 1) = albedoChannel(i) * augmentedNormals.nx(i);
-        rhoTimesN(i, 2) = albedoChannel(i) * augmentedNormals.ny(i);
-        rhoTimesN(i, 3) = albedoChannel(i) * augmentedNormals.nz(i);
-        rhoTimesN(i, 4) = albedoChannel(i) * augmentedNormals.ambiant(i);
-        rhoTimesN(i, 5) = albedoChannel(i) * augmentedNormals.nx_ny(i);
-        rhoTimesN(i, 6) = albedoChannel(i) * augmentedNormals.nx_nz(i);
-        rhoTimesN(i, 7) = albedoChannel(i) * augmentedNormals.ny_nz(i);
-        rhoTimesN(i, 8) = albedoChannel(i) * augmentedNormals.nx2_ny2(i);
-        rhoTimesN(i, 9) = albedoChannel(i) * augmentedNormals.nz2(i);
+        rhoTimesN(i, 0) = albedoChannel(i) * augmentedNormals(i).nx();
+        rhoTimesN(i, 1) = albedoChannel(i) * augmentedNormals(i).ny();
+        rhoTimesN(i, 2) = albedoChannel(i) * augmentedNormals(i).nz();
+        rhoTimesN(i, 3) = albedoChannel(i) * augmentedNormals(i).nambiant();
+        rhoTimesN(i, 4) = albedoChannel(i) * augmentedNormals(i).nx_ny();
+        rhoTimesN(i, 5) = albedoChannel(i) * augmentedNormals(i).nx_nz();
+        rhoTimesN(i, 6) = albedoChannel(i) * augmentedNormals(i).ny_nz();
+        rhoTimesN(i, 7) = albedoChannel(i) * augmentedNormals(i).nx2_ny2();
+        rhoTimesN(i, 8) = albedoChannel(i) * augmentedNormals(i).nz2();
     }
 }
 
-void estimateLigthingOneChannel(Eigen::Matrix<float, 9, 1>& lighting, const MatrixXf& albedoChannel, const MatrixXf& pictureChannel, const AugmentedNormals& augNormals)
+void estimateLigthingOneChannel(Eigen::Matrix<float, 9, 1>& lighting, const MatrixXf& albedoChannel, const MatrixXf& pictureChannel, const Image<AugmentedNormal>& augNormals)
 {
-    int nbPoints = augNormals.ambiant.size();
+    int nbPoints = augNormals.size();
 
     MatrixXf rhoTimesN(nbPoints, 9);
     albedoNormalsProduct(rhoTimesN, albedoChannel, augNormals);
@@ -43,21 +43,20 @@ void estimateLigthing(LightingVector& lighting, const Image<RGBfColor>& albedo, 
     // Map albedo, image
     std::size_t nbPixels = albedo.Width() * albedo.Height();
 
-    Map<MatrixXf, 0, OuterStride<3>> albedoR((float*)&albedo.data()->r(), nbPixels, 1);
-    Map<MatrixXf, 0, OuterStride<3>> albedoG((float*)&albedo.data()->g(), nbPixels, 1);
-    Map<MatrixXf, 0, OuterStride<3>> albedoB((float*)&albedo.data()->b(), nbPixels, 1);
+    Map<MatrixXf, 0, InnerStride<3>> albedoR((float*)&albedo.data()->r(), nbPixels, 1);
+    Map<MatrixXf, 0, InnerStride<3>> albedoG((float*)&albedo.data()->g(), nbPixels, 1);
+    Map<MatrixXf, 0, InnerStride<3>> albedoB((float*)&albedo.data()->b(), nbPixels, 1);
 
-    Map<MatrixXf, 0, OuterStride<3>> pictureR((float*)&picture.data()->r(), nbPixels, 1);
-    Map<MatrixXf, 0, OuterStride<3>> pictureG((float*)&picture.data()->g(), nbPixels, 1);
-    Map<MatrixXf, 0, OuterStride<3>> pictureB((float*)&picture.data()->b(), nbPixels, 1);
+    Map<MatrixXf, 0, InnerStride<3>> pictureR((float*)&picture.data()->r(), nbPixels, 1);
+    Map<MatrixXf, 0, InnerStride<3>> pictureG((float*)&picture.data()->g(), nbPixels, 1);
+    Map<MatrixXf, 0, InnerStride<3>> pictureB((float*)&picture.data()->b(), nbPixels, 1);
 
     Eigen::Matrix<float, 9, 1> lightingR;
     Eigen::Matrix<float, 9, 1> lightingG;
     Eigen::Matrix<float, 9, 1> lightingB;
 
     // Augmented normales
-    AugmentedNormals augNormals;
-    getAugmentedNormals(augNormals, normals);
+    Image<AugmentedNormal> augNormals(normals.cast<AugmentedNormal>());
 
     // EstimateLightingOneChannel
     estimateLigthingOneChannel(lightingR, albedoR, pictureR, augNormals);
