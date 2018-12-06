@@ -743,18 +743,23 @@ static void ps_computeSimilarityVolume(
 
     const int max_tcs = tcs.size();
 
-    for( int ct=0; ct<max_tcs; ct++ )
-    {
-        const int baseDepth = tcs[ct].getLowestUsedDepth();  // min of all TCs
-        const int stopDepth = tcs[ct].getHighestUsedDepth(); // max of all TCs
+    const int baseDepth = tcs[0].getLowestUsedDepth();  // min of all TCs
+    const int stopDepth = tcs[0].getHighestUsedDepth(); // max of all TCs
 
-        if(verbose)
+    if(verbose)
+    {
+        for( int ct=0; ct<max_tcs; ct++ )
+        {
             printf("nDepths %i, depths to skip %i (but enter), depths to search %i \n",
                     (int)depths_dev.getUnitsTotal(),
                     tcs[ct].getIgnoredLowLayers(),
                     tcs[ct].getDepthsToSearch() );
+        }
+    }
 
-        for( int depthOffset=0; depthOffset<stopDepth; depthOffset+=zDimsAtATime )
+    for( int depthOffset=0; depthOffset<stopDepth; depthOffset+=zDimsAtATime )
+    {
+        for( int ct=0; ct<max_tcs; ct++ )
         {
             const int numPlanesToCopy = std::min( zDimsAtATime, stopDepth - depthOffset );
 
