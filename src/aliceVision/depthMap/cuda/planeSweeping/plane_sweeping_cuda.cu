@@ -722,7 +722,7 @@ static void ps_computeSimilarityVolume(
                                 std::vector<CudaDeviceMemoryPitched<float, 3>*> vol_dmp,
                                 const cameraStruct& rcam,
                                 const std::vector<cameraStruct>& tcams,
-                                int width, int height,
+                                int stepLessWidth, int stepLessHeight,
                                 int volStepXY,
                                 int volDimX, int volDimY,
                                 const int zDimsAtATime,
@@ -738,8 +738,8 @@ static void ps_computeSimilarityVolume(
     configure_volume_slice_kernel();
 
     // compute similarity volume
-    const int xsteps = width / volStepXY;
-    const int ysteps = height / volStepXY;
+    // const int xsteps = stepLessWidth  / volStepXY;
+    // const int ysteps = stepLessHeight / volStepXY;
 
     const int max_tcs = tcs.size();
 
@@ -761,10 +761,26 @@ static void ps_computeSimilarityVolume(
     {
         for( int ct=0; ct<max_tcs; ct++ )
         {
+            dim3 block(32,4,1);
+
+            dim3 grid( divUp(volDimX,block.x),
+                       divUp(volDimY,block.y),
+                       zDimsAtATime );
+
+            volume_init_kernel
+                <<<grid,block,0,tcams[ct].stream>>>
+                ( vol_dmp[ct]->getBuffer(),
+                  vol_dmp[ct]->getBytesPaddedUpToDim(1),
+                  vol_dmp[ct]->getBytesPaddedUpToDim(0),
+                  volDimX, volDimY );
+        }
+
+        for( int ct=0; ct<max_tcs; ct++ )
+        {
             const int numPlanesToCopy = std::min( zDimsAtATime, stopDepth - depthOffset );
 
-            dim3 volume_slice_kernel_grid( divUp(xsteps, volume_slice_kernel_block.x),
-                                           divUp(ysteps, volume_slice_kernel_block.y),
+            dim3 volume_slice_kernel_grid( divUp(volDimX, volume_slice_kernel_block.x),
+                                           divUp(volDimY, volume_slice_kernel_block.y),
                                            numPlanesToCopy );
 
             volume_slice_kernel
@@ -777,7 +793,7 @@ static void ps_computeSimilarityVolume(
                   baseDepth + depthOffset,
                   tcs[ct].getDepthToStart(),
                   tcs[ct].getDepthToStop(),
-                  width, height,
+                  stepLessWidth, stepLessHeight,
                   wsh,
                   gammaC, gammaP, epipShift,
                   vol_dmp[ct]->getBuffer(),
@@ -804,7 +820,7 @@ void ps_planeSweepingGPUPixelsVolume(
         std::vector<CudaDeviceMemoryPitched<float, 3>*>& volSim_dmp,
         const cameraStruct& rcam,
         const std::vector<cameraStruct>& tcams,
-        int width, int height,
+        int stepLessWidth, int stepLessHeight,
         int volStepXY, int volDimX, int volDimY,
         const int zDimsAtATime,
         CudaDeviceMemory<float>& depths_dev,
@@ -831,7 +847,7 @@ void ps_planeSweepingGPUPixelsVolume(
     ps_computeSimilarityVolume(ps_texs_arr,
                                volSim_dmp,
                                rcam, tcams,
-                               width, height,
+                               stepLessWidth, stepLessHeight,
                                volStepXY,
                                volDimX, volDimY,
                                zDimsAtATime,

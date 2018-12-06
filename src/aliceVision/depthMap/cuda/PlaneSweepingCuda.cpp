@@ -788,8 +788,8 @@ void PlaneSweepingCuda::sweepPixelsToVolumeSubset(
 {
     clock_t t1 = tic();
 
-    const int w = mp->getWidth(rc) / scale;
-    const int h = mp->getHeight(rc) / scale;
+    const int stepLessWidth  = mp->getWidth(rc) / scale;
+    const int stepLessHeight = mp->getHeight(rc) / scale;
 
     const int max_tcs = tcs.size();
 
@@ -834,8 +834,9 @@ void PlaneSweepingCuda::sweepPixelsToVolumeSubset(
     ps_planeSweepingGPUPixelsVolume(
             ps_texs_arr,     // indexed with tcams[].camId
             volSim_dmp,
-            rcam, tcams, w, h, volStepXY,
-            volDimX, volDimY,
+            rcam, tcams,
+            stepLessWidth, stepLessHeight,
+            volStepXY, volDimX, volDimY,
             zDimsAtATime,
             depths_dev,
             tcs,

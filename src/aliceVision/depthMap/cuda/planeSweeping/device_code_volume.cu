@@ -23,6 +23,19 @@ inline __device__ void volume_computePatch( const cameraStructBase* rc_cam_s,
     computeRotCSEpip( rc_cam_s, tc_cam_s, ptch, p ); // no texture use
 }
 
+__global__ void volume_init_kernel( float* volume, int volume_s, int volume_p,
+                                    int volDimX, int volDimY )
+{
+    const int vx = blockIdx.x * blockDim.x + threadIdx.x;
+    const int vy = blockIdx.y * blockDim.y + threadIdx.y;
+    const int vz = blockIdx.z;
+
+    if( vx >= volDimX ) return;
+    if( vy >= volDimY ) return;
+
+    *get3DBufferAt(volume, volume_s, volume_p, vx, vy, vz) = 1.0f;
+}
+
 __global__ void volume_slice_kernel(
                                     cudaTextureObject_t rc_tex,
                                     cudaTextureObject_t tc_tex,
@@ -39,6 +52,14 @@ __global__ void volume_slice_kernel(
                                     int volStepXY,
                                     int volDimX, int volDimY )
 {
+    /*
+     * Note !
+     * volDimX == width  / volStepXY
+     * volDimY == height / volStepXY
+     * width and height are needed to compute transformations,
+     * volDimX and volDimY may be the number of samples, reducing memory or computation
+     */
+
     const int vx = blockIdx.x * blockDim.x + threadIdx.x;
     const int vy = blockIdx.y * blockDim.y + threadIdx.y;
     const int vz = blockIdx.z;
@@ -54,7 +75,8 @@ __global__ void volume_slice_kernel(
     if( x >= width  ) return;
     if( y >= height ) return;
 
-    float fsim = 1.0f;
+    // float fsim = 1.0f;
+    float fsim = *get3DBufferAt(volume, volume_s, volume_p, vx, vy, vz);
 
     if( depth >= lowestUsedDepth && depth < highestUsedDepth )
     {
@@ -69,17 +91,17 @@ __global__ void volume_slice_kernel(
         patch ptcho;
         volume_computePatch( rc_cam_s, tc_cam_s, ptcho, fpPlaneDepth, pix); // no texture use
 
-        fsim = compNCCby3DptsYK( rc_tex, tc_tex,
-                                 rc_cam_s, tc_cam_s,
-                                 ptcho, wsh,
-                                 width, height,
-                                 gammaC, gammaP,
-                                 epipShift);
+        float newfsim = compNCCby3DptsYK( rc_tex, tc_tex,
+                                          rc_cam_s, tc_cam_s,
+                                          ptcho, wsh,
+                                          width, height,
+                                          gammaC, gammaP,
+                                          epipShift);
 
         const float fminVal = -1.0f;
         const float fmaxVal = 1.0f;
-        fsim = (fsim - fminVal) / (fmaxVal - fminVal);
-        fsim = fminf(1.0f, fmaxf(0.0f, fsim));
+        newfsim = (newfsim - fminVal) / (fmaxVal - fminVal);
+        fsim    = fminf(fsim, fmaxf(0.0f, newfsim));
         // int sim = (unsigned char)(fsim * 255.0f); // upcast to int due to atomicMin
     }
 
