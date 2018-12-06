@@ -25,6 +25,7 @@ if(ALICEVISION_BUILD_SFM)
     SOURCE main_featureExtraction.cpp
     FOLDER ${FOLDER_SOFTWARE_PIPELINE}
     LINKS aliceVision_system
+          aliceVision_gpu
           aliceVision_image
           aliceVision_feature
           aliceVision_multiview
@@ -203,6 +204,7 @@ if(ALICEVISION_BUILD_MVS)
       SOURCE main_depthMapEstimation.cpp
       FOLDER ${FOLDER_SOFTWARE_PIPELINE}
       LINKS aliceVision_system
+            aliceVision_gpu
             aliceVision_mvsData
             aliceVision_mvsUtils
             aliceVision_depthMap

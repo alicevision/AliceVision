@@ -6,7 +6,7 @@
 
 #include "RefineRc.hpp"
 #include <aliceVision/system/Logger.hpp>
-#include <aliceVision/system/gpu.hpp>
+#include <aliceVision/gpu/gpu.hpp>
 
 #include <aliceVision/mvsData/Point2d.hpp>
 #include <aliceVision/mvsData/Point3d.hpp>
@@ -356,8 +356,9 @@ void refineDepthMaps(mvsUtils::MultiViewParams* mp, const StaticVector<int>& cam
 
     if(numthreads == 1)
     {
-        int bestGpuId = system::getBestGpuDeviceId(2, 0);
-        int CUDADeviceNo = mp->userParams.get<int>("global.CUDADeviceNo", bestGpuId);
+        // The GPU sorting is determined by an environment variable named CUDA_DEVICE_ORDER
+        // Possible values: FASTEST_FIRST (default) or PCI_BUS_ID
+        const int CUDADeviceNo = 0;
         refineDepthMaps(CUDADeviceNo, mp, cams);
     }
     else
