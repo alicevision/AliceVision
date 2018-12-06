@@ -1,7 +1,6 @@
 # Headers
 set(system_files_headers
   cpu.hpp
-  gpu.hpp
   MemoryInfo.hpp
   system.hpp
   Timer.hpp
