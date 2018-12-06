@@ -36,7 +36,7 @@ public:
     bool filterDepthMapsRC(int rc, int minNumOfModals, int minNumOfModalsWSP2SSP);
 
     void divideSpaceFromDepthMaps(Point3d* hexah, float& minPixSize);
-    void divideSpaceFromSfM(const sfmData::SfMData& sfmData, Point3d* hexah, std::size_t minObservations = 0) const;
+    void divideSpaceFromSfM(const sfmData::SfMData& sfmData, Point3d* hexah, std::size_t minObservations = 0, float minObservationAngle = 0.0f) const;
 
     /// @brief Compute average pixel size in the given hexahedron
     float computeAveragePixelSizeInHexahedron(Point3d* hexah, int step, int scale);

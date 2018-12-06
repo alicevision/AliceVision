@@ -564,7 +564,41 @@ void Fuser::divideSpaceFromDepthMaps(Point3d* hexah, float& minPixSize)
     ALICEVISION_LOG_INFO("Estimate space done.");
 }
 
-void Fuser::divideSpaceFromSfM(const sfmData::SfMData& sfmData, Point3d* hexah, std::size_t minObservations) const
+bool checkLandmarkMinObservationAngle(const sfmData::SfMData& sfmData, const sfmData::Landmark& landmark, float minObservationAngle)
+{
+  for(const auto& observationPairI : landmark.observations)
+  {
+    const IndexT I = observationPairI.first;
+    const sfmData::View& viewI = *(sfmData.getViews().at(I));
+    const geometry::Pose3 poseI = sfmData.getPose(viewI).getTransform();
+    const camera::IntrinsicBase* intrinsicPtrI = sfmData.getIntrinsicPtr(viewI.getIntrinsicId());
+
+    for(const auto& observationPairJ : landmark.observations)
+    {
+      const IndexT J = observationPairJ.first;
+
+      // cannot compare the current view with itself
+      if(I == J)
+        continue;
+
+      const sfmData::View& viewJ = *(sfmData.getViews().at(J));
+      const geometry::Pose3 poseJ = sfmData.getPose(viewJ).getTransform();
+      const camera::IntrinsicBase* intrinsicPtrJ = sfmData.getIntrinsicPtr(viewJ.getIntrinsicId());
+
+      const double angle = camera::AngleBetweenRays(poseI, intrinsicPtrI, poseJ, intrinsicPtrJ, observationPairI.second.x, observationPairJ.second.x);
+
+      // check angle between two observation
+      if(angle < minObservationAngle)
+        continue;
+
+      return true;
+    }
+  }
+
+  return false;
+}
+
+void Fuser::divideSpaceFromSfM(const sfmData::SfMData& sfmData, Point3d* hexah, std::size_t minObservations, float minObservationAngle) const
 {
   ALICEVISION_LOG_INFO("Estimate space from SfM.");
 
@@ -586,7 +620,12 @@ void Fuser::divideSpaceFromSfM(const sfmData::SfMData& sfmData, Point3d* hexah, 
   {
     const sfmData::Landmark& landmark = landmarkPair.second;
 
+    // check number of observations
     if(landmark.observations.size() < minObservations)
+      continue;
+
+    // check angle between observations
+    if(!checkLandmarkMinObservationAngle(sfmData, landmark, minObservationAngle))
       continue;
 
     const double x = landmark.X(0);
