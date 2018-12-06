@@ -68,6 +68,7 @@ alicevision_add_library(aliceVision_feature
     aliceVision_image
     aliceVision_numeric
     aliceVision_system
+    aliceVision_gpu
     vlsift
   PRIVATE_LINKS
     ${Boost_FILESYSTEM_LIBRARY}
@@ -80,7 +81,7 @@ endif()
 
 # Link PopSIFT library
 if(ALICEVISION_HAVE_POPSIFT)
-  target_link_libraries(aliceVision_feature PUBLIC PopSift::popsift)
+  target_link_libraries(aliceVision_feature PRIVATE PopSift::popsift)
 endif()
 
 # Link OpenCV library

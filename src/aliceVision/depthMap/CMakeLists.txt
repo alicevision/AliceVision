@@ -73,6 +73,8 @@ alicevision_add_library(aliceVision_depthMap
     ${Boost_FILESYSTEM_LIBRARY}
     ${CUDA_CUDADEVRT_LIBRARY}
     ${CUDA_CUBLAS_LIBRARIES} #TODO shouldn't be here, but required to build on some machines
+  PRIVATE_LINKS
+    aliceVision_gpu
   PUBLIC_INCLUDE_DIRS
     ${CUDA_INCLUDE_DIRS}
 )
