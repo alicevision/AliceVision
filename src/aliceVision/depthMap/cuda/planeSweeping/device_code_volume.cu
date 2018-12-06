@@ -30,7 +30,10 @@ __global__ void volume_slice_kernel(
                                     const cameraStructBase* tc_cam_s,
                                     float* depths_dev,
                                     const int startDimZ,
-                                    int width, int height, int wsh,
+                                    const int lowestUsedDepth,
+                                    const int highestUsedDepth,
+                                    int width, int height,
+                                    int wsh,
                                     const float gammaC, const float gammaP, const float epipShift,
                                     float* volume, int volume_s, int volume_p,
                                     int volStepXY,
@@ -46,32 +49,39 @@ __global__ void volume_slice_kernel(
     const int x = vx * volStepXY;
     const int y = vy * volStepXY;
 
-    const float fpPlaneDepth = depths_dev[startDimZ+vz];
+    const int depth = startDimZ + vz;
 
     if( x >= width  ) return;
     if( y >= height ) return;
 
-    // const unsigned char occluded = tex2D(r4tex, x+0.5f, y+0.5f).w;
-    const float occluded = tex2D<float4>(rc_tex, x+0.5f, y+0.5f).w;
-    if( occluded > 0.75f ) return;
+    float fsim = 1.0f;
 
-    const int2 pix = make_int2( x, y );
+    if( depth >= lowestUsedDepth && depth < highestUsedDepth )
+    {
+        const float fpPlaneDepth = depths_dev[depth];
 
-    patch ptcho;
-    volume_computePatch( rc_cam_s, tc_cam_s, ptcho, fpPlaneDepth, pix); // no texture use
+        // const unsigned char occluded = tex2D(r4tex, x+0.5f, y+0.5f).w;
+        const float occluded = tex2D<float4>(rc_tex, x+0.5f, y+0.5f).w;
+        if( occluded > 0.75f ) return;
 
-    float fsim = compNCCby3DptsYK( rc_tex, tc_tex,
-                                   rc_cam_s, tc_cam_s,
-                                   ptcho, wsh,
-                                   width, height,
-                                   gammaC, gammaP,
-                                   epipShift);
+        const int2 pix = make_int2( x, y );
 
-    const float fminVal = -1.0f;
-    const float fmaxVal = 1.0f;
-    fsim = (fsim - fminVal) / (fmaxVal - fminVal);
-    fsim = fminf(1.0f, fmaxf(0.0f, fsim));
-    // int sim = (unsigned char)(fsim * 255.0f); // upcast to int due to atomicMin
+        patch ptcho;
+        volume_computePatch( rc_cam_s, tc_cam_s, ptcho, fpPlaneDepth, pix); // no texture use
+
+        fsim = compNCCby3DptsYK( rc_tex, tc_tex,
+                                 rc_cam_s, tc_cam_s,
+                                 ptcho, wsh,
+                                 width, height,
+                                 gammaC, gammaP,
+                                 epipShift);
+
+        const float fminVal = -1.0f;
+        const float fmaxVal = 1.0f;
+        fsim = (fsim - fminVal) / (fmaxVal - fminVal);
+        fsim = fminf(1.0f, fmaxf(0.0f, fsim));
+        // int sim = (unsigned char)(fsim * 255.0f); // upcast to int due to atomicMin
+    }
 
     *get3DBufferAt(volume, volume_s, volume_p, vx, vy, vz) = fsim;
 }

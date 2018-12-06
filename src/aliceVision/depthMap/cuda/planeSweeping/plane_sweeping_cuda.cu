@@ -745,19 +745,18 @@ static void ps_computeSimilarityVolume(
 
     for( int ct=0; ct<max_tcs; ct++ )
     {
-        const int volDimZ = tcs[ct].getDepthsToSearch();
+        const int baseDepth = tcs[ct].getLowestUsedDepth();  // min of all TCs
+        const int stopDepth = tcs[ct].getHighestUsedDepth(); // max of all TCs
 
         if(verbose)
-            printf("nDepths %i, nDepthsToSearch %i \n", (int)depths_dev.getUnitsTotal(), tcs[ct].getDepthsToSearch() );
+            printf("nDepths %i, depths to skip %i (but enter), depths to search %i \n",
+                    (int)depths_dev.getUnitsTotal(),
+                    tcs[ct].getIgnoredLowLayers(),
+                    tcs[ct].getDepthsToSearch() );
 
-
-        const int offset = tcs[ct].getDepthToStart();
-
-        for( int startDepth=0; startDepth<volDimZ; startDepth+=zDimsAtATime )
+        for( int depthOffset=0; depthOffset<stopDepth; depthOffset+=zDimsAtATime )
         {
-            const int numPlanesToCopy = ( startDepth+zDimsAtATime < volDimZ )
-                                      ? zDimsAtATime
-                                      : volDimZ - startDepth;
+            const int numPlanesToCopy = std::min( zDimsAtATime, stopDepth - depthOffset );
 
             dim3 volume_slice_kernel_grid( divUp(xsteps, volume_slice_kernel_block.x),
                                            divUp(ysteps, volume_slice_kernel_block.y),
@@ -770,7 +769,9 @@ static void ps_computeSimilarityVolume(
                   rcam.param_dev,
                   tcams[ct].param_dev,
                   depths_dev.getBuffer(),
-                  offset + startDepth,
+                  baseDepth + depthOffset,
+                  tcs[ct].getDepthToStart(),
+                  tcs[ct].getDepthToStop(),
                   width, height,
                   wsh,
                   gammaC, gammaP, epipShift,
@@ -782,9 +783,9 @@ static void ps_computeSimilarityVolume(
 
             float* src = vol_dmp[ct]->getBuffer();
 
-            float* dst = tcs[ct].getVolumeOutWithOffset();
+            float* dst = tcs[ct].getVolumeOut();
 
-            dst += startDepth*volDimX*volDimY;
+            dst += depthOffset*volDimX*volDimY;
 
             copy2D( dst, volDimX, volDimY*numPlanesToCopy,
                     src, vol_dmp[ct]->getPitch(),

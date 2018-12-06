@@ -28,8 +28,8 @@ private:
     float*    _volume_out;
 
     /* This is possibly refundant information.
-     * It is the number of floats that are contained in a single depth
-     * level of a host-side volume.
+     * It is the number of units (floats) that are contained in a single
+     * depth level of a host-side volume.
      * It is used to compute offsets from _volume_out.
      */
     int _depth_layer_size;
@@ -39,7 +39,13 @@ private:
      * least on TC's sweep. Some initial depths are not needed for any TCs,
      * the number of those is kept here.
      */
-    int _unallocated_low_depth;
+    int _lowest_allocated_depth;
+
+    /* This is possibly refundant information.
+     * To unify depth processing for all TCs, we keep the max of the max
+     * depths for all TC in _highest_allocated_depth;
+     */
+    int _highest_allocated_depth;
 
 public:
     OneTC( int tcj, int tc, int start, int search )
@@ -49,7 +55,8 @@ public:
         , _depths_to_search( search )
         , _volume_out( 0 )
         , _depth_layer_size( 0 )
-        , _unallocated_low_depth( 0 )
+        , _lowest_allocated_depth( 0 )
+        , _highest_allocated_depth( 0 )
     { }
 
     OneTC( const OneTC& orig )
@@ -59,7 +66,8 @@ public:
         , _depths_to_search( orig._depths_to_search )
         , _volume_out( orig._volume_out )
         , _depth_layer_size( orig._depth_layer_size )
-        , _unallocated_low_depth( orig._unallocated_low_depth )
+        , _lowest_allocated_depth( orig._lowest_allocated_depth )
+        , _highest_allocated_depth( orig._highest_allocated_depth )
     { }
 
     inline int getTCPerm() const
@@ -87,16 +95,27 @@ public:
         return _depth_to_start + _depths_to_search;
     }
 
-    void setVolumeOut( float* ptr, int depthLayerSize, int unallocatedLowDepths )
+    inline int getLowestUsedDepth() const
     {
-        _volume_out            = ptr;
-        _depth_layer_size      = depthLayerSize;
-        _unallocated_low_depth = unallocatedLowDepths;
+        return _lowest_allocated_depth;
+    }
+
+    inline int getHighestUsedDepth() const
+    {
+        return _highest_allocated_depth;
+    }
+
+    void setVolumeOut( float* ptr, int depthLayerSize, int lowestAllocatedDepth, int highestAllocatedDepth )
+    {
+        _volume_out             = ptr;
+        _depth_layer_size       = depthLayerSize;
+        _lowest_allocated_depth = lowestAllocatedDepth;
+        _highest_allocated_depth = highestAllocatedDepth;
     }
 
     inline int getIgnoredLowLayers() const
     {
-        return _depth_to_start - _unallocated_low_depth;
+        return _depth_to_start - _lowest_allocated_depth;
     }
 
     inline float* getVolumeOutWithOffset()
@@ -104,12 +123,10 @@ public:
         return _volume_out + getIgnoredLowLayers() * _depth_layer_size;
     }
 
-#if 0
     inline float* getVolumeOut()
     {
         return _volume_out;
     }
-#endif
 };
 
 } // namespace depthMap

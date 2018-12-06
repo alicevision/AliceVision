@@ -143,7 +143,8 @@ void SemiGlobalMatchingRcTc::computeDepthSimMapVolume(
     {
         tcs[ct].setVolumeOut( volume_buf + ct * volume_offset,
                               depth_layer_size,
-                              startingDepth );
+                              startingDepth,
+                              stoppingDepth );
     }
 
     sp->cps.sweepPixelsToVolume( volume_tmp_on_gpu,
