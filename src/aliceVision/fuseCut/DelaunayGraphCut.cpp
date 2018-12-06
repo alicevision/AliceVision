@@ -7,6 +7,7 @@
 #include "DelaunayGraphCut.hpp"
 // #include <aliceVision/fuseCut/MaxFlow_CSR.hpp>
 #include <aliceVision/fuseCut/MaxFlow_AdjList.hpp>
+#include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/mvsData/geometry.hpp>
 #include <aliceVision/mvsData/jetColorMap.hpp>
 #include <aliceVision/mvsData/Pixel.hpp>
@@ -295,7 +296,7 @@ void createVerticesWithVisibilities(const StaticVector<int>& cams, std::vector<P
         std::vector<float> simMap;
         int width, height;
         {
-            const std::string depthMapFilepath = mv_getFileName(mp, c, mvsUtils::EFileType::depthMap, 0);
+            const std::string depthMapFilepath = getFileNameFromIndex(mp, c, mvsUtils::EFileType::depthMap, 0);
             imageIO::readImage(depthMapFilepath, width, height, depthMap);
             if(depthMap.empty())
             {
@@ -303,7 +304,7 @@ void createVerticesWithVisibilities(const StaticVector<int>& cams, std::vector<P
                 continue;
             }
             int wTmp, hTmp;
-            const std::string simMapFilepath = mv_getFileName(mp, c, mvsUtils::EFileType::simMap, 0);
+            const std::string simMapFilepath = getFileNameFromIndex(mp, c, mvsUtils::EFileType::simMap, 0);
             imageIO::readImage(simMapFilepath, wTmp, hTmp, simMap);
             if(wTmp != width || hTmp != height)
                 throw std::runtime_error("Similarity map size doesn't match the depth map size: " + simMapFilepath + ", " + depthMapFilepath);
@@ -393,7 +394,7 @@ DelaunayGraphCut::DelaunayGraphCut(mvsUtils::MultiViewParams* _mp, mvsUtils::Pre
 
     _camsVertexes.resize(mp->ncams, -1);
 
-    saveTemporaryBinFiles = mp->_ini.get<bool>("LargeScale.saveTemporaryBinFiles", false);
+    saveTemporaryBinFiles = mp->userParams.get<bool>("LargeScale.saveTemporaryBinFiles", false);
 
     GEO::initialize();
     _tetrahedralization = GEO::Delaunay::create(3, "BDEL");
@@ -406,7 +407,7 @@ DelaunayGraphCut::~DelaunayGraphCut()
 {
 }
 
-void DelaunayGraphCut::saveDhInfo(std::string fileNameInfo)
+void DelaunayGraphCut::saveDhInfo(const std::string& fileNameInfo)
 {
     FILE* f = fopen(fileNameInfo.c_str(), "wb");
 
@@ -426,13 +427,14 @@ void DelaunayGraphCut::saveDhInfo(std::string fileNameInfo)
     fclose(f);
 }
 
-void DelaunayGraphCut::saveDh(std::string fileNameDh, std::string fileNameInfo)
+void DelaunayGraphCut::saveDh(const std::string& fileNameDh, const std::string& fileNameInfo)
 {
-    ALICEVISION_LOG_DEBUG("Saving triangulation");
+    ALICEVISION_LOG_DEBUG("Saving triangulation.");
 
     saveDhInfo(fileNameInfo);
 
     long t1 = clock();
+
     // std::ofstream oFileT(fileNameDh.c_str());
     // oFileT << *_tetrahedralization; // TODO GEOGRAM
 
@@ -666,7 +668,7 @@ void DelaunayGraphCut::addPointsFromCameraCenters(const StaticVector<int>& cams,
     }
 }
 
-void DelaunayGraphCut::addPointsToPreventSingularities(Point3d voxel[8], float minDist)
+void DelaunayGraphCut::addPointsToPreventSingularities(const Point3d voxel[8], float minDist)
 {
     ALICEVISION_LOG_DEBUG("Add points to prevent singularities");
 
@@ -709,7 +711,7 @@ void DelaunayGraphCut::addPointsToPreventSingularities(Point3d voxel[8], float m
     }
 }
 
-void DelaunayGraphCut::addHelperPoints(int nGridHelperVolumePointsDim, Point3d voxel[8], float minDist)
+void DelaunayGraphCut::addHelperPoints(int nGridHelperVolumePointsDim, const Point3d voxel[8], float minDist)
 {
     if(nGridHelperVolumePointsDim <= 0)
         return;
@@ -815,7 +817,7 @@ void DelaunayGraphCut::fuseFromDepthMaps(const StaticVector<int>& cams, const Po
             std::vector<unsigned char> numOfModalsMap;
             int width, height;
             {
-                const std::string depthMapFilepath = mv_getFileName(mp, c, mvsUtils::EFileType::depthMap, 0);
+                const std::string depthMapFilepath = getFileNameFromIndex(mp, c, mvsUtils::EFileType::depthMap, 0);
                 imageIO::readImage(depthMapFilepath, width, height, depthMap);
                 if(depthMap.empty())
                 {
@@ -823,7 +825,7 @@ void DelaunayGraphCut::fuseFromDepthMaps(const StaticVector<int>& cams, const Po
                     continue;
                 }
                 int wTmp, hTmp;
-                const std::string simMapFilepath = mv_getFileName(mp, c, mvsUtils::EFileType::simMap, 0);
+                const std::string simMapFilepath = getFileNameFromIndex(mp, c, mvsUtils::EFileType::simMap, 0);
                 imageIO::readImage(simMapFilepath, wTmp, hTmp, simMap);
                 if(wTmp != width || hTmp != height)
                     throw std::runtime_error("Wrong sim map dimensions: " + simMapFilepath);
@@ -833,7 +835,7 @@ void DelaunayGraphCut::fuseFromDepthMaps(const StaticVector<int>& cams, const Po
                     simMap.swap(simMapTmp);
                 }
 
-                const std::string nmodMapFilepath = mv_getFileName(mp, c, mvsUtils::EFileType::nmodMap, 0);
+                const std::string nmodMapFilepath = getFileNameFromIndex(mp, c, mvsUtils::EFileType::nmodMap, 0);
                 imageIO::readImage(nmodMapFilepath, wTmp, hTmp, numOfModalsMap);
                 if(wTmp != width || hTmp != height)
                     throw std::runtime_error("Wrong nmod map dimensions: " + nmodMapFilepath);
@@ -1045,8 +1047,8 @@ void DelaunayGraphCut::loadPrecomputedDensePoints(const StaticVector<int>* voxel
     Point3d cgpt;
     int ncgpt = 0;
 
-    bool doFilterOctreeTracks = mp->_ini.get<bool>("LargeScale.doFilterOctreeTracks", true);
-    int minNumOfConsistentCams = mp->_ini.get<int>("filter.minNumOfConsistentCams", 2);
+    bool doFilterOctreeTracks = mp->userParams.get<bool>("LargeScale.doFilterOctreeTracks", true);
+    int minNumOfConsistentCams = mp->userParams.get<int>("filter.minNumOfConsistentCams", 2);
 
     // add points from voxel
     for(int i = 0; i < voxelsIds->size(); i++)
@@ -1111,9 +1113,9 @@ void DelaunayGraphCut::loadPrecomputedDensePoints(const StaticVector<int>* voxel
 void DelaunayGraphCut::computeVerticesSegSize(bool allPoints, float alpha) // allPoints=true, alpha=0
 {
     ALICEVISION_LOG_DEBUG("creating universe");
-    int scalePS = mp->_ini.get<int>("global.scalePS", 1);
-    int step = mp->_ini.get<int>("global.step", 1);
-    float pointToJoinPixSizeDist = (float)mp->_ini.get<double>("delaunaycut.pointToJoinPixSizeDist", 2.0) *
+    int scalePS = mp->userParams.get<int>("global.scalePS", 1);
+    int step = mp->userParams.get<int>("global.step", 1);
+    float pointToJoinPixSizeDist = (float)mp->userParams.get<double>("delaunaycut.pointToJoinPixSizeDist", 2.0) *
                                    (float)scalePS * (float)step * 2.0f;
 
     std::vector<Pixel> edges;
@@ -1754,10 +1756,10 @@ void DelaunayGraphCut::forceTedgesByGradientCVPR11(bool fixesSigma, float nPixel
     ALICEVISION_LOG_INFO("Forcing t-edges.");
     long t2 = clock();
 
-    float delta = (float)mp->_ini.get<double>("delaunaycut.delta", 0.1f);
+    float delta = (float)mp->userParams.get<double>("delaunaycut.delta", 0.1f);
     ALICEVISION_LOG_INFO("delta: " << delta);
 
-    float beta = (float)mp->_ini.get<double>("delaunaycut.beta", 1000.0f);
+    float beta = (float)mp->userParams.get<double>("delaunaycut.beta", 1000.0f);
     ALICEVISION_LOG_INFO("beta: " << beta);
 
     for(GC_cellInfo& c: _cellsAttr)
@@ -1854,22 +1856,22 @@ void DelaunayGraphCut::forceTedgesByGradientIJCV(bool fixesSigma, float nPixelSi
     ALICEVISION_LOG_INFO("Forcing t-edges");
     long t2 = clock();
 
-    float delta = (float)mp->_ini.get<double>("delaunaycut.delta", 0.1f);
+    float delta = (float)mp->userParams.get<double>("delaunaycut.delta", 0.1f);
     ALICEVISION_LOG_DEBUG("delta: " << delta);
 
-    float minJumpPartRange = (float)mp->_ini.get<double>("delaunaycut.minJumpPartRange", 10000.0f);
+    float minJumpPartRange = (float)mp->userParams.get<double>("delaunaycut.minJumpPartRange", 10000.0f);
     ALICEVISION_LOG_DEBUG("minJumpPartRange: " << minJumpPartRange);
 
-    float maxSilentPartRange = (float)mp->_ini.get<double>("delaunaycut.maxSilentPartRange", 100.0f);
+    float maxSilentPartRange = (float)mp->userParams.get<double>("delaunaycut.maxSilentPartRange", 100.0f);
     ALICEVISION_LOG_DEBUG("maxSilentPartRange: " << maxSilentPartRange);
 
-    float nsigmaJumpPart = (float)mp->_ini.get<double>("delaunaycut.nsigmaJumpPart", 2.0f);
+    float nsigmaJumpPart = (float)mp->userParams.get<double>("delaunaycut.nsigmaJumpPart", 2.0f);
     ALICEVISION_LOG_DEBUG("nsigmaJumpPart: " << nsigmaJumpPart);
 
-    float nsigmaFrontSilentPart = (float)mp->_ini.get<double>("delaunaycut.nsigmaFrontSilentPart", 2.0f);
+    float nsigmaFrontSilentPart = (float)mp->userParams.get<double>("delaunaycut.nsigmaFrontSilentPart", 2.0f);
     ALICEVISION_LOG_DEBUG("nsigmaFrontSilentPart: " << nsigmaFrontSilentPart);
 
-    float nsigmaBackSilentPart = (float)mp->_ini.get<double>("delaunaycut.nsigmaBackSilentPart", 2.0f);
+    float nsigmaBackSilentPart = (float)mp->userParams.get<double>("delaunaycut.nsigmaBackSilentPart", 2.0f);
     ALICEVISION_LOG_DEBUG("nsigmaBackSilentPart: " << nsigmaBackSilentPart);
 
 
@@ -2076,8 +2078,8 @@ void DelaunayGraphCut::updateGraphFromTmpPtsCamsHexahRC(int rc, Point3d hexah[8]
     std::string camPtsFileName;
     camPtsFileName = tmpCamsPtsFolderName + "camPtsGrid_" + mvsUtils::num2strFourDecimal(rc) + ".bin";
 
-    bool doFilterOctreeTracks = mp->_ini.get<bool>("LargeScale.doFilterOctreeTracks", true);
-    int minNumOfConsistentCams = mp->_ini.get<int>("filter.minNumOfConsistentCams", 2);
+    bool doFilterOctreeTracks = mp->userParams.get<bool>("LargeScale.doFilterOctreeTracks", true);
+    int minNumOfConsistentCams = mp->userParams.get<int>("filter.minNumOfConsistentCams", 2);
 
     /////////////////////////////////////////////////////////////////////////////////
     FILE* f = fopen(camPtsFileName.c_str(), "rb");
@@ -2231,10 +2233,10 @@ void DelaunayGraphCut::freeUnwantedFullCells(const Point3d* hexah)
 {
     ALICEVISION_LOG_DEBUG("freeUnwantedFullCells\n");
 
-    int minSegmentSize = (int)mp->_ini.get<int>("hallucinationsFiltering.minSegmentSize", 10);
-    bool doRemoveBubbles = (bool)mp->_ini.get<bool>("hallucinationsFiltering.doRemoveBubbles", true);
-    bool doRemoveDust = (bool)mp->_ini.get<bool>("hallucinationsFiltering.doRemoveDust", true);
-    bool doLeaveLargestFullSegmentOnly = (bool)mp->_ini.get<bool>("hallucinationsFiltering.doLeaveLargestFullSegmentOnly", false);
+    int minSegmentSize = (int)mp->userParams.get<int>("hallucinationsFiltering.minSegmentSize", 10);
+    bool doRemoveBubbles = (bool)mp->userParams.get<bool>("hallucinationsFiltering.doRemoveBubbles", true);
+    bool doRemoveDust = (bool)mp->userParams.get<bool>("hallucinationsFiltering.doRemoveDust", true);
+    bool doLeaveLargestFullSegmentOnly = (bool)mp->userParams.get<bool>("hallucinationsFiltering.doLeaveLargestFullSegmentOnly", false);
 
     if(doRemoveBubbles)
     {
@@ -2369,80 +2371,115 @@ void DelaunayGraphCut::invertFullStatusForSmallLabels()
     delete buff;
 }
 
-void DelaunayGraphCut::reconstructVoxel(Point3d hexah[8], StaticVector<int>* voxelsIds, const std::string& folderName,
-                                      const std::string& tmpCamsPtsFolderName, bool removeSmallSegments,
-                                      VoxelsGrid* ls, const Point3d& spaceSteps, const FuseParams& fuseParams)
+void DelaunayGraphCut::createDensePointCloudFromDepthMaps(Point3d hexah[8], const StaticVector<int>& cams, StaticVector<int>* voxelsIds, VoxelsGrid* ls, const FuseParams& fuseParams)
 {
-    StaticVector<int> cams;
-    if(hexah)
+  // Load tracks
+  ALICEVISION_LOG_INFO("Creating delaunay tetrahedralization from depth maps voxel");
+
+  float minDist = hexah ? (hexah[0] - hexah[1]).size() / 1000.0f : 0.00001f;
+
+  // add points for cam centers
+  addPointsFromCameraCenters(cams, minDist);
+
+  // add 6 points to prevent singularities
+  addPointsToPreventSingularities(hexah, minDist);
+
+  if(ls)
+    loadPrecomputedDensePoints(voxelsIds, hexah, ls);
+  else
+    fuseFromDepthMaps(cams, hexah, fuseParams);
+
+  // initialize random seed
+  srand(time(nullptr));
+
+  int nGridHelperVolumePointsDim = mp->userParams.get<int>("LargeScale.nGridHelperVolumePointsDim", 10);
+
+  // add volume points to prevent singularities
+  addHelperPoints(nGridHelperVolumePointsDim, hexah, minDist);
+}
+
+void DelaunayGraphCut::createDensePointCloudFromSfM(const Point3d hexah[8], const StaticVector<int>& cams, const sfmData::SfMData& sfmData)
+{
+  // Load tracks
+  float minDist = hexah ? (hexah[0] - hexah[1]).size() / 1000.0f : 0.00001f;
+
+  // add points for cam centers
+  addPointsFromCameraCenters(cams, minDist);
+
+  // add 6 points to prevent singularities
+  addPointsToPreventSingularities(hexah, minDist);
+
+  const std::size_t nbPoints = sfmData.getLandmarks().size();
+  const std::size_t verticesOffset = _verticesCoords.size();
+
+  _verticesCoords.resize(verticesOffset + nbPoints);
+  _verticesAttr.resize(verticesOffset + nbPoints);
+
+  sfmData:: Landmarks::const_iterator landmarkIt = sfmData.getLandmarks().begin();
+  std::vector<Point3d>::iterator vCoordsIt = _verticesCoords.begin();
+  std::vector<GC_vertexInfo>::iterator vAttrIt = _verticesAttr.begin();
+
+  std::advance(vCoordsIt, verticesOffset);
+  std::advance(vAttrIt, verticesOffset);
+
+  for(std::size_t i = 0; i < nbPoints; ++i)
+  {
+    const sfmData::Landmark& landmark = landmarkIt->second;
+    const Point3d p(landmark.X(0), landmark.X(1), landmark.X(2));
+
+    if(mvsUtils::isPointInHexahedron(p, hexah))
     {
-        cams = pc->findCamsWhichIntersectsHexahedron(hexah);
+      *vCoordsIt = p;
+
+      vAttrIt->nrc = landmark.observations.size();
+      vAttrIt->cams.reserve(vAttrIt->nrc);
+
+      for(const auto& observationPair : landmark.observations)
+        vAttrIt->cams.push_back(mp->getIndexFromViewId(observationPair.first));
+
+      ++vCoordsIt;
+      ++vAttrIt;
     }
-    else
-    {
-        cams.resize(mp->getNbCameras());
-        for(int i = 0; i < cams.size(); ++i)
-            cams[i] = i;
-    }
+    ++landmarkIt;
+  }
 
-    if(cams.size() < 1)
-        throw std::logic_error("No camera to make the reconstruction");
+  _verticesCoords.shrink_to_fit();
+  _verticesAttr.shrink_to_fit();
 
-    // Load tracks
-    ALICEVISION_LOG_INFO("Creating delaunay tetrahedralization from depth maps voxel");
+  // initialize random seed
+  srand(time(nullptr));
 
-    float minDist = hexah ? (hexah[0] - hexah[1]).size() / 1000.0f : 0.00001f;
+  const int nGridHelperVolumePointsDim = mp->userParams.get<int>("LargeScale.nGridHelperVolumePointsDim", 10);
 
-    // add points for cam centers
-    addPointsFromCameraCenters(cams, minDist);
+  // add volume points to prevent singularities
+  addHelperPoints(nGridHelperVolumePointsDim, hexah, minDist);
+}
 
-    // add 6 points to prevent singularities
-    addPointsToPreventSingularities(hexah, minDist);
+void DelaunayGraphCut::createGraphCut(Point3d hexah[8], const StaticVector<int>& cams, VoxelsGrid* ls, const std::string& folderName, const std::string& tmpCamsPtsFolderName, bool removeSmallSegments, const Point3d& spaceSteps)
+{
+  initVertices();
 
-    if(ls)
-    {
-        loadPrecomputedDensePoints(voxelsIds, hexah, ls);
-    }
-    else
-    {
-        fuseFromDepthMaps(cams, hexah, fuseParams);
-    }
+  // Create tetrahedralization
+  computeDelaunay();
+  displayStatistics();
 
-    // initialize random seed
-    srand(time(nullptr));
+  computeVerticesSegSize(true, 0.0f); // TODO: could go into the "if(removeSmallSegments)"?
 
-    {
-        int nGridHelperVolumePointsDim = mp->_ini.get<int>("LargeScale.nGridHelperVolumePointsDim", 10);
-        // add volume points to prevent singularities
-        addHelperPoints(nGridHelperVolumePointsDim, hexah, minDist);
-    }
+  if(removeSmallSegments) // false
+    removeSmallSegs(2500); // TODO FACA: to decide
 
-    initVertices();
+  const bool updateLSC = ls ? mp->userParams.get<bool>("LargeScale.updateLSC", true) : false;
 
-    // Create tetrahedralization (into T variable)
-    computeDelaunay();
+  reconstructExpetiments(cams, folderName, updateLSC,
+                         hexah, tmpCamsPtsFolderName,
+                         spaceSteps);
 
-    displayStatistics();
-
-    computeVerticesSegSize(true, 0.0f); // TODO: could go into the "if(removeSmallSegments)"?
-    if(removeSmallSegments) // false
-    {
-        removeSmallSegs(2500); // TODO FACA: to decide
-    }
-
-    bool updateLSC = ls ? mp->_ini.get<bool>("LargeScale.updateLSC", true) : false;
-
-    reconstructExpetiments(cams, folderName, updateLSC,
-                           hexah, tmpCamsPtsFolderName,
-                           spaceSteps);
-
-    bool saveOrNot = mp->_ini.get<bool>("LargeScale.saveDelaunayTriangulation", false);
-    if(saveOrNot)
-    {
-        std::string fileNameDh = folderName + "delaunayTriangulation.bin";
-        std::string fileNameInfo = folderName + "delaunayTriangulationInfo.bin";
-        saveDh(fileNameDh, fileNameInfo);
-    }
+  if(mp->userParams.get<bool>("LargeScale.saveDelaunayTriangulation", false))
+  {
+    const std::string fileNameDh = folderName + "delaunayTriangulation.bin";
+    const std::string fileNameInfo = folderName + "delaunayTriangulationInfo.bin";
+    saveDh(fileNameDh, fileNameInfo);
+  }
 }
 
 void DelaunayGraphCut::addToInfiniteSw(float sW)
@@ -2567,7 +2604,7 @@ void DelaunayGraphCut::reconstructExpetiments(const StaticVector<int>& cams, con
     long t1;
 
     bool fixesSigma = (update && spaceSteps.size() != 0.0);
-    float sigma = (float)mp->_ini.get<double>("delaunaycut.sigma", 4.0f); // TODO FACA: 2 or 4?
+    float sigma = (float)mp->userParams.get<double>("delaunaycut.sigma", 4.0f); // TODO FACA: 2 or 4?
     if(fixesSigma)
         sigma *= spaceSteps.size();
 
@@ -2575,20 +2612,20 @@ void DelaunayGraphCut::reconstructExpetiments(const StaticVector<int>& cams, con
     ALICEVISION_LOG_INFO("sigma: " << sigma);
 
     // 0 for distFcn equals 1 all the time
-    float distFcnHeight = (float)mp->_ini.get<double>("delaunaycut.distFcnHeight", 0.0f);
+    float distFcnHeight = (float)mp->userParams.get<double>("delaunaycut.distFcnHeight", 0.0f);
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-    bool labatutCFG09 = mp->_ini.get<bool>("global.LabatutCFG09", false);
-    bool jancosekCVPR11 = mp->_ini.get<bool>("global.JancosekCVPR11", false);
+    bool labatutCFG09 = mp->userParams.get<bool>("global.LabatutCFG09", false);
+    bool jancosekCVPR11 = mp->userParams.get<bool>("global.JancosekCVPR11", false);
     // jancosekIJCV: "Exploiting Visibility Information in Surface Reconstruction to Preserve Weakly Supported Surfaces", Michal Jancosek and Tomas Pajdla, 2014
-    bool jancosekIJCV = mp->_ini.get<bool>("global.JancosekIJCV", true);
+    bool jancosekIJCV = mp->userParams.get<bool>("global.JancosekIJCV", true);
 
     if(jancosekCVPR11)
     {
-        float delta = (float)mp->_ini.get<double>("delaunaycut.delta", 0.1f);
+        float delta = (float)mp->userParams.get<double>("delaunaycut.delta", 0.1f);
 
         ALICEVISION_LOG_INFO("Jancosek CVPR 2011 method ( delta*100 = " << static_cast<int>(delta * 100.0f) << "):");
 
@@ -2621,7 +2658,7 @@ void DelaunayGraphCut::reconstructExpetiments(const StaticVector<int>& cams, con
 
     if(jancosekIJCV) // true by default
     {
-        float delta = (float)mp->_ini.get<double>("delaunaycut.delta", 0.1f);
+        float delta = (float)mp->userParams.get<double>("delaunaycut.delta", 0.1f);
 
         ALICEVISION_LOG_INFO("Jancosek IJCV method ( delta*100 = " << static_cast<int>(delta * 100.0f) << " ): ");
 

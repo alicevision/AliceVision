@@ -13,16 +13,16 @@ namespace aliceVision {
 namespace depthMap {
 
 SemiGlobalMatchingVolume::SemiGlobalMatchingVolume(float _volGpuMB, int _volDimX, int _volDimY, int _volDimZ, SemiGlobalMatchingParams* _sp)
+    : sp( _sp )
+    , volDimX(  _volDimX )
+    , volDimY(  _volDimY )
+    , volDimZ(  _volDimZ )
 {
-    sp = _sp;
 
     volGpuMB = _volGpuMB;
-    volDimX = _volDimX;
-    volDimY = _volDimY;
-    volDimZ = _volDimZ;
 
     {
-        Point3d dmi = sp->cps->getDeviceMemoryInfo();
+        Point3d dmi = sp->cps.getDeviceMemoryInfo();
         if(sp->mp->verbose)
             ALICEVISION_LOG_DEBUG("GPU memory : free: " << dmi.x << ", total: " << dmi.y << ", used: " << dmi.z);
         volStepZ = 1;
@@ -42,26 +42,19 @@ SemiGlobalMatchingVolume::SemiGlobalMatchingVolume(float _volGpuMB, int _volDimX
         }
     }
 
-    _volume = new StaticVector<unsigned char>();
-    _volume->reserve(volDimX * volDimY * volDimZ);
-    _volume->resize_with(volDimX * volDimY * volDimZ, 255);
+    _volume = new StaticVector<unsigned char>( volDimX * volDimY * volDimZ, 255 );
 
-    _volumeSecondBest = new StaticVector<unsigned char>();
-    _volumeSecondBest->reserve(volDimX * volDimY * volDimZ);
-    _volumeSecondBest->resize_with(volDimX * volDimY * volDimZ, 255);
+    _volumeSecondBest = new StaticVector<unsigned char>( volDimX * volDimY * volDimZ, 255 );
 
-    _volumeStepZ = new StaticVector<unsigned char>();
-    _volumeStepZ->reserve(volDimX * volDimY * (volDimZ / volStepZ));
-    _volumeStepZ->resize_with(volDimX * volDimY * (volDimZ / volStepZ), 255);
+    _volumeStepZ = new StaticVector<unsigned char>( volDimX * volDimY * (volDimZ / volStepZ), 255 );
 
-    _volumeBestZ = new StaticVector<int>();
-    _volumeBestZ->reserve(volDimX * volDimY * (volDimZ / volStepZ));
-    _volumeBestZ->resize_with(volDimX * volDimY * (volDimZ / volStepZ), -1);
+    _volumeBestZ = new StaticVector<int>( volDimX * volDimY * (volDimZ / volStepZ), -1 );
 }
 
 SemiGlobalMatchingVolume::~SemiGlobalMatchingVolume()
 {
     delete _volume;
+    delete _volumeSecondBest;
     delete _volumeStepZ;
     delete _volumeBestZ;
 }
@@ -151,7 +144,7 @@ void SemiGlobalMatchingVolume::SGMoptimizeVolumeStepZ(int rc, int volStepXY, int
 {
     long tall = clock();
 
-    sp->cps->SGMoptimizeSimVolume(rc, _volumeStepZ, volDimX, volDimY, volDimZ / volStepZ, volStepXY, volLUX, volLUY,
+    sp->cps.SGMoptimizeSimVolume(rc, _volumeStepZ, volDimX, volDimY, volDimZ / volStepZ, volStepXY, volLUX, volLUY,
                                   scale, sp->P1, sp->P2);
 
     if(sp->mp->verbose)

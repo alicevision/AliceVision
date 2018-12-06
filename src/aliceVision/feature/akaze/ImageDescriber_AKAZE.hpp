@@ -28,24 +28,24 @@ enum EAKAZE_DESCRIPTOR
 
 struct AKAZEParams
 {
-  AKAZEParams(AKAZEConfig config = AKAZEConfig(),
-              EAKAZE_DESCRIPTOR eAkazeDescriptor = AKAZE_MSURF)
-    : _options(config)
-    , _eAkazeDescriptor(eAkazeDescriptor)
+  AKAZEParams(AKAZEOptions akazeOptions = AKAZEOptions(), EAKAZE_DESCRIPTOR eAkazeDescriptor = AKAZE_MSURF)
+    : options(akazeOptions)
+    , akazeDescriptorType(eAkazeDescriptor)
   {}
 
-  // Parameters
-  AKAZEConfig _options;
-  EAKAZE_DESCRIPTOR _eAkazeDescriptor;
+  // parameters
+  AKAZEOptions options;
+  EAKAZE_DESCRIPTOR akazeDescriptorType;
 };
 
 class ImageDescriber_AKAZE : public ImageDescriber
 {
 public:
-  ImageDescriber_AKAZE(
-    const AKAZEParams & params = AKAZEParams(),
-    bool bOrientation = true
-  ):ImageDescriber(), _params(params), _bOrientation(bOrientation) {}
+  ImageDescriber_AKAZE(const AKAZEParams& params = AKAZEParams(), bool isOriented = true)
+    : ImageDescriber()
+    , _params(params)
+    , _isOriented(isOriented)
+  {}
 
   /**
    * @brief Check if the image describer use CUDA
@@ -71,11 +71,11 @@ public:
    */
   virtual EImageDescriberType getDescriberType() const override
   {
-    switch(_params._eAkazeDescriptor)
+    switch(_params.akazeDescriptorType)
     {
       case AKAZE_MSURF: return EImageDescriberType::AKAZE;
-      case AKAZE_LIOP: return EImageDescriberType::AKAZE_LIOP;
-      case AKAZE_MLDB: return EImageDescriberType::AKAZE_MLDB;
+      case AKAZE_LIOP:  return EImageDescriberType::AKAZE_LIOP;
+      case AKAZE_MLDB:  return EImageDescriberType::AKAZE_MLDB;
     }
     throw std::logic_error("Unknown AKAZE type.");
   }
@@ -92,12 +92,12 @@ public:
     std::size_t fullImgSize = width * height;
     std::size_t memoryConsuption = 0;
     double downscale = 1.0;
-    for(int octave = 0; octave < _params._options.iNbOctave; ++octave)
+    for(int octave = 0; octave < _params.options.nbOctaves; ++octave)
     {
       memoryConsuption += fullImgSize / (downscale * downscale);
       downscale *= 2.0;
     }
-    memoryConsuption *= _params._options.iNbSlicePerOctave * sizeof(float);
+    memoryConsuption *= _params.options.nbSlicePerOctave * sizeof(float);
     return 4 * memoryConsuption + (3 * width * height * sizeof(float)) + 1.5 * std::pow(2,30); // add arbitrary 1.5 GB
   }
 
@@ -107,7 +107,7 @@ public:
    */
   void setUpRight(bool upRight) override
   {
-    _bOrientation = !upRight;
+    _isOriented = !upRight;
   }
 
   /**
@@ -119,16 +119,33 @@ public:
     switch(preset)
     {
       case EImageDescriberPreset::LOW:
+      {
+         _params.options.maxTotalKeypoints = 1000;
+         break;
+      }
       case EImageDescriberPreset::MEDIUM:
+      {
+         _params.options.maxTotalKeypoints = 5000;
+         break;
+      }
       case EImageDescriberPreset::NORMAL:
-        _params._options.fThreshold = AKAZEConfig().fThreshold;
-      break;
+      {
+         _params.options.maxTotalKeypoints = 10000;
+         _params.options.threshold = AKAZEOptions().threshold;
+        break;
+      }
       case EImageDescriberPreset::HIGH:
-        _params._options.fThreshold = AKAZEConfig().fThreshold/10.;
-      break;
+      {
+        _params.options.maxTotalKeypoints = 50000;
+        _params.options.threshold = AKAZEOptions().threshold / 10.f;
+        break;
+      }
       case EImageDescriberPreset::ULTRA:
-       _params._options.fThreshold = AKAZEConfig().fThreshold/100.;
-      break;
+      {
+       _params.options.maxTotalKeypoints = 100000;
+       _params.options.threshold = AKAZEOptions().threshold / 100.f;
+        break;
+      }
       default:
         throw std::out_of_range("Invalid image describer preset enum");
     }
@@ -142,16 +159,16 @@ public:
    * Non-zero values depict the region of interest.
    */
   bool describe(const image::Image<float>& image,
-    std::unique_ptr<Regions> &regions,
+    std::unique_ptr<Regions>& regions,
     const image::Image<unsigned char> * mask = nullptr) override;
 
   /**
    * @brief Allocate Regions type depending of the ImageDescriber
    * @param[in,out] regions
    */
-  void allocate(std::unique_ptr<Regions> &regions) const override
+  void allocate(std::unique_ptr<Regions>& regions) const override
   {
-    switch(_params._eAkazeDescriptor)
+    switch(_params.akazeDescriptorType)
     {
       case AKAZE_MSURF: regions.reset(new AKAZE_Float_Regions); break;
       case AKAZE_LIOP:  regions.reset(new AKAZE_Liop_Regions);  break;
@@ -161,7 +178,7 @@ public:
 
 private:
   AKAZEParams _params;
-  bool _bOrientation;
+  bool _isOriented = true;
 };
 
 } // namespace feature

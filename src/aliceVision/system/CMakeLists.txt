@@ -1,11 +1,11 @@
 # Headers
 set(system_files_headers
   cpu.hpp
-  gpu.hpp
   MemoryInfo.hpp
   system.hpp
   Timer.hpp
   Logger.hpp
+  nvtx.hpp
 )
 
 # Sources
@@ -14,6 +14,7 @@ set(system_files_sources
   MemoryInfo.cpp
   Timer.cpp
   Logger.cpp
+  nvtx.cpp
 )
 
 alicevision_add_library(aliceVision_system
@@ -26,6 +27,7 @@ alicevision_add_library(aliceVision_system
     ${Boost_SYSTEM_LIBRARY}
     ${Boost_DATE_TIME_LIBRARY}
     ${Boost_PROGRAM_OPTIONS_LIBRARY}
+    ${ALICEVISION_NVTX_LIBRARY}
   PUBLIC_INCLUDE_DIRS
     ${Boost_INCLUDE_DIR}
 )

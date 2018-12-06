@@ -84,7 +84,7 @@ bool MeshEnergyOpt::optimizeSmooth(float lambda, int niter, StaticVectorBool* pt
         return false;
     }
 
-    bool saveDebug = mp ? mp->_ini.get<bool>("meshEnergyOpt.saveAllIterations", false) : false;
+    bool saveDebug = mp ? mp->userParams.get<bool>("meshEnergyOpt.saveAllIterations", false) : false;
 
     Point3d LU, RD;
     LU = (*pts)[0];
@@ -107,8 +107,8 @@ bool MeshEnergyOpt::optimizeSmooth(float lambda, int niter, StaticVectorBool* pt
     {
         ALICEVISION_LOG_INFO("Optimizing mesh smooth: iteration " << i);
         updateGradientParallel(lambda, LU, RD, ptsCanMove);
-        if(saveDebug)
-            saveToObj(mp->mvDir + "mesh_smoothed_" + std::to_string(i) + ".obj");
+        //if(saveDebug)
+        //    saveToObj(folder + "mesh_smoothed_" + std::to_string(i) + ".obj");
     }
 
     return true;

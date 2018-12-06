@@ -79,7 +79,7 @@ int main( int argc , char ** argv )
   Timer t;
   t.reset();
 
-  AKAZEConfig options;
+  AKAZEOptions options;
   options.fDesc_factor = 10.f * sqrt(2.f) ;
   AKAZE akaze(src, options);
   akaze.Compute_AKAZEScaleSpace();

@@ -305,7 +305,7 @@ public:
     for(IndexT key: keys)
     {
       PairwiseMatches::const_iterator match = matchBegin;
-      while(match->first.first == key && match != matchEnd)
+      while(match != matchEnd && match->first.first == key)
         ++match;
       const std::string filepath = (fs::path(m_directory) / (std::to_string(key) + "." + m_filename)).string();
       ALICEVISION_LOG_DEBUG("Export Matches in: " << filepath);

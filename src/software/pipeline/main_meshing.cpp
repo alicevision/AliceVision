@@ -4,31 +4,33 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
-#include <aliceVision/system/cmdline.hpp>
-#include <aliceVision/system/Logger.hpp>
-#include <aliceVision/system/Timer.hpp>
+#include <aliceVision/sfmData/SfMData.hpp>
+#include <aliceVision/sfmDataIO/sfmDataIO.hpp>
+#include <aliceVision/fuseCut/LargeScale.hpp>
+#include <aliceVision/fuseCut/ReconstructionPlan.hpp>
+#include <aliceVision/fuseCut/DelaunayGraphCut.hpp>
+#include <aliceVision/mesh/meshPostProcessing.hpp>
 #include <aliceVision/mvsData/Point3d.hpp>
 #include <aliceVision/mvsData/StaticVector.hpp>
 #include <aliceVision/mvsUtils/common.hpp>
 #include <aliceVision/mvsUtils/MultiViewParams.hpp>
 #include <aliceVision/mvsUtils/PreMatchCams.hpp>
-#include <aliceVision/mesh/meshPostProcessing.hpp>
-#include <aliceVision/fuseCut/LargeScale.hpp>
-#include <aliceVision/fuseCut/ReconstructionPlan.hpp>
-#include <aliceVision/fuseCut/DelaunayGraphCut.hpp>
 #include <aliceVision/mvsUtils/fileIO.hpp>
+#include <aliceVision/system/cmdline.hpp>
+#include <aliceVision/system/Logger.hpp>
+#include <aliceVision/system/Timer.hpp>
 
 #include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>
 
 // These constants define the current software version.
 // They must be updated when the command line is changed.
-#define ALICEVISION_SOFTWARE_VERSION_MAJOR 1
+#define ALICEVISION_SOFTWARE_VERSION_MAJOR 2
 #define ALICEVISION_SOFTWARE_VERSION_MINOR 0
 
 using namespace aliceVision;
 
-namespace bfs = boost::filesystem;
+namespace fs = boost::filesystem;
 namespace po = boost::program_options;
 
 enum EPartitioningMode
@@ -85,15 +87,19 @@ int main(int argc, char* argv[])
     system::Timer timer;
 
     std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
-    std::string iniFilepath;
+    std::string sfmDataFilename;
     std::string outputMesh;
+    std::string imagesFolder;
     std::string depthMapFolder;
     std::string depthMapFilterFolder;
-
     EPartitioningMode partitioningMode = ePartitioningSingleBlock;
     ERepartitionMode repartitionMode = eRepartitionMultiResolution;
     po::options_description inputParams;
+    std::size_t estimateSpaceMinObservations = 3;
+    double universePercentile = 0.999;
     int maxPtsPerVoxel = 6000000;
+    bool meshingFromDepthMaps = true;
+    bool estimateSpaceFromSfM = false;
 
     fuseCut::FuseParams fuseParams;
 
@@ -101,17 +107,19 @@ int main(int argc, char* argv[])
 
     po::options_description requiredParams("Required parameters");
     requiredParams.add_options()
-        ("ini", po::value<std::string>(&iniFilepath)->required(),
-            "Configuration file (mvs.ini).")
-        ("depthMapFolder", po::value<std::string>(&depthMapFolder)->required(),
-            "Input depth maps folder.")
-        ("depthMapFilterFolder", po::value<std::string>(&depthMapFilterFolder)->required(),
-            "Input filtered depth maps folder.")
+        ("input,i", po::value<std::string>(&sfmDataFilename)->required(),
+          "SfMData file.")
         ("output,o", po::value<std::string>(&outputMesh)->required(),
             "Output mesh (OBJ file format).");
 
     po::options_description optionalParams("Optional parameters");
     optionalParams.add_options()
+        ("imagesFolder", po::value<std::string>(&imagesFolder),
+          "Use images from a specific folder. Filename should be the image uid.")
+        ("depthMapFolder", po::value<std::string>(&depthMapFolder),
+            "Input depth maps folder.")
+        ("depthMapFilterFolder", po::value<std::string>(&depthMapFilterFolder),
+            "Input filtered depth maps folder.")
         ("maxInputPoints", po::value<int>(&fuseParams.maxInputPoints)->default_value(fuseParams.maxInputPoints),
             "Max input points loaded from images.")
         ("maxPoints", po::value<int>(&fuseParams.maxPoints)->default_value(fuseParams.maxPoints),
@@ -128,26 +136,32 @@ int main(int argc, char* argv[])
         ("partitioning", po::value<EPartitioningMode>(&partitioningMode)->default_value(partitioningMode),
             "Partitioning: 'singleBlock' or 'auto'.")
         ("repartition", po::value<ERepartitionMode>(&repartitionMode)->default_value(repartitionMode),
-            "Repartition: 'multiResolution' or 'regularGrid'.");
+            "Repartition: 'multiResolution' or 'regularGrid'.")
+        ("estimateSpaceFromSfM", po::value<bool>(&estimateSpaceFromSfM)->default_value(estimateSpaceFromSfM),
+            "Estimate the 3d space from the SfM.");
 
     po::options_description advancedParams("Advanced parameters");
     advancedParams.add_options()
-            ("pixSizeMarginInitCoef", po::value<double>(&fuseParams.pixSizeMarginInitCoef)->default_value(fuseParams.pixSizeMarginInitCoef),
-                "pixSizeMarginInitCoef")
-            ("pixSizeMarginFinalCoef", po::value<double>(&fuseParams.pixSizeMarginFinalCoef)->default_value(fuseParams.pixSizeMarginFinalCoef),
-                "pixSizeMarginFinalCoef")
-            ("voteMarginFactor", po::value<float>(&fuseParams.voteMarginFactor)->default_value(fuseParams.voteMarginFactor),
-                "voteMarginFactor")
-            ("contributeMarginFactor", po::value<float>(&fuseParams.contributeMarginFactor)->default_value(fuseParams.contributeMarginFactor),
-                "contributeMarginFactor")
-            ("simGaussianSizeInit", po::value<float>(&fuseParams.simGaussianSizeInit)->default_value(fuseParams.simGaussianSizeInit),
-                "simGaussianSizeInit")
-            ("simGaussianSize", po::value<float>(&fuseParams.simGaussianSize)->default_value(fuseParams.simGaussianSize),
-                "simGaussianSize")
-            ("minAngleThreshold", po::value<double>(&fuseParams.minAngleThreshold)->default_value(fuseParams.minAngleThreshold),
-                "minAngleThreshold")
-            ("refineFuse", po::value<bool>(&fuseParams.refineFuse)->default_value(fuseParams.refineFuse),
-                "refineFuse");
+        ("universePercentile", po::value<double>(&universePercentile)->default_value(universePercentile),
+            "universe percentile")
+        ("estimateSpaceMinObservations", po::value<std::size_t>(&estimateSpaceMinObservations)->default_value(estimateSpaceMinObservations),
+            "Minimum number of observations for SfM space estimation.")
+        ("pixSizeMarginInitCoef", po::value<double>(&fuseParams.pixSizeMarginInitCoef)->default_value(fuseParams.pixSizeMarginInitCoef),
+            "pixSizeMarginInitCoef")
+        ("pixSizeMarginFinalCoef", po::value<double>(&fuseParams.pixSizeMarginFinalCoef)->default_value(fuseParams.pixSizeMarginFinalCoef),
+            "pixSizeMarginFinalCoef")
+        ("voteMarginFactor", po::value<float>(&fuseParams.voteMarginFactor)->default_value(fuseParams.voteMarginFactor),
+            "voteMarginFactor")
+        ("contributeMarginFactor", po::value<float>(&fuseParams.contributeMarginFactor)->default_value(fuseParams.contributeMarginFactor),
+            "contributeMarginFactor")
+        ("simGaussianSizeInit", po::value<float>(&fuseParams.simGaussianSizeInit)->default_value(fuseParams.simGaussianSizeInit),
+            "simGaussianSizeInit")
+        ("simGaussianSize", po::value<float>(&fuseParams.simGaussianSize)->default_value(fuseParams.simGaussianSize),
+            "simGaussianSize")
+        ("minAngleThreshold", po::value<double>(&fuseParams.minAngleThreshold)->default_value(fuseParams.minAngleThreshold),
+            "minAngleThreshold")
+        ("refineFuse", po::value<bool>(&fuseParams.refineFuse)->default_value(fuseParams.refineFuse),
+            "refineFuse");
 
     po::options_description logParams("Log parameters");
     logParams.add_options()
@@ -189,18 +203,47 @@ int main(int argc, char* argv[])
     // set verbose level
     system::Logger::get()->setLogLevel(verboseLevel);
 
-    // .ini and files parsing
-    mvsUtils::MultiViewParams mp(iniFilepath, depthMapFolder, depthMapFilterFolder, true);
-    mvsUtils::PreMatchCams pc(&mp);
+    if(depthMapFolder.empty() || depthMapFilterFolder.empty())
+    {
+      if(depthMapFolder.empty() &&
+         depthMapFilterFolder.empty() &&
+         repartitionMode == eRepartitionMultiResolution &&
+         partitioningMode == ePartitioningSingleBlock)
+      {
+        meshingFromDepthMaps = false;
+      }
+      else
+      {
+        ALICEVISION_LOG_ERROR("Invalid input options:\n"
+                              "- Meshing from depth maps require --depthMapFolder and --depthMapFilterFolder options.\n"
+                              "- Meshing from SfM require option --partitioning set to 'singleBlock' and option --repartition set to 'multiResolution'.");
+        return EXIT_FAILURE;
+      }
+    }
 
-    int ocTreeDim = mp._ini.get<int>("LargeScale.gridLevel0", 1024);
-    const auto baseDir = mp._ini.get<std::string>("LargeScale.baseDirName", "root01024");
+    // read the input SfM scene
+    sfmData::SfMData sfmData;
+    if(!sfmDataIO::Load(sfmData, sfmDataFilename, sfmDataIO::ESfMData::ALL))
+    {
+      ALICEVISION_LOG_ERROR("The input SfMData file '" << sfmDataFilename << "' cannot be read.");
+      return EXIT_FAILURE;
+    }
 
-    bfs::path outDirectory = bfs::path(outputMesh).parent_path();
-    if(!bfs::is_directory(outDirectory))
-        bfs::create_directory(outDirectory);
+    // initialization
+    mvsUtils::MultiViewParams mp(sfmData, imagesFolder, depthMapFolder, depthMapFilterFolder, meshingFromDepthMaps);
 
-    bfs::path tmpDirectory = outDirectory / "tmp";
+    mp.userParams.put("LargeScale.universePercentile", universePercentile);
+
+    mvsUtils::PreMatchCams pc(mp);
+
+    int ocTreeDim = mp.userParams.get<int>("LargeScale.gridLevel0", 1024);
+    const auto baseDir = mp.userParams.get<std::string>("LargeScale.baseDirName", "root01024");
+
+    fs::path outDirectory = fs::path(outputMesh).parent_path();
+    if(!fs::is_directory(outDirectory))
+        fs::create_directory(outDirectory);
+
+    fs::path tmpDirectory = outDirectory / "tmp";
 
     ALICEVISION_LOG_WARNING("repartitionMode: " << repartitionMode);
     ALICEVISION_LOG_WARNING("partitioningMode: " << partitioningMode);
@@ -218,7 +261,7 @@ int main(int argc, char* argv[])
                     lsbase.generateSpace(maxPtsPerVoxel, ocTreeDim, true);
                     std::string voxelsArrayFileName = lsbase.spaceFolderName + "hexahsToReconstruct.bin";
                     StaticVector<Point3d>* voxelsArray = nullptr;
-                    if(bfs::exists(voxelsArrayFileName))
+                    if(fs::exists(voxelsArrayFileName))
                     {
                         // If already computed reload it.
                         ALICEVISION_LOG_INFO("Voxels array already computed, reload from file: " << voxelsArrayFileName);
@@ -240,7 +283,7 @@ int main(int argc, char* argv[])
 
                     ALICEVISION_LOG_INFO("Saving joined meshes...");
 
-                    bfs::path spaceBinFileName = outDirectory/"denseReconstruction.bin";
+                    fs::path spaceBinFileName = outDirectory/"denseReconstruction.bin";
                     mesh->saveToBin(spaceBinFileName.string());
 
                     // Export joined mesh to obj
@@ -262,7 +305,7 @@ int main(int argc, char* argv[])
                     unsigned long ntracks = std::numeric_limits<unsigned long>::max();
                     while(ntracks > fuseParams.maxPoints)
                     {
-                        bfs::path dirName = outDirectory/("LargeScaleMaxPts" + mvsUtils::num2strFourDecimal(ocTreeDim));
+                        fs::path dirName = outDirectory/("LargeScaleMaxPts" + mvsUtils::num2strFourDecimal(ocTreeDim));
                         fuseCut::LargeScale* ls = ls0.cloneSpaceIfDoesNotExists(ocTreeDim, dirName.string() + "/");
                         fuseCut::VoxelsGrid vg(ls->dimensions, &ls->space[0], ls->mp, ls->pc, ls->spaceVoxelsFolderName);
                         ntracks = vg.getNTracks();
@@ -278,7 +321,7 @@ int main(int argc, char* argv[])
                     }
                     ALICEVISION_LOG_INFO("Number of tracks: " << ntracks);
                     ALICEVISION_LOG_INFO("ocTreeDim: " << ocTreeDim);
-                    bfs::path dirName = outDirectory/("LargeScaleMaxPts" + mvsUtils::num2strFourDecimal(ocTreeDim));
+                    fs::path dirName = outDirectory/("LargeScaleMaxPts" + mvsUtils::num2strFourDecimal(ocTreeDim));
                     fuseCut::LargeScale lsbase(&mp, &pc, dirName.string()+"/");
                     lsbase.loadSpaceFromFile();
                     fuseCut::ReconstructionPlan rp(lsbase.dimensions, &lsbase.space[0], lsbase.mp, lsbase.pc, lsbase.spaceVoxelsFolderName);
@@ -291,9 +334,24 @@ int main(int argc, char* argv[])
 
                     fuseCut::DelaunayGraphCut delaunayGC(lsbase.mp, lsbase.pc);
                     Point3d* hexah = &lsbase.space[0];
-                    delaunayGC.reconstructVoxel(hexah, &voxelNeighs, outDirectory.string()+"/", lsbase.getSpaceCamsTracksDir(), false,
-                                          (fuseCut::VoxelsGrid*)&rp, lsbase.getSpaceSteps(), fuseParams);
 
+                    StaticVector<int> cams;
+                    if(hexah)
+                    {
+                      cams = pc.findCamsWhichIntersectsHexahedron(hexah);
+                    }
+                    else
+                    {
+                      cams.resize(mp.getNbCameras());
+                      for(int i = 0; i < cams.size(); ++i)
+                          cams[i] = i;
+                    }
+
+                    if(cams.size() < 1)
+                        throw std::logic_error("No camera to make the reconstruction");
+
+                    delaunayGC.createDensePointCloudFromDepthMaps(hexah, cams, &voxelNeighs, (fuseCut::VoxelsGrid*)&rp, fuseParams);
+                    delaunayGC.createGraphCut(hexah, cams, (fuseCut::VoxelsGrid*)&rp, outDirectory.string()+"/", lsbase.getSpaceCamsTracksDir(), false, lsbase.getSpaceSteps());
                     delaunayGC.graphCutPostProcessing();
 
                     // Save mesh as .bin and .obj
@@ -338,15 +396,22 @@ int main(int argc, char* argv[])
 
                     float minPixSize;
                     fuseCut::Fuser fs(&mp, &pc);
-                    fs.divideSpace(&hexah[0], minPixSize);
-                    Voxel dimensions = fs.estimateDimensions(&hexah[0], &hexah[0], 0, ocTreeDim);
+
+                    if(meshingFromDepthMaps && !estimateSpaceFromSfM)
+                      fs.divideSpaceFromDepthMaps(&hexah[0], minPixSize);
+                    else
+                      fs.divideSpaceFromSfM(sfmData, &hexah[0], estimateSpaceMinObservations);
+
+                    Voxel dimensions = fs.estimateDimensions(&hexah[0], &hexah[0], 0, ocTreeDim, (meshingFromDepthMaps && !estimateSpaceFromSfM) ? nullptr : &sfmData);
                     StaticVector<Point3d>* voxels = mvsUtils::computeVoxels(&hexah[0], dimensions);
 
                     StaticVector<int> voxelNeighs;
                     voxelNeighs.resize(voxels->size() / 8);
                     ALICEVISION_LOG_INFO("voxelNeighs.size(): " << voxelNeighs.size());
+
                     for(int i = 0; i < voxelNeighs.size(); ++i)
                         voxelNeighs[i] = i;
+
                     Point3d spaceSteps;
                     {
                         Point3d vx = hexah[1] - hexah[0];
@@ -356,10 +421,28 @@ int main(int argc, char* argv[])
                         spaceSteps.y = (vy.size() / (double)dimensions.y) / (double)ocTreeDim;
                         spaceSteps.z = (vz.size() / (double)dimensions.z) / (double)ocTreeDim;
                     }
-                    delaunayGC.reconstructVoxel(&hexah[0], &voxelNeighs, outDirectory.string()+"/", outDirectory.string()+"/SpaceCamsTracks/", false,
-                                                nullptr, spaceSteps, fuseParams);
-                    // TODO change the function name: reconstructFromDepthMaps(hexah);
 
+                    StaticVector<int> cams;
+                    if(meshingFromDepthMaps)
+                    {
+                      cams = pc.findCamsWhichIntersectsHexahedron(&hexah[0]);
+                    }
+                    else
+                    {
+                      cams.resize(mp.getNbCameras());
+                      for(int i = 0; i < cams.size(); ++i)
+                          cams[i] = i;
+                    }
+
+                    if(cams.empty())
+                        throw std::logic_error("No camera to make the reconstruction");
+
+                    if(meshingFromDepthMaps)
+                      delaunayGC.createDensePointCloudFromDepthMaps(&hexah[0], cams, &voxelNeighs, nullptr, fuseParams);
+                    else
+                      delaunayGC.createDensePointCloudFromSfM(&hexah[0], cams, sfmData);
+
+                    delaunayGC.createGraphCut(&hexah[0], cams, nullptr, outDirectory.string()+"/", outDirectory.string()+"/SpaceCamsTracks/", false, spaceSteps);
                     delaunayGC.graphCutPostProcessing();
 
                     // Save mesh as .bin and .obj

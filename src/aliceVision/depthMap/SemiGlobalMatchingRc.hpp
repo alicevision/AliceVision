@@ -20,29 +20,34 @@ public:
     ~SemiGlobalMatchingRc(void);
 
     bool sgmrc(bool checkIfExists = true);
-    StaticVector<int>* tcams;
+
+protected:
+    StaticVector<int> tcams;
 
 protected:
 
     float getMinTcStepAtDepth(float depth, float minDepth, float maxDepth,
                               StaticVector<StaticVector<float>*>* alldepths);
-    StaticVector<float>* getTcSeedsRcPlaneDists(int rc, StaticVector<int>* tcams);
     bool selectBestDepthsRange(int nDepthsThr, StaticVector<float>* rcSeedsDistsAsc);
     bool selectBestDepthsRange(int nDepthsThr, StaticVector<StaticVector<float>*>* alldepths);
-    StaticVector<StaticVector<float>*>* computeAllDepthsAndResetTCams();
+    StaticVector<StaticVector<float>*>* computeAllDepthsAndResetTCams(float midDepth);
     void computeDepthsTcamsLimits(StaticVector<StaticVector<float>*>* alldepths);
     void computeDepths(float minDepth, float maxDepth, StaticVector<StaticVector<float>*>* alldepths);
     void computeDepthsAndResetTCams();
 
-    StaticVector<float>* getSubDepthsForTCam(int tcamid);
+private:
+    void getSubDepthsForTCam( int tcamid, std::vector<float>& subDepths );
 
+protected:
     SemiGlobalMatchingParams* sp;
 
-    int rc, scale, step;
+    const int rc;
+    const int scale;
+    const int step;
     int wsh;
     float gammaC, gammaP;
     StaticVector<float>* depths;
-    StaticVector<Pixel>* depthsTcamsLimits;
+    StaticVector<Pixel> depthsTcamsLimits;
     int w, h;
 
     std::string outDir;

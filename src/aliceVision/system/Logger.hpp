@@ -15,6 +15,9 @@
 #include <memory>
 #include <iostream>
 
+#include <stdexcept>
+#include <sstream>
+
 #define ALICEVISION_COUT(x) std::cout << x << std::endl
 #define ALICEVISION_CERR(x) std::cerr << x << std::endl
 
@@ -32,6 +35,14 @@
 #define ALICEVISION_LOG_WARNING(a) ALICEVISION_LOG(ALICEVISION_LOG_WARNING_OBJ, a)
 #define ALICEVISION_LOG_ERROR(a) ALICEVISION_LOG(ALICEVISION_LOG_ERROR_OBJ, a)
 #define ALICEVISION_LOG_FATAL(a) ALICEVISION_LOG(ALICEVISION_LOG_FATAL_OBJ, a)
+
+#define ALICEVISION_THROW(EXCEPTION, x) \
+{ \
+  std::stringstream s; \
+  s << x; \
+  throw EXCEPTION(s.str()); \
+}
+#define ALICEVISION_THROW_ERROR(x) ALICEVISION_THROW(std::runtime_error, x)
 
 
 namespace aliceVision {

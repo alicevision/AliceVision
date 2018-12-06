@@ -11,7 +11,7 @@
 #include <aliceVision/feature/sift/ImageDescriber_SIFT_vlfeat.hpp>
 
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_POPSIFT)
-#include <aliceVision/system/gpu.hpp>
+#include <aliceVision/gpu/gpu.hpp>
 #include <aliceVision/feature/sift/ImageDescriber_SIFT_popSIFT.hpp>
 #endif
 
@@ -32,7 +32,7 @@ public:
     , _isOriented(isOriented)
   {
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_POPSIFT)
-    setUseCuda(system::gpuSupportCUDA(3,5));
+    setUseCuda(gpu::gpuSupportCUDA(3,0));
 #else
     setUseCuda(false);
 #endif
