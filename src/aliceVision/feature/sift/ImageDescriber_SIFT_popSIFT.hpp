@@ -12,14 +12,10 @@
 #include <aliceVision/feature/regionsFactory.hpp>
 #include <aliceVision/feature/sift/SIFT.hpp>
 
-// PopSIFT includes
-#include <popsift/popsift.h>
-#include <popsift/sift_pyramid.h>
-#include <popsift/sift_octave.h>
-#include <popsift/common/device_prop.h>
-
 #include <iostream>
 #include <numeric>
+
+class PopSift;
 
 namespace aliceVision {
 namespace feature {
@@ -90,11 +86,7 @@ public:
    * @brief Use a preset to control the number of detected regions
    * @param[in] preset The preset configuration
    */
-  void setConfigurationPreset(EImageDescriberPreset preset) override
-  {
-    _params.setPreset(preset);
-    _popSift.reset(nullptr); // reset by describe method
-  }
+  void setConfigurationPreset(EImageDescriberPreset preset) override;
 
   /**
    * @brief Detect regions on the 8-bit image and compute their attributes (description)

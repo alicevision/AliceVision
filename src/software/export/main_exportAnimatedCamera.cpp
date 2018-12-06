@@ -154,11 +154,35 @@ int main(int argc, char** argv)
        !std::regex_match(view.getImagePath(), regexFilter))
       continue;
 
+    const std::string imagePathStem = fs::path(viewPair.second->getImagePath()).stem().string();
+
+    // undistort camera images
+    if(undistortedImages)
+    {
+      sfmData::Intrinsics::const_iterator iterIntrinsic = sfmData.getIntrinsics().find(view.getIntrinsicId());
+
+      const std::string dstImage = (undistortedImagesFolderPath / (imagePathStem + "." + image::EImageFileType_enumToString(outputFileType))).string();
+      const camera::IntrinsicBase * cam = iterIntrinsic->second.get();
+
+      image::readImage(view.getImagePath(), image);
+
+      if(cam->isValid() && cam->have_disto())
+      {
+        // undistort the image and save it
+        camera::UndistortImage(image, cam, image_ud, image::FBLACK, true); // correct principal point
+        image::writeImage(dstImage, image_ud);
+      }
+      else // (no distortion)
+      {
+        // copy the image since there is no distortion
+        image::writeImage(dstImage, image);
+      }
+    }
+
     // pose and intrinsic defined
     if(!sfmData.isPoseAndIntrinsicDefined(&view))
       continue;
 
-    const std::string imagePathStem = fs::path(viewPair.second->getImagePath()).stem().string();
     std::string cameraName =  view.getMetadataMake() + "_" + view.getMetadataModel();
     std::size_t frameN = 0;
     bool isSequence = false;
@@ -209,29 +233,6 @@ int main(int argc, char** argv)
     else // no time or sequence information
     {
       dslrViewPerKey[cameraName].push_back({0, view.getViewId()});
-    }
-
-    // undistort camera images
-    if(undistortedImages)
-    {
-      sfmData::Intrinsics::const_iterator iterIntrinsic = sfmData.getIntrinsics().find(view.getIntrinsicId());
-
-      const std::string dstImage = (undistortedImagesFolderPath / (imagePathStem + "." + image::EImageFileType_enumToString(outputFileType))).string();
-      const camera::IntrinsicBase * cam = iterIntrinsic->second.get();
-
-      image::readImage(view.getImagePath(), image);
-
-      if (cam->isValid() && cam->have_disto())
-      {
-        // undistort the image and save it
-        camera::UndistortImage(image, cam, image_ud, image::FBLACK, true); // correct principal point
-        image::writeImage(dstImage, image_ud);
-      }
-      else // (no distortion)
-      {
-        // copy the image since there is no distortion
-        image::writeImage(dstImage, image);
-      }
     }
   }
 
