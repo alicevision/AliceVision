@@ -763,7 +763,7 @@ static void ps_computeSimilarityVolume(
 
         dim3 grid( divUp(volDimX,block.x),
                    divUp(volDimY,block.y),
-                   zDimsAtATime );
+                   zDimsAtATime * 2 );
 
         for( int ct=0; ct<max_tcs; ct++ )
         {
@@ -783,6 +783,9 @@ static void ps_computeSimilarityVolume(
 
         for( int ct=0; ct<max_tcs; ct++ )
         {
+            float* gpu_volume_1st = vol_dmp[ct]->getBuffer();
+            float* gpu_volume_2nd = vol_dmp[ct]->getRow( volDimY * zDimsAtATime );
+
             volume_slice_kernel
                 <<<volume_slice_kernel_grid, volume_slice_kernel_block,0,tcams[ct].stream>>>
                 ( ps_texs_arr[rcam.camId][scale].tex,
@@ -796,7 +799,8 @@ static void ps_computeSimilarityVolume(
                   stepLessWidth, stepLessHeight,
                   wsh,
                   gammaC, gammaP, epipShift,
-                  vol_dmp[ct]->getBuffer(),
+                  gpu_volume_1st,
+                  gpu_volume_2nd,
                   vol_dmp[ct]->getBytesPaddedUpToDim(1),
                   vol_dmp[ct]->getBytesPaddedUpToDim(0),
                   volStepXY,

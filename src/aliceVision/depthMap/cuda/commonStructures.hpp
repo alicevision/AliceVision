@@ -476,7 +476,6 @@ public:
         return (unsigned char*)buffer;
     }
 
-private:
     inline Type* getRow( size_t row )
     {
         unsigned char* ptr = getBytePtr();
@@ -484,7 +483,6 @@ private:
         return (Type*)ptr;
     }
 
-public:
     void allocate( const CudaSize<Dim>& size )
     {
         this->setSize( size, false );

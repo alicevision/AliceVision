@@ -714,7 +714,10 @@ void PlaneSweepingCuda::allocTempVolume( std::vector<CudaDeviceMemoryPitched<flo
     volSim_dmp.resize( max_tcs );
     for( int ct=0; ct<max_tcs; ct++ )
     {
-        volSim_dmp[ct] = new CudaDeviceMemoryPitched<float, 3>(CudaSize<3>(volDimX, volDimY, zDimsAtATime));
+        // allocate twice the number of dimensions-at-a-time
+        // first half: best values
+        // second half: second best values
+        volSim_dmp[ct] = new CudaDeviceMemoryPitched<float, 3>(CudaSize<3>(volDimX, volDimY, zDimsAtATime * 2));
     }
 }
 

@@ -48,7 +48,9 @@ __global__ void volume_slice_kernel(
                                     int width, int height,
                                     int wsh,
                                     const float gammaC, const float gammaP, const float epipShift,
-                                    float* volume, int volume_s, int volume_p,
+                                    float* volume_1st,
+                                    float* volume_2nd,
+                                    int volume_s, int volume_p,
                                     int volStepXY,
                                     int volDimX, int volDimY )
 {
@@ -76,7 +78,8 @@ __global__ void volume_slice_kernel(
     if( y >= height ) return;
 
     // float fsim = 1.0f;
-    float fsim = *get3DBufferAt(volume, volume_s, volume_p, vx, vy, vz);
+    float fsim_1st = *get3DBufferAt(volume_1st, volume_s, volume_p, vx, vy, vz);
+    float fsim_2nd = *get3DBufferAt(volume_2nd, volume_s, volume_p, vx, vy, vz);
 
     if( depth >= lowestUsedDepth && depth < highestUsedDepth )
     {
@@ -91,21 +94,25 @@ __global__ void volume_slice_kernel(
         patch ptcho;
         volume_computePatch( rc_cam_s, tc_cam_s, ptcho, fpPlaneDepth, pix); // no texture use
 
-        float newfsim = compNCCby3DptsYK( rc_tex, tc_tex,
-                                          rc_cam_s, tc_cam_s,
-                                          ptcho, wsh,
-                                          width, height,
-                                          gammaC, gammaP,
-                                          epipShift);
+        float fsim = compNCCby3DptsYK( rc_tex, tc_tex,
+                                       rc_cam_s, tc_cam_s,
+                                       ptcho, wsh,
+                                       width, height,
+                                       gammaC, gammaP,
+                                       epipShift);
 
         const float fminVal = -1.0f;
         const float fmaxVal = 1.0f;
-        newfsim = (newfsim - fminVal) / (fmaxVal - fminVal);
-        fsim    = fminf(fsim, fmaxf(0.0f, newfsim));
+        fsim = (fsim - fminVal) / (fmaxVal - fminVal);
+        fsim = fminf(1.0f, fmaxf(0.0f, fsim));
         // int sim = (unsigned char)(fsim * 255.0f); // upcast to int due to atomicMin
+
+        if( fsim < fsim_1st ) swap( fsim, fsim_1st );
+        if( fsim < fsim_2nd ) swap( fsim, fsim_2nd );
     }
 
-    *get3DBufferAt(volume, volume_s, volume_p, vx, vy, vz) = fsim;
+    *get3DBufferAt(volume_1st, volume_s, volume_p, vx, vy, vz) = fsim_1st;
+    *get3DBufferAt(volume_2nd, volume_s, volume_p, vx, vy, vz) = fsim_2nd;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
