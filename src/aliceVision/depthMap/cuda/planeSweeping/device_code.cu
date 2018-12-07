@@ -42,6 +42,14 @@ texture<float4,        cudaTextureType2D, cudaReadModeElementType> f4Tex;
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////
 
+template<typename T>
+inline __device__ void swap( T& a, T& b )
+{
+    T tmp = a;
+    a = b;
+    b = tmp;
+}
+
 __device__ unsigned char computeGradientSizeOfL( cudaTextureObject_t rc_tex, int x, int y)
 {
 

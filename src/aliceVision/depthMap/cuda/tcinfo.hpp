@@ -27,12 +27,15 @@ private:
 
     float*    _volume_out;
 
-    /* This is possibly refundant information.
-     * It is the number of units (floats) that are contained in a single
+    /* It is the number of units (floats) that are contained in a single
      * depth level of a host-side volume.
      * It is used to compute offsets from _volume_out.
      */
     int _depth_layer_size;
+
+    /* It is the number of units (floats) in a single volume.
+     */
+    int _volume_size;
 
     /* This is possibly refundant information.
      * Host-side volume is allocated for all depths that are required for at
@@ -55,6 +58,7 @@ public:
         , _depths_to_search( search )
         , _volume_out( 0 )
         , _depth_layer_size( 0 )
+        , _volume_size( 0 )
         , _lowest_allocated_depth( 0 )
         , _highest_allocated_depth( 0 )
     { }
@@ -66,6 +70,7 @@ public:
         , _depths_to_search( orig._depths_to_search )
         , _volume_out( orig._volume_out )
         , _depth_layer_size( orig._depth_layer_size )
+        , _volume_size( orig._volume_size )
         , _lowest_allocated_depth( orig._lowest_allocated_depth )
         , _highest_allocated_depth( orig._highest_allocated_depth )
     { }
@@ -105,11 +110,17 @@ public:
         return _highest_allocated_depth;
     }
 
-    void setVolumeOut( float* ptr, int depthLayerSize, int lowestAllocatedDepth, int highestAllocatedDepth )
+    inline int getVolumeSize() const
     {
-        _volume_out             = ptr;
-        _depth_layer_size       = depthLayerSize;
-        _lowest_allocated_depth = lowestAllocatedDepth;
+        return _volume_size;
+    }
+
+    void setVolumeOut( float* ptr, int depthLayerSize, int volumeSize, int lowestAllocatedDepth, int highestAllocatedDepth )
+    {
+        _volume_out              = ptr;
+        _depth_layer_size        = depthLayerSize;
+        _volume_size             = volumeSize;
+        _lowest_allocated_depth  = lowestAllocatedDepth;
         _highest_allocated_depth = highestAllocatedDepth;
     }
 
@@ -126,6 +137,11 @@ public:
     inline float* getVolumeOut()
     {
         return _volume_out;
+    }
+
+    inline float* getNextVolumeOut()
+    {
+        return _volume_out + _volume_size;
     }
 };
 

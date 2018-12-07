@@ -759,14 +759,14 @@ static void ps_computeSimilarityVolume(
 
     for( int depthOffset=0; depthOffset<stopDepth; depthOffset+=zDimsAtATime )
     {
+        dim3 block(32,4,1);
+
+        dim3 grid( divUp(volDimX,block.x),
+                   divUp(volDimY,block.y),
+                   zDimsAtATime );
+
         for( int ct=0; ct<max_tcs; ct++ )
         {
-            dim3 block(32,4,1);
-
-            dim3 grid( divUp(volDimX,block.x),
-                       divUp(volDimY,block.y),
-                       zDimsAtATime );
-
             volume_init_kernel
                 <<<grid,block,0,tcams[ct].stream>>>
                 ( vol_dmp[ct]->getBuffer(),
@@ -775,14 +775,14 @@ static void ps_computeSimilarityVolume(
                   volDimX, volDimY );
         }
 
+        const int numPlanesToCopy = std::min( zDimsAtATime, stopDepth - depthOffset );
+
+        dim3 volume_slice_kernel_grid( divUp(volDimX, volume_slice_kernel_block.x),
+                                       divUp(volDimY, volume_slice_kernel_block.y),
+                                       numPlanesToCopy );
+
         for( int ct=0; ct<max_tcs; ct++ )
         {
-            const int numPlanesToCopy = std::min( zDimsAtATime, stopDepth - depthOffset );
-
-            dim3 volume_slice_kernel_grid( divUp(volDimX, volume_slice_kernel_block.x),
-                                           divUp(volDimY, volume_slice_kernel_block.y),
-                                           numPlanesToCopy );
-
             volume_slice_kernel
                 <<<volume_slice_kernel_grid, volume_slice_kernel_block,0,tcams[ct].stream>>>
                 ( ps_texs_arr[rcam.camId][scale].tex,

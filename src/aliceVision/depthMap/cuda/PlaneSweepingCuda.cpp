@@ -817,9 +817,14 @@ void PlaneSweepingCuda::sweepPixelsToVolumeSubset(
 
     if(_verbose)
     {
-        ALICEVISION_LOG_DEBUG("rc: " << rc << std::endl << "tcams: ");
-        for( int ct=1; ct<max_tcs; ct++ )
-            ALICEVISION_LOG_DEBUG( "\ttc: " << tcs[ct].getTCIndex() );
+        std::ostringstream ostr;
+        ostr << "rc: " << rc << " tcams: ";
+        for( int ct=0; ct<max_tcs; ct++ )
+        {
+            ostr << " " << tcs[ct].getTCIndex();
+        }
+
+        ALICEVISION_LOG_DEBUG( ostr.str() );
     }
 
     // last synchronous step

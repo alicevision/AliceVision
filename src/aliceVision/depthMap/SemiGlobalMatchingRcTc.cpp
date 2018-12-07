@@ -5,6 +5,7 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "SemiGlobalMatchingRcTc.hpp"
+#include <aliceVision/system/Logger.hpp>
 #include <aliceVision/mvsUtils/common.hpp>
 #include <aliceVision/depthMap/cuda/tcinfo.hpp>
 #include <algorithm>
@@ -35,6 +36,7 @@ SemiGlobalMatchingRcTc::SemiGlobalMatchingRcTc(
     , _rcTcDepthRanges( rcTcDepthRanges )
     , _zDimsAtATime( zDimsAtATime )
 {
+    ALICEVISION_LOG_DEBUG( "Create SemiGlobalMatchingRcTc with index_set.size() " << _index_set.size() );
     _rcSilhoueteMap = rcSilhoueteMap;
 }
 
@@ -82,33 +84,20 @@ void SemiGlobalMatchingRcTc::computeDepthSimMapVolume(
                                       Pixel_xy_comp );
     const int stoppingDepth = depth_it->x + depth_it->y;
     
-#if 1
     const int maxDimZ = stoppingDepth - startingDepth;
 
-#else
-    int       maxDimZ   = 0; // *_index_set.begin();
-    for( auto j : _index_set )
-    {
-        const int volDimZ = _rcTcDepthRanges[j].y;
-
-        volume[j].resize( volDimX * volDimY * volDimZ );
-
-        maxDimZ = std::max( maxDimZ, volDimZ );
-    }
-#endif
-    
     // volume size for 1 depth layer for 1 tcam
     const int    depth_layer_size  = volDimX * volDimY;
 
     // volume size for 1 tcam
-    const int    volume_offset     = volDimX * volDimY * maxDimZ;
+    const int    volume_size       = volDimX * volDimY * maxDimZ;
 
     // volume size for all tcams
     const size_t volume_num_floats = volDimX * volDimY * maxDimZ * _index_set.size();
 
     for( auto j : _index_set )
     {
-        volume[j].resize( volume_offset );
+        volume[j].resize( volume_size );
     }
 
     float* volume_buf;
@@ -141,8 +130,9 @@ void SemiGlobalMatchingRcTc::computeDepthSimMapVolume(
 
     for( int ct=0; ct<tcs.size(); ct++ )
     {
-        tcs[ct].setVolumeOut( volume_buf + ct * volume_offset,
+        tcs[ct].setVolumeOut( volume_buf + ct * volume_size,
                               depth_layer_size,
+                              volume_size,
                               startingDepth,
                               stoppingDepth );
     }

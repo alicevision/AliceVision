@@ -550,12 +550,14 @@ bool SemiGlobalMatchingRc::sgmrc(bool checkIfExists)
      *   (max_img - 1) * X * Y * dims_at_a_time * sizeof(float)
      * of device memory.
      */
-    int devid;
-    cudaGetDevice( &devid );
-    printf("Allocating %d times %d %d %d on device %d\n", (int)tcams.size(),
-                                             volDimX,
-                                             volDimY,
-                                             zDimsAtATime, devid );
+    if(sp->mp->verbose)
+    {
+        int devid;
+        cudaGetDevice( &devid );
+        ALICEVISION_LOG_DEBUG( "Allocating " << tcams.size()
+            << " times " << volDimX << " " << volDimY << " "
+            << zDimsAtATime << " on device " << devid );
+    }
     std::vector<CudaDeviceMemoryPitched<float, 3>*> volume_tmp_on_gpu;
     sp->cps.allocTempVolume( volume_tmp_on_gpu,
                              tcams.size(),

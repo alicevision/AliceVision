@@ -1161,6 +1161,22 @@ template<class Type> void copy2D( Type* dst, size_t sx, size_t sy,
     THROW_ON_CUDA_ERROR( err, "Failed to copy (" << __FILE__ << " " << __LINE__ << ", " << cudaGetErrorString(err) << ")" );
 }
 
+template<class Type> void copy2D( Type* dst, size_t sx, size_t sy,
+                                  Type* src, size_t src_pitch )
+{
+    const size_t dst_pitch      = sx * sizeof(Type);
+    const size_t width_in_bytes = sx * sizeof(Type);
+    const size_t height         = sy;
+    cudaError_t err = cudaMemcpy2D( dst,
+                                    dst_pitch,
+                                    src,
+                                    src_pitch,
+                                    width_in_bytes,
+                                    height,
+                                    cudaMemcpyDeviceToHost );
+    THROW_ON_CUDA_ERROR( err, "Failed to copy (" << __FILE__ << " " << __LINE__ << ", " << cudaGetErrorString(err) << ")" );
+}
+
 struct cameraStructBase
 {
     float  P[12];
