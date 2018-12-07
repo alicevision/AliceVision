@@ -113,7 +113,7 @@ void saveIntrinsic(const std::string& name, IndexT intrinsicId, const std::share
     intrinsicTree.add_child("distortionParams", distParamsTree);
   }
 
-  intrinsicTree.put("locked", intrinsic->isLocked());
+  intrinsicTree.put("locked", static_cast<int>(intrinsic->isLocked()));
 
   parentTree.push_back(std::make_pair(name, intrinsicTree));
 }
