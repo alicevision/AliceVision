@@ -735,6 +735,8 @@ static void ps_computeSimilarityVolume(
                                 float gammaC, float gammaP, bool subPixel,
                                 float epipShift)
 {
+    cudaDeviceSynchronize();
+
     configure_volume_slice_kernel();
 
     // compute similarity volume
@@ -768,7 +770,7 @@ static void ps_computeSimilarityVolume(
         for( int ct=0; ct<max_tcs; ct++ )
         {
             volume_init_kernel
-                <<<grid,block,0,tcams[ct].stream>>>
+                <<<grid,block>>>
                 ( vol_dmp[ct]->getBuffer(),
                   vol_dmp[ct]->getBytesPaddedUpToDim(1),
                   vol_dmp[ct]->getBytesPaddedUpToDim(0),
@@ -787,7 +789,7 @@ static void ps_computeSimilarityVolume(
             float* gpu_volume_2nd = vol_dmp[ct]->getRow( volDimY * zDimsAtATime );
 
             volume_slice_kernel
-                <<<volume_slice_kernel_grid, volume_slice_kernel_block,0,tcams[ct].stream>>>
+                <<<volume_slice_kernel_grid, volume_slice_kernel_block>>>
                 ( ps_texs_arr[rcam.camId][scale].tex,
                   ps_texs_arr[tcams[ct].camId][scale].tex,
                   rcam.param_dev,
@@ -813,10 +815,11 @@ static void ps_computeSimilarityVolume(
             dst += depthOffset*volDimX*volDimY;
 
             copy2D( dst, volDimX, volDimY*numPlanesToCopy,
-                    src, vol_dmp[ct]->getPitch(),
-                    tcams[ct].stream );
+                    src, vol_dmp[ct]->getPitch() );
         }
     }
+
+    cudaDeviceSynchronize();
 }
 
 void ps_planeSweepingGPUPixelsVolume(
