@@ -86,9 +86,9 @@ void SemiGlobalMatchingVolume::cloneVolumeSecondStepZ()
 
     _volumeStepZ->resize_with(volDimX * volDimY * (volDimZ / volStepZ), 255);
     _volumeBestZ->resize_with(volDimX * volDimY * (volDimZ / volStepZ), -1);
-    unsigned char* _volumeStepZPtr = _volumeStepZ->getDataWritable().data();
-    unsigned char* _volumeSecondBestPtr = _volumeSecondBest->getDataWritable().data();
-    int* _volumeBestZPtr = _volumeBestZ->getDataWritable().data();
+    unsigned char* volumeStepZPtr      = _volumeStepZ->getDataWritable().data();
+    unsigned char* volumeSecondBestPtr = _volumeSecondBest->getDataWritable().data();
+    int*           volumeBestZPtr      = _volumeBestZ->getDataWritable().data();
     for(int z = 0; z < volDimZ; z++)
     {
         for(int y = 0; y < volDimY; y++)
@@ -98,12 +98,12 @@ void SemiGlobalMatchingVolume::cloneVolumeSecondStepZ()
                 if((z / volStepZ) < (volDimZ / volStepZ))
                 {
                     int offs = (z / volStepZ) * volDimX * volDimY + y * volDimX + x;
-                    unsigned char oldSim = _volumeStepZPtr[offs];
-                    unsigned char newSim = _volumeSecondBestPtr[z * volDimX * volDimY + y * volDimX + x];
+                    unsigned char oldSim = volumeStepZPtr[offs];
+                    unsigned char newSim = volumeSecondBestPtr[z * volDimX * volDimY + y * volDimX + x];
                     if(newSim <= oldSim)
                     {
-                        _volumeStepZPtr[offs] = newSim;
-                        _volumeBestZPtr[offs] = z;
+                        volumeStepZPtr[offs] = newSim;
+                        volumeBestZPtr[offs] = z;
                     }
                 }
             }
@@ -177,8 +177,8 @@ void SemiGlobalMatchingVolume::copyVolume(const StaticVector<unsigned char>& vol
 {
     const int zFrom   = fromSteps.x;
     const int nZSteps = fromSteps.y;
-    unsigned char*       _volumePtr = _volume->getDataWritable().data();
-    const unsigned char* volumePtr  = volume.getData().data();
+    unsigned char*       fullVolumePtr = _volume->getDataWritable().data();
+    const unsigned char* subVolumePtr  = volume.getData().data();
 #pragma omp parallel for
     for(int z = zFrom; z < zFrom + nZSteps; z++)
     {
@@ -186,8 +186,8 @@ void SemiGlobalMatchingVolume::copyVolume(const StaticVector<unsigned char>& vol
         {
             for(int x = 0; x < volDimX; x++)
             {
-                _volumePtr[z * volDimY * volDimX + y * volDimX + x] =
-                    volumePtr[(z - zFrom) * volDimY * volDimX + y * volDimX + x];
+                fullVolumePtr[z * volDimY * volDimX + y * volDimX + x] =
+                    subVolumePtr[(z - zFrom) * volDimY * volDimX + y * volDimX + x];
             }
         }
     }
@@ -206,9 +206,9 @@ void SemiGlobalMatchingVolume::addVolumeSecondMin(
     const int zFrom   = z[i].x;
     const int nZSteps = z[i].y;
 
-    unsigned char* _volumePtr = _volume->getDataWritable().data();
-    unsigned char* _volumeSecondBestPtr = _volumeSecondBest->getDataWritable().data();
-    const unsigned char* volumePtr = volume.getData().data();
+    unsigned char* fullVolumePtr = _volume->getDataWritable().data();
+    unsigned char* volumeSecondBestPtr = _volumeSecondBest->getDataWritable().data();
+    const unsigned char* subVolumePtr = volume.getData().data();
 #pragma omp parallel for
     for(int z = zFrom; z < zFrom + nZSteps; z++)
     {
@@ -218,9 +218,9 @@ void SemiGlobalMatchingVolume::addVolumeSecondMin(
             {
                 const int vaIdx = z * volDimY * volDimX + y * volDimX + x;
                 const int vnIdx = (z - zFrom) * volDimY * volDimX + y * volDimX + x;
-                unsigned char& va = _volumePtr[vaIdx];
-                unsigned char& va2 = _volumeSecondBestPtr[vaIdx];
-                unsigned char vn = volumePtr[vnIdx];
+                unsigned char& va  = fullVolumePtr[vaIdx];
+                unsigned char& va2 = volumeSecondBestPtr[vaIdx];
+                unsigned char vn   = subVolumePtr[vnIdx];
                 if(vn < va)
                 {
                     va2 = va;
