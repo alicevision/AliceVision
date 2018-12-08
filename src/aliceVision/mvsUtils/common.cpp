@@ -299,18 +299,25 @@ void getHexahedronTriangles(Point3d tris[12][3], const Point3d hexah[8])
 }
 
 // hexahedron format ... 0-3 frontal face, 4-7 back face
-void getCamHexahedron(const MultiViewParams* mp, Point3d hexah[8], int cam, float mind, float maxd)
+void getCamHexahedron(const Point3d& position,
+                      const Matrix3x3& iCam,
+                      int width,
+                      int height,
+                      float minDepth,
+                      float maxDepth,
+                      Point3d hexah[8])
 {
-    float w = (float)mp->getWidth(cam);
-    float h = (float)mp->getHeight(cam);
-    hexah[0] = mp->CArr[cam] + (mp->iCamArr[cam] * Point2d(0.0f, 0.0f)).normalize() * mind;
-    hexah[4] = mp->CArr[cam] + (mp->iCamArr[cam] * Point2d(0.0f, 0.0f)).normalize() * maxd;
-    hexah[1] = mp->CArr[cam] + (mp->iCamArr[cam] * Point2d(w, 0.0f)).normalize() * mind;
-    hexah[5] = mp->CArr[cam] + (mp->iCamArr[cam] * Point2d(w, 0.0f)).normalize() * maxd;
-    hexah[2] = mp->CArr[cam] + (mp->iCamArr[cam] * Point2d(w, h)).normalize() * mind;
-    hexah[6] = mp->CArr[cam] + (mp->iCamArr[cam] * Point2d(w, h)).normalize() * maxd;
-    hexah[3] = mp->CArr[cam] + (mp->iCamArr[cam] * Point2d(0.0f, h)).normalize() * mind;
-    hexah[7] = mp->CArr[cam] + (mp->iCamArr[cam] * Point2d(0.0f, h)).normalize() * maxd;
+    const float w = static_cast<float>(width);
+    const float h = static_cast<float>(height);
+
+    hexah[0] = position + (iCam * Point2d(0.0f, 0.0f)).normalize() * minDepth;
+    hexah[4] = position + (iCam * Point2d(0.0f, 0.0f)).normalize() * maxDepth;
+    hexah[1] = position + (iCam * Point2d(w, 0.0f)).normalize() * minDepth;
+    hexah[5] = position + (iCam * Point2d(w, 0.0f)).normalize() * maxDepth;
+    hexah[2] = position + (iCam * Point2d(w, h)).normalize() * minDepth;
+    hexah[6] = position + (iCam * Point2d(w, h)).normalize() * maxDepth;
+    hexah[3] = position + (iCam * Point2d(0.0f, h)).normalize() * minDepth;
+    hexah[7] = position + (iCam * Point2d(0.0f, h)).normalize() * maxDepth;
 }
 
 // hexahedron format ... 0-3 frontal face, 4-7 back face

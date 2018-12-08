@@ -6,11 +6,11 @@
 
 #pragma once
 
+#include <aliceVision/mvsUtils/MultiViewParams.hpp>
 #include <aliceVision/mvsData/Point3d.hpp>
 #include <aliceVision/mvsData/StaticVector.hpp>
 #include <aliceVision/mvsData/Universe.hpp>
 #include <aliceVision/mvsData/Voxel.hpp>
-#include <aliceVision/mvsUtils/PreMatchCams.hpp>
 
 namespace aliceVision {
 
@@ -24,9 +24,8 @@ class Fuser
 {
 public:
     const mvsUtils::MultiViewParams* mp;
-    mvsUtils::PreMatchCams* pc;
 
-    Fuser(const mvsUtils::MultiViewParams* _mp, mvsUtils::PreMatchCams* _pc);
+    Fuser(const mvsUtils::MultiViewParams* _mp);
     ~Fuser(void);
 
     // minNumOfModals number of other cams including this cam ... minNumOfModals /in 2,3,... default 3
@@ -37,7 +36,7 @@ public:
     bool filterDepthMapsRC(int rc, int minNumOfModals, int minNumOfModalsWSP2SSP);
 
     void divideSpaceFromDepthMaps(Point3d* hexah, float& minPixSize);
-    void divideSpaceFromSfM(const sfmData::SfMData& sfmData, Point3d* hexah, std::size_t minObservations = 0) const;
+    void divideSpaceFromSfM(const sfmData::SfMData& sfmData, Point3d* hexah, std::size_t minObservations = 0, float minObservationAngle = 0.0f) const;
 
     /// @brief Compute average pixel size in the given hexahedron
     float computeAveragePixelSizeInHexahedron(Point3d* hexah, int step, int scale);

@@ -11,7 +11,6 @@
 #include <aliceVision/mvsData/StaticVector.hpp>
 #include <aliceVision/mvsUtils/common.hpp>
 #include <aliceVision/mvsUtils/MultiViewParams.hpp>
-#include <aliceVision/mvsUtils/PreMatchCams.hpp>
 #include <aliceVision/system/cmdline.hpp>
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/Timer.hpp>
@@ -35,15 +34,19 @@ int main(int argc, char* argv[])
 
     std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
     std::string sfmDataFilename;
-    std::string cameraPairsMatrixFolder;
     std::string outputFolder;
     std::string imagesFolder;
 
+    // program range
     int rangeStart = -1;
     int rangeSize = -1;
 
     // image downscale factor during process
     int downscale = 2;
+
+    // min / max view angle
+    float minViewAngle = 2.0f;
+    float maxViewAngle = 70.0f;
 
     // semiGlobalMatching
     int sgmMaxTCams = 10;
@@ -82,6 +85,10 @@ int main(int argc, char* argv[])
             "Compute a sub-range of N images (N=rangeSize).")
         ("downscale", po::value<int>(&downscale)->default_value(downscale),
             "Image downscale factor.")
+        ("minViewAngle", po::value<float>(&minViewAngle)->default_value(minViewAngle),
+            "minimum angle between two views.")
+        ("maxViewAngle", po::value<float>(&maxViewAngle)->default_value(maxViewAngle),
+            "maximum angle between two views.")
         ("sgmMaxTCams", po::value<int>(&sgmMaxTCams)->default_value(sgmMaxTCams),
             "Semi Global Matching: Number of neighbour cameras.")
         ("sgmWSH", po::value<int>(&sgmWSH)->default_value(sgmWSH),
@@ -177,6 +184,9 @@ int main(int argc, char* argv[])
     // initialization
     mvsUtils::MultiViewParams mp(sfmData, imagesFolder, outputFolder, "", false, downscale);
 
+    mp.setMinViewAngle(minViewAngle);
+    mp.setMaxViewAngle(maxViewAngle);
+
     // set params in bpt
 
     // semiGlobalMatching
@@ -195,8 +205,6 @@ int main(int argc, char* argv[])
     mp.userParams.put("refineRc.gammaC", refineGammaC);
     mp.userParams.put("refineRc.gammaP", refineGammaP);
     mp.userParams.put("refineRc.useTcOrRcPixSize", refineUseTcOrRcPixSize);
-
-    mvsUtils::PreMatchCams pc(mp);
 
     StaticVector<int> cams;
     cams.reserve(mp.ncams);
@@ -224,8 +232,8 @@ int main(int argc, char* argv[])
     ALICEVISION_LOG_INFO("Create depth maps.");
 
     {
-      depthMap::computeDepthMapsPSSGM(&mp, &pc, cams);
-      depthMap::refineDepthMaps(&mp, &pc, cams);
+      depthMap::computeDepthMapsPSSGM(&mp, cams);
+      depthMap::refineDepthMaps(&mp, cams);
     }
 
     ALICEVISION_LOG_INFO("Task done in (s): " + std::to_string(timer.elapsed()));

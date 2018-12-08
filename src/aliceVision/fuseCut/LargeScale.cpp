@@ -17,9 +17,8 @@ namespace fuseCut {
 
 namespace bfs = boost::filesystem;
 
-LargeScale::LargeScale(mvsUtils::MultiViewParams* _mp, mvsUtils::PreMatchCams* _pc, std::string _spaceFolderName)
+LargeScale::LargeScale(mvsUtils::MultiViewParams* _mp, std::string _spaceFolderName)
   : mp(_mp)
-  , pc(_pc)
   , spaceFolderName(_spaceFolderName)
   , spaceVoxelsFolderName(_spaceFolderName + "_data/")
   , spaceFileName(spaceFolderName + "/space.txt")
@@ -73,7 +72,7 @@ void LargeScale::loadSpaceFromFile()
 void LargeScale::initialEstimateSpace(int maxOcTreeDim)
 {
     float minPixSize;
-    Fuser* fs = new Fuser(mp, pc);
+    Fuser* fs = new Fuser(mp);
     fs->divideSpaceFromDepthMaps(&space[0], minPixSize);
     dimensions = fs->estimateDimensions(&space[0], &space[0], 0, maxOcTreeDim);
     delete fs;
@@ -81,7 +80,7 @@ void LargeScale::initialEstimateSpace(int maxOcTreeDim)
 
 std::string LargeScale::getSpaceCamsTracksDir()
 {
-    VoxelsGrid* vg = new VoxelsGrid(dimensions, &space[0], mp, pc, spaceVoxelsFolderName);
+    VoxelsGrid* vg = new VoxelsGrid(dimensions, &space[0], mp, spaceVoxelsFolderName);
     std::string out = vg->spaceCamsTracksDir;
     delete vg;
     return out;
@@ -93,7 +92,7 @@ LargeScale* LargeScale::cloneSpaceIfDoesNotExists(int newOcTreeDim, std::string 
     {
         loadSpaceFromFile();
         
-        LargeScale* out = new LargeScale(mp, pc, newSpaceFolderName);
+        LargeScale* out = new LargeScale(mp, newSpaceFolderName);
 
         if(out->isSpaceSaved())
         {
@@ -115,7 +114,7 @@ LargeScale* LargeScale::cloneSpaceIfDoesNotExists(int newOcTreeDim, std::string 
 
         long t1 = clock();
 
-        VoxelsGrid* vgactual = new VoxelsGrid(dimensions, &space[0], mp, pc, spaceVoxelsFolderName, doVisualize);
+        VoxelsGrid* vgactual = new VoxelsGrid(dimensions, &space[0], mp, spaceVoxelsFolderName, doVisualize);
         if(maxOcTreeDim == out->maxOcTreeDim)
         {
             VoxelsGrid* vgnew = vgactual->copySpace(out->spaceVoxelsFolderName);
@@ -170,7 +169,7 @@ bool LargeScale::generateSpace(int maxPts, int ocTreeDim, bool generateTracks)
 
         std::string tmpdir = spaceFolderName + "tmp/";
         bfs::create_directory(tmpdir);
-        VoxelsGrid* vg = new VoxelsGrid(dimensions, &space[0], mp, pc, tmpdir, doVisualize);
+        VoxelsGrid* vg = new VoxelsGrid(dimensions, &space[0], mp, tmpdir, doVisualize);
         int maxlevel = 0;
         vg->generateTracksForEachVoxel(ReconstructionPlan, maxOcTreeDim, maxPts, 1, maxlevel, depthMapsPtsSimsTmpDir);
         if(mp->verbose)
@@ -185,7 +184,7 @@ bool LargeScale::generateSpace(int maxPts, int ocTreeDim, bool generateTracks)
         if(mp->verbose)
             ALICEVISION_LOG_DEBUG("final dimmension: " << dimensions.x << ", " << dimensions.y << ", " << dimensions.z << " max: " << maxOcTreeDim);
 
-        VoxelsGrid* vgnew = new VoxelsGrid(dimensions, &space[0], mp, pc, spaceVoxelsFolderName, doVisualize);
+        VoxelsGrid* vgnew = new VoxelsGrid(dimensions, &space[0], mp, spaceVoxelsFolderName, doVisualize);
         vg->generateSpace(vgnew, Voxel(0, 0, 0), dimensions, depthMapsPtsSimsTmpDir);
         vgnew->generateCamsPtsFromVoxelsTracks();
         if(doVisualize)

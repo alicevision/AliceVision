@@ -413,15 +413,10 @@ void DepthSimMap::save(int rc, const StaticVector<int>& tcams)
     imageIO::writeImage(getFileNameFromIndex(mp, rc, mvsUtils::EFileType::simMap, scale), width, height, simMap->getDataWritable());
 
     {
+        // TODO: write max & min depth in depth maps metadata.
         Point2d maxMinDepth = getMaxMinDepth();
         FILE* f = mv_openFile(mp, rc, mvsUtils::EFileType::depthMapInfo, "w");
-        int nbTCs = tcams.size();
-        fprintf(f, "minDepth %f, maxDepth %f, ntcams %i, tcams", maxMinDepth.y, maxMinDepth.x, nbTCs);
-        for(int c = 0; c < nbTCs; c++)
-        {
-            int tc = tcams[c];
-            fprintf(f, " %i", tc);
-        }
+        fprintf(f, "minDepth %f, maxDepth %f", maxMinDepth.y, maxMinDepth.x);
         fclose(f);
     }
 }

@@ -392,27 +392,15 @@ void memcpyRGBImageFromFileToArr(int camId, Color* imgArr, const std::string& fi
     }
 }
 
-bool getDepthMapInfo(int refImgFileId, const MultiViewParams* mp, float& mindepth, float& maxdepth,
-                     StaticVector<int>** tcams)
+bool getDepthMapInfo(int rc, const MultiViewParams* mp, float& minDepth, float& maxDepth)
 {
-    *tcams = nullptr;
-    FILE* f = mv_openFile(mp, refImgFileId, EFileType::depthMapInfo, "r");
+    FILE* f = mv_openFile(mp, rc, EFileType::depthMapInfo, "r");
     if(f == nullptr)
     {
-        ALICEVISION_LOG_WARNING("Depth map info: " << refImgFileId << " does not exists.");
+        ALICEVISION_LOG_WARNING("Depth map info: " << rc << " does not exists.");
         return false;
     }
-
-    int ntcams;
-    fscanf(f, "minDepth %f, maxDepth %f, ntcams %i, tcams", &mindepth, &maxdepth, &ntcams);
-    (*tcams) = new StaticVector<int>();
-    (*tcams)->reserve(ntcams);
-    for(int c = 0; c < ntcams; c++)
-    {
-        int tc;
-        fscanf(f, " %i", &tc);
-        (*tcams)->push_back(tc);
-    }
+    fscanf(f, "minDepth %f, maxDepth %f", &minDepth, &maxDepth);
     fclose(f);
     return true;
 }

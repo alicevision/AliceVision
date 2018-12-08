@@ -36,7 +36,7 @@ RefineRc::RefineRc(int _rc, int _scale, int _step, SemiGlobalMatchingParams* _sp
     _gammaP = (float)sp->mp->userParams.get<double>("refineRc.gammaP", 8.0);
     
     int nnearestcams = sp->mp->userParams.get<int>("refineRc.maxTCams", 6);
-    tcams = sp->pc->findNearestCamsFromLandmarks(rc, nnearestcams);
+    tcams = sp->mp->findNearestCamsFromLandmarks(rc, nnearestcams);
 }
 
 RefineRc::~RefineRc()
@@ -307,7 +307,7 @@ bool RefineRc::refinercCUDA(bool checkIfExists)
     return true;
 }
 
-void refineDepthMaps(int CUDADeviceNo, mvsUtils::MultiViewParams* mp, mvsUtils::PreMatchCams* pc, const StaticVector<int>& cams)
+void refineDepthMaps(int CUDADeviceNo, mvsUtils::MultiViewParams* mp, const StaticVector<int>& cams)
 {
     const int fileScale = 1; // input images scale (should be one)
     int sgmScale = mp->userParams.get<int>("semiGlobalMatching.scale", -1);
@@ -325,9 +325,9 @@ void refineDepthMaps(int CUDADeviceNo, mvsUtils::MultiViewParams* mp, mvsUtils::
     }
 
     int bandType = 0;
-    mvsUtils::ImagesCache    ic(mp, bandType, true);
-    PlaneSweepingCuda        cps(CUDADeviceNo, ic, mp, pc, sgmScale);
-    SemiGlobalMatchingParams sp(mp, pc, cps);
+    mvsUtils::ImagesCache ic(mp, bandType, true);
+    PlaneSweepingCuda cps(CUDADeviceNo, ic, mp, sgmScale);
+    SemiGlobalMatchingParams sp(mp, cps);
 
     //////////////////////////////////////////////////////////////////////////////////////////
 
@@ -341,7 +341,7 @@ void refineDepthMaps(int CUDADeviceNo, mvsUtils::MultiViewParams* mp, mvsUtils::
     }
 }
 
-void refineDepthMaps(mvsUtils::MultiViewParams* mp, mvsUtils::PreMatchCams* pc, const StaticVector<int>& cams)
+void refineDepthMaps(mvsUtils::MultiViewParams* mp, const StaticVector<int>& cams)
 {
     int num_gpus = listCUDADevices(true);
     int num_cpu_threads = omp_get_num_procs();
@@ -359,7 +359,7 @@ void refineDepthMaps(mvsUtils::MultiViewParams* mp, mvsUtils::PreMatchCams* pc, 
         // The GPU sorting is determined by an environment variable named CUDA_DEVICE_ORDER
         // Possible values: FASTEST_FIRST (default) or PCI_BUS_ID
         const int CUDADeviceNo = 0;
-        refineDepthMaps(CUDADeviceNo, mp, pc, cams);
+        refineDepthMaps(CUDADeviceNo, mp, cams);
     }
     else
     {
@@ -382,7 +382,7 @@ void refineDepthMaps(mvsUtils::MultiViewParams* mp, mvsUtils::PreMatchCams* pc, 
             {
                 subcams.push_back(cams[rc]);
             }
-            refineDepthMaps(cpu_thread_id, mp, pc, subcams);
+            refineDepthMaps(cpu_thread_id, mp, subcams);
         }
     }
 }

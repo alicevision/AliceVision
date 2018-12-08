@@ -9,7 +9,6 @@
 #include <aliceVision/mvsData/geometry.hpp>
 #include <aliceVision/mvsData/Point3d.hpp>
 #include <aliceVision/mvsData/StaticVector.hpp>
-#include <aliceVision/mvsUtils/PreMatchCams.hpp>
 #include <aliceVision/mesh/MeshEnergyOpt.hpp>
 
 #include <boost/filesystem/operations.hpp>
@@ -19,8 +18,7 @@ namespace mesh {
 
 namespace bfs = boost::filesystem;
 
-void meshPostProcessing(Mesh*& inout_mesh, StaticVector<StaticVector<int>*>*& inout_ptsCams, StaticVector<int>& usedCams,
-                      mvsUtils::MultiViewParams& mp, mvsUtils::PreMatchCams& pc,
+void meshPostProcessing(Mesh*& inout_mesh, StaticVector<StaticVector<int>*>*& inout_ptsCams, StaticVector<int>& usedCams, mvsUtils::MultiViewParams& mp,
                       const std::string& debugFolderName,
                       StaticVector<Point3d>* hexahsToExcludeFromResultingMesh, Point3d* hexah)
 {

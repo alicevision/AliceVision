@@ -38,7 +38,7 @@ SemiGlobalMatchingRc::SemiGlobalMatchingRc(bool doComputeDepthsAndResetTCams, in
     h = sp->mp->getHeight(rc) / (scale * step);
 
     int nnearestcams = sp->mp->userParams.get<int>("semiGlobalMatching.maxTCams", 10);
-    tcams = sp->pc->findNearestCamsFromLandmarks(rc, nnearestcams);
+    tcams = sp->mp->findNearestCamsFromLandmarks(rc, nnearestcams);
 
     wsh = sp->mp->userParams.get<int>("semiGlobalMatching.wsh", 4);
     gammaC = (float)sp->mp->userParams.get<double>("semiGlobalMatching.gammaC", 5.5);
@@ -615,7 +615,7 @@ bool SemiGlobalMatchingRc::sgmrc(bool checkIfExists)
     return true;
 }
 
-void computeDepthMapsPSSGM(int CUDADeviceNo, mvsUtils::MultiViewParams* mp, mvsUtils::PreMatchCams* pc, const StaticVector<int>& cams)
+void computeDepthMapsPSSGM(int CUDADeviceNo, mvsUtils::MultiViewParams* mp, const StaticVector<int>& cams)
 {
     const int fileScale = 1; // input images scale (should be one)
     int sgmScale = mp->userParams.get<int>("semiGlobalMatching.scale", -1);
@@ -638,9 +638,9 @@ void computeDepthMapsPSSGM(int CUDADeviceNo, mvsUtils::MultiViewParams* mp, mvsU
     // load images from files into RAM 
     mvsUtils::ImagesCache ic(mp, bandType, true);
     // load stuff on GPU memory and creates multi-level images and computes gradients
-    PlaneSweepingCuda cps(CUDADeviceNo, ic, mp, pc, sgmScale);
+    PlaneSweepingCuda cps(CUDADeviceNo, ic, mp, sgmScale);
     // init plane sweeping parameters
-    SemiGlobalMatchingParams sp(mp, pc, cps);
+    SemiGlobalMatchingParams sp(mp, cps);
 
     //////////////////////////////////////////////////////////////////////////////////////////
 
@@ -660,7 +660,7 @@ void computeDepthMapsPSSGM(int CUDADeviceNo, mvsUtils::MultiViewParams* mp, mvsU
     }
 }
 
-void computeDepthMapsPSSGM(mvsUtils::MultiViewParams* mp, mvsUtils::PreMatchCams* pc, const StaticVector<int>& cams)
+void computeDepthMapsPSSGM(mvsUtils::MultiViewParams* mp, const StaticVector<int>& cams)
 {
     int num_gpus = listCUDADevices(true);
     int num_cpu_threads = omp_get_num_procs();
@@ -678,7 +678,7 @@ void computeDepthMapsPSSGM(mvsUtils::MultiViewParams* mp, mvsUtils::PreMatchCams
         // The GPU sorting is determined by an environment variable named CUDA_DEVICE_ORDER
         // Possible values: FASTEST_FIRST (default) or PCI_BUS_ID
         const int CUDADeviceNo = 0;
-        computeDepthMapsPSSGM(CUDADeviceNo, mp, pc, cams);
+        computeDepthMapsPSSGM(CUDADeviceNo, mp, cams);
     }
     else
     {
@@ -701,7 +701,7 @@ void computeDepthMapsPSSGM(mvsUtils::MultiViewParams* mp, mvsUtils::PreMatchCams
             {
                 subcams.push_back(cams[rc]);
             }
-            computeDepthMapsPSSGM(cpu_thread_id, mp, pc, subcams);
+            computeDepthMapsPSSGM(cpu_thread_id, mp, subcams);
         }
     }
 }

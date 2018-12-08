@@ -10,7 +10,6 @@
 #include <aliceVision/mvsData/StaticVector.hpp>
 #include <aliceVision/mvsData/Voxel.hpp>
 #include <aliceVision/mvsUtils/common.hpp>
-#include <aliceVision/mvsUtils/PreMatchCams.hpp>
 #include <aliceVision/fuseCut/OctreeTracks.hpp>
 
 #include <array>
@@ -22,7 +21,6 @@ class LargeScale
 {
 public:
     mvsUtils::MultiViewParams* mp;
-    mvsUtils::PreMatchCams* pc;
     std::string spaceFolderName;
     std::string spaceVoxelsFolderName;
     std::string spaceFileName;
@@ -31,7 +29,7 @@ public:
     int maxOcTreeDim;
     bool doVisualize;
 
-    LargeScale(mvsUtils::MultiViewParams* _mp, mvsUtils::PreMatchCams* _pc, std::string _spaceFolderName);
+    LargeScale(mvsUtils::MultiViewParams* _mp, std::string _spaceFolderName);
     ~LargeScale();
 
     std::string getSpaceCamsTracksDir();

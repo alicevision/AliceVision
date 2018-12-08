@@ -58,11 +58,9 @@ unsigned long computeNumberOfAllPoints(const mvsUtils::MultiViewParams* mp, int 
     return npts;
 }
 
-Fuser::Fuser(const mvsUtils::MultiViewParams* _mp, mvsUtils::PreMatchCams* _pc)
+Fuser::Fuser(const mvsUtils::MultiViewParams* _mp)
   : mp(_mp)
-  , pc(_pc)
-{
-}
+{}
 
 Fuser::~Fuser()
 {
@@ -187,7 +185,7 @@ bool Fuser::filterGroupsRC(int rc, int pixSizeBall, int pixSizeBallWSP, int nNea
     numOfPtsMap->reserve(w * h);
     numOfPtsMap->resize_with(w * h, 0);
 
-    StaticVector<int> tcams = pc->findNearestCamsFromLandmarks(rc, nNearestCams);
+    StaticVector<int> tcams = mp->findNearestCamsFromLandmarks(rc, nNearestCams);
 
     for(int c = 0; c < tcams.size(); c++)
     {
@@ -343,7 +341,7 @@ float Fuser::computeAveragePixelSizeInHexahedron(Point3d* hexah, int step, int s
 {
     int scaleuse = std::max(1, scale);
 
-    StaticVector<int> cams = pc->findCamsWhichIntersectsHexahedron(hexah);
+    StaticVector<int> cams = mp->findCamsWhichIntersectsHexahedron(hexah);
     int j = 0;
     float av = 0.0f;
     float nav = 0.0f;
@@ -566,7 +564,41 @@ void Fuser::divideSpaceFromDepthMaps(Point3d* hexah, float& minPixSize)
     ALICEVISION_LOG_INFO("Estimate space done.");
 }
 
-void Fuser::divideSpaceFromSfM(const sfmData::SfMData& sfmData, Point3d* hexah, std::size_t minObservations) const
+bool checkLandmarkMinObservationAngle(const sfmData::SfMData& sfmData, const sfmData::Landmark& landmark, float minObservationAngle)
+{
+  for(const auto& observationPairI : landmark.observations)
+  {
+    const IndexT I = observationPairI.first;
+    const sfmData::View& viewI = *(sfmData.getViews().at(I));
+    const geometry::Pose3 poseI = sfmData.getPose(viewI).getTransform();
+    const camera::IntrinsicBase* intrinsicPtrI = sfmData.getIntrinsicPtr(viewI.getIntrinsicId());
+
+    for(const auto& observationPairJ : landmark.observations)
+    {
+      const IndexT J = observationPairJ.first;
+
+      // cannot compare the current view with itself
+      if(I == J)
+        continue;
+
+      const sfmData::View& viewJ = *(sfmData.getViews().at(J));
+      const geometry::Pose3 poseJ = sfmData.getPose(viewJ).getTransform();
+      const camera::IntrinsicBase* intrinsicPtrJ = sfmData.getIntrinsicPtr(viewJ.getIntrinsicId());
+
+      const double angle = camera::AngleBetweenRays(poseI, intrinsicPtrI, poseJ, intrinsicPtrJ, observationPairI.second.x, observationPairJ.second.x);
+
+      // check angle between two observation
+      if(angle < minObservationAngle)
+        continue;
+
+      return true;
+    }
+  }
+
+  return false;
+}
+
+void Fuser::divideSpaceFromSfM(const sfmData::SfMData& sfmData, Point3d* hexah, std::size_t minObservations, float minObservationAngle) const
 {
   ALICEVISION_LOG_INFO("Estimate space from SfM.");
 
@@ -588,7 +620,12 @@ void Fuser::divideSpaceFromSfM(const sfmData::SfMData& sfmData, Point3d* hexah, 
   {
     const sfmData::Landmark& landmark = landmarkPair.second;
 
+    // check number of observations
     if(landmark.observations.size() < minObservations)
+      continue;
+
+    // check angle between observations
+    if(!checkLandmarkMinObservationAngle(sfmData, landmark, minObservationAngle))
       continue;
 
     const double x = landmark.X(0);
