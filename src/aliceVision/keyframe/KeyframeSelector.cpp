@@ -24,7 +24,8 @@ namespace keyframe {
 
 
 /**
- * @brief Get a random int in order to generate uid
+ * @brief Get a random int in order to generate uid.
+ * @warning The random don't use a repeatable seed to avoid conflicts between different launches on different data sets.
  * @return int between 0 and std::numeric_limits<int>::max()
  */
 int getRandomInt()
