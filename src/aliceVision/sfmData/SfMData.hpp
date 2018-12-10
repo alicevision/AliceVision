@@ -208,7 +208,7 @@ public:
     return (
       view->getIntrinsicId() != UndefinedIndexT &&
       view->getPoseId() != UndefinedIndexT &&
-      (!view->isPartOfRig() || getRigSubPose(*view).status != ERigSubPoseStatus::UNINITIALIZED) &&
+      // (!view->isPartOfRig() || getRigSubPose(*view).status != ERigSubPoseStatus::UNINITIALIZED) &&
       intrinsics.find(view->getIntrinsicId()) != intrinsics.end() &&
       _poses.find(view->getPoseId()) != _poses.end());
   }
@@ -234,6 +234,26 @@ public:
   }
 
   /**
+   * @brief Gives the view of the input view id.
+   * @param[in] viewId The given view id
+   * @return the corresponding view reference
+   */
+  View& getView(IndexT viewId)
+  {
+    return *(views.at(viewId));
+  }
+
+  /**
+   * @brief Gives the view of the input view id.
+   * @param[in] viewId The given view id
+   * @return the corresponding view reference
+   */
+  const View& getView(IndexT viewId) const
+  {
+    return *(views.at(viewId));
+  }
+
+  /**
    * @brief Gives the pose of the input view. If this view is part of a rig, it returns rigPose + rigSubPose.
    * @param[in] view The given view
    *
@@ -243,7 +263,7 @@ public:
   const CameraPose getPose(const View& view) const
   {
     // check the view has valid pose / rig etc
-    if(!view.isPartOfRig())
+    if(!view.isPartOfRig() || view.isPoseIndependant())
     {
       return _poses.at(view.getPoseId());
     }
@@ -344,13 +364,14 @@ public:
   /**
    * @brief Erase yhe pose for the given poseId
    * @param[in] poseId The given poseId
+   * @param[in] noThrow If false, throw exception if no pose found
    */
-  void erasePose(IndexT poseId)
+  void erasePose(IndexT poseId, bool noThrow = false)
   {
     auto it =_poses.find(poseId);
     if(it != _poses.end())
       _poses.erase(it);
-    else
+    else if(!noThrow)
       throw std::out_of_range(std::string("Can't erase unfind pose ") + std::to_string(poseId));
   }
 

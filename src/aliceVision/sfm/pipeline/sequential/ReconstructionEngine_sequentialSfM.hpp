@@ -8,13 +8,12 @@
 #pragma once
 
 #include <aliceVision/sfm/pipeline/ReconstructionEngine.hpp>
-#include <aliceVision/sfm/LocalBundleAdjustmentData.hpp>
+#include <aliceVision/sfm/LocalBundleAdjustmentGraph.hpp>
 #include <aliceVision/sfm/pipeline/localization/SfMLocalizer.hpp>
 #include <aliceVision/sfm/pipeline/pairwiseMatchesIO.hpp>
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
 #include <aliceVision/feature/FeaturesPerView.hpp>
 #include <aliceVision/track/Track.hpp>
-
 #include <dependencies/htmlDoc/htmlDoc.hpp>
 #include <dependencies/histogram/histogram.hpp>
 
@@ -38,7 +37,7 @@ class ReconstructionEngine_sequentialSfM : public ReconstructionEngine
 public:
 
   ReconstructionEngine_sequentialSfM(const sfmData::SfMData& sfmData,
-                                     const std::string& soutDirectory,
+                                     const std::string& outputFolder,
                                      const std::string& loggingFile = "");
 
   void setFeatures(feature::FeaturesPerView* featuresPerView)
@@ -101,35 +100,33 @@ public:
     _useTrackFiltering = useTrackFiltering;
   }
 
+  void useRigsCalibration(bool useRigsCalibration)
+  {
+    _useRigsCalibration = useRigsCalibration;
+  }
+
   void setLocalizerEstimator(robustEstimation::ERobustEstimator estimator)
   {
     _localizerEstimator = estimator;
   }
 
-  void setIntermediateFileExtension(const std::string& interFileExtension)
+  void setIntermediateFileExtension(const std::string& fileExtension)
   {
-    _sfmdataInterFileExtension = interFileExtension;
+    _sfmStepFileExtension = fileExtension;
   }
 
   void setLocalBundleAdjustmentGraphDistance(std::size_t distance)
   {
     if(_uselocalBundleAdjustment)
-      _localBA_data->setGraphDistanceLimit(distance);
+      _localStrategyGraph->setGraphDistanceLimit(distance);
   }
 
-  void setUseLocalBundleAdjustmentStrategy(bool v)
+  void setUseLocalBundleAdjustmentStrategy(bool useLocalStrategy)
   {
-    _uselocalBundleAdjustment = v;
-    if(v)
-    {
-      _localBA_data = std::make_shared<LocalBundleAdjustmentData>(_sfmData);
-      _localBA_data->setOutDirectory((fs::path(_outputFolder) / "localBA").string());
+    _uselocalBundleAdjustment = useLocalStrategy;
 
-      // delete all the previous data about the Local BA.
-      if(fs::exists(_localBA_data->getOutDirectory()))
-        fs::remove(_localBA_data->getOutDirectory());
-      fs::create_directory(_localBA_data->getOutDirectory());
-    }
+    if(useLocalStrategy)
+      _localStrategyGraph = std::make_shared<LocalBundleAdjustmentGraph>(_sfmData);
   }
 
   /**
@@ -175,17 +172,46 @@ public:
 
   /**
    * @brief Update the reconstruction with a new resection group of images
-   * @param resectionId The resection id
-   * @param bestViewIds The best remaining view ids
-   * @param viewIds The remaining view ids
+   * @param[in] resectionId The resection id
+   * @param[in] bestViewIds The best remaining view ids
+   * @param[in] prevReconstructedViews The previously reconstructed view ids
+   * @param[in,out] viewIds The remaining view ids
+   * @return new reconstructed view ids
    */
-  void updateReconstruction(IndexT resectionId, const std::vector<IndexT>& bestViewIds, std::set<IndexT>& viewIds);
+  std::set<IndexT> resection(IndexT resectionId,
+                             const std::vector<IndexT>& bestViewIds,
+                             const std::set<IndexT>& prevReconstructedViews,
+                             std::set<IndexT>& viewIds);
+
+  /**
+   * @brief triangulate
+   * @param[in] prevReconstructedViews The previously reconstructed view ids
+   * @param[in] newReconstructedViews The newly reconstructed view ids
+   */
+  void triangulate(const std::set<IndexT>& prevReconstructedViews,
+                   const std::set<IndexT>& newReconstructedViews);
+
+  /**
+   * @brief bundleAdjustment
+   * @param[in,out] newReconstructedViews The newly reconstructed view ids
+   * @param[in] isInitialPair If true use fixed intrinsics an no nbOutliersThreshold
+   * @return true if the bundle adjustment solution is usable
+   */
+  bool bundleAdjustment(std::set<IndexT>& newReconstructedViews, bool isInitialPair = false);
 
   /**
    * @brief Export and print statistics of a complete reconstruction
    * @param[in] reconstructionTime The duration of the reconstruction
    */
   void exportStatistics(double reconstructionTime);
+
+
+  /**
+   * @brief calibrateRigs
+   * @param[in,out] updatedViews add the updated view ids to the list
+   * @return updatedViews view ids
+   */
+  void calibrateRigs(std::set<IndexT>& updatedViews);
 
   /**
    * @brief Return all the images containing matches with already reconstructed 3D points.
@@ -273,7 +299,7 @@ private:
    * @param[in] trackIds: set of track IDs contained in viewId
    * @return the computed score
    */
-  std::size_t computeImageScore(IndexT viewId, const std::vector<std::size_t>& trackIds) const;
+  std::size_t computeCandidateImageScore(IndexT viewId, const std::vector<std::size_t>& trackIds) const;
 
   /**
    * @brief Apply the resection on a single view.
@@ -297,7 +323,7 @@ private:
    * @param previousReconstructedViews
    * @param newReconstructedViews
    */
-  void triangulate(sfmData::SfMData& scene, const std::set<IndexT>& previousReconstructedViews, const std::set<IndexT>& newReconstructedViews);
+  void triangulate_2Views(sfmData::SfMData& scene, const std::set<IndexT>& previousReconstructedViews, const std::set<IndexT>& newReconstructedViews);
   
   /**
    * @brief Triangulate new possible 2D tracks
@@ -306,8 +332,8 @@ private:
    * @param[in] previousReconstructedViews The list of the old reconstructed views (views index).
    * @param[in] newReconstructedViews The list of the new reconstructed views (views index).
    */
-  void triangulateMultiViews_LORANSAC(sfmData::SfMData& scene, const std::set<IndexT>& previousReconstructedViews, const std::set<IndexT>& newReconstructedViews);
-  
+  void triangulate_multiViewsLORANSAC(sfmData::SfMData& scene, const std::set<IndexT>& previousReconstructedViews, const std::set<IndexT>& newReconstructedViews);
+
   /**
    * @brief Check if a 3D points is well located in front of a set of views.
    * @param[in] pt3D A 3D point (euclidian coordinates)
@@ -326,20 +352,6 @@ private:
    * @return false if the maximal angle does not exceed the limit, else \c true.
    */
   bool checkAngles(const Vec3& pt3D, const std::set<IndexT>& viewsId, const sfmData::SfMData& scene, const double& kMinAngle);
-
-  /**
-   * @brief Bundle adjustment to refine Structure; Motion and Intrinsics
-   * @param fixedIntrinsics
-   */
-  bool BundleAdjustment(bool fixedIntrinsics);
-  
-  /**
-   * @brief Apply the bundle adjustment choosing a small amount of parameters to reduce.
-   * It reduces drastically the reconstruction time for big dataset of images.
-   * @param The parameters to refine (landmarks, intrinsics, poses) are choosen according to the their
-   * @details proximity to the cameras newly added to the reconstruction.
-   */
-  bool localBundleAdjustment(const std::set<IndexT>& newReconstructedViews);
 
   /**
    * @brief Select the candidate tracks for the next triangulation step. 
@@ -371,6 +383,7 @@ private:
   int _minTrackLength = 2;
   int _minPointsPerPose = 30;
   bool _uselocalBundleAdjustment = false;
+  bool _useRigsCalibration = true;
   /// minimum number of obersvations to triangulate a 3d point.
   std::size_t _minNbObservationsForTriangulation = 2;
   /// a 3D point must have at least 2 obervations not too much aligned.
@@ -408,19 +421,23 @@ private:
 
   // Local Bundle Adjustment data
 
+  /// The minimum number of shared matches to create an edge between two views (nodes)
+  const std::size_t _kMinNbOfMatches = 50;
   /// Contains all the data used by the Local BA approach
-  std::shared_ptr<LocalBundleAdjustmentData> _localBA_data;
+  std::shared_ptr<LocalBundleAdjustmentGraph> _localStrategyGraph;
 
   // Intermediate reconstructions
-
+  /// sfm intermediate reconstruction files
+  const std::string _sfmStepFolder;
   /// extension of the intermediate reconstruction files
-  std::string _sfmdataInterFileExtension = ".ply";
+  std::string _sfmStepFileExtension = ".ply";
   /// filter for the intermediate reconstruction files
-  sfmDataIO::ESfMData _sfmdataInterFilter = sfmDataIO::ESfMData(sfmDataIO::EXTRINSICS |
-                                                                sfmDataIO::INTRINSICS |
-                                                                sfmDataIO::STRUCTURE |
-                                                                sfmDataIO::OBSERVATIONS |
-                                                                sfmDataIO::CONTROL_POINTS);
+  sfmDataIO::ESfMData _sfmStepFilter = sfmDataIO::ESfMData(sfmDataIO::VIEWS |
+                                                           sfmDataIO::EXTRINSICS |
+                                                           sfmDataIO::INTRINSICS |
+                                                           sfmDataIO::STRUCTURE |
+                                                           sfmDataIO::OBSERVATIONS |
+                                                           sfmDataIO::CONTROL_POINTS);
 
   // Log
 

@@ -128,6 +128,16 @@ public:
     return false;
   }
 
+  bool isFullyCalibrated() const
+  {
+    for(const RigSubPose& subPose : _subPoses)
+    {
+      if(subPose.status == ERigSubPoseStatus::UNINITIALIZED)
+        return false;
+    }
+    return true;
+  }
+
   /**
    * @brief Get the number of sub-poses in the rig
    * @return number of sub-poses in the rig

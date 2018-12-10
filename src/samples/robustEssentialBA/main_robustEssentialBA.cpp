@@ -265,7 +265,7 @@ int main() {
     //D. Perform Bundle Adjustment of the scene
 
     BundleAdjustmentCeres bundle_adjustment_obj;
-    bundle_adjustment_obj.Adjust(tinyScene);
+    bundle_adjustment_obj.adjust(tinyScene);
 
     sfmDataIO::Save(tinyScene, "EssentialGeometry_refined.ply", sfmDataIO::ESfMData::ALL);
   }

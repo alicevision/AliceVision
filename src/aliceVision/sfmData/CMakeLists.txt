@@ -28,11 +28,3 @@ alicevision_add_library(aliceVision_sfmData
 )
 
 # Unit tests
-
-alicevision_add_test(rig_test.cpp
-  NAME "sfmData_rig"
-  LINKS aliceVision_sfmData
-        aliceVision_feature
-        aliceVision_system
-)
-

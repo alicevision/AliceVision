@@ -139,60 +139,29 @@ std::set<IndexT> SfMData::getReconstructedIntrinsics() const
 
 void SfMData::setPose(const View& view, const CameraPose& absolutePose)
 {
-  const bool knownPose = existsPose(view);
+  //const bool knownPose = existsPose(view);
   CameraPose& viewPose = _poses[view.getPoseId()];
 
-  // view is not part of a rig
-  if(!view.isPartOfRig())
+  // pose dedicated for this view (independant from rig, even if it is potentially part of a rig)
+  if(view.isPoseIndependant())
   {
-    viewPose.setTransform(absolutePose.getTransform());//todo locked
+    viewPose.setTransform(absolutePose.getTransform());
     return;
   }
 
-  // view is part of a rig
-  const Rig& rig = _rigs.at(view.getRigId());
-  RigSubPose& subPose = getRigSubPose(view);
-
-  if(!rig.isInitialized())
+  // initialized rig
+  if(view.getRigId() != UndefinedIndexT)
   {
-    // rig not initialized
+    const Rig& rig = _rigs.at(view.getRigId());
+    RigSubPose& subPose = getRigSubPose(view);
 
-    subPose.status = ERigSubPoseStatus::ESTIMATED; // sub-pose initialized
-    subPose.pose = Pose3();  // the first sub-pose is set to identity
-    viewPose.setTransform(absolutePose.getTransform()); // so the pose of the rig is the same than the pose
+    viewPose.setTransform(subPose.pose.inverse() * absolutePose.getTransform());
+    return;
   }
-  else
-  {
-    if(knownPose)
-    {
-      // rig has a Pose (at least one image of the rig is localized), RigSubPose not initialized
 
-      if(subPose.status != ERigSubPoseStatus::UNINITIALIZED)
-      {
-        throw std::logic_error("Can't set the pose of an already initialized rig sub-pose");
-      }
-
-      // initialize sub-pose
-      subPose.status = ERigSubPoseStatus::ESTIMATED;
-
-      // convert absolute pose to RigSubPose
-      subPose.pose = absolutePose.getTransform() * viewPose.getTransform().inverse();
-
-    }
-    else
-    {
-      // rig has no Pose but RigSubPose is known
-
-      if(subPose.status == ERigSubPoseStatus::UNINITIALIZED)
-      {
-        throw std::logic_error("Can't set the pose of an uninitialized rig sub-pose when rig pose is unknown");
-      }
-
-      //convert absolute pose to rig Pose
-      viewPose.setTransform(subPose.pose.inverse() * absolutePose.getTransform());
-    }
-  }
+  throw std::runtime_error("SfMData::setPose: dependant view pose not part of an initialized rig.");
 }
+
 
 void SfMData::combine(const SfMData& sfmData)
 {

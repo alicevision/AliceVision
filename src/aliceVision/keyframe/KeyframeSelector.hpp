@@ -5,6 +5,7 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #pragma once
+
 #include <aliceVision/keyframe/SharpnessSelectionPreset.hpp>
 #include <aliceVision/feature/feature.hpp>
 #include <aliceVision/dataio/FeedProvider.hpp>
@@ -17,10 +18,7 @@
 #include <memory>
 #include <limits>
 
-namespace oiio = OIIO;
-
 namespace aliceVision {
-
 namespace image {
 
 template<typename T>
@@ -29,6 +27,8 @@ class Image;
 } // namespace image
 
 namespace keyframe {
+
+namespace oiio = OIIO;
 
 class KeyframeSelector
 {
@@ -49,6 +49,8 @@ public:
     std::string model = "radial3";
     /// Focal length in mm or px
     float focalLength = 1.2f;
+    /// Camera frame offset
+    unsigned int frameOffset = 0;
     /// If focalIsMM is false, focalLength is in px
     bool focalIsMM = true;
   };
@@ -61,9 +63,9 @@ public:
    * @param[in] outputFolder output keyframes directory
    */
   KeyframeSelector(const std::vector<std::string>& mediaPaths,
-                      const std::string& sensorDbPath,
-                      const std::string& voctreeFilePath,
-                      const std::string& outputFolder);
+                   const std::string& sensorDbPath,
+                   const std::string& voctreeFilePath,
+                   const std::string& outputFolder);
 
   /**
    * @brief KeyframeSelector copy constructor - NO COPY
@@ -77,12 +79,39 @@ public:
   void process();
 
   /**
+   * @brief Set if selector use keyframe sparse distance selection
+   * @param[in] useSparseDistanceSelection True or False
+   */
+  void useSparseDistanceSelection(bool useSparseDistanceSelection)
+  {
+    _hasSparseDistanceSelection = useSparseDistanceSelection;
+  }
+
+  /**
+   * @brief Set if selector use keyframe sharpness selection
+   * @param[in] useSharpnessSelection True or False
+   */
+  void useSharpnessSelection(bool useSharpnessSelection)
+  {
+    _hasSharpnessSelection = useSharpnessSelection;
+  }
+
+  /**
    * @brief Set cameras informations for output keyframes
    * @param[in] cameras informations
    */
-  void setCameraInfos(const std::vector<CameraInfo>& CameraInfos)
+  void setCameraInfos(const std::vector<CameraInfo>& cameraInfos)
   {
-    _cameraInfos = CameraInfos;
+    _cameraInfos = cameraInfos;
+  }
+
+  /**
+   * @brief Set sparse distance max score
+   * @param[in] distScoreMax max strong common points
+   */
+  void setSparseDistanceMaxScore(float distScoreMax)
+  {
+    _distScoreMax = distScoreMax;
   }
 
   /**
@@ -208,6 +237,10 @@ private:
   float _sharpnessThreshold = 15.0f;
   /// Distance max score (image with smallest distance from the last keyframe will be selected)
   float _distScoreMax = 100.0f;
+  /// Use sharpness selection
+  bool _hasSharpnessSelection = true;
+  /// Use sparseDistance selection
+  bool _hasSparseDistanceSelection = true;
 
   /// Camera metadatas
   std::vector<CameraInfo> _cameraInfos;
