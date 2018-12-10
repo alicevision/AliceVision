@@ -164,6 +164,7 @@ BOOST_AUTO_TEST_CASE(LOCAL_BUNDLE_ADJUSTMENT_EffectiveMinimization_Pinhole_Camer
   sfmData.getLandmarks().at(2).observations.erase(1);
 
   // lock common intrinsic
+  // if it's not locked, all views will have a distance of 1 as all views share a common intrinsic.
   sfmData.getIntrinsics().begin()->second->lock();
 
   track::TracksPerView tracksPerView = getTracksPerViews(sfmData);
