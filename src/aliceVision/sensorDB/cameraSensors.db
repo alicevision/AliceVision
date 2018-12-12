@@ -2938,7 +2938,8 @@ Lg;Lg Optimus G LS970;4.69;devicespecifications
 Lg;Lg V10;5.95;devicespecifications
 Lg;Lg V20;5.22;devicespecifications
 Lg;Lg Zero;3.7;devicespecifications
-LG Electronics;LG-H932;5.893;
+LG Electronics;LG-H930;5.893
+LG Electronics;LG-H932;5.893
 LGE;Nexus 5X;6.25;
 Lyf;Lyf Water 2;4.69;devicespecifications
 Lyf;Lyf Wind 4;3.6;devicespecifications
@@ -3486,6 +3487,7 @@ Nokia;Nokia 225;2.83;devicespecifications
 Nokia;Nokia 225 Dual SIM;2.83;devicespecifications
 Nokia;Nokia 3;3.67;devicespecifications
 Nokia;Nokia 6;4.74;devicespecifications
+Nokia;Nokia 7 plus;5.75;devicespecifications
 Nokia;Nokia 808 PureView;10.67;devicespecifications
 Nokia;Nokia Asha 502;3.67;devicespecifications
 Nokia;Nokia Lumia 1020;8.8;devicespecifications
@@ -4042,6 +4044,7 @@ Olympus;Olympus X-935;6.17;dpreview
 Olympus;Olympus XZ-1;7.85;digicamdb
 Olympus;Olympus XZ-2 iHS;7.44;dpreview,digicamdb,dxomark
 Olympus;Olympus XZ1;7.9;dxomark
+OLYMPUS IMAGING CORP.;E-M10;17.3;olympus
 Onda;Onda V975i;3.67;devicespecifications
 Onda;Onda V989;3.68;devicespecifications
 Oneplus;Oneplus 2;5.55;devicespecifications
@@ -5282,6 +5285,7 @@ Samsung;Samsung S850;7.144;dpreview,digicamdb
 Samsung;Samsung S860;5.744;dpreview,digicamdb
 Samsung;Samsung SCV32;5.3;devicespecifications
 Samsung;Samsung SDC-MS61;5.75;digicamdb
+Samsung;Samsung SGH-I717;5.95;devicespecifications
 Samsung;Samsung SH100;6.08;digicamdb
 Samsung;Samsung SL102;6.08;dpreview,digicamdb
 Samsung;Samsung SL201;6.08;dpreview,digicamdb
@@ -5512,15 +5516,20 @@ Smartisan;Smartisan T1;4.69;devicespecifications
 Smartisan;Smartisan T2;4.69;devicespecifications
 Smartisan;Smartisan U1;4.69;devicespecifications
 Smartron;Smartron t.phone;5.44;devicespecifications
-Sony;A7SM2;35.6;
-SONY;DSC-HX60V;7.76;
-SONY;DSC-P200;7.11;
-Sony;DSC-RX100M4;13.2;
-Sony;H3113;6.17;
-SONY;ILCE-7RM2;35.9;
-SONY;ILCE-7RM3;35.9;
-Sony;ILCE-7S;35.6;
-SONY;NEX-3N;23.5;
+Sony;A7SM2;35.6
+Sony;DSC-HX60V;7.76
+Sony;DSC-P200;7.11
+Sony;DSC-RX100M4;13.2
+Sony;E6653;6.17;devicespecifications
+Sony;G3212;6.17;devicespecifications
+Sony;G3221;6.17;devicespecifications
+Sony;G3223;6.17;devicespecifications
+Sony;G3226;6.17;devicespecifications
+Sony;H3113;6.17
+Sony;ILCE-7RM2;35.9
+Sony;ILCE-7RM3;35.9
+Sony;ILCE-7S;35.6
+Sony;NEX-3N;23.5
 Sony;Sony A3000;23.5;dxomark
 Sony;Sony A3500;23.2;dxomark
 Sony;Sony A5000;23.2;dxomark
@@ -5531,7 +5540,7 @@ Sony;Sony a6500;23.5;dpreview
 Sony;Sony a7;35.8;dpreview
 Sony;Sony a7 II;35.8;dpreview
 Sony;Sony A7 III;35.6;dxomark
-Sony;Sony A77 II;23.5;
+Sony;Sony A77 II;23.5
 Sony;Sony a7R;35.9;dpreview
 Sony;Sony a7R II;35.9;dpreview
 Sony;Sony a7R III;35.9;dpreview
