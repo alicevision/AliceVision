@@ -9,6 +9,9 @@
 #include <string>
 #include <cmath>
 
+#include <geogram/basic/vecg.h>
+
+
 namespace aliceVision {
 
 class Point3d
@@ -101,6 +104,12 @@ public:
     inline double size2() const
     {
         return x * x + y * y + z * z;
+    }
+
+    template <class T>
+    operator GEO::vecng<3, T>() const
+    {
+      return GEO::vecng<3, T>(x, y, z);
     }
 
     friend double dot(const Point3d& p1, const Point3d& p2);

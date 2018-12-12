@@ -21,7 +21,8 @@
 namespace bfs = boost::filesystem;
 
 namespace GEO {
-class MeshFacetsAABB;
+  class MeshFacetsAABB;
+  class Mesh;
 }
 
 namespace aliceVision {
@@ -163,6 +164,7 @@ public:
 
     void _generateNormalAndHeightMaps(const mvsUtils::MultiViewParams& mp,
       const GEO::MeshFacetsAABB& denseMeshAABB,
+      const GEO::Mesh& sparseMesh,
       size_t atlasID, mvsUtils::ImagesCache& imageCache,
       const bfs::path &outPath, EImageFileType normalMapFileType, EImageFileType heightMapFileType);
 

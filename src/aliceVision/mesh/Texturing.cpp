@@ -256,13 +256,16 @@ void Texturing::generateNormalAndHeightMaps(const mvsUtils::MultiViewParams& mp,
 {
   GEO::Mesh geoDenseMesh;
   toGeoMesh(denseMesh, geoDenseMesh);
-
   GEO::compute_normals(geoDenseMesh);
   GEO::MeshFacetsAABB denseMeshAABB(geoDenseMesh);  // warning: mesh_reorder called inside
 
+  GEO::Mesh geoSparseMesh;
+  toGeoMesh(*me, geoSparseMesh);
+  GEO::compute_normals(geoSparseMesh);
+
   mvsUtils::ImagesCache imageCache(&mp, 0, false);
   for (size_t atlasID = 0; atlasID < _atlases.size(); ++atlasID)
-    _generateNormalAndHeightMaps(mp, denseMeshAABB, atlasID, imageCache, outPath, normalMapFileType, heightMapFileType);
+    _generateNormalAndHeightMaps(mp, denseMeshAABB, geoSparseMesh, atlasID, imageCache, outPath, normalMapFileType, heightMapFileType);
 }
 
 /// accumulates colors and keeps count for providing average
@@ -622,6 +625,29 @@ inline GEO::vec3 mesh_facet_interpolate_normal_at_point(const GEO::Mesh& mesh, G
   return n;
 }
 
+inline GEO::vec3 mesh_facet_interpolate_normal_at_point(const StaticVector<Point3d>& ptsNormals, const Mesh& mesh, unsigned int f, const GEO::vec3& p)
+{
+  const GEO::index_t v0 = (*mesh.tris)[f].v[0];
+  const GEO::index_t v1 = (*mesh.tris)[f].v[1];
+  const GEO::index_t v2 = (*mesh.tris)[f].v[2];
+
+  const GEO::vec3 p0 = (*mesh.pts)[v0];
+  const GEO::vec3 p1 = (*mesh.pts)[v1];
+  const GEO::vec3 p2 = (*mesh.pts)[v2];
+
+  const GEO::vec3 n0 = ptsNormals[v0];
+  const GEO::vec3 n1 = ptsNormals[v1];
+  const GEO::vec3 n2 = ptsNormals[v2];
+
+  GEO::vec3 barycCoords;
+  GEO::vec3 closestPoint;
+  GEO::Geom::point_triangle_squared_distance<GEO::vec3>(p, p0, p1, p2, closestPoint, barycCoords.x, barycCoords.y, barycCoords.z);
+
+  const GEO::vec3 n = barycCoords.x * n0 + barycCoords.y * n1 + barycCoords.z * n2;
+  
+  return GEO::normalize(n);
+}
+
 inline void computeNormalHeight(const GEO::Mesh& mesh, double orientation, double t, GEO::index_t f, const GEO::vec3& triangleNormal, const GEO::vec3& q, const GEO::vec3& qA, const GEO::vec3& qB, float& out_height, Color& out_normal)
 {
   GEO::vec3 intersectionPoint = t * qB + (1.0 - t) * qA;
@@ -647,6 +673,7 @@ inline void computeNormalHeight(const GEO::Mesh& mesh, double orientation, doubl
 
 void Texturing::_generateNormalAndHeightMaps(const mvsUtils::MultiViewParams& mp,
   const GEO::MeshFacetsAABB& denseMeshAABB,
+  const GEO::Mesh& sparseMesh,
   size_t atlasID, mvsUtils::ImagesCache& imageCache,
   const bfs::path &outPath, EImageFileType normalMapFileType, EImageFileType heightMapFileType)
 {
@@ -657,15 +684,17 @@ void Texturing::_generateNormalAndHeightMaps(const mvsUtils::MultiViewParams& mp
   std::vector<float> heightMap(texParams.textureSide * texParams.textureSide);
   const auto& triangles = _atlases[atlasID];
 
+  StaticVector<Point3d>* ptsNormals = me->computeNormalsForPts();
+
   // iterate over atlas' triangles
 #pragma omp parallel for
   for (int ti = 0; ti < triangles.size(); ++ti)
   {
     const unsigned int triangleId = triangles[ti];
-    const Point3d triangleNormal_ = me->computeTriangleNormal(triangleId).normalize();
-    const GEO::vec3 triangleNormal(triangleNormal_.x, triangleNormal_.y, triangleNormal_.z);
+    // const Point3d triangleNormal_ = me->computeTriangleNormal(triangleId).normalize();
+    // const GEO::vec3 triangleNormal(triangleNormal_.x, triangleNormal_.y, triangleNormal_.z);
     const double minEdgeLength = me->computeTriangleMinEdgeLength(triangleId);
-    const GEO::vec3 scaledTriangleNormal = triangleNormal * minEdgeLength;
+    // const GEO::vec3 scaledTriangleNormal = triangleNormal * minEdgeLength;
 
     // retrieve triangle 3D and UV coordinates
     Point2d triPixs[3];
@@ -716,9 +745,12 @@ void Texturing::_generateNormalAndHeightMaps(const mvsUtils::MultiViewParams& mp
         unsigned int xyoffset = y_ * texParams.textureSide + x;
         // get 3D coordinates
         Point3d pt3d = barycentricToCartesian(triPts, Point2d(barycCoords.z, barycCoords.y));
-        
-        const double epsilon = 0.00001;
         GEO::vec3 q(pt3d.x, pt3d.y, pt3d.z);
+
+        const GEO::vec3 triangleNormal = mesh_facet_interpolate_normal_at_point(*ptsNormals, *me, triangleId, q);
+        const GEO::vec3 scaledTriangleNormal = triangleNormal * minEdgeLength * 10;
+
+        const double epsilon = 0.00001;
         GEO::vec3 qA1 = q - (scaledTriangleNormal * epsilon);
         GEO::vec3 qB1 = q + scaledTriangleNormal;
         double t = 0.0;
