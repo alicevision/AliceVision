@@ -34,15 +34,15 @@ namespace fs = boost::filesystem;
 
 MultiViewParams::MultiViewParams(const sfmData::SfMData& sfmData,
                                  const std::string& imagesFolder,
-                                 const std::string& depthMapFolder,
-                                 const std::string& depthMapFilterFolder,
+                                 const std::string& depthMapsFolder,
+                                 const std::string& depthMapsFilterFolder,
                                  bool readFromDepthMaps,
                                  int downscale,
                                  StaticVector<CameraMatrices>* cameras)
     : _sfmData(sfmData)
     , _imagesFolder(imagesFolder + "/")
-    , _depthMapFolder(depthMapFolder + "/")
-    , _depthMapFilterFolder(depthMapFilterFolder + "/")
+    , _depthMapsFolder(depthMapsFolder + "/")
+    , _depthMapsFilterFolder(depthMapsFilterFolder + "/")
     , _processDownscale(downscale)
 {
     verbose = userParams.get<bool>("global.verbose", true);

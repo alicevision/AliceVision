@@ -48,7 +48,7 @@ SemiGlobalMatchingRc::SemiGlobalMatchingRc(bool doComputeDepthsAndResetTCams, in
 
     tcamsFileName = sp->getSGM_tcamsFileName(viewId);
     depthsFileName = sp->getSGM_depthsFileName(viewId);
-    depthsTcamsLimitsFileName =  sp->mp->getDepthMapFolder() + std::to_string(viewId) + "_depthsTcamsLimits.bin";
+    depthsTcamsLimitsFileName =  sp->mp->getDepthMapsFolder() + std::to_string(viewId) + "_depthsTcamsLimits.bin";
     SGM_depthMapFileName = sp->getSGM_depthMapFileName(viewId, scale, step);
     SGM_simMapFileName = sp->getSGM_simMapFileName(viewId, scale, step);
     SGM_idDepthMapFileName = sp->getSGM_idDepthMapFileName(viewId, scale, step);

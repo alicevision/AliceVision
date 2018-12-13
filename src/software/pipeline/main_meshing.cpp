@@ -88,18 +88,16 @@ int main(int argc, char* argv[])
     std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
     std::string sfmDataFilename;
     std::string outputMesh;
-    std::string imagesFolder;
-    std::string depthMapFolder;
-    std::string depthMapFilterFolder;
+    std::string depthMapsFolder;
+    std::string depthMapsFilterFolder;
     EPartitioningMode partitioningMode = ePartitioningSingleBlock;
     ERepartitionMode repartitionMode = eRepartitionMultiResolution;
-    po::options_description inputParams;
     std::size_t estimateSpaceMinObservations = 3;
-    float estimateSpaceMinObservationAngle = 0.2f;
+    float estimateSpaceMinObservationAngle = 10.0f;
     double universePercentile = 0.999;
     int maxPtsPerVoxel = 6000000;
     bool meshingFromDepthMaps = true;
-    bool estimateSpaceFromSfM = false;
+    bool estimateSpaceFromSfM = true;
 
     fuseCut::FuseParams fuseParams;
 
@@ -114,11 +112,9 @@ int main(int argc, char* argv[])
 
     po::options_description optionalParams("Optional parameters");
     optionalParams.add_options()
-        ("imagesFolder", po::value<std::string>(&imagesFolder),
-          "Use images from a specific folder. Filename should be the image uid.")
-        ("depthMapFolder", po::value<std::string>(&depthMapFolder),
+        ("depthMapsFolder", po::value<std::string>(&depthMapsFolder),
             "Input depth maps folder.")
-        ("depthMapFilterFolder", po::value<std::string>(&depthMapFilterFolder),
+        ("depthMapsFilterFolder", po::value<std::string>(&depthMapsFilterFolder),
             "Input filtered depth maps folder.")
         ("maxInputPoints", po::value<int>(&fuseParams.maxInputPoints)->default_value(fuseParams.maxInputPoints),
             "Max input points loaded from images.")
@@ -205,10 +201,10 @@ int main(int argc, char* argv[])
     // set verbose level
     system::Logger::get()->setLogLevel(verboseLevel);
 
-    if(depthMapFolder.empty() || depthMapFilterFolder.empty())
+    if(depthMapsFolder.empty() || depthMapsFilterFolder.empty())
     {
-      if(depthMapFolder.empty() &&
-         depthMapFilterFolder.empty() &&
+      if(depthMapsFolder.empty() &&
+         depthMapsFilterFolder.empty() &&
          repartitionMode == eRepartitionMultiResolution &&
          partitioningMode == ePartitioningSingleBlock)
       {
@@ -217,7 +213,7 @@ int main(int argc, char* argv[])
       else
       {
         ALICEVISION_LOG_ERROR("Invalid input options:\n"
-                              "- Meshing from depth maps require --depthMapFolder and --depthMapFilterFolder options.\n"
+                              "- Meshing from depth maps require --depthMapsFolder and --depthMapsFilterFolder options.\n"
                               "- Meshing from SfM require option --partitioning set to 'singleBlock' and option --repartition set to 'multiResolution'.");
         return EXIT_FAILURE;
       }
@@ -232,7 +228,7 @@ int main(int argc, char* argv[])
     }
 
     // initialization
-    mvsUtils::MultiViewParams mp(sfmData, imagesFolder, depthMapFolder, depthMapFilterFolder, meshingFromDepthMaps);
+    mvsUtils::MultiViewParams mp(sfmData, "", depthMapsFolder, depthMapsFilterFolder, meshingFromDepthMaps);
 
     mp.userParams.put("LargeScale.universePercentile", universePercentile);
 

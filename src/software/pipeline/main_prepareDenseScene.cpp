@@ -241,9 +241,9 @@ int main(int argc, char *argv[])
     ("outputFileType", po::value<std::string>(&outImageFileTypeName)->default_value(outImageFileTypeName),
         image::EImageFileType_informations().c_str())
     ("saveMetadata", po::value<bool>(&saveMetadata)->default_value(saveMetadata),
-      "Save projections and intrinsics informations in images metadata.")
+      "Save projections and intrinsics information in images metadata.")
     ("saveMatricesTxtFiles", po::value<bool>(&saveMatricesTxtFiles)->default_value(saveMatricesTxtFiles),
-      "Save projections and intrinsics informations in text files.")
+      "Save projections and intrinsics information in text files.")
     ("rangeStart", po::value<int>(&rangeStart)->default_value(rangeStart),
       "Range image index start.")
     ("rangeSize", po::value<int>(&rangeSize)->default_value(rangeSize),
