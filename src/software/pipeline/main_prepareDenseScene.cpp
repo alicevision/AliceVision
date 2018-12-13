@@ -38,7 +38,7 @@ namespace po = boost::program_options;
 namespace fs = boost::filesystem;
 
 bool prepareDenseScene(const SfMData& sfmData,
-                       const std::string& imagesFolder,
+                       const std::vector<std::string>& imagesFolders,
                        int beginIndex,
                        int endIndex,
                        const std::string& outFolder,
@@ -159,19 +159,27 @@ bool prepareDenseScene(const SfMData& sfmData,
     {
       std::string srcImage = view->getImagePath();
 
-      if(!imagesFolder.empty())
+      if(!imagesFolders.empty())
       {
+        bool found = false;
+        for(const std::string& folder : imagesFolders)
+        {
+          const fs::recursive_directory_iterator end;
+          const auto findIt = std::find_if(fs::recursive_directory_iterator(folder), end,
+                                   [&view](const fs::directory_entry& e) {
+                                      return (e.path().stem() == std::to_string(view->getViewId()) ||
+                                              e.path().stem() == fs::path(view->getImagePath()).stem());});
 
-        const fs::recursive_directory_iterator end;
-        const auto findIt = std::find_if(fs::recursive_directory_iterator(imagesFolder), end,
-                                 [&view](const fs::directory_entry& e) {
-                                    return (e.path().stem() == std::to_string(view->getViewId()) ||
-                                            e.path().stem() == fs::path(view->getImagePath()).stem());});
+          if(findIt != end)
+          {
+            srcImage = (fs::path(folder) / (findIt->path().stem().string() + findIt->path().extension().string())).string();
+            found = true;
+            break;
+          }
+        }
 
-        if(findIt == end)
-          throw std::runtime_error("Cannot find view " + std::to_string(view->getViewId()) + " image file in folder " + imagesFolder);
-
-        srcImage = (fs::path(imagesFolder) / (findIt->path().stem().string() + findIt->path().extension().string())).string();
+        if(!found)
+          throw std::runtime_error("Cannot find view " + std::to_string(view->getViewId()) + " image file in given folder(s)");
       }
 
 
@@ -210,7 +218,7 @@ int main(int argc, char *argv[])
   std::string sfmDataFilename;
   std::string outFolder;
   std::string outImageFileTypeName = image::EImageFileType_enumToString(image::EImageFileType::EXR);
-  std::string imagesFolder;
+  std::vector<std::string> imagesFolders;
   int rangeStart = -1;
   int rangeSize = 1;
   bool saveMetadata = true;
@@ -227,9 +235,9 @@ int main(int argc, char *argv[])
 
   po::options_description optionalParams("Optional parameters");
   optionalParams.add_options()
-    ("imagesFolder", po::value<std::string>(&imagesFolder),
-      "Use images from a specific folder instead of those specify in the SfMData file.\n"
-      "Filename should be the image uid.")
+    ("imagesFolders",  po::value<std::vector<std::string>>(&imagesFolders)->multitoken(),
+      "Use images from specific folder(s) instead of those specify in the SfMData file.\n"
+      "Filename should be the same or the image uid.")
     ("outputFileType", po::value<std::string>(&outImageFileTypeName)->default_value(outImageFileTypeName),
         image::EImageFileType_informations().c_str())
     ("saveMetadata", po::value<bool>(&saveMetadata)->default_value(saveMetadata),
@@ -317,7 +325,7 @@ int main(int argc, char *argv[])
   }
 
   // export
-  if(prepareDenseScene(sfmData, imagesFolder, rangeStart, rangeEnd, outFolder, outputFileType, saveMetadata, saveMatricesTxtFiles))
+  if(prepareDenseScene(sfmData, imagesFolders, rangeStart, rangeEnd, outFolder, outputFileType, saveMetadata, saveMatricesTxtFiles))
     return EXIT_SUCCESS;
 
   return EXIT_FAILURE;
