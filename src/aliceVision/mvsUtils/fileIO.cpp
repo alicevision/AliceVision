@@ -217,9 +217,9 @@ std::string getFileNameFromViewId(const MultiViewParams* mp, int viewId, EFileTy
       case EFileType::depthMap:
       {
           if(scale == 0)
-              folder = mp->getDepthMapFilterFolder();
+              folder = mp->getDepthMapsFilterFolder();
           else
-              folder = mp->getDepthMapFolder();
+              folder = mp->getDepthMapsFolder();
           suffix = "_depthMap";
           ext = "exr";
           break;
@@ -227,9 +227,9 @@ std::string getFileNameFromViewId(const MultiViewParams* mp, int viewId, EFileTy
       case EFileType::simMap:
       {
           if(scale == 0)
-              folder = mp->getDepthMapFilterFolder();
+              folder = mp->getDepthMapsFilterFolder();
           else
-              folder = mp->getDepthMapFolder();
+              folder = mp->getDepthMapsFolder();
           suffix = "_simMap";
           ext = "exr";
           break;
@@ -248,7 +248,7 @@ std::string getFileNameFromViewId(const MultiViewParams* mp, int viewId, EFileTy
       }
       case EFileType::depthMapInfo:
       {
-          folder = mp->getDepthMapFolder();
+          folder = mp->getDepthMapsFolder();
           suffix = "_depthMapInfo";
           ext = "tmp";
           break;
@@ -261,7 +261,7 @@ std::string getFileNameFromViewId(const MultiViewParams* mp, int viewId, EFileTy
       }
       case EFileType::nmodMap:
       {
-          folder = mp->getDepthMapFilterFolder();
+          folder = mp->getDepthMapsFilterFolder();
           suffix = "_nmodMap";
           ext = "png";
           break;

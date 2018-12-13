@@ -102,8 +102,8 @@ public:
 
     MultiViewParams(const sfmData::SfMData& sfmData,
                     const std::string& imagesFolder = "",
-                    const std::string& depthMapFolder = "",
-                    const std::string& depthMapFilterFolder = "",
+                    const std::string& depthMapsFolder = "",
+                    const std::string& depthMapsFilterFolder = "",
                     bool readFromDepthMaps = false,
                     int downscale = 1,
                     StaticVector<CameraMatrices>* cameras = nullptr);
@@ -214,14 +214,14 @@ public:
         return p44;
     }
 
-    inline const std::string& getDepthMapFolder() const
+    inline const std::string& getDepthMapsFolder() const
     {
-        return _depthMapFolder;
+        return _depthMapsFolder;
     }
 
-    inline const std::string& getDepthMapFilterFolder() const
+    inline const std::string& getDepthMapsFilterFolder() const
     {
-        return _depthMapFilterFolder;
+        return _depthMapsFilterFolder;
     }
 
     inline const sfmData::SfMData& getInputSfMData() const
@@ -299,9 +299,9 @@ private:
     /// maximum height
     int _maxImageHeight = 0;
     /// depthMapEstimate data folder
-    std::string _depthMapFolder;
+    std::string _depthMapsFolder;
     /// depthMapFilter data folder
-    std::string _depthMapFilterFolder;
+    std::string _depthMapsFilterFolder;
     /// use silhouettes
     bool _useSil = false;
     /// minimum view angle

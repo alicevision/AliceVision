@@ -32,7 +32,7 @@ int main(int argc, char* argv[])
 
     std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
     std::string sfmDataFilename;
-    std::string depthMapFolder;
+    std::string depthMapsFolder;
     std::string outputFolder;
 
     // program range
@@ -56,7 +56,7 @@ int main(int argc, char* argv[])
     requiredParams.add_options()
         ("input,i", po::value<std::string>(&sfmDataFilename)->required(),
             "SfMData file.")
-        ("depthMapFolder", po::value<std::string>(&depthMapFolder)->required(),
+        ("depthMapsFolder", po::value<std::string>(&depthMapsFolder)->required(),
             "Input depth map folder.")
         ("output,o", po::value<std::string>(&outputFolder)->required(),
             "Output folder for filtered depth maps.");
@@ -131,7 +131,7 @@ int main(int argc, char* argv[])
     }
 
     // initialization
-    mvsUtils::MultiViewParams mp(sfmData, "", depthMapFolder, outputFolder, "", true);
+    mvsUtils::MultiViewParams mp(sfmData, "", depthMapsFolder, outputFolder, "", true);
 
     mp.setMinViewAngle(minViewAngle);
     mp.setMaxViewAngle(maxViewAngle);
