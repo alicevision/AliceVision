@@ -442,7 +442,7 @@ double ReconstructionEngine_sequentialSfM::incrementalReconstruction()
       ++resectionId;
     }
 
-    if(_useRigsCalibration && !_sfmData.getRigs().empty())
+    if(_useRigConstraint && !_sfmData.getRigs().empty())
     {
       ALICEVISION_LOG_INFO("Rig(s) calibration start");
 

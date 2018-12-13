@@ -100,9 +100,9 @@ public:
     _useTrackFiltering = useTrackFiltering;
   }
 
-  void useRigsCalibration(bool useRigsCalibration)
+  void useRigConstraint(bool useRigConstraint)
   {
-    _useRigsCalibration = useRigsCalibration;
+    _useRigConstraint = useRigConstraint;
   }
 
   void setLocalizerEstimator(robustEstimation::ERobustEstimator estimator)
@@ -383,7 +383,7 @@ private:
   int _minTrackLength = 2;
   int _minPointsPerPose = 30;
   bool _uselocalBundleAdjustment = false;
-  bool _useRigsCalibration = true;
+  bool _useRigConstraint = true;
   /// minimum number of obersvations to triangulate a 3d point.
   std::size_t _minNbObservationsForTriangulation = 2;
   /// a 3D point must have at least 2 obervations not too much aligned.
