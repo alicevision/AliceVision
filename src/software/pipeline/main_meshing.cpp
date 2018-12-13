@@ -93,11 +93,11 @@ int main(int argc, char* argv[])
     EPartitioningMode partitioningMode = ePartitioningSingleBlock;
     ERepartitionMode repartitionMode = eRepartitionMultiResolution;
     std::size_t estimateSpaceMinObservations = 3;
-    float estimateSpaceMinObservationAngle = 0.2f;
+    float estimateSpaceMinObservationAngle = 10.0f;
     double universePercentile = 0.999;
     int maxPtsPerVoxel = 6000000;
     bool meshingFromDepthMaps = true;
-    bool estimateSpaceFromSfM = false;
+    bool estimateSpaceFromSfM = true;
 
     fuseCut::FuseParams fuseParams;
 
