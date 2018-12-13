@@ -88,12 +88,10 @@ int main(int argc, char* argv[])
     std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
     std::string sfmDataFilename;
     std::string outputMesh;
-    std::string imagesFolder;
     std::string depthMapFolder;
     std::string depthMapFilterFolder;
     EPartitioningMode partitioningMode = ePartitioningSingleBlock;
     ERepartitionMode repartitionMode = eRepartitionMultiResolution;
-    po::options_description inputParams;
     std::size_t estimateSpaceMinObservations = 3;
     float estimateSpaceMinObservationAngle = 0.2f;
     double universePercentile = 0.999;
@@ -114,8 +112,6 @@ int main(int argc, char* argv[])
 
     po::options_description optionalParams("Optional parameters");
     optionalParams.add_options()
-        ("imagesFolder", po::value<std::string>(&imagesFolder),
-          "Use images from a specific folder. Filename should be the image uid.")
         ("depthMapFolder", po::value<std::string>(&depthMapFolder),
             "Input depth maps folder.")
         ("depthMapFilterFolder", po::value<std::string>(&depthMapFilterFolder),
@@ -232,7 +228,7 @@ int main(int argc, char* argv[])
     }
 
     // initialization
-    mvsUtils::MultiViewParams mp(sfmData, imagesFolder, depthMapFolder, depthMapFilterFolder, meshingFromDepthMaps);
+    mvsUtils::MultiViewParams mp(sfmData, "", depthMapFolder, depthMapFilterFolder, meshingFromDepthMaps);
 
     mp.userParams.put("LargeScale.universePercentile", universePercentile);
 
