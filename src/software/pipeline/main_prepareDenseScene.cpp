@@ -38,6 +38,7 @@ namespace po = boost::program_options;
 namespace fs = boost::filesystem;
 
 bool prepareDenseScene(const SfMData& sfmData,
+                       const std::string& imagesFolder,
                        int beginIndex,
                        int endIndex,
                        const std::string& outFolder,
@@ -156,7 +157,24 @@ bool prepareDenseScene(const SfMData& sfmData,
 
     // export undistort image
     {
-      const std::string srcImage = view->getImagePath();
+      std::string srcImage = view->getImagePath();
+
+      if(!imagesFolder.empty())
+      {
+
+        const fs::recursive_directory_iterator end;
+        const auto findIt = std::find_if(fs::recursive_directory_iterator(imagesFolder), end,
+                                 [&view](const fs::directory_entry& e) {
+                                    return (e.path().stem() == std::to_string(view->getViewId()) ||
+                                            e.path().stem() == fs::path(view->getImagePath()).stem());});
+
+        if(findIt == end)
+          throw std::runtime_error("Cannot find view " + std::to_string(view->getViewId()) + " image file in folder " + imagesFolder);
+
+        srcImage = (fs::path(imagesFolder) / (findIt->path().stem().string() + findIt->path().extension().string())).string();
+      }
+
+
       std::string dstColorImage = (fs::path(outFolder) / (baseFilename + "." + image::EImageFileType_enumToString(outputFileType))).string();
 
       const IntrinsicBase* cam = iterIntrinsic->second.get();
@@ -192,6 +210,7 @@ int main(int argc, char *argv[])
   std::string sfmDataFilename;
   std::string outFolder;
   std::string outImageFileTypeName = image::EImageFileType_enumToString(image::EImageFileType::EXR);
+  std::string imagesFolder;
   int rangeStart = -1;
   int rangeSize = 1;
   bool saveMetadata = true;
@@ -208,6 +227,9 @@ int main(int argc, char *argv[])
 
   po::options_description optionalParams("Optional parameters");
   optionalParams.add_options()
+    ("imagesFolder", po::value<std::string>(&imagesFolder),
+      "Use images from a specific folder instead of those specify in the SfMData file.\n"
+      "Filename should be the image uid.")
     ("outputFileType", po::value<std::string>(&outImageFileTypeName)->default_value(outImageFileTypeName),
         image::EImageFileType_informations().c_str())
     ("saveMetadata", po::value<bool>(&saveMetadata)->default_value(saveMetadata),
@@ -295,7 +317,7 @@ int main(int argc, char *argv[])
   }
 
   // export
-  if(prepareDenseScene(sfmData, rangeStart, rangeEnd, outFolder, outputFileType, saveMetadata, saveMatricesTxtFiles))
+  if(prepareDenseScene(sfmData, imagesFolder, rangeStart, rangeEnd, outFolder, outputFileType, saveMetadata, saveMatricesTxtFiles))
     return EXIT_SUCCESS;
 
   return EXIT_FAILURE;
