@@ -40,7 +40,7 @@ bool parseDatabase(const std::string& databaseFilePath, std::vector<Datasheet>& 
         std::vector<std::string> values;
         boost::split(values, line, boost::is_any_of(";"));
 
-        if(values.size() == 3)
+        if(values.size() >= 3)
         {
           const std::string brand = values[0];
           const std::string model = values[1];
