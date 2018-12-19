@@ -50,12 +50,12 @@ public:
 
 public:
     UVAtlas(const Mesh& mesh, mvsUtils::MultiViewParams& mp, StaticVector<StaticVector<int>*>* ptsCams,
-                    unsigned int textureSide, unsigned int gutterSize);
+                    unsigned int textureSize, unsigned int gutterSize);
 
 public:
     const std::vector<std::vector<Chart>>& atlases() const { return _atlases; }
     const std::vector<int>& visibleCameras(int triangleID) const { return _triangleCameraIDs[triangleID]; }
-    int textureSide() const { return _textureSide; }
+    int textureSize() const { return _textureSize; }
     const Mesh& mesh() const { return _mesh; }
 
 private:
@@ -67,7 +67,7 @@ private:
 private:
     std::vector<std::vector<Chart>> _atlases;
     std::vector<std::vector<int>> _triangleCameraIDs;
-    int _textureSide;
+    int _textureSize;
     int _gutterSize;
     const Mesh& _mesh;
 };
