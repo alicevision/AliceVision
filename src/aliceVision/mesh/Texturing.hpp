@@ -70,7 +70,7 @@ struct TexturingParams
     bool forceVisibleByAllVertices = false; //< triangle visibility is based on the union of vertices visiblity
     EVisibilityRemappingMethod visibilityRemappingMethod = EVisibilityRemappingMethod::PullPush;
 
-    unsigned int textureSide = 8192;
+    unsigned int textureSize = 8192;
     unsigned int padding = 15;
     unsigned int downscale = 2;
     bool fillHoles = false;
