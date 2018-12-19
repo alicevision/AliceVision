@@ -22,8 +22,8 @@ namespace feature {
 ImageDescriber_CCTAG::CCTagParameters::CCTagParameters(size_t nRings)
   : _internalParams(new cctag::Parameters(nRings))
 {
-#ifdef WITH_CUDA // CCTAG_WITH_CUDA
-  _internalParams->_useCuda = system::gpuSupportCUDA(3,5);
+#ifdef CCTAG_WITH_CUDA // CCTAG_WITH_CUDA
+  _internalParams->_useCuda = gpu::gpuSupportCUDA(3,5);
 #else
   _internalParams->_useCuda = false;
 #endif
