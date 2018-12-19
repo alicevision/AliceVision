@@ -105,7 +105,7 @@ int main(int argc, char **argv)
   ceres::CRSMatrix jacobian;
   {
     BundleAdjustmentCeres bundleAdjustmentObj;
-    BundleAdjustment::ERefineOptions refineOption = BundleAdjustment::REFINE_ROTATION | BundleAdjustment::REFINE_TRANSLATION | BundleAdjustment::REFINE_STRUCTURE;
+    BundleAdjustment::ERefineOptions refineOptions = BundleAdjustment::REFINE_ROTATION | BundleAdjustment::REFINE_TRANSLATION | BundleAdjustment::REFINE_STRUCTURE;
     bundleAdjustmentObj.createJacobian(sfmData, refineOptions, jacobian);
   }
 
