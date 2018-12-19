@@ -68,7 +68,7 @@ int main(int argc, char* argv[])
           "Filename should be the image uid.")
         ("outputTextureFileType", po::value<std::string>(&outTextureFileTypeName)->default_value(outTextureFileTypeName),
           EImageFileType_informations().c_str())
-        ("textureSide", po::value<unsigned int>(&texParams.textureSide)->default_value(texParams.textureSide),
+        ("textureSize", po::value<unsigned int>(&texParams.textureSize)->default_value(texParams.textureSize),
             "Output texture size")
         ("downscale", po::value<unsigned int>(&texParams.downscale)->default_value(texParams.downscale),
             "Texture downscale factor")
