@@ -126,8 +126,8 @@ void Texturing::generateUVs(mvsUtils::MultiViewParams& mp)
         throw std::runtime_error("Can't generate UVs without a mesh");
 
     // automatic uv atlasing
-    ALICEVISION_LOG_INFO("Generating UVs (textureSide: " << texParams.textureSide << "; padding: " << texParams.padding << ").");
-    UVAtlas mua(*me, mp, pointsVisibilities, texParams.textureSide, texParams.padding);
+    ALICEVISION_LOG_INFO("Generating UVs (textureSize: " << texParams.textureSize << "; padding: " << texParams.padding << ").");
+    UVAtlas mua(*me, mp, pointsVisibilities, texParams.textureSize, texParams.padding);
     // create a new mesh to store data
     Mesh* m = new Mesh();
     m->pts = new StaticVector<Point3d>();
@@ -178,9 +178,9 @@ void Texturing::generateUVs(mvsUtils::MultiViewParams& mp)
                         if(mp.isPixelInImage(pix, chart.refCameraID))
                         {
                             // compute the final pixel coordinates
-                            uvPix = (pix + Point2d(offset.x, offset.y)) / (float)mua.textureSide();
+                            uvPix = (pix + Point2d(offset.x, offset.y)) / (float)mua.textureSize();
                             uvPix.y = 1.0 - uvPix.y;
-                            if(uvPix.x >= mua.textureSide() || uvPix.y >= mua.textureSide())
+                            if(uvPix.x >= mua.textureSize() || uvPix.y >= mua.textureSize())
                                 uvPix = Point2d();
                         }
                     }
@@ -277,7 +277,7 @@ void Texturing::generateTexture(const mvsUtils::MultiViewParams& mp,
     if(atlasID >= _atlases.size())
         throw std::runtime_error("Invalid atlas ID " + std::to_string(atlasID));
 
-    unsigned int textureSize = texParams.textureSide * texParams.textureSide;
+    unsigned int textureSize = texParams.textureSize * texParams.textureSize;
     std::vector<int> colorIDs(textureSize, -1);
 
     std::vector<std::vector<unsigned int>> camTriangles(mp.ncams);
@@ -418,7 +418,7 @@ void Texturing::generateTexture(const mvsUtils::MultiViewParams& mp,
                 const int pointIndex = (*me->tris)[triangleId].v[k];
                 triPts[k] = (*me->pts)[pointIndex];                               // 3D coordinates
                 const int uvPointIndex = trisUvIds[triangleId].m[k];
-                triPixs[k] = uvCoords[uvPointIndex] * texParams.textureSide;   // UV coordinates
+                triPixs[k] = uvCoords[uvPointIndex] * texParams.textureSize;   // UV coordinates
             }
 
             // compute triangle bounding box in pixel indexes
@@ -430,8 +430,8 @@ void Texturing::generateTexture(const mvsUtils::MultiViewParams& mp,
             RD.x = static_cast<int>(std::ceil(std::max(std::max(triPixs[0].x, triPixs[1].x), triPixs[2].x)));
             RD.y = static_cast<int>(std::ceil(std::max(std::max(triPixs[0].y, triPixs[1].y), triPixs[2].y)));
 
-            // sanity check: clamp values to [0; textureSide]
-            int texSide = static_cast<int>(texParams.textureSide);
+            // sanity check: clamp values to [0; textureSize]
+            int texSide = static_cast<int>(texParams.textureSize);
             LU.x = clamp(LU.x, 0, texSide);
             LU.y = clamp(LU.y, 0, texSide);
             RD.x = clamp(RD.x, 0, texSide);
@@ -453,9 +453,9 @@ void Texturing::generateTexture(const mvsUtils::MultiViewParams& mp,
                     }
 
                     // remap 'y' to image coordinates system (inverted Y axis)
-                    const unsigned int y_ = (texParams.textureSide - 1) - y;
+                    const unsigned int y_ = (texParams.textureSize - 1) - y;
                     // 1D pixel index
-                    unsigned int xyoffset = y_ * texParams.textureSide + x;
+                    unsigned int xyoffset = y_ * texParams.textureSize + x;
                     // get 3D coordinates
                     Point3d pt3d = barycentricToCartesian(triPts, barycCoords);
                     // get 2D coordinates in source image
@@ -488,10 +488,10 @@ void Texturing::generateTexture(const mvsUtils::MultiViewParams& mp,
         // edge padding (dilate gutter)
         for(unsigned int g = 0; g < texParams.padding; ++g)
         {
-            for(unsigned int y = 1; y < texParams.textureSide-1; ++y)
+            for(unsigned int y = 1; y < texParams.textureSize-1; ++y)
             {
-                unsigned int yoffset = y * texParams.textureSide;
-                for(unsigned int x = 1; x < texParams.textureSide-1; ++x)
+                unsigned int yoffset = y * texParams.textureSize;
+                for(unsigned int x = 1; x < texParams.textureSize-1; ++x)
                 {
                     unsigned int xyoffset = yoffset + x;
                     if(colorIDs[xyoffset] > 0)
@@ -504,13 +504,13 @@ void Texturing::generateTexture(const mvsUtils::MultiViewParams& mp,
                     {
                         colorIDs[xyoffset] = (xyoffset+1)*-1;
                     }
-                    else if(colorIDs[xyoffset+texParams.textureSide] > 0)
+                    else if(colorIDs[xyoffset+texParams.textureSize] > 0)
                     {
-                        colorIDs[xyoffset] = (xyoffset+texParams.textureSide)*-1;
+                        colorIDs[xyoffset] = (xyoffset+texParams.textureSize)*-1;
                     }
-                    else if(colorIDs[xyoffset-texParams.textureSide] > 0)
+                    else if(colorIDs[xyoffset-texParams.textureSize] > 0)
                     {
-                        colorIDs[xyoffset] = (xyoffset-texParams.textureSide)*-1;
+                        colorIDs[xyoffset] = (xyoffset-texParams.textureSize)*-1;
                     }
                 }
             }
@@ -525,15 +525,15 @@ void Texturing::generateTexture(const mvsUtils::MultiViewParams& mp,
     ALICEVISION_LOG_INFO("Computing final (average) color.");
 
     // save texture image
-    std::vector<Color> colorBuffer(texParams.textureSide * texParams.textureSide);
+    std::vector<Color> colorBuffer(texParams.textureSize * texParams.textureSize);
     std::vector<float> alphaBuffer;
     if(texParams.fillHoles)
         alphaBuffer.resize(colorBuffer.size(), 0.0f);
 
-    for(unsigned int yp = 0; yp < texParams.textureSide; ++yp)
+    for(unsigned int yp = 0; yp < texParams.textureSize; ++yp)
     {
-        unsigned int yoffset = yp * texParams.textureSide;
-        for(unsigned int xp = 0; xp < texParams.textureSide; ++xp)
+        unsigned int yoffset = yp * texParams.textureSize;
+        for(unsigned int xp = 0; xp < texParams.textureSize; ++xp)
         {
             unsigned int xyoffset = yoffset + xp;
             int colorID = colorIDs[xyoffset];
@@ -555,23 +555,23 @@ void Texturing::generateTexture(const mvsUtils::MultiViewParams& mp,
     bfs::path texturePath = outPath / textureName;
     ALICEVISION_LOG_INFO("Writing texture file: " << texturePath.string());
 
-    unsigned int outTextureSide = texParams.textureSide;
+    unsigned int outTextureSide = texParams.textureSize;
 
     // texture holes filling
     if(texParams.fillHoles)
     {
         ALICEVISION_LOG_INFO("Filling texture holes.");
-        imageIO::fillHoles(texParams.textureSide, texParams.textureSide, colorBuffer, alphaBuffer);
+        imageIO::fillHoles(texParams.textureSize, texParams.textureSize, colorBuffer, alphaBuffer);
         alphaBuffer.clear();
     }
     // downscale texture if required
     if(texParams.downscale > 1)
     {
         std::vector<Color> resizedColorBuffer;
-        outTextureSide = texParams.textureSide / texParams.downscale;
+        outTextureSide = texParams.textureSize / texParams.downscale;
 
         ALICEVISION_LOG_INFO("Downscaling texture (" << texParams.downscale << "x).");
-        imageIO::resizeImage(texParams.textureSide, texParams.textureSide, texParams.downscale, colorBuffer, resizedColorBuffer);
+        imageIO::resizeImage(texParams.textureSize, texParams.textureSize, texParams.downscale, colorBuffer, resizedColorBuffer);
         std::swap(resizedColorBuffer, colorBuffer);
     }
     imageIO::writeImage(texturePath.string(), outTextureSide, outTextureSide, colorBuffer);
