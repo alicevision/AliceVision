@@ -139,5 +139,22 @@ void computeNewCoordinateSystemFromLandmarks(const sfmData::SfMData& sfmData,
                                              Mat3& out_R,
                                              Vec3& out_t);
 
+/**
+ * @brief Compute the new coordinate system in the given reconstruction so that the given camera is the
+ * origin of the world coordinate system. If this camera (view) does not exist, the transformation
+ * remains unchanged.
+ *
+ * @param[in] sfmData
+ * @param[in] cameraName name of the reference picture (e.g. "cam_1.png")
+ * @param[out] out_S scale
+ * @param[out] out_R rotation
+ * @param[out] out_t translation
+ */
+void computeNewCoordinateSystemFromSingleCamera(const sfmData::SfMData& sfmData,
+                                                const std::string& cameraName,
+                                                double& out_S,
+                                                Mat3& out_R,
+                                                Vec3& out_t);
+
 } // namespace sfm
 } // namespace aliceVision

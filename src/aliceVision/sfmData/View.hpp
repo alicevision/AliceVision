@@ -304,6 +304,17 @@ public:
   }
 
   /**
+   * @brief Get the corresponding "Orientation" metadata value
+   * @return the metadata value int or -1 if no corresponding value
+   */
+    int getMetadataOrientation() const
+  {
+    if(hasDigitMetadata("Orientation"))
+      return  std::stoi(getMetadata("Orientation"));
+    return -1;
+  }
+
+  /**
    * @brief Get the view metadata structure
    * @return the view metadata
    */

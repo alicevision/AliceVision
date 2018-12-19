@@ -34,6 +34,7 @@ enum class EAlignmentMethod: unsigned char
   TRANSFOMATION = 0
   , AUTO_FROM_CAMERAS
   , AUTO_FROM_LANDMARKS
+  , FROM_SINGLE_CAMERA
 };
 
 /**
@@ -48,6 +49,7 @@ std::string EAlignmentMethod_enumToString(EAlignmentMethod alignmentMethod)
     case EAlignmentMethod::TRANSFOMATION:       return "transformation";
     case EAlignmentMethod::AUTO_FROM_CAMERAS:   return "auto_from_cameras";
     case EAlignmentMethod::AUTO_FROM_LANDMARKS: return "auto_from_landmarks";
+    case EAlignmentMethod::FROM_SINGLE_CAMERA:  return "from_single_camera";
   }
   throw std::out_of_range("Invalid EAlignmentMethod enum");
 }
@@ -65,6 +67,7 @@ EAlignmentMethod EAlignmentMethod_stringToEnum(const std::string& alignmentMetho
   if(method == "transformation")      return EAlignmentMethod::TRANSFOMATION;
   if(method == "auto_from_cameras")   return EAlignmentMethod::AUTO_FROM_CAMERAS;
   if(method == "auto_from_landmarks") return EAlignmentMethod::AUTO_FROM_LANDMARKS;
+  if(method == "from_single_camera")   return EAlignmentMethod::FROM_SINGLE_CAMERA;
   throw std::out_of_range("Invalid SfM alignment method : " + alignmentMethod);
 }
 
@@ -122,8 +125,9 @@ int main(int argc, char **argv)
   po::options_description optionalParams("Optional parameters");
   optionalParams.add_options()
     ("transformation", po::value<std::string>(&transformationYAlignScale)->default_value(transformationYAlignScale),
-      "required only for 'transformation' method:\n"
-      "Align [X,Y,Z] to +Y-axis, rotate around Y by R deg, scale by S; syntax: X,Y,Z;R;S")
+      "required only for 'transformation' and 'single camera' methods:\n"
+      "Transformation: Align [X,Y,Z] to +Y-axis, rotate around Y by R deg, scale by S; syntax: X,Y,Z;R;S\n"
+      "Single camera: Image name")
     ("landmarksDescriberTypes,d", po::value<std::string>(&landmarksDescriberTypesName)->default_value(landmarksDescriberTypesName),
       ("optional for 'landmarks' method:\n"
       "Image describer types used to compute the mean of the point cloud\n"
@@ -174,6 +178,7 @@ int main(int argc, char **argv)
   const EAlignmentMethod alignmentMethod = EAlignmentMethod_stringToEnum(alignmentMethodName);
 
   if(alignmentMethod == EAlignmentMethod::TRANSFOMATION &&
+     alignmentMethod == EAlignmentMethod::FROM_SINGLE_CAMERA &&
      transformationYAlignScale.empty())
   {
     ALICEVISION_LOG_ERROR("Missing --transformation option");
@@ -210,6 +215,10 @@ int main(int argc, char **argv)
 
     case EAlignmentMethod::AUTO_FROM_LANDMARKS:
       sfm::computeNewCoordinateSystemFromLandmarks(sfmDataIn, feature::EImageDescriberType_stringToEnums(landmarksDescriberTypesName), S, R, t);
+    break;
+
+    case EAlignmentMethod::FROM_SINGLE_CAMERA:
+      sfm::computeNewCoordinateSystemFromSingleCamera(sfmDataIn,transformationYAlignScale, S, R, t);
     break;
   }
 
