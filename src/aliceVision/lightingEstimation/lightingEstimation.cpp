@@ -15,7 +15,9 @@
 namespace aliceVision {
 namespace lightingEstimation {
 
-
+/**
+ * @brief Evaluate albedo and normal product for one channel
+ */
 void albedoNormalsProduct(MatrixXf& rhoTimesN, const MatrixXf& albedoChannel, const Image<AugmentedNormal>& augmentedNormals)
 {
     for (int i = 0; i < augmentedNormals.size(); ++i)
@@ -32,6 +34,10 @@ void albedoNormalsProduct(MatrixXf& rhoTimesN, const MatrixXf& albedoChannel, co
     }
 }
 
+/**
+ * @brief Resolve lighting estimation problem for one channel
+ */
+ 
 void estimateLigthingOneChannel(Eigen::Matrix<float, 9, 1>& lighting, const MatrixXf& albedoChannel, const MatrixXf& pictureChannel, const Image<AugmentedNormal>& augNormals)
 {
     int nbPoints = augNormals.size();

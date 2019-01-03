@@ -21,9 +21,15 @@ namespace lightingEstimation {
 
 using Eigen::MatrixXf;
 
+/**
+ * @brief Augmented lighting vetor for augmented Lambert's law (using Spherical Harmonics model)
+ * Composed of 9 coefficients
+ */ 
 using LightingVector = Eigen::Matrix<float, 9, 3>;
 
-
+/**
+ * @brief Lighting estimation from picture, albedo and geometry
+ */ 
 void estimateLigthing(LightingVector& lighting, const Image<RGBfColor>& albedo, const Image<RGBfColor>& picture, const Image<RGBfColor>& normals);
 
 

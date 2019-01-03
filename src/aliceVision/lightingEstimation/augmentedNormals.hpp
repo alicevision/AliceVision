@@ -21,7 +21,9 @@ using namespace aliceVision::image;
 
 
 /**
- * @brief Augmented normals
+ * @brief Augmented normals for augmented Lambert's law (using Spherical Harmonics model)
+ * Composed of 9 coefficients evaluated from normal coordinates (nx, ny, nz):
+ * New coefficients are: [nx; ny; nz; 1; nx*ny; nx*nz; ny*nz; nx^2 * ny^2; 3nz^2-1]
  */
 class AugmentedNormal : public Eigen::Matrix<float, 9, 1, 0, 9, 1>
 {
