@@ -23,7 +23,6 @@ public:
     RcTc* prt;
     PlaneSweepingCuda& cps;
     bool exportIntermediateResults;
-    bool visualizePartialDepthMaps;
     bool doSmooth;
     // int   s_wsh;
     // float s_gammaC;

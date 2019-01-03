@@ -111,9 +111,9 @@ DepthSimMap* RefineRc::refineAndFuseDepthSimMapCUDA(DepthSimMap* depthPixSizeMap
 
         dataMaps->push_back(depthSimMapC);
 
-        if(_sp->visualizePartialDepthMaps)
-            depthSimMapC->saveToImage(_sp->mp->getDepthMapsFolder() + "refineRc_Photo_" + std::to_string(_sp->mp->getViewId(_rc)) + "_tc_" +
-                                           std::to_string(_sp->mp->getViewId(tc)) + ".depthSimMap.png", -2.0f);
+        if(_sp->exportIntermediateResults)
+            depthSimMapC->saveToImage(_sp->mp->getDepthMapsFolder() + "refine_photo_" + std::to_string(_sp->mp->getViewId(_rc)) + "_tc_" +
+                                           std::to_string(_sp->mp->getViewId(tc)) + ".png", -2.0f);
     }
 
     // in order to fit into GPU memory
