@@ -24,7 +24,7 @@ SemiGlobalMatchingParams::SemiGlobalMatchingParams(mvsUtils::MultiViewParams* _m
     mp = _mp;
     prt = new RcTc(mp, cps);
 
-    visualizeDepthMaps = mp->userParams.get<bool>("semiGlobalMatching.visualizeDepthMaps", false);
+    exportIntermediateResults = mp->userParams.get<bool>("depthMap.intermediateResults", false);
     visualizePartialDepthMaps =
         mp->userParams.get<bool>("semiGlobalMatching.visualizePartialDepthMaps", false);
 

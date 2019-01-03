@@ -64,6 +64,9 @@ int main(int argc, char* argv[])
     double refineGammaP = 8.0;
     bool refineUseTcOrRcPixSize = false;
 
+    // intermediate results
+    bool exportIntermediateResults = false;
+
     po::options_description allParams("AliceVision depthMapEstimation\n"
                                       "Estimate depth map for each input image");
 
@@ -111,7 +114,9 @@ int main(int argc, char* argv[])
         ("refineGammaP", po::value<double>(&refineGammaP)->default_value(refineGammaP),
             "Refine: GammaP threshold.")
         ("refineUseTcOrRcPixSize", po::value<bool>(&refineUseTcOrRcPixSize)->default_value(refineUseTcOrRcPixSize),
-            "Refine: Use current camera pixel size or minimum pixel size of neighbour cameras.");
+            "Refine: Use current camera pixel size or minimum pixel size of neighbour cameras.")
+        ("exportIntermediateResults", po::value<bool>(&exportIntermediateResults)->default_value(exportIntermediateResults),
+            "Export intermediate results from the SGM and Refine steps");
 
     po::options_description logParams("Log parameters");
     logParams.add_options()
@@ -201,6 +206,9 @@ int main(int argc, char* argv[])
     mp.userParams.put("refineRc.gammaC", refineGammaC);
     mp.userParams.put("refineRc.gammaP", refineGammaP);
     mp.userParams.put("refineRc.useTcOrRcPixSize", refineUseTcOrRcPixSize);
+
+    // intermediate results
+    mp.userParams.put("depthMap.intermediateResults", exportIntermediateResults);
 
     std::vector<int> cams;
     cams.reserve(mp.ncams);

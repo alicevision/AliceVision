@@ -22,7 +22,7 @@ public:
     mvsUtils::MultiViewParams* mp;
     RcTc* prt;
     PlaneSweepingCuda& cps;
-    bool visualizeDepthMaps;
+    bool exportIntermediateResults;
     bool visualizePartialDepthMaps;
     bool doSmooth;
     // int   s_wsh;

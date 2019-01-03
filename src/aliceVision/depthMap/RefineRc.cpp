@@ -258,7 +258,7 @@ bool RefineRc::refinerc(bool checkIfExists)
         _depthSimMapOpt->add(depthSimMapPhoto);
     }
 
-    if(_sp->visualizeDepthMaps)
+    if(_sp->exportIntermediateResults)
     {
       depthPixSizeMapVis->saveToImage(_sp->mp->getDepthMapsFolder() + "refine_" + std::to_string(viewId) + "_vis.png", 0.0f);
       depthSimMapPhoto->saveToImage(_sp->mp->getDepthMapsFolder() + "refine_" + std::to_string(viewId) + "_photo.png", 0.0f);
