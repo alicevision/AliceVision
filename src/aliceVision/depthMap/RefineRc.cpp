@@ -22,81 +22,64 @@ namespace depthMap {
 
 namespace bfs = boost::filesystem;
 
-RefineRc::RefineRc(int _rc, int _scale, int _step, SemiGlobalMatchingParams* _sp)
-    : SemiGlobalMatchingRc(false, _rc, _scale, _step, _sp)
+RefineRc::RefineRc(int rc, int scale, int step, SemiGlobalMatchingParams* sp)
+    : SemiGlobalMatchingRc(rc, scale, step, sp)
 {
-    _nSamplesHalf = sp->mp->userParams.get<int>("refineRc.nSamplesHalf", 150);
-    _ndepthsToRefine = sp->mp->userParams.get<int>("refineRc.ndepthsToRefine", 31);
-    _sigma = (float)sp->mp->userParams.get<double>("refineRc.sigma", 15.0);
-    _niters = sp->mp->userParams.get<int>("refineRc.niters", 100);
-
-    _userTcOrPixSize = sp->mp->userParams.get<bool>("refineRc.useTcOrRcPixSize", false);
-    _wsh = sp->mp->userParams.get<int>("refineRc.wsh", 3);
-    _gammaC = (float)sp->mp->userParams.get<double>("refineRc.gammaC", 15.5);
-    _gammaP = (float)sp->mp->userParams.get<double>("refineRc.gammaP", 8.0);
-    
-    int nnearestcams = sp->mp->userParams.get<int>("refineRc.maxTCams", 6);
-    tcams = sp->mp->findNearestCamsFromLandmarks(rc, nnearestcams);
+    _userTcOrPixSize = _sp->mp->userParams.get<bool>("refineRc.useTcOrRcPixSize", false);
+    _nbDepthsToRefine = _sp->mp->userParams.get<int>("refineRc.ndepthsToRefine", 31);
+    _refineWsh = _sp->mp->userParams.get<int>("refineRc.wsh", 3);
+    _refineNiters = _sp->mp->userParams.get<int>("refineRc.niters", 100);
+    _refineNSamplesHalf = _sp->mp->userParams.get<int>("refineRc.nSamplesHalf", 150);
+    _refineSigma  = static_cast<float>(_sp->mp->userParams.get<double>("refineRc.sigma", 15.0));
+    _refineGammaC = static_cast<float>(_sp->mp->userParams.get<double>("refineRc.gammaC", 15.5));
+    _refineGammaP = static_cast<float>(_sp->mp->userParams.get<double>("refineRc.gammaP", 8.0));
 }
 
 RefineRc::~RefineRc()
 {
-    //
+  delete _depthSimMapOpt;
 }
 
 DepthSimMap* RefineRc::getDepthPixSizeMapFromSGM()
 {
-    int w11 = sp->mp->getWidth(rc);
-    int h11 = sp->mp->getHeight(rc);
+    const int w11 = _sp->mp->getWidth(_rc);
+    const int h11 = _sp->mp->getHeight(_rc);
+    const int zborder = 2;
 
-    int volDimX = w;
-    int volDimY = h;
-    int volDimZ = depths->size();
+    StaticVector<IdValue> volumeBestIdVal;
+    volumeBestIdVal.reserve(_width * _height);
 
-    StaticVector<IdValue>* volumeBestIdVal = new StaticVector<IdValue>();
-    volumeBestIdVal->reserve(volDimX * volDimY);
+    for(int i = 0; i < _volumeBestIdVal->size(); i++)
     {
-        std::vector<unsigned short> rcIdDepthMap;
+        // float sim = (*depthSimMapFinal->dsm)[i].y;
+        // sim = std::min(sim,mp->simThr);
+        const float sim = _sp->mp->simThr - 0.0001;
+        const int id = (*_volumeBestIdVal)[i].id;
 
-        imageIO::readImage(SGM_idDepthMapFileName, volDimX, volDimY, rcIdDepthMap);
-
-        for(int i = 0; i < volDimX * volDimY; i++)
-        {
-            // float sim = (*depthSimMapFinal->dsm)[i].y;
-            // sim = std::min(sim,mp->simThr);
-            float sim = sp->mp->simThr - 0.0001;
-
-            int id = rcIdDepthMap.at(i);
-            id = (id > 0) && (id < volDimZ - sp->minObjectThickness - 1) ? id : 0;
-            volumeBestIdVal->push_back(IdValue(id, sim));
-        }
+        if(id > 0)
+          volumeBestIdVal.push_back(IdValue(id, sim));
+        else
+          volumeBestIdVal.push_back(IdValue(0, sim));
     }
 
-    int zborder = 2;
-    DepthSimMap* depthSimMap =
-        sp->getDepthSimMapFromBestIdVal(w, h, volumeBestIdVal, scale, step, rc, zborder, depths);
-    delete volumeBestIdVal;
-
-    DepthSimMap* depthSimMapScale1Step1 = new DepthSimMap(rc, sp->mp, 1, 1);
-    depthSimMapScale1Step1->add11(depthSimMap);
-    delete depthSimMap;
+    DepthSimMap* depthSimMapScale1Step1 = new DepthSimMap(_rc, _sp->mp, 1, 1);
+    {
+        DepthSimMap* depthSimMap = _sp->getDepthSimMapFromBestIdVal(_width, _height, &volumeBestIdVal, _scale, _step, _rc, zborder, _depths);
+        depthSimMapScale1Step1->add11(depthSimMap);
+        delete depthSimMap;
+    }
 
     // set sim (y) to pixsize
-    for(int y = 0; y < h11; y++)
+    for(int y = 0; y < h11; ++y)
     {
-        for(int x = 0; x < w11; x++)
+        for(int x = 0; x < w11; ++x)
         {
-            Point3d p = sp->mp->CArr[rc] +
-                        (sp->mp->iCamArr[rc] * Point2d((float)x, (float)y)).normalize() *
-                            (*depthSimMapScale1Step1->dsm)[y * w11 + x].depth;
+            Point3d p = _sp->mp->CArr[_rc] + (_sp->mp->iCamArr[_rc] * Point2d(static_cast<float>(x), static_cast<float>(y))).normalize() * (*depthSimMapScale1Step1->dsm)[y * w11 + x].depth;
+
             if(_userTcOrPixSize)
-            {
-                (*depthSimMapScale1Step1->dsm)[y * w11 + x].sim = sp->mp->getCamsMinPixelSize(p, tcams);
-            }
+                (*depthSimMapScale1Step1->dsm)[y * w11 + x].sim = _sp->mp->getCamsMinPixelSize(p, _tcams);
             else
-            {
-                (*depthSimMapScale1Step1->dsm)[y * w11 + x].sim = sp->mp->getCamPixelSize(p, rc);
-            }
+                (*depthSimMapScale1Step1->dsm)[y * w11 + x].sim = _sp->mp->getCamPixelSize(p, _rc);
         }
     }
 
@@ -105,36 +88,36 @@ DepthSimMap* RefineRc::getDepthPixSizeMapFromSGM()
 
 DepthSimMap* RefineRc::refineAndFuseDepthSimMapCUDA(DepthSimMap* depthPixSizeMapVis)
 {
-    int w11 = sp->mp->getWidth(rc);
-    int h11 = sp->mp->getHeight(rc);
+    int w11 = _sp->mp->getWidth(_rc);
+    int h11 = _sp->mp->getHeight(_rc);
 
     StaticVector<DepthSimMap*>* dataMaps = new StaticVector<DepthSimMap*>();
-    dataMaps->reserve(tcams.size() + 1);
+    dataMaps->reserve(_tcams.size() + 1);
     dataMaps->push_back(depthPixSizeMapVis); //!!DO NOT ERASE!!!
 
     const int scale = 1;
 
-    for(int c = 0; c < tcams.size(); c++)
+    for(int c = 0; c < _tcams.size(); c++)
     {
-        int tc = tcams[c];
+        int tc = _tcams[c];
 
-        DepthSimMap* depthSimMapC = new DepthSimMap(rc, sp->mp, scale, 1);
+        DepthSimMap* depthSimMapC = new DepthSimMap(_rc, _sp->mp, scale, 1);
         StaticVector<float>* depthMap = depthPixSizeMapVis->getDepthMap();
         depthSimMapC->initJustFromDepthMap(depthMap, 1.0f);
         delete depthMap;
 
-        sp->prt->refineRcTcDepthSimMap(_userTcOrPixSize, depthSimMapC, rc, tc, _ndepthsToRefine, _wsh, _gammaC, _gammaP,
+        _sp->prt->refineRcTcDepthSimMap(_userTcOrPixSize, depthSimMapC, _rc, tc, _nbDepthsToRefine, _refineWsh, _refineGammaC, _refineGammaP,
                                        0.0f);
 
         dataMaps->push_back(depthSimMapC);
 
-        if(sp->visualizePartialDepthMaps)
-            depthSimMapC->saveToImage(outDir + "refineRc_Photo_" + std::to_string(sp->mp->getViewId(rc)) + "_tc_" +
-                                           std::to_string(sp->mp->getViewId(tc)) + ".depthSimMap.png", -2.0f);
+        if(_sp->visualizePartialDepthMaps)
+            depthSimMapC->saveToImage(_sp->mp->getDepthMapsFolder() + "refineRc_Photo_" + std::to_string(_sp->mp->getViewId(_rc)) + "_tc_" +
+                                           std::to_string(_sp->mp->getViewId(tc)) + ".depthSimMap.png", -2.0f);
     }
 
     // in order to fit into GPU memory
-    DepthSimMap* depthSimMapFused = new DepthSimMap(rc, sp->mp, scale, 1);
+    DepthSimMap* depthSimMapFused = new DepthSimMap(_rc, _sp->mp, scale, 1);
 
     int nhParts = 4;
     int hPartHeightGlob = h11 / nhParts;
@@ -168,8 +151,8 @@ DepthSimMap* RefineRc::refineAndFuseDepthSimMapCUDA(DepthSimMap* depthPixSizeMap
         depthSimMapFusedHPart->reserve(w11 * hPartHeight);
         depthSimMapFusedHPart->resize_with(w11 * hPartHeight, DepthSim(-1.0f, 1.0f));
 
-        sp->cps.fuseDepthSimMapsGaussianKernelVoting(w11, hPartHeight, depthSimMapFusedHPart, dataMapsHPart,
-                                                      _nSamplesHalf, _ndepthsToRefine, _sigma);
+        _sp->cps.fuseDepthSimMapsGaussianKernelVoting(w11, hPartHeight, depthSimMapFusedHPart, dataMapsHPart,
+                                                      _refineNSamplesHalf, _nbDepthsToRefine, _refineSigma);
 
 #pragma omp parallel for
         for(int y = 0; y < hPartHeight; y++)
@@ -186,7 +169,7 @@ DepthSimMap* RefineRc::refineAndFuseDepthSimMapCUDA(DepthSimMap* depthPixSizeMap
     }
 
     (*dataMaps)[0] = nullptr; // it is input dsmap we dont want to delete it
-    for(int c = 0; c < tcams.size(); c++)
+    for(int c = 0; c < _tcams.size(); c++)
     {
         delete(*dataMaps)[c + 1];
     }
@@ -198,14 +181,14 @@ DepthSimMap* RefineRc::refineAndFuseDepthSimMapCUDA(DepthSimMap* depthPixSizeMap
 DepthSimMap* RefineRc::optimizeDepthSimMapCUDA(DepthSimMap* depthPixSizeMapVis,
                                                       DepthSimMap* depthSimMapPhoto)
 {
-    int h11 = sp->mp->getHeight(rc);
+    int h11 = _sp->mp->getHeight(_rc);
 
     StaticVector<DepthSimMap*>* dataMaps = new StaticVector<DepthSimMap*>();
     dataMaps->reserve(2);
     dataMaps->push_back(depthPixSizeMapVis); //!!DO NOT ERASE!!!
     dataMaps->push_back(depthSimMapPhoto);   //!!DO NOT ERASE!!!
 
-    DepthSimMap* depthSimMapOptimized = new DepthSimMap(rc, sp->mp, 1, 1);
+    DepthSimMap* depthSimMapOptimized = new DepthSimMap(_rc, _sp->mp, 1, 1);
 
     {
         StaticVector<StaticVector<DepthSim>*>* dataMapsPtrs = new StaticVector<StaticVector<DepthSim>*>();
@@ -221,8 +204,8 @@ DepthSimMap* RefineRc::optimizeDepthSimMapCUDA(DepthSimMap* depthPixSizeMapVis,
         {
             int yFrom = part * hPart;
             int hPartAct = std::min(hPart, h11 - yFrom);
-            sp->cps.optimizeDepthSimMapGradientDescent(depthSimMapOptimized->dsm, dataMapsPtrs, rc, _nSamplesHalf,
-                                                        _ndepthsToRefine, _sigma, _niters, yFrom, hPartAct);
+            _sp->cps.optimizeDepthSimMapGradientDescent(depthSimMapOptimized->dsm, dataMapsPtrs, _rc, _refineNSamplesHalf,
+                                                        _nbDepthsToRefine, _refineSigma, _refineNiters, yFrom, hPartAct);
         }
 
         for(int i = 0; i < dataMaps->size(); i++)
@@ -239,152 +222,152 @@ DepthSimMap* RefineRc::optimizeDepthSimMapCUDA(DepthSimMap* depthPixSizeMapVis,
     return depthSimMapOptimized;
 }
 
-bool RefineRc::refinercCUDA(bool checkIfExists)
+bool RefineRc::refinerc(bool checkIfExists)
 {
-    const IndexT viewId = sp->mp->getViewId(rc);
+    const IndexT viewId = _sp->mp->getViewId(_rc);
 
-    if(sp->mp->verbose)
-        ALICEVISION_LOG_DEBUG("refinercCUDA: processing " << (rc + 1) << " of " << sp->mp->ncams << ".");
+    if(_sp->mp->verbose)
+        ALICEVISION_LOG_DEBUG("Refine CUDA (rc: " << (_rc + 1) << " / " << _sp->mp->ncams << ")");
 
     // generate default depthSimMap if rc has no tcam
-    if(tcams.size() == 0 || depths == nullptr)
+    if(_tcams.size() == 0 || _depths == nullptr)
     {
-        DepthSimMap depthSimMapOpt(rc, sp->mp, 1, 1);
-        depthSimMapOpt.save(rc, StaticVector<int>() );
+        DepthSimMap depthSimMapOpt(_rc, _sp->mp, 1, 1);
+        depthSimMapOpt.save(_rc, StaticVector<int>() );
         return true;
     }
 
-    if(checkIfExists && (mvsUtils::FileExists(sp->getREFINE_opt_simMapFileName(viewId, 1, 1))))
+    if(checkIfExists && (mvsUtils::FileExists(_sp->getREFINE_opt_simMapFileName(viewId, 1, 1))))
     {
+        ALICEVISION_LOG_INFO("Already computed: " + _sp->getREFINE_opt_simMapFileName(viewId, 1, 1));
         return false;
     }
 
     long tall = clock();
 
     DepthSimMap* depthPixSizeMapVis = getDepthPixSizeMapFromSGM();
-
-    if(sp->visualizeDepthMaps)
-        depthPixSizeMapVis->saveToImage(outDir + "refineRc_" + std::to_string(viewId) + "Vis.png", 0.0f);
-
     DepthSimMap* depthSimMapPhoto = refineAndFuseDepthSimMapCUDA(depthPixSizeMapVis);
 
-    if(sp->visualizeDepthMaps)
-        depthSimMapPhoto->saveToImage(outDir + "refineRc_" + std::to_string(viewId) + "Photo.png", 0.0f);
-
-    DepthSimMap* depthSimMapOpt = nullptr;
-    if(sp->doRefineRc)
+    if(_sp->doRefineRc)
     {
-        depthSimMapOpt = optimizeDepthSimMapCUDA(depthPixSizeMapVis, depthSimMapPhoto);
+        _depthSimMapOpt = optimizeDepthSimMapCUDA(depthPixSizeMapVis, depthSimMapPhoto);
     }
     else
     {
-        depthSimMapOpt = new DepthSimMap(rc, sp->mp, 1, 1);
-        depthSimMapOpt->add(depthSimMapPhoto);
+        _depthSimMapOpt = new DepthSimMap(_rc, _sp->mp, 1, 1);
+        _depthSimMapOpt->add(depthSimMapPhoto);
     }
 
-    if(sp->visualizeDepthMaps)
-        depthSimMapOpt->saveToImage(outDir + "refineRc_" + std::to_string(viewId) + "Opt.png", 0.0f);
-
-    depthSimMapOpt->save(rc, tcams);
-
-    if(sp->visualizeDepthMaps)
+    if(_sp->visualizeDepthMaps)
     {
-        depthSimMapPhoto->saveRefine(rc,
-                                    sp->getREFINE_photo_depthMapFileName(viewId, 1, 1),
-                                    sp->getREFINE_photo_simMapFileName(viewId, 1, 1));
-
-        depthSimMapOpt->saveRefine(rc,
-                                   sp->getREFINE_opt_depthMapFileName(viewId, 1, 1),
-                                   sp->getREFINE_opt_simMapFileName(viewId, 1, 1));
+      depthPixSizeMapVis->saveToImage(_sp->mp->getDepthMapsFolder() + "refine_" + std::to_string(viewId) + "_vis.png", 0.0f);
+      depthSimMapPhoto->saveToImage(_sp->mp->getDepthMapsFolder() + "refine_" + std::to_string(viewId) + "_photo.png", 0.0f);
+      depthSimMapPhoto->saveRefine(_rc, _sp->getREFINE_photo_depthMapFileName(viewId, 1, 1), _sp->getREFINE_photo_simMapFileName(viewId, 1, 1));
+      _depthSimMapOpt->saveToImage(_sp->mp->getDepthMapsFolder() + "refine_" + std::to_string(viewId) + "_opt.png", 0.0f);
+      _depthSimMapOpt->saveRefine(_rc, _sp->getREFINE_opt_depthMapFileName(viewId, 1, 1), _sp->getREFINE_opt_simMapFileName(viewId, 1, 1));
     }
 
-    mvsUtils::printfElapsedTime(tall, "refinerc CUDA: " + mvsUtils::num2str(rc) + " of " + mvsUtils::num2str(sp->mp->ncams) + ", " + std::to_string(viewId) + " done.");
+    mvsUtils::printfElapsedTime(tall, "Refine CUDA (rc: " + mvsUtils::num2str(_rc) + " / " + mvsUtils::num2str(_sp->mp->ncams) + ")");
 
     delete depthPixSizeMapVis;
     delete depthSimMapPhoto;
-    delete depthSimMapOpt;
-
     return true;
 }
 
-void refineDepthMaps(int CUDADeviceNo, mvsUtils::MultiViewParams* mp, const StaticVector<int>& cams)
+void RefineRc::writeDepthMap()
 {
-    const int fileScale = 1; // input images scale (should be one)
-    int sgmScale = mp->userParams.get<int>("semiGlobalMatching.scale", -1);
-    int sgmStep = mp->userParams.get<int>("semiGlobalMatching.step", -1);
-
-    if(sgmScale == -1)
-    {
-        int width = mp->getMaxImageWidth();
-        int height = mp->getMaxImageHeight();
-
-        int scaleTmp = computeStep(mp, fileScale, (width > height ? 700 : 550), (width > height ? 550 : 700));
-        sgmScale = std::min(2, scaleTmp);
-        sgmStep = computeStep(mp, fileScale * sgmScale, (width > height ? 700 : 550), (width > height ? 550 : 700));
-        ALICEVISION_LOG_INFO("PSSGM autoScaleStep scale: " << sgmScale << ", step: " << sgmStep);
-    }
-
-    int bandType = 0;
-    mvsUtils::ImagesCache ic(mp, bandType, true);
-    PlaneSweepingCuda cps(CUDADeviceNo, ic, mp, sgmScale);
-    SemiGlobalMatchingParams sp(mp, cps);
-
-    //////////////////////////////////////////////////////////////////////////////////////////
-
-    for(const int rc : cams)
-    {
-        if(!mvsUtils::FileExists(sp.getREFINE_opt_simMapFileName(mp->getViewId(rc), 1, 1)))
-        {
-            RefineRc rrc(rc, sgmScale, sgmStep, &sp);
-            rrc.refinercCUDA();
-        }
-    }
+  _depthSimMapOpt->save(_rc, _tcams);
 }
 
-void refineDepthMaps(mvsUtils::MultiViewParams* mp, const StaticVector<int>& cams)
+void estimateAndRefineDepthMaps(mvsUtils::MultiViewParams* mp, const std::vector<int>& cams)
 {
-    int num_gpus = listCUDADevices(true);
-    int num_cpu_threads = omp_get_num_procs();
-    ALICEVISION_LOG_INFO("Number of GPU devices: " << num_gpus << ", number of CPU threads: " << num_cpu_threads);
-    int numthreads = std::min(num_gpus, num_cpu_threads);
+  const int numGpus = listCUDADevices(true);
+  const int numCpuThreads = omp_get_num_procs();
+  const int numGpusToUse = mp->userParams.get<int>("refineRc.num_gpus_to_use", 0);
+  int numThreads = std::min(numGpus, numCpuThreads);
 
-    int num_gpus_to_use = mp->userParams.get<int>("refineRc.num_gpus_to_use", 0);
-    if(num_gpus_to_use > 0)
-    {
-        numthreads = num_gpus_to_use;
-    }
+  ALICEVISION_LOG_INFO("# GPU devices: " << numGpus << ", # CPU threads: " << numCpuThreads);
 
-    if(numthreads == 1)
-    {
-        // The GPU sorting is determined by an environment variable named CUDA_DEVICE_ORDER
-        // Possible values: FASTEST_FIRST (default) or PCI_BUS_ID
-        const int CUDADeviceNo = 0;
-        refineDepthMaps(CUDADeviceNo, mp, cams);
-    }
-    else
-    {
-        omp_set_num_threads(numthreads); // create as many CPU threads as there are CUDA devices
+  if(numGpusToUse > 0)
+      numThreads = numGpusToUse;
+
+  if(numThreads == 1)
+  {
+      // the GPU sorting is determined by an environment variable named CUDA_DEVICE_ORDER
+      // possible values: FASTEST_FIRST (default) or PCI_BUS_ID
+      const int cudaDeviceNo = 0;
+      estimateAndRefineDepthMaps(cudaDeviceNo, mp, cams);
+  }
+  else
+  {
+      omp_set_num_threads(numThreads); // create as many CPU threads as there are CUDA devices
 #pragma omp parallel
-        {
-            int cpu_thread_id = omp_get_thread_num();
-            int CUDADeviceNo = cpu_thread_id % numthreads;
-            ALICEVISION_LOG_INFO("CPU thread " << cpu_thread_id << " (of " << numthreads << ") uses CUDA device: " << CUDADeviceNo);
+      {
+          const int cpuThreadId = omp_get_thread_num();
+          const int cudaDeviceNo = cpuThreadId % numThreads;
+          const int rcFrom = cudaDeviceNo * (cams.size() / numThreads);
+          int rcTo = (cudaDeviceNo + 1) * (cams.size() / numThreads);
 
-            int rcFrom = CUDADeviceNo * (cams.size() / numthreads);
-            int rcTo = (CUDADeviceNo + 1) * (cams.size() / numthreads);
-            if(CUDADeviceNo == numthreads - 1)
-            {
-                rcTo = cams.size();
-            }
-            StaticVector<int> subcams;
-            subcams.reserve(cams.size());
-            for(int rc = rcFrom; rc < rcTo; rc++)
-            {
-                subcams.push_back(cams[rc]);
-            }
-            refineDepthMaps(cpu_thread_id, mp, subcams);
-        }
-    }
+          ALICEVISION_LOG_INFO("CPU thread " << cpuThreadId << " / " << numThreads << " uses CUDA device: " << cudaDeviceNo);
+
+          if(cudaDeviceNo == numThreads - 1)
+              rcTo = cams.size();
+
+          std::vector<int> subcams;
+          subcams.reserve(cams.size());
+
+          for(int rc = rcFrom; rc < rcTo; rc++)
+              subcams.push_back(cams[rc]);
+
+          estimateAndRefineDepthMaps(cpuThreadId, mp, subcams);
+      }
+  }
+}
+
+void estimateAndRefineDepthMaps(int cudaDeviceNo, mvsUtils::MultiViewParams* mp, const std::vector<int>& cams)
+{
+  const int fileScale = 1; // input images scale (should be one)
+  int sgmScale = mp->userParams.get<int>("semiGlobalMatching.scale", -1);
+  int sgmStep = mp->userParams.get<int>("semiGlobalMatching.step", -1);
+
+  if(sgmScale == -1)
+  {
+      // compute the number of scales that will be used in the plane sweeping.
+      // the highest scale should have a minimum resolution of 700x550.
+      const int width = mp->getMaxImageWidth();
+      const int height = mp->getMaxImageHeight();
+      const int scaleTmp = computeStep(mp, fileScale, (width > height ? 700 : 550), (width > height ? 550 : 700));
+
+      sgmScale = std::min(2, scaleTmp);
+      sgmStep = computeStep(mp, fileScale * sgmScale, (width > height ? 700 : 550), (width > height ? 550 : 700));
+
+      ALICEVISION_LOG_INFO("Plane sweeping parameters:\n"
+                           "\t- scale: " << sgmScale << "\n"
+                           "\t- step: " << sgmStep);
+  }
+
+  const int bandType = 0;
+
+  // load images from files into RAM
+  mvsUtils::ImagesCache ic(mp, bandType, true);
+  // load stuff on GPU memory and creates multi-level images and computes gradients
+  PlaneSweepingCuda cps(cudaDeviceNo, ic, mp, sgmScale);
+  // init plane sweeping parameters
+  SemiGlobalMatchingParams sp(mp, cps);
+
+  for(const int rc : cams)
+  {
+      RefineRc sgmRefineRc(rc, sgmScale, sgmStep, &sp);
+
+      ALICEVISION_LOG_INFO("Estimate depth map, view id: " << mp->getViewId(rc));
+      sgmRefineRc.sgmrc();
+
+      ALICEVISION_LOG_INFO("Refine depth map, view id: " << mp->getViewId(rc));
+      sgmRefineRc.refinerc();
+
+      // write results
+      sgmRefineRc.writeDepthMap();
+  }
 }
 
 } // namespace depthMap

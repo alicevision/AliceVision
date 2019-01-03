@@ -59,7 +59,6 @@ int main(int argc, char* argv[])
     int refineNDepthsToRefine = 31;
     int refineNiters = 100;
     int refineWSH = 3;
-    int refineMaxTCams = 6;
     double refineSigma = 15.0;
     double refineGammaC = 15.5;
     double refineGammaP = 8.0;
@@ -105,8 +104,6 @@ int main(int argc, char* argv[])
             "Refine: Number of iterations.")
         ("refineWSH", po::value<int>(&refineWSH)->default_value(refineWSH),
             "Refine: Size of the patch used to compute the similarity.")
-        ("refineMaxTCams", po::value<int>(&refineMaxTCams)->default_value(refineMaxTCams),
-            "Refine: Number of neighbour cameras.")
         ("refineSigma", po::value<double>(&refineSigma)->default_value(refineSigma),
             "Refine: Sigma threshold.")
         ("refineGammaC", po::value<double>(&refineGammaC)->default_value(refineGammaC),
@@ -200,13 +197,12 @@ int main(int argc, char* argv[])
     mp.userParams.put("refineRc.ndepthsToRefine", refineNDepthsToRefine);
     mp.userParams.put("refineRc.niters", refineNiters);
     mp.userParams.put("refineRc.wsh", refineWSH);
-    mp.userParams.put("refineRc.maxTCams", refineMaxTCams);
     mp.userParams.put("refineRc.sigma", refineSigma);
     mp.userParams.put("refineRc.gammaC", refineGammaC);
     mp.userParams.put("refineRc.gammaP", refineGammaP);
     mp.userParams.put("refineRc.useTcOrRcPixSize", refineUseTcOrRcPixSize);
 
-    StaticVector<int> cams;
+    std::vector<int> cams;
     cams.reserve(mp.ncams);
     if(rangeSize == -1)
     {
@@ -231,10 +227,7 @@ int main(int argc, char* argv[])
 
     ALICEVISION_LOG_INFO("Create depth maps.");
 
-    {
-      depthMap::computeDepthMapsPSSGM(&mp, cams);
-      depthMap::refineDepthMaps(&mp, cams);
-    }
+    depthMap::estimateAndRefineDepthMaps(&mp, cams);
 
     ALICEVISION_LOG_INFO("Task done in (s): " + std::to_string(timer.elapsed()));
     return EXIT_SUCCESS;

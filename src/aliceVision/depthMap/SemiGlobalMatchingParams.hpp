@@ -47,7 +47,6 @@ public:
     bool saveDepthsToSweepToTxtForVis;
     int modalsMapDistLimit;
     int minNumOfConsistentCams;
-    int minObjectThickness;
     float maxTcRcPixSizeInVoxRatio;
     int nSGGCIters;
     bool doSGMoptimizeVolume;

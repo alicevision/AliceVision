@@ -59,7 +59,6 @@ SemiGlobalMatchingParams::SemiGlobalMatchingParams(mvsUtils::MultiViewParams* _m
 
     modalsMapDistLimit = mp->userParams.get<int>("semiGlobalMatching.modalsMapDistLimit", 2);
     minNumOfConsistentCams = mp->userParams.get<int>("semiGlobalMatching.minNumOfConsistentCams", 2);
-    minObjectThickness = mp->userParams.get<int>("semiGlobalMatching.minObjectThickness", 8);
     maxTcRcPixSizeInVoxRatio =
         (float)mp->userParams.get<double>("semiGlobalMatching.maxTcRcPixSizeInVoxRatio", 2.0f);
     nSGGCIters = mp->userParams.get<int>("semiGlobalMatching.nSGGCIters", 0);

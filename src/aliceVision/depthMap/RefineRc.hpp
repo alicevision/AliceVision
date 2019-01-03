@@ -15,30 +15,33 @@ namespace depthMap {
 class RefineRc : public SemiGlobalMatchingRc
 {
 public:
-    RefineRc(int _rc, int _scale, int _step, SemiGlobalMatchingParams* _sp);
-    ~RefineRc(void);
+    RefineRc(int rc, int scale, int step, SemiGlobalMatchingParams* sp);
+    ~RefineRc();
 
-    bool refinercCUDA(bool checkIfExists = true);
+    bool refinerc(bool checkIfExists = true);
 
-    std::string outDir;
-    bool _userTcOrPixSize;
-    int _wsh;
-    float _gammaC;
-    float _gammaP;
+    void writeDepthMap();
 
 private:
-    int _nSamplesHalf;
-    int _ndepthsToRefine;
-    float _sigma;
-    int _niters;
+
+    float _refineSigma;
+    float _refineGammaC;
+    float _refineGammaP;
+    int _refineWsh;
+    int _refineNSamplesHalf;
+    int _refineNiters;
+    int _nbDepthsToRefine;
+    bool _userTcOrPixSize;
+
+    DepthSimMap* _depthSimMapOpt = nullptr;
 
     DepthSimMap* getDepthPixSizeMapFromSGM();
     DepthSimMap* refineAndFuseDepthSimMapCUDA(DepthSimMap* depthPixSizeMapVis);
     DepthSimMap* optimizeDepthSimMapCUDA(DepthSimMap* depthPixSizeMapVis, DepthSimMap* depthSimMapPhoto);
 };
 
-void refineDepthMaps(mvsUtils::MultiViewParams* mp, const StaticVector<int>& cams);
-void refineDepthMaps(int CUDADeviceNo, mvsUtils::MultiViewParams* mp, const StaticVector<int>& cams);
+void estimateAndRefineDepthMaps(mvsUtils::MultiViewParams* mp, const std::vector<int>& cams);
+void estimateAndRefineDepthMaps(int cudaDeviceNo, mvsUtils::MultiViewParams* mp, const std::vector<int>& cams);
 
 } // namespace depthMap
 } // namespace aliceVision
