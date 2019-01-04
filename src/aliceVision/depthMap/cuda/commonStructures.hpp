@@ -1158,10 +1158,10 @@ template<class Type> void copy2D( Type* dst, size_t sx, size_t sy,
 struct cameraStruct
 {
     float P[12], iP[9], R[9], iR[9], K[9], iK[9], C[3];
-    CudaHostMemoryHeap<uchar4, 2>* tex_rgba_hmh;
+    CudaHostMemoryHeap<uchar4, 2>* tex_rgba_hmh = nullptr;
     int camId;
     int rc;
-    float* H;
+    float* H = nullptr;
     int scale;
     int blurid;
 };

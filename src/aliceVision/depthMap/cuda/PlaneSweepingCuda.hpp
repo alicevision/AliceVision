@@ -17,6 +17,7 @@
 #include <aliceVision/mvsData/Voxel.hpp>
 #include <aliceVision/mvsUtils/ImagesCache.hpp>
 #include <aliceVision/depthMap/DepthSimMap.hpp>
+#include <aliceVision/depthMap/cuda/commonStructures.hpp>
 
 namespace aliceVision {
 namespace depthMap {
@@ -54,7 +55,7 @@ public:
     const int _CUDADeviceNo;
     void** ps_texs_arr;
 
-    StaticVector<void*>* cams;
+    StaticVector<cameraStruct*>* cams;
     StaticVector<int>* camsRcs;
     StaticVector<long>* camsTimes;
 

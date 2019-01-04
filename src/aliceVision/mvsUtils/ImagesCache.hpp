@@ -87,13 +87,16 @@ public:
     void initIC( std::vector<std::string>& _imagesNames );
     ~ImagesCache();
 
-    inline ImgPtr getImg( int camId ) {
-        refreshData(camId);
+    inline ImgPtr getImg_sync( int camId )
+    {
+        refreshData_sync(camId);
         const int imageId = camIdMapId[camId];
         return imgs[imageId];
     }
 
     void refreshData(int camId);
+    void refreshData_sync(int camId);
+
     std::future<void> refreshData_async(int camId);
 
     Color getPixelValueInterpolated(const Point2d* pix, int camId);

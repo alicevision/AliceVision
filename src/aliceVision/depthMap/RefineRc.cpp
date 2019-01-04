@@ -40,6 +40,12 @@ RefineRc::~RefineRc()
   delete _depthSimMapOpt;
 }
 
+void RefineRc::preloadTcams_async()
+{
+  for(int tc : _tcams.getData())
+    _sp->cps._ic.refreshData_async(tc);
+}
+
 DepthSimMap* RefineRc::getDepthPixSizeMapFromSGM()
 {
     const int w11 = _sp->mp->getWidth(_rc);
@@ -358,6 +364,8 @@ void estimateAndRefineDepthMaps(int cudaDeviceNo, mvsUtils::MultiViewParams* mp,
   for(const int rc : cams)
   {
       RefineRc sgmRefineRc(rc, sgmScale, sgmStep, &sp);
+
+      sgmRefineRc.preloadTcams_async();
 
       ALICEVISION_LOG_INFO("Estimate depth map, view id: " << mp->getViewId(rc));
       sgmRefineRc.sgmrc();
