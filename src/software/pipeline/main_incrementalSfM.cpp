@@ -24,7 +24,7 @@
 // These constants define the current software version.
 // They must be updated when the command line is changed.
 #define ALICEVISION_SOFTWARE_VERSION_MAJOR 2
-#define ALICEVISION_SOFTWARE_VERSION_MINOR 0
+#define ALICEVISION_SOFTWARE_VERSION_MINOR 1
 
 using namespace aliceVision;
 
@@ -282,25 +282,32 @@ int main(int argc, char **argv)
 
   if(minNbObservationsForTriangulation < 2)
   {
-      // allows to use to the old triangulatation algorithm (using 2 views only) during resection.
-      minNbObservationsForTriangulation = 0;
-      // ALICEVISION_LOG_ERROR("The value associated to the argument '--minNbObservationsForTriangulation' must be >= 2 ");
-      // return EXIT_FAILURE;
+    // allows to use to the old triangulatation algorithm (using 2 views only) during resection.
+    minNbObservationsForTriangulation = 0;
+    // ALICEVISION_LOG_ERROR("The value associated to the argument '--minNbObservationsForTriangulation' must be >= 2 ");
+    // return EXIT_FAILURE;
   }
   sfmEngine.setNbOfObservationsForTriangulation(minNbObservationsForTriangulation);
 
-  // handle Initial pair parameter
-  if(!initialPairString.first.empty() && !initialPairString.second.empty())
+  // handle initial pair parameter
+  if(!initialPairString.first.empty() || !initialPairString.second.empty())
   {
+    bool isInitialPairCorrect = true;
+    Pair initialPairIndex;
+
     if(initialPairString.first == initialPairString.second)
     {
       ALICEVISION_LOG_ERROR("Invalid image names. You cannot use the same image to initialize a pair.");
       return EXIT_FAILURE;
     }
 
-    Pair initialPairIndex;
-    if(!retrieveViewIdFromImageName(sfmData, initialPairString.first, initialPairIndex.first) ||
-       !retrieveViewIdFromImageName(sfmData, initialPairString.second, initialPairIndex.second))
+    if(!initialPairString.first.empty() && !retrieveViewIdFromImageName(sfmData, initialPairString.first, initialPairIndex.first))
+      isInitialPairCorrect = false;
+
+    if(!initialPairString.second.empty() && !retrieveViewIdFromImageName(sfmData, initialPairString.second, initialPairIndex.second))
+      isInitialPairCorrect = false;
+
+    if(!isInitialPairCorrect)
     {
       ALICEVISION_LOG_ERROR("Could not find the initial pairs (" + initialPairString.first + ", " + initialPairString.second + ") !");
       return EXIT_FAILURE;

@@ -263,9 +263,10 @@ private:
   /**
    * @brief Automatic initial pair selection (based on a 'baseline' computation score)
    * @param[out] out_bestImagePairs
+   * @param[in] filterViewId If defined, each output pairs must contain filterViewId
    * @return
    */
-  bool getBestInitialImagePairs(std::vector<Pair>& out_bestImagePairs) const;
+  bool getBestInitialImagePairs(std::vector<Pair>& out_bestImagePairs, IndexT filterViewId = UndefinedIndexT) const;
 
   /**
    * @brief Compute MSE (Mean Square Error) and a histogram of residual values.
