@@ -40,7 +40,7 @@ void albedoNormalsProduct(MatrixXf& rhoTimesN, const MatrixXf& albedoChannel, co
  
 void estimateLigthingOneChannel(Eigen::Matrix<float, 9, 1>& lighting, const MatrixXf& albedoChannel, const MatrixXf& pictureChannel, const image::Image<AugmentedNormal>& augNormals)
 {
-    int nbPoints = augNormals.size();
+    const auto nbPoints = augNormals.size();
 
     MatrixXf rhoTimesN(nbPoints, 9);
     albedoNormalsProduct(rhoTimesN, albedoChannel, augNormals);
@@ -53,7 +53,7 @@ void estimateLigthing(LightingVector& lighting, const image::Image<image::RGBfCo
     using namespace Eigen;
 
     // Map albedo, image
-    std::size_t nbPixels = albedo.Width() * albedo.Height();
+    const std::size_t nbPixels = albedo.Width() * albedo.Height();
 
     Map<MatrixXf, 0, InnerStride<3>> albedoR((float*)&albedo.data()->r(), nbPixels, 1);
     Map<MatrixXf, 0, InnerStride<3>> albedoG((float*)&albedo.data()->g(), nbPixels, 1);

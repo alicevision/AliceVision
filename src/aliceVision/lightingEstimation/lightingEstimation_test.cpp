@@ -29,8 +29,8 @@ inline float zeroOneRand()
 
 BOOST_AUTO_TEST_CASE(LIGHTING_ESTIMATION_Lambertian_GT)
 {
-  std::size_t sx = 4;
-  std::size_t sy = 3;
+  const std::size_t sx = 4;
+  const std::size_t sy = 3;
 
   // Random initialization of lighting, albedo and normals
   LightingVector lightingSynt = MatrixXf::Random(9, 3).cwiseAbs();
@@ -76,8 +76,8 @@ BOOST_AUTO_TEST_CASE(LIGHTING_ESTIMATION_Lambertian_GT)
 
 BOOST_AUTO_TEST_CASE(LIGHTING_ESTIMATION_Lambertian_noise)
 {
-  std::size_t sx = 500;
-  std::size_t sy = 300;
+  const std::size_t sx = 500;
+  const std::size_t sy = 300;
 
   // Random initialization of lighting, albedo and normals
   LightingVector lightingSynt = MatrixXf::Random(9, 3).cwiseAbs();
@@ -98,7 +98,7 @@ BOOST_AUTO_TEST_CASE(LIGHTING_ESTIMATION_Lambertian_noise)
 
   Image<AugmentedNormal> agmNormalsSynt(normalsSynt.cast<AugmentedNormal>());
 
-  float noiseLevel = 0.01;
+  const float noiseLevel = 0.01f;
 
   // Create simulated image
   Image<RGBfColor> pictureGenerated(sy, sx);
