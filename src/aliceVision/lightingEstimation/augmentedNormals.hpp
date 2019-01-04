@@ -32,8 +32,7 @@ class AugmentedNormal : public Eigen::Matrix<float, 9, 1, 0, 9, 1>
   typedef T TBase;
 public:
 
-  inline AugmentedNormal()
-  {}
+  AugmentedNormal() = default;
 
   /**
   * @brief Constructor from a normal value

@@ -92,7 +92,7 @@ namespace aliceVision
       /**
       * @brief destructor
       */
-      virtual inline ~Image() {}
+      virtual ~Image() = default;
       //-- Image construction method
       //------------------------------
 
