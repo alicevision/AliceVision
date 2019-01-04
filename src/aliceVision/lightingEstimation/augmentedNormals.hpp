@@ -17,8 +17,6 @@ namespace aliceVision {
 namespace lightingEstimation {
 
 using Eigen::MatrixXf;
-using namespace aliceVision::image;
-
 
 /**
  * @brief Augmented normals for augmented Lambert's law (using Spherical Harmonics model)

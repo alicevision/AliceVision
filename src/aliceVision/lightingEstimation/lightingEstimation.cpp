@@ -18,7 +18,7 @@ namespace lightingEstimation {
 /**
  * @brief Evaluate albedo and normal product for one channel
  */
-void albedoNormalsProduct(MatrixXf& rhoTimesN, const MatrixXf& albedoChannel, const Image<AugmentedNormal>& augmentedNormals)
+void albedoNormalsProduct(MatrixXf& rhoTimesN, const MatrixXf& albedoChannel, const image::Image<AugmentedNormal>& augmentedNormals)
 {
     for (int i = 0; i < augmentedNormals.size(); ++i)
     {
@@ -38,7 +38,7 @@ void albedoNormalsProduct(MatrixXf& rhoTimesN, const MatrixXf& albedoChannel, co
  * @brief Resolve lighting estimation problem for one channel
  */
  
-void estimateLigthingOneChannel(Eigen::Matrix<float, 9, 1>& lighting, const MatrixXf& albedoChannel, const MatrixXf& pictureChannel, const Image<AugmentedNormal>& augNormals)
+void estimateLigthingOneChannel(Eigen::Matrix<float, 9, 1>& lighting, const MatrixXf& albedoChannel, const MatrixXf& pictureChannel, const image::Image<AugmentedNormal>& augNormals)
 {
     int nbPoints = augNormals.size();
 
@@ -48,7 +48,7 @@ void estimateLigthingOneChannel(Eigen::Matrix<float, 9, 1>& lighting, const Matr
     lighting = rhoTimesN.colPivHouseholderQr().solve(pictureChannel);
 }
 
-void estimateLigthing(LightingVector& lighting, const Image<RGBfColor>& albedo, const Image<RGBfColor>& picture, const Image<RGBfColor>& normals)
+void estimateLigthing(LightingVector& lighting, const image::Image<image::RGBfColor>& albedo, const image::Image<image::RGBfColor>& picture, const image::Image<image::RGBfColor>& normals)
 {
     using namespace Eigen;
 
@@ -68,7 +68,7 @@ void estimateLigthing(LightingVector& lighting, const Image<RGBfColor>& albedo, 
     Eigen::Matrix<float, 9, 1> lightingB;
 
     // Augmented normales
-    Image<AugmentedNormal> augNormals(normals.cast<AugmentedNormal>());
+    image::Image<AugmentedNormal> augNormals(normals.cast<AugmentedNormal>());
 
     // EstimateLightingOneChannel
     estimateLigthingOneChannel(lightingR, albedoR, pictureR, augNormals);

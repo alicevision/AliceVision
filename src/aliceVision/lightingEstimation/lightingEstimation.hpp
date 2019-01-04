@@ -30,7 +30,7 @@ using LightingVector = Eigen::Matrix<float, 9, 3>;
 /**
  * @brief Lighting estimation from picture, albedo and geometry
  */ 
-void estimateLigthing(LightingVector& lighting, const Image<RGBfColor>& albedo, const Image<RGBfColor>& picture, const Image<RGBfColor>& normals);
+void estimateLigthing(LightingVector& lighting, const image::Image<image::RGBfColor>& albedo, const image::Image<image::RGBfColor>& picture, const image::Image<image::RGBfColor>& normals);
 
 
 }
