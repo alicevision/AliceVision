@@ -147,8 +147,22 @@ void computeNewCoordinateSystemFromSingleCamera(const sfmData::SfMData& sfmData,
 {  
   IndexT viewId = -1;
   int orientation = -1;
-  for(const auto & view : sfmData.getViews())
+
+  try
   {
+    viewId = lexical_cast<IndexT>(camName));
+    if(!sfmData.getViews().count(viewId))
+      viewId = -1;
+  }
+  catch(const bad_lexical_cast &)
+  {
+    viewId = -1;
+  }
+  
+  if(viewId == -1)
+  {
+    for(const auto & view : sfmData.getViews())
+    {
       std::string path = view.second->getImagePath();      
       std::size_t found = path.find(camName);
       orientation = view.second->getMetadataOrientation();
@@ -157,28 +171,28 @@ void computeNewCoordinateSystemFromSingleCamera(const sfmData::SfMData& sfmData,
           viewId = view.second->getViewId();          
           break;
       }
+    }
   }
 
-  out_S = 1;
-  if(viewId != -1)
-  {
-    if(orientation == 8)     
+
+  if(viewId == -1)
+    throw std::invalid_argument("The camera name \"" + camName + "\" is not found in the sfmData.");
+  else if(!sfmData.isPoseAndIntrinsicDefined(viewId))
+    throw std::invalid_argument("The camera \"" + camName + "\" exists in the sfmData but is not reconstructed.");
+
+  if(orientation == 8)     
       out_R = Eigen::AngleAxisd(degreeToRadian(180.0),  Vec3(0,1,0)) * Eigen::AngleAxisd(degreeToRadian(90.0),  Vec3(0,0,1)) * sfmData.getAbsolutePose(viewId).getTransform().rotation();
-    else if(orientation == 6)     
+  else if(orientation == 6)     
       out_R = Eigen::AngleAxisd(degreeToRadian(180.0),  Vec3(0,1,0)) * Eigen::AngleAxisd(degreeToRadian(270.0),  Vec3(0,0,1)) * sfmData.getAbsolutePose(viewId).getTransform().rotation();
-    else if(orientation == 1)
+  else if(orientation == 1)
       out_R = Eigen::AngleAxisd(degreeToRadian(180.0),  Vec3(0,1,0)) * Eigen::AngleAxisd(degreeToRadian(180.0),  Vec3(0,0,1)) * sfmData.getAbsolutePose(viewId).getTransform().rotation();
-    else if (orientation == 3)
+  else if (orientation == 3)
       out_R = Eigen::AngleAxisd(degreeToRadian(180.0),  Vec3(0,1,0)) * sfmData.getAbsolutePose(viewId).getTransform().rotation();
 	else
 		out_R = Eigen::AngleAxisd(degreeToRadian(180.0), Vec3(0, 1, 0)) * Eigen::AngleAxisd(degreeToRadian(180.0), Vec3(0, 0, 1)) * sfmData.getAbsolutePose(viewId).getTransform().rotation();
-    out_t = - out_R * sfmData.getAbsolutePose(viewId).getTransform().center();    
-  }
-  else
-  {
-    out_R = Eigen::Matrix<double, 3, 3>::Identity();
-    out_t = Vec3::Zero(3,1);
-  }
+  
+  out_t = - out_R * sfmData.getAbsolutePose(viewId).getTransform().center();    
+  out_S = 1;
 }
 
 void computeNewCoordinateSystemFromLandmarks(const sfmData::SfMData& sfmData,

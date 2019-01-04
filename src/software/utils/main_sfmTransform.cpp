@@ -104,7 +104,7 @@ int main(int argc, char **argv)
 
   // user optional parameters
 
-  std::string transformationYAlignScale;
+  std::string transform;
   std::string landmarksDescriberTypesName;
   double userScale = 1;
 
@@ -124,10 +124,10 @@ int main(int argc, char **argv)
 
   po::options_description optionalParams("Optional parameters");
   optionalParams.add_options()
-    ("transformation", po::value<std::string>(&transformationYAlignScale)->default_value(transformationYAlignScale),
+    ("transformation", po::value<std::string>(&transform)->default_value(transform),
       "required only for 'transformation' and 'single camera' methods:\n"
       "Transformation: Align [X,Y,Z] to +Y-axis, rotate around Y by R deg, scale by S; syntax: X,Y,Z;R;S\n"
-      "Single camera: Image name")
+      "Single camera: camera UID or image filename")
     ("landmarksDescriberTypes,d", po::value<std::string>(&landmarksDescriberTypesName)->default_value(landmarksDescriberTypesName),
       ("optional for 'landmarks' method:\n"
       "Image describer types used to compute the mean of the point cloud\n"
@@ -177,9 +177,10 @@ int main(int argc, char **argv)
   // set alignment method
   const EAlignmentMethod alignmentMethod = EAlignmentMethod_stringToEnum(alignmentMethodName);
 
-  if(alignmentMethod == EAlignmentMethod::TRANSFOMATION &&
-     alignmentMethod == EAlignmentMethod::FROM_SINGLE_CAMERA &&
-     transformationYAlignScale.empty())
+  if(transform.empty() && (
+     alignmentMethod == EAlignmentMethod::TRANSFOMATION ||
+     alignmentMethod == EAlignmentMethod::FROM_SINGLE_CAMERA)
+    )
   {
     ALICEVISION_LOG_ERROR("Missing --transformation option");
     return EXIT_FAILURE;
@@ -201,7 +202,7 @@ int main(int argc, char **argv)
   {
     case EAlignmentMethod::TRANSFOMATION:
     {
-      if(!parseAlignScale(transformationYAlignScale, S, R, t))
+      if(!parseAlignScale(transform, S, R, t))
       {
          ALICEVISION_LOG_ERROR("Failed to parse align/scale argument");
          return EXIT_FAILURE;
@@ -218,7 +219,7 @@ int main(int argc, char **argv)
     break;
 
     case EAlignmentMethod::FROM_SINGLE_CAMERA:
-      sfm::computeNewCoordinateSystemFromSingleCamera(sfmDataIn,transformationYAlignScale, S, R, t);
+      sfm::computeNewCoordinateSystemFromSingleCamera(sfmDataIn,transform, S, R, t);
     break;
   }
 
