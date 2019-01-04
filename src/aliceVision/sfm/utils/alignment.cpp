@@ -12,6 +12,7 @@
 #include <boost/accumulators/statistics/stats.hpp>
 #include <boost/accumulators/statistics/min.hpp>
 #include <boost/accumulators/statistics/max.hpp>
+#include <boost/lexical_cast.hpp>
 
 #include <algorithm>
 
@@ -150,7 +151,7 @@ void computeNewCoordinateSystemFromSingleCamera(const sfmData::SfMData& sfmData,
 
   try
   {
-    viewId = lexical_cast<IndexT>(camName));
+    viewId = boost::lexical_cast<IndexT>(camName));
     if(!sfmData.getViews().count(viewId))
       viewId = -1;
   }
