@@ -151,11 +151,11 @@ void computeNewCoordinateSystemFromSingleCamera(const sfmData::SfMData& sfmData,
 
   try
   {
-    viewId = boost::lexical_cast<IndexT>(camName));
+    viewId = boost::lexical_cast<IndexT>(camName);
     if(!sfmData.getViews().count(viewId))
       viewId = -1;
   }
-  catch(const bad_lexical_cast &)
+  catch(const boost::bad_lexical_cast &)
   {
     viewId = -1;
   }
