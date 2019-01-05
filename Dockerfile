@@ -50,7 +50,25 @@ WORKDIR "${AV_BUILD}"
 RUN cmake "${AV_DEV}" -DCMAKE_BUILD_TYPE=Release -DALICEVISION_BUILD_DEPENDENCIES:BOOL=ON -DINSTALL_DEPS_BUILD:BOOL=ON -DCMAKE_INSTALL_PREFIX="${AV_INSTALL}" -DALICEVISION_BUNDLE_PREFIX="${AV_BUNDLE}"
 
 WORKDIR "${AV_BUILD}"
-RUN make -j${NPROC} install && make bundle
+# RUN make zlib
+# RUN make geogram
+# RUN make tbb
+# RUN make eigen
+# RUN make opengv
+# RUN make lapack
+# RUN make suitesparse
+# RUN make ceres
+# RUN make openexr
+# RUN make tiff
+# RUN make png
+# RUN make turbojpeg
+# RUN make libraw
+# RUN make boost
+# RUN make openimageio
+# RUN make alembic
+# RUN make popsift
+
+RUN make install && make bundle
 # && cd /opt && rm -rf "${AV_BUILD}"
 
 WORKDIR "${AV_BUNDLE}/share/aliceVision"
