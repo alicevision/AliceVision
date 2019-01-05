@@ -39,6 +39,7 @@ endif()
 
 if(ALICEVISION_BUILD_MVS)
   add_subdirectory(imageIO)
+  add_subdirectory(lightingEstimation)
   add_subdirectory(mesh)
   add_subdirectory(mvsData)
   add_subdirectory(mvsUtils)
