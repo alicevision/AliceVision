@@ -147,7 +147,7 @@ void computeNewCoordinateSystemFromSingleCamera(const sfmData::SfMData& sfmData,
                                            Vec3& out_t)
 {  
   IndexT viewId = -1;
-  int orientation = -1;
+  sfmData::EEXIFOrientation orientation = sfmData::EEXIFOrientation::UNKNOWN;
 
   try
   {
@@ -181,16 +181,24 @@ void computeNewCoordinateSystemFromSingleCamera(const sfmData::SfMData& sfmData,
   else if(!sfmData.isPoseAndIntrinsicDefined(viewId))
     throw std::invalid_argument("The camera \"" + camName + "\" exists in the sfmData but is not reconstructed.");
 
-  if(orientation == 8)     
-      out_R = Eigen::AngleAxisd(degreeToRadian(180.0),  Vec3(0,1,0)) * Eigen::AngleAxisd(degreeToRadian(90.0),  Vec3(0,0,1)) * sfmData.getAbsolutePose(viewId).getTransform().rotation();
-  else if(orientation == 6)     
-      out_R = Eigen::AngleAxisd(degreeToRadian(180.0),  Vec3(0,1,0)) * Eigen::AngleAxisd(degreeToRadian(270.0),  Vec3(0,0,1)) * sfmData.getAbsolutePose(viewId).getTransform().rotation();
-  else if(orientation == 1)
-      out_R = Eigen::AngleAxisd(degreeToRadian(180.0),  Vec3(0,1,0)) * Eigen::AngleAxisd(degreeToRadian(180.0),  Vec3(0,0,1)) * sfmData.getAbsolutePose(viewId).getTransform().rotation();
-  else if (orientation == 3)
-      out_R = Eigen::AngleAxisd(degreeToRadian(180.0),  Vec3(0,1,0)) * sfmData.getAbsolutePose(viewId).getTransform().rotation();
-	else
-		out_R = Eigen::AngleAxisd(degreeToRadian(180.0), Vec3(0, 1, 0)) * Eigen::AngleAxisd(degreeToRadian(180.0), Vec3(0, 0, 1)) * sfmData.getAbsolutePose(viewId).getTransform().rotation();
+  switch(orientation)
+  {
+    case sfmData::EEXIFOrientation::RIGHT:
+          out_R = Eigen::AngleAxisd(degreeToRadian(180.0),  Vec3(0,1,0)) * Eigen::AngleAxisd(degreeToRadian(90.0),  Vec3(0,0,1)) * sfmData.getAbsolutePose(viewId).getTransform().rotation();
+          break;
+    case sfmData::EEXIFOrientation::LEFT:
+          out_R = Eigen::AngleAxisd(degreeToRadian(180.0),  Vec3(0,1,0)) * Eigen::AngleAxisd(degreeToRadian(270.0),  Vec3(0,0,1)) * sfmData.getAbsolutePose(viewId).getTransform().rotation();
+          break;
+    case sfmData::EEXIFOrientation::UPSIDEDOWN:
+          out_R = Eigen::AngleAxisd(degreeToRadian(180.0),  Vec3(0,1,0)) * sfmData.getAbsolutePose(viewId).getTransform().rotation();
+          break;
+    case sfmData::EEXIFOrientation::NONE:
+          out_R = Eigen::AngleAxisd(degreeToRadian(180.0),  Vec3(0,1,0)) * Eigen::AngleAxisd(degreeToRadian(180.0), Vec3(0,0,1)) * sfmData.getAbsolutePose(viewId).getTransform().rotation();
+          break;
+    default:
+          out_R = Eigen::AngleAxisd(degreeToRadian(180.0),  Vec3(0,1,0)) * Eigen::AngleAxisd(degreeToRadian(180.0), Vec3(0,0,1)) * sfmData.getAbsolutePose(viewId).getTransform().rotation();
+          break;
+  }
   
   out_t = - out_R * sfmData.getAbsolutePose(viewId).getTransform().center();    
   out_S = 1;

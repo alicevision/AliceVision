@@ -16,6 +16,22 @@ namespace aliceVision {
 namespace sfmData {
 
 /**
+ * @brief EXIF Orientation to names
+ */
+enum class EEXIFOrientation
+{
+  NONE = 1
+  , REVERSED = 2
+  , UPSIDEDOWN = 3
+  , UPSIDEDOWN_REVERSED = 4
+  , LEFT_REVERSED = 5
+  , LEFT = 6  
+  , RIGHT_REVERSED = 7
+  , RIGHT = 8
+  , UNKNOWN = -1
+};
+
+/**
  * @brief A view define an image by a string and unique indexes for
  * the view, the camera intrinsic, the pose and the subpose if the camera is part of a rig
  */
@@ -305,13 +321,13 @@ public:
 
   /**
    * @brief Get the corresponding "Orientation" metadata value
-   * @return the metadata value int or -1 if no corresponding value
+   * @return the enum EEXIFOrientation
    */
-    int getMetadataOrientation() const
+  EEXIFOrientation getMetadataOrientation() const
   {
     if(hasDigitMetadata("Orientation"))
-      return  std::stoi(getMetadata("Orientation"));
-    return -1;
+      return  static_cast<EEXIFOrientation>(std::stoi(getMetadata("Orientation")));
+    return EEXIFOrientation::UNKNOWN;
   }
 
   /**
