@@ -34,6 +34,7 @@ enum class EAlignmentMethod: unsigned char
   TRANSFOMATION = 0
   , AUTO_FROM_CAMERAS
   , AUTO_FROM_LANDMARKS
+  , FROM_SINGLE_CAMERA
 };
 
 /**
@@ -48,6 +49,7 @@ std::string EAlignmentMethod_enumToString(EAlignmentMethod alignmentMethod)
     case EAlignmentMethod::TRANSFOMATION:       return "transformation";
     case EAlignmentMethod::AUTO_FROM_CAMERAS:   return "auto_from_cameras";
     case EAlignmentMethod::AUTO_FROM_LANDMARKS: return "auto_from_landmarks";
+    case EAlignmentMethod::FROM_SINGLE_CAMERA:  return "from_single_camera";
   }
   throw std::out_of_range("Invalid EAlignmentMethod enum");
 }
@@ -65,6 +67,7 @@ EAlignmentMethod EAlignmentMethod_stringToEnum(const std::string& alignmentMetho
   if(method == "transformation")      return EAlignmentMethod::TRANSFOMATION;
   if(method == "auto_from_cameras")   return EAlignmentMethod::AUTO_FROM_CAMERAS;
   if(method == "auto_from_landmarks") return EAlignmentMethod::AUTO_FROM_LANDMARKS;
+  if(method == "from_single_camera")   return EAlignmentMethod::FROM_SINGLE_CAMERA;
   throw std::out_of_range("Invalid SfM alignment method : " + alignmentMethod);
 }
 
@@ -101,7 +104,7 @@ int main(int argc, char **argv)
 
   // user optional parameters
 
-  std::string transformationYAlignScale;
+  std::string transform;
   std::string landmarksDescriberTypesName;
   double userScale = 1;
 
@@ -121,9 +124,10 @@ int main(int argc, char **argv)
 
   po::options_description optionalParams("Optional parameters");
   optionalParams.add_options()
-    ("transformation", po::value<std::string>(&transformationYAlignScale)->default_value(transformationYAlignScale),
-      "required only for 'transformation' method:\n"
-      "Align [X,Y,Z] to +Y-axis, rotate around Y by R deg, scale by S; syntax: X,Y,Z;R;S")
+    ("transformation", po::value<std::string>(&transform)->default_value(transform),
+      "required only for 'transformation' and 'single camera' methods:\n"
+      "Transformation: Align [X,Y,Z] to +Y-axis, rotate around Y by R deg, scale by S; syntax: X,Y,Z;R;S\n"
+      "Single camera: camera UID or image filename")
     ("landmarksDescriberTypes,d", po::value<std::string>(&landmarksDescriberTypesName)->default_value(landmarksDescriberTypesName),
       ("optional for 'landmarks' method:\n"
       "Image describer types used to compute the mean of the point cloud\n"
@@ -173,8 +177,10 @@ int main(int argc, char **argv)
   // set alignment method
   const EAlignmentMethod alignmentMethod = EAlignmentMethod_stringToEnum(alignmentMethodName);
 
-  if(alignmentMethod == EAlignmentMethod::TRANSFOMATION &&
-     transformationYAlignScale.empty())
+  if(transform.empty() && (
+     alignmentMethod == EAlignmentMethod::TRANSFOMATION ||
+     alignmentMethod == EAlignmentMethod::FROM_SINGLE_CAMERA)
+    )
   {
     ALICEVISION_LOG_ERROR("Missing --transformation option");
     return EXIT_FAILURE;
@@ -196,7 +202,7 @@ int main(int argc, char **argv)
   {
     case EAlignmentMethod::TRANSFOMATION:
     {
-      if(!parseAlignScale(transformationYAlignScale, S, R, t))
+      if(!parseAlignScale(transform, S, R, t))
       {
          ALICEVISION_LOG_ERROR("Failed to parse align/scale argument");
          return EXIT_FAILURE;
@@ -210,6 +216,10 @@ int main(int argc, char **argv)
 
     case EAlignmentMethod::AUTO_FROM_LANDMARKS:
       sfm::computeNewCoordinateSystemFromLandmarks(sfmDataIn, feature::EImageDescriberType_stringToEnums(landmarksDescriberTypesName), S, R, t);
+    break;
+
+    case EAlignmentMethod::FROM_SINGLE_CAMERA:
+      sfm::computeNewCoordinateSystemFromSingleCamera(sfmDataIn,transform, S, R, t);
     break;
   }
 

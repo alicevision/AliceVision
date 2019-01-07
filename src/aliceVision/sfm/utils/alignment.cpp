@@ -12,6 +12,7 @@
 #include <boost/accumulators/statistics/stats.hpp>
 #include <boost/accumulators/statistics/min.hpp>
 #include <boost/accumulators/statistics/max.hpp>
+#include <boost/lexical_cast.hpp>
 
 #include <algorithm>
 
@@ -137,6 +138,70 @@ void computeNewCoordinateSystemFromCameras(const sfmData::SfMData& sfmData,
   out_S = 1.0 / rms;
 
   out_t = - out_S * out_R * meanPoints;
+}
+
+void computeNewCoordinateSystemFromSingleCamera(const sfmData::SfMData& sfmData,
+                                           const std::string & camName,
+                                           double& out_S,
+                                           Mat3& out_R,
+                                           Vec3& out_t)
+{  
+  IndexT viewId = -1;
+  sfmData::EEXIFOrientation orientation = sfmData::EEXIFOrientation::UNKNOWN;
+
+  try
+  {
+    viewId = boost::lexical_cast<IndexT>(camName);
+    if(!sfmData.getViews().count(viewId))
+      viewId = -1;
+  }
+  catch(const boost::bad_lexical_cast &)
+  {
+    viewId = -1;
+  }
+  
+  if(viewId == -1)
+  {
+    for(const auto & view : sfmData.getViews())
+    {
+      std::string path = view.second->getImagePath();      
+      std::size_t found = path.find(camName);
+      orientation = view.second->getMetadataOrientation();
+      if (found!=std::string::npos)
+      {
+          viewId = view.second->getViewId();          
+          break;
+      }
+    }
+  }
+
+
+  if(viewId == -1)
+    throw std::invalid_argument("The camera name \"" + camName + "\" is not found in the sfmData.");
+  else if(!sfmData.isPoseAndIntrinsicDefined(viewId))
+    throw std::invalid_argument("The camera \"" + camName + "\" exists in the sfmData but is not reconstructed.");
+
+  switch(orientation)
+  {
+    case sfmData::EEXIFOrientation::RIGHT:
+          out_R = Eigen::AngleAxisd(degreeToRadian(180.0),  Vec3(0,1,0)) * Eigen::AngleAxisd(degreeToRadian(90.0),  Vec3(0,0,1)) * sfmData.getAbsolutePose(viewId).getTransform().rotation();
+          break;
+    case sfmData::EEXIFOrientation::LEFT:
+          out_R = Eigen::AngleAxisd(degreeToRadian(180.0),  Vec3(0,1,0)) * Eigen::AngleAxisd(degreeToRadian(270.0),  Vec3(0,0,1)) * sfmData.getAbsolutePose(viewId).getTransform().rotation();
+          break;
+    case sfmData::EEXIFOrientation::UPSIDEDOWN:
+          out_R = Eigen::AngleAxisd(degreeToRadian(180.0),  Vec3(0,1,0)) * sfmData.getAbsolutePose(viewId).getTransform().rotation();
+          break;
+    case sfmData::EEXIFOrientation::NONE:
+          out_R = Eigen::AngleAxisd(degreeToRadian(180.0),  Vec3(0,1,0)) * Eigen::AngleAxisd(degreeToRadian(180.0), Vec3(0,0,1)) * sfmData.getAbsolutePose(viewId).getTransform().rotation();
+          break;
+    default:
+          out_R = Eigen::AngleAxisd(degreeToRadian(180.0),  Vec3(0,1,0)) * Eigen::AngleAxisd(degreeToRadian(180.0), Vec3(0,0,1)) * sfmData.getAbsolutePose(viewId).getTransform().rotation();
+          break;
+  }
+  
+  out_t = - out_R * sfmData.getAbsolutePose(viewId).getTransform().center();    
+  out_S = 1;
 }
 
 void computeNewCoordinateSystemFromLandmarks(const sfmData::SfMData& sfmData,
