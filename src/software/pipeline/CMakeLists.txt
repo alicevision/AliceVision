@@ -35,11 +35,6 @@ if(ALICEVISION_BUILD_SFM)
           ${Boost_LIBRARIES}
   )
 
-  if(ALICEVISION_HAVE_CCTAG)
-    target_link_libraries(aliceVision_featureExtraction PUBLIC CCTag::CCTag)
-  endif()
-
-
   # Image matching
   # - generate the image pair lists
   alicevision_add_software(aliceVision_imageMatching
