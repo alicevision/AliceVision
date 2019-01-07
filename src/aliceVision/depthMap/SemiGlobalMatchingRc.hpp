@@ -33,7 +33,7 @@ protected:
     float _sgmGammaC;
     float _sgmGammaP;
 
-    StaticVector<int> _tcams;
+    StaticVector<int> _sgmTCams;
     StaticVector<Pixel> _depthsTcamsLimits;
     StaticVector<IdValue>* _volumeBestIdVal = nullptr;
     StaticVector<float>* _depths = nullptr;

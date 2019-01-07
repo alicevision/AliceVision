@@ -25,6 +25,8 @@ namespace bfs = boost::filesystem;
 RefineRc::RefineRc(int rc, int scale, int step, SemiGlobalMatchingParams* sp)
     : SemiGlobalMatchingRc(rc, scale, step, sp)
 {
+    const int nbNearestCams = sp->mp->userParams.get<int>("refineRc.maxTCams", 6);
+    _refineTCams  = sp->mp->findNearestCamsFromLandmarks(rc, nbNearestCams);
     _userTcOrPixSize = _sp->mp->userParams.get<bool>("refineRc.useTcOrRcPixSize", false);
     _nbDepthsToRefine = _sp->mp->userParams.get<int>("refineRc.ndepthsToRefine", 31);
     _refineWsh = _sp->mp->userParams.get<int>("refineRc.wsh", 3);
@@ -42,7 +44,7 @@ RefineRc::~RefineRc()
 
 void RefineRc::preloadTcams_async()
 {
-  for(int tc : _tcams.getData())
+  for(int tc : _refineTCams.getData())
     _sp->cps._ic.refreshData_async(tc);
 }
 
@@ -83,7 +85,7 @@ DepthSimMap* RefineRc::getDepthPixSizeMapFromSGM()
             Point3d p = _sp->mp->CArr[_rc] + (_sp->mp->iCamArr[_rc] * Point2d(static_cast<float>(x), static_cast<float>(y))).normalize() * (*depthSimMapScale1Step1->dsm)[y * w11 + x].depth;
 
             if(_userTcOrPixSize)
-                (*depthSimMapScale1Step1->dsm)[y * w11 + x].sim = _sp->mp->getCamsMinPixelSize(p, _tcams);
+                (*depthSimMapScale1Step1->dsm)[y * w11 + x].sim = _sp->mp->getCamsMinPixelSize(p, _refineTCams);
             else
                 (*depthSimMapScale1Step1->dsm)[y * w11 + x].sim = _sp->mp->getCamPixelSize(p, _rc);
         }
@@ -98,14 +100,14 @@ DepthSimMap* RefineRc::refineAndFuseDepthSimMapCUDA(DepthSimMap* depthPixSizeMap
     int h11 = _sp->mp->getHeight(_rc);
 
     StaticVector<DepthSimMap*>* dataMaps = new StaticVector<DepthSimMap*>();
-    dataMaps->reserve(_tcams.size() + 1);
+    dataMaps->reserve(_refineTCams.size() + 1);
     dataMaps->push_back(depthPixSizeMapVis); //!!DO NOT ERASE!!!
 
     const int scale = 1;
 
-    for(int c = 0; c < _tcams.size(); c++)
+    for(int c = 0; c < _refineTCams.size(); c++)
     {
-        int tc = _tcams[c];
+        int tc = _refineTCams[c];
 
         DepthSimMap* depthSimMapC = new DepthSimMap(_rc, _sp->mp, scale, 1);
         StaticVector<float>* depthMap = depthPixSizeMapVis->getDepthMap();
@@ -175,7 +177,7 @@ DepthSimMap* RefineRc::refineAndFuseDepthSimMapCUDA(DepthSimMap* depthPixSizeMap
     }
 
     (*dataMaps)[0] = nullptr; // it is input dsmap we dont want to delete it
-    for(int c = 0; c < _tcams.size(); c++)
+    for(int c = 0; c < _refineTCams.size(); c++)
     {
         delete(*dataMaps)[c + 1];
     }
@@ -236,7 +238,7 @@ bool RefineRc::refinerc(bool checkIfExists)
         ALICEVISION_LOG_DEBUG("Refine CUDA (rc: " << (_rc + 1) << " / " << _sp->mp->ncams << ")");
 
     // generate default depthSimMap if rc has no tcam
-    if(_tcams.size() == 0 || _depths == nullptr)
+    if(_refineTCams.size() == 0 || _depths == nullptr)
     {
         DepthSimMap depthSimMapOpt(_rc, _sp->mp, 1, 1);
         depthSimMapOpt.save(_rc, StaticVector<int>() );
@@ -282,7 +284,7 @@ bool RefineRc::refinerc(bool checkIfExists)
 
 void RefineRc::writeDepthMap()
 {
-  _depthSimMapOpt->save(_rc, _tcams);
+  _depthSimMapOpt->save(_rc, _refineTCams);
 }
 
 void estimateAndRefineDepthMaps(mvsUtils::MultiViewParams* mp, const std::vector<int>& cams)

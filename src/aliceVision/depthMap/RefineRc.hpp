@@ -25,7 +25,7 @@ public:
     void writeDepthMap();
 
 private:
-
+    StaticVector<int> _refineTCams;
     float _refineSigma;
     float _refineGammaC;
     float _refineGammaP;

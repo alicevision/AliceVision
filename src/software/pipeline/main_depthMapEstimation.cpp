@@ -55,6 +55,7 @@ int main(int argc, char* argv[])
     double sgmGammaP = 8.0;
 
     // refineRc
+    int refineMaxTCams = 6;
     int refineNSamplesHalf = 150;
     int refineNDepthsToRefine = 31;
     int refineNiters = 100;
@@ -99,6 +100,8 @@ int main(int argc, char* argv[])
             "Semi Global Matching: GammaC threshold.")
         ("sgmGammaP", po::value<double>(&sgmGammaP)->default_value(sgmGammaP),
             "Semi Global Matching: GammaP threshold.")
+        ("refineMaxTCams", po::value<int>(&refineMaxTCams)->default_value(refineMaxTCams),
+            "Refine: Number of neighbour cameras.")
         ("refineNSamplesHalf", po::value<int>(&refineNSamplesHalf)->default_value(refineNSamplesHalf),
             "Refine: Number of samples.")
         ("refineNDepthsToRefine", po::value<int>(&refineNDepthsToRefine)->default_value(refineNDepthsToRefine),
@@ -198,6 +201,7 @@ int main(int argc, char* argv[])
     mp.userParams.put("semiGlobalMatching.gammaP", sgmGammaP);
 
     // refineRc
+    mp.userParams.put("refineRc.maxTCams", refineMaxTCams);
     mp.userParams.put("refineRc.nSamplesHalf", refineNSamplesHalf);
     mp.userParams.put("refineRc.ndepthsToRefine", refineNDepthsToRefine);
     mp.userParams.put("refineRc.niters", refineNiters);
