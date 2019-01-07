@@ -292,8 +292,7 @@ int main(int argc, char **argv)
   // handle initial pair parameter
   if(!initialPairString.first.empty() || !initialPairString.second.empty())
   {
-    bool isInitialPairCorrect = true;
-    Pair initialPairIndex;
+    Pair initialPairIndex = {UndefinedIndexT, UndefinedIndexT};
 
     if(initialPairString.first == initialPairString.second)
     {
@@ -302,14 +301,14 @@ int main(int argc, char **argv)
     }
 
     if(!initialPairString.first.empty() && !retrieveViewIdFromImageName(sfmData, initialPairString.first, initialPairIndex.first))
-      isInitialPairCorrect = false;
+    {
+      ALICEVISION_LOG_ERROR("Could not find corresponding view in the initial pair: " + initialPairString.first);
+      return EXIT_FAILURE;
+    }
 
     if(!initialPairString.second.empty() && !retrieveViewIdFromImageName(sfmData, initialPairString.second, initialPairIndex.second))
-      isInitialPairCorrect = false;
-
-    if(!isInitialPairCorrect)
     {
-      ALICEVISION_LOG_ERROR("Could not find the initial pairs (" + initialPairString.first + ", " + initialPairString.second + ") !");
+      ALICEVISION_LOG_ERROR("Could not find corresponding view in the initial pair: " + initialPairString.second);
       return EXIT_FAILURE;
     }
 

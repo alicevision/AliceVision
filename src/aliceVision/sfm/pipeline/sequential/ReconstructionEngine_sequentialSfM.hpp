@@ -379,7 +379,7 @@ private:
 
   // Parameters
 
-  Pair _userInitialImagePair;
+  Pair _userInitialImagePair = {UndefinedIndexT, UndefinedIndexT};
   int _minInputTrackLength = 2;
   int _minTrackLength = 2;
   int _minPointsPerPose = 30;

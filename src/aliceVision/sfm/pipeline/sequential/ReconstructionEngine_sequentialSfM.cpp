@@ -129,7 +129,7 @@ ReconstructionEngine_sequentialSfM::ReconstructionEngine_sequentialSfM(
   const std::string& loggingFile)
   : ReconstructionEngine(sfmData, outputFolder),
     _htmlLogFile(loggingFile),
-    _userInitialImagePair(Pair(0,0)),
+    _userInitialImagePair(Pair(UndefinedIndexT, UndefinedIndexT)),
     _sfmStepFolder((fs::path(outputFolder) / "intermediate_steps").string())
 {
   // setup HTML logger
@@ -269,14 +269,13 @@ std::vector<Pair> ReconstructionEngine_sequentialSfM::getInitialImagePairsCandid
 {
   std::vector<Pair> initialImagePairCandidates;
 
-  if(_userInitialImagePair.first == 0 || _userInitialImagePair.second == 0)
+  if(_userInitialImagePair.first == UndefinedIndexT || _userInitialImagePair.second == UndefinedIndexT)
   {
     IndexT filterViewId = UndefinedIndexT;
 
-    if(_userInitialImagePair.first != 0)
+    if(_userInitialImagePair.first != UndefinedIndexT)
       filterViewId = _userInitialImagePair.first;
-
-    if(_userInitialImagePair.second != 0)
+    else if(_userInitialImagePair.second != UndefinedIndexT)
       filterViewId = _userInitialImagePair.second;
 
     if(!getBestInitialImagePairs(initialImagePairCandidates, filterViewId))
@@ -297,7 +296,7 @@ void ReconstructionEngine_sequentialSfM::createInitialReconstruction(const std::
   {
     if(makeInitialPair3D(initialPairCandidate))
     {
-      // Successfully found an initial image pair
+      // successfully found an initial image pair
       ALICEVISION_LOG_INFO("Initial pair is: " << initialPairCandidate.first << ", " << initialPairCandidate.second);
       return;
     }
@@ -1181,7 +1180,7 @@ bool ReconstructionEngine_sequentialSfM::getBestInitialImagePairs(std::vector<Pa
   }
 
   if(filterViewId != UndefinedIndexT)
-    ALICEVISION_LOG_INFO("Selection of an initial pair with one given view id.");
+    ALICEVISION_LOG_INFO("Selection of an initial pair with one given view id: " << filterViewId << ".");
   
   /// ImagePairScore contains <imagePairScore*scoring_angle, imagePairScore, scoring_angle, numberOfInliers, imagePair>
   typedef std::tuple<double, double, double, std::size_t, Pair> ImagePairScore;
