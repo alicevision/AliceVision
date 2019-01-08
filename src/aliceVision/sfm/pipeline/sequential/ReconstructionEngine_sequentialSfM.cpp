@@ -129,7 +129,7 @@ ReconstructionEngine_sequentialSfM::ReconstructionEngine_sequentialSfM(
   const std::string& loggingFile)
   : ReconstructionEngine(sfmData, outputFolder),
     _htmlLogFile(loggingFile),
-    _userInitialImagePair(Pair(0,0)),
+    _userInitialImagePair(Pair(UndefinedIndexT, UndefinedIndexT)),
     _sfmStepFolder((fs::path(outputFolder) / "intermediate_steps").string())
 {
   // setup HTML logger
@@ -269,9 +269,16 @@ std::vector<Pair> ReconstructionEngine_sequentialSfM::getInitialImagePairsCandid
 {
   std::vector<Pair> initialImagePairCandidates;
 
-  if(_userInitialImagePair == Pair(0,0))
+  if(_userInitialImagePair.first == UndefinedIndexT || _userInitialImagePair.second == UndefinedIndexT)
   {
-    if(!getBestInitialImagePairs(initialImagePairCandidates))
+    IndexT filterViewId = UndefinedIndexT;
+
+    if(_userInitialImagePair.first != UndefinedIndexT)
+      filterViewId = _userInitialImagePair.first;
+    else if(_userInitialImagePair.second != UndefinedIndexT)
+      filterViewId = _userInitialImagePair.second;
+
+    if(!getBestInitialImagePairs(initialImagePairCandidates, filterViewId))
       throw std::runtime_error("No valid initial pair found automatically.");
   }
   else
@@ -289,7 +296,7 @@ void ReconstructionEngine_sequentialSfM::createInitialReconstruction(const std::
   {
     if(makeInitialPair3D(initialPairCandidate))
     {
-      // Successfully found an initial image pair
+      // successfully found an initial image pair
       ALICEVISION_LOG_INFO("Initial pair is: " << initialPairCandidate.first << ", " << initialPairCandidate.second);
       return;
     }
@@ -1144,7 +1151,7 @@ bool ReconstructionEngine_sequentialSfM::makeInitialPair3D(const Pair& currentPa
   return !_sfmData.structure.empty();
 }
 
-bool ReconstructionEngine_sequentialSfM::getBestInitialImagePairs(std::vector<Pair>& out_bestImagePairs) const
+bool ReconstructionEngine_sequentialSfM::getBestInitialImagePairs(std::vector<Pair>& out_bestImagePairs, IndexT filterViewId) const
 {
   // From the k view pairs with the highest number of verified matches
   // select a pair that have the largest baseline (mean angle between its bearing vectors).
@@ -1171,6 +1178,9 @@ bool ReconstructionEngine_sequentialSfM::getBestInitialImagePairs(std::vector<Pa
     ALICEVISION_LOG_WARNING("Failed to find an initial pair automatically. There is no view with valid intrinsics.");
     return false;
   }
+
+  if(filterViewId != UndefinedIndexT)
+    ALICEVISION_LOG_INFO("Selection of an initial pair with one given view id: " << filterViewId << ".");
   
   /// ImagePairScore contains <imagePairScore*scoring_angle, imagePairScore, scoring_angle, numberOfInliers, imagePair>
   typedef std::tuple<double, double, double, std::size_t, Pair> ImagePairScore;
@@ -1195,6 +1205,9 @@ bool ReconstructionEngine_sequentialSfM::getBestInitialImagePairs(std::vector<Pa
     const IndexT I = std::min(current_pair.first, current_pair.second);
     const IndexT J = std::max(current_pair.first, current_pair.second);
 
+    if (filterViewId != UndefinedIndexT && filterViewId != I && filterViewId != J)
+      continue;
+
     if (!valid_views.count(I) || !valid_views.count(J))
       continue;
     
@@ -1214,7 +1227,7 @@ bool ReconstructionEngine_sequentialSfM::getBestInitialImagePairs(std::vector<Pa
 
     // Copy points correspondences to arrays for relative pose estimation
     const size_t n = map_tracksCommon.size();
-    ALICEVISION_LOG_DEBUG("AutomaticInitialPairChoice, test I: " << I << ", J: " << J << ", nbCommonTracks: " << n);
+    ALICEVISION_LOG_DEBUG("Automatic initial pair choice test - I: " << I << ", J: " << J << ", common tracks: " << n);
     Mat xI(2,n), xJ(2,n);
     size_t cptIndex = 0;
     std::vector<std::size_t> commonTracksIds(n);
@@ -1293,14 +1306,14 @@ bool ReconstructionEngine_sequentialSfM::getBestInitialImagePairs(std::vector<Pa
   const std::size_t nBestScores = std::min(std::size_t(50), bestImagePairs.size());
   std::sort(bestImagePairs.begin(), bestImagePairs.end(), std::greater<ImagePairScore>());
   ALICEVISION_LOG_DEBUG(bestImagePairs.size() << " possible image pairs. " << nBestScores << " best possibles image pairs are:");
-  ALICEVISION_LOG_DEBUG(boost::format("%=15s | %=15s | %=15s | %=15s | %=15s") % "Pair" % "Score" % "ImagePairScore" % "Angle" % "NbMatches");
-  ALICEVISION_LOG_DEBUG(std::string(15*5+3*3, '-'));
+  ALICEVISION_LOG_DEBUG(boost::format("%=25s | %=15s | %=15s | %=15s | %=15s") % "Pair" % "Score" % "ImagePairScore" % "Angle" % "NbMatches");
+  ALICEVISION_LOG_DEBUG(std::string(25+15*4+3*4, '-'));
   for(std::size_t i = 0; i < nBestScores; ++i)
   {
     const ImagePairScore& s = bestImagePairs[i];
     const Pair& currPair = std::get<4>(s);
     const std::string pairIdx = std::to_string(currPair.first) + ", " + std::to_string(currPair.second);
-    ALICEVISION_LOG_DEBUG(boost::format("%=15s | %+15.1f | %+15.1f | %+15.1f | %+15f") % pairIdx % std::get<0>(s) % std::get<1>(s) % std::get<2>(s) % std::get<3>(s));
+    ALICEVISION_LOG_DEBUG(boost::format("%=25s | %+15.1f | %+15.1f | %+15.1f | %+15f") % pairIdx % std::get<0>(s) % std::get<1>(s) % std::get<2>(s) % std::get<3>(s));
   }
   if (bestImagePairs.empty())
   {
