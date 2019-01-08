@@ -42,6 +42,12 @@ struct EightPointSolver {
   static void Solve(const Mat &x1, const Mat &x2, vector<Mat3> *Fs, const vector<double> *weights = nullptr);
 };
 
+struct TenPointSolver {
+  enum { MINIMUM_SAMPLES = 10 };
+  enum { MAX_MODELS = 10 };
+  static void Solve(const Mat &x1, const Mat &x2, vector<Mat3> *Fs);
+};
+
 /**
  * Build a 9 x n matrix from point matches, where each row is equivalent to the
  * equation x'T*F*x = 0 for a single correspondence pair (x', x). The domain of

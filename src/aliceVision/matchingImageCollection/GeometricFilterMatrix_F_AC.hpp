@@ -80,51 +80,52 @@ struct GeometricFilterMatrix_F_AC: public GeometricFilterMatrix
    */
   template<class MapFeatOrRegionsPerDesc>
   EstimationStatus geometricEstimation(
-      const MapFeatOrRegionsPerDesc& region_I,
-      const MapFeatOrRegionsPerDesc& region_J,
-      const camera::IntrinsicBase * cam_I,
-      const camera::IntrinsicBase * cam_J,
-      const std::pair<size_t,size_t> & imageSizeI,     // size of the first image
-      const std::pair<size_t,size_t> & imageSizeJ,     // size of the first image
-      const matching::MatchesPerDescType & putativeMatchesPerType,
-      matching::MatchesPerDescType & out_geometricInliersPerType)
+      const MapFeatOrRegionsPerDesc& regionI,
+      const MapFeatOrRegionsPerDesc& regionJ,
+      const camera::IntrinsicBase* camI,
+      const camera::IntrinsicBase* camJ,
+      const std::pair<size_t,size_t>& imageSizeI, // size of the first image
+      const std::pair<size_t,size_t>& imageSizeJ, // size of the first image
+      const matching::MatchesPerDescType& putativeMatchesPerType,
+      matching::MatchesPerDescType& out_geometricInliersPerType)
   {
     using namespace aliceVision;
     using namespace aliceVision::robustEstimation;
+
     out_geometricInliersPerType.clear();
 
-    const std::vector<feature::EImageDescriberType> descTypes = getCommonDescTypes(region_I, region_J);
+    const std::vector<feature::EImageDescriberType> descTypes = getCommonDescTypes(regionI, regionJ);
 
     if(descTypes.empty())
       return EstimationStatus(false, false);
 
-    // Retrieve all 2D features as undistorted positions into flat arrays
+    // retrieve all 2D features as undistorted positions into flat arrays
     Mat xI, xJ;
-    fillMatricesWithUndistortFeaturesMatches(putativeMatchesPerType, cam_I, cam_J,
-                     region_I, region_J,
+    fillMatricesWithUndistortFeaturesMatches(putativeMatchesPerType, camI, camJ,
+                     regionI, regionJ,
                      descTypes, xI, xJ);
-    std::vector<size_t> inliers;
 
-    std::pair<bool, std::size_t> estimationPair = geometricEstimation_Mat(
-        xI, xJ,
-        imageSizeI,
-        imageSizeJ,
-        inliers);
+    std::vector<std::size_t> inliers;
+    std::pair<bool, std::size_t> estimationPair;
 
-    if (!estimationPair.first) // estimation is not valid
+    if(camI->initialFocalLengthPix() <= 0 || camJ->initialFocalLengthPix() <= 0)
+    {
+      ALICEVISION_LOG_WARNING("TenPointSolver");
+      estimationPair = geometricEstimation_Mat<fundamental::kernel::TenPointSolver>(xI, xJ, imageSizeI, imageSizeJ, inliers);
+    }
+    else
+      estimationPair = geometricEstimation_Mat<fundamental::kernel::SevenPointSolver>(xI, xJ, imageSizeI, imageSizeJ, inliers);
+
+    if(!estimationPair.first) // estimation is not valid
     {
       assert(inliers.empty());
       return EstimationStatus(false, false);
     }
 
-    // Fill geometricInliersPerType with inliers from putativeMatchesPerType
-    copyInlierMatches(
-          inliers,
-          putativeMatchesPerType,
-          descTypes,
-          out_geometricInliersPerType);
+    // fill geometricInliersPerType with inliers from putativeMatchesPerType
+    copyInlierMatches(inliers, putativeMatchesPerType, descTypes, out_geometricInliersPerType);
 
-    // If matches has strong support
+    // if matches has strong support
     const bool hasStrongSupport = robustEstimation::hasStrongSupport(out_geometricInliersPerType, estimationPair.second);
 
     return EstimationStatus(true, hasStrongSupport);
@@ -141,12 +142,13 @@ struct GeometricFilterMatrix_F_AC: public GeometricFilterMatrix
    * @param[out] geometric_inliers A vector containing the indices of the inliers
    * @return true if geometric_inliers is not empty
    */
+  template<class KernelSolver>
   std::pair<bool, std::size_t> geometricEstimation_Mat(
-    const Mat& xI,       // points of the first image
-    const Mat& xJ,       // points of the second image
-    const std::pair<size_t,size_t> & imageSizeI,     // size of the first image  
-    const std::pair<size_t,size_t> & imageSizeJ,     // size of the first image
-    std::vector<size_t> & out_inliers)
+    const Mat& xI, // points of the first image
+    const Mat& xJ, // points of the second image
+    const std::pair<size_t,size_t>& imageSizeI, // size of the first image
+    const std::pair<size_t,size_t>& imageSizeJ, // size of the first image
+    std::vector<size_t>& out_inliers)
   {
     using namespace aliceVision;
     using namespace aliceVision::robustEstimation;
@@ -158,8 +160,8 @@ struct GeometricFilterMatrix_F_AC: public GeometricFilterMatrix
       {
         // Define the AContrario adapted Fundamental matrix solver
         typedef ACKernelAdaptor<
-          aliceVision::fundamental::kernel::SevenPointSolver,
-          aliceVision::fundamental::kernel::SimpleError,
+          KernelSolver,
+          fundamental::kernel::SimpleError,
           //aliceVision::fundamental::kernel::SymmetricEpipolarDistanceError,
           UnnormalizerT,
           Mat3>
@@ -190,11 +192,11 @@ struct GeometricFilterMatrix_F_AC: public GeometricFilterMatrix
         }
 
         typedef KernelAdaptorLoRansac<
-                aliceVision::fundamental::kernel::SevenPointSolver,
-                aliceVision::fundamental::kernel::SymmetricEpipolarDistanceError,
+                KernelSolver,
+                fundamental::kernel::SymmetricEpipolarDistanceError,
                 UnnormalizerT,
                 Mat3,
-                aliceVision::fundamental::kernel::EightPointSolver>
+                fundamental::kernel::EightPointSolver> // TODO: if KernelSolver is F10, which solverLS
                 KernelType;
 
         const KernelType kernel(xI, imageSizeI.first, imageSizeI.second,

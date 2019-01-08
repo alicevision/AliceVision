@@ -8,6 +8,7 @@
 
 #include <aliceVision/numeric/polynomial.hpp>
 #include <aliceVision/multiview/fundamentalKernelSolver.hpp>
+#include <aliceVision/multiview/essentialF10Solver.hpp>
 
 namespace aliceVision {
 namespace fundamental {
@@ -124,6 +125,12 @@ void EightPointSolver::Solve(const Mat &x1, const Mat &x2, vector<Mat3> *Fs, con
     F = USV.matrixU() * d.asDiagonal() * USV.matrixV().transpose();
   }
   Fs->push_back(F);
+}
+
+void TenPointSolver::Solve(const Mat& x1, const Mat& x2, vector<Mat3>* Fs)
+{
+  std::vector<Mat21> L;
+  F10RelativePose(x1.transpose(), x2.transpose(), *Fs, L);
 }
 
 }  // namespace kernel
