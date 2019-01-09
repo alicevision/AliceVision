@@ -85,6 +85,7 @@ void BundleAdjustmentCeres::CeresOptions::setDenseBA()
   // default configuration use a DENSE representation
   preconditionerType = ceres::JACOBI;
   linearSolverType = ceres::DENSE_SCHUR;
+  sparseLinearAlgebraLibraryType = ceres::SUITE_SPARSE; // not used but just to avoid a warning in ceres
   ALICEVISION_LOG_DEBUG("BundleAdjustment[Ceres]: DENSE_SCHUR");
 }
 
