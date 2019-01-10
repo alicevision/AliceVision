@@ -525,6 +525,15 @@ bool isPointInHexahedron(const Point3d& p, const Point3d* hexah)
     return d1 * d2 >= 0.0;
 }
 
+double computeHexahedronVolume(const Point3d* hexah)
+{
+  const double w = std::sqrt(std::pow(hexah[1].x - hexah[0].x, 2));
+  const double h = std::sqrt(std::pow(hexah[3].y - hexah[0].y, 2));
+  const double l = std::sqrt(std::pow(hexah[4].z - hexah[0].z, 2));
+
+  return (l * w * h);
+}
+
 void inflateHexahedron(const Point3d hexahIn[8], Point3d hexahOut[8], float scale)
 {
     Point3d cg = Point3d(0.0f, 0.0f, 0.0f);
