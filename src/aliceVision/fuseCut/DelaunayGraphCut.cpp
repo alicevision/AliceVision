@@ -339,7 +339,7 @@ void createVerticesWithVisibilities(const StaticVector<int>& cams, std::vector<P
                 resultSet.init(&nearestVertexIndex, &dist);
                 if(!kdTree.findNeighbors(resultSet, p.m, nanoflann::SearchParams()))
                 {
-                    ALICEVISION_LOG_WARNING("Failed to find Neighbors.");
+                    ALICEVISION_LOG_TRACE("Failed to find Neighbors.");
                     continue;
                 }
 #endif
