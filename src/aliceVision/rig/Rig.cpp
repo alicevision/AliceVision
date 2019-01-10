@@ -472,8 +472,7 @@ bool Rig::optimizeCalibration()
 
   // Configure a BA engine and run it
   // todo: Set the most appropriate options
-  aliceVision::sfm::BundleAdjustmentCeres::CeresOptions aliceVision_options(true); // Set all
-  // the options field in our owm struct - unnecessary dependancy to aliceVision here
+  aliceVision::sfm::BundleAdjustmentCeres::CeresOptions aliceVision_options(true);
   
   ceres::Solver::Options options;
   
@@ -483,7 +482,9 @@ bool Rig::optimizeCalibration()
   options.minimizer_progress_to_stdout = aliceVision_options.verbose;
   options.logging_type = ceres::SILENT;
   options.num_threads = 1;//aliceVision_options._nbThreads;
+#if CERES_VERSION_MAJOR < 2
   options.num_linear_solver_threads = 1;//aliceVision_options._nbThreads;
+#endif
   
   // Solve BA
   ceres::Solver::Summary summary;
