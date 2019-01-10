@@ -50,6 +50,7 @@ StaticVector<Point3d>* triangleHexahedronIntersection(Point3d& A, Point3d& B, Po
 StaticVector<Point3d>* triangleRectangleIntersection(Point3d& A, Point3d& B, Point3d& C, const MultiViewParams* mp, int rc,
                                                      Point2d P[4]);
 bool isPointInHexahedron(const Point3d &p, const Point3d *hexah);
+double computeHexahedronVolume(const Point3d* hexah);
 void inflateHexahedron(const Point3d hexahIn[8], Point3d hexahOut[8], float scale);
 bool checkPoint3d(Point3d n);
 bool checkPoint2d(Point2d n);

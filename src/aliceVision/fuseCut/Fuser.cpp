@@ -561,6 +561,11 @@ void Fuser::divideSpaceFromDepthMaps(Point3d* hexah, float& minPixSize)
     hexah[6] = cg + v1 * mind1 + v2 * mind2 + v3 * mind3;
     hexah[7] = cg + v1 * maxd1 + v2 * mind2 + v3 * mind3;
 
+    const double volume = mvsUtils::computeHexahedronVolume(hexah);
+
+    if(std::isnan(volume) || volume < std::numeric_limits<double>::epsilon())
+      throw std::runtime_error("Failed to estimate space from depth maps: The space bounding box is too small.");
+
     ALICEVISION_LOG_INFO("Estimate space done.");
 }
 
@@ -655,6 +660,11 @@ void Fuser::divideSpaceFromSfM(const sfmData::SfMData& sfmData, Point3d* hexah, 
   hexah[5] = Point3d(xMin, yMax, zMin);
   hexah[6] = Point3d(xMin, yMin, zMin);
   hexah[7] = Point3d(xMax, yMin, zMin);
+
+  const double volume = mvsUtils::computeHexahedronVolume(hexah);
+
+  if(std::isnan(volume) || volume < std::numeric_limits<double>::epsilon())
+    throw std::runtime_error("Failed to estimate space from SfM: The space bounding box is too small.");
 
   ALICEVISION_LOG_INFO("Estimate space done.");
 }
