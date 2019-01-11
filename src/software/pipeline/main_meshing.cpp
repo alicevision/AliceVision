@@ -25,7 +25,7 @@
 // These constants define the current software version.
 // They must be updated when the command line is changed.
 #define ALICEVISION_SOFTWARE_VERSION_MAJOR 2
-#define ALICEVISION_SOFTWARE_VERSION_MINOR 0
+#define ALICEVISION_SOFTWARE_VERSION_MINOR 1
 
 using namespace aliceVision;
 
@@ -346,7 +346,7 @@ int main(int argc, char* argv[])
                     if(cams.size() < 1)
                         throw std::logic_error("No camera to make the reconstruction");
 
-                    delaunayGC.createDensePointCloudFromDepthMaps(hexah, cams, &voxelNeighs, (fuseCut::VoxelsGrid*)&rp, fuseParams);
+                    delaunayGC.createDensePointCloudFromPrecomputedDensePoints(hexah, cams, &voxelNeighs, (fuseCut::VoxelsGrid*)&rp);
                     delaunayGC.createGraphCut(hexah, cams, (fuseCut::VoxelsGrid*)&rp, outDirectory.string()+"/", lsbase.getSpaceCamsTracksDir(), false, lsbase.getSpaceSteps());
                     delaunayGC.graphCutPostProcessing();
 
@@ -433,11 +433,7 @@ int main(int argc, char* argv[])
                     if(cams.empty())
                         throw std::logic_error("No camera to make the reconstruction");
 
-                    if(meshingFromDepthMaps)
-                      delaunayGC.createDensePointCloudFromDepthMaps(&hexah[0], cams, &voxelNeighs, nullptr, fuseParams);
-                    else
-                      delaunayGC.createDensePointCloudFromSfM(&hexah[0], cams, sfmData);
-
+                    delaunayGC.createDensePointCloud(&hexah[0], cams, &sfmData, meshingFromDepthMaps ? &fuseParams : nullptr);
                     delaunayGC.createGraphCut(&hexah[0], cams, nullptr, outDirectory.string()+"/", outDirectory.string()+"/SpaceCamsTracks/", false, spaceSteps);
                     delaunayGC.graphCutPostProcessing();
 
