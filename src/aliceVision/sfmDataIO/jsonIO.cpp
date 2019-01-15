@@ -98,8 +98,9 @@ void saveIntrinsic(const std::string& name, IndexT intrinsicId, const std::share
   intrinsicTree.put("intrinsicId", intrinsicId);
   intrinsicTree.put("width", intrinsic->w());
   intrinsicTree.put("height", intrinsic->h());
-  intrinsicTree.put("type", camera::EINTRINSIC_enumToString(intrinsicType));
   intrinsicTree.put("serialNumber", intrinsic->serialNumber());
+  intrinsicTree.put("type", camera::EINTRINSIC_enumToString(intrinsicType));
+  intrinsicTree.put("initializationMode", camera::EIntrinsicInitMode_enumToString(intrinsic->getInitializationMode()));
   intrinsicTree.put("pxInitialFocalLength", intrinsic->initialFocalLengthPix());
 
   if(camera::isPinhole(intrinsicType))
@@ -132,6 +133,7 @@ void loadIntrinsic(IndexT& intrinsicId, std::shared_ptr<camera::IntrinsicBase>& 
   const unsigned int width = intrinsicTree.get<unsigned int>("width");
   const unsigned int height = intrinsicTree.get<unsigned int>("height");
   const camera::EINTRINSIC intrinsicType = camera::EINTRINSIC_stringToEnum(intrinsicTree.get<std::string>("type"));
+  const camera::EIntrinsicInitMode initializationMode = camera::EIntrinsicInitMode_stringToEnum(intrinsicTree.get<std::string>("initializationMode", camera::EIntrinsicInitMode_enumToString(camera::EIntrinsicInitMode::CALIBRATED)));
   const double pxFocalLength = intrinsicTree.get<double>("pxFocalLength");
 
   // principal point
@@ -146,12 +148,13 @@ void loadIntrinsic(IndexT& intrinsicId, std::shared_ptr<camera::IntrinsicBase>& 
   std::shared_ptr<camera::Pinhole> pinholeIntrinsic = camera::createPinholeIntrinsic(intrinsicType, width, height, pxFocalLength, principalPoint(0), principalPoint(1));
   pinholeIntrinsic->setInitialFocalLengthPix(intrinsicTree.get<double>("pxInitialFocalLength"));
   pinholeIntrinsic->setSerialNumber(intrinsicTree.get<std::string>("serialNumber"));
+  pinholeIntrinsic->setInitializationMode(initializationMode);
 
   std::vector<double> distortionParams;
   for(bpt::ptree::value_type &paramNode : intrinsicTree.get_child("distortionParams"))
     distortionParams.emplace_back(paramNode.second.get_value<double>());
 
-  // Ensure that we have the right number of params
+  // ensure that we have the right number of params
   distortionParams.resize(pinholeIntrinsic->getDistortionParams().size(), 0.0);
 
   pinholeIntrinsic->setDistortionParams(distortionParams);
