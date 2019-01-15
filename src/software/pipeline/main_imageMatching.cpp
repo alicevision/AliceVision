@@ -163,46 +163,23 @@ std::string EImageMatchingMode_enumToString(EImageMatchingMode modeMultiSfM)
  * there won't be the image 1
  *
  * @param[in] allMatches A pairlist containing all the matching images for each image of the dataset
- * @param[in] numMatches The maximum number of matching images to consider for each image
+ * @param[in] numMatches The maximum number of matching images to consider for each image (if 0, consider all matches)
  * @param[out] matches A processed version of allMatches that consider only the first numMatches without repetitions
  */
-void convertAllMatchesToPairList(const PairList &allMatches, const std::size_t numMatches, OrderedPairList &outPairList)
+void convertAllMatchesToPairList(const PairList &allMatches, std::size_t numMatches, OrderedPairList &outPairList)
 {
   outPairList.clear();
 
-  PairList::const_iterator allIter = allMatches.begin();
-  if(allIter == allMatches.end())
-    return;
+  if(numMatches == 0)
+    numMatches = allMatches.size();  // disable image matching limit
 
-  // For the first image, just copy the numMatches first numMatches
+  for(const auto& match : allMatches)
   {
-    ImageID currImageId = allIter->first;
-    OrderedListOfImageID& bestMatches = outPairList[ currImageId ] = OrderedListOfImageID();
-    for(std::size_t i = 0; i < std::min(allIter->second.size(), numMatches); ++i)
-    {
-      // avoid self-matching
-      if(allIter->second[i] == currImageId)
-        continue;
-
-      bestMatches.insert(allIter->second[i]);
-    }
-    ++allIter;
-  }
-
-  // All other images
-  for(; allIter != allMatches.end(); ++allIter)
-  {
-    ImageID currImageId = allIter->first;
-
+    ImageID currImageId = match.first;
     OrderedListOfImageID bestMatches;
 
-    std::size_t numFound = 0;
-
-    // otherwise check each element
-    for(std::size_t i = 0; i < allIter->second.size(); ++i)
+    for(const ImageID currMatchId : match.second)
     {
-      ImageID currMatchId = allIter->second[i];
-
       // avoid self-matching
       if(currMatchId == currImageId)
         continue;
@@ -218,24 +195,21 @@ void convertAllMatchesToPairList(const PairList &allMatches, const std::size_t n
         {
           // then add it to the list
           bestMatches.insert(currMatchId);
-          ++numFound;
         }
       }
-      else if(currMatchId > currImageId)
+      else
       {
-        // then add it to the list
         bestMatches.insert(currMatchId);
-        ++numFound;
       }
 
-      // if we are done stop
-      if(numFound == numMatches)
+      // stop if numMatches is satisfied
+      if(bestMatches.size() == numMatches)
         break;
     }
 
     // fill the output if we have matches
     if(!bestMatches.empty())
-      outPairList[ currImageId ] = bestMatches;
+      outPairList[currImageId] = bestMatches;
   }
 }
 
