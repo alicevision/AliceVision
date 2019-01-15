@@ -15,14 +15,14 @@ namespace aliceVision {
 namespace camera {
 
 /**
- * @brief Intrinsic init mode enum
+ * @brief Camera Intrinsic initialization mode
  */
 enum class EIntrinsicInitMode : std::uint8_t
 {
-  CALIBRATED
-  , COMPUTED_FROM_METADATA
-  , ESTIMATED_FROM_METADATA
-  , SET_FROM_DEFAULT_FOV
+  NONE = 0, //< Value not set
+  CALIBRATED, //< External calibration
+  ESTIMATED, //< Estimated, in the standard pipeline it is estimated from metadata information (FocalLength + sensor width or FocalLengthIn35mm with integer approximation)
+  UNKNOWN //< The camera parameters are unknown (can still have a default value guess)
 };
 
 /**
@@ -34,12 +34,12 @@ inline std::string EIntrinsicInitMode_enumToString(EIntrinsicInitMode intrinsicI
 {
   switch(intrinsicInitMode)
   {
-    case EIntrinsicInitMode::CALIBRATED:               return "calibrated";
-    case EIntrinsicInitMode::COMPUTED_FROM_METADATA:   return "computed_from_metadata";
-    case EIntrinsicInitMode::ESTIMATED_FROM_METADATA:  return "estimated_from_metadata";
-    case EIntrinsicInitMode::SET_FROM_DEFAULT_FOV:     return "set_from_default_fov";
+    case EIntrinsicInitMode::CALIBRATED: return "calibrated";
+    case EIntrinsicInitMode::ESTIMATED:  return "estimated";
+    case EIntrinsicInitMode::UNKNOWN:    return "unknown";
+    case EIntrinsicInitMode::NONE:       return "none";
   }
-  throw std::out_of_range("Invalid Intrinsic init mode enum");
+  throw std::out_of_range("Invalid Intrinsic init mode enum: " + std::to_string(int(intrinsicInitMode)));
 }
 
 /**
@@ -52,10 +52,10 @@ inline EIntrinsicInitMode EIntrinsicInitMode_stringToEnum(const std::string& int
   std::string mode = intrinsicInitMode;
   std::transform(mode.begin(), mode.end(), mode.begin(), ::tolower); //tolower
 
-  if(mode == "calibrated")               return EIntrinsicInitMode::CALIBRATED;
-  if(mode == "computed_from_metadata")   return EIntrinsicInitMode::COMPUTED_FROM_METADATA;
-  if(mode == "estimated_from_metadata")  return EIntrinsicInitMode::ESTIMATED_FROM_METADATA;
-  if(mode == "set_from_default_fov")     return EIntrinsicInitMode::SET_FROM_DEFAULT_FOV;
+  if(mode == "calibrated") return EIntrinsicInitMode::CALIBRATED;
+  if(mode == "estimated")  return EIntrinsicInitMode::ESTIMATED;
+  if(mode == "unknown")    return EIntrinsicInitMode::UNKNOWN;
+  if(mode == "none")       return EIntrinsicInitMode::NONE;
 
   throw std::out_of_range("Invalid Intrinsic init mode: " + intrinsicInitMode);
 }

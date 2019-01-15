@@ -350,7 +350,7 @@ struct IntrinsicBase
 private:
 
   /// initialization mode
-  EIntrinsicInitMode _initializationMode = EIntrinsicInitMode::CALIBRATED;
+  EIntrinsicInitMode _initializationMode = EIntrinsicInitMode::NONE;
   /// intrinsic lock
   bool _locked = false;
 };

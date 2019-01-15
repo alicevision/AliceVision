@@ -43,7 +43,7 @@ void updateIncompleteView(sfmData::View& view)
     view.setMetadata(metadata);
 
   // reset viewId
-  view.setViewId(sfmData::computeUID(view));
+  view.setViewId(sfmData::computeViewUID(view));
 
   if(view.getPoseId() == UndefinedIndexT)
   {

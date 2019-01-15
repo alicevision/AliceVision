@@ -56,13 +56,11 @@ SfMData createTestScene(IndexT singleViewsCount,
       if(i == 0)
       {
         sfm_data.intrinsics[0] = std::make_shared<camera::Pinhole>(1000, 1000, 36.0, std::rand()%10000, std::rand()%10000);
-        sfm_data.intrinsics[0]->setInitializationMode(camera::EIntrinsicInitMode::SET_FROM_DEFAULT_FOV);
       }
     }
     else
     {
       sfm_data.intrinsics[i] = std::make_shared<camera::Pinhole>(1000, 1000, 36.0, std::rand()%10000, std::rand()%10000);
-      sfm_data.intrinsics[i]->setInitializationMode(camera::EIntrinsicInitMode::SET_FROM_DEFAULT_FOV);
     }
   }
 

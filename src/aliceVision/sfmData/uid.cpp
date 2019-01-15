@@ -16,7 +16,7 @@ namespace fs = boost::filesystem;
 namespace aliceVision {
 namespace sfmData {
 
-std::size_t computeUID(const View& view)
+std::size_t computeViewUID(const View& view)
 {
   std::size_t uid = 0;
 
@@ -143,7 +143,7 @@ void regenerateViewUIDs(Views &views, std::map<std::size_t, std::size_t> &oldIdT
     const View& currentView = *iter.second.get();
 
     // compute the view UID
-    const std::size_t uid = computeUID(currentView);
+    const std::size_t uid = computeViewUID(currentView);
 
     // update the mapping
     assert(oldIdToNew.count(currentView.getViewId()) == 0);
