@@ -164,8 +164,9 @@ bool ReconstructionEngine_sequentialSfM::process()
   }
   else if(_sfmData.getLandmarks().empty())
   {
-    // TODO: it could make sense to triangulate valid poses
-    throw std::runtime_error("Valid poses with no landmark is not supported.");
+    std::set<IndexT> prevReconstructedViews = _sfmData.getValidViews();
+    triangulate({}, prevReconstructedViews);
+    bundleAdjustment(prevReconstructedViews);
   }
   else
   {
