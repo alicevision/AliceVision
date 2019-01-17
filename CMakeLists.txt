@@ -177,7 +177,7 @@ ExternalProject_Add(${TBB_TARGET}
 # Add Eigen
 set(EIGEN_TARGET eigen)
 ExternalProject_Add(${EIGEN_TARGET}
-       URL https://github.com/alicevision/eigen-git-mirror/archive/3.3.4.tar.gz
+       URL https://github.com/eigenteam/eigen-git-mirror/archive/3.3.7.tar.gz
        PREFIX ${BUILD_DIR}
        BUILD_IN_SOURCE 0
        BUILD_ALWAYS 0
@@ -193,7 +193,7 @@ if(AV_BUILD_OPENGV)
 set(OPENGV_TARGET opengv)
 ExternalProject_Add(${OPENGV_TARGET}
        GIT_REPOSITORY https://github.com/laurentkneip/opengv.git
-       GIT_TAG 0b2017d23bbbb9a39d3f508ad2cd7042a58be682
+       GIT_TAG 306a54e6c6b94e2048f820cdf77ef5281d4b48ad
        PREFIX ${BUILD_DIR}
        BUILD_IN_SOURCE 0
        BUILD_ALWAYS 0
@@ -232,6 +232,7 @@ set(SUITESPARSE_TARGET suitesparse)
 set(SUITESPARSE_INTERNAL_MAKE_CMD LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${BUILD_DIR}/lapack_build/${CMAKE_INSTALL_LIBDIR} make BLAS="${BLAS_LIBRARIES}" LAPACK="${LAPACK_LIBRARIES}")
 ExternalProject_Add(${SUITESPARSE_TARGET}
        URL https://github.com/jluttine/suitesparse/archive/v4.5.6.tar.gz
+       # URL http://faculty.cse.tamu.edu/davis/SuiteSparse/SuiteSparse-5.4.0.tar.gz  # requires gxx >= 4.9, centos 7 use gxx-4.8.5
        PREFIX ${BUILD_DIR}
        BUILD_IN_SOURCE 0
        BUILD_ALWAYS 0
@@ -250,7 +251,7 @@ endif()
 # Add ceres-solver: A Nonlinear Least Squares Minimizer
 set(CERES_TARGET ceres)
 ExternalProject_Add(${CERES_TARGET}
-       URL https://github.com/ceres-solver/ceres-solver/archive/1.13.0.tar.gz
+       URL https://github.com/ceres-solver/ceres-solver/archive/1.14.0.tar.gz
        PREFIX ${BUILD_DIR}
        BUILD_IN_SOURCE 0
        BUILD_ALWAYS 0
@@ -266,18 +267,19 @@ set(CERES_CMAKE_FLAGS ${SUITESPARSE_CMAKE_FLAGS} -DCeres_DIR=${BUILD_DIR}/ceres_
 # Add OpenEXR
 set(OPENEXR_TARGET openexr)
 ExternalProject_Add(${OPENEXR_TARGET}
-       # URL https://github.com/openexr/openexr/archive/v2.2.1.tar.gz
-       # The release 2.2.1 has troubles with C++17, which breaks compilation with recent compilers.
-       # The problem has been fixed https://github.com/openexr/openexr/issues/235
-       # but there is no release yet, so we use the development version.
-       # GIT_REPOSITORY https://github.com/openexr/openexr
-       # Use the latest commit with g++4.X compatibility
-       # GIT_TAG 74b5c1dc2dfbdce74987a57f5e011dc711f9ca65
-       # Finally use a custom version for a cmake fix
+      URL https://github.com/openexr/openexr/archive/v2.3.0.tar.gz
+      # URL https://github.com/openexr/openexr/archive/v2.2.1.tar.gz
+      # The release 2.2.1 has troubles with C++17, which breaks compilation with recent compilers.
+      # The problem has been fixed https://github.com/openexr/openexr/issues/235
+      # but there is no release yet, so we use the development version.
+      # GIT_REPOSITORY https://github.com/openexr/openexr
+      # Use the latest commit with g++4.X compatibility
+      # GIT_TAG 74b5c1dc2dfbdce74987a57f5e011dc711f9ca65
+      # Finally use a custom version for a cmake fix
       # GIT_REPOSITORY https://github.com/alicevision/openexr
       # GIT_TAG develop_compatibility_gxx4
-      GIT_REPOSITORY https://github.com/openexr/openexr
-      GIT_TAG a12937f6d7650d4fb81b469900ee2fd4c082c208
+      # GIT_REPOSITORY https://github.com/openexr/openexr
+      # GIT_TAG a12937f6d7650d4fb81b469900ee2fd4c082c208
       PREFIX ${BUILD_DIR}
       BUILD_IN_SOURCE 0
       BUILD_ALWAYS 0
@@ -295,7 +297,7 @@ set(OPENEXR_CMAKE_FLAGS ${ILMBASE_CMAKE_FLAGS} -DOPENEXR_ROOT=${BUILD_DIR}/opene
 if(AV_BUILD_TIFF)
 set(TIFF_TARGET tiff)
 ExternalProject_Add(${TIFF_TARGET}
-       URL http://download.osgeo.org/libtiff/tiff-4.0.9.tar.gz
+       URL http://download.osgeo.org/libtiff/tiff-4.0.10.tar.gz
        PREFIX ${BUILD_DIR}
        BUILD_IN_SOURCE 0
        BUILD_ALWAYS 0
@@ -367,7 +369,7 @@ ExternalProject_Add(libraw_cmake
       INSTALL_COMMAND ""
       )
 ExternalProject_Add(${LIBRAW_TARGET}
-      URL https://github.com/LibRaw/LibRaw/archive/0.19.0.tar.gz
+      URL https://github.com/LibRaw/LibRaw/archive/0.19.2.tar.gz
       PREFIX ${BUILD_DIR}
       BUILD_IN_SOURCE 0
       BUILD_ALWAYS 0
@@ -387,9 +389,9 @@ endif()
 # Add Boost
 set(BOOST_TARGET boost)
 ExternalProject_Add(${BOOST_TARGET}
-       URL https://github.com/alicevision/AliceVisionDependencies/releases/download/boost-src.1.61.0/boost_1_61_0.tar.gz
-       #    http://sourceforge.net/projects/boost/files/boost/1.61.0/boost_1_61_0.tar.bz2
-       #    https://dl.bintray.com/boostorg/release/1.61.0/source/boost_1_61_0.tar.gz
+       URL https://github.com/alicevision/AliceVisionDependencies/releases/download/boost-src-1.66.0/boost_1_66_0.tar.bz2
+       #    http://sourceforge.net/projects/boost/files/boost/1.66.0/boost_1_66_0.tar.bz2
+       #    https://dl.bintray.com/boostorg/release/1.66.0/source/boost_1_66_0.tar.gz
        # GIT_REPOSITORY https://github.com/boostorg/boost.git
        # GIT_TAG boost-1.61.0
        PREFIX ${BUILD_DIR}
@@ -409,7 +411,7 @@ set(BOOST_CMAKE_FLAGS -DBOOST_ROOT=${BUILD_DIR}/boost_build)
 # Add OpenImageIO
 set(OPENIMAGEIO_TARGET openimageio)
 ExternalProject_Add(${OPENIMAGEIO_TARGET}
-      URL https://github.com/OpenImageIO/oiio/archive/Release-1.8.11.tar.gz
+      URL https://github.com/OpenImageIO/oiio/archive/Release-2.0.3.tar.gz
       PREFIX ${BUILD_DIR}
       BUILD_IN_SOURCE 0
       BUILD_ALWAYS 0
@@ -417,7 +419,7 @@ ExternalProject_Add(${OPENIMAGEIO_TARGET}
       SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/openimageio
       BINARY_DIR ${BUILD_DIR}/openimageio_build
       INSTALL_DIR ${BUILD_DIR}/openimageio_build
-      CONFIGURE_COMMAND ${CMAKE_COMMAND} -DCMAKE_CXX_FLAGS="-Wno-deprecated-declarations" ${CMAKE_CORE_BUILD_FLAGS} -DCMAKE_PREFIX_PATH="${BUILD_DIR}/png_build;${BUILD_DIR}/turbojpeg_build;${BUILD_DIR}/libraw_build" -DBOOST_ROOT=${BUILD_DIR}/boost_build -DOIIO_BUILD_TESTS:BOOL=OFF -DILMBASE_HOME=${BUILD_DIR}/openexr_build -DOPENEXR_HOME=${BUILD_DIR}/openexr_build ${TIFF_CMAKE_FLAGS} ${ZLIB_CMAKE_FLAGS} ${PNG_CMAKE_FLAGS} ${JPEG_CMAKE_FLAGS} ${LIBRAW_CMAKE_FLAGS} -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR> <SOURCE_DIR> -DUSE_PYTHON=OFF -DUSE_OPENCV=OFF -DUSE_OPENGL=OFF
+      CONFIGURE_COMMAND ${CMAKE_COMMAND} -DCMAKE_CXX_FLAGS="-Wno-deprecated-declarations" ${CMAKE_CORE_BUILD_FLAGS} -DCMAKE_PREFIX_PATH="${BUILD_DIR}/png_build;${BUILD_DIR}/turbojpeg_build;${BUILD_DIR}/libraw_build" -DBOOST_ROOT=${BUILD_DIR}/boost_build -DOIIO_BUILD_TESTS:BOOL=OFF -DILMBASE_HOME=${BUILD_DIR}/openexr_build -DOPENEXR_HOME=${BUILD_DIR}/openexr_build ${TIFF_CMAKE_FLAGS} ${ZLIB_CMAKE_FLAGS} ${PNG_CMAKE_FLAGS} ${JPEG_CMAKE_FLAGS} ${LIBRAW_CMAKE_FLAGS} ${OPENEXR_CMAKE_FLAGS} -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR> <SOURCE_DIR> -DUSE_PYTHON=OFF -DUSE_OPENCV=OFF -DUSE_OPENGL=OFF
       DEPENDS ${BOOST_TARGET} ${OPENEXR_TARGET} ${TIFF_TARGET} ${PNG_TARGET} ${JPEG_TARGET} ${LIBRAW_TARGET} ${ZLIB_TARGET}
       )
 # TODO: openjpeg
@@ -427,7 +429,7 @@ set(OPENIMAGEIO_CMAKE_FLAGS -DOPENIMAGEIO_LIBRARY_DIR_HINTS=${BUILD_DIR}/openima
 # Add Alembic: I/O for Point Cloud and Cameras
 set(ALEMBIC_TARGET alembic)
 ExternalProject_Add(${ALEMBIC_TARGET}
-      URL https://github.com/alembic/alembic/archive/1.7.5.tar.gz
+      URL https://github.com/alembic/alembic/archive/1.7.10.tar.gz
       PREFIX ${BUILD_DIR}
       BUILD_IN_SOURCE 0
       BUILD_ALWAYS 0
@@ -445,7 +447,7 @@ if(AV_BUILD_POPSIFT)
 set(POPSIFT_TARGET popsift)
 ExternalProject_Add(${POPSIFT_TARGET}
       GIT_REPOSITORY https://github.com/alicevision/popsift
-      GIT_TAG e7f15c4ec1ecbb1d5ea4f820f3a71d05fe4af8e2
+      GIT_TAG aa77bd6d308ad9fced2d5ba63e02f2f10873479b
       PREFIX ${BUILD_DIR}
       BUILD_IN_SOURCE 0
       BUILD_ALWAYS 0
