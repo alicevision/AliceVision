@@ -25,7 +25,7 @@
 // These constants define the current software version.
 // They must be updated when the command line is changed.
 #define ALICEVISION_SOFTWARE_VERSION_MAJOR 2
-#define ALICEVISION_SOFTWARE_VERSION_MINOR 0
+#define ALICEVISION_SOFTWARE_VERSION_MINOR 1
 
 using namespace aliceVision;
 
@@ -98,6 +98,7 @@ int main(int argc, char* argv[])
     int maxPtsPerVoxel = 6000000;
     bool meshingFromDepthMaps = true;
     bool estimateSpaceFromSfM = true;
+    bool addLandmarksToTheDensePointCloud = true;
 
     fuseCut::FuseParams fuseParams;
 
@@ -134,7 +135,9 @@ int main(int argc, char* argv[])
         ("repartition", po::value<ERepartitionMode>(&repartitionMode)->default_value(repartitionMode),
             "Repartition: 'multiResolution' or 'regularGrid'.")
         ("estimateSpaceFromSfM", po::value<bool>(&estimateSpaceFromSfM)->default_value(estimateSpaceFromSfM),
-            "Estimate the 3d space from the SfM.");
+            "Estimate the 3d space from the SfM.")
+        ("addLandmarksToTheDensePointCloud", po::value<bool>(&addLandmarksToTheDensePointCloud)->default_value(addLandmarksToTheDensePointCloud),
+            "Add SfM Landmarks to the dense point cloud.");
 
     po::options_description advancedParams("Advanced parameters");
     advancedParams.add_options()
@@ -209,6 +212,11 @@ int main(int argc, char* argv[])
          partitioningMode == ePartitioningSingleBlock)
       {
         meshingFromDepthMaps = false;
+        if(!addLandmarksToTheDensePointCloud)
+        {
+          ALICEVISION_LOG_ERROR("Cannot compute meshing from SfM if --addLandmarksToTheDensePointCloud is false.");
+          return EXIT_FAILURE;
+        }
       }
       else
       {
@@ -346,7 +354,7 @@ int main(int argc, char* argv[])
                     if(cams.size() < 1)
                         throw std::logic_error("No camera to make the reconstruction");
 
-                    delaunayGC.createDensePointCloudFromDepthMaps(hexah, cams, &voxelNeighs, (fuseCut::VoxelsGrid*)&rp, fuseParams);
+                    delaunayGC.createDensePointCloudFromPrecomputedDensePoints(hexah, cams, &voxelNeighs, (fuseCut::VoxelsGrid*)&rp);
                     delaunayGC.createGraphCut(hexah, cams, (fuseCut::VoxelsGrid*)&rp, outDirectory.string()+"/", lsbase.getSpaceCamsTracksDir(), false, lsbase.getSpaceSteps());
                     delaunayGC.graphCutPostProcessing();
 
@@ -433,11 +441,7 @@ int main(int argc, char* argv[])
                     if(cams.empty())
                         throw std::logic_error("No camera to make the reconstruction");
 
-                    if(meshingFromDepthMaps)
-                      delaunayGC.createDensePointCloudFromDepthMaps(&hexah[0], cams, &voxelNeighs, nullptr, fuseParams);
-                    else
-                      delaunayGC.createDensePointCloudFromSfM(&hexah[0], cams, sfmData);
-
+                    delaunayGC.createDensePointCloud(&hexah[0], cams, addLandmarksToTheDensePointCloud ? &sfmData : nullptr, meshingFromDepthMaps ? &fuseParams : nullptr);
                     delaunayGC.createGraphCut(&hexah[0], cams, nullptr, outDirectory.string()+"/", outDirectory.string()+"/SpaceCamsTracks/", false, spaceSteps);
                     delaunayGC.graphCutPostProcessing();
 
