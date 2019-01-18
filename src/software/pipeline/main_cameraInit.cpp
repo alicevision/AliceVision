@@ -388,6 +388,12 @@ int main(int argc, char **argv)
 
     IndexT intrinsicId = view.getIntrinsicId();
     double sensorWidth = -1;
+    enum class ESensorWidthSource {
+        FROM_DB,
+        FROM_METADATA_ESTIMATION,
+        UNKNOWN
+    } sensorWidthSource = ESensorWidthSource::UNKNOWN;
+
     double focalLengthmm = view.getMetadataFocalLength();
     const std::string& make = view.getMetadataMake();
     const std::string& model = view.getMetadataModel();
@@ -433,6 +439,7 @@ int main(int argc, char **argv)
           unsureSensors.emplace(std::make_pair(make, model), std::make_pair(view.getImagePath(), datasheet)); // will throw a warning message
 
         sensorWidth = datasheet._sensorSize;
+        sensorWidthSource = ESensorWidthSource::FROM_DB;
 
         if(focalLengthmm > 0.0)
           intrinsicInitMode = camera::EIntrinsicInitMode::ESTIMATED;
@@ -451,12 +458,14 @@ int main(int argc, char **argv)
           // no sensorWidth but valid focalLength and valid focalLengthIn35mm, so deduce sensorWith approximation
           const double sensorDiag = (focalLengthmm * diag24x36) / focalIn35mm; // 43.3 is the diagonal of 35mm film
           sensorWidth = sensorDiag * std::sqrt(1.0 / (1.0 + invRatio * invRatio));
+          sensorWidthSource = ESensorWidthSource::FROM_METADATA_ESTIMATION;
         }
         else
         {
           // no sensorWidth and no focalLength but valid focalLengthIn35mm, so consider sensorWith as 35mm
           sensorWidth = diag24x36 * std::sqrt(1.0 / (1.0 + invRatio * invRatio));
           focalLengthmm = sensorWidth * (focalIn35mm ) / 36.0;
+          sensorWidthSource = ESensorWidthSource::UNKNOWN;
         }
 
         intrinsicsSetFromFocal35mm.emplace(view.getImagePath(), std::make_pair(sensorWidth, focalLengthmm));
@@ -491,7 +500,11 @@ int main(int argc, char **argv)
     else
     {
       // we have a valid sensorWidth information, so se store it into the metadata (where it would have been nice to have it in the first place)
-      view.addMetadata("AliceVision:SensorWidth", std::to_string(sensorWidth));
+      if(sensorWidthSource == ESensorWidthSource::FROM_DB)
+        view.addMetadata("AliceVision:SensorWidth", std::to_string(sensorWidth));
+      else if(sensorWidthSource == ESensorWidthSource::FROM_METADATA_ESTIMATION)
+        view.addMetadata("AliceVision:SensorWidthEstimation", std::to_string(sensorWidth));
+      // else it is just a guess, so there is no need to put it into the metadata.
     }
 
     // build intrinsic
