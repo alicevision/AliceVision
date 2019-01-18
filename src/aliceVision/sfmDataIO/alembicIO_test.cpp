@@ -51,10 +51,12 @@ SfMData createTestScene(IndexT singleViewsCount,
     sfm_data.setPose(*view, CameraPose(geometry::Pose3(r, c)));
 
     // Add intrinsics
-    if (bSharedIntrinsic)
+    if(bSharedIntrinsic)
     {
-      if (i == 0)
+      if(i == 0)
+      {
         sfm_data.intrinsics[0] = std::make_shared<camera::Pinhole>(1000, 1000, 36.0, std::rand()%10000, std::rand()%10000);
+      }
     }
     else
     {

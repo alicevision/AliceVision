@@ -45,10 +45,12 @@ sfmData::SfMData createTestScene(std::size_t viewsCount = 2, std::size_t observa
     sfmData.setPose(*view, sfmData::CameraPose());
 
     // Add intrinsics
-    if (sharedIntrinsic)
+    if(sharedIntrinsic)
     {
-      if (i == 0)
+      if(i == 0)
+      {
         sfmData.intrinsics[0] = std::make_shared<Pinhole>();
+      }
     }
     else
     {

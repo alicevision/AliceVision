@@ -191,8 +191,8 @@ void AlembicExporter::DataImpl::addCamera(const std::string& name,
     // We chose a full frame 24x36 camera
     float sensorWidthMM = 36.0;
 
-    if(view.hasMetadata("sensor_width"))
-      sensorWidthMM = std::stof(view.getMetadata("sensor_width"));
+    if(view.hasMetadata("AliceVision:SensorWidth"))
+      sensorWidthMM = std::stof(view.getMetadata("AliceVision:SensorWidth"));
 
     // Take the max of the image size to handle the case where the image is in portrait mode
     const float imgWidth = pinhole->w();
@@ -217,6 +217,7 @@ void AlembicExporter::DataImpl::addCamera(const std::string& name,
 
     OUInt32ArrayProperty(userProps, "mvg_sensorSizePix").set(sensorSize_pix);
     OStringProperty(userProps, "mvg_intrinsicType").set(pinhole->getTypeStr());
+    OStringProperty(userProps, "mvg_intrinsicInitializationMode").set(camera::EIntrinsicInitMode_enumToString(pinhole->getInitializationMode()));
     ODoubleProperty(userProps, "mvg_initialFocalLengthPix").set(pinhole->initialFocalLengthPix());
     ODoubleArrayProperty(userProps, "mvg_intrinsicParams").set(pinhole->getParams());
     OBoolProperty(userProps, "mvg_intrinsicLocked").set(pinhole->isLocked());

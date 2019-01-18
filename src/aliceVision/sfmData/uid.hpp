@@ -19,7 +19,7 @@ namespace sfmData {
  * @param[in] view
  * @return UID
  */
-std::size_t computeUID(const View& view);
+std::size_t computeViewUID(const View& view);
 
 /**
  * @brief Update all viewID referenced in the observation of each landmark according 
