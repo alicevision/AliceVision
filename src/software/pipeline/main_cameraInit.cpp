@@ -541,27 +541,24 @@ int main(int argc, char **argv)
           missingDeviceUID.emplace_back(view.getImagePath()); // will throw a warning message at the end
         }
 
-        if(!make.empty() || !model.empty())
+        // To avoid stopping the process, we fallback to a solution selected by the user:
+        if(groupCameraModel == 2)
         {
-          // We have no way to identify a camera device, we fallback on the camera make/model.
-          // If you use multiple identical devices, they will be fused together incorrectly.
-          intrinsic->setSerialNumber(make + "_" + model);
+          // when we have no metadata at all, we create one intrinsic group per folder.
+          // the use case is images extracted from a video without metadata and assumes fixed intrinsics in the video.
+          intrinsic->setSerialNumber(fs::path(view.getImagePath()).parent_path().string());
         }
         else
         {
-          // We have no way to identify a camera device (neither by serial number and not even by camera make/model).
-          // To avoid stopping the process, we fallback to a solution selected by the user:
-          if(groupCameraModel == 2)
-          {
-            // when we have no metadata at all, we create one intrinsic group per folder.
-            // the use case is images extracted from a video without metadata and assumes fixed intrinsics in the video.
-            intrinsic->setSerialNumber(fs::path(view.getImagePath()).parent_path().string());
-          }
-          else
-          {
-            // if no metadata each view has its own camera intrinsic parameters
-            intrinsic->setSerialNumber(std::to_string(std::rand()));
-          }
+          // if no metadata, each view has its own camera intrinsic parameters
+          intrinsic->setSerialNumber(std::to_string(std::rand()));
+        }
+
+        if(!make.empty() || !model.empty())
+        {
+          // We have no correct way to identify a camera device, we fallback on the camera make/model.
+          // If you use multiple identical devices, they will be fused together incorrectly.
+          intrinsic->setSerialNumber(intrinsic->serialNumber() + "_" + make + "_" + model);
         }
 
         if(view.isPartOfRig())
