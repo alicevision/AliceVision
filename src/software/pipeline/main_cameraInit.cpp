@@ -118,6 +118,50 @@ bool listFiles(const std::string& folderOrFile,
   return false;
 }
 
+enum class EGroupCameraFallback {
+    GLOBAL,
+    FOLDER,
+    IMAGE
+};
+
+inline std::string EGroupCameraFallback_enumToString(EGroupCameraFallback strategy)
+{
+  switch(strategy)
+  {
+    case EGroupCameraFallback::GLOBAL:
+      return "global";
+    case EGroupCameraFallback::FOLDER:
+      return "folder";
+    case EGroupCameraFallback::IMAGE:
+      return "image";
+  }
+  throw std::out_of_range("Invalid GroupCameraFallback type Enum: " + std::to_string(int(strategy)));
+}
+
+inline EGroupCameraFallback EGroupCameraFallback_stringToEnum(const std::string& strategy)
+{
+  if(strategy == "global")
+    return EGroupCameraFallback::GLOBAL;
+  if(strategy == "folder")
+    return EGroupCameraFallback::FOLDER;
+  if(strategy == "image")
+    return EGroupCameraFallback::IMAGE;
+  throw std::out_of_range("Invalid GroupCameraFallback type string " + strategy);
+}
+
+inline std::ostream& operator<<(std::ostream& os, EGroupCameraFallback s)
+{
+    return os << EGroupCameraFallback_enumToString(s);
+}
+
+inline std::istream& operator>>(std::istream& in, EGroupCameraFallback& s)
+{
+    std::string token;
+    in >> token;
+    s = EGroupCameraFallback_stringToEnum(token);
+    return in;
+}
+
 
 /**
  * @brief Create the description of an input image dataset for AliceVision toolsuite
@@ -139,7 +183,8 @@ int main(int argc, char **argv)
   std::string defaultCameraModelName;
   double defaultFocalLengthPixel = -1.0;
   double defaultFieldOfView = -1.0;
-  int groupCameraModel = 2;
+  EGroupCameraFallback groupCameraFallback = EGroupCameraFallback::FOLDER;
+
   bool allowSingleView = false;
 
   po::options_description allParams("AliceVision cameraInit");
@@ -165,10 +210,12 @@ int main(int argc, char **argv)
       "Intrinsics Kmatrix \"f;0;ppx;0;f;ppy;0;0;1\".")
     ("defaultCameraModel", po::value<std::string>(&defaultCameraModelName)->default_value(defaultCameraModelName),
       "Camera model type (pinhole, radial1, radial3, brown, fisheye4, fisheye1).")
-    ("groupCameraModel", po::value<int>(&groupCameraModel)->default_value(groupCameraModel),
-      "* 0: each view have its own camera intrinsic parameters\n"
-      "* 1: view share camera intrinsic parameters based on metadata, if no metadata each view has its own camera intrinsic parameters\n"
-      "* 2: view share camera intrinsic parameters based on metadata, if no metadata they are grouped by folder\n")
+    ("groupCameraFallback", po::value<EGroupCameraFallback>(&groupCameraFallback)->default_value(groupCameraFallback),
+      std::string("When there is no serial number in the image metadata, we cannot know if the images come from the same camera. "
+      "This is problematic for grouping images sharing the same internal camera settings and we have to decide on a fallback strategy:\n"
+      " * " + EGroupCameraFallback_enumToString(EGroupCameraFallback::GLOBAL) + ": all images may come from a single device (make/model/focal will still be a differentiator).\n"
+      " * " + EGroupCameraFallback_enumToString(EGroupCameraFallback::FOLDER) + ": different folders will be considered as different devices\n"
+      " * " + EGroupCameraFallback_enumToString(EGroupCameraFallback::IMAGE) + ": consider that each image has different internal camera parameters").c_str())
     ("allowSingleView", po::value<bool>(&allowSingleView)->default_value(allowSingleView),
       "Allow the program to process a single view.\n"
       "Warning: if a single view is process, the output file can't be use in many other programs.");
@@ -542,16 +589,21 @@ int main(int argc, char **argv)
         }
 
         // To avoid stopping the process, we fallback to a solution selected by the user:
-        if(groupCameraModel == 2)
+        if(groupCameraFallback == EGroupCameraFallback::FOLDER)
         {
-          // when we have no metadata at all, we create one intrinsic group per folder.
-          // the use case is images extracted from a video without metadata and assumes fixed intrinsics in the video.
+          // when we don't have a serial number, the folder will become part of the device ID.
+          // This means that 2 images in different folder will NOT share intrinsics.
           intrinsic->setSerialNumber(fs::path(view.getImagePath()).parent_path().string());
         }
-        else
+        else if(groupCameraFallback == EGroupCameraFallback::IMAGE)
         {
-          // if no metadata, each view has its own camera intrinsic parameters
-          intrinsic->setSerialNumber(std::to_string(std::rand()));
+          // if no serial number, each view will get its own camera intrinsic parameters.
+          intrinsic->setSerialNumber(view.getImagePath());
+        }
+        else if(groupCameraFallback == EGroupCameraFallback::GLOBAL)
+        {
+          // if no serial number, images with the same make/model/focal or no make/model/focal
+          // will be considered as a single group of camera intrinsics.
         }
 
         if(!make.empty() || !model.empty())
@@ -569,7 +621,7 @@ int main(int argc, char **argv)
       }
 
       // If we have not managed to initialize the focal length, we need to use the
-      if(intrinsic->getFocalLengthPix() <= 0)
+      if(intrinsic->getFocalLengthPix() <= 0 && focalLengthmm > 0)
       {
         intrinsic->setSerialNumber(intrinsic->serialNumber() + "_FocalLengthMM_" + std::to_string(focalLengthmm));
       }
@@ -580,12 +632,6 @@ int main(int argc, char **argv)
     if(intrinsicId == UndefinedIndexT)
     {
       intrinsicId = intrinsic->hashValue();
-    }
-
-    if(groupCameraModel == 0)
-    {
-      // Force one single intrinsic per view without taking metadata information into account
-      intrinsicId = std::rand(); // random number
     }
 
     #pragma omp critical
