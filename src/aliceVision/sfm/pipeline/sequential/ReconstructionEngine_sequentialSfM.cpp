@@ -632,8 +632,8 @@ bool ReconstructionEngine_sequentialSfM::bundleAdjustment(std::set<IndexT>& newR
     const std::size_t nbRefinedPoses = _localStrategyGraph->getNbPosesPerState(BundleAdjustment::EParameterState::REFINED);
     const std::size_t nbConstantPoses = _localStrategyGraph->getNbPosesPerState(BundleAdjustment::EParameterState::CONSTANT);
 
-    // restore the Dense linear solver type if the number of cameras in the solver is <= 100
-    if(nbRefinedPoses + nbConstantPoses <= 100)
+    // restore the Dense linear solver type if the number of cameras in the solver is <= 20
+    if(nbRefinedPoses + nbConstantPoses <= 20)
       options.setDenseBA();
 
     // parameters are refined only if the number of cameras to refine is > to the number of newly added cameras.
