@@ -7,7 +7,7 @@
 #pragma once
 
 #define ALICEVISION_VERSION_MAJOR 2
-#define ALICEVISION_VERSION_MINOR 0
+#define ALICEVISION_VERSION_MINOR 1
 #define ALICEVISION_VERSION_REVISION 0
 
 // Preprocessor to string conversion
