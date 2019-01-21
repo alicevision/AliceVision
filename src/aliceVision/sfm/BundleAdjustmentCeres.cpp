@@ -388,7 +388,11 @@ void BundleAdjustmentCeres::addIntrinsicsToProblem(const sfmData::SfMData& sfmDa
   {
     const IndexT intrinsicId = intrinsicPair.first;
     const auto& intrinsicPtr = intrinsicPair.second;
-    const std::size_t usageCount = intrinsicsUsage.at(intrinsicId);
+    const auto usageIt = intrinsicsUsage.find(intrinsicId);
+    if(usageIt == intrinsicsUsage.end())
+      // if the intrinsic is never referenced by any view, skip it
+      continue;
+    const std::size_t usageCount = usageIt->second;
 
     // do not refine an intrinsic does not used by any reconstructed view
     if(usageCount <= 0 || getIntrinsicState(intrinsicId) == EParameterState::IGNORED)
