@@ -87,9 +87,6 @@ MultiViewParams::MultiViewParams(const sfmData::SfMData& sfmData,
           ++i;
         }
 
-        if(getNbCameras() <= 0)
-            throw std::runtime_error("No defined camera found.");
-
         ALICEVISION_LOG_INFO("Found " << dimensions.size() << " image dimension(s): ");
         for(const auto& dim : dimensions)
             ALICEVISION_LOG_INFO("\t- [" << dim.first << "x" << dim.second << "]");
