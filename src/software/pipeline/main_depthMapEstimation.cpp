@@ -68,6 +68,9 @@ int main(int argc, char* argv[])
     // intermediate results
     bool exportIntermediateResults = false;
 
+    // number of GPUs to use (0 means use all GPUs)
+    int nbGPUs = 0;
+
     po::options_description allParams("AliceVision depthMapEstimation\n"
                                       "Estimate depth map for each input image");
 
@@ -119,7 +122,9 @@ int main(int argc, char* argv[])
         ("refineUseTcOrRcPixSize", po::value<bool>(&refineUseTcOrRcPixSize)->default_value(refineUseTcOrRcPixSize),
             "Refine: Use current camera pixel size or minimum pixel size of neighbour cameras.")
         ("exportIntermediateResults", po::value<bool>(&exportIntermediateResults)->default_value(exportIntermediateResults),
-            "Export intermediate results from the SGM and Refine steps");
+            "Export intermediate results from the SGM and Refine steps.")
+        ("nbGPUs", po::value<int>(&nbGPUs)->default_value(nbGPUs),
+            "Number of GPUs to use (0 means use all GPUs).");
 
     po::options_description logParams("Log parameters");
     logParams.add_options()
@@ -239,7 +244,7 @@ int main(int argc, char* argv[])
 
     ALICEVISION_LOG_INFO("Create depth maps.");
 
-    depthMap::estimateAndRefineDepthMaps(&mp, cams);
+    depthMap::estimateAndRefineDepthMaps(&mp, cams, nbGPUs);
 
     ALICEVISION_LOG_INFO("Task done in (s): " + std::to_string(timer.elapsed()));
     return EXIT_SUCCESS;

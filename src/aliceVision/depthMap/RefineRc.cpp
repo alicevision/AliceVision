@@ -287,17 +287,16 @@ void RefineRc::writeDepthMap()
   _depthSimMapOpt->save(_rc, _refineTCams);
 }
 
-void estimateAndRefineDepthMaps(mvsUtils::MultiViewParams* mp, const std::vector<int>& cams)
+void estimateAndRefineDepthMaps(mvsUtils::MultiViewParams* mp, const std::vector<int>& cams, int nbGPUs)
 {
   const int numGpus = listCUDADevices(true);
   const int numCpuThreads = omp_get_num_procs();
-  const int numGpusToUse = mp->userParams.get<int>("refineRc.num_gpus_to_use", 0);
   int numThreads = std::min(numGpus, numCpuThreads);
 
   ALICEVISION_LOG_INFO("# GPU devices: " << numGpus << ", # CPU threads: " << numCpuThreads);
 
-  if(numGpusToUse > 0)
-      numThreads = numGpusToUse;
+  if(nbGPUs > 0)
+      numThreads = nbGPUs;
 
   if(numThreads == 1)
   {
