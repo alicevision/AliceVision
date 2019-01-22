@@ -28,7 +28,6 @@ Matrix3x4 load3x4MatrixFromFile(FILE* fi);
 void memcpyRGBImageFromFileToArr(int camId, Color* imgArr, const std::string& fileNameOrigStr, const MultiViewParams* mp,
                                  int bandType);
 
-bool getDepthMapInfo(int rc, const MultiViewParams* mp, float& minDepth, float& maxDepth);
 bool DeleteDirectory(const std::string& sPath);
 
 } // namespace mvsUtils

@@ -405,20 +405,18 @@ void DepthSimMap::save(int rc, const StaticVector<int>& tcams)
     metadata.push_back(oiio::ParamValue("AliceVision:iCamArr", oiio::TypeDesc(oiio::TypeDesc::DOUBLE, oiio::TypeDesc::MATRIX33), 1, mp->iCamArr[rc].m));
 
     {
-        std::vector<double> matrixP = mp->getOriginalP(rc);
-        metadata.push_back(oiio::ParamValue("AliceVision:P", oiio::TypeDesc(oiio::TypeDesc::DOUBLE, oiio::TypeDesc::MATRIX44), 1, matrixP.data()));
+      const Point2d maxMinDepth = getMaxMinDepth();
+      metadata.push_back(oiio::ParamValue("AliceVision:minDepth", static_cast<float>(maxMinDepth.y)));
+      metadata.push_back(oiio::ParamValue("AliceVision:maxDepth", static_cast<float>(maxMinDepth.x)));
+    }
+
+    {
+      std::vector<double> matrixP = mp->getOriginalP(rc);
+      metadata.push_back(oiio::ParamValue("AliceVision:P", oiio::TypeDesc(oiio::TypeDesc::DOUBLE, oiio::TypeDesc::MATRIX44), 1, matrixP.data()));
     }
 
     imageIO::writeImage(getFileNameFromIndex(mp, rc, mvsUtils::EFileType::depthMap, scale), width, height, depthMap->getDataWritable(), imageIO::EImageQuality::LOSSLESS, metadata);
     imageIO::writeImage(getFileNameFromIndex(mp, rc, mvsUtils::EFileType::simMap, scale), width, height, simMap->getDataWritable());
-
-    {
-        // TODO: write max & min depth in depth maps metadata.
-        Point2d maxMinDepth = getMaxMinDepth();
-        FILE* f = mv_openFile(mp, rc, mvsUtils::EFileType::depthMapInfo, "w");
-        fprintf(f, "minDepth %f, maxDepth %f", maxMinDepth.y, maxMinDepth.x);
-        fclose(f);
-    }
 }
 
 void DepthSimMap::load(int rc, int fromScale)
@@ -456,6 +454,12 @@ void DepthSimMap::saveRefine(int rc, std::string depthMapFileName, std::string s
     metadata.push_back(oiio::ParamValue("AliceVision:downscale", mp->getDownscaleFactor(rc)));
     metadata.push_back(oiio::ParamValue("AliceVision:CArr", oiio::TypeDesc(oiio::TypeDesc::DOUBLE, oiio::TypeDesc::VEC3), 1, mp->CArr[rc].m));
     metadata.push_back(oiio::ParamValue("AliceVision:iCamArr", oiio::TypeDesc(oiio::TypeDesc::DOUBLE, oiio::TypeDesc::MATRIX33), 1, mp->iCamArr[rc].m));
+
+    {
+      const Point2d maxMinDepth = getMaxMinDepth();
+      metadata.push_back(oiio::ParamValue("AliceVision:minDepth", static_cast<float>(maxMinDepth.y)));
+      metadata.push_back(oiio::ParamValue("AliceVision:maxDepth", static_cast<float>(maxMinDepth.x)));
+    }
 
     {
         std::vector<double> matrixP = mp->getOriginalP(rc);

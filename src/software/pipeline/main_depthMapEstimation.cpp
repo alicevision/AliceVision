@@ -55,15 +55,21 @@ int main(int argc, char* argv[])
     double sgmGammaP = 8.0;
 
     // refineRc
+    int refineMaxTCams = 6;
     int refineNSamplesHalf = 150;
     int refineNDepthsToRefine = 31;
     int refineNiters = 100;
     int refineWSH = 3;
-    int refineMaxTCams = 6;
     double refineSigma = 15.0;
     double refineGammaC = 15.5;
     double refineGammaP = 8.0;
     bool refineUseTcOrRcPixSize = false;
+
+    // intermediate results
+    bool exportIntermediateResults = false;
+
+    // number of GPUs to use (0 means use all GPUs)
+    int nbGPUs = 0;
 
     po::options_description allParams("AliceVision depthMapEstimation\n"
                                       "Estimate depth map for each input image");
@@ -97,6 +103,8 @@ int main(int argc, char* argv[])
             "Semi Global Matching: GammaC threshold.")
         ("sgmGammaP", po::value<double>(&sgmGammaP)->default_value(sgmGammaP),
             "Semi Global Matching: GammaP threshold.")
+        ("refineMaxTCams", po::value<int>(&refineMaxTCams)->default_value(refineMaxTCams),
+            "Refine: Number of neighbour cameras.")
         ("refineNSamplesHalf", po::value<int>(&refineNSamplesHalf)->default_value(refineNSamplesHalf),
             "Refine: Number of samples.")
         ("refineNDepthsToRefine", po::value<int>(&refineNDepthsToRefine)->default_value(refineNDepthsToRefine),
@@ -105,8 +113,6 @@ int main(int argc, char* argv[])
             "Refine: Number of iterations.")
         ("refineWSH", po::value<int>(&refineWSH)->default_value(refineWSH),
             "Refine: Size of the patch used to compute the similarity.")
-        ("refineMaxTCams", po::value<int>(&refineMaxTCams)->default_value(refineMaxTCams),
-            "Refine: Number of neighbour cameras.")
         ("refineSigma", po::value<double>(&refineSigma)->default_value(refineSigma),
             "Refine: Sigma threshold.")
         ("refineGammaC", po::value<double>(&refineGammaC)->default_value(refineGammaC),
@@ -114,7 +120,11 @@ int main(int argc, char* argv[])
         ("refineGammaP", po::value<double>(&refineGammaP)->default_value(refineGammaP),
             "Refine: GammaP threshold.")
         ("refineUseTcOrRcPixSize", po::value<bool>(&refineUseTcOrRcPixSize)->default_value(refineUseTcOrRcPixSize),
-            "Refine: Use current camera pixel size or minimum pixel size of neighbour cameras.");
+            "Refine: Use current camera pixel size or minimum pixel size of neighbour cameras.")
+        ("exportIntermediateResults", po::value<bool>(&exportIntermediateResults)->default_value(exportIntermediateResults),
+            "Export intermediate results from the SGM and Refine steps.")
+        ("nbGPUs", po::value<int>(&nbGPUs)->default_value(nbGPUs),
+            "Number of GPUs to use (0 means use all GPUs).");
 
     po::options_description logParams("Log parameters");
     logParams.add_options()
@@ -196,17 +206,20 @@ int main(int argc, char* argv[])
     mp.userParams.put("semiGlobalMatching.gammaP", sgmGammaP);
 
     // refineRc
+    mp.userParams.put("refineRc.maxTCams", refineMaxTCams);
     mp.userParams.put("refineRc.nSamplesHalf", refineNSamplesHalf);
     mp.userParams.put("refineRc.ndepthsToRefine", refineNDepthsToRefine);
     mp.userParams.put("refineRc.niters", refineNiters);
     mp.userParams.put("refineRc.wsh", refineWSH);
-    mp.userParams.put("refineRc.maxTCams", refineMaxTCams);
     mp.userParams.put("refineRc.sigma", refineSigma);
     mp.userParams.put("refineRc.gammaC", refineGammaC);
     mp.userParams.put("refineRc.gammaP", refineGammaP);
     mp.userParams.put("refineRc.useTcOrRcPixSize", refineUseTcOrRcPixSize);
 
-    StaticVector<int> cams;
+    // intermediate results
+    mp.userParams.put("depthMap.intermediateResults", exportIntermediateResults);
+
+    std::vector<int> cams;
     cams.reserve(mp.ncams);
     if(rangeSize == -1)
     {
@@ -231,10 +244,7 @@ int main(int argc, char* argv[])
 
     ALICEVISION_LOG_INFO("Create depth maps.");
 
-    {
-      depthMap::computeDepthMapsPSSGM(&mp, cams);
-      depthMap::refineDepthMaps(&mp, cams);
-    }
+    depthMap::estimateAndRefineDepthMaps(&mp, cams, nbGPUs);
 
     ALICEVISION_LOG_INFO("Task done in (s): " + std::to_string(timer.elapsed()));
     return EXIT_SUCCESS;

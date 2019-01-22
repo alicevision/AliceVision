@@ -623,8 +623,15 @@ StaticVector<int> MultiViewParams::findCamsWhichIntersectsHexahedron(const Point
     tcams.reserve(getNbCameras());
     for(int rc = 0; rc < getNbCameras(); rc++)
     {
-        float minDepth, maxDepth;
-        if(getDepthMapInfo(rc, this, minDepth, maxDepth))
+        oiio::ParamValueList metadata;
+        imageIO::readImageMetadata(getImagePath(rc), metadata);
+
+        const float minDepth = metadata.get_float("AliceVision:minDepth", -1);
+        const float maxDepth = metadata.get_float("AliceVision:maxDepth", -1);
+
+        if(minDepth == -1 && maxDepth == -1)
+          throw std::runtime_error(std::string("Cannot find min / max depth metadata in image: ") + getImagePath(rc));
+
         {
             Point3d rchex[8];
             getCamHexahedron(CArr.at(rc), iCamArr.at(rc), getWidth(rc), getHeight(rc), minDepth, maxDepth, rchex);

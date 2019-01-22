@@ -22,8 +22,7 @@ public:
     mvsUtils::MultiViewParams* mp;
     RcTc* prt;
     PlaneSweepingCuda& cps;
-    bool visualizeDepthMaps;
-    bool visualizePartialDepthMaps;
+    bool exportIntermediateResults;
     bool doSmooth;
     // int   s_wsh;
     // float s_gammaC;
@@ -47,7 +46,6 @@ public:
     bool saveDepthsToSweepToTxtForVis;
     int modalsMapDistLimit;
     int minNumOfConsistentCams;
-    int minObjectThickness;
     float maxTcRcPixSizeInVoxRatio;
     int nSGGCIters;
     bool doSGMoptimizeVolume;
