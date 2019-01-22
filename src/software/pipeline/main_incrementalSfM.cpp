@@ -90,7 +90,7 @@ int main(int argc, char **argv)
   double maxReprojectionError = 4.0;
   float minAngleInitialPair = 5.0f;
   float maxAngleInitialPair = 40.0f;
-  bool refineIntrinsics = true;
+  bool lockAllIntrinsics = false;
   bool useLocalBundleAdjustment = false;
   bool useOnlyMatchesFromInputFolder = false;
   bool useTrackFiltering = true;
@@ -148,8 +148,8 @@ int main(int argc, char **argv)
       "UID or filepath or filename of the first image.")
     ("initialPairB", po::value<std::string>(&initialPairString.second)->default_value(initialPairString.second),
       "UID or filepath or filename of the second image.")
-    ("refineIntrinsics", po::value<bool>(&refineIntrinsics)->default_value(refineIntrinsics),
-      "Refine intrinsic parameters.")
+    ("lockAllIntrinsics", po::value<bool>(&lockAllIntrinsics)->default_value(lockAllIntrinsics),
+      "Force lock of all camera intrinsic parameters, so they will not be refined during Bundle Adjustment.")
     ("useLocalBA,l", po::value<bool>(&useLocalBundleAdjustment)->default_value(useLocalBundleAdjustment),
       "Enable/Disable the Local bundle adjustment strategy.\n"
       "It reduces the reconstruction time, especially for big datasets (500+ images).")
@@ -266,7 +266,7 @@ int main(int argc, char **argv)
   sfmEngine.setMatches(&pairwiseMatches);
 
   // configure reconstruction parameters
-  sfmEngine.setFixedIntrinsics(!refineIntrinsics);
+  sfmEngine.setFixedIntrinsics(lockAllIntrinsics);
   sfmEngine.setMinInputTrackLength(minInputTrackLength);
   sfmEngine.setMinAngleForTriangulation(minAngleForTriangulation);
   sfmEngine.setMinAngleForLandmark(minAngleForLandmark);
