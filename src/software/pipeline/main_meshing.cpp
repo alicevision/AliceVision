@@ -98,7 +98,7 @@ int main(int argc, char* argv[])
     int maxPtsPerVoxel = 6000000;
     bool meshingFromDepthMaps = true;
     bool estimateSpaceFromSfM = true;
-    bool addLandmarksToTheDensePointCloud = true;
+    bool addLandmarksToTheDensePointCloud = false;
 
     fuseCut::FuseParams fuseParams;
 
@@ -137,7 +137,7 @@ int main(int argc, char* argv[])
         ("estimateSpaceFromSfM", po::value<bool>(&estimateSpaceFromSfM)->default_value(estimateSpaceFromSfM),
             "Estimate the 3d space from the SfM.")
         ("addLandmarksToTheDensePointCloud", po::value<bool>(&addLandmarksToTheDensePointCloud)->default_value(addLandmarksToTheDensePointCloud),
-            "Add SfM Landmarks to the dense point cloud.");
+            "Add SfM Landmarks into the dense point cloud (created from depth maps). If only the SfM is provided in input, SfM landmarks will be used regardless of this option.");
 
     po::options_description advancedParams("Advanced parameters");
     advancedParams.add_options()
@@ -212,11 +212,7 @@ int main(int argc, char* argv[])
          partitioningMode == ePartitioningSingleBlock)
       {
         meshingFromDepthMaps = false;
-        if(!addLandmarksToTheDensePointCloud)
-        {
-          ALICEVISION_LOG_ERROR("Cannot compute meshing from SfM if --addLandmarksToTheDensePointCloud is false.");
-          return EXIT_FAILURE;
-        }
+        addLandmarksToTheDensePointCloud = true;
       }
       else
       {
