@@ -18,7 +18,7 @@ public:
     RefineRc(int rc, int scale, int step, SemiGlobalMatchingParams* sp);
     ~RefineRc();
 
-    void preloadTcams_async();
+    void preloadSgmTcams_async();
 
     bool refinerc(bool checkIfExists = true);
 
