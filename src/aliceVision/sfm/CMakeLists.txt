@@ -23,7 +23,6 @@ set(sfm_files_headers
   LocalBundleAdjustmentGraph.hpp
   FrustumFilter.hpp
   ResidualErrorFunctor.hpp
-  colorizeTracks.hpp
   filters.hpp
   generateReport.hpp
   sfm.hpp
@@ -49,7 +48,6 @@ set(sfm_files_sources
   BundleAdjustmentCeres.cpp
   LocalBundleAdjustmentGraph.cpp
   FrustumFilter.cpp
-  colorizeTracks.cpp
   generateReport.cpp
   sfmFilters.cpp
   sfmTriangulation.cpp

@@ -6,8 +6,8 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include <aliceVision/sfmData/SfMData.hpp>
+#include <aliceVision/sfmData/colorize.hpp>
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
-#include <aliceVision/sfm/colorizeTracks.hpp>
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/cmdline.hpp>
 #include <aliceVision/config.hpp>
@@ -101,7 +101,7 @@ int main(int argc, char **argv)
   }
 
   // compute the scene structure color
-  if(!sfm::colorizeTracks(sfmData))
+  if(!sfmData::colorizeTracks(sfmData))
   {
     ALICEVISION_LOG_ERROR("Error while trying to colorize the tracks! Aborting...");
   }

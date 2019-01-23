@@ -5,7 +5,7 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
-#include "colorizeTracks.hpp"
+#include "colorize.hpp"
 #include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/stl/indexedSort.hpp>
 #include <aliceVision/stl/mapUtils.hpp>
@@ -17,9 +17,9 @@
 #include <vector>
 
 namespace aliceVision {
-namespace sfm {
+namespace sfmData {
 
-bool colorizeTracks(sfmData::SfMData& sfmData)
+bool colorizeTracks(SfMData& sfmData)
 {
   // colorize each track:
   // start with the most representative image
@@ -34,7 +34,7 @@ bool colorizeTracks(sfmData::SfMData& sfmData)
   // build a list of contiguous index for the trackIds
   std::map<IndexT, IndexT> trackIds_to_contiguousIndexes;
   IndexT cpt = 0;
-  for(sfmData::Landmarks::const_iterator it = sfmData.getLandmarks().begin(); it != sfmData.getLandmarks().end(); ++it, ++cpt)
+  for(Landmarks::const_iterator it = sfmData.getLandmarks().begin(); it != sfmData.getLandmarks().end(); ++it, ++cpt)
   {
     trackIds_to_contiguousIndexes[it->first] = cpt;
     vec_3dPoints[cpt] = it->second.X;
@@ -56,9 +56,9 @@ bool colorizeTracks(sfmData::SfMData& sfmData)
     for(std::set<IndexT>::const_iterator iterT = remainingTrackToColor.begin(); iterT != remainingTrackToColor.end(); ++iterT)
     {
       const std::size_t trackId = *iterT;
-      const sfmData::Observations& observations = sfmData.getLandmarks().at(trackId).observations;
+      const Observations& observations = sfmData.getLandmarks().at(trackId).observations;
 
-      for(sfmData::Observations::const_iterator iterObs = observations.begin(); iterObs != observations.end(); ++iterObs)
+      for(Observations::const_iterator iterObs = observations.begin(); iterObs != observations.end(); ++iterObs)
       {
         const size_t viewId = iterObs->first;
         if (map_IndexCardinal.find(viewId) == map_IndexCardinal.end())
@@ -82,7 +82,7 @@ bool colorizeTracks(sfmData::SfMData& sfmData)
     std::map<IndexT, IndexT>::const_iterator iterTT = map_IndexCardinal.begin();
     std::advance(iterTT, packet_vec[0].index);
     const std::size_t view_index = iterTT->first;
-    const sfmData::View * view = sfmData.getViews().at(view_index).get();
+    const View * view = sfmData.getViews().at(view_index).get();
     const std::string imagePath = view->getImagePath();
     image::Image<image::RGBColor> image;
     image::readImage(imagePath, image);
@@ -93,8 +93,8 @@ bool colorizeTracks(sfmData::SfMData& sfmData)
     for(std::set<IndexT>::const_iterator iterT = remainingTrackToColor.begin(); iterT != remainingTrackToColor.end(); ++iterT)
     {
       const std::size_t trackId = *iterT;
-      const sfmData::Observations& observations = sfmData.getLandmarks().at(trackId).observations;
-      sfmData::Observations::const_iterator it = observations.find(view_index);
+      const Observations& observations = sfmData.getLandmarks().at(trackId).observations;
+      Observations::const_iterator it = observations.find(view_index);
 
       if(it != observations.end())
       {
