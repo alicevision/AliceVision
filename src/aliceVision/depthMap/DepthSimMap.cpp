@@ -416,7 +416,7 @@ void DepthSimMap::save(int rc, const StaticVector<int>& tcams)
     }
 
     imageIO::writeImage(getFileNameFromIndex(mp, rc, mvsUtils::EFileType::depthMap, scale), width, height, depthMap->getDataWritable(), imageIO::EImageQuality::LOSSLESS, metadata);
-    imageIO::writeImage(getFileNameFromIndex(mp, rc, mvsUtils::EFileType::simMap, scale), width, height, simMap->getDataWritable());
+    imageIO::writeImage(getFileNameFromIndex(mp, rc, mvsUtils::EFileType::simMap, scale), width, height, simMap->getDataWritable(), imageIO::EImageQuality::OPTIMIZED, metadata);
 }
 
 void DepthSimMap::load(int rc, int fromScale)
@@ -467,7 +467,7 @@ void DepthSimMap::saveRefine(int rc, std::string depthMapFileName, std::string s
     }
 
     imageIO::writeImage(depthMapFileName, width, height, depthMap, imageIO::EImageQuality::LOSSLESS, metadata);
-    imageIO::writeImage(simMapFileName, width, height, simMap);
+    imageIO::writeImage(simMapFileName, width, height, simMap, imageIO::EImageQuality::OPTIMIZED, metadata);
 }
 
 float DepthSimMap::getCellSmoothStep(int rc, const int cellId)
