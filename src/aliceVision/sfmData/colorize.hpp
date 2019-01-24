@@ -14,7 +14,7 @@ class SfMData;
 
 /**
  * @brief colorizeTracks Add the associated color to each 3D point of
- * the sfm_data, using the track to determine the best view from which
+ * the sfmData, using the track to determine the best view from which
  * to get the color.
  * @param[in,out] sfmData The container of the data
  * @return true if everything went well

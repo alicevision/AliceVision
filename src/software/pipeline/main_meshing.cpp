@@ -25,8 +25,8 @@
 
 // These constants define the current software version.
 // They must be updated when the command line is changed.
-#define ALICEVISION_SOFTWARE_VERSION_MAJOR 2
-#define ALICEVISION_SOFTWARE_VERSION_MINOR 1
+#define ALICEVISION_SOFTWARE_VERSION_MAJOR 3
+#define ALICEVISION_SOFTWARE_VERSION_MINOR 0
 
 using namespace aliceVision;
 
@@ -121,6 +121,7 @@ int main(int argc, char* argv[])
     std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
     std::string sfmDataFilename;
     std::string outputMesh;
+    std::string outputDensePointCloud;
     std::string depthMapsFolder;
     std::string depthMapsFilterFolder;
     EPartitioningMode partitioningMode = ePartitioningSingleBlock;
@@ -133,7 +134,6 @@ int main(int argc, char* argv[])
     bool estimateSpaceFromSfM = true;
     bool addLandmarksToTheDensePointCloud = false;
     bool saveRawDensePointCloud = false;
-    bool saveFilteredDensePointCloud = false;
 
     fuseCut::FuseParams fuseParams;
 
@@ -143,8 +143,10 @@ int main(int argc, char* argv[])
     requiredParams.add_options()
         ("input,i", po::value<std::string>(&sfmDataFilename)->required(),
           "SfMData file.")
-        ("output,o", po::value<std::string>(&outputMesh)->required(),
-            "Output mesh (OBJ file format).");
+        ("output,o", po::value<std::string>(&outputDensePointCloud)->required(),
+          "Output Dense SfMData file.")
+        ("outputMesh,o", po::value<std::string>(&outputMesh)->required(),
+          "Output mesh (OBJ file format).");
 
     po::options_description optionalParams("Optional parameters");
     optionalParams.add_options()
@@ -199,9 +201,7 @@ int main(int argc, char* argv[])
         ("refineFuse", po::value<bool>(&fuseParams.refineFuse)->default_value(fuseParams.refineFuse),
             "refineFuse")
         ("saveRawDensePointCloud", po::value<bool>(&saveRawDensePointCloud)->default_value(saveRawDensePointCloud),
-            "Save dense point cloud before cut and filtering.")
-        ("saveFilteredDensePointCloud", po::value<bool>(&saveFilteredDensePointCloud)->default_value(saveFilteredDensePointCloud),
-            "Save dense point cloud after cut and filtering.");
+            "Save dense point cloud before cut and filtering.");
 
     po::options_description logParams("Log parameters");
     logParams.add_options()
@@ -480,7 +480,7 @@ int main(int argc, char* argv[])
                     {
                       ALICEVISION_LOG_INFO("Save dense point cloud before cut and filtering.");
                       StaticVector<StaticVector<int>*>* ptsCams = delaunayGC.createPtsCams();
-                      exportPointCloud((outDirectory/"densePointCloud.abc").string(), mp, sfmData, delaunayGC._verticesCoords, *ptsCams);
+                      exportPointCloud((outDirectory/"densePointCloud_raw.abc").string(), mp, sfmData, delaunayGC._verticesCoords, *ptsCams);
                       deleteArrayOfArrays<int>(&ptsCams);
                     }
 
@@ -497,18 +497,16 @@ int main(int argc, char* argv[])
                     StaticVector<Point3d>* hexahsToExcludeFromResultingMesh = nullptr;
                     mesh::meshPostProcessing(mesh, ptsCams, mp, outDirectory.string()+"/", hexahsToExcludeFromResultingMesh, &hexah[0]);
 
-                    if(saveFilteredDensePointCloud)
-                    {
-                      ALICEVISION_LOG_INFO("Save dense point cloud after cut and filtering.");
-                      exportPointCloud((outDirectory/"densePointCloud_filtered.abc").string(), mp, sfmData, mesh->pts->getData(), *ptsCams);
-                    }
+                    ALICEVISION_LOG_INFO("Save dense point cloud.");
+                    exportPointCloud(outputDensePointCloud, mp, sfmData, mesh->pts->getData(), *ptsCams);
 
-                    mesh->saveToBin((outDirectory/"denseReconstruction.bin").string());
+                    //mesh->saveToBin((outDirectory/"denseReconstruction.bin").string());
 
-                    saveArrayOfArraysToFile<int>((outDirectory/"meshPtsCamsFromDGC.bin").string(), ptsCams);
+                    //saveArrayOfArraysToFile<int>((outDirectory/"meshPtsCamsFromDGC.bin").string(), ptsCams);
                     deleteArrayOfArrays<int>(&ptsCams);
                     delete voxels;
 
+                    ALICEVISION_LOG_INFO("Save obj mesh file.");
                     mesh->saveToObj(outputMesh);
 
                     delete mesh;
