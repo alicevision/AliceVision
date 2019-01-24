@@ -715,12 +715,17 @@ void ReconstructionEngine_sequentialSfM::exportStatistics(double reconstructionT
   // residual histogram
   Histogram<double> residualHistogram;
   computeResidualsHistogram(&residualHistogram);
-  ALICEVISION_LOG_INFO("Histogram of residuals:" << residualHistogram.ToString());
+  ALICEVISION_LOG_INFO("Histogram of residuals:" << residualHistogram.ToString("", 2));
 
   // tracks lengths histogram
-  Histogram<double> tracksLengthHistogram;
-  computeTracksLengthsHistogram(&tracksLengthHistogram);
-  ALICEVISION_LOG_INFO("Histogram of tracks length:" << tracksLengthHistogram.ToString());
+  Histogram<double> observationsLengthHistogram;
+  computeObservationsLengthsHistogram(&observationsLengthHistogram);
+  ALICEVISION_LOG_INFO("Histogram of observations length:" << observationsLengthHistogram.ToString("", 6));
+
+  // nb landmarks per view histogram
+  Histogram<double> landmarksPerViewHistogram;
+  computeLandmarksPerViewHistogram(&landmarksPerViewHistogram);
+  ALICEVISION_LOG_INFO("Histogram of nb landmarks per view:" << landmarksPerViewHistogram.ToString<int>("", 3));
 
   // html log file
   if(!_htmlLogFile.empty())
@@ -746,8 +751,8 @@ void ReconstructionEngine_sequentialSfM::exportStatistics(double reconstructionT
     const std::vector<double> xBin = residualHistogram.GetXbinsValue();
     _htmlDocStream->pushXYChart(xBin, residualHistogram.GetHist(),"3DtoImageResiduals");
 
-    const std::vector<double> xBinTracks = tracksLengthHistogram.GetXbinsValue();
-    _htmlDocStream->pushXYChart(xBinTracks, tracksLengthHistogram.GetHist(),"3DtoTracksSize");
+    const std::vector<double> xBinTracks = observationsLengthHistogram.GetXbinsValue();
+    _htmlDocStream->pushXYChart(xBinTracks, observationsLengthHistogram.GetHist(),"3DtoTracksSize");
 
     // save the reconstruction Log
     std::ofstream htmlFileStream(_htmlLogFile.c_str());
@@ -1334,7 +1339,7 @@ double ReconstructionEngine_sequentialSfM::computeResidualsHistogram(Histogram<d
     return -1.0;
   
   // Collect residuals for each observation
-  std::vector<float> vec_residuals;
+  std::vector<double> vec_residuals;
   vec_residuals.reserve(_sfmData.structure.size());
   for(const auto &track : _sfmData.getLandmarks())
   {
@@ -1352,15 +1357,15 @@ double ReconstructionEngine_sequentialSfM::computeResidualsHistogram(Histogram<d
   
   assert(!vec_residuals.empty());
 
-  MinMaxMeanMedian<float> stats(vec_residuals.begin(), vec_residuals.end());
+  MinMaxMeanMedian<double> stats(vec_residuals.begin(), vec_residuals.end());
   
   if (histo)  {
-    *histo = Histogram<double>(stats.min, stats.max, 10);
+    *histo = Histogram<double>(0.0, std::ceil(stats.max), std::ceil(stats.max)*2);
     histo->Add(vec_residuals.begin(), vec_residuals.end());
   }
 
   ALICEVISION_LOG_DEBUG("ReconstructionEngine_sequentialSfM::ComputeResidualsMSE." << std::endl
-    << "\t- #Tracks: " << _sfmData.getLandmarks().size() << std::endl
+    << "\t- # Landmarks: " << _sfmData.getLandmarks().size() << std::endl
     << "\t- Residual min: " << stats.min << std::endl
     << "\t- Residual median: " << stats.median << std::endl
     << "\t- Residual max: "  << stats.max << std::endl
@@ -1369,36 +1374,80 @@ double ReconstructionEngine_sequentialSfM::computeResidualsHistogram(Histogram<d
   return stats.mean;
 }
 
-double ReconstructionEngine_sequentialSfM::computeTracksLengthsHistogram(Histogram<double> * histo) const
+double ReconstructionEngine_sequentialSfM::computeObservationsLengthsHistogram(Histogram<double> * histo) const
 {
   if (_sfmData.getLandmarks().empty())
     return -1.0;
   
   // Collect tracks size: number of 2D observations per 3D points
-  std::vector<float> vec_nbTracks;
-  vec_nbTracks.reserve(_sfmData.getLandmarks().size());
+  std::vector<double> nbObservations;
+  int overallNbObservations = 0;
+  nbObservations.reserve(_sfmData.getLandmarks().size());
   
   for(const auto &track : _sfmData.getLandmarks())
   {
     const Observations & observations = track.second.observations;
-    vec_nbTracks.push_back(observations.size());
+    nbObservations.push_back(observations.size());
+    overallNbObservations += observations.size();
   }
   
-  assert(!vec_nbTracks.empty());
+  assert(!nbObservations.empty());
 
-  MinMaxMeanMedian<float> stats(vec_nbTracks.begin(), vec_nbTracks.end());
+  MinMaxMeanMedian<double> stats(nbObservations.begin(), nbObservations.end());
 
   if (histo)
   {
     *histo = Histogram<double>(stats.min, stats.max + 1, stats.max - stats.min + 1);
-    histo->Add(vec_nbTracks.begin(), vec_nbTracks.end());
+    histo->Add(nbObservations.begin(), nbObservations.end());
   }
 
-  ALICEVISION_LOG_INFO("# tracks: " << _sfmData.getLandmarks().size());
-  ALICEVISION_LOG_INFO("Tracks Length min: " << stats.min);
-  ALICEVISION_LOG_INFO("Tracks Length median: " << stats.median);
-  ALICEVISION_LOG_INFO("Tracks Length max: "  << stats.max);
-  ALICEVISION_LOG_INFO("Tracks Length mean: " << stats.mean);
+  ALICEVISION_LOG_INFO("# landmarks: " << _sfmData.getLandmarks().size());
+  ALICEVISION_LOG_INFO("# overall observations: " << overallNbObservations);
+  ALICEVISION_LOG_INFO("Landmarks observations length min: " << stats.min << ", mean: " << stats.mean << ", median: " << stats.median << ", max: "  << stats.max);
+
+  return stats.mean;
+}
+
+double ReconstructionEngine_sequentialSfM::computeLandmarksPerViewHistogram(Histogram<double> * histo) const
+{
+  if (_sfmData.getLandmarks().empty())
+    return -1.0;
+
+  // Collect tracks size: number of 2D observations per 3D points
+  std::vector<int> nbLandmarksPerView;
+  nbLandmarksPerView.reserve(_sfmData.getViews().size());
+
+  std::set<std::size_t> landmarksId;
+  std::transform(_sfmData.getLandmarks().begin(), _sfmData.getLandmarks().end(),
+    std::inserter(landmarksId, landmarksId.begin()),
+    stl::RetrieveKey());
+
+  for (const auto &viewIt : _sfmData.getViews())
+  {
+    const View & view = *viewIt.second;
+    if (!_sfmData.isPoseAndIntrinsicDefined(view.getViewId()))
+      continue;
+
+    aliceVision::track::TrackIdSet viewLandmarksIds;
+    {
+      const aliceVision::track::TrackIdSet& viewTracksIds = _map_tracksPerView.at(view.getViewId());
+      // Get the ids of the already reconstructed tracks
+      std::set_intersection(viewTracksIds.begin(), viewTracksIds.end(),
+        landmarksId.begin(), landmarksId.end(),
+        std::inserter(viewLandmarksIds, viewLandmarksIds.begin()));
+    }
+    nbLandmarksPerView.push_back(viewLandmarksIds.size());
+  }
+
+  MinMaxMeanMedian<double> stats(nbLandmarksPerView.begin(), nbLandmarksPerView.end());
+
+  if (histo)
+  {
+    *histo = Histogram<double>(stats.min, (stats.max + 1), 10);
+    histo->Add(nbLandmarksPerView.begin(), nbLandmarksPerView.end());
+  }
+
+  ALICEVISION_LOG_INFO("Landmarks per view min: " << stats.min << ", mean: " << stats.mean << ", median: " << stats.median << ", max: " << stats.max);
 
   return stats.mean;
 }
@@ -1438,13 +1487,13 @@ std::size_t ReconstructionEngine_sequentialSfM::computeCandidateImageScore(Index
  * C. Do the resectioning: compute the camera pose.
  * D. Refine the pose of the found camera
  */
-bool ReconstructionEngine_sequentialSfM::computeResection(const IndexT viewIndex, ResectionData& resectionData)
+bool ReconstructionEngine_sequentialSfM::computeResection(const IndexT viewId, ResectionData& resectionData)
 {
   using namespace track;
 
   // A. Compute 2D/3D matches
   // A1. list tracks ids used by the view
-  const aliceVision::track::TrackIdSet& set_tracksIds = _map_tracksPerView.at(viewIndex);
+  const aliceVision::track::TrackIdSet& set_tracksIds = _map_tracksPerView.at(viewId);
 
   // A2. intersects the track list with the reconstructed
   std::set<std::size_t> reconstructed_trackId;
@@ -1469,7 +1518,7 @@ bool ReconstructionEngine_sequentialSfM::computeResection(const IndexT viewIndex
   // These 2D/3D associations will be used for the resection.
   tracksUtilsMap::getFeatureIdInViewPerTrack(_map_tracks,
                                              resectionData.tracksId,
-                                             viewIndex,
+                                             viewId,
                                              &resectionData.featuresId);
   
   // Localize the image inside the SfM reconstruction
@@ -1478,7 +1527,7 @@ bool ReconstructionEngine_sequentialSfM::computeResection(const IndexT viewIndex
   resectionData.vec_descType.resize(resectionData.tracksId.size());
   
   // B. Look if intrinsic data is known or not
-  const View * view_I = _sfmData.getViews().at(viewIndex).get();
+  const View * view_I = _sfmData.getViews().at(viewId).get();
   resectionData.optionalIntrinsic = _sfmData.getIntrinsicsharedPtr(view_I->getIntrinsicId());
   
   std::size_t cpt = 0;
@@ -1489,12 +1538,12 @@ bool ReconstructionEngine_sequentialSfM::computeResection(const IndexT viewIndex
   {
     const feature::EImageDescriberType descType = iterfeatId->first;
     resectionData.pt3D.col(cpt) = _sfmData.getLandmarks().at(*iterTrackId).X;
-    resectionData.pt2D.col(cpt) = _featuresPerView->getFeatures(viewIndex, descType)[iterfeatId->second].coords().cast<double>();
+    resectionData.pt2D.col(cpt) = _featuresPerView->getFeatures(viewId, descType)[iterfeatId->second].coords().cast<double>();
     resectionData.vec_descType.at(cpt) = descType;
   }
   
   // C. Do the resectioning: compute the camera pose.
-  ALICEVISION_LOG_INFO("Robust Resection of view: " << viewIndex);
+  ALICEVISION_LOG_INFO("[" << _sfmData.getValidViews().size()+1 << "/" << _sfmData.getViews().size() << "] Robust Resection of view: " << viewId);
 
   const bool bResection = sfm::SfMLocalizer::Localize(
       Pair(view_I->getWidth(), view_I->getHeight()),
@@ -1508,7 +1557,7 @@ bool ReconstructionEngine_sequentialSfM::computeResection(const IndexT viewIndex
   {
     using namespace htmlDocument;
     std::ostringstream os;
-    os << "Robust resection of view " << viewIndex << ": <br>";
+    os << "Robust resection of view " << viewId << ": <br>";
     _htmlDocStream->pushInfo(htmlMarkup("h4",os.str()));
 
     os.str("");
@@ -1526,7 +1575,7 @@ bool ReconstructionEngine_sequentialSfM::computeResection(const IndexT viewIndex
   
   if (!bResection)
   {
-    ALICEVISION_LOG_INFO("Resection of view " << viewIndex << " failed.");
+    ALICEVISION_LOG_INFO("Resection of view " << viewId << " failed.");
     return false;
   }
 
@@ -1567,7 +1616,7 @@ bool ReconstructionEngine_sequentialSfM::computeResection(const IndexT viewIndex
       resectionData.optionalIntrinsic.get(), resectionData.pose,
       resectionData, true, resectionData.isNewIntrinsic || intrinsicsFirstUsage))
     {
-      ALICEVISION_LOG_INFO("Resection of view " << viewIndex << " failed during pose refinement.");
+      ALICEVISION_LOG_INFO("Resection of view " << viewId << " failed during pose refinement.");
       return false;
     }
   }

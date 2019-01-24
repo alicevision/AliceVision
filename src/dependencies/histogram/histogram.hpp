@@ -118,18 +118,19 @@ public:
   double GetEnd() const {return End;}
 
   // Text display of the histogram
-  std::string ToString(const std::string & sTitle = "") const
+  template<typename DTK = T, typename DTV = T>
+  std::string ToString(const std::string & sTitle = "", int precision = 3) const
   {
     std::ostringstream os;
     os << std::endl << sTitle << std::endl;
     const size_t n = freq.size();
     for (size_t i = 0; i < n; ++i)
     {
-       os << std::setprecision(3)
-          << Start + static_cast<float>(End-Start)/n*static_cast<float>(i)
-          << "\t|\t" << freq[i] << "\n";
+       os << std::setprecision(precision)
+          << DTK(Start + static_cast<float>(End-Start)/n*static_cast<float>(i))
+          << "\t|\t" << DTV(freq[i]) << "\n";
     }
-    os << std::setprecision(3) << End << std::endl;
+    os << std::setprecision(precision) << DTK(End) << std::endl;
     return os.str();
   }
 

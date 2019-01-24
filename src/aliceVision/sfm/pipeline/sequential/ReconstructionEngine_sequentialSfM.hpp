@@ -280,7 +280,14 @@ private:
    * @param[in] histogram
    * @return MSE
    */
-  double computeTracksLengthsHistogram(Histogram<double>* histogram) const;
+  double computeObservationsLengthsHistogram(Histogram<double>* histogram) const;
+
+  /**
+  * @brief Compute MSE (Mean Square Error) and a histogram of landmarks per view.
+  * @param[in] histogram
+  * @return MSE
+  */
+  double computeLandmarksPerViewHistogram(Histogram<double> * histo) const;
 
   /**
    * @brief Compute a score of the view for a subset of features. This is

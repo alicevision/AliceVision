@@ -234,8 +234,8 @@ void BundleAdjustmentCeres::Statistics::show() const
                         << "\t    - # constant: " << states[EParameter::INTRINSIC][EParameterState::CONSTANT] << "\n"
                         << "\t    - # ignored:  " << states[EParameter::INTRINSIC][EParameterState::IGNORED]  << "\n"
                         << "\t- # residual blocks: " << nbResidualBlocks << "\n"
-                        << "\t- # successful iterations:  " << nbSuccessfullIterations   << "\n"
-                        << "\t- # unsuccessful iterations:" << nbUnsuccessfullIterations << "\n"
+                        << "\t- # successful iterations: " << nbSuccessfullIterations   << "\n"
+                        << "\t- # unsuccessful iterations: " << nbUnsuccessfullIterations << "\n"
                         << "\t- initial RMSE: " << RMSEinitial << "\n"
                         << "\t- final   RMSE: " << RMSEfinal);
 }

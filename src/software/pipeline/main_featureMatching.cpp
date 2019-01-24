@@ -153,7 +153,7 @@ int main(int argc, char **argv)
       "* acransac: A-Contrario Ransac\n"
       "* loransac: LO-Ransac (only available for fundamental matrix). Need to set '--geometricError'")
     ("geometricError", po::value<double>(&geometricErrorMax)->default_value(geometricErrorMax), 
-          "Maximum matching error (in pixels) allowed for image matching with geometric verification. "
+          "Maximum error (in pixels) allowed for features matching during geometric verification. "
           "If set to 0 it lets the ACRansac select an optimal value.")
     ("savePutativeMatches", po::value<bool>(&savePutativeMatches)->default_value(savePutativeMatches),
       "Save putative matches.")
