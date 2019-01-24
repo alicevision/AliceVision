@@ -65,7 +65,7 @@ bool SfMLocalizer::Localize(const Pair& imageSize,
     KernelType kernel(resectionData.pt2D, imageSize.first, imageSize.second, resectionData.pt3D);
     // Robust estimation of the Projection matrix and its precision
     const std::pair<double,double> ACRansacOut =
-      aliceVision::robustEstimation::ACRANSAC(kernel, resectionData.vec_inliers, resectionData.max_iteration, &P, precision, true);
+      aliceVision::robustEstimation::ACRANSAC(kernel, resectionData.vec_inliers, resectionData.max_iteration, &P, precision);
     // Update the upper bound precision of the model found by AC-RANSAC
     resectionData.error_max = ACRansacOut.first;
   }
@@ -102,7 +102,7 @@ bool SfMLocalizer::Localize(const Pair& imageSize,
 
         // Robust estimation of the Projection matrix and its precision
         const std::pair<double, double> ACRansacOut =
-                aliceVision::robustEstimation::ACRANSAC(kernel, resectionData.vec_inliers, resectionData.max_iteration, &P, precision, true);
+                aliceVision::robustEstimation::ACRANSAC(kernel, resectionData.vec_inliers, resectionData.max_iteration, &P, precision);
         // Update the upper bound precision of the model found by AC-RANSAC
         resectionData.error_max = ACRansacOut.first;
         break;
