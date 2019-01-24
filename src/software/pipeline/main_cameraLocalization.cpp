@@ -264,8 +264,8 @@ int main(int argc, char** argv)
     return EXIT_FAILURE;
   }
   
-  if(!robustEstimation::checkRobustEstimator(matchingEstimator, matchingErrorMax) ||
-     !robustEstimation::checkRobustEstimator(resectionEstimator, resectionErrorMax))
+  if(!robustEstimation::adjustRobustEstimatorThreshold(matchingEstimator, matchingErrorMax, 4.0) ||
+     !robustEstimation::adjustRobustEstimatorThreshold(resectionEstimator, resectionErrorMax, 4.0))
   {
     return EXIT_FAILURE;
   }

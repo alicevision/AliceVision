@@ -209,7 +209,7 @@ int main(int argc, char **argv)
   }
 
   robustEstimation::ERobustEstimator geometricEstimator = robustEstimation::ERobustEstimator_stringToEnum(geometricEstimatorName);
-  if(!checkRobustEstimator(geometricEstimator, geometricErrorMax))
+  if(!adjustRobustEstimatorThreshold(geometricEstimator, geometricErrorMax, 20.0))
     return EXIT_FAILURE;
 
   ALICEVISION_COUT("Program called with the following parameters:");

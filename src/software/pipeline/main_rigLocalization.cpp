@@ -226,8 +226,8 @@ int main(int argc, char** argv)
     return EXIT_FAILURE;
   }
 
-  if(!checkRobustEstimator(matchingEstimator, matchingErrorMax) || 
-     !checkRobustEstimator(resectionEstimator, resectionErrorMax))
+  if(!adjustRobustEstimatorThreshold(matchingEstimator, matchingErrorMax, 4.0) ||
+     !adjustRobustEstimatorThreshold(resectionEstimator, resectionErrorMax, 4.0))
   {
     return EXIT_FAILURE;
   }
