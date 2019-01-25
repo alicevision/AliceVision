@@ -64,6 +64,19 @@ alicevision_add_software(aliceVision_exportPMVS
         ${Boost_LIBRARIES}
 )
 
+# Export point cloud
+alicevision_add_software(aliceVision_exportColoredPointCloud
+  SOURCE main_exportColoredPointCloud.cpp
+  FOLDER ${FOLDER_SOFTWARE_EXPORT}
+  LINKS aliceVision_system
+        aliceVision_image
+        aliceVision_feature
+        aliceVision_sfmData
+        aliceVision_sfmDataIO
+        aliceVision_mesh
+        ${Boost_LIBRARIES}
+)
+
 # Export a SfM aliceVision scene to MayaMVG
 if(ALICEVISION_HAVE_ALEMBIC) # maya can read alembic file
   alicevision_add_software(aliceVision_exportMeshroomMaya

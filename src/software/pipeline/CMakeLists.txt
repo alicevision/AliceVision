@@ -100,18 +100,6 @@ if(ALICEVISION_BUILD_SFM)
           ${Boost_LIBRARIES}
   )
 
-  # Compute structure color
-  alicevision_add_software(aliceVision_computeSfMColor
-    SOURCE main_computeSfMColor.cpp
-    FOLDER ${FOLDER_SOFTWARE_PIPELINE}
-    LINKS aliceVision_system
-          aliceVision_image
-          aliceVision_feature
-          aliceVision_sfmData
-          aliceVision_sfmDataIO
-          ${Boost_LIBRARIES}
-  )
-
   # Calibrate a camera
   if(ALICEVISION_HAVE_OPENCV)
     alicevision_add_software(aliceVision_cameraCalibration
