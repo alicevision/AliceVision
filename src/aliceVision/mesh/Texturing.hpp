@@ -108,12 +108,13 @@ public:
     void loadFromOBJ(const std::string& filename, bool flipNormals=false);
 
     /**
-     * @brief Load a mesh from a dense reconstruction.
+     * @brief Remap visibilities
      *
-     * @param meshFilepath the path to the .bin mesh file
-     * @param visibilitiesFilepath the path to the .bin points visibilities file
+     * @param[in] remappingMethod the remapping method
+     * @param[in] refMesh the reference mesh
+     * @param[in] refPointsVisibilities the reference visibilities
      */
-    void loadFromMeshing(const std::string& meshFilepath, const std::string& visibilitiesFilepath);
+    void remapVisibilities(EVisibilityRemappingMethod remappingMethod, const Mesh& refMesh, const mesh::PointsVisibility& refPointsVisibilities);
 
     /**
      * @brief Replace inner mesh with the mesh loaded from 'otherMeshPath'

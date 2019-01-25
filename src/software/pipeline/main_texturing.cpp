@@ -154,15 +154,12 @@ int main(int argc, char* argv[])
     mesh::Texturing mesh;
     mesh.texParams = texParams;
 
-    // load dense reconstruction
+    // load and remap mesh
     {
       mesh.clear();
 
       // load input obj file
       mesh.loadFromOBJ(inputMeshFilepath, flipNormals);
-
-      // allocate pointsVisibilities for new internal mesh
-      mesh.pointsVisibilities = new mesh::PointsVisibility();
 
       // load reference dense point cloud with visibilities
       mesh::Mesh refPoints;
@@ -185,13 +182,7 @@ int main(int argc, char* argv[])
         refPoints.pts->push_back(Point3d(landmark.X(0), landmark.X(1), landmark.X(2)));
       }
 
-      // remap visibilities from dense point cloud onto input mesh
-      if(texParams.visibilityRemappingMethod & mesh::EVisibilityRemappingMethod::Pull)
-          mesh::remapMeshVisibilities_pullVerticesVisibility(refPoints, *refVisibilities, *(mesh.me), *(mesh.pointsVisibilities));
-      if (texParams.visibilityRemappingMethod & mesh::EVisibilityRemappingMethod::Push)
-          mesh::remapMeshVisibilities_pushVerticesVisibilityToTriangles(refPoints, *refVisibilities, *(mesh.me), *(mesh.pointsVisibilities));
-      if(mesh.pointsVisibilities->empty())
-          throw std::runtime_error("No visibility after visibility remapping.");
+      mesh.remapVisibilities(texParams.visibilityRemappingMethod, refPoints, *refVisibilities);
 
       // delete visibilities
       deleteArrayOfArrays(&refVisibilities);
