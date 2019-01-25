@@ -6,6 +6,7 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "colorize.hpp"
+#include <aliceVision/alicevision_omp.hpp>
 #include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/stl/indexedSort.hpp>
 #include <aliceVision/stl/mapUtils.hpp>
@@ -15,108 +16,111 @@
 
 #include <map>
 #include <vector>
-
+#include <functional>
 namespace aliceVision {
 namespace sfmData {
 
-bool colorizeTracks(SfMData& sfmData)
+void colorizeTracks(SfMData& sfmData)
 {
-  // colorize each track:
-  // start with the most representative image
-  // and iterate to provide a color to each 3D point
-
-  std::vector<Vec3> vec_3dPoints;
-
   boost::progress_display progressBar(sfmData.getLandmarks().size(), std::cout, "\nCompute scene structure color\n");
 
-  vec_3dPoints.resize(sfmData.getLandmarks().size());
+  std::vector<std::reference_wrapper<Landmark>> remainingLandmarksToColor;
+  remainingLandmarksToColor.reserve(sfmData.getLandmarks().size());
 
-  // build a list of contiguous index for the trackIds
-  std::map<IndexT, IndexT> trackIds_to_contiguousIndexes;
-  IndexT cpt = 0;
-  for(Landmarks::const_iterator it = sfmData.getLandmarks().begin(); it != sfmData.getLandmarks().end(); ++it, ++cpt)
+  for(auto& landmarkPair : sfmData.getLandmarks())
+    remainingLandmarksToColor.push_back(landmarkPair.second);
+
+  struct ViewInfo
   {
-    trackIds_to_contiguousIndexes[it->first] = cpt;
-    vec_3dPoints[cpt] = it->second.X;
-  }
+    ViewInfo(IndexT viewId, std::size_t cardinal)
+      : viewId(viewId)
+      , cardinal(cardinal)
+    {}
 
-  // the track list that will be colored (point removed during the process)
-  std::set<IndexT> remainingTrackToColor;
-  std::transform(sfmData.getLandmarks().begin(), sfmData.getLandmarks().end(),
-    std::inserter(remainingTrackToColor, remainingTrackToColor.begin()),
-    stl::RetrieveKey());
+    IndexT viewId;
+    std::size_t cardinal;
+    std::vector<std::reference_wrapper<Landmark>> landmarks;
+  };
 
-  while(!remainingTrackToColor.empty())
+  std::vector<ViewInfo> sortedViewsCardinal;
+  sortedViewsCardinal.reserve(sfmData.getViews().size());
   {
-    // find the most representative image (for the remaining 3D points)
-    //  a. count the number of observation per view for each 3Dpoint Index
-    //  b. sort to find the most representative view index
-
-    std::map<IndexT, IndexT> map_IndexCardinal; // ViewId, Cardinal
-    for(std::set<IndexT>::const_iterator iterT = remainingTrackToColor.begin(); iterT != remainingTrackToColor.end(); ++iterT)
+    // create cardinal per viewId map
+    std::map<IndexT, std::size_t> viewsCardinalMap; // <ViewId, Cardinal>
+    for(const auto& landmarkPair : sfmData.getLandmarks())
     {
-      const std::size_t trackId = *iterT;
-      const Observations& observations = sfmData.getLandmarks().at(trackId).observations;
-
-      for(Observations::const_iterator iterObs = observations.begin(); iterObs != observations.end(); ++iterObs)
-      {
-        const size_t viewId = iterObs->first;
-        if (map_IndexCardinal.find(viewId) == map_IndexCardinal.end())
-          map_IndexCardinal[viewId] = 1;
-        else
-          ++map_IndexCardinal[viewId];
-      }
+      const Observations& observations = landmarkPair.second.observations;
+      for(const auto& observationPair : observations)
+        ++viewsCardinalMap[observationPair.first]; // TODO: 0
     }
 
-    // find the View index that is the most represented
-    std::vector<IndexT> vec_cardinal;
-    std::transform(map_IndexCardinal.begin(),
-      map_IndexCardinal.end(),
-      std::back_inserter(vec_cardinal),
-      stl::RetrieveValue());
-    using namespace stl::indexed_sort;
-    std::vector< sort_index_packet_descend< IndexT, IndexT> > packet_vec(vec_cardinal.size());
-    sort_index_helper(packet_vec, &vec_cardinal[0], 1);
+    // copy key-value pairs from the map to the vector
+    for(const auto& cardinalPair : viewsCardinalMap)
+      sortedViewsCardinal.push_back(ViewInfo(cardinalPair.first, cardinalPair.second));
 
-    // first image index with the most of occurrence
-    std::map<IndexT, IndexT>::const_iterator iterTT = map_IndexCardinal.begin();
-    std::advance(iterTT, packet_vec[0].index);
-    const std::size_t view_index = iterTT->first;
-    const View * view = sfmData.getViews().at(view_index).get();
-    const std::string imagePath = view->getImagePath();
-    image::Image<image::RGBColor> image;
-    image::readImage(imagePath, image);
+    // sort the vector, biggest cardinality first
+    std::sort(sortedViewsCardinal.begin(),
+              sortedViewsCardinal.end(),
+              [] (const ViewInfo& l, const ViewInfo& r) { return l.cardinal > r.cardinal; });
+  }
 
-    // iterate through the remaining track to color
-    // - look if the current view is present to color the track
-    std::set<IndexT> set_toRemove;
-    for(std::set<IndexT>::const_iterator iterT = remainingTrackToColor.begin(); iterT != remainingTrackToColor.end(); ++iterT)
+  // assign each landmark to a view
+  for(ViewInfo& viewCardinal : sortedViewsCardinal)
+  {
+    std::vector<std::reference_wrapper<Landmark>> toKeep;
+    const IndexT viewId = viewCardinal.viewId;
+
+    for(int i = 0; i < remainingLandmarksToColor.size(); ++i)
     {
-      const std::size_t trackId = *iterT;
-      const Observations& observations = sfmData.getLandmarks().at(trackId).observations;
-      Observations::const_iterator it = observations.find(view_index);
-
-      if(it != observations.end())
+      Landmark& landmark = remainingLandmarksToColor.at(i);
+      auto it = landmark.observations.find(viewId);
+      if(it != landmark.observations.end())
       {
-        // color the track
-        Vec2 pt = it->second.x;
+        viewCardinal.landmarks.push_back(landmark);
+      }
+      else
+      {
+        toKeep.push_back(landmark);
+      }
+    }
+    std::swap(toKeep, remainingLandmarksToColor);
+
+    if(remainingLandmarksToColor.empty())
+      break;
+  }
+
+  // create an unsorted index container
+  std::vector<int> unsortedIndexes(sortedViewsCardinal.size()) ;
+  std::iota(std::begin(unsortedIndexes), std::end(unsortedIndexes), 0);
+  std::random_shuffle(unsortedIndexes.begin(), unsortedIndexes.end());
+
+  // landmark colorization
+#pragma omp parallel for
+  for(int i = 0; i < unsortedIndexes.size(); ++i)
+  {
+    const ViewInfo& viewCardinal = sortedViewsCardinal.at(unsortedIndexes.at(i));
+    if(!viewCardinal.landmarks.empty())
+    {
+      const View& view = sfmData.getView(viewCardinal.viewId);
+      image::Image<image::RGBColor> image;
+      image::readImage(view.getImagePath(), image);
+
+      for(Landmark& landmark : viewCardinal.landmarks)
+      {
+        // color the point
+        Vec2 pt = landmark.observations.at(view.getViewId()).x;
         // clamp the pixel position if the feature/marker center is outside the image.
-        pt.x() = clamp(pt.x(), 0.0, double(image.Width()-1));
-        pt.y() = clamp(pt.y(), 0.0, double(image.Height()-1));
-        sfmData.structure.at(trackId).rgb = image(pt.y(), pt.x());
-        set_toRemove.insert(trackId);
-        ++progressBar;
+        pt.x() = clamp(pt.x(), 0.0, static_cast<double>(image.Width() - 1));
+        pt.y() = clamp(pt.y(), 0.0, static_cast<double>(image.Height() - 1));
+        landmark.rgb = image(pt.y(), pt.x());
+      }
+
+#pragma omp critical
+      {
+        progressBar += viewCardinal.landmarks.size();
       }
     }
-
-    // remove colored track
-    for(std::set<IndexT>::const_iterator iter = set_toRemove.begin();
-      iter != set_toRemove.end(); ++iter)
-    {
-      remainingTrackToColor.erase(*iter);
-    }
   }
-  return true;
 }
 
 } // namespace sfm

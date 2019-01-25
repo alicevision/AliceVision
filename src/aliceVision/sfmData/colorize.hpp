@@ -17,9 +17,8 @@ class SfMData;
  * the sfmData, using the track to determine the best view from which
  * to get the color.
  * @param[in,out] sfmData The container of the data
- * @return true if everything went well
  */
-bool colorizeTracks(SfMData& sfmData);
+void colorizeTracks(SfMData& sfmData);
 
 } // namespace sfmData
 } // namespace aliceVision

@@ -82,9 +82,9 @@ public:
    * @brief Colorization of the reconstructed scene
    * @return true if ok
    */
-  inline bool colorize()
+  inline void colorize()
   {
-    return  sfmData::colorizeTracks(_sfmData);
+    sfmData::colorizeTracks(_sfmData);
   }
 
 protected:
