@@ -83,7 +83,7 @@ void fillMatricesWithUndistortFeaturesMatches(const matching::IndMatches &putati
  * @param[out] x_J Pixel perfect features from the Jnth image putativeMatches matches
  */
 template<typename MatT, class MapFeatOrRegionPerDesc>
-void MatchesPairToMat(const matching::MatchesPerDescType &putativeMatchesPerType,
+void fillMatricesWithUndistortFeaturesMatches(const matching::MatchesPerDescType &putativeMatchesPerType,
                       const camera::IntrinsicBase *cam_I,
                       const camera::IntrinsicBase *cam_J,
                       const MapFeatOrRegionPerDesc &features_I,
@@ -137,7 +137,7 @@ void MatchesPairToMat(const matching::MatchesPerDescType &putativeMatchesPerType
  * @param[out] x_J Pixel perfect features from the Jnth image putativeMatches matches
  */
 template<typename MatT >
-void MatchesPairToMat(const Pair &pairIndex,
+void fillMatricesWithUndistortFeaturesMatches(const Pair &pairIndex,
                       const matching::MatchesPerDescType &putativeMatchesPerType,
                       const sfmData::SfMData *sfmData,
                       const feature::RegionsPerView &regionsPerView,
@@ -151,7 +151,7 @@ void MatchesPairToMat(const Pair &pairIndex,
   const camera::IntrinsicBase * cam_I = sfmData->getIntrinsicPtr(view_I->getIntrinsicId());
   const camera::IntrinsicBase * cam_J = sfmData->getIntrinsicPtr(view_J->getIntrinsicId());
 
-  MatchesPairToMat(
+  fillMatricesWithUndistortFeaturesMatches(
       putativeMatchesPerType,
       cam_I,
       cam_J,
