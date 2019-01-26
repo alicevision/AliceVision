@@ -145,6 +145,10 @@ int main(int argc, char **argv)
       "Graph-distance limit setting the Active region in the Local Bundle Adjustment strategy.")
     ("localizerEstimator", po::value<robustEstimation::ERobustEstimator>(&sfmParams.localizerEstimator)->default_value(sfmParams.localizerEstimator),
       "Estimator type used to localize cameras (acransac (default), ransac, lsmeds, loransac, maxconsensus)")
+    ("localizerEstimatorError", po::value<double>(&sfmParams.localizerEstimatorError)->default_value(sfmParams.localizerEstimatorError),
+      "Reprojection error threshold (in pixels) for the localizer estimator (0 for default value according to the estimator).")
+    ("localizerEstimatorMaxIteration", po::value<std::size_t>(&sfmParams.localizerEstimatorMaxIteration)->default_value(sfmParams.localizerEstimatorMaxIteration),
+      "Max number of RANSAC iterations.")
     ("useOnlyMatchesFromInputFolder", po::value<bool>(&useOnlyMatchesFromInputFolder)->default_value(useOnlyMatchesFromInputFolder),
       "Use only matches from the input matchesFolder parameter.\n"
       "Matches folders previously added to the SfMData file will be ignored.")
@@ -192,6 +196,11 @@ int main(int argc, char **argv)
 
   // set verbose level
   system::Logger::get()->setLogLevel(verboseLevel);
+
+  if(!robustEstimation::adjustRobustEstimatorThreshold(sfmParams.localizerEstimator, sfmParams.localizerEstimatorError, 4.0))
+  {
+    return EXIT_FAILURE;
+  }
 
   // load input SfMData scene
   sfmData::SfMData sfmData;
