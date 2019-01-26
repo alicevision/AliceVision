@@ -80,24 +80,12 @@ int main(int argc, char **argv)
   std::string outputSfMViewsAndPoses;
   std::string extraInfoFolder;
   std::string describerTypesName = feature::EImageDescriberType_enumToString(feature::EImageDescriberType::SIFT);
-  std::string outInterFileExtension = ".ply";
   std::pair<std::string,std::string> initialPairString("","");
-  int maxNbMatches = 0;
-  int minInputTrackLength = 2;
-  std::size_t minNbObservationsForTriangulation = 2;
-  double minAngleForTriangulation = 3.0;
-  double minAngleForLandmark = 2.0;
-  double maxReprojectionError = 4.0;
-  float minAngleInitialPair = 5.0f;
-  float maxAngleInitialPair = 40.0f;
-  bool lockAllIntrinsics = false;
-  bool useLocalBundleAdjustment = false;
-  bool useOnlyMatchesFromInputFolder = false;
-  bool useTrackFiltering = true;
-  bool useRigConstraint = true;
+
+  sfm::ReconstructionEngine_sequentialSfM::Params sfmParams;
   bool lockScenePreviouslyReconstructed = true;
-  std::size_t localBundelAdjustementGraphDistanceLimit = 1;
-  std::string localizerEstimatorName = robustEstimation::ERobustEstimator_enumToString(robustEstimation::ERobustEstimator::ACRANSAC);
+  int maxNbMatches = 0;
+  bool useOnlyMatchesFromInputFolder = false;
 
   po::options_description allParams(
     "Sequential/Incremental reconstruction\n"
@@ -123,24 +111,24 @@ int main(int argc, char **argv)
       "Folder for intermediate reconstruction files and additional reconstruction information files.")
     ("describerTypes,d", po::value<std::string>(&describerTypesName)->default_value(describerTypesName),
       feature::EImageDescriberType_informations().c_str())
-    ("interFileExtension", po::value<std::string>(&outInterFileExtension)->default_value(outInterFileExtension),
+    ("interFileExtension", po::value<std::string>(&sfmParams.sfmStepFileExtension)->default_value(sfmParams.sfmStepFileExtension),
       "Extension of the intermediate file export.")
     ("maxNumberOfMatches", po::value<int>(&maxNbMatches)->default_value(maxNbMatches),
       "Maximum number of matches per image pair (and per feature type). "
       "This can be useful to have a quick reconstruction overview. 0 means no limit.")
-    ("minInputTrackLength", po::value<int>(&minInputTrackLength)->default_value(minInputTrackLength),
+    ("minInputTrackLength", po::value<int>(&sfmParams.minInputTrackLength)->default_value(sfmParams.minInputTrackLength),
       "Minimum track length in input of SfM.")
-    ("minAngleForTriangulation", po::value<double>(&minAngleForTriangulation)->default_value(minAngleForTriangulation),
+    ("minAngleForTriangulation", po::value<double>(&sfmParams.minAngleForTriangulation)->default_value(sfmParams.minAngleForTriangulation),
       "Minimum angle for triangulation.")
-    ("minAngleForLandmark", po::value<double>(&minAngleForLandmark)->default_value(minAngleForLandmark),
+    ("minAngleForLandmark", po::value<double>(&sfmParams.minAngleForLandmark)->default_value(sfmParams.minAngleForLandmark),
       "Minimum angle for landmark.")
-    ("maxReprojectionError", po::value<double>(&maxReprojectionError)->default_value(maxReprojectionError),
+    ("maxReprojectionError", po::value<double>(&sfmParams.maxReprojectionError)->default_value(sfmParams.maxReprojectionError),
       "Maximum reprojection error.")
-    ("minAngleInitialPair", po::value<float>(&minAngleInitialPair)->default_value(minAngleInitialPair),
+    ("minAngleInitialPair", po::value<float>(&sfmParams.minAngleInitialPair)->default_value(sfmParams.minAngleInitialPair),
       "Minimum angle for the initial pair.")
-    ("maxAngleInitialPair", po::value<float>(&maxAngleInitialPair)->default_value(maxAngleInitialPair),
+    ("maxAngleInitialPair", po::value<float>(&sfmParams.maxAngleInitialPair)->default_value(sfmParams.maxAngleInitialPair),
       "Maximum angle for the initial pair.")
-    ("minNumberOfObservationsForTriangulation", po::value<std::size_t>(&minNbObservationsForTriangulation)->default_value(minNbObservationsForTriangulation),
+    ("minNumberOfObservationsForTriangulation", po::value<std::size_t>(&sfmParams.minNbObservationsForTriangulation)->default_value(sfmParams.minNbObservationsForTriangulation),
       "Minimum number of observations to triangulate a point.\n"
       "Set it to 3 (or more) reduces drastically the noise in the point cloud, but the number of final poses is a little bit reduced (from 1.5% to 11% on the tested datasets).\n"
       "Note: set it to 0 or 1 to use the old triangulation algorithm (using 2 views only) during resection.")
@@ -148,21 +136,21 @@ int main(int argc, char **argv)
       "UID or filepath or filename of the first image.")
     ("initialPairB", po::value<std::string>(&initialPairString.second)->default_value(initialPairString.second),
       "UID or filepath or filename of the second image.")
-    ("lockAllIntrinsics", po::value<bool>(&lockAllIntrinsics)->default_value(lockAllIntrinsics),
+    ("lockAllIntrinsics", po::value<bool>(&sfmParams.lockAllIntrinsics)->default_value(sfmParams.lockAllIntrinsics),
       "Force lock of all camera intrinsic parameters, so they will not be refined during Bundle Adjustment.")
-    ("useLocalBA,l", po::value<bool>(&useLocalBundleAdjustment)->default_value(useLocalBundleAdjustment),
+    ("useLocalBA,l", po::value<bool>(&sfmParams.useLocalBundleAdjustment)->default_value(sfmParams.useLocalBundleAdjustment),
       "Enable/Disable the Local bundle adjustment strategy.\n"
       "It reduces the reconstruction time, especially for big datasets (500+ images).")
-    ("localBAGraphDistance", po::value<std::size_t>(&localBundelAdjustementGraphDistanceLimit)->default_value(localBundelAdjustementGraphDistanceLimit),
+    ("localBAGraphDistance", po::value<int>(&sfmParams.localBundelAdjustementGraphDistanceLimit)->default_value(sfmParams.localBundelAdjustementGraphDistanceLimit),
       "Graph-distance limit setting the Active region in the Local Bundle Adjustment strategy.")
-    ("localizerEstimator", po::value<std::string>(&localizerEstimatorName)->default_value(localizerEstimatorName),
+    ("localizerEstimator", po::value<robustEstimation::ERobustEstimator>(&sfmParams.localizerEstimator)->default_value(sfmParams.localizerEstimator),
       "Estimator type used to localize cameras (acransac (default), ransac, lsmeds, loransac, maxconsensus)")
     ("useOnlyMatchesFromInputFolder", po::value<bool>(&useOnlyMatchesFromInputFolder)->default_value(useOnlyMatchesFromInputFolder),
       "Use only matches from the input matchesFolder parameter.\n"
       "Matches folders previously added to the SfMData file will be ignored.")
-    ("useTrackFiltering", po::value<bool>(&useTrackFiltering)->default_value(useTrackFiltering),
+    ("useTrackFiltering", po::value<bool>(&sfmParams.useTrackFiltering)->default_value(sfmParams.useTrackFiltering),
       "Enable/Disable the track filtering.\n")
-    ("useRigConstraint", po::value<bool>(&useRigConstraint)->default_value(useRigConstraint),
+    ("useRigConstraint", po::value<bool>(&sfmParams.useRigConstraint)->default_value(sfmParams.useRigConstraint),
       "Enable/Disable rig constraint.\n")
     ("lockScenePreviouslyReconstructed", po::value<bool>(&lockScenePreviouslyReconstructed)->default_value(lockScenePreviouslyReconstructed),
       "Lock/Unlock scene previously reconstructed.\n");
@@ -256,64 +244,46 @@ int main(int argc, char **argv)
 
   // sequential reconstruction process
   aliceVision::system::Timer timer;
-  sfm::ReconstructionEngine_sequentialSfM sfmEngine(
-    sfmData,
-    extraInfoFolder,
-    (fs::path(extraInfoFolder) / "sfm_log.html").string());
 
-  // configure the featuresPerView & the matches_provider
-  sfmEngine.setFeatures(&featuresPerView);
-  sfmEngine.setMatches(&pairwiseMatches);
-
-  // configure reconstruction parameters
-  sfmEngine.setFixedIntrinsics(lockAllIntrinsics);
-  sfmEngine.setMinInputTrackLength(minInputTrackLength);
-  sfmEngine.setMinAngleForTriangulation(minAngleForTriangulation);
-  sfmEngine.setMinAngleForLandmark(minAngleForLandmark);
-  sfmEngine.setMaxReprojectionError(maxReprojectionError);
-  sfmEngine.setMinAngleInitialPair(minAngleInitialPair);
-  sfmEngine.setMaxAngleInitialPair(maxAngleInitialPair);
-  sfmEngine.setIntermediateFileExtension(outInterFileExtension);
-  sfmEngine.setUseLocalBundleAdjustmentStrategy(useLocalBundleAdjustment);
-  sfmEngine.setLocalBundleAdjustmentGraphDistance(localBundelAdjustementGraphDistanceLimit);
-  sfmEngine.setLocalizerEstimator(robustEstimation::ERobustEstimator_stringToEnum(localizerEstimatorName));
-  sfmEngine.useTrackFiltering(useTrackFiltering);
-  sfmEngine.useRigConstraint(useRigConstraint);
-
-  if(minNbObservationsForTriangulation < 2)
+  if(sfmParams.minNbObservationsForTriangulation < 2)
   {
     // allows to use to the old triangulatation algorithm (using 2 views only) during resection.
-    minNbObservationsForTriangulation = 0;
+    sfmParams.minNbObservationsForTriangulation = 0;
     // ALICEVISION_LOG_ERROR("The value associated to the argument '--minNbObservationsForTriangulation' must be >= 2 ");
     // return EXIT_FAILURE;
   }
-  sfmEngine.setNbOfObservationsForTriangulation(minNbObservationsForTriangulation);
 
   // handle initial pair parameter
   if(!initialPairString.first.empty() || !initialPairString.second.empty())
   {
-    Pair initialPairIndex = {UndefinedIndexT, UndefinedIndexT};
-
     if(initialPairString.first == initialPairString.second)
     {
       ALICEVISION_LOG_ERROR("Invalid image names. You cannot use the same image to initialize a pair.");
       return EXIT_FAILURE;
     }
 
-    if(!initialPairString.first.empty() && !retrieveViewIdFromImageName(sfmData, initialPairString.first, initialPairIndex.first))
+    if(!initialPairString.first.empty() && !retrieveViewIdFromImageName(sfmData, initialPairString.first, sfmParams.userInitialImagePair.first))
     {
       ALICEVISION_LOG_ERROR("Could not find corresponding view in the initial pair: " + initialPairString.first);
       return EXIT_FAILURE;
     }
 
-    if(!initialPairString.second.empty() && !retrieveViewIdFromImageName(sfmData, initialPairString.second, initialPairIndex.second))
+    if(!initialPairString.second.empty() && !retrieveViewIdFromImageName(sfmData, initialPairString.second, sfmParams.userInitialImagePair.second))
     {
       ALICEVISION_LOG_ERROR("Could not find corresponding view in the initial pair: " + initialPairString.second);
       return EXIT_FAILURE;
     }
-
-    sfmEngine.setInitialPair(initialPairIndex);
   }
+
+  sfm::ReconstructionEngine_sequentialSfM sfmEngine(
+    sfmData,
+    sfmParams,
+    extraInfoFolder,
+    (fs::path(extraInfoFolder) / "sfm_log.html").string());
+
+  // configure the featuresPerView & the matches_provider
+  sfmEngine.setFeatures(&featuresPerView);
+  sfmEngine.setMatches(&pairwiseMatches);
 
   if(!sfmEngine.process())
     return EXIT_FAILURE;
@@ -343,7 +313,7 @@ int main(int argc, char **argv)
   // export to disk computed scene (data & visualizable results)
   ALICEVISION_LOG_INFO("Export SfMData to disk: " + outputSfM);
 
-  sfmDataIO::Save(sfmEngine.getSfMData(), (fs::path(extraInfoFolder) / ("cloud_and_poses" + outInterFileExtension)).string(), sfmDataIO::ESfMData(sfmDataIO::VIEWS|sfmDataIO::EXTRINSICS|sfmDataIO::INTRINSICS|sfmDataIO::STRUCTURE));
+  sfmDataIO::Save(sfmEngine.getSfMData(), (fs::path(extraInfoFolder) / ("cloud_and_poses" + sfmParams.sfmStepFileExtension)).string(), sfmDataIO::ESfMData(sfmDataIO::VIEWS|sfmDataIO::EXTRINSICS|sfmDataIO::INTRINSICS|sfmDataIO::STRUCTURE));
   sfmDataIO::Save(sfmEngine.getSfMData(), outputSfM, sfmDataIO::ESfMData::ALL);
 
   if(!outputSfMViewsAndPoses.empty())

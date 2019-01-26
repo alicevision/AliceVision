@@ -125,13 +125,21 @@ void computeTracksPyramidPerView(
 
 ReconstructionEngine_sequentialSfM::ReconstructionEngine_sequentialSfM(
   const SfMData& sfmData,
+  const Params& params,
   const std::string& outputFolder,
   const std::string& loggingFile)
   : ReconstructionEngine(sfmData, outputFolder),
+    _params(params),
     _htmlLogFile(loggingFile),
-    _userInitialImagePair(Pair(UndefinedIndexT, UndefinedIndexT)),
     _sfmStepFolder((fs::path(outputFolder) / "intermediate_steps").string())
 {
+  if (_params.useLocalBundleAdjustment)
+  {
+    _localStrategyGraph = std::make_shared<LocalBundleAdjustmentGraph>(_sfmData);
+    if (_params.useLocalBundleAdjustment)
+      _localStrategyGraph->setGraphDistanceLimit(_params.localBundelAdjustementGraphDistanceLimit);
+  }
+
   // setup HTML logger
   if(!_htmlLogFile.empty())
   {
@@ -175,13 +183,13 @@ bool ReconstructionEngine_sequentialSfM::process()
     // Note: each landmark has a corresponding track with the same id (landmarkId == trackId).
     remapLandmarkIdsToTrackIds();
 
-    if(_uselocalBundleAdjustment)
+    if(_params.useLocalBundleAdjustment)
     {
       const std::set<IndexT> reconstructedViews = _sfmData.getValidViews();
       if(!reconstructedViews.empty())
       {
         // Add the reconstructed views to the LocalBA graph
-        _localStrategyGraph->updateGraphWithNewViews(_sfmData, _map_tracksPerView, reconstructedViews, _kMinNbOfMatches);
+        _localStrategyGraph->updateGraphWithNewViews(_sfmData, _map_tracksPerView, reconstructedViews, _params.kMinNbOfMatches);
         _localStrategyGraph->updateRigEdgesToTheGraph(_sfmData);
       }
     }
@@ -198,18 +206,18 @@ bool ReconstructionEngine_sequentialSfM::process()
 void ReconstructionEngine_sequentialSfM::initializePyramidScoring()
 {
   // update cache values
-  if(_pyramidWeights.size() != _pyramidDepth)
+  if(_pyramidWeights.size() != _params.pyramidDepth)
   {
-    _pyramidWeights.resize(_pyramidDepth);
+    _pyramidWeights.resize(_params.pyramidDepth);
     std::size_t maxWeight = 0;
-    for(std::size_t level = 0; level < _pyramidDepth; ++level)
+    for(std::size_t level = 0; level < _params.pyramidDepth; ++level)
     {
-      std::size_t nbCells = Square(std::pow(_pyramidBase, level+1));
+      std::size_t nbCells = Square(std::pow(_params.pyramidBase, level+1));
       // We use a different weighting strategy than [Schonberger 2016].
       // They use w = 2^l with l={1...L} (even if there is a typo in the text where they say to use w=2^{2*l}.
       // We prefer to give more importance to the first levels of the pyramid, so:
       // w = 2^{L-l} with L the number of levels in the pyramid.
-      _pyramidWeights[level] = std::pow(2.0, (_pyramidDepth-(level+1)));
+      _pyramidWeights[level] = std::pow(2.0, (_params.pyramidDepth-(level+1)));
       maxWeight += nbCells * _pyramidWeights[level];
     }
     _pyramidThreshold = maxWeight * 0.2;
@@ -228,10 +236,10 @@ std::size_t ReconstructionEngine_sequentialSfM::fuseMatchesIntoTracks()
     ALICEVISION_LOG_DEBUG("Track building");
     tracksBuilder.build(matches);
 
-    if(_useTrackFiltering)
+    if(_params.useTrackFiltering)
     {
       ALICEVISION_LOG_DEBUG("Track filtering");
-      tracksBuilder.filter(_minInputTrackLength);
+      tracksBuilder.filter(_params.minInputTrackLength);
     }
 
     ALICEVISION_LOG_DEBUG("Track export to internal structure");
@@ -241,7 +249,7 @@ std::size_t ReconstructionEngine_sequentialSfM::fuseMatchesIntoTracks()
     track::tracksUtilsMap::computeTracksPerView(_map_tracks, _map_tracksPerView);
     ALICEVISION_LOG_DEBUG("Build tracks pyramid per view");
     computeTracksPyramidPerView(
-            _map_tracksPerView, _map_tracks, _sfmData.views, *_featuresPerView, _pyramidBase, _pyramidDepth, _map_featsPyramidPerView);
+            _map_tracksPerView, _map_tracks, _sfmData.views, *_featuresPerView, _params.pyramidBase, _params.pyramidDepth, _map_featsPyramidPerView);
 
     // display stats
     {
@@ -270,21 +278,21 @@ std::vector<Pair> ReconstructionEngine_sequentialSfM::getInitialImagePairsCandid
 {
   std::vector<Pair> initialImagePairCandidates;
 
-  if(_userInitialImagePair.first == UndefinedIndexT || _userInitialImagePair.second == UndefinedIndexT)
+  if(_params.userInitialImagePair.first == UndefinedIndexT || _params.userInitialImagePair.second == UndefinedIndexT)
   {
     IndexT filterViewId = UndefinedIndexT;
 
-    if(_userInitialImagePair.first != UndefinedIndexT)
-      filterViewId = _userInitialImagePair.first;
-    else if(_userInitialImagePair.second != UndefinedIndexT)
-      filterViewId = _userInitialImagePair.second;
+    if(_params.userInitialImagePair.first != UndefinedIndexT)
+      filterViewId = _params.userInitialImagePair.first;
+    else if(_params.userInitialImagePair.second != UndefinedIndexT)
+      filterViewId = _params.userInitialImagePair.second;
 
     if(!getBestInitialImagePairs(initialImagePairCandidates, filterViewId))
       throw std::runtime_error("No valid initial pair found automatically.");
   }
   else
   {
-    initialImagePairCandidates.emplace_back(_userInitialImagePair);
+    initialImagePairCandidates.emplace_back(_params.userInitialImagePair);
   }
 
   return initialImagePairCandidates;
@@ -443,14 +451,14 @@ double ReconstructionEngine_sequentialSfM::incrementalReconstruction()
         auto chrono_start = std::chrono::steady_clock::now();
         std::ostringstream os;
         os << "sfm_" << std::setw(8) << std::setfill('0') << resectionId;
-        sfmDataIO::Save(_sfmData, (fs::path(_sfmStepFolder) / (os.str() + _sfmStepFileExtension)).string(), _sfmStepFilter);
+        sfmDataIO::Save(_sfmData, (fs::path(_sfmStepFolder) / (os.str() + _params.sfmStepFileExtension)).string(), _params.sfmStepFilter);
         ALICEVISION_LOG_DEBUG("Save of file " << os.str() << " took " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - chrono_start).count() << " msec.");
       }
 
       ++resectionId;
     }
 
-    if(_useRigConstraint && !_sfmData.getRigs().empty())
+    if(_params.useRigConstraint && !_sfmData.getRigs().empty())
     {
       ALICEVISION_LOG_INFO("Rig(s) calibration start");
 
@@ -459,7 +467,7 @@ double ReconstructionEngine_sequentialSfM::incrementalReconstruction()
       calibrateRigs(updatedViews);
 
       // update rig edges in the local BA graph
-      if(_uselocalBundleAdjustment)
+      if(_params.useLocalBundleAdjustment)
         _localStrategyGraph->updateRigEdgesToTheGraph(_sfmData);
 
       // after rig calibration, camera may have moved by replacing independant poses by a rig pose with a common subpose.
@@ -538,6 +546,8 @@ double ReconstructionEngine_sequentialSfM::incrementalReconstruction()
     }
 
     ResectionData newResectionData;
+    newResectionData.error_max = _params.localizerEstimatorError;
+    newResectionData.max_iteration = _params.localizerEstimatorMaxIteration;
     const bool hasResected = computeResection(viewId, newResectionData);
 
 #pragma omp critical
@@ -580,7 +590,7 @@ void ReconstructionEngine_sequentialSfM::triangulate(const std::set<IndexT>& pre
   auto chrono_start = std::chrono::steady_clock::now();
 
   // allow to use to the old triangulatation algorithm (using 2 views only)
-  if(_minNbObservationsForTriangulation == 0)
+  if(_params.minNbObservationsForTriangulation == 0)
     triangulate_2Views(_sfmData, prevReconstructedViews, newReconstructedViews);
   else
     triangulate_multiViewsLORANSAC(_sfmData, prevReconstructedViews, newReconstructedViews);
@@ -596,7 +606,7 @@ bool ReconstructionEngine_sequentialSfM::bundleAdjustment(std::set<IndexT>& newR
   BundleAdjustmentCeres::CeresOptions options;
   BundleAdjustment::ERefineOptions refineOptions = BundleAdjustment::REFINE_ROTATION | BundleAdjustment::REFINE_TRANSLATION | BundleAdjustment::REFINE_STRUCTURE;
 
-  if(!isInitialPair && !_hasFixedIntrinsics)
+  if(!isInitialPair && !_params.lockAllIntrinsics)
     refineOptions |= BundleAdjustment::REFINE_INTRINSICS_ALL;
 
   const std::size_t nbOutliersThreshold = (isInitialPair) ? 0 : 50;
@@ -608,7 +618,7 @@ bool ReconstructionEngine_sequentialSfM::bundleAdjustment(std::set<IndexT>& newR
   if(_sfmData.getPoses().size() > 100)
   {
     options.setSparseBA();
-    if(_uselocalBundleAdjustment) // local strategy enable if more than 100 poses
+    if(_params.useLocalBundleAdjustment) // local strategy enable if more than 100 poses
       enableLocalStrategy = true;
   }
   else
@@ -617,8 +627,8 @@ bool ReconstructionEngine_sequentialSfM::bundleAdjustment(std::set<IndexT>& newR
   }
 
   // add the new reconstructed views to the graph
-  if(_uselocalBundleAdjustment)
-    _localStrategyGraph->updateGraphWithNewViews(_sfmData, _map_tracksPerView, newReconstructedViews, _kMinNbOfMatches);
+  if(_params.useLocalBundleAdjustment)
+    _localStrategyGraph->updateGraphWithNewViews(_sfmData, _map_tracksPerView, newReconstructedViews, _params.kMinNbOfMatches);
 
 
   if(enableLocalStrategy)
@@ -666,7 +676,7 @@ bool ReconstructionEngine_sequentialSfM::bundleAdjustment(std::set<IndexT>& newR
         return false; // not usable solution
 
       // save the current focal lengths values (for each intrinsic) in the history
-      if(_uselocalBundleAdjustment)
+      if(_params.useLocalBundleAdjustment)
         _localStrategyGraph->saveIntrinsicsToHistory(_sfmData);
 
       // export and print information about the refinement
@@ -675,15 +685,15 @@ bool ReconstructionEngine_sequentialSfM::bundleAdjustment(std::set<IndexT>& newR
       statistics.show();
     }
 
-    nbOutliers = removeOutliers(_maxReprojectionError);
+    nbOutliers = removeOutliers(_params.maxReprojectionError);
 
     std::set<IndexT> removedViewsIdIteration;
-    eraseUnstablePosesAndObservations(this->_sfmData, _minPointsPerPose, _minTrackLength, &removedViewsIdIteration);
+    eraseUnstablePosesAndObservations(this->_sfmData, _params.minPointsPerPose, _params.minTrackLength, &removedViewsIdIteration);
 
     for(IndexT v : removedViewsIdIteration)
       newReconstructedViews.erase(v);
 
-    if(_uselocalBundleAdjustment && !removedViewsIdIteration.empty())
+    if(_params.useLocalBundleAdjustment && !removedViewsIdIteration.empty())
     {
       // remove removed views to the graph
       _localStrategyGraph->removeViewsToTheGraph(removedViewsIdIteration);
@@ -792,7 +802,7 @@ void ReconstructionEngine_sequentialSfM::exportStatistics(double reconstructionT
   }
 
   // (optional) export the intrinsics history values to a csv file.
-  if(_uselocalBundleAdjustment)
+  if(_params.useLocalBundleAdjustment)
     _localStrategyGraph->exportIntrinsicsHistory(_outputFolder, "intrinsics_history.csv");
 }
 
@@ -1164,9 +1174,9 @@ bool ReconstructionEngine_sequentialSfM::getBestInitialImagePairs(std::vector<Pa
   
   const unsigned iMin_inliers_count = 100;
   // Use a min angle limit to ensure quality of the geometric evaluation.
-  const float fRequired_min_angle = _minAngleInitialPair;
+  const float fRequired_min_angle = _params.minAngleInitialPair;
   // Use a max angle limit to ensure good matching quality.
-  const float fLimit_max_angle = _maxAngleInitialPair;
+  const float fLimit_max_angle = _params.maxAngleInitialPair;
   
   // List Views that support valid intrinsic (view that could be used for Essential matrix computation)
   std::set<IndexT> valid_views;
@@ -1461,12 +1471,12 @@ std::size_t ReconstructionEngine_sequentialSfM::computeCandidateImageScore(Index
   // The number of cells of the pyramid grid represent the score
   // and ensure a proper repartition of features in images.
   const auto& featsPyramid = _map_featsPyramidPerView.at(viewId);
-  for(std::size_t level = 0; level < _pyramidDepth; ++level)
+  for(std::size_t level = 0; level < _params.pyramidDepth; ++level)
   {
     std::set<std::size_t> featIndexes; // Set of grid cell indexes in the pyramid
     for(IndexT trackId: trackIds)
     {
-      std::size_t pyramidIndex = featsPyramid.at(trackId * _pyramidDepth + level);
+      std::size_t pyramidIndex = featsPyramid.at(trackId * _params.pyramidDepth + level);
       featIndexes.insert(pyramidIndex);
     }
     score += featIndexes.size() * _pyramidWeights[level];
@@ -1550,7 +1560,7 @@ bool ReconstructionEngine_sequentialSfM::computeResection(const IndexT viewId, R
       resectionData.optionalIntrinsic.get(),
       resectionData,
       resectionData.pose, 
-      _localizerEstimator
+      _params.localizerEstimator
     );
 
   if (!_htmlLogFile.empty())
@@ -1717,7 +1727,7 @@ void ReconstructionEngine_sequentialSfM::getTracksToTriangulate(const std::set<I
                               allReconstructedViews.begin(), allReconstructedViews.end(),
                               std::inserter(allReconstructedViewsSharingTheTrack, allReconstructedViewsSharingTheTrack.begin()));
         
-        if (allReconstructedViewsSharingTheTrack.size() >= _minNbObservationsForTriangulation)
+        if (allReconstructedViewsSharingTheTrack.size() >= _params.minNbObservationsForTriangulation)
         {
 #pragma omp critical        
           mapTracksToTriangulate[trackId] = allReconstructedViewsSharingTheTrack;
@@ -1751,7 +1761,7 @@ void ReconstructionEngine_sequentialSfM::triangulate_multiViewsLORANSAC(SfMData&
     std::set<IndexT>& observations = mapTracksToTriangulate.at(trackId); // all the posed views possessing the track
     
     // The track needs to be seen by a min. number of views to be triangulated
-    if (observations.size() < _minNbObservationsForTriangulation)
+    if (observations.size() < _params.minNbObservationsForTriangulation)
       continue;
     
     Vec3 X_euclidean = Vec3::Zero();
@@ -1794,7 +1804,7 @@ void ReconstructionEngine_sequentialSfM::triangulate_multiViewsLORANSAC(SfMData&
       const double& acThresholdI = (acThresholdItI != _map_ACThreshold.end()) ? acThresholdItI->second : 4.0;
       const double& acThresholdJ = (acThresholdItJ != _map_ACThreshold.end()) ? acThresholdItJ->second : 4.0;
       
-      if (AngleBetweenRays(poseI, camI, poseJ, camJ, xI, xJ) < _minAngleForTriangulation || 
+      if (AngleBetweenRays(poseI, camI, poseJ, camJ, xI, xJ) < _params.minAngleForTriangulation ||
           poseI.depth(X_euclidean) < 0 || 
           poseJ.depth(X_euclidean) < 0 || 
           camI->residual(poseI, X_euclidean, xI).norm() > acThresholdI || 
@@ -1842,8 +1852,8 @@ void ReconstructionEngine_sequentialSfM::triangulate_multiViewsLORANSAC(SfMData&
       //  - nb of cameras validing the track 
       //  - angle (small angle leads imprecise triangulation)
       //  - positive depth (chierality)
-      if (inliers.size() < _minNbObservationsForTriangulation ||
-          !checkAngles(X_euclidean, inliers, scene, _minAngleForTriangulation) ||
+      if (inliers.size() < _params.minNbObservationsForTriangulation ||
+          !checkAngles(X_euclidean, inliers, scene, _params.minAngleForTriangulation) ||
           !checkChieralities(X_euclidean, inliers, scene))
         isValidTrack = false;
     }  
@@ -1999,7 +2009,7 @@ void ReconstructionEngine_sequentialSfM::triangulate_2Views(SfMData& scene, cons
           const double& acThresholdI = (acThresholdItI != _map_ACThreshold.end()) ? acThresholdItI->second : 4.0;
           const double& acThresholdJ = (acThresholdItJ != _map_ACThreshold.end()) ? acThresholdItJ->second : 4.0;
           
-          if (angle > _minAngleForTriangulation &&
+          if (angle > _params.minAngleForTriangulation &&
               poseI.depth(X_euclidean) > 0 &&
               poseJ.depth(X_euclidean) > 0 &&
               residualI.norm() < acThresholdI &&
@@ -2036,7 +2046,7 @@ void ReconstructionEngine_sequentialSfM::triangulate_2Views(SfMData& scene, cons
 std::size_t ReconstructionEngine_sequentialSfM::removeOutliers(double precision)
 {
   const std::size_t nbOutliersResidualErr = RemoveOutliers_PixelResidualError(_sfmData, precision, 2);
-  const std::size_t nbOutliersAngleErr = RemoveOutliers_AngleError(_sfmData, _minAngleForLandmark);
+  const std::size_t nbOutliersAngleErr = RemoveOutliers_AngleError(_sfmData, _params.minAngleForLandmark);
 
   ALICEVISION_LOG_INFO("Remove outliers: " << std::endl
                         << "\t- # outliers residual error: " << nbOutliersResidualErr << std::endl

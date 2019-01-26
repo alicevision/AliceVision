@@ -45,7 +45,7 @@ int main(int argc, char **argv)
   std::string describerTypesName = feature::EImageDescriberType_enumToString(feature::EImageDescriberType::SIFT);
   int rotationAveragingMethod = static_cast<int>(sfm::ROTATION_AVERAGING_L2);
   int translationAveragingMethod = static_cast<int>(sfm::TRANSLATION_AVERAGING_SOFTL1);
-  bool refineIntrinsics = true;
+  bool lockAllIntrinsics = false;
 
   po::options_description allParams("Implementation of the paper\n"
     "\"Global Fusion of Relative Motions for "
@@ -76,8 +76,8 @@ int main(int argc, char **argv)
     ("translationAveraging", po::value<int>(&translationAveragingMethod)->default_value(translationAveragingMethod),
       "* 1: L1 minimization\n"
       "* 2: L2 minimization of sum of squared Chordal distances")
-    ("refineIntrinsics", po::value<bool>(&refineIntrinsics)->default_value(refineIntrinsics),
-      "Refine intrinsic parameters.");
+    ("lockAllIntrinsics", po::value<bool>(&lockAllIntrinsics)->default_value(lockAllIntrinsics),
+      "Force lock of all camera intrinsic parameters, so they will not be refined during Bundle Adjustment.");
 
   po::options_description logParams("Log parameters");
   logParams.add_options()
@@ -192,7 +192,7 @@ int main(int argc, char **argv)
   sfmEngine.SetMatchesProvider(&pairwiseMatches);
 
   // configure reconstruction parameters
-  sfmEngine.setFixedIntrinsics(!refineIntrinsics);
+  sfmEngine.setLockAllIntrinsics(lockAllIntrinsics); // TODO: rename param
 
   // configure motion averaging method
   sfmEngine.SetRotationAveragingMethod(sfm::ERotationAveragingMethod(rotationAveragingMethod));
