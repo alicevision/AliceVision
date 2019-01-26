@@ -60,7 +60,7 @@ public:
     bool useTrackFiltering = true;
     robustEstimation::ERobustEstimator localizerEstimator = robustEstimation::ERobustEstimator::ACRANSAC;
     double localizerEstimatorError = std::numeric_limits<double>::infinity();
-    size_t localizerEstimatorMaxIteration = 4096;
+    size_t localizerEstimatorMaxIterations = 4096;
 
     // Pyramid scoring
 

@@ -547,7 +547,7 @@ double ReconstructionEngine_sequentialSfM::incrementalReconstruction()
 
     ResectionData newResectionData;
     newResectionData.error_max = _params.localizerEstimatorError;
-    newResectionData.max_iteration = _params.localizerEstimatorMaxIteration;
+    newResectionData.max_iteration = _params.localizerEstimatorMaxIterations;
     const bool hasResected = computeResection(viewId, newResectionData);
 
 #pragma omp critical
