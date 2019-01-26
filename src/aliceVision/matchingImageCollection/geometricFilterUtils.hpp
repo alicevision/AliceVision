@@ -44,7 +44,7 @@ void fillMatricesWithUndistortFeaturesMatches(const matching::IndMatches &putati
                                               const FeatOrRegions &feature_I,
                                               const camera::IntrinsicBase *cam_J,
                                               const FeatOrRegions &feature_J,
-  MatT & x_I, MatT & x_J)
+                                              MatT & x_I, MatT & x_J)
 {
   typedef typename MatT::Scalar Scalar; // Output matrix type
 

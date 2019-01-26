@@ -118,7 +118,7 @@ public:
   double GetEnd() const {return End;}
 
   // Text display of the histogram
-  template<typename DTK = T, typename DTV = T>
+  template<typename KeyDataType = T, typename ValueDataType = T>
   std::string ToString(const std::string & sTitle = "", int precision = 3) const
   {
     std::ostringstream os;
@@ -127,10 +127,10 @@ public:
     for (size_t i = 0; i < n; ++i)
     {
        os << std::setprecision(precision)
-          << DTK(Start + static_cast<float>(End-Start)/n*static_cast<float>(i))
-          << "\t|\t" << DTV(freq[i]) << "\n";
+          << KeyDataType(Start + static_cast<float>(End-Start)/n*static_cast<float>(i))
+          << "\t|\t" << ValueDataType(freq[i]) << "\n";
     }
-    os << std::setprecision(precision) << DTK(End) << std::endl;
+    os << std::setprecision(precision) << KeyDataType(End) << std::endl;
     return os.str();
   }
 

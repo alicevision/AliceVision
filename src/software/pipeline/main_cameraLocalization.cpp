@@ -263,9 +263,11 @@ int main(int argc, char** argv)
     ALICEVISION_COUT("Usage:\n\n" << allParams);
     return EXIT_FAILURE;
   }
-  
-  if(!robustEstimation::adjustRobustEstimatorThreshold(matchingEstimator, matchingErrorMax, 4.0) ||
-     !robustEstimation::adjustRobustEstimatorThreshold(resectionEstimator, resectionErrorMax, 4.0))
+
+  const double defaultLoRansacMatchingError = 4.0;
+  const double defaultLoRansacResectionError = 4.0;
+  if(!robustEstimation::adjustRobustEstimatorThreshold(matchingEstimator, matchingErrorMax, defaultLoRansacMatchingError) ||
+     !robustEstimation::adjustRobustEstimatorThreshold(resectionEstimator, resectionErrorMax, defaultLoRansacResectionError))
   {
     return EXIT_FAILURE;
   }

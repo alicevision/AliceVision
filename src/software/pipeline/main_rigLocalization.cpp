@@ -226,8 +226,10 @@ int main(int argc, char** argv)
     return EXIT_FAILURE;
   }
 
-  if(!adjustRobustEstimatorThreshold(matchingEstimator, matchingErrorMax, 4.0) ||
-     !adjustRobustEstimatorThreshold(resectionEstimator, resectionErrorMax, 4.0))
+  const double defaultLoRansacMatchingError = 4.0;
+  const double defaultLoRansacResectionError = 4.0;
+  if(!adjustRobustEstimatorThreshold(matchingEstimator, matchingErrorMax, defaultLoRansacMatchingError) ||
+     !adjustRobustEstimatorThreshold(resectionEstimator, resectionErrorMax, defaultLoRansacResectionError))
   {
     return EXIT_FAILURE;
   }

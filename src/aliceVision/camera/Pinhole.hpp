@@ -118,7 +118,7 @@ class Pinhole : public IntrinsicBase
     return params;
   }
 
-  virtual bool hasDistortion() const
+  bool hasDistortion() const override
   {
     for(double d: _distortionParams)
       if(d != 0.0)

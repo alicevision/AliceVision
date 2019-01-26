@@ -243,22 +243,22 @@ private:
 
   /**
    * @brief Compute MSE (Mean Square Error) and a histogram of residual values.
-   * @param[in] histogram
-   * @return MSE
+   * @param[out] histogram
+   * @return the mean number of residual values
    */
   double computeResidualsHistogram(Histogram<double>* histogram) const;
 
   /**
-   * @brief Compute MSE (Mean Square Error) and a histogram of tracks size.
-   * @param[in] histogram
-   * @return MSE
+   * @brief Compute MSE (Mean Square Error) and a histogram of landmarks' observations size.
+   * @param[out] histogram
+   * @return the mean number of observations per landmark
    */
   double computeObservationsLengthsHistogram(Histogram<double>* histogram) const;
 
   /**
   * @brief Compute MSE (Mean Square Error) and a histogram of landmarks per view.
-  * @param[in] histogram
-  * @return MSE
+  * @param[out] histogram
+  * @return the mean number of landmarks per view or -1 if no landmarks
   */
   double computeLandmarksPerViewHistogram(Histogram<double> * histo) const;
 
