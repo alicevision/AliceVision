@@ -142,8 +142,7 @@ int main() {
 
     Mat3 F;
     const std::pair<double,double> ACRansacOut = ACRANSAC(kernel, vec_inliers, 1024, &F,
-      Square(4.0), // Upper bound of authorized threshold
-      true);
+      Square(4.0)); // Upper bound of authorized threshold
     const double & thresholdF = ACRansacOut.first;
 
     // Check the fundamental support some point to be considered as valid

@@ -72,7 +72,7 @@ struct GeometricFilterMatrix_E_AC : public GeometricFilterMatrix
 
     // Get corresponding point regions arrays
     Mat xI,xJ;
-    MatchesPairToMat(pairIndex, putativeMatchesPerType, sfmData, regionsPerView, descTypes, xI, xJ);
+    fillMatricesWithUndistortFeaturesMatches(pairIndex, putativeMatchesPerType, sfmData, regionsPerView, descTypes, xI, xJ);
 
     // Define the AContrario adapted Essential matrix solver
     typedef ACKernelAdaptorEssential<

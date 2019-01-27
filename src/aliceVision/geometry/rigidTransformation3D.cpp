@@ -152,7 +152,7 @@ bool ACRansac_FindRTS(const Mat &x1,
   KernelType kernel = KernelType(x1, x2);
   // Robust estimation of the Projection matrix and its precision
   const std::pair<double, double> ACRansacOut =
-          robustEstimation::ACRANSAC(kernel, vec_inliers, numIterations, &RTS, dPrecision, true);
+          robustEstimation::ACRANSAC(kernel, vec_inliers, numIterations, &RTS, dPrecision);
 
   const bool good = decomposeRTS(RTS, S, t, R);
 

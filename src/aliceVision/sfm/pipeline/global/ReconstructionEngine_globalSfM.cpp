@@ -378,7 +378,7 @@ bool ReconstructionEngine_globalSfM::Adjust()
       sfmDataIO::Save(_sfmData, (fs::path(_loggingFile).parent_path() / "structure_01_refine_RT_Xi.ply").string(), sfmDataIO::ESfMData(sfmDataIO::EXTRINSICS | sfmDataIO::STRUCTURE));
   }
 
-  if(success && !_hasFixedIntrinsics)
+  if(success && !_lockAllIntrinsics)
   {
     // refine all: Structure, motion:{rotations, translations} and optics:{intrinsics}
     success = BA.adjust(_sfmData, BundleAdjustment::REFINE_ALL);
@@ -413,7 +413,7 @@ bool ReconstructionEngine_globalSfM::Adjust()
   }
 
   BundleAdjustment::ERefineOptions refineOptions = BundleAdjustment::REFINE_ROTATION | BundleAdjustment::REFINE_TRANSLATION | BundleAdjustment::REFINE_STRUCTURE;
-  if(!_hasFixedIntrinsics)
+  if(!_lockAllIntrinsics)
     refineOptions |= BundleAdjustment::REFINE_INTRINSICS_ALL;
   success = BA.adjust(_sfmData, refineOptions);
 

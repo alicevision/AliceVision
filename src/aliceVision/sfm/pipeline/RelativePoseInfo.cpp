@@ -99,7 +99,7 @@ bool robustRelativePose(
 
   // Robustly estimation of the Essential matrix and its precision
   const std::pair<double,double> acRansacOut = ACRANSAC(kernel, relativePose_info.vec_inliers,
-    max_iteration_count, &relativePose_info.essential_matrix, relativePose_info.initial_residual_tolerance, false);
+    max_iteration_count, &relativePose_info.essential_matrix, relativePose_info.initial_residual_tolerance);
   relativePose_info.found_residual_precision = acRansacOut.first;
 
   if (relativePose_info.vec_inliers.size() < SolverType::MINIMUM_SAMPLES * ALICEVISION_MINIMUM_SAMPLES_COEF )  

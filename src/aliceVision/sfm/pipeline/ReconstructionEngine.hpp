@@ -31,7 +31,6 @@ public:
   ReconstructionEngine(const sfmData::SfMData& sfmData, const std::string& outFolder)
     : _outputFolder(outFolder)
     , _sfmData(sfmData)
-    , _hasFixedIntrinsics(false)
   {}
 
   virtual ~ReconstructionEngine() {}
@@ -43,30 +42,12 @@ public:
   virtual bool process() = 0;
 
   /**
-   * @brief Return true or false the intrinsics are fixed
-   * @return true if the intrinsics are fixed
-   */
-  inline bool hasFixedIntrinsics() const
-  {
-    return _hasFixedIntrinsics;
-  }
-
-  /**
    * @brief Get the scene SfMData
    * @return SfMData
    */
   inline const sfmData::SfMData& getSfMData() const
   {
     return _sfmData;
-  }
-
-  /**
-   * @brief Set true or false the intrinsics are fixed
-   * @param[in] fixed true if intrinsics are fixed
-   */
-  inline void setFixedIntrinsics(bool fixed)
-  {
-    _hasFixedIntrinsics = fixed;
   }
 
   /**
@@ -92,8 +73,6 @@ protected:
   std::string _outputFolder;
   /// Internal SfMData
   sfmData::SfMData _sfmData;
-  /// Has fixed Intrinsics
-  bool _hasFixedIntrinsics;
 };
 
 } // namespace sfm

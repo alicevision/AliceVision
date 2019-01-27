@@ -330,6 +330,11 @@ struct IntrinsicBase
     return _w != 0 && _h != 0;
   }
 
+  virtual bool hasDistortion() const
+  {
+    return false;
+  }
+
   /**
    * @brief Generate an unique Hash from the camera parameters (used for grouping)
    * @return Unique Hash from the camera parameters
