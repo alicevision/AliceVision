@@ -98,7 +98,7 @@ void exportPointCloud(const std::string& path,
     if(!cams[i]->empty())
     {
       const Vec3 pt3D(point.x, point.y, point.z);
-      sfmData::Landmark landmark(pt3D);
+      sfmData::Landmark landmark(pt3D, feature::EImageDescriberType::UNKNOWN);
       for(int cam : *(cams[i]))
       {
         const sfmData::View& view = sfmData.getView(mp.getViewId(cam));
@@ -111,7 +111,7 @@ void exportPointCloud(const std::string& path,
     }
   }
   sfmData::colorizeTracks(densePointCloud);
-  sfmDataIO::Save(densePointCloud, path, sfmDataIO::ALL);
+  sfmDataIO::Save(densePointCloud, path, sfmDataIO::ESfMData::ALL_DENSE);
 }
 
 int main(int argc, char* argv[])
