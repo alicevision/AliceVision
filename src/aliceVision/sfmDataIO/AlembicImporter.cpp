@@ -136,10 +136,12 @@ bool readPointCloud(IObject iObj, M44d mat, sfmData::SfMData &sfmdata, ESfMData 
     }
   }
 
+  // for compatibility
   if(userProps &&
      userProps.getPropertyHeader("mvg_visibilitySize") &&
      userProps.getPropertyHeader("mvg_visibilityIds") &&
-     userProps.getPropertyHeader("mvg_visibilityFeatPos"))
+     userProps.getPropertyHeader("mvg_visibilityFeatPos") &&
+     (flags_part & ESfMData::OBSERVATIONS || flags_part & ESfMData::OBSERVATIONS_WITH_FEATURES))
   {
     IUInt32ArrayProperty propVisibilitySize(userProps, "mvg_visibilitySize");
     UInt32ArraySamplePtr sampleVisibilitySize;
@@ -155,16 +157,16 @@ bool readPointCloud(IObject iObj, M44d mat, sfmData::SfMData &sfmdata, ESfMData 
 
     if( positions->size() != sampleVisibilitySize->size() )
     {
-      ALICEVISION_LOG_WARNING("ABC Error: number of observations per 3D point should be identical to the number of 2D features.");
-      ALICEVISION_LOG_WARNING("Number of observations per 3D point size is " << sampleVisibilitySize->size());
-      ALICEVISION_LOG_WARNING("Number of 3D points is " << positions->size());
+      ALICEVISION_LOG_ERROR("Alembic Error: number of observations per 3D point should be identical to the number of 2D features.\n"
+                            "# observations per 3D point: " << sampleVisibilitySize->size() << ".\n"
+                            "# 3D points: " << positions->size() << ".");
       return false;
     }
     if( sampleVisibilityIds->size() != sampleFeatPos2d->size() )
     {
-      ALICEVISION_LOG_WARNING("ABC Error: visibility Ids and features 2D pos should have the same size.");
-      ALICEVISION_LOG_WARNING("Visibility Ids size is " << sampleVisibilityIds->size());
-      ALICEVISION_LOG_WARNING("Features 2d Pos size is " << sampleFeatPos2d->size());
+      ALICEVISION_LOG_ERROR("Alembic Error: visibility Ids and features 2D pos should have the same size.\n"
+                            "# visibility Ids: " << sampleVisibilityIds->size() << ".\n"
+                            "# features 2D pos: " << sampleFeatPos2d->size() << ".");
       return false;
     }
 
@@ -194,6 +196,86 @@ bool readPointCloud(IObject iObj, M44d mat, sfmData::SfMData &sfmdata, ESfMData 
       }
     }
   }
+
+  if(userProps &&
+     userProps.getPropertyHeader("mvg_visibilitySize") &&
+     userProps.getPropertyHeader("mvg_visibilityViewId") &&
+     (flags_part & ESfMData::OBSERVATIONS || flags_part & ESfMData::OBSERVATIONS_WITH_FEATURES))
+  {
+    IUInt32ArrayProperty propVisibilitySize(userProps, "mvg_visibilitySize");
+    UInt32ArraySamplePtr sampleVisibilitySize;
+    propVisibilitySize.get(sampleVisibilitySize);
+
+    IUInt32ArrayProperty propVisibilityViewId(userProps, "mvg_visibilityViewId");
+    UInt32ArraySamplePtr sampleVisibilityViewId;
+    propVisibilityViewId.get(sampleVisibilityViewId);
+
+
+    if(positions->size() != sampleVisibilitySize->size())
+    {
+      ALICEVISION_LOG_ERROR("Alembic Error: number of observations per 3D point should be identical to the number of 2D features.\n"
+                            "# observations per 3D point: " << sampleVisibilitySize->size() << ".\n"
+                            "# 3D points: " << positions->size() << ".");
+      return false;
+    }
+
+    UInt32ArraySamplePtr sampleVisibilityFeatId;
+    FloatArraySamplePtr sampleVisibilityFeatPos;
+
+    if(userProps.getPropertyHeader("mvg_visibilityFeatId") &&
+       userProps.getPropertyHeader("mvg_visibilityFeatPos") &&
+       flags_part & ESfMData::OBSERVATIONS_WITH_FEATURES)
+    {
+      IUInt32ArrayProperty propVisibilityFeatId(userProps, "mvg_visibilityFeatId");
+      propVisibilityFeatId.get(sampleVisibilityFeatId);
+
+      IFloatArrayProperty propVisibilityFeatPos(userProps, "mvg_visibilityFeatPos");
+      propVisibilityFeatPos.get(sampleVisibilityFeatPos);
+
+      if(sampleVisibilityViewId->size() != sampleVisibilityFeatId->size() ||
+         2*sampleVisibilityViewId->size() != sampleVisibilityFeatPos->size())
+      {
+        ALICEVISION_LOG_ERROR("Alembic Error: visibility Ids and features id / 2D pos should have the same size.\n"
+                              "# view Ids: " << sampleVisibilityViewId->size() << ".\n"
+                              "# features id: " << sampleVisibilityFeatId->size() << ".\n"
+                              "# features 2D pos: " << sampleVisibilityFeatPos->size() << ".");
+        return false;
+      }
+    }
+
+    const bool hasFeatures = (sampleVisibilityFeatId->size() > 0);
+    std::size_t obsGlobalIndex = 0;
+    for(std::size_t point3d_i = 0; point3d_i < positions->size(); ++point3d_i)
+    {
+      sfmData::Landmark& landmark = sfmdata.structure[nbPointsInit + point3d_i];
+
+      // Number of observation for this 3d point
+      const std::size_t visibilitySize = (*sampleVisibilitySize)[point3d_i];
+
+      for(std::size_t obs_i = 0; obs_i < visibilitySize; ++obs_i, ++obsGlobalIndex)
+      {
+        const int viewId = (*sampleVisibilityViewId)[obsGlobalIndex];
+
+        if(hasFeatures)
+        {
+          const int featId = (*sampleVisibilityFeatId)[obsGlobalIndex];
+          sfmData::Observation& observations = landmark.observations[viewId];
+          observations.id_feat = featId;
+
+          const float posX = (*sampleVisibilityFeatPos)[2 * obsGlobalIndex];
+          const float posY = (*sampleVisibilityFeatPos)[2 * obsGlobalIndex + 1];
+          observations.x[0] = posX;
+          observations.x[1] = posY;
+        }
+        else
+        {
+          landmark.observations[viewId] = sfmData::Observation();
+        }
+
+      }
+    }
+  }
+
   return true;
 }
 
