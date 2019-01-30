@@ -612,9 +612,9 @@ inline GEO::vec3 mesh_facet_interpolate_normal_at_point(const GEO::Mesh& mesh, G
   const GEO::vec3 p1 = mesh.vertices.point(v1);
   const GEO::vec3 p2 = mesh.vertices.point(v2);
 
-  const GEO::vec3 n0 = GEO::Geom::mesh_vertex_normal(mesh, v0);
-  const GEO::vec3 n1 = GEO::Geom::mesh_vertex_normal(mesh, v1);
-  const GEO::vec3 n2 = GEO::Geom::mesh_vertex_normal(mesh, v2);
+  const GEO::vec3 n0 = GEO::normalize(GEO::Geom::mesh_vertex_normal(mesh, v0));
+  const GEO::vec3 n1 = GEO::normalize(GEO::Geom::mesh_vertex_normal(mesh, v1));
+  const GEO::vec3 n2 = GEO::normalize(GEO::Geom::mesh_vertex_normal(mesh, v2));
 
   GEO::vec3 barycCoords;
   GEO::vec3 closestPoint;
@@ -622,10 +622,10 @@ inline GEO::vec3 mesh_facet_interpolate_normal_at_point(const GEO::Mesh& mesh, G
 
   const GEO::vec3 n = barycCoords.x * n0 + barycCoords.y * n1 + barycCoords.z * n2;
 
-  return n;
+  return GEO::normalize(n);
 }
 
-inline GEO::vec3 mesh_facet_interpolate_normal_at_point(const StaticVector<Point3d>& ptsNormals, const Mesh& mesh, unsigned int f, const GEO::vec3& p)
+inline GEO::vec3 mesh_facet_interpolate_normal_at_point(const StaticVector<Point3d>& ptsNormals, const Mesh& mesh, GEO::index_t f, const GEO::vec3& p)
 {
   const GEO::index_t v0 = (*mesh.tris)[f].v[0];
   const GEO::index_t v1 = (*mesh.tris)[f].v[1];
@@ -644,11 +644,59 @@ inline GEO::vec3 mesh_facet_interpolate_normal_at_point(const StaticVector<Point
   GEO::Geom::point_triangle_squared_distance<GEO::vec3>(p, p0, p1, p2, closestPoint, barycCoords.x, barycCoords.y, barycCoords.z);
 
   const GEO::vec3 n = barycCoords.x * n0 + barycCoords.y * n1 + barycCoords.z * n2;
-  
+
   return GEO::normalize(n);
 }
 
-inline void computeNormalHeight(const GEO::Mesh& mesh, double orientation, double t, GEO::index_t f, const GEO::vec3& triangleNormal, const GEO::vec3& q, const GEO::vec3& qA, const GEO::vec3& qB, float& out_height, Color& out_normal)
+template <class T, int R>
+inline Eigen::Matrix<T, R, 1> toEigen(const GEO::vecng<R, T>& v)
+{
+  return Eigen::Matrix<T, R, 1>(v.data());
+}
+
+
+/**
+ * @brief Compute a transformation matrix to convert coordinates in world space coordinates into the triangle space.
+ * The triangle space is define by the Z-axis as the normal of the triangle,
+ * the X-axis aligned with the horizontal line in the texture file (using texture/UV coordinates).
+ *
+ * @param[in] mesh: input mesh
+ * @param[in] f: facet/triangle index
+ * @param[in] triPts: UV Coordinates
+ * @return Rotation matrix to convert from world space coordinates in the triangle space
+ */
+inline Eigen::Matrix3d computeTriangleTransform(const Mesh& mesh, int f, const Point2d* triPts)
+{
+  const Eigen::Vector3d p0 = toEigen((*mesh.pts)[(*mesh.tris)[f].v[0]]);
+  const Eigen::Vector3d p1 = toEigen((*mesh.pts)[(*mesh.tris)[f].v[1]]);
+  const Eigen::Vector3d p2 = toEigen((*mesh.pts)[(*mesh.tris)[f].v[2]]);
+
+  const Eigen::Vector3d tX = (p1 - p0).normalized(); // edge0 => local triangle X-axis
+  const Eigen::Vector3d N = tX.cross((p2 - p0).normalized()).normalized(); // cross(edge0, edge1) => Z-axis
+
+  // Correct triangle X-axis to be align with X-axis in the texture 
+  const GEO::vec2 t0 = GEO::vec2(triPts[0].m);
+  const GEO::vec2 t1 = GEO::vec2(triPts[1].m);
+  const GEO::vec2 tV = GEO::normalize(t1 - t0);
+  const GEO::vec2 origNormal(1.0, 0.0); // X-axis in the texture
+  const double tAngle = GEO::Geom::angle(tV, origNormal);
+  Eigen::Matrix3d transform(Eigen::AngleAxisd(tAngle, N).toRotationMatrix());
+  // Rotate triangle v0v1 axis around Z-axis, to get a X axis aligned with the 2d texture
+  Eigen::Vector3d X = (transform * tX).normalized();
+
+  const Eigen::Vector3d Y = N.cross(X).normalized(); // Y-axis
+
+  Eigen::Matrix3d m;
+  m.col(0) = X;
+  m.col(1) = Y;
+  m.col(2) = N;
+  // const Eigen::Matrix3d mInv = m.inverse();
+  const Eigen::Matrix3d mT = m.transpose();
+
+  return mT;
+}
+
+inline void computeNormalHeight(const GEO::Mesh& mesh, double orientation, double t, GEO::index_t f, const Eigen::Matrix3d& m, const GEO::vec3& q, const GEO::vec3& qA, const GEO::vec3& qB, float& out_height, Color& out_normal)
 {
   GEO::vec3 intersectionPoint = t * qB + (1.0 - t) * qA;
   out_height = q.distance(intersectionPoint) * orientation;
@@ -658,17 +706,9 @@ inline void computeNormalHeight(const GEO::Mesh& mesh, double orientation, doubl
   // Use per pixel normal using weighted interpolation of the facet vertex normals
   const GEO::vec3 denseMeshNormal = mesh_facet_interpolate_normal_at_point(mesh, f, intersectionPoint);
 
-  const GEO::vec3 origNormal(0.0, 0.0, 1.0);
-  const double angle = GEO::Geom::angle(origNormal, triangleNormal);
-  const GEO::vec3 rotAxis = cross(triangleNormal, origNormal); // get the inverse rotation
-
-  Eigen::Vector3d axis = Eigen::Vector3d(rotAxis.x, rotAxis.y, rotAxis.z);
-  axis.normalize();
-  Eigen::Matrix3d transform(Eigen::AngleAxisd(angle, axis).toRotationMatrix());
-  Eigen::Vector3d n = transform * Eigen::Vector3d(denseMeshNormal.x, denseMeshNormal.y, denseMeshNormal.z);
-  n.normalize();
-
-  out_normal = Color(n(0), n(1), n(2));
+  Eigen::Vector3d dNormal = m * toEigen(denseMeshNormal);
+  dNormal.normalize();
+  out_normal = Color(dNormal(0), dNormal(1), dNormal(2));
 }
 
 void Texturing::_generateNormalAndHeightMaps(const mvsUtils::MultiViewParams& mp,
@@ -684,15 +724,13 @@ void Texturing::_generateNormalAndHeightMaps(const mvsUtils::MultiViewParams& mp
   std::vector<float> heightMap(texParams.textureSide * texParams.textureSide);
   const auto& triangles = _atlases[atlasID];
 
-  StaticVector<Point3d>* ptsNormals = me->computeNormalsForPts();
-
   // iterate over atlas' triangles
 #pragma omp parallel for
   for (int ti = 0; ti < triangles.size(); ++ti)
   {
     const unsigned int triangleId = triangles[ti];
-    // const Point3d triangleNormal_ = me->computeTriangleNormal(triangleId).normalize();
-    // const GEO::vec3 triangleNormal(triangleNormal_.x, triangleNormal_.y, triangleNormal_.z);
+    //  const Point3d __triangleNormal_ = me->computeTriangleNormal(triangleId).normalize();
+    //  const GEO::vec3 __triangleNormal(__triangleNormal_.x, __triangleNormal_.y, __triangleNormal_.z);
     const double minEdgeLength = me->computeTriangleMinEdgeLength(triangleId);
     // const GEO::vec3 scaledTriangleNormal = triangleNormal * minEdgeLength;
 
@@ -724,6 +762,9 @@ void Texturing::_generateNormalAndHeightMaps(const mvsUtils::MultiViewParams& mp
     RD.x = clamp(RD.x, 0, texSide);
     RD.y = clamp(RD.y, 0, texSide);
 
+    const Eigen::Matrix3d worldToTriangleMatrix = computeTriangleTransform(*me, triangleId, triPixs);
+    // const Point3d triangleNormal = me->computeTriangleNormal(triangleId);
+
     // iterate over bounding box's pixels
     for (int y = LU.y; y < RD.y; ++y)
     {
@@ -747,8 +788,10 @@ void Texturing::_generateNormalAndHeightMaps(const mvsUtils::MultiViewParams& mp
         Point3d pt3d = barycentricToCartesian(triPts, Point2d(barycCoords.z, barycCoords.y));
         GEO::vec3 q(pt3d.x, pt3d.y, pt3d.z);
 
-        const GEO::vec3 triangleNormal = mesh_facet_interpolate_normal_at_point(*ptsNormals, *me, triangleId, q);
-        const GEO::vec3 scaledTriangleNormal = triangleNormal * minEdgeLength * 10;
+        // Texel normal (weighted normal from the 3 vertices normals), instead of face normal for better transitions (reduce seams)
+        const GEO::vec3 triangleNormal_p = mesh_facet_interpolate_normal_at_point(sparseMesh, triangleId, q);
+        // const GEO::vec3 triangleNormal_p = GEO::vec3(triangleNormal.m); // to use the triangle normal instead
+        const GEO::vec3 scaledTriangleNormal = triangleNormal_p * minEdgeLength * 10;
 
         const double epsilon = 0.00001;
         GEO::vec3 qA1 = q - (scaledTriangleNormal * epsilon);
@@ -758,7 +801,7 @@ void Texturing::_generateNormalAndHeightMaps(const mvsUtils::MultiViewParams& mp
         bool intersection = denseMeshAABB.segment_nearest_intersection(qA1, qB1, t, f);
         if (intersection)
         {
-          computeNormalHeight(denseMeshAABB.mesh(), 1.0, t, f, triangleNormal, q, qA1, qB1,
+          computeNormalHeight(denseMeshAABB.mesh(), 1.0, t, f, worldToTriangleMatrix, q, qA1, qB1,
             heightMap[xyoffset], normalMap[xyoffset]);
         }
         else
@@ -768,7 +811,7 @@ void Texturing::_generateNormalAndHeightMaps(const mvsUtils::MultiViewParams& mp
           bool intersection = denseMeshAABB.segment_nearest_intersection(qA2, qB2, t, f);
           if (intersection)
           {
-            computeNormalHeight(denseMeshAABB.mesh(), -1.0, t, f, triangleNormal, q, qA2, qB2,
+            computeNormalHeight(denseMeshAABB.mesh(), -1.0, t, f, worldToTriangleMatrix, q, qA2, qB2,
               heightMap[xyoffset], normalMap[xyoffset]);
           }
           else
@@ -782,7 +825,6 @@ void Texturing::_generateNormalAndHeightMaps(const mvsUtils::MultiViewParams& mp
   }
 
   // save normal / height maps to images
-
   if (normalMapFileType != EImageFileType::NONE)
   {
     unsigned int outTextureSide = texParams.textureSide;
@@ -800,11 +842,12 @@ void Texturing::_generateNormalAndHeightMaps(const mvsUtils::MultiViewParams& mp
 
     if (normalMapFileType != EImageFileType::EXR)
     {
-      // X: -1 to + 1 : Red : 0 to 255
-      // Y: -1 to + 1 : Green : 0 to 255
-      // Z: 0 to - 1 : Blue : 128 to 255 OR 0 to 255 (like Blender)
+      // X: -1 to +1 : Red : 0 to 255
+      // Y: -1 to +1 : Green : 0 to 255
+      // Z: 0 to -1 : Blue : 128 to 255 OR 0 to 255 (like Blender)
       for (unsigned int i = 0; i < normalMap.size(); ++i)
-        normalMap[i] = Color(normalMap[i].r * 0.5 + 0.5, normalMap[i].g * 0.5 + 0.5, normalMap[i].b); // * 0.5 + 0.5);
+        // normalMap[i] = Color(normalMap[i].r * 0.5 + 0.5, normalMap[i].g * 0.5 + 0.5, normalMap[i].b); // B: 0:+1 => 0-255
+        normalMap[i] = Color(normalMap[i].r * 0.5 + 0.5, normalMap[i].g * 0.5 + 0.5, normalMap[i].b * 0.5 + 0.5); // B: -1:+1 => 0-255 which means 0:+1 => 128-255
     }
 
     const std::string name = "normalMap_" + std::to_string(atlasID) + "." + EImageFileType_enumToString(normalMapFileType);

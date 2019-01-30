@@ -8,6 +8,10 @@
 
 #include <cmath>
 
+#include <geogram/basic/vecg.h>
+#include <Eigen/Core>
+
+
 namespace aliceVision {
 
 class Point2d
@@ -82,12 +86,23 @@ public:
         return std::sqrt(x * x + y * y);
     }
 
+    template <class T>
+    operator GEO::vecng<2, T>() const
+    {
+      return GEO::vecng<2, T>(x, y);
+    }
+
     friend double dot(const Point2d& p1, const Point2d& p2);
 };
 
 inline double dot(const Point2d& p1, const Point2d& p2)
 {
     return p1.x * p2.x + p1.y * p2.y;
+}
+
+inline Eigen::Matrix<double, 2, 1> toEigen(const Point2d& v)
+{
+  return Eigen::Matrix<double, 2, 1>(v.m);
 }
 
 } // namespace aliceVision

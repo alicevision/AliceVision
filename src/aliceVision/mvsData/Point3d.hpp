@@ -10,6 +10,7 @@
 #include <cmath>
 
 #include <geogram/basic/vecg.h>
+#include <Eigen/Core>
 
 
 namespace aliceVision {
@@ -135,6 +136,11 @@ inline Point3d cross(const Point3d& a, const Point3d& b)
 inline Point3d proj(Point3d& e, Point3d& a)
 {
     return e * (dot(e, a) / dot(e, e));
+}
+
+inline Eigen::Matrix<double, 3, 1> toEigen(const Point3d& v)
+{
+  return Eigen::Matrix<double, 3, 1>(v.m);
 }
 
 } // namespace aliceVision
