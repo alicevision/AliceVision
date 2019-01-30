@@ -38,6 +38,7 @@ alicevision_add_library(aliceVision_mvsData
     aliceVision_system
     ${ZLIB_LIBRARIES}
     ${Boost_FILESYSTEM_LIBRARY}
+    Geogram::geogram
   PUBLIC_INCLUDE_DIRS
     ${ZLIB_INCLUDE_DIR}
     ${Boost_INCLUDE_DIR}
