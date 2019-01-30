@@ -136,7 +136,7 @@ bool readPointCloud(IObject iObj, M44d mat, sfmData::SfMData &sfmdata, ESfMData 
     }
   }
 
-  // for compatibility
+  // for compatibility with files generated with a previous version
   if(userProps &&
      userProps.getPropertyHeader("mvg_visibilitySize") &&
      userProps.getPropertyHeader("mvg_visibilityIds") &&
@@ -243,7 +243,7 @@ bool readPointCloud(IObject iObj, M44d mat, sfmData::SfMData &sfmdata, ESfMData 
       }
     }
 
-    const bool hasFeatures = (sampleVisibilityFeatId->size() > 0);
+    const bool hasFeatures = (sampleVisibilityFeatId != nullptr) && (sampleVisibilityFeatId->size() > 0);
     std::size_t obsGlobalIndex = 0;
     for(std::size_t point3d_i = 0; point3d_i < positions->size(); ++point3d_i)
     {
