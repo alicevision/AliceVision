@@ -36,7 +36,7 @@ namespace depthMap {
 }
 
 
-__host__ float3 ps_M3x3mulV3(float* M3x3, const float3& V)
+__host__ float3 ps_M3x3mulV3(const float* M3x3, const float3& V)
 {
     return make_float3(M3x3[0] * V.x + M3x3[3] * V.y + M3x3[6] * V.z, M3x3[1] * V.x + M3x3[4] * V.y + M3x3[7] * V.z,
                        M3x3[2] * V.x + M3x3[5] * V.y + M3x3[8] * V.z);
@@ -81,8 +81,7 @@ float3 ps_getDeviceMemoryInfo()
     return make_float3(avail, total, used);
 }
 
-__host__ void ps_init_reference_camera_matrices(float* _P, float* _iP, float* _R, float* _iR, float* _K, float* _iK,
-                                                float* _C)
+__host__ void ps_init_reference_camera_matrices(const float* _P, const float* _iP, const float* _R, const float* _iR, const float* _K, const float* _iK, const float* _C)
 {
     cudaMemcpyToSymbol(sg_s_rP, _P, sizeof(float) * 3 * 4);
     cudaMemcpyToSymbol(sg_s_riP, _iP, sizeof(float) * 3 * 3);
@@ -1484,7 +1483,7 @@ void ps_getSilhoueteMap(CudaArray<uchar4, 2>** ps_texs_arr, CudaHostMemoryHeap<b
 
 
 void ps_computeNormalMap(CudaArray<uchar4, 2>** ps_texs_arr, CudaHostMemoryHeap<float3, 2>* normalMap_hmh,
-  CudaHostMemoryHeap<float, 2>* depthMap_hmh, cameraStruct** cams, int width, int height,
+  CudaHostMemoryHeap<float, 2>* depthMap_hmh, const cameraStruct& camera, int width, int height,
   int scale, int CUDAdeviceNo, int ncamsAllocated, int scales, int wsh, bool verbose,
   float gammaC, float gammaP)
 {
@@ -1494,13 +1493,9 @@ void ps_computeNormalMap(CudaArray<uchar4, 2>** ps_texs_arr, CudaHostMemoryHeap<
   CudaArray<float, 2> depthMap_arr(*depthMap_hmh);
   cudaBindTextureToArray(depthsTex, depthMap_arr.getArray(), cudaCreateChannelDesc<float>());
 
-  ps_init_reference_camera_matrices(cams[0]->P, cams[0]->iP, cams[0]->R, cams[0]->iR, cams[0]->K, cams[0]->iK,
-    cams[0]->C);
-  cudaBindTextureToArray(r4tex, ps_texs_arr[cams[0]->camId * scales + scale]->getArray(),
-    cudaCreateChannelDesc<uchar4>());
+  ps_init_reference_camera_matrices(camera.P, camera.iP, camera.R, camera.iR, camera.K, camera.iK, camera.C);
 
   CudaDeviceMemoryPitched<float3, 2> normalMap_dmp(*normalMap_hmh);
-  CudaDeviceMemoryPitched<float, 2> depthMap_dmp(CudaSize<2>(width, height));
 
   int block_size = 8;
   dim3 block(block_size, block_size, 1);

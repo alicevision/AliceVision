@@ -667,7 +667,6 @@ __global__ void computeNormalMap_kernel(
       pixSize = size(p1 - p2);
     }
 
-    float4 gcr = 255.0f * tex2D(r4tex, (float)x + 0.5f, (float)y + 0.5f);
     cuda_stat3d s3d = cuda_stat3d();
 
     for (int yp = -wsh; yp <= wsh; yp++)
@@ -677,12 +676,6 @@ __global__ void computeNormalMap_kernel(
         float depthn = tex2D(depthsTex, x + xp, y + yp);
         if ((depth > 0.0f) && (fabs(depthn - depth) < 30.0f * pixSize))
         {
-          // float3 gcr1;
-          // gcr1.x = 255.0f*tex2D(rtex0, (float)(x+xp)+0.5f, (float)(y+yp)+0.5f);
-          // gcr1.y = 255.0f*tex2D(rtex1, (float)(x+xp)+0.5f, (float)(y+yp)+0.5f);
-          // gcr1.z = 255.0f*tex2D(rtex2, (float)(x+xp)+0.5f, (float)(y+yp)+0.5f);
-          // float w = CostYKfromLab(xp, yp, gcr, gcr1, gammaC, gammaP);
-
           float w = 1.0f;
           float2 pixn = make_float2(x + xp, y + yp);
           float3 pn = get3DPointForPixelAndDepthFromRC(pixn, depthn);

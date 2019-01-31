@@ -153,7 +153,7 @@ void ps_computeNormalMap(
   CudaArray<uchar4, 2>** ps_texs_arr,
   CudaHostMemoryHeap<float3, 2>* normalMap_hmh,
   CudaHostMemoryHeap<float, 2>* depthMap_hmh,
-  cameraStruct** cams,
+  const cameraStruct& camera,
   int width, int height,
   int scale,
   int CUDAdeviceNo,

@@ -382,14 +382,12 @@ void estimateAndRefineDepthMaps(int cudaDeviceNo, mvsUtils::MultiViewParams* mp,
 
 
 
-void computeNormalMaps(int CUDADeviceNo, mvsUtils::MultiViewParams* mp, mvsUtils::PreMatchCams* pc, const StaticVector<int>& cams)
+void computeNormalMaps(int CUDADeviceNo, mvsUtils::MultiViewParams* mp, const StaticVector<int>& cams)
 {
-  const int fileScale = 1; // input images scale (should be one)
-
   int bandType = 0;
   mvsUtils::ImagesCache ic(mp, bandType, true);
-  PlaneSweepingCuda cps(CUDADeviceNo, ic, mp, pc, 1);
-  SemiGlobalMatchingParams sp(mp, pc, cps);
+  PlaneSweepingCuda cps(CUDADeviceNo, ic, mp, 1);
+  SemiGlobalMatchingParams sp(mp, cps);
 
   float igammaC = 1.0f;
   float igammaP = 1.0f;
@@ -414,7 +412,7 @@ void computeNormalMaps(int CUDADeviceNo, mvsUtils::MultiViewParams* mp, mvsUtils
   }
 }
 
-void computeNormalMaps(mvsUtils::MultiViewParams* mp, mvsUtils::PreMatchCams* pc, const StaticVector<int>& cams)
+void computeNormalMaps(mvsUtils::MultiViewParams* mp, const StaticVector<int>& cams)
 {
   int num_gpus = listCUDADevices(true);
   int num_cpu_threads = omp_get_num_procs();
@@ -429,9 +427,8 @@ void computeNormalMaps(mvsUtils::MultiViewParams* mp, mvsUtils::PreMatchCams* pc
 
   if (numthreads == 1)
   {
-    int bestGpuId = system::getBestGpuDeviceId(2, 0);
-    int CUDADeviceNo = mp->userParams.get<int>("global.CUDADeviceNo", bestGpuId);
-    computeNormalMaps(CUDADeviceNo, mp, pc, cams);
+    int CUDADeviceNo = 0;
+    computeNormalMaps(CUDADeviceNo, mp, cams);
   }
   else
   {
@@ -454,7 +451,7 @@ void computeNormalMaps(mvsUtils::MultiViewParams* mp, mvsUtils::PreMatchCams* pc
       {
         subcams.push_back(cams[rc]);
       }
-      computeNormalMaps(cpu_thread_id, mp, pc, subcams);
+      computeNormalMaps(cpu_thread_id, mp, subcams);
     }
   }
 }

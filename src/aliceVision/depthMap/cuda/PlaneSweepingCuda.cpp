@@ -235,14 +235,15 @@ int PlaneSweepingCuda::addCam(int camIndex, float** H, int scale)
         int oldestId = camsTimes->minValId();
         cameraStruct* cam = (*cams)[oldestId];
 
+        long t1 = clock();
+
+        cps_fillCamera(cam, camIndex, mp, H, scale);
+
         if(cam->tex_rgba_hmh == nullptr)
         {
             cam->tex_rgba_hmh =
                 new CudaHostMemoryHeap<uchar4, 2>(CudaSize<2>(mp->getMaxImageWidth(), mp->getMaxImageHeight()));
         }
-        long t1 = clock();
-
-        cps_fillCamera(cam, camIndex, mp, H, scale);
         cps_fillCameraData(&_ic, cam, camIndex, mp);
         ps_deviceUpdateCam((CudaArray<uchar4, 2>**)ps_texs_arr, cam, oldestId,
                            _CUDADeviceNo, _nImgsInGPUAtTime, _scales, mp->getMaxImageWidth(), mp->getMaxImageHeight(), varianceWSH);
@@ -976,13 +977,9 @@ bool PlaneSweepingCuda::computeNormalMap(StaticVector<float>* depthMap, StaticVe
   long t1 = clock();
 
   ALICEVISION_LOG_DEBUG("computeNormalMap rc: " << rc);
-  StaticVector<int>* camsids = new StaticVector<int>();
-  camsids->reserve(1);
-  camsids->push_back(addCam(rc, NULL, scale));
-  cameraStruct** ttcams = new cameraStruct*[1];
-  ttcams[0] = (cameraStruct*)(*cams)[(*camsids)[0]];
-  ttcams[0]->camId = (*camsids)[0];
-  ttcams[0]->rc = rc;
+  cameraStruct camera;
+  camera.camId = rc;
+  cps_fillCamera(&camera, rc, mp, nullptr, scale);
 
   CudaHostMemoryHeap<float3, 2> normalMap_hmh(CudaSize<2>(w, h));
   CudaHostMemoryHeap<float, 2> depthMap_hmh(CudaSize<2>(w, h));
@@ -992,7 +989,7 @@ bool PlaneSweepingCuda::computeNormalMap(StaticVector<float>* depthMap, StaticVe
     depthMap_hmh.getBuffer()[i] = (*depthMap)[i];
   }
 
-  ps_computeNormalMap((CudaArray<uchar4, 2>**)ps_texs_arr, &normalMap_hmh, &depthMap_hmh, ttcams, w, h, scale - 1,
+  ps_computeNormalMap((CudaArray<uchar4, 2>**)ps_texs_arr, &normalMap_hmh, &depthMap_hmh, camera, w, h, scale - 1,
     _CUDADeviceNo, _nImgsInGPUAtTime, _scales, wsh, _verbose, igammaC, igammaP);
 
   for (int i = 0; i < w * h; i++)
@@ -1001,13 +998,6 @@ bool PlaneSweepingCuda::computeNormalMap(StaticVector<float>* depthMap, StaticVe
     (*normalMap)[i].g = normalMap_hmh.getBuffer()[i].y;
     (*normalMap)[i].b = normalMap_hmh.getBuffer()[i].z;
   }
-
-  for (int i = 0; i < camsids->size(); i++)
-  {
-    ttcams[i] = NULL;
-  }
-  delete[] ttcams;
-  delete camsids;
 
   if (_verbose)
     mvsUtils::printfElapsedTime(t1);
