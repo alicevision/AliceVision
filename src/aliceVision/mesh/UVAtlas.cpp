@@ -281,6 +281,9 @@ void UVAtlas::createTextureAtlases(vector<Chart>& charts, mvsUtils::MultiViewPar
         // fill potential empty space (i != j) in backward direction
         while(j > i && insertChart(j)) { --j; }
 
+        if(atlas.empty())
+            throw std::runtime_error("Unable to add any chart to this atlas");
+
         // atlas is full or all charts have been handled
         ALICEVISION_LOG_INFO("Filled with " << atlas.size() << " charts.");
         // store this texture
