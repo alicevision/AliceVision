@@ -50,6 +50,7 @@ int main(int argc, char* argv[])
     int pixSizeBall = 0;
     int pixSizeBallWithLowSimilarity = 0;
     int nNearestCams = 10;
+    bool computeNormalMaps = false;
 
     po::options_description allParams("AliceVision depthMapFiltering\n"
                                       "Filter depth map to remove values that are not consistent with other depth maps");
@@ -82,7 +83,9 @@ int main(int argc, char* argv[])
         ("pixSizeBallWithLowSimilarity", po::value<int>(&pixSizeBallWithLowSimilarity)->default_value(pixSizeBallWithLowSimilarity),
             "Filter ball size (in px) when the similarity is weak or ambiguous.")
         ("nNearestCams", po::value<int>(&nNearestCams)->default_value(nNearestCams),
-            "Number of nearest cameras.");
+            "Number of nearest cameras.")
+        ("computeNormalMaps", po::value<bool>(&computeNormalMaps)->default_value(computeNormalMaps),
+            "Compute normal maps per depth map");
 
     po::options_description logParams("Log parameters");
     logParams.add_options()
@@ -170,7 +173,8 @@ int main(int argc, char* argv[])
         fs.filterDepthMaps(cams, minNumOfConsistentCams, minNumOfConsistentCamsWithLowSimilarity);
     }
 
-    depthMap::computeNormalMaps(&mp, &pc, cams);
+    if(computeNormalMaps)
+      depthMap::computeNormalMaps(&mp, cams);
 
     ALICEVISION_LOG_INFO("Task done in (s): " + std::to_string(timer.elapsed()));
     return EXIT_SUCCESS;
