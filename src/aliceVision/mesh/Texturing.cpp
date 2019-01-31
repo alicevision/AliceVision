@@ -152,8 +152,8 @@ void Texturing::generateUVs(mvsUtils::MultiViewParams& mp)
         {
             std::map<int, int> uvCache;
 
-            Pixel offset = chart.targetLU;
-            offset = offset - chart.sourceLU;
+            Point2d sourceLU(chart.sourceLU.x, chart.sourceLU.y);
+            Point2d targetLU(chart.targetLU.x, chart.targetLU.y);
 
             // for each triangle in this chart
             for(size_t i = 0 ; i<chart.triangleIDs.size(); ++i)
@@ -178,10 +178,19 @@ void Texturing::generateUVs(mvsUtils::MultiViewParams& mp)
                         if(mp.isPixelInImage(pix, chart.refCameraID))
                         {
                             // compute the final pixel coordinates
-                            uvPix = (pix + Point2d(offset.x, offset.y)) / (float)mua.textureSide();
+                            // get pixel offset in reference camera space with applied downscale
+                            Point2d dp = (pix - sourceLU) * chart.downscale;
+                            // add this offset to targetLU to get final pixel coordinates + normalize
+                            uvPix = (targetLU + dp) / (float)mua.textureSide();
                             uvPix.y = 1.0 - uvPix.y;
-                            if(uvPix.x >= mua.textureSide() || uvPix.y >= mua.textureSide())
+
+                            // sanity check: discard invalid UVs
+                            if(   uvPix.x < 0 || uvPix.x > 1.0 
+                               || uvPix.y < 0 || uvPix.x > 1.0 )
+                            {
+                                ALICEVISION_LOG_WARNING("Discarding invalid UV: " + std::to_string(uvPix.x) + ", " + std::to_string(uvPix.y));
                                 uvPix = Point2d();
+                            }
                         }
                     }
 

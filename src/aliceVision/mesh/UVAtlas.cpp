@@ -226,6 +226,14 @@ void UVAtlas::finalizeCharts(vector<Chart>& charts, mvsUtils::MultiViewParams& m
                 chart.sourceRD = sourceRD;
             }
         }
+
+        const int largerSize = std::max(chart.sourceWidth(), chart.sourceHeight());
+        if(largerSize > chartMaxSize())
+        {
+            chart.downscale = static_cast<float>(chartMaxSize()) / static_cast<float>(largerSize);
+            ALICEVISION_LOG_WARNING("Downscaling chart (by " + std::to_string(chart.downscale) + ") to fit in texture."
+                "Set higher texture size for better results.");
+        }
     }
 }
 
@@ -236,10 +244,10 @@ void UVAtlas::createTextureAtlases(vector<Chart>& charts, mvsUtils::MultiViewPar
     // sort charts by size, descending
     std::sort(charts.begin(), charts.end(), [](const Chart& a, const Chart& b)
     {
-        int wa = a.width();
-        int wb = b.width();
+        int wa = a.targetWidth();
+        int wb = b.targetWidth();
         if(wa == wb)
-            return a.height() > b.height();
+            return a.targetHeight() > b.targetHeight();
         return wa > wb;
     });
 
@@ -318,8 +326,8 @@ UVAtlas::ChartRect* UVAtlas::ChartRect::insert(Chart& chart, size_t gutter)
     }
     else
     {
-        size_t chartWidth = chart.width() + gutter * 2;
-        size_t chartHeight = chart.height() + gutter * 2;
+        size_t chartWidth = chart.targetWidth() + gutter * 2;
+        size_t chartHeight = chart.targetHeight() + gutter * 2;
         // if there is already a chart here
         if(c) return nullptr;
         // not enough space
