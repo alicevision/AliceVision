@@ -182,6 +182,8 @@ void Texturing::generateUVs(mvsUtils::MultiViewParams& mp)
                             Point2d dp = (pix - sourceLU) * chart.downscale;
                             // add this offset to targetLU to get final pixel coordinates + normalize
                             uvPix = (targetLU + dp) / (float)mua.textureSide();
+                            if(useUDIM)
+                              uvPix.x += atlasId;
                             uvPix.y = 1.0 - uvPix.y;
 
                             // sanity check: discard invalid UVs
@@ -427,7 +429,11 @@ void Texturing::generateTexture(const mvsUtils::MultiViewParams& mp,
                 const int pointIndex = (*me->tris)[triangleId].v[k];
                 triPts[k] = (*me->pts)[pointIndex];                               // 3D coordinates
                 const int uvPointIndex = trisUvIds[triangleId].m[k];
-                triPixs[k] = uvCoords[uvPointIndex] * texParams.textureSide;   // UV coordinates
+                Point2d uv = uvCoords[uvPointIndex];
+                uv.x -= std::floor(uv.x);
+                uv.y -= std::floor(uv.y);
+
+                triPixs[k] = uv * texParams.textureSide;   // UV coordinates
             }
 
             // compute triangle bounding box in pixel indexes
@@ -560,7 +566,7 @@ void Texturing::generateTexture(const mvsUtils::MultiViewParams& mp,
     perPixelColors.clear();
     colorIDs.clear();
 
-    std::string textureName = "texture_" + std::to_string(atlasID) + "." + EImageFileType_enumToString(textureFileType);
+    const std::string textureName = "texture_" + std::to_string(1001 + atlasID) + "." + EImageFileType_enumToString(textureFileType); // starts at '1001' for UDIM compatibility
     bfs::path texturePath = outPath / textureName;
     ALICEVISION_LOG_INFO("Writing texture file: " << texturePath.string());
 
@@ -739,10 +745,11 @@ void Texturing::saveAsOBJ(const bfs::path& dir, const std::string& basename, EIm
         fprintf(fobj, "vt %f %f\n", uvCoords[i].x, uvCoords[i].y);
 
     // write faces per texture atlas
-    for(size_t atlasID=0; atlasID < _atlases.size(); ++atlasID)
+    for(std::size_t atlasId=0; atlasId < _atlases.size(); ++atlasId)
     {
-        fprintf(fobj, "usemtl TextureAtlas_%i\n", atlasID);
-        for(const auto triangleID : _atlases[atlasID])
+        const std::size_t textureId = 1001 + atlasId; // starts at '1001' for UDIM compatibility
+        fprintf(fobj, "usemtl TextureAtlas_%i\n", textureId);
+        for(const auto triangleID : _atlases[atlasId])
         {
             // vertex IDs
             int vertexID1 = (*me->tris)[triangleID].v[0];
@@ -768,11 +775,12 @@ void Texturing::saveAsOBJ(const bfs::path& dir, const std::string& basename, EIm
     fprintf(fmtl, "# \n\n");
 
     // for each atlas, create a new material with associated texture
-    for(size_t atlasID=0; atlasID < _atlases.size(); ++atlasID)
+    for(size_t atlasId=0; atlasId < _atlases.size(); ++atlasId)
     {
-        std::string textureName = "texture_" + std::to_string(atlasID) + "." + EImageFileType_enumToString(textureFileType);
-        fprintf(fmtl, "\n");
-        fprintf(fmtl, "newmtl TextureAtlas_%i\n", atlasID);
+        const std::size_t textureId = 1001 + atlasId; // starts at '1001' for UDIM compatibility
+        const std::string textureName = "texture_" + std::to_string(textureId) + "." + EImageFileType_enumToString(textureFileType);
+
+        fprintf(fmtl, "newmtl TextureAtlas_%i\n", textureId);
         fprintf(fmtl, "Ka  0.6 0.6 0.6\n");
         fprintf(fmtl, "Kd  0.6 0.6 0.6\n");
         fprintf(fmtl, "Ks  0.0 0.0 0.0\n");

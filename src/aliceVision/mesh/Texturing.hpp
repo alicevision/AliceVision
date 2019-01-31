@@ -88,6 +88,7 @@ struct Texturing
     StaticVector<Voxel> trisNormalsIds;
     PointsVisibility* pointsVisibilities = nullptr;
     Mesh* me = nullptr;
+    bool useUDIM = false;
 
     /// texture atlas to 3D triangle ids
     std::vector<std::vector<int>> _atlases;
