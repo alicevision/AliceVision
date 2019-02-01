@@ -182,7 +182,7 @@ void Texturing::generateUVs(mvsUtils::MultiViewParams& mp)
                             Point2d dp = (pix - sourceLU) * chart.downscale;
                             // add this offset to targetLU to get final pixel coordinates + normalize
                             uvPix = (targetLU + dp) / (float)mua.textureSide();
-                            if(useUDIM)
+                            if(texParams.useUDIM)
                               uvPix.x += atlasId;
                             uvPix.y = 1.0 - uvPix.y;
 

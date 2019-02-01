@@ -74,6 +74,7 @@ struct TexturingParams
     unsigned int padding = 15;
     unsigned int downscale = 2;
     bool fillHoles = false;
+    bool useUDIM = true;
 };
 
 struct Texturing
@@ -88,7 +89,6 @@ struct Texturing
     StaticVector<Voxel> trisNormalsIds;
     PointsVisibility* pointsVisibilities = nullptr;
     Mesh* me = nullptr;
-    bool useUDIM = false;
 
     /// texture atlas to 3D triangle ids
     std::vector<std::vector<int>> _atlases;
