@@ -10,8 +10,8 @@ branches:
 platform:
   - x64
 
-# environment: 
-#   APPVEYOR_SAVE_CACHE_ON_ERROR: true
+environment: 
+  APPVEYOR_SAVE_CACHE_ON_ERROR: true
 
 configuration:
   - Release
@@ -32,10 +32,6 @@ install:
           openexr 
           openimageio[libraw] 
           alembic 
-          geogram 
-          eigen3 
-          ceres[suitesparse]
-          cuda
           --triplet %PLATFORM%-windows
           --recurse
     - vcpkg list
