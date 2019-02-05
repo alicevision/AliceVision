@@ -68,7 +68,7 @@ BOOST_AUTO_TEST_CASE(LIGHTING_ESTIMATION_Lambertian_GT)
 
   // Retrieve unknown lighting
   LightingVector lightingEst;
-  estimateLigthing(lightingEst, albedoSynt, pictureGenerated, normalsSynt);
+  estimateLigthingRGB(lightingEst, albedoSynt, pictureGenerated, normalsSynt);
 
   const float epsilon = 1e-3f;
   EXPECT_MATRIX_NEAR(lightingEst, lightingSynt, epsilon);
@@ -118,7 +118,7 @@ BOOST_AUTO_TEST_CASE(LIGHTING_ESTIMATION_Lambertian_noise)
 
   // Retrieve unknown lighting
   LightingVector lightingEst;
-  estimateLigthing(lightingEst, albedoSynt, pictureGenerated, normalsSynt);
+  estimateLigthingRGB(lightingEst, albedoSynt, pictureGenerated, normalsSynt);
 
   const float epsilon = 1e-2f;
   EXPECT_MATRIX_NEAR(lightingEst, lightingSynt, epsilon);
