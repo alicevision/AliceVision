@@ -32,6 +32,10 @@ install:
           openexr 
           openimageio[libraw] 
           alembic 
+          geogram 
+          eigen3 
+          ceres[suitesparse]
+          cuda
           --triplet %PLATFORM%-windows
           --recurse
     - vcpkg list
