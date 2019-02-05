@@ -52,13 +52,13 @@ before_build:
             -DCMAKE_TOOLCHAIN_FILE=c:/tools/vcpkg/scripts/buildsystems/vcpkg.cmake
     - ls -l
 
-build:
-  project: $(APPVEYOR_BUILD_FOLDER)\build\aliceVision.sln
-  verbosity: minimal
+#build:
+#  project: $(APPVEYOR_BUILD_FOLDER)\build\aliceVision.sln
+#  verbosity: minimal
 
 #comment the above and uncomment the following to just build the dependencies
-# build_script:
-#  - echo "Dependencies installed."
+build_script:
+ - echo "Dependencies installed."
 
 cache:
   c:\tools\vcpkg\installed\
