@@ -30,6 +30,9 @@ public:
     void SGMoptimizeVolumeStepZ(int rc, int volStepXY, int volLUX, int volLUY, int scale);
     StaticVector<IdValue>* getOrigVolumeBestIdValFromVolumeStepZ(int zborder);
 
+    void exportVolume(StaticVector<float>& depths, int camIndex, int scale, int step, const std::string& filepath) const;
+    void exportVolumeStep(StaticVector<float>& depths, int camIndex, int scale, int step, const std::string& filepath) const;
+
 private:
     SemiGlobalMatchingParams* sp;
 

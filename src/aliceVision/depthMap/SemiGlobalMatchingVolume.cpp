@@ -7,7 +7,11 @@
 #include "SemiGlobalMatchingVolume.hpp"
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/mvsData/Point3d.hpp>
+#include <aliceVision/mvsData/jetColorMap.hpp>
 #include <aliceVision/mvsUtils/common.hpp>
+
+#include <aliceVision/sfmData/SfMData.hpp>
+#include <aliceVision/sfmDataIO/sfmDataIO.hpp>
 
 namespace aliceVision {
 namespace depthMap {
@@ -135,6 +139,75 @@ void SemiGlobalMatchingVolume::cloneVolumeSecondStepZ()
 
     if (sp->mp->verbose)
         mvsUtils::printfElapsedTime(tall, "SemiGlobalMatchingVolume::cloneVolumeSecondStepZ ");
+}
+
+void SemiGlobalMatchingVolume::exportVolume(StaticVector<float>& depths, int camIndex,  int scale, int step, const std::string& filepath) const
+{
+    sfmData::SfMData pointCloud;
+    const unsigned char* _volumeSecondBestPtr = _volumeSecondBest->getData().data();
+    const mvsUtils::MultiViewParams* mp = sp->mp;
+
+    IndexT landmarkId;
+    for(int z = 0; z < volDimZ; ++z)
+    {
+        for(int y = 0; y < volDimY; ++y)
+        {
+            for(int x = 0; x < volDimX; ++x)
+            {
+                const double planeDepth = depths[z];
+                const Point3d planen = (mp->iRArr[camIndex] * Point3d(0.0f, 0.0f, 1.0f)).normalize();
+                const Point3d planep = mp->CArr[camIndex] + planen * planeDepth;
+                const Point3d v = (mp->iCamArr[camIndex] * Point2d(x * scale * step, y * scale * step)).normalize();
+                const Point3d p = linePlaneIntersect(mp->CArr[camIndex], v, planep, planen);
+
+                const int index = z * volDimX * volDimY + y * volDimX + x;
+                const int maxValue = 80;
+                if(_volumeSecondBestPtr[index] > maxValue)
+                  continue;
+                const rgb c = getRGBFromJetColorMap(static_cast<double>(_volumeSecondBestPtr[index]) / double(maxValue));
+                pointCloud.getLandmarks()[landmarkId] = sfmData::Landmark(Vec3(p.x, p.y, p.z), feature::EImageDescriberType::UNKNOWN, sfmData::Observations(), image::RGBColor(c.r, c.g, c.b));
+
+                ++landmarkId;
+            }
+        }
+    }
+
+    sfmDataIO::Save(pointCloud, filepath, sfmDataIO::ESfMData::STRUCTURE);
+}
+
+void SemiGlobalMatchingVolume::exportVolumeStep(StaticVector<float>& depths, int camIndex,  int scale, int step, const std::string& filepath) const
+{
+    sfmData::SfMData pointCloud;
+    const unsigned char* volumePtr = _volumeStepZ->getData().data();
+    const mvsUtils::MultiViewParams* mp = sp->mp;
+
+    IndexT landmarkId;
+    for(int stepZ = 0; stepZ < (volDimZ / volStepZ); ++stepZ)
+    {
+        for(int y = 0; y < volDimY; ++y)
+        {
+            for(int x = 0; x < volDimX; ++x)
+            {
+                const int z = (*_volumeBestZ)[stepZ * volDimX * volDimY + y * volDimX + x];
+                const double planeDepth = depths[z];
+                const Point3d planen = (mp->iRArr[camIndex] * Point3d(0.0f, 0.0f, 1.0f)).normalize();
+                const Point3d planep = mp->CArr[camIndex] + planen * planeDepth;
+                const Point3d v = (mp->iCamArr[camIndex] * Point2d(x * scale * step, y * scale * step)).normalize();
+                const Point3d p = linePlaneIntersect(mp->CArr[camIndex], v, planep, planen);
+
+                const int index = stepZ * volDimX * volDimY + y * volDimX + x;
+                const int maxValue = 80;
+                if(volumePtr[index] > maxValue)
+                  continue;
+                const rgb c = getRGBFromJetColorMap(static_cast<double>(volumePtr[index]) / double(maxValue));
+                pointCloud.getLandmarks()[landmarkId] = sfmData::Landmark(Vec3(p.x, p.y, p.z), feature::EImageDescriberType::UNKNOWN, sfmData::Observations(), image::RGBColor(c.r, c.g, c.b));
+
+                ++landmarkId;
+            }
+        }
+    }
+
+    sfmDataIO::Save(pointCloud, filepath, sfmDataIO::ESfMData::STRUCTURE);
 }
 
 /**
