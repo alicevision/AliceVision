@@ -971,10 +971,10 @@ bool PlaneSweepingCuda::optimizeDepthSimMapGradientDescent(StaticVector<DepthSim
 bool PlaneSweepingCuda::computeNormalMap(StaticVector<float>* depthMap, StaticVector<Color>* normalMap, int rc,
   int scale, float igammaC, float igammaP, int wsh)
 {
-  int w = mp->getWidth(rc) / scale;
-  int h = mp->getHeight(rc) / scale;
+  const int w = mp->getWidth(rc) / scale;
+  const int h = mp->getHeight(rc) / scale;
 
-  long t1 = clock();
+  const long t1 = clock();
 
   ALICEVISION_LOG_DEBUG("computeNormalMap rc: " << rc);
   cameraStruct camera;
