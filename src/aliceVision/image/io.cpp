@@ -232,6 +232,11 @@ void readImage(const std::string& path, Image<RGBColor>& image)
   readImage(path, oiio::TypeDesc::UINT8, 3, image);
 }
 
+void writeImage(const std::string& path, const Image<float>& image, const oiio::ParamValueList& metadata)
+{
+  writeImage(path, oiio::TypeDesc::FLOAT, 1, image, metadata);
+}
+
 void writeImage(const std::string& path, const Image<unsigned char>& image, const oiio::ParamValueList& metadata)
 {
   writeImage(path, oiio::TypeDesc::UINT8, 1, image, metadata);
