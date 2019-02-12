@@ -102,8 +102,6 @@ inline std::istream& operator>>(std::istream& in, EAlbedoEstimation& v)
     return in;
 }
 
-
-
 enum class ELightingEstimationMode
 {
   GLOBAL = 1,
@@ -115,7 +113,7 @@ inline std::string ELightingEstimationMode_enumToString(ELightingEstimationMode 
   switch(v)
   {
     case ELightingEstimationMode::GLOBAL:       return "global";
-    case ELightingEstimationMode::PER_IMAGE:        return "per_image";
+    case ELightingEstimationMode::PER_IMAGE:    return "per_image";
   }
   throw std::out_of_range("Invalid LightEstimationMode enum: " + std::to_string(int(v)));
 }
@@ -126,7 +124,7 @@ inline ELightingEstimationMode ELightingEstimationMode_stringToEnum(const std::s
   std::transform(vv.begin(), vv.end(), vv.begin(), ::tolower); //tolower
 
   if(vv == "global")       return ELightingEstimationMode::GLOBAL;
-  if(vv == "per_image")        return ELightingEstimationMode::PER_IMAGE;
+  if(vv == "per_image")    return ELightingEstimationMode::PER_IMAGE;
 
   throw std::out_of_range("Invalid LightEstimationMode: " + v);
 }
@@ -144,6 +142,47 @@ inline std::istream& operator>>(std::istream& in, ELightingEstimationMode& v)
     return in;
 }
 
+enum class ELightingColor {
+  Luminance = 1,
+  RGB = 3
+};
+
+inline std::string ELightingColor_enumToString(ELightingColor v)
+{
+  switch(v)
+  {
+    case ELightingColor::RGB:
+      return "rgb";
+    case ELightingColor::Luminance:
+      return "luminance";
+  }
+  throw std::out_of_range("Invalid LightingColor type Enum: " + std::to_string(int(v)));
+}
+
+inline ELightingColor ELightingColor_stringToEnum(const std::string& v)
+{
+  std::string vv = v;
+  std::transform(vv.begin(), vv.end(), vv.begin(), ::tolower); //tolower
+
+  if(vv == "rgb")
+    return ELightingColor::RGB;
+  if(vv == "luminance")
+    return ELightingColor::Luminance;
+  throw std::out_of_range("Invalid LightingColor type string " + v);
+}
+
+inline std::ostream& operator<<(std::ostream& os, ELightingColor v)
+{
+    return os << ELightingColor_enumToString(v);
+}
+
+inline std::istream& operator>>(std::istream& in, ELightingColor& v)
+{
+    std::string token;
+    in >> token;
+    v = ELightingColor_stringToEnum(token);
+    return in;
+}
 
 void initAlbedo(image::Image<image::RGBfColor>& albedo, const image::Image<image::RGBfColor>& picture, EAlbedoEstimation albedoEstimationMethod, int albedoEstimationFilterSize, const std::string& outputFolder, IndexT viewId)
 {
@@ -183,6 +222,44 @@ void initAlbedo(image::Image<image::RGBfColor>& albedo, const image::Image<image
   }
 }
 
+void initAlbedo(image::Image<float>& albedo, const image::Image<float>& picture, EAlbedoEstimation albedoEstimationMethod, int albedoEstimationFilterSize, const std::string& outputFolder, IndexT viewId)
+{
+  switch(albedoEstimationMethod)
+  {
+    case EAlbedoEstimation::CONSTANT:
+    {
+      albedo.resize(picture.Width(), picture.Height());
+      albedo.fill(.5f);
+    }
+    break;
+    case EAlbedoEstimation::PICTURE:
+    {
+      albedo = picture;
+    }
+    break;
+    case EAlbedoEstimation::MEDIAN_FILTER:
+    {
+      albedo.resize(picture.Width(), picture.Height());
+      const oiio::ImageBuf pictureBuf(oiio::ImageSpec(picture.Width(), picture.Height(), 1, oiio::TypeDesc::FLOAT), const_cast<float*>(picture.data()));
+      oiio::ImageBuf albedoBuf(oiio::ImageSpec(picture.Width(), picture.Height(), 1, oiio::TypeDesc::FLOAT), albedo.data());
+      oiio::ImageBufAlgo::median_filter(albedoBuf, pictureBuf, albedoEstimationFilterSize, albedoEstimationFilterSize);
+      image::writeImage((fs::path(outputFolder) / (std::to_string(viewId) + "_albedo.jpg")).string(), albedo);
+    }
+    break;
+    case EAlbedoEstimation::BLUR_FILTER:
+    {
+      albedo.resize(picture.Width(), picture.Height());
+      const oiio::ImageBuf pictureBuf(oiio::ImageSpec(picture.Width(), picture.Height(), 1, oiio::TypeDesc::FLOAT), const_cast<float*>(picture.data()));
+      oiio::ImageBuf albedoBuf(oiio::ImageSpec(picture.Width(), picture.Height(), 1, oiio::TypeDesc::FLOAT), albedo.data());
+      oiio::ImageBuf K;
+      oiio::ImageBufAlgo::make_kernel(K, "gaussian", albedoEstimationFilterSize, albedoEstimationFilterSize);
+      oiio::ImageBufAlgo::convolve(albedoBuf, pictureBuf, K);
+      image::writeImage((fs::path(outputFolder) / (std::to_string(viewId) + "_albedo.jpg")).string(), albedo);
+    }
+    break;
+  }
+}
+
 int main(int argc, char** argv)
 {
   system::Timer timer;
@@ -199,7 +276,7 @@ int main(int argc, char** argv)
   ELightingEstimationMode lightEstimationMode = ELightingEstimationMode::PER_IMAGE;
 
   int albedoEstimationFilterSize = 3;
-  lightingEstimation::ELightingColor lightingColor = lightingEstimation::ELightingColor::RGB;
+  ELightingColor lightingColor = ELightingColor::RGB;
 
   po::options_description allParams("AliceVision lighthingEstimation");
 
@@ -217,7 +294,7 @@ int main(int argc, char** argv)
 
   po::options_description optionalParams("Optional parameters");
   optionalParams.add_options()
-    ("lightingColor", po::value<lightingEstimation::ELightingColor>(&lightingColor)->default_value(lightingColor),
+    ("lightingColor", po::value<ELightingColor>(&lightingColor)->default_value(lightingColor),
       "Lighting color.")
     ("lightingEstimationMode", po::value<ELightingEstimationMode>(&lightEstimationMode)->default_value(lightEstimationMode),
       "Lighting Estimation Mode.")
@@ -275,117 +352,63 @@ int main(int argc, char** argv)
   // initialization
   mvsUtils::MultiViewParams mp(sfmData, imagesFolder, "", depthMapsFilterFolder, false);
 
-  if(lightEstimationMode == ELightingEstimationMode::PER_IMAGE)
+  lightingEstimation::LighthingEstimator estimator;
+
+  for(const auto& viewPair : sfmData.getViews())
   {
-    for(const auto& viewPair : sfmData.getViews())
+    const IndexT viewId = viewPair.first;
+
+    const std::string picturePath = mp.getImagePath(mp.getIndexFromViewId(viewId));
+    const std::string normalsPath = mvsUtils::getFileNameFromViewId(&mp, viewId, mvsUtils::EFileType::normalMap, 0);
+
+    image::Image<image::RGBfColor> normals;
+    image::readImage(normalsPath, normals);
+
+    if(lightingColor == ELightingColor::Luminance)
     {
-      const IndexT viewId = viewPair.first;
-
-      const std::string picturePath = mp.getImagePath(mp.getIndexFromViewId(viewId));
-      const std::string normalsPath = mvsUtils::getFileNameFromViewId(&mp, viewId, mvsUtils::EFileType::normalMap, 0);
-
-      lightingEstimation::LightingVector shl;
-      image::Image<image::RGBfColor> picture;
-      image::Image<image::RGBfColor> normals;
-
+      image::Image<float> albedo, picture;
       image::readImage(picturePath, picture);
-      image::readImage(normalsPath, normals);
 
-      image::Image<image::RGBfColor> albedo;
       initAlbedo(albedo, picture, albedoEstimationMethod, albedoEstimationFilterSize, outputFolder, viewId);
 
-      lightingEstimation::estimateLigthing(shl, albedo, picture, normals, lightingColor);
+      estimator.addImage(albedo, picture, normals);
+    }
+    else if(lightingColor == ELightingColor::RGB)
+    {
+      image::Image<image::RGBfColor> albedo, picture;
+      image::readImage(picturePath, picture);
+
+      initAlbedo(albedo, picture, albedoEstimationMethod, albedoEstimationFilterSize, outputFolder, viewId);
+
+      estimator.addImage(albedo, picture, normals);
+    }
+
+    if(lightEstimationMode == ELightingEstimationMode::PER_IMAGE)
+    {
+      ALICEVISION_LOG_INFO("Solving view: " << viewId << " lighting estimation...");
+      lightingEstimation::LightingVector shl;
+      estimator.estimateLigthing(shl);
+      estimator.clear(); // clear aggregate data
 
       std::ofstream file((fs::path(outputFolder) / (std::to_string(viewId) + ".shl")).string());
       if(file.is_open())
         file << shl;
     }
+    else
+    {
+      ALICEVISION_LOG_INFO("View: " << viewId << " added to the problem.");
+    }
   }
-  else if(lightEstimationMode == ELightingEstimationMode::GLOBAL)
+
+  if(lightEstimationMode == ELightingEstimationMode::GLOBAL)
   {
-    using namespace Eigen;
-    using namespace aliceVision::lightingEstimation;
+    ALICEVISION_LOG_INFO("Solving global scene lighting estimation...");
+    lightingEstimation::LightingVector shl;
+    estimator.estimateLigthing(shl);
 
-    MatrixXf rhoTimesN[3];
-    MatrixXf colors[3];
-
-    for(const auto& viewPair : sfmData.getViews())
-    {
-      const IndexT viewId = viewPair.first;
-
-      const std::string picturePath = mp.getImagePath(mp.getIndexFromViewId(viewId));
-      const std::string normalsPath = mvsUtils::getFileNameFromViewId(&mp, viewId, mvsUtils::EFileType::normalMap, 0);
-
-      image::Image<image::RGBfColor> picture;
-      image::Image<image::RGBfColor> normals;
-
-      image::readImage(picturePath, picture);
-      image::readImage(normalsPath, normals);
-
-      image::Image<image::RGBfColor> albedo;
-      initAlbedo(albedo, picture, albedoEstimationMethod, albedoEstimationFilterSize, outputFolder, viewId);
-
-      // Augmented normales
-      image::Image<AugmentedNormal> augNormals(normals.cast<AugmentedNormal>());
-
-      const std::size_t nbPixels = albedo.Width() * albedo.Height();
-
-      // estimate Lighting per Channel
-      for(std::size_t c = 0; c < 3; ++c)
-      {
-          // Map albedo, image
-          Map<MatrixXf, 0, InnerStride<3>> albedoC((float*)&(albedo(0,0)(c)), nbPixels, 1);
-          Map<MatrixXf, 0, InnerStride<3>> pictureC((float*)&(picture(0,0)(c)), nbPixels, 1);
-
-          accumulateImageData(rhoTimesN[c], colors[c], albedoC, pictureC, augNormals);
-
-          ALICEVISION_LOG_INFO("GLOBAL: estimateLigthingLuminance (channel=" << c << "): " << rhoTimesN[c].rows() << "x" << rhoTimesN[c].cols());
-      }
-    }
-
-    LightingVector shl;
-    if(lightingColor == ELightingColor::Luminance)
-    {
-        MatrixXf all_rhoTimesN;
-        MatrixXf all_colors;
-
-        for(std::size_t c = 0; c < 3; ++c)
-        {
-            all_rhoTimesN.resize(all_rhoTimesN.rows() + rhoTimesN[c].rows(), rhoTimesN[c].cols());
-            all_colors.resize(all_colors.rows() + colors[c].rows(), colors[c].cols());
-
-            all_rhoTimesN.bottomLeftCorner(rhoTimesN[c].rows(), rhoTimesN[c].cols()) = rhoTimesN[c];
-            all_colors.bottomLeftCorner(colors[c].rows(), colors[c].cols()) = colors[c];
-        }
-
-        Eigen::Matrix<float, 9, 1> lightingL;
-        estimateLigthing(lightingL, all_rhoTimesN, all_colors);
-
-        // lighting vectors fusion
-        shl.col(0) = lightingL;
-        shl.col(1) = lightingL;
-        shl.col(2) = lightingL;
-    }
-    else if(lightingColor == ELightingColor::RGB)
-    {
-        // estimate Lighting per Channel
-        for(std::size_t c = 0; c < 3; ++c)
-        {
-            Eigen::Matrix<float, 9, 1> lightingC;
-            estimateLigthing(lightingC, rhoTimesN[c], colors[c]);
-
-            // lighting vectors fusion
-            shl.col(c) = lightingC;
-        }
-    }
-
-    std::ofstream file((fs::path(outputFolder) / ("scene.shl")).string());
+    std::ofstream file((fs::path(outputFolder) / ("global.shl")).string());
     if(file.is_open())
       file << shl;
-  }
-  else
-  {
-    throw std::runtime_error("Invalid lightingEstimationMode: " + ELightingEstimationMode_enumToString(lightEstimationMode));
   }
 
   ALICEVISION_LOG_INFO("Task done in (s): " + std::to_string(timer.elapsed()));

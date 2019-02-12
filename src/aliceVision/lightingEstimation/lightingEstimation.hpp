@@ -6,10 +6,9 @@
 
 #pragma once
 
-#include "augmentedNormals.hpp"
-
 #include <aliceVision/image/Image.hpp>
 #include <aliceVision/image/pixelTypes.hpp>
+#include <aliceVision/lightingEstimation/augmentedNormals.hpp>
 
 #include <Eigen/Core>
 #include <Eigen/Dense>
@@ -21,81 +20,47 @@ namespace lightingEstimation {
 
 using Eigen::MatrixXf;
 
-enum class ELightingColor {
-  Luminance = 1,
-  RGB = 3
-};
-
-inline std::string ELightingColor_enumToString(ELightingColor v)
-{
-  switch(v)
-  {
-    case ELightingColor::RGB:
-      return "rgb";
-    case ELightingColor::Luminance:
-      return "luminance";
-  }
-  throw std::out_of_range("Invalid LightingColor type Enum: " + std::to_string(int(v)));
-}
-
-inline ELightingColor ELightingColor_stringToEnum(const std::string& v)
-{
-  std::string vv = v;
-  std::transform(vv.begin(), vv.end(), vv.begin(), ::tolower); //tolower
-
-  if(vv == "rgb")
-    return ELightingColor::RGB;
-  if(vv == "luminance")
-    return ELightingColor::Luminance;
-  throw std::out_of_range("Invalid LightingColor type string " + v);
-}
-
-inline std::ostream& operator<<(std::ostream& os, ELightingColor v)
-{
-    return os << ELightingColor_enumToString(v);
-}
-
-inline std::istream& operator>>(std::istream& in, ELightingColor& v)
-{
-    std::string token;
-    in >> token;
-    v = ELightingColor_stringToEnum(token);
-    return in;
-}
-
 /**
  * @brief Augmented lighting vetor for augmented Lambert's law (using Spherical Harmonics model)
  * Composed of 9 coefficients
  */ 
 using LightingVector = Eigen::Matrix<float, 9, 3>;
 
-void estimateLigthing(Eigen::Matrix<float, 9, 1>& lighting, const MatrixXf& rhoTimesN, const MatrixXf& pictureChannel);
-
 /**
- * @brief Lighting estimation from picture, albedo and geometry
- */ 
-void estimateLigthingLuminance(LightingVector& lighting, const image::Image<image::RGBfColor>& albedo, const image::Image<image::RGBfColor>& picture, const image::Image<image::RGBfColor>& normals);
-
-/**
- * @brief Lighting estimation from picture, albedo and geometry
+ * @brief The LighthingEstimator class
+ * Allows to estimate LightingVector from a single image or multiple images
+ * @warning Image pixel type can be:
+ * - RGB (float) for light and color estimation
+ * - Greyscale (float) for luminance estimation
  */
-void estimateLigthingRGB(LightingVector& lighting, const image::Image<image::RGBfColor>& albedo, const image::Image<image::RGBfColor>& picture, const image::Image<image::RGBfColor>& normals);
-
-inline void estimateLigthing(LightingVector& lighting, const image::Image<image::RGBfColor>& albedo, const image::Image<image::RGBfColor>& picture, const image::Image<image::RGBfColor>& normals, ELightingColor lightingColor)
+class LighthingEstimator
 {
-  switch(lightingColor)
-  {
-  case ELightingColor::RGB:
-    estimateLigthingRGB(lighting, albedo, picture, normals);
-    break;
-  case ELightingColor::Luminance:
-    estimateLigthingLuminance(lighting, albedo, picture, normals);
-    break;
-  }
-}
+public:
 
-void accumulateImageData(MatrixXf& all_rhoTimesN, MatrixXf& all_colors, const MatrixXf& albedoChannel, const MatrixXf& pictureChannel, const image::Image<AugmentedNormal>& augNormals);
+  /**
+   * @brief Aggregate image data
+   * @param albedo[in] the corresponding albedo image
+   * @param picture[in] the corresponding picture
+   * @param normals[in] the corresponding normals image
+   */
+  void addImage(const image::Image<float>& albedo, const image::Image<float>& picture, const image::Image<image::RGBfColor>& normals);
+  void addImage(const image::Image<image::RGBfColor>& albedo, const image::Image<image::RGBfColor>& picture, const image::Image<image::RGBfColor>& normals);
 
+  /**
+   * @brief Estimate ligthing from the aggregate image(s) data
+   * @param[out] lighting Estimate ligthing @see LightingVector
+   */
+  void estimateLigthing(LightingVector& lighting) const;
 
-}
-}
+  /**
+   * @brief Clear all the aggregate image(s) data
+   */
+  void clear();
+
+private:
+  std::array<std::vector<MatrixXf>, 3> _all_rhoTimesN;
+  std::array<std::vector<MatrixXf>, 3> _all_pictureChannel;
+};
+
+} // namespace lightingEstimation
+} // namespace aliceVision
