@@ -43,123 +43,164 @@ void albedoNormalsProduct(MatrixXf& rhoTimesN, const MatrixXf& albedoChannel, co
     }
 }
 
-/**
- * @brief Resolve lighting estimation problem for one channel
- */
-void estimateLigthing(Eigen::Matrix<float, 9, 1>& lighting, const MatrixXf& rhoTimesN, const MatrixXf& pictureChannel)
-{
-    ALICEVISION_LOG_INFO("estimateLigthing: " << rhoTimesN.rows() << "x" << rhoTimesN.cols());
-    lighting = rhoTimesN.colPivHouseholderQr().solve(pictureChannel);
-}
-
-void prepareImageData(MatrixXf& rhoTimesN, MatrixXf& outColor, const MatrixXf& albedoChannel, const MatrixXf& pictureChannel, const image::Image<AugmentedNormal>& augNormals)
+void prepareImageData(const MatrixXf& albedo,
+                      const MatrixXf& picture,
+                      const image::Image<AugmentedNormal>& augmentedNormals,
+                      MatrixXf& rhoTimesN,
+                      MatrixXf& colors)
 {
   std::size_t nbValidPoints = 0;
-  for (int i = 0; i < augNormals.size(); ++i)
+
+  for(int i = 0; i < augmentedNormals.size(); ++i)
   {
-    // If the normal is undefined
-    if(augNormals(i).nx() == -1.0f && augNormals(i).ny() == -1.0f && augNormals(i).nz() == -1.0f)
+    // if the normal is undefined
+    if(augmentedNormals(i).nx() == -1.0f && augmentedNormals(i).ny() == -1.0f && augmentedNormals(i).nz() == -1.0f)
       continue;
     ++nbValidPoints;
   }
 
   rhoTimesN.resize(nbValidPoints, 9);
-  albedoNormalsProduct(rhoTimesN, albedoChannel, augNormals);
+  albedoNormalsProduct(rhoTimesN, albedo, augmentedNormals);
+  colors.resize(nbValidPoints, 1);
 
-  outColor.resize(nbValidPoints, 1);
   {
     std::size_t validIndex = 0;
-    for (int i = 0; i < augNormals.size(); ++i)
+    for(int i = 0; i < augmentedNormals.size(); ++i)
     {
-      // If the normal is undefined
-      if(augNormals(i).nx() == -1.0f && augNormals(i).ny() == -1.0f && augNormals(i).nz() == -1.0f)
+      // if the normal is undefined
+      if(augmentedNormals(i).nx() == -1.0f && augmentedNormals(i).ny() == -1.0f && augmentedNormals(i).nz() == -1.0f)
         continue;
 
-      outColor(validIndex++) = pictureChannel(i);
+      colors(validIndex++) = picture(i);
     }
   }
 }
 
-void accumulateImageData(MatrixXf& all_rhoTimesN, MatrixXf& all_colors, const MatrixXf& albedoChannel, const MatrixXf& pictureChannel, const image::Image<AugmentedNormal>& augNormals)
+void LighthingEstimator::addImage(const image::Image<float>& albedo, const image::Image<float>& picture, const image::Image<image::RGBfColor>& normals)
 {
+  using namespace Eigen;
+
+  // augmented normales
+  image::Image<AugmentedNormal> augmentedNormals(normals.cast<AugmentedNormal>());
+
+  const std::size_t nbPixels = augmentedNormals.Width() * augmentedNormals.Height();
+
   MatrixXf rhoTimesN;
   MatrixXf colors;
-  prepareImageData(rhoTimesN, colors, albedoChannel, pictureChannel, augNormals);
 
-  all_rhoTimesN.resize(all_rhoTimesN.rows() + rhoTimesN.rows(), rhoTimesN.cols());
-  all_colors.resize(all_colors.rows() + colors.rows(), colors.cols());
+  // map albedo, image
+  Map<const MatrixXf> channelAlbedo(albedo.data(), nbPixels, 1);
+  Map<const MatrixXf> channelPicture(picture.data(), nbPixels, 1);
 
-  all_rhoTimesN.bottomLeftCorner(rhoTimesN.rows(), rhoTimesN.cols()) << rhoTimesN;
-  all_colors.bottomLeftCorner(colors.rows(), colors.cols()) << colors;
+  prepareImageData(channelAlbedo, channelPicture, augmentedNormals, rhoTimesN, colors);
+
+  // store image data
+  _all_rhoTimesN.at(0).push_back(rhoTimesN);
+  _all_pictureChannel.at(0).push_back(colors);
 }
 
-void estimateLigthingOneChannel(Eigen::Matrix<float, 9, 1>& lighting, const MatrixXf& albedoChannel, const MatrixXf& pictureChannel, const image::Image<AugmentedNormal>& augNormals)
+void LighthingEstimator::addImage(const image::Image<image::RGBfColor>& albedo, const image::Image<image::RGBfColor>& picture, const image::Image<image::RGBfColor>& normals)
 {
-  MatrixXf rhoTimesN;
-  MatrixXf colors;
-  prepareImageData(rhoTimesN, colors, albedoChannel, pictureChannel, augNormals);
-  estimateLigthing(lighting, rhoTimesN, colors);
-}
+  using namespace Eigen;
 
-void estimateLigthingLuminance(LightingVector& lighting, const image::Image<image::RGBfColor>& albedo, const image::Image<image::RGBfColor>& picture, const image::Image<image::RGBfColor>& normals)
-{
-    using namespace Eigen;
+  // augmented normales
+  image::Image<AugmentedNormal> augmentedNormals(normals.cast<AugmentedNormal>());
 
-    // Map albedo, image
-    const std::size_t nbPixels = albedo.Width() * albedo.Height();
+  const std::size_t nbPixels = augmentedNormals.Width() * augmentedNormals.Height();
 
-    // Augmented normales
-    image::Image<AugmentedNormal> augNormals(normals.cast<AugmentedNormal>());
-
+  // estimate lighting per channel
+  for(std::size_t channel = 0; channel < 3; ++channel)
+  {
     MatrixXf rhoTimesN;
     MatrixXf colors;
 
-    // estimate Lighting per Channel
-    for(std::size_t c = 0; c < 3; ++c)
+    // map albedo, image
+    Map<const MatrixXf, 0, InnerStride<3>> channelAlbedo(static_cast<const float*>(&(albedo(0,0)(channel))), nbPixels, 1);
+    Map<const MatrixXf, 0, InnerStride<3>> channelPicture(static_cast<const float*>(&(picture(0,0)(channel))), nbPixels, 1);
+
+    prepareImageData(channelAlbedo, channelPicture, augmentedNormals, rhoTimesN, colors);
+
+    // store image data
+    _all_rhoTimesN.at(channel).push_back(rhoTimesN);
+    _all_pictureChannel.at(channel).push_back(colors);
+  }
+}
+
+void LighthingEstimator::estimateLigthing(LightingVector& lighting) const
+{
+  int nbChannels = 3;
+
+  // check number of channels
+  for(int channel = 0; channel < 3; ++channel)
+  {
+    if(_all_rhoTimesN.at(channel).empty())
     {
-        // Map albedo, image
-        Map<MatrixXf, 0, InnerStride<3>> albedoC((float*)&(albedo(0,0)(c)), nbPixels, 1);
-        Map<MatrixXf, 0, InnerStride<3>> pictureC((float*)&(picture(0,0)(c)), nbPixels, 1);
+      nbChannels = channel;
+      break;
+    }
+  }
 
-        accumulateImageData(rhoTimesN, colors, albedoC, pictureC, augNormals);
+  // for each channel
+  for(int channel = 0; channel < nbChannels; ++channel)
+  {
+    std::size_t nbRows_all_rhoTimesN = 0;
+    std::size_t nbRows_all_pictureChannel = 0;
 
-        ALICEVISION_LOG_INFO("estimateLigthingLuminance (channel=" << c << "): " << rhoTimesN.rows() << "x" << rhoTimesN.cols());
+    // count and check matrices rows
+    {
+      for(const MatrixXf& matrix : _all_rhoTimesN.at(channel))
+        nbRows_all_rhoTimesN += matrix.rows();
+
+      for(const MatrixXf& matrix : _all_pictureChannel.at(channel))
+        nbRows_all_pictureChannel += matrix.rows();
+
+      assert(nbRows_all_rhoTimesN == nbRows_all_pictureChannel);
     }
 
-    Eigen::Matrix<float, 9, 1> lightingL;
-    estimateLigthing(lightingL, rhoTimesN, colors);
+    // agglomerate rhoTimesN
+    MatrixXf rhoTimesN(nbRows_all_rhoTimesN, 9);
+    {
+      std::size_t nbRow = 0;
+      for(const MatrixXf& matrix : _all_rhoTimesN.at(channel))
+      {
+        for(int matrixRow = 0; matrixRow < matrix.rows(); ++matrixRow)
+          rhoTimesN.row(nbRow + matrixRow) = matrix.row(matrixRow);
+        nbRow += matrix.rows();
+      }
+    }
+
+    // agglomerate pictureChannel
+    MatrixXf pictureChannel(nbRows_all_pictureChannel, 1);
+    {
+      std::size_t nbRow = 0;
+      for(const MatrixXf& matrix : _all_pictureChannel.at(channel))
+      {
+        for(int matrixRow = 0; matrixRow < matrix.rows(); ++matrixRow)
+          pictureChannel.row(nbRow + matrixRow) = matrix.row(matrixRow);
+        nbRow += matrix.rows();
+      }
+    }
+
+    ALICEVISION_LOG_INFO("estimate ligthing channel: rhoTimesN(" << rhoTimesN.rows() << "x" << rhoTimesN.cols()<< ")");
+    Eigen::Matrix<float, 9, 1> lightingC = rhoTimesN.colPivHouseholderQr().solve(pictureChannel);
 
     // lighting vectors fusion
-    lighting.col(0) = lightingL;
-    lighting.col(1) = lightingL;
-    lighting.col(2) = lightingL;
-}
+    lighting.col(channel) = lightingC;
 
-
-void estimateLigthingRGB(LightingVector& lighting, const image::Image<image::RGBfColor>& albedo, const image::Image<image::RGBfColor>& picture, const image::Image<image::RGBfColor>& normals)
-{
-    using namespace Eigen;
-
-    // Augmented normales
-    image::Image<AugmentedNormal> augNormals(normals.cast<AugmentedNormal>());
-
-    const std::size_t nbPixels = albedo.Width() * albedo.Height();
-
-    // estimate Lighting per Channel
-    for(std::size_t c = 0; c < 3; ++c)
+    // luminance estimation
+    if(nbChannels == 1)
     {
-        // Map albedo, image
-        Map<MatrixXf, 0, InnerStride<3>> albedoC((float*)&(albedo(0,0)(c)), nbPixels, 1);
-        Map<MatrixXf, 0, InnerStride<3>> pictureC((float*)&(picture(0,0)(c)), nbPixels, 1);
-
-        Eigen::Matrix<float, 9, 1> lightingC;
-
-        estimateLigthingOneChannel(lightingC, albedoC, pictureC, augNormals);
-
-        // lighting vectors fusion
-        lighting.col(c) = lightingC;
+      lighting.col(1) = lightingC;
+      lighting.col(2) = lightingC;
     }
+  }
 }
 
+void LighthingEstimator::clear()
+{
+  _all_rhoTimesN = std::array<std::vector<MatrixXf>, 3>();
+  _all_pictureChannel = std::array<std::vector<MatrixXf>, 3>();
 }
-}
+
+} // namespace lightingEstimation
+} // namespace aliceVision
