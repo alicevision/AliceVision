@@ -210,6 +210,51 @@ void SemiGlobalMatchingVolume::exportVolumeStep(StaticVector<float>& depths, int
     sfmDataIO::Save(pointCloud, filepath, sfmDataIO::ESfMData::STRUCTURE);
 }
 
+void SemiGlobalMatchingVolume::export9PCSV(StaticVector<float>& depths, int camIndex,  int scale, int step, const std::string& name, const std::string& filepath) const
+{
+    const unsigned char* volumePtr = _volumeStepZ->getData().data();
+
+    const int xOffset = std::floor(volDimX / 4.0f);
+    const int yOffset = std::floor(volDimY / 4.0f);
+
+    std::array<std::vector<double>, 9> ptsDepths;
+
+    for(int iy = 0; iy < 3; ++iy)
+    {
+        for(int ix = 0; ix < 3; ++ix)
+        {
+            const int x = (ix + 1) * xOffset;
+            const int y = (iy + 1) * yOffset;
+
+            std::vector<double>& pDepths = ptsDepths.at(iy * 3 + ix);
+
+            for(int stepZ = 0; stepZ < (volDimZ / volStepZ); ++stepZ)
+            {
+                pDepths.push_back(volumePtr[stepZ * volDimX * volDimY + y * volDimX + x]);
+            }
+        }
+    }
+
+    std::stringstream ss;
+    {
+      ss << name << "\n";
+      int ptId = 1;
+      for(const std::vector<double>& pDepths : ptsDepths)
+      {
+        ss << "p" << ptId << ";";
+        for(const double& depth : pDepths)
+          ss << depth << ";";
+        ss << "\n";
+        ++ptId;
+      }
+    }
+
+    std::ofstream file;
+    file.open(filepath, std::ios_base::app);
+    if(file.is_open())
+      file << ss.str();
+}
+
 /**
  * @param[in] volStepXY step in the image space
  */
