@@ -90,7 +90,7 @@ bool prepareDenseScene(const SfMData& sfmData,
     //we have a valid view with a corresponding camera & pose
     const std::string baseFilename = std::to_string(viewId);
 
-    oiio::ParamValueList metadata;
+    oiio::ParamValueList metadata = image::getMetadataFromMap(view->getMetadata());
 
     // export camera
     if(saveMetadata || saveMatricesFiles)
@@ -188,18 +188,18 @@ bool prepareDenseScene(const SfMData& sfmData,
       const IntrinsicBase* cam = iterIntrinsic->second.get();
       Image<RGBfColor> image, image_ud;
 
-      readImage(srcImage, image);
+      readImage(srcImage, image, image::EImageColorSpace::LINEAR);
 
       // undistort
       if(cam->isValid() && cam->have_disto())
       {
         // undistort the image and save it
         UndistortImage(image, cam, image_ud, FBLACK);
-        writeImage(dstColorImage, image_ud, metadata);
+        writeImage(dstColorImage, image_ud, image::EImageColorSpace::LINEAR, metadata);
       }
       else
       {
-        writeImage(dstColorImage, image, metadata);
+        writeImage(dstColorImage, image, image::EImageColorSpace::LINEAR, metadata);
       }
     }
 

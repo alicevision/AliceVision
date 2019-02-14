@@ -583,7 +583,8 @@ void Texturing::generateTexture(const mvsUtils::MultiViewParams& mp,
         imageIO::resizeImage(texParams.textureSide, texParams.textureSide, texParams.downscale, colorBuffer, resizedColorBuffer);
         std::swap(resizedColorBuffer, colorBuffer);
     }
-    imageIO::writeImage(texturePath.string(), outTextureSide, outTextureSide, colorBuffer);
+
+    imageIO::writeImage(texturePath.string(), outTextureSide, outTextureSide, colorBuffer, imageIO::EImageQuality::OPTIMIZED, imageIO::EImageColorSpace::LINEAR);
 }
 
 

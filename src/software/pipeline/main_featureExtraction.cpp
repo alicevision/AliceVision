@@ -210,7 +210,7 @@ private:
     image::Image<float> imageGrayFloat;
     image::Image<unsigned char> imageGrayUChar;
 
-    image::readImage(job.view.getImagePath(), imageGrayFloat);
+    image::readImage(job.view.getImagePath(), imageGrayFloat, image::EImageColorSpace::SRGB);
 
     const auto imageDescriberIndexes = useGPU ? job.gpuImageDescriberIndexes : job.cpuImageDescriberIndexes;
 

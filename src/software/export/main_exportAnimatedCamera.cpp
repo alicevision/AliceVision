@@ -163,18 +163,18 @@ int main(int argc, char** argv)
       const std::string dstImage = (undistortedImagesFolderPath / (std::to_string(view.getIntrinsicId()) + "_" + imagePathStem + "." + image::EImageFileType_enumToString(outputFileType))).string();
       const camera::IntrinsicBase * cam = iterIntrinsic->second.get();
 
-      image::readImage(view.getImagePath(), image);
+      image::readImage(view.getImagePath(), image, image::EImageColorSpace::LINEAR);
 
       if(cam->isValid() && cam->have_disto())
       {
         // undistort the image and save it
         camera::UndistortImage(image, cam, image_ud, image::FBLACK, true); // correct principal point
-        image::writeImage(dstImage, image_ud);
+        image::writeImage(dstImage, image_ud, image::EImageColorSpace::LINEAR);
       }
       else // (no distortion)
       {
         // copy the image since there is no distortion
-        image::writeImage(dstImage, image);
+        image::writeImage(dstImage, image, image::EImageColorSpace::LINEAR);
       }
     }
 
