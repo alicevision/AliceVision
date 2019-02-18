@@ -185,3 +185,17 @@ alicevision_add_software(aliceVision_utils_lightingEstimation
         aliceVision_lightingEstimation
         ${Boost_LIBRARIES}
 )
+
+alicevision_add_software(aliceVision_utils_intrinsicDecomposition
+  SOURCE main_intrinsicDecomposition.cpp
+  FOLDER ${FOLDER_SOFTWARE_UTILS}
+  LINKS aliceVision_system
+        aliceVision_numeric
+        aliceVision_sfmData
+        aliceVision_sfmDataIO
+        aliceVision_image
+        aliceVision_intrinsicDecomposition
+        aliceVision_mvsUtils
+        ${Boost_LIBRARIES}
+)
+

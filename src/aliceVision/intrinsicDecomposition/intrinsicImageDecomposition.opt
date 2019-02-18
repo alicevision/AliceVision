@@ -1,0 +1,102 @@
+local W,H = Dim("W", 0), Dim("H", 1)
+
+local albedo = Unknown("albedo", opt_float3, {W,H}, 0)                  -- Albedo maps
+-- local albedo_const = Array("albedo_const", opt_float3, {W,H}, 0)        -- A constant view of the unknown
+local shading = Unknown("shading", opt_float, {W,H}, 1)                     -- Shading map
+local normals = Array("normals", opt_float3, {W,H}, 2)                  -- Normal maps
+local image = Array("image", opt_float3, {W,H}, 3)                       -- Input image
+
+local pNorm = Param("pNorm", float, 4)
+local w_regAlbedo = Param("w_regAlbedo", float, 5)                          -- Regularization albedo
+local w_smoothShading = Param("w_smoothShading", float, 6)                    -- Regularization albedo for pixels with unvalid normal
+local w_dataShading = Param("w_dataShading", float, 7)             -- Weigtht for the data term for shading (stay as close as possible to the data we know)
+
+local L = {}                                                            -- Lighting
+for i=1,9 do
+    L[i] = Param("L_" .. i .. "", float, 7+i)
+end
+
+for i=1,9 do
+    L[i] = 0.0
+end
+-- L[2] = -1.0
+
+L[1] = -0.232015
+L[2] = -0.406994
+L[3] = -0.479057
+L[4] =  0.661341
+L[5] = -0.0911283
+L[6] =  -0.14992
+L[7] = -0.475428
+L[8] =  0.174569
+L[9] = 0.0486487
+
+w_regAlbedo = 10.0
+w_smoothShading = 10.0
+w_dataShading = 1.0
+local w_lambert = 10.0
+local w_truc = 10.0
+
+-- local posX, posY = Index(0), Index(1)
+
+local function validNormal(x, y)
+  return Not(eq(normals(x,y,0), -1.0) * eq(normals(x,y,1), -1.0) * eq(normals(x,y,2), -1.0))
+end
+
+local function shadingAt(x, y)
+  local n_x = normals(x,y,0)
+  local n_y = normals(x,y,1)
+  local n_z = normals(x,y,2)
+  local currentShading = L[1]*n_x + L[2]*n_y + L[3]*n_z + L[4] + L[5]*n_x*n_y + L[6]*n_x*n_y + L[7]*n_y*n_z + L[8]*(n_x*n_x - n_y*n_y) + L[9]*(3*n_z*n_z - 1)
+  return Select(validNormal(x,y), currentShading, Select(greater(albedo(x,y), 0.0001), image(x,y) / albedo(x,y), image(x,y)))
+end
+
+-- Data term for shading
+local function dataTerm_shading(x,y)
+  return shadingAt(x, y) - shading(x,y)
+end
+
+Energy(Select(validNormal(0,0), w_dataShading * dataTerm_shading(0,0), 0))
+
+
+-- Data term for albedo (Lambertian model)
+local function dataTerm(x,y)
+    local lambertianModel = shading(x,y) * albedo(x,y)
+    -- local lambertianModel_const = shading(x,y)*albedo_const(x,y)
+
+    local diff = lambertianModel - image(x,y)
+    -- local diff_const = (lambertianModel_const - image(x,y))
+    -- local res = L_p(diff, diff_const, pNorm, {W,H})
+    return diff -- res
+end
+
+Energy(w_lambert * dataTerm(0,0))
+
+-- regularization term
+for x,y in Stencil { {1,0}, {-1,0}, {0,1}, {0,-1} } do
+    local diff = (albedo(0,0) - albedo(x,y))
+    -- local diff_const = (albedo_const(0,0) - albedo_const(x,y))
+
+    -- local regAlbedo = L_p(diff, diff_const, pNorm, {W,H})
+    -- local regAlbedoF = Select(InBounds(0,0),Select(InBounds(x,y), regAlbedo,0),0)
+    -- Energy(w_regAlbedo * regAlbedoF)
+    Energy(w_regAlbedo * diff)
+end
+
+
+-- Truc
+for x,y in Stencil { {1,0}, {-1,0}, {0,1}, {0,-1} } do
+    local diffA = (albedo(0,0) - albedo(x,y))
+    local diffI = (image(0,0) - image(x,y))
+    Energy(w_truc * (diffA - diffI))
+end
+
+
+-- Smoothing shading
+for x,y in Stencil { {1,0}, {-1,0}, {0,1}, {0,-1} } do
+    local diff = (shading(0,0) - shading(x,y))
+    local laplacianCostF = Select(InBounds(0,0),Select(InBounds(x,y), diff, 0), 0)
+    -- Energy(Select(validNormal(0, 0), 0, w_smoothShading * laplacianCostF))
+    Energy(w_smoothShading * laplacianCostF)
+end
+
