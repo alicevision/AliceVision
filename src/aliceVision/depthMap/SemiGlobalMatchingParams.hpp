@@ -9,7 +9,6 @@
 #include <aliceVision/mvsData/Rgb.hpp>
 #include <aliceVision/mvsData/StaticVector.hpp>
 #include <aliceVision/mvsUtils/ImagesCache.hpp>
-#include <aliceVision/mvsUtils/PreMatchCams.hpp>
 #include <aliceVision/depthMap/DepthSimMap.hpp>
 #include <aliceVision/depthMap/RcTc.hpp>
 #include <aliceVision/depthMap/cuda/PlaneSweepingCuda.hpp>
@@ -21,11 +20,9 @@ class SemiGlobalMatchingParams
 {
 public:
     mvsUtils::MultiViewParams* mp;
-    mvsUtils::PreMatchCams* pc;
     RcTc* prt;
     PlaneSweepingCuda& cps;
-    bool visualizeDepthMaps;
-    bool visualizePartialDepthMaps;
+    bool exportIntermediateResults;
     bool doSmooth;
     // int   s_wsh;
     // float s_gammaC;
@@ -49,7 +46,6 @@ public:
     bool saveDepthsToSweepToTxtForVis;
     int modalsMapDistLimit;
     int minNumOfConsistentCams;
-    int minObjectThickness;
     float maxTcRcPixSizeInVoxRatio;
     int nSGGCIters;
     bool doSGMoptimizeVolume;
@@ -59,7 +55,7 @@ public:
     bool useSilhouetteMaskCodedByColor;
     rgb silhouetteMaskColor;
 
-    SemiGlobalMatchingParams(mvsUtils::MultiViewParams* _mp, mvsUtils::PreMatchCams* _pc, PlaneSweepingCuda& _cps);
+    SemiGlobalMatchingParams(mvsUtils::MultiViewParams* _mp, PlaneSweepingCuda& _cps);
     ~SemiGlobalMatchingParams(void);
 
     DepthSimMap* getDepthSimMapFromBestIdVal(int w, int h, StaticVector<IdValue>* volumeBestIdVal, int scale,

@@ -90,18 +90,17 @@ IndexT RemoveOutliers_AngleError(sfmData::SfMData& sfmData, const double dMinAcc
   return removedTrack_count;
 }
 
-bool eraseUnstablePoses(sfmData::SfMData& sfmData, const IndexT min_points_per_pose, std::set<IndexT>* outRemovedPosedId)
+bool eraseUnstablePoses(sfmData::SfMData& sfmData, const IndexT min_points_per_pose, std::set<IndexT>* outRemovedViewsId)
 {
   IndexT removed_elements = 0;
   const sfmData::Landmarks & landmarks = sfmData.structure;
 
   // Count the observation poses occurrence
-  HashMap<IndexT, IndexT> map_PoseId_Count; // TODO: add subpose
-  // Init with 0 count (in order to be able to remove non referenced elements)
+  HashMap<IndexT, IndexT> posesCount;
+
+  // Init with 0 count, undefined rig id (in order to be able to remove non referenced elements)
   for(sfmData::Poses::const_iterator itPoses = sfmData.getPoses().begin(); itPoses != sfmData.getPoses().end(); ++itPoses)
-  {
-    map_PoseId_Count[itPoses->first] = 0;
-  }
+    posesCount[itPoses->first] = 0;
 
   // Count occurrence of the poses in the Landmark observations
   for(sfmData::Landmarks::const_iterator itLandmarks = landmarks.begin(); itLandmarks != landmarks.end(); ++itLandmarks)
@@ -109,23 +108,41 @@ bool eraseUnstablePoses(sfmData::SfMData& sfmData, const IndexT min_points_per_p
     const sfmData::Observations & observations = itLandmarks->second.observations;
     for(sfmData::Observations::const_iterator itObs = observations.begin(); itObs != observations.end(); ++itObs)
     {
-      const IndexT ViewId = itObs->first;
-      const sfmData::View * v = sfmData.getViews().at(ViewId).get();
-      if (map_PoseId_Count.count(v->getPoseId()))
-        map_PoseId_Count.at(v->getPoseId()) += 1;
-      else
-        map_PoseId_Count[v->getPoseId()] = 0;
+      const IndexT viewId = itObs->first;
+      const sfmData::View * v = sfmData.getViews().at(viewId).get();
+      const auto poseInfoIt = posesCount.find(v->getPoseId());
+
+      if(poseInfoIt != posesCount.end())
+        poseInfoIt->second++;
+      else // all pose should be defined in map_PoseId_Count
+        throw std::runtime_error(std::string("eraseUnstablePoses: found unknown pose id referenced by a view.\n\t- view id: ")
+                                 + std::to_string(v->getViewId()) + std::string("\n\t- pose id: ") + std::to_string(v->getPoseId()));
     }
   }
 
   // If usage count is smaller than the threshold, remove the Pose
-  for (HashMap<IndexT, IndexT>::const_iterator it = map_PoseId_Count.begin(); it != map_PoseId_Count.end(); ++it)
+  for(HashMap<IndexT, IndexT>::const_iterator it = posesCount.begin(); it != posesCount.end(); ++it)
   {
-    if (it->second < min_points_per_pose)
+    if(it->second < min_points_per_pose)
     {
-      sfmData.erasePose(it->first);
-      if (outRemovedPosedId != NULL)
-        outRemovedPosedId->insert(it->first);
+      sfmData.erasePose(it->first, true); // no throw
+
+      for(auto& viewPair : sfmData.getViews())
+      {
+        if(viewPair.second->getPoseId() == it->first)
+        {
+          if(viewPair.second->isPartOfRig())
+          {
+            // the pose is now independant
+            viewPair.second->setPoseId(viewPair.first);
+            viewPair.second->setIndependantPose(true);
+          }
+
+          // add view id to the removedViewsId set
+          if(outRemovedViewsId != NULL)
+            outRemovedViewsId->insert(viewPair.first);
+        }
+      }
       ++removed_elements;
     }
   }
@@ -176,7 +193,7 @@ bool eraseObservationsWithMissingPoses(sfmData::SfMData& sfmData, const IndexT m
 bool eraseUnstablePosesAndObservations(sfmData::SfMData& sfmData,
                                        const IndexT min_points_per_pose,
                                        const IndexT min_points_per_landmark,
-                                       std::set<IndexT>* outRemovedPosedId)
+                                       std::set<IndexT>* outRemovedViewsId)
 {
   IndexT removeIteration = 0;
   bool removedContent = false;
@@ -185,7 +202,7 @@ bool eraseUnstablePosesAndObservations(sfmData::SfMData& sfmData,
   do
   {
     removedContent = false;
-    if(eraseUnstablePoses(sfmData, min_points_per_pose, outRemovedPosedId))
+    if(eraseUnstablePoses(sfmData, min_points_per_pose, outRemovedViewsId))
     {
       removedPoses = true;
       removedContent = eraseObservationsWithMissingPoses(sfmData, min_points_per_landmark);

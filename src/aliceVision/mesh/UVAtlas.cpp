@@ -48,8 +48,7 @@ void UVAtlas::createCharts(vector<Chart>& charts, mvsUtils::MultiViewParams& mp,
     #pragma omp parallel for
     for(int i = 0; i < trisCams->size(); ++i)
     {
-        Chart& chart = charts[i];
-        std::vector<int>& tCamIds = _triangleCameraIDs[i];
+        std::vector<std::pair<float, int>> commonCameraIDs;
 
         // project triangle in all cams
         auto cameras = (*trisCams)[i];
@@ -57,19 +56,35 @@ void UVAtlas::createCharts(vector<Chart>& charts, mvsUtils::MultiViewParams& mp,
         {
             int cameraID = (*cameras)[c];
             // project triangle
-            Mesh::triangle_proj tp = _mesh.getTriangleProjection(i, &mp, cameraID, mp.getWidth(cameraID), mp.getHeight(cameraID));
-            if(!mp.isPixelInImage(Pixel(tp.tp2ds[0]), 10, cameraID)
-                    || !mp.isPixelInImage(Pixel(tp.tp2ds[1]), 10, cameraID)
-                    || !mp.isPixelInImage(Pixel(tp.tp2ds[2]), 10, cameraID))
+            Mesh::triangle_proj tProj = _mesh.getTriangleProjection(i, &mp, cameraID, mp.getWidth(cameraID), mp.getHeight(cameraID));
+            if(!mp.isPixelInImage(Pixel(tProj.tp2ds[0]), 10, cameraID)
+                    || !mp.isPixelInImage(Pixel(tProj.tp2ds[1]), 10, cameraID)
+                    || !mp.isPixelInImage(Pixel(tProj.tp2ds[2]), 10, cameraID))
                 continue;
-            // store this camera ID
-            chart.commonCameraIDs.emplace_back(cameraID);
-            tCamIds.emplace_back(cameraID);
+
+            const float area = _mesh.computeTriangleProjectionArea(tProj);
+            commonCameraIDs.emplace_back(area, cameraID);
         }
-        // sort camera IDs
+        // sort cameras by score
+        std::sort(commonCameraIDs.begin(), commonCameraIDs.end(), std::greater<std::pair<int, int>>());
+
+        // Declare into the charts only the best ones
+        Chart& chart = charts[i];
+        for (int c = 0; c < commonCameraIDs.size(); ++c)
+        {
+          // don't use visibility with less than half the resolution of the best one
+          if (c > 0 && commonCameraIDs[c].first < 0.5 * commonCameraIDs[0].first)
+            break;
+          chart.commonCameraIDs.emplace_back(commonCameraIDs[c].second);
+        }
+        // sort cameras by IDs
         std::sort(chart.commonCameraIDs.begin(), chart.commonCameraIDs.end());
+
+        // save of copy of the triangle visibility
+        _triangleCameraIDs[i] = chart.commonCameraIDs;
+
         // store triangle ID
-        chart.triangleIDs.emplace_back(i);
+        chart.triangleIDs.emplace_back(i); // one triangle per chart in a first place
     }
     deleteArrayOfArrays<int>(&trisCams);
 }

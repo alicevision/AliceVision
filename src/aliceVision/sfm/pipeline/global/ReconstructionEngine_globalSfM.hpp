@@ -34,6 +34,8 @@ public:
   void SetRotationAveragingMethod(ERotationAveragingMethod eRotationAveragingMethod);
   void SetTranslationAveragingMethod(ETranslationAveragingMethod eTranslationAveragingMethod);
 
+  void setLockAllIntrinsics(bool v) { _lockAllIntrinsics = v; }
+
   virtual bool process();
 
 protected:
@@ -62,6 +64,7 @@ private:
   // Parameter
   ERotationAveragingMethod _eRotationAveragingMethod;
   ETranslationAveragingMethod _eTranslationAveragingMethod;
+  bool _lockAllIntrinsics = false;
 
   // Data provider
   feature::FeaturesPerView* _featuresPerView;

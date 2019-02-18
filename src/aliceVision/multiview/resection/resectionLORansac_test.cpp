@@ -73,12 +73,12 @@ bool refinePoseAsItShouldbe(const Mat & pt3D,
   }
 
   BundleAdjustmentCeres bundle_adjustment_obj;
-  BA_Refine refineOptions = BA_REFINE_NONE;
+  BundleAdjustment::ERefineOptions refineOptions = BundleAdjustment::REFINE_NONE;
   if(b_refine_pose)
-    refineOptions |= sfm::BA_REFINE_ROTATION | sfm::BA_REFINE_TRANSLATION;
+    refineOptions |= sfm::BundleAdjustment::REFINE_ROTATION | sfm::BundleAdjustment::REFINE_TRANSLATION;
   if(b_refine_intrinsic)
-    refineOptions |= sfm::BA_REFINE_INTRINSICS_ALL;
-  const bool b_BA_Status = bundle_adjustment_obj.Adjust(sfm_data, refineOptions);
+    refineOptions |= sfm::BundleAdjustment::REFINE_INTRINSICS_ALL;
+  const bool b_BA_Status = bundle_adjustment_obj.adjust(sfm_data, refineOptions);
   if(b_BA_Status)
   {
     pose = sfm_data.getPose(*view).getTransform();

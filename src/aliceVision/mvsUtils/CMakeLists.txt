@@ -4,7 +4,6 @@ set(mvsUtils_files_headers
   fileIO.hpp
   ImagesCache.hpp
   MultiViewParams.hpp
-  PreMatchCams.hpp
 )
 
 # Sources
@@ -13,7 +12,6 @@ set(mvsUtils_files_sources
   fileIO.cpp
   ImagesCache.cpp
   MultiViewParams.cpp
-  PreMatchCams.cpp
 )
 
 alicevision_add_library(aliceVision_mvsUtils

@@ -339,7 +339,7 @@ void createVerticesWithVisibilities(const StaticVector<int>& cams, std::vector<P
                 resultSet.init(&nearestVertexIndex, &dist);
                 if(!kdTree.findNeighbors(resultSet, p.m, nanoflann::SearchParams()))
                 {
-                    ALICEVISION_LOG_WARNING("Failed to find Neighbors.");
+                    ALICEVISION_LOG_TRACE("Failed to find Neighbors.");
                     continue;
                 }
 #endif
@@ -387,10 +387,9 @@ void createVerticesWithVisibilities(const StaticVector<int>& cams, std::vector<P
 }
 
 
-DelaunayGraphCut::DelaunayGraphCut(mvsUtils::MultiViewParams* _mp, mvsUtils::PreMatchCams* _pc)
+DelaunayGraphCut::DelaunayGraphCut(mvsUtils::MultiViewParams* _mp)
 {
     mp = _mp;
-    pc = _pc;
 
     _camsVertexes.resize(mp->ncams, -1);
 
@@ -629,6 +628,46 @@ StaticVector<int> DelaunayGraphCut::getSortedUsedCams() const
     }
 
     return out;
+}
+
+void DelaunayGraphCut::addPointsFromSfM(const Point3d hexah[8], const StaticVector<int>& cams, const sfmData::SfMData& sfmData)
+{
+  const std::size_t nbPoints = sfmData.getLandmarks().size();
+  const std::size_t verticesOffset = _verticesCoords.size();
+
+  _verticesCoords.resize(verticesOffset + nbPoints);
+  _verticesAttr.resize(verticesOffset + nbPoints);
+
+  sfmData:: Landmarks::const_iterator landmarkIt = sfmData.getLandmarks().begin();
+  std::vector<Point3d>::iterator vCoordsIt = _verticesCoords.begin();
+  std::vector<GC_vertexInfo>::iterator vAttrIt = _verticesAttr.begin();
+
+  std::advance(vCoordsIt, verticesOffset);
+  std::advance(vAttrIt, verticesOffset);
+
+  for(std::size_t i = 0; i < nbPoints; ++i)
+  {
+    const sfmData::Landmark& landmark = landmarkIt->second;
+    const Point3d p(landmark.X(0), landmark.X(1), landmark.X(2));
+
+    if(mvsUtils::isPointInHexahedron(p, hexah))
+    {
+      *vCoordsIt = p;
+
+      vAttrIt->nrc = landmark.observations.size();
+      vAttrIt->cams.reserve(vAttrIt->nrc);
+
+      for(const auto& observationPair : landmark.observations)
+        vAttrIt->cams.push_back(mp->getIndexFromViewId(observationPair.first));
+
+      ++vCoordsIt;
+      ++vAttrIt;
+    }
+    ++landmarkIt;
+  }
+
+  _verticesCoords.shrink_to_fit();
+  _verticesAttr.shrink_to_fit();
 }
 
 void DelaunayGraphCut::addPointsFromCameraCenters(const StaticVector<int>& cams, float minDist)
@@ -2371,7 +2410,7 @@ void DelaunayGraphCut::invertFullStatusForSmallLabels()
     delete buff;
 }
 
-void DelaunayGraphCut::createDensePointCloudFromDepthMaps(Point3d hexah[8], const StaticVector<int>& cams, StaticVector<int>* voxelsIds, VoxelsGrid* ls, const FuseParams& fuseParams)
+void DelaunayGraphCut::createDensePointCloudFromPrecomputedDensePoints(Point3d hexah[8], const StaticVector<int>& cams, StaticVector<int>* voxelsIds, VoxelsGrid* ls)
 {
   // Load tracks
   ALICEVISION_LOG_INFO("Creating delaunay tetrahedralization from depth maps voxel");
@@ -2384,10 +2423,7 @@ void DelaunayGraphCut::createDensePointCloudFromDepthMaps(Point3d hexah[8], cons
   // add 6 points to prevent singularities
   addPointsToPreventSingularities(hexah, minDist);
 
-  if(ls)
-    loadPrecomputedDensePoints(voxelsIds, hexah, ls);
-  else
-    fuseFromDepthMaps(cams, hexah, fuseParams);
+  loadPrecomputedDensePoints(voxelsIds, hexah, ls);
 
   // initialize random seed
   srand(time(nullptr));
@@ -2398,9 +2434,13 @@ void DelaunayGraphCut::createDensePointCloudFromDepthMaps(Point3d hexah[8], cons
   addHelperPoints(nGridHelperVolumePointsDim, hexah, minDist);
 }
 
-void DelaunayGraphCut::createDensePointCloudFromSfM(const Point3d hexah[8], const StaticVector<int>& cams, const sfmData::SfMData& sfmData)
+
+void DelaunayGraphCut::createDensePointCloud(Point3d hexah[8], const StaticVector<int>& cams, const sfmData::SfMData* sfmData, const FuseParams* depthMapsFuseParams)
 {
-  // Load tracks
+  assert(sfmData != nullptr || depthMapsFuseParams != nullptr);
+
+  ALICEVISION_LOG_INFO("Creating dense point cloud.");
+
   float minDist = hexah ? (hexah[0] - hexah[1]).size() / 1000.0f : 0.00001f;
 
   // add points for cam centers
@@ -2409,42 +2449,13 @@ void DelaunayGraphCut::createDensePointCloudFromSfM(const Point3d hexah[8], cons
   // add 6 points to prevent singularities
   addPointsToPreventSingularities(hexah, minDist);
 
-  const std::size_t nbPoints = sfmData.getLandmarks().size();
-  const std::size_t verticesOffset = _verticesCoords.size();
+  // add points from depth maps
+  if(depthMapsFuseParams != nullptr)
+    fuseFromDepthMaps(cams, hexah, *depthMapsFuseParams);
 
-  _verticesCoords.resize(verticesOffset + nbPoints);
-  _verticesAttr.resize(verticesOffset + nbPoints);
-
-  sfmData:: Landmarks::const_iterator landmarkIt = sfmData.getLandmarks().begin();
-  std::vector<Point3d>::iterator vCoordsIt = _verticesCoords.begin();
-  std::vector<GC_vertexInfo>::iterator vAttrIt = _verticesAttr.begin();
-
-  std::advance(vCoordsIt, verticesOffset);
-  std::advance(vAttrIt, verticesOffset);
-
-  for(std::size_t i = 0; i < nbPoints; ++i)
-  {
-    const sfmData::Landmark& landmark = landmarkIt->second;
-    const Point3d p(landmark.X(0), landmark.X(1), landmark.X(2));
-
-    if(mvsUtils::isPointInHexahedron(p, hexah))
-    {
-      *vCoordsIt = p;
-
-      vAttrIt->nrc = landmark.observations.size();
-      vAttrIt->cams.reserve(vAttrIt->nrc);
-
-      for(const auto& observationPair : landmark.observations)
-        vAttrIt->cams.push_back(mp->getIndexFromViewId(observationPair.first));
-
-      ++vCoordsIt;
-      ++vAttrIt;
-    }
-    ++landmarkIt;
-  }
-
-  _verticesCoords.shrink_to_fit();
-  _verticesAttr.shrink_to_fit();
+  // add points from sfm
+  if(sfmData != nullptr)
+    addPointsFromSfM(hexah, cams, *sfmData);
 
   // initialize random seed
   srand(time(nullptr));

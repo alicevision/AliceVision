@@ -23,12 +23,10 @@ VoxelsGrid::VoxelsGrid()
 {
 }
 
-VoxelsGrid::VoxelsGrid(const Voxel& dimensions, Point3d* _space, mvsUtils::MultiViewParams* _mp, mvsUtils::PreMatchCams* _pc,
-                       const std::string& _spaceRootDir, bool _doVisualize)
+VoxelsGrid::VoxelsGrid(const Voxel& dimensions, Point3d* _space, mvsUtils::MultiViewParams* _mp, const std::string& _spaceRootDir, bool _doVisualize)
 {
     doVisualize = _doVisualize;
     mp = _mp;
-    pc = _pc;
     voxelDim = dimensions;
     for(int k = 0; k < 8; k++)
     {
@@ -48,7 +46,6 @@ VoxelsGrid* VoxelsGrid::clone(const std::string& _spaceRootDir)
 
     out->doVisualize = doVisualize;
     out->mp = mp;
-    out->pc = pc;
     out->voxelDim = voxelDim;
     out->voxels = new StaticVector<Point3d>();
     out->voxels->resize(voxels->size());
@@ -280,7 +277,7 @@ void VoxelsGrid::generateTracksForEachVoxel(StaticVector<Point3d>* Reconstructio
         std::string folderName = getVoxelFolderName(i);
 
         long t1 = clock();
-        OctreeTracks* ott = new OctreeTracks(&(*voxels)[i * 8], mp, pc, Voxel(numSubVoxs, numSubVoxs, numSubVoxs));
+        OctreeTracks* ott = new OctreeTracks(&(*voxels)[i * 8], mp, Voxel(numSubVoxs, numSubVoxs, numSubVoxs));
         StaticVector<OctreeTracks::trackStruct*>* tracks = ott->fillOctree(maxPts, depthMapsPtsSimsTmpDir);
         if(mp->verbose)
             mvsUtils::printfElapsedTime(t1, "fillOctree");
@@ -348,7 +345,7 @@ void VoxelsGrid::generateTracksForEachVoxel(StaticVector<Point3d>* Reconstructio
         FILE* f = fopen(subfnFileMark.c_str(), "w");
         fclose(f);
 
-        VoxelsGrid* vgnew = new VoxelsGrid(Voxel(2, 2, 2), &(*voxels)[i * 8], mp, pc, subfn, doVisualize);
+        VoxelsGrid* vgnew = new VoxelsGrid(Voxel(2, 2, 2), &(*voxels)[i * 8], mp, subfn, doVisualize);
         vgnew->generateTracksForEachVoxel(ReconstructionPlan, numSubVoxs / 2, maxPts, level + 1, maxlevel,
                                           depthMapsPtsSimsTmpDir);
         delete vgnew;
@@ -389,15 +386,15 @@ void VoxelsGrid::generateSpace(VoxelsGrid* vgnew, const Voxel& LU, const Voxel& 
         // if (FolderExists(subfn)==true)
         if(mvsUtils::FileExists(subfnFileMark))
         {
-            VoxelsGrid* vgrec = new VoxelsGrid(Voxel(2, 2, 2), &(*voxels)[voxid * 8], mp, pc, subfn, doVisualize);
+            VoxelsGrid* vgrec = new VoxelsGrid(Voxel(2, 2, 2), &(*voxels)[voxid * 8], mp, subfn, doVisualize);
             vgrec->generateSpace(vgnew, subLU, subRD, depthMapsPtsSimsTmpDir);
             delete vgrec;
         }
         else
         {
             Voxel part = subRD - subLU;
-            OctreeTracks* ott = new OctreeTracks(&(*voxels)[voxid * 8], mp, pc, part);
-            VoxelsGrid* vgg = new VoxelsGrid(part, &(*voxels)[voxid * 8], mp, pc, folderName, doVisualize);
+            OctreeTracks* ott = new OctreeTracks(&(*voxels)[voxid * 8], mp, part);
+            VoxelsGrid* vgg = new VoxelsGrid(part, &(*voxels)[voxid * 8], mp, folderName, doVisualize);
             StaticVector<int>* cams = nullptr;
             StaticVector<OctreeTracks::trackStruct*>* tracks = loadTracksFromVoxelFiles(&cams, voxid);
             Voxel vrel;
@@ -485,7 +482,7 @@ void VoxelsGrid::cloneSpaceVoxel(int voxelId, int numSubVoxs, VoxelsGrid* newSpa
     if(mvsUtils::FileExists(fileNameTracksPts))
     {
         OctreeTracks* ott =
-            new OctreeTracks(&(*voxels)[voxelId * 8], mp, pc, Voxel(numSubVoxs, numSubVoxs, numSubVoxs));
+            new OctreeTracks(&(*voxels)[voxelId * 8], mp, Voxel(numSubVoxs, numSubVoxs, numSubVoxs));
         StaticVector<int>* tcams;
         StaticVector<OctreeTracks::trackStruct*>* tracksOld = loadTracksFromVoxelFiles(&tcams, voxelId);
         StaticVector<OctreeTracks::trackStruct*>* tracksNew = ott->fillOctreeFromTracks(tracksOld);

@@ -103,7 +103,7 @@ int main(int argc, char **argv)
   int rangeStart = -1;
   int rangeSize = 0;
   std::string nearestMatchingMethod = "ANN_L2";
-  std::string geometricEstimatorName = robustEstimation::ERobustEstimator_enumToString(robustEstimation::ERobustEstimator::ACRANSAC);
+  robustEstimation::ERobustEstimator geometricEstimator = robustEstimation::ERobustEstimator::ACRANSAC;
   double geometricErrorMax = 0.0; //< the maximum reprojection error allowed for image matching with geometric validation
   bool savePutativeMatches = false;
   bool guidedMatching = false;
@@ -148,12 +148,12 @@ int main(int argc, char **argv)
       "(faster than CASCADE_HASHING_L2 but use more memory)\n"
       "For Binary based descriptor:\n"
       "* BRUTE_FORCE_HAMMING: BruteForce Hamming matching")
-    ("geometricEstimator", po::value<std::string>(&geometricEstimatorName)->default_value(geometricEstimatorName),
+    ("geometricEstimator", po::value<robustEstimation::ERobustEstimator>(&geometricEstimator)->default_value(geometricEstimator),
       "Geometric estimator:\n"
       "* acransac: A-Contrario Ransac\n"
       "* loransac: LO-Ransac (only available for fundamental matrix). Need to set '--geometricError'")
     ("geometricError", po::value<double>(&geometricErrorMax)->default_value(geometricErrorMax), 
-          "Maximum matching error (in pixels) allowed for image matching with geometric verification. "
+          "Maximum error (in pixels) allowed for features matching during geometric verification. "
           "If set to 0 it lets the ACRansac select an optimal value.")
     ("savePutativeMatches", po::value<bool>(&savePutativeMatches)->default_value(savePutativeMatches),
       "Save putative matches.")
@@ -208,8 +208,8 @@ int main(int argc, char **argv)
     return EXIT_FAILURE;
   }
 
-  robustEstimation::ERobustEstimator geometricEstimator = robustEstimation::ERobustEstimator_stringToEnum(geometricEstimatorName);
-  if(!checkRobustEstimator(geometricEstimator, geometricErrorMax))
+  const double defaultLoRansacMatchingError = 20.0;
+  if(!adjustRobustEstimatorThreshold(geometricEstimator, geometricErrorMax, defaultLoRansacMatchingError))
     return EXIT_FAILURE;
 
   ALICEVISION_COUT("Program called with the following parameters:");

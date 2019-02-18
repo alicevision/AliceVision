@@ -43,13 +43,14 @@ bool arecoincident(OrientedPoint* op1, OrientedPoint* op2, float pixSize);
 bool checkPair(const Point3d& p, int rc, int tc, const MultiViewParams* mp, float minAng, float maxAng);
 bool checkCamPairAngle(int rc, int tc, const MultiViewParams* mp, float minAng, float maxAng);
 void getHexahedronTriangles(Point3d tris[12][3], const Point3d hexah[8]);
-void getCamHexahedron(const MultiViewParams* mp, Point3d hexah[8], int cam, float mind, float maxd);
+void getCamHexahedron(const Point3d& position, const Matrix3x3& iCam, int width, int height, float minDepth, float maxDepth, Point3d hexah[8]);
 bool intersectsHexahedronHexahedron(const Point3d rchex[8], const Point3d tchex[8]);
 StaticVector<Point3d>* lineSegmentHexahedronIntersection(Point3d& linePoint1, Point3d& linePoint2, Point3d hexah[8]);
 StaticVector<Point3d>* triangleHexahedronIntersection(Point3d& A, Point3d& B, Point3d& C, Point3d hexah[8]);
 StaticVector<Point3d>* triangleRectangleIntersection(Point3d& A, Point3d& B, Point3d& C, const MultiViewParams* mp, int rc,
                                                      Point2d P[4]);
 bool isPointInHexahedron(const Point3d &p, const Point3d *hexah);
+double computeHexahedronVolume(const Point3d* hexah);
 void inflateHexahedron(const Point3d hexahIn[8], Point3d hexahOut[8], float scale);
 bool checkPoint3d(Point3d n);
 bool checkPoint2d(Point2d n);

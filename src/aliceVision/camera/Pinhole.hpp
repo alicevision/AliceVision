@@ -117,7 +117,15 @@ class Pinhole : public IntrinsicBase
     params.insert(params.end(), _distortionParams.begin(), _distortionParams.end());
     return params;
   }
-  
+
+  bool hasDistortion() const override
+  {
+    for(double d: _distortionParams)
+      if(d != 0.0)
+        return true;
+    return false;
+  }
+
   const std::vector<double>& getDistortionParams() const
   {
     return _distortionParams;

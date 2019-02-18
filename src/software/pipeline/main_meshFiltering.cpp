@@ -32,7 +32,7 @@ int main(int argc, char* argv[])
     std::string inputMeshPath;
     std::string outputMeshPath;
 
-    bool keepLargestMeshOnly = true;
+    bool keepLargestMeshOnly = false;
     double removeLargeTrianglesFactor = 60.0;
 
     int smoothNIter = 10;

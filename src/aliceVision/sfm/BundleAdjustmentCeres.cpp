@@ -6,11 +6,19 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include <aliceVision/sfm/BundleAdjustmentCeres.hpp>
+#include <aliceVision/sfm/ResidualErrorFunctor.hpp>
 #include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/alicevision_omp.hpp>
 #include <aliceVision/config.hpp>
 
+
+#include <boost/filesystem.hpp>
+
 #include <ceres/rotation.h>
+
+#include <fstream>
+
+namespace fs = boost::filesystem;
 
 namespace aliceVision {
 namespace sfm {
@@ -18,219 +26,327 @@ namespace sfm {
 using namespace aliceVision::camera;
 using namespace aliceVision::geometry;
 
-/// Create the appropriate cost functor according the provided input camera intrinsic model
-ceres::CostFunction* createCostFunctionFromIntrinsics(IntrinsicBase* intrinsic, const Vec2& observation)
+/**
+ * @brief Create the appropriate cost functor according the provided input camera intrinsic model
+ * @param[in] intrinsicPtr The intrinsic pointer
+ * @param[in] observation The corresponding observation
+ * @return cost functor
+ */
+ceres::CostFunction* createCostFunctionFromIntrinsics(const IntrinsicBase* intrinsicPtr, const Vec2& observation)
 {
-  switch(intrinsic->getType())
+  switch(intrinsicPtr->getType())
   {
     case PINHOLE_CAMERA:
-      return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_Pinhole, 2, 3, 6, 3>(
-        new ResidualErrorFunctor_Pinhole(observation.data()));
-    break;
+      return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_Pinhole, 2, 3, 6, 3>(new ResidualErrorFunctor_Pinhole(observation.data()));
     case PINHOLE_CAMERA_RADIAL1:
-      return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_PinholeRadialK1, 2, 4, 6, 3>(
-        new ResidualErrorFunctor_PinholeRadialK1(observation.data()));
-    break;
+      return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_PinholeRadialK1, 2, 4, 6, 3>(new ResidualErrorFunctor_PinholeRadialK1(observation.data()));
     case PINHOLE_CAMERA_RADIAL3:
-      return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_PinholeRadialK3, 2, 6, 6, 3>(
-        new ResidualErrorFunctor_PinholeRadialK3(observation.data()));
-    break;
+      return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_PinholeRadialK3, 2, 6, 6, 3>(new ResidualErrorFunctor_PinholeRadialK3(observation.data()));
     case PINHOLE_CAMERA_BROWN:
-      return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_PinholeBrownT2, 2, 8, 6, 3>(
-        new ResidualErrorFunctor_PinholeBrownT2(observation.data()));
-    break;
+      return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_PinholeBrownT2, 2, 8, 6, 3>(new ResidualErrorFunctor_PinholeBrownT2(observation.data()));
     case PINHOLE_CAMERA_FISHEYE:
-      return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_PinholeFisheye, 2, 7, 6, 3>(
-        new ResidualErrorFunctor_PinholeFisheye(observation.data()));
+      return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_PinholeFisheye, 2, 7, 6, 3>(new ResidualErrorFunctor_PinholeFisheye(observation.data()));
     case PINHOLE_CAMERA_FISHEYE1:
-      return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_PinholeFisheye1, 2, 4, 6, 3>(
-        new ResidualErrorFunctor_PinholeFisheye1(observation.data()));
+      return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_PinholeFisheye1, 2, 4, 6, 3>(new ResidualErrorFunctor_PinholeFisheye1(observation.data()));
     default:
-      throw std::logic_error("Unrecognized intrinsic type in BA.");
+      throw std::logic_error("Cannot create cost function, unrecognized intrinsic type in BA.");
   }
 }
 
-/// Create the appropriate cost functor according the provided input rig camera intrinsic model
-ceres::CostFunction* createRigCostFunctionFromIntrinsics(IntrinsicBase* intrinsic, const Vec2& observation)
+/**
+ * @brief Create the appropriate cost functor according the provided input rig camera intrinsic model
+ * @param[in] intrinsicPtr The intrinsic pointer
+ * @param[in] observation The corresponding observation
+ * @return cost functor
+ */
+ceres::CostFunction* createRigCostFunctionFromIntrinsics(const IntrinsicBase* intrinsicPtr, const Vec2& observation)
 {
-  switch(intrinsic->getType())
+  switch(intrinsicPtr->getType())
   {
     case PINHOLE_CAMERA:
-      return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_Pinhole, 2, 3, 6, 6, 3>(
-        new ResidualErrorFunctor_Pinhole(observation.data()));
-    break;
+      return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_Pinhole, 2, 3, 6, 6, 3>(new ResidualErrorFunctor_Pinhole(observation.data()));
     case PINHOLE_CAMERA_RADIAL1:
-      return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_PinholeRadialK1, 2, 4, 6, 6, 3>(
-        new ResidualErrorFunctor_PinholeRadialK1(observation.data()));
-    break;
+      return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_PinholeRadialK1, 2, 4, 6, 6, 3>(new ResidualErrorFunctor_PinholeRadialK1(observation.data()));
     case PINHOLE_CAMERA_RADIAL3:
-      return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_PinholeRadialK3, 2, 6, 6, 6, 3>(
-        new ResidualErrorFunctor_PinholeRadialK3(observation.data()));
-    break;
+      return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_PinholeRadialK3, 2, 6, 6, 6, 3>(new ResidualErrorFunctor_PinholeRadialK3(observation.data()));
     case PINHOLE_CAMERA_BROWN:
-      return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_PinholeBrownT2, 2, 8, 6, 6, 3>(
-        new ResidualErrorFunctor_PinholeBrownT2(observation.data()));
-    break;
+      return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_PinholeBrownT2, 2, 8, 6, 6, 3>(new ResidualErrorFunctor_PinholeBrownT2(observation.data()));
     case PINHOLE_CAMERA_FISHEYE:
-      return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_PinholeFisheye, 2, 7, 6, 6, 3>(
-        new ResidualErrorFunctor_PinholeFisheye(observation.data()));
+      return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_PinholeFisheye, 2, 7, 6, 6, 3>(new ResidualErrorFunctor_PinholeFisheye(observation.data()));
     case PINHOLE_CAMERA_FISHEYE1:
-      return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_PinholeFisheye1, 2, 4, 6, 6, 3>(
-        new ResidualErrorFunctor_PinholeFisheye1(observation.data()));
+      return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_PinholeFisheye1, 2, 4, 6, 6, 3>(new ResidualErrorFunctor_PinholeFisheye1(observation.data()));
     default:
-      throw std::logic_error("Unrecognized intrinsic type in BA.");
+      throw std::logic_error("Cannot create rig cost function, unrecognized intrinsic type in BA.");
   }
 }
 
-
-void addPose(ceres::Problem& problem,
-             BA_Refine refineOptions,
-             const sfmData::CameraPose& cameraPose,
-             std::vector<double*>& out_parameterBlocks,
-             std::vector<double>& out_poseParams)
+void BundleAdjustmentCeres::CeresOptions::setDenseBA()
 {
-  const Mat3& R = cameraPose.getTransform().rotation();
-  const Vec3& t = cameraPose.getTransform().translation();
-
-  double angleAxis[3];
-  ceres::RotationMatrixToAngleAxis((const double*)R.data(), angleAxis);
-  out_poseParams.reserve(6); //angleAxis + translation
-  out_poseParams.push_back(angleAxis[0]);
-  out_poseParams.push_back(angleAxis[1]);
-  out_poseParams.push_back(angleAxis[2]);
-  out_poseParams.push_back(t(0));
-  out_poseParams.push_back(t(1));
-  out_poseParams.push_back(t(2));
-
-  double * parameter_block = &out_poseParams[0];
-  problem.AddParameterBlock(parameter_block, 6);
-  out_parameterBlocks.push_back(parameter_block);
-  // Keep the camera extrinsics constants
-
-  if(cameraPose.isLocked() ||
-     (!(refineOptions & BA_REFINE_TRANSLATION) &&
-     !(refineOptions & BA_REFINE_ROTATION)))
-  {
-    //set the whole parameter block as constant for best performance or because it's locked.
-    problem.SetParameterBlockConstant(parameter_block);
-  }
-  else
-  {
-    // Subset parametrization
-    std::vector<int> vec_constant_extrinsic;
-    // Don't refine rotations (if BA_REFINE_ROTATION is not specified)
-    if(!(refineOptions & BA_REFINE_ROTATION))
-    {
-      vec_constant_extrinsic.push_back(0);
-      vec_constant_extrinsic.push_back(1);
-      vec_constant_extrinsic.push_back(2);
-    }
-    // Don't refine translations (if BA_REFINE_TRANSLATION is not specified)
-    if(!(refineOptions & BA_REFINE_TRANSLATION))
-    {
-      vec_constant_extrinsic.push_back(3);
-      vec_constant_extrinsic.push_back(4);
-      vec_constant_extrinsic.push_back(5);
-    }
-    if (!vec_constant_extrinsic.empty())
-    {
-      ceres::SubsetParameterization *subset_parameterization =
-        new ceres::SubsetParameterization(6, vec_constant_extrinsic);
-      problem.SetParameterization(parameter_block, subset_parameterization);
-    }
-  }
+  // default configuration use a DENSE representation
+  preconditionerType = ceres::JACOBI;
+  linearSolverType = ceres::DENSE_SCHUR;
+  sparseLinearAlgebraLibraryType = ceres::SUITE_SPARSE; // not used but just to avoid a warning in ceres
+  ALICEVISION_LOG_DEBUG("BundleAdjustment[Ceres]: DENSE_SCHUR");
 }
 
-BundleAdjustmentCeres::BA_options::BA_options(const bool verbose, bool multithreaded)
-  :_bVerbose(verbose)
+void BundleAdjustmentCeres::CeresOptions::setSparseBA()
 {
-  // set number of threads, 1 if openMP is not enabled
-  _nbThreads = omp_get_max_threads();
-
-  if (!multithreaded)
-    _nbThreads = 1;
-
-  _bCeres_Summary = false;
-  
-  // Use dense BA by default
-  setDenseBA();
-}
-
-void BundleAdjustmentCeres::BA_options::setDenseBA()
-{
-  // Default configuration use a DENSE representation
-  _preconditioner_type = ceres::JACOBI;
-  _linear_solver_type = ceres::DENSE_SCHUR;
-  ALICEVISION_LOG_DEBUG("BundleAdjustmentCeres: DENSE_SCHUR");
-}
-
-void BundleAdjustmentCeres::BA_options::setSparseBA()
-{
-  _preconditioner_type = ceres::JACOBI;
-  // If Sparse linear solver are available
-  // Descending priority order by efficiency (SUITE_SPARSE > CX_SPARSE > EIGEN_SPARSE)
+  preconditionerType = ceres::JACOBI;
+  // if Sparse linear solver are available
+  // descending priority order by efficiency (SUITE_SPARSE > CX_SPARSE > EIGEN_SPARSE)
   if (ceres::IsSparseLinearAlgebraLibraryTypeAvailable(ceres::SUITE_SPARSE))
   {
-    _sparse_linear_algebra_library_type = ceres::SUITE_SPARSE;
-    _linear_solver_type = ceres::SPARSE_SCHUR;
-    ALICEVISION_LOG_DEBUG("BundleAdjustmentCeres: SPARSE_SCHUR, SUITE_SPARSE");
+    sparseLinearAlgebraLibraryType = ceres::SUITE_SPARSE;
+    linearSolverType = ceres::SPARSE_SCHUR;
+    ALICEVISION_LOG_DEBUG("BundleAdjustment[Ceres]: SPARSE_SCHUR, SUITE_SPARSE");
   }
   else if (ceres::IsSparseLinearAlgebraLibraryTypeAvailable(ceres::CX_SPARSE))
   {
-    _sparse_linear_algebra_library_type = ceres::CX_SPARSE;
-    _linear_solver_type = ceres::SPARSE_SCHUR;
-    ALICEVISION_LOG_DEBUG("BundleAdjustmentCeres: SPARSE_SCHUR, CX_SPARSE");
+    sparseLinearAlgebraLibraryType = ceres::CX_SPARSE;
+    linearSolverType = ceres::SPARSE_SCHUR;
+    ALICEVISION_LOG_DEBUG("BundleAdjustment[Ceres]: SPARSE_SCHUR, CX_SPARSE");
   }
   else if (ceres::IsSparseLinearAlgebraLibraryTypeAvailable(ceres::EIGEN_SPARSE))
   {
-    _sparse_linear_algebra_library_type = ceres::EIGEN_SPARSE;
-    _linear_solver_type = ceres::SPARSE_SCHUR;
-    ALICEVISION_LOG_DEBUG("BundleAdjustmentCeres: SPARSE_SCHUR, EIGEN_SPARSE");
+    sparseLinearAlgebraLibraryType = ceres::EIGEN_SPARSE;
+    linearSolverType = ceres::SPARSE_SCHUR;
+    ALICEVISION_LOG_DEBUG("BundleAdjustment[Ceres]: SPARSE_SCHUR, EIGEN_SPARSE");
   }
   else
   {
-    _linear_solver_type = ceres::DENSE_SCHUR;
-    ALICEVISION_LOG_WARNING("BundleAdjustmentCeres: no sparse BA available, fallback to dense BA.");
+    linearSolverType = ceres::DENSE_SCHUR;
+    ALICEVISION_LOG_WARNING("BundleAdjustment[Ceres]: no sparse BA available, fallback to dense BA.");
   }
 }
 
-BundleAdjustmentCeres::BundleAdjustmentCeres(
-  BundleAdjustmentCeres::BA_options options)
-  : _aliceVision_options(options)
-{}
-
-void BundleAdjustmentCeres::createProblem(sfmData::SfMData& sfmData,
-                                          BA_Refine refineOptions,
-                                          ceres::Problem& problem)
+bool BundleAdjustmentCeres::Statistics::exportToFile(const std::string& folder, const std::string& filename) const
 {
-  // Ensure we are not using incompatible options:
-  //  - BA_REFINE_INTRINSICS_OPTICALCENTER_ALWAYS and BA_REFINE_INTRINSICS_OPTICALCENTER_IF_ENOUGH_DATA cannot be used at the same time
-  assert(!((refineOptions & BA_REFINE_INTRINSICS_OPTICALCENTER_ALWAYS) && (refineOptions & BA_REFINE_INTRINSICS_OPTICALCENTER_IF_ENOUGH_DATA)));
-  
-  //----------
-  // Add camera parameters
-  // - intrinsics
-  // - poses [R|t]
+  std::ofstream os;
+  os.open((fs::path(folder) / filename).string(), std::ios::app);
 
-  // Create residuals for each observation in the bundle adjustment problem. The
-  // parameters for cameras and points are added automatically.
-  //----------
-
-  parameterBlocks.reserve(sfmData.getPoses().size() + sfmData.structure.size());
-
-  // Setup Poses data & subparametrization
-  for(sfmData::Poses::const_iterator itPose = sfmData.getPoses().begin(); itPose != sfmData.getPoses().end(); ++itPose)
+  if(!os.is_open())
   {
-    const IndexT indexPose = itPose->first;
-    const sfmData::CameraPose& cameraPose = itPose->second;
-
-    addPose(problem, refineOptions, cameraPose, parameterBlocks, map_poses[indexPose]);
+    ALICEVISION_LOG_DEBUG("Unable to open the Bundle adjustment statistics file: '" << filename << "'.");
+    return false;
   }
 
-  for(const auto& rigIt : sfmData.getRigs())
+  os.seekp(0, std::ios::end); // put the cursor at the end
+
+  if(os.tellp() == std::streampos(0)) // 'tellp' return the cursor's position
   {
-    const IndexT rigId = rigIt.first;
-    const sfmData::Rig& rig = rigIt.second;
+    // if the file does't exist: add a header.
+    os << "Time/BA(s);RefinedPose;ConstPose;IgnoredPose;"
+          "RefinedPts;ConstPts;IgnoredPts;"
+          "RefinedK;ConstK;IgnoredK;"
+          "ResidualBlocks;SuccessIteration;BadIteration;"
+          "InitRMSE;FinalRMSE;"
+          "d=-1;d=0;d=1;d=2;d=3;d=4;"
+          "d=5;d=6;d=7;d=8;d=9;d=10+;\n";
+  }
+
+  std::map<EParameter, std::map<EParameterState, std::size_t>> states = parametersStates;
+  std::size_t posesWithDistUpperThanTen = 0;
+
+  for(const auto& it : nbCamerasPerDistance)
+    if (it.first >= 10)
+      posesWithDistUpperThanTen += it.second;
+
+  os << time << ";"
+     << states[EParameter::POSE][EParameterState::REFINED]  << ";"
+     << states[EParameter::POSE][EParameterState::CONSTANT] << ";"
+     << states[EParameter::POSE][EParameterState::IGNORED]  << ";"
+     << states[EParameter::LANDMARK][EParameterState::REFINED]  << ";"
+     << states[EParameter::LANDMARK][EParameterState::CONSTANT] << ";"
+     << states[EParameter::LANDMARK][EParameterState::IGNORED]  << ";"
+     << states[EParameter::INTRINSIC][EParameterState::REFINED]  << ";"
+     << states[EParameter::INTRINSIC][EParameterState::CONSTANT] << ";"
+     << states[EParameter::INTRINSIC][EParameterState::IGNORED]  << ";"
+     << nbResidualBlocks << ";"
+     << nbSuccessfullIterations << ";"
+     << nbUnsuccessfullIterations << ";"
+     << RMSEinitial << ";"
+     << RMSEfinal << ";";
+
+     for(int i = -1; i < 10; ++i)
+     {
+       auto cdIt = nbCamerasPerDistance.find(i);
+       if(cdIt != nbCamerasPerDistance.end())
+        os << cdIt->second << ";";
+       else
+         os << "0;";
+     }
+
+     os << posesWithDistUpperThanTen << ";\n";
+
+  os.close();
+  return true;
+}
+
+void BundleAdjustmentCeres::Statistics::show() const
+{
+  std::map<EParameter, std::map<EParameterState, std::size_t>> states = parametersStates;
+  std::stringstream ss;
+
+  if(!nbCamerasPerDistance.empty())
+  {
+    std::size_t nbCamNotConnected = 0;
+    std::size_t nbCamDistEqZero = 0;
+    std::size_t nbCamDistEqOne = 0;
+    std::size_t nbCamDistUpperOne = 0;
+
+    for(const auto & camdistIt : nbCamerasPerDistance)
+    {
+      if(camdistIt.first < 0)
+        nbCamNotConnected += camdistIt.second;
+      else if(camdistIt.first == 1)
+        nbCamDistEqZero += camdistIt.second;
+      else if(camdistIt.first == 1)
+        nbCamDistEqOne += camdistIt.second;
+      else if(camdistIt.first > 1)
+        nbCamDistUpperOne += camdistIt.second;
+    }
+
+    ss << "\t- local strategy enabled: yes\n"
+       << "\t- graph-distances distribution:\n"
+       << "\t    - not connected: " << nbCamNotConnected << " cameras\n"
+       << "\t    - D = 0: " << nbCamDistEqZero << " cameras\n"
+       << "\t    - D = 1: " << nbCamDistEqOne << " cameras\n"
+       << "\t    - D > 1: " << nbCamDistUpperOne << " cameras\n";
+  }
+  else
+  {
+      ss << "\t- local strategy enabled: no\n";
+  }
+
+  ALICEVISION_LOG_INFO("Bundle Adjustment Statistics:\n"
+                        << ss.str()
+                        << "\t- adjustment duration: " << time << " s\n"
+                        << "\t- poses:\n"
+                        << "\t    - # refined:  " << states[EParameter::POSE][EParameterState::REFINED]  << "\n"
+                        << "\t    - # constant: " << states[EParameter::POSE][EParameterState::CONSTANT] << "\n"
+                        << "\t    - # ignored:  " << states[EParameter::POSE][EParameterState::IGNORED]  << "\n"
+                        << "\t- landmarks:\n"
+                        << "\t    - # refined:  " << states[EParameter::LANDMARK][EParameterState::REFINED]  << "\n"
+                        << "\t    - # constant: " << states[EParameter::LANDMARK][EParameterState::CONSTANT] << "\n"
+                        << "\t    - # ignored:  " << states[EParameter::LANDMARK][EParameterState::IGNORED]  << "\n"
+                        << "\t- intrinsics:\n"
+                        << "\t    - # refined:  " << states[EParameter::INTRINSIC][EParameterState::REFINED]  << "\n"
+                        << "\t    - # constant: " << states[EParameter::INTRINSIC][EParameterState::CONSTANT] << "\n"
+                        << "\t    - # ignored:  " << states[EParameter::INTRINSIC][EParameterState::IGNORED]  << "\n"
+                        << "\t- # residual blocks: " << nbResidualBlocks << "\n"
+                        << "\t- # successful iterations: " << nbSuccessfullIterations   << "\n"
+                        << "\t- # unsuccessful iterations: " << nbUnsuccessfullIterations << "\n"
+                        << "\t- initial RMSE: " << RMSEinitial << "\n"
+                        << "\t- final   RMSE: " << RMSEfinal);
+}
+
+void BundleAdjustmentCeres::setSolverOptions(ceres::Solver::Options& solverOptions) const
+{
+  solverOptions.preconditioner_type = _ceresOptions.preconditionerType;
+  solverOptions.linear_solver_type = _ceresOptions.linearSolverType;
+  solverOptions.sparse_linear_algebra_library_type = _ceresOptions.sparseLinearAlgebraLibraryType;
+  solverOptions.minimizer_progress_to_stdout = _ceresOptions.verbose;
+  solverOptions.logging_type = ceres::SILENT;
+  solverOptions.num_threads = _ceresOptions.nbThreads;
+#if CERES_VERSION_MAJOR < 2
+  solverOptions.num_linear_solver_threads = _ceresOptions.nbThreads;
+#endif
+
+  if(_ceresOptions.useParametersOrdering)
+  {
+    solverOptions.linear_solver_ordering.reset(new ceres::ParameterBlockOrdering);
+
+    // copy ParameterBlockOrdering
+    *(solverOptions.linear_solver_ordering) = _ceresOptions.linearSolverOrdering;
+  }
+}
+
+void BundleAdjustmentCeres::addExtrinsicsToProblem(const sfmData::SfMData& sfmData, BundleAdjustment::ERefineOptions refineOptions, ceres::Problem& problem)
+{
+  const bool refineTranslation = refineOptions & BundleAdjustment::REFINE_TRANSLATION;
+  const bool refineRotation = refineOptions & BundleAdjustment::REFINE_ROTATION;
+
+  const auto addPose = [&](const sfmData::CameraPose& cameraPose, bool isConstant, std::array<double,6>& poseBlock)
+  {
+    const Mat3& R = cameraPose.getTransform().rotation();
+    const Vec3& t = cameraPose.getTransform().translation();
+
+    double angleAxis[3];
+    ceres::RotationMatrixToAngleAxis(static_cast<const double *>(R.data()), angleAxis);
+    poseBlock.at(0) = angleAxis[0];
+    poseBlock.at(1) = angleAxis[1];
+    poseBlock.at(2) = angleAxis[2];
+    poseBlock.at(3) = t(0);
+    poseBlock.at(4) = t(1);
+    poseBlock.at(5) = t(2);
+
+    double* poseBlockPtr = poseBlock.data();
+    problem.AddParameterBlock(poseBlockPtr, 6);
+
+    // add pose parameter to the all parameters blocks pointers list
+    _allParametersBlocks.push_back(poseBlockPtr);
+
+    // keep the camera extrinsics constants
+    if(cameraPose.isLocked() || isConstant || (!refineTranslation && !refineRotation))
+    {
+      // set the whole parameter block as constant.
+      _statistics.addState(EParameter::POSE, EParameterState::CONSTANT);
+      problem.SetParameterBlockConstant(poseBlockPtr);
+      return;
+    }
+
+    // constant parameters
+    std::vector<int> constantExtrinsic;
+
+    // don't refine rotations
+    if(!refineRotation)
+    {
+      constantExtrinsic.push_back(0);
+      constantExtrinsic.push_back(1);
+      constantExtrinsic.push_back(2);
+    }
+
+    // don't refine translations
+    if(!refineTranslation)
+    {
+      constantExtrinsic.push_back(3);
+      constantExtrinsic.push_back(4);
+      constantExtrinsic.push_back(5);
+    }
+
+    // subset parametrization
+    if(!constantExtrinsic.empty())
+    {
+      ceres::SubsetParameterization* subsetParameterization = new ceres::SubsetParameterization(6, constantExtrinsic);
+      problem.SetParameterization(poseBlockPtr, subsetParameterization);
+    }
+
+    _statistics.addState(EParameter::POSE, EParameterState::REFINED);
+  };
+
+  // setup poses data
+  for(const auto& posePair : sfmData.getPoses())
+  {
+    const IndexT poseId = posePair.first;
+    const sfmData::CameraPose& pose = posePair.second;
+
+    // skip camera pose set as Ignored in the Local strategy
+    if(getPoseState(poseId) == EParameterState::IGNORED)
+    {
+      _statistics.addState(EParameter::POSE, EParameterState::IGNORED);
+      continue;
+    }
+
+    const bool isConstant = (getPoseState(poseId) == EParameterState::CONSTANT);
+
+    addPose(pose, isConstant, _posesBlocks[poseId]);
+  }
+
+  // setup sub-poses data
+  for(const auto& rigPair : sfmData.getRigs())
+  {
+    const IndexT rigId = rigPair.first;
+    const sfmData::Rig& rig = rigPair.second;
     const std::size_t nbSubPoses = rig.getNbSubPoses();
 
     for(std::size_t subPoseId = 0 ; subPoseId < nbSubPoses; ++subPoseId)
@@ -240,194 +356,344 @@ void BundleAdjustmentCeres::createProblem(sfmData::SfMData& sfmData,
       if(rigSubPose.status == sfmData::ERigSubPoseStatus::UNINITIALIZED)
         continue;
 
-     const bool locked = (rigSubPose.status == sfmData::ERigSubPoseStatus::CONSTANT);
+      const bool isConstant = (rigSubPose.status == sfmData::ERigSubPoseStatus::CONSTANT);
 
-      addPose(problem, refineOptions, sfmData::CameraPose(rigSubPose.pose, locked), parameterBlocks, map_subposes[rigId][subPoseId]);
+      addPose(sfmData::CameraPose(rigSubPose.pose), isConstant, _rigBlocks[rigId][subPoseId]);
     }
-  }
-
-  HashMap<IndexT, std::size_t> intrinsicsUsage;
-
-  // Setup Intrinsics data & subparametrization
-  const bool refineIntrinsicsOpticalCenter = (refineOptions & BA_REFINE_INTRINSICS_OPTICALCENTER_ALWAYS) || (refineOptions & BA_REFINE_INTRINSICS_OPTICALCENTER_IF_ENOUGH_DATA);
-  const bool refineIntrinsics = (refineOptions & BA_REFINE_INTRINSICS_FOCAL) ||
-                                (refineOptions & BA_REFINE_INTRINSICS_DISTORTION) ||
-                                refineIntrinsicsOpticalCenter;
-  for(const auto& itView: sfmData.getViews())
-  {
-    const sfmData::View* v = itView.second.get();
-    if (sfmData.isPoseAndIntrinsicDefined(v))
-    {
-      if(intrinsicsUsage.find(v->getIntrinsicId()) == intrinsicsUsage.end())
-        intrinsicsUsage[v->getIntrinsicId()] = 1;
-      else
-        ++intrinsicsUsage[v->getIntrinsicId()];
-    }
-    else
-    {
-      if(intrinsicsUsage.find(v->getIntrinsicId()) == intrinsicsUsage.end())
-        intrinsicsUsage[v->getIntrinsicId()] = 0;
-    }
-  }
-
-  // Setup Intrinsics data & subparametrization
-  for(const auto& itIntrinsic: sfmData.getIntrinsics())
-  {
-    const IndexT idIntrinsics = itIntrinsic.first;
-    if(intrinsicsUsage[idIntrinsics] == 0)
-    {
-      continue;
-    }
-    assert(isValid(itIntrinsic.second->getType()));
-    map_intrinsics[idIntrinsics] = itIntrinsic.second->getParams();
-
-    double * parameter_block = &map_intrinsics[idIntrinsics][0];
-    problem.AddParameterBlock(parameter_block, map_intrinsics[idIntrinsics].size());
-    if((!refineIntrinsics) || itIntrinsic.second->isLocked())
-    {
-      // Nothing to refine in the intrinsics,
-      //set the whole parameter block as constant for best performance or because it's locked.
-      problem.SetParameterBlockConstant(parameter_block);
-    }
-    else
-    {
-      std::vector<int> vec_constant_params;
-      // Focal length
-      if(refineOptions & BA_REFINE_INTRINSICS_FOCAL)
-      {
-        // Refine the focal length
-        if(itIntrinsic.second->initialFocalLengthPix() > 0)
-        {
-          // If we have an initial guess, we only authorize a margin around this value.
-          assert(map_intrinsics[idIntrinsics].size() >= 1);
-          const unsigned int maxFocalErr = 0.2 * std::max(itIntrinsic.second->w(), itIntrinsic.second->h());
-          problem.SetParameterLowerBound(parameter_block, 0, (double)itIntrinsic.second->initialFocalLengthPix() - maxFocalErr);
-          problem.SetParameterUpperBound(parameter_block, 0, (double)itIntrinsic.second->initialFocalLengthPix() + maxFocalErr);
-        }
-        else // no initial guess
-        {
-          // We don't have an initial guess, but we assume that we use
-          // a converging lens, so the focal length should be positive.
-          problem.SetParameterLowerBound(parameter_block, 0, 0.0);
-        }
-      }
-      else
-      {
-        // Set focal length as constant
-        vec_constant_params.push_back(0);
-      }
-
-      const std::size_t minImagesForOpticalCenter = 3;
-
-      // Optical center
-      if((refineOptions & BA_REFINE_INTRINSICS_OPTICALCENTER_ALWAYS) ||
-         ((refineOptions & BA_REFINE_INTRINSICS_OPTICALCENTER_IF_ENOUGH_DATA) && intrinsicsUsage[idIntrinsics] > minImagesForOpticalCenter)
-         )
-      {
-        // Refine optical center within 10% of the image size.
-        assert(map_intrinsics[idIntrinsics].size() >= 3);
-        
-        const double opticalCenterMinPercent = 0.45;
-        const double opticalCenterMaxPercent = 0.55;
-        
-        // Add bounds to the principal point
-        problem.SetParameterLowerBound(parameter_block, 1, opticalCenterMinPercent * itIntrinsic.second->w());
-        problem.SetParameterUpperBound(parameter_block, 1, opticalCenterMaxPercent * itIntrinsic.second->w());
-
-        problem.SetParameterLowerBound(parameter_block, 2, opticalCenterMinPercent * itIntrinsic.second->h());
-        problem.SetParameterUpperBound(parameter_block, 2, opticalCenterMaxPercent * itIntrinsic.second->h());
-      }
-      else
-      {
-        // Don't refine the optical center
-        vec_constant_params.push_back(1);
-        vec_constant_params.push_back(2);
-      }
-
-      // Lens distortion
-      if(!(refineOptions & BA_REFINE_INTRINSICS_DISTORTION))
-      {
-        for(std::size_t i = 3; i < map_intrinsics[idIntrinsics].size(); ++i)
-        {
-          vec_constant_params.push_back(i);
-        }
-      }
-
-      if(!vec_constant_params.empty())
-      {
-        ceres::SubsetParameterization *subset_parameterization =
-          new ceres::SubsetParameterization(map_intrinsics[idIntrinsics].size(), vec_constant_params);
-        problem.SetParameterization(parameter_block, subset_parameterization);
-      }
-    }
-  }
-
-  // Set a LossFunction to be less penalized by false measurements
-  //  - set it to NULL if you don't want use a lossFunction.
-  ceres::LossFunction * p_LossFunction = new ceres::HuberLoss(Square(4.0));
-  // TODO: make the LOSS function and the parameter an option
-
-  // For all visibility add reprojections errors:
-  for(auto& landmarkIt: sfmData.structure)
-  {
-    const sfmData::Observations & observations = landmarkIt.second.observations;
-    // Iterate over 2D observation associated to the 3D landmark
-    for(const auto& observationIt: observations)
-    {
-      // Build the residual block corresponding to the track observation:
-      const sfmData::View * view = sfmData.views.at(observationIt.first).get();
-
-      // Each Residual block takes a point and a camera as input and outputs a 2
-      // dimensional residual. Internally, the cost function stores the observed
-      // image location and compares the reprojection against the observation.
-
-      if(view->isPartOfRig())
-      {
-        ceres::CostFunction* costFunction = createRigCostFunctionFromIntrinsics(sfmData.intrinsics[view->getIntrinsicId()].get(), observationIt.second.x);
-
-        const sfmData::Rig& rig = sfmData.getRig(*view);
-        const sfmData::RigSubPose& rigSubPose = rig.getSubPose(view->getSubPoseId());
-        assert(rigSubPose.status != sfmData::ERigSubPoseStatus::UNINITIALIZED);
-
-        double* subpose_ptr = &map_subposes.at(view->getRigId()).at(view->getSubPoseId())[0];
-
-        problem.AddResidualBlock(
-          costFunction,
-          p_LossFunction,
-          &map_intrinsics[view->getIntrinsicId()][0],
-          &map_poses[view->getPoseId()][0],
-          subpose_ptr, // subpose of the cameras rig
-          landmarkIt.second.X.data()); //Do we need to copy 3D point to avoid false motion, if failure ?
-      }
-      else
-      {
-        ceres::CostFunction* costFunction = createCostFunctionFromIntrinsics(sfmData.intrinsics[view->getIntrinsicId()].get(), observationIt.second.x);
-
-        problem.AddResidualBlock(
-          costFunction,
-          p_LossFunction,
-          &map_intrinsics[view->getIntrinsicId()][0],
-          &map_poses[view->getPoseId()][0],
-          landmarkIt.second.X.data()); //Do we need to copy 3D point to avoid false motion, if failure ?
-      }
-    }
-    parameterBlocks.push_back(landmarkIt.second.X.data());
-    if (!(refineOptions & BA_REFINE_STRUCTURE))
-      problem.SetParameterBlockConstant(landmarkIt.second.X.data());
   }
 }
 
-void BundleAdjustmentCeres::createJacobian(sfmData::SfMData& sfmData,
-                                           BA_Refine refineOptions,
+void BundleAdjustmentCeres::addIntrinsicsToProblem(const sfmData::SfMData& sfmData, BundleAdjustment::ERefineOptions refineOptions, ceres::Problem& problem)
+{
+  const bool refineIntrinsicsOpticalCenter = (refineOptions & REFINE_INTRINSICS_OPTICALCENTER_ALWAYS) || (refineOptions & REFINE_INTRINSICS_OPTICALCENTER_IF_ENOUGH_DATA);
+  const bool refineIntrinsicsFocalLength = refineOptions & REFINE_INTRINSICS_FOCAL;
+  const bool refineIntrinsicsDistortion = refineOptions & REFINE_INTRINSICS_DISTORTION;
+  const bool refineIntrinsics = refineIntrinsicsDistortion || refineIntrinsicsFocalLength || refineIntrinsicsOpticalCenter;
+
+  std::map<IndexT, std::size_t> intrinsicsUsage;
+
+  // count the number of reconstructed views per intrinsic
+  for(const auto& viewPair: sfmData.getViews())
+  {
+    const sfmData::View& view = *(viewPair.second);
+
+    if(intrinsicsUsage.find(view.getIntrinsicId()) == intrinsicsUsage.end())
+      intrinsicsUsage[view.getIntrinsicId()] = 0;
+
+    if(sfmData.isPoseAndIntrinsicDefined(&view))
+      ++intrinsicsUsage.at(view.getIntrinsicId());
+  }
+
+  for(const auto& intrinsicPair: sfmData.getIntrinsics())
+  {
+    const IndexT intrinsicId = intrinsicPair.first;
+    const auto& intrinsicPtr = intrinsicPair.second;
+    const auto usageIt = intrinsicsUsage.find(intrinsicId);
+    if(usageIt == intrinsicsUsage.end())
+      // if the intrinsic is never referenced by any view, skip it
+      continue;
+    const std::size_t usageCount = usageIt->second;
+
+    // do not refine an intrinsic does not used by any reconstructed view
+    if(usageCount <= 0 || getIntrinsicState(intrinsicId) == EParameterState::IGNORED)
+    {
+      _statistics.addState(EParameter::INTRINSIC, EParameterState::IGNORED);
+      continue;
+    }
+
+    assert(isValid(intrinsicPtr->getType()));
+
+    std::vector<double>& intrinsicBlock = _intrinsicsBlocks[intrinsicId];
+    intrinsicBlock = intrinsicPtr->getParams();
+
+    double* intrinsicBlockPtr = intrinsicBlock.data();
+    problem.AddParameterBlock(intrinsicBlockPtr, intrinsicBlock.size());
+
+    // add intrinsic parameter to the all parameters blocks pointers list
+    _allParametersBlocks.push_back(intrinsicBlockPtr);
+
+    // keep the camera intrinsic constant
+    if(intrinsicPtr->isLocked() || !refineIntrinsics || getIntrinsicState(intrinsicId) == EParameterState::CONSTANT)
+    {
+      // set the whole parameter block as constant.
+      _statistics.addState(EParameter::INTRINSIC, EParameterState::CONSTANT);
+      problem.SetParameterBlockConstant(intrinsicBlockPtr);
+      continue;
+    }
+
+    // constant parameters
+    std::vector<int> constantIntrinisc;
+
+    // refine the focal length
+    if(refineIntrinsicsFocalLength)
+    {
+      if(intrinsicPtr->initialFocalLengthPix() > 0)
+      {
+        // if we have an initial guess, we only authorize a margin around this value.
+        assert(intrinsicBlock.size() >= 1);
+        const unsigned int maxFocalError = 0.2 * std::max(intrinsicPtr->w(), intrinsicPtr->h()); // TODO : check if rounding is needed
+        problem.SetParameterLowerBound(intrinsicBlockPtr, 0, static_cast<double>(intrinsicPtr->initialFocalLengthPix() - maxFocalError));
+        problem.SetParameterUpperBound(intrinsicBlockPtr, 0, static_cast<double>(intrinsicPtr->initialFocalLengthPix() + maxFocalError));
+      }
+      else // no initial guess
+      {
+        // we don't have an initial guess, but we assume that we use
+        // a converging lens, so the focal length should be positive.
+        problem.SetParameterLowerBound(intrinsicBlockPtr, 0, 0.0);
+      }
+    }
+    else
+    {
+      // set focal length as constant
+      constantIntrinisc.push_back(0);
+    }
+
+    const std::size_t minImagesForOpticalCenter = 3;
+
+    // optical center
+    if(refineIntrinsicsOpticalCenter && (usageCount > minImagesForOpticalCenter))
+    {
+      // refine optical center within 10% of the image size.
+      assert(intrinsicBlock.size() >= 3);
+
+      const double opticalCenterMinPercent = 0.45;
+      const double opticalCenterMaxPercent = 0.55;
+
+      // add bounds to the principal point
+      problem.SetParameterLowerBound(intrinsicBlockPtr, 1, opticalCenterMinPercent * intrinsicPtr->w());
+      problem.SetParameterUpperBound(intrinsicBlockPtr, 1, opticalCenterMaxPercent * intrinsicPtr->w());
+      problem.SetParameterLowerBound(intrinsicBlockPtr, 2, opticalCenterMinPercent * intrinsicPtr->h());
+      problem.SetParameterUpperBound(intrinsicBlockPtr, 2, opticalCenterMaxPercent * intrinsicPtr->h());
+    }
+    else
+    {
+      // don't refine the optical center
+      constantIntrinisc.push_back(1);
+      constantIntrinisc.push_back(2);
+    }
+
+    // lens distortion
+    if(!refineIntrinsicsDistortion)
+      for(std::size_t i = 3; i < intrinsicBlock.size(); ++i)
+        constantIntrinisc.push_back(i);
+
+    if(!constantIntrinisc.empty())
+    {
+      ceres::SubsetParameterization* subsetParameterization = new ceres::SubsetParameterization(intrinsicBlock.size(), constantIntrinisc);
+      problem.SetParameterization(intrinsicBlockPtr, subsetParameterization);
+    }
+
+    _statistics.addState(EParameter::INTRINSIC, EParameterState::REFINED);
+  }
+}
+
+void BundleAdjustmentCeres::addLandmarksToProblem(const sfmData::SfMData& sfmData, ERefineOptions refineOptions, ceres::Problem& problem)
+{
+  const bool refineStructure = refineOptions & REFINE_STRUCTURE;
+
+  // set a LossFunction to be less penalized by false measurements.
+  // note: set it to NULL if you don't want use a lossFunction.
+  ceres::LossFunction* lossFunction = new ceres::HuberLoss(Square(4.0)); // TODO: make the LOSS function and the parameter an option
+
+  // build the residual blocks corresponding to the track observations
+  for(const auto& landmarkPair: sfmData.getLandmarks())
+  {
+    const IndexT landmarkId = landmarkPair.first;
+    const sfmData::Landmark& landmark = landmarkPair.second;
+
+    // do not create a residual block if the landmark
+    // have been set as Ignored by the Local BA strategy
+    if(getLandmarkState(landmarkId) == EParameterState::IGNORED)
+    {
+      _statistics.addState(EParameter::LANDMARK, EParameterState::IGNORED);
+      continue;
+    }
+
+    std::array<double,3>& landmarkBlock = _landmarksBlocks[landmarkId];
+    for(std::size_t i = 0; i < 3; ++i)
+      landmarkBlock.at(i) = landmark.X(Eigen::Index(i));
+
+    double* landmarkBlockPtr = landmarkBlock.data();
+
+    // add landmark parameter to the all parameters blocks pointers list
+    _allParametersBlocks.push_back(landmarkBlockPtr);
+
+    // iterate over 2D observation associated to the 3D landmark
+    for(const auto& observationPair: landmark.observations)
+    {
+      const sfmData::View& view = sfmData.getView(observationPair.first);
+      const sfmData::Observation& observation = observationPair.second;
+
+      // each residual block takes a point and a camera as input and outputs a 2
+      // dimensional residual. Internally, the cost function stores the observed
+      // image location and compares the reprojection against the observation.
+
+      assert(getPoseState(view.getPoseId()) != EParameterState::IGNORED);
+      assert(getIntrinsicState(view.getIntrinsicId()) != EParameterState::IGNORED);
+
+      // needed parameters to create a residual block (K, pose)
+      double* poseBlockPtr = _posesBlocks.at(view.getPoseId()).data();
+      double* intrinsicBlockPtr = _intrinsicsBlocks.at(view.getIntrinsicId()).data();
+
+      // apply a specific parameter ordering:
+      if(_ceresOptions.useParametersOrdering)
+      {
+        _ceresOptions.linearSolverOrdering.AddElementToGroup(landmarkBlockPtr, 0);
+        _ceresOptions.linearSolverOrdering.AddElementToGroup(poseBlockPtr, 1);
+        _ceresOptions.linearSolverOrdering.AddElementToGroup(intrinsicBlockPtr, 2);
+      }
+
+      if(view.isPartOfRig() && !view.isPoseIndependant())
+      {
+        ceres::CostFunction* costFunction = createRigCostFunctionFromIntrinsics(sfmData.getIntrinsicPtr(view.getIntrinsicId()), observation.x);
+
+        problem.AddResidualBlock(costFunction,
+            lossFunction,
+            intrinsicBlockPtr,
+            poseBlockPtr,
+            _rigBlocks.at(view.getRigId()).at(view.getSubPoseId()).data(), // subpose of the cameras rig
+            landmarkBlockPtr); // do we need to copy 3D point to avoid false motion, if failure ?
+      }
+      else
+      {
+        ceres::CostFunction* costFunction = createCostFunctionFromIntrinsics(sfmData.getIntrinsicPtr(view.getIntrinsicId()), observation.x);
+
+        problem.AddResidualBlock(costFunction,
+            lossFunction,
+            intrinsicBlockPtr,
+            poseBlockPtr,
+            landmarkBlockPtr); //do we need to copy 3D point to avoid false motion, if failure ?
+      }
+
+      if(!refineStructure || getLandmarkState(landmarkId) == EParameterState::CONSTANT)
+      {
+        // set the whole landmark parameter block as constant.
+        _statistics.addState(EParameter::LANDMARK, EParameterState::CONSTANT);
+        problem.SetParameterBlockConstant(landmarkBlockPtr);
+      }
+      else
+      {
+        _statistics.addState(EParameter::LANDMARK, EParameterState::REFINED);
+      }
+    }
+  }
+}
+
+void BundleAdjustmentCeres::createProblem(const sfmData::SfMData& sfmData,
+                                          ERefineOptions refineOptions,
+                                          ceres::Problem& problem)
+{
+  // clear previously computed data
+  resetProblem();
+
+  // ensure we are not using incompatible options
+  // REFINEINTRINSICS_OPTICALCENTER_ALWAYS and REFINEINTRINSICS_OPTICALCENTER_IF_ENOUGH_DATA cannot be used at the same time
+  assert(!((refineOptions & REFINE_INTRINSICS_OPTICALCENTER_ALWAYS) && (refineOptions & REFINE_INTRINSICS_OPTICALCENTER_IF_ENOUGH_DATA)));
+
+  // add SfM extrincics to the Ceres problem
+  addExtrinsicsToProblem(sfmData, refineOptions, problem);
+
+  // add SfM intrinsics to the Ceres problem
+  addIntrinsicsToProblem(sfmData, refineOptions, problem);
+
+  // add SfM landmarks to the Ceres problem
+  addLandmarksToProblem(sfmData, refineOptions, problem);
+}
+
+void BundleAdjustmentCeres::updateFromSolution(sfmData::SfMData& sfmData, ERefineOptions refineOptions) const
+{
+  const bool refinePoses = (refineOptions & REFINE_ROTATION) || (refineOptions & REFINE_TRANSLATION);
+  const bool refineIntrinsicsOpticalCenter = (refineOptions & REFINE_INTRINSICS_OPTICALCENTER_ALWAYS) || (refineOptions & REFINE_INTRINSICS_OPTICALCENTER_IF_ENOUGH_DATA);
+  const bool refineIntrinsics = (refineOptions & REFINE_INTRINSICS_FOCAL) || (refineOptions & REFINE_INTRINSICS_DISTORTION) || refineIntrinsicsOpticalCenter;
+  const bool refineStructure = refineOptions & REFINE_STRUCTURE;
+
+  // update camera poses with refined data
+  if(refinePoses)
+  {
+    // absolute poses
+    for(auto& posePair : sfmData.getPoses())
+    {
+      const IndexT poseId = posePair.first;
+
+      // do not update a camera pose set as Ignored or Constant in the Local strategy
+      if(getPoseState(poseId) != EParameterState::REFINED)
+        continue;
+
+      const std::array<double,6>& poseBlock = _posesBlocks.at(poseId);
+
+      Mat3 R_refined;
+      ceres::AngleAxisToRotationMatrix(poseBlock.data(), R_refined.data());
+      const Vec3 t_refined(poseBlock.at(3), poseBlock.at(4), poseBlock.at(5));
+
+      // update the pose
+      posePair.second.setTransform(poseFromRT(R_refined, t_refined));
+    }
+
+    // rig sub-poses
+    for(const auto& rigIt : _rigBlocks)
+    {
+      sfmData::Rig& rig = sfmData.getRigs().at(rigIt.first);
+
+      for(const auto& subPoseit : rigIt.second)
+      {
+        sfmData::RigSubPose& subPose = rig.getSubPose(subPoseit.first);
+        const std::array<double,6>& subPoseBlock = subPoseit.second;
+
+        Mat3 R_refined;
+        ceres::AngleAxisToRotationMatrix(subPoseBlock.data(), R_refined.data());
+        const Vec3 t_refined(subPoseBlock.at(3), subPoseBlock.at(4), subPoseBlock.at(5));
+
+        // update the sub-pose
+        subPose.pose = poseFromRT(R_refined, t_refined);
+      }
+    }
+  }
+
+  // update camera intrinsics with refined data
+  if(refineIntrinsics)
+  {
+    for(const auto& intrinsicBlockPair: _intrinsicsBlocks)
+    {
+      const IndexT intrinsicId = intrinsicBlockPair.first;
+
+      // do not update a camera pose set as Ignored or Constant in the Local strategy
+      if(getIntrinsicState(intrinsicId) != EParameterState::REFINED)
+        continue;
+
+      sfmData.getIntrinsics().at(intrinsicId)->updateFromParams(intrinsicBlockPair.second);
+    }
+  }
+
+  // update landmarks
+  if(refineStructure)
+  {
+    for(const auto& landmarksBlockPair: _landmarksBlocks)
+    {
+      const IndexT landmarkId = landmarksBlockPair.first;
+      sfmData::Landmark& landmark = sfmData.getLandmarks().at(landmarkId);
+
+      // do not update a camera pose set as Ignored or Constant in the Local strategy
+      if(getLandmarkState(landmarkId) != EParameterState::REFINED)
+        continue;
+
+      for(std::size_t i = 0; i < 3; ++i)
+        landmark.X(Eigen::Index(i))= landmarksBlockPair.second.at(i);
+    }
+  }
+}
+
+void BundleAdjustmentCeres::createJacobian(const sfmData::SfMData& sfmData,
+                                           ERefineOptions refineOptions,
                                            ceres::CRSMatrix& jacobian)
 {
+  // create problem
   ceres::Problem problem;
   createProblem(sfmData, refineOptions, problem);
 
-  // Configure Jacobian engine
+  // configure Jacobian engine
   double cost = 0.0;
   ceres::Problem::EvaluateOptions evalOpt;
-  evalOpt.parameter_blocks = parameterBlocks;
+  evalOpt.parameter_blocks = _allParametersBlocks;
   evalOpt.num_threads = 8;
   evalOpt.apply_loss_function = true;
 
@@ -435,96 +701,47 @@ void BundleAdjustmentCeres::createJacobian(sfmData::SfMData& sfmData,
   problem.Evaluate(evalOpt, &cost, NULL, NULL, &jacobian);
 }
 
-bool BundleAdjustmentCeres::Adjust(sfmData::SfMData& sfmData,     // the SfM scene to refine
-                                   BA_Refine refineOptions)
+bool BundleAdjustmentCeres::adjust(sfmData::SfMData& sfmData, ERefineOptions refineOptions)
 {
+  // create problem
   ceres::Problem problem;
   createProblem(sfmData, refineOptions, problem);
 
-  // Configure a BA engine and run it
-  //  Make Ceres automatically detect the bundle structure.
+  // configure a Bundle Adjustment engine and run it
+  // make Ceres automatically detect the bundle structure.
   ceres::Solver::Options options;
-  options.preconditioner_type = _aliceVision_options._preconditioner_type;
-  options.linear_solver_type = _aliceVision_options._linear_solver_type;
-  options.sparse_linear_algebra_library_type = _aliceVision_options._sparse_linear_algebra_library_type;
-  options.minimizer_progress_to_stdout = _aliceVision_options._bVerbose;
-  options.logging_type = ceres::SILENT;
-  options.num_threads = _aliceVision_options._nbThreads;
-  options.num_linear_solver_threads = _aliceVision_options._nbThreads;
+  setSolverOptions(options);
 
-  // Solve BA
+  // solve BA
   ceres::Solver::Summary summary;
   ceres::Solve(options, &problem, &summary);
-  if (_aliceVision_options._bCeres_Summary)
+
+  // print summary
+  if(_ceresOptions.summary)
     ALICEVISION_LOG_DEBUG(summary.FullReport());
 
-  // If no error, get back refined parameters
-  if (!summary.IsSolutionUsable())
+  // solution is not usable
+  if(!summary.IsSolutionUsable())
   {
-    ALICEVISION_LOG_WARNING("Bundle Adjustment failed.");
+    ALICEVISION_LOG_WARNING("Bundle Adjustment failed, the solution is not usable.");
     return false;
   }
 
-  // Solution is usable
-  if (_aliceVision_options._bVerbose)
-  {
-    // Display statistics about the minimization
-    ALICEVISION_LOG_DEBUG(
-      "Bundle Adjustment statistics (approximated RMSE):\n"
-      "\t- # views: " << sfmData.views.size() << "\n"
-      "\t- # poses: " << sfmData.getPoses().size() << "\n"
-      "\t- # intrinsics: " << sfmData.intrinsics.size() << "\n"
-      "\t- # tracks: " << sfmData.structure.size() << "\n"
-      "\t- # residuals: " << summary.num_residuals << "\n"
-      "\t- initial RMSE: " << std::sqrt( summary.initial_cost / summary.num_residuals) << "\n"
-      "\t- final RMSE: " << std::sqrt( summary.final_cost / summary.num_residuals) << "\n"
-      "\t- time (s): " << summary.total_time_in_seconds);
-  }
+  // update input sfmData with the solution
+  updateFromSolution(sfmData, refineOptions);
 
-  // Update camera poses with refined data
-  if ((refineOptions & BA_REFINE_ROTATION) || (refineOptions & BA_REFINE_TRANSLATION))
-  {
-    for (sfmData::Poses::iterator itPose = sfmData.getPoses().begin(); itPose != sfmData.getPoses().end(); ++itPose)
-    {
-      const IndexT indexPose = itPose->first;
+  // store some statitics from the summary
+  _statistics.time = summary.total_time_in_seconds;
+  _statistics.nbSuccessfullIterations = summary.num_successful_steps;
+  _statistics.nbUnsuccessfullIterations = summary.num_unsuccessful_steps;
+  _statistics.nbResidualBlocks = summary.num_residuals;
+  _statistics.RMSEinitial = std::sqrt(summary.initial_cost / summary.num_residuals);
+  _statistics.RMSEfinal = std::sqrt(summary.final_cost / summary.num_residuals);
 
-      Mat3 R_refined;
-      ceres::AngleAxisToRotationMatrix(&map_poses[indexPose][0], R_refined.data());
-      Vec3 t_refined(map_poses[indexPose][3], map_poses[indexPose][4], map_poses[indexPose][5]);
-      // Update the pose
-      itPose->second.setTransform(poseFromRT(R_refined, t_refined));
-    }
+  //store distance histogram for local strategy
+  if(useLocalStrategy())
+    _statistics.nbCamerasPerDistance = _localGraph->getDistancesHistogram();
 
-    for(const auto& rigIt : map_subposes)
-    {
-      sfmData::Rig& rig = sfmData.getRigs().at(rigIt.first);
-
-      for(const auto& subPoseit : rigIt.second)
-      {
-        sfmData::RigSubPose& subpose = rig.getSubPose(subPoseit.first);
-
-        Mat3 R_refined;
-        ceres::AngleAxisToRotationMatrix(&subPoseit.second[0], R_refined.data());
-        Vec3 t_refined(subPoseit.second[3], subPoseit.second[4], subPoseit.second[5]);
-
-        // Update the pose
-        subpose.pose = poseFromRT(R_refined, t_refined);
-      }
-    }
-  }
-
-  // Update camera intrinsics with refined data
-  const bool refineIntrinsicsOpticalCenter = (refineOptions & BA_REFINE_INTRINSICS_OPTICALCENTER_ALWAYS) || (refineOptions & BA_REFINE_INTRINSICS_OPTICALCENTER_IF_ENOUGH_DATA);
-  const bool refineIntrinsics = (refineOptions & BA_REFINE_INTRINSICS_FOCAL) ||
-                                (refineOptions & BA_REFINE_INTRINSICS_DISTORTION) ||
-                                refineIntrinsicsOpticalCenter;
-  if(refineIntrinsics)
-  {
-    for(const auto& intrinsicsV: map_intrinsics)
-    {
-      sfmData.intrinsics[intrinsicsV.first]->updateFromParams(intrinsicsV.second);
-    }
-  }
   return true;
 }
 

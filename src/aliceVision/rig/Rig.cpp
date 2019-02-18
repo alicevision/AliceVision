@@ -472,35 +472,36 @@ bool Rig::optimizeCalibration()
 
   // Configure a BA engine and run it
   // todo: Set the most appropriate options
-  aliceVision::sfm::BundleAdjustmentCeres::BA_options aliceVision_options(true); // Set all
-  // the options field in our owm struct - unnecessary dependancy to aliceVision here
+  aliceVision::sfm::BundleAdjustmentCeres::CeresOptions aliceVision_options(true);
   
   ceres::Solver::Options options;
   
-  options.preconditioner_type = aliceVision_options._preconditioner_type;
-  options.linear_solver_type = aliceVision_options._linear_solver_type;
-  options.sparse_linear_algebra_library_type = aliceVision_options._sparse_linear_algebra_library_type;
-  options.minimizer_progress_to_stdout = aliceVision_options._bVerbose;
+  options.preconditioner_type = aliceVision_options.preconditionerType;
+  options.linear_solver_type = aliceVision_options.linearSolverType;
+  options.sparse_linear_algebra_library_type = aliceVision_options.sparseLinearAlgebraLibraryType;
+  options.minimizer_progress_to_stdout = aliceVision_options.verbose;
   options.logging_type = ceres::SILENT;
   options.num_threads = 1;//aliceVision_options._nbThreads;
+#if CERES_VERSION_MAJOR < 2
   options.num_linear_solver_threads = 1;//aliceVision_options._nbThreads;
+#endif
   
   // Solve BA
   ceres::Solver::Summary summary;
   ceres::Solve(options, &problem, &summary);
   
-  if (aliceVision_options._bCeres_Summary)
+  if (aliceVision_options.summary)
     ALICEVISION_LOG_DEBUG(summary.FullReport());
 
   // If no error, get back refined parameters
   if (!summary.IsSolutionUsable())
   {
-    if (aliceVision_options._bVerbose)
+    if (aliceVision_options.verbose)
       ALICEVISION_LOG_DEBUG("Bundle Adjustment failed.");
     return false;
   }
 
-  if (aliceVision_options._bVerbose)
+  if (aliceVision_options.verbose)
   {
     // Display statistics about the minimization
     ALICEVISION_LOG_DEBUG("Bundle Adjustment statistics (approximated RMSE):");

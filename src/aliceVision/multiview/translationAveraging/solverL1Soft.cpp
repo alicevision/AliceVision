@@ -196,7 +196,9 @@ bool solve_translations_problem_softl1
 
   // set number of threads, 1 if openMP is not enabled
   options.num_threads = omp_get_max_threads();
+#if CERES_VERSION_MAJOR < 2
   options.num_linear_solver_threads = omp_get_max_threads();
+#endif
 
   ceres::Solver::Summary summary;
   ceres::Solve(options, &problem, &summary);

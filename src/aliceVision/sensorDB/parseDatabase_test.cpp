@@ -47,7 +47,7 @@ BOOST_AUTO_TEST_CASE(ParseDatabaseSD900)
   BOOST_CHECK( getInfo( sBrand, sModel, vec_database, datasheet ) );
   BOOST_CHECK_EQUAL( "Canon", datasheet._brand );
   BOOST_CHECK_EQUAL( "Canon PowerShot SD900", datasheet._model );
-  BOOST_CHECK_EQUAL( 7.11, datasheet._sensorSize );
+  BOOST_CHECK_EQUAL( 7.144, datasheet._sensorSize );
 }
 
 BOOST_AUTO_TEST_CASE(ParseDatabaseA710_IS)
@@ -61,7 +61,7 @@ BOOST_AUTO_TEST_CASE(ParseDatabaseA710_IS)
   BOOST_CHECK( getInfo( sBrand, sModel, vec_database, datasheet ) );
   BOOST_CHECK_EQUAL( "Canon", datasheet._brand );
   BOOST_CHECK_EQUAL( "Canon PowerShot A710 IS", datasheet._model );
-  BOOST_CHECK_EQUAL( 5.75, datasheet._sensorSize );
+  BOOST_CHECK_EQUAL( 5.744, datasheet._sensorSize );
 }
 
 BOOST_AUTO_TEST_CASE(ParseDatabaseNotExist)

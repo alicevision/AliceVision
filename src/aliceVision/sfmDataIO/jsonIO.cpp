@@ -32,11 +32,17 @@ void saveView(const std::string& name, const sfmData::View& view, bpt::ptree& pa
     viewTree.put("subPoseId", view.getSubPoseId());
   }
 
+  if(view.getFrameId() != UndefinedIndexT)
+    viewTree.put("frameId", view.getFrameId());
+
   if(view.getIntrinsicId() != UndefinedIndexT)
     viewTree.put("intrinsicId", view.getIntrinsicId());
 
   if(view.getResectionId() != UndefinedIndexT)
     viewTree.put("resectionId", view.getResectionId());
+
+  if(view.isPoseIndependant() == false)
+    viewTree.put("isPoseIndependant", view.isPoseIndependant());
 
   viewTree.put("path", view.getImagePath());
   viewTree.put("width", view.getWidth());
@@ -67,8 +73,10 @@ void loadView(sfmData::View& view, bpt::ptree& viewTree)
       viewTree.get<IndexT>("subPoseId"));
   }
 
+  view.setFrameId(viewTree.get<IndexT>("frameId", UndefinedIndexT));
   view.setIntrinsicId(viewTree.get<IndexT>("intrinsicId", UndefinedIndexT));
   view.setResectionId(viewTree.get<IndexT>("resectionId", UndefinedIndexT));
+  view.setIndependantPose(viewTree.get<bool>("isPoseIndependant", true));
 
   view.setImagePath(viewTree.get<std::string>("path"));
   view.setWidth(viewTree.get<std::size_t>("width", 0));
@@ -90,8 +98,9 @@ void saveIntrinsic(const std::string& name, IndexT intrinsicId, const std::share
   intrinsicTree.put("intrinsicId", intrinsicId);
   intrinsicTree.put("width", intrinsic->w());
   intrinsicTree.put("height", intrinsic->h());
-  intrinsicTree.put("type", camera::EINTRINSIC_enumToString(intrinsicType));
   intrinsicTree.put("serialNumber", intrinsic->serialNumber());
+  intrinsicTree.put("type", camera::EINTRINSIC_enumToString(intrinsicType));
+  intrinsicTree.put("initializationMode", camera::EIntrinsicInitMode_enumToString(intrinsic->getInitializationMode()));
   intrinsicTree.put("pxInitialFocalLength", intrinsic->initialFocalLengthPix());
 
   if(camera::isPinhole(intrinsicType))
@@ -113,7 +122,7 @@ void saveIntrinsic(const std::string& name, IndexT intrinsicId, const std::share
     intrinsicTree.add_child("distortionParams", distParamsTree);
   }
 
-  intrinsicTree.put("locked", intrinsic->isLocked());
+  intrinsicTree.put("locked", static_cast<int>(intrinsic->isLocked())); // convert bool to integer to avoid using "true/false" in exported file instead of "1/0".
 
   parentTree.push_back(std::make_pair(name, intrinsicTree));
 }
@@ -124,6 +133,7 @@ void loadIntrinsic(IndexT& intrinsicId, std::shared_ptr<camera::IntrinsicBase>& 
   const unsigned int width = intrinsicTree.get<unsigned int>("width");
   const unsigned int height = intrinsicTree.get<unsigned int>("height");
   const camera::EINTRINSIC intrinsicType = camera::EINTRINSIC_stringToEnum(intrinsicTree.get<std::string>("type"));
+  const camera::EIntrinsicInitMode initializationMode = camera::EIntrinsicInitMode_stringToEnum(intrinsicTree.get<std::string>("initializationMode", camera::EIntrinsicInitMode_enumToString(camera::EIntrinsicInitMode::CALIBRATED)));
   const double pxFocalLength = intrinsicTree.get<double>("pxFocalLength");
 
   // principal point
@@ -138,12 +148,13 @@ void loadIntrinsic(IndexT& intrinsicId, std::shared_ptr<camera::IntrinsicBase>& 
   std::shared_ptr<camera::Pinhole> pinholeIntrinsic = camera::createPinholeIntrinsic(intrinsicType, width, height, pxFocalLength, principalPoint(0), principalPoint(1));
   pinholeIntrinsic->setInitialFocalLengthPix(intrinsicTree.get<double>("pxInitialFocalLength"));
   pinholeIntrinsic->setSerialNumber(intrinsicTree.get<std::string>("serialNumber"));
+  pinholeIntrinsic->setInitializationMode(initializationMode);
 
   std::vector<double> distortionParams;
   for(bpt::ptree::value_type &paramNode : intrinsicTree.get_child("distortionParams"))
     distortionParams.emplace_back(paramNode.second.get_value<double>());
 
-  // Ensure that we have the right number of params
+  // ensure that we have the right number of params
   distortionParams.resize(pinholeIntrinsic->getDistortionParams().size(), 0.0);
 
   pinholeIntrinsic->setDistortionParams(distortionParams);

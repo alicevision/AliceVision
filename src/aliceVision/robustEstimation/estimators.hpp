@@ -75,15 +75,17 @@ inline std::istream& operator>>(std::istream& in, robustEstimation::ERobustEstim
 }
 
 /**
- * @brief It checks if the value for the reprojection error or the matching error
- * is compatible with the given robust estimator. The value cannot be 0 for 
- * LORansac, for ACRansac a value of 0 means to use infinity (ie estimate the 
- * threshold during ransac process)
+ * @brief It adjust the value for the reprojection/matching error
+ * to ensure the compatibility with the given robust estimator.
+ * The value 0 will be converted to a default value:
+ * - LORansac: use defaultLoRansac parameter
+ * - ACRansac: use infinity (ie estimate the threshold during ransac process)
+ *
  * @param e The estimator to be checked.
  * @param value The value for the reprojection or matching error.
  * @return true if the value is compatible
  */
-inline bool checkRobustEstimator(ERobustEstimator e, double &value)
+inline bool adjustRobustEstimatorThreshold(ERobustEstimator e, double &value, double defaultLoRansac)
 {
   if(e != ERobustEstimator::LORANSAC &&
      e != ERobustEstimator::ACRANSAC)
@@ -93,22 +95,17 @@ inline bool checkRobustEstimator(ERobustEstimator e, double &value)
             << " are supported.");
     return false;
   }
-  if(value == 0 && 
-     e == ERobustEstimator::ACRANSAC)
+  if(value == 0)
   {
-    // for acransac set it to infinity
-    value = std::numeric_limits<double>::infinity();
-  }
-  // for loransac we need thresholds > 0
-  if(e == ERobustEstimator::LORANSAC)
-  {
-    const double minThreshold = 1e-6;
-    if( value <= minThreshold)
+    if (e == ERobustEstimator::ACRANSAC)
     {
-      ALICEVISION_CERR("Error: errorMax and matchingError cannot be 0 with " 
-              << ERobustEstimator::LORANSAC
-              << " estimator.");
-      return false;     
+      // for acransac set it to infinity
+      value = std::numeric_limits<double>::infinity();
+    }
+    else if(e == ERobustEstimator::LORANSAC)
+    {
+      // for loransac we need a threshold > 0
+      value = defaultLoRansac;
     }
   }
 

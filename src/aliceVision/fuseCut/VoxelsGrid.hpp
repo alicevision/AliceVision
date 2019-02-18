@@ -6,11 +6,11 @@
 
 #pragma once
 
-#include "OctreeTracks.hpp"
+#include <aliceVision/mvsUtils/MultiViewParams.hpp>
 #include <aliceVision/mvsData/Point3d.hpp>
 #include <aliceVision/mvsData/StaticVector.hpp>
 #include <aliceVision/mvsData/Voxel.hpp>
-#include <aliceVision/mvsUtils/PreMatchCams.hpp>
+#include <aliceVision/fuseCut/OctreeTracks.hpp>
 
 namespace aliceVision {
 namespace fuseCut {
@@ -19,7 +19,6 @@ class VoxelsGrid
 {
 public:
     mvsUtils::MultiViewParams* mp;
-    mvsUtils::PreMatchCams* pc;
 
     Voxel voxelDim;
     Point3d space[8]; // TODO FACA: array
@@ -29,8 +28,7 @@ public:
     bool doVisualize;
 
     VoxelsGrid();
-    VoxelsGrid(const Voxel& dimensions, Point3d* _space, mvsUtils::MultiViewParams* _mp, mvsUtils::PreMatchCams* _pc,
-               const std::string& _spaceRootDir, bool _doVisualize = false);
+    VoxelsGrid(const Voxel& dimensions, Point3d* _space, mvsUtils::MultiViewParams* _mp, const std::string& _spaceRootDir, bool _doVisualize = false);
     ~VoxelsGrid();
 
     VoxelsGrid* clone(const std::string& _spaceRootDir);

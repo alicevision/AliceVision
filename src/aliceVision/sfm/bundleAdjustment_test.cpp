@@ -50,7 +50,7 @@ BOOST_AUTO_TEST_CASE(BUNDLE_ADJUSTMENT_EffectiveMinimization_Pinhole)
 
   // Call the BA interface and let it refine (Structure and Camera parameters [Intrinsics|Motion])
   std::shared_ptr<BundleAdjustment> ba_object = std::make_shared<BundleAdjustmentCeres>();
-  BOOST_CHECK( ba_object->Adjust(sfmData) );
+  BOOST_CHECK( ba_object->adjust(sfmData) );
 
   const double dResidual_after = RMSE(sfmData);
   BOOST_CHECK(dResidual_before > dResidual_after);
@@ -70,7 +70,7 @@ BOOST_AUTO_TEST_CASE(BUNDLE_ADJUSTMENT_EffectiveMinimization_PinholeRadialK1)
 
   // Call the BA interface and let it refine (Structure and Camera parameters [Intrinsics|Motion])
   std::shared_ptr<BundleAdjustment> ba_object = std::make_shared<BundleAdjustmentCeres>();
-  BOOST_CHECK( ba_object->Adjust(sfmData) );
+  BOOST_CHECK( ba_object->adjust(sfmData) );
 
   const double dResidual_after = RMSE(sfmData);
   BOOST_CHECK(dResidual_before > dResidual_after);
@@ -90,7 +90,7 @@ BOOST_AUTO_TEST_CASE(BUNDLE_ADJUSTMENT_EffectiveMinimization_PinholeRadialK3)
 
   // Call the BA interface and let it refine (Structure and Camera parameters [Intrinsics|Motion])
   std::shared_ptr<BundleAdjustment> ba_object = std::make_shared<BundleAdjustmentCeres>();
-  BOOST_CHECK( ba_object->Adjust(sfmData) );
+  BOOST_CHECK( ba_object->adjust(sfmData) );
 
   const double dResidual_after = RMSE(sfmData);
   BOOST_CHECK(dResidual_before > dResidual_after);
@@ -110,7 +110,7 @@ BOOST_AUTO_TEST_CASE(BUNDLE_ADJUSTMENT_EffectiveMinimization_PinholeBrownT2)
 
   // Call the BA interface and let it refine (Structure and Camera parameters [Intrinsics|Motion])
   std::shared_ptr<BundleAdjustment> ba_object = std::make_shared<BundleAdjustmentCeres>();
-  BOOST_CHECK( ba_object->Adjust(sfmData) );
+  BOOST_CHECK( ba_object->adjust(sfmData) );
 
   const double dResidual_after = RMSE(sfmData);
   BOOST_CHECK(dResidual_before > dResidual_after);
@@ -130,7 +130,7 @@ BOOST_AUTO_TEST_CASE(BUNDLE_ADJUSTMENT_EffectiveMinimization_PinholeFisheye)
 
   // Call the BA interface and let it refine (Structure and Camera parameters [Intrinsics|Motion])
   std::shared_ptr<BundleAdjustment> ba_object = std::make_shared<BundleAdjustmentCeres>();
-  BOOST_CHECK( ba_object->Adjust(sfmData) );
+  BOOST_CHECK( ba_object->adjust(sfmData) );
 
   const double dResidual_after = RMSE(sfmData);
   BOOST_CHECK(dResidual_before > dResidual_after);
@@ -156,12 +156,16 @@ BOOST_AUTO_TEST_CASE(LOCAL_BUNDLE_ADJUSTMENT_EffectiveMinimization_Pinhole_Camer
   //          |     |     =>     /  \ /  \ /  \
   //          v1 - v2           v0   v1   v2   v3
   // removing adequate observations:
-  sfmData.structure[0].observations.erase(2);
-  sfmData.structure[0].observations.erase(3);
-  sfmData.structure[1].observations.erase(0);
-  sfmData.structure[1].observations.erase(3);
-  sfmData.structure[2].observations.erase(0);
-  sfmData.structure[2].observations.erase(1);
+  sfmData.getLandmarks().at(0).observations.erase(2);
+  sfmData.getLandmarks().at(0).observations.erase(3);
+  sfmData.getLandmarks().at(1).observations.erase(0);
+  sfmData.getLandmarks().at(1).observations.erase(3);
+  sfmData.getLandmarks().at(2).observations.erase(0);
+  sfmData.getLandmarks().at(2).observations.erase(1);
+
+  // lock common intrinsic
+  // if it's not locked, all views will have a distance of 1 as all views share a common intrinsic.
+  sfmData.getIntrinsics().begin()->second->lock();
 
   track::TracksPerView tracksPerView = getTracksPerViews(sfmData);
 
@@ -172,11 +176,11 @@ BOOST_AUTO_TEST_CASE(LOCAL_BUNDLE_ADJUSTMENT_EffectiveMinimization_Pinhole_Camer
   const double dResidual_before = RMSE(sfmData);
 
   // Call the Local BA interface and let it refine
-  LocalBundleAdjustmentCeres::LocalBA_options options;
+  BundleAdjustmentCeres::CeresOptions options;
   options.setDenseBA();
-  options.enableLocalBA();
-  LocalBundleAdjustmentData localBAData(sfmData);
-  localBAData.setGraphDistanceLimit(1); // the default value is '1'
+
+  std::shared_ptr<LocalBundleAdjustmentGraph> localBAGraph = std::make_shared<LocalBundleAdjustmentGraph>(sfmData);
+  localBAGraph->setGraphDistanceLimit(1); // the default value is '1'
 
   /* DETAILS: 
    * With the previous reconstruction scheme & parameters:
@@ -198,36 +202,34 @@ BOOST_AUTO_TEST_CASE(LOCAL_BUNDLE_ADJUSTMENT_EffectiveMinimization_Pinhole_Camer
   // Assign the refinement rule for all the parameters (poses, landmarks & intrinsics) according to the LBA strategy:
   // 1. Add the new reconstructed views to the graph
   const std::size_t kMinNbOfMatches = 1;
-  localBAData.updateGraphWithNewViews(sfmData, tracksPerView, newReconstructedViews, kMinNbOfMatches);
+  localBAGraph->updateGraphWithNewViews(sfmData, tracksPerView, newReconstructedViews, kMinNbOfMatches);
   // 2. Compute the graph-distance between each newly reconstructed views and all the reconstructed views
-  localBAData.computeGraphDistances(sfmData, newReconstructedViews);
+  localBAGraph->computeGraphDistances(sfmData, newReconstructedViews);
   // 3. Use the graph-distances to assign a LBA state (Refine, Constant & Ignore) for each parameter (poses, intrinsics & landmarks)
-  localBAData.convertDistancesToLBAStates(sfmData); 
+  localBAGraph->convertDistancesToStates(sfmData);
 
-  BOOST_CHECK(localBAData.getNumOfRefinedPoses() == 2);     // v0 & v1
-  BOOST_CHECK(localBAData.getNumOfConstantPoses() == 1);    // v2
-  BOOST_CHECK(localBAData.getNumOfIgnoredPoses() == 1);     // v3
-  BOOST_CHECK(localBAData.getNumOfRefinedLandmarks() == 2); // p0 & p1
-  BOOST_CHECK(localBAData.getNumOfConstantLandmarks() == 0);
-  BOOST_CHECK(localBAData.getNumOfIgnoredLandmarks() == 1); // p2
+  BOOST_CHECK_EQUAL(localBAGraph->getNbPosesPerState(BundleAdjustment::EParameterState::REFINED), 2);     // v0 & v1
+  BOOST_CHECK_EQUAL(localBAGraph->getNbPosesPerState(BundleAdjustment::EParameterState::CONSTANT), 1);    // v2
+  BOOST_CHECK_EQUAL(localBAGraph->getNbPosesPerState(BundleAdjustment::EParameterState::IGNORED), 1);     // v3
+  BOOST_CHECK_EQUAL(localBAGraph->getNbLandmarksPerState(BundleAdjustment::EParameterState::REFINED), 2); // p0 & p1
+  BOOST_CHECK_EQUAL(localBAGraph->getNbLandmarksPerState(BundleAdjustment::EParameterState::CONSTANT), 0);
+  BOOST_CHECK_EQUAL(localBAGraph->getNbLandmarksPerState(BundleAdjustment::EParameterState::IGNORED), 1); // p2
 
-  std::shared_ptr<LocalBundleAdjustmentCeres> lba_object = std::make_shared<LocalBundleAdjustmentCeres>(localBAData, options, newReconstructedViews);
-  BOOST_CHECK( lba_object->Adjust(sfmData, localBAData) );
+  std::shared_ptr<BundleAdjustmentCeres> BA = std::make_shared<BundleAdjustmentCeres>(options);
+  BA->useLocalStrategyGraph(localBAGraph);
+  BOOST_CHECK( BA->useLocalStrategy() );
+  BOOST_CHECK( BA->adjust(sfmData) );
 
   // Check views:
-  BOOST_CHECK( !(sfmData.getPose(*sfmData.views[0].get())
-    == sfmData_notRefined.getPose(*sfmData_notRefined.views[0].get())) ); // v0 refined
-  BOOST_CHECK( !(sfmData.getPose(*sfmData.views[1].get())
-    == sfmData_notRefined.getPose(*sfmData_notRefined.views[1].get())) ); // v1 refined
-  BOOST_CHECK( sfmData.getPose(*sfmData.views[2].get())
-    == sfmData_notRefined.getPose(*sfmData_notRefined.views[2].get()) ); // v2 constant
-  BOOST_CHECK( sfmData.getPose(*sfmData.views[2].get())
-    == sfmData_notRefined.getPose(*sfmData_notRefined.views[2].get()) ); // v2 ignored
+  BOOST_CHECK( !(sfmData.getPose(*sfmData.views[0].get()) == sfmData_notRefined.getPose(*sfmData_notRefined.views[0].get())) ); // v0 refined
+  BOOST_CHECK( !(sfmData.getPose(*sfmData.views[1].get()) == sfmData_notRefined.getPose(*sfmData_notRefined.views[1].get())) ); // v1 refined
+  BOOST_CHECK( sfmData.getPose(*sfmData.views[2].get()) == sfmData_notRefined.getPose(*sfmData_notRefined.views[2].get()) ); // v2 constant
+  BOOST_CHECK( sfmData.getPose(*sfmData.views[2].get()) == sfmData_notRefined.getPose(*sfmData_notRefined.views[2].get()) ); // v2 ignored
 
   // Check 3D points
   BOOST_CHECK( sfmData.structure[0].X != sfmData_notRefined.structure[0].X ); // p0 refined
   BOOST_CHECK( sfmData.structure[1].X != sfmData_notRefined.structure[1].X ); // p1 refined
-  BOOST_CHECK( sfmData.structure[2].X == sfmData_notRefined.structure[2].X ); // p2 ignored
+  BOOST_CHECK_EQUAL( sfmData.structure[2].X, sfmData_notRefined.structure[2].X ); // p2 ignored
 
   // Not refined parameters:
   BOOST_CHECK( sfmData.structure[2].X == sfmData_notRefined.structure[2].X );

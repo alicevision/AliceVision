@@ -10,7 +10,6 @@
 #include <aliceVision/mvsData/StaticVector.hpp>
 #include <aliceVision/mvsUtils/common.hpp>
 #include <aliceVision/mvsUtils/MultiViewParams.hpp>
-#include <aliceVision/mvsUtils/PreMatchCams.hpp>
 #include <aliceVision/system/cmdline.hpp>
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/Timer.hpp>
@@ -33,14 +32,19 @@ int main(int argc, char* argv[])
 
     std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
     std::string sfmDataFilename;
-    std::string depthMapFolder;
+    std::string depthMapsFolder;
     std::string outputFolder;
 
+    // program range
     int rangeStart = -1;
     int rangeSize = -1;
 
-    int minNumOfConsistensCams = 3;
-    int minNumOfConsistensCamsWithLowSimilarity = 4;
+    // min / max view angle
+    float minViewAngle = 2.0f;
+    float maxViewAngle = 70.0f;
+
+    int minNumOfConsistentCams = 3;
+    int minNumOfConsistentCamsWithLowSimilarity = 4;
     int pixSizeBall = 0;
     int pixSizeBallWithLowSimilarity = 0;
     int nNearestCams = 10;
@@ -52,7 +56,7 @@ int main(int argc, char* argv[])
     requiredParams.add_options()
         ("input,i", po::value<std::string>(&sfmDataFilename)->required(),
             "SfMData file.")
-        ("depthMapFolder", po::value<std::string>(&depthMapFolder)->required(),
+        ("depthMapsFolder", po::value<std::string>(&depthMapsFolder)->required(),
             "Input depth map folder.")
         ("output,o", po::value<std::string>(&outputFolder)->required(),
             "Output folder for filtered depth maps.");
@@ -63,9 +67,13 @@ int main(int argc, char* argv[])
             "Compute only a sub-range of images from index rangeStart to rangeStart+rangeSize.")
         ("rangeSize", po::value<int>(&rangeSize)->default_value(rangeSize),
             "Compute only a sub-range of N images (N=rangeSize).")
-        ("minNumOfConsistensCams", po::value<int>(&minNumOfConsistensCams)->default_value(minNumOfConsistensCams),
+        ("minViewAngle", po::value<float>(&minViewAngle)->default_value(minViewAngle),
+            "minimum angle between two views.")
+        ("maxViewAngle", po::value<float>(&maxViewAngle)->default_value(maxViewAngle),
+            "maximum angle between two views.")
+        ("minNumOfConsistentCams", po::value<int>(&minNumOfConsistentCams)->default_value(minNumOfConsistentCams),
             "Minimal number of consistent cameras to consider the pixel.")
-        ("minNumOfConsistensCamsWithLowSimilarity", po::value<int>(&minNumOfConsistensCamsWithLowSimilarity)->default_value(minNumOfConsistensCamsWithLowSimilarity),
+        ("minNumOfConsistentCamsWithLowSimilarity", po::value<int>(&minNumOfConsistentCamsWithLowSimilarity)->default_value(minNumOfConsistentCamsWithLowSimilarity),
             "Minimal number of consistent cameras to consider the pixel when the similarity is weak or ambiguous.")
         ("pixSizeBall", po::value<int>(&pixSizeBall)->default_value(pixSizeBall),
             "Filter ball size (in px).")
@@ -123,8 +131,10 @@ int main(int argc, char* argv[])
     }
 
     // initialization
-    mvsUtils::MultiViewParams mp(sfmData, "", depthMapFolder, outputFolder, "", true);
-    mvsUtils::PreMatchCams pc(mp);
+    mvsUtils::MultiViewParams mp(sfmData, "", depthMapsFolder, outputFolder, "", true);
+
+    mp.setMinViewAngle(minViewAngle);
+    mp.setMaxViewAngle(maxViewAngle);
 
     StaticVector<int> cams;
     cams.reserve(mp.ncams);
@@ -153,9 +163,9 @@ int main(int argc, char* argv[])
     ALICEVISION_LOG_INFO("Filter depth maps.");
 
     {
-        fuseCut::Fuser fs(&mp, &pc);
+        fuseCut::Fuser fs(&mp);
         fs.filterGroups(cams, pixSizeBall, pixSizeBallWithLowSimilarity, nNearestCams);
-        fs.filterDepthMaps(cams, minNumOfConsistensCams, minNumOfConsistensCamsWithLowSimilarity);
+        fs.filterDepthMaps(cams, minNumOfConsistentCams, minNumOfConsistentCamsWithLowSimilarity);
     }
 
     ALICEVISION_LOG_INFO("Task done in (s): " + std::to_string(timer.elapsed()));

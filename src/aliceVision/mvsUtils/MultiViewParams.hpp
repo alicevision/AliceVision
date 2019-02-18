@@ -63,7 +63,6 @@ enum class EFileType {
     depthMap = 35,
     simMap = 36,
     mapPtsTmp = 37,
-    depthMapInfo = 38,
     camMap = 39,
     mapPtsSimsTmp = 40,
     nmodMap = 41,
@@ -102,8 +101,8 @@ public:
 
     MultiViewParams(const sfmData::SfMData& sfmData,
                     const std::string& imagesFolder = "",
-                    const std::string& depthMapFolder = "",
-                    const std::string& depthMapFilterFolder = "",
+                    const std::string& depthMapsFolder = "",
+                    const std::string& depthMapsFilterFolder = "",
                     bool readFromDepthMaps = false,
                     int downscale = 1,
                     StaticVector<CameraMatrices>* cameras = nullptr);
@@ -149,10 +148,12 @@ public:
     {
         return _imagesParams.at(index).size / getDownscaleFactor(index);
     }
+
     inline const std::vector<ImageParams>& getImagesParams() const
     {
         return _imagesParams;
     }
+
     inline const ImageParams& getImageParams(int i) const
     {
         return _imagesParams.at(i);
@@ -188,6 +189,16 @@ public:
         return _imageIdsPerViewId.at(viewId);
     }
 
+    inline float getMinViewAngle() const
+    {
+        return _minViewAngle;
+    }
+
+    inline float getMaxViewAngle() const
+    {
+        return _maxViewAngle;
+    }
+
     inline std::vector<double> getOriginalP(int index) const
     {
         std::vector<double> p44; // projection matrix (4x4) scale 1
@@ -202,14 +213,14 @@ public:
         return p44;
     }
 
-    inline const std::string& getDepthMapFolder() const
+    inline const std::string& getDepthMapsFolder() const
     {
-        return _depthMapFolder;
+        return _depthMapsFolder;
     }
 
-    inline const std::string& getDepthMapFilterFolder() const
+    inline const std::string& getDepthMapsFilterFolder() const
     {
-        return _depthMapFilterFolder;
+        return _depthMapsFilterFolder;
     }
 
     inline const sfmData::SfMData& getInputSfMData() const
@@ -239,6 +250,40 @@ public:
     bool isPixelInImage(const Point2d& pix, int camId) const;
     void decomposeProjectionMatrix(Point3d& Co, Matrix3x3& Ro, Matrix3x3& iRo, Matrix3x3& Ko, Matrix3x3& iKo, Matrix3x3& iPo, const Matrix3x4& P) const;
 
+    /**
+     * @brief findCamsWhichIntersectsHexahedron
+     * @param hexah 0-3 frontal face, 4-7 back face
+     * @param minMaxDepthsFileName
+     * @return
+     */
+    StaticVector<int> findCamsWhichIntersectsHexahedron(const Point3d hexah[8], const std::string& minMaxDepthsFileName) const;
+
+    /**
+     * @brief findCamsWhichIntersectsHexahedron
+     * @param hexah 0-3 frontal face, 4-7 back face
+     * @return
+     */
+    StaticVector<int> findCamsWhichIntersectsHexahedron(const Point3d hexah[8]) const;
+
+    /**
+     * @brief findNearestCamsFromLandmarks
+     * @param rc
+     * @param nbNearestCams
+     * @return
+     */
+    StaticVector<int> findNearestCamsFromLandmarks(int rc, int nbNearestCams) const;
+
+
+    inline void setMinViewAngle(float minViewAngle)
+    {
+      _minViewAngle = minViewAngle;
+    }
+
+    inline void setMaxViewAngle(float maxViewAngle)
+    {
+      _maxViewAngle = maxViewAngle;
+    }
+
 private:
     /// image params list (width, height, size)
     std::vector<ImageParams> _imagesParams;
@@ -253,11 +298,15 @@ private:
     /// maximum height
     int _maxImageHeight = 0;
     /// depthMapEstimate data folder
-    std::string _depthMapFolder;
+    std::string _depthMapsFolder;
     /// depthMapFilter data folder
-    std::string _depthMapFilterFolder;
+    std::string _depthMapsFilterFolder;
     /// use silhouettes
     bool _useSil = false;
+    /// minimum view angle
+    float _minViewAngle = 2.0f;
+    /// maximum view angle
+    float _maxViewAngle = 70.0f;  // WARNING: may be too low, especially when using seeds from SfM
     /// input sfmData
     const sfmData::SfMData& _sfmData;
 
