@@ -21,6 +21,7 @@
 #include <boost/filesystem.hpp>
 
 #include <iostream>
+#include <sstream>
 
 namespace aliceVision {
 namespace depthMap {
@@ -437,9 +438,34 @@ bool SemiGlobalMatchingRc::sgmrc(bool checkIfExists)
     const int volDimX = _width;
     const int volDimY = _height;
     const int volDimZ = _depths->size();
-    float volumeMBinGPUMem = 0.0f;
 
-    StaticVector<unsigned char>* simVolume = nullptr;
+    _sp->cps.cameraToDevice(_rc, _sgmTCams);
+
+// #define FORCE_ZDIM_LIMIT 32
+#undef  FORCE_ZDIM_LIMIT
+#ifndef FORCE_ZDIM_LIMIT
+    const long gpu_bytes_reqd_per_plane = volDimX * volDimY * sizeof(float) * 2; // safety margin 100%
+    const long gpu_bytes_free = _sp->cps.getDeviceMemoryInfo().x * 1024 * 1024;
+    int        zDimsAtATime = _depths->size();
+    const int  camsAtATime  = _sgmTCams.size();
+    if( gpu_bytes_reqd_per_plane * zDimsAtATime * camsAtATime > gpu_bytes_free )
+    {
+        while( zDimsAtATime > 1 && gpu_bytes_reqd_per_plane * zDimsAtATime * camsAtATime > gpu_bytes_free )
+        {
+            zDimsAtATime /= 2;
+        }
+    }
+    if(_sp->mp->verbose)
+        ALICEVISION_LOG_DEBUG("bytes free on GPU: " << gpu_bytes_free
+                           << "(" << (int)(gpu_bytes_free/1024.0f/1024.0f) << " MB)"<< std::endl
+                           << "    estimated req'd bytes/plane: " << gpu_bytes_reqd_per_plane << std::endl
+                           << "    estimated dims at a time: " << zDimsAtATime << std::endl
+                           << "    cams at a time: " << camsAtATime << std::endl
+                           << "    estimated total: " << gpu_bytes_reqd_per_plane * zDimsAtATime * camsAtATime
+                           << " (" << (int)(gpu_bytes_reqd_per_plane * zDimsAtATime * camsAtATime/1024.0f/1024.0f) << " MB)" );
+#else
+    int zDimsAtATime = FORCE_ZDIM_LIMIT; // for example FORCE_ZDIM_LIMIT=32
+#endif
 
     StaticVectorBool* rcSilhoueteMap = nullptr;
     if(_sp->useSilhouetteMaskCodedByColor)
@@ -450,46 +476,74 @@ bool SemiGlobalMatchingRc::sgmrc(bool checkIfExists)
         _sp->cps.getSilhoueteMap(rcSilhoueteMap, _scale, _step, _sp->silhouetteMaskColor, _rc);
     }
 
+    std::vector<std::vector<float> > subDepths( _sgmTCams.size() );
+    for( int c = 0; c < _sgmTCams.size(); c++ )
     {
-        std::vector<float> subDepths;
-        getSubDepthsForTCam(0, subDepths);
-        SemiGlobalMatchingRcTc srt(subDepths, _rc, _sgmTCams[0], _scale, _step, _sp, rcSilhoueteMap);
-        simVolume = srt.computeDepthSimMapVolume(volumeMBinGPUMem, _sgmWsh, _sgmGammaC, _sgmGammaP);
+        getSubDepthsForTCam( c, subDepths[c] );
     }
 
-    // recompute to all depths
-    volumeMBinGPUMem = ((volumeMBinGPUMem / (float)_depthsTcamsLimits[0].y) * (float)volDimZ);
-
-    SemiGlobalMatchingVolume* svol = new SemiGlobalMatchingVolume(volumeMBinGPUMem, volDimX, volDimY, volDimZ, _sp);
-    svol->copyVolume(simVolume, _depthsTcamsLimits[0].x, _depthsTcamsLimits[0].y);
-    delete simVolume;
-
-    for(int c = 1; c < _sgmTCams.size(); c++)
+    if(_sp->mp->verbose)
     {
-        std::vector<float> subDepths;
-        getSubDepthsForTCam(c, subDepths);
-        SemiGlobalMatchingRcTc* srt = new SemiGlobalMatchingRcTc(subDepths, _rc, _sgmTCams[c], _scale, _step, _sp, rcSilhoueteMap);
-        simVolume = srt->computeDepthSimMapVolume(volumeMBinGPUMem, _sgmWsh, _sgmGammaC, _sgmGammaP);
-        delete srt;
-        svol->addVolumeSecondMin(simVolume,_depthsTcamsLimits[c].x,_depthsTcamsLimits[c].y);
-        delete simVolume;
+        std::ostringstream ostr;
+        ostr << "In " << __FUNCTION__ << std::endl
+             << "    rc camera " << _rc << " has depth " << _depths->size() << std::endl;
+        for( int c = 0; c < _sgmTCams.size(); c++ )
+            ostr << "    tc camera " << _sgmTCams[c]
+                 << " uses " << subDepths[c].size() << " depths" << std::endl;
+
+        ALICEVISION_LOG_DEBUG( ostr.str() );
     }
 
-    // reduction of 'volume' (X, Y, Z) into 'volumeStepZ' (X, Y, Z/step)
-    svol->cloneVolumeSecondStepZ();
+    std::vector<StaticVector<unsigned char> > simVolume;
+    simVolume.resize( _sgmTCams.size() );
 
-    // filter on the 3D volume to weight voxels based on their neighborhood strongness.
-    // so it downweights local minimums that are not supported by their neighborhood.
-    // this is here for experimental reason ... to show how SGGC work on non
-    // optimized depthmaps ... it must equals to true in normal case
-    if(_sp->doSGMoptimizeVolume)
-        svol->SGMoptimizeVolumeStepZ(_rc, _step, 0, 0, _scale);
+    /* request this device to allocate
+     *   (max_img - 1) * X * Y * dims_at_a_time * sizeof(float)
+     * of device memory.
+     */
+    int devid;
+    cudaGetDevice( &devid );
+    printf("Allocating %d times %d %d %d on device %d\n", _sgmTCams.size(),
+                                             volDimX,
+                                             volDimY,
+                                             zDimsAtATime, devid );
+    std::vector<CudaDeviceMemoryPitched<float, 3>*> volume_tmp_on_gpu;
+    _sp->cps.allocTempVolume( volume_tmp_on_gpu,
+                             _sgmTCams.size(),
+                             volDimX,
+                             volDimY,
+                             zDimsAtATime );
 
-    // for each pixel: choose the voxel with the minimal similarity value
-    const int zborder = 2;
-    _volumeBestIdVal = svol->getOrigVolumeBestIdValFromVolumeStepZ(zborder);
+    std::vector<int> index_set( _sgmTCams.size() );
+    for(int c = 0; c < _sgmTCams.size(); c++)
+    {
+        index_set[c] = c;
+    }
+    SemiGlobalMatchingRcTc srt( index_set, subDepths, _rc, _sgmTCams, _scale, _step, zDimsAtATime, _sp, rcSilhoueteMap );
+    srt.computeDepthSimMapVolume( simVolume, volume_tmp_on_gpu, _sgmWsh, _sgmGammaC, _sgmGammaP );
 
-    delete svol;
+    _sp->cps.freeTempVolume( volume_tmp_on_gpu );
+
+    index_set.erase( index_set.begin() );
+    SemiGlobalMatchingVolume svol( volDimX, volDimY, volDimZ, zDimsAtATime, _sp );
+    svol.copyVolume( simVolume[0], _depthsTcamsLimits[0].x, _depthsTcamsLimits[0].y);
+    svol.addVolumeSecondMin( index_set, simVolume, _depthsTcamsLimits );
+
+    // Reduction of 'volume' (X, Y, Z) into 'volumeStepZ' (X, Y, Z/step)
+    svol.cloneVolumeSecondStepZ();
+
+    // Filter on the 3D volume to weight voxels based on their neighborhood strongness.
+    // So it downweights local minimums that are not supported by their neighborhood.
+    if(_sp->doSGMoptimizeVolume) // this is here for experimental reason ... to show how SGGC work on non
+                                // optimized depthmaps ... it must equals to true in normal case
+    {
+        svol.SGMoptimizeVolumeStepZ(_rc, _step, _scale);
+    }
+
+    // For each pixel: choose the voxel with the minimal similarity value
+    int zborder = 2;
+    _volumeBestIdVal = svol.getOrigVolumeBestIdValFromVolumeStepZ(zborder);
+    svol.freeMem();
 
     if(rcSilhoueteMap != nullptr)
     {

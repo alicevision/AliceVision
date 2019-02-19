@@ -136,12 +136,12 @@ __device__ float2 getCellSmoothStepEnergy(const int2& cell0)
     if(n > 1.0f)
     {
         cg = cg / n; // average of x, y, depth
-        float3 vcn = sg_s_rC - p0;
+        float3 vcn = sg_s_r.C - p0;
         normalize(vcn);
         // pS: projection of cg on the line from p0 to camera
         float3 pS = closestPointToLine3D(cg, p0, vcn);
         // keep the depth difference between pS and p0 as the smoothing step
-        out.x = size(sg_s_rC - pS) - d0;
+        out.x = size(sg_s_r.C - pS) - d0;
     }
 
     float e = 0.0f;

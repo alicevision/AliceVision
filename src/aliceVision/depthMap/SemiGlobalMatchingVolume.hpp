@@ -15,25 +15,26 @@ namespace depthMap {
 class SemiGlobalMatchingVolume
 {
 public:
-    SemiGlobalMatchingVolume(float _volGpuMB, int _volDimX, int _volDimY, int _volDimZ, SemiGlobalMatchingParams* _sp);
+    SemiGlobalMatchingVolume(int _volDimX, int _volDimY, int _volDimZ,
+                             int zDimsAtATime,
+                             SemiGlobalMatchingParams* _sp);
     ~SemiGlobalMatchingVolume(void);
 
-    void copyVolume(const StaticVector<int>* volume);
-    void copyVolume(const StaticVector<unsigned char>* volume, int zFrom, int nZSteps);
-    void addVolumeMin(const StaticVector<unsigned char>* volume, int zFrom, int nZSteps);
-    void addVolumeSecondMin(const StaticVector<unsigned char>* volume, int zFrom, int nZSteps);
-    void addVolumeAvg(int n, const StaticVector<unsigned char>* volume, int zFrom, int nZSteps);
+    void copyVolume(const StaticVector<unsigned char>& volume, int zFrom, int nZSteps);
+    void addVolumeSecondMin( const std::vector<int>& index_set, 
+                             const std::vector<StaticVector<unsigned char> >& vols,
+                             StaticVector<Pixel> z );
 
-    void cloneVolumeStepZ();
     void cloneVolumeSecondStepZ();
 
-    void SGMoptimizeVolumeStepZ(int rc, int volStepXY, int volLUX, int volLUY, int scale);
+    void SGMoptimizeVolumeStepZ(int rc, int volStepXY, int scale);
     StaticVector<IdValue>* getOrigVolumeBestIdValFromVolumeStepZ(int zborder);
+
+    void freeMem();
 
 private:
     SemiGlobalMatchingParams* sp;
 
-    float volGpuMB;
     int   volDimX;
     int   volDimY;
     int   volDimZ;

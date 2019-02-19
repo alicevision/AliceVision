@@ -25,38 +25,38 @@ texture<unsigned char, 2, cudaReadModeNormalizedFloat> ttex;
 
 #define MAX_CUDA_DEVICES 10
 
-texture<int4, 2, cudaReadModeElementType> volPixsTex;
-
-texture<int2, 2, cudaReadModeElementType> pixsTex;
-
-texture<float2, 2, cudaReadModeElementType> gradTex;
-
-texture<float, 2, cudaReadModeElementType> depthsTex;
-
-texture<float, 2, cudaReadModeElementType> depthsTex1;
-
-texture<float4, 2, cudaReadModeElementType> normalsTex;
-
-texture<float, 2, cudaReadModeElementType> sliceTex;
-
-texture<float2, 2, cudaReadModeElementType> sliceTexFloat2;
-
-texture<unsigned char, 2, cudaReadModeElementType> sliceTexUChar;
-
-texture<uint2, 2, cudaReadModeElementType> sliceTexUInt2;
-
-texture<unsigned int, 2, cudaReadModeElementType> sliceTexUInt;
-
-texture<uchar4, 2, cudaReadModeElementType> rTexU4;
-
-texture<uchar4, 2, cudaReadModeElementType> tTexU4;
-
-texture<float4, 2, cudaReadModeElementType> f4Tex;
+texture<int4,          cudaTextureType2D, cudaReadModeElementType> volPixsTex;
+texture<int2,          cudaTextureType2D, cudaReadModeElementType> pixsTex;
+texture<float2,        cudaTextureType2D, cudaReadModeElementType> gradTex;
+texture<float,         cudaTextureType2D, cudaReadModeElementType> depthsTex;
+texture<float,         cudaTextureType2D, cudaReadModeElementType> depthsTex1;
+texture<float4,        cudaTextureType2D, cudaReadModeElementType> normalsTex;
+texture<float,         cudaTextureType2D, cudaReadModeElementType> sliceTex;
+texture<float2,        cudaTextureType2D, cudaReadModeElementType> sliceTexFloat2;
+texture<unsigned char, cudaTextureType2D, cudaReadModeElementType> sliceTexUChar;
+texture<uint2,         cudaTextureType2D, cudaReadModeElementType> sliceTexUInt2;
+texture<unsigned int,  cudaTextureType2D, cudaReadModeElementType> sliceTexUInt;
+texture<uchar4,        cudaTextureType2D, cudaReadModeElementType> rTexU4;
+texture<uchar4,        cudaTextureType2D, cudaReadModeElementType> tTexU4;
+texture<float4,        cudaTextureType2D, cudaReadModeElementType> f4Tex;
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////
 
-__device__ unsigned char computeGradientSizeOfL(int x, int y)
+__device__ unsigned char computeGradientSizeOfL( cudaTextureObject_t rc_tex, int x, int y)
+{
 
+    float xM1 = 255.0f * (tex2D<float4>(rc_tex, (float)(x - 1) + 0.5f, (float)(y + 0) + 0.5f).x);
+    float xP1 = 255.0f * (tex2D<float4>(rc_tex, (float)(x + 1) + 0.5f, (float)(y + 0) + 0.5f).x);
+    float yM1 = 255.0f * (tex2D<float4>(rc_tex, (float)(x + 0) + 0.5f, (float)(y - 1) + 0.5f).x);
+    float yP1 = 255.0f * (tex2D<float4>(rc_tex, (float)(x + 0) + 0.5f, (float)(y + 1) + 0.5f).x);
+
+    // not divided by 2?
+    float2 g = make_float2(xM1 - xP1, yM1 - yP1);
+
+    return (unsigned char)size(g);
+}
+
+__device__ unsigned char computeGradientSizeOfL(int x, int y)
 {
 
     float xM1 = 255.0f * (tex2D(r4tex, (float)(x - 1) + 0.5f, (float)(y + 0) + 0.5f).x);
@@ -68,6 +68,23 @@ __device__ unsigned char computeGradientSizeOfL(int x, int y)
     float2 g = make_float2(xM1 - xP1, yM1 - yP1);
 
     return (unsigned char)size(g);
+}
+
+__global__ void compute_varLofLABtoW_kernel(cudaTextureObject_t rc_tex, uchar4* labMap, int labMap_p, int width, int height, int wsh)
+{
+    int x = blockIdx.x * blockDim.x + threadIdx.x;
+    int y = blockIdx.y * blockDim.y + threadIdx.y;
+
+    if(x < width && y < height)
+    {
+        uchar4* val = get2DBufferAt(labMap, labMap_p, x, y);
+
+        // unsigned char sigma = computeSigmaOfL(x, y, wsh);
+        // val->w = sigma;
+        unsigned char grad = computeGradientSizeOfL( rc_tex, x, y);
+
+        val->w = grad;
+    }
 }
 
 __global__ void compute_varLofLABtoW_kernel(uchar4* labMap, int labMap_p, int width, int height, int wsh)
@@ -91,7 +108,7 @@ __global__ void compute_varLofLABtoW_kernel(uchar4* labMap, int labMap_p, int wi
 
 __device__ void move3DPointByRcPixSize(float3& p, float rcPixSize)
 {
-    float3 rpv = p - sg_s_rC;
+    float3 rpv = p - sg_s_r.C;
     normalize(rpv);
     p = p + rpv * rcPixSize;
 }
@@ -99,7 +116,7 @@ __device__ void move3DPointByRcPixSize(float3& p, float rcPixSize)
 __device__ void move3DPointByTcPixStep(float3& p, float tcPixStep)
 
 {
-    float3 rpv = sg_s_rC - p;
+    float3 rpv = sg_s_r.C - p;
     float3 prp = p;
     float3 prp1 = p + rpv / 2.0f;
 
@@ -140,15 +157,63 @@ __device__ float3 computeDepthPoint_fine(float& pixSize, int depthid, int ndepth
 {
     float depth = tex2D(depthsTex, pixid, t);
     float2 rp = make_float2((float)pix.x, (float)pix.y);
-    float3 rpv = M3x3mulV2(sg_s_riP, rp);
+    float3 rpv = M3x3mulV2(sg_s_r.iP, rp);
     normalize(rpv);
 
-    float3 prp = sg_s_rC + rpv * depth;
+    float3 prp = sg_s_r.C + rpv * depth;
     pixSize = computePixSize(prp);
 
     float jump = (float)(depthid - ((ndepths - 1) / 2));
 
-    return sg_s_rC + rpv * (depth + pixSize * jump);
+    return sg_s_r.C + rpv * (depth + pixSize * jump);
+}
+
+__global__ void alignSourceDepthMapToTarget_kernel(
+    float* dmap, int dmap_p,
+    int width, int height, int wsh, const float gammaC, const float maxPixelSizeDist)
+{
+    int x = blockIdx.x * blockDim.x + threadIdx.x;
+    int y = blockIdx.y * blockDim.y + threadIdx.y;
+
+    if((x < width) && (y < height))
+    {
+        float sourceDepthMid = tex2D(depthsTex, x, y);
+        float pixSize = 0.0f;
+        {
+            int2 pix1 = make_int2(x, y);
+            float3 p1 = get3DPointForPixelAndDepthFromRC(pix1, sourceDepthMid);
+            int2 pix2 = make_int2(x + 1, y);
+            float3 p2 = get3DPointForPixelAndDepthFromRC(pix2, sourceDepthMid);
+            pixSize = size(p1 - p2);
+        }
+
+        float maxDepthsDist = maxPixelSizeDist * pixSize;
+        float4 gcr = 255.0f * tex2D(r4tex, (float)x + 0.5f, (float)y + 0.5f);
+        float avdist = 0.0f;
+        float navdist = 0.0f;
+
+        for(int yp = -wsh; yp <= wsh; yp++)
+        {
+            for(int xp = -wsh; xp <= wsh; xp++)
+            {
+                float sourceDepth = tex2D(depthsTex, x + xp, y + yp);
+                float targetDepth = tex2D(depthsTex1, x + xp, y + yp);
+
+                if((sourceDepth > 0.0f) && (targetDepth > 0.0f) && (fabs(targetDepth - sourceDepth) < maxDepthsDist))
+                {
+                    float4 gcr1 = 255.0f * tex2D(r4tex, (float)(x + xp) + 0.5f, (float)(y + yp) + 0.5f);
+                    float deltaC = Euclidean3(gcr, gcr1);
+                    if(deltaC < gammaC)
+                    {
+                        avdist += targetDepth - sourceDepth;
+                        navdist += 1.0f;
+                    }
+                }
+            }
+        }
+        *get2DBufferAt(dmap, dmap_p, x, y) =
+            (((navdist == 0.0f) || (sourceDepthMid < 0.0f)) ? sourceDepthMid : (sourceDepthMid + avdist / navdist));
+    }
 }
 
 __global__ void locmin_kernel(float* slice, int slice_p, int ndepths, int slicesAtTime,
@@ -230,16 +295,16 @@ __global__ void grad_kernel(float2* grad, int grad_p,
     }
 }
 
-__global__ void getRefTexLAB_kernel(uchar4* texs, int texs_p, int width, int height)
-{
-    int x = blockIdx.x * blockDim.x + threadIdx.x;
-    int y = blockIdx.y * blockDim.y + threadIdx.y;
-
-    if((x < width) && (y < height))
-    {
-        *get2DBufferAt(texs, texs_p, x, y) = float4_to_uchar4(255.0f * tex2D(r4tex, (float)x + 0.5f, (float)y + 0.5f));
-    }
-}
+// __global__ void getRefTexLAB_kernel(uchar4* texs, int texs_p, int width, int height)
+// {
+//     int x = blockIdx.x * blockDim.x + threadIdx.x;
+//     int y = blockIdx.y * blockDim.y + threadIdx.y;
+// 
+//     if((x < width) && (y < height))
+//     {
+//         *get2DBufferAt(texs, texs_p, x, y) = float4_to_uchar4(255.0f * tex2D(r4tex, (float)x + 0.5f, (float)y + 0.5f));
+//     }
+// }
 
 __global__ void getTarTexLAB_kernel(uchar4* texs, int texs_p, int width, int height)
 {
@@ -264,7 +329,7 @@ __global__ void reprojTarTexLAB_kernel(uchar4* texs, int texs_p, int width, int 
     if((x < width) && (y < height))
     {
         float3 p = get3DPointForPixelAndFrontoParellePlaneRC(pix, fpPlaneDepth);
-        float2 tpc = project3DPoint(sg_s_tP, p);
+        float2 tpc = project3DPoint(sg_s_t.P, p);
         uchar4* tex = get2DBufferAt(texs, texs_p, x, y);
         if(((tpc.x + 0.5f) > 0.0f) && ((tpc.y + 0.5f) > 0.0f) &&
            ((tpc.x + 0.5f) < (float)width - 1.0f) && ((tpc.y + 0.5f) < (float)height - 1.0f))
@@ -293,7 +358,7 @@ __global__ void reprojTarTexRgb_kernel(uchar4* texs, int texs_p, int width, int 
     if((x < width) && (y < height))
     {
         float3 p = get3DPointForPixelAndFrontoParellePlaneRC(pix, fpPlaneDepth);
-        float2 tpc = project3DPoint(sg_s_tP, p);
+        float2 tpc = project3DPoint(sg_s_t.P, p);
         uchar4* tex = get2DBufferAt(texs, texs_p, x, y);
         if(((tpc.x + 0.5f) > 0.0f) && ((tpc.y + 0.5f) > 0.0f) &&
            ((tpc.x + 0.5f) < (float)width - 1.0f) && ((tpc.y + 0.5f) < (float)height - 1.0f))
@@ -595,44 +660,11 @@ __global__ void updateBestDepth_kernel(
         {
             int2 pix = make_int2(x * step, y * step);
             float3 p = get3DPointForPixelAndFrontoParellePlaneRC(pix, fpPlaneDepth);
-            float depth = size(sg_s_rC - p);
+            float depth = size(sg_s_r.C - p);
 
             *get2DBufferAt(osim, osim_p, x, y) = is;
             *get2DBufferAt(odpt, odpt_p, x, y) = depth;
         }
-    }
-}
-
-__global__ void downscale_gauss_smooth_lab_kernel(
-    uchar4* texLab, int texLab_p,
-    int width, int height, int scale, int radius)
-{
-    int x = blockIdx.x * blockDim.x + threadIdx.x;
-    int y = blockIdx.y * blockDim.y + threadIdx.y;
-
-    if((x < width) && (y < height))
-    {
-        float4 t = make_float4(0.0f, 0.0f, 0.0f, 0.0f);
-        float sum = 0.0f;
-        for(int i = -radius; i <= radius; i++)
-        {
-            for(int j = -radius; j <= radius; j++)
-            {
-                float4 curPix = 255.0f * tex2D(r4tex, (float)(x * scale + j) + (float)scale / 2.0f,
-                                               (float)(y * scale + i) + (float)scale / 2.0f);
-                float factor = (tex1D(gaussianTex, i + radius) * tex1D(gaussianTex, j + radius)); // domain factor
-                t = t + curPix * factor;
-                sum += factor;
-            }
-        }
-        t.x = t.x / sum;
-        t.y = t.y / sum;
-        t.z = t.z / sum;
-        t.w = t.w / sum;
-
-        uchar4 tu4 = make_uchar4((unsigned char)t.x, (unsigned char)t.y, (unsigned char)t.z, (unsigned char)t.w);
-
-        *get2DBufferAt(texLab, texLab_p, x, y) = tu4; 
     }
 }
 
