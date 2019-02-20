@@ -277,7 +277,7 @@ void DepthSimMap::initJustFromDepthMap(const StaticVector<float>& depthMap, floa
     }
 }
 
-void DepthSimMap::initFromDepthMapTAndSimMapT(StaticVector<float>* depthMapT, StaticVector<float>* simMapT,
+void DepthSimMap::initFromDepthMapAndSimMap(StaticVector<float>* depthMapT, StaticVector<float>* simMapT,
                                                  int depthSimMapsScale)
 {
     int wdm = mp->getWidth(rc) / depthSimMapsScale;
@@ -289,8 +289,9 @@ void DepthSimMap::initFromDepthMapTAndSimMapT(StaticVector<float>* depthMapT, St
         int y = (((i / w) * step) * scale) / depthSimMapsScale;
         if((x < wdm) && (y < hdm))
         {
-            dsm[i].depth = (*depthMapT)[x * hdm + y];
-            dsm[i].sim = (*simMapT)[x * hdm + y];
+            int index = y * wdm + x;
+            dsm[i].depth = (*depthMapT)[index];
+            dsm[i].sim = (*simMapT)[index];
         }
     }
 }
@@ -408,10 +409,7 @@ void DepthSimMap::load(int rc, int fromScale)
     imageIO::readImage(getFileNameFromIndex(mp, rc, mvsUtils::EFileType::depthMap, fromScale), width, height, depthMap.getDataWritable());
     imageIO::readImage(getFileNameFromIndex(mp, rc, mvsUtils::EFileType::simMap, fromScale), width, height, simMap.getDataWritable());
 
-    imageIO::transposeImage(width, height, depthMap.getDataWritable());
-    imageIO::transposeImage(width, height, simMap.getDataWritable());
-
-    initFromDepthMapTAndSimMapT(&depthMap, &simMap, fromScale);
+    initFromDepthMapAndSimMap(&depthMap, &simMap, fromScale);
 }
 
 void DepthSimMap::saveRefine(int rc, std::string depthMapFileName, std::string simMapFileName)
