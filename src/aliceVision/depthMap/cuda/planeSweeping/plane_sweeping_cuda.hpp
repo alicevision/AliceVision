@@ -14,30 +14,25 @@ namespace depthMap {
 
 void ps_initCameraMatrix( cameraStructBase& base );
 
-float3 ps_getDeviceMemoryInfo();
+void pr_printfDeviceMemoryInfo();
 
-void ps_planeSweepingGPUPixelsVolume(
-    Pyramid& ps_texs_arr,
-    std::vector<CudaDeviceMemoryPitched<float, 3>*>& volSim_dmp,
-    const cameraStruct& rcam,
-    const std::vector<cameraStruct>& tcams,
-    int width, int height,
-    int volStepXY, int volDimX, int volDimY,
-    const int zDimsAtATime,
-    CudaDeviceMemory<float>& depths_dev,
-    std::vector<OneTC>&  tcs,
-    int wsh,
-    int kernelSizeHalf,
-    int scale,
-    int scales,
-    bool verbose,
-    bool doUsePixelsDepths,
-    int nbest,
-    float gammaC, float gammaP,
-    bool subPixel,
-    float epipShift);
-
-float3 ps_getDeviceMemoryInfo();
+void ps_computeSimilarityVolume(
+  Pyramid& ps_texs_arr,
+  std::vector<CudaDeviceMemoryPitched<float, 3>*> vol_dmp,
+  const cameraStruct& rcam,
+  const std::vector<cameraStruct>& tcams,
+  int stepLessWidth, int stepLessHeight,
+  int volStepXY,
+  int volDimX, int volDimY,
+  const int zDimsAtATime,
+  CudaDeviceMemory<float>& depths_dev,
+  std::vector<OneTC>&  tcs,
+  int wsh, int kernelSizeHalf,
+  int scale,
+  int scales, bool verbose, bool doUsePixelsDepths,
+  int nbest,
+  float gammaC, float gammaP, bool subPixel,
+  float epipShift);
 
 void ps_SGMoptimizeSimVolume(
     Pyramid& ps_texs_arr,

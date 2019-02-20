@@ -37,14 +37,14 @@ private:
      */
     int _volume_size;
 
-    /* This is possibly refundant information.
+    /* This is possibly redundant information.
      * Host-side volume is allocated for all depths that are required for at
-     * least on TC's sweep. Some initial depths are not needed for any TCs,
+     * least one TC's sweep. Some initial depths are not needed for any TCs,
      * the number of those is kept here.
      */
     int _lowest_allocated_depth;
 
-    /* This is possibly refundant information.
+    /* This is possibly redundant information.
      * To unify depth processing for all TCs, we keep the max of the max
      * depths for all TC in _highest_allocated_depth;
      */

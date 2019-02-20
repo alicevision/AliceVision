@@ -839,7 +839,15 @@ void PlaneSweepingCuda::sweepPixelsToVolumeSubset(
     const float* depth_data = rc_depths.data();
     CudaDeviceMemory<float> depths_dev( depth_data, rc_depths.size() );
 
-    ps_planeSweepingGPUPixelsVolume(
+    {
+      const int max_tcs = tcams.size();
+      pr_printfDeviceMemoryInfo();
+      double mbytes = max_tcs * volSim_dmp[0]->getBytesPadded();
+      mbytes /= (1024.0 * 1024.0);
+      ALICEVISION_LOG_DEBUG(__FUNCTION__ << ": total size of volume maps for "<< max_tcs <<" images in GPU memory: approx "<< mbytes <<" MB");
+    }
+
+    ps_computeSimilarityVolume(
             ps_texs_arr,     // indexed with tcams[].camId
             volSim_dmp,
             rcam, tcams,
@@ -892,8 +900,16 @@ bool PlaneSweepingCuda::SGMoptimizeSimVolume(int rc, StaticVector<unsigned char>
 // make_float3(avail,total,used)
 Point3d PlaneSweepingCuda::getDeviceMemoryInfo()
 {
-    float3 dmif3 = ps_getDeviceMemoryInfo();
-    return Point3d(dmif3.x, dmif3.y, dmif3.z);
+    size_t iavail;
+    size_t itotal;
+    cudaMemGetInfo(&iavail, &itotal);
+    size_t iused = itotal - iavail;
+
+    double avail = (double)iavail / (1024.0 * 1024.0);
+    double total = (double)itotal / (1024.0 * 1024.0);
+    double used = (double)iused / (1024.0 * 1024.0);
+
+    return Point3d(avail, total, used);
 }
 
 bool PlaneSweepingCuda::fuseDepthSimMapsGaussianKernelVoting(int w, int h, StaticVector<DepthSim>* oDepthSimMap,

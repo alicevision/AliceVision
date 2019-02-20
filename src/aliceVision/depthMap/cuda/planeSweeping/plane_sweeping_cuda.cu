@@ -97,28 +97,14 @@ void pr_printfDeviceMemoryInfo()
     cudaMemGetInfo(&iavail, &itotal);
     size_t iused = itotal - iavail;
 
-    float avail = (float)iavail / (1024.0f * 1024.0f);
-    float total = (float)itotal / (1024.0f * 1024.0f);
-    float used = (float)iused / (1024.0f * 1024.0f);
+    double avail = (double)iavail / (1024.0 * 1024.0);
+    double total = (double)itotal / (1024.0 * 1024.0);
+    double used = (double)iused / (1024.0 * 1024.0);
 
     int CUDAdeviceNo;
     cudaGetDevice(&CUDAdeviceNo);
 
     printf("Device %i memory - used: %f, free: %f, total: %f\n", CUDAdeviceNo, used, avail, total);
-}
-
-float3 ps_getDeviceMemoryInfo()
-{
-    size_t iavail;
-    size_t itotal;
-    cudaMemGetInfo(&iavail, &itotal);
-    size_t iused = itotal - iavail;
-
-    float avail = (float)iavail / (1024.0f * 1024.0f);
-    float total = (float)itotal / (1024.0f * 1024.0f);
-    float used = (float)iused / (1024.0f * 1024.0f);
-
-    return make_float3(avail, total, used);
 }
 
 __host__ void ps_initCameraMatrix( cameraStructBase& base )
@@ -717,7 +703,7 @@ void ps_transposeVolume(CudaHostMemoryHeap<unsigned char, 3>* ovol_hmh,
     copy((*ovol_hmh), volTra_dmp);
 }
 
-static void ps_computeSimilarityVolume(
+void ps_computeSimilarityVolume(
                                 Pyramid& ps_texs_arr,
                                 std::vector<CudaDeviceMemoryPitched<float, 3>*> vol_dmp,
                                 const cameraStruct& rcam,
@@ -820,51 +806,6 @@ static void ps_computeSimilarityVolume(
     }
 
     cudaDeviceSynchronize();
-}
-
-void ps_planeSweepingGPUPixelsVolume(
-        Pyramid& ps_texs_arr,
-        std::vector<CudaDeviceMemoryPitched<float, 3>*>& volSim_dmp,
-        const cameraStruct& rcam,
-        const std::vector<cameraStruct>& tcams,
-        int stepLessWidth, int stepLessHeight,
-        int volStepXY, int volDimX, int volDimY,
-        const int zDimsAtATime,
-        CudaDeviceMemory<float>& depths_dev,
-        std::vector<OneTC>&  tcs,
-        int wsh, int kernelSizeHalf,
-        int scale,
-        int scales, bool verbose,
-        bool doUsePixelsDepths, int nbest,
-        float gammaC, float gammaP,
-        bool subPixel, float epipShift)
-{
-    if(verbose)
-    {
-        const int max_tcs = tcams.size();
-
-        pr_printfDeviceMemoryInfo();
-
-        float mbytes = max_tcs * volSim_dmp[0]->getBytesPadded();
-        mbytes /= (1024.0f * 1024.0f);
-        printf("%s: total size of volume maps for %d images in GPU memory: approx %4.2f MB\n", __FUNCTION__, max_tcs, mbytes );
-    }
-
-    // compute similarity volume
-    ps_computeSimilarityVolume(ps_texs_arr,
-                               volSim_dmp,
-                               rcam, tcams,
-                               stepLessWidth, stepLessHeight,
-                               volStepXY,
-                               volDimX, volDimY,
-                               zDimsAtATime,
-                               depths_dev,
-                               tcs,
-                               wsh, kernelSizeHalf,
-                               scale,
-                               scales,
-                               verbose, doUsePixelsDepths, nbest,
-                               gammaC, gammaP, subPixel, epipShift);
 }
 
 void ps_filterVisTVolume(CudaHostMemoryHeap<unsigned int, 3>* iovol_hmh, int volDimX, int volDimY, int volDimZ,

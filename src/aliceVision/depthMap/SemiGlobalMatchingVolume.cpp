@@ -86,9 +86,9 @@ void SemiGlobalMatchingVolume::cloneVolumeSecondStepZ()
 
     _volumeStepZ->resize_with(volDimX * volDimY * (volDimZ / volStepZ), 255);
     _volumeBestZ->resize_with(volDimX * volDimY * (volDimZ / volStepZ), -1);
-    unsigned char* volumeStepZPtr      = _volumeStepZ->getDataWritable().data();
-    unsigned char* volumeSecondBestPtr = _volumeSecondBest->getDataWritable().data();
-    int*           volumeBestZPtr      = _volumeBestZ->getDataWritable().data();
+    unsigned char* in_volumeSecondBestPtr = _volumeSecondBest->getDataWritable().data();
+    unsigned char* out_volumeStepZPtr     = _volumeStepZ->getDataWritable().data();
+    int*           out_volumeBestZPtr     = _volumeBestZ->getDataWritable().data();
     for(int z = 0; z < volDimZ; z++)
     {
         for(int y = 0; y < volDimY; y++)
@@ -98,12 +98,12 @@ void SemiGlobalMatchingVolume::cloneVolumeSecondStepZ()
                 if((z / volStepZ) < (volDimZ / volStepZ))
                 {
                     int offs = (z / volStepZ) * volDimX * volDimY + y * volDimX + x;
-                    unsigned char oldSim = volumeStepZPtr[offs];
-                    unsigned char newSim = volumeSecondBestPtr[z * volDimX * volDimY + y * volDimX + x];
+                    unsigned char oldSim = out_volumeStepZPtr[offs];
+                    unsigned char newSim = in_volumeSecondBestPtr[z * volDimX * volDimY + y * volDimX + x];
                     if(newSim <= oldSim)
                     {
-                        volumeStepZPtr[offs] = newSim;
-                        volumeBestZPtr[offs] = z;
+                        out_volumeStepZPtr[offs] = newSim;
+                        out_volumeBestZPtr[offs] = z;
                     }
                 }
             }
