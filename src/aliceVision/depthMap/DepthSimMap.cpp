@@ -33,23 +33,23 @@ DepthSimMap::~DepthSimMap()
 {
 }
 
-void DepthSimMap::add11(DepthSimMap* depthSimMap)
+void DepthSimMap::add11(const DepthSimMap& depthSimMap)
 {
     if((scale != 1) || (step != 1))
     {
         throw std::runtime_error("Error DepthSimMap: You can only add to scale1-step1 map.");
     }
 
-    int k = (depthSimMap->step * depthSimMap->scale) / 2;
+    int k = (depthSimMap.step * depthSimMap.scale) / 2;
     int k1 = k;
-    if((depthSimMap->step * depthSimMap->scale) % 2 == 0)
+    if((depthSimMap.step * depthSimMap.scale) % 2 == 0)
         k -= 1;
 
-    for(int i = 0; i < depthSimMap->dsm.size(); i++)
+    for(int i = 0; i < depthSimMap.dsm.size(); i++)
     {
-        int x = (i % depthSimMap->w) * depthSimMap->step * depthSimMap->scale;
-        int y = (i / depthSimMap->w) * depthSimMap->step * depthSimMap->scale;
-        DepthSim depthSim = depthSimMap->dsm[i];
+        int x = (i % depthSimMap.w) * depthSimMap.step * depthSimMap.scale;
+        int y = (i / depthSimMap.w) * depthSimMap.step * depthSimMap.scale;
+        DepthSim depthSim = depthSimMap.dsm[i];
 
         if(depthSim.depth > -1.0f)
         {
@@ -84,17 +84,17 @@ void DepthSimMap::add11(DepthSimMap* depthSimMap)
     }
 }
 
-void DepthSimMap::add(DepthSimMap* depthSimMap)
+void DepthSimMap::add(const DepthSimMap& depthSimMap)
 {
-    if((scale != depthSimMap->scale) || (step != depthSimMap->step))
+    if((scale != depthSimMap.scale) || (step != depthSimMap.step))
     {
         throw std::runtime_error("Error DepthSimMap: You can only add to the same scale and step map.");
     }
 
     for(int i = 0; i < dsm.size(); i++)
     {
-        DepthSim depthSim1 = dsm[i];
-        DepthSim depthSim2 = depthSimMap->dsm[i];
+        const DepthSim& depthSim1 = dsm[i];
+        const DepthSim& depthSim2 = depthSimMap.dsm[i];
 
         if((depthSim2.depth > -1.0f) && (depthSim2.sim < depthSim1.sim))
         {
@@ -261,23 +261,7 @@ StaticVector<float>* DepthSimMap::getSimMapStep1XPart(int xFrom, int partW)
     return simMap;
 }
 
-void DepthSimMap::initJustFromDepthMapT(StaticVector<float>* depthMapT, float defaultSim)
-{
-    int hdm = mp->getHeight(rc) / scale;
-
-    for(int i = 0; i < dsm.size(); i++)
-    {
-        int x = (i % w) * step;
-        int y = (i / w) * step;
-        if((x < w) && (y < h))
-        {
-            dsm[i].depth = (*depthMapT)[x * hdm + y];
-            dsm[i].sim = defaultSim;
-        }
-    }
-}
-
-void DepthSimMap::initJustFromDepthMap(StaticVector<float>* depthMap, float defaultSim)
+void DepthSimMap::initJustFromDepthMap(const StaticVector<float>& depthMap, float defaultSim)
 {
     int wdm = mp->getWidth(rc) / scale;
 
@@ -287,7 +271,7 @@ void DepthSimMap::initJustFromDepthMap(StaticVector<float>* depthMap, float defa
         int y = (i / w) * step;
         if((x < w) && (y < h))
         {
-            dsm[i].depth = (*depthMap)[y * wdm + x];
+            dsm[i].depth = depthMap[y * wdm + x];
             dsm[i].sim = defaultSim;
         }
     }
@@ -333,15 +317,13 @@ StaticVector<float>* DepthSimMap::getDepthMapTStep1()
     return depthMap;
 }
 
-StaticVector<float>* DepthSimMap::getDepthMap()
+void DepthSimMap::getDepthMap(StaticVector<float>& out_depthMap) const
 {
-    StaticVector<float>* depthMap = new StaticVector<float>();
-    depthMap->reserve(dsm.size());
+    out_depthMap.resize(dsm.size());
     for(int i = 0; i < dsm.size(); i++)
     {
-        depthMap->push_back(dsm[i].depth);
+        out_depthMap[i] = dsm[i].depth;
     }
-    return depthMap;
 }
 
 void DepthSimMap::saveToImage(std::string filename, float simThr)

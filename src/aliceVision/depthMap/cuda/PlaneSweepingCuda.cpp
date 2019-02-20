@@ -912,15 +912,15 @@ Point3d PlaneSweepingCuda::getDeviceMemoryInfo()
     return Point3d(avail, total, used);
 }
 
-bool PlaneSweepingCuda::fuseDepthSimMapsGaussianKernelVoting(int w, int h, StaticVector<DepthSim>* oDepthSimMap,
-                                                               const StaticVector<StaticVector<DepthSim>*>* dataMaps,
+bool PlaneSweepingCuda::fuseDepthSimMapsGaussianKernelVoting(int w, int h, StaticVector<DepthSim>& oDepthSimMap,
+                                                               const StaticVector<StaticVector<DepthSim>*>& dataMaps,
                                                                int nSamplesHalf, int nDepthsToRefine, float sigma)
 {
     long t1 = clock();
 
     // sweep
-    CudaHostMemoryHeap<float2, 2>** dataMaps_hmh = new CudaHostMemoryHeap<float2, 2>*[dataMaps->size()];
-    for(int i = 0; i < dataMaps->size(); i++)
+    std::vector<CudaHostMemoryHeap<float2, 2>*> dataMaps_hmh(dataMaps.size());
+    for(int i = 0; i < dataMaps.size(); i++)
     {
         dataMaps_hmh[i] = new CudaHostMemoryHeap<float2, 2>(CudaSize<2>(w, h));
         for(int y = 0; y < h; y++)
@@ -928,7 +928,7 @@ bool PlaneSweepingCuda::fuseDepthSimMapsGaussianKernelVoting(int w, int h, Stati
             for(int x = 0; x < w; x++)
             {
                 float2& data_hmh = (*dataMaps_hmh[i])(x, y);
-                const DepthSim& data = (*(*dataMaps)[i])[y * w + x];
+                const DepthSim& data = (*dataMaps[i])[y * w + x];
                 data_hmh.x = data.depth;
                 data_hmh.y = data.sim;
             }
@@ -937,7 +937,7 @@ bool PlaneSweepingCuda::fuseDepthSimMapsGaussianKernelVoting(int w, int h, Stati
 
     CudaHostMemoryHeap<float2, 2> oDepthSimMap_hmh(CudaSize<2>(w, h));
 
-    ps_fuseDepthSimMapsGaussianKernelVoting(&oDepthSimMap_hmh, dataMaps_hmh, dataMaps->size(), nSamplesHalf,
+    ps_fuseDepthSimMapsGaussianKernelVoting(&oDepthSimMap_hmh, dataMaps_hmh, dataMaps.size(), nSamplesHalf,
                                             nDepthsToRefine, sigma, w, h, _verbose);
 
     for(int y = 0; y < h; y++)
@@ -945,17 +945,16 @@ bool PlaneSweepingCuda::fuseDepthSimMapsGaussianKernelVoting(int w, int h, Stati
         for(int x = 0; x < w; x++)
         {
             const float2& oDepthSim_hmh = oDepthSimMap_hmh(x, y);
-            DepthSim& oDepthSim = (*oDepthSimMap)[y * w + x];
+            DepthSim& oDepthSim = oDepthSimMap[y * w + x];
             oDepthSim.depth = oDepthSim_hmh.x;
             oDepthSim.sim = oDepthSim_hmh.y;
         }
     }
 
-    for(int i = 0; i < dataMaps->size(); i++)
+    for(int i = 0; i < dataMaps.size(); i++)
     {
         delete dataMaps_hmh[i];
     }
-    delete[] dataMaps_hmh;
 
     if(_verbose)
         mvsUtils::printfElapsedTime(t1);
@@ -964,9 +963,9 @@ bool PlaneSweepingCuda::fuseDepthSimMapsGaussianKernelVoting(int w, int h, Stati
 }
 
 bool PlaneSweepingCuda::optimizeDepthSimMapGradientDescent(StaticVector<DepthSim>& oDepthSimMap,
-                                                             StaticVector<StaticVector<DepthSim>*>* dataMaps, int rc,
-                                                             int nSamplesHalf, int nDepthsToRefine, float sigma,
-                                                             int nIters, int yFrom, int hPart)
+                                                           StaticVector<const StaticVector<DepthSim>*>& dataMaps, int rc,
+                                                           int nSamplesHalf, int nDepthsToRefine, float sigma,
+                                                           int nIters, int yFrom, int hPart)
 {
     if(_verbose)
         ALICEVISION_LOG_DEBUG("optimizeDepthSimMapGradientDescent.");
@@ -990,17 +989,19 @@ bool PlaneSweepingCuda::optimizeDepthSimMapGradientDescent(StaticVector<DepthSim
     }
 
     // sweep
-    CudaHostMemoryHeap<float2, 2>** dataMaps_hmh = new CudaHostMemoryHeap<float2, 2>*[dataMaps->size()];
-    for(int i = 0; i < dataMaps->size(); i++)
+    std::vector<CudaHostMemoryHeap<float2, 2>*> dataMaps_hmh(dataMaps.size());
+    for(int i = 0; i < dataMaps.size(); i++)
     {
+        const StaticVector<DepthSim>& depthSimMap = *dataMaps[i];
         dataMaps_hmh[i] = new CudaHostMemoryHeap<float2, 2>(CudaSize<2>(w, h));
+        CudaHostMemoryHeap<float2, 2>& dataMap_hmh = *dataMaps_hmh[i];
         for(int y = 0; y < h; y++)
         {
             for(int x = 0; x < w; x++)
             {
                 int jO = (y + yFrom) * w + x;
-                float2& h_data = (*dataMaps_hmh[i])(x, y);
-                const DepthSim& data = (*(*dataMaps)[i])[jO];
+                float2& h_data = dataMap_hmh(x, y);
+                const DepthSim& data = depthSimMap[jO];
                 h_data.x = data.depth;
                 h_data.y = data.sim;
             }
@@ -1010,7 +1011,7 @@ bool PlaneSweepingCuda::optimizeDepthSimMapGradientDescent(StaticVector<DepthSim
     CudaHostMemoryHeap<float2, 2> oDepthSimMap_hmh(CudaSize<2>(w, h));
 
     ps_optimizeDepthSimMapGradientDescent(ps_texs_arr, &oDepthSimMap_hmh, dataMaps_hmh,
-                                          dataMaps->size(), nSamplesHalf, nDepthsToRefine, nIters, sigma, ttcams,
+                                          dataMaps.size(), nSamplesHalf, nDepthsToRefine, nIters, sigma, ttcams,
                                           camsids.size(), w, h, scale - 1, _CUDADeviceNo, _nImgsInGPUAtTime, _scales,
                                           _verbose, yFrom);
 
@@ -1027,11 +1028,10 @@ bool PlaneSweepingCuda::optimizeDepthSimMapGradientDescent(StaticVector<DepthSim
         }
     }
 
-    for(int i = 0; i < dataMaps->size(); i++)
+    for(int i = 0; i < dataMaps.size(); i++)
     {
         delete dataMaps_hmh[i];
     }
-    delete[] dataMaps_hmh;
 
     if(_verbose)
         mvsUtils::printfElapsedTime(t1);

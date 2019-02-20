@@ -60,13 +60,12 @@ public:
     DepthSimMap(int rc, mvsUtils::MultiViewParams* _mp, int _scale, int _step);
     ~DepthSimMap(void);
 
-    void initJustFromDepthMapT(StaticVector<float>* depthMapT, float defaultSim);
-    void initJustFromDepthMap(StaticVector<float>* depthMap, float defaultSim);
+    void initJustFromDepthMap(const StaticVector<float>& depthMap, float defaultSim);
     void initFromDepthMapTAndSimMapT(StaticVector<float>* depthMapT, StaticVector<float>* simMapT,
                                      int depthSimMapsScale);
 
-    void add11(DepthSimMap* depthSimMap);
-    void add(DepthSimMap* depthSimMap);
+    void add11(const DepthSimMap& depthSimMap);
+    void add(const DepthSimMap& depthSimMap);
 
     Point2d getMaxMinDepth() const;
     Point2d getMaxMinSim() const;
@@ -75,7 +74,7 @@ public:
     StaticVector<float>* getDepthMapStep1();
     StaticVector<float>* getDepthMapTStep1();
     StaticVector<float>* getSimMapStep1();
-    StaticVector<float>* getDepthMap();
+    void getDepthMap(StaticVector<float>& out_depthMap) const;
 
     StaticVector<float>* getDepthMapStep1XPart(int xFrom, int partW);
     StaticVector<float>* getSimMapStep1XPart(int xFrom, int partW);

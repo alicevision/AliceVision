@@ -637,16 +637,29 @@ void loadArrayFromFileIntoArray(StaticVector<T>* a, std::string fileName, bool p
 int getArrayLengthFromFile(std::string fileName);
 
 template <class T>
+void deleteAllPointers(StaticVector<T*>& vec)
+{
+  for (int i = 0; i < vec.size(); ++i)
+  {
+    if (vec[i] != NULL)
+    {
+      delete(vec[i]);
+      vec[i] = NULL;
+    }
+  }
+}
+
+template <class T>
 void deleteArrayOfArrays(StaticVector<StaticVector<T>*>** aa)
 {
     for(int i = 0; i < (*aa)->size(); i++)
     {
         if((*(*aa))[i] != NULL)
         {
-            delete(*(*aa))[i];
+            delete((*(*aa))[i]);
             (*(*aa))[i] = NULL;
-        };
-    };
+        }
+    }
     delete(*aa);
 }
 

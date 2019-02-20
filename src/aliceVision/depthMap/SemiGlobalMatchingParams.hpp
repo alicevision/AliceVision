@@ -56,10 +56,11 @@ public:
     rgb silhouetteMaskColor;
 
     SemiGlobalMatchingParams(mvsUtils::MultiViewParams* _mp, PlaneSweepingCuda& _cps);
-    ~SemiGlobalMatchingParams(void);
+    ~SemiGlobalMatchingParams();
 
-    DepthSimMap* getDepthSimMapFromBestIdVal(int w, int h, StaticVector<IdValue>& volumeBestIdVal, int scale,
-                                                int step, int rc, int zborder, StaticVector<float>& planesDepths);
+    void getDepthSimMapFromBestIdVal(DepthSimMap& out_depthSimMap, int w, int h,
+                                     StaticVector<IdValue>& volumeBestIdVal, int scale,
+                                     int step, int rc, int zborder, StaticVector<float>& planesDepths);
 
     std::string getREFINE_photo_depthMapFileName(IndexT viewId, int scale, int step);
     std::string getREFINE_photo_simMapFileName(IndexT viewId, int scale, int step);

@@ -544,9 +544,9 @@ bool SemiGlobalMatchingRc::sgmrc(bool checkIfExists)
 
     if(_sp->exportIntermediateResults)
     {
-        DepthSimMap* depthSimMapFinal = _sp->getDepthSimMapFromBestIdVal(_width, _height, _volumeBestIdVal, _scale, _step, _rc, zborder, _depths);
-        depthSimMapFinal->saveToImage(_sp->mp->getDepthMapsFolder() + "sgm_" + std::to_string(_sp->mp->getViewId(_rc)) + "_" + "scale" + mvsUtils::num2str(depthSimMapFinal->scale) + "_step" + mvsUtils::num2str(depthSimMapFinal->step) + ".png", 1.0f);
-        delete depthSimMapFinal;
+        DepthSimMap depthSimMapFinal(_rc, _sp->mp, _scale, _step);
+        _sp->getDepthSimMapFromBestIdVal(depthSimMapFinal, _width, _height, _volumeBestIdVal, _scale, _step, _rc, zborder, _depths);
+        depthSimMapFinal.saveToImage(_sp->mp->getDepthMapsFolder() + "sgm_" + std::to_string(_sp->mp->getViewId(_rc)) + "_" + "scale" + mvsUtils::num2str(depthSimMapFinal.scale) + "_step" + mvsUtils::num2str(depthSimMapFinal.step) + ".png", 1.0f);
 
         std::vector<unsigned short> volumeBestId(_volumeBestIdVal.size());
         for(int i = 0; i < _volumeBestIdVal.size(); i++)

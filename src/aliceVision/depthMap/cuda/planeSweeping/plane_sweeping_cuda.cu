@@ -1210,7 +1210,7 @@ void ps_refineRcDepthMap(Pyramid& ps_texs_arr, float* osimMap_hmh,
  * @param verbose
  */
 void ps_fuseDepthSimMapsGaussianKernelVoting(CudaHostMemoryHeap<float2, 2>* odepthSimMap_hmh,
-                                             CudaHostMemoryHeap<float2, 2>** depthSimMaps_hmh, int ndepthSimMaps,
+                                             std::vector<CudaHostMemoryHeap<float2, 2>*>& depthSimMaps_hmh, int ndepthSimMaps,
                                              int nSamplesHalf, int nDepthsToRefine, float sigma, int width, int height,
                                              bool verbose)
 {
@@ -1228,9 +1228,8 @@ void ps_fuseDepthSimMapsGaussianKernelVoting(CudaHostMemoryHeap<float2, 2>* odep
     CudaDeviceMemoryPitched<float2, 2> bestDepthSimMap_dmp(CudaSize<2>(width, height));
     CudaDeviceMemoryPitched<float2, 2> bestGsvSampleMap_dmp(CudaSize<2>(width, height));
     CudaDeviceMemoryPitched<float, 2> gsvSampleMap_dmp(CudaSize<2>(width, height));
-    CudaDeviceMemoryPitched<float2, 2>** depthSimMaps_dmp;
+    std::vector<CudaDeviceMemoryPitched<float2, 2>*> depthSimMaps_dmp(ndepthSimMaps);
 
-    depthSimMaps_dmp = new CudaDeviceMemoryPitched<float2, 2>*[ndepthSimMaps];
     for(int i = 0; i < ndepthSimMaps; i++)
     {
         depthSimMaps_dmp[i] = new CudaDeviceMemoryPitched<float2, 2>(CudaSize<2>(width, height));
@@ -1265,7 +1264,6 @@ void ps_fuseDepthSimMapsGaussianKernelVoting(CudaHostMemoryHeap<float2, 2>* odep
     {
         delete depthSimMaps_dmp[i];
     }
-    delete[] depthSimMaps_dmp;
 
     if(verbose)
         printf("gpu elapsed time: %f ms \n", toc(tall));
@@ -1273,7 +1271,7 @@ void ps_fuseDepthSimMapsGaussianKernelVoting(CudaHostMemoryHeap<float2, 2>* odep
 
 void ps_optimizeDepthSimMapGradientDescent(Pyramid& ps_texs_arr,
                                            CudaHostMemoryHeap<float2, 2>* odepthSimMap_hmh,
-                                           CudaHostMemoryHeap<float2, 2>** dataMaps_hmh, int ndataMaps,
+                                           std::vector<CudaHostMemoryHeap<float2, 2>*>& dataMaps_hmh, int ndataMaps,
                                            int nSamplesHalf, int nDepthsToRefine, int nIters, float sigma,
                                            const std::vector<cameraStruct>& cams,
                                            int ncams, int width, int height, int scale,
@@ -1294,8 +1292,7 @@ void ps_optimizeDepthSimMapGradientDescent(Pyramid& ps_texs_arr,
 //     cudaBindTextureToArray(r4tex, ps_texs_arr[cams[0].camId][scale].arr->getArray(),
 //                            cudaCreateChannelDesc<uchar4>());
 
-    CudaDeviceMemoryPitched<float2, 2>** dataMaps_dmp;
-    dataMaps_dmp = new CudaDeviceMemoryPitched<float2, 2>*[ndataMaps];
+    std::vector<CudaDeviceMemoryPitched<float2, 2>*> dataMaps_dmp(ndataMaps);
     for(int i = 0; i < ndataMaps; i++)
     {
         dataMaps_dmp[i] = new CudaDeviceMemoryPitched<float2, 2>(CudaSize<2>(width, height));
@@ -1334,7 +1331,6 @@ void ps_optimizeDepthSimMapGradientDescent(Pyramid& ps_texs_arr,
     {
         delete dataMaps_dmp[i];
     }
-    delete[] dataMaps_dmp;
 
     cudaUnbindTexture(r4tex);
 

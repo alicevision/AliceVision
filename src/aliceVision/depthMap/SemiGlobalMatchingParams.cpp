@@ -122,7 +122,7 @@ std::string SemiGlobalMatchingParams::getSGM_depthsFileName(IndexT viewId)
     return mp->getDepthMapsFolder() + std::to_string(viewId) + "_depths.bin";
 }
 
-DepthSimMap* SemiGlobalMatchingParams::getDepthSimMapFromBestIdVal(int w, int h, StaticVector<IdValue>& volumeBestIdVal,
+void SemiGlobalMatchingParams::getDepthSimMapFromBestIdVal(DepthSimMap& out_depthSimMap, int w, int h, StaticVector<IdValue>& volumeBestIdVal,
                                                            int scale, int step, int rc, int zborder,
                                                            StaticVector<float>& planesDepths)
 {
@@ -130,8 +130,6 @@ DepthSimMap* SemiGlobalMatchingParams::getDepthSimMapFromBestIdVal(int w, int h,
 
     int volDimX = w;
     int volDimY = h;
-
-    DepthSimMap* depthSimMap = new DepthSimMap(rc, mp, scale, step);
 
 #pragma omp parallel for
     for(int y = 0; y < volDimY; y++)
@@ -154,10 +152,10 @@ DepthSimMap* SemiGlobalMatchingParams::getDepthSimMapFromBestIdVal(int w, int h,
                 // printf("fpdepthId %i, fpPlaneDepth %f, depth %f, x %i y
                 // %i\n",fpdepthId,fpPlaneDepth,depth,pixScale1.x,pixScale1.y);
 
-                //depthSimMap->dsm[(pix.y/step)*(depthSimMap->w)+(pix.x/step)].x = depth;
-                //depthSimMap->dsm[(pix.y/step)*(depthSimMap->w)+(pix.x/step)].y = sim;
-                depthSimMap->dsm[y * volDimX + x].depth = depth;
-                depthSimMap->dsm[y * volDimX + x].sim = sim;
+                //out_depthSimMap.dsm[(pix.y/step)*(out_depthSimMap.w)+(pix.x/step)].x = depth;
+                //out_depthSimMap.dsm[(pix.y/step)*(out_depthSimMap.w)+(pix.x/step)].y = sim;
+                out_depthSimMap.dsm[y * volDimX + x].depth = depth;
+                out_depthSimMap.dsm[y * volDimX + x].sim = sim;
             }
             else
             {
@@ -170,8 +168,6 @@ DepthSimMap* SemiGlobalMatchingParams::getDepthSimMapFromBestIdVal(int w, int h,
 
     if(mp->verbose)
         mvsUtils::printfElapsedTime(tall, "getDepthSimMapFromBestIdVal");
-
-    return depthSimMap;
 }
 
 } // namespace depthMap

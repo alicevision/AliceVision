@@ -93,7 +93,7 @@ void ps_refineRcDepthMap(
 
 void ps_fuseDepthSimMapsGaussianKernelVoting(
     CudaHostMemoryHeap<float2, 2>* odepthSimMap_hmh,
-    CudaHostMemoryHeap<float2, 2>** depthSimMaps_hmh,
+    std::vector<CudaHostMemoryHeap<float2, 2>*>& depthSimMaps_hmh,
     int ndepthSimMaps,
     int nSamplesHalf,
     int nDepthsToRefine,
@@ -104,7 +104,7 @@ void ps_fuseDepthSimMapsGaussianKernelVoting(
 void ps_optimizeDepthSimMapGradientDescent(
     Pyramid& ps_texs_arr,
     CudaHostMemoryHeap<float2, 2>* odepthSimMap_hmh,
-    CudaHostMemoryHeap<float2, 2>** dataMaps_hmh,
+    std::vector<CudaHostMemoryHeap<float2, 2>*>& dataMaps_hmh,
     int ndataMaps,
     int nSamplesHalf,
     int nDepthsToRefine,

@@ -35,11 +35,11 @@ private:
     int _nbDepthsToRefine;
     bool _userTcOrPixSize;
 
-    DepthSimMap* _depthSimMapOpt = nullptr;
+    DepthSimMap _depthSimMapOpt;
 
-    DepthSimMap* getDepthPixSizeMapFromSGM();
-    DepthSimMap* refineAndFuseDepthSimMapCUDA(DepthSimMap* depthPixSizeMapVis);
-    DepthSimMap* optimizeDepthSimMapCUDA(DepthSimMap* depthPixSizeMapVis, DepthSimMap* depthSimMapPhoto);
+    void getDepthPixSizeMapFromSGM(DepthSimMap& out_depthSimMapScale1Step1);
+    void refineAndFuseDepthSimMapCUDA(DepthSimMap& out_depthSimMapFused, const DepthSimMap& depthPixSizeMapVis);
+    void optimizeDepthSimMapCUDA(DepthSimMap& out_depthSimMapOptimized, const DepthSimMap& depthPixSizeMapVis, const DepthSimMap& depthSimMapPhoto);
 };
 
 void estimateAndRefineDepthMaps(mvsUtils::MultiViewParams* mp, const std::vector<int>& cams, int nbGPUs);
