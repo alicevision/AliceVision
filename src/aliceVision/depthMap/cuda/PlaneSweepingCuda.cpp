@@ -21,14 +21,14 @@
 namespace aliceVision {
 namespace depthMap {
 
-inline const uchar4 get( mvsUtils::ImagesCache::ImgPtr img, int x, int y )
+inline const uchar4 get(mvsUtils::ImagesCache::ImgPtr img, int x, int y)
 {
     const Color floatRGB = img->at(x,y) * 255.0f;
 
     return make_uchar4( static_cast<unsigned char>(floatRGB.r),
                         static_cast<unsigned char>(floatRGB.g),
                         static_cast<unsigned char>(floatRGB.b),
-                        0 );
+                        255 );
 }
 
 
@@ -155,7 +155,7 @@ static void cps_fillCameraData(mvsUtils::ImagesCache& ic, cameraStruct& cam, int
                 uchar4 pc = get( img, pix.x, pix.y );
                 if( (*rcSilhoueteMap)[pix.y*mp->getWidth(c)+pix.x] ) 
                 {
-                    pc.w = 1; // disabled if pix has background color
+                    pc.w = 0; // disabled if pix has background color
                 }
                 pix_rgba = pc;
             }

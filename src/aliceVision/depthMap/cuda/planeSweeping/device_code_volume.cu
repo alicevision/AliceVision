@@ -85,9 +85,9 @@ __global__ void volume_slice_kernel(
     {
         const float fpPlaneDepth = depths_dev[depth];
 
-        // const unsigned char occluded = tex2D(r4tex, x+0.5f, y+0.5f).w;
-        const float occluded = tex2D<float4>(rc_tex, x+0.5f, y+0.5f).w;
-        if( occluded > 0.75f ) return;
+        const float alpha = tex2D<float4>(rc_tex, x+0.5f, y+0.5f).w;
+        if( alpha < 0.5f )
+          return; // if no alpha, invalid pixel from input mask
 
         const int2 pix = make_int2( x, y );
 
