@@ -445,7 +445,10 @@ bool SemiGlobalMatchingRc::sgmrc(bool checkIfExists)
 #undef  FORCE_ZDIM_LIMIT
 #ifndef FORCE_ZDIM_LIMIT
     const long gpu_bytes_reqd_per_plane = volDimX * volDimY * sizeof(float) * 2; // safety margin 100%
-    const long gpu_bytes_free = _sp->cps.getDeviceMemoryInfo().x * 1024 * 1024;
+    std::size_t gpu_bytes_free;
+    std::size_t total;
+    cudaError_t err = cudaMemGetInfo(&gpu_bytes_free, &total);
+    THROW_ON_CUDA_ERROR(err, "Failed to get memory info for CUDA device");
     int        zDimsAtATime = _depths->size();
     const int  camsAtATime  = _sgmTCams.size();
     if( gpu_bytes_reqd_per_plane * zDimsAtATime * camsAtATime > gpu_bytes_free )
