@@ -177,7 +177,7 @@ public:
     bool fuseDepthSimMapsGaussianKernelVoting(int w, int h, StaticVector<DepthSim> *oDepthSimMap,
                                               const StaticVector<StaticVector<DepthSim> *> *dataMaps, int nSamplesHalf,
                                               int nDepthsToRefine, float sigma);
-    bool optimizeDepthSimMapGradientDescent(StaticVector<DepthSim> *oDepthSimMap,
+    bool optimizeDepthSimMapGradientDescent(StaticVector<DepthSim>& oDepthSimMap,
                                             StaticVector<StaticVector<DepthSim> *> *dataMaps, int rc, int nSamplesHalf,
                                             int nDepthsToRefine, float sigma, int nIters, int yFrom, int hPart);
     bool computeDP1Volume(StaticVector<int>* ovolume, StaticVector<unsigned int>* ivolume, int _volDimX, int volDimY,

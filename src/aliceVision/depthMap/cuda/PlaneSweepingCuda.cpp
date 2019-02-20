@@ -963,7 +963,7 @@ bool PlaneSweepingCuda::fuseDepthSimMapsGaussianKernelVoting(int w, int h, Stati
     return true;
 }
 
-bool PlaneSweepingCuda::optimizeDepthSimMapGradientDescent(StaticVector<DepthSim>* oDepthSimMap,
+bool PlaneSweepingCuda::optimizeDepthSimMapGradientDescent(StaticVector<DepthSim>& oDepthSimMap,
                                                              StaticVector<StaticVector<DepthSim>*>* dataMaps, int rc,
                                                              int nSamplesHalf, int nDepthsToRefine, float sigma,
                                                              int nIters, int yFrom, int hPart)
@@ -1019,7 +1019,7 @@ bool PlaneSweepingCuda::optimizeDepthSimMapGradientDescent(StaticVector<DepthSim
         for(int x = 0; x < w; x++)
         {
             int jO = (y + yFrom) * w + x;
-            DepthSim& oDepthSim = (*oDepthSimMap)[jO];
+            DepthSim& oDepthSim = oDepthSimMap[jO];
             const float2& h_oDepthSim = oDepthSimMap_hmh(x, y);
 
             oDepthSim.depth = h_oDepthSim.x;

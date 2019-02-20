@@ -55,7 +55,7 @@ public:
     const int scale;
     const int step;
     int rc, w, h;
-    StaticVector<DepthSim>* dsm; //< depth similarity map
+    StaticVector<DepthSim> dsm; //< depth similarity map
 
     DepthSimMap(int rc, mvsUtils::MultiViewParams* _mp, int _scale, int _step);
     ~DepthSimMap(void);

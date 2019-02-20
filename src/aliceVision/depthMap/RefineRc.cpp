@@ -59,7 +59,7 @@ DepthSimMap* RefineRc::getDepthPixSizeMapFromSGM()
 
     for(int i = 0; i < _volumeBestIdVal.size(); i++)
     {
-        // float sim = (*depthSimMapFinal->dsm)[i].y;
+        // float sim = depthSimMapFinal->dsm[i].y;
         // sim = std::min(sim,mp->simThr);
         const float sim = _sp->mp->simThr - 0.0001;
         const int id = _volumeBestIdVal[i].id;
@@ -82,12 +82,12 @@ DepthSimMap* RefineRc::getDepthPixSizeMapFromSGM()
     {
         for(int x = 0; x < w11; ++x)
         {
-            Point3d p = _sp->mp->CArr[_rc] + (_sp->mp->iCamArr[_rc] * Point2d(static_cast<float>(x), static_cast<float>(y))).normalize() * (*depthSimMapScale1Step1->dsm)[y * w11 + x].depth;
+            Point3d p = _sp->mp->CArr[_rc] + (_sp->mp->iCamArr[_rc] * Point2d(static_cast<float>(x), static_cast<float>(y))).normalize() * depthSimMapScale1Step1->dsm[y * w11 + x].depth;
 
             if(_userTcOrPixSize)
-                (*depthSimMapScale1Step1->dsm)[y * w11 + x].sim = _sp->mp->getCamsMinPixelSize(p, _refineTCams);
+                depthSimMapScale1Step1->dsm[y * w11 + x].sim = _sp->mp->getCamsMinPixelSize(p, _refineTCams);
             else
-                (*depthSimMapScale1Step1->dsm)[y * w11 + x].sim = _sp->mp->getCamPixelSize(p, _rc);
+                depthSimMapScale1Step1->dsm[y * w11 + x].sim = _sp->mp->getCamPixelSize(p, _rc);
         }
     }
 
@@ -148,7 +148,7 @@ DepthSimMap* RefineRc::refineAndFuseDepthSimMapCUDA(DepthSimMap* depthPixSizeMap
             {
                 for(int x = 0; x < w11; x++)
                 {
-                    (*dataMapHPart)[y * w11 + x] = (*(*dataMaps)[i]->dsm)[(y + hPart * hPartHeightGlob) * w11 + x];
+                    (*dataMapHPart)[y * w11 + x] = (*dataMaps)[i]->dsm[(y + hPart * hPartHeightGlob) * w11 + x];
                 }
             }
 
@@ -167,7 +167,7 @@ DepthSimMap* RefineRc::refineAndFuseDepthSimMapCUDA(DepthSimMap* depthPixSizeMap
         {
             for(int x = 0; x < w11; x++)
             {
-                (*depthSimMapFused->dsm)[(y + hPart * hPartHeightGlob) * w11 + x] =
+                depthSimMapFused->dsm[(y + hPart * hPartHeightGlob) * w11 + x] =
                     (*depthSimMapFusedHPart)[y * w11 + x];
             }
         }
@@ -203,7 +203,7 @@ DepthSimMap* RefineRc::optimizeDepthSimMapCUDA(DepthSimMap* depthPixSizeMapVis,
         dataMapsPtrs->reserve(dataMaps->size());
         for(int i = 0; i < dataMaps->size(); i++)
         {
-            dataMapsPtrs->push_back((*dataMaps)[i]->dsm);
+            dataMapsPtrs->push_back(&(*dataMaps)[i]->dsm);
         }
 
         int nParts = 4;

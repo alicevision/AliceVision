@@ -154,10 +154,10 @@ DepthSimMap* SemiGlobalMatchingParams::getDepthSimMapFromBestIdVal(int w, int h,
                 // printf("fpdepthId %i, fpPlaneDepth %f, depth %f, x %i y
                 // %i\n",fpdepthId,fpPlaneDepth,depth,pixScale1.x,pixScale1.y);
 
-                //(*depthSimMap->dsm)[(pix.y/step)*(depthSimMap->w)+(pix.x/step)].x = depth;
-                //(*depthSimMap->dsm)[(pix.y/step)*(depthSimMap->w)+(pix.x/step)].y = sim;
-                (*depthSimMap->dsm)[y * volDimX + x].depth = depth;
-                (*depthSimMap->dsm)[y * volDimX + x].sim = sim;
+                //depthSimMap->dsm[(pix.y/step)*(depthSimMap->w)+(pix.x/step)].x = depth;
+                //depthSimMap->dsm[(pix.y/step)*(depthSimMap->w)+(pix.x/step)].y = sim;
+                depthSimMap->dsm[y * volDimX + x].depth = depth;
+                depthSimMap->dsm[y * volDimX + x].sim = sim;
             }
             else
             {
