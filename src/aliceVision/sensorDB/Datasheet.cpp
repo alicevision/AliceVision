@@ -30,7 +30,9 @@ bool Datasheet::operator==(const Datasheet& other) const
   brandA.erase(std::remove_if(brandA.begin(), brandA.end(), ::isspace), brandA.end()); //remove spaces
   brandB.erase(std::remove_if(brandB.begin(), brandB.end(), ::isspace), brandB.end()); //remove spaces
 
-  if(brandA == brandB)
+  if((brandA == brandB) ||
+     (boost::algorithm::starts_with(brandA, brandB)) ||
+     (boost::algorithm::starts_with(brandB, brandA)))
   {
     std::string modelA = _model;
     std::string modelB = other._model;

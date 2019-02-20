@@ -12,7 +12,6 @@
 #include <aliceVision/mvsData/StaticVector.hpp>
 #include <aliceVision/mvsData/Voxel.hpp>
 #include <aliceVision/mvsUtils/common.hpp>
-#include <aliceVision/mvsUtils/PreMatchCams.hpp>
 #include <aliceVision/mesh/Mesh.hpp>
 #include <aliceVision/fuseCut/delaunayGraphCutTypes.hpp>
 #include <aliceVision/fuseCut/VoxelsGrid.hpp>
@@ -77,7 +76,6 @@ public:
     };
 
     mvsUtils::MultiViewParams* mp;
-    mvsUtils::PreMatchCams* pc;
 
     GEO::Delaunay_var _tetrahedralization;
     /// 3D points coordinates
@@ -96,7 +94,7 @@ public:
 
     static const GEO::index_t NO_TETRAHEDRON = GEO::NO_CELL;
 
-    DelaunayGraphCut(mvsUtils::MultiViewParams* _mp, mvsUtils::PreMatchCams* _pc);
+    DelaunayGraphCut(mvsUtils::MultiViewParams* _mp);
     virtual ~DelaunayGraphCut();
 
     /// Get absolute opposite vertex index
@@ -250,8 +248,8 @@ public:
     StaticVector<int> getIsUsedPerCamera() const;
     StaticVector<int> getSortedUsedCams() const;
 
+    void addPointsFromSfM(const Point3d hexah[8], const StaticVector<int>& cams, const sfmData::SfMData& sfmData);
     void addPointsFromCameraCenters(const StaticVector<int>& cams, float minDist);
-
     void addPointsToPreventSingularities(const Point3d Voxel[], float minDist);
 
     /**
@@ -318,8 +316,10 @@ public:
                                 bool update, Point3d hexahInflated[8], const std::string& tmpCamsPtsFolderName,
                                 const Point3d& spaceSteps);
 
-    void createDensePointCloudFromDepthMaps(Point3d hexah[8], const StaticVector<int>& cams, StaticVector<int>* voxelsIds, VoxelsGrid* ls, const FuseParams& fuseParams);
-    void createDensePointCloudFromSfM(const Point3d hexah[8], const StaticVector<int>& cams, const sfmData::SfMData& sfmData);
+
+    void createDensePointCloud(Point3d hexah[8], const StaticVector<int>& cams, const sfmData::SfMData* sfmData, const FuseParams* depthMapsFuseParams);
+    void createDensePointCloudFromPrecomputedDensePoints(Point3d hexah[8], const StaticVector<int>& cams, StaticVector<int>* voxelsIds, VoxelsGrid* ls);
+
     void createGraphCut(Point3d hexah[8], const StaticVector<int>& cams, VoxelsGrid* ls, const std::string& folderName, const std::string& tmpCamsPtsFolderName,
                         bool removeSmallSegments, const Point3d& spaceSteps);
 

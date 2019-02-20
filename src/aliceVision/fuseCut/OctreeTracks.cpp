@@ -461,8 +461,8 @@ void OctreeTracks::trackStruct::doPrintf()
         ALICEVISION_LOG_INFO("\t- cam: " << i << ", rc: " << cams[i].x << ", val: " << cams[i].y);
 }
 
-OctreeTracks::OctreeTracks(const Point3d* _voxel, mvsUtils::MultiViewParams* _mp, mvsUtils::PreMatchCams* _pc, Voxel dimensions)
-    : Fuser(_mp, _pc)
+OctreeTracks::OctreeTracks(const Point3d* _voxel, mvsUtils::MultiViewParams* _mp, Voxel dimensions)
+    : Fuser(_mp)
 {
     numSubVoxsX = dimensions.x;
     numSubVoxsY = dimensions.y;
@@ -671,7 +671,7 @@ void OctreeTracks::filterOctreeTracks2(StaticVector<trackStruct*>* tracks)
 StaticVector<OctreeTracks::trackStruct*>* OctreeTracks::fillOctree(int maxPts, std::string depthMapsPtsSimsTmpDir)
 {
     long t1 = clock();
-    StaticVector<int> cams = pc->findCamsWhichIntersectsHexahedron(vox, depthMapsPtsSimsTmpDir + "minMaxDepths.bin");
+    StaticVector<int> cams = mp->findCamsWhichIntersectsHexahedron(vox, depthMapsPtsSimsTmpDir + "minMaxDepths.bin");
     if(mp->verbose)
         mvsUtils::printfElapsedTime(t1, "findCamsWhichIntersectsHexahedron");
     if(mp->verbose)

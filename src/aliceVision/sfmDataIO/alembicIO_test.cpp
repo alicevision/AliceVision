@@ -51,10 +51,12 @@ SfMData createTestScene(IndexT singleViewsCount,
     sfm_data.setPose(*view, CameraPose(geometry::Pose3(r, c)));
 
     // Add intrinsics
-    if (bSharedIntrinsic)
+    if(bSharedIntrinsic)
     {
-      if (i == 0)
+      if(i == 0)
+      {
         sfm_data.intrinsics[0] = std::make_shared<camera::Pinhole>(1000, 1000, 36.0, std::rand()%10000, std::rand()%10000);
+      }
     }
     else
     {
@@ -75,7 +77,12 @@ SfMData createTestScene(IndexT singleViewsCount,
 
     for(IndexT subPoseId = 0; subPoseId < subPoseCount; ++subPoseId)
     {
-      rig.setSubPose(subPoseId, RigSubPose());
+      {
+        const Mat3 r = Mat3::Random();
+        const Vec3 c = Vec3::Random();
+        rig.setSubPose(subPoseId, RigSubPose(geometry::Pose3(r, c), ERigSubPoseStatus::ESTIMATED));
+      }
+
       sfm_data.intrinsics[nbIntrinsics + subPoseId] = std::make_shared<camera::Pinhole>(1000, 1000, 36.0, std::rand()%10000, std::rand()%10000);
 
       for(std::size_t pose = 0; pose < nbRigPoses; ++pose)
@@ -92,12 +99,15 @@ SfMData createTestScene(IndexT singleViewsCount,
                                                             rigId,
                                                             subPoseId);
 
-        if((pose == 0) || (subPoseId == 0))
+        if(subPoseId == 0)
         {
           const Mat3 r = Mat3::Random();
           const Vec3 c = Vec3::Random();
           sfm_data.setPose(*view, CameraPose(geometry::Pose3(r, c)));
         }
+
+        view->setFrameId(nbPoses + pose);
+        view->setIndependantPose(false);
 
         sfm_data.views[nbViews] = view;
         ++nbViews;

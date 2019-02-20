@@ -217,9 +217,9 @@ std::string getFileNameFromViewId(const MultiViewParams* mp, int viewId, EFileTy
       case EFileType::depthMap:
       {
           if(scale == 0)
-              folder = mp->getDepthMapFilterFolder();
+              folder = mp->getDepthMapsFilterFolder();
           else
-              folder = mp->getDepthMapFolder();
+              folder = mp->getDepthMapsFolder();
           suffix = "_depthMap";
           ext = "exr";
           break;
@@ -227,9 +227,9 @@ std::string getFileNameFromViewId(const MultiViewParams* mp, int viewId, EFileTy
       case EFileType::simMap:
       {
           if(scale == 0)
-              folder = mp->getDepthMapFilterFolder();
+              folder = mp->getDepthMapsFilterFolder();
           else
-              folder = mp->getDepthMapFolder();
+              folder = mp->getDepthMapsFolder();
           suffix = "_simMap";
           ext = "exr";
           break;
@@ -246,13 +246,6 @@ std::string getFileNameFromViewId(const MultiViewParams* mp, int viewId, EFileTy
           ext = "tmp";
           break;
       }
-      case EFileType::depthMapInfo:
-      {
-          folder = mp->getDepthMapFolder();
-          suffix = "_depthMapInfo";
-          ext = "tmp";
-          break;
-      }
       case EFileType::camMap:
       {
           suffix = "_camMap";
@@ -261,7 +254,7 @@ std::string getFileNameFromViewId(const MultiViewParams* mp, int viewId, EFileTy
       }
       case EFileType::nmodMap:
       {
-          folder = mp->getDepthMapFilterFolder();
+          folder = mp->getDepthMapsFilterFolder();
           suffix = "_nmodMap";
           ext = "png";
           break;
@@ -390,31 +383,6 @@ void memcpyRGBImageFromFileToArr(int camId, Color* imgArr, const std::string& fi
 
         }
     }
-}
-
-bool getDepthMapInfo(int refImgFileId, const MultiViewParams* mp, float& mindepth, float& maxdepth,
-                     StaticVector<int>** tcams)
-{
-    *tcams = nullptr;
-    FILE* f = mv_openFile(mp, refImgFileId, EFileType::depthMapInfo, "r");
-    if(f == nullptr)
-    {
-        ALICEVISION_LOG_WARNING("Depth map info: " << refImgFileId << " does not exists.");
-        return false;
-    }
-
-    int ntcams;
-    fscanf(f, "minDepth %f, maxDepth %f, ntcams %i, tcams", &mindepth, &maxdepth, &ntcams);
-    (*tcams) = new StaticVector<int>();
-    (*tcams)->reserve(ntcams);
-    for(int c = 0; c < ntcams; c++)
-    {
-        int tc;
-        fscanf(f, " %i", &tc);
-        (*tcams)->push_back(tc);
-    }
-    fclose(f);
-    return true;
 }
 
 bool DeleteDirectory(const std::string& sPath)

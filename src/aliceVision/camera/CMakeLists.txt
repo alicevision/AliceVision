@@ -4,6 +4,7 @@ set(camera_files_headers
 	cameraCommon.hpp
 	cameraUndistortImage.hpp
 	IntrinsicBase.hpp
+	IntrinsicInitMode.hpp
 	Pinhole.hpp
 	PinholeBrown.hpp
 	PinholeFisheye.hpp

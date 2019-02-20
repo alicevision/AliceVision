@@ -118,7 +118,7 @@ void SemiGlobalMatchingRcTc::computeDepthSimMapVolume(
     // move to GPU eventually
     std::fill_n( volume_buf, volume_num_floats, 255.0f );
 
-#warning change sweep to record depth data at _rcTcDepthRanges[j].x-startingDepth instead of 0
+//#warning change sweep to record depth data at _rcTcDepthRanges[j].x-startingDepth instead of 0
     std::vector<OneTC> tcs;
     for( auto j : _index_set )
     {

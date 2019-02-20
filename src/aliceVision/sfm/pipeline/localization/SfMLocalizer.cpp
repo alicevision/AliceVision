@@ -65,7 +65,7 @@ bool SfMLocalizer::Localize(const Pair& imageSize,
     KernelType kernel(resectionData.pt2D, imageSize.first, imageSize.second, resectionData.pt3D);
     // Robust estimation of the Projection matrix and its precision
     const std::pair<double,double> ACRansacOut =
-      aliceVision::robustEstimation::ACRANSAC(kernel, resectionData.vec_inliers, resectionData.max_iteration, &P, precision, true);
+      aliceVision::robustEstimation::ACRANSAC(kernel, resectionData.vec_inliers, resectionData.max_iteration, &P, precision);
     // Update the upper bound precision of the model found by AC-RANSAC
     resectionData.error_max = ACRansacOut.first;
   }
@@ -102,7 +102,7 @@ bool SfMLocalizer::Localize(const Pair& imageSize,
 
         // Robust estimation of the Projection matrix and its precision
         const std::pair<double, double> ACRansacOut =
-                aliceVision::robustEstimation::ACRANSAC(kernel, resectionData.vec_inliers, resectionData.max_iteration, &P, precision, true);
+                aliceVision::robustEstimation::ACRANSAC(kernel, resectionData.vec_inliers, resectionData.max_iteration, &P, precision);
         // Update the upper bound precision of the model found by AC-RANSAC
         resectionData.error_max = ACRansacOut.first;
         break;
@@ -207,17 +207,17 @@ bool SfMLocalizer::RefinePose(camera::IntrinsicBase* intrinsics,
     tinyScene.structure[i] = std::move(landmark);
   }
 
-  BundleAdjustmentCeres bundle_adjustment_obj;
-  BA_Refine refineOptions = BA_REFINE_NONE;
+  BundleAdjustmentCeres BA;
+  BundleAdjustment::ERefineOptions refineOptions = BundleAdjustment::REFINE_NONE;
 
   if(refinePose)
-    refineOptions |= BA_REFINE_ROTATION | BA_REFINE_TRANSLATION;
+    refineOptions |= BundleAdjustment::REFINE_ROTATION | BundleAdjustment::REFINE_TRANSLATION;
   if(refineIntrinsic)
-    refineOptions |= BA_REFINE_INTRINSICS_ALL;
+    refineOptions |= BundleAdjustment::REFINE_INTRINSICS_ALL;
 
-  const bool baStatus = bundle_adjustment_obj.Adjust(tinyScene, refineOptions);
+  const bool success = BA.adjust(tinyScene, refineOptions);
 
-  if(!baStatus)
+  if(!success)
     return false;
 
   pose = tinyScene.getPose(*view).getTransform();

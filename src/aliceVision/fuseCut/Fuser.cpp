@@ -58,11 +58,9 @@ unsigned long computeNumberOfAllPoints(const mvsUtils::MultiViewParams* mp, int 
     return npts;
 }
 
-Fuser::Fuser(const mvsUtils::MultiViewParams* _mp, mvsUtils::PreMatchCams* _pc)
+Fuser::Fuser(const mvsUtils::MultiViewParams* _mp)
   : mp(_mp)
-  , pc(_pc)
-{
-}
+{}
 
 Fuser::~Fuser()
 {
@@ -187,7 +185,7 @@ bool Fuser::filterGroupsRC(int rc, int pixSizeBall, int pixSizeBallWSP, int nNea
     numOfPtsMap->reserve(w * h);
     numOfPtsMap->resize_with(w * h, 0);
 
-    StaticVector<int> tcams = pc->findNearestCamsFromLandmarks(rc, nNearestCams);
+    StaticVector<int> tcams = mp->findNearestCamsFromLandmarks(rc, nNearestCams);
 
     for(int c = 0; c < tcams.size(); c++)
     {
@@ -320,12 +318,12 @@ bool Fuser::filterDepthMapsRC(int rc, int minNumOfModals, int minNumOfModalsWSP2
     metadata.push_back(oiio::ParamValue("AliceVision:iCamArr", oiio::TypeDesc(oiio::TypeDesc::DOUBLE, oiio::TypeDesc::MATRIX33), 1, mp->iCamArr[rc].m));
 
     {
-        std::vector<double> matrixP = mp->getOriginalP(rc);
-        metadata.push_back(oiio::ParamValue("AliceVision:P", oiio::TypeDesc(oiio::TypeDesc::DOUBLE, oiio::TypeDesc::MATRIX44), 1, matrixP.data()));
+      std::vector<double> matrixP = mp->getOriginalP(rc);
+      metadata.push_back(oiio::ParamValue("AliceVision:P", oiio::TypeDesc(oiio::TypeDesc::DOUBLE, oiio::TypeDesc::MATRIX44), 1, matrixP.data()));
     }
 
     imageIO::writeImage(getFileNameFromIndex(mp, rc, mvsUtils::EFileType::depthMap, 0), w, h, depthMap, imageIO::EImageQuality::LOSSLESS, metadata);
-    imageIO::writeImage(getFileNameFromIndex(mp, rc, mvsUtils::EFileType::simMap, 0), w, h, simMap);
+    imageIO::writeImage(getFileNameFromIndex(mp, rc, mvsUtils::EFileType::simMap, 0), w, h, simMap, imageIO::EImageQuality::OPTIMIZED, metadata);
 
     if(mp->verbose)
         ALICEVISION_LOG_DEBUG(rc << " solved.");
@@ -335,15 +333,11 @@ bool Fuser::filterDepthMapsRC(int rc, int minNumOfModals, int minNumOfModalsWSP2
     return true;
 }
 
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
 float Fuser::computeAveragePixelSizeInHexahedron(Point3d* hexah, int step, int scale)
 {
     int scaleuse = std::max(1, scale);
 
-    StaticVector<int> cams = pc->findCamsWhichIntersectsHexahedron(hexah);
+    StaticVector<int> cams = mp->findCamsWhichIntersectsHexahedron(hexah);
     int j = 0;
     float av = 0.0f;
     float nav = 0.0f;
@@ -563,10 +557,49 @@ void Fuser::divideSpaceFromDepthMaps(Point3d* hexah, float& minPixSize)
     hexah[6] = cg + v1 * mind1 + v2 * mind2 + v3 * mind3;
     hexah[7] = cg + v1 * maxd1 + v2 * mind2 + v3 * mind3;
 
+    const double volume = mvsUtils::computeHexahedronVolume(hexah);
+
+    if(std::isnan(volume) || volume < std::numeric_limits<double>::epsilon())
+      throw std::runtime_error("Failed to estimate space from depth maps: The space bounding box is too small.");
+
     ALICEVISION_LOG_INFO("Estimate space done.");
 }
 
-void Fuser::divideSpaceFromSfM(const sfmData::SfMData& sfmData, Point3d* hexah, std::size_t minObservations) const
+bool checkLandmarkMinObservationAngle(const sfmData::SfMData& sfmData, const sfmData::Landmark& landmark, float minObservationAngle)
+{
+  for(const auto& observationPairI : landmark.observations)
+  {
+    const IndexT I = observationPairI.first;
+    const sfmData::View& viewI = *(sfmData.getViews().at(I));
+    const geometry::Pose3 poseI = sfmData.getPose(viewI).getTransform();
+    const camera::IntrinsicBase* intrinsicPtrI = sfmData.getIntrinsicPtr(viewI.getIntrinsicId());
+
+    for(const auto& observationPairJ : landmark.observations)
+    {
+      const IndexT J = observationPairJ.first;
+
+      // cannot compare the current view with itself
+      if(I == J)
+        continue;
+
+      const sfmData::View& viewJ = *(sfmData.getViews().at(J));
+      const geometry::Pose3 poseJ = sfmData.getPose(viewJ).getTransform();
+      const camera::IntrinsicBase* intrinsicPtrJ = sfmData.getIntrinsicPtr(viewJ.getIntrinsicId());
+
+      const double angle = camera::AngleBetweenRays(poseI, intrinsicPtrI, poseJ, intrinsicPtrJ, observationPairI.second.x, observationPairJ.second.x);
+
+      // check angle between two observation
+      if(angle < minObservationAngle)
+        continue;
+
+      return true;
+    }
+  }
+
+  return false;
+}
+
+void Fuser::divideSpaceFromSfM(const sfmData::SfMData& sfmData, Point3d* hexah, std::size_t minObservations, float minObservationAngle) const
 {
   ALICEVISION_LOG_INFO("Estimate space from SfM.");
 
@@ -588,7 +621,12 @@ void Fuser::divideSpaceFromSfM(const sfmData::SfMData& sfmData, Point3d* hexah, 
   {
     const sfmData::Landmark& landmark = landmarkPair.second;
 
+    // check number of observations
     if(landmark.observations.size() < minObservations)
+      continue;
+
+    // check angle between observations
+    if(!checkLandmarkMinObservationAngle(sfmData, landmark, minObservationAngle))
       continue;
 
     const double x = landmark.X(0);
@@ -618,6 +656,11 @@ void Fuser::divideSpaceFromSfM(const sfmData::SfMData& sfmData, Point3d* hexah, 
   hexah[5] = Point3d(xMin, yMax, zMin);
   hexah[6] = Point3d(xMin, yMin, zMin);
   hexah[7] = Point3d(xMax, yMin, zMin);
+
+  const double volume = mvsUtils::computeHexahedronVolume(hexah);
+
+  if(std::isnan(volume) || volume < std::numeric_limits<double>::epsilon())
+    throw std::runtime_error("Failed to estimate space from SfM: The space bounding box is too small.");
 
   ALICEVISION_LOG_INFO("Estimate space done.");
 }

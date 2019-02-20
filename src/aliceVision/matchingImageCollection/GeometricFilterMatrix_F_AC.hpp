@@ -100,7 +100,7 @@ struct GeometricFilterMatrix_F_AC: public GeometricFilterMatrix
 
     // Retrieve all 2D features as undistorted positions into flat arrays
     Mat xI, xJ;
-    MatchesPairToMat(putativeMatchesPerType, cam_I, cam_J,
+    fillMatricesWithUndistortFeaturesMatches(putativeMatchesPerType, cam_I, cam_J,
                      region_I, region_J,
                      descTypes, xI, xJ);
     std::vector<size_t> inliers;

@@ -153,7 +153,6 @@ inline ErrorIndex bestNFA(
  * @param[in] nIter maximum number of consecutive iterations
  * @param[out] model returned model if found
  * @param[in] precision upper bound of the precision (squared error)
- * @param[in] bVerbose display console log
  *
  * @return (errorMax, minNFA)
  */
@@ -162,8 +161,7 @@ std::pair<double, double> ACRANSAC(const Kernel &kernel,
   std::vector<size_t> & vec_inliers,
   size_t nIter = 1024,
   typename Kernel::Model * model = nullptr,
-  double precision = std::numeric_limits<double>::infinity(),
-  bool bVerbose = false)
+  double precision = std::numeric_limits<double>::infinity())
 {
   vec_inliers.clear();
 
@@ -259,16 +257,13 @@ std::pair<double, double> ACRANSAC(const Kernel &kernel,
           errorMax = vec_residuals[best.second-1].first; // Error threshold
           if(model) *model = vec_models[k];
 
-          if(bVerbose)
-          {
-            ALICEVISION_LOG_DEBUG("  nfa=" << minNFA
-              << " inliers=" << best.second << "/" << nData
-              << " precisionNormalized=" << errorMax
-              << " precision=" << kernel.unormalizeError(errorMax)
-              << " (iter=" << iter
-              << ",sample=" << vec_sample
-              << ")");
-          }
+          ALICEVISION_LOG_TRACE("  nfa=" << minNFA
+            << " inliers=" << best.second << "/" << nData
+            << " precisionNormalized=" << errorMax
+            << " precision=" << kernel.unormalizeError(errorMax)
+            << " (iter=" << iter
+            << ",sample=" << vec_sample
+            << ")");
         }
       } //if(bACRansacMode)
     } //for(size_t k...

@@ -34,15 +34,15 @@ namespace fs = boost::filesystem;
 
 MultiViewParams::MultiViewParams(const sfmData::SfMData& sfmData,
                                  const std::string& imagesFolder,
-                                 const std::string& depthMapFolder,
-                                 const std::string& depthMapFilterFolder,
+                                 const std::string& depthMapsFolder,
+                                 const std::string& depthMapsFilterFolder,
                                  bool readFromDepthMaps,
                                  int downscale,
                                  StaticVector<CameraMatrices>* cameras)
     : _sfmData(sfmData)
     , _imagesFolder(imagesFolder + "/")
-    , _depthMapFolder(depthMapFolder + "/")
-    , _depthMapFilterFolder(depthMapFilterFolder + "/")
+    , _depthMapsFolder(depthMapsFolder + "/")
+    , _depthMapsFilterFolder(depthMapsFilterFolder + "/")
     , _processDownscale(downscale)
 {
     verbose = userParams.get<bool>("global.verbose", true);
@@ -86,9 +86,6 @@ MultiViewParams::MultiViewParams(const sfmData::SfMData& sfmData,
           _imageIdsPerViewId[view.getViewId()] = i;
           ++i;
         }
-
-        if(getNbCameras() <= 0)
-            throw std::runtime_error("No defined camera found.");
 
         ALICEVISION_LOG_INFO("Found " << dimensions.size() << " image dimension(s): ");
         for(const auto& dim : dimensions)
@@ -534,6 +531,115 @@ void MultiViewParams::decomposeProjectionMatrix(Point3d& Co, Matrix3x3& Ro, Matr
     iKo = Ko.inverse();
     iRo = Ro.inverse();
     iPo = iRo * iKo;
+}
+
+
+StaticVector<int> MultiViewParams::findNearestCamsFromLandmarks(int rc, int nbNearestCams) const
+{
+  StaticVector<int> out;
+  std::vector<SortedId> ids;
+  ids.reserve(getNbCameras());
+
+  for(int tc = 0; tc < getNbCameras(); ++tc)
+    ids.push_back(SortedId(tc,0));
+
+  const IndexT viewId = getViewId(rc);
+  const sfmData::View& view = *(_sfmData.getViews().at(viewId));
+  const geometry::Pose3 pose = _sfmData.getPose(view).getTransform();
+  const camera::IntrinsicBase* intrinsicPtr = _sfmData.getIntrinsicPtr(view.getIntrinsicId());
+
+  for(const auto& landmarkPair :_sfmData.getLandmarks())
+  {
+    const auto& observations = landmarkPair.second.observations;
+
+    auto viewObsIt = observations.find(viewId);
+    if(viewObsIt == observations.end())
+      continue;
+
+    for(const auto& observationPair : observations)
+    {
+      const IndexT otherViewId = observationPair.first;
+
+      if(otherViewId == viewId)
+       continue;
+
+      const sfmData::View& otherView = *(_sfmData.getViews().at(otherViewId));
+      const geometry::Pose3 otherPose = _sfmData.getPose(otherView).getTransform();
+      const camera::IntrinsicBase* otherIntrinsicPtr = _sfmData.getIntrinsicPtr(otherView.getIntrinsicId());
+
+      const double angle = camera::AngleBetweenRays(pose, intrinsicPtr, otherPose, otherIntrinsicPtr, viewObsIt->second.x, observationPair.second.x);
+
+      if(angle < _minViewAngle || angle > _maxViewAngle)
+        continue;
+
+      const int tc = getIndexFromViewId(otherViewId);
+      ++ids.at(tc).value;
+    }
+  }
+
+  qsort(&ids[0], ids.size(), sizeof(SortedId), qsortCompareSortedIdDesc);
+
+  // ensure the ideal number of target cameras is not superior to the actual number of cameras
+  const int maxTc = std::min(std::min(getNbCameras(), nbNearestCams), static_cast<int>(ids.size()));
+  out.reserve(maxTc);
+
+  for(int i = 0; i < maxTc; ++i)
+  {
+    // a minimum of 10 common points is required (10*2 because points are stored in both rc/tc combinations)
+    if(ids[i].value > (10 * 2))
+      out.push_back(ids[i].id);
+  }
+
+  if(out.size() < nbNearestCams)
+    ALICEVISION_LOG_INFO("Found only " << out.size() << "/" << nbNearestCams << " nearest cameras for view id: " << getViewId(rc));
+
+  return out;
+}
+
+StaticVector<int> MultiViewParams::findCamsWhichIntersectsHexahedron(const Point3d hexah[8], const std::string& minMaxDepthsFileName) const
+{
+    StaticVector<Point2d>* minMaxDepths = loadArrayFromFile<Point2d>(minMaxDepthsFileName);
+    StaticVector<int> tcams;
+    tcams.reserve(getNbCameras());
+    for(int rc = 0; rc < getNbCameras(); rc++)
+    {
+        const float minDepth = (*minMaxDepths)[rc].x;
+        const float maxDepth = (*minMaxDepths)[rc].y;
+        if((minDepth > 0.0f) && (maxDepth > minDepth))
+        {
+            Point3d rchex[8];
+            getCamHexahedron(CArr.at(rc), iCamArr.at(rc), getWidth(rc), getHeight(rc), minDepth, maxDepth, rchex);
+            if(intersectsHexahedronHexahedron(rchex, hexah))
+                tcams.push_back(rc);
+        }
+    }
+    delete minMaxDepths;
+    return tcams;
+}
+
+StaticVector<int> MultiViewParams::findCamsWhichIntersectsHexahedron(const Point3d hexah[8]) const
+{
+    StaticVector<int> tcams;
+    tcams.reserve(getNbCameras());
+    for(int rc = 0; rc < getNbCameras(); rc++)
+    {
+        oiio::ParamValueList metadata;
+        imageIO::readImageMetadata(getImagePath(rc), metadata);
+
+        const float minDepth = metadata.get_float("AliceVision:minDepth", -1);
+        const float maxDepth = metadata.get_float("AliceVision:maxDepth", -1);
+
+        if(minDepth == -1 && maxDepth == -1)
+          throw std::runtime_error(std::string("Cannot find min / max depth metadata in image: ") + getImagePath(rc));
+
+        {
+            Point3d rchex[8];
+            getCamHexahedron(CArr.at(rc), iCamArr.at(rc), getWidth(rc), getHeight(rc), minDepth, maxDepth, rchex);
+            if(intersectsHexahedronHexahedron(rchex, hexah))
+                tcams.push_back(rc);
+        }
+    }
+    return tcams;
 }
 
 } // namespace mvsUtils

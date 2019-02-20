@@ -72,7 +72,7 @@ BOOST_AUTO_TEST_CASE(GLOBAL_SFM_RotationAveragingL2_TranslationAveragingL1)
   sfmEngine.SetMatchesProvider(&pairwiseMatches);
 
   // Configure reconstruction parameters
-  sfmEngine.setFixedIntrinsics(true);
+  sfmEngine.setLockAllIntrinsics(true);
 
   // Configure motion averaging method
   sfmEngine.SetRotationAveragingMethod(ROTATION_AVERAGING_L2);
@@ -122,7 +122,7 @@ BOOST_AUTO_TEST_CASE(GLOBAL_SFM_RotationAveragingL1_TranslationAveragingL1)
   sfmEngine.SetMatchesProvider(&pairwiseMatches);
 
   // Configure reconstruction parameters
-  sfmEngine.setFixedIntrinsics(true);
+  sfmEngine.setLockAllIntrinsics(true);
 
   // Configure motion averaging method
   sfmEngine.SetRotationAveragingMethod(ROTATION_AVERAGING_L1);
@@ -172,7 +172,7 @@ BOOST_AUTO_TEST_CASE(GLOBAL_SFM_RotationAveragingL2_TranslationAveragingL2_Chord
   sfmEngine.SetMatchesProvider(&pairwiseMatches);
 
   // Configure reconstruction parameters
-  sfmEngine.setFixedIntrinsics(true);
+  sfmEngine.setLockAllIntrinsics(true);
 
   // Configure motion averaging method
   sfmEngine.SetRotationAveragingMethod(ROTATION_AVERAGING_L2);
@@ -222,7 +222,7 @@ BOOST_AUTO_TEST_CASE(GLOBAL_SFM_RotationAveragingL2_TranslationAveragingSoftL1)
   sfmEngine.SetMatchesProvider(&pairwiseMatches);
 
   // Configure reconstruction parameters
-  sfmEngine.setFixedIntrinsics(true);
+  sfmEngine.setLockAllIntrinsics(true);
 
   // Configure motion averaging method
   sfmEngine.SetRotationAveragingMethod(ROTATION_AVERAGING_L2);

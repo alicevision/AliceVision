@@ -49,8 +49,13 @@ BOOST_AUTO_TEST_CASE(SEQUENTIAL_SFM_Known_Intrinsics)
   sfmData2.getPoses().clear();
   sfmData2.structure.clear();
 
+  ReconstructionEngine_sequentialSfM::Params sfmParams;
+  sfmParams.userInitialImagePair = Pair(0, 1);
+  sfmParams.lockAllIntrinsics = true;
+
   ReconstructionEngine_sequentialSfM sfmEngine(
     sfmData2,
+    sfmParams,
     "./",
     "./Reconstruction_Report.html");
 
@@ -67,12 +72,6 @@ BOOST_AUTO_TEST_CASE(SEQUENTIAL_SFM_Known_Intrinsics)
   // Configure data provider (Features and Matches)
   sfmEngine.setFeatures(&featuresPerView);
   sfmEngine.setMatches(&pairwiseMatches);
-
-  // Set an initial pair
-  sfmEngine.setInitialPair(Pair(0,1));
-
-  // Configure reconstruction parameters
-  sfmEngine.setFixedIntrinsics(true);
 
   BOOST_CHECK (sfmEngine.process());
 
@@ -109,8 +108,13 @@ BOOST_AUTO_TEST_CASE(SEQUENTIAL_SFM_Partially_Known_Intrinsics)
     sfmData2.views[2]->setIntrinsicId(1);
   }
 
+  ReconstructionEngine_sequentialSfM::Params sfmParams;
+  // sfmParams.userInitialImagePair = Pair(0, 1); // test automatic selection of initial pair
+  sfmParams.lockAllIntrinsics = true;
+
   ReconstructionEngine_sequentialSfM sfmEngine(
     sfmData2,
+    sfmParams,
     "./",
     "./Reconstruction_Report.html");
 
@@ -128,11 +132,6 @@ BOOST_AUTO_TEST_CASE(SEQUENTIAL_SFM_Partially_Known_Intrinsics)
   sfmEngine.setFeatures(&featuresPerView);
   sfmEngine.setMatches(&pairwiseMatches);
 
-  // Set an initial pair
-  // sfmEngine.setInitialPair(Pair(0,1)); // TODO: test without
-
-  // Configure reconstruction parameters
-  sfmEngine.setFixedIntrinsics(true);
   BOOST_CHECK (sfmEngine.process());
 
   const SfMData& finalSfMData = sfmEngine.getSfMData();
@@ -161,8 +160,13 @@ BOOST_AUTO_TEST_CASE(SEQUENTIAL_SFM_Known_Rig)
   sfmData2.getPoses().clear();
   sfmData2.structure.clear();
 
+  ReconstructionEngine_sequentialSfM::Params sfmParams;
+  sfmParams.userInitialImagePair = Pair(0, 2);
+  sfmParams.lockAllIntrinsics = true;
+
   ReconstructionEngine_sequentialSfM sfmEngine(
     sfmData2,
+    sfmParams,
     "./",
     "./Reconstruction_Report.html");
 
@@ -179,12 +183,6 @@ BOOST_AUTO_TEST_CASE(SEQUENTIAL_SFM_Known_Rig)
   // Configure data provider (Features and Matches)
   sfmEngine.setFeatures(&featuresPerView);
   sfmEngine.setMatches(&pairwiseMatches);
-
-  // Set an initial pair
-  sfmEngine.setInitialPair(Pair(0,2));
-
-  // Configure reconstruction parameters
-  sfmEngine.setFixedIntrinsics(true);
 
   BOOST_CHECK (sfmEngine.process());
 

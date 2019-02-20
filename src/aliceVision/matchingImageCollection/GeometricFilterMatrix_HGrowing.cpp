@@ -159,7 +159,7 @@ void filterMatchesByHGrowing(const std::vector<feature::SIOPointFeature>& siofea
       {
         #pragma omp critical
         {
-          if(iH == 3) std::cout << "best iMatch" << iMatch << std::endl;
+          // if(iH == 3) { std::cout << "best iMatch" << iMatch << std::endl; }
           bestMatchesId = planarMatchesId; // be careful: it contains the id. in the 'remainingMatches' vector not 'putativeMatches' vector.
           bestHomography = homography;
         }

@@ -674,7 +674,7 @@ bool GlobalSfMTranslationAveragingSolver::Estimate_T_triplet(
 
   TrifocalTensorModel T;
   const std::pair<double,double> acStat =
-    robustEstimation::ACRANSAC(kernel, vec_inliers, ORSA_ITER, &T, precision/min_focal, false);
+    robustEstimation::ACRANSAC(kernel, vec_inliers, ORSA_ITER, &T, precision/min_focal);
   // If robust estimation fails => stop.
   if (precision == std::numeric_limits<double>::infinity())
     return false;
@@ -751,7 +751,7 @@ bool GlobalSfMTranslationAveragingSolver::Estimate_T_triplet(
   BundleAdjustmentCeres::BA_options options(false, false);
   options._linear_solver_type = ceres::SPARSE_SCHUR;
   BundleAdjustmentCeres bundle_adjustment_obj(options);
-  if (bundle_adjustment_obj.Adjust(tiny_scene, BA_REFINE_TRANSLATION | BA_REFINE_STRUCTURE))
+  if (bundle_adjustment_obj.Adjust(tiny_scene, REFINE_TRANSLATION | REFINE_STRUCTURE))
   {
     // export scene for visualization
     std::ostringstream os;

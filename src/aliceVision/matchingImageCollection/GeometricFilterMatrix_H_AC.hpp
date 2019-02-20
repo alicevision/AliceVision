@@ -57,7 +57,7 @@ struct GeometricFilterMatrix_H_AC : public GeometricFilterMatrix
 
     // Retrieve all 2D features as undistorted positions into flat arrays
     Mat xI, xJ;
-    MatchesPairToMat(pairIndex, putativeMatchesPerType, sfmData, regionsPerView, descTypes, xI, xJ);
+    fillMatricesWithUndistortFeaturesMatches(pairIndex, putativeMatchesPerType, sfmData, regionsPerView, descTypes, xI, xJ);
 
     // Define the AContrario adapted Homography matrix solver
     typedef ACKernelAdaptor<

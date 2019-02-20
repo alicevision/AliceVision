@@ -5,8 +5,7 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
-#ifndef STL_MAP_ADDITION_H
-#define STL_MAP_ADDITION_H
+#pragma once
 
 // ---------------------------
 // Usage example :
@@ -50,6 +49,3 @@ struct RetrieveValue
 };
 
 } // namespace stl
-
-#endif // STL_MAP_ADDITION_H
-

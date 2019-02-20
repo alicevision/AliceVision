@@ -16,7 +16,6 @@
 #include <aliceVision/mvsData/StaticVector.hpp>
 #include <aliceVision/mvsData/Voxel.hpp>
 #include <aliceVision/mvsUtils/ImagesCache.hpp>
-#include <aliceVision/mvsUtils/PreMatchCams.hpp>
 #include <aliceVision/depthMap/DepthSimMap.hpp>
 #include <aliceVision/depthMap/cuda/commonStructures.hpp>
 #include <aliceVision/depthMap/cuda/tcinfo.hpp>
@@ -53,7 +52,6 @@ public:
     const int _nbest; // == 1
 
     mvsUtils::MultiViewParams* mp;
-    mvsUtils::PreMatchCams* pc;
 
     const int _CUDADeviceNo;
     Pyramid ps_texs_arr;
@@ -79,8 +77,7 @@ public:
 
     mvsUtils::ImagesCache& _ic;
 
-    PlaneSweepingCuda(int CUDADeviceNo, mvsUtils::ImagesCache& _ic, mvsUtils::MultiViewParams* _mp, mvsUtils::PreMatchCams* _pc,
-                        int scales);
+    PlaneSweepingCuda(int CUDADeviceNo, mvsUtils::ImagesCache& _ic, mvsUtils::MultiViewParams* _mp, int scales);
     ~PlaneSweepingCuda(void);
 
     void cameraToDevice( int rc, const StaticVector<int>& tcams );

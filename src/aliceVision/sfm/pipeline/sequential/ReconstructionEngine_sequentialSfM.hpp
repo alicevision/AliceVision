@@ -8,13 +8,12 @@
 #pragma once
 
 #include <aliceVision/sfm/pipeline/ReconstructionEngine.hpp>
-#include <aliceVision/sfm/LocalBundleAdjustmentData.hpp>
+#include <aliceVision/sfm/LocalBundleAdjustmentGraph.hpp>
 #include <aliceVision/sfm/pipeline/localization/SfMLocalizer.hpp>
 #include <aliceVision/sfm/pipeline/pairwiseMatchesIO.hpp>
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
 #include <aliceVision/feature/FeaturesPerView.hpp>
 #include <aliceVision/track/Track.hpp>
-
 #include <dependencies/htmlDoc/htmlDoc.hpp>
 #include <dependencies/histogram/histogram.hpp>
 
@@ -36,9 +35,61 @@ typedef std::tuple<IndexT, std::size_t, std::size_t, bool> ViewConnectionScore;
 class ReconstructionEngine_sequentialSfM : public ReconstructionEngine
 {
 public:
+  struct Params
+  {
+    Pair userInitialImagePair = { UndefinedIndexT, UndefinedIndexT };
+    int minInputTrackLength = 2;
+    int minTrackLength = 2;
+    int minPointsPerPose = 30;
+    bool useLocalBundleAdjustment = false;
+    int localBundelAdjustementGraphDistanceLimit = 1;
+
+    bool useRigConstraint = true;
+
+    /// Has fixed Intrinsics
+    bool lockAllIntrinsics = false;
+
+    /// minimum number of obersvations to triangulate a 3d point.
+    std::size_t minNbObservationsForTriangulation = 2;
+    /// a 3D point must have at least 2 obervations not too much aligned.
+    double minAngleForTriangulation = 3.0;
+    double minAngleForLandmark = 2.0;
+    double maxReprojectionError = 4.0;
+    float minAngleInitialPair = 5.0f;
+    float maxAngleInitialPair = 40.0f;
+    bool useTrackFiltering = true;
+    robustEstimation::ERobustEstimator localizerEstimator = robustEstimation::ERobustEstimator::ACRANSAC;
+    double localizerEstimatorError = std::numeric_limits<double>::infinity();
+    size_t localizerEstimatorMaxIterations = 4096;
+
+    // Pyramid scoring
+
+    const int pyramidBase = 2;
+    const int pyramidDepth = 5;
+
+    // Local Bundle Adjustment data
+
+    /// The minimum number of shared matches to create an edge between two views (nodes)
+    const std::size_t kMinNbOfMatches = 50;
+
+    // Intermediate reconstructions
+    /// extension of the intermediate reconstruction files
+    std::string sfmStepFileExtension = ".ply";
+    /// filter for the intermediate reconstruction files
+    sfmDataIO::ESfMData sfmStepFilter = sfmDataIO::ESfMData(
+      sfmDataIO::VIEWS |
+      sfmDataIO::EXTRINSICS |
+      sfmDataIO::INTRINSICS |
+      sfmDataIO::STRUCTURE |
+      sfmDataIO::OBSERVATIONS |
+      sfmDataIO::CONTROL_POINTS);
+  };
+
+public:
 
   ReconstructionEngine_sequentialSfM(const sfmData::SfMData& sfmData,
-                                     const std::string& soutDirectory,
+                                     const Params& params,
+                                     const std::string& outputFolder,
                                      const std::string& loggingFile = "");
 
   void setFeatures(feature::FeaturesPerView* featuresPerView)
@@ -49,87 +100,6 @@ public:
   void setMatches(matching::PairwiseMatches* pairwiseMatches)
   {
     _pairwiseMatches = pairwiseMatches;
-  }
-
-  void setInitialPair(const Pair& initialPair)
-  {
-    _userInitialImagePair = initialPair;
-  }
-
-  void setMinTrackLength(int minTrackLength)
-  {
-    _minTrackLength = minTrackLength;
-  }
-
-  void setMinInputTrackLength(int minInputTrackLength)
-  {
-    _minInputTrackLength = minInputTrackLength;
-  }
-
-  void setNbOfObservationsForTriangulation(std::size_t minNbObservationsForTriangulation)
-  {
-    _minNbObservationsForTriangulation = minNbObservationsForTriangulation;
-  }
-
-  void setMinAngleForTriangulation(double minAngleForTriangulation)
-  {
-    _minAngleForTriangulation = minAngleForTriangulation;
-  }
-
-  void setMinAngleForLandmark(double minAngleForLandmark)
-  {
-    _minAngleForLandmark = minAngleForLandmark;
-  }
-
-  void setMaxReprojectionError(double maxReprojectionError)
-  {
-    _maxReprojectionError = maxReprojectionError;
-  }
-
-  void setMinAngleInitialPair(float minAngleInitialPair)
-  {
-    _minAngleInitialPair = minAngleInitialPair;
-  }
-
-  void setMaxAngleInitialPair(float maxAngleInitialPair)
-  {
-    _maxAngleInitialPair = maxAngleInitialPair;
-  }
-
-  void useTrackFiltering(bool useTrackFiltering)
-  {
-    _useTrackFiltering = useTrackFiltering;
-  }
-
-  void setLocalizerEstimator(robustEstimation::ERobustEstimator estimator)
-  {
-    _localizerEstimator = estimator;
-  }
-
-  void setIntermediateFileExtension(const std::string& interFileExtension)
-  {
-    _sfmdataInterFileExtension = interFileExtension;
-  }
-
-  void setLocalBundleAdjustmentGraphDistance(std::size_t distance)
-  {
-    if(_uselocalBundleAdjustment)
-      _localBA_data->setGraphDistanceLimit(distance);
-  }
-
-  void setUseLocalBundleAdjustmentStrategy(bool v)
-  {
-    _uselocalBundleAdjustment = v;
-    if(v)
-    {
-      _localBA_data = std::make_shared<LocalBundleAdjustmentData>(_sfmData);
-      _localBA_data->setOutDirectory((fs::path(_outputFolder) / "localBA").string());
-
-      // delete all the previous data about the Local BA.
-      if(fs::exists(_localBA_data->getOutDirectory()))
-        fs::remove(_localBA_data->getOutDirectory());
-      fs::create_directory(_localBA_data->getOutDirectory());
-    }
   }
 
   /**
@@ -175,17 +145,46 @@ public:
 
   /**
    * @brief Update the reconstruction with a new resection group of images
-   * @param resectionId The resection id
-   * @param bestViewIds The best remaining view ids
-   * @param viewIds The remaining view ids
+   * @param[in] resectionId The resection id
+   * @param[in] bestViewIds The best remaining view ids
+   * @param[in] prevReconstructedViews The previously reconstructed view ids
+   * @param[in,out] viewIds The remaining view ids
+   * @return new reconstructed view ids
    */
-  void updateReconstruction(IndexT resectionId, const std::vector<IndexT>& bestViewIds, std::set<IndexT>& viewIds);
+  std::set<IndexT> resection(IndexT resectionId,
+                             const std::vector<IndexT>& bestViewIds,
+                             const std::set<IndexT>& prevReconstructedViews,
+                             std::set<IndexT>& viewIds);
+
+  /**
+   * @brief triangulate
+   * @param[in] prevReconstructedViews The previously reconstructed view ids
+   * @param[in] newReconstructedViews The newly reconstructed view ids
+   */
+  void triangulate(const std::set<IndexT>& prevReconstructedViews,
+                   const std::set<IndexT>& newReconstructedViews);
+
+  /**
+   * @brief bundleAdjustment
+   * @param[in,out] newReconstructedViews The newly reconstructed view ids
+   * @param[in] isInitialPair If true use fixed intrinsics an no nbOutliersThreshold
+   * @return true if the bundle adjustment solution is usable
+   */
+  bool bundleAdjustment(std::set<IndexT>& newReconstructedViews, bool isInitialPair = false);
 
   /**
    * @brief Export and print statistics of a complete reconstruction
    * @param[in] reconstructionTime The duration of the reconstruction
    */
   void exportStatistics(double reconstructionTime);
+
+
+  /**
+   * @brief calibrateRigs
+   * @param[in,out] updatedViews add the updated view ids to the list
+   * @return updatedViews view ids
+   */
+  void calibrateRigs(std::set<IndexT>& updatedViews);
 
   /**
    * @brief Return all the images containing matches with already reconstructed 3D points.
@@ -237,23 +236,31 @@ private:
   /**
    * @brief Automatic initial pair selection (based on a 'baseline' computation score)
    * @param[out] out_bestImagePairs
+   * @param[in] filterViewId If defined, each output pairs must contain filterViewId
    * @return
    */
-  bool getBestInitialImagePairs(std::vector<Pair>& out_bestImagePairs) const;
+  bool getBestInitialImagePairs(std::vector<Pair>& out_bestImagePairs, IndexT filterViewId = UndefinedIndexT) const;
 
   /**
    * @brief Compute MSE (Mean Square Error) and a histogram of residual values.
-   * @param[in] histogram
-   * @return MSE
+   * @param[out] histogram
+   * @return the mean number of residual values
    */
   double computeResidualsHistogram(Histogram<double>* histogram) const;
 
   /**
-   * @brief Compute MSE (Mean Square Error) and a histogram of tracks size.
-   * @param[in] histogram
-   * @return MSE
+   * @brief Compute MSE (Mean Square Error) and a histogram of landmarks' observations size.
+   * @param[out] histogram
+   * @return the mean number of observations per landmark
    */
-  double computeTracksLengthsHistogram(Histogram<double>* histogram) const;
+  double computeObservationsLengthsHistogram(Histogram<double>* histogram) const;
+
+  /**
+  * @brief Compute MSE (Mean Square Error) and a histogram of landmarks per view.
+  * @param[out] histogram
+  * @return the mean number of landmarks per view or -1 if no landmarks
+  */
+  double computeLandmarksPerViewHistogram(Histogram<double> * histo) const;
 
   /**
    * @brief Compute a score of the view for a subset of features. This is
@@ -273,7 +280,7 @@ private:
    * @param[in] trackIds: set of track IDs contained in viewId
    * @return the computed score
    */
-  std::size_t computeImageScore(IndexT viewId, const std::vector<std::size_t>& trackIds) const;
+  std::size_t computeCandidateImageScore(IndexT viewId, const std::vector<std::size_t>& trackIds) const;
 
   /**
    * @brief Apply the resection on a single view.
@@ -297,7 +304,7 @@ private:
    * @param previousReconstructedViews
    * @param newReconstructedViews
    */
-  void triangulate(sfmData::SfMData& scene, const std::set<IndexT>& previousReconstructedViews, const std::set<IndexT>& newReconstructedViews);
+  void triangulate_2Views(sfmData::SfMData& scene, const std::set<IndexT>& previousReconstructedViews, const std::set<IndexT>& newReconstructedViews);
   
   /**
    * @brief Triangulate new possible 2D tracks
@@ -306,8 +313,8 @@ private:
    * @param[in] previousReconstructedViews The list of the old reconstructed views (views index).
    * @param[in] newReconstructedViews The list of the new reconstructed views (views index).
    */
-  void triangulateMultiViews_LORANSAC(sfmData::SfMData& scene, const std::set<IndexT>& previousReconstructedViews, const std::set<IndexT>& newReconstructedViews);
-  
+  void triangulate_multiViewsLORANSAC(sfmData::SfMData& scene, const std::set<IndexT>& previousReconstructedViews, const std::set<IndexT>& newReconstructedViews);
+
   /**
    * @brief Check if a 3D points is well located in front of a set of views.
    * @param[in] pt3D A 3D point (euclidian coordinates)
@@ -326,20 +333,6 @@ private:
    * @return false if the maximal angle does not exceed the limit, else \c true.
    */
   bool checkAngles(const Vec3& pt3D, const std::set<IndexT>& viewsId, const sfmData::SfMData& scene, const double& kMinAngle);
-
-  /**
-   * @brief Bundle adjustment to refine Structure; Motion and Intrinsics
-   * @param fixedIntrinsics
-   */
-  bool BundleAdjustment(bool fixedIntrinsics);
-  
-  /**
-   * @brief Apply the bundle adjustment choosing a small amount of parameters to reduce.
-   * It reduces drastically the reconstruction time for big dataset of images.
-   * @param The parameters to refine (landmarks, intrinsics, poses) are choosen according to the their
-   * @details proximity to the cameras newly added to the reconstruction.
-   */
-  bool localBundleAdjustment(const std::set<IndexT>& newReconstructedViews);
 
   /**
    * @brief Select the candidate tracks for the next triangulation step. 
@@ -364,23 +357,10 @@ private:
    */
   std::size_t removeOutliers(double precision);
 
-  // Parameters
+private:
 
-  Pair _userInitialImagePair;
-  int _minInputTrackLength = 2;
-  int _minTrackLength = 2;
-  int _minPointsPerPose = 30;
-  bool _uselocalBundleAdjustment = false;
-  /// minimum number of obersvations to triangulate a 3d point.
-  std::size_t _minNbObservationsForTriangulation = 2;
-  /// a 3D point must have at least 2 obervations not too much aligned.
-  double _minAngleForTriangulation = 3.0;
-  double _minAngleForLandmark = 2.0;
-  double _maxReprojectionError = 4.0;
-  float _minAngleInitialPair = 5.0f;
-  float _maxAngleInitialPair = 40.0f;
-  bool _useTrackFiltering = true;
-  robustEstimation::ERobustEstimator _localizerEstimator = robustEstimation::ERobustEstimator::ACRANSAC;
+  // Parameters
+  Params _params;
 
   // Data providers
 
@@ -389,8 +369,6 @@ private:
 
   // Pyramid scoring
 
-  const int _pyramidBase = 2;
-  const int _pyramidDepth = 5;
   /// internal cache of precomputed values for the weighting of the pyramid levels
   std::vector<int> _pyramidWeights;
   int _pyramidThreshold;
@@ -409,20 +387,12 @@ private:
   // Local Bundle Adjustment data
 
   /// Contains all the data used by the Local BA approach
-  std::shared_ptr<LocalBundleAdjustmentData> _localBA_data;
-
-  // Intermediate reconstructions
-
-  /// extension of the intermediate reconstruction files
-  std::string _sfmdataInterFileExtension = ".ply";
-  /// filter for the intermediate reconstruction files
-  sfmDataIO::ESfMData _sfmdataInterFilter = sfmDataIO::ESfMData(sfmDataIO::EXTRINSICS |
-                                                                sfmDataIO::INTRINSICS |
-                                                                sfmDataIO::STRUCTURE |
-                                                                sfmDataIO::OBSERVATIONS |
-                                                                sfmDataIO::CONTROL_POINTS);
+  std::shared_ptr<LocalBundleAdjustmentGraph> _localStrategyGraph;
 
   // Log
+
+  /// sfm intermediate reconstruction files
+  const std::string _sfmStepFolder;
 
   /// HTML logger
   std::shared_ptr<htmlDocument::htmlDocumentStream> _htmlDocStream;

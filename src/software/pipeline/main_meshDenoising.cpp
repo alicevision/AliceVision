@@ -141,6 +141,7 @@ int main(int argc, char* argv[])
 
     // Load option file
     SDFilter::MeshDenoisingParameters param;
+    param.outer_iterations = denoisingIterations;
     param.mesh_update_method = (SDFilter::MeshFilterParameters::MeshUpdateMethod)meshUpdateMethod;
     param.mesh_update_closeness_weight = meshUpdateClosenessWeight;
     param.mesh_update_iter = meshUpdateIterations;

@@ -107,7 +107,9 @@ bool solve_translations_problem_l2_chordal(
   Solver::Options options;
   // set number of threads, 1 if openMP is not enabled
   options.num_threads = omp_get_max_threads();
+#if CERES_VERSION_MAJOR < 2
   options.num_linear_solver_threads = omp_get_max_threads();
+#endif
 
   //options.minimizer_progress_to_stdout = true;
   options.max_num_iterations = max_iterations;

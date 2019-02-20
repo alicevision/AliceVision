@@ -1,5 +1,54 @@
 # AliceVision Changelog
 
+## Release 2.1.0 (2019.01.30)
+
+Release Notes Summary:
+ - More complete sensor database and better matching as well as explicit status for lens initialization
+ - Add support for rig of cameras. This enables to add more contraints if you make acquisition with multiple synchronized devices.
+ - Support for reconstruction with projected light patterns and texturing with another images set.
+ - Better estimation of the space to reconstruct to limit the reconstruction zone. This avoid to reconstruct low quality and useless areas around the main object/environment.
+ - New option to directly mesh the SfM results. This provides a quick solution to get a draft mesh (without cuda requirement).
+ - Reduce IO and intermediate files in MVS part of the pipeline.
+
+Full Release Notes:
+ - sensorDB: Update the sensors database with much more models
+ - sensorDB: Use `FocalLengthIn35mmFilm` metadata as a fallback if available
+ - sensorDB: Improve matching of metadata make/model with sensor database
+ - CameraInit: New management of intrinsics (serial number, error/warning log) with an explicit InstrinsicInitMode enum
+ - CameraInit: Fix intrinsics grouping with serial number as expected and add metadata "AliceVision::SensorWidth"
+               (or "AliceVision::SensorWidthEstimated" if estimated from `FocalLength`/`FocalLengthIn35mmFilm`)
+ - CameraInit: Explicit warning if serial number is missing
+ - SfM: Add support for rig of cameras. This information is used as a new constraint in the SfM. This option can now be combined with localBA.
+        You need to use a specific folder hierarchy in the input images files (for instance: “/my/dataset/rig/0/DSLR_0001.JPG”, “/my/dataset/rig/1/DSLR_0001.JPG”) to provide this information.
+ - PrepareDenseScene: New `imagesFolders` option to override input images. This enables to use images with light patterns projected for SfM and MVS parts
+                      and do the Texturing with another set of images.
+ - Meshing fusion: New option to use SfM landmarks (mesh from sparse point cloud) or combine them with depth maps
+ - Meshing: Add option `estimateSpaceFromSfM` to better estimate the bounding box of the reconstruction and avoid useless reconstruction of the environment
+ - MVS: Reduce IO and intermediate files. Use sfmData in the MVS pipeline (instead of MVS seeds, ini file) and do not export depthmap files before refine
+ - ExportAnimatedCamera: Improved solution to export an SfM result into an animated camera
+ - PrepareDenseScene: Remove hackish software `CameraConnection` (now properly done in PrepareDenseScene)
+ - PrepareDenseScene: Allow parallelization on renderfarm
+ - FeatureExtraction: Add grid filtering in AKAZE (to avoid unmanageable number of keypoints on well textured images)
+ - DepthMap: Fix memory leak in SGMVolume
+ - Meshing: Fix loading of OBJ with normals
+ - System: Improve gpu detection and logging
+ - DepthMap: Enable usage of multiple GPUs by default with an option to add a limit
+ - DepthMap: Fuse estimate & refine in a single loop (fuse “computeDepthMapsPSSGM” with “refineDepthMaps”)  and use the same image cache
+ - DepthMap: Remove depthMapInfo files and use image metadata instead
+ - DepthMap: Initial refactoring for better readability to prepare the optimization work
+ - SfM: Refactoring of localBA (now fused with the standard BA code to avoid redundancy)
+ - ConvertSfMFormat: Users can now specify a view whitelist to filter views
+ - SfM: The user can provide only one image of the initial pair and it will choose the 2nd image automatically.
+        This allows to ensure that the reconstruction start from a specific part of the scene without choosing the image pair manually.
+ - SfMTransform: Allow to choose one view as the origin for the coordinate system
+ - SfM Augmentation from known poses: When the sfm starts with existing cameras poses but without landmarks, it now does the triangulation first.
+ - LightingEstimation: New module with preliminary low-level methods for lighting estimation (spherical harmonics)
+ - MeshDenoising: Fix ignored parameter denoising outer iteration
+ - Meshing: Bug fix (infinity loop) in Meshing when the BBox is empty
+ - SfM LocalBA: reduce minimum number of images to use sparse BA (change threshold from 100 to 20) to speedup large reconstructions when localBA is used.
+ - Minor build fix for compatibility with ceres 2.
+
+
 ## Release 2.0.0 (2018.08.09)
 
 Release of the full 3D reconstruction pipeline.

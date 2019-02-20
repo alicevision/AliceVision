@@ -16,6 +16,22 @@ namespace aliceVision {
 namespace sfmData {
 
 /**
+ * @brief EXIF Orientation to names
+ */
+enum class EEXIFOrientation
+{
+  NONE = 1
+  , REVERSED = 2
+  , UPSIDEDOWN = 3
+  , UPSIDEDOWN_REVERSED = 4
+  , LEFT_REVERSED = 5
+  , LEFT = 6  
+  , RIGHT_REVERSED = 7
+  , RIGHT = 8
+  , UNKNOWN = -1
+};
+
+/**
  * @brief A view define an image by a string and unique indexes for
  * the view, the camera intrinsic, the pose and the subpose if the camera is part of a rig
  */
@@ -140,6 +156,15 @@ public:
   }
 
   /**
+   * @brief Get the frame id
+   * @return frame id
+   */
+  IndexT getFrameId() const
+  {
+    return _frameId;
+  }
+
+  /**
    * @brief Get the resection id
    * @return resection id
    */
@@ -155,6 +180,15 @@ public:
   bool isPartOfRig() const
   {
     return _rigId != UndefinedIndexT;
+  }
+
+  /**
+   * @brief xxx
+   * @return true if the view is xxx
+   */
+  bool isPoseIndependant() const
+  {
+    return (!isPartOfRig() || _isIndependantPose);
   }
 
   /**
@@ -286,6 +320,17 @@ public:
   }
 
   /**
+   * @brief Get the corresponding "Orientation" metadata value
+   * @return the enum EEXIFOrientation
+   */
+  EEXIFOrientation getMetadataOrientation() const
+  {
+    if(hasDigitMetadata("Orientation"))
+      return  static_cast<EEXIFOrientation>(std::stoi(getMetadata("Orientation")));
+    return EEXIFOrientation::UNKNOWN;
+  }
+
+  /**
    * @brief Get the view metadata structure
    * @return the view metadata
    */
@@ -349,6 +394,15 @@ public:
   }
 
   /**
+   * @brief setIndependantPose
+   * @param independant
+   */
+  void setIndependantPose(bool independant)
+  {
+    _isIndependantPose = independant;
+  }
+
+  /**
    * @brief Set the given rig id and the given sub-pose id
    * @param[in] rigId The given rig id
    * @param[in] subPoseId The given sub-pose id
@@ -357,6 +411,16 @@ public:
   {
     _rigId = rigId;
     _subPoseId = subPoseId;
+  }
+
+
+  /**
+   * @brief Set the given frame id
+   * @param[in] frame The given frame id
+   */
+  void setFrameId(IndexT frameId)
+  {
+    _frameId = frameId;
   }
 
   /**
@@ -405,8 +469,12 @@ private:
   IndexT _rigId;
   /// corresponding sub-pose id or undefined
   IndexT _subPoseId;
+  /// corresponding frame id for synchronized views
+  IndexT _frameId = UndefinedIndexT;
   /// resection id
   IndexT _resectionId = UndefinedIndexT;
+  /// pose independant of other view(s)
+  bool _isIndependantPose = true;
   /// map for metadata
   std::map<std::string, std::string> _metadata;
 };

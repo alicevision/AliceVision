@@ -11,7 +11,6 @@
 #include <aliceVision/mvsData/OrientedPoint.hpp>
 #include <aliceVision/mvsUtils/common.hpp>
 #include <aliceVision/mvsUtils/fileIO.hpp>
-#include <aliceVision/depthMap/cuda/commonStructures.hpp>
 #include <aliceVision/depthMap/cuda/planeSweeping/plane_sweeping_cuda.hpp>
 #include <aliceVision/depthMap/cuda/planeSweeping/host_utils.h>
 
@@ -131,7 +130,7 @@ static void cps_fillCameraData(mvsUtils::ImagesCache& ic, cameraStruct& cam, int
     //	cam->tex_hmh_b->getBuffer(), mp->indexes[c], mp, true, 1, 0);
 
     // ic.refreshData(c);
-    mvsUtils::ImagesCache::ImgPtr img = ic.getImg( c );
+    mvsUtils::ImagesCache::ImgPtr img = ic.getImg_sync( c );
 
     Pixel pix;
     if( rcSilhoueteMap == nullptr )
@@ -167,7 +166,6 @@ static void cps_fillCameraData(mvsUtils::ImagesCache& ic, cameraStruct& cam, int
 PlaneSweepingCuda::PlaneSweepingCuda( int CUDADeviceNo,
                                       mvsUtils::ImagesCache&     ic,
                                       mvsUtils::MultiViewParams* _mp,
-                                      mvsUtils::PreMatchCams*    _pc,
                                       int scales )
     : _scales( scales )
     , _nbest( 1 ) // TODO remove nbest ... now must be 1
@@ -190,7 +188,6 @@ PlaneSweepingCuda::PlaneSweepingCuda( int CUDADeviceNo,
      */
 
     mp = _mp;
-    pc = _pc;
 
     const int maxImageWidth = mp->getMaxImageWidth();
     const int maxImageHeight = mp->getMaxImageHeight();
@@ -242,9 +239,6 @@ PlaneSweepingCuda::PlaneSweepingCuda( int CUDADeviceNo,
 
     for(int rc = 0; rc < _nImgsInGPUAtTime; ++rc)
     {
-        cams[rc].tex_rgba_hmh =
-            new CudaHostMemoryHeap<uchar4, 2>(CudaSize<2>(maxImageWidth, maxImageHeight));
-
         cams[rc].camId = -1;
         camsRcs[rc]   = -1;
         camsTimes[rc] = 0;
@@ -291,7 +285,13 @@ int PlaneSweepingCuda::addCam( int rc, int scale,
     {
         // get oldest id
         int oldestId = camsTimes.minValId();
+        cameraStruct& cam = cams[oldestId];
 
+        if(cam.tex_rgba_hmh == nullptr)
+        {
+            cam.tex_rgba_hmh =
+                new CudaHostMemoryHeap<uchar4, 2>(CudaSize<2>(mp->getMaxImageWidth(), mp->getMaxImageHeight()));
+        }
         long t1 = clock();
 
         cps_fillCamera( _camsBasesHst(0,oldestId), rc, mp, scale, calling_func );
@@ -463,7 +463,7 @@ StaticVector<float>* PlaneSweepingCuda::getDepthsRcTc(int rc, int tc, int scale,
             float depth = orientedPointPlaneDistance(p, rcplane.p, rcplane.n); // todo: can compute the distance to the camera (as it's the principal point it's the same)
             if( mp->isPixelInImage(tpix, tc)
                 && (depth > 0.0f)
-                && checkPair(p, rc, tc, mp, pc->minang, pc->maxang) )
+                && checkPair(p, rc, tc, mp, mp->getMinViewAngle(), mp->getMaxViewAngle()) )
             {
                 cg = cg + tpix;
                 cg3 = cg3 + p;
@@ -539,9 +539,9 @@ StaticVector<float>* PlaneSweepingCuda::getDepthsRcTc(int rc, int tc, int scale,
         float depth = orientedPointPlaneDistance(p, rcplane.p, rcplane.n);
         if (mp->isPixelInImage(tpix, tc)
             && (depth > 0.0f) && (depth > depthOld)
-            && checkPair(p, rc, tc, mp, pc->minang, pc->maxang)
-            && (rptpang > pc->minang)  // WARNING if vects are near parallel thaen this results to strange angles ...
-            && (rptpang < pc->maxang)) // this is the propper angle ... beacause is does not depend on the triangluated p
+            && checkPair(p, rc, tc, mp, mp->getMinViewAngle(), mp->getMaxViewAngle())
+            && (rptpang > mp->getMinViewAngle())  // WARNING if vects are near parallel thaen this results to strange angles ...
+            && (rptpang < mp->getMaxViewAngle())) // this is the propper angle ... beacause is does not depend on the triangluated p
         {
             out1->push_back(depth);
             // if ((tpix.x!=tpixold.x)||(tpix.y!=tpixold.y)||(depthOld>=depth))
@@ -576,9 +576,9 @@ StaticVector<float>* PlaneSweepingCuda::getDepthsRcTc(int rc, int tc, int scale,
         float depth = orientedPointPlaneDistance(p, rcplane.p, rcplane.n);
         if(mp->isPixelInImage(tpix, tc)
             && (depth > 0.0f) && (depth < depthOld) 
-            && checkPair(p, rc, tc, mp, pc->minang, pc->maxang)
-            && (rptpang > pc->minang)  // WARNING if vects are near parallel thaen this results to strange angles ...
-            && (rptpang < pc->maxang)) // this is the propper angle ... beacause is does not depend on the triangluated p
+            && checkPair(p, rc, tc, mp, mp->getMinViewAngle(), mp->getMaxViewAngle())
+            && (rptpang > mp->getMinViewAngle())  // WARNING if vects are near parallel thaen this results to strange angles ...
+            && (rptpang < mp->getMaxViewAngle())) // this is the propper angle ... beacause is does not depend on the triangluated p
         {
             out2->push_back(depth);
             // printf("%f %f\n",tpix.x,tpix.y);

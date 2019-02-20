@@ -141,8 +141,7 @@ int main() {
 
     Mat3 H;
     const std::pair<double,double> ACRansacOut = ACRANSAC(kernel, vec_inliers, 1024, &H,
-      std::numeric_limits<double>::infinity(),
-      true);
+      std::numeric_limits<double>::infinity());
     const double & thresholdH = ACRansacOut.first;
 
     // Check the homography support some point to be considered as valid
