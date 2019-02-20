@@ -321,7 +321,7 @@ void estimateAndRefineDepthMaps(int cudaDeviceNo, mvsUtils::MultiViewParams* mp,
   const int bandType = 0;
 
   // load images from files into RAM
-  mvsUtils::ImagesCache ic(mp, bandType, true);
+  mvsUtils::ImagesCache ic(mp, bandType);
   // load stuff on GPU memory and creates multi-level images and computes gradients
   PlaneSweepingCuda cps(cudaDeviceNo, ic, mp, sgmScale);
   // init plane sweeping parameters

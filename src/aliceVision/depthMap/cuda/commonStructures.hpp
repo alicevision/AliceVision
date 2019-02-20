@@ -186,7 +186,7 @@ public:
     }
 
     /* Return the Size struct.
-     * It is best to use this as an opague type.
+     * It is best to use this as an opaque type.
      */
     inline const CudaSize<Dim>& getSize() const
     {

@@ -237,7 +237,7 @@ void Texturing::generateUVs(mvsUtils::MultiViewParams& mp)
 void Texturing::generateTextures(const mvsUtils::MultiViewParams &mp,
                                  const boost::filesystem::path &outPath, EImageFileType textureFileType)
 {
-    mvsUtils::ImagesCache imageCache(&mp, 0, false);
+    mvsUtils::ImagesCache imageCache(&mp, 0);
     for(size_t atlasID = 0; atlasID < _atlases.size(); ++atlasID)
         generateTexture(mp, atlasID, imageCache, outPath, textureFileType);
 }
