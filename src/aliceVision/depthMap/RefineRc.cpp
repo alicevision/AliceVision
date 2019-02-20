@@ -57,12 +57,12 @@ DepthSimMap* RefineRc::getDepthPixSizeMapFromSGM()
     StaticVector<IdValue> volumeBestIdVal;
     volumeBestIdVal.reserve(_width * _height);
 
-    for(int i = 0; i < _volumeBestIdVal->size(); i++)
+    for(int i = 0; i < _volumeBestIdVal.size(); i++)
     {
         // float sim = (*depthSimMapFinal->dsm)[i].y;
         // sim = std::min(sim,mp->simThr);
         const float sim = _sp->mp->simThr - 0.0001;
-        const int id = (*_volumeBestIdVal)[i].id;
+        const int id = _volumeBestIdVal[i].id;
 
         if(id > 0)
           volumeBestIdVal.push_back(IdValue(id, sim));
@@ -72,7 +72,7 @@ DepthSimMap* RefineRc::getDepthPixSizeMapFromSGM()
 
     DepthSimMap* depthSimMapScale1Step1 = new DepthSimMap(_rc, _sp->mp, 1, 1);
     {
-        DepthSimMap* depthSimMap = _sp->getDepthSimMapFromBestIdVal(_width, _height, &volumeBestIdVal, _scale, _step, _rc, zborder, _depths);
+        DepthSimMap* depthSimMap = _sp->getDepthSimMapFromBestIdVal(_width, _height, volumeBestIdVal, _scale, _step, _rc, zborder, _depths);
         depthSimMapScale1Step1->add11(depthSimMap);
         delete depthSimMap;
     }
@@ -238,7 +238,7 @@ bool RefineRc::refinerc(bool checkIfExists)
         ALICEVISION_LOG_DEBUG("Refine CUDA (rc: " << (_rc + 1) << " / " << _sp->mp->ncams << ")");
 
     // generate default depthSimMap if rc has no tcam
-    if(_refineTCams.size() == 0 || _depths == nullptr)
+    if(_refineTCams.empty() || _depths.empty())
     {
         DepthSimMap depthSimMapOpt(_rc, _sp->mp, 1, 1);
         depthSimMapOpt.save(_rc, StaticVector<int>() );

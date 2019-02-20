@@ -122,9 +122,9 @@ std::string SemiGlobalMatchingParams::getSGM_depthsFileName(IndexT viewId)
     return mp->getDepthMapsFolder() + std::to_string(viewId) + "_depths.bin";
 }
 
-DepthSimMap* SemiGlobalMatchingParams::getDepthSimMapFromBestIdVal(int w, int h, StaticVector<IdValue>* volumeBestIdVal,
+DepthSimMap* SemiGlobalMatchingParams::getDepthSimMapFromBestIdVal(int w, int h, StaticVector<IdValue>& volumeBestIdVal,
                                                            int scale, int step, int rc, int zborder,
-                                                           StaticVector<float>* planesDepths)
+                                                           StaticVector<float>& planesDepths)
 {
     long tall = clock();
 
@@ -140,11 +140,11 @@ DepthSimMap* SemiGlobalMatchingParams::getDepthSimMapFromBestIdVal(int w, int h,
         {
             Pixel pix = Pixel(x * step, y * step);
             Pixel pixScale1 = Pixel(pix.x * scale, pix.y * scale);
-            float sim = (*volumeBestIdVal)[y * volDimX + x].value;
-            int fpdepthId = (*volumeBestIdVal)[y * volDimX + x].id;
-            if((fpdepthId >= zborder) && (fpdepthId < planesDepths->size() - zborder))
+            float sim = volumeBestIdVal[y * volDimX + x].value;
+            int fpdepthId = volumeBestIdVal[y * volDimX + x].id;
+            if((fpdepthId >= zborder) && (fpdepthId < planesDepths.size() - zborder))
             {
-                float fpPlaneDepth = (*planesDepths)[fpdepthId];
+                float fpPlaneDepth = planesDepths[fpdepthId];
                 Point3d planen = (mp->iRArr[rc] * Point3d(0.0f, 0.0f, 1.0f)).normalize();
                 Point3d planep = mp->CArr[rc] + planen * fpPlaneDepth;
                 Point3d v = (mp->iCamArr[rc] * Point2d((float)(pixScale1.x), (float)(pixScale1.y))).normalize();

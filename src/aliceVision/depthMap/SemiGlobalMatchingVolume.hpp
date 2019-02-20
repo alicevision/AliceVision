@@ -28,7 +28,7 @@ public:
     void cloneVolumeSecondStepZ();
 
     void SGMoptimizeVolumeStepZ(int rc, int volStepXY, int scale);
-    StaticVector<IdValue>* getOrigVolumeBestIdValFromVolumeStepZ(int zborder);
+    void getOrigVolumeBestIdValFromVolumeStepZ(StaticVector<IdValue>& out_volumeBestIdVal, int zborder);
 
     void freeMem();
 
