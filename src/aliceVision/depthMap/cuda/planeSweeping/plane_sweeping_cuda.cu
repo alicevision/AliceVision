@@ -1116,8 +1116,8 @@ void ps_computeSimMapForDepthMapInternal(CudaDeviceMemoryPitched<float, 2>& osim
         wsh, gammaC, gammaP);
 }
 
-void ps_refineRcDepthMap(Pyramid& ps_texs_arr, float* osimMap_hmh,
-                         float* rcDepthMap_hmh, int ntcsteps,
+void ps_refineRcDepthMap(Pyramid& ps_texs_arr, float* out_osimMap_hmh,
+                         float* inout_rcDepthMap_hmh, int ntcsteps,
                          const std::vector<cameraStruct>& cams,
                          int width, int height,
                          int imWidth, int imHeight, int scale, int CUDAdeviceNo, int ncamsAllocated,
@@ -1139,7 +1139,7 @@ void ps_refineRcDepthMap(Pyramid& ps_texs_arr, float* osimMap_hmh,
     CudaDeviceMemoryPitched<float3, 2> lastThreeSimsMap(CudaSize<2>(width, height));
     CudaDeviceMemoryPitched<float, 2> simMap_dmp(CudaSize<2>(width, height));
     CudaDeviceMemoryPitched<float, 2> rcDepthMap_dmp(CudaSize<2>(width, height));
-    copy(rcDepthMap_dmp, rcDepthMap_hmh, width, height);
+    copy(rcDepthMap_dmp, inout_rcDepthMap_hmh, width, height);
     CudaDeviceMemoryPitched<float, 2> bestSimMap_dmp(CudaSize<2>(width, height));
     CudaDeviceMemoryPitched<float, 2> bestDptMap_dmp(CudaSize<2>(width, height));
 
@@ -1190,8 +1190,8 @@ void ps_refineRcDepthMap(Pyramid& ps_texs_arr, float* osimMap_hmh,
         lastThreeSimsMap.getBuffer(), lastThreeSimsMap.getPitch(),
         width, height, moveByTcOrRc, xFrom);
 
-    copy(osimMap_hmh, width, height, bestSimMap_dmp);
-    copy(rcDepthMap_hmh, width, height, bestDptMap_dmp);
+    copy(out_osimMap_hmh, width, height, bestSimMap_dmp);
+    copy(inout_rcDepthMap_hmh, width, height, bestDptMap_dmp);
 
     if(verbose)
         printf("gpu elapsed time: %f ms \n", toc(tall));

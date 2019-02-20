@@ -74,8 +74,8 @@ void ps_deviceDeallocate(
 
 void ps_refineRcDepthMap(
     Pyramid& ps_texs_arr,
-    float* osimMap_hmh,
-    float* rcDepthMap_hmh,
+    float* out_osimMap_hmh,
+    float* inout_rcDepthMap_hmh,
     int ntcsteps,
     const std::vector<cameraStruct>& cams,
     int width, int height,

@@ -103,8 +103,8 @@ public:
     //                                      StaticVector<float>* tcDepthMap, int rc, int tc, int wsh, float gammaC,
     //                                      float gammaP, float depthMapShift);
 
-    bool refineRcTcDepthMap(bool useTcOrRcPixSize, int nStepsToRefine, StaticVector<float>* simMap,
-                            StaticVector<float>* rcDepthMap, int rc, int tc, int scale, int wsh, float gammaC,
+    bool refineRcTcDepthMap(bool useTcOrRcPixSize, int nStepsToRefine, StaticVector<float>& out_simMap,
+                            StaticVector<float>& out_rcDepthMap, int rc, int tc, int scale, int wsh, float gammaC,
                             float gammaP, float epipShift, int xFrom, int wPart);
 
 private:

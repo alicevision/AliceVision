@@ -650,8 +650,8 @@ StaticVector<float>* PlaneSweepingCuda::getDepthsRcTc(int rc, int tc, int scale,
     return out;
 }
 
-bool PlaneSweepingCuda::refineRcTcDepthMap(bool useTcOrRcPixSize, int nStepsToRefine, StaticVector<float>* simMap,
-                                             StaticVector<float>* rcDepthMap, int rc, int tc, int scale, int wsh,
+bool PlaneSweepingCuda::refineRcTcDepthMap(bool useTcOrRcPixSize, int nStepsToRefine, StaticVector<float>& out_simMap,
+                                             StaticVector<float>& out_rcDepthMap, int rc, int tc, int scale, int wsh,
                                              float gammaC, float gammaP, float epipShift, int xFrom, int wPart)
 {
     // int w = mp->getWidth(rc)/scale;
@@ -676,7 +676,7 @@ bool PlaneSweepingCuda::refineRcTcDepthMap(bool useTcOrRcPixSize, int nStepsToRe
     }
 
     // sweep
-    ps_refineRcDepthMap(ps_texs_arr, simMap->getDataWritable().data(), rcDepthMap->getDataWritable().data(), nStepsToRefine,
+    ps_refineRcDepthMap(ps_texs_arr, out_simMap.getDataWritable().data(), out_rcDepthMap.getDataWritable().data(), nStepsToRefine,
                         ttcams,
                         w, h, mp->getWidth(rc) / scale,
                         mp->getHeight(rc) / scale, scale - 1, _CUDADeviceNo, _nImgsInGPUAtTime, _scales, _verbose, wsh,

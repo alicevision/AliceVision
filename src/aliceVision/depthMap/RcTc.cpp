@@ -37,8 +37,10 @@ void RcTc::refineRcTcDepthSimMap(bool useTcOrRcPixSize, DepthSimMap* depthSimMap
     {
         int xFrom = p * wPart;
         int wPartAct = std::min(wPart, w - xFrom);
-        StaticVector<float>* depthMap = depthSimMap->getDepthMapStep1XPart(xFrom, wPartAct);
-        StaticVector<float>* simMap = depthSimMap->getSimMapStep1XPart(xFrom, wPartAct);
+        StaticVector<float> depthMap;
+        depthSimMap->getDepthMapStep1XPart(depthMap, xFrom, wPartAct);
+        StaticVector<float> simMap;
+        depthSimMap->getSimMapStep1XPart(simMap, xFrom, wPartAct);
 
         cps.refineRcTcDepthMap(useTcOrRcPixSize, ndepthsToRefine, simMap, depthMap, rc, tc, scale, wsh, gammaC, gammaP,
                                 epipShift, xFrom, wPartAct);
@@ -47,8 +49,8 @@ void RcTc::refineRcTcDepthSimMap(bool useTcOrRcPixSize, DepthSimMap* depthSimMap
         {
             for(int xp = xFrom; xp < xFrom + wPartAct; xp++)
             {
-                float depth = (*depthMap)[yp * wPartAct + (xp - xFrom)];
-                float sim = (*simMap)[yp * wPartAct + (xp - xFrom)];
+                float depth = depthMap[yp * wPartAct + (xp - xFrom)];
+                float sim = simMap[yp * wPartAct + (xp - xFrom)];
                 float oldSim =
                     depthSimMap->dsm[(yp / depthSimMap->step) * depthSimMap->w + (xp / depthSimMap->step)].sim;
                 if((depth > 0.0f) && (sim < oldSim))
@@ -61,9 +63,6 @@ void RcTc::refineRcTcDepthSimMap(bool useTcOrRcPixSize, DepthSimMap* depthSimMap
 
         if(verbose)
             mvsUtils::printfElapsedTime(t1, "refineRcTcDepthSimMap");
-
-        delete depthMap;
-        delete simMap;
     }
 }
 

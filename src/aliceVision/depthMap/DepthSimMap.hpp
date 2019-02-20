@@ -70,19 +70,18 @@ public:
     Point2d getMaxMinDepth() const;
     Point2d getMaxMinSim() const;
 
-    float getPercentileDepth(float perc);
-    StaticVector<float>* getDepthMapStep1();
-    StaticVector<float>* getDepthMapTStep1();
-    StaticVector<float>* getSimMapStep1();
+    float getPercentileDepth(float perc) const;
+    void getDepthMapStep1(StaticVector<float>& out_depthMap) const;
+    void getSimMapStep1(StaticVector<float>& out_simMap) const;
     void getDepthMap(StaticVector<float>& out_depthMap) const;
 
-    StaticVector<float>* getDepthMapStep1XPart(int xFrom, int partW);
-    StaticVector<float>* getSimMapStep1XPart(int xFrom, int partW);
+    void getDepthMapStep1XPart(StaticVector<float>& out_depthMap, int xFrom, int partW);
+    void getSimMapStep1XPart(StaticVector<float>& out_depthMap, int xFrom, int partW);
 
-    void saveToImage(std::string pngFileName, float simThr);
-    void save(int rc, const StaticVector<int>& tcams);
+    void saveToImage(const std::string& filename, float simThr) const;
+    void save(int rc, const StaticVector<int>& tcams) const;
     void load(int rc, int fromScale);
-    void saveRefine(int rc, std::string depthMapFileName, std::string simMapFileName);
+    void saveRefine(int rc, const std::string& depthMapFileName, const std::string& simMapFileName) const;
 
     float getCellSmoothStep(int rc, const int cellId);
     float getCellSmoothStep(int rc, const Pixel& cell);
