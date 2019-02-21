@@ -97,9 +97,8 @@ inline __device__ float3 rgb2hsl(const float3& c)
     return make_float3(h, s, l);
 }
 
-// XYZ (0..1) to CIELAB (0..100) assuming D65 whitepoint - old
-// XYZ (0..1) to CIELAB (0..255) assuming D65 whitepoint - new
-inline __device__ float3 xyz2lab(const float3 c)
+// XYZ (0..1) to CIELAB (0..255) assuming D65 whitepoint
+inline __host__ __device__ float3 xyz2lab(const float3 c)
 {
     // assuming whitepoint D65, XYZ=(0.95047, 1.00000, 1.08883)
     float3 r = make_float3(c.x / 0.95047f, c.y, c.z / 1.08883f);
@@ -108,28 +107,20 @@ inline __device__ float3 xyz2lab(const float3 c)
                            (r.y > 216.0f / 24389.0f ? cbrtf(r.y) : (24389.0f / 27.0f * r.y + 16.0f) / 116.0f),
                            (r.z > 216.0f / 24389.0f ? cbrtf(r.z) : (24389.0f / 27.0f * r.z + 16.0f) / 116.0f));
 
-    // location of xzy2lab-bug (CR 2010-03-14): 116.0f * f.x - 16.0f is wrong
     float3 out = make_float3(116.0f * f.y - 16.0f, 500.0f * (f.x - f.y), 200.0f * (f.y - f.z));
+    
+    // convert values to fit into 0..255
     out.x = out.x * 2.55f;
-    out.y = out.y * 2.55f;
-    out.z = out.z * 2.55f;
-    return out;
-}
-
-inline __host__ float3 h_xyz2lab(const float3 c)
-{
-    // assuming whitepoint D65, XYZ=(0.95047, 1.00000, 1.08883)
-    float3 r = make_float3(c.x / 0.95047f, c.y, c.z / 1.08883f);
-
-    float3 f = make_float3((r.x > 216.0f / 24389.0f ? cbrtf(r.x) : (24389.0f / 27.0f * r.x + 16.0f) / 116.0f),
-                           (r.y > 216.0f / 24389.0f ? cbrtf(r.y) : (24389.0f / 27.0f * r.y + 16.0f) / 116.0f),
-                           (r.z > 216.0f / 24389.0f ? cbrtf(r.z) : (24389.0f / 27.0f * r.z + 16.0f) / 116.0f));
-
-    // location of xzy2lab-bug (CR 2010-03-14): 116.0f * f.x - 16.0f is wrong
-    float3 out = make_float3(116.0f * f.y - 16.0f, 500.0f * (f.x - f.y), 200.0f * (f.y - f.z));
-    out.x = out.x * 2.55f;
-    out.y = out.y * 2.55f;
-    out.z = out.z * 2.55f;
+    out.y = out.y * 2.55f + 127.0f;
+    out.z = out.z * 2.55f + 127.0f;
+    /*
+    if(out.x < -0.01 || out.x > 255.0)
+        printf("L: %f\n", out.x);
+    if (out.y < -0.01 || out.y > 255.0)
+      printf("a: %f\n", out.y);
+    if (out.z < -0.01 || out.z > 255.0)
+      printf("b: %f\n", out.z);
+    */
     return out;
 }
 

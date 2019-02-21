@@ -1346,7 +1346,7 @@ void ps_getSilhoueteMap(Pyramid& ps_texs_arr, CudaHostMemoryHeap<bool, 2>* omap_
     clock_t tall = tic();
 
     uchar4 maskColorLab;
-    float3 flab = h_xyz2lab(h_rgb2xyz(uchar4_to_float3(maskColorRgb)));
+    float3 flab = xyz2lab(h_rgb2xyz(uchar4_to_float3(maskColorRgb)));
     maskColorLab.x = (unsigned char)(flab.x);
     maskColorLab.y = (unsigned char)(flab.y);
     maskColorLab.z = (unsigned char)(flab.z);
