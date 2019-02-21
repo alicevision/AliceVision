@@ -12,8 +12,6 @@
 #include <aliceVision/mvsUtils/common.hpp>
 #include <aliceVision/mvsUtils/MultiViewParams.hpp>
 #include <aliceVision/system/cmdline.hpp>
-#include <aliceVision/system/Logger.hpp>
-#include <aliceVision/system/Timer.hpp>
 #include <aliceVision/gpu/gpu.hpp>
 
 #include <boost/program_options.hpp>
@@ -30,7 +28,7 @@ namespace po = boost::program_options;
 
 int main(int argc, char* argv[])
 {
-    system::Timer timer;
+    ALICEVISION_COMMANDLINE_START
 
     std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
     std::string sfmDataFilename;
@@ -246,6 +244,5 @@ int main(int argc, char* argv[])
 
     depthMap::estimateAndRefineDepthMaps(&mp, cams, nbGPUs);
 
-    ALICEVISION_LOG_INFO("Task done in (s): " + std::to_string(timer.elapsed()));
-    return EXIT_SUCCESS;
+    ALICEVISION_COMMANDLINE_END
 }

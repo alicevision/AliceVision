@@ -6,10 +6,42 @@
 
 #pragma once
 
+#include "Logger.hpp"
+#include "Timer.hpp"
+
 // This file is header only, so the module don't need to have program_options as a dependency
 #include <boost/program_options/variables_map.hpp>
 #include <boost/program_options/option.hpp>
+
 #include <ostream>
+
+
+#define ALICEVISION_COMMANDLINE_START \
+\
+try { \
+system::Timer commandLineTimer; \
+
+
+#define ALICEVISION_COMMANDLINE_END \
+\
+    ALICEVISION_LOG_INFO("Task done in (s): " + std::to_string(commandLineTimer.elapsed())); \
+    return EXIT_SUCCESS; \
+\
+} catch(std::exception& e) \
+{ \
+  ALICEVISION_CERR("================================================================================"); \
+  ALICEVISION_CERR("====================== Command line failed with an error ======================="); \
+  ALICEVISION_CERR(e.what()); \
+  ALICEVISION_CERR("================================================================================"); \
+  return EXIT_FAILURE; \
+} catch(...) \
+{ \
+  ALICEVISION_CERR("================================================================================"); \
+  ALICEVISION_CERR("============== Command line failed with an unrecognized exception =============="); \
+  ALICEVISION_CERR("================================================================================"); \
+  return EXIT_FAILURE; \
+}
+
 
 namespace boost {
 
