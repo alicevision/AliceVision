@@ -837,8 +837,7 @@ void PlaneSweepingCuda::sweepPixelsToVolumeSubset(
 
     // copy the vector of depths to GPU
     // TODO - move out - don't do this here
-    const float* depth_data = rc_depths.data();
-    CudaDeviceMemory<float> depths_dev( depth_data, rc_depths.size() );
+    CudaDeviceMemory<float> depths_dev(rc_depths.data(), rc_depths.size() );
 
     {
       const int max_tcs = tcams.size();

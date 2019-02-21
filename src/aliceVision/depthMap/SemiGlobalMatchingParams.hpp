@@ -34,7 +34,6 @@ public:
     int ndepthsToRefine;
     unsigned char P1;
     unsigned char P2;
-    unsigned char P3;
     int maxDepthsToStore;
     int maxDepthsToSweep;
     int rcTcDepthsHalfLimit;

@@ -172,26 +172,6 @@ void SemiGlobalMatchingRcTc::computeDepthSimMapVolume(
 
     if(sp->mp->verbose)
         mvsUtils::printfElapsedTime(tall, "SemiGlobalMatchingRcTc::computeDepthSimMapVolume ");
-
-    for( auto j : _index_set )
-    {
-        const int volDimZ = _rcTcDepthRanges[j].y;
-
-        if(sp->P3 > 0)
-        {
-#pragma omp parallel for
-            for(int y = 0; y < volDimY; y++)
-            {
-                for(int x = 0; x < volDimX; x++)
-                {
-                    volume[j][(volDimZ - 1) * volDimY * volDimX + y * volDimX + x] = sp->P3;
-                    volume[j][(volDimZ - 2) * volDimY * volDimX + y * volDimX + x] = sp->P3;
-                    volume[j][(volDimZ - 3) * volDimY * volDimX + y * volDimX + x] = sp->P3;
-                    volume[j][(volDimZ - 4) * volDimY * volDimX + y * volDimX + x] = sp->P3;
-                }
-            }
-        }
-    }
 }
 
 } // namespace depthMap
