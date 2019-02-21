@@ -205,7 +205,7 @@ PlaneSweepingCuda::PlaneSweepingCuda( int CUDADeviceNo,
     useRcDepthsOrRcTcDepths = mp->userParams.get<bool>("grow.useRcDepthsOrRcTcDepths", false);
 
     minSegSize = mp->userParams.get<int>("fuse.minSegSize", 100);
-    varianceWSH = mp->userParams.get<int>("global.varianceWSH", 4);
+    varianceWSH = mp->userParams.get<int>("global.varianceWSH", 0);
 
     subPixel = mp->userParams.get<bool>("global.subPixel", true);
 

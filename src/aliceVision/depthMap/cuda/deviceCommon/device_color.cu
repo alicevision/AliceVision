@@ -239,7 +239,7 @@ __global__ void rgb2lab_kernel(uchar4* irgbaOlab, int irgbaOlab_p, int width, in
         lab.x = (unsigned char)(flab.x);
         lab.y = (unsigned char)(flab.y);
         lab.z = (unsigned char)(flab.z);
-        lab.w = 0;
+        lab.w = rgb->w;
 
         *rgb = lab;
     }

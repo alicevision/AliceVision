@@ -305,7 +305,6 @@ void ps_deviceUpdateCam( Pyramid& ps_texs_arr,
 {
     // std::cerr << std::endl << "Calling " << __FUNCTION__ << std::endl << "    for camera id " << camId << " and " << scales << " scales" << std::endl <<std::endl;
 
-    // compute gradient
     {
         copy(*ps_texs_arr[camId][0].arr, (*cam.tex_rgba_hmh));
 
@@ -316,6 +315,7 @@ void ps_deviceUpdateCam( Pyramid& ps_texs_arr,
             ps_texs_arr[camId][0].arr->getBuffer(), ps_texs_arr[camId][0].arr->getPitch(),
             w, h);
 
+        // compute gradient
         if(varianceWsh > 0)
         {
             // Reading from obj.tex and writing to obj.arr is somewhat dangerous,

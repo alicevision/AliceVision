@@ -328,7 +328,7 @@ __device__ float compNCCby3DptsYK( cudaTextureObject_t rc_tex,
     float2 vEpipShift = tvUp * epipShift;
     tp = tp + vEpipShift;
 
-    const float dd = wsh + 2.0f;
+    const float dd = wsh + 2.0f; // TODO FACA
     if((rp.x < dd) || (rp.x > (float)(width  - 1) - dd) ||
        (rp.y < dd) || (rp.y > (float)(height - 1) - dd) ||
        (tp.x < dd) || (tp.x > (float)(width  - 1) - dd) ||
@@ -341,6 +341,12 @@ __device__ float compNCCby3DptsYK( cudaTextureObject_t rc_tex,
     // value od I(i,j) ... it is what we want
     float4 gcr = 255.0f * tex2D<float4>(rc_tex, rp.x + 0.5f, rp.y + 0.5f);
     float4 gct = 255.0f * tex2D<float4>(tc_tex, tp.x + 0.5f, tp.y + 0.5f);
+
+    // printf("gcr: R: %f, G: %f, B: %f, A: %f", gcr.x, gcr.y, gcr.z, gcr.w);
+    // printf("gct: R: %f, G: %f, B: %f, A: %f", gct.x, gct.y, gct.z, gct.w);
+
+    // if( gcr.w == 0.0f || gct.w == 0.0f )
+    //    return 1.0f; // if no alpha, invalid pixel from input mask
 
     float gammaC = _gammaC;
     // float gammaC = ((gcr.w>0)||(gct.w>0))?sigmoid(_gammaC,25.5f,20.0f,10.0f,fmaxf(gcr.w,gct.w)):_gammaC;
