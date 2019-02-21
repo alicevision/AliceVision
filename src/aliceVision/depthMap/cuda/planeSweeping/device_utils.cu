@@ -24,7 +24,6 @@ template <typename T>
 __device__ T* get2DBufferAt(T* ptr, int pitch, int x, int y)
 {
     return &(BufPtr<T>(ptr,pitch).at(x,y));
-    // return ((T*)(((char*)ptr) + y * pitch)) + x;
 }
 
 /**
@@ -39,7 +38,6 @@ __device__ T* get2DBufferAt(T* ptr, int pitch, int x, int y)
 template <typename T>
 __device__ T* get3DBufferAt(T* ptr, int spitch, int pitch, int x, int y, int z)
 {
-
     return ((T*)(((char*)ptr) + z * spitch + y * pitch)) + x;
 }
 
