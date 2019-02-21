@@ -205,7 +205,7 @@ PlaneSweepingCuda::PlaneSweepingCuda( int CUDADeviceNo,
     useRcDepthsOrRcTcDepths = mp->userParams.get<bool>("grow.useRcDepthsOrRcTcDepths", false);
 
     minSegSize = mp->userParams.get<int>("fuse.minSegSize", 100);
-    varianceWSH = mp->userParams.get<int>("global.varianceWSH", 0);
+    varianceWSH = mp->userParams.get<int>("global.varianceWSH", 1);
 
     subPixel = mp->userParams.get<bool>("global.subPixel", true);
 
@@ -723,7 +723,8 @@ void PlaneSweepingCuda::allocTempVolume( std::vector<CudaDeviceMemoryPitched<flo
 
 void PlaneSweepingCuda::freeTempVolume( std::vector<CudaDeviceMemoryPitched<float, 3>*>& volSim_dmp )
 {
-    for( auto ptr: volSim_dmp ) delete ptr;
+    for( auto ptr: volSim_dmp )
+        delete ptr;
     volSim_dmp.clear();
 }
 
