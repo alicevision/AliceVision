@@ -279,7 +279,7 @@ int PlaneSweepingCuda::addCam( int rc, int scale,
                                StaticVectorBool* rcSilhoueteMap,
                                const char* calling_func )
 {
-    // fist is oldest
+    // first is oldest
     int id = camsRcs.indexOf(rc);
     if(id == -1)
     {
@@ -679,7 +679,7 @@ bool PlaneSweepingCuda::refineRcTcDepthMap(bool useTcOrRcPixSize, int nStepsToRe
     ps_refineRcDepthMap(ps_texs_arr, out_simMap.getDataWritable().data(), out_rcDepthMap.getDataWritable().data(), nStepsToRefine,
                         ttcams,
                         w, h, mp->getWidth(rc) / scale,
-                        mp->getHeight(rc) / scale, scale - 1, _CUDADeviceNo, _nImgsInGPUAtTime, _scales, _verbose, wsh,
+                        mp->getHeight(rc) / scale, scale - 1, _CUDADeviceNo, _nImgsInGPUAtTime, _verbose, wsh,
                         gammaC, gammaP, epipShift, useTcOrRcPixSize, xFrom);
 
     /*
@@ -859,7 +859,7 @@ void PlaneSweepingCuda::sweepPixelsToVolumeSubset(
             wsh,
             _nbestkernelSizeHalf,
             scale - 1,
-            _scales, _verbose,
+            _verbose,
             false, _nbest,
             gammaC, gammaP, subPixel, epipShift);
 
@@ -889,7 +889,7 @@ bool PlaneSweepingCuda::SGMoptimizeSimVolume(int rc, StaticVector<unsigned char>
                             cams[addCam(rc, scale, nullptr, __FUNCTION__ )],
                             volume->getDataWritable().data(), volDimX, volDimY, volDimZ, volStepXY,
                             _verbose, P1, P2, scale - 1, // TODO: move the '- 1' inside the function
-                            _CUDADeviceNo, _nImgsInGPUAtTime, _scales);
+                            _CUDADeviceNo, _nImgsInGPUAtTime);
 
     if(_verbose)
         mvsUtils::printfElapsedTime(t1);
@@ -1012,7 +1012,7 @@ bool PlaneSweepingCuda::optimizeDepthSimMapGradientDescent(StaticVector<DepthSim
 
     ps_optimizeDepthSimMapGradientDescent(ps_texs_arr, &oDepthSimMap_hmh, dataMaps_hmh,
                                           dataMaps.size(), nSamplesHalf, nDepthsToRefine, nIters, sigma, ttcams,
-                                          camsids.size(), w, h, scale - 1, _CUDADeviceNo, _nImgsInGPUAtTime, _scales,
+                                          camsids.size(), w, h, scale - 1, _CUDADeviceNo, _nImgsInGPUAtTime,
                                           _verbose, yFrom);
 
     for(int y = 0; y < h; y++)

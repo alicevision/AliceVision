@@ -29,7 +29,7 @@ void ps_computeSimilarityVolume(
   std::vector<OneTC>&  tcs,
   int wsh, int kernelSizeHalf,
   int scale,
-  int scales, bool verbose, bool doUsePixelsDepths,
+  bool verbose, bool doUsePixelsDepths,
   int nbest,
   float gammaC, float gammaP, bool subPixel,
   float epipShift);
@@ -82,7 +82,6 @@ void ps_refineRcDepthMap(
     int scale,
     int CUDAdeviceNo,
     int ncamsAllocated,
-    int scales,
     bool verbose,
     int wsh,
     float gammaC, float gammaP,
@@ -115,7 +114,6 @@ void ps_optimizeDepthSimMapGradientDescent(
     int scale,
     int CUDAdeviceNo,
     int ncamsAllocated,
-    int scales,
     bool verbose,
     int yFrom);
 

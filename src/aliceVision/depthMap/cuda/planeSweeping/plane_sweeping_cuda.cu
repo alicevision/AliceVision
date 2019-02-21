@@ -716,7 +716,7 @@ void ps_computeSimilarityVolume(
                                 std::vector<OneTC>&  tcs,
                                 int wsh, int kernelSizeHalf,
                                 int scale,
-                                int scales, bool verbose, bool doUsePixelsDepths,
+                                bool verbose, bool doUsePixelsDepths,
                                 int nbest,
                                 float gammaC, float gammaP, bool subPixel,
                                 float epipShift)
@@ -964,7 +964,7 @@ void ps_normalizeDP1Volume(CudaHostMemoryHeap<int, 3>** iovols_hmh, int nZparts,
 }
 
 void ps_getTexture( Pyramid& ps_texs_arr, CudaHostMemoryHeap<uchar4, 2>* oimg_hmh, int camId,
-                   int scale, int CUDAdeviceNo, int ncamsAllocated, int scales)
+                   int scale, int CUDAdeviceNo, int ncamsAllocated)
 {
     clock_t tall = tic();
 
@@ -1121,7 +1121,7 @@ void ps_refineRcDepthMap(Pyramid& ps_texs_arr, float* out_osimMap_hmh,
                          const std::vector<cameraStruct>& cams,
                          int width, int height,
                          int imWidth, int imHeight, int scale, int CUDAdeviceNo, int ncamsAllocated,
-                         int scales, bool verbose, int wsh, float gammaC, float gammaP, float epipShift,
+                         bool verbose, int wsh, float gammaC, float gammaP, float epipShift,
                          bool moveByTcOrRc, int xFrom)
 {
     ///////////////////////////////////////////////////////////////////////////////
@@ -1275,7 +1275,7 @@ void ps_optimizeDepthSimMapGradientDescent(Pyramid& ps_texs_arr,
                                            int nSamplesHalf, int nDepthsToRefine, int nIters, float sigma,
                                            const std::vector<cameraStruct>& cams,
                                            int ncams, int width, int height, int scale,
-                                           int CUDAdeviceNo, int ncamsAllocated, int scales, bool verbose, int yFrom)
+                                           int CUDAdeviceNo, int ncamsAllocated, bool verbose, int yFrom)
 {
     clock_t tall = tic();
 
