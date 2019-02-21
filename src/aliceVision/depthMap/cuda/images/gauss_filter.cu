@@ -90,13 +90,13 @@ __host__ void ps_create_gaussian_arr( int deviceId, int scales ) // float delta,
     // create cuda array
     err = cudaMemcpyToSymbol( d_gaussianArrayOffset,
                               h_gaussianArrayOffset,
-                              MAX_CONSTANT_GAUSS_SCALES * sizeof(int), 0, cudaMemcpyDeviceToDevice);
+                              MAX_CONSTANT_GAUSS_SCALES * sizeof(int), 0, cudaMemcpyHostToDevice);
 
     THROW_ON_CUDA_ERROR(err, "Failed to move Gaussian filter to symbol.");
 
     err = cudaMemcpyToSymbol( d_gaussianArray,
                               h_gaussianArray,
-                              sum_sizes * sizeof(float), 0, cudaMemcpyDeviceToDevice);
+                              sum_sizes * sizeof(float), 0, cudaMemcpyHostToDevice);
 
     THROW_ON_CUDA_ERROR(err, "Failed to move Gaussian filter to symbol." );
 
