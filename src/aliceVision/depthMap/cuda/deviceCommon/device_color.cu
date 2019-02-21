@@ -108,19 +108,12 @@ inline __host__ __device__ float3 xyz2lab(const float3 c)
                            (r.z > 216.0f / 24389.0f ? cbrtf(r.z) : (24389.0f / 27.0f * r.z + 16.0f) / 116.0f));
 
     float3 out = make_float3(116.0f * f.y - 16.0f, 500.0f * (f.x - f.y), 200.0f * (f.y - f.z));
-    
-    // convert values to fit into 0..255
+
+    // convert values to fit into 0..255 (could be out-of-range)
+    // TODO FACA: use float textures, the values are out-of-range for a and b.
     out.x = out.x * 2.55f;
-    out.y = out.y * 2.55f + 127.0f;
-    out.z = out.z * 2.55f + 127.0f;
-    /*
-    if(out.x < -0.01 || out.x > 255.0)
-        printf("L: %f\n", out.x);
-    if (out.y < -0.01 || out.y > 255.0)
-      printf("a: %f\n", out.y);
-    if (out.z < -0.01 || out.z > 255.0)
-      printf("b: %f\n", out.z);
-    */
+    out.y = out.y * 2.55f;
+    out.z = out.z * 2.55f;
     return out;
 }
 
