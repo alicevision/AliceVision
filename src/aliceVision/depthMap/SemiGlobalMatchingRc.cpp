@@ -423,7 +423,7 @@ bool SemiGlobalMatchingRc::sgmrc(bool checkIfExists)
 // #define FORCE_ZDIM_LIMIT 32
 #undef  FORCE_ZDIM_LIMIT
 #ifndef FORCE_ZDIM_LIMIT
-    const std::size_t gpu_bytes_reqd_per_plane = volDimX * volDimY * sizeof(float) * 2; // safety margin 100%
+    const std::size_t gpu_bytes_reqd_per_plane = volDimX * volDimY * sizeof(float) * 2 * 2; // *2 for first/second best values, *2 for safety cuda alloc margin 100%
     std::size_t gpu_bytes_free;
     std::size_t total;
     cudaError_t err = cudaMemGetInfo(&gpu_bytes_free, &total);
