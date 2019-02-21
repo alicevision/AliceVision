@@ -64,21 +64,7 @@ __device__ unsigned char computeGradientSizeOfL( cudaTextureObject_t rc_tex, int
     return (unsigned char)size(g);
 }
 
-__device__ unsigned char computeGradientSizeOfL(int x, int y)
-{
-
-    float xM1 = 255.0f * (tex2D(r4tex, (float)(x - 1) + 0.5f, (float)(y + 0) + 0.5f).x);
-    float xP1 = 255.0f * (tex2D(r4tex, (float)(x + 1) + 0.5f, (float)(y + 0) + 0.5f).x);
-    float yM1 = 255.0f * (tex2D(r4tex, (float)(x + 0) + 0.5f, (float)(y - 1) + 0.5f).x);
-    float yP1 = 255.0f * (tex2D(r4tex, (float)(x + 0) + 0.5f, (float)(y + 1) + 0.5f).x);
-
-    // not divided by 2?
-    float2 g = make_float2(xM1 - xP1, yM1 - yP1);
-
-    return (unsigned char)size(g);
-}
-
-__global__ void compute_varLofLABtoW_kernel(cudaTextureObject_t rc_tex, uchar4* labMap, int labMap_p, int width, int height, int wsh)
+__global__ void compute_varLofLABtoW_kernel(cudaTextureObject_t rc_tex, uchar4* labMap, int labMap_p, int width, int height)
 {
     int x = blockIdx.x * blockDim.x + threadIdx.x;
     int y = blockIdx.y * blockDim.y + threadIdx.y;
@@ -86,28 +72,7 @@ __global__ void compute_varLofLABtoW_kernel(cudaTextureObject_t rc_tex, uchar4* 
     if(x < width && y < height)
     {
         uchar4* val = get2DBufferAt(labMap, labMap_p, x, y);
-
-        // unsigned char sigma = computeSigmaOfL(x, y, wsh);
-        // val->w = sigma;
-        unsigned char grad = computeGradientSizeOfL( rc_tex, x, y);
-
-        val->w = grad;
-    }
-}
-
-__global__ void compute_varLofLABtoW_kernel(uchar4* labMap, int labMap_p, int width, int height, int wsh)
-{
-    int x = blockIdx.x * blockDim.x + threadIdx.x;
-    int y = blockIdx.y * blockDim.y + threadIdx.y;
-
-    if(x < width && y < height)
-    {
-        uchar4* val = get2DBufferAt(labMap, labMap_p, x, y);
-
-        // unsigned char sigma = computeSigmaOfL(x, y, wsh);
-        // val->w = sigma;
-        unsigned char grad = computeGradientSizeOfL(x, y);
-
+        unsigned char grad = computeGradientSizeOfL(rc_tex, x, y);
         val->w = grad;
     }
 }

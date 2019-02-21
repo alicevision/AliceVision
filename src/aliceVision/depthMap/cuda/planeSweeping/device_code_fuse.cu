@@ -195,7 +195,7 @@ __global__ void fuse_optimizeDepthSimMap_kernel(float2* out_optDepthSimMap, int 
             else
             {
                 depthSmoothStep = +fminf(fabsf(depthSmoothStep), midDepthPixSize.y / 10.0f);
-            };
+            }
 
             float depthPhotoStep = fusedDepthSim.x - depthOpt;
             if(depthPhotoStep < 0.0f)
@@ -205,14 +205,14 @@ __global__ void fuse_optimizeDepthSimMap_kernel(float2* out_optDepthSimMap, int 
             else
             {
                 depthPhotoStep = +fminf(fabsf(depthPhotoStep), midDepthPixSize.y / 10.0f);
-            };
+            }
 
             float depthVisStep = midDepthPixSize.x - depthOpt;
 
             float depthSmoothVal = depthSmoothStepEnergy.y;
             float depthPhotoStepVal = fusedDepthSim.y;
 
-            float varianceGray = 255.0f*tex2D(r4tex, (float)x + 0.5f, (float)(y + yFrom) + 0.5f).w;
+            float varianceGray = 255.0f*tex2D(r4tex, (float)x + 0.5f, (float)(y + yFrom) + 0.5f).w; // TODO FACA
 
             // archive: 
             // float varianceGrayAndleWeight = sigmoid2(5.0f, 60.0f, 10.0f, 5.0f, varianceGray);

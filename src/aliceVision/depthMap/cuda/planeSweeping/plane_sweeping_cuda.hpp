@@ -44,8 +44,7 @@ void ps_SGMoptimizeSimVolume(
     unsigned char P1, unsigned char P2,
     int scale,
     int CUDAdeviceNo,
-    int ncamsAllocated,
-    int scales);
+    int ncamsAllocated);
 
 int ps_listCUDADevices(bool verbose);
 

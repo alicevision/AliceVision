@@ -324,7 +324,7 @@ void ps_deviceUpdateCam( Pyramid& ps_texs_arr,
                 <<<grid, block>>>
                 ( ps_texs_arr[camId][0].tex,
                   ps_texs_arr[camId][0].arr->getBuffer(), ps_texs_arr[camId][0].arr->getPitch(),
-                  w, h, varianceWsh);
+                  w, h);
         }
     }
 
@@ -348,7 +348,7 @@ void ps_deviceUpdateCam( Pyramid& ps_texs_arr,
                 ( ps_texs_arr[camId][scale].tex,
                   ps_texs_arr[camId][scale].arr->getBuffer(),
                   ps_texs_arr[camId][scale].arr->getPitch(),
-                  w / (scale + 1), h / (scale + 1), varianceWsh);
+                  w / (scale + 1), h / (scale + 1));
         }
     }
 
@@ -589,7 +589,7 @@ void ps_SGMoptimizeSimVolume(Pyramid& ps_texs_arr,
                              int volDimX, int volDimY, int volDimZ,
                              int volStepXY,
                              bool verbose, unsigned char P1, unsigned char P2,
-                             int scale, int CUDAdeviceNo, int ncamsAllocated, int scales)
+                             int scale, int CUDAdeviceNo, int ncamsAllocated)
 {
     if(verbose)
         printf("ps_SGMoptimizeSimVolume\n");
