@@ -197,7 +197,7 @@ PlaneSweepingCuda::PlaneSweepingCuda( int CUDADeviceNo,
     {
         oneimagemb += 4.0 * (((float)((maxImageWidth / scale) * (maxImageHeight / scale)) / 1024.0) / 1024.0);
     }
-    float maxmbGPU = 100.0f;
+    float maxmbGPU = 2000.0f; // TODO FACA
     _nImgsInGPUAtTime = (int)(maxmbGPU / oneimagemb);
     _nImgsInGPUAtTime = std::max(2, std::min(mp->ncams, _nImgsInGPUAtTime));
 
@@ -294,10 +294,10 @@ int PlaneSweepingCuda::addCam( int rc, int scale,
         }
         long t1 = clock();
 
-        cps_fillCamera( _camsBasesHst(0,oldestId), rc, mp, scale, calling_func );
-        cps_fillCameraData( _ic, cams[oldestId], rc, mp, rcSilhoueteMap );
-        ps_deviceUpdateCam( ps_texs_arr, cams[oldestId], oldestId,
-                            _CUDADeviceNo, _nImgsInGPUAtTime, _scales, mp->getMaxImageWidth(), mp->getMaxImageHeight(), varianceWSH);
+        cps_fillCamera(_camsBasesHst(0,oldestId), rc, mp, scale, calling_func);
+        cps_fillCameraData(_ic, cams[oldestId], rc, mp, rcSilhoueteMap);
+        ps_deviceUpdateCam(ps_texs_arr, cams[oldestId], oldestId,
+                           _CUDADeviceNo, _nImgsInGPUAtTime, _scales, mp->getMaxImageWidth(), mp->getMaxImageHeight(), varianceWSH);
 
         if(_verbose)
             mvsUtils::printfElapsedTime(t1, "copy image from disk to GPU ");
@@ -660,12 +660,11 @@ bool PlaneSweepingCuda::refineRcTcDepthMap(bool useTcOrRcPixSize, int nStepsToRe
 
     long t1 = clock();
 
+    if (_verbose)
+      ALICEVISION_LOG_DEBUG("\t- rc: " << rc << std::endl << "\t- tcams: " << tc);
+
     StaticVector<int> camsids(2);
     camsids[0] = addCam(rc, scale, nullptr, __FUNCTION__);
-
-    if(_verbose)
-        ALICEVISION_LOG_DEBUG("\t- rc: " << rc << std::endl << "\t- tcams: " << tc);
-
     camsids[1] = addCam(tc, scale, nullptr, __FUNCTION__);
 
     std::vector<cameraStruct> ttcams( camsids.size() );
@@ -682,109 +681,69 @@ bool PlaneSweepingCuda::refineRcTcDepthMap(bool useTcOrRcPixSize, int nStepsToRe
                         mp->getHeight(rc) / scale, scale - 1, _CUDADeviceNo, _nImgsInGPUAtTime, _verbose, wsh,
                         gammaC, gammaP, epipShift, useTcOrRcPixSize, xFrom);
 
-    /*
-    CudaHostMemoryHeap<float, 3> tmpSimVolume_hmh(CudaSize<3>(201, 201, nStepsToRefine));
-
-    ps_refineRcTcDepthMapSGM(
-            &tmpSimVolume_hmh,
-            &simMap_hmh,
-            &rcDepthMap_hmh,
-            nStepsToRefine,
-            rcDepthMap_hmh,
-            ttcams, camsids->size(),
-            w, h,
-            scale-1, _scales,
-            _verbose, wsh, gammaC, gammaP, epipShift,
-            0.0001f, 1.0f
-    );
-    */
-
     if(_verbose)
         mvsUtils::printfElapsedTime(t1);
 
     return true;
 }
 
-void PlaneSweepingCuda::allocTempVolume( std::vector<CudaDeviceMemoryPitched<float, 3>*>& volSim_dmp,
-                                         const int max_tcs,
-                                         const int volDimX,
-                                         const int volDimY,
-                                         const int zDimsAtATime )
-{
-    volSim_dmp.resize( max_tcs );
-    for( int ct=0; ct<max_tcs; ct++ )
-    {
-        // allocate twice the number of dimensions-at-a-time
-        // first half: best values
-        // second half: second best values
-        volSim_dmp[ct] = new CudaDeviceMemoryPitched<float, 3>(CudaSize<3>(volDimX, volDimY, zDimsAtATime * 2));
-    }
-}
-
-void PlaneSweepingCuda::freeTempVolume( std::vector<CudaDeviceMemoryPitched<float, 3>*>& volSim_dmp )
-{
-    for( auto ptr: volSim_dmp )
-        delete ptr;
-    volSim_dmp.clear();
-}
-
 /* Be very careful with volume indexes:
  * volume is indexed with the same index as tc. The values of tc can be quite different.
  * depths is indexed with the index_set elements
  */
-void PlaneSweepingCuda::sweepPixelsToVolume( std::vector<CudaDeviceMemoryPitched<float, 3>*>& volSim_dmp,
+void PlaneSweepingCuda::sweepPixelsToVolume( CudaDeviceMemoryPitched<float, 3>& volBestSim_dmp,
+                                             CudaDeviceMemoryPitched<float, 3>& volSecBestSim_dmp,
                                              const int volDimX,
                                              const int volDimY,
                                              const int volStepXY,
-                                             std::vector<OneTC>& tcs,
-                                             const int zDimsAtATime,
+                                             const std::vector<OneTC>& tcs,
                                              const std::vector<float>& rc_depths,
                                              int rc,
-                                             const StaticVector<int>& tc_in,
+                                             const StaticVector<int>& tcams,
                                              StaticVectorBool* rcSilhoueteMap,
                                              int wsh, float gammaC, float gammaP,
                                              int scale, int step,
                                              float epipShift )
 {
-    const int max_tcs = _nImgsInGPUAtTime - 1;
+    ps_initSimilarityVolume(
+      volBestSim_dmp,
+      volSecBestSim_dmp,
+      volDimX, volDimY, rc_depths.size());
 
-    auto it  = tcs.begin();
-    auto end = tcs.end();
+    cudaDeviceSynchronize();
+    // copy the vector of depths to GPU
+    CudaDeviceMemory<float> depths_d(rc_depths.data(), rc_depths.size());
 
-    while( it != end )
+    for(int tci = 0; tci < tcams.size(); ++tci)
     {
-        std::vector<OneTC> sub_tcs;
+        int tc = tcams[tci];
 
-        for( int i=0; i<max_tcs && it!=end; i++ )
-        {
-            sub_tcs.emplace_back( *it );
-            it++;
-        }
+        // FACA WIP: for now, only create one cell for a TC
+        std::vector<OneTC> cells;
+        cells.push_back(tcs[tci]);
 
-        sweepPixelsToVolumeSubset( volSim_dmp,
+        sweepPixelsToVolumeSubset( volBestSim_dmp, volSecBestSim_dmp,
                                    volDimX, volDimY, volStepXY,
-                                   sub_tcs,
-                                   zDimsAtATime,
-                                   rc_depths,
-                                   rc,
-                                   tc_in,
+                                   cells,
+                                   depths_d,
+                                   rc, tc,
                                    rcSilhoueteMap,
                                    wsh,
                                    gammaC, gammaP, scale, step, epipShift );
+        cudaDeviceSynchronize();
     }
     cudaDeviceSynchronize();
 }
 
 void PlaneSweepingCuda::sweepPixelsToVolumeSubset(
-    std::vector<CudaDeviceMemoryPitched<float, 3>*>& volSim_dmp,
+    CudaDeviceMemoryPitched<float, 3>& volBestSim_dmp,
+    CudaDeviceMemoryPitched<float, 3>& volSecBestSim_dmp,
     const int volDimX,
     const int volDimY,
     const int volStepXY,
-    std::vector<OneTC>& tcs,
-    const int zDimsAtATime,
-    const std::vector<float>& rc_depths,
-    int rc,
-    const StaticVector<int>& tc_in,
+    const std::vector<OneTC>& cells,
+    const CudaDeviceMemory<float>& depths_d,
+    int rc, int tc,
     StaticVectorBool* rcSilhoueteMap,
     int wsh, float gammaC, float gammaP,
     int scale, int step,
@@ -792,75 +751,59 @@ void PlaneSweepingCuda::sweepPixelsToVolumeSubset(
 {
     clock_t t1 = tic();
 
-    const int stepLessWidth  = mp->getWidth(rc) / scale;
-    const int stepLessHeight = mp->getHeight(rc) / scale;
+    const int max_cells = cells.size();
 
-    const int max_tcs = tcs.size();
+    ALICEVISION_LOG_DEBUG("sweepPixelsVolume:" << std::endl
+                            << "\t- scale: " << scale << std::endl
+                            << "\t- step: " << step << std::endl
+                            << "\t- volStepXY: " << volStepXY << std::endl
+                            << "\t- volDimX: " << volDimX << std::endl
+                            << "\t- volDimY: " << volDimY );
 
-    if(_verbose)
-        ALICEVISION_LOG_DEBUG("sweepPixelsVolume:" << std::endl
-                                << "\t- scale: " << scale << std::endl
-                                << "\t- step: " << step << std::endl
-                                << "\t- volStepXY: " << volStepXY << std::endl
-                                << "\t- volDimX: " << volDimX << std::endl
-                                << "\t- volDimY: " << volDimY );
+    const int rcamCacheId = addCam(rc, scale, rcSilhoueteMap, __FUNCTION__ );
+    cams[rcamCacheId].camId = rcamCacheId;
+    cameraStruct rcam = cams[rcamCacheId];
 
-    cameraStruct              rcam;
-    std::vector<cameraStruct> tcams( max_tcs );
+    const int tcamCacheId = addCam(tc, scale, nullptr, __FUNCTION__ );
+    cams[tcamCacheId].camId = tcamCacheId;
+    cameraStruct tcam = cams[tcamCacheId];
 
-    const int camid = addCam(rc, scale, rcSilhoueteMap, __FUNCTION__ );
-    cams[camid].camId = camid;
-    rcam = cams[camid];
-
-    for( int ct=0; ct<max_tcs; ct++ )
     {
-        const int camid = addCam(tcs[ct].getTCIndex(), scale, nullptr, __FUNCTION__ );
-        cams[camid].camId = camid;
-        tcams[ct] = cams[camid];
+        ALICEVISION_LOG_DEBUG("rc: " << rc << " tcams: " << tc);
+        for( int ci=0; ci<max_cells; ++ci)
+        {
+          ALICEVISION_LOG_DEBUG(" - Cell["<<ci<<"] depth start: " << cells[ci].getDepthToStart() << ", stop: " << cells[ci].getDepthToStop());
+        }
     }
 
-    if(_verbose)
     {
-        std::ostringstream ostr;
-        ostr << "rc: " << rc << " tcams: ";
-        for( int ct=0; ct<max_tcs; ct++ )
-        {
-            ostr << " " << tcs[ct].getTCIndex();
-        }
-
-        ALICEVISION_LOG_DEBUG( ostr.str() );
+      pr_printfDeviceMemoryInfo();
+      double mbytes = volBestSim_dmp.getBytesPadded();
+      mbytes /= (1024.0 * 1024.0);
+      ALICEVISION_LOG_DEBUG(__FUNCTION__ ": total size of one volume map in GPU memory: approx "<< mbytes <<" MB");
     }
 
     // last synchronous step
     cudaDeviceSynchronize();
-    _camsBasesDev.copyFrom( _camsBasesHst );
+    _camsBasesDev.copyFrom(_camsBasesHst);
 
-    // copy the vector of depths to GPU
-    // TODO - move out - don't do this here
-    CudaDeviceMemory<float> depths_dev(rc_depths.data(), rc_depths.size() );
-
-    {
-      const int max_tcs = tcams.size();
-      pr_printfDeviceMemoryInfo();
-      double mbytes = max_tcs * volSim_dmp[0]->getBytesPadded();
-      mbytes /= (1024.0 * 1024.0);
-      ALICEVISION_LOG_DEBUG(__FUNCTION__ << ": total size of volume maps for "<< max_tcs <<" images in GPU memory: approx "<< mbytes <<" MB");
-    }
-
+    const int rcWidth = mp->getWidth(rc);
+    const int rcHeight = mp->getHeight(rc);
+    const int tcWidth = mp->getWidth(tc);
+    const int tcHeight = mp->getHeight(tc);
     ps_computeSimilarityVolume(
-            ps_texs_arr,     // indexed with tcams[].camId
-            volSim_dmp,
-            rcam, tcams,
-            stepLessWidth, stepLessHeight,
+            ps_texs_arr,     // indexed with cams[].camId
+            volBestSim_dmp,
+            volSecBestSim_dmp,
+            rcam, rcWidth, rcHeight,
+            tcam, tcWidth, tcHeight,
             volStepXY, volDimX, volDimY,
-            zDimsAtATime,
-            depths_dev,
-            tcs,
+            depths_d,
+            cells,
             wsh,
             _nbestkernelSizeHalf,
-            scale - 1,
+            scale,
             _verbose,
-            false, _nbest,
             gammaC, gammaP, subPixel, epipShift);
 
     if(_verbose)
@@ -872,7 +815,7 @@ void PlaneSweepingCuda::sweepPixelsToVolumeSubset(
 /**
  * @param[inout] volume input similarity volume (after Z reduction)
  */
-bool PlaneSweepingCuda::SGMoptimizeSimVolume(int rc, StaticVector<unsigned char>* volume, 
+bool PlaneSweepingCuda::SGMoptimizeSimVolume(int rc, CudaDeviceMemoryPitched<unsigned char, 3>& volSim_dmp,
                                                int volDimX, int volDimY, int volDimZ, 
                                                int volStepXY, int scale,
                                                unsigned char P1, unsigned char P2)
@@ -884,10 +827,11 @@ bool PlaneSweepingCuda::SGMoptimizeSimVolume(int rc, StaticVector<unsigned char>
                               << "\t- volDimZ: " << volDimZ);
 
     long t1 = clock();
-
+    int camCacheIndex = addCam(rc, scale, nullptr, __FUNCTION__);
     ps_SGMoptimizeSimVolume(ps_texs_arr,
-                            cams[addCam(rc, scale, nullptr, __FUNCTION__ )],
-                            volume->getDataWritable().data(), volDimX, volDimY, volDimZ, volStepXY,
+                            cams[camCacheIndex],
+                            volSim_dmp,
+                            volDimX, volDimY, volDimZ, volStepXY,
                             _verbose, P1, P2, scale - 1, // TODO: move the '- 1' inside the function
                             _CUDADeviceNo, _nImgsInGPUAtTime);
 

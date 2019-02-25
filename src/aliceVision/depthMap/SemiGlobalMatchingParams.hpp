@@ -20,7 +20,6 @@ class SemiGlobalMatchingParams
 {
 public:
     mvsUtils::MultiViewParams* mp;
-    RcTc* prt;
     PlaneSweepingCuda& cps;
     bool exportIntermediateResults;
     bool doSmooth;

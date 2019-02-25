@@ -116,8 +116,7 @@ __device__ float getRefCamPixSize(patch &ptch)
         };
 
         return minstep;
-};
-
+}
 
 __device__ float getTarCamPixSize(patch &ptch)
 {
@@ -137,8 +136,7 @@ __device__ float getTarCamPixSize(patch &ptch)
         };
 
         return minstep;
-};
-
+}
 
 __device__ float getPatchPixSize(patch &ptch)
 {
@@ -146,7 +144,7 @@ __device__ float getPatchPixSize(patch &ptch)
 }
 */
 
-__device__ void computeHomography(float* _H, float3& _p, float3& _n)
+__device__ void computeHomography(float* _H, const float3& _p, const float3& _n)
 {
     // hartley zisserman second edition p.327 (13.2)
     float3 _tl = make_float3(0.0, 0.0, 0.0) - M3x3mulV3(sg_s_r.R, sg_s_r.C);
@@ -174,7 +172,7 @@ __device__ void computeHomography(float* _H, float3& _p, float3& _n)
     for(int i = 0; i < 9; i++)
     {
         _H[i] = tmp[i];
-    };
+    }
 }
 
 __device__ float compNCC(float2& rpix, float2& tpix, int wsh)
@@ -197,8 +195,8 @@ __device__ float compNCC(float2& rpix, float2& tpix, int wsh)
             g.x = tex2D(rtex, rp.x + 0.5f, rp.y + 0.5f);
             g.y = tex2D(ttex, tp.x + 0.5f, tp.y + 0.5f);
             sst.update(g);
-        };
-    };
+        }
+    }
     sst.computeSim();
 
     return sst.sim;
@@ -221,11 +219,9 @@ __device__ float compNCCvarThr(float2& rpix, float2& tpix, int wsh, float varThr
             float2 g;
             g.x = 255.0f * tex2D(rtex, rp.x + 0.5, rp.y + 0.5);
             g.y = 255.0f * tex2D(ttex, tp.x + 0.5, tp.y + 0.5);
-            // g.x = tex2D(rtex, rp.x+0.5f, rp.y+0.5f);
-            // g.y = tex2D(ttex, tp.x+0.5f, tp.y+0.5f);
             sst.update(g);
-        };
-    };
+        }
+    }
 
     sst.computeSim();
 
@@ -245,17 +241,15 @@ __device__ simStat compSimStat(float2& rpix, float2& tpix, int wsh)
         for(int yp = -wsh; yp <= wsh; yp++)
         {
             float2 rp;
-            float2 tp;
             rp.x = rpix.x + (float)xp;
             rp.y = rpix.y + (float)yp;
+            float2 tp;
             tp.x = tpix.x + (float)xp;
             tp.y = tpix.y + (float)yp;
 
             float2 g;
             g.x = 255.0f * tex2D(rtex, rp.x + 0.5, rp.y + 0.5);
             g.y = 255.0f * tex2D(ttex, tp.x + 0.5, tp.y + 0.5);
-            // g.x = tex2D(rtex, rp.x+0.5f, rp.y+0.5f);
-            // g.y = tex2D(ttex, tp.x+0.5f, tp.y+0.5f);
             sst.update(g);
         };
     };
@@ -263,7 +257,7 @@ __device__ simStat compSimStat(float2& rpix, float2& tpix, int wsh)
     return sst;
 }
 
-__device__ float compNCCbyH(patch& ptch, int wsh)
+__device__ float compNCCbyH(const patch& ptch, int wsh)
 {
     float2 rpix = project3DPoint(sg_s_r.P, ptch.p);
     float2 tpix = project3DPoint(sg_s_t.P, ptch.p);
@@ -285,11 +279,9 @@ __device__ float compNCCbyH(patch& ptch, int wsh)
             float2 g;
             g.x = 255.0f * tex2D(rtex, rp.x + 0.5f, rp.y + 0.5f);
             g.y = 255.0f * tex2D(ttex, tp.x + 0.5f, tp.y + 0.5f);
-            // g.x = tex2D(rtex, rp.x+0.5f, rp.y+0.5f);
-            // g.y = tex2D(ttex, tp.x+0.5f, tp.y+0.5f);
             sst.update(g);
-        };
-    };
+        }
+    }
     sst.computeSim();
 
     return sst.sim;
@@ -312,8 +304,10 @@ __device__ float compNCCby3DptsYK( cudaTextureObject_t rc_tex,
                                    cudaTextureObject_t tc_tex,
                                    const cameraStructBase* rc_cam_s,
                                    const cameraStructBase* tc_cam_s,
-                                   patch& ptch,
-                                   int wsh, int width, int height,
+                                   const patch& ptch,
+                                   int wsh,
+                                   int rc_width, int rc_height,
+                                   int tc_width, int tc_height,
                                    const float _gammaC, const float _gammaP,
                                    const float epipShift )
 {
@@ -329,10 +323,10 @@ __device__ float compNCCby3DptsYK( cudaTextureObject_t rc_tex,
     tp = tp + vEpipShift;
 
     const float dd = wsh + 2.0f; // TODO FACA
-    if((rp.x < dd) || (rp.x > (float)(width  - 1) - dd) ||
-       (rp.y < dd) || (rp.y > (float)(height - 1) - dd) ||
-       (tp.x < dd) || (tp.x > (float)(width  - 1) - dd) ||
-       (tp.y < dd) || (tp.y > (float)(height - 1) - dd))
+    if((rp.x < dd) || (rp.x > (float)(rc_width  - 1) - dd) ||
+       (rp.y < dd) || (rp.y > (float)(rc_height - 1) - dd) ||
+       (tp.x < dd) || (tp.x > (float)(tc_width  - 1) - dd) ||
+       (tp.y < dd) || (tp.y > (float)(tc_height - 1) - dd))
     {
         return 1.0f;
     }
@@ -386,7 +380,7 @@ __device__ float compNCCby3DptsYK( cudaTextureObject_t rc_tex,
     return sst.sim;
 }
 
-__device__ float compNCCby3DptsYK(patch& ptch, int wsh, int width, int height, const float _gammaC, const float _gammaP,
+__device__ float compNCCby3DptsYK(const patch& ptch, int wsh, int width, int height, const float _gammaC, const float _gammaP,
                                   const float epipShift)
 {
     float3 p = ptch.p;
@@ -413,13 +407,11 @@ __device__ float compNCCby3DptsYK(patch& ptch, int wsh, int width, int height, c
     // value od I(i,j) ... it is what we want
     float4 gcr = 255.0f * tex2D(r4tex, rp.x + 0.5f, rp.y + 0.5f);
     float4 gct = 255.0f * tex2D(t4tex, tp.x + 0.5f, tp.y + 0.5f);
-    // gcr = 255.0f*tex2D(r4tex, rp.x, rp.y);
-    // gct = 255.0f*tex2D(t4tex, tp.x, tp.y);
 
     float gammaC = _gammaC;
+    float gammaP = _gammaP;
     // float gammaC = ((gcr.w>0)||(gct.w>0))?sigmoid(_gammaC,25.5f,20.0f,10.0f,fmaxf(gcr.w,gct.w)):_gammaC;
     // float gammaP = ((gcr.w>0)||(gct.w>0))?sigmoid(1.5,(float)(wsh+3),30.0f,20.0f,fmaxf(gcr.w,gct.w)):_gammaP;
-    float gammaP = _gammaP;
 
     simStat sst = simStat();
     for(int yp = -wsh; yp <= wsh; yp++)
@@ -434,12 +426,8 @@ __device__ float compNCCby3DptsYK(patch& ptch, int wsh, int width, int height, c
 
             // see CUDA_C_Programming_Guide.pdf ... E.2 pp132-133 ... adding 0.5 caises that tex2D return for point i,j
             // exactly value od I(i,j) ... it is what we want
-            float4 gcr1f = tex2D(r4tex, rp1.x + 0.5f, rp1.y + 0.5f);
-            float4 gct1f = tex2D(t4tex, tp1.x + 0.5f, tp1.y + 0.5f);
-            float4 gcr1 = 255.0f * gcr1f;
-            float4 gct1 = 255.0f * gct1f;
-            // gcr1 = 255.0f*tex2D(r4tex, rp1.x, rp1.y);
-            // gct1 = 255.0f*tex2D(t4tex, tp1.x, tp1.y);
+            float4 gcr1 = 255.0f * tex2D(r4tex, rp1.x + 0.5f, rp1.y + 0.5f);
+            float4 gct1 = 255.0f * tex2D(t4tex, tp1.x + 0.5f, tp1.y + 0.5f);
 
             // Weighting is based on:
             //  * color difference to the center pixel of the patch:
@@ -451,7 +439,7 @@ __device__ float compNCCby3DptsYK(patch& ptch, int wsh, int width, int height, c
             float w = CostYKfromLab(xp, yp, gcr, gcr1, gammaC, gammaP) * CostYKfromLab(xp, yp, gct, gct1, gammaC, gammaP);
             assert(w >= 0.f);
             assert(w <= 1.f);
-            sst.update(gcr1.x, gct1.x, w); // TODO: try with gcr1f and gtc1f
+            sst.update(gcr1.x, gct1.x, w);
         }
     }
     sst.computeWSim();
@@ -459,7 +447,7 @@ __device__ float compNCCby3DptsYK(patch& ptch, int wsh, int width, int height, c
 }
 
 /*
-__device__ float compNCCby3DptsYK(patch &ptch, int wsh, int width, int height, const float gammaC, const float gammaP,
+__device__ float compNCCby3DptsYK(const patch &ptch, int wsh, int width, int height, const float gammaC, const float gammaP,
 const float epipShift)
 {
         float3 p =  ptch.p;
@@ -498,8 +486,6 @@ plane
         {
                 for (int yp=-wsh;yp<=wsh;yp++)
                 {
-
-
                         simStat sst = simStat();
                         for (int xpp=-1;xpp<=1;xpp++)
                         {
@@ -531,9 +517,8 @@ ptch.p+ptch.x*(float)(ptch.d*(float)(xp+xpp))+ptch.y*(float)(ptch.d*(float)(yp+y
 gammaC, gammaP);
                         sumsim += sst.sim*w;
                         wsim += w;
-                };
-        };
-
+                }
+        }
 
         return sumsim/wsim;
 }
@@ -559,7 +544,7 @@ __device__ float compNCCby3Dpts(patch& ptch, int wsh, int width, int height)
        (tp.y < dd) || (tp.y > (float)height - 1 - dd))
     {
         return 1.0f;
-    };
+    }
 
     simStat sst = simStat();
     for(int xp = -wsh; xp <= wsh; xp++)
@@ -573,8 +558,8 @@ __device__ float compNCCby3Dpts(patch& ptch, int wsh, int width, int height)
             g.x = 255.0f * tex2D(rtex, rp.x + 0.5f, rp.y + 0.5f);
             g.y = 255.0f * tex2D(ttex, tp.x + 0.5f, tp.y + 0.5f);
             sst.update(g);
-        };
-    };
+        }
+    }
     sst.computeSim();
     return sst.sim;
 }
@@ -590,7 +575,7 @@ __device__ float compNCCby3DptsEpipOpt(patch& ptch, int width, int height)
          (tp.x < (float)width - dd) && (tp.y > dd) && (tp.y < (float)height - dd)))
     {
         return 1.0f;
-    };
+    }
 
     const int wsh = 2;
     const int neer = 2;
@@ -604,8 +589,8 @@ __device__ float compNCCby3DptsEpipOpt(patch& ptch, int width, int height)
             p = ptch.p + ptch.x * (float)(ptch.d * (float)xp) + ptch.y * (float)(ptch.d * (float)yp);
             rp = project3DPoint(sg_s_r.P, p);
             lim[xp + wsh][yp + wsh] = 255.0f * tex2D(rtex, rp.x + 0.5f, rp.y + 0.5f);
-        };
-    };
+        }
+    }
 
     float2 v;
     p = ptch.p;
@@ -632,13 +617,13 @@ __device__ float compNCCby3DptsEpipOpt(patch& ptch, int width, int height)
                 g.x = lim[xp + wsh][yp + wsh];
                 g.y = 255.0f * tex2D(ttex, tp.x + 0.5f, tp.y + 0.5f);
                 sst.update(g);
-            };
-        };
+            }
+        }
         sst.computeSim();
         sims[i] = sst.sim;
         minsim = fminf(minsim, sst.sim);
         maxsim = fmaxf(maxsim, sst.sim);
-    };
+    }
 
     if(minsim == sims[neer])
     {
@@ -647,9 +632,7 @@ __device__ float compNCCby3DptsEpipOpt(patch& ptch, int width, int height)
     else
     {
         return 1.0f;
-    };
-
-    // return minsim;
+    }
 }
 
 __device__ void getPixelFor3DPointRC(float2& out, float3& X)
@@ -661,7 +644,7 @@ __device__ void getPixelFor3DPointRC(float2& out, float3& X)
     {
         out.x = -1.0f;
         out.y = -1.0f;
-    };
+    }
 }
 
 __device__ void getPixelFor3DPointTC(float2& out, float3& X)
@@ -673,7 +656,7 @@ __device__ void getPixelFor3DPointTC(float2& out, float3& X)
     {
         out.x = -1.0f;
         out.y = -1.0f;
-    };
+    }
 }
 
 __device__ float frontoParellePlaneRCDepthFor3DPoint(const float3& p)
@@ -865,7 +848,7 @@ __device__ float refineDepthSubPixel(const float3& depths, const float3& sims)
         float a = b - floatDepthM1;
 
         outDepth = a * dispStep + b;
-    };
+    }
 
     return outDepth;
 }

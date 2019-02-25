@@ -52,6 +52,7 @@ set(depthMap_cuda_files_sources
   cuda/commonStructures.hpp
   cuda/PlaneSweepingCuda.cpp
   cuda/PlaneSweepingCuda.hpp
+  cuda/planeSweeping/plane_sweeping_cuda.hpp
   cuda/planeSweeping/plane_sweeping_cuda.cu
   cuda/images/gauss_filter.cu
   ${depthMap_cuda_files_headers}

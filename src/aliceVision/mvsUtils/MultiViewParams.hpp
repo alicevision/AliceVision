@@ -104,8 +104,7 @@ public:
                     const std::string& depthMapsFolder = "",
                     const std::string& depthMapsFilterFolder = "",
                     bool readFromDepthMaps = false,
-                    int downscale = 1,
-                    StaticVector<CameraMatrices>* cameras = nullptr);
+                    int downscale = 1);
 
     ~MultiViewParams();
 

@@ -20,36 +20,31 @@ public:
                              SemiGlobalMatchingParams* _sp);
     ~SemiGlobalMatchingVolume(void);
 
-    void copyVolume(const StaticVector<unsigned char>& volume, const Pixel& fromSteps );
-    void addVolumeSecondMin( const std::vector<int>& index_set, 
-                             const std::vector<StaticVector<unsigned char> >& vols,
-                             const StaticVector<Pixel>& z );
+    void copyVolume(const StaticVector<unsigned char>& volume, const Pixel& fromSteps);
 
-    void cloneVolumeSecondStepZ();
+    /**
+     * @param[in] volumeSecondBest: Volume containing the second best value accross multiple input volumes
+     */
+    void cloneVolumeSecondStepZ(const StaticVector<unsigned char>& volumeSecondBest);
 
-    void SGMoptimizeVolumeStepZ(int rc, int volStepXY, int scale);
     void getOrigVolumeBestIdValFromVolumeStepZ(StaticVector<IdValue>& out_volumeBestIdVal, int zborder);
 
     void freeMem();
 
 private:
-    SemiGlobalMatchingParams* sp;
+    SemiGlobalMatchingParams* sp = nullptr;
 
     int   volDimX;
     int   volDimY;
     int   volDimZ;
+
+public: // TODO FACA: TO KEEP PRIVATE
     int   volStepZ;
 
-    /// Volume containing the second best value accross multiple input volumes
-    StaticVector<unsigned char>* _volumeSecondBest;
-
-    /// Volume containing the best value accross multiple input volumes
-    StaticVector<unsigned char>* _volume;
-
     /// The similarity volume after Z reduction. Volume dimension is (X, Y, Z/step).
-    StaticVector<unsigned char>* _volumeStepZ;
+    StaticVector<unsigned char>* _volumeStepZ = nullptr;
     /// Volume with the index of the original plane. Volume dimension (X, Y, Z/step).
-    StaticVector<int>* _volumeBestZ;
+    StaticVector<int>* _volumeBestZ = nullptr;
 };
 
 } // namespace depthMap

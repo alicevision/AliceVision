@@ -16,11 +16,10 @@ namespace depthMap {
 class RcTc
 {
 public:
-    mvsUtils::MultiViewParams* mp;
+    mvsUtils::MultiViewParams& mp;
     PlaneSweepingCuda&         cps;
-    bool                       verbose;
 
-    RcTc(mvsUtils::MultiViewParams* _mp, PlaneSweepingCuda& _cps);
+    RcTc(mvsUtils::MultiViewParams& _mp, PlaneSweepingCuda& _cps);
 
     void refineRcTcDepthSimMap(bool useTcOrRcPixSize, DepthSimMap* depthSimMap, int rc, int tc, int ndepthsToRefine,
                                int wsh, float gammaC, float gammaP, float epipShift);

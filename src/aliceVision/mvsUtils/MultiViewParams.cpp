@@ -37,8 +37,7 @@ MultiViewParams::MultiViewParams(const sfmData::SfMData& sfmData,
                                  const std::string& depthMapsFolder,
                                  const std::string& depthMapsFilterFolder,
                                  bool readFromDepthMaps,
-                                 int downscale,
-                                 StaticVector<CameraMatrices>* cameras)
+                                 int downscale)
     : _sfmData(sfmData)
     , _imagesFolder(imagesFolder + "/")
     , _depthMapsFolder(depthMapsFolder + "/")
@@ -134,19 +133,7 @@ MultiViewParams::MultiViewParams(const sfmData::SfMData& sfmData,
         FocK1K2Arr.at(i) = Point3d(-1.0, -1.0, -1.0);
 
         // load camera matrices
-        if(cameras != nullptr)
-        {
-            // use constructor cameras input parameter
-            camArr.at(i) = (*cameras)[i].P;
-            KArr.at(i) = (*cameras)[i].K;
-            RArr.at(i) = (*cameras)[i].R;
-            CArr.at(i) = (*cameras)[i].C;
-            iKArr.at(i) = (*cameras)[i].iK;
-            iRArr.at(i) = (*cameras)[i].iR;
-            iCamArr.at(i) = (*cameras)[i].iCam;
-            FocK1K2Arr.at(i) = Point3d((*cameras)[i].f, (*cameras)[i].k1, (*cameras)[i].k2);
-        }
-        else if(pIt != metadata.end() && pIt->type() == oiio::TypeDesc(oiio::TypeDesc::DOUBLE, oiio::TypeDesc::MATRIX44))
+        if(pIt != metadata.end() && pIt->type() == oiio::TypeDesc(oiio::TypeDesc::DOUBLE, oiio::TypeDesc::MATRIX44))
         {
             ALICEVISION_LOG_DEBUG("Reading view " << getViewId(i) << " projection matrix from image metadata.");
             loadMatricesFromRawProjectionMatrix(i, static_cast<const double*>(pIt->data()));
@@ -214,8 +201,8 @@ MultiViewParams::MultiViewParams(const sfmData::SfMData& sfmData,
         }
 
         // find max width and max height
-        _maxImageWidth = std::max(_maxImageWidth, imgParams.width);
-        _maxImageHeight = std::max(_maxImageHeight, imgParams.height);
+        _maxImageWidth = std::max(_maxImageWidth, imgParams.width / _imagesScale.at(i));
+        _maxImageHeight = std::max(_maxImageHeight, imgParams.height / _imagesScale.at(i));
     }
 
     ALICEVISION_LOG_INFO("Overall maximum dimension: [" << _maxImageWidth << "x" << _maxImageHeight << "]");

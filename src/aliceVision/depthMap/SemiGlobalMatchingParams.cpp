@@ -22,7 +22,6 @@ SemiGlobalMatchingParams::SemiGlobalMatchingParams(mvsUtils::MultiViewParams* _m
     : cps( _cps )
 {
     mp = _mp;
-    prt = new RcTc(mp, cps);
 
     exportIntermediateResults = mp->userParams.get<bool>("depthMap.intermediateResults", false);
     doSmooth = mp->userParams.get<bool>("semiGlobalMatching.smooth", true);
@@ -68,7 +67,6 @@ SemiGlobalMatchingParams::SemiGlobalMatchingParams(mvsUtils::MultiViewParams* _m
 
 SemiGlobalMatchingParams::~SemiGlobalMatchingParams()
 {
-    delete prt;
 }
 
 std::string SemiGlobalMatchingParams::getREFINE_photo_depthMapFileName(IndexT viewId, int scale, int step)

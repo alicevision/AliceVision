@@ -110,39 +110,27 @@ public:
 private:
     /* Needed to compensate for _nImgsInGPUAtTime that are smaller than |index_set|-1 */
     void sweepPixelsToVolumeSubset(
-            std::vector<CudaDeviceMemoryPitched<float, 3>*>& volume_buf,
+            CudaDeviceMemoryPitched<float, 3>& volBestSim_dmp,
+            CudaDeviceMemoryPitched<float, 3>& volSecBestSim_dmp,
             const int volDimX,
             const int volDimY,
             const int volStepXY,
-            std::vector<OneTC>& tcs,
-            const int zDimsAtATime,
-            const std::vector<float>& rc_depths,
-            int rc,
-            const StaticVector<int>& tcams,
+            const std::vector<OneTC>& tcs,
+            const CudaDeviceMemory<float>& depths_d,
+            int rc, int tc,
             StaticVectorBool* rcSilhoueteMap,
             int wsh, float gammaC, float gammaP,
             int scale, int step,
             float epipShift);
 
 public:
-    /* pre-processing for sweepPixelsToVolume */
-    void allocTempVolume(
-            std::vector<CudaDeviceMemoryPitched<float, 3>*>& volSim_dmp,
-            const int max_tcs,
-            const int volDimX,
-            const int volDimY,
-            const int zDimsAtATime );
-
-    /* post-processing for sweepPixelsToVolume */
-    void freeTempVolume( std::vector<CudaDeviceMemoryPitched<float, 3>*>& volSim_dmp );
-
     void sweepPixelsToVolume(
-            std::vector<CudaDeviceMemoryPitched<float, 3>*>& volSim_dmp,
+            CudaDeviceMemoryPitched<float, 3>& volBestSim_dmp,
+            CudaDeviceMemoryPitched<float, 3>& volSecBestSim_dmp,
             const int volDimX,
             const int volDimY,
             const int volStepXY,
-            std::vector<OneTC>& tcs,
-            const int zDimsAtATime,
+            const std::vector<OneTC>& tcs,
             const std::vector<float>& rc_depths,
             int rc,
             const StaticVector<int>& tcams,
@@ -151,7 +139,7 @@ public:
             int scale, int step,
             float epipShift);
 
-    bool SGMoptimizeSimVolume(int rc, StaticVector<unsigned char>* volume,
+    bool SGMoptimizeSimVolume(int rc, CudaDeviceMemoryPitched<unsigned char, 3>& volSim_dmp,
                               int volDimX, int volDimY, int volDimZ,
                               int volStepXY,
                               int scale, unsigned char P1, unsigned char P2);

@@ -41,18 +41,19 @@ __global__ void volume_slice_kernel(
                                     cudaTextureObject_t tc_tex,
                                     const cameraStructBase* rc_cam_s,
                                     const cameraStructBase* tc_cam_s,
-                                    float* depths_dev,
-                                    const int startDimZ,
+                                    const float* depths_d,
                                     const int lowestUsedDepth,
-                                    const int highestUsedDepth,
-                                    int width, int height,
+                                    const int nbDepthsToSearch,
+                                    int rcWidth, int rcHeight,
+                                    int tcWidth, int tcHeight,
                                     int wsh,
                                     const float gammaC, const float gammaP, const float epipShift,
                                     float* volume_1st,
+                                    int volume1st_s, int volume1st_p,
                                     float* volume_2nd,
-                                    int volume_s, int volume_p,
+                                    int volume2nd_s, int volume2nd_p,
                                     int volStepXY,
-                                    int volDimX, int volDimY )
+                                    int volDimX, int volDimY)
 {
     /*
      * Note !
@@ -64,51 +65,49 @@ __global__ void volume_slice_kernel(
 
     const int vx = blockIdx.x * blockDim.x + threadIdx.x;
     const int vy = blockIdx.y * blockDim.y + threadIdx.y;
-    const int vz = blockIdx.z;
+    const int vz = blockIdx.z * blockDim.z + threadIdx.z;
 
-    if( vx >= volDimX ) return;
-    if( vy >= volDimY ) return;
+    if( vx >= volDimX || vy >= volDimY )
+        return;
+    if (vz >= nbDepthsToSearch)
+      return;
 
     const int x = vx * volStepXY;
     const int y = vy * volStepXY;
 
-    const int depth = startDimZ + vz;
+    if(x >= rcWidth || y >= rcHeight)
+        return;
 
-    if( x >= width  ) return;
-    if( y >= height ) return;
+    const int zIndex = lowestUsedDepth + vz;
+    const float fpPlaneDepth = depths_d[zIndex];
 
-    // float fsim = 1.0f;
-    float fsim_1st = *get3DBufferAt(volume_1st, volume_s, volume_p, vx, vy, vz);
-    float fsim_2nd = *get3DBufferAt(volume_2nd, volume_s, volume_p, vx, vy, vz);
+    patch ptcho;
+    volume_computePatch(rc_cam_s, tc_cam_s, ptcho, fpPlaneDepth, make_int2(x, y)); // no texture use
 
-    if( depth >= lowestUsedDepth && depth < highestUsedDepth )
+    float fsim = compNCCby3DptsYK(rc_tex, tc_tex,
+                                  rc_cam_s, tc_cam_s,
+                                  ptcho, wsh,
+                                  rcWidth, rcHeight,
+                                  tcWidth, tcHeight,
+                                  gammaC, gammaP,
+                                  epipShift);
+
+    const float fminVal = -1.0f;
+    const float fmaxVal = 1.0f;
+    fsim = (fsim - fminVal) / (fmaxVal - fminVal);
+    fsim = fminf(1.0f, fmaxf(0.0f, fsim));
+
+    float* fsim_1st = get3DBufferAt(volume_1st, volume1st_s, volume1st_p, vx, vy, zIndex);
+    float* fsim_2nd = get3DBufferAt(volume_2nd, volume2nd_s, volume2nd_p, vx, vy, zIndex);
+    if (fsim < *fsim_1st)
     {
-        const float fpPlaneDepth = depths_dev[depth];
-
-        const int2 pix = make_int2( x, y );
-
-        patch ptcho;
-        volume_computePatch( rc_cam_s, tc_cam_s, ptcho, fpPlaneDepth, pix); // no texture use
-
-        float fsim = compNCCby3DptsYK( rc_tex, tc_tex,
-                                       rc_cam_s, tc_cam_s,
-                                       ptcho, wsh,
-                                       width, height,
-                                       gammaC, gammaP,
-                                       epipShift);
-
-        const float fminVal = -1.0f;
-        const float fmaxVal = 1.0f;
-        fsim = (fsim - fminVal) / (fmaxVal - fminVal);
-        fsim = fminf(1.0f, fmaxf(0.0f, fsim));
-        // int sim = (unsigned char)(fsim * 255.0f); // upcast to int due to atomicMin
-
-        if( fsim < fsim_1st ) swap( fsim, fsim_1st );
-        if( fsim < fsim_2nd ) swap( fsim, fsim_2nd );
+        *fsim_1st = fsim;
+        *fsim_2nd = *fsim_1st;
     }
-
-    *get3DBufferAt(volume_1st, volume_s, volume_p, vx, vy, vz) = fsim_1st;
-    *get3DBufferAt(volume_2nd, volume_s, volume_p, vx, vy, vz) = fsim_2nd;
+    else if (fsim < *fsim_2nd)
+    {
+      *fsim_2nd = fsim;
+    }
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

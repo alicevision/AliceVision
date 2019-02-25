@@ -16,28 +16,30 @@ void ps_initCameraMatrix( cameraStructBase& base );
 
 void pr_printfDeviceMemoryInfo();
 
+void ps_initSimilarityVolume(
+  CudaDeviceMemoryPitched<float, 3>& volBestSim_dmp,
+  CudaDeviceMemoryPitched<float, 3>& volSecBestSim_dmp,
+  int volDimX, int volDimY, int volDimZ);
+
 void ps_computeSimilarityVolume(
   Pyramid& ps_texs_arr,
-  std::vector<CudaDeviceMemoryPitched<float, 3>*> vol_dmp,
-  const cameraStruct& rcam,
-  const std::vector<cameraStruct>& tcams,
-  int stepLessWidth, int stepLessHeight,
-  int volStepXY,
-  int volDimX, int volDimY,
-  const int zDimsAtATime,
-  CudaDeviceMemory<float>& depths_dev,
-  std::vector<OneTC>&  tcs,
+  CudaDeviceMemoryPitched<float, 3>& volBestSim_dmp,
+  CudaDeviceMemoryPitched<float, 3>& volSecBestSim_dmp,
+  const cameraStruct& rcam, int rcWidth, int rcHeight,
+  const cameraStruct& tcams, int tcWidth, int tcHeight,
+  int volStepXY, int volDimX, int volDimY,
+  const CudaDeviceMemory<float>& depths_dev,
+  const std::vector<OneTC>&  cells,
   int wsh, int kernelSizeHalf,
   int scale,
-  bool verbose, bool doUsePixelsDepths,
-  int nbest,
+  bool verbose,
   float gammaC, float gammaP, bool subPixel,
   float epipShift);
 
 void ps_SGMoptimizeSimVolume(
     Pyramid& ps_texs_arr,
     const cameraStruct& rccam,
-    unsigned char* iovol_hmh,
+    CudaDeviceMemoryPitched<unsigned char, 3>& volSim_dmp,
     int volDimX, int volDimY, int volDimZ,
     int volStepXY,
     bool verbose,

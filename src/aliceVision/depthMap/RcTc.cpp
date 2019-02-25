@@ -12,21 +12,20 @@
 namespace aliceVision {
 namespace depthMap {
 
-RcTc::RcTc(mvsUtils::MultiViewParams* _mp, PlaneSweepingCuda& _cps)
-    : cps( _cps )
+RcTc::RcTc(mvsUtils::MultiViewParams& _mp, PlaneSweepingCuda& _cps)
+    : cps(_cps)
+    , mp(_mp)
 {
-    mp = _mp;
-    verbose = mp->verbose;
 }
 
 void RcTc::refineRcTcDepthSimMap(bool useTcOrRcPixSize, DepthSimMap* depthSimMap, int rc, int tc,
                                     int ndepthsToRefine, int wsh, float gammaC, float gammaP, float epipShift)
 {
     int scale = depthSimMap->scale;
-    int w = mp->getWidth(rc) / scale;
-    int h = mp->getHeight(rc) / scale;
+    int w = mp.getWidth(rc) / scale;
+    int h = mp.getHeight(rc) / scale;
 
-    if(verbose)
+    if(mp.verbose)
         ALICEVISION_LOG_DEBUG("refineRcTcDepthSimMap: width: " << w << ", height: " << h);
 
     long t1 = clock();
@@ -61,7 +60,7 @@ void RcTc::refineRcTcDepthSimMap(bool useTcOrRcPixSize, DepthSimMap* depthSimMap
             }
         }
 
-        if(verbose)
+        if(mp.verbose)
             mvsUtils::printfElapsedTime(t1, "refineRcTcDepthSimMap");
     }
 }
@@ -81,7 +80,7 @@ void RcTc::smoothDepthMap(DepthSimMap* depthSimMap, int rc, int wsh, float gamma
         depthSimMap->dsm[i].depth = (*depthMap)[y * depthSimMap->w * depthSimMap->step + x];
     }
 
-    if(verbose)
+    if(mp.verbose)
         mvsUtils::printfElapsedTime(t1, "smoothDepth11");
 
     delete depthMap;
@@ -105,7 +104,7 @@ void RcTc::filterDepthMap(DepthSimMap* depthSimMap, int rc, int wsh, float gamma
         depthSimMap->dsm[i].depth = (*depthMap)[y * depthSimMap->w * depthSimMap->step + x];
     }
 
-    if(verbose)
+    if(mp.verbose)
         mvsUtils::printfElapsedTime(t1, "smoothDepth11");
 
     delete depthMap;

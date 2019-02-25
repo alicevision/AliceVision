@@ -16,27 +16,23 @@ namespace depthMap {
 class SemiGlobalMatchingRcTc
 {
 public:
-    SemiGlobalMatchingRcTc( const std::vector<int>& index_set,
-                            const std::vector<float>& rcTcDepths,
+    SemiGlobalMatchingRcTc( const std::vector<float>& rcDepths,
                             const std::vector<Pixel>&  rcTcDepthRanges,
                             int _rc,
                             const StaticVector<int>& _tc,
                             int _scale,
                             int _step,
-                            int zDimsAtATime,
                             SemiGlobalMatchingParams* _sp,
                             StaticVectorBool* rcSilhoueteMap = NULL );
-    ~SemiGlobalMatchingRcTc(void);
+    ~SemiGlobalMatchingRcTc();
 
-    void computeDepthSimMapVolume( std::vector<StaticVector<unsigned char> >& volume,
-                                   std::vector<CudaDeviceMemoryPitched<float, 3>*>& volume_tmp_on_gpu,
-                                   // float& volumeMBinGPUMem,
+    void computeDepthSimMapVolume( CudaDeviceMemoryPitched<float, 3>& volumeBestSim,
+                                   CudaDeviceMemoryPitched<float, 3>& volumeSecBestSim,
                                    int wsh,
                                    float gammaC,
                                    float gammaP );
 
 private:
-    const std::vector<int> _index_set;
     const SemiGlobalMatchingParams* const sp;
 
     const int _rc;
@@ -45,8 +41,7 @@ private:
     const int _step;
     const int _w;
     const int _h;
-    const int _zDimsAtATime;
-    const std::vector<float>& _rcTcDepths;
+    const std::vector<float>& _rcDepths;
     const std::vector<Pixel>& _rcTcDepthRanges;
     StaticVectorBool*         _rcSilhoueteMap;
 };

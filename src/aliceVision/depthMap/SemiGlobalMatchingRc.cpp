@@ -416,39 +416,6 @@ bool SemiGlobalMatchingRc::sgmrc(bool checkIfExists)
 
     _sp->cps.cameraToDevice( _rc, _sgmTCams );
 
-//
-// FORCE_ZDIM_LIMIT exists only to test volume slicing for low-memory CUDA cards
-// also on high-memory cards. Make sure to #undef for releases.
-//
-// #define FORCE_ZDIM_LIMIT 32
-#undef  FORCE_ZDIM_LIMIT
-#ifndef FORCE_ZDIM_LIMIT
-    const std::size_t gpu_bytes_reqd_per_plane = volDimX * volDimY * sizeof(float) * 2 * 2; // *2 for first/second best values, *2 for safety cuda alloc margin 100%
-    std::size_t gpu_bytes_free;
-    std::size_t total;
-    cudaError_t err = cudaMemGetInfo(&gpu_bytes_free, &total);
-    THROW_ON_CUDA_ERROR(err, "Failed to get memory info for CUDA device");
-    int        zDimsAtATime = _depths.size();
-    const int  camsAtATime  = _sgmTCams.size();
-    if( gpu_bytes_reqd_per_plane * zDimsAtATime * camsAtATime > gpu_bytes_free )
-    {
-        while( zDimsAtATime > 1 && gpu_bytes_reqd_per_plane * zDimsAtATime * camsAtATime > gpu_bytes_free )
-        {
-            zDimsAtATime /= 2;
-        }
-    }
-    if(_sp->mp->verbose)
-        ALICEVISION_LOG_DEBUG("bytes free on GPU: " << gpu_bytes_free
-                           << "(" << (int)(gpu_bytes_free/1024.0f/1024.0f) << " MB)"<< std::endl
-                           << "    estimated req'd bytes/plane: " << gpu_bytes_reqd_per_plane << std::endl
-                           << "    estimated dims at a time: " << zDimsAtATime << std::endl
-                           << "    cams at a time: " << camsAtATime << std::endl
-                           << "    estimated total: " << gpu_bytes_reqd_per_plane * zDimsAtATime * camsAtATime
-                           << " (" << (int)(gpu_bytes_reqd_per_plane * zDimsAtATime * camsAtATime/1024.0f/1024.0f) << " MB)" );
-#else
-    int zDimsAtATime = FORCE_ZDIM_LIMIT; // for example FORCE_ZDIM_LIMIT=32
-#endif
-
     StaticVectorBool* rcSilhoueteMap = nullptr;
     if(_sp->useSilhouetteMaskCodedByColor)
     {
@@ -470,9 +437,6 @@ bool SemiGlobalMatchingRc::sgmrc(bool checkIfExists)
         ALICEVISION_LOG_DEBUG( ostr.str() );
     }
 
-    std::vector<StaticVector<unsigned char> > simVolume;
-    simVolume.resize( _sgmTCams.size() );
-
     /* request this device to allocate
      *   (max_img - 1) * X * Y * dims_at_a_time * sizeof(float)
      * of device memory.
@@ -481,44 +445,60 @@ bool SemiGlobalMatchingRc::sgmrc(bool checkIfExists)
     {
         int devid;
         cudaGetDevice( &devid );
-        ALICEVISION_LOG_DEBUG( "Allocating " << _sgmTCams.size()
-            << " times " << volDimX << " " << volDimY << " "
-            << zDimsAtATime << " on device " << devid );
+        ALICEVISION_LOG_DEBUG( "Allocating " << volDimX << " x " << volDimY << " x " << volDimZ << " on device " << devid << ".");
     }
-    std::vector<CudaDeviceMemoryPitched<float, 3>*> volume_tmp_on_gpu;
-    _sp->cps.allocTempVolume( volume_tmp_on_gpu,
-                             _sgmTCams.size(),
-                             volDimX,
-                             volDimY,
-                             zDimsAtATime );
+    CudaDeviceMemoryPitched<float, 3> volumeBestSim(CudaSize<3>(volDimX, volDimY, volDimZ));
+    CudaDeviceMemoryPitched<float, 3> volumeSecBestSim(CudaSize<3>(volDimX, volDimY, volDimZ));
 
-    std::vector<int> index_set( _sgmTCams.size() );
-    for(int c = 0; c < _sgmTCams.size(); c++)
-    {
-        index_set[c] = c;
-    }
-    SemiGlobalMatchingRcTc srt( index_set,
-                                _depths.getData(),
+    SemiGlobalMatchingRcTc srt( _depths.getData(),
                                 _depthsTcamsLimits.getData(),
-                                _rc, _sgmTCams, _scale, _step, zDimsAtATime, _sp, rcSilhoueteMap );
-    srt.computeDepthSimMapVolume( simVolume, volume_tmp_on_gpu, _sgmWsh, _sgmGammaC, _sgmGammaP );
+                                _rc, _sgmTCams, _scale, _step, _sp, rcSilhoueteMap );
+    srt.computeDepthSimMapVolume(volumeBestSim, volumeSecBestSim, _sgmWsh, _sgmGammaC, _sgmGammaP);
 
-    _sp->cps.freeTempVolume( volume_tmp_on_gpu );
+    CudaHostMemoryHeap<float, 3> volumeSecBestSim_cpu(volumeSecBestSim.getSize());
+    copy(volumeSecBestSim_cpu, volumeSecBestSim);
 
-    index_set.erase( index_set.begin() );
-    SemiGlobalMatchingVolume svol( volDimX, volDimY, volDimZ, zDimsAtATime, _sp );
-    svol.copyVolume( simVolume[0], _depthsTcamsLimits[0] );
-    svol.addVolumeSecondMin( index_set, simVolume, _depthsTcamsLimits );
+    StaticVector<unsigned char> simVolume(volDimX*volDimY*volDimZ);
+    for (int z = 0; z < volDimZ; z++)
+    {
+        for (int y = 0; y < volDimY; y++)
+        {
+            for (int x = 0; x < volDimX; x++)
+            {
+                int index = z * volDimX * volDimY + y * volDimX + x;
+                simVolume[index] = volumeSecBestSim_cpu(z * volDimX * volDimY + x, y) * 255.0f;
+            }
+        }
+    }
+
+    SemiGlobalMatchingVolume svol(volDimX, volDimY, volDimZ, volDimZ, _sp);
 
     // Reduction of 'volume' (X, Y, Z) into 'volumeStepZ' (X, Y, Z/step)
-    svol.cloneVolumeSecondStepZ();
+    svol.cloneVolumeSecondStepZ(simVolume);
 
     // Filter on the 3D volume to weight voxels based on their neighborhood strongness.
     // So it downweights local minimums that are not supported by their neighborhood.
     if(_sp->doSGMoptimizeVolume) // this is here for experimental reason ... to show how SGGC work on non
                                 // optimized depthmaps ... it must equals to true in normal case
     {
-        svol.SGMoptimizeVolumeStepZ(_rc, _step, _scale);
+        int volDimStepZ = volDimZ / svol.volStepZ;
+        CudaHostMemoryHeap<unsigned char, 3> volumeStepZ_hmh(CudaSize<3>(volDimX, volDimY, volDimStepZ));
+
+        for (int z = 0; z < volDimStepZ; z++)
+        {
+            for (int y = 0; y < volDimY; y++)
+            {
+                for (int x = 0; x < volDimX; x++)
+                {
+                    int index = z * volDimX * volDimY + y * volDimX + x;
+                    volumeStepZ_hmh(z * volDimX * volDimY + x, y) = (*svol._volumeStepZ)[index];
+                }
+            }
+        }
+        CudaDeviceMemoryPitched<unsigned char, 3> volumeStepZ_dmp(volumeStepZ_hmh);
+        _sp->cps.SGMoptimizeSimVolume(_rc, volumeStepZ_dmp, volDimX, volDimY, volDimStepZ, _step, //  TODO FACA: TO CHECK: volStepXY => _step
+           _scale, _sp->P1, _sp->P2);
+
     }
 
     // For each pixel: choose the voxel with the minimal similarity value
