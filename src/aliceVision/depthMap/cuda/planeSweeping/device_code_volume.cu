@@ -101,8 +101,8 @@ __global__ void volume_slice_kernel(
     float* fsim_2nd = get3DBufferAt(volume_2nd, volume2nd_s, volume2nd_p, vx, vy, zIndex);
     if (fsim < *fsim_1st)
     {
-        *fsim_1st = fsim;
         *fsim_2nd = *fsim_1st;
+        *fsim_1st = fsim;
     }
     else if (fsim < *fsim_2nd)
     {
