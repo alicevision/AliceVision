@@ -28,7 +28,7 @@ __global__ void volume_init_kernel( float* volume, int volume_s, int volume_p,
 {
     const int vx = blockIdx.x * blockDim.x + threadIdx.x;
     const int vy = blockIdx.y * blockDim.y + threadIdx.y;
-    const int vz = blockIdx.z;
+    const int vz = blockIdx.z * blockDim.z + threadIdx.z;
 
     if( vx >= volDimX ) return;
     if( vy >= volDimY ) return;
@@ -80,6 +80,18 @@ __global__ void volume_slice_kernel(
 
     const int zIndex = lowestUsedDepth + vz;
     const float fpPlaneDepth = depths_d[zIndex];
+
+    if (vx == 10 && vy == 10 && vz == 10)
+    {
+        printf("______________________________________\n");
+        printf("volume_slice_kernel: vx: %i, vy: %i, vz: %i, x: %i, y: %i\n", vx, vy, vz, x, y);
+        printf("volume_slice_kernel: volStepXY: %i, volDimX: %i, volDimY: %i\n", volStepXY, volDimX, volDimY);
+        printf("volume_slice_kernel: wsh: %i\n", wsh);
+        printf("volume_slice_kernel: rcWidth: %i, rcHeight: %i\n", rcWidth, rcHeight);
+        printf("volume_slice_kernel: lowestUsedDepth: %i, nbDepthsToSearch: %i\n", lowestUsedDepth, nbDepthsToSearch);
+        printf("volume_slice_kernel: zIndex: %i, fpPlaneDepth: %i\n", zIndex, fpPlaneDepth);
+        printf("______________________________________\n");
+    }
 
     patch ptcho;
     volume_computePatch(rc_cam_s, tc_cam_s, ptcho, fpPlaneDepth, make_int2(x, y)); // no texture use
