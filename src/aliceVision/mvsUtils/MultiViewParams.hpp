@@ -170,12 +170,12 @@ public:
 
     inline int getMaxImageWidth() const
     {
-        return _maxImageWidth;
+        return _maxImageWidth / getProcessDownscale();
     }
 
     inline int getMaxImageHeight() const
     {
-        return _maxImageHeight;
+        return _maxImageHeight / getProcessDownscale();
     }
 
     inline int getNbCameras() const

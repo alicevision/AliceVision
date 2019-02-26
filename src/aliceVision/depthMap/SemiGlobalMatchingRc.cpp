@@ -471,7 +471,7 @@ bool SemiGlobalMatchingRc::sgmrc(bool checkIfExists)
         }
     }
 
-    SemiGlobalMatchingVolume svol(volDimX, volDimY, volDimZ, volDimZ, _sp);
+    SemiGlobalMatchingVolume svol(volDimX, volDimY, volDimZ, _sp);
 
     // Reduction of 'volume' (X, Y, Z) into 'volumeStepZ' (X, Y, Z/step)
     svol.cloneVolumeSecondStepZ(simVolume);

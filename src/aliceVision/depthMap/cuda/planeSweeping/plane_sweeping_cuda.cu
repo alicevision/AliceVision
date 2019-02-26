@@ -337,9 +337,13 @@ void ps_deviceUpdateCam( Pyramid& ps_texs_arr,
     for(int scale = 1; scale < scales; ++scale)
     {
         const int radius = scale + 1;
+        const int sWidth = w / (scale + 1);
+        const int sHeight = h / (scale + 1);
+        std::cerr << "Create downscaled image for camera id " << camId << " at scale " << scale
+                  << ": " << sWidth << "x" << sHeight << std::endl;
 
         const dim3 block(32, 2, 1);
-        const dim3 grid(divUp(w / (scale + 1), block.x), divUp(h / (scale + 1), block.y), 1);
+        const dim3 grid(divUp(sWidth, block.x), divUp(sHeight, block.y), 1);
 
         ps_downscale_gauss( ps_texs_arr, camId, scale, w, h, radius );
 
@@ -350,7 +354,7 @@ void ps_deviceUpdateCam( Pyramid& ps_texs_arr,
                 ( ps_texs_arr[camId][scale].tex,
                   ps_texs_arr[camId][scale].arr->getBuffer(),
                   ps_texs_arr[camId][scale].arr->getPitch(),
-                  w / (scale + 1), h / (scale + 1));
+                  sWidth, sHeight);
         }
     }
 
@@ -737,6 +741,12 @@ void ps_computeSimilarityVolume(Pyramid& ps_texs_arr,
 
     configure_volume_slice_kernel();
 
+    int s = scale -1; // 0
+
+    // bind 'r4tex' from the image in Lab colorspace at the scale used
+    ps_texs_arr[rcam.camId][s].arr->bindToTexture(r4tex);
+    ps_texs_arr[tcam.camId][s].arr->bindToTexture(t4tex);
+
     const int max_cells = cells.size();
 
     const int baseDepth = cells[0].getLowestUsedDepth();  // min of all cells
@@ -768,17 +778,18 @@ void ps_computeSimilarityVolume(Pyramid& ps_texs_arr,
       ALICEVISION_CU_PRINT_DEBUG("====================");
       ALICEVISION_CU_PRINT_DEBUG("RC: " << rcam.camId << ", TC: " << tcam.camId);
       ALICEVISION_CU_PRINT_DEBUG("volume_slice_kernel_grid: " << volume_slice_kernel_grid.x << ", " << volume_slice_kernel_grid.y << ", " << volume_slice_kernel_grid.z);
+      ALICEVISION_CU_PRINT_DEBUG("volume_slice_kernel_block: " << volume_slice_kernel_block.x << ", " << volume_slice_kernel_block.y << ", " << volume_slice_kernel_block.z);
       ALICEVISION_CU_PRINT_DEBUG("nbDepthsToSearch: " << nbDepthsToSearch);
       ALICEVISION_CU_PRINT_DEBUG("volDimX: " << volDimX << ", volDimY: " << volDimY);
       ALICEVISION_CU_PRINT_DEBUG("scale-1: " << scale - 1);
+      ALICEVISION_CU_PRINT_DEBUG("s: " << s);
       ALICEVISION_CU_PRINT_DEBUG("rcWidth: " << rcWidth);
       ALICEVISION_CU_PRINT_DEBUG("tcWidth: " << tcWidth);
       ALICEVISION_CU_PRINT_DEBUG("====================");
-
       volume_slice_kernel
             <<<volume_slice_kernel_grid, volume_slice_kernel_block>>>
-            ( ps_texs_arr[rcam.camId][scale-1].tex,
-              ps_texs_arr[tcam.camId][scale-1].tex,
+            ( ps_texs_arr[rcam.camId][s].tex,
+              ps_texs_arr[tcam.camId][s].tex,
               rcam.param_dev,
               tcam.param_dev,
               depths_d.getBuffer(),
@@ -801,6 +812,9 @@ void ps_computeSimilarityVolume(Pyramid& ps_texs_arr,
     }
 
     cudaDeviceSynchronize();
+
+    cudaUnbindTexture(r4tex);
+    cudaUnbindTexture(t4tex);
 }
 
 void ps_filterVisTVolume(CudaHostMemoryHeap<unsigned int, 3>* iovol_hmh, int volDimX, int volDimY, int volDimZ,
@@ -1284,8 +1298,6 @@ void ps_optimizeDepthSimMapGradientDescent(Pyramid& ps_texs_arr,
 
     ps_init_reference_camera_matrices(cams[0].param_hst);
     ps_texs_arr[cams[0].camId][scale].arr->bindToTexture( r4tex );
-//     cudaBindTextureToArray(r4tex, ps_texs_arr[cams[0].camId][scale].arr->getArray(),
-//                            cudaCreateChannelDesc<uchar4>());
 
     std::vector<CudaDeviceMemoryPitched<float2, 2>*> dataMaps_dmp(ndataMaps);
     for(int i = 0; i < ndataMaps; i++)

@@ -132,6 +132,8 @@ static void cps_fillCameraData(mvsUtils::ImagesCache& ic, cameraStruct& cam, int
     // ic.refreshData(c);
     mvsUtils::ImagesCache::ImgPtr img = ic.getImg_sync( c );
 
+    ALICEVISION_LOG_DEBUG("cps_fillCameraData [" << c << "]: " << mp->getWidth(c) << "x" << mp->getHeight(c));
+
     Pixel pix;
     if( rcSilhoueteMap == nullptr )
     {
@@ -197,7 +199,7 @@ PlaneSweepingCuda::PlaneSweepingCuda( int CUDADeviceNo,
     {
         oneimagemb += 4.0 * (((float)((maxImageWidth / scale) * (maxImageHeight / scale)) / 1024.0) / 1024.0);
     }
-    float maxmbGPU = 2000.0f; // TODO FACA
+    float maxmbGPU = 500.0f; // TODO FACA
     _nImgsInGPUAtTime = (int)(maxmbGPU / oneimagemb);
     _nImgsInGPUAtTime = std::max(2, std::min(mp->ncams, _nImgsInGPUAtTime));
 

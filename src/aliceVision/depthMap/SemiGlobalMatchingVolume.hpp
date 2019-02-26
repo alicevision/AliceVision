@@ -16,7 +16,6 @@ class SemiGlobalMatchingVolume
 {
 public:
     SemiGlobalMatchingVolume(int _volDimX, int _volDimY, int _volDimZ,
-                             int zDimsAtATime,
                              SemiGlobalMatchingParams* _sp);
     ~SemiGlobalMatchingVolume(void);
 

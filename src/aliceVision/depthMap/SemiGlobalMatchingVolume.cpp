@@ -12,7 +12,7 @@
 namespace aliceVision {
 namespace depthMap {
 
-SemiGlobalMatchingVolume::SemiGlobalMatchingVolume(int _volDimX, int _volDimY, int _volDimZ, int zDimsAtATime, SemiGlobalMatchingParams* _sp)
+SemiGlobalMatchingVolume::SemiGlobalMatchingVolume(int _volDimX, int _volDimY, int _volDimZ, SemiGlobalMatchingParams* _sp)
     : sp( _sp )
     , volDimX(  _volDimX )
     , volDimY(  _volDimY )
@@ -30,11 +30,11 @@ SemiGlobalMatchingVolume::SemiGlobalMatchingVolume(int _volDimX, int _volDimY, i
                 << ": GPU memory on device " << devid
                 << ": free: " << dmi.x << ", total: " << dmi.y << ", used: " << dmi.z);
         }
-        float volumeMB = ( _volDimX * _volDimY * zDimsAtATime * sizeof(float) ) / ( 1024.0f*1024.0f );
+        float volumeMB = ( _volDimX * _volDimY * _volDimZ * sizeof(float) ) / ( 1024.0f*1024.0f );
         while(volumeMB > dmi.x)
         {
             volStepZ++;
-            volumeMB = ( _volDimX * _volDimY * zDimsAtATime/volStepZ * sizeof(float) ) / ( 1024.0f*1024.0f );
+            volumeMB = ( _volDimX * _volDimY * _volDimZ / volStepZ * sizeof(float) ) / ( 1024.0f*1024.0f );
         }
         if(sp->mp->verbose)
             ALICEVISION_LOG_DEBUG("GPU memory volume: " <<  volumeMB );
