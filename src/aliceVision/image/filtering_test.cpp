@@ -19,7 +19,7 @@ using namespace std;
 
 BOOST_AUTO_TEST_CASE(Image_Convolution)
 {
-  Image<unsigned char> in(250,250);
+  Image<unsigned char> in(250,250,true);
   for( int i = 10; i < 250-10; i++)
     for( int j = 10; j < 250-10; j++)
     {
@@ -30,7 +30,7 @@ BOOST_AUTO_TEST_CASE(Image_Convolution)
   BOOST_CHECK(in(249-5,249-5) == 0);
 
   // filter
-  Image<unsigned char> outFiltered(250,250);
+  Image<unsigned char> outFiltered(250, 250, true);
   ImageGaussianFilter( in, 6.0, outFiltered);
 
   BOOST_CHECK_NO_THROW(writeImage("in.png", in));
@@ -43,7 +43,7 @@ BOOST_AUTO_TEST_CASE(Image_Convolution)
 
 BOOST_AUTO_TEST_CASE(Image_Convolution_MeanBoxFilter_Separable)
 {
-  Image<unsigned char> in(40,40);
+  Image<unsigned char> in(40,40,true);
   in.block(10,10,20,20).fill(255.f);
   Vec3 meanBoxFilterKernel(1.f/3.f, 1.f/3.f, 1.f/3.f);
   Image<unsigned char> out;
@@ -52,7 +52,7 @@ BOOST_AUTO_TEST_CASE(Image_Convolution_MeanBoxFilter_Separable)
 
 BOOST_AUTO_TEST_CASE(Image_Convolution_MeanBoxFilter)
 {
-  Image<unsigned char> in(40,40);
+  Image<unsigned char> in(40,40,true);
   in.block(10,10,20,20).fill(255.f);
   Mat3 meanBoxFilterKernel;
   meanBoxFilterKernel.fill(1.f/9.f);
@@ -62,10 +62,10 @@ BOOST_AUTO_TEST_CASE(Image_Convolution_MeanBoxFilter)
 
 BOOST_AUTO_TEST_CASE(Image_Convolution_Scharr_X_Y)
 {
-  Image<float> in(40,40);
+  Image<float> in(40,40,true);
   in.block(10,10,20,20).fill(255.f);
 
-  Image<float> outFiltered(40,40);
+  Image<float> outFiltered(40,40,true);
 
   ImageScaledScharrXDerivative( in, outFiltered, 1);
 
@@ -100,10 +100,10 @@ BOOST_AUTO_TEST_CASE(Image_Convolution_Scharr_X_Y)
 
 BOOST_AUTO_TEST_CASE(Image_Convolution_Sobel_X_Y)
 {
-  Image<float> in(40,40);
+  Image<float> in(40,40,true);
   in.block(10,10,20,20).fill(255.f);
 
-  Image<float> outFiltered(40,40);
+  Image<float> outFiltered(40,40,true);
 
   ImageSobelXDerivative( in, outFiltered);
 

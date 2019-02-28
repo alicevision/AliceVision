@@ -648,5 +648,67 @@ __global__ void getSilhoueteMap_kernel(bool* out, int out_p, int step, int width
     }
 }
 
+__global__ void computeNormalMap_kernel(
+  float3* nmap, int nmap_p,
+  int width, int height, int wsh, const float gammaC, const float gammaP)
+{
+  int x = blockIdx.x * blockDim.x + threadIdx.x;
+  int y = blockIdx.y * blockDim.y + threadIdx.y;
+
+  if ((x >= width) || (y >= height))
+    return;
+
+  float depth = tex2D(depthsTex, x, y);
+  if(depth <= 0.0f)
+  {
+    *get2DBufferAt(nmap, nmap_p, x, y) = make_float3(-1.f, -1.f, -1.f);
+    return;
+  }
+
+  int2 pix1 = make_int2(x, y);
+  float3 p = get3DPointForPixelAndDepthFromRC(pix1, depth);
+  float pixSize = 0.0f;
+  {
+    int2 pix2 = make_int2(x + 1, y);
+    float3 p2 = get3DPointForPixelAndDepthFromRC(pix2, depth);
+    pixSize = size(p - p2);
+  }
+
+  cuda_stat3d s3d = cuda_stat3d();
+
+  for (int yp = -wsh; yp <= wsh; yp++)
+  {
+    for (int xp = -wsh; xp <= wsh; xp++)
+    {
+      float depthn = tex2D(depthsTex, x + xp, y + yp);
+      if ((depth > 0.0f) && (fabs(depthn - depth) < 30.0f * pixSize))
+      {
+        float w = 1.0f;
+        float2 pixn = make_float2(x + xp, y + yp);
+        float3 pn = get3DPointForPixelAndDepthFromRC(pixn, depthn);
+        s3d.update(pn, w);
+      }
+    }
+  }
+
+  float3 pp = p;
+  float3 nn = make_float3(-1.f, -1.f, -1.f);
+  if(!s3d.computePlaneByPCA(pp, nn))
+  {
+    *get2DBufferAt(nmap, nmap_p, x, y) = make_float3(-1.f, -1.f, -1.f);
+    return;
+  }
+
+  float3 nc = sg_s_rC - p;
+  normalize(nc);
+  if (orientedPointPlaneDistanceNormalizedNormal(pp + nn, pp, nc) < 0.0f)
+  {
+    nn.x = -nn.x;
+    nn.y = -nn.y;
+    nn.z = -nn.z;
+  }
+  *get2DBufferAt(nmap, nmap_p, x, y) = nn;
+}
+
 } // namespace depthMap
 } // namespace aliceVision

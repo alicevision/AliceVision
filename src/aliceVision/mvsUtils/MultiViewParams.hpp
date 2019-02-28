@@ -67,6 +67,7 @@ enum class EFileType {
     mapPtsSimsTmp = 40,
     nmodMap = 41,
     D = 42,
+    normalMap = 43,
 };
 
 class MultiViewParams

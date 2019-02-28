@@ -235,14 +235,15 @@ int PlaneSweepingCuda::addCam(int camIndex, float** H, int scale)
         int oldestId = camsTimes->minValId();
         cameraStruct* cam = (*cams)[oldestId];
 
+        long t1 = clock();
+
+        cps_fillCamera(cam, camIndex, mp, H, scale);
+
         if(cam->tex_rgba_hmh == nullptr)
         {
             cam->tex_rgba_hmh =
                 new CudaHostMemoryHeap<uchar4, 2>(CudaSize<2>(mp->getMaxImageWidth(), mp->getMaxImageHeight()));
         }
-        long t1 = clock();
-
-        cps_fillCamera(cam, camIndex, mp, H, scale);
         cps_fillCameraData(&_ic, cam, camIndex, mp);
         ps_deviceUpdateCam((CudaArray<uchar4, 2>**)ps_texs_arr, cam, oldestId,
                            _CUDADeviceNo, _nImgsInGPUAtTime, _scales, mp->getMaxImageWidth(), mp->getMaxImageHeight(), varianceWSH);
@@ -965,6 +966,43 @@ bool PlaneSweepingCuda::optimizeDepthSimMapGradientDescent(StaticVector<DepthSim
         mvsUtils::printfElapsedTime(t1);
 
     return true;
+}
+
+bool PlaneSweepingCuda::computeNormalMap(StaticVector<float>* depthMap, StaticVector<Color>* normalMap, int rc,
+  int scale, float igammaC, float igammaP, int wsh)
+{
+  const int w = mp->getWidth(rc) / scale;
+  const int h = mp->getHeight(rc) / scale;
+
+  const long t1 = clock();
+
+  ALICEVISION_LOG_DEBUG("computeNormalMap rc: " << rc);
+  cameraStruct camera;
+  camera.camId = rc;
+  cps_fillCamera(&camera, rc, mp, nullptr, scale);
+
+  CudaHostMemoryHeap<float3, 2> normalMap_hmh(CudaSize<2>(w, h));
+  CudaHostMemoryHeap<float, 2> depthMap_hmh(CudaSize<2>(w, h));
+
+  for (int i = 0; i < w * h; i++)
+  {
+    depthMap_hmh.getBuffer()[i] = (*depthMap)[i];
+  }
+
+  ps_computeNormalMap((CudaArray<uchar4, 2>**)ps_texs_arr, &normalMap_hmh, &depthMap_hmh, camera, w, h, scale - 1,
+    _CUDADeviceNo, _nImgsInGPUAtTime, _scales, wsh, _verbose, igammaC, igammaP);
+
+  for (int i = 0; i < w * h; i++)
+  {
+    (*normalMap)[i].r = normalMap_hmh.getBuffer()[i].x;
+    (*normalMap)[i].g = normalMap_hmh.getBuffer()[i].y;
+    (*normalMap)[i].b = normalMap_hmh.getBuffer()[i].z;
+  }
+
+  if (_verbose)
+    mvsUtils::printfElapsedTime(t1);
+
+  return true;
 }
 
 bool PlaneSweepingCuda::getSilhoueteMap(StaticVectorBool* oMap, int scale, int step, const rgb maskColor, int rc)
