@@ -263,7 +263,7 @@ void AlembicExporter::addSfM(const sfmData::SfMData& sfmData, ESfMData flagsPart
 
     addLandmarks(sfmData.getLandmarks(),
               (flagsPart & ESfMData::LANDMARKS_UNCERTAINTY) ? sfmData._landmarksUncertainty : noUncertainty,
-              (flagsPart & ESfMData::OBSERVATIONS));
+              ((flagsPart & ESfMData::OBSERVATIONS || flagsPart & ESfMData::OBSERVATIONS_WITH_FEATURES)), (flagsPart & ESfMData::OBSERVATIONS_WITH_FEATURES));
   }
 
   if(flagsPart & ESfMData::VIEWS ||
@@ -387,7 +387,7 @@ void AlembicExporter::addSfMCameraRig(const sfmData::SfMData& sfmData, IndexT ri
   }
 }
 
-void AlembicExporter::addLandmarks(const sfmData::Landmarks& landmarks, const sfmData::LandmarksUncertainty& landmarksUncertainty, bool withVisibility)
+void AlembicExporter::addLandmarks(const sfmData::Landmarks& landmarks, const sfmData::LandmarksUncertainty& landmarksUncertainty, bool withVisibility, bool withFeatures)
 {
   if(landmarks.empty())
     return;
@@ -442,29 +442,47 @@ void AlembicExporter::addLandmarks(const sfmData::Landmarks& landmarks, const sf
 
     // Use std::vector<::uint32_t> and std::vector<float> instead of std::vector<V2i> and std::vector<V2f>
     // Because Maya don't import them correctly
-    std::vector<::uint32_t> visibilityIds;
-    visibilityIds.reserve(nbObservations*2);
-    std::vector<float>featPos2d;
-    featPos2d.reserve(nbObservations*2);
+    std::vector<::uint32_t> visibilityViewId;
+    std::vector<::uint32_t> visibilityFeatId;
+    visibilityViewId.reserve(nbObservations);
 
-    for (const auto &landmark : landmarks)
+    std::vector<float>featPos2d;
+    if(withFeatures)
+    {
+      featPos2d.reserve(nbObservations*2);
+      visibilityFeatId.reserve(nbObservations);
+    }
+
+    for (const auto& landmark : landmarks)
     {
       const sfmData::Observations& observations = landmark.second.observations;
       for(const auto& vObs: observations )
       {
         const sfmData::Observation& obs = vObs.second;
-        // (View ID, Feature ID)
-        visibilityIds.emplace_back(vObs.first);
-        visibilityIds.emplace_back(obs.id_feat);
-        // Feature 2D position (x, y))
-        featPos2d.emplace_back(obs.x[0]);
-        featPos2d.emplace_back(obs.x[1]);
+
+        // viewId
+        visibilityViewId.emplace_back(vObs.first);
+
+        if(withFeatures)
+        {
+          // featureId
+          visibilityFeatId.emplace_back(obs.id_feat);
+
+          // feature 2D position (x, y))
+          featPos2d.emplace_back(obs.x[0]);
+          featPos2d.emplace_back(obs.x[1]);
+        }
       }
     }
 
     OUInt32ArrayProperty(userProps, "mvg_visibilitySize" ).set(visibilitySize);
-    OUInt32ArrayProperty(userProps, "mvg_visibilityIds" ).set(visibilityIds); // (viewID, featID)
-    OFloatArrayProperty(userProps, "mvg_visibilityFeatPos" ).set(featPos2d); // feature position (x,y)
+    OUInt32ArrayProperty(userProps, "mvg_visibilityViewId" ).set(visibilityViewId);
+
+    if(withFeatures)
+    {
+      OUInt32ArrayProperty(userProps, "mvg_visibilityFeatId" ).set(visibilityFeatId);
+      OFloatArrayProperty(userProps, "mvg_visibilityFeatPos" ).set(featPos2d); // feature position (x,y)
+    }
   }
   if(!landmarksUncertainty.empty())
   {

@@ -299,8 +299,7 @@ int main(int argc, char **argv)
     return EXIT_FAILURE;
 
   // get the color for the 3D points
-  if(!sfmEngine.colorize())
-    ALICEVISION_LOG_ERROR("SfM Colorization failed.");
+  sfmEngine.colorize();
 
   // set featuresFolders and matchesFolders relative paths
   {

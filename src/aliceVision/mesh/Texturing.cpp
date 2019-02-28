@@ -632,17 +632,18 @@ void Texturing::loadFromOBJ(const std::string& filename, bool flipNormals)
     }
 }
 
-void Texturing::loadFromMeshing(const std::string& meshFilepath, const std::string& visibilitiesFilepath)
+void Texturing::remapVisibilities(EVisibilityRemappingMethod remappingMethod, const Mesh& refMesh, const mesh::PointsVisibility& refPointsVisibilities)
 {
-    clear();
-    me = new Mesh();
-    if(!me->loadFromBin(meshFilepath))
-    {
-        throw std::runtime_error("Unable to load: " + meshFilepath);
-    }
-    pointsVisibilities = loadArrayOfArraysFromFile<int>(visibilitiesFilepath);
-    if(pointsVisibilities->size() != me->pts->size())
-        throw std::runtime_error("Error: Reference mesh and associated visibilities don't have the same size.");
+  assert(pointsVisibilities == nullptr);
+  pointsVisibilities = new mesh::PointsVisibility();
+
+  // remap visibilities from the reference onto the mesh
+  if(remappingMethod == EVisibilityRemappingMethod::PullPush || remappingMethod == mesh::EVisibilityRemappingMethod::Pull)
+    remapMeshVisibilities_pullVerticesVisibility(refMesh, refPointsVisibilities, *me, *pointsVisibilities);
+  if(remappingMethod == EVisibilityRemappingMethod::PullPush || remappingMethod == mesh::EVisibilityRemappingMethod::Push)
+    remapMeshVisibilities_pushVerticesVisibilityToTriangles(refMesh, refPointsVisibilities, *me, *pointsVisibilities);
+  if(pointsVisibilities->empty())
+    throw std::runtime_error("No visibility after visibility remapping.");
 }
 
 void Texturing::replaceMesh(const std::string& otherMeshPath, bool flipNormals)
