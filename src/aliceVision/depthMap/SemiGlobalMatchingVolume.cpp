@@ -146,13 +146,14 @@ void SemiGlobalMatchingVolume::exportVolume(StaticVector<float>& depths, int cam
     sfmData::SfMData pointCloud;
     const unsigned char* _volumeSecondBestPtr = _volumeSecondBest->getData().data();
     const mvsUtils::MultiViewParams* mp = sp->mp;
+    int eStep = 10;
 
     IndexT landmarkId;
     for(int z = 0; z < volDimZ; ++z)
     {
-        for(int y = 0; y < volDimY; ++y)
+        for(int y = 0; y < volDimY; y+=eStep)
         {
-            for(int x = 0; x < volDimX; ++x)
+            for(int x = 0; x < volDimX; x+=eStep)
             {
                 const double planeDepth = depths[z];
                 const Point3d planen = (mp->iRArr[camIndex] * Point3d(0.0f, 0.0f, 1.0f)).normalize();
@@ -180,13 +181,14 @@ void SemiGlobalMatchingVolume::exportVolumeStep(StaticVector<float>& depths, int
     sfmData::SfMData pointCloud;
     const unsigned char* volumePtr = _volumeStepZ->getData().data();
     const mvsUtils::MultiViewParams* mp = sp->mp;
+    int eStep = 10;
 
     IndexT landmarkId;
     for(int stepZ = 0; stepZ < (volDimZ / volStepZ); ++stepZ)
     {
-        for(int y = 0; y < volDimY; ++y)
+        for(int y = 0; y < volDimY; y+=eStep)
         {
-            for(int x = 0; x < volDimX; ++x)
+            for(int x = 0; x < volDimX; x+=eStep)
             {
                 const int z = (*_volumeBestZ)[stepZ * volDimX * volDimY + y * volDimX + x];
                 const double planeDepth = depths[z];

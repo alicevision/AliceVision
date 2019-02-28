@@ -475,8 +475,8 @@ bool SemiGlobalMatchingRc::sgmrc(bool checkIfExists)
         delete simVolume;
     }
 
-    if(_sp->exportIntermediateResults)
-      svol->exportVolume(*_depths, _rc, _scale, _step, _sp->mp->getDepthMapsFolder() + std::to_string(_sp->mp->getViewId(_rc)) + "_vol_beforeReduction.abc");
+    //if(_sp->exportIntermediateResults)
+    //  svol->exportVolume(*_depths, _rc, _scale, _step, _sp->mp->getDepthMapsFolder() + std::to_string(_sp->mp->getViewId(_rc)) + "_vol_beforeReduction.abc");
 
     // reduction of 'volume' (X, Y, Z) into 'volumeStepZ' (X, Y, Z/step)
     svol->cloneVolumeSecondStepZ();
