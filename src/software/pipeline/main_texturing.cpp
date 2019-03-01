@@ -45,6 +45,7 @@ int main(int argc, char* argv[])
     std::string imagesFolder;
     std::string outTextureFileTypeName = EImageFileType_enumToString(EImageFileType::PNG);
     bool flipNormals = false;
+
     mesh::TexturingParams texParams;
     std::string unwrapMethod = mesh::EUnwrapMethod_enumToString(mesh::EUnwrapMethod::Basic);
     std::string visibilityRemappingMethod = mesh::EVisibilityRemappingMethod_enumToString(texParams.visibilityRemappingMethod);
@@ -76,6 +77,8 @@ int main(int argc, char* argv[])
             " * Basic (> 600k faces) fast and simple. Can generate multiple atlases.\n"
             " * LSCM (<= 600k faces): optimize space. Generates one atlas.\n"
             " * ABF (<= 300k faces): optimize space and stretch. Generates one atlas.'")
+        ("useUDIM", po::value<bool>(&texParams.useUDIM)->default_value(texParams.useUDIM),
+            "Use UDIM UV mapping.")
         ("fillHoles", po::value<bool>(&texParams.fillHoles)->default_value(texParams.fillHoles),
             "Fill texture holes with plausible values.")
         ("padding", po::value<unsigned int>(&texParams.padding)->default_value(texParams.padding),

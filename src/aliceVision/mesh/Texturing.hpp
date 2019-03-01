@@ -74,6 +74,7 @@ struct TexturingParams
     unsigned int padding = 15;
     unsigned int downscale = 2;
     bool fillHoles = false;
+    bool useUDIM = true;
 };
 
 struct Texturing
