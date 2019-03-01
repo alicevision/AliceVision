@@ -467,7 +467,6 @@ void ps_aggregatePathVolume(CudaDeviceMemoryPitched<unsigned char, 3>& d_volSimT
 void ps_updateAggrVolume(CudaDeviceMemoryPitched<unsigned char, 3>& volAgr_dmp,
                          const CudaDeviceMemoryPitched<unsigned char, 3>& d_volSim,
                          int volDimX, int volDimY, int volDimZ,
-                         int volStepXY,
                          int dimTrnX, int dimTrnY, int dimTrnZ,
                          unsigned char P1, unsigned char P2, 
                          bool verbose, bool doInvZ, int lastN)
@@ -593,7 +592,6 @@ void ps_SGMoptimizeSimVolume(Pyramid& ps_texs_arr,
                              const cameraStruct& rccam,
                              CudaDeviceMemoryPitched<unsigned char, 3>& volSim_dmp,
                              int volDimX, int volDimY, int volDimZ,
-                             int volStepXY,
                              bool verbose, unsigned char P1, unsigned char P2,
                              int scale, int CUDAdeviceNo, int ncamsAllocated)
 {
@@ -603,7 +601,7 @@ void ps_SGMoptimizeSimVolume(Pyramid& ps_texs_arr,
     ps_init_reference_camera_matrices(rccam.param_hst);
 
     // bind 'r4tex' from the image in Lab colorspace at the scale used
-    ps_texs_arr[rccam.camId][scale].arr->bindToTexture( r4tex );
+    ps_texs_arr[rccam.camId][scale-1].arr->bindToTexture( r4tex );
 
     clock_t tall = tic();
 
@@ -627,7 +625,6 @@ void ps_SGMoptimizeSimVolume(Pyramid& ps_texs_arr,
                                       ps_updateAggrVolume(volAgr_dmp,
                                                           volSim_dmp,
                                                           volDimX, volDimY, volDimZ,
-                                                          volStepXY,
                                                           dimTrnX, dimTrnY, dimTrnZ,
                                                           P1, P2, verbose,
                                                           invZ,
@@ -648,6 +645,8 @@ void ps_SGMoptimizeSimVolume(Pyramid& ps_texs_arr,
         printf("SGM volume gpu elapsed time: %f ms \n", toc(tall));
 
     cudaUnbindTexture(r4tex);
+
+    volSim_dmp.copyFrom(volAgr_dmp);
 
     if(verbose)
         printf("ps_SGMoptimizeSimVolume done\n");
@@ -733,19 +732,14 @@ void ps_computeSimilarityVolume(Pyramid& ps_texs_arr,
                                 int wsh, int kernelSizeHalf,
                                 int scale,
                                 bool verbose,
-                                float gammaC, float gammaP, bool subPixel,
-                                float epipShift)
+                                float gammaC, float gammaP)
 {
     CHECK_CUDA_ERROR();
     cudaDeviceSynchronize();
 
     configure_volume_slice_kernel();
 
-    int s = scale -1; // 0
-
-    // bind 'r4tex' from the image in Lab colorspace at the scale used
-    ps_texs_arr[rcam.camId][s].arr->bindToTexture(r4tex);
-    ps_texs_arr[tcam.camId][s].arr->bindToTexture(t4tex);
+    int s = scale -1;
 
     const int max_cells = cells.size();
 
@@ -768,6 +762,7 @@ void ps_computeSimilarityVolume(Pyramid& ps_texs_arr,
 
     for(int ci=0; ci<max_cells; ci++)
     {
+      const int startDepthIndex = cells[ci].getDepthToStart();
       const int nbDepthsToSearch = cells[ci].getDepthsToSearch();
 
       dim3 volume_slice_kernel_grid(
@@ -779,12 +774,14 @@ void ps_computeSimilarityVolume(Pyramid& ps_texs_arr,
       ALICEVISION_CU_PRINT_DEBUG("RC: " << rcam.camId << ", TC: " << tcam.camId);
       ALICEVISION_CU_PRINT_DEBUG("volume_slice_kernel_grid: " << volume_slice_kernel_grid.x << ", " << volume_slice_kernel_grid.y << ", " << volume_slice_kernel_grid.z);
       ALICEVISION_CU_PRINT_DEBUG("volume_slice_kernel_block: " << volume_slice_kernel_block.x << ", " << volume_slice_kernel_block.y << ", " << volume_slice_kernel_block.z);
+      ALICEVISION_CU_PRINT_DEBUG("startDepthIndex: " << startDepthIndex);
       ALICEVISION_CU_PRINT_DEBUG("nbDepthsToSearch: " << nbDepthsToSearch);
+      ALICEVISION_CU_PRINT_DEBUG("startDepthIndex+nbDepthsToSearch: " << startDepthIndex+nbDepthsToSearch);
       ALICEVISION_CU_PRINT_DEBUG("volDimX: " << volDimX << ", volDimY: " << volDimY);
       ALICEVISION_CU_PRINT_DEBUG("scale-1: " << scale - 1);
       ALICEVISION_CU_PRINT_DEBUG("s: " << s);
-      ALICEVISION_CU_PRINT_DEBUG("rcWidth: " << rcWidth);
-      ALICEVISION_CU_PRINT_DEBUG("tcWidth: " << tcWidth);
+      ALICEVISION_CU_PRINT_DEBUG("rcWidth / scale: " << rcWidth / scale << "x" << rcHeight / scale);
+      ALICEVISION_CU_PRINT_DEBUG("tcWidth / scale: " << tcWidth / scale << "x" << tcHeight / scale);
       ALICEVISION_CU_PRINT_DEBUG("====================");
       volume_slice_kernel
             <<<volume_slice_kernel_grid, volume_slice_kernel_block>>>
@@ -793,12 +790,12 @@ void ps_computeSimilarityVolume(Pyramid& ps_texs_arr,
               rcam.param_dev,
               tcam.param_dev,
               depths_d.getBuffer(),
-              cells[ci].getDepthToStart(),
+              startDepthIndex,
               nbDepthsToSearch,
               rcWidth / scale, rcHeight / scale,
               tcWidth / scale, tcHeight / scale,
               wsh,
-              gammaC, gammaP, epipShift,
+              gammaC, gammaP,
               gpu_volume_1st,
               volBestSim_dmp.getBytesPaddedUpToDim(1),
               volBestSim_dmp.getBytesPaddedUpToDim(0),
@@ -812,9 +809,6 @@ void ps_computeSimilarityVolume(Pyramid& ps_texs_arr,
     }
 
     cudaDeviceSynchronize();
-
-    cudaUnbindTexture(r4tex);
-    cudaUnbindTexture(t4tex);
 }
 
 void ps_filterVisTVolume(CudaHostMemoryHeap<unsigned int, 3>* iovol_hmh, int volDimX, int volDimY, int volDimZ,

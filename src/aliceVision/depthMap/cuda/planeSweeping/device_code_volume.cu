@@ -47,7 +47,7 @@ __global__ void volume_slice_kernel(
                                     int rcWidth, int rcHeight,
                                     int tcWidth, int tcHeight,
                                     int wsh,
-                                    const float gammaC, const float gammaP, const float epipShift,
+                                    const float gammaC, const float gammaP,
                                     float* volume_1st,
                                     int volume1st_s, int volume1st_p,
                                     float* volume_2nd,
@@ -65,7 +65,7 @@ __global__ void volume_slice_kernel(
 
     const int vx = blockIdx.x * blockDim.x + threadIdx.x;
     const int vy = blockIdx.y * blockDim.y + threadIdx.y;
-    const int vz = blockIdx.z * blockDim.z + threadIdx.z;
+    const int vz = blockIdx.z; // * blockDim.z + threadIdx.z;
 
     if( vx >= volDimX || vy >= volDimY )
         return;
@@ -81,7 +81,10 @@ __global__ void volume_slice_kernel(
     const int zIndex = lowestUsedDepth + vz;
     const float fpPlaneDepth = depths_d[zIndex];
 
-    if (vx == 10 && vy == 10 && vz == 10)
+    /*
+    int verbose = (vx % 100 == 0 && vy % 100 == 0 && vz % 100 == 0);
+
+    if (verbose)
     {
         printf("______________________________________\n");
         printf("volume_slice_kernel: vx: %i, vy: %i, vz: %i, x: %i, y: %i\n", vx, vy, vz, x, y);
@@ -89,10 +92,11 @@ __global__ void volume_slice_kernel(
         printf("volume_slice_kernel: wsh: %i\n", wsh);
         printf("volume_slice_kernel: rcWidth: %i, rcHeight: %i\n", rcWidth, rcHeight);
         printf("volume_slice_kernel: lowestUsedDepth: %i, nbDepthsToSearch: %i\n", lowestUsedDepth, nbDepthsToSearch);
-        printf("volume_slice_kernel: zIndex: %i, fpPlaneDepth: %i\n", zIndex, fpPlaneDepth);
+        printf("volume_slice_kernel: zIndex: %i, fpPlaneDepth: %f\n", zIndex, fpPlaneDepth);
+        printf("volume_slice_kernel: gammaC: %f, gammaP: %f, epipShift: %f\n", gammaC, gammaP, epipShift);
         printf("______________________________________\n");
     }
-
+    */
     patch ptcho;
     volume_computePatch(rc_cam_s, tc_cam_s, ptcho, fpPlaneDepth, make_int2(x, y)); // no texture use
 
@@ -101,8 +105,7 @@ __global__ void volume_slice_kernel(
                                   ptcho, wsh,
                                   rcWidth, rcHeight,
                                   tcWidth, tcHeight,
-                                  gammaC, gammaP,
-                                  epipShift);
+                                  gammaC, gammaP);
 
     const float fminVal = -1.0f;
     const float fmaxVal = 1.0f;
@@ -111,6 +114,7 @@ __global__ void volume_slice_kernel(
 
     float* fsim_1st = get3DBufferAt(volume_1st, volume1st_s, volume1st_p, vx, vy, zIndex);
     float* fsim_2nd = get3DBufferAt(volume_2nd, volume2nd_s, volume2nd_p, vx, vy, zIndex);
+
     if (fsim < *fsim_1st)
     {
         *fsim_2nd = *fsim_1st;

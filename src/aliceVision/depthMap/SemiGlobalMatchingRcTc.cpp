@@ -96,8 +96,7 @@ void SemiGlobalMatchingRcTc::computeDepthSimMapVolume(
                                  _rcDepths,
                                  _rc, _tc,
                                  _rcSilhoueteMap,
-                                 wsh, gammaC, gammaP, _scale, 1,
-                                 0.0f);
+                                 wsh, gammaC, gammaP, _scale);
 
     if(sp->mp->verbose)
         mvsUtils::printfElapsedTime(tall, "SemiGlobalMatchingRcTc::computeDepthSimMapVolume ");

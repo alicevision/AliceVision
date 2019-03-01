@@ -128,6 +128,8 @@ void SemiGlobalMatchingParams::getDepthSimMapFromBestIdVal(DepthSimMap& out_dept
     int volDimX = w;
     int volDimY = h;
 
+    assert(out_depthSimMap.dsm.size() == volDimX * volDimY);
+
 #pragma omp parallel for
     for(int y = 0; y < volDimY; y++)
     {
@@ -137,6 +139,9 @@ void SemiGlobalMatchingParams::getDepthSimMapFromBestIdVal(DepthSimMap& out_dept
             Pixel pixScale1 = Pixel(pix.x * scale, pix.y * scale);
             float sim = volumeBestIdVal[y * volDimX + x].value;
             int fpdepthId = volumeBestIdVal[y * volDimX + x].id;
+
+            DepthSim& out_depthSim = out_depthSimMap.dsm[y * volDimX + x];
+
             if((fpdepthId >= zborder) && (fpdepthId < planesDepths.size() - zborder))
             {
                 float fpPlaneDepth = planesDepths[fpdepthId];
@@ -149,16 +154,13 @@ void SemiGlobalMatchingParams::getDepthSimMapFromBestIdVal(DepthSimMap& out_dept
                 // printf("fpdepthId %i, fpPlaneDepth %f, depth %f, x %i y
                 // %i\n",fpdepthId,fpPlaneDepth,depth,pixScale1.x,pixScale1.y);
 
-                //out_depthSimMap.dsm[(pix.y/step)*(out_depthSimMap.w)+(pix.x/step)].x = depth;
-                //out_depthSimMap.dsm[(pix.y/step)*(out_depthSimMap.w)+(pix.x/step)].y = sim;
-                out_depthSimMap.dsm[y * volDimX + x].depth = depth;
-                out_depthSimMap.dsm[y * volDimX + x].sim = sim;
+                out_depthSim.depth = depth;
+                out_depthSim.sim = sim;
             }
             else
             {
-                // border cases
-                // printf("WARNING fpdepthId == %i\n",fpdepthId);
-                // exit(1);
+                out_depthSim.depth = -1.0f;
+                out_depthSim.sim = 1.0f;
             }
         }
     }

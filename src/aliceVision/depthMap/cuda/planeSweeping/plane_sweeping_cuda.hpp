@@ -33,15 +33,13 @@ void ps_computeSimilarityVolume(
   int wsh, int kernelSizeHalf,
   int scale,
   bool verbose,
-  float gammaC, float gammaP, bool subPixel,
-  float epipShift);
+  float gammaC, float gammaP);
 
 void ps_SGMoptimizeSimVolume(
     Pyramid& ps_texs_arr,
     const cameraStruct& rccam,
     CudaDeviceMemoryPitched<unsigned char, 3>& volSim_dmp,
     int volDimX, int volDimY, int volDimZ,
-    int volStepXY,
     bool verbose,
     unsigned char P1, unsigned char P2,
     int scale,

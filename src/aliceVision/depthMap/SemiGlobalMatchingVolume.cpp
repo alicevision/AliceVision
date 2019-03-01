@@ -49,24 +49,12 @@ SemiGlobalMatchingVolume::SemiGlobalMatchingVolume(int _volDimX, int _volDimY, i
             }
         }
     }
-
-    _volumeStepZ = new StaticVector<unsigned char>( volDimX * volDimY * (volDimZ / volStepZ), 255 );
-
-    _volumeBestZ = new StaticVector<int>( volDimX * volDimY * (volDimZ / volStepZ), -1 );
 }
 
 SemiGlobalMatchingVolume::~SemiGlobalMatchingVolume()
 {
-    freeMem();
 }
 
-void SemiGlobalMatchingVolume::freeMem()
-{
-    if( _volumeStepZ )      delete _volumeStepZ;
-    if( _volumeBestZ )      delete _volumeBestZ;
-    _volumeStepZ      = nullptr;
-    _volumeBestZ      = nullptr;
-}
 
 void SemiGlobalMatchingVolume::cloneVolumeSecondStepZ(const StaticVector<unsigned char>& volumeSecondBest)
 {
@@ -74,11 +62,12 @@ void SemiGlobalMatchingVolume::cloneVolumeSecondStepZ(const StaticVector<unsigne
 
     ALICEVISION_LOG_DEBUG("SemiGlobalMatchingVolume::cloneVolumeSecondStepZ, volume reduction by volStepZ: " << volStepZ);
 
-    _volumeStepZ->resize_with(volDimX * volDimY * (volDimZ / volStepZ), 255);
-    _volumeBestZ->resize_with(volDimX * volDimY * (volDimZ / volStepZ), -1);
+    _volumeStepZ.resize_with(volDimX * volDimY * (volDimZ / volStepZ), 255);
+    _volumeBestZ.resize_with(volDimX * volDimY * (volDimZ / volStepZ), -1);
+
     const unsigned char* in_volumeSecondBestPtr = volumeSecondBest.getData().data();
-    unsigned char* out_volumeStepZPtr     = _volumeStepZ->getDataWritable().data();
-    int*           out_volumeBestZPtr     = _volumeBestZ->getDataWritable().data();
+    unsigned char* out_volumeStepZPtr     = _volumeStepZ.getDataWritable().data();
+    int*           out_volumeBestZPtr     = _volumeBestZ.getDataWritable().data();
     for(int z = 0; z < volDimZ; z++)
     {
         for(int y = 0; y < volDimY; y++)
@@ -106,13 +95,14 @@ void SemiGlobalMatchingVolume::cloneVolumeSecondStepZ(const StaticVector<unsigne
 
 void SemiGlobalMatchingVolume::getOrigVolumeBestIdValFromVolumeStepZ(StaticVector<IdValue>& out_volumeBestIdVal, int zborder)
 {
+    ALICEVISION_LOG_DEBUG("SemiGlobalMatchingVolume::getOrigVolumeBestIdValFromVolumeStepZ");
     long tall = clock();
 
     out_volumeBestIdVal.resize_with(volDimX * volDimY, IdValue(-1, 1.0f));
-    unsigned char* _volumeStepZPtr = _volumeStepZ->getDataWritable().data();
-    int* _volumeBestZPtr = _volumeBestZ->getDataWritable().data();
-    IdValue* volumeBestIdValPtr = out_volumeBestIdVal.getDataWritable().data();
-    for(int z = zborder; z < volDimZ / volStepZ - zborder; z++)
+    unsigned char* _volumeStepZPtr = _volumeStepZ.getDataWritable().data();
+    int* _volumeBestZPtr = _volumeBestZ.getDataWritable().data();
+    IdValue* out_volumeBestIdValPtr = out_volumeBestIdVal.getDataWritable().data();
+    for(int z = zborder; z < (volDimZ / volStepZ) - zborder; z++)
     {
         for(int y = 1; y < volDimY - 1; y++)
         {
@@ -121,21 +111,21 @@ void SemiGlobalMatchingVolume::getOrigVolumeBestIdValFromVolumeStepZ(StaticVecto
                 int volumeIndex = z * volDimX * volDimY + y * volDimX + x;
                 // value from volumeStepZ converted from (0, 255) to (-1, +1)
                 float val = (((float)_volumeStepZPtr[volumeIndex]) / 255.0f) * 2.0f - 1.0f;
-                int bestZ = _volumeBestZPtr[volumeIndex]; // TODO: what is bestZ?
-                IdValue& idVal = volumeBestIdValPtr[y * volDimX + x];
+                int bestZ = _volumeBestZPtr[volumeIndex];
+                IdValue& out_idVal = out_volumeBestIdValPtr[y * volDimX + x];
                 assert(bestZ >= 0);
 
-                if(idVal.id == -1)
+                if(out_idVal.id == -1)
                 {
                     // if not initialized, set the value
-                    idVal.value = val;
-                    idVal.id = bestZ;
+                    out_idVal.value = val;
+                    out_idVal.id = bestZ;
                 }
-                else if (val < idVal.value)
+                else if (val < out_idVal.value)
                 {
                     // if already initialized, update the value if smaller
-                    idVal.value = val;
-                    idVal.id = bestZ;
+                    out_idVal.value = val;
+                    out_idVal.id = bestZ;
                 }
             }
         }

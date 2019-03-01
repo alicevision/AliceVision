@@ -308,19 +308,11 @@ __device__ float compNCCby3DptsYK( cudaTextureObject_t rc_tex,
                                    int wsh,
                                    int rc_width, int rc_height,
                                    int tc_width, int tc_height,
-                                   const float _gammaC, const float _gammaP,
-                                   const float epipShift )
+                                   const float _gammaC, const float _gammaP)
 {
     float3 p = ptch.p;
     float2 rp = project3DPoint(rc_cam_s->P, p);
     float2 tp = project3DPoint(tc_cam_s->P, p);
-
-    float3 pUp = p + ptch.y * (ptch.d * 10.0f); // assuming that ptch.y is ortogonal to epipolar plane
-    float2 tvUp = project3DPoint(tc_cam_s->P, pUp);
-    tvUp = tvUp - tp;
-    normalize(tvUp);
-    float2 vEpipShift = tvUp * epipShift;
-    tp = tp + vEpipShift;
 
     const float dd = wsh + 2.0f; // TODO FACA
     if((rp.x < dd) || (rp.x > (float)(rc_width  - 1) - dd) ||
@@ -354,7 +346,7 @@ __device__ float compNCCby3DptsYK( cudaTextureObject_t rc_tex,
         {
             p = ptch.p + ptch.x * (float)(ptch.d * (float)xp) + ptch.y * (float)(ptch.d * (float)yp);
             float2 rp1 = project3DPoint(rc_cam_s->P, p);
-            float2 tp1 = project3DPoint(tc_cam_s->P, p) + vEpipShift;
+            float2 tp1 = project3DPoint(tc_cam_s->P, p);
             // float2 rp1 = rp + rvLeft*(float)xp + rvUp*(float)yp;
             // float2 tp1 = tp + tvLeft*(float)xp + tvUp*((float)yp+epipShift);
 

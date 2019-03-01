@@ -120,8 +120,7 @@ private:
             int rc, int tc,
             StaticVectorBool* rcSilhoueteMap,
             int wsh, float gammaC, float gammaP,
-            int scale, int step,
-            float epipShift);
+            int scale);
 
 public:
     void sweepPixelsToVolume(
@@ -136,12 +135,10 @@ public:
             const StaticVector<int>& tcams,
             StaticVectorBool* rcSilhoueteMap,
             int wsh, float gammaC, float gammaP,
-            int scale, int step,
-            float epipShift);
+            int scale);
 
     bool SGMoptimizeSimVolume(int rc, CudaDeviceMemoryPitched<unsigned char, 3>& volSim_dmp,
                               int volDimX, int volDimY, int volDimZ,
-                              int volStepXY,
                               int scale, unsigned char P1, unsigned char P2);
     Point3d getDeviceMemoryInfo();
     bool transposeVolume(StaticVector<unsigned char>* volume, const Voxel& dimIn, const Voxel& dimTrn, Voxel& dimOut);

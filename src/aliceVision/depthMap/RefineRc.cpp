@@ -54,8 +54,7 @@ void RefineRc::getDepthPixSizeMapFromSGM(DepthSimMap& out_depthSimMapScale1Step1
     const int h11 = _sp->mp->getHeight(_rc);
     const int zborder = 2;
 
-    StaticVector<IdValue> volumeBestIdVal;
-    volumeBestIdVal.reserve(_width * _height);
+    StaticVector<IdValue> volumeBestIdVal(_width * _height);
 
     for(int i = 0; i < _volumeBestIdVal.size(); i++)
     {
@@ -64,10 +63,7 @@ void RefineRc::getDepthPixSizeMapFromSGM(DepthSimMap& out_depthSimMapScale1Step1
         const float sim = _sp->mp->simThr - 0.0001;
         const int id = _volumeBestIdVal[i].id;
 
-        if(id > 0)
-          volumeBestIdVal.push_back(IdValue(id, sim));
-        else
-          volumeBestIdVal.push_back(IdValue(0, sim));
+        volumeBestIdVal[i] = IdValue(std::max(0, id), sim);
     }
 
     {
@@ -81,7 +77,7 @@ void RefineRc::getDepthPixSizeMapFromSGM(DepthSimMap& out_depthSimMapScale1Step1
     {
         for(int x = 0; x < w11; ++x)
         {
-            Point3d p = _sp->mp->CArr[_rc] + (_sp->mp->iCamArr[_rc] * Point2d(static_cast<float>(x), static_cast<float>(y))).normalize() * out_depthSimMapScale1Step1.dsm[y * w11 + x].depth;
+            const Point3d p = _sp->mp->CArr[_rc] + (_sp->mp->iCamArr[_rc] * Point2d(static_cast<float>(x), static_cast<float>(y))).normalize() * out_depthSimMapScale1Step1.dsm[y * w11 + x].depth;
 
             if(_userTcOrPixSize)
                 out_depthSimMapScale1Step1.dsm[y * w11 + x].sim = _sp->mp->getCamsMinPixelSize(p, _refineTCams);

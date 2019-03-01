@@ -28,7 +28,11 @@ public:
 
     void getOrigVolumeBestIdValFromVolumeStepZ(StaticVector<IdValue>& out_volumeBestIdVal, int zborder);
 
-    void freeMem();
+    void freeMem()
+    {
+        _volumeStepZ.swap(StaticVector<unsigned char>());
+        _volumeBestZ.swap(StaticVector<int>());
+    }
 
 private:
     SemiGlobalMatchingParams* sp = nullptr;
@@ -41,9 +45,9 @@ public: // TODO FACA: TO KEEP PRIVATE
     int   volStepZ;
 
     /// The similarity volume after Z reduction. Volume dimension is (X, Y, Z/step).
-    StaticVector<unsigned char>* _volumeStepZ = nullptr;
+    StaticVector<unsigned char> _volumeStepZ;
     /// Volume with the index of the original plane. Volume dimension (X, Y, Z/step).
-    StaticVector<int>* _volumeBestZ = nullptr;
+    StaticVector<int> _volumeBestZ;
 };
 
 } // namespace depthMap

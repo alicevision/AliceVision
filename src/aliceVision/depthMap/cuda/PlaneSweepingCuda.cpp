@@ -286,27 +286,29 @@ int PlaneSweepingCuda::addCam( int rc, int scale,
     if(id == -1)
     {
         // get oldest id
-        int oldestId = camsTimes.minValId();
-        cameraStruct& cam = cams[oldestId];
+        id = camsTimes.minValId();
+        cameraStruct& cam = cams[id];
+        cam.camId = id;
 
         if(cam.tex_rgba_hmh == nullptr)
         {
             cam.tex_rgba_hmh =
                 new CudaHostMemoryHeap<uchar4, 2>(CudaSize<2>(mp->getMaxImageWidth(), mp->getMaxImageHeight()));
         }
+        else
+        {
+            assert(cam.tex_rgba_hmh->getSize() == CudaSize<2>(mp->getMaxImageWidth(), mp->getMaxImageHeight()));
+        }
         long t1 = clock();
 
-        cps_fillCamera(_camsBasesHst(0,oldestId), rc, mp, scale, calling_func);
-        cps_fillCameraData(_ic, cams[oldestId], rc, mp, rcSilhoueteMap);
-        ps_deviceUpdateCam(ps_texs_arr, cams[oldestId], oldestId,
-                           _CUDADeviceNo, _nImgsInGPUAtTime, _scales, mp->getMaxImageWidth(), mp->getMaxImageHeight(), varianceWSH);
+        cps_fillCamera(_camsBasesHst(0,id), rc, mp, scale, calling_func);
+        cps_fillCameraData(_ic, cam, rc, mp, rcSilhoueteMap);
+        ps_deviceUpdateCam(ps_texs_arr, cam, id,
+                           _CUDADeviceNo, _nImgsInGPUAtTime, _scales, mp->getWidth(rc), mp->getHeight(rc), varianceWSH);
 
-        if(_verbose)
-            mvsUtils::printfElapsedTime(t1, "copy image from disk to GPU ");
+        mvsUtils::printfElapsedTime(t1, "Copy image (camera id="+std::to_string(rc)+") from CPU to GPU");
 
-        camsRcs[oldestId] = rc;
-        camsTimes[oldestId] = clock();
-        id = oldestId;
+        camsRcs[id] = rc;
     }
     else
     {
@@ -315,12 +317,12 @@ int PlaneSweepingCuda::addCam( int rc, int scale,
          * It is not sensible to waste cycles on refilling the camera struct if the new one
          * is identical to the old one.
          */
-        cps_fillCamera( _camsBasesHst(0,id), rc, mp, scale, calling_func );
+        cps_fillCamera(_camsBasesHst(0,id), rc, mp, scale, calling_func);
         // cps_fillCameraData((cameraStruct*)(*cams)[id], rc, mp, H, _scales);
         // ps_deviceUpdateCam((cameraStruct*)(*cams)[id], id, _scales);
-
-        camsTimes[id] = clock();
+        ALICEVISION_LOG_DEBUG("Reuse image (camera id=" + std::to_string(rc) + ") already on the GPU.");
     }
+    camsTimes[id] = clock();
     return id;
 }
 
@@ -704,8 +706,7 @@ void PlaneSweepingCuda::sweepPixelsToVolume( CudaDeviceMemoryPitched<float, 3>& 
                                              const StaticVector<int>& tcams,
                                              StaticVectorBool* rcSilhoueteMap,
                                              int wsh, float gammaC, float gammaP,
-                                             int scale, int step,
-                                             float epipShift )
+                                             int scale)
 {
     ps_initSimilarityVolume(
       volBestSim_dmp,
@@ -731,7 +732,7 @@ void PlaneSweepingCuda::sweepPixelsToVolume( CudaDeviceMemoryPitched<float, 3>& 
                                    rc, tc,
                                    rcSilhoueteMap,
                                    wsh,
-                                   gammaC, gammaP, scale, step, epipShift );
+                                   gammaC, gammaP, scale);
         cudaDeviceSynchronize();
     }
     cudaDeviceSynchronize();
@@ -748,8 +749,7 @@ void PlaneSweepingCuda::sweepPixelsToVolumeSubset(
     int rc, int tc,
     StaticVectorBool* rcSilhoueteMap,
     int wsh, float gammaC, float gammaP,
-    int scale, int step,
-    float epipShift )
+    int scale)
 {
     clock_t t1 = tic();
 
@@ -757,24 +757,22 @@ void PlaneSweepingCuda::sweepPixelsToVolumeSubset(
 
     ALICEVISION_LOG_DEBUG("sweepPixelsVolume:" << std::endl
                             << "\t- scale: " << scale << std::endl
-                            << "\t- step: " << step << std::endl
                             << "\t- volStepXY: " << volStepXY << std::endl
                             << "\t- volDimX: " << volDimX << std::endl
                             << "\t- volDimY: " << volDimY );
 
     const int rcamCacheId = addCam(rc, scale, rcSilhoueteMap, __FUNCTION__ );
-    cams[rcamCacheId].camId = rcamCacheId;
     cameraStruct rcam = cams[rcamCacheId];
 
     const int tcamCacheId = addCam(tc, scale, nullptr, __FUNCTION__ );
-    cams[tcamCacheId].camId = tcamCacheId;
     cameraStruct tcam = cams[tcamCacheId];
 
     {
         ALICEVISION_LOG_DEBUG("rc: " << rc << " tcams: " << tc);
+        ALICEVISION_LOG_DEBUG("rcamCacheId: " << rcamCacheId << ", tcamCacheId: " << tcamCacheId);
         for( int ci=0; ci<max_cells; ++ci)
         {
-          ALICEVISION_LOG_DEBUG(" - Cell["<<ci<<"] depth start: " << cells[ci].getDepthToStart() << ", stop: " << cells[ci].getDepthToStop());
+            ALICEVISION_LOG_DEBUG(" - Cell["<<ci<<"] depth start: " << cells[ci].getDepthToStart() << ", stop: " << cells[ci].getDepthToStop());
         }
     }
 
@@ -806,7 +804,7 @@ void PlaneSweepingCuda::sweepPixelsToVolumeSubset(
             _nbestkernelSizeHalf,
             scale,
             _verbose,
-            gammaC, gammaP, subPixel, epipShift);
+            gammaC, gammaP);
 
     if(_verbose)
     {
@@ -819,8 +817,7 @@ void PlaneSweepingCuda::sweepPixelsToVolumeSubset(
  */
 bool PlaneSweepingCuda::SGMoptimizeSimVolume(int rc, CudaDeviceMemoryPitched<unsigned char, 3>& volSim_dmp,
                                                int volDimX, int volDimY, int volDimZ, 
-                                               int volStepXY, int scale,
-                                               unsigned char P1, unsigned char P2)
+                                               int scale, unsigned char P1, unsigned char P2)
 {
     if(_verbose)
         ALICEVISION_LOG_DEBUG("SGM optimizing volume:" << std::endl
@@ -833,8 +830,8 @@ bool PlaneSweepingCuda::SGMoptimizeSimVolume(int rc, CudaDeviceMemoryPitched<uns
     ps_SGMoptimizeSimVolume(ps_texs_arr,
                             cams[camCacheIndex],
                             volSim_dmp,
-                            volDimX, volDimY, volDimZ, volStepXY,
-                            _verbose, P1, P2, scale - 1, // TODO: move the '- 1' inside the function
+                            volDimX, volDimY, volDimZ,
+                            _verbose, P1, P2, scale,
                             _CUDADeviceNo, _nImgsInGPUAtTime);
 
     if(_verbose)
