@@ -60,6 +60,70 @@ float getStrokeEstimate(const std::pair<size_t,size_t> & imgSize)
   return std::max(std::max(imgSize.first, imgSize.second) / float(2200), 2.0f);
 }
 
+inline void drawMatchesSideBySide(svg::svgDrawer& svgStream,
+                           const feature::PointFeature &L,
+                           const feature::PointFeature &R,
+                           std::size_t offset,
+                           float radiusLeft,
+                           float radiusRight,
+                           float strokeLeft,
+                           float strokeRight,
+                           const svg::svgStyle& lineStyle,
+                           const svg::svgStyle& leftStyle,
+                           const svg::svgStyle& rightStyle)
+{
+    const float xRight = R.x() + offset;
+    svgStream.drawLine(L.x(), L.y(), xRight, R.y(), lineStyle);
+    svgStream.drawCircle(L.x(), L.y(), radiusLeft, leftStyle);
+    svgStream.drawCircle(xRight, R.y(), radiusRight, rightStyle);
+}
+
+inline void drawMatchesSideBySide(svg::svgDrawer& svgStream,
+                           const std::vector<feature::SIOPointFeature>& keypointsLeft,
+                           const std::vector<feature::SIOPointFeature>& keypointsRight,
+                           std::size_t offset,
+                           float radiusLeft,
+                           float radiusRight,
+                           float strokeLeft,
+                           float strokeRight,
+                           const svg::svgStyle& lineStyle,
+                           const svg::svgStyle& leftStyle,
+                           const svg::svgStyle& rightStyle,
+                           const matching::IndMatches& matches)
+{
+    for (const matching::IndMatch &m : matches)
+    {
+        const feature::PointFeature &L = keypointsLeft[m._i];
+        const feature::PointFeature &R = keypointsRight[m._j];
+        drawMatchesSideBySide(svgStream, L, R,  offset, radiusLeft, radiusRight, strokeLeft, strokeRight, lineStyle, leftStyle, rightStyle);
+    }
+}
+
+inline void drawInliersSideBySide(svg::svgDrawer& svgStream,
+                           const std::vector<feature::SIOPointFeature>& keypointsLeft,
+                           const std::vector<feature::SIOPointFeature>& keypointsRight,
+                           std::size_t offset,
+                           float radiusLeft,
+                           float radiusRight,
+                           float strokeLeft,
+                           float strokeRight,
+                           const svg::svgStyle& lineStyle,
+                           const svg::svgStyle& leftStyle,
+                           const svg::svgStyle& rightStyle,
+                           const matching::IndMatches& matches,
+                           std::vector<size_t>& inliers)
+{
+    for (const auto &idx : inliers)
+    {
+        const auto currMatch = matches[idx];
+        const feature::PointFeature &L = keypointsLeft[currMatch._i];
+        const feature::PointFeature &R = keypointsRight[currMatch._j];
+        const float xRight = R.x() + offset;
+
+        drawMatchesSideBySide(svgStream, L, R,  offset, radiusLeft, radiusRight, strokeLeft, strokeRight, lineStyle, leftStyle, rightStyle);
+    }
+}
+
 void drawMatchesSideBySide(const std::string& imagePathLeft,
                            const std::pair<size_t,size_t>& imageSizeLeft,
                            const std::vector<feature::SIOPointFeature>& keypointsLeft,
