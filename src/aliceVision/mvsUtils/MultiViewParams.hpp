@@ -110,6 +110,11 @@ public:
 
     ~MultiViewParams();
 
+    inline Point3d backproject(const int camIndex, const Point2d& pix, double depth) const
+    {
+        const Point3d p = CArr[camIndex] + (iCamArr[camIndex] * pix).normalize() * depth;
+        return p;
+    }
     inline const std::string& getImagePath(int index) const
     {
         return _imagesParams.at(index).path;

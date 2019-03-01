@@ -475,8 +475,17 @@ bool SemiGlobalMatchingRc::sgmrc(bool checkIfExists)
         delete simVolume;
     }
 
+    //if(_sp->exportIntermediateResults)
+    //  svol->exportVolume(*_depths, _rc, _scale, _step, _sp->mp->getDepthMapsFolder() + std::to_string(_sp->mp->getViewId(_rc)) + "_vol_beforeReduction.abc");
+
     // reduction of 'volume' (X, Y, Z) into 'volumeStepZ' (X, Y, Z/step)
     svol->cloneVolumeSecondStepZ();
+
+    if(_sp->exportIntermediateResults)
+    {
+      svol->exportVolumeStep(*_depths, _rc, _scale, _step, _sp->mp->getDepthMapsFolder() + std::to_string(_sp->mp->getViewId(_rc)) + "_vol_afterReduction.abc");
+      svol->export9PCSV(*_depths, _rc, _scale, _step, "afterReduction", _sp->mp->getDepthMapsFolder() + std::to_string(_sp->mp->getViewId(_rc)) + "_9p.csv");
+    }
 
     // filter on the 3D volume to weight voxels based on their neighborhood strongness.
     // so it downweights local minimums that are not supported by their neighborhood.
@@ -484,6 +493,12 @@ bool SemiGlobalMatchingRc::sgmrc(bool checkIfExists)
     // optimized depthmaps ... it must equals to true in normal case
     if(_sp->doSGMoptimizeVolume)
         svol->SGMoptimizeVolumeStepZ(_rc, _step, 0, 0, _scale);
+
+    if(_sp->exportIntermediateResults)
+    {
+      svol->exportVolumeStep(*_depths, _rc, _scale, _step, _sp->mp->getDepthMapsFolder() + std::to_string(_sp->mp->getViewId(_rc)) + "_vol_afterFiltering.abc");
+      svol->export9PCSV(*_depths, _rc, _scale, _step, "afterFiltering", _sp->mp->getDepthMapsFolder() + std::to_string(_sp->mp->getViewId(_rc)) + "_9p.csv");
+    }
 
     // for each pixel: choose the voxel with the minimal similarity value
     const int zborder = 2;
