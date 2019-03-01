@@ -182,8 +182,6 @@ void Texturing::generateUVs(mvsUtils::MultiViewParams& mp)
                             Point2d dp = (pix - sourceLU) * chart.downscale;
                             // add this offset to targetLU to get final pixel coordinates + normalize
                             uvPix = (targetLU + dp) / (float)mua.textureSide();
-                            if(texParams.useUDIM)
-                              uvPix.x += atlasId;
                             uvPix.y = 1.0 - uvPix.y;
 
                             // sanity check: discard invalid UVs
@@ -192,6 +190,12 @@ void Texturing::generateUVs(mvsUtils::MultiViewParams& mp)
                             {
                                 ALICEVISION_LOG_WARNING("Discarding invalid UV: " + std::to_string(uvPix.x) + ", " + std::to_string(uvPix.y));
                                 uvPix = Point2d();
+                            }
+
+                            if(texParams.useUDIM)
+                            {
+                              uvPix.x += atlasId % 10;
+                              uvPix.y += atlasId / 10;
                             }
                         }
                     }
