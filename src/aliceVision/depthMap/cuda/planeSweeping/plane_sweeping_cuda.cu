@@ -27,14 +27,18 @@ namespace depthMap {
 // Macro for checking cuda errors
 #define CHECK_CUDA_ERROR()                                                    \
     if(cudaError_t err = cudaGetLastError())                                  \
-                                                                              \
-{                                                                             \
+    {                                                                         \
         fprintf(stderr, "\n\nCUDAError: %s\n", cudaGetErrorString(err));      \
         fprintf(stderr, "  file:       %s\n", __FILE__);                      \
         fprintf(stderr, "  function:   %s\n", __FUNCTION__);                  \
         fprintf(stderr, "  line:       %d\n\n", __LINE__);                    \
-                                                                              \
-}
+        std::stringstream s;                                                  \
+        s << "\n  CUDA Error: " << cudaGetErrorString(err)                    \
+          << "\n  file:       " << __FILE__                                   \
+          << "\n  function:   " << __FUNCTION__                               \
+          << "\n  line:       " << __LINE__ << "\n";                          \
+        throw std::runtime_error(s.str());                                    \
+    }
 
 #define ALICEVISION_CU_PRINT_DEBUG(a) \
     std::cerr << a << std::endl;
@@ -314,24 +318,28 @@ void ps_deviceUpdateCam( Pyramid& ps_texs_arr,
 
         const dim3 block(32, 2, 1);
         const dim3 grid(divUp(w, block.x), divUp(h, block.y), 1);
+        ALICEVISION_CU_PRINT_DEBUG("rgb2lab_kernel: block=(" << block.x << ", " << block.y << ", " << block.z << "), grid=(" << grid.x << ", " << grid.y << ", " << grid.z << ")");
+
         rgb2lab_kernel<<<grid, block>>>(
             ps_texs_arr[camId][0].arr->getBuffer(), ps_texs_arr[camId][0].arr->getPitch(),
             w, h);
-
+        CHECK_CUDA_ERROR();
         // compute gradient
         if(varianceWsh > 0)
         {
             // Reading from obj.tex and writing to obj.arr is somewhat dangerous,
             // but elements read from obj.tex are not updated in compute_varLofLABtoW_kernel.
-            compute_varLofLABtoW_kernel
+          compute_varLofLABtoW_kernel
                 <<<grid, block>>>
                 ( ps_texs_arr[camId][0].tex,
                   ps_texs_arr[camId][0].arr->getBuffer(), ps_texs_arr[camId][0].arr->getPitch(),
                   w, h);
+            CHECK_CUDA_ERROR();
         }
     }
 
     ps_create_gaussian_arr( CUDAdeviceNo, scales );
+    CHECK_CUDA_ERROR();
 
     // for each scale
     for(int scale = 1; scale < scales; ++scale)
@@ -344,8 +352,10 @@ void ps_deviceUpdateCam( Pyramid& ps_texs_arr,
 
         const dim3 block(32, 2, 1);
         const dim3 grid(divUp(sWidth, block.x), divUp(sHeight, block.y), 1);
+        ALICEVISION_CU_PRINT_DEBUG("ps_downscale_gauss: block=(" << block.x << ", " << block.y << ", " << block.z << "), grid=(" << grid.x << ", " << grid.y << ", " << grid.z << ")");
 
         ps_downscale_gauss( ps_texs_arr, camId, scale, w, h, radius );
+        CHECK_CUDA_ERROR();
 
         if(varianceWsh > 0)
         {
@@ -355,6 +365,7 @@ void ps_deviceUpdateCam( Pyramid& ps_texs_arr,
                   ps_texs_arr[camId][scale].arr->getBuffer(),
                   ps_texs_arr[camId][scale].arr->getPitch(),
                   sWidth, sHeight);
+            CHECK_CUDA_ERROR();
         }
     }
 
@@ -805,6 +816,7 @@ void ps_computeSimilarityVolume(Pyramid& ps_texs_arr,
               volStepXY,
               volDimX, volDimY);
 
+        cudaDeviceSynchronize();
         CHECK_CUDA_ERROR();
     }
 

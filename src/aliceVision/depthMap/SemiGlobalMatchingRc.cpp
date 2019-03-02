@@ -461,7 +461,7 @@ bool SemiGlobalMatchingRc::sgmrc(bool checkIfExists)
                                 _rc, _sgmTCams, _scale, _step, _sp, rcSilhoueteMap );
     srt.computeDepthSimMapVolume(volumeBestSim_d, volumeSecBestSim_d, _sgmWsh, _sgmGammaC, _sgmGammaP);
 
-    CudaHostMemoryHeap<float, 3> volumeSecBestSim_h(volumeSecBestSim_d.getSize()); // TODO FACA: volumeSecBestSim_d
+    CudaHostMemoryHeap<float, 3> volumeSecBestSim_h(volumeSecBestSim_d.getSize());
     copy(volumeSecBestSim_h, volumeSecBestSim_d);
 
     ALICEVISION_LOG_DEBUG("Copy sim volume Host to CPU START");
