@@ -142,6 +142,9 @@ void readImage(const std::string& path,
         throw std::runtime_error("Can't load channels of image file '" + path + "'.");
 
     // color conversion
+    if(imageColorSpace == EImageColorSpace::AUTO)
+      throw std::runtime_error("You must specify a requested color space for image file '" + path + "'.");
+
     if(imageColorSpace == EImageColorSpace::SRGB) // color conversion to sRGB
     {
       const std::string& colorSpace = inSpec.get_string_attribute("oiio:ColorSpace", "sRGB"); // default image color space is sRGB
@@ -267,8 +270,13 @@ void writeImage(const std::string& path,
 
     const oiio::ImageBuf imgBuf(imageSpec, const_cast<T*>(buffer.data()));
 
-    if((isJPG || isPNG) && imageColorSpace != EImageColorSpace::NO_CONVERSION)
-      imageColorSpace = EImageColorSpace::SRGB; // force image color space for JPG and PNG
+    if(imageColorSpace == EImageColorSpace::AUTO)
+    {
+      if(isJPG || isPNG)
+        imageColorSpace = EImageColorSpace::SRGB;
+      else
+        imageColorSpace = EImageColorSpace::LINEAR;
+    }
 
     if((isEXR) && imageQuality == EImageQuality::OPTIMIZED)
       imageSpec.format = oiio::TypeDesc::HALF; // override format
