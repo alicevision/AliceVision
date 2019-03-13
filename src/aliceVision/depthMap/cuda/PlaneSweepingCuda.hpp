@@ -137,9 +137,12 @@ public:
             int wsh, float gammaC, float gammaP,
             int scale);
 
-    bool SGMoptimizeSimVolume(int rc, CudaDeviceMemoryPitched<unsigned char, 3>& volSim_dmp,
+    bool SGMoptimizeSimVolume(int rc, CudaDeviceMemoryPitched<float, 3>& volSim_dmp,
                               int volDimX, int volDimY, int volDimZ,
                               int scale, unsigned char P1, unsigned char P2);
+    void SGMretrieveBestDepth(StaticVector<IdValue>& bestDepth, CudaDeviceMemoryPitched<float, 3>& volSim_dmp,
+      int volDimX, int volDimY, int volDimZ, int zBorder);
+
     Point3d getDeviceMemoryInfo();
     bool transposeVolume(StaticVector<unsigned char>* volume, const Voxel& dimIn, const Voxel& dimTrn, Voxel& dimOut);
 

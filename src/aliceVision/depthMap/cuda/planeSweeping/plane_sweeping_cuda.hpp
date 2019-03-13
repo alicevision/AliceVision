@@ -38,13 +38,16 @@ void ps_computeSimilarityVolume(
 void ps_SGMoptimizeSimVolume(
     Pyramid& ps_texs_arr,
     const cameraStruct& rccam,
-    CudaDeviceMemoryPitched<unsigned char, 3>& volSim_dmp,
+    CudaDeviceMemoryPitched<float, 3>& volSim_dmp,
     int volDimX, int volDimY, int volDimZ,
     bool verbose,
     unsigned char P1, unsigned char P2,
     int scale,
     int CUDAdeviceNo,
     int ncamsAllocated);
+
+  void ps_SGMretrieveBestDepth(CudaDeviceMemoryPitched<float2, 2>& bestDepth_dmp, CudaDeviceMemoryPitched<float, 3>& volSim_dmp,
+    int volDimX, int volDimY, int volDimZ, int zBorder);
 
 int ps_listCUDADevices(bool verbose);
 

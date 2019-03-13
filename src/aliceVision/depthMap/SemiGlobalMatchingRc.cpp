@@ -461,86 +461,27 @@ bool SemiGlobalMatchingRc::sgmrc(bool checkIfExists)
                                 _rc, _sgmTCams, _scale, _step, _sp, rcSilhoueteMap );
     srt.computeDepthSimMapVolume(volumeBestSim_d, volumeSecBestSim_d, _sgmWsh, _sgmGammaC, _sgmGammaP);
 
-    CudaHostMemoryHeap<float, 3> volumeSecBestSim_h(volumeSecBestSim_d.getSize());
-    copy(volumeSecBestSim_h, volumeSecBestSim_d);
-
-    ALICEVISION_LOG_DEBUG("Copy sim volume Host to CPU START");
-    StaticVector<unsigned char> simVolume(volDimX*volDimY*volDimZ);
-    int simVol_zPitch = volumeSecBestSim_h.getBytesPaddedUpToDim(1);
-    int simVol_yPitch = volumeSecBestSim_h.getBytesPaddedUpToDim(0);
-    for (int z = 0; z < volDimZ; z++)
-    {
-        for (int y = 0; y < volDimY; y++)
-        {
-            for (int x = 0; x < volDimX; x++)
-            {
-                int index = z * volDimX * volDimY + y * volDimX + x;
-                const float* sim = get3DBufferAt_h<float>(volumeSecBestSim_h.getBuffer(), simVol_zPitch, simVol_yPitch, x, y, z);
-                const float sim_clamp = std::max(0.0f, std::min(1.0f, *sim));
-                const unsigned char sim_c = static_cast<unsigned char>(sim_clamp * 255.0f);
-                simVolume[index] = sim_c;
-            }
-        }
-    }
-    ALICEVISION_LOG_DEBUG("Copy sim volume Host to CPU DONE");
+    volumeBestSim_d.deallocate();
 
     SemiGlobalMatchingVolume svol(volDimX, volDimY, volDimZ, _sp);
-
-    // Reduction of 'volume' (X, Y, Z) into 'volumeStepZ' (X, Y, Z/step)
-    svol.cloneVolumeSecondStepZ(simVolume);
-
-    // Release memory
-    simVolume.swap(StaticVector<unsigned char>());
 
     // Filter on the 3D volume to weight voxels based on their neighborhood strongness.
     // So it downweights local minimums that are not supported by their neighborhood.
     if(_sp->doSGMoptimizeVolume) // this is here for experimental reason ... to show how SGGC work on non
                                 // optimized depthmaps ... it must equals to true in normal case
     {
-        const int volDimStepZ = volDimZ / svol.volStepZ;
-        CudaHostMemoryHeap<unsigned char, 3> volumeStepZ_hmh(CudaSize<3>(volDimX, volDimY, volDimStepZ));
-        int simVolStep_zPitch = volumeStepZ_hmh.getBytesPaddedUpToDim(1);
-        int simVolStep_yPitch = volumeStepZ_hmh.getBytesPaddedUpToDim(0);
-
-        ALICEVISION_LOG_DEBUG("Copy sim volume from CPU to GPU - Start volDimZ: " << volDimZ << ", volStepZ: " << svol.volStepZ << " => volDimStepZ: " << volDimStepZ);
-        for (int z = 0; z < volDimStepZ; z++)
-        {
-            for (int y = 0; y < volDimY; y++)
-            {
-                for (int x = 0; x < volDimX; x++)
-                {
-                    int index = z * volDimX * volDimY + y * volDimX + x;
-                    unsigned char* sim_hmh = get3DBufferAt_h<unsigned char>(volumeStepZ_hmh.getBuffer(), simVolStep_zPitch, simVolStep_yPitch, x, y, z);
-                    *sim_hmh = svol._volumeStepZ[index];
-                }
-            }
-        }
-        CudaDeviceMemoryPitched<unsigned char, 3> volumeStepZ_dmp(volumeStepZ_hmh);
-        ALICEVISION_LOG_DEBUG("Copy sim volume from CPU to GPU - DONE");
-
-        _sp->cps.SGMoptimizeSimVolume(_rc, volumeStepZ_dmp, volDimX, volDimY, volDimStepZ, _scale, _sp->P1, _sp->P2);
-
-        ALICEVISION_LOG_DEBUG("Copy filtered sim volume from GPU to CPU");
-        volumeStepZ_hmh.copyFrom(volumeStepZ_dmp);
-        for (int z = 0; z < volDimStepZ; z++)
-        {
-          for (int y = 0; y < volDimY; y++)
-          {
-            for (int x = 0; x < volDimX; x++)
-            {
-              int index = z * volDimX * volDimY + y * volDimX + x;
-              const unsigned char* sim_c = get3DBufferAt_h<unsigned char>(volumeStepZ_hmh.getBuffer(), simVolStep_zPitch, simVolStep_yPitch, x, y, z);
-              svol._volumeStepZ[index] = *sim_c;
-            }
-          }
-        }
-        ALICEVISION_LOG_DEBUG("Copy filtered sim volume Host to CPU - DONE");
+        _sp->cps.SGMoptimizeSimVolume(_rc, volumeSecBestSim_d, volDimX, volDimY, volDimZ, _scale, _sp->P1, _sp->P2);
     }
+
+    // vector<z, sim>
+    _volumeBestIdVal.resize_with(volDimX * volDimY, IdValue(-1, 1.0f));
+
 
     // For each pixel: choose the voxel with the minimal similarity value
     int zborder = 2;
-    svol.getOrigVolumeBestIdValFromVolumeStepZ(_volumeBestIdVal, zborder);
-    svol.freeMem();
+    _sp->cps.SGMretrieveBestDepth(_volumeBestIdVal, volumeSecBestSim_d, volDimX, volDimY, volDimZ, zborder);
+    // svol.getOrigVolumeBestIdValFromVolumeStepZ(_volumeBestIdVal, zborder);
+    
 
     if(rcSilhoueteMap != nullptr)
     {

@@ -387,7 +387,7 @@ void ps_deviceDeallocate(Pyramid& ps_texs_arr, int CUDAdeviceNo, int ncams, int 
 /**
  * @param[inout] d_volSimT similarity volume with some transposition applied
  */
-void ps_aggregatePathVolume(CudaDeviceMemoryPitched<unsigned char, 3>& d_volSimT,
+void ps_aggregatePathVolume(CudaDeviceMemoryPitched<float, 3>& d_volSimT,
                             int volDimX, int volDimY, int volDimZ,
                             float P1, float P2, bool transfer,
                             int dimTrnX, bool doInvZ, bool verbose)
@@ -406,13 +406,13 @@ void ps_aggregatePathVolume(CudaDeviceMemoryPitched<unsigned char, 3>& d_volSimT
     dim3 gridvolrow(divUp(volDimX, block_sizenmxs), 1, 1);
     dim3 gridvolrowAllCols(divUp(volDimX, block_sizenmxs), volDimY, 1);
 
-    CudaDeviceMemoryPitched<unsigned int, 2> d_xySliceForZ(CudaSize<2>(volDimX, volDimY));
-    CudaDeviceMemoryPitched<unsigned int, 2> d_xySliceForZM1(CudaSize<2>(volDimX, volDimY));
-    CudaArray<unsigned int, 2> xySliceForZM1_arr(CudaSize<2>(volDimX, volDimY));
-    CudaDeviceMemoryPitched<unsigned int, 2> d_xSliceBestInColSimForZM1(CudaSize<2>(volDimX, 1));
+    CudaDeviceMemoryPitched<float, 2> d_xySliceForZ(CudaSize<2>(volDimX, volDimY));
+    CudaDeviceMemoryPitched<float, 2> d_xySliceForZM1(CudaSize<2>(volDimX, volDimY));
+    CudaArray<float, 2> xySliceForZM1_arr(CudaSize<2>(volDimX, volDimY));
+    CudaDeviceMemoryPitched<float, 2> d_xSliceBestInColSimForZM1(CudaSize<2>(volDimX, 1));
 
     // Copy the first Z plane from 'd_volSimT' into 'xysliceForZ_dmp'
-    volume_getVolumeXYSliceAtZ_kernel<unsigned int, unsigned char><<<gridvol, blockvol>>>(
+    volume_getVolumeXYSliceAtZ_kernel<float, float><<<gridvol, blockvol>>>(
         d_xySliceForZ.getBuffer(),
         d_xySliceForZ.getPitch(),
         d_volSimT.getBuffer(),
@@ -422,7 +422,7 @@ void ps_aggregatePathVolume(CudaDeviceMemoryPitched<unsigned char, 3>& d_volSimT
     CHECK_CUDA_ERROR();
 
     // Set the first Z plane from 'd_volSimT' to 255
-    volume_initVolume_kernel<unsigned char><<<gridvol, blockvol>>>(
+    volume_initVolume_kernel<float><<<gridvol, blockvol>>>(
         d_volSimT.getBuffer(),
         d_volSimT.getBytesPaddedUpToDim(1),
         d_volSimT.getBytesPaddedUpToDim(0),
@@ -433,7 +433,7 @@ void ps_aggregatePathVolume(CudaDeviceMemoryPitched<unsigned char, 3>& d_volSimT
     {
         copy(d_xySliceForZM1, d_xySliceForZ);
         copy((xySliceForZM1_arr), d_xySliceForZM1);
-        cudaBindTextureToArray(sliceTexUInt, xySliceForZM1_arr.getArray(), cudaCreateChannelDesc<unsigned int>());
+        cudaBindTextureToArray(sliceTexUInt, xySliceForZM1_arr.getArray(), cudaCreateChannelDesc<float>());
         // For each column: compute the best score
         // Foreach x:
         //   d_xSliceBestInColSimForZM1[x] = min(d_xySliceForZ[1:height])
@@ -444,7 +444,7 @@ void ps_aggregatePathVolume(CudaDeviceMemoryPitched<unsigned char, 3>& d_volSimT
         cudaUnbindTexture(sliceTexUInt);
 
         // Copy the 'z' plane from 'd_volSimT' into 'd_xySliceForZ'
-        volume_getVolumeXYSliceAtZ_kernel<unsigned int, unsigned char><<<gridvol, blockvol>>>(
+        volume_getVolumeXYSliceAtZ_kernel<float, float><<<gridvol, blockvol>>>(
             d_xySliceForZ.getBuffer(),
             d_xySliceForZ.getPitch(),
             d_volSimT.getBuffer(),
@@ -457,9 +457,7 @@ void ps_aggregatePathVolume(CudaDeviceMemoryPitched<unsigned char, 3>& d_volSimT
             d_xySliceForZ.getBuffer(), d_xySliceForZ.getPitch(),              // inout: xySliceForZ
             d_xySliceForZM1.getBuffer(), d_xySliceForZM1.getPitch(),          // in:    xySliceForZM1
             d_xSliceBestInColSimForZM1.getBuffer(),                          // in:    xSliceBestInColSimForZM1
-            d_volSimT.getBuffer(),
-            d_volSimT.getBytesPaddedUpToDim(1),
-            d_volSimT.getBytesPaddedUpToDim(0), // out:   volSimT
+            d_volSimT.getBuffer(), d_volSimT.getBytesPaddedUpToDim(1), d_volSimT.getBytesPaddedUpToDim(0), // out:   volSimT
             volDimX, volDimY, volDimZ,
             z, P1, P2, transfer,
             dimTrnX, doInvZ);
@@ -475,8 +473,8 @@ void ps_aggregatePathVolume(CudaDeviceMemoryPitched<unsigned char, 3>& d_volSimT
  * @param[out] volAgr_dmp output volume where we will aggregate the best XXX
  * @param[in] d_volSim input similarity volume
  */
-void ps_updateAggrVolume(CudaDeviceMemoryPitched<unsigned char, 3>& volAgr_dmp,
-                         const CudaDeviceMemoryPitched<unsigned char, 3>& d_volSim,
+void ps_updateAggrVolume(CudaDeviceMemoryPitched<float, 3>& volAgr_dmp,
+                         const CudaDeviceMemoryPitched<float, 3>& d_volSim,
                          int volDimX, int volDimY, int volDimZ,
                          int dimTrnX, int dimTrnY, int dimTrnZ,
                          unsigned char P1, unsigned char P2, 
@@ -511,7 +509,7 @@ void ps_updateAggrVolume(CudaDeviceMemoryPitched<unsigned char, 3>& volAgr_dmp,
     //--------------------------------------------------------------------------------------------------
     // aggregate similarity volume
     // clock_t tall = tic();
-    CudaDeviceMemoryPitched<unsigned char, 3> d_volSimT(
+    CudaDeviceMemoryPitched<float, 3> d_volSimT(
         CudaSize<3>(volDims[dimsTrn[0]], volDims[dimsTrn[1]], volDims[dimsTrn[2]]));
     for(int z = 0; z < volDimZ; z++)
     {
@@ -535,7 +533,7 @@ void ps_updateAggrVolume(CudaDeviceMemoryPitched<unsigned char, 3>& volAgr_dmp,
         // clock_t tall = tic();
         for(int z = 0; z < volDims[dimsTrn[2]] / 2; z++)
         {
-            volume_shiftZVolumeTempl_kernel<unsigned char><<<gridT, blockT>>>(
+            volume_shiftZVolumeTempl_kernel<<<gridT, blockT>>>(
                 d_volSimT.getBuffer(),
                 d_volSimT.getBytesPaddedUpToDim(1),
                 d_volSimT.getBytesPaddedUpToDim(0),
@@ -559,7 +557,7 @@ void ps_updateAggrVolume(CudaDeviceMemoryPitched<unsigned char, 3>& volAgr_dmp,
         // clock_t tall = tic();
         for(int z = 0; z < volDims[dimsTrn[2]] / 2; z++)
         {
-            volume_shiftZVolumeTempl_kernel<unsigned char><<<gridT, blockT>>>(
+            volume_shiftZVolumeTempl_kernel<float><<<gridT, blockT>>>(
                 d_volSimT.getBuffer(),
                 d_volSimT.getBytesPaddedUpToDim(1),
                 d_volSimT.getBytesPaddedUpToDim(0),
@@ -601,7 +599,7 @@ void ps_updateAggrVolume(CudaDeviceMemoryPitched<unsigned char, 3>& volAgr_dmp,
 */
 void ps_SGMoptimizeSimVolume(Pyramid& ps_texs_arr,
                              const cameraStruct& rccam,
-                             CudaDeviceMemoryPitched<unsigned char, 3>& volSim_dmp,
+                             CudaDeviceMemoryPitched<float, 3>& volSim_dmp,
                              int volDimX, int volDimY, int volDimZ,
                              bool verbose, unsigned char P1, unsigned char P2,
                              int scale, int CUDAdeviceNo, int ncamsAllocated)
@@ -626,7 +624,7 @@ void ps_SGMoptimizeSimVolume(Pyramid& ps_texs_arr,
 
     // Don't need to initialize this buffer
     // ps_updateAggrVolume multiplies the initial value by npaths, which is 0 at first call
-    CudaDeviceMemoryPitched<unsigned char, 3> volAgr_dmp(CudaSize<3>(volDimX, volDimY, volDimZ));
+    CudaDeviceMemoryPitched<float, 3> volAgr_dmp(CudaSize<3>(volDimX, volDimY, volDimZ));
     
     // update aggregation volume
     int npaths = 0;
@@ -662,6 +660,23 @@ void ps_SGMoptimizeSimVolume(Pyramid& ps_texs_arr,
     if(verbose)
         printf("ps_SGMoptimizeSimVolume done\n");
 }
+
+void ps_SGMretrieveBestDepth(CudaDeviceMemoryPitched<float2, 2>& bestDepth_dmp, CudaDeviceMemoryPitched<float, 3>& volSim_dmp,
+    int volDimX, int volDimY, int volDimZ, int zBorder)
+{
+  int block_size = 8;
+  dim3 block(block_size, block_size, 1);
+  dim3 grid(divUp(volDimX, block_size), divUp(volDimY, block_size), 1);
+
+  volume_retrieveBestZ_kernel<<<grid, block>>>(
+    bestDepth_dmp.getBuffer(),
+    bestDepth_dmp.getBytesPaddedUpToDim(0),
+    volSim_dmp.getBuffer(),
+    volSim_dmp.getBytesPaddedUpToDim(1),
+    volSim_dmp.getBytesPaddedUpToDim(0),
+    volDimX, volDimY, volDimZ, zBorder);
+}
+
 
 void ps_transposeVolume(CudaHostMemoryHeap<unsigned char, 3>* ovol_hmh,
                         CudaHostMemoryHeap<unsigned char, 3>* ivol_hmh, int volDimX, int volDimY, int volDimZ,

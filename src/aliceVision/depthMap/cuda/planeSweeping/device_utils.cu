@@ -41,17 +41,16 @@ __device__ T* get3DBufferAt(T* ptr, int spitch, int pitch, int x, int y, int z)
     return ((T*)(((char*)ptr) + z * spitch + y * pitch)) + x;
 }
 
-/*
-
-// function clamping x between a and b
-
-__device__ int clamp(int x, int a, int b){
-
-return fmaxf(a, fminf(b,x));
-
+__device__ float multi_fminf(float a, float b, float c)
+{
+  return fminf(fminf(a, b), c);
 }
 
-*/
+__device__ float multi_fminf(float a, float b, float c, float d)
+{
+  return fminf(fminf(fminf(a, b), c), d);
+}
+
 
 } // namespace depthMap
 } // namespace aliceVision
