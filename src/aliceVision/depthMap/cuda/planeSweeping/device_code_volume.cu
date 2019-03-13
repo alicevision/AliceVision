@@ -360,7 +360,6 @@ __global__ void volume_agregateCostVolumeAtZinSlices_kernel(float* xySliceForZ, 
                                                             float* volSimT, int volSimT_s, int volSimT_p,
                                                             int volDimX, int volDimY, int volDimZ, 
                                                             int vz, unsigned int _P1, unsigned int _P2,
-                                                            bool transfer,
                                                             int dimTrnX, bool doInvZ)
 {
     int vx = blockIdx.x * blockDim.x + threadIdx.x;
@@ -370,7 +369,7 @@ __global__ void volume_agregateCostVolumeAtZinSlices_kernel(float* xySliceForZ, 
     {
         float* sim_yx = get2DBufferAt(xySliceForZ, xySliceForZ_p, vx, vy);
         float sim = *sim_yx;
-        float pathCost = transfer ? sim : 255;
+        float pathCost = 255.0f;
 
         if((vz >= 1) && (vy >= 1) && (vy < volDimY - 1))
         {

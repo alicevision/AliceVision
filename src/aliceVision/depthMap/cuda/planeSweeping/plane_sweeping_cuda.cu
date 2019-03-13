@@ -389,7 +389,7 @@ void ps_deviceDeallocate(Pyramid& ps_texs_arr, int CUDAdeviceNo, int ncams, int 
  */
 void ps_aggregatePathVolume(CudaDeviceMemoryPitched<float, 3>& d_volSimT,
                             int volDimX, int volDimY, int volDimZ,
-                            float P1, float P2, bool transfer,
+                            float P1, float P2,
                             int dimTrnX, bool doInvZ, bool verbose)
 {
     if(verbose)
@@ -459,7 +459,7 @@ void ps_aggregatePathVolume(CudaDeviceMemoryPitched<float, 3>& d_volSimT,
             d_xSliceBestInColSimForZM1.getBuffer(),                          // in:    xSliceBestInColSimForZM1
             d_volSimT.getBuffer(), d_volSimT.getBytesPaddedUpToDim(1), d_volSimT.getBytesPaddedUpToDim(0), // out:   volSimT
             volDimX, volDimY, volDimZ,
-            z, P1, P2, transfer,
+            z, P1, P2,
             dimTrnX, doInvZ);
         cudaThreadSynchronize();
         CHECK_CUDA_ERROR();
@@ -547,7 +547,7 @@ void ps_updateAggrVolume(CudaDeviceMemoryPitched<float, 3>& volAgr_dmp,
     // clock_t tall = tic();
     ps_aggregatePathVolume(
         d_volSimT, volDims[dimsTrn[0]], volDims[dimsTrn[1]], volDims[dimsTrn[2]],
-        P1, P2, false,
+        P1, P2,
         dimTrnX, doInvZ, verbose);
     // if (verbose) printf("aggregate volume gpu elapsed time: %f ms \n", toc(tall));
     // pr_printfDeviceMemoryInfo();
