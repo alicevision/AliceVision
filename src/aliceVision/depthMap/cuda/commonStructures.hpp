@@ -1175,7 +1175,7 @@ template<class Type> void copy2D( Type* dst, size_t sx, size_t sy,
     THROW_ON_CUDA_ERROR( err, "Failed to copy (" << __FILE__ << " " << __LINE__ << ", " << cudaGetErrorString(err) << ")" );
 }
 
-struct cameraStructBase
+struct CameraStructBase
 {
     float  P[12];
     float  iP[9];
@@ -1189,34 +1189,25 @@ struct cameraStructBase
     float3 ZVect;
 };
 
-typedef cameraStructBase DeviceCameraStructBase;
+typedef CameraStructBase DeviceCameraStructBase;
 
-struct cameraStruct
+struct CameraStruct
 {
-    const cameraStructBase* param_hst;
-    const cameraStructBase* param_dev;
-    CudaHostMemoryHeap<uchar4, 2>* tex_rgba_hmh;
+    const CameraStructBase* param_hst = nullptr;
+    const CameraStructBase* param_dev = nullptr;
+    CudaHostMemoryHeap<uchar4, 2>* tex_rgba_hmh = nullptr;
     int camId;
     cudaStream_t stream; // allow async work on cameras used in parallel
 };
 
-struct ps_parameters
-{
-    int epipShift;
-    int rotX;
-    int rotY;
-};
-
 struct TexturedArray
 {
-    CudaDeviceMemoryPitched<uchar4, 2>* arr;
+    CudaDeviceMemoryPitched<uchar4, 2>* arr = nullptr;
     cudaTextureObject_t tex;
 };
 
-typedef std::vector<std::vector<TexturedArray> > Pyramid;
-
-#define MAX_PTS 500           // 500
-#define MAX_PATCH_PIXELS 2500 // 50*50
+typedef std::vector<TexturedArray> Pyramid;
+typedef std::vector<Pyramid> Pyramids;
 
 } // namespace depthMap
 } // namespace aliceVision

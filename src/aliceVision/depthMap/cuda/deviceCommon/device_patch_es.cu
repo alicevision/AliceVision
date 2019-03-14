@@ -16,8 +16,8 @@
 namespace aliceVision {
 namespace depthMap {
 
-__device__ void computeRotCSEpip( const cameraStructBase* rc_cam_s,
-                                  const cameraStructBase* tc_cam_s,
+__device__ void computeRotCSEpip( const CameraStructBase* rc_cam_s,
+                                  const CameraStructBase* tc_cam_s,
                                   patch& ptch,
                                   const float3& p )
 {
@@ -302,8 +302,8 @@ __device__ float compNCCbyH(const patch& ptch, int wsh)
  */
 __device__ float compNCCby3DptsYK( cudaTextureObject_t rc_tex,
                                    cudaTextureObject_t tc_tex,
-                                   const cameraStructBase* rc_cam_s,
-                                   const cameraStructBase* tc_cam_s,
+                                   const CameraStructBase* rc_cam_s,
+                                   const CameraStructBase* tc_cam_s,
                                    const patch& ptch,
                                    int wsh,
                                    int rc_width, int rc_height,
@@ -661,7 +661,7 @@ __device__ float frontoParellePlaneTCDepthFor3DPoint(const float3& p)
     return fabsf(orientedPointPlaneDistanceNormalizedNormal(p, sg_s_t.C, sg_s_t.ZVect));
 }
 
-__device__ float3 get3DPointForPixelAndFrontoParellePlaneRC( const cameraStructBase* rc_cam_s,
+__device__ float3 get3DPointForPixelAndFrontoParellePlaneRC( const CameraStructBase* rc_cam_s,
                                                              const float2& pix,
                                                              float fpPlaneDepth)
 {
@@ -671,7 +671,7 @@ __device__ float3 get3DPointForPixelAndFrontoParellePlaneRC( const cameraStructB
     return linePlaneIntersect(rc_cam_s->C, v, planep, rc_cam_s->ZVect);
 }
 
-__device__ float3 get3DPointForPixelAndFrontoParellePlaneRC( const cameraStructBase* rc_cam_s,
+__device__ float3 get3DPointForPixelAndFrontoParellePlaneRC( const CameraStructBase* rc_cam_s,
                                                              const int2& pixi,
                                                              float fpPlaneDepth)
 {
@@ -769,7 +769,7 @@ __device__ float computeRcPixSize(const float3& p)
     return pointLineDistance3D(p, sg_s_r.C, refvect);
 }
 
-__device__ float computeRcPixSize( const cameraStructBase* rc_cam_s, const float3& p)
+__device__ float computeRcPixSize( const CameraStructBase* rc_cam_s, const float3& p)
 {
     float2 rp = project3DPoint(rc_cam_s->P, p);
     float2 rp1 = rp + make_float2(1.0f, 0.0f);
@@ -779,7 +779,7 @@ __device__ float computeRcPixSize( const cameraStructBase* rc_cam_s, const float
     return pointLineDistance3D(p, rc_cam_s->C, refvect);
 }
 
-__device__ float computePixSize( const cameraStructBase* rc_cam_s, const float3& p)
+__device__ float computePixSize( const CameraStructBase* rc_cam_s, const float3& p)
 {
     return computeRcPixSize( rc_cam_s, p );
 }

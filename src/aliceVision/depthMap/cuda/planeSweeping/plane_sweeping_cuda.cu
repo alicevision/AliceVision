@@ -111,7 +111,7 @@ void pr_printfDeviceMemoryInfo()
     printf("Device %i memory - used: %f, free: %f, total: %f\n", CUDAdeviceNo, used, avail, total);
 }
 
-__host__ void ps_initCameraMatrix( cameraStructBase& base )
+__host__ void ps_initCameraMatrix( CameraStructBase& base )
 {
     float3 z;
     z.x = 0.0f;
@@ -135,14 +135,14 @@ __host__ void ps_initCameraMatrix( cameraStructBase& base )
     ps_normalize(base.XVect);
 }
 
-__host__ static void ps_init_reference_camera_matrices( const cameraStructBase* base )
+__host__ static void ps_init_reference_camera_matrices( const CameraStructBase* base )
 {
-    cudaMemcpyToSymbol(sg_s_r, base, sizeof(cameraStructBase));
+    cudaMemcpyToSymbol(sg_s_r, base, sizeof(CameraStructBase));
 }
 
-__host__ static void ps_init_target_camera_matrices( const cameraStructBase* base )
+__host__ static void ps_init_target_camera_matrices( const CameraStructBase* base )
 {
-    cudaMemcpyToSymbol(sg_s_t, base, sizeof(cameraStructBase));
+    cudaMemcpyToSymbol(sg_s_t, base, sizeof(CameraStructBase));
 }
 
 int ps_listCUDADevices(bool verbose)
@@ -179,7 +179,7 @@ int ps_listCUDADevices(bool verbose)
     return num_gpus;
 }
 
-void ps_deviceAllocate(Pyramid& ps_texs_arr, int ncams, int width, int height, int scales,
+void ps_deviceAllocate(Pyramids& ps_texs_arr, int ncams, int width, int height, int scales,
                        int deviceId)
 {
     int num_gpus = 0;
@@ -303,8 +303,8 @@ void ps_testCUDAdeviceNo(int CUDAdeviceNo)
     }
 }
 
-void ps_deviceUpdateCam( Pyramid& ps_texs_arr,
-                         const cameraStruct& cam, int camId, int CUDAdeviceNo,
+void ps_deviceUpdateCam( Pyramids& ps_texs_arr,
+                         const CameraStruct& cam, int camId, int CUDAdeviceNo,
                          int ncamsAllocated, int scales, int w, int h, int varianceWsh)
 {
     std::cerr << std::endl
@@ -372,7 +372,7 @@ void ps_deviceUpdateCam( Pyramid& ps_texs_arr,
     CHECK_CUDA_ERROR();
 }
 
-void ps_deviceDeallocate(Pyramid& ps_texs_arr, int CUDAdeviceNo, int ncams, int scales)
+void ps_deviceDeallocate(Pyramids& ps_texs_arr, int CUDAdeviceNo, int ncams, int scales)
 {
     for(int c = 0; c < ncams; c++)
     {
@@ -597,8 +597,8 @@ void ps_updateAggrVolume(CudaDeviceMemoryPitched<float, 3>& volAgr_dmp,
 * @param[in] rccam RC camera
 * @param[inout] iovol_hmh input similarity volume (after Z reduction)
 */
-void ps_SGMoptimizeSimVolume(Pyramid& ps_texs_arr,
-                             const cameraStruct& rccam,
+void ps_SGMoptimizeSimVolume(Pyramids& ps_texs_arr,
+                             const CameraStruct& rccam,
                              CudaDeviceMemoryPitched<float, 3>& volSim_dmp,
                              int volDimX, int volDimY, int volDimZ,
                              bool verbose, unsigned char P1, unsigned char P2,
@@ -747,11 +747,11 @@ void ps_initSimilarityVolume(
       volDimX, volDimY);
 }
 
-void ps_computeSimilarityVolume(Pyramid& ps_texs_arr,
+void ps_computeSimilarityVolume(Pyramids& ps_texs_arr,
                                 CudaDeviceMemoryPitched<float, 3>& volBestSim_dmp,
                                 CudaDeviceMemoryPitched<float, 3>& volSecBestSim_dmp,
-                                const cameraStruct& rcam, int rcWidth, int rcHeight,
-                                const cameraStruct& tcam, int tcWidth, int tcHeight,
+                                const CameraStruct& rcam, int rcWidth, int rcHeight,
+                                const CameraStruct& tcam, int tcWidth, int tcHeight,
                                 int volStepXY, int volDimX, int volDimY,
                                 const CudaDeviceMemory<float>& depths_d,
                                 const std::vector<OneTC>& cells,
@@ -993,7 +993,7 @@ void ps_normalizeDP1Volume(CudaHostMemoryHeap<int, 3>** iovols_hmh, int nZparts,
         printf("elapsed time: %f ms \n", toc(tall));
 }
 
-void ps_getTexture( Pyramid& ps_texs_arr, CudaHostMemoryHeap<uchar4, 2>* oimg_hmh, int camId,
+void ps_getTexture( Pyramids& ps_texs_arr, CudaHostMemoryHeap<uchar4, 2>* oimg_hmh, int camId,
                    int scale, int CUDAdeviceNo, int ncamsAllocated)
 {
     clock_t tall = tic();
@@ -1146,9 +1146,9 @@ void ps_computeSimMapForDepthMapInternal(CudaDeviceMemoryPitched<float, 2>& osim
         wsh, gammaC, gammaP);
 }
 
-void ps_refineRcDepthMap(Pyramid& ps_texs_arr, float* out_osimMap_hmh,
+void ps_refineRcDepthMap(Pyramids& ps_texs_arr, float* out_osimMap_hmh,
                          float* inout_rcDepthMap_hmh, int ntcsteps,
-                         const std::vector<cameraStruct>& cams,
+                         const std::vector<CameraStruct>& cams,
                          int width, int height,
                          int imWidth, int imHeight, int scale, int CUDAdeviceNo, int ncamsAllocated,
                          bool verbose, int wsh, float gammaC, float gammaP, float epipShift,
@@ -1299,11 +1299,11 @@ void ps_fuseDepthSimMapsGaussianKernelVoting(CudaHostMemoryHeap<float2, 2>* odep
         printf("gpu elapsed time: %f ms \n", toc(tall));
 }
 
-void ps_optimizeDepthSimMapGradientDescent(Pyramid& ps_texs_arr,
+void ps_optimizeDepthSimMapGradientDescent(Pyramids& ps_texs_arr,
                                            CudaHostMemoryHeap<float2, 2>* odepthSimMap_hmh,
                                            std::vector<CudaHostMemoryHeap<float2, 2>*>& dataMaps_hmh, int ndataMaps,
                                            int nSamplesHalf, int nDepthsToRefine, int nIters, float sigma,
-                                           const std::vector<cameraStruct>& cams,
+                                           const std::vector<CameraStruct>& cams,
                                            int ncams, int width, int height, int scale,
                                            int CUDAdeviceNo, int ncamsAllocated, bool verbose, int yFrom)
 {
@@ -1378,7 +1378,7 @@ void ps_optimizeDepthSimMapGradientDescent(Pyramid& ps_texs_arr,
         printf("gpu elapsed time: %f ms \n", toc(tall));
 }
 
-void ps_getSilhoueteMap(Pyramid& ps_texs_arr, CudaHostMemoryHeap<bool, 2>* omap_hmh, int width,
+void ps_getSilhoueteMap(Pyramids& ps_texs_arr, CudaHostMemoryHeap<bool, 2>* omap_hmh, int width,
                         int height, int scale,
                         int step, int camId,
                         uchar4 maskColorRgb, bool verbose)

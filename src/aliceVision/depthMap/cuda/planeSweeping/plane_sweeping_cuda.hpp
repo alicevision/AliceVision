@@ -12,7 +12,7 @@
 namespace aliceVision {
 namespace depthMap {
 
-void ps_initCameraMatrix( cameraStructBase& base );
+void ps_initCameraMatrix( CameraStructBase& base );
 
 void pr_printfDeviceMemoryInfo();
 
@@ -22,11 +22,11 @@ void ps_initSimilarityVolume(
   int volDimX, int volDimY, int volDimZ);
 
 void ps_computeSimilarityVolume(
-  Pyramid& ps_texs_arr,
+  Pyramids& ps_texs_arr,
   CudaDeviceMemoryPitched<float, 3>& volBestSim_dmp,
   CudaDeviceMemoryPitched<float, 3>& volSecBestSim_dmp,
-  const cameraStruct& rcam, int rcWidth, int rcHeight,
-  const cameraStruct& tcams, int tcWidth, int tcHeight,
+  const CameraStruct& rcam, int rcWidth, int rcHeight,
+  const CameraStruct& tcams, int tcWidth, int tcHeight,
   int volStepXY, int volDimX, int volDimY,
   const CudaDeviceMemory<float>& depths_dev,
   const std::vector<OneTC>&  cells,
@@ -36,8 +36,8 @@ void ps_computeSimilarityVolume(
   float gammaC, float gammaP);
 
 void ps_SGMoptimizeSimVolume(
-    Pyramid& ps_texs_arr,
-    const cameraStruct& rccam,
+    Pyramids& ps_texs_arr,
+    const CameraStruct& rccam,
     CudaDeviceMemoryPitched<float, 3>& volSim_dmp,
     int volDimX, int volDimY, int volDimZ,
     bool verbose,
@@ -52,7 +52,7 @@ void ps_SGMoptimizeSimVolume(
 int ps_listCUDADevices(bool verbose);
 
 void ps_deviceAllocate(
-    Pyramid& ps_texs_arr,
+    Pyramids& ps_texs_arr,
     int ncams,
     int width, int height,
     int scales,
@@ -61,8 +61,8 @@ void ps_deviceAllocate(
 void ps_testCUDAdeviceNo(int CUDAdeviceNo);
 
 void ps_deviceUpdateCam(
-    Pyramid& ps_texs_arr,
-    const cameraStruct& cam,
+    Pyramids& ps_texs_arr,
+    const CameraStruct& cam,
     int camId,
     int CUDAdeviceNo,
     int ncamsAllocated,
@@ -71,15 +71,15 @@ void ps_deviceUpdateCam(
     int varianceWsh);
 
 void ps_deviceDeallocate(
-    Pyramid& ps_texs_arr,
+    Pyramids& ps_texs_arr,
     int CUDAdeviceNo, int ncams, int scales);
 
 void ps_refineRcDepthMap(
-    Pyramid& ps_texs_arr,
+    Pyramids& ps_texs_arr,
     float* out_osimMap_hmh,
     float* inout_rcDepthMap_hmh,
     int ntcsteps,
-    const std::vector<cameraStruct>& cams,
+    const std::vector<CameraStruct>& cams,
     int width, int height,
     int imWidth, int imHeight,
     int scale,
@@ -103,7 +103,7 @@ void ps_fuseDepthSimMapsGaussianKernelVoting(
     bool verbose);
 
 void ps_optimizeDepthSimMapGradientDescent(
-    Pyramid& ps_texs_arr,
+    Pyramids& ps_texs_arr,
     CudaHostMemoryHeap<float2, 2>* odepthSimMap_hmh,
     std::vector<CudaHostMemoryHeap<float2, 2>*>& dataMaps_hmh,
     int ndataMaps,
@@ -111,7 +111,7 @@ void ps_optimizeDepthSimMapGradientDescent(
     int nDepthsToRefine,
     int nIters,
     float sigma,
-    const std::vector<cameraStruct>& cams,
+    const std::vector<CameraStruct>& cams,
     int ncams,
     int width, int height,
     int scale,
@@ -121,7 +121,7 @@ void ps_optimizeDepthSimMapGradientDescent(
     int yFrom);
 
 void ps_getSilhoueteMap(
-    Pyramid& ps_texs_arr,
+    Pyramids& ps_texs_arr,
     CudaHostMemoryHeap<bool, 2>* omap_hmh,
     int width, int height,
     int scale,

@@ -16,7 +16,7 @@ namespace depthMap {
 
 extern void ps_create_gaussian_arr( int deviceId, int scales );
 
-extern void ps_downscale_gauss( Pyramid& ps_texs_arr,
+extern void ps_downscale_gauss( Pyramids& ps_texs_arr,
                                 int camId, int scale,
                                 int w, int h, int radius );
 

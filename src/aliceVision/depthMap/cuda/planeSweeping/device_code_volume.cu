@@ -7,8 +7,8 @@
 namespace aliceVision {
 namespace depthMap {
 
-inline __device__ void volume_computePatch( const cameraStructBase* rc_cam_s,
-                                            const cameraStructBase* tc_cam_s,
+inline __device__ void volume_computePatch( const CameraStructBase* rc_cam_s,
+                                            const CameraStructBase* tc_cam_s,
                                             patch& ptch,
                                             const float fpPlaneDepth, const int2& pix )
 {
@@ -39,8 +39,8 @@ __global__ void volume_init_kernel( float* volume, int volume_s, int volume_p,
 __global__ void volume_slice_kernel(
                                     cudaTextureObject_t rc_tex,
                                     cudaTextureObject_t tc_tex,
-                                    const cameraStructBase* rc_cam_s,
-                                    const cameraStructBase* tc_cam_s,
+                                    const CameraStructBase* rc_cam_s,
+                                    const CameraStructBase* tc_cam_s,
                                     const float* depths_d,
                                     const int lowestUsedDepth,
                                     const int nbDepthsToSearch,

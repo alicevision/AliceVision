@@ -49,36 +49,27 @@ public:
     };
 
     const int _scales;
-    const int _nbest; // == 1
 
-    mvsUtils::MultiViewParams* mp;
-
+    mvsUtils::MultiViewParams* _mp;
     const int _CUDADeviceNo;
-    Pyramid ps_texs_arr;
+    Pyramids _pyramids;
 
-    CudaDeviceMemoryPitched<cameraStructBase,2> _camsBasesDev;
-    CudaHostMemoryHeap<cameraStructBase,2>      _camsBasesHst;
-    std::vector<cameraStruct>                   cams;
-    StaticVector<int>                           camsRcs;
-    StaticVector<long>                          camsTimes;
+    CudaDeviceMemoryPitched<CameraStructBase,2> _camsBasesDev;
+    CudaHostMemoryHeap<CameraStructBase,2>      _camsBasesHst;
+    std::vector<CameraStruct>                   _cams;
+    StaticVector<int>                           _camsRcs;
+    StaticVector<long>                          _camsTimes;
 
     const bool _verbose;
-    bool doVizualizePartialDepthMaps;
     const int  _nbestkernelSizeHalf;
-
-    bool useRcDepthsOrRcTcDepths;
-    int  minSegSize;
-    bool useSeg;
     int  _nImgsInGPUAtTime;
-    bool subPixel;
-    int  varianceWSH;
+    int  _varianceWSH;
+    mvsUtils::ImagesCache& _ic;
 
     inline int maxImagesInGPU() const { return _nImgsInGPUAtTime; }
 
-    mvsUtils::ImagesCache& _ic;
-
     PlaneSweepingCuda(int CUDADeviceNo, mvsUtils::ImagesCache& _ic, mvsUtils::MultiViewParams* _mp, int scales);
-    ~PlaneSweepingCuda(void);
+    ~PlaneSweepingCuda();
 
     void cameraToDevice( int rc, const StaticVector<int>& tcams );
 

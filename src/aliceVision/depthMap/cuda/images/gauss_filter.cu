@@ -104,7 +104,7 @@ __host__ void ps_create_gaussian_arr( int deviceId, int scales ) // float delta,
     cudaFreeHost( h_gaussianArray );
 }
 
-__host__ void ps_downscale_gauss( Pyramid& ps_texs_arr,
+__host__ void ps_downscale_gauss( Pyramids& ps_texs_arr,
                                   int camId, int scale,
                                   int w, int h, int radius )
 {
