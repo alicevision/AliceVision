@@ -303,7 +303,7 @@ void ps_testCUDAdeviceNo(int CUDAdeviceNo)
     }
 }
 
-void ps_deviceUpdateCam( Pyramids& ps_texs_arr,
+void ps_device_updateCam( Pyramids& ps_texs_arr,
                          const CameraStruct& cam, int camId, int CUDAdeviceNo,
                          int ncamsAllocated, int scales, int w, int h, int varianceWsh)
 {

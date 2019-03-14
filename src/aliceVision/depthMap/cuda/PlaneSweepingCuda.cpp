@@ -32,7 +32,7 @@ inline const uchar4 get(mvsUtils::ImagesCache::ImgPtr img, int x, int y)
 }
 
 
-static void cps_fillCamera(CameraStructBase& base, int c, mvsUtils::MultiViewParams& mp, int scale, const char* called_from )
+static void cps_host_fillCamera(CameraStructBase& base, int c, mvsUtils::MultiViewParams& mp, int scale, const char* called_from )
 {
 
     Matrix3x3 scaleM;
@@ -121,7 +121,7 @@ static void cps_fillCamera(CameraStructBase& base, int c, mvsUtils::MultiViewPar
     ps_initCameraMatrix( base );
 }
 
-static void cps_fillCameraData(mvsUtils::ImagesCache& ic, CameraStruct& cam, int c, mvsUtils::MultiViewParams& mp, StaticVectorBool* rcSilhoueteMap)
+static void cps_host_fillCameraData(mvsUtils::ImagesCache& ic, CameraStruct& cam, int c, mvsUtils::MultiViewParams& mp, StaticVectorBool* rcSilhoueteMap)
 {
     // memcpyGrayImageFromFileToArr(cam->tex_hmh->getBuffer(), mp.indexes[c], mp, true, 1, 0);
     // memcpyRGBImageFromFileToArr(
@@ -132,7 +132,7 @@ static void cps_fillCameraData(mvsUtils::ImagesCache& ic, CameraStruct& cam, int
     // ic.refreshData(c);
     mvsUtils::ImagesCache::ImgPtr img = ic.getImg_sync( c );
 
-    ALICEVISION_LOG_DEBUG("cps_fillCameraData [" << c << "]: " << mp.getWidth(c) << "x" << mp.getHeight(c));
+    ALICEVISION_LOG_DEBUG("cps_host_fillCameraData [" << c << "]: " << mp.getWidth(c) << "x" << mp.getHeight(c));
 
     Pixel pix;
     if( rcSilhoueteMap == nullptr )
@@ -289,9 +289,9 @@ int PlaneSweepingCuda::addCam( int rc, int scale,
         }
         long t1 = clock();
 
-        cps_fillCamera(_camsBasesHst(0,id), rc, _mp, scale, calling_func);
-        cps_fillCameraData(_ic, cam, rc, _mp, rcSilhoueteMap);
-        ps_deviceUpdateCam(_pyramids, cam, id,
+        cps_host_fillCamera(_camsBasesHst(0,id), rc, _mp, scale, calling_func);
+        cps_host_fillCameraData(_ic, cam, rc, _mp, rcSilhoueteMap);
+        ps_device_updateCam(_pyramids, cam, id,
                            _CUDADeviceNo, _nImgsInGPUAtTime, _scales, _mp.getWidth(rc), _mp.getHeight(rc), _varianceWSH);
 
         mvsUtils::printfElapsedTime(t1, "Copy image (camera id="+std::to_string(rc)+") from CPU to GPU");
@@ -305,9 +305,9 @@ int PlaneSweepingCuda::addCam( int rc, int scale,
          * It is not sensible to waste cycles on refilling the camera struct if the new one
          * is identical to the old one.
          */
-        cps_fillCamera(_camsBasesHst(0,id), rc, _mp, scale, calling_func);
-        // cps_fillCameraData((CameraStruct*)(*cams)[id], rc, mp, H, _scales);
-        // ps_deviceUpdateCam((CameraStruct*)(*cams)[id], id, _scales);
+        cps_host_fillCamera(_camsBasesHst(0,id), rc, _mp, scale, calling_func);
+        // cps_host_fillCameraData((CameraStruct*)(*cams)[id], rc, mp, H, _scales);
+        // ps_device_updateCam((CameraStruct*)(*cams)[id], id, _scales);
         ALICEVISION_LOG_DEBUG("Reuse image (camera id=" + std::to_string(rc) + ") already on the GPU.");
     }
     _camsTimes[id] = clock();

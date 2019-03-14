@@ -60,7 +60,7 @@ void ps_deviceAllocate(
 
 void ps_testCUDAdeviceNo(int CUDAdeviceNo);
 
-void ps_deviceUpdateCam(
+void ps_device_updateCam(
     Pyramids& ps_texs_arr,
     const CameraStruct& cam,
     int camId,
