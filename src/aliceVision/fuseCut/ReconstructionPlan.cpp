@@ -269,7 +269,7 @@ void reconstructSpaceAccordingToVoxelsArray(const std::string& voxelsArrayFileNa
         if(!mvsUtils::FileExists(meshBinFilepath))
         {
             StaticVector<int>* voxelsIds = rp->voxelsIdsIntersectingHexah(&(*voxelsArray)[i * 8]);
-            DelaunayGraphCut delaunayGC(ls->mp);
+            DelaunayGraphCut delaunayGC(*ls->mp);
             Point3d* hexah = &(*voxelsArray)[i * 8];
 
             StaticVector<int> cams = ls->mp->findCamsWhichIntersectsHexahedron(hexah);

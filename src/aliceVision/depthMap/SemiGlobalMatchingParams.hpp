@@ -19,7 +19,7 @@ namespace depthMap {
 class SemiGlobalMatchingParams
 {
 public:
-    mvsUtils::MultiViewParams* mp;
+    mvsUtils::MultiViewParams& mp;
     PlaneSweepingCuda& cps;
     bool exportIntermediateResults;
     bool doSmooth;
@@ -53,7 +53,7 @@ public:
     bool useSilhouetteMaskCodedByColor;
     rgb silhouetteMaskColor;
 
-    SemiGlobalMatchingParams(mvsUtils::MultiViewParams* _mp, PlaneSweepingCuda& _cps);
+    SemiGlobalMatchingParams(mvsUtils::MultiViewParams& mp, PlaneSweepingCuda& _cps);
     ~SemiGlobalMatchingParams();
 
     void getDepthSimMapFromBestIdVal(DepthSimMap& out_depthSimMap, int w, int h,

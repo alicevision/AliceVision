@@ -26,9 +26,9 @@ bool FolderExists(const std::string& folderPath)
     return boost::filesystem::is_directory(folderPath);
 }
 
-std::string getFileNameFromViewId(const MultiViewParams* mp, int viewId, EFileType fileType, int scale)
+std::string getFileNameFromViewId(const MultiViewParams& mp, int viewId, EFileType fileType, int scale)
 {
-  std::string folder = mp->_imagesFolder;
+  std::string folder = mp._imagesFolder;
   std::string suffix;
   std::string ext;
 
@@ -217,9 +217,9 @@ std::string getFileNameFromViewId(const MultiViewParams* mp, int viewId, EFileTy
       case EFileType::depthMap:
       {
           if(scale == 0)
-              folder = mp->getDepthMapsFilterFolder();
+              folder = mp.getDepthMapsFilterFolder();
           else
-              folder = mp->getDepthMapsFolder();
+              folder = mp.getDepthMapsFolder();
           suffix = "_depthMap";
           ext = "exr";
           break;
@@ -227,9 +227,9 @@ std::string getFileNameFromViewId(const MultiViewParams* mp, int viewId, EFileTy
       case EFileType::simMap:
       {
           if(scale == 0)
-              folder = mp->getDepthMapsFilterFolder();
+              folder = mp.getDepthMapsFilterFolder();
           else
-              folder = mp->getDepthMapsFolder();
+              folder = mp.getDepthMapsFolder();
           suffix = "_simMap";
           ext = "exr";
           break;
@@ -254,7 +254,7 @@ std::string getFileNameFromViewId(const MultiViewParams* mp, int viewId, EFileTy
       }
       case EFileType::nmodMap:
       {
-          folder = mp->getDepthMapsFilterFolder();
+          folder = mp.getDepthMapsFilterFolder();
           suffix = "_nmodMap";
           ext = "png";
           break;
@@ -275,12 +275,12 @@ std::string getFileNameFromViewId(const MultiViewParams* mp, int viewId, EFileTy
   return fileName;
 }
 
-std::string getFileNameFromIndex(const MultiViewParams* mp, int index, EFileType mv_file_type, int scale)
+std::string getFileNameFromIndex(const MultiViewParams& mp, int index, EFileType mv_file_type, int scale)
 {
-    return getFileNameFromViewId(mp, mp->getViewId(index), mv_file_type, scale);
+    return getFileNameFromViewId(mp, mp.getViewId(index), mv_file_type, scale);
 }
 
-FILE* mv_openFile(const MultiViewParams* mp, int index, EFileType mv_file_type, const char* readWrite)
+FILE* mv_openFile(const MultiViewParams& mp, int index, EFileType mv_file_type, const char* readWrite)
 {
     const std::string fileName = getFileNameFromIndex(mp, index, mv_file_type);
     FILE* out = fopen(fileName.c_str(), readWrite);
@@ -315,31 +315,31 @@ Matrix3x4 load3x4MatrixFromFile(FILE* fi)
     return m;
 }
 
-void memcpyRGBImageFromFileToArr(int camId, Color* imgArr, const std::string& fileNameOrigStr, const MultiViewParams* mp, int bandType)
+void memcpyRGBImageFromFileToArr(int camId, Color* imgArr, const std::string& fileNameOrigStr, const MultiViewParams& mp, int bandType)
 {
     int origWidth, origHeight;
     std::vector<Color> cimg;
     imageIO::readImage(fileNameOrigStr, origWidth, origHeight, cimg);
 
     // check image size
-    if((mp->getOriginalWidth(camId) != origWidth) || (mp->getOriginalHeight(camId) != origHeight))
+    if((mp.getOriginalWidth(camId) != origWidth) || (mp.getOriginalHeight(camId) != origHeight))
     {
         std::stringstream s;
         s << "Bad image dimension for camera : " << camId << "\n";
         s << "\t- image path : " << fileNameOrigStr << "\n";
-        s << "\t- expected dimension : " << mp->getOriginalWidth(camId) << "x" << mp->getOriginalHeight(camId) << "\n";
+        s << "\t- expected dimension : " << mp.getOriginalWidth(camId) << "x" << mp.getOriginalHeight(camId) << "\n";
         s << "\t- real dimension : " << origWidth << "x" << origHeight << "\n";
         throw std::runtime_error(s.str());
     }
 
     // scale choosed by the user and apply during the process
-    const int processScale = mp->getProcessDownscale();
-    const int width = mp->getWidth(camId);
-    const int height = mp->getHeight(camId);
+    const int processScale = mp.getProcessDownscale();
+    const int width = mp.getWidth(camId);
+    const int height = mp.getHeight(camId);
 
     if(processScale > 1)
     {
-        ALICEVISION_LOG_DEBUG("Downscale (x" << processScale << ") image: " << mp->getViewId(camId) << ".");
+        ALICEVISION_LOG_DEBUG("Downscale (x" << processScale << ") image: " << mp.getViewId(camId) << ".");
         std::vector<Color> bmpr;
         imageIO::resizeImage(origWidth, origHeight, processScale, cimg, bmpr);
         cimg = bmpr;

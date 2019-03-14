@@ -6,7 +6,6 @@ set(depthMap_files_headers
   SemiGlobalMatchingParams.hpp
   SemiGlobalMatchingRc.hpp
   SemiGlobalMatchingRcTc.hpp
-  SemiGlobalMatchingVolume.hpp
 )
 
 # Sources
@@ -17,7 +16,6 @@ set(depthMap_files_sources
   SemiGlobalMatchingParams.cpp
   SemiGlobalMatchingRc.cpp
   SemiGlobalMatchingRcTc.cpp
-  SemiGlobalMatchingVolume.cpp
 )
 
 # Cuda Headers

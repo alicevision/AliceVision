@@ -20,15 +20,15 @@ SemiGlobalMatchingRcTc::SemiGlobalMatchingRcTc(
             const StaticVector<int>& tc,
             int scale,
             int step,
-            SemiGlobalMatchingParams* _sp,
+            SemiGlobalMatchingParams& sp,
             StaticVectorBool* rcSilhoueteMap)
-    : sp( _sp )
+    : _sp( sp )
     , _rc( rc )
     , _tc( tc )
     , _scale( scale )
     , _step( step )
-    , _w( sp->mp->getWidth(rc) / (scale * step) )
-    , _h( sp->mp->getHeight(rc) / (scale * step) )
+    , _w( sp.mp.getWidth(rc) / (scale * step) )
+    , _h( sp.mp.getHeight(rc) / (scale * step) )
     , _rcDepths( rcDepths )
     , _rcTcDepthRanges( rcTcDepthRanges )
 {
@@ -88,7 +88,7 @@ void SemiGlobalMatchingRcTc::computeDepthSimMapVolume(
                               stoppingDepth) );
     }
 
-    sp->cps.sweepPixelsToVolume( volumeBestSim,
+    _sp.cps.sweepPixelsToVolume( volumeBestSim,
                                  volumeSecBestSim,
                                  volDimX, volDimY,
                                  volStepXY,
@@ -98,8 +98,7 @@ void SemiGlobalMatchingRcTc::computeDepthSimMapVolume(
                                  _rcSilhoueteMap,
                                  wsh, gammaC, gammaP, _scale);
 
-    if(sp->mp->verbose)
-        mvsUtils::printfElapsedTime(tall, "SemiGlobalMatchingRcTc::computeDepthSimMapVolume ");
+    mvsUtils::printfElapsedTime(tall, "SemiGlobalMatchingRcTc::computeDepthSimMapVolume ");
 }
 
 } // namespace depthMap

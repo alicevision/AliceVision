@@ -60,7 +60,7 @@ public:
     typedef std::shared_ptr<Img> ImgPtr;
 
 public:
-    const MultiViewParams* mp;
+    const MultiViewParams& _mp;
 
 private:
     ImagesCache(const ImagesCache&) = delete;
@@ -75,11 +75,11 @@ private:
     std::vector<std::mutex> imagesMutexes;
     std::vector<std::string> imagesNames;
 
-    const int  bandType;
+    const int bandType;
 
 public:
-    ImagesCache(const MultiViewParams* _mp, int _bandType);
-    ImagesCache(const MultiViewParams* _mp, int _bandType, std::vector<std::string>& _imagesNames);
+    ImagesCache(const MultiViewParams& mp, int _bandType);
+    ImagesCache(const MultiViewParams& mp, int _bandType, std::vector<std::string>& _imagesNames);
     void initIC(std::vector<std::string>& _imagesNames);
     ~ImagesCache();
 

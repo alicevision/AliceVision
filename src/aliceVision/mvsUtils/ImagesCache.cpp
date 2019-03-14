@@ -13,20 +13,20 @@
 namespace aliceVision {
 namespace mvsUtils {
 
-ImagesCache::ImagesCache(const MultiViewParams* _mp, int _bandType)
-  : mp(_mp)
+ImagesCache::ImagesCache(const MultiViewParams& mp, int _bandType)
+  : _mp(mp)
   , bandType( _bandType )
 {
     std::vector<std::string> _imagesNames;
-    for(int rc = 0; rc < _mp->getNbCameras(); rc++)
+    for(int rc = 0; rc < _mp.getNbCameras(); rc++)
     {
-        _imagesNames.push_back(_mp->getImagePath(rc));
+        _imagesNames.push_back(_mp.getImagePath(rc));
     }
     initIC( _imagesNames );
 }
 
-ImagesCache::ImagesCache(const MultiViewParams* _mp, int _bandType, std::vector<std::string>& _imagesNames)
-  : mp(_mp)
+ImagesCache::ImagesCache(const MultiViewParams& mp, int _bandType, std::vector<std::string>& _imagesNames)
+  : _mp(mp)
   , bandType( _bandType )
 {
     initIC( _imagesNames );
@@ -34,27 +34,27 @@ ImagesCache::ImagesCache(const MultiViewParams* _mp, int _bandType, std::vector<
 
 void ImagesCache::initIC( std::vector<std::string>& _imagesNames )
 {
-    float oneimagemb = (sizeof(Color) * mp->getMaxImageWidth() * mp->getMaxImageHeight()) / 1024.f / 1024.f;
-    float maxmbCPU = (float)mp->userParams.get<int>("images_cache.maxmbCPU", 5000);
+    float oneimagemb = (sizeof(Color) * _mp.getMaxImageWidth() * _mp.getMaxImageHeight()) / 1024.f / 1024.f;
+    float maxmbCPU = (float)_mp.userParams.get<int>("images_cache.maxmbCPU", 5000);
     int _npreload = std::max((int)(maxmbCPU / oneimagemb), 5); // image cache has a minimum size of 5
-    N_PRELOADED_IMAGES = std::min(mp->ncams, _npreload);
+    N_PRELOADED_IMAGES = std::min(_mp.ncams, _npreload);
 
-    for(int rc = 0; rc < mp->ncams; rc++)
+    for(int rc = 0; rc < _mp.ncams; rc++)
     {
         imagesNames.push_back(_imagesNames[rc]);
     }
 
     imgs.resize(N_PRELOADED_IMAGES); // = new Color*[N_PRELOADED_IMAGES];
 
-    camIdMapId.resize( mp->ncams, -1 );
+    camIdMapId.resize(_mp.ncams, -1 );
     mapIdCamId.resize( N_PRELOADED_IMAGES, -1 );
     mapIdClock.resize( N_PRELOADED_IMAGES, clock() );
 
     {
         // Cannot resize the vector<mutex> directly, as mutex class is not move-constructible.
-        // imagesMutexes.resize(mp->ncams); // cannot compile
+        // imagesMutexes.resize(_mp.ncams); // cannot compile
         // So, we do the same with a new vector and swap.
-        std::vector<std::mutex> imagesMutexesTmp(mp->ncams);
+        std::vector<std::mutex> imagesMutexesTmp(_mp.ncams);
         imagesMutexes.swap(imagesMutexesTmp);
     }
 
@@ -87,14 +87,14 @@ void ImagesCache::refreshData(int camId)
         long t1 = clock();
         if (imgs[mapId] == nullptr)
         {
-            const std::size_t maxSize = mp->getMaxImageWidth() * mp->getMaxImageHeight();
+            const std::size_t maxSize = _mp.getMaxImageWidth() * _mp.getMaxImageHeight();
             imgs[mapId] = std::make_shared<Img>( maxSize );
         }
 
         const std::string imagePath = imagesNames.at(camId);
-        memcpyRGBImageFromFileToArr(camId, imgs[mapId]->data, imagePath, mp, bandType);
-        imgs[mapId]->setWidth(  mp->getWidth(camId) );
-        imgs[mapId]->setHeight( mp->getHeight(camId) );
+        memcpyRGBImageFromFileToArr(camId, imgs[mapId]->data, imagePath, _mp, bandType);
+        imgs[mapId]->setWidth(  _mp.getWidth(camId) );
+        imgs[mapId]->setHeight( _mp.getHeight(camId) );
 
         ALICEVISION_LOG_DEBUG("Add " << imagePath << " to image cache. " << formatElapsedTime(t1));
     }

@@ -50,7 +50,7 @@ public:
 
     const int _scales;
 
-    mvsUtils::MultiViewParams* _mp;
+    mvsUtils::MultiViewParams& _mp;
     const int _CUDADeviceNo;
     Pyramids _pyramids;
 
@@ -60,7 +60,6 @@ public:
     StaticVector<int>                           _camsRcs;
     StaticVector<long>                          _camsTimes;
 
-    const bool _verbose;
     const int  _nbestkernelSizeHalf;
     int  _nImgsInGPUAtTime;
     int  _varianceWSH;
@@ -68,7 +67,7 @@ public:
 
     inline int maxImagesInGPU() const { return _nImgsInGPUAtTime; }
 
-    PlaneSweepingCuda(int CUDADeviceNo, mvsUtils::ImagesCache& _ic, mvsUtils::MultiViewParams* _mp, int scales);
+    PlaneSweepingCuda(int CUDADeviceNo, mvsUtils::ImagesCache& _ic, mvsUtils::MultiViewParams& _mp, int scales);
     ~PlaneSweepingCuda();
 
     void cameraToDevice( int rc, const StaticVector<int>& tcams );

@@ -461,15 +461,15 @@ void OctreeTracks::trackStruct::doPrintf()
         ALICEVISION_LOG_INFO("\t- cam: " << i << ", rc: " << cams[i].x << ", val: " << cams[i].y);
 }
 
-OctreeTracks::OctreeTracks(const Point3d* _voxel, mvsUtils::MultiViewParams* _mp, Voxel dimensions)
-    : Fuser(_mp)
+OctreeTracks::OctreeTracks(const Point3d* voxel_, mvsUtils::MultiViewParams* mp_, Voxel dimensions)
+    : Fuser(*mp_)
 {
     numSubVoxsX = dimensions.x;
     numSubVoxsY = dimensions.y;
     numSubVoxsZ = dimensions.z;
     for(int i = 0; i < 8; i++)
     {
-        vox[i] = _voxel[i];
+        vox[i] = voxel_[i];
     }
 
     O = vox[0];
@@ -487,11 +487,11 @@ OctreeTracks::OctreeTracks(const Point3d* _voxel, mvsUtils::MultiViewParams* _mp
     sy = svy / (float)numSubVoxsY;
     sz = svz / (float)numSubVoxsZ;
 
-    doFilterOctreeTracks = mp->userParams.get<bool>("LargeScale.doFilterOctreeTracks", true);
-    doUseWeaklySupportedPoints = mp->userParams.get<bool>("LargeScale.doUseWeaklySupportedPoints", false);
-    doUseWeaklySupportedPointCam = mp->userParams.get<bool>("LargeScale.doUseWeaklySupportedPointCam", false);
-    minNumOfConsistentCams = mp->userParams.get<int>("filter.minNumOfConsistentCams", 2);
-    simWspThr = (float)mp->userParams.get<double>("LargeScale.simWspThr", -0.0f);
+    doFilterOctreeTracks = _mp.userParams.get<bool>("LargeScale.doFilterOctreeTracks", true);
+    doUseWeaklySupportedPoints = _mp.userParams.get<bool>("LargeScale.doUseWeaklySupportedPoints", false);
+    doUseWeaklySupportedPointCam = _mp.userParams.get<bool>("LargeScale.doUseWeaklySupportedPointCam", false);
+    minNumOfConsistentCams = _mp.userParams.get<int>("filter.minNumOfConsistentCams", 2);
+    simWspThr = (float)_mp.userParams.get<double>("LargeScale.simWspThr", -0.0f);
 
     int maxNumSubVoxs = std::max(std::max(numSubVoxsX, numSubVoxsY), numSubVoxsZ);
     size_ = 2;
@@ -618,12 +618,11 @@ void OctreeTracks::updateOctreeTracksCams(StaticVector<trackStruct*>* tracks)
 /// smaller enough pix size then remove the actual track
 void OctreeTracks::filterOctreeTracks2(StaticVector<trackStruct*>* tracks)
 {
-    if(mp->verbose)
-        ALICEVISION_LOG_DEBUG("filterOctreeTracks2");
+    ALICEVISION_LOG_DEBUG("filterOctreeTracks2");
     StaticVector<trackStruct*> tracksOut;
     tracksOut.reserve(tracks->size());
 
-    float clusterSizeThr = mp->userParams.get<double>("OctreeTracks.clusterSizeThr", 2.0f);
+    float clusterSizeThr = _mp.userParams.get<double>("OctreeTracks.clusterSizeThr", 2.0f);
 
     // long t1 = initEstimate();
     for(int i = 0; i < tracks->size(); i++)
@@ -671,11 +670,9 @@ void OctreeTracks::filterOctreeTracks2(StaticVector<trackStruct*>* tracks)
 StaticVector<OctreeTracks::trackStruct*>* OctreeTracks::fillOctree(int maxPts, std::string depthMapsPtsSimsTmpDir)
 {
     long t1 = clock();
-    StaticVector<int> cams = mp->findCamsWhichIntersectsHexahedron(vox, depthMapsPtsSimsTmpDir + "minMaxDepths.bin");
-    if(mp->verbose)
-        mvsUtils::printfElapsedTime(t1, "findCamsWhichIntersectsHexahedron");
-    if(mp->verbose)
-        ALICEVISION_LOG_DEBUG("ncams: " << cams.size());
+    StaticVector<int> cams = _mp.findCamsWhichIntersectsHexahedron(vox, depthMapsPtsSimsTmpDir + "minMaxDepths.bin");
+    mvsUtils::printfElapsedTime(t1, "findCamsWhichIntersectsHexahedron");
+    ALICEVISION_LOG_DEBUG("ncams: " << cams.size());
 
     t1 = clock();
 
@@ -685,9 +682,9 @@ StaticVector<OctreeTracks::trackStruct*>* OctreeTracks::fillOctree(int maxPts, s
     {
         int rc = cams[camid];
         StaticVector<Point3d>* pts =
-            loadArrayFromFile<Point3d>(depthMapsPtsSimsTmpDir + std::to_string(mp->getViewId(rc)) + "pts.bin");
+            loadArrayFromFile<Point3d>(depthMapsPtsSimsTmpDir + std::to_string(_mp.getViewId(rc)) + "pts.bin");
         StaticVector<float>* sims =
-            loadArrayFromFile<float>(depthMapsPtsSimsTmpDir + std::to_string(mp->getViewId(rc)) + "sims.bin");
+            loadArrayFromFile<float>(depthMapsPtsSimsTmpDir + std::to_string(_mp.getViewId(rc)) + "sims.bin");
 
         // long tpts=initEstimate();
         for(int i = 0; i < pts->size(); i++)
@@ -705,7 +702,7 @@ StaticVector<OctreeTracks::trackStruct*>* OctreeTracks::fillOctree(int maxPts, s
                         sim -= 2.0f;
                     }
                 }
-                float pixSize = mp->getCamPixelSize(p, rc);
+                float pixSize = _mp.getCamPixelSize(p, rc);
                 addPoint(otVox.x, otVox.y, otVox.z, sim, pixSize, p, rc);
             }
             if(leafsNumber_ > 2 * maxPts)
@@ -725,49 +722,40 @@ StaticVector<OctreeTracks::trackStruct*>* OctreeTracks::fillOctree(int maxPts, s
     // finishEstimate();
 
     StaticVector<trackStruct*>* tracks = getAllPoints();
-    if(mp->verbose)
-        mvsUtils::printfElapsedTime(t1, "fillOctree fill");
+    mvsUtils::printfElapsedTime(t1, "fillOctree fill");
 
     // TODO this is not working well ...
     // updateOctreeTracksCams(tracks);
-    // if (mp->verbose) printfElapsedTime(t1,"updateOctreeTracksCams");
+    // if (_mp.verbose) printfElapsedTime(t1,"updateOctreeTracksCams");
 
     if(doFilterOctreeTracks)
     {
-        if(mp->verbose)
-            ALICEVISION_LOG_DEBUG("# tracks before filtering: " << tracks->size());
+        ALICEVISION_LOG_DEBUG("# tracks before filtering: " << tracks->size());
         long t2 = clock();
 
         filterMinNumConsistentCams(tracks);
-        if(mp->verbose)
-            mvsUtils::printfElapsedTime(t2, "filterMinNumConsistentCams");
+        mvsUtils::printfElapsedTime(t2, "filterMinNumConsistentCams");
 
-        if(mp->verbose)
-            ALICEVISION_LOG_DEBUG("# tracks after filterMinNumConsistentCams: " << tracks->size());
+        ALICEVISION_LOG_DEBUG("# tracks after filterMinNumConsistentCams: " << tracks->size());
 
         t2 = clock();
         // filter cameras observations that have a large pixelSize regarding the others
         filterOctreeTracks2(tracks);
 
-        if(mp->verbose)
-            mvsUtils::printfElapsedTime(t2, "filterOctreeTracks2");
+        mvsUtils::printfElapsedTime(t2, "filterOctreeTracks2");
 
-        if(mp->verbose)
-            ALICEVISION_LOG_DEBUG("# tracks after filterOctreeTracks2: " << tracks->size());
-        if(mp->verbose)
-            ALICEVISION_LOG_DEBUG("# tracks after filtering: " << tracks->size());
+        ALICEVISION_LOG_DEBUG("# tracks after filterOctreeTracks2: " << tracks->size());
+        ALICEVISION_LOG_DEBUG("# tracks after filtering: " << tracks->size());
     }
 
     if(tracks->size() > maxPts)
     {
-        if(mp->verbose)
-            ALICEVISION_LOG_DEBUG("Too much tracks (" << tracks->size() << "), clear all.");
+        ALICEVISION_LOG_DEBUG("Too much tracks (" << tracks->size() << "), clear all.");
         delete tracks; // DO NOT DELETE POINTER JUST DELETE THE ARRAY!!!
         return nullptr;
     }
 
-    if(mp->verbose)
-        ALICEVISION_LOG_DEBUG("number of tracks: " << tracks->size());
+    ALICEVISION_LOG_DEBUG("number of tracks: " << tracks->size());
 
     return tracks;
 }
@@ -789,8 +777,7 @@ OctreeTracks::fillOctreeFromTracks(StaticVector<OctreeTracks::trackStruct*>* tra
 
     StaticVector<trackStruct*>* tracks = getAllPoints();
 
-    if(mp->verbose)
-        mvsUtils::printfElapsedTime(t1, "fillOctreeFromTracks");
+    mvsUtils::printfElapsedTime(t1, "fillOctreeFromTracks");
 
     return tracks;
 }
@@ -798,8 +785,8 @@ OctreeTracks::fillOctreeFromTracks(StaticVector<OctreeTracks::trackStruct*>* tra
 StaticVector<int>* OctreeTracks::getTracksCams(StaticVector<OctreeTracks::trackStruct*>* tracks)
 {
     StaticVectorBool* camsb = new StaticVectorBool();
-    camsb->reserve(mp->ncams);
-    camsb->resize_with(mp->ncams, false);
+    camsb->reserve(_mp.ncams);
+    camsb->resize_with(_mp.ncams, false);
 
     for(int i = 0; i < tracks->size(); i++)
     {
@@ -810,8 +797,8 @@ StaticVector<int>* OctreeTracks::getTracksCams(StaticVector<OctreeTracks::trackS
     }
 
     StaticVector<int>* cams = new StaticVector<int>();
-    cams->reserve(mp->ncams);
-    for(int i = 0; i < mp->ncams; i++)
+    cams->reserve(_mp.ncams);
+    for(int i = 0; i < _mp.ncams; i++)
     {
         if((*camsb)[i])
         {

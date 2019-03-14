@@ -242,7 +242,7 @@ int main(int argc, char* argv[])
 
     ALICEVISION_LOG_INFO("Create depth maps.");
 
-    depthMap::estimateAndRefineDepthMaps(&mp, cams, nbGPUs);
+    depthMap::estimateAndRefineDepthMaps(mp, cams, nbGPUs);
 
     ALICEVISION_COMMANDLINE_END
 }

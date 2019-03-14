@@ -75,7 +75,7 @@ public:
         VertexIndex localVertexIndex = GEO::NO_VERTEX;
     };
 
-    mvsUtils::MultiViewParams* mp;
+    mvsUtils::MultiViewParams& _mp;
 
     GEO::Delaunay_var _tetrahedralization;
     /// 3D points coordinates
@@ -94,7 +94,7 @@ public:
 
     static const GEO::index_t NO_TETRAHEDRON = GEO::NO_CELL;
 
-    DelaunayGraphCut(mvsUtils::MultiViewParams* _mp);
+    DelaunayGraphCut(mvsUtils::MultiViewParams& mp);
     virtual ~DelaunayGraphCut();
 
     /// Get absolute opposite vertex index
@@ -391,12 +391,12 @@ inline DelaunayGraphCut::Facet DelaunayGraphCut::getFacetInFrontVertexOnTheRayTo
     //	printf("campos %f %f
     //%f\n",mp->CArr[cam].x,mp->CArr[cam].y,mp->CArr[cam].z);
     //};
-    if((cam < 0) || (cam >= mp->ncams))
+    if((cam < 0) || (cam >= _mp.ncams))
     {
         ALICEVISION_LOG_WARNING("Bad camId, cam: " << cam << ", ptid: " << vertexIndex);
     }
 
-    return getFacetInFrontVertexOnTheRayToThePoint3d(vertexIndex, mp->CArr[cam]);
+    return getFacetInFrontVertexOnTheRayToThePoint3d(vertexIndex, _mp.CArr[cam]);
 }
 
 } // namespace fuseCut

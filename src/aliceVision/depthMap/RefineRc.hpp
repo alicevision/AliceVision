@@ -15,7 +15,7 @@ namespace depthMap {
 class RefineRc : public SemiGlobalMatchingRc
 {
 public:
-    RefineRc(int rc, int scale, int step, SemiGlobalMatchingParams* sp);
+    RefineRc(int rc, int scale, int step, SemiGlobalMatchingParams& sp);
     ~RefineRc();
 
     void preloadSgmTcams_async();
@@ -42,8 +42,8 @@ private:
     void optimizeDepthSimMapCUDA(DepthSimMap& out_depthSimMapOptimized, const DepthSimMap& depthPixSizeMapVis, const DepthSimMap& depthSimMapPhoto);
 };
 
-void estimateAndRefineDepthMaps(mvsUtils::MultiViewParams* mp, const std::vector<int>& cams, int nbGPUs);
-void estimateAndRefineDepthMaps(int cudaDeviceNo, mvsUtils::MultiViewParams* mp, const std::vector<int>& cams);
+void estimateAndRefineDepthMaps(mvsUtils::MultiViewParams& mp, const std::vector<int>& cams, int nbGPUs);
+void estimateAndRefineDepthMaps(int cudaDeviceNo, mvsUtils::MultiViewParams& mp, const std::vector<int>& cams);
 
 } // namespace depthMap
 } // namespace aliceVision

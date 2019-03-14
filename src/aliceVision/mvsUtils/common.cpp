@@ -18,7 +18,7 @@ namespace aliceVision {
 namespace mvsUtils {
 
 bool get2dLineImageIntersection(Point2d* pFrom, Point2d* pTo, Point2d linePoint1, Point2d linePoint2,
-                                const MultiViewParams* mp, int camId)
+                                const MultiViewParams& mp, int camId)
 {
     Point2d v = linePoint2 - linePoint1;
 
@@ -34,8 +34,8 @@ bool get2dLineImageIntersection(Point2d* pFrom, Point2d* pTo, Point2d linePoint1
     float c = -a * linePoint1.x - b * linePoint1.y;
 
     int intersections = 0;
-    float rw = (float)mp->getWidth(camId);
-    float rh = (float)mp->getHeight(camId);
+    float rw = (float)mp.getWidth(camId);
+    float rh = (float)mp.getHeight(camId);
 
     // ax + by + c = 0
 
@@ -115,10 +115,10 @@ bool get2dLineImageIntersection(Point2d* pFrom, Point2d* pTo, Point2d linePoint1
 }
 
 bool getTarEpipolarDirectedLine(Point2d* pFromTar, Point2d* pToTar, Point2d refpix, int refCam, int tarCam,
-                                const MultiViewParams* mp)
+                                const MultiViewParams& mp)
 {
-    const Matrix3x4& rP = mp->camArr[refCam];
-    const Matrix3x4& tP = mp->camArr[tarCam];
+    const Matrix3x4& rP = mp.camArr[refCam];
+    const Matrix3x4& tP = mp.camArr[tarCam];
 
     Point3d rC;
     Matrix3x3 rR;
@@ -126,7 +126,7 @@ bool getTarEpipolarDirectedLine(Point2d* pFromTar, Point2d* pToTar, Point2d refp
     Matrix3x3 rK;
     Matrix3x3 riK;
     Matrix3x3 riP;
-    mp->decomposeProjectionMatrix(rC, rR, riR, rK, riK, riP, rP);
+    mp.decomposeProjectionMatrix(rC, rR, riR, rK, riK, riP, rP);
 
     Point3d tC;
     Matrix3x3 tR;
@@ -134,7 +134,7 @@ bool getTarEpipolarDirectedLine(Point2d* pFromTar, Point2d* pToTar, Point2d refp
     Matrix3x3 tK;
     Matrix3x3 tiK;
     Matrix3x3 tiP;
-    mp->decomposeProjectionMatrix(tC, tR, tiR, tK, tiK, tiP, tP);
+    mp.decomposeProjectionMatrix(tC, tR, tiR, tK, tiK, tiP, tP);
 
     Point3d refvect = riP * refpix;
     refvect = refvect.normalize();
@@ -142,30 +142,30 @@ bool getTarEpipolarDirectedLine(Point2d* pFromTar, Point2d* pToTar, Point2d refp
     float d = (rC - tC).size();
     Point3d X = refvect * d + rC;
     Point2d tarpix1;
-    mp->getPixelFor3DPoint(&tarpix1, X, tP);
+    mp.getPixelFor3DPoint(&tarpix1, X, tP);
 
     X = refvect * d * 500.0 + rC;
     Point2d tarpix2;
-    mp->getPixelFor3DPoint(&tarpix2, X, tP);
+    mp.getPixelFor3DPoint(&tarpix2, X, tP);
 
     return get2dLineImageIntersection(pFromTar, pToTar, tarpix1, tarpix2, mp, tarCam);
 }
 
 bool triangulateMatch(Point3d& out, const Point2d& refpix, const Point2d& tarpix, int refCam, int tarCam,
-                      const MultiViewParams* mp)
+                      const MultiViewParams& mp)
 {
-    Point3d refvect = mp->iCamArr[refCam] * refpix;
+    Point3d refvect = mp.iCamArr[refCam] * refpix;
     refvect = refvect.normalize();
-    Point3d refpoint = refvect + mp->CArr[refCam];
+    Point3d refpoint = refvect + mp.CArr[refCam];
 
-    Point3d tarvect = mp->iCamArr[tarCam] * tarpix;
+    Point3d tarvect = mp.iCamArr[tarCam] * tarpix;
     tarvect = tarvect.normalize();
-    Point3d tarpoint = tarvect + mp->CArr[tarCam];
+    Point3d tarpoint = tarvect + mp.CArr[tarCam];
 
     float k, l;
     Point3d lli1, lli2;
 
-    return lineLineIntersect(&k, &l, &out, &lli1, &lli2, mp->CArr[refCam], refpoint, mp->CArr[tarCam], tarpoint);
+    return lineLineIntersect(&k, &l, &out, &lli1, &lli2, mp.CArr[refCam], refpoint, mp.CArr[tarCam], tarpoint);
 }
 
 long initEstimate()
@@ -220,24 +220,24 @@ std::string formatElapsedTime(long t1)
     return out;
 }
 
-bool checkPair(const Point3d& p, int rc, int tc, const MultiViewParams* mp, float minAng, float maxAng)
+bool checkPair(const Point3d& p, int rc, int tc, const MultiViewParams& mp, float minAng, float maxAng)
 {
-    float ps1 = mp->getCamPixelSize(p, rc);
-    float ps2 = mp->getCamPixelSize(p, tc);
-    float ang = angleBetwABandAC(p, mp->CArr[rc], mp->CArr[tc]);
+    float ps1 = mp.getCamPixelSize(p, rc);
+    float ps2 = mp.getCamPixelSize(p, tc);
+    float ang = angleBetwABandAC(p, mp.CArr[rc], mp.CArr[tc]);
 
     return ((std::min(ps1, ps2) > std::max(ps1, ps2) * 0.8) && (ang >= minAng) && (ang <= maxAng));
 }
 
-bool checkCamPairAngle(int rc, int tc, const MultiViewParams* mp, float minAng, float maxAng)
+bool checkCamPairAngle(int rc, int tc, const MultiViewParams& mp, float minAng, float maxAng)
 {
     if(rc == tc)
     {
         return false;
     }
 
-    Point3d rn = mp->iRArr[rc] * Point3d(0.0, 0.0, 1.0);
-    Point3d tn = mp->iRArr[tc] * Point3d(0.0, 0.0, 1.0);
+    Point3d rn = mp.iRArr[rc] * Point3d(0.0, 0.0, 1.0);
+    Point3d tn = mp.iRArr[tc] * Point3d(0.0, 0.0, 1.0);
     float a = angleBetwV1andV2(rn, tn);
 
     return ((a >= minAng) && (a <= maxAng));
@@ -665,13 +665,13 @@ StaticVector<StaticVector<Pixel>*>* convertObjectsCamsToCamsObjects(const MultiV
     return camsPts;
 }
 
-int computeStep(MultiViewParams* mp, int scale, int maxWidth, int maxHeight)
+int computeStep(MultiViewParams& mp, int scale, int maxWidth, int maxHeight)
 {
     int step = 1;
-    int ow = mp->getMaxImageWidth() / scale;
-    int oh = mp->getMaxImageHeight() / scale;
-    int g_Width = mp->getMaxImageWidth() / scale;
-    int g_Height = mp->getMaxImageHeight() / scale;
+    int ow = mp.getMaxImageWidth() / scale;
+    int oh = mp.getMaxImageHeight() / scale;
+    int g_Width = mp.getMaxImageWidth() / scale;
+    int g_Height = mp.getMaxImageHeight() / scale;
     while((g_Width > maxWidth) || (g_Height > maxHeight))
     {
         step++;

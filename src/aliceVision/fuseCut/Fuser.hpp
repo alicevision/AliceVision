@@ -23,10 +23,10 @@ namespace fuseCut {
 class Fuser
 {
 public:
-    const mvsUtils::MultiViewParams* mp;
+    const mvsUtils::MultiViewParams& _mp;
 
-    Fuser(const mvsUtils::MultiViewParams* _mp);
-    ~Fuser(void);
+    Fuser(const mvsUtils::MultiViewParams& mp);
+    ~Fuser();
 
     // minNumOfModals number of other cams including this cam ... minNumOfModals /in 2,3,... default 3
     // pixSizeBall = default 2
@@ -49,11 +49,11 @@ private:
                       StaticVector<float>* depthMap, StaticVector<float>* simMap, int scale);
 };
 
-unsigned long computeNumberOfAllPoints(const mvsUtils::MultiViewParams* mp, int scale);
+unsigned long computeNumberOfAllPoints(const mvsUtils::MultiViewParams& mp, int scale);
 
-std::string generateTempPtsSimsFiles(std::string tmpDir, mvsUtils::MultiViewParams* mp, bool addRandomNoise = false,
+std::string generateTempPtsSimsFiles(std::string tmpDir, mvsUtils::MultiViewParams& mp, bool addRandomNoise = false,
                                      float percNoisePts = 0.0, int noisPixSizeDistHalfThr = 0);
-void deleteTempPtsSimsFiles(mvsUtils::MultiViewParams* mp, std::string depthMapsPtsSimsTmpDir);
+void deleteTempPtsSimsFiles(mvsUtils::MultiViewParams& mp, std::string depthMapsPtsSimsTmpDir);
 
 } // namespace fuseCut
 } // namespace aliceVision

@@ -63,7 +63,7 @@ MultiViewParams::MultiViewParams(const sfmData::SfMData& sfmData,
 
           if(readFromDepthMaps)
           {
-            path = getFileNameFromViewId(this, view.getViewId(), mvsUtils::EFileType::depthMap, 1);
+            path = getFileNameFromViewId(*this, view.getViewId(), mvsUtils::EFileType::depthMap, 1);
           }
           else if(_imagesFolder != "/" && !_imagesFolder.empty() && fs::is_directory(_imagesFolder) && !fs::is_empty(_imagesFolder))
           {
@@ -141,8 +141,8 @@ MultiViewParams::MultiViewParams(const sfmData::SfMData& sfmData,
         else
         {
             // use P matrix file
-            const std::string fileNameP = getFileNameFromIndex(this, i, EFileType::P);
-            const std::string fileNameD = getFileNameFromIndex(this, i, EFileType::D);
+            const std::string fileNameP = getFileNameFromIndex(*this, i, EFileType::P);
+            const std::string fileNameD = getFileNameFromIndex(*this, i, EFileType::D);
 
             if(fs::exists(fileNameP), fs::exists(fileNameD))
             {
@@ -429,7 +429,7 @@ double MultiViewParams::getCamPixelSizeRcTc(const Point3d& p, int rc, int tc, fl
     getPixelFor3DPoint(&rpix, p, rc);
 
     Point2d pFromTar, pToTar;
-    getTarEpipolarDirectedLine(&pFromTar, &pToTar, rpix, rc, tc, this);
+    getTarEpipolarDirectedLine(&pFromTar, &pToTar, rpix, rc, tc, *this);
     // A vector of 1 pixel length on the epipolar line in tc camera
     // of the 3D point p projected in camera rc.
     Point2d pixelVect = ((pToTar - pFromTar).normalize()) * d;
@@ -439,7 +439,7 @@ double MultiViewParams::getCamPixelSizeRcTc(const Point3d& p, int rc, int tc, fl
     // tpix1 is tpix with an offset of d pixels along the epipolar line
     Point2d tpix1 = tpix + pixelVect * d;
 
-    if(!triangulateMatch(p1, rpix, tpix1, rc, tc, this))
+    if(!triangulateMatch(p1, rpix, tpix1, rc, tc, *this))
     {
         // Fallback to compute the pixel size using only the rc camera
         return getCamPixelSize(p, rc, d);

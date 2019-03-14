@@ -22,7 +22,7 @@ public:
                             const StaticVector<int>& _tc,
                             int _scale,
                             int _step,
-                            SemiGlobalMatchingParams* _sp,
+                            SemiGlobalMatchingParams& sp,
                             StaticVectorBool* rcSilhoueteMap = NULL );
     ~SemiGlobalMatchingRcTc();
 
@@ -33,7 +33,7 @@ public:
                                    float gammaP );
 
 private:
-    const SemiGlobalMatchingParams* const sp;
+    const SemiGlobalMatchingParams& const _sp;
 
     const int _rc;
     const StaticVector<int>& _tc;

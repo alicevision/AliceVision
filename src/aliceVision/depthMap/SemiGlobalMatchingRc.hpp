@@ -16,7 +16,7 @@ namespace depthMap {
 class SemiGlobalMatchingRc
 {
 public:
-    SemiGlobalMatchingRc(int rc, int scale, int step, SemiGlobalMatchingParams* sp);
+    SemiGlobalMatchingRc(int rc, int scale, int step, SemiGlobalMatchingParams& sp);
     ~SemiGlobalMatchingRc();
 
     bool sgmrc(bool checkIfExists = true);
@@ -38,7 +38,7 @@ protected:
     StaticVector<IdValue> _volumeBestIdVal;
     StaticVector<float> _depths;
 
-    SemiGlobalMatchingParams* _sp;
+    SemiGlobalMatchingParams& _sp;
 
 private:
 

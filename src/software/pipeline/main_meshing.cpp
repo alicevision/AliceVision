@@ -332,7 +332,7 @@ int main(int argc, char* argv[])
                     for(int i = 0; i < voxelNeighs.size(); ++i)
                         voxelNeighs[i] = i;
 
-                    fuseCut::DelaunayGraphCut delaunayGC(lsbase.mp);
+                    fuseCut::DelaunayGraphCut delaunayGC(*lsbase.mp);
                     Point3d* hexah = &lsbase.space[0];
 
                     StaticVector<int> cams;
@@ -391,11 +391,11 @@ int main(int argc, char* argv[])
                 case ePartitioningSingleBlock:
                 {
                     ALICEVISION_LOG_INFO("Meshing mode: multi-resolution, partitioning: single block.");
-                    fuseCut::DelaunayGraphCut delaunayGC(&mp);
+                    fuseCut::DelaunayGraphCut delaunayGC(mp);
                     std::array<Point3d, 8> hexah;
 
                     float minPixSize;
-                    fuseCut::Fuser fs(&mp);
+                    fuseCut::Fuser fs(mp);
 
                     if(meshingFromDepthMaps && !estimateSpaceFromSfM)
                       fs.divideSpaceFromDepthMaps(&hexah[0], minPixSize);
