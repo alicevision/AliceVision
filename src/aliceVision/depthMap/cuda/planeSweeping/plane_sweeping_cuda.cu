@@ -194,11 +194,6 @@ void ps_deviceAllocate(Pyramids& ps_texs_arr, int ncams, int width, int height, 
     printf("Setting CUDA device to %i\n", deviceId);
 
     // setup textures parameters
-    rtex.filterMode = cudaFilterModeLinear;
-    rtex.normalized = false;
-    ttex.filterMode = cudaFilterModeLinear;
-    ttex.normalized = false;
-
     depthsTex.filterMode = cudaFilterModePoint;
     depthsTex.normalized = false;
 

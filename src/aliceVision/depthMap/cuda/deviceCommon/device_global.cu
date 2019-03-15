@@ -19,17 +19,6 @@ __device__ int clamp(int x, int a, int b)
 }
 
 
-// Global data handlers and parameters
-// defines
-
-texture<unsigned char, 2, cudaReadModeNormalizedFloat> rtex;
-texture<unsigned char, 2, cudaReadModeNormalizedFloat> ttex;
-texture<unsigned char, 2, cudaReadModeNormalizedFloat> gtex;
-texture<unsigned char, 2, cudaReadModeNormalizedFloat> btex;
-
-texture<unsigned char, 2, cudaReadModeNormalizedFloat> wshtex;
-texture<float, 2, cudaReadModeElementType> watex;
-
 ////////////////////////////////////////////////////////////////////////////////
 // CONSTANT MEMORY
 
