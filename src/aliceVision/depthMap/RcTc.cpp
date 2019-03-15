@@ -21,7 +21,7 @@ RcTc::RcTc(mvsUtils::MultiViewParams& _mp, PlaneSweepingCuda& _cps)
 void RcTc::refineRcTcDepthSimMap(bool useTcOrRcPixSize, DepthSimMap* depthSimMap, int rc, int tc,
                                     int ndepthsToRefine, int wsh, float gammaC, float gammaP, float epipShift)
 {
-    int scale = depthSimMap->scale;
+    int scale = depthSimMap->_scale;
     int w = mp.getWidth(rc) / scale;
     int h = mp.getHeight(rc) / scale;
 
@@ -51,10 +51,10 @@ void RcTc::refineRcTcDepthSimMap(bool useTcOrRcPixSize, DepthSimMap* depthSimMap
                 float depth = depthMap[yp * wPartAct + (xp - xFrom)];
                 float sim = simMap[yp * wPartAct + (xp - xFrom)];
                 float oldSim =
-                    depthSimMap->dsm[(yp / depthSimMap->step) * depthSimMap->w + (xp / depthSimMap->step)].sim;
+                    depthSimMap->_dsm[(yp / depthSimMap->_step) * depthSimMap->_w + (xp / depthSimMap->_step)].sim;
                 if((depth > 0.0f) && (sim < oldSim))
                 {
-                    depthSimMap->dsm[(yp / depthSimMap->step) * depthSimMap->w + (xp / depthSimMap->step)] =
+                    depthSimMap->_dsm[(yp / depthSimMap->_step) * depthSimMap->_w + (xp / depthSimMap->_step)] =
                         DepthSim(depth, sim);
                 }
             }

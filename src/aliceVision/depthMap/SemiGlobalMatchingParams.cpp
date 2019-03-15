@@ -127,7 +127,7 @@ void SemiGlobalMatchingParams::getDepthSimMapFromBestIdVal(DepthSimMap& out_dept
     int volDimX = w;
     int volDimY = h;
 
-    assert(out_depthSimMap.dsm.size() == volDimX * volDimY);
+    assert(out_depthSimMap._dsm.size() == volDimX * volDimY);
 
 #pragma omp parallel for
     for(int y = 0; y < volDimY; y++)
@@ -139,7 +139,7 @@ void SemiGlobalMatchingParams::getDepthSimMapFromBestIdVal(DepthSimMap& out_dept
             float sim = volumeBestIdVal[y * volDimX + x].value;
             int fpdepthId = volumeBestIdVal[y * volDimX + x].id;
 
-            DepthSim& out_depthSim = out_depthSimMap.dsm[y * volDimX + x];
+            DepthSim& out_depthSim = out_depthSimMap._dsm[y * volDimX + x];
 
             if((fpdepthId >= zborder) && (fpdepthId < planesDepths.size() - zborder))
             {

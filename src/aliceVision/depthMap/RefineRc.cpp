@@ -77,12 +77,12 @@ void RefineRc::getDepthPixSizeMapFromSGM(DepthSimMap& out_depthSimMapScale1Step1
     {
         for(int x = 0; x < w11; ++x)
         {
-            const Point3d p = _sp.mp.CArr[_rc] + (_sp.mp.iCamArr[_rc] * Point2d(static_cast<float>(x), static_cast<float>(y))).normalize() * out_depthSimMapScale1Step1.dsm[y * w11 + x].depth;
+            const Point3d p = _sp.mp.CArr[_rc] + (_sp.mp.iCamArr[_rc] * Point2d(static_cast<float>(x), static_cast<float>(y))).normalize() * out_depthSimMapScale1Step1._dsm[y * w11 + x].depth;
 
             if(_userTcOrPixSize)
-                out_depthSimMapScale1Step1.dsm[y * w11 + x].sim = _sp.mp.getCamsMinPixelSize(p, _refineTCams);
+                out_depthSimMapScale1Step1._dsm[y * w11 + x].sim = _sp.mp.getCamsMinPixelSize(p, _refineTCams);
             else
-                out_depthSimMapScale1Step1.dsm[y * w11 + x].sim = _sp.mp.getCamPixelSize(p, _rc);
+                out_depthSimMapScale1Step1._dsm[y * w11 + x].sim = _sp.mp.getCamPixelSize(p, _rc);
         }
     }
 }
@@ -132,7 +132,7 @@ void RefineRc::refineAndFuseDepthSimMapCUDA(DepthSimMap& out_depthSimMapFused, c
         {
             StaticVector<DepthSim>* dataMapHPart = new StaticVector<DepthSim>();
             dataMapHPart->resize(w11 * hPartHeight);
-            const StaticVector<DepthSim>& dsm = dataMaps[i]->dsm;
+            const StaticVector<DepthSim>& dsm = dataMaps[i]->_dsm;
 
 #pragma omp parallel for
             for(int y = 0; y < hPartHeight; y++)
@@ -157,7 +157,7 @@ void RefineRc::refineAndFuseDepthSimMapCUDA(DepthSimMap& out_depthSimMapFused, c
         {
             for(int x = 0; x < w11; x++)
             {
-                out_depthSimMapFused.dsm[(y + hPart * hPartHeightGlob) * w11 + x] =
+                out_depthSimMapFused._dsm[(y + hPart * hPartHeightGlob) * w11 + x] =
                     depthSimMapFusedHPart[y * w11 + x];
             }
         }
@@ -179,8 +179,8 @@ void RefineRc::optimizeDepthSimMapCUDA(DepthSimMap& out_depthSimMapOptimized,
     int h11 = _sp.mp.getHeight(_rc);
 
     StaticVector<const StaticVector<DepthSim>*> dataMaps;
-    dataMaps.push_back(&depthPixSizeMapVis.dsm); // link without ownership
-    dataMaps.push_back(&depthSimMapPhoto.dsm); // link without ownership
+    dataMaps.push_back(&depthPixSizeMapVis._dsm); // link without ownership
+    dataMaps.push_back(&depthSimMapPhoto._dsm); // link without ownership
 
     int nParts = 4;
     int hPart = h11 / nParts;
@@ -188,7 +188,7 @@ void RefineRc::optimizeDepthSimMapCUDA(DepthSimMap& out_depthSimMapOptimized,
     {
         int yFrom = part * hPart;
         int hPartAct = std::min(hPart, h11 - yFrom);
-        _sp.cps.optimizeDepthSimMapGradientDescent(out_depthSimMapOptimized.dsm, dataMaps, _rc, _refineNSamplesHalf,
+        _sp.cps.optimizeDepthSimMapGradientDescent(out_depthSimMapOptimized._dsm, dataMaps, _rc, _refineNSamplesHalf,
                                                     _nbDepthsToRefine, _refineSigma, _refineNiters, yFrom, hPartAct);
     }
 }
