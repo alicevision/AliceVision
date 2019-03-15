@@ -150,128 +150,6 @@ __global__ void refine_computeDepthsMapFromDepthMap_kernel(float3* depthsMap, in
     };
 }
 
-__global__ void refine_reprojTarTexLABByDepthsMap_kernel(float3* depthsMap, int depthsMap_p, uchar4* tex, int tex_p,
-                                                         int width, int height, int id)
-{
-    int x = blockIdx.x * blockDim.x + threadIdx.x;
-    int y = blockIdx.y * blockDim.y + threadIdx.y;
-    int2 pix;
-    pix.x = x;
-    pix.y = y;
-
-    if((x < width) && (y < height))
-    {
-        float depth = 0.0f;
-        if(id == 0)
-        {
-            depth = depthsMap[y * depthsMap_p + x].x;
-        };
-        if(id == 1)
-        {
-            depth = depthsMap[y * depthsMap_p + x].y;
-        };
-        if(id == 2)
-        {
-            depth = depthsMap[y * depthsMap_p + x].z;
-        };
-
-        if(depth > 0.0f)
-        {
-            float3 p = get3DPointForPixelAndDepthFromRC(pix, depth);
-            float2 tpc = project3DPoint(sg_s_t.P, p);
-
-            if(((tpc.x + 0.5f) > 0.0f) && ((tpc.y + 0.5f) > 0.0f) && ((tpc.x + 0.5f) < (float)width - 1.0f) &&
-               ((tpc.y + 0.5f) < (float)height - 1.0f))
-            {
-                tex[y * tex_p + x] = float4_to_uchar4(255.0f * tex2D(t4tex, (float)tpc.x + 0.5f, (float)tpc.y + 0.5f));
-            }
-            else
-            {
-                tex[y * tex_p + x].x = 0;
-                tex[y * tex_p + x].y = 0;
-                tex[y * tex_p + x].z = 0;
-                tex[y * tex_p + x].w = 0;
-            };
-        };
-    };
-}
-
-__global__ void refine_reprojTarTexLABByDepthMap_kernel(float* depthMap, int depthMap_p, uchar4* tex, int tex_p,
-                                                        int width, int height)
-{
-    int x = blockIdx.x * blockDim.x + threadIdx.x;
-    int y = blockIdx.y * blockDim.y + threadIdx.y;
-    int2 pix;
-    pix.x = x;
-    pix.y = y;
-
-    if((x < width) && (y < height))
-    {
-        float depth = depthMap[y * depthMap_p + x];
-        uchar4 ocol = make_uchar4(0, 0, 0, 0);
-
-        if(depth > 0.0f)
-        {
-            float3 p = get3DPointForPixelAndDepthFromRC(pix, depth);
-            float2 tpc = project3DPoint(sg_s_t.P, p);
-            if(((tpc.x + 0.5f) > 0.0f) && ((tpc.y + 0.5f) > 0.0f) && ((tpc.x + 0.5f) < (float)width - 1.0f) &&
-               ((tpc.y + 0.5f) < (float)height - 1.0f))
-            {
-                ocol = float4_to_uchar4(255.0f * tex2D(t4tex, (float)tpc.x + 0.5f, (float)tpc.y + 0.5f));
-            };
-        };
-
-        tex[y * tex_p + x] = ocol;
-    };
-}
-
-__global__ void refine_reprojTarTexLABByDepthMapMovedByStep_kernel(float* depthMap, int depthMap_p, uchar4* tex,
-                                                                   int tex_p, int width, int height, bool moveByTcOrRc,
-                                                                   float step)
-{
-    int x = blockIdx.x * blockDim.x + threadIdx.x;
-    int y = blockIdx.y * blockDim.y + threadIdx.y;
-    int2 pix;
-    pix.x = x;
-    pix.y = y;
-
-    if((x < width) && (y < height))
-    {
-        float depth = depthMap[y * depthMap_p + x];
-        uchar4 ocol = make_uchar4(0, 0, 0, 0);
-
-        if(depth > 0.0f)
-        {
-            float3 p = get3DPointForPixelAndDepthFromRC(pix, depth);
-
-            if(step != 0.0f)
-            {
-                if(moveByTcOrRc == true)
-                {
-                    move3DPointByTcPixStep(p, step);
-                }
-                else
-                {
-                    float pixSize = step * computePixSize(p);
-                    move3DPointByRcPixSize(p, pixSize);
-                };
-
-                depth = size(p - sg_s_r.C);
-            };
-
-            float2 tpc = project3DPoint(sg_s_t.P, p);
-            if(((tpc.x + 0.5f) > 0.0f) && ((tpc.y + 0.5f) > 0.0f) && ((tpc.x + 0.5f) < (float)width - 1.0f) &&
-               ((tpc.y + 0.5f) < (float)height - 1.0f))
-            {
-                ocol = float4_to_uchar4(255.0f * tex2D(t4tex, (float)tpc.x + 0.5f, (float)tpc.y + 0.5f));
-            };
-        };
-
-        depthMap[y * depthMap_p + x] = depth;
-        tex[y * tex_p + x] = ocol;
-    };
-}
-
 __global__ void refine_compYKNCCSimMap_kernel(float* osimMap, int osimMap_p, float* depthMap, int depthMap_p, int width,
                                               int height, int wsh, const float gammaC, const float gammaP)
 {
@@ -573,40 +451,6 @@ __global__ void refine_coputeDepthStepMap_kernel(float* depthStepMap, int depthS
 
 __global__ void refine_compYKNCCDepthSimMapPatch_kernel(float2* oDepthSimMap, int oDepthSimMap_p, float* depthMap,
                                                         int depthMap_p, int width, int height, int wsh,
-                                                        const float gammaC, const float gammaP, const float epipShift,
-                                                        const float tcStep, bool moveByTcOrRc)
-{
-    int x = blockIdx.x * blockDim.x + threadIdx.x;
-    int y = blockIdx.y * blockDim.y + threadIdx.y;
-    int2 pix;
-    pix.x = x;
-    pix.y = y;
-
-    if((x > wsh) && (y > wsh) && (x < width - wsh) && (y < height - wsh))
-    {
-        float depth = depthMap[y * depthMap_p + x];
-        float2 oDepthSim = make_float2(-1.0f, 1.0f);
-
-        if(depth > 0.0f)
-        {
-            float3 p = get3DPointForPixelAndDepthFromRC(pix, depth);
-            // move3DPointByTcPixStep(p, tcStep);
-            move3DPointByTcOrRcPixStep(pix, p, tcStep, moveByTcOrRc);
-
-            patch ptch;
-            ptch.p = p;
-            ptch.d = computePixSize(p);
-            computeRotCSEpip(ptch, p);
-
-            oDepthSim.x = size(sg_s_r.C - ptch.p);
-            oDepthSim.y = compNCCby3DptsYK(ptch, wsh, width, height, gammaC, gammaP, epipShift);
-        };
-
-        oDepthSimMap[y * oDepthSimMap_p + x] = oDepthSim;
-    };
-}
-
-__global__ void refine_compYKNCCSimMapPatch_kernel(float* osimMap, int osimMap_p, float* depthMap, int depthMap_p,
                                                    int width, int height, int wsh, const float gammaC,
                                                    const float gammaP, const float epipShift, const float tcStep,
                                                    bool moveByTcOrRc, int xFrom, int imWidth, int imHeight)
@@ -636,37 +480,6 @@ __global__ void refine_compYKNCCSimMapPatch_kernel(float* osimMap, int osimMap_p
             osim = compNCCby3DptsYK(ptch, wsh, imWidth, imHeight, gammaC, gammaP, epipShift);
         };
         *get2DBufferAt(osimMap, osimMap_p, x, y) = osim;
-    };
-}
-
-__global__ void refine_compYKNCCSimMapPatchDMS_kernel(float* osimMap, int osimMap_p, float* depthMap, int depthMap_p,
-                                                      int width, int height, int wsh, const float gammaC,
-                                                      const float gammaP, const float epipShift,
-                                                      const float depthMapShift)
-{
-    int x = blockIdx.x * blockDim.x + threadIdx.x;
-    int y = blockIdx.y * blockDim.y + threadIdx.y;
-    int2 pix;
-    pix.x = x;
-    pix.y = y;
-
-    if((x > wsh) && (y > wsh) && (x < width - wsh) && (y < height - wsh))
-    {
-        float depth = depthMap[y * depthMap_p + x];
-        float osim = 1.1f;
-
-        if(depth > 0.0f)
-        {
-            float3 p = get3DPointForPixelAndDepthFromRC(pix, depth + depthMapShift);
-
-            patch ptch;
-            ptch.p = p;
-            ptch.d = computePixSize(p);
-            computeRotCSEpip(ptch, p);
-            osim = compNCCby3DptsYK(ptch, wsh, width, height, gammaC, gammaP, epipShift);
-        };
-
-        osimMap[y * osimMap_p + x] = osim;
     };
 }
 
