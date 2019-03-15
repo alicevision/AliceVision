@@ -141,53 +141,6 @@ __device__ float3 computeDepthPoint_fine(float& pixSize, int depthid, int ndepth
     return sg_s_r.C + rpv * (depth + pixSize * jump);
 }
 
-__global__ void alignSourceDepthMapToTarget_kernel(
-    float* dmap, int dmap_p,
-    int width, int height, int wsh, const float gammaC, const float maxPixelSizeDist)
-{
-    int x = blockIdx.x * blockDim.x + threadIdx.x;
-    int y = blockIdx.y * blockDim.y + threadIdx.y;
-
-    if((x < width) && (y < height))
-    {
-        float sourceDepthMid = tex2D(depthsTex, x, y);
-        float pixSize = 0.0f;
-        {
-            int2 pix1 = make_int2(x, y);
-            float3 p1 = get3DPointForPixelAndDepthFromRC(pix1, sourceDepthMid);
-            int2 pix2 = make_int2(x + 1, y);
-            float3 p2 = get3DPointForPixelAndDepthFromRC(pix2, sourceDepthMid);
-            pixSize = size(p1 - p2);
-        }
-
-        float maxDepthsDist = maxPixelSizeDist * pixSize;
-        float4 gcr = 255.0f * tex2D(r4tex, (float)x + 0.5f, (float)y + 0.5f);
-        float avdist = 0.0f;
-        float navdist = 0.0f;
-
-        for(int yp = -wsh; yp <= wsh; yp++)
-        {
-            for(int xp = -wsh; xp <= wsh; xp++)
-            {
-                float sourceDepth = tex2D(depthsTex, x + xp, y + yp);
-                float targetDepth = tex2D(depthsTex1, x + xp, y + yp);
-
-                if((sourceDepth > 0.0f) && (targetDepth > 0.0f) && (fabs(targetDepth - sourceDepth) < maxDepthsDist))
-                {
-                    float4 gcr1 = 255.0f * tex2D(r4tex, (float)(x + xp) + 0.5f, (float)(y + yp) + 0.5f);
-                    float deltaC = Euclidean3(gcr, gcr1);
-                    if(deltaC < gammaC)
-                    {
-                        avdist += targetDepth - sourceDepth;
-                        navdist += 1.0f;
-                    }
-                }
-            }
-        }
-        *get2DBufferAt(dmap, dmap_p, x, y) =
-            (((navdist == 0.0f) || (sourceDepthMid < 0.0f)) ? sourceDepthMid : (sourceDepthMid + avdist / navdist));
-    }
-}
 
 __global__ void locmin_kernel(float* slice, int slice_p, int ndepths, int slicesAtTime,
                               int width, int height, int wsh, int t, int npixs,
@@ -267,17 +220,6 @@ __global__ void grad_kernel(float2* grad, int grad_p,
         *get2DBufferAt(grad, grad_p, pixid, t) = computeMagRotL(pix.x, pix.y);
     }
 }
-
-// __global__ void getRefTexLAB_kernel(uchar4* texs, int texs_p, int width, int height)
-// {
-//     int x = blockIdx.x * blockDim.x + threadIdx.x;
-//     int y = blockIdx.y * blockDim.y + threadIdx.y;
-// 
-//     if((x < width) && (y < height))
-//     {
-//         *get2DBufferAt(texs, texs_p, x, y) = float4_to_uchar4(255.0f * tex2D(r4tex, (float)x + 0.5f, (float)y + 0.5f));
-//     }
-// }
 
 __global__ void getTarTexLAB_kernel(uchar4* texs, int texs_p, int width, int height)
 {
