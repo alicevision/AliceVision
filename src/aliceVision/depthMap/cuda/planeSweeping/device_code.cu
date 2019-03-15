@@ -15,17 +15,8 @@ namespace depthMap {
 
 // Global data handlers and parameters
 
-texture<int2,          cudaTextureType2D, cudaReadModeElementType> pixsTex;
-texture<float2,        cudaTextureType2D, cudaReadModeElementType> gradTex;
 texture<float,         cudaTextureType2D, cudaReadModeElementType> depthsTex;
-texture<float,         cudaTextureType2D, cudaReadModeElementType> depthsTex1;
-texture<float4,        cudaTextureType2D, cudaReadModeElementType> normalsTex;
-texture<float,         cudaTextureType2D, cudaReadModeElementType> sliceTex;
-texture<float2,        cudaTextureType2D, cudaReadModeElementType> sliceTexFloat2;
-texture<float,         cudaTextureType2D, cudaReadModeElementType> sliceTexUChar;
-texture<float2,         cudaTextureType2D, cudaReadModeElementType> sliceTexUInt2;
 texture<float,         cudaTextureType2D, cudaReadModeElementType> sliceTexUInt;
-texture<float4,        cudaTextureType2D, cudaReadModeElementType> f4Tex;
 
 
 template<typename T>
