@@ -57,4 +57,11 @@ std::ostream& operator<<(std::ostream& os, EImageFileType imageFileType);
  */
 std::istream& operator>>(std::istream& in, EImageFileType& imageFileType);
 
+/**
+ * @brief Test if the extension is supported for undistorted images.
+ * @param[in] ext The extension with the dot (eg ".png")
+ * @return \p true if the extension is supported.
+ */
+bool isSupportedUndistortFormat(const std::string &ext);
+
 } // namespace aliceVision

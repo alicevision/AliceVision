@@ -6,9 +6,14 @@
 
 #include "image.hpp"
 
+#include  <boost/algorithm/string/case_conv.hpp>
+
 #include <iostream>
 #include <algorithm>
 #include <stdexcept>
+
+#include <array>
+
 
 namespace aliceVision {
 
@@ -57,6 +62,14 @@ std::istream& operator>>(std::istream& in, EImageFileType& imageFileType)
   in >> token;
   imageFileType = EImageFileType_stringToEnum(token);
   return in;
+}
+
+bool isSupportedUndistortFormat(const std::string &ext)
+{
+  static const std::array<std::string, 6> supportedExtensions = {".jpg", ".jpeg", ".png",  ".tif", ".tiff", ".exr"};
+  const auto start = supportedExtensions.begin();
+  const auto end = supportedExtensions.end();
+  return(std::find(start, end, boost::to_lower_copy(ext)) != end);
 }
 
 } // namespace aliceVision
