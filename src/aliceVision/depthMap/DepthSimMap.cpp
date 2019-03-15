@@ -258,6 +258,22 @@ void DepthSimMap::initJustFromDepthMap(const StaticVector<float>& depthMap, floa
     }
 }
 
+void DepthSimMap::initJustFromDepthMap(const DepthSimMap& depthSimMap, float defaultSim)
+{
+  if(depthSimMap._w != _w || depthSimMap._h != _h)
+    throw std::runtime_error("DepthSimMap:initJustFromDepthMap: Error input depth map is not at the same size.");
+
+  for (int y = 0; y < _h; ++y)
+  {
+    for (int x = 0; x < _w; ++x)
+    {
+      DepthSim& ds = _dsm[y * _w + x];
+      ds.depth = depthSimMap._dsm[y * depthSimMap._w + x].depth;
+      ds.sim = defaultSim;
+    }
+  }
+}
+
 void DepthSimMap::initFromDepthMapAndSimMap(StaticVector<float>* depthMapT, StaticVector<float>* simMapT,
                                                  int depthSimMapsScale)
 {

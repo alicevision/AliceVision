@@ -61,6 +61,7 @@ public:
     ~DepthSimMap();
 
     void initJustFromDepthMap(const StaticVector<float>& depthMap, float defaultSim);
+    void initJustFromDepthMap(const DepthSimMap& depthSimMap, float defaultSim);
     void initFromDepthMapAndSimMap(StaticVector<float>* depthMapT, StaticVector<float>* simMapT,
                                      int depthSimMapsScale);
 
