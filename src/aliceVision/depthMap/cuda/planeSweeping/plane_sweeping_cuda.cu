@@ -208,8 +208,6 @@ void ps_deviceAllocate(Pyramids& ps_texs_arr, int ncams, int width, int height, 
     tTexU4.filterMode = cudaFilterModePoint;
     tTexU4.normalized = false;
 
-    volPixsTex.filterMode = cudaFilterModePoint;
-    volPixsTex.normalized = false;
     pixsTex.filterMode = cudaFilterModePoint;
     pixsTex.normalized = false;
     gradTex.filterMode = cudaFilterModePoint;
