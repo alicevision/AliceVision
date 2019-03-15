@@ -316,16 +316,17 @@ __global__ void volume_agregateCostVolumeAtZ_kernel(float* volume, int volume_s,
     }
 }
 
-__global__ void volume_computeBestXSliceUInt_kernel(float* xsliceBestInColCst, int volDimX, int volDimY)
+__global__ void volume_computeBestXSlice_kernel(float* xySlice, int xySlice_p, float* xsliceBestInColCst, int volDimX, int volDimY)
 {
     int vx = blockIdx.x * blockDim.x + threadIdx.x;
 
     if((vx >= 0) && (vx < volDimX))
     {
-        float bestCst = tex2D(sliceTexUInt, vx, 0);
+        float bestCst = *get2DBufferAt(xySlice, xySlice_p, vx, 0);
+
         for(int vy = 0; vy < volDimY; vy++)
         {
-            float cst = tex2D(sliceTexUInt, vx, vy);
+            float cst = *get2DBufferAt(xySlice, xySlice_p, vx, vy);
             bestCst = cst < bestCst ? cst : bestCst;
         }
         xsliceBestInColCst[vx] = bestCst;

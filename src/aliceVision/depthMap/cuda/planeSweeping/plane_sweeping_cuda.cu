@@ -201,8 +201,6 @@ void ps_deviceAllocate(Pyramids& ps_texs_arr, int ncams, int width, int height, 
 
     depthsTex.filterMode = cudaFilterModePoint;
     depthsTex.normalized = false;
-    sliceTexUInt.filterMode = cudaFilterModePoint;
-    sliceTexUInt.normalized = false;
 
     pr_printfDeviceMemoryInfo();
 
@@ -374,7 +372,6 @@ void ps_aggregatePathVolume(CudaDeviceMemoryPitched<float, 3>& d_volSimT,
 
     CudaDeviceMemoryPitched<float, 2> d_xySliceForZ(CudaSize<2>(volDimX, volDimY));
     CudaDeviceMemoryPitched<float, 2> d_xySliceForZM1(CudaSize<2>(volDimX, volDimY));
-    CudaArray<float, 2> xySliceForZM1_arr(CudaSize<2>(volDimX, volDimY));
     CudaDeviceMemoryPitched<float, 2> d_xSliceBestInColSimForZM1(CudaSize<2>(volDimX, 1));
 
     // Copy the first Z plane from 'd_volSimT' into 'xysliceForZ_dmp'
@@ -398,16 +395,15 @@ void ps_aggregatePathVolume(CudaDeviceMemoryPitched<float, 3>& d_volSimT,
     for(int z = 1; z < volDimZ; z++)
     {
         copy(d_xySliceForZM1, d_xySliceForZ);
-        copy((xySliceForZM1_arr), d_xySliceForZM1);
-        cudaBindTextureToArray(sliceTexUInt, xySliceForZM1_arr.getArray(), cudaCreateChannelDesc<float>());
+
         // For each column: compute the best score
         // Foreach x:
         //   d_xSliceBestInColSimForZM1[x] = min(d_xySliceForZ[1:height])
-        volume_computeBestXSliceUInt_kernel<<<gridvolrow, blockvolrow>>>(
+        volume_computeBestXSlice_kernel<<<gridvolrow, blockvolrow>>>(
+            d_xySliceForZM1.getBuffer(), d_xySliceForZM1.getPitch(),
             d_xSliceBestInColSimForZM1.getBuffer(),
             volDimX, volDimY);
         CHECK_CUDA_ERROR();
-        cudaUnbindTexture(sliceTexUInt);
 
         // Copy the 'z' plane from 'd_volSimT' into 'd_xySliceForZ'
         volume_getVolumeXYSliceAtZ_kernel<float, float><<<gridvol, blockvol>>>(

@@ -16,7 +16,6 @@ namespace depthMap {
 // Global data handlers and parameters
 
 texture<float,         cudaTextureType2D, cudaReadModeElementType> depthsTex;
-texture<float,         cudaTextureType2D, cudaReadModeElementType> sliceTexUInt;
 
 
 template<typename T>
