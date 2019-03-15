@@ -203,11 +203,6 @@ void ps_deviceAllocate(Pyramids& ps_texs_arr, int ncams, int width, int height, 
     ttex.filterMode = cudaFilterModeLinear;
     ttex.normalized = false;
 
-    r4tex.filterMode = cudaFilterModeLinear;
-    r4tex.normalized = false;
-    t4tex.filterMode = cudaFilterModeLinear;
-    t4tex.normalized = false;
-
     rTexU4.filterMode = cudaFilterModePoint;
     rTexU4.normalized = false;
     tTexU4.filterMode = cudaFilterModePoint;
@@ -389,6 +384,7 @@ void ps_deviceDeallocate(Pyramids& ps_texs_arr, int CUDAdeviceNo, int ncams, int
  */
 void ps_aggregatePathVolume(CudaDeviceMemoryPitched<float, 3>& d_volSimT,
                             int volDimX, int volDimY, int volDimZ,
+                            cudaTextureObject_t rc_tex,
                             float P1, float P2,
                             int dimTrnX, bool doInvZ, bool verbose)
 {
@@ -454,6 +450,7 @@ void ps_aggregatePathVolume(CudaDeviceMemoryPitched<float, 3>& d_volSimT,
         CHECK_CUDA_ERROR();
 
         volume_agregateCostVolumeAtZinSlices_kernel<<<gridvolrowAllCols, blockvolrow>>>(
+            rc_tex,
             d_xySliceForZ.getBuffer(), d_xySliceForZ.getPitch(),              // inout: xySliceForZ
             d_xySliceForZM1.getBuffer(), d_xySliceForZM1.getPitch(),          // in:    xySliceForZM1
             d_xSliceBestInColSimForZM1.getBuffer(),                          // in:    xSliceBestInColSimForZM1
@@ -477,6 +474,7 @@ void ps_updateAggrVolume(CudaDeviceMemoryPitched<float, 3>& volAgr_dmp,
                          const CudaDeviceMemoryPitched<float, 3>& d_volSim,
                          int volDimX, int volDimY, int volDimZ,
                          int dimTrnX, int dimTrnY, int dimTrnZ,
+                         cudaTextureObject_t rc_tex,
                          unsigned char P1, unsigned char P2, 
                          bool verbose, bool doInvZ, int lastN)
 {
@@ -547,6 +545,7 @@ void ps_updateAggrVolume(CudaDeviceMemoryPitched<float, 3>& volAgr_dmp,
     // clock_t tall = tic();
     ps_aggregatePathVolume(
         d_volSimT, volDims[dimsTrn[0]], volDims[dimsTrn[1]], volDims[dimsTrn[2]],
+        rc_tex,
         P1, P2,
         dimTrnX, doInvZ, verbose);
     // if (verbose) printf("aggregate volume gpu elapsed time: %f ms \n", toc(tall));
@@ -609,9 +608,6 @@ void ps_SGMoptimizeSimVolume(Pyramids& ps_texs_arr,
 
     ps_init_reference_camera_matrices(rccam.param_hst);
 
-    // bind 'r4tex' from the image in Lab colorspace at the scale used
-    ps_texs_arr[rccam.camId][scale-1].arr->bindToTexture( r4tex );
-
     clock_t tall = tic();
 
     ///////////////////////////////////////////////////////////////////////////////
@@ -628,6 +624,7 @@ void ps_SGMoptimizeSimVolume(Pyramids& ps_texs_arr,
     
     // update aggregation volume
     int npaths = 0;
+    cudaTextureObject_t rc_tex = ps_texs_arr[rccam.camId][scale - 1].tex;
 
     const auto updateAggrVolume = [&](int dimTrnX, int dimTrnY, int dimTrnZ, bool invZ) 
                                   {
@@ -635,6 +632,7 @@ void ps_SGMoptimizeSimVolume(Pyramids& ps_texs_arr,
                                                           volSim_dmp,
                                                           volDimX, volDimY, volDimZ,
                                                           dimTrnX, dimTrnY, dimTrnZ,
+                                                          rc_tex,
                                                           P1, P2, verbose,
                                                           invZ,
                                                           npaths);
@@ -652,8 +650,6 @@ void ps_SGMoptimizeSimVolume(Pyramids& ps_texs_arr,
 
     if(verbose)
         printf("SGM volume gpu elapsed time: %f ms \n", toc(tall));
-
-    cudaUnbindTexture(r4tex);
 
     volSim_dmp.copyFrom(volAgr_dmp);
 
@@ -1082,11 +1078,11 @@ void ps_refineRcDepthMap(Pyramids& ps_texs_arr, float* out_osimMap_hmh,
     dim3 grid(divUp(width, block.x), divUp(height, block.y), 1);
 
     ps_init_reference_camera_matrices(cams[0].param_hst);
-    ps_texs_arr[cams[0].camId][scale].arr->bindToTexture( r4tex );
+    cudaTextureObject_t rc_tex = ps_texs_arr[cams[0].camId][scale].tex;
 
     int c = 1;
     ps_init_target_camera_matrices(cams[c].param_hst);
-    ps_texs_arr[cams[c].camId][scale].arr->bindToTexture( t4tex );
+    cudaTextureObject_t tc_tex = ps_texs_arr[cams[c].camId][scale].tex;
 
     CudaDeviceMemoryPitched<float3, 2> lastThreeSimsMap(CudaSize<2>(width, height));
     CudaDeviceMemoryPitched<float, 2> simMap_dmp(CudaSize<2>(width, height));
@@ -1100,6 +1096,7 @@ void ps_refineRcDepthMap(Pyramids& ps_texs_arr, float* out_osimMap_hmh,
     for(int i = 0; i < ntcsteps; i++) // Default ntcsteps = 31
     {
         refine_compUpdateYKNCCSimMapPatch_kernel<<<grid, block>>>(
+            rc_tex, tc_tex,
             bestSimMap_dmp.getBuffer(), bestSimMap_dmp.getPitch(),
             bestDptMap_dmp.getBuffer(), bestDptMap_dmp.getPitch(),
             rcDepthMap_dmp.getBuffer(), rcDepthMap_dmp.getPitch(),
@@ -1113,6 +1110,7 @@ void ps_refineRcDepthMap(Pyramids& ps_texs_arr, float* out_osimMap_hmh,
         width, height, 1);
 
     refine_compYKNCCSimMapPatch_kernel<<<grid, block>>>(
+        rc_tex, tc_tex,
         simMap_dmp.getBuffer(), simMap_dmp.getPitch(),
         bestDptMap_dmp.getBuffer(), bestDptMap_dmp.getPitch(),
         width,
@@ -1125,6 +1123,7 @@ void ps_refineRcDepthMap(Pyramids& ps_texs_arr, float* out_osimMap_hmh,
         width, height, 0);
 
     refine_compYKNCCSimMapPatch_kernel<<<grid, block>>>(
+        rc_tex, tc_tex,
         simMap_dmp.getBuffer(), simMap_dmp.getPitch(),
         bestDptMap_dmp.getBuffer(), bestDptMap_dmp.getPitch(),
         width,
@@ -1240,7 +1239,6 @@ void ps_optimizeDepthSimMapGradientDescent(Pyramids& ps_texs_arr,
     dim3 grid(divUp(width, block_size), divUp(height, block_size), 1);
 
     ps_init_reference_camera_matrices(cams[0].param_hst);
-    ps_texs_arr[cams[0].camId][scale].arr->bindToTexture( r4tex );
 
     std::vector<CudaDeviceMemoryPitched<float2, 2>*> dataMaps_dmp(ndataMaps);
     for(int i = 0; i < ndataMaps; i++)
@@ -1254,6 +1252,8 @@ void ps_optimizeDepthSimMapGradientDescent(Pyramids& ps_texs_arr,
     CudaArray<float, 2> optDepthMap_arr(CudaSize<2>(width, height));
     copy(optDepthSimMap_dmp, (*dataMaps_dmp[0]));
     
+    cudaTextureObject_t rc_tex = ps_texs_arr[cams[0].camId][scale].tex;
+
     /*
     TODO FACA: compute variance in a new buffer
     {
@@ -1273,12 +1273,13 @@ void ps_optimizeDepthSimMapGradientDescent(Pyramids& ps_texs_arr,
             optDepthMap_dmp.getBuffer(), optDepthMap_dmp.getPitch(),
             optDepthSimMap_dmp.getBuffer(), optDepthSimMap_dmp.getPitch(),
             width, height);
-        copy((optDepthMap_arr), optDepthMap_dmp);
+        copy(optDepthMap_arr, optDepthMap_dmp);
         // Bind those depth values as a texture
         cudaBindTextureToArray(depthsTex, optDepthMap_arr.getArray(), cudaCreateChannelDesc<float>());
 
         // Adjust depth/sim by using previously computed depths (depthTex is accessed inside this kernel)
         fuse_optimizeDepthSimMap_kernel<<<grid, block>>>(
+            rc_tex,
             optDepthSimMap_dmp.getBuffer(), optDepthSimMap_dmp.getPitch(),
             dataMaps_dmp[0]->getBuffer(), dataMaps_dmp[0]->getPitch(),
             dataMaps_dmp[1]->getBuffer(), dataMaps_dmp[1]->getPitch(),
@@ -1293,8 +1294,6 @@ void ps_optimizeDepthSimMapGradientDescent(Pyramids& ps_texs_arr,
     {
         delete dataMaps_dmp[i];
     }
-
-    cudaUnbindTexture(r4tex);
 
     if(verbose)
         printf("gpu elapsed time: %f ms \n", toc(tall));

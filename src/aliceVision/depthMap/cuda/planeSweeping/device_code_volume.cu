@@ -354,7 +354,8 @@ __global__ void volume_computeBestXSliceUInt_kernel(float* xsliceBestInColCst, i
  * @param[in] xSliceBestInColCst
  * @param[out] volSimT output similarity volume
  */
-__global__ void volume_agregateCostVolumeAtZinSlices_kernel(float* xySliceForZ, int xySliceForZ_p,
+__global__ void volume_agregateCostVolumeAtZinSlices_kernel(cudaTextureObject_t rc_tex,
+                                                            float* xySliceForZ, int xySliceForZ_p,
                                                             const float* xySliceForZM1, int xySliceForZM1_p,
                                                             const float* xSliceBestInColSimForZM1,
                                                             float* volSimT, int volSimT_s, int volSimT_p,
@@ -379,8 +380,8 @@ __global__ void volume_agregateCostVolumeAtZinSlices_kernel(float* xySliceForZ, 
             int imY0 = (dimTrnX == 0) ?  z : vx;
             int imX1 = (dimTrnX == 0) ? vx : z1; // M1
             int imY1 = (dimTrnX == 0) ? z1 : vx;
-            float4 gcr0 = 255.0f * tex2D(r4tex, (float)imX0 + 0.5f, (float)imY0 + 0.5f);
-            float4 gcr1 = 255.0f * tex2D(r4tex, (float)imX1 + 0.5f, (float)imY1 + 0.5f);
+            float4 gcr0 = 255.0f * tex2D<float4>(rc_tex, (float)imX0 + 0.5f, (float)imY0 + 0.5f);
+            float4 gcr1 = 255.0f * tex2D<float4>(rc_tex, (float)imX1 + 0.5f, (float)imY1 + 0.5f);
             float deltaC = Euclidean3(gcr0, gcr1);
             // unsigned int P1 = (unsigned int)sigmoid(5.0f,20.0f,60.0f,10.0f,deltaC);
             float P1 = _P1;

@@ -368,7 +368,8 @@ __global__ void refine_fuseThreeDepthSimMaps_kernel(float* osim, int osim_p, flo
     };
 }
 
-__global__ void refine_compUpdateYKNCCSimMapPatch_kernel(float* osimMap, int osimMap_p, float* odptMap, int odptMap_p,
+__global__ void refine_compUpdateYKNCCSimMapPatch_kernel(cudaTextureObject_t rc_tex, cudaTextureObject_t tc_tex,
+                                                         float* osimMap, int osimMap_p, float* odptMap, int odptMap_p,
                                                          float* depthMap, int depthMap_p, int width, int height,
                                                          int wsh, const float gammaC, const float gammaP,
                                                          const float epipShift, const float tcStep, int id,
@@ -400,7 +401,7 @@ __global__ void refine_compUpdateYKNCCSimMapPatch_kernel(float* osimMap, int osi
             ptch.d = computePixSize(p);
             // TODO: we could compute the orientation of the path from the input depth map instead of relying on the cameras orientations
             computeRotCSEpip(ptch, p);
-            osim = compNCCby3DptsYK(ptch, wsh, imWidth, imHeight, gammaC, gammaP, epipShift);
+            osim = compNCCby3DptsYK(rc_tex, tc_tex, ptch, wsh, imWidth, imHeight, gammaC, gammaP, epipShift);
         }
 
         float* osim_ptr = get2DBufferAt(osimMap, osimMap_p, x, y);
@@ -449,8 +450,8 @@ __global__ void refine_coputeDepthStepMap_kernel(float* depthStepMap, int depthS
     };
 }
 
-__global__ void refine_compYKNCCDepthSimMapPatch_kernel(float2* oDepthSimMap, int oDepthSimMap_p, float* depthMap,
-                                                        int depthMap_p, int width, int height, int wsh,
+__global__ void refine_compYKNCCSimMapPatch_kernel(cudaTextureObject_t rc_tex, cudaTextureObject_t tc_tex,
+                                                   float* osimMap, int osimMap_p, float* depthMap, int depthMap_p,
                                                    int width, int height, int wsh, const float gammaC,
                                                    const float gammaP, const float epipShift, const float tcStep,
                                                    bool moveByTcOrRc, int xFrom, int imWidth, int imHeight)
@@ -477,7 +478,7 @@ __global__ void refine_compYKNCCDepthSimMapPatch_kernel(float2* oDepthSimMap, in
             ptch.p = p;
             ptch.d = computePixSize(p);
             computeRotCSEpip(ptch, p);
-            osim = compNCCby3DptsYK(ptch, wsh, imWidth, imHeight, gammaC, gammaP, epipShift);
+            osim = compNCCby3DptsYK(rc_tex, tc_tex, ptch, wsh, imWidth, imHeight, gammaC, gammaP, epipShift);
         };
         *get2DBufferAt(osimMap, osimMap_p, x, y) = osim;
     };

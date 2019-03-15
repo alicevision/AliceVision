@@ -372,8 +372,10 @@ __device__ float compNCCby3DptsYK( cudaTextureObject_t rc_tex,
     return sst.sim;
 }
 
-__device__ float compNCCby3DptsYK(const patch& ptch, int wsh, int width, int height, const float _gammaC, const float _gammaP,
-                                  const float epipShift)
+__device__ float compNCCby3DptsYK(
+        cudaTextureObject_t rc_tex, cudaTextureObject_t tc_tex,
+        const patch& ptch, int wsh, int width, int height, const float _gammaC, const float _gammaP,
+        const float epipShift)
 {
     float3 p = ptch.p;
     float2 rp = project3DPoint(sg_s_r.P, p);
@@ -397,8 +399,8 @@ __device__ float compNCCby3DptsYK(const patch& ptch, int wsh, int width, int hei
 
     // see CUDA_C_Programming_Guide.pdf ... E.2 pp132-133 ... adding 0.5 caises that tex2D return for point i,j exactly
     // value od I(i,j) ... it is what we want
-    float4 gcr = 255.0f * tex2D(r4tex, rp.x + 0.5f, rp.y + 0.5f);
-    float4 gct = 255.0f * tex2D(t4tex, tp.x + 0.5f, tp.y + 0.5f);
+    float4 gcr = 255.0f * tex2D<float4>(rc_tex, rp.x + 0.5f, rp.y + 0.5f);
+    float4 gct = 255.0f * tex2D<float4>(tc_tex, tp.x + 0.5f, tp.y + 0.5f);
 
     float gammaC = _gammaC;
     float gammaP = _gammaP;
@@ -418,8 +420,8 @@ __device__ float compNCCby3DptsYK(const patch& ptch, int wsh, int width, int hei
 
             // see CUDA_C_Programming_Guide.pdf ... E.2 pp132-133 ... adding 0.5 caises that tex2D return for point i,j
             // exactly value od I(i,j) ... it is what we want
-            float4 gcr1 = 255.0f * tex2D(r4tex, rp1.x + 0.5f, rp1.y + 0.5f);
-            float4 gct1 = 255.0f * tex2D(t4tex, tp1.x + 0.5f, tp1.y + 0.5f);
+            float4 gcr1 = 255.0f * tex2D<float4>(rc_tex, rp1.x + 0.5f, rp1.y + 0.5f);
+            float4 gct1 = 255.0f * tex2D<float4>(tc_tex, tp1.x + 0.5f, tp1.y + 0.5f);
 
             // Weighting is based on:
             //  * color difference to the center pixel of the patch:
