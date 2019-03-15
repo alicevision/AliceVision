@@ -25,11 +25,8 @@ texture<float2,        cudaTextureType2D, cudaReadModeElementType> sliceTexFloat
 texture<float,         cudaTextureType2D, cudaReadModeElementType> sliceTexUChar;
 texture<float2,         cudaTextureType2D, cudaReadModeElementType> sliceTexUInt2;
 texture<float,         cudaTextureType2D, cudaReadModeElementType> sliceTexUInt;
-texture<uchar4,        cudaTextureType2D, cudaReadModeElementType> rTexU4;
-texture<uchar4,        cudaTextureType2D, cudaReadModeElementType> tTexU4;
 texture<float4,        cudaTextureType2D, cudaReadModeElementType> f4Tex;
 
-//////////////////////////////////////////////////////////////////////////////////////////////////////
 
 template<typename T>
 inline __device__ void swap( T& a, T& b )
@@ -113,14 +110,14 @@ __device__ float move3DPointByTcOrRcPixStep(int2& pix, float3& p, float pixStep,
     }
 }
 
-__global__ void getSilhoueteMap_kernel(bool* out, int out_p, int step, int width, int height, const uchar4 maskColorLab)
+__global__ void getSilhoueteMap_kernel(cudaTextureObject_t rc_tex, bool* out, int out_p, int step, int width, int height, const uchar4 maskColorLab)
 {
     int x = blockIdx.x * blockDim.x + threadIdx.x;
     int y = blockIdx.y * blockDim.y + threadIdx.y;
 
     if((x * step < width) && (y * step < height))
     {
-        uchar4 col = tex2D(rTexU4, x * step, y * step);
+        uchar4 col = tex2D<uchar4>(rc_tex, x * step, y * step);
         *get2DBufferAt(out, out_p, x, y) = ((maskColorLab.x == col.x) && (maskColorLab.y == col.y) && (maskColorLab.z == col.z));
     }
 }

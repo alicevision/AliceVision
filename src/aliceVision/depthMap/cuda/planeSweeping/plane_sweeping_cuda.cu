@@ -203,11 +203,6 @@ void ps_deviceAllocate(Pyramids& ps_texs_arr, int ncams, int width, int height, 
     ttex.filterMode = cudaFilterModeLinear;
     ttex.normalized = false;
 
-    rTexU4.filterMode = cudaFilterModePoint;
-    rTexU4.normalized = false;
-    tTexU4.filterMode = cudaFilterModePoint;
-    tTexU4.normalized = false;
-
     pixsTex.filterMode = cudaFilterModePoint;
     pixsTex.normalized = false;
     gradTex.filterMode = cudaFilterModePoint;
@@ -1245,22 +1240,17 @@ void ps_getSilhoueteMap(Pyramids& ps_texs_arr, CudaHostMemoryHeap<bool, 2>* omap
     maskColorLab.z = (unsigned char)(flab.z);
     maskColorLab.w = 0;
 
-    ///////////////////////////////////////////////////////////////////////////////
     // setup block and grid
     int block_size = 16;
     dim3 block(block_size, block_size, 1);
     dim3 grid(divUp(width / step, block_size), divUp(height / step, block_size), 1);
 
-    ps_texs_arr[camId][scale].arr->bindToTexture( rTexU4 );
-//     cudaBindTextureToArray(rTexU4, ps_texs_arr[camId][scale].arr->getArray(), cudaCreateChannelDesc<uchar4>());
-
     CudaDeviceMemoryPitched<bool, 2> map_dmp(CudaSize<2>(width / step, height / step));
     getSilhoueteMap_kernel<<<grid, block>>>(
+        ps_texs_arr[camId][scale].tex,
         map_dmp.getBuffer(), map_dmp.getPitch(),
         step, width, height, maskColorLab);
     CHECK_CUDA_ERROR();
-
-    cudaUnbindTexture(rTexU4);
 
     copy((*omap_hmh), map_dmp);
 
