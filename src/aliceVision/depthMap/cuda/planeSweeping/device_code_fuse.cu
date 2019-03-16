@@ -93,7 +93,7 @@ __global__ void fuse_getOptDeptMapFromOPtDepthSimMap_kernel(float* optDepthMap, 
 /**
  * @return (smoothStep, energy)
  */
-__device__ float2 getCellSmoothStepEnergy(const int2& cell0)
+__device__ float2 getCellSmoothStepEnergy(const CameraStructBase& rc_cam, const int2& cell0)
 {
     float2 out = make_float2(0.0f, 180.0f);
 
@@ -117,11 +117,11 @@ __device__ float2 getCellSmoothStepEnergy(const int2& cell0)
     float dB = tex2D(depthsTex, cellB.x, cellB.y);
 
     // Get associated 3D points
-    float3 p0 = get3DPointForPixelAndDepthFromRC(cell0, d0);
-    float3 pL = get3DPointForPixelAndDepthFromRC(cellL, dL);
-    float3 pR = get3DPointForPixelAndDepthFromRC(cellR, dR);
-    float3 pU = get3DPointForPixelAndDepthFromRC(cellU, dU);
-    float3 pB = get3DPointForPixelAndDepthFromRC(cellB, dB);
+    float3 p0 = get3DPointForPixelAndDepthFromRC(rc_cam, cell0, d0);
+    float3 pL = get3DPointForPixelAndDepthFromRC(rc_cam, cellL, dL);
+    float3 pR = get3DPointForPixelAndDepthFromRC(rc_cam, cellR, dR);
+    float3 pU = get3DPointForPixelAndDepthFromRC(rc_cam, cellU, dU);
+    float3 pB = get3DPointForPixelAndDepthFromRC(rc_cam, cellB, dB);
 
     // Compute the average point based on neighbors (cg)
     float3 cg = make_float3(0.0f, 0.0f, 0.0f);
@@ -136,12 +136,12 @@ __device__ float2 getCellSmoothStepEnergy(const int2& cell0)
     if(n > 1.0f)
     {
         cg = cg / n; // average of x, y, depth
-        float3 vcn = sg_s_r.C - p0;
+        float3 vcn = rc_cam.C - p0;
         normalize(vcn);
         // pS: projection of cg on the line from p0 to camera
         float3 pS = closestPointToLine3D(cg, p0, vcn);
         // keep the depth difference between pS and p0 as the smoothing step
-        out.x = size(sg_s_r.C - pS) - d0;
+        out.x = size(rc_cam.C - pS) - d0;
     }
 
     float e = 0.0f;
@@ -167,6 +167,7 @@ __device__ float2 getCellSmoothStepEnergy(const int2& cell0)
 }
 
 __global__ void fuse_optimizeDepthSimMap_kernel(cudaTextureObject_t rc_tex,
+                                                const CameraStructBase& rc_cam,
                                                 float2* out_optDepthSimMap, int optDepthSimMap_p,
                                                 float2* midDepthPixSizeMap, int midDepthPixSizeMap_p,
                                                 float2* fusedDepthSimMap, int fusedDepthSimMap_p, int width, int height,
@@ -188,7 +189,7 @@ __global__ void fuse_optimizeDepthSimMap_kernel(cudaTextureObject_t rc_tex,
 
     if(depthOpt > 0.0f)
     {
-        float2 depthSmoothStepEnergy = getCellSmoothStepEnergy(pix);
+        float2 depthSmoothStepEnergy = getCellSmoothStepEnergy(rc_cam, pix);
         float depthSmoothStep = depthSmoothStepEnergy.x;
         if(depthSmoothStep < 0.0f)
         {

@@ -648,6 +648,7 @@ bool PlaneSweepingCuda::refineRcTcDepthMap(bool useTcOrRcPixSize, int nStepsToRe
     StaticVector<int> camsids(2);
     camsids[0] = addCam(rc, scale, nullptr, __FUNCTION__);
     camsids[1] = addCam(tc, scale, nullptr, __FUNCTION__);
+    _camsBasesDev.copyFrom(_camsBasesHst);
 
     std::vector<CameraStruct> ttcams( camsids.size() );
     for(int i = 0; i < camsids.size(); i++)
@@ -659,8 +660,10 @@ bool PlaneSweepingCuda::refineRcTcDepthMap(bool useTcOrRcPixSize, int nStepsToRe
     // sweep
     ps_refineRcDepthMap(_pyramids, out_simMap.getDataWritable().data(), out_rcDepthMap.getDataWritable().data(), nStepsToRefine,
                         ttcams,
-                        w, h, _mp.getWidth(rc) / scale,
-                        _mp.getHeight(rc) / scale, scale - 1, _CUDADeviceNo, _nImgsInGPUAtTime, _mp.verbose, wsh,
+                        w, h,
+                        _mp.getWidth(rc) / scale, _mp.getHeight(rc) / scale,
+                        _mp.getWidth(tc) / scale, _mp.getHeight(tc) / scale,
+                        scale - 1, _CUDADeviceNo, _nImgsInGPUAtTime, _mp.verbose, wsh,
                         gammaC, gammaP, useTcOrRcPixSize, xFrom);
 
     mvsUtils::printfElapsedTime(t1);
@@ -744,6 +747,8 @@ void PlaneSweepingCuda::sweepPixelsToVolumeSubset(
     const int tcamCacheId = addCam(tc, scale, nullptr, __FUNCTION__ );
     CameraStruct tcam = _cams[tcamCacheId];
 
+    _camsBasesDev.copyFrom(_camsBasesHst);
+
     {
         ALICEVISION_LOG_DEBUG("rc: " << rc << " tcams: " << tc);
         ALICEVISION_LOG_DEBUG("rcamCacheId: " << rcamCacheId << ", tcamCacheId: " << tcamCacheId);
@@ -762,7 +767,6 @@ void PlaneSweepingCuda::sweepPixelsToVolumeSubset(
 
     // last synchronous step
     cudaDeviceSynchronize();
-    _camsBasesDev.copyFrom(_camsBasesHst);
 
     const int rcWidth = _mp.getWidth(rc);
     const int rcHeight = _mp.getHeight(rc);
@@ -801,6 +805,8 @@ bool PlaneSweepingCuda::SGMoptimizeSimVolume(int rc, CudaDeviceMemoryPitched<flo
                           << "\t- volDimZ: " << volDimZ);
 
     int camCacheIndex = addCam(rc, scale, nullptr, __FUNCTION__);
+    _camsBasesDev.copyFrom(_camsBasesHst);
+
     ps_SGMoptimizeSimVolume(_pyramids,
                             _cams[camCacheIndex],
                             volSim_dmp,
@@ -924,6 +930,9 @@ bool PlaneSweepingCuda::optimizeDepthSimMapGradientDescent(StaticVector<DepthSim
 
     StaticVector<int> camsids;
     camsids.push_back(addCam(rc, scale, nullptr, __FUNCTION__ ));
+
+    _camsBasesDev.copyFrom(_camsBasesHst);
+
     ALICEVISION_LOG_DEBUG("rc: " << rc);
 
     std::vector<CameraStruct> ttcams( camsids.size() );

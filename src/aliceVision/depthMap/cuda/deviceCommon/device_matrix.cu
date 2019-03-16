@@ -45,7 +45,7 @@ __device__ float2 project3DPoint( const float* M3x4, const float3& V)
     return make_float2(p.x / p.z, p.y / p.z);
 }
 
-__device__ void M3x3mulM3x3(float* O3x3, float* A3x3, float* B3x3)
+__device__ void M3x3mulM3x3(float* O3x3, const float* A3x3, const float* B3x3)
 {
     O3x3[0] = A3x3[0] * B3x3[0] + A3x3[3] * B3x3[1] + A3x3[6] * B3x3[2];
     O3x3[3] = A3x3[0] * B3x3[3] + A3x3[3] * B3x3[4] + A3x3[6] * B3x3[5];
@@ -68,7 +68,7 @@ __device__ void M3x3minusM3x3(float* O3x3, float* A3x3, float* B3x3)
     };
 }
 
-__device__ void M3x3transpose(float* O3x3, float* A3x3)
+__device__ void M3x3transpose(float* O3x3, const float* A3x3)
 {
     O3x3[0] = A3x3[0];
     O3x3[1] = A3x3[3];
@@ -212,8 +212,8 @@ __device__ float angleBetwABandAC(const float3& A, const float3& B, const float3
     return fabsf(a) / (CUDART_PI_F / 180.0f);
 }
 
-__device__ float3 lineLineIntersect(float* k, float* l, float3* lli1, float3* lli2, float3& p1, float3& p2, float3& p3,
-                                    float3& p4)
+__device__ float3 lineLineIntersect(float* k, float* l, float3* lli1, float3* lli2,
+    const float3& p1, const float3& p2, const float3& p3, const float3& p4)
 {
     /*
     %  [pa, pb, mua, mub] = LineLineIntersect(p1,p2,p3,p4)

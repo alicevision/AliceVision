@@ -7,14 +7,14 @@
 namespace aliceVision {
 namespace depthMap {
 
-inline __device__ void volume_computePatch( const CameraStructBase* rc_cam_s,
-                                            const CameraStructBase* tc_cam_s,
+inline __device__ void volume_computePatch( const CameraStructBase& rc_cam,
+                                            const CameraStructBase& tc_cam,
                                             Patch& ptch,
                                             const float fpPlaneDepth, const int2& pix )
 {
-    ptch.p = get3DPointForPixelAndFrontoParellePlaneRC( rc_cam_s, pix, fpPlaneDepth); // no texture use
-    ptch.d = computePixSize(rc_cam_s, ptch.p); // no texture use
-    computeRotCSEpip( rc_cam_s, tc_cam_s, ptch ); // no texture use
+    ptch.p = get3DPointForPixelAndFrontoParellePlaneRC(rc_cam, pix, fpPlaneDepth); // no texture use
+    ptch.d = computePixSize(rc_cam, ptch.p); // no texture use
+    computeRotCSEpip(rc_cam, tc_cam, ptch); // no texture use
 }
 
 __global__ void volume_init_kernel( float* volume, int volume_s, int volume_p,
@@ -33,8 +33,8 @@ __global__ void volume_init_kernel( float* volume, int volume_s, int volume_p,
 __global__ void volume_slice_kernel(
                                     cudaTextureObject_t rc_tex,
                                     cudaTextureObject_t tc_tex,
-                                    const CameraStructBase* rc_cam_s,
-                                    const CameraStructBase* tc_cam_s,
+                                    const CameraStructBase& rc_cam,
+                                    const CameraStructBase& tc_cam,
                                     const float* depths_d,
                                     const int lowestUsedDepth,
                                     const int nbDepthsToSearch,
@@ -92,10 +92,10 @@ __global__ void volume_slice_kernel(
     }
     */
     Patch ptcho;
-    volume_computePatch(rc_cam_s, tc_cam_s, ptcho, fpPlaneDepth, make_int2(x, y)); // no texture use
+    volume_computePatch(rc_cam, tc_cam, ptcho, fpPlaneDepth, make_int2(x, y)); // no texture use
 
     float fsim = compNCCby3DptsYK(rc_tex, tc_tex,
-                                  rc_cam_s, tc_cam_s,
+                                  rc_cam, tc_cam,
                                   ptcho, wsh,
                                   rcWidth, rcHeight,
                                   tcWidth, tcHeight,

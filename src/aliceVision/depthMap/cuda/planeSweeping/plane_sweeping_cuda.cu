@@ -135,16 +135,6 @@ __host__ void ps_initCameraMatrix( CameraStructBase& base )
     ps_normalize(base.XVect);
 }
 
-__host__ static void ps_init_reference_camera_matrices( const CameraStructBase* base )
-{
-    cudaMemcpyToSymbol(sg_s_r, base, sizeof(CameraStructBase));
-}
-
-__host__ static void ps_init_target_camera_matrices( const CameraStructBase* base )
-{
-    cudaMemcpyToSymbol(sg_s_t, base, sizeof(CameraStructBase));
-}
-
 int ps_listCUDADevices(bool verbose)
 {
     int num_gpus = 0; // number of CUDA GPUs
@@ -534,8 +524,6 @@ void ps_SGMoptimizeSimVolume(Pyramids& ps_texs_arr,
                              bool verbose, unsigned char P1, unsigned char P2,
                              int scale, int CUDAdeviceNo, int ncamsAllocated)
 {
-    ps_init_reference_camera_matrices(rccam.param_hst);
-
     clock_t tall = tic();
 
     // setup block and grid
@@ -737,8 +725,8 @@ void ps_computeSimilarityVolume(Pyramids& ps_texs_arr,
             <<<volume_slice_kernel_grid, volume_slice_kernel_block>>>
             ( ps_texs_arr[rcam.camId][s].tex,
               ps_texs_arr[tcam.camId][s].tex,
-              rcam.param_dev,
-              tcam.param_dev,
+              *rcam.param_dev,
+              *tcam.param_dev,
               depths_d.getBuffer(),
               startDepthIndex,
               nbDepthsToSearch,
@@ -766,21 +754,19 @@ void ps_refineRcDepthMap(Pyramids& ps_texs_arr, float* out_osimMap_hmh,
                          float* inout_rcDepthMap_hmh, int ntcsteps,
                          const std::vector<CameraStruct>& cams,
                          int width, int height,
-                         int imWidth, int imHeight, int scale, int CUDAdeviceNo, int ncamsAllocated,
+                         int rcWidth, int rcHeight,
+                         int tcWidth, int tcHeight,
+                         int scale, int CUDAdeviceNo, int ncamsAllocated,
                          bool verbose, int wsh, float gammaC, float gammaP,
                          bool moveByTcOrRc, int xFrom)
 {
-    ///////////////////////////////////////////////////////////////////////////////
     // setup block and grid
     dim3 block(16, 16, 1);
     dim3 grid(divUp(width, block.x), divUp(height, block.y), 1);
 
-    ps_init_reference_camera_matrices(cams[0].param_hst);
     cudaTextureObject_t rc_tex = ps_texs_arr[cams[0].camId][scale].tex;
-
-    int c = 1;
-    ps_init_target_camera_matrices(cams[c].param_hst);
-    cudaTextureObject_t tc_tex = ps_texs_arr[cams[c].camId][scale].tex;
+    int t = 1;
+    cudaTextureObject_t tc_tex = ps_texs_arr[cams[t].camId][scale].tex;
 
     CudaDeviceMemoryPitched<float3, 2> lastThreeSimsMap(CudaSize<2>(width, height));
     CudaDeviceMemoryPitched<float, 2> simMap_dmp(CudaSize<2>(width, height));
@@ -791,15 +777,18 @@ void ps_refineRcDepthMap(Pyramids& ps_texs_arr, float* out_osimMap_hmh,
 
     clock_t tall = tic();
 
-    for(int i = 0; i < ntcsteps; i++) // Default ntcsteps = 31
+    for(int i = 0; i < ntcsteps; ++i) // Default ntcsteps = 31
     {
         refine_compUpdateYKNCCSimMapPatch_kernel<<<grid, block>>>(
+            *cams[0].param_dev, *cams[t].param_dev,
             rc_tex, tc_tex,
             bestSimMap_dmp.getBuffer(), bestSimMap_dmp.getPitch(),
             bestDptMap_dmp.getBuffer(), bestDptMap_dmp.getPitch(),
             rcDepthMap_dmp.getBuffer(), rcDepthMap_dmp.getPitch(),
             width, height, wsh, gammaC, gammaP,
-            (float)(i - (ntcsteps - 1) / 2), i, moveByTcOrRc, xFrom, imWidth, imHeight);
+            (float)(i - (ntcsteps - 1) / 2), i, moveByTcOrRc, xFrom,
+            rcWidth, rcHeight,
+            tcWidth, tcHeight);
     }
 
     refine_setLastThreeSimsMap_kernel<<<grid, block>>>(
@@ -808,12 +797,14 @@ void ps_refineRcDepthMap(Pyramids& ps_texs_arr, float* out_osimMap_hmh,
         width, height, 1);
 
     refine_compYKNCCSimMapPatch_kernel<<<grid, block>>>(
+        *cams[0].param_dev, *cams[t].param_dev, 
         rc_tex, tc_tex,
         simMap_dmp.getBuffer(), simMap_dmp.getPitch(),
         bestDptMap_dmp.getBuffer(), bestDptMap_dmp.getPitch(),
         width,
-        height, wsh, gammaC, gammaP, -1.0f, moveByTcOrRc, xFrom, imWidth, imHeight);
-
+        height, wsh, gammaC, gammaP, -1.0f, moveByTcOrRc, xFrom,
+        rcWidth, rcHeight,
+        tcWidth, tcHeight);
 
     refine_setLastThreeSimsMap_kernel<<<grid, block>>>(
         lastThreeSimsMap.getBuffer(), lastThreeSimsMap.getPitch(),
@@ -821,12 +812,14 @@ void ps_refineRcDepthMap(Pyramids& ps_texs_arr, float* out_osimMap_hmh,
         width, height, 0);
 
     refine_compYKNCCSimMapPatch_kernel<<<grid, block>>>(
+        *cams[0].param_dev, *cams[t].param_dev,
         rc_tex, tc_tex,
         simMap_dmp.getBuffer(), simMap_dmp.getPitch(),
         bestDptMap_dmp.getBuffer(), bestDptMap_dmp.getPitch(),
         width,
-        height, wsh, gammaC, gammaP, +1.0f, moveByTcOrRc, xFrom, imWidth, imHeight);
-
+        height, wsh, gammaC, gammaP, +1.0f, moveByTcOrRc, xFrom,
+        rcWidth, rcHeight,
+        tcWidth, tcHeight);
 
     refine_setLastThreeSimsMap_kernel<<<grid, block>>>(
         lastThreeSimsMap.getBuffer(), lastThreeSimsMap.getPitch(),
@@ -834,6 +827,7 @@ void ps_refineRcDepthMap(Pyramids& ps_texs_arr, float* out_osimMap_hmh,
         width, height, 2);
 
     refine_computeDepthSimMapFromLastThreeSimsMap_kernel<<<grid, block>>>(
+        *cams[0].param_dev, *cams[t].param_dev,
         bestSimMap_dmp.getBuffer(), bestSimMap_dmp.getPitch(),
         bestDptMap_dmp.getBuffer(), bestDptMap_dmp.getPitch(),
         lastThreeSimsMap.getBuffer(), lastThreeSimsMap.getPitch(),
@@ -936,8 +930,6 @@ void ps_optimizeDepthSimMapGradientDescent(Pyramids& ps_texs_arr,
     dim3 block(block_size, block_size, 1);
     dim3 grid(divUp(width, block_size), divUp(height, block_size), 1);
 
-    ps_init_reference_camera_matrices(cams[0].param_hst);
-
     std::vector<CudaDeviceMemoryPitched<float2, 2>*> dataMaps_dmp(ndataMaps);
     for(int i = 0; i < ndataMaps; i++)
     {
@@ -977,7 +969,7 @@ void ps_optimizeDepthSimMapGradientDescent(Pyramids& ps_texs_arr,
 
         // Adjust depth/sim by using previously computed depths (depthTex is accessed inside this kernel)
         fuse_optimizeDepthSimMap_kernel<<<grid, block>>>(
-            rc_tex,
+            rc_tex, *cams[0].param_dev,
             optDepthSimMap_dmp.getBuffer(), optDepthSimMap_dmp.getPitch(),
             dataMaps_dmp[0]->getBuffer(), dataMaps_dmp[0]->getPitch(),
             dataMaps_dmp[1]->getBuffer(), dataMaps_dmp[1]->getPitch(),

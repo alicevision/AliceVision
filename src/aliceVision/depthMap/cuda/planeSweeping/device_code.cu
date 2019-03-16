@@ -53,48 +53,47 @@ __global__ void compute_varLofLABtoW_kernel(cudaTextureObject_t rc_tex, uchar4* 
     }
 }
 
-__device__ void move3DPointByRcPixSize(float3& p, float rcPixSize)
+__device__ void move3DPointByRcPixSize(const CameraStructBase& rc_cam, float3& p, float rcPixSize)
 {
-    float3 rpv = p - sg_s_r.C;
+    float3 rpv = p - rc_cam.C;
     normalize(rpv);
     p = p + rpv * rcPixSize;
 }
 
-__device__ void move3DPointByTcPixStep(float3& p, float tcPixStep)
-
+__device__ void move3DPointByTcPixStep(const CameraStructBase& rc_cam, const CameraStructBase& tc_cam, float3& p, float tcPixStep)
 {
-    float3 rpv = sg_s_r.C - p;
+    float3 rpv = rc_cam.C - p;
     float3 prp = p;
     float3 prp1 = p + rpv / 2.0f;
 
     float2 rp;
-    getPixelFor3DPointRC(rp, prp);
+    getPixelFor3DPoint(rc_cam, rp, prp);
 
     float2 tpo;
-    getPixelFor3DPointTC(tpo, prp);
+    getPixelFor3DPoint(tc_cam, tpo, prp);
 
     float2 tpv;
-    getPixelFor3DPointTC(tpv, prp1);
+    getPixelFor3DPoint(tc_cam, tpv, prp1);
 
     tpv = tpv - tpo;
     normalize(tpv);
 
     float2 tpd = tpo + tpv * tcPixStep;
 
-    p = triangulateMatchRef(rp, tpd);
+    p = triangulateMatchRef(rc_cam, tc_cam, rp, tpd);
 }
 
-__device__ float move3DPointByTcOrRcPixStep(int2& pix, float3& p, float pixStep, bool moveByTcOrRc)
+__device__ float move3DPointByTcOrRcPixStep(const CameraStructBase& rc_cam, const CameraStructBase& tc_cam, int2& pix, float3& p, float pixStep, bool moveByTcOrRc)
 {
     if(moveByTcOrRc == true)
     {
-        move3DPointByTcPixStep(p, pixStep);
+        move3DPointByTcPixStep(rc_cam, tc_cam, p, pixStep);
         return 0.0f;
     }
     else
     {
-        float pixSize = pixStep * computePixSize(p);
-        move3DPointByRcPixSize(p, pixSize);
+        float pixSize = pixStep * computePixSize(rc_cam, p);
+        move3DPointByRcPixSize(rc_cam, p, pixSize);
 
         return pixSize;
     }

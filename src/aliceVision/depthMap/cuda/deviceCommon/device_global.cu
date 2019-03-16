@@ -37,12 +37,6 @@ __device__ __constant__ unsigned char distFcnConst5[5] = {0, 37, 94, 120, 125};
 // 1-distFcnHeight*exp(-(dist.*dist)/(2*maxDist*maxDist)); plot(dist,y); int32(125*y)
 __device__ __constant__ unsigned char distFcnConst3[3] = {0, 94, 125};
 
-#define BLOCK_DIM 8
-
-// cameras matrices
-
-__device__ __constant__ DeviceCameraStructBase sg_s_r;
-__device__ __constant__ DeviceCameraStructBase sg_s_t;
 
 } // namespace depthMap
 } // namespace aliceVision
