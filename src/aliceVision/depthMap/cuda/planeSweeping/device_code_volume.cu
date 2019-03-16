@@ -216,24 +216,6 @@ __global__ void volume_transposeVolume_kernel(T* volumeT, int volumeT_s, int vol
 }
 
 template <typename T>
-__global__ void volume_shiftZVolumeTempl_kernel(T* volume, int volume_s, int volume_p, int volDimX, int volDimY,
-                                                int volDimZ, int vz)
-{
-    int vx = blockIdx.x * blockDim.x + threadIdx.x;
-    int vy = blockIdx.y * blockDim.y + threadIdx.y;
-
-    if (vx >= volDimX || vy >= volDimY) // || vz >= volDimZ)
-      return;
-
-    T* v1_ptr = get3DBufferAt(volume, volume_s, volume_p, vx, vy, vz);
-    T* v2_ptr = get3DBufferAt(volume, volume_s, volume_p, vx, vy, volDimZ - 1 - vz);
-    T v1 = *v1_ptr;
-    T v2 = *v2_ptr;
-    *v1_ptr = v2;
-    *v2_ptr = v1;
-}
-
-template <typename T>
 __global__ void volume_initVolume_kernel(T* volume, int volume_s, int volume_p, int volDimX, int volDimY, int volDimZ,
                                          int vz, T cst)
 {
@@ -348,7 +330,7 @@ __global__ void volume_agregateCostVolumeAtZinSlices_kernel(cudaTextureObject_t 
     int vy = blockIdx.y * blockDim.y + threadIdx.y;
 
     if (vx >= volDimX && vy >= volDimY) // && vz >= volDimZ)
-      return;
+        return;
 
     float* sim_yx = get2DBufferAt(xySliceForZ, xySliceForZ_p, vx, vy);
     float sim = *sim_yx;
@@ -356,19 +338,35 @@ __global__ void volume_agregateCostVolumeAtZinSlices_kernel(cudaTextureObject_t 
 
     if((vz >= 1) && (vy >= 1) && (vy < volDimY - 1))
     {
-        int z = doInvZ ? volDimZ - vz : vz;
-        int z1 = doInvZ ? z + 1 : z - 1; // M1
-        int imX0 = (dimTrnX == 0) ? vx : z; // current
-        int imY0 = (dimTrnX == 0) ?  z : vx;
-        int imX1 = (dimTrnX == 0) ? vx : z1; // M1
-        int imY1 = (dimTrnX == 0) ? z1 : vx;
+        int z1 = doInvZ ? vz + 1 : vz - 1; // M1
+
+        int imX0; // current
+        int imY0;
+        int imX1; // M1
+        int imY1;
+        if (dimTrnX == 0) //  // Y is on Z axis
+        {
+            // 0,2,1 / XZY
+            imX0 = vx; // current
+            imY0 = vz;
+            imX1 = vx; // M1
+            imY1 = z1;
+        }
+        else if(dimTrnX == 1) // X is on Z axis
+        {
+            // 1,2,0 / YZX
+            imX0 = vz; // current
+            imY0 = vx;
+            imX1 = z1; // M1
+            imY1 = vx;
+        }
         float4 gcr0 = 255.0f * tex2D<float4>(rc_tex, (float)imX0 + 0.5f, (float)imY0 + 0.5f);
         float4 gcr1 = 255.0f * tex2D<float4>(rc_tex, (float)imX1 + 0.5f, (float)imY1 + 0.5f);
         float deltaC = Euclidean3(gcr0, gcr1);
         // unsigned int P1 = (unsigned int)sigmoid(5.0f,20.0f,60.0f,10.0f,deltaC);
         float P1 = _P1;
         // 15.0 + (255.0 - 15.0) * (1.0 / (1.0 + exp(10.0 * ((x - 20.) / 80.))))
-        float P2 = sigmoid(15.0f, 255.0f, 80.0f, 20.0f, deltaC);
+        float P2 = sigmoid(15.0f, 255.0f, 80.0f, 20.0f, deltaC); // TODO test: 20 => 40
         // float P2 = _P2;
 
         float bestCostInColM1 = xSliceBestInColSimForZM1[vx];

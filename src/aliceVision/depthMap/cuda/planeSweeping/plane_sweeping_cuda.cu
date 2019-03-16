@@ -369,6 +369,8 @@ void ps_aggregatePathVolume(CudaDeviceMemoryPitched<float, 3>& d_volSimT,
     CudaDeviceMemoryPitched<float, 2> d_xySliceForZM1(CudaSize<2>(volDimX, volDimY));
     CudaDeviceMemoryPitched<float, 2> d_xSliceBestInColSimForZM1(CudaSize<2>(volDimX, 1));
 
+    int zStart = doInvZ ? volDimZ - 1 : 0;
+
     // Copy the first Z plane from 'd_volSimT' into 'xysliceForZ_dmp'
     volume_getVolumeXYSliceAtZ_kernel<float, float><<<gridvol, blockvol>>>(
         d_xySliceForZ.getBuffer(),
@@ -376,7 +378,7 @@ void ps_aggregatePathVolume(CudaDeviceMemoryPitched<float, 3>& d_volSimT,
         d_volSimT.getBuffer(),
         d_volSimT.getBytesPaddedUpToDim(1),
         d_volSimT.getBytesPaddedUpToDim(0),
-        volDimX, volDimY, volDimZ, 0); // Z=0
+        volDimX, volDimY, volDimZ, zStart); // Z=0
     CHECK_CUDA_ERROR();
 
     // Set the first Z plane from 'd_volSimT' to 255
@@ -387,8 +389,10 @@ void ps_aggregatePathVolume(CudaDeviceMemoryPitched<float, 3>& d_volSimT,
         volDimX, volDimY, volDimZ, 0, 255);
     CHECK_CUDA_ERROR();
 
-    for(int z = 1; z < volDimZ; z++)
+    for(int iz = 1; iz < volDimZ; iz++)
     {
+        int z = doInvZ ? volDimZ - 1 - iz : iz;
+
         copy(d_xySliceForZM1, d_xySliceForZ);
 
         // For each column: compute the best score
@@ -487,22 +491,6 @@ void ps_updateAggrVolume(CudaDeviceMemoryPitched<float, 3>& volAgr_dmp,
     // if (verbose) printf("transpose volume gpu elapsed time: %f ms \n", toc(tall));
     // pr_printfDeviceMemoryInfo();
 
-    if(doInvZ == true)
-    {
-        // clock_t tall = tic();
-        for(int z = 0; z < volDims[dimsTrn[2]] / 2; z++)
-        {
-            volume_shiftZVolumeTempl_kernel<<<gridT, blockT>>>(
-                d_volSimT.getBuffer(),
-                d_volSimT.getBytesPaddedUpToDim(1),
-                d_volSimT.getBytesPaddedUpToDim(0),
-                volDims[dimsTrn[0]], volDims[dimsTrn[1]], volDims[dimsTrn[2]],
-                z);
-        }
-        CHECK_CUDA_ERROR();
-        // if (verbose) printf("shift z volume gpu elapsed time: %f ms \n", toc(tall));
-    }
-
     // clock_t tall = tic();
     ps_aggregatePathVolume(
         d_volSimT, volDims[dimsTrn[0]], volDims[dimsTrn[1]], volDims[dimsTrn[2]],
@@ -511,24 +499,6 @@ void ps_updateAggrVolume(CudaDeviceMemoryPitched<float, 3>& volAgr_dmp,
         dimTrnX, doInvZ, verbose);
     // if (verbose) printf("aggregate volume gpu elapsed time: %f ms \n", toc(tall));
     // pr_printfDeviceMemoryInfo();
-
-    if(doInvZ == true)
-    {
-        // clock_t tall = tic();
-        for(int z = 0; z < volDims[dimsTrn[2]] / 2; z++)
-        {
-            volume_shiftZVolumeTempl_kernel<float><<<gridT, blockT>>>(
-                d_volSimT.getBuffer(),
-                d_volSimT.getBytesPaddedUpToDim(1),
-                d_volSimT.getBytesPaddedUpToDim(0),
-                volDims[dimsTrn[0]],
-                volDims[dimsTrn[1]],
-                volDims[dimsTrn[2]],
-                z);
-        }
-        CHECK_CUDA_ERROR();
-        // if (verbose) printf("shift z volume gpu elapsed time: %f ms \n", toc(tall));
-    }
 
     // clock_t tall = tic();
     for(int zT = 0; zT < volDims[dimsTrn[2]]; zT++)
