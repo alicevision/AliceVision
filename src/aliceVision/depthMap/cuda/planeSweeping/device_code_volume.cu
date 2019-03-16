@@ -63,14 +63,14 @@ __global__ void volume_slice_kernel(
 
     if( vx >= volDimX || vy >= volDimY ) // || vz >= volDimZ
         return;
-    if (vz >= nbDepthsToSearch)
-      return;
+    // if (vz >= nbDepthsToSearch)
+    //  return;
 
     const int x = vx * volStepXY;
     const int y = vy * volStepXY;
 
-    if(x >= rcWidth || y >= rcHeight)
-        return;
+    // if(x >= rcWidth || y >= rcHeight)
+    //     return;
 
     const int zIndex = lowestUsedDepth + vz;
     const float fpPlaneDepth = depths_d[zIndex];

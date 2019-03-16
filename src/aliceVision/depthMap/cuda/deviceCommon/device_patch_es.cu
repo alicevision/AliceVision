@@ -279,7 +279,7 @@ __device__ float compNCCby3DptsYK( cudaTextureObject_t rc_tex,
             float w = CostYKfromLab(xp, yp, gcr, gcr1, gammaC, gammaP) * CostYKfromLab(xp, yp, gct, gct1, gammaC, gammaP);
             assert(w >= 0.f);
             assert(w <= 1.f);
-            sst.update(gcr1.x, gct1.x, w); // TODO: try with gcr1f and gtc1f
+            sst.update(gcr1.x, gct1.x, w);
         }
     }
     sst.computeWSim();
