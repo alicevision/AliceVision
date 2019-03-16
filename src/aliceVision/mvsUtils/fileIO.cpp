@@ -26,7 +26,7 @@ bool FolderExists(const std::string& folderPath)
     return boost::filesystem::is_directory(folderPath);
 }
 
-std::string getFileNameFromViewId(const MultiViewParams& mp, int viewId, EFileType fileType, int scale)
+std::string getFileNameFromViewId(const MultiViewParams& mp, int viewId, EFileType fileType, int scale, const std::string& customSuffix)
 {
   std::string folder = mp._imagesFolder;
   std::string suffix;
@@ -271,18 +271,18 @@ std::string getFileNameFromViewId(const MultiViewParams& mp, int viewId, EFileTy
       suffix += "_scale" + num2str(scale);
   }
 
-  std::string fileName = folder + std::to_string(viewId) + suffix + "." + ext;
+  std::string fileName = folder + std::to_string(viewId) + suffix + customSuffix + "." + ext;
   return fileName;
 }
 
-std::string getFileNameFromIndex(const MultiViewParams& mp, int index, EFileType mv_file_type, int scale)
+std::string getFileNameFromIndex(const MultiViewParams& mp, int index, EFileType mv_file_type, int scale, const std::string& customSuffix)
 {
-    return getFileNameFromViewId(mp, mp.getViewId(index), mv_file_type, scale);
+    return getFileNameFromViewId(mp, mp.getViewId(index), mv_file_type, scale, customSuffix);
 }
 
 FILE* mv_openFile(const MultiViewParams& mp, int index, EFileType mv_file_type, const char* readWrite)
 {
-    const std::string fileName = getFileNameFromIndex(mp, index, mv_file_type);
+    const std::string fileName = getFileNameFromIndex(mp, index, mv_file_type, 0, "");
     FILE* out = fopen(fileName.c_str(), readWrite);
     if (out==NULL)
         throw std::runtime_error(std::string("Cannot create file: ") + fileName);

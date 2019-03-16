@@ -346,20 +346,38 @@ void DepthSimMap::saveToImage(const std::string& filename, float simThr) const
     }
 }
 
-void DepthSimMap::save(int rc, const StaticVector<int>& tcams) const
+void DepthSimMap::save(const std::string& customSuffix) const
 {
     StaticVector<float> depthMap;
     getDepthMapStep1(depthMap);
     StaticVector<float> simMap;
     getSimMapStep1(simMap);
 
-    const int width = _mp.getWidth(rc) / _scale;
-    const int height = _mp.getHeight(rc) / _scale;
+    const int width = _mp.getWidth(_rc) / _scale;
+    const int height = _mp.getHeight(_rc) / _scale;
 
-    oiio::ParamValueList metadata = imageIO::getMetadataFromMap(_mp.getMetadata(rc));
-    metadata.push_back(oiio::ParamValue("AliceVision:downscale", _mp.getDownscaleFactor(rc)));
-    metadata.push_back(oiio::ParamValue("AliceVision:CArr", oiio::TypeDesc(oiio::TypeDesc::DOUBLE, oiio::TypeDesc::VEC3), 1, _mp.CArr[rc].m));
-    metadata.push_back(oiio::ParamValue("AliceVision:iCamArr", oiio::TypeDesc(oiio::TypeDesc::DOUBLE, oiio::TypeDesc::MATRIX33), 1, _mp.iCamArr[rc].m));
+    double s = _scale;
+    oiio::ParamValueList metadata = imageIO::getMetadataFromMap(_mp.getMetadata(_rc));
+    metadata.push_back(oiio::ParamValue("AliceVision:downscale", _mp.getDownscaleFactor(_rc) * _scale));
+
+    Point3d C = _mp.CArr[_rc];
+    Matrix3x3 iP = _mp.iCamArr[_rc];
+    if(s > 1.0)
+    {
+        Matrix3x4 P = _mp.camArr[_rc];
+        for (int i = 0; i < 8; ++i)
+            P.m[i] /= s;
+        Matrix3x3 K, iK;
+        Matrix3x3 R, iR;
+
+        P.decomposeProjectionMatrix(K, R, C); // replace C
+        iK = K.inverse();
+        iR = R.inverse();
+        iP = iR * iK; // replace iP
+    }
+
+    metadata.push_back(oiio::ParamValue("AliceVision:CArr", oiio::TypeDesc(oiio::TypeDesc::DOUBLE, oiio::TypeDesc::VEC3), 1, C.m));
+    metadata.push_back(oiio::ParamValue("AliceVision:iCamArr", oiio::TypeDesc(oiio::TypeDesc::DOUBLE, oiio::TypeDesc::MATRIX33), 1, iP.m));
 
     {
       const Point2d maxMinDepth = getMaxMinDepth();
@@ -368,141 +386,25 @@ void DepthSimMap::save(int rc, const StaticVector<int>& tcams) const
     }
 
     {
-      std::vector<double> matrixP = _mp.getOriginalP(rc);
+      std::vector<double> matrixP = _mp.getOriginalP(_rc);
       metadata.push_back(oiio::ParamValue("AliceVision:P", oiio::TypeDesc(oiio::TypeDesc::DOUBLE, oiio::TypeDesc::MATRIX44), 1, matrixP.data()));
     }
 
-    imageIO::writeImage(getFileNameFromIndex(_mp, rc, mvsUtils::EFileType::depthMap, _scale), width, height, depthMap.getDataWritable(), imageIO::EImageQuality::LOSSLESS, metadata);
-    imageIO::writeImage(getFileNameFromIndex(_mp, rc, mvsUtils::EFileType::simMap, _scale), width, height, simMap.getDataWritable(), imageIO::EImageQuality::OPTIMIZED, metadata);
+    imageIO::writeImage(getFileNameFromIndex(_mp, _rc, mvsUtils::EFileType::depthMap, _scale, customSuffix), width, height, depthMap.getDataWritable(), imageIO::EImageQuality::LOSSLESS, metadata);
+    imageIO::writeImage(getFileNameFromIndex(_mp, _rc, mvsUtils::EFileType::simMap, _scale, customSuffix), width, height, simMap.getDataWritable(), imageIO::EImageQuality::OPTIMIZED, metadata);
 }
 
-void DepthSimMap::load(int rc, int fromScale)
+void DepthSimMap::load(int fromScale)
 {
     int width, height;
 
     StaticVector<float> depthMap;
     StaticVector<float> simMap;
 
-    imageIO::readImage(getFileNameFromIndex(_mp, rc, mvsUtils::EFileType::depthMap, fromScale), width, height, depthMap.getDataWritable());
-    imageIO::readImage(getFileNameFromIndex(_mp, rc, mvsUtils::EFileType::simMap, fromScale), width, height, simMap.getDataWritable());
+    imageIO::readImage(getFileNameFromIndex(_mp, _rc, mvsUtils::EFileType::depthMap, fromScale), width, height, depthMap.getDataWritable());
+    imageIO::readImage(getFileNameFromIndex(_mp, _rc, mvsUtils::EFileType::simMap, fromScale), width, height, simMap.getDataWritable());
 
     initFromDepthMapAndSimMap(&depthMap, &simMap, fromScale);
-}
-
-void DepthSimMap::saveRefine(int rc, const std::string& depthMapFileName, const std::string& simMapFileName) const
-{
-    const int width = _mp.getWidth(rc);
-    const int height = _mp.getHeight(rc);
-    const int size = width * height;
-
-    std::vector<float> depthMap(size);
-    std::vector<float> simMap(size);
-
-    for(int i = 0; i < _dsm.size(); ++i)
-    {
-        depthMap.at(i) = _dsm[i].depth;
-        simMap.at(i) = _dsm[i].sim;
-    }
-
-    oiio::ParamValueList metadata = imageIO::getMetadataFromMap(_mp.getMetadata(rc));
-    metadata.push_back(oiio::ParamValue("AliceVision:downscale", _mp.getDownscaleFactor(rc)));
-    metadata.push_back(oiio::ParamValue("AliceVision:CArr", oiio::TypeDesc(oiio::TypeDesc::DOUBLE, oiio::TypeDesc::VEC3), 1, _mp.CArr[rc].m));
-    metadata.push_back(oiio::ParamValue("AliceVision:iCamArr", oiio::TypeDesc(oiio::TypeDesc::DOUBLE, oiio::TypeDesc::MATRIX33), 1, _mp.iCamArr[rc].m));
-
-    {
-      const Point2d maxMinDepth = getMaxMinDepth();
-      metadata.push_back(oiio::ParamValue("AliceVision:minDepth", static_cast<float>(maxMinDepth.y)));
-      metadata.push_back(oiio::ParamValue("AliceVision:maxDepth", static_cast<float>(maxMinDepth.x)));
-    }
-
-    {
-        std::vector<double> matrixP = _mp.getOriginalP(rc);
-        metadata.push_back(oiio::ParamValue("AliceVision:P", oiio::TypeDesc(oiio::TypeDesc::DOUBLE, oiio::TypeDesc::MATRIX44), 1, matrixP.data()));
-    }
-
-    imageIO::writeImage(depthMapFileName, width, height, depthMap, imageIO::EImageQuality::LOSSLESS, metadata);
-    imageIO::writeImage(simMapFileName, width, height, simMap, imageIO::EImageQuality::OPTIMIZED, metadata);
-}
-
-float DepthSimMap::getCellSmoothStep(int rc, const int cellId)
-{
-    return getCellSmoothStep(rc, Pixel(cellId % _w, cellId / _w));
-}
-
-float DepthSimMap::getCellSmoothStep(int rc, const Pixel& cell)
-{
-    if((cell.x <= 0) || (cell.x >= _w - 1) || (cell.y <= 0) || (cell.y >= _h - 1))
-    {
-        return 0.0f;
-    }
-
-    Pixel cell0 = cell;
-    Pixel cellL = cell0 + Pixel(0, -1);
-    Pixel cellR = cell0 + Pixel(0, 1);
-    Pixel cellU = cell0 + Pixel(-1, 0);
-    Pixel cellB = cell0 + Pixel(1, 0);
-
-    float d0 = _dsm[cell0.y * _w + cell0.x].depth;
-    float dL = _dsm[cellL.y * _w + cellL.x].depth;
-    float dR = _dsm[cellR.y * _w + cellR.x].depth;
-    float dU = _dsm[cellU.y * _w + cellU.x].depth;
-    float dB = _dsm[cellB.y * _w + cellB.x].depth;
-
-    Point3d cg = Point3d(0.0f, 0.0f, 0.0f);
-    float n = 0.0f;
-
-    if(dL > 0.0f)
-    {
-        cg =
-            cg +
-            (_mp.CArr[rc] +
-             (_mp.iCamArr[rc] * Point2d((float)cellL.x * (_scale * _step), (float)cellL.y * (_scale * _step))).normalize() *
-                 dL);
-        n += 1.0f;
-    }
-    if(dR > 0.0f)
-    {
-        cg =
-            cg +
-            (_mp.CArr[rc] +
-             (_mp.iCamArr[rc] * Point2d((float)cellR.x * (_scale * _step), (float)cellR.y * (_scale * _step))).normalize() *
-                 dR);
-        n += 1.0f;
-    }
-    if(dU > 0.0f)
-    {
-        cg =
-            cg +
-            (_mp.CArr[rc] +
-             (_mp.iCamArr[rc] * Point2d((float)cellU.x * (_scale * _step), (float)cellU.y * (_scale * _step))).normalize() *
-                 dU);
-        n += 1.0f;
-    }
-    if(dB > 0.0f)
-    {
-        cg =
-            cg +
-            (_mp.CArr[rc] +
-             (_mp.iCamArr[rc] * Point2d((float)cellB.x * (_scale * _step), (float)cellB.y * (_scale * _step))).normalize() *
-                 dB);
-        n += 1.0f;
-    }
-
-    if((d0 > 0.0f) && (n > 1.0f))
-    {
-        cg = cg / n;
-        Point3d p0 =
-            _mp.CArr[rc] +
-            (_mp.iCamArr[rc] * Point2d((float)cell0.x * (_scale * _step), (float)cell0.y * (_scale * _step))).normalize() *
-                d0;
-        Point3d vcn = (_mp.CArr[rc] - p0).normalize();
-
-        Point3d pS = closestPointToLine3D(&cg, &p0, &vcn);
-
-        return (_mp.CArr[rc] - pS).size() - d0;
-    }
-
-    return 0.0f;
 }
 
 } // namespace depthMap

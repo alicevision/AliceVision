@@ -80,12 +80,8 @@ public:
     void getSimMapStep1XPart(StaticVector<float>& out_depthMap, int xFrom, int partW);
 
     void saveToImage(const std::string& filename, float simThr) const;
-    void save(int rc, const StaticVector<int>& tcams) const;
-    void load(int rc, int fromScale);
-    void saveRefine(int rc, const std::string& depthMapFileName, const std::string& simMapFileName) const;
-
-    float getCellSmoothStep(int rc, const int cellId);
-    float getCellSmoothStep(int rc, const Pixel& cell);
+    void save(const std::string& customSuffix = "") const;
+    void load(int fromScale);
 };
 
 } // namespace depthMap

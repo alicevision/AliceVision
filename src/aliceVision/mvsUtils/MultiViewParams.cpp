@@ -261,9 +261,9 @@ void MultiViewParams::loadMatricesFromRawProjectionMatrix(int index, const doubl
   std::copy_n(rawProjMatix, 12, pMatrix.m);
 
   // apply scale to camera matrix (camera matrix is scale 1)
-  const int imgScale = _imagesScale.at(index) * _processDownscale;
+  const double imgScale = double(_imagesScale.at(index) * _processDownscale);
   for(int i = 0; i < 8; ++i)
-      pMatrix.m[i] /= static_cast<double>(imgScale);
+      pMatrix.m[i] /= imgScale;
 
   pMatrix.decomposeProjectionMatrix(KArr.at(index), RArr.at(index), CArr.at(index));
   iKArr.at(index) = KArr.at(index).inverse();

@@ -111,9 +111,9 @@ void RefineRc::refineAndFuseDepthSimMapCUDA(DepthSimMap& out_depthSimMapFused, c
 
         dataMaps.push_back(depthSimMapC);
 
-        if(_sp.exportIntermediateResults)
-            depthSimMapC->saveToImage(_sp.mp.getDepthMapsFolder() + "refine_photo_" + std::to_string(_sp.mp.getViewId(_rc)) + "_tc_" +
-                                           std::to_string(_sp.mp.getViewId(tc)) + ".png", -2.0f);
+        // if(_sp.exportIntermediateResults)
+        //     depthSimMapC->saveToImage(_sp.mp.getDepthMapsFolder() + "refine_photo_" + std::to_string(_sp.mp.getViewId(_rc)) + "_tc_" +
+        //                                    std::to_string(_sp.mp.getViewId(tc)) + ".png", -2.0f);
     }
 
     // in order to fit into GPU memory
@@ -200,7 +200,7 @@ bool RefineRc::refinerc(bool checkIfExists)
     // generate default depthSimMap if rc has no tcam
     if(_refineTCams.empty() || _depths.empty())
     {
-        _depthSimMapOpt.save(_rc, StaticVector<int>() );
+        _depthSimMapOpt.save();
         return true;
     }
 
@@ -216,9 +216,16 @@ bool RefineRc::refinerc(bool checkIfExists)
     getDepthPixSizeMapFromSGM(depthPixSizeMapVis);
 
     DepthSimMap depthSimMapPhoto(_rc, _sp.mp, 1, 1);
-    refineAndFuseDepthSimMapCUDA(depthSimMapPhoto, depthPixSizeMapVis);
+    if (_sp.doRefineFuse)
+    {
+      refineAndFuseDepthSimMapCUDA(depthSimMapPhoto, depthPixSizeMapVis);
+    }
+    else
+    {
+        depthSimMapPhoto.initJustFromDepthMap(depthPixSizeMapVis, 1.0f);
+    }
 
-    if(_sp.doRefineRc)
+    if(_sp.doRefineOpt)
     {
         optimizeDepthSimMapCUDA(_depthSimMapOpt, depthPixSizeMapVis, depthSimMapPhoto);
     }
@@ -230,10 +237,9 @@ bool RefineRc::refinerc(bool checkIfExists)
     if(_sp.exportIntermediateResults)
     {
       depthPixSizeMapVis.saveToImage(_sp.mp.getDepthMapsFolder() + "refine_" + std::to_string(viewId) + "_vis.png", 0.0f);
-      depthSimMapPhoto.saveToImage(_sp.mp.getDepthMapsFolder() + "refine_" + std::to_string(viewId) + "_photo.png", 0.0f);
-      depthSimMapPhoto.saveRefine(_rc, _sp.getREFINE_photo_depthMapFileName(viewId, 1, 1), _sp.getREFINE_photo_simMapFileName(viewId, 1, 1));
-      _depthSimMapOpt.saveToImage(_sp.mp.getDepthMapsFolder() + "refine_" + std::to_string(viewId) + "_opt.png", 0.0f);
-      _depthSimMapOpt.saveRefine(_rc, _sp.getREFINE_opt_depthMapFileName(viewId, 1, 1), _sp.getREFINE_opt_simMapFileName(viewId, 1, 1));
+      // depthSimMapPhoto.saveToImage(_sp.mp.getDepthMapsFolder() + "refine_" + std::to_string(viewId) + "_photo.png", 0.0f);
+      depthSimMapPhoto.save("_photo");
+      // _depthSimMapOpt.saveToImage(_sp.mp.getDepthMapsFolder() + "refine_" + std::to_string(viewId) + "_opt.png", 0.0f);
     }
 
     mvsUtils::printfElapsedTime(tall, "Refine CUDA (rc: " + mvsUtils::num2str(_rc) + " / " + mvsUtils::num2str(_sp.mp.ncams) + ")");
@@ -243,7 +249,7 @@ bool RefineRc::refinerc(bool checkIfExists)
 
 void RefineRc::writeDepthMap()
 {
-  _depthSimMapOpt.save(_rc, _refineTCams);
+  _depthSimMapOpt.save();
 }
 
 void estimateAndRefineDepthMaps(mvsUtils::MultiViewParams& mp, const std::vector<int>& cams, int nbGPUs)

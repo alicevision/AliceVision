@@ -496,12 +496,13 @@ bool SemiGlobalMatchingRc::sgmrc(bool checkIfExists)
     {
         DepthSimMap depthSimMapFinal(_rc, _sp.mp, _scale, _step);
         _sp.getDepthSimMapFromBestIdVal(depthSimMapFinal, _width, _height, _volumeBestIdVal, _scale, _step, _rc, zborder, _depths);
-        depthSimMapFinal.saveToImage(_sp.mp.getDepthMapsFolder() + "sgm_" + std::to_string(_sp.mp.getViewId(_rc)) + "_" + "_scale" + mvsUtils::num2str(depthSimMapFinal._scale) + "_step" + mvsUtils::num2str(depthSimMapFinal._step) + ".png", 1.0f);
+        // depthSimMapFinal.saveToImage(_sp.mp.getDepthMapsFolder() + std::to_string(_sp.mp.getViewId(_rc)) + "_sgm" + "_scale" + mvsUtils::num2str(depthSimMapFinal._scale) + "_step" + mvsUtils::num2str(depthSimMapFinal._step) + ".png", 1.0f);
+        depthSimMapFinal.save("_sgm");
 
-        std::vector<unsigned short> volumeBestId(_volumeBestIdVal.size());
-        for(int i = 0; i < _volumeBestIdVal.size(); i++)
-          volumeBestId.at(i) = std::max(0, _volumeBestIdVal[i].id);
-        imageIO::writeImage(_sp.getSGM_idDepthMapFileName(_sp.mp.getViewId(_rc), _scale, _step), _width, _height, volumeBestId);
+        // std::vector<unsigned short> volumeBestId(_volumeBestIdVal.size());
+        // for(int i = 0; i < _volumeBestIdVal.size(); i++)
+          //   volumeBestId.at(i) = std::max(0, _volumeBestIdVal[i].id);
+        // imageIO::writeImage(_sp.getSGM_idDepthMapFileName(_sp.mp.getViewId(_rc), _scale, _step), _width, _height, volumeBestId);
     }
     return true;
 }
