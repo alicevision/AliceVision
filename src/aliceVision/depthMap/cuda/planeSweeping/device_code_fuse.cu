@@ -19,22 +19,22 @@ __global__ void fuse_computeGaussianKernelVotingSampleMap_kernel(float* out_gsvS
     int x = blockIdx.x * blockDim.x + threadIdx.x;
     int y = blockIdx.y * blockDim.y + threadIdx.y;
 
-    if((x >= 0) && (y >= 0) && (x < width) && (y < height))
-    {
-        float2 midDepthPixSize = *get2DBufferAt(midDepthPixSizeMap, midDepthPixSizeMap_p, x, y);
-        float2 depthSim = *get2DBufferAt(depthSimMap, depthSimMap_p, x, y);
-        float* out_gsvSample_ptr = get2DBufferAt(out_gsvSampleMap, out_gsvSampleMap_p, x, y);
-        float gsvSample = (idCam == 0) ? 0.0f : *out_gsvSample_ptr;
+    if(x >= width || y >= height)
+        return;
 
-        if((midDepthPixSize.x > 0.0f) && (depthSim.x > 0.0f))
-        {
-            float depthStep = midDepthPixSize.y / samplesPerPixSize;
-            float i = (midDepthPixSize.x - depthSim.x) / depthStep;
-            float sim = -sigmoid(0.0f, 1.0f, 0.7f, -0.7f, depthSim.y);
-            gsvSample += sim * expf(-((i - s) * (i - s)) / twoTimesSigmaPowerTwo);
-        };
-        *out_gsvSample_ptr = gsvSample;
-    };
+    float2 midDepthPixSize = *get2DBufferAt(midDepthPixSizeMap, midDepthPixSizeMap_p, x, y);
+    float2 depthSim = *get2DBufferAt(depthSimMap, depthSimMap_p, x, y);
+    float* out_gsvSample_ptr = get2DBufferAt(out_gsvSampleMap, out_gsvSampleMap_p, x, y);
+    float gsvSample = (idCam == 0) ? 0.0f : *out_gsvSample_ptr;
+
+    if((midDepthPixSize.x > 0.0f) && (depthSim.x > 0.0f))
+    {
+        float depthStep = midDepthPixSize.y / samplesPerPixSize;
+        float i = (midDepthPixSize.x - depthSim.x) / depthStep;
+        float sim = -sigmoid(0.0f, 1.0f, 0.7f, -0.7f, depthSim.y);
+        gsvSample += sim * expf(-((i - s) * (i - s)) / twoTimesSigmaPowerTwo);
+    }
+    *out_gsvSample_ptr = gsvSample;
 }
 
 
@@ -45,13 +45,13 @@ __global__ void fuse_updateBestGaussianKernelVotingSampleMap_kernel(float2* best
     int x = blockIdx.x * blockDim.x + threadIdx.x;
     int y = blockIdx.y * blockDim.y + threadIdx.y;
 
-    if((x >= 0) && (y >= 0) && (x < width) && (y < height))
-    {
-        float gsvSampleX = *get2DBufferAt(gsvSampleMap, gsvSampleMap_p, x, y);
-        float2* bestGsvSample_ptr = get2DBufferAt(bestGsvSampleMap, bestGsvSampleMap_p, x, y);
-        if(id == 0 || gsvSampleX < bestGsvSample_ptr->x)
-            *bestGsvSample_ptr = make_float2(gsvSampleX, s);
-    };
+    if(x >= width || y >= height)
+        return;
+
+    float gsvSampleX = *get2DBufferAt(gsvSampleMap, gsvSampleMap_p, x, y);
+    float2* bestGsvSample_ptr = get2DBufferAt(bestGsvSampleMap, bestGsvSampleMap_p, x, y);
+    if(id == 0 || gsvSampleX < bestGsvSample_ptr->x)
+        *bestGsvSample_ptr = make_float2(gsvSampleX, s);
 }
 
 __global__ void fuse_computeFusedDepthSimMapFromBestGaussianKernelVotingSampleMap_kernel(
@@ -61,21 +61,20 @@ __global__ void fuse_computeFusedDepthSimMapFromBestGaussianKernelVotingSampleMa
     int x = blockIdx.x * blockDim.x + threadIdx.x;
     int y = blockIdx.y * blockDim.y + threadIdx.y;
 
-    if((x >= 0) && (y >= 0) && (x < width) && (y < height))
-    {
-        float2 bestGsvSample = *get2DBufferAt(bestGsvSampleMap, bestGsvSampleMap_p, x, y);
-        float2 midDepthPixSize = *get2DBufferAt(midDepthPixSizeMap, midDepthPixSizeMap_p, x, y);
-        float depthStep = midDepthPixSize.y / samplesPerPixSize;
+    if(x >= width || y >= height)
+        return;
+    float2 bestGsvSample = *get2DBufferAt(bestGsvSampleMap, bestGsvSampleMap_p, x, y);
+    float2 midDepthPixSize = *get2DBufferAt(midDepthPixSizeMap, midDepthPixSizeMap_p, x, y);
+    float depthStep = midDepthPixSize.y / samplesPerPixSize;
 
-        // normalize similarity to -1,0
-        // figure; t = -5.0:0.01:0.0; plot(t,sigmoid(0.0,-1.0,6.0,-0.4,t,0));
-        //bestGsvSample.x = sigmoid(0.0f, -1.0f, 6.0f, -0.4f, bestGsvSample.x);
-        float2* oDepthSim = get2DBufferAt(oDepthSimMap, oDepthSimMap_p, x, y);
-        if(midDepthPixSize.x <= 0.0f)
-            *oDepthSim = make_float2(-1.0f, 1.0f);
-        else
-            *oDepthSim = make_float2(midDepthPixSize.x - bestGsvSample.y * depthStep, bestGsvSample.x);
-    };
+    // normalize similarity to -1,0
+    // figure; t = -5.0:0.01:0.0; plot(t,sigmoid(0.0,-1.0,6.0,-0.4,t,0));
+    //bestGsvSample.x = sigmoid(0.0f, -1.0f, 6.0f, -0.4f, bestGsvSample.x);
+    float2* oDepthSim = get2DBufferAt(oDepthSimMap, oDepthSimMap_p, x, y);
+    if(midDepthPixSize.x <= 0.0f)
+        *oDepthSim = make_float2(-1.0f, 1.0f);
+    else
+        *oDepthSim = make_float2(midDepthPixSize.x - bestGsvSample.y * depthStep, bestGsvSample.x);
 }
 
 __global__ void fuse_getOptDeptMapFromOPtDepthSimMap_kernel(float* optDepthMap, int optDepthMap_p,
@@ -85,11 +84,12 @@ __global__ void fuse_getOptDeptMapFromOPtDepthSimMap_kernel(float* optDepthMap, 
     int x = blockIdx.x * blockDim.x + threadIdx.x;
     int y = blockIdx.y * blockDim.y + threadIdx.y;
 
-    if((x >= 0) && (y >= 0) && (x < width) && (y < height))
+    if(x < width && y < height)
     {
         *get2DBufferAt(optDepthMap, optDepthMap_p, x, y) = get2DBufferAt(optDepthMapSimMap, optDepthMapSimMap_p, x, y)->x;
-    };
+    }
 }
+
 /**
  * @return (smoothStep, energy)
  */
@@ -176,75 +176,75 @@ __global__ void fuse_optimizeDepthSimMap_kernel(cudaTextureObject_t rc_tex,
     int y = blockIdx.y * blockDim.y + threadIdx.y;
     int2 pix = make_int2(x, y);
 
-    if((x >= 0) && (y >= 0) && (x < width) && (y < height))
+    if(x >= width || y >= height)
+        return;
+
+    float2 midDepthPixSize = *get2DBufferAt(midDepthPixSizeMap, midDepthPixSizeMap_p, x, y);
+    float2 fusedDepthSim = *get2DBufferAt(fusedDepthSimMap, fusedDepthSimMap_p, x, y);
+    float2* out_optDepthSim_ptr = get2DBufferAt(out_optDepthSimMap, optDepthSimMap_p, x, y);
+    float2 out_optDepthSim = (iter == 0) ? make_float2(midDepthPixSize.x, fusedDepthSim.y) : *out_optDepthSim_ptr;
+
+    float depthOpt = out_optDepthSim.x;
+
+    if(depthOpt > 0.0f)
     {
-        float2 midDepthPixSize = *get2DBufferAt(midDepthPixSizeMap, midDepthPixSizeMap_p, x, y);
-        float2 fusedDepthSim = *get2DBufferAt(fusedDepthSimMap, fusedDepthSimMap_p, x, y);
-        float2* out_optDepthSim_ptr = get2DBufferAt(out_optDepthSimMap, optDepthSimMap_p, x, y);
-        float2 out_optDepthSim = (iter == 0) ? make_float2(midDepthPixSize.x, fusedDepthSim.y) : *out_optDepthSim_ptr;
-
-        float depthOpt = out_optDepthSim.x;
-
-        if(depthOpt > 0.0f)
+        float2 depthSmoothStepEnergy = getCellSmoothStepEnergy(pix);
+        float depthSmoothStep = depthSmoothStepEnergy.x;
+        if(depthSmoothStep < 0.0f)
         {
-            float2 depthSmoothStepEnergy = getCellSmoothStepEnergy(pix);
-            float depthSmoothStep = depthSmoothStepEnergy.x;
-            if(depthSmoothStep < 0.0f)
-            {
-                depthSmoothStep = -fminf(fabsf(depthSmoothStep), midDepthPixSize.y / 10.0f);
-            }
-            else
-            {
-                depthSmoothStep = +fminf(fabsf(depthSmoothStep), midDepthPixSize.y / 10.0f);
-            }
+            depthSmoothStep = -fminf(fabsf(depthSmoothStep), midDepthPixSize.y / 10.0f);
+        }
+        else
+        {
+            depthSmoothStep = +fminf(fabsf(depthSmoothStep), midDepthPixSize.y / 10.0f);
+        }
 
-            float depthPhotoStep = fusedDepthSim.x - depthOpt;
-            if(depthPhotoStep < 0.0f)
-            {
-                depthPhotoStep = -fminf(fabsf(depthPhotoStep), midDepthPixSize.y / 10.0f);
-            }
-            else
-            {
-                depthPhotoStep = +fminf(fabsf(depthPhotoStep), midDepthPixSize.y / 10.0f);
-            }
+        float depthPhotoStep = fusedDepthSim.x - depthOpt;
+        if(depthPhotoStep < 0.0f)
+        {
+            depthPhotoStep = -fminf(fabsf(depthPhotoStep), midDepthPixSize.y / 10.0f);
+        }
+        else
+        {
+            depthPhotoStep = +fminf(fabsf(depthPhotoStep), midDepthPixSize.y / 10.0f);
+        }
 
-            float depthVisStep = midDepthPixSize.x - depthOpt;
+        float depthVisStep = midDepthPixSize.x - depthOpt;
 
-            float depthSmoothVal = depthSmoothStepEnergy.y;
-            float depthPhotoStepVal = fusedDepthSim.y;
+        float depthSmoothVal = depthSmoothStepEnergy.y;
+        float depthPhotoStepVal = fusedDepthSim.y;
 
-            float varianceGray = 255.0f*tex2D<float4>(rc_tex, (float)x + 0.5f, (float)(y + yFrom) + 0.5f).w; // TODO FACA
+        float varianceGray = 255.0f*tex2D<float4>(rc_tex, (float)x + 0.5f, (float)(y + yFrom) + 0.5f).w; // TODO FACA
 
-            // archive: 
-            // float varianceGrayAndleWeight = sigmoid2(5.0f, 60.0f, 10.0f, 5.0f, varianceGray);
-            // 0.6:
-            float varianceGrayAndleWeight = sigmoid2(5.0f, 30.0f, 40.0f, 20.0f, varianceGray);
+        // archive: 
+        // float varianceGrayAndleWeight = sigmoid2(5.0f, 60.0f, 10.0f, 5.0f, varianceGray);
+        // 0.6:
+        float varianceGrayAndleWeight = sigmoid2(5.0f, 30.0f, 40.0f, 20.0f, varianceGray);
 
-            // archive: 
-            // float simWeight = -depthPhotoStepVal; // must be from 0 to 1=from worst=0 to best=1 ... it is from -1 to 0
-            // 0.6:
-            float simWeight = sigmoid(0.0f, 1.0f, 0.7f, -0.7f, depthPhotoStepVal);
+        // archive: 
+        // float simWeight = -depthPhotoStepVal; // must be from 0 to 1=from worst=0 to best=1 ... it is from -1 to 0
+        // 0.6:
+        float simWeight = sigmoid(0.0f, 1.0f, 0.7f, -0.7f, depthPhotoStepVal);
 
-            // archive: 
-            // float photoWeight = sigmoid(0.0f, 1.0f, 60.0f, varianceGrayAndleWeight, depthSmoothVal);
-            // 0.6:
-            float photoWeight = sigmoid(0.0f, 1.0f, 30.0f, varianceGrayAndleWeight, depthSmoothVal);
+        // archive: 
+        // float photoWeight = sigmoid(0.0f, 1.0f, 60.0f, varianceGrayAndleWeight, depthSmoothVal);
+        // 0.6:
+        float photoWeight = sigmoid(0.0f, 1.0f, 30.0f, varianceGrayAndleWeight, depthSmoothVal);
 
-            float smoothWeight = 1.0f - photoWeight;
-            float visWeight = 1.0f - sigmoid(0.0f, 1.0f, 10.0f, 17.0f, fabsf(depthVisStep / midDepthPixSize.y));
+        float smoothWeight = 1.0f - photoWeight;
+        float visWeight = 1.0f - sigmoid(0.0f, 1.0f, 10.0f, 17.0f, fabsf(depthVisStep / midDepthPixSize.y));
 
-            float depthOptStep = visWeight*depthVisStep + (1.0f - visWeight)*(photoWeight*simWeight*depthPhotoStep + smoothWeight*depthSmoothStep);
+        float depthOptStep = visWeight*depthVisStep + (1.0f - visWeight)*(photoWeight*simWeight*depthPhotoStep + smoothWeight*depthSmoothStep);
 
-            out_optDepthSim.x = depthOpt + depthOptStep;
+        out_optDepthSim.x = depthOpt + depthOptStep;
 
-            // archive: 
-            // optDepthSim.y = -photoWeight * simWeight
-            // 0.6:
-            out_optDepthSim.y = (1.0f - visWeight)*photoWeight*simWeight*depthPhotoStepVal + (1.0f - visWeight)*smoothWeight*(depthSmoothVal / 20.0f);
-        };
+        // archive: 
+        // optDepthSim.y = -photoWeight * simWeight
+        // 0.6:
+        out_optDepthSim.y = (1.0f - visWeight)*photoWeight*simWeight*depthPhotoStepVal + (1.0f - visWeight)*smoothWeight*(depthSmoothVal / 20.0f);
+    }
 
-        *out_optDepthSim_ptr = out_optDepthSim;
-    };
+    *out_optDepthSim_ptr = out_optDepthSim;
 }
 
 } // namespace depthMap
