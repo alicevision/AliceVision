@@ -36,11 +36,11 @@ __global__ void refine_compUpdateYKNCCSimMapPatch_kernel(cudaTextureObject_t rc_
 
         odpt = size(p - sg_s_r.C);
 
-        patch ptch;
+        Patch ptch;
         ptch.p = p;
         ptch.d = computePixSize(p);
         // TODO: we could compute the orientation of the path from the input depth map instead of relying on the cameras orientations
-        computeRotCSEpip(ptch, p);
+        computeRotCSEpip(ptch);
         osim = compNCCby3DptsYK(rc_tex, tc_tex, ptch, wsh, imWidth, imHeight, gammaC, gammaP, epipShift);
     }
 
@@ -89,10 +89,10 @@ __global__ void refine_compYKNCCSimMapPatch_kernel(cudaTextureObject_t rc_tex, c
         // move3DPointByTcPixStep(p, tcStep);
         move3DPointByTcOrRcPixStep(pix, p, tcStep, moveByTcOrRc);
 
-        patch ptch;
+        Patch ptch;
         ptch.p = p;
         ptch.d = computePixSize(p);
-        computeRotCSEpip(ptch, p);
+        computeRotCSEpip(ptch);
         osim = compNCCby3DptsYK(rc_tex, tc_tex, ptch, wsh, imWidth, imHeight, gammaC, gammaP, epipShift);
     }
     *get2DBufferAt(osimMap, osimMap_p, x, y) = osim;

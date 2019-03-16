@@ -9,15 +9,13 @@
 namespace aliceVision {
 namespace depthMap {
 
-// patch exhaustive search
-
-struct patch
+struct Patch
 {
-	float3 p; //< 3d point
-	float3 n; //< normal
-	float3 x; //< 
-	float3 y; //< 
-    float d;  //< 
+    float3 p; //< 3d point
+    float3 n; //< normal
+    float3 x; //< x axis
+    float3 y; //< y axis
+    float d;  //< pixel size
 };
 
 __device__ void rotPointAroundVect(float3& out, float3& X, float3& vect, int angle)
@@ -58,7 +56,7 @@ __device__ void rotPointAroundVect(float3& out, float3& X, float3& vect, int ang
     out.z = z * sizeX;
 }
 
-__device__ void rotatePatch(patch& ptch, int rx, int ry)
+__device__ void rotatePatch(Patch& ptch, int rx, int ry)
 {
     float3 n, y, x;
 
@@ -75,7 +73,7 @@ __device__ void rotatePatch(patch& ptch, int rx, int ry)
     ptch.x = x;
 }
 
-__device__ void movePatch(patch& ptch, int pt)
+__device__ void movePatch(Patch& ptch, int pt)
 {
     // float3 v = ptch.p-rC;
     // normalize(v);

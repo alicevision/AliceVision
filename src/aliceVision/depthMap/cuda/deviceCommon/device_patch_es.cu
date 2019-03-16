@@ -18,15 +18,12 @@ namespace depthMap {
 
 __device__ void computeRotCSEpip( const CameraStructBase* rc_cam_s,
                                   const CameraStructBase* tc_cam_s,
-                                  patch& ptch,
-                                  const float3& p )
+                                  Patch& ptch )
 {
-    ptch.p = p;
-
     // Vector from the reference camera to the 3d point
-    float3 v1 = rc_cam_s->C - p;
+    float3 v1 = rc_cam_s->C - ptch.p;
     // Vector from the target camera to the 3d point
-    float3 v2 = tc_cam_s->C - p;
+    float3 v2 = tc_cam_s->C - ptch.p;
     normalize(v1);
     normalize(v2);
 
@@ -45,15 +42,12 @@ __device__ void computeRotCSEpip( const CameraStructBase* rc_cam_s,
     normalize(ptch.x);
 }
 
-__device__ void computeRotCSEpip( patch& ptch,
-                                  const float3& p )
+__device__ void computeRotCSEpip(Patch& ptch)
 {
-    ptch.p = p;
-
     // Vector from the reference camera to the 3d point
-    float3 v1 = sg_s_r.C - p;
+    float3 v1 = sg_s_r.C - ptch.p;
     // Vector from the target camera to the 3d point
-    float3 v2 = sg_s_t.C - p;
+    float3 v2 = sg_s_t.C - ptch.p;
     normalize(v1);
     normalize(v2);
 
@@ -77,7 +71,7 @@ __device__ int angleBetwUnitV1andUnitV2(float3& V1, float3& V2)
     return (int)fabs(acos(V1.x * V2.x + V1.y * V2.y + V1.z * V2.z) / (CUDART_PI_F / 180.0f));
 }
 
-__device__ bool checkPatch(patch& ptch, int angThr)
+__device__ bool checkPatch(Patch& ptch, int angThr)
 {
 
     float3 rv = (sg_s_r.C - ptch.p);
@@ -98,7 +92,7 @@ __device__ bool checkPatch(patch& ptch, int angThr)
 }
 
 /*
-__device__ float getRefCamPixSize(patch &ptch)
+__device__ float getRefCamPixSize(Patch &ptch)
 {
         float2 rp = project3DPoint(sg_s_r.P,ptch.p);
 
@@ -118,7 +112,7 @@ __device__ float getRefCamPixSize(patch &ptch)
         return minstep;
 }
 
-__device__ float getTarCamPixSize(patch &ptch)
+__device__ float getTarCamPixSize(Patch &ptch)
 {
         float2 tp = project3DPoint(sg_s_t.P,ptch.p);
 
@@ -138,7 +132,7 @@ __device__ float getTarCamPixSize(patch &ptch)
         return minstep;
 }
 
-__device__ float getPatchPixSize(patch &ptch)
+__device__ float getPatchPixSize(Patch &ptch)
 {
         return fmaxf(getTarCamPixSize(ptch),getRefCamPixSize(ptch));
 }
@@ -176,7 +170,7 @@ __device__ void computeHomography(float* _H, const float3& _p, const float3& _n)
 }
 
 /*
-__device__ float compNCCbyH(const patch& ptch, int wsh)
+__device__ float compNCCbyH(const Patch& ptch, int wsh)
 {
     float2 rpix = project3DPoint(sg_s_r.P, ptch.p);
     float2 tpix = project3DPoint(sg_s_t.P, ptch.p);
@@ -224,7 +218,7 @@ __device__ float compNCCby3DptsYK( cudaTextureObject_t rc_tex,
                                    cudaTextureObject_t tc_tex,
                                    const CameraStructBase* rc_cam_s,
                                    const CameraStructBase* tc_cam_s,
-                                   const patch& ptch,
+                                   const Patch& ptch,
                                    int wsh,
                                    int rc_width, int rc_height,
                                    int tc_width, int tc_height,
@@ -294,7 +288,7 @@ __device__ float compNCCby3DptsYK( cudaTextureObject_t rc_tex,
 
 __device__ float compNCCby3DptsYK(
         cudaTextureObject_t rc_tex, cudaTextureObject_t tc_tex,
-        const patch& ptch, int wsh, int width, int height, const float _gammaC, const float _gammaP,
+        const Patch& ptch, int wsh, int width, int height, const float _gammaC, const float _gammaP,
         const float epipShift)
 {
     float3 p = ptch.p;
@@ -475,7 +469,7 @@ __device__ float computeRcPixSize(const float3& p)
     /*
     patch ptcho;
     ptcho.p = p;
-    computeRotCSEpip(ptcho,p);
+    computeRotCSEpip(ptcho);
     float2 rp = project3DPoint(sg_s_r.P, p);
 
     float dRcTc = size(sg_s_r.C-sg_s_t.C)/100.0f;
