@@ -635,7 +635,7 @@ StaticVector<float>* PlaneSweepingCuda::getDepthsRcTc(int rc, int tc, int scale,
 
 bool PlaneSweepingCuda::refineRcTcDepthMap(bool useTcOrRcPixSize, int nStepsToRefine, StaticVector<float>& out_simMap,
                                              StaticVector<float>& out_rcDepthMap, int rc, int tc, int scale, int wsh,
-                                             float gammaC, float gammaP, float epipShift, int xFrom, int wPart)
+                                             float gammaC, float gammaP, int xFrom, int wPart)
 {
     // int w = _mp.getWidth(rc)/scale;
     int w = wPart;
@@ -661,7 +661,7 @@ bool PlaneSweepingCuda::refineRcTcDepthMap(bool useTcOrRcPixSize, int nStepsToRe
                         ttcams,
                         w, h, _mp.getWidth(rc) / scale,
                         _mp.getHeight(rc) / scale, scale - 1, _CUDADeviceNo, _nImgsInGPUAtTime, _mp.verbose, wsh,
-                        gammaC, gammaP, epipShift, useTcOrRcPixSize, xFrom);
+                        gammaC, gammaP, useTcOrRcPixSize, xFrom);
 
     mvsUtils::printfElapsedTime(t1);
 

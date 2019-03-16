@@ -108,8 +108,7 @@ void RefineRc::refineAndFuseDepthSimMapCUDA(DepthSimMap& out_depthSimMapFused, c
         DepthSimMap* depthSimMapC = new DepthSimMap(_rc, _sp.mp, scale, 1);
         depthSimMapC->initJustFromDepthMap(depthPixSizeMapVis, 1.0f);
 
-        prt.refineRcTcDepthSimMap(_userTcOrPixSize, depthSimMapC, _rc, tc, _nbDepthsToRefine, _refineWsh, _refineGammaC, _refineGammaP,
-                                       0.0f);
+        prt.refineRcTcDepthSimMap(_userTcOrPixSize, depthSimMapC, _rc, tc, _nbDepthsToRefine, _refineWsh, _refineGammaC, _refineGammaP);
 
         dataMaps.push_back(depthSimMapC);
 

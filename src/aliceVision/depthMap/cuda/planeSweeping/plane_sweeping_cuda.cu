@@ -767,7 +767,7 @@ void ps_refineRcDepthMap(Pyramids& ps_texs_arr, float* out_osimMap_hmh,
                          const std::vector<CameraStruct>& cams,
                          int width, int height,
                          int imWidth, int imHeight, int scale, int CUDAdeviceNo, int ncamsAllocated,
-                         bool verbose, int wsh, float gammaC, float gammaP, float epipShift,
+                         bool verbose, int wsh, float gammaC, float gammaP,
                          bool moveByTcOrRc, int xFrom)
 {
     ///////////////////////////////////////////////////////////////////////////////
@@ -798,7 +798,7 @@ void ps_refineRcDepthMap(Pyramids& ps_texs_arr, float* out_osimMap_hmh,
             bestSimMap_dmp.getBuffer(), bestSimMap_dmp.getPitch(),
             bestDptMap_dmp.getBuffer(), bestDptMap_dmp.getPitch(),
             rcDepthMap_dmp.getBuffer(), rcDepthMap_dmp.getPitch(),
-            width, height, wsh, gammaC, gammaP, epipShift,
+            width, height, wsh, gammaC, gammaP,
             (float)(i - (ntcsteps - 1) / 2), i, moveByTcOrRc, xFrom, imWidth, imHeight);
     }
 
@@ -812,7 +812,7 @@ void ps_refineRcDepthMap(Pyramids& ps_texs_arr, float* out_osimMap_hmh,
         simMap_dmp.getBuffer(), simMap_dmp.getPitch(),
         bestDptMap_dmp.getBuffer(), bestDptMap_dmp.getPitch(),
         width,
-        height, wsh, gammaC, gammaP, epipShift, -1.0f, moveByTcOrRc, xFrom, imWidth, imHeight);
+        height, wsh, gammaC, gammaP, -1.0f, moveByTcOrRc, xFrom, imWidth, imHeight);
 
 
     refine_setLastThreeSimsMap_kernel<<<grid, block>>>(
@@ -825,7 +825,7 @@ void ps_refineRcDepthMap(Pyramids& ps_texs_arr, float* out_osimMap_hmh,
         simMap_dmp.getBuffer(), simMap_dmp.getPitch(),
         bestDptMap_dmp.getBuffer(), bestDptMap_dmp.getPitch(),
         width,
-        height, wsh, gammaC, gammaP, epipShift, +1.0f, moveByTcOrRc, xFrom, imWidth, imHeight);
+        height, wsh, gammaC, gammaP, +1.0f, moveByTcOrRc, xFrom, imWidth, imHeight);
 
 
     refine_setLastThreeSimsMap_kernel<<<grid, block>>>(

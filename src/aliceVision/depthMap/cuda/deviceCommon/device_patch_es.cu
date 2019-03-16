@@ -210,7 +210,6 @@ __device__ float compNCCbyH(const Patch& ptch, int wsh)
  * @param[in] height image height
  * @param[in] _gammaC
  * @param[in] _gammaP
- * @param[in] epipShift
  * 
  * @return similarity value
  */
@@ -261,8 +260,6 @@ __device__ float compNCCby3DptsYK( cudaTextureObject_t rc_tex,
             p = ptch.p + ptch.x * (float)(ptch.d * (float)xp) + ptch.y * (float)(ptch.d * (float)yp);
             float2 rp1 = project3DPoint(rc_cam_s->P, p);
             float2 tp1 = project3DPoint(tc_cam_s->P, p);
-            // float2 rp1 = rp + rvLeft*(float)xp + rvUp*(float)yp;
-            // float2 tp1 = tp + tvLeft*(float)xp + tvUp*((float)yp+epipShift);
 
             // see CUDA_C_Programming_Guide.pdf ... E.2 pp132-133 ... adding 0.5 caises that tex2D return for point i,j
             // exactly value od I(i,j) ... it is what we want
@@ -288,19 +285,11 @@ __device__ float compNCCby3DptsYK( cudaTextureObject_t rc_tex,
 
 __device__ float compNCCby3DptsYK(
         cudaTextureObject_t rc_tex, cudaTextureObject_t tc_tex,
-        const Patch& ptch, int wsh, int width, int height, const float _gammaC, const float _gammaP,
-        const float epipShift)
+        const Patch& ptch, int wsh, int width, int height, const float _gammaC, const float _gammaP)
 {
     float3 p = ptch.p;
     float2 rp = project3DPoint(sg_s_r.P, p);
     float2 tp = project3DPoint(sg_s_t.P, p);
-
-    float3 pUp = p + ptch.y * (ptch.d * 10.0f); // assuming that ptch.y is ortogonal to epipolar plane
-    float2 tvUp = project3DPoint(sg_s_t.P, pUp);
-    tvUp = tvUp - tp;
-    normalize(tvUp);
-    float2 vEpipShift = tvUp * epipShift;
-    tp = tp + vEpipShift;
 
     const float dd = wsh + 2.0f;
     if((rp.x < dd) || (rp.x > (float)(width  - 1) - dd) ||
@@ -328,9 +317,7 @@ __device__ float compNCCby3DptsYK(
         {
             p = ptch.p + ptch.x * (float)(ptch.d * (float)xp) + ptch.y * (float)(ptch.d * (float)yp);
             float2 rp1 = project3DPoint(sg_s_r.P, p);
-            float2 tp1 = project3DPoint(sg_s_t.P, p) + vEpipShift;
-            // float2 rp1 = rp + rvLeft*(float)xp + rvUp*(float)yp;
-            // float2 tp1 = tp + tvLeft*(float)xp + tvUp*((float)yp+epipShift);
+            float2 tp1 = project3DPoint(sg_s_t.P, p);
 
             // see CUDA_C_Programming_Guide.pdf ... E.2 pp132-133 ... adding 0.5 caises that tex2D return for point i,j
             // exactly value od I(i,j) ... it is what we want

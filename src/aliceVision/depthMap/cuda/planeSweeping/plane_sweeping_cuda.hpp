@@ -88,7 +88,6 @@ void ps_refineRcDepthMap(
     bool verbose,
     int wsh,
     float gammaC, float gammaP,
-    float epipShift,
     bool moveByTcOrRc,
     int xFrom);
 

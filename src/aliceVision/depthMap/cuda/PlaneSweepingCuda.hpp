@@ -85,7 +85,7 @@ public:
 
     bool refineRcTcDepthMap(bool useTcOrRcPixSize, int nStepsToRefine, StaticVector<float>& out_simMap,
                             StaticVector<float>& out_rcDepthMap, int rc, int tc, int scale, int wsh, float gammaC,
-                            float gammaP, float epipShift, int xFrom, int wPart);
+                            float gammaP, int xFrom, int wPart);
 
 private:
     /* Needed to compensate for _nImgsInGPUAtTime that are smaller than |index_set|-1 */
