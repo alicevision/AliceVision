@@ -30,6 +30,7 @@ alicevision_add_library(aliceVision_matching
     aliceVision_numeric
     aliceVision_stl
     aliceVision_system
+    lz4
   PRIVATE_LINKS
     ${Boost_FILESYSTEM_LIBRARY}
     ${FLANN_LIBRARY}
