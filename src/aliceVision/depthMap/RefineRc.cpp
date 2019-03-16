@@ -89,6 +89,8 @@ void RefineRc::getDepthPixSizeMapFromSGM(DepthSimMap& out_depthSimMapScale1Step1
 
 void RefineRc::refineAndFuseDepthSimMapCUDA(DepthSimMap& out_depthSimMapFused, const DepthSimMap& depthPixSizeMapVis)
 {
+    auto startTime = std::chrono::high_resolution_clock::now();
+
     int w11 = _sp.mp.getWidth(_rc);
     int h11 = _sp.mp.getHeight(_rc);
 
@@ -168,12 +170,15 @@ void RefineRc::refineAndFuseDepthSimMapCUDA(DepthSimMap& out_depthSimMapFused, c
     {
         delete dataMaps[c];
     }
+    ALICEVISION_LOG_INFO("==== refineAndFuseDepthSimMapCUDA done in : " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - startTime).count() << "ms.");
 }
 
 void RefineRc::optimizeDepthSimMapCUDA(DepthSimMap& out_depthSimMapOptimized,
                                        const DepthSimMap& depthPixSizeMapVis,
                                        const DepthSimMap& depthSimMapPhoto)
 {
+    auto startTime = std::chrono::high_resolution_clock::now();
+
     int h11 = _sp.mp.getHeight(_rc);
 
     StaticVector<const StaticVector<DepthSim>*> dataMaps;
@@ -189,6 +194,7 @@ void RefineRc::optimizeDepthSimMapCUDA(DepthSimMap& out_depthSimMapOptimized,
         _sp.cps.optimizeDepthSimMapGradientDescent(out_depthSimMapOptimized._dsm, dataMaps, _rc, _refineNSamplesHalf,
                                                     _nbDepthsToRefine, _refineSigma, _refineNiters, yFrom, hPartAct);
     }
+    ALICEVISION_LOG_INFO("==== optimizeDepthSimMapCUDA done in : " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - startTime).count() << "ms.");
 }
 
 bool RefineRc::refinerc(bool checkIfExists)
@@ -216,9 +222,10 @@ bool RefineRc::refinerc(bool checkIfExists)
     getDepthPixSizeMapFromSGM(depthPixSizeMapVis);
 
     DepthSimMap depthSimMapPhoto(_rc, _sp.mp, 1, 1);
+
     if (_sp.doRefineFuse)
     {
-      refineAndFuseDepthSimMapCUDA(depthSimMapPhoto, depthPixSizeMapVis);
+        refineAndFuseDepthSimMapCUDA(depthSimMapPhoto, depthPixSizeMapVis);
     }
     else
     {
@@ -236,10 +243,10 @@ bool RefineRc::refinerc(bool checkIfExists)
 
     if(_sp.exportIntermediateResults)
     {
-      depthPixSizeMapVis.saveToImage(_sp.mp.getDepthMapsFolder() + "refine_" + std::to_string(viewId) + "_vis.png", 0.0f);
-      // depthSimMapPhoto.saveToImage(_sp.mp.getDepthMapsFolder() + "refine_" + std::to_string(viewId) + "_photo.png", 0.0f);
-      depthSimMapPhoto.save("_photo");
-      // _depthSimMapOpt.saveToImage(_sp.mp.getDepthMapsFolder() + "refine_" + std::to_string(viewId) + "_opt.png", 0.0f);
+        // depthPixSizeMapVis.saveToImage(_sp.mp.getDepthMapsFolder() + "refine_" + std::to_string(viewId) + "_vis.png", 0.0f);
+        // depthSimMapPhoto.saveToImage(_sp.mp.getDepthMapsFolder() + "refine_" + std::to_string(viewId) + "_photo.png", 0.0f);
+        depthSimMapPhoto.save("_photo");
+        // _depthSimMapOpt.saveToImage(_sp.mp.getDepthMapsFolder() + "refine_" + std::to_string(viewId) + "_opt.png", 0.0f);
     }
 
     mvsUtils::printfElapsedTime(tall, "Refine CUDA (rc: " + mvsUtils::num2str(_rc) + " / " + mvsUtils::num2str(_sp.mp.ncams) + ")");
@@ -332,12 +339,16 @@ void estimateAndRefineDepthMaps(int cudaDeviceNo, mvsUtils::MultiViewParams& mp,
       RefineRc sgmRefineRc(rc, sgmScale, sgmStep, sp);
 
       // sgmRefineRc.preloadSgmTcams_async();
+      auto startTime = std::chrono::high_resolution_clock::now();
 
       ALICEVISION_LOG_INFO("Estimate depth map, view id: " << mp.getViewId(rc));
       sgmRefineRc.sgmrc();
+      ALICEVISION_LOG_INFO("==== SGM done in : " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - startTime).count() << "ms.");
 
+      startTime = std::chrono::high_resolution_clock::now();
       ALICEVISION_LOG_INFO("Refine depth map, view id: " << mp.getViewId(rc));
       sgmRefineRc.refinerc();
+      ALICEVISION_LOG_INFO("==== RefineRC done in : " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - startTime).count() << "ms.");
 
       // write results
       sgmRefineRc.writeDepthMap();

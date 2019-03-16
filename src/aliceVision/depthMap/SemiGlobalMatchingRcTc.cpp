@@ -64,7 +64,7 @@ void SemiGlobalMatchingRcTc::computeDepthSimMapVolume(
         float gammaC,
         float gammaP)
 {
-    const long tall = clock();
+    auto startTime = std::chrono::high_resolution_clock::now();
 
     const int volStepXY = _step;
     const int volDimX   = _w;
@@ -98,7 +98,7 @@ void SemiGlobalMatchingRcTc::computeDepthSimMapVolume(
                                  _rcSilhoueteMap,
                                  wsh, gammaC, gammaP, _scale);
 
-    mvsUtils::printfElapsedTime(tall, "SemiGlobalMatchingRcTc::computeDepthSimMapVolume ");
+    ALICEVISION_LOG_INFO("==== computeDepthSimMapVolume done in : " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - startTime).count() << "ms.");
 }
 
 } // namespace depthMap

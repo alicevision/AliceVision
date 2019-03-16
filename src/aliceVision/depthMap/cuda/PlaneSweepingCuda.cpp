@@ -783,10 +783,7 @@ void PlaneSweepingCuda::sweepPixelsToVolumeSubset(
             _mp.verbose,
             gammaC, gammaP);
 
-    if(_mp.verbose)
-    {
-      ALICEVISION_LOG_DEBUG("sweepPixelsToVolumeSubset elapsed time: " << toc(t1) << " ms.");
-    }
+    ALICEVISION_LOG_DEBUG("sweepPixelsToVolumeSubset elapsed time: " << toc(t1) << " ms.");
 }
 
 /**
@@ -796,12 +793,13 @@ bool PlaneSweepingCuda::SGMoptimizeSimVolume(int rc, CudaDeviceMemoryPitched<flo
                                                int volDimX, int volDimY, int volDimZ, 
                                                int scale, unsigned char P1, unsigned char P2)
 {
+    auto startTime = std::chrono::high_resolution_clock::now();
+
     ALICEVISION_LOG_DEBUG("SGM optimizing volume:" << std::endl
                           << "\t- volDimX: " << volDimX << std::endl
                           << "\t- volDimY: " << volDimY << std::endl
                           << "\t- volDimZ: " << volDimZ);
 
-    long t1 = clock();
     int camCacheIndex = addCam(rc, scale, nullptr, __FUNCTION__);
     ps_SGMoptimizeSimVolume(_pyramids,
                             _cams[camCacheIndex],
@@ -810,7 +808,7 @@ bool PlaneSweepingCuda::SGMoptimizeSimVolume(int rc, CudaDeviceMemoryPitched<flo
                             _mp.verbose, P1, P2, scale,
                             _CUDADeviceNo, _nImgsInGPUAtTime);
 
-    mvsUtils::printfElapsedTime(t1);
+    ALICEVISION_LOG_INFO("==== SGMoptimizeSimVolume done in : " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - startTime).count() << "ms.");
 
     return true;
 }

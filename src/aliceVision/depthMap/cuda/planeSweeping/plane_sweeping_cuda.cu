@@ -564,25 +564,22 @@ void ps_SGMoptimizeSimVolume(Pyramids& ps_texs_arr,
                              bool verbose, unsigned char P1, unsigned char P2,
                              int scale, int CUDAdeviceNo, int ncamsAllocated)
 {
-    if(verbose)
-        printf("ps_SGMoptimizeSimVolume\n");
-
     ps_init_reference_camera_matrices(rccam.param_hst);
 
     clock_t tall = tic();
 
-    ///////////////////////////////////////////////////////////////////////////////
     // setup block and grid
     int block_size = 8;
     dim3 blockvol(block_size, block_size, 1);
     dim3 gridvol(divUp(volDimX, block_size), divUp(volDimY, block_size), 1);
 
-    // printf("total size of volume map in GPU memory: %f\n",(float)d_volSim.getBytes()/(1024.0f*1024.0f));
+    if (verbose)
+        printf("ps_SGMoptimizeSimVolume: Total size of volume map in GPU memory: %f\n", double(volSim_dmp.getBytesPadded())/(1024.0*1024.0));
 
     // Don't need to initialize this buffer
     // ps_updateAggrVolume multiplies the initial value by npaths, which is 0 at first call
     CudaDeviceMemoryPitched<float, 3> volAgr_dmp(CudaSize<3>(volDimX, volDimY, volDimZ));
-    
+
     // update aggregation volume
     int npaths = 0;
     cudaTextureObject_t rc_tex = ps_texs_arr[rccam.camId][scale - 1].tex;
@@ -602,11 +599,11 @@ void ps_SGMoptimizeSimVolume(Pyramids& ps_texs_arr,
 
     // XYZ -> XZY
     updateAggrVolume(0, 2, 1, false);
-    // XYZ -> XZ'Y
+    // XYZ -> XZY'
     updateAggrVolume(0, 2, 1, true);
     // XYZ -> YZX
     updateAggrVolume(1, 2, 0, false);
-    // XYZ -> YZ'X
+    // XYZ -> YZX'
     updateAggrVolume(1, 2, 0, true);
 
     if(verbose)
