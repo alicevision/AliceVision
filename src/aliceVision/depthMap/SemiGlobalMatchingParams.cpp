@@ -47,7 +47,8 @@ SemiGlobalMatchingParams::SemiGlobalMatchingParams(mvsUtils::MultiViewParams& _m
         mp.userParams.get<bool>("semiGlobalMatching.saveDepthsToSweepToTxtForVis", false);
 
     doSGMoptimizeVolume = mp.userParams.get<bool>("semiGlobalMatching.doSGMoptimizeVolume", true);
-    doRefineRc = mp.userParams.get<bool>("semiGlobalMatching.doRefineRc", true);
+    doRefineFuse = mp.userParams.get<bool>("semiGlobalMatching.doRefineFuse", true);
+    doRefineOpt = mp.userParams.get<bool>("semiGlobalMatching.doRefineOpt", true);
 
     modalsMapDistLimit = mp.userParams.get<int>("semiGlobalMatching.modalsMapDistLimit", 2);
     minNumOfConsistentCams = mp.userParams.get<int>("semiGlobalMatching.minNumOfConsistentCams", 2);

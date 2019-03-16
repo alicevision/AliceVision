@@ -47,7 +47,8 @@ public:
     float maxTcRcPixSizeInVoxRatio;
     int nSGGCIters;
     bool doSGMoptimizeVolume;
-    bool doRefineRc;
+    bool doRefineFuse;
+    bool doRefineOpt;
     std::string SGMoutDirName;
     std::string SGMtmpDirName;
     bool useSilhouetteMaskCodedByColor;
