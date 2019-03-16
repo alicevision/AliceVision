@@ -10,6 +10,7 @@
 #include <aliceVision/mvsData/geometry.hpp>
 #include <aliceVision/mvsData/Matrix3x4.hpp>
 #include <aliceVision/mvsData/Pixel.hpp>
+#include <aliceVision/mvsData/image.hpp>
 #include <aliceVision/mvsUtils/fileIO.hpp>
 #include <aliceVision/mvsUtils/common.hpp>
 #include <aliceVision/imageIO/image.hpp>
@@ -72,7 +73,8 @@ MultiViewParams::MultiViewParams(const sfmData::SfMData& sfmData,
             const fs::recursive_directory_iterator end;
             const auto findIt = std::find_if(fs::recursive_directory_iterator(_imagesFolder), end,
                                      [&view](const fs::directory_entry& e) {
-                                        return e.path().stem() == std::to_string(view.getViewId());
+                                        return (e.path().stem() == std::to_string(view.getViewId()) &&
+                                        (isSupportedUndistortFormat(e.path().extension().string())));
                                      });
 
             if(findIt == end)
