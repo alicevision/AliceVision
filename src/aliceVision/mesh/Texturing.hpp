@@ -137,21 +137,21 @@ public:
     void unwrap(mvsUtils::MultiViewParams& mp, EUnwrapMethod method);
 
     /**
-     * @brief Generate automatic texture atlasing and UV coordinates based on points visibilities
+     * @brief Generate automatic texture atlasing and UV coordinates based on points visibilities with the "Basic" method.
      *
      * Requires internal mesh 'me' to be initialized.
      *
      * @param mp
      */
-    void generateUVs(mvsUtils::MultiViewParams &mp);
+    void generateUVsBasicMethod(mvsUtils::MultiViewParams &mp);
 
     /// Generate texture files for all texture atlases
     void generateTextures(const mvsUtils::MultiViewParams& mp,
                           const bfs::path &outPath, EImageFileType textureFileType = EImageFileType::PNG);
 
-    /// Generate texture files for the given texture atlas index
-    void generateTexture(const mvsUtils::MultiViewParams& mp,
-                         size_t atlasID, mvsUtils::ImagesCache& imageCache,
+    /// Generate texture files for the given sub-set of texture atlases
+    void generateTexturesSubSet(const mvsUtils::MultiViewParams& mp,
+                         std::vector<size_t> atlasIDs, mvsUtils::ImagesCache& imageCache,
                          const bfs::path &outPath, EImageFileType textureFileType = EImageFileType::PNG);
 
     /// Save textured mesh as an OBJ + MTL file
