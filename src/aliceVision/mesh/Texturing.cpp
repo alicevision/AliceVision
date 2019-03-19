@@ -542,7 +542,7 @@ void Texturing::generateTexturesSubSet(const mvsUtils::MultiViewParams& mp,
                        if(color == Color(0.f, 0.f, 0.f))
                            continue;
                        // fill the accumulated color map for this pixel
-                       accuImage.img[xyoffset] = accuImage.img[xyoffset] + color;
+                       accuImage.img[xyoffset] += color;
                        accuImage.imgCount[xyoffset] += 1;
                    }
                }
@@ -566,7 +566,7 @@ void Texturing::generateTexturesSubSet(const mvsUtils::MultiViewParams& mp,
             {
                 unsigned int xyoffset = yoffset + xp;
                 if(accuImage.imgCount[xyoffset])
-                    accuImage.img[xyoffset] = accuImage.img[xyoffset] / accuImage.imgCount[xyoffset];
+                    accuImage.img[xyoffset] /= accuImage.imgCount[xyoffset];
             }
         }
 
