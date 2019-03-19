@@ -240,8 +240,7 @@ bool RefineRc::refinerc(bool checkIfExists)
     // generate default depthSimMap if rc has no tcam
     if(_refineTCams.size() == 0 || _depths == nullptr)
     {
-        DepthSimMap depthSimMapOpt(_rc, _sp->mp, 1, 1);
-        depthSimMapOpt.save(_rc, StaticVector<int>() );
+        _depthSimMapOpt = new DepthSimMap(_rc, _sp->mp, 1, 1);
         return true;
     }
 
