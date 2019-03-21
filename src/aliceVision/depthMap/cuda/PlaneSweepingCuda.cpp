@@ -292,7 +292,7 @@ int PlaneSweepingCuda::addCam( int rc, int scale,
         cps_host_fillCamera(_camsBasesHst(0,id), rc, _mp, scale, calling_func);
         cps_host_fillCameraData(_ic, cam, rc, _mp, rcSilhoueteMap);
         ps_device_updateCam(_pyramids, cam, id,
-                           _CUDADeviceNo, _nImgsInGPUAtTime, _scales, _mp.getWidth(rc), _mp.getHeight(rc), _varianceWSH);
+                           _CUDADeviceNo, _nImgsInGPUAtTime, _scales, _mp.getWidth(rc), _mp.getHeight(rc));
 
         mvsUtils::printfElapsedTime(t1, "Copy image (camera id="+std::to_string(rc)+") from CPU to GPU");
 

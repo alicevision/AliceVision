@@ -253,12 +253,12 @@ void ps_testCUDAdeviceNo(int CUDAdeviceNo)
 
 void ps_device_updateCam( Pyramids& ps_texs_arr,
                          const CameraStruct& cam, int camId, int CUDAdeviceNo,
-                         int ncamsAllocated, int scales, int w, int h, int varianceWsh)
+                         int ncamsAllocated, int scales, int w, int h)
 {
     std::cerr << std::endl
               << "Calling " << __FUNCTION__ << std::endl
               << "    for camera id " << camId << " and " << scales << " scales"
-              << ", w: " << w << ", h: " << h << ", ncamsAllocated: " << ncamsAllocated << ", varianceWsh: " << varianceWsh
+              << ", w: " << w << ", h: " << h << ", ncamsAllocated: " << ncamsAllocated
               << std::endl << std::endl;
 
     {
@@ -272,18 +272,6 @@ void ps_device_updateCam( Pyramids& ps_texs_arr,
             ps_texs_arr[camId][0].arr->getBuffer(), ps_texs_arr[camId][0].arr->getPitch(),
             w, h);
         CHECK_CUDA_ERROR();
-        // compute gradient
-        if(varianceWsh > 0)
-        {
-            // Reading from obj.tex and writing to obj.arr is somewhat dangerous,
-            // but elements read from obj.tex are not updated in compute_varLofLABtoW_kernel.
-          compute_varLofLABtoW_kernel
-                <<<grid, block>>>
-                ( ps_texs_arr[camId][0].tex,
-                  ps_texs_arr[camId][0].arr->getBuffer(), ps_texs_arr[camId][0].arr->getPitch(),
-                  w, h);
-            CHECK_CUDA_ERROR();
-        }
     }
 
     ps_create_gaussian_arr( CUDAdeviceNo, scales );
@@ -302,19 +290,8 @@ void ps_device_updateCam( Pyramids& ps_texs_arr,
         const dim3 grid(divUp(sWidth, block.x), divUp(sHeight, block.y), 1);
         ALICEVISION_CU_PRINT_DEBUG("ps_downscale_gauss: block=(" << block.x << ", " << block.y << ", " << block.z << "), grid=(" << grid.x << ", " << grid.y << ", " << grid.z << ")");
 
-        ps_downscale_gauss( ps_texs_arr, camId, scale, w, h, radius );
+        ps_downscale_gauss(ps_texs_arr, camId, scale, w, h, radius);
         CHECK_CUDA_ERROR();
-
-        if(varianceWsh > 0)
-        {
-            compute_varLofLABtoW_kernel
-                <<<grid, block>>>
-                ( ps_texs_arr[camId][scale].tex,
-                  ps_texs_arr[camId][scale].arr->getBuffer(),
-                  ps_texs_arr[camId][scale].arr->getPitch(),
-                  sWidth, sHeight);
-            CHECK_CUDA_ERROR();
-        }
     }
 
     CHECK_CUDA_ERROR();
@@ -941,20 +918,41 @@ void ps_optimizeDepthSimMapGradientDescent(Pyramids& ps_texs_arr,
     CudaDeviceMemoryPitched<float2, 2> optDepthSimMap_dmp(CudaSize<2>(width, height));
     CudaArray<float, 2> optDepthMap_arr(CudaSize<2>(width, height));
     copy(optDepthSimMap_dmp, (*dataMaps_dmp[0]));
-    
+
     cudaTextureObject_t rc_tex = ps_texs_arr[cams[0].camId][scale].tex;
 
-    /*
-    TODO FACA: compute variance in a new buffer
+    CudaDeviceMemoryPitched<float, 2> variance_dmp(CudaSize<2>(width, height));
+    cudaTextureObject_t varianceTex = 0;
+
     {
-      const dim3 lblock(32, 2, 1);
-      const dim3 lgrid(divUp(width, block.x), divUp(height, block.y), 1);
-      compute_varLofLABtoW_kernel
-        <<<lgrid, lblock >>>
-        (ps_texs_arr[camId][0].tex,
-          ps_texs_arr[camId][0].arr->getBuffer(), ps_texs_arr[camId][0].arr->getPitch(),
-          w, h, 1);
-    }*/
+        const dim3 lblock(32, 2, 1);
+        const dim3 lgrid(divUp(width, block.x), divUp(height, block.y), 1);
+
+        compute_varLofLABtoW_kernel<<<lgrid, lblock>>>
+            (rc_tex,
+            variance_dmp.getBuffer(), variance_dmp.getPitch(),
+            width, height);
+
+        cudaTextureDesc  tex_desc;
+        memset(&tex_desc, 0, sizeof(cudaTextureDesc));
+        tex_desc.normalizedCoords = 0; // addressed (x,y) in [width,height]
+        tex_desc.addressMode[0] = cudaAddressModeClamp;
+        tex_desc.addressMode[1] = cudaAddressModeClamp;
+        tex_desc.addressMode[2] = cudaAddressModeClamp;
+        tex_desc.readMode = cudaReadModeElementType;
+        tex_desc.filterMode = cudaFilterModeLinear; // with interpolation
+
+        cudaResourceDesc res_desc;
+        res_desc.resType = cudaResourceTypePitch2D;
+        res_desc.res.pitch2D.desc = cudaCreateChannelDesc<float>();
+        res_desc.res.pitch2D.devPtr = variance_dmp.getBuffer();
+        res_desc.res.pitch2D.width = variance_dmp.getSize()[0];
+        res_desc.res.pitch2D.height = variance_dmp.getSize()[1];
+        res_desc.res.pitch2D.pitchInBytes = variance_dmp.getPitch();
+
+        // create texture object: we only have to do this once!
+        cudaCreateTextureObject(&varianceTex, &res_desc, &tex_desc, NULL);
+    }
 
     for(int iter = 0; iter < nIters; iter++) // nIters: 100 by default
     {
@@ -970,6 +968,7 @@ void ps_optimizeDepthSimMapGradientDescent(Pyramids& ps_texs_arr,
         // Adjust depth/sim by using previously computed depths (depthTex is accessed inside this kernel)
         fuse_optimizeDepthSimMap_kernel<<<grid, block>>>(
             rc_tex, *cams[0].param_dev,
+            varianceTex,
             optDepthSimMap_dmp.getBuffer(), optDepthSimMap_dmp.getPitch(),
             dataMaps_dmp[0]->getBuffer(), dataMaps_dmp[0]->getPitch(),
             dataMaps_dmp[1]->getBuffer(), dataMaps_dmp[1]->getPitch(),
@@ -979,6 +978,8 @@ void ps_optimizeDepthSimMapGradientDescent(Pyramids& ps_texs_arr,
     }
 
     copy((*odepthSimMap_hmh), optDepthSimMap_dmp);
+
+    cudaDestroyTextureObject(varianceTex);
 
     for(int i = 0; i < ndataMaps; i++)
     {

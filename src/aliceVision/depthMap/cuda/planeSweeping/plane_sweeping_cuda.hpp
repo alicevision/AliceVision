@@ -67,8 +67,7 @@ void ps_device_updateCam(
     int CUDAdeviceNo,
     int ncamsAllocated,
     int scales,
-    int w, int h,
-    int varianceWsh);
+    int w, int h);
 
 void ps_deviceDeallocate(
     Pyramids& ps_texs_arr,
