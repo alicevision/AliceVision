@@ -7,6 +7,7 @@ set(mesh_files_headers
   MeshEnergyOpt.hpp
   meshPostProcessing.hpp
   meshVisibility.hpp
+  MultiBandBlending.hpp
   Texturing.hpp
   UVAtlas.hpp
 )
@@ -19,6 +20,7 @@ set(mesh_files_sources
   MeshEnergyOpt.cpp
   meshPostProcessing.cpp
   meshVisibility.cpp
+  MultiBandBlending.cpp
   Texturing.cpp
   UVAtlas.cpp
 )

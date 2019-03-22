@@ -15,6 +15,7 @@
 #include <aliceVision/mvsData/geometry.hpp>
 #include <aliceVision/mvsData/Pixel.hpp>
 #include <aliceVision/imageIO/image.hpp>
+#include <aliceVision/mesh/MultiBandBlending.hpp>
 
 #include <geogram/basic/common.h>
 #include <geogram/basic/geometry_nd.h>
@@ -462,6 +463,17 @@ void Texturing::generateTexturesSubSet(const mvsUtils::MultiViewParams& mp,
 
         imageCache.refreshData(camId);
 
+        //conversion ImagesCache::Img -> Image
+        mvsUtils::ImagesCache::ImgPtr imgPtr = imageCache.getImg_sync(camId);
+        Image camImg(imgPtr->data, imgPtr->getWidth(), imgPtr->getHeight());
+
+        ALICEVISION_LOG_INFO(" - camera " << camId + 1 << " multiBandBlending");
+
+        //Calculate laplacianPyramid
+        MultiBandBlending multiBandBlending;
+        std::vector<Image> pyramidL; //laplacian pyramid
+        multiBandBlending.laplacianPyramid(pyramidL, camImg, camId, 3, 40.0f); //sizeKernel = final blur
+
         // for each output texture file
         for(const auto& c : cameraContributions)
         {
@@ -535,7 +547,14 @@ void Texturing::generateTexturesSubSet(const mvsUtils::MultiViewParams& mp,
                        // exclude out of bounds pixels
                        if(!mp.isPixelInImage(pixRC, camId))
                            continue;
-                       Color color = imageCache.getPixelValueInterpolated(&pixRC, camId);
+
+                       //Color color = imageCache.getPixelValueInterpolated(&pixRC, camId);
+                       Color color(0.f,0.f,0.f);
+                       for(const Image& bandImage : pyramidL)
+                       {
+                           color += bandImage.getInterpolateColor(pixRC);
+                       }
+
                        // If the color is pure zero, we consider it as an invalid pixel.
                        // After correction of radial distortion, some pixels are invalid.
                        // TODO: use an alpha channel instead.
@@ -646,7 +665,6 @@ void Texturing::generateTexturesSubSet(const mvsUtils::MultiViewParams& mp,
         imageIO::writeImage(texturePath.string(), outTextureSide, outTextureSide, accuImage.img);
     }
 }
-
 
 void Texturing::clear()
 {
