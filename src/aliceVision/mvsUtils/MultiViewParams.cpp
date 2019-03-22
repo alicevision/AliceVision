@@ -10,7 +10,7 @@
 #include <aliceVision/mvsData/geometry.hpp>
 #include <aliceVision/mvsData/Matrix3x4.hpp>
 #include <aliceVision/mvsData/Pixel.hpp>
-#include <aliceVision/mvsData/image.hpp>
+#include <aliceVision/mvsData/imageIO.hpp>
 #include <aliceVision/mvsUtils/fileIO.hpp>
 #include <aliceVision/mvsUtils/common.hpp>
 #include <aliceVision/imageIO/image.hpp>

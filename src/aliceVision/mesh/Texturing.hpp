@@ -6,7 +6,7 @@
 
 #pragma once
 
-#include <aliceVision/mvsData/image.hpp>
+#include <aliceVision/mvsData/imageIO.hpp>
 #include <aliceVision/mvsData/Point2d.hpp>
 #include <aliceVision/mvsData/Point3d.hpp>
 #include <aliceVision/mvsData/StaticVector.hpp>

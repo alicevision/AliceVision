@@ -9,7 +9,7 @@
 #include <aliceVision/mesh/Mesh.hpp>
 #include <aliceVision/mesh/Texturing.hpp>
 #include <aliceVision/mesh/meshVisibility.hpp>
-#include <aliceVision/mvsData/image.hpp>
+#include <aliceVision/mvsData/imageIO.hpp>
 #include <aliceVision/mvsUtils/common.hpp>
 #include <aliceVision/mvsUtils/MultiViewParams.hpp>
 #include <aliceVision/system/cmdline.hpp>
