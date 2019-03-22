@@ -145,8 +145,8 @@ void cps_fillCameraData(mvsUtils::ImagesCache* ic, cameraStruct* cam, int c, mvs
         {
             for(pix.x = 0; pix.x < mp->getWidth(c); pix.x++)
             {
-                uchar4& pix_rgba = ic->transposed ? (*cam->tex_rgba_hmh)(pix.x, pix.y) : (*cam->tex_rgba_hmh)(pix.y, pix.x);
-                const uchar4 pc = get( img, pix.x, pix.y ); //  ic.getPixelValue(pix, c);
+                uchar4& pix_rgba = (*cam->tex_rgba_hmh)(pix.x, pix.y);
+                const uchar4 pc = get( img, pix.x, pix.y );
                 pix_rgba = pc;
             }
         }

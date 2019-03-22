@@ -253,7 +253,7 @@ void Texturing::generateUVsBasicMethod(mvsUtils::MultiViewParams& mp)
 void Texturing::generateTextures(const mvsUtils::MultiViewParams &mp,
                                  const boost::filesystem::path &outPath, EImageFileType textureFileType)
 {
-    mvsUtils::ImagesCache imageCache(&mp, 0, false);
+    mvsUtils::ImagesCache imageCache(&mp, 0);
     system::MemoryInfo memInfo = system::getMemoryInfo();
 
     //calculate the maximum number of atlases in memory in Mb
