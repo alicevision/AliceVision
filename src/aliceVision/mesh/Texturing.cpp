@@ -299,7 +299,7 @@ void Texturing::generateTextures(const mvsUtils::MultiViewParams &mp,
 }
 
 void Texturing::generateTexturesSubSet(const mvsUtils::MultiViewParams& mp,
-                                std::vector<size_t> atlasIDs, mvsUtils::ImagesCache& imageCache, const bfs::path& outPath, EImageFileType textureFileType)
+                                const std::vector<size_t>& atlasIDs, mvsUtils::ImagesCache& imageCache, const bfs::path& outPath, EImageFileType textureFileType)
 {
     if(atlasIDs.size() > _atlases.size())
         throw std::runtime_error("Invalid atlas IDs ");
@@ -313,7 +313,7 @@ void Texturing::generateTexturesSubSet(const mvsUtils::MultiViewParams& mp,
     // List of triangle IDs (selected to contribute to the final texturing) per image.
     std::vector<std::map<AtlasIndex, TrianglesId>> contributionsPerCamera(mp.ncams);
 
-    //for each atlasID
+    //for each atlasID, calculate contributionPerCamera
     for(const size_t atlasID : atlasIDs)
     {
         ALICEVISION_LOG_INFO("Generating texture for atlas " << atlasID + 1 << "/" << _atlases.size()

@@ -151,7 +151,7 @@ public:
 
     /// Generate texture files for the given sub-set of texture atlases
     void generateTexturesSubSet(const mvsUtils::MultiViewParams& mp,
-                         std::vector<size_t> atlasIDs, mvsUtils::ImagesCache& imageCache,
+                         const std::vector<size_t>& atlasIDs, mvsUtils::ImagesCache& imageCache,
                          const bfs::path &outPath, EImageFileType textureFileType = EImageFileType::PNG);
 
     /// Save textured mesh as an OBJ + MTL file
