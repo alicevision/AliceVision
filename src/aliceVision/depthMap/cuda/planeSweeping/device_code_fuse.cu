@@ -214,25 +214,25 @@ __global__ void fuse_optimizeDepthSimMap_kernel(cudaTextureObject_t rc_tex,
 
         float depthVisStep = midDepthPixSize.x - depthOpt;
 
-        float depthSmoothVal = depthSmoothStepEnergy.y;
-        float depthPhotoStepVal = fusedDepthSim.y;
+        float depthEnergy = depthSmoothStepEnergy.y;
+        float sim = fusedDepthSim.y;
 
-        float varianceGray = tex2D<float>(varianceTex, (float)x + 0.5f, (float)(y + yFrom) + 0.5f);
-
-        // archive: 
-        // float varianceGrayAndleWeight = sigmoid2(5.0f, 60.0f, 10.0f, 5.0f, varianceGray);
-        // 0.6:
-        float varianceGrayAndleWeight = sigmoid2(5.0f, 30.0f, 40.0f, 20.0f, varianceGray);
+        float colorVariance = tex2D<float>(varianceTex, float(x) + 0.5f, float(y + yFrom) + 0.5f);
 
         // archive: 
-        // float simWeight = -depthPhotoStepVal; // must be from 0 to 1=from worst=0 to best=1 ... it is from -1 to 0
+        // float weightedColorVariance = sigmoid2(5.0f, 60.0f, 10.0f, 5.0f, colorVariance);
         // 0.6:
-        float simWeight = sigmoid(0.0f, 1.0f, 0.7f, -0.7f, depthPhotoStepVal);
+        float weightedColorVariance = sigmoid2(5.0f, 30.0f, 40.0f, 20.0f, colorVariance);
 
         // archive: 
-        // float photoWeight = sigmoid(0.0f, 1.0f, 60.0f, varianceGrayAndleWeight, depthSmoothVal);
+        // float simWeight = -sim; // must be from 0 to 1=from worst=0 to best=1 ... it is from -1 to 0
         // 0.6:
-        float photoWeight = sigmoid(0.0f, 1.0f, 30.0f, varianceGrayAndleWeight, depthSmoothVal);
+        float simWeight = sigmoid(0.0f, 1.0f, 0.7f, -0.7f, sim);
+
+        // archive: 
+        // float photoWeight = sigmoid(0.0f, 1.0f, 60.0f, weightedColorVariance, depthEnergy);
+        // 0.6:
+        float photoWeight = sigmoid(0.0f, 1.0f, 30.0f, weightedColorVariance, depthEnergy);
 
         float smoothWeight = 1.0f - photoWeight;
         float visWeight = 1.0f - sigmoid(0.0f, 1.0f, 10.0f, 17.0f, fabsf(depthVisStep / midDepthPixSize.y));
@@ -242,9 +242,9 @@ __global__ void fuse_optimizeDepthSimMap_kernel(cudaTextureObject_t rc_tex,
         out_optDepthSim.x = depthOpt + depthOptStep;
 
         // archive: 
-        // optDepthSim.y = -photoWeight * simWeight
+        // out_optDepthSim.y = -photoWeight * simWeight
         // 0.6:
-        out_optDepthSim.y = (1.0f - visWeight)*photoWeight*simWeight*depthPhotoStepVal + (1.0f - visWeight)*smoothWeight*(depthSmoothVal / 20.0f);
+        out_optDepthSim.y = (1.0f - visWeight)*photoWeight*simWeight*sim + (1.0f - visWeight)*smoothWeight*(depthEnergy / 20.0f);
     }
 
     *out_optDepthSim_ptr = out_optDepthSim;
