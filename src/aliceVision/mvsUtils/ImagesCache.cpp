@@ -109,9 +109,9 @@ void ImagesCache::refreshData_sync(int camId)
   refreshData(camId);
 }
 
-std::future<void> ImagesCache::refreshData_async(int camId)
+void ImagesCache::refreshData_async(int camId)
 {
-    return std::async(&ImagesCache::refreshData_sync, this, camId);
+    _asyncObjects.emplace_back(std::async(std::launch::async, &ImagesCache::refreshData_sync, this, camId));
 }
 
 Color ImagesCache::getPixelValueInterpolated(const Point2d* pix, int camId)

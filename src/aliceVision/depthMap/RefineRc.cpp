@@ -337,9 +337,11 @@ void estimateAndRefineDepthMaps(int cudaDeviceNo, mvsUtils::MultiViewParams& mp,
   {
       RefineRc sgmRefineRc(rc, sgmScale, sgmStep, sp);
 
-      // sgmRefineRc.preloadSgmTcams_async();
       auto startTime = std::chrono::high_resolution_clock::now();
+      sgmRefineRc.preloadSgmTcams_async();
+      ALICEVISION_LOG_INFO("==== preloadSgmTcams_async done in : " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - startTime).count() << "ms.");
 
+      startTime = std::chrono::high_resolution_clock::now();
       ALICEVISION_LOG_INFO("Estimate depth map, view id: " << mp.getViewId(rc));
       sgmRefineRc.sgmrc();
       ALICEVISION_LOG_INFO("==== SGM done in : " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - startTime).count() << "ms.");

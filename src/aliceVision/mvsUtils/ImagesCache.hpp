@@ -77,6 +77,8 @@ private:
 
     const int bandType;
 
+    std::list<std::future<void>> _asyncObjects;
+
 public:
     ImagesCache(const MultiViewParams& mp, int _bandType);
     ImagesCache(const MultiViewParams& mp, int _bandType, std::vector<std::string>& _imagesNames);
@@ -93,7 +95,7 @@ public:
     void refreshData(int camId);
     void refreshData_sync(int camId);
 
-    std::future<void> refreshData_async(int camId);
+    void refreshData_async(int camId);
 
     Color getPixelValueInterpolated(const Point2d* pix, int camId);
 };
