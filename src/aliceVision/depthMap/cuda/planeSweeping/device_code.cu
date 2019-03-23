@@ -13,11 +13,6 @@
 namespace aliceVision {
 namespace depthMap {
 
-// Global data handlers and parameters
-
-texture<float,         cudaTextureType2D, cudaReadModeElementType> depthsTex;
-
-
 template<typename T>
 inline __device__ void swap( T& a, T& b )
 {

@@ -183,10 +183,6 @@ void ps_deviceAllocate(Pyramids& ps_texs_arr, int ncams, int width, int height, 
     }
     printf("Setting CUDA device to %i\n", deviceId);
 
-    // setup textures parameters
-    depthsTex.filterMode = cudaFilterModePoint;
-    depthsTex.normalized = false;
-
     pr_printfDeviceMemoryInfo();
 
     // copy textures to the device
@@ -961,20 +957,40 @@ void ps_optimizeDepthSimMapGradientDescent(Pyramids& ps_texs_arr,
             optDepthMap_dmp.getBuffer(), optDepthMap_dmp.getPitch(),
             optDepthSimMap_dmp.getBuffer(), optDepthSimMap_dmp.getPitch(),
             width, height);
-        copy(optDepthMap_arr, optDepthMap_dmp);
-        // Bind those depth values as a texture
-        cudaBindTextureToArray(depthsTex, optDepthMap_arr.getArray(), cudaCreateChannelDesc<float>());
 
-        // Adjust depth/sim by using previously computed depths (depthTex is accessed inside this kernel)
+        cudaTextureObject_t depthTex = 0;
+        {
+            cudaTextureDesc  tex_desc;
+            memset(&tex_desc, 0, sizeof(cudaTextureDesc));
+            tex_desc.normalizedCoords = 0; // addressed (x,y) in [width,height]
+            tex_desc.addressMode[0] = cudaAddressModeClamp;
+            tex_desc.addressMode[1] = cudaAddressModeClamp;
+            tex_desc.addressMode[2] = cudaAddressModeClamp;
+            tex_desc.readMode = cudaReadModeElementType;
+            tex_desc.filterMode = cudaFilterModePoint;
+
+            cudaResourceDesc res_desc;
+            res_desc.resType = cudaResourceTypePitch2D;
+            res_desc.res.pitch2D.desc = cudaCreateChannelDesc<float>();
+            res_desc.res.pitch2D.devPtr = optDepthMap_dmp.getBuffer();
+            res_desc.res.pitch2D.width = optDepthMap_dmp.getSize()[0];
+            res_desc.res.pitch2D.height = optDepthMap_dmp.getSize()[1];
+            res_desc.res.pitch2D.pitchInBytes = optDepthMap_dmp.getPitch();
+
+            // create texture object: we only have to do this once!
+            cudaCreateTextureObject(&depthTex, &res_desc, &tex_desc, NULL);
+        }
+
+        // Adjust depth/sim by using previously computed depths
         fuse_optimizeDepthSimMap_kernel<<<grid, block>>>(
             rc_tex, *cams[0].param_dev,
-            varianceTex,
+            varianceTex, depthTex,
             optDepthSimMap_dmp.getBuffer(), optDepthSimMap_dmp.getPitch(),
             dataMaps_dmp[0]->getBuffer(), dataMaps_dmp[0]->getPitch(),
             dataMaps_dmp[1]->getBuffer(), dataMaps_dmp[1]->getPitch(),
             width, height, iter, samplesPerPixSize, yFrom);
 
-        cudaUnbindTexture(depthsTex);
+        cudaDestroyTextureObject(depthTex);
     }
 
     copy((*odepthSimMap_hmh), optDepthSimMap_dmp);
