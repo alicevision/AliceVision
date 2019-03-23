@@ -23,19 +23,17 @@ class ImagesCache
 public:
     class Img
     {
-        int  _width;
-        int  _height;
+        int  _width = 0;
+        int  _height = 0;
     public:
         Img( )
-            : data(nullptr)
         { }
         Img( size_t sz )
-            : data( new Color[sz] )
+            : data(sz)
         { }
 
         ~Img( )
         {
-            delete [] data;
         }
 
         inline void setWidth(  int w ) { _width  = w; }
@@ -54,7 +52,7 @@ public:
             return data[y * _width + x];
         }
 
-        Color* data;
+        std::vector<Color> data;
     };
 
     typedef std::shared_ptr<Img> ImgPtr;

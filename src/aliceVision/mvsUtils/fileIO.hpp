@@ -36,7 +36,7 @@ inline std::string getFileNameFromIndex(const MultiViewParams& mp, int index, EF
 
 FILE* mv_openFile(const MultiViewParams& mp, int index, EFileType mv_file_type, const char* readWrite);
 Matrix3x4 load3x4MatrixFromFile(FILE* fi);
-void memcpyRGBImageFromFileToArr(int camId, Color* imgArr, const std::string& fileNameOrigStr, const MultiViewParams& mp,
+void memcpyRGBImageFromFileToArr(int camId, std::vector<Color>& imgArr, const std::string& fileNameOrigStr, const MultiViewParams& mp,
                                  int bandType);
 
 bool DeleteDirectory(const std::string& sPath);

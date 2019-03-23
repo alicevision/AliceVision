@@ -315,7 +315,7 @@ Matrix3x4 load3x4MatrixFromFile(FILE* fi)
     return m;
 }
 
-void memcpyRGBImageFromFileToArr(int camId, Color* imgArr, const std::string& fileNameOrigStr, const MultiViewParams& mp, int bandType)
+void memcpyRGBImageFromFileToArr(int camId, std::vector<Color>& imgArr, const std::string& fileNameOrigStr, const MultiViewParams& mp, int bandType)
 {
     int origWidth, origHeight;
     std::vector<Color> cimg;
@@ -342,7 +342,7 @@ void memcpyRGBImageFromFileToArr(int camId, Color* imgArr, const std::string& fi
         ALICEVISION_LOG_DEBUG("Downscale (x" << processScale << ") image: " << mp.getViewId(camId) << ".");
         std::vector<Color> bmpr;
         imageIO::resizeImage(origWidth, origHeight, processScale, cimg, bmpr);
-        cimg = bmpr;
+        cimg.swap(bmpr);
     }
 
     if(bandType == 1)
@@ -354,7 +354,7 @@ void memcpyRGBImageFromFileToArr(int camId, Color* imgArr, const std::string& fi
         // cimg=cimg1;
         std::vector<Color> smooth;
         imageIO::convolveImage(width, height, cimg, smooth, "gaussian", 11.0f, 11.0f);
-        cimg = smooth;
+        cimg.swap(smooth);
     }
 
     if(bandType == 2)
@@ -373,16 +373,7 @@ void memcpyRGBImageFromFileToArr(int camId, Color* imgArr, const std::string& fi
         }
     }
 
-    for(int y = 0; y < height; y++)
-    {
-        for(int x = 0; x < width; x++)
-        {
-            const Color color = cimg.at(y * width + x);
-
-            imgArr[y * width + x] = color;
-
-        }
-    }
+    imgArr.swap(cimg);
 }
 
 bool DeleteDirectory(const std::string& sPath)
