@@ -29,7 +29,7 @@ __device__ __constant__ float d_gaussianArray[MAX_CONSTANT_GAUSS_MEM_SIZE];
  *********************************************************************************/
 __global__ void downscale_gauss_smooth_lab_kernel(
     cudaTextureObject_t rc_tex,
-    uchar4* texLab, int texLab_p,
+    float4* texLab, int texLab_p,
     int width, int height, int scale, int radius);
 
 /*********************************************************************************
@@ -131,7 +131,7 @@ __device__ inline float getGauss( int scale, int idx )
 
 __global__ void downscale_gauss_smooth_lab_kernel(
     cudaTextureObject_t rc_tex,
-    uchar4* texLab, int texLab_p,
+    float4* texLab, int texLab_p,
     int width, int height, int scale, int radius)
 {
     int x = blockIdx.x * blockDim.x + threadIdx.x;
@@ -139,14 +139,15 @@ __global__ void downscale_gauss_smooth_lab_kernel(
 
     if((x < width) && (y < height))
     {
+        float s = (float)scale * 0.5f;
         float4 t = make_float4(0.0f, 0.0f, 0.0f, 0.0f);
         float sum = 0.0f;
         for(int i = -radius; i <= radius; i++)
         {
             for(int j = -radius; j <= radius; j++)
             {
-                float4 curPix = 255.0f * tex2D<float4>(rc_tex, (float)(x * scale + j) + (float)scale / 2.0f,
-                                               (float)(y * scale + i) + (float)scale / 2.0f);
+                float4 curPix = tex2D<float4>(rc_tex, (float)(x * scale + j) + s,
+                                               (float)(y * scale + i) + s);
                 float factor = getGauss( scale-1, i + radius )
                              * getGauss( scale-1, j + radius ); // domain factor
                 t = t + curPix * factor;
@@ -158,9 +159,7 @@ __global__ void downscale_gauss_smooth_lab_kernel(
         t.z = t.z / sum;
         t.w = t.w / sum;
 
-        uchar4 tu4 = make_uchar4((unsigned char)t.x, (unsigned char)t.y, (unsigned char)t.z, (unsigned char)t.w);
-
-        BufPtr<uchar4>(texLab, texLab_p).at(x,y) = tu4;
+        BufPtr<float4>(texLab, texLab_p).at(x,y) = t;
     }
 }
 

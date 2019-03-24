@@ -190,22 +190,6 @@ struct simStat
         xysum += w * gx * gy;
     }
 
-    __device__ void update(const uchar4 c1, const uchar4 c2)
-    {
-        float2 g;
-        g.x = (float)c1.x / 255.0f;
-        g.y = (float)c2.x / 255.0f;
-        update(g);
-
-        g.x = (float)c1.y / 255.0f;
-        g.y = (float)c2.y / 255.0f;
-        update(g);
-
-        g.x = (float)c1.z / 255.0f;
-        g.y = (float)c2.z / 255.0f;
-        update(g);
-    }
-
     __device__ void update(const float3 c1, const float3 c2)
     {
         float2 g;

@@ -1195,14 +1195,14 @@ struct CameraStruct
 {
     const CameraStructBase* param_hst = nullptr;
     const CameraStructBase* param_dev = nullptr;
-    CudaHostMemoryHeap<uchar4, 2>* tex_rgba_hmh = nullptr;
+    CudaHostMemoryHeap<float4, 2>* tex_rgba_hmh = nullptr;
     int camId;
     cudaStream_t stream; // allow async work on cameras used in parallel
 };
 
 struct TexturedArray
 {
-    CudaDeviceMemoryPitched<uchar4, 2>* arr = nullptr;
+    CudaDeviceMemoryPitched<float4, 2>* arr = nullptr;
     cudaTextureObject_t tex;
 };
 

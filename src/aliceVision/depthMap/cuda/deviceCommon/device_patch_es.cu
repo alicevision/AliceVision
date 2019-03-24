@@ -194,8 +194,8 @@ __device__ float compNCCby3DptsYK( cudaTextureObject_t rc_tex,
 
     // see CUDA_C_Programming_Guide.pdf ... E.2 pp132-133 ... adding 0.5 caises that tex2D return for point i,j exactly
     // value od I(i,j) ... it is what we want
-    float4 gcr = 255.0f * tex2D<float4>(rc_tex, rp.x + 0.5f, rp.y + 0.5f);
-    float4 gct = 255.0f * tex2D<float4>(tc_tex, tp.x + 0.5f, tp.y + 0.5f);
+    float4 gcr = tex2D<float4>(rc_tex, rp.x + 0.5f, rp.y + 0.5f);
+    float4 gct = tex2D<float4>(tc_tex, tp.x + 0.5f, tp.y + 0.5f);
 
     // printf("gcr: R: %f, G: %f, B: %f, A: %f", gcr.x, gcr.y, gcr.z, gcr.w);
     // printf("gct: R: %f, G: %f, B: %f, A: %f", gct.x, gct.y, gct.z, gct.w);
@@ -219,8 +219,8 @@ __device__ float compNCCby3DptsYK( cudaTextureObject_t rc_tex,
 
             // see CUDA_C_Programming_Guide.pdf ... E.2 pp132-133 ... adding 0.5 caises that tex2D return for point i,j
             // exactly value od I(i,j) ... it is what we want
-            float4 gcr1 = 255.0f * tex2D<float4>(rc_tex, rp1.x + 0.5f, rp1.y + 0.5f);
-            float4 gct1 = 255.0f * tex2D<float4>(tc_tex, tp1.x + 0.5f, tp1.y + 0.5f);
+            float4 gcr1 = tex2D<float4>(rc_tex, rp1.x + 0.5f, rp1.y + 0.5f);
+            float4 gct1 = tex2D<float4>(tc_tex, tp1.x + 0.5f, tp1.y + 0.5f);
 
             // Weighting is based on:
             //  * color difference to the center pixel of the patch:

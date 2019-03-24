@@ -21,14 +21,14 @@
 namespace aliceVision {
 namespace depthMap {
 
-inline const uchar4 get(mvsUtils::ImagesCache::ImgPtr img, int x, int y)
+inline float4 get(mvsUtils::ImagesCache::ImgPtr img, int x, int y)
 {
     const Color floatRGB = img->at(x,y) * 255.0f;
 
-    return make_uchar4( static_cast<unsigned char>(floatRGB.r),
-                        static_cast<unsigned char>(floatRGB.g),
-                        static_cast<unsigned char>(floatRGB.b),
-                        255 );
+    return make_float4(floatRGB.r,
+                       floatRGB.g,
+                       floatRGB.b,
+                       255.f);
 }
 
 
@@ -123,13 +123,6 @@ static void cps_host_fillCamera(CameraStructBase& base, int c, mvsUtils::MultiVi
 
 static void cps_host_fillCameraData(mvsUtils::ImagesCache& ic, CameraStruct& cam, int c, mvsUtils::MultiViewParams& mp, StaticVectorBool* rcSilhoueteMap)
 {
-    // memcpyGrayImageFromFileToArr(cam->tex_hmh->getBuffer(), mp.indexes[c], mp, true, 1, 0);
-    // memcpyRGBImageFromFileToArr(
-    //	cam->tex_hmh_r->getBuffer(),
-    //	cam->tex_hmh_g->getBuffer(),
-    //	cam->tex_hmh_b->getBuffer(), mp.indexes[c], mp, true, 1, 0);
-
-    // ic.refreshData(c);
     mvsUtils::ImagesCache::ImgPtr img = ic.getImg_sync( c );
 
     ALICEVISION_LOG_DEBUG("cps_host_fillCameraData [" << c << "]: " << mp.getWidth(c) << "x" << mp.getHeight(c));
@@ -141,8 +134,8 @@ static void cps_host_fillCameraData(mvsUtils::ImagesCache& ic, CameraStruct& cam
         {
             for(pix.x = 0; pix.x < mp.getWidth(c); pix.x++)
             {
-                uchar4& pix_rgba = (*cam.tex_rgba_hmh)(pix.x, pix.y);
-                const uchar4 pc = get( img, pix.x, pix.y ); //  ic.getPixelValue(pix, c);
+                float4& pix_rgba = (*cam.tex_rgba_hmh)(pix.x, pix.y);
+                const float4 pc = get(img, pix.x, pix.y); //  ic.getPixelValue(pix, c);
                 pix_rgba = pc;
             }
         }
@@ -153,8 +146,8 @@ static void cps_host_fillCameraData(mvsUtils::ImagesCache& ic, CameraStruct& cam
         {
             for(pix.x = 0; pix.x < mp.getWidth(c); pix.x++)
             {
-                uchar4& pix_rgba = (*cam.tex_rgba_hmh)(pix.x, pix.y);
-                uchar4 pc = get( img, pix.x, pix.y );
+                float4& pix_rgba = (*cam.tex_rgba_hmh)(pix.x, pix.y);
+                float4 pc = get( img, pix.x, pix.y );
                 if( (*rcSilhoueteMap)[pix.y*mp.getWidth(c)+pix.x] ) 
                 {
                     pc.w = 0; // disabled if pix has background color
@@ -191,12 +184,12 @@ PlaneSweepingCuda::PlaneSweepingCuda( int CUDADeviceNo,
     const int maxImageWidth = mp.getMaxImageWidth();
     const int maxImageHeight = mp.getMaxImageHeight();
 
-    float oneimagemb = 4.0f * (((float)(maxImageWidth * maxImageHeight) / 1024.0f) / 1024.0f);
+    float oneimagemb = 4.0f * sizeof(float) * (((float)(maxImageWidth * maxImageHeight) / 1024.0f) / 1024.0f);
     for(int scale = 2; scale <= _scales; ++scale)
     {
-        oneimagemb += 4.0 * (((float)((maxImageWidth / scale) * (maxImageHeight / scale)) / 1024.0) / 1024.0);
+        oneimagemb += 4.0 * sizeof(float) * (((float)((maxImageWidth / scale) * (maxImageHeight / scale)) / 1024.0) / 1024.0);
     }
-    float maxmbGPU = 200.0f; // TODO FACA
+    float maxmbGPU = 400.0f; // TODO FACA
     _nImgsInGPUAtTime = (int)(maxmbGPU / oneimagemb);
     _nImgsInGPUAtTime = std::max(2, std::min(mp.ncams, _nImgsInGPUAtTime));
 
@@ -281,7 +274,7 @@ int PlaneSweepingCuda::addCam( int rc, int scale,
         if(cam.tex_rgba_hmh == nullptr)
         {
             cam.tex_rgba_hmh =
-                new CudaHostMemoryHeap<uchar4, 2>(CudaSize<2>(_mp.getMaxImageWidth(), _mp.getMaxImageHeight()));
+                new CudaHostMemoryHeap<float4, 2>(CudaSize<2>(_mp.getMaxImageWidth(), _mp.getMaxImageHeight()));
         }
         else
         {

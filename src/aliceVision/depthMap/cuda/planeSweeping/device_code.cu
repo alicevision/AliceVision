@@ -23,10 +23,10 @@ inline __device__ void swap( T& a, T& b )
 
 __device__ float computeGradientSizeOfL( cudaTextureObject_t rc_tex, int x, int y)
 {
-    float xM1 = 255.0f * (tex2D<float4>(rc_tex, (float)(x - 1) + 0.5f, (float)(y + 0) + 0.5f).x);
-    float xP1 = 255.0f * (tex2D<float4>(rc_tex, (float)(x + 1) + 0.5f, (float)(y + 0) + 0.5f).x);
-    float yM1 = 255.0f * (tex2D<float4>(rc_tex, (float)(x + 0) + 0.5f, (float)(y - 1) + 0.5f).x);
-    float yP1 = 255.0f * (tex2D<float4>(rc_tex, (float)(x + 0) + 0.5f, (float)(y + 1) + 0.5f).x);
+    float xM1 = tex2D<float4>(rc_tex, (float)(x - 1) + 0.5f, (float)(y + 0) + 0.5f).x;
+    float xP1 = tex2D<float4>(rc_tex, (float)(x + 1) + 0.5f, (float)(y + 0) + 0.5f).x;
+    float yM1 = tex2D<float4>(rc_tex, (float)(x + 0) + 0.5f, (float)(y - 1) + 0.5f).x;
+    float yP1 = tex2D<float4>(rc_tex, (float)(x + 0) + 0.5f, (float)(y + 1) + 0.5f).x;
 
     // not divided by 2?
     float2 g = make_float2(xM1 - xP1, yM1 - yP1);

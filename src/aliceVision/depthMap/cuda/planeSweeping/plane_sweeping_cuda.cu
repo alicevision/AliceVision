@@ -199,7 +199,7 @@ void ps_deviceAllocate(Pyramids& ps_texs_arr, int ncams, int width, int height, 
             int w = width / (s + 1);
             int h = height / (s + 1);
             printf("ps_deviceAllocate: CudaDeviceMemoryPitched: [c%i][s%i] %ix%i\n", c, s, w, h);
-            ps_texs_arr[c][s].arr = new CudaDeviceMemoryPitched<uchar4, 2>(CudaSize<2>(w, h));
+            ps_texs_arr[c][s].arr = new CudaDeviceMemoryPitched<float4, 2>(CudaSize<2>(w, h));
             allBytes += ps_texs_arr[c][s].arr->getBytesPadded();
 
             cudaTextureDesc  tex_desc;
@@ -208,12 +208,12 @@ void ps_deviceAllocate(Pyramids& ps_texs_arr, int ncams, int width, int height, 
             tex_desc.addressMode[0]   = cudaAddressModeClamp;
             tex_desc.addressMode[1]   = cudaAddressModeClamp;
             tex_desc.addressMode[2]   = cudaAddressModeClamp;
-            tex_desc.readMode         = cudaReadModeNormalizedFloat; // transform uchar to float
+            tex_desc.readMode         = cudaReadModeElementType; // transform uchar to float
             tex_desc.filterMode       = cudaFilterModeLinear; // with interpolation
 
             cudaResourceDesc res_desc;
             res_desc.resType = cudaResourceTypePitch2D;
-            res_desc.res.pitch2D.desc = cudaCreateChannelDesc<uchar4>();
+            res_desc.res.pitch2D.desc = cudaCreateChannelDesc<float4>();
             res_desc.res.pitch2D.devPtr       = ps_texs_arr[c][s].arr->getBuffer();
             res_desc.res.pitch2D.width        = ps_texs_arr[c][s].arr->getSize()[0];
             res_desc.res.pitch2D.height       = ps_texs_arr[c][s].arr->getSize()[1];
@@ -1004,6 +1004,12 @@ void ps_optimizeDepthSimMapGradientDescent(Pyramids& ps_texs_arr,
 
     if(verbose)
         printf("gpu elapsed time: %f ms \n", toc(tall));
+}
+
+// uchar4 with 0..255 components => float3 with 0..1 components
+inline __device__ __host__ float3 uchar4_to_float3(const uchar4 c)
+{
+    return make_float3(float(c.x) / 255.0f, float(c.y) / 255.0f, float(c.z) / 255.0f);
 }
 
 void ps_getSilhoueteMap(Pyramids& ps_texs_arr, CudaHostMemoryHeap<bool, 2>* omap_hmh, int width,

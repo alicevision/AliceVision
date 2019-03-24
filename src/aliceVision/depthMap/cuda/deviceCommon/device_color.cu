@@ -21,14 +21,6 @@ inline __device__ float Euclidean3(const float4 x1, const float4 x2)
     return sqrtf((x1.x - x2.x) * (x1.x - x2.x) + (x1.y - x2.y) * (x1.y - x2.y) + (x1.z - x2.z) * (x1.z - x2.z));
 }
 
-//== data conversion utils ========================================================================
-
-// uchar4 with 0..255 components => float3 with 0..1 components
-inline __device__ __host__ float3 uchar4_to_float3(const uchar4 c)
-{
-    return make_float3(float(c.x) / 255.0f, float(c.y) / 255.0f, float(c.z) / 255.0f);
-}
-
 //== colour conversion utils ======================================================================
 
 // sRGB (0..1) to linear RGB (0..1)
@@ -122,12 +114,6 @@ inline __device__ float rgb2gray(const uchar4 c)
     return 0.2989f * (float)c.x + 0.5870f * (float)c.y + 0.1140f * (float)c.z;
 }
 
-inline __device__ float distColor(const uchar4 cf1, const uchar4 cf2)
-{
-    return fmaxf(fabs((float)cf1.x - (float)cf2.x),
-                 fmaxf(fabs((float)cf1.y - (float)cf2.y), fabs((float)cf1.z - (float)cf2.z)));
-}
-
 /**
  * @brief 
  * 
@@ -142,8 +128,8 @@ inline __device__ float distColor(const uchar4 cf1, const uchar4 cf2)
  * @param[in] gammaP Strength of Grouping by Proximity          8 / 4
  * @return distance value
  */
-inline __device__ float CostYK(const int dx, const int dy, const uchar4 c1, const uchar4 c2, const float gammaC,
-                               const float gammaP)
+inline __device__ float CostYKfromLab(const int dx, const int dy, const float4 c1, const float4 c2, const float gammaC,
+                                      const float gammaP)
 {
     // const float deltaC = 0; // ignore colour difference
 
@@ -166,23 +152,6 @@ inline __device__ float CostYK(const int dx, const int dy, const uchar4 c1, cons
     //);
 
     // Euclidean distance in Lab, assuming linear RGB
-    const float deltaC = Euclidean(xyz2lab(rgb2xyz(uchar4_to_float3(c1))), xyz2lab(rgb2xyz(uchar4_to_float3(c2))));
-
-    // spatial distance
-    const float deltaP = sqrtf(float(dx * dx + dy * dy));
-
-    return __expf(-(deltaC / gammaC + deltaP / gammaP)); // Yoon & Kweon
-    // return __expf(-(deltaC * deltaC / (2 * gammaC * gammaC))) * sqrtf(__expf(-(deltaP * deltaP / (2 * gammaP *
-    // gammaP)))); // DCB
-}
-
-/**
- * @see CostYK
- */
-inline __device__ float CostYKfromLab(const int dx, const int dy, const float4 c1, const float4 c2, const float gammaC,
-                                      const float gammaP)
-{
-    // Euclidean distance in Lab, assuming linear RGB
     const float deltaC = Euclidean3(c1, c2);
     // const float deltaC = fmaxf(fabs(c1.x-c2.x),fmaxf(fabs(c1.y-c2.y),fabs(c1.z-c2.z)));
 
@@ -190,6 +159,7 @@ inline __device__ float CostYKfromLab(const int dx, const int dy, const float4 c
     const float deltaP = sqrtf(float(dx * dx + dy * dy));
 
     return __expf(-(deltaC / gammaC + deltaP / gammaP)); // Yoon & Kweon
+    // return __expf(-(deltaC * deltaC / (2 * gammaC * gammaC))) * sqrtf(__expf(-(deltaP * deltaP / (2 * gammaP * gammaP)))); // DCB
 }
 
 inline __device__ float CostYKfromLab(const float4 c1, const float4 c2, const float gammaC)
@@ -201,15 +171,7 @@ inline __device__ float CostYKfromLab(const float4 c1, const float4 c2, const fl
     return __expf(-(deltaC / gammaC)); // Yoon & Kweon
 }
 
-inline static __device__ float computeADCost(const uchar4 pixL, const uchar4 pixR)
-{
-    const float diffX = (float)pixL.x - (float)pixR.x;
-    const float diffY = (float)pixL.y - (float)pixR.y;
-    const float diffZ = (float)pixL.z - (float)pixR.z;
-    return fminf(40.0f, fabs(diffX) + fabs(diffY) + fabs(diffZ));
-}
-
-__global__ void rgb2lab_kernel(uchar4* irgbaOlab, int irgbaOlab_p, int width, int height)
+__global__ void rgb2lab_kernel(float4* irgbaOlab, int irgbaOlab_p, int width, int height)
 {
     int x = blockIdx.x * blockDim.x + threadIdx.x;
     int y = blockIdx.y * blockDim.y + threadIdx.y;
@@ -217,14 +179,10 @@ __global__ void rgb2lab_kernel(uchar4* irgbaOlab, int irgbaOlab_p, int width, in
     if((x >= width) || (y >= height))
         return;
 
-    uchar4* rgb = get2DBufferAt(irgbaOlab, irgbaOlab_p, x, y);
-    float3 flab = xyz2lab(rgb2xyz(uchar4_to_float3(*rgb)));
+    float4* rgb = get2DBufferAt(irgbaOlab, irgbaOlab_p, x, y);
+    float3 flab = xyz2lab(rgb2xyz(make_float3(rgb->x / 255.f, rgb->y / 255.f, rgb->z / 255.f)));
 
-    uchar4 lab;
-    lab.x = (unsigned char)(flab.x);
-    lab.y = (unsigned char)(flab.y);
-    lab.z = (unsigned char)(flab.z);
-    lab.w = rgb->w;
+    float4 lab = make_float4(flab.x, flab.y, flab.z, rgb->w);
 
     *rgb = lab;
 }
