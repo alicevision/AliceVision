@@ -74,6 +74,8 @@ alicevision_add_library(aliceVision_depthMap
     ${CUDA_CUBLAS_LIBRARIES} #TODO shouldn't be here, but required to build on some machines
   PRIVATE_LINKS
     aliceVision_gpu
+    aliceVision_sfmData
+    aliceVision_sfmDataIO
   PUBLIC_INCLUDE_DIRS
     ${CUDA_INCLUDE_DIRS}
 )
