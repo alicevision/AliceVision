@@ -104,7 +104,7 @@ __global__ void volume_slice_kernel(
     const float fminVal = -1.0f;
     const float fmaxVal = 1.0f;
     fsim = (fsim - fminVal) / (fmaxVal - fminVal);
-    fsim = fminf(1.0f, fmaxf(0.0f, fsim));
+    // fsim = fminf(1.0f, fmaxf(0.0f, fsim));
     fsim *= 255.0f; // Currently needed for the next step... (TODO: should be removed at some point)
 
     float* fsim_1st = get3DBufferAt(volume_1st, volume1st_s, volume1st_p, vx, vy, zIndex);
