@@ -32,3 +32,14 @@ alicevision_add_software(aliceVision_convertRAW
         aliceVision_image
         ${Boost_LIBRARIES}
 )
+
+
+# Convert LDR to HDR
+alicevision_add_software(aliceVision_convertLDRToHDR
+  SOURCE main_convertLDRToHDR.cpp
+  FOLDER ${FOLDER_SOFTWARE_CONVERT}
+  LINKS aliceVision_system
+        aliceVision_image
+        aliceVision_hdr
+        ${Boost_LIBRARIES}
+)
