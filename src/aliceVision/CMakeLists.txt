@@ -29,6 +29,7 @@ if(ALICEVISION_BUILD_SFM)
   add_subdirectory(stl)
   add_subdirectory(track)
   add_subdirectory(voctree)
+  add_subdirectory(hdr)
 
   if(ALICEVISION_HAVE_OPENCV)
     add_subdirectory(calibration)
