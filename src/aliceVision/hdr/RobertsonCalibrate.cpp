@@ -30,7 +30,7 @@ void RobertsonCalibrate::process(const std::vector< std::vector< image::Image<im
   static const std::size_t channels = 3;
 
   //get channels quantization
-  const std::size_t channelQuantization = std::pow(2, 8); //RAW 12 bit precision, 2^12 values between black and white point
+  const std::size_t channelQuantization = std::pow(2, 12); //RAW 12 bit precision, 2^12 values between black and white point
 
   //create radiance vector of image
   _radiance = std::vector< image::Image<image::RGBfColor> >(ldrImageGroups.size());

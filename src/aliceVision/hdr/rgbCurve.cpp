@@ -5,7 +5,7 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "rgbCurve.hpp"
-#include <algorithm>
+
 #include <functional>
 #include <fstream>
 #include <iostream>
@@ -27,6 +27,20 @@ rgbCurve::rgbCurve(std::size_t size)
 rgbCurve::rgbCurve(const std::string &path)
 {
   read(path);
+}
+
+void rgbCurve::setFunction(EFunctionType functionType)
+{
+  switch(functionType)
+  {
+    case EFunctionType::LINEAR:     setLinear(); return;
+    case EFunctionType::GAUSSIAN:   setGaussian(); return;
+    case EFunctionType::TRIANGLE:   setTriangular(); return;
+    case EFunctionType::PLATEAU:    setPlateau(); return;
+    case EFunctionType::GAMMA:      setGamma(); return;
+    case EFunctionType::LOG10:      setLog10(); return;
+  }
+  throw std::out_of_range("Invalid function type enum");
 }
 
 void rgbCurve::setLinear() 

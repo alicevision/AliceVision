@@ -35,6 +35,9 @@ int main(int argc, char** argv)
   std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
   std::string imageFolder;
   std::string outputHDRImagePath;
+  std::string outputResponsePath;
+  bool calibration;
+  std::string weightFunctionName = hdr::EFunctionType_enumToString(hdr::EFunctionType::GAUSSIAN);
 
   po::options_description allParams("AliceVision convertLDRToHDR");
 
@@ -48,7 +51,13 @@ int main(int argc, char** argv)
   po::options_description logParams("Log parameters");
   logParams.add_options()
     ("verboseLevel,v", po::value<std::string>(&verboseLevel)->default_value(verboseLevel),
-      "verbosity level (fatal,  error, warning, info, debug, trace).");
+      "verbosity level (fatal,  error, warning, info, debug, trace).")
+    ("response,r", po::value<std::string>(&outputResponsePath),
+       "output response function path.")
+    ("calibration,c", po::value<bool>(&calibration)->default_value(false),
+        "calibration of the camera response function (true, false).")
+    ("weight,w", po::value<std::string>(&weightFunctionName)->default_value(weightFunctionName),
+       "weight function type (gaussian, triangle, plateau).");
 
   allParams.add(requiredParams).add(logParams);
 
@@ -80,8 +89,24 @@ int main(int argc, char** argv)
   ALICEVISION_COUT("Program called with the following parameters:");
   ALICEVISION_COUT(vm);
 
+  const std::size_t channelQuantization = std::pow(2, 12); //RAW 12 bit precision, 2^12 values between black and white point
+
+  std::vector< std::vector< image::Image<image::RGBfColor> > > ldrImageGroups_cropped(1);
+  std::vector< std::vector< image::Image<image::RGBfColor> > > ldrImageGroups(1);
+  std::vector< std::vector<float> > times(1);
+  hdr::rgbCurve weight(channelQuantization);
+  hdr::rgbCurve response(channelQuantization);
+
+  std::vector<image::Image<image::RGBfColor>> &ldrImages_cropped = ldrImageGroups_cropped.at(0);
+  std::vector<image::Image<image::RGBfColor>> &ldrImages = ldrImageGroups.at(0);
+  std::vector<float> &ldrTimes = times.at(0);
+
   // set verbose level
   system::Logger::get()->setLogLevel(verboseLevel);
+
+  // set the correct weight function corresponding to the string parameter
+  const hdr::EFunctionType weightFunction = hdr::EFunctionType_stringToEnum(weightFunctionName);
+  weight.setFunction(weightFunction);
 
   // get all valid images paths from input folder
   std::vector<std::string> inputFilesNames;
@@ -98,43 +123,32 @@ int main(int argc, char** argv)
           }
       }
   }
-//  image::Image<image::RGBfColor> image;
-//  image::readImage(inputFilesNames[0], image);
-//  image::writeImage(outputHDRImagePath, image);
-
-  const std::size_t channelQuantization = std::pow(2, 8); //RAW 12 bit precision, 2^12 values between black and white point
-
-  std::vector< std::vector< image::Image<image::RGBfColor> > > ldrImageGroups(1);
-  std::vector< std::vector< image::Image<image::RGBfColor> > > ldrImageGroups_full(1);
-  std::vector< std::vector<float> > times(1);
-  hdr::rgbCurve weight(channelQuantization);
-  hdr::rgbCurve response(channelQuantization);
-
-  std::vector<image::Image<image::RGBfColor>> &ldrImages = ldrImageGroups.at(0);
-  std::vector<image::Image<image::RGBfColor>> &ldrImages_full = ldrImageGroups_full.at(0);
-  std::vector<float> &ldrTimes = times.at(0);
 
   int nbImages = inputFilesNames.size();
+  ldrImages_cropped.resize(nbImages);
   ldrImages.resize(nbImages);
-  ldrImages_full.resize(nbImages);
   for(int i=0; i<nbImages; ++i)
   {
     std::string imagePath = inputFilesNames.at(i);
     int w, h;
     std::map<std::string, std::string> metadata;
 
-    image::readImage(imagePath, ldrImages_full.at(i));
+    image::readImage(imagePath, ldrImages.at(i));
     image::readImageMetadata(imagePath, w, h, metadata);
 
-    ldrImages.at(i) = image::Image<image::RGBfColor>(ldrImages_full.at(i).block<2000,2000>(h/2-1000, w/2-1000));
+    // we use a cropped image for calibration (fisheye images)
+    ldrImages_cropped.at(i) = image::Image<image::RGBfColor>(ldrImages.at(i).block<2000,2000>(h/2-1000, w/2-1000));
 
+    // Debevec and Robertson algorithms use shutter speed as ev value
     float ev;
     try
     {
-     // const float aperture = std::stof(metadata.at("FNumber"));
+      // const float aperture = std::stof(metadata.at("FNumber"));
+      // const float iso = std::stof(metadata.at("Exif:PhotographicSensitivity"));
+      // ev = std::log2(pow(aperture, 2) / shutter) + std::log2(iso/100);
+
       const float shutter = std::stof(metadata.at("ExposureTime"));
-     // const float iso = std::stof(metadata.at("Exif:PhotographicSensitivity"));
-      ev = shutter; ///std::log2(pow(aperture, 2) / shutter) + std::log2(iso/100);
+      ev = shutter;
     }
     catch(std::exception& e)
     {
@@ -152,24 +166,26 @@ int main(int argc, char** argv)
     targetTime = ldrTimes_sorted.at(ldrTimes_sorted.size()/2);
   }
 
-  ALICEVISION_LOG_DEBUG(targetTime);
+  image::Image<image::RGBfColor> image(ldrImages.at(0).Width(), ldrImages.at(0).Height(), false);
+  if(calibration == true)
+  {
+    // Robertson calibrate
+    hdr::RobertsonCalibrate calibration(40);
+    calibration.process(ldrImageGroups_cropped, times, weight, response, targetTime);
 
-  weight.setGaussian();
-  //weight.setTriangular();
-  //weight.setPlateau();
-
-  // Robertson calibrate
-  hdr::RobertsonCalibrate calibration(40);
-  calibration.process(ldrImageGroups, times, weight, response, targetTime);
-
-  //response.setLinear();
-  hdr::RobertsonMerge merge;
-  image::Image<image::RGBfColor> image(ldrImages_full.at(0).Width(), ldrImages_full.at(0).Height(), false);
-  merge.process(ldrImages_full, ldrTimes, weight, response, image, targetTime);
-  //image::Image<image::RGBfColor> image = calibration.getRadiance(0);
+    hdr::RobertsonMerge merge;
+    merge.process(ldrImages, ldrTimes, weight, response, image, targetTime);
+  }
+  else
+  {
+    // Robertson merge only
+    response.setLinear();
+    hdr::RobertsonMerge merge;
+    merge.process(ldrImages, ldrTimes, weight, response, image, targetTime);
+  }
 
   image::writeImage(outputHDRImagePath, image);
-  //response.write("");
+  if(!outputResponsePath.empty())    response.write(outputResponsePath);
 
   return EXIT_SUCCESS;
 }
