@@ -4,8 +4,9 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
-
 #pragma once
+
+#include <algorithm>
 #include <cstddef>
 #include <cassert>
 #include <cmath>
@@ -16,6 +17,70 @@
 
 namespace aliceVision {
 namespace hdr {
+
+enum class EFunctionType
+{
+      LINEAR,
+      GAUSSIAN,
+      TRIANGLE,
+      PLATEAU,
+      GAMMA,
+      LOG10
+};
+
+/**
+ * @brief convert an enum EFunctionType to its corresponding string
+ * @param EFunctionType
+ * @return String
+ */
+inline std::string EFunctionType_enumToString(const EFunctionType functionType)
+{
+  switch(functionType)
+  {
+    case EFunctionType::LINEAR:     return "linear";
+    case EFunctionType::GAUSSIAN:   return "gaussian";
+    case EFunctionType::TRIANGLE:   return "triangle";
+    case EFunctionType::PLATEAU:    return "plateau";
+    case EFunctionType::GAMMA:      return "gamma";
+    case EFunctionType::LOG10:      return "log10";
+   }
+  throw std::out_of_range("Invalid function type enum");
+}
+
+/**
+ * @brief convert a string function type to its corresponding enum EFunctionType
+ * @param String
+ * @return EFunctionType
+ */
+inline EFunctionType EFunctionType_stringToEnum(const std::string& functionType)
+{
+  std::string type = functionType;
+  std::transform(type.begin(), type.end(), type.begin(), ::tolower);
+
+  if(type == "linear")     return EFunctionType::LINEAR;
+  if(type == "gaussian")   return EFunctionType::GAUSSIAN;
+  if(type == "triangle")   return EFunctionType::TRIANGLE;
+  if(type == "plateau")    return EFunctionType::PLATEAU;
+  if(type == "gamma")      return EFunctionType::GAMMA;
+  if(type == "log10")      return EFunctionType::LOG10;
+
+  throw std::out_of_range("Invalid function type : '" + functionType + "'");
+}
+
+inline std::ostream& operator<<(std::ostream& os, const EFunctionType functionType)
+{
+  os << EFunctionType_enumToString(functionType);
+  return os;
+}
+
+inline std::istream& operator>>(std::istream& in, EFunctionType& functionType)
+{
+  std::string token;
+  in >> token;
+  functionType = EFunctionType_stringToEnum(token);
+  return in;
+}
+
   
 class rgbCurve
 {
@@ -70,13 +135,15 @@ public:
     }
   }
 
+  void setFunction(EFunctionType functionType);
+
   /**
    * @brief Set curves to linear
    */
   void setLinear();
   
   /**
-   * @brief Set curves to linear
+   * @brief Set curves to gamma
    */
   void setGamma();
   
@@ -96,7 +163,7 @@ public:
   void setPlateau();
   
   /**
-   *@brief Set curves to plateau
+   *@brief Set curves to log10
    */
   void setLog10();
   
@@ -112,7 +179,7 @@ public:
   void setAllAbsolute();
 
   /*
-   *@brief normalize the curve
+   * @brief normalize the curve
    */
   void normalize();
   
