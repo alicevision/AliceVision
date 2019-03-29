@@ -471,7 +471,6 @@ bool SemiGlobalMatchingRc::sgmrc(bool checkIfExists)
     // vector<z, sim>
     _volumeBestIdVal.resize_with(volDimX * volDimY, IdValue(-1, 1.0f));
 
-
     // For each pixel: choose the voxel with the minimal similarity value
     int zborder = 2;
     _sp.cps.SGMretrieveBestDepth(_volumeBestIdVal, volumeSecBestSim_d, volDimX, volDimY, volDimZ, zborder);

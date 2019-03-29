@@ -21,7 +21,7 @@
 
 // These constants define the current software version.
 // They must be updated when the command line is changed.
-#define ALICEVISION_SOFTWARE_VERSION_MAJOR 2
+#define ALICEVISION_SOFTWARE_VERSION_MAJOR 3
 #define ALICEVISION_SOFTWARE_VERSION_MINOR 0
 
 using namespace aliceVision;
@@ -40,12 +40,12 @@ int main(int argc, char* argv[])
 
     std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
     std::string sfmDataFilename;
-    std::string inputDenseReconstruction;
     std::string inputMeshFilepath;
     std::string outputFolder;
     std::string imagesFolder;
     std::string outTextureFileTypeName = EImageFileType_enumToString(EImageFileType::PNG);
     bool flipNormals = false;
+
     mesh::TexturingParams texParams;
     std::string unwrapMethod = mesh::EUnwrapMethod_enumToString(mesh::EUnwrapMethod::Basic);
     std::string visibilityRemappingMethod = mesh::EVisibilityRemappingMethod_enumToString(texParams.visibilityRemappingMethod);
@@ -55,9 +55,9 @@ int main(int argc, char* argv[])
     po::options_description requiredParams("Required parameters");
     requiredParams.add_options()
         ("input,i", po::value<std::string>(&sfmDataFilename)->required(),
-          "SfMData file.")
-        ("inputDenseReconstruction", po::value<std::string>(&inputDenseReconstruction)->required(),
-            "Path to the dense reconstruction (mesh with per vertex visibility).")
+          "Dense point cloud SfMData file.")
+        ("inputMesh", po::value<std::string>(&inputMeshFilepath)->required(),
+            "Input mesh to texture.")
         ("output,o", po::value<std::string>(&outputFolder)->required(),
             "Folder for output mesh: OBJ, material and texture files.");
 
@@ -77,12 +77,12 @@ int main(int argc, char* argv[])
             " * Basic (> 600k faces) fast and simple. Can generate multiple atlases.\n"
             " * LSCM (<= 600k faces): optimize space. Generates one atlas.\n"
             " * ABF (<= 300k faces): optimize space and stretch. Generates one atlas.'")
+        ("useUDIM", po::value<bool>(&texParams.useUDIM)->default_value(texParams.useUDIM),
+            "Use UDIM UV mapping.")
         ("fillHoles", po::value<bool>(&texParams.fillHoles)->default_value(texParams.fillHoles),
             "Fill texture holes with plausible values.")
         ("padding", po::value<unsigned int>(&texParams.padding)->default_value(texParams.padding),
             "Texture edge padding size in pixel")
-        ("inputMesh", po::value<std::string>(&inputMeshFilepath),
-            "Optional input mesh to texture. By default, it will texture the inputReconstructionMesh.")
         ("flipNormals", po::value<bool>(&flipNormals)->default_value(flipNormals),
             "Option to flip face normals. It can be needed as it depends on the vertices order in triangles and the convention change from one software to another.")
         ("maxNbImagesForFusion", po::value<int>(&texParams.maxNbImagesForFusion)->default_value(texParams.maxNbImagesForFusion),
@@ -145,7 +145,7 @@ int main(int argc, char* argv[])
 
     // read the input SfM scene
     sfmData::SfMData sfmData;
-    if(!sfmDataIO::Load(sfmData, sfmDataFilename, sfmDataIO::ESfMData::ALL))
+    if(!sfmDataIO::Load(sfmData, sfmDataFilename, sfmDataIO::ESfMData::ALL_DENSE))
     {
       ALICEVISION_LOG_ERROR("The input SfMData file '" << sfmDataFilename << "' cannot be read.");
       return EXIT_FAILURE;
@@ -157,17 +157,41 @@ int main(int argc, char* argv[])
     mesh::Texturing mesh;
     mesh.texParams = texParams;
 
-    // load dense reconstruction
-    const fs::path reconstructionMeshFolder = fs::path(inputDenseReconstruction).parent_path();
-    mesh.loadFromMeshing(inputDenseReconstruction, (reconstructionMeshFolder/"meshPtsCamsFromDGC.bin").string());
+    // load and remap mesh
+    {
+      mesh.clear();
+
+      // load input obj file
+      mesh.loadFromOBJ(inputMeshFilepath, flipNormals);
+
+      // load reference dense point cloud with visibilities
+      mesh::Mesh refPoints;
+      mesh::PointsVisibility* refVisibilities = new mesh::PointsVisibility();
+      const std::size_t nbPoints = sfmData.getLandmarks().size();
+      refPoints.pts = new StaticVector<Point3d>();
+      refPoints.pts->reserve(nbPoints);
+      refVisibilities->reserve(nbPoints);
+
+      for(const auto& landmarkPair : sfmData.getLandmarks())
+      {
+        const sfmData::Landmark& landmark = landmarkPair.second;
+        mesh::PointVisibility* pointVisibility = new mesh::PointVisibility();
+
+        pointVisibility->reserve(landmark.observations.size());
+        for(const auto& observationPair : landmark.observations)
+          pointVisibility->push_back(mp.getIndexFromViewId(observationPair.first));
+
+        refVisibilities->push_back(pointVisibility);
+        refPoints.pts->push_back(Point3d(landmark.X(0), landmark.X(1), landmark.X(2)));
+      }
+
+      mesh.remapVisibilities(texParams.visibilityRemappingMethod, refPoints, *refVisibilities);
+
+      // delete visibilities
+      deleteArrayOfArrays(&refVisibilities);
+    }
 
     fs::create_directory(outputFolder);
-
-    // texturing from input mesh
-    if(!inputMeshFilepath.empty())
-    {
-      mesh.replaceMesh(inputMeshFilepath, flipNormals);
-    }
 
     if(!mesh.hasUVs())
     {

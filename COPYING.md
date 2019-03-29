@@ -139,6 +139,7 @@ This program is based on works distributed under the terms of another license(s)
     [https://github.com/alicevision/popsift](https://github.com/alicevision/popsift)  
     Copyright 2016, Simula Research Laboratory  
     Distributed under the [MPL2 license](http://opensource.org/licenses/MPL-2.0).
+    However, SIFT is patented in the US and perhaps other countries, and this license does not release users of this code from any requirements that may arise from such patents.
 
 *   __vectorGraphics__  
     Copyright (c) Pierre Moulon  
@@ -148,6 +149,7 @@ This program is based on works distributed under the terms of another license(s)
     [http://www.vlfeat.org](http://www.vlfeat.org)  
     Copyright (C) 2007-12 Andrea Vedaldi and Brian Fulkerson. All rights reserved.  
     Distributed under the [BSD License](http://www.opensource.org/licenses/bsd-license.php).
+    However, SIFT is patented in the US and perhaps other countries, and this license does not release users of this code from any requirements that may arise from such patents.
 
 *   __zlib__  (optional)  
     [https://zlib.net](https://zlib.net)  

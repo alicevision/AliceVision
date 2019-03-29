@@ -325,7 +325,7 @@ void createVerticesWithVisibilities(const StaticVector<int>& cams, std::vector<P
                 if(depth <= 0.0f)
                     continue;
 
-                const Point3d p = mp.CArr[c] + (mp.iCamArr[c] * Point2d((float)x, (float)y)).normalize() * depth;
+                const Point3d p = mp.backproject(c, Point2d(x, y), depth);
                 const double pixSize = mp.getCamPixelSize(p, c);
 #ifdef USE_GEOGRAM_KDTREE
                 const std::size_t nearestVertexIndex = kdTree.get_nearest_neighbor(p.m);

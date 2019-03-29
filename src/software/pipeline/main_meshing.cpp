@@ -5,6 +5,7 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include <aliceVision/sfmData/SfMData.hpp>
+#include <aliceVision/sfmData/colorize.hpp>
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
 #include <aliceVision/fuseCut/LargeScale.hpp>
 #include <aliceVision/fuseCut/ReconstructionPlan.hpp>
@@ -24,8 +25,8 @@
 
 // These constants define the current software version.
 // They must be updated when the command line is changed.
-#define ALICEVISION_SOFTWARE_VERSION_MAJOR 2
-#define ALICEVISION_SOFTWARE_VERSION_MINOR 1
+#define ALICEVISION_SOFTWARE_VERSION_MAJOR 3
+#define ALICEVISION_SOFTWARE_VERSION_MINOR 0
 
 using namespace aliceVision;
 
@@ -80,6 +81,38 @@ inline std::istream& operator>>(std::istream& in, ERepartitionMode& out_mode)
     return in;
 }
 
+void exportPointCloud(const std::string& path,
+                      const mvsUtils::MultiViewParams& mp,
+                      const sfmData::SfMData& sfmData,
+                      const std::vector<Point3d>& vertices,
+                      const StaticVector<StaticVector<int>*> cams)
+{
+  sfmData::SfMData densePointCloud = sfmData;
+  densePointCloud.getLandmarks().clear();
+  int outputIndex = 0;
+
+  for(int i = 0; i < vertices.size(); ++i)
+  {
+    const Point3d& point = vertices.at(i);
+
+    if(!cams[i]->empty())
+    {
+      const Vec3 pt3D(point.x, point.y, point.z);
+      sfmData::Landmark landmark(pt3D, feature::EImageDescriberType::UNKNOWN);
+      for(int cam : *(cams[i]))
+      {
+        const sfmData::View& view = sfmData.getView(mp.getViewId(cam));
+        const camera::IntrinsicBase* intrinsicPtr = sfmData.getIntrinsicPtr(view.getIntrinsicId());
+        const sfmData::Observation observation(intrinsicPtr->project(sfmData.getPose(view).getTransform(), pt3D, true), UndefinedIndexT); // apply distortion
+        landmark.observations[view.getViewId()] = observation;
+      }
+      densePointCloud.getLandmarks()[outputIndex] = landmark;
+      ++outputIndex;
+    }
+  }
+  sfmData::colorizeTracks(densePointCloud);
+  sfmDataIO::Save(densePointCloud, path, sfmDataIO::ESfMData::ALL_DENSE);
+}
 
 int main(int argc, char* argv[])
 {
@@ -88,6 +121,7 @@ int main(int argc, char* argv[])
     std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
     std::string sfmDataFilename;
     std::string outputMesh;
+    std::string outputDensePointCloud;
     std::string depthMapsFolder;
     std::string depthMapsFilterFolder;
     EPartitioningMode partitioningMode = ePartitioningSingleBlock;
@@ -99,6 +133,7 @@ int main(int argc, char* argv[])
     bool meshingFromDepthMaps = true;
     bool estimateSpaceFromSfM = true;
     bool addLandmarksToTheDensePointCloud = false;
+    bool saveRawDensePointCloud = false;
 
     fuseCut::FuseParams fuseParams;
 
@@ -108,8 +143,10 @@ int main(int argc, char* argv[])
     requiredParams.add_options()
         ("input,i", po::value<std::string>(&sfmDataFilename)->required(),
           "SfMData file.")
-        ("output,o", po::value<std::string>(&outputMesh)->required(),
-            "Output mesh (OBJ file format).");
+        ("output,o", po::value<std::string>(&outputDensePointCloud)->required(),
+          "Output Dense SfMData file.")
+        ("outputMesh,o", po::value<std::string>(&outputMesh)->required(),
+          "Output mesh (OBJ file format).");
 
     po::options_description optionalParams("Optional parameters");
     optionalParams.add_options()
@@ -162,7 +199,9 @@ int main(int argc, char* argv[])
         ("minAngleThreshold", po::value<double>(&fuseParams.minAngleThreshold)->default_value(fuseParams.minAngleThreshold),
             "minAngleThreshold")
         ("refineFuse", po::value<bool>(&fuseParams.refineFuse)->default_value(fuseParams.refineFuse),
-            "refineFuse");
+            "refineFuse")
+        ("saveRawDensePointCloud", po::value<bool>(&saveRawDensePointCloud)->default_value(saveRawDensePointCloud),
+            "Save dense point cloud before cut and filtering.");
 
     po::options_description logParams("Log parameters");
     logParams.add_options()
@@ -360,10 +399,9 @@ int main(int argc, char* argv[])
                       throw std::runtime_error("Empty mesh");
 
                     StaticVector<StaticVector<int>*>* ptsCams = delaunayGC.createPtsCams();
-                    StaticVector<int> usedCams = delaunayGC.getSortedUsedCams();
 
                     StaticVector<Point3d>* hexahsToExcludeFromResultingMesh = nullptr;
-                    mesh::meshPostProcessing(mesh, ptsCams, usedCams, mp, outDirectory.string()+"/", hexahsToExcludeFromResultingMesh, hexah);
+                    mesh::meshPostProcessing(mesh, ptsCams, mp, outDirectory.string()+"/", hexahsToExcludeFromResultingMesh, hexah);
                     mesh->saveToBin((outDirectory/"denseReconstruction.bin").string());
 
                     saveArrayOfArraysToFile<int>((outDirectory/"meshPtsCamsFromDGC.bin").string(), ptsCams);
@@ -438,6 +476,14 @@ int main(int argc, char* argv[])
                         throw std::logic_error("No camera to make the reconstruction");
 
                     delaunayGC.createDensePointCloud(&hexah[0], cams, addLandmarksToTheDensePointCloud ? &sfmData : nullptr, meshingFromDepthMaps ? &fuseParams : nullptr);
+                    if(saveRawDensePointCloud)
+                    {
+                      ALICEVISION_LOG_INFO("Save dense point cloud before cut and filtering.");
+                      StaticVector<StaticVector<int>*>* ptsCams = delaunayGC.createPtsCams();
+                      exportPointCloud((outDirectory/"densePointCloud_raw.abc").string(), mp, sfmData, delaunayGC._verticesCoords, *ptsCams);
+                      deleteArrayOfArrays<int>(&ptsCams);
+                    }
+
                     delaunayGC.createGraphCut(&hexah[0], cams, nullptr, outDirectory.string()+"/", outDirectory.string()+"/SpaceCamsTracks/", false, spaceSteps);
                     delaunayGC.graphCutPostProcessing();
 
@@ -447,16 +493,20 @@ int main(int argc, char* argv[])
                         throw std::runtime_error("Empty mesh");
 
                     StaticVector<StaticVector<int>*>* ptsCams = delaunayGC.createPtsCams();
-                    StaticVector<int> usedCams = delaunayGC.getSortedUsedCams();
 
                     StaticVector<Point3d>* hexahsToExcludeFromResultingMesh = nullptr;
-                    mesh::meshPostProcessing(mesh, ptsCams, usedCams, mp, outDirectory.string()+"/", hexahsToExcludeFromResultingMesh, &hexah[0]);
-                    mesh->saveToBin((outDirectory/"denseReconstruction.bin").string());
+                    mesh::meshPostProcessing(mesh, ptsCams, mp, outDirectory.string()+"/", hexahsToExcludeFromResultingMesh, &hexah[0]);
 
-                    saveArrayOfArraysToFile<int>((outDirectory/"meshPtsCamsFromDGC.bin").string(), ptsCams);
+                    ALICEVISION_LOG_INFO("Save dense point cloud.");
+                    exportPointCloud(outputDensePointCloud, mp, sfmData, mesh->pts->getData(), *ptsCams);
+
+                    //mesh->saveToBin((outDirectory/"denseReconstruction.bin").string());
+
+                    //saveArrayOfArraysToFile<int>((outDirectory/"meshPtsCamsFromDGC.bin").string(), ptsCams);
                     deleteArrayOfArrays<int>(&ptsCams);
                     delete voxels;
 
+                    ALICEVISION_LOG_INFO("Save obj mesh file.");
                     mesh->saveToObj(outputMesh);
 
                     delete mesh;

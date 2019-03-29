@@ -16,7 +16,7 @@
 
 // These constants define the current software version.
 // They must be updated when the command line is changed.
-#define ALICEVISION_SOFTWARE_VERSION_MAJOR 2
+#define ALICEVISION_SOFTWARE_VERSION_MAJOR 3
 #define ALICEVISION_SOFTWARE_VERSION_MINOR 0
 
 using namespace aliceVision;
@@ -42,9 +42,9 @@ int main(int argc, char* argv[])
 
     po::options_description requiredParams("Required parameters");
     requiredParams.add_options()
-        ("input,i", po::value<std::string>(&inputMeshPath)->required(),
+        ("inputMesh,i", po::value<std::string>(&inputMeshPath)->required(),
             "Input Mesh (OBJ file format).")
-        ("output,o", po::value<std::string>(&outputMeshPath)->required(),
+        ("outputMesh,o", po::value<std::string>(&outputMeshPath)->required(),
             "Output mesh (OBJ file format).");
 
     po::options_description optionalParams("Optional parameters");

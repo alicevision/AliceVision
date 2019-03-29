@@ -6,8 +6,8 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include <aliceVision/sfmData/SfMData.hpp>
+#include <aliceVision/sfmData/colorize.hpp>
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
-#include <aliceVision/sfm/colorizeTracks.hpp>
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/cmdline.hpp>
 #include <aliceVision/config.hpp>
@@ -35,18 +35,14 @@ int main(int argc, char **argv)
   std::string sfmDataFilename;
   std::string outputSfMDataFilename;
 
-  po::options_description allParams("AliceVision computeSfMColor");
+  po::options_description allParams("AliceVision exportColoredPointCloud");
 
   po::options_description requiredParams("Required parameters");
   requiredParams.add_options()
     ("input,i", po::value<std::string>(&sfmDataFilename)->required(),
       "SfMData file.")
     ("output,o", po::value<std::string>(&outputSfMDataFilename)->required(),
-      "Output SfMData filename (.json, .bin, .xml, .ply, .baf"
-#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_ALEMBIC)
-      ", .abc"
-#endif
-      ").");
+      "Output point cloud with visibilities as SfMData file.");
 
   po::options_description logParams("Log parameters");
   logParams.add_options()
@@ -101,10 +97,7 @@ int main(int argc, char **argv)
   }
 
   // compute the scene structure color
-  if(!sfm::colorizeTracks(sfmData))
-  {
-    ALICEVISION_LOG_ERROR("Error while trying to colorize the tracks! Aborting...");
-  }
+  sfmData::colorizeTracks(sfmData);
 
   // export the SfMData scene in the expected format
   ALICEVISION_LOG_INFO("Saving output result to " << outputSfMDataFilename << "...");

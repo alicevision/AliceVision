@@ -48,7 +48,7 @@ struct Landmark
   Landmark() = default;
   explicit Landmark(feature::EImageDescriberType descType): descType(descType) {}
   Landmark(const Vec3& pos3d,
-           feature::EImageDescriberType descType,
+           feature::EImageDescriberType descType = feature::EImageDescriberType::UNINITIALIZED,
            const Observations& observations = Observations(),
            const image::RGBColor &color = image::WHITE)
     : X(pos3d)

@@ -45,5 +45,8 @@ private:
 void estimateAndRefineDepthMaps(mvsUtils::MultiViewParams& mp, const std::vector<int>& cams, int nbGPUs);
 void estimateAndRefineDepthMaps(int cudaDeviceNo, mvsUtils::MultiViewParams& mp, const std::vector<int>& cams);
 
+void computeNormalMaps(int CUDADeviceNo, mvsUtils::MultiViewParams& mp, const StaticVector<int>& cams);
+void computeNormalMaps(mvsUtils::MultiViewParams& mp, const StaticVector<int>& cams);
+
 } // namespace depthMap
 } // namespace aliceVision

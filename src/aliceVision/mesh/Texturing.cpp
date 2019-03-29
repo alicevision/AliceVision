@@ -152,8 +152,8 @@ void Texturing::generateUVs(mvsUtils::MultiViewParams& mp)
         {
             std::map<int, int> uvCache;
 
-            Pixel offset = chart.targetLU;
-            offset = offset - chart.sourceLU;
+            Point2d sourceLU(chart.sourceLU.x, chart.sourceLU.y);
+            Point2d targetLU(chart.targetLU.x, chart.targetLU.y);
 
             // for each triangle in this chart
             for(size_t i = 0 ; i<chart.triangleIDs.size(); ++i)
@@ -178,10 +178,25 @@ void Texturing::generateUVs(mvsUtils::MultiViewParams& mp)
                         if(mp.isPixelInImage(pix, chart.refCameraID))
                         {
                             // compute the final pixel coordinates
-                            uvPix = (pix + Point2d(offset.x, offset.y)) / (float)mua.textureSide();
+                            // get pixel offset in reference camera space with applied downscale
+                            Point2d dp = (pix - sourceLU) * chart.downscale;
+                            // add this offset to targetLU to get final pixel coordinates + normalize
+                            uvPix = (targetLU + dp) / (float)mua.textureSide();
                             uvPix.y = 1.0 - uvPix.y;
-                            if(uvPix.x >= mua.textureSide() || uvPix.y >= mua.textureSide())
+
+                            // sanity check: discard invalid UVs
+                            if(   uvPix.x < 0 || uvPix.x > 1.0 
+                               || uvPix.y < 0 || uvPix.x > 1.0 )
+                            {
+                                ALICEVISION_LOG_WARNING("Discarding invalid UV: " + std::to_string(uvPix.x) + ", " + std::to_string(uvPix.y));
                                 uvPix = Point2d();
+                            }
+
+                            if(texParams.useUDIM)
+                            {
+                              uvPix.x += atlasId % 10;
+                              uvPix.y += atlasId / 10;
+                            }
                         }
                     }
 
@@ -418,7 +433,11 @@ void Texturing::generateTexture(const mvsUtils::MultiViewParams& mp,
                 const int pointIndex = (*me->tris)[triangleId].v[k];
                 triPts[k] = (*me->pts)[pointIndex];                               // 3D coordinates
                 const int uvPointIndex = trisUvIds[triangleId].m[k];
-                triPixs[k] = uvCoords[uvPointIndex] * texParams.textureSide;   // UV coordinates
+                Point2d uv = uvCoords[uvPointIndex];
+                uv.x -= std::floor(uv.x);
+                uv.y -= std::floor(uv.y);
+
+                triPixs[k] = uv * texParams.textureSide;   // UV coordinates
             }
 
             // compute triangle bounding box in pixel indexes
@@ -551,7 +570,7 @@ void Texturing::generateTexture(const mvsUtils::MultiViewParams& mp,
     perPixelColors.clear();
     colorIDs.clear();
 
-    std::string textureName = "texture_" + std::to_string(atlasID) + "." + EImageFileType_enumToString(textureFileType);
+    const std::string textureName = "texture_" + std::to_string(1001 + atlasID) + "." + EImageFileType_enumToString(textureFileType); // starts at '1001' for UDIM compatibility
     bfs::path texturePath = outPath / textureName;
     ALICEVISION_LOG_INFO("Writing texture file: " << texturePath.string());
 
@@ -623,17 +642,18 @@ void Texturing::loadFromOBJ(const std::string& filename, bool flipNormals)
     }
 }
 
-void Texturing::loadFromMeshing(const std::string& meshFilepath, const std::string& visibilitiesFilepath)
+void Texturing::remapVisibilities(EVisibilityRemappingMethod remappingMethod, const Mesh& refMesh, const mesh::PointsVisibility& refPointsVisibilities)
 {
-    clear();
-    me = new Mesh();
-    if(!me->loadFromBin(meshFilepath))
-    {
-        throw std::runtime_error("Unable to load: " + meshFilepath);
-    }
-    pointsVisibilities = loadArrayOfArraysFromFile<int>(visibilitiesFilepath);
-    if(pointsVisibilities->size() != me->pts->size())
-        throw std::runtime_error("Error: Reference mesh and associated visibilities don't have the same size.");
+  assert(pointsVisibilities == nullptr);
+  pointsVisibilities = new mesh::PointsVisibility();
+
+  // remap visibilities from the reference onto the mesh
+  if(remappingMethod == EVisibilityRemappingMethod::PullPush || remappingMethod == mesh::EVisibilityRemappingMethod::Pull)
+    remapMeshVisibilities_pullVerticesVisibility(refMesh, refPointsVisibilities, *me, *pointsVisibilities);
+  if(remappingMethod == EVisibilityRemappingMethod::PullPush || remappingMethod == mesh::EVisibilityRemappingMethod::Push)
+    remapMeshVisibilities_pushVerticesVisibilityToTriangles(refMesh, refPointsVisibilities, *me, *pointsVisibilities);
+  if(pointsVisibilities->empty())
+    throw std::runtime_error("No visibility after visibility remapping.");
 }
 
 void Texturing::replaceMesh(const std::string& otherMeshPath, bool flipNormals)
@@ -729,10 +749,11 @@ void Texturing::saveAsOBJ(const bfs::path& dir, const std::string& basename, EIm
         fprintf(fobj, "vt %f %f\n", uvCoords[i].x, uvCoords[i].y);
 
     // write faces per texture atlas
-    for(size_t atlasID=0; atlasID < _atlases.size(); ++atlasID)
+    for(std::size_t atlasId=0; atlasId < _atlases.size(); ++atlasId)
     {
-        fprintf(fobj, "usemtl TextureAtlas_%i\n", atlasID);
-        for(const auto triangleID : _atlases[atlasID])
+        const std::size_t textureId = 1001 + atlasId; // starts at '1001' for UDIM compatibility
+        fprintf(fobj, "usemtl TextureAtlas_%i\n", textureId);
+        for(const auto triangleID : _atlases[atlasId])
         {
             // vertex IDs
             int vertexID1 = (*me->tris)[triangleID].v[0];
@@ -758,11 +779,12 @@ void Texturing::saveAsOBJ(const bfs::path& dir, const std::string& basename, EIm
     fprintf(fmtl, "# \n\n");
 
     // for each atlas, create a new material with associated texture
-    for(size_t atlasID=0; atlasID < _atlases.size(); ++atlasID)
+    for(size_t atlasId=0; atlasId < _atlases.size(); ++atlasId)
     {
-        std::string textureName = "texture_" + std::to_string(atlasID) + "." + EImageFileType_enumToString(textureFileType);
-        fprintf(fmtl, "\n");
-        fprintf(fmtl, "newmtl TextureAtlas_%i\n", atlasID);
+        const std::size_t textureId = 1001 + atlasId; // starts at '1001' for UDIM compatibility
+        const std::string textureName = "texture_" + std::to_string(textureId) + "." + EImageFileType_enumToString(textureFileType);
+
+        fprintf(fmtl, "newmtl TextureAtlas_%i\n", textureId);
         fprintf(fmtl, "Ka  0.6 0.6 0.6\n");
         fprintf(fmtl, "Kd  0.6 0.6 0.6\n");
         fprintf(fmtl, "Ks  0.0 0.0 0.0\n");

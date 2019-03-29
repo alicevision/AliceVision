@@ -8,6 +8,7 @@
 #pragma once
 
 #include <aliceVision/types.hpp>
+#include <aliceVision/alicevision_omp.hpp>
 #include <aliceVision/sfm/BundleAdjustment.hpp>
 #include <aliceVision/sfm/LocalBundleAdjustmentGraph.hpp>
 

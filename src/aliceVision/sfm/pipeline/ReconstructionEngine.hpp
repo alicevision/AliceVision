@@ -8,7 +8,7 @@
 #pragma once
 
 #include <aliceVision/sfmData/SfMData.hpp>
-#include <aliceVision/sfm/colorizeTracks.hpp>
+#include <aliceVision/sfmData/colorize.hpp>
 
 #include <string>
 
@@ -63,9 +63,9 @@ public:
    * @brief Colorization of the reconstructed scene
    * @return true if ok
    */
-  inline bool colorize()
+  inline void colorize()
   {
-    return colorizeTracks(_sfmData);
+    sfmData::colorizeTracks(_sfmData);
   }
 
 protected:

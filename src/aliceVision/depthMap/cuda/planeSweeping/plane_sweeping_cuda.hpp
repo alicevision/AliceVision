@@ -129,6 +129,14 @@ void ps_getSilhoueteMap(
     uchar4 maskColorRgb,
     bool verbose);
 
+void ps_computeNormalMap(
+    Pyramids& ps_texs_arr,
+    CudaHostMemoryHeap<float3, 2>& normalMap_hmh,
+    CudaHostMemoryHeap<float, 2>& depthMap_hmh,
+    const CameraStruct& camera, int width, int height,
+    int scale, int ncamsAllocated, int scales, int wsh, bool verbose,
+    float gammaC, float gammaP);
+
 } // namespace depthMap
 } // namespace aliceVision
 

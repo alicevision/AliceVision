@@ -63,7 +63,8 @@ public:
    */
   void addLandmarks(const sfmData::Landmarks& points,
                     const sfmData::LandmarksUncertainty& landmarksUncertainty = sfmData::LandmarksUncertainty(),
-                    bool withVisibility = true);
+                    bool withVisibility = true,
+                    bool withFeatures = true);
 
   /**
    * @brief Add a camera
