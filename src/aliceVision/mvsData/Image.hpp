@@ -55,6 +55,7 @@ public:
     {
         _width = width;
         _height = height;
+        _img.resize(0);
         _img.resize(_width*_height);
     }
 
@@ -69,6 +70,7 @@ public:
     {
         _width = param._width;
         _height = param._height;
+        _img.resize(_width*_height);
         _img = param._img;
         return *this;
     }
@@ -91,6 +93,9 @@ public:
 
     std::vector<Color>& data() { return _img; }
     const std::vector<Color>& data() const { return _img; }
+
+    const Color& operator[](std::size_t index) const { return _img[index]; }
+    Color& operator[](std::size_t index) { return _img[index]; }
 
     Color getInterpolateColor(const Point2d& pix) const
     {
