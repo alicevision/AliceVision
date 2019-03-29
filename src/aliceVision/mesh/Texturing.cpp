@@ -255,30 +255,30 @@ void Texturing::generateTextures(const mvsUtils::MultiViewParams &mp,
                                  const boost::filesystem::path &outPath, EImageFileType textureFileType)
 {
     mvsUtils::ImagesCache imageCache(&mp, 0);
+    imageCache.setCacheSize(2);
     system::MemoryInfo memInfo = system::getMemoryInfo();
 
     //calculate the maximum number of atlases in memory in Mb
-    unsigned int atlasSize = texParams.textureSide * texParams.textureSide;
-    size_t atlasMemSize = atlasSize * 3 * sizeof(float) / std::pow(2,20); //Mb
-    int imageMaxSize = mp.getMaxImageWidth() * mp.getMaxImageHeight();
-    size_t imageMaxMemSize = imageMaxSize * 3 * sizeof(float) / std::pow(2,20); //Mb
+    const std::size_t atlasMemSize = texParams.textureSide * texParams.textureSide * sizeof(Color) / std::pow(2,20); //Mb
+    const std::size_t imageMaxMemSize =  mp.getMaxImageWidth() * mp.getMaxImageHeight() * sizeof(Color) / std::pow(2,20); //Mb
+    const std::size_t pyramidMaxMemSize = texParams.multiBandNbContrib.size() * atlasMemSize;
 
-    int freeMem = int(memInfo.freeRam / std::pow(2,20));
-    int availableMem = freeMem - int(imageMaxMemSize); // keep some memory for the input image buffers
-    int nbAtlasMax = availableMem / atlasMemSize; //maximum number of textures in RAM
-    int nbAtlas = _atlases.size();
+    const int freeMem = int(memInfo.freeRam / std::pow(2,20));
+    const int availableMem = freeMem - 2 * imageMaxMemSize; // keep some memory for the input image buffer TODO : BESON DE + DE BUFFERS INTERMEDIAIRES ???
+    int nbAtlasMax = availableMem  / pyramidMaxMemSize; //maximum number of textures in RAM
+    const int nbAtlas = _atlases.size();
     nbAtlasMax = std::max(1, nbAtlasMax); //if not enough memory, do it one by one
     nbAtlasMax = std::min(nbAtlas, nbAtlasMax); //if enough memory, do it with all atlases
 
-    div_t divresult = div(nbAtlas, nbAtlasMax);
-    int nquot = divresult.quot;
-    int nrem = divresult.rem;
+    std::div_t divresult = div(nbAtlas, nbAtlasMax);
+    const int nquot = divresult.quot;
+    const int nrem = divresult.rem;
 
     ALICEVISION_LOG_INFO("Total amount of free memory  : " << freeMem << " Mb.");
     ALICEVISION_LOG_INFO("Total amount of an image in memory  : " << imageMaxMemSize << " Mb.");
     ALICEVISION_LOG_INFO("Total amount of memory available : " << availableMem << " Mb.");
     ALICEVISION_LOG_INFO("Size of an atlas : " << atlasMemSize << " Mb.");
-    ALICEVISION_LOG_INFO("Processing " << nbAtlas << " atlases by chunks of " << nbAtlasMax << " (" << nquot + 1 << " iterations).");
+    ALICEVISION_LOG_INFO("Processing " << nbAtlas << " atlases by chunks of " << nbAtlasMax);
 
     //generateTexture for the maximum number of atlases, and iterate
     std::vector<size_t> atlasIDs;
