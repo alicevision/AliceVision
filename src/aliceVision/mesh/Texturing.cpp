@@ -630,40 +630,98 @@ void Texturing::generateTexturesSubSet(const mvsUtils::MultiViewParams& mp,
         const std::string textureName = "texture_" + std::to_string(1001 + atlasID) + "." + EImageFileType_enumToString(textureFileType); // starts at '1001' for UDIM compatibility
         bfs::path texturePath = outPath / textureName;
         ALICEVISION_LOG_INFO("  - Writing texture file: " << texturePath.string());
-
-        unsigned int outTextureSide = texParams.textureSide;
-
-        // texture holes filling
-        if(texParams.fillHoles)
+void Texturing::writeTexture(AccuImage& atlasTexture, const std::size_t atlasID, const boost::filesystem::path &outPath,
+                             EImageFileType textureFileType, const int level)
+{
+    // WARNING: we modify the "imgCount" to apply the padding (to avoid the creation of a new buffer)
+    if(!texParams.fillHoles && texParams.padding > 0)
+    {
+        ALICEVISION_LOG_INFO("  - Edge padding (" << texParams.padding << " pixels).");
+        // edge padding (dilate gutter)
+        for(unsigned int g = 0; g < texParams.padding; ++g)
         {
-            ALICEVISION_LOG_INFO("  - Filling texture holes.");
-            std::vector<float> alphaBuffer(accuImage.img.size());
-            for(unsigned int yp = 0; yp < texParams.textureSide; ++yp)
+            for(unsigned int y = 1; y < texParams.textureSide-1; ++y)
             {
-                unsigned int yoffset = yp * texParams.textureSide;
-                for(unsigned int xp = 0; xp < texParams.textureSide; ++xp)
+                unsigned int yoffset = y * texParams.textureSide;
+                for(unsigned int x = 1; x < texParams.textureSide-1; ++x)
                 {
-                    unsigned int xyoffset = yoffset + xp;
-                    alphaBuffer[xyoffset] = accuImage.imgCount[xyoffset] ? 1.0f : 0.0f;
+                    unsigned int xyoffset = yoffset + x;
+
+                    if(atlasTexture.imgCount[xyoffset] > 0)
+                        continue;
+
+                    if(atlasTexture.imgCount[xyoffset-1] > 0)
+                    {
+                        atlasTexture.img[xyoffset] = atlasTexture.img[xyoffset-1];
+                        atlasTexture.imgCount[xyoffset] = -1;
+                    }
+                    else if(atlasTexture.imgCount[xyoffset+1] > 0)
+                    {
+                        atlasTexture.img[xyoffset] = atlasTexture.img[xyoffset+1];
+                        atlasTexture.imgCount[xyoffset] = -1;
+                    }
+                    else if(atlasTexture.imgCount[xyoffset+texParams.textureSide] > 0)
+                    {
+                        atlasTexture.img[xyoffset] = atlasTexture.img[xyoffset+texParams.textureSide];
+                        atlasTexture.imgCount[xyoffset] = -1;
+                    }
+                    else if(atlasTexture.imgCount[xyoffset-texParams.textureSide] > 0)
+                    {
+                        atlasTexture.img[xyoffset] = atlasTexture.img[xyoffset-texParams.textureSide];
+                        atlasTexture.imgCount[xyoffset] = -1;
+                    }
                 }
             }
-            imageIO::fillHoles(texParams.textureSide, texParams.textureSide, accuImage.img, alphaBuffer);
-            alphaBuffer.clear();
+            for(unsigned int y = 1; y < texParams.textureSide-1; ++y)
+            {
+                unsigned int yoffset = y * texParams.textureSide;
+                for(unsigned int x = 1; x < texParams.textureSide-1; ++x)
+                {
+                    unsigned int xyoffset = yoffset + x;
+                    if(atlasTexture.imgCount[xyoffset] == -1)
+                        atlasTexture.imgCount[xyoffset] = 1;
+                }
+            }
         }
-
-        // downscale texture if required
-        if(texParams.downscale > 1)
-        {
-            std::vector<Color> resizedColorBuffer;
-            outTextureSide = texParams.textureSide / texParams.downscale;
-
-            ALICEVISION_LOG_INFO("  - Downscaling texture (" << texParams.downscale << "x).");
-            imageIO::resizeImage(texParams.textureSide, texParams.textureSide, texParams.downscale, accuImage.img, resizedColorBuffer);
-            std::swap(resizedColorBuffer, accuImage.img);
-        }
-
-        imageIO::writeImage(texturePath.string(), outTextureSide, outTextureSide, accuImage.img);
     }
+
+    const std::string textureName = "texture_" + std::to_string(1001 + atlasID) + (level < 0 ? "" : "_" + std::to_string(level)) + "." + EImageFileType_enumToString(textureFileType); // starts at '1001' for UDIM compatibility
+    bfs::path texturePath = outPath / textureName;
+    ALICEVISION_LOG_INFO("  - Writing texture file: " << texturePath.string());
+
+    unsigned int outTextureSide = texParams.textureSide;
+
+    // texture holes filling
+    if(texParams.fillHoles)
+    {
+        ALICEVISION_LOG_INFO("  - Filling texture holes.");
+        std::vector<float> alphaBuffer(atlasTexture.img.size());
+        for(unsigned int yp = 0; yp < texParams.textureSide; ++yp)
+        {
+            unsigned int yoffset = yp * texParams.textureSide;
+            for(unsigned int xp = 0; xp < texParams.textureSide; ++xp)
+            {
+                unsigned int xyoffset = yoffset + xp;
+                alphaBuffer[xyoffset] = atlasTexture.imgCount[xyoffset] ? 1.0f : 0.0f;
+            }
+        }
+        imageIO::fillHoles(texParams.textureSide, texParams.textureSide, atlasTexture.img, alphaBuffer);
+        alphaBuffer.clear();
+    }
+
+    // downscale texture if required
+    if(texParams.downscale > 1)
+    {
+        std::vector<Color> resizedColorBuffer;
+        outTextureSide = texParams.textureSide / texParams.downscale;
+
+        ALICEVISION_LOG_INFO("  - Downscaling texture (" << texParams.downscale << "x).");
+        imageIO::resizeImage(texParams.textureSide, texParams.textureSide, texParams.downscale, atlasTexture.img, resizedColorBuffer);
+        std::swap(resizedColorBuffer, atlasTexture.img);
+    }
+
+    imageIO::writeImage(texturePath.string(), outTextureSide, outTextureSide, atlasTexture.img);
+
 }
 
 void Texturing::clear()

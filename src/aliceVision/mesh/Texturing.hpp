@@ -145,6 +145,30 @@ public:
      */
     void generateUVsBasicMethod(mvsUtils::MultiViewParams &mp);
 
+    // Create buffer for the set of output textures
+    struct AccuImage
+    {
+        std::vector<Color> img;
+        std::vector<int> imgCount;
+
+        void resize(std::size_t s)
+        {
+            img.resize(s);
+            imgCount.resize(s);
+        }
+    };
+    struct AccuPyramid
+    {
+        std::vector<AccuImage> pyramid;
+
+        void init(std::size_t nbLevels, std::size_t imageSize)
+        {
+            pyramid.resize(nbLevels);
+            for(auto& p : pyramid)
+                p.resize(imageSize);
+        }
+    };
+
     /// Generate texture files for all texture atlases
     void generateTextures(const mvsUtils::MultiViewParams& mp,
                           const bfs::path &outPath, EImageFileType textureFileType = EImageFileType::PNG);
@@ -153,6 +177,10 @@ public:
     void generateTexturesSubSet(const mvsUtils::MultiViewParams& mp,
                          const std::vector<size_t>& atlasIDs, mvsUtils::ImagesCache& imageCache,
                          const bfs::path &outPath, EImageFileType textureFileType = EImageFileType::PNG);
+
+    ///Fill holes and write texture files for the given texture atlas
+    void writeTexture(AccuImage& atlasTexture, const std::size_t atlasID, const bfs::path& outPath,
+                      EImageFileType textureFileType, const int level);
 
     /// Save textured mesh as an OBJ + MTL file
     void saveAsOBJ(const bfs::path& dir, const std::string& basename, EImageFileType textureFileType = EImageFileType::PNG);
