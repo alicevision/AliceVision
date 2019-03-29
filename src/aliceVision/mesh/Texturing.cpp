@@ -478,7 +478,7 @@ void Texturing::generateTexturesSubSet(const mvsUtils::MultiViewParams& mp,
         //Calculate laplacianPyramid
         MultiBandBlending multiBandBlending;
         std::vector<Image> pyramidL; //laplacian pyramid
-        multiBandBlending.laplacianDownscalePyramid(pyramidL, camImg, camId, nbBand, texParams.multiBandKernelSize);
+        multiBandBlending.laplacianDownscalePyramid(pyramidL, camImg, nbBand);
 
         // for each output texture file
         for(const auto& c : cameraContributions)
