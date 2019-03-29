@@ -570,52 +570,90 @@ void Texturing::generateTexturesSubSet(const mvsUtils::MultiViewParams& mp,
             }
         }
 
-        // WARNING: we modify the "imgCount" to apply the padding (to avoid the creation of a new buffer)
+        unsigned int outTextureSide = texParams.textureSide;
+
         if(!texParams.fillHoles && texParams.padding > 0)
         {
             ALICEVISION_LOG_INFO("  - Edge padding (" << texParams.padding << " pixels).");
-            // edge padding (dilate gutter)
-            for(unsigned int g = 0; g < texParams.padding; ++g)
+            //up-left to bottom-right
+            for(unsigned int y = 1; y < outTextureSide-1; ++y)
             {
-                for(unsigned int y = 1; y < texParams.textureSide-1; ++y)
+                unsigned int yoffset = y * outTextureSide;
+                for(unsigned int x = 1; x < outTextureSide-1; ++x)
                 {
-                    unsigned int yoffset = y * texParams.textureSide;
-                    for(unsigned int x = 1; x < texParams.textureSide-1; ++x)
-                    {
-                        unsigned int xyoffset = yoffset + x;
+                    unsigned int xyoffset = yoffset + x;
+                    const int leftCount = accuImage.imgCount[xyoffset-1];
+                    const int upCount = accuImage.imgCount[xyoffset-outTextureSide];
 
-                        if(accuImage.imgCount[xyoffset] > 0)
-                            continue;
-                        else if(accuImage.imgCount[xyoffset-1] > 0)
-                        {
-                            accuImage.img[xyoffset] = accuImage.img[xyoffset-1];
-                            accuImage.imgCount[xyoffset] += 1;
-                        }
-                        else if(accuImage.imgCount[xyoffset+1] > 0)
-                        {
-                            accuImage.img[xyoffset] = accuImage.img[xyoffset+1];
-                            accuImage.imgCount[xyoffset] += 1;
-                        }
-                        else if(accuImage.imgCount[xyoffset+texParams.textureSide] > 0)
-                        {
-                            accuImage.img[xyoffset] = accuImage.img[xyoffset+texParams.textureSide];
-                            accuImage.imgCount[xyoffset] += 1;
-                        }
-                        else if(accuImage.imgCount[xyoffset-texParams.textureSide] > 0)
-                        {
-                            accuImage.img[xyoffset] = accuImage.img[xyoffset-texParams.textureSide];
-                            accuImage.imgCount[xyoffset] += 1;
-                        }
+                    if(accuImage.imgCount[xyoffset] > 0)
+                        continue;
+
+                    if(leftCount > 0)
+                    {
+                        accuImage.img[xyoffset] = accuImage.img[xyoffset-1];
+                        accuImage.imgCount[xyoffset] = - 1;
+                    }
+                    else if(upCount > 0)
+                    {
+                        accuImage.img[xyoffset] = accuImage.img[xyoffset-outTextureSide];
+                        accuImage.imgCount[xyoffset] = - 1;
+                    }
+                    else if(leftCount < 0 && - leftCount < texParams.padding && (upCount == 0 || leftCount > upCount))
+                    {
+                        accuImage.img[xyoffset] = accuImage.img[xyoffset-1];
+                        accuImage.imgCount[xyoffset] = leftCount - 1;
+                    }
+
+                    else if(upCount < 0 && - upCount < texParams.padding)
+                    {
+                        accuImage.img[xyoffset] = accuImage.img[xyoffset-outTextureSide];
+                        accuImage.imgCount[xyoffset] = upCount - 1;
+                    }
+                }
+            }
+            //bottom-right to up-left
+            for(unsigned int y = 1; y < outTextureSide-1; ++y) //change
+            {
+                unsigned int yoffset = (outTextureSide - y) * outTextureSide;
+                for(unsigned int x = 1; x < outTextureSide-1; ++x)
+                {
+                    unsigned int xyoffset = yoffset + (outTextureSide - x);
+                    const int rightCount = accuImage.imgCount[xyoffset+1];
+                    const int leftCount = accuImage.imgCount[xyoffset-1];
+                    const int downCount = accuImage.imgCount[xyoffset+outTextureSide];
+                    const int upCount = accuImage.imgCount[xyoffset-outTextureSide];
+
+                    if(accuImage.imgCount[xyoffset] > 0)
+                        continue;
+
+                    if(rightCount > 0)
+                    {
+                        accuImage.img[xyoffset] = accuImage.img[xyoffset+1];
+                        accuImage.imgCount[xyoffset] = - 1;
+                    }
+                    else if(downCount > 0)
+                    {
+                        accuImage.img[xyoffset] = accuImage.img[xyoffset+outTextureSide];
+                        accuImage.imgCount[xyoffset] = - 1;
+                    }
+                    else if((rightCount < 0 && - rightCount < texParams.padding) &&
+                            (leftCount == 0 || rightCount > leftCount) &&
+                            (downCount == 0 || rightCount >= downCount)
+                            )
+                    {
+                        accuImage.img[xyoffset] = accuImage.img[xyoffset+1];
+                        accuImage.imgCount[xyoffset] = rightCount - 1;
+                    }
+                    else if((downCount < 0 && - downCount < texParams.padding) &&
+                            (upCount == 0 || downCount > upCount)
+                            )
+                    {
+                        accuImage.img[xyoffset] = accuImage.img[xyoffset+outTextureSide];
+                        accuImage.imgCount[xyoffset] = downCount - 1;
                     }
                 }
             }
         }
-
-        const std::string textureName = "texture_" + std::to_string(1001 + atlasID) + "." + EImageFileType_enumToString(textureFileType); // starts at '1001' for UDIM compatibility
-        bfs::path texturePath = outPath / textureName;
-        ALICEVISION_LOG_INFO("  - Writing texture file: " << texturePath.string());
-
-        unsigned int outTextureSide = texParams.textureSide;
 
         // texture holes filling
         if(texParams.fillHoles)
@@ -624,15 +662,20 @@ void Texturing::generateTexturesSubSet(const mvsUtils::MultiViewParams& mp,
             std::vector<float> alphaBuffer(accuImage.img.size());
             for(unsigned int yp = 0; yp < texParams.textureSide; ++yp)
             {
-                unsigned int yoffset = yp * texParams.textureSide;
-                for(unsigned int xp = 0; xp < texParams.textureSide; ++xp)
+                ALICEVISION_LOG_INFO("  - Filling texture holes.");
+                std::vector<float> alphaBuffer(accuImage.img.size());
+                for(unsigned int yp = 0; yp < texParams.textureSide; ++yp)
                 {
-                    unsigned int xyoffset = yoffset + xp;
-                    alphaBuffer[xyoffset] = accuImage.imgCount[xyoffset] ? 1.0f : 0.0f;
+                    unsigned int yoffset = yp * texParams.textureSide;
+                    for(unsigned int xp = 0; xp < texParams.textureSide; ++xp)
+                    {
+                        unsigned int xyoffset = yoffset + xp;
+                        alphaBuffer[xyoffset] = accuImage.imgCount[xyoffset] ? 1.0f : 0.0f;
+                    }
                 }
+                imageIO::fillHoles(texParams.textureSide, texParams.textureSide, accuImage.img, alphaBuffer);
+                alphaBuffer.clear();
             }
-            imageIO::fillHoles(texParams.textureSide, texParams.textureSide, accuImage.img, alphaBuffer);
-            alphaBuffer.clear();
         }
 
         // downscale texture if required
@@ -646,6 +689,9 @@ void Texturing::generateTexturesSubSet(const mvsUtils::MultiViewParams& mp,
             std::swap(resizedColorBuffer, accuImage.img);
         }
 
+        const std::string textureName = "texture_" + std::to_string(1001 + atlasID) + "." + EImageFileType_enumToString(textureFileType); // starts at '1001' for UDIM compatibility
+        bfs::path texturePath = outPath / textureName;
+        ALICEVISION_LOG_INFO("  - Writing texture file: " << texturePath.string());
         imageIO::writeImage(texturePath.string(), outTextureSide, outTextureSide, accuImage.img, imageIO::EImageQuality::OPTIMIZED, imageIO::EImageColorSpace::AUTO);
     }
 }
