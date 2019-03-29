@@ -37,18 +37,15 @@ void ImagesCache::initIC( std::vector<std::string>& _imagesNames )
     float oneimagemb = (sizeof(Color) * mp->getMaxImageWidth() * mp->getMaxImageHeight()) / 1024.f / 1024.f;
     float maxmbCPU = (float)mp->userParams.get<int>("images_cache.maxmbCPU", 5000);
     int _npreload = std::max((int)(maxmbCPU / oneimagemb), 5); // image cache has a minimum size of 5
-    N_PRELOADED_IMAGES = std::min(mp->ncams, _npreload);
+    _npreload = std::min(mp->ncams, _npreload);
 
     for(int rc = 0; rc < mp->ncams; rc++)
     {
         imagesNames.push_back(_imagesNames[rc]);
     }
 
-    imgs.resize(N_PRELOADED_IMAGES); // = new Color*[N_PRELOADED_IMAGES];
-
     camIdMapId.resize( mp->ncams, -1 );
-    mapIdCamId.resize( N_PRELOADED_IMAGES, -1 );
-    mapIdClock.resize( N_PRELOADED_IMAGES, clock() );
+    setCacheSize(_npreload);
 
     {
         // Cannot resize the vector<mutex> directly, as mutex class is not move-constructible.
@@ -59,6 +56,14 @@ void ImagesCache::initIC( std::vector<std::string>& _imagesNames )
     }
 
 
+}
+
+void ImagesCache::setCacheSize(int nbPreload)
+{
+    N_PRELOADED_IMAGES = nbPreload;
+    imgs.resize(N_PRELOADED_IMAGES);
+    mapIdCamId.resize( N_PRELOADED_IMAGES, -1 );
+    mapIdClock.resize( N_PRELOADED_IMAGES, clock() );
 }
 
 ImagesCache::~ImagesCache()

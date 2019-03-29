@@ -81,6 +81,7 @@ public:
     ImagesCache( const MultiViewParams* _mp, int _bandType);
     ImagesCache( const MultiViewParams* _mp, int _bandType, std::vector<std::string>& _imagesNames);
     void initIC( std::vector<std::string>& _imagesNames );
+    void setCacheSize(int nbPreload);
     ~ImagesCache();
 
     inline ImgPtr getImg_sync( int camId )
