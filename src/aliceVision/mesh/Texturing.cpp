@@ -639,53 +639,82 @@ void Texturing::generateTexturesSubSet(const mvsUtils::MultiViewParams& mp,
 void Texturing::writeTexture(AccuImage& atlasTexture, const std::size_t atlasID, const boost::filesystem::path &outPath,
                              EImageFileType textureFileType, const int level)
 {
+    unsigned int outTextureSide = texParams.textureSide;
     // WARNING: we modify the "imgCount" to apply the padding (to avoid the creation of a new buffer)
+    // edge padding (dilate gutter)
     if(!texParams.fillHoles && texParams.padding > 0)
     {
         ALICEVISION_LOG_INFO("  - Edge padding (" << texParams.padding << " pixels).");
-        // edge padding (dilate gutter)
-        for(unsigned int g = 0; g < texParams.padding; ++g)
+
+        //up-left to bottom-right
+        for(unsigned int y = 1; y < outTextureSide-1; ++y)
         {
-            for(unsigned int y = 1; y < texParams.textureSide-1; ++y)
+            unsigned int yoffset = y * outTextureSide;
+            for(unsigned int x = 1; x < outTextureSide-1; ++x)
             {
-                unsigned int yoffset = y * texParams.textureSide;
-                for(unsigned int x = 1; x < texParams.textureSide-1; ++x)
+                unsigned int xyoffset = yoffset + x;
+                const int leftCount = atlasTexture.imgCount[xyoffset-1];
+                const int upCount = atlasTexture.imgCount[xyoffset-outTextureSide];
+
+                if(atlasTexture.imgCount[xyoffset] > 0)
+                    continue;
+
+                if(leftCount > 0)
                 {
-                    unsigned int xyoffset = yoffset + x;
-
-                    if(atlasTexture.imgCount[xyoffset] > 0)
-                        continue;
-
-                    if(atlasTexture.imgCount[xyoffset-1] > 0)
-                    {
-                        atlasTexture.img[xyoffset] = atlasTexture.img[xyoffset-1];
-                        atlasTexture.imgCount[xyoffset] = -1;
-                    }
-                    else if(atlasTexture.imgCount[xyoffset+1] > 0)
-                    {
-                        atlasTexture.img[xyoffset] = atlasTexture.img[xyoffset+1];
-                        atlasTexture.imgCount[xyoffset] = -1;
-                    }
-                    else if(atlasTexture.imgCount[xyoffset+texParams.textureSide] > 0)
-                    {
-                        atlasTexture.img[xyoffset] = atlasTexture.img[xyoffset+texParams.textureSide];
-                        atlasTexture.imgCount[xyoffset] = -1;
-                    }
-                    else if(atlasTexture.imgCount[xyoffset-texParams.textureSide] > 0)
-                    {
-                        atlasTexture.img[xyoffset] = atlasTexture.img[xyoffset-texParams.textureSide];
-                        atlasTexture.imgCount[xyoffset] = -1;
-                    }
+                    atlasTexture.img[xyoffset] = atlasTexture.img[xyoffset-1];
+                    atlasTexture.imgCount[xyoffset] = - 1;
+                }
+                if(leftCount < 0 && leftCount > -texParams.padding)
+                {
+                    atlasTexture.img[xyoffset] = atlasTexture.img[xyoffset-1];
+                    atlasTexture.imgCount[xyoffset] = leftCount - 1;
+                }
+                if(upCount > 0)
+                {
+                    atlasTexture.img[xyoffset] = atlasTexture.img[xyoffset-1];
+                    atlasTexture.imgCount[xyoffset] = - 1;
+                }
+                if(upCount < 0 && upCount > -texParams.padding)
+                {
+                    atlasTexture.img[xyoffset] = atlasTexture.img[xyoffset-1];
+                    atlasTexture.imgCount[xyoffset] = upCount - 1;
                 }
             }
-            for(unsigned int y = 1; y < texParams.textureSide-1; ++y)
+        }
+        //bottom-right to up-left
+        for(unsigned int y = 1; y < outTextureSide-1; ++y) //change
+        {
+            unsigned int yoffset = (outTextureSide - y) * outTextureSide;
+            for(unsigned int x = 1; x < outTextureSide-1; ++x)
             {
-                unsigned int yoffset = y * texParams.textureSide;
-                for(unsigned int x = 1; x < texParams.textureSide-1; ++x)
+                unsigned int xyoffset = yoffset + (outTextureSide - x);
+                const int rightCount = atlasTexture.imgCount[xyoffset+1];
+                const int leftCount = atlasTexture.imgCount[xyoffset-1];
+                const int downCount = atlasTexture.imgCount[xyoffset+outTextureSide];
+                const int upCount = atlasTexture.imgCount[xyoffset-outTextureSide];
+
+                if(atlasTexture.imgCount[xyoffset] > 0)
+                    continue;
+
+                if(rightCount > 0)
                 {
-                    unsigned int xyoffset = yoffset + x;
-                    if(atlasTexture.imgCount[xyoffset] == -1)
-                        atlasTexture.imgCount[xyoffset] = 1;
+                    atlasTexture.img[xyoffset] = atlasTexture.img[xyoffset-1];
+                    atlasTexture.imgCount[xyoffset] = - 1;
+                }
+                if(rightCount < 0 && rightCount > -texParams.padding && rightCount < leftCount)
+                {
+                    atlasTexture.img[xyoffset] = atlasTexture.img[xyoffset-1];
+                    atlasTexture.imgCount[xyoffset] = rightCount - 1;
+                }
+                if(downCount > 0)
+                {
+                    atlasTexture.img[xyoffset] = atlasTexture.img[xyoffset-1];
+                    atlasTexture.imgCount[xyoffset] = - 1;
+                }
+                if(downCount < 0 && downCount > -texParams.padding && downCount < upCount)
+                {
+                    atlasTexture.img[xyoffset] = atlasTexture.img[xyoffset-1];
+                    atlasTexture.imgCount[xyoffset] = downCount - 1;
                 }
             }
         }
@@ -694,8 +723,6 @@ void Texturing::writeTexture(AccuImage& atlasTexture, const std::size_t atlasID,
     const std::string textureName = "texture_" + std::to_string(1001 + atlasID) + (level < 0 ? "" : "_" + std::to_string(level)) + "." + EImageFileType_enumToString(textureFileType); // starts at '1001' for UDIM compatibility
     bfs::path texturePath = outPath / textureName;
     ALICEVISION_LOG_INFO("  - Writing texture file: " << texturePath.string());
-
-    unsigned int outTextureSide = texParams.textureSide;
 
     // texture holes filling
     if(texParams.fillHoles)
