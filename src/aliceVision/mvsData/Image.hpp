@@ -88,6 +88,22 @@ public:
         }
     }
 
+    //WARNING : size(inImga) = 2*size(inImgb)
+    static void imageDownscaleDiff(Image& inImga, Image& inImgb, Image& outImg)
+    {
+        //inImga = largest image
+        if(inImga.height() < inImgb.height())
+            inImga.swap(inImgb);
+
+        outImg.resize(inImga._width, inImga._height);
+        for(int i = 0; i < inImga._width*inImga._height; ++i)
+        {
+            Point2d pix(i%inImga.width(), static_cast<int>(i/inImga.width()));
+            outImg._img[i] = inImga._img[i] - inImgb.getInterpolateColor(pix/2);
+        }
+
+    }
+
     int width() const { return _width; }
     int height() const { return _height; }
 
