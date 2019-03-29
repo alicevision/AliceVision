@@ -608,17 +608,15 @@ void Texturing::generateTexturesSubSet(const mvsUtils::MultiViewParams& mp,
             }
         }
 
+        bool debug = 1;
+        if(debug)
         {
-            ALICEVISION_LOG_INFO("  - Edge padding (" << texParams.padding << " pixels).");
-            // edge padding (dilate gutter)
-            for(unsigned int g = 0; g < texParams.padding; ++g)
+            for(std::size_t level = 0; level < accuPyramid.pyramid.size(); ++level)
             {
-                for(unsigned int y = 1; y < texParams.textureSide-1; ++y)
-                {
-                    unsigned int yoffset = y * texParams.textureSide;
-                    for(unsigned int x = 1; x < texParams.textureSide-1; ++x)
-                    {
-                        unsigned int xyoffset = yoffset + x;
+                AccuImage& atlasLevelTexture =  accuPyramid.pyramid[level];
+                writeTexture(atlasLevelTexture, atlasID, outPath, textureFileType, level);
+            }
+        }
 
         // Fuse frequency bands into the first buffer
         for(unsigned int yp = 0; yp < texParams.textureSide; ++yp)
