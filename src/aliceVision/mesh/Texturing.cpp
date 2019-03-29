@@ -254,6 +254,12 @@ void Texturing::generateUVsBasicMethod(mvsUtils::MultiViewParams& mp)
 void Texturing::generateTextures(const mvsUtils::MultiViewParams &mp,
                                  const boost::filesystem::path &outPath, EImageFileType textureFileType)
 {
+    ALICEVISION_LOG_INFO("Texturing: Use multiband blending with the following contributions per band:");
+    for(int c: texParams.multiBandNbContrib)
+    {
+        ALICEVISION_LOG_INFO(c << ", ");
+    }
+
     mvsUtils::ImagesCache imageCache(&mp, 0);
     imageCache.setCacheSize(2);
     system::MemoryInfo memInfo = system::getMemoryInfo();
@@ -294,7 +300,7 @@ void Texturing::generateTextures(const mvsUtils::MultiViewParams &mp,
             size_t atlasID = size_t(n*nbAtlasMax + i);
             atlasIDs.push_back(atlasID);
         }
-        ALICEVISION_LOG_INFO("Generating texture for atlases " << n*nbAtlasMax << " to " << n*nbAtlasMax+imax-1 << " (process a chunk of " << atlasIDs.size() << " atlases within " << _atlases.size() << " atlases).");
+        ALICEVISION_LOG_INFO("Generating texture for atlases " << n*nbAtlasMax + 1 << " to " << n*nbAtlasMax+imax << " (process a chunk of " << atlasIDs.size() << " atlases within " << _atlases.size() << " atlases).");
         generateTexturesSubSet(mp, atlasIDs, imageCache, outPath, textureFileType);
     }
 }
@@ -306,13 +312,14 @@ void Texturing::generateTexturesSubSet(const mvsUtils::MultiViewParams& mp,
         throw std::runtime_error("Invalid atlas IDs ");
 
     unsigned int textureSize = texParams.textureSide * texParams.textureSide;
+    int nbBand = texParams.multiBandNbContrib.size();
 
     using AtlasIndex = size_t;
     using TrianglesId = std::vector<unsigned int>;
 
     // We select the best cameras for each triangle and store it per camera for each output texture files.
     // List of triangle IDs (selected to contribute to the final texturing) per image.
-    std::vector<std::map<AtlasIndex, TrianglesId>> contributionsPerCamera(mp.ncams);
+    std::vector<std::map<AtlasIndex, std::vector<TrianglesId>>> contributionsPerCamera(mp.ncams);
 
     //for each atlasID, calculate contributionPerCamera
     for(const size_t atlasID : atlasIDs)
@@ -410,50 +417,49 @@ void Texturing::generateTexturesSubSet(const mvsUtils::MultiViewParams& mp,
             const double minScore = texParams.bestScoreThreshold * std::get<1>(scorePerCamId.front()); // bestScoreThreshold * bestScore
             const bool bestIsPartial = (std::get<0>(scorePerCamId.front()) < 3);
             int nbCumulatedVertices = 0;
-            const int maxNbVerticesForFusion = texParams.maxNbImagesForFusion * 3;
-            for(int i = 0; i < scorePerCamId.size(); ++i)
+
+            int levelContrib = 0;
+            for(int i = 0; i < scorePerCamId.size() && levelContrib < nbBand; ++i)
             {
+                const int maxNbVerticesForFusion = texParams.multiBandNbContrib[levelContrib] * 3;
                 if (!bestIsPartial && i > 0)
                 {
-                    bool triVisIsPartial = (std::get<0>(scorePerCamId[i]) < 3);
                     nbCumulatedVertices += std::get<0>(scorePerCamId[i]);
                     if(maxNbVerticesForFusion != 0 && nbCumulatedVertices > maxNbVerticesForFusion)
-                        break;
+                    {
+                        ++levelContrib;
+                        nbCumulatedVertices = 0;
+                        continue;
+                    }
                     if(std::get<1>(scorePerCamId[i]) < minScore)
+                    {
                         // The best image fully see the triangle and has a much better score, so only rely on the first ones
                         break;
+                    }
                 }
 
-                //add triangleID to the corresponding texture for this camera
+                //for the camera camId : add triangleID to the corresponding texture at the right level of frequency
                 const int camId = std::get<2>(scorePerCamId[i]);
-                contributionsPerCamera[camId][atlasID].push_back(triangleID);
+                auto& camContribution = contributionsPerCamera[camId];
+                if(camContribution.find(atlasID) == camContribution.end())
+                    camContribution[atlasID].resize(nbBand);
+                camContribution.at(atlasID)[levelContrib].push_back(triangleID);
             }
         }
     }
 
     ALICEVISION_LOG_INFO("Reading pixel color.");
 
-    // Create buffer for the set of output textures
-    struct AccuImage
-    {
-        std::vector<Color> img;
-        std::vector<int> imgCount;
-
-        void resize(std::size_t s)
-        {
-            img.resize(s);
-            imgCount.resize(s);
-        }
-    };
-
-    std::map<AtlasIndex, AccuImage> accuImages;
+    std::map<AtlasIndex, AccuPyramid> accuPyramids;
     for(std::size_t atlasID: atlasIDs)
-        accuImages[atlasID].resize(textureSize);
+        accuPyramids[atlasID].init(nbBand, textureSize);
 
-    //for each camera, for each texture, iterate over triangles and fill the colorID map
-    int camId = 0;
-    for(const std::map<AtlasIndex, TrianglesId>& cameraContributions : contributionsPerCamera)
+    //for each camera, for each texture, iterate over triangles and fill the accuPyramids map
+
+    for(int camId = 0; camId < contributionsPerCamera.size(); ++camId)
     {
+        const std::map<AtlasIndex, std::vector<TrianglesId>>& cameraContributions = contributionsPerCamera[camId];
+
         if(cameraContributions.empty())
         {
             ALICEVISION_LOG_INFO(" - camera " << camId + 1 << "/" << mp.ncams << " unused.");
@@ -461,7 +467,7 @@ void Texturing::generateTexturesSubSet(const mvsUtils::MultiViewParams& mp,
         }
         ALICEVISION_LOG_INFO(" - camera " << camId + 1 << "/" << mp.ncams << " with contributions to " << cameraContributions.size() << " texture files:");
 
-        imageCache.refreshData(camId);
+        imageCache.refreshData(camId);        
 
         //conversion ImagesCache::Img -> Image
         mvsUtils::ImagesCache::ImgPtr imgPtr = imageCache.getImg_sync(camId);
@@ -472,125 +478,136 @@ void Texturing::generateTexturesSubSet(const mvsUtils::MultiViewParams& mp,
         //Calculate laplacianPyramid
         MultiBandBlending multiBandBlending;
         std::vector<Image> pyramidL; //laplacian pyramid
-        multiBandBlending.laplacianPyramid(pyramidL, camImg, camId, 3, 40.0f); //sizeKernel = final blur
+        multiBandBlending.laplacianDownscalePyramid(pyramidL, camImg, camId, nbBand, texParams.multiBandKernelSize);
 
         // for each output texture file
         for(const auto& c : cameraContributions)
         {
             AtlasIndex atlasID = c.first;
-            AccuImage& accuImage = accuImages.at(atlasID);
-            const TrianglesId& trianglesId = c.second;
+            for(int level = 0; level < c.second.size(); ++level)
+            {
+                const TrianglesId& trianglesId = c.second[level];
+                ALICEVISION_LOG_INFO("    Texture file: " << atlasID << ", number of triangles: " << trianglesId.size() << ".");
 
-            ALICEVISION_LOG_INFO("    Texture file: " << atlasID << ", number of triangles: " << trianglesId.size() << ".");
+                // for each triangle
+                #pragma omp parallel for
+                for(int ti = 0; ti < trianglesId.size(); ++ti)
+                {
+                    const unsigned int triangleId = trianglesId[ti];
+                    // retrieve triangle 3D and UV coordinates
+                    Point2d triPixs[3];
+                    Point3d triPts[3];
 
-           // for each triangle
-           #pragma omp parallel for
-           for(int ti = 0; ti < trianglesId.size(); ++ti)
-           {
-               const unsigned int triangleId = trianglesId[ti];
-               // retrieve triangle 3D and UV coordinates
-               Point2d triPixs[3];
-               Point3d triPts[3];
+                    for(int k = 0; k < 3; k++)
+                    {
+                       const int pointIndex = (*me->tris)[triangleId].v[k];
+                       triPts[k] = (*me->pts)[pointIndex];                               // 3D coordinates
+                       const int uvPointIndex = trisUvIds[triangleId].m[k];
+                       Point2d uv = uvCoords[uvPointIndex];
+                       uv.x -= std::floor(uv.x);
+                       uv.y -= std::floor(uv.y);
 
-               for(int k = 0; k < 3; k++)
-               {
-                   const int pointIndex = (*me->tris)[triangleId].v[k];
-                   triPts[k] = (*me->pts)[pointIndex];                               // 3D coordinates
-                   const int uvPointIndex = trisUvIds[triangleId].m[k];
-                   Point2d uv = uvCoords[uvPointIndex];
-                   uv.x -= std::floor(uv.x);
-                   uv.y -= std::floor(uv.y);
+                       triPixs[k] = uv * texParams.textureSide;   // UV coordinates
+                    }
 
-                   triPixs[k] = uv * texParams.textureSide;   // UV coordinates
-               }
+                    // compute triangle bounding box in pixel indexes
+                    // min values: floor(value)
+                    // max values: ceil(value)
+                    Pixel LU, RD;
+                    LU.x = static_cast<int>(std::floor(std::min(std::min(triPixs[0].x, triPixs[1].x), triPixs[2].x)));
+                    LU.y = static_cast<int>(std::floor(std::min(std::min(triPixs[0].y, triPixs[1].y), triPixs[2].y)));
+                    RD.x = static_cast<int>(std::ceil(std::max(std::max(triPixs[0].x, triPixs[1].x), triPixs[2].x)));
+                    RD.y = static_cast<int>(std::ceil(std::max(std::max(triPixs[0].y, triPixs[1].y), triPixs[2].y)));
 
-               // compute triangle bounding box in pixel indexes
-               // min values: floor(value)
-               // max values: ceil(value)
-               Pixel LU, RD;
-               LU.x = static_cast<int>(std::floor(std::min(std::min(triPixs[0].x, triPixs[1].x), triPixs[2].x)));
-               LU.y = static_cast<int>(std::floor(std::min(std::min(triPixs[0].y, triPixs[1].y), triPixs[2].y)));
-               RD.x = static_cast<int>(std::ceil(std::max(std::max(triPixs[0].x, triPixs[1].x), triPixs[2].x)));
-               RD.y = static_cast<int>(std::ceil(std::max(std::max(triPixs[0].y, triPixs[1].y), triPixs[2].y)));
+                    // sanity check: clamp values to [0; textureSide]
+                    int texSide = static_cast<int>(texParams.textureSide);
+                    LU.x = clamp(LU.x, 0, texSide);
+                    LU.y = clamp(LU.y, 0, texSide);
+                    RD.x = clamp(RD.x, 0, texSide);
+                    RD.y = clamp(RD.y, 0, texSide);
 
-               // sanity check: clamp values to [0; textureSide]
-               int texSide = static_cast<int>(texParams.textureSide);
-               LU.x = clamp(LU.x, 0, texSide);
-               LU.y = clamp(LU.y, 0, texSide);
-               RD.x = clamp(RD.x, 0, texSide);
-               RD.y = clamp(RD.y, 0, texSide);
-
-               // iterate over pixels of the triangle's bounding box
-               for(int y = LU.y; y < RD.y; y++)
-               {
-                   for(int x = LU.x; x < RD.x; x++)
-                   {
-                       Pixel pix(x, y); // top-left corner of the pixel
-                       Point2d barycCoords;
-
-                       // test if the pixel is inside triangle
-                       // and retrieve its barycentric coordinates
-                       if(!isPixelInTriangle(triPixs, pix, barycCoords))
+                    // iterate over pixels of the triangle's bounding box
+                    for(int y = LU.y; y < RD.y; y++)
+                    {
+                       for(int x = LU.x; x < RD.x; x++)
                        {
-                           continue;
+                           Pixel pix(x, y); // top-left corner of the pixel
+                           Point2d barycCoords;
+
+                           // test if the pixel is inside triangle
+                           // and retrieve its barycentric coordinates
+                           if(!isPixelInTriangle(triPixs, pix, barycCoords))
+                           {
+                               continue;
+                           }
+
+                           // remap 'y' to image coordinates system (inverted Y axis)
+                           const unsigned int y_ = (texParams.textureSide - 1) - y;
+                           // 1D pixel index
+                           unsigned int xyoffset = y_ * texParams.textureSide + x;
+                           // get 3D coordinates
+                           Point3d pt3d = barycentricToCartesian(triPts, barycCoords);
+                           // get 2D coordinates in source image
+                           Point2d pixRC;
+                           mp.getPixelFor3DPoint(&pixRC, pt3d, camId);
+                           // exclude out of bounds pixels
+                           if(!mp.isPixelInImage(pixRC, camId))
+                               continue;
+
+                           // If the color is pure zero, we consider it as an invalid pixel.
+                           // After correction of radial distortion, some pixels are invalid.
+                           // TODO: use an alpha channel instead.
+                           if(pyramidL.back().getInterpolateColor(pixRC/std::pow(2,nbBand-1)) == Color(0.f, 0.f, 0.f))
+                               continue;
+
+                           //each level also contributes to lower frequencies levels
+                           AccuPyramid& accuPyramid = accuPyramids.at(atlasID);
+                           for(std::size_t levelC = level; levelC < pyramidL.size(); ++levelC)
+                           {
+                               int downscaleCoef = std::pow(2, levelC);
+                               AccuImage& accuImage = accuPyramid.pyramid[levelC];
+
+                               // fill the accumulated color map for this pixel
+                               accuImage.img[xyoffset] += pyramidL[levelC].getInterpolateColor(pixRC/downscaleCoef);
+                               accuImage.imgCount[xyoffset] += 1;
+                           }
                        }
-
-                       // remap 'y' to image coordinates system (inverted Y axis)
-                       const unsigned int y_ = (texParams.textureSide - 1) - y;
-                       // 1D pixel index
-                       unsigned int xyoffset = y_ * texParams.textureSide + x;
-                       // get 3D coordinates
-                       Point3d pt3d = barycentricToCartesian(triPts, barycCoords);
-                       // get 2D coordinates in source image
-                       Point2d pixRC;
-                       mp.getPixelFor3DPoint(&pixRC, pt3d, camId);
-                       // exclude out of bounds pixels
-                       if(!mp.isPixelInImage(pixRC, camId))
-                           continue;
-
-                       //Color color = imageCache.getPixelValueInterpolated(&pixRC, camId);
-                       Color color(0.f,0.f,0.f);
-                       for(const Image& bandImage : pyramidL)
-                       {
-                           color += bandImage.getInterpolateColor(pixRC);
-                       }
-
-                       // If the color is pure zero, we consider it as an invalid pixel.
-                       // After correction of radial distortion, some pixels are invalid.
-                       // TODO: use an alpha channel instead.
-                       if(color == Color(0.f, 0.f, 0.f))
-                           continue;
-                       // fill the accumulated color map for this pixel
-                       accuImage.img[xyoffset] += color;
-                       accuImage.imgCount[xyoffset] += 1;
-                   }
-               }
-           }
+                    }
+                }
+            }
         }
-        camId++; // increment current cam index
     }
 
-    for(int atlasID = 0; atlasID < accuImages.size(); ++atlasID)
+    //calculate atlas texture in the first level of the pyramid (avoid creating a new buffer)
+    //debug mode : write all the frequencies levels for each texture
+    for(std::size_t atlasID : atlasIDs)
     {
-        AccuImage& accuImage = accuImages.at(atlasID);
-
+        AccuPyramid& accuPyramid = accuPyramids.at(atlasID);
+        AccuImage& atlasTexture = accuPyramid.pyramid[0];
         ALICEVISION_LOG_INFO("Create texture " << atlasID);
 
         ALICEVISION_LOG_INFO("  - Computing final (average) color.");
-
         for(unsigned int yp = 0; yp < texParams.textureSide; ++yp)
         {
             unsigned int yoffset = yp * texParams.textureSide;
             for(unsigned int xp = 0; xp < texParams.textureSide; ++xp)
             {
                 unsigned int xyoffset = yoffset + xp;
-                if(accuImage.imgCount[xyoffset])
-                    accuImage.img[xyoffset] /= accuImage.imgCount[xyoffset];
+
+                // If the imgCount is valid on the first band, it will be valid on all the other bands
+                if(atlasTexture.imgCount[xyoffset] == 0)
+                    continue;
+
+                atlasTexture.img[xyoffset] /= atlasTexture.imgCount[xyoffset];
+
+                for(std::size_t level = 1; level < accuPyramid.pyramid.size(); ++level)
+                {
+                    AccuImage& atlasLevelTexture =  accuPyramid.pyramid[level];
+                    atlasLevelTexture.img[xyoffset] /= atlasLevelTexture.imgCount[xyoffset];
+                }
             }
         }
 
-        // WARNING: we modify the "imgCount" to apply the padding (to avoid the creation of a new buffer)
-        if(!texParams.fillHoles && texParams.padding > 0)
         {
             ALICEVISION_LOG_INFO("  - Edge padding (" << texParams.padding << " pixels).");
             // edge padding (dilate gutter)
@@ -603,33 +620,24 @@ void Texturing::generateTexturesSubSet(const mvsUtils::MultiViewParams& mp,
                     {
                         unsigned int xyoffset = yoffset + x;
 
-                        if(accuImage.imgCount[xyoffset] > 0)
-                            continue;
-                        else if(accuImage.imgCount[xyoffset-1] > 0)
-                        {
-                            accuImage.img[xyoffset] = accuImage.img[xyoffset-1];
-                        }
-                        else if(accuImage.imgCount[xyoffset+1] > 0)
-                        {
-                            accuImage.img[xyoffset] = accuImage.img[xyoffset+1];
-                        }
-                        else if(accuImage.imgCount[xyoffset+texParams.textureSide] > 0)
-                        {
-                            accuImage.img[xyoffset] = accuImage.img[xyoffset+texParams.textureSide];
-                        }
-                        else if(accuImage.imgCount[xyoffset-texParams.textureSide] > 0)
-                        {
-                            accuImage.img[xyoffset] = accuImage.img[xyoffset-texParams.textureSide];
-                        }
-                        accuImage.imgCount[xyoffset] += 1;
-                    }
+        // Fuse frequency bands into the first buffer
+        for(unsigned int yp = 0; yp < texParams.textureSide; ++yp)
+        {
+            unsigned int yoffset = yp * texParams.textureSide;
+            for(unsigned int xp = 0; xp < texParams.textureSide; ++xp)
+            {
+                unsigned int xyoffset = yoffset + xp;
+                for(std::size_t level = 1; level < accuPyramid.pyramid.size(); ++level)
+                {
+                    AccuImage& atlasLevelTexture =  accuPyramid.pyramid[level];
+                    atlasTexture.img[xyoffset] += atlasLevelTexture.img[xyoffset];
                 }
             }
         }
+        writeTexture(atlasTexture, atlasID, outPath, textureFileType, -1);
+    }
+}
 
-        const std::string textureName = "texture_" + std::to_string(1001 + atlasID) + "." + EImageFileType_enumToString(textureFileType); // starts at '1001' for UDIM compatibility
-        bfs::path texturePath = outPath / textureName;
-        ALICEVISION_LOG_INFO("  - Writing texture file: " << texturePath.string());
 void Texturing::writeTexture(AccuImage& atlasTexture, const std::size_t atlasID, const boost::filesystem::path &outPath,
                              EImageFileType textureFileType, const int level)
 {
@@ -723,6 +731,7 @@ void Texturing::writeTexture(AccuImage& atlasTexture, const std::size_t atlasID,
     imageIO::writeImage(texturePath.string(), outTextureSide, outTextureSide, atlasTexture.img);
 
 }
+
 
 void Texturing::clear()
 {
