@@ -305,7 +305,6 @@ public:
         : buffer( nullptr )
     {
         allocate( size );
-        // memset(buffer, 0, this->getBytesPadded() );
     }
 
     CudaHostMemoryHeap<Type,Dim>& operator=(const CudaHostMemoryHeap<Type,Dim>& rhs)
@@ -327,6 +326,11 @@ public:
     ~CudaHostMemoryHeap()
     {
         deallocate();
+    }
+
+    void initBuffer()
+    {
+        memset(buffer, 0, this->getBytesPadded());
     }
 
     // see below with copy() functions

@@ -5,9 +5,12 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "SemiGlobalMatchingRc.hpp"
+#include "volumeIO.hpp"
+
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/gpu/gpu.hpp>
 
+#include <aliceVision/depthMap/cuda/planeSweeping/device_utils.h>
 #include <aliceVision/depthMap/SemiGlobalMatchingRcTc.hpp>
 #include <aliceVision/mvsData/OrientedPoint.hpp>
 #include <aliceVision/mvsData/Point3d.hpp>
@@ -390,12 +393,6 @@ void SemiGlobalMatchingRc::computeDepthsAndResetTCams()
     deleteArrayOfArrays<float>(&alldepths);
 }
 
-template <typename T>
-inline T* get3DBufferAt_h(T* ptr, int spitch, int pitch, int x, int y, int z)
-{
-  return ((T*)(((char*)ptr) + z * spitch + y * pitch)) + x;
-}
-
 bool SemiGlobalMatchingRc::sgmrc(bool checkIfExists)
 {
     ALICEVISION_LOG_DEBUG("SGM (_rc: " << (_rc + 1) << " / " << _sp.mp.ncams << ")");
@@ -460,12 +457,30 @@ bool SemiGlobalMatchingRc::sgmrc(bool checkIfExists)
 
     volumeBestSim_d.deallocate();
 
+    if (_sp.exportIntermediateResults)
+    {
+        CudaHostMemoryHeap<float, 3> volumeSecBestSim_h(volumeSecBestSim_d.getSize());
+        volumeSecBestSim_h.copyFrom(volumeSecBestSim_d);
+
+        exportVolume(volumeSecBestSim_h, _depths, _sp.mp, _rc, _scale, _step, _sp.mp.getDepthMapsFolder() + std::to_string(_sp.mp.getViewId(_rc)) + "_vol_beforeFiltering.abc");
+        export9PCSV(volumeSecBestSim_h, _depths, _rc, _scale, _step, "beforeFiltering", _sp.mp.getDepthMapsFolder() + std::to_string(_sp.mp.getViewId(_rc)) + "_9p.csv");
+    }
+
     // Filter on the 3D volume to weight voxels based on their neighborhood strongness.
     // So it downweights local minimums that are not supported by their neighborhood.
     if(_sp.doSGMoptimizeVolume) // this is here for experimental reason ... to show how SGGC work on non
                                 // optimized depthmaps ... it must equals to true in normal case
     {
         _sp.cps.SGMoptimizeSimVolume(_rc, volumeSecBestSim_d, volDimX, volDimY, volDimZ, _scale, _sp.P1, _sp.P2);
+    }
+
+    if (_sp.exportIntermediateResults)
+    {
+        CudaHostMemoryHeap<float, 3> volumeSecBestSim_h(volumeSecBestSim_d.getSize());
+        volumeSecBestSim_h.copyFrom(volumeSecBestSim_d);
+
+        exportVolume(volumeSecBestSim_h, _depths, _sp.mp, _rc, _scale, _step, _sp.mp.getDepthMapsFolder() + std::to_string(_sp.mp.getViewId(_rc)) + "_vol_afterFiltering.abc");
+        export9PCSV(volumeSecBestSim_h, _depths, _rc, _scale, _step, "afterFiltering", _sp.mp.getDepthMapsFolder() + std::to_string(_sp.mp.getViewId(_rc)) + "_9p.csv");
     }
 
     // vector<z, sim>
