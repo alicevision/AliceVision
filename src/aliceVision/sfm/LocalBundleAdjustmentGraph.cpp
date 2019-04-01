@@ -140,9 +140,9 @@ bool LocalBundleAdjustmentGraph::removeViewsToTheGraph(const std::set<IndexT>& r
     auto it = _nodePerViewId.find(viewId);
     if(it != _nodePerViewId.end())
     {
-      _graph.erase(it->second); // this function erase a node with its incident arcs
-      _nodePerViewId.erase(it->first);
-      _viewIdPerNode.erase(it->second);
+    _graph.erase(it->second); // this function erase a node with its incident arcs
+    _viewIdPerNode.erase(it->second);
+    _nodePerViewId.erase(it->first);
 
       numRemovedNode++;
       ALICEVISION_LOG_DEBUG("The view #" << viewId << " has been successfully removed to the distance graph.");
