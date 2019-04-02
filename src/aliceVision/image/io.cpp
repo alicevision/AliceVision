@@ -207,9 +207,6 @@ void writeImage(const std::string& path,
   const bool isJPG = (extension == ".jpg");
   const bool isPNG = (extension == ".png");
 
-  oiio::ImageSpec imageSpec(image.Width(), image.Height(), nchannels, typeDesc);
-  imageSpec.extra_attribs = metadata; // add custom metadata
-
   if(imageColorSpace == EImageColorSpace::AUTO)
   {
     if(isJPG || isPNG)
@@ -218,39 +215,33 @@ void writeImage(const std::string& path,
       imageColorSpace = EImageColorSpace::LINEAR;
   }
 
-  if(isEXR || (imageColorSpace == EImageColorSpace::SRGB))
+  oiio::ImageSpec imageSpec(image.Width(), image.Height(), nchannels, typeDesc);
+  imageSpec.extra_attribs = metadata; // add custom metadata
+
+  imageSpec.attribute("jpeg:subsampling", "4:4:4");           // if possible, always subsampling 4:4:4 for jpeg
+  imageSpec.attribute("CompressionQuality", 100);             // if possible, best compression quality
+  imageSpec.attribute("compression", isEXR ? "piz" : "none"); // if possible, set compression (piz for EXR, none for the other)
+
+  const oiio::ImageBuf imgBuf = oiio::ImageBuf(imageSpec, const_cast<T*>(image.data())); // original image buffer
+  const oiio::ImageBuf* outBuf = &imgBuf;  // buffer to write
+
+  oiio::ImageBuf colorspaceBuf; // buffer for image colorspace modification
+  if(imageColorSpace == EImageColorSpace::SRGB)
   {
-    oiio::ImageBuf buf(imageSpec, const_cast<T*>(image.data()));
-
-    if(isEXR)
-    {
-      imageSpec.format = oiio::TypeDesc::HALF;     // override format
-      imageSpec.attribute("compression", "piz");   // if possible, PIZ compression for openEXR
-    }
-
-    oiio::ImageBuf outBuf(imageSpec); // conversion to half
-
-    if(imageColorSpace == EImageColorSpace::SRGB)
-      oiio::ImageBufAlgo::colorconvert(outBuf, buf, "Linear", "sRGB");
-    else
-      outBuf.copy_pixels(buf);
-
-    // write image
-    if(!outBuf.write(tmpPath))
-      throw std::runtime_error("Can't write output image file '" + path + "'.");
+    oiio::ImageBufAlgo::colorconvert(colorspaceBuf, *outBuf, "Linear", "sRGB");
+    outBuf = &colorspaceBuf;
   }
-  else
+
+  oiio::ImageBuf formatBuf;  // buffer for image format modification
+  if(isEXR)
   {
-    imageSpec.attribute("jpeg:subsampling", "4:4:4"); // if possible, always subsampling 4:4:4 for jpeg
-    imageSpec.attribute("CompressionQuality", 100);   // if possible, best compression quality
-    imageSpec.attribute("compression", "none");       // if possible, no compression
-
-    oiio::ImageBuf outBuf(imageSpec, const_cast<T*>(image.data()));
-
-    // write image
-    if(!outBuf.write(tmpPath))
-      throw std::runtime_error("Can't write output image file '" + path + "'.");
+    formatBuf.copy(*outBuf, oiio::TypeDesc::HALF); // override format, use half instead of float
+    outBuf = &formatBuf;
   }
+
+  // write image
+  if(!outBuf->write(tmpPath))
+    throw std::runtime_error("Can't write output image file '" + path + "'.");
 
   // rename temporay filename
   fs::rename(tmpPath, path);

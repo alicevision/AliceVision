@@ -249,27 +249,6 @@ void writeImage(const std::string& path,
     const bool isJPG = (extension == ".jpg");
     const bool isPNG = (extension == ".png");
 
-    ALICEVISION_LOG_DEBUG("[IO] Write Image: " << path << std::endl
-      << "\t- width: " << width << std::endl
-      << "\t- height: " << height << std::endl
-      << "\t- channels: " << nchannels);
-
-    oiio::ImageSpec imageSpec(width, height, nchannels, typeDesc);
-    imageSpec.extra_attribs = metadata;
-
-    if(isEXR)
-    {
-        imageSpec.attribute("compression", "piz");   // if possible, PIZ compression for openEXR
-    }
-    else
-    {
-        imageSpec.attribute("jpeg:subsampling", "4:4:4"); // if possible, always subsampling 4:4:4 for jpeg
-        imageSpec.attribute("CompressionQuality", 100);   // if possible, best compression quality
-        imageSpec.attribute("compression", "none");       // if possible, no compression
-    }
-
-    const oiio::ImageBuf imgBuf(imageSpec, const_cast<T*>(buffer.data()));
-
     if(imageColorSpace == EImageColorSpace::AUTO)
     {
       if(isJPG || isPNG)
@@ -278,28 +257,38 @@ void writeImage(const std::string& path,
         imageColorSpace = EImageColorSpace::LINEAR;
     }
 
-    if((isEXR) && imageQuality == EImageQuality::OPTIMIZED)
-      imageSpec.format = oiio::TypeDesc::HALF; // override format
+    ALICEVISION_LOG_DEBUG("[IO] Write Image: " << path << std::endl
+                       << "\t- width: " << width << std::endl
+                       << "\t- height: " << height << std::endl
+                       << "\t- channels: " << nchannels);
 
-    if(imageColorSpace == EImageColorSpace::SRGB || (isEXR && imageQuality == EImageQuality::OPTIMIZED))
+    oiio::ImageSpec imageSpec(width, height, nchannels, typeDesc);
+    imageSpec.extra_attribs = metadata; // add custom metadata
+
+    imageSpec.attribute("jpeg:subsampling", "4:4:4");           // if possible, always subsampling 4:4:4 for jpeg
+    imageSpec.attribute("CompressionQuality", 100);             // if possible, best compression quality
+    imageSpec.attribute("compression", isEXR ? "piz" : "none"); // if possible, set compression (piz for EXR, none for the other)
+
+    const oiio::ImageBuf imgBuf = oiio::ImageBuf(imageSpec, const_cast<T*>(buffer.data())); // original image buffer
+    const oiio::ImageBuf* outBuf = &imgBuf;  // buffer to write
+
+    oiio::ImageBuf colorspaceBuf;  // buffer for image colorspace modification
+    if(imageColorSpace == EImageColorSpace::SRGB)
     {
-      oiio::ImageBuf outBuf(imageSpec);
-
-      if(imageColorSpace == EImageColorSpace::SRGB) // color conversion to sRGB
-        oiio::ImageBufAlgo::colorconvert(outBuf, imgBuf, "Linear", "sRGB");
-      else if(isEXR && imageQuality == EImageQuality::OPTIMIZED) // float -> half
-        outBuf.copy_pixels(imgBuf);
-
-      // write image
-      if(!outBuf.write(tmpPath))
-        throw std::runtime_error("Can't write output image file '" + path + "'.");
+      oiio::ImageBufAlgo::colorconvert(colorspaceBuf, *outBuf, "Linear", "sRGB");
+      outBuf = &colorspaceBuf;
     }
-    else
+
+    oiio::ImageBuf formatBuf; // buffer for image format modification
+    if(imageQuality ==EImageQuality::OPTIMIZED && isEXR)
     {
-      // write image
-      if(!imgBuf.write(tmpPath))
-        throw std::runtime_error("Can't write output image file '" + path + "'.");
+      formatBuf.copy(*outBuf, oiio::TypeDesc::HALF); // override format, use half instead of float
+      outBuf = &formatBuf;
     }
+
+    // write image
+    if(!outBuf->write(tmpPath))
+      throw std::runtime_error("Can't write output image file '" + path + "'.");
 
     // rename temporay filename
     fs::rename(tmpPath, path);
