@@ -743,5 +743,21 @@ std::size_t LocalBundleAdjustmentGraph::updateRigEdgesToTheGraph(const sfmData::
   return numAddedEdges;
 }
 
+unsigned int LocalBundleAdjustmentGraph::countNodes() const
+{
+  unsigned int count = 0;
+  for(lemon::ListGraph::NodeIt n(_graph); n != lemon::INVALID; ++n)
+    ++count;
+  return count;
+}
+
+unsigned int LocalBundleAdjustmentGraph::countEdges() const
+{
+  unsigned int count = 0;
+  for(lemon::ListGraph::EdgeIt e(_graph); e != lemon::INVALID; ++e)
+    ++count;
+  return count;
+}
+
 } // namespace sfm
 } // namespace aliceVision

@@ -208,6 +208,9 @@ BOOST_AUTO_TEST_CASE(LOCAL_BUNDLE_ADJUSTMENT_EffectiveMinimization_Pinhole_Camer
   // 3. Use the graph-distances to assign a LBA state (Refine, Constant & Ignore) for each parameter (poses, intrinsics & landmarks)
   localBAGraph->convertDistancesToStates(sfmData);
 
+  BOOST_CHECK_EQUAL(localBAGraph->countNodes(), 4); // 4 views => 4 nodes
+  BOOST_CHECK_EQUAL(localBAGraph->countEdges(), 6); // landmarks connections: 6 edges created (see scheme)
+
   BOOST_CHECK_EQUAL(localBAGraph->getNbPosesPerState(BundleAdjustment::EParameterState::REFINED), 2);     // v0 & v1
   BOOST_CHECK_EQUAL(localBAGraph->getNbPosesPerState(BundleAdjustment::EParameterState::CONSTANT), 1);    // v2
   BOOST_CHECK_EQUAL(localBAGraph->getNbPosesPerState(BundleAdjustment::EParameterState::IGNORED), 1);     // v3

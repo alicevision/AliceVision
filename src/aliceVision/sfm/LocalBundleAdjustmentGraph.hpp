@@ -200,7 +200,19 @@ public:
    * @return
    */
   std::size_t updateRigEdgesToTheGraph(const sfmData::SfMData& sfmData);
-   
+
+  /**
+   * @brief Count and return the number of nodes in the underlying lemon graph.
+   * @return The number of nodes in the graph.
+   */
+  unsigned int countNodes() const;
+
+  /**
+   * @brief Count and return the number of edges in the underlying lemon graph.
+   * @return The number of edges in the graph.
+   */
+  unsigned int countEdges() const;
+
 private:
   
   /**
