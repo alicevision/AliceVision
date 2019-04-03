@@ -145,7 +145,7 @@ struct simStat
         // NCC
         sim = getVarianceXYW() / sqrtf(getVarianceXW() * getVarianceYW());
         sim = isinf(sim) ? 1.0f : 0.0f - sim;
-        sim = fmaxf(fminf(sim, 1.0f), -1.0f);
+        // sim = fmaxf(fminf(sim, 1.0f), -1.0f); // clamp
     }
 
     __device__ void update(const float2 g)
