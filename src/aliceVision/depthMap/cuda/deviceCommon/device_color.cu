@@ -13,12 +13,14 @@ namespace depthMap {
 
 inline __device__ float Euclidean(const float3 x1, const float3 x2)
 {
-    return sqrtf((x1.x - x2.x) * (x1.x - x2.x) + (x1.y - x2.y) * (x1.y - x2.y) + (x1.z - x2.z) * (x1.z - x2.z));
+    // return sqrtf((x1.x - x2.x) * (x1.x - x2.x) + (x1.y - x2.y) * (x1.y - x2.y) + (x1.z - x2.z) * (x1.z - x2.z));
+    return norm3df(x1.x - x2.x, x1.y - x2.y, x1.z - x2.z);
 }
 
 inline __device__ float Euclidean3(const float4 x1, const float4 x2)
 {
-    return sqrtf((x1.x - x2.x) * (x1.x - x2.x) + (x1.y - x2.y) * (x1.y - x2.y) + (x1.z - x2.z) * (x1.z - x2.z));
+    // return sqrtf((x1.x - x2.x) * (x1.x - x2.x) + (x1.y - x2.y) * (x1.y - x2.y) + (x1.z - x2.z) * (x1.z - x2.z));
+    return norm3df(x1.x - x2.x, x1.y - x2.y, x1.z - x2.z);
 }
 
 //== colour conversion utils ======================================================================
@@ -161,7 +163,7 @@ inline __device__ float CostYKfromLab(const int dx, const int dy, const float4 c
     return __expf(-(deltaC / gammaC + deltaP / gammaP)); // Yoon & Kweon
     // return __expf(-(deltaC * deltaC / (2 * gammaC * gammaC))) * sqrtf(__expf(-(deltaP * deltaP / (2 * gammaP * gammaP)))); // DCB
 }
-
+/*
 inline __device__ float CostYKfromLab(const float4 c1, const float4 c2, const float gammaC)
 {
     // Euclidean distance in Lab, assuming linear RGB
@@ -170,7 +172,7 @@ inline __device__ float CostYKfromLab(const float4 c1, const float4 c2, const fl
 
     return __expf(-(deltaC / gammaC)); // Yoon & Kweon
 }
-
+*/
 __global__ void rgb2lab_kernel(float4* irgbaOlab, int irgbaOlab_p, int width, int height)
 {
     int x = blockIdx.x * blockDim.x + threadIdx.x;
