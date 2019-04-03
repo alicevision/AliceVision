@@ -10,6 +10,7 @@
 #include <aliceVision/depthMap/cuda/deviceCommon/device_matrix.cu>
 #include <aliceVision/depthMap/cuda/deviceCommon/device_patch_es_glob.hpp>
 #include <aliceVision/depthMap/cuda/deviceCommon/device_simStat.cu>
+#include <aliceVision/depthMap/cuda/planeSweeping/device_utils.cu>
 
 #include <math_constants.h>
 
@@ -236,6 +237,96 @@ __device__ float compNCCby3DptsYK( cudaTextureObject_t rc_tex,
         }
     }
     sst.computeWSim();
+    return sst.sim;
+}
+
+
+// #define PLANE_SWEEPING_PRECOMPUTED_COLORS_TEXTURE 1
+
+/**
+* @brief Compute Normalized Cross-Correlation
+*
+* @param[in] rc_tex
+* @param[in] tc_tex3D
+* @param[in] coord
+* @param[in] volStepXY
+* @param[in] wsh half-width of the similarity homography matrix (width = wsh*2+1)
+* @param[in] gammaC
+* @param[in] gammaP
+*
+* @return similarity value
+*/
+__device__ float compNCCby3DptsYK_vol(
+    cudaTextureObject_t rc_tex,
+#ifdef PLANE_SWEEPING_PRECOMPUTED_COLORS_TEXTURE
+    cudaTextureObject_t tc_tex3D,
+#else
+    const float4* volTcamColors, const int volTcamColors_s, const int volTcamColors_p,
+#endif
+    const int coordX, const int coordY, const int coordZ,
+    const int volDimX, const int volDimY,
+    const int scale, const int volStepXY,
+    const int wsh,
+    const float gammaC, const float gammaP)
+{
+    // const dim3 coord = { coordX, coordY, coordZ };
+
+    const float4 gcr = tex2D<float4>(rc_tex, coordX * volStepXY + 0.5f, coordY * volStepXY + 0.5f);
+
+#ifdef PLANE_SWEEPING_PRECOMPUTED_COLORS_TEXTURE
+    const float4 gct = tex3D<float4>(tc_tex3D, coordX + 0.5f, coordY + 0.5f, coordZ + 0.5f);
+#else
+    const float4 gct = *get3DBufferAt<float4>(volTcamColors, volTcamColors_s, volTcamColors_p, coordX, coordY, coordZ);
+#endif
+
+    // const int verbose = (int(coordX) % 200 == 0 && int(coordY) % 200 == 0 && int(coordZ) % 50 == 10);
+
+    // if( gcr.w == 0.0f || gct.w == 0.0f )
+    //    return 1.0f; // if no alpha, invalid pixel from input mask
+
+    simStat sst = simStat();
+    for (int yp = -wsh; yp <= wsh; yp++)
+    {
+        float2 coord_i;
+        coord_i.y = coordY + float(yp);
+        if (int(coord_i.y) < 0 || int(coord_i.y) >= volDimY)
+            continue;
+        for (int xp = -wsh; xp <= wsh; xp++)
+        {
+            coord_i.x = coordX + float(xp);
+            if (int(coord_i.x) < 0 || int(coord_i.x) >= volDimX)
+                continue;
+
+            const float4 gcr_i = tex2D<float4>(rc_tex, coord_i.x * volStepXY + 0.5f, coord_i.y * volStepXY + 0.5f);
+#ifdef PLANE_SWEEPING_PRECOMPUTED_COLORS_TEXTURE
+            const float4 gct_i = tex3D<float4>(tc_tex3D, coord_i.x + 0.5f, coord_i.y + 0.5f, coordZ + 0.5f);
+#else
+            const float4 gct_i = *get3DBufferAt<float4>(volTcamColors, volTcamColors_s, volTcamColors_p, int(coord_i.x), int(coord_i.y), int(coordZ));
+#endif
+
+            // Weighting is based on:
+            //  * color difference to the center pixel of the patch:
+            //    ** low value (close to 0) means that the color is different from the center pixel (ie. strongly supported surface)
+            //    ** high value (close to 1) means that the color is close the center pixel (ie. uniform color)
+            //  * distance in image to the center pixel of the patch:
+            //    ** low value (close to 0) means that the pixel is close to the center of the patch
+            //    ** high value (close to 1) means that the pixel is far from the center of the patch
+            const float w = CostYKfromLab(xp, yp, gcr, gcr_i, gammaC, gammaP) * CostYKfromLab(xp, yp, gct, gct_i, gammaC, gammaP);
+            assert(w >= 0.f);
+            assert(w <= 1.f);
+            sst.update(gcr_i.x, gct_i.x, w);
+        }
+    }
+    sst.computeWSim();
+
+    /*
+    if (verbose)
+    {
+        printf("compNCCby3DptsYK_vol: coordX: %i, coordY: %i, coordZ: %i, scale: %i, volStepXY: %i\n", coordX, coordY, coordZ, scale, volStepXY);
+        printf("compNCCby3DptsYK_vol: gcr: %f, %f, %f, %f\n", gcr.x, gcr.y, gcr.z, gcr.w);
+        printf("compNCCby3DptsYK_vol: gct: %f, %f, %f, %f\n", gct.x, gct.y, gct.z, gct.w);
+        printf("compNCCby3DptsYK_vol: sst.sim: %f\n", sst.sim);
+    }*/
     return sst.sim;
 }
 

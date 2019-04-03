@@ -73,7 +73,6 @@ public:
     void cameraToDevice( int rc, const StaticVector<int>& tcams );
 
     int addCam( int rc, int scale,
-                StaticVectorBool* rcSilhoueteMap,
                 const char* calling_func );
 
     void getMinMaxdepths(int rc, const StaticVector<int>& tcams, float& minDepth, float& midDepth, float& maxDepth);
@@ -90,32 +89,30 @@ public:
 private:
     /* Needed to compensate for _nImgsInGPUAtTime that are smaller than |index_set|-1 */
     void sweepPixelsToVolumeSubset(
-            CudaDeviceMemoryPitched<float, 3>& volBestSim_dmp,
-            CudaDeviceMemoryPitched<float, 3>& volSecBestSim_dmp,
-            const int volDimX,
-            const int volDimY,
-            const int volStepXY,
-            const std::vector<OneTC>& tcs,
-            const CudaDeviceMemory<float>& depths_d,
-            int rc, int tc,
-            StaticVectorBool* rcSilhoueteMap,
-            int wsh, float gammaC, float gammaP,
-            int scale);
+        CudaDeviceMemoryPitched<float, 3>& volBestSim_dmp,
+        CudaDeviceMemoryPitched<float, 3>& volSecBestSim_dmp,
+        CudaDeviceMemoryPitched<float4, 3>& volTcamColors_dmp, // cudaTextureObject_t volTcamColors_tex3D,
+        const int volDimX, const int volDimY, const int volStepXY,
+        const std::vector<OneTC>& cells,
+        const CudaDeviceMemory<float>& depths_d,
+        const CameraStruct& rcam, int rcWidth, int rcHeight,
+        const CameraStruct& tcam, int tcWidth, int tcHeight,
+        int wsh, float gammaC, float gammaP,
+        int scale);
 
 public:
     void sweepPixelsToVolume(
-            CudaDeviceMemoryPitched<float, 3>& volBestSim_dmp,
-            CudaDeviceMemoryPitched<float, 3>& volSecBestSim_dmp,
-            const int volDimX,
-            const int volDimY,
-            const int volStepXY,
-            const std::vector<OneTC>& tcs,
-            const std::vector<float>& rc_depths,
-            int rc,
-            const StaticVector<int>& tcams,
-            StaticVectorBool* rcSilhoueteMap,
-            int wsh, float gammaC, float gammaP,
-            int scale);
+        CudaDeviceMemoryPitched<float, 3>& volBestSim_dmp,
+        CudaDeviceMemoryPitched<float, 3>& volSecBestSim_dmp,
+        const int volDimX,
+        const int volDimY,
+        const int volStepXY,
+        const std::vector<OneTC>& tcs,
+        const std::vector<float>& rc_depths,
+        int rc,
+        const StaticVector<int>& tcams,
+        int wsh, float gammaC, float gammaP,
+        int scale);
 
     bool SGMoptimizeSimVolume(int rc, CudaDeviceMemoryPitched<float, 3>& volSim_dmp,
                               int volDimX, int volDimY, int volDimZ,

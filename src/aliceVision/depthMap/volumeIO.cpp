@@ -28,7 +28,7 @@ namespace aliceVision {
 namespace depthMap {
 
 
-void exportVolume(const CudaHostMemoryHeap<float, 3>& volumeSim, StaticVector<float>& depths, const mvsUtils::MultiViewParams& mp, int camIndex, int scale, int step, const std::string& filepath)
+void exportSimilarityVolume(const CudaHostMemoryHeap<float, 3>& volumeSim, const StaticVector<float>& depths, const mvsUtils::MultiViewParams& mp, int camIndex, int scale, int step, const std::string& filepath)
 {
     sfmData::SfMData pointCloud;
     int xyStep = 10;
@@ -39,7 +39,7 @@ void exportVolume(const CudaHostMemoryHeap<float, 3>& volumeSim, StaticVector<fl
     size_t spitch = volumeSim.getBytesPaddedUpToDim(1);
     size_t pitch = volumeSim.getBytesPaddedUpToDim(0);
 
-    ALICEVISION_LOG_DEBUG("DepthMap exportVolume: " << volDim[0] << " x " << volDim[1] << " x " << volDim[2] << ", xyStep=" << xyStep << ".");
+    ALICEVISION_LOG_DEBUG("DepthMap exportSimilarityVolume: " << volDim[0] << " x " << volDim[1] << " x " << volDim[2] << ", xyStep=" << xyStep << ".");
 
     for (int z = 0; z < volDim[2]; ++z)
     {
@@ -68,7 +68,56 @@ void exportVolume(const CudaHostMemoryHeap<float, 3>& volumeSim, StaticVector<fl
     sfmDataIO::Save(pointCloud, filepath, sfmDataIO::ESfMData::STRUCTURE);
 }
 
-void export9PCSV(const CudaHostMemoryHeap<float, 3>& volumeSim, StaticVector<float>& depths, int camIndex, int scale, int step, const std::string& name, const std::string& filepath)
+inline unsigned char float_to_uchar(float v)
+{
+    float vv = std::max(0.f, v);
+    vv = std::min(255.f, vv);
+    return unsigned char(vv);
+}
+
+inline rgb float4_to_rgb(const float4& v)
+{
+    return { float_to_uchar(v.x), float_to_uchar(v.y), float_to_uchar(v.z) };
+}
+
+void exportColorVolume(const CudaHostMemoryHeap<float4, 3>& volumeSim, const std::vector<float>& depths, int startDepth, int nbDepths, const mvsUtils::MultiViewParams& mp, int camIndex, int scale, int step, const std::string& filepath)
+{
+    sfmData::SfMData pointCloud;
+    int xyStep = 10;
+
+    IndexT landmarkId;
+
+    auto volDim = volumeSim.getSize();
+    size_t spitch = volumeSim.getBytesPaddedUpToDim(1);
+    size_t pitch = volumeSim.getBytesPaddedUpToDim(0);
+
+    ALICEVISION_LOG_DEBUG("DepthMap exportColorVolume: " << volDim[0] << " x " << volDim[1] << " x " << nbDepths << ", volDim[2]=" << volDim[2] << ", xyStep=" << xyStep << ".");
+
+    for (int z = 0; z < nbDepths; ++z)
+    {
+        for (int y = 0; y < volDim[1]; y += xyStep)
+        {
+            for (int x = 0; x < volDim[0]; x += xyStep)
+            {
+                const double planeDepth = depths[startDepth + z];
+                const Point3d planen = (mp.iRArr[camIndex] * Point3d(0.0f, 0.0f, 1.0f)).normalize();
+                const Point3d planep = mp.CArr[camIndex] + planen * planeDepth;
+                const Point3d v = (mp.iCamArr[camIndex] * Point2d(x * scale * step, y * scale * step)).normalize();
+                const Point3d p = linePlaneIntersect(mp.CArr[camIndex], v, planep, planen);
+
+                float4 colorValue = *get3DBufferAt_h<float4>(volumeSim.getBuffer(), spitch, pitch, x, y, z);
+                const rgb c = float4_to_rgb(colorValue); // TODO: convert Lab color into sRGB color
+                pointCloud.getLandmarks()[landmarkId] = sfmData::Landmark(Vec3(p.x, p.y, p.z), feature::EImageDescriberType::UNKNOWN, sfmData::Observations(), image::RGBColor(c.r, c.g, c.b));
+
+                ++landmarkId;
+            }
+        }
+    }
+
+    sfmDataIO::Save(pointCloud, filepath, sfmDataIO::ESfMData::STRUCTURE);
+}
+
+void exportSimilaritySamplesCSV(const CudaHostMemoryHeap<float, 3>& volumeSim, const StaticVector<float>& depths, int camIndex, int scale, int step, const std::string& name, const std::string& filepath)
 {
     const auto volDim = volumeSim.getSize();
     const size_t spitch = volumeSim.getBytesPaddedUpToDim(1);

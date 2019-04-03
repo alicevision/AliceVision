@@ -41,6 +41,12 @@ __device__ T* get3DBufferAt(T* ptr, int spitch, int pitch, int x, int y, int z)
     return ((T*)(((char*)ptr) + z * spitch + y * pitch)) + x;
 }
 
+template <typename T>
+__device__ const T* get3DBufferAt(const T* ptr, int spitch, int pitch, int x, int y, int z)
+{
+    return ((const T*)(((const char*)ptr) + z * spitch + y * pitch)) + x;
+}
+
 __device__ float multi_fminf(float a, float b, float c)
 {
   return fminf(fminf(a, b), c);

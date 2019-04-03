@@ -22,13 +22,168 @@ __global__ void volume_init_kernel( float* volume, int volume_s, int volume_p,
 {
     const int vx = blockIdx.x * blockDim.x + threadIdx.x;
     const int vy = blockIdx.y * blockDim.y + threadIdx.y;
-    const int vz = blockIdx.z * blockDim.z + threadIdx.z;
+    const int vz = blockIdx.z; // * blockDim.z + threadIdx.z;
 
     if(vx >= volDimX || vy >= volDimY)
         return;
 
     *get3DBufferAt(volume, volume_s, volume_p, vx, vy, vz) = 9999.0f;
 }
+
+
+__global__ void volume_initCameraColor_kernel(
+    float4* volume, int volume_s, int volume_p,
+    const CameraStructBase& rc_cam,
+    const CameraStructBase& tc_cam,
+    cudaTextureObject_t tc_tex,
+    const int tcWidth, const int tcHeight,
+    const int depthToStart,
+    const float* depths_d,
+    int volDimX, int volDimY, int volDimZ, int volStepXY)
+{
+    const int vx = blockIdx.x * blockDim.x + threadIdx.x;
+    const int vy = blockIdx.y * blockDim.y + threadIdx.y;
+    const int vz = blockIdx.z; // * blockDim.z + threadIdx.z;
+
+    if (vx >= volDimX || vy >= volDimY)
+        return;
+
+    const int x = vx * volStepXY;
+    const int y = vy * volStepXY;
+
+    // Remap kernel Z index into a volume voxel Z index
+    const int zIndex = depthToStart + vz;
+    // Read the depth value at the specific voxel Z index
+    const float fpPlaneDepth = depths_d[zIndex];
+
+    // Convert the voxel into a 3D coordinate
+    float3 p = get3DPointForPixelAndFrontoParellePlaneRC(rc_cam, make_int2(x, y), fpPlaneDepth); // no texture use
+    // Project the 3D point in the image of the T camera
+    float2 p_tc = project3DPoint(tc_cam.P, p);
+
+    if (p_tc.x < 0.0f || p_tc.y < 0.0f || p_tc.x >= tcWidth || p_tc.y >= tcHeight)
+    {
+        *get3DBufferAt(volume, volume_s, volume_p, vx, vy, vz) = make_float4(0.f, 0.f, 255.f, 0.f);
+        return;
+    }
+
+    // Read the interpolated color in the T camera
+    float4 color = tex2D<float4>(tc_tex, p_tc.x + 0.5f, p_tc.y + 0.5f);
+
+    /*
+    // int verbose = (vx % 200 == 0 && vy % 200 == 0 && vz % 50 == 0 && vz > 300);
+    if (verbose)
+    {
+        printf("______________________________________\n");
+        printf("volume_initCameraColor_kernel: vx: %i, vy: %i, vz: %i, x: %i, y: %i\n", vx, vy, vz, x, y);
+        printf("volume_initCameraColor_kernel: p 3D: %f, %f, %f\n", p.x, p.y, p.z);
+        printf("volume_initCameraColor_kernel: p_tc: %f, %f\n", p_tc.x, p_tc.y);
+        printf("volume_initCameraColor_kernel: color: %f, %f, %f, %f\n", color.x, color.y, color.z, color.w);
+        printf("volume_initCameraColor_kernel: volStepXY: %i, volDimX: %i, volDimY: %i\n", volStepXY, volDimX, volDimY);
+        printf("volume_initCameraColor_kernel: depthToStart: %i\n", depthToStart);
+        printf("______________________________________\n");
+    }
+    */
+    *get3DBufferAt(volume, volume_s, volume_p, vx, vy, vz) = make_float4(color.x, color.x, color.x, 1.0f);
+/*
+    float* p = get3DBufferAt<float>(volume, volume_s, volume_p, vx*4, vy, vz);
+    p[0] = color.x;
+    p[1] = color.y;
+    p[2] = color.z;
+    p[3] = color.w;
+*/
+/*
+    float4* p = get3DBufferAt<float4>(volume, volume_s, volume_p, vx, vy, vz); // x * 4
+    p->x = 99.f;
+*/
+}
+
+// #define PLANE_SWEEPING_PRECOMPUTED_COLORS_TEXTURE 1
+
+__global__ void volume_estimateSim_twoViews_kernel(
+    cudaTextureObject_t rc_tex,
+#ifdef PLANE_SWEEPING_PRECOMPUTED_COLORS_TEXTURE
+    cudaTextureObject_t tc_tex3D,
+#else
+    const float4* volTcamColors, int volTcamColors_s, int volTcamColors_p,
+#endif
+    const int depthToStart,
+    const int nbDepthsToSearch,
+    int rcWidth, int rcHeight,
+    int wsh,
+    const float gammaC, const float gammaP,
+    float* volume_1st, int volume1st_s, int volume1st_p,
+    float* volume_2nd, int volume2nd_s, int volume2nd_p,
+    int scale, int volStepXY,
+    int volDimX, int volDimY)
+{
+    const int vx = blockIdx.x * blockDim.x + threadIdx.x;
+    const int vy = blockIdx.y * blockDim.y + threadIdx.y;
+    const int vz = blockIdx.z; // * blockDim.z + threadIdx.z;
+
+    if (vx >= volDimX || vy >= volDimY) // || vz >= volDimZ
+        return;
+    // if (vz >= nbDepthsToSearch)
+    //  return;
+
+    // int verbose = (vx % 200 == 0 && vy % 200 == 0 && vz % 100 == 0);
+
+    const int zIndex = depthToStart + vz;
+
+    float fsim = compNCCby3DptsYK_vol(
+        rc_tex,
+#ifdef PLANE_SWEEPING_PRECOMPUTED_COLORS_TEXTURE
+        tc_tex3D,
+#else
+        volTcamColors, volTcamColors_s, volTcamColors_p,
+#endif
+        vx, vy, vz, volDimX, volDimY,
+        scale, volStepXY,
+        wsh, gammaC, gammaP);
+
+    const float fminVal = -1.0f;
+    const float fmaxVal = 1.0f;
+    fsim = (fsim - fminVal) / (fmaxVal - fminVal);
+    // fsim = fminf(1.0f, fmaxf(0.0f, fsim));
+    fsim *= 255.0f; // Currently needed for the next step... (TODO: should be removed at some point)
+
+    /*
+    if (verbose)
+    {
+        printf("______________________________________\n");
+        printf("volume_estimateSim_twoViews_kernel: vx: %i, vy: %i, vz: %i\n", vx, vy, vz);
+        printf("volume_estimateSim_twoViews_kernel: scale: %i, volStepXY: %i, volDimX: %i, volDimY: %i\n", scale, volStepXY, volDimX, volDimY);
+        printf("volume_estimateSim_twoViews_kernel: depthToStart: %i\n", depthToStart);
+        printf("volume_estimateSim_twoViews_kernel: fsim: %f\n", fsim);
+        printf("______________________________________\n");
+    }
+    */
+    float* fsim_1st = get3DBufferAt(volume_1st, volume1st_s, volume1st_p, vx, vy, zIndex);
+    float* fsim_2nd = get3DBufferAt(volume_2nd, volume2nd_s, volume2nd_p, vx, vy, zIndex);
+
+    if (fsim < *fsim_1st)
+    {
+        // if (verbose)
+        // {
+        //     printf("volume_estimateSim_twoViews_kernel: A update fsim_2nd from %f to %f\n", *fsim_2nd, *fsim_1st);
+        // }
+        *fsim_2nd = *fsim_1st;
+        // if (verbose)
+        // {
+        //     printf("volume_estimateSim_twoViews_kernel: A update fsim_1st from %f to %f\n", *fsim_1st, fsim);
+        // }
+        *fsim_1st = fsim;
+    }
+    else if (fsim < *fsim_2nd)
+    {
+        // if (verbose)
+        // {
+        //     printf("volume_estimateSim_twoViews_kernel: B update fsim_2nd from %f to %f\n", *fsim_2nd, fsim);
+        // }
+        *fsim_2nd = fsim;
+    }
+}
+
 
 __global__ void volume_slice_kernel(
                                     cudaTextureObject_t rc_tex,
@@ -42,10 +197,8 @@ __global__ void volume_slice_kernel(
                                     int tcWidth, int tcHeight,
                                     int wsh,
                                     const float gammaC, const float gammaP,
-                                    float* volume_1st,
-                                    int volume1st_s, int volume1st_p,
-                                    float* volume_2nd,
-                                    int volume2nd_s, int volume2nd_p,
+                                    float* volume_1st, int volume1st_s, int volume1st_p,
+                                    float* volume_2nd, int volume2nd_s, int volume2nd_p,
                                     int volStepXY,
                                     int volDimX, int volDimY)
 {
@@ -76,7 +229,7 @@ __global__ void volume_slice_kernel(
     const float fpPlaneDepth = depths_d[zIndex];
 
     /*
-    int verbose = (vx % 100 == 0 && vy % 100 == 0 && vz % 100 == 0);
+    // int verbose = (vx % 100 == 0 && vy % 100 == 0 && vz % 100 == 0);
 
     if (verbose)
     {

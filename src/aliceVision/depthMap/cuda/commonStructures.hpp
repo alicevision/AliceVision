@@ -535,6 +535,10 @@ public:
             buffer = (Type*)pitchDevPtr.ptr;
             this->setPitch( pitchDevPtr.pitch );
         }
+        else
+        {
+            throw std::runtime_error("CudaDeviceMemoryPitched does not support " + std::to_string(Dim) + " dimensions.");
+        }
     }
 
     void deallocate()

@@ -416,15 +416,6 @@ bool SemiGlobalMatchingRc::sgmrc(bool checkIfExists)
 
     _sp.cps.cameraToDevice( _rc, _sgmTCams );
 
-    StaticVectorBool* rcSilhoueteMap = nullptr;
-    if(_sp.useSilhouetteMaskCodedByColor)
-    {
-        rcSilhoueteMap = new StaticVectorBool();
-        rcSilhoueteMap->reserve(_width * _height);
-        rcSilhoueteMap->resize_with(_width * _height, true);
-        _sp.cps.getSilhoueteMap(rcSilhoueteMap, _scale, _step, _sp.silhouetteMaskColor, _rc);
-    }
-
     if(_sp.mp.verbose)
     {
         std::ostringstream ostr;
@@ -452,7 +443,7 @@ bool SemiGlobalMatchingRc::sgmrc(bool checkIfExists)
 
     SemiGlobalMatchingRcTc srt( _depths.getData(),
                                 _depthsTcamsLimits.getData(),
-                                _rc, _sgmTCams, _scale, _step, _sp, rcSilhoueteMap );
+                                _rc, _sgmTCams, _scale, _step, _sp );
     srt.computeDepthSimMapVolume(volumeBestSim_d, volumeSecBestSim_d, _sgmWsh, _sgmGammaC, _sgmGammaP);
 
     volumeBestSim_d.deallocate();
@@ -462,8 +453,8 @@ bool SemiGlobalMatchingRc::sgmrc(bool checkIfExists)
         CudaHostMemoryHeap<float, 3> volumeSecBestSim_h(volumeSecBestSim_d.getSize());
         volumeSecBestSim_h.copyFrom(volumeSecBestSim_d);
 
-        exportVolume(volumeSecBestSim_h, _depths, _sp.mp, _rc, _scale, _step, _sp.mp.getDepthMapsFolder() + std::to_string(_sp.mp.getViewId(_rc)) + "_vol_beforeFiltering.abc");
-        export9PCSV(volumeSecBestSim_h, _depths, _rc, _scale, _step, "beforeFiltering", _sp.mp.getDepthMapsFolder() + std::to_string(_sp.mp.getViewId(_rc)) + "_9p.csv");
+        exportSimilarityVolume(volumeSecBestSim_h, _depths, _sp.mp, _rc, _scale, _step, _sp.mp.getDepthMapsFolder() + std::to_string(_sp.mp.getViewId(_rc)) + "_vol_beforeFiltering.abc");
+        exportSimilaritySamplesCSV(volumeSecBestSim_h, _depths, _rc, _scale, _step, "beforeFiltering", _sp.mp.getDepthMapsFolder() + std::to_string(_sp.mp.getViewId(_rc)) + "_9p.csv");
     }
 
     // Filter on the 3D volume to weight voxels based on their neighborhood strongness.
@@ -479,8 +470,8 @@ bool SemiGlobalMatchingRc::sgmrc(bool checkIfExists)
         CudaHostMemoryHeap<float, 3> volumeSecBestSim_h(volumeSecBestSim_d.getSize());
         volumeSecBestSim_h.copyFrom(volumeSecBestSim_d);
 
-        exportVolume(volumeSecBestSim_h, _depths, _sp.mp, _rc, _scale, _step, _sp.mp.getDepthMapsFolder() + std::to_string(_sp.mp.getViewId(_rc)) + "_vol_afterFiltering.abc");
-        export9PCSV(volumeSecBestSim_h, _depths, _rc, _scale, _step, "afterFiltering", _sp.mp.getDepthMapsFolder() + std::to_string(_sp.mp.getViewId(_rc)) + "_9p.csv");
+        exportSimilarityVolume(volumeSecBestSim_h, _depths, _sp.mp, _rc, _scale, _step, _sp.mp.getDepthMapsFolder() + std::to_string(_sp.mp.getViewId(_rc)) + "_vol_afterFiltering.abc");
+        exportSimilaritySamplesCSV(volumeSecBestSim_h, _depths, _rc, _scale, _step, "afterFiltering", _sp.mp.getDepthMapsFolder() + std::to_string(_sp.mp.getViewId(_rc)) + "_9p.csv");
     }
 
     // vector<z, sim>
@@ -490,6 +481,7 @@ bool SemiGlobalMatchingRc::sgmrc(bool checkIfExists)
     int zborder = 2;
     _sp.cps.SGMretrieveBestDepth(_volumeBestIdVal, volumeSecBestSim_d, volDimX, volDimY, volDimZ, zborder);
 
+    /*
     if(rcSilhoueteMap != nullptr)
     {
         for(int i = 0; i < _width * _height; i++)
@@ -503,6 +495,7 @@ bool SemiGlobalMatchingRc::sgmrc(bool checkIfExists)
         delete rcSilhoueteMap;
         rcSilhoueteMap = nullptr;
     }
+    */
 
     mvsUtils::printfElapsedTime(tall, "SGM (_rc: " + mvsUtils::num2str(_rc) + " / " + mvsUtils::num2str(_sp.mp.ncams) + ")");
 

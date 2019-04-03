@@ -22,8 +22,7 @@ public:
                             const StaticVector<int>& _tc,
                             int _scale,
                             int _step,
-                            SemiGlobalMatchingParams& sp,
-                            StaticVectorBool* rcSilhoueteMap = NULL );
+                            SemiGlobalMatchingParams& sp);
     ~SemiGlobalMatchingRcTc();
 
     void computeDepthSimMapVolume( CudaDeviceMemoryPitched<float, 3>& volumeBestSim,
@@ -43,7 +42,6 @@ private:
     const int _h;
     const std::vector<float>& _rcDepths;
     const std::vector<Pixel>& _rcTcDepthRanges;
-    StaticVectorBool*         _rcSilhoueteMap;
 };
 
 } // namespace depthMap

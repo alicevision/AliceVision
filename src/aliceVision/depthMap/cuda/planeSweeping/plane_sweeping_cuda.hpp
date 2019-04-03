@@ -21,6 +21,35 @@ void ps_initSimilarityVolume(
   CudaDeviceMemoryPitched<float, 3>& volSecBestSim_dmp,
   int volDimX, int volDimY, int volDimZ);
 
+void ps_initColorVolumeFromCamera(
+    CudaDeviceMemoryPitched<float4, 3>& volColor_dmp,
+    const CameraStruct& rcam,
+    const CameraStruct& tcam,
+    cudaTextureObject_t tcam_tex,
+    const int tcWidth, const int tcHeight,
+    const int lowestUsedDepth,
+    const CudaDeviceMemory<float>& depths_d,
+    int volDimX, int volDimY, int volDimZ, int volStepXY);
+
+// #define PLANE_SWEEPING_PRECOMPUTED_COLORS_TEXTURE 1
+
+void ps_computeSimilarityVolume_precomputedColors(
+    cudaTextureObject_t rc_tex,
+#ifdef PLANE_SWEEPING_PRECOMPUTED_COLORS_TEXTURE
+    cudaTextureObject_t volTcamColors_tex3D,
+#else
+    const CudaDeviceMemoryPitched<float4, 3>& volTcamColors_dmp,
+#endif
+    CudaDeviceMemoryPitched<float, 3>& volBestSim_dmp,
+    CudaDeviceMemoryPitched<float, 3>& volSecBestSim_dmp,
+    const CameraStruct& rcam, int rcWidth, int rcHeight,
+    int volStepXY, int volDimX, int volDimY,
+    const OneTC& cell,
+    int wsh, int kernelSizeHalf,
+    int scale,
+    bool verbose,
+    float gammaC, float gammaP);
+
 void ps_computeSimilarityVolume(
   Pyramids& ps_texs_arr,
   CudaDeviceMemoryPitched<float, 3>& volBestSim_dmp,

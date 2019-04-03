@@ -251,11 +251,11 @@ void ps_device_updateCam( Pyramids& ps_texs_arr,
                          const CameraStruct& cam, int camId, int CUDAdeviceNo,
                          int ncamsAllocated, int scales, int w, int h)
 {
-    std::cerr << std::endl
+    ALICEVISION_CU_PRINT_DEBUG(std::endl
               << "Calling " << __FUNCTION__ << std::endl
               << "    for camera id " << camId << " and " << scales << " scales"
               << ", w: " << w << ", h: " << h << ", ncamsAllocated: " << ncamsAllocated
-              << std::endl << std::endl;
+              << std::endl);
 
     {
         copy(*ps_texs_arr[camId][0].arr, (*cam.tex_rgba_hmh));
@@ -279,8 +279,8 @@ void ps_device_updateCam( Pyramids& ps_texs_arr,
         const int radius = scale + 1;
         const int sWidth = w / (scale + 1);
         const int sHeight = h / (scale + 1);
-        std::cerr << "Create downscaled image for camera id " << camId << " at scale " << scale
-                  << ": " << sWidth << "x" << sHeight << std::endl;
+        ALICEVISION_CU_PRINT_DEBUG("Create downscaled image for camera id " << camId << " at scale " << scale
+                  << ": " << sWidth << "x" << sHeight);
 
         const dim3 block(32, 2, 1);
         const dim3 grid(divUp(sWidth, block.x), divUp(sHeight, block.y), 1);
@@ -631,6 +631,130 @@ void ps_initSimilarityVolume(
       volSecBestSim_dmp.getBytesPaddedUpToDim(0),
       volDimX, volDimY);
 }
+
+void ps_initColorVolumeFromCamera(
+    CudaDeviceMemoryPitched<float4, 3>& volColor_dmp,
+    const CameraStruct& rcam,
+    const CameraStruct& tcam,
+    cudaTextureObject_t tcam_tex,
+    const int tcWidth, const int tcHeight,
+    const int depthToStart,
+    const CudaDeviceMemory<float>& depths_d,
+    int volDimX, int volDimY, int usedVolDimZ, int volStepXY)
+{
+    dim3 block(32, 4, 1);
+
+    dim3 grid(divUp(volDimX, block.x),
+        divUp(volDimY, block.y),
+        usedVolDimZ);
+
+    ALICEVISION_CU_PRINT_DEBUG("ps_initColorVolumeFromCamera:" << std::endl
+        << "\t- tcam.camId: " << tcam.camId << std::endl
+        << "\t- block: " << block.x << ", " << block.y << ", " << block.z << std::endl
+        << "\t- grid: " << grid.x << ", " << grid.y << ", " << grid.z << std::endl
+        << "\t- volDimX: " << volDimX << ", volDimY: " << volDimY << ", volStepXY: " << volStepXY << std::endl
+        << "\t- usedVolDimZ: " << usedVolDimZ << std::endl
+        << "\t- depthToStart: " << depthToStart << std::endl
+        << "\t- depths_d.getUnitsInDim(0): " << depths_d.getUnitsInDim(0) << std::endl
+        << "\t- volColor_dmp.getSize(): " << volColor_dmp.getSize()[0] << ", " << volColor_dmp.getSize()[1] << ", " << volColor_dmp.getSize()[2] << std::endl
+        << "\t- volColor_dmp.getBytesPaddedUpToDim(1): " << volColor_dmp.getBytesPaddedUpToDim(1) << std::endl
+        << "\t- volColor_dmp.getBytesPaddedUpToDim(0): " << volColor_dmp.getBytesPaddedUpToDim(0) << std::endl
+        );
+
+    cudaDeviceSynchronize();
+    CHECK_CUDA_ERROR();
+
+    volume_initCameraColor_kernel
+        <<<grid, block>>>
+        (volColor_dmp.getBuffer(),
+         volColor_dmp.getBytesPaddedUpToDim(1),
+         volColor_dmp.getBytesPaddedUpToDim(0),
+         *rcam.param_dev,
+         *tcam.param_dev,
+         tcam_tex,
+         tcWidth, tcHeight,
+         depthToStart,
+         depths_d.getBuffer(),
+         volDimX, volDimY, usedVolDimZ, volStepXY);
+
+    cudaDeviceSynchronize();
+    CHECK_CUDA_ERROR();
+}
+
+
+// #define PLANE_SWEEPING_PRECOMPUTED_COLORS_TEXTURE 1
+
+void ps_computeSimilarityVolume_precomputedColors(
+    cudaTextureObject_t rc_tex,
+#ifdef PLANE_SWEEPING_PRECOMPUTED_COLORS_TEXTURE
+    cudaTextureObject_t volTcamColors_tex3D,
+#else
+    const CudaDeviceMemoryPitched<float4, 3>& volTcamColors_dmp,
+#endif
+    CudaDeviceMemoryPitched<float, 3>& volBestSim_dmp,
+    CudaDeviceMemoryPitched<float, 3>& volSecBestSim_dmp,
+    const CameraStruct& rcam, int rcWidth, int rcHeight,
+    int volStepXY, int volDimX, int volDimY,
+    const OneTC& cell,
+    int wsh, int kernelSizeHalf,
+    int scale,
+    bool verbose,
+    float gammaC, float gammaP)
+{
+
+    configure_volume_slice_kernel();
+
+    printf("Start depth: %i, nb depths to search: %i \n", cell.getLowestUsedDepth(), cell.getDepthsToSearch());
+
+    dim3 volume_slice_kernel_grid(
+        divUp(volDimX, volume_slice_kernel_block.x),
+        divUp(volDimY, volume_slice_kernel_block.y),
+        cell.getDepthsToSearch());
+
+    ALICEVISION_CU_PRINT_DEBUG("====================");
+    ALICEVISION_CU_PRINT_DEBUG("RC: " << rcam.camId);
+    ALICEVISION_CU_PRINT_DEBUG("volume_slice_kernel_grid: " << volume_slice_kernel_grid.x << ", " << volume_slice_kernel_grid.y << ", " << volume_slice_kernel_grid.z);
+    ALICEVISION_CU_PRINT_DEBUG("volume_slice_kernel_block: " << volume_slice_kernel_block.x << ", " << volume_slice_kernel_block.y << ", " << volume_slice_kernel_block.z);
+    ALICEVISION_CU_PRINT_DEBUG("startDepthIndex: " << cell.getDepthToStart());
+    ALICEVISION_CU_PRINT_DEBUG("nbDepthsToSearch: " << cell.getDepthsToSearch());
+    ALICEVISION_CU_PRINT_DEBUG("startDepthIndex+nbDepthsToSearch: " << cell.getDepthToStart() + cell.getDepthsToSearch());
+    ALICEVISION_CU_PRINT_DEBUG("volDimX: " << volDimX << ", volDimY: " << volDimY << ", volStepXY: " << volStepXY);
+    ALICEVISION_CU_PRINT_DEBUG("scale: " << scale);
+    ALICEVISION_CU_PRINT_DEBUG("rcWidth / scale: " << rcWidth / scale << "x" << rcHeight / scale);
+    ALICEVISION_CU_PRINT_DEBUG("====================");
+
+    cudaDeviceSynchronize();
+    CHECK_CUDA_ERROR();
+
+    volume_estimateSim_twoViews_kernel
+        <<<volume_slice_kernel_grid, volume_slice_kernel_block>>>
+        (rc_tex,
+#ifdef PLANE_SWEEPING_PRECOMPUTED_COLORS_TEXTURE
+         volTcamColors_tex3D,
+#else
+         volTcamColors_dmp.getBuffer(),
+         volTcamColors_dmp.getBytesPaddedUpToDim(1),
+         volTcamColors_dmp.getBytesPaddedUpToDim(0),
+#endif
+         cell.getDepthToStart(),
+         cell.getDepthsToSearch(),
+         rcWidth / scale, rcHeight / scale,
+         wsh, gammaC, gammaP,
+         volBestSim_dmp.getBuffer(),
+         volBestSim_dmp.getBytesPaddedUpToDim(1),
+         volBestSim_dmp.getBytesPaddedUpToDim(0),
+         volSecBestSim_dmp.getBuffer(),
+         volSecBestSim_dmp.getBytesPaddedUpToDim(1),
+         volSecBestSim_dmp.getBytesPaddedUpToDim(0),
+         scale, volStepXY,
+         volDimX, volDimY);
+
+    cudaDeviceSynchronize();
+    CHECK_CUDA_ERROR();
+
+    cudaDeviceSynchronize();
+}
+
 
 void ps_computeSimilarityVolume(Pyramids& ps_texs_arr,
                                 CudaDeviceMemoryPitched<float, 3>& volBestSim_dmp,

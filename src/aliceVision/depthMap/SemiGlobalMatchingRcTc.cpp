@@ -20,8 +20,7 @@ SemiGlobalMatchingRcTc::SemiGlobalMatchingRcTc(
             const StaticVector<int>& tc,
             int scale,
             int step,
-            SemiGlobalMatchingParams& sp,
-            StaticVectorBool* rcSilhoueteMap)
+            SemiGlobalMatchingParams& sp)
     : _sp( sp )
     , _rc( rc )
     , _tc( tc )
@@ -33,7 +32,6 @@ SemiGlobalMatchingRcTc::SemiGlobalMatchingRcTc(
     , _rcTcDepthRanges( rcTcDepthRanges )
 {
     ALICEVISION_LOG_DEBUG("Create SemiGlobalMatchingRcTc with " << rcTcDepthRanges.size() << " T cameras.");
-    _rcSilhoueteMap = rcSilhoueteMap;
 }
 
 SemiGlobalMatchingRcTc::~SemiGlobalMatchingRcTc()
@@ -95,7 +93,6 @@ void SemiGlobalMatchingRcTc::computeDepthSimMapVolume(
                                  tcs,
                                  _rcDepths,
                                  _rc, _tc,
-                                 _rcSilhoueteMap,
                                  wsh, gammaC, gammaP, _scale);
 
     ALICEVISION_LOG_INFO("==== computeDepthSimMapVolume done in : " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - startTime).count() << "ms.");
