@@ -281,8 +281,8 @@ __device__ float compNCCby3DptsYK_vol(
 
     // const int verbose = (int(coordX) % 200 == 0 && int(coordY) % 200 == 0 && int(coordZ) % 50 == 10);
 
-    // if( gcr.w == 0.0f || gct.w == 0.0f )
-    //    return 1.0f; // if no alpha, invalid pixel from input mask
+    if( gcr.w == 0.0f || gct.w == 0.0f )
+        return 1.0f; // if no alpha, invalid pixel from input mask
 
     simStat sst = simStat();
     for (int yp = -wsh; yp <= wsh; yp++)
@@ -298,11 +298,16 @@ __device__ float compNCCby3DptsYK_vol(
                 continue;
 
             const float4 gcr_i = tex2D<float4>(rc_tex, coord_i.x * volStepXY + 0.5f, coord_i.y * volStepXY + 0.5f);
+            if (gcr_i.w == 0.0f)
+                continue;
+
 #ifdef PLANE_SWEEPING_PRECOMPUTED_COLORS_TEXTURE
             const float4 gct_i = tex3D<float4>(tc_tex3D, coord_i.x + 0.5f, coord_i.y + 0.5f, coordZ + 0.5f);
 #else
             const float4 gct_i = *get3DBufferAt<float4>(volTcamColors, volTcamColors_s, volTcamColors_p, int(coord_i.x), int(coord_i.y), int(coordZ));
 #endif
+            if (gct_i.w == 0.0f)
+                continue;
 
             // Weighting is based on:
             //  * color difference to the center pixel of the patch:
