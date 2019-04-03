@@ -296,7 +296,7 @@ void LocalBundleAdjustmentGraph::updateGraphWithNewViews(
     for(const Pair& edge: newEdges)
       _graph.addEdge(_nodePerViewId.at(edge.first), _nodePerViewId.at(edge.second));
 
-    addIntrinsicEdgesToTheGraph(sfmData, addedViewsId);
+    numAddedEdges += addIntrinsicEdgesToTheGraph(sfmData, addedViewsId);
   }
   
   ALICEVISION_LOG_DEBUG("The distances graph has been completed with " << nbAddedNodes<< " nodes & " << numAddedEdges << " edges.");
@@ -646,7 +646,7 @@ void LocalBundleAdjustmentGraph::drawGraph(const sfmData::SfMData& sfmData, cons
 
 std::size_t LocalBundleAdjustmentGraph::addIntrinsicEdgesToTheGraph(const sfmData::SfMData& sfmData, const std::set<IndexT>& newReconstructedViews)
 {
-  std::size_t numAddedEdges = 0;
+  std::map<Pair, IndexT> newIntrinsicEdges;
 
   for(IndexT newViewId : newReconstructedViews) // for each new view
   {
@@ -657,24 +657,26 @@ std::size_t LocalBundleAdjustmentGraph::addIntrinsicEdgesToTheGraph(const sfmDat
 
     for(const auto& x : _nodePerViewId) // for each reconstructed view in the graph
     {
-      if(newViewId == x.first)  // do not compare a view with itself
-        continue;
-      
-      const IndexT reconstructedViewIntrinsicId = sfmData.getViews().at(x.first)->getIntrinsicId();
-      
+      const auto& otherViewId = x.first;
+
       // if the new view share the same intrinsic than previously reconstructed views
-      if(reconstructedViewIntrinsicId == newViewIntrinsicId)
+      if(newViewId != otherViewId  // do not compare a view with itself
+         && newViewIntrinsicId == sfmData.getViews().at(otherViewId)->getIntrinsicId())
       {
-        const IndexT minId = std::min(x.first, newViewId);
-        const IndexT maxId = std::max(x.first, newViewId);
-        
-        lemon::ListGraph::Edge edge = _graph.addEdge(_nodePerViewId[minId], _nodePerViewId[maxId]);
-        _intrinsicEdgesId[newViewIntrinsicId].push_back(_graph.id(edge));
-        numAddedEdges++;
+        // register a new intrinsic edge between those views
+        newIntrinsicEdges[std::minmax(otherViewId, newViewId)] = newViewIntrinsicId;
       }
     }
   }
-  return numAddedEdges;
+
+  // create registered intrinsic edges in lemon graph 
+  // and update _intrinsicEdgesId accordingly
+  for(const auto& newEdge : newIntrinsicEdges)
+  {
+    lemon::ListGraph::Edge edge = _graph.addEdge(_nodePerViewId[newEdge.first.first], _nodePerViewId[newEdge.first.second]);
+    _intrinsicEdgesId[newEdge.second].push_back(_graph.id(edge));
+  }
+  return newIntrinsicEdges.size();
 }
 
 void LocalBundleAdjustmentGraph::removeIntrinsicEdgesFromTheGraph(IndexT intrinsicId)
