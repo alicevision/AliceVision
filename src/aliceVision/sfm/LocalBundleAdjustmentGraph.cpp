@@ -682,8 +682,11 @@ void LocalBundleAdjustmentGraph::removeIntrinsicEdgesFromTheGraph(IndexT intrins
   if(_intrinsicEdgesId.count(intrinsicId) == 0)
     return;
   for(int edgeId : _intrinsicEdgesId.at(intrinsicId))
-    _graph.erase(_graph.fromId(edgeId, lemon::ListGraph::Edge()));
-
+  {
+    const auto& edge = _graph.edgeFromId(edgeId);
+    assert(_graph.valid(edge));
+    _graph.erase(edge);
+  }
   _intrinsicEdgesId.erase(intrinsicId);
 }
 
@@ -697,7 +700,9 @@ std::size_t LocalBundleAdjustmentGraph::updateRigEdgesToTheGraph(const sfmData::
   {
     for(int edgeId : edgesPerRid.second)
     {
-      _graph.erase(_graph.fromId(edgeId, lemon::ListGraph::Edge()));
+      const auto& edge = _graph.edgeFromId(edgeId);
+      assert(_graph.valid(edge));
+      _graph.erase(edge);
     }
   }
   _rigEdgesId.clear();
