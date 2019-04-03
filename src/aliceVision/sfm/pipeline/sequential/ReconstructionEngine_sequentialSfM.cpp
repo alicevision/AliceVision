@@ -695,9 +695,9 @@ bool ReconstructionEngine_sequentialSfM::bundleAdjustment(std::set<IndexT>& newR
 
     if(_params.useLocalBundleAdjustment && !removedViewsIdIteration.empty())
     {
-      // remove removed views to the graph
-      _localStrategyGraph->removeViewsToTheGraph(removedViewsIdIteration);
-      ALICEVISION_LOG_DEBUG("Removed views to the local strategy graph: " << removedViewsIdIteration);
+      // remove views from localBA graph
+      _localStrategyGraph->removeViews(_sfmData, removedViewsIdIteration);
+      ALICEVISION_LOG_DEBUG("Removed views from local strategy graph: " << removedViewsIdIteration);
     }
 
     ALICEVISION_LOG_INFO("Bundle adjustment iteration: " << iteration << " took " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - chronoItStart).count() << " msec.");

@@ -149,7 +149,7 @@ public:
    * @param[in] removedViewsId Set of views index to remove
    * @return true if the number of removed node is equal to the size of \c removedViewsId
    */
-  bool removeViewsToTheGraph(const std::set<IndexT>& removedViewsId);
+  bool removeViews(const sfmData::SfMData& sfmData, const std::set<IndexT>& removedViewsId);
 
   /**
    * @brief Complete the graph with the newly resected views or all the posed views if the graph is empty.

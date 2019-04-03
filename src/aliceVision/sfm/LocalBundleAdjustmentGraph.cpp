@@ -11,6 +11,7 @@
 #include <lemon/bfs.h>
 
 #include <fstream>
+#include <algorithm>
 
 namespace fs = boost::filesystem;
 
@@ -132,23 +133,66 @@ void LocalBundleAdjustmentGraph::exportIntrinsicsHistory(const std::string& fold
   os.close();
 }
 
-bool LocalBundleAdjustmentGraph::removeViewsToTheGraph(const std::set<IndexT>& removedViewsId)
+bool LocalBundleAdjustmentGraph::removeViews(const sfmData::SfMData& sfmData, const std::set<IndexT>& removedViewsId)
 {
   std::size_t numRemovedNode = 0;
+  std::map<IndexT, std::vector<int>> removedEdgesByIntrinsic;
+
   for(const IndexT& viewId : removedViewsId)
   {
     auto it = _nodePerViewId.find(viewId);
-    if(it != _nodePerViewId.end())
+    if(it == _nodePerViewId.end())
     {
+      ALICEVISION_LOG_WARNING("The view id: " << viewId << " does not exist in the graph, cannot remove it.");
+      continue;
+    }
+
+    // keep track of node incident edges that are going to be removed
+    // in order to update _intrinsicEdgesId accordingly
+    { 
+      IndexT intrinsicId = sfmData.getView(viewId).getIntrinsicId();
+      auto intrinsicIt = _intrinsicEdgesId.find(intrinsicId);
+      if(intrinsicIt != _intrinsicEdgesId.end())
+      {
+        // store incident edge ids before removal
+        for(lemon::ListGraph::IncEdgeIt e(_graph, it->second); e != lemon::INVALID; ++e)
+        {
+          removedEdgesByIntrinsic[intrinsicId].push_back(_graph.id(lemon::ListGraph::Edge(e)));
+        }
+      }
+    }
+    
     _graph.erase(it->second); // this function erase a node with its incident arcs
     _viewIdPerNode.erase(it->second);
     _nodePerViewId.erase(it->first);
 
-      numRemovedNode++;
-      ALICEVISION_LOG_DEBUG("The view #" << viewId << " has been successfully removed to the distance graph.");
+    numRemovedNode++;
+    ALICEVISION_LOG_DEBUG("The view #" << viewId << " has been successfully removed to the distance graph.");
+  }
+
+  // remove erased edges from _intrinsicsEdgesId
+  for(auto& edgesIt : removedEdgesByIntrinsic)
+  {
+    const IndexT intrinsicId =  edgesIt.first;
+    std::vector<int>& edgeIds = _intrinsicEdgesId[intrinsicId];
+    std::vector<int>& removedEdges = edgesIt.second;
+
+    std::vector<int> newEdgeIds;
+    // sort before using set_difference
+    std::sort(edgeIds.begin(), edgeIds.end());
+    std::sort(removedEdges.begin(), removedEdges.end());
+
+    std::set_difference(
+      edgeIds.begin(), edgeIds.end(), 
+      removedEdges.begin(), removedEdges.end(), 
+      std::back_inserter(newEdgeIds)
+    );
+    std::swap(edgeIds, newEdgeIds);
+
+    if(edgeIds.empty())
+    {
+      _intrinsicEdgesId.erase(intrinsicId);
     }
-    else
-      ALICEVISION_LOG_WARNING("The view id: " << viewId << " does not exist in the graph, cannot remove it.");
   }
   return numRemovedNode == removedViewsId.size();
 }
