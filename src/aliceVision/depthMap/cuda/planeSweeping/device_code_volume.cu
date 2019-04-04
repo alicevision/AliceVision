@@ -128,8 +128,6 @@ __global__ void volume_estimateSim_twoViews_kernel(
 
     // int verbose = (vx % 200 == 0 && vy % 200 == 0 && vz % 100 == 0);
 
-    const int zIndex = depthToStart + vz;
-
     float fsim = compNCCby3DptsYK_vol(
         rc_tex,
 #ifdef PLANE_SWEEPING_PRECOMPUTED_COLORS_TEXTURE
@@ -141,8 +139,8 @@ __global__ void volume_estimateSim_twoViews_kernel(
         scale, volStepXY,
         wsh, gammaC, gammaP);
 
-    const float fminVal = -1.0f;
-    const float fmaxVal = 1.0f;
+    static const float fminVal = -1.0f;
+    static const float fmaxVal = 1.0f;
     fsim = (fsim - fminVal) / (fmaxVal - fminVal);
     // fsim = fminf(1.0f, fmaxf(0.0f, fsim));
     fsim *= 255.0f; // Currently needed for the next step... (TODO: should be removed at some point)
@@ -158,6 +156,7 @@ __global__ void volume_estimateSim_twoViews_kernel(
         printf("______________________________________\n");
     }
     */
+    const int zIndex = depthToStart + vz;
     float* fsim_1st = get3DBufferAt(volume_1st, volume1st_s, volume1st_p, vx, vy, zIndex);
     float* fsim_2nd = get3DBufferAt(volume_2nd, volume2nd_s, volume2nd_p, vx, vy, zIndex);
 

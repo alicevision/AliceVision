@@ -209,7 +209,7 @@ __device__ float compNCCby3DptsYK( cudaTextureObject_t rc_tex,
     // float gammaP = ((gcr.w>0)||(gct.w>0))?sigmoid(1.5,(float)(wsh+3),30.0f,20.0f,fmaxf(gcr.w,gct.w)):_gammaP;
     float gammaP = _gammaP;
 
-    simStat sst = simStat();
+    simStat sst;
     for(int yp = -wsh; yp <= wsh; yp++)
     {
         for(int xp = -wsh; xp <= wsh; xp++)
@@ -236,8 +236,7 @@ __device__ float compNCCby3DptsYK( cudaTextureObject_t rc_tex,
             sst.update(gcr1.x, gct1.x, w);
         }
     }
-    sst.computeWSim();
-    return sst.sim;
+    return sst.computeWSim();
 }
 
 
@@ -284,7 +283,7 @@ __device__ float compNCCby3DptsYK_vol(
     if( gcr.w == 0.0f || gct.w == 0.0f )
         return 1.0f; // if no alpha, invalid pixel from input mask
 
-    simStat sst = simStat();
+    simStat sst;
     for (int yp = -wsh; yp <= wsh; yp++)
     {
         float2 coord_i;
@@ -322,7 +321,6 @@ __device__ float compNCCby3DptsYK_vol(
             sst.update(gcr_i.x, gct_i.x, w);
         }
     }
-    sst.computeWSim();
 
     /*
     if (verbose)
@@ -332,7 +330,7 @@ __device__ float compNCCby3DptsYK_vol(
         printf("compNCCby3DptsYK_vol: gct: %f, %f, %f, %f\n", gct.x, gct.y, gct.z, gct.w);
         printf("compNCCby3DptsYK_vol: sst.sim: %f\n", sst.sim);
     }*/
-    return sst.sim;
+    return sst.computeWSim();
 }
 
 __device__ void getPixelFor3DPoint(const CameraStructBase& cam, float2& out, float3& X)
