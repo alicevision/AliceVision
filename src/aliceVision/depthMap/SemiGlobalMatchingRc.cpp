@@ -516,7 +516,7 @@ bool SemiGlobalMatchingRc::sgmrc(bool checkIfExists)
         std::vector<unsigned short> volumeBestId(_volumeBestIdVal->size());
         for(int i = 0; i < _volumeBestIdVal->size(); i++)
           volumeBestId.at(i) = std::max(0, (*_volumeBestIdVal)[i].id);
-        imageIO::writeImage(_sp->getSGM_idDepthMapFileName(_sp->mp->getViewId(_rc), _scale, _step), _width, _height, volumeBestId);
+        imageIO::writeImage(_sp->getSGM_idDepthMapFileName(_sp->mp->getViewId(_rc), _scale, _step), _width, _height, volumeBestId, imageIO::EImageQuality::LOSSLESS, imageIO::EImageColorSpace::NO_CONVERSION);
     }
     return true;
 }

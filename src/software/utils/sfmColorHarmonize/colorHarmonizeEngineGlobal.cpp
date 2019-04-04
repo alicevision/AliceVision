@@ -281,14 +281,14 @@ bool ColorHarmonizationEngineGlobal::Process()
 
       string out_filename_J = "00_mask_J.png";
       out_filename_J = (fs::path(sEdge) / out_filename_J).string();
-      writeImage(out_filename_I, maskI);
-      writeImage(out_filename_J, maskJ);
+      writeImage(out_filename_I, maskI, image::EImageColorSpace::NO_CONVERSION);
+      writeImage(out_filename_J, maskJ, image::EImageColorSpace::NO_CONVERSION);
     }
 
     //-- Compute the histograms
     Image< RGBColor > imageI, imageJ;
-    readImage(p_imaNames.first, imageI);
-    readImage(p_imaNames.second, imageJ);
+    readImage(p_imaNames.first, imageI, image::EImageColorSpace::NO_CONVERSION);
+    readImage(p_imaNames.second, imageJ, image::EImageColorSpace::NO_CONVERSION);
 
     Histogram< double > histoI( minvalue, maxvalue, bin);
     Histogram< double > histoJ( minvalue, maxvalue, bin);
@@ -415,7 +415,7 @@ bool ColorHarmonizationEngineGlobal::Process()
     }
 
     Image< RGBColor > image_c;
-    readImage( _fileNames[ imaNum ], image_c );
+    readImage( _fileNames[ imaNum ], image_c , image::EImageColorSpace::NO_CONVERSION);
 
     #pragma omp parallel for
     for( int j = 0; j < image_c.Height(); ++j )
@@ -433,7 +433,7 @@ bool ColorHarmonizationEngineGlobal::Process()
       fs::create_directory(out_folder);
     const std::string out_filename = (fs::path(out_folder) / fs::path(_fileNames[ imaNum ]).filename() ).string();
 
-    writeImage( out_filename, image_c );
+    writeImage( out_filename, image_c , image::EImageColorSpace::NO_CONVERSION);
   }
   return true;
 }

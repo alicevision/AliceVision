@@ -116,7 +116,7 @@ int main(int argc, char **argv)
     }
 
     image::Image<image::RGBColor> image, imageUd;
-    image::readImage(view.getImagePath(), image);
+    image::readImage(view.getImagePath(), image, image::EImageColorSpace::NO_CONVERSION);
 
     // compute undistorted image
     if(intrinsicPtr->isValid() && intrinsicPtr->have_disto())

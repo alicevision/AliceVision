@@ -383,7 +383,7 @@ void DepthSimMap::saveToImage(std::string filename, float simThr)
             }
         }
 
-        imageIO::writeImage(filename, bufferWidth, h, colorBuffer);
+        imageIO::writeImage(filename, bufferWidth, h, colorBuffer, imageIO::EImageQuality::LOSSLESS, imageIO::EImageColorSpace::NO_CONVERSION);
     }
     catch(...)
     {

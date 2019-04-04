@@ -226,7 +226,7 @@ bool Fuser::filterGroupsRC(int rc, int pixSizeBall, int pixSizeBallWSP, int nNea
 
     {
       imageIO::transposeImage(h, w, numOfModalsMap);
-      imageIO::writeImage(getFileNameFromIndex(mp, rc, mvsUtils::EFileType::nmodMap), w, h, numOfModalsMap);
+      imageIO::writeImage(getFileNameFromIndex(mp, rc, mvsUtils::EFileType::nmodMap), w, h, numOfModalsMap, imageIO::EImageQuality::LOSSLESS, imageIO::EImageColorSpace::NO_CONVERSION);
     }
 
     delete numOfPtsMap;

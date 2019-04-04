@@ -408,7 +408,7 @@ void computeNormalMaps(int CUDADeviceNo, mvsUtils::MultiViewParams* mp, const St
       
       cps.computeNormalMap(&depthMap, &normalMap, rc, 1, igammaC, igammaP, wsh);
 
-      imageIO::writeImage(normalMapFilepath, mp->getWidth(rc), mp->getHeight(rc), normalMap.getDataWritable(), imageIO::EImageQuality::LOSSLESS);
+      imageIO::writeImage(normalMapFilepath, mp->getWidth(rc), mp->getHeight(rc), normalMap.getDataWritable(), imageIO::EImageQuality::LOSSLESS, imageIO::EImageColorSpace::NO_CONVERSION);
     }
   }
 }

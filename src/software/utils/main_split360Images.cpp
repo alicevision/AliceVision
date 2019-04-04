@@ -187,7 +187,7 @@ bool splitEquirectangular(const std::string& imagePath, const std::string& outpu
   const oiio::ImageSpec& inSpec = inBuffer.spec();
 
   image::Image<image::RGBColor> imageSource;
-  image::readImage(imagePath, imageSource);
+  image::readImage(imagePath, imageSource, image::EImageColorSpace::LINEAR);
 
   const int inWidth = imageSource.Width();
   const int inHeight = imageSource.Height();
@@ -248,7 +248,7 @@ bool splitEquirectangular(const std::string& imagePath, const std::string& outpu
 bool splitEquirectangularDemo(const std::string& imagePath, const std::string& outputFolder, std::size_t nbSplits, std::size_t splitResolution)
 {
   image::Image<image::RGBColor> imageSource;
-  image::readImage(imagePath, imageSource);
+  image::readImage(imagePath, imageSource, image::EImageColorSpace::LINEAR);
 
   const int inWidth = imageSource.Width();
   const int inHeight = imageSource.Height();
