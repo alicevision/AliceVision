@@ -326,7 +326,7 @@ void memcpyRGBImageFromFileToArr(int camId, Color* imgArr, const std::string& fi
 {
     int origWidth, origHeight;
     std::vector<Color> cimg;
-    imageIO::readImage(fileNameOrigStr, origWidth, origHeight, cimg);
+    imageIO::readImage(fileNameOrigStr, origWidth, origHeight, cimg, imageIO::EImageColorSpace::LINEAR);
 
     // check image size
     if((mp->getOriginalWidth(camId) != origWidth) || (mp->getOriginalHeight(camId) != origHeight))

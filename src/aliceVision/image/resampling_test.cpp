@@ -23,7 +23,7 @@ BOOST_AUTO_TEST_CASE(Ressampling_SampleSamePosition)
   Image<unsigned char> image;
   std::string png_filename = std::string(THIS_SOURCE_DIR) + "/image_test/lena.png";
   ALICEVISION_LOG_DEBUG(png_filename);
-  BOOST_CHECK_NO_THROW(readImage(png_filename, image));
+  BOOST_CHECK_NO_THROW(readImage(png_filename, image, image::EImageColorSpace::NO_CONVERSION));
 
 
   // Build sampling grid
@@ -44,7 +44,7 @@ BOOST_AUTO_TEST_CASE(Ressampling_SampleSamePosition)
   GenericRessample( image , sampling_grid , image.Width() , image.Height() , sampler , imageOut ) ;
 
   std::string out_filename = ("test_ressample_same.png");
-  BOOST_CHECK_NO_THROW( writeImage( out_filename, imageOut) ) ;
+  BOOST_CHECK_NO_THROW( writeImage( out_filename, imageOut, image::EImageColorSpace::NO_CONVERSION) ) ;
 }
 
 // Iterative image rotations
@@ -103,7 +103,7 @@ void ImageRotation(
 
     std::stringstream str ;
     str << "test_ressample_"<< samplerString <<"_rotate_" << id_rot << ".png" ;
-    writeImage(str.str(), imageOut);
+    writeImage(str.str(), imageOut, image::EImageColorSpace::NO_CONVERSION);
     image = imageOut ;
   }
 }
@@ -114,7 +114,7 @@ BOOST_AUTO_TEST_CASE(Ressampling_SampleRotate)
 
   std::string png_filename = std::string(THIS_SOURCE_DIR) + "/image_test/lena.png";
   ALICEVISION_LOG_DEBUG(png_filename);
-  BOOST_CHECK_NO_THROW(readImage(png_filename, image));
+  BOOST_CHECK_NO_THROW(readImage(png_filename, image, image::EImageColorSpace::NO_CONVERSION));
 
   BOOST_CHECK_NO_THROW(ImageRotation(image, Sampler2d< SamplerNearest >(), "SamplerNearest"));
   BOOST_CHECK_NO_THROW(ImageRotation(image, Sampler2d< SamplerLinear >(), "SamplerLinear"));

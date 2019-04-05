@@ -34,7 +34,7 @@ void writeImageScaledColors(const std::string& savePath, T* buffer, int width, i
             colorBuffer.at(index++) = getColorFromJetColorMap(s);
         }
     }
-    writeImage(savePath, width, height, colorBuffer);
+    writeImage(savePath, width, height, colorBuffer, EImageQuality::OPTIMIZED, EImageColorSpace::NO_CONVERSION);
 }
 
 void writeImageScaledColors(const std::string& path, int width, int height, float* buffer, bool transpose)
@@ -56,7 +56,7 @@ void writeImageScaledColors(const std::string& path, int width, int height, floa
             colorBuffer.at(index++) = Color(val, val, val);
         }
     }
-    writeImage(path, width, height, colorBuffer);
+    writeImage(path, width, height, colorBuffer, EImageQuality::OPTIMIZED, EImageColorSpace::NO_CONVERSION);
 }
 
 void writeImageScaledColors(const std::string& path, int width, int height, float minVal, float maxVal, float* buffer, bool transpose)

@@ -646,7 +646,7 @@ void Texturing::generateTexturesSubSet(const mvsUtils::MultiViewParams& mp,
             std::swap(resizedColorBuffer, accuImage.img);
         }
 
-        imageIO::writeImage(texturePath.string(), outTextureSide, outTextureSide, accuImage.img);
+        imageIO::writeImage(texturePath.string(), outTextureSide, outTextureSide, accuImage.img, imageIO::EImageQuality::OPTIMIZED, imageIO::EImageColorSpace::AUTO);
     }
 }
 
