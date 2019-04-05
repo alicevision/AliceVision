@@ -73,7 +73,7 @@ struct TexturingParams
     EVisibilityRemappingMethod visibilityRemappingMethod = EVisibilityRemappingMethod::PullPush;
 
     unsigned int textureSide = 8192;
-    unsigned int padding = 15;
+    unsigned int padding = 5;
     unsigned int downscale = 2;
     bool fillHoles = false;
     bool useUDIM = true;
