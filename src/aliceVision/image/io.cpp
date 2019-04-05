@@ -81,6 +81,20 @@ oiio::ParamValueList getMetadataFromMap(const std::map<std::string, std::string>
   return metadata;
 }
 
+oiio::ParamValueList readImageMetadata(const std::string& path)
+{
+  std::unique_ptr<oiio::ImageInput> in(oiio::ImageInput::open(path));
+
+  if(!in)
+    throw std::runtime_error("Can't find/open image file '" + path + "'.");
+
+  oiio::ParamValueList metadata = in->spec().extra_attribs;
+
+  in->close();
+
+  return metadata;
+}
+
 void readImageMetadata(const std::string& path, int& width, int& height, std::map<std::string, std::string>& metadata)
 {
   std::unique_ptr<oiio::ImageInput> in(oiio::ImageInput::open(path));
@@ -97,6 +111,42 @@ void readImageMetadata(const std::string& path, int& width, int& height, std::ma
     metadata.emplace(param.name().string(), param.get_string());
 
   in->close();
+}
+
+template<typename T>
+void getBufferFromImage(Image<T>& image,
+                        oiio::TypeDesc format,
+                        int nchannels,
+                        oiio::ImageBuf& buffer)
+{
+  const oiio::ImageSpec imageSpec(image.Width(), image.Height(), nchannels, format);
+  oiio::ImageBuf imageBuf(imageSpec, image.data());
+  buffer.swap(imageBuf);
+}
+
+void getBufferFromImage(Image<float>& image, oiio::ImageBuf& buffer)
+{
+  getBufferFromImage(image, oiio::TypeDesc::FLOAT, 1, buffer);
+}
+
+void getBufferFromImage(Image<unsigned char>& image, oiio::ImageBuf& buffer)
+{
+  getBufferFromImage(image, oiio::TypeDesc::UINT8, 1, buffer);
+}
+
+void getBufferFromImage(Image<RGBAColor>& image, oiio::ImageBuf& buffer)
+{
+  getBufferFromImage(image, oiio::TypeDesc::UINT8, 4, buffer);
+}
+
+void getBufferFromImage(Image<RGBfColor>& image, oiio::ImageBuf& buffer)
+{
+  getBufferFromImage(image, oiio::TypeDesc::FLOAT, 3, buffer);
+}
+
+void getBufferFromImage(Image<RGBColor>& image, oiio::ImageBuf& buffer)
+{
+  getBufferFromImage(image, oiio::TypeDesc::UINT8, 3, buffer);
 }
 
 template<typename T>

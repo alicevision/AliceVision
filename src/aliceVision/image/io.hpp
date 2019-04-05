@@ -11,6 +11,7 @@
 #include <aliceVision/image/pixelTypes.hpp>
 
 #include <OpenImageIO/paramlist.h>
+#include <OpenImageIO/imagebuf.h>
 
 #include <string>
 
@@ -87,11 +88,29 @@ oiio::ParamValueList getMetadataFromMap(const std::map<std::string, std::string>
 /**
  * @brief extract metadata from an image for a given path
  * @param[in] path The given path to the image
+ * @return metadata All metadata find in the image
+ */
+oiio::ParamValueList readImageMetadata(const std::string& path);
+
+/**
+ * @brief extract metadata from an image for a given path
+ * @param[in] path The given path to the image
  * @param[out] width The image header width
  * @param[out] height The image header height
  * @param[out] metadata All metadata find in the image
  */
 void readImageMetadata(const std::string& path, int& width, int& height, std::map<std::string, std::string>& metadata);
+
+/**
+ * @brief get OIIO buffer from an AliceVision image
+ * @param[in] image Image class
+ * @param[out] buffer OIIO buffer
+ */
+void getBufferFromImage(Image<float>& image, oiio::ImageBuf& buffer);
+void getBufferFromImage(Image<unsigned char>& image, oiio::ImageBuf& buffer);
+void getBufferFromImage(Image<RGBAColor>& image, oiio::ImageBuf& buffer);
+void getBufferFromImage(Image<RGBfColor>& image, oiio::ImageBuf& buffer);
+void getBufferFromImage(Image<RGBColor>& image, oiio::ImageBuf& buffer);
 
 /**
  * @brief read an image with a given path and buffer
