@@ -5,7 +5,6 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "rgbCurve.hpp"
-
 #include <functional>
 #include <fstream>
 #include <iostream>

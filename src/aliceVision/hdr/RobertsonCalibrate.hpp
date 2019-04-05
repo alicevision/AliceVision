@@ -7,6 +7,7 @@
 #pragma once
 #include <aliceVision/image/all.hpp>
 #include "rgbCurve.hpp"
+#include "RobertsonMerge.hpp"
 
 
 namespace aliceVision {

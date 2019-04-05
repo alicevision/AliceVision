@@ -43,7 +43,7 @@ inline std::string EFunctionType_enumToString(const EFunctionType functionType)
     case EFunctionType::PLATEAU:    return "plateau";
     case EFunctionType::GAMMA:      return "gamma";
     case EFunctionType::LOG10:      return "log10";
-   }
+  }
   throw std::out_of_range("Invalid function type enum");
 }
 
@@ -190,9 +190,9 @@ public:
 
   /**
    * @brief Left accessor
-   * @param[in] index
+   * @param[in] sample
    * @param[in] channel
-   * @return the value at the index of the channel curve
+   * @return the value at the index corresponding to the sample of the channel curve
    */
   float& operator() (float sample, std::size_t channel);
 
@@ -201,10 +201,10 @@ public:
    * @brief Right accessor
    * @param[in] sample
    * @param[in] channel
-   * @return the value at the index of the channel curve
+   * @return the value at the index corresponding to the sample of the channel curve
    */
   float operator() (float sample , std::size_t channel) const;
-  
+
   /**
    * @brief Operator+ Call sum method
    * @param[in] other
@@ -260,6 +260,45 @@ public:
   bool isEmpty() const
   {
     return _data.front().empty();
+  }
+
+  /**
+   * @brief Access curve value at the specified index and channel
+   * @param[in] index
+   * @param[in] channel
+   * @return the value at the index of the channel curve
+   */
+  float& getValue(std::size_t index, std::size_t channel)
+  {
+    assert(channel < _data.size());
+    assert(index < getSize());
+    return _data.at(channel).at(index);
+  }
+
+  /**
+   * @brief Access curve value at the specified index and channel
+   * @param[in] index
+   * @param[in] channel
+   * @return the value at the index of the channel curve
+   */
+  float getValue(std::size_t index, std::size_t channel) const
+  {
+    assert(channel < _data.size());
+    assert(index < getSize());
+    return _data.at(channel).at(index);
+  }
+
+  /**
+   * @brief Set curve value at the specified index and channel
+   * @param[in] index
+   * @param[in] channel
+   * @param[in] new desired value
+   */
+  void setValue(std::size_t index, std::size_t channel, float value)
+  {
+    assert(channel < _data.size());
+    assert(index < getSize());
+   _data.at(channel).at(index) = value;
   }
 
   std::size_t getIndex(float sample) const
