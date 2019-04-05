@@ -312,7 +312,7 @@ void Texturing::generateTexturesSubSet(const mvsUtils::MultiViewParams& mp,
         throw std::runtime_error("Invalid atlas IDs ");
 
     unsigned int textureSize = texParams.textureSide * texParams.textureSide;
-    int nbBand = texParams.multiBandNbContrib.size();
+    int nbBand = texParams.nbBand;
     unsigned int multiBandDownScale = texParams.multiBandDownscale;
 
     using AtlasIndex = size_t;

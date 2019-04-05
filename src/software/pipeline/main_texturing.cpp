@@ -85,10 +85,10 @@ int main(int argc, char* argv[])
             "Texture edge padding size in pixel")
         ("flipNormals", po::value<bool>(&flipNormals)->default_value(flipNormals),
             "Option to flip face normals. It can be needed as it depends on the vertices order in triangles and the convention change from one software to another.")
-        ("multiBandNbContrib", po::value<std::vector<int>>(&texParams.multiBandNbContrib)->default_value(texParams.multiBandNbContrib),
-            "Number of images to combine per band of frequencies to create the final texture.")
         ("multiBandDownscale", po::value<unsigned int>(&texParams.multiBandDownscale)->default_value(texParams.multiBandDownscale),
             "Width of frequency bands.")
+        ("nbBand", po::value<unsigned int>(&texParams.nbBand)->default_value(texParams.nbBand),
+            "Number of bands to combine for multi-band blending.")
         ("bestScoreThreshold", po::value<double>(&texParams.bestScoreThreshold)->default_value(texParams.bestScoreThreshold),
             "(0.0 to disable filtering based on threshold to relative best score).")
         ("angleHardThreshold", po::value<double>(&texParams.angleHardThreshold)->default_value(texParams.angleHardThreshold),
