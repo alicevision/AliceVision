@@ -126,6 +126,11 @@ void readImage(const std::string& path,
 
   const oiio::ImageSpec& inSpec = inBuf.spec();
 
+  {
+    const std::string& colorSpace = inSpec.get_string_attribute("oiio:ColorSpace", "Undefined");
+    ALICEVISION_LOG_WARNING("Load image " << path << " in colorspace: " << colorSpace);
+  }
+
   // check picture channels number
   if(inSpec.nchannels != 1 && inSpec.nchannels < 3)
     throw std::runtime_error("Can't load channels of image file '" + path + "'.");

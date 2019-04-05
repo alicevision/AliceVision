@@ -4,42 +4,38 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
-#include "RobertsonMerge.hpp"
+#include "DebevecMerge.hpp"
 #include <cassert>
 #include <cmath>
 #include <limits>
 #include <iostream>
 #include <aliceVision/alicevision_omp.hpp>
 
-
 namespace aliceVision {
 namespace hdr {
-  
-void RobertsonMerge::process(const std::vector< image::Image<image::RGBfColor> > &images,
+
+void DebevecMerge::process(const std::vector< image::Image<image::RGBfColor> > &images,
                               const std::vector<float> &times,
                               const rgbCurve &weight,
                               const rgbCurve &response,
                               image::Image<image::RGBfColor> &radiance,
                               float targetTime)
 {
-  std::cout << "Robertson merge" << std::endl;
+
+  std::cout << "Debevec merge" << std::endl;
 
   //checks
   assert(!response.isEmpty());
   assert(!images.empty());
   assert(images.size() == times.size());
-  
+
   //reset radiance image
   radiance.fill(image::RGBfColor(0.f, 0.f, 0.f));
 
   //get images width, height
   const std::size_t width = images.front().Width();
   const std::size_t height = images.front().Height();
-  
-  //min and max trusted values
-  const float minTrustedValue = 0.0f - std::numeric_limits<float>::epsilon();
-  const float maxTrustedValue = 1.0f + std::numeric_limits<float>::epsilon();
-  
+
   #pragma omp parallel for
   for(std::size_t y = 0; y < height; ++y)
   {
@@ -47,14 +43,11 @@ void RobertsonMerge::process(const std::vector< image::Image<image::RGBfColor> >
     {
       //for each pixels
       image::RGBfColor &radianceColor = radiance(y, x);
-      
+
       for(std::size_t channel = 0; channel < 3; ++channel)
       {
         double wsum = 0.0f;
         double wdiv = 0.0f;
-//        float minTimeSaturation = std::numeric_limits<float>::max();
-//        float maxTimeSaturation = std::numeric_limits<float>::min();
-
 
         for(std::size_t i = 0; i < images.size(); ++i)
         {
@@ -62,62 +55,32 @@ void RobertsonMerge::process(const std::vector< image::Image<image::RGBfColor> >
           const double value = images[i](y, x)(channel);
           const double time = times[i];
           const double w = weight(value, channel) + 0.001;
-          const float r = response(value, channel);
+          const float r = std::exp(response(value, channel));
+
+//          const double time = std::log(times[i]);
+//          const float r = response(value, channel);
 
           wsum += w * r / time;
           wdiv += w;
+
+//          wsum += w * (r - time);
+
         }
 
         if(wdiv > 0.0001f)
         {
-          radianceColor(channel) = wsum / wdiv * targetTime;
+            radianceColor(channel) = (wsum / wdiv)*targetTime;
+
+//          radianceColor(channel) = std::exp(wsum / wdiv)*targetTime;
         }
         else
         {
-          radianceColor(channel) = 0.0f;
+          radianceColor(channel) = 1.0f;
         }
-
-
-//          wsum += w * time * r;
-//          wdiv += w * time * time;
-
-//          wsum += w * r;
-//          wdiv += w * time;
-
-//          wsum += w * value / time;
-//          wdiv += w;
-
-//          //saturation detection
-//          if(value > maxTrustedValue)
-//          {
-//            minTimeSaturation = std::min(minTimeSaturation, time);
-//          }
-//
-//          if(value < minTrustedValue)
-//          {
-//            maxTimeSaturation = std::max(maxTimeSaturation, time);
-//          }
-
-//        //saturation correction
-//        if((wdiv == 0.0f) && 
-//               (maxTimeSaturation > std::numeric_limits<float>::min())) 
-//        {
-//          wsum = minTrustedValue;
-//          wdiv = maxTimeSaturation;
-//        }
-//        
-//        if((wdiv == 0.0f) && 
-//               (minTimeSaturation < std::numeric_limits<float>::max())) 
-//        {
-//          wsum = maxTrustedValue;
-//          wdiv = minTimeSaturation;
-//        }
-        
-      } 
+      }
     }
   }
 }
-
 
 } // namespace hdr
 } // namespace aliceVision
