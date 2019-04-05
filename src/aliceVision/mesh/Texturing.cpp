@@ -589,20 +589,23 @@ void Texturing::generateTexturesSubSet(const mvsUtils::MultiViewParams& mp,
                         else if(accuImage.imgCount[xyoffset-1] > 0)
                         {
                             accuImage.img[xyoffset] = accuImage.img[xyoffset-1];
+                            accuImage.imgCount[xyoffset] += 1;
                         }
                         else if(accuImage.imgCount[xyoffset+1] > 0)
                         {
                             accuImage.img[xyoffset] = accuImage.img[xyoffset+1];
+                            accuImage.imgCount[xyoffset] += 1;
                         }
                         else if(accuImage.imgCount[xyoffset+texParams.textureSide] > 0)
                         {
                             accuImage.img[xyoffset] = accuImage.img[xyoffset+texParams.textureSide];
+                            accuImage.imgCount[xyoffset] += 1;
                         }
                         else if(accuImage.imgCount[xyoffset-texParams.textureSide] > 0)
                         {
                             accuImage.img[xyoffset] = accuImage.img[xyoffset-texParams.textureSide];
+                            accuImage.imgCount[xyoffset] += 1;
                         }
-                        accuImage.imgCount[xyoffset] += 1;
                     }
                 }
             }
