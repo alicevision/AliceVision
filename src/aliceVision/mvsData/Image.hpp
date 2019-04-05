@@ -119,14 +119,12 @@ public:
         const int xp = static_cast<int>(pix.x);
         const int yp = static_cast<int>(pix.y);
 
-        if(xp == _width - 1 || yp == _height - 1 )
-            return _img.at(yp * _width + xp);
+        if(xp >= _width - 1 || yp >= _height - 1 ) //invalid pixel for interpolation
+            return _img.at((_height-1) * _width + (_width-1));
 
         // precision to 4 decimal places
         const float ui = pix.x - static_cast<float>(xp);
         const float vi = pix.y - static_cast<float>(yp);
-
-
 
         const Color lu = _img.at( yp * _width + xp   );
         const Color ru = _img.at( yp * _width + (xp+1) );
