@@ -23,17 +23,6 @@
 namespace aliceVision {
 namespace depthMap {
 
-inline float4 get(mvsUtils::ImagesCache::ImgPtr img, int x, int y)
-{
-    const Color floatRGB = img->at(x,y) * 255.0f;
-
-    return make_float4(floatRGB.r,
-                       floatRGB.g,
-                       floatRGB.b,
-                       255.f);
-}
-
-
 static void cps_host_fillCamera(CameraStructBase& base, int c, mvsUtils::MultiViewParams& mp, int scale, const char* called_from )
 {
 
@@ -125,20 +114,27 @@ static void cps_host_fillCamera(CameraStructBase& base, int c, mvsUtils::MultiVi
 
 static void cps_host_fillCameraData(mvsUtils::ImagesCache& ic, CameraStruct& cam, int c, mvsUtils::MultiViewParams& mp)
 {
-    mvsUtils::ImagesCache::ImgPtr img = ic.getImg_sync( c );
-
     ALICEVISION_LOG_DEBUG("cps_host_fillCameraData [" << c << "]: " << mp.getWidth(c) << "x" << mp.getHeight(c));
+    clock_t t1 = tic();
+    mvsUtils::ImagesCache::ImgPtr img = ic.getImg_sync( c );
+    ALICEVISION_LOG_DEBUG("cps_host_fillCameraData: " << c << " -a- Retrieve from ImagesCache elapsed time: " << toc(t1) << " ms.");
+    t1 = tic();
 
-    Pixel pix;
-    for(pix.y = 0; pix.y < mp.getHeight(c); pix.y++)
+    const int h = mp.getHeight(c);
+    const int w = mp.getWidth(c);
+    for(int y = 0; y < h; ++y)
     {
-        for(pix.x = 0; pix.x < mp.getWidth(c); pix.x++)
+        for(int x = 0; x < w; ++x)
         {
-            float4& pix_rgba = (*cam.tex_rgba_hmh)(pix.x, pix.y);
-            const float4 pc = get(img, pix.x, pix.y); //  ic.getPixelValue(pix, c);
-            pix_rgba = pc;
+            const Color& floatRGB = img->at(x, y);
+            float4& pix_rgba = (*cam.tex_rgba_hmh)(x, y);
+            pix_rgba.x = floatRGB.r * 255.0f;
+            pix_rgba.y = floatRGB.g * 255.0f;
+            pix_rgba.z = floatRGB.b * 255.0f;
+            pix_rgba.w = 255.0f;
         }
     }
+    ALICEVISION_LOG_DEBUG("cps_host_fillCameraData: " << c << " -b- Copy to HMH elapsed time: " << toc(t1) << " ms.");
 }
 
 PlaneSweepingCuda::PlaneSweepingCuda( int CUDADeviceNo,
