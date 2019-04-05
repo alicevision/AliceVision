@@ -98,8 +98,6 @@ __global__ void volume_initCameraColor_kernel(
 */
 }
 
-// #define PLANE_SWEEPING_PRECOMPUTED_COLORS_TEXTURE 1
-
 __global__ void volume_estimateSim_twoViews_kernel(
     cudaTextureObject_t rc_tex,
 #ifdef PLANE_SWEEPING_PRECOMPUTED_COLORS_TEXTURE

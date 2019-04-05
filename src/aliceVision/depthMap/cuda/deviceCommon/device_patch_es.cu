@@ -240,7 +240,6 @@ __device__ float compNCCby3DptsYK( cudaTextureObject_t rc_tex,
 }
 
 
-// #define PLANE_SWEEPING_PRECOMPUTED_COLORS_TEXTURE 1
 
 /**
 * @brief Compute Normalized Cross-Correlation

@@ -642,9 +642,6 @@ bool PlaneSweepingCuda::refineRcTcDepthMap(bool useTcOrRcPixSize, int nStepsToRe
     return true;
 }
 
-
-#define PLANE_SWEEPING_PRECOMPUTED_COLORS 1
-
 /* Be very careful with volume indexes:
  * volume is indexed with the same index as tc. The values of tc can be quite different.
  * depths is indexed with the index_set elements

@@ -31,7 +31,6 @@ void ps_initColorVolumeFromCamera(
     const CudaDeviceMemory<float>& depths_d,
     int volDimX, int volDimY, int volDimZ, int volStepXY);
 
-// #define PLANE_SWEEPING_PRECOMPUTED_COLORS_TEXTURE 1
 
 void ps_computeSimilarityVolume_precomputedColors(
     cudaTextureObject_t rc_tex,

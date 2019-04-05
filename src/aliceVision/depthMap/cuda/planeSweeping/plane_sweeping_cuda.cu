@@ -682,8 +682,6 @@ void ps_initColorVolumeFromCamera(
 }
 
 
-// #define PLANE_SWEEPING_PRECOMPUTED_COLORS_TEXTURE 1
-
 void ps_computeSimilarityVolume_precomputedColors(
     cudaTextureObject_t rc_tex,
 #ifdef PLANE_SWEEPING_PRECOMPUTED_COLORS_TEXTURE
