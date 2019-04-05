@@ -322,11 +322,26 @@ Matrix3x4 load3x4MatrixFromFile(FILE* fi)
     return m;
 }
 
+inline
+clock_t tic()
+{
+    return clock();
+}
+
+// returns the ms passed after last call to tic()
+inline
+float toc(clock_t ticClk)
+{
+    return (float)((clock() - ticClk) * 1000.0 / CLOCKS_PER_SEC);
+}
+
 void memcpyRGBImageFromFileToArr(int camId, std::vector<Color>& imgArr, const std::string& fileNameOrigStr, const MultiViewParams& mp, int bandType)
 {
     int origWidth, origHeight;
     std::vector<Color> cimg;
+    clock_t t = tic();
     imageIO::readImage(fileNameOrigStr, origWidth, origHeight, cimg);
+    ALICEVISION_LOG_DEBUG("imageIO::readImage elapsed time: " << toc(t) << " ms.");
 
     // check image size
     if((mp.getOriginalWidth(camId) != origWidth) || (mp.getOriginalHeight(camId) != origHeight))
@@ -346,10 +361,12 @@ void memcpyRGBImageFromFileToArr(int camId, std::vector<Color>& imgArr, const st
 
     if(processScale > 1)
     {
+        clock_t t1 = tic();
         ALICEVISION_LOG_DEBUG("Downscale (x" << processScale << ") image: " << mp.getViewId(camId) << ".");
         std::vector<Color> bmpr;
         imageIO::resizeImage(origWidth, origHeight, processScale, cimg, bmpr);
         cimg.swap(bmpr);
+        ALICEVISION_LOG_DEBUG("Downscale elapsed time: " << toc(t1) << " ms.");
     }
 
     if(bandType == 1)
