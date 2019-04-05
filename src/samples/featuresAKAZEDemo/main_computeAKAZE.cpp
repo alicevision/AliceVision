@@ -109,7 +109,7 @@ int main( int argc , char ** argv )
     DrawCircle(kp.x, kp.y, kp.size*2.5, 255, &src);
   }
 
-  writeImage(outputBaseName + std::string("_feat.png"), src);
+  writeImage(outputBaseName + std::string("_feat.png"), src, image::EImageColorSpace::AUTO);
 
   svgDrawer svgStream( src.Width(), src.Height());
   svgStream.drawImage(sInputImage, src.Width(), src.Height());
