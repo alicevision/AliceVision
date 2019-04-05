@@ -265,13 +265,13 @@ void Texturing::generateTextures(const mvsUtils::MultiViewParams &mp,
     system::MemoryInfo memInfo = system::getMemoryInfo();
 
     //calculate the maximum number of atlases in memory in Mb
-    const std::size_t atlasMemSize = texParams.textureSide * texParams.textureSide * sizeof(Color) / std::pow(2,20); //Mb
+    const std::size_t atlasContribMemSize = texParams.textureSide * texParams.textureSide * (sizeof(Color)+sizeof(int)) / std::pow(2,20); //Mb
     const std::size_t imageMaxMemSize =  mp.getMaxImageWidth() * mp.getMaxImageHeight() * sizeof(Color) / std::pow(2,20); //Mb
-    const std::size_t pyramidMaxMemSize = texParams.multiBandNbContrib.size() * atlasMemSize;
+    const std::size_t pyramidMaxMemSize = texParams.nbBand * atlasContribMemSize;
 
     const int freeMem = int(memInfo.freeRam / std::pow(2,20));
-    const int availableMem = freeMem - 2 * imageMaxMemSize; // keep some memory for the input image buffer TODO : BESON DE + DE BUFFERS INTERMEDIAIRES ???
-    int nbAtlasMax = availableMem  / pyramidMaxMemSize; //maximum number of textures in RAM
+    const int availableMem = freeMem - 2 * imageMaxMemSize * (texParams.nbBand + 1); // keep some memory for the input image buffer and its laplacian pyramid
+    int nbAtlasMax = std::floor(availableMem  / pyramidMaxMemSize) - 1; //maximum number of textures in RAM
     const int nbAtlas = _atlases.size();
     nbAtlasMax = std::max(1, nbAtlasMax); //if not enough memory, do it one by one
     nbAtlasMax = std::min(nbAtlas, nbAtlasMax); //if enough memory, do it with all atlases
@@ -283,7 +283,7 @@ void Texturing::generateTextures(const mvsUtils::MultiViewParams &mp,
     ALICEVISION_LOG_INFO("Total amount of free memory  : " << freeMem << " Mb.");
     ALICEVISION_LOG_INFO("Total amount of an image in memory  : " << imageMaxMemSize << " Mb.");
     ALICEVISION_LOG_INFO("Total amount of memory available : " << availableMem << " Mb.");
-    ALICEVISION_LOG_INFO("Size of an atlas : " << atlasMemSize << " Mb.");
+    ALICEVISION_LOG_INFO("Size of an atlas : " << atlasContribMemSize << " Mb.");
     ALICEVISION_LOG_INFO("Processing " << nbAtlas << " atlases by chunks of " << nbAtlasMax);
 
     //generateTexture for the maximum number of atlases, and iterate
