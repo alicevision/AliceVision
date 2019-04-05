@@ -175,7 +175,7 @@ int main(int argc, char **argv)
   std::unique_ptr<Regions> query_regions;
   image::Image<unsigned char> imageGray;
   {
-    image::readImage(queryImage, imageGray);
+    image::readImage(queryImage, imageGray, image::EImageColorSpace::NO_CONVERSION);
 
     // Compute features and descriptors
     imageDescribers->describe(imageGray, query_regions);

@@ -117,7 +117,7 @@ int main(int argc, char** argv)
 
     try
     {
-      image::readImage(path, image);
+      image::readImage(path, image, image::EImageColorSpace::LINEAR);
     }
     catch(std::exception& e)
     {
@@ -128,7 +128,7 @@ int main(int argc, char** argv)
     // write output image
     try
     {
-      image::writeImage(outputPath, image);
+      image::writeImage(outputPath, image, image::EImageColorSpace::AUTO);
     }
     catch(std::exception& e)
     {

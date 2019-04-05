@@ -171,9 +171,9 @@ int main(int argc, char **argv)
   Image<RGBColor> image;
 
   Image<float> imageLeft, imageRight;
-  readImage(filenameLeft, imageLeft);
+  readImage(filenameLeft, imageLeft, image::EImageColorSpace::NO_CONVERSION);
   const auto imageLeftSize = std::make_pair<std::size_t, std::size_t>(imageLeft.Width(), imageLeft.Height());
-  readImage(filenameRight, imageRight);
+  readImage(filenameRight, imageRight, image::EImageColorSpace::NO_CONVERSION);
   const auto imageRightSize = std::make_pair<std::size_t, std::size_t>(imageRight.Width(), imageRight.Height());
 
   // Call Keypoint extractor

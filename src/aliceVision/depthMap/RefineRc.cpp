@@ -400,14 +400,14 @@ void computeNormalMaps(int CUDADeviceNo, mvsUtils::MultiViewParams* mp, const St
       StaticVector<float> depthMap;
       int w = 0;
       int h = 0;
-      imageIO::readImage(getFileNameFromIndex(mp, rc, mvsUtils::EFileType::depthMap, 0), w, h, depthMap.getDataWritable());
+      imageIO::readImage(getFileNameFromIndex(mp, rc, mvsUtils::EFileType::depthMap, 0), w, h, depthMap.getDataWritable(), imageIO::EImageColorSpace::NO_CONVERSION);
 
       StaticVector<Color> normalMap;
       normalMap.resize(mp->getWidth(rc) * mp->getHeight(rc));
       
       cps.computeNormalMap(&depthMap, &normalMap, rc, 1, igammaC, igammaP, wsh);
 
-      imageIO::writeImage(normalMapFilepath, mp->getWidth(rc), mp->getHeight(rc), normalMap.getDataWritable(), imageIO::EImageQuality::LOSSLESS);
+      imageIO::writeImage(normalMapFilepath, mp->getWidth(rc), mp->getHeight(rc), normalMap.getDataWritable(), imageIO::EImageQuality::LOSSLESS, imageIO::EImageColorSpace::NO_CONVERSION);
     }
   }
 }
