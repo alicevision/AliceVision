@@ -20,7 +20,7 @@ public:
     void laplacianPyramid(std::vector<Image>& out_pyramidL, const Image& inImg, int camId, int nbBand, float sizeKernel);
 
     ///Generate the gaussian pyramid given the input image
-    void laplacianDownscalePyramid(std::vector<Image>& out_pyramidL, const Image& inImg, int nbBand);
+    void laplacianDownscalePyramid(std::vector<Image>& out_pyramidL, const Image& inImg, int nbBand, unsigned int downscale);
 
 
 };

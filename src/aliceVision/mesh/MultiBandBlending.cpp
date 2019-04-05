@@ -45,13 +45,13 @@ void MultiBandBlending::laplacianPyramid(std::vector<Image>& out_pyramidL, const
     out_pyramidL.at(nbBand-1) = base;
 }
 
-void MultiBandBlending::laplacianDownscalePyramid(std::vector<Image>& out_pyramidL, const Image& inImg, int nbBand)
+void MultiBandBlending::laplacianDownscalePyramid(std::vector<Image>& out_pyramidL, const Image& inImg, int nbBand, unsigned int downscale)
 {
     assert(nbBand >= 1);
 
     Image img(inImg);
-    int outW = static_cast<int>(img.width()/2);
-    int outH = static_cast<int>(img.height()/2);
+    int outW = static_cast<int>(img.width()/downscale);
+    int outH = static_cast<int>(img.height()/downscale);
 
     Image imgDownscaled(outW, outH);
     out_pyramidL.resize(nbBand);
@@ -59,15 +59,13 @@ void MultiBandBlending::laplacianDownscalePyramid(std::vector<Image>& out_pyrami
     //Create Laplacian pyramid
     for(int b = 0; b < nbBand-1; ++b)
     {
-        imageIO::resizeImage(img.width(), img.height(), 2, img.data(), imgDownscaled.data(), "gaussian");
-        Image::imageDownscaleDiff(img, imgDownscaled, out_pyramidL[b]);
-
+        imageIO::resizeImage(img.width(), img.height(), static_cast<int>(downscale), img.data(), imgDownscaled.data(), "gaussian");
+        Image::imageDownscaleDiff(img, imgDownscaled, out_pyramidL[b], downscale);
         img.swap(imgDownscaled);
 
-        outW = static_cast<int>(outW/2);
-        outH = static_cast<int>(outH/2);
+        outW = static_cast<int>(outW/downscale);
+        outH = static_cast<int>(outH/downscale);
         imgDownscaled.resize(outW, outH);
-
 
     }
     out_pyramidL[nbBand-1] = img;

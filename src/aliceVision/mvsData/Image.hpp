@@ -88,8 +88,7 @@ public:
         }
     }
 
-    //WARNING : size(inImga) = 2*size(inImgb)
-    static void imageDownscaleDiff(Image& inImga, Image& inImgb, Image& outImg)
+    static void imageDownscaleDiff(Image& inImga, Image& inImgb, Image& outImg, unsigned int downscale)
     {
         //inImga = largest image
         if(inImga.height() < inImgb.height())
@@ -99,7 +98,9 @@ public:
         for(int i = 0; i < inImga._width*inImga._height; ++i)
         {
             Point2d pix(i%inImga.width(), static_cast<int>(i/inImga.width()));
-            outImg._img[i] = inImga._img[i] - inImgb.getInterpolateColor(pix/2);
+            Point2d pixd = pix/downscale;
+
+            outImg._img[i] = inImga._img[i] - inImgb.getInterpolateColor(pixd);
         }
 
     }

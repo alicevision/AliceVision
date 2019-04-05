@@ -313,6 +313,7 @@ void Texturing::generateTexturesSubSet(const mvsUtils::MultiViewParams& mp,
 
     unsigned int textureSize = texParams.textureSide * texParams.textureSide;
     int nbBand = texParams.multiBandNbContrib.size();
+    unsigned int multiBandDownScale = texParams.multiBandDownscale;
 
     using AtlasIndex = size_t;
     using TrianglesId = std::vector<unsigned int>;
@@ -478,7 +479,7 @@ void Texturing::generateTexturesSubSet(const mvsUtils::MultiViewParams& mp,
         //Calculate laplacianPyramid
         MultiBandBlending multiBandBlending;
         std::vector<Image> pyramidL; //laplacian pyramid
-        multiBandBlending.laplacianDownscalePyramid(pyramidL, camImg, nbBand);
+        multiBandBlending.laplacianDownscalePyramid(pyramidL, camImg, nbBand, multiBandDownScale);
 
         // for each output texture file
         for(const auto& c : cameraContributions)
@@ -557,14 +558,14 @@ void Texturing::generateTexturesSubSet(const mvsUtils::MultiViewParams& mp,
                            // If the color is pure zero, we consider it as an invalid pixel.
                            // After correction of radial distortion, some pixels are invalid.
                            // TODO: use an alpha channel instead.
-                           if(pyramidL.back().getInterpolateColor(pixRC/std::pow(2,nbBand-1)) == Color(0.f, 0.f, 0.f))
+                           if(pyramidL.back().getInterpolateColor(pixRC/std::pow(multiBandDownScale,nbBand-1)) == Color(0.f, 0.f, 0.f))
                                continue;
 
                            //each level also contributes to lower frequencies levels
                            AccuPyramid& accuPyramid = accuPyramids.at(atlasID);
                            for(std::size_t levelC = level; levelC < pyramidL.size(); ++levelC)
                            {
-                               int downscaleCoef = std::pow(2, levelC);
+                               int downscaleCoef = std::pow(multiBandDownScale, levelC);
                                AccuImage& accuImage = accuPyramid.pyramid[levelC];
 
                                // fill the accumulated color map for this pixel
