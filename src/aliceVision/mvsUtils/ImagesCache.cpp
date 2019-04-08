@@ -13,10 +13,9 @@
 namespace aliceVision {
 namespace mvsUtils {
 
-ImagesCache::ImagesCache(const MultiViewParams* _mp, int _bandType, bool _transposed)
+ImagesCache::ImagesCache(const MultiViewParams* _mp, int _bandType)
   : mp(_mp)
   , bandType( _bandType )
-  , transposed( _transposed )
 {
     std::vector<std::string> _imagesNames;
     for(int rc = 0; rc < _mp->getNbCameras(); rc++)
@@ -26,11 +25,9 @@ ImagesCache::ImagesCache(const MultiViewParams* _mp, int _bandType, bool _transp
     initIC( _imagesNames );
 }
 
-ImagesCache::ImagesCache(const MultiViewParams* _mp, int _bandType, std::vector<std::string>& _imagesNames,
-                                 bool _transposed)
+ImagesCache::ImagesCache(const MultiViewParams* _mp, int _bandType, std::vector<std::string>& _imagesNames)
   : mp(_mp)
   , bandType( _bandType )
-  , transposed( _transposed )
 {
     initIC( _imagesNames );
 }

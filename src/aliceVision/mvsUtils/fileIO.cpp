@@ -385,9 +385,7 @@ void memcpyRGBImageFromFileToArr(int camId, Color* imgArr, const std::string& fi
         for(int x = 0; x < width; x++)
         {
             const Color color = cimg.at(y * width + x);
-
-            imgArr[x * height + y] = color;
-
+            imgArr[y * width + x] = color;
         }
     }
 }

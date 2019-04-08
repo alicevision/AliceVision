@@ -46,12 +46,12 @@ public:
 
         inline Color& at( int x, int y )
         {
-            return data[x * _height + y];
+            return data[y * _width + x];
         }
 
         inline const Color& at( int x, int y ) const
         {
-            return data[x * _height + y];
+            return data[y * _width + x];
         }
 
         Color* data;
@@ -76,14 +76,10 @@ private:
     std::vector<std::string> imagesNames;
 
     const int  bandType;
-public:
-    const bool transposed;
 
 public:
-    ImagesCache( const MultiViewParams* _mp, int _bandType,
-                 bool _transposed = false);
-    ImagesCache( const MultiViewParams* _mp, int _bandType, std::vector<std::string>& _imagesNames,
-                 bool _transposed = false);
+    ImagesCache( const MultiViewParams* _mp, int _bandType);
+    ImagesCache( const MultiViewParams* _mp, int _bandType, std::vector<std::string>& _imagesNames);
     void initIC( std::vector<std::string>& _imagesNames );
     ~ImagesCache();
 
