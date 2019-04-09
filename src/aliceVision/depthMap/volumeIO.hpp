@@ -6,6 +6,7 @@
 
 
 #include <aliceVision/depthMap/cuda/commonStructures.hpp>
+#include <aliceVision/depthMap/cuda/planeSweeping/plane_sweeping_cuda.hpp>
 #include <aliceVision/mvsData/StaticVector.hpp>
 #include <aliceVision/mvsData/Point3d.hpp>
 #include <aliceVision/mvsUtils/common.hpp>
@@ -17,11 +18,11 @@
 namespace aliceVision {
 namespace depthMap {
 
-void exportSimilarityVolume(const CudaHostMemoryHeap<float, 3>& volumeSim, const StaticVector<float>& depths, const mvsUtils::MultiViewParams& mp, int camIndex, int scale, int step, const std::string& filepath);
+void exportSimilarityVolume(const CudaHostMemoryHeap<TSim, 3>& volumeSim, const StaticVector<float>& depths, const mvsUtils::MultiViewParams& mp, int camIndex, int scale, int step, const std::string& filepath);
 
 void exportColorVolume(const CudaHostMemoryHeap<float4, 3>& volumeSim, const std::vector<float>& depths, int startDepth, int nbDepths, const mvsUtils::MultiViewParams& mp, int camIndex, int scale, int step, const std::string& filepath);
 
-void exportSimilaritySamplesCSV(const CudaHostMemoryHeap<float, 3>& volumeSim, const StaticVector<float>& depths, int camIndex, int scale, int step, const std::string& name, const std::string& filepath);
+void exportSimilaritySamplesCSV(const CudaHostMemoryHeap<TSim, 3>& volumeSim, const StaticVector<float>& depths, int camIndex, int scale, int step, const std::string& name, const std::string& filepath);
 
 
 } // namespace depthMap

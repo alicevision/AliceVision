@@ -23,6 +23,13 @@
 namespace aliceVision {
 namespace depthMap {
 
+#ifdef TSIM_USE_FLOAT
+    using TSim = float;
+#else
+    using TSim = unsigned char;
+#endif
+
+
 class PlaneSweepingCuda
 {
 public:
@@ -89,8 +96,8 @@ public:
 private:
     /* Needed to compensate for _nImgsInGPUAtTime that are smaller than |index_set|-1 */
     void sweepPixelsToVolumeSubset(
-        CudaDeviceMemoryPitched<float, 3>& volBestSim_dmp,
-        CudaDeviceMemoryPitched<float, 3>& volSecBestSim_dmp,
+        CudaDeviceMemoryPitched<TSim, 3>& volBestSim_dmp,
+        CudaDeviceMemoryPitched<TSim, 3>& volSecBestSim_dmp,
         CudaDeviceMemoryPitched<float4, 3>& volTcamColors_dmp, // cudaTextureObject_t volTcamColors_tex3D,
         const int volDimX, const int volDimY, const int volStepXY,
         const std::vector<OneTC>& cells,
@@ -102,8 +109,8 @@ private:
 
 public:
     void sweepPixelsToVolume(
-        CudaDeviceMemoryPitched<float, 3>& volBestSim_dmp,
-        CudaDeviceMemoryPitched<float, 3>& volSecBestSim_dmp,
+        CudaDeviceMemoryPitched<TSim, 3>& volBestSim_dmp,
+        CudaDeviceMemoryPitched<TSim, 3>& volSecBestSim_dmp,
         const int volDimX,
         const int volDimY,
         const int volStepXY,
@@ -114,12 +121,12 @@ public:
         int wsh, float gammaC, float gammaP,
         int scale);
 
-    bool SGMoptimizeSimVolume(int rc, CudaDeviceMemoryPitched<float, 3>& volSim_dmp,
+    bool SGMoptimizeSimVolume(int rc, CudaDeviceMemoryPitched<TSim, 3>& volSim_dmp,
                               int volDimX, int volDimY, int volDimZ,
                               int scale, unsigned char P1, unsigned char P2);
 
-    void SGMretrieveBestDepth(StaticVector<IdValue>& bestDepth, CudaDeviceMemoryPitched<float, 3>& volSim_dmp,
-      int volDimX, int volDimY, int volDimZ, int zBorder);
+    void SGMretrieveBestDepth(StaticVector<IdValue>& bestDepth, CudaDeviceMemoryPitched<TSim, 3>& volSim_dmp,
+        int volDimX, int volDimY, int volDimZ, int zBorder);
 
     Point3d getDeviceMemoryInfo();
 
@@ -138,6 +145,7 @@ public:
 };
 
 int listCUDADevices(bool verbose);
+
 
 } // namespace depthMap
 } // namespace aliceVision

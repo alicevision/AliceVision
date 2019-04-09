@@ -28,7 +28,7 @@ namespace aliceVision {
 namespace depthMap {
 
 
-void exportSimilarityVolume(const CudaHostMemoryHeap<float, 3>& volumeSim, const StaticVector<float>& depths, const mvsUtils::MultiViewParams& mp, int camIndex, int scale, int step, const std::string& filepath)
+void exportSimilarityVolume(const CudaHostMemoryHeap<TSim, 3>& volumeSim, const StaticVector<float>& depths, const mvsUtils::MultiViewParams& mp, int camIndex, int scale, int step, const std::string& filepath)
 {
     sfmData::SfMData pointCloud;
     int xyStep = 10;
@@ -54,7 +54,7 @@ void exportSimilarityVolume(const CudaHostMemoryHeap<float, 3>& volumeSim, const
                 const Point3d p = linePlaneIntersect(mp.CArr[camIndex], v, planep, planen);
 
                 const float maxValue = 80.f;
-                float simValue = *get3DBufferAt_h<float>(volumeSim.getBuffer(), spitch, pitch, x, y, z);
+                float simValue = *get3DBufferAt_h<TSim>(volumeSim.getBuffer(), spitch, pitch, x, y, z);
                 if (simValue > maxValue)
                     continue;
                 const rgb c = getRGBFromJetColorMap(simValue / maxValue);
@@ -117,7 +117,7 @@ void exportColorVolume(const CudaHostMemoryHeap<float4, 3>& volumeSim, const std
     sfmDataIO::Save(pointCloud, filepath, sfmDataIO::ESfMData::STRUCTURE);
 }
 
-void exportSimilaritySamplesCSV(const CudaHostMemoryHeap<float, 3>& volumeSim, const StaticVector<float>& depths, int camIndex, int scale, int step, const std::string& name, const std::string& filepath)
+void exportSimilaritySamplesCSV(const CudaHostMemoryHeap<TSim, 3>& volumeSim, const StaticVector<float>& depths, int camIndex, int scale, int step, const std::string& name, const std::string& filepath)
 {
     const auto volDim = volumeSim.getSize();
     const size_t spitch = volumeSim.getBytesPaddedUpToDim(1);
@@ -141,7 +141,7 @@ void exportSimilaritySamplesCSV(const CudaHostMemoryHeap<float, 3>& volumeSim, c
 
             for (int iz = 0; iz < volDim[2]; ++iz)
             {
-                float simValue = *get3DBufferAt_h<float>(volumeSim.getBuffer(), spitch, pitch, x, y, iz);
+                float simValue = *get3DBufferAt_h<TSim>(volumeSim.getBuffer(), spitch, pitch, x, y, iz);
                 pDepths.push_back(simValue);
             }
         }

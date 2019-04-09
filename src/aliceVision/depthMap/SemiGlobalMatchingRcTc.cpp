@@ -13,6 +13,7 @@
 namespace aliceVision {
 namespace depthMap {
 
+
 SemiGlobalMatchingRcTc::SemiGlobalMatchingRcTc(
             const std::vector<float>& rcDepths,
             const std::vector<Pixel>&  rcTcDepthRanges,
@@ -56,8 +57,8 @@ struct MinOffXplusY
 };
 
 void SemiGlobalMatchingRcTc::computeDepthSimMapVolume(
-        CudaDeviceMemoryPitched<float, 3>& volumeBestSim,
-        CudaDeviceMemoryPitched<float, 3>& volumeSecBestSim,
+        CudaDeviceMemoryPitched<TSim, 3>& volumeBestSim,
+        CudaDeviceMemoryPitched<TSim, 3>& volumeSecBestSim,
         int wsh,
         float gammaC,
         float gammaP)

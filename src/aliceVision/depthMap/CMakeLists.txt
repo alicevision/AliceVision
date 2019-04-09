@@ -82,3 +82,6 @@ alicevision_add_library(aliceVision_depthMap
   PUBLIC_INCLUDE_DIRS
     ${CUDA_INCLUDE_DIRS}
 )
+
+# target_compile_definitions(aliceVision_depthMap PUBLIC TSIM_USE_FLOAT)
+

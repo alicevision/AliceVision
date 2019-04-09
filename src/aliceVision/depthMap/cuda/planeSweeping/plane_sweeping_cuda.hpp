@@ -12,13 +12,19 @@
 namespace aliceVision {
 namespace depthMap {
 
+#ifdef TSIM_USE_FLOAT
+    using TSim = float;
+#else
+    using TSim = unsigned char;
+#endif
+
 void ps_initCameraMatrix( CameraStructBase& base );
 
 void pr_printfDeviceMemoryInfo();
 
 void ps_initSimilarityVolume(
-  CudaDeviceMemoryPitched<float, 3>& volBestSim_dmp,
-  CudaDeviceMemoryPitched<float, 3>& volSecBestSim_dmp,
+  CudaDeviceMemoryPitched<TSim, 3>& volBestSim_dmp,
+  CudaDeviceMemoryPitched<TSim, 3>& volSecBestSim_dmp,
   int volDimX, int volDimY, int volDimZ);
 
 void ps_initColorVolumeFromCamera(
@@ -39,8 +45,8 @@ void ps_computeSimilarityVolume_precomputedColors(
 #else
     const CudaDeviceMemoryPitched<float4, 3>& volTcamColors_dmp,
 #endif
-    CudaDeviceMemoryPitched<float, 3>& volBestSim_dmp,
-    CudaDeviceMemoryPitched<float, 3>& volSecBestSim_dmp,
+    CudaDeviceMemoryPitched<TSim, 3>& volBestSim_dmp,
+    CudaDeviceMemoryPitched<TSim, 3>& volSecBestSim_dmp,
     const CameraStruct& rcam, int rcWidth, int rcHeight,
     int volStepXY, int volDimX, int volDimY,
     const OneTC& cell,
@@ -51,8 +57,8 @@ void ps_computeSimilarityVolume_precomputedColors(
 
 void ps_computeSimilarityVolume(
   Pyramids& ps_texs_arr,
-  CudaDeviceMemoryPitched<float, 3>& volBestSim_dmp,
-  CudaDeviceMemoryPitched<float, 3>& volSecBestSim_dmp,
+  CudaDeviceMemoryPitched<TSim, 3>& volBestSim_dmp,
+  CudaDeviceMemoryPitched<TSim, 3>& volSecBestSim_dmp,
   const CameraStruct& rcam, int rcWidth, int rcHeight,
   const CameraStruct& tcams, int tcWidth, int tcHeight,
   int volStepXY, int volDimX, int volDimY,
@@ -66,7 +72,7 @@ void ps_computeSimilarityVolume(
 void ps_SGMoptimizeSimVolume(
     Pyramids& ps_texs_arr,
     const CameraStruct& rccam,
-    CudaDeviceMemoryPitched<float, 3>& volSim_dmp,
+    CudaDeviceMemoryPitched<TSim, 3>& volSim_dmp,
     int volDimX, int volDimY, int volDimZ,
     bool verbose,
     unsigned char P1, unsigned char P2,
@@ -74,7 +80,7 @@ void ps_SGMoptimizeSimVolume(
     int CUDAdeviceNo,
     int ncamsAllocated);
 
-  void ps_SGMretrieveBestDepth(CudaDeviceMemoryPitched<float2, 2>& bestDepth_dmp, CudaDeviceMemoryPitched<float, 3>& volSim_dmp,
+  void ps_SGMretrieveBestDepth(CudaDeviceMemoryPitched<float2, 2>& bestDepth_dmp, CudaDeviceMemoryPitched<TSim, 3>& volSim_dmp,
     int volDimX, int volDimY, int volDimZ, int zBorder);
 
 int ps_listCUDADevices(bool verbose);

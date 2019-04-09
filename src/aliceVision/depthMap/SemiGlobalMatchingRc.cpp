@@ -438,8 +438,9 @@ bool SemiGlobalMatchingRc::sgmrc(bool checkIfExists)
         cudaGetDevice( &devid );
         ALICEVISION_LOG_DEBUG( "Allocating " << volDimX << " x " << volDimY << " x " << volDimZ << " on device " << devid << ".");
     }
-    CudaDeviceMemoryPitched<float, 3> volumeBestSim_d(CudaSize<3>(volDimX, volDimY, volDimZ));
-    CudaDeviceMemoryPitched<float, 3> volumeSecBestSim_d(CudaSize<3>(volDimX, volDimY, volDimZ));
+
+    CudaDeviceMemoryPitched<TSim, 3> volumeBestSim_d(CudaSize<3>(volDimX, volDimY, volDimZ));
+    CudaDeviceMemoryPitched<TSim, 3> volumeSecBestSim_d(CudaSize<3>(volDimX, volDimY, volDimZ));
 
     SemiGlobalMatchingRcTc srt( _depths.getData(),
                                 _depthsTcamsLimits.getData(),
@@ -450,7 +451,7 @@ bool SemiGlobalMatchingRc::sgmrc(bool checkIfExists)
 
     if (_sp.exportIntermediateResults)
     {
-        CudaHostMemoryHeap<float, 3> volumeSecBestSim_h(volumeSecBestSim_d.getSize());
+        CudaHostMemoryHeap<TSim, 3> volumeSecBestSim_h(volumeSecBestSim_d.getSize());
         volumeSecBestSim_h.copyFrom(volumeSecBestSim_d);
 
         exportSimilarityVolume(volumeSecBestSim_h, _depths, _sp.mp, _rc, _scale, _step, _sp.mp.getDepthMapsFolder() + std::to_string(_sp.mp.getViewId(_rc)) + "_vol_beforeFiltering.abc");
@@ -467,7 +468,7 @@ bool SemiGlobalMatchingRc::sgmrc(bool checkIfExists)
 
     if (_sp.exportIntermediateResults)
     {
-        CudaHostMemoryHeap<float, 3> volumeSecBestSim_h(volumeSecBestSim_d.getSize());
+        CudaHostMemoryHeap<TSim, 3> volumeSecBestSim_h(volumeSecBestSim_d.getSize());
         volumeSecBestSim_h.copyFrom(volumeSecBestSim_d);
 
         exportSimilarityVolume(volumeSecBestSim_h, _depths, _sp.mp, _rc, _scale, _step, _sp.mp.getDepthMapsFolder() + std::to_string(_sp.mp.getViewId(_rc)) + "_vol_afterFiltering.abc");

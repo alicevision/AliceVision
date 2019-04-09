@@ -646,8 +646,8 @@ bool PlaneSweepingCuda::refineRcTcDepthMap(bool useTcOrRcPixSize, int nStepsToRe
  * volume is indexed with the same index as tc. The values of tc can be quite different.
  * depths is indexed with the index_set elements
  */
-void PlaneSweepingCuda::sweepPixelsToVolume( CudaDeviceMemoryPitched<float, 3>& volBestSim_dmp,
-                                             CudaDeviceMemoryPitched<float, 3>& volSecBestSim_dmp,
+void PlaneSweepingCuda::sweepPixelsToVolume( CudaDeviceMemoryPitched<TSim, 3>& volBestSim_dmp,
+                                             CudaDeviceMemoryPitched<TSim, 3>& volSecBestSim_dmp,
                                              const int volDimX,
                                              const int volDimY,
                                              const int volStepXY,
@@ -836,7 +836,7 @@ void PlaneSweepingCuda::sweepPixelsToVolume( CudaDeviceMemoryPitched<float, 3>& 
 /**
  * @param[inout] volume input similarity volume
  */
-bool PlaneSweepingCuda::SGMoptimizeSimVolume(int rc, CudaDeviceMemoryPitched<float, 3>& volSim_dmp,
+bool PlaneSweepingCuda::SGMoptimizeSimVolume(int rc, CudaDeviceMemoryPitched<TSim, 3>& volSim_dmp,
                                                int volDimX, int volDimY, int volDimZ, 
                                                int scale, unsigned char P1, unsigned char P2)
 {
@@ -862,7 +862,7 @@ bool PlaneSweepingCuda::SGMoptimizeSimVolume(int rc, CudaDeviceMemoryPitched<flo
     return true;
 }
 
-void PlaneSweepingCuda::SGMretrieveBestDepth(StaticVector<IdValue>& bestDepth, CudaDeviceMemoryPitched<float, 3>& volSim_dmp,
+void PlaneSweepingCuda::SGMretrieveBestDepth(StaticVector<IdValue>& bestDepth, CudaDeviceMemoryPitched<TSim, 3>& volSim_dmp,
   int volDimX, int volDimY, int volDimZ, int zBorder)
 {
   ALICEVISION_LOG_DEBUG("SGMretrieveBestDepth:" << std::endl
