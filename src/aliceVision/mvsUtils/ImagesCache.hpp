@@ -85,15 +85,19 @@ public:
 
     inline ImgPtr getImg_sync( int camId )
     {
-        refreshData_sync(camId);
+        refreshImage_sync(camId);
         const int imageId = camIdMapId[camId];
         return imgs[imageId];
     }
 
     void refreshData(int camId);
-    void refreshData_sync(int camId);
+    void refreshImage_sync(int camId);
 
-    void refreshData_async(int camId);
+    void refreshImage_async(int camId);
+
+    void refreshImages_sync(const std::vector<int>& camIds);
+
+    void refreshImages_async(const std::vector<int>& camIds);
 
     Color getPixelValueInterpolated(const Point2d* pix, int camId);
 };

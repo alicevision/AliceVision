@@ -103,15 +103,27 @@ void ImagesCache::refreshData(int camId)
       ALICEVISION_LOG_DEBUG("Reuse " << imagesNames.at(camId) << " from image cache. ");
     }
 }
-void ImagesCache::refreshData_sync(int camId)
+
+void ImagesCache::refreshImage_sync(int camId)
 {
   std::lock_guard<std::mutex> lock(imagesMutexes[camId]);
   refreshData(camId);
 }
 
-void ImagesCache::refreshData_async(int camId)
+void ImagesCache::refreshImage_async(int camId)
 {
-    _asyncObjects.emplace_back(std::async(std::launch::async, &ImagesCache::refreshData_sync, this, camId));
+    _asyncObjects.emplace_back(std::async(std::launch::async, &ImagesCache::refreshImage_sync, this, camId));
+}
+
+void ImagesCache::refreshImages_sync(const std::vector<int>& camIds)
+{
+    for(int camId: camIds)
+        refreshImage_sync(camId);
+}
+
+void ImagesCache::refreshImages_async(const std::vector<int>& camIds)
+{
+    _asyncObjects.emplace_back(std::async(std::launch::async, &ImagesCache::refreshImages_sync, this, camIds));
 }
 
 Color ImagesCache::getPixelValueInterpolated(const Point2d* pix, int camId)
