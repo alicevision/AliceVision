@@ -100,8 +100,8 @@ int main(int argc, char **argv)
   const string jpg_filenameR = imageBFilename;
 
   Image<unsigned char> imageL, imageR;
-  readImage(jpg_filenameL, imageL);
-  readImage(jpg_filenameR, imageR);
+  readImage(jpg_filenameL, imageL, image::EImageColorSpace::NO_CONVERSION);
+  readImage(jpg_filenameR, imageR, image::EImageColorSpace::NO_CONVERSION);
 
 //--
   // Detect regions thanks to an image_describer
@@ -124,7 +124,7 @@ int main(int argc, char **argv)
     Image<unsigned char> concat;
     ConcatH(imageL, imageR, concat);
     string out_filename = "00_images.jpg";
-    writeImage(out_filename, concat);
+    writeImage(out_filename, concat, image::EImageColorSpace::NO_CONVERSION);
   }
 
   //- Draw features on the two image (side by side)
@@ -142,7 +142,7 @@ int main(int argc, char **argv)
       DrawCircle(point.x()+imageL.Width(), point.y(), point.scale(), 255, &concat);
     }
     string out_filename = "01_features.jpg";
-    writeImage(out_filename, concat);
+    writeImage(out_filename, concat, image::EImageColorSpace::NO_CONVERSION);
   }
 
   std::vector<IndMatch> vec_PutativeMatches;
@@ -291,12 +291,12 @@ int main(int argc, char **argv)
   {
     string out_filename = "07_Left-K-VLD-MASK.jpg";
     out_filename = (fs::path(outputFolder) / out_filename).string();
-    writeImage(out_filename, imageOutL);
+    writeImage(out_filename, imageOutL, image::EImageColorSpace::NO_CONVERSION);
   }
   {
     string out_filename = "08_Right-K-VLD-MASK.jpg";
     out_filename = (fs::path(outputFolder) / out_filename).string();
-    writeImage(out_filename, imageOutR);
+    writeImage(out_filename, imageOutR, image::EImageColorSpace::NO_CONVERSION);
   }
 
   return EXIT_SUCCESS;
