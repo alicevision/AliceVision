@@ -349,7 +349,7 @@ void ps_aggregatePathVolume(CudaDeviceMemoryPitched<TSim, 3>& d_volSimT,
         d_volSimT.getBuffer(),
         d_volSimT.getBytesPaddedUpToDim(1),
         d_volSimT.getBytesPaddedUpToDim(0),
-        volDimX, volDimY, volDimZ, 0, 255);
+        volDimX, volDimY, volDimZ, 0, TSim(255.0f));
     CHECK_CUDA_ERROR();
 
     for(int iz = 1; iz < volDimZ; iz++)

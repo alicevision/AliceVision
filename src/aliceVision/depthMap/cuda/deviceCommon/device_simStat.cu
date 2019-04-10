@@ -96,8 +96,8 @@ struct simStat
             sim = 0.0f - sim;
         }
 
-        sim = fmaxf(sim, -1.0f);
-        sim = fminf(sim, 1.0f);
+        // sim = fmaxf(sim, -1.0f); // clamp
+        // sim = fminf(sim, 1.0f);
         return sim;
     }
 
