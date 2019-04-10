@@ -48,12 +48,15 @@ int main(int argc, char* argv[])
 
     // semiGlobalMatching
     int sgmScale = -1;
-    int sgmStep = -1;
+    int sgmStepXY = -1;
     int sgmMaxSide = 200;
     int sgmMaxTCams = 10;
     int sgmWSH = 4;
     double sgmGammaC = 5.5;
     double sgmGammaP = 8.0;
+    int sgmMaxDepths = 3000;
+    int sgmMaxDepthsPerTc = 1500;
+    bool sgmUseSfmSeeds = true;
 
     // refineRc
     int refineMaxTCams = 6;
@@ -98,10 +101,10 @@ int main(int argc, char* argv[])
             "maximum angle between two views.")
         ("sgmScale", po::value<int>(&sgmScale)->default_value(sgmScale),
             "Semi Global Matching: Downscale factor used to compute the similarity volume.")
-        ("sgmStep", po::value<int>(&sgmStep)->default_value(sgmStep),
+        ("sgmStepXY", po::value<int>(&sgmStepXY)->default_value(sgmStepXY),
             "Semi Global Matching: Step used to compute the similarity volume.")
         ("sgmMaxSide", po::value<int>(&sgmMaxSide)->default_value(sgmMaxSide),
-            "Semi Global Matching: Max side in pixels used to automatically decide for sgmScale/sgmStep if not defined.")
+            "Semi Global Matching: Max side in pixels used to automatically decide for sgmScale/sgmStepXY if not defined.")
         ("sgmMaxTCams", po::value<int>(&sgmMaxTCams)->default_value(sgmMaxTCams),
             "Semi Global Matching: Number of neighbour cameras.")
         ("sgmWSH", po::value<int>(&sgmWSH)->default_value(sgmWSH),
@@ -110,6 +113,12 @@ int main(int argc, char* argv[])
             "Semi Global Matching: GammaC threshold.")
         ("sgmGammaP", po::value<double>(&sgmGammaP)->default_value(sgmGammaP),
             "Semi Global Matching: GammaP threshold.")
+        ("sgmMaxDepths", po::value<int>(&sgmMaxDepths)->default_value(sgmMaxDepths),
+            "Semi Global Matching: Max number of depths in the overall similarity volume.")
+        ("sgmMaxDepthsPerTc", po::value<int>(&sgmMaxDepthsPerTc)->default_value(sgmMaxDepthsPerTc),
+            "Semi Global Matching: Max number of depths to sweep in the similarity volume per Rc/Tc cameras.")
+        ("sgmUseSfmSeeds", po::value<bool>(&sgmUseSfmSeeds)->default_value(sgmUseSfmSeeds),
+            "Semi Global Matching: Use landmarks from SfM to define the ranges for the plane sweeping.")
         ("refineMaxTCams", po::value<int>(&refineMaxTCams)->default_value(refineMaxTCams),
             "Refine: Number of neighbour cameras.")
         ("refineNSamplesHalf", po::value<int>(&refineNSamplesHalf)->default_value(refineNSamplesHalf),
@@ -213,8 +222,12 @@ int main(int argc, char* argv[])
     mp.userParams.put("semiGlobalMatching.gammaP", sgmGammaP);
 
     mp.userParams.put("semiGlobalMatching.scale", sgmScale);
-    mp.userParams.put("semiGlobalMatching.step", sgmStep);
+    mp.userParams.put("semiGlobalMatching.step", sgmStepXY);
     mp.userParams.put("semiGlobalMatching.maxSide", sgmMaxSide);
+
+    mp.userParams.put("semiGlobalMatching.maxDepthsToStore", sgmMaxDepths);
+    mp.userParams.put("semiGlobalMatching.maxDepthsToSweep", sgmMaxDepthsPerTc);
+    mp.userParams.put("semiGlobalMatching.useSeedsToCompDepthsToSweep", sgmUseSfmSeeds);
 
     // refineRc
     mp.userParams.put("refineRc.maxTCams", refineMaxTCams);
