@@ -177,6 +177,12 @@ void RefineRc::optimizeDepthSimMapCUDA(DepthSimMap& out_depthSimMapOptimized,
 {
     auto startTime = std::chrono::high_resolution_clock::now();
 
+    if (_refineNiters == 0)
+    {
+        _depthSimMapOpt.add(depthSimMapPhoto);
+        return;
+    }
+
     int h11 = _sp.mp.getHeight(_rc);
 
     StaticVector<const StaticVector<DepthSim>*> dataMaps;
