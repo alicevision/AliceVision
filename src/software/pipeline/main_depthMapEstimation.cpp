@@ -47,6 +47,9 @@ int main(int argc, char* argv[])
     float maxViewAngle = 70.0f;
 
     // semiGlobalMatching
+    int sgmScale = -1;
+    int sgmStep = -1;
+    int sgmMaxSide = 200;
     int sgmMaxTCams = 10;
     int sgmWSH = 4;
     double sgmGammaC = 5.5;
@@ -93,6 +96,12 @@ int main(int argc, char* argv[])
             "minimum angle between two views.")
         ("maxViewAngle", po::value<float>(&maxViewAngle)->default_value(maxViewAngle),
             "maximum angle between two views.")
+        ("sgmScale", po::value<int>(&sgmScale)->default_value(sgmScale),
+            "Semi Global Matching: Downscale factor used to compute the similarity volume.")
+        ("sgmStep", po::value<int>(&sgmStep)->default_value(sgmStep),
+            "Semi Global Matching: Step used to compute the similarity volume.")
+        ("sgmMaxSide", po::value<int>(&sgmMaxSide)->default_value(sgmMaxSide),
+            "Semi Global Matching: Max side in pixels used to automatically decide for sgmScale/sgmStep if not defined.")
         ("sgmMaxTCams", po::value<int>(&sgmMaxTCams)->default_value(sgmMaxTCams),
             "Semi Global Matching: Number of neighbour cameras.")
         ("sgmWSH", po::value<int>(&sgmWSH)->default_value(sgmWSH),
@@ -202,6 +211,10 @@ int main(int argc, char* argv[])
     mp.userParams.put("semiGlobalMatching.wsh", sgmWSH);
     mp.userParams.put("semiGlobalMatching.gammaC", sgmGammaC);
     mp.userParams.put("semiGlobalMatching.gammaP", sgmGammaP);
+
+    mp.userParams.put("semiGlobalMatching.scale", sgmScale);
+    mp.userParams.put("semiGlobalMatching.step", sgmStep);
+    mp.userParams.put("semiGlobalMatching.maxSide", sgmMaxSide);
 
     // refineRc
     mp.userParams.put("refineRc.maxTCams", refineMaxTCams);
