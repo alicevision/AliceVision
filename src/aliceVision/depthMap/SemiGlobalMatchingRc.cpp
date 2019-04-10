@@ -14,6 +14,7 @@
 #include <aliceVision/depthMap/SemiGlobalMatchingRcTc.hpp>
 #include <aliceVision/mvsData/OrientedPoint.hpp>
 #include <aliceVision/mvsData/Point3d.hpp>
+#include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/mvsUtils/common.hpp>
 #include <aliceVision/mvsUtils/fileIO.hpp>
 #include <aliceVision/imageIO/image.hpp>
@@ -267,7 +268,7 @@ void SemiGlobalMatchingRc::computeDepthsAndResetTCams()
         }
     }
 
-    if(!_sp.useSeedsToCompDepthsToSweep)
+    if(!_sp.useSeedsToCompDepthsToSweep || _sp.mp.getInputSfMData().getLandmarks().empty())
     {
         computeDepths(minDepthAll, maxDepthAll, alldepths);
         if(_sp.saveDepthsToSweepToTxtForVis)
