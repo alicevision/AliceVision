@@ -340,7 +340,7 @@ void memcpyRGBImageFromFileToArr(int camId, std::vector<Color>& imgArr, const st
     int origWidth, origHeight;
     std::vector<Color> cimg;
     clock_t t = tic();
-    imageIO::readImage(fileNameOrigStr, origWidth, origHeight, cimg);
+    imageIO::readImage(fileNameOrigStr, origWidth, origHeight, cimg, imageIO::EImageColorSpace::LINEAR);
     ALICEVISION_LOG_DEBUG("imageIO::readImage elapsed time: " << toc(t) << " ms.");
 
     // check image size

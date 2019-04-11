@@ -78,8 +78,8 @@ int main(int argc, char **argv)
   Image<RGBColor> image;
 
   Image<unsigned char> imageL, imageR;
-  readImage(jpgFilenameL, imageL);
-  readImage(jpgFilenameR, imageR);
+  readImage(jpgFilenameL, imageL, image::EImageColorSpace::NO_CONVERSION);
+  readImage(jpgFilenameR, imageR, image::EImageColorSpace::NO_CONVERSION);
 
   // Call Keypoint extractor
   using namespace aliceVision::feature;
@@ -121,7 +121,7 @@ int main(int argc, char **argv)
     Image<unsigned char> concat;
     ConcatH(imageL, imageR, concat);
     const string out_filename = "00_images.jpg";
-    writeImage(out_filename, concat);
+    writeImage(out_filename, concat, image::EImageColorSpace::NO_CONVERSION);
   }
 
   {
@@ -139,7 +139,7 @@ int main(int argc, char **argv)
       DrawCircle(imaB.x()+imageL.Width(), imaB.y(), 3.0f, 255, &concat);
     }
     const string out_filename = "01_features.jpg";
-    writeImage(out_filename, concat);
+    writeImage(out_filename, concat, image::EImageColorSpace::NO_CONVERSION);
   }
 
   //--

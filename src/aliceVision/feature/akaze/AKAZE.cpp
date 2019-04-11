@@ -265,7 +265,7 @@ void AKAZE::computeScaleSpace()
       image::Image<float> tmp = evo.cur;
       convertScale(tmp);
       image::Image< unsigned char > tmp2 ((tmp*255).cast<unsigned char>());
-      image::writeImage(str.str(), tmp2);
+      image::writeImage(str.str(), tmp2, image::EImageColorSpace::NO_CONVERSION);
 #endif // DEBUG_OCTAVE
     }
   }

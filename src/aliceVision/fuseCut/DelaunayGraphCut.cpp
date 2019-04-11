@@ -297,7 +297,7 @@ void createVerticesWithVisibilities(const StaticVector<int>& cams, std::vector<P
         int width, height;
         {
             const std::string depthMapFilepath = getFileNameFromIndex(mp, c, mvsUtils::EFileType::depthMap, 0);
-            imageIO::readImage(depthMapFilepath, width, height, depthMap);
+            imageIO::readImage(depthMapFilepath, width, height, depthMap, imageIO::EImageColorSpace::NO_CONVERSION);
             if(depthMap.empty())
             {
                 ALICEVISION_LOG_WARNING("Empty depth map: " << depthMapFilepath);
@@ -305,7 +305,7 @@ void createVerticesWithVisibilities(const StaticVector<int>& cams, std::vector<P
             }
             int wTmp, hTmp;
             const std::string simMapFilepath = getFileNameFromIndex(mp, c, mvsUtils::EFileType::simMap, 0);
-            imageIO::readImage(simMapFilepath, wTmp, hTmp, simMap);
+            imageIO::readImage(simMapFilepath, wTmp, hTmp, simMap, imageIO::EImageColorSpace::NO_CONVERSION);
             if(wTmp != width || hTmp != height)
                 throw std::runtime_error("Similarity map size doesn't match the depth map size: " + simMapFilepath + ", " + depthMapFilepath);
             {
@@ -856,7 +856,7 @@ void DelaunayGraphCut::fuseFromDepthMaps(const StaticVector<int>& cams, const Po
             int width, height;
             {
                 const std::string depthMapFilepath = getFileNameFromIndex(_mp, c, mvsUtils::EFileType::depthMap, 0);
-                imageIO::readImage(depthMapFilepath, width, height, depthMap);
+                imageIO::readImage(depthMapFilepath, width, height, depthMap, imageIO::EImageColorSpace::NO_CONVERSION);
                 if(depthMap.empty())
                 {
                     ALICEVISION_LOG_WARNING("Empty depth map: " << depthMapFilepath);
@@ -864,7 +864,7 @@ void DelaunayGraphCut::fuseFromDepthMaps(const StaticVector<int>& cams, const Po
                 }
                 int wTmp, hTmp;
                 const std::string simMapFilepath = getFileNameFromIndex(_mp, c, mvsUtils::EFileType::simMap, 0);
-                imageIO::readImage(simMapFilepath, wTmp, hTmp, simMap);
+                imageIO::readImage(simMapFilepath, wTmp, hTmp, simMap, imageIO::EImageColorSpace::NO_CONVERSION);
                 if(wTmp != width || hTmp != height)
                     throw std::runtime_error("Wrong sim map dimensions: " + simMapFilepath);
                 {
@@ -874,7 +874,7 @@ void DelaunayGraphCut::fuseFromDepthMaps(const StaticVector<int>& cams, const Po
                 }
 
                 const std::string nmodMapFilepath = getFileNameFromIndex(_mp, c, mvsUtils::EFileType::nmodMap, 0);
-                imageIO::readImage(nmodMapFilepath, wTmp, hTmp, numOfModalsMap);
+                imageIO::readImage(nmodMapFilepath, wTmp, hTmp, numOfModalsMap, imageIO::EImageColorSpace::NO_CONVERSION);
                 if(wTmp != width || hTmp != height)
                     throw std::runtime_error("Wrong nmod map dimensions: " + nmodMapFilepath);
             }

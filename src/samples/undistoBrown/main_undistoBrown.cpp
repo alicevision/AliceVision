@@ -128,12 +128,12 @@ int main(int argc, char **argv)
     const string outFileName = (fs::path(outputImagePath) / fs::path(vec_fileNames[j]).filename()).string();
 
     Image<RGBColor> image, imageUd;
-    readImage(inFileName, image);
+    readImage(inFileName, image, image::EImageColorSpace::NO_CONVERSION);
 
     const PinholeRadialK3 cam(image.Width(), image.Height(), f, c(0), c(1), k(0), k(1), k(2));
 
     UndistortImage(image, &cam, imageUd, BLACK);
-    writeImage(outFileName, imageUd);
+    writeImage(outFileName, imageUd, image::EImageColorSpace::NO_CONVERSION);
 
   } //end loop for each file
   return EXIT_SUCCESS;

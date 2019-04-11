@@ -121,32 +121,23 @@ double focalFromPinholeHeight(int height, double thetaMax = degreeToRadian(60.0)
 
 bool splitDualFisheye(const std::string& imagePath, const std::string& outputFolder, const std::string& splitPreset)
 {
-  oiio::ImageBuf inBuffer(imagePath);
+  image::Image<image::RGBfColor> imageSource;
+  image::readImage(imagePath, imageSource, image::EImageColorSpace::LINEAR);
 
-  if(!inBuffer.initialized())
-    return false;
-
-  const oiio::ImageSpec& inSpec = inBuffer.spec();
-
-  int inWidth = inSpec.width;
-  int inHeight = inSpec.height;
-  const int inChannels = inSpec.nchannels;
+  oiio::ImageBuf buffer;
+  image::getBufferFromImage(imageSource, buffer);
 
   // all image need to be horizontal
-  if(inHeight > inWidth)
-  {
-    oiio::ImageBufAlgo::flop(inBuffer, inBuffer);
-    std::swap(inHeight, inWidth);
-  }
+  if(imageSource.Height() > imageSource.Width())
+    throw std::runtime_error(std::string("Cannot split dual fisheye from the vertical image '") + imagePath + "'.");
 
-  const int outSide = std::min(inHeight, inWidth / 2);
-  const int offset = std::abs((inWidth / 2) - inHeight);
+  const int outSide = std::min(imageSource.Height(), imageSource.Width() / 2);
+  const int offset = std::abs((imageSource.Width() / 2) - imageSource.Height());
   const int halfOffset = offset / 2;
 
-  oiio::ImageSpec outSpec(outSide, outSide, inChannels, oiio::TypeDesc::UINT8);
-  oiio::ImageBuf outBuffer(outSpec);
-  // Copy all the metadata (except for resolution, channel and data format)
-  outBuffer.copy_metadata(inBuffer);
+  image::Image<image::RGBfColor> imageOut(outSide, outSide, false);
+  oiio::ImageBuf bufferOut;
+  image::getBufferFromImage(imageOut, bufferOut);
 
   for(std::size_t i = 0; i < 2; ++i)
   {
@@ -168,10 +159,11 @@ bool splitDualFisheye(const std::string& imagePath, const std::string& outputFol
 
     const oiio::ROI subImageROI(xbegin, xend, ybegin, yend);
 
-    oiio::ImageBufAlgo::cut(outBuffer, inBuffer, subImageROI);
+    oiio::ImageBufAlgo::cut(bufferOut, buffer, subImageROI);
 
     boost::filesystem::path path(imagePath);
-    outBuffer.write(outputFolder + std::string("/") + path.stem().string() + std::string("_") + std::to_string(i) + path.extension().string());
+    image::writeImage(outputFolder + std::string("/") + path.stem().string() + std::string("_") + std::to_string(i) + path.extension().string(),
+                      imageOut, image::EImageColorSpace::AUTO, image::readImageMetadata(imagePath));
   }
   ALICEVISION_LOG_INFO(imagePath + " successfully split");
   return true;
@@ -179,15 +171,8 @@ bool splitDualFisheye(const std::string& imagePath, const std::string& outputFol
 
 bool splitEquirectangular(const std::string& imagePath, const std::string& outputFolder, std::size_t nbSplits, std::size_t splitResolution)
 {
-  oiio::ImageBuf inBuffer(imagePath);
-
-  if(!inBuffer.initialized())
-    return false;
-
-  const oiio::ImageSpec& inSpec = inBuffer.spec();
-
   image::Image<image::RGBColor> imageSource;
-  image::readImage(imagePath, imageSource);
+  image::readImage(imagePath, imageSource, image::EImageColorSpace::LINEAR);
 
   const int inWidth = imageSource.Width();
   const int inHeight = imageSource.Height();
@@ -224,19 +209,24 @@ bool splitEquirectangular(const std::string& imagePath, const std::string& outpu
         imaOut(j,i) = sampler(imageSource, x(1), x(0));
       }
     }
-    //-- save image
-    const oiio::ImageSpec outSpec(splitResolution, splitResolution, inSpec.nchannels,inSpec.format);
-    oiio::ImageBuf outBuffer(outSpec, (void*)imaOut.data());
-    outBuffer.copy_metadata(inBuffer);
-    oiio::ImageSpec& outMetadataSpec = outBuffer.specmod();
 
-    //Override make and model in order to force camera model in SfM
+    // save image
+
+    oiio::ImageBuf bufferOut;
+    image::getBufferFromImage(imageSource, bufferOut);
+
+    oiio::ImageSpec& outMetadataSpec = bufferOut.specmod();
+
+    outMetadataSpec.extra_attribs = image::readImageMetadata(imagePath);
+
+    // Ooerride make and model in order to force camera model in SfM
     outMetadataSpec.attribute("Make",  "Custom");
     outMetadataSpec.attribute("Model", "Pinhole");
     outMetadataSpec.attribute("Exif:FocalLength", static_cast<float>(focal));
 
     boost::filesystem::path path(imagePath);
-    outBuffer.write(outputFolder + std::string("/") + path.stem().string() + std::string("_") + std::to_string(index) + path.extension().string());
+    image::writeImage(outputFolder + std::string("/") + path.stem().string() + std::string("_") + std::to_string(index) + path.extension().string(),
+                      imaOut, image::EImageColorSpace::AUTO, outMetadataSpec.extra_attribs);
 
     ++index;
   }
@@ -248,7 +238,7 @@ bool splitEquirectangular(const std::string& imagePath, const std::string& outpu
 bool splitEquirectangularDemo(const std::string& imagePath, const std::string& outputFolder, std::size_t nbSplits, std::size_t splitResolution)
 {
   image::Image<image::RGBColor> imageSource;
-  image::readImage(imagePath, imageSource);
+  image::readImage(imagePath, imageSource, image::EImageColorSpace::LINEAR);
 
   const int inWidth = imageSource.Width();
   const int inHeight = imageSource.Height();
