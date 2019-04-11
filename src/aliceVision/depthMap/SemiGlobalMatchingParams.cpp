@@ -32,6 +32,7 @@ SemiGlobalMatchingParams::SemiGlobalMatchingParams(mvsUtils::MultiViewParams& _m
     P1 = (unsigned char)mp.userParams.get<int>("semiGlobalMatching.P1", 10);
     P2 = (unsigned char)mp.userParams.get<int>("semiGlobalMatching.P2", 125);
 
+    stepZ = mp.userParams.get<int>("semiGlobalMatching.stepZ", -1);
     maxDepthsToStore = mp.userParams.get<int>("semiGlobalMatching.maxDepthsToStore", 3000);
     maxDepthsToSweep = mp.userParams.get<int>("semiGlobalMatching.maxDepthsToSweep", 1500);
     rcTcDepthsHalfLimit = mp.userParams.get<int>("semiGlobalMatching.rcTcDepthsHalfLimit", 2048);

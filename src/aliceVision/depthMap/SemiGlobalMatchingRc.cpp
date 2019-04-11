@@ -95,7 +95,7 @@ bool SemiGlobalMatchingRc::selectBestDepthsRange(int nDepthsThr, StaticVector<fl
 
 bool SemiGlobalMatchingRc::selectBestDepthsRange(int nDepthsThr, StaticVector<StaticVector<float>*>* alldepths)
 {
-    if(_depths.size() <= nDepthsThr)
+    if(nDepthsThr <= 0 || _depths.size() <= nDepthsThr)
         return true;
 
     StaticVector<float> votes;
@@ -129,6 +129,20 @@ bool SemiGlobalMatchingRc::selectBestDepthsRange(int nDepthsThr, StaticVector<St
 
     std::swap(_depths, depthsNew);
     return true;
+}
+
+void SemiGlobalMatchingRc::filterDepthsPerStepZ(int stepZ)
+{
+    if (stepZ <= 1)
+        return;
+
+    StaticVector<float> depthsNew;
+    depthsNew.reserve(_depths.size() / stepZ);
+    for (int i = 0; i < _depths.size(); i += stepZ)
+    {
+        depthsNew.push_back(_depths[i]);
+    }
+    std::swap(_depths, depthsNew);
 }
 
 float SemiGlobalMatchingRc::getMinTcStepAtDepth(float depth, float minDepth, float maxDepth,
@@ -282,6 +296,7 @@ void SemiGlobalMatchingRc::computeDepthsAndResetTCams()
             }
             fclose(f);
         }
+        filterDepthsPerStepZ(_sp.stepZ);
         selectBestDepthsRange(_sp.maxDepthsToStore, alldepths);
     }
     else
@@ -324,6 +339,7 @@ void SemiGlobalMatchingRc::computeDepthsAndResetTCams()
         }
 
         // filter out depths if computeDepths gave too many values
+        filterDepthsPerStepZ(_sp.stepZ);
         selectBestDepthsRange(_sp.maxDepthsToStore, alldepths);
     }
 

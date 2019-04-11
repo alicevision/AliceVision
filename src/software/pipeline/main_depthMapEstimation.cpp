@@ -49,6 +49,7 @@ int main(int argc, char* argv[])
     // semiGlobalMatching
     int sgmScale = -1;
     int sgmStepXY = -1;
+    int sgmStepZ = 1;
     int sgmMaxSide = 200;
     int sgmMaxTCams = 10;
     int sgmWSH = 4;
@@ -102,7 +103,9 @@ int main(int argc, char* argv[])
         ("sgmScale", po::value<int>(&sgmScale)->default_value(sgmScale),
             "Semi Global Matching: Downscale factor used to compute the similarity volume.")
         ("sgmStepXY", po::value<int>(&sgmStepXY)->default_value(sgmStepXY),
-            "Semi Global Matching: Step used to compute the similarity volume.")
+            "Semi Global Matching: Step used to compute the similarity volume on the X and Y axis.")
+        ("sgmStepZ", po::value<int>(&sgmStepZ)->default_value(sgmStepZ),
+            "Semi Global Matching: Step used to compute the similarity volume on the Z axis.")
         ("sgmMaxSide", po::value<int>(&sgmMaxSide)->default_value(sgmMaxSide),
             "Semi Global Matching: Max side in pixels used to automatically decide for sgmScale/sgmStepXY if not defined.")
         ("sgmMaxTCams", po::value<int>(&sgmMaxTCams)->default_value(sgmMaxTCams),
@@ -223,6 +226,7 @@ int main(int argc, char* argv[])
 
     mp.userParams.put("semiGlobalMatching.scale", sgmScale);
     mp.userParams.put("semiGlobalMatching.step", sgmStepXY);
+    mp.userParams.put("semiGlobalMatching.stepZ", sgmStepZ);
     mp.userParams.put("semiGlobalMatching.maxSide", sgmMaxSide);
 
     mp.userParams.put("semiGlobalMatching.maxDepthsToStore", sgmMaxDepths);
