@@ -695,11 +695,11 @@ void PlaneSweepingCuda::sweepPixelsToVolume( CudaDeviceMemoryPitched<TSim, 3>& v
 
         {
             pr_printfDeviceMemoryInfo();
-            ALICEVISION_LOG_DEBUG(__FUNCTION__ ": total size of one similarity volume map in GPU memory: approx " << volBestSim_dmp.getBytesPadded() / (1024.0 * 1024.0) << " MB");
-            ALICEVISION_LOG_DEBUG(__FUNCTION__ ": UNPADDED total size of one similarity volume map in GPU memory: approx " << volBestSim_dmp.getBytesUnpadded() / (1024.0 * 1024.0) << " MB");
+            ALICEVISION_LOG_DEBUG(__FUNCTION__ << ": total size of one similarity volume map in GPU memory: approx " << volBestSim_dmp.getBytesPadded() / (1024.0 * 1024.0) << " MB");
+            ALICEVISION_LOG_DEBUG(__FUNCTION__ << ": UNPADDED total size of one similarity volume map in GPU memory: approx " << volBestSim_dmp.getBytesUnpadded() / (1024.0 * 1024.0) << " MB");
 #ifdef PLANE_SWEEPING_PRECOMPUTED_COLORS
-            ALICEVISION_LOG_DEBUG(__FUNCTION__ ": total size of one color volume map in GPU memory: approx " << volTcamColors_dmp.getBytesPadded() / (1024.0 * 1024.0) << " MB");
-            ALICEVISION_LOG_DEBUG(__FUNCTION__ ": UNPADDED total size of one color volume map in GPU memory: approx " << volTcamColors_dmp.getBytesUnpadded() / (1024.0 * 1024.0) << " MB");
+            ALICEVISION_LOG_DEBUG(__FUNCTION__ << ": total size of one color volume map in GPU memory: approx " << volTcamColors_dmp.getBytesPadded() / (1024.0 * 1024.0) << " MB");
+            ALICEVISION_LOG_DEBUG(__FUNCTION__ << ": UNPADDED total size of one color volume map in GPU memory: approx " << volTcamColors_dmp.getBytesUnpadded() / (1024.0 * 1024.0) << " MB");
 #endif
         }
 

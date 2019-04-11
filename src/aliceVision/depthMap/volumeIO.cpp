@@ -72,7 +72,8 @@ inline unsigned char float_to_uchar(float v)
 {
     float vv = std::max(0.f, v);
     vv = std::min(255.f, vv);
-    return unsigned char(vv);
+    unsigned char out = vv;
+    return out;
 }
 
 inline rgb float4_to_rgb(const float4& v)

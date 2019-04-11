@@ -33,7 +33,7 @@ public:
                                    float gammaP );
 
 private:
-    const SemiGlobalMatchingParams& const _sp;
+    const SemiGlobalMatchingParams& _sp;
 
     const int _rc;
     const StaticVector<int>& _tc;

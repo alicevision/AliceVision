@@ -144,8 +144,8 @@ __global__ void volume_estimateSim_twoViews_kernel(
         scale, volStepXY,
         wsh, gammaC, gammaP);
 
-    static const float fminVal = -1.0f;
-    static const float fmaxVal = 1.0f;
+    const float fminVal = -1.0f;
+    const float fmaxVal = 1.0f;
     fsim = (fsim - fminVal) / (fmaxVal - fminVal);
 #ifdef TSIM_USE_FLOAT
     // no clamp
