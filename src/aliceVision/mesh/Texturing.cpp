@@ -614,10 +614,10 @@ void Texturing::generateTexturesSubSet(const mvsUtils::MultiViewParams& mp,
             //bottom-right to up-left
             for(unsigned int y = 1; y < outTextureSide-1; ++y) //change
             {
-                unsigned int yoffset = (outTextureSide - y) * outTextureSide;
+                unsigned int yoffset = (outTextureSide - 1 - y) * outTextureSide;
                 for(unsigned int x = 1; x < outTextureSide-1; ++x)
                 {
-                    unsigned int xyoffset = yoffset + (outTextureSide - x);
+                    unsigned int xyoffset = yoffset + (outTextureSide - 1 - x);
                     const int rightCount = accuImage.imgCount[xyoffset+1];
                     const int leftCount = accuImage.imgCount[xyoffset-1];
                     const int downCount = accuImage.imgCount[xyoffset+outTextureSide];
