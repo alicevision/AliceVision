@@ -694,10 +694,10 @@ void Texturing::writeTexture(AccuImage& atlasTexture, const std::size_t atlasID,
         //bottom-right to up-left
         for(unsigned int y = 1; y < outTextureSide-1; ++y)
         {
-            unsigned int yoffset = (outTextureSide - y) * outTextureSide;
+            unsigned int yoffset = (outTextureSide - 1 - y) * outTextureSide;
             for(unsigned int x = 1; x < outTextureSide-1; ++x)
             {
-                unsigned int xyoffset = yoffset + (outTextureSide - x);
+                unsigned int xyoffset = yoffset + (outTextureSide - 1 - x);
                 if(atlasTexture.imgCount[xyoffset] > 0)
                     continue;
 
