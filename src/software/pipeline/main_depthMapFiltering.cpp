@@ -47,6 +47,7 @@ int main(int argc, char* argv[])
 
     int minNumOfConsistentCams = 3;
     int minNumOfConsistentCamsWithLowSimilarity = 4;
+    float pixToleranceFactor = 2.0f;
     int pixSizeBall = 0;
     int pixSizeBallWithLowSimilarity = 0;
     int nNearestCams = 10;
@@ -78,6 +79,8 @@ int main(int argc, char* argv[])
             "Minimal number of consistent cameras to consider the pixel.")
         ("minNumOfConsistentCamsWithLowSimilarity", po::value<int>(&minNumOfConsistentCamsWithLowSimilarity)->default_value(minNumOfConsistentCamsWithLowSimilarity),
             "Minimal number of consistent cameras to consider the pixel when the similarity is weak or ambiguous.")
+        ("pixToleranceFactor", po::value<float>(&pixToleranceFactor)->default_value(pixToleranceFactor),
+            "Filtering tolerance size factor (in px).")
         ("pixSizeBall", po::value<int>(&pixSizeBall)->default_value(pixSizeBall),
             "Filter ball size (in px).")
         ("pixSizeBallWithLowSimilarity", po::value<int>(&pixSizeBallWithLowSimilarity)->default_value(pixSizeBallWithLowSimilarity),
@@ -169,7 +172,7 @@ int main(int argc, char* argv[])
 
     {
         fuseCut::Fuser fs(mp);
-        fs.filterGroups(cams, pixSizeBall, pixSizeBallWithLowSimilarity, nNearestCams);
+        fs.filterGroups(cams, pixToleranceFactor, pixSizeBall, pixSizeBallWithLowSimilarity, nNearestCams);
         fs.filterDepthMaps(cams, minNumOfConsistentCams, minNumOfConsistentCamsWithLowSimilarity);
     }
 

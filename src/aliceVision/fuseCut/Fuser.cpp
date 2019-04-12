@@ -70,7 +70,7 @@ Fuser::~Fuser()
 /**
  * @brief 
  * 
- * @param[in]
+ * @param[in] pixSizeFactor: pixSize tolerance factor
  * @param[in]
  * @param[in] p: 3d point back projected from tc camera
  * @param[in]
@@ -80,7 +80,7 @@ Fuser::~Fuser()
  * @param[in] simMap
  * @param[in] scale
  */
-bool Fuser::updateInSurr(int pixSizeBall, int pixSizeBallWSP, Point3d& p, int rc, int tc,
+bool Fuser::updateInSurr(float pixToleranceFactor, int pixSizeBall, int pixSizeBallWSP, Point3d& p, int rc, int tc,
                            StaticVector<int>* numOfPtsMap, StaticVector<float>* depthMap, StaticVector<float>* simMap,
                            int scale)
 {
@@ -109,7 +109,7 @@ bool Fuser::updateInSurr(int pixSizeBall, int pixSizeBallWSP, Point3d& p, int rc
     }
 
     // float pixSize = 2.0f*(float)std::max(d,1)*_mp.getCamPixelSize(p,cam);
-    float pixSize = 2.0f *_mp.getCamPixelSizePlaneSweepAlpha(p, rc, tc, scale, 1);
+    float pixSize = pixToleranceFactor *_mp.getCamPixelSizePlaneSweepAlpha(p, rc, tc, scale, 1);
 
     Pixel ncell;
     for(ncell.x = std::max(0, cell.x - d); ncell.x <= std::min(w - 1, cell.x + d); ncell.x++)
@@ -132,7 +132,7 @@ bool Fuser::updateInSurr(int pixSizeBall, int pixSizeBallWSP, Point3d& p, int rc
 }
 
 // minNumOfModals number of other cams including this cam ... minNumOfModals /in 2,3,...
-void Fuser::filterGroups(const StaticVector<int>& cams, int pixSizeBall, int pixSizeBallWSP, int nNearestCams)
+void Fuser::filterGroups(const StaticVector<int>& cams, float pixToleranceFactor, int pixSizeBall, int pixSizeBallWSP, int nNearestCams)
 {
     ALICEVISION_LOG_INFO("Precomputing groups.");
     long t1 = clock();
@@ -140,14 +140,14 @@ void Fuser::filterGroups(const StaticVector<int>& cams, int pixSizeBall, int pix
     for(int c = 0; c < cams.size(); c++)
     {
         int rc = cams[c];
-        filterGroupsRC(rc, pixSizeBall, pixSizeBallWSP, nNearestCams);
+        filterGroupsRC(rc, pixToleranceFactor, pixSizeBall, pixSizeBallWSP, nNearestCams);
     }
 
     mvsUtils::printfElapsedTime(t1);
 }
 
 // minNumOfModals number of other cams including this cam ... minNumOfModals /in 2,3,...
-bool Fuser::filterGroupsRC(int rc, int pixSizeBall, int pixSizeBallWSP, int nNearestCams)
+bool Fuser::filterGroupsRC(int rc, float pixToleranceFactor, int pixSizeBall, int pixSizeBallWSP, int nNearestCams)
 {
     if(mvsUtils::FileExists(getFileNameFromIndex(_mp, rc, mvsUtils::EFileType::nmodMap)))
     {
@@ -213,7 +213,7 @@ bool Fuser::filterGroupsRC(int rc, int pixSizeBall, int pixSizeBallWSP, int nNea
                 if(depth > 0.0f)
                 {
                     Point3d p = _mp.CArr[tc] + (_mp.iCamArr[tc] * Point2d((float)x, (float)y)).normalize() * depth;
-                    updateInSurr(pixSizeBall, pixSizeBallWSP, p, rc, tc, numOfPtsMap, &depthMap, &simMap, 1);
+                    updateInSurr(pixToleranceFactor, pixSizeBall, pixSizeBallWSP, p, rc, tc, numOfPtsMap, &depthMap, &simMap, 1);
                 }
             }
 
