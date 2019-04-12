@@ -6,13 +6,14 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "RelativePoseInfo.hpp"
-
-#include <aliceVision/multiview/essentialKernelSolver.hpp>
+#include <aliceVision/multiview/relativePose/Essential5PSolver.hpp>
+#include <aliceVision/multiview/relativePose/FundamentalError.hpp>
 #include <aliceVision/multiview/projection.hpp>
+#include <aliceVision/multiview/essential.hpp>
 #include <aliceVision/multiview/triangulation/triangulationDLT.hpp>
-
 #include <aliceVision/robustEstimation/ACRansac.hpp>
-#include <aliceVision/robustEstimation/ACRansacKernelAdaptator.hpp>
+#include <aliceVision/robustEstimation/RansacKernel.hpp>
+#include <aliceVision/robustEstimation/supportEstimation.hpp>
 
 namespace aliceVision {
 namespace sfm {
@@ -52,7 +53,7 @@ bool estimate_Rt_fromE(const Mat3 & K1, const Mat3 & K2,
       const Vec2
         & x1_ = x1.col(vec_inliers[k]),
         & x2_ = x2.col(vec_inliers[k]);
-      TriangulateDLT(P1, x1_, P2, x2_, &X);
+      multiview::TriangulateDLT(P1, x1_, P2, x2_, &X);
       // Test if point is front to the two cameras.
       if (Depth(R1, t1, X) > 0 && Depth(R2, t2, X) > 0)
       {
@@ -74,47 +75,47 @@ bool estimate_Rt_fromE(const Mat3 & K1, const Mat3 & K2,
   return true;
 }
 
-using namespace aliceVision::robustEstimation;
-
-bool robustRelativePose(
-  const Mat3 & K1, const Mat3 & K2,
-  const Mat & x1, const Mat & x2,
-  RelativePoseInfo & relativePose_info,
-  const std::pair<size_t, size_t> & size_ima1,
-  const std::pair<size_t, size_t> & size_ima2,
-  const size_t max_iteration_count)
+bool robustRelativePose(const Mat3& K1, const Mat3& K2,
+                        const Mat& x1, const Mat& x2,
+                        RelativePoseInfo & relativePose_info,
+                        const std::pair<size_t, size_t> & size_ima1,
+                        const std::pair<size_t, size_t> & size_ima2,
+                        const size_t max_iteration_count)
 {
-  // Use the 5 point solver to estimate E
-  typedef aliceVision::essential::kernel::FivePointKernel SolverType;
-  // Define the AContrario adaptor
-  typedef ACKernelAdaptorEssential<
-      SolverType,
-      aliceVision::fundamental::kernel::EpipolarDistanceError,
-      UnnormalizerT,
-      Mat3>
-      KernelType;
+  // use the 5 point solver to estimate E
+  using SolverT = multiview::relativePose::Essential5PSolver;
 
-  KernelType kernel(x1, size_ima1.first, size_ima1.second,
-                    x2, size_ima2.first, size_ima2.second, K1, K2);
+  // define the kernel
+  using KernelT = robustEstimation::RelativePoseKernel_K<SolverT, multiview::relativePose::FundamentalEpipolarDistanceError, multiview::Mat3Model>;
 
-  // Robustly estimation of the Essential matrix and its precision
-  const std::pair<double,double> acRansacOut = ACRANSAC(kernel, relativePose_info.vec_inliers,
-    max_iteration_count, &relativePose_info.essential_matrix, relativePose_info.initial_residual_tolerance);
+  KernelT kernel(x1, size_ima1.first, size_ima1.second,
+                 x2, size_ima2.first, size_ima2.second, K1, K2);
+
+
+  multiview::Mat3Model model;
+
+  // robustly estimation of the Essential matrix and its precision
+  const std::pair<double,double> acRansacOut = robustEstimation::ACRANSAC(kernel,
+                                                                          relativePose_info.vec_inliers,
+                                                                          max_iteration_count,
+                                                                          &model,
+                                                                          relativePose_info.initial_residual_tolerance);
+  relativePose_info.essential_matrix = model.getMatrix();
   relativePose_info.found_residual_precision = acRansacOut.first;
 
-  if (relativePose_info.vec_inliers.size() < SolverType::MINIMUM_SAMPLES * ALICEVISION_MINIMUM_SAMPLES_COEF )  
+  if(relativePose_info.vec_inliers.size() < kernel.getMinimumNbRequiredSamples() * ALICEVISION_MINIMUM_SAMPLES_COEF)
     return false; // no sufficient coverage (the model does not support enough samples)
 
   // estimation of the relative poses
   Mat3 R;
   Vec3 t;
-  if (!estimate_Rt_fromE(
-    K1, K2, x1, x2,
-    relativePose_info.essential_matrix, relativePose_info.vec_inliers, &R, &t))
+
+  if(!estimate_Rt_fromE(K1, K2, x1, x2, relativePose_info.essential_matrix, relativePose_info.vec_inliers, &R, &t))
     return false; // cannot find a valid [R|t] couple that makes the inliers in front of the camera.
 
   // Store [R|C] for the second camera, since the first camera is [Id|0]
   relativePose_info.relativePose = geometry::Pose3(R, -R.transpose() * t);
+
   return true;
 }
 

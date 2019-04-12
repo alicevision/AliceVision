@@ -11,7 +11,6 @@
 #include <aliceVision/multiview/essential.hpp>
 #include <aliceVision/multiview/triangulation/triangulationDLT.hpp>
 
-
 namespace aliceVision {
 
 // HZ 9.6 page 257 (formula 9.12)
@@ -24,7 +23,7 @@ void EssentialFromFundamental(const Mat3 &F,
 
 // HZ 9.6 page 257 (formula 9.12)
 // Or http://ai.stanford.edu/~birch/projective/node20.html
-void FundamentalFromEssential(const Mat3 &E,
+void fundamentalFromEssential(const Mat3 &E,
                               const Mat3 &K1,
                               const Mat3 &K2,
                               Mat3 *F)  {
@@ -109,7 +108,7 @@ int MotionFromEssentialChooseSolution(const std::vector<Mat3> &Rs,
     const Vec3 &t2 = ts[i];
     P_From_KRt(K2, R2, t2, &P2);
     Vec3 X;
-    TriangulateDLT(P1, x1, P2, x2, &X);
+    multiview::TriangulateDLT(P1, x1, P2, x2, &X);
     // Test if point is front to the two cameras (positive depth)
     if (Depth(R1, t1, X) > 0 && Depth(R2, t2, X) > 0) {
       return i;

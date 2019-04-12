@@ -51,7 +51,7 @@ void StructureComputation_blind::triangulate(sfmData::SfMData& sfmData) const
         ++(*my_progress_bar);
       }
       // Triangulate each landmark
-      Triangulation trianObj;
+      multiview::Triangulation trianObj;
       const sfmData::Observations & observations = iterTracks->second.observations;
       for(const auto& itObs : observations)
       {
@@ -242,7 +242,7 @@ Vec3 StructureComputation_robust::track_sample_triangulation(const sfmData::SfMD
                                                              const sfmData::Observations& observations,
                                                              const std::set<IndexT>& samples) const
 {
-  Triangulation trianObj;
+  multiview::Triangulation trianObj;
   for (const IndexT idx : samples)
   {
     assert(idx < observations.size());

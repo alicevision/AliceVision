@@ -6,27 +6,21 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
-#include "essentialKernelSolver.hpp"
-#include <aliceVision/multiview/fundamentalKernelSolver.hpp>
-#include <aliceVision/multiview/essentialFivePointSolver.hpp>
-#include <aliceVision/numeric/polynomial.hpp>
-
-#include <cassert>
+#include "Essential8PSolver.hpp"
 
 namespace aliceVision {
-namespace essential {
-namespace kernel {
+namespace multiview {
+namespace relativePose {
 
-using namespace std;
-
-void EightPointRelativePoseSolver::Solve(const Mat &x1, const Mat &x2, vector<Mat3> *Es) {
+void Essential8PSolver::solve(const Mat& x1, const Mat& x2, std::vector<Mat3Model>& models) const
+{
   assert(2 == x1.rows());
   assert(8 <= x1.cols());
   assert(x1.rows() == x2.rows());
   assert(x1.cols() == x2.cols());
 
   MatX9 A(x1.cols(), 9);
-  fundamental::kernel::EncodeEpipolarEquation(x1, x2, &A);
+  encodeEpipolarEquation(x1, x2, &A);
 
   Vec9 e;
   Nullspace(&A, &e);
@@ -34,7 +28,8 @@ void EightPointRelativePoseSolver::Solve(const Mat &x1, const Mat &x2, vector<Ma
 
   // Find the closest essential matrix to E in frobenius norm
   // E = UD'VT
-  if (x1.cols() > 8) {
+  if (x1.cols() > 8)
+  {
     Eigen::JacobiSVD<Mat3> USV(E, Eigen::ComputeFullU | Eigen::ComputeFullV);
     Vec3 d = USV.singularValues();
     const double a = d[0];
@@ -42,18 +37,10 @@ void EightPointRelativePoseSolver::Solve(const Mat &x1, const Mat &x2, vector<Ma
     d << (a+b)/2., (a+b)/2., 0.0;
     E = USV.matrixU() * d.asDiagonal() * USV.matrixV().transpose();
   }
-  Es->push_back(E);
+  models.emplace_back(E);
 }
 
-void FivePointSolver::Solve(const Mat &x1, const Mat &x2, vector<Mat3> *E) {
-  assert(2 == x1.rows());
-  assert(5 <= x1.cols());
-  assert(x1.rows() == x2.rows());
-  assert(x1.cols() == x2.cols());
-
-  FivePointsRelativePose(x1, x2, E);
-}
-
-}  // namespace kernel
-}  // namespace essential
+}  // namespace relativePose
+}  // namespace multiview
 }  // namespace aliceVision
+

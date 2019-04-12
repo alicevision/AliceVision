@@ -13,6 +13,7 @@
 #include <aliceVision/robustEstimation/ScoreEvaluator.hpp>
 
 namespace aliceVision {
+namespace multiview {
 
 void TriangulateNView(const Mat2X &x,
                       const std::vector< Mat34 > &Ps,
@@ -56,16 +57,18 @@ void TriangulateNViewAlgebraic(const Mat2X &x,
   Nullspace(&design, X);
 }
 
-void TriangulateNViewLORANSAC(const Mat2X &x, 
-                              const std::vector< Mat34 > &Ps,
-                              Vec4 *X, 
-                              std::vector<std::size_t> *inliersIndex, 
-                              const double & thresholdError)
+void TriangulateNViewLORANSAC(const Mat2X& x,
+                              const std::vector<Mat34>& Ps,
+                              Vec4* X,
+                              std::vector<std::size_t>* inliersIndex,
+                              const double& thresholdError)
 {
-  using TriangulationKernel = LORansacTriangulationKernel<>;
+  using TriangulationKernel = multiview::LORansacTriangulationKernel<>;
   TriangulationKernel kernel(x, Ps);
   robustEstimation::ScoreEvaluator<TriangulationKernel> scorer(thresholdError);
-  *X = robustEstimation::LO_RANSAC(kernel, scorer, inliersIndex);
+  multiview::MatrixModel<Vec4> model;
+  model = robustEstimation::LO_RANSAC(kernel, scorer, inliersIndex);
+  *X = model.getMatrix();
 }
 
 double Triangulation::error(const Vec3 &X) const
@@ -142,21 +145,22 @@ Vec3 Triangulation::compute(int iter) const
   return X;
 }
 
-void TriangulateNViewsSolver::Solve(const Mat2X& x, const std::vector<Mat34>& Ps, std::vector<Vec4> &X)
+void TriangulateNViewsSolver::solve(const Mat2X& x, const std::vector<Mat34>& Ps, std::vector<MatrixModel<Vec4>> &X) const
 {
   Vec4 pt3d;
   TriangulateNViewAlgebraic(x, Ps, &pt3d);
-  X.push_back(pt3d);
+  X.push_back(MatrixModel<Vec4>(pt3d));
   assert(X.size() == 1);
 }
 
-void TriangulateNViewsSolver::Solve(const Mat2X& x, const std::vector<Mat34>& Ps, std::vector<Vec4> &X, const std::vector<double> &weights)
+void TriangulateNViewsSolver::solve(const Mat2X& x, const std::vector<Mat34>& Ps, std::vector<MatrixModel<Vec4>> &X, const std::vector<double> &weights) const
 {
   Vec4 pt3d;
   TriangulateNViewAlgebraic(x, Ps, &pt3d, &weights);
-  X.push_back(pt3d);
+  X.push_back(MatrixModel<Vec4>(pt3d));
   assert(X.size() == 1);
 }
 
-}  // namespace aliceCision
+} // namespace multiview
+} // namespace aliceVision
 

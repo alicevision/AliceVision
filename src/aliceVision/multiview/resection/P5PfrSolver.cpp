@@ -13,11 +13,12 @@
 #include <iostream>
 
 namespace aliceVision {
+namespace multiview {
 namespace resection {
 
 /**
  * @brief Compute the nullspace, choose the algorithm based on input matrix size
- * @param A matrix
+ * @param[in] A matrix
  */
 Mat nullspace(const Mat &A)
 {
@@ -37,25 +38,22 @@ Mat nullspace(const Mat &A)
   return N;
 }
 
-Mat divisionToPolynomialModelDistortion(const p5pfrModel &divisionModel,
-                                        double maxRadius,
-                                        const Mat &points2d)
+Mat P5PfrModel::divisionToPolynomialModelDistortion(const Mat& x2d /*,double maxRadius*/) const
 {
-  Vec r = divisionModel._r;
   Vec k(3);
 
   // make k of length 3 if shorter
   for(Vec::Index i = 0; i < 3; ++i)
   {
-    k(i) = (i < r.rows()) ? r(i) : 0;
+    k(i) = (i < _r.rows()) ? _r(i) : 0;
   }
 
-  Vec di(points2d.cols());
-  Vec o(points2d.cols());
+  Vec di(x2d.cols());
+  Vec o(x2d.cols());
 
-  for(Vec::Index i = 0; i < points2d.cols(); ++i)
+  for(Vec::Index i = 0; i < x2d.cols(); ++i)
   {
-    di(i) = points2d(0, i);
+    di(i) = x2d(0, i);
     o(i) = 1;
   }
 
@@ -80,10 +78,7 @@ Mat divisionToPolynomialModelDistortion(const p5pfrModel &divisionModel,
   return A.jacobiSvd(Eigen::ComputeThinU | Eigen::ComputeThinV).solve(b);
 }
 
-bool computeP5PfrPosesRD(const Mat &featureVectors,
-                            const Mat &worldPoints,
-                            int numOfRadialCoeff,
-                            std::vector<p5pfrModel> *solutions)
+bool computePosesRD(const Mat& featureVectors, const Mat& worldPoints, int numOfRadialCoeff, std::vector<P5PfrModel>* solutions)
 {
   // Eliminate all linear stuff
   Mat A = Mat(5, 8);
@@ -299,43 +294,38 @@ bool computeP5PfrPosesRD(const Mat &featureVectors,
   return true;
 }
 
-bool computeP5PfrPosesRP(const Mat &featureVectors,
-                            const Mat &worldPoints,
-                            int numOfRadialCoeff,
-                            std::vector<p5pfrModel> *solutions)
+bool computePosesRP(const Mat& featureVectors, const Mat& worldPoints, int numOfRadialCoeff, std::vector<P5PfrModel>* solutions)
 {
-  if(computeP5PfrPosesRD(featureVectors, worldPoints, numOfRadialCoeff, solutions))
+  if(computePosesRD(featureVectors, worldPoints, numOfRadialCoeff, solutions))
   {
-    const Mat pt2D_radius = featureVectors.colwise().norm();
+    const Mat p2dRadius = featureVectors.colwise().norm();
     for(std::size_t i = 0; i < solutions->size(); ++i)
     {
-      p5pfrModel &m = solutions->at(i);
-      m._r = divisionToPolynomialModelDistortion(m, pt2D_radius.maxCoeff(), (1 / m._f) * pt2D_radius);
+      P5PfrModel &m = solutions->at(i);
+      m._r = m.divisionToPolynomialModelDistortion((1 / m._f) * p2dRadius /*,p2dRadius.maxCoeff(),*/);
     }
     return true;
   }
   return false;
 }
 
-double reprojectionErrorRD(const p5pfrModel &m,
-                       const Vec2 &pt2D,
-                       const Vec3 &pt3D)
+double reprojectionErrorRD(const P5PfrModel& model, const Vec2& p2d, const Vec3& p3d)
 {
-  if(m._r.rows() > 1)
+  if(model._r.rows() > 1)
   {
      ALICEVISION_CERR("Projection function is not implemented for the radial division undistortion model for more than one parameter." << std::endl);
      throw std::invalid_argument("Projection function is not implemented for the radial division undistortion model for more than one parameter.");
   }
 
-  Vec3 v = m._R * pt3D + m._t; // from delta to epsilon
+  Vec3 v = model._R * p3d + model._t; // from delta to epsilon
   v *= 1.0 / v(2); // normalize to have v(3, :) = 1
 
   // undistorted squared radius
   const double ru2 = v(0) * v(0) + v(1) * v(1);
 
-  // works for fish - eye, i.e.when distorte image gets smaller on the image plane
-  const double h1 = sqrt(-4 * m._r(0) * ru2 + 1);
-  const double h2 = 0.5 * ((-2 * m._r(0) * ru2 + 1) - h1) * (1 / (m._r(0) * m._r(0)));
+  // works for fish-eye, i.e. when distort image gets smaller on the image plane
+  const double h1 = sqrt(-4 * model._r(0) * ru2 + 1);
+  const double h2 = 0.5 * ((-2 * model._r(0) * ru2 + 1) - h1) * (1 / (model._r(0) * model._r(0)));
   const double rd = sqrt(h2 * (1 / ru2));
 
   // distort in epsilon
@@ -344,58 +334,28 @@ double reprojectionErrorRD(const p5pfrModel &m,
   u << v(0) * h3, v(1) * h3;
 
   // to alpha
-  u = m._f * u;
-  return (pt2D - u).norm();
+  u = model._f * u;
+  return (p2d - u).norm();
 }
 
-double reprojectionErrorRP(const p5pfrModel &m,
-                       const Vec2 &pt2D,
-                       const Vec3 &pt3D)
+double reprojectionErrorRP(const P5PfrModel& model, const Vec2& p2d, const Vec3& p3d)
 {
-  Vec3 v = m._R * pt3D + m._t; // from delta to epsilon
+  Vec3 v = model._R * p3d + model._t; // from delta to epsilon
   v *= 1.0 / v(2); // normalize to have v(3, :) = 1
 
   double t = 1; // the final radius parameter
   const double r = std::hypot(v(0), v(1));
-  for(Mat::Index i = 0; i < m._r.rows(); ++i)
-    t += m._r(i) * pow(r, 2 * (i + 1));
+  for(Mat::Index i = 0; i < model._r.rows(); ++i)
+    t += model._r(i) * pow(r, 2 * (i + 1));
 
   Vec2 u;
   u << v(0) * t, v(1) * t;
 
   // to alpha
-  u = m._f * u;
-  return (pt2D - u).norm();
-}
-
-void P5PfrSolver::solve(const Mat &pt2Dx,
-                        const Mat &pt3Dx,
-                        const int numR,
-                        std::vector<p5pfrModel> *models)
-{
-  assert(2 == pt2Dx.rows());
-  assert(3 == pt3Dx.rows());
-  assert(5 == pt3Dx.cols());
-  assert(5 == pt2Dx.cols());
-
-  // The radial distorision is represented by: the radial division undistortion
-  if(!computeP5PfrPosesRD(pt2Dx, pt3Dx, numR, models))
-    models->clear();
-
-  // The radial distorision is represented by: Brown polynomial distortion model
-  /*if (!compute_P5Pfr_Poses_RP(pt2Dx, pt3Dx, num_r, models))
-          models->clear();*/
-}
-
-// Compute the residual of the projection distance(pt2D, Project(M,pt3D))
-
-double P5PfrSolver::error(const p5pfrModel &m,
-                          const Vec2 &pt2D,
-                          const Vec3 &pt3D)
-{
-  return reprojectionErrorRD(m, pt2D, pt3D);
-  //return reproj_error_RP( m, pt2D, pt3D);
+  u = model._f * u;
+  return (p2d - u).norm();
 }
 
 } // namespace resection
+} // namespace multiview
 } // namespace aliceVision

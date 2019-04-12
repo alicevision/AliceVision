@@ -10,6 +10,7 @@
 #include <aliceVision/multiview/triangulation/triangulationDLT.hpp>
 
 namespace aliceVision {
+namespace multiview {
 
 // HZ 12.2 pag.312
 void TriangulateDLT(const Mat34 &P1, const Vec2 &x1,
@@ -33,4 +34,5 @@ void TriangulateDLT(const Mat34 &P1, const Vec2 &x1,
   HomogeneousToEuclidean(X_homogeneous, X_euclidean);
 }
 
-}  // namespace aliceVision
+} // namespace multiview
+} // namespace aliceVision

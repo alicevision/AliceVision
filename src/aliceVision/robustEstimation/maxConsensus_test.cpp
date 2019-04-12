@@ -19,8 +19,8 @@ using namespace aliceVision;
 using namespace aliceVision::robustEstimation;
 
 // Test without outlier
-BOOST_AUTO_TEST_CASE(MaxConsensusLineFitter_OutlierFree) {
-
+BOOST_AUTO_TEST_CASE(MaxConsensusLineFitter_OutlierFree)
+{
   Mat2X xy(2, 5);
   // y = 2x + 1
   xy << 1, 2, 3, 4,  5,
@@ -31,32 +31,30 @@ BOOST_AUTO_TEST_CASE(MaxConsensusLineFitter_OutlierFree) {
 
   // Check the best model that fit the most of the data
   //  in a robust framework (Max-consensus).
-  std::vector<size_t> vec_inliers;
-  Vec2 model = MaxConsensus(kernel,
-    ScoreEvaluator<LineKernel>(0.3), &vec_inliers);
-  BOOST_CHECK_SMALL(2.0-model[1], 1e-9);
-  BOOST_CHECK_SMALL(1.0-model[0], 1e-9);
-  BOOST_CHECK_EQUAL(5, vec_inliers.size());
+  std::vector<std::size_t> inliers;
+  LineKernel::ModelT model = MaxConsensus(kernel, ScoreEvaluator<LineKernel>(0.3), &inliers);
+  BOOST_CHECK_SMALL(2.0 - model.getMatrix()[1], 1e-9);
+  BOOST_CHECK_SMALL(1.0 - model.getMatrix()[0], 1e-9);
+  BOOST_CHECK_EQUAL(5, inliers.size());
 }
 
 // Test without getting back the model
-BOOST_AUTO_TEST_CASE(MaxConsensusLineFitter_OutlierFree_DoNotGetBackModel) {
-
+BOOST_AUTO_TEST_CASE(MaxConsensusLineFitter_OutlierFree_DoNotGetBackModel)
+{
   Mat2X xy(2, 5);
   // y = 2x + 1
   xy << 1, 2, 3, 4,  5,
         3, 5, 7, 9, 11;
 
   LineKernel kernel(xy);
-  std::vector<size_t> vec_inliers;
-  Vec2 model = MaxConsensus(kernel,
-    ScoreEvaluator<LineKernel>(0.3), &vec_inliers);
-  BOOST_CHECK_EQUAL(5, vec_inliers.size());
+  std::vector<std::size_t> inliers;
+  LineKernel::ModelT model = MaxConsensus(kernel, ScoreEvaluator<LineKernel>(0.3), &inliers);
+  BOOST_CHECK_EQUAL(5, inliers.size());
 }
 
 // Test efficiency of MaxConsensus to find (inlier/outlier) in contamined data
-BOOST_AUTO_TEST_CASE(MaxConsensusLineFitter_OneOutlier) {
-
+BOOST_AUTO_TEST_CASE(MaxConsensusLineFitter_OneOutlier)
+{
   Mat2X xy(2, 6);
   // y = 2x + 1 with an outlier
   xy << 1, 2, 3, 4,  5, 100, // outlier!
@@ -64,35 +62,33 @@ BOOST_AUTO_TEST_CASE(MaxConsensusLineFitter_OneOutlier) {
 
   LineKernel kernel(xy);
 
-  std::vector<size_t> vec_inliers;
-  Vec2 model = MaxConsensus(kernel,
-    ScoreEvaluator<LineKernel>(0.3), &vec_inliers);
-  BOOST_CHECK_SMALL(2.0-model[1], 1e-9);
-  BOOST_CHECK_SMALL(1.0-model[0], 1e-9);
-  BOOST_CHECK_EQUAL(5, vec_inliers.size());
+  std::vector<std::size_t> inliers;
+  LineKernel::ModelT model = MaxConsensus(kernel, ScoreEvaluator<LineKernel>(0.3), &inliers);
+  BOOST_CHECK_SMALL(2.0 - model.getMatrix()[1], 1e-9);
+  BOOST_CHECK_SMALL(1.0 - model.getMatrix()[0], 1e-9);
+  BOOST_CHECK_EQUAL(5, inliers.size());
 }
 
 // Critical test:
 // Test if the robust estimator do not return inlier if too few point
 // was given for an estimation.
-BOOST_AUTO_TEST_CASE(MaxConsensusLineFitter_TooFewPoints) {
-
+BOOST_AUTO_TEST_CASE(MaxConsensusLineFitter_TooFewPoints)
+{
   Mat2X xy(2, 1);
   xy << 1,
         3;   // y = 2x + 1 with x = 1
   LineKernel kernel(xy);
-  std::vector<size_t> vec_inliers;
-  Vec2 model = MaxConsensus(kernel,
-    ScoreEvaluator<LineKernel>(0.3), &vec_inliers);
-  BOOST_CHECK_EQUAL(0, vec_inliers.size());
+  std::vector<std::size_t> inliers;
+  LineKernel::ModelT model = MaxConsensus(kernel, ScoreEvaluator<LineKernel>(0.3), &inliers);
+  BOOST_CHECK_EQUAL(0, inliers.size());
 }
 
 // From a GT model :
 //  Compute a list of point that fit the model.
 //  Add white noise to given amount of points in this list.
 //  Check that the number of inliers and the model are correct.
-BOOST_AUTO_TEST_CASE(MaxConsensusLineFitter_RealisticCase) {
-
+BOOST_AUTO_TEST_CASE(MaxConsensusLineFitter_RealisticCase)
+{
   const int numPoints = 30;
   const float outlierRatio = .3; //works with .4
   Mat2X xy(2, numPoints);
@@ -108,21 +104,20 @@ BOOST_AUTO_TEST_CASE(MaxConsensusLineFitter_RealisticCase) {
 
   //-- Add some noise (for the asked percentage amount)
   int nbPtToNoise = (int) numPoints * outlierRatio;
-  vector<size_t> vec_samples; // Fit with unique random index
+  vector<std::size_t> vec_samples; // Fit with unique random index
   UniformSample(nbPtToNoise, numPoints, vec_samples);
-  for(size_t i = 0; i <vec_samples.size(); ++i)
+  for(std::size_t i = 0; i <vec_samples.size(); ++i)
   {
-    const size_t randomIndex = vec_samples[i];
+    const std::size_t randomIndex = vec_samples[i];
     //Additive random noise
     xy.col(randomIndex) << xy.col(randomIndex)(0)+rand()%2-3,
                            xy.col(randomIndex)(1)+rand()%8-6;
   }
 
   LineKernel kernel(xy);
-  std::vector<size_t> vec_inliers;
-  Vec2 model = MaxConsensus(kernel,
-    ScoreEvaluator<LineKernel>(0.3), &vec_inliers);
-  BOOST_CHECK_EQUAL(numPoints-nbPtToNoise, vec_inliers.size());
-  BOOST_CHECK_SMALL((-2.0)-model[0], 1e-9);
-  BOOST_CHECK_SMALL( 6.3-model[1], 1e-9);
+  std::vector<std::size_t> inliers;
+  LineKernel::ModelT model = MaxConsensus(kernel, ScoreEvaluator<LineKernel>(0.3), &inliers);
+  BOOST_CHECK_EQUAL(numPoints-nbPtToNoise, inliers.size());
+  BOOST_CHECK_SMALL((-2.0) - model.getMatrix()[0], 1e-9);
+  BOOST_CHECK_SMALL( 6.3 - model.getMatrix()[1], 1e-9);
 }

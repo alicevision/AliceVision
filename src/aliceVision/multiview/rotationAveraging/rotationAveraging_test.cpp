@@ -271,27 +271,27 @@ BOOST_AUTO_TEST_CASE ( rotationAveraging_RefineRotationsAvgL1IRLS_CompleteGraph_
   Matrix3x3Arr vec_globalR(iNviews);
   vec_globalR = d._R;
   std::size_t nMainViewID = 0;
-  std::vector<bool> vec_inliers;
-  bool bTest = GlobalRotationsRobust(vec_relativeRotEstimate, vec_globalR, nMainViewID, 0.0f, &vec_inliers);
+  std::vector<bool> inliers;
+  bool bTest = GlobalRotationsRobust(vec_relativeRotEstimate, vec_globalR, nMainViewID, 0.0f, &inliers);
   BOOST_CHECK(bTest);
 
-  ALICEVISION_LOG_DEBUG("Inliers: " << vec_inliers);
+  ALICEVISION_LOG_DEBUG("Inliers: " << inliers);
 
   // Check inlier list
-  BOOST_CHECK(std::accumulate(vec_inliers.begin(), vec_inliers.end(), 0) == 8);
+  BOOST_CHECK(std::accumulate(inliers.begin(), inliers.end(), 0) == 8);
   // Check outlier have been found
-  BOOST_CHECK(vec_inliers[0]== 0);
-  BOOST_CHECK(vec_inliers[3] == 0);
+  BOOST_CHECK(inliers[0]== 0);
+  BOOST_CHECK(inliers[3] == 0);
 
   // Remove outliers and refine
   RelativeRotations vec_relativeRotEstimateTemp;
-  for (std::size_t i = 0; i < vec_inliers.size(); ++i)
+  for (std::size_t i = 0; i < inliers.size(); ++i)
   {
-    if( vec_inliers[i] == 1)
+    if(inliers[i] == 1)
       vec_relativeRotEstimateTemp.push_back(vec_relativeRotEstimate[i]);
   }
   vec_relativeRotEstimate.swap(vec_relativeRotEstimateTemp);
-  BOOST_CHECK( GlobalRotationsRobust(vec_relativeRotEstimate, vec_globalR, nMainViewID, 0.0f, &vec_inliers));
+  BOOST_CHECK( GlobalRotationsRobust(vec_relativeRotEstimate, vec_globalR, nMainViewID, 0.0f, &inliers));
 
   // Check that the loop is closing
   Mat3 rotCumul = vec_globalR[0];

@@ -1,19 +1,20 @@
 # Headers
-set(robustEstimation_files_headers
-  guidedMatching.hpp
-  lineTestGenerator.hpp
+set(robustEstimation_files_headers 
+  IRansacKernel.hpp
+  RansacKernel.hpp 
+  Ransac.hpp 
+  ACRansac.hpp
+  LORansac.hpp
+  ransacTools.hpp
   randSampling.hpp
   LineKernel.hpp
-  Ransac.hpp
-  ACRansac.hpp
-  ACRansacKernelAdaptator.hpp
-  LORansac.hpp
-  LORansacKernelAdaptor.hpp
-  ransacTools.hpp
-  estimators.hpp
-  maxConsensus.hpp
+  lineTestGenerator.hpp
   leastMedianOfSquares.hpp
+  guidedMatching.hpp
   ScoreEvaluator.hpp
+  supportEstimation.hpp
+  maxConsensus.hpp
+  estimators.hpp
 )
 
 alicevision_add_interface(aliceVision_robustEstimation

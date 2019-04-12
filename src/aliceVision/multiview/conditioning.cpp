@@ -9,9 +9,10 @@
 #include "conditioning.hpp"
 
 namespace aliceVision {
+namespace multiview {
 
 // HZ 4.4.4 pag.109
-void PreconditionerFromPoints(const Mat &points, Mat3 *T) {
+void preconditionerFromPoints(const Mat &points, Mat3 *T) {
   Vec mean, variance;
   MeanAndVarianceAlongRows(points, &mean, &variance);
 
@@ -30,7 +31,7 @@ void PreconditionerFromPoints(const Mat &points, Mat3 *T) {
         0,       0,        1;
 }
 
-void PreconditionerFromImageSize(int width, int height, Mat3 *T) {
+void preconditionerFromImageSize(int width, int height, Mat3 *T) {
   // Build the normalization matrix
   double dNorm = 1.0 / sqrt( static_cast<double>(width*height) );
 
@@ -40,9 +41,10 @@ void PreconditionerFromImageSize(int width, int height, Mat3 *T) {
   (*T)(1,2) = -.5*height*dNorm;
 }
 
-void ApplyTransformationToPoints(const Mat &points,
+void applyTransformationToPoints(const Mat &points,
                                  const Mat3 &T,
-                                 Mat *transformed_points) {
+                                 Mat *transformed_points)
+{
   const Mat::Index n = points.cols();
   transformed_points->resize(2,n);
   for (Mat::Index i = 0; i < n; ++i) {
@@ -54,31 +56,32 @@ void ApplyTransformationToPoints(const Mat &points,
   }
 }
 
-void NormalizePointsFromImageSize(const Mat &points,
+void normalizePointsFromImageSize(const Mat &points,
                       Mat *normalized_points,
                       Mat3 *T,
                       int width,
                       int height) {
-  PreconditionerFromImageSize(width, height, T);
-  ApplyTransformationToPoints(points, *T, normalized_points);
+  preconditionerFromImageSize(width, height, T);
+  applyTransformationToPoints(points, *T, normalized_points);
 }
 
 
-void NormalizePoints(const Mat &points,
+void normalizePoints(const Mat &points,
                      Mat *normalized_points,
                      Mat3 *T) {
-  PreconditionerFromPoints(points, T);
-  ApplyTransformationToPoints(points, *T, normalized_points);
+  preconditionerFromPoints(points, T);
+  applyTransformationToPoints(points, *T, normalized_points);
 }
 
 // Denormalize the results. See HZ page 109.
-void UnnormalizerT::Unnormalize(const Mat3 &T1, const Mat3 &T2, Mat3 *H)  {
+void UnnormalizerT::unnormalize(const Mat3 &T1, const Mat3 &T2, Mat3 *H)  {
   *H = T2.transpose() * (*H) * T1;
 }
 
 // Denormalize the results. See HZ page 109.
-void UnnormalizerI::Unnormalize(const Mat3 &T1, const Mat3 &T2, Mat3 *H)  {
+void UnnormalizerI::unnormalize(const Mat3 &T1, const Mat3 &T2, Mat3 *H)  {
   *H = T2.inverse() * (*H) * T1;
 }
 
-} // namespace aliceVision
+} // namespace multiview
+} //namespace aliceVision

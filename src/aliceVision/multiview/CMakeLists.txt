@@ -3,17 +3,28 @@ set(multiview_files_headers
   affineSolver.hpp
   conditioning.hpp
   essential.hpp
-  projection.hpp
-  essentialF10Solver.hpp
-  essentialFivePointSolver.hpp
-  essentialKernelSolver.hpp
-  fundamentalKernelSolver.hpp
-  homographyKernelSolver.hpp
   knownRotationTranslationKernel.hpp
-  twoViewKernel.hpp
+  projection.hpp
+  ISolver.hpp
+  relativePose/Essential5PSolver.hpp
+  relativePose/Essential8PSolver.hpp
+  relativePose/EssentialError.hpp
+  relativePose/EssentialKernel.hpp
+  relativePose/Fundamental7PSolver.hpp
+  relativePose/Fundamental8PSolver.hpp
+  relativePose/Fundamental10PSolver.hpp
+  relativePose/FundamentalError.hpp
+  relativePose/FundamentalKernel.hpp
+  relativePose/Homography4PSolver.hpp
+  relativePose/HomographyError.hpp
+  relativePose/HomographyKernel.hpp
+  resection/EPnPSolver.hpp
+  resection/EPnPKernel.hpp
   resection/P3PSolver.hpp
   resection/P4PfSolver.hpp
-  resection/P5PfrSolver.hpp
+  #resection/P5PfrSolver.hpp
+  resection/ProjectionDistanceError.hpp
+  resection/Resection6PSolver.hpp   
   resection/ResectionKernel.hpp
   rotationAveraging/common.hpp
   rotationAveraging/rotationAveraging.hpp
@@ -24,6 +35,7 @@ set(multiview_files_headers
   triangulation/Triangulation.hpp
   triangulation/triangulationDLT.hpp
   triangulation/NViewsTriangulationLORansac.hpp
+  TwoViewKernel.hpp
 )
 
 # Sources
@@ -32,15 +44,17 @@ set(multiview_files_sources
   conditioning.cpp
   essential.cpp
   projection.cpp
-  essentialF10Solver.cpp
-  essentialFivePointSolver.cpp
-  essentialKernelSolver.cpp
-  fundamentalKernelSolver.cpp
-  homographyKernelSolver.cpp
-  resection/ResectionKernel.cpp
+  relativePose/Essential5PSolver.cpp
+  relativePose/Essential8PSolver.cpp
+  relativePose/Fundamental7PSolver.cpp
+  relativePose/Fundamental8PSolver.cpp
+  relativePose/Fundamental10PSolver.cpp
+  relativePose/Homography4PSolver.cpp
+  resection/EPnPSolver.cpp
   resection/P3PSolver.cpp
   resection/P4PfSolver.cpp
   resection/P5PfrSolver.cpp
+  resection/Resection6PSolver.cpp
   rotationAveraging/l1.cpp
   rotationAveraging/l2.cpp
   translationAveraging/solverL2Chordal.cpp
@@ -75,15 +89,11 @@ alicevision_add_library(aliceVision_multiview_test_data
 )
 
 # Unit tests
+add_subdirectory(relativePose)
 add_subdirectory(resection)
 add_subdirectory(rotationAveraging)
 add_subdirectory(translationAveraging)
 add_subdirectory(triangulation)
 
 alicevision_add_test(affineSolver_test.cpp                   NAME "multiview_affineSolver"                    LINKS aliceVision_multiview)
-alicevision_add_test(fundamentalKernelSolver_test.cpp        NAME "multiview_fundamentalKernelSolver"         LINKS aliceVision_multiview)
-alicevision_add_test(essentialFivePointSolver_test.cpp       NAME "multiview_essentialFivePointSolver"        LINKS aliceVision_multiview aliceVision_multiview_test_data)
-alicevision_add_test(essentialF10Solver_test.cpp             NAME "multiview_essentialF10Solver"              LINKS aliceVision_multiview aliceVision_multiview_test_data)
-alicevision_add_test(essentialKernelSolver_test.cpp          NAME "multiview_essentialKernelSolver"           LINKS aliceVision_multiview aliceVision_multiview_test_data)
-alicevision_add_test(homographyKernelSolver_test.cpp         NAME "multiview_homographyKernelSolver"          LINKS aliceVision_multiview aliceVision_multiview_test_data)
 alicevision_add_test(knownRotationTranslationKernel_test.cpp NAME "multiview_knownRotationTranslationKernel"  LINKS aliceVision_multiview aliceVision_multiview_test_data)

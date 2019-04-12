@@ -12,27 +12,32 @@ namespace robustEstimation{
 
 using namespace std;
 
-/// Templated Functor class to evaluate a given model over a set of samples.
+/**
+ * @brief Templated Functor class to evaluate a given model over a set of samples.
+ */
 template<typename Kernel>
-class ScoreEvaluator {
+class ScoreEvaluator
+{
 public:
-  ScoreEvaluator(double threshold) : threshold_(threshold) {}
+  ScoreEvaluator(double threshold)
+    : _threshold(threshold)
+  {}
 
   template <typename T>
-  double Score(const Kernel &kernel,
-               const typename Kernel::Model &model,
-               const std::vector<T> &samples,
-               std::vector<T> *inliers,
+  double score(const Kernel& kernel,
+               const typename Kernel::ModelT& model,
+               const std::vector<T>& samples,
+               std::vector<T>& inliers,
                double threshold) const
   {
     double cost = 0.0;
-    for (size_t j = 0; j < samples.size(); ++j) 
+    for(std::size_t j = 0; j < samples.size(); ++j)
     {
-      double error = kernel.Error(samples[j], model);
+      double error = kernel.error(samples.at(j), model);
       if (error < threshold) 
       {
         cost += error;
-        inliers->push_back(samples[j]);
+        inliers.push_back(samples[j]);
       } 
       else 
       {
@@ -44,18 +49,18 @@ public:
   }
 
   template <typename T>
-  double Score(const Kernel &kernel,
-               const typename Kernel::Model &model,
-               const std::vector<T> &samples,
-               std::vector<T> *inliers) const
+  double score(const Kernel &kernel,
+               const typename Kernel::ModelT& model,
+               const std::vector<T>& samples,
+               std::vector<T>& inliers) const
   {
-    return Score(kernel, model, samples, inliers, threshold_);
+    return score(kernel, model, samples, inliers, _threshold);
   }
   
-  double getThreshold() const {return threshold_;} 
+  double getThreshold() const {return _threshold;}
   
 private:
-  double threshold_;
+  double _threshold;
 };
 
 } // namespace robustEstimation

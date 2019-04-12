@@ -1288,7 +1288,7 @@ bool ReconstructionEngine_sequentialSfM::getBestInitialImagePairs(std::vector<Pa
       for (const size_t inlier_idx: relativePose_info.vec_inliers)
       {
         Vec3 X;
-        TriangulateDLT(PI, xI.col(inlier_idx), PJ, xJ.col(inlier_idx), &X);
+        multiview::TriangulateDLT(PI, xI.col(inlier_idx), PJ, xJ.col(inlier_idx), &X);
         IndexT trackId = commonTracksIds[inlier_idx];
         auto iter = map_tracksCommon[trackId].featPerView.begin();
         const Vec2 featI = _featuresPerView->getFeatures(I, map_tracksCommon[trackId].descType)[iter->second].coords().cast<double>();
@@ -1788,7 +1788,7 @@ void ReconstructionEngine_sequentialSfM::triangulate_multiViewsLORANSAC(SfMData&
       const Vec2 xJ = _featuresPerView->getFeatures(J, track.descType)[track.featPerView.at(J)].coords().cast<double>();
   
       // -- Triangulate:
-      TriangulateDLT(camI->get_projective_equivalent(poseI), 
+      multiview::TriangulateDLT(camI->get_projective_equivalent(poseI),
                      camI->get_ud_pixel(xI), 
                      camJ->get_projective_equivalent(poseJ), 
                      camI->get_ud_pixel(xJ), 
@@ -1840,7 +1840,7 @@ void ReconstructionEngine_sequentialSfM::triangulate_multiViewsLORANSAC(SfMData&
       Vec4 X_homogeneous = Vec4::Zero();
       std::vector<std::size_t> inliersIndex;
       
-      TriangulateNViewLORANSAC(features, Ps, &X_homogeneous, &inliersIndex, 8.0);
+      multiview::TriangulateNViewLORANSAC(features, Ps, &X_homogeneous, &inliersIndex, 8.0);
       
       HomogeneousToEuclidean(X_homogeneous, &X_euclidean);     
       
@@ -1991,7 +1991,7 @@ void ReconstructionEngine_sequentialSfM::triangulate_2Views(SfMData& scene, cons
           const Mat34 pI = camI->get_projective_equivalent(poseI);
           const Mat34 pJ = camJ->get_projective_equivalent(poseJ);
           
-          TriangulateDLT(pI, xI_ud, pJ, xJ_ud, &X_euclidean);
+          multiview::TriangulateDLT(pI, xI_ud, pJ, xJ_ud, &X_euclidean);
           
           // Check triangulation results
           //  - Check angle (small angle leads imprecise triangulation)

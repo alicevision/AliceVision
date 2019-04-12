@@ -558,7 +558,7 @@ void ReconstructionEngine_globalSfM::Compute_Relative_Rotations(rotationAveragin
             const Vec2 x1_ = _featuresPerView->getFeatures(I, descType)[match._i].coords().cast<double>();
             const Vec2 x2_ = _featuresPerView->getFeatures(J, descType)[match._j].coords().cast<double>();
             Vec3 X;
-            TriangulateDLT(P1, x1_, P2, x2_, &X);
+            multiview::TriangulateDLT(P1, x1_, P2, x2_, &X);
             Observations obs;
             obs[view_I->getViewId()] = Observation(x1_, match._i);
             obs[view_J->getViewId()] = Observation(x2_, match._j);

@@ -12,7 +12,7 @@
 #include "aliceVision/multiview/essential.hpp"
 #include "aliceVision/robustEstimation/ACRansac.hpp"
 #include "aliceVision/multiview/conditioning.hpp"
-#include "aliceVision/robustEstimation/ACRansacKernelAdaptator.hpp"
+#include "aliceVision/robustEstimation/RansacKernel.hpp"
 
 #include "sphericalCam.hpp"
 
@@ -153,19 +153,18 @@ int main() {
       typedef aliceVision::spherical_cam::EssentialKernel_spherical Kernel;
 
       // Define the AContrario angular error adaptor
-      typedef aliceVision::robustEstimation::ACKernelAdaptor_AngularRadianError<
+      typedef aliceVision::robustEstimation::AngularRadianErrorKernel<
           aliceVision::spherical_cam::EightPointRelativePoseSolver,
           aliceVision::spherical_cam::AngularError,
-          Mat3>
+          multiview::Mat3Model>
           KernelType;
 
       KernelType kernel(xL_spherical, xR_spherical);
 
       // Robust estimation of the Essential matrix and it's precision
-      Mat3 E;
+      multiview::Mat3Model E;
       const double precision = std::numeric_limits<double>::infinity();
-      const std::pair<double,double> ACRansacOut =
-        ACRANSAC(kernel, vec_inliers, 1024, &E, precision);
+      const std::pair<double,double> ACRansacOut = ACRANSAC(kernel, vec_inliers, 1024, &E, precision);
       const double & threshold = ACRansacOut.first;
       const double & NFA = ACRansacOut.second;
 
@@ -182,13 +181,14 @@ int main() {
         // Accumulator to find the best solution
         std::vector<size_t> f(4, 0);
 
-        std::vector<Mat3> Es;  // Essential,
-        std::vector<Mat3> Rs;  // Rotation matrix.
-        std::vector<Vec3> ts;  // Translation matrix.
+        std::vector<multiview::Mat3Model> Es;  // Essential,
+        std::vector<Mat3> Rs;                  // Rotation matrix.
+        std::vector<Vec3> ts;                  // Translation matrix.
 
         Es.push_back(E);
+
         // Recover best rotation and translation from E.
-        MotionFromEssential(E, &Rs, &ts);
+        MotionFromEssential(E.getMatrix(), &Rs, &ts);
 
         //-> Test the 4 solutions will all the point
         Mat34 P1;

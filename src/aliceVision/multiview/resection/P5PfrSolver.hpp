@@ -6,30 +6,93 @@
 
 #pragma once
 
-#include <aliceVision/numeric/numeric.hpp>
-
-#include <iostream>
+#include <aliceVision/multiview/ISolver.hpp>
 
 namespace aliceVision {
+namespace multiview {
 namespace resection {
 
 /**
- * @brief The structure p5pfrModel contain one output model
+ * @brief The structure P5PfrModel contain one output model
+ *        camera description with radial division undistortion parameters 'KRCrd'
  */
-struct p5pfrModel
+struct P5PfrModel
 {
-  p5pfrModel(Mat R, Vec3 t, Vec r, double f)
+  P5PfrModel(const Mat& R, const Vec3& t, const Vec& r, double f)
     : _R(R)
     , _t(t)
     , _r(r)
     , _f(f)
   {}
 
+  /**
+   * @brief Inversion of the radial division undistortion to Brown polynomial distortion model conversion
+   * @param[in] x2d Points on which is the difference minimized, dmax//max(C.K([1 5]))*[0 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 0.95 1] implicit
+   * @param[in] maxRadius Maximal distorted radius, 1 implicit
+   * @return camera description with polynomial radial distoriton parameters 'KRCp'
+   */
+  Mat divisionToPolynomialModelDistortion(const Mat& x2d /*,double maxRadius*/) const;
+
+  /// rotation matrix
   Mat _R;
+  /// translation vector
   Vec3 _t;
+  /// radial division undistortion parameters
   Vec _r;
+  /// focal length
   double _f;
 };
+
+/**
+ * @brief computeP5PfrPosesRD
+ * @param[in] featureVectors
+ * @param[in] worldPoints
+ * @param[in] numOfRadialCoeff
+ * @param[out] solutions
+ */
+bool computePosesRD(const Mat& featureVectors, const Mat& worldPoints, int numOfRadialCoeff, std::vector<P5PfrModel>* solutions);
+
+/**
+ * @brief Compute computePosesRD and transform the radial division undistortion to Brown polynomial distortion model
+ * @param[in] featureVectors
+ * @param[in] worldPoints
+ * @param[in] numOfRadialCoeff
+ * @param[out] solutions
+ */
+bool computePosesRP(const Mat& featureVectors, const Mat& worldPoints, int numOfRadialCoeff, std::vector<P5PfrModel>* solutions);
+
+/**
+ * @brief Compute the reprojection error for the radial division undistortion model
+ * @param[in] P5PfrModel model
+ * @param[in] p2d feature vector
+ * @param[in] p3d corresponding 3D world point
+ * @return reprojection error for the radial division undistortion model
+ */
+double reprojectionErrorRD(const P5PfrModel& model, const Vec2& p2d, const Vec3& p3d);
+
+/**
+ * @brief Compute the reprojection error for Brown polynomial distortion model
+ * @param[in] P5PfrModel model
+ * @param[in] p2d feature vector
+ * @param[in] p3d corresponding 3D world point
+ * @return reprojection error for Brown polynomial distortion model
+ */
+double reprojectionErrorRP(const P5PfrModel& model, const Vec2 &p2d, const Vec3& p3d);
+
+struct P5PfrError : public ISolverErrorResection<P5PfrModel>
+{
+  /**
+   * @brief Compute the residual of the projection distance(p2d, Project(P,p3d))
+   * @param[in] model solution
+   * @param[in] p2d feature vector
+   * @param[in] p3d corresponding 3D world point
+   */
+  inline double error(const P5PfrModel& model, const Vec2& p2d, const Vec3& p3d) const override
+  {
+    return reprojectionErrorRD(model, p2d, p3d);
+  }
+};
+
 
 /**
  * @brief Compute the absolute pose, focal length and radial distorsion of a camera using three 3D-to-2D correspondences
@@ -38,108 +101,68 @@ struct p5pfrModel
  *          Kukelova, Z., Bujnak, M., and Pajdla T.
  *          ICCV 2013
  */
-struct P5PfrSolver
+template<int numOfRadialCoeff_>
+class P5PfrSolver : public ISolver<P5PfrModel>
 {
-  enum
-  {
-    MINIMUM_SAMPLES = 5
-  };
+public:
 
-  enum
+  /**
+   * @brief Return the minimum number of required samples
+   * @return minimum number of required samples
+   */
+  inline std::size_t getMinimumNbRequiredSamples() const override
   {
-    MAX_MODELS = 10
-  };
+    return 5;
+  }
+
+  /**
+   * @brief Return the maximum number of models
+   * @return maximum number of models
+   */
+  inline std::size_t getMaximumNbModels() const override
+  {
+    return 10;
+  }
 
   /**
    * @brief Solve the problem of camera pose.
    *
-   * @param pt2Dx featureVectors:
-   * 2 x 5 matrix with feature vectors with principal point at [0; 0] (each column is a vector)
-   *
-   * @param pt3Dx worldPoints:
-   * 3 x 5 matrix with corresponding 3D world points (each column is a point)
-   *
-   * @param num_r numOfRadialCoeff:
-   * integer which reperesents how many radial distorsion parameters should be computed [min 1, max 3]
-   *
-   * @param solutions:
-   * M x n vector that will contain the each solution in structure M (p5pfModel._R - rotation matrix,
-   * p5pfModel._t - translation vector, p5pfModel._r - the radial division undistortion parameters, p5pfModel._f - focal length).
+   * @param[in] x2d featureVectors 2 x 5 matrix with feature vectors with principal point at [0; 0] (each column is a vector)
+   * @param[in] x3d worldPoints 3 x 5 matrix with corresponding 3D world points (each column is a point)
+   * @param[in] numOfRadialCoeff Reperesents how many radial distorsion parameters should be computed [min 1, max 3]
+   * @param[out] models M x n vector that will contain the each solution in structure M
    */
-  static void solve(const Mat &pt2Dx,
-                    const Mat &pt3Dx,
-                    const int num_r,
-                    std::vector<p5pfrModel> *models);
+  void solve(const Mat& x2d, const Mat& x3d, std::vector<P5PfrModel>& models) const override
+  {
+    assert(2 == x2d.rows());
+    assert(3 == x3d.rows());
+    assert(5 == x3d.cols());
+    assert(5 == x2d.cols());
+    assert(numOfRadialCoeff_ >= 1 && numOfRadialCoeff_ <= 3 && "P5PfrSolver error: the number of radial parameters must be between 1 to 3 !");
+
+    // the radial distorision is represented by: the radial division undistortion
+    if(!computePosesRD(x2d, x3d, numOfRadialCoeff_, &models))
+      models.clear();
+
+    // the radial distorision is represented by: Brown polynomial distortion model
+    //if(!P5PfrSolver::computePosesRP(x2d, x3d, numR, &models))
+    //    models.clear();
+  }
 
   /**
-   * @brief Compute the residual of the projection distance(pt2D, Project(P,pt3D))
-   * @param model solution
-   * @param pt2D feature vector
-   * @param pt3D corresponding 3D world point
+   * @brief Solve the problem of camera pose..
+   *
+   * @param[in]  x2d 2d points in the first image. One per column.
+   * @param[in]  x3d Corresponding 3d points in the second image. One per column.
+   * @param[out] models A vector into which the computed models are stored.
+   * @param[in]  weights.
    */
-  static double error(const p5pfrModel &model,
-                      const Vec2 &pt2D,
-                      const Vec3 &pt3D);
+  void solve(const Mat& x2d, const Mat& x3d, std::vector<P5PfrModel>& models, const std::vector<double>& weights) const override
+  {
+     throw std::logic_error("P5PfrSolver does not support problem solving with weights.");
+  }
 };
 
-/**
- * @brief divisionToPolynomialModelDistortion
- * inversion of the radial division undistortion to Brown polynomial distortion model conversion
- * @author Tomas Pajdla, adapted to aliceVision by Michal Polic
- * @param divisionModel camera description with radial division undistortion parameters 'KRCrd'
- * @param maxRadius maximal distorted radius, 1 implicit
- * @param points2d  points on which is the difference minimized, dmax//max(C.K([1 5]))*[0 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 0.95 1] implicit
- * @return camera description with polynomial radial distoriton parameters 'KRCp'
- */
-Mat divisionToPolynomialModelDistortion(const p5pfrModel &divisionModel,
-                                        double maxRadius,
-                                        const Mat &points2d);
-
-/**
- * @brief computeP5PfrPosesRD
- * @param featureVectors
- * @param worldPoints
- * @param numOfRadialCoeff
- * @param solutions
- */
-bool computeP5PfrPosesRD(const Mat &featureVectors,
-                         const Mat &worldPoints,
-                         int numOfRadialCoeff,
-                         std::vector<p5pfrModel> *solutions);
-
-/**
- * @brief Compute computeP5PfrPosesRD and transform the radial division undistortion to Brown polynomial distortion model
- * @param featureVectors
- * @param worldPoints
- * @param numOfRadialCoeff
- * @param solutions
- */
-bool computeP5PfrPosesRP(const Mat &featureVectors,
-                         const Mat &worldPoints,
-                         int numOfRadialCoeff,
-                         std::vector<p5pfrModel> *solutions);
-
-/**
- * @brief Compute the reprojection error for the radial division undistortion model
- * @param m P5Pfr model
- * @param pt2D feature vector
- * @param pt3D corresponding 3D world point
- * @return reprojection error for the radial division undistortion model
- */
-double reprojectionErrorRD(const p5pfrModel &m,
-                           const Vec2 &pt2D,
-                           const Vec3 &pt3D);
-
-/**
- * @brief Compute the reprojection error for Brown polynomial distortion model
- * @param m P5Pfr model
- * @param pt2D feature vector
- * @param pt3D corresponding 3D world point
- * @return reprojection error for Brown polynomial distortion model
- */
-double reprojectionErrorRP(const p5pfrModel &m,
-                           const Vec2 &pt2D,
-                           const Vec3 &pt3D);
-
 } // namespace resection
+} // namespace multiview
 } // namespace aliceVision

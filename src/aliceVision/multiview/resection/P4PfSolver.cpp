@@ -14,8 +14,16 @@
 #include <iostream>
 
 namespace aliceVision {
+namespace multiview {
 namespace resection {
 
+/**
+ * @brief GJ elimination
+ * @param[in,out] A
+ * @param[in] rcnt
+ * @param[in] ccnt
+ * @param[in] tol
+ */
 void GJ(double *A, int rcnt, int ccnt, double tol)
 {
   int row = 0;
@@ -128,6 +136,15 @@ void GJ(double *A, int rcnt, int ccnt, double tol)
   }
 }
 
+/**
+ * @brief Prepare polynomial coefficients.
+ * @param[in] src1
+ * @param[in] src2
+ * @param[in] src3
+ * @param[in] src4
+ * @param[in] src5
+ * @param[out] dst1
+ */
 void computeCoefficients(const double *src1, const double *src2, const double *src3, const double *src4, const double *src5, double *dst1)
 {
   // symbolic names.
@@ -223,6 +240,17 @@ void computeCoefficients(const double *src1, const double *src2, const double *s
   dst1[41] = t42 / 2.0 + t41 / 2.0 - t43 / 2.0 + glcd * t42 * t1 / 2.0 - t46 / 2.0 + t84 * t41 / 2.0;
 }
 
+/**
+ * @brief Compute P4pf Poses
+ * [glab, glac, glad, glbc, glbd, glcd], [a1; a2], [b1; b2], [c1; c2], [d1;d2]
+ *
+ * @param[in] glab - glXY - ||X-Y||^2 - quadratic distances between 3D points X and Y
+ * @param[in] a1 (a2) = x (resp y) measurement of the first 2D point
+ * @param[in] b1 (b2) = x (resp y) measurement of the second 2D point
+ * @param[in] c1 (c2) = x (resp y) measurement of the third 2D point
+ * @param[in] d1 (d2) = x (resp y) measurement of the fourth 2D point
+ * @param[out] A 10 x 10 action matrix
+ */
 void computeP4pfPoses(const double *glab, const double *a1, const double *b1, const double *c1, const double *d1, double *A)
 {
   // precalculate polynomial equations coefficients
@@ -1034,6 +1062,10 @@ void computeP4pfPoses(const double *glab, const double *a1, const double *b1, co
   A[99] = -M[6238];
 }
 
+/**
+ * @brief isNan
+ * @param[in] A matrix
+ */
 bool isNan(const Eigen::MatrixXcd &A)
 {
   const Mat B = A.real();
@@ -1044,6 +1076,11 @@ bool isNan(const Eigen::MatrixXcd &A)
   return false;
 }
 
+/**
+ * @brief validSol
+ * @param[in] sol
+ * @param[out] vSol
+ */
 bool validSol(const Eigen::MatrixXcd &sol, Mat &vSol)
 {
   assert(sol.cols() == 10 && sol.rows() == 4);
@@ -1082,6 +1119,13 @@ bool validSol(const Eigen::MatrixXcd &sol, Mat &vSol)
   return true;
 }
 
+/**
+ * @brief Get the rigid transformation
+ * @param[in] pp1
+ * @param[in] pp2
+ * @param[out] R
+ * @param[out] t
+ */
 void getRigidTransform(const Mat &pp1, const Mat &pp2, Mat &R, Vec3 &t)
 {
   Mat p1(pp1);
@@ -1116,10 +1160,10 @@ void getRigidTransform(const Mat &pp1, const Mat &pp2, Mat &R, Vec3 &t)
   t = -R * p1mean + p2mean;
 }
 
-void P4PfSolver::solve(const Mat &pt2Dx, const Mat &pt3Dx, std::vector<p4fSolution> *models)
+void P4PfSolver::solve(const Mat& x2d, const Mat& x3d, std::vector<P4PfModel>& models) const
 {
-  Mat pt2D(pt2Dx);
-  Mat pt3D(pt3Dx);
+  Mat pt2D(x2d);
+  Mat pt3D(x3d);
 
   assert(2 == pt2D.rows());
   assert(3 == pt3D.rows());
@@ -1210,14 +1254,11 @@ void P4PfSolver::solve(const Mat &pt2Dx, const Mat &pt3Dx, std::vector<p4fSoluti
     const Vec3 t = var * tt - Rr * mean3d;
 
     // output
-    models->emplace_back(Rr, t, f * var2d);
+    models.emplace_back(Rr, t, f * var2d);
   }
 }
 
-double P4PfSolver::error(const p4fSolution & model, const Vec2 & pt2D, const Vec3 & pt3D)
-{
-  return (pt2D - Project(model.getP(), pt3D)).norm();
-}
 
 } // namespace resection
+} // namespace multiview
 } // namespace aliceVision

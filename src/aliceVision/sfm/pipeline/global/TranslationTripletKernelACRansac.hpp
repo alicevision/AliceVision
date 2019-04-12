@@ -10,6 +10,7 @@
 #include <aliceVision/numeric/numeric.hpp>
 #include <aliceVision/multiview/conditioning.hpp>
 #include <aliceVision/linearProgramming/linearProgramming.hpp>
+#include <aliceVision/robustEstimation/IRansacKernel.hpp>
 #include <aliceVision/robustEstimation/ACRansac.hpp>
 
 namespace aliceVision {
@@ -18,19 +19,21 @@ namespace sfm {
 using namespace aliceVision::trifocal::kernel;
 
 /// AContrario Kernel to solve a translation triplet & structure problem
-template <typename SolverArg, typename ErrorArg, typename ModelArg>
+template <typename SolverT_, typename ErrorT_, typename ModelT_>
 class TranslationTripletKernelACRansac
+    : robustEstimation::IRansacKernel<ModelT_>
 {
 public:
-  typedef SolverArg Solver;
-  typedef ModelArg  Model;
+  using SolverT = SolverT_;
+  using ErrorT = SolverT_;
+  using ModelT =  ModelT_;
 
   TranslationTripletKernelACRansac(const Mat& x1,
-                 const Mat& x2,
-                 const Mat& x3,
-                 const std::vector<Mat3>& vec_KRi,
-                 const Mat3& K,
-                 const double ThresholdUpperBound)
+                                   const Mat& x2,
+                                   const Mat& x3,
+                                   const std::vector<Mat3>& vec_KRi,
+                                   const Mat3& K,
+                                   const double ThresholdUpperBound)
     : _x1(x1)
     , _x2(x2)
     , _x3(x3)
@@ -41,75 +44,111 @@ public:
     , _Kinv(K.inverse())
   {
     // Normalize points by inverse(K)
-    ApplyTransformationToPoints(_x1, _Kinv, &_x1n);
-    ApplyTransformationToPoints(_x2, _Kinv, &_x2n);
-    ApplyTransformationToPoints(_x3, _Kinv, &_x3n);
+    multiview::applyTransformationToPoints(_x1, _Kinv, &_x1n);
+    multiview::applyTransformationToPoints(_x2, _Kinv, &_x2n);
+    multiview::applyTransformationToPoints(_x3, _Kinv, &_x3n);
 
     _vecKR[0] = _Kinv * _vecKR[0];
     _vecKR[1] = _Kinv * _vecKR[1];
     _vecKR[2] = _Kinv * _vecKR[2];
   }
-
-  enum { MINIMUM_SAMPLES = Solver::MINIMUM_SAMPLES };
-  enum { MAX_MODELS = Solver::MAX_MODELS };
-
-  void Fit(const std::vector<std::size_t>& samples, std::vector<Model>* models) const
+  /**
+   * @brief Return the minimum number of required samples for the solver
+   * @return minimum number of required samples
+   */
+  inline std::size_t getMinimumNbRequiredSamples() const override
   {
-
-    // Create a model from the points
-    Solver::Solve(ExtractColumns(_x1n, samples),
-                  ExtractColumns(_x2n, samples),
-                  ExtractColumns(_x3n, samples),
-                  _vecKR, models, _thresholdUpperBound);
+    return _kernelSolver.getMinimumNbRequiredSamples();
   }
 
-  double Error(std::size_t sample, const Model& model) const
+  /**
+   * @brief Return the maximum number of models for the solver
+   * @return maximum number of models
+   */
+  inline std::size_t getMaximumNbModels() const override
   {
-    return ErrorArg::Error(model, _x1n.col(sample), _x2n.col(sample), _x3n.col(sample));
+    return _kernelSolver.getMaximumNbModels();
   }
 
-  void Errors(const Model& model, std::vector<double>& vec_errors) const
+  void fit(const std::vector<std::size_t>& samples, std::vector<ModelT_>& models) const override
+  {
+
+    // create a model from the points
+    _kernelSolver.solve(ExtractColumns(_x1n, samples),
+                        ExtractColumns(_x2n, samples),
+                        ExtractColumns(_x3n, samples),
+                        _vecKR, models, _thresholdUpperBound);
+  }
+
+  /**
+   * @brief error
+   * @param sample
+   * @param model
+   * @return
+   */
+  double error(std::size_t sample, const ModelT_& model) const override
+  {
+    return _errorEstimator.error(model, _x1n.col(sample), _x2n.col(sample), _x3n.col(sample));
+  }
+
+  void errors(const ModelT_& model, std::vector<double>& errors) const override
   {
     for(std::size_t sample = 0; sample < _x1n.cols(); ++sample)
-      vec_errors[sample] = ErrorArg::Error(model, _x1n.col(sample), _x2n.col(sample), _x3n.col(sample));
+      errors[sample] = error(sample, model);
   }
 
-  std::size_t NumSamples() const
+  std::size_t nbSamples() const override
   {
     return _x1n.cols();
   }
 
-  void Unnormalize(Model* model) const
+  void unnormalize(ModelT_& model) const override
   {
-    // Unnormalize model from the computed conditioning.
-    model->P1 = _K * model->P1;
-    model->P2 = _K * model->P2;
-    model->P3 = _K * model->P3;
+    // unnormalize model from the computed conditioning.
+    model.P1 = _K * model.P1;
+    model.P2 = _K * model.P2;
+    model.P3 = _K * model.P3;
   }
 
-  double logalpha0() const
+  double logalpha0() const override
   {
     return _logalpha0;
   }
 
-  double multError() const
+  double multError() const override
   {
     return 1.0;
   }
 
-  Mat3 normalizer1() const
+  Mat3 normalizer1() const override
   {
     return _Kinv;
   }
 
-  Mat3 normalizer2() const
+  Mat3 normalizer2() const override
   {
     return Mat3::Identity();
   }
 
-  double unormalizeError(double val) const
+  double unormalizeError(double val) const override
   {
     return std::sqrt(val) / _Kinv(0,0);
+  }
+
+  std::size_t getMinimumNbRequiredSamplesLS() const
+  {
+    throw std::logic_error("TranslationTripletKernelACRansac cannot be used in LO_RANSAC.");
+    return 0;
+  }
+
+  void fitLS(const std::vector<std::size_t>& inliers, std::vector<ModelT>& models, const std::vector<double>* weights = nullptr) const
+  {
+    throw std::logic_error("TranslationTripletKernelACRansac cannot be used in LO_RANSAC.");
+  }
+
+  void computeWeights(const ModelT& model, const std::vector<std::size_t>& inliers, std::vector<double> & weights, const double eps = 0.001) const
+  {
+    throw std::logic_error("TranslationTripletKernelACRansac cannot be used in LO_RANSAC.");
   }
 
 private:
@@ -123,6 +162,11 @@ private:
   const double _logalpha0;
   const double _thresholdUpperBound;
   std::vector<Mat3> _vecKR;
+
+  /// two view solver
+  const SolverT _kernelSolver = SolverT();
+  /// solver error estimation
+  const ErrorT _errorEstimator = ErrorT();
 };
 
 } // namespace sfm

@@ -7,12 +7,11 @@
 
 #pragma once
 
-#include "aliceVision/numeric/numeric.hpp"
-#include "aliceVision/matching/IndMatch.hpp"
-#include "aliceVision/feature/RegionsPerView.hpp"
-
-#include "aliceVision/feature/Regions.hpp"
-#include "aliceVision/camera/IntrinsicBase.hpp"
+#include <aliceVision/numeric/numeric.hpp>
+#include <aliceVision/matching/IndMatch.hpp>
+#include <aliceVision/feature/RegionsPerView.hpp>
+#include <aliceVision/feature/Regions.hpp>
+#include <aliceVision/camera/IntrinsicBase.hpp>
 
 #include <vector>
 
@@ -21,34 +20,37 @@ namespace robustEstimation {
 
 /**
  * @brief Guided Matching (features only):
- *   Use a model to find valid correspondences:
- *   Keep the best corresponding points for the given model under the
- *   user specified distance.
+ *        Use a model to find valid correspondences:
+ *        Keep the best corresponding points for the given model under the
+ *        user specified distance.
+ *
+ * @tparam ModelT The used model type
+ * @tparam ErrorT The metric to compute distance to the model
+ *
+ * @param[in] mod The model
+ * @param[in] xLeft The left data points
+ * @param[in] xRight The right data points
+ * @param[in] errorTh Maximal authorized error threshold
+ * @param[out] out_validMatches Ouput corresponding index
  */
-template<
-  typename ModelArg, // The used model type
-  typename ErrorArg> // The metric to compute distance to the model
-void GuidedMatching(
-  const ModelArg & mod, // The model
-  const Mat & xLeft,    // The left data points
-  const Mat & xRight,   // The right data points
-  double errorTh,       // Maximal authorized error threshold
-  matching::IndMatches & out_validMatches) // Ouput corresponding index
+template<typename ModelT, typename ErrorT> 
+void guidedMatching(const ModelT& mod, const Mat& xLeft, const Mat& xRight, double errorTh, matching::IndMatches& out_validMatches)
 {
   assert(xLeft.rows() == xRight.rows());
 
-  // Looking for the corresponding points that have
-  //  the smallest distance (smaller than the provided Threshold)
-  for (Mat::Index i = 0; i < xLeft.cols(); ++i)
+  const ErrorT errorEstimator = ErrorT();
+
+  // looking for the corresponding points that have
+  // the smallest distance (smaller than the provided Threshold)
+  for(Mat::Index i = 0; i < xLeft.cols(); ++i)
   {
     double min = std::numeric_limits<double>::max();
     matching::IndMatch match;
     for(Mat::Index j = 0; j < xRight.cols(); ++j)
     {
-      // Compute the geometric error: error to the model
-      const double err = ErrorArg::Error(
-                                         mod, // The model
-                                         xLeft.col(i), xRight.col(j)); // The corresponding points
+      // compute the geometric error: error to the model
+      const double err = errorEstimator.error(mod, xLeft.col(i), xRight.col(j));
+
       // if smaller error update corresponding index
       if(err < errorTh && err < min)
       {
@@ -63,27 +65,31 @@ void GuidedMatching(
     }
   }
 
-  // Remove duplicates (when multiple points at same position exist)
+  // remove duplicates (when multiple points at same position exist)
   matching::IndMatch::getDeduplicated(out_validMatches);
 }
 
-
-// Struct to help filtering of correspondence according update of
-//  two smallest distance.
-// -> useful for descriptor distance ratio filtering
+/**
+ * @brief Struct to help filtering of correspondence according update of two smallest distance.
+ * @note useful for descriptor distance ratio filtering
+ */
 template <typename DistT>
 struct distanceRatio
 {
-  DistT bd, sbd; // best and second best distance
-  std::size_t idx; // best corresponding index
+  /// best and second best distance
+  DistT bd, sbd;
+  /// best corresponding index
+  std::size_t idx;
 
-  distanceRatio():
-    bd(std::numeric_limits<DistT>::max()),
-    sbd(std::numeric_limits<DistT>::max()),
-    idx(0)
-  { }
+  distanceRatio()
+    : bd(std::numeric_limits<DistT>::max())
+    , sbd(std::numeric_limits<DistT>::max())
+    , idx(0)
+  {}
 
-  // Update match according the provided distance
+  /**
+   * @brief Update match according the provided distance
+   */
   inline bool update(std::size_t index, DistT dist)
   {
     if(dist < bd) // best than any previous
@@ -102,8 +108,9 @@ struct distanceRatio
     return false;
   }
 
-  // Return if the ratio of distance is ok or not
-
+  /**
+   * @brief Return if the ratio of distance is ok or not
+   */
   inline bool isValid(const double distRatio) const
   {
     // check:
@@ -114,24 +121,36 @@ struct distanceRatio
   }
 };
 
-/// Guided Matching (features + descriptors with distance ratio):
-///  Use a model to find valid correspondences:
-///   Keep the best corresponding points for the given model under the
-///   user specified distance ratio.
-template<
-  typename ModelArg,    // The used model type
-  typename ErrorArg,    // The metric to compute distance to the model
-  typename DescriptorT, // The descriptor type
-  typename MetricT >    // The metric to compare two descriptors
-void GuidedMatching(
-  const ModelArg & mod, // The model
-  const Mat & xLeft,    // The left data points
-  const std::vector<DescriptorT > & lDescriptors,
-  const Mat & xRight,   // The right data points
-  const std::vector<DescriptorT > & rDescriptors,
-  double errorTh,       // Maximal authorized error threshold
-  double distRatio,     // Maximal authorized distance ratio
-  matching::IndMatches & vec_corresponding_index) // Ouput corresponding index
+
+/**
+ * @brief Guided Matching (features + descriptors with distance ratio):
+ *        Use a model to find valid correspondences:
+ *        Keep the best corresponding points for the given model under the
+ *        user specified distance.
+ *
+ * @tparam ModelT The used model type
+ * @tparam ErrorT The metric to compute distance to the model
+ * @tparam DescriptorT The descriptor type
+ * @tparam MetricT The metric to compare two descriptors
+ *
+ * @param[in] mod The model
+ * @param[in] xLeft The left data points
+ * @param[in] lDescriptors The left descriptors
+ * @param[in] xRight The right data points
+ * @param[in] rDescriptors The right descriptors
+ * @param[in] errorTh Maximal authorized error threshold
+ * @param[in] distRatio Maximal authorized distance ratio
+ * @param[out] vec_corresponding_index Ouput corresponding index
+ */
+template<typename ModelT, typename ErrorT, typename DescriptorT, typename MetricT>
+void guidedMatching(const ModelT& mod,
+                    const Mat& xLeft,
+                    const std::vector<DescriptorT>& lDescriptors,
+                    const Mat& xRight,
+                    const std::vector<DescriptorT>& rDescriptors,
+                    double errorTh,
+                    double distRatio,
+                    matching::IndMatches& vec_corresponding_index)
 {
   assert(xLeft.rows() == xRight.rows());
   assert(xLeft.cols() == lDescriptors.size());
@@ -150,7 +169,7 @@ void GuidedMatching(
     for(Mat::Index j = 0; j < xRight.cols(); ++j)
     {
       // Compute the geometric error: error to the model
-      const double geomErr = ErrorArg::Error(mod, // The model
+      const double geomErr = ErrorT::Error(mod, // The model
                                              xLeft.col(i), 
                                              xRight.col(j)); // The corresponding points
       if(geomErr < errorTh)
@@ -175,30 +194,39 @@ void GuidedMatching(
 
 /**
  * @brief Guided Matching (features + descriptors with distance ratio):
- * Use a model to find valid correspondences:
- * Keep the best corresponding points for the given model under the
- * user specified distance ratio.
+ *        Use a model to find valid correspondences:
+ *        Keep the best corresponding points for the given model under the
+ *        user specified distance ratio.
+ *
+ * @tparam ModelT The used model type
+ * @tparam ErrorT The metric to compute distance to the model
+ *
+ * @param[in] mod The model
+ * @param[in] camL Optional camera (in order to undistord on the fly feature positions, can be NULL)
+ * @param[in] lRegions regions (point features & corresponding descriptors)
+ * @param[in] camR Optional camera (in order to undistord on the fly feature positions, can be NULL)
+ * @param[in] rRegions regions (point features & corresponding descriptors)
+ * @param[in] errorTh Maximal authorized error threshold
+ * @param[in] distRatio Maximal authorized distance ratio
+ * @param[out] out_matches Ouput corresponding index
  */
-
-template<
-typename ModelArg, // The used model type
-typename ErrorArg // The metric to compute distance to the model
->
-void GuidedMatching(
-  const ModelArg & mod, // The model
-  const camera::IntrinsicBase * camL, // Optional camera (in order to undistord on the fly feature positions, can be NULL)
-  const feature::Regions & lRegions,  // regions (point features & corresponding descriptors)
-  const camera::IntrinsicBase * camR, // Optional camera (in order to undistord on the fly feature positions, can be NULL)
-  const feature::Regions & rRegions,  // regions (point features & corresponding descriptors)
-  double errorTh,       // Maximal authorized error threshold
-  double distRatio,     // Maximal authorized distance ratio
-  matching::IndMatches & out_matches) // Ouput corresponding index
+template<typename ModelT, typename ErrorT>
+void guidedMatching(const ModelT& mod,
+                    const camera::IntrinsicBase* camL,
+                    const feature::Regions& lRegions,
+                    const camera::IntrinsicBase* camR,
+                    const feature::Regions& rRegions,
+                    double errorTh,
+                    double distRatio,
+                    matching::IndMatches& out_matches)
 {
-  // Looking for the corresponding points that have to satisfy:
+  // looking for the corresponding points that have to satisfy:
   //   1. a geometric distance below the provided Threshold
   //   2. a distance ratio between descriptors of valid geometric correspondencess
 
-  // Build region positions arrays (in order to un-distord on-demand point position once)
+  const ErrorT errorEstimator = ErrorT();
+
+  // build region positions arrays (in order to un-distord on-demand point position once)
   std::vector<Vec2> lRegionsPos(lRegions.RegionCount());
   std::vector<Vec2> rRegionsPos(rRegions.RegionCount());
 
@@ -228,18 +256,16 @@ void GuidedMatching(
     distanceRatio<double> dR;
     for(std::size_t j = 0; j < rRegions.RegionCount(); ++j)
     {
-      // Compute the geometric error: error to the model
-      const double geomErr = ErrorArg::Error(mod, // The model
-                                             // The corresponding points
-                                             lRegionsPos[i],
-                                             rRegionsPos[j]);
+      // compute the geometric error: error to the model
+      const double geomErr = errorEstimator.error(mod, lRegionsPos[i], rRegionsPos[j]);
+
       if(geomErr < errorTh)
       {
-        // Update the corresponding points & distance (if required)
+        // update the corresponding points & distance (if required)
         dR.update(j, lRegions.SquaredDescriptorDistance(i, &rRegions, j));
       }
     }
-    // Add correspondence only iff the distance ratio is valid
+    // add correspondence only iff the distance ratio is valid
     if(dR.isValid(distRatio))
     {
       // save the best corresponding index
@@ -247,30 +273,37 @@ void GuidedMatching(
     }
   }
 
-  // Remove duplicates (when multiple points at same position exist)
+  // remove duplicates (when multiple points at same position exist)
   matching::IndMatch::getDeduplicated(out_matches);
 }
 
-
 /**
  * @brief Guided Matching (features + descriptors with distance ratio):
- * Use a model to find valid correspondences:
- * Keep the best corresponding points for the given model under the
- * user specified distance ratio.
+ *        Use a model to find valid correspondences:
+ *        Keep the best corresponding points for the given model under the
+ *        user specified distance ratio.
+ *
+ * @tparam ModelT The used model type
+ * @tparam ErrorT The metric to compute distance to the model
+ *
+ * @param[in] mod The model
+ * @param[in] camL Optional camera (in order to undistord on the fly feature positions, can be NULL)
+ * @param[in] lRegions regions (point features & corresponding descriptors)
+ * @param[in] camR Optional camera (in order to undistord on the fly feature positions, can be NULL)
+ * @param[in] rRegions regions (point features & corresponding descriptors)
+ * @param[in] errorTh Maximal authorized error threshold
+ * @param[in] distRatio Maximal authorized distance ratio
+ * @param[out] out_matchesPerDesc Ouput corresponding index
  */
-template<
-  typename ModelArg,  // The used model type
-  typename ErrorArg   // The metric to compute distance to the model
-  >
-void GuidedMatching(
-  const ModelArg & mod, // The model
-  const camera::IntrinsicBase * camL, // Optional camera (in order to undistord on the fly feature positions, can be NULL)
-  const feature::MapRegionsPerDesc & lRegions,  // regions (point features & corresponding descriptors)
-  const camera::IntrinsicBase * camR, // Optional camera (in order to undistord on the fly feature positions, can be NULL)
-  const feature::MapRegionsPerDesc & rRegions,  // regions (point features & corresponding descriptors)
-  double errorTh,       // Maximal authorized error threshold
-  double distRatio,     // Maximal authorized distance ratio
-  matching::MatchesPerDescType & out_matchesPerDesc) // Ouput corresponding index
+template<typename ModelT, typename ErrorT>
+void guidedMatching(const ModelT& mod,
+                    const camera::IntrinsicBase* camL,
+                    const feature::MapRegionsPerDesc& lRegions,
+                    const camera::IntrinsicBase* camR,
+                    const feature::MapRegionsPerDesc& rRegions,
+                    double errorTh,
+                    double distRatio,
+                    matching::MatchesPerDescType& out_matchesPerDesc)
 {
   const std::vector<feature::EImageDescriberType> descTypes = getCommonDescTypes(lRegions, rRegions);
   if(descTypes.empty())
@@ -278,12 +311,14 @@ void GuidedMatching(
 
   for(const feature::EImageDescriberType descType: descTypes)
   {
-    GuidedMatching<ModelArg, ErrorArg>(mod, camL, *lRegions.at(descType), camR, *rRegions.at(descType), errorTh, distRatio, out_matchesPerDesc[descType]);
+    guidedMatching<ModelT, ErrorT>(mod, camL, *lRegions.at(descType), camR, *rRegions.at(descType), errorTh, distRatio, out_matchesPerDesc[descType]);
   }
 }
 
-/// Compute a bucket index from an epipolar point
-///  (the one that is closer to image border intersection)
+/**
+ * @brief Compute a bucket index from an epipolar point
+ *        (the one that is closer to image border intersection)
+ */
 inline unsigned int pix_to_bucket(const Vec2i &x, int W, int H)
 {
   if(x(1) == 0) return x(0); // Top border
@@ -292,8 +327,10 @@ inline unsigned int pix_to_bucket(const Vec2i &x, int W, int H)
   return 2 * (W + H - 2) - x(1); // Left border
 }
 
-/// Compute intersection of the epipolar line with the image border
-inline bool line_to_endPoints(const Vec3 & line, int W, int H, Vec2 & x0, Vec2 & x1)
+/**
+ * @brief Compute intersection of the epipolar line with the image border
+ */
+inline bool line_to_endPoints(const Vec3& line, int W, int H, Vec2& x0, Vec2& x1)
 {
   const double a = line(0), b = line(1), c = line(2);
 
@@ -335,28 +372,45 @@ inline bool line_to_endPoints(const Vec3 & line, int W, int H, Vec2 & x0, Vec2 &
   return true;
 }
 
-/// Guided Matching (features + descriptors with distance ratio):
-/// Cluster correspondences per epipolar line (faster than exhaustive search).
-///   Keep the best corresponding points for the given model under the
-///   user specified distance ratio.
-/// Can be seen as a variant of robustEstimation method [1].
-/// Note that implementation done here use a pixel grid limited to image border.
-///
-///  [1] Rajvi Shah, Vanshika Shrivastava, and P J Narayanan
-///  Geometry-aware Feature Matching for Structure from Motion Applications.
-///  WACV 2015.
-template<typename ErrorArg> // The used model type
-void GuidedMatching_Fundamental_Fast(
-  const Mat3 & FMat,    // The fundamental matrix
-  const Vec3 & epipole2,// Epipole2 (camera center1 in image plane2; must not be normalized)
-  const camera::IntrinsicBase * camL, // Optional camera (in order to undistord on the fly feature positions, can be NULL)
-  const feature::Regions & lRegions,  // regions (point features & corresponding descriptors)
-  const camera::IntrinsicBase * camR, // Optional camera (in order to undistord on the fly feature positions, can be NULL)
-  const feature::Regions & rRegions,  // regions (point features & corresponding descriptors)
-  const int widthR, const int heightR,
-  double errorTh,       // Maximal authorized error threshold (consider it's a square threshold)
-  double distRatio,     // Maximal authorized distance ratio
-  matching::IndMatches & vec_corresponding_index) // Ouput corresponding index
+/**
+ * @brief Guided Matching (features + descriptors with distance ratio):
+ *        Cluster correspondences per epipolar line (faster than exhaustive search).
+ *        Keep the best corresponding points for the given model under the
+ *        user specified distance ratio.
+ *        Can be seen as a variant of robustEstimation method [1].
+ *
+ * @note implementation done here use a pixel grid limited to image border.
+ *
+ * @ref [1] Rajvi Shah, Vanshika Shrivastava, and P J Narayanan
+ *          Geometry-aware Feature Matching for Structure from Motion Applications.
+ *          WACV 2015.
+ *
+ * @tparam ErrorT The metric to compute distance to the model
+ *
+ * @param[in] FMat The fundamental matrix
+ * @param[in] epipole2 Epipole2 (camera center1 in image plane2; must not be normalized)
+ * @param[in] camL Optional camera (in order to undistord on the fly feature positions, can be NULL)
+ * @param[in] lRegions regions (point features & corresponding descriptors)
+ * @param[in] camR Optional camera (in order to undistord on the fly feature positions, can be NULL)
+ * @param[in] rRegions regions (point features & corresponding descriptors)
+ * @param[in] widthR
+ * @param[in] heightR
+ * @param[in] errorTh Maximal authorized error threshold (consider it's a square threshold)
+ * @param[in] distRatio Maximal authorized distance ratio
+ * @param[out] vec_corresponding_index Ouput corresponding index
+ */
+template<typename ErrorT>
+void guidedMatchingFundamentalFast(const Mat3& FMat,
+                                   const Vec3& epipole2,
+                                   const camera::IntrinsicBase* camL,
+                                   const feature::Regions& lRegions,
+                                   const camera::IntrinsicBase* camR,
+                                   const feature::Regions& rRegions,
+                                   const int widthR,
+                                   const int heightR,
+                                   double errorTh,
+                                   double distRatio,
+                                   matching::IndMatches& vec_corresponding_index)
 {
   // Looking for the corresponding points that have to satisfy:
   //   1. a geometric distance below the provided Threshold

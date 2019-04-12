@@ -40,21 +40,22 @@ BOOST_AUTO_TEST_CASE(Resection_L_Infinity_Robust_OutlierFree) {
   // Solve the problem and check that fitted value are good enough
   {
     typedef  lInfinityCV::kernel::l1PoseResectionKernel KernelType;
-    const Mat & pt2D = d2._x[nResectionCameraIndex];
-    const Mat & pt3D = d2._X;
+    const Mat& pt2D = d2._x[nResectionCameraIndex];
+    const Mat& pt3D = d2._X;
+
     KernelType kernel(pt2D, pt3D);
     ScoreEvaluator<KernelType> scorer(2*Square(0.6));
-    Mat34 P = MaxConsensus(kernel, scorer, nullptr, 128);
+    multiview::Mat34Model P = MaxConsensus(kernel, scorer, nullptr, 128);
 
     // Check that Projection matrix is near to the GT :
     Mat34 GT_ProjectionMatrix = d.P(nResectionCameraIndex).array()
                                 / d.P(nResectionCameraIndex).norm();
-    Mat34 COMPUTED_ProjectionMatrix = P.array() / P.norm();
+    Mat34 COMPUTED_ProjectionMatrix = P.getMatrix().array() / P.getMatrix().norm();
 
     // Extract K[R|t]
     Mat3 R,K;
     Vec3 t;
-    KRt_From_P(P, &K, &R, &t);
+    KRt_From_P(P.getMatrix(), &K, &R, &t);
 
     d2._R[nResectionCameraIndex] = R;
     d2._t[nResectionCameraIndex] = t;
@@ -65,8 +66,8 @@ BOOST_AUTO_TEST_CASE(Resection_L_Infinity_Robust_OutlierFree) {
   }
 }
 
-BOOST_AUTO_TEST_CASE(Resection_L_Infinity_Robust_OneOutlier) {
-
+BOOST_AUTO_TEST_CASE(Resection_L_Infinity_Robust_OneOutlier)
+{
   const int nViews = 3;
   const int nbPoints = 20;
   const NViewDataSet d = NRealisticCamerasRing(nViews, nbPoints,
@@ -97,17 +98,17 @@ BOOST_AUTO_TEST_CASE(Resection_L_Infinity_Robust_OneOutlier) {
     const Mat & pt3D = d2._X;
     KernelType kernel(pt2D, pt3D);
     ScoreEvaluator<KernelType> scorer(Square(0.1)); //Highly intolerant for the test
-    Mat34 P = MaxConsensus(kernel, scorer, nullptr, 128);
+    multiview::Mat34Model P = MaxConsensus(kernel, scorer, nullptr, 128);
 
     // Check that Projection matrix is near to the GT :
     Mat34 GT_ProjectionMatrix = d.P(nResectionCameraIndex).array()
       / d.P(nResectionCameraIndex).norm();
-    Mat34 estimatedProjectionMatrix = P.array() / P.norm();
+    Mat34 estimatedProjectionMatrix = P.getMatrix().array() / P.getMatrix().norm();
 
     // Extract K[R|t]
     Mat3 R,K;
     Vec3 t;
-    KRt_From_P(P, &K, &R, &t);
+    KRt_From_P(P.getMatrix(), &K, &R, &t);
 
     d2._R[nResectionCameraIndex] = R;
     d2._t[nResectionCameraIndex] = t;

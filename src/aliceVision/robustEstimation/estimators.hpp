@@ -7,9 +7,10 @@
 
 #pragma once
 
+#include <aliceVision/system/Logger.hpp>
+
 #include <string>
 #include <iostream>
-#include <aliceVision/system/Logger.hpp>
 
 namespace aliceVision {
 namespace robustEstimation {

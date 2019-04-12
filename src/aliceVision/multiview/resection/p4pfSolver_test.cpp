@@ -17,8 +17,9 @@
 
 
 using namespace aliceVision;
+using namespace aliceVision::multiview;
 
-bool isEqual(const resection::p4fSolution first, const resection::p4fSolution second)
+bool isEqual(const resection::P4PfModel first, const resection::P4PfModel second)
 {
   double eps = 1e-3;
   return ((first._R - second._R).norm() < first._R.maxCoeff() * eps &&
@@ -42,11 +43,12 @@ BOOST_AUTO_TEST_CASE(Resection_P4Pf_AssignmentWithOneResult)
   R_1 << -0.97189, 0.05884, -0.22797, -0.02068, -0.98586, -0.16631, -0.23454, -0.15692, 0.95936;
   Vec3 t_1;
   t_1 << 2.00322, -1.27420, 2.92685;
-  resection::p4fSolution sol_1(R_1, t_1, 887.17549);
+  resection::P4PfModel sol_1(R_1, t_1, 887.17549);
 
   // PROCESS THE RESECTION P4Pf
-  std::vector<resection::p4fSolution> models_1;
-  resection::P4PfSolver::solve(pt2D_1, pt3D_1, &models_1);
+  std::vector<resection::P4PfModel> models_1;
+  resection::P4PfSolver solver;
+  solver.solve(pt2D_1, pt3D_1, models_1);
 
   bool pass = true;
   if(!(models_1.size() == 1 && isEqual(models_1.at(0), sol_1)))
@@ -78,13 +80,14 @@ BOOST_AUTO_TEST_CASE(Resection_P4Pf_AssignmentWithMoreResults)
   t_22 << 0.08257, 0.57753, 1.04335;
   Vec3 t_23;
   t_23 << 0.16029, 0.58720, 1.07571;
-  resection::p4fSolution sol_21(R_21, t_21, 4571.95746);
-  resection::p4fSolution sol_22(R_22, t_22, 1193.30606);
-  resection::p4fSolution sol_23(R_23, t_23, 1315.17564);
+  resection::P4PfModel sol_21(R_21, t_21, 4571.95746);
+  resection::P4PfModel sol_22(R_22, t_22, 1193.30606);
+  resection::P4PfModel sol_23(R_23, t_23, 1315.17564);
 
   // PROCESS
-  std::vector<resection::p4fSolution> models_2;
-  resection::P4PfSolver::solve(pt2D_2, pt3D_2, &models_2);
+  std::vector<resection::P4PfModel> models_2;
+  resection::P4PfSolver solver;
+  solver.solve(pt2D_2, pt3D_2, models_2);
 
   bool pass = true;
   if(!(models_2.size() == 3
@@ -107,8 +110,9 @@ BOOST_AUTO_TEST_CASE(Resection_P4Pf_AssignmentWithNoResults)
           -1.68077, 0.70813, 1.22217, -1.76850;
 
   // PROCESS
-  std::vector<resection::p4fSolution> models_3;
-  resection::P4PfSolver::solve(pt2D_3, pt3D_3, &models_3);
+  std::vector<resection::P4PfModel> models_3;
+  resection::P4PfSolver solver;
+  solver.solve(pt2D_3, pt3D_3, models_3);
 
   bool pass = true;
   if(models_3.size() != 0)

@@ -5,8 +5,10 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "rigResection.hpp"
-#include "aliceVision/robustEstimation/ACRansacKernelAdaptator.hpp"
 #include <aliceVision/system/Logger.hpp>
+#include <aliceVision/robustEstimation/RansacKernel.hpp>
+#include <aliceVision/robustEstimation/supportEstimation.hpp>
+
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_OPENGV)
 #include <Eigen/Eigen>
 #include <opengv/absolute_pose/methods.hpp>

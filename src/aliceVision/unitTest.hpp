@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include "aliceVision/numeric/numeric.hpp"
+#include <aliceVision/numeric/numeric.hpp>
 
 #include <boost/test/included/unit_test.hpp>
 

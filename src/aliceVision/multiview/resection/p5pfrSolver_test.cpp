@@ -15,8 +15,8 @@
 
 #include <vector>
 
-
 using namespace aliceVision;
+using namespace aliceVision::multiview;
 
 #define CHECK_SOLUTIONS(solutions, models, eps) \
 { \
@@ -31,7 +31,7 @@ using namespace aliceVision;
 }
 
 
-bool sortM(const resection::p5pfrModel &i, const resection::p5pfrModel &j)
+bool sortM(const resection::P5PfrModel &i, const resection::P5PfrModel &j)
 {
   return (i._f < j._f);
 }
@@ -50,7 +50,7 @@ BOOST_AUTO_TEST_CASE(Resection_P5Pfr_RandomRealExample)
           -8.605090000000000e-01, -1.507400000000000e+00, -1.828080000000000e+00,  1.208810000000000e+00,  2.980880000000000e-01;
 
   // SOLUTIONS
-  std::vector<resection::p5pfrModel> solutions;
+  std::vector<resection::P5PfrModel> solutions;
   Mat R1 = Mat(3, 3);
   R1 << -9.430073299811607e-01,  2.928814581476584e-01, -1.579798312288744e-01,
         -3.071682103315301e-01, -5.834954588038342e-01,  7.517850358427121e-01,
@@ -113,9 +113,10 @@ BOOST_AUTO_TEST_CASE(Resection_P5Pfr_RandomRealExample)
 
   std::sort(solutions.begin(), solutions.end(), sortM);
 
-  // PROCESS
-  std::vector<resection::p5pfrModel> models;
-  resection::P5PfrSolver::solve(pt2D, pt3D, 1, &models);
+  // process
+  std::vector<resection::P5PfrModel> models;
+  resection::P5PfrSolver<1> solver;
+  solver.solve(pt2D, pt3D, models);
   std::sort(models.begin(), models.end(), sortM);
 
   // BOOST_AUTO_TEST_CASE
@@ -137,7 +138,7 @@ BOOST_AUTO_TEST_CASE(Resection_P5Pfr_Test01)
           1.100000000000000e+01,  9.000000000000000e+00,  1.000000000000000e+01,  1.100000000000000e+01, 7.000000000000000e+00;
 
   // SOLUTIONS
-  std::vector<resection::p5pfrModel> solutions;
+  std::vector<resection::P5PfrModel> solutions;
   Mat R1 = Mat(3, 3);
   R1 << -9.866769718754666e-01,  8.864003655023664e-02, 1.364239608391149e-01,
         -8.610773932011366e-02, -9.959878698575466e-01, 2.436432485840338e-02,
@@ -166,13 +167,14 @@ BOOST_AUTO_TEST_CASE(Resection_P5Pfr_Test01)
   Vec r2 = Vec(1);
   r2 << -1.000869226503413e-01;
 
-  resection::p5pfrModel m2(R2, t2, r2, f2);
+  resection::P5PfrModel m2(R2, t2, r2, f2);
   solutions.emplace_back(m2);
   std::sort(solutions.begin(), solutions.end(), sortM);
 
   // PROCESS
-  std::vector<resection::p5pfrModel> models;
-  resection::P5PfrSolver::solve(pt2D, pt3D, 1, &models);
+  std::vector<resection::P5PfrModel> models;
+  resection::P5PfrSolver<1> solver;
+  solver.solve(pt2D, pt3D, models);
   std::sort(models.begin(), models.end(), sortM);
 
   // BOOST_AUTO_TEST_CASE
@@ -194,7 +196,7 @@ BOOST_AUTO_TEST_CASE(Resection_P5Pfr_Test02)
           1.100000000000000e+01,  9.000000000000000e+00,  1.000000000000000e+01,  1.100000000000000e+01, 7.000000000000000e+00;
 
   // SOLUTIONS
-  std::vector<resection::p5pfrModel> solutions;
+  std::vector<resection::P5PfrModel> solutions;
   Mat R1 = Mat(3, 3);
   R1 <<   -9.866769718754656e-01,  8.864003655023635e-02, 1.364239608391232e-01,
           -8.610773932011311e-02, -9.959878698575468e-01, 2.436432485840404e-02, 
@@ -227,8 +229,9 @@ BOOST_AUTO_TEST_CASE(Resection_P5Pfr_Test02)
   std::sort(solutions.begin(), solutions.end(), sortM);
 
   // PROCESS
-  std::vector<resection::p5pfrModel> models;
-  resection::P5PfrSolver::solve(pt2D, pt3D, 1, &models);
+  std::vector<resection::P5PfrModel> models;
+  resection::P5PfrSolver<1> solver;
+  solver.solve(pt2D, pt3D, models);
   std::sort(models.begin(), models.end(), sortM);
 
   // BOOST_AUTO_TEST_CASE
@@ -250,7 +253,7 @@ BOOST_AUTO_TEST_CASE(Resection_P5Pfr_Test03)
           1.100000000000000e+01,  9.000000000000000e+00,  1.000000000000000e+01,  1.100000000000000e+01, 7.000000000000000e+00;
 
   // SOLUTIONS
-  std::vector<resection::p5pfrModel> solutions;
+  std::vector<resection::P5PfrModel> solutions;
   Mat R1 = Mat(3, 3);
   R1 <<   9.866726171702454e-01, -8.863862515507148e-02, -1.364563690599919e-01,
           8.610372986162385e-02,  9.959878340728819e-01, -2.437995247586850e-02,
@@ -283,8 +286,9 @@ BOOST_AUTO_TEST_CASE(Resection_P5Pfr_Test03)
   std::sort(solutions.begin(), solutions.end(), sortM);
 
   // PROCESS
-  std::vector<resection::p5pfrModel> models;
-  resection::P5PfrSolver::solve(pt2D, pt3D, 3, &models);
+  std::vector<resection::P5PfrModel> models;
+  resection::P5PfrSolver<3> solver;
+  solver.solve(pt2D, pt3D, models);
   std::sort(models.begin(), models.end(), sortM);
 
   // BOOST_AUTO_TEST_CASE
@@ -306,7 +310,7 @@ BOOST_AUTO_TEST_CASE(Resection_P5Pfr_Test04)
           1.100000000000000e+01,  9.000000000000000e+00,  1.000000000000000e+01,  1.100000000000000e+01, 7.000000000000000e+00;
 
   // SOLUTIONS
-  std::vector<resection::p5pfrModel> solutions;
+  std::vector<resection::P5PfrModel> solutions;
   Mat R1 = Mat(3, 3);
   R1 << -9.866929474192679e-01,  8.865005182074735e-02, 1.363018555459043e-01,
         -8.612834136352524e-02, -9.959876607489899e-01, 2.429996810126685e-02,
@@ -339,8 +343,9 @@ BOOST_AUTO_TEST_CASE(Resection_P5Pfr_Test04)
   std::sort(solutions.begin(), solutions.end(), sortM);
 
   // PROCESS
-  std::vector<resection::p5pfrModel> models;
-  resection::P5PfrSolver::solve(pt2D, pt3D, 2, &models);
+  std::vector<resection::P5PfrModel> models;
+  resection::P5PfrSolver<2> solver;
+  solver.solve(pt2D, pt3D, models);
   std::sort(models.begin(), models.end(), sortM);
 
   // BOOST_AUTO_TEST_CASE
@@ -362,7 +367,7 @@ BOOST_AUTO_TEST_CASE(Resection_P5Pfr_Test05)
            2.975400000000000e+02,  2.715000000000000e+02,  2.743600000000000e+02,  2.852800000000000e+02,  2.909600000000000e+02;
 
   // SOLUTIONS
-  std::vector<resection::p5pfrModel> solutions;
+  std::vector<resection::P5PfrModel> solutions;
   Mat R1 = Mat(3, 3);
   R1 << 1.155567671802503e-01,  8.662877974144153e-01, -4.859959728328315e-01,
         9.628483489629153e-01,  2.253109491131032e-02,  2.691011086218072e-01,
@@ -425,8 +430,9 @@ BOOST_AUTO_TEST_CASE(Resection_P5Pfr_Test05)
   std::sort(solutions.begin(), solutions.end(), sortM);
 
   // PROCESS
-  std::vector<resection::p5pfrModel> models;
-  resection::P5PfrSolver::solve(pt2D, pt3D, 1, &models);
+  std::vector<resection::P5PfrModel> models;
+  resection::P5PfrSolver<1> solver;
+  solver.solve(pt2D, pt3D, models);
   std::sort(models.begin(), models.end(), sortM);
 
   // BOOST_AUTO_TEST_CASE
@@ -448,7 +454,7 @@ BOOST_AUTO_TEST_CASE(Resection_P5Pfr_Test06)
            2.975400000000000e+02,  2.715000000000000e+02,  2.743600000000000e+02,  2.852800000000000e+02,  2.909600000000000e+02;
 
   // SOLUTIONS
-  std::vector<resection::p5pfrModel> solutions;
+  std::vector<resection::P5PfrModel> solutions;
   Mat R1 = Mat(3, 3);
   R1 << 1.158093303645603e-01,  8.661302625338441e-01, -4.862165847886791e-01,
         9.628499358654846e-01,  2.232902483922909e-02,  2.691122733239069e-01,
@@ -511,8 +517,9 @@ BOOST_AUTO_TEST_CASE(Resection_P5Pfr_Test06)
   std::sort(solutions.begin(), solutions.end(), sortM);
 
   // PROCESS
-  std::vector<resection::p5pfrModel> models;
-  resection::P5PfrSolver::solve(pt2D, pt3D, 1, &models);
+  std::vector<resection::P5PfrModel> models;
+  resection::P5PfrSolver<1> solver;
+  solver.solve(pt2D, pt3D, models);
   std::sort(models.begin(), models.end(), sortM);
 
   // BOOST_AUTO_TEST_CASE
@@ -536,7 +543,7 @@ BOOST_AUTO_TEST_CASE(Resection_P5Pfr_ReprojectionErrRD)
   Vec r1 = Vec(1);
   r1 << -1.915149736941400e-02;
 
-  resection::p5pfrModel m1(R1, t1, r1, f1);
+  resection::P5PfrModel m1(R1, t1, r1, f1);
 
   Mat X = Mat(3, 5);
   X << -4.780000000000000e+00, -5.662000000000001e+01, -3.109000000000000e+01, -1.337000000000000e+01, -1.220000000000000e+00, 
@@ -574,7 +581,7 @@ BOOST_AUTO_TEST_CASE(Resection_P5Pfr_ReprojectionErrRP)
   Vec r1 = Vec(2);
   r1 << 2.609980000000000e-01, -8.600540000000000e-01;
 
-  resection::p5pfrModel m1(R1, t1, r1, f1);
+  resection::P5PfrModel m1(R1, t1, r1, f1);
 
   Mat X = Mat(3, 5);
   X << -1.789980000000000e+00, 3.126420000000000e-02, -8.818300000000000e-01,  4.003490000000000e-01, -2.801120000000000e-01,
@@ -616,7 +623,7 @@ BOOST_AUTO_TEST_CASE(Resection_P5Pfr_ConversionRD2RP)
   Vec r1 = Vec(1);
   r1 << -2.905907042217655e-01;
 
-  resection::p5pfrModel m1(R1, t1, r1, f1);
+  resection::P5PfrModel m1(R1, t1, r1, f1);
 
   Mat R2 = Mat(3, 3);
   R2 << -5.147789719583958e-01, -2.194669622313594e-01, -8.287562141657801e-01, 
@@ -631,7 +638,7 @@ BOOST_AUTO_TEST_CASE(Resection_P5Pfr_ConversionRD2RP)
   Vec r2 = Vec(1);
   r2 << -3.992521126906051e+00;
 
-  resection::p5pfrModel m2(R2, t2, r2, f2);
+  resection::P5PfrModel m2(R2, t2, r2, f2);
 
   // SOLUTIONS ( EXPECTED VALUES )
   Vec e_r1 = Vec(3);
@@ -643,10 +650,10 @@ BOOST_AUTO_TEST_CASE(Resection_P5Pfr_ConversionRD2RP)
   const double eps = 1e-4;
   Mat pt2D_radius = pt2D.colwise().norm();
 
-  m1._r = divisionToPolynomialModelDistortion(m1, pt2D_radius.maxCoeff(), (1 / f1) * pt2D_radius);
+  m1._r = m1.divisionToPolynomialModelDistortion((1 / f1) * pt2D_radius /*, pt2D_radius.maxCoeff()*/);
   EXPECT_MATRIX_NEAR(m1._r, e_r1, eps);
 
-  m2._r = divisionToPolynomialModelDistortion(m2, pt2D_radius.maxCoeff(), (1 / f2) * pt2D_radius);
+  m2._r = m2.divisionToPolynomialModelDistortion((1 / f2) * pt2D_radius /*, pt2D_radius.maxCoeff()*/);
   EXPECT_MATRIX_NEAR(m2._r, e_r2, eps);
 }
 
@@ -656,7 +663,7 @@ BOOST_AUTO_TEST_CASE(Resection_P5Pfr_ConversionRD2RP)
 //
 //  // PROCESS
 //  std::vector<resection::M> models;
-//  resection::P5PfrSolver::Solve(pt2D, pt3D, &models);
+//  resection::P5PfrSolver::Solve(pt2D, pt3D, models);
 //  std::sort(models.begin(), models.end(), sortM);
 //
 //  double eps = 1e-4;

@@ -6,10 +6,11 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
-#include "aliceVision/multiview/essential.hpp"
-#include "aliceVision/multiview/essentialKernelSolver.hpp"
-#include "aliceVision/multiview/projection.hpp"
-#include "aliceVision/multiview/NViewDataSet.hpp"
+#include <aliceVision/multiview/projection.hpp>
+#include <aliceVision/multiview/NViewDataSet.hpp>
+#include <aliceVision/multiview/essential.hpp>
+#include <aliceVision/multiview/relativePose/EssentialKernel.hpp>
+
 
 #define BOOST_TEST_MODULE essentialKernelSolver
 #include <boost/test/included/unit_test.hpp>
@@ -17,10 +18,10 @@
 #include <aliceVision/unitTest.hpp>
 
 using namespace aliceVision;
+using namespace aliceVision::multiview;
 
-/// Check that the E matrix fit the Essential Matrix properties
-/// Determinant is 0
-///
+/// check that the E matrix fit the Essential Matrix properties
+/// determinant is 0
 #define EXPECT_ESSENTIAL_MATRIX_PROPERTIES(E, expectedPrecision) { \
   BOOST_CHECK_SMALL(E.determinant(), expectedPrecision); \
   Mat3 O = 2 * E * E.transpose() * E - (E * E.transpose()).trace() * E; \
@@ -28,29 +29,33 @@ using namespace aliceVision;
   EXPECT_MATRIX_NEAR(zero3x3, O, expectedPrecision);\
 }
 
-BOOST_AUTO_TEST_CASE(EightPointsRelativePose_EightPointsRelativePose_Kernel_IdFocal) {
-
-  //-- Setup a circular camera rig and assert that 8PT relative pose works.
+BOOST_AUTO_TEST_CASE(Essential8PSolver_IdFocal)
+{
+  // setup a circular camera rig and assert that 8PT relative pose works.
   const int iNviews = 5;
-  NViewDataSet d = NRealisticCamerasRing(iNviews, 8,
-    NViewDatasetConfigurator(1,1,0,0,5,0)); // Suppose a camera with Unit matrix as K
+  NViewDataSet d = NRealisticCamerasRing(iNviews, 8, NViewDatasetConfigurator(1,1,0,0,5,0)); // suppose a camera with Unit matrix as K
 
   for(int i=0; i <iNviews; ++i)
   {
-    std::vector<Mat3> Es; // Essential,
-    std::vector<Mat3> Rs;  // Rotation matrix.
-    std::vector<Vec3> ts;  // Translation matrix.
-    essential::kernel::EightPointRelativePoseSolver::Solve(d._x[i], d._x[(i+1)%iNviews], &Es);
+    std::vector<Mat3Model> Es; // essential,
+    std::vector<Mat3> Rs; // rotation matrix.
+    std::vector<Vec3> ts; // translation matrix.
+
+    relativePose::Essential8PSolver solver;
+    solver.solve(d._x[i], d._x[(i+1)%iNviews], Es);
 
     // Recover rotation and translation from E.
     Rs.resize(Es.size());
     ts.resize(Es.size());
-    for (int s = 0; s < Es.size(); ++s) {
+
+    for(int s = 0; s < Es.size(); ++s)
+    {
       Vec2 x1Col, x2Col;
       x1Col << d._x[i].col(0);
       x2Col << d._x[(i+1)%iNviews].col(0);
+
       BOOST_CHECK(
-        MotionFromEssentialAndCorrespondence(Es[s],
+        MotionFromEssentialAndCorrespondence(Es.at(s).getMatrix(),
         d._K[i], x1Col,
         d._K[(i+1)%iNviews], x2Col,
         &Rs[s],
@@ -63,10 +68,11 @@ BOOST_AUTO_TEST_CASE(EightPointsRelativePose_EightPointsRelativePose_Kernel_IdFo
 
     // Assert that found relative motion is correct for almost one model.
     bool bsolution_found = false;
-    for (std::size_t nModel = 0; nModel < Es.size(); ++nModel) {
+    for (std::size_t nModel = 0; nModel < Es.size(); ++nModel)
+    {
 
       // Check that E holds the essential matrix constraints.
-      EXPECT_ESSENTIAL_MATRIX_PROPERTIES(Es[nModel], 1e-8);
+      EXPECT_ESSENTIAL_MATRIX_PROPERTIES(Es.at(nModel).getMatrix(), 1e-8);
 
       // Check that we find the correct relative orientation.
       if (FrobeniusDistance(R, Rs[nModel]) < 1e-3
@@ -74,26 +80,27 @@ BOOST_AUTO_TEST_CASE(EightPointsRelativePose_EightPointsRelativePose_Kernel_IdFo
           bsolution_found = true;
       }
     }
-    //-- Almost one solution must find the correct relative orientation
+    // almost one solution must find the correct relative orientation
     BOOST_CHECK(bsolution_found);
   }
 }
 
-BOOST_AUTO_TEST_CASE(EightPointsRelativePose_EightPointsRelativePose_Kernel) {
-
-  typedef essential::kernel::EightPointKernel Kernel;
+BOOST_AUTO_TEST_CASE(Essential8PKernel_EightPointsRelativePose)
+{
+  using Kernel = relativePose::Essential8PKernel;
 
   int focal = 1000;
   int principal_Point = 500;
 
-  //-- Setup a circular camera rig and assert that 8PT relative pose works.
+  // setup a circular camera rig and assert that 8PT relative pose works.
   const int iNviews = 5;
-  NViewDataSet d = NRealisticCamerasRing(iNviews, Kernel::MINIMUM_SAMPLES,
+  NViewDataSet d = NRealisticCamerasRing(iNviews, Kernel::SolverT().getMinimumNbRequiredSamples(),
     NViewDatasetConfigurator(focal,focal,principal_Point,principal_Point,5,0)); // Suppose a camera with Unit matrix as K
 
   for(int i=0; i <iNviews; ++i)
   {
-    std::vector<Mat3> Es, Rs;  // Essential, Rotation matrix.
+    std::vector<Mat3Model> Es; // Essential
+    std::vector<Mat3> Rs;      // Rotation matrix.
     std::vector<Vec3> ts;      // Translation matrix.
 
     // Direct value do not work.
@@ -103,20 +110,25 @@ BOOST_AUTO_TEST_CASE(EightPointsRelativePose_EightPointsRelativePose_Kernel) {
 
     Kernel kernel(x0, x1, d._K[i], d._K[(i+1)%iNviews]);
     std::vector<std::size_t> samples;
-    for (std::size_t k = 0; k < Kernel::MINIMUM_SAMPLES; ++k) {
+
+    for (std::size_t k = 0; k < kernel.getMinimumNbRequiredSamples(); ++k)
+    {
       samples.push_back(k);
     }
-    kernel.Fit(samples, &Es);
+
+    kernel.fit(samples, Es);
 
     // Recover rotation and translation from E.
     Rs.resize(Es.size());
     ts.resize(Es.size());
-    for (int s = 0; s < Es.size(); ++s) {
+
+    for (int s = 0; s < Es.size(); ++s)
+    {
       Vec2 x1Col, x2Col;
       x1Col << d._x[i].col(0);
       x2Col << d._x[(i+1)%iNviews].col(0);
       BOOST_CHECK(
-        MotionFromEssentialAndCorrespondence(Es[s],
+        MotionFromEssentialAndCorrespondence(Es.at(s).getMatrix(),
         d._K[i], x1Col,
         d._K[(i+1)%iNviews], x2Col,
         &Rs[s],
@@ -129,10 +141,11 @@ BOOST_AUTO_TEST_CASE(EightPointsRelativePose_EightPointsRelativePose_Kernel) {
 
     // Assert that found relative motion is correct for almost one model.
     bool bsolution_found = false;
-    for (std::size_t nModel = 0; nModel < Es.size(); ++nModel) {
+    for (std::size_t nModel = 0; nModel < Es.size(); ++nModel)
+    {
 
       // Check that E holds the essential matrix constraints.
-      EXPECT_ESSENTIAL_MATRIX_PROPERTIES(Es[nModel], 1e-8);
+      EXPECT_ESSENTIAL_MATRIX_PROPERTIES(Es.at(nModel).getMatrix(), 1e-8);
 
       // Check that we find the correct relative orientation.
       if (FrobeniusDistance(R, Rs[nModel]) < 1e-3
@@ -145,14 +158,17 @@ BOOST_AUTO_TEST_CASE(EightPointsRelativePose_EightPointsRelativePose_Kernel) {
   }
 }
 
-BOOST_AUTO_TEST_CASE(FivePointKernelTest_KernelError) {
+BOOST_AUTO_TEST_CASE(Essential5PKernel_KernelError)
+{
 
   Mat x1(2, 5), x2(2, 5);
   x1 << 0,   0,  0, .8, .8,
         0, -.5, .8,  0, .8;
   x2 << 0,    0,  0, .8, .8,
         .1, -.4, .9,  .1, .9; // Y Translated camera.
-  typedef essential::kernel::FivePointKernel Kernel;
+
+  using Kernel = relativePose::Essential5PKernel;
+
   Kernel kernel(x1,x2, Mat3::Identity(), Mat3::Identity());
 
   bool bOk = true;
@@ -160,32 +176,33 @@ BOOST_AUTO_TEST_CASE(FivePointKernelTest_KernelError) {
   for (std::size_t i = 0; i < x1.cols(); ++i) {
     samples.push_back(i);
   }
-  std::vector<Mat3> Es;
-  kernel.Fit(samples, &Es);
+  std::vector<Mat3Model> Es;
+  kernel.fit(samples, Es);
 
   bOk &= (!Es.empty());
   for (int i = 0; i < Es.size(); ++i) {
     for(int j = 0; j < x1.cols(); ++j)
-      BOOST_CHECK_SMALL(kernel.Error(j,Es[i]), 1e-8);
+      BOOST_CHECK_SMALL(kernel.error(j, Es.at(i)), 1e-8);
   }
 }
 
-BOOST_AUTO_TEST_CASE(FivePointKernelTest_FivePointsRelativePose_Kernel) {
-
-  typedef essential::kernel::FivePointKernel Kernel;
+BOOST_AUTO_TEST_CASE(Essential5PKernel_FivePointsRelativePose)
+{
+  using Kernel = relativePose::Essential5PKernel;
 
   int focal = 1000;
   int principal_Point = 500;
 
   //-- Setup a circular camera rig and assert that 5PT relative pose works.
   const int iNviews = 8;
-  NViewDataSet d = NRealisticCamerasRing(iNviews, Kernel::MINIMUM_SAMPLES,
+  NViewDataSet d = NRealisticCamerasRing(iNviews, Kernel::SolverT().getMinimumNbRequiredSamples(),
     NViewDatasetConfigurator(focal,focal,principal_Point,principal_Point,5,0)); // Suppose a camera with Unit matrix as K
 
   std::size_t found = 0;
   for(int i=1; i <iNviews; ++i)
   {
-    std::vector<Mat3> Es, Rs;  // Essential, Rotation matrix.
+    std::vector<Mat3Model> Es; // Essential
+    std::vector<Mat3> Rs;      // Rotation matrix.
     std::vector<Vec3> ts;      // Translation matrix.
 
     // Direct value do not work.
@@ -195,20 +212,23 @@ BOOST_AUTO_TEST_CASE(FivePointKernelTest_FivePointsRelativePose_Kernel) {
 
     Kernel kernel(x0, x1, d._K[0], d._K[1]);
     std::vector<std::size_t> samples;
-    for (std::size_t k = 0; k < Kernel::MINIMUM_SAMPLES; ++k) {
+    for (std::size_t k = 0; k < kernel.getMinimumNbRequiredSamples(); ++k)
+    {
       samples.push_back(k);
     }
-    kernel.Fit(samples, &Es);
+
+    kernel.fit(samples, Es);
 
     // Recover rotation and translation from E.
     Rs.resize(Es.size());
     ts.resize(Es.size());
-    for (int s = 0; s < Es.size(); ++s) {
+    for (int s = 0; s < Es.size(); ++s)
+    {
       Vec2 x1Col, x2Col;
       x1Col << d._x[0].col(0);
       x2Col << d._x[i].col(0);
       BOOST_CHECK(
-        MotionFromEssentialAndCorrespondence(Es[s],
+        MotionFromEssentialAndCorrespondence(Es.at(s).getMatrix(),
         d._K[0], x1Col,
         d._K[i], x2Col,
         &Rs[s],
@@ -221,10 +241,10 @@ BOOST_AUTO_TEST_CASE(FivePointKernelTest_FivePointsRelativePose_Kernel) {
 
     // Assert that found relative motion is correct for almost one model.
     bool bsolution_found = false;
-    for (std::size_t nModel = 0; nModel < Es.size(); ++nModel) {
-
+    for (std::size_t nModel = 0; nModel < Es.size(); ++nModel)
+    {
       // Check that E holds the essential matrix constraints.
-      EXPECT_ESSENTIAL_MATRIX_PROPERTIES(Es[nModel], 1e-4);
+      EXPECT_ESSENTIAL_MATRIX_PROPERTIES(Es.at(nModel).getMatrix(), 1e-4);
 
       // Check that we find the correct relative orientation.
       if (FrobeniusDistance(R, Rs[nModel]) < 1e-3
@@ -232,7 +252,7 @@ BOOST_AUTO_TEST_CASE(FivePointKernelTest_FivePointsRelativePose_Kernel) {
           bsolution_found = true;
       }
     }
-    //-- Almost one solution must find the correct relative orientation
+    // Almost one solution must find the correct relative orientation
     BOOST_CHECK(bsolution_found);
     if (bsolution_found)
       found++;

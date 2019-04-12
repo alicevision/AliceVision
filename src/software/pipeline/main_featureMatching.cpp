@@ -410,6 +410,17 @@ int main(int argc, char **argv)
     }
     break;
 
+  case EGeometricFilterType::FUNDAMENTAL_WITH_DISTORTION:
+  {
+    matchingImageCollection::robustModelEstimation(geometricMatches,
+      &sfmData,
+      regionPerView,
+      GeometricFilterMatrix_F_AC(geometricErrorMax, maxIteration, geometricEstimator, true),
+      mapPutativesMatches,
+      guidedMatching);
+  }
+  break;
+
     case EGeometricFilterType::ESSENTIAL_MATRIX:
     {
       matchingImageCollection::robustModelEstimation(geometricMatches,

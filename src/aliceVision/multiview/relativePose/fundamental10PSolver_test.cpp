@@ -4,18 +4,19 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
+#include <aliceVision/numeric/numeric.hpp>
+#include <aliceVision/multiview/relativePose/Fundamental10PSolver.hpp>
+
 #define BOOST_TEST_MODULE essentialF10Solver
-
-#include <aliceVision/multiview/essentialF10Solver.hpp>
-
 #include <boost/test/included/unit_test.hpp>
 #include <boost/test/floating_point_comparison.hpp>
 
 #include <vector>
 
 using namespace aliceVision;
+using namespace aliceVision::multiview;
 
-BOOST_AUTO_TEST_CASE(RelativePoseF10_8_solutions)
+BOOST_AUTO_TEST_CASE(Fundamental10PSolver_8_solutions)
 {
   // input data
   Mat X = Mat(10, 2);
@@ -42,6 +43,10 @@ BOOST_AUTO_TEST_CASE(RelativePoseF10_8_solutions)
         3.628858064350329e-01, -6.060566149259868e-03,
         4.513226639597039e-01, -1.025031481291119e-01;
 
+  // transpose for aliceVision
+  X.transposeInPlace();
+  U.transposeInPlace();
+
   // expected result
   std::vector<Mat3> resF;
   Mat3 resF1; resF1 << -5.751087019565978e+02, -4.158188692023641e+02, -3.933617847277337e+01,  5.623077923604983e+02, -1.155037417506222e+03, -3.603293875557833e+01, -5.277848487166921e-01, -9.666992599768776e-02, 1.000000000000000e+00; resF.push_back(resF1);
@@ -52,6 +57,7 @@ BOOST_AUTO_TEST_CASE(RelativePoseF10_8_solutions)
   Mat3 resF6; resF6 <<  3.845891112065496e+02, -3.376624483974341e+02,  1.058628706262809e+00,  4.567090509397883e+02, -1.782032107508239e+01,  6.603245933354176e-01, -3.057044617411873e+01, -1.171693147510399e+01, 1.000000000000000e+00; resF.push_back(resF6);
   Mat3 resF7; resF7 <<  9.173705728965071e-01,  6.566802897577452e+02, -9.150842187178472e+01, -6.985651797488533e+02,  6.389672979364663e+01, -2.813972637838619e+01,  1.224499375450345e+02,  2.273467046355762e+00, 1.000000000000000e+00; resF.push_back(resF7);
   Mat3 resF8; resF8 <<  9.260243587671360e+00,  2.901973712182848e+01, -4.525967397412600e+00,  3.873064498047484e+00, -3.308114531934898e+01, -1.268705935682481e+01,  3.742963523739931e+00,  1.576531480674961e+01, 1.000000000000000e+00; resF.push_back(resF8);
+
   std::vector<Mat2X> resL;
   Mat2X resL1(2, 1); resL1 <<  6.664890785418972e+02,  9.360374635703592e-01; resL.push_back(resL1);
   Mat2X resL2(2, 1); resL2 << -1.401232955798790e+02,  1.190659194737138e+03; resL.push_back(resL2);
@@ -63,19 +69,22 @@ BOOST_AUTO_TEST_CASE(RelativePoseF10_8_solutions)
   Mat2X resL8(2, 1); resL8 << -8.478427431999348e+00, -4.469547181112368e+00; resL.push_back(resL8);
 
   // process
-  std::vector<Mat3> F;
-  std::vector<Mat21> L;
-
-  F10RelativePose(X, U, F, L);
+  std::vector<relativePose::Fundamental10PModel> models;
+  relativePose::Fundamental10PSolver().solve(X, U, models);
 
   // test results
-  if(resF.size() != F.size())
+  if(resF.size() != models.size())
     BOOST_CHECK(false);
+
   for(Eigen::Index i = 0; i < resF.size(); ++i)
-    BOOST_CHECK(resF.at(i).isApprox(F.at(i), 1e-1) && resL.at(i).isApprox(L.at(i), 1e-1));
+  {
+    relativePose::Fundamental10PModel model = models.at(i);
+    BOOST_CHECK(resF.at(i).isApprox(model.getMatrix(), 1e-1));
+    BOOST_CHECK(resL.at(i).isApprox(model.getRadialDistortion(), 1e-1));
+  }
 }
 
-BOOST_AUTO_TEST_CASE(RelativePoseF10_2_solutions)
+BOOST_AUTO_TEST_CASE(Fundamental10PSolver_2_solutions)
 {
   // input data
   Mat X = Mat(10, 2);
@@ -102,23 +111,46 @@ BOOST_AUTO_TEST_CASE(RelativePoseF10_2_solutions)
         4.302636076274671e-01, -1.466708052785773e-01,
         4.942827405427632e-01, -8.317700837787830e-02;
 
+  // transpose for aliceVision
+  X.transposeInPlace();
+  U.transposeInPlace();
+
   // expected result
   std::vector<Mat3> resF;
-  Mat3 resF1; resF1 <<  1.732473500041804e+02,  7.711017146713161e+00,  9.471075243833084e+00, -1.518330376101678e+01, 3.516937871974938e+02, 1.097973146625093e+01, -1.046922253151639e-01,  6.610316585565101e-03, 1.000000000000000e+00; resF.push_back(resF1);
-  Mat3 resF2; resF2 << -1.716387900591730e+04, -3.791505579727971e+04, -4.981406222447205e+00, 6.621894661079650e+03, 4.767612634161247e+04, -1.134635374165869e+02,  1.131438262492466e+03, -1.429200024334792e+04, 1.000000000000000e+00; resF.push_back(resF2);
+  {
+    Mat3 resF1;
+    resF1 <<  1.732473500041804e+02,  7.711017146713161e+00,  9.471075243833084e+00, -1.518330376101678e+01, 3.516937871974938e+02, 1.097973146625093e+01, -1.046922253151639e-01,  6.610316585565101e-03, 1.000000000000000e+00;
+    resF.push_back(resF1);
+
+    Mat3 resF2;
+    resF2 << -1.716387900591730e+04, -3.791505579727971e+04, -4.981406222447205e+00, 6.621894661079650e+03, 4.767612634161247e+04, -1.134635374165869e+02,  1.131438262492466e+03, -1.429200024334792e+04, 1.000000000000000e+00;
+    resF.push_back(resF2);
+  }
+
   std::vector<Mat2X> resL;
-  Mat21 resL1; resL1 << -1.904715904949555e+02,  4.147643173367164e-01; resL.push_back(resL1);
-  Mat21 resL2; resL2 <<  1.258548483732838e+01, -2.918230091342369e+03; resL.push_back(resL2);
+  {
+    relativePose::Fundamental10PModel::Mat21 resL1;
+    relativePose::Fundamental10PModel::Mat21 resL2;
+
+    resL1 << -1.904715904949555e+02,  4.147643173367164e-01;
+    resL.push_back(resL1);
+
+    resL2 <<  1.258548483732838e+01, -2.918230091342369e+03;
+    resL.push_back(resL2);
+  }
 
   // process
-  std::vector<Mat3> F;
-  std::vector<Mat21> L;
-
-  F10RelativePose(X, U, F, L);
+  std::vector<relativePose::Fundamental10PModel> models;
+  relativePose::Fundamental10PSolver().solve(X, U, models);
 
   // test results
-  if(resF.size() != F.size())
+  if(resF.size() != models.size())
     BOOST_CHECK(false);
+
   for(Eigen::Index i = 0; i < resF.size(); ++i)
-    BOOST_CHECK(resF.at(i).isApprox(F.at(i), 1e-1) && resL.at(i).isApprox(L.at(i), 1e-1));
+  {
+    relativePose::Fundamental10PModel model = models.at(i);
+    BOOST_CHECK(resF.at(i).isApprox(model.getMatrix(), 1e-1));
+    BOOST_CHECK(resL.at(i).isApprox(model.getRadialDistortion(), 1e-1));
+  }
 }

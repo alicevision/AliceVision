@@ -7,8 +7,10 @@
 
 #pragma once
 
-#include "aliceVision/numeric/numeric.hpp"
-#include "aliceVision/multiview/projection.hpp"
+#include <aliceVision/numeric/numeric.hpp>
+#include <aliceVision/multiview/projection.hpp>
+#include <aliceVision/multiview/ISolver.hpp>
+#include <aliceVision/multiview/TwoViewKernel.hpp>
 
 // [1] "Robust and accurate calibration of camera networks". PhD.
 // Authors: Pierre MOULON
@@ -49,39 +51,65 @@ using namespace std;
  * See page 294 in HZ Result 11.1.
  *
  */
-struct EightPointRelativePoseSolver {
-  enum { MINIMUM_SAMPLES = 8 };
-  enum { MAX_MODELS = 1 };
-  static void Solve(const Mat &x1, const Mat &x2, std::vector<Mat3> *pvec_E)
-  {
-    assert(3 == x1.rows());
-    assert(8 <= x1.cols());
-    assert(x1.rows() == x2.rows());
-    assert(x1.cols() == x2.cols());
+class EightPointRelativePoseSolver : public multiview::ISolver<multiview::Mat3Model>
+{
+public:
 
-    MatX9 A(x1.cols(), 9);
-    EncodeEpipolarEquation(x1, x2, &A);
+    using ModelT = multiview::Mat3Model;
 
-    Vec9 e;
-    Nullspace(&A, &e);
-    Mat3 E = Map<RMat3>(e.data());
-
-    // Find the closest essential matrix to E in frobenius norm
-    // E = UD'VT
-    if (x1.cols() > 8) {
-      Eigen::JacobiSVD<Mat3> USV(E, Eigen::ComputeFullU | Eigen::ComputeFullV);
-      Vec3 d = USV.singularValues();
-      double a = d[0];
-      double b = d[1];
-      d << (a+b)/2., (a+b)/2., 0.0;
-      E = USV.matrixU() * d.asDiagonal() * USV.matrixV().transpose();
+    /**
+     * @brief Return the minimum number of required samples
+     * @return minimum number of required samples
+     */
+    inline std::size_t getMinimumNbRequiredSamples() const override
+    {
+      return 8;
     }
-    pvec_E->push_back(E);
 
-  }
+    /**
+     * @brief Return the maximum number of models
+     * @return maximum number of models
+     */
+    inline std::size_t getMaximumNbModels() const override
+    {
+      return 1;
+    }
+
+
+    void solve(const Mat &x1, const Mat &x2, std::vector<ModelT>& models) const override
+    {
+        assert(3 == x1.rows());
+        assert(8 <= x1.cols());
+        assert(x1.rows() == x2.rows());
+        assert(x1.cols() == x2.cols());
+
+        MatX9 A(x1.cols(), 9);
+        encodeEpipolarEquation(x1, x2, &A);
+
+        Vec9 e;
+        Nullspace(&A, &e);
+        Mat3 E = Map<RMat3>(e.data());
+
+        // Find the closest essential matrix to E in frobenius norm
+        // E = UD'VT
+        if (x1.cols() > 8) {
+          Eigen::JacobiSVD<Mat3> USV(E, Eigen::ComputeFullU | Eigen::ComputeFullV);
+          Vec3 d = USV.singularValues();
+          double a = d[0];
+          double b = d[1];
+          d << (a+b)/2., (a+b)/2., 0.0;
+          E = USV.matrixU() * d.asDiagonal() * USV.matrixV().transpose();
+        }
+        models.emplace_back(E);
+    }
+
+    void solve(const Mat& x1, const Mat& x2, std::vector<ModelT>& models, const std::vector<double>& weights) const override
+    {
+       throw std::logic_error("EightPointRelativePoseSolver does not support problem solving with weights.");
+    }
 
   template<typename TMatX, typename TMatA>
-  static inline void EncodeEpipolarEquation(const TMatX &x1, const TMatX &x2, TMatA *A) {
+  static inline void encodeEpipolarEquation(const TMatX &x1, const TMatX &x2, TMatA *A) {
     for (int i = 0; i < x1.cols(); ++i) {
       (*A)(i, 0) = x2(0, i) * x1(0, i);  // 0 represents x coords,
       (*A)(i, 1) = x2(0, i) * x1(1, i);  // 1 represents y coords,
@@ -97,9 +125,11 @@ struct EightPointRelativePoseSolver {
 };
 
 // Return the angular error between [0; PI/2]
-struct AngularError {
-  static double Error(const Mat3 &model, const Vec3 &x1, const Vec3 &x2) {
-    const Vec3 Em1 = (model * x1).normalized();
+struct AngularError
+{
+  double error(const multiview::Mat3Model& model, const Vec3 &x1, const Vec3 &x2) const
+  {
+    const Vec3 Em1 = (model.getMatrix() * x1).normalized();
     double angleVal = (x2.transpose() * Em1);
     angleVal /= (x2.norm() * Em1.norm());
     return abs(asin(angleVal));
@@ -107,34 +137,26 @@ struct AngularError {
 };
 
 class EssentialKernel_spherical
+        : public multiview::TwoViewKernel<EightPointRelativePoseSolver, AngularError, multiview::Mat3Model>
 {
 public:
-  typedef Mat3 Model;
-  enum { MINIMUM_SAMPLES = EightPointRelativePoseSolver::MINIMUM_SAMPLES };
 
-  EssentialKernel_spherical(const Mat &x1, const Mat &x2) : x1_(x1), x2_(x2) {}
+  using ModelT = multiview::Mat3Model;
+  using KernelBase = multiview::TwoViewKernel<EightPointRelativePoseSolver, AngularError, multiview::Mat3Model>;
 
-  void Fit(const vector<size_t> &samples, std::vector<Model> *models) const {
-    const Mat x1 = ExtractColumns(x1_, samples);
-    const Mat x2 = ExtractColumns(x2_, samples);
+  EssentialKernel_spherical(const Mat& x1, const Mat& x2)
+      : KernelBase(x1, x2)
+  {}
 
-    assert(3 == x1.rows());
-    assert(MINIMUM_SAMPLES <= x1.cols());
-    assert(x1.rows() == x2.rows());
-    assert(x1.cols() == x2.cols());
+  void fit(const vector<std::size_t>& samples, std::vector<ModelT>& models) const
+  {
+    assert(3 == KernelBase::_x1.rows());
+    assert(KernelBase::getMinimumNbRequiredSamples() <= KernelBase::_x1.cols());
+    assert(KernelBase::_x1.rows() == KernelBase::_x2.rows());
+    assert(KernelBase::_x1.cols() == KernelBase::_x2.cols());
 
-    EightPointRelativePoseSolver::Solve(x1, x2, models);
+    KernelBase::_kernelSolver.solve(KernelBase::_x1, KernelBase::_x2, models);
   }
-
-  size_t NumSamples() const {return x1_.cols();}
-
-  /// Return the angular error (between 0 and PI/2)
-  double Error(size_t sample, const Model &model) const {
-    return AngularError::Error(model, x1_.col(sample), x2_.col(sample));
-  }
-
-  protected:
-  const Mat & x1_, & x2_;
 };
 
 // Solve:

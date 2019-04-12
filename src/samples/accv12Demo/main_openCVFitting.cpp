@@ -189,7 +189,7 @@ int main(int, char**)
           double thresholdH = 4.0;
           double NFAH;
           {
-            typedef ACKernelAdaptor<
+            typedef AC_RelativePoseKernel<
               aliceVision::homography::kernel::FourPointSolver,
               aliceVision::homography::kernel::AsymmetricError,
               UnnormalizerI,
