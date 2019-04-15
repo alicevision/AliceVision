@@ -323,6 +323,9 @@ void Texturing::generateTexturesSubSet(const mvsUtils::MultiViewParams& mp,
     // We select the best cameras for each triangle and store it per camera for each output texture files.
     // List of triangle IDs (selected to contribute to the final texturing) per image.
     std::vector<std::map<AtlasIndex, std::vector<TrianglesId>>> contributionsPerCamera(mp.ncams);
+    using AtlasIndex = size_t;
+    using ScoreTriangleId = std::vector<std::pair<unsigned int, int>>; //list of <triangleId, score>
+    std::vector<std::map<AtlasIndex, std::vector<ScoreTriangleId>>> contributionsPerCamera(mp.ncams);
 
     //for each atlasID, calculate contributionPerCamera
     for(const size_t atlasID : atlasIDs)
@@ -419,35 +422,34 @@ void Texturing::generateTexturesSubSet(const mvsUtils::MultiViewParams& mp,
             std::sort(scorePerCamId.begin(), scorePerCamId.end(), std::greater<ScoreCamId>());
             const double minScore = texParams.bestScoreThreshold * std::get<1>(scorePerCamId.front()); // bestScoreThreshold * bestScore
             const bool bestIsPartial = (std::get<0>(scorePerCamId.front()) < 3);
-            int nbCumulatedVertices = 0;
 
-            int levelContrib = 0;
-            for(int i = 0; i < scorePerCamId.size() && levelContrib < nbBand; ++i)
+            int maxNbContrib = std::min(texParams.multiBandNbContrib.back(), static_cast<int>(scorePerCamId.size()));
+            int nbCumulatedVertices = 0;
+            int level = 0;
+            for(int contrib = 0; nbCumulatedVertices < 3 * maxNbContrib && contrib < maxNbContrib; ++contrib)
             {
-                const int maxNbVerticesForFusion = texParams.multiBandNbContrib[levelContrib] * 3;
-                if (!bestIsPartial && i > 0)
+                nbCumulatedVertices += std::get<0>(scorePerCamId[contrib]);
+                if (!bestIsPartial && contrib != 0)
                 {
-                    nbCumulatedVertices += std::get<0>(scorePerCamId[i]);
-                    if(maxNbVerticesForFusion != 0 && nbCumulatedVertices > maxNbVerticesForFusion)
-                    {
-                        ++levelContrib;
-                        nbCumulatedVertices = 0;
-                        continue;
-                    }
-                    if(std::get<1>(scorePerCamId[i]) < minScore)
+                    if(std::get<1>(scorePerCamId[contrib]) < minScore)
                     {
                         // The best image fully see the triangle and has a much better score, so only rely on the first ones
                         break;
                     }
                 }
 
-                //for the camera camId : add triangleID to the corresponding texture at the right level of frequency
-                const int camId = std::get<2>(scorePerCamId[i]);
+                //for the camera camId : add triangleID to the corresponding texture at the right level of frequencies
+                const int camId = std::get<2>(scorePerCamId[contrib]);
+                const int triangleScore = std::get<1>(scorePerCamId[contrib]);
                 auto& camContribution = contributionsPerCamera[camId];
                 if(camContribution.find(atlasID) == camContribution.end())
                     camContribution[atlasID].resize(nbBand);
-                camContribution.at(atlasID)[levelContrib].push_back(triangleID);
+                camContribution.at(atlasID)[level].emplace_back(triangleID, triangleScore);
+
+                if(contrib + 1 >= texParams.multiBandNbContrib[level])
+                    ++level;
             }
+
         }
     }
 
@@ -461,7 +463,7 @@ void Texturing::generateTexturesSubSet(const mvsUtils::MultiViewParams& mp,
 
     for(int camId = 0; camId < contributionsPerCamera.size(); ++camId)
     {
-        const std::map<AtlasIndex, std::vector<TrianglesId>>& cameraContributions = contributionsPerCamera[camId];
+        const std::map<AtlasIndex, std::vector<ScoreTriangleId>>& cameraContributions = contributionsPerCamera[camId];
 
         if(cameraContributions.empty())
         {
@@ -487,16 +489,18 @@ void Texturing::generateTexturesSubSet(const mvsUtils::MultiViewParams& mp,
         for(const auto& c : cameraContributions)
         {
             AtlasIndex atlasID = c.first;
+            //for each level
             for(int level = 0; level < c.second.size(); ++level)
             {
-                const TrianglesId& trianglesId = c.second[level];
+                const ScoreTriangleId& trianglesId = c.second[level];
                 ALICEVISION_LOG_INFO("    Texture file: " << atlasID << ", number of triangles: " << trianglesId.size() << ".");
 
                 // for each triangle
                 #pragma omp parallel for
                 for(int ti = 0; ti < trianglesId.size(); ++ti)
                 {
-                    const unsigned int triangleId = trianglesId[ti];
+                    const unsigned int triangleId = std::get<0>(trianglesId[ti]);
+                    const int triangleScore = std::get<1>(trianglesId[ti]);
                     // retrieve triangle 3D and UV coordinates
                     Point2d triPixs[3];
                     Point3d triPts[3];
@@ -571,8 +575,8 @@ void Texturing::generateTexturesSubSet(const mvsUtils::MultiViewParams& mp,
                                AccuImage& accuImage = accuPyramid.pyramid[levelC];
 
                                // fill the accumulated color map for this pixel
-                               accuImage.img[xyoffset] += pyramidL[levelC].getInterpolateColor(pixRC/downscaleCoef);
-                               accuImage.imgCount[xyoffset] += 1;
+                               accuImage.img[xyoffset] += pyramidL[levelC].getInterpolateColor(pixRC/downscaleCoef) * triangleScore;
+                               accuImage.imgCount[xyoffset] += triangleScore;
                            }
                        }
                     }
@@ -602,6 +606,7 @@ void Texturing::generateTexturesSubSet(const mvsUtils::MultiViewParams& mp,
                     continue;
 
                 atlasTexture.img[xyoffset] /= atlasTexture.imgCount[xyoffset];
+                atlasTexture.imgCount[xyoffset] = 1;
 
                 for(std::size_t level = 1; level < accuPyramid.pyramid.size(); ++level)
                 {
