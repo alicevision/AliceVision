@@ -8,7 +8,6 @@ set(multiview_files_headers
   ISolver.hpp
   relativePose/Essential5PSolver.hpp
   relativePose/Essential8PSolver.hpp
-  relativePose/EssentialError.hpp
   relativePose/EssentialKernel.hpp
   relativePose/Fundamental7PSolver.hpp
   relativePose/Fundamental8PSolver.hpp
@@ -22,7 +21,7 @@ set(multiview_files_headers
   resection/EPnPKernel.hpp
   resection/P3PSolver.hpp
   resection/P4PfSolver.hpp
-  #resection/P5PfrSolver.hpp
+  resection/P5PfrSolver.hpp
   resection/ProjectionDistanceError.hpp
   resection/Resection6PSolver.hpp   
   resection/ResectionKernel.hpp
