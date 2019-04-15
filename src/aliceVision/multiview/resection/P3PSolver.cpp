@@ -287,53 +287,6 @@ void P3PSolver::solve(const Mat& x2d, const Mat& x3d, std::vector<Mat34Model>& m
   }
 }
 
-
-/*
-P3P_ResectionKernel_K::P3P_ResectionKernel_K(const Mat2X &x_camera, const Mat3X &X, const Mat3 &K = Mat3::Identity())
-: x_image_(x_camera), X_(X), K_(K)
-{
-  assert(x_camera.cols() == X.cols());
-  // Conversion from image coordinates to normalized camera coordinates
-  Mat3X x_image_h;
-  EuclideanToHomogeneous(x_image_, &x_image_h);
-  x_camera_ = K_.inverse() * x_image_h;
-  for(size_t i = 0; i < x_camera_.cols(); ++i)
-    x_camera_.col(i).normalize();
-}
-
-void P3P_ResectionKernel_K::Fit(const std::vector<size_t> &samples, std::vector<Model> *models) const
-{
-  const Mat3 pt2D_3x3(ExtractColumns(x_camera_, samples));
-  const Mat3 pt3D_3x3(ExtractColumns(X_, samples));
-  Mat solutions(3, 4 * 4);
-  if(computeP3PPoses(pt2D_3x3, pt3D_3x3, solutions))
-  {
-    Mat34 P;
-    Mat3 R;
-    Vec3 t;
-    for(size_t i = 0; i < 4; ++i)
-    {
-      R = solutions.block<3, 3>(0, i * 4 + 1);
-      t = -R * solutions.col(i * 4);
-      P_From_KRt(K_, R, t, &P);
-      models->push_back(P);
-    }
-  }
-}
-
-double P3P_ResectionKernel_K::Error(size_t sample, const Model &model) const
-{
-  const Vec3 X = X_.col(sample);
-  const Mat2X error = Project(model, X) - x_image_.col(sample);
-  return error.col(0).norm();
-}
-
-size_t P3P_ResectionKernel_K::NumSamples() const
-{
-  return static_cast<size_t> (x_camera_.cols());
-}
-*/
-
 }  // namespace resection
 }  // namespace multiview
 }  // namespace aliceVision

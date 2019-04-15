@@ -64,38 +64,3 @@ public:
 }  // namespace resection
 }  // namespace multiview
 }  // namespace aliceVision
-
-
-
-
-
-
-
-
-/*
-
-class P3P_ResectionKernel_K
-{
-public:
-  typedef Mat34 Model;
-
-  enum
-  {
-    MINIMUM_SAMPLES = 3
-  };
-
-  P3P_ResectionKernel_K(const Mat2X &x_camera, const Mat3X &X, const Mat3 &K = Mat3::Identity());
-
-  void Fit(const std::vector<size_t> &samples, std::vector<Model> *models) const;
-
-  double Error(size_t sample, const Model &model) const;
-
-  size_t NumSamples() const;
-
-private:
-  Mat2X x_image_; // camera coordinates
-  Mat3X x_camera_; // camera coordinates (normalized)
-  Mat3X X_; // 3D points
-  Mat3 K_;
-};
-*/
