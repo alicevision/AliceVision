@@ -426,7 +426,7 @@ int main(int argc, char **argv)
       matchingImageCollection::robustModelEstimation(geometricMatches,
         &sfmData,
         regionPerView,
-        GeometricFilterMatrix_E_AC(std::numeric_limits<double>::infinity(), maxIteration),
+        GeometricFilterMatrix_E_AC(geometricErrorMax, maxIteration),
         mapPutativesMatches,
         guidedMatching);
 
@@ -455,7 +455,7 @@ int main(int argc, char **argv)
       matchingImageCollection::robustModelEstimation(geometricMatches,
         &sfmData,
         regionPerView,
-        GeometricFilterMatrix_H_AC(std::numeric_limits<double>::infinity(), maxIteration),
+        GeometricFilterMatrix_H_AC(geometricErrorMax, maxIteration),
         mapPutativesMatches, guidedMatching,
         onlyGuidedMatching ? -1.0 : 0.6);
     }
@@ -466,7 +466,7 @@ int main(int argc, char **argv)
       matchingImageCollection::robustModelEstimation(geometricMatches,
         &sfmData,
         regionPerView,
-        GeometricFilterMatrix_HGrowing(std::numeric_limits<double>::infinity(), maxIteration),
+        GeometricFilterMatrix_HGrowing(geometricErrorMax, maxIteration),
         mapPutativesMatches,
         guidedMatching);
     }
