@@ -10,9 +10,9 @@
 #include "aliceVision/feature/sift/ImageDescriber_SIFT.hpp"
 #include "aliceVision/matching/RegionsMatcher.hpp"
 #include "aliceVision/multiview/relativePose/FundamentalKernel.hpp"
-#include "aliceVision/multiview/conditioning.hpp"
+#include "aliceVision/robustEstimation/conditioning.hpp"
 #include "aliceVision/robustEstimation/ACRansac.hpp"
-#include "aliceVision/robustEstimation/RansacKernel.hpp"
+#include "aliceVision/multiview/RelativePoseKernel.hpp"
 
 #include "dependencies/vectorGraphics/svgDrawer.hpp"
 
@@ -172,11 +172,11 @@ int main(int argc, char **argv)
 
     //-- Fundamental robust estimation
     std::vector<size_t> vec_inliers;
-    typedef RelativePoseKernel<
+    typedef multiview::RelativePoseKernel<
       multiview::relativePose::Fundamental7PSolver,
       multiview::relativePose::FundamentalSymmetricEpipolarDistanceError,
       multiview::UnnormalizerT,
-      multiview::Mat3Model>
+      robustEstimation::Mat3Model>
       KernelType;
 
     KernelType kernel(
@@ -184,7 +184,7 @@ int main(int argc, char **argv)
       xR, imageR.Width(), imageR.Height(),
       true); // configure as point to line error model.
 
-    multiview::Mat3Model F;
+    robustEstimation::Mat3Model F;
     const std::pair<double,double> ACRansacOut = ACRANSAC(kernel, vec_inliers, 1024, &F,
       Square(4.0)); // Upper bound of authorized threshold
     

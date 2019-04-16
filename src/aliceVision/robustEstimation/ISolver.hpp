@@ -8,8 +8,10 @@
 
 #include <aliceVision/numeric/numeric.hpp>
 
+#include <vector>
+
 namespace aliceVision {
-namespace multiview {
+namespace robustEstimation {
 
 /**
  * @brief Generic solver interface.
@@ -49,7 +51,6 @@ public:
   virtual void solve(const Mat& x1, const Mat& x2, std::vector<ModelT_>& models, const std::vector<double>& weights) const = 0;
 };
 
-
 /**
  * @brief An Undefined Solver
  */
@@ -80,7 +81,6 @@ public:
     throw std::runtime_error("Undefined solver used in kernel.");
   }
 };
-
 
 /**
  * @brief Generic matrix solver model.
@@ -124,71 +124,6 @@ typedef MatrixModel<Mat3> Mat3Model;
  */
 typedef MatrixModel<Mat34> Mat34Model;
 
-/**
- * @brief Relative pose solver error interface.
- */
-template <typename ModelT>
-struct ISolverErrorRelativePose
-{
-  virtual double error(const ModelT& model, const Vec2& x1, const Vec2& x2) const = 0;
-};
 
-/**
- * @brief Resection solver error interface.
- */
-template <typename ModelT>
-struct ISolverErrorResection
-{
-  virtual double error(const ModelT& model, const Vec2& x2d, const Vec3& x3d) const = 0;
-};
-
-/**
- * @brief Build a 9 x n matrix from point matches, where each row is equivalent to the
- * equation x'T*F*x = 0 for a single correspondence pair (x', x). The domain of
- * the matrix is a 9 element vector corresponding to F. In other words, set up
- * the linear system
- *
- *   Af = 0,
- *
- * where f is the F matrix as a 9-vector rather than a 3x3 matrix (row
- * major). If the points are well conditioned and there are 8 or more, then
- * the nullspace should be rank one. If the nullspace is two dimensional,
- * then the rank 2 constraint must be enforced to identify the appropriate F
- * matrix.
- *
- * @note that this does not resize the matrix A; it is expected to have the
- * appropriate size already.
- */
-template<typename TMatX, typename TMatA>
-inline void encodeEpipolarEquation(const TMatX& x1, const TMatX& x2, TMatA* A, const std::vector<double> *weights = nullptr)
-{
-  assert(x1.cols()==x2.cols());
-
-  if(weights != nullptr)
-  {
-    assert(x1.cols()==weights->size());
-  }
-
-  for(typename TMatX::Index i = 0; i < x1.cols(); ++i)
-  {
-    const Vec2 xx1 = x1.col(i);
-    const Vec2 xx2 = x2.col(i);
-
-    A->row(i) <<
-      xx2(0) * xx1(0),  // 0 represents x coords,
-      xx2(0) * xx1(1),  // 1 represents y coords.
-      xx2(0),
-      xx2(1) * xx1(0),
-      xx2(1) * xx1(1),
-      xx2(1),
-      xx1(0),
-      xx1(1),
-      1.0;
-
-    if(weights != nullptr)
-      A->row(i) *= (*weights)[i];
-  }
-}
-
-} // namespace multiview
+} // namespace robustEstimation
 } // namespace aliceVision

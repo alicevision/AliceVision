@@ -10,11 +10,12 @@
 #include <aliceVision/matching/IndMatch.hpp>
 #include <aliceVision/matching/IndMatchDecorator.hpp>
 #include <aliceVision/matchingImageCollection/GeometricFilterMatrix.hpp>
-#include <aliceVision/multiview/relativePose/Homography4PSolver.hpp>
-#include <aliceVision/multiview/relativePose/HomographyError.hpp>
-#include <aliceVision/robustEstimation/RansacKernel.hpp>
 #include <aliceVision/robustEstimation/ACRansac.hpp>
 #include <aliceVision/robustEstimation/guidedMatching.hpp>
+#include <aliceVision/multiview/relativePose/Homography4PSolver.hpp>
+#include <aliceVision/multiview/relativePose/HomographyError.hpp>
+#include <aliceVision/multiview/RelativePoseKernel.hpp>
+#include <aliceVision/multiview/Unnormalizer.hpp>
 #include <aliceVision/feature/RegionsPerView.hpp>
 #include <aliceVision/sfmData/SfMData.hpp>
 
@@ -43,9 +44,6 @@ struct GeometricFilterMatrix_H_AC : public GeometricFilterMatrix
                                        const matching::MatchesPerDescType& putativeMatchesPerType,
                                        matching::MatchesPerDescType& out_geometricInliersPerType)
   {
-    using namespace aliceVision;
-    using namespace aliceVision::robustEstimation;
-
     out_geometricInliersPerType.clear();
 
     // get back corresponding view index
@@ -65,11 +63,11 @@ struct GeometricFilterMatrix_H_AC : public GeometricFilterMatrix
     fillMatricesWithUndistortFeaturesMatches(pairIndex, putativeMatchesPerType, sfmData, regionsPerView, descTypes, xI, xJ);
 
     // define the AContrario adapted Homography matrix solver
-    typedef RelativePoseKernel<
+    typedef multiview::RelativePoseKernel<
         multiview::relativePose::Homography4PSolver,
         multiview::relativePose::HomographyAsymmetricError,
         multiview::UnnormalizerI,
-        multiview::Mat3Model>
+        robustEstimation::Mat3Model>
         KernelT;
 
     const KernelT kernel(xI, viewI.getWidth(), viewI.getHeight(),
@@ -79,8 +77,8 @@ struct GeometricFilterMatrix_H_AC : public GeometricFilterMatrix
     const double upperBoundPrecision = Square(m_dPrecision);
 
     std::vector<std::size_t> inliers;
-    multiview::Mat3Model model;
-    const std::pair<double,double> ACRansacOut = ACRANSAC(kernel, inliers, m_stIteration, &model, upperBoundPrecision);
+    robustEstimation::Mat3Model model;
+    const std::pair<double,double> ACRansacOut = robustEstimation::ACRANSAC(kernel, inliers, m_stIteration, &model, upperBoundPrecision);
     m_H = model.getMatrix();
 
     if (inliers.empty())
@@ -188,7 +186,7 @@ struct GeometricFilterMatrix_H_AC : public GeometricFilterMatrix
       const camera::IntrinsicBase* camJ = sfmData->getIntrinsics().count(viewJ.getIntrinsicId()) ?
                                           sfmData->getIntrinsics().at(viewJ.getIntrinsicId()).get() : nullptr;
 
-      multiview::Mat3Model model(m_H);
+      robustEstimation::Mat3Model model(m_H);
 
       if(dDistanceRatio < 0)
       {
@@ -207,7 +205,7 @@ struct GeometricFilterMatrix_H_AC : public GeometricFilterMatrix
           createMatricesWithUndistortFeatures(camI, pointsFeaturesI, xI);
           createMatricesWithUndistortFeatures(camJ, pointsFeaturesJ, xJ);
 
-          robustEstimation::guidedMatching<multiview::Mat3Model, multiview::relativePose::HomographyAsymmetricError>(model, xI, xJ, Square(m_dPrecision_robust), localMatches);
+          robustEstimation::guidedMatching<robustEstimation::Mat3Model, multiview::relativePose::HomographyAsymmetricError>(model, xI, xJ, Square(m_dPrecision_robust), localMatches);
 
           // remove matches that have the same (X,Y) coordinates
           matching::IndMatchDecorator<float> matchDeduplicator(localMatches, pointsFeaturesI, pointsFeaturesJ);
@@ -218,7 +216,7 @@ struct GeometricFilterMatrix_H_AC : public GeometricFilterMatrix
       else
       {
         // filtering based on region positions and regions descriptors
-        robustEstimation::guidedMatching<multiview::Mat3Model, multiview::relativePose::HomographyAsymmetricError>(model,
+        robustEstimation::guidedMatching<robustEstimation::Mat3Model, multiview::relativePose::HomographyAsymmetricError>(model,
                                                                  camI, regionsPerView.getAllRegions(I),
                                                                  camJ, regionsPerView.getAllRegions(J),
                                                                  Square(m_dPrecision_robust), Square(dDistanceRatio),

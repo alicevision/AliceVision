@@ -48,7 +48,7 @@ BOOST_AUTO_TEST_CASE(NormalizedHomography4PKernel_Fitting)
     std::vector<std::size_t> samples(samples_,samples_+5);
     for(std::size_t j = 4; samples.size() < x.cols(); samples.push_back(j++))
     {
-      std::vector<Mat3Model> Hs;
+      std::vector<robustEstimation::Mat3Model> Hs;
       kernel.fit(samples, Hs);
       BOOST_CHECK_EQUAL(1, Hs.size());
 
@@ -91,7 +91,7 @@ BOOST_AUTO_TEST_CASE(Homography4PKernel_Fitting)
 
     for(std::size_t j = 4; samples.size() < x.cols(); samples.push_back(j++))
     {
-      std::vector<Mat3Model> Hs;
+      std::vector<robustEstimation::Mat3Model> Hs;
       kernel.fit(samples, Hs);
       BOOST_CHECK_EQUAL(1, Hs.size());
 

@@ -43,7 +43,7 @@ BOOST_AUTO_TEST_CASE(TranslationFromKnowRotationKernel_Multiview)
 
     std::size_t samples_[2]={0,1};
     std::vector<std::size_t> samples(samples_, samples_ + 2);
-    std::vector<multiview::MatrixModel<Vec3>> vec_t;
+    std::vector<robustEstimation::MatrixModel<Vec3>> vec_t;
     kernel.fit(samples, vec_t);
 
     BOOST_CHECK_EQUAL(1, vec_t.size());

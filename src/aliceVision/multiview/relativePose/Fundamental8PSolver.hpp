@@ -8,13 +8,13 @@
 
 #pragma once
 
-#include <aliceVision/multiview/ISolver.hpp>
+#include <aliceVision/robustEstimation/ISolver.hpp>
 
 namespace aliceVision {
 namespace multiview {
 namespace relativePose {
 
-class Fundamental8PSolver : public ISolver<Mat3Model>
+class Fundamental8PSolver : public robustEstimation::ISolver<robustEstimation::Mat3Model>
 {
 public:
 
@@ -42,7 +42,7 @@ public:
    * @param[in] x2 Corresponding points in the second image. One per column.
    * @param[out] models  A list of at most 10 candidate essential matrix solutions.
    */
-   void solve(const Mat& x1, const Mat& x2, std::vector<Mat3Model>& models) const override;
+   void solve(const Mat& x1, const Mat& x2, std::vector<robustEstimation::Mat3Model>& models) const override;
 
    /**
     * @brief Solve the problem.
@@ -51,7 +51,7 @@ public:
     * @param[out] models A vector into which the computed models are stored.
     * @param[in]  weights.
     */
-   void solve(const Mat& x1, const Mat& x2, std::vector<Mat3Model>& models, const std::vector<double>& weights) const override;
+   void solve(const Mat& x1, const Mat& x2, std::vector<robustEstimation::Mat3Model>& models, const std::vector<double>& weights) const override;
 };
 
 }  // namespace relativePose

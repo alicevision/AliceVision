@@ -9,10 +9,12 @@
 #pragma once
 
 #include <aliceVision/numeric/numeric.hpp>
-#include <aliceVision/multiview/conditioning.hpp>
-#include <aliceVision/multiview/triangulation/Triangulation.hpp>
+#include <aliceVision/robustEstimation/conditioning.hpp>
 #include <aliceVision/robustEstimation/LORansac.hpp> 
-#include <aliceVision/robustEstimation/RansacKernel.hpp>
+#include <aliceVision/robustEstimation/ISolver.hpp>
+#include <aliceVision/robustEstimation/IRansacKernel.hpp>
+#include <aliceVision/multiview/Unnormalizer.hpp>
+#include <aliceVision/multiview/triangulation/Triangulation.hpp>
 
 #include <vector>
 #include <cstddef>
@@ -36,7 +38,7 @@ namespace multiview {
  * a solution from any set of data larger than the minimum required, usually a 
  * DLT algorithm.
  */
-template <typename SolverT_, typename ErrorT_, typename UnnormalizerT_, typename ModelT_ = MatrixModel<Vec4>, typename SolverLsT_ = UndefinedSolver<ModelT_>>
+template <typename SolverT_, typename ErrorT_, typename UnnormalizerT_, typename ModelT_ = robustEstimation::MatrixModel<Vec4>, typename SolverLsT_ = robustEstimation::UndefinedSolver<ModelT_>>
 class NViewsTriangulationLORansac
     : public robustEstimation::IRansacKernel<ModelT_>
 {
@@ -218,7 +220,7 @@ private:
 /**
  * @brief Functor used to compute the reprojection error as the pixel error.
  */
-template<typename ModelT_ = MatrixModel<Vec4>>
+template<typename ModelT_ = robustEstimation::MatrixModel<Vec4>>
 struct ReprojectionError
 {
   /**
@@ -238,7 +240,7 @@ struct ReprojectionError
 /**
  * @brief Functor used to compute the error as the angular error.
  */
-template<typename ModelT_ = MatrixModel<Vec4>>
+template<typename ModelT_ = robustEstimation::MatrixModel<Vec4>>
 struct AngularError
 {
   /**
@@ -262,7 +264,7 @@ struct AngularError
 //                                    ReprojectionError, 
 //                                    UnnormalizerT,
 //                                    TriangulateNViewsSolver> LORansacTriangulationKernel;
-template<typename ErrorCost = ReprojectionError<MatrixModel<Vec4>>>
-using LORansacTriangulationKernel =  NViewsTriangulationLORansac<TriangulateNViewsSolver, ErrorCost, UnnormalizerT, MatrixModel<Vec4>, TriangulateNViewsSolver>;
+template<typename ErrorCost = ReprojectionError<robustEstimation::MatrixModel<Vec4>>>
+using LORansacTriangulationKernel =  NViewsTriangulationLORansac<TriangulateNViewsSolver, ErrorCost, UnnormalizerT, robustEstimation::MatrixModel<Vec4>, TriangulateNViewsSolver>;
 } // namespace multiview
 } // namespace aliceVision

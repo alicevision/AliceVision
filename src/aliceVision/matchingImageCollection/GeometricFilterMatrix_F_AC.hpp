@@ -10,18 +10,19 @@
 #include <aliceVision/matching/IndMatch.hpp>
 #include <aliceVision/matchingImageCollection/GeometricFilterMatrix.hpp>
 #include <aliceVision/matchingImageCollection/geometricFilterUtils.hpp>
-#include <aliceVision/multiview/essential.hpp>
-#include <aliceVision/multiview/relativePose/Fundamental7PSolver.hpp>
-#include <aliceVision/multiview/relativePose/Fundamental8PSolver.hpp>
-#include <aliceVision/multiview/relativePose/Fundamental10PSolver.hpp>
-#include <aliceVision/multiview/relativePose/FundamentalError.hpp>
 #include <aliceVision/robustEstimation/estimators.hpp>
-#include <aliceVision/robustEstimation/RansacKernel.hpp>
 #include <aliceVision/robustEstimation/ACRansac.hpp>
 #include <aliceVision/robustEstimation/LORansac.hpp>
 #include <aliceVision/robustEstimation/ScoreEvaluator.hpp>
 #include <aliceVision/robustEstimation/guidedMatching.hpp>
 #include <aliceVision/robustEstimation/supportEstimation.hpp>
+#include <aliceVision/multiview/essential.hpp>
+#include <aliceVision/multiview/relativePose/Fundamental7PSolver.hpp>
+#include <aliceVision/multiview/relativePose/Fundamental8PSolver.hpp>
+#include <aliceVision/multiview/relativePose/Fundamental10PSolver.hpp>
+#include <aliceVision/multiview/relativePose/FundamentalError.hpp>
+#include <aliceVision/multiview/RelativePoseKernel.hpp>
+#include <aliceVision/multiview/Unnormalizer.hpp>
 #include <aliceVision/feature/RegionsPerView.hpp>
 #include <aliceVision/sfmData/SfMData.hpp>
 
@@ -54,9 +55,6 @@ struct GeometricFilterMatrix_F_AC : public GeometricFilterMatrix
                                        const matching::MatchesPerDescType& putativeMatchesPerType,
                                        matching::MatchesPerDescType& out_geometricInliersPerType)
   {
-    using namespace aliceVision;
-    using namespace aliceVision::robustEstimation;
-
     out_geometricInliersPerType.clear();
 
     // get back corresponding view index
@@ -94,9 +92,6 @@ struct GeometricFilterMatrix_F_AC : public GeometricFilterMatrix
                                        const matching::MatchesPerDescType& putativeMatchesPerType,
                                        matching::MatchesPerDescType& out_geometricInliersPerType)
   {
-    using namespace aliceVision;
-    using namespace aliceVision::robustEstimation;
-
     out_geometricInliersPerType.clear();
 
     const std::vector<feature::EImageDescriberType> descTypes = getCommonDescTypes(regionI, regionJ);
@@ -115,17 +110,17 @@ struct GeometricFilterMatrix_F_AC : public GeometricFilterMatrix
 
     switch(m_estimator)
     {
-      case ERobustEstimator::ACRANSAC:
+      case robustEstimation::ERobustEstimator::ACRANSAC:
       {
         if(m_estimateDistortion)
         {
           estimationPair = geometricEstimation_Mat_ACRANSAC<multiview::relativePose::Fundamental10PSolver, multiview::relativePose::Fundamental10PModel>(xI, xJ, imageSizeI, imageSizeJ, inliers);
         }
         else
-          estimationPair = geometricEstimation_Mat_ACRANSAC<multiview::relativePose::Fundamental7PSolver, multiview::Mat3Model>(xI, xJ, imageSizeI, imageSizeJ, inliers);
+          estimationPair = geometricEstimation_Mat_ACRANSAC<multiview::relativePose::Fundamental7PSolver, robustEstimation::Mat3Model>(xI, xJ, imageSizeI, imageSizeJ, inliers);
       }
       break;
-      case ERobustEstimator::LORANSAC:
+      case robustEstimation::ERobustEstimator::LORANSAC:
       {
         if(m_estimateDistortion)
           throw std::invalid_argument("[GeometricFilterMatrix_F_AC::geometricEstimation] Using fundamental matrix and f10 solver with LO_RANSAC is not yet implemented");
@@ -170,13 +165,10 @@ struct GeometricFilterMatrix_F_AC : public GeometricFilterMatrix
                                                                 const std::pair<std::size_t, std::size_t>& imageSizeJ, // size of the first image
                                                                 std::vector<std::size_t>& out_inliers)
   {
-    using namespace aliceVision;
-    using namespace aliceVision::robustEstimation;
-
     out_inliers.clear();
 
     // define the AContrario adapted Fundamental matrix solver
-    typedef RelativePoseKernel<
+    typedef multiview::RelativePoseKernel<
       SolverT_,
       multiview::relativePose::FundamentalEpipolarDistanceError,
       //multiview::relativePose::FundamentalSymmetricEpipolarDistanceError,
@@ -191,7 +183,7 @@ struct GeometricFilterMatrix_F_AC : public GeometricFilterMatrix
     const double upperBoundPrecision = Square(m_dPrecision);
 
     ModelT_ model;
-    const std::pair<double,double> ACRansacOut = ACRANSAC(kernel, out_inliers, m_stIteration, &model, upperBoundPrecision);
+    const std::pair<double,double> ACRansacOut = robustEstimation::ACRANSAC(kernel, out_inliers, m_stIteration, &model, upperBoundPrecision);
     m_F = model.getMatrix();
 
     if(out_inliers.empty())
@@ -219,20 +211,17 @@ struct GeometricFilterMatrix_F_AC : public GeometricFilterMatrix
                                                                 const std::pair<std::size_t, std::size_t>& imageSizeJ, // size of the first image
                                                                 std::vector<std::size_t>& out_inliers)
   {
-    using namespace aliceVision;
-    using namespace aliceVision::robustEstimation;
-
     out_inliers.clear();
 
     // just a safeguard
     if(m_dPrecision == std::numeric_limits<double>::infinity())
       throw std::invalid_argument("[GeometricFilterMatrix_F_AC_AC::geometricEstimation] the threshold of the LORANSAC is set to infinity!");
 
-    typedef RelativePoseKernel<
+    typedef multiview::RelativePoseKernel<
             SolverT_,
             multiview::relativePose::FundamentalSymmetricEpipolarDistanceError,
             multiview::UnnormalizerT,
-            multiview::Mat3Model,
+            robustEstimation::Mat3Model,
             SolverLsT_>
             KernelT;
 
@@ -241,9 +230,9 @@ struct GeometricFilterMatrix_F_AC : public GeometricFilterMatrix
 
     //@fixme scorer should be using the pixel error, not the squared version, refactoring needed
     const double normalizedThreshold = Square(m_dPrecision * kernel.normalizer2()(0, 0));
-    ScoreEvaluator<KernelT> scorer(normalizedThreshold);
+    robustEstimation::ScoreEvaluator<KernelT> scorer(normalizedThreshold);
 
-    multiview::Mat3Model model = LO_RANSAC(kernel, scorer, &out_inliers);
+    robustEstimation::Mat3Model model = robustEstimation::LO_RANSAC(kernel, scorer, &out_inliers);
     m_F = model.getMatrix();
 
     if(out_inliers.empty())
@@ -284,10 +273,10 @@ struct GeometricFilterMatrix_F_AC : public GeometricFilterMatrix
       const camera::IntrinsicBase* camJ = sfmData->getIntrinsics().count(viewJ.getIntrinsicId()) ?
                                           sfmData->getIntrinsics().at(viewJ.getIntrinsicId()).get() : nullptr;
 
-      multiview::Mat3Model model(m_F);
+      robustEstimation::Mat3Model model(m_F);
 
       // check the features correspondences that agree in the geometric and photometric domain
-      robustEstimation::guidedMatching<multiview::Mat3Model, multiview::relativePose::FundamentalEpipolarDistanceError>(
+      robustEstimation::guidedMatching<robustEstimation::Mat3Model, multiview::relativePose::FundamentalEpipolarDistanceError>(
         model,
         camI,                            // camera::IntrinsicBase
         regionsPerView.getAllRegions(I), // feature::Regions

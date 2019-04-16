@@ -8,9 +8,10 @@
 
 #pragma once
 
-#include <aliceVision/multiview/TwoViewKernel.hpp>
+#include <aliceVision/robustEstimation/FittingKernel.hpp>
 #include <aliceVision/multiview/relativePose/Homography4PSolver.hpp>
 #include <aliceVision/multiview/relativePose/HomographyError.hpp>
+#include <aliceVision/multiview/Unnormalizer.hpp>
 
 namespace aliceVision {
 namespace multiview {
@@ -19,12 +20,12 @@ namespace relativePose {
 /**
  * @brief  Kernel that works on original data point
  */
-typedef TwoViewKernel<Homography4PSolver, HomographyAsymmetricError, Mat3Model> Homography4PKernel;
+typedef robustEstimation::FittingKernel<Homography4PSolver, HomographyAsymmetricError, robustEstimation::Mat3Model> Homography4PKernel;
 
 /**
  * @brief By default use the normalized version for increased robustness.
  */
-typedef NormalizedTwoViewKernel<Homography4PSolver, HomographyAsymmetricError, UnnormalizerI, Mat3Model> NormalizedHomography4PKernel;
+typedef robustEstimation::NormalizedFittingKernel<Homography4PSolver, HomographyAsymmetricError, UnnormalizerI, robustEstimation::Mat3Model> NormalizedHomography4PKernel;
 
 }  // namespace relativePose
 }  // namespace multiview

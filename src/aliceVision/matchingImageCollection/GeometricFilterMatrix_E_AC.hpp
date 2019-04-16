@@ -10,12 +10,12 @@
 #include <aliceVision/types.hpp>
 #include <aliceVision/matching/IndMatch.hpp>
 #include <aliceVision/matchingImageCollection/GeometricFilterMatrix.hpp>
-#include <aliceVision/multiview/essential.hpp>
+#include <aliceVision/robustEstimation/ACRansac.hpp>
+#include <aliceVision/robustEstimation/guidedMatching.hpp>
 #include <aliceVision/multiview/relativePose/Essential5PSolver.hpp>
 #include <aliceVision/multiview/relativePose/FundamentalError.hpp>
-#include <aliceVision/robustEstimation/ACRansac.hpp>
-#include <aliceVision/robustEstimation/RansacKernel.hpp>
-#include <aliceVision/robustEstimation/guidedMatching.hpp>
+#include <aliceVision/multiview/essential.hpp>
+#include <aliceVision/multiview/RelativePoseKernel.hpp>
 #include <aliceVision/feature/RegionsPerView.hpp>
 #include <aliceVision/sfmData/SfMData.hpp>
 
@@ -46,9 +46,6 @@ struct GeometricFilterMatrix_E_AC : public GeometricFilterMatrix
                                        const matching::MatchesPerDescType& putativeMatchesPerType,
                                        matching::MatchesPerDescType& out_geometricInliersPerType)
   {
-    using namespace aliceVision;
-    using namespace aliceVision::robustEstimation;
-
     out_geometricInliersPerType.clear();
 
     // get back corresponding view index
@@ -79,10 +76,10 @@ struct GeometricFilterMatrix_E_AC : public GeometricFilterMatrix
     fillMatricesWithUndistortFeaturesMatches(pairIndex, putativeMatchesPerType, sfmData, regionsPerView, descTypes, xI, xJ);
 
     // define the AContrario adapted Essential matrix solver
-    typedef RelativePoseKernel_K<
+    typedef multiview::RelativePoseKernel_K<
         multiview::relativePose::Essential5PSolver,
         multiview::relativePose::FundamentalEpipolarDistanceError,
-        multiview::Mat3Model>
+        robustEstimation::Mat3Model>
         KernelT;
 
     const camera::Pinhole* ptrPinholeI = (const camera::Pinhole*)(camI);
@@ -95,8 +92,8 @@ struct GeometricFilterMatrix_E_AC : public GeometricFilterMatrix
     const double upperBoundPrecision = Square(m_dPrecision);
 
     std::vector<std::size_t> inliers;
-    multiview::Mat3Model model;
-    const std::pair<double,double> ACRansacOut = ACRANSAC(kernel, inliers, m_stIteration, &model, upperBoundPrecision);
+    robustEstimation::Mat3Model model;
+    const std::pair<double,double> ACRansacOut = robustEstimation::ACRANSAC(kernel, inliers, m_stIteration, &model, upperBoundPrecision);
     m_E = model.getMatrix();
 
     if (inliers.empty())
@@ -157,9 +154,9 @@ struct GeometricFilterMatrix_E_AC : public GeometricFilterMatrix
       Mat3 F;
       fundamentalFromEssential(m_E, ptrPinholeI->K(), ptrPinholeJ->K(), &F);
 
-      multiview::Mat3Model model(F);
+      robustEstimation::Mat3Model model(F);
       // multiview::relativePose::FundamentalSymmetricEpipolarDistanceError
-      robustEstimation::guidedMatching<multiview::Mat3Model, multiview::relativePose::FundamentalEpipolarDistanceError>(
+      robustEstimation::guidedMatching<robustEstimation::Mat3Model, multiview::relativePose::FundamentalEpipolarDistanceError>(
             model,
             camI, regionsPerView.getAllRegions(I),
             camJ, regionsPerView.getAllRegions(J),

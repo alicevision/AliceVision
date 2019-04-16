@@ -6,7 +6,7 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
-#include <aliceVision/multiview/projection.hpp>
+#include <aliceVision/numeric/projection.hpp>
 #include <aliceVision/multiview/NViewDataSet.hpp>
 #include <aliceVision/multiview/essential.hpp>
 #include <aliceVision/multiview/relativePose/EssentialKernel.hpp>
@@ -37,7 +37,7 @@ BOOST_AUTO_TEST_CASE(Essential8PSolver_IdFocal)
 
   for(int i=0; i <iNviews; ++i)
   {
-    std::vector<Mat3Model> Es; // essential,
+    std::vector<robustEstimation::Mat3Model> Es; // essential,
     std::vector<Mat3> Rs; // rotation matrix.
     std::vector<Vec3> ts; // translation matrix.
 
@@ -99,7 +99,7 @@ BOOST_AUTO_TEST_CASE(Essential8PKernel_EightPointsRelativePose)
 
   for(int i=0; i <iNviews; ++i)
   {
-    std::vector<Mat3Model> Es; // Essential
+    std::vector<robustEstimation::Mat3Model> Es; // Essential
     std::vector<Mat3> Rs;      // Rotation matrix.
     std::vector<Vec3> ts;      // Translation matrix.
 
@@ -176,7 +176,7 @@ BOOST_AUTO_TEST_CASE(Essential5PKernel_KernelError)
   for (std::size_t i = 0; i < x1.cols(); ++i) {
     samples.push_back(i);
   }
-  std::vector<Mat3Model> Es;
+  std::vector<robustEstimation::Mat3Model> Es;
   kernel.fit(samples, Es);
 
   bOk &= (!Es.empty());
@@ -201,7 +201,7 @@ BOOST_AUTO_TEST_CASE(Essential5PKernel_FivePointsRelativePose)
   std::size_t found = 0;
   for(int i=1; i <iNviews; ++i)
   {
-    std::vector<Mat3Model> Es; // Essential
+    std::vector<robustEstimation::Mat3Model> Es; // Essential
     std::vector<Mat3> Rs;      // Rotation matrix.
     std::vector<Vec3> ts;      // Translation matrix.
 

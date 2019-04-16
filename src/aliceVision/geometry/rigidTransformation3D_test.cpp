@@ -166,7 +166,7 @@ BOOST_AUTO_TEST_CASE(SRT_precision_ACRANSAC_noNoise)
   Mat4 RTS;
   composeRTS(Sc, tc, Rc, RTS);
 
-  multiview::MatrixModel<Mat4> modelRTS(RTS);
+  robustEstimation::MatrixModel<Mat4> modelRTS(RTS);
   geometry::RTSSquaredResidualError errorEstimator;
 
   for(std::size_t i = 0; i < nbPoints; ++i)
@@ -237,7 +237,7 @@ BOOST_AUTO_TEST_CASE(SRT_precision_ACRANSAC_noiseByShuffling)
   Mat4 RTS;
   composeRTS(Sc, tc, Rc, RTS);
 
-  multiview::MatrixModel<Mat4> modelRTS(RTS);
+  robustEstimation::MatrixModel<Mat4> modelRTS(RTS);
   geometry::RTSSquaredResidualError errorEstimator;
 
   // check the residuals for the inliers

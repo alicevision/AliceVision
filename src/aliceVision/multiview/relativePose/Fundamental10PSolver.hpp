@@ -7,22 +7,22 @@
 
 #pragma once
 
-#include <aliceVision/multiview/ISolver.hpp>
+#include <aliceVision/robustEstimation/ISolver.hpp>
 
 namespace aliceVision {
 namespace multiview {
 namespace relativePose {
 
-struct Fundamental10PModel : public Mat3Model
+struct Fundamental10PModel : public robustEstimation::Mat3Model
 {
   using Mat21 = Eigen::Matrix<double, 2, 1>;
 
   Fundamental10PModel()
-    : Mat3Model()
+    : robustEstimation::Mat3Model()
   {}
 
   Fundamental10PModel(const Mat3& F, const Mat21& L)
-    : Mat3Model(F) , _L(L)
+    : robustEstimation::Mat3Model(F) , _L(L)
   {}
 
   inline const Mat21& getRadialDistortion() const
@@ -34,7 +34,7 @@ private:
   Mat21 _L;
 };
 
-class Fundamental10PSolver : public ISolver<Fundamental10PModel>
+class Fundamental10PSolver : public robustEstimation::ISolver<Fundamental10PModel>
 {
 public:
 

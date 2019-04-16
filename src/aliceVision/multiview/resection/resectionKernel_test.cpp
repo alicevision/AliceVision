@@ -38,7 +38,7 @@ BOOST_AUTO_TEST_CASE(Resection_Kernel_Multiview)
 
     std::size_t samples_[6]={0,1,2,3,4,5};
     std::vector<std::size_t> samples(samples_,samples_+6);
-    std::vector<Mat34Model> Ps;
+    std::vector<robustEstimation::Mat34Model> Ps;
 
     kernel.fit(samples, Ps);
 
@@ -74,7 +74,7 @@ BOOST_AUTO_TEST_CASE(P3P_Kneip_CVPR11_Multiview)
 
     std::size_t samples_[3]={0,1,2};
     std::vector<std::size_t> samples(samples_, samples_+3);
-    std::vector<Mat34Model> Ps;
+    std::vector<robustEstimation::Mat34Model> Ps;
     kernel.fit(samples, Ps);
 
     bool bFound = false;
@@ -192,7 +192,7 @@ BOOST_AUTO_TEST_CASE(EuclideanResection_Points6AllRandomInput) {
 
     std::size_t samples_[6]={0,1,2,3,4,5};
     std::vector<std::size_t> samples(samples_, samples_+6);
-    std::vector<Mat34Model> Ps;
+    std::vector<robustEstimation::Mat34Model> Ps;
     kernel.fit(samples, Ps);
 
     BOOST_CHECK_EQUAL(1, Ps.size());

@@ -6,8 +6,9 @@
 
 #pragma once
 
-#include <aliceVision/multiview/ISolver.hpp>
-#include <aliceVision/multiview/projection.hpp>
+#include <aliceVision/numeric/projection.hpp>
+#include <aliceVision/robustEstimation/ISolver.hpp>
+#include <aliceVision/multiview/resection/ISolverErrorResection.hpp>
 
 namespace aliceVision {
 namespace multiview {
@@ -68,7 +69,7 @@ struct P4PfError : public ISolverErrorResection<P4PfModel>
  *          Bujnak, M., Kukelova, Z., and Pajdla T.
  *          CVPR 2008
  */
-class P4PfSolver : public ISolver<P4PfModel>
+class P4PfSolver : public robustEstimation::ISolver<P4PfModel>
 {
 public:
 

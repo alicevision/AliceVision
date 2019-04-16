@@ -41,7 +41,7 @@ void buildActionMatrix(Matrix& L, const Mat& x1, const Mat& x2)
   }
 }
 
-void Homography4PSolver::solve(const Mat& x1, const Mat& x2, std::vector<Mat3Model>& models) const
+void Homography4PSolver::solve(const Mat& x1, const Mat& x2, std::vector<robustEstimation::Mat3Model>& models) const
 {
   assert(2 == x1.rows());
   assert(4 <= x1.cols());

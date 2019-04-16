@@ -10,7 +10,7 @@
 #include "aliceVision/numeric/numeric.hpp"
 #include <aliceVision/config.hpp>
 
-#include "aliceVision/multiview/projection.hpp"
+#include "aliceVision/numeric/projection.hpp"
 
 #include "aliceVision/linearProgramming/ISolver.hpp"
 #include "aliceVision/linearProgramming/OSIXSolver.hpp"

@@ -1135,9 +1135,9 @@ bool VoctreeLocalizer::robustMatching(matching::RegionsDatabaseMatcherPerDesc & 
   // So we ignore the previous matches and recompute all matches.
   out_featureMatches.clear();
 
-  multiview::Mat3Model model(geometricFilter.m_F);
+  robustEstimation::Mat3Model model(geometricFilter.m_F);
 
-  robustEstimation::guidedMatching<multiview::Mat3Model, multiview::relativePose::FundamentalEpipolarDistanceError>(
+  robustEstimation::guidedMatching<robustEstimation::Mat3Model, multiview::relativePose::FundamentalEpipolarDistanceError>(
         model,
         queryIntrinsicsBase,                  // camera::IntrinsicBase of the matched image
         matchers.getDatabaseRegionsPerDesc(), // feature::Regions

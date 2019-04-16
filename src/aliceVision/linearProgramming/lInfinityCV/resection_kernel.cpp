@@ -28,7 +28,7 @@ void translate(const Mat3X & X, const Vec3 & vecTranslation,
   }
 }
 
-void l1SixPointResectionSolver::solve(const Mat &pt2D, const Mat &pt3d, std::vector<multiview::Mat34Model>& Ps) const
+void l1SixPointResectionSolver::solve(const Mat &pt2D, const Mat &pt3d, std::vector<robustEstimation::Mat34Model>& Ps) const
 {
   assert(2 == pt2D.rows());
   assert(3 == pt3d.rows());

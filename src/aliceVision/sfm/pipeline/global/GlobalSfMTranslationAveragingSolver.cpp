@@ -21,7 +21,7 @@
 #include <aliceVision/system/Timer.hpp>
 #include <aliceVision/linearProgramming/linearProgramming.hpp>
 #include <aliceVision/multiview/essential.hpp>
-#include <aliceVision/multiview/conditioning.hpp>
+#include <aliceVision/robustEstimation/conditioning.hpp>
 #include <aliceVision/multiview/translationAveraging/common.hpp>
 #include <aliceVision/multiview/translationAveraging/solver.hpp>
 #include <aliceVision/sfm/pipeline/global/TranslationTripletKernelACRansac.hpp>

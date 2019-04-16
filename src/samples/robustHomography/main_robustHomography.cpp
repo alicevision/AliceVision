@@ -12,9 +12,10 @@
 #include "aliceVision/matching/RegionsMatcher.hpp"
 #include "aliceVision/multiview/relativePose/Homography4PSolver.hpp"
 #include "aliceVision/multiview/relativePose/HomographyError.hpp"
-#include "aliceVision/multiview/conditioning.hpp"
+#include "aliceVision/multiview/Unnormalizer.hpp"
+#include "aliceVision/robustEstimation/conditioning.hpp"
 #include "aliceVision/robustEstimation/ACRansac.hpp"
-#include "aliceVision/robustEstimation/RansacKernel.hpp"
+#include "aliceVision/multiview/RelativePoseKernel.hpp"
 
 #include "dependencies/vectorGraphics/svgDrawer.hpp"
 
@@ -128,11 +129,11 @@ int main() {
 
     //-- Homography robust estimation
     std::vector<size_t> vec_inliers;
-    typedef RelativePoseKernel<
+    typedef multiview::RelativePoseKernel<
       multiview::relativePose::Homography4PSolver,
       multiview::relativePose::HomographyAsymmetricError,
       multiview::UnnormalizerI,
-      multiview::Mat3Model>
+      robustEstimation::Mat3Model>
       KernelType;
 
     KernelType kernel(
@@ -140,7 +141,7 @@ int main() {
       xR, imageR.Width(), imageR.Height(),
       false); // configure as point to point error model.
 
-    multiview::Mat3Model H;
+    robustEstimation::Mat3Model H;
     const std::pair<double,double> ACRansacOut = ACRANSAC(kernel, vec_inliers, 1024, &H,
       std::numeric_limits<double>::infinity());
     const double & thresholdH = ACRansacOut.first;
@@ -168,7 +169,7 @@ int main() {
         svgStream.drawCircle(L.x(), L.y(), LL.scale(), svgStyle().stroke("yellow", 2.0));
         svgStream.drawCircle(R.x()+imageL.Width(), R.y(), RR.scale(),svgStyle().stroke("yellow", 2.0));
         // residual computation
-        vec_residuals[i] = std::sqrt(KernelType::ErrorT(   ).error(H, LL.coords().cast<double>(), RR.coords().cast<double>()));
+        vec_residuals[i] = std::sqrt(KernelType::ErrorT().error(H, LL.coords().cast<double>(), RR.coords().cast<double>()));
       }
       string out_filename = "04_ACRansacHomography.svg";
       ofstream svgFile( out_filename.c_str() );

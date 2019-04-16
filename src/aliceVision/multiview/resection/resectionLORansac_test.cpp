@@ -4,14 +4,15 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
+#include <aliceVision/numeric/projection.hpp>
 #include <aliceVision/robustEstimation/LORansac.hpp>
-#include <aliceVision/robustEstimation/RansacKernel.hpp>
+#include <aliceVision/robustEstimation/conditioning.hpp>
 #include <aliceVision/robustEstimation/ScoreEvaluator.hpp>
 #include <aliceVision/robustEstimation/randSampling.hpp>
-#include <aliceVision/multiview/projection.hpp>
 #include <aliceVision/multiview/resection/ResectionKernel.hpp>
 #include <aliceVision/multiview/resection/P3PSolver.hpp>
-#include <aliceVision/multiview/conditioning.hpp>
+#include <aliceVision/multiview/ResectionKernel.hpp>
+#include <aliceVision/multiview/Unnormalizer.hpp>
 #include <aliceVision/camera/camera.hpp>
 #include <aliceVision/sfm/sfm.hpp>
 #include <aliceVision/sfmData/SfMData.hpp>
@@ -176,23 +177,23 @@ BOOST_AUTO_TEST_CASE(P3P_Ransac_noisyFromImagePoints)
     typedef multiview::resection::P3PSolver SolverType;
     typedef multiview::resection::Resection6PSolver SolverLSType;
   
-    typedef aliceVision::robustEstimation::ResectionKernel_K<SolverType,
-                                                             multiview::resection::ProjectionDistanceSquaredError,
-                                                             multiview::UnnormalizerResection,
-                                                             multiview::Mat34Model,
-                                                             SolverLSType> KernelType;
+    typedef aliceVision::multiview::ResectionKernel_K<SolverType,
+                                                      multiview::resection::ProjectionDistanceSquaredError,
+                                                      multiview::UnnormalizerResection,
+                                                      robustEstimation::Mat34Model,
+                                                      SolverLSType> KernelType;
 
     // this is just to simplify and use image plane coordinates instead of camera
     // (pixel) coordinates
     Mat pts2Dnorm;
-    multiview::applyTransformationToPoints(pts2D, Kgt.inverse(), &pts2Dnorm);
+    robustEstimation::applyTransformationToPoints(pts2D, Kgt.inverse(), &pts2Dnorm);
     KernelType kernel(pts2Dnorm, pts3D, Mat3::Identity());
 
     std::vector<std::size_t> inliers;
     const double threshold = 2*gaussianNoiseLevel;
     const double normalizedThreshold = Square(threshold / FOCAL);
     robustEstimation::ScoreEvaluator<KernelType> scorer(normalizedThreshold);
-    multiview::Mat34Model model = robustEstimation::LO_RANSAC(kernel, scorer, &inliers);
+    robustEstimation::Mat34Model model = robustEstimation::LO_RANSAC(kernel, scorer, &inliers);
     Mat34 Pest = model.getMatrix();
     const std::size_t numInliersFound = inliers.size();
     const std::size_t numInliersExpected = nbPoints-vec_outliers.size();

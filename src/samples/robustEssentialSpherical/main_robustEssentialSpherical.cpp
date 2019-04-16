@@ -11,8 +11,8 @@
 #include "aliceVision/matching/RegionsMatcher.hpp"
 #include "aliceVision/multiview/essential.hpp"
 #include "aliceVision/robustEstimation/ACRansac.hpp"
-#include "aliceVision/multiview/conditioning.hpp"
-#include "aliceVision/robustEstimation/RansacKernel.hpp"
+#include "aliceVision/robustEstimation/conditioning.hpp"
+#include "aliceVision/multiview/AngularRadianErrorKernel.hpp"
 
 #include "sphericalCam.hpp"
 
@@ -153,16 +153,16 @@ int main() {
       typedef aliceVision::spherical_cam::EssentialKernel_spherical Kernel;
 
       // Define the AContrario angular error adaptor
-      typedef aliceVision::robustEstimation::AngularRadianErrorKernel<
+      typedef aliceVision::multiview::AngularRadianErrorKernel<
           aliceVision::spherical_cam::EightPointRelativePoseSolver,
           aliceVision::spherical_cam::AngularError,
-          multiview::Mat3Model>
+          robustEstimation::Mat3Model>
           KernelType;
 
       KernelType kernel(xL_spherical, xR_spherical);
 
       // Robust estimation of the Essential matrix and it's precision
-      multiview::Mat3Model E;
+      robustEstimation::Mat3Model E;
       const double precision = std::numeric_limits<double>::infinity();
       const std::pair<double,double> ACRansacOut = ACRANSAC(kernel, vec_inliers, 1024, &E, precision);
       const double & threshold = ACRansacOut.first;
@@ -181,7 +181,7 @@ int main() {
         // Accumulator to find the best solution
         std::vector<size_t> f(4, 0);
 
-        std::vector<multiview::Mat3Model> Es;  // Essential,
+        std::vector<robustEstimation::Mat3Model> Es;  // Essential,
         std::vector<Mat3> Rs;                  // Rotation matrix.
         std::vector<Vec3> ts;                  // Translation matrix.
 

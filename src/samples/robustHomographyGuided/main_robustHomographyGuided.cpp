@@ -10,9 +10,9 @@
 #include "aliceVision/feature/sift/ImageDescriber_SIFT.hpp"
 #include "aliceVision/matching/RegionsMatcher.hpp"
 #include "aliceVision/multiview/relativePose/HomographyKernel.hpp"
-#include "aliceVision/multiview/conditioning.hpp"
+#include "aliceVision/robustEstimation/conditioning.hpp"
 #include "aliceVision/robustEstimation/ACRansac.hpp"
-#include "aliceVision/robustEstimation/RansacKernel.hpp"
+#include "aliceVision/multiview/RelativePoseKernel.hpp"
 #include "aliceVision/robustEstimation/guidedMatching.hpp"
 
 #include "dependencies/vectorGraphics/svgDrawer.hpp"
@@ -127,11 +127,11 @@ int main() {
 
     //-- Homography robust estimation
     std::vector<size_t> vec_inliers;
-    typedef RelativePoseKernel<
+    typedef multiview::RelativePoseKernel<
       multiview::relativePose::Homography4PSolver,
       multiview::relativePose::HomographyAsymmetricError,
       multiview::UnnormalizerI,
-      multiview::Mat3Model>
+      robustEstimation::Mat3Model>
       KernelType;
 
     KernelType kernel(
@@ -139,7 +139,7 @@ int main() {
       xR, imageR.Width(), imageR.Height(),
       false); // configure as point to point error model.
 
-    multiview::Mat3Model H;
+    robustEstimation::Mat3Model H;
     const std::pair<double,double> ACRansacOut = ACRANSAC(kernel, vec_inliers, 1024, &H,
       std::numeric_limits<double>::infinity());
     const double & thresholdH = ACRansacOut.first;
@@ -198,14 +198,14 @@ int main() {
 
       //a. by considering only the geometric error
 
-      robustEstimation::guidedMatching<multiview::Mat3Model, multiview::relativePose::HomographyAsymmetricError>(
+      robustEstimation::guidedMatching<robustEstimation::Mat3Model, multiview::relativePose::HomographyAsymmetricError>(
         H, xL, xR, Square(thresholdH), vec_corresponding_indexes[0]);
       std::cout << "\nGuided homography matching (geometric error) found "
         << vec_corresponding_indexes[0].size() << " correspondences."
         << std::endl;
 
       // b. by considering geometric error and descriptor distance ratio
-      robustEstimation::guidedMatching<multiview::Mat3Model, multiview::relativePose::HomographyAsymmetricError>(
+      robustEstimation::guidedMatching<robustEstimation::Mat3Model, multiview::relativePose::HomographyAsymmetricError>(
         H,
         NULL, *regions_perImage.at(0), // Null since no Intrinsic is defined
         NULL, *regions_perImage.at(1), // Null since no Intrinsic is defined

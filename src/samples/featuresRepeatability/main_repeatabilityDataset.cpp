@@ -366,8 +366,8 @@ int main(int argc, char **argv)
           PointsToMat(pointsFeaturesI, xI);
 
           IndMatches matches_0I;
-          robustEstimation::guidedMatching<multiview::Mat3Model, multiview::relativePose::HomographyAsymmetricError>(
-            multiview::Mat3Model(dataset.H(i).transpose()), x0, xI, Square(m_dPrecision_robust), matches_0I);
+          robustEstimation::guidedMatching<robustEstimation::Mat3Model, multiview::relativePose::HomographyAsymmetricError>(
+            robustEstimation::Mat3Model(dataset.H(i).transpose()), x0, xI, Square(m_dPrecision_robust), matches_0I);
 
           std::cout << "Feature repeatablity Results" << "\n"
            << "*******************************" << "\n"
@@ -403,8 +403,8 @@ int main(int argc, char **argv)
           PointsToMat(putativesMatches, pointsFeatures0, pointsFeaturesI, x0, xI);
 
           IndMatches matches_0I;
-          robustEstimation::guidedMatching<multiview::Mat3Model, multiview::relativePose::HomographyAsymmetricError>(
-            multiview::Mat3Model(dataset.H(i).transpose()), x0, xI, Square(m_dPrecision_robust), matches_0I);
+          robustEstimation::guidedMatching<robustEstimation::Mat3Model, multiview::relativePose::HomographyAsymmetricError>(
+            robustEstimation::Mat3Model(dataset.H(i).transpose()), x0, xI, Square(m_dPrecision_robust), matches_0I);
 
           std::cout << "Feature matching repeatability Results" << "\n"
            << "*******************************" << "\n"

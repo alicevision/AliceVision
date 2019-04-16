@@ -8,13 +8,13 @@
 
 #pragma once
 
-#include <aliceVision/multiview/ISolver.hpp>
+#include <aliceVision/robustEstimation/ISolver.hpp>
 
 namespace aliceVision {
 namespace multiview {
 namespace relativePose {
 
-class Homography4PSolver : public ISolver<Mat3Model>
+class Homography4PSolver : public robustEstimation::ISolver<robustEstimation::Mat3Model>
 {
 public:
 
@@ -46,7 +46,7 @@ public:
    *
    * The estimated homography should approximately hold the condition y = H x.
    */
-   void solve(const Mat& x, const Mat& y, std::vector<Mat3Model>& models) const override;
+   void solve(const Mat& x, const Mat& y, std::vector<robustEstimation::Mat3Model>& models) const override;
 
    /**
     * @brief Solve the problem.
@@ -55,7 +55,7 @@ public:
     * @param[out] models A vector into which the computed models are stored.
     * @param[in]  weights.
     */
-   void solve(const Mat& x1, const Mat& x2, std::vector<Mat3Model>& models, const std::vector<double>& weights) const override
+   void solve(const Mat& x1, const Mat& x2, std::vector<robustEstimation::Mat3Model>& models, const std::vector<double>& weights) const override
    {
       throw std::logic_error("Homography4PSolver does not support problem solving with weights.");
    }

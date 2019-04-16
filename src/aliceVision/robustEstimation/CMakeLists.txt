@@ -1,25 +1,33 @@
 # Headers
 set(robustEstimation_files_headers 
+  conditioning.hpp
+  estimators.hpp
+  LineKernel.hpp
+  lineTestGenerator.hpp
+  FittingKernel.hpp
+  ISolver.hpp
   IRansacKernel.hpp
-  RansacKernel.hpp 
   Ransac.hpp 
+  RansacKernel.hpp
   ACRansac.hpp
   LORansac.hpp
   ransacTools.hpp
   randSampling.hpp
-  LineKernel.hpp
-  lineTestGenerator.hpp
   leastMedianOfSquares.hpp
   guidedMatching.hpp
   ScoreEvaluator.hpp
   supportEstimation.hpp
   maxConsensus.hpp
-  estimators.hpp
 )
 
-alicevision_add_interface(aliceVision_robustEstimation
-  SOURCES ${robustEstimation_files_headers}
-  LINKS
+# Sources
+set(robustEstimation_files_sources
+  conditioning.cpp
+)
+
+alicevision_add_library(aliceVision_robustEstimation
+  SOURCES ${robustEstimation_files_headers} ${robustEstimation_files_sources}
+  PUBLIC_LINKS
     aliceVision_camera
     aliceVision_feature
     aliceVision_matching

@@ -7,7 +7,7 @@
 
 #include "aliceVision/numeric/numeric.hpp"
 #include "aliceVision/multiview/homographyKernelSolver.hpp"
-#include "aliceVision/multiview/conditioning.hpp"
+#include "aliceVision/robustEstimation/conditioning.hpp"
 #include "aliceVision/robustEstimation/maxConsensus.hpp"
 #include "aliceVision/robustEstimation/ScoreEvaluator.hpp"
 #include "aliceVision/robustEstimation/ACRansac.hpp"

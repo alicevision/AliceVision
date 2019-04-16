@@ -1,24 +1,23 @@
 # Headers
 set(camera_files_headers
-	camera.hpp
-	cameraCommon.hpp
-	cameraUndistortImage.hpp
-	IntrinsicBase.hpp
-	IntrinsicInitMode.hpp
-	Pinhole.hpp
-	PinholeBrown.hpp
-	PinholeFisheye.hpp
-	PinholeFisheye1.hpp
-	PinholeRadial.hpp
+    camera.hpp
+    cameraCommon.hpp
+    cameraUndistortImage.hpp
+    IntrinsicBase.hpp
+    IntrinsicInitMode.hpp
+    Pinhole.hpp
+    PinholeBrown.hpp
+    PinholeFisheye.hpp
+    PinholeFisheye1.hpp
+    PinholeRadial.hpp
 )
 
 alicevision_add_interface(aliceVision_camera
   SOURCES ${camera_files_headers}
   LINKS
-    aliceVision_geometry
-    aliceVision_multiview
-    aliceVision_image
     aliceVision_numeric
+    aliceVision_geometry
+    aliceVision_image
     aliceVision_stl
     aliceVision_system
 )

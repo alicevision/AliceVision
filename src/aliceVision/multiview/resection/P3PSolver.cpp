@@ -7,7 +7,7 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "P3PSolver.hpp"
-#include <aliceVision/multiview/projection.hpp>
+#include <aliceVision/numeric/projection.hpp>
 
 namespace aliceVision {
 namespace multiview {
@@ -253,7 +253,7 @@ bool computeP3PPoses(const Mat3& featureVectors, const Mat3& worldPoints, Mat& s
   return true;
 }
 
-void P3PSolver::solve(const Mat& x2d, const Mat& x3d, std::vector<Mat34Model>& models) const
+void P3PSolver::solve(const Mat& x2d, const Mat& x3d, std::vector<robustEstimation::Mat34Model>& models) const
 {
   assert(2 == x2d.rows());
   assert(3 == x3d.rows());

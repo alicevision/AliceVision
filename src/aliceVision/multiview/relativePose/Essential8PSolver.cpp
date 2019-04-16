@@ -7,12 +7,13 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "Essential8PSolver.hpp"
+#include <aliceVision/multiview/epipolarEquation.hpp>
 
 namespace aliceVision {
 namespace multiview {
 namespace relativePose {
 
-void Essential8PSolver::solve(const Mat& x1, const Mat& x2, std::vector<Mat3Model>& models) const
+void Essential8PSolver::solve(const Mat& x1, const Mat& x2, std::vector<robustEstimation::Mat3Model>& models) const
 {
   assert(2 == x1.rows());
   assert(8 <= x1.cols());

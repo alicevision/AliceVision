@@ -9,7 +9,7 @@
 #pragma once
 
 #include <aliceVision/numeric/numeric.hpp>
-#include <aliceVision/multiview/ISolver.hpp>
+#include <aliceVision/robustEstimation/ISolver.hpp>
 
 #include <vector>
 
@@ -127,9 +127,9 @@ struct TriangulateNViewsSolver
     return 1;
   }
 
-  void solve(const Mat2X& x, const std::vector<Mat34>& Ps, std::vector<MatrixModel<Vec4>>& X) const;
+  void solve(const Mat2X& x, const std::vector<Mat34>& Ps, std::vector<robustEstimation::MatrixModel<Vec4>>& X) const;
   
-  void solve(const Mat2X& x, const std::vector<Mat34>& Ps, std::vector<MatrixModel<Vec4>>& X, const std::vector<double>& weights) const;
+  void solve(const Mat2X& x, const std::vector<Mat34>& Ps, std::vector<robustEstimation::MatrixModel<Vec4>>& X, const std::vector<double>& weights) const;
 
 };
 

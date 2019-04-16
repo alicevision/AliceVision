@@ -10,7 +10,7 @@
 
 #include <aliceVision/numeric/numeric.hpp>
 #include <aliceVision/multiview/essential.hpp>
-#include <aliceVision/multiview/projection.hpp>
+#include <aliceVision/numeric/projection.hpp>
 #include <aliceVision/multiview/relativePose/Essential5PSolver.hpp>
 #include <aliceVision/multiview/NViewDataSet.hpp>
 
@@ -158,7 +158,7 @@ BOOST_AUTO_TEST_CASE(FivePointsRelativePose_Random)
 {
   TestData d = SomeTestData();
 
-  std::vector<multiview::Mat3Model> Es;
+  std::vector<robustEstimation::Mat3Model> Es;
   std::vector<Mat3> Rs;
   std::vector<Vec3> ts;
 
@@ -213,7 +213,7 @@ BOOST_AUTO_TEST_CASE(FivePointsRelativePose_test_data_sets)
   // Compute pose [R|t] from 0 to [1;..;iNviews]
   for(int i=1; i <iNviews; ++i)
   {
-    std::vector<multiview::Mat3Model> Es; // Essential.
+    std::vector<robustEstimation::Mat3Model> Es; // Essential.
     std::vector<Mat3> Rs;                 // Rotation matrix.
     std::vector<Vec3> ts;                 // Translation matrix.
 

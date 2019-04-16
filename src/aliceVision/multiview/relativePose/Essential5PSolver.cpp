@@ -7,6 +7,7 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "Essential5PSolver.hpp"
+#include <aliceVision/multiview/epipolarEquation.hpp>
 
 namespace aliceVision {
 namespace multiview {
@@ -157,7 +158,7 @@ Mat fivePointsPolynomialConstraints(const Mat& EBasis)
   return M;
 }
 
-void Essential5PSolver::solve(const Mat& x1, const Mat& x2, std::vector<Mat3Model>& models) const
+void Essential5PSolver::solve(const Mat& x1, const Mat& x2, std::vector<robustEstimation::Mat3Model>& models) const
 {
   assert(2 == x1.rows());
   assert(5 <= x1.cols());

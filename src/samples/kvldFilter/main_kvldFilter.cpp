@@ -10,11 +10,10 @@
 #include <aliceVision/feature/sift/ImageDescriber_SIFT.hpp>
 #include <aliceVision/matching/RegionsMatcher.hpp>
 #include <aliceVision/multiview/relativePose/HomographyKernel.hpp>
-#include <aliceVision/multiview/conditioning.hpp>
+#include <aliceVision/robustEstimation/conditioning.hpp>
 #include <aliceVision/matching/kvld/kvld.h>
 #include <aliceVision/matching/kvld/kvld_draw.h>
 #include <aliceVision/robustEstimation/ACRansac.hpp>
-#include <aliceVision/robustEstimation/RansacKernel.hpp>
 
 #include <dependencies/vectorGraphics/svgDrawer.hpp>
 

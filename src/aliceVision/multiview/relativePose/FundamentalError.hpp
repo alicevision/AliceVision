@@ -8,7 +8,8 @@
 
 #pragma once
 
-#include <aliceVision/multiview/ISolver.hpp>
+#include <aliceVision/robustEstimation/ISolver.hpp>
+#include <aliceVision/multiview/relativePose/ISolverErrorRelativePose.hpp>
 
 namespace aliceVision {
 namespace multiview {
@@ -17,9 +18,9 @@ namespace relativePose {
 /**
  * @brief Compute FundamentalSampsonError related to the Fundamental matrix and 2 correspondences
  */
-struct FundamentalSampsonError : public ISolverErrorRelativePose<Mat3Model>
+struct FundamentalSampsonError : public ISolverErrorRelativePose<robustEstimation::Mat3Model>
 {
-  inline double error(const Mat3Model& F, const Vec2& x1, const Vec2& x2) const override
+  inline double error(const robustEstimation::Mat3Model& F, const Vec2& x1, const Vec2& x2) const override
   {
     const Vec3 x(x1(0), x1(1), 1.0);
     const Vec3 y(x2(0), x2(1), 1.0);
@@ -32,9 +33,9 @@ struct FundamentalSampsonError : public ISolverErrorRelativePose<Mat3Model>
   }
 };
 
-struct FundamentalSymmetricEpipolarDistanceError: public ISolverErrorRelativePose<Mat3Model>
+struct FundamentalSymmetricEpipolarDistanceError: public ISolverErrorRelativePose<robustEstimation::Mat3Model>
 {
-  inline double error(const Mat3Model& F, const Vec2& x1, const Vec2& x2) const override
+  inline double error(const robustEstimation::Mat3Model& F, const Vec2& x1, const Vec2& x2) const override
   {
     const Vec3 x(x1(0), x1(1), 1.0);
     const Vec3 y(x2(0), x2(1), 1.0);
@@ -48,9 +49,9 @@ struct FundamentalSymmetricEpipolarDistanceError: public ISolverErrorRelativePos
   }
 };
 
-struct FundamentalEpipolarDistanceError : public ISolverErrorRelativePose<Mat3Model>
+struct FundamentalEpipolarDistanceError : public ISolverErrorRelativePose<robustEstimation::Mat3Model>
 {
-  inline double error(const Mat3Model& F, const Vec2& x1, const Vec2& x2) const override
+  inline double error(const robustEstimation::Mat3Model& F, const Vec2& x1, const Vec2& x2) const override
   {
     // transfer error in image 2
     // @see page 287 equation (11.9) of HZ.

@@ -6,7 +6,8 @@
 
 #pragma once
 
-#include <aliceVision/multiview/ISolver.hpp>
+#include <aliceVision/robustEstimation/ISolver.hpp>
+#include <aliceVision/multiview/resection/ISolverErrorResection.hpp>
 
 namespace aliceVision {
 namespace multiview {
@@ -102,7 +103,7 @@ struct P5PfrError : public ISolverErrorResection<P5PfrModel>
  *          ICCV 2013
  */
 template<int numOfRadialCoeff_>
-class P5PfrSolver : public ISolver<P5PfrModel>
+class P5PfrSolver : public robustEstimation::ISolver<P5PfrModel>
 {
 public:
 

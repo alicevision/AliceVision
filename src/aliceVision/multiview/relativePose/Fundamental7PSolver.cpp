@@ -8,12 +8,13 @@
 
 #include "Fundamental7PSolver.hpp"
 #include <aliceVision/numeric/polynomial.hpp>
+#include <aliceVision/multiview/epipolarEquation.hpp>
 
 namespace aliceVision {
 namespace multiview {
 namespace relativePose {
 
-void Fundamental7PSolver::solve(const Mat& x1, const Mat& x2, std::vector<Mat3Model>& models) const
+void Fundamental7PSolver::solve(const Mat& x1, const Mat& x2, std::vector<robustEstimation::Mat3Model>& models) const
 {
   assert(2 == x1.rows());
   assert(7 <= x1.cols());

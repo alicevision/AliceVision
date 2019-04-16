@@ -7,8 +7,10 @@
 
 #pragma once
 
-#include <aliceVision/multiview/ISolver.hpp>
-#include <aliceVision/multiview/projection.hpp>
+#include <aliceVision/numeric/projection.hpp>
+#include <aliceVision/robustEstimation/ISolver.hpp>
+#include <aliceVision/multiview/resection/ISolverErrorResection.hpp>
+
 
 namespace aliceVision {
 namespace multiview {
@@ -18,9 +20,9 @@ namespace resection {
  * @brief Compute the residual of the projection distance
  *        (pt2D, project(P,pt3D))
  */
-struct ProjectionDistanceError : public ISolverErrorResection<Mat34Model>
+struct ProjectionDistanceError : public ISolverErrorResection<robustEstimation::Mat34Model>
 {
-  inline double error(const Mat34Model& P, const Vec2& p2d, const Vec3& p3d) const override
+  inline double error(const robustEstimation::Mat34Model& P, const Vec2& p2d, const Vec3& p3d) const override
   {
     return (project(P.getMatrix(), p3d) - p2d).norm();
   }
@@ -30,9 +32,9 @@ struct ProjectionDistanceError : public ISolverErrorResection<Mat34Model>
  * @brief Compute the residual of the projection distance
  *        (pt2D, project(P,pt3D))
  */
-struct ProjectionDistanceSquaredError : public ISolverErrorResection<Mat34Model>
+struct ProjectionDistanceSquaredError : public ISolverErrorResection<robustEstimation::Mat34Model>
 {
-  inline double error(const Mat34Model& P, const Vec2& p2d, const Vec3& p3d) const override
+  inline double error(const robustEstimation::Mat34Model& P, const Vec2& p2d, const Vec3& p3d) const override
   {
     return (project(P.getMatrix(), p3d) - p2d).squaredNorm();
   }

@@ -1,11 +1,13 @@
 # Headers
 set(multiview_files_headers
   affineSolver.hpp
-  conditioning.hpp
   essential.hpp
+  epipolarEquation.hpp
   knownRotationTranslationKernel.hpp
-  projection.hpp
-  ISolver.hpp
+  Unnormalizer.hpp
+  AngularRadianErrorKernel.hpp
+  RelativePoseKernel.hpp
+  ResectionKernel.hpp
   relativePose/Essential5PSolver.hpp
   relativePose/Essential8PSolver.hpp
   relativePose/EssentialKernel.hpp
@@ -17,6 +19,7 @@ set(multiview_files_headers
   relativePose/Homography4PSolver.hpp
   relativePose/HomographyError.hpp
   relativePose/HomographyKernel.hpp
+  relativePose/ISolverErrorRelativePose.hpp
   resection/EPnPSolver.hpp
   resection/EPnPKernel.hpp
   resection/P3PSolver.hpp
@@ -25,6 +28,7 @@ set(multiview_files_headers
   resection/ProjectionDistanceError.hpp
   resection/Resection6PSolver.hpp   
   resection/ResectionKernel.hpp
+  resection/ISolverErrorResection.hpp
   rotationAveraging/common.hpp
   rotationAveraging/rotationAveraging.hpp
   rotationAveraging/l1.hpp
@@ -34,15 +38,13 @@ set(multiview_files_headers
   triangulation/Triangulation.hpp
   triangulation/triangulationDLT.hpp
   triangulation/NViewsTriangulationLORansac.hpp
-  TwoViewKernel.hpp
 )
 
 # Sources
 set(multiview_files_sources
   affineSolver.cpp
-  conditioning.cpp
   essential.cpp
-  projection.cpp
+  Unnormalizer.cpp
   relativePose/Essential5PSolver.cpp
   relativePose/Essential8PSolver.cpp
   relativePose/Fundamental7PSolver.cpp

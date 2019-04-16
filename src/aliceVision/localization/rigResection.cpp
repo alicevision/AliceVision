@@ -6,7 +6,6 @@
 
 #include "rigResection.hpp"
 #include <aliceVision/system/Logger.hpp>
-#include <aliceVision/robustEstimation/RansacKernel.hpp>
 #include <aliceVision/robustEstimation/supportEstimation.hpp>
 
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_OPENGV)

@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include <aliceVision/multiview/TwoViewKernel.hpp>
+#include <aliceVision/robustEstimation/FittingKernel.hpp>
 #include <aliceVision/multiview/resection/Resection6PSolver.hpp>
 #include <aliceVision/multiview/resection/ProjectionDistanceError.hpp>
 
@@ -18,15 +18,15 @@ namespace resection {
 /**
  * @brief Generic solver for resection algorithm using linear least squares.
  */
-template<typename SolverT, typename ErrorT, typename ModelT = Mat34Model>
-class ResectionKernel : public TwoViewKernel<SolverT,ErrorT, ModelT>
+template<typename SolverT, typename ErrorT, typename ModelT = robustEstimation::Mat34Model>
+class ResectionKernel : public robustEstimation::FittingKernel<SolverT,ErrorT, ModelT>
 {
 public:
 
-  using KernelBase = TwoViewKernel<SolverT,ErrorT, ModelT>;
+  using KernelBase = robustEstimation::FittingKernel<SolverT,ErrorT, ModelT>;
 
   ResectionKernel(const Mat& x2d, const Mat& x3d)
-    : TwoViewKernel<SolverT, ErrorT, ModelT>(x2d, x3d)
+    : robustEstimation::FittingKernel<SolverT, ErrorT, ModelT>(x2d, x3d)
   {}
 
   void fit(const std::vector<std::size_t>& samples, std::vector<ModelT>& models) const override
@@ -46,7 +46,7 @@ public:
 /**
  * @brief Usable solver for the 6pt Resection estimation
  */
-typedef TwoViewKernel<Resection6PSolver, ProjectionDistanceError, Mat34Model>  Resection6PKernel;
+typedef robustEstimation::FittingKernel<Resection6PSolver, ProjectionDistanceError, robustEstimation::Mat34Model>  Resection6PKernel;
 
 }  // namespace resection
 }  // namespace multiview

@@ -6,7 +6,7 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "Resection6PSolver.hpp"
-#include <aliceVision/multiview/projection.hpp>
+#include <aliceVision/numeric/projection.hpp>
 
 namespace aliceVision {
 namespace multiview {
@@ -74,7 +74,7 @@ void BuildActionMatrix(Matrix& A, const Mat& pt2D, const Mat& XPoints)
     A.row(i).normalize();
 }
 
-void solveProblem(const Mat& x2d, const Mat& x3d, std::vector<Mat34Model>& models, bool bcheck)
+void solveProblem(const Mat& x2d, const Mat& x3d, std::vector<robustEstimation::Mat34Model>& models, bool bcheck)
 {
   assert(2 == x2d.rows());
   assert(3 == x3d.rows());
@@ -148,12 +148,12 @@ void solveProblem(const Mat& x2d, const Mat& x3d, std::vector<Mat34Model>& model
   }
 }
 
-void Resection6PSolver::solve(const Mat& x2d, const Mat& x3d, std::vector<Mat34Model>& models) const
+void Resection6PSolver::solve(const Mat& x2d, const Mat& x3d, std::vector<robustEstimation::Mat34Model>& models) const
 {
   solveProblem(x2d, x3d, models, true);
 }
 
-void Resection6PSolver::solve(const Mat& x2d, const Mat& x3d, std::vector<Mat34Model>& models, const std::vector<double>& weights) const
+void Resection6PSolver::solve(const Mat& x2d, const Mat& x3d, std::vector<robustEstimation::Mat34Model>& models, const std::vector<double>& weights) const
 {
   solveProblem(x2d, x3d, models, true); // TODO : no weights implementation
 }

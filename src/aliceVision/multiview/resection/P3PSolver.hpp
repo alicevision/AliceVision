@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include <aliceVision/multiview/ISolver.hpp>
+#include <aliceVision/robustEstimation/ISolver.hpp>
 
 namespace aliceVision {
 namespace multiview {
@@ -16,7 +16,7 @@ namespace resection {
 
 typedef Eigen::Matrix<double, 5, 1> Vec5;
 
-class P3PSolver : public ISolver<Mat34Model>
+class P3PSolver : public robustEstimation::ISolver<robustEstimation::Mat34Model>
 {
 public:
 
@@ -45,7 +45,7 @@ public:
    * @param[in] x3d Corresponding 3d points in the second image. One per column.
    * @param[out] models A list of at most 4 candidate solutions.
    */
-   void solve(const Mat& x2d, const Mat& x3d, std::vector<Mat34Model>& models) const override;
+   void solve(const Mat& x2d, const Mat& x3d, std::vector<robustEstimation::Mat34Model>& models) const override;
 
    /**
     * @brief Solve the problem.
@@ -55,7 +55,7 @@ public:
     * @param[out] models A vector into which the computed models are stored.
     * @param[in]  weights.
     */
-   void solve(const Mat& x2d, const Mat& x3d, std::vector<Mat34Model>& models, const std::vector<double>& weights) const override
+   void solve(const Mat& x2d, const Mat& x3d, std::vector<robustEstimation::Mat34Model>& models, const std::vector<double>& weights) const override
    {
       throw std::logic_error("P3PSolver does not support problem solving with weights.");
    }

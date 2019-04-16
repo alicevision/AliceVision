@@ -9,7 +9,7 @@
 #pragma once
 
 #include <aliceVision/numeric/numeric.hpp>
-#include <aliceVision/multiview/ISolver.hpp>
+#include <aliceVision/robustEstimation/ISolver.hpp>
 #include <aliceVision/robustEstimation/IRansacKernel.hpp>
 
 namespace aliceVision {
@@ -28,11 +28,11 @@ inline double pointToLineError(const Vec2& lineEq, const Vec2& xs)
 /**
  * @brief Embed the basic solver to fit from sampled point set
  */
-class LineKernel : public IRansacKernel<multiview::MatrixModel<Vec2>>
+class LineKernel : public IRansacKernel<robustEstimation::MatrixModel<Vec2>>
 {
 public:
 
-  using ModelT = multiview::MatrixModel<Vec2>;
+  using ModelT = robustEstimation::MatrixModel<Vec2>;
 
   LineKernel(const Mat2X& xs)
     : _xs(xs)

@@ -6,7 +6,8 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
-#include <aliceVision/multiview/projection.hpp>
+#include <aliceVision/numeric/projection.hpp>
+#include <aliceVision/robustEstimation/ISolver.hpp>
 #include <aliceVision/multiview/relativePose/FundamentalKernel.hpp>
 
 #define BOOST_TEST_MODULE fundamentalKernelSolver
@@ -75,7 +76,7 @@ bool expectKernelProperties(const Mat& x1, const Mat& x2, Mat3* F_expected = nul
   for(std::size_t i = 0; i < x1.cols(); ++i)
     samples.push_back(i);
 
-  std::vector<multiview::Mat3Model> Fs;
+  std::vector<robustEstimation::Mat3Model> Fs;
   kernel.fit(samples, Fs);
 
   bOk &= (!Fs.empty());

@@ -7,12 +7,13 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "Fundamental8PSolver.hpp"
+#include <aliceVision/multiview/epipolarEquation.hpp>
 
 namespace aliceVision {
 namespace multiview {
 namespace relativePose {
 
-void solveProblem(const Mat& x1, const Mat& x2, std::vector<Mat3Model>& models, const std::vector<double>* weights = nullptr)
+void solveProblem(const Mat& x1, const Mat& x2, std::vector<robustEstimation::Mat3Model>& models, const std::vector<double>* weights = nullptr)
 {
   assert(2 == x1.rows());
   assert(8 <= x1.cols());
@@ -53,12 +54,12 @@ void solveProblem(const Mat& x1, const Mat& x2, std::vector<Mat3Model>& models, 
   models.emplace_back(F);
 }
 
-void Fundamental8PSolver::solve(const Mat& x1, const Mat& x2, std::vector<Mat3Model>& models) const
+void Fundamental8PSolver::solve(const Mat& x1, const Mat& x2, std::vector<robustEstimation::Mat3Model>& models) const
 {
   solveProblem(x1, x2, models);
 }
 
-void Fundamental8PSolver::solve(const Mat& x1, const Mat& x2, std::vector<Mat3Model>& models, const std::vector<double>& weights) const
+void Fundamental8PSolver::solve(const Mat& x1, const Mat& x2, std::vector<robustEstimation::Mat3Model>& models, const std::vector<double>& weights) const
 {
   solveProblem(x1, x2, models, &weights);
 }

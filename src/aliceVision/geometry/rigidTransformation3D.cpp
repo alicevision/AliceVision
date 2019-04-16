@@ -147,7 +147,7 @@ bool ACRansac_FindRTS(const Mat& x1,
 
   const KernelT kernel = KernelT(x1, x2);
 
-  multiview::MatrixModel<Mat4> RTS;
+  robustEstimation::MatrixModel<Mat4> RTS;
 
   // robust estimation of the Projection matrix and its precision
   const std::pair<double, double> ACRansacOut = robustEstimation::ACRANSAC(kernel, vec_inliers, numIterations, &RTS, dPrecision);

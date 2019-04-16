@@ -8,9 +8,9 @@
 #pragma once
 
 #include <aliceVision/numeric/numeric.hpp>
-#include <aliceVision/multiview/projection.hpp>
-#include <aliceVision/multiview/ISolver.hpp>
-#include <aliceVision/multiview/TwoViewKernel.hpp>
+#include <aliceVision/numeric/projection.hpp>
+#include <aliceVision/robustEstimation/ISolver.hpp>
+#include <aliceVision/robustEstimation/FittingKernel.hpp>
 
 // [1] "Robust and accurate calibration of camera networks". PhD.
 // Authors: Pierre MOULON
@@ -51,11 +51,11 @@ using namespace std;
  * See page 294 in HZ Result 11.1.
  *
  */
-class EightPointRelativePoseSolver : public multiview::ISolver<multiview::Mat3Model>
+class EightPointRelativePoseSolver : public robustEstimation::ISolver<robustEstimation::Mat3Model>
 {
 public:
 
-    using ModelT = multiview::Mat3Model;
+    using ModelT = robustEstimation::Mat3Model;
 
     /**
      * @brief Return the minimum number of required samples
@@ -127,7 +127,7 @@ public:
 // Return the angular error between [0; PI/2]
 struct AngularError
 {
-  double error(const multiview::Mat3Model& model, const Vec3 &x1, const Vec3 &x2) const
+  double error(const robustEstimation::Mat3Model& model, const Vec3 &x1, const Vec3 &x2) const
   {
     const Vec3 Em1 = (model.getMatrix() * x1).normalized();
     double angleVal = (x2.transpose() * Em1);
@@ -137,12 +137,12 @@ struct AngularError
 };
 
 class EssentialKernel_spherical
-        : public multiview::TwoViewKernel<EightPointRelativePoseSolver, AngularError, multiview::Mat3Model>
+        : public robustEstimation::FittingKernel<EightPointRelativePoseSolver, AngularError, robustEstimation::Mat3Model>
 {
 public:
 
-  using ModelT = multiview::Mat3Model;
-  using KernelBase = multiview::TwoViewKernel<EightPointRelativePoseSolver, AngularError, multiview::Mat3Model>;
+  using ModelT = robustEstimation::Mat3Model;
+  using KernelBase = robustEstimation::FittingKernel<EightPointRelativePoseSolver, AngularError, robustEstimation::Mat3Model>;
 
   EssentialKernel_spherical(const Mat& x1, const Mat& x2)
       : KernelBase(x1, x2)

@@ -8,11 +8,13 @@
 
 #pragma once
 
-#include <aliceVision/multiview/essential.hpp>
-#include <aliceVision/multiview/TwoViewKernel.hpp>
+#include <aliceVision/robustEstimation/conditioning.hpp>
+#include <aliceVision/robustEstimation/FittingKernel.hpp>
 #include <aliceVision/multiview/relativePose/Essential5PSolver.hpp>
 #include <aliceVision/multiview/relativePose/Essential8PSolver.hpp>
 #include <aliceVision/multiview/relativePose/FundamentalError.hpp>
+#include <aliceVision/multiview/essential.hpp>
+#include <aliceVision/multiview/Unnormalizer.hpp>
 
 namespace aliceVision {
 namespace multiview {
@@ -24,15 +26,15 @@ namespace relativePose {
  * @todo  Error must be overwrite in order to compute F from E and K's.
  *        Fitting must normalize image values to camera values.
  */
-template<typename SolverT, typename ErrorT, typename ModelT = Mat3Model>
-class EssentialKernel : public TwoViewKernel<SolverT, ErrorT, ModelT>
+template<typename SolverT, typename ErrorT, typename ModelT = robustEstimation::Mat3Model>
+class EssentialKernel : public robustEstimation::FittingKernel<SolverT, ErrorT, ModelT>
 {
 public:
 
-  using KernelBase = TwoViewKernel<SolverT, ErrorT, ModelT>;
+  using KernelBase = robustEstimation::FittingKernel<SolverT, ErrorT, ModelT>;
 
   EssentialKernel(const Mat& x1, const Mat& x2, const Mat3& K1, const Mat3& K2)
-    : TwoViewKernel<SolverT, ErrorT, ModelT>(x1,x2)
+    : robustEstimation::FittingKernel<SolverT, ErrorT, ModelT>(x1,x2)
     , _K1(K1)
     , _K2(K2)
   {}
@@ -54,8 +56,8 @@ public:
     Mat x1_normalized;
     Mat x2_normalized;
 
-    applyTransformationToPoints(x1, K1Inverse, &x1_normalized);
-    applyTransformationToPoints(x2, K2Inverse, &x2_normalized);
+    robustEstimation::applyTransformationToPoints(x1, K1Inverse, &x1_normalized);
+    robustEstimation::applyTransformationToPoints(x2, K2Inverse, &x2_normalized);
 
     KernelBase::_kernelSolver.solve(x1_normalized, x2_normalized, models);
   }
@@ -64,7 +66,7 @@ public:
   {
     Mat3 F;
     fundamentalFromEssential(model.getMatrix(), _K1, _K2, &F);
-    Mat3Model modelF(F);
+    robustEstimation::Mat3Model modelF(F);
     return KernelBase::_errorEstimator.error(modelF, KernelBase::_x1.col(sample), KernelBase::_x2.col(sample));
   }
 
@@ -77,12 +79,12 @@ protected:
 /**
  * @brief Solver kernel for the 8pt Essential Matrix Estimation
  */
-typedef EssentialKernel<Essential8PSolver, FundamentalSampsonError, Mat3Model>  Essential8PKernel;
+typedef EssentialKernel<Essential8PSolver, FundamentalSampsonError, robustEstimation::Mat3Model>  Essential8PKernel;
 
 /**
  * @brief Solver kernel for the 5pt Essential Matrix Estimation
  */
-typedef EssentialKernel<Essential5PSolver, FundamentalSampsonError, Mat3Model>  Essential5PKernel;
+typedef EssentialKernel<Essential5PSolver, FundamentalSampsonError, robustEstimation::Mat3Model>  Essential5PKernel;
 
 
 }  // namespace relativePose

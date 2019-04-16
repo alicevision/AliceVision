@@ -10,15 +10,15 @@
 
 #include <aliceVision/numeric/numeric.hpp>
 
-namespace aliceVision {
-namespace multiview {
-
 /**
  * @brief Implementation of normalized coordinates.
  *        Normalization improve accuracy of results and provide benefits
  *        that make scale and coordinate origin invariant.
  *        The implementation follows @see Algorithm 4.2 from HZ page 109.
  */
+
+namespace aliceVision {
+namespace robustEstimation {
 
 /**
  * @brief Point conditioning
@@ -45,41 +45,5 @@ void preconditionerFromImageSize(int width, int height, Mat3 *T);
  */
 void normalizePointsFromImageSize(const Mat& points, Mat* normalized_points, Mat3* T, int width, int height);
 
-/**
- * @brief Unnormalize using Inverse
- */
-struct UnnormalizerI
-{
-  /**
-   * @brief Denormalize the results.
-   * @see HZ page 109.
-   */
-  static void unnormalize(const Mat3 &T1, const Mat3 &T2, Mat3 *H);
-};
-
-/**
- * @brief Unnormalize using Transpose
- */
-struct UnnormalizerT
-{
-  /**
-   * @brief Denormalize the results.
-   * @see HZ page 109.
-   */
-  static void unnormalize(const Mat3 &T1, const Mat3 &T2, Mat3 *H);
-};
-
-/**
- * @brief Unnormalize for resection
- */
-struct UnnormalizerResection
-{
-
-  static void unnormalize(const Mat &T, const Mat &U, Mat34 *P)
-  {
-    *P = T.inverse() * (*P);
-  }
-};
-
-} //namespace multiview
+} //namespace robustEstimation
 } //namespace aliceVision

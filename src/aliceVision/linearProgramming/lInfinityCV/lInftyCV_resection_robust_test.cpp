@@ -10,7 +10,7 @@
 #include "aliceVision/linearProgramming/lInfinityCV/resection_kernel.hpp"
 #include "aliceVision/robustEstimation/maxConsensus.hpp"
 #include "aliceVision/robustEstimation/ScoreEvaluator.hpp"
-#include "aliceVision/multiview/projection.hpp"
+#include "aliceVision/numeric/projection.hpp"
 
 #include <iostream>
 #include <vector>
@@ -45,7 +45,7 @@ BOOST_AUTO_TEST_CASE(Resection_L_Infinity_Robust_OutlierFree) {
 
     KernelType kernel(pt2D, pt3D);
     ScoreEvaluator<KernelType> scorer(2*Square(0.6));
-    multiview::Mat34Model P = maxConsensus(kernel, scorer, nullptr, 128);
+    robustEstimation::Mat34Model P = maxConsensus(kernel, scorer, nullptr, 128);
 
     // Check that Projection matrix is near to the GT :
     Mat34 GT_ProjectionMatrix = d.P(nResectionCameraIndex).array()
@@ -98,7 +98,7 @@ BOOST_AUTO_TEST_CASE(Resection_L_Infinity_Robust_OneOutlier)
     const Mat & pt3D = d2._X;
     KernelType kernel(pt2D, pt3D);
     ScoreEvaluator<KernelType> scorer(Square(0.1)); //Highly intolerant for the test
-    multiview::Mat34Model P = maxConsensus(kernel, scorer, nullptr, 128);
+    robustEstimation::Mat34Model P = maxConsensus(kernel, scorer, nullptr, 128);
 
     // Check that Projection matrix is near to the GT :
     Mat34 GT_ProjectionMatrix = d.P(nResectionCameraIndex).array()

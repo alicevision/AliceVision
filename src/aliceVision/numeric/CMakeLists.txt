@@ -1,11 +1,13 @@
 # Headers
 set(numeric_files_headers
   numeric.hpp
+  projection.hpp
 )
 
 # Sources
 set(numeric_files_sources
   numeric.cpp
+  projection.cpp
 )
 
 alicevision_add_library(aliceVision_numeric

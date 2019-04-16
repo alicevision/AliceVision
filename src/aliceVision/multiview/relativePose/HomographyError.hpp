@@ -8,9 +8,9 @@
 
 #pragma once
 
-
-#include <aliceVision/multiview/ISolver.hpp>
-#include <aliceVision/multiview/projection.hpp>
+#include <aliceVision/numeric/projection.hpp>
+#include <aliceVision/robustEstimation/ISolver.hpp>
+#include <aliceVision/multiview/relativePose/ISolverErrorRelativePose.hpp>
 
 namespace aliceVision {
 namespace multiview {
@@ -20,9 +20,9 @@ namespace relativePose {
  * @brief The HomographyAsymmetricError struct
  * @note Should be distributed as Chi-squared with k = 2.
  */
-struct HomographyAsymmetricError : ISolverErrorRelativePose<Mat3Model>
+struct HomographyAsymmetricError : ISolverErrorRelativePose<robustEstimation::Mat3Model>
 {
-  inline double error(const Mat3Model& H, const Vec2& x1, const Vec2& x2) const
+  inline double error(const robustEstimation::Mat3Model& H, const Vec2& x1, const Vec2& x2) const
   {
     Vec3 x2h_est = H.getMatrix() * euclideanToHomogeneous(x1);
     Vec2 x2_est = x2h_est.head<2>() / x2h_est[2];

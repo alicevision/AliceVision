@@ -9,7 +9,7 @@
 
 #include <aliceVision/numeric/numeric.hpp>
 #include <aliceVision/numeric/LMFunctor.hpp>
-#include <aliceVision/multiview/ISolver.hpp>
+#include <aliceVision/robustEstimation/ISolver.hpp>
 
 namespace aliceVision {
 namespace geometry {
@@ -150,7 +150,7 @@ void Refine_RTS(const Mat &x1,
 /**
  * @brief the Solver to use for ACRansac
  */
-class RTSSolver : public multiview::ISolver<multiview::MatrixModel<Mat4>>
+class RTSSolver : public robustEstimation::ISolver<robustEstimation::MatrixModel<Mat4>>
 {
 public:
 
@@ -173,18 +173,18 @@ public:
   }
 
   // solve the RTS problem
-  inline void solve(const Mat& pts1, const Mat& pts2, std::vector<multiview::MatrixModel<Mat4>>& models) const
+  inline void solve(const Mat& pts1, const Mat& pts2, std::vector<robustEstimation::MatrixModel<Mat4>>& models) const
   {
-    models.push_back( multiview::MatrixModel<Mat4>(Eigen::umeyama(pts1, pts2, true)) );
+    models.push_back( robustEstimation::MatrixModel<Mat4>(Eigen::umeyama(pts1, pts2, true)) );
   }
 
-  void solve(const Mat& x1, const Mat& x2, std::vector<multiview::MatrixModel<Mat4>>& models, const std::vector<double>& weights) const override
+  void solve(const Mat& x1, const Mat& x2, std::vector<robustEstimation::MatrixModel<Mat4>>& models, const std::vector<double>& weights) const override
   {
      throw std::logic_error("RTSSolver does not support problem solving with weights.");
   }
 
   // compute the residual of the transformation
-  inline double error(const multiview::MatrixModel<Mat4>& RTS, const Vec3& pt1, const Vec3& pt2)
+  inline double error(const robustEstimation::MatrixModel<Mat4>& RTS, const Vec3& pt1, const Vec3& pt2)
   {
     const Mat4& matrixRTS = RTS.getMatrix();
     const Mat3& RS = matrixRTS.topLeftCorner<3, 3>();
@@ -200,7 +200,7 @@ public:
 struct RTSSquaredResidualError 
 {
   // return the squared error
-  inline double error(const multiview::MatrixModel<Mat4>& RTS, const Vec3& pt1, const Vec3& pt2) const
+  inline double error(const robustEstimation::MatrixModel<Mat4>& RTS, const Vec3& pt1, const Vec3& pt2) const
   {
     const Mat4& matrixRTS = RTS.getMatrix();
     const Mat3& RS = matrixRTS.topLeftCorner<3, 3>();
@@ -212,7 +212,7 @@ struct RTSSquaredResidualError
 /**
  * @brief The kernel to use for ACRansac
  */
-template <typename SolverT_, typename ErrorT_, typename ModelT_ = multiview::MatrixModel<Mat4>>
+template <typename SolverT_, typename ErrorT_, typename ModelT_ = robustEstimation::MatrixModel<Mat4>>
 class ACKernelAdaptor_PointsRegistrationSRT
 {
 public:

@@ -10,9 +10,9 @@
 #include <aliceVision/feature/sift/ImageDescriber_SIFT.hpp>
 #include <aliceVision/matching/RegionsMatcher.hpp>
 #include <aliceVision/multiview/relativePose/FundamentalKernel.hpp>
-#include <aliceVision/multiview/conditioning.hpp>
+#include <aliceVision/robustEstimation/conditioning.hpp>
 #include <aliceVision/robustEstimation/ACRansac.hpp>
-#include <aliceVision/robustEstimation/RansacKernel.hpp>
+#include <aliceVision/multiview/RelativePoseKernel.hpp>
 #include <aliceVision/robustEstimation/guidedMatching.hpp>
 
 #include <dependencies/vectorGraphics/svgDrawer.hpp>
@@ -128,11 +128,11 @@ int main() {
 
     //-- Fundamental robust estimation
     std::vector<size_t> vec_inliers;
-    typedef RelativePoseKernel<
+    typedef multiview::RelativePoseKernel<
       multiview::relativePose::Fundamental7PSolver,
       multiview::relativePose::FundamentalSymmetricEpipolarDistanceError,
       multiview::UnnormalizerT,
-      multiview::Mat3Model>
+      robustEstimation::Mat3Model>
       KernelType;
 
     KernelType kernel(
@@ -140,7 +140,7 @@ int main() {
       xR, imageR.Width(), imageR.Height(),
       true); // configure as point to line error model.
 
-    multiview::Mat3Model F;
+    robustEstimation::Mat3Model F;
     const std::pair<double,double> ACRansacOut = ACRANSAC(kernel, vec_inliers, 1024, &F,
       Square(4.0)); // Upper bound of authorized threshold
     const double & thresholdF = ACRansacOut.first;
@@ -199,14 +199,14 @@ int main() {
 
       //a. by considering only the geometric error
 
-      robustEstimation::guidedMatching<multiview::Mat3Model, multiview::relativePose::FundamentalEpipolarDistanceError>(
+      robustEstimation::guidedMatching<robustEstimation::Mat3Model, multiview::relativePose::FundamentalEpipolarDistanceError>(
         F, xL, xR, Square(thresholdF), vec_corresponding_indexes[0]);
       std::cout << "\nGuided Fundamental matching (geometric error) found "
         << vec_corresponding_indexes[0].size() << " correspondences."
         << std::endl;
 
       // b. by considering geometric error and descriptor distance ratio
-      robustEstimation::guidedMatching<multiview::Mat3Model, multiview::relativePose::FundamentalEpipolarDistanceError>(
+      robustEstimation::guidedMatching<robustEstimation::Mat3Model, multiview::relativePose::FundamentalEpipolarDistanceError>(
         F,
         NULL, *regions_perImage.at(0), // Null since no Intrinsic is defined
         NULL, *regions_perImage.at(1), // Null since no Intrinsic is defined

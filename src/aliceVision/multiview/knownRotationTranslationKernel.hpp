@@ -8,7 +8,7 @@
 #pragma once
 
 #include <aliceVision/multiview/relativePose/FundamentalError.hpp>
-#include <aliceVision/multiview/projection.hpp>
+#include <aliceVision/numeric/projection.hpp>
 
 namespace aliceVision {
 namespace multiview {
@@ -50,7 +50,7 @@ struct TwoPointTranslationSolver
    * @param R
    * @param models t
    */
-  void solve(const Mat& xA, const Mat& xB, const Mat3& R, std::vector<MatrixModel<Vec3>>& models) const
+  void solve(const Mat& xA, const Mat& xB, const Mat3& R, std::vector<robustEstimation::MatrixModel<Vec3>>& models) const
   {
     const Mat3 Rt = R.transpose();
 
@@ -77,7 +77,7 @@ struct TwoPointTranslationSolver
 /**
  * @brief Generic Solver to find the translation from a known Rotation.
  */
-template<typename SolverT_ = TwoPointTranslationSolver, typename ErrorT_ = relativePose::FundamentalSampsonError, typename ModelT_ = MatrixModel<Vec3>>
+template<typename SolverT_ = TwoPointTranslationSolver, typename ErrorT_ = relativePose::FundamentalSampsonError, typename ModelT_ = robustEstimation::MatrixModel<Vec3>>
 class TranslationFromKnowRotationKernel
 {
 public:
@@ -143,7 +143,7 @@ public:
     Mat34 poseA, poseB;
     P_from_KRt(Mat3::Identity(), Mat3::Identity(), Vec3::Zero(), &poseA);
     P_from_KRt(Mat3::Identity(), _R, model.getMatrix(), &poseB);
-    const Mat3Model F(F_from_P(poseA, poseB));
+    const robustEstimation::Mat3Model F(F_from_P(poseA, poseB));
     return _errorEstimator.error(F, _x1.col(sample), _x2.col(sample));
   }
 

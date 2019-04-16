@@ -6,14 +6,14 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "RelativePoseInfo.hpp"
-#include <aliceVision/multiview/relativePose/Essential5PSolver.hpp>
-#include <aliceVision/multiview/relativePose/FundamentalError.hpp>
-#include <aliceVision/multiview/projection.hpp>
+#include <aliceVision/numeric/projection.hpp>
+#include <aliceVision/robustEstimation/ACRansac.hpp>
+#include <aliceVision/robustEstimation/supportEstimation.hpp>
 #include <aliceVision/multiview/essential.hpp>
 #include <aliceVision/multiview/triangulation/triangulationDLT.hpp>
-#include <aliceVision/robustEstimation/ACRansac.hpp>
-#include <aliceVision/robustEstimation/RansacKernel.hpp>
-#include <aliceVision/robustEstimation/supportEstimation.hpp>
+#include <aliceVision/multiview/relativePose/Essential5PSolver.hpp>
+#include <aliceVision/multiview/relativePose/FundamentalError.hpp>
+#include <aliceVision/multiview/RelativePoseKernel.hpp>
 
 namespace aliceVision {
 namespace sfm {
@@ -86,13 +86,13 @@ bool robustRelativePose(const Mat3& K1, const Mat3& K2,
   using SolverT = multiview::relativePose::Essential5PSolver;
 
   // define the kernel
-  using KernelT = robustEstimation::RelativePoseKernel_K<SolverT, multiview::relativePose::FundamentalEpipolarDistanceError, multiview::Mat3Model>;
+  using KernelT = multiview::RelativePoseKernel_K<SolverT, multiview::relativePose::FundamentalEpipolarDistanceError, robustEstimation::Mat3Model>;
 
   KernelT kernel(x1, size_ima1.first, size_ima1.second,
                  x2, size_ima2.first, size_ima2.second, K1, K2);
 
 
-  multiview::Mat3Model model;
+  robustEstimation::Mat3Model model;
 
   // robustly estimation of the Essential matrix and its precision
   const std::pair<double,double> acRansacOut = robustEstimation::ACRANSAC(kernel,

@@ -8,7 +8,7 @@
 #pragma once
 
 #include <aliceVision/numeric/numeric.hpp>
-#include <aliceVision/multiview/conditioning.hpp>
+#include <aliceVision/robustEstimation/conditioning.hpp>
 #include <aliceVision/linearProgramming/linearProgramming.hpp>
 #include <aliceVision/robustEstimation/IRansacKernel.hpp>
 #include <aliceVision/robustEstimation/ACRansac.hpp>
@@ -44,9 +44,9 @@ public:
     , _Kinv(K.inverse())
   {
     // Normalize points by inverse(K)
-    multiview::applyTransformationToPoints(_x1, _Kinv, &_x1n);
-    multiview::applyTransformationToPoints(_x2, _Kinv, &_x2n);
-    multiview::applyTransformationToPoints(_x3, _Kinv, &_x3n);
+    robustEstimation::applyTransformationToPoints(_x1, _Kinv, &_x1n);
+    robustEstimation::applyTransformationToPoints(_x2, _Kinv, &_x2n);
+    robustEstimation::applyTransformationToPoints(_x3, _Kinv, &_x3n);
 
     _vecKR[0] = _Kinv * _vecKR[0];
     _vecKR[1] = _Kinv * _vecKR[1];

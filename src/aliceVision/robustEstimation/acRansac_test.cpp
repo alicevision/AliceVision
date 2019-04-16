@@ -40,7 +40,7 @@ BOOST_AUTO_TEST_CASE(RansacLineFitter_OutlierFree)
   // check the best model that fit the most of the data in a robust framework (ACRANSAC).
   std::vector<std::size_t> inliers;
 
-  multiview::MatrixModel<Vec2> model;
+  robustEstimation::MatrixModel<Vec2> model;
   ACRANSAC(lineKernel, inliers, 300, &model);
 
   BOOST_CHECK_SMALL(2.0 - model.getMatrix()[1], 1e-9);
@@ -79,7 +79,7 @@ BOOST_AUTO_TEST_CASE(RansacLineFitter_OneOutlier)
   // Check the best model that fit the most of the data
   //  in a robust framework (ACRANSAC).
   std::vector<std::size_t> inliers;
-  multiview::MatrixModel<Vec2> model;
+  robustEstimation::MatrixModel<Vec2> model;
 
   ACRANSAC(lineKernel, inliers, 300, &model);
 
@@ -147,7 +147,7 @@ BOOST_AUTO_TEST_CASE(RansacLineFitter_RealisticCase)
   // Check the best model that fit the most of the data
   //  in a robust framework (ACRANSAC).
   std::vector<std::size_t> inliers;
-  multiview::MatrixModel<Vec2> model;
+  robustEstimation::MatrixModel<Vec2> model;
 
   ACRANSAC(lineKernel, inliers, 300, &model);
 
@@ -247,7 +247,7 @@ BOOST_AUTO_TEST_CASE(RansacLineFitter_ACRANSACSimu)
     std::vector<std::size_t> vec_inliersGT;
     generateLine(numPoints, outlierRatio, gaussianNoiseLevel, GTModel, gen, points, vec_inliersGT);
     // robust line estimation
-    multiview::MatrixModel<Vec2> model;
+    robustEstimation::MatrixModel<Vec2> model;
 
     // The base estimator
     LineKernel lineKernel(points, W, H);

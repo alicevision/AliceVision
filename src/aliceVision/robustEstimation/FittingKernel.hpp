@@ -9,14 +9,14 @@
 #pragma once
 
 #include <aliceVision/numeric/numeric.hpp>
-#include <aliceVision/multiview/conditioning.hpp>
-#include <aliceVision/multiview/ISolver.hpp>
+#include <aliceVision/robustEstimation/conditioning.hpp>
+#include <aliceVision/robustEstimation/ISolver.hpp>
 
 #include <vector>
 #include <cassert>
 
 namespace aliceVision {
-namespace multiview {
+namespace robustEstimation {
 
 /**
  * @brief This is one example (targeted at solvers that operate on correspondences
@@ -45,7 +45,7 @@ namespace multiview {
  * should append new solutions to the end.
  */
 template<typename SolverT_, typename ErrorT_, typename ModelT_ = Mat3Model>
-class TwoViewKernel
+class FittingKernel
 {
 public:
 
@@ -53,7 +53,7 @@ public:
   using ErrorT = ErrorT_;
   using ModelT = ModelT_;
 
-  TwoViewKernel(const Mat& x1, const Mat& x2)
+  FittingKernel(const Mat& x1, const Mat& x2)
     : _x1(x1)
     , _x2(x2)
   {}
@@ -122,9 +122,9 @@ public:
 
 protected:
 
-  /// left corresponding point
+  /// left corresponding data
   const Mat& _x1;
-  /// right corresponding point
+  /// right corresponding data
   const Mat& _x2;
   /// two view solver
   const SolverT _kernelSolver = SolverT();
@@ -133,13 +133,13 @@ protected:
 };
 
 template<typename SolverT_, typename ErrorT_, typename UnnormalizerT_, typename ModelT_ = Mat3Model>
-class NormalizedTwoViewKernel : public TwoViewKernel<SolverT_, ErrorT_, ModelT_>
+class NormalizedFittingKernel : public FittingKernel<SolverT_, ErrorT_, ModelT_>
 {
 public:
 
-  using KernelBase = TwoViewKernel<SolverT_, ErrorT_, ModelT_>;
+  using KernelBase = FittingKernel<SolverT_, ErrorT_, ModelT_>;
 
-  NormalizedTwoViewKernel(const Mat& x1, const Mat& x2)
+  NormalizedFittingKernel(const Mat& x1, const Mat& x2)
     : KernelBase(x1, x2)
   {}
 
@@ -175,5 +175,5 @@ public:
   }
 };
 
-}  // namespace multiview
+}  // namespace robustEstimation
 }  // namespace aliceVision

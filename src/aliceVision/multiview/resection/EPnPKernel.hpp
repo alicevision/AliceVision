@@ -9,8 +9,8 @@
 
 #include <aliceVision/multiview/resection/EPnPSolver.hpp>
 #include <aliceVision/multiview/resection/ProjectionDistanceError.hpp>
-#include <aliceVision/multiview/TwoViewKernel.hpp>
-#include <aliceVision/multiview/projection.hpp>
+#include <aliceVision/robustEstimation/FittingKernel.hpp>
+#include <aliceVision/numeric/projection.hpp>
 
 namespace aliceVision {
 namespace multiview {
@@ -20,11 +20,11 @@ namespace resection {
  * @brief Euclidean (EPnP) resection kernel
  * @note Have K intrinsic helps
  */
-class EPnPKernel : public TwoViewKernel<EPnPSolver, ProjectionDistanceError, Mat34Model>
+class EPnPKernel : public robustEstimation::FittingKernel<EPnPSolver, ProjectionDistanceError, robustEstimation::Mat34Model>
 {
  public:
 
-  using KernelBase = TwoViewKernel<EPnPSolver, ProjectionDistanceError, Mat34Model>;
+  using KernelBase = robustEstimation::FittingKernel<EPnPSolver, ProjectionDistanceError, robustEstimation::Mat34Model>;
 
   EPnPKernel(const Mat2X& x2d, const Mat3X& x3d)
     : KernelBase(x2d, x3d)
@@ -44,7 +44,7 @@ class EPnPKernel : public TwoViewKernel<EPnPSolver, ProjectionDistanceError, Mat
       euclideanToNormalizedCamera(x2d, K, &x_camera_);
     }
 
-  void fit(const std::vector<std::size_t>& samples, std::vector<Mat34Model>& models) const override
+  void fit(const std::vector<std::size_t>& samples, std::vector<robustEstimation::Mat34Model>& models) const override
   {
     Mat2X x = ExtractColumns(x_camera_, samples);
     Mat3X X = ExtractColumns(X_, samples);

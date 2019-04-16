@@ -9,7 +9,7 @@
 #include <vector>
 
 #include "aliceVision/multiview/NViewDataSet.hpp"
-#include "aliceVision/multiview/projection.hpp"
+#include "aliceVision/numeric/projection.hpp"
 #include <aliceVision/config.hpp>
 
 #include "aliceVision/linearProgramming/ISolver.hpp"

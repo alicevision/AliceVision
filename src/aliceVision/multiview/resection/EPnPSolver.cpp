@@ -6,7 +6,7 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "EPnPSolver.hpp"
-#include <aliceVision/multiview/projection.hpp>
+#include <aliceVision/numeric/projection.hpp>
 
 namespace aliceVision {
 namespace multiview {
@@ -457,7 +457,7 @@ bool EPnPSolver::resection(const Mat2X& x2d, const Mat3X& x3d, Mat3* R, Vec3* t)
   return false;
 }
 
-void EPnPSolver::solve(const Mat& x2d, const Mat& x3d, std::vector<Mat34Model>& models) const
+void EPnPSolver::solve(const Mat& x2d, const Mat& x3d, std::vector<robustEstimation::Mat34Model>& models) const
 {
   Mat3 R;
   Vec3 t;

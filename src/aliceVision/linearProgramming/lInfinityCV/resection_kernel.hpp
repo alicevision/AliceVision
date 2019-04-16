@@ -7,8 +7,8 @@
 
 #pragma once
 
-#include <aliceVision/multiview/ISolver.hpp>
-#include <aliceVision/multiview/TwoViewKernel.hpp>
+#include <aliceVision/robustEstimation/ISolver.hpp>
+#include <aliceVision/robustEstimation/FittingKernel.hpp>
 #include <aliceVision/multiview/resection/ProjectionDistanceError.hpp>
 #include <aliceVision/numeric/numeric.hpp>
 
@@ -24,7 +24,7 @@ namespace kernel {
  * Rely on L1 Resection algorithm.
  * Work from 6 to N points.
  */
-struct l1SixPointResectionSolver : public multiview::ISolver<multiview::Mat34Model>
+struct l1SixPointResectionSolver : public robustEstimation::ISolver<robustEstimation::Mat34Model>
 {
   /**
   * @brief Return the minimum number of required samples
@@ -48,7 +48,7 @@ struct l1SixPointResectionSolver : public multiview::ISolver<multiview::Mat34Mod
    * @brief Solve the problem of camera pose.
    * @note First 3d point will be translated in order to have X0 = (0,0,0,1)
    */
-  void solve(const Mat& pt2D, const Mat& pt3D, std::vector<multiview::Mat34Model>& P) const;
+  void solve(const Mat& pt2D, const Mat& pt3D, std::vector<robustEstimation::Mat34Model>& P) const;
 
   /**
    * @brief Solve the problem.
@@ -57,7 +57,7 @@ struct l1SixPointResectionSolver : public multiview::ISolver<multiview::Mat34Mod
    * @param[out] models A vector into which the computed models are stored.
    * @param[in]  weights.
    */
-   void solve(const Mat& x1, const Mat& x2, std::vector<multiview::Mat34Model>& models, const std::vector<double>& weights) const override
+   void solve(const Mat& x1, const Mat& x2, std::vector<robustEstimation::Mat34Model>& models, const std::vector<double>& weights) const override
    {
       throw std::logic_error("l1SixPointResectionSolver does not support problem solving with weights.");
    }
@@ -67,7 +67,7 @@ struct l1SixPointResectionSolver : public multiview::ISolver<multiview::Mat34Mod
 /**
  * @brief Usable solver for the l1 6pt Resection Estimation
  */
-typedef multiview::TwoViewKernel<l1SixPointResectionSolver, multiview::resection::ProjectionDistanceError, multiview::Mat34Model>  l1PoseResectionKernel;
+typedef robustEstimation::FittingKernel<l1SixPointResectionSolver, multiview::resection::ProjectionDistanceError, robustEstimation::Mat34Model>  l1PoseResectionKernel;
 
 }  // namespace kernel
 }  // namespace lInfinityCV
