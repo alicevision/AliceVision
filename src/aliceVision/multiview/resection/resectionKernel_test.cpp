@@ -203,7 +203,7 @@ BOOST_AUTO_TEST_CASE(EuclideanResection_Points6AllRandomInput) {
       Mat3 R_output;
       Vec3 T_output;
       Mat3 K;
-      KRt_From_P(Ps.at(i).getMatrix(), &K, &R_output, &T_output);
+      KRt_from_P(Ps.at(i).getMatrix(), &K, &R_output, &T_output);
       if(NormLInfinity(T_output-T_expected) < 1e-8 && NormLInfinity(R_output-R_expected) < 1e-8)
         bFound = true;
     }

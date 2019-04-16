@@ -34,13 +34,13 @@ BOOST_AUTO_TEST_CASE(NormalizedHomography4PKernel_Fitting)
   x << 0, 0, 0, 1, 1, 1, 2, 2, 2,
        0, 1, 2, 0, 1, 2, 0, 1, 2;
 
-  EuclideanToHomogeneous(x, &xh);
+  euclideanToHomogeneous(x, &xh);
 
   for(int i = 0; i < H_gt.size(); ++i)
   {
     // transform points by the ground truth homography.
     Mat y, yh = H_gt[i] * xh;
-    HomogeneousToEuclidean(yh, &y);
+    homogeneousToEuclidean(yh, &y);
 
     const relativePose::NormalizedHomography4PKernel kernel(x, y);
 
@@ -76,13 +76,13 @@ BOOST_AUTO_TEST_CASE(Homography4PKernel_Fitting)
   x << 0, 0, 0, 1, 1, 1, 2, 2, 2,
        0, 1, 2, 0, 1, 2, 0, 1, 2;
 
-  EuclideanToHomogeneous(x, &xh);
+  euclideanToHomogeneous(x, &xh);
 
   for(int i = 0; i < H_gt.size(); ++i)
   {
     // transform points by the ground truth homography.
     Mat y, yh = H_gt[i] * xh;
-    HomogeneousToEuclidean(yh, &y);
+    homogeneousToEuclidean(yh, &y);
 
     const relativePose::Homography4PKernel kernel(x, y);
 

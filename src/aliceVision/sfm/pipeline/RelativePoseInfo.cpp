@@ -30,7 +30,7 @@ bool estimate_Rt_fromE(const Mat3 & K1, const Mat3 & K2,
   std::vector<Vec3> ts;  // Translation matrix.
 
   // Recover best rotation and translation from E.
-  MotionFromEssential(E, &Rs, &ts);
+  motionFromEssential(E, &Rs, &ts);
 
   //-> Test the 4 solutions will all the points
   assert(Rs.size() == 4);
@@ -39,13 +39,13 @@ bool estimate_Rt_fromE(const Mat3 & K1, const Mat3 & K2,
   Mat34 P1, P2;
   Mat3 R1 = Mat3::Identity();
   Vec3 t1 = Vec3::Zero();
-  P_From_KRt(K1, R1, t1, &P1);
+  P_from_KRt(K1, R1, t1, &P1);
 
   for (unsigned int i = 0; i < 4; ++i)
   {
     const Mat3 &R2 = Rs[i];
     const Vec3 &t2 = ts[i];
-    P_From_KRt(K2, R2, t2, &P2);
+    P_from_KRt(K2, R2, t2, &P2);
     Vec3 X;
 
     for (size_t k = 0; k < vec_inliers.size(); ++k)

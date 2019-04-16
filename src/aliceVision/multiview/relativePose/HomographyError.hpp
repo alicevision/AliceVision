@@ -24,7 +24,7 @@ struct HomographyAsymmetricError : ISolverErrorRelativePose<Mat3Model>
 {
   inline double error(const Mat3Model& H, const Vec2& x1, const Vec2& x2) const
   {
-    Vec3 x2h_est = H.getMatrix() * EuclideanToHomogeneous(x1);
+    Vec3 x2h_est = H.getMatrix() * euclideanToHomogeneous(x1);
     Vec2 x2_est = x2h_est.head<2>() / x2h_est[2];
     return (x2 - x2_est).squaredNorm();
   }

@@ -564,7 +564,7 @@ bool VoctreeLocalizer::localizeFirstBestResult(const feature::MapRegionsPerDesc 
       Vec3 t_;
       // Decompose the projection matrix  to get K, R and t using 
       // RQ decomposition
-      KRt_From_P(resectionData.projection_matrix, &K_, &R_, &t_);
+      KRt_from_P(resectionData.projection_matrix, &K_, &R_, &t_);
       ALICEVISION_LOG_DEBUG("K estimated\n" << K_);
       queryIntrinsics.setK(K_);
       queryIntrinsics.setWidth(queryImageSize.first);
@@ -688,7 +688,7 @@ bool VoctreeLocalizer::localizeAllResults(const feature::MapRegionsPerDesc &quer
     Vec3 t_;
     // Decompose the projection matrix  to get K, R and t using 
     // RQ decomposition
-    KRt_From_P(resectionData.projection_matrix, &K_, &R_, &t_);
+    KRt_from_P(resectionData.projection_matrix, &K_, &R_, &t_);
     queryIntrinsics.setK(K_);
     ALICEVISION_LOG_DEBUG("K estimated\n" << K_);
     queryIntrinsics.setWidth(queryImageSize.first);

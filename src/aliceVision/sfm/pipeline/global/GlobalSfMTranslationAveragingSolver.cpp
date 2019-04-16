@@ -491,15 +491,15 @@ void GlobalSfMTranslationAveragingSolver::ComputePutativeTranslation_EdgesCovera
 
               Mat3 Rij;
               Vec3 tij;
-              RelativeCameraMotion(RI, ti, RJ, tj, &Rij, &tij);
+              relativeCameraMotion(RI, ti, RJ, tj, &Rij, &tij);
 
               Mat3 Rjk;
               Vec3 tjk;
-              RelativeCameraMotion(RJ, tj, RK, tk, &Rjk, &tjk);
+              relativeCameraMotion(RJ, tj, RK, tk, &Rjk, &tjk);
 
               Mat3 Rik;
               Vec3 tik;
-              RelativeCameraMotion(RI, ti, RK, tk, &Rik, &tik);
+              relativeCameraMotion(RI, ti, RK, tk, &Rik, &tik);
 
               // set number of threads, 1 if openMP is not enabled
               const int thread_id = omp_get_thread_num();
@@ -684,9 +684,9 @@ bool GlobalSfMTranslationAveragingSolver::Estimate_T_triplet(
 
   vec_tis.resize(3);
   Mat3 K, R;
-  KRt_From_P(T.P1, &K, &R, &vec_tis[0]);
-  KRt_From_P(T.P2, &K, &R, &vec_tis[1]);
-  KRt_From_P(T.P3, &K, &R, &vec_tis[2]);
+  KRt_from_P(T.P1, &K, &R, &vec_tis[0]);
+  KRt_from_P(T.P2, &K, &R, &vec_tis[1]);
+  KRt_from_P(T.P3, &K, &R, &vec_tis[2]);
 
 #ifdef DEBUG_TRIPLET
   // compute 3D scene base on motion estimation

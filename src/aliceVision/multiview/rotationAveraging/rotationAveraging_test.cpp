@@ -93,13 +93,13 @@ BOOST_AUTO_TEST_CASE ( rotationAveraging_RotationLeastSquare_3_Camera)
   //--
   Mat3 R;
   Vec3 t, t0 = Vec3::Zero(), t1 = Vec3::Zero();
-  RelativeCameraMotion(vec_globalR[0], t0, vec_globalR[1], t1, &R, &t);
+  relativeCameraMotion(vec_globalR[0], t0, vec_globalR[1], t1, &R, &t);
   BOOST_CHECK_SMALL(FrobeniusDistance( R01, R), 1e-2);
 
-  RelativeCameraMotion(vec_globalR[1], t0, vec_globalR[2], t1, &R, &t);
+  relativeCameraMotion(vec_globalR[1], t0, vec_globalR[2], t1, &R, &t);
   BOOST_CHECK_SMALL(FrobeniusDistance( R12, R), 1e-2);
 
-  RelativeCameraMotion(vec_globalR[2], t0, vec_globalR[0], t1, &R, &t);
+  relativeCameraMotion(vec_globalR[2], t0, vec_globalR[0], t1, &R, &t);
   BOOST_CHECK_SMALL(FrobeniusDistance( R20, R), 1e-2);
 }
 
@@ -138,13 +138,13 @@ BOOST_AUTO_TEST_CASE ( rotationAveraging_RefineRotationsAvgL1IRLS_SimpleTriplet)
   //--
   Mat3 R;
   Vec3 t, t0 = Vec3::Zero(), t1 = Vec3::Zero();
-  RelativeCameraMotion(vec_globalR[0], t0, vec_globalR[1], t1, &R, &t);
+  relativeCameraMotion(vec_globalR[0], t0, vec_globalR[1], t1, &R, &t);
   BOOST_CHECK_SMALL(FrobeniusDistance( R01, R), 1e-8);
 
-  RelativeCameraMotion(vec_globalR[1], t0, vec_globalR[2], t1, &R, &t);
+  relativeCameraMotion(vec_globalR[1], t0, vec_globalR[2], t1, &R, &t);
   BOOST_CHECK_SMALL(FrobeniusDistance( R12, R), 1e-8);
 
-  RelativeCameraMotion(vec_globalR[2], t0, vec_globalR[0], t1, &R, &t);
+  relativeCameraMotion(vec_globalR[2], t0, vec_globalR[0], t1, &R, &t);
   BOOST_CHECK_SMALL(FrobeniusDistance( R20, R), 1e-8);
 }
 
@@ -168,13 +168,13 @@ BOOST_AUTO_TEST_CASE ( rotationAveraging_RefineRotationsAvgL1IRLS_CompleteGraph)
     // (index0->index1), (index1,index2), (index0->index2)
     Mat3 Rrel;
     Vec3 trel;
-    RelativeCameraMotion(d._R[index0], d._t[index0], d._R[index1], d._t[index1], &Rrel, &trel);
+    relativeCameraMotion(d._R[index0], d._t[index0], d._R[index1], d._t[index1], &Rrel, &trel);
     vec_relativeRotEstimate.push_back(RelativeRotation(index0, index1, Rrel, 1));
 
-    RelativeCameraMotion(d._R[index1], d._t[index1], d._R[index2], d._t[index2], &Rrel, &trel);
+    relativeCameraMotion(d._R[index1], d._t[index1], d._R[index2], d._t[index2], &Rrel, &trel);
     vec_relativeRotEstimate.push_back(RelativeRotation(index1, index2, Rrel, 1));
 
-    RelativeCameraMotion(d._R[index0], d._t[index0], d._R[index2], d._t[index2], &Rrel, &trel);
+    relativeCameraMotion(d._R[index0], d._t[index0], d._R[index2], d._t[index2], &Rrel, &trel);
     vec_relativeRotEstimate.push_back(RelativeRotation(index0, index2, Rrel, 1));
   }
 
@@ -195,7 +195,7 @@ BOOST_AUTO_TEST_CASE ( rotationAveraging_RefineRotationsAvgL1IRLS_CompleteGraph)
   {
     Mat3 Rrel;
     Vec3 trel;
-    RelativeCameraMotion(vec_globalR[0], Vec3::Zero(), d._R[0], Vec3::Zero(), &Rrel, &trel);
+    relativeCameraMotion(vec_globalR[0], Vec3::Zero(), d._R[0], Vec3::Zero(), &Rrel, &trel);
     for (std::size_t i = 0; i < iNviews; ++i)
       vec_globalR[i] *= Rrel;
   }
@@ -235,7 +235,7 @@ BOOST_AUTO_TEST_CASE ( rotationAveraging_RefineRotationsAvgL1IRLS_CompleteGraph_
     if ( std::find(vec_unique.begin(), vec_unique.end(), std::make_pair(index0, index1)) == vec_unique.end()
       && std::find(vec_unique.begin(), vec_unique.end(), std::make_pair(index1, index0)) == vec_unique.end())
     {
-      RelativeCameraMotion(d._R[index0], d._t[index0], d._R[index1], d._t[index1], &Rrel, &trel);
+      relativeCameraMotion(d._R[index0], d._t[index0], d._R[index1], d._t[index1], &Rrel, &trel);
       vec_relativeRotEstimate.push_back(RelativeRotation(index0, index1, Rrel, 1));
       vec_unique.emplace_back(index0, index1);
     }
@@ -243,7 +243,7 @@ BOOST_AUTO_TEST_CASE ( rotationAveraging_RefineRotationsAvgL1IRLS_CompleteGraph_
     if ( std::find(vec_unique.begin(), vec_unique.end(), std::make_pair(index1, index2)) == vec_unique.end()
       && std::find(vec_unique.begin(), vec_unique.end(), std::make_pair(index2, index1)) == vec_unique.end())
     {
-      RelativeCameraMotion(d._R[index1], d._t[index1], d._R[index2], d._t[index2], &Rrel, &trel);
+      relativeCameraMotion(d._R[index1], d._t[index1], d._R[index2], d._t[index2], &Rrel, &trel);
       vec_relativeRotEstimate.push_back(RelativeRotation(index1, index2, Rrel, 1));
       vec_unique.emplace_back(index1, index2);
     }
@@ -251,7 +251,7 @@ BOOST_AUTO_TEST_CASE ( rotationAveraging_RefineRotationsAvgL1IRLS_CompleteGraph_
     if ( std::find(vec_unique.begin(), vec_unique.end(), std::make_pair(index0, index2)) == vec_unique.end()
       && std::find(vec_unique.begin(), vec_unique.end(), std::make_pair(index2, index0)) == vec_unique.end())
     {
-      RelativeCameraMotion(d._R[index0], d._t[index0], d._R[index2], d._t[index2], &Rrel, &trel);
+      relativeCameraMotion(d._R[index0], d._t[index0], d._R[index2], d._t[index2], &Rrel, &trel);
       vec_relativeRotEstimate.push_back(RelativeRotation(index0, index2, Rrel, 1));
       vec_unique.emplace_back(index0, index2);
     }
@@ -306,7 +306,7 @@ BOOST_AUTO_TEST_CASE ( rotationAveraging_RefineRotationsAvgL1IRLS_CompleteGraph_
   {
     Mat3 Rrel;
     Vec3 trel;
-    RelativeCameraMotion(vec_globalR[0], Vec3::Zero(), d._R[0], Vec3::Zero(), &Rrel, &trel);
+    relativeCameraMotion(vec_globalR[0], Vec3::Zero(), d._R[0], Vec3::Zero(), &Rrel, &trel);
     for (std::size_t i = 0; i < iNviews; ++i)
       vec_globalR[i] *= Rrel;
   }

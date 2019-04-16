@@ -42,9 +42,9 @@ struct TrifocalTensorModel {
     const Vec3 X = triangulationObj.compute();
 
     // Return the maximum observed reprojection error
-    const double pt1ReProj = (Project(t.P1, X) - pt1).squaredNorm();
-    const double pt2ReProj = (Project(t.P2, X) - pt2).squaredNorm();
-    const double pt3ReProj = (Project(t.P3, X) - pt3).squaredNorm();
+    const double pt1ReProj = (project(t.P1, X) - pt1).squaredNorm();
+    const double pt2ReProj = (project(t.P2, X) - pt2).squaredNorm();
+    const double pt3ReProj = (project(t.P3, X) - pt3).squaredNorm();
 
     return std::max(pt1ReProj, std::max(pt2ReProj,pt3ReProj));
   }

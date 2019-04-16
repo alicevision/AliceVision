@@ -13,18 +13,18 @@
 namespace aliceVision {
 
 /// Compute P = K[R|t]
-void P_From_KRt(const Mat3 &K,  const Mat3 &R,  const Vec3 &t, Mat34 *P)
+void P_from_KRt(const Mat3 &K,  const Mat3 &R,  const Vec3 &t, Mat34 *P)
 {
   assert(P != nullptr);
-  *P = P_From_KRt(K, R, t);
+  *P = P_from_KRt(K, R, t);
 }
 
-Mat34 P_From_KRt(const Mat3 &K, const Mat3 &R, const Vec3 &t)
+Mat34 P_from_KRt(const Mat3 &K, const Mat3 &R, const Vec3 &t)
 {
   return K * HStack(R,t);
 }
 
-void KRt_From_P(const Mat34 &P, Mat3 *Kp, Mat3 *Rp, Vec3 *tp)
+void KRt_from_P(const Mat34 &P, Mat3 *Kp, Mat3 *Rp, Vec3 *tp)
 {
   assert(Kp != nullptr);
   assert(Rp != nullptr);
@@ -167,40 +167,40 @@ Mat3 F_from_P(const Mat34 & P1, const Mat34 & P2)
   return F12;
 }
 
-Vec2 Project(const Mat34 &P, const Vec3 &X)
+Vec2 project(const Mat34 &P, const Vec3 &X)
 {
   return Vec3(P * X.homogeneous()).hnormalized();
 }
 
-void Project(const Mat34 &P, const Mat3X &X, Mat2X *x)
+void project(const Mat34 &P, const Mat3X &X, Mat2X *x)
 {
   assert(x != nullptr);
-  Project(P, Mat4X(X.colwise().homogeneous()), x);
+  project(P, Mat4X(X.colwise().homogeneous()), x);
 }
 
-void Project(const Mat34 &P, const Mat4X &X, Mat2X *x)
+void project(const Mat34 &P, const Mat4X &X, Mat2X *x)
 {
   assert(x != nullptr);
-  *x = Project(P, X);
+  *x = project(P, X);
 }
 
-Mat2X Project(const Mat34 &P, const Mat3X &X)
+Mat2X project(const Mat34 &P, const Mat3X &X)
 {
-  return Project(P, Mat4X(X.colwise().homogeneous()));
+  return project(P, Mat4X(X.colwise().homogeneous()));
 }
 
-Mat2X Project(const Mat34 &P, const Mat4X &X)
+Mat2X project(const Mat34 &P, const Mat4X &X)
 {
   return Mat3X(P * X).colwise().hnormalized();
 }
 
-void HomogeneousToEuclidean(const Vec4 &H, Vec3 *X)
+void homogeneousToEuclidean(const Vec4 &H, Vec3 *X)
 {
   assert(X != nullptr);
   *X = H.hnormalized();
 }
 
-void EuclideanToHomogeneous(const Mat &X, Mat *H)
+void euclideanToHomogeneous(const Mat &X, Mat *H)
 {
   assert(H != nullptr);
   *H = X.colwise().homogeneous();  
@@ -211,41 +211,41 @@ double Depth(const Mat3 &R, const Vec3 &t, const Vec3 &X)
   return (R*X)[2] + t[2];
 }
 
-Vec3 EuclideanToHomogeneous(const Vec2 &x)
+Vec3 euclideanToHomogeneous(const Vec2 &x)
 {
   return x.homogeneous();
 }
 
-void HomogeneousToEuclidean(const Mat &H, Mat *X)
+void homogeneousToEuclidean(const Mat &H, Mat *X)
 {
   assert(X != nullptr);
   *X = H.colwise().hnormalized();
 }
 
-Mat3X EuclideanToHomogeneous(const Mat2X &x)
+Mat3X euclideanToHomogeneous(const Mat2X &x)
 {
   return x.colwise().homogeneous();
 }
 
-void EuclideanToHomogeneous(const Mat2X &x, Mat3X *h)
+void euclideanToHomogeneous(const Mat2X &x, Mat3X *h)
 {
   assert(h != nullptr);
   *h = x.colwise().homogeneous();
 }
 
-void HomogeneousToEuclidean(const Mat3X &h, Mat2X *e)
+void homogeneousToEuclidean(const Mat3X &h, Mat2X *e)
 {
   assert(e != nullptr);
   *e = h.colwise().hnormalized();
 }
 
-void EuclideanToNormalizedCamera(const Mat2X &x, const Mat3 &K, Mat2X *n)
+void euclideanToNormalizedCamera(const Mat2X &x, const Mat3 &K, Mat2X *n)
 {
   assert(n != nullptr);
-  HomogeneousToNormalizedCamera(x.colwise().homogeneous(), K, n);
+  homogeneousToNormalizedCamera(x.colwise().homogeneous(), K, n);
 }
 
-void HomogeneousToNormalizedCamera(const Mat3X &x, const Mat3 &K, Mat2X *n)
+void homogeneousToNormalizedCamera(const Mat3X &x, const Mat3 &K, Mat2X *n)
 {
   assert(n != nullptr);
   *n = (K.inverse() * x).colwise().hnormalized();
@@ -257,7 +257,7 @@ double reprojectionErrorRMSE(const Mat2X &x_image,
                            const Mat34 &P) 
 {
     const std::size_t num_points = x_image.cols();
-    const Mat2X dx = Project(P, X_world) - x_image;
+    const Mat2X dx = project(P, X_world) - x_image;
     return std::sqrt(dx.squaredNorm() / num_points);
 }
 
@@ -269,7 +269,7 @@ double reprojectionErrorRMSE(const Mat2X &x_image,
                            const Vec3 &t) 
 {
     Mat34 P;
-    P_From_KRt(K, R, t, &P);
+    P_from_KRt(K, R, t, &P);
     return reprojectionErrorRMSE(x_image, X_world.colwise().homogeneous(), P);
 }
 

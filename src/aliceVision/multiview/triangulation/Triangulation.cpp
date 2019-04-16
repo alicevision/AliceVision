@@ -78,7 +78,7 @@ double Triangulation::error(const Vec3 &X) const
   {
     const Mat34& PMat = view.first;
     const Vec2 & xy = view.second;
-    const Vec2 p = Project(PMat, X);
+    const Vec2 p = project(PMat, X);
     squared_reproj_error += (xy - p).norm();
   }
   return squared_reproj_error;

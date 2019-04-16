@@ -31,7 +31,7 @@ void TriangulateDLT(const Mat34 &P1, const Vec2 &x1,
                     Vec3 *X_euclidean) {
   Vec4 X_homogeneous;
   TriangulateDLT(P1, x1, P2, x2, &X_homogeneous);
-  HomogeneousToEuclidean(X_homogeneous, X_euclidean);
+  homogeneousToEuclidean(X_homogeneous, X_euclidean);
 }
 
 } // namespace multiview

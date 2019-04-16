@@ -72,7 +72,7 @@ typename Kernel::ModelT RANSAC(
     iteration < really_max_iterations; ++iteration) 
   {
       std::vector<size_t> sample;
-      UniformSample(min_samples, total_samples, sample);
+      uniformSample(min_samples, total_samples, sample);
 
       std::vector<typename Kernel::ModelT> models;
       kernel.fit(sample, models);
@@ -101,7 +101,7 @@ typename Kernel::ModelT RANSAC(
         }
           if (best_inlier_ratio) 
           {
-          max_iterations = IterationsRequired(min_samples,
+          max_iterations = iterationsRequired(min_samples,
             outliers_probability,
             best_inlier_ratio);
             if(bVerbose)

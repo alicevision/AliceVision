@@ -55,7 +55,7 @@ BOOST_AUTO_TEST_CASE(Essential8PSolver_IdFocal)
       x2Col << d._x[(i+1)%iNviews].col(0);
 
       BOOST_CHECK(
-        MotionFromEssentialAndCorrespondence(Es.at(s).getMatrix(),
+        motionFromEssentialAndCorrespondence(Es.at(s).getMatrix(),
         d._K[i], x1Col,
         d._K[(i+1)%iNviews], x2Col,
         &Rs[s],
@@ -64,7 +64,7 @@ BOOST_AUTO_TEST_CASE(Essential8PSolver_IdFocal)
     //-- Compute Ground Truth motion
     Mat3 R;
     Vec3 t, t0 = Vec3::Zero(), t1 = Vec3::Zero();
-    RelativeCameraMotion(d._R[i], d._t[i], d._R[(i+1)%iNviews], d._t[(i+1)%iNviews], &R, &t);
+    relativeCameraMotion(d._R[i], d._t[i], d._R[(i+1)%iNviews], d._t[(i+1)%iNviews], &R, &t);
 
     // Assert that found relative motion is correct for almost one model.
     bool bsolution_found = false;
@@ -128,7 +128,7 @@ BOOST_AUTO_TEST_CASE(Essential8PKernel_EightPointsRelativePose)
       x1Col << d._x[i].col(0);
       x2Col << d._x[(i+1)%iNviews].col(0);
       BOOST_CHECK(
-        MotionFromEssentialAndCorrespondence(Es.at(s).getMatrix(),
+        motionFromEssentialAndCorrespondence(Es.at(s).getMatrix(),
         d._K[i], x1Col,
         d._K[(i+1)%iNviews], x2Col,
         &Rs[s],
@@ -137,7 +137,7 @@ BOOST_AUTO_TEST_CASE(Essential8PKernel_EightPointsRelativePose)
     //-- Compute Ground Truth motion
     Mat3 R;
     Vec3 t, t0 = Vec3::Zero(), t1 = Vec3::Zero();
-    RelativeCameraMotion(d._R[i], d._t[i], d._R[(i+1)%iNviews], d._t[(i+1)%iNviews], &R, &t);
+    relativeCameraMotion(d._R[i], d._t[i], d._R[(i+1)%iNviews], d._t[(i+1)%iNviews], &R, &t);
 
     // Assert that found relative motion is correct for almost one model.
     bool bsolution_found = false;
@@ -228,7 +228,7 @@ BOOST_AUTO_TEST_CASE(Essential5PKernel_FivePointsRelativePose)
       x1Col << d._x[0].col(0);
       x2Col << d._x[i].col(0);
       BOOST_CHECK(
-        MotionFromEssentialAndCorrespondence(Es.at(s).getMatrix(),
+        motionFromEssentialAndCorrespondence(Es.at(s).getMatrix(),
         d._K[0], x1Col,
         d._K[i], x2Col,
         &Rs[s],
@@ -237,7 +237,7 @@ BOOST_AUTO_TEST_CASE(Essential5PKernel_FivePointsRelativePose)
     //-- Compute Ground Truth motion
     Mat3 R;
     Vec3 t, t0 = Vec3::Zero(), t1 = Vec3::Zero();
-    RelativeCameraMotion(d._R[0], d._t[0], d._R[i], d._t[i], &R, &t);
+    relativeCameraMotion(d._R[0], d._t[0], d._R[i], d._t[i], &R, &t);
 
     // Assert that found relative motion is correct for almost one model.
     bool bsolution_found = false;

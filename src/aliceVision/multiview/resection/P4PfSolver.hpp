@@ -50,14 +50,14 @@ struct P4PfModel
 struct P4PfError : public ISolverErrorResection<P4PfModel>
 {
   /**
-   * @brief Compute the residual of the projection distance(p2d, Project(P,p3d))
+   * @brief Compute the residual of the projection distance(p2d, project(P,p3d))
    * @param[in] model solution
    * @param[in] p2d feature vector
    * @param[in] p3d corresponding 3D world point
    */
   inline double error(const P4PfModel& model, const Vec2& p2d, const Vec3& p3d) const override
   {
-    return (p2d - Project(model.getP(), p3d)).norm();
+    return (p2d - project(model.getP(), p3d)).norm();
   }
 };
 

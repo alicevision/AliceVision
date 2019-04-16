@@ -20,8 +20,8 @@ namespace relativePose {
 
 /**
  * @brief Generic Solver for the 5pt Essential Matrix Estimation.
- * @todo  Need a new Class that inherit of TwoViewKernel.
- *        Error must be overwrite in order to compute F from E and K's.
+ *
+ * @todo  Error must be overwrite in order to compute F from E and K's.
  *        Fitting must normalize image values to camera values.
  */
 template<typename SolverT, typename ErrorT, typename ModelT = Mat3Model>

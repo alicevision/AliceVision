@@ -465,7 +465,7 @@ void EPnPSolver::solve(const Mat& x2d, const Mat& x3d, std::vector<Mat34Model>& 
 
   if(resection(x2d, x3d, &R, &t))
   {
-    P_From_KRt(Mat3::Identity(), R, t, &P); // K = Id
+    P_from_KRt(Mat3::Identity(), R, t, &P); // K = Id
     models.emplace_back(P);
   }
 }

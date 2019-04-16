@@ -202,7 +202,7 @@ BOOST_AUTO_TEST_CASE(P3P_Ransac_noisyFromImagePoints)
     Mat3 Rest;
     Mat3 Kest;
     Vec3 Test;
-    KRt_From_P(Pest, &Kest, &Rest, &Test);
+    KRt_from_P(Pest, &Kest, &Rest, &Test);
 
     ALICEVISION_LOG_DEBUG("Est: Pest:\n" << Pest
             << "\nRest:\n" << Rest

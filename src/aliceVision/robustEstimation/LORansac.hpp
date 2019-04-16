@@ -235,7 +235,7 @@ double localOptimization(const Kernel& kernel,
   for(std::size_t i = 0; i < numRep; ++i)
   {
     std::vector<std::size_t> sample;
-    UniformSample(sampleSize, inliersBase, sample);
+    uniformSample(sampleSize, inliersBase, sample);
     assert(sampleSize > kernel.getMinimumNbRequiredSamplesLS());
     assert(sample.size() > kernel.getMinimumNbRequiredSamplesLS());
   
@@ -327,7 +327,7 @@ typename Kernel::ModelT LO_RANSAC(const Kernel& kernel,
   for(iteration = 0; iteration < max_iterations; ++iteration) 
   {
     std::vector<std::size_t> sample;
-    UniformSample(min_samples, total_samples, sample);
+    uniformSample(min_samples, total_samples, sample);
 
     std::vector<typename Kernel::ModelT> models;
     kernel.fit(sample, models);
@@ -387,7 +387,7 @@ typename Kernel::ModelT LO_RANSAC(const Kernel& kernel,
         }
         if (bestInlierRatio) 
         {
-          max_iterations = IterationsRequired(min_samples,
+          max_iterations = iterationsRequired(min_samples,
                                               outliers_probability,
                                               bestInlierRatio);
           // safeguard to not get stuck in a big number of iterations

@@ -280,7 +280,7 @@ void P3PSolver::solve(const Mat& x2d, const Mat& x3d, std::vector<Mat34Model>& m
     {
       R = solutions.block<3, 3>(0, i * 4 + 1);
       t = -R * solutions.col(i * 4);
-      P_From_KRt(Mat3::Identity(), R, t, &P); // K = Id
+      P_from_KRt(Mat3::Identity(), R, t, &P); // K = Id
 
       models.emplace_back(P);
     }

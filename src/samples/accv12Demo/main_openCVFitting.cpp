@@ -211,7 +211,7 @@ int main(int, char**)
             typedef homography::kernel::Kernel KernelType;
             KernelType kernel(xA, xB);
             if (bDoRansac)
-              Hransac = MaxConsensus(kernel, ScoreEvaluator<KernelType>(Square(thresholdransac)), &vec_inliersRansac, 1024);
+              Hransac = maxConsensus(kernel, ScoreEvaluator<KernelType>(Square(thresholdransac)), &vec_inliersRansac, 1024);
             if (vec_inliersRansac.size()<12)
               thresholdransac = 900;
           }

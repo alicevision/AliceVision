@@ -106,7 +106,7 @@ class Pinhole : public IntrinsicBase
   virtual Mat34 get_projective_equivalent(const geometry::Pose3 & pose) const
   {
     Mat34 P;
-    P_From_KRt(K(), pose.rotation(), pose.translation(), &P);
+    P_from_KRt(K(), pose.rotation(), pose.translation(), &P);
     return P;
   }
 

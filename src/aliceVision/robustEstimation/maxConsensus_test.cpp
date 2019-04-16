@@ -32,7 +32,7 @@ BOOST_AUTO_TEST_CASE(MaxConsensusLineFitter_OutlierFree)
   // Check the best model that fit the most of the data
   //  in a robust framework (Max-consensus).
   std::vector<std::size_t> inliers;
-  LineKernel::ModelT model = MaxConsensus(kernel, ScoreEvaluator<LineKernel>(0.3), &inliers);
+  LineKernel::ModelT model = maxConsensus(kernel, ScoreEvaluator<LineKernel>(0.3), &inliers);
   BOOST_CHECK_SMALL(2.0 - model.getMatrix()[1], 1e-9);
   BOOST_CHECK_SMALL(1.0 - model.getMatrix()[0], 1e-9);
   BOOST_CHECK_EQUAL(5, inliers.size());
@@ -48,7 +48,7 @@ BOOST_AUTO_TEST_CASE(MaxConsensusLineFitter_OutlierFree_DoNotGetBackModel)
 
   LineKernel kernel(xy);
   std::vector<std::size_t> inliers;
-  LineKernel::ModelT model = MaxConsensus(kernel, ScoreEvaluator<LineKernel>(0.3), &inliers);
+  LineKernel::ModelT model = maxConsensus(kernel, ScoreEvaluator<LineKernel>(0.3), &inliers);
   BOOST_CHECK_EQUAL(5, inliers.size());
 }
 
@@ -63,7 +63,7 @@ BOOST_AUTO_TEST_CASE(MaxConsensusLineFitter_OneOutlier)
   LineKernel kernel(xy);
 
   std::vector<std::size_t> inliers;
-  LineKernel::ModelT model = MaxConsensus(kernel, ScoreEvaluator<LineKernel>(0.3), &inliers);
+  LineKernel::ModelT model = maxConsensus(kernel, ScoreEvaluator<LineKernel>(0.3), &inliers);
   BOOST_CHECK_SMALL(2.0 - model.getMatrix()[1], 1e-9);
   BOOST_CHECK_SMALL(1.0 - model.getMatrix()[0], 1e-9);
   BOOST_CHECK_EQUAL(5, inliers.size());
@@ -79,7 +79,7 @@ BOOST_AUTO_TEST_CASE(MaxConsensusLineFitter_TooFewPoints)
         3;   // y = 2x + 1 with x = 1
   LineKernel kernel(xy);
   std::vector<std::size_t> inliers;
-  LineKernel::ModelT model = MaxConsensus(kernel, ScoreEvaluator<LineKernel>(0.3), &inliers);
+  LineKernel::ModelT model = maxConsensus(kernel, ScoreEvaluator<LineKernel>(0.3), &inliers);
   BOOST_CHECK_EQUAL(0, inliers.size());
 }
 
@@ -105,7 +105,7 @@ BOOST_AUTO_TEST_CASE(MaxConsensusLineFitter_RealisticCase)
   //-- Add some noise (for the asked percentage amount)
   int nbPtToNoise = (int) numPoints * outlierRatio;
   vector<std::size_t> vec_samples; // Fit with unique random index
-  UniformSample(nbPtToNoise, numPoints, vec_samples);
+  uniformSample(nbPtToNoise, numPoints, vec_samples);
   for(std::size_t i = 0; i <vec_samples.size(); ++i)
   {
     const std::size_t randomIndex = vec_samples[i];
@@ -116,7 +116,7 @@ BOOST_AUTO_TEST_CASE(MaxConsensusLineFitter_RealisticCase)
 
   LineKernel kernel(xy);
   std::vector<std::size_t> inliers;
-  LineKernel::ModelT model = MaxConsensus(kernel, ScoreEvaluator<LineKernel>(0.3), &inliers);
+  LineKernel::ModelT model = maxConsensus(kernel, ScoreEvaluator<LineKernel>(0.3), &inliers);
   BOOST_CHECK_EQUAL(numPoints-nbPtToNoise, inliers.size());
   BOOST_CHECK_SMALL((-2.0) - model.getMatrix()[0], 1e-9);
   BOOST_CHECK_SMALL( 6.3 - model.getMatrix()[1], 1e-9);

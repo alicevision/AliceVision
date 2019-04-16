@@ -16,25 +16,25 @@ namespace resection {
 
 /**
  * @brief Compute the residual of the projection distance
- *        (pt2D, Project(P,pt3D))
+ *        (pt2D, project(P,pt3D))
  */
 struct ProjectionDistanceError : public ISolverErrorResection<Mat34Model>
 {
   inline double error(const Mat34Model& P, const Vec2& p2d, const Vec3& p3d) const override
   {
-    return (Project(P.getMatrix(), p3d) - p2d).norm();
+    return (project(P.getMatrix(), p3d) - p2d).norm();
   }
 };
 
 /**
  * @brief Compute the residual of the projection distance
- *        (pt2D, Project(P,pt3D))
+ *        (pt2D, project(P,pt3D))
  */
 struct ProjectionDistanceSquaredError : public ISolverErrorResection<Mat34Model>
 {
   inline double error(const Mat34Model& P, const Vec2& p2d, const Vec3& p3d) const override
   {
-    return (Project(P.getMatrix(), p3d) - p2d).squaredNorm();
+    return (project(P.getMatrix(), p3d) - p2d).squaredNorm();
   }
 };
 

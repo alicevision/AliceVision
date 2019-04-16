@@ -30,7 +30,7 @@ namespace robustEstimation {
  *      A Review IJCV 1998
  */
 template <typename Kernel>
-double LeastMedianOfSquares(const Kernel& kernel,
+double leastMedianOfSquares(const Kernel& kernel,
                             typename Kernel::ModelT* model = nullptr,
                             double* outlierThreshold = nullptr,
                             double outlierRatio = 0.5,
@@ -52,7 +52,7 @@ double LeastMedianOfSquares(const Kernel& kernel,
 
     std::vector<std::size_t> vec_sample(min_samples);
     // Get Samples indexes
-    UniformSample(min_samples, total_samples, vec_sample);
+    uniformSample(min_samples, total_samples, vec_sample);
 
     // Estimate parameters: the solutions are stored in a vector
     std::vector<typename Kernel::ModelT> models;

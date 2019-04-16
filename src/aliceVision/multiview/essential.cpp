@@ -14,7 +14,7 @@
 namespace aliceVision {
 
 // HZ 9.6 page 257 (formula 9.12)
-void EssentialFromFundamental(const Mat3 &F,
+void essentialFromFundamental(const Mat3 &F,
                               const Mat3 &K1,
                               const Mat3 &K2,
                               Mat3 *E) {
@@ -30,7 +30,7 @@ void fundamentalFromEssential(const Mat3 &E,
   *F = K2.inverse().transpose() * E * K1.inverse();
 }
 
-void RelativeCameraMotion(const Mat3 &R1,
+void relativeCameraMotion(const Mat3 &R1,
                           const Vec3 &t1,
                           const Mat3 &R2,
                           const Vec3 &t2,
@@ -41,20 +41,20 @@ void RelativeCameraMotion(const Mat3 &R1,
 }
 
 // HZ 9.6 page 257
-void EssentialFromRt(const Mat3 &R1,
+void essentialFromRt(const Mat3 &R1,
                      const Vec3 &t1,
                      const Mat3 &R2,
                      const Vec3 &t2,
                      Mat3 *E) {
   Mat3 R;
   Vec3 t;
-  RelativeCameraMotion(R1, t1, R2, t2, &R, &t);
+  relativeCameraMotion(R1, t1, R2, t2, &R, &t);
   Mat3 Tx = CrossProductMatrix(t);
   *E = Tx * R;
 }
 
 // HZ 9.7 page 259 (Result 9.19)
-void MotionFromEssential(const Mat3 &E,
+void motionFromEssential(const Mat3 &E,
                          std::vector<Mat3> *Rs,
                          std::vector<Vec3> *ts) {
   Eigen::	JacobiSVD<Mat3> USV(E, Eigen::ComputeFullU|Eigen::ComputeFullV);
@@ -88,7 +88,7 @@ void MotionFromEssential(const Mat3 &E,
 }
 
 // HZ 9.6 pag 259 (9.6.3 Geometrical interpretation of the 4 solutions)
-int MotionFromEssentialChooseSolution(const std::vector<Mat3> &Rs,
+int motionFromEssentialChooseSolution(const std::vector<Mat3> &Rs,
                                       const std::vector<Vec3> &ts,
                                       const Mat3 &K1,
                                       const Vec2 &x1,
@@ -101,12 +101,12 @@ int MotionFromEssentialChooseSolution(const std::vector<Mat3> &Rs,
   // Set P1 = K1 [Id|0]
   Mat3 R1 = Mat3::Identity();
   Vec3 t1 = Vec3::Zero();
-  P_From_KRt(K1, R1, t1, &P1);
+  P_from_KRt(K1, R1, t1, &P1);
 
   for (int i = 0; i < 4; ++i) {
     const Mat3 &R2 = Rs[i];
     const Vec3 &t2 = ts[i];
-    P_From_KRt(K2, R2, t2, &P2);
+    P_from_KRt(K2, R2, t2, &P2);
     Vec3 X;
     multiview::TriangulateDLT(P1, x1, P2, x2, &X);
     // Test if point is front to the two cameras (positive depth)
@@ -117,7 +117,7 @@ int MotionFromEssentialChooseSolution(const std::vector<Mat3> &Rs,
   return -1;
 }
 
-bool MotionFromEssentialAndCorrespondence(const Mat3 &E,
+bool motionFromEssentialAndCorrespondence(const Mat3 &E,
                                           const Mat3 &K1,
                                           const Vec2 &x1,
                                           const Mat3 &K2,
@@ -126,8 +126,8 @@ bool MotionFromEssentialAndCorrespondence(const Mat3 &E,
                                           Vec3 *t) {
   std::vector<Mat3> Rs;
   std::vector<Vec3> ts;
-  MotionFromEssential(E, &Rs, &ts);
-  int solution = MotionFromEssentialChooseSolution(Rs, ts, K1, x1, K2, x2);
+  motionFromEssential(E, &Rs, &ts);
+  int solution = motionFromEssentialChooseSolution(Rs, ts, K1, x1, K2, x2);
   if (solution >= 0) {
     *R = Rs[solution];
     *t = ts[solution];

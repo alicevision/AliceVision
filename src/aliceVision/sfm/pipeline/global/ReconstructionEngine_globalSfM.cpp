@@ -590,7 +590,7 @@ void ReconstructionEngine_globalSfM::Compute_Relative_Rotations(rotationAveragin
           // Compute relative motion and save it
           Mat3 Rrel;
           Vec3 trel;
-          RelativeCameraMotion(R1, t1, R2, t2, &Rrel, &trel);
+          relativeCameraMotion(R1, t1, R2, t2, &Rrel, &trel);
           // Update found relative pose
           relativePose_info.relativePose = Pose3(Rrel, -Rrel.transpose() * trel);
         }

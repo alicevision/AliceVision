@@ -177,7 +177,7 @@ bool StructureComputation_robust::robust_triangulation(const sfmData::SfMData& s
   for(IndexT i = 0; i < nbIter; ++i)
   {
     std::set<IndexT> samples;
-    robustEstimation::UniformSample(std::min(std::size_t(min_sample_index), observations.size()), observations.size(), samples);
+    robustEstimation::uniformSample(std::min(std::size_t(min_sample_index), observations.size()), observations.size(), samples);
 
     // Hypothesis generation.
     const Vec3 current_model = track_sample_triangulation(sfmData, observations, samples);

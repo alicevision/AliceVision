@@ -153,7 +153,7 @@ bool SfMLocalizer::Localize(const Pair& imageSize,
     resectionData.projection_matrix = P;
     Mat3 K, R;
     Vec3 t;
-    KRt_From_P(P, &K, &R, &t);
+    KRt_from_P(P, &K, &R, &t);
     pose = geometry::Pose3(R, -R.transpose() * t);
   }
 

@@ -1609,7 +1609,7 @@ bool ReconstructionEngine_sequentialSfM::computeResection(const IndexT viewId, R
       // setup a default camera model from the found projection matrix
       Mat3 K, R;
       Vec3 t;
-      KRt_From_P(resectionData.projection_matrix, &K, &R, &t);
+      KRt_from_P(resectionData.projection_matrix, &K, &R, &t);
       
       const double focal = (K(0,0) + K(1,1))/2.0;
       const Vec2 principal_point(K(0,2), K(1,2));
@@ -1842,7 +1842,7 @@ void ReconstructionEngine_sequentialSfM::triangulate_multiViewsLORANSAC(SfMData&
       
       multiview::TriangulateNViewLORANSAC(features, Ps, &X_homogeneous, &inliersIndex, 8.0);
       
-      HomogeneousToEuclidean(X_homogeneous, &X_euclidean);     
+      homogeneousToEuclidean(X_homogeneous, &X_euclidean);     
       
       // observations = {350, 380, 442} | inliersIndex = [0, 1] | inliers = {350, 380}
       for (const auto & id : inliersIndex)

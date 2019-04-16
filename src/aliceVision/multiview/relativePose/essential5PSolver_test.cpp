@@ -55,13 +55,13 @@ TestData SomeTestData()
   d.t.setRandom();
   //d.t(1)  = 10;
 
-  EssentialFromRt(Mat3::Identity(), Vec3::Zero(), d.R, d.t, &d.E);
+  essentialFromRt(Mat3::Identity(), Vec3::Zero(), d.R, d.t, &d.E);
 
-  P_From_KRt(Mat3::Identity(), Mat3::Identity(), Vec3::Zero(), &d.P1);
-  P_From_KRt(Mat3::Identity(), d.R, d.t, &d.P2);
+  P_from_KRt(Mat3::Identity(), Mat3::Identity(), Vec3::Zero(), &d.P1);
+  P_from_KRt(Mat3::Identity(), d.R, d.t, &d.P2);
 
-  Project(d.P1, d.X, &d.x1);
-  Project(d.P2, d.X, &d.x2);
+  project(d.P1, d.X, &d.x1);
+  project(d.P2, d.X, &d.x2);
 
   return d;
 }
@@ -174,7 +174,7 @@ BOOST_AUTO_TEST_CASE(FivePointsRelativePose_Random)
     Vec2 x1Col = d.x1.col(0);
     Vec2 x2Col = d.x2.col(0);
     BOOST_CHECK(
-      MotionFromEssentialAndCorrespondence(Es.at(s).getMatrix(),
+      motionFromEssentialAndCorrespondence(Es.at(s).getMatrix(),
                                          Mat3::Identity(),
                                          x1Col,
                                          Mat3::Identity(),
@@ -228,7 +228,7 @@ BOOST_AUTO_TEST_CASE(FivePointsRelativePose_test_data_sets)
       Vec2 x1Col = d._x[0].col(0);
       Vec2 x2Col = d._x[i].col(0);
       BOOST_CHECK(
-        MotionFromEssentialAndCorrespondence(Es.at(s).getMatrix(),
+        motionFromEssentialAndCorrespondence(Es.at(s).getMatrix(),
         d._K[0],
         x1Col,
         d._K[i],
@@ -239,7 +239,7 @@ BOOST_AUTO_TEST_CASE(FivePointsRelativePose_test_data_sets)
     //-- Compute Ground Truth motion
     Mat3 R;
     Vec3 t, t0 = Vec3::Zero(), t1 = Vec3::Zero();
-    RelativeCameraMotion(d._R[0], d._t[0], d._R[i], d._t[i], &R, &t);
+    relativeCameraMotion(d._R[0], d._t[0], d._R[i], d._t[i], &R, &t);
 
     // Assert that found relative motion is correct for almost one model.
     bool bsolution_found = false;

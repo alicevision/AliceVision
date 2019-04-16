@@ -37,7 +37,7 @@ BOOST_AUTO_TEST_CASE(TranslationFromKnowRotationKernel_Multiview)
     // compute GT (Ground Truth) motion
     Mat3 R_GT;
     Vec3 t_GT;
-    RelativeCameraMotion(d._R[0], d._t[0], d._R[nCameraIndex], d._t[nCameraIndex], &R_GT, &t_GT);
+    relativeCameraMotion(d._R[0], d._t[0], d._R[nCameraIndex], d._t[nCameraIndex], &R_GT, &t_GT);
 
     multiview::TranslationFromKnowRotationKernel<> kernel(x0, xCam, R_GT);
 

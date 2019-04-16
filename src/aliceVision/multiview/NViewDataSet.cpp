@@ -61,7 +61,7 @@ NViewDataSet NRealisticCamerasRing(size_t nviews, size_t npoints,
                         0,           0,          1;
     d._R[i] = LookAt(lookdir);  // Y axis UP
     d._t[i] = -d._R[i] * camera_center; // [t]=[-RC] Cf HZ.
-    d._x[i] = Project(d.P(i), d._X);
+    d._x[i] = project(d.P(i), d._X);
     d._x_ids[i] = all_point_ids;
   }
   return d;
@@ -70,11 +70,11 @@ NViewDataSet NRealisticCamerasRing(size_t nviews, size_t npoints,
 Mat34 NViewDataSet::P(size_t i)const {
   assert(i < _n);
   Mat34 P;
-  P_From_KRt(_K[i], _R[i], _t[i], &P);
+  P_from_KRt(_K[i], _R[i], _t[i], &P);
   return P;
 }
 
-void NViewDataSet::ExportToPLY(
+void NViewDataSet::exportToPLY(
   const std::string & out_file_name)const {
   std::ofstream outfile;
   outfile.open(out_file_name.c_str(), std::ios_base::out);
@@ -160,7 +160,7 @@ NViewDataSet NRealisticCamerasCardioid(size_t nviews, size_t npoints,
       0,           0,          1;
     d._R[i] = LookAt(lookdir);  // Y axis UP
     d._t[i] = -d._R[i] * camera_center; // [t]=[-RC] Cf HZ.
-    d._x[i] = Project(d.P(i), d._X);
+    d._x[i] = project(d.P(i), d._X);
     d._x_ids[i] = all_point_ids;
   }
   return d;

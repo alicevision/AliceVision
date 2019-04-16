@@ -45,7 +45,7 @@ BOOST_AUTO_TEST_CASE(Resection_L_Infinity_Robust_OutlierFree) {
 
     KernelType kernel(pt2D, pt3D);
     ScoreEvaluator<KernelType> scorer(2*Square(0.6));
-    multiview::Mat34Model P = MaxConsensus(kernel, scorer, nullptr, 128);
+    multiview::Mat34Model P = maxConsensus(kernel, scorer, nullptr, 128);
 
     // Check that Projection matrix is near to the GT :
     Mat34 GT_ProjectionMatrix = d.P(nResectionCameraIndex).array()
@@ -55,7 +55,7 @@ BOOST_AUTO_TEST_CASE(Resection_L_Infinity_Robust_OutlierFree) {
     // Extract K[R|t]
     Mat3 R,K;
     Vec3 t;
-    KRt_From_P(P.getMatrix(), &K, &R, &t);
+    KRt_from_P(P.getMatrix(), &K, &R, &t);
 
     d2._R[nResectionCameraIndex] = R;
     d2._t[nResectionCameraIndex] = t;
@@ -73,7 +73,7 @@ BOOST_AUTO_TEST_CASE(Resection_L_Infinity_Robust_OneOutlier)
   const NViewDataSet d = NRealisticCamerasRing(nViews, nbPoints,
     NViewDatasetConfigurator(1,1,0,0,5,0)); // Suppose a camera with Unit matrix as K
 
-  d.ExportToPLY("test_Before_Infinity.ply");
+  d.exportToPLY("test_Before_Infinity.ply");
   //-- Modify a dataset (set to 0 and parse new value) (Assert good values)
   NViewDataSet d2 = d;
 
@@ -98,7 +98,7 @@ BOOST_AUTO_TEST_CASE(Resection_L_Infinity_Robust_OneOutlier)
     const Mat & pt3D = d2._X;
     KernelType kernel(pt2D, pt3D);
     ScoreEvaluator<KernelType> scorer(Square(0.1)); //Highly intolerant for the test
-    multiview::Mat34Model P = MaxConsensus(kernel, scorer, nullptr, 128);
+    multiview::Mat34Model P = maxConsensus(kernel, scorer, nullptr, 128);
 
     // Check that Projection matrix is near to the GT :
     Mat34 GT_ProjectionMatrix = d.P(nResectionCameraIndex).array()
@@ -108,7 +108,7 @@ BOOST_AUTO_TEST_CASE(Resection_L_Infinity_Robust_OneOutlier)
     // Extract K[R|t]
     Mat3 R,K;
     Vec3 t;
-    KRt_From_P(P.getMatrix(), &K, &R, &t);
+    KRt_from_P(P.getMatrix(), &K, &R, &t);
 
     d2._R[nResectionCameraIndex] = R;
     d2._t[nResectionCameraIndex] = t;
@@ -117,5 +117,5 @@ BOOST_AUTO_TEST_CASE(Resection_L_Infinity_Robust_OneOutlier)
     BOOST_CHECK_SMALL(FrobeniusDistance(GT_ProjectionMatrix, estimatedProjectionMatrix), 1e-1 );
     BOOST_CHECK_SMALL(reprojectionErrorRMSE(pt2D, pt3D.colwise().homogeneous(), estimatedProjectionMatrix), 0.75);
   }
-  d2.ExportToPLY("test_After_Infinity.ply");
+  d2.exportToPLY("test_After_Infinity.ply");
 }

@@ -211,7 +211,7 @@ int main(int argc, char **argv)
       // setup a default camera model from the found projection matrix
       Mat3 K, R;
       Vec3 t;
-      KRt_From_P(matching_data.projection_matrix, &K, &R, &t);
+      KRt_from_P(matching_data.projection_matrix, &K, &R, &t);
 
       const double focal = (K(0,0) + K(1,1))/2.0;
       const Vec2 principal_point(K(0,2), K(1,2));

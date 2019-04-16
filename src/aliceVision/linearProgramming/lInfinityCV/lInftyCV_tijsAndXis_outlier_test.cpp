@@ -45,7 +45,7 @@ BOOST_AUTO_TEST_CASE(Translation_Structure_L_Infinity_Noisy_Outlier_OSICLP_SOLVE
     NRealisticCamerasCardioid(nViews, nbPoints,
     NViewDatasetConfigurator(focalValue,focalValue,cx,cy,5,0));
 
-  d.ExportToPLY("test_Before_Infinity.ply");
+  d.exportToPLY("test_Before_Infinity.ply");
   //-- Test triangulation of all the point
   NViewDataSet d2 = d;
 
@@ -123,7 +123,7 @@ BOOST_AUTO_TEST_CASE(Translation_Structure_L_Infinity_Noisy_Outlier_OSICLP_SOLVE
         ALICEVISION_LOG_DEBUG_OBJ << "Camera : " << i << " \t:";
         for(int k = 0; k < d._x[0].cols(); ++k)
         {
-          xk = Project(d2.P(i),  Vec3(d2._X.col(k)));
+          xk = project(d2.P(i),  Vec3(d2._X.col(k)));
           double residual = (xk - d2._x[i].col(k)).norm();
           ALICEVISION_LOG_DEBUG_OBJ << Vec2(( xk - d2._x[i].col(k)).array().pow(2)).array().sqrt().mean() <<"\t";
           //-- Check that were measurement are not noisy the residual is small
@@ -142,7 +142,7 @@ BOOST_AUTO_TEST_CASE(Translation_Structure_L_Infinity_Noisy_Outlier_OSICLP_SOLVE
     BOOST_CHECK_SMALL(dResidual, 1e-1);
   }
 
-  d2.ExportToPLY("test_After_Infinity.ply");
+  d2.exportToPLY("test_After_Infinity.ply");
 }
 
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_MOSEK)
@@ -158,7 +158,7 @@ BOOST_AUTO_TEST_CASE(Translation_Structure_L_Infinity_Noisy_Outlier_MOSEK) {
     NRealisticCamerasCardioid(nViews, nbPoints,
     NViewDatasetConfigurator(focalValue,focalValue,cx,cy,5,0));
 
-  d.ExportToPLY("test_Before_Infinity.ply");
+  d.exportToPLY("test_Before_Infinity.ply");
   //-- Test triangulation of all the point
   NViewDataSet d2 = d;
 
@@ -237,7 +237,7 @@ BOOST_AUTO_TEST_CASE(Translation_Structure_L_Infinity_Noisy_Outlier_MOSEK) {
         ALICEVISION_LOG_DEBUG("\nCamera : " << i << " \t:";
         for(int k = 0; k < d._x[0].cols(); ++k)
         {
-          xk = Project(d2.P(i),  Vec3(d2._X.col(k)));
+          xk = project(d2.P(i),  Vec3(d2._X.col(k)));
           double residual = (xk - d2._x[i].col(k)).norm();
           ALICEVISION_LOG_DEBUG(Vec2(( xk - d2._x[i].col(k)).array().pow(2)).array().sqrt().mean() <<"\t";
           //-- Check that were measurement are not noisy the residual is small
@@ -256,6 +256,6 @@ BOOST_AUTO_TEST_CASE(Translation_Structure_L_Infinity_Noisy_Outlier_MOSEK) {
     BOOST_CHECK_SMALL(dResidual, 1e-1);
   }
 
-  d2.ExportToPLY("test_After_Infinity.ply");
+  d2.exportToPLY("test_After_Infinity.ply");
 }
 #endif // ALICEVISION_HAVE_MOSEK

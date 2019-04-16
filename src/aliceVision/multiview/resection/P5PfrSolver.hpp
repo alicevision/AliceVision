@@ -82,7 +82,7 @@ double reprojectionErrorRP(const P5PfrModel& model, const Vec2 &p2d, const Vec3&
 struct P5PfrError : public ISolverErrorResection<P5PfrModel>
 {
   /**
-   * @brief Compute the residual of the projection distance(p2d, Project(P,p3d))
+   * @brief Compute the residual of the projection distance(p2d, project(P,p3d))
    * @param[in] model solution
    * @param[in] p2d feature vector
    * @param[in] p3d corresponding 3D world point
