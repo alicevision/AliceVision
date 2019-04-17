@@ -236,21 +236,21 @@ bool RefineRc::refinerc(bool checkIfExists)
         depthSimMapPhoto.initJustFromDepthMap(depthPixSizeMapVis, 1.0f);
     }
 
-    if(_sp.doRefineOpt)
+    if(_sp.doRefineOpt && _refineNiters != 0)
     {
+        if (_sp.exportIntermediateResults)
+        {
+            // depthPixSizeMapVis.saveToImage(_sp.mp.getDepthMapsFolder() + "refine_" + std::to_string(viewId) + "_vis.png", 0.0f);
+            // depthSimMapPhoto.saveToImage(_sp.mp.getDepthMapsFolder() + "refine_" + std::to_string(viewId) + "_photo.png", 0.0f);
+            depthSimMapPhoto.save("_photo");
+            // _depthSimMapOpt.saveToImage(_sp.mp.getDepthMapsFolder() + "refine_" + std::to_string(viewId) + "_opt.png", 0.0f);
+        }
+
         optimizeDepthSimMapCUDA(_depthSimMapOpt, depthPixSizeMapVis, depthSimMapPhoto);
     }
     else
     {
         _depthSimMapOpt.add(depthSimMapPhoto);
-    }
-
-    if(_sp.exportIntermediateResults)
-    {
-        // depthPixSizeMapVis.saveToImage(_sp.mp.getDepthMapsFolder() + "refine_" + std::to_string(viewId) + "_vis.png", 0.0f);
-        // depthSimMapPhoto.saveToImage(_sp.mp.getDepthMapsFolder() + "refine_" + std::to_string(viewId) + "_photo.png", 0.0f);
-        depthSimMapPhoto.save("_photo");
-        // _depthSimMapOpt.saveToImage(_sp.mp.getDepthMapsFolder() + "refine_" + std::to_string(viewId) + "_opt.png", 0.0f);
     }
 
     mvsUtils::printfElapsedTime(tall, "Refine CUDA (rc: " + mvsUtils::num2str(_rc) + " / " + mvsUtils::num2str(_sp.mp.ncams) + ")");
