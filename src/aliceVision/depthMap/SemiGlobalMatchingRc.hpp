@@ -57,7 +57,7 @@ private:
      * @brief Fill depthsTcamsLimits member variable with index range of depths to sweep
      */
     void computeDepthsTcamsLimits(StaticVector<StaticVector<float>*>* alldepths);
-    void computeDepths(float minDepth, float maxDepth, StaticVector<StaticVector<float>*>* alldepths);
+    void computeDepths(float minDepth, float maxDepth, float scaleFactor, StaticVector<StaticVector<float>*>* alldepths);
     void computeDepthsAndResetTCams();
 
 protected:

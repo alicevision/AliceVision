@@ -150,9 +150,10 @@ float SemiGlobalMatchingRc::getMinTcStepAtDepth(float depth, float minDepth, flo
 {
     float minTcStep = maxDepth - minDepth;
 
-    // for each tc depths
+    // for each tc camera
     for(int i = 0; i < alldepths->size(); i++)
     {
+        // list of valid depths for the tc
         StaticVector<float>* tcDepths = (*alldepths)[i];
 
         // get the tc depth closest to the current depth
@@ -174,7 +175,7 @@ float SemiGlobalMatchingRc::getMinTcStepAtDepth(float depth, float minDepth, flo
     return minTcStep;
 }
 
-void SemiGlobalMatchingRc::computeDepths(float minDepth, float maxDepth, StaticVector<StaticVector<float>*>* alldepths)
+void SemiGlobalMatchingRc::computeDepths(float minDepth, float maxDepth, float scaleFactor, StaticVector<StaticVector<float>*>* alldepths)
 {
     _depths.clear();
 
@@ -183,7 +184,8 @@ void SemiGlobalMatchingRc::computeDepths(float minDepth, float maxDepth, StaticV
         while(depth < maxDepth)
         {
             _depths.push_back(depth);
-            depth += getMinTcStepAtDepth(depth, minDepth, maxDepth, alldepths);
+            float step = getMinTcStepAtDepth(depth, minDepth, maxDepth, alldepths);
+            depth += step * scaleFactor;
         }
     }
 }
@@ -284,7 +286,16 @@ void SemiGlobalMatchingRc::computeDepthsAndResetTCams()
 
     if(!_sp.useSeedsToCompDepthsToSweep || _sp.mp.getInputSfMData().getLandmarks().empty())
     {
-        computeDepths(minDepthAll, maxDepthAll, alldepths);
+        ALICEVISION_LOG_DEBUG("Select depth candidates without seeds.");
+        computeDepths(minDepthAll, maxDepthAll, 1.0f, alldepths);
+        if (_sp.maxDepthsToStore > 0 && _depths.size() > _sp.maxDepthsToStore)
+        {
+            const float scaleFactor = float(_depths.size()) / float(_sp.maxDepthsToStore);
+            ALICEVISION_LOG_DEBUG("_depths.size(): " << _depths.size() << ", maxDepths: " << _sp.maxDepthsToStore);
+            ALICEVISION_LOG_DEBUG("scaleFactor: " << scaleFactor);
+            computeDepths(minDepthAll, maxDepthAll, scaleFactor, alldepths);
+            ALICEVISION_LOG_DEBUG("_depths.size(): " << _depths.size());
+        }
         if(_sp.saveDepthsToSweepToTxtForVis)
         {
             std::string fn = _sp.mp.getDepthMapsFolder() + std::to_string(_sp.mp.getViewId(_rc)) + "depthsAll.txt";
@@ -297,10 +308,10 @@ void SemiGlobalMatchingRc::computeDepthsAndResetTCams()
             fclose(f);
         }
         filterDepthsPerStepZ(_sp.stepZ);
-        selectBestDepthsRange(_sp.maxDepthsToStore, alldepths);
     }
     else
     {
+        ALICEVISION_LOG_DEBUG("Select depth candidates from seeds.");
         float minDepth = minDepthAll;
         float maxDepth = maxDepthAll;
 
@@ -324,7 +335,15 @@ void SemiGlobalMatchingRc::computeDepthsAndResetTCams()
         }
 
         // build the list of "best" depths for rc, from all tc cameras depths
-        computeDepths(minDepth, maxDepth, alldepths);
+        computeDepths(minDepth, maxDepth, 1.0f, alldepths);
+        if (_sp.maxDepthsToStore > 0 && _depths.size() > _sp.maxDepthsToStore)
+        {
+            const float scaleFactor = float(_depths.size()) / float(_sp.maxDepthsToStore);
+            ALICEVISION_LOG_DEBUG("_depths.size(): " << _depths.size() << ", maxDepths: " << _sp.maxDepthsToStore);
+            ALICEVISION_LOG_DEBUG("scaleFactor: " << scaleFactor);
+            computeDepths(minDepth, maxDepth, scaleFactor, alldepths);
+            ALICEVISION_LOG_DEBUG("_depths.size(): " << _depths.size());
+        }
 
         if(_sp.saveDepthsToSweepToTxtForVis)
         {
@@ -340,7 +359,6 @@ void SemiGlobalMatchingRc::computeDepthsAndResetTCams()
 
         // filter out depths if computeDepths gave too many values
         filterDepthsPerStepZ(_sp.stepZ);
-        selectBestDepthsRange(_sp.maxDepthsToStore, alldepths);
     }
 
     // fill depthsTcamsLimits member variable with index range of depths to sweep

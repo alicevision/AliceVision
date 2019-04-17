@@ -49,8 +49,8 @@ int main(int argc, char* argv[])
     // semiGlobalMatching
     int sgmScale = -1;
     int sgmStepXY = -1;
-    int sgmStepZ = 1;
-    int sgmMaxSide = 200;
+    int sgmStepZ = -1;
+    int sgmMaxSideXY = 400;
     int sgmMaxTCams = 10;
     int sgmWSH = 4;
     double sgmGammaC = 5.5;
@@ -106,7 +106,7 @@ int main(int argc, char* argv[])
             "Semi Global Matching: Step used to compute the similarity volume on the X and Y axis.")
         ("sgmStepZ", po::value<int>(&sgmStepZ)->default_value(sgmStepZ),
             "Semi Global Matching: Step used to compute the similarity volume on the Z axis.")
-        ("sgmMaxSide", po::value<int>(&sgmMaxSide)->default_value(sgmMaxSide),
+        ("sgmMaxSideXY", po::value<int>(&sgmMaxSideXY)->default_value(sgmMaxSideXY),
             "Semi Global Matching: Max side in pixels used to automatically decide for sgmScale/sgmStepXY if not defined.")
         ("sgmMaxTCams", po::value<int>(&sgmMaxTCams)->default_value(sgmMaxTCams),
             "Semi Global Matching: Number of neighbour cameras.")
@@ -225,9 +225,9 @@ int main(int argc, char* argv[])
     mp.userParams.put("semiGlobalMatching.gammaP", sgmGammaP);
 
     mp.userParams.put("semiGlobalMatching.scale", sgmScale);
-    mp.userParams.put("semiGlobalMatching.step", sgmStepXY);
+    mp.userParams.put("semiGlobalMatching.stepXY", sgmStepXY);
     mp.userParams.put("semiGlobalMatching.stepZ", sgmStepZ);
-    mp.userParams.put("semiGlobalMatching.maxSide", sgmMaxSide);
+    mp.userParams.put("semiGlobalMatching.maxSideXY", sgmMaxSideXY);
 
     mp.userParams.put("semiGlobalMatching.maxDepthsToStore", sgmMaxDepths);
     mp.userParams.put("semiGlobalMatching.maxDepthsToSweep", sgmMaxDepthsPerTc);
