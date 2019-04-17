@@ -33,23 +33,44 @@ DepthSimMap::~DepthSimMap()
 {
 }
 
-void DepthSimMap::add11(const DepthSimMap& depthSimMap)
+void DepthSimMap::initFromSmaller(const DepthSimMap& other)
+{
+    if ((_scale * _step) > (other._scale * other._step))
+    {
+        throw std::runtime_error("Error DepthSimMap: You cannot init from a larger map.");
+    }
+    double ratio = double(_scale * _step) / double(other._scale * other._step);
+
+    ALICEVISION_LOG_DEBUG("DepthSimMap::initFromSmaller: ratio=" << ratio << ", otherScaleStep=" << other._scale * other._step << ", scaleStep=" << _scale * _step);
+    for (int y = 0; y < _h; ++y)
+    {
+        const int oy = y * ratio;
+        for (int x = 0; x < _w; ++x)
+        {
+            const int ox = x * ratio;
+            const DepthSim& otherDepthSim = other._dsm[oy * other._w + ox];
+            _dsm[y * _w + x] = otherDepthSim;
+        }
+    }
+}
+
+void DepthSimMap::add11(const DepthSimMap& other)
 {
     if ((_scale != 1) || (_step != 1))
     {
         throw std::runtime_error("Error DepthSimMap: You can only add to scale1-step1 map.");
     }
 
-    int k = (depthSimMap._step * depthSimMap._scale) / 2;
+    int k = (other._step * other._scale) / 2;
     int k1 = k;
-    if ((depthSimMap._step * depthSimMap._scale) % 2 == 0)
+    if ((other._step * other._scale) % 2 == 0)
         k -= 1;
 
-    for (int i = 0; i < depthSimMap._dsm.size(); i++)
+    for (int i = 0; i < other._dsm.size(); i++)
     {
-        int x = (i % depthSimMap._w) * depthSimMap._step * depthSimMap._scale;
-        int y = (i / depthSimMap._w) * depthSimMap._step * depthSimMap._scale;
-        DepthSim depthSim = depthSimMap._dsm[i];
+        int x = (i % other._w) * other._step * other._scale;
+        int y = (i / other._w) * other._step * other._scale;
+        DepthSim depthSim = other._dsm[i];
 
         if (depthSim.depth > -1.0f)
         {
@@ -84,9 +105,9 @@ void DepthSimMap::add11(const DepthSimMap& depthSimMap)
     }
 }
 
-void DepthSimMap::add(const DepthSimMap& depthSimMap)
+void DepthSimMap::add(const DepthSimMap& other)
 {
-    if ((_scale != depthSimMap._scale) || (_step != depthSimMap._step))
+    if ((_scale != other._scale) || (_step != other._step))
     {
         throw std::runtime_error("Error DepthSimMap: You can only add to the same _scale and step map.");
     }
@@ -94,7 +115,7 @@ void DepthSimMap::add(const DepthSimMap& depthSimMap)
     for (int i = 0; i < _dsm.size(); i++)
     {
         const DepthSim& depthSim1 = _dsm[i];
-        const DepthSim& depthSim2 = depthSimMap._dsm[i];
+        const DepthSim& depthSim2 = other._dsm[i];
 
         if ((depthSim2.depth > -1.0f) && (depthSim2.sim < depthSim1.sim))
         {
