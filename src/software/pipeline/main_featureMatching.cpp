@@ -108,7 +108,7 @@ int main(int argc, char **argv)
   bool savePutativeMatches = false;
   bool guidedMatching = false;
   int maxIteration = 2048;
-  bool matchFilePerImage = true;
+  bool matchFilePerImage = false;
   size_t numMatchesToKeep = 0;
   bool useGridSort = true;
   bool exportDebugFiles = false;
