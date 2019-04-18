@@ -140,7 +140,7 @@ bool LocalBundleAdjustmentGraph::removeViews(const sfmData::SfMData& sfmData, co
 
   for(const IndexT& viewId : removedViewsId)
   {
-    auto it = _nodePerViewId.find(viewId);
+    const auto it = _nodePerViewId.find(viewId);
     if(it == _nodePerViewId.end())
     {
       ALICEVISION_LOG_WARNING("The view id: " << viewId << " does not exist in the graph, cannot remove it.");
@@ -150,8 +150,8 @@ bool LocalBundleAdjustmentGraph::removeViews(const sfmData::SfMData& sfmData, co
     // keep track of node incident edges that are going to be removed
     // in order to update _intrinsicEdgesId accordingly
     { 
-      IndexT intrinsicId = sfmData.getView(viewId).getIntrinsicId();
-      auto intrinsicIt = _intrinsicEdgesId.find(intrinsicId);
+      const IndexT intrinsicId = sfmData.getView(viewId).getIntrinsicId();
+      const auto intrinsicIt = _intrinsicEdgesId.find(intrinsicId);
       if(intrinsicIt != _intrinsicEdgesId.end())
       {
         // store incident edge ids before removal
@@ -166,7 +166,7 @@ bool LocalBundleAdjustmentGraph::removeViews(const sfmData::SfMData& sfmData, co
     _viewIdPerNode.erase(it->second);
     _nodePerViewId.erase(it->first);
 
-    numRemovedNode++;
+    ++numRemovedNode;
     ALICEVISION_LOG_DEBUG("The view #" << viewId << " has been successfully removed to the distance graph.");
   }
 
@@ -673,7 +673,7 @@ std::size_t LocalBundleAdjustmentGraph::addIntrinsicEdgesToTheGraph(const sfmDat
   // and update _intrinsicEdgesId accordingly
   for(const auto& newEdge : newIntrinsicEdges)
   {
-    lemon::ListGraph::Edge edge = _graph.addEdge(_nodePerViewId[newEdge.first.first], _nodePerViewId[newEdge.first.second]);
+    const lemon::ListGraph::Edge edge = _graph.addEdge(_nodePerViewId[newEdge.first.first], _nodePerViewId[newEdge.first.second]);
     _intrinsicEdgesId[newEdge.second].push_back(_graph.id(edge));
   }
   return newIntrinsicEdges.size();
@@ -683,7 +683,7 @@ void LocalBundleAdjustmentGraph::removeIntrinsicEdgesFromTheGraph(IndexT intrins
 {
   if(_intrinsicEdgesId.count(intrinsicId) == 0)
     return;
-  for(int edgeId : _intrinsicEdgesId.at(intrinsicId))
+  for(const int edgeId : _intrinsicEdgesId.at(intrinsicId))
   {
     const auto& edge = _graph.edgeFromId(edgeId);
     assert(_graph.valid(edge));
@@ -700,7 +700,7 @@ std::size_t LocalBundleAdjustmentGraph::updateRigEdgesToTheGraph(const sfmData::
   // remove all rig edges
   for(auto& edgesPerRid: _rigEdgesId)
   {
-    for(int edgeId : edgesPerRid.second)
+    for(const int edgeId : edgesPerRid.second)
     {
       const auto& edge = _graph.edgeFromId(edgeId);
       assert(_graph.valid(edge));
