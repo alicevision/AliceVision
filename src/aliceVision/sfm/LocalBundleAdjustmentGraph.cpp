@@ -164,7 +164,7 @@ bool LocalBundleAdjustmentGraph::removeViews(const sfmData::SfMData& sfmData, co
     
     _graph.erase(it->second); // this function erase a node with its incident arcs
     _viewIdPerNode.erase(it->second);
-    _nodePerViewId.erase(it->first);
+    _nodePerViewId.erase(it->first); // warning: invalidates the iterator "it", so it can not be used after this line
 
     ++numRemovedNode;
     ALICEVISION_LOG_DEBUG("The view #" << viewId << " has been successfully removed to the distance graph.");
@@ -655,12 +655,15 @@ std::size_t LocalBundleAdjustmentGraph::addIntrinsicEdgesToTheGraph(const sfmDat
     if(isFocalLengthConstant(newViewIntrinsicId)) // do not add edges for a constant intrinsic
       continue;
 
-    for(const auto& x : _nodePerViewId) // for each reconstructed view in the graph
+    // for each reconstructed view in the graph
+    // warning: at this point, "_nodePerViewId" already contains the "newReconstructedViews"
+    for(const auto& x : _nodePerViewId)
     {
       const auto& otherViewId = x.first;
 
       // if the new view share the same intrinsic than previously reconstructed views
-      if(newViewId != otherViewId  // do not compare a view with itself
+      // note: do not compare a view with itself (must be tested since "_nodePerViewId" contains "newReconstructedViews")
+      if(newViewId != otherViewId
          && newViewIntrinsicId == sfmData.getViews().at(otherViewId)->getIntrinsicId())
       {
         // register a new intrinsic edge between those views

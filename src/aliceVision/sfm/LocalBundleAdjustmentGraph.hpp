@@ -145,7 +145,9 @@ public:
   void exportIntrinsicsHistory(const std::string& folder, const std::string& filename);
 
   /**
-   * @brief Remove some views to the graph. It delete the node and all the incident edges for each removed view.
+   * @brief Remove specific views from the LocalBA graph. 
+   * @details Delete the nodes corresponding to those views and all their incident edges.
+   * @param[in] sfmData contains all the information about the reconstruction
    * @param[in] removedViewsId Set of views index to remove
    * @return true if the number of removed node is equal to the size of \c removedViewsId
    */
