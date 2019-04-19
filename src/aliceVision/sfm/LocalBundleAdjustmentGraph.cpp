@@ -11,6 +11,7 @@
 #include <lemon/bfs.h>
 
 #include <fstream>
+#include <algorithm>
 
 namespace fs = boost::filesystem;
 
@@ -132,23 +133,66 @@ void LocalBundleAdjustmentGraph::exportIntrinsicsHistory(const std::string& fold
   os.close();
 }
 
-bool LocalBundleAdjustmentGraph::removeViewsToTheGraph(const std::set<IndexT>& removedViewsId)
+bool LocalBundleAdjustmentGraph::removeViews(const sfmData::SfMData& sfmData, const std::set<IndexT>& removedViewsId)
 {
   std::size_t numRemovedNode = 0;
+  std::map<IndexT, std::vector<int>> removedEdgesByIntrinsic;
+
   for(const IndexT& viewId : removedViewsId)
   {
-    auto it = _nodePerViewId.find(viewId);
-    if(it != _nodePerViewId.end())
+    const auto it = _nodePerViewId.find(viewId);
+    if(it == _nodePerViewId.end())
     {
-      _graph.erase(it->second); // this function erase a node with its incident arcs
-      _nodePerViewId.erase(it->first);
-      _viewIdPerNode.erase(it->second);
-
-      numRemovedNode++;
-      ALICEVISION_LOG_DEBUG("The view #" << viewId << " has been successfully removed to the distance graph.");
-    }
-    else
       ALICEVISION_LOG_WARNING("The view id: " << viewId << " does not exist in the graph, cannot remove it.");
+      continue;
+    }
+
+    // keep track of node incident edges that are going to be removed
+    // in order to update _intrinsicEdgesId accordingly
+    { 
+      const IndexT intrinsicId = sfmData.getView(viewId).getIntrinsicId();
+      const auto intrinsicIt = _intrinsicEdgesId.find(intrinsicId);
+      if(intrinsicIt != _intrinsicEdgesId.end())
+      {
+        // store incident edge ids before removal
+        for(lemon::ListGraph::IncEdgeIt e(_graph, it->second); e != lemon::INVALID; ++e)
+        {
+          removedEdgesByIntrinsic[intrinsicId].push_back(_graph.id(lemon::ListGraph::Edge(e)));
+        }
+      }
+    }
+    
+    _graph.erase(it->second); // this function erase a node with its incident arcs
+    _viewIdPerNode.erase(it->second);
+    _nodePerViewId.erase(it->first); // warning: invalidates the iterator "it", so it can not be used after this line
+
+    ++numRemovedNode;
+    ALICEVISION_LOG_DEBUG("The view #" << viewId << " has been successfully removed to the distance graph.");
+  }
+
+  // remove erased edges from _intrinsicsEdgesId
+  for(auto& edgesIt : removedEdgesByIntrinsic)
+  {
+    const IndexT intrinsicId =  edgesIt.first;
+    std::vector<int>& edgeIds = _intrinsicEdgesId[intrinsicId];
+    std::vector<int>& removedEdges = edgesIt.second;
+
+    std::vector<int> newEdgeIds;
+    // sort before using set_difference
+    std::sort(edgeIds.begin(), edgeIds.end());
+    std::sort(removedEdges.begin(), removedEdges.end());
+
+    std::set_difference(
+      edgeIds.begin(), edgeIds.end(), 
+      removedEdges.begin(), removedEdges.end(), 
+      std::back_inserter(newEdgeIds)
+    );
+    std::swap(edgeIds, newEdgeIds);
+
+    if(edgeIds.empty())
+    {
+      _intrinsicEdgesId.erase(intrinsicId);
+    }
   }
   return numRemovedNode == removedViewsId.size();
 }
@@ -252,7 +296,7 @@ void LocalBundleAdjustmentGraph::updateGraphWithNewViews(
     for(const Pair& edge: newEdges)
       _graph.addEdge(_nodePerViewId.at(edge.first), _nodePerViewId.at(edge.second));
 
-    addIntrinsicEdgesToTheGraph(sfmData, addedViewsId);
+    numAddedEdges += addIntrinsicEdgesToTheGraph(sfmData, addedViewsId);
   }
   
   ALICEVISION_LOG_DEBUG("The distances graph has been completed with " << nbAddedNodes<< " nodes & " << numAddedEdges << " edges.");
@@ -602,7 +646,7 @@ void LocalBundleAdjustmentGraph::drawGraph(const sfmData::SfMData& sfmData, cons
 
 std::size_t LocalBundleAdjustmentGraph::addIntrinsicEdgesToTheGraph(const sfmData::SfMData& sfmData, const std::set<IndexT>& newReconstructedViews)
 {
-  std::size_t numAddedEdges = 0;
+  std::map<Pair, IndexT> newIntrinsicEdges;
 
   for(IndexT newViewId : newReconstructedViews) // for each new view
   {
@@ -611,35 +655,43 @@ std::size_t LocalBundleAdjustmentGraph::addIntrinsicEdgesToTheGraph(const sfmDat
     if(isFocalLengthConstant(newViewIntrinsicId)) // do not add edges for a constant intrinsic
       continue;
 
-    for(const auto& x : _nodePerViewId) // for each reconstructed view in the graph
+    // for each reconstructed view in the graph
+    // warning: at this point, "_nodePerViewId" already contains the "newReconstructedViews"
+    for(const auto& x : _nodePerViewId)
     {
-      if(newViewId == x.first)  // do not compare a view with itself
-        continue;
-      
-      const IndexT reconstructedViewIntrinsicId = sfmData.getViews().at(x.first)->getIntrinsicId();
-      
+      const auto& otherViewId = x.first;
+
       // if the new view share the same intrinsic than previously reconstructed views
-      if(reconstructedViewIntrinsicId == newViewIntrinsicId)
+      // note: do not compare a view with itself (must be tested since "_nodePerViewId" contains "newReconstructedViews")
+      if(newViewId != otherViewId
+         && newViewIntrinsicId == sfmData.getViews().at(otherViewId)->getIntrinsicId())
       {
-        const IndexT minId = std::min(x.first, newViewId);
-        const IndexT maxId = std::max(x.first, newViewId);
-        
-        lemon::ListGraph::Edge edge = _graph.addEdge(_nodePerViewId[minId], _nodePerViewId[maxId]);
-        _intrinsicEdgesId[newViewIntrinsicId].push_back(_graph.id(edge));
-        numAddedEdges++;
+        // register a new intrinsic edge between those views
+        newIntrinsicEdges[std::minmax(otherViewId, newViewId)] = newViewIntrinsicId;
       }
     }
   }
-  return numAddedEdges;
+
+  // create registered intrinsic edges in lemon graph 
+  // and update _intrinsicEdgesId accordingly
+  for(const auto& newEdge : newIntrinsicEdges)
+  {
+    const lemon::ListGraph::Edge edge = _graph.addEdge(_nodePerViewId[newEdge.first.first], _nodePerViewId[newEdge.first.second]);
+    _intrinsicEdgesId[newEdge.second].push_back(_graph.id(edge));
+  }
+  return newIntrinsicEdges.size();
 }
 
 void LocalBundleAdjustmentGraph::removeIntrinsicEdgesFromTheGraph(IndexT intrinsicId)
 {
   if(_intrinsicEdgesId.count(intrinsicId) == 0)
     return;
-  for(int edgeId : _intrinsicEdgesId.at(intrinsicId))
-    _graph.erase(_graph.fromId(edgeId, lemon::ListGraph::Edge()));
-
+  for(const int edgeId : _intrinsicEdgesId.at(intrinsicId))
+  {
+    const auto& edge = _graph.edgeFromId(edgeId);
+    assert(_graph.valid(edge));
+    _graph.erase(edge);
+  }
   _intrinsicEdgesId.erase(intrinsicId);
 }
 
@@ -651,9 +703,11 @@ std::size_t LocalBundleAdjustmentGraph::updateRigEdgesToTheGraph(const sfmData::
   // remove all rig edges
   for(auto& edgesPerRid: _rigEdgesId)
   {
-    for(int edgeId : edgesPerRid.second)
+    for(const int edgeId : edgesPerRid.second)
     {
-      _graph.erase(_graph.fromId(edgeId, lemon::ListGraph::Edge()));
+      const auto& edge = _graph.edgeFromId(edgeId);
+      assert(_graph.valid(edge));
+      _graph.erase(edge);
     }
   }
   _rigEdgesId.clear();
@@ -690,6 +744,22 @@ std::size_t LocalBundleAdjustmentGraph::updateRigEdgesToTheGraph(const sfmData::
   }
 
   return numAddedEdges;
+}
+
+unsigned int LocalBundleAdjustmentGraph::countNodes() const
+{
+  unsigned int count = 0;
+  for(lemon::ListGraph::NodeIt n(_graph); n != lemon::INVALID; ++n)
+    ++count;
+  return count;
+}
+
+unsigned int LocalBundleAdjustmentGraph::countEdges() const
+{
+  unsigned int count = 0;
+  for(lemon::ListGraph::EdgeIt e(_graph); e != lemon::INVALID; ++e)
+    ++count;
+  return count;
 }
 
 } // namespace sfm
