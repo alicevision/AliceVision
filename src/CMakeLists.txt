@@ -780,7 +780,7 @@ else()
   find_package(Doxygen)
 
    # if neither one is found
-  if (NOT EXISTS ${SPHINX_EXECUTABLE} OR NOT DOXYGEN_FOUND)
+  if (NOT EXISTS ${SPHINX_EXECUTABLE} AND NOT DOXYGEN_FOUND)
     # generate error if build doc was required
     if(ALICEVISION_BUILD_DOC STREQUAL "ON")
       set(ALICEVISION_HAVE_DOC 0)
