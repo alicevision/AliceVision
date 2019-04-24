@@ -27,6 +27,19 @@ function(trilean_option NAME DESCRIPTION DEFAULT_VALUE)
   endif()
 endfunction()
 
+# ==============================================================================
+# AliceVision version
+# ==============================================================================
+file(STRINGS "aliceVision/version.hpp" _ALICEVISION_VERSION_HPP_CONTENTS REGEX "#define ALICEVISION_VERSION_")
+foreach(v MAJOR MINOR REVISION)
+  if("${_ALICEVISION_VERSION_HPP_CONTENTS}" MATCHES "#define ALICEVISION_VERSION_${v} ([0-9]+)")
+    set(ALICEVISION_VERSION_${v} "${CMAKE_MATCH_1}")
+  else()
+    message(FATAL_ERROR "Failed to retrieve the AliceVision version the source code. Missing ALICEVISION_VERSION_${v}.")
+  endif()
+endforeach()
+set(ALICEVISION_VERSION ${ALICEVISION_VERSION_MAJOR}.${ALICEVISION_VERSION_MINOR}.${ALICEVISION_VERSION_REVISION})
+
 # C++11
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -860,19 +873,6 @@ set(ALICEVISION_INCLUDE_DIRS
 )
 
 include_directories(${ALICEVISION_INCLUDE_DIRS})
-
-# ==============================================================================
-# AliceVision version
-# ==============================================================================
-file(STRINGS "aliceVision/version.hpp" _ALICEVISION_VERSION_HPP_CONTENTS REGEX "#define ALICEVISION_VERSION_")
-foreach(v MAJOR MINOR REVISION)
-  if("${_ALICEVISION_VERSION_HPP_CONTENTS}" MATCHES "#define ALICEVISION_VERSION_${v} ([0-9]+)")
-    set(ALICEVISION_VERSION_${v} "${CMAKE_MATCH_1}")
-  else()
-    message(FATAL_ERROR "Failed to retrieve the AliceVision version the source code. Missing ALICEVISION_VERSION_${v}.")
-  endif()
-endforeach()
-set(ALICEVISION_VERSION ${ALICEVISION_VERSION_MAJOR}.${ALICEVISION_VERSION_MINOR}.${ALICEVISION_VERSION_REVISION})
 
 # ==============================================================================
 # Information print
