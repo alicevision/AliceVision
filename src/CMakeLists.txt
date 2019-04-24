@@ -757,39 +757,78 @@ endif()
 # ==============================================================================
 # Documentation
 # --------------------------
-# Sphinx detection
+# Sphinx and Doxygen detection
 # ==============================================================================
 if(ALICEVISION_BUILD_DOC STREQUAL "OFF")
   set(ALICEVISION_HAVE_DOC 0)
 else()
+  # try to find the packages
   find_package(Sphinx)
+  find_package(Doxygen)
 
-  if (EXISTS ${SPHINX_EXECUTABLE})
-    set(SPHINX_HTML_DIR "${CMAKE_CURRENT_BINARY_DIR}/htmlDoc")
-
-    configure_file(
-      "${CMAKE_CURRENT_SOURCE_DIR}/../docs/sphinx/rst/conf.py"
-      "${CMAKE_CURRENT_BINARY_DIR}/conf.py"
-      @ONLY
-    )
-
-    add_custom_target(doc ALL
-      ${SPHINX_EXECUTABLE}
-      -b html
-      "${CMAKE_CURRENT_SOURCE_DIR}/../docs/sphinx/rst"
-      "${SPHINX_HTML_DIR}"
-      COMMENT "Building HTML documentation with Sphinx")
-
-    set_property(TARGET doc
-      PROPERTY FOLDER AliceVision
-    )
-    set(ALICEVISION_HAVE_DOC 1)
-    message(STATUS "Sphinx found.")
-  elseif(ALICEVISION_BUILD_DOC STREQUAL "ON")
-    set(ALICEVISION_HAVE_DOC 0)
-    message(SEND_ERROR "Failed to find Sphinx.\nSphinx need to be installed to generate the documentation")
+   # if neither one is found
+  if (NOT EXISTS ${SPHINX_EXECUTABLE} OR NOT DOXYGEN_FOUND)
+    # generate error if build doc was required
+    if(ALICEVISION_BUILD_DOC STREQUAL "ON")
+      set(ALICEVISION_HAVE_DOC 0)
+      message(SEND_ERROR "Failed to find Sphinx.\nSphinx need to be installed to generate the documentation")
+    else()
+      # otherwise quietly fail and set the variable to off
+      set(ALICEVISION_HAVE_DOC 0)
+    endif()
   else()
-    set(ALICEVISION_HAVE_DOC 0)
+    # set the variable to true
+    set(ALICEVISION_HAVE_DOC 1)
+
+    # sphinx stuff
+    if(EXISTS ${SPHINX_EXECUTABLE})
+      message(STATUS "Sphinx found.")
+      set(SPHINX_HTML_DIR "${CMAKE_CURRENT_BINARY_DIR}/htmlDoc")
+
+      configure_file(
+        "${CMAKE_CURRENT_SOURCE_DIR}/../docs/sphinx/rst/conf.py"
+        "${CMAKE_CURRENT_BINARY_DIR}/conf.py"
+        @ONLY
+      )
+
+      add_custom_target(doc ALL
+        ${SPHINX_EXECUTABLE}
+        -b html
+        "${CMAKE_CURRENT_SOURCE_DIR}/../docs/sphinx/rst"
+        "${SPHINX_HTML_DIR}"
+        COMMENT "Building HTML documentation with Sphinx")
+
+      set_property(TARGET doc
+        PROPERTY FOLDER AliceVision
+      )
+    endif()
+
+    # doxygen stuff
+    if(DOXYGEN_FOUND)
+      message(STATUS "Doxygen found.")
+
+      # set input and output files
+      set(DOXYGEN_IN ${PROJECT_SOURCE_DIR}/../docs/doxygen/Doxyfile.in)
+      set(DOXYGEN_OUT ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile)
+
+      # request to configure the file
+      configure_file(${DOXYGEN_IN} ${DOXYGEN_OUT} @ONLY)
+
+      add_custom_target( doc_doxygen
+              COMMAND ${DOXYGEN_EXECUTABLE} ${DOXYGEN_OUT}
+              WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+              COMMENT "Generating API documentation with Doxygen"
+              VERBATIM )
+
+      set_property(TARGET doc_doxygen
+              PROPERTY FOLDER AliceVision
+              )
+
+      install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/doc  DESTINATION ${CMAKE_INSTALL_DOCDIR})
+
+      # request to configure the file
+      configure_file(${DOXYGEN_IN} ${DOXYGEN_OUT} @ONLY)
+    endif()
   endif()
 endif()
 
