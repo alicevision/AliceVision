@@ -34,7 +34,7 @@ public:
 
   using ModelT = robustEstimation::MatrixModel<Vec2>;
 
-  LineKernel(const Mat2X& xs)
+  explicit LineKernel(const Mat2X& xs)
     : _xs(xs)
     , _logalpha0(0)
   {}

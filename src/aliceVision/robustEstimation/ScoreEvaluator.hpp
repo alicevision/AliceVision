@@ -19,7 +19,7 @@ template<typename Kernel>
 class ScoreEvaluator
 {
 public:
-  ScoreEvaluator(double threshold)
+  explicit ScoreEvaluator(double threshold)
     : _threshold(threshold)
   {}
 
