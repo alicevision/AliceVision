@@ -234,7 +234,12 @@ bool Load(
   std::size_t nbLoadedMatchFiles = 0;
   const std::string pattern = "matches.txt";
 
-  for(const std::string& folder : folders)
+  // build up a set with normalized paths to remove duplicates
+  std::set<std::string> foldersSet;
+  for(const auto& folder : folders)
+    foldersSet.insert(fs::canonical(folder).string());
+
+  for(const auto& folder : foldersSet)
   {
     nbLoadedMatchFiles += LoadMatchesFromFolder(matches, folder, pattern);
   }
