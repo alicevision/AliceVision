@@ -171,7 +171,6 @@ BOOST_AUTO_TEST_CASE(Essential5PKernel_KernelError)
 
   Kernel kernel(x1,x2, Mat3::Identity(), Mat3::Identity());
 
-  bool bOk = true;
   std::vector<std::size_t> samples;
   for (std::size_t i = 0; i < x1.cols(); ++i) {
     samples.push_back(i);
@@ -179,7 +178,6 @@ BOOST_AUTO_TEST_CASE(Essential5PKernel_KernelError)
   std::vector<robustEstimation::Mat3Model> Es;
   kernel.fit(samples, Es);
 
-  bOk &= (!Es.empty());
   for (int i = 0; i < Es.size(); ++i) {
     for(int j = 0; j < x1.cols(); ++j)
       BOOST_CHECK_SMALL(kernel.error(j, Es.at(i)), 1e-8);

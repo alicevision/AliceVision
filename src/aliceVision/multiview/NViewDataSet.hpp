@@ -69,11 +69,11 @@ struct NViewDatasetConfigurator
 /**
  * @brief Place cameras on a circle with point in the center
  */
-NViewDataSet NRealisticCamerasRing(std::size_t nviews, std::size_t npoints, const NViewDatasetConfigurator config = NViewDatasetConfigurator());
+NViewDataSet NRealisticCamerasRing(std::size_t nviews, std::size_t npoints, const NViewDatasetConfigurator& config = NViewDatasetConfigurator());
 
 /**
  * @brief Place cameras on cardiod shape with point in the center
  */
-NViewDataSet NRealisticCamerasCardioid(std::size_t nviews, std::size_t npoints, const NViewDatasetConfigurator config = NViewDatasetConfigurator());
+NViewDataSet NRealisticCamerasCardioid(std::size_t nviews, std::size_t npoints, const NViewDatasetConfigurator& config = NViewDatasetConfigurator());
 
 } // namespace aliceVision

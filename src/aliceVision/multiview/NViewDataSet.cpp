@@ -23,7 +23,7 @@ NViewDatasetConfigurator::NViewDatasetConfigurator(int fx, int fy,
 {}
 
 NViewDataSet NRealisticCamerasRing(size_t nviews, size_t npoints,
-                                   const NViewDatasetConfigurator config)
+                                   const NViewDatasetConfigurator& config)
 {
   //-- Setup a camera circle rig.
   NViewDataSet d;
@@ -119,7 +119,7 @@ void NViewDataSet::exportToPLY(
 }
 
 NViewDataSet NRealisticCamerasCardioid(size_t nviews, size_t npoints,
-                                        const NViewDatasetConfigurator config)
+                                        const NViewDatasetConfigurator& config)
 {
   //-- Setup a camera circle rig.
   NViewDataSet d;
