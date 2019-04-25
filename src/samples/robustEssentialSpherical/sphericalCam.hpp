@@ -10,7 +10,7 @@
 #include <aliceVision/numeric/numeric.hpp>
 #include <aliceVision/numeric/projection.hpp>
 #include <aliceVision/robustEstimation/ISolver.hpp>
-#include <aliceVision/robustEstimation/FittingKernel.hpp>
+#include <aliceVision/robustEstimation/PointFittingKernel.hpp>
 
 // [1] "Robust and accurate calibration of camera networks". PhD.
 // Authors: Pierre MOULON
@@ -137,12 +137,12 @@ struct AngularError
 };
 
 class EssentialKernel_spherical
-        : public robustEstimation::FittingKernel<EightPointRelativePoseSolver, AngularError, robustEstimation::Mat3Model>
+        : public robustEstimation::PointFittingKernel<EightPointRelativePoseSolver, AngularError, robustEstimation::Mat3Model>
 {
 public:
 
   using ModelT = robustEstimation::Mat3Model;
-  using KernelBase = robustEstimation::FittingKernel<EightPointRelativePoseSolver, AngularError, robustEstimation::Mat3Model>;
+  using KernelBase = robustEstimation::PointFittingKernel<EightPointRelativePoseSolver, AngularError, robustEstimation::Mat3Model>;
 
   EssentialKernel_spherical(const Mat& x1, const Mat& x2)
       : KernelBase(x1, x2)

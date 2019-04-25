@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include <aliceVision/robustEstimation/FittingKernel.hpp>
+#include <aliceVision/robustEstimation/PointFittingKernel.hpp>
 #include <aliceVision/multiview/relativePose/Homography4PSolver.hpp>
 #include <aliceVision/multiview/relativePose/HomographyError.hpp>
 #include <aliceVision/multiview/Unnormalizer.hpp>
@@ -20,12 +20,12 @@ namespace relativePose {
 /**
  * @brief  Kernel that works on original data point
  */
-typedef robustEstimation::FittingKernel<Homography4PSolver, HomographyAsymmetricError, robustEstimation::Mat3Model> Homography4PKernel;
+typedef robustEstimation::PointFittingKernel<Homography4PSolver, HomographyAsymmetricError, robustEstimation::Mat3Model> Homography4PKernel;
 
 /**
  * @brief By default use the normalized version for increased robustness.
  */
-typedef robustEstimation::NormalizedFittingKernel<Homography4PSolver, HomographyAsymmetricError, UnnormalizerI, robustEstimation::Mat3Model> NormalizedHomography4PKernel;
+typedef robustEstimation::NormalizedPointFittingKernel<Homography4PSolver, HomographyAsymmetricError, UnnormalizerI, robustEstimation::Mat3Model> NormalizedHomography4PKernel;
 
 }  // namespace relativePose
 }  // namespace multiview

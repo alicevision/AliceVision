@@ -9,7 +9,7 @@
 #pragma once
 
 #include <aliceVision/robustEstimation/conditioning.hpp>
-#include <aliceVision/robustEstimation/FittingKernel.hpp>
+#include <aliceVision/robustEstimation/PointFittingKernel.hpp>
 #include <aliceVision/multiview/relativePose/Essential5PSolver.hpp>
 #include <aliceVision/multiview/relativePose/Essential8PSolver.hpp>
 #include <aliceVision/multiview/relativePose/FundamentalError.hpp>
@@ -27,14 +27,14 @@ namespace relativePose {
  *        Fitting must normalize image values to camera values.
  */
 template<typename SolverT, typename ErrorT, typename ModelT = robustEstimation::Mat3Model>
-class EssentialKernel : public robustEstimation::FittingKernel<SolverT, ErrorT, ModelT>
+class EssentialKernel : public robustEstimation::PointFittingKernel<SolverT, ErrorT, ModelT>
 {
 public:
 
-  using KernelBase = robustEstimation::FittingKernel<SolverT, ErrorT, ModelT>;
+  using KernelBase = robustEstimation::PointFittingKernel<SolverT, ErrorT, ModelT>;
 
   EssentialKernel(const Mat& x1, const Mat& x2, const Mat3& K1, const Mat3& K2)
-    : robustEstimation::FittingKernel<SolverT, ErrorT, ModelT>(x1,x2)
+    : robustEstimation::PointFittingKernel<SolverT, ErrorT, ModelT>(x1,x2)
     , _K1(K1)
     , _K2(K2)
   {}

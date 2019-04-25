@@ -8,7 +8,7 @@
 #pragma once
 
 #include <aliceVision/robustEstimation/ISolver.hpp>
-#include <aliceVision/robustEstimation/FittingKernel.hpp>
+#include <aliceVision/robustEstimation/PointFittingKernel.hpp>
 #include <aliceVision/multiview/resection/ProjectionDistanceError.hpp>
 #include <aliceVision/numeric/numeric.hpp>
 
@@ -67,7 +67,7 @@ struct l1SixPointResectionSolver : public robustEstimation::ISolver<robustEstima
 /**
  * @brief Usable solver for the l1 6pt Resection Estimation
  */
-using l1PoseResectionKernel = robustEstimation::FittingKernel<l1SixPointResectionSolver, multiview::resection::ProjectionDistanceError, robustEstimation::Mat34Model>;
+using l1PoseResectionKernel = robustEstimation::PointFittingKernel<l1SixPointResectionSolver, multiview::resection::ProjectionDistanceError, robustEstimation::Mat34Model>;
 
 }  // namespace kernel
 }  // namespace lInfinityCV

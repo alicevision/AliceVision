@@ -4,11 +4,11 @@ set(robustEstimation_files_headers
   estimators.hpp
   LineKernel.hpp
   lineTestGenerator.hpp
-  FittingKernel.hpp
+  PointFittingKernel.hpp
+  PointFittingRansacKernel.hpp
   ISolver.hpp
   IRansacKernel.hpp
   Ransac.hpp 
-  RansacKernel.hpp
   ACRansac.hpp
   LORansac.hpp
   ransacTools.hpp

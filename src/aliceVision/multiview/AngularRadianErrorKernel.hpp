@@ -10,7 +10,7 @@
 #include <aliceVision/numeric/numeric.hpp>
 #include <aliceVision/robustEstimation/conditioning.hpp>
 #include <aliceVision/robustEstimation/ISolver.hpp>
-#include <aliceVision/robustEstimation/RansacKernel.hpp>
+#include <aliceVision/robustEstimation/PointFittingRansacKernel.hpp>
 
 /**
  * @brief Collection of kernel.
@@ -31,11 +31,11 @@ namespace multiview {
  */
 template<typename SolverT_, typename ErrorT_, typename ModelT_ = robustEstimation::Mat3Model>
 class AngularRadianErrorKernel
-    : public robustEstimation::RansacKernel<SolverT_, ErrorT_, ModelT_, robustEstimation::UndefinedSolver<ModelT_>>
+    : public robustEstimation::PointFittingRansacKernel<SolverT_, ErrorT_, ModelT_, robustEstimation::UndefinedSolver<ModelT_>>
 {
 public:
 
-  using KernelBase = robustEstimation::RansacKernel<SolverT_, ErrorT_, ModelT_, robustEstimation::UndefinedSolver<ModelT_>>;
+  using KernelBase = robustEstimation::PointFittingRansacKernel<SolverT_, ErrorT_, ModelT_, robustEstimation::UndefinedSolver<ModelT_>>;
 
   AngularRadianErrorKernel(const Mat& x1, const Mat& x2)
     : KernelBase(x1, x2)

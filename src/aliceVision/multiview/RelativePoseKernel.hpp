@@ -10,7 +10,7 @@
 #include <aliceVision/numeric/numeric.hpp>
 #include <aliceVision/robustEstimation/conditioning.hpp>
 #include <aliceVision/robustEstimation/ISolver.hpp>
-#include <aliceVision/robustEstimation/RansacKernel.hpp>
+#include <aliceVision/robustEstimation/PointFittingRansacKernel.hpp>
 
 namespace aliceVision {
 namespace multiview {
@@ -29,11 +29,11 @@ namespace multiview {
  */
 template<typename SolverT_, typename ErrorT_, typename UnnormalizerT_, typename ModelT_ = robustEstimation::Mat3Model, typename SolverLsT_ = robustEstimation::UndefinedSolver<ModelT_>>
 class RelativePoseKernel
-    : public robustEstimation::RansacKernel<SolverT_, ErrorT_, ModelT_, SolverLsT_>
+    : public robustEstimation::PointFittingRansacKernel<SolverT_, ErrorT_, ModelT_, SolverLsT_>
 {
 public:
 
-  using KernelBase = robustEstimation::RansacKernel<SolverT_, ErrorT_, ModelT_, SolverLsT_>;
+  using KernelBase = robustEstimation::PointFittingRansacKernel<SolverT_, ErrorT_, ModelT_, SolverLsT_>;
 
   RelativePoseKernel(const Mat& x1, int w1, int h1,
                      const Mat& x2, int w2, int h2,
@@ -107,11 +107,11 @@ protected:
  */
 template<typename SolverT_, typename ErrorT_, typename ModelT_ = robustEstimation::Mat3Model, typename SolverLsT_ = robustEstimation::UndefinedSolver<ModelT_>>
 class RelativePoseKernel_K
-    : public robustEstimation::RansacKernel<SolverT_, ErrorT_, ModelT_, SolverLsT_>
+    : public robustEstimation::PointFittingRansacKernel<SolverT_, ErrorT_, ModelT_, SolverLsT_>
 {
 public:
 
-  using KernelBase = robustEstimation::RansacKernel<SolverT_, ErrorT_, ModelT_, SolverLsT_>;
+  using KernelBase = robustEstimation::PointFittingRansacKernel<SolverT_, ErrorT_, ModelT_, SolverLsT_>;
 
   RelativePoseKernel_K(const Mat& x1, int w1, int h1,
                        const Mat& x2, int w2, int h2,

@@ -10,7 +10,7 @@
 #include <aliceVision/numeric/numeric.hpp>
 #include <aliceVision/robustEstimation/conditioning.hpp>
 #include <aliceVision/robustEstimation/ISolver.hpp>
-#include <aliceVision/robustEstimation/RansacKernel.hpp>
+#include <aliceVision/robustEstimation/PointFittingRansacKernel.hpp>
 
 namespace aliceVision {
 namespace multiview {
@@ -23,11 +23,11 @@ namespace multiview {
  */
 template<typename SolverT_, typename ErrorT_, typename UnnormalizerT_, typename ModelT_ = robustEstimation::Mat34Model, typename SolverLsT_ = robustEstimation::UndefinedSolver<ModelT_>>
 class ResectionKernel
-    : public robustEstimation::RansacKernel<SolverT_, ErrorT_, ModelT_, SolverLsT_>
+    : public robustEstimation::PointFittingRansacKernel<SolverT_, ErrorT_, ModelT_, SolverLsT_>
 {
 public:
 
-  using KernelBase = robustEstimation::RansacKernel<SolverT_, ErrorT_, ModelT_, SolverLsT_>;
+  using KernelBase = robustEstimation::PointFittingRansacKernel<SolverT_, ErrorT_, ModelT_, SolverLsT_>;
 
   /**
    * @brief ResectionKernel constructor with unknown intrinsic
@@ -88,11 +88,11 @@ protected:
  */
 template<typename SolverT_, typename ErrorT_, typename UnnormalizerT_, typename ModelT_ = robustEstimation::Mat34Model, typename SolverLsT_ = robustEstimation::UndefinedSolver<ModelT_>>
 class ResectionKernel_K
-    : public robustEstimation::RansacKernel<SolverT_, ErrorT_, ModelT_, SolverLsT_>
+    : public robustEstimation::PointFittingRansacKernel<SolverT_, ErrorT_, ModelT_, SolverLsT_>
 {
 public:
 
-  using KernelBase = robustEstimation::RansacKernel<SolverT_, ErrorT_, ModelT_, SolverLsT_>;
+  using KernelBase = robustEstimation::PointFittingRansacKernel<SolverT_, ErrorT_, ModelT_, SolverLsT_>;
 
   /**
    * @brief ResectionKernel constructor with known intrinsic

@@ -11,7 +11,7 @@
 #include <aliceVision/robustEstimation/conditioning.hpp>
 #include <aliceVision/robustEstimation/ISolver.hpp>
 #include <aliceVision/robustEstimation/IRansacKernel.hpp>
-#include <aliceVision/robustEstimation/FittingKernel.hpp>
+#include <aliceVision/robustEstimation/PointFittingKernel.hpp>
 
 namespace aliceVision {
 namespace robustEstimation {
@@ -29,15 +29,15 @@ namespace robustEstimation {
  *       that depends of the error model (point to line, or point to point)
  */
 template <typename SolverT_, typename ErrorT_, typename ModelT_, typename SolverLsT_ = robustEstimation::UndefinedSolver<ModelT_>>
-class RansacKernel
+class PointFittingRansacKernel
     : public robustEstimation::IRansacKernel<ModelT_>
-    , public robustEstimation::FittingKernel<SolverT_, ErrorT_, ModelT_>
+    , public robustEstimation::PointFittingKernel<SolverT_, ErrorT_, ModelT_>
 {
 public:
 
-  using KernelBase = robustEstimation::FittingKernel<SolverT_, ErrorT_, ModelT_>;
+  using KernelBase = robustEstimation::PointFittingKernel<SolverT_, ErrorT_, ModelT_>;
 
-  RansacKernel(const Mat& x1, const Mat& x2)
+  PointFittingRansacKernel(const Mat& x1, const Mat& x2)
     : KernelBase(x1, x2)
   {}
 

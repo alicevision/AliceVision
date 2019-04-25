@@ -45,7 +45,7 @@ namespace robustEstimation {
  * should append new solutions to the end.
  */
 template<typename SolverT_, typename ErrorT_, typename ModelT_ = Mat3Model>
-class FittingKernel
+class PointFittingKernel
 {
 public:
 
@@ -53,7 +53,7 @@ public:
   using ErrorT = ErrorT_;
   using ModelT = ModelT_;
 
-  FittingKernel(const Mat& x1, const Mat& x2)
+  PointFittingKernel(const Mat& x1, const Mat& x2)
     : _x1(x1)
     , _x2(x2)
   {}
@@ -133,13 +133,13 @@ protected:
 };
 
 template<typename SolverT_, typename ErrorT_, typename UnnormalizerT_, typename ModelT_ = Mat3Model>
-class NormalizedFittingKernel : public FittingKernel<SolverT_, ErrorT_, ModelT_>
+class NormalizedPointFittingKernel : public PointFittingKernel<SolverT_, ErrorT_, ModelT_>
 {
 public:
 
-  using KernelBase = FittingKernel<SolverT_, ErrorT_, ModelT_>;
+  using KernelBase = PointFittingKernel<SolverT_, ErrorT_, ModelT_>;
 
-  NormalizedFittingKernel(const Mat& x1, const Mat& x2)
+  NormalizedPointFittingKernel(const Mat& x1, const Mat& x2)
     : KernelBase(x1, x2)
   {}
 

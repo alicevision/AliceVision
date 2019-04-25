@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include <aliceVision/robustEstimation/FittingKernel.hpp>
+#include <aliceVision/robustEstimation/PointFittingKernel.hpp>
 #include <aliceVision/multiview/relativePose/Fundamental7PSolver.hpp>
 #include <aliceVision/multiview/relativePose/Fundamental8PSolver.hpp>
 #include <aliceVision/multiview/relativePose/FundamentalError.hpp>
@@ -21,24 +21,24 @@ namespace relativePose {
 /**
  * @brief Kernel solver for the 8pt Fundamental Matrix Estimation
  */
-using Fundamental7PKernel = robustEstimation::FittingKernel<Fundamental7PSolver, FundamentalSampsonError, robustEstimation::Mat3Model>;
+using Fundamental7PKernel = robustEstimation::PointFittingKernel<Fundamental7PSolver, FundamentalSampsonError, robustEstimation::Mat3Model>;
 
 /**
  * @brief Kernel solver for the 8pt Fundamental Matrix Estimation
  */
-using Fundamental8PKernel = robustEstimation::FittingKernel<Fundamental8PSolver, FundamentalSampsonError, robustEstimation::Mat3Model>;
+using Fundamental8PKernel = robustEstimation::PointFittingKernel<Fundamental8PSolver, FundamentalSampsonError, robustEstimation::Mat3Model>;
 
 /**
  * @brief Normalized 7pt kernel
  * @see conditioning from HZ (Algo 11.1) pag 282
  */
-using NormalizedFundamental7PKernel = robustEstimation::NormalizedFittingKernel<Fundamental7PSolver, FundamentalSampsonError, UnnormalizerT, robustEstimation::Mat3Model>;
+using NormalizedFundamental7PKernel = robustEstimation::NormalizedPointFittingKernel<Fundamental7PSolver, FundamentalSampsonError, UnnormalizerT, robustEstimation::Mat3Model>;
 
 /**
  * @brief Normalized 8pt kernel
  * @see conditioning from HZ (Algo 11.1) pag 282
  */
-using NormalizedFundamental8PKernel = robustEstimation::NormalizedFittingKernel<Fundamental8PSolver, FundamentalSampsonError, UnnormalizerT, robustEstimation::Mat3Model>;
+using NormalizedFundamental8PKernel = robustEstimation::NormalizedPointFittingKernel<Fundamental8PSolver, FundamentalSampsonError, UnnormalizerT, robustEstimation::Mat3Model>;
 
 }  // namespace relativePose
 }  // namespace multiview

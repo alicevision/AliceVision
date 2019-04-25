@@ -9,7 +9,7 @@
 
 #include <aliceVision/multiview/resection/EPnPSolver.hpp>
 #include <aliceVision/multiview/resection/ProjectionDistanceError.hpp>
-#include <aliceVision/robustEstimation/FittingKernel.hpp>
+#include <aliceVision/robustEstimation/PointFittingKernel.hpp>
 #include <aliceVision/numeric/projection.hpp>
 
 namespace aliceVision {
@@ -20,11 +20,11 @@ namespace resection {
  * @brief Euclidean (EPnP) resection kernel
  * @note Have K intrinsic helps
  */
-class EPnPKernel : public robustEstimation::FittingKernel<EPnPSolver, ProjectionDistanceError, robustEstimation::Mat34Model>
+class EPnPKernel : public robustEstimation::PointFittingKernel<EPnPSolver, ProjectionDistanceError, robustEstimation::Mat34Model>
 {
  public:
 
-  using KernelBase = robustEstimation::FittingKernel<EPnPSolver, ProjectionDistanceError, robustEstimation::Mat34Model>;
+  using KernelBase = robustEstimation::PointFittingKernel<EPnPSolver, ProjectionDistanceError, robustEstimation::Mat34Model>;
 
   EPnPKernel(const Mat2X& x2d, const Mat3X& x3d)
     : KernelBase(x2d, x3d)
