@@ -11,6 +11,7 @@
 #include <aliceVision/system/Logger.hpp>
 
 #include <boost/filesystem.hpp>
+#include <boost/range/iterator_range.hpp>
 
 #include <map>
 #include <fstream>
@@ -133,7 +134,7 @@ void filterMatchesByDesc(
 }
 
 
-bool LoadMatchFilePerImage(
+std::size_t LoadMatchFilePerImage(
   PairwiseMatches& matches,
   const std::set<IndexT>& viewsKeys,
   const std::string& folder,
@@ -167,21 +168,60 @@ bool LoadMatchFilePerImage(
       }
     }
   }
-  if(nbLoadedMatchFiles == 0)
+  return nbLoadedMatchFiles;
+}
+
+std::size_t LoadMatchesFromFolder(
+  PairwiseMatches& matches, 
+  const std::string& folder, 
+  const std::string& pattern)
+{
+  std::size_t nbLoadedMatchFiles = 0;
+  std::vector<std::string> matchFiles;
+  // list all matches files in 'folder' matching (i.e containing) 'pattern'
+  for(auto& entry : boost::make_iterator_range(fs::directory_iterator(folder), {}))
   {
+    if(entry.path().string().find(pattern) != std::string::npos)
+    {
+      matchFiles.emplace_back(entry.path().string());
+    }
+  }
+
+  #pragma omp parallel for num_threads(3)
+  for(int i = 0; i < matchFiles.size(); ++i)
+  {
+    const std::string& matchFile = matchFiles[i];
+    PairwiseMatches fileMatches;
+    ALICEVISION_LOG_DEBUG("Loading match file: " << matchFile);
+    if(!LoadMatchFile(fileMatches, matchFile))
+    {
+      ALICEVISION_LOG_WARNING("Unable to load match file: " << matchFile);
+      continue;
+    }
+    #pragma omp critical
+    {
+    for(const auto& matchesPerView: fileMatches)
+    {
+      const Pair& pair = matchesPerView.first;
+      const MatchesPerDescType& pairMatches = matchesPerView.second;
+      for(const auto& matchesPerDescType : pairMatches)
+      {
+        const feature::EImageDescriberType& descType = matchesPerDescType.first;
+        const auto& pairMatches = matchesPerDescType.second;
+        // merge in global map
+        std::copy(
+          std::make_move_iterator(pairMatches.begin()), 
+          std::make_move_iterator(pairMatches.end()), 
+          std::back_inserter(matches[pair][descType])
+        );
+      }
+    }
+    ++nbLoadedMatchFiles;
+    }   
+  }
+  if(!nbLoadedMatchFiles)
     ALICEVISION_LOG_WARNING("No matches file loaded in: " << folder);
-    return false;
-  }
-  ALICEVISION_LOG_TRACE("Matches per image pair");
-  for(const auto& imagePairIt: matches)
-  {
-    std::stringstream ss;
-    ss << " * " << imagePairIt.first.first << "-" << imagePairIt.first.second << ": " << imagePairIt.second.getNbAllMatches() << "    ";
-    for(const auto& matchesPerDeskIt: imagePairIt.second)
-       ss << " [" << feature::EImageDescriberType_enumToString(matchesPerDeskIt.first) << ": " << matchesPerDeskIt.second.size() << "]";
-    ALICEVISION_LOG_TRACE(ss.str());
-  }
-  return true;
+  return nbLoadedMatchFiles;
 }
 
 bool Load(
@@ -191,21 +231,31 @@ bool Load(
   const std::vector<feature::EImageDescriberType>& descTypesFilter,
   const int maxNbMatches)
 {
-  bool res = false;
-  const std::string fileName = "matches.txt";
+  std::size_t nbLoadedMatchFiles = 0;
+  const std::string pattern = "matches.txt";
 
   for(const std::string& folder : folders)
   {
-    const fs::path filePath = fs::path(folder) / fileName;
-
-    if(fs::exists(filePath))
-      res = LoadMatchFile(matches, filePath.string());
-    else
-      res = LoadMatchFilePerImage(matches, viewsKeysFilter, folder, fileName);
+    nbLoadedMatchFiles += LoadMatchesFromFolder(matches, folder, pattern);
   }
 
-  if(!res)
+  if(!nbLoadedMatchFiles)
     return false;
+
+  const auto logMatches = [](const PairwiseMatches& m)
+  {
+    for(const auto& imagePairIt: m)
+    {
+      std::stringstream ss;
+      ss << " * " << imagePairIt.first.first << "-" << imagePairIt.first.second << ": " << imagePairIt.second.getNbAllMatches() << "    ";
+      for(const auto& matchesPerDeskIt: imagePairIt.second)
+         ss << " [" << feature::EImageDescriberType_enumToString(matchesPerDeskIt.first) << ": " << matchesPerDeskIt.second.size() << "]";
+      ALICEVISION_LOG_TRACE(ss.str());
+    }
+  };
+
+  ALICEVISION_LOG_TRACE("Matches per image pair (before filtering):");
+  logMatches(matches);
 
   if(!viewsKeysFilter.empty())
     filterMatchesByViews(matches, viewsKeysFilter);
@@ -216,19 +266,10 @@ bool Load(
   if(maxNbMatches > 0)
     filterTopMatches(matches, maxNbMatches);
 
-  ALICEVISION_LOG_TRACE("Matches per image pair");
-  for(const auto& imagePairIt: matches)
-  {
-    std::stringstream ss;
-    ss << " * " << imagePairIt.first.first << "-" << imagePairIt.first.second << ": " << imagePairIt.second.getNbAllMatches() << "    ";
-    for(const auto& matchesPerDeskIt: imagePairIt.second)
-    {
-       ss << " [" << feature::EImageDescriberType_enumToString(matchesPerDeskIt.first) << ": " << matchesPerDeskIt.second.size() << "]";
-    }
-    ALICEVISION_LOG_TRACE(ss.str());
-  }
+  ALICEVISION_LOG_TRACE("Matches per image pair (after filtering):");
+  logMatches(matches);
 
-  return res;
+  return true;
 }
 
 
@@ -331,9 +372,11 @@ bool Save(
   const PairwiseMatches & matches,
   const std::string & folder,
   const std::string & extension,
-  bool matchFilePerImage)
+  bool matchFilePerImage,
+  const std::string& prefix
+  )
 {
-  const std::string filename = "matches." + extension;
+  const std::string filename = prefix + "matches." + extension;
   MatchExporter exporter(matches, folder, filename);
 
   if(matchFilePerImage)

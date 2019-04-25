@@ -340,6 +340,11 @@ int main(int argc, char **argv)
     }
   }
 
+  // when a range is specified, generate a file prefix to reflect the current iteration (rangeStart/rangeSize)
+  // => with matchFilePerImage: avoids overwriting files if a view is present in several iterations
+  // => without matchFilePerImage: avoids overwriting the unique resulting file
+  const std::string filePrefix = rangeSize > 0 ? std::to_string(rangeStart/rangeSize) + "." : "";
+
   ALICEVISION_LOG_INFO(std::to_string(mapPutativesMatches.size()) << " putative image pair matches");
 
   for(const auto& imageMatch: mapPutativesMatches)
@@ -347,7 +352,7 @@ int main(int argc, char **argv)
 
   // export putative matches
   if(savePutativeMatches)
-    Save(mapPutativesMatches, (fs::path(matchesFolder) / "putativeMatches").string(), fileExtension, matchFilePerImage);
+    Save(mapPutativesMatches, (fs::path(matchesFolder) / "putativeMatches").string(), fileExtension, matchFilePerImage, filePrefix);
 
   ALICEVISION_LOG_INFO("Task (Regions Matching) done in (s): " + std::to_string(timer.elapsed()));
 
@@ -522,7 +527,7 @@ int main(int argc, char **argv)
 
   // export geometric filtered matches
   ALICEVISION_LOG_INFO("Save geometric matches.");
-  Save(finalMatches, matchesFolder, fileExtension, matchFilePerImage);
+  Save(finalMatches, matchesFolder, fileExtension, matchFilePerImage, filePrefix);
   ALICEVISION_LOG_INFO("Task done in (s): " + std::to_string(timer.elapsed()));
 
   // d. Export some statistics
