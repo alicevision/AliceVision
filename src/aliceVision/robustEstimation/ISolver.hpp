@@ -83,13 +83,12 @@ public:
 };
 
 /**
- * @brief Generic matrix solver model.
+ * @brief Matrix based model to be used in a solver.
  */
 template<typename MatrixT>
 struct MatrixModel
 {
-  MatrixModel()
-  {}
+  MatrixModel() = default;
 
   explicit MatrixModel(const MatrixT& matrix)
     : _matrix(matrix)
@@ -110,19 +109,19 @@ struct MatrixModel
     _matrix = matrix;
   }
 
-private:
-  MatrixT _matrix;
+protected:
+  MatrixT _matrix{};
 };
 
 /**
  * @brief explicit typename for MatrixModel with Mat3 matrix (fundamental, essential, homography, ...)
  */
-typedef MatrixModel<Mat3> Mat3Model;
+using Mat3Model = MatrixModel<Mat3>;
 
 /**
  * @brief explicit typename for MatrixModel with Mat34 matrix (projection, ...)
  */
-typedef MatrixModel<Mat34> Mat34Model;
+using Mat34Model = MatrixModel<Mat34>;
 
 
 } // namespace robustEstimation

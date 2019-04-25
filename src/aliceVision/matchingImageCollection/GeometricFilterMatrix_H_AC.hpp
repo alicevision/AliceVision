@@ -63,12 +63,11 @@ struct GeometricFilterMatrix_H_AC : public GeometricFilterMatrix
     fillMatricesWithUndistortFeaturesMatches(pairIndex, putativeMatchesPerType, sfmData, regionsPerView, descTypes, xI, xJ);
 
     // define the AContrario adapted Homography matrix solver
-    typedef multiview::RelativePoseKernel<
-        multiview::relativePose::Homography4PSolver,
-        multiview::relativePose::HomographyAsymmetricError,
-        multiview::UnnormalizerI,
-        robustEstimation::Mat3Model>
-        KernelT;
+    using KernelT = multiview::RelativePoseKernel<
+                    multiview::relativePose::Homography4PSolver,
+                    multiview::relativePose::HomographyAsymmetricError,
+                    multiview::UnnormalizerI,
+                    robustEstimation::Mat3Model>;
 
     const KernelT kernel(xI, viewI.getWidth(), viewI.getHeight(),
                          xJ, viewJ.getWidth(), viewJ.getHeight(), false); // configure as point to point error model.

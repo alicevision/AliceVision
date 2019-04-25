@@ -76,11 +76,10 @@ struct GeometricFilterMatrix_E_AC : public GeometricFilterMatrix
     fillMatricesWithUndistortFeaturesMatches(pairIndex, putativeMatchesPerType, sfmData, regionsPerView, descTypes, xI, xJ);
 
     // define the AContrario adapted Essential matrix solver
-    typedef multiview::RelativePoseKernel_K<
-        multiview::relativePose::Essential5PSolver,
-        multiview::relativePose::FundamentalEpipolarDistanceError,
-        robustEstimation::Mat3Model>
-        KernelT;
+    using KernelT = multiview::RelativePoseKernel_K<
+                    multiview::relativePose::Essential5PSolver,
+                    multiview::relativePose::FundamentalEpipolarDistanceError,
+                    robustEstimation::Mat3Model>;
 
     const camera::Pinhole* ptrPinholeI = (const camera::Pinhole*)(camI);
     const camera::Pinhole* ptrPinholeJ = (const camera::Pinhole*)(camJ);
@@ -128,7 +127,7 @@ struct GeometricFilterMatrix_E_AC : public GeometricFilterMatrix
                                 const double dDistanceRatio,
                                 matching::MatchesPerDescType& matches) override
   {
-    if(m_dPrecision_robust != std::numeric_limits<double>::infinity())
+    if(!std::isinf(m_dPrecision_robust))
     {
       // get back corresponding view index
       const IndexT I = imageIdsPair.first;

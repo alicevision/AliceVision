@@ -14,7 +14,7 @@ namespace aliceVision {
 namespace multiview {
 
 /**
- * @brief Two-point translation estimation between two views from a known rotation
+ * @brief Two-point translation estimation solver between two views from a known rotation
  *        Implementation based on [1] => 3.2 Selection of the right solution.
  *
  * @ref [1] "Finding the Exact Rotation Between Two Images Independently of the Translation."
@@ -45,10 +45,10 @@ struct TwoPointTranslationSolver
 
   /**
    * @brief Solve the problem of camera translation.
-   * @param xA
-   * @param xB
-   * @param R
-   * @param models t
+   * @param[in] xA
+   * @param[in] xB
+   * @param[in] R
+   * @param[out] models t
    */
   void solve(const Mat& xA, const Mat& xB, const Mat3& R, std::vector<robustEstimation::MatrixModel<Vec3>>& models) const
   {

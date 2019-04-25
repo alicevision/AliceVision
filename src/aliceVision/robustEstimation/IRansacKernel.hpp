@@ -15,7 +15,7 @@ namespace robustEstimation{
 
 /**
  * @brief A generic kernel used for the ACRANSAC / LORANSAC framework.
- * @tparam Model The class representing the model to estimate.
+ * @tparam ModelT The class representing the model to estimate.
  *
  * @note Handle data normalization and compute the corresponding logalpha 0
  *       that depends of the error model (point to line, or point to point)

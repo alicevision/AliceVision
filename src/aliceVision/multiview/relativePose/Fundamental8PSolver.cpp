@@ -24,8 +24,6 @@ void solveProblem(const Mat& x1, const Mat& x2, std::vector<robustEstimation::Ma
 
   if(x1.cols() == 8)
   {
-    typedef Eigen::Matrix<double, 9, 9> Mat9;
-
     // in the minimal solution use fixed sized matrix to let Eigen and the
     // compiler doing the maximum of optimization.
     Mat9 A = Mat::Zero(9,9);

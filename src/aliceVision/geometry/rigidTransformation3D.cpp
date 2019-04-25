@@ -142,8 +142,8 @@ bool ACRansac_FindRTS(const Mat& x1,
   const std::size_t numIterations = 1024;
   const double dPrecision = std::numeric_limits<double>::infinity();
 
-  typedef geometry::RTSSolver SolverT;
-  typedef ACKernelAdaptor_PointsRegistrationSRT<SolverT, geometry::RTSSquaredResidualError> KernelT;
+  using SolverT = geometry::RTSSolver;
+  using KernelT = ACKernelAdaptor_PointsRegistrationSRT<SolverT, geometry::RTSSquaredResidualError>;
 
   const KernelT kernel = KernelT(x1, x2);
 

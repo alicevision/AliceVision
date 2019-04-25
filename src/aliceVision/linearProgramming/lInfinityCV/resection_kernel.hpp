@@ -67,7 +67,7 @@ struct l1SixPointResectionSolver : public robustEstimation::ISolver<robustEstima
 /**
  * @brief Usable solver for the l1 6pt Resection Estimation
  */
-typedef robustEstimation::FittingKernel<l1SixPointResectionSolver, multiview::resection::ProjectionDistanceError, robustEstimation::Mat34Model>  l1PoseResectionKernel;
+using l1PoseResectionKernel = robustEstimation::FittingKernel<l1SixPointResectionSolver, multiview::resection::ProjectionDistanceError, robustEstimation::Mat34Model>;
 
 }  // namespace kernel
 }  // namespace lInfinityCV

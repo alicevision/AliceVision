@@ -12,22 +12,14 @@
 #include <aliceVision/robustEstimation/ISolver.hpp>
 #include <aliceVision/robustEstimation/RansacKernel.hpp>
 
-/**
- * @brief Collection of kernel.
- * @ref [1] "Robust and accurate calibration of camera networks". PhD. Pierre MOULON
- *
- * - ResectionKernel: pose / resection estimation with unknown intrinsic
- * - ResectionKernel_K: pose / resection estimation with known intrinsic
- *
- *  Mainly it add correct data normalization and define the function required
- *  by the generic ACRANSAC / LORANSAC routine.
- */
-
 namespace aliceVision {
 namespace multiview {
 
 /**
  * @brief Pose/Resection Kernel with unknown intrinsic for the A contrario (AC) model estimator.
+ *        to be used with the ACRANSAC / LORANSAC framework.
+ *
+ * @ref [1] "Robust and accurate calibration of camera networks". PhD. Pierre MOULON
  */
 template<typename SolverT_, typename ErrorT_, typename UnnormalizerT_, typename ModelT_ = robustEstimation::Mat34Model, typename SolverLsT_ = robustEstimation::UndefinedSolver<ModelT_>>
 class ResectionKernel
@@ -83,6 +75,8 @@ protected:
 /**
  * @brief The kernel for the resection with known intrinsics (PnP) to be used with
  * the ACRANSAC / LORANSAC framework.
+ *
+ * @ref [1] "Robust and accurate calibration of camera networks". PhD. Pierre MOULON
  *
  * @tparam SolverT The minimal solver able to find a solution from a minimum set of points, usually any PnP solver.
  * @tparam ErrorT The functor computing the error for each data sample with respect to the estimated model, usually a reprojection error functor.

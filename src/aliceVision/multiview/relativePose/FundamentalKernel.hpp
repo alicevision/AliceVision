@@ -21,24 +21,24 @@ namespace relativePose {
 /**
  * @brief Kernel solver for the 8pt Fundamental Matrix Estimation
  */
-typedef robustEstimation::FittingKernel<Fundamental7PSolver, FundamentalSampsonError, robustEstimation::Mat3Model> Fundamental7PKernel;
+using Fundamental7PKernel = robustEstimation::FittingKernel<Fundamental7PSolver, FundamentalSampsonError, robustEstimation::Mat3Model>;
 
 /**
  * @brief Kernel solver for the 8pt Fundamental Matrix Estimation
  */
-typedef robustEstimation::FittingKernel<Fundamental8PSolver, FundamentalSampsonError, robustEstimation::Mat3Model> Fundamental8PKernel;
+using Fundamental8PKernel = robustEstimation::FittingKernel<Fundamental8PSolver, FundamentalSampsonError, robustEstimation::Mat3Model>;
 
 /**
  * @brief Normalized 7pt kernel
  * @see conditioning from HZ (Algo 11.1) pag 282
  */
-typedef robustEstimation::NormalizedFittingKernel<Fundamental7PSolver, FundamentalSampsonError, UnnormalizerT, robustEstimation::Mat3Model> NormalizedFundamental7PKernel;
+using NormalizedFundamental7PKernel = robustEstimation::NormalizedFittingKernel<Fundamental7PSolver, FundamentalSampsonError, UnnormalizerT, robustEstimation::Mat3Model>;
 
 /**
  * @brief Normalized 8pt kernel
  * @see conditioning from HZ (Algo 11.1) pag 282
  */
-typedef robustEstimation::NormalizedFittingKernel<Fundamental8PSolver, FundamentalSampsonError, UnnormalizerT, robustEstimation::Mat3Model> NormalizedFundamental8PKernel;
+using NormalizedFundamental8PKernel = robustEstimation::NormalizedFittingKernel<Fundamental8PSolver, FundamentalSampsonError, UnnormalizerT, robustEstimation::Mat3Model>;
 
 }  // namespace relativePose
 }  // namespace multiview

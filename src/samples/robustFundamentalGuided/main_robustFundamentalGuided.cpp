@@ -128,12 +128,11 @@ int main() {
 
     //-- Fundamental robust estimation
     std::vector<size_t> vec_inliers;
-    typedef multiview::RelativePoseKernel<
-      multiview::relativePose::Fundamental7PSolver,
-      multiview::relativePose::FundamentalSymmetricEpipolarDistanceError,
-      multiview::UnnormalizerT,
-      robustEstimation::Mat3Model>
-      KernelType;
+    using KernelType = multiview::RelativePoseKernel<
+                       multiview::relativePose::Fundamental7PSolver,
+                       multiview::relativePose::FundamentalSymmetricEpipolarDistanceError,
+                       multiview::UnnormalizerT,
+                       robustEstimation::Mat3Model>;
 
     KernelType kernel(
       xL, imageL.Width(), imageL.Height(),

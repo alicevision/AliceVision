@@ -26,7 +26,6 @@ void Fundamental7PSolver::solve(const Mat& x1, const Mat& x2, std::vector<robust
   if(x1.cols() == 7)
   {
     // set up the homogeneous system Af = 0 from the equations x'T*F*x = 0.
-    typedef Eigen::Matrix<double, 9, 9> Mat9;
 
     // in the minimal solution use fixed sized matrix to let Eigen and the
     // compiler doing the maximum of optimization.

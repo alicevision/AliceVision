@@ -34,7 +34,7 @@ namespace robustEstimation {
  * error, but can never access the samples themselves.
  *
  * The Kernel objects must follow the following concept so that the robust
- * fitting alogrithm can fit this type of relation:
+ * fitting algorithm can fit this type of relation:
  *ModelT
  *   1. kernel.getMaximumNbModels()
  *   2. kernel.getMinimumNbRequiredSamples()

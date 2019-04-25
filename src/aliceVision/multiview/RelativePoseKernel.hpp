@@ -12,23 +12,14 @@
 #include <aliceVision/robustEstimation/ISolver.hpp>
 #include <aliceVision/robustEstimation/RansacKernel.hpp>
 
-/**
- * @brief Collection of kernel.
- * @ref [1] "Robust and accurate calibration of camera networks". PhD. Pierre MOULON
- *
- * - RelativePoseKernel: relative pose two view estimation (affine, homography, fundamental) with unkwon intrinsic
- * - RelativePoseKernel_K: relative pose two view estimation for essential matrix with known intrinsics
- *
- *  Mainly it add correct data normalization and define the function required
- *  by the generic ACRANSAC / LORANSAC routine.
- */
-
 namespace aliceVision {
 namespace multiview {
 
 /**
  * @brief Two view Kernel adapter for the A contrario (AC) model estimator.
  *        With unknown intrinsic.
+ *
+ * @ref [1] "Robust and accurate calibration of camera networks". PhD. Pierre MOULON
  *
  * @note Handle data normalization and compute the corresponding logalpha 0
  *       that depends of the error model (point to line, or point to point)
@@ -105,6 +96,8 @@ protected:
 /**
  * @brief Two view Kernel adapter for the A contrario (AC) model estimator.
  *        With known intrinsic.
+ *
+ * @ref [1] "Robust and accurate calibration of camera networks". PhD. Pierre MOULON
  *
  * @note Handle data normalization and compute the corresponding logalpha 0
  *       that depends of the error model (point to line, or point to point)

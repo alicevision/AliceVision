@@ -123,14 +123,14 @@ struct GeometricFilterMatrix_F_AC : public GeometricFilterMatrix
       case robustEstimation::ERobustEstimator::LORANSAC:
       {
         if(m_estimateDistortion)
-          throw std::invalid_argument("[GeometricFilterMatrix_F_AC::geometricEstimation] Using fundamental matrix and f10 solver with LO_RANSAC is not yet implemented");
+          throw std::invalid_argument("["+std::string(__func__)+"] Using fundamental matrix and f10 solver with LO_RANSAC is not yet implemented");
 
         estimationPair = geometricEstimation_Mat_LORANSAC<multiview::relativePose::Fundamental7PSolver, multiview::relativePose::Fundamental8PSolver>(xI, xJ, imageSizeI, imageSizeJ, inliers);
       }
       break;
 
       default:
-        throw std::runtime_error("[GeometricFilterMatrix_F_AC::geometricEstimation] only ACRansac and LORansac are supported!");
+        throw std::runtime_error("["+std::string(__func__)+"] only ACRansac and LORansac are supported!");
     }
 
     if(!estimationPair.first) // estimation is not valid
@@ -142,7 +142,7 @@ struct GeometricFilterMatrix_F_AC : public GeometricFilterMatrix
     // fill geometricInliersPerType with inliers from putativeMatchesPerType
     copyInlierMatches(inliers, putativeMatchesPerType, descTypes, out_geometricInliersPerType);
 
-    // if matches has strong support
+    // have matches has strong support
     const bool hasStrongSupport = robustEstimation::hasStrongSupport(out_geometricInliersPerType, estimationPair.second);
 
     return EstimationStatus(true, hasStrongSupport);
@@ -168,13 +168,12 @@ struct GeometricFilterMatrix_F_AC : public GeometricFilterMatrix
     out_inliers.clear();
 
     // define the AContrario adapted Fundamental matrix solver
-    typedef multiview::RelativePoseKernel<
-      SolverT_,
-      multiview::relativePose::FundamentalEpipolarDistanceError,
-      //multiview::relativePose::FundamentalSymmetricEpipolarDistanceError,
-      multiview::UnnormalizerT,
-      ModelT_>
-      KernelT;
+    using KernelT = multiview::RelativePoseKernel<
+                    SolverT_,
+                    multiview::relativePose::FundamentalEpipolarDistanceError,
+                    //multiview::relativePose::FundamentalSymmetricEpipolarDistanceError,
+                    multiview::UnnormalizerT,
+                    ModelT_>;
 
     const KernelT kernel(xI, imageSizeI.first, imageSizeI.second,
                          xJ, imageSizeJ.first, imageSizeJ.second, true);
@@ -215,15 +214,14 @@ struct GeometricFilterMatrix_F_AC : public GeometricFilterMatrix
 
     // just a safeguard
     if(m_dPrecision == std::numeric_limits<double>::infinity())
-      throw std::invalid_argument("[GeometricFilterMatrix_F_AC_AC::geometricEstimation] the threshold of the LORANSAC is set to infinity!");
+      throw std::invalid_argument("["+std::string(__func__)+"] the threshold of the LORANSAC is set to infinity!");
 
-    typedef multiview::RelativePoseKernel<
-            SolverT_,
-            multiview::relativePose::FundamentalSymmetricEpipolarDistanceError,
-            multiview::UnnormalizerT,
-            robustEstimation::Mat3Model,
-            SolverLsT_>
-            KernelT;
+    using KernelT = multiview::RelativePoseKernel<
+                    SolverT_,
+                    multiview::relativePose::FundamentalSymmetricEpipolarDistanceError,
+                    multiview::UnnormalizerT,
+                    robustEstimation::Mat3Model,
+                    SolverLsT_>;
 
     const KernelT kernel(xI, imageSizeI.first, imageSizeI.second,
                          xJ, imageSizeJ.first, imageSizeJ.second, true);

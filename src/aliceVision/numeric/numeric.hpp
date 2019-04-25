@@ -95,6 +95,7 @@ typedef Eigen::Matrix<double, 3, Eigen::Dynamic> Mat3X;
 typedef Eigen::Matrix<double, 4, Eigen::Dynamic> Mat4X;
 
 typedef Eigen::Matrix<double, Eigen::Dynamic, 9> MatX9;
+typedef Eigen::Matrix<double, 9, 9> Mat9;
 
 //-- Sparse Matrix (Column major, and row major)
 typedef Eigen::SparseMatrix<double> sMat;

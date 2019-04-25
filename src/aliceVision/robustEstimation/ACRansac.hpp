@@ -98,20 +98,19 @@ void makelogcombi(std::size_t k, std::size_t n, std::vector<Type>& vec_logc_k, s
 /**
  * @brief NFA and associated index
  */
-typedef std::pair<double,size_t> ErrorIndex;
+using ErrorIndex = std::pair<double,size_t>;
 
 /**
  * @brief Find best NFA and its index wrt square error threshold in e.
  */
-inline ErrorIndex bestNFA(
-  int startIndex, //number of point required for estimation
-  double logalpha0,
-  const std::vector<ErrorIndex>& e,
-  double loge0,
-  double maxThreshold,
-  const std::vector<float> &logc_n,
-  const std::vector<float> &logc_k,
-  double multError = 1.0)
+inline ErrorIndex bestNFA(int startIndex, //number of point required for estimation
+                          double logalpha0,
+                          const std::vector<ErrorIndex>& e,
+                          double loge0,
+                          double maxThreshold,
+                          const std::vector<float> &logc_n,
+                          const std::vector<float> &logc_k,
+                          double multError = 1.0)
 {
   ErrorIndex bestIndex(std::numeric_limits<double>::infinity(), startIndex);
   const size_t n = e.size();
@@ -144,10 +143,10 @@ inline ErrorIndex bestNFA(
  */
 template<typename Kernel>
 std::pair<double, double> ACRANSAC(const Kernel& kernel,
-  std::vector<size_t>& vec_inliers,
-  std::size_t nIter = 1024,
-  typename Kernel::ModelT* model = nullptr,
-  double precision = std::numeric_limits<double>::infinity())
+                                   std::vector<size_t>& vec_inliers,
+                                   std::size_t nIter = 1024,
+                                   typename Kernel::ModelT* model = nullptr,
+                                   double precision = std::numeric_limits<double>::infinity())
 {
   vec_inliers.clear();
 

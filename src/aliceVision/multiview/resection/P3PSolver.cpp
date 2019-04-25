@@ -156,12 +156,9 @@ bool computeP3PPoses(const Mat3& featureVectors, const Mat3& worldPoints, Mat& s
   const double p_2 = P3[1];
 
   const double cos_beta = f1.transpose() * f2;
-  double b = 1.0 / (1.0 - pow(cos_beta, 2)) - 1.0;
 
-  if(cos_beta < 0)
-    b = -sqrt(b);
-  else
-    b = sqrt(b);
+  const double sign = ((cos_beta < 0) ? -1.0 : 1.0) ;
+  const double b = sign * std::sqrt(1.0  / (1.0 - pow(cos_beta, 2)) - 1.0);
 
   // definition of temporary variables for avoiding multiple computation
 
