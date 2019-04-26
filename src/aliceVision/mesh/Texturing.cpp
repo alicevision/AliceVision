@@ -685,9 +685,17 @@ void Texturing::writeTexture(AccuImage& atlasTexture, const std::size_t atlasID,
         const unsigned int padding = texParams.padding * 3;
         ALICEVISION_LOG_INFO("  - Edge padding (" << padding << " pixels).");
 
-      /*  const std::string textureName0 = "texture_" + std::to_string(1001 + atlasID) + "prePadd." + EImageFileType_enumToString(textureFileType); // starts at '1001' for UDIM compatibility
-        bfs::path texturePath0 = outPath / textureName0;
-        imageIO::writeImage(texturePath0.string(), outTextureSide, outTextureSide, atlasTexture.img);*/
+        // Init valid values to 1
+        for(unsigned int y = 0; y < outTextureSide; ++y)
+        {
+            unsigned int yoffset = y * outTextureSide;
+            for(unsigned int x = 0; x < outTextureSide; ++x)
+            {
+                unsigned int xyoffset = yoffset + x;
+                if(atlasTexture.imgCount[xyoffset] > 0)
+                    atlasTexture.imgCount[xyoffset] = 1;
+            }
+        }
 
         //up-left to bottom-right
         for(unsigned int y = 1; y < outTextureSide-1; ++y)
@@ -780,7 +788,7 @@ void Texturing::writeTexture(AccuImage& atlasTexture, const std::size_t atlasID,
             for(unsigned int xp = 0; xp < texParams.textureSide; ++xp)
             {
                 unsigned int xyoffset = yoffset + xp;
-                alphaBuffer[xyoffset] = atlasTexture.imgCount[xyoffset] ? 1.0f : 0.0f;
+                alphaBuffer[xyoffset] = atlasTexture.imgCount[xyoffset] ? 1 : 0;
             }
         }
         imageIO::fillHoles(texParams.textureSide, texParams.textureSide, atlasTexture.img, alphaBuffer);
