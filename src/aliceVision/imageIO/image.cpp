@@ -207,7 +207,7 @@ void readImage(const std::string& path,
     width = inSpec.width;
     height = inSpec.height;
 
-    buffer.resize(inSpec.width * inSpec.height * nchannels);
+    buffer.resize(inSpec.width * inSpec.height);
 
     {
         oiio::ROI exportROI = inBuf.roi();
