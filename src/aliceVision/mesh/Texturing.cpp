@@ -260,7 +260,6 @@ void Texturing::generateTextures(const mvsUtils::MultiViewParams &mp,
         ALICEVISION_LOG_INFO(c << ", ");
     }
 
-    mvsUtils::ImagesCache imageCache(&mp, 0);
     mvsUtils::ImagesCache imageCache(&mp, 0, imageIO::EImageColorSpace::SRGB);
     imageCache.setCacheSize(2);
     system::MemoryInfo memInfo = system::getMemoryInfo();
@@ -596,6 +595,33 @@ void Texturing::generateTexturesSubSet(const mvsUtils::MultiViewParams& mp,
         AccuImage& atlasTexture = accuPyramid.pyramid[0];
         ALICEVISION_LOG_INFO("Create texture " << atlasID);
 
+        bool debug = 1;
+
+        if(debug)
+        {
+            for(std::size_t level = 0; level < accuPyramid.pyramid.size(); ++level)
+            {
+                AccuImage& atlasLevelTexture =  accuPyramid.pyramid[level];
+
+                //write the number of contributions for each texture
+                std::vector<float> imgContrib(texParams.textureSide*texParams.textureSide);
+
+                for(unsigned int yp = 0; yp < texParams.textureSide; ++yp)
+                {
+                    unsigned int yoffset = yp * texParams.textureSide;
+                    for(unsigned int xp = 0; xp < texParams.textureSide; ++xp)
+                    {
+                        unsigned int xyoffset = yoffset + xp;
+                        imgContrib[xyoffset] = atlasLevelTexture.imgCount[xyoffset];
+                    }
+                }
+
+                const std::string textureName = "contrib_" + std::to_string(1001 + atlasID) + std::string("_") + std::to_string(level) + std::string(".") + EImageFileType_enumToString(textureFileType); // starts at '1001' for UDIM compatibility
+                bfs::path texturePath = outPath / textureName;
+                imageIO::writeImage(texturePath.string(), texParams.textureSide, texParams.textureSide, imgContrib, imageIO::EImageQuality::OPTIMIZED, imageIO::EImageColorSpace::AUTO);
+            }
+        }
+
         ALICEVISION_LOG_INFO("  - Computing final (average) color.");
         for(unsigned int yp = 0; yp < texParams.textureSide; ++yp)
         {
@@ -619,14 +645,15 @@ void Texturing::generateTexturesSubSet(const mvsUtils::MultiViewParams& mp,
             }
         }
 
-        bool debug = 1;
         if(debug)
         {
+            //write each frequency band, for each texture
             for(std::size_t level = 0; level < accuPyramid.pyramid.size(); ++level)
             {
                 AccuImage& atlasLevelTexture =  accuPyramid.pyramid[level];
                 writeTexture(atlasLevelTexture, atlasID, outPath, textureFileType, level);
             }
+
         }
 
         // Fuse frequency bands into the first buffer
@@ -698,9 +725,7 @@ void Texturing::writeTexture(AccuImage& atlasTexture, const std::size_t atlasID,
                 }
             }
         }
-      /*  const std::string textureName1 = "texture_" + std::to_string(1001 + atlasID) + "Interpadd." + EImageFileType_enumToString(textureFileType); // starts at '1001' for UDIM compatibility
-        bfs::path texturePath1 = outPath / textureName1;
-        imageIO::writeImage(texturePath1.string(), outTextureSide, outTextureSide, atlasTexture.img);*/
+
         //bottom-right to up-left
         for(unsigned int y = 1; y < outTextureSide-1; ++y)
         {
@@ -742,9 +767,6 @@ void Texturing::writeTexture(AccuImage& atlasTexture, const std::size_t atlasID,
                 }
             }
         }
-     /*   const std::string textureName2 = "texture_" + std::to_string(1001 + atlasID) + "finalPadd." + EImageFileType_enumToString(textureFileType); // starts at '1001' for UDIM compatibility
-        bfs::path texturePath2 = outPath / textureName2;
-        imageIO::writeImage(texturePath2.string(), outTextureSide, outTextureSide, atlasTexture.img);*/
     }
 
     // texture holes filling
