@@ -317,16 +317,15 @@ void Texturing::generateTexturesSubSet(const mvsUtils::MultiViewParams& mp,
     unsigned int textureSize = texParams.textureSide * texParams.textureSide;
     int nbBand = texParams.nbBand;
     unsigned int multiBandDownScale = texParams.multiBandDownscale;
+    bool useScore = texParams.useScore;
 
     using AtlasIndex = size_t;
-    using TrianglesId = std::vector<unsigned int>;
 
     // We select the best cameras for each triangle and store it per camera for each output texture files.
-    // List of triangle IDs (selected to contribute to the final texturing) per image.
-    std::vector<std::map<AtlasIndex, std::vector<TrianglesId>>> contributionsPerCamera(mp.ncams);
+    // Triangles contributions are stored per frequency bands for multi-band blending.
     using AtlasIndex = size_t;
-    using ScoreTriangleId = std::vector<std::pair<unsigned int, int>>; //list of <triangleId, score>
-    std::vector<std::map<AtlasIndex, std::vector<ScoreTriangleId>>> contributionsPerCamera(mp.ncams);
+    using ScorePerTriangle = std::vector<std::pair<unsigned int, float>>; //list of <triangleId, score>
+    std::vector<std::map<AtlasIndex, std::vector<ScorePerTriangle>>> contributionsPerCamera(mp.ncams);
 
     //for each atlasID, calculate contributionPerCamera
     for(const size_t atlasID : atlasIDs)
@@ -464,7 +463,7 @@ void Texturing::generateTexturesSubSet(const mvsUtils::MultiViewParams& mp,
 
     for(int camId = 0; camId < contributionsPerCamera.size(); ++camId)
     {
-        const std::map<AtlasIndex, std::vector<ScoreTriangleId>>& cameraContributions = contributionsPerCamera[camId];
+        const std::map<AtlasIndex, std::vector<ScorePerTriangle>>& cameraContributions = contributionsPerCamera[camId];
 
         if(cameraContributions.empty())
         {
@@ -493,7 +492,7 @@ void Texturing::generateTexturesSubSet(const mvsUtils::MultiViewParams& mp,
             //for each level
             for(int level = 0; level < c.second.size(); ++level)
             {
-                const ScoreTriangleId& trianglesId = c.second[level];
+                const ScorePerTriangle& trianglesId = c.second[level];
                 ALICEVISION_LOG_INFO("    Texture file: " << atlasID << ", number of triangles: " << trianglesId.size() << ".");
 
                 // for each triangle
@@ -501,7 +500,7 @@ void Texturing::generateTexturesSubSet(const mvsUtils::MultiViewParams& mp,
                 for(int ti = 0; ti < trianglesId.size(); ++ti)
                 {
                     const unsigned int triangleId = std::get<0>(trianglesId[ti]);
-                    const int triangleScore = std::get<1>(trianglesId[ti]);
+                    const float triangleScore = useScore ? std::get<1>(trianglesId[ti]) : 1.0f;
                     // retrieve triangle 3D and UV coordinates
                     Point2d triPixs[3];
                     Point3d triPts[3];

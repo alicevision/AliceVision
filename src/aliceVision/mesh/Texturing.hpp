@@ -64,6 +64,7 @@ EVisibilityRemappingMethod EVisibilityRemappingMethod_stringToEnum(const std::st
 
 struct TexturingParams
 {
+    bool useScore = true;
     unsigned int nbBand = 3;
     unsigned int multiBandDownscale = 2;
     std::vector<int> multiBandNbContrib = {1, 5, 10}; // number of contributions per level for the multi-band blending
@@ -151,7 +152,7 @@ public:
     struct AccuImage
     {
         std::vector<Color> img;
-        std::vector<int> imgCount;
+        std::vector<float> imgCount;
 
         void resize(std::size_t s)
         {
