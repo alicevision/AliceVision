@@ -26,10 +26,13 @@ namespace imageIO {
 enum class EImageColorSpace
 {
   AUTO,
+  AUTO_FROM_SRGB,
   LINEAR,
   SRGB,
   NO_CONVERSION
 };
+
+std::string EImageColorSpace_enumToString(const EImageColorSpace colorSpace);
 
 /**
  * @brief Available image qualities for pipeline output

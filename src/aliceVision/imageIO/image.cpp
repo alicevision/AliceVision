@@ -19,11 +19,24 @@
 
 #include <stdexcept>
 #include <memory>
+#include <string>
 
 namespace fs = boost::filesystem;
 
 namespace aliceVision {
 namespace imageIO {
+
+std::string EImageColorSpace_enumToString(const EImageColorSpace colorSpace)
+{
+    switch(colorSpace)
+    {
+    case EImageColorSpace::SRGB:  return "sRGB"; // WARNING: string should match with OIIO definitions
+    case EImageColorSpace::LINEAR:   return "Linear";
+    default: ;
+    }
+    throw std::out_of_range("No string defined for EImageColorSpace: " + std::to_string(int(colorSpace)));
+}
+
 
 std::string EImageQuality_informations()
 {
@@ -238,7 +251,7 @@ void writeImage(const std::string& path,
                 int nchannels,
                 const std::vector<T>& buffer,
                 EImageQuality imageQuality,
-                EImageColorSpace imageColorSpace,
+                EImageColorSpace outputColorSpace,
                 const oiio::ParamValueList& metadata)
 {
     const fs::path bPath = fs::path(path);
@@ -249,13 +262,17 @@ void writeImage(const std::string& path,
     const bool isJPG = (extension == ".jpg");
     const bool isPNG = (extension == ".png");
 
-    if(imageColorSpace == EImageColorSpace::AUTO)
+    EImageColorSpace fromColorspace = EImageColorSpace::LINEAR;
+    EImageColorSpace toColorspace = EImageColorSpace::LINEAR;
+    if(outputColorSpace == EImageColorSpace::AUTO || outputColorSpace == EImageColorSpace::AUTO_FROM_SRGB)
     {
       if(isJPG || isPNG)
-        imageColorSpace = EImageColorSpace::SRGB;
+        toColorspace = EImageColorSpace::SRGB;
       else
-        imageColorSpace = EImageColorSpace::LINEAR;
+        toColorspace = EImageColorSpace::LINEAR;
     }
+    if(outputColorSpace == EImageColorSpace::AUTO_FROM_SRGB)
+        fromColorspace = EImageColorSpace::SRGB;
 
     ALICEVISION_LOG_DEBUG("[IO] Write Image: " << path << std::endl
                        << "\t- width: " << width << std::endl
@@ -273,9 +290,9 @@ void writeImage(const std::string& path,
     const oiio::ImageBuf* outBuf = &imgBuf;  // buffer to write
 
     oiio::ImageBuf colorspaceBuf;  // buffer for image colorspace modification
-    if(imageColorSpace == EImageColorSpace::SRGB)
+    if(fromColorspace != toColorspace)
     {
-      oiio::ImageBufAlgo::colorconvert(colorspaceBuf, *outBuf, "Linear", "sRGB");
+      oiio::ImageBufAlgo::colorconvert(colorspaceBuf, *outBuf, EImageColorSpace_enumToString(fromColorspace), EImageColorSpace_enumToString(toColorspace));
       outBuf = &colorspaceBuf;
     }
 

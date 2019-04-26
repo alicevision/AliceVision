@@ -778,7 +778,7 @@ void Texturing::writeTexture(AccuImage& atlasTexture, const std::size_t atlasID,
     bfs::path texturePath = outPath / textureName;
     ALICEVISION_LOG_INFO("  - Writing texture file: " << texturePath.string());
 
-    imageIO::writeImage(texturePath.string(), outTextureSide, outTextureSide, atlasTexture.img, imageIO::EImageQuality::OPTIMIZED, imageIO::EImageColorSpace::AUTO);
+    imageIO::writeImage(texturePath.string(), outTextureSide, outTextureSide, atlasTexture.img, imageIO::EImageQuality::OPTIMIZED, imageIO::EImageColorSpace::AUTO_FROM_SRGB);
 }
 
 
