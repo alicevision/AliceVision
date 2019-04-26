@@ -11,6 +11,8 @@
 #include <aliceVision/mvsUtils/ImagesCache.hpp>
 #include <aliceVision/mvsData/Point2d.hpp>
 
+#include <algorithm>
+
 namespace aliceVision {
 
 class Image
@@ -55,8 +57,11 @@ public:
     {
         _width = width;
         _height = height;
-        _img.resize(0);
-        _img.resize(_width*_height);
+        if(_width*_height != _img.size())
+        {
+            _img.resize(0); // no need to copy image content
+            _img.resize(_width*_height);
+        }
     }
 
     void swap(Image& other)
@@ -116,11 +121,8 @@ public:
 
     Color getInterpolateColor(const Point2d& pix) const
     {
-        const int xp = static_cast<int>(pix.x);
-        const int yp = static_cast<int>(pix.y);
-
-        if(xp >= _width - 1 || yp >= _height - 1 ) //invalid pixel for interpolation
-            return _img.at((_height-1) * _width + (_width-1));
+        const int xp = std::min(static_cast<int>(pix.x), _width-2);
+        const int yp = std::min(static_cast<int>(pix.y), _height-2);
 
         // precision to 4 decimal places
         const float ui = pix.x - static_cast<float>(xp);
@@ -138,6 +140,13 @@ public:
         return out;
     }
 
+    Color getNearestPixelColor(const Point2d& pix) const
+    {
+        const int xp = std::min(static_cast<int>(pix.x), _width-1);
+        const int yp = std::min(static_cast<int>(pix.y), _height-1);
+        const Color lu = _img.at( yp * _width + xp   );
+        return lu;
+    }
 };
 
 
