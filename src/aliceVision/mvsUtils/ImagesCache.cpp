@@ -13,9 +13,10 @@
 namespace aliceVision {
 namespace mvsUtils {
 
-ImagesCache::ImagesCache(const MultiViewParams* _mp, int _bandType)
+ImagesCache::ImagesCache(const MultiViewParams* _mp, int _bandType, imageIO::EImageColorSpace colorspace)
   : mp(_mp)
   , bandType( _bandType )
+  , _colorspace(colorspace)
 {
     std::vector<std::string> _imagesNames;
     for(int rc = 0; rc < _mp->getNbCameras(); rc++)
@@ -25,9 +26,10 @@ ImagesCache::ImagesCache(const MultiViewParams* _mp, int _bandType)
     initIC( _imagesNames );
 }
 
-ImagesCache::ImagesCache(const MultiViewParams* _mp, int _bandType, std::vector<std::string>& _imagesNames)
+ImagesCache::ImagesCache(const MultiViewParams* _mp, int _bandType, imageIO::EImageColorSpace colorspace, std::vector<std::string>& _imagesNames)
   : mp(_mp)
   , bandType( _bandType )
+  , _colorspace(colorspace)
 {
     initIC( _imagesNames );
 }
@@ -97,7 +99,7 @@ void ImagesCache::refreshData(int camId)
         }
 
         const std::string imagePath = imagesNames.at(camId);
-        memcpyRGBImageFromFileToArr(camId, imgs[mapId]->data, imagePath, mp, bandType);
+        memcpyRGBImageFromFileToArr(camId, imgs[mapId]->data, imagePath, mp, bandType, _colorspace);
         imgs[mapId]->setWidth(  mp->getWidth(camId) );
         imgs[mapId]->setHeight( mp->getHeight(camId) );
 

@@ -322,11 +322,11 @@ Matrix3x4 load3x4MatrixFromFile(FILE* fi)
     return m;
 }
 
-void memcpyRGBImageFromFileToArr(int camId, Color* imgArr, const std::string& fileNameOrigStr, const MultiViewParams* mp, int bandType)
+void memcpyRGBImageFromFileToArr(int camId, Color* imgArr, const std::string& fileNameOrigStr, const MultiViewParams* mp, int bandType, imageIO::EImageColorSpace colorspace)
 {
     int origWidth, origHeight;
     std::vector<Color> cimg;
-    imageIO::readImage(fileNameOrigStr, origWidth, origHeight, cimg, imageIO::EImageColorSpace::LINEAR);
+    imageIO::readImage(fileNameOrigStr, origWidth, origHeight, cimg, colorspace);
 
     // check image size
     if((mp->getOriginalWidth(camId) != origWidth) || (mp->getOriginalHeight(camId) != origHeight))

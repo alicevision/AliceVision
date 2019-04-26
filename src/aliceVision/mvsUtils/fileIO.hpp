@@ -12,6 +12,7 @@
 #include <aliceVision/mvsData/Point3d.hpp>
 #include <aliceVision/mvsData/StaticVector.hpp>
 #include <aliceVision/mvsUtils/MultiViewParams.hpp>
+#include <aliceVision/imageIO/image.hpp>
 
 #include <fstream>
 
@@ -26,7 +27,7 @@ std::string getFileNameFromIndex(const MultiViewParams* mp, int index, EFileType
 FILE* mv_openFile(const MultiViewParams* mp, int index, EFileType mv_file_type, const char* readWrite);
 Matrix3x4 load3x4MatrixFromFile(FILE* fi);
 void memcpyRGBImageFromFileToArr(int camId, Color* imgArr, const std::string& fileNameOrigStr, const MultiViewParams* mp,
-                                 int bandType);
+                                 int bandType, imageIO::EImageColorSpace colorspace);
 
 bool DeleteDirectory(const std::string& sPath);
 

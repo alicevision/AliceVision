@@ -261,6 +261,7 @@ void Texturing::generateTextures(const mvsUtils::MultiViewParams &mp,
     }
 
     mvsUtils::ImagesCache imageCache(&mp, 0);
+    mvsUtils::ImagesCache imageCache(&mp, 0, imageIO::EImageColorSpace::SRGB);
     imageCache.setCacheSize(2);
     system::MemoryInfo memInfo = system::getMemoryInfo();
 

@@ -11,6 +11,7 @@
 #include <aliceVision/mvsData/Rgb.hpp>
 #include <aliceVision/mvsData/StaticVector.hpp>
 #include <aliceVision/mvsUtils/MultiViewParams.hpp>
+#include <aliceVision/imageIO/image.hpp>
 
 #include <future>
 #include <mutex>
@@ -76,10 +77,11 @@ private:
     std::vector<std::string> imagesNames;
 
     const int  bandType;
+    const imageIO::EImageColorSpace _colorspace;
 
 public:
-    ImagesCache( const MultiViewParams* _mp, int _bandType);
-    ImagesCache( const MultiViewParams* _mp, int _bandType, std::vector<std::string>& _imagesNames);
+    ImagesCache( const MultiViewParams* _mp, int _bandType, imageIO::EImageColorSpace colorspace);
+    ImagesCache( const MultiViewParams* _mp, int _bandType, imageIO::EImageColorSpace colorspace, std::vector<std::string>& _imagesNames);
     void initIC( std::vector<std::string>& _imagesNames );
     void setCacheSize(int nbPreload);
     ~ImagesCache();
