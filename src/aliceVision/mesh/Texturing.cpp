@@ -423,10 +423,11 @@ void Texturing::generateTexturesSubSet(const mvsUtils::MultiViewParams& mp,
             const double minScore = texParams.bestScoreThreshold * std::get<1>(scorePerCamId.front()); // bestScoreThreshold * bestScore
             const bool bestIsPartial = (std::get<0>(scorePerCamId.front()) < 3);
 
-            int maxNbContrib = std::min(texParams.multiBandNbContrib.back(), static_cast<int>(scorePerCamId.size()));
+            int nbContribMax = std::min(texParams.multiBandNbContrib.back(), static_cast<int>(scorePerCamId.size()));
             int nbCumulatedVertices = 0;
             int level = 0;
-            for(int contrib = 0; nbCumulatedVertices < 3 * maxNbContrib && contrib < maxNbContrib; ++contrib)
+            int nbContribLevel = texParams.multiBandNbContrib[0];
+            for(int contrib = 0; nbCumulatedVertices < 3 * nbContribMax && contrib < nbContribMax; ++contrib)
             {
                 nbCumulatedVertices += std::get<0>(scorePerCamId[contrib]);
                 if (!bestIsPartial && contrib != 0)
@@ -446,10 +447,12 @@ void Texturing::generateTexturesSubSet(const mvsUtils::MultiViewParams& mp,
                     camContribution[atlasID].resize(nbBand);
                 camContribution.at(atlasID)[level].emplace_back(triangleID, triangleScore);
 
-                if(contrib + 1 >= texParams.multiBandNbContrib[level])
+                if(contrib + 1 == nbContribLevel)
+                {
                     ++level;
+                    nbContribLevel += texParams.multiBandNbContrib[level];
+                }
             }
-
         }
     }
 
