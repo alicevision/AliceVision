@@ -318,8 +318,6 @@ void Texturing::generateTexturesSubSet(const mvsUtils::MultiViewParams& mp,
     unsigned int multiBandDownScale = texParams.multiBandDownscale;
     bool useScore = texParams.useScore;
 
-    using AtlasIndex = size_t;
-
     // We select the best cameras for each triangle and store it per camera for each output texture files.
     // Triangles contributions are stored per frequency bands for multi-band blending.
     using AtlasIndex = size_t;
@@ -381,8 +379,8 @@ void Texturing::generateTexturesSubSet(const mvsUtils::MultiViewParams& mp,
                 triangleNormal = me->computeTriangleNormal(triangleID);
                 triangleCenter = me->computeTriangleCenterOfGravity(triangleID);
             }
-            using ScoreCamId = std::tuple<int, double, int>;
-            std::vector<ScoreCamId> scorePerCamId; // <nbVertex, score, camId>
+            using ScoreCamId = std::tuple<int, double, int>; // <nbVertex, score, camId>
+            std::vector<ScoreCamId> scorePerCamId;
             for (const auto& itCamVis: selectedTriCams)
             {
                 const int camId = itCamVis.first;
@@ -424,7 +422,7 @@ void Texturing::generateTexturesSubSet(const mvsUtils::MultiViewParams& mp,
 
             int nbContribMax = std::min(texParams.multiBandNbContrib.back(), static_cast<int>(scorePerCamId.size()));
             int nbCumulatedVertices = 0;
-            int level = 0;
+            int band = 0;
             int nbContribLevel = texParams.multiBandNbContrib[0];
             for(int contrib = 0; nbCumulatedVertices < 3 * nbContribMax && contrib < nbContribMax; ++contrib)
             {
@@ -438,18 +436,18 @@ void Texturing::generateTexturesSubSet(const mvsUtils::MultiViewParams& mp,
                     }
                 }
 
-                //for the camera camId : add triangleID to the corresponding texture at the right level of frequencies
+                //for the camera camId : add triangle score to the corresponding texture, at the right frequency band
                 const int camId = std::get<2>(scorePerCamId[contrib]);
                 const int triangleScore = std::get<1>(scorePerCamId[contrib]);
                 auto& camContribution = contributionsPerCamera[camId];
                 if(camContribution.find(atlasID) == camContribution.end())
                     camContribution[atlasID].resize(nbBand);
-                camContribution.at(atlasID)[level].emplace_back(triangleID, triangleScore);
+                camContribution.at(atlasID)[band].emplace_back(triangleID, triangleScore);
 
                 if(contrib + 1 == nbContribLevel)
                 {
-                    ++level;
-                    nbContribLevel += texParams.multiBandNbContrib[level];
+                    ++band;
+                    nbContribLevel += texParams.multiBandNbContrib[band];
                 }
             }
         }
@@ -457,12 +455,12 @@ void Texturing::generateTexturesSubSet(const mvsUtils::MultiViewParams& mp,
 
     ALICEVISION_LOG_INFO("Reading pixel color.");
 
+    //pyramid of atlases frequency bands
     std::map<AtlasIndex, AccuPyramid> accuPyramids;
     for(std::size_t atlasID: atlasIDs)
         accuPyramids[atlasID].init(nbBand, textureSize);
 
     //for each camera, for each texture, iterate over triangles and fill the accuPyramids map
-
     for(int camId = 0; camId < contributionsPerCamera.size(); ++camId)
     {
         const std::map<AtlasIndex, std::vector<ScorePerTriangle>>& cameraContributions = contributionsPerCamera[camId];
@@ -491,11 +489,11 @@ void Texturing::generateTexturesSubSet(const mvsUtils::MultiViewParams& mp,
         for(const auto& c : cameraContributions)
         {
             AtlasIndex atlasID = c.first;
-            //for each level
-            for(int level = 0; level < c.second.size(); ++level)
+            //for each frequency band
+            for(int band = 0; band < c.second.size(); ++band)
             {
-                const ScorePerTriangle& trianglesId = c.second[level];
-                ALICEVISION_LOG_INFO("    Texture file: " << atlasID << ", number of triangles: " << trianglesId.size() << ".");
+                const ScorePerTriangle& trianglesId = c.second[band];
+                ALICEVISION_LOG_INFO("    Texture file: " << atlasID << "- band: " << band << "- number of triangles: " << trianglesId.size() << ".");
 
                 // for each triangle
                 #pragma omp parallel for
@@ -563,21 +561,20 @@ void Texturing::generateTexturesSubSet(const mvsUtils::MultiViewParams& mp,
                            if(!mp.isPixelInImage(pixRC, camId))
                                continue;
 
-                           // If the color is pure zero, we consider it as an invalid pixel.
-                           // After correction of radial distortion, some pixels are invalid.
-                           // TODO: use an alpha channel instead.
-                           if(pyramidL.back().getInterpolateColor(pixRC/std::pow(multiBandDownScale,nbBand-1)) == Color(0.f, 0.f, 0.f))
+                           // If the color is pure zero (ie. no contributions), we consider it as an invalid pixel.
+                           if(camImg.getInterpolateColor(pixRC) == Color(0.f, 0.f, 0.f))
                                continue;
 
-                           //each level also contributes to lower frequencies levels
+                           // Fill the accumulated pyramid for this pixel
+                           // each frequency band also contributes to lower frequencies (higher band indexes)
                            AccuPyramid& accuPyramid = accuPyramids.at(atlasID);
-                           for(std::size_t levelC = level; levelC < pyramidL.size(); ++levelC)
+                           for(std::size_t bandContrib = band; bandContrib < pyramidL.size(); ++bandContrib)
                            {
-                               int downscaleCoef = std::pow(multiBandDownScale, levelC);
-                               AccuImage& accuImage = accuPyramid.pyramid[levelC];
+                               int downscaleCoef = std::pow(multiBandDownScale, bandContrib);
+                               AccuImage& accuImage = accuPyramid.pyramid[bandContrib];
 
                                // fill the accumulated color map for this pixel
-                               accuImage.img[xyoffset] += pyramidL[levelC].getInterpolateColor(pixRC/downscaleCoef) * triangleScore;
+                               accuImage.img[xyoffset] += pyramidL[bandContrib].getInterpolateColor(pixRC/downscaleCoef) * triangleScore;
                                accuImage.imgCount[xyoffset] += triangleScore;
                            }
                        }
@@ -656,7 +653,7 @@ void Texturing::generateTexturesSubSet(const mvsUtils::MultiViewParams& mp,
 
         }
 
-        // Fuse frequency bands into the first buffer
+        // Fuse frequency bands into the first buffer, calculate final texture
         for(unsigned int yp = 0; yp < texParams.textureSide; ++yp)
         {
             unsigned int yoffset = yp * texParams.textureSide;
