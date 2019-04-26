@@ -270,12 +270,12 @@ void Texturing::generateTextures(const mvsUtils::MultiViewParams &mp,
     const std::size_t pyramidMaxMemSize = texParams.nbBand * atlasContribMemSize;
 
     const int freeMem = int(memInfo.freeRam / std::pow(2,20));
-    const int availableMem = freeMem - 2 * imageMaxMemSize * (texParams.nbBand + 1); // keep some memory for the input image buffer and its laplacian pyramid
-    int nbAtlasMax = std::floor(availableMem  / pyramidMaxMemSize); //maximum number of textures in RAM
+    const int availableMem = freeMem - 2 * imageMaxMemSize - imageMaxMemSize * texParams.nbBand; // keep some memory for the input image buffer and its laplacian pyramid
+    int nbAtlasMax = std::floor((availableMem - 1000) / pyramidMaxMemSize); //maximum number of textures in RAM
     const int nbAtlas = _atlases.size();
     nbAtlasMax = std::max(1, nbAtlasMax); //if not enough memory, do it one by one
     nbAtlasMax = std::min(nbAtlas, nbAtlasMax); //if enough memory, do it with all atlases
-    if (availableMem - nbAtlasMax*pyramidMaxMemSize < 2000) //keep margin in memory
+    if (availableMem - nbAtlasMax*pyramidMaxMemSize < 1000 && nbAtlasMax > 1) //keep margin in memory
         nbAtlasMax -= 1;
 
     std::div_t divresult = div(nbAtlas, nbAtlasMax);
@@ -283,9 +283,9 @@ void Texturing::generateTextures(const mvsUtils::MultiViewParams &mp,
     const int nrem = divresult.rem;
 
     ALICEVISION_LOG_INFO("Total amount of free memory  : " << freeMem << " Mb.");
-    ALICEVISION_LOG_INFO("Total amount of an image in memory  : " << imageMaxMemSize << " Mb.");
     ALICEVISION_LOG_INFO("Total amount of memory available : " << availableMem << " Mb.");
-    ALICEVISION_LOG_INFO("Size of an atlas : " << pyramidMaxMemSize << " Mb.");
+    ALICEVISION_LOG_INFO("Total amount of an image in memory  : " << imageMaxMemSize << " Mb.");
+    ALICEVISION_LOG_INFO("Total amount of an atlas in memory: " << pyramidMaxMemSize << " Mb.");
     ALICEVISION_LOG_INFO("Processing " << nbAtlas << " atlases by chunks of " << nbAtlasMax);
 
     //generateTexture for the maximum number of atlases, and iterate
