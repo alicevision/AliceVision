@@ -26,10 +26,33 @@ namespace imageIO {
 enum class EImageColorSpace
 {
   AUTO,
-  AUTO_FROM_SRGB,
   LINEAR,
   SRGB,
   NO_CONVERSION
+};
+
+
+struct OutputFileColorSpace
+{
+    EImageColorSpace from = EImageColorSpace::LINEAR;
+    EImageColorSpace to = EImageColorSpace::AUTO;
+
+    OutputFileColorSpace(EImageColorSpace from_, EImageColorSpace to_)
+        : from(from_)
+        , to(to_)
+    {
+    }
+    /// @brief Assumes that @p from is LINEAR
+    OutputFileColorSpace(EImageColorSpace to_)
+    {
+        if(to_ == EImageColorSpace::NO_CONVERSION)
+            to = from;
+        else
+            to = to_;
+    }
+    OutputFileColorSpace()
+    {
+    }
 };
 
 std::string EImageColorSpace_enumToString(const EImageColorSpace colorSpace);
@@ -123,11 +146,11 @@ void readImage(const std::string& path, int& width, int& height, std::vector<Col
  * @param[in] height The input image height
  * @param[in] buffer The input image buffer
  */
-void writeImage(const std::string& path, int width, int height, const std::vector<unsigned char>& buffer, EImageQuality imageQuality, EImageColorSpace imageColorSpace, const oiio::ParamValueList& metadata = oiio::ParamValueList());
-void writeImage(const std::string& path, int width, int height, const std::vector<unsigned short>& buffer, EImageQuality imageQuality, EImageColorSpace imageColorSpace, const oiio::ParamValueList& metadata = oiio::ParamValueList());
-void writeImage(const std::string& path, int width, int height, const std::vector<rgb>& buffer, EImageQuality imageQuality, EImageColorSpace imageColorSpace, const oiio::ParamValueList& metadata = oiio::ParamValueList());
-void writeImage(const std::string& path, int width, int height, const std::vector<float>& buffer, EImageQuality imageQuality, EImageColorSpace imageColorSpace, const oiio::ParamValueList& metadata = oiio::ParamValueList());
-void writeImage(const std::string& path, int width, int height, const std::vector<Color>& buffer, EImageQuality imageQuality, EImageColorSpace imageColorSpace, const oiio::ParamValueList& metadata = oiio::ParamValueList());
+void writeImage(const std::string& path, int width, int height, const std::vector<unsigned char>& buffer, EImageQuality imageQuality, OutputFileColorSpace colorspace, const oiio::ParamValueList& metadata = oiio::ParamValueList());
+void writeImage(const std::string& path, int width, int height, const std::vector<unsigned short>& buffer, EImageQuality imageQuality, OutputFileColorSpace colorspace, const oiio::ParamValueList& metadata = oiio::ParamValueList());
+void writeImage(const std::string& path, int width, int height, const std::vector<rgb>& buffer, EImageQuality imageQuality, OutputFileColorSpace colorspace, const oiio::ParamValueList& metadata = oiio::ParamValueList());
+void writeImage(const std::string& path, int width, int height, const std::vector<float>& buffer, EImageQuality imageQuality, OutputFileColorSpace colorspace, const oiio::ParamValueList& metadata = oiio::ParamValueList());
+void writeImage(const std::string& path, int width, int height, const std::vector<Color>& buffer, EImageQuality imageQuality, OutputFileColorSpace colorspace, const oiio::ParamValueList& metadata = oiio::ParamValueList());
 
 /**
  * @brief transpose a given image buffer

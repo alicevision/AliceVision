@@ -251,7 +251,7 @@ void writeImage(const std::string& path,
                 int nchannels,
                 const std::vector<T>& buffer,
                 EImageQuality imageQuality,
-                EImageColorSpace outputColorSpace,
+                OutputFileColorSpace colorspace,
                 const oiio::ParamValueList& metadata)
 {
     const fs::path bPath = fs::path(path);
@@ -262,17 +262,13 @@ void writeImage(const std::string& path,
     const bool isJPG = (extension == ".jpg");
     const bool isPNG = (extension == ".png");
 
-    EImageColorSpace fromColorspace = EImageColorSpace::LINEAR;
-    EImageColorSpace toColorspace = EImageColorSpace::LINEAR;
-    if(outputColorSpace == EImageColorSpace::AUTO || outputColorSpace == EImageColorSpace::AUTO_FROM_SRGB)
+    if(colorspace.to == EImageColorSpace::AUTO)
     {
       if(isJPG || isPNG)
-        toColorspace = EImageColorSpace::SRGB;
+        colorspace.to = EImageColorSpace::SRGB;
       else
-        toColorspace = EImageColorSpace::LINEAR;
+        colorspace.to = EImageColorSpace::LINEAR;
     }
-    if(outputColorSpace == EImageColorSpace::AUTO_FROM_SRGB)
-        fromColorspace = EImageColorSpace::SRGB;
 
     ALICEVISION_LOG_DEBUG("[IO] Write Image: " << path << std::endl
                        << "\t- width: " << width << std::endl
@@ -290,14 +286,14 @@ void writeImage(const std::string& path,
     const oiio::ImageBuf* outBuf = &imgBuf;  // buffer to write
 
     oiio::ImageBuf colorspaceBuf;  // buffer for image colorspace modification
-    if(fromColorspace != toColorspace)
+    if(colorspace.from != colorspace.to)
     {
-      oiio::ImageBufAlgo::colorconvert(colorspaceBuf, *outBuf, EImageColorSpace_enumToString(fromColorspace), EImageColorSpace_enumToString(toColorspace));
+      oiio::ImageBufAlgo::colorconvert(colorspaceBuf, *outBuf, EImageColorSpace_enumToString(colorspace.from), EImageColorSpace_enumToString(colorspace.to));
       outBuf = &colorspaceBuf;
     }
 
     oiio::ImageBuf formatBuf; // buffer for image format modification
-    if(imageQuality ==EImageQuality::OPTIMIZED && isEXR)
+    if(imageQuality == EImageQuality::OPTIMIZED && isEXR)
     {
       formatBuf.copy(*outBuf, oiio::TypeDesc::HALF); // override format, use half instead of float
       outBuf = &formatBuf;
@@ -311,29 +307,29 @@ void writeImage(const std::string& path,
     fs::rename(tmpPath, path);
 }
 
-void writeImage(const std::string& path, int width, int height, const std::vector<unsigned char>& buffer, EImageQuality imageQuality, EImageColorSpace imageColorSpace, const oiio::ParamValueList& metadata)
+void writeImage(const std::string& path, int width, int height, const std::vector<unsigned char>& buffer, EImageQuality imageQuality, OutputFileColorSpace colorspace, const oiio::ParamValueList& metadata)
 {
-    writeImage(path, oiio::TypeDesc::UCHAR, width, height, 1, buffer, imageQuality, imageColorSpace, metadata);
+    writeImage(path, oiio::TypeDesc::UCHAR, width, height, 1, buffer, imageQuality, colorspace, metadata);
 }
 
-void writeImage(const std::string& path, int width, int height, const std::vector<unsigned short>& buffer, EImageQuality imageQuality, EImageColorSpace imageColorSpace, const oiio::ParamValueList& metadata)
+void writeImage(const std::string& path, int width, int height, const std::vector<unsigned short>& buffer, EImageQuality imageQuality, OutputFileColorSpace colorspace, const oiio::ParamValueList& metadata)
 {
-    writeImage(path, oiio::TypeDesc::UINT16, width, height, 1, buffer, imageQuality, imageColorSpace, metadata);
+    writeImage(path, oiio::TypeDesc::UINT16, width, height, 1, buffer, imageQuality, colorspace, metadata);
 }
 
-void writeImage(const std::string& path, int width, int height, const std::vector<rgb>& buffer, EImageQuality imageQuality, EImageColorSpace imageColorSpace, const oiio::ParamValueList& metadata)
+void writeImage(const std::string& path, int width, int height, const std::vector<rgb>& buffer, EImageQuality imageQuality, OutputFileColorSpace colorspace, const oiio::ParamValueList& metadata)
 {
-    writeImage(path, oiio::TypeDesc::UCHAR, width, height, 3, buffer, imageQuality, imageColorSpace, metadata);
+    writeImage(path, oiio::TypeDesc::UCHAR, width, height, 3, buffer, imageQuality, colorspace, metadata);
 }
 
-void writeImage(const std::string& path, int width, int height, const std::vector<float>& buffer, EImageQuality imageQuality, EImageColorSpace imageColorSpace, const oiio::ParamValueList& metadata)
+void writeImage(const std::string& path, int width, int height, const std::vector<float>& buffer, EImageQuality imageQuality, OutputFileColorSpace colorspace, const oiio::ParamValueList& metadata)
 {
-    writeImage(path, oiio::TypeDesc::FLOAT, width, height, 1, buffer, imageQuality, imageColorSpace, metadata);
+    writeImage(path, oiio::TypeDesc::FLOAT, width, height, 1, buffer, imageQuality, colorspace, metadata);
 }
 
-void writeImage(const std::string& path, int width, int height, const std::vector<Color>& buffer, EImageQuality imageQuality, EImageColorSpace imageColorSpace, const oiio::ParamValueList& metadata)
+void writeImage(const std::string& path, int width, int height, const std::vector<Color>& buffer, EImageQuality imageQuality, OutputFileColorSpace colorspace, const oiio::ParamValueList& metadata)
 {
-    writeImage(path, oiio::TypeDesc::FLOAT, width, height, 3, buffer, imageQuality, imageColorSpace, metadata);
+    writeImage(path, oiio::TypeDesc::FLOAT, width, height, 3, buffer, imageQuality, colorspace, metadata);
 }
 
 template<typename T>
