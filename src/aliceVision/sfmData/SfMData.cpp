@@ -89,22 +89,79 @@ bool SfMData::operator==(const SfMData& other) const {
 
 }
 
+/**
+ * @brief Convert paths in \p folders to absolute paths using \p absolutePath parent folder as base.
+ * @param[in] folders list of paths to convert
+ * @param[in] absolutePath filepath which parent folder should be used as base for absolute path conversion
+ * @return the list of converted absolute paths or input folder if absolutePath is empty
+ */
+std::vector<std::string> toAbsoluteFolders(const std::vector<std::string>& folders, const std::string& absolutePath)
+{
+  // if absolute path is not set, return input folders
+  if(absolutePath.empty())
+    return folders;
+  // else, convert relative paths to absolute paths
+  std::vector<std::string> absolutePaths(folders.size());
+  for(int i = 0; i < absolutePaths.size(); ++i)
+    absolutePaths.at(i) = fs::canonical(folders.at(i), fs::path(absolutePath).parent_path()).string();
+  return absolutePaths;
+}
+
+/** 
+ * @brief Add paths contained in \p folders to \p dst as relative paths to \p absolutePath.
+ *        Paths already present in \p dst are omitted.
+ * @param[in] dst list in which paths should be added
+ * @param[in] folders paths to add to \p dst as relative folders
+ * @param[in] absolutePath filepath which parent folder should be used as base for relative path conversions
+ */
+void addAsRelativeFolders(std::vector<std::string>& dst, const std::vector<std::string>& folders, const std::string& absolutePath)
+{
+  for(auto folderPath: folders) 
+  {
+    // if absolutePath is set, convert to relative path
+    if(!absolutePath.empty() && fs::path(folderPath).is_absolute())
+    {
+      folderPath = fs::relative(folderPath, fs::path(absolutePath).parent_path()).string();
+    }
+    // add path only if not already in dst
+    if(std::find(dst.begin(), dst.end(), folderPath) == dst.end())
+    {
+      dst.emplace_back(folderPath);
+    }
+  }
+}
+
 std::vector<std::string> SfMData::getFeaturesFolders() const
 {
-  fs::path sfmFolder = fs::path(_absolutePath).parent_path();
-  std::vector<std::string> absolutePaths(_featuresFolders.size());
-  for(int i = 0; i < absolutePaths.size(); ++i)
-    absolutePaths.at(i) = fs::canonical(fs::path(_featuresFolders.at(i)), sfmFolder).string();
-  return absolutePaths;
+  return toAbsoluteFolders(_featuresFolders, _absolutePath);
 }
 
 std::vector<std::string> SfMData::getMatchesFolders() const
 {
-  fs::path sfmFolder = fs::path(_absolutePath).parent_path();
-  std::vector<std::string> absolutePaths(_matchesFolders.size());
-  for(int i = 0; i < absolutePaths.size(); ++i)
-    absolutePaths.at(i) = fs::canonical(fs::path(_matchesFolders.at(i)), sfmFolder).string();
-  return absolutePaths;
+  return toAbsoluteFolders(_matchesFolders, _absolutePath);
+}
+
+void SfMData::addFeaturesFolders(const std::vector<std::string>& folders)
+{
+  addAsRelativeFolders(_featuresFolders, folders, _absolutePath);
+}
+
+void SfMData::addMatchesFolders(const std::vector<std::string>& folders)
+{
+  addAsRelativeFolders(_matchesFolders, folders, _absolutePath);
+}
+
+void SfMData::setAbsolutePath(const std::string& path)
+{
+  // get absolute path to features/matches folders
+  const std::vector<std::string> featuresFolders = getFeaturesFolders();
+  const std::vector<std::string> matchesFolders = getMatchesFolders();
+  // change internal absolute path
+  _absolutePath = path;
+  // re-set features/matches folders
+  // they will be converted back to relative paths based on updated _absolutePath
+  setFeaturesFolders(featuresFolders);
+  setMatchesFolders(matchesFolders);
 }
 
 std::set<IndexT> SfMData::getValidViews() const
@@ -169,10 +226,10 @@ void SfMData::combine(const SfMData& sfmData)
     throw std::runtime_error("Can't combine two SfMData with rigs");
 
   // feature folder
-  _featuresFolders.insert(_featuresFolders.end(), sfmData._featuresFolders.begin(), sfmData._featuresFolders.end());
+  addFeaturesFolders(sfmData.getFeaturesFolders());
 
   // matching folder
-  _matchesFolders.insert(_matchesFolders.end(), sfmData._matchesFolders.begin(), sfmData._matchesFolders.end());
+  addMatchesFolders(sfmData.getMatchesFolders());
 
   // views
   views.insert(sfmData.views.begin(), sfmData.views.end());

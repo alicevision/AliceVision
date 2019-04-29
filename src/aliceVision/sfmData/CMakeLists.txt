@@ -30,3 +30,9 @@ alicevision_add_library(aliceVision_sfmData
 )
 
 # Unit tests
+
+alicevision_add_test(sfmData_test.cpp
+  NAME "sfmData"
+  LINKS aliceVision_sfmData
+        aliceVision_system
+)

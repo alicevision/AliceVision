@@ -303,14 +303,8 @@ int main(int argc, char **argv)
 
   // set featuresFolders and matchesFolders relative paths
   {
-    const fs::path sfmFolder = fs::path(outputSfM).remove_filename();
-
-    for(const std::string& featuresFolder : featuresFolders)
-       sfmEngine.getSfMData().addFeaturesFolder(fs::relative(fs::path(featuresFolder), sfmFolder).string());
-
-    for(const std::string& matchesFolder : matchesFolders)
-       sfmEngine.getSfMData().addMatchesFolder(fs::relative(fs::path(matchesFolder), sfmFolder).string());
-
+    sfmEngine.getSfMData().addFeaturesFolders(featuresFolders);
+    sfmEngine.getSfMData().addMatchesFolders(matchesFolders);
     sfmEngine.getSfMData().setAbsolutePath(outputSfM);
   }
 
