@@ -171,19 +171,22 @@ std::size_t LoadMatchFilePerImage(
   return nbLoadedMatchFiles;
 }
 
-std::size_t LoadMatchesFromFolder(
-  PairwiseMatches& matches, 
-  const std::string& folder, 
-  const std::string& pattern)
+/**
+ * Load and add pair-wise matches to \p matches from all files in \p folder matching \p pattern.
+ * @param[out] matches PairwiseMatches to add loaded matches to
+ * @param[in] folder Folder to load matches files from
+ * @param[in] pattern Pattern that files must respect to be loaded
+ */
+std::size_t loadMatchesFromFolder(PairwiseMatches& matches, const std::string& folder, const std::string& pattern)
 {
   std::size_t nbLoadedMatchFiles = 0;
   std::vector<std::string> matchFiles;
   // list all matches files in 'folder' matching (i.e containing) 'pattern'
-  for(auto& entry : boost::make_iterator_range(fs::directory_iterator(folder), {}))
+  for(const auto& entry : boost::make_iterator_range(fs::directory_iterator(folder), {}))
   {
     if(entry.path().string().find(pattern) != std::string::npos)
     {
-      matchFiles.emplace_back(entry.path().string());
+      matchFiles.push_back(entry.path().string());
     }
   }
 
@@ -241,7 +244,7 @@ bool Load(
 
   for(const auto& folder : foldersSet)
   {
-    nbLoadedMatchFiles += LoadMatchesFromFolder(matches, folder, pattern);
+    nbLoadedMatchFiles += loadMatchesFromFolder(matches, folder, pattern);
   }
 
   if(!nbLoadedMatchFiles)
