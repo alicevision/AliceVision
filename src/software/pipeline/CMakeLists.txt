@@ -243,7 +243,8 @@ if(ALICEVISION_BUILD_MVS)
       FOLDER ${FOLDER_SOFTWARE_PIPELINE}
       LINKS aliceVision_system
             aliceVision_mvsUtils
-            OpenMesh
+            # OpenMesh
+            Geogram::geogram
             ${Boost_LIBRARIES}
     )
   endif()

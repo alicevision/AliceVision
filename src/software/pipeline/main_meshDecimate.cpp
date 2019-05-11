@@ -9,6 +9,9 @@
 #include <aliceVision/system/Timer.hpp>
 #include <aliceVision/mvsUtils/common.hpp>
 
+// #define ALICEVISION_DECIMATE_USE_OPENMESH
+
+#if ALICEVISION_DECIMATE_USE_OPENMESH
 #include <OpenMesh/Core/IO/reader/OBJReader.hh>
 #include <OpenMesh/Core/IO/writer/OBJWriter.hh>
 #include <OpenMesh/Core/IO/MeshIO.hh>
@@ -16,6 +19,13 @@
 #include <OpenMesh/Core/Geometry/VectorT.hh>
 #include <OpenMesh/Tools/Decimater/DecimaterT.hh>
 #include <OpenMesh/Tools/Decimater/ModQuadricT.hh>
+#else
+#include <geogram/mesh/mesh.h> 
+#include <geogram/mesh/mesh_io.h> 
+#include <geogram/mesh/mesh_geometry.h> 
+#include <geogram/mesh/mesh_preprocessing.h>
+#include <geogram/mesh/mesh_decimate.h>
+#endif
 
 #include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>
@@ -110,6 +120,7 @@ int main(int argc, char* argv[])
     if(!bfs::is_directory(outDirectory))
         bfs::create_directory(outDirectory);
 
+#ifdef ALICEVISION_DECIMATE_USE_OPENMESH
     // Mesh type
     typedef OpenMesh::TriMesh_ArrayKernelT<>                      Mesh;
     // Decimater type
@@ -124,9 +135,23 @@ int main(int argc, char* argv[])
         return EXIT_FAILURE;
     }
 
+    int nbInputPoints = mesh.n_vertices();
+    int nbInputFacets = mesh.n_faces();
+#else
+
+    GEO::initialize();
+    GEO::Mesh M;
+    if (!GEO::mesh_load(inputMeshPath, M))
+    {
+        ALICEVISION_LOG_ERROR("Failed to load mesh file: \"" << inputMeshPath << "\".");
+        return EXIT_FAILURE;
+    }
+    int nbInputPoints = M.vertices.nb();
+    int nbInputFacets = M.facets.nb();
+#endif
+
     ALICEVISION_LOG_INFO("Mesh file: \"" << inputMeshPath << "\" loaded.");
 
-    int nbInputPoints = mesh.n_vertices();
     int nbOutputPoints = 0;
     if(fixedNbVertices != 0)
     {
@@ -150,9 +175,10 @@ int main(int argc, char* argv[])
         }
     }
 
-    ALICEVISION_LOG_INFO("Input mesh: " << nbInputPoints << " vertices and " << mesh.n_faces() << " facets.");
+    ALICEVISION_LOG_INFO("Input mesh: " << nbInputPoints << " vertices and " << nbInputFacets << " facets.");
     ALICEVISION_LOG_INFO("Target output mesh: " << nbOutputPoints << " vertices.");
 
+#ifdef ALICEVISION_DECIMATE_USE_OPENMESH
     {
         // a decimater object, connected to a mesh
         Decimater   decimater(mesh);
@@ -192,6 +218,26 @@ int main(int argc, char* argv[])
         return EXIT_FAILURE;
     }
     ALICEVISION_LOG_INFO("Mesh file: \"" << outputMeshPath << "\" saved.");
+#else
+    
+    GEO::mesh_decimate_vertex_clustering(M, nbOutputPoints);
+
+    /*
+    GEO::remove_small_facets(M, 0.00001);
+    GEO::fill_holes(M, 0.0001);
+    GEO::mesh_repair(M, GEO::MeshRepairMode(
+        GEO::MESH_REPAIR_TOPOLOGY
+        | GEO::MESH_REPAIR_COLOCATE
+        | GEO::MESH_REPAIR_DUP_F
+        | GEO::MESH_REPAIR_TRIANGULATE));
+    */
+    // GEO::orient_normals(M); 
+    if (!GEO::mesh_save(M, outputMeshPath))
+    {
+        ALICEVISION_LOG_ERROR("Failed to save mesh file: \"" << outputMeshPath << "\".");
+        return EXIT_FAILURE;
+    }
+#endif
 
     ALICEVISION_LOG_INFO("Task done in (s): " + std::to_string(timer.elapsed()));
     return EXIT_SUCCESS;
