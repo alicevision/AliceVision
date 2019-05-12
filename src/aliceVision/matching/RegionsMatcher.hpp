@@ -145,6 +145,8 @@ public:
     if (!matcher_.SearchNeighbours(queries, queryregions_.RegionCount(), &vec_nIndice, &vec_fDistance, NNN__))
       return false;
 
+    assert(vec_nIndice.size() == vec_fDistance.size());
+
     std::vector<int> vec_nn_ratio_idx;
     std::vector<float> vec_distanceRatio;
     // Filter the matches using a distance ratio test:
@@ -162,11 +164,11 @@ public:
     vec_putative_matches.reserve(vec_nn_ratio_idx.size());
     for (size_t k=0; k < vec_nn_ratio_idx.size(); ++k)
     {
-      const size_t index = vec_nn_ratio_idx[k];
-      vec_putative_matches.emplace_back(vec_nIndice[index*NNN__]._j, vec_nIndice[index*NNN__]._i
+      const size_t index = vec_nn_ratio_idx[k] * NNN__;
+      vec_putative_matches.emplace_back(vec_nIndice[index]._j, vec_nIndice[index]._i
           , vec_distanceRatio[k]
   #ifdef ALICEVISION_DEBUG_MATCHING
-          , (float) vec_fDistance[vec_nn_ratio_idx[0]]
+          , (float) vec_fDistance[index]
   #endif
       );
     }
