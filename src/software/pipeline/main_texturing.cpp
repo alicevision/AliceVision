@@ -89,7 +89,7 @@ int main(int argc, char* argv[])
              "Use triangles scores for multiband blending.")
         ("multiBandDownscale", po::value<unsigned int>(&texParams.multiBandDownscale)->default_value(texParams.multiBandDownscale),
             "Width of frequency bands.")
-        ("multiBandNbContrib", po::value<std::vector<int>>(&texParams.multiBandNbContrib)->default_value(texParams.multiBandNbContrib),
+        ("multiBandNbContrib", po::value<std::vector<int>>(&texParams.multiBandNbContrib)->default_value(texParams.multiBandNbContrib)->multitoken(),
              "Number of contributions per frequency band.")
         ("bestScoreThreshold", po::value<double>(&texParams.bestScoreThreshold)->default_value(texParams.bestScoreThreshold),
             "(0.0 to disable filtering based on threshold to relative best score).")

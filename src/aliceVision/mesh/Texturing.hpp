@@ -65,9 +65,9 @@ EVisibilityRemappingMethod EVisibilityRemappingMethod_stringToEnum(const std::st
 struct TexturingParams
 {
     bool useScore = true;
-    unsigned int nbBand = 3;
+    unsigned int nbBand = 4;
     unsigned int multiBandDownscale = 2;
-    std::vector<int> multiBandNbContrib = {1, 5, 10}; // number of contributions per level for the multi-band blending
+    std::vector<int> multiBandNbContrib = {1, 3, 15, 0}; // number of contributions per frequency band for the multi-band blending
     double bestScoreThreshold = 0.0; //< 0.0 to disable filtering based on threshold to relative best score
     double angleHardThreshold = 90.0; //< 0.0 to disable angle hard threshold filtering
     bool forceVisibleByAllVertices = false; //< triangle visibility is based on the union of vertices visiblity

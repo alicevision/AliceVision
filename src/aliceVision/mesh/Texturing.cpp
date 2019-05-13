@@ -255,10 +255,16 @@ void Texturing::generateTextures(const mvsUtils::MultiViewParams &mp,
                                  const boost::filesystem::path &outPath, EImageFileType textureFileType)
 {
     ALICEVISION_LOG_INFO("Texturing: Use multiband blending with the following contributions per band:");
+    texParams.nbBand = texParams.multiBandNbContrib.size();
     for(int c: texParams.multiBandNbContrib)
     {
         ALICEVISION_LOG_INFO(c << ", ");
+        if(c == 0)
+            texParams.nbBand -= 1;
     }
+
+    texParams.multiBandNbContrib.resize(texParams.nbBand);
+    ALICEVISION_LOG_INFO("Size multibandnnbcontrib : " + std::to_string(texParams.multiBandNbContrib.size()));
 
     mvsUtils::ImagesCache imageCache(&mp, 0, imageIO::EImageColorSpace::SRGB);
     imageCache.setCacheSize(2);
