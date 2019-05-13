@@ -172,13 +172,4 @@ alicevision_add_software(aliceVision_utils_split360Images
         ${Boost_LIBRARIES}
 )
 
-# Multi-Band Blending
-alicevision_add_software(aliceVision_utils_multibandtest
-  SOURCE main_multibandtest.cpp
-  FOLDER ${FOLDER_SOFTWARE_UTILS}
-  LINKS aliceVision_system
-        aliceVision_mesh
-        aliceVision_imageIO
-        aliceVision_mvsData
-        ${Boost_LIBRARIES}
-)
+
