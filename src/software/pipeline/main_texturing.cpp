@@ -86,7 +86,7 @@ int main(int argc, char* argv[])
         ("flipNormals", po::value<bool>(&flipNormals)->default_value(flipNormals),
             "Option to flip face normals. It can be needed as it depends on the vertices order in triangles and the convention change from one software to another.")
         ("useScore", po::value<bool>(&texParams.useScore)->default_value(texParams.useScore),
-             "Use triangles scores for multiband blending.")
+             "Use triangles scores (based on observations and re-projected areas in source images) for weighting contributions.")
         ("multiBandDownscale", po::value<unsigned int>(&texParams.multiBandDownscale)->default_value(texParams.multiBandDownscale),
             "Width of frequency bands.")
         ("multiBandNbContrib", po::value<std::vector<int>>(&texParams.multiBandNbContrib)->default_value(texParams.multiBandNbContrib)->multitoken(),

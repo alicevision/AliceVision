@@ -19,9 +19,8 @@ public:
     ///Generate the pyramid of the differences of the successives gaussian convolutions of the input image
     void laplacianPyramid(std::vector<Image>& out_pyramidL, const Image& inImg, int camId, int nbBand, float sizeKernel);
 
-    ///Generate the gaussian pyramid given the input image
+    ///Generate the laplacian pyramid given the input image
     void laplacianDownscalePyramid(std::vector<Image>& out_pyramidL, const Image& inImg, int nbBand, unsigned int downscale);
-
 
 };
 

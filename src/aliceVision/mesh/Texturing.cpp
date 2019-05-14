@@ -277,30 +277,27 @@ void Texturing::generateTextures(const mvsUtils::MultiViewParams &mp,
 
     const int freeMem = int(memInfo.freeRam / std::pow(2,20));
     const int availableMem = freeMem - 2 * imageMaxMemSize - imageMaxMemSize * texParams.nbBand; // keep some memory for the input image buffer and its laplacian pyramid
-    int nbAtlasMax = std::floor((availableMem - 1000) / pyramidMaxMemSize); //maximum number of textures in RAM
+    int nbAtlasMax = std::floor(availableMem / pyramidMaxMemSize); //maximum number of textures in RAM
     const int nbAtlas = _atlases.size();
     nbAtlasMax = std::max(1, nbAtlasMax); //if not enough memory, do it one by one
     nbAtlasMax = std::min(nbAtlas, nbAtlasMax); //if enough memory, do it with all atlases
-    if (availableMem - nbAtlasMax*pyramidMaxMemSize < 1000 && nbAtlasMax > 1) //keep margin in memory
-        nbAtlasMax -= 1;
-
-    std::div_t divresult = div(nbAtlas, nbAtlasMax);
-    const int nquot = divresult.quot;
-    const int nrem = divresult.rem;
+   // if (availableMem - nbAtlasMax*pyramidMaxMemSize < 1000 && nbAtlasMax > 1) //keep margin in memory
+   //     nbAtlasMax -= 1;
 
     ALICEVISION_LOG_INFO("Total amount of free memory  : " << freeMem << " Mb.");
     ALICEVISION_LOG_INFO("Total amount of memory available : " << availableMem << " Mb.");
     ALICEVISION_LOG_INFO("Total amount of an image in memory  : " << imageMaxMemSize << " Mb.");
-    ALICEVISION_LOG_INFO("Total amount of an atlas in memory: " << pyramidMaxMemSize << " Mb.");
+    ALICEVISION_LOG_INFO("Total amount of an atlas pyramid in memory: " << pyramidMaxMemSize << " Mb.");
     ALICEVISION_LOG_INFO("Processing " << nbAtlas << " atlases by chunks of " << nbAtlasMax);
 
     //generateTexture for the maximum number of atlases, and iterate
+    const std::div_t divresult = div(nbAtlas, nbAtlasMax);
     std::vector<size_t> atlasIDs;
     atlasIDs.reserve(nbAtlasMax);
-    for(int n = 0; n <= nquot; ++n)
+    for(int n = 0; n <= divresult.quot; ++n)
     {
         atlasIDs.clear();
-        int imax = (n < nquot ? nbAtlasMax : nrem);
+        int imax = (n < divresult.quot ? nbAtlasMax : divresult.rem);
         if(!imax)
             continue;
         for(int i = 0; i < imax; ++i)
@@ -308,7 +305,7 @@ void Texturing::generateTextures(const mvsUtils::MultiViewParams &mp,
             size_t atlasID = size_t(n*nbAtlasMax + i);
             atlasIDs.push_back(atlasID);
         }
-        ALICEVISION_LOG_INFO("Generating texture for atlases " << n*nbAtlasMax + 1 << " to " << n*nbAtlasMax+imax << " (process a chunk of " << atlasIDs.size() << " atlases within " << _atlases.size() << " atlases).");
+        ALICEVISION_LOG_INFO("Generating texture for atlases " << n*nbAtlasMax + 1 << " to " << n*nbAtlasMax+imax );
         generateTexturesSubSet(mp, atlasIDs, imageCache, outPath, textureFileType);
     }
 }
@@ -320,9 +317,6 @@ void Texturing::generateTexturesSubSet(const mvsUtils::MultiViewParams& mp,
         throw std::runtime_error("Invalid atlas IDs ");
 
     unsigned int textureSize = texParams.textureSide * texParams.textureSide;
-    int nbBand = texParams.nbBand;
-    unsigned int multiBandDownScale = texParams.multiBandDownscale;
-    bool useScore = texParams.useScore;
 
     // We select the best cameras for each triangle and store it per camera for each output texture files.
     // Triangles contributions are stored per frequency bands for multi-band blending.
@@ -447,7 +441,7 @@ void Texturing::generateTexturesSubSet(const mvsUtils::MultiViewParams& mp,
                 const int triangleScore = std::get<1>(scorePerCamId[contrib]);
                 auto& camContribution = contributionsPerCamera[camId];
                 if(camContribution.find(atlasID) == camContribution.end())
-                    camContribution[atlasID].resize(nbBand);
+                    camContribution[atlasID].resize(texParams.nbBand);
                 camContribution.at(atlasID)[band].emplace_back(triangleID, triangleScore);
 
                 if(contrib + 1 == nbContribLevel)
@@ -464,7 +458,7 @@ void Texturing::generateTexturesSubSet(const mvsUtils::MultiViewParams& mp,
     //pyramid of atlases frequency bands
     std::map<AtlasIndex, AccuPyramid> accuPyramids;
     for(std::size_t atlasID: atlasIDs)
-        accuPyramids[atlasID].init(nbBand, textureSize);
+        accuPyramids[atlasID].init(texParams.nbBand, textureSize);
 
     //for each camera, for each texture, iterate over triangles and fill the accuPyramids map
     for(int camId = 0; camId < contributionsPerCamera.size(); ++camId)
@@ -473,10 +467,10 @@ void Texturing::generateTexturesSubSet(const mvsUtils::MultiViewParams& mp,
 
         if(cameraContributions.empty())
         {
-            ALICEVISION_LOG_INFO(" - camera " << camId + 1 << "/" << mp.ncams << " unused.");
+            ALICEVISION_LOG_INFO("- camera " << camId + 1 << "/" << mp.ncams << " unused.");
             continue;
         }
-        ALICEVISION_LOG_INFO(" - camera " << camId + 1 << "/" << mp.ncams << " with contributions to " << cameraContributions.size() << " texture files:");
+        ALICEVISION_LOG_INFO("- camera " << camId + 1 << "/" << mp.ncams << " with contributions to " << cameraContributions.size() << " texture files:");
 
         imageCache.refreshData(camId);        
 
@@ -484,29 +478,28 @@ void Texturing::generateTexturesSubSet(const mvsUtils::MultiViewParams& mp,
         mvsUtils::ImagesCache::ImgPtr imgPtr = imageCache.getImg_sync(camId);
         Image camImg(imgPtr->data, imgPtr->getWidth(), imgPtr->getHeight());
 
-        ALICEVISION_LOG_INFO(" - camera " << camId + 1 << " multiBandBlending");
-
         //Calculate laplacianPyramid
         MultiBandBlending multiBandBlending;
         std::vector<Image> pyramidL; //laplacian pyramid
-        multiBandBlending.laplacianDownscalePyramid(pyramidL, camImg, nbBand, multiBandDownScale);
+        multiBandBlending.laplacianDownscalePyramid(pyramidL, camImg, texParams.nbBand, texParams.multiBandDownscale);
 
         // for each output texture file
         for(const auto& c : cameraContributions)
         {
             AtlasIndex atlasID = c.first;
+            ALICEVISION_LOG_INFO("  - Texture file: " << atlasID);
             //for each frequency band
             for(int band = 0; band < c.second.size(); ++band)
             {
                 const ScorePerTriangle& trianglesId = c.second[band];
-                ALICEVISION_LOG_INFO("    Texture file: " << atlasID << "- band: " << band << "- number of triangles: " << trianglesId.size() << ".");
+                ALICEVISION_LOG_INFO("      - band " << band << ": " << trianglesId.size() << " triangles.");
 
                 // for each triangle
                 #pragma omp parallel for
                 for(int ti = 0; ti < trianglesId.size(); ++ti)
                 {
                     const unsigned int triangleId = std::get<0>(trianglesId[ti]);
-                    const float triangleScore = useScore ? std::get<1>(trianglesId[ti]) : 1.0f;
+                    const float triangleScore = texParams.useScore ? std::get<1>(trianglesId[ti]) : 1.0f;
                     // retrieve triangle 3D and UV coordinates
                     Point2d triPixs[3];
                     Point3d triPts[3];
@@ -576,7 +569,7 @@ void Texturing::generateTexturesSubSet(const mvsUtils::MultiViewParams& mp,
                            AccuPyramid& accuPyramid = accuPyramids.at(atlasID);
                            for(std::size_t bandContrib = band; bandContrib < pyramidL.size(); ++bandContrib)
                            {
-                               int downscaleCoef = std::pow(multiBandDownScale, bandContrib);
+                               int downscaleCoef = std::pow(texParams.multiBandDownscale, bandContrib);
                                AccuImage& accuImage = accuPyramid.pyramid[bandContrib];
 
                                // fill the accumulated color map for this pixel

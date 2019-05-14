@@ -34,13 +34,6 @@ void MultiBandBlending::laplacianPyramid(std::vector<Image>& out_pyramidL, const
         Image::imageDiff(base, baseG, out_pyramidL[b]);
         base.swap(baseG); //newBase = oldBaseG
         s *= 2;
-
-        /*//TODO : REMOVE
-        const std::string outPathG = std::string("/datas/rave/tmp/") + std::string("cam") + std::to_string(camId) + std::string("G") + std::to_string(b) +  ".exr";
-        imageIO::writeImage(outPathG, width, height, baseG.data());
-        const std::string outPathL = std::string("/datas/rave/tmp/") + std::string("cam") + std::to_string(camId) + std::string("L") + std::to_string(b) + ".exr";
-        imageIO::writeImage(outPathL, width, height, out_pyramidL.at(b).data());*/
-
     }
     out_pyramidL.at(nbBand-1) = base;
 }
@@ -71,9 +64,8 @@ void MultiBandBlending::laplacianDownscalePyramid(std::vector<Image>& out_pyrami
     out_pyramidL[nbBand-1] = img;
 
     for(std::size_t i = 0; i < out_pyramidL.size(); ++i)
-        ALICEVISION_LOG_INFO("laplacianDownscalePyramid: Size level " << i << " : " << out_pyramidL[i].width() << "x" << out_pyramidL[i].height());
+        ALICEVISION_LOG_DEBUG("laplacianDownscalePyramid: Size level " << i << " : " << out_pyramidL[i].width() << "x" << out_pyramidL[i].height());
 }
-
 
 }
 }
