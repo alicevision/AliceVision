@@ -451,7 +451,7 @@ void Texturing::generateTexturesSubSet(const mvsUtils::MultiViewParams& mp,
                 if(contrib + 1 == nbContribLevel)
                 {
                     ++band;
-                    nbContribLevel += texParams.multiBandNbContrib[band];
+                    nbContribLevel = texParams.multiBandNbContrib[band];
                 }
             }
         }
