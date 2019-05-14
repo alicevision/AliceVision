@@ -28,6 +28,10 @@
 #include <map>
 #include <set>
 
+// Debug mode: save atlases decomposition in frequency bands and
+// the number of contribution in each band (if useScore is set to false)
+#define TEXTURING_MBB_DEBUG 0
+
 namespace aliceVision {
 namespace mesh {
 
@@ -591,9 +595,7 @@ void Texturing::generateTexturesSubSet(const mvsUtils::MultiViewParams& mp,
         AccuImage& atlasTexture = accuPyramid.pyramid[0];
         ALICEVISION_LOG_INFO("Create texture " << atlasID);
 
-        bool debug = 1;
-
-        if(debug)
+#if TEXTURING_MBB_DEBUG
         {
             for(std::size_t level = 0; level < accuPyramid.pyramid.size(); ++level)
             {
@@ -617,6 +619,7 @@ void Texturing::generateTexturesSubSet(const mvsUtils::MultiViewParams& mp,
                 imageIO::writeImage(texturePath.string(), texParams.textureSide, texParams.textureSide, imgContrib, imageIO::EImageQuality::OPTIMIZED, imageIO::EImageColorSpace::AUTO);
             }
         }
+#endif
 
         ALICEVISION_LOG_INFO("  - Computing final (average) color.");
         for(unsigned int yp = 0; yp < texParams.textureSide; ++yp)
@@ -641,7 +644,7 @@ void Texturing::generateTexturesSubSet(const mvsUtils::MultiViewParams& mp,
             }
         }
 
-        if(debug)
+#if TEXTURING_MBB_DEBUG
         {
             //write each frequency band, for each texture
             for(std::size_t level = 0; level < accuPyramid.pyramid.size(); ++level)
@@ -651,6 +654,7 @@ void Texturing::generateTexturesSubSet(const mvsUtils::MultiViewParams& mp,
             }
 
         }
+#endif
 
         // Fuse frequency bands into the first buffer, calculate final texture
         for(unsigned int yp = 0; yp < texParams.textureSide; ++yp)
