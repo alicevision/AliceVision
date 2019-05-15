@@ -59,7 +59,7 @@ struct MinOffXplusY
 void SemiGlobalMatchingRcTc::computeDepthSimMapVolume(
         CudaDeviceMemoryPitched<TSim, 3>& volumeBestSim,
         CudaDeviceMemoryPitched<TSim, 3>& volumeSecBestSim,
-        int wsh,
+        int wsh, float patchPixStep,
         float gammaC,
         float gammaP)
 {
@@ -94,7 +94,7 @@ void SemiGlobalMatchingRcTc::computeDepthSimMapVolume(
                                  tcs,
                                  _rcDepths,
                                  _rc, _tc,
-                                 wsh, gammaC, gammaP, _scale);
+                                 wsh, patchPixStep, gammaC, gammaP, _scale);
 
     ALICEVISION_LOG_INFO("==== computeDepthSimMapVolume done in : " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - startTime).count() << "ms.");
 }

@@ -605,16 +605,14 @@ StaticVector<float>* PlaneSweepingCuda::getDepthsRcTc(int rc, int tc, int scale,
 }
 
 bool PlaneSweepingCuda::refineRcTcDepthMap(bool useTcOrRcPixSize, int nStepsToRefine, StaticVector<float>& out_simMap,
-                                             StaticVector<float>& out_rcDepthMap, int rc, int tc, int scale, int wsh,
-                                             float gammaC, float gammaP, int xFrom, int wPart)
+                                             StaticVector<float>& out_rcDepthMap, int rc, int tc, int scale, int stepXY, float stepZFactor, int wsh, float patchPixStep,
+                                             float gammaC, float gammaP, int xFrom, int wPart, int h)
 {
-    // int w = _mp.getWidth(rc)/scale;
-    int w = wPart;
-    int h = _mp.getHeight(rc) / scale;
-
     long t1 = clock();
 
     ALICEVISION_LOG_DEBUG("\t- rc: " << rc << std::endl << "\t- tcams: " << tc);
+    ALICEVISION_LOG_DEBUG("refineRcTcDepthMap: xFrom:" << xFrom << ", wPart: " << wPart << ", h: " << h);
+    ALICEVISION_LOG_DEBUG("refineRcTcDepthMap: scale:" << scale << ", stepXY: " << stepXY);
 
     StaticVector<int> camsids(2);
     camsids[0] = addCam(rc, scale, __FUNCTION__);
@@ -631,10 +629,10 @@ bool PlaneSweepingCuda::refineRcTcDepthMap(bool useTcOrRcPixSize, int nStepsToRe
     // sweep
     ps_refineRcDepthMap(_pyramids, out_simMap.getDataWritable().data(), out_rcDepthMap.getDataWritable().data(), nStepsToRefine,
                         ttcams,
-                        w, h,
+                        wPart, h,
                         _mp.getWidth(rc) / scale, _mp.getHeight(rc) / scale,
                         _mp.getWidth(tc) / scale, _mp.getHeight(tc) / scale,
-                        scale - 1, _CUDADeviceNo, _nImgsInGPUAtTime, _mp.verbose, wsh,
+                        scale - 1, stepXY, stepZFactor, _CUDADeviceNo, _nImgsInGPUAtTime, _mp.verbose, wsh, patchPixStep,
                         gammaC, gammaP, useTcOrRcPixSize, xFrom);
 
     mvsUtils::printfElapsedTime(t1);
@@ -655,7 +653,7 @@ void PlaneSweepingCuda::sweepPixelsToVolume( CudaDeviceMemoryPitched<TSim, 3>& v
                                              const std::vector<float>& rc_depths,
                                              int rc,
                                              const StaticVector<int>& tcams,
-                                             int wsh, float gammaC, float gammaP,
+                                             int wsh, float patchPixStep, float gammaC, float gammaP,
                                              int scale)
 {
     int volDimZ = rc_depths.size();
@@ -812,7 +810,7 @@ void PlaneSweepingCuda::sweepPixelsToVolume( CudaDeviceMemoryPitched<TSim, 3>& v
                 volStepXY, volDimX, volDimY,
                 depths_d,
                 cells,
-                wsh,
+                wsh, patchPixStep,
                 _nbestkernelSizeHalf,
                 scale,
                 _mp.verbose,

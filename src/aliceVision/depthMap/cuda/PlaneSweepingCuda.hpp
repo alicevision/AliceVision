@@ -90,8 +90,8 @@ public:
     StaticVector<float>* getDepthsRcTc(int rc, int tc, int scale, float midDepth, int maxDepthsHalf = 1024);
 
     bool refineRcTcDepthMap(bool useTcOrRcPixSize, int nStepsToRefine, StaticVector<float>& out_simMap,
-                            StaticVector<float>& out_rcDepthMap, int rc, int tc, int scale, int wsh, float gammaC,
-                            float gammaP, int xFrom, int wPart);
+                            StaticVector<float>& out_rcDepthMap, int rc, int tc, int scale, int stepXY, float stepZFactor, int wsh, float patchPixStep, float gammaC,
+                            float gammaP, int xFrom, int wPart, int h);
 
 private:
     /* Needed to compensate for _nImgsInGPUAtTime that are smaller than |index_set|-1 */
@@ -118,7 +118,7 @@ public:
         const std::vector<float>& rc_depths,
         int rc,
         const StaticVector<int>& tcams,
-        int wsh, float gammaC, float gammaP,
+        int wsh, float patchPixStep, float gammaC, float gammaP,
         int scale);
 
     bool SGMoptimizeSimVolume(int rc, CudaDeviceMemoryPitched<TSim, 3>& volSim_dmp,

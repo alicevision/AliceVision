@@ -61,10 +61,13 @@ int main(int argc, char* argv[])
 
     // refineRc
     int refineMaxTCams = 6;
+    int refineStepXY = 2;
     int refineNSamplesHalf = 150;
     int refineNDepthsToRefine = 31;
+    double refineStepZ = 1.0;
     int refineNiters = 100;
     int refineWSH = 3;
+    double refinePatchPixStep = 1.0;
     double refineSigma = 15.0;
     double refineGammaC = 15.5;
     double refineGammaP = 8.0;
@@ -124,14 +127,20 @@ int main(int argc, char* argv[])
             "Semi Global Matching: Use landmarks from SfM to define the ranges for the plane sweeping.")
         ("refineMaxTCams", po::value<int>(&refineMaxTCams)->default_value(refineMaxTCams),
             "Refine: Number of neighbour cameras.")
+        ("refineStepXY", po::value<int>(&refineStepXY)->default_value(refineStepXY),
+            "Refine: Step used to refine on the X and Y axis.")
         ("refineNSamplesHalf", po::value<int>(&refineNSamplesHalf)->default_value(refineNSamplesHalf),
             "Refine: Number of samples.")
         ("refineNDepthsToRefine", po::value<int>(&refineNDepthsToRefine)->default_value(refineNDepthsToRefine),
             "Refine: Number of depths.")
+        ("refineStepZ", po::value<double>(&refineStepZ)->default_value(refineStepZ),
+            "Refine: Step between depths to refine.")
         ("refineNiters", po::value<int>(&refineNiters)->default_value(refineNiters),
             "Refine: Number of iterations.")
         ("refineWSH", po::value<int>(&refineWSH)->default_value(refineWSH),
             "Refine: Size of the patch used to compute the similarity.")
+        ("refinePatchPixStep", po::value<double>(&refinePatchPixStep)->default_value(refinePatchPixStep),
+            "Refine: Pixel step used within the patch comparison.")
         ("refineSigma", po::value<double>(&refineSigma)->default_value(refineSigma),
             "Refine: Sigma threshold.")
         ("refineGammaC", po::value<double>(&refineGammaC)->default_value(refineGammaC),
@@ -235,10 +244,13 @@ int main(int argc, char* argv[])
 
     // refineRc
     mp.userParams.put("refineRc.maxTCams", refineMaxTCams);
+    mp.userParams.put("refineRc.stepXY", refineStepXY);
     mp.userParams.put("refineRc.nSamplesHalf", refineNSamplesHalf);
     mp.userParams.put("refineRc.ndepthsToRefine", refineNDepthsToRefine);
+    mp.userParams.put("refineRc.stepZ", refineStepZ);
     mp.userParams.put("refineRc.niters", refineNiters);
     mp.userParams.put("refineRc.wsh", refineWSH);
+    mp.userParams.put("refineRc.patchPixStep", refinePatchPixStep);
     mp.userParams.put("refineRc.sigma", refineSigma);
     mp.userParams.put("refineRc.gammaC", refineGammaC);
     mp.userParams.put("refineRc.gammaP", refineGammaP);

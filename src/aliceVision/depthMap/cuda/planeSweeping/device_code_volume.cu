@@ -17,10 +17,10 @@ using TSim = unsigned char;
 inline __device__ void volume_computePatch( const CameraStructBase& rc_cam,
                                             const CameraStructBase& tc_cam,
                                             Patch& ptch,
-                                            const float fpPlaneDepth, const int2& pix )
+                                            const float fpPlaneDepth, const int2& pix, const float patchPixStep)
 {
     ptch.p = get3DPointForPixelAndFrontoParellePlaneRC(rc_cam, pix, fpPlaneDepth); // no texture use
-    ptch.d = computePixSize(rc_cam, ptch.p); // no texture use
+    ptch.d = computePixSize(rc_cam, ptch.p, patchPixStep); // no texture use
     computeRotCSEpip(rc_cam, tc_cam, ptch); // no texture use
 }
 
@@ -203,7 +203,7 @@ __global__ void volume_slice_kernel(
                                     const int nbDepthsToSearch,
                                     int rcWidth, int rcHeight,
                                     int tcWidth, int tcHeight,
-                                    int wsh,
+                                    int wsh, float patchPixStep,
                                     const float gammaC, const float gammaP,
                                     TSim* volume_1st, int volume1st_s, int volume1st_p,
                                     TSim* volume_2nd, int volume2nd_s, int volume2nd_p,
@@ -253,7 +253,7 @@ __global__ void volume_slice_kernel(
     }
     */
     Patch ptcho;
-    volume_computePatch(rc_cam, tc_cam, ptcho, fpPlaneDepth, make_int2(x, y)); // no texture use
+    volume_computePatch(rc_cam, tc_cam, ptcho, fpPlaneDepth, make_int2(x, y), patchPixStep); // no texture use
 
     float fsim = compNCCby3DptsYK(rc_tex, tc_tex,
                                   rc_cam, tc_cam,

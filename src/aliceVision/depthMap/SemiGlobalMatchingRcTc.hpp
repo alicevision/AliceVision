@@ -28,7 +28,7 @@ public:
 
     void computeDepthSimMapVolume( CudaDeviceMemoryPitched<TSim, 3>& volumeBestSim,
                                    CudaDeviceMemoryPitched<TSim, 3>& volumeSecBestSim,
-                                   int wsh,
+                                   int wsh, float patchPixStep,
                                    float gammaC,
                                    float gammaP );
 

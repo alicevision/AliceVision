@@ -8,11 +8,13 @@ namespace aliceVision {
 namespace depthMap {
 
 /**
- * @param[in] s: iteration over nSamplesHalf
+ * @param[in] s: iteration over samples [-nSamplesHalf:nSamplesHalf]
+ * @param[in] idCam: 
+ * @param[in] samplesPerPixSize: global number of samples per pixelSize
  */
 __global__ void fuse_computeGaussianKernelVotingSampleMap_kernel(float* out_gsvSampleMap, int out_gsvSampleMap_p,
-                                                                 float2* depthSimMap, int depthSimMap_p,
-                                                                 float2* midDepthPixSizeMap, int midDepthPixSizeMap_p,
+                                                                 const float2* depthSimMap, int depthSimMap_p,
+                                                                 const float2* midDepthPixSizeMap, int midDepthPixSizeMap_p,
                                                                  int width, int height, float s, int idCam,
                                                                  float samplesPerPixSize, float twoTimesSigmaPowerTwo)
 {
@@ -29,17 +31,24 @@ __global__ void fuse_computeGaussianKernelVotingSampleMap_kernel(float* out_gsvS
 
     if((midDepthPixSize.x > 0.0f) && (depthSim.x > 0.0f))
     {
+        // depthStep: the step used based on the pixelSize and the number of samples for the optimization
         float depthStep = midDepthPixSize.y / samplesPerPixSize;
+        // i: index of the iteration within the depths
         float i = (midDepthPixSize.x - depthSim.x) / depthStep;
+        // convert similarity:
+        //  * inputSim < -0.7 is good ==> -1
+        //  * inputSim > -0.7 is bad ==> 0
         float sim = -sigmoid(0.0f, 1.0f, 0.7f, -0.7f, depthSim.y);
+        // gsvSample: gaussian weighted sum of similarity
+        //            the gaussian curve is centered on the iteration "s" (in practive between [-150, +150])
         gsvSample += sim * expf(-((i - s) * (i - s)) / twoTimesSigmaPowerTwo);
     }
     *out_gsvSample_ptr = gsvSample;
 }
 
 
-__global__ void fuse_updateBestGaussianKernelVotingSampleMap_kernel(float2* bestGsvSampleMap, int bestGsvSampleMap_p,
-                                                                    float* gsvSampleMap, int gsvSampleMap_p, int width,
+__global__ void fuse_updateBestGaussianKernelVotingSampleMap_kernel(float2* out_bestGsvSampleMap, int bestGsvSampleMap_p,
+                                                                    const float* gsvSampleMap, int gsvSampleMap_p, int width,
                                                                     int height, float s, int id)
 {
     int x = blockIdx.x * blockDim.x + threadIdx.x;
@@ -49,7 +58,7 @@ __global__ void fuse_updateBestGaussianKernelVotingSampleMap_kernel(float2* best
         return;
 
     float gsvSampleX = *get2DBufferAt(gsvSampleMap, gsvSampleMap_p, x, y);
-    float2* bestGsvSample_ptr = get2DBufferAt(bestGsvSampleMap, bestGsvSampleMap_p, x, y);
+    float2* bestGsvSample_ptr = get2DBufferAt(out_bestGsvSampleMap, bestGsvSampleMap_p, x, y);
     if(id == 0 || gsvSampleX < bestGsvSample_ptr->x)
         *bestGsvSample_ptr = make_float2(gsvSampleX, s);
 }

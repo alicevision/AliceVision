@@ -401,10 +401,10 @@ __device__ float3 triangulateMatchRef(const CameraStructBase& rc_cam, const Came
     return rc_cam.C + refvect * k;
 }
 
-__device__ float computePixSize(const CameraStructBase& cam, const float3& p)
+__device__ float computePixSize(const CameraStructBase& cam, const float3& p, float patchPixStep)
 {
     float2 rp = project3DPoint(cam.P, p);
-    float2 rp1 = rp + make_float2(1.0f, 0.0f);
+    float2 rp1 = rp + make_float2(patchPixStep, 0.0f);
 
     float3 refvect = M3x3mulV2(cam.iP, rp1);
     normalize(refvect);

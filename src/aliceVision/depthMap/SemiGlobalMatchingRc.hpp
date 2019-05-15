@@ -30,6 +30,7 @@ protected:
     int _width;
     int _height;
     int _sgmWsh;
+    float _sgmPatchPixStep;
     float _sgmGammaC;
     float _sgmGammaP;
 

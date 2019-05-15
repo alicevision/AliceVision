@@ -42,6 +42,8 @@ SemiGlobalMatchingRc::SemiGlobalMatchingRc(int rc, int scale, int step, SemiGlob
     _height = _sp.mp.getHeight(rc) / (scale * step);
     _sgmTCams  = _sp.mp.findNearestCamsFromLandmarks(rc, nbNearestCams);
     _sgmWsh = _sp.mp.userParams.get<int>("semiGlobalMatching.wsh", 4);
+    _sgmPatchPixStep = static_cast<float>(_sp.mp.userParams.get<double>("semiGlobalMatching.patchPixStep", 1.0));
+    
     _sgmGammaC = static_cast<float>(_sp.mp.userParams.get<double>("semiGlobalMatching.gammaC", 5.5));
     _sgmGammaP = static_cast<float>(_sp.mp.userParams.get<double>("semiGlobalMatching.gammaP", 8.0));
     _depthsTcamsLimits.clear();
@@ -480,7 +482,7 @@ bool SemiGlobalMatchingRc::sgmrc(bool checkIfExists)
     SemiGlobalMatchingRcTc srt( _depths.getData(),
                                 _depthsTcamsLimits.getData(),
                                 _rc, _sgmTCams, _scale, _step, _sp );
-    srt.computeDepthSimMapVolume(volumeBestSim_d, volumeSecBestSim_d, _sgmWsh, _sgmGammaC, _sgmGammaP);
+    srt.computeDepthSimMapVolume(volumeBestSim_d, volumeSecBestSim_d, _sgmWsh, _sgmPatchPixStep, _sgmGammaC, _sgmGammaP);
 
     volumeBestSim_d.deallocate();
 

@@ -73,12 +73,11 @@ public:
     Point2d getMaxMinSim() const;
 
     float getPercentileDepth(float perc) const;
-    void getDepthMapStep1(StaticVector<float>& out_depthMap) const;
-    void getSimMapStep1(StaticVector<float>& out_simMap) const;
     void getDepthMap(StaticVector<float>& out_depthMap) const;
+    void getSimMap(StaticVector<float>& out_simMap) const;
 
-    void getDepthMapStep1XPart(StaticVector<float>& out_depthMap, int xFrom, int partW);
-    void getSimMapStep1XPart(StaticVector<float>& out_depthMap, int xFrom, int partW);
+    void getDepthMapXPart(StaticVector<float>& out_depthMap, int xFrom, int partW);
+    void getSimMapXPart(StaticVector<float>& out_depthMap, int xFrom, int partW);
 
     void saveToImage(const std::string& filename, float simThr) const;
     void save(const std::string& customSuffix = "") const;

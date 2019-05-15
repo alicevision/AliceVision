@@ -26,10 +26,13 @@ public:
 
 private:
     StaticVector<int> _refineTCams;
+    int _refineStepXY;
     float _refineSigma;
     float _refineGammaC;
     float _refineGammaP;
     int _refineWsh;
+    float _refinePatchPixStep;
+    float _refineStepZFactor;
     int _refineNSamplesHalf;
     int _refineNiters;
     int _nbDepthsToRefine;

@@ -18,44 +18,38 @@ RcTc::RcTc(mvsUtils::MultiViewParams& _mp, PlaneSweepingCuda& _cps)
 {
 }
 
-void RcTc::refineRcTcDepthSimMap(bool useTcOrRcPixSize, DepthSimMap* depthSimMap, int rc, int tc,
-                                    int ndepthsToRefine, int wsh, float gammaC, float gammaP)
+void RcTc::refineRcTcDepthSimMap(bool useTcOrRcPixSize, DepthSimMap* inout_depthSimMap, int rc, int tc,
+                                    int ndepthsToRefine, float stepZFactor, int wsh, float patchPixStep, float gammaC, float gammaP)
 {
-    int scale = depthSimMap->_scale;
-    int w = mp.getWidth(rc) / scale;
-    int h = mp.getHeight(rc) / scale;
-
     if(mp.verbose)
-        ALICEVISION_LOG_DEBUG("refineRcTcDepthSimMap: width: " << w << ", height: " << h);
+        ALICEVISION_LOG_DEBUG("refineRcTcDepthSimMap: width: " << inout_depthSimMap->_w << ", height: " << inout_depthSimMap->_h);
 
     long t1 = clock();
 
     int nParts = 4;
-    int wPart = w / nParts;
-    for(int p = 0; p < nParts; p++)
+    int wPart = inout_depthSimMap->_w / nParts;
+    for(int p = 0; p < nParts; ++p)
     {
         int xFrom = p * wPart;
-        int wPartAct = std::min(wPart, w - xFrom);
+        int wPartAct = std::min(wPart, inout_depthSimMap->_w - xFrom);
         StaticVector<float> depthMap;
-        depthSimMap->getDepthMapStep1XPart(depthMap, xFrom, wPartAct);
+        inout_depthSimMap->getDepthMapXPart(depthMap, xFrom, wPartAct);
         StaticVector<float> simMap;
-        depthSimMap->getSimMapStep1XPart(simMap, xFrom, wPartAct);
+        inout_depthSimMap->getSimMapXPart(simMap, xFrom, wPartAct);
 
-        cps.refineRcTcDepthMap(useTcOrRcPixSize, ndepthsToRefine, simMap, depthMap, rc, tc, scale, wsh, gammaC, gammaP,
-                                xFrom, wPartAct);
+        cps.refineRcTcDepthMap(useTcOrRcPixSize, ndepthsToRefine, simMap, depthMap, rc, tc, inout_depthSimMap->_scale, inout_depthSimMap->_step, stepZFactor, wsh, patchPixStep, gammaC, gammaP,
+                                xFrom, wPartAct, inout_depthSimMap->_h);
 
-        for(int yp = 0; yp < h; yp++)
+        for(int yp = 0; yp < inout_depthSimMap->_h; ++yp)
         {
-            for(int xp = xFrom; xp < xFrom + wPartAct; xp++)
+            for(int xp = xFrom; xp < xFrom + wPartAct; ++xp)
             {
                 float depth = depthMap[yp * wPartAct + (xp - xFrom)];
                 float sim = simMap[yp * wPartAct + (xp - xFrom)];
-                float oldSim =
-                    depthSimMap->_dsm[(yp / depthSimMap->_step) * depthSimMap->_w + (xp / depthSimMap->_step)].sim;
+                float oldSim = inout_depthSimMap->_dsm[yp * inout_depthSimMap->_w + xp].sim;
                 if((depth > 0.0f) && (sim < oldSim))
                 {
-                    depthSimMap->_dsm[(yp / depthSimMap->_step) * depthSimMap->_w + (xp / depthSimMap->_step)] =
-                        DepthSim(depth, sim);
+                    inout_depthSimMap->_dsm[yp * inout_depthSimMap->_w + xp] = DepthSim(depth, sim);
                 }
             }
         }

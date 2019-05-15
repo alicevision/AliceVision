@@ -78,7 +78,7 @@ __device__ void move3DPointByTcPixStep(const CameraStructBase& rc_cam, const Cam
     p = triangulateMatchRef(rc_cam, tc_cam, rp, tpd);
 }
 
-__device__ float move3DPointByTcOrRcPixStep(const CameraStructBase& rc_cam, const CameraStructBase& tc_cam, int2& pix, float3& p, float pixStep, bool moveByTcOrRc)
+__device__ float move3DPointByTcOrRcPixStep(const CameraStructBase& rc_cam, const CameraStructBase& tc_cam, float3& p, float pixStep, bool moveByTcOrRc)
 {
     if(moveByTcOrRc == true)
     {
@@ -87,7 +87,7 @@ __device__ float move3DPointByTcOrRcPixStep(const CameraStructBase& rc_cam, cons
     }
     else
     {
-        float pixSize = pixStep * computePixSize(rc_cam, p);
+        float pixSize = computePixSize(rc_cam, p, pixStep);
         move3DPointByRcPixSize(rc_cam, p, pixSize);
 
         return pixSize;

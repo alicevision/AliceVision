@@ -64,7 +64,7 @@ void ps_computeSimilarityVolume(
   int volStepXY, int volDimX, int volDimY,
   const CudaDeviceMemory<float>& depths_dev,
   const std::vector<OneTC>&  cells,
-  int wsh, int kernelSizeHalf,
+  int wsh, float patchPixStep, int kernelSizeHalf,
   int scale,
   bool verbose,
   float gammaC, float gammaP);
@@ -116,11 +116,11 @@ void ps_refineRcDepthMap(
     int width, int height,
     int rcWidth, int rcHeight,
     int tcWidth, int tcHeight,
-    int scale,
+    int scale, int stepXY, float stepZFactor,
     int CUDAdeviceNo,
     int ncamsAllocated,
     bool verbose,
-    int wsh,
+    int wsh, float patchPixStep,
     float gammaC, float gammaP,
     bool moveByTcOrRc,
     int xFrom);

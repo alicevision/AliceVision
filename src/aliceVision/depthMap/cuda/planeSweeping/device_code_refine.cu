@@ -9,9 +9,11 @@ namespace depthMap {
 
 __global__ void refine_compUpdateYKNCCSimMapPatch_kernel(const CameraStructBase& rc_cam, const CameraStructBase& tc_cam,
                                                          cudaTextureObject_t rc_tex, cudaTextureObject_t tc_tex,
-                                                         float* osimMap, int osimMap_p, float* odptMap, int odptMap_p,
-                                                         float* depthMap, int depthMap_p, int width, int height,
-                                                         int wsh, float gammaC, float gammaP,
+                                                         float* osimMap, int osimMap_p,
+                                                         float* odptMap, int odptMap_p,
+                                                         const float* depthMap, int depthMap_p,
+                                                         int width, int height, int stepXY,
+                                                         int wsh, float patchPixStep, float gammaC, float gammaP,
                                                          float tcStep, int id,
                                                          bool moveByTcOrRc, int xFrom,
                                                          int rcWidth, int rcHeight,
@@ -19,11 +21,7 @@ __global__ void refine_compUpdateYKNCCSimMapPatch_kernel(const CameraStructBase&
 {
     int x = blockIdx.x * blockDim.x + threadIdx.x;
     int y = blockIdx.y * blockDim.y + threadIdx.y;
-    int2 pix;
-    pix.x = x + xFrom;
-    pix.y = y;
 
-    // if ((pix.x>wsh)&&(pix.y>wsh)&&(pix.x<width-wsh)&&(pix.y<height-wsh))
     if(x >= width || y >= height)
         return;
 
@@ -33,15 +31,19 @@ __global__ void refine_compUpdateYKNCCSimMapPatch_kernel(const CameraStructBase&
     // If we have an initial depth value, we can refine it
     if(odpt > 0.0f)
     {
+        int2 pix;
+        pix.x = (x + xFrom) * stepXY;
+        pix.y = y * stepXY;
+
         float3 p = get3DPointForPixelAndDepthFromRC(rc_cam, pix, odpt);
         // move3DPointByTcPixStep(p, tcStep);
-        move3DPointByTcOrRcPixStep(rc_cam, tc_cam, pix, p, tcStep, moveByTcOrRc);
+        move3DPointByTcOrRcPixStep(rc_cam, tc_cam, p, tcStep, moveByTcOrRc);
 
         odpt = size(p - rc_cam.C);
 
         Patch ptch;
         ptch.p = p;
-        ptch.d = computePixSize(rc_cam, p);
+        ptch.d = computePixSize(rc_cam, p, patchPixStep);
         // TODO: we could compute the orientation of the path from the input depth map instead of relying on the cameras orientations
         computeRotCSEpip(rc_cam, tc_cam, ptch);
         osim = compNCCby3DptsYK(rc_tex, tc_tex, rc_cam, tc_cam, ptch, wsh, rcWidth, rcHeight, tcWidth, tcHeight, gammaC, gammaP);
@@ -69,18 +71,15 @@ __global__ void refine_compUpdateYKNCCSimMapPatch_kernel(const CameraStructBase&
 
 __global__ void refine_compYKNCCSimMapPatch_kernel(const CameraStructBase& rc_cam, const CameraStructBase& tc_cam,
                                                    cudaTextureObject_t rc_tex, cudaTextureObject_t tc_tex,
-                                                   float* osimMap, int osimMap_p, float* depthMap, int depthMap_p,
-                                                   int width, int height, int wsh, float gammaC,
+                                                   float* osimMap, int osimMap_p,
+                                                   const float* depthMap, int depthMap_p,
+                                                   int width, int height, int stepXY, int wsh, float patchPixStep, float gammaC,
                                                    float gammaP, float tcStep,
                                                    bool moveByTcOrRc, int xFrom, int rcWidth, int rcHeight, int tcWidth, int tcHeight)
 {
     int x = blockIdx.x * blockDim.x + threadIdx.x;
     int y = blockIdx.y * blockDim.y + threadIdx.y;
-    int2 pix;
-    pix.x = x + xFrom;
-    pix.y = y;
 
-    // if ((x>wsh)&&(y>wsh)&&(x<width-wsh)&&(y<height-wsh))
     if(x >= width || y >= height)
         return;
 
@@ -89,13 +88,17 @@ __global__ void refine_compYKNCCSimMapPatch_kernel(const CameraStructBase& rc_ca
 
     if(depth > 0.0f)
     {
+        int2 pix;
+        pix.x = (x + xFrom) * stepXY;
+        pix.y = y * stepXY;
+
         float3 p = get3DPointForPixelAndDepthFromRC(rc_cam, pix, depth);
         // move3DPointByTcPixStep(p, tcStep);
-        move3DPointByTcOrRcPixStep(rc_cam, tc_cam, pix, p, tcStep, moveByTcOrRc);
+        move3DPointByTcOrRcPixStep(rc_cam, tc_cam, p, tcStep, moveByTcOrRc);
 
         Patch ptch;
         ptch.p = p;
-        ptch.d = computePixSize(rc_cam, p);
+        ptch.d = computePixSize(rc_cam, p, patchPixStep);
         computeRotCSEpip(rc_cam, tc_cam, ptch);
         osim = compNCCby3DptsYK(rc_tex, tc_tex, rc_cam, tc_cam, ptch, wsh, rcWidth, rcHeight, tcWidth, tcHeight, gammaC, gammaP);
     }
@@ -132,6 +135,7 @@ __global__ void refine_computeDepthSimMapFromLastThreeSimsMap_kernel(const Camer
                                                                      float* osimMap, int osimMap_p, float* iodepthMap,
                                                                      int iodepthMap_p, float3* lastThreeSimsMap,
                                                                      int lastThreeSimsMap_p, int width, int height,
+                                                                     float stepZFactor,
                                                                      bool moveByTcOrRc, int xFrom)
 {
     int x = blockIdx.x * blockDim.x + threadIdx.x;
@@ -153,8 +157,8 @@ __global__ void refine_computeDepthSimMapFromLastThreeSimsMap_kernel(const Camer
         float3 pMid = get3DPointForPixelAndDepthFromRC(rc_cam, pix, midDepth);
         float3 pm1 = pMid;
         float3 pp1 = pMid;
-        move3DPointByTcOrRcPixStep(rc_cam, tc_cam, pix, pm1, -1.0f, moveByTcOrRc);
-        move3DPointByTcOrRcPixStep(rc_cam, tc_cam, pix, pp1, +1.0f, moveByTcOrRc);
+        move3DPointByTcOrRcPixStep(rc_cam, tc_cam, pm1, -stepZFactor, moveByTcOrRc);
+        move3DPointByTcOrRcPixStep(rc_cam, tc_cam, pp1, +stepZFactor, moveByTcOrRc);
 
         float3 depths;
         depths.x = size(pm1 - rc_cam.C);

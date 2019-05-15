@@ -176,89 +176,58 @@ float DepthSimMap::getPercentileDepth(float perc) const
     return out;
 }
 
-/**
-* @brief Get depth map at the size of our input image (with _scale applied)
-*        from an internal buffer only computed for a subpart (based on the step).
-*/
-void DepthSimMap::getDepthMapStep1(StaticVector<float>& out_depthMap) const
+void DepthSimMap::getDepthMap(StaticVector<float>& out_depthMap) const
 {
-    // Size of our input image (with _scale applied)
-    int wdm = _mp.getWidth(_rc) / _scale;
-    int hdm = _mp.getHeight(_rc) / _scale;
-
     // Create a depth map at the size of our input image
-    out_depthMap.resize(wdm * hdm);
+    out_depthMap.resize(_w * _h);
 
-    for (int i = 0; i < wdm * hdm; i++)
+    for (int y = 0; y < _h; ++y)
     {
-        int x = (i % wdm) / _step;
-        int y = (i / wdm) / _step;
-        if ((x < _w) && (y < _h))
+        for (int x = 0; x < _w; ++x)
         {
-            // dsm size: (width, height) / (_scale*step)
-            float depth = _dsm[y * _w + x].depth;
-            // depthMap size: (width, height) / _scale
-            out_depthMap[i] = depth;
+            int xyoffset = y * _w + x;
+            out_depthMap[xyoffset] = _dsm[xyoffset].depth;
         }
     }
 }
 
-void DepthSimMap::getSimMapStep1(StaticVector<float>& out_simMap) const
+void DepthSimMap::getSimMap(StaticVector<float>& out_simMap) const
 {
-    int wdm = _mp.getWidth(_rc) / _scale;
-    int hdm = _mp.getHeight(_rc) / _scale;
+    // Create a depth map at the size of our input image
+    out_simMap.resize(_w * _h);
 
-    out_simMap.resize(wdm * hdm);
-    for (int i = 0; i < wdm * hdm; i++)
+    for (int y = 0; y < _h; ++y)
     {
-        int x = (i % wdm) / _step;
-        int y = (i / wdm) / _step;
-        if ((x < _w) && (y < _h))
+        for (int x = 0; x < _w; ++x)
         {
-            float sim = _dsm[y * _w + x].sim;
-            out_simMap[i] = sim;
+            int xyoffset = y * _w + x;
+            out_simMap[xyoffset] = _dsm[xyoffset].sim;
         }
     }
 }
 
-void DepthSimMap::getDepthMapStep1XPart(StaticVector<float>& out_depthMap, int xFrom, int partW)
+void DepthSimMap::getDepthMapXPart(StaticVector<float>& out_depthMap, int xFrom, int partW)
 {
-    int wdm = _mp.getWidth(_rc) / _scale;
-    int hdm = _mp.getHeight(_rc) / _scale;
-
-    out_depthMap.resize_with(wdm * hdm, -1.0f);
-    for (int yp = 0; yp < hdm; yp++)
+    out_depthMap.resize_with(partW * _h, -1.0f);
+    for (int yp = 0; yp < _h; yp++)
     {
         for (int xp = xFrom; xp < xFrom + partW; xp++)
         {
-            int x = xp / _step;
-            int y = yp / _step;
-            if ((x < _w) && (y < _h))
-            {
-                float depth = _dsm[y * _w + x].depth;
-                out_depthMap[yp * partW + (xp - xFrom)] = depth;
-            }
+            float depth = _dsm[yp * _w + xp].depth;
+            out_depthMap[yp * partW + (xp - xFrom)] = depth;
         }
     }
 }
 
-void DepthSimMap::getSimMapStep1XPart(StaticVector<float>& out_simMap, int xFrom, int partW)
+void DepthSimMap::getSimMapXPart(StaticVector<float>& out_simMap, int xFrom, int partW)
 {
-    int wdm = _mp.getWidth(_rc) / _scale;
-    int hdm = _mp.getHeight(_rc) / _scale;
-
-    out_simMap.resize_with(wdm * hdm, -1.0f);
-    for (int yp = 0; yp < hdm; yp++)
+    out_simMap.resize_with(partW * _h, -1.0f);
+    for (int yp = 0; yp < _h; yp++)
     {
         for (int xp = xFrom; xp < xFrom + partW; xp++)
         {
-            int x = xp / _step;
-            int y = yp / _step;
-            if ((x < _w) && (y < _h))
-            {
-                float sim = _dsm[y * _w + x].sim;
-                out_simMap[yp * partW + (xp - xFrom)] = sim;
-            }
+            float sim = _dsm[yp * _w + xp].sim;
+            out_simMap[yp * partW + (xp - xFrom)] = sim;
         }
     }
 }
@@ -314,15 +283,6 @@ void DepthSimMap::initFromDepthMapAndSimMap(StaticVector<float>* depthMapT, Stat
     }
 }
 
-void DepthSimMap::getDepthMap(StaticVector<float>& out_depthMap) const
-{
-    out_depthMap.resize(_dsm.size());
-    for (int i = 0; i < _dsm.size(); i++)
-    {
-        out_depthMap[i] = _dsm[i].depth;
-    }
-}
-
 void DepthSimMap::saveToImage(const std::string& filename, float simThr) const
 {
     const int bufferWidth = 2 * _w;
@@ -370,16 +330,13 @@ void DepthSimMap::saveToImage(const std::string& filename, float simThr) const
 void DepthSimMap::save(const std::string& customSuffix) const
 {
     StaticVector<float> depthMap;
-    getDepthMapStep1(depthMap);
+    getDepthMap(depthMap);
     StaticVector<float> simMap;
-    getSimMapStep1(simMap);
+    getSimMap(simMap);
 
-    const int width = _mp.getWidth(_rc) / _scale;
-    const int height = _mp.getHeight(_rc) / _scale;
-
-    double s = _scale;
+    double s = _scale * _step;
     oiio::ParamValueList metadata = imageIO::getMetadataFromMap(_mp.getMetadata(_rc));
-    metadata.push_back(oiio::ParamValue("AliceVision:downscale", _mp.getDownscaleFactor(_rc) * _scale));
+    metadata.push_back(oiio::ParamValue("AliceVision:downscale", _mp.getDownscaleFactor(_rc) * _scale * _step));
 
     Point3d C = _mp.CArr[_rc];
     Matrix3x3 iP = _mp.iCamArr[_rc];
@@ -411,8 +368,8 @@ void DepthSimMap::save(const std::string& customSuffix) const
         metadata.push_back(oiio::ParamValue("AliceVision:P", oiio::TypeDesc(oiio::TypeDesc::DOUBLE, oiio::TypeDesc::MATRIX44), 1, matrixP.data()));
     }
 
-    imageIO::writeImage(getFileNameFromIndex(_mp, _rc, mvsUtils::EFileType::depthMap, _scale, customSuffix), width, height, depthMap.getDataWritable(), imageIO::EImageQuality::LOSSLESS, imageIO::EImageColorSpace::NO_CONVERSION, metadata);
-    imageIO::writeImage(getFileNameFromIndex(_mp, _rc, mvsUtils::EFileType::simMap, _scale, customSuffix), width, height, simMap.getDataWritable(), imageIO::EImageQuality::OPTIMIZED, imageIO::EImageColorSpace::NO_CONVERSION, metadata);
+    imageIO::writeImage(getFileNameFromIndex(_mp, _rc, mvsUtils::EFileType::depthMap, _scale, customSuffix), _w, _h, depthMap.getDataWritable(), imageIO::EImageQuality::LOSSLESS, imageIO::EImageColorSpace::NO_CONVERSION, metadata);
+    imageIO::writeImage(getFileNameFromIndex(_mp, _rc, mvsUtils::EFileType::simMap, _scale, customSuffix), _w, _h, simMap.getDataWritable(), imageIO::EImageQuality::OPTIMIZED, imageIO::EImageColorSpace::NO_CONVERSION, metadata);
 }
 
 void DepthSimMap::load(int fromScale)
