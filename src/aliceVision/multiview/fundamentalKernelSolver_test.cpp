@@ -7,7 +7,7 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "aliceVision/multiview/fundamentalKernelSolver.hpp"
-#include "aliceVision/multiview/projection.hpp"
+#include "aliceVision/numeric/projection.hpp"
 
 #define BOOST_TEST_MODULE fundamentalKernelSolver
 #include <boost/test/included/unit_test.hpp>

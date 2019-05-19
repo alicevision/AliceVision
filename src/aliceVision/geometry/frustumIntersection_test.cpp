@@ -9,7 +9,7 @@
 #include "aliceVision/geometry/Frustum.hpp"
 
 #include "aliceVision/multiview/NViewDataSet.hpp"
-#include "aliceVision/multiview/projection.hpp"
+#include "aliceVision/numeric/projection.hpp"
 
 #include <iostream>
 

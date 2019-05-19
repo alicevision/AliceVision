@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include <aliceVision/multiview/projection.hpp>
+#include <aliceVision/numeric/projection.hpp>
 #include <aliceVision/multiview/twoViewKernel.hpp>
 
 #include <vector>

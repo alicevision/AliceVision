@@ -18,7 +18,6 @@ alicevision_add_library(aliceVision_mvsUtils
   SOURCES ${mvsUtils_files_headers} ${mvsUtils_files_sources}
   PUBLIC_LINKS
     aliceVision_numeric
-    aliceVision_multiview
     aliceVision_mvsData
     aliceVision_sfmData
     aliceVision_imageIO

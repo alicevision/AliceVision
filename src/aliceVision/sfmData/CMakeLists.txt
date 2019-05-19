@@ -22,8 +22,8 @@ alicevision_add_library(aliceVision_sfmData
     aliceVision_system
     aliceVision_numeric
     aliceVision_image
-    aliceVision_feature
-    aliceVision_geometry
+    aliceVision_featureData
+    aliceVision_geometryData
     aliceVision_camera
     aliceVision_stl
     ${Boost_FILESYSTEM_LIBRARY}

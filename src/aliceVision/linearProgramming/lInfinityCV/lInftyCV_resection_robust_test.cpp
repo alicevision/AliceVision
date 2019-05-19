@@ -10,7 +10,7 @@
 #include "aliceVision/linearProgramming/lInfinityCV/resection_kernel.hpp"
 #include "aliceVision/robustEstimation/maxConsensus.hpp"
 #include "aliceVision/robustEstimation/ScoreEvaluator.hpp"
-#include "aliceVision/multiview/projection.hpp"
+#include "aliceVision/numeric/projection.hpp"
 
 #include <iostream>
 #include <vector>

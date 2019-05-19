@@ -3,7 +3,6 @@ set(multiview_files_headers
   affineSolver.hpp
   conditioning.hpp
   essential.hpp
-  projection.hpp
   essentialFivePointSolver.hpp
   essentialKernelSolver.hpp
   fundamentalKernelSolver.hpp
@@ -30,7 +29,6 @@ set(multiview_files_sources
   affineSolver.cpp
   conditioning.cpp
   essential.cpp
-  projection.cpp
   essentialFivePointSolver.cpp
   essentialKernelSolver.cpp
   fundamentalKernelSolver.cpp
@@ -84,4 +82,3 @@ alicevision_add_test(essentialFivePointSolver_test.cpp       NAME "multiview_ess
 alicevision_add_test(essentialKernelSolver_test.cpp          NAME "multiview_essentialKernelSolver"           LINKS aliceVision_multiview aliceVision_multiview_test_data)
 alicevision_add_test(homographyKernelSolver_test.cpp         NAME "multiview_homographyKernelSolver"          LINKS aliceVision_multiview aliceVision_multiview_test_data)
 alicevision_add_test(knownRotationTranslationKernel_test.cpp NAME "multiview_knownRotationTranslationKernel"  LINKS aliceVision_multiview aliceVision_multiview_test_data)
-

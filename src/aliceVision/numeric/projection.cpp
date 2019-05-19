@@ -6,7 +6,8 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
-#include <aliceVision/multiview/projection.hpp>
+#include <aliceVision/numeric/projection.hpp>
+#include <aliceVision/numeric/numeric.hpp>
 
 #include <cmath>
 
@@ -29,7 +30,7 @@ void KRt_From_P(const Mat34 &P, Mat3 *Kp, Mat3 *Rp, Vec3 *tp)
   assert(Kp != nullptr);
   assert(Rp != nullptr);
   assert(tp != nullptr);
-  
+
   // Decompose using the RQ decomposition HZ A4.1.1 pag.579.
   Mat3 K = P.block(0, 0, 3, 3);
 
@@ -42,7 +43,7 @@ void KRt_From_P(const Mat34 &P, Mat3 *Kp, Mat3 *Rp, Vec3 *tp)
     double c = -K(2,2);
     double s = K(2,1);
     const double length = std::hypot(c, s);
-    c /= length; 
+    c /= length;
     s /= length;
     Mat3 Qx;
     Qx << 1, 0, 0,
@@ -57,7 +58,7 @@ void KRt_From_P(const Mat34 &P, Mat3 *Kp, Mat3 *Rp, Vec3 *tp)
     double c = K(2,2);
     double s = K(2,0);
     const double length = std::hypot(c, s);
-    c /= length; 
+    c /= length;
     s /= length;
     Mat3 Qy;
     Qy << c, 0, s,
@@ -72,7 +73,7 @@ void KRt_From_P(const Mat34 &P, Mat3 *Kp, Mat3 *Rp, Vec3 *tp)
     double c = -K(1,1);
     double s = K(1,0);
     const double length = std::hypot(c, s);
-    c /= length; 
+    c /= length;
     s /= length;
     Mat3 Qz;
     Qz << c,-s, 0,
@@ -203,7 +204,7 @@ void HomogeneousToEuclidean(const Vec4 &H, Vec3 *X)
 void EuclideanToHomogeneous(const Mat &X, Mat *H)
 {
   assert(H != nullptr);
-  *H = X.colwise().homogeneous();  
+  *H = X.colwise().homogeneous();
 }
 
 double Depth(const Mat3 &R, const Vec3 &t, const Vec3 &X)
@@ -254,7 +255,7 @@ void HomogeneousToNormalizedCamera(const Mat3X &x, const Mat3 &K, Mat2X *n)
 /// Estimates the root mean square error (2D)
 double reprojectionErrorRMSE(const Mat2X &x_image,
                            const Mat4X &X_world,
-                           const Mat34 &P) 
+                           const Mat34 &P)
 {
     const std::size_t num_points = x_image.cols();
     const Mat2X dx = Project(P, X_world) - x_image;
@@ -266,7 +267,7 @@ double reprojectionErrorRMSE(const Mat2X &x_image,
                            const Mat3X &X_world,
                            const Mat3 &K,
                            const Mat3 &R,
-                           const Vec3 &t) 
+                           const Vec3 &t)
 {
     Mat34 P;
     P_From_KRt(K, R, t, &P);
@@ -274,4 +275,3 @@ double reprojectionErrorRMSE(const Mat2X &x_image,
 }
 
 } // namespace aliceVision
-

@@ -8,7 +8,7 @@
 #include <aliceVision/robustEstimation/LORansacKernelAdaptor.hpp>
 #include <aliceVision/robustEstimation/ScoreEvaluator.hpp>
 #include <aliceVision/robustEstimation/randSampling.hpp>
-#include <aliceVision/multiview/projection.hpp>
+#include <aliceVision/numeric/projection.hpp>
 #include <aliceVision/multiview/resection/ResectionKernel.hpp>
 #include <aliceVision/multiview/resection/P3PSolver.hpp>
 #include <aliceVision/multiview/conditioning.hpp>

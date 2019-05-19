@@ -15,8 +15,7 @@ set(camera_files_headers
 alicevision_add_interface(aliceVision_camera
   SOURCES ${camera_files_headers}
   LINKS
-    aliceVision_geometry
-    aliceVision_multiview
+    aliceVision_geometryData
     aliceVision_image
     aliceVision_numeric
     aliceVision_stl

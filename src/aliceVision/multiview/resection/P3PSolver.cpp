@@ -7,7 +7,7 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "P3PSolver.hpp"
-#include <aliceVision/multiview/projection.hpp>
+#include <aliceVision/numeric/projection.hpp>
 
 namespace aliceVision {
 namespace resection {

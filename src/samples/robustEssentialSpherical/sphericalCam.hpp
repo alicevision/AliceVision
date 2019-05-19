@@ -8,7 +8,7 @@
 #pragma once
 
 #include "aliceVision/numeric/numeric.hpp"
-#include "aliceVision/multiview/projection.hpp"
+#include "aliceVision/numeric/projection.hpp"
 
 // [1] "Robust and accurate calibration of camera networks". PhD.
 // Authors: Pierre MOULON

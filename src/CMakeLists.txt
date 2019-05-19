@@ -82,7 +82,7 @@ if(ALICEVISION_USE_RPATH)
     set(CMAKE_INSTALL_RPATH "\\$ORIGIN/../${CMAKE_INSTALL_LIBDIR}:\\$ORIGIN")
   endif()
 endif()
- 
+
 
 # Set build path
 set(EXECUTABLE_OUTPUT_PATH "${ALICEVISION_ROOT}/${CMAKE_SYSTEM_NAME}-${CMAKE_SYSTEM_PROCESSOR}")
@@ -355,7 +355,7 @@ if(ALICEVISION_BUILD_SFM)
     message(STATUS "CERES_LIBRARIES: ${CERES_LIBRARIES}")
     message(STATUS "CERES_INCLUDE_DIRS: ${CERES_INCLUDE_DIRS}")
     if(WIN32)
-        # avoid 'ERROR' macro clashing on Windows 
+        # avoid 'ERROR' macro clashing on Windows
         add_definitions(-DGLOG_NO_ABBREVIATED_SEVERITIES)
     endif()
     include_directories(${CERES_INCLUDE_DIRS})
@@ -507,7 +507,7 @@ endif()
 # ==============================================================================
 set(ALICEVISION_HAVE_ALEMBIC 0)
 
-if(ALICEVISION_BUILD_SFM) # or ALICEVISION_BUILD_MVS
+if(ALICEVISION_BUILD_SFM OR ALICEVISION_BUILD_MVS)
   if(NOT ALICEVISION_USE_ALEMBIC STREQUAL "OFF")
     find_package(Alembic 1.7.0 CONFIG)
 
@@ -664,7 +664,7 @@ if(NOT ALICEVISION_USE_CUDA STREQUAL "OFF")
     set(CUDA_USE_STATIC_CUDA_RUNTIME OFF)
     # Workaround to force deactivation of cuda static runtime for cmake < 3.10
     set(CUDA_cudart_static_LIBRARY 0)
-  else() 
+  else()
     message(STATUS "BUILD_SHARED_LIBS OFF")
     option(CUDA_USE_STATIC_CUDA_RUNTIME "Use the static version of the CUDA runtime library if available" ON)
     set(CUDA_USE_STATIC_CUDA_RUNTIME ON)

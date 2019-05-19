@@ -10,7 +10,7 @@
 
 #include "aliceVision/numeric/numeric.hpp"
 #include "aliceVision/multiview/essential.hpp"
-#include "aliceVision/multiview/projection.hpp"
+#include "aliceVision/numeric/projection.hpp"
 #include "aliceVision/multiview/essentialFivePointSolver.hpp"
 #include "aliceVision/multiview/NViewDataSet.hpp"
 

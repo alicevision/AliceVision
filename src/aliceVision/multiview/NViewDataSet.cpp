@@ -8,7 +8,7 @@
 
 #include "NViewDataSet.hpp"
 #include <aliceVision/numeric/numeric.hpp>
-#include <aliceVision/multiview/projection.hpp>
+#include <aliceVision/numeric/projection.hpp>
 
 #include <cmath>
 #include <fstream>

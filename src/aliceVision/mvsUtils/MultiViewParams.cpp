@@ -15,7 +15,7 @@
 #include <aliceVision/mvsUtils/common.hpp>
 #include <aliceVision/imageIO/image.hpp>
 #include <aliceVision/numeric/numeric.hpp>
-#include <aliceVision/multiview/projection.hpp>
+#include <aliceVision/numeric/projection.hpp>
 
 #include <boost/filesystem.hpp>
 #include <boost/accumulators/accumulators.hpp>

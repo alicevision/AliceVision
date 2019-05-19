@@ -9,7 +9,7 @@
 #define ALICEVISION_RESECTION_L1_KERNEL_H_
 
 #include <vector>
-#include "aliceVision/multiview/projection.hpp"
+#include "aliceVision/numeric/projection.hpp"
 #include "aliceVision/multiview/twoViewKernel.hpp"
 #include "aliceVision/numeric/numeric.hpp"
 

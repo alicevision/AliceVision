@@ -8,7 +8,7 @@
 #include "RelativePoseInfo.hpp"
 
 #include <aliceVision/multiview/essentialKernelSolver.hpp>
-#include <aliceVision/multiview/projection.hpp>
+#include <aliceVision/numeric/projection.hpp>
 #include <aliceVision/multiview/triangulation/triangulationDLT.hpp>
 
 #include <aliceVision/robustEstimation/ACRansac.hpp>

@@ -8,7 +8,7 @@
 
 #include "Triangulation.hpp"
 #include "NViewsTriangulationLORansac.hpp"
-#include <aliceVision/multiview/projection.hpp>
+#include <aliceVision/numeric/projection.hpp>
 #include <aliceVision/robustEstimation/LORansac.hpp>
 #include <aliceVision/robustEstimation/ScoreEvaluator.hpp>
 
