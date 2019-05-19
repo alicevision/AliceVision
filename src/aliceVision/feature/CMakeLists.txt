@@ -1,22 +1,22 @@
-project(features)
+project(feature)
 
-set(featuresData_files_headers
+set(featureData_files_headers
   imageDescriberCommon.hpp
 )
-set(featuresData_files_sources
+set(featureData_files_sources
   imageDescriberCommon.cpp
 )
 
 # Sub-library dedicated for the data structure to cut dependencies
 alicevision_add_library(aliceVision_featureData
-  SOURCES ${featuresData_files_headers} ${featuresData_files_sources}
+  SOURCES ${featureData_files_headers} ${featureData_files_sources}
   PRIVATE_LINKS
     ${Boost_FILESYSTEM_LIBRARY}
 )
 
 if(ALICEVISION_BUILD_SFM)
   # Headers
-  set(features_files_headers
+  set(feature_files_headers
     akaze/AKAZE.hpp
     akaze/descriptorLIOP.hpp
     akaze/descriptorMLDB.hpp
@@ -40,7 +40,7 @@ if(ALICEVISION_BUILD_SFM)
   )
 
   # Sources
-  set(features_files_sources
+  set(feature_files_sources
     akaze/AKAZE.cpp
     akaze/descriptorLIOP.cpp
     akaze/ImageDescriber_AKAZE.cpp
@@ -53,30 +53,30 @@ if(ALICEVISION_BUILD_SFM)
 
   # CCTAG ImageDescriber
   if(ALICEVISION_HAVE_CCTAG)
-    list(APPEND features_files_headers cctag/ImageDescriber_CCTAG.hpp)
-    list(APPEND features_files_sources cctag/ImageDescriber_CCTAG.cpp)
+    list(APPEND feature_files_headers cctag/ImageDescriber_CCTAG.hpp)
+    list(APPEND feature_files_sources cctag/ImageDescriber_CCTAG.cpp)
   endif()
 
   # PopSIFT ImageDescriber
   if(ALICEVISION_HAVE_POPSIFT)
-    list(APPEND features_files_headers sift/ImageDescriber_SIFT_popSIFT.hpp)
-    list(APPEND features_files_sources sift/ImageDescriber_SIFT_popSIFT.cpp)
+    list(APPEND feature_files_headers sift/ImageDescriber_SIFT_popSIFT.hpp)
+    list(APPEND feature_files_sources sift/ImageDescriber_SIFT_popSIFT.cpp)
   endif()
 
   # OpenCV ImageDescriber
   if(ALICEVISION_HAVE_OPENCV)
-    list(APPEND features_files_headers openCV/ImageDescriber_AKAZE_OCV.hpp)
-    list(APPEND features_files_sources openCV/ImageDescriber_AKAZE_OCV.cpp)
+    list(APPEND feature_files_headers openCV/ImageDescriber_AKAZE_OCV.hpp)
+    list(APPEND feature_files_sources openCV/ImageDescriber_AKAZE_OCV.cpp)
 
     if(ALICEVISION_HAVE_OCVSIFT)
-      list(APPEND features_files_headers openCV/ImageDescriber_SIFT_OCV.hpp)
-      list(APPEND features_files_sources openCV/ImageDescriber_SIFT_OCV.cpp)
+      list(APPEND feature_files_headers openCV/ImageDescriber_SIFT_OCV.hpp)
+      list(APPEND feature_files_sources openCV/ImageDescriber_SIFT_OCV.cpp)
     endif()
   endif()
 
 
   alicevision_add_library(aliceVision_feature
-    SOURCES ${features_files_headers} ${features_files_sources}
+    SOURCES ${feature_files_headers} ${feature_files_sources}
     PUBLIC_LINKS
       aliceVision_featureData
       aliceVision_image
@@ -104,6 +104,6 @@ if(ALICEVISION_BUILD_SFM)
   endif()
 
   # Unit tests
-  alicevision_add_test(features_test.cpp NAME "features" LINKS aliceVision_feature)
+  alicevision_add_test(features_test.cpp NAME "feature" LINKS aliceVision_feature)
 
 endif()
