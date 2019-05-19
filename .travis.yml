@@ -12,7 +12,6 @@ addons:
   apt:
     sources:
       - ubuntu-toolchain-r-test
-      - boost-latest
     packages:
       #- cmake # Manually install latest version (>=3.0)
       - lcov
