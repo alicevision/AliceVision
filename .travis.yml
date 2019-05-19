@@ -32,6 +32,7 @@ env:
     - BUILD_TYPE="Release"
     - BUILD_SYSTEM="`uname -s`"
     - BUILD_PROCESSOR="`uname -p`"
+    - ALICEVISION_WITH_CUDA=ON
     # NOTE: we need to install the dependencies in install-deps because for those ones using the cmake config file,
     # some of their dependencies are linked with hard-coded paths to the place where they where installed when said
     # dependency was built. E.g. Alembic depends on openExr and the AlembicConfig.cmake contains hard-coded links to
@@ -131,4 +132,3 @@ before_cache:
 cache:
   # Enable compiler cache
   ccache: true
-
