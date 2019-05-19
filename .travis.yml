@@ -12,8 +12,11 @@ addons:
   apt:
     sources:
       - ubuntu-toolchain-r-test
+      - llvm-toolchain-precise
     packages:
       #- cmake # Manually install latest version (>=3.0)
+      - g++-4.8
+      - clang-3.8
       - lcov
       - libpng-dev
       - libjpeg8-dev
@@ -22,9 +25,18 @@ addons:
       - libxxf86vm-dev
       - x11proto-xf86vidmode-dev
       - libxrandr-dev
-      - g++-4.8
       - libatlas-base-dev
       - libsuitesparse-dev
+
+matrix:
+  include:
+    - compiler: gcc
+      env: CXX_COMPILER=g++-4.8 C_COMPILER=gcc-4.8 TOOLSET=gcc ALICEVISION_BUILD_SFM=ON ALICEVISION_BUILD_MVS=ON ALICEVISION_USE_CUDA=OFF ALICEVISION_BUILD_TESTS=ON ALICEVISION_BUILD_EXAMPLES=ON
+    - compiler: clang
+      # clang 3.8 is  supported in cuda >= 8.0
+      env: CXX_COMPILER=clang++-3.8 C_COMPILER=clang-3.8 TOOLSET=clang ALICEVISION_BUILD_SFM=ON ALICEVISION_BUILD_MVS=ON ALICEVISION_USE_CUDA=OFF ALICEVISION_BUILD_TESTS=ON ALICEVISION_BUILD_EXAMPLES=ON
+    - compiler: gcc
+      env: CXX_COMPILER=g++-4.8 C_COMPILER=gcc-4.8 TOOLSET=gcc ALICEVISION_BUILD_SFM=OFF ALICEVISION_BUILD_MVS=ON ALICEVISION_USE_CUDA=ON ALICEVISION_BUILD_TESTS=OFF ALICEVISION_BUILD_EXAMPLES=OFF
 
 env:
   global:
@@ -32,7 +44,6 @@ env:
     - BUILD_TYPE="Release"
     - BUILD_SYSTEM="`uname -s`"
     - BUILD_PROCESSOR="`uname -p`"
-    - ALICEVISION_WITH_CUDA=ON
     # NOTE: we need to install the dependencies in install-deps because for those ones using the cmake config file,
     # some of their dependencies are linked with hard-coded paths to the place where they where installed when said
     # dependency was built. E.g. Alembic depends on openExr and the AlembicConfig.cmake contains hard-coded links to
@@ -69,10 +80,12 @@ before_script:
      cmake \
        -DCMAKE_BUILD_TYPE=${BUILD_TYPE} \
        -DTARGET_ARCHITECTURE=core \
-       -DALICEVISION_BUILD_TESTS=ON \
-       -DALICEVISION_BUILD_EXAMPLES=ON \
+       -DALICEVISION_BUILD_SFM=${ALICEVISION_BUILD_SFM} \
+       -DALICEVISION_BUILD_MVS=${ALICEVISION_BUILD_MVS} \
+       -DALICEVISION_BUILD_TESTS=${ALICEVISION_BUILD_TESTS} \
+       -DALICEVISION_BUILD_EXAMPLES=${ALICEVISION_BUILD_EXAMPLES} \
        -DALICEVISION_USE_OPENCV=ON \
-       -DALICEVISION_USE_CUDA=OFF \
+       -DALICEVISION_USE_CUDA=${ALICEVISION_USE_CUDA} \
        -DOpenCV_DIR="${DEPS_INSTALL_PATH}/share/OpenCV" \
        -DALICEVISION_USE_OPENGV=ON \
        -DOPENGV_DIR="${DEPS_INSTALL_PATH}" \
