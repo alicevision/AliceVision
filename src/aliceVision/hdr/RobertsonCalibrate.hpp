@@ -7,7 +7,7 @@
 #pragma once
 #include <aliceVision/image/all.hpp>
 #include "rgbCurve.hpp"
-#include "RobertsonMerge.hpp"
+#include "hdrMerge.hpp"
 
 
 namespace aliceVision {
@@ -33,9 +33,11 @@ public:
    * @param[in] times
    */
   void process(const std::vector< std::vector< image::Image<image::RGBfColor> > > &ldrImageGroups,
-               const std::vector< std::vector<float> > &times,
-               const rgbCurve &weight,
-               rgbCurve &response, float targetTime);
+               const std::size_t channelQuantization,
+               const std::vector< std::vector<float> > &times, const int nbPoints,
+               rgbCurve &weight,
+               rgbCurve &response,
+               float targetTime);
 
 
   int getMaxIteration() const 

@@ -14,8 +14,10 @@ namespace aliceVision {
 namespace hdr {
 
 void RobertsonCalibrate::process(const std::vector< std::vector< image::Image<image::RGBfColor> > > &ldrImageGroups,
+                                 const std::size_t channelQuantization,
                                  const std::vector< std::vector<float> > &times,
-                                 const rgbCurve &weight,
+                                 const int nbPoints,
+                                 rgbCurve &weight,
                                  rgbCurve &response,
                                  float targetTime)
 {
@@ -27,9 +29,6 @@ void RobertsonCalibrate::process(const std::vector< std::vector< image::Image<im
 
   //set channels count always RGB
   static const std::size_t channels = 3;
-
-  //get channels quantization
-  const std::size_t channelQuantization = std::pow(2, 12); //RAW 12 bit precision, 2^12 values between black and white point
 
   //create radiance vector of image
   _radiance = std::vector< image::Image<image::RGBfColor> >(ldrImageGroups.size());
@@ -51,17 +50,20 @@ void RobertsonCalibrate::process(const std::vector< std::vector< image::Image<im
   for(unsigned int g = 0; g < ldrImageGroups.size(); ++g)
   {
     const std::vector< image::Image<image::RGBfColor> > &ldrImagesGroup = ldrImageGroups[g];
+    const int step = std::floor(ldrImagesGroup.at(0).Width() * ldrImagesGroup.at(0).Height() / nbPoints);
 
     for(unsigned int i = 0; i < ldrImagesGroup.size(); ++i) 
     {
       const image::Image<image::RGBfColor> &image = ldrImagesGroup[i];
 
       //for each pixel
-      for(std::size_t y = 0; y < image.Height(); ++y)
+//      for(std::size_t y = 0; y < image.Height(); ++y)
+//      {
+//        for(std::size_t x = 0; x < image.Width(); ++x)
+//        {
+      for(std::size_t j=0; j<nbPoints; ++j)
       {
-        for(std::size_t x = 0; x < image.Width(); ++x)
-        {
-          const image::RGBfColor &pixelValue = image(y, x);
+          const image::RGBfColor &pixelValue = image(step*j);
           
           for(std::size_t channel = 0; channel < channels; ++channel) 
           {
@@ -69,7 +71,7 @@ void RobertsonCalibrate::process(const std::vector< std::vector< image::Image<im
             card(pixelValue(channel), channel) += 1;
             
           }
-        }
+//        }
       }
     }
   }
@@ -79,7 +81,7 @@ void RobertsonCalibrate::process(const std::vector< std::vector< image::Image<im
   card.inverseAllValues();
 
   //create merge operator
-  RobertsonMerge merge;
+  hdrMerge merge;
 
   for(std::size_t iter = 0; iter < _maxIteration; ++iter) 
   {
@@ -89,7 +91,7 @@ void RobertsonCalibrate::process(const std::vector< std::vector< image::Image<im
     //initialize radiance
     for(std::size_t g = 0; g < ldrImageGroups.size(); ++g)
     {
-      merge.process(ldrImageGroups[g], times[g], weight, response, _radiance[g], targetTime);
+      merge.process(ldrImageGroups[g], times[g], weight, response, _radiance[g], targetTime, true);
     }
 
     std::cout << "2) initialization new response "<< std::endl;
@@ -103,23 +105,26 @@ void RobertsonCalibrate::process(const std::vector< std::vector< image::Image<im
     {
       const std::vector< image::Image<image::RGBfColor> > &ldrImagesGroup = ldrImageGroups[g];
       const image::Image<image::RGBfColor> &radiance = _radiance[g];
+      const int step = std::floor(ldrImagesGroup.at(0).Width() * ldrImagesGroup.at(0).Height() / nbPoints);
 
       for(unsigned int i = 0; i < ldrImagesGroup.size(); ++i) 
       {
         #pragma omp parallel for
-        for(std::size_t y = 0; y < ldrImagesGroup[i].Height(); ++y)
+//        for(std::size_t y = 0; y < ldrImagesGroup[i].Height(); ++y)
+//        {
+//          for(std::size_t x = 0; x < ldrImagesGroup[i].Width(); ++x)
+//          {
+        for(std::size_t j=0; j<nbPoints; ++j)
         {
-          for(std::size_t x = 0; x < ldrImagesGroup[i].Width(); ++x)
-          {
             //for each pixels
-            const image::RGBfColor &pixelValue = ldrImagesGroup[i](y, x);
-            const image::RGBfColor &radianceValue = radiance(y, x);
+            const image::RGBfColor &pixelValue = ldrImagesGroup[i](step*j);
+            const image::RGBfColor &radianceValue = radiance(step*j);
 
             for(std::size_t channel = 0; channel < channels; ++channel)
             {
                 newResponse(pixelValue(channel), channel) += times[g][i] * (radianceValue(channel));
             }
-          }
+//          }
         }
       }
     }

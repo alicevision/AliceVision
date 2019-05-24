@@ -150,8 +150,9 @@ public:
   /**
    *@brief Set curves to gaussian
    */
-  void setGaussian(double size = 1);
-  
+  void setGaussian(double mu = 0.5, double sigma = 1.0 / (4.0 * sqrt(2.0)));
+//  void setGaussian(double mu = 0.5, double sigma = 1.0 / (5.0 * sqrt(2.0)));
+
   /**
    *@brief Set curves to triangular
    */
@@ -178,15 +179,25 @@ public:
    */
   void setAllAbsolute();
 
-  /*
+  /**
    * @brief normalize the curve
    */
   void normalize();
+
+  /**
+   * @brief scale the curve between 0 and 1
+   */
+  void scale();
   
   /**
    * @brief interpolates all values at zero with the previous an the next value 
    */
   void interpolateMissingValues();
+
+  /**
+   * @brief calculate the exponential of the curve
+   */
+  void exponential();
 
   /**
    * @brief Left accessor
@@ -226,6 +237,13 @@ public:
   void operator*=(const rgbCurve &other);
 
   /**
+   * @brief Operator*= Call multiply method with float parameter
+   * @param[in] coefficient
+   * @return rgbCurve of the multiplication
+   */
+  const rgbCurve operator*(const float coefficient);
+
+  /**
    * @brief Sum all value of an rgbCurve by another of the same size
    * @param[in] other
    * @return rgbCurve of the sum
@@ -244,6 +262,13 @@ public:
    * @param[in] other
    */
   void multiply(const rgbCurve &other);
+
+  /**
+   * @brief Multiply all value of an rgbCurve by a float coefficient
+   * @param[in] coefficient
+   * @return rgbCurve of teh multiplication
+   */
+  const rgbCurve multiply(const float coefficient);
 
   /**
    * @brief Write in a csv file 
@@ -298,7 +323,7 @@ public:
   {
     assert(channel < _data.size());
     assert(index < getSize());
-   _data.at(channel).at(index) = value;
+    _data.at(channel).at(index) = value;
   }
 
   std::size_t getIndex(float sample) const
