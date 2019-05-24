@@ -10,9 +10,10 @@
 #include <aliceVision/system/cmdline.hpp>
 #include <aliceVision/hdr/rgbCurve.hpp>
 #include <aliceVision/hdr/RobertsonCalibrate.hpp>
-#include <aliceVision/hdr/RobertsonMerge.hpp>
+#include <aliceVision/hdr/hdrMerge.hpp>
 #include <aliceVision/hdr/DebevecCalibrate.hpp>
-#include <aliceVision/hdr/DebevecMerge.hpp>
+#include <aliceVision/hdr/GrossbergCalibrate.hpp>
+#include <aliceVision/hdr/emorCurve.hpp>
 
 #include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>
@@ -34,7 +35,8 @@ namespace fs = boost::filesystem;
 enum class ECalibrationMethod
 {
       ROBERTSON,
-      DEBEVEC
+      DEBEVEC,
+      GROSSBERG
 };
 
 /**
@@ -48,6 +50,7 @@ inline std::string ECalibrationMethod_enumToString(const ECalibrationMethod cali
   {
     case ECalibrationMethod::ROBERTSON:   return "robertson";
     case ECalibrationMethod::DEBEVEC:     return "debevec";
+    case ECalibrationMethod::GROSSBERG:   return "grossberg";
   }
   throw std::out_of_range("Invalid method name enum");
 }
@@ -64,6 +67,7 @@ inline ECalibrationMethod ECalibrationMethod_stringToEnum(const std::string& cal
 
   if(methodName == "robertson")   return ECalibrationMethod::ROBERTSON;
   if(methodName == "debevec")     return ECalibrationMethod::DEBEVEC;
+  if(methodName == "grossberg")   return ECalibrationMethod::GROSSBERG;
 
   throw std::out_of_range("Invalid method name : '" + calibrationMethodName + "'");
 }
@@ -82,6 +86,45 @@ inline std::istream& operator>>(std::istream& in, ECalibrationMethod calibration
   return in;
 }
 
+/**
+ * @brief recreate the source image at the target exposure by applying the inverse camera response function to HDR image
+ * @param hdrImage
+ * @param response
+ * @param channelQuantization
+ * @param path to write the output image
+ */
+void recoverSourceImage(const image::Image<image::RGBfColor>& hdrImage, hdr::rgbCurve& response, float channelQuantization, std::string path, float meanVal[])
+{
+    image::Image<image::RGBfColor> targetRecover(hdrImage.Width(), hdrImage.Height(), false);
+    float meanRecovered[3] = {0.f, 0.f, 0.f};
+    for(std::size_t channel = 0; channel < 3; ++channel)
+    {
+      std::vector<float>::iterator first = response.getCurve(channel).begin();
+      std::vector<float>::iterator last = response.getCurve(channel).end();
+      for(std::size_t y = 0; y < hdrImage.Height(); ++y)
+      {
+        for(std::size_t x = 0; x < hdrImage.Width(); ++x)
+        {
+          const float &pixelValue = hdrImage(y, x)(channel);
+          std::vector<float>::iterator it = std::lower_bound(first, last, pixelValue);
+          float value = float(std::distance(response.getCurve(channel).begin(), it)) / (channelQuantization - 1.f);
+          targetRecover(y, x)(channel) =  value;
+
+          meanRecovered[channel] += value;
+
+        }
+      }
+      meanRecovered[channel] /= hdrImage.size();
+    }
+    ALICEVISION_COUT("mean values of recovered image = " << meanRecovered);
+    float offset[3];
+    for(int i=0; i<3; ++i)
+        offset[i] = std::abs(meanRecovered[i] - meanVal[i]);
+    ALICEVISION_COUT("offset between target source image and recovered from hdr = " << offset);
+
+    image::writeImage(path, targetRecover, image::EImageColorSpace::NO_CONVERSION);
+}
+
 
 int main(int argc, char** argv)
 {
@@ -92,8 +135,9 @@ int main(int argc, char** argv)
   std::string outputHDRImagePath;
   std::string outputResponsePath;
   bool calibration;
-  std::string calibrationMethodName = ECalibrationMethod_enumToString(ECalibrationMethod::DEBEVEC);
+  std::string calibrationMethodName = ECalibrationMethod_enumToString(ECalibrationMethod::GROSSBERG);
   std::string weightFunctionName = hdr::EFunctionType_enumToString(hdr::EFunctionType::GAUSSIAN);
+  std::string target;
 
   po::options_description allParams("AliceVision convertLDRToHDR");
 
@@ -115,7 +159,9 @@ int main(int argc, char** argv)
     ("calibrationMethod,m", po::value<std::string>(&calibrationMethodName)->default_value(calibrationMethodName),
         "method used for camera calibration.")
     ("weight,w", po::value<std::string>(&weightFunctionName)->default_value(weightFunctionName),
-       "weight function type (gaussian, triangle, plateau).");
+       "weight function type (gaussian, triangle, plateau).")
+    ("targetExposureTime,t", po::value<std::string>(&target),
+     "target exposure time for the output HDR image to be centered");
 
   allParams.add(requiredParams).add(logParams);
 
@@ -150,17 +196,18 @@ int main(int argc, char** argv)
   ALICEVISION_COUT("response file: " << outputResponsePath);
 
   const std::size_t channelQuantization = std::pow(2, 12); //RAW 12 bit precision, 2^12 values between black and white point
-  //const std::size_t channelQuantization = std::pow(2, 8); //JPG 8 bit precision, 256 values between black and white point
+//  const std::size_t channelQuantization = std::pow(2, 8); //JPG 8 bit precision, 256 values between black and white point
+//  const std::size_t channelQuantization = std::pow(2, 10); //RAW 10 bit precision, 2^10 values between black and white point
 
-  std::vector< std::vector< image::Image<image::RGBfColor> > > ldrImageGroups_cropped(1);
   std::vector< std::vector< image::Image<image::RGBfColor> > > ldrImageGroups(1);
   std::vector< std::vector<float> > times(1);
+//  std::vector< std::vector<float> > ev(1);
   hdr::rgbCurve weight(channelQuantization);
   hdr::rgbCurve response(channelQuantization);
 
-  std::vector<image::Image<image::RGBfColor>> &ldrImages_cropped = ldrImageGroups_cropped.at(0);
   std::vector<image::Image<image::RGBfColor>> &ldrImages = ldrImageGroups.at(0);
   std::vector<float> &ldrTimes = times.at(0);
+//  std::vector<float> &ldrEv = ev.at(0);
 
   // set verbose level
   system::Logger::get()->setLogLevel(verboseLevel);
@@ -174,6 +221,8 @@ int main(int argc, char** argv)
 
   // get all valid images paths from input folder
   std::vector<std::string> inputFilesNames;
+  std::vector<std::string> stemImages;
+  std::vector<std::string> nameImages;
   const std::vector<std::string> validExtensions = {".jpg", ".jpeg", ".png", ".cr2", ".tiff", ".tif"};
   for(auto& entry: fs::directory_iterator(fs::path(imageFolder)))
   {
@@ -184,36 +233,37 @@ int main(int argc, char** argv)
           if(std::find(validExtensions.begin(), validExtensions.end(), lowerExtension) != validExtensions.end())
           {
               inputFilesNames.push_back(entry.path().string());
+              stemImages.push_back(entry.path().stem().string());
+              nameImages.push_back(entry.path().filename().string());
           }
       }
   }
 
+
+
   int nbImages = inputFilesNames.size();
-  ldrImages_cropped.resize(nbImages);
   ldrImages.resize(nbImages);
   for(int i=0; i<nbImages; ++i)
-  {
+  {      
     std::string imagePath = inputFilesNames.at(i);
     int w, h;
     std::map<std::string, std::string> metadata;
 
-    image::readImage(imagePath, ldrImages.at(i), image::EImageColorSpace::NO_CONVERSION);
+    image::readImage(imagePath, ldrImages.at(i), image::EImageColorSpace::SRGB);
+
+    // test image conversion to sRGB
+//    image::writeImage(std::string("/s/prods/mvg/_source_global/samples/HDR_selection/terrasse_2/Mikros/sources/JPG/" + nameImages.at(i) + ".jpg"), ldrImages.at(i), image::EImageColorSpace::NO_CONVERSION);
     image::readImageMetadata(imagePath, w, h, metadata);
 
-    // we use a cropped image for calibration (fisheye images)
-    ldrImages_cropped.at(i) = image::Image<image::RGBfColor>(ldrImages.at(i).block<4000,4000>(h/2-2000, w/2-2000));
-    image::writeImage("/s/prods/mvg/_source_global/samples/HDR_selection/terrasse_2/Mikros/Debevec/image_cropped_2.jpg", ldrImages_cropped.at(i));
-
     // Debevec and Robertson algorithms use shutter speed as ev value
-    float ev;
+    float shutter;
     try
     {
-      // const float aperture = std::stof(metadata.at("FNumber"));
-      // const float iso = std::stof(metadata.at("Exif:PhotographicSensitivity"));
-      // ev = std::log2(pow(aperture, 2) / shutter) + std::log2(iso/100);
-
-      const float shutter = std::stof(metadata.at("ExposureTime"));
-      ev = shutter;
+//      const float aperture = std::stof(metadata.at("FNumber"));
+//      const float iso = std::stof(metadata.at("Exif:PhotographicSensitivity"));
+//      const float iso = std::stof(metadata.at("Exif:ISOSpeedRatings"));
+      shutter = std::stof(metadata.at("ExposureTime"));
+//      ldrEv.push_back(std::log2(pow(aperture, 2) / shutter) + std::log2(iso/100));      
     }
     catch(std::exception& e)
     {
@@ -221,16 +271,73 @@ int main(int argc, char** argv)
       return EXIT_FAILURE;
     }
 
-    ldrTimes.push_back(ev);
+    ldrTimes.push_back(shutter);
   }
 
+//  image::writeImage("/s/prods/mvg/_source_global/samples/HDR_selection/MPC/crop.tiff", ldrImages_cropped.at(nbImages-1), image::EImageColorSpace::NO_CONVERSION);
+
+  std::vector< std::vector<float> > times_sorted = times;
+  std::sort(times_sorted.at(0).begin(), times_sorted.at(0).end());
+  std::vector<float> ldrTimes_sorted = times_sorted.at(0);
+
   float targetTime;
+  if(!target.empty())
   {
-    std::vector<float> ldrTimes_sorted = ldrTimes;
-    std::sort(ldrTimes_sorted.begin(), ldrTimes_sorted.end());
-    targetTime = ldrTimes_sorted.at(ldrTimes_sorted.size()/2);
+      nameImages.insert(nameImages.end(), stemImages.begin(), stemImages.end());    //search target for filenames only and filenames + extensions
+      std::size_t targetIndex = std::distance(nameImages.begin(), std::find(nameImages.begin(), nameImages.end(), target));
+      try
+      {
+        targetTime = ldrTimes.at(targetIndex);
+      }
+      catch(std::exception& e)
+      {
+          try
+          {
+              targetTime = ldrTimes.at(targetIndex - ldrTimes.size());
+          }
+          catch(std::exception& e)
+          {
+              ALICEVISION_CERR("Invalid name of target");
+              return EXIT_FAILURE;
+          }
+      }
   }
-  ALICEVISION_COUT("target time = " << targetTime);
+  else
+      targetTime = ldrTimes_sorted.at(ldrTimes_sorted.size()/2);
+
+  // calcul of mean value of target image
+  std::size_t targetIndex = std::distance(ldrTimes.begin(), std::find(ldrTimes.begin(), ldrTimes.end(), targetTime));
+  float meanVal[3] = {0.f, 0.f, 0.f};
+  for(std::size_t channel=0; channel<3; ++channel)
+  {
+      for(std::size_t y = 0; y < ldrImages.at(0).Height(); ++y)
+      {
+        for(std::size_t x = 0; x < ldrImages.at(0).Width(); ++x)
+        {
+            meanVal[channel] += ldrImages.at(targetIndex)(y, x)(channel);
+        }
+      }
+      meanVal[channel] /= ldrImages.at(targetIndex).size();
+  }
+//  ALICEVISION_COUT("mean values of target image = " << meanVal);
+
+  // we sort the images according to their exposure time
+  std::vector< std::vector< image::Image<image::RGBfColor> > > ldrImageGroups_sorted(1);
+  ldrImageGroups_sorted.at(0).resize(nbImages);
+//  std::vector<std::string> nameImages_sorted = nameImages;
+  for(int i=0; i<nbImages; ++i)
+  {
+      std::vector<float>::iterator it = std::find(ldrTimes.begin(), ldrTimes.end(), ldrTimes_sorted.at(i));
+      if(it != ldrTimes.end())
+      {
+          ldrImageGroups_sorted.at(0).at(i) = ldrImages.at(std::distance(ldrTimes.begin(), it));
+//          nameImages_sorted.at(i) = nameImages.at(std::distance(ldrTimes.begin(), it));
+      }
+      else
+          ALICEVISION_LOG_ERROR("sorting failed");
+  }
+
+//  ALICEVISION_COUT("sorted images : " << nameImages_sorted);
 
   image::Image<image::RGBfColor> image(ldrImages.at(0).Width(), ldrImages.at(0).Height(), false);
 
@@ -242,24 +349,13 @@ int main(int argc, char** argv)
       case ECalibrationMethod::DEBEVEC:
       {
         ALICEVISION_COUT("Debevec calibration");
-        const float lambda = 1000.f;
+        const float lambda = channelQuantization * 1.f;
         const int nbPoints = 1000;
-        hdr::DebevecCalibrate calibration(channelQuantization);
-        calibration.process(ldrImageGroups_cropped, times, nbPoints, weight, lambda, response);
+        hdr::DebevecCalibrate calibration;
+        calibration.process(ldrImageGroups, channelQuantization, times, nbPoints, weight, lambda, response);
 
-//        response.write(outputResponsePath);
-
-        hdr::DebevecMerge merge;
-        merge.process(ldrImages, ldrTimes, weight, response, image, targetTime);
-
-//        hdr::rgbCurve expResponse(channelQuantization);
-//        for(unsigned int channel=0; channel<3; ++channel)
-//        {
-//          for(unsigned int k=0; k<channelQuantization; ++k)
-//            expResponse.setValue(k, channel, std::exp(response.getValue(k, channel)));
-//        }
-//        ALICEVISION_COUT("response(middle) = " << expResponse.getValue(2048, 0));
-//        expResponse.write("/s/prods/mvg/_source_global/samples/HDR_selection/terrasse_2/Mikros/Debevec/response_test_exp.csv");
+        response.exponential();
+        response.scale();
       }
       break;
 
@@ -267,12 +363,19 @@ int main(int argc, char** argv)
       {
         ALICEVISION_COUT("Robertson calibration");
         hdr::RobertsonCalibrate calibration(40);
-        calibration.process(ldrImageGroups_cropped, times, weight, response, targetTime);
+        const int nbPoints = 1000000;
+        calibration.process(ldrImageGroups_sorted, channelQuantization, times_sorted, nbPoints, weight, response, targetTime);
+        response.scale();
+      }
+      break;
 
-//        response.write(outputResponsePath);
-
-        hdr::RobertsonMerge merge;
-        merge.process(ldrImages, ldrTimes, weight, response, image, targetTime);
+      case ECalibrationMethod::GROSSBERG:
+      {
+        ALICEVISION_COUT("Grossberg calibration");
+        const int nbPoints = 1000000;
+        hdr::GrossbergCalibrate calibration(5);
+        calibration.process(ldrImageGroups_sorted, times_sorted, nbPoints, weight, response);
+        response.scale();
       }
       break;
     }
@@ -281,17 +384,18 @@ int main(int argc, char** argv)
   {
     // set the response function to linear
     response.setLinear();
-//    response.write(outputResponsePath);
-    hdr::RobertsonMerge merge;
-    merge.process(ldrImages, ldrTimes, weight, response, image, targetTime);
   }
+
+  hdr::hdrMerge merge;
+  merge.process(ldrImageGroups_sorted.at(0), ldrTimes_sorted, weight, response, image, targetTime);
 
 
   image::writeImage(outputHDRImagePath, image, image::EImageColorSpace::NO_CONVERSION);
   if(!outputResponsePath.empty())   response.write(outputResponsePath);
 
 
-
+  // test of recovery of source target image from HDR
+//  recoverSourceImage(image, response, channelQuantization, "/s/prods/mvg/_source_global/samples/HDR_selection/MPC/0/Mikros/recovered_test.exr", meanVal);
 
 
   return EXIT_SUCCESS;

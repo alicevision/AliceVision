@@ -5,17 +5,19 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #pragma once
+
 #include <aliceVision/image/all.hpp>
+#include "emorCurve.hpp"
 #include "rgbCurve.hpp"
-#include <aliceVision/numeric/numeric.hpp>
-#include <Eigen/SparseQR>
 
 namespace aliceVision {
 namespace hdr {
 
-class DebevecCalibrate
+class GrossbergCalibrate
 {
-public:  
+public:
+  GrossbergCalibrate(const unsigned int dimension, const std::size_t channelQuantization = std::pow(2, 10));     // the EMOR model has 2^10 values for each curve
+
 
   /**
    * @brief
@@ -23,17 +25,17 @@ public:
    * @param[in] times
    * @param[in] nbPoints (number of samples for calibration)
    * @param[in] weight
-   * @param[in] lambda (parameter of smoothness)
    * @param[out] response
    */
   void process(const std::vector< std::vector< image::Image<image::RGBfColor> > > &ldrImageGroups,
-               const std::size_t channelQuantization,
                const std::vector< std::vector<float> > &times,
                const int nbPoints,
                const rgbCurve &weight,
-               const float lambda,
                rgbCurve &response);
 
+private:
+  std::size_t _channelQuantization;
+  unsigned int _dimension;
 };
 
 } // namespace hdr

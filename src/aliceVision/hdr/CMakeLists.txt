@@ -3,18 +3,20 @@
 set(hdr_files_headers
  rgbCurve.hpp
  RobertsonCalibrate.hpp
- RobertsonMerge.hpp
+ hdrMerge.hpp
  DebevecCalibrate.hpp
- DebevecMerge.hpp
+ GrossbergCalibrate.hpp
+ emorCurve.hpp
 )
 
 # Sources
 set(hdr_files_sources
  rgbCurve.cpp
  RobertsonCalibrate.cpp
- RobertsonMerge.cpp
+ hdrMerge.cpp
  DebevecCalibrate.cpp
- DebevecMerge.cpp
+ GrossbergCalibrate.cpp
+ emorCurve.cpp
 )
 
 alicevision_add_library(aliceVision_hdr

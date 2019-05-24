@@ -13,7 +13,7 @@
 namespace aliceVision {
 namespace hdr {
  
-class RobertsonMerge {
+class hdrMerge {
 public:
 
   /**
@@ -26,10 +26,11 @@ public:
    */
   void process(const std::vector< image::Image<image::RGBfColor> > &images,
                 const std::vector<float> &times,
-                const rgbCurve &weight,
+                rgbCurve &weight,
                 const rgbCurve &response,
                 image::Image<image::RGBfColor> &radiance,
-                float targetTime);
+                float targetTime,
+                bool robCalibrate = false);
   
   /**
    * @brief This function obtains the "average scene luminance" EV value 

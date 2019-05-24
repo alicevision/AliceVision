@@ -60,13 +60,23 @@ void rgbCurve::setGamma()
   }
 }
 
-void rgbCurve::setGaussian(double size)
+//void rgbCurve::setGaussian(double size)
+//{
+//  const float coefficient = 1.f / (static_cast<float>(getSize() - 1) / 4.0f);
+//  for(std::size_t i = 0; i < getSize(); ++i)
+//  {
+//    float factor = i / size * coefficient - 2.0f / size;
+//    setAllChannels(i, std::exp( -factor * factor ));
+//  }
+//}
+
+void rgbCurve::setGaussian(double mu, double sigma)
 {
-  const float coefficient = 1.f / (static_cast<float>(getSize() - 1) / 4.0f);
   for(std::size_t i = 0; i < getSize(); ++i)
   {
-    float factor = i / size * coefficient - 2.0f / size;
-    setAllChannels(i, std::exp( -factor * factor ));
+    float factor = i / (static_cast<float>(getSize() - 1)) - mu;
+    setAllChannels(i, std::exp( -factor * factor / (2.0 * sigma * sigma)));
+//    setAllChannels(i, std::max(0.0, std::exp( -factor * factor / (2.0 * sigma * sigma)) - 0.005));
   }
 }
 
@@ -91,6 +101,7 @@ void rgbCurve::setPlateau()
   for(std::size_t i = 0; i < getSize(); ++i)
   {
     setAllChannels(i, 1.0f - std::pow((2.0f * i * coefficient - 1.0f), 12.0f));
+//      setAllChannels(i, 1.0f - std::pow((2.0f * i * coefficient - 1.0f), 4.0f));
   }
 }
 
@@ -161,6 +172,22 @@ void rgbCurve::normalize()
   }
 }
 
+void rgbCurve::scale()
+{
+    float minTot = std::numeric_limits<float>::max();
+    float maxTot = std::numeric_limits<float>::min();
+    for(auto &curve : _data)
+    {
+        float minV = *std::min_element(curve.begin(), curve.end());
+        float maxV = *std::max_element(curve.begin(), curve.end());
+        minTot = std::min(minTot, minV);
+        maxTot = std::max(maxTot, maxV);
+    }
+    for(auto &curve : _data)
+        for(auto &value : curve)
+            value = (value - minTot) / (maxTot - minTot);
+}
+
 void rgbCurve::interpolateMissingValues()
 {
   for(auto &curve : _data)
@@ -182,6 +209,15 @@ void rgbCurve::interpolateMissingValues()
       }
     }
   }
+}
+
+void rgbCurve::exponential()
+{
+    for(auto &curve : _data)
+    {
+        for(auto &value : curve)
+            value = std::exp(value);
+    }
 }
 
 float& rgbCurve::operator() (float sample, std::size_t channel)
@@ -209,6 +245,11 @@ const rgbCurve rgbCurve::operator-(const rgbCurve &other) const
 void rgbCurve::operator*=(const rgbCurve &other)
 {
   multiply(other);
+}
+
+const rgbCurve rgbCurve::operator*(const float coefficient)
+{
+    return multiply(coefficient);
 }
 
 const rgbCurve rgbCurve::sum(const rgbCurve &other) const
@@ -255,6 +296,13 @@ void rgbCurve::multiply(const rgbCurve &other)
     //multiply member channel by the other channel
     std::transform (curve.begin(), curve.end(), otherCurve.begin(), curve.begin(), std::multiplies<float>());
   }
+}
+
+const rgbCurve rgbCurve::multiply(const float coefficient)
+{
+  for(auto &curve : _data)
+      for(auto &value : curve)    value *= coefficient;
+  return (*this);
 }
 
 void rgbCurve::write(const std::string &path, const std::string &name) const

@@ -4,7 +4,7 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
-#include "RobertsonMerge.hpp"
+#include "hdrMerge.hpp"
 #include <cassert>
 #include <cmath>
 #include <limits>
@@ -16,15 +16,17 @@
 namespace aliceVision {
 namespace hdr {
   
-void RobertsonMerge::process(const std::vector< image::Image<image::RGBfColor> > &images,
+void hdrMerge::process(const std::vector< image::Image<image::RGBfColor> > &images,
                               const std::vector<float> &times,
-                              const rgbCurve &weight,
+                              rgbCurve &weight,
                               const rgbCurve &response,
                               image::Image<image::RGBfColor> &radiance,
                               float targetTime,
                               bool robCalibrate)
 {
-  std::cout << "Robertson merge" << std::endl;
+  std::cout << "hdr merge" << std::endl;
+
+  weight.setGaussian(0.5, 1.0/(5.0 * sqrt(2)));
 
   //checks
   assert(!response.isEmpty());
@@ -42,9 +44,9 @@ void RobertsonMerge::process(const std::vector< image::Image<image::RGBfColor> >
 //  const float minTrustedValue = 0.0f - std::numeric_limits<float>::epsilon();
 //  const float maxTrustedValue = 1.0f + std::numeric_limits<float>::epsilon();
 
-  const float maxLum = 4000.0;
-  const float minLum = std::numeric_limits<float>::min();
-  
+  const float maxLum = 1000.0;
+  const float minLum = 0.0001;
+
   #pragma omp parallel for
   for(std::size_t y = 0; y < height; ++y)
   {
@@ -52,13 +54,17 @@ void RobertsonMerge::process(const std::vector< image::Image<image::RGBfColor> >
     {
       //for each pixels
       image::RGBfColor &radianceColor = radiance(y, x);
-      
+
+//      double highValue = images.at(0)(y, x).maxCoeff();
+//      double lowValue = images.at(images.size()-1)(y, x).minCoeff();
+
       for(std::size_t channel = 0; channel < 3; ++channel)
       {
-        double wsum = 0.0f;
-        double wdiv = 0.0f;
-//        bool saturatedValue = true;
-//        double compVal = std::round(images[0](y, x));
+        double wsum = 0.0;
+        double wdiv = 0.0;
+        double highValue = images.at(0)(y, x)(channel);
+        double lowValue = images.at(images.size()-1)(y, x)(channel);
+
 //        float minTimeSaturation = std::numeric_limits<float>::max();
 //        float maxTimeSaturation = std::numeric_limits<float>::min();
 
@@ -68,45 +74,27 @@ void RobertsonMerge::process(const std::vector< image::Image<image::RGBfColor> >
           //for each images
           const double value = images[i](y, x)(channel);
           const double time = times[i];
-          const double w = weight(value, channel); //+ 0.0001;
+          double w = std::max(0.f, weight(value, channel) - weight(0.01, 0));
+
           const double r = response(value, channel);
 
           wsum += w * r / time;
           wdiv += w;
-
-//          if(std::round(value) != compVal)    saturatedValue = false;
         }
 
-//        if(wdiv <= 0.14 && robCalibrate == false)
-//        {
-////          std::cout << "sat" << std::endl;
-//          if(compVal == 0.0)   radianceColor(channel) = 0.0001 * wsum / wdiv * targetTime;
-//          else                  radianceColor(channel) = 1000.0 * wsum / wdiv * targetTime;
-//        }
-//        else
-//        {
-//            radianceColor(channel) = wsum / wdiv * targetTime;
-//        }
+        double clampedHighValue = 1.0 - (1.0 / (1.0 + expf(10.0 * ((highValue - 0.9) / 0.2))));
+        double clampedLowValue = 1.0 / (1.0 + expf(10.0 * ((lowValue - 0.005) / 0.01)));
 
-//        if(!robCalibrate)
-//        {
-//            double highValue = images.at(0)(y, x)(channel);
-//            double lowValue = images.at(images.size()-1)(y, x)(channel);
-//            double clampedHighValue = 1.0 - (1.0 / (1.0 + expf(10.0 * ((highValue - 0.9) / 0.3))));
-//            double clampedLowValue = 1.0 / (1.0 + expf(10.0 * ((lowValue - 0.3) / 0.4)));
-//            radianceColor(channel) = (1 - clampedHighValue - clampedLowValue) * wsum / wdiv * targetTime + clampedHighValue * maxLum + clampedLowValue * minLum;
-//        }
-//        else
-            radianceColor(channel) = wsum / wdiv * targetTime;
 
-//          wsum += w * r;
-//          wdiv += w * time;
+          if(!robCalibrate)
+          {
+              radianceColor(channel) = (1.0 - clampedHighValue - clampedLowValue) * wsum / std::max(0.001, wdiv) * targetTime + clampedHighValue * maxLum + clampedLowValue * minLum;
+          }
+          else
+          {
+              radianceColor(channel) = wsum / std::max(0.001, wdiv) * targetTime;
+          }
 
-//          wsum += w * time * r;
-//          wdiv += w * time * time;
-
-//          wsum += w * value / time;
-//          wdiv += w;
 
 //          //saturation detection
 //          if(value > maxTrustedValue)
@@ -120,8 +108,8 @@ void RobertsonMerge::process(const std::vector< image::Image<image::RGBfColor> >
 //          }
 
 //        //saturation correction
-//        if((wdiv == 0.0f) && 
-//               (maxTimeSaturation > std::numeric_limits<float>::min())) 
+//        if((wdiv == 0.0f) &&
+//               (maxTimeSaturation > std::numeric_limits<float>::min()))
 //        {
 //          wsum = minTrustedValue;
 //          wdiv = maxTimeSaturation;
@@ -134,7 +122,8 @@ void RobertsonMerge::process(const std::vector< image::Image<image::RGBfColor> >
 //          wdiv = minTimeSaturation;
 //        }
         
-      } 
+      }
+
     }
   }
 }
