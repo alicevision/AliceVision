@@ -7,6 +7,7 @@ set(hdr_files_headers
  DebevecCalibrate.hpp
  GrossbergCalibrate.hpp
  emorCurve.hpp
+ eiquadprog.hpp
 )
 
 # Sources

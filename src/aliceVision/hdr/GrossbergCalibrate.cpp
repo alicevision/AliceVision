@@ -8,6 +8,7 @@
 #include <iostream>
 #include <cassert>
 #include <aliceVision/alicevision_omp.hpp>
+#include "eiquadprog.hpp"
 
 
 namespace aliceVision {
@@ -38,6 +39,7 @@ void GrossbergCalibrate::process(const std::vector< std::vector< image::Image<im
 
     //initialize response with g0 from invEmor
     response = rgbCurve(_channelQuantization);
+    rgbCurve temporaryResponse(_channelQuantization);
     const double* ptrf0 = getEmorInvCurve(0);
     std::vector<double> f0;
     f0.assign(ptrf0, ptrf0 + _channelQuantization);
@@ -65,6 +67,7 @@ void GrossbergCalibrate::process(const std::vector< std::vector< image::Image<im
         for(unsigned int channel=0; channel<channels; ++channel)
         {
             response.getCurve(channel) = std::vector<float>(f0.begin(), f0.end());
+            temporaryResponse.getCurve(channel) = std::vector<float>(f0.begin(), f0.end());
 
             Mat A = Mat::Zero(nbPoints*(nbImages-1), _dimension);
             Vec b = Vec::Zero(nbPoints*(nbImages-1));
@@ -109,14 +112,55 @@ void GrossbergCalibrate::process(const std::vector< std::vector< image::Image<im
 
             for(unsigned int i=0; i<_dimension; ++i)
             {
-              std::vector<double> temp_hCurve = hCurves[i];
-              for(auto &value : temp_hCurve)
-                value *= c(i);
+                std::vector<double> temp_hCurve = hCurves[i];
+                for(auto &value : temp_hCurve)
+                    value *= c(i);
 
-              std::transform(response.getCurve(channel).begin(), response.getCurve(channel).end(), temp_hCurve.begin(), response.getCurve(channel).begin(), std::plus<float>());
+                std::transform(temporaryResponse.getCurve(channel).begin(), temporaryResponse.getCurve(channel).end(), temp_hCurve.begin(), temporaryResponse.getCurve(channel).begin(), std::plus<float>());
             }
 
             std::cout << "c : " << c << std::endl;
+        }
+
+        for(unsigned int channel=0; channel<channels; ++channel)
+        {
+            // Imposing monocity of the response function by quadratic programming
+            std::vector<double> fdiff(_channelQuantization);
+            std::transform(temporaryResponse.getCurve(channel).begin(), temporaryResponse.getCurve(channel).end(), f0.begin(), fdiff.begin(), std::minus<float>());
+            //                std::transform(f0.begin(), f0.end(), temporaryResponse.getCurve(channel).begin(), fdiff.begin(), std::minus<float>());
+            Vec v = Eigen::Map<Vec>(fdiff.data(), fdiff.size());
+            Mat D = Mat::Zero(_channelQuantization-1, _channelQuantization);
+            for(std::size_t y=0; y<_channelQuantization-1; ++y)
+            {
+//                D(y,y) = -1.f;
+//                D(y,y+1) = 1.f;
+                D(y,y) = -1.0 * _channelQuantization;
+                D(y,y+1) = _channelQuantization;
+            }
+
+            Mat G = H.transpose() * H;
+            Vec g0 = -H.transpose() * v;
+            Vec x;
+            Mat CE(_dimension, _channelQuantization);
+            Vec ce0(_channelQuantization);
+            Mat CI = (D*H).transpose();
+            Vec ci0 = D * Eigen::Map<Vec>(f0.data(), f0.size());
+
+            double cost = Eigen::solve_quadprog(G, g0, CE, ce0, CI, ci0, x);
+            if(cost == std::numeric_limits<double>::infinity())     //optimization failed
+                return;
+
+            std::cout << "x : " << x << std::endl;
+
+            // Calculate final monotonic response function
+            for(unsigned int i=0; i<_dimension; ++i)
+            {
+                std::vector<double> final_hCurve = hCurves[i];
+                for(auto &value : final_hCurve)
+                    value *= x(i);
+
+                std::transform(response.getCurve(channel).begin(), response.getCurve(channel).end(), final_hCurve.begin(), response.getCurve(channel).begin(), std::plus<float>());
+            }
         }
     }
 }
