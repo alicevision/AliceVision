@@ -16,48 +16,48 @@ namespace hdr {
     
 rgbCurve::rgbCurve(std::size_t size)
 {
-  for(auto &curve : _data)
-  {
-    curve.resize(size);
-  }
-  setZero();
+    for(auto &curve : _data)
+    {
+        curve.resize(size);
+    }
+    setZero();
 }
 
 rgbCurve::rgbCurve(const std::string &path)
 {
-  read(path);
+      read(path);
 }
 
 void rgbCurve::setFunction(EFunctionType functionType)
 {
-  switch(functionType)
-  {
-    case EFunctionType::LINEAR:     setLinear(); return;
-    case EFunctionType::GAUSSIAN:   setGaussian(); return;
-    case EFunctionType::TRIANGLE:   setTriangular(); return;
-    case EFunctionType::PLATEAU:    setPlateau(); return;
-    case EFunctionType::GAMMA:      setGamma(); return;
-    case EFunctionType::LOG10:      setLog10(); return;
-  }
-  throw std::out_of_range("Invalid function type enum");
+    switch(functionType)
+    {
+        case EFunctionType::LINEAR:     setLinear(); return;
+        case EFunctionType::GAUSSIAN:   setGaussian(); return;
+        case EFunctionType::TRIANGLE:   setTriangular(); return;
+        case EFunctionType::PLATEAU:    setPlateau(); return;
+        case EFunctionType::GAMMA:      setGamma(); return;
+        case EFunctionType::LOG10:      setLog10(); return;
+    }
+    throw std::out_of_range("Invalid function type enum");
 }
 
 void rgbCurve::setLinear() 
 {
-  const float coefficient = 1.f / static_cast<float>(getSize() - 1);
-  for(std::size_t i = 0; i < getSize(); ++i)
-  {
-    setAllChannels(i, i * coefficient);
-  }
+    const float coefficient = 1.f / static_cast<float>(getSize() - 1);
+    for(std::size_t i = 0; i < getSize(); ++i)
+    {
+        setAllChannels(i, i * coefficient);
+    }
 }
 
 void rgbCurve::setGamma()
 {
-  const float coefficient = 1.f / static_cast<float>(getSize() - 1);
-  for(std::size_t i = 0; i < getSize(); ++i)
-  {
-    setAllChannels(i, std::pow(4.0f * i * coefficient, 1.7f) + 1e-4);
-  }
+    const float coefficient = 1.f / static_cast<float>(getSize() - 1);
+    for(std::size_t i = 0; i < getSize(); ++i)
+    {
+        setAllChannels(i, std::pow(4.0f * i * coefficient, 1.7f) + 1e-4);
+    }
 }
 
 //void rgbCurve::setGaussian(double size)
@@ -72,104 +72,104 @@ void rgbCurve::setGamma()
 
 void rgbCurve::setGaussian(double mu, double sigma)
 {
-  for(std::size_t i = 0; i < getSize(); ++i)
-  {
-    float factor = i / (static_cast<float>(getSize() - 1)) - mu;
-    setAllChannels(i, std::exp( -factor * factor / (2.0 * sigma * sigma)));
-//    setAllChannels(i, std::max(0.0, std::exp( -factor * factor / (2.0 * sigma * sigma)) - 0.005));
-  }
+    for(std::size_t i = 0; i < getSize(); ++i)
+    {
+        float factor = i / (static_cast<float>(getSize() - 1)) - mu;
+        setAllChannels(i, std::exp( -factor * factor / (2.0 * sigma * sigma)));
+        //    setAllChannels(i, std::max(0.0, std::exp( -factor * factor / (2.0 * sigma * sigma)) - 0.005));
+    }
 }
 
 void rgbCurve::setTriangular()
 {
-  const float coefficient = 1.f / static_cast<float>(getSize() - 1);
-  for(std::size_t i = 0; i < getSize(); ++i)
-  {
-    float value = i * coefficient * 1.8f + 0.1f;
-    if (value >= 1.f)
+    const float coefficient = 1.f / static_cast<float>(getSize() - 1);
+    for(std::size_t i = 0; i < getSize(); ++i)
     {
-      value = 2.0f - value;
+        float value = i * coefficient * 1.8f + 0.1f;
+        if (value >= 1.f)
+        {
+            value = 2.0f - value;
+        }
+        setAllChannels(i, value);
     }
-    setAllChannels(i, value);
-  }
 }
 
 
 void rgbCurve::setPlateau()
 {
-  const float coefficient = 1.f / static_cast<float>(getSize() - 1);
-  for(std::size_t i = 0; i < getSize(); ++i)
-  {
-    setAllChannels(i, 1.0f - std::pow((2.0f * i * coefficient - 1.0f), 12.0f));
-//      setAllChannels(i, 1.0f - std::pow((2.0f * i * coefficient - 1.0f), 4.0f));
-  }
+    const float coefficient = 1.f / static_cast<float>(getSize() - 1);
+    for(std::size_t i = 0; i < getSize(); ++i)
+    {
+        setAllChannels(i, 1.0f - std::pow((2.0f * i * coefficient - 1.0f), 12.0f));
+        //      setAllChannels(i, 1.0f - std::pow((2.0f * i * coefficient - 1.0f), 4.0f));
+    }
 }
 
 void rgbCurve::setLog10()
 {
-  const float coefficient = 1.f / static_cast<float>(getSize() - 1);
-  const float logInverseNorm = 1.0f / 0.0625f;
-  const float logInverseMaxValue = 1.0f / 1e8;
-  for(std::size_t i = 0; i < getSize(); ++i)
-  {
-    setAllChannels(i, logInverseMaxValue * std::pow(10.0f, (i * coefficient * logInverseNorm) - 8.f));
-  }
+    const float coefficient = 1.f / static_cast<float>(getSize() - 1);
+    const float logInverseNorm = 1.0f / 0.0625f;
+    const float logInverseMaxValue = 1.0f / 1e8;
+    for(std::size_t i = 0; i < getSize(); ++i)
+    {
+        setAllChannels(i, logInverseMaxValue * std::pow(10.0f, (i * coefficient * logInverseNorm) - 8.f));
+    }
 }
 
 void rgbCurve::inverseAllValues()
 {
-  for(auto &curve : _data)
-  {
-    for(auto &value : curve)
+    for(auto &curve : _data)
     {
-      if(value != 0.f)
-      {
-        value = 1.f / value;
-      }
+        for(auto &value : curve)
+        {
+            if(value != 0.f)
+            {
+                value = 1.f / value;
+            }
+        }
     }
-  }
 }
 
 void rgbCurve::setAllAbsolute()
 {
-  for(auto &curve : _data)
-  {
-    for(auto &value : curve)
+    for(auto &curve : _data)
     {
-      value = std::abs(value);
+        for(auto &value : curve)
+        {
+            value = std::abs(value);
+        }
     }
-  }
 }
 
 void rgbCurve::normalize()
 {
-  for(auto &curve : _data)
-  {
-    std::size_t first = 0;
-    std::size_t last = curve.size() - 1;
-    
-    // find first and last value not null
-    for (; (first < curve.size()) && (curve[first] == 0) ; ++first);
-    for (; (last > 0) && (curve[last] == 0)  ; --last);
-
-    std::size_t middle = first + ((last - first) / 2);
-    float midValue = curve[middle];
-
-    if (midValue == 0.0f)
+    for(auto &curve : _data)
     {
-      // find first non-zero middle response
-      for (; (middle < last) && (curve[middle] == 0.0f) ; ++middle);
-      midValue = curve[middle];
+        std::size_t first = 0;
+        std::size_t last = curve.size() - 1;
+
+        // find first and last value not null
+        for (; (first < curve.size()) && (curve[first] == 0) ; ++first);
+        for (; (last > 0) && (curve[last] == 0)  ; --last);
+
+        std::size_t middle = first + ((last - first) / 2);
+        float midValue = curve[middle];
+
+        if (midValue == 0.0f)
+        {
+            // find first non-zero middle response
+            for (; (middle < last) && (curve[middle] == 0.0f) ; ++middle);
+            midValue = curve[middle];
+        }
+
+        std::cout << "-> middle [" << middle << "]: " << midValue <<std::endl;
+        const float coefficient = 1 / midValue;
+
+        for(auto &value : curve)
+        {
+            value *= coefficient;
+        }
     }
-    
-    std::cout << "-> middle [" << middle << "]: " << midValue <<std::endl;
-    const float coefficient = 1 / midValue;
-    
-    for(auto &value : curve)
-    {
-      value *= coefficient;
-    }
-  }
 }
 
 void rgbCurve::scale()
@@ -190,25 +190,25 @@ void rgbCurve::scale()
 
 void rgbCurve::interpolateMissingValues()
 {
-  for(auto &curve : _data)
-  {
-    std::size_t previousValidIndex = 0;
-    for(std::size_t index = 1; index < curve.size(); ++index)
+    for(auto &curve : _data)
     {
-      if(curve[index] != 0.0f)
-      {
-        if(previousValidIndex+1 < index)
+        std::size_t previousValidIndex = 0;
+        for(std::size_t index = 1; index < curve.size(); ++index)
         {
-          const float inter = (curve[index] - curve[previousValidIndex]) / (index - previousValidIndex);
-          for(std::size_t j = previousValidIndex+1; j < index; ++j)
-          {
-            curve[j] = curve[previousValidIndex] + inter * (j-previousValidIndex);
-          }
+            if(curve[index] != 0.0f)
+            {
+                if(previousValidIndex+1 < index)
+                {
+                    const float inter = (curve[index] - curve[previousValidIndex]) / (index - previousValidIndex);
+                    for(std::size_t j = previousValidIndex+1; j < index; ++j)
+                    {
+                        curve[j] = curve[previousValidIndex] + inter * (j-previousValidIndex);
+                    }
+                }
+                previousValidIndex = index;
+            }
         }
-        previousValidIndex = index;
-      }
     }
-  }
 }
 
 void rgbCurve::exponential()
@@ -254,147 +254,162 @@ const rgbCurve rgbCurve::operator*(const float coefficient)
 
 const rgbCurve rgbCurve::sum(const rgbCurve &other) const
 {
-  assert(getSize() == other.getSize());
+    assert(getSize() == other.getSize());
 
-  rgbCurve sum = rgbCurve(*this);
-  for(std::size_t channel = 0; channel < getNbChannels(); ++channel)
-  {
-    auto &sumCurve = sum.getCurve(channel);
-    const auto &otherCurve = other.getCurve(channel);
+    rgbCurve sum = rgbCurve(*this);
+    for(std::size_t channel = 0; channel < getNbChannels(); ++channel)
+    {
+        auto &sumCurve = sum.getCurve(channel);
+        const auto &otherCurve = other.getCurve(channel);
 
-    //sum member channel by the other channel
-    std::transform (sumCurve.begin(), sumCurve.end(), otherCurve.begin(), sumCurve.begin(), std::plus<float>());
-  }
-  return sum;
+        //sum member channel by the other channel
+        std::transform (sumCurve.begin(), sumCurve.end(), otherCurve.begin(), sumCurve.begin(), std::plus<float>());
+    }
+    return sum;
 }
 
 const rgbCurve rgbCurve::subtract(const rgbCurve &other) const
 {
-  assert(getSize() == other.getSize());
+    assert(getSize() == other.getSize());
 
-  rgbCurve sub = rgbCurve(*this);
-  for(std::size_t channel = 0; channel < getNbChannels(); ++channel)
-  {
-    auto &subCurve = sub.getCurve(channel);
-    const auto &otherCurve = other.getCurve(channel);
+    rgbCurve sub = rgbCurve(*this);
+    for(std::size_t channel = 0; channel < getNbChannels(); ++channel)
+    {
+        auto &subCurve = sub.getCurve(channel);
+        const auto &otherCurve = other.getCurve(channel);
 
-    //subtract member channel by the other channel
-    std::transform (subCurve.begin(), subCurve.end(), otherCurve.begin(), subCurve.begin(), std::minus<float>());
-  }
-  return sub;
+        //subtract member channel by the other channel
+        std::transform (subCurve.begin(), subCurve.end(), otherCurve.begin(), subCurve.begin(), std::minus<float>());
+    }
+    return sub;
 }
 
 void rgbCurve::multiply(const rgbCurve &other)
 {
-  assert(getSize() == other.getSize());  
+    assert(getSize() == other.getSize());
 
-  for(std::size_t channel = 0; channel < getNbChannels(); ++channel)
-  {
-    auto &curve = getCurve(channel);
-    const auto &otherCurve = other.getCurve(channel);
+    for(std::size_t channel = 0; channel < getNbChannels(); ++channel)
+    {
+        auto &curve = getCurve(channel);
+        const auto &otherCurve = other.getCurve(channel);
 
-    //multiply member channel by the other channel
-    std::transform (curve.begin(), curve.end(), otherCurve.begin(), curve.begin(), std::multiplies<float>());
-  }
+        //multiply member channel by the other channel
+        std::transform (curve.begin(), curve.end(), otherCurve.begin(), curve.begin(), std::multiplies<float>());
+    }
 }
 
 const rgbCurve rgbCurve::multiply(const float coefficient)
 {
+    for(auto &curve : _data)
+        for(auto &value : curve)    value *= coefficient;
+    return (*this);
+}
+
+const rgbCurve rgbCurve::meanCurves() const
+{
+  std::size_t nbChannels = getNbChannels();
+  rgbCurve mean = rgbCurve(nbChannels);
+  std::vector<float> calculateMean(getSize());
+
   for(auto &curve : _data)
-      for(auto &value : curve)    value *= coefficient;
-  return (*this);
+    std::transform (calculateMean.begin(), calculateMean.end(), curve.begin(), calculateMean.begin(), std::plus<float>());
+
+  for(std::size_t channel = 0; channel<nbChannels; ++channel)
+    mean.getCurve(channel) = calculateMean;
+
+  return mean.multiply(float(1.f/nbChannels));
 }
 
 void rgbCurve::write(const std::string &path, const std::string &name) const
 {
-  std::ofstream file(path);
+    std::ofstream file(path);
 
-  if(!file)
-  {
-    throw std::logic_error("Can't create curves file");
-    return;
-  }
-
-  std::string text(name + ",Red,Green,Blue,\n");
-  for(std::size_t index = 0; index < getSize(); ++index)
-  {
-    text += std::to_string(index) + ",";
-    for(std::size_t channel = 0; channel < getNbChannels(); ++channel)
+    if(!file)
     {
-      text += std::to_string(_data[channel][index]) + ",";
+        throw std::logic_error("Can't create curves file");
+        return;
     }
-    text += "\n";
-  }
-  file << text;
-  file.close();
+
+    std::string text(name + ",Red,Green,Blue,\n");
+    for(std::size_t index = 0; index < getSize(); ++index)
+    {
+        text += std::to_string(index) + ",";
+        for(std::size_t channel = 0; channel < getNbChannels(); ++channel)
+        {
+            text += std::to_string(_data[channel][index]) + ",";
+        }
+        text += "\n";
+    }
+    file << text;
+    file.close();
 }
 
 void rgbCurve::read(const std::string &path)
 {
-  std::ifstream file(path);
-  std::vector <std::vector <std::string> > fileData;
-  
-  if(!file)
-  {
-    throw std::logic_error("Can't open curves file");
-    return;
-  }
-  
-  //create fileData
-  while (file)
-  {
-    std::string line;
-    if (!getline( file, line )) break;
+    std::ifstream file(path);
+    std::vector <std::vector <std::string> > fileData;
 
-    std::istringstream sline( line );
-    std::vector<std::string> record;
-    while (sline)
+    if(!file)
     {
-      std::string value;
-      if (!getline( sline, value, ',' )) break;
-      record.push_back( value );
+        throw std::logic_error("Can't open curves file");
+        return;
     }
-    fileData.push_back( record );
-  }  
-  
-  //clear rgbCurve
-  for(auto &curve : _data)
-  {
-    curve.clear();
-  }
-  
-  //fill rgbCurve
-  
-  try 
-  {
-    for(std::size_t line = 1; line < fileData.size(); ++line)
-    {
-      _data[0].push_back(std::stof(fileData[line][1]));
-      _data[1].push_back(std::stof(fileData[line][2]));
-      _data[2].push_back(std::stof(fileData[line][3]));
-    }
-  }
-  catch(std::exception &e)
-  {
-    throw std::logic_error("Invalid Curve File");
-  }
 
-  file.close();
+    //create fileData
+    while (file)
+    {
+        std::string line;
+        if (!getline( file, line )) break;
+
+        std::istringstream sline( line );
+        std::vector<std::string> record;
+        while (sline)
+        {
+            std::string value;
+            if (!getline( sline, value, ',' )) break;
+            record.push_back( value );
+        }
+        fileData.push_back( record );
+    }
+
+    //clear rgbCurve
+    for(auto &curve : _data)
+    {
+        curve.clear();
+    }
+
+    //fill rgbCurve
+
+    try
+    {
+        for(std::size_t line = 1; line < fileData.size(); ++line)
+        {
+            _data[0].push_back(std::stof(fileData[line][1]));
+            _data[1].push_back(std::stof(fileData[line][2]));
+            _data[2].push_back(std::stof(fileData[line][3]));
+        }
+    }
+    catch(std::exception &e)
+    {
+        throw std::logic_error("Invalid Curve File");
+    }
+
+    file.close();
 }
 
 double rgbCurve::sumAll(const rgbCurve &curve)
 {
-  double sum = 0.0f;
-  for(std::size_t channel = 0; channel < curve.getNbChannels(); ++channel)
-  {
-    auto const &sumCurve = curve.getCurve(channel);
-
-    for(auto value : sumCurve)
+    double sum = 0.0f;
+    for(std::size_t channel = 0; channel < curve.getNbChannels(); ++channel)
     {
-      sum += value;
+        auto const &sumCurve = curve.getCurve(channel);
+
+        for(auto value : sumCurve)
+        {
+            sum += value;
+        }
     }
-  }
-  return sum;
+    return sum;
 }
 
 } // namespace hdr

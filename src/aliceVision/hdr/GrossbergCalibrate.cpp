@@ -8,6 +8,7 @@
 #include <iostream>
 #include <cassert>
 #include <aliceVision/alicevision_omp.hpp>
+#include <Eigen/Dense>
 
 
 namespace aliceVision {
@@ -38,6 +39,7 @@ void GrossbergCalibrate::process(const std::vector< std::vector< image::Image<im
 
     //initialize response with g0 from invEmor
     response = rgbCurve(_channelQuantization);
+    rgbCurve temporaryResponse(_channelQuantization);
     const double* ptrf0 = getEmorInvCurve(0);
     std::vector<double> f0;
     f0.assign(ptrf0, ptrf0 + _channelQuantization);
@@ -64,7 +66,7 @@ void GrossbergCalibrate::process(const std::vector< std::vector< image::Image<im
 
         for(unsigned int channel=0; channel<channels; ++channel)
         {
-            response.getCurve(channel) = std::vector<float>(f0.begin(), f0.end());
+            temporaryResponse.getCurve(channel) = std::vector<float>(f0.begin(), f0.end());
 
             Mat A = Mat::Zero(nbPoints*(nbImages-1), _dimension);
             Vec b = Vec::Zero(nbPoints*(nbImages-1));
@@ -85,13 +87,23 @@ void GrossbergCalibrate::process(const std::vector< std::vector< image::Image<im
                     std::size_t index1 = std::round((_channelQuantization-1) * sample1);
                     std::size_t index2 = std::round((_channelQuantization-1) * sample2);
 
-                    double w = std::min(weight(sample1, channel), weight(sample2, channel));
-                    if(std::max(sample1, sample2) > 0.95)
-                        w = 0.0;
+//                    double w = std::min(weight(sample1, channel), weight(sample2, channel));
+
+                    double w = (weight(sample1, channel) + weight(sample2, channel)) / 2.0;
+
+//                    double w_R = (weight(sample1, 0) + weight(sample2, 0)) / 2.0;
+//                    double w_G = (weight(sample1, 1) + weight(sample2, 1)) / 2.0;
+//                    double w_B = (weight(sample1, 2) + weight(sample2, 2)) / 2.0;
+
+//                    double w = (w_R + w_G + w_B) / 3.0;
+//                    double w = (w_R * w_G * w_B);
+//                    double w = std::min(std::min(w_R, w_G), w_B);
+//                    if(std::max(sample1, sample2) > 0.95)
+//                        w = 0.0;
 
                     b(j*nbPoints + l) = w * (f0.at(index2) - k * f0.at(index1));
                     for(unsigned int i=0; i<_dimension; ++i)
-                        A(j*nbPoints + l, i) = w * (H(index1, i) - k * H(index2, i));
+                      A(j*nbPoints + l, i) = w * (k * H(index1, i) - H(index2, i));
 
                 }
             }
@@ -113,11 +125,13 @@ void GrossbergCalibrate::process(const std::vector< std::vector< image::Image<im
               for(auto &value : temp_hCurve)
                 value *= c(i);
 
-              std::transform(response.getCurve(channel).begin(), response.getCurve(channel).end(), temp_hCurve.begin(), response.getCurve(channel).begin(), std::plus<float>());
-            }
+              std::cout << c(i) << std::endl;
 
-            std::cout << "c : " << c << std::endl;
+              std::transform(temporaryResponse.getCurve(channel).begin(), temporaryResponse.getCurve(channel).end(), temp_hCurve.begin(), temporaryResponse.getCurve(channel).begin(), std::plus<float>());
+            }
         }
+        response = temporaryResponse.meanCurves();
+//        response = temporaryResponse;
     }
 }
 
