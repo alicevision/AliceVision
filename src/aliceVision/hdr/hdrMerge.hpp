@@ -30,10 +30,11 @@ public:
                 const rgbCurve &response,
                 image::Image<image::RGBfColor> &radiance,
                 float targetTime,
+                const float threshold,
                 bool robCalibrate = false);
   
   /**
-   * @brief This function obtains the "average scene luminance" EV value 
+   * @brief This function obtains the "average scene luminance" EV value
    * from an image file.
    *
    * "average scene luminance" is the L (aka B) value mentioned in [1]
@@ -57,9 +58,9 @@ public:
    *
    * F-number and shutter speed are mandatory in exif data for EV
    * calculation, iso is not.
-   * 
+   *
    * Function from Luminance HDR
-   * 
+   *
    * @param shutter
    * @param iso
    * @param aperture
@@ -70,7 +71,7 @@ public:
     //reflected-light meter calibration constant
     const float K = 12.07488f;
     return std::log2((shutter * iso) / (aperture * aperture * K));
-    
+
     //EV = log2 (pow2(fstop) / shutter time)
     //LV = LV = EV + log2 (ISO / 100) (LV light Value as exposure)
     //return std::log2( ((aperture * aperture)/shutter) * (iso / 100) );

@@ -37,34 +37,35 @@ public:
                const std::vector< std::vector<float> > &times, const int nbPoints,
                rgbCurve &weight,
                rgbCurve &response,
-               float targetTime);
+               float targetTime,
+               const int threshold);
 
 
-  int getMaxIteration() const 
-  { 
-    return _maxIteration; 
-  }
-
-  float getThreshold() const 
+  int getMaxIteration() const
   {
-    return _threshold; 
+    return _maxIteration;
   }
-  
-  void setMaxIteration(int value) 
-  { 
-    _maxIteration = value; 
+
+  float getThreshold() const
+  {
+    return _threshold;
   }
-  
-  void setThreshold(float value) 
-  { 
-    _threshold = value; 
+
+  void setMaxIteration(int value)
+  {
+    _maxIteration = value;
+  }
+
+  void setThreshold(float value)
+  {
+    _threshold = value;
   }
 
   const image::Image<image::RGBfColor>& getRadiance(std::size_t group) const
-  { 
+  {
     assert(group < _radiance.size());
-    
-    return _radiance[group]; 
+
+    return _radiance[group];
   }
 
 private:

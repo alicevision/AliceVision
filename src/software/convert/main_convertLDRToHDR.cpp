@@ -138,6 +138,7 @@ int main(int argc, char** argv)
   std::string calibrationMethodName = ECalibrationMethod_enumToString(ECalibrationMethod::GROSSBERG);
   std::string weightFunctionName = hdr::EFunctionType_enumToString(hdr::EFunctionType::GAUSSIAN);
   std::string target;
+  float threshold = 1.f;
 
   po::options_description allParams("AliceVision convertLDRToHDR");
 
@@ -160,8 +161,10 @@ int main(int argc, char** argv)
         "method used for camera calibration.")
     ("weight,w", po::value<std::string>(&weightFunctionName)->default_value(weightFunctionName),
        "weight function type (gaussian, triangle, plateau).")
-    ("targetExposureTime,t", po::value<std::string>(&target),
-     "target exposure time for the output HDR image to be centered");
+    ("targetExposureTime,e", po::value<std::string>(&target),
+      "target exposure time for the output HDR image to be centered")
+    ("threshold,t", po::value<float>(&threshold)->default_value(threshold),
+      "threshold for clamped value (0 for no correction, 0.5 for inside lights and 1 for outside lights");
 
   allParams.add(requiredParams).add(logParams);
 
@@ -244,7 +247,7 @@ int main(int argc, char** argv)
   int nbImages = inputFilesNames.size();
   ldrImages.resize(nbImages);
   for(int i=0; i<nbImages; ++i)
-  {      
+  {
     std::string imagePath = inputFilesNames.at(i);
     int w, h;
     std::map<std::string, std::string> metadata;
@@ -263,7 +266,7 @@ int main(int argc, char** argv)
 //      const float iso = std::stof(metadata.at("Exif:PhotographicSensitivity"));
 //      const float iso = std::stof(metadata.at("Exif:ISOSpeedRatings"));
       shutter = std::stof(metadata.at("ExposureTime"));
-//      ldrEv.push_back(std::log2(pow(aperture, 2) / shutter) + std::log2(iso/100));      
+//      ldrEv.push_back(std::log2(pow(aperture, 2) / shutter) + std::log2(iso/100));
     }
     catch(std::exception& e)
     {
@@ -273,8 +276,6 @@ int main(int argc, char** argv)
 
     ldrTimes.push_back(shutter);
   }
-
-//  image::writeImage("/s/prods/mvg/_source_global/samples/HDR_selection/MPC/crop.tiff", ldrImages_cropped.at(nbImages-1), image::EImageColorSpace::NO_CONVERSION);
 
   std::vector< std::vector<float> > times_sorted = times;
   std::sort(times_sorted.at(0).begin(), times_sorted.at(0).end());
@@ -355,7 +356,7 @@ int main(int argc, char** argv)
         calibration.process(ldrImageGroups, channelQuantization, times, nbPoints, weight, lambda, response);
 
         response.exponential();
-        response.scale();
+//                response.scale();
       }
       break;
 
@@ -364,7 +365,7 @@ int main(int argc, char** argv)
         ALICEVISION_COUT("Robertson calibration");
         hdr::RobertsonCalibrate calibration(40);
         const int nbPoints = 1000000;
-        calibration.process(ldrImageGroups_sorted, channelQuantization, times_sorted, nbPoints, weight, response, targetTime);
+        calibration.process(ldrImageGroups_sorted, channelQuantization, times_sorted, nbPoints, weight, response, targetTime, threshold);
         response.scale();
       }
       break;
@@ -375,7 +376,7 @@ int main(int argc, char** argv)
         const int nbPoints = 1000000;
         hdr::GrossbergCalibrate calibration(5);
         calibration.process(ldrImageGroups_sorted, times_sorted, nbPoints, weight, response);
-        response.scale();
+//        response.scale();
       }
       break;
     }
@@ -387,7 +388,7 @@ int main(int argc, char** argv)
   }
 
   hdr::hdrMerge merge;
-  merge.process(ldrImageGroups_sorted.at(0), ldrTimes_sorted, weight, response, image, targetTime);
+  merge.process(ldrImageGroups_sorted.at(0), ldrTimes_sorted, weight, response, image, targetTime, threshold);
 
 
   image::writeImage(outputHDRImagePath, image, image::EImageColorSpace::NO_CONVERSION);
@@ -395,7 +396,7 @@ int main(int argc, char** argv)
 
 
   // test of recovery of source target image from HDR
-//  recoverSourceImage(image, response, channelQuantization, "/s/prods/mvg/_source_global/samples/HDR_selection/MPC/0/Mikros/recovered_test.exr", meanVal);
+  recoverSourceImage(image, response, channelQuantization, "/s/prods/mvg/_source_global/samples/HDR_selection/terrasse_2/Mikros/Centrage_expos/recovered_from_Gros_bonsCoeff_meanCurve.exr", meanVal);
 
 
   return EXIT_SUCCESS;

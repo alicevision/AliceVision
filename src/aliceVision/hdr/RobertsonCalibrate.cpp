@@ -19,7 +19,8 @@ void RobertsonCalibrate::process(const std::vector< std::vector< image::Image<im
                                  const int nbPoints,
                                  rgbCurve &weight,
                                  rgbCurve &response,
-                                 float targetTime)
+                                 float targetTime,
+                                 const int threshold)
 {
   //checks
   for (int g = 0; g < ldrImageGroups.size(); ++g)
@@ -52,7 +53,7 @@ void RobertsonCalibrate::process(const std::vector< std::vector< image::Image<im
     const std::vector< image::Image<image::RGBfColor> > &ldrImagesGroup = ldrImageGroups[g];
     const int step = std::floor(ldrImagesGroup.at(0).Width() * ldrImagesGroup.at(0).Height() / nbPoints);
 
-    for(unsigned int i = 0; i < ldrImagesGroup.size(); ++i) 
+    for(unsigned int i = 0; i < ldrImagesGroup.size(); ++i)
     {
       const image::Image<image::RGBfColor> &image = ldrImagesGroup[i];
 
@@ -64,26 +65,26 @@ void RobertsonCalibrate::process(const std::vector< std::vector< image::Image<im
       for(std::size_t j=0; j<nbPoints; ++j)
       {
           const image::RGBfColor &pixelValue = image(step*j);
-          
-          for(std::size_t channel = 0; channel < channels; ++channel) 
+
+          for(std::size_t channel = 0; channel < channels; ++channel)
           {
-            //number of pixel with the same value 
+            //number of pixel with the same value
             card(pixelValue(channel), channel) += 1;
-            
+
           }
 //        }
       }
     }
   }
   card.interpolateMissingValues();
-  
+
   //inverse cardinal curve value (for optimized division in the loop)
   card.inverseAllValues();
 
   //create merge operator
   hdrMerge merge;
 
-  for(std::size_t iter = 0; iter < _maxIteration; ++iter) 
+  for(std::size_t iter = 0; iter < _maxIteration; ++iter)
   {
     std::cout << "--> iteration : "<< iter << std::endl;
 
@@ -91,7 +92,7 @@ void RobertsonCalibrate::process(const std::vector< std::vector< image::Image<im
     //initialize radiance
     for(std::size_t g = 0; g < ldrImageGroups.size(); ++g)
     {
-      merge.process(ldrImageGroups[g], times[g], weight, response, _radiance[g], targetTime, true);
+      merge.process(ldrImageGroups[g], times[g], weight, response, _radiance[g], targetTime, threshold, true);
     }
 
     std::cout << "2) initialization new response "<< std::endl;
@@ -107,7 +108,7 @@ void RobertsonCalibrate::process(const std::vector< std::vector< image::Image<im
       const image::Image<image::RGBfColor> &radiance = _radiance[g];
       const int step = std::floor(ldrImagesGroup.at(0).Width() * ldrImagesGroup.at(0).Height() / nbPoints);
 
-      for(unsigned int i = 0; i < ldrImagesGroup.size(); ++i) 
+      for(unsigned int i = 0; i < ldrImagesGroup.size(); ++i)
       {
         #pragma omp parallel for
 //        for(std::size_t y = 0; y < ldrImagesGroup[i].Height(); ++y)
@@ -131,12 +132,12 @@ void RobertsonCalibrate::process(const std::vector< std::vector< image::Image<im
     newResponse.interpolateMissingValues();
     //dividing the response by the cardinal curve
     newResponse *= card;
-    
+
     std::cout << "4) normalize response"<< std::endl;
     //normalization
     newResponse.normalize();
-    
-    std::cout << "5) compute difference"<< std::endl;    
+
+    std::cout << "5) compute difference"<< std::endl;
     //calculate difference between the old response and the new one
     rgbCurve responseDiff = newResponse - response;
     responseDiff.setAllAbsolute();
@@ -145,13 +146,13 @@ void RobertsonCalibrate::process(const std::vector< std::vector< image::Image<im
 
     //update the response
     response = newResponse;
-    
-    std::cout << "6) check end condition"<< std::endl; 
+
+    std::cout << "6) check end condition"<< std::endl;
     //check end condition
-    if(diff < _threshold) 
+    if(diff < _threshold)
     {
-      std::cout << "[BREAK] difference < threshold " << std::endl;
-      break;
+        std::cout << "[BREAK] difference < threshold " << std::endl;
+        break;
     }
     std::cout << "-> difference is " << diff << std::endl;
   }
