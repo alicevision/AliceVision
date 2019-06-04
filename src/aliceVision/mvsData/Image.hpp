@@ -8,7 +8,6 @@
 
 #include <aliceVision/mvsData/Color.hpp>
 #include <aliceVision/mvsData/StaticVector.hpp>
-#include <aliceVision/mvsUtils/ImagesCache.hpp>
 #include <aliceVision/mvsData/Point2d.hpp>
 
 #include <algorithm>
@@ -19,15 +18,11 @@ class Image
 {
 private:
     std::vector<Color> _img;
-    int _width = 0;
-    int _height = 0;
+    int _width{0};
+    int _height{0};
 
 public:
-    Image()
-    {
-        _width = 0;
-        _height = 0;
-    }
+    Image() = default;
 
     Image(int width, int height)
         : _width(width)
@@ -36,12 +31,8 @@ public:
         _img.resize(width*height);
     }
 
-    Image(Color* data, int  width, int  height)
+    Image(Color* data, int  width, int  height) : Image(width, height)
     {
-        _width = width;
-        _height = height;
-        _img.resize(_width * _height);
-
         for(int i = 0; i < _width*_height; ++i)
             _img[i] = data[i];
     }
@@ -80,35 +71,6 @@ public:
         return *this;
     }
 
-    //outImg = inImga - inImgb
-    static void imageDiff(const Image& inImga, const Image& inImgb, Image& outImg)
-    {
-        if(inImga._width != inImgb._width || inImga._height != inImgb._height)
-            throw std::runtime_error("Incompatible image sizes");
-
-        outImg.resize(inImga._width, inImga._height);
-        for(int i = 0; i < inImga._width*inImga._height; ++i)
-        {
-            outImg._img[i] = inImga._img.at(i) - inImgb._img.at(i);
-        }
-    }
-
-    static void imageDownscaleDiff(Image& inImga, Image& inImgb, Image& outImg, unsigned int downscale)
-    {
-        //inImga = largest image
-        if(inImga.height() < inImgb.height())
-            inImga.swap(inImgb);
-
-        outImg.resize(inImga._width, inImga._height);
-        for(int i = 0; i < inImga._width*inImga._height; ++i)
-        {
-            Point2d pix(i%inImga.width(), static_cast<int>(i/inImga.width()));
-            Point2d pixd = pix/downscale;
-
-            outImg._img[i] = inImga._img[i] - inImgb.getInterpolateColor(pixd);
-        }
-
-    }
 
     int width() const { return _width; }
     int height() const { return _height; }
@@ -119,38 +81,27 @@ public:
     const Color& operator[](std::size_t index) const { return _img[index]; }
     Color& operator[](std::size_t index) { return _img[index]; }
 
-    Color getInterpolateColor(const Point2d& pix) const
-    {
-        const int xp = std::min(static_cast<int>(pix.x), _width-2);
-        const int yp = std::min(static_cast<int>(pix.y), _height-2);
+    Color getInterpolateColor(const Point2d& pix) const;
+    Color getNearestPixelColor(const Point2d& pix) const;
 
-        // precision to 4 decimal places
-        const float ui = pix.x - static_cast<float>(xp);
-        const float vi = pix.y - static_cast<float>(yp);
+    /**
+     * @brief Calculate the difference between images of different sizes
+     * @param [inImgDownscaled] the smaller image
+     * @param [outImg] the difference
+     * @param [downscale] the downscale coefficient between image sizes
+     */
+    void imageDiff(Image& inImgDownscaled, Image& outImg, unsigned int downscale);
 
-        const Color lu = _img.at( yp * _width + xp   );
-        const Color ru = _img.at( yp * _width + (xp+1) );
-        const Color rd = _img.at( (yp+1) * _width + (xp+1) );
-        const Color ld = _img.at( (yp+1) * _width + xp );
+    /**
+    * @brief Calculate the laplacian pyramid of a given image,
+    *        ie. its decomposition in frequency bands
+    * @param [out_pyramidL] the laplacian pyramid
+    * @param [nbBand] the number of frequency bands
+    * @param [downscale] the downscale coefficient between floors of the pyramid
+    */
+    void laplacianPyramid(std::vector<Image>& out_pyramidL, int nbBand, unsigned int downscale);
 
-        // bilinear interpolation of the pixel intensity value
-        const Color u = lu + (ru - lu) * ui;
-        const Color d = ld + (rd - ld) * ui;
-        const Color out = u + (d - u) * vi;
-        return out;
-    }
 
-    Color getNearestPixelColor(const Point2d& pix) const
-    {
-        const int xp = std::min(static_cast<int>(pix.x), _width-1);
-        const int yp = std::min(static_cast<int>(pix.y), _height-1);
-        const Color lu = _img.at( yp * _width + xp   );
-        return lu;
-    }
 };
 
-
 }
-
-
-

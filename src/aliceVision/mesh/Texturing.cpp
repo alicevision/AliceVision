@@ -14,8 +14,8 @@
 #include <aliceVision/mvsData/Color.hpp>
 #include <aliceVision/mvsData/geometry.hpp>
 #include <aliceVision/mvsData/Pixel.hpp>
+#include <aliceVision/mvsData/Image.hpp>
 #include <aliceVision/imageIO/image.hpp>
-#include <aliceVision/mesh/MultiBandBlending.hpp>
 
 #include <geogram/basic/common.h>
 #include <geogram/basic/geometry_nd.h>
@@ -488,9 +488,8 @@ void Texturing::generateTexturesSubSet(const mvsUtils::MultiViewParams& mp,
         Image camImg(imgPtr->data, imgPtr->getWidth(), imgPtr->getHeight());
 
         //Calculate laplacianPyramid
-        MultiBandBlending multiBandBlending;
         std::vector<Image> pyramidL; //laplacian pyramid
-        multiBandBlending.laplacianDownscalePyramid(pyramidL, camImg, texParams.nbBand, texParams.multiBandDownscale);
+        camImg.laplacianPyramid(pyramidL, texParams.nbBand, texParams.multiBandDownscale);
 
         // for each output texture file
         for(const auto& c : cameraContributions)
