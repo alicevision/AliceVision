@@ -11,7 +11,7 @@
 #include <aliceVision/mvsData/Color.hpp>
 #include <aliceVision/mvsData/geometry.hpp>
 #include <aliceVision/mvsData/jetColorMap.hpp>
-#include <aliceVision/imageIO/image.hpp>
+#include <aliceVision/mvsData/imageIO.hpp>
 
 #include <iostream>
 

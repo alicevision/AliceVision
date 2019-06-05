@@ -4,7 +4,6 @@ alicevision_add_software(aliceVision_samples_multibandtest
   FOLDER ${FOLDER_SAMPLES}
   LINKS aliceVision_system
         aliceVision_mesh
-        aliceVision_imageIO
         aliceVision_mvsData
         ${Boost_LIBRARIES}
 )

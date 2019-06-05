@@ -28,7 +28,6 @@ alicevision_add_library(aliceVision_fuseCut
   PUBLIC_LINKS
     aliceVision_mvsData
     aliceVision_mvsUtils
-    aliceVision_imageIO
     aliceVision_mesh
     aliceVision_system
     Geogram::geogram

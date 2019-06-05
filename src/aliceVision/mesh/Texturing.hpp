@@ -175,19 +175,19 @@ public:
 
     /// Generate texture files for all texture atlases
     void generateTextures(const mvsUtils::MultiViewParams& mp,
-                          const bfs::path &outPath, EImageFileType textureFileType = EImageFileType::PNG);
+                          const bfs::path &outPath, imageIO::EImageFileType textureFileType = imageIO::EImageFileType::PNG);
 
     /// Generate texture files for the given sub-set of texture atlases
     void generateTexturesSubSet(const mvsUtils::MultiViewParams& mp,
                          const std::vector<size_t>& atlasIDs, mvsUtils::ImagesCache& imageCache,
-                         const bfs::path &outPath, EImageFileType textureFileType = EImageFileType::PNG);
+                         const bfs::path &outPath, imageIO::EImageFileType textureFileType = imageIO::EImageFileType::PNG);
 
     ///Fill holes and write texture files for the given texture atlas
     void writeTexture(AccuImage& atlasTexture, const std::size_t atlasID, const bfs::path& outPath,
-                      EImageFileType textureFileType, const int level);
+                      imageIO::EImageFileType textureFileType, const int level);
 
     /// Save textured mesh as an OBJ + MTL file
-    void saveAsOBJ(const bfs::path& dir, const std::string& basename, EImageFileType textureFileType = EImageFileType::PNG);
+    void saveAsOBJ(const bfs::path& dir, const std::string& basename, imageIO::EImageFileType textureFileType = imageIO::EImageFileType::PNG);
 };
 
 } // namespace mesh

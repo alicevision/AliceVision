@@ -14,8 +14,7 @@
 #include <aliceVision/mvsData/Point3d.hpp>
 #include <aliceVision/mvsUtils/common.hpp>
 #include <aliceVision/mvsUtils/fileIO.hpp>
-#include <aliceVision/imageIO/image.hpp>
-#include <aliceVision/imageIO/imageScaledColors.hpp>
+#include <aliceVision/mvsData/imageIO.hpp>
 #include <aliceVision/alicevision_omp.hpp>
 
 #include <boost/filesystem.hpp>

@@ -15,7 +15,7 @@
 #include <aliceVision/mvsData/geometry.hpp>
 #include <aliceVision/mvsData/Pixel.hpp>
 #include <aliceVision/mvsData/Image.hpp>
-#include <aliceVision/imageIO/image.hpp>
+#include <aliceVision/mvsData/imageIO.hpp>
 
 #include <geogram/basic/common.h>
 #include <geogram/basic/geometry_nd.h>
@@ -256,7 +256,7 @@ void Texturing::generateUVsBasicMethod(mvsUtils::MultiViewParams& mp)
 }
 
 void Texturing::generateTextures(const mvsUtils::MultiViewParams &mp,
-                                 const boost::filesystem::path &outPath, EImageFileType textureFileType)
+                                 const boost::filesystem::path &outPath, imageIO::EImageFileType textureFileType)
 {
     ALICEVISION_LOG_INFO("Texturing: Use multiband blending with the following contributions per band:");
 
@@ -320,7 +320,7 @@ void Texturing::generateTextures(const mvsUtils::MultiViewParams &mp,
 }
 
 void Texturing::generateTexturesSubSet(const mvsUtils::MultiViewParams& mp,
-                                const std::vector<size_t>& atlasIDs, mvsUtils::ImagesCache& imageCache, const bfs::path& outPath, EImageFileType textureFileType)
+                                const std::vector<size_t>& atlasIDs, mvsUtils::ImagesCache& imageCache, const bfs::path& outPath, imageIO::EImageFileType textureFileType)
 {
     if(atlasIDs.size() > _atlases.size())
         throw std::runtime_error("Invalid atlas IDs ");
@@ -679,7 +679,7 @@ void Texturing::generateTexturesSubSet(const mvsUtils::MultiViewParams& mp,
 }
 
 void Texturing::writeTexture(AccuImage& atlasTexture, const std::size_t atlasID, const boost::filesystem::path &outPath,
-                             EImageFileType textureFileType, const int level)
+                             imageIO::EImageFileType textureFileType, const int level)
 {
     unsigned int outTextureSide = texParams.textureSide;
     // WARNING: we modify the "imgCount" to apply the padding (to avoid the creation of a new buffer)
@@ -810,7 +810,7 @@ void Texturing::writeTexture(AccuImage& atlasTexture, const std::size_t atlasID,
         std::swap(resizedColorBuffer, atlasTexture.img);
     }
 
-    const std::string textureName = "texture_" + std::to_string(1001 + atlasID) + (level < 0 ? "" : "_" + std::to_string(level)) + "." + EImageFileType_enumToString(textureFileType); // starts at '1001' for UDIM compatibility
+    const std::string textureName = "texture_" + std::to_string(1001 + atlasID) + (level < 0 ? "" : "_" + std::to_string(level)) + "." + imageIO::EImageFileType_enumToString(textureFileType); // starts at '1001' for UDIM compatibility
     bfs::path texturePath = outPath / textureName;
     ALICEVISION_LOG_INFO("  - Writing texture file: " << texturePath.string());
 
@@ -942,7 +942,7 @@ void Texturing::unwrap(mvsUtils::MultiViewParams& mp, EUnwrapMethod method)
     }
 }
 
-void Texturing::saveAsOBJ(const bfs::path& dir, const std::string& basename, EImageFileType textureFileType)
+void Texturing::saveAsOBJ(const bfs::path& dir, const std::string& basename, imageIO::EImageFileType textureFileType)
 {
     ALICEVISION_LOG_INFO("Writing obj and mtl file.");
 
@@ -1004,7 +1004,7 @@ void Texturing::saveAsOBJ(const bfs::path& dir, const std::string& basename, EIm
     for(size_t atlasId=0; atlasId < _atlases.size(); ++atlasId)
     {
         const std::size_t textureId = 1001 + atlasId; // starts at '1001' for UDIM compatibility
-        const std::string textureName = "texture_" + std::to_string(textureId) + "." + EImageFileType_enumToString(textureFileType);
+        const std::string textureName = "texture_" + std::to_string(textureId) + "." + imageIO::EImageFileType_enumToString(textureFileType);
 
         fprintf(fmtl, "newmtl TextureAtlas_%i\n", textureId);
         fprintf(fmtl, "Ka  0.6 0.6 0.6\n");

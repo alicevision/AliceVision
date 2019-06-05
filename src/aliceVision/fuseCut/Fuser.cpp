@@ -13,8 +13,7 @@
 #include <aliceVision/mvsData/Stat3d.hpp>
 #include <aliceVision/mvsUtils/common.hpp>
 #include <aliceVision/mvsUtils/fileIO.hpp>
-#include <aliceVision/imageIO/image.hpp>
-#include <aliceVision/imageIO/imageScaledColors.hpp>
+#include <aliceVision/mvsData/imageIO.hpp>
 
 #include <boost/filesystem.hpp>
 #include <boost/accumulators/accumulators.hpp>

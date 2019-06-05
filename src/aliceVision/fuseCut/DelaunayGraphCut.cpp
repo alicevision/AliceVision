@@ -14,7 +14,7 @@
 #include <aliceVision/mvsData/Point2d.hpp>
 #include <aliceVision/mvsData/Universe.hpp>
 #include <aliceVision/mvsUtils/fileIO.hpp>
-#include <aliceVision/imageIO/image.hpp>
+#include <aliceVision/mvsData/imageIO.hpp>
 #include <aliceVision/alicevision_omp.hpp>
 
 #include "nanoflann.hpp"

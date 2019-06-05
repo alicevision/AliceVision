@@ -13,7 +13,7 @@
 #include <aliceVision/mvsData/imageIO.hpp>
 #include <aliceVision/mvsUtils/fileIO.hpp>
 #include <aliceVision/mvsUtils/common.hpp>
-#include <aliceVision/imageIO/image.hpp>
+#include <aliceVision/mvsData/imageIO.hpp>
 #include <aliceVision/numeric/numeric.hpp>
 #include <aliceVision/multiview/projection.hpp>
 
@@ -74,7 +74,7 @@ MultiViewParams::MultiViewParams(const sfmData::SfMData& sfmData,
             const auto findIt = std::find_if(fs::recursive_directory_iterator(_imagesFolder), end,
                                      [&view](const fs::directory_entry& e) {
                                         return (e.path().stem() == std::to_string(view.getViewId()) &&
-                                        (isSupportedUndistortFormat(e.path().extension().string())));
+                                        (imageIO::isSupportedUndistortFormat(e.path().extension().string())));
                                      });
 
             if(findIt == end)

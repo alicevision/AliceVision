@@ -11,7 +11,7 @@
 #include <aliceVision/mvsData/Rgb.hpp>
 #include <aliceVision/mvsData/StaticVector.hpp>
 #include <aliceVision/mvsUtils/MultiViewParams.hpp>
-#include <aliceVision/imageIO/image.hpp>
+#include <aliceVision/mvsData/imageIO.hpp>
 
 #include <future>
 #include <mutex>

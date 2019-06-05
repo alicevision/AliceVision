@@ -6,7 +6,7 @@
 
 #include "Image.hpp"
 
-#include <aliceVision/imageIO/image.hpp>
+#include <aliceVision/mvsData/imageIO.hpp>
 
 
 namespace aliceVision{

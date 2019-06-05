@@ -8,7 +8,7 @@
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/mvsUtils/common.hpp>
 #include <aliceVision/mvsUtils/MultiViewParams.hpp>
-#include <aliceVision/imageIO/image.hpp>
+#include <aliceVision/mvsData/imageIO.hpp>
 
 #include <boost/filesystem/operations.hpp>
 #include <boost/filesystem/path.hpp>

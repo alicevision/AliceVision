@@ -43,7 +43,7 @@ int main(int argc, char* argv[])
     std::string inputMeshFilepath;
     std::string outputFolder;
     std::string imagesFolder;
-    std::string outTextureFileTypeName = EImageFileType_enumToString(EImageFileType::PNG);
+    std::string outTextureFileTypeName = imageIO::EImageFileType_enumToString(imageIO::EImageFileType::PNG);
     bool flipNormals = false;
 
     mesh::TexturingParams texParams;
@@ -67,7 +67,7 @@ int main(int argc, char* argv[])
           "Use images from a specific folder instead of those specify in the SfMData file.\n"
           "Filename should be the image uid.")
         ("outputTextureFileType", po::value<std::string>(&outTextureFileTypeName)->default_value(outTextureFileTypeName),
-          EImageFileType_informations().c_str())
+          imageIO::EImageFileType_informations().c_str())
         ("textureSide", po::value<unsigned int>(&texParams.textureSide)->default_value(texParams.textureSide),
             "Output texture size")
         ("downscale", po::value<unsigned int>(&texParams.downscale)->default_value(texParams.downscale),
@@ -145,7 +145,7 @@ int main(int argc, char* argv[])
 
     texParams.visibilityRemappingMethod = mesh::EVisibilityRemappingMethod_stringToEnum(visibilityRemappingMethod);
     // set output texture file type
-    const EImageFileType outputTextureFileType = EImageFileType_stringToEnum(outTextureFileTypeName);
+    const imageIO::EImageFileType outputTextureFileType = imageIO::EImageFileType_stringToEnum(outTextureFileTypeName);
 
     // read the input SfM scene
     sfmData::SfMData sfmData;
