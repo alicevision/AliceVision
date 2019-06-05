@@ -12,7 +12,7 @@
 namespace aliceVision{
 
 
-void Image::imageDiff(Image& inImgDownscaled, Image& outImg, unsigned int downscale)
+void Image::imageDiff(const Image& inImgDownscaled, Image& outImg, unsigned int downscale) const
 {
     outImg.resize(_width, _height);
     for(int i = 0; i < _width*_height; ++i)
@@ -20,12 +20,12 @@ void Image::imageDiff(Image& inImgDownscaled, Image& outImg, unsigned int downsc
         Point2d pix(i%_width, static_cast<int>(i/_width));
         Point2d pixd = pix/downscale;
 
-        outImg._img[i] = _img[i] - inImgDownscaled.getInterpolateColor(pixd);
+        outImg._data[i] = _data[i] - inImgDownscaled.getInterpolateColor(pixd);
     }
 
 }
 
-void Image::laplacianPyramid(std::vector<Image>& out_pyramidL, int nbBand, unsigned int downscale)
+void Image::laplacianPyramid(std::vector<Image>& out_pyramidL, int nbBand, unsigned int downscale) const
 {
     assert(nbBand >= 1);
 
@@ -39,14 +39,14 @@ void Image::laplacianPyramid(std::vector<Image>& out_pyramidL, int nbBand, unsig
     //Create Laplacian pyramid
     for(int b = 0; b < nbBand-1; ++b)
     {
-        imageIO::resizeImage(img.width(), img.height(), static_cast<int>(downscale), img.data(), imgDownscaled.data(), "gaussian");
+        imageIO::resizeImage(static_cast<int>(downscale), img, imgDownscaled, "gaussian");
         img.imageDiff(imgDownscaled, out_pyramidL[b], downscale);
         img.swap(imgDownscaled);
-
+/*
         outW = static_cast<int>(outW/downscale);
         outH = static_cast<int>(outH/downscale);
         imgDownscaled.resize(outW, outH);
-
+*/
     }
     out_pyramidL[nbBand-1] = img;
 
@@ -63,10 +63,10 @@ Color Image::getInterpolateColor(const Point2d& pix) const
     const float ui = pix.x - static_cast<float>(xp);
     const float vi = pix.y - static_cast<float>(yp);
 
-    const Color lu = _img.at( yp * _width + xp   );
-    const Color ru = _img.at( yp * _width + (xp+1) );
-    const Color rd = _img.at( (yp+1) * _width + (xp+1) );
-    const Color ld = _img.at( (yp+1) * _width + xp );
+    const Color lu = _data.at( yp * _width + xp   );
+    const Color ru = _data.at( yp * _width + (xp+1) );
+    const Color rd = _data.at( (yp+1) * _width + (xp+1) );
+    const Color ld = _data.at( (yp+1) * _width + xp );
 
     // bilinear interpolation of the pixel intensity value
     const Color u = lu + (ru - lu) * ui;
@@ -79,7 +79,7 @@ Color Image::getNearestPixelColor(const Point2d& pix) const
 {
     const int xp = std::min(static_cast<int>(pix.x), _width-1);
     const int yp = std::min(static_cast<int>(pix.y), _height-1);
-    const Color lu = _img.at( yp * _width + xp   );
+    const Color lu = _data.at( yp * _width + xp   );
     return lu;
 }
 

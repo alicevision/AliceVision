@@ -152,24 +152,24 @@ public:
     // Create buffer for the set of output textures
     struct AccuImage
     {
-        std::vector<Color> img;
+        Image img;
         std::vector<float> imgCount;
 
-        void resize(std::size_t s)
+        void resize(int width, int height)
         {
-            img.resize(s);
-            imgCount.resize(s);
+            img.resize(width, height);
+            imgCount.resize(width * height);
         }
     };
     struct AccuPyramid
     {
         std::vector<AccuImage> pyramid;
 
-        void init(std::size_t nbLevels, std::size_t imageSize)
+        void init(int nbLevels, int imgWidth, int imgHeight)
         {
             pyramid.resize(nbLevels);
-            for(auto& p : pyramid)
-                p.resize(imageSize);
+            for(auto& accuImage : pyramid)
+                accuImage.resize(imgWidth, imgHeight);
         }
     };
 

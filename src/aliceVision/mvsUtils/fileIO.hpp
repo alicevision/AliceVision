@@ -26,7 +26,7 @@ std::string getFileNameFromViewId(const MultiViewParams* mp, int viewId, EFileTy
 std::string getFileNameFromIndex(const MultiViewParams* mp, int index, EFileType mv_file_type, int scale = 0);
 FILE* mv_openFile(const MultiViewParams* mp, int index, EFileType mv_file_type, const char* readWrite);
 Matrix3x4 load3x4MatrixFromFile(FILE* fi);
-void memcpyRGBImageFromFileToArr(int camId, Color* imgArr, const std::string& fileNameOrigStr, const MultiViewParams* mp,
+void loadImage(const std::string& path, const MultiViewParams* mp, int camId, Image& img,
                                  int bandType, imageIO::EImageColorSpace colorspace);
 
 bool DeleteDirectory(const std::string& sPath);

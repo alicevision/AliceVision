@@ -467,7 +467,7 @@ void Texturing::generateTexturesSubSet(const mvsUtils::MultiViewParams& mp,
     //pyramid of atlases frequency bands
     std::map<AtlasIndex, AccuPyramid> accuPyramids;
     for(std::size_t atlasID: atlasIDs)
-        accuPyramids[atlasID].init(texParams.nbBand, textureSize);
+        accuPyramids[atlasID].init(texParams.nbBand, texParams.textureSide, texParams.textureSide);
 
     //for each camera, for each texture, iterate over triangles and fill the accuPyramids map
     for(int camId = 0; camId < contributionsPerCamera.size(); ++camId)
@@ -481,11 +481,9 @@ void Texturing::generateTexturesSubSet(const mvsUtils::MultiViewParams& mp,
         }
         ALICEVISION_LOG_INFO("- camera " << camId + 1 << "/" << mp.ncams << " with contributions to " << cameraContributions.size() << " texture files:");
 
+        //Load camera image from cache
         imageCache.refreshData(camId);        
-
-        //conversion ImagesCache::Img -> Image
-        mvsUtils::ImagesCache::ImgPtr imgPtr = imageCache.getImg_sync(camId);
-        Image camImg(imgPtr->data, imgPtr->getWidth(), imgPtr->getHeight());
+        const Image& camImg = *(imageCache.getImg_sync(camId));
 
         //Calculate laplacianPyramid
         std::vector<Image> pyramidL; //laplacian pyramid
@@ -606,7 +604,7 @@ void Texturing::generateTexturesSubSet(const mvsUtils::MultiViewParams& mp,
                 AccuImage& atlasLevelTexture =  accuPyramid.pyramid[level];
 
                 //write the number of contributions for each texture
-                std::vector<float> imgContrib(texParams.textureSide*texParams.textureSide);
+                std::vector<float> imgContrib(textureSize);
 
                 for(unsigned int yp = 0; yp < texParams.textureSide; ++yp)
                 {
@@ -795,18 +793,18 @@ void Texturing::writeTexture(AccuImage& atlasTexture, const std::size_t atlasID,
                 alphaBuffer[xyoffset] = atlasTexture.imgCount[xyoffset] ? 1 : 0;
             }
         }
-        imageIO::fillHoles(texParams.textureSide, texParams.textureSide, atlasTexture.img, alphaBuffer);
+        imageIO::fillHoles(atlasTexture.img, alphaBuffer);
         alphaBuffer.clear();
     }
 
     // downscale texture if required
     if(texParams.downscale > 1)
     {
-        std::vector<Color> resizedColorBuffer;
+        Image resizedColorBuffer;
         outTextureSide = texParams.textureSide / texParams.downscale;
 
         ALICEVISION_LOG_INFO("  - Downscaling texture (" << texParams.downscale << "x).");
-        imageIO::resizeImage(texParams.textureSide, texParams.textureSide, texParams.downscale, atlasTexture.img, resizedColorBuffer);
+        imageIO::resizeImage(texParams.downscale, atlasTexture.img, resizedColorBuffer);
         std::swap(resizedColorBuffer, atlasTexture.img);
     }
 
@@ -815,7 +813,7 @@ void Texturing::writeTexture(AccuImage& atlasTexture, const std::size_t atlasID,
     ALICEVISION_LOG_INFO("  - Writing texture file: " << texturePath.string());
 
     using namespace imageIO;
-    imageIO::writeImage(texturePath.string(), outTextureSide, outTextureSide, atlasTexture.img, EImageQuality::OPTIMIZED, OutputFileColorSpace(EImageColorSpace::SRGB, EImageColorSpace::AUTO));
+    imageIO::writeImage(texturePath.string(), atlasTexture.img, EImageQuality::OPTIMIZED, OutputFileColorSpace(EImageColorSpace::SRGB, EImageColorSpace::AUTO));
 }
 
 

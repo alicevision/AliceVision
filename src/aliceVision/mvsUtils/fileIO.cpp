@@ -9,6 +9,7 @@
 #include <aliceVision/mvsUtils/common.hpp>
 #include <aliceVision/mvsUtils/MultiViewParams.hpp>
 #include <aliceVision/mvsData/imageIO.hpp>
+#include <aliceVision/mvsData/Image.hpp>
 
 #include <boost/filesystem/operations.hpp>
 #include <boost/filesystem/path.hpp>
@@ -322,20 +323,18 @@ Matrix3x4 load3x4MatrixFromFile(FILE* fi)
     return m;
 }
 
-void memcpyRGBImageFromFileToArr(int camId, Color* imgArr, const std::string& fileNameOrigStr, const MultiViewParams* mp, int bandType, imageIO::EImageColorSpace colorspace)
+void loadImage(const std::string& path, const MultiViewParams* mp, int camId, Image& img, int bandType, imageIO::EImageColorSpace colorspace)
 {
-    int origWidth, origHeight;
-    std::vector<Color> cimg;
-    imageIO::readImage(fileNameOrigStr, origWidth, origHeight, cimg, colorspace);
+    imageIO::readImage(path, img, colorspace);
 
     // check image size
-    if((mp->getOriginalWidth(camId) != origWidth) || (mp->getOriginalHeight(camId) != origHeight))
+    if((mp->getOriginalWidth(camId) != img.width()) || (mp->getOriginalHeight(camId) != img.height()))
     {
         std::stringstream s;
         s << "Bad image dimension for camera : " << camId << "\n";
-        s << "\t- image path : " << fileNameOrigStr << "\n";
+        s << "\t- image path : " << path << "\n";
         s << "\t- expected dimension : " << mp->getOriginalWidth(camId) << "x" << mp->getOriginalHeight(camId) << "\n";
-        s << "\t- real dimension : " << origWidth << "x" << origHeight << "\n";
+        s << "\t- real dimension : " << img.width() << "x" << img.height() << "\n";
         throw std::runtime_error(s.str());
     }
 
@@ -347,45 +346,29 @@ void memcpyRGBImageFromFileToArr(int camId, Color* imgArr, const std::string& fi
     if(processScale > 1)
     {
         ALICEVISION_LOG_DEBUG("Downscale (x" << processScale << ") image: " << mp->getViewId(camId) << ".");
-        std::vector<Color> bmpr;
-        imageIO::resizeImage(origWidth, origHeight, processScale, cimg, bmpr);
-        cimg = bmpr;
+        Image bmpr;
+        imageIO::resizeImage(processScale, img, bmpr);
+        img.swap(bmpr);
     }
 
     if(bandType == 1)
     {
-
-        // IplImage* cimg1=cvCreateImage(cvSize(cimg->width,cimg->height),IPL_DEPTH_8U,3);
-        // cvSmooth(cimg1,cimg,CV_BILATERAL,11,0,10.0,5.0);
-        // cvReleaseImage(&cimg);
-        // cimg=cimg1;
-        std::vector<Color> smooth;
-        imageIO::convolveImage(width, height, cimg, smooth, "gaussian", 11.0f, 11.0f);
-        cimg = smooth;
+        Image smooth;
+        imageIO::convolveImage(img, smooth, "gaussian", 11.0f, 11.0f);
+        img.swap(smooth);
     }
 
     if(bandType == 2)
     {
-        std::vector<Color> bmps;
-        imageIO::convolveImage(width, height, cimg, bmps, "gaussian", 11.0f, 11.0f);
+        Image bmps;
+        imageIO::convolveImage(img, bmps, "gaussian", 11.0f, 11.0f);
 
         for(int y = 0; y < height; y++)
         {
             for(int x = 0; x < width; x++)
             {
-                const std::size_t index = y * width + x;
-                Color& cimc = cimg.at(index);
-                cimc = cimc - bmps.at(index); //cimg(x, y) - bmps(x, y)
+                img.at(x, y) -= bmps.at(x, y);
             }
-        }
-    }
-
-    for(int y = 0; y < height; y++)
-    {
-        for(int x = 0; x < width; x++)
-        {
-            const Color color = cimg.at(y * width + x);
-            imgArr[y * width + x] = color;
         }
     }
 }

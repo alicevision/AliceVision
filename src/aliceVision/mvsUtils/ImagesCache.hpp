@@ -12,6 +12,7 @@
 #include <aliceVision/mvsData/StaticVector.hpp>
 #include <aliceVision/mvsUtils/MultiViewParams.hpp>
 #include <aliceVision/mvsData/imageIO.hpp>
+#include <aliceVision/mvsData/Image.hpp>
 
 #include <future>
 #include <mutex>
@@ -22,46 +23,9 @@ namespace mvsUtils {
 class ImagesCache
 {
 public:
-    class Img
-    {
-        int  _width;
-        int  _height;
-    public:
-        Img( )
-            : data(nullptr)
-        { }
-        Img( size_t sz )
-            : data( new Color[sz] )
-        { }
-
-        ~Img( )
-        {
-            delete [] data;
-        }
-
-        inline void setWidth(  int w ) { _width  = w; }
-        inline void setHeight( int h ) { _height = h; }
-
-        inline int  getWidth()  const { return _width;  }
-        inline int  getHeight() const { return _height; }
-
-        inline Color& at( int x, int y )
-        {
-            return data[y * _width + x];
-        }
-
-        inline const Color& at( int x, int y ) const
-        {
-            return data[y * _width + x];
-        }
-
-        Color* data;
-    };
-
-    typedef std::shared_ptr<Img> ImgPtr;
-
-public:
     const MultiViewParams* mp;
+
+    typedef std::shared_ptr<Image> ImgPtr;
 
 private:
     ImagesCache(const ImagesCache&) = delete;

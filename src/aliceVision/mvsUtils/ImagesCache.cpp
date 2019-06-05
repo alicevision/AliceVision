@@ -94,14 +94,13 @@ void ImagesCache::refreshData(int camId)
         long t1 = clock();
         if (imgs[mapId] == nullptr)
         {
-            const std::size_t maxSize = mp->getMaxImageWidth() * mp->getMaxImageHeight();
-            imgs[mapId] = std::make_shared<Img>( maxSize );
+            const int maxWidth = mp->getMaxImageWidth();
+            const int maxHeight = mp->getMaxImageHeight();
+            imgs[mapId] = std::make_shared<Image>(maxWidth, maxHeight);
         }
 
         const std::string imagePath = imagesNames.at(camId);
-        memcpyRGBImageFromFileToArr(camId, imgs[mapId]->data, imagePath, mp, bandType, _colorspace);
-        imgs[mapId]->setWidth(  mp->getWidth(camId) );
-        imgs[mapId]->setHeight( mp->getHeight(camId) );
+        loadImage(imagePath, mp, camId, *(imgs[mapId]),  bandType, _colorspace);
 
         ALICEVISION_LOG_DEBUG("Add " << imagePath << " to image cache. " << formatElapsedTime(t1));
     }
