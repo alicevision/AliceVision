@@ -8,6 +8,7 @@
 #include <iostream>
 #include <cassert>
 #include <aliceVision/alicevision_omp.hpp>
+#include <aliceVision/system/Logger.hpp>
 #include "eiquadprog.hpp"
 
 
@@ -88,13 +89,14 @@ void GrossbergCalibrate::process(const std::vector< std::vector< image::Image<im
                     std::size_t index1 = std::round((_channelQuantization-1) * sample1);
                     std::size_t index2 = std::round((_channelQuantization-1) * sample2);
 
-                    double w = std::min(weight(sample1, channel), weight(sample2, channel));
-                    if(std::max(sample1, sample2) > 0.95)
-                        w = 0.0;
+//                    double w = std::min(weight(sample1, channel), weight(sample2, channel));
+                    double w = (weight(sample1, channel) + weight(sample2, channel)) / 2.0;
+//                    if(std::max(sample1, sample2) > 0.95)
+//                        w = 0.0;
 
                     b(j*nbPoints + l) = w * (f0.at(index2) - k * f0.at(index1));
                     for(unsigned int i=0; i<_dimension; ++i)
-                        A(j*nbPoints + l, i) = w * (H(index1, i) - k * H(index2, i));
+                        A(j*nbPoints + l, i) = w * (k * H(index1, i) - H(index2, i));
 
                 }
             }
@@ -148,7 +150,10 @@ void GrossbergCalibrate::process(const std::vector< std::vector< image::Image<im
 
             double cost = Eigen::solve_quadprog(G, g0, CE, ce0, CI, ci0, x);
             if(cost == std::numeric_limits<double>::infinity())     //optimization failed
+            {
+                ALICEVISION_LOG_INFO("optim failed");
                 return;
+            }
 
             std::cout << "x : " << x << std::endl;
 
