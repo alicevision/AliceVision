@@ -198,7 +198,14 @@ int main(int argc, char** argv)
 
   ALICEVISION_COUT("response file: " << outputResponsePath);
 
-  const std::size_t channelQuantization = std::pow(2, 12); //RAW 12 bit precision, 2^12 values between black and white point
+  // set the correct calibration method corresponding to the string parameter
+  const ECalibrationMethod calibrationMethod = ECalibrationMethod_stringToEnum(calibrationMethodName);
+
+  std::size_t channelQuantization;
+  if(calibration == true && calibrationMethod == ECalibrationMethod::GROSSBERG)
+    channelQuantization = std::pow(2, 10);
+  else
+    channelQuantization = std::pow(2, 12); //RAW 12 bit precision, 2^12 values between black and white point
 //  const std::size_t channelQuantization = std::pow(2, 8); //JPG 8 bit precision, 256 values between black and white point
 //  const std::size_t channelQuantization = std::pow(2, 10); //RAW 10 bit precision, 2^10 values between black and white point
 
@@ -215,9 +222,6 @@ int main(int argc, char** argv)
   // set verbose level
   system::Logger::get()->setLogLevel(verboseLevel);
 
-  // set the correct calibration method corresponding to the string parameter
-  const ECalibrationMethod calibrationMethod = ECalibrationMethod_stringToEnum(calibrationMethodName);
-
   // set the correct weight function corresponding to the string parameter
   const hdr::EFunctionType weightFunction = hdr::EFunctionType_stringToEnum(weightFunctionName);
   weight.setFunction(weightFunction);
@@ -226,7 +230,7 @@ int main(int argc, char** argv)
   std::vector<std::string> inputFilesNames;
   std::vector<std::string> stemImages;
   std::vector<std::string> nameImages;
-  const std::vector<std::string> validExtensions = {".jpg", ".jpeg", ".png", ".cr2", ".tiff", ".tif"};
+  const std::vector<std::string> validExtensions = {".jpg", ".jpeg", ".png", ".cr2", ".tiff", ".tif", ".rw2"};
   for(auto& entry: fs::directory_iterator(fs::path(imageFolder)))
   {
       if(fs::is_regular_file(entry.status()))
@@ -239,6 +243,16 @@ int main(int argc, char** argv)
               stemImages.push_back(entry.path().stem().string());
               nameImages.push_back(entry.path().filename().string());
           }
+          else
+          {
+            ALICEVISION_LOG_ERROR("No valid image files in entry folder");
+            return EXIT_FAILURE;
+          }
+      }
+      else
+      {
+        ALICEVISION_LOG_ERROR("No regular files in entry folder");
+        return EXIT_FAILURE;
       }
   }
 
@@ -349,11 +363,13 @@ int main(int argc, char** argv)
     {
       case ECalibrationMethod::DEBEVEC:
       {
+        hdr::rgbCurve wDeb(channelQuantization);
+        wDeb.setTriangular();
         ALICEVISION_COUT("Debevec calibration");
         const float lambda = channelQuantization * 1.f;
         const int nbPoints = 1000;
         hdr::DebevecCalibrate calibration;
-        calibration.process(ldrImageGroups, channelQuantization, times, nbPoints, weight, lambda, response);
+        calibration.process(ldrImageGroups, channelQuantization, times, nbPoints, wDeb, lambda, response);
 
         response.exponential();
 //                response.scale();
@@ -362,10 +378,12 @@ int main(int argc, char** argv)
 
       case ECalibrationMethod::ROBERTSON:
       {
+        hdr::rgbCurve wRob(channelQuantization);
+        wRob.setRobertsonWeight();
         ALICEVISION_COUT("Robertson calibration");
         hdr::RobertsonCalibrate calibration(40);
         const int nbPoints = 1000000;
-        calibration.process(ldrImageGroups_sorted, channelQuantization, times_sorted, nbPoints, weight, response, targetTime, threshold);
+        calibration.process(ldrImageGroups_sorted, channelQuantization, times_sorted, nbPoints, wRob, response, targetTime, threshold);
         response.scale();
       }
       break;
@@ -375,7 +393,7 @@ int main(int argc, char** argv)
         ALICEVISION_COUT("Grossberg calibration");
         const int nbPoints = 1000000;
         hdr::GrossbergCalibrate calibration(5);
-        calibration.process(ldrImageGroups_sorted, times_sorted, nbPoints, weight, response);
+        calibration.process(ldrImageGroups_sorted, channelQuantization, times_sorted, nbPoints, weight, response);
 //        response.scale();
       }
       break;

@@ -150,8 +150,13 @@ public:
   /**
     *@brief Set curves to gaussian
     */
-      void setGaussian(double mu = 0.5, double sigma = 1.0 / (4.0 * sqrt(2.0)));
-//  void setGaussian(double mu = 0.5, double sigma = 1.0 / (5.0 * sqrt(2.0)));
+//      void setGaussian(double mu = 0.5, double sigma = 1.0 / (4.0 * sqrt(2.0)));
+  void setGaussian(double mu = 0.5, double sigma = 1.0 / (5.0 * sqrt(2.0)));
+
+  /**
+   * @brief set curve to adaptative weight for Robertson
+   */
+  void setRobertsonWeight();
 
   /**
     *@brief Set curves to triangular

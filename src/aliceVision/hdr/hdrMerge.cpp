@@ -27,8 +27,6 @@ void hdrMerge::process(const std::vector< image::Image<image::RGBfColor> > &imag
 {
   std::cout << "hdr merge" << std::endl;
 
-  weight.setGaussian(0.5, 1.0/(5.0 * sqrt(2)));
-
   //checks
   assert(!response.isEmpty());
   assert(!images.empty());

@@ -16,7 +16,7 @@ namespace hdr {
 class GrossbergCalibrate
 {
 public:
-  GrossbergCalibrate(const unsigned int dimension, const std::size_t channelQuantization = std::pow(2, 10));     // the EMOR model has 2^10 values for each curve
+  GrossbergCalibrate(const unsigned int dimension);
 
 
   /**
@@ -28,13 +28,13 @@ public:
    * @param[out] response
    */
   void process(const std::vector< std::vector< image::Image<image::RGBfColor> > > &ldrImageGroups,
+               const std::size_t channelQuantization,
                const std::vector< std::vector<float> > &times,
                const int nbPoints,
                const rgbCurve &weight,
                rgbCurve &response);
 
 private:
-  std::size_t _channelQuantization;
   unsigned int _dimension;
 };
 

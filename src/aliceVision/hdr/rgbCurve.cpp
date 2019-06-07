@@ -80,6 +80,15 @@ void rgbCurve::setGaussian(double mu, double sigma)
     }
 }
 
+void rgbCurve::setRobertsonWeight()
+{
+  for(std::size_t i = 0; i < getSize(); ++i)
+  {
+    float factor = i / (static_cast<float>(getSize() - 1)) - 0.5f;
+    setAllChannels(i, (std::exp( -16.f * factor * factor) - std::exp(-4.f)) / (1.f - std::exp(-4.f)));
+  }
+}
+
 void rgbCurve::setTriangular()
 {
     const float coefficient = 1.f / static_cast<float>(getSize() - 1);

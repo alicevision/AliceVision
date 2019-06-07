@@ -15,13 +15,13 @@ namespace aliceVision {
 namespace hdr {
 
 
-GrossbergCalibrate::GrossbergCalibrate(const unsigned int dimension, const std::size_t channelQuantization)
+GrossbergCalibrate::GrossbergCalibrate(const unsigned int dimension)
 {
     _dimension = dimension;
-    _channelQuantization = channelQuantization;
 }
 
 void GrossbergCalibrate::process(const std::vector< std::vector< image::Image<image::RGBfColor> > > &ldrImageGroups,
+                                 const std::size_t channelQuantization,
                                  const std::vector< std::vector<float> > &times,
                                  const int nbPoints,
                                  const rgbCurve &weight,
@@ -38,20 +38,19 @@ void GrossbergCalibrate::process(const std::vector< std::vector< image::Image<im
     static const std::size_t channels = 3;
 
     //initialize response with g0 from invEmor
-    response = rgbCurve(_channelQuantization);
-    rgbCurve temporaryResponse(_channelQuantization);
+    response = rgbCurve(channelQuantization);
     const double* ptrf0 = getEmorInvCurve(0);
     std::vector<double> f0;
-    f0.assign(ptrf0, ptrf0 + _channelQuantization);
+    f0.assign(ptrf0, ptrf0 + channelQuantization);
 
-    Mat H(_channelQuantization, _dimension);
+    Mat H(channelQuantization, _dimension);
     std::vector<double> hCurves[_dimension];
 
     for(unsigned int i=0; i<_dimension; ++i)
     {
         const double *h = getEmorInvCurve(i+1);
-        hCurves[i].assign(h, h + _channelQuantization);
-        H.col(i) = Eigen::Map<Vec>(hCurves[i].data(), _channelQuantization);
+        hCurves[i].assign(h, h + channelQuantization);
+        H.col(i) = Eigen::Map<Vec>(hCurves[i].data(), channelQuantization);
     }
 
     for(unsigned int g=0; g<ldrImageGroups.size(); ++g)
@@ -66,7 +65,7 @@ void GrossbergCalibrate::process(const std::vector< std::vector< image::Image<im
 
         for(unsigned int channel=0; channel<channels; ++channel)
         {
-            temporaryResponse.getCurve(channel) = std::vector<float>(f0.begin(), f0.end());
+            response.getCurve(channel) = std::vector<float>(f0.begin(), f0.end());
 
             Mat A = Mat::Zero(nbPoints*(nbImages-1), _dimension);
             Vec b = Vec::Zero(nbPoints*(nbImages-1));
@@ -84,8 +83,10 @@ void GrossbergCalibrate::process(const std::vector< std::vector< image::Image<im
                 {
                     double sample1 = std::max(0.f, std::min(1.f, image1(step*l)(channel)));
                     double sample2 = std::max(0.f, std::min(1.f, image2(step*l)(channel)));
-                    std::size_t index1 = std::round((_channelQuantization-1) * sample1);
-                    std::size_t index2 = std::round((_channelQuantization-1) * sample2);
+
+
+                    std::size_t index1 = std::round((channelQuantization-1) * sample1);
+                    std::size_t index2 = std::round((channelQuantization-1) * sample2);
 
 //                    double w = std::min(weight(sample1, channel), weight(sample2, channel));
 
@@ -98,8 +99,6 @@ void GrossbergCalibrate::process(const std::vector< std::vector< image::Image<im
 //                    double w = (w_R + w_G + w_B) / 3.0;
 //                    double w = (w_R * w_G * w_B);
 //                    double w = std::min(std::min(w_R, w_G), w_B);
-//                    if(std::max(sample1, sample2) > 0.95)
-//                        w = 0.0;
 
                     b(j*nbPoints + l) = w * (f0.at(index2) - k * f0.at(index1));
                     for(unsigned int i=0; i<_dimension; ++i)
@@ -127,11 +126,9 @@ void GrossbergCalibrate::process(const std::vector< std::vector< image::Image<im
 
               std::cout << c(i) << std::endl;
 
-              std::transform(temporaryResponse.getCurve(channel).begin(), temporaryResponse.getCurve(channel).end(), temp_hCurve.begin(), temporaryResponse.getCurve(channel).begin(), std::plus<float>());
+              std::transform(response.getCurve(channel).begin(), response.getCurve(channel).end(), temp_hCurve.begin(), response.getCurve(channel).begin(), std::plus<float>());
             }
         }
-        response = temporaryResponse.meanCurves();
-//        response = temporaryResponse;
     }
 }
 
