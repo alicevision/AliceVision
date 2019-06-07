@@ -298,49 +298,74 @@ public:
   }
 
   /**
-   * @brief Add the given features Folder
-   * @param[in] featuresFolder The given features folder
+   * @brief Add the given \p folder to features folders.
+   * @note If SfmData's absolutePath has been set, 
+   *       an absolute path will be converted to a relative one.
+   * @param[in] folder path to a folder containing features
    */
-  void addFeaturesFolder(const std::string& featuresFolder)
+  inline void addFeaturesFolder(const std::string& folder)
   {
-    _featuresFolders.emplace_back(featuresFolder);
+    addFeaturesFolders({folder});
   }
 
   /**
-   * @brief A the given matches Folder
-   * @param[in] matchesFolder The given mathes folder
+   * @brief Add the given \p folders to features folders.
+   * @note If SfmData's absolutePath has been set, 
+   *       absolute paths will be converted to relative ones.
+   * @param[in] folders paths to folders containing features
    */
-  void addMatchesFolder(const std::string& matchesFolder)
+  void addFeaturesFolders(const std::vector<std::string>& folders);
+
+  /**
+   * @brief Add the given \p folder to matches folders.
+   * @note If SfmData's absolutePath has been set, 
+   *       an absolute path will be converted to a relative one.
+   * @param[in] folder path to a folder containing matches
+   */
+  inline void addMatchesFolder(const std::string& folder)
   {
-    _matchesFolders.emplace_back(matchesFolder);
+    addMatchesFolders({folder});
   }
 
   /**
-   * @brief Set the given features folders
-   * @param[in] featuresFolders The given features folders
+   * @brief Add the given \p folders to matches folders.
+   * @note If SfmData's absolutePath has been set, 
+   *       absolute paths will be converted to relative ones.
+   * @param[in] folders paths to folders containing matches
    */
-  void setFeaturesFolders(const std::vector<std::string>& featuresFolders)
+  void addMatchesFolders(const std::vector<std::string>& folders);
+
+  /**
+   * @brief Replace the current features folders by the given ones.
+   * @note If SfmData's absolutePath has been set, 
+   *       absolute paths will be converted to relative ones.
+   * @param[in] folders paths to folders containing features
+   */
+  inline void setFeaturesFolders(const std::vector<std::string>& folders)
   {
-    _featuresFolders = featuresFolders;
+    _featuresFolders.clear();
+    addFeaturesFolders(folders);
   }
 
   /**
-   * @brief Set the given mathes folders
-   * @param[in] matchesFolders The given mathes folders
+   * @brief Replace the current matches folders by the given ones.
+   * @note If SfmData's absolutePath has been set, 
+   *       absolute paths will be converted to relative ones.
+   * @param[in] folders paths to folders containing matches
    */
-  void setMatchesFolders(const std::vector<std::string>& matchesFolders)
+  inline void setMatchesFolders(const std::vector<std::string>& folders)
   {
-    _matchesFolders = matchesFolders;
+    _matchesFolders.clear();
+    addMatchesFolders(folders);
   }
 
   /**
-   * @brief Set the SfMData file folder absolute path
+   * @brief Set the SfMData file absolute path.
+   * @note Internal relative features/matches folders will be remapped 
+   *       to be relative to the new absolute \p path.
    * @param[in] path The absolute path to the SfMData file folder
    */
-  void setAbsolutePath(const std::string& path)
-  {
-    _absolutePath = path;
-  }
+  void setAbsolutePath(const std::string& path);
 
   /**
    * @brief Set the given pose for the given view
