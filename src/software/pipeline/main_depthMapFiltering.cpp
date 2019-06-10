@@ -15,6 +15,7 @@
 #include <aliceVision/system/Timer.hpp>
 
 #include <aliceVision/depthMap/RefineRc.hpp>
+#include <aliceVision/depthMap/computeOnMultiGPUs.hpp>
 
 #include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>
@@ -144,7 +145,7 @@ int main(int argc, char* argv[])
     mp.setMinViewAngle(minViewAngle);
     mp.setMaxViewAngle(maxViewAngle);
 
-    StaticVector<int> cams;
+    std::vector<int> cams;
     cams.reserve(mp.ncams);
 
     if(rangeSize == -1)
@@ -176,8 +177,11 @@ int main(int argc, char* argv[])
         fs.filterDepthMaps(cams, minNumOfConsistentCams, minNumOfConsistentCamsWithLowSimilarity);
     }
 
-    if(computeNormalMaps)
-      depthMap::computeNormalMaps(mp, cams);
+    if (computeNormalMaps)
+    {
+        int nbGPUs = 0;
+        depthMap::computeOnMultiGPUs(mp, cams, depthMap::computeNormalMaps, nbGPUs);
+    }
 
     ALICEVISION_LOG_INFO("Task done in (s): " + std::to_string(timer.elapsed()));
     return EXIT_SUCCESS;

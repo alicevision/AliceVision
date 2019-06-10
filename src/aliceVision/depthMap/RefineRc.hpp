@@ -42,11 +42,9 @@ private:
     void optimizeDepthSimMapCUDA(DepthSimMap& out_depthSimMapOptimized, const DepthSimMap& depthPixSizeMapVis, const DepthSimMap& depthSimMapPhoto);
 };
 
-void estimateAndRefineDepthMaps(mvsUtils::MultiViewParams& mp, const std::vector<int>& cams, int nbGPUs);
-void estimateAndRefineDepthMaps(int cudaDeviceNo, mvsUtils::MultiViewParams& mp, const std::vector<int>& cams);
+void estimateAndRefineDepthMaps(int cudaDeviceIndex, mvsUtils::MultiViewParams& mp, const std::vector<int>& cams);
 
-void computeNormalMaps(int CUDADeviceNo, mvsUtils::MultiViewParams& mp, const StaticVector<int>& cams);
-void computeNormalMaps(mvsUtils::MultiViewParams& mp, const StaticVector<int>& cams);
+void computeNormalMaps(int cudaDeviceIndex, mvsUtils::MultiViewParams& mp, const std::vector<int>& cams);
 
 } // namespace depthMap
 } // namespace aliceVision

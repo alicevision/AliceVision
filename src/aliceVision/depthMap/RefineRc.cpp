@@ -264,51 +264,7 @@ void RefineRc::writeDepthMap()
   _depthSimMapOpt.save();
 }
 
-void estimateAndRefineDepthMaps(mvsUtils::MultiViewParams& mp, const std::vector<int>& cams, int nbGPUs)
-{
-  const int numGpus = listCUDADevices(true);
-  const int numCpuThreads = omp_get_num_procs();
-  int numThreads = std::min(numGpus, numCpuThreads);
-
-  ALICEVISION_LOG_INFO("# GPU devices: " << numGpus << ", # CPU threads: " << numCpuThreads);
-
-  if(nbGPUs > 0)
-      numThreads = nbGPUs;
-
-  if(numThreads == 1)
-  {
-      // the GPU sorting is determined by an environment variable named CUDA_DEVICE_ORDER
-      // possible values: FASTEST_FIRST (default) or PCI_BUS_ID
-      const int cudaDeviceNo = 0;
-      estimateAndRefineDepthMaps(cudaDeviceNo, mp, cams);
-  }
-  else
-  {
-      omp_set_num_threads(numThreads); // create as many CPU threads as there are CUDA devices
-#pragma omp parallel
-      {
-          const int cpuThreadId = omp_get_thread_num();
-          const int cudaDeviceNo = cpuThreadId % numThreads;
-          const int rcFrom = cudaDeviceNo * (cams.size() / numThreads);
-          int rcTo = (cudaDeviceNo + 1) * (cams.size() / numThreads);
-
-          ALICEVISION_LOG_INFO("CPU thread " << cpuThreadId << " / " << numThreads << " uses CUDA device: " << cudaDeviceNo);
-
-          if(cudaDeviceNo == numThreads - 1)
-              rcTo = cams.size();
-
-          std::vector<int> subcams;
-          subcams.reserve(cams.size());
-
-          for(int rc = rcFrom; rc < rcTo; rc++)
-              subcams.push_back(cams[rc]);
-
-          estimateAndRefineDepthMaps(cpuThreadId, mp, subcams);
-      }
-  }
-}
-
-void estimateAndRefineDepthMaps(int cudaDeviceNo, mvsUtils::MultiViewParams& mp, const std::vector<int>& cams)
+void estimateAndRefineDepthMaps(int cudaDeviceIndex, mvsUtils::MultiViewParams& mp, const std::vector<int>& cams)
 {
   const int fileScale = 1; // input images scale (should be one)
   int sgmScale = mp.userParams.get<int>("semiGlobalMatching.scale", -1);
@@ -339,7 +295,7 @@ void estimateAndRefineDepthMaps(int cudaDeviceNo, mvsUtils::MultiViewParams& mp,
   // load images from files into RAM
   mvsUtils::ImagesCache ic(mp, bandType);
   // load stuff on GPU memory and creates multi-level images and computes gradients
-  PlaneSweepingCuda cps(cudaDeviceNo, ic, mp, sgmScale);
+  PlaneSweepingCuda cps(cudaDeviceIndex, ic, mp, sgmScale);
   // init plane sweeping parameters
   SemiGlobalMatchingParams sp(mp, cps);
 
@@ -367,9 +323,7 @@ void estimateAndRefineDepthMaps(int cudaDeviceNo, mvsUtils::MultiViewParams& mp,
 }
 
 
-
-
-void computeNormalMaps(int CUDADeviceNo, mvsUtils::MultiViewParams& mp, const StaticVector<int>& cams)
+void computeNormalMaps(int cudaDeviceIndex, mvsUtils::MultiViewParams& mp, const std::vector<int>& cams)
 {
   const float igammaC = 1.0f;
   const float igammaP = 1.0f;
@@ -377,7 +331,7 @@ void computeNormalMaps(int CUDADeviceNo, mvsUtils::MultiViewParams& mp, const St
   const int wsh = 3;
 
   mvsUtils::ImagesCache ic(mp, bandType);
-  PlaneSweepingCuda cps(CUDADeviceNo, ic, mp, 1);
+  PlaneSweepingCuda cps(cudaDeviceIndex, ic, mp, 1);
 
   for(const int rc : cams)
   {
@@ -399,59 +353,6 @@ void computeNormalMaps(int CUDADeviceNo, mvsUtils::MultiViewParams& mp, const St
     }
   }
 }
-
-void computeNormalMaps(mvsUtils::MultiViewParams& mp, const StaticVector<int>& cams)
-{
-  const int nbGPUs = listCUDADevices(true);
-  const int nbCPUThreads = omp_get_num_procs();
-
-  ALICEVISION_LOG_INFO("Number of GPU devices: " << nbGPUs << ", number of CPU threads: " << nbCPUThreads);
-
-  const int nbGPUsToUse = mp.userParams.get<int>("refineRc.num_gpus_to_use", 1);
-  int nbThreads = std::min(nbGPUs, nbCPUThreads);
-
-  if(nbGPUsToUse > 0)
-  {
-    nbThreads = nbGPUsToUse;
-  }
-
-  if(nbThreads == 1)
-  {
-    const int CUDADeviceNo = 0;
-    computeNormalMaps(CUDADeviceNo, mp, cams);
-  }
-  else
-  {
-    omp_set_num_threads(nbThreads); // create as many CPU threads as there are CUDA devices
-#pragma omp parallel
-    {
-      const int cpuThreadId = omp_get_thread_num();
-      const int CUDADeviceNo = cpuThreadId % nbThreads;
-
-      ALICEVISION_LOG_INFO("CPU thread " << cpuThreadId << " (of " << nbThreads << ") uses CUDA device: " << CUDADeviceNo);
-
-      const int nbCamsPerThread = (cams.size() / nbThreads);
-      const int rcFrom = CUDADeviceNo * nbCamsPerThread;
-      int rcTo = (CUDADeviceNo + 1) * nbCamsPerThread;
-
-      if(CUDADeviceNo == nbThreads - 1)
-      {
-        rcTo = cams.size();
-      }
-
-      StaticVector<int> subcams;
-      subcams.reserve(cams.size());
-
-      for(int rc = rcFrom; rc < rcTo; ++rc)
-      {
-        subcams.push_back(cams[rc]);
-      }
-
-      computeNormalMaps(CUDADeviceNo, mp, subcams);
-    }
-  }
-}
-
 
 
 

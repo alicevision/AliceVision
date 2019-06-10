@@ -132,7 +132,7 @@ bool Fuser::updateInSurr(float pixToleranceFactor, int pixSizeBall, int pixSizeB
 }
 
 // minNumOfModals number of other cams including this cam ... minNumOfModals /in 2,3,...
-void Fuser::filterGroups(const StaticVector<int>& cams, float pixToleranceFactor, int pixSizeBall, int pixSizeBallWSP, int nNearestCams)
+void Fuser::filterGroups(const std::vector<int>& cams, float pixToleranceFactor, int pixSizeBall, int pixSizeBallWSP, int nNearestCams)
 {
     ALICEVISION_LOG_INFO("Precomputing groups.");
     long t1 = clock();
@@ -238,7 +238,7 @@ bool Fuser::filterGroupsRC(int rc, float pixToleranceFactor, int pixSizeBall, in
 }
 
 // minNumOfModals number of other cams including this cam ... minNumOfModals /in 2,3,...
-void Fuser::filterDepthMaps(const StaticVector<int>& cams, int minNumOfModals, int minNumOfModalsWSP2SSP)
+void Fuser::filterDepthMaps(const std::vector<int>& cams, int minNumOfModals, int minNumOfModalsWSP2SSP)
 {
     ALICEVISION_LOG_INFO("Filtering depth maps.");
     long t1 = clock();

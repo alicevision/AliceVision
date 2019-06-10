@@ -30,9 +30,9 @@ public:
 
     // minNumOfModals number of other cams including this cam ... minNumOfModals /in 2,3,... default 3
     // pixSizeBall = default 2
-    void filterGroups(const StaticVector<int>& cams, float pixToleranceFactor, int pixSizeBall, int pixSizeBallWSP, int nNearestCams);
+    void filterGroups(const std::vector<int>& cams, float pixToleranceFactor, int pixSizeBall, int pixSizeBallWSP, int nNearestCams);
     bool filterGroupsRC(int rc, float pixToleranceFactor, int pixSizeBall, int pixSizeBallWSP, int nNearestCams);
-    void filterDepthMaps(const StaticVector<int>& cams, int minNumOfModals, int minNumOfModalsWSP2SSP);
+    void filterDepthMaps(const std::vector<int>& cams, int minNumOfModals, int minNumOfModalsWSP2SSP);
     bool filterDepthMapsRC(int rc, int minNumOfModals, int minNumOfModalsWSP2SSP);
 
     void divideSpaceFromDepthMaps(Point3d* hexah, float& minPixSize);

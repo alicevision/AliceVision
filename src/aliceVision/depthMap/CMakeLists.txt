@@ -1,5 +1,6 @@
 # Headers
 set(depthMap_files_headers
+  computeOnMultiGPUs.hpp
   DepthSimMap.hpp
   RcTc.hpp
   RefineRc.hpp
@@ -11,6 +12,7 @@ set(depthMap_files_headers
 
 # Sources
 set(depthMap_files_sources
+  computeOnMultiGPUs.cpp
   DepthSimMap.cpp
   RcTc.cpp
   RefineRc.cpp

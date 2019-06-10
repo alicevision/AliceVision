@@ -10,9 +10,12 @@
 #include <aliceVision/depthMap/SemiGlobalMatchingRc.hpp>
 #include <aliceVision/mvsData/StaticVector.hpp>
 #include <aliceVision/mvsUtils/common.hpp>
-#include <aliceVision/mvsUtils/MultiViewParams.hpp>
 #include <aliceVision/system/cmdline.hpp>
+#include <aliceVision/mvsUtils/MultiViewParams.hpp>
+#include <aliceVision/depthMap/RefineRc.hpp>
+#include <aliceVision/depthMap/SemiGlobalMatchingRc.hpp>
 #include <aliceVision/gpu/gpu.hpp>
+#include <aliceVision/depthMap/computeOnMultiGPUs.hpp>
 
 #include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>
@@ -271,8 +274,7 @@ int main(int argc, char* argv[])
     }
 
     ALICEVISION_LOG_INFO("Create depth maps.");
-
-    depthMap::estimateAndRefineDepthMaps(mp, cams, nbGPUs);
+    depthMap::computeOnMultiGPUs(mp, cams, depthMap::estimateAndRefineDepthMaps, nbGPUs);
 
     ALICEVISION_COMMANDLINE_END
 }

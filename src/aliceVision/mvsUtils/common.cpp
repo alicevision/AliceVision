@@ -665,7 +665,7 @@ StaticVector<StaticVector<Pixel>*>* convertObjectsCamsToCamsObjects(const MultiV
     return camsPts;
 }
 
-int computeStep(MultiViewParams& mp, int scale, int maxWidth, int maxHeight)
+int computeStep(const MultiViewParams& mp, int scale, int maxWidth, int maxHeight)
 {
     int step = 1;
     int ow = mp.getMaxImageWidth() / scale;
