@@ -4,6 +4,7 @@
 # Software PROPERTY FOLDER is 'Software/Convert'
 set(FOLDER_SOFTWARE_CONVERT "Software/Convert")
 
+if(ALICEVISION_BUILD_SFM)
 # Convert SfMData format (from one to another)
 alicevision_add_software(aliceVision_convertSfMFormat
   SOURCE main_convertSfMFormat.cpp
@@ -23,6 +24,7 @@ alicevision_add_software(aliceVision_convertFloatDescriptorToUchar
         aliceVision_feature
         ${Boost_LIBRARIES}
 )
+endif()
 
 # Convert image to EXR
 alicevision_add_software(aliceVision_convertRAW
@@ -33,7 +35,7 @@ alicevision_add_software(aliceVision_convertRAW
         ${Boost_LIBRARIES}
 )
 
-
+if(ALICEVISION_BUILD_HDR)
 # Convert LDR to HDR
 alicevision_add_software(aliceVision_convertLDRToHDR
   SOURCE main_convertLDRToHDR.cpp
@@ -43,3 +45,4 @@ alicevision_add_software(aliceVision_convertLDRToHDR
         aliceVision_hdr
         ${Boost_LIBRARIES}
 )
+endif()

@@ -4,6 +4,7 @@
 # Software PROPERTY FOLDER is 'Software/Export'
 set(FOLDER_SOFTWARE_EXPORT "Software/Export")
 
+if(ALICEVISION_BUILD_SFM)
 # Export an alembic animated camera from a SfMData file
 if(ALICEVISION_HAVE_ALEMBIC)
   alicevision_add_software(aliceVision_exportAnimatedCamera
@@ -151,3 +152,4 @@ alicevision_add_software(aliceVision_exportCameraFrustums
         aliceVision_sfmDataIO
         ${Boost_LIBRARIES}
 )
+endif()
