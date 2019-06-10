@@ -12,6 +12,7 @@
 #include <cmath>
 #include <vector>
 #include <array>
+#include <string>
 #include <iostream>
 
 

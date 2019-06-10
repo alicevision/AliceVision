@@ -115,7 +115,7 @@ void RobertsonCalibrate::process(const std::vector< std::vector< image::Image<im
 //        {
 //          for(std::size_t x = 0; x < ldrImagesGroup[i].Width(); ++x)
 //          {
-        for(std::size_t j=0; j<nbPoints; ++j)
+        for(int j=0; j<nbPoints; ++j)
         {
             //for each pixels
             const image::RGBfColor &pixelValue = ldrImagesGroup[i](step*j);

@@ -44,7 +44,7 @@ void GrossbergCalibrate::process(const std::vector< std::vector< image::Image<im
     f0.assign(ptrf0, ptrf0 + channelQuantization);
 
     Mat H(channelQuantization, _dimension);
-    std::vector<double> hCurves[_dimension];
+    std::vector<std::vector<double>> hCurves(_dimension);
 
     for(unsigned int i=0; i<_dimension; ++i)
     {

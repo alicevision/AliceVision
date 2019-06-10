@@ -47,9 +47,9 @@ void hdrMerge::process(const std::vector< image::Image<image::RGBfColor> > &imag
   const float minLum = 0.0001;
 
   #pragma omp parallel for
-  for(std::size_t y = 0; y < height; ++y)
+  for(int y = 0; y < height; ++y)
   {
-    for(std::size_t x = 0; x < width; ++x)
+    for(int x = 0; x < width; ++x)
     {
       //for each pixels
       image::RGBfColor &radianceColor = radiance(y, x);
