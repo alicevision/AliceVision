@@ -176,10 +176,6 @@ void readImage(const std::string& path,
 
   const oiio::ImageSpec& inSpec = inBuf.spec();
 
-  {
-    const std::string& colorSpace = inSpec.get_string_attribute("oiio:ColorSpace", "Undefined");
-  }
-
   // check picture channels number
   if(inSpec.nchannels != 1 && inSpec.nchannels < 3)
     throw std::runtime_error("Can't load channels of image file '" + path + "'.");
@@ -192,8 +188,10 @@ void readImage(const std::string& path,
   {
     const std::string& colorSpace = inSpec.get_string_attribute("oiio:ColorSpace", "sRGB"); // default image color space is sRGB
     if(colorSpace != "sRGB")
+    {
      oiio::ImageBufAlgo::colorconvert(inBuf, inBuf, colorSpace, "sRGB");
-    ALICEVISION_LOG_INFO("Convert image " << path << " to sRGB colorspace");
+     ALICEVISION_LOG_INFO("Convert image " << path << " to sRGB colorspace");
+    }
   }
   else if(imageColorSpace == EImageColorSpace::LINEAR) // color conversion to linear
   {
