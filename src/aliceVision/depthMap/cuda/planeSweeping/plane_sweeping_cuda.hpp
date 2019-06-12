@@ -74,6 +74,7 @@ void ps_SGMoptimizeSimVolume(
     const CameraStruct& rccam,
     CudaDeviceMemoryPitched<TSim, 3>& volSim_dmp,
     int volDimX, int volDimY, int volDimZ,
+    const std::string& filteringAxes,
     bool verbose,
     unsigned char P1, unsigned char P2,
     int scale,

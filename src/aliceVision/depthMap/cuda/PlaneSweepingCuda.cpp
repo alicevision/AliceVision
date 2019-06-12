@@ -143,8 +143,6 @@ PlaneSweepingCuda::PlaneSweepingCuda( int CUDADeviceNo,
                                       int scales )
     : _scales( scales )
     , _CUDADeviceNo( CUDADeviceNo )
-    , _nbestkernelSizeHalf( 1 )
-    , _nImgsInGPUAtTime( 2 )
     , _ic( ic )
     , _mp(mp)
 {
@@ -172,7 +170,7 @@ PlaneSweepingCuda::PlaneSweepingCuda( int CUDADeviceNo,
     _nImgsInGPUAtTime = (int)(maxmbGPU / oneimagemb);
     _nImgsInGPUAtTime = std::max(2, std::min(mp.ncams, _nImgsInGPUAtTime));
 
-    _varianceWSH = mp.userParams.get<int>("global.varianceWSH", 1);
+    _varianceWSH = mp.userParams.get<int>("global.varianceWSH", _varianceWSH);
 
     ALICEVISION_LOG_INFO("PlaneSweepingCuda:" << std::endl
                          << "\t- _nImgsInGPUAtTime: " << _nImgsInGPUAtTime << std::endl
@@ -837,15 +835,17 @@ void PlaneSweepingCuda::sweepPixelsToVolume( CudaDeviceMemoryPitched<TSim, 3>& v
  * @param[inout] volume input similarity volume
  */
 bool PlaneSweepingCuda::SGMoptimizeSimVolume(int rc, CudaDeviceMemoryPitched<TSim, 3>& volSim_dmp,
-                                               int volDimX, int volDimY, int volDimZ, 
-                                               int scale, unsigned char P1, unsigned char P2)
+                                             int volDimX, int volDimY, int volDimZ,
+                                             const std::string& filteringAxes,
+                                             int scale, unsigned char P1, unsigned char P2)
 {
     auto startTime = std::chrono::high_resolution_clock::now();
 
     ALICEVISION_LOG_DEBUG("SGM optimizing volume:" << std::endl
                           << "\t- volDimX: " << volDimX << std::endl
                           << "\t- volDimY: " << volDimY << std::endl
-                          << "\t- volDimZ: " << volDimZ);
+                          << "\t- volDimZ: " << volDimZ << std::endl
+                          << "\t- filteringAxes: " << filteringAxes);
 
     int camCacheIndex = addCam(rc, scale, __FUNCTION__);
     _camsBasesDev.copyFrom(_camsBasesHst);
@@ -854,6 +854,7 @@ bool PlaneSweepingCuda::SGMoptimizeSimVolume(int rc, CudaDeviceMemoryPitched<TSi
                             _cams[camCacheIndex],
                             volSim_dmp,
                             volDimX, volDimY, volDimZ,
+                            filteringAxes,
                             _mp.verbose, P1, P2, scale,
                             _CUDADeviceNo, _nImgsInGPUAtTime);
 

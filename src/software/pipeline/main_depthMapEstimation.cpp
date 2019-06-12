@@ -61,6 +61,7 @@ int main(int argc, char* argv[])
     int sgmMaxDepths = 3000;
     int sgmMaxDepthsPerTc = 1500;
     bool sgmUseSfmSeeds = true;
+    std::string sgmFilteringAxes = "YX";
 
     // refineRc
     int refineMaxTCams = 6;
@@ -125,6 +126,8 @@ int main(int argc, char* argv[])
             "Semi Global Matching: Max number of depths to sweep in the similarity volume per Rc/Tc cameras.")
         ("sgmUseSfmSeeds", po::value<bool>(&sgmUseSfmSeeds)->default_value(sgmUseSfmSeeds),
             "Semi Global Matching: Use landmarks from SfM to define the ranges for the plane sweeping.")
+        ("sgmFilteringAxes", po::value<std::string>(&sgmFilteringAxes)->default_value(sgmFilteringAxes),
+            "Semi Global Matching: Filtering axes for the 3D volume.")
         ("refineMaxTCams", po::value<int>(&refineMaxTCams)->default_value(refineMaxTCams),
             "Refine: Number of neighbour cameras.")
         ("refineNSamplesHalf", po::value<int>(&refineNSamplesHalf)->default_value(refineNSamplesHalf),
@@ -235,6 +238,8 @@ int main(int argc, char* argv[])
     mp.userParams.put("semiGlobalMatching.maxDepthsToStore", sgmMaxDepths);
     mp.userParams.put("semiGlobalMatching.maxDepthsToSweep", sgmMaxDepthsPerTc);
     mp.userParams.put("semiGlobalMatching.useSeedsToCompDepthsToSweep", sgmUseSfmSeeds);
+
+    mp.userParams.put("semiGlobalMatching.filteringAxes", sgmFilteringAxes);
 
     // refineRc
     mp.userParams.put("refineRc.maxTCams", refineMaxTCams);

@@ -29,9 +29,11 @@ protected:
 
     int _width;
     int _height;
-    int _sgmWsh;
-    float _sgmGammaC;
-    float _sgmGammaP;
+    int _sgmWsh = 4;
+    float _sgmGammaC = 5.5;
+    float _sgmGammaP = 8.0;
+
+    std::string _filteringAxes = "YX";
 
     StaticVector<int> _sgmTCams;
     StaticVector<Pixel> _depthsTcamsLimits;

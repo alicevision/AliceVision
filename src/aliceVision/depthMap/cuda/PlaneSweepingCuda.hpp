@@ -58,7 +58,7 @@ public:
     const int _scales;
 
     mvsUtils::MultiViewParams& _mp;
-    const int _CUDADeviceNo;
+    const int _CUDADeviceNo = 0;
     Pyramids _pyramids;
 
     CudaDeviceMemoryPitched<CameraStructBase,2> _camsBasesDev;
@@ -67,9 +67,9 @@ public:
     StaticVector<int>                           _camsRcs;
     StaticVector<long>                          _camsTimes;
 
-    const int  _nbestkernelSizeHalf;
-    int  _nImgsInGPUAtTime;
-    int  _varianceWSH;
+    const int  _nbestkernelSizeHalf = 1;
+    int  _nImgsInGPUAtTime = 2;
+    int  _varianceWSH = 1;
     mvsUtils::ImagesCache& _ic;
 
     inline int maxImagesInGPU() const { return _nImgsInGPUAtTime; }
@@ -123,6 +123,7 @@ public:
 
     bool SGMoptimizeSimVolume(int rc, CudaDeviceMemoryPitched<TSim, 3>& volSim_dmp,
                               int volDimX, int volDimY, int volDimZ,
+                              const std::string& filteringAxes,
                               int scale, unsigned char P1, unsigned char P2);
 
     void SGMretrieveBestDepth(StaticVector<IdValue>& bestDepth, CudaDeviceMemoryPitched<TSim, 3>& volSim_dmp,

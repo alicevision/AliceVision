@@ -20,6 +20,8 @@
 
 #include <iostream>
 #include <algorithm>
+#include <map>
+#include <array>
 
 namespace aliceVision {
 namespace depthMap {
@@ -494,6 +496,7 @@ void ps_SGMoptimizeSimVolume(Pyramids& ps_texs_arr,
                              const CameraStruct& rccam,
                              CudaDeviceMemoryPitched<TSim, 3>& volSim_dmp,
                              int volDimX, int volDimY, int volDimZ,
+                             const std::string& filteringAxes,
                              bool verbose, unsigned char P1, unsigned char P2,
                              int scale, int CUDAdeviceNo, int ncamsAllocated)
 {
@@ -515,27 +518,30 @@ void ps_SGMoptimizeSimVolume(Pyramids& ps_texs_arr,
     int npaths = 0;
     cudaTextureObject_t rc_tex = ps_texs_arr[rccam.camId][scale - 1].tex;
 
-    const auto updateAggrVolume = [&](int dimTrnX, int dimTrnY, int dimTrnZ, bool invZ) 
+    const auto updateAggrVolume = [&](const std::array<int, 3>& dimTrn, bool invZ) 
                                   {
                                       ps_updateAggrVolume(volAgr_dmp,
                                                           volSim_dmp,
                                                           volDimX, volDimY, volDimZ,
-                                                          dimTrnX, dimTrnY, dimTrnZ,
+                                                          dimTrn[0], dimTrn[1], dimTrn[2],
                                                           rc_tex,
                                                           P1, P2, verbose,
                                                           invZ,
                                                           npaths);
                                       npaths++;
                                   };
+    // Filtering is done on the last axis
+    const std::map<char, std::array<int, 3>> mapAxes = {
+        {'Y', {0, 2, 1}}, // XYZ -> XZY
+        {'X', {1, 2, 0}}, // XYZ -> YZX
+        {'Z', {0, 1, 2}}, // XYZ
+    };
 
-    // XYZ -> XZY
-    updateAggrVolume(0, 2, 1, false);
-    // XYZ -> XZY'
-    updateAggrVolume(0, 2, 1, true);
-    // XYZ -> YZX
-    updateAggrVolume(1, 2, 0, false);
-    // XYZ -> YZX'
-    updateAggrVolume(1, 2, 0, true);
+    for (char axis : filteringAxes)
+    {
+        updateAggrVolume(mapAxes.at(axis), false); // without transpose
+        updateAggrVolume(mapAxes.at(axis), true); // with transpose of the last axis
+    }
 
     if(verbose)
         printf("SGM volume gpu elapsed time: %f ms \n", toc(tall));

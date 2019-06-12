@@ -41,9 +41,11 @@ SemiGlobalMatchingRc::SemiGlobalMatchingRc(int rc, int scale, int step, SemiGlob
     _width  = _sp.mp.getWidth(rc)  / (scale * step);
     _height = _sp.mp.getHeight(rc) / (scale * step);
     _sgmTCams  = _sp.mp.findNearestCamsFromLandmarks(rc, nbNearestCams);
-    _sgmWsh = _sp.mp.userParams.get<int>("semiGlobalMatching.wsh", 4);
-    _sgmGammaC = static_cast<float>(_sp.mp.userParams.get<double>("semiGlobalMatching.gammaC", 5.5));
-    _sgmGammaP = static_cast<float>(_sp.mp.userParams.get<double>("semiGlobalMatching.gammaP", 8.0));
+    _sgmWsh = _sp.mp.userParams.get<int>("semiGlobalMatching.wsh", _sgmWsh);
+    _sgmGammaC = static_cast<float>(_sp.mp.userParams.get<double>("semiGlobalMatching.gammaC", _sgmGammaC));
+    _sgmGammaP = static_cast<float>(_sp.mp.userParams.get<double>("semiGlobalMatching.gammaP", _sgmGammaP));
+    _filteringAxes = _sp.mp.userParams.get<std::string>("semiGlobalMatching.filteringAxes", _filteringAxes);
+
     _depthsTcamsLimits.clear();
 
     computeDepthsAndResetTCams();
@@ -51,7 +53,6 @@ SemiGlobalMatchingRc::SemiGlobalMatchingRc(int rc, int scale, int step, SemiGlob
 
 SemiGlobalMatchingRc::~SemiGlobalMatchingRc()
 {
-    delete _volumeBestIdVal;
 }
 
 bool SemiGlobalMatchingRc::selectBestDepthsRange(int nDepthsThr, StaticVector<float>* rcSeedsDistsAsc)
@@ -499,7 +500,7 @@ bool SemiGlobalMatchingRc::sgmrc(bool checkIfExists)
     if(_sp.doSGMoptimizeVolume) // this is here for experimental reason ... to show how SGGC work on non
                                 // optimized depthmaps ... it must equals to true in normal case
     {
-        _sp.cps.SGMoptimizeSimVolume(_rc, volumeSecBestSim_d, volDimX, volDimY, volDimZ, _scale, _sp.P1, _sp.P2);
+        _sp.cps.SGMoptimizeSimVolume(_rc, volumeSecBestSim_d, volDimX, volDimY, volDimZ, _filteringAxes, _scale, _sp.P1, _sp.P2);
     }
 
     if (_sp.exportIntermediateResults)
