@@ -483,8 +483,9 @@ void Texturing::generateTexturesSubSet(const mvsUtils::MultiViewParams& mp,
         ALICEVISION_LOG_INFO("- camera " << camId + 1 << "/" << mp.ncams << " with contributions to " << cameraContributions.size() << " texture files:");
 
         //Load camera image from cache
-        imageCache.refreshData(camId);        
-        const Image& camImg = *(imageCache.getImg_sync(camId));
+        imageCache.refreshData(camId);
+        mvsUtils::ImagesCache::ImgPtr imgPtr = imageCache.getImg_sync(camId);
+        const Image& camImg = *imgPtr;
 
         //Calculate laplacianPyramid
         std::vector<Image> pyramidL; //laplacian pyramid
