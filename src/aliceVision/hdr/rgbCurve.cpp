@@ -171,7 +171,7 @@ void rgbCurve::normalize()
             midValue = curve[middle];
         }
 
-        std::cout << "-> middle [" << middle << "]: " << midValue <<std::endl;
+//        std::cout << "-> middle [" << middle << "]: " << midValue <<std::endl;
         const float coefficient = 1 / midValue;
 
         for(auto &value : curve)

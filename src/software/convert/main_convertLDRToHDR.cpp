@@ -20,6 +20,7 @@
 
 #include <algorithm>
 #include <string>
+#include <regex>
 
 // These constants define the current software version.
 // They must be updated when the command line is changed.
@@ -34,6 +35,7 @@ namespace fs = boost::filesystem;
 
 enum class ECalibrationMethod
 {
+      LINEAR,
       ROBERTSON,
       DEBEVEC,
       GROSSBERG
@@ -48,6 +50,7 @@ inline std::string ECalibrationMethod_enumToString(const ECalibrationMethod cali
 {
   switch(calibrationMethod)
   {
+    case ECalibrationMethod::LINEAR:      return "linear";
     case ECalibrationMethod::ROBERTSON:   return "robertson";
     case ECalibrationMethod::DEBEVEC:     return "debevec";
     case ECalibrationMethod::GROSSBERG:   return "grossberg";
@@ -65,6 +68,7 @@ inline ECalibrationMethod ECalibrationMethod_stringToEnum(const std::string& cal
   std::string methodName = calibrationMethodName;
   std::transform(methodName.begin(), methodName.end(), methodName.begin(), ::tolower);
 
+  if(methodName == "linear")      return ECalibrationMethod::LINEAR;
   if(methodName == "robertson")   return ECalibrationMethod::ROBERTSON;
   if(methodName == "debevec")     return ECalibrationMethod::DEBEVEC;
   if(methodName == "grossberg")   return ECalibrationMethod::GROSSBERG;
@@ -131,42 +135,45 @@ int main(int argc, char** argv)
   // command-line parameters
 
   std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
-  std::string imageFolder;
+  std::vector<std::string> imagesFolder;
   std::string outputHDRImagePath;
   std::string outputResponsePath;
-  bool calibration;
-  std::string calibrationMethodName = ECalibrationMethod_enumToString(ECalibrationMethod::GROSSBERG);
-  std::string weightFunctionName = hdr::EFunctionType_enumToString(hdr::EFunctionType::GAUSSIAN);
+  std::string responseCalibrationName = ECalibrationMethod_enumToString(ECalibrationMethod::LINEAR);
+  std::string calibrationWeightFunction = "default";
+  hdr::EFunctionType fusionWeightFunction = hdr::EFunctionType::GAUSSIAN;
   std::string target;
-  float threshold = 1.f;
+  float clampedValueCorrection = 1.f;
 
   po::options_description allParams("AliceVision convertLDRToHDR");
 
-  po::options_description requiredParams("Required parameters");
+  po::options_description requiredParams("Required Parameters");
   requiredParams.add_options()
-    ("inputFolder,i", po::value<std::string>(&imageFolder)->required(),
-      "LDR images folder.")
+    ("input,i", po::value<std::vector<std::string>>(&imagesFolder)->required()->multitoken(),
+      "List of LDR images or a folder containing them (accepted formats are: .jpg .jpeg .png .tif .tiff .cr2 .rw2)")
     ("output,o", po::value<std::string>(&outputHDRImagePath)->required(),
       "output HDR image path.");
+
+  po::options_description optionalParams("Optional Parameters");
+  optionalParams.add_options()
+    ("outputResponse", po::value<std::string>(&outputResponsePath),
+       "output response function path.")
+    ("responseCalibration,r", po::value<std::string>(&responseCalibrationName )->default_value(responseCalibrationName ),
+        "method used for camera calibration (linear, robertson, debevec) or provide an external response file directly.")
+    ("calibrationWeight,w", po::value<std::string>(&calibrationWeightFunction)->default_value(calibrationWeightFunction),
+       "weight function type (default, gaussian, triangle, plateau).")
+    ("fusionWeight,W", po::value<hdr::EFunctionType>(&fusionWeightFunction)->default_value(fusionWeightFunction),
+       "weight function used to fuse all LDR images together (gaussian, triangle, plateau).")
+    ("targetExposureImage,e", po::value<std::string>(&target),
+      "LDR image at the target exposure for the output HDR image to be centered")
+    ("oversaturatedCorrection,s", po::value<float>(&clampedValueCorrection)->default_value(clampedValueCorrection),
+      "oversaturated correction for pixels oversaturated in all images: use 0 for no correction, 0.5 for interior lighting and 1 for outdoor lighting");
 
   po::options_description logParams("Log parameters");
   logParams.add_options()
     ("verboseLevel,v", po::value<std::string>(&verboseLevel)->default_value(verboseLevel),
-      "verbosity level (fatal,  error, warning, info, debug, trace).")
-    ("response,r", po::value<std::string>(&outputResponsePath),
-       "output response function path.")
-    ("calibration,c", po::value<bool>(&calibration)->default_value(false),
-        "calibration of the camera response function (true, false).")
-    ("calibrationMethod,m", po::value<std::string>(&calibrationMethodName)->default_value(calibrationMethodName),
-        "method used for camera calibration.")
-    ("weight,w", po::value<std::string>(&weightFunctionName)->default_value(weightFunctionName),
-       "weight function type (gaussian, triangle, plateau).")
-    ("targetExposureTime,e", po::value<std::string>(&target),
-      "target exposure time for the output HDR image to be centered")
-    ("threshold,t", po::value<float>(&threshold)->default_value(threshold),
-      "threshold for clamped value (0 for no correction, 0.5 for inside lights and 1 for outside lights");
+      "verbosity level (fatal,  error, warning, info, debug, trace).");
 
-  allParams.add(requiredParams).add(logParams);
+  allParams.add(requiredParams).add(optionalParams).add(logParams);
 
   po::variables_map vm;
   try
@@ -196,74 +203,109 @@ int main(int argc, char** argv)
   ALICEVISION_COUT("Program called with the following parameters:");
   ALICEVISION_COUT(vm);
 
-  ALICEVISION_COUT("response file: " << outputResponsePath);
-
-  // set the correct calibration method corresponding to the string parameter
-  const ECalibrationMethod calibrationMethod = ECalibrationMethod_stringToEnum(calibrationMethodName);
-
-  std::size_t channelQuantization;
-  if(calibration == true && calibrationMethod == ECalibrationMethod::GROSSBERG)
-    channelQuantization = std::pow(2, 10);
-  else
-    channelQuantization = std::pow(2, 12); //RAW 12 bit precision, 2^12 values between black and white point
-//  const std::size_t channelQuantization = std::pow(2, 8); //JPG 8 bit precision, 256 values between black and white point
-//  const std::size_t channelQuantization = std::pow(2, 10); //RAW 10 bit precision, 2^10 values between black and white point
+  if(!outputResponsePath.empty())
+    ALICEVISION_COUT("response file: " << outputResponsePath);
 
   std::vector< std::vector< image::Image<image::RGBfColor> > > ldrImageGroups(1);
   std::vector< std::vector<float> > times(1);
 //  std::vector< std::vector<float> > ev(1);
-  hdr::rgbCurve weight(channelQuantization);
-  hdr::rgbCurve response(channelQuantization);
+  hdr::rgbCurve response(0);
 
   std::vector<image::Image<image::RGBfColor>> &ldrImages = ldrImageGroups.at(0);
   std::vector<float> &ldrTimes = times.at(0);
 //  std::vector<float> &ldrEv = ev.at(0);
 
+  // set the correct calibration method corresponding to the string parameter
+  ECalibrationMethod calibrationMethod;
+  std::size_t channelQuantization;
+  try
+  {
+    calibrationMethod = ECalibrationMethod_stringToEnum(responseCalibrationName);
+    if(calibrationMethod == ECalibrationMethod::GROSSBERG)
+      channelQuantization = std::pow(2, 10);  //RAW 10 bit precision, 2^10 values between black and white point
+    else
+      channelQuantization = std::pow(2, 12); //RAW 12 bit precision, 2^12 values between black and white point
+    response.resize(channelQuantization);
+  }
+  catch(std::exception& e)
+  {
+    response = hdr::rgbCurve(responseCalibrationName);    // use the camera response function set in "responseCalibration"
+    channelQuantization = response.getSize();
+  }
+
   // set verbose level
   system::Logger::get()->setLogLevel(verboseLevel);
 
-  // set the correct weight function corresponding to the string parameter
-  const hdr::EFunctionType weightFunction = hdr::EFunctionType_stringToEnum(weightFunctionName);
-  weight.setFunction(weightFunction);
+  // set the correct weight functions corresponding to the string parameter
+  hdr::rgbCurve fusionWeight(channelQuantization);
+  fusionWeight.setFunction(fusionWeightFunction);
 
-  // get all valid images paths from input folder
-  std::vector<std::string> inputFilesNames;
+  hdr::rgbCurve calibrationWeight(channelQuantization);
+  std::transform(calibrationWeightFunction.begin(), calibrationWeightFunction.end(), calibrationWeightFunction.begin(), ::tolower);
+  if(calibrationWeightFunction == "default")
+  {
+    switch(calibrationMethod)
+    {
+    case ECalibrationMethod::LINEAR:      break;
+    case ECalibrationMethod::DEBEVEC:     calibrationWeight.setTriangular();
+    case ECalibrationMethod::ROBERTSON:   calibrationWeight.setRobertsonWeight();
+    case ECalibrationMethod::GROSSBERG:   calibrationWeight.setGaussian();
+    }
+  }
+  else
+    calibrationWeight.setFunction(hdr::EFunctionType_stringToEnum(calibrationWeightFunction));
+
+  // get all valid images from input
+  std::vector<std::string> inputImagesNames;
   std::vector<std::string> stemImages;
   std::vector<std::string> nameImages;
-  const std::vector<std::string> validExtensions = {".jpg", ".jpeg", ".png", ".cr2", ".tiff", ".tif", ".rw2"};
-  for(auto& entry: fs::directory_iterator(fs::path(imageFolder)))
+
+//  const std::vector<std::string> validExtensions = {".jpg", ".jpeg", ".png", ".cr2", ".tiff", ".tif", ".rw2"};
+  const std::regex validExtensions("\\.(?:jpg|jpeg|png|cr2|tiff|tif|rw2)");
+
+  for(const std::string& entry: imagesFolder)
   {
-      if(fs::is_regular_file(entry.status()))
+    if(fs::is_directory(fs::path(entry)))
+    {
+      for(const auto& file: fs::directory_iterator(fs::path(entry)))
       {
-          std::string lowerExtension=entry.path().extension().string();
-          std::transform(lowerExtension.begin(), lowerExtension.end(), lowerExtension.begin(), ::tolower);
-          if(std::find(validExtensions.begin(), validExtensions.end(), lowerExtension) != validExtensions.end())
-          {
-              inputFilesNames.push_back(entry.path().string());
-              stemImages.push_back(entry.path().stem().string());
-              nameImages.push_back(entry.path().filename().string());
-          }
-          else
-          {
-            ALICEVISION_LOG_ERROR("No valid image files in entry folder");
-            return EXIT_FAILURE;
-          }
+        std::string extension = file.path().extension().string();
+        std::transform(extension.begin(), extension.end(), extension.begin(), ::tolower);
+        if(fs::is_regular_file(file.status()) && std::regex_match(extension, validExtensions))
+//            if(std::find(validExtensions.begin(), validExtensions.end(), extension) != validExtensions.end())
+        {
+            inputImagesNames.push_back(file.path().string());
+            stemImages.push_back(file.path().stem().string());
+            nameImages.push_back(file.path().filename().string());
+        }
       }
-      else
+    }
+    else
+    {
+      std::string extension = fs::path(entry).extension().string();
+      std::transform(extension.begin(), extension.end(), extension.begin(), ::tolower);
+      if(fs::is_regular_file(fs::path(entry)) && std::regex_match(extension, validExtensions))
       {
-        ALICEVISION_LOG_ERROR("No regular files in entry folder");
-        return EXIT_FAILURE;
+        inputImagesNames.push_back(entry);
+        stemImages.push_back(fs::path(entry).stem().string());
+        nameImages.push_back(fs::path(entry).filename().string());
       }
+    }
+  }
+  if(inputImagesNames.empty())
+  {
+    ALICEVISION_LOG_ERROR("No valid input images. Please give a list of LDR images or a folder path containing them (accepted formats are: .jpg .jpeg .png .tif .tiff .cr2 .rw2");
+    return EXIT_FAILURE;
   }
 
 
-
-  int nbImages = inputFilesNames.size();
+  int nbImages = inputImagesNames.size();
   ldrImages.resize(nbImages);
   for(int i=0; i<nbImages; ++i)
   {
-    std::string imagePath = inputFilesNames.at(i);
+    std::string imagePath = inputImagesNames.at(i);
     int w, h;
+
     std::map<std::string, std::string> metadata;
 
     image::readImage(imagePath, ldrImages.at(i), image::EImageColorSpace::SRGB);
@@ -339,74 +381,67 @@ int main(int argc, char** argv)
   // we sort the images according to their exposure time
   std::vector< std::vector< image::Image<image::RGBfColor> > > ldrImageGroups_sorted(1);
   ldrImageGroups_sorted.at(0).resize(nbImages);
-//  std::vector<std::string> nameImages_sorted = nameImages;
   for(int i=0; i<nbImages; ++i)
   {
       std::vector<float>::iterator it = std::find(ldrTimes.begin(), ldrTimes.end(), ldrTimes_sorted.at(i));
       if(it != ldrTimes.end())
       {
           ldrImageGroups_sorted.at(0).at(i) = ldrImages.at(std::distance(ldrTimes.begin(), it));
-//          nameImages_sorted.at(i) = nameImages.at(std::distance(ldrTimes.begin(), it));
       }
       else
           ALICEVISION_LOG_ERROR("sorting failed");
   }
 
-//  ALICEVISION_COUT("sorted images : " << nameImages_sorted);
 
   image::Image<image::RGBfColor> image(ldrImages.at(0).Width(), ldrImages.at(0).Height(), false);
 
-  if(calibration == true)
+  // calculate the response function according to the method given in argument or take the response provided by the user
+  switch(calibrationMethod)
   {
-    // calculate the response function according to the method given in argument and merge the HDR
-    switch(calibrationMethod)
+    case ECalibrationMethod::LINEAR:
     {
-      case ECalibrationMethod::DEBEVEC:
-      {
-        hdr::rgbCurve wDeb(channelQuantization);
-        wDeb.setTriangular();
-        ALICEVISION_COUT("Debevec calibration");
-        const float lambda = channelQuantization * 1.f;
-        const int nbPoints = 1000;
-        hdr::DebevecCalibrate calibration;
-        calibration.process(ldrImageGroups, channelQuantization, times, nbPoints, wDeb, lambda, response);
-
-        response.exponential();
-//                response.scale();
-      }
-      break;
-
-      case ECalibrationMethod::ROBERTSON:
-      {
-        hdr::rgbCurve wRob(channelQuantization);
-        wRob.setRobertsonWeight();
-        ALICEVISION_COUT("Robertson calibration");
-        hdr::RobertsonCalibrate calibration(40);
-        const int nbPoints = 1000000;
-        calibration.process(ldrImageGroups_sorted, channelQuantization, times_sorted, nbPoints, wRob, response, targetTime, threshold);
-        response.scale();
-      }
-      break;
-
-      case ECalibrationMethod::GROSSBERG:
-      {
-        ALICEVISION_COUT("Grossberg calibration");
-        const int nbPoints = 1000000;
-        hdr::GrossbergCalibrate calibration(5);
-        calibration.process(ldrImageGroups_sorted, channelQuantization, times_sorted, nbPoints, weight, response);
-//        response.scale();
-      }
-      break;
+      // set the response function to linear
+      response.setLinear();
     }
-  }
-  else
-  {
-    // set the response function to linear
-    response.setLinear();
+    break;
+
+    case ECalibrationMethod::DEBEVEC:
+    {
+      ALICEVISION_COUT("Debevec calibration");
+      const float lambda = channelQuantization * 1.f;
+      const int nbPoints = 1000;
+      hdr::DebevecCalibrate calibration;
+      calibration.process(ldrImageGroups, channelQuantization, times, nbPoints, calibrationWeight, lambda, response);
+
+      response.exponential();
+//      response.scale();
+    }
+    break;
+
+    case ECalibrationMethod::ROBERTSON:
+    {
+      ALICEVISION_COUT("Robertson calibration");
+      hdr::RobertsonCalibrate calibration(40);
+      const int nbPoints = 1000000;
+      calibration.process(ldrImageGroups_sorted, channelQuantization, times_sorted, nbPoints, calibrationWeight, response, targetTime, clampedValueCorrection);
+      response.scale();
+    }
+    break;
+
+    case ECalibrationMethod::GROSSBERG:
+    {
+      ALICEVISION_COUT("Grossberg calibration");
+      const int nbPoints = 1000000;
+      hdr::GrossbergCalibrate calibration(5);
+      calibration.process(ldrImageGroups_sorted, channelQuantization, times_sorted, nbPoints, calibrationWeight, response);
+//      response.scale();
+    }
+    break;
   }
 
+  ALICEVISION_COUT("hdr fusion");
   hdr::hdrMerge merge;
-  merge.process(ldrImageGroups_sorted.at(0), ldrTimes_sorted, weight, response, image, targetTime, threshold);
+  merge.process(ldrImageGroups_sorted.at(0), ldrTimes_sorted, fusionWeight, response, image, targetTime, clampedValueCorrection);
 
 
   image::writeImage(outputHDRImagePath, image, image::EImageColorSpace::NO_CONVERSION);
@@ -414,8 +449,7 @@ int main(int argc, char** argv)
 
 
   // test of recovery of source target image from HDR
-  recoverSourceImage(image, response, channelQuantization, "/s/prods/mvg/_source_global/samples/HDR_selection/terrasse_2/Mikros/Centrage_expos/recovered_from_Gros_bonsCoeff_meanCurve.exr", meanVal);
-
+//  recoverSourceImage(image, response, channelQuantization, "/s/prods/mvg/_source_global/samples/HDR_selection/terrasse_2/Mikros/Centrage_expos/recovered_from_Gros_bonsCoeff_meanCurve.exr", meanVal);
 
   return EXIT_SUCCESS;
 }

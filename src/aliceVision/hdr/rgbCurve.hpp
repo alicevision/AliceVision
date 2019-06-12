@@ -99,6 +99,13 @@ public:
    */
   rgbCurve(const std::string &path);
 
+  void resize(std::size_t newSize)
+  {
+    for(auto &curve : _data)
+      curve.resize(newSize);
+    assert(getSize() == newSize);
+  }
+
   /**
    * @brief set curves to zero
    */

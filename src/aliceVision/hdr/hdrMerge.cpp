@@ -25,8 +25,6 @@ void hdrMerge::process(const std::vector< image::Image<image::RGBfColor> > &imag
                               const float threshold,
                               bool robCalibrate)
 {
-  std::cout << "hdr merge" << std::endl;
-
   //checks
   assert(!response.isEmpty());
   assert(!images.empty());
