@@ -57,9 +57,8 @@ void UVAtlas::createCharts(vector<Chart>& charts, mvsUtils::MultiViewParams& mp,
             int cameraID = (*cameras)[c];
             // project triangle
             Mesh::triangle_proj tProj = _mesh.getTriangleProjection(i, &mp, cameraID, mp.getWidth(cameraID), mp.getHeight(cameraID));
-            if(!mp.isPixelInImage(Pixel(tProj.tp2ds[0]), 10, cameraID)
-                    || !mp.isPixelInImage(Pixel(tProj.tp2ds[1]), 10, cameraID)
-                    || !mp.isPixelInImage(Pixel(tProj.tp2ds[2]), 10, cameraID))
+
+            if(!_mesh.isTriangleProjectionInImage(mp, tProj, cameraID, 10))
                 continue;
 
             const float area = _mesh.computeTriangleProjectionArea(tProj);
