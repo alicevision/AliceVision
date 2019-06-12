@@ -275,6 +275,8 @@ void Texturing::generateTextures(const mvsUtils::MultiViewParams &mp,
         ALICEVISION_LOG_INFO("  - " << c);
     }
 
+    std::partial_sum(m.begin(), m.end(), m.begin());
+
     mvsUtils::ImagesCache imageCache(&mp, 0, imageIO::EImageColorSpace::SRGB);
     imageCache.setCacheSize(2);
     system::MemoryInfo memInfo = system::getMemoryInfo();
@@ -432,7 +434,6 @@ void Texturing::generateTexturesSubSet(const mvsUtils::MultiViewParams& mp,
             int nbContribMax = std::min(texParams.multiBandNbContrib.back(), static_cast<int>(scorePerCamId.size()));
             int nbCumulatedVertices = 0;
             int band = 0;
-            int nbContribLevel = texParams.multiBandNbContrib[0];
             for(int contrib = 0; nbCumulatedVertices < 3 * nbContribMax && contrib < nbContribMax; ++contrib)
             {
                 nbCumulatedVertices += std::get<0>(scorePerCamId[contrib]);
