@@ -39,11 +39,33 @@ public:
         sim = _sim;
     }
 
-    inline DepthSim& operator=(const DepthSim& param)
+    inline DepthSim& operator=(const DepthSim& v)
     {
-        depth = param.depth;
-        sim = param.sim;
+        depth = v.depth;
+        sim = v.sim;
         return *this;
+    }
+
+    inline DepthSim operator+(const DepthSim& v) const
+    {
+        DepthSim out;
+        out.depth = depth + v.depth;
+        out.sim = sim + v.sim;
+        return out;
+    }
+    inline DepthSim operator-(const DepthSim& v) const
+    {
+        DepthSim out;
+        out.depth = depth - v.depth;
+        out.sim = sim - v.sim;
+        return out;
+    }
+    inline DepthSim operator*(double v) const
+    {
+        DepthSim out;
+        out.depth = depth * v;
+        out.sim = sim * v;
+        return out;
     }
 };
 

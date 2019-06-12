@@ -33,6 +33,30 @@ DepthSimMap::~DepthSimMap()
 {
 }
 
+DepthSim getPixelValueInterpolated(const StaticVector<DepthSim>& depthSimMap, double x, double y, int width, int height)
+{
+    // get the image index in the memory
+
+    int xp = static_cast<int>(x);
+    int yp = static_cast<int>(y);
+    xp = std::min(xp, width - 2);
+    yp = std::min(yp, height - 2);
+
+    const DepthSim lu = depthSimMap[yp       * width + xp    ];
+    const DepthSim ru = depthSimMap[yp       * width + xp + 1];
+    const DepthSim rd = depthSimMap[(yp + 1) * width + xp + 1];
+    const DepthSim ld = depthSimMap[(yp + 1) * width + xp    ];
+
+    // bilinear interpolation
+    const double ui = x - static_cast<float>(xp);
+    const double vi = y - static_cast<float>(yp);
+    const DepthSim u = lu + (ru - lu) * ui;
+    const DepthSim d = ld + (rd - ld) * ui;
+    const DepthSim out = u + (d - u) * vi;
+
+    return out;
+}
+
 void DepthSimMap::initFromSmaller(const DepthSimMap& other)
 {
     if ((_scale * _step) > (other._scale * other._step))
@@ -48,7 +72,7 @@ void DepthSimMap::initFromSmaller(const DepthSimMap& other)
         for (int x = 0; x < _w; ++x)
         {
             const int ox = x * ratio;
-            const DepthSim& otherDepthSim = other._dsm[oy * other._w + ox];
+            const DepthSim otherDepthSim = getPixelValueInterpolated(other._dsm, ox, oy, other._w, other._h);
             _dsm[y * _w + x] = otherDepthSim;
         }
     }
