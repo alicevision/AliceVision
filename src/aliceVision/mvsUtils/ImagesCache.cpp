@@ -124,7 +124,7 @@ Color ImagesCache::getPixelValueInterpolated(const Point2d* pix, int camId)
 {
     // get the image index in the memory
     const int i = camIdMapId[camId];
-    const ImgPtr& img = imgs[i];
+    const ImgSharedPtr& img = imgs[i];
     
     const int xp = static_cast<int>(pix->x);
     const int yp = static_cast<int>(pix->y);

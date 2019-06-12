@@ -25,13 +25,13 @@ class ImagesCache
 public:
     const MultiViewParams* mp;
 
-    typedef std::shared_ptr<Image> ImgPtr;
+    typedef std::shared_ptr<Image> ImgSharedPtr;
 
 private:
     ImagesCache(const ImagesCache&) = delete;
 
     int N_PRELOADED_IMAGES;
-    std::vector<ImgPtr> imgs;
+    std::vector<ImgSharedPtr> imgs;
 
     std::vector<int> camIdMapId;
     std::vector<int> mapIdCamId;
@@ -50,7 +50,7 @@ public:
     void setCacheSize(int nbPreload);
     ~ImagesCache();
 
-    inline ImgPtr getImg_sync( int camId )
+    inline ImgSharedPtr getImg_sync( int camId )
     {
         refreshData_sync(camId);
         const int imageId = camIdMapId[camId];

@@ -258,18 +258,17 @@ void Texturing::generateUVsBasicMethod(mvsUtils::MultiViewParams& mp)
 void Texturing::generateTextures(const mvsUtils::MultiViewParams &mp,
                                  const boost::filesystem::path &outPath, imageIO::EImageFileType textureFileType)
 {
-    ALICEVISION_LOG_INFO("Texturing: Use multiband blending with the following contributions per band:");
+    // Ensure that contribution levels do not contain 0 and are sorted (as each frequency band contributes to lower bands).
+    auto& m = texParams.multiBandNbContrib;
+    m.erase(std::remove(std::begin(m), std::end(m), 0), std::end(m));
+    texParams.nbBand = m.size();
 
-    texParams.multiBandNbContrib.erase(std::remove(std::begin(texParams.multiBandNbContrib), std::end(texParams.multiBandNbContrib), 0),
-                                       std::end(texParams.multiBandNbContrib));
-    texParams.nbBand = texParams.multiBandNbContrib.size();
-
-    if(!std::is_sorted(std::begin(texParams.multiBandNbContrib), std::end(texParams.multiBandNbContrib)))
+    if(!std::is_sorted(std::begin(m), std::end(m)))
     {
         ALICEVISION_LOG_INFO("Sorting contributions per band (necessary).");
-        std::sort(std::begin(texParams.multiBandNbContrib), std::end(texParams.multiBandNbContrib));
-
+        std::sort(std::begin(m), std::end(m));
     }
+    ALICEVISION_LOG_INFO("Texturing: Use multiband blending with the following contributions per band:");
     for(int c: texParams.multiBandNbContrib)
     {
         ALICEVISION_LOG_INFO("  - " << c);
@@ -454,10 +453,9 @@ void Texturing::generateTexturesSubSet(const mvsUtils::MultiViewParams& mp,
                     camContribution[atlasID].resize(texParams.nbBand);
                 camContribution.at(atlasID)[band].emplace_back(triangleID, triangleScore);
 
-                if(contrib + 1 == nbContribLevel)
+                if(contrib + 1 == texParams.multiBandNbContrib[band])
                 {
                     ++band;
-                    nbContribLevel = texParams.multiBandNbContrib[band];
                 }
             }
         }
@@ -477,14 +475,14 @@ void Texturing::generateTexturesSubSet(const mvsUtils::MultiViewParams& mp,
 
         if(cameraContributions.empty())
         {
-            ALICEVISION_LOG_INFO("- camera " << camId + 1 << "/" << mp.ncams << " unused.");
+            ALICEVISION_LOG_INFO("- camera " << mp.getViewId(camId) << " (" << camId + 1 << "/" << mp.ncams << ") unused.");
             continue;
         }
-        ALICEVISION_LOG_INFO("- camera " << camId + 1 << "/" << mp.ncams << " with contributions to " << cameraContributions.size() << " texture files:");
+        ALICEVISION_LOG_INFO("- camera " << mp.getViewId(camId) << " (" << camId + 1 << "/" << mp.ncams << ") with contributions to " << cameraContributions.size() << " texture files:");
 
         //Load camera image from cache
         imageCache.refreshData(camId);
-        mvsUtils::ImagesCache::ImgPtr imgPtr = imageCache.getImg_sync(camId);
+        mvsUtils::ImagesCache::ImgSharedPtr imgPtr = imageCache.getImg_sync(camId);
         const Image& camImg = *imgPtr;
 
         //Calculate laplacianPyramid
@@ -601,6 +599,7 @@ void Texturing::generateTexturesSubSet(const mvsUtils::MultiViewParams& mp,
 
 #if TEXTURING_MBB_DEBUG
         {
+            // write the number of contribution per atlas frequency bands
             for(std::size_t level = 0; level < accuPyramid.pyramid.size(); ++level)
             {
                 AccuImage& atlasLevelTexture =  accuPyramid.pyramid[level];

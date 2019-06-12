@@ -20,7 +20,7 @@
 namespace aliceVision {
 namespace depthMap {
 
-inline const uchar4 get( mvsUtils::ImagesCache::ImgPtr img, int x, int y )
+inline const uchar4 get( mvsUtils::ImagesCache::ImgSharedPtr img, int x, int y )
 {
     const Color floatRGB = img->at(x,y) * 255.0f;
 
@@ -137,7 +137,7 @@ void cps_fillCameraData(mvsUtils::ImagesCache* ic, cameraStruct* cam, int c, mvs
     //	cam->tex_hmh_g->getBuffer(),
     //	cam->tex_hmh_b->getBuffer(), mp->indexes[c], mp, true, 1, 0);
 
-    mvsUtils::ImagesCache::ImgPtr img = ic->getImg_sync(c);
+    mvsUtils::ImagesCache::ImgSharedPtr img = ic->getImg_sync(c);
 
     Pixel pix;
     {

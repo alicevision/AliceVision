@@ -66,7 +66,7 @@ struct TexturingParams
 {
     bool useScore = true;
     unsigned int nbBand = 4;
-    unsigned int multiBandDownscale = 2;
+    unsigned int multiBandDownscale = 4;
     std::vector<int> multiBandNbContrib = {1, 5, 10, 0}; // number of contributions per frequency band for the multi-band blending
 
     double bestScoreThreshold = 0.0; //< 0.0 to disable filtering based on threshold to relative best score
