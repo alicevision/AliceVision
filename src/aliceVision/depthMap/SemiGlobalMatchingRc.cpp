@@ -51,6 +51,7 @@ SemiGlobalMatchingRc::SemiGlobalMatchingRc(int rc, int scale, int step, SemiGlob
 
 SemiGlobalMatchingRc::~SemiGlobalMatchingRc()
 {
+    delete _volumeBestIdVal;
 }
 
 bool SemiGlobalMatchingRc::selectBestDepthsRange(int nDepthsThr, StaticVector<float>* rcSeedsDistsAsc)

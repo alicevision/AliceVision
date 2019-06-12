@@ -373,6 +373,11 @@ void AKAZE::gridFiltering(std::vector<AKAZEKeypoint>& keypoints) const
   if(keypoints.size() <= _options.maxTotalKeypoints)
     return;
 
+  // sort keypoints by size to guarantee best points are kept
+  // note: reordering keypoints also helps preventing grid-filtering from creating a 
+  //       non-uniform distribution within cells when input keypoints are sorted by spatial coordinates
+  std::sort(keypoints.begin(), keypoints.end(), [](const AKAZEKeypoint& a, const AKAZEKeypoint& b){ return a.size > b.size; });
+
   std::vector<AKAZEKeypoint> out_keypoints;
   out_keypoints.reserve(keypoints.size());
 

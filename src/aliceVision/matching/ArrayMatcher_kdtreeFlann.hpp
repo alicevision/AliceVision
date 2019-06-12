@@ -31,13 +31,9 @@ class ArrayMatcher_kdtreeFlann : public ArrayMatcher<Scalar, Metric>
   public:
   typedef typename Metric::ResultType DistanceType;
 
-  ArrayMatcher_kdtreeFlann() {}
+  ArrayMatcher_kdtreeFlann() = default;
 
-  virtual ~ArrayMatcher_kdtreeFlann()
-  {
-    _datasetM.reset();
-    _index.reset();
-  }
+  virtual ~ArrayMatcher_kdtreeFlann() = default;
 
   /**
    * Build the matching structure

@@ -122,7 +122,7 @@ std::string SemiGlobalMatchingParams::getSGM_depthsFileName(IndexT viewId)
 
 void SemiGlobalMatchingParams::getDepthSimMapFromBestIdVal(DepthSimMap& out_depthSimMap, int w, int h, StaticVector<IdValue>& volumeBestIdVal,
                                                            int scale, int step, int rc, int zborder,
-                                                           StaticVector<float>& planesDepths)
+                                                           const StaticVector<float>& planesDepths)
 {
     long tall = clock();
 

@@ -27,6 +27,19 @@ function(trilean_option NAME DESCRIPTION DEFAULT_VALUE)
   endif()
 endfunction()
 
+# ==============================================================================
+# AliceVision version
+# ==============================================================================
+file(STRINGS "aliceVision/version.hpp" _ALICEVISION_VERSION_HPP_CONTENTS REGEX "#define ALICEVISION_VERSION_")
+foreach(v MAJOR MINOR REVISION)
+  if("${_ALICEVISION_VERSION_HPP_CONTENTS}" MATCHES "#define ALICEVISION_VERSION_${v} ([0-9]+)")
+    set(ALICEVISION_VERSION_${v} "${CMAKE_MATCH_1}")
+  else()
+    message(FATAL_ERROR "Failed to retrieve the AliceVision version the source code. Missing ALICEVISION_VERSION_${v}.")
+  endif()
+endforeach()
+set(ALICEVISION_VERSION ${ALICEVISION_VERSION_MAJOR}.${ALICEVISION_VERSION_MINOR}.${ALICEVISION_VERSION_REVISION})
+
 # C++11
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -754,44 +767,6 @@ if(ALICEVISION_HAVE_CUDA)
   endif()
 endif()
 
-# ==============================================================================
-# Documentation
-# --------------------------
-# Sphinx detection
-# ==============================================================================
-if(ALICEVISION_BUILD_DOC STREQUAL "OFF")
-  set(ALICEVISION_HAVE_DOC 0)
-else()
-  find_package(Sphinx)
-
-  if (EXISTS ${SPHINX_EXECUTABLE})
-    set(SPHINX_HTML_DIR "${CMAKE_CURRENT_BINARY_DIR}/htmlDoc")
-
-    configure_file(
-      "${CMAKE_CURRENT_SOURCE_DIR}/../docs/sphinx/rst/conf.py"
-      "${CMAKE_CURRENT_BINARY_DIR}/conf.py"
-      @ONLY
-    )
-
-    add_custom_target(doc ALL
-      ${SPHINX_EXECUTABLE}
-      -b html
-      "${CMAKE_CURRENT_SOURCE_DIR}/../docs/sphinx/rst"
-      "${SPHINX_HTML_DIR}"
-      COMMENT "Building HTML documentation with Sphinx")
-
-    set_property(TARGET doc
-      PROPERTY FOLDER AliceVision
-    )
-    set(ALICEVISION_HAVE_DOC 1)
-    message(STATUS "Sphinx found.")
-  elseif(ALICEVISION_BUILD_DOC STREQUAL "ON")
-    set(ALICEVISION_HAVE_DOC 0)
-    message(SEND_ERROR "Failed to find Sphinx.\nSphinx need to be installed to generate the documentation")
-  else()
-    set(ALICEVISION_HAVE_DOC 0)
-  endif()
-endif()
 
 # ==============================================================================
 # Include directories
@@ -805,35 +780,98 @@ message("generatedDir: ${generatedDir}")
 set(ALICEVISION_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 
 set(ALICEVISION_INCLUDE_DIRS
-  ${CMAKE_CURRENT_SOURCE_DIR}
-  ${generatedDir}
-  ${CMAKE_CURRENT_SOURCE_DIR}/dependencies
-  ${LEMON_INCLUDE_DIRS}
-  ${EIGEN_INCLUDE_DIRS}
-  ${CERES_INCLUDE_DIRS}
-  ${UNCERTAINTYTE_INCLUDE_DIRS}
-  ${MAGMA_INCLUDE_DIRS}
-  ${FLANN_INCLUDE_DIRS}
-  ${LP_INCLUDE_DIRS}
-  ${COINUTILS_INCLUDE_DIRS}
-  ${CLP_INCLUDE_DIRS}
-  ${OSI_INCLUDE_DIRS}
-)
+        ${CMAKE_CURRENT_SOURCE_DIR}
+        ${generatedDir}
+        ${CMAKE_CURRENT_SOURCE_DIR}/dependencies
+        ${LEMON_INCLUDE_DIRS}
+        ${EIGEN_INCLUDE_DIRS}
+        ${CERES_INCLUDE_DIRS}
+        ${UNCERTAINTYTE_INCLUDE_DIRS}
+        ${MAGMA_INCLUDE_DIRS}
+        ${FLANN_INCLUDE_DIRS}
+        ${LP_INCLUDE_DIRS}
+        ${COINUTILS_INCLUDE_DIRS}
+        ${CLP_INCLUDE_DIRS}
+        ${OSI_INCLUDE_DIRS}
+        )
 
 include_directories(${ALICEVISION_INCLUDE_DIRS})
 
 # ==============================================================================
-# AliceVision version
+# Documentation
+# --------------------------
+# Sphinx and Doxygen detection
 # ==============================================================================
-file(STRINGS "aliceVision/version.hpp" _ALICEVISION_VERSION_HPP_CONTENTS REGEX "#define ALICEVISION_VERSION_")
-foreach(v MAJOR MINOR REVISION)
-  if("${_ALICEVISION_VERSION_HPP_CONTENTS}" MATCHES "#define ALICEVISION_VERSION_${v} ([0-9]+)")
-    set(ALICEVISION_VERSION_${v} "${CMAKE_MATCH_1}")
+if(ALICEVISION_BUILD_DOC STREQUAL "OFF")
+  set(ALICEVISION_HAVE_DOC 0)
+else()
+  # try to find the packages
+  find_package(Sphinx)
+  find_package(Doxygen)
+
+   # if neither one is found
+  if (NOT EXISTS ${SPHINX_EXECUTABLE} AND NOT DOXYGEN_FOUND)
+    # generate error if build doc was required
+    if(ALICEVISION_BUILD_DOC STREQUAL "ON")
+      set(ALICEVISION_HAVE_DOC 0)
+      message(SEND_ERROR "Failed to find Sphinx.\nSphinx need to be installed to generate the documentation")
+    else()
+      # otherwise quietly fail and set the variable to off
+      set(ALICEVISION_HAVE_DOC 0)
+    endif()
   else()
-    message(FATAL_ERROR "Failed to retrieve the AliceVision version the source code. Missing ALICEVISION_VERSION_${v}.")
+    # set the variable to true
+    set(ALICEVISION_HAVE_DOC 1)
+
+    # sphinx stuff
+    if(EXISTS ${SPHINX_EXECUTABLE})
+      message(STATUS "Sphinx found.")
+      set(SPHINX_HTML_DIR "${CMAKE_CURRENT_BINARY_DIR}/htmlDoc")
+
+      configure_file(
+        "${CMAKE_CURRENT_SOURCE_DIR}/../docs/sphinx/rst/conf.py"
+        "${CMAKE_CURRENT_BINARY_DIR}/conf.py"
+        @ONLY
+      )
+
+      add_custom_target(doc ALL
+        ${SPHINX_EXECUTABLE}
+        -b html
+        "${CMAKE_CURRENT_SOURCE_DIR}/../docs/sphinx/rst"
+        "${SPHINX_HTML_DIR}"
+        COMMENT "Building HTML documentation with Sphinx")
+
+      set_property(TARGET doc
+        PROPERTY FOLDER AliceVision
+      )
+    endif()
+
+    # doxygen stuff
+    if(DOXYGEN_FOUND)
+      message(STATUS "Doxygen found.")
+
+      # set input and output files
+      set(DOXYGEN_IN ${PROJECT_SOURCE_DIR}/../docs/doxygen/Doxyfile.in)
+      set(DOXYGEN_OUT ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile)
+
+      # request to configure the file
+      configure_file(${DOXYGEN_IN} ${DOXYGEN_OUT} @ONLY)
+
+      add_custom_target( doc_doxygen
+              COMMAND ${DOXYGEN_EXECUTABLE} ${DOXYGEN_OUT}
+              WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+              COMMENT "Generating API documentation with Doxygen"
+              VERBATIM )
+
+      set_property(TARGET doc_doxygen
+              PROPERTY FOLDER AliceVision
+              )
+
+      install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/doc  DESTINATION ${CMAKE_INSTALL_DOCDIR})
+
+    endif()
   endif()
-endforeach()
-set(ALICEVISION_VERSION ${ALICEVISION_VERSION_MAJOR}.${ALICEVISION_VERSION_MINOR}.${ALICEVISION_VERSION_REVISION})
+endif()
 
 # ==============================================================================
 # Information print
