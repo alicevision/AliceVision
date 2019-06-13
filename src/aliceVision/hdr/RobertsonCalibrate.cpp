@@ -18,10 +18,9 @@ void RobertsonCalibrate::process(const std::vector< std::vector< image::Image<im
                                  const std::size_t channelQuantization,
                                  const std::vector< std::vector<float> > &times,
                                  const int nbPoints,
-                                 rgbCurve &weight,
-                                 rgbCurve &response,
+                                 const rgbCurve &weight,
                                  float targetTime,
-                                 const int threshold)
+                                 rgbCurve &response)
 {
   //checks
   for (int g = 0; g < ldrImageGroups.size(); ++g)
@@ -93,7 +92,7 @@ void RobertsonCalibrate::process(const std::vector< std::vector< image::Image<im
     //initialize radiance
     for(std::size_t g = 0; g < ldrImageGroups.size(); ++g)
     {
-      merge.process(ldrImageGroups[g], times[g], weight, response, _radiance[g], targetTime, threshold, true);
+      merge.process(ldrImageGroups[g], times[g], weight, response, _radiance[g], targetTime, true);
     }
 
 //    ALICEVISION_LOG_TRACE("2) initialization new response ");

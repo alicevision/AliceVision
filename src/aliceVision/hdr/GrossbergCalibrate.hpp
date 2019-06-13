@@ -21,11 +21,12 @@ public:
 
   /**
    * @brief
-   * @param[in] groups
-   * @param[in] times
-   * @param[in] nbPoints (number of samples for calibration)
-   * @param[in] weight
-   * @param[out] response
+   * @param[in] LDR images groups
+   * @param[in] channel quantization
+   * @param[in] exposure times
+   * @param[in] number of samples
+   * @param[in] calibration weight function
+   * @param[out] camera response function
    */
   void process(const std::vector< std::vector< image::Image<image::RGBfColor> > > &ldrImageGroups,
                const std::size_t channelQuantization,
@@ -35,6 +36,7 @@ public:
                rgbCurve &response);
 
 private:
+  /// Dimension of the response ie number of basis vectors to calculate the response function
   unsigned int _dimension;
 };
 

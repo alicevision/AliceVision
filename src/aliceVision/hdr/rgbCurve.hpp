@@ -415,6 +415,7 @@ public:
   static double sumAll(const rgbCurve &curve);
 
 private: 
+  /// Array containing the curves as vectors of float for each channel
   std::array< std::vector<float>, 3 > _data;
 };
 

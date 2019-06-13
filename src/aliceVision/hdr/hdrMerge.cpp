@@ -18,12 +18,12 @@ namespace hdr {
   
 void hdrMerge::process(const std::vector< image::Image<image::RGBfColor> > &images,
                               const std::vector<float> &times,
-                              rgbCurve &weight,
+                              const rgbCurve &weight,
                               const rgbCurve &response,
                               image::Image<image::RGBfColor> &radiance,
                               float targetTime,
-                              const float threshold,
-                              bool robCalibrate)
+                              bool robCalibrate,
+                              float threshold)
 {
   //checks
   assert(!response.isEmpty());

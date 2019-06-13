@@ -17,7 +17,7 @@ class RobertsonCalibrate {
 public:
     
   /**
-   * @brief
+   * @brief RobertsonCalibrate constructor
    * @param[in] maxIter
    * @param[in] threshold
    */
@@ -27,18 +27,22 @@ public:
   {}
 
   /**
-   * @brief
-   * @param[in] groups
-   * @param[out] response
-   * @param[in] times
+   * @brief Calculate the camera response function according to Robertson method
+   * @param[in] LDR images groups
+   * @param[in] channel quantization
+   * @param[in] exposure times
+   * @param[in] number of samples
+   * @param[in] calibration weight function
+   * @param[in] target exposure time
+   * @param[out] camera response function
    */
   void process(const std::vector< std::vector< image::Image<image::RGBfColor> > > &ldrImageGroups,
-               const std::size_t channelQuantization,
-               const std::vector< std::vector<float> > &times, const int nbPoints,
-               rgbCurve &weight,
-               rgbCurve &response,
+               std::size_t channelQuantization,
+               const std::vector< std::vector<float> > &times,
+               int nbPoints,
+               const rgbCurve &weight,
                float targetTime,
-               const int threshold);
+               rgbCurve &response);
 
 
   int getMaxIteration() const
@@ -69,8 +73,11 @@ public:
   }
 
 private:
+  /// Vector containing the HDR images for each group
   std::vector< image::Image<image::RGBfColor> > _radiance;
+  /// If the difference between responses is below the threshold we stop the iteration
   double _threshold;
+  /// Maximum number of iteration before stopping the program
   std::size_t _maxIteration;
 };
 

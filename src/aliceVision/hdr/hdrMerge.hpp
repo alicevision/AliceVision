@@ -26,12 +26,12 @@ public:
    */
   void process(const std::vector< image::Image<image::RGBfColor> > &images,
                 const std::vector<float> &times,
-                rgbCurve &weight,
+                const rgbCurve &weight,
                 const rgbCurve &response,
                 image::Image<image::RGBfColor> &radiance,
                 float targetTime,
-                const float threshold,
-                bool robCalibrate = false);
+                bool robCalibrate = false,
+                float threshold = 1.f);
   
   /**
    * @brief This function obtains the "average scene luminance" EV value

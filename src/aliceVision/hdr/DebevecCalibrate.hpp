@@ -19,12 +19,13 @@ public:
 
   /**
    * @brief
-   * @param[in] groups
-   * @param[in] times
-   * @param[in] nbPoints (number of samples for calibration)
-   * @param[in] weight
+   * @param[in] LDR images groups
+   * @param[in] channel quantization
+   * @param[in] exposure times
+   * @param[in] number of samples
+   * @param[in] calibration weight function
    * @param[in] lambda (parameter of smoothness)
-   * @param[out] response
+   * @param[out] camera response function
    */
   void process(const std::vector< std::vector< image::Image<image::RGBfColor> > > &ldrImageGroups,
                const std::size_t channelQuantization,

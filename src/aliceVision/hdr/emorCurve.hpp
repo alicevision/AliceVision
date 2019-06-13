@@ -20,6 +20,11 @@ namespace hdr {
 const std::size_t kEmorMDimension = 26;
 const std::size_t kEmorQuantization = 1024;
 
+/**
+ * @brief hcurve accessor
+ * @param[in] index of the emor curve
+ * @return a pointer to the first element of the ith array of kEmorInv
+ */
 const double* getEmorInvCurve(int i);
 
 

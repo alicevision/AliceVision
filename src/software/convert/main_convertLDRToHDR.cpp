@@ -438,7 +438,7 @@ int main(int argc, char** argv)
       calibration.process(ldrImageGroups, channelQuantization, times, nbPoints, calibrationWeight, lambda, response);
 
       response.exponential();
-//      response.scale();
+      response.scale();
     }
     break;
 
@@ -447,7 +447,7 @@ int main(int argc, char** argv)
       ALICEVISION_COUT("Robertson calibration");
       hdr::RobertsonCalibrate calibration(40);
       const int nbPoints = 1000000;
-      calibration.process(ldrImageGroups_sorted, channelQuantization, times_sorted, nbPoints, calibrationWeight, response, targetTime, clampedValueCorrection);
+      calibration.process(ldrImageGroups_sorted, channelQuantization, times_sorted, nbPoints, calibrationWeight, targetTime, response);
       response.scale();
     }
     break;
@@ -458,14 +458,13 @@ int main(int argc, char** argv)
       const int nbPoints = 1000000;
       hdr::GrossbergCalibrate calibration(5);
       calibration.process(ldrImageGroups_sorted, channelQuantization, times_sorted, nbPoints, calibrationWeight, response);
-//      response.scale();
     }
     break;
   }
 
   ALICEVISION_COUT("hdr fusion");
   hdr::hdrMerge merge;
-  merge.process(ldrImageGroups_sorted.at(0), ldrTimes_sorted, fusionWeight, response, image, targetTime, clampedValueCorrection);
+  merge.process(ldrImageGroups_sorted.at(0), ldrTimes_sorted, fusionWeight, response, image, targetTime, false, clampedValueCorrection);
 
 
   image::writeImage(outputHDRImagePath, image, image::EImageColorSpace::NO_CONVERSION);
