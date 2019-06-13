@@ -94,10 +94,11 @@ inline std::istream& operator>>(std::istream& in, ECalibrationMethod calibration
 
 /**
  * @brief recreate the source image at the target exposure by applying the inverse camera response function to HDR image
- * @param hdrImage
- * @param response
- * @param channelQuantization
- * @param path to write the output image
+ * and calculate the offset between the mean value of target source image and the recovered image
+ * @param[in] hdrImage
+ * @param[in] response
+ * @param[in] channelQuantization
+ * @param[in] path to write the output image
  */
 void recoverSourceImage(const image::Image<image::RGBfColor>& hdrImage, hdr::rgbCurve& response, float channelQuantization, std::string path, float meanVal[])
 {
@@ -122,7 +123,6 @@ void recoverSourceImage(const image::Image<image::RGBfColor>& hdrImage, hdr::rgb
       }
       meanRecovered[channel] /= hdrImage.size();
     }
-    ALICEVISION_COUT("mean values of recovered image = " << meanRecovered);
     float offset[3];
     for(int i=0; i<3; ++i)
         offset[i] = std::abs(meanRecovered[i] - meanVal[i]);
@@ -145,6 +145,7 @@ int main(int argc, char** argv)
   hdr::EFunctionType fusionWeightFunction = hdr::EFunctionType::GAUSSIAN;
   std::string target;
   float clampedValueCorrection = 1.f;
+  std::string recoverSourcePath;
 
   po::options_description allParams("AliceVision convertLDRToHDR");
 
@@ -166,9 +167,11 @@ int main(int argc, char** argv)
     ("fusionWeight,W", po::value<hdr::EFunctionType>(&fusionWeightFunction)->default_value(fusionWeightFunction),
        "weight function used to fuse all LDR images together (gaussian, triangle, plateau).")
     ("targetExposureImage,e", po::value<std::string>(&target),
-      "LDR image at the target exposure for the output HDR image to be centered")
+      "LDR image at the target exposure for the output HDR image to be centered.")
     ("oversaturatedCorrection,s", po::value<float>(&clampedValueCorrection)->default_value(clampedValueCorrection),
-      "oversaturated correction for pixels oversaturated in all images: use 0 for no correction, 0.5 for interior lighting and 1 for outdoor lighting");
+      "oversaturated correction for pixels oversaturated in all images: use 0 for no correction, 0.5 for interior lighting and 1 for outdoor lighting.")
+    ("recoverPath", po::value<std::string>(&recoverSourcePath)->default_value(recoverSourcePath),
+      "path to write recovered LDR image at the target exposure by applying inverse response on HDR image.");
 
   po::options_description logParams("Log parameters");
   logParams.add_options()
@@ -382,22 +385,6 @@ int main(int argc, char** argv)
   else
       targetTime = ldrTimes_sorted.at(ldrTimes_sorted.size()/2);
 
-  // calcul of mean value of target image
-  std::size_t targetIndex = std::distance(ldrTimes.begin(), std::find(ldrTimes.begin(), ldrTimes.end(), targetTime));
-  float meanVal[3] = {0.f, 0.f, 0.f};
-  for(std::size_t channel=0; channel<3; ++channel)
-  {
-      for(std::size_t y = 0; y < ldrImages.at(0).Height(); ++y)
-      {
-        for(std::size_t x = 0; x < ldrImages.at(0).Width(); ++x)
-        {
-            meanVal[channel] += ldrImages.at(targetIndex)(y, x)(channel);
-        }
-      }
-      meanVal[channel] /= ldrImages.at(targetIndex).size();
-  }
-//  ALICEVISION_COUT("mean values of target image = " << meanVal);
-
   // we sort the images according to their exposure time
   std::vector< std::vector< image::Image<image::RGBfColor> > > ldrImageGroups_sorted(1);
   ldrImageGroups_sorted.at(0).resize(nbImages);
@@ -472,7 +459,24 @@ int main(int argc, char** argv)
 
 
   // test of recovery of source target image from HDR
-//  recoverSourceImage(image, response, channelQuantization, "/s/prods/mvg/_source_global/samples/HDR_selection/terrasse_2/Mikros/Centrage_expos/recovered_from_Gros_bonsCoeff_meanCurve.exr", meanVal);
+  if(!recoverSourcePath.empty())
+  {
+    // calcul of mean value of target image
+    std::size_t targetIndex = std::distance(ldrTimes.begin(), std::find(ldrTimes.begin(), ldrTimes.end(), targetTime));
+    float meanVal[3] = {0.f, 0.f, 0.f};
+    for(std::size_t channel=0; channel<3; ++channel)
+    {
+        for(std::size_t y = 0; y < ldrImages.at(0).Height(); ++y)
+        {
+          for(std::size_t x = 0; x < ldrImages.at(0).Width(); ++x)
+          {
+              meanVal[channel] += ldrImages.at(targetIndex)(y, x)(channel);
+          }
+        }
+        meanVal[channel] /= ldrImages.at(targetIndex).size();
+    }
+    recoverSourceImage(image, response, channelQuantization, recoverSourcePath, meanVal);
+  }
 
   return EXIT_SUCCESS;
 }
