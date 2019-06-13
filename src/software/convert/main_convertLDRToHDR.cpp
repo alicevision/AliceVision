@@ -35,6 +35,7 @@ namespace fs = boost::filesystem;
 
 enum class ECalibrationMethod
 {
+      NONE,
       LINEAR,
       ROBERTSON,
       DEBEVEC,
@@ -50,6 +51,7 @@ inline std::string ECalibrationMethod_enumToString(const ECalibrationMethod cali
 {
   switch(calibrationMethod)
   {
+    case ECalibrationMethod::NONE:        return "none";
     case ECalibrationMethod::LINEAR:      return "linear";
     case ECalibrationMethod::ROBERTSON:   return "robertson";
     case ECalibrationMethod::DEBEVEC:     return "debevec";
@@ -218,7 +220,12 @@ int main(int argc, char** argv)
   // set the correct calibration method corresponding to the string parameter
   ECalibrationMethod calibrationMethod;
   std::size_t channelQuantization;
-  try
+  if(fs::is_regular_file(fs::path(responseCalibrationName)))
+  {
+    response = hdr::rgbCurve(responseCalibrationName);    // use the camera response function set in "responseCalibration", calibrationMethod is set to "none"
+    channelQuantization = response.getSize();
+  }
+  else
   {
     calibrationMethod = ECalibrationMethod_stringToEnum(responseCalibrationName);
     if(calibrationMethod == ECalibrationMethod::GROSSBERG)
@@ -226,11 +233,6 @@ int main(int argc, char** argv)
     else
       channelQuantization = std::pow(2, 12); //RAW 12 bit precision, 2^12 values between black and white point
     response.resize(channelQuantization);
-  }
-  catch(std::exception& e)
-  {
-    response = hdr::rgbCurve(responseCalibrationName);    // use the camera response function set in "responseCalibration"
-    channelQuantization = response.getSize();
   }
 
   // set verbose level
@@ -246,6 +248,7 @@ int main(int argc, char** argv)
   {
     switch(calibrationMethod)
     {
+    case ECalibrationMethod::NONE:        break;
     case ECalibrationMethod::LINEAR:      break;
     case ECalibrationMethod::DEBEVEC:     calibrationWeight.setTriangular();
     case ECalibrationMethod::ROBERTSON:   calibrationWeight.setRobertsonWeight();
@@ -415,6 +418,10 @@ int main(int argc, char** argv)
   // calculate the response function according to the method given in argument or take the response provided by the user
   switch(calibrationMethod)
   {
+    case ECalibrationMethod::NONE:
+    {
+      break;
+    }
     case ECalibrationMethod::LINEAR:
     {
       // set the response function to linear
