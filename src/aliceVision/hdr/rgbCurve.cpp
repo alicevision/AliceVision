@@ -9,6 +9,7 @@
 #include <fstream>
 #include <iostream>
 #include <sstream>
+#include <aliceVision/system/Logger.hpp>
 
 
 namespace aliceVision {
@@ -171,7 +172,7 @@ void rgbCurve::normalize()
             midValue = curve[middle];
         }
 
-//        std::cout << "-> middle [" << middle << "]: " << midValue <<std::endl;
+//        ALICEVISION_LOG_TRACE("-> middle [" << middle << "]: " << midValue);
         const float coefficient = 1 / midValue;
 
         for(auto &value : curve)

@@ -9,6 +9,7 @@
 #include <fstream>
 #include <cassert>
 #include <aliceVision/alicevision_omp.hpp>
+#include <aliceVision/system/Logger.hpp>
 
 namespace aliceVision {
 namespace hdr {
@@ -53,7 +54,7 @@ void DebevecCalibrate::process(const std::vector< std::vector< image::Image<imag
       std::vector<T> tripletList;
       tripletList.reserve(2 * nbPoints*nbImages + 1 + 3 * channelQuantization);
 
-//      std::cout << "filling A and b matrices" << std::endl;
+//      ALICEVISION_LOG_TRACE("filling A and b matrices");
 
       // include the data-fitting equations
       for(unsigned int j=0; j<nbImages; ++j)
@@ -101,10 +102,10 @@ void DebevecCalibrate::process(const std::vector< std::vector< image::Image<imag
       Vec x = solver.solve(b);
       if(solver.info() != Eigen::Success)  return; // solving failed
 
-//      std::cout << "system solved" << std::endl;
+//      ALICEVISION_LOG_TRACE("system solved");
 
 //      double relative_error = (A*x - b).norm() / b.norm();
-//      std::cout << "relative error is : " << relative_error << std::endl;
+//      ALICEVISION_LOG_TRACE("relative error is : " << relative_error);
 
       for(std::size_t k=0; k<channelQuantization; ++k)
         response.setValue(k, channel, x(k));

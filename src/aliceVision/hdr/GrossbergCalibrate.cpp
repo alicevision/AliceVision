@@ -8,6 +8,7 @@
 #include <iostream>
 #include <cassert>
 #include <aliceVision/alicevision_omp.hpp>
+#include <aliceVision/system/Logger.hpp>
 #include <Eigen/Dense>
 
 
@@ -70,7 +71,7 @@ void GrossbergCalibrate::process(const std::vector< std::vector< image::Image<im
             Mat A = Mat::Zero(nbPoints*(nbImages-1), _dimension);
             Vec b = Vec::Zero(nbPoints*(nbImages-1));
 
-//            std::cout << "filling A and b matrices" << std::endl;
+//            ALICEVISION_LOG_TRACE("filling A and b matrices");
 
             for(unsigned int j=0; j<nbImages-1; ++j)
             {
@@ -107,16 +108,16 @@ void GrossbergCalibrate::process(const std::vector< std::vector< image::Image<im
                 }
             }
 
-//            std::cout << "solving Ax=b system" << std::endl;
+//            ALICEVISION_LOG_TRACE("solving Ax=b system");
 
             // solve the system using QR decomposition
             Eigen::HouseholderQR<Mat> solver(A);
             Vec c = solver.solve(b);
 
-//            std::cout << "system solved" << std::endl;
+//            ALICEVISION_LOG_TRACE("system solved");
 
 //            double relative_error = (A*c - b).norm() / b.norm();
-//            std::cout << "relative error is : " << relative_error << std::endl;
+//            ALICEVISION_LOG_TRACE("relative error is : " << relative_error);
 
             for(unsigned int i=0; i<_dimension; ++i)
             {
@@ -124,7 +125,7 @@ void GrossbergCalibrate::process(const std::vector< std::vector< image::Image<im
               for(auto &value : temp_hCurve)
                 value *= c(i);
 
-//              std::cout << c(i) << std::endl;
+//              ALICEVISION_LOG_TRACE(c(i));
 
               std::transform(response.getCurve(channel).begin(), response.getCurve(channel).end(), temp_hCurve.begin(), response.getCurve(channel).begin(), std::plus<float>());
             }

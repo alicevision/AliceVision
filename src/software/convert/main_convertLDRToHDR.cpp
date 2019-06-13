@@ -260,8 +260,26 @@ int main(int argc, char** argv)
   std::vector<std::string> stemImages;
   std::vector<std::string> nameImages;
 
-//  const std::vector<std::string> validExtensions = {".jpg", ".jpeg", ".png", ".cr2", ".tiff", ".tif", ".rw2"};
-  const std::regex validExtensions("\\.(?:jpg|jpeg|png|cr2|tiff|tif|rw2)");
+  const std::regex validExtensions("\\.(?:"
+  // Basic image file extensions
+  "jpg|jpeg|png|tiff|tif|"
+  // RAW image file extensions:
+  "3fr|" // Hasselblad
+  "arw|" // Sony
+  "crw|cr2|cr3|" // Canon
+  "dng|" // Adobe
+  "kdc|" // Kodak
+  "mrw|" // Minolta
+  "nef|nrw|" // Nikon
+  "orf|" // Olympus
+  "ptx|pef|" // Pentax
+  "raf|" // Fuji
+  "R3D|" // RED
+  "rw2|" // Panasonic
+  "srw|" // Samsung
+  "x3f" // Sigma
+  ")"
+  );
 
   for(const std::string& entry: imagesFolder)
   {
@@ -272,7 +290,6 @@ int main(int argc, char** argv)
         std::string extension = file.path().extension().string();
         std::transform(extension.begin(), extension.end(), extension.begin(), ::tolower);
         if(fs::is_regular_file(file.status()) && std::regex_match(extension, validExtensions))
-//            if(std::find(validExtensions.begin(), validExtensions.end(), extension) != validExtensions.end())
         {
             inputImagesNames.push_back(file.path().string());
             stemImages.push_back(file.path().stem().string());
