@@ -48,7 +48,7 @@ public:
     ImagesCache( const MultiViewParams* _mp, int _bandType, imageIO::EImageColorSpace colorspace, std::vector<std::string>& _imagesNames);
     void initIC( std::vector<std::string>& _imagesNames );
     void setCacheSize(int nbPreload);
-    ~ImagesCache();
+    ~ImagesCache() = default;
 
     inline ImgSharedPtr getImg_sync( int camId )
     {

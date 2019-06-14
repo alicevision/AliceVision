@@ -45,8 +45,8 @@ enum class EImageColorSpace
 
 struct OutputFileColorSpace
 {
-    EImageColorSpace from = EImageColorSpace::LINEAR;
-    EImageColorSpace to = EImageColorSpace::AUTO;
+    EImageColorSpace from{EImageColorSpace::LINEAR};
+    EImageColorSpace to{EImageColorSpace::AUTO};
 
     OutputFileColorSpace(EImageColorSpace from_, EImageColorSpace to_)
         : from(from_)
@@ -61,9 +61,7 @@ struct OutputFileColorSpace
         else
             to = to_;
     }
-    OutputFileColorSpace()
-    {
-    }
+    OutputFileColorSpace() = default;
 };
 
 /**

@@ -384,7 +384,7 @@ void writeImage(const std::string& path, int width, int height, const std::vecto
     writeImage(path, oiio::TypeDesc::UCHAR, width, height, 1, buffer, imageQuality, colorspace, metadata);
 }
 
-void writeImage(const std::string& path, int width, int height, const std::vector<unsigned short>& buffer, EImageQuality imageQuality, OutputFileColorSpace colorspace, const oiio::ParamValueList& metadata)
+void writeImage(const std::string& path, int width, int height, const std::vector<unsigned short>& buffer, EImageQuality imageQuality,  OutputFileColorSpace colorspace, const oiio::ParamValueList& metadata)
 {
     writeImage(path, oiio::TypeDesc::UINT16, width, height, 1, buffer, imageQuality, colorspace, metadata);
 }
@@ -404,7 +404,7 @@ void writeImage(const std::string& path, int width, int height, const std::vecto
     writeImage(path, oiio::TypeDesc::FLOAT, width, height, 3, buffer, imageQuality, colorspace, metadata);
 }
 
-void writeImage(const std::string &path, Image &image, EImageQuality imageQuality, OutputFileColorSpace colorspace, const OpenImageIO_v1_8::ParamValueList &metadata)
+void writeImage(const std::string &path, Image &image, EImageQuality imageQuality, OutputFileColorSpace colorspace, const oiio::ParamValueList& metadata)
 {
     writeImage(path, oiio::TypeDesc::FLOAT, image.width(), image.height(), 3, image.data(), imageQuality, colorspace, metadata);
 }

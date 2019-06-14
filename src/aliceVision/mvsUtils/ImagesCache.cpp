@@ -68,10 +68,6 @@ void ImagesCache::setCacheSize(int nbPreload)
     mapIdClock.resize( N_PRELOADED_IMAGES, clock() );
 }
 
-ImagesCache::~ImagesCache()
-{
-}
-
 void ImagesCache::refreshData(int camId)
 {
     // printf("camId %i\n",camId);
