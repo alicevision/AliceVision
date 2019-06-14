@@ -397,11 +397,7 @@ int main(int argc, char** argv)
   image::Image<image::RGBfColor> image(ldrImages.at(0).Width(), ldrImages.at(0).Height(), false);
 
   // calculate the response function according to the method given in argument or take the response provided by the user
-  if(!inputResponsePath.empty())
-  {
-    goto MERGE;
-  }
-  else
+  if(inputResponsePath.empty())
   {
     switch(calibrationMethod)
     {
@@ -446,7 +442,6 @@ int main(int argc, char** argv)
     }
   }
 
-  MERGE:
   ALICEVISION_LOG_INFO("hdr fusion");
   hdr::hdrMerge merge;
   merge.process(ldrImageGroups_sorted.at(0), ldrTimes_sorted, fusionWeight, response, image, targetTime, false, clampedValueCorrection);
@@ -475,6 +470,8 @@ int main(int argc, char** argv)
     }
     recoverSourceImage(image, response, channelQuantization, recoverSourcePath, meanVal);
   }
+
+  ALICEVISION_LOG_INFO("Successfull HDR fusion of " << nbImages << " LDR images.");
 
   return EXIT_SUCCESS;
 }
