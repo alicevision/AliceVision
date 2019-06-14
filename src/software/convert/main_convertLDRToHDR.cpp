@@ -266,7 +266,7 @@ int main(int argc, char** argv)
   std::vector<std::string> stemImages;
   std::vector<std::string> nameImages;
 
-  const std::regex validExtensions("\\.(?:"
+  const std::string validExtensions(
   // Basic image file extensions
   "jpg|jpeg|png|tiff|tif|"
   // RAW image file extensions:
@@ -284,8 +284,8 @@ int main(int argc, char** argv)
   "rw2|" // Panasonic
   "srw|" // Samsung
   "x3f" // Sigma
-  ")"
   );
+  const std::regex validExtensionsExp("\\.(?:" + validExtensions + ")");
 
   for(const std::string& entry: imagesFolder)
   {
@@ -295,7 +295,7 @@ int main(int argc, char** argv)
       {
         std::string extension = file.path().extension().string();
         std::transform(extension.begin(), extension.end(), extension.begin(), ::tolower);
-        if(fs::is_regular_file(file.status()) && std::regex_match(extension, validExtensions))
+        if(fs::is_regular_file(file.status()) && std::regex_match(extension, validExtensionsExp))
         {
             inputImagesNames.push_back(file.path().string());
             stemImages.push_back(file.path().stem().string());
@@ -307,7 +307,7 @@ int main(int argc, char** argv)
     {
       std::string extension = fs::path(entry).extension().string();
       std::transform(extension.begin(), extension.end(), extension.begin(), ::tolower);
-      if(fs::is_regular_file(fs::path(entry)) && std::regex_match(extension, validExtensions))
+      if(fs::is_regular_file(fs::path(entry)) && std::regex_match(extension, validExtensionsExp))
       {
         inputImagesNames.push_back(entry);
         stemImages.push_back(fs::path(entry).stem().string());
@@ -317,7 +317,7 @@ int main(int argc, char** argv)
   }
   if(inputImagesNames.empty())
   {
-    ALICEVISION_LOG_ERROR("No valid input images. Please give a list of LDR images or a folder path containing them (accepted formats are: .jpg .jpeg .png .tif .tiff .cr2 .rw2");
+    ALICEVISION_LOG_ERROR("No valid input images. Please give a list of LDR images or a folder path containing them (accepted formats are: " << validExtensions << ")");
     return EXIT_FAILURE;
   }
 
@@ -333,11 +333,10 @@ int main(int argc, char** argv)
 
     image::readImage(imagePath, ldrImages.at(i), image::EImageColorSpace::SRGB);
 
-    // test image conversion to sRGB
-//    image::writeImage(std::string("/s/prods/mvg/_source_global/samples/HDR_selection/terrasse_2/Mikros/sources/JPG/" + nameImages.at(i) + ".jpg"), ldrImages.at(i), image::EImageColorSpace::NO_CONVERSION);
     image::readImageMetadata(imagePath, w, h, metadata);
 
     // Debevec and Robertson algorithms use shutter speed as ev value
+    // TODO: in the future, we should use EVs instead of just shutter speed.
     float shutter;
     try
     {
