@@ -208,9 +208,6 @@ int main(int argc, char** argv)
   ALICEVISION_COUT("Program called with the following parameters:");
   ALICEVISION_COUT(vm);
 
-  if(!outputResponsePath.empty())
-    ALICEVISION_COUT("response file: " << outputResponsePath);
-
   std::vector< std::vector< image::Image<image::RGBfColor> > > ldrImageGroups(1);
   std::vector< std::vector<float> > times(1);
 //  std::vector< std::vector<float> > ev(1);
@@ -417,7 +414,7 @@ int main(int argc, char** argv)
 
     case ECalibrationMethod::DEBEVEC:
     {
-      ALICEVISION_COUT("Debevec calibration");
+        ALICEVISION_LOG_INFO("Debevec calibration");
       const float lambda = channelQuantization * 1.f;
       const int nbPoints = 1000;
       hdr::DebevecCalibrate calibration;
@@ -430,7 +427,7 @@ int main(int argc, char** argv)
 
     case ECalibrationMethod::ROBERTSON:
     {
-      ALICEVISION_COUT("Robertson calibration");
+        ALICEVISION_LOG_INFO("Robertson calibration");
       hdr::RobertsonCalibrate calibration(40);
       const int nbPoints = 1000000;
       calibration.process(ldrImageGroups_sorted, channelQuantization, times_sorted, nbPoints, calibrationWeight, targetTime, response);
@@ -440,7 +437,7 @@ int main(int argc, char** argv)
 
     case ECalibrationMethod::GROSSBERG:
     {
-      ALICEVISION_COUT("Grossberg calibration");
+        ALICEVISION_LOG_INFO("Grossberg calibration");
       const int nbPoints = 1000000;
       hdr::GrossbergCalibrate calibration(5);
       calibration.process(ldrImageGroups_sorted, channelQuantization, times_sorted, nbPoints, calibrationWeight, response);
@@ -448,7 +445,7 @@ int main(int argc, char** argv)
     break;
   }
 
-  ALICEVISION_COUT("hdr fusion");
+  ALICEVISION_LOG_INFO("hdr fusion");
   hdr::hdrMerge merge;
   merge.process(ldrImageGroups_sorted.at(0), ldrTimes_sorted, fusionWeight, response, image, targetTime, false, clampedValueCorrection);
 
