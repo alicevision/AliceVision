@@ -78,13 +78,13 @@ inline ECalibrationMethod ECalibrationMethod_stringToEnum(const std::string& cal
   throw std::out_of_range("Invalid method name : '" + calibrationMethodName + "'");
 }
 
-inline std::ostream& operator<<(std::ostream& os, const ECalibrationMethod calibrationMethodName)
+inline std::ostream& operator<<(std::ostream& os, ECalibrationMethod calibrationMethodName)
 {
   os << ECalibrationMethod_enumToString(calibrationMethodName);
   return os;
 }
 
-inline std::istream& operator>>(std::istream& in, ECalibrationMethod calibrationMethod)
+inline std::istream& operator>>(std::istream& in, ECalibrationMethod& calibrationMethod)
 {
   std::string token;
   in >> token;

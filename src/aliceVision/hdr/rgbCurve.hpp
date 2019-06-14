@@ -91,13 +91,13 @@ public:
    * @brief rgbCurve constructor
    * @param[in] size - size of each curve
    */
-  rgbCurve(std::size_t size);
+  explicit rgbCurve(std::size_t size);
 
   /**
    * @brief rgbCurve constructor
    * @param[in] path - filepath of an rgbCurve file
    */
-  rgbCurve(const std::string &path);
+  explicit rgbCurve(const std::string &path);
 
   void resize(std::size_t newSize)
   {

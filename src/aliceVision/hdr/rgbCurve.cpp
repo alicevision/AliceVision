@@ -362,7 +362,6 @@ void rgbCurve::read(const std::string &path)
     if(!file)
     {
         throw std::logic_error("Can't open curves file");
-        return;
     }
 
     //create fileData

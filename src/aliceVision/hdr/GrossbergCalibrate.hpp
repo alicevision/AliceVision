@@ -16,7 +16,7 @@ namespace hdr {
 class GrossbergCalibrate
 {
 public:
-  GrossbergCalibrate(const unsigned int dimension);
+  explicit GrossbergCalibrate(const unsigned int dimension);
 
 
   /**
