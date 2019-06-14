@@ -35,7 +35,6 @@ namespace fs = boost::filesystem;
 
 enum class ECalibrationMethod
 {
-      NONE,
       LINEAR,
       ROBERTSON,
       DEBEVEC,
@@ -51,7 +50,6 @@ inline std::string ECalibrationMethod_enumToString(const ECalibrationMethod cali
 {
   switch(calibrationMethod)
   {
-    case ECalibrationMethod::NONE:        return "none";
     case ECalibrationMethod::LINEAR:      return "linear";
     case ECalibrationMethod::ROBERTSON:   return "robertson";
     case ECalibrationMethod::DEBEVEC:     return "debevec";
@@ -140,7 +138,8 @@ int main(int argc, char** argv)
   std::vector<std::string> imagesFolder;
   std::string outputHDRImagePath;
   std::string outputResponsePath;
-  std::string responseCalibrationName = ECalibrationMethod_enumToString(ECalibrationMethod::LINEAR);
+  ECalibrationMethod calibrationMethod = ECalibrationMethod::LINEAR;
+  std::string inputResponsePath;
   std::string calibrationWeightFunction = "default";
   hdr::EFunctionType fusionWeightFunction = hdr::EFunctionType::GAUSSIAN;
   std::string target;
@@ -160,8 +159,10 @@ int main(int argc, char** argv)
   optionalParams.add_options()
     ("outputResponse", po::value<std::string>(&outputResponsePath),
        "output response function path.")
-    ("responseCalibration,r", po::value<std::string>(&responseCalibrationName )->default_value(responseCalibrationName ),
-        "method used for camera calibration (linear, robertson, debevec) or provide an external response file directly.")
+    ("calibrationMethod,m", po::value<ECalibrationMethod>(&calibrationMethod )->default_value(calibrationMethod ),
+        "method used for camera calibration (linear, robertson, debevec).")
+    ("inputResponse,r", po::value<std::string>(&inputResponsePath ),
+        "external camera response file path to fuse all LDR images together.")
     ("calibrationWeight,w", po::value<std::string>(&calibrationWeightFunction)->default_value(calibrationWeightFunction),
        "weight function type (default, gaussian, triangle, plateau).")
     ("fusionWeight,W", po::value<hdr::EFunctionType>(&fusionWeightFunction)->default_value(fusionWeightFunction),
@@ -217,17 +218,15 @@ int main(int argc, char** argv)
   std::vector<float> &ldrTimes = times.at(0);
 //  std::vector<float> &ldrEv = ev.at(0);
 
-  // set the correct calibration method corresponding to the string parameter
-  ECalibrationMethod calibrationMethod;
+  // read teh input response fiel or set the correct channel quantization according to the calibration method used
   std::size_t channelQuantization;
-  if(fs::is_regular_file(fs::path(responseCalibrationName)))
+  if(!inputResponsePath.empty())
   {
-    response = hdr::rgbCurve(responseCalibrationName);    // use the camera response function set in "responseCalibration", calibrationMethod is set to "none"
+    response = hdr::rgbCurve(inputResponsePath);    // use the camera response function set in "responseCalibration", calibrationMethod is set to "none"
     channelQuantization = response.getSize();
   }
   else
   {
-    calibrationMethod = ECalibrationMethod_stringToEnum(responseCalibrationName);
     if(calibrationMethod == ECalibrationMethod::GROSSBERG)
       channelQuantization = std::pow(2, 10);  //RAW 10 bit precision, 2^10 values between black and white point
     else
@@ -248,7 +247,6 @@ int main(int argc, char** argv)
   {
     switch(calibrationMethod)
     {
-    case ECalibrationMethod::NONE:        break;
     case ECalibrationMethod::LINEAR:      break;
     case ECalibrationMethod::DEBEVEC:     calibrationWeight.setTriangular();
     case ECalibrationMethod::ROBERTSON:   calibrationWeight.setRobertsonWeight();
@@ -399,52 +397,56 @@ int main(int argc, char** argv)
   image::Image<image::RGBfColor> image(ldrImages.at(0).Width(), ldrImages.at(0).Height(), false);
 
   // calculate the response function according to the method given in argument or take the response provided by the user
-  switch(calibrationMethod)
+  if(!inputResponsePath.empty())
   {
-    case ECalibrationMethod::NONE:
+    goto MERGE;
+  }
+  else
+  {
+    switch(calibrationMethod)
     {
+      case ECalibrationMethod::LINEAR:
+      {
+        // set the response function to linear
+        response.setLinear();
+      }
+      break;
+
+      case ECalibrationMethod::DEBEVEC:
+      {
+        ALICEVISION_LOG_INFO("Debevec calibration");
+        const float lambda = channelQuantization * 1.f;
+        const int nbPoints = 1000;
+        hdr::DebevecCalibrate calibration;
+        calibration.process(ldrImageGroups, channelQuantization, times, nbPoints, calibrationWeight, lambda, response);
+
+        response.exponential();
+        response.scale();
+      }
+      break;
+
+      case ECalibrationMethod::ROBERTSON:
+      {
+        ALICEVISION_LOG_INFO("Robertson calibration");
+        hdr::RobertsonCalibrate calibration(40);
+        const int nbPoints = 1000000;
+        calibration.process(ldrImageGroups_sorted, channelQuantization, times_sorted, nbPoints, calibrationWeight, targetTime, response);
+        response.scale();
+      }
+      break;
+
+      case ECalibrationMethod::GROSSBERG:
+      {
+        ALICEVISION_LOG_INFO("Grossberg calibration");
+        const int nbPoints = 1000000;
+        hdr::GrossbergCalibrate calibration(5);
+        calibration.process(ldrImageGroups_sorted, channelQuantization, times_sorted, nbPoints, calibrationWeight, response);
+      }
       break;
     }
-    case ECalibrationMethod::LINEAR:
-    {
-      // set the response function to linear
-      response.setLinear();
-    }
-    break;
-
-    case ECalibrationMethod::DEBEVEC:
-    {
-        ALICEVISION_LOG_INFO("Debevec calibration");
-      const float lambda = channelQuantization * 1.f;
-      const int nbPoints = 1000;
-      hdr::DebevecCalibrate calibration;
-      calibration.process(ldrImageGroups, channelQuantization, times, nbPoints, calibrationWeight, lambda, response);
-
-      response.exponential();
-      response.scale();
-    }
-    break;
-
-    case ECalibrationMethod::ROBERTSON:
-    {
-        ALICEVISION_LOG_INFO("Robertson calibration");
-      hdr::RobertsonCalibrate calibration(40);
-      const int nbPoints = 1000000;
-      calibration.process(ldrImageGroups_sorted, channelQuantization, times_sorted, nbPoints, calibrationWeight, targetTime, response);
-      response.scale();
-    }
-    break;
-
-    case ECalibrationMethod::GROSSBERG:
-    {
-        ALICEVISION_LOG_INFO("Grossberg calibration");
-      const int nbPoints = 1000000;
-      hdr::GrossbergCalibrate calibration(5);
-      calibration.process(ldrImageGroups_sorted, channelQuantization, times_sorted, nbPoints, calibrationWeight, response);
-    }
-    break;
   }
 
+  MERGE:
   ALICEVISION_LOG_INFO("hdr fusion");
   hdr::hdrMerge merge;
   merge.process(ldrImageGroups_sorted.at(0), ldrTimes_sorted, fusionWeight, response, image, targetTime, false, clampedValueCorrection);
