@@ -23,16 +23,10 @@ public:
     PlaneSweepingCuda& cps;
     bool exportIntermediateResults;
     bool doSmooth;
-    // int   s_wsh;
-    // float s_gammaC;
-    // float s_gammaP;
-    // int   wsh;
-    // float gammaC;
-    // float gammaP;
     bool doRefine;
     int ndepthsToRefine;
-    unsigned char P1;
-    unsigned char P2;
+    float P1;
+    float P2;
     int stepZ;
     int maxDepthsToStore;
     int maxDepthsToSweep;

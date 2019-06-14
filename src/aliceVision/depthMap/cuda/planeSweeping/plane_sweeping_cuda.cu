@@ -314,7 +314,7 @@ void ps_aggregatePathVolume(CudaDeviceMemoryPitched<TSim, 3>& d_volSimT,
                             int volDimX, int volDimY, int volDimZ,
                             cudaTextureObject_t rc_tex,
                             float P1, float P2,
-                            int dimTrnX, bool doInvZ, bool verbose)
+                            int dimTrnZ, bool doInvZ, bool verbose)
 {
     if(verbose)
         printf("ps_aggregatePathVolume\n");
@@ -387,7 +387,7 @@ void ps_aggregatePathVolume(CudaDeviceMemoryPitched<TSim, 3>& d_volSimT,
             d_volSimT.getBuffer(), d_volSimT.getBytesPaddedUpToDim(1), d_volSimT.getBytesPaddedUpToDim(0), // out:   volSimT
             volDimX, volDimY, volDimZ,
             z, P1, P2,
-            dimTrnX, doInvZ);
+            dimTrnZ, doInvZ);
         cudaThreadSynchronize();
         CHECK_CUDA_ERROR();
     }
@@ -405,7 +405,7 @@ void ps_updateAggrVolume(CudaDeviceMemoryPitched<TSim, 3>& volAgr_dmp,
                          int volDimX, int volDimY, int volDimZ,
                          int dimTrnX, int dimTrnY, int dimTrnZ,
                          cudaTextureObject_t rc_tex,
-                         unsigned char P1, unsigned char P2, 
+                         float P1, float P2,
                          bool verbose, bool doInvZ, int lastN)
 {
     if(verbose)
@@ -461,7 +461,7 @@ void ps_updateAggrVolume(CudaDeviceMemoryPitched<TSim, 3>& volAgr_dmp,
         d_volSimT, volDims[dimsTrn[0]], volDims[dimsTrn[1]], volDims[dimsTrn[2]],
         rc_tex,
         P1, P2,
-        dimTrnX, doInvZ, verbose);
+        dimTrnZ, doInvZ, verbose);
     // if (verbose) printf("aggregate volume gpu elapsed time: %f ms \n", toc(tall));
     // pr_printfDeviceMemoryInfo();
 
@@ -497,7 +497,7 @@ void ps_SGMoptimizeSimVolume(Pyramids& ps_texs_arr,
                              CudaDeviceMemoryPitched<TSim, 3>& volSim_dmp,
                              int volDimX, int volDimY, int volDimZ,
                              const std::string& filteringAxes,
-                             bool verbose, unsigned char P1, unsigned char P2,
+                             bool verbose, float P1, float P2,
                              int scale, int CUDAdeviceNo, int ncamsAllocated)
 {
     clock_t tall = tic();
@@ -539,8 +539,9 @@ void ps_SGMoptimizeSimVolume(Pyramids& ps_texs_arr,
 
     for (char axis : filteringAxes)
     {
-        updateAggrVolume(mapAxes.at(axis), false); // without transpose
-        updateAggrVolume(mapAxes.at(axis), true); // with transpose of the last axis
+        const std::array<int, 3>& dimTrn = mapAxes.at(axis);
+        updateAggrVolume(dimTrn, false); // without transpose
+        updateAggrVolume(dimTrn, true); // with transpose of the last axis
     }
 
     if(verbose)

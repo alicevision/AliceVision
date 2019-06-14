@@ -53,11 +53,13 @@ int main(int argc, char* argv[])
     int sgmScale = -1;
     int sgmStepXY = -1;
     int sgmStepZ = -1;
-    int sgmMaxSideXY = 400;
+    int sgmMaxSideXY = 700;
     int sgmMaxTCams = 10;
     int sgmWSH = 4;
     double sgmGammaC = 5.5;
     double sgmGammaP = 8.0;
+    double sgmP1 = 10;
+    double sgmP2 = 20.0;
     int sgmMaxDepths = 3000;
     int sgmMaxDepthsPerTc = 1500;
     bool sgmUseSfmSeeds = true;
@@ -120,6 +122,10 @@ int main(int argc, char* argv[])
             "Semi Global Matching: GammaC threshold.")
         ("sgmGammaP", po::value<double>(&sgmGammaP)->default_value(sgmGammaP),
             "Semi Global Matching: GammaP threshold.")
+        ("sgmP1", po::value<double>(&sgmP1)->default_value(sgmP1),
+            "Semi Global Matching: P1.")
+        ("sgmP2", po::value<double>(&sgmP2)->default_value(sgmP2),
+            "Semi Global Matching: P2.")
         ("sgmMaxDepths", po::value<int>(&sgmMaxDepths)->default_value(sgmMaxDepths),
             "Semi Global Matching: Max number of depths in the overall similarity volume.")
         ("sgmMaxDepthsPerTc", po::value<int>(&sgmMaxDepthsPerTc)->default_value(sgmMaxDepthsPerTc),
@@ -229,6 +235,8 @@ int main(int argc, char* argv[])
     mp.userParams.put("semiGlobalMatching.wsh", sgmWSH);
     mp.userParams.put("semiGlobalMatching.gammaC", sgmGammaC);
     mp.userParams.put("semiGlobalMatching.gammaP", sgmGammaP);
+    mp.userParams.put("semiGlobalMatching.P1", sgmP1);
+    mp.userParams.put("semiGlobalMatching.P2", sgmP2);
 
     mp.userParams.put("semiGlobalMatching.scale", sgmScale);
     mp.userParams.put("semiGlobalMatching.stepXY", sgmStepXY);

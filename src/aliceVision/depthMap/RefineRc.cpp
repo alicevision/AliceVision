@@ -172,9 +172,9 @@ void RefineRc::refineAndFuseDepthSimMapCUDA(DepthSimMap& out_depthSimMapFused, c
     ALICEVISION_LOG_INFO("==== refineAndFuseDepthSimMapCUDA done in : " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - startTime).count() << "ms.");
 }
 
-void RefineRc::optimizeDepthSimMapCUDA(DepthSimMap& out_depthSimMapOptimized,
-                                       const DepthSimMap& depthPixSizeMapVis,
-                                       const DepthSimMap& depthSimMapPhoto)
+void RefineRc::optimizeDepthSimMapCUDA(DepthSimMap& out_depthSimMapOptimized, // optimized
+                                       const DepthSimMap& depthPixSizeMapVis, // SGM
+                                       const DepthSimMap& depthSimMapPhoto) // refined
 {
     auto startTime = std::chrono::high_resolution_clock::now();
 
@@ -269,7 +269,7 @@ void estimateAndRefineDepthMaps(int cudaDeviceIndex, mvsUtils::MultiViewParams& 
   const int fileScale = 1; // input images scale (should be one)
   int sgmScale = mp.userParams.get<int>("semiGlobalMatching.scale", -1);
   int sgmStepXY = mp.userParams.get<int>("semiGlobalMatching.stepXY", -1);
-  const int maxSideXY = mp.userParams.get<int>("semiGlobalMatching.maxSideXY", 400);
+  const int maxSideXY = mp.userParams.get<int>("semiGlobalMatching.maxSideXY", 700);
 
   if(sgmScale == -1)
   {

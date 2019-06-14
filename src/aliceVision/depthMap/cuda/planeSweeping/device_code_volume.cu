@@ -492,8 +492,8 @@ __global__ void volume_agregateCostVolumeAtZinSlices_kernel(cudaTextureObject_t 
             const TSim* xSliceBestInColSimForZM1,
             TSim* volSimT, int volSimT_s, int volSimT_p,
             int volDimX, int volDimY, int volDimZ, 
-            int vz, unsigned int _P1, unsigned int _P2,
-            int dimTrnX, bool doInvZ)
+            int vz, float _P1, float _P2,
+            int dimTrnZ, bool doInvZ)
 {
     int vx = blockIdx.x * blockDim.x + threadIdx.x;
     int vy = blockIdx.y * blockDim.y + threadIdx.y;
@@ -509,11 +509,11 @@ __global__ void volume_agregateCostVolumeAtZinSlices_kernel(cudaTextureObject_t 
     {
         int z1 = doInvZ ? vz + 1 : vz - 1; // M1
 
-        int imX0; // current
-        int imY0;
-        int imX1; // M1
-        int imY1;
-        if (dimTrnX == 0) //  // Y is on Z axis
+        int imX0 = 0; // current
+        int imY0 = 0;
+        int imX1 = 0; // M1
+        int imY1 = 0;
+        if (dimTrnZ == 1) // Y is on Z axis
         {
             // 0,2,1 / XZY
             imX0 = vx; // current
@@ -521,7 +521,7 @@ __global__ void volume_agregateCostVolumeAtZinSlices_kernel(cudaTextureObject_t 
             imX1 = vx; // M1
             imY1 = z1;
         }
-        else if(dimTrnX == 1) // X is on Z axis
+        else if(dimTrnZ == 0) // X is on Z axis
         {
             // 1,2,0 / YZX
             imX0 = vz; // current
@@ -535,8 +535,12 @@ __global__ void volume_agregateCostVolumeAtZinSlices_kernel(cudaTextureObject_t 
         // unsigned int P1 = (unsigned int)sigmoid(5.0f,20.0f,60.0f,10.0f,deltaC);
         float P1 = _P1;
         // 15.0 + (255.0 - 15.0) * (1.0 / (1.0 + exp(10.0 * ((x - 20.) / 80.))))
-        float P2 = sigmoid(15.0f, 255.0f, 80.0f, 20.0f, deltaC); // TODO test: 20 => 40
-        // float P2 = _P2;
+        float P2 = 0;
+        // _P2 convention: use negative value to skip the use of deltaC
+        if(_P2 >= 0)
+            P2 = sigmoid(15.0f, 255.0f, 80.0f, _P2, deltaC);
+        else
+            P2 = std::abs(_P2);
 
         float bestCostInColM1 = xSliceBestInColSimForZM1[vx];
         float pathCostMDM1 = *get2DBufferAt(xySliceForZM1, xySliceForZM1_p, vx, vy - 1); // M1: minus 1 over depths
