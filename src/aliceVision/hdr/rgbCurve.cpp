@@ -337,7 +337,6 @@ void rgbCurve::write(const std::string &path, const std::string &name) const
     if(!file)
     {
         throw std::logic_error("Can't create curves file");
-        return;
     }
 
     std::string text(name + ",Red,Green,Blue,\n");
