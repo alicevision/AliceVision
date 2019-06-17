@@ -37,7 +37,7 @@ x64
 CMakeFiles  # intermediate folders
 
 # user files
-*.user
+*.user*
 
 # netbeans projects
 /nbproject
