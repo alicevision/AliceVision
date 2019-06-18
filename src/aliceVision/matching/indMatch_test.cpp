@@ -76,12 +76,32 @@ BOOST_AUTO_TEST_CASE(IndMatch_IO)
     matches[std::make_pair(1,2)][EImageDescriberType::UNKNOWN] = {{0,0},{1,1}, {2,2}};
 
     BOOST_CHECK(Save(matches, testFolder, "txt", true));
+    // Create an additional pair-wise matches entry
+    matches[std::make_pair(0,2)][EImageDescriberType::UNKNOWN] = {{3,3},{4,4}};
+
+    // Don't clear matches and reload saved file
     BOOST_CHECK(Load(matches, viewsKeys, {testFolder}, {EImageDescriberType::UNKNOWN}));
-    BOOST_CHECK_EQUAL(2, matches.size());
+    BOOST_CHECK_EQUAL(3, matches.size());
     BOOST_CHECK_EQUAL(1, matches.count(std::make_pair(0,1)));
     BOOST_CHECK_EQUAL(1, matches.count(std::make_pair(1,2)));
+    BOOST_CHECK_EQUAL(1, matches.count(std::make_pair(0,2)));
+    // 'matches' was not cleared, pair-wise matches are accumulated ({0, 1} and {1,2} contains duplicates)
+    BOOST_CHECK_EQUAL(4, matches.at(std::make_pair(0,1)).at(EImageDescriberType::UNKNOWN).size());
+    BOOST_CHECK_EQUAL(6, matches.at(std::make_pair(1,2)).at(EImageDescriberType::UNKNOWN).size());
+    BOOST_CHECK_EQUAL(2, matches.at(std::make_pair(0,2)).at(EImageDescriberType::UNKNOWN).size());
+
+    // Deduplicate matches
+    //  - {0, 1} has duplicates
+    BOOST_CHECK(IndMatch::getDeduplicated(matches.at(std::make_pair(0,1)).at(EImageDescriberType::UNKNOWN)));
+    //  - {1, 2} has duplicates
+    BOOST_CHECK(IndMatch::getDeduplicated(matches.at(std::make_pair(1,2)).at(EImageDescriberType::UNKNOWN)));
+    //  - {0, 2} does not have duplicates
+    BOOST_CHECK(!IndMatch::getDeduplicated(matches.at(std::make_pair(0,2)).at(EImageDescriberType::UNKNOWN)));
+
+    // Check matches count after deduplication
     BOOST_CHECK_EQUAL(2, matches.at(std::make_pair(0,1)).at(EImageDescriberType::UNKNOWN).size());
     BOOST_CHECK_EQUAL(3, matches.at(std::make_pair(1,2)).at(EImageDescriberType::UNKNOWN).size());
+    BOOST_CHECK_EQUAL(2, matches.at(std::make_pair(0,2)).at(EImageDescriberType::UNKNOWN).size());
     fs::remove_all("./4/");
   }
   boost::filesystem::remove_all(testFolder);

@@ -38,7 +38,7 @@ int main(int argc, char** argv)
 
   po::options_description requiredParams("Required parameters");
   requiredParams.add_options()
-    ("input,i", po::value<std::vector<std::string>>(&imagePaths)->required(),
+    ("input,i", po::value<std::vector<std::string>>(&imagePaths)->required()->multitoken(),
       "Image path.")
     ("outputFolder,o", po::value<std::string>(&outputFolder)->required(),
       "The convertion output folder.");

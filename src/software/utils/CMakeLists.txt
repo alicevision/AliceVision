@@ -4,6 +4,7 @@
 # Software PROPERTY FOLDER is 'Software/Utils'
 set(FOLDER_SOFTWARE_UTILS "Software/Utils")
 
+if(ALICEVISION_BUILD_SFM)
 # Uncertainty
 if(ALICEVISION_HAVE_UNCERTAINTYTE)
     alicevision_add_software(aliceVision_utils_computeUncertainty
@@ -172,4 +173,4 @@ alicevision_add_software(aliceVision_utils_split360Images
         ${Boost_LIBRARIES}
 )
 
-
+endif() # ALICEVISION_BUILD_SFM
