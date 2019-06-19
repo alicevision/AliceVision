@@ -213,11 +213,10 @@ void readImage(const std::string& path,
 
   if(imageColorSpace == EImageColorSpace::SRGB) // color conversion to sRGB
   {
-      ALICEVISION_LOG_INFO("Convert image " << path << " from " << colorSpace << " to sRGB colorspace");
     if (colorSpace != "sRGB")
     {
       oiio::ImageBufAlgo::colorconvert(inBuf, inBuf, colorSpace, "sRGB");
-      ALICEVISION_LOG_INFO("Convert image " << path << " from " << colorSpace << " to sRGB colorspace");
+      ALICEVISION_LOG_TRACE("Convert image " << path << " from " << colorSpace << " to sRGB colorspace");
     }
   }
   else if(imageColorSpace == EImageColorSpace::LINEAR) // color conversion to linear
@@ -225,7 +224,7 @@ void readImage(const std::string& path,
     if (colorSpace != "Linear")
     {
       oiio::ImageBufAlgo::colorconvert(inBuf, inBuf, colorSpace, "Linear");
-      ALICEVISION_LOG_INFO("Convert image " << path << " from " << colorSpace << " to Linear colorspace");
+      ALICEVISION_LOG_TRACE("Convert image " << path << " from " << colorSpace << " to Linear colorspace");
     }
   }
 
