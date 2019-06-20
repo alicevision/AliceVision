@@ -298,6 +298,26 @@ public:
   }
 
   /**
+   * @brief Get the median Exposure Value (Ev) of
+   * @return
+   */
+
+  float getMedianEv() const
+  {
+      std::vector<float> evList;
+      evList.reserve(views.size());
+
+      for(const auto& view : views)
+      {
+          float ev = view.second->getEv();
+          evList.emplace_back(ev);
+      }
+      std::nth_element(evList.begin(), evList.begin() + evList.size()/2, evList.end());
+      float evMedian = evList[evList.size()/2];
+      return evMedian;
+  }
+
+  /**
    * @brief Add the given \p folder to features folders.
    * @note If SfmData's absolutePath has been set, 
    *       an absolute path will be converted to a relative one.

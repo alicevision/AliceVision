@@ -44,7 +44,8 @@ bool prepareDenseScene(const SfMData& sfmData,
                        const std::string& outFolder,
                        image::EImageFileType outputFileType,
                        bool saveMetadata,
-                       bool saveMatricesFiles)
+                       bool saveMatricesFiles,
+                       bool evCorrection)
 {
   // defined view Ids
   std::set<IndexT> viewIds;
@@ -75,6 +76,10 @@ bool prepareDenseScene(const SfMData& sfmData,
 
   // export data
   boost::progress_display progressBar(viewIds.size(), std::cout, "Exporting Scene Undistorted Images\n");
+
+  // for exposure correction
+  const float medianEv = sfmData.getMedianEv();
+  ALICEVISION_LOG_INFO("median Ev : " << medianEv);
 
 #pragma omp parallel for num_threads(3)
   for(int i = 0; i < viewIds.size(); ++i)
@@ -188,6 +193,22 @@ bool prepareDenseScene(const SfMData& sfmData,
       Image<RGBfColor> image, image_ud;
 
       readImage(srcImage, image, image::EImageColorSpace::LINEAR);
+
+      //exposure correction
+      if(evCorrection)
+      {
+          float exposureCompensation = view->getEvCompensation(medianEv);
+
+          //metadata & log
+          metadata.push_back(oiio::ParamValue("AliceVision:EV", view->getEv()));
+          metadata.push_back(oiio::ParamValue("AliceVision:EVComp", exposureCompensation));
+          ALICEVISION_LOG_INFO("image " + std::to_string(viewId) + " Ev : " + std::to_string(view->getEv()));
+          ALICEVISION_LOG_INFO("image " + std::to_string(viewId) + " Ev compensation : " + std::to_string(exposureCompensation));
+
+          for(int pix = 0; pix < image.Width() * image.Height(); ++pix)
+              image(pix) = image(pix) * exposureCompensation;
+
+      }
       
       // undistort
       if(cam->isValid() && cam->have_disto())
@@ -222,6 +243,7 @@ int main(int argc, char *argv[])
   int rangeSize = 1;
   bool saveMetadata = true;
   bool saveMatricesTxtFiles = false;
+  bool evCorrection = false;
 
   po::options_description allParams("AliceVision prepareDenseScene");
 
@@ -246,7 +268,9 @@ int main(int argc, char *argv[])
     ("rangeStart", po::value<int>(&rangeStart)->default_value(rangeStart),
       "Range image index start.")
     ("rangeSize", po::value<int>(&rangeSize)->default_value(rangeSize),
-      "Range size.");
+      "Range size.")
+    ("evCorrection", po::value<bool>(&evCorrection)->default_value(evCorrection),
+      "Correct exposure value.");
 
   po::options_description logParams("Log parameters");
   logParams.add_options()
@@ -324,7 +348,7 @@ int main(int argc, char *argv[])
   }
 
   // export
-  if(prepareDenseScene(sfmData, imagesFolders, rangeStart, rangeEnd, outFolder, outputFileType, saveMetadata, saveMatricesTxtFiles))
+  if(prepareDenseScene(sfmData, imagesFolders, rangeStart, rangeEnd, outFolder, outputFileType, saveMetadata, saveMatricesTxtFiles, evCorrection))
     return EXIT_SUCCESS;
 
   return EXIT_FAILURE;
