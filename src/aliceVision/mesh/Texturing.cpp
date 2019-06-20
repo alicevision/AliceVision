@@ -802,7 +802,6 @@ void Texturing::writeTexture(AccuImage& atlasTexture, const std::size_t atlasID,
     if(texParams.downscale > 1)
     {
         Image resizedColorBuffer;
-        outTextureSide = texParams.textureSide / texParams.downscale;
 
         ALICEVISION_LOG_INFO("  - Downscaling texture (" << texParams.downscale << "x).");
         imageIO::resizeImage(texParams.downscale, atlasTexture.img, resizedColorBuffer);
@@ -814,7 +813,8 @@ void Texturing::writeTexture(AccuImage& atlasTexture, const std::size_t atlasID,
     ALICEVISION_LOG_INFO("  - Writing texture file: " << texturePath.string());
 
     using namespace imageIO;
-    writeImage(texturePath.string(), atlasTexture.img, EImageQuality::OPTIMIZED, OutputFileColorSpace(EImageColorSpace::SRGB, EImageColorSpace::AUTO));
+    OutputFileColorSpace colorspace(EImageColorSpace::SRGB, EImageColorSpace::AUTO);
+    writeImage(texturePath.string(), atlasTexture.img, EImageQuality::OPTIMIZED, colorspace);
 }
 
 
