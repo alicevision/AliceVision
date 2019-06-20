@@ -4,10 +4,12 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
-#include "image.hpp"
+#include "imageIO.hpp"
+
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/mvsData/Color.hpp>
 #include <aliceVision/mvsData/Rgb.hpp>
+#include <aliceVision/mvsData/Image.hpp>
 
 #include <OpenImageIO/imageio.h>
 #include <OpenImageIO/imagebuf.h>
@@ -16,15 +18,35 @@
 #include <OpenEXR/half.h>
 
 #include <boost/filesystem.hpp>
+#include  <boost/algorithm/string/case_conv.hpp>
 
+#include <iostream>
+#include <algorithm>
+#include <stdexcept>
+
+#include <array>
 #include <stdexcept>
 #include <memory>
+#include <string>
 
 
 namespace fs = boost::filesystem;
 
 namespace aliceVision {
+
 namespace imageIO {
+
+std::string EImageColorSpace_enumToString(const EImageColorSpace colorSpace)
+{
+    switch(colorSpace)
+    {
+    case EImageColorSpace::SRGB:  return "sRGB"; // WARNING: string should match with OIIO definitions
+    case EImageColorSpace::LINEAR:   return "Linear";
+    default: ;
+    }
+    throw std::out_of_range("No string defined for EImageColorSpace: " + std::to_string(int(colorSpace)));
+}
+
 
 std::string EImageQuality_informations()
 {
@@ -67,6 +89,53 @@ std::istream& operator>>(std::istream& in, EImageQuality& imageQuality)
   return in;
 }
 
+std::string EImageFileType_informations()
+{
+  return "Image file type :\n"
+         "* jpg \n"
+         "* png \n"
+         "* tif \n"
+         "* exr (half)";
+}
+
+EImageFileType EImageFileType_stringToEnum(const std::string& imageFileType)
+{
+  std::string type = imageFileType;
+  std::transform(type.begin(), type.end(), type.begin(), ::tolower); //tolower
+
+  if(type == "jpg" || type == "jpeg") return EImageFileType::JPEG;
+  if(type == "png")                   return EImageFileType::PNG;
+  if(type == "tif" || type == "tiff") return EImageFileType::TIFF;
+  if(type == "exr")                   return EImageFileType::EXR;
+
+  throw std::out_of_range("Invalid image file type : " + imageFileType);
+}
+
+std::string EImageFileType_enumToString(const EImageFileType imageFileType)
+{
+  switch(imageFileType)
+  {
+    case EImageFileType::JPEG:  return "jpg";
+    case EImageFileType::PNG:   return "png";
+    case EImageFileType::TIFF:  return "tif";
+    case EImageFileType::EXR:   return "exr";
+  }
+  throw std::out_of_range("Invalid EImageType enum");
+}
+
+std::ostream& operator<<(std::ostream& os, EImageFileType imageFileType)
+{
+  return os << EImageFileType_enumToString(imageFileType);
+}
+
+std::istream& operator>>(std::istream& in, EImageFileType& imageFileType)
+{
+  std::string token;
+  in >> token;
+  imageFileType = EImageFileType_stringToEnum(token);
+  return in;
+}
+
 oiio::ParamValueList getMetadataFromMap(const std::map<std::string, std::string>& metadataMap)
 {
   oiio::ParamValueList metadata;
@@ -106,6 +175,14 @@ void readImageMetadata(const std::string& path, oiio::ParamValueList& metadata)
   metadata = in->spec().extra_attribs;
 
   in->close();
+}
+
+bool isSupportedUndistortFormat(const std::string &ext)
+{
+  static const std::array<std::string, 6> supportedExtensions = {".jpg", ".jpeg", ".png",  ".tif", ".tiff", ".exr"};
+  const auto start = supportedExtensions.begin();
+  const auto end = supportedExtensions.end();
+  return(std::find(start, end, boost::to_lower_copy(ext)) != end);
 }
 
 template<typename T>
@@ -226,7 +303,7 @@ void readImage(const std::string& path,
     width = inSpec.width;
     height = inSpec.height;
 
-    buffer.resize(inSpec.width * inSpec.height * nchannels);
+    buffer.resize(inSpec.width * inSpec.height);
 
     {
         oiio::ROI exportROI = inBuf.roi();
@@ -262,6 +339,14 @@ void readImage(const std::string& path, int& width, int& height, std::vector<Col
     readImage(path, oiio::TypeDesc::FLOAT, 3, width, height, buffer, imageColorSpace);
 }
 
+void readImage(const std::string& path, Image& image, EImageColorSpace imageColorSpace)
+{
+    int width, height;
+    readImage(path, oiio::TypeDesc::FLOAT, 3, width, height, image.data(), imageColorSpace);
+    image.setWidth(width);
+    image.setHeight(height);
+}
+
 template<typename T>
 void writeImage(const std::string& path,
                 oiio::TypeDesc typeDesc,
@@ -270,7 +355,7 @@ void writeImage(const std::string& path,
                 int nchannels,
                 const std::vector<T>& buffer,
                 EImageQuality imageQuality,
-                EImageColorSpace imageColorSpace,
+                OutputFileColorSpace colorspace,
                 const oiio::ParamValueList& metadata)
 {
     const fs::path bPath = fs::path(path);
@@ -281,12 +366,12 @@ void writeImage(const std::string& path,
     const bool isJPG = (extension == ".jpg");
     const bool isPNG = (extension == ".png");
 
-    if(imageColorSpace == EImageColorSpace::AUTO)
+    if(colorspace.to == EImageColorSpace::AUTO)
     {
       if(isJPG || isPNG)
-        imageColorSpace = EImageColorSpace::SRGB;
+        colorspace.to = EImageColorSpace::SRGB;
       else
-        imageColorSpace = EImageColorSpace::LINEAR;
+        colorspace.to = EImageColorSpace::LINEAR;
     }
 
     ALICEVISION_LOG_DEBUG("[IO] Write Image: " << path << std::endl
@@ -305,14 +390,14 @@ void writeImage(const std::string& path,
     const oiio::ImageBuf* outBuf = &imgBuf;  // buffer to write
 
     oiio::ImageBuf colorspaceBuf;  // buffer for image colorspace modification
-    if(imageColorSpace == EImageColorSpace::SRGB)
+    if(colorspace.from != colorspace.to)
     {
-      oiio::ImageBufAlgo::colorconvert(colorspaceBuf, *outBuf, "Linear", "sRGB");
+      oiio::ImageBufAlgo::colorconvert(colorspaceBuf, *outBuf, EImageColorSpace_enumToString(colorspace.from), EImageColorSpace_enumToString(colorspace.to));
       outBuf = &colorspaceBuf;
     }
 
     oiio::ImageBuf formatBuf; // buffer for image format modification
-    if(imageQuality ==EImageQuality::OPTIMIZED && isEXR)
+    if(imageQuality == EImageQuality::OPTIMIZED && isEXR)
     {
       formatBuf.copy(*outBuf, oiio::TypeDesc::HALF); // override format, use half instead of float
       outBuf = &formatBuf;
@@ -326,29 +411,34 @@ void writeImage(const std::string& path,
     fs::rename(tmpPath, path);
 }
 
-void writeImage(const std::string& path, int width, int height, const std::vector<unsigned char>& buffer, EImageQuality imageQuality, EImageColorSpace imageColorSpace, const oiio::ParamValueList& metadata)
+void writeImage(const std::string& path, int width, int height, const std::vector<unsigned char>& buffer, EImageQuality imageQuality, OutputFileColorSpace& colorspace, const oiio::ParamValueList& metadata)
 {
-    writeImage(path, oiio::TypeDesc::UCHAR, width, height, 1, buffer, imageQuality, imageColorSpace, metadata);
+    writeImage(path, oiio::TypeDesc::UCHAR, width, height, 1, buffer, imageQuality, colorspace, metadata);
 }
 
-void writeImage(const std::string& path, int width, int height, const std::vector<unsigned short>& buffer, EImageQuality imageQuality, EImageColorSpace imageColorSpace, const oiio::ParamValueList& metadata)
+void writeImage(const std::string& path, int width, int height, const std::vector<unsigned short>& buffer, EImageQuality imageQuality,  OutputFileColorSpace& colorspace, const oiio::ParamValueList& metadata)
 {
-    writeImage(path, oiio::TypeDesc::UINT16, width, height, 1, buffer, imageQuality, imageColorSpace, metadata);
+    writeImage(path, oiio::TypeDesc::UINT16, width, height, 1, buffer, imageQuality, colorspace, metadata);
 }
 
-void writeImage(const std::string& path, int width, int height, const std::vector<rgb>& buffer, EImageQuality imageQuality, EImageColorSpace imageColorSpace, const oiio::ParamValueList& metadata)
+void writeImage(const std::string& path, int width, int height, const std::vector<rgb>& buffer, EImageQuality imageQuality, OutputFileColorSpace& colorspace, const oiio::ParamValueList& metadata)
 {
-    writeImage(path, oiio::TypeDesc::UCHAR, width, height, 3, buffer, imageQuality, imageColorSpace, metadata);
+    writeImage(path, oiio::TypeDesc::UCHAR, width, height, 3, buffer, imageQuality, colorspace, metadata);
 }
 
-void writeImage(const std::string& path, int width, int height, const std::vector<float>& buffer, EImageQuality imageQuality, EImageColorSpace imageColorSpace, const oiio::ParamValueList& metadata)
+void writeImage(const std::string& path, int width, int height, const std::vector<float>& buffer, EImageQuality imageQuality, OutputFileColorSpace& colorspace, const oiio::ParamValueList& metadata)
 {
-    writeImage(path, oiio::TypeDesc::FLOAT, width, height, 1, buffer, imageQuality, imageColorSpace, metadata);
+    writeImage(path, oiio::TypeDesc::FLOAT, width, height, 1, buffer, imageQuality, colorspace, metadata);
 }
 
-void writeImage(const std::string& path, int width, int height, const std::vector<Color>& buffer, EImageQuality imageQuality, EImageColorSpace imageColorSpace, const oiio::ParamValueList& metadata)
+void writeImage(const std::string& path, int width, int height, const std::vector<Color>& buffer, EImageQuality imageQuality, OutputFileColorSpace& colorspace, const oiio::ParamValueList& metadata)
 {
-    writeImage(path, oiio::TypeDesc::FLOAT, width, height, 3, buffer, imageQuality, imageColorSpace, metadata);
+    writeImage(path, oiio::TypeDesc::FLOAT, width, height, 3, buffer, imageQuality, colorspace, metadata);
+}
+
+void writeImage(const std::string &path, Image &image, EImageQuality imageQuality, OutputFileColorSpace& colorspace, const oiio::ParamValueList& metadata)
+{
+    writeImage(path, oiio::TypeDesc::FLOAT, image.width(), image.height(), 3, image.data(), imageQuality, colorspace, metadata);
 }
 
 template<typename T>
@@ -386,6 +476,11 @@ void transposeImage(int width, int height, std::vector<float>& buffer)
 void transposeImage(int width, int height, std::vector<Color>& buffer)
 {
     transposeImage(oiio::TypeDesc::FLOAT, width, height, 3, buffer);
+}
+
+void transposeImage(Image &image)
+{
+    transposeImage(oiio::TypeDesc::FLOAT, image.width(), image.height(), 3, image.data());
 }
 
 template<typename T>
@@ -428,6 +523,13 @@ void resizeImage(int inWidth, int inHeight, int downscale, const std::vector<flo
 void resizeImage(int inWidth, int inHeight, int downscale, const std::vector<Color>& inBuffer, std::vector<Color>& outBuffer, const std::string& filter, float filterSize)
 {
     resizeImage(oiio::TypeDesc::FLOAT, inWidth, inHeight, 3, downscale, inBuffer, outBuffer, filter, filterSize);
+}
+
+void resizeImage(int downscale, const Image &inImage, Image &outImage, const std::string &filter, float filterSize)
+{
+    resizeImage(oiio::TypeDesc::FLOAT, inImage.width(), inImage.height(), 3, downscale, inImage.data(), outImage.data(), filter, filterSize);
+    outImage.setHeight(inImage.height() / downscale);
+    outImage.setWidth(inImage.width() / downscale);
 }
 
 template<typename T>
@@ -473,6 +575,13 @@ void convolveImage(int inWidth, int inHeight, const std::vector<Color>& inBuffer
   convolveImage(oiio::TypeDesc::FLOAT, inWidth, inHeight, 3, inBuffer, outBuffer, kernel, kernelWidth, kernelHeight);
 }
 
+void convolveImage(const Image &inImage, Image &outImage, const std::string &kernel, float kernelWidth, float kernelHeight)
+{
+    convolveImage(oiio::TypeDesc::FLOAT, inImage.width(), inImage.height(), 3, inImage.data(), outImage.data(), kernel, kernelWidth, kernelHeight);
+    outImage.setHeight(inImage.height());
+    outImage.setWidth(inImage.width());
+}
+
 void fillHoles(int inWidth, int inHeight, std::vector<Color>& colorBuffer, const std::vector<float>& alphaBuffer)
 {
     oiio::ImageBuf rgbBuf(oiio::ImageSpec(inWidth, inHeight, 3, oiio::TypeDesc::FLOAT), colorBuffer.data());
@@ -491,6 +600,11 @@ void fillHoles(int inWidth, int inHeight, std::vector<Color>& colorBuffer, const
 
     // Copy result to original RGB buffer
     oiio::ImageBufAlgo::copy(rgbBuf, filledBuf);
+}
+
+void fillHoles(Image& image, const std::vector<float>& alphaBuffer)
+{
+    fillHoles(image.width(), image.height(), image.data(), alphaBuffer);
 }
 
 } // namespace imageIO

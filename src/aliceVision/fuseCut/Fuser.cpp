@@ -13,8 +13,7 @@
 #include <aliceVision/mvsData/Stat3d.hpp>
 #include <aliceVision/mvsUtils/common.hpp>
 #include <aliceVision/mvsUtils/fileIO.hpp>
-#include <aliceVision/imageIO/image.hpp>
-#include <aliceVision/imageIO/imageScaledColors.hpp>
+#include <aliceVision/mvsData/imageIO.hpp>
 
 #include <boost/filesystem.hpp>
 #include <boost/accumulators/accumulators.hpp>
@@ -225,8 +224,10 @@ bool Fuser::filterGroupsRC(int rc, int pixSizeBall, int pixSizeBallWSP, int nNea
     }
 
     {
-      imageIO::transposeImage(h, w, numOfModalsMap);
-      imageIO::writeImage(getFileNameFromIndex(mp, rc, mvsUtils::EFileType::nmodMap), w, h, numOfModalsMap, imageIO::EImageQuality::LOSSLESS, imageIO::EImageColorSpace::NO_CONVERSION);
+      using namespace imageIO;
+      OutputFileColorSpace colorspace(EImageColorSpace::NO_CONVERSION);
+      transposeImage(h, w, numOfModalsMap);
+      writeImage(getFileNameFromIndex(mp, rc, mvsUtils::EFileType::nmodMap), w, h, numOfModalsMap, EImageQuality::LOSSLESS, colorspace);
     }
 
     delete numOfPtsMap;
@@ -322,8 +323,10 @@ bool Fuser::filterDepthMapsRC(int rc, int minNumOfModals, int minNumOfModalsWSP2
       metadata.push_back(oiio::ParamValue("AliceVision:P", oiio::TypeDesc(oiio::TypeDesc::DOUBLE, oiio::TypeDesc::MATRIX44), 1, matrixP.data()));
     }
 
-    imageIO::writeImage(getFileNameFromIndex(mp, rc, mvsUtils::EFileType::depthMap, 0), w, h, depthMap, imageIO::EImageQuality::LOSSLESS,  imageIO::EImageColorSpace::NO_CONVERSION, metadata);
-    imageIO::writeImage(getFileNameFromIndex(mp, rc, mvsUtils::EFileType::simMap, 0), w, h, simMap, imageIO::EImageQuality::OPTIMIZED,  imageIO::EImageColorSpace::NO_CONVERSION, metadata);
+    using namespace imageIO;
+    OutputFileColorSpace colorspace(EImageColorSpace::NO_CONVERSION);
+    writeImage(getFileNameFromIndex(mp, rc, mvsUtils::EFileType::depthMap, 0), w, h, depthMap, EImageQuality::LOSSLESS,  colorspace, metadata);
+    writeImage(getFileNameFromIndex(mp, rc, mvsUtils::EFileType::simMap, 0), w, h, simMap, EImageQuality::OPTIMIZED,  colorspace, metadata);
 
     if(mp->verbose)
         ALICEVISION_LOG_DEBUG(rc << " solved.");

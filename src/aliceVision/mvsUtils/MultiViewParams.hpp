@@ -251,9 +251,11 @@ public:
     double getCamsMinPixelSize(const Point3d& x0, std::vector<unsigned short>* tcams) const;
     double getCamsMinPixelSize(const Point3d& x0, StaticVector<int>& tcams) const;
 
-    bool isPixelInImage(const Pixel& pix, int d, int camId) const;
+    bool isPixelInSourceImage(const Pixel& pixRC, int camId, int margin) const;
+    bool isPixelInImage(const Pixel& pix, int camId, int margin) const;
     bool isPixelInImage(const Pixel& pix, int camId) const;
     bool isPixelInImage(const Point2d& pix, int camId) const;
+    bool isPixelInImage(const Point2d& pix, int camId, int margin) const;
     void decomposeProjectionMatrix(Point3d& Co, Matrix3x3& Ro, Matrix3x3& iRo, Matrix3x3& Ko, Matrix3x3& iKo, Matrix3x3& iPo, const Matrix3x4& P) const;
 
     /**

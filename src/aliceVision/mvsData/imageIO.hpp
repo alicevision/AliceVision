@@ -7,7 +7,6 @@
 #pragma once
 
 #include <string>
-#include <vector>
 
 #include <OpenImageIO/paramlist.h>
 
@@ -17,8 +16,20 @@ namespace aliceVision {
 
 class rgb;
 class Color;
+class Image;
 
 namespace imageIO {
+
+/**
+ * @brief Available image file types for pipeline output
+ */
+enum class EImageFileType
+{
+  JPEG,
+  PNG,
+  TIFF,
+  EXR
+};
 
 /**
  * @brief Available image color space for pipeline input / output
@@ -31,6 +42,28 @@ enum class EImageColorSpace
   NO_CONVERSION
 };
 
+
+struct OutputFileColorSpace
+{
+    EImageColorSpace from{EImageColorSpace::LINEAR};
+    EImageColorSpace to{EImageColorSpace::AUTO};
+
+    OutputFileColorSpace(EImageColorSpace from_, EImageColorSpace to_)
+        : from(from_)
+        , to(to_)
+    {
+    }
+    /// @brief Assumes that @p from is LINEAR
+    explicit OutputFileColorSpace(EImageColorSpace to_)
+    {
+        if(to_ == EImageColorSpace::NO_CONVERSION)
+            to = from;
+        else
+            to = to_;
+    }
+    OutputFileColorSpace() = default;
+};
+
 /**
  * @brief Available image qualities for pipeline output
  */
@@ -39,6 +72,8 @@ enum class EImageQuality
   OPTIMIZED,
   LOSSLESS
 };
+
+std::string EImageColorSpace_enumToString(const EImageColorSpace colorSpace);
 
 /**
  * @brief get informations about each image quality
@@ -84,6 +119,42 @@ std::istream& operator>>(std::istream& in, EImageQuality& imageQuality);
 oiio::ParamValueList getMetadataFromMap(const std::map<std::string, std::string>& metadataMap);
 
 /**
+ * @brief get informations about each image file type
+ * @return String
+ */
+std::string EImageFileType_informations();
+
+/**
+ * @brief returns the EImageFileType enum from a string.
+ * @param[in] imageFileType the input string.
+ * @return the associated EImageFileType enum.
+ */
+EImageFileType EImageFileType_stringToEnum(const std::string& imageFileType);
+
+/**
+ * @brief converts an EImageFileType enum to a string.
+ * @param[in] imageFileType the EImageFileType enum to convert.
+ * @return the string associated to the EImageFileType enum.
+ */
+std::string EImageFileType_enumToString(const EImageFileType imageFileType);
+
+/**
+ * @brief write an EImageFileType enum into a stream by converting it to a string.
+ * @param[in] os the stream where to write the imageType.
+ * @param[in] imageFileType the EImageFileType enum to write.
+ * @return the modified stream.
+ */
+std::ostream& operator<<(std::ostream& os, EImageFileType imageFileType);
+
+/**
+ * @brief read a EImageFileType enum from a stream.
+ * @param[in] in the stream from which the enum is read.
+ * @param[out] imageFileType the EImageFileType enum read from the stream.
+ * @return the modified stream without the read enum.
+ */
+std::istream& operator>>(std::istream& in, EImageFileType& imageFileType);
+
+/**
  * @brief read image dimension from a given path
  * @param[in] path The given path to the image
  * @param[out] width The image width
@@ -100,6 +171,13 @@ void readImageSpec(const std::string& path, int& width, int& height, int& nchann
 void readImageMetadata(const std::string& path, oiio::ParamValueList& metadata);
 
 /**
+ * @brief Test if the extension is supported for undistorted images.
+ * @param[in] ext The extension with the dot (eg ".png")
+ * @return \p true if the extension is supported.
+ */
+bool isSupportedUndistortFormat(const std::string &ext);
+
+/**
  * @brief read an image with a given path and buffer
  * @param[in] path The given path to the image
  * @param[out] width The output image width
@@ -112,6 +190,7 @@ void readImage(const std::string& path, int& width, int& height, std::vector<uns
 void readImage(const std::string& path, int& width, int& height, std::vector<rgb>& buffer, EImageColorSpace imageColorSpace);
 void readImage(const std::string& path, int& width, int& height, std::vector<float>& buffer, EImageColorSpace imageColorSpace);
 void readImage(const std::string& path, int& width, int& height, std::vector<Color>& buffer, EImageColorSpace imageColorSpace);
+void readImage(const std::string& path, Image& image, EImageColorSpace imageColorSpace);
 
 /**
  * @brief write an image with a given path and buffer
@@ -120,11 +199,12 @@ void readImage(const std::string& path, int& width, int& height, std::vector<Col
  * @param[in] height The input image height
  * @param[in] buffer The input image buffer
  */
-void writeImage(const std::string& path, int width, int height, const std::vector<unsigned char>& buffer, EImageQuality imageQuality, EImageColorSpace imageColorSpace, const oiio::ParamValueList& metadata = oiio::ParamValueList());
-void writeImage(const std::string& path, int width, int height, const std::vector<unsigned short>& buffer, EImageQuality imageQuality, EImageColorSpace imageColorSpace, const oiio::ParamValueList& metadata = oiio::ParamValueList());
-void writeImage(const std::string& path, int width, int height, const std::vector<rgb>& buffer, EImageQuality imageQuality, EImageColorSpace imageColorSpace, const oiio::ParamValueList& metadata = oiio::ParamValueList());
-void writeImage(const std::string& path, int width, int height, const std::vector<float>& buffer, EImageQuality imageQuality, EImageColorSpace imageColorSpace, const oiio::ParamValueList& metadata = oiio::ParamValueList());
-void writeImage(const std::string& path, int width, int height, const std::vector<Color>& buffer, EImageQuality imageQuality, EImageColorSpace imageColorSpace, const oiio::ParamValueList& metadata = oiio::ParamValueList());
+void writeImage(const std::string& path, int width, int height, const std::vector<unsigned char>& buffer, EImageQuality imageQuality, OutputFileColorSpace& colorspace, const oiio::ParamValueList& metadata = oiio::ParamValueList());
+void writeImage(const std::string& path, int width, int height, const std::vector<unsigned short>& buffer, EImageQuality imageQuality, OutputFileColorSpace& colorspace, const oiio::ParamValueList& metadata = oiio::ParamValueList());
+void writeImage(const std::string& path, int width, int height, const std::vector<rgb>& buffer, EImageQuality imageQuality, OutputFileColorSpace& colorspace, const oiio::ParamValueList& metadata = oiio::ParamValueList());
+void writeImage(const std::string& path, int width, int height, const std::vector<float>& buffer, EImageQuality imageQuality, OutputFileColorSpace& colorspace, const oiio::ParamValueList& metadata = oiio::ParamValueList());
+void writeImage(const std::string& path, int width, int height, const std::vector<Color>& buffer, EImageQuality imageQuality, OutputFileColorSpace& colorspace, const oiio::ParamValueList& metadata = oiio::ParamValueList());
+void writeImage(const std::string& path, Image& image, EImageQuality imageQuality, OutputFileColorSpace& colorspace, const oiio::ParamValueList& metadata = oiio::ParamValueList());
 
 /**
  * @brief transpose a given image buffer
@@ -136,6 +216,7 @@ void transposeImage(int width, int height, std::vector<unsigned char>& buffer);
 void transposeImage(int width, int height, std::vector<rgb>& buffer);
 void transposeImage(int width, int height, std::vector<float>& buffer);
 void transposeImage(int width, int height, std::vector<Color>& buffer);
+void transposeImage(Image& image);
 
 /**
  * @brief resize a given image buffer
@@ -153,6 +234,7 @@ void resizeImage(int inWidth, int inHeight, int downscale, const std::vector<uns
 void resizeImage(int inWidth, int inHeight, int downscale, const std::vector<rgb>& inBuffer, std::vector<rgb>& outBuffer, const std::string& filter = "", float filterSize = 0);
 void resizeImage(int inWidth, int inHeight, int downscale, const std::vector<float>& inBuffer, std::vector<float>& outBuffer, const std::string& filter = "", float filterSize = 0);
 void resizeImage(int inWidth, int inHeight, int downscale, const std::vector<Color>& inBuffer, std::vector<Color>& outBuffer, const std::string& filter = "", float filterSize = 0);
+void resizeImage(int downscale, const Image& inImage, Image& outImage,  const std::string& filter = "", float filterSize = 0);
 
 /**
  * @brief convolve a given image buffer
@@ -170,6 +252,7 @@ void convolveImage(int inWidth, int inHeight, const std::vector<unsigned char>& 
 void convolveImage(int inWidth, int inHeight, const std::vector<rgb>& inBuffer, std::vector<rgb>& outBuffer, const std::string& kernel = "gaussian", float kernelWidth = 5.0f, float kernelHeight = 5.0f);
 void convolveImage(int inWidth, int inHeight, const std::vector<float>& inBuffer, std::vector<float>& outBuffer, const std::string& kernel = "gaussian", float kernelWidth = 5.0f, float kernelHeight = 5.0f);
 void convolveImage(int inWidth, int inHeight, const std::vector<Color>& inBuffer, std::vector<Color>& outBuffer, const std::string& kernel = "gaussian", float kernelWidth = 5.0f, float kernelHeight = 5.0f);
+void convolveImage(const Image& inImage, Image& outImage, const std::string& kernel = "gaussian", float kernelWidth = 5.0f, float kernelHeight = 5.0f);
 
 /**
  * @brief fill holes in a given image buffer with plausible values
@@ -179,6 +262,7 @@ void convolveImage(int inWidth, int inHeight, const std::vector<Color>& inBuffer
  * @param[in] alphaBuffer The input alpha buffer containing 0.0/1.0 for empty/valid pixels
  */
 void fillHoles(int inWidth, int inHeight, std::vector<Color>& colorBuffer, const std::vector<float>& alphaBuffer);
+void fillHoles(Image& image, const std::vector<float>& alphaBuffer);
 
 } // namespace imageIO
 } // namespace aliceVision

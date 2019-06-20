@@ -13,9 +13,10 @@
 namespace aliceVision {
 namespace mvsUtils {
 
-ImagesCache::ImagesCache(const MultiViewParams* _mp, int _bandType)
+ImagesCache::ImagesCache(const MultiViewParams* _mp, int _bandType, imageIO::EImageColorSpace colorspace)
   : mp(_mp)
   , bandType( _bandType )
+  , _colorspace(colorspace)
 {
     std::vector<std::string> _imagesNames;
     for(int rc = 0; rc < _mp->getNbCameras(); rc++)
@@ -25,9 +26,10 @@ ImagesCache::ImagesCache(const MultiViewParams* _mp, int _bandType)
     initIC( _imagesNames );
 }
 
-ImagesCache::ImagesCache(const MultiViewParams* _mp, int _bandType, std::vector<std::string>& _imagesNames)
+ImagesCache::ImagesCache(const MultiViewParams* _mp, int _bandType, imageIO::EImageColorSpace colorspace, std::vector<std::string>& _imagesNames)
   : mp(_mp)
   , bandType( _bandType )
+  , _colorspace(colorspace)
 {
     initIC( _imagesNames );
 }
@@ -37,18 +39,15 @@ void ImagesCache::initIC( std::vector<std::string>& _imagesNames )
     float oneimagemb = (sizeof(Color) * mp->getMaxImageWidth() * mp->getMaxImageHeight()) / 1024.f / 1024.f;
     float maxmbCPU = (float)mp->userParams.get<int>("images_cache.maxmbCPU", 5000);
     int _npreload = std::max((int)(maxmbCPU / oneimagemb), 5); // image cache has a minimum size of 5
-    N_PRELOADED_IMAGES = std::min(mp->ncams, _npreload);
+    _npreload = std::min(mp->ncams, _npreload);
 
     for(int rc = 0; rc < mp->ncams; rc++)
     {
         imagesNames.push_back(_imagesNames[rc]);
     }
 
-    imgs.resize(N_PRELOADED_IMAGES); // = new Color*[N_PRELOADED_IMAGES];
-
     camIdMapId.resize( mp->ncams, -1 );
-    mapIdCamId.resize( N_PRELOADED_IMAGES, -1 );
-    mapIdClock.resize( N_PRELOADED_IMAGES, clock() );
+    setCacheSize(_npreload);
 
     {
         // Cannot resize the vector<mutex> directly, as mutex class is not move-constructible.
@@ -61,8 +60,12 @@ void ImagesCache::initIC( std::vector<std::string>& _imagesNames )
 
 }
 
-ImagesCache::~ImagesCache()
+void ImagesCache::setCacheSize(int nbPreload)
 {
+    N_PRELOADED_IMAGES = nbPreload;
+    imgs.resize(N_PRELOADED_IMAGES);
+    mapIdCamId.resize( N_PRELOADED_IMAGES, -1 );
+    mapIdClock.resize( N_PRELOADED_IMAGES, clock() );
 }
 
 void ImagesCache::refreshData(int camId)
@@ -87,14 +90,13 @@ void ImagesCache::refreshData(int camId)
         long t1 = clock();
         if (imgs[mapId] == nullptr)
         {
-            const std::size_t maxSize = mp->getMaxImageWidth() * mp->getMaxImageHeight();
-            imgs[mapId] = std::make_shared<Img>( maxSize );
+            const int maxWidth = mp->getMaxImageWidth();
+            const int maxHeight = mp->getMaxImageHeight();
+            imgs[mapId] = std::make_shared<Image>(maxWidth, maxHeight);
         }
 
         const std::string imagePath = imagesNames.at(camId);
-        memcpyRGBImageFromFileToArr(camId, imgs[mapId]->data, imagePath, mp, bandType);
-        imgs[mapId]->setWidth(  mp->getWidth(camId) );
-        imgs[mapId]->setHeight( mp->getHeight(camId) );
+        loadImage(imagePath, mp, camId, *(imgs[mapId]),  bandType, _colorspace);
 
         ALICEVISION_LOG_DEBUG("Add " << imagePath << " to image cache. " << formatElapsedTime(t1));
     }
@@ -118,7 +120,7 @@ Color ImagesCache::getPixelValueInterpolated(const Point2d* pix, int camId)
 {
     // get the image index in the memory
     const int i = camIdMapId[camId];
-    const ImgPtr& img = imgs[i];
+    const ImgSharedPtr& img = imgs[i];
     
     const int xp = static_cast<int>(pix->x);
     const int yp = static_cast<int>(pix->y);

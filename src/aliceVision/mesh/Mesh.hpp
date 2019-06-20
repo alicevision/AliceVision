@@ -169,8 +169,8 @@ public:
     double computeTriangleProjectionArea(const triangle_proj& tp) const;
     double computeTriangleArea(int idTri) const;
     Mesh::triangle_proj getTriangleProjection(int triid, const mvsUtils::MultiViewParams* mp, int rc, int w, int h) const;
-    bool isTriangleProjectionInImage(const Mesh::triangle_proj& tp, int width, int height, int margin) const;
-    int getTriangleNbVertexInImage(const Mesh::triangle_proj& tp, int width, int height, int margin) const;
+    bool isTriangleProjectionInImage(const mvsUtils::MultiViewParams& mp, const Mesh::triangle_proj& tp, int camId, int margin) const;
+    int getTriangleNbVertexInImage(const mvsUtils::MultiViewParams& mp, const Mesh::triangle_proj& tp, int camId, int margin) const;
     bool doesTriangleIntersectsRectangle(Mesh::triangle_proj* tp, Mesh::rectangle* re);
     StaticVector<Point2d>* getTrianglePixelIntersectionsAndInternalPoints(Mesh::triangle_proj* tp,
                                                                           Mesh::rectangle* re);
