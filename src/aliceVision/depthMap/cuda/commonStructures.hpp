@@ -1217,6 +1217,41 @@ struct TexturedArray
 typedef std::vector<TexturedArray> Pyramid;
 typedef std::vector<Pyramid> Pyramids;
 
+/**
+* @notes: use normalized coordinates
+*/
+template <class Type>
+struct CudaTexture
+{
+    cudaTextureObject_t textureObj = 0;
+    CudaTexture(CudaDeviceMemoryPitched<Type, 2>& buffer_dmp)
+    {
+        cudaTextureDesc  tex_desc;
+        memset(&tex_desc, 0, sizeof(cudaTextureDesc));
+        tex_desc.normalizedCoords = 0; // addressed (x,y) in [width,height]
+        tex_desc.addressMode[0] = cudaAddressModeClamp;
+        tex_desc.addressMode[1] = cudaAddressModeClamp;
+        tex_desc.addressMode[2] = cudaAddressModeClamp;
+        tex_desc.readMode = cudaReadModeElementType;
+        tex_desc.filterMode = cudaFilterModePoint;
+
+        cudaResourceDesc res_desc;
+        res_desc.resType = cudaResourceTypePitch2D;
+        res_desc.res.pitch2D.desc = cudaCreateChannelDesc<Type>();
+        res_desc.res.pitch2D.devPtr = buffer_dmp.getBuffer();
+        res_desc.res.pitch2D.width = buffer_dmp.getSize()[0];
+        res_desc.res.pitch2D.height = buffer_dmp.getSize()[1];
+        res_desc.res.pitch2D.pitchInBytes = buffer_dmp.getPitch();
+
+        // create texture object: we only have to do this once!
+        cudaCreateTextureObject(&textureObj, &res_desc, &tex_desc, NULL);
+    }
+    ~CudaTexture()
+    {
+        cudaDestroyTextureObject(textureObj);
+    }
+};
+
 } // namespace depthMap
 } // namespace aliceVision
 
