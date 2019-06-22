@@ -96,6 +96,7 @@ void RefineRc::refineAndFuseDepthSimMapCUDA(DepthSimMap& out_depthSimMapFused, c
 
     StaticVector<const DepthSimMap*> dataMaps;
     dataMaps.reserve(_refineTCams.size() + 1);
+    // Put the raw SGM result first:
     dataMaps.push_back(&depthPixSizeMapVis); //!!DO NOT ERASE!!!
 
     const int scale = 1;
@@ -112,9 +113,12 @@ void RefineRc::refineAndFuseDepthSimMapCUDA(DepthSimMap& out_depthSimMapFused, c
 
         dataMaps.push_back(depthSimMapC);
 
-        // if(_sp.exportIntermediateResults)
-        //     depthSimMapC->saveToImage(_sp.mp.getDepthMapsFolder() + "refine_photo_" + std::to_string(_sp.mp.getViewId(_rc)) + "_tc_" +
-        //                                    std::to_string(_sp.mp.getViewId(tc)) + ".png", -2.0f);
+        if (_sp.exportIntermediateResults)
+        {
+            depthSimMapC->save("_refine_tc_" + std::to_string(tc) + "_" + std::to_string(_sp.mp.getViewId(tc)));
+        //     // depthSimMapC->saveToImage(_sp.mp.getDepthMapsFolder() + "refine_photo_" + std::to_string(_sp.mp.getViewId(_rc)) + "_tc_" +
+        //     //                           std::to_string(_sp.mp.getViewId(tc)) + ".png", -2.0f);
+        }
     }
 
     // in order to fit into GPU memory
