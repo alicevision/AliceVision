@@ -207,40 +207,47 @@ float DepthSimMap::getPercentileDepth(float perc) const
 void DepthSimMap::getDepthMapStep1(StaticVector<float>& out_depthMap) const
 {
     // Size of our input image (with _scale applied)
-    int wdm = _mp.getWidth(_rc) / _scale;
-    int hdm = _mp.getHeight(_rc) / _scale;
+    const int wdm = _mp.getWidth(_rc) / _scale;
+    const int hdm = _mp.getHeight(_rc) / _scale;
 
     // Create a depth map at the size of our input image
     out_depthMap.resize(wdm * hdm);
 
-    for (int i = 0; i < wdm * hdm; i++)
+    const double ratio = 1.0 / double(_step);
+
+    ALICEVISION_LOG_DEBUG("DepthSimMap::getDepthMapStep1: ratio=" << ratio);
+    for (int y = 0; y < hdm; ++y)
     {
-        int x = (i % wdm) / _step;
-        int y = (i / wdm) / _step;
-        if ((x < _w) && (y < _h))
+        const int oy = y * ratio;
+        for (int x = 0; x < wdm; ++x)
         {
-            // dsm size: (width, height) / (_scale*step)
-            float depth = _dsm[y * _w + x].depth;
-            // depthMap size: (width, height) / _scale
-            out_depthMap[i] = depth;
+            const int ox = x * ratio;
+            const float depth = getPixelValueInterpolated(_dsm, ox, oy, _w, _h).depth;
+            out_depthMap[y * wdm + x] = depth;
         }
     }
 }
 
 void DepthSimMap::getSimMapStep1(StaticVector<float>& out_simMap) const
 {
-    int wdm = _mp.getWidth(_rc) / _scale;
-    int hdm = _mp.getHeight(_rc) / _scale;
+    // Size of our input image (with _scale applied)
+    const int wdm = _mp.getWidth(_rc) / _scale;
+    const int hdm = _mp.getHeight(_rc) / _scale;
 
+    // Create a depth map at the size of our input image
     out_simMap.resize(wdm * hdm);
-    for (int i = 0; i < wdm * hdm; i++)
+
+    const double ratio = 1.0 / double(_step);
+
+    ALICEVISION_LOG_DEBUG("DepthSimMap::getDepthMapStep1: ratio=" << ratio);
+    for (int y = 0; y < hdm; ++y)
     {
-        int x = (i % wdm) / _step;
-        int y = (i / wdm) / _step;
-        if ((x < _w) && (y < _h))
+        const int oy = y * ratio;
+        for (int x = 0; x < wdm; ++x)
         {
-            float sim = _dsm[y * _w + x].sim;
-            out_simMap[i] = sim;
+            const int ox = x * ratio;
+            const float sim = getPixelValueInterpolated(_dsm, ox, oy, _w, _h).sim;
+            out_simMap[y * wdm + x] = sim;
         }
     }
 }
