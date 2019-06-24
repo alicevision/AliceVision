@@ -487,7 +487,6 @@ void Texturing::generateTexturesSubSet(const mvsUtils::MultiViewParams& mp,
         ALICEVISION_LOG_INFO("- camera " << mp.getViewId(camId) << " (" << camId + 1 << "/" << mp.ncams << ") with contributions to " << cameraContributions.size() << " texture files:");
 
         //Load camera image from cache
-        imageCache.refreshData(camId);
         mvsUtils::ImagesCache::ImgSharedPtr imgPtr = imageCache.getImg_sync(camId);
         const Image& camImg = *imgPtr;
 
@@ -606,26 +605,34 @@ void Texturing::generateTexturesSubSet(const mvsUtils::MultiViewParams& mp,
 #if TEXTURING_MBB_DEBUG
         {
             // write the number of contribution per atlas frequency bands
-            for(std::size_t level = 0; level < accuPyramid.pyramid.size(); ++level)
+            if(!texParams.useScore)
             {
-                AccuImage& atlasLevelTexture =  accuPyramid.pyramid[level];
-
-                //write the number of contributions for each texture
-                std::vector<float> imgContrib(textureSize);
-
-                for(unsigned int yp = 0; yp < texParams.textureSide; ++yp)
+                for(std::size_t level = 0; level < accuPyramid.pyramid.size(); ++level)
                 {
-                    unsigned int yoffset = yp * texParams.textureSide;
-                    for(unsigned int xp = 0; xp < texParams.textureSide; ++xp)
-                    {
-                        unsigned int xyoffset = yoffset + xp;
-                        imgContrib[xyoffset] = atlasLevelTexture.imgCount[xyoffset];
-                    }
-                }
+                    AccuImage& atlasLevelTexture =  accuPyramid.pyramid[level];
 
-                const std::string textureName = "contrib_" + std::to_string(1001 + atlasID) + std::string("_") + std::to_string(level) + std::string(".") + EImageFileType_enumToString(textureFileType); // starts at '1001' for UDIM compatibility
-                bfs::path texturePath = outPath / textureName;
-                imageIO::writeImage(texturePath.string(), texParams.textureSide, texParams.textureSide, imgContrib, imageIO::EImageQuality::OPTIMIZED, imageIO::EImageColorSpace::AUTO);
+                    //write the number of contributions for each texture
+                    std::vector<float> imgContrib(textureSize);
+
+                    for(unsigned int yp = 0; yp < texParams.textureSide; ++yp)
+                    {
+                        unsigned int yoffset = yp * texParams.textureSide;
+                        for(unsigned int xp = 0; xp < texParams.textureSide; ++xp)
+                        {
+                            unsigned int xyoffset = yoffset + xp;
+                            imgContrib[xyoffset] = atlasLevelTexture.imgCount[xyoffset];
+                        }
+                    }
+
+                    const std::string textureName = "contrib_" + std::to_string(1001 + atlasID) + std::string("_") + std::to_string(level) + std::string(".") + EImageFileType_enumToString(textureFileType); // starts at '1001' for UDIM compatibility
+                    bfs::path texturePath = outPath / textureName;
+
+                    using namespace imageIO;
+                    OutputFileColorSpace colorspace(EImageColorSpace::SRGB, EImageColorSpace::AUTO);
+                    if(texParams.convertLAB)
+                        colorspace.from = EImageColorSpace::LAB;
+                    writeImage(texturePath.string(), texParams.textureSide, texParams.textureSide, imgContrib, EImageQuality::OPTIMIZED, colorspace);
+                }
             }
         }
 #endif

@@ -19,7 +19,7 @@
 #include <OpenEXR/half.h>
 
 #include <boost/filesystem.hpp>
-#include  <boost/algorithm/string/case_conv.hpp>
+#include <boost/algorithm/string/case_conv.hpp>
 
 #include <iostream>
 #include <algorithm>
