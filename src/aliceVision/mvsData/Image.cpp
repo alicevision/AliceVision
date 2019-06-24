@@ -7,6 +7,7 @@
 #include "Image.hpp"
 
 #include <aliceVision/mvsData/imageIO.hpp>
+#include <aliceVision/mvsData/imageAlgo.hpp>
 
 
 namespace aliceVision{
@@ -39,7 +40,7 @@ void Image::laplacianPyramid(std::vector<Image>& out_pyramidL, int nbBand, unsig
     //Create Laplacian pyramid
     for(int b = 0; b < nbBand-1; ++b)
     {
-        imageIO::resizeImage(static_cast<int>(downscale), img, imgDownscaled, "gaussian");
+        imageAlgo::resizeImage(static_cast<int>(downscale), img, imgDownscaled, "gaussian");
         img.imageDiff(imgDownscaled, out_pyramidL[b], downscale);
         img.swap(imgDownscaled);
 /*

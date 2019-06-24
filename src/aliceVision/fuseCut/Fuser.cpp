@@ -14,6 +14,7 @@
 #include <aliceVision/mvsUtils/common.hpp>
 #include <aliceVision/mvsUtils/fileIO.hpp>
 #include <aliceVision/mvsData/imageIO.hpp>
+#include <aliceVision/mvsData/imageAlgo.hpp>
 
 #include <boost/filesystem.hpp>
 #include <boost/accumulators/accumulators.hpp>
@@ -166,8 +167,8 @@ bool Fuser::filterGroupsRC(int rc, int pixSizeBall, int pixSizeBallWSP, int nNea
         imageIO::readImage(getFileNameFromIndex(mp, rc, mvsUtils::EFileType::depthMap, 1), width, height, depthMap.getDataWritable(), imageIO::EImageColorSpace::NO_CONVERSION);
         imageIO::readImage(getFileNameFromIndex(mp, rc, mvsUtils::EFileType::simMap, 1), width, height, simMap.getDataWritable(), imageIO::EImageColorSpace::NO_CONVERSION);
 
-        imageIO::transposeImage(width, height, depthMap.getDataWritable());
-        imageIO::transposeImage(width, height, simMap.getDataWritable());
+        imageAlgo::transposeImage(width, height, depthMap.getDataWritable());
+        imageAlgo::transposeImage(width, height, simMap.getDataWritable());
     }
 
     std::vector<unsigned char> numOfModalsMap(w * h, 0);
@@ -199,7 +200,7 @@ bool Fuser::filterGroupsRC(int rc, int pixSizeBall, int pixSizeBallWSP, int nNea
             imageIO::readImage(getFileNameFromIndex(mp, tc, mvsUtils::EFileType::depthMap, 1), width, height, tcdepthMap.getDataWritable(), imageIO::EImageColorSpace::NO_CONVERSION);
 
             // transpose image in-place, width/height are no more valid after this function.
-            imageIO::transposeImage(width, height, tcdepthMap.getDataWritable());
+            imageAlgo::transposeImage(width, height, tcdepthMap.getDataWritable());
         }
 
         if(!tcdepthMap.empty())
@@ -226,7 +227,7 @@ bool Fuser::filterGroupsRC(int rc, int pixSizeBall, int pixSizeBallWSP, int nNea
     {
       using namespace imageIO;
       OutputFileColorSpace colorspace(EImageColorSpace::NO_CONVERSION);
-      transposeImage(h, w, numOfModalsMap);
+      imageAlgo::transposeImage(h, w, numOfModalsMap);
       writeImage(getFileNameFromIndex(mp, rc, mvsUtils::EFileType::nmodMap), w, h, numOfModalsMap, EImageQuality::LOSSLESS, colorspace);
     }
 
@@ -274,9 +275,9 @@ bool Fuser::filterDepthMapsRC(int rc, int minNumOfModals, int minNumOfModalsWSP2
         imageIO::readImage(getFileNameFromIndex(mp, rc, mvsUtils::EFileType::simMap, 1), width, height, simMap, imageIO::EImageColorSpace::NO_CONVERSION);
         imageIO::readImage(getFileNameFromIndex(mp, rc, mvsUtils::EFileType::nmodMap), width, height, numOfModalsMap, imageIO::EImageColorSpace::NO_CONVERSION);
 
-        imageIO::transposeImage(width, height, depthMap);
-        imageIO::transposeImage(width, height, simMap);
-        imageIO::transposeImage(width, height, numOfModalsMap);
+        imageAlgo::transposeImage(width, height, depthMap);
+        imageAlgo::transposeImage(width, height, simMap);
+        imageAlgo::transposeImage(width, height, numOfModalsMap);
     }
 
     int nbDepthValues = 0;
@@ -309,8 +310,8 @@ bool Fuser::filterDepthMapsRC(int rc, int minNumOfModals, int minNumOfModalsWSP2
           ++nbDepthValues;
     }
 
-    imageIO::transposeImage(h, w, depthMap);
-    imageIO::transposeImage(h, w, simMap);
+    imageAlgo::transposeImage(h, w, depthMap);
+    imageAlgo::transposeImage(h, w, simMap);
 
     oiio::ParamValueList metadata = imageIO::getMetadataFromMap(mp->getMetadata(rc));
     metadata.push_back(oiio::ParamValue("AliceVision:nbDepthValues", oiio::TypeDesc::INT32, 1, &nbDepthValues));
@@ -356,7 +357,7 @@ float Fuser::computeAveragePixelSizeInHexahedron(Point3d* hexah, int step, int s
 
             imageIO::readImage(getFileNameFromIndex(mp, rc, mvsUtils::EFileType::depthMap, scale), width, height, rcdepthMap.getDataWritable(), imageIO::EImageColorSpace::NO_CONVERSION);
 
-            imageIO::transposeImage(width, height, rcdepthMap.getDataWritable());
+            imageAlgo::transposeImage(width, height, rcdepthMap.getDataWritable());
         }
 
         for(int i = 0; i < rcdepthMap.size(); i++)
@@ -455,7 +456,7 @@ void Fuser::divideSpaceFromDepthMaps(Point3d* hexah, float& minPixSize)
 
             imageIO::readImage(getFileNameFromIndex(mp, rc, mvsUtils::EFileType::depthMap, scale), width, height, depthMap.getDataWritable(), imageIO::EImageColorSpace::NO_CONVERSION);
 
-            imageIO::transposeImage(width, height, depthMap.getDataWritable());
+            imageAlgo::transposeImage(width, height, depthMap.getDataWritable());
         }
 
         for(int i = 0; i < sizeOfStaticVector<float>(&depthMap); i += stepPts)
@@ -501,7 +502,7 @@ void Fuser::divideSpaceFromDepthMaps(Point3d* hexah, float& minPixSize)
 
             imageIO::readImage(getFileNameFromIndex(mp, rc, mvsUtils::EFileType::depthMap, scale), width, height, depthMap.getDataWritable(), imageIO::EImageColorSpace::NO_CONVERSION);
 
-            imageIO::transposeImage(width, height, depthMap.getDataWritable());
+            imageAlgo::transposeImage(width, height, depthMap.getDataWritable());
         }
 
         for(int i = 0; i < depthMap.size(); i += stepPts)
@@ -767,8 +768,8 @@ std::string generateTempPtsSimsFiles(std::string tmpDir, mvsUtils::MultiViewPara
                 imageIO::readImage(getFileNameFromIndex(mp, rc, mvsUtils::EFileType::depthMap, scale), width, height, depthMap.getDataWritable(), imageIO::EImageColorSpace::NO_CONVERSION);
                 imageIO::readImage(getFileNameFromIndex(mp, rc, mvsUtils::EFileType::simMap, scale), width, height, simMap.getDataWritable(), imageIO::EImageColorSpace::NO_CONVERSION);
 
-                imageIO::transposeImage(width, height, depthMap.getDataWritable());
-                imageIO::transposeImage(width, height, simMap.getDataWritable());
+                imageAlgo::transposeImage(width, height, depthMap.getDataWritable());
+                imageAlgo::transposeImage(width, height, simMap.getDataWritable());
             }
 
             if(addRandomNoise)

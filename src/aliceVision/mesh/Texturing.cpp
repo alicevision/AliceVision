@@ -16,6 +16,7 @@
 #include <aliceVision/mvsData/Pixel.hpp>
 #include <aliceVision/mvsData/Image.hpp>
 #include <aliceVision/mvsData/imageIO.hpp>
+#include <aliceVision/mvsData/imageAlgo.hpp>
 
 #include <geogram/basic/common.h>
 #include <geogram/basic/geometry_nd.h>
@@ -794,7 +795,7 @@ void Texturing::writeTexture(AccuImage& atlasTexture, const std::size_t atlasID,
                 alphaBuffer[xyoffset] = atlasTexture.imgCount[xyoffset] ? 1 : 0;
             }
         }
-        imageIO::fillHoles(atlasTexture.img, alphaBuffer);
+        imageAlgo::fillHoles(atlasTexture.img, alphaBuffer);
         alphaBuffer.clear();
     }
 
@@ -804,7 +805,7 @@ void Texturing::writeTexture(AccuImage& atlasTexture, const std::size_t atlasID,
         Image resizedColorBuffer;
 
         ALICEVISION_LOG_INFO("  - Downscaling texture (" << texParams.downscale << "x).");
-        imageIO::resizeImage(texParams.downscale, atlasTexture.img, resizedColorBuffer);
+        imageAlgo::resizeImage(texParams.downscale, atlasTexture.img, resizedColorBuffer);
         std::swap(resizedColorBuffer, atlasTexture.img);
     }
 
