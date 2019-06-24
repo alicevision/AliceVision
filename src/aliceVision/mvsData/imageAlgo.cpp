@@ -10,10 +10,105 @@
 #include <OpenImageIO/imagebuf.h>
 #include <OpenImageIO/imagebufalgo.h>
 
+#include <Eigen/Eigen>
+
 namespace aliceVision
 {
 namespace imageAlgo
 {
+
+float func_XYZtoLAB(float t)
+{
+    if(t > 0.008856f)
+        return std::pow(t, 1.0f/3.0f);
+    else
+        return t / 0.1284f + 0.1379f;
+}
+
+float func_LABtoXYZ(float t)
+{
+    if(t > 0.2069f)
+        return std::pow(t, 3.0f);
+    else
+        return 0.1284f * (t - 0.1379f);
+}
+
+void RGBtoXYZ(oiio::ImageBuf::Iterator<float>& pixel)
+{
+    const Eigen::Vector3f rgb(pixel[0], pixel[1], pixel[2]);
+    Eigen::Matrix3f M;
+    M << 0.4124f, 0.3576f, 0.1805f,
+            0.2126f, 0.7152f, 0.0722f,
+            0.0193f, 0.1192f, 0.9504f;
+    const Eigen::Vector3f xyz_vec = M * rgb;
+
+    pixel[0] = xyz_vec[0] * 0.9505f;
+    pixel[1] = xyz_vec[1];
+    pixel[2] = xyz_vec[2] * 1.0890f;
+}
+
+void XYZtoRGB(oiio::ImageBuf::Iterator<float>& pixel)
+{
+    const Eigen::Vector3f xyz(pixel[0] / 0.9505f, pixel[1], pixel[2] / 1.0890f);
+    Eigen::Matrix3f M;
+    M << 3.2406f, -1.5372f, -0.4986f,
+            -0.9689f, 1.8758f, 0.0415f,
+            0.0557f, -0.2040f, 1.0570f;
+    const Eigen::Vector3f rgb_vec = M * xyz;
+
+    pixel[0] = rgb_vec[0];
+    pixel[1] = rgb_vec[1];
+    pixel[2] = rgb_vec[2];
+}
+
+void XYZtoLAB(oiio::ImageBuf::Iterator<float>& pixel)
+{
+    float L = 116.0f * func_XYZtoLAB(pixel[1]) - 16.0f;
+    float A = 500.0f * (func_XYZtoLAB(pixel[0]) - func_XYZtoLAB(pixel[1]));
+    float B = 200.0f * (func_XYZtoLAB(pixel[1]) - func_XYZtoLAB(pixel[2]));
+
+    pixel[0] = L / 100.0f;
+    pixel[1] = A / 100.0f;
+    pixel[2] = B / 100.0f;
+}
+
+void LABtoXYZ(oiio::ImageBuf::Iterator<float>& pixel)
+{
+    float L_offset = (pixel[0] * 100.0f + 16.0f) / 116.0f;
+
+    pixel[0] = func_LABtoXYZ(L_offset + pixel[1] * 100.0f / 500.0f);
+    pixel[1] = func_LABtoXYZ(L_offset);
+    pixel[2] = func_LABtoXYZ(L_offset - pixel[2] * 100.0f / 200.0f);
+}
+
+void RGBtoLAB(oiio::ImageBuf::Iterator<float>& pixel)
+{
+    RGBtoXYZ(pixel);
+    XYZtoLAB(pixel);
+}
+
+void LABtoRGB(oiio::ImageBuf::Iterator<float>& pixel)
+{
+    LABtoXYZ(pixel);
+    XYZtoRGB(pixel);
+}
+
+void processImage(oiio::ImageBuf& image, std::function<void(oiio::ImageBuf::Iterator<float>&)> pixelFunc)
+{
+    oiio::ImageBufAlgo::parallel_image(image.roi(), [&image, &pixelFunc](oiio::ROI roi) {
+        for(oiio::ImageBuf::Iterator<float> pixel(image, roi); !pixel.done(); ++pixel)
+        {
+            pixelFunc(pixel);
+        }
+    });
+}
+
+void processImage(oiio::ImageBuf& dst, const oiio::ImageBuf& src, std::function<void(oiio::ImageBuf::Iterator<float>&)> pixelFunc)
+{
+    dst.copy(src);
+    processImage(dst, pixelFunc);
+}
+
 template<typename T>
 void transposeImage(oiio::TypeDesc typeDesc,
                     int width,

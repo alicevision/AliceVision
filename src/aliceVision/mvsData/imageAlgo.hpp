@@ -17,6 +17,24 @@ class Image;
 
 namespace imageAlgo
 {
+
+void RGBtoXYZ(oiio::ImageBuf::Iterator<float>& pixel);
+void XYZtoRGB(oiio::ImageBuf::Iterator<float>& pixel);
+
+void XYZtoLAB(oiio::ImageBuf::Iterator<float>& pixel);
+void LABtoXYZ(oiio::ImageBuf::Iterator<float>& pixel);
+
+void RGBtoLAB(oiio::ImageBuf::Iterator<float>& pixel);
+void LABtoRGB(oiio::ImageBuf::Iterator<float>& pixel);
+
+/**
+ * @brief split an image in chunks and proces them in parallel
+ * @param [in] image to process (in place or not)
+ * @param [in] pixelFunc the function to apply
+ */
+void processImage(oiio::ImageBuf& image, std::function<void(oiio::ImageBuf::Iterator<float>&)> pixelFunc);
+void processImage(oiio::ImageBuf& dst, const oiio::ImageBuf& src, std::function<void(oiio::ImageBuf::Iterator<float>&)> pixelFunc);
+
 /**
  * @brief transpose a given image buffer
  * @param[in] width The image buffer width

@@ -39,6 +39,7 @@ enum class EImageColorSpace
   AUTO,
   LINEAR,
   SRGB,
+  LAB,
   NO_CONVERSION
 };
 

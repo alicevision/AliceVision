@@ -10,6 +10,7 @@
 #include <aliceVision/mvsData/Color.hpp>
 #include <aliceVision/mvsData/Rgb.hpp>
 #include <aliceVision/mvsData/Image.hpp>
+#include <aliceVision/mvsData/imageAlgo.hpp>
 
 #include <OpenImageIO/imageio.h>
 #include <OpenImageIO/imagebuf.h>
@@ -42,6 +43,7 @@ std::string EImageColorSpace_enumToString(const EImageColorSpace colorSpace)
     {
     case EImageColorSpace::SRGB:  return "sRGB"; // WARNING: string should match with OIIO definitions
     case EImageColorSpace::LINEAR:   return "Linear";
+    case EImageColorSpace::LAB: return "LAB";
     default: ;
     }
     throw std::out_of_range("No string defined for EImageColorSpace: " + std::to_string(int(colorSpace)));
@@ -266,6 +268,16 @@ void readImage(const std::string& path,
             ALICEVISION_LOG_TRACE("Convert image " << path << " from " << colorSpace << " to Linear colorspace");
         }
     }
+    else if(imageColorSpace == EImageColorSpace::LAB) //color conversion to LAB
+    {
+        if(colorSpace != "Linear") // image need to be converted in Linear colorspace first
+        {
+            oiio::ImageBufAlgo::colorconvert(inBuf, inBuf, colorSpace, "Linear");
+            ALICEVISION_LOG_TRACE("Convert image " << path << " from " << colorSpace << " to Linear colorspace for La*b* conversion");
+        }
+        imageAlgo::processImage(inBuf, &imageAlgo::RGBtoLAB);
+        ALICEVISION_LOG_TRACE("Convert image " << path << " from Linear to La*b* colorspace");
+    }
 
     // convert to grayscale if needed
     if(nchannels == 1 && inSpec.nchannels >= 3)
@@ -374,6 +386,7 @@ void writeImage(const std::string& path,
         colorspace.to = EImageColorSpace::LINEAR;
     }
 
+
     ALICEVISION_LOG_DEBUG("[IO] Write Image: " << path << std::endl
                        << "\t- width: " << width << std::endl
                        << "\t- height: " << height << std::endl
@@ -392,6 +405,12 @@ void writeImage(const std::string& path,
     oiio::ImageBuf colorspaceBuf;  // buffer for image colorspace modification
     if(colorspace.from != colorspace.to)
     {
+      if(colorspace.from == imageIO::EImageColorSpace::LAB)
+      {
+          imageAlgo::processImage(colorspaceBuf, *outBuf, &imageAlgo::LABtoRGB);
+          outBuf = &colorspaceBuf;
+          colorspace.from = imageIO::EImageColorSpace::LINEAR;
+      }
       oiio::ImageBufAlgo::colorconvert(colorspaceBuf, *outBuf, EImageColorSpace_enumToString(colorspace.from), EImageColorSpace_enumToString(colorspace.to));
       outBuf = &colorspaceBuf;
     }

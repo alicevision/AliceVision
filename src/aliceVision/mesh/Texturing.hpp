@@ -64,6 +64,7 @@ EVisibilityRemappingMethod EVisibilityRemappingMethod_stringToEnum(const std::st
 
 struct TexturingParams
 {
+    bool convertLAB = false;
     bool useScore = true;
     unsigned int nbBand = 4;
     unsigned int multiBandDownscale = 4;

@@ -277,11 +277,16 @@ void Texturing::generateTextures(const mvsUtils::MultiViewParams &mp,
 
     std::partial_sum(m.begin(), m.end(), m.begin());
 
-    mvsUtils::ImagesCache imageCache(&mp, 0, imageIO::EImageColorSpace::SRGB);
+    imageIO::EImageColorSpace colorspace{imageIO::EImageColorSpace::SRGB};
+    if(texParams.convertLAB)
+    {
+        colorspace = imageIO::EImageColorSpace::LAB;
+    }
+    mvsUtils::ImagesCache imageCache(&mp, 0, colorspace);
     imageCache.setCacheSize(2);
-    system::MemoryInfo memInfo = system::getMemoryInfo();
 
     //calculate the maximum number of atlases in memory in Mb
+    system::MemoryInfo memInfo = system::getMemoryInfo();
     const std::size_t atlasContribMemSize = texParams.textureSide * texParams.textureSide * (sizeof(Color)+sizeof(int)) / std::pow(2,20); //Mb
     const std::size_t imageMaxMemSize =  mp.getMaxImageWidth() * mp.getMaxImageHeight() * sizeof(Color) / std::pow(2,20); //Mb
     const std::size_t pyramidMaxMemSize = texParams.nbBand * atlasContribMemSize;
@@ -815,6 +820,8 @@ void Texturing::writeTexture(AccuImage& atlasTexture, const std::size_t atlasID,
 
     using namespace imageIO;
     OutputFileColorSpace colorspace(EImageColorSpace::SRGB, EImageColorSpace::AUTO);
+    if(texParams.convertLAB)
+        colorspace.from = EImageColorSpace::LAB;
     writeImage(texturePath.string(), atlasTexture.img, EImageQuality::OPTIMIZED, colorspace);
 }
 
