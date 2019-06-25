@@ -44,6 +44,7 @@ std::string EImageColorSpace_enumToString(const EImageColorSpace colorSpace)
     case EImageColorSpace::SRGB:  return "sRGB"; // WARNING: string should match with OIIO definitions
     case EImageColorSpace::LINEAR:   return "Linear";
     case EImageColorSpace::LAB: return "LAB";
+    case EImageColorSpace::XYZ: return "XYZ";
     default: ;
     }
     throw std::out_of_range("No string defined for EImageColorSpace: " + std::to_string(int(colorSpace)));
@@ -278,6 +279,16 @@ void readImage(const std::string& path,
         imageAlgo::processImage(inBuf, &imageAlgo::RGBtoLAB);
         ALICEVISION_LOG_TRACE("Convert image " << path << " from Linear to La*b* colorspace");
     }
+    else if(imageColorSpace == EImageColorSpace::XYZ)
+    {
+        if(colorSpace != "Linear") // image need to be converted in Linear colorspace first
+        {
+            oiio::ImageBufAlgo::colorconvert(inBuf, inBuf, colorSpace, "Linear");
+            ALICEVISION_LOG_TRACE("Convert image " << path << " from " << colorSpace << " to Linear colorspace for La*b* conversion");
+        }
+        imageAlgo::processImage(inBuf, &imageAlgo::RGBtoXYZ);
+        ALICEVISION_LOG_TRACE("Convert image " << path << " from Linear to XYZ colorspace");
+    }
 
     // convert to grayscale if needed
     if(nchannels == 1 && inSpec.nchannels >= 3)
@@ -408,6 +419,12 @@ void writeImage(const std::string& path,
       if(colorspace.from == imageIO::EImageColorSpace::LAB)
       {
           imageAlgo::processImage(colorspaceBuf, *outBuf, &imageAlgo::LABtoRGB);
+          outBuf = &colorspaceBuf;
+          colorspace.from = imageIO::EImageColorSpace::LINEAR;
+      }
+      if(colorspace.from == imageIO::EImageColorSpace::XYZ)
+      {
+          imageAlgo::processImage(colorspaceBuf, *outBuf, &imageAlgo::XYZtoRGB);
           outBuf = &colorspaceBuf;
           colorspace.from = imageIO::EImageColorSpace::LINEAR;
       }

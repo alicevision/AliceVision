@@ -40,6 +40,7 @@ enum class EImageColorSpace
   LINEAR,
   SRGB,
   LAB,
+  XYZ,
   NO_CONVERSION
 };
 
