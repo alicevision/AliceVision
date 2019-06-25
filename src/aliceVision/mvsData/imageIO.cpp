@@ -50,6 +50,15 @@ std::string EImageColorSpace_enumToString(const EImageColorSpace colorSpace)
     throw std::out_of_range("No string defined for EImageColorSpace: " + std::to_string(int(colorSpace)));
 }
 
+EImageColorSpace EImageColorSpace_stringToEnum(const std::string& colorspace)
+{
+    if(colorspace == "sRGB") return EImageColorSpace::SRGB;
+    if(colorspace == "LAB") return  EImageColorSpace::LAB;
+    if(colorspace == "XYZ") return EImageColorSpace::XYZ;
+
+    throw std::out_of_range("No EImageColorSpace defined for string: " + colorspace);
+}
+
 
 std::string EImageQuality_informations()
 {

@@ -274,15 +274,10 @@ void Texturing::generateTextures(const mvsUtils::MultiViewParams &mp,
     {
         ALICEVISION_LOG_INFO("  - " << c);
     }
-
     std::partial_sum(m.begin(), m.end(), m.begin());
 
-    imageIO::EImageColorSpace colorspace{imageIO::EImageColorSpace::SRGB};
-    if(texParams.convertLAB)
-    {
-        colorspace = imageIO::EImageColorSpace::LAB;
-    }
-    mvsUtils::ImagesCache imageCache(&mp, 0, colorspace);
+    ALICEVISION_LOG_INFO("Texturing in " + imageIO::EImageColorSpace_enumToString(texParams.processColorspace) + " colorspace.");
+    mvsUtils::ImagesCache imageCache(&mp, 0, texParams.processColorspace);
     imageCache.setCacheSize(2);
 
     //calculate the maximum number of atlases in memory in Mb
@@ -826,9 +821,7 @@ void Texturing::writeTexture(AccuImage& atlasTexture, const std::size_t atlasID,
     ALICEVISION_LOG_INFO("  - Writing texture file: " << texturePath.string());
 
     using namespace imageIO;
-    OutputFileColorSpace colorspace(EImageColorSpace::SRGB, EImageColorSpace::AUTO);
-    if(texParams.convertLAB)
-        colorspace.from = EImageColorSpace::LAB;
+    OutputFileColorSpace colorspace(texParams.processColorspace, EImageColorSpace::AUTO);
     writeImage(texturePath.string(), atlasTexture.img, EImageQuality::OPTIMIZED, colorspace);
 }
 
