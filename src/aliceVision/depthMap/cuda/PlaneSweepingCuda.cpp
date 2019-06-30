@@ -137,6 +137,44 @@ static void cps_host_fillCameraData(mvsUtils::ImagesCache& ic, CameraStruct& cam
     ALICEVISION_LOG_DEBUG("cps_host_fillCameraData: " << c << " -b- Copy to HMH elapsed time: " << toc(t1) << " ms.");
 }
 
+
+void copy(CudaHostMemoryHeap<float2, 2>& outHmh, const StaticVector<DepthSim>& inDepthSimMap, int yFrom)
+{
+    const int w = outHmh.getSize()[0];
+    const int h = outHmh.getSize()[1];
+    for (int y = 0; y < h; ++y)
+    {
+        for (int x = 0; x < w; ++x)
+        {
+            int jO = (y + yFrom) * w + x;
+            float2& h_data = outHmh(x, y);
+            const DepthSim& data = inDepthSimMap[jO];
+            h_data.x = data.depth;
+            h_data.y = data.sim;
+        }
+    }
+}
+
+void copy(StaticVector<DepthSim>& outDepthSimMap, const CudaHostMemoryHeap<float2, 2>& inHmh, int yFrom)
+{
+    const int w = inHmh.getSize()[0];
+    const int h = inHmh.getSize()[1];
+    for (int y = 0; y < h; ++y)
+    {
+        for (int x = 0; x < w; ++x)
+        {
+            int jO = (y + yFrom) * w + x;
+            DepthSim& oDepthSim = outDepthSimMap[jO];
+            const float2& h_depthSim = inHmh(x, y);
+
+            oDepthSim.depth = h_depthSim.x;
+            oDepthSim.sim = h_depthSim.y;
+        }
+    }
+}
+
+
+
 PlaneSweepingCuda::PlaneSweepingCuda( int CUDADeviceNo,
                                       mvsUtils::ImagesCache&     ic,
                                       mvsUtils::MultiViewParams& mp,
@@ -960,7 +998,9 @@ bool PlaneSweepingCuda::fuseDepthSimMapsGaussianKernelVoting(int w, int h, Stati
 }
 
 bool PlaneSweepingCuda::optimizeDepthSimMapGradientDescent(StaticVector<DepthSim>& oDepthSimMap,
-                                                           StaticVector<const StaticVector<DepthSim>*>& dataMaps, int rc,
+                                                           const StaticVector<DepthSim>& sgmDepthPixSizeMap,
+                                                           const StaticVector<DepthSim>& refinedDepthSimMap,
+                                                           int rc,
                                                            int nSamplesHalf, int nDepthsToRefine, float sigma,
                                                            int nIters, int yFrom, int hPart)
 {
@@ -987,49 +1027,20 @@ bool PlaneSweepingCuda::optimizeDepthSimMapGradientDescent(StaticVector<DepthSim
     }
 
     // sweep
-    std::vector<CudaHostMemoryHeap<float2, 2>*> dataMaps_hmh(dataMaps.size());
-    for(int i = 0; i < dataMaps.size(); i++)
-    {
-        const StaticVector<DepthSim>& depthSimMap = *dataMaps[i];
-        dataMaps_hmh[i] = new CudaHostMemoryHeap<float2, 2>(CudaSize<2>(w, h));
-        CudaHostMemoryHeap<float2, 2>& dataMap_hmh = *dataMaps_hmh[i];
-        for(int y = 0; y < h; y++)
-        {
-            for(int x = 0; x < w; x++)
-            {
-                int jO = (y + yFrom) * w + x;
-                float2& h_data = dataMap_hmh(x, y);
-                const DepthSim& data = depthSimMap[jO];
-                h_data.x = data.depth;
-                h_data.y = data.sim;
-            }
-        }
-    }
+    CudaHostMemoryHeap<float2, 2> sgmDepthPixSizeMap_hmh(CudaSize<2>(w, h));
+    CudaHostMemoryHeap<float2, 2> refinedDepthSimMap_hmh(CudaSize<2>(w, h));
+    copy(sgmDepthPixSizeMap_hmh, sgmDepthPixSizeMap, yFrom);
+    copy(refinedDepthSimMap_hmh, refinedDepthSimMap, yFrom);
 
     CudaHostMemoryHeap<float2, 2> oDepthSimMap_hmh(CudaSize<2>(w, h));
 
-    ps_optimizeDepthSimMapGradientDescent(_pyramids, &oDepthSimMap_hmh, dataMaps_hmh,
-                                          dataMaps.size(), nSamplesHalf, nDepthsToRefine, nIters, sigma, ttcams,
+    ps_optimizeDepthSimMapGradientDescent(_pyramids, oDepthSimMap_hmh,
+                                          sgmDepthPixSizeMap_hmh, refinedDepthSimMap_hmh,
+                                          nSamplesHalf, nDepthsToRefine, nIters, sigma, ttcams,
                                           camsids.size(), w, h, scale - 1, _CUDADeviceNo, _nImgsInGPUAtTime,
                                           _mp.verbose, yFrom);
 
-    for(int y = 0; y < h; y++)
-    {
-        for(int x = 0; x < w; x++)
-        {
-            int jO = (y + yFrom) * w + x;
-            DepthSim& oDepthSim = oDepthSimMap[jO];
-            const float2& h_oDepthSim = oDepthSimMap_hmh(x, y);
-
-            oDepthSim.depth = h_oDepthSim.x;
-            oDepthSim.sim = h_oDepthSim.y;
-        }
-    }
-
-    for(int i = 0; i < dataMaps.size(); i++)
-    {
-        delete dataMaps_hmh[i];
-    }
+    copy(oDepthSimMap, oDepthSimMap_hmh, yFrom);
 
     mvsUtils::printfElapsedTime(t1);
 

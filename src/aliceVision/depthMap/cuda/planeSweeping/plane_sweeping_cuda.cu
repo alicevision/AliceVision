@@ -1015,8 +1015,9 @@ void ps_fuseDepthSimMapsGaussianKernelVoting(CudaHostMemoryHeap<float2, 2>* odep
 }
 
 void ps_optimizeDepthSimMapGradientDescent(Pyramids& ps_texs_arr,
-                                           CudaHostMemoryHeap<float2, 2>* odepthSimMap_hmh,
-                                           std::vector<CudaHostMemoryHeap<float2, 2>*>& dataMaps_hmh, int ndataMaps,
+                                           CudaHostMemoryHeap<float2, 2>& out_depthSimMap_hmh,
+                                           const CudaHostMemoryHeap<float2, 2>& sgmDepthPixSizeMap_hmh,
+                                           const CudaHostMemoryHeap<float2, 2>& refinedDepthSimMap_hmh,
                                            int nSamplesHalf, int nDepthsToRefine, int nIters, float sigma,
                                            const std::vector<CameraStruct>& cams,
                                            int ncams, int width, int height, int scale,
@@ -1032,31 +1033,26 @@ void ps_optimizeDepthSimMapGradientDescent(Pyramids& ps_texs_arr,
     dim3 block(block_size, block_size, 1);
     dim3 grid(divUp(width, block_size), divUp(height, block_size), 1);
 
-    std::vector<CudaDeviceMemoryPitched<float2, 2>*> dataMaps_dmp(ndataMaps);
-    for(int i = 0; i < ndataMaps; i++)
-    {
-        dataMaps_dmp[i] = new CudaDeviceMemoryPitched<float2, 2>(CudaSize<2>(width, height));
-        copy((*dataMaps_dmp[i]), (*dataMaps_hmh[i]));
-    }
+    const CudaDeviceMemoryPitched<float2, 2> sgmDepthPixSizeMap_dmp(sgmDepthPixSizeMap_hmh);
+    const CudaDeviceMemoryPitched<float2, 2> refinedDepthSimMap_dmp(refinedDepthSimMap_hmh);
 
     CudaDeviceMemoryPitched<float, 2> optDepthMap_dmp(CudaSize<2>(width, height));
     CudaDeviceMemoryPitched<float2, 2> optDepthSimMap_dmp(CudaSize<2>(width, height));
-    CudaArray<float, 2> optDepthMap_arr(CudaSize<2>(width, height));
-    copy(optDepthSimMap_dmp, (*dataMaps_dmp[0]));
+    copy(optDepthSimMap_dmp, sgmDepthPixSizeMap_dmp);
 
     cudaTextureObject_t rc_tex = ps_texs_arr[cams[0].camId][scale].tex;
 
-    CudaDeviceMemoryPitched<float, 2> variance_dmp(CudaSize<2>(width, height));
+    CudaDeviceMemoryPitched<float, 2> imgVariance_dmp(CudaSize<2>(width, height));
     {
         const dim3 lblock(32, 2, 1);
         const dim3 lgrid(divUp(width, block.x), divUp(height, block.y), 1);
 
         compute_varLofLABtoW_kernel<<<lgrid, lblock>>>
             (rc_tex,
-            variance_dmp.getBuffer(), variance_dmp.getPitch(),
+            imgVariance_dmp.getBuffer(), imgVariance_dmp.getPitch(),
             width, height);
     }
-    CudaTexture<float> varianceTex(variance_dmp);
+    CudaTexture<float> imgVarianceTex(imgVariance_dmp);
 
     for(int iter = 0; iter < nIters; iter++) // nIters: 100 by default
     {
@@ -1071,19 +1067,14 @@ void ps_optimizeDepthSimMapGradientDescent(Pyramids& ps_texs_arr,
         // Adjust depth/sim by using previously computed depths
         fuse_optimizeDepthSimMap_kernel<<<grid, block>>>(
             rc_tex, *cams[0].param_dev,
-            varianceTex.textureObj, depthTex.textureObj,
+            imgVarianceTex.textureObj, depthTex.textureObj,
             optDepthSimMap_dmp.getBuffer(), optDepthSimMap_dmp.getPitch(),
-            dataMaps_dmp[0]->getBuffer(), dataMaps_dmp[0]->getPitch(),
-            dataMaps_dmp[1]->getBuffer(), dataMaps_dmp[1]->getPitch(),
+            sgmDepthPixSizeMap_dmp.getBuffer(), sgmDepthPixSizeMap_dmp.getPitch(),
+            refinedDepthSimMap_dmp.getBuffer(), refinedDepthSimMap_dmp.getPitch(),
             width, height, iter, samplesPerPixSize, yFrom);
     }
 
-    copy((*odepthSimMap_hmh), optDepthSimMap_dmp);
-
-    for(int i = 0; i < ndataMaps; i++)
-    {
-        delete dataMaps_dmp[i];
-    }
+    copy(out_depthSimMap_hmh, optDepthSimMap_dmp);
 
     if(verbose)
         printf("gpu elapsed time: %f ms \n", toc(tall));

@@ -348,7 +348,15 @@ public:
     {
         return buffer[x];
     }
+    inline const Type& operator()(size_t x) const
+    {
+        return buffer[x];
+    }
     inline Type& operator()(size_t x, size_t y)
+    {
+        return getRow(y)[x];
+    }
+    inline const Type& operator()(size_t x, size_t y) const
     {
         return getRow(y)[x];
     }
@@ -363,9 +371,15 @@ public:
     }
 
 private:
-    inline Type* getRow( size_t row )
+    inline Type* getRow(size_t row)
     {
         unsigned char* ptr = getBytePtr();
+        ptr += row * this->getPitch();
+        return (Type*)ptr;
+    }
+    inline const Type* getRow(size_t row) const
+    {
+        const unsigned char* ptr = getBytePtr();
         ptr += row * this->getPitch();
         return (Type*)ptr;
     }

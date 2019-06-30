@@ -138,21 +138,13 @@ void ps_fuseDepthSimMapsGaussianKernelVoting(
 
 void ps_optimizeDepthSimMapGradientDescent(
     Pyramids& ps_texs_arr,
-    CudaHostMemoryHeap<float2, 2>* odepthSimMap_hmh,
-    std::vector<CudaHostMemoryHeap<float2, 2>*>& dataMaps_hmh,
-    int ndataMaps,
-    int nSamplesHalf,
-    int nDepthsToRefine,
-    int nIters,
-    float sigma,
+    CudaHostMemoryHeap<float2, 2>& out_depthSimMap_hmh,
+    const CudaHostMemoryHeap<float2, 2>& sgmDepthSimMap_hmh,
+    const CudaHostMemoryHeap<float2, 2>& refinedDepthSimMap_hmh,
+    int nSamplesHalf, int nDepthsToRefine, int nIters, float sigma,
     const std::vector<CameraStruct>& cams,
-    int ncams,
-    int width, int height,
-    int scale,
-    int CUDAdeviceNo,
-    int ncamsAllocated,
-    bool verbose,
-    int yFrom);
+    int ncams, int width, int height, int scale,
+    int CUDAdeviceNo, int ncamsAllocated, bool verbose, int yFrom);
 
 void ps_getSilhoueteMap(
     Pyramids& ps_texs_arr,

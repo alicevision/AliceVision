@@ -168,76 +168,66 @@ __device__ float2 getCellSmoothStepEnergy(const CameraStructBase& rc_cam, cudaTe
 
 __global__ void fuse_optimizeDepthSimMap_kernel(cudaTextureObject_t rc_tex,
                                                 const CameraStructBase& rc_cam,
-                                                cudaTextureObject_t varianceTex,
+                                                cudaTextureObject_t imgVarianceTex,
                                                 cudaTextureObject_t depthTex,
                                                 float2* out_optDepthSimMap, int optDepthSimMap_p,
-                                                float2* midDepthPixSizeMap, int midDepthPixSizeMap_p,
-                                                float2* fusedDepthSimMap, int fusedDepthSimMap_p, int width, int height,
+                                                const float2* sgmDepthPixSizeMap, int sgmDepthPixSizeMap_p,
+                                                const float2* refinedDepthSimMap, int refinedDepthSimMap_p, int width, int height,
                                                 int iter, float samplesPerPixSize, int yFrom)
 {
-    int x = blockIdx.x * blockDim.x + threadIdx.x;
-    int y = blockIdx.y * blockDim.y + threadIdx.y;
-    int2 pix = make_int2(x, y);
+    const int x = blockIdx.x * blockDim.x + threadIdx.x;
+    const int y = blockIdx.y * blockDim.y + threadIdx.y;
+    const int2 pix = make_int2(x, y);
 
     if(x >= width || y >= height)
         return;
 
-    float2 midDepthPixSize = *get2DBufferAt(midDepthPixSizeMap, midDepthPixSizeMap_p, x, y);
-    float2 fusedDepthSim = *get2DBufferAt(fusedDepthSimMap, fusedDepthSimMap_p, x, y);
+    const float2 sgmDepthPixSize = *get2DBufferAt(sgmDepthPixSizeMap, sgmDepthPixSizeMap_p, x, y);
+    const float2 refinedDepthSim = *get2DBufferAt(refinedDepthSimMap, refinedDepthSimMap_p, x, y);
     float2* out_optDepthSim_ptr = get2DBufferAt(out_optDepthSimMap, optDepthSimMap_p, x, y);
-    float2 out_optDepthSim = (iter == 0) ? make_float2(midDepthPixSize.x, fusedDepthSim.y) : *out_optDepthSim_ptr;
+    float2 out_optDepthSim = (iter == 0) ? make_float2(sgmDepthPixSize.x, refinedDepthSim.y) : *out_optDepthSim_ptr;
 
-    float depthOpt = out_optDepthSim.x;
+    const float depthOpt = out_optDepthSim.x;
 
     if(depthOpt > 0.0f)
     {
-        float2 depthSmoothStepEnergy = getCellSmoothStepEnergy(rc_cam, depthTex, pix); // (smoothStep, energy)
-        float depthSmoothStep = depthSmoothStepEnergy.x;
-        if(depthSmoothStep < 0.0f)
-        {
-            depthSmoothStep = -fminf(fabsf(depthSmoothStep), midDepthPixSize.y / 10.0f);
-        }
-        else
-        {
-            depthSmoothStep = +fminf(fabsf(depthSmoothStep), midDepthPixSize.y / 10.0f);
-        }
+        const float2 depthSmoothStepEnergy = getCellSmoothStepEnergy(rc_cam, depthTex, pix); // (smoothStep, energy)
+        const float depthSmoothStep = copysign(fminf(fabsf(depthSmoothStepEnergy.x), sgmDepthPixSize.y / 10.0f), depthSmoothStepEnergy.x);
 
-        float depthPhotoStep = fusedDepthSim.x - depthOpt;
-        if(depthPhotoStep < 0.0f)
-        {
-            depthPhotoStep = -fminf(fabsf(depthPhotoStep), midDepthPixSize.y / 10.0f);
-        }
-        else
-        {
-            depthPhotoStep = +fminf(fabsf(depthPhotoStep), midDepthPixSize.y / 10.0f);
-        }
+        float depthPhotoStep = refinedDepthSim.x - depthOpt;
+        depthPhotoStep = copysign(fminf(fabsf(depthPhotoStep), sgmDepthPixSize.y / 10.0f), depthPhotoStep);
 
-        float depthVisStep = midDepthPixSize.x - depthOpt;
+        const float depthVisStep = sgmDepthPixSize.x - depthOpt;
 
-        float depthEnergy = depthSmoothStepEnergy.y;
-        float sim = fusedDepthSim.y;
+        const float depthEnergy = depthSmoothStepEnergy.y;
+        const float sim = refinedDepthSim.y;
 
-        float colorVariance = tex2D<float>(varianceTex, float(x) + 0.5f, float(y + yFrom) + 0.5f);
+        const float imgColorVariance = tex2D<float>(imgVarianceTex, float(x) + 0.5f, float(y + yFrom) + 0.5f);
 
         // archive: 
-        // float weightedColorVariance = sigmoid2(5.0f, 60.0f, 10.0f, 5.0f, colorVariance);
+        // https://www.desmos.com/calculator/s6qf8ouzwa
+        // const float weightedColorVariance = sigmoid2(5.0f, 60.0f, 10.0f, 5.0f, imgColorVariance);
         // 0.6:
-        float weightedColorVariance = sigmoid2(5.0f, 30.0f, 40.0f, 20.0f, colorVariance);
+        // https://www.desmos.com/calculator/kob9lxs9qf
+        const float weightedColorVariance = sigmoid2(5.0f, 30.0f, 40.0f, 20.0f, imgColorVariance);
 
         // archive: 
-        // float simWeight = -sim; // must be from 0 to 1=from worst=0 to best=1 ... it is from -1 to 0
+        // const float simWeight = -sim; // must be from 0 to 1=from worst=0 to best=1 ... it is from -1 to 0
         // 0.6:
-        float simWeight = sigmoid(0.0f, 1.0f, 0.7f, -0.7f, sim);
+        // https://www.desmos.com/calculator/jwhpjq6ppj
+        const float simWeight = sigmoid(0.0f, 1.0f, 0.7f, -0.7f, sim);
 
         // archive: 
-        // float photoWeight = sigmoid(0.0f, 1.0f, 60.0f, weightedColorVariance, depthEnergy);
+        // const float photoWeight = sigmoid(0.0f, 1.0f, 60.0f, weightedColorVariance, depthEnergy);
         // 0.6:
-        float photoWeight = sigmoid(0.0f, 1.0f, 30.0f, weightedColorVariance, depthEnergy);
+        // https://www.desmos.com/calculator/jzbweilb85
+        const float photoWeight = sigmoid(0.0f, 1.0f, 30.0f, weightedColorVariance, depthEnergy);
 
-        float smoothWeight = 1.0f - photoWeight;
-        float visWeight = 1.0f - sigmoid(0.0f, 1.0f, 10.0f, 17.0f, fabsf(depthVisStep / midDepthPixSize.y));
+        const float smoothWeight = 1.0f - photoWeight;
+        // https://www.desmos.com/calculator/qyeymudwd4
+        const float visWeight = 1.0f - sigmoid(0.0f, 1.0f, 10.0f, 17.0f, fabsf(depthVisStep / sgmDepthPixSize.y));
 
-        float depthOptStep = visWeight*depthVisStep + (1.0f - visWeight)*(photoWeight*simWeight*depthPhotoStep + smoothWeight*depthSmoothStep);
+        const float depthOptStep = visWeight*depthVisStep + (1.0f - visWeight)*(photoWeight*simWeight*depthPhotoStep + smoothWeight*depthSmoothStep);
 
         out_optDepthSim.x = depthOpt + depthOptStep;
 

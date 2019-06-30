@@ -190,18 +190,15 @@ void RefineRc::optimizeDepthSimMapCUDA(DepthSimMap& out_depthSimMapOptimized, //
 
     int h11 = _sp.mp.getHeight(_rc);
 
-    StaticVector<const StaticVector<DepthSim>*> dataMaps;
-    dataMaps.push_back(&depthPixSizeMapVis._dsm); // link without ownership
-    dataMaps.push_back(&depthSimMapPhoto._dsm); // link without ownership
-
     int nParts = 4;
     int hPart = h11 / nParts;
-    for(int part = 0; part < nParts; part++)
+    for(int part = 0; part < nParts; ++part)
     {
         int yFrom = part * hPart;
         int hPartAct = std::min(hPart, h11 - yFrom);
-        _sp.cps.optimizeDepthSimMapGradientDescent(out_depthSimMapOptimized._dsm, dataMaps, _rc, _refineNSamplesHalf,
-                                                    _nbDepthsToRefine, _refineSigma, _refineNiters, yFrom, hPartAct);
+        _sp.cps.optimizeDepthSimMapGradientDescent(out_depthSimMapOptimized._dsm, depthPixSizeMapVis._dsm, depthSimMapPhoto._dsm,
+                                                   _rc, _refineNSamplesHalf,
+                                                   _nbDepthsToRefine, _refineSigma, _refineNiters, yFrom, hPartAct);
     }
     ALICEVISION_LOG_INFO("==== optimizeDepthSimMapCUDA done in : " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - startTime).count() << "ms.");
 }

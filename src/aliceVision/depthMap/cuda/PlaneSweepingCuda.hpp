@@ -136,7 +136,9 @@ public:
                                               int nDepthsToRefine, float sigma);
 
     bool optimizeDepthSimMapGradientDescent(StaticVector<DepthSim>& oDepthSimMap,
-                                            StaticVector<const StaticVector<DepthSim> *>& dataMaps, int rc, int nSamplesHalf,
+                                            const StaticVector<DepthSim>& sgmDepthPixSizeMap,
+                                            const StaticVector<DepthSim>& refinedDepthSimMap,
+                                            int rc, int nSamplesHalf,
                                             int nDepthsToRefine, float sigma, int nIters, int yFrom, int hPart);
 
     bool computeNormalMap(StaticVector<float>* depthMap, StaticVector<Color>* normalMap, int rc,

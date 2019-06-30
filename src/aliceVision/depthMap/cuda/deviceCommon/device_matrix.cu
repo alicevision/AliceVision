@@ -310,13 +310,17 @@ __device__ float3 lineLineIntersect(float* k, float* l, float3* lli1, float3* ll
 }
 
 /**
- * f(x)=min + (max-min) * \frac{1}{1 + e^{10 * (x - mid) / width}}
+ * f(x) = min + (max-min) * \frac{1}{1 + e^{10 * (x - mid) / width}}
+ * https://www.desmos.com/calculator/1qvampwbyx
  */
 __device__ float sigmoid(float zeroVal, float endVal, float sigwidth, float sigMid, float xval)
 {
     return zeroVal + (endVal - zeroVal) * (1.0f / (1.0f + expf(10.0f * ((xval - sigMid) / sigwidth))));
 }
 
+/**
+ * f(x) = min + (max-min) * \frac{1}{1 + e^{10 * (mid - x) / width}}
+ */
 __device__ float sigmoid2(float zeroVal, float endVal, float sigwidth, float sigMid, float xval)
 {
     return zeroVal + (endVal - zeroVal) * (1.0f / (1.0f + expf(10.0f * ((sigMid - xval) / sigwidth))));
