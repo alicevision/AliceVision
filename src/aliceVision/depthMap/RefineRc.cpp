@@ -69,7 +69,6 @@ void RefineRc::getDepthPixSizeMapFromSGM(DepthSimMap& out_depthSimMapScale1Step1
         DepthSimMap depthSimMap(_rc, _sp.mp, _scale, _step);
         _sp.getDepthSimMapFromBestIdVal(depthSimMap, _width, _height, volumeBestIdVal, _scale, _step, _rc, zborder, _depths);
         out_depthSimMapScale1Step1.initFromSmaller(depthSimMap);
-        // out_depthSimMapScale1Step1.add11(depthSimMap);
     }
 
     // set sim (y) to pixsize
@@ -184,7 +183,7 @@ void RefineRc::optimizeDepthSimMapCUDA(DepthSimMap& out_depthSimMapOptimized, //
 
     if (_refineNiters == 0)
     {
-        _depthSimMapOpt.add(depthSimMapPhoto);
+        _depthSimMapOpt.init(depthSimMapPhoto);
         return;
     }
 
@@ -252,7 +251,7 @@ bool RefineRc::refinerc(bool checkIfExists)
     }
     else
     {
-        _depthSimMapOpt.add(depthSimMapPhoto);
+        _depthSimMapOpt.init(depthSimMapPhoto);
     }
 
     mvsUtils::printfElapsedTime(tall, "Refine CUDA (rc: " + mvsUtils::num2str(_rc) + " / " + mvsUtils::num2str(_sp.mp.ncams) + ")");

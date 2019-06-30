@@ -78,58 +78,7 @@ void DepthSimMap::initFromSmaller(const DepthSimMap& other)
     }
 }
 
-void DepthSimMap::add11(const DepthSimMap& other)
-{
-    if ((_scale != 1) || (_step != 1))
-    {
-        throw std::runtime_error("Error DepthSimMap: You can only add to scale1-step1 map.");
-    }
-
-    int k = (other._step * other._scale) / 2;
-    int k1 = k;
-    if ((other._step * other._scale) % 2 == 0)
-        k -= 1;
-
-    for (int i = 0; i < other._dsm.size(); i++)
-    {
-        int x = (i % other._w) * other._step * other._scale;
-        int y = (i / other._w) * other._step * other._scale;
-        DepthSim depthSim = other._dsm[i];
-
-        if (depthSim.depth > -1.0f)
-        {
-
-            bool isBest = true;
-            for (int yp = y - k; yp <= y + k1; yp++)
-            {
-                for (int xp = x - k; xp <= x + k1; xp++)
-                {
-                    if ((xp >= 0) && (xp < _w) && (yp >= 0) && (yp < _h) && // check image borders
-                        (depthSim.sim > _dsm[yp * _w + xp].sim))
-                    {
-                        isBest = false;
-                    }
-                }
-            }
-
-            if (isBest)
-            {
-                for (int yp = y - k; yp <= y + k1; yp++)
-                {
-                    for (int xp = x - k; xp <= x + k1; xp++)
-                    {
-                        if ((xp >= 0) && (xp < _w) && (yp >= 0) && (yp < _h))
-                        {
-                            _dsm[yp * _w + xp] = depthSim;
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-void DepthSimMap::add(const DepthSimMap& other)
+void DepthSimMap::init(const DepthSimMap& other)
 {
     if ((_scale != other._scale) || (_step != other._step))
     {
@@ -138,13 +87,7 @@ void DepthSimMap::add(const DepthSimMap& other)
 
     for (int i = 0; i < _dsm.size(); i++)
     {
-        const DepthSim& depthSim1 = _dsm[i];
-        const DepthSim& depthSim2 = other._dsm[i];
-
-        if ((depthSim2.depth > -1.0f) && (depthSim2.sim < depthSim1.sim))
-        {
-            _dsm[i] = depthSim2;
-        }
+        _dsm[i] = other._dsm[i];
     }
 }
 

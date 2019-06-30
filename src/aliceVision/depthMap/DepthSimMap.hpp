@@ -88,8 +88,7 @@ public:
                                      int depthSimMapsScale);
 
     void initFromSmaller(const DepthSimMap& depthSimMap);
-    void add11(const DepthSimMap& depthSimMap);
-    void add(const DepthSimMap& depthSimMap);
+    void init(const DepthSimMap& depthSimMap);
 
     Point2d getMaxMinDepth() const;
     Point2d getMaxMinSim() const;
