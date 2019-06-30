@@ -870,8 +870,6 @@ void ps_refineRcDepthMap(Pyramids& ps_texs_arr, float* out_osimMap_hmh,
     int t = 1;
     cudaTextureObject_t tc_tex = ps_texs_arr[cams[t].camId][scale].tex;
 
-    CudaDeviceMemoryPitched<float3, 2> lastThreeSimsMap(CudaSize<2>(width, height));
-    CudaDeviceMemoryPitched<float, 2> simMap_dmp(CudaSize<2>(width, height));
     CudaDeviceMemoryPitched<float, 2> rcDepthMap_dmp(CudaSize<2>(width, height));
     copy(rcDepthMap_dmp, inout_rcDepthMap_hmh, width, height);
     CudaDeviceMemoryPitched<float, 2> bestSimMap_dmp(CudaSize<2>(width, height));
@@ -893,48 +891,100 @@ void ps_refineRcDepthMap(Pyramids& ps_texs_arr, float* out_osimMap_hmh,
             tcWidth, tcHeight);
     }
 
-    refine_setLastThreeSimsMap_kernel<<<grid, block>>>(
-        lastThreeSimsMap.getBuffer(), lastThreeSimsMap.getPitch(),
-        bestSimMap_dmp.getBuffer(), bestSimMap_dmp.getPitch(),
-        width, height, 1);
+    /*
+    // Filter intermediate refined images does not improve
+    // if(false)
+    // for (int i = 0; i < 5; ++i)
+    {
+        // Filter refined depth map
+        CudaTexture<float> depthTex(bestDptMap_dmp);
+        float euclideanDelta = 1.0;
+        int radius = 3;
+        ps_bilateralFilter<float>(
+            depthTex.textureObj,
+            bestDptMap_dmp,
+            euclideanDelta,
+            radius);
+        ps_medianFilter<float>(
+            depthTex.textureObj,
+            bestDptMap_dmp,
+            radius);
+    }
+    */
 
-    refine_compYKNCCSimMapPatch_kernel<<<grid, block>>>(
-        *cams[0].param_dev, *cams[t].param_dev, 
-        rc_tex, tc_tex,
-        simMap_dmp.getBuffer(), simMap_dmp.getPitch(),
-        bestDptMap_dmp.getBuffer(), bestDptMap_dmp.getPitch(),
-        width,
-        height, wsh, gammaC, gammaP, -1.0f, moveByTcOrRc, xFrom,
-        rcWidth, rcHeight,
-        tcWidth, tcHeight);
+    {
+        CudaDeviceMemoryPitched<float3, 2> lastThreeSimsMap_dmp(CudaSize<2>(width, height));
+        CudaDeviceMemoryPitched<float, 2> simMap_dmp(CudaSize<2>(width, height));
 
-    refine_setLastThreeSimsMap_kernel<<<grid, block>>>(
-        lastThreeSimsMap.getBuffer(), lastThreeSimsMap.getPitch(),
-        simMap_dmp.getBuffer(), simMap_dmp.getPitch(),
-        width, height, 0);
+        {
+            // Set best sim map into lastThreeSimsMap_dmp.y
+            refine_setLastThreeSimsMap_kernel<<<grid, block>>>(
+                lastThreeSimsMap_dmp.getBuffer(), lastThreeSimsMap_dmp.getPitch(),
+                bestSimMap_dmp.getBuffer(), bestSimMap_dmp.getPitch(),
+                width, height, 1);
+            /*
+            // Compute NCC for depth-1
+            refine_compYKNCCSimMapPatch_kernel << <grid, block >> >(
+                *cams[0].param_dev, *cams[t].param_dev,
+                rc_tex, tc_tex,
+                simMap_dmp.getBuffer(), simMap_dmp.getPitch(),
+                bestDptMap_dmp.getBuffer(), bestDptMap_dmp.getPitch(),
+                width,
+                height, wsh, gammaC, gammaP, 0.0f, moveByTcOrRc, xFrom,
+                rcWidth, rcHeight,
+                tcWidth, tcHeight);
+            // Set sim for depth-1 into lastThreeSimsMap_dmp.y
+            refine_setLastThreeSimsMap_kernel << <grid, block >> >(
+                lastThreeSimsMap_dmp.getBuffer(), lastThreeSimsMap_dmp.getPitch(),
+                simMap_dmp.getBuffer(), simMap_dmp.getPitch(),
+                width, height, 1);
+            */
+        }
 
-    refine_compYKNCCSimMapPatch_kernel<<<grid, block>>>(
-        *cams[0].param_dev, *cams[t].param_dev,
-        rc_tex, tc_tex,
-        simMap_dmp.getBuffer(), simMap_dmp.getPitch(),
-        bestDptMap_dmp.getBuffer(), bestDptMap_dmp.getPitch(),
-        width,
-        height, wsh, gammaC, gammaP, +1.0f, moveByTcOrRc, xFrom,
-        rcWidth, rcHeight,
-        tcWidth, tcHeight);
+        {
+            // Compute NCC for depth-1
+            refine_compYKNCCSimMapPatch_kernel<<<grid, block>>>(
+                *cams[0].param_dev, *cams[t].param_dev, 
+                rc_tex, tc_tex,
+                simMap_dmp.getBuffer(), simMap_dmp.getPitch(),
+                bestDptMap_dmp.getBuffer(), bestDptMap_dmp.getPitch(),
+                width,
+                height, wsh, gammaC, gammaP, -1.0f, moveByTcOrRc, xFrom,
+                rcWidth, rcHeight,
+                tcWidth, tcHeight);
+            // Set sim for depth-1 into lastThreeSimsMap_dmp.x
+            refine_setLastThreeSimsMap_kernel<<<grid, block>>>(
+                lastThreeSimsMap_dmp.getBuffer(), lastThreeSimsMap_dmp.getPitch(),
+                simMap_dmp.getBuffer(), simMap_dmp.getPitch(),
+                width, height, 0);
+        }
 
-    refine_setLastThreeSimsMap_kernel<<<grid, block>>>(
-        lastThreeSimsMap.getBuffer(), lastThreeSimsMap.getPitch(),
-        simMap_dmp.getBuffer(), simMap_dmp.getPitch(),
-        width, height, 2);
+        {
+            // Compute NCC for depth+1
+            refine_compYKNCCSimMapPatch_kernel<<<grid, block>>>(
+                *cams[0].param_dev, *cams[t].param_dev,
+                rc_tex, tc_tex,
+                simMap_dmp.getBuffer(), simMap_dmp.getPitch(),
+                bestDptMap_dmp.getBuffer(), bestDptMap_dmp.getPitch(),
+                width,
+                height, wsh, gammaC, gammaP, +1.0f, moveByTcOrRc, xFrom,
+                rcWidth, rcHeight,
+                tcWidth, tcHeight);
+            // Set sim for depth+1 into lastThreeSimsMap_dmp.z
+            refine_setLastThreeSimsMap_kernel<<<grid, block>>>(
+                lastThreeSimsMap_dmp.getBuffer(), lastThreeSimsMap_dmp.getPitch(),
+                simMap_dmp.getBuffer(), simMap_dmp.getPitch(),
+                width, height, 2);
+        }
 
-    refine_computeDepthSimMapFromLastThreeSimsMap_kernel<<<grid, block>>>(
-        *cams[0].param_dev, *cams[t].param_dev,
-        bestSimMap_dmp.getBuffer(), bestSimMap_dmp.getPitch(),
-        bestDptMap_dmp.getBuffer(), bestDptMap_dmp.getPitch(),
-        lastThreeSimsMap.getBuffer(), lastThreeSimsMap.getPitch(),
-        width, height, moveByTcOrRc, xFrom);
-
+        // Interpolation from the lastThreeSimsMap_dmp
+        refine_computeDepthSimMapFromLastThreeSimsMap_kernel<<<grid, block>>>(
+            *cams[0].param_dev, *cams[t].param_dev,
+            bestSimMap_dmp.getBuffer(), bestSimMap_dmp.getPitch(),
+            bestDptMap_dmp.getBuffer(), bestDptMap_dmp.getPitch(),
+            lastThreeSimsMap_dmp.getBuffer(), lastThreeSimsMap_dmp.getPitch(),
+            width, height, moveByTcOrRc, xFrom);
+    }
     copy(out_osimMap_hmh, width, height, bestSimMap_dmp);
     copy(inout_rcDepthMap_hmh, width, height, bestDptMap_dmp);
 

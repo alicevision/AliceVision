@@ -12,14 +12,13 @@
 #include <aliceVision/depthMap/cuda/planeSweeping/device_utils.h>
 #include <aliceVision/depthMap/cuda/commonStructures.hpp>
 
-#include <set>
 
 namespace aliceVision {
 namespace depthMap {
 
 /*********************************************************************************
- * global / constant data structures
- *********************************************************************************/
+* global / constant data structures
+*********************************************************************************/
 std::set<int>                 d_gaussianArrayInitialized;
 __device__ __constant__ int   d_gaussianArrayOffset[MAX_CONSTANT_GAUSS_SCALES];
 __device__ __constant__ float d_gaussianArray[MAX_CONSTANT_GAUSS_MEM_SIZE];
@@ -124,11 +123,6 @@ __host__ void ps_downscale_gauss( Pyramids& ps_texs_arr,
  * kernel definitions
  *********************************************************************************/
 
-__device__ inline float getGauss( int scale, int idx )
-{
-    return d_gaussianArray[d_gaussianArrayOffset[scale] + idx];
-}
-
 __global__ void downscale_gauss_smooth_lab_kernel(
     cudaTextureObject_t rc_tex,
     float4* texLab, int texLab_p,
@@ -162,6 +156,7 @@ __global__ void downscale_gauss_smooth_lab_kernel(
         BufPtr<float4>(texLab, texLab_p).at(x,y) = t;
     }
 }
+
 
 } // namespace depthMap
 } // namespace aliceVision
