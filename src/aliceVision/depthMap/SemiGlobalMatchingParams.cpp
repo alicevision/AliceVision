@@ -22,48 +22,48 @@ SemiGlobalMatchingParams::SemiGlobalMatchingParams(mvsUtils::MultiViewParams& _m
     : cps( _cps )
     , mp(_mp)
 {
-    exportIntermediateResults = mp.userParams.get<bool>("depthMap.intermediateResults", false);
-    doSmooth = mp.userParams.get<bool>("semiGlobalMatching.smooth", true);
-    doRefine = mp.userParams.get<bool>("semiGlobalMatching.doRefine", true);
-    refineUseTcOrPixSize = mp.userParams.get<bool>("semiGlobalMatching.refineUseTcOrPixSize", true);
+    exportIntermediateResults = mp.userParams.get<bool>("depthMap.intermediateResults", exportIntermediateResults);
+    doSmooth = mp.userParams.get<bool>("semiGlobalMatching.smooth", doSmooth);
+    doRefine = mp.userParams.get<bool>("semiGlobalMatching.doRefine", doRefine);
+    refineUseTcOrPixSize = mp.userParams.get<bool>("semiGlobalMatching.refineUseTcOrPixSize", refineUseTcOrPixSize);
 
-    ndepthsToRefine = mp.userParams.get<int>("semiGlobalMatching.ndepthsToRefine", 15);
+    ndepthsToRefine = mp.userParams.get<int>("semiGlobalMatching.ndepthsToRefine", ndepthsToRefine);
 
-    P1 = mp.userParams.get<float>("semiGlobalMatching.P1", 10.0);
-    P2 = mp.userParams.get<float>("semiGlobalMatching.P2", 20.0); // direct P2 was 125.0, no it's only the P2 weighting
+    P1 = mp.userParams.get<float>("semiGlobalMatching.P1", P1);
+    P2 = mp.userParams.get<float>("semiGlobalMatching.P2", P2); // direct P2 was 125.0, now it's only the P2 weighting
 
-    stepZ = mp.userParams.get<int>("semiGlobalMatching.stepZ", -1);
-    maxDepthsToStore = mp.userParams.get<int>("semiGlobalMatching.maxDepthsToStore", 3000);
-    maxDepthsToSweep = mp.userParams.get<int>("semiGlobalMatching.maxDepthsToSweep", 1500);
-    rcTcDepthsHalfLimit = mp.userParams.get<int>("semiGlobalMatching.rcTcDepthsHalfLimit", 2048);
+    stepZ = mp.userParams.get<int>("semiGlobalMatching.stepZ", stepZ);
+    maxDepthsToStore = mp.userParams.get<int>("semiGlobalMatching.maxDepthsToStore", maxDepthsToStore);
+    maxDepthsToSweep = mp.userParams.get<int>("semiGlobalMatching.maxDepthsToSweep", maxDepthsToSweep);
+    rcTcDepthsHalfLimit = mp.userParams.get<int>("semiGlobalMatching.rcTcDepthsHalfLimit", rcTcDepthsHalfLimit);
 
-    rcDepthsCompStep = mp.userParams.get<int>("semiGlobalMatching.rcDepthsCompStep", 6);
+    rcDepthsCompStep = mp.userParams.get<int>("semiGlobalMatching.rcDepthsCompStep", rcDepthsCompStep);
 
     useSeedsToCompDepthsToSweep =
-        mp.userParams.get<bool>("semiGlobalMatching.useSeedsToCompDepthsToSweep", true);
-    seedsRangePercentile = (float)mp.userParams.get<double>("semiGlobalMatching.seedsRangePercentile", 0.999);
-    seedsRangeInflate = (float)mp.userParams.get<double>("semiGlobalMatching.seedsRangeInflate", 0.2);
+        mp.userParams.get<bool>("semiGlobalMatching.useSeedsToCompDepthsToSweep", useSeedsToCompDepthsToSweep);
+    seedsRangePercentile = (float)mp.userParams.get<double>("semiGlobalMatching.seedsRangePercentile", seedsRangePercentile);
+    seedsRangeInflate = (float)mp.userParams.get<double>("semiGlobalMatching.seedsRangeInflate", seedsRangeInflate);
 
     saveDepthsToSweepToTxtForVis =
-        mp.userParams.get<bool>("semiGlobalMatching.saveDepthsToSweepToTxtForVis", false);
+        mp.userParams.get<bool>("semiGlobalMatching.saveDepthsToSweepToTxtForVis", saveDepthsToSweepToTxtForVis);
 
-    doSGMoptimizeVolume = mp.userParams.get<bool>("semiGlobalMatching.doSGMoptimizeVolume", true);
-    doRefineFuse = mp.userParams.get<bool>("semiGlobalMatching.doRefineFuse", true);
-    doRefineOpt = mp.userParams.get<bool>("semiGlobalMatching.doRefineOpt", true);
+    doSGMoptimizeVolume = mp.userParams.get<bool>("semiGlobalMatching.doSGMoptimizeVolume", doSGMoptimizeVolume);
+    doRefineFuse = mp.userParams.get<bool>("semiGlobalMatching.doRefineFuse", doRefineFuse);
+    doRefineOpt = mp.userParams.get<bool>("semiGlobalMatching.doRefineOpt", doRefineOpt);
 
-    modalsMapDistLimit = mp.userParams.get<int>("semiGlobalMatching.modalsMapDistLimit", 2);
-    minNumOfConsistentCams = mp.userParams.get<int>("semiGlobalMatching.minNumOfConsistentCams", 2);
+    modalsMapDistLimit = mp.userParams.get<int>("semiGlobalMatching.modalsMapDistLimit", modalsMapDistLimit);
+    minNumOfConsistentCams = mp.userParams.get<int>("semiGlobalMatching.minNumOfConsistentCams", minNumOfConsistentCams);
     maxTcRcPixSizeInVoxRatio =
-        (float)mp.userParams.get<double>("semiGlobalMatching.maxTcRcPixSizeInVoxRatio", 2.0f);
-    nSGGCIters = mp.userParams.get<int>("semiGlobalMatching.nSGGCIters", 0);
+        (float)mp.userParams.get<double>("semiGlobalMatching.maxTcRcPixSizeInVoxRatio", maxTcRcPixSizeInVoxRatio);
+    nSGGCIters = mp.userParams.get<int>("semiGlobalMatching.nSGGCIters", nSGGCIters);
 
-    SGMoutDirName = mp.userParams.get<std::string>("semiGlobalMatching.outDirName", "SGM");
-    SGMtmpDirName = mp.userParams.get<std::string>("semiGlobalMatching.tmpDirName", "_tmp");
+    SGMoutDirName = mp.userParams.get<std::string>("semiGlobalMatching.outDirName", SGMoutDirName);
+    SGMtmpDirName = mp.userParams.get<std::string>("semiGlobalMatching.tmpDirName", SGMtmpDirName);
 
-    useSilhouetteMaskCodedByColor = mp.userParams.get<bool>("global.useSilhouetteMaskCodedByColor", false);
-    silhouetteMaskColor.r = mp.userParams.get<int>("global.silhouetteMaskColorR", 0);
-    silhouetteMaskColor.g = mp.userParams.get<int>("global.silhouetteMaskColorG", 0);
-    silhouetteMaskColor.b = mp.userParams.get<int>("global.silhouetteMaskColorB", 0);
+    useSilhouetteMaskCodedByColor = mp.userParams.get<bool>("global.useSilhouetteMaskCodedByColor", useSilhouetteMaskCodedByColor);
+    silhouetteMaskColor.r = mp.userParams.get<int>("global.silhouetteMaskColorR", silhouetteMaskColor.r);
+    silhouetteMaskColor.g = mp.userParams.get<int>("global.silhouetteMaskColorG", silhouetteMaskColor.g);
+    silhouetteMaskColor.b = mp.userParams.get<int>("global.silhouetteMaskColorB", silhouetteMaskColor.b);
 }
 
 SemiGlobalMatchingParams::~SemiGlobalMatchingParams()
