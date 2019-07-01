@@ -330,6 +330,7 @@ int main(int argc, char** argv)
     std::map<std::string, std::string> metadata;
 
     image::readImage(imagePath, ldrImages.at(i), image::EImageColorSpace::SRGB);
+    ALICEVISION_LOG_INFO("Reading " << imagePath);
 
     image::readImageMetadata(imagePath, w, h, metadata);
 
@@ -445,7 +446,7 @@ int main(int argc, char** argv)
     }
   }
 
-  ALICEVISION_LOG_INFO("hdr fusion");
+  ALICEVISION_LOG_INFO("HDR fusion");
   hdr::hdrMerge merge;
   merge.process(ldrImageGroups_sorted.at(0), ldrTimes_sorted, fusionWeight, response, image, targetTime, false, clampedValueCorrection);
 
@@ -474,7 +475,7 @@ int main(int argc, char** argv)
     recoverSourceImage(image, response, channelQuantization, recoverSourcePath, meanVal);
   }
 
-  ALICEVISION_LOG_INFO("Successfull HDR fusion of " << nbImages << " LDR images.");
+  ALICEVISION_LOG_INFO("Successfull HDR fusion of " << nbImages << " LDR images centered on " << target);
 
   return EXIT_SUCCESS;
 }
