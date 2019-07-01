@@ -509,15 +509,20 @@ void Texturing::generateTexturesSubSet(const mvsUtils::MultiViewParams& mp,
                     // retrieve triangle 3D and UV coordinates
                     Point2d triPixs[3];
                     Point3d triPts[3];
+                    Point2d LD;
+                    auto triangleUvIds = trisUvIds[triangleId];
+                    // UDIM: compute UV left-down minima for [0,1] range remapping
+                    LD.x = std::floor(std::min(std::min(uvCoords[triangleUvIds[0]].x, uvCoords[triangleUvIds[1]].x), uvCoords[triangleUvIds[2]].x));
+                    LD.y = std::floor(std::min(std::min(uvCoords[triangleUvIds[0]].y, uvCoords[triangleUvIds[1]].y), uvCoords[triangleUvIds[2]].y));
 
                     for(int k = 0; k < 3; k++)
                     {
                        const int pointIndex = (*me->tris)[triangleId].v[k];
                        triPts[k] = (*me->pts)[pointIndex];                               // 3D coordinates
-                       const int uvPointIndex = trisUvIds[triangleId].m[k];
+                       const int uvPointIndex = triangleUvIds.m[k];
                        Point2d uv = uvCoords[uvPointIndex];
-                       uv.x -= std::floor(uv.x);
-                       uv.y -= std::floor(uv.y);
+                       // UDIM: remap coordinates between [0,1]
+                       uv = uv - LD;
 
                        triPixs[k] = uv * texParams.textureSide;   // UV coordinates
                     }
