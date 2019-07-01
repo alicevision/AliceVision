@@ -82,36 +82,46 @@ oiio::ParamValueList getMetadataFromMap(const std::map<std::string, std::string>
   return metadata;
 }
 
-oiio::ParamValueList readImageMetadata(const std::string& path)
+oiio::ParamValueList readImageMetadata(const std::string& path, int& width, int& height)
 {
   std::unique_ptr<oiio::ImageInput> in(oiio::ImageInput::open(path));
+  oiio::ImageSpec spec = in->spec();
 
   if(!in)
     throw std::runtime_error("Can't find/open image file '" + path + "'.");
 
-  oiio::ParamValueList metadata = in->spec().extra_attribs;
+#if OIIO_VERSION <= (10000 * 2 + 100 * 0 + 8) // OIIO_VERSION <= 2.0.8
+  const std::string formatStr = in->format_name();
+  if(formatStr == "raw")
+  {
+    // For the RAW plugin: override colorspace as linear (as the content is linear with sRGB primaries but declared as sRGB)
+    spec.attribute("oiio:ColorSpace", "Linear");
+    ALICEVISION_LOG_TRACE("OIIO workaround: RAW input image " << path << " is in Linear.");
+  }
+#endif
+
+  width = spec.width;
+  height = spec.height;
+
+  oiio::ParamValueList metadata = spec.extra_attribs;
 
   in->close();
 
   return metadata;
 }
 
+oiio::ParamValueList readImageMetadata(const std::string& path)
+{
+  int w, h;
+  return readImageMetadata(path, w, h);
+}
+
 void readImageMetadata(const std::string& path, int& width, int& height, std::map<std::string, std::string>& metadata)
 {
-  std::unique_ptr<oiio::ImageInput> in(oiio::ImageInput::open(path));
+  oiio::ParamValueList oiioMetadadata = readImageMetadata(path, width, height);
 
-  if(!in)
-    throw std::runtime_error("Can't find/open image file '" + path + "'.");
-
-  const oiio::ImageSpec &spec = in->spec();
-
-  width = spec.width;
-  height = spec.height;
-
-  for(const auto& param : spec.extra_attribs)
+  for(const auto& param : oiioMetadadata)
     metadata.emplace(param.name().string(), param.get_string());
-
-  in->close();
 }
 
 template<typename T>
@@ -189,6 +199,7 @@ void readImage(const std::string& path,
   {
     const auto in = oiio::ImageInput::open(path, nullptr);
     const std::string formatStr = in->format_name();
+    ALICEVISION_LOG_INFO("************** inBuf.file_format_name(): " << inBuf.file_format_name());
     if(formatStr == "raw")
     {
       // For the RAW plugin: override colorspace as linear (as the content is linear with sRGB primaries but declared as sRGB)
