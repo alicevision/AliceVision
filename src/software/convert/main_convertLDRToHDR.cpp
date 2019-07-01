@@ -126,7 +126,7 @@ void recoverSourceImage(const image::Image<image::RGBfColor>& hdrImage, hdr::rgb
         offset[i] = std::abs(meanRecovered[i] - meanVal[i]);
     ALICEVISION_COUT("offset between target source image and recovered from hdr = " << offset);
 
-    image::writeImage(path, targetRecover, image::EImageColorSpace::NO_CONVERSION);
+    image::writeImage(path, targetRecover, image::EImageColorSpace::AUTO);
 }
 
 
@@ -447,7 +447,7 @@ int main(int argc, char** argv)
   merge.process(ldrImageGroups_sorted.at(0), ldrTimes_sorted, fusionWeight, response, image, targetTime, false, clampedValueCorrection);
 
 
-  image::writeImage(outputHDRImagePath, image, image::EImageColorSpace::NO_CONVERSION);
+  image::writeImage(outputHDRImagePath, image, image::EImageColorSpace::AUTO);
   if(!outputResponsePath.empty())   response.write(outputResponsePath);
 
 
