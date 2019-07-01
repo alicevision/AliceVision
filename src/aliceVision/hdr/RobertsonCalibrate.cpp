@@ -86,21 +86,21 @@ void RobertsonCalibrate::process(const std::vector< std::vector< image::Image<im
 
   for(std::size_t iter = 0; iter < _maxIteration; ++iter)
   {
-//    ALICEVISION_LOG_TRACE("--> iteration : "<< iter);
+    ALICEVISION_LOG_TRACE("--> iteration : "<< iter);
 
-//    ALICEVISION_LOG_TRACE("1) compute radiance ");
+    ALICEVISION_LOG_TRACE("1) compute radiance ");
     //initialize radiance
     for(std::size_t g = 0; g < ldrImageGroups.size(); ++g)
     {
       merge.process(ldrImageGroups[g], times[g], weight, response, _radiance[g], targetTime, true);
     }
 
-//    ALICEVISION_LOG_TRACE("2) initialization new response ");
+    ALICEVISION_LOG_TRACE("2) initialization new response ");
     //initialize new response
     rgbCurve newResponse = rgbCurve(channelQuantization);
     newResponse.setZero();
 
-//    ALICEVISION_LOG_TRACE("3) compute new response ");
+    ALICEVISION_LOG_TRACE("3) compute new response ");
     //compute new response
     for(unsigned int g = 0; g < ldrImageGroups.size(); ++g)
     {
@@ -133,11 +133,11 @@ void RobertsonCalibrate::process(const std::vector< std::vector< image::Image<im
     //dividing the response by the cardinal curve
     newResponse *= card;
 
-//    ALICEVISION_LOG_TRACE("4) normalize response");
+    ALICEVISION_LOG_TRACE("4) normalize response");
     //normalization
     newResponse.normalize();
 
-//    ALICEVISION_LOG_TRACE("5) compute difference");
+    ALICEVISION_LOG_TRACE("5) compute difference");
     //calculate difference between the old response and the new one
     rgbCurve responseDiff = newResponse - response;
     responseDiff.setAllAbsolute();
@@ -147,14 +147,14 @@ void RobertsonCalibrate::process(const std::vector< std::vector< image::Image<im
     //update the response
     response = newResponse;
 
-//    ALICEVISION_LOG_TRACE("6) check end condition");
+    ALICEVISION_LOG_TRACE("6) check end condition");
     //check end condition
     if(diff < _threshold)
     {
         ALICEVISION_LOG_ERROR("[BREAK] difference < threshold "" << std::endl");
         break;
     }
-//    ALICEVISION_LOG_TRACE("-> difference is " << diff);
+    ALICEVISION_LOG_DEBUG("-> difference is " << diff);
   }
 }
 

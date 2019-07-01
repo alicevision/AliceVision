@@ -64,6 +64,7 @@ void GrossbergCalibrate::process(const std::vector< std::vector< image::Image<im
         const int step = std::floor(nbPixels/nbPoints);
 
 
+        ALICEVISION_LOG_TRACE("filling A and b matrices");
         for(unsigned int channel=0; channel<channels; ++channel)
         {
             response.getCurve(channel) = std::vector<float>(f0.begin(), f0.end());
@@ -105,19 +106,21 @@ void GrossbergCalibrate::process(const std::vector< std::vector< image::Image<im
                     for(unsigned int i=0; i<_dimension; ++i)
                       A(j*nbPoints + l, i) = w * (k * H(index1, i) - H(index2, i));
 
-                }
             }
+        }
 
-//            ALICEVISION_LOG_TRACE("solving Ax=b system");
+            ALICEVISION_LOG_TRACE("solving Ax=b system");
 
             // solve the system using QR decomposition
             Eigen::HouseholderQR<Mat> solver(A);
             Vec c = solver.solve(b);
 
-//            ALICEVISION_LOG_TRACE("system solved");
+            ALICEVISION_LOG_TRACE("system solved");
 
-//            double relative_error = (A*c - b).norm() / b.norm();
-//            ALICEVISION_LOG_TRACE("relative error is : " << relative_error);
+            double relative_error = (A*c - b).norm() / b.norm();
+            ALICEVISION_LOG_DEBUG("relative error is : " << relative_error);
+
+            ALICEVISION_LOG_DEBUG("emor coefficients are : ");
 
             for(unsigned int i=0; i<_dimension; ++i)
             {
@@ -125,9 +128,10 @@ void GrossbergCalibrate::process(const std::vector< std::vector< image::Image<im
               for(auto &value : temp_hCurve)
                 value *= c(i);
 
-//              ALICEVISION_LOG_TRACE(c(i));
+              ALICEVISION_LOG_DEBUG("emor coefficients : ");
+              ALICEVISION_LOG_DEBUG(c(i));
 
-              std::transform(response.getCurve(channel).begin(), response.getCurve(channel).end(), temp_hCurve.begin(), response.getCurve(channel).begin(), std::plus<float>());
+                std::transform(response.getCurve(channel).begin(), response.getCurve(channel).end(), temp_hCurve.begin(), response.getCurve(channel).begin(), std::plus<float>());
             }
         }
     }
