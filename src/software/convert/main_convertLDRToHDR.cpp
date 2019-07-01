@@ -248,9 +248,9 @@ int main(int argc, char** argv)
     switch(calibrationMethod)
     {
     case ECalibrationMethod::LINEAR:      break;
-    case ECalibrationMethod::DEBEVEC:     calibrationWeight.setTriangular();
-    case ECalibrationMethod::ROBERTSON:   calibrationWeight.setRobertsonWeight();
-    case ECalibrationMethod::GROSSBERG:   calibrationWeight.setGaussian();
+    case ECalibrationMethod::DEBEVEC:     calibrationWeight.setTriangular();  break;
+    case ECalibrationMethod::ROBERTSON:   calibrationWeight.setRobertsonWeight(); break;
+    case ECalibrationMethod::GROSSBERG:   calibrationWeight.setGaussian();  break;
     }
   }
   else
