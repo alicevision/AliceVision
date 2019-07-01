@@ -1,4 +1,4 @@
-ARG CUDA_TAG=7.0
+ARG CUDA_TAG=8.0
 ARG OS_TAG=7
 ARG NPROC=1
 FROM nvidia/cuda:${CUDA_TAG}-devel-centos${OS_TAG}
