@@ -234,6 +234,9 @@ int main(int argc, char** argv)
     response.resize(channelQuantization);
   }
 
+  // force clamped value correction between 0 and 1
+  clampedValueCorrection = clamp(clampedValueCorrection, 0.f, 1.f);
+
   // set verbose level
   system::Logger::get()->setLogLevel(verboseLevel);
 
