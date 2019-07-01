@@ -19,7 +19,6 @@ void RobertsonCalibrate::process(const std::vector< std::vector< image::Image<im
                                  const std::vector< std::vector<float> > &times,
                                  const int nbPoints,
                                  const rgbCurve &weight,
-                                 float targetTime,
                                  rgbCurve &response)
 {
   //checks
@@ -92,7 +91,7 @@ void RobertsonCalibrate::process(const std::vector< std::vector< image::Image<im
     //initialize radiance
     for(std::size_t g = 0; g < ldrImageGroups.size(); ++g)
     {
-      merge.process(ldrImageGroups[g], times[g], weight, response, _radiance[g], targetTime, true);
+      merge.process(ldrImageGroups[g], times[g], weight, response, _radiance[g], 1.f, true);
     }
 
     ALICEVISION_LOG_TRACE("2) initialization new response ");
