@@ -151,28 +151,28 @@ int main(int argc, char** argv)
   po::options_description requiredParams("Required Parameters");
   requiredParams.add_options()
     ("input,i", po::value<std::vector<std::string>>(&imagesFolder)->required()->multitoken(),
-      "List of LDR images or a folder containing them (accepted formats are: .jpg .jpeg .png .tif .tiff .cr2 .rw2)")
+      "List of LDR images or a folder containing them (accepted formats are: .jpg .jpeg .png .tif .tiff or RAW image file extensions: .3fr .arw .crw .cr2 .cr3 .dng .kdc .mrw .nef .nrw .orf .ptx .pef .raf .R3D .rw2 .srw .x3f")
     ("output,o", po::value<std::string>(&outputHDRImagePath)->required(),
-      "output HDR image path.");
+      "Output HDR image complete name.");
 
   po::options_description optionalParams("Optional Parameters");
   optionalParams.add_options()
-    ("outputResponse", po::value<std::string>(&outputResponsePath),
-       "output response function path.")
     ("calibrationMethod,m", po::value<ECalibrationMethod>(&calibrationMethod )->default_value(calibrationMethod ),
-        "method used for camera calibration (linear, robertson, debevec).")
+      "Name of method used for camera calibration (linear, robertson -> slow !, debevec).")
+    ("expandDynamicRange,e", po::value<float>(&clampedValueCorrection)->default_value(clampedValueCorrection),
+      "float value between 0 and 1 to correct clamped high values in dynamic range: use 0 for no correction, 0.5 for interior lighting and 1 for outdoor lighting.")
+    ("targetExposureImage,t", po::value<std::string>(&target),
+      "Name of LDR image to center your HDR exposure.")
     ("inputResponse,r", po::value<std::string>(&inputResponsePath ),
-        "external camera response file path to fuse all LDR images together.")
+      "External camera response file to fuse all LDR images together.")
     ("calibrationWeight,w", po::value<std::string>(&calibrationWeightFunction)->default_value(calibrationWeightFunction),
-       "weight function type (default, gaussian, triangle, plateau).")
+       "Weight function used to calibrate camera response (default depends on the calibration method, gaussian, triangle, plateau).")
     ("fusionWeight,W", po::value<hdr::EFunctionType>(&fusionWeightFunction)->default_value(fusionWeightFunction),
-       "weight function used to fuse all LDR images together (gaussian, triangle, plateau).")
-    ("targetExposureImage,e", po::value<std::string>(&target),
-      "LDR image at the target exposure for the output HDR image to be centered.")
-    ("oversaturatedCorrection,s", po::value<float>(&clampedValueCorrection)->default_value(clampedValueCorrection),
-      "oversaturated correction for pixels oversaturated in all images: use 0 for no correction, 0.5 for interior lighting and 1 for outdoor lighting.")
+       "Weight function used to fuse all LDR images together (gaussian, triangle, plateau).")
+    ("outputResponse", po::value<std::string>(&outputResponsePath),
+       "(For debug) Output camera response function complete name.")
     ("recoverPath", po::value<std::string>(&recoverSourcePath)->default_value(recoverSourcePath),
-      "path to write recovered LDR image at the target exposure by applying inverse response on HDR image.");
+      "(For debug) Name of recovered LDR image at the target exposure by applying inverse response on HDR image.");
 
   po::options_description logParams("Log parameters");
   logParams.add_options()
