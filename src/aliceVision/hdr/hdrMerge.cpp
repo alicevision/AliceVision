@@ -23,7 +23,7 @@ void hdrMerge::process(const std::vector< image::Image<image::RGBfColor> > &imag
                               image::Image<image::RGBfColor> &radiance,
                               float targetTime,
                               bool robCalibrate,
-                              float threshold)
+                              float clampedValueCorrection)
 {
   //checks
   assert(!response.isEmpty());

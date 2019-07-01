@@ -31,7 +31,7 @@ public:
                 image::Image<image::RGBfColor> &radiance,
                 float targetTime,
                 bool robCalibrate = false,
-                float threshold = 1.f);
+                float clampedValueCorrection = 1.f);
   
   /**
    * @brief This function obtains the "average scene luminance" EV value
