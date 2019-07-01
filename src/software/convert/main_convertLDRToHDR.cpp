@@ -358,10 +358,28 @@ int main(int argc, char** argv)
   std::sort(times_sorted.at(0).begin(), times_sorted.at(0).end());
   std::vector<float> ldrTimes_sorted = times_sorted.at(0);
 
+  // we sort the images according to their exposure time
+  std::vector< std::vector< image::Image<image::RGBfColor> > > ldrImageGroups_sorted(1);
+  std::vector<std::string> nameImages_sorted(nbImages);
+  ldrImageGroups_sorted.at(0).resize(nbImages);
+  for(int i=0; i<nbImages; ++i)
+  {
+      std::vector<float>::iterator it = std::find(ldrTimes.begin(), ldrTimes.end(), ldrTimes_sorted.at(i));
+      if(it != ldrTimes.end())
+      {
+          ldrImageGroups_sorted.at(0).at(i) = ldrImages.at(std::distance(ldrTimes.begin(), it));
+          nameImages_sorted.at(i) = nameImages.at(std::distance(ldrTimes.begin(), it));
+      }
+      else
+          ALICEVISION_LOG_ERROR("sorting failed");
+  }
+
+  // find target exposure time corresponding to the image name given by user
   float targetTime;
   if(!target.empty())
   {
-      nameImages.insert(nameImages.end(), stemImages.begin(), stemImages.end());    //search target for filenames only and filenames + extensions
+      nameImages.insert(nameImages.end(), stemImages.begin(), stemImages.end());
+      nameImages.insert(nameImages.end(), inputImagesNames.begin(), inputImagesNames.end());    //search target for filenames only, filenames + extensions and complete paths
       std::size_t targetIndex = std::distance(nameImages.begin(), std::find(nameImages.begin(), nameImages.end(), target));
       try
       {
@@ -375,26 +393,22 @@ int main(int argc, char** argv)
           }
           catch(std::exception& e)
           {
+              try
+              {
+                  targetTime = ldrTimes.at(targetIndex - 2 * ldrTimes.size());
+              }
+              catch(std::exception& e)
+              {
               ALICEVISION_CERR("Invalid name of target");
               return EXIT_FAILURE;
           }
       }
   }
-  else
-      targetTime = ldrTimes_sorted.at(ldrTimes_sorted.size()/2);
-
-  // we sort the images according to their exposure time
-  std::vector< std::vector< image::Image<image::RGBfColor> > > ldrImageGroups_sorted(1);
-  ldrImageGroups_sorted.at(0).resize(nbImages);
-  for(int i=0; i<nbImages; ++i)
-  {
-      std::vector<float>::iterator it = std::find(ldrTimes.begin(), ldrTimes.end(), ldrTimes_sorted.at(i));
-      if(it != ldrTimes.end())
-      {
-          ldrImageGroups_sorted.at(0).at(i) = ldrImages.at(std::distance(ldrTimes.begin(), it));
       }
       else
-          ALICEVISION_LOG_ERROR("sorting failed");
+  {
+      targetTime = ldrTimes_sorted.at(ldrTimes_sorted.size()/2);
+      target = nameImages_sorted.at(nbImages/2);
   }
 
 
@@ -418,7 +432,7 @@ int main(int argc, char** argv)
         const float lambda = channelQuantization * 1.f;
         const int nbPoints = 1000;
         hdr::DebevecCalibrate calibration;
-        calibration.process(ldrImageGroups, channelQuantization, times, nbPoints, calibrationWeight, lambda, response);
+        calibration.process(ldrImageGroups_sorted, channelQuantization, times_sorted, nbPoints, calibrationWeight, lambda, response);
 
         response.exponential();
         response.scale();
@@ -428,9 +442,9 @@ int main(int argc, char** argv)
       case ECalibrationMethod::ROBERTSON:
       {
         ALICEVISION_LOG_INFO("Robertson calibration");
-        hdr::RobertsonCalibrate calibration(40);
+        hdr::RobertsonCalibrate calibration(10);
         const int nbPoints = 1000000;
-        calibration.process(ldrImageGroups_sorted, channelQuantization, times_sorted, nbPoints, calibrationWeight, targetTime, response);
+        calibration.process(ldrImageGroups_sorted, channelQuantization, times_sorted, nbPoints, calibrationWeight, response);
         response.scale();
       }
       break;
@@ -439,7 +453,7 @@ int main(int argc, char** argv)
       {
         ALICEVISION_LOG_INFO("Grossberg calibration");
         const int nbPoints = 1000000;
-        hdr::GrossbergCalibrate calibration(5);
+        hdr::GrossbergCalibrate calibration(3);
         calibration.process(ldrImageGroups_sorted, channelQuantization, times_sorted, nbPoints, calibrationWeight, response);
       }
       break;
