@@ -42,9 +42,9 @@ RUN yum -y install \
         openssl-devel \
         gcc-gfortran
 
-# Manually install cmake 3.11
+# Manually install cmake 3.14
 WORKDIR /opt
-RUN wget https://cmake.org/files/v3.13/cmake-3.13.2.tar.gz && tar zxvf cmake-3.13.2.tar.gz && cd cmake-3.13.2 && ./bootstrap --prefix=/usr/local  -- -DCMAKE_BUILD_TYPE:STRING=Release -DCMAKE_USE_OPENSSL:BOOL=ON && make -j8 && make install
+RUN wget https://cmake.org/files/v3.14/cmake-3.14.5.tar.gz && tar zxvf cmake-3.14.5.tar.gz && cd cmake-3.14.5 && ./bootstrap --prefix=/usr/local  -- -DCMAKE_BUILD_TYPE:STRING=Release -DCMAKE_USE_OPENSSL:BOOL=ON && make -j8 && make install
 
 WORKDIR "${AV_BUILD}"
 RUN cmake "${AV_DEV}" -DCMAKE_BUILD_TYPE=Release -DALICEVISION_BUILD_DEPENDENCIES:BOOL=ON -DINSTALL_DEPS_BUILD:BOOL=ON -DCMAKE_INSTALL_PREFIX="${AV_INSTALL}" -DALICEVISION_BUNDLE_PREFIX="${AV_BUNDLE}"
