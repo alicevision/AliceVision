@@ -144,6 +144,7 @@ int main(int argc, char** argv)
   hdr::EFunctionType fusionWeightFunction = hdr::EFunctionType::GAUSSIAN;
   std::string target;
   float clampedValueCorrection = 1.f;
+  bool fisheye = true;
   std::string recoverSourcePath;
 
   po::options_description allParams("AliceVision convertLDRToHDR");
@@ -158,11 +159,13 @@ int main(int argc, char** argv)
   po::options_description optionalParams("Optional Parameters");
   optionalParams.add_options()
     ("calibrationMethod,m", po::value<ECalibrationMethod>(&calibrationMethod )->default_value(calibrationMethod ),
-      "Name of method used for camera calibration (linear, robertson -> slow !, debevec).")
+      "Name of method used for camera calibration (linear, robertson -> slow !, debevec, grossberg).")
     ("expandDynamicRange,e", po::value<float>(&clampedValueCorrection)->default_value(clampedValueCorrection),
       "float value between 0 and 1 to correct clamped high values in dynamic range: use 0 for no correction, 0.5 for interior lighting and 1 for outdoor lighting.")
     ("targetExposureImage,t", po::value<std::string>(&target),
       "Name of LDR image to center your HDR exposure.")
+    ("fisheyeLens,f", po::value<bool>(&fisheye)->default_value(fisheye),
+     "Set to 1 if images are taken with a fisheye lens and to 0 if not. Default value is set to 1.")
     ("inputResponse,r", po::value<std::string>(&inputResponsePath ),
       "External camera response file to fuse all LDR images together.")
     ("calibrationWeight,w", po::value<std::string>(&calibrationWeightFunction)->default_value(calibrationWeightFunction),
@@ -432,7 +435,7 @@ int main(int argc, char** argv)
         const float lambda = channelQuantization * 1.f;
         const int nbPoints = 1000;
         hdr::DebevecCalibrate calibration;
-        calibration.process(ldrImageGroups_sorted, channelQuantization, times_sorted, nbPoints, calibrationWeight, lambda, response);
+        calibration.process(ldrImageGroups_sorted, channelQuantization, times_sorted, nbPoints, fisheye, calibrationWeight, lambda, response);
 
         response.exponential();
         response.scale();
@@ -444,7 +447,7 @@ int main(int argc, char** argv)
         ALICEVISION_LOG_INFO("Robertson calibration");
         hdr::RobertsonCalibrate calibration(10);
         const int nbPoints = 1000000;
-        calibration.process(ldrImageGroups_sorted, channelQuantization, times_sorted, nbPoints, calibrationWeight, response);
+        calibration.process(ldrImageGroups_sorted, channelQuantization, times_sorted, nbPoints, fisheye, calibrationWeight, response);
         response.scale();
       }
       break;
@@ -454,7 +457,7 @@ int main(int argc, char** argv)
         ALICEVISION_LOG_INFO("Grossberg calibration");
         const int nbPoints = 1000000;
         hdr::GrossbergCalibrate calibration(3);
-        calibration.process(ldrImageGroups_sorted, channelQuantization, times_sorted, nbPoints, calibrationWeight, response);
+        calibration.process(ldrImageGroups_sorted, channelQuantization, times_sorted, nbPoints, fisheye, response);
       }
       break;
     }
