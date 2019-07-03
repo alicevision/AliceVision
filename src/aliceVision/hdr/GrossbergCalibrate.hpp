@@ -7,6 +7,7 @@
 #pragma once
 
 #include <aliceVision/image/all.hpp>
+#include <aliceVision/numeric/numeric.hpp>
 #include "emorCurve.hpp"
 #include "rgbCurve.hpp"
 
@@ -32,7 +33,6 @@ public:
                const std::size_t channelQuantization,
                const std::vector< std::vector<float> > &times,
                const int nbPoints,
-               const rgbCurve &weight,
                rgbCurve &response);
 
 private:

@@ -25,7 +25,6 @@ void GrossbergCalibrate::process(const std::vector< std::vector< image::Image<im
                                  const std::size_t channelQuantization,
                                  const std::vector< std::vector<float> > &times,
                                  const int nbPoints,
-                                 const rgbCurve &weight,
                                  rgbCurve &response)
 {
 
@@ -110,15 +109,15 @@ void GrossbergCalibrate::process(const std::vector< std::vector< image::Image<im
         const int nbPixels = ldrImagesGroup.at(0).Width() * ldrImagesGroup.at(0).Height();
         const int step = std::floor(nbPixels/nbPoints);
 
+      Mat A = Mat::Zero(nbPoints*(nbImages-1)*channels, _dimension);
+      Vec b = Vec::Zero(nbPoints*(nbImages-1)*channels);
+      int count = 0;
 
       ALICEVISION_LOG_TRACE("filling A and b matrices");
         for(unsigned int channel=0; channel<channels; ++channel)
         {
 
-            Mat A = Mat::Zero(nbPoints*(nbImages-1), _dimension);
-            Vec b = Vec::Zero(nbPoints*(nbImages-1));
 
-//            ALICEVISION_LOG_TRACE("filling A and b matrices");
 
           for(unsigned int j=0; j<nbImages-1; ++j)
           {
@@ -136,24 +135,14 @@ void GrossbergCalibrate::process(const std::vector< std::vector< image::Image<im
                     std::size_t index1 = std::round((channelQuantization-1) * sample1);
                     std::size_t index2 = std::round((channelQuantization-1) * sample2);
 
-//                    double w = std::min(weight(sample1, channel), weight(sample2, channel));
-
-                    double w = (weight(sample1, channel) + weight(sample2, channel)) / 2.0;
-
-//                    double w_R = (weight(sample1, 0) + weight(sample2, 0)) / 2.0;
-//                    double w_G = (weight(sample1, 1) + weight(sample2, 1)) / 2.0;
-//                    double w_B = (weight(sample1, 2) + weight(sample2, 2)) / 2.0;
-
-//                    double w = (w_R + w_G + w_B) / 3.0;
-//                    double w = (w_R * w_G * w_B);
-//                    double w = std::min(std::min(w_R, w_G), w_B);
-
-                    b(j*nbPoints + l) = w * (f0.at(index2) - k * f0.at(index1));
+                b(channels*j*nbPoints + channels*l + channel) = response.getCurve(channel).at(index2) - k * response.getCurve(channel).at(index1);
                     for(unsigned int i=0; i<_dimension; ++i)
-                      A(j*nbPoints + l, i) = w * (k * H(index1, i) - H(index2, i));
-
+                  A(channels*j*nbPoints + channels*l + channel, i) = k * H(index1, i) - H(index2, i);
+            }
+          }
             }
         }
+
 
             ALICEVISION_LOG_TRACE("solving Ax=b system");
 
@@ -174,14 +163,13 @@ void GrossbergCalibrate::process(const std::vector< std::vector< image::Image<im
               for(auto &value : temp_hCurve)
                 value *= c(i);
 
-              ALICEVISION_LOG_DEBUG("emor coefficients : ");
               ALICEVISION_LOG_DEBUG(c(i));
 
+        for(int channel=0; channel<channels; ++channel)
                 std::transform(response.getCurve(channel).begin(), response.getCurve(channel).end(), temp_hCurve.begin(), response.getCurve(channel).begin(), std::plus<float>());
             }
         }
     }
-}
 
 
 } // namespace hdr
