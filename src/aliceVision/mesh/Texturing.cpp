@@ -278,9 +278,10 @@ void Texturing::generateTextures(const mvsUtils::MultiViewParams &mp,
 
     mvsUtils::ImagesCache imageCache(&mp, imageIO::EImageColorSpace::SRGB, texParams.correctEV);
     imageCache.setCacheSize(2);
-    system::MemoryInfo memInfo = system::getMemoryInfo();
+    ALICEVISION_LOG_INFO("Images loaded from cache with: " + imageCache.ECorrectEV_enumToString(texParams.correctEV));
 
     //calculate the maximum number of atlases in memory in Mb
+    system::MemoryInfo memInfo = system::getMemoryInfo();
     const std::size_t atlasContribMemSize = texParams.textureSide * texParams.textureSide * (sizeof(Color)+sizeof(int)) / std::pow(2,20); //Mb
     const std::size_t imageMaxMemSize =  mp.getMaxImageWidth() * mp.getMaxImageHeight() * sizeof(Color) / std::pow(2,20); //Mb
     const std::size_t pyramidMaxMemSize = texParams.nbBand * atlasContribMemSize;
@@ -480,12 +481,11 @@ void Texturing::generateTexturesSubSet(const mvsUtils::MultiViewParams& mp,
         }
         ALICEVISION_LOG_INFO("- camera " << mp.getViewId(camId) << " (" << camId + 1 << "/" << mp.ncams << ") with contributions to " << cameraContributions.size() << " texture files:");
 
-        //Load camera image from cache
-        imageCache.refreshData(camId);
+        // Load camera image from cache
         mvsUtils::ImagesCache::ImgSharedPtr imgPtr = imageCache.getImg_sync(camId);
         const Image& camImg = *imgPtr;
 
-        //Calculate laplacianPyramid
+        // Calculate laplacianPyramid
         std::vector<Image> pyramidL; //laplacian pyramid
         camImg.laplacianPyramid(pyramidL, texParams.nbBand, texParams.multiBandDownscale);
 
