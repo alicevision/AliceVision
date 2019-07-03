@@ -212,14 +212,6 @@ public:
     */
   void exponential();
 
-  /**
-    * @brief Left accessor
-    * @param[in] sample
-    * @param[in] channel
-    * @return the value at the index corresponding to the sample of the channel curve
-    */
-  float& operator() (float sample, std::size_t channel);
-
 
   /**
     * @brief Right accessor
@@ -345,14 +337,18 @@ public:
     _data.at(channel).at(index) = value;
   }
 
-  std::size_t getIndex(float sample) const
+  /**
+    * @brief Get inferior index value corresponding to float sample and scale between inferior and superior indexes
+    * @param[in] float sample between 0 and 1
+    * @param[out] float scale between inferior and superior indexes
+    * @return int inferior index of curve
+    */
+  std::size_t getIndex(float sample, float scale) const
   {
     assert(getSize() != 0);
-    if(sample < 0.0f)
-      return 0;
-    if(sample > 1.0f)
-      return getSize() - 1;
-    return std::size_t(std::round(sample * (getSize() - 1)));
+    float infIndex;
+    scale = std::modf(std::max(0.f, std::min(1.f, sample)) * getSize() - 2, &infIndex);
+    return std::size_t(infIndex);
   }
 
   std::size_t getSize() const
