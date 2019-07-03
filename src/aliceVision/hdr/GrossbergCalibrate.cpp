@@ -40,9 +40,13 @@ void GrossbergCalibrate::process(const std::vector< std::vector< image::Image<im
 
     //initialize response with g0 from invEmor
     response = rgbCurve(channelQuantization);
-    const double* ptrf0 = getEmorInvCurve(0);
-    std::vector<double> f0;
-    f0.assign(ptrf0, ptrf0 + channelQuantization);
+    response.setEmor();
+//    response.write("/s/prods/mvg/_source_global/samples/HDR_selection/samsung/8bits/emor.ods");
+//    const double* ptrf0 = getEmorInvCurve(0);
+//    std::vector<double> f0;
+//    f0.assign(ptrf0, ptrf0 + channelQuantization);
+
+    const std::size_t emorSize = std::pow(2, 10);
 
     Mat H(channelQuantization, _dimension);
     std::vector<std::vector<double>> hCurves(_dimension);
@@ -50,33 +54,75 @@ void GrossbergCalibrate::process(const std::vector< std::vector< image::Image<im
     for(unsigned int i=0; i<_dimension; ++i)
     {
         const double *h = getEmorInvCurve(i+1);
-        hCurves[i].assign(h, h + channelQuantization);
+        if(emorSize == channelQuantization)
+        {
+          hCurves[i].assign(h, h + emorSize);
+        }
+        else if(emorSize > channelQuantization)
+        {
+          std::vector<double> emorH;
+          emorH.assign(h, h + emorSize);
+          std::vector<double> h0 = std::vector<double>(emorH.begin(), emorH.end());
+
+          std::size_t step = emorSize/channelQuantization;
+          for(std::size_t k = 0; k<channelQuantization; ++k)
+            hCurves[i].emplace_back(h0.at(k*step));
+        }
+        else
+        {
+          std::vector<double> emorH;
+          emorH.assign(h, h + emorSize);
+          std::vector<double> h0 = std::vector<double>(emorH.begin(), emorH.end());
+
+          std::size_t step = channelQuantization/emorSize;
+          hCurves[i].resize(channelQuantization, 0.0);
+          for(std::size_t k = 0; k<emorSize-1; ++k)
+          {
+            hCurves[i].at(k*step) = h0.at(k);
+          }
+          hCurves[i].at(emorSize*step-1) = h0.at(emorSize-1);
+          std::size_t previousValidIndex = 0;
+          for(std::size_t index = 1; index<channelQuantization; ++index)
+          {
+              if(hCurves[i].at(index) != 0.0f)
+              {
+                  if(previousValidIndex+1 < index)
+                  {
+                      const float inter = (hCurves[i].at(index) - hCurves[i].at(previousValidIndex)) / (index - previousValidIndex);
+                      for(std::size_t j = previousValidIndex+1; j < index; ++j)
+                      {
+                          hCurves[i].at(j) = hCurves[i].at(previousValidIndex) + inter * (j-previousValidIndex);
+                      }
+                  }
+                  previousValidIndex = index;
+              }
+            }
+        }
         H.col(i) = Eigen::Map<Vec>(hCurves[i].data(), channelQuantization);
     }
 
     for(unsigned int g=0; g<ldrImageGroups.size(); ++g)
     {
         const std::vector< image::Image<image::RGBfColor> > &ldrImagesGroup = ldrImageGroups.at(g);
-        const std::vector<float> &ldrTimes= times.at(g);
+      const std::vector<float> &ldrTimes= times.at(g);
 
-        const int nbImages = ldrImagesGroup.size();
+      const int nbImages = ldrImagesGroup.size();
         const int nbPixels = ldrImagesGroup.at(0).Width() * ldrImagesGroup.at(0).Height();
         const int step = std::floor(nbPixels/nbPoints);
 
 
-        ALICEVISION_LOG_TRACE("filling A and b matrices");
+      ALICEVISION_LOG_TRACE("filling A and b matrices");
         for(unsigned int channel=0; channel<channels; ++channel)
         {
-            response.getCurve(channel) = std::vector<float>(f0.begin(), f0.end());
 
             Mat A = Mat::Zero(nbPoints*(nbImages-1), _dimension);
             Vec b = Vec::Zero(nbPoints*(nbImages-1));
 
 //            ALICEVISION_LOG_TRACE("filling A and b matrices");
 
-            for(unsigned int j=0; j<nbImages-1; ++j)
-            {
-                const image::Image<image::RGBfColor> &image1 = ldrImagesGroup.at(j);
+          for(unsigned int j=0; j<nbImages-1; ++j)
+          {
+            const image::Image<image::RGBfColor> &image1 = ldrImagesGroup.at(j);
                 const image::Image<image::RGBfColor> &image2 = ldrImagesGroup.at(j+1);
                 const double k = ldrTimes.at(j+1)/ldrTimes.at(j);
 
