@@ -211,15 +211,13 @@ public:
    * @return the exposure compensation
    */
   float getEvCompensation(float refEv) const
-  {
-      float evComp = 1.0f;
-      float comp = getEv() - refEv;
+    {
+        const float ev = getEv();
+        if(ev == -1)
+            return 1.0f;
 
-      if(getEv() != -1)
-          evComp = std::pow(2.0f, comp);
-
-      return evComp;
-  }
+        return std::pow(2.0f, ev - refEv);
+    }
 
 
   /**
