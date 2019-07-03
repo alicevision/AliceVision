@@ -158,7 +158,7 @@ int main(int argc, char** argv)
 
   po::options_description optionalParams("Optional Parameters");
   optionalParams.add_options()
-    ("calibrationMethod,m", po::value<ECalibrationMethod>(&calibrationMethod )->default_value(calibrationMethod ),
+    ("calibrationMethod,m", po::value<ECalibrationMethod>(&calibrationMethod )->default_value(calibrationMethod),
       "Name of method used for camera calibration (linear, robertson -> slow !, debevec, grossberg).")
     ("expandDynamicRange,e", po::value<float>(&clampedValueCorrection)->default_value(clampedValueCorrection),
       "float value between 0 and 1 to correct clamped high values in dynamic range: use 0 for no correction, 0.5 for interior lighting and 1 for outdoor lighting.")
@@ -166,7 +166,7 @@ int main(int argc, char** argv)
       "Name of LDR image to center your HDR exposure.")
     ("fisheyeLens,f", po::value<bool>(&fisheye)->default_value(fisheye),
      "Set to 1 if images are taken with a fisheye lens and to 0 if not. Default value is set to 1.")
-    ("inputResponse,r", po::value<std::string>(&inputResponsePath ),
+    ("inputResponse,r", po::value<std::string>(&inputResponsePath),
       "External camera response file to fuse all LDR images together.")
     ("calibrationWeight,w", po::value<std::string>(&calibrationWeightFunction)->default_value(calibrationWeightFunction),
        "Weight function used to calibrate camera response (default depends on the calibration method, gaussian, triangle, plateau).")
@@ -221,7 +221,11 @@ int main(int argc, char** argv)
   std::vector<float> &ldrTimes = times.at(0);
 //  std::vector<float> &ldrEv = ev.at(0);
 
-  // read teh input response fiel or set the correct channel quantization according to the calibration method used
+  std::vector<float> aperture;
+  image::EImageColorSpace loadColorSpace;
+  std::vector<std::string> colorSpace;
+
+  // read input response file or set the correct channel quantization according to the calibration method used
   std::size_t channelQuantization;
   if(!inputResponsePath.empty())
   {
@@ -230,7 +234,7 @@ int main(int argc, char** argv)
   }
   else
   {
-      channelQuantization = std::pow(2, 10);  //RAW 10 bit precision, 2^10 values between black and white point
+    channelQuantization = std::pow(2, 10); //RAW 10 bit precision, 2^10 values between black and white point
     response.resize(channelQuantization);
     if(calibrationMethod == ECalibrationMethod::LINEAR)
       loadColorSpace = image::EImageColorSpace::LINEAR;
@@ -341,13 +345,13 @@ int main(int argc, char** argv)
 
     // Debevec and Robertson algorithms use shutter speed as ev value
     // TODO: in the future, we should use EVs instead of just shutter speed.
-    float shutter;
     try
     {
-//      const float aperture = std::stof(metadata.at("FNumber"));
 //      const float iso = std::stof(metadata.at("Exif:PhotographicSensitivity"));
 //      const float iso = std::stof(metadata.at("Exif:ISOSpeedRatings"));
-      shutter = std::stof(metadata.at("ExposureTime"));
+      aperture.emplace_back(std::stof(metadata.at("FNumber")));
+      ldrTimes.emplace_back(std::stof(metadata.at("ExposureTime")));
+      colorSpace.emplace_back(metadata.at("oiio:ColorSpace"));
 //      ldrEv.push_back(std::log2(pow(aperture, 2) / shutter) + std::log2(iso/100));
     }
     catch(std::exception& e)
@@ -355,8 +359,18 @@ int main(int argc, char** argv)
       ALICEVISION_LOG_ERROR("no metadata in images : " << imagePath);
       return EXIT_FAILURE;
     }
+  }
 
-    ldrTimes.push_back(shutter);
+  // assert that all images have the same aperture and same color space
+  if(std::adjacent_find(aperture.begin(), aperture.end(), std::not_equal_to<float>()) != aperture.end())
+  {
+    ALICEVISION_LOG_ERROR("Input images have different apertures.");
+    return EXIT_FAILURE;
+  }
+  if(std::adjacent_find(colorSpace.begin(), colorSpace.end(), std::not_equal_to<std::string>()) != colorSpace.end())
+  {
+    ALICEVISION_LOG_ERROR("Input images have different color spaces.");
+    return EXIT_FAILURE;
   }
 
   std::vector< std::vector<float> > times_sorted = times;
@@ -404,13 +418,13 @@ int main(int argc, char** argv)
               }
               catch(std::exception& e)
               {
-              ALICEVISION_CERR("Invalid name of target");
-              return EXIT_FAILURE;
+                  ALICEVISION_CERR("Invalid name of target");
+                  return EXIT_FAILURE;
+              }
           }
       }
   }
-      }
-      else
+  else
   {
       targetTime = ldrTimes_sorted.at(ldrTimes_sorted.size()/2);
       target = nameImages_sorted.at(nbImages/2);
@@ -426,8 +440,8 @@ int main(int argc, char** argv)
     {
       case ECalibrationMethod::LINEAR:
       {
-        // set the response function to linear
-        response.setLinear();
+      // set the response function to linear
+      response.setLinear();
       }
       break;
 
