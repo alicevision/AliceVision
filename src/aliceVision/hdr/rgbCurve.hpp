@@ -14,6 +14,7 @@
 #include <array>
 #include <string>
 #include <iostream>
+#include "emorCurve.hpp"
 
 
 namespace aliceVision {
@@ -154,6 +155,11 @@ public:
     * @brief Set curves to gamma
     */
   void setGamma();
+
+  /**
+    * @brief Set curves to Grossberg mean function of emor model
+    */
+  void setEmor();
 
   /**
     *@brief Set curves to gaussian
