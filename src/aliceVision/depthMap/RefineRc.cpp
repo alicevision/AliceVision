@@ -352,10 +352,8 @@ void estimateAndRefineDepthMaps(int cudaDeviceNo, mvsUtils::MultiViewParams* mp,
                            "\t- step: " << sgmStep);
   }
 
-  const int bandType = 0;
-
   // load images from files into RAM
-  mvsUtils::ImagesCache ic(mp, bandType, imageIO::EImageColorSpace::LINEAR);
+  mvsUtils::ImagesCache ic(mp, imageIO::EImageColorSpace::LINEAR);
   // load stuff on GPU memory and creates multi-level images and computes gradients
   PlaneSweepingCuda cps(cudaDeviceNo, ic, mp, sgmScale);
   // init plane sweeping parameters
@@ -385,10 +383,9 @@ void computeNormalMaps(int CUDADeviceNo, mvsUtils::MultiViewParams* mp, const St
 {
   const float igammaC = 1.0f;
   const float igammaP = 1.0f;
-  const int bandType = 0;
   const int wsh = 3;
 
-  mvsUtils::ImagesCache ic(mp, bandType, imageIO::EImageColorSpace::LINEAR);
+  mvsUtils::ImagesCache ic(mp, imageIO::EImageColorSpace::LINEAR);
   PlaneSweepingCuda cps(CUDADeviceNo, ic, mp, 1);
 
   for(const int rc : cams)

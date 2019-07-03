@@ -276,7 +276,7 @@ void Texturing::generateTextures(const mvsUtils::MultiViewParams &mp,
 
     std::partial_sum(m.begin(), m.end(), m.begin());
 
-    mvsUtils::ImagesCache imageCache(&mp, 0, imageIO::EImageColorSpace::SRGB);
+    mvsUtils::ImagesCache imageCache(&mp, imageIO::EImageColorSpace::SRGB, texParams.correctEV);
     imageCache.setCacheSize(2);
     system::MemoryInfo memInfo = system::getMemoryInfo();
 

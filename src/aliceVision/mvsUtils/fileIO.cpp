@@ -323,7 +323,7 @@ Matrix3x4 load3x4MatrixFromFile(FILE* fi)
     return m;
 }
 
-void loadImage(const std::string& path, const MultiViewParams* mp, int camId, Image& img, int bandType, imageIO::EImageColorSpace colorspace)
+void loadImage(const std::string& path, const MultiViewParams* mp, int camId, Image& img, imageIO::EImageColorSpace colorspace, ImagesCache::ECorrectEV correctEV)
 {
     imageIO::readImage(path, img, colorspace);
 
@@ -351,26 +351,7 @@ void loadImage(const std::string& path, const MultiViewParams* mp, int camId, Im
         img.swap(bmpr);
     }
 
-    if(bandType == 1)
-    {
-        Image smooth;
-        imageIO::convolveImage(img, smooth, "gaussian", 11.0f, 11.0f);
-        img.swap(smooth);
-    }
 
-    if(bandType == 2)
-    {
-        Image bmps;
-        imageIO::convolveImage(img, bmps, "gaussian", 11.0f, 11.0f);
-
-        for(int y = 0; y < height; y++)
-        {
-            for(int x = 0; x < width; x++)
-            {
-                img.at(x, y) -= bmps.at(x, y);
-            }
-        }
-    }
 }
 
 bool DeleteDirectory(const std::string& sPath)
