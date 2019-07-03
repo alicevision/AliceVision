@@ -410,6 +410,33 @@ void writeImage(const std::string &path, Image &image, EImageQuality imageQualit
 }
 
 template<typename T>
+void convertImage(oiio::TypeDesc typeDesc,
+                  int width,
+                  int height,
+                  int nchannels,
+                  std::vector<T>& buffer,
+                  EImageColorSpace fromColorSpace, EImageColorSpace toColorSpace)
+{
+    oiio::ImageSpec imageSpec(width, height, nchannels, typeDesc);
+
+    oiio::ImageBuf imgBuf = oiio::ImageBuf(imageSpec, const_cast<T*>(buffer.data())); // original image buffer
+
+    if(fromColorSpace != toColorSpace)
+    {
+        oiio::ImageBufAlgo::colorconvert(imgBuf, imgBuf, EImageColorSpace_enumToString(fromColorSpace), EImageColorSpace_enumToString(toColorSpace));
+        buffer.resize(imageSpec.width * imageSpec.height);
+
+        imgBuf.get_pixels(oiio::ROI::All(), typeDesc, buffer.data());
+    }
+
+}
+
+void convertImage(Image& image, EImageColorSpace fromColorSpace, EImageColorSpace toColorSpace)
+{
+    convertImage(oiio::TypeDesc::FLOAT, image.width(), image.height(), 3, image.data(), fromColorSpace, toColorSpace);
+}
+
+template<typename T>
 void transposeImage(oiio::TypeDesc typeDesc,
                     int width,
                     int height,

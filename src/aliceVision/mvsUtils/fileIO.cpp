@@ -325,17 +325,39 @@ Matrix3x4 load3x4MatrixFromFile(FILE* fi)
 
 void loadImage(const std::string& path, const MultiViewParams* mp, int camId, Image& img, imageIO::EImageColorSpace colorspace, ImagesCache::ECorrectEV correctEV)
 {
-    imageIO::readImage(path, img, colorspace);
-
     // check image size
-    if((mp->getOriginalWidth(camId) != img.width()) || (mp->getOriginalHeight(camId) != img.height()))
+    auto checkImageSize = [&path, &mp, camId, &img](){
+        if((mp->getOriginalWidth(camId) != img.width()) || (mp->getOriginalHeight(camId) != img.height()))
+        {
+            std::stringstream s;
+            s << "Bad image dimension for camera : " << camId << "\n";
+            s << "\t- image path : " << path << "\n";
+            s << "\t- expected dimension : " << mp->getOriginalWidth(camId) << "x" << mp->getOriginalHeight(camId) << "\n";
+            s << "\t- real dimension : " << img.width() << "x" << img.height() << "\n";
+            throw std::runtime_error(s.str());
+        }
+    };
+
+    if(correctEV == ImagesCache::ECorrectEV::NO_CORRECTION)
     {
-        std::stringstream s;
-        s << "Bad image dimension for camera : " << camId << "\n";
-        s << "\t- image path : " << path << "\n";
-        s << "\t- expected dimension : " << mp->getOriginalWidth(camId) << "x" << mp->getOriginalHeight(camId) << "\n";
-        s << "\t- real dimension : " << img.width() << "x" << img.height() << "\n";
-        throw std::runtime_error(s.str());
+        imageIO::readImage(path, img, colorspace);
+        checkImageSize();
+    }
+    // if exposure correction, apply it in linear colorspace and then convert colorspace
+    else
+    {
+        imageIO::readImage(path, img, imageIO::EImageColorSpace::LINEAR);
+        checkImageSize();
+
+        oiio::ParamValueList metadata;
+        imageIO::readImageMetadata(path, metadata);
+        float exposureCompensation = metadata.get_float("AliceVision:EVComp");
+        ALICEVISION_LOG_INFO("  exposure compensation for image " << camId + 1 << ": " << exposureCompensation);
+
+        for(int pix = 0; pix < img.size(); ++pix)
+            img[pix] = img[pix] * exposureCompensation;
+
+        imageIO::convertImage(img, imageIO::EImageColorSpace::LINEAR, colorspace);
     }
 
     // scale choosed by the user and apply during the process

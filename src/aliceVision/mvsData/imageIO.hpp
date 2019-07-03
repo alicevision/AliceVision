@@ -206,6 +206,9 @@ void writeImage(const std::string& path, int width, int height, const std::vecto
 void writeImage(const std::string& path, int width, int height, const std::vector<Color>& buffer, EImageQuality imageQuality, OutputFileColorSpace colorspace, const oiio::ParamValueList& metadata = oiio::ParamValueList());
 void writeImage(const std::string& path, Image& image, EImageQuality imageQuality, OutputFileColorSpace colorspace, const oiio::ParamValueList& metadata = oiio::ParamValueList());
 
+void convertImage(Image& image, EImageColorSpace fromColorSpace, EImageColorSpace toColorSpace);
+
+
 /**
  * @brief transpose a given image buffer
  * @param[in] width The image buffer width
