@@ -25,6 +25,7 @@ void GrossbergCalibrate::process(const std::vector< std::vector< image::Image<im
                                  const std::size_t channelQuantization,
                                  const std::vector< std::vector<float> > &times,
                                  const int nbPoints,
+                                 const bool fisheye,
                                  rgbCurve &response)
 {
 
@@ -102,74 +103,122 @@ void GrossbergCalibrate::process(const std::vector< std::vector< image::Image<im
 
     for(unsigned int g=0; g<ldrImageGroups.size(); ++g)
     {
-        const std::vector< image::Image<image::RGBfColor> > &ldrImagesGroup = ldrImageGroups.at(g);
+      const std::vector< image::Image<image::RGBfColor> > &ldrImagesGroup = ldrImageGroups.at(g);
       const std::vector<float> &ldrTimes= times.at(g);
 
       const int nbImages = ldrImagesGroup.size();
-        const int nbPixels = ldrImagesGroup.at(0).Width() * ldrImagesGroup.at(0).Height();
-        const int step = std::floor(nbPixels/nbPoints);
+      const std::size_t width = ldrImagesGroup.front().Width();
+      const std::size_t height = ldrImagesGroup.front().Height();
 
       Mat A = Mat::Zero(nbPoints*(nbImages-1)*channels, _dimension);
       Vec b = Vec::Zero(nbPoints*(nbImages-1)*channels);
       int count = 0;
 
       ALICEVISION_LOG_TRACE("filling A and b matrices");
+
+      if(fisheye)
+      {
+        const std::size_t minSize = std::min(width, height) * 0.97;
+        const Vec2i center(width/2, height/2);
+
+        const int xMin = std::ceil(center(0) - minSize/2);
+        const int yMin = std::ceil(center(1) - minSize/2);
+        const int xMax = std::floor(center(0) + minSize/2);
+        const int yMax = std::floor(center(1) + minSize/2);
+        const std::size_t maxDist2 = pow(minSize * 0.5, 2);
+
         for(unsigned int channel=0; channel<channels; ++channel)
         {
-
-
-
+          const int step = std::ceil(sqrt(std::ceil(minSize*minSize / nbPoints)));
           for(unsigned int j=0; j<nbImages-1; ++j)
           {
             const image::Image<image::RGBfColor> &image1 = ldrImagesGroup.at(j);
-                const image::Image<image::RGBfColor> &image2 = ldrImagesGroup.at(j+1);
-                const double k = ldrTimes.at(j+1)/ldrTimes.at(j);
+            const image::Image<image::RGBfColor> &image2 = ldrImagesGroup.at(j+1);
+            const double k = ldrTimes.at(j+1)/ldrTimes.at(j);
 
-                // fill A and b matrices with the equations
-                for(unsigned int l=0; l<nbPoints; ++l)
-                {
-                    double sample1 = std::max(0.f, std::min(1.f, image1(step*l)(channel)));
-                    double sample2 = std::max(0.f, std::min(1.f, image2(step*l)(channel)));
+            // fill A and b matrices with the equations
+            for(int y = yMin; y <= yMax-step; y+=step)
+            {
+              for(int x = xMin; x <= xMax-step; x+=step)
+              {
+                std::size_t dist2 = pow(center(0)-x, 2) + pow(center(1)-y, 2);
+                if(dist2 > maxDist2)
+                  continue;
+
+                double sample1 = clamp(image1(y, x)(channel), 0.f, 1.f);
+                double sample2 = clamp(image2(y, x)(channel), 0.f, 1.f);
+
+                std::size_t index1 = std::round((channelQuantization-1) * sample1);
+                std::size_t index2 = std::round((channelQuantization-1) * sample2);
+
+                b(count) = response.getCurve(channel).at(index2) - k * response.getCurve(channel).at(index1);
+                for(unsigned int i=0; i<_dimension; ++i)
+                  A(count, i) = k * H(index1, i) - H(index2, i);
+
+                count += 1;
+              }
+            }
+          }
+        }
+        A.conservativeResize(count, Eigen::NoChange_t::NoChange);
+        b.conservativeResize(count);
+      }
+      else
+      {
+        for(unsigned int channel=0; channel<channels; ++channel)
+        {
+          const int step = std::floor(width*height / nbPoints);
+          for(unsigned int j=0; j<nbImages-1; ++j)
+          {
+            const image::Image<image::RGBfColor> &image1 = ldrImagesGroup.at(j);
+            const image::Image<image::RGBfColor> &image2 = ldrImagesGroup.at(j+1);
+            const double k = ldrTimes.at(j+1)/ldrTimes.at(j);
+
+            // fill A and b matrices with the equations
+            for(unsigned int l=0; l<nbPoints; ++l)
+            {
+                double sample1 = std::max(0.f, std::min(1.f, image1(step*l)(channel)));
+                double sample2 = std::max(0.f, std::min(1.f, image2(step*l)(channel)));
 
 
-                    std::size_t index1 = std::round((channelQuantization-1) * sample1);
-                    std::size_t index2 = std::round((channelQuantization-1) * sample2);
+                std::size_t index1 = std::round((channelQuantization-1) * sample1);
+                std::size_t index2 = std::round((channelQuantization-1) * sample2);
 
                 b(channels*j*nbPoints + channels*l + channel) = response.getCurve(channel).at(index2) - k * response.getCurve(channel).at(index1);
-                    for(unsigned int i=0; i<_dimension; ++i)
+                for(unsigned int i=0; i<_dimension; ++i)
                   A(channels*j*nbPoints + channels*l + channel, i) = k * H(index1, i) - H(index2, i);
             }
           }
-            }
         }
+      }
 
 
-            ALICEVISION_LOG_TRACE("solving Ax=b system");
+      ALICEVISION_LOG_TRACE("solving Ax=b system");
 
-            // solve the system using QR decomposition
-            Eigen::HouseholderQR<Mat> solver(A);
-            Vec c = solver.solve(b);
+      // solve the system using QR decomposition
+      Eigen::HouseholderQR<Mat> solver(A);
+      Vec c = solver.solve(b);
 
-            ALICEVISION_LOG_TRACE("system solved");
+      ALICEVISION_LOG_TRACE("system solved");
 
-            double relative_error = (A*c - b).norm() / b.norm();
-            ALICEVISION_LOG_DEBUG("relative error is : " << relative_error);
+      double relative_error = (A*c - b).norm() / b.norm();
+      ALICEVISION_LOG_DEBUG("relative error is : " << relative_error);
 
-            ALICEVISION_LOG_DEBUG("emor coefficients are : ");
+      ALICEVISION_LOG_DEBUG("emor coefficients are : ");
 
-            for(unsigned int i=0; i<_dimension; ++i)
-            {
-              std::vector<double> temp_hCurve = hCurves[i];
-              for(auto &value : temp_hCurve)
-                value *= c(i);
+      for(unsigned int i=0; i<_dimension; ++i)
+      {
+        std::vector<double> temp_hCurve = hCurves[i];
+        for(auto &value : temp_hCurve)
+          value *= c(i);
 
-              ALICEVISION_LOG_DEBUG(c(i));
+        ALICEVISION_LOG_DEBUG(c(i));
 
         for(int channel=0; channel<channels; ++channel)
-                std::transform(response.getCurve(channel).begin(), response.getCurve(channel).end(), temp_hCurve.begin(), response.getCurve(channel).begin(), std::plus<float>());
-            }
-        }
+          std::transform(response.getCurve(channel).begin(), response.getCurve(channel).end(), temp_hCurve.begin(), response.getCurve(channel).begin(), std::plus<float>());
+      }
     }
+}
 
 
 } // namespace hdr

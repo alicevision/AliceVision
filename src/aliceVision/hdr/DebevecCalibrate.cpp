@@ -20,6 +20,7 @@ void DebevecCalibrate::process(const std::vector< std::vector< image::Image<imag
                                const std::size_t channelQuantization,
                                const std::vector< std::vector<float> > &times,
                                const int nbPoints,
+                               const bool fisheye,
                                const rgbCurve &weight,
                                const float lambda,
                                rgbCurve &response)
@@ -43,13 +44,22 @@ void DebevecCalibrate::process(const std::vector< std::vector< image::Image<imag
     const std::vector< image::Image<image::RGBfColor> > &ldrImagesGroup = ldrImageGroups.at(g);
     const std::vector<float> &ldrTimes = times.at(g);
     const int nbImages = ldrImagesGroup.size();
-    const int step = std::floor(ldrImagesGroup.at(0).Width() * ldrImagesGroup.at(0).Height() / nbPoints);
+    const std::size_t width = ldrImagesGroup.front().Width();
+    const std::size_t height = ldrImagesGroup.front().Height();
+
+    const std::size_t minSize = std::min(width, height) * 0.97;
+    const Vec2i center(width/2, height/2);
+    const int xMin = std::ceil(center(0) - minSize/2);
+    const int yMin = std::ceil(center(1) - minSize/2);
+    const int xMax = std::floor(center(0) + minSize/2);
+    const int yMax = std::floor(center(1) + minSize/2);
+    const std::size_t maxDist2 = pow(minSize * 0.5, 2);
 
     for(unsigned int channel=0; channel<channels; ++channel)
     {
-      sMat A(nbPoints*nbImages + channelQuantization + 1, channelQuantization + nbPoints);
       Vec b = Vec::Zero(nbPoints*nbImages + channelQuantization + 1);
-      int count=0;
+      int count = 0;
+      int nbValidPixels = 0;
 
       std::vector<T> tripletList;
       tripletList.reserve(2 * nbPoints*nbImages + 1 + 3 * channelQuantization);
@@ -57,21 +67,58 @@ void DebevecCalibrate::process(const std::vector< std::vector< image::Image<imag
       ALICEVISION_LOG_TRACE("filling A and b matrices");
 
       // include the data-fitting equations
-      for(unsigned int j=0; j<nbImages; ++j)
+      // if images are fisheye, we take only pixels inside a disk with a radius of image's minimum side
+      if(fisheye)
       {
-        const image::Image<image::RGBfColor> &image = ldrImagesGroup.at(j);
-        for(unsigned int i=0; i<nbPoints; ++i)
+        const int step = std::ceil(sqrt(std::ceil(minSize*minSize / nbPoints)));
+        for(unsigned int j=0; j<nbImages; ++j)
         {
-          float sample = std::max(0.f, std::min(1.f, image(step*i)(channel)));
-          float w_ij = weight(sample, channel);
-          std::size_t index = std::round(sample * (channelQuantization - 1));
+          const image::Image<image::RGBfColor> &image = ldrImagesGroup.at(j);
+          int iter = 0;
+          for(int y = yMin; y <= yMax-step; y+=step)
+          {
+            for(int x = xMin; x <= xMax-step; x+=step)
+            {
+              std::size_t dist2 = pow(center(0)-x, 2) + pow(center(1)-y, 2);
+              if(dist2 > maxDist2)
+                continue;
 
-          tripletList.push_back(T(count, index, w_ij));
-          tripletList.push_back(T(count, channelQuantization+i, -w_ij));
+              float sample = clamp(image(y, x)(channel), 0.f, 1.f);
+              float w_ij = weight(sample, channel);
+              std::size_t index = std::round(sample * (channelQuantization - 1));
 
-          b(count) = w_ij * std::log(ldrTimes.at(j));
-          count += 1;
+              tripletList.push_back(T(count, index, w_ij));
+              tripletList.push_back(T(count, channelQuantization + iter, -w_ij));
+
+              b(count) = w_ij * std::log(ldrTimes.at(j));
+              count += 1;
+              iter +=1;
+            }
+          }
+          if(j == 0)
+            nbValidPixels = iter;
         }
+      }
+      else
+      {
+        const int step = std::floor(width*height / nbPoints);
+        for(unsigned int j=0; j<nbImages; ++j)
+        {
+          const image::Image<image::RGBfColor> &image = ldrImagesGroup.at(j);
+          for(unsigned int i=0; i<nbPoints; ++i)
+          {
+            float sample = clamp(image(step*i)(channel), 0.f, 1.f);
+            float w_ij = weight(sample, channel);
+            std::size_t index = std::round(sample * (channelQuantization - 1));
+
+            tripletList.push_back(T(count, index, w_ij));
+            tripletList.push_back(T(count, channelQuantization+i, -w_ij));
+
+            b(count) = w_ij * std::log(ldrTimes.at(j));
+            count += 1;
+          }
+        }
+        nbValidPixels = nbPoints;
       }
 
       // fix the curve by setting its middle value to zero
@@ -90,9 +137,10 @@ void DebevecCalibrate::process(const std::vector< std::vector< image::Image<imag
         count += 1;
       }
 
+      sMat A(count, channelQuantization + nbValidPixels);
       A.setFromTriplets(tripletList.begin(), tripletList.end());
 
-
+      b.conservativeResize(count);
 
       // solve the system using SVD decomposition
       A.makeCompressed();
