@@ -230,11 +230,12 @@ int main(int argc, char** argv)
   }
   else
   {
-    if(calibrationMethod == ECalibrationMethod::GROSSBERG)
       channelQuantization = std::pow(2, 10);  //RAW 10 bit precision, 2^10 values between black and white point
-    else
-      channelQuantization = std::pow(2, 12); //RAW 12 bit precision, 2^12 values between black and white point
     response.resize(channelQuantization);
+    if(calibrationMethod == ECalibrationMethod::LINEAR)
+      loadColorSpace = image::EImageColorSpace::LINEAR;
+    else
+      loadColorSpace = image::EImageColorSpace::SRGB;
   }
 
   // force clamped value correction between 0 and 1
@@ -256,7 +257,7 @@ int main(int argc, char** argv)
     case ECalibrationMethod::LINEAR:      break;
     case ECalibrationMethod::DEBEVEC:     calibrationWeight.setTriangular();  break;
     case ECalibrationMethod::ROBERTSON:   calibrationWeight.setRobertsonWeight(); break;
-    case ECalibrationMethod::GROSSBERG:   calibrationWeight.setGaussian();  break;
+    case ECalibrationMethod::GROSSBERG:   break;
     }
   }
   else
@@ -332,8 +333,9 @@ int main(int argc, char** argv)
 
     std::map<std::string, std::string> metadata;
 
-    image::readImage(imagePath, ldrImages.at(i), image::EImageColorSpace::SRGB);
     ALICEVISION_LOG_INFO("Reading " << imagePath);
+
+    image::readImage(imagePath, ldrImages.at(i), loadColorSpace);
 
     image::readImageMetadata(imagePath, w, h, metadata);
 
