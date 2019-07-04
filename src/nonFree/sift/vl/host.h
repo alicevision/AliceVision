@@ -320,10 +320,10 @@ defined(__DOXYGEN__)
 #if defined(VL_COMPILER_MSC) & ! defined(__DOXYGEN__)
 #  define VL_UNUSED
 #  define VL_INLINE static __inline
-#if _MSC_VER < 1900
+#if _MSC_VER <= 1800
 #  define snprintf _snprintf
-#endif
 #  define isnan _isnan
+#endif
 #  ifdef VL_BUILD_DLL
 #    ifdef __cplusplus
 #      define VL_EXPORT extern "C" __declspec(dllexport)
