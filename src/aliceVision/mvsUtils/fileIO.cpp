@@ -351,19 +351,27 @@ void loadImage(const std::string& path, const MultiViewParams* mp, int camId, Im
 
         oiio::ParamValueList metadata;
         imageIO::readImageMetadata(path, metadata);
-        float exposureCompensation = metadata.get_float("AliceVision:EVComp");
-        ALICEVISION_LOG_INFO("  exposure compensation for image " << camId + 1 << ": " << exposureCompensation);
 
-        for(int pix = 0; pix < img.size(); ++pix)
-            img[pix] = img[pix] * exposureCompensation;
+        float exposureCompensation = metadata.get_float("AliceVision:EVComp", -1);
 
-        imageIO::convertImage(img, imageIO::EImageColorSpace::LINEAR, colorspace);
+        if(exposureCompensation == -1)
+        {
+            exposureCompensation = 1.0f;
+            ALICEVISION_LOG_INFO("Cannot compensate exposure. PrepareDenseScene needs to be update");
+        }
+        else
+        {
+            ALICEVISION_LOG_INFO("  exposure compensation for image " << camId + 1 << ": " << exposureCompensation);
+
+            for(int pix = 0; pix < img.size(); ++pix)
+                img[pix] = img[pix] * exposureCompensation;
+
+            imageIO::convertImage(img, imageIO::EImageColorSpace::LINEAR, colorspace);
+        }
     }
 
     // scale choosed by the user and apply during the process
     const int processScale = mp->getProcessDownscale();
-    const int width = mp->getWidth(camId);
-    const int height = mp->getHeight(camId);
 
     if(processScale > 1)
     {
