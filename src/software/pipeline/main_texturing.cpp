@@ -44,6 +44,7 @@ int main(int argc, char* argv[])
     std::string outputFolder;
     std::string imagesFolder;
     std::string outTextureFileTypeName = imageIO::EImageFileType_enumToString(imageIO::EImageFileType::PNG);
+    std::string processColorspaceName = imageIO::EImageColorSpace_enumToString(imageIO::EImageColorSpace::SRGB);
     bool flipNormals = false;
 
     mesh::TexturingParams texParams;
@@ -87,6 +88,8 @@ int main(int argc, char* argv[])
             "Option to flip face normals. It can be needed as it depends on the vertices order in triangles and the convention change from one software to another.")
         ("useScore", po::value<bool>(&texParams.useScore)->default_value(texParams.useScore),
              "Use triangles scores (based on observations and re-projected areas in source images) for weighting contributions.")
+        ("processColorspace", po::value<std::string>(&processColorspaceName)->default_value(processColorspaceName),
+            "Colorspace for the texturing internal computation (does not impact the output file colorspace).")
         ("multiBandDownscale", po::value<unsigned int>(&texParams.multiBandDownscale)->default_value(texParams.multiBandDownscale),
             "Width of frequency bands.")
         ("multiBandNbContrib", po::value<std::vector<int>>(&texParams.multiBandNbContrib)->default_value(texParams.multiBandNbContrib)->multitoken(),
@@ -144,6 +147,7 @@ int main(int argc, char* argv[])
     system::Logger::get()->setLogLevel(verboseLevel);
 
     texParams.visibilityRemappingMethod = mesh::EVisibilityRemappingMethod_stringToEnum(visibilityRemappingMethod);
+    texParams.processColorspace = imageIO::EImageColorSpace_stringToEnum(processColorspaceName);
     // set output texture file type
     const imageIO::EImageFileType outputTextureFileType = imageIO::EImageFileType_stringToEnum(outTextureFileTypeName);
 
