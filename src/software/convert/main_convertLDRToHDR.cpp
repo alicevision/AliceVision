@@ -124,9 +124,10 @@ void recoverSourceImage(const image::Image<image::RGBfColor>& hdrImage, hdr::rgb
     float offset[3];
     for(int i=0; i<3; ++i)
         offset[i] = std::abs(meanRecovered[i] - meanVal[i]);
-    ALICEVISION_COUT("offset between target source image and recovered from hdr = " << offset);
+    ALICEVISION_LOG_INFO("Offset between target source image and recovered from hdr = " << offset);
 
     image::writeImage(path, targetRecover, image::EImageColorSpace::AUTO);
+    ALICEVISION_LOG_INFO("Recovered target source image written as " << path);
 }
 
 
@@ -485,7 +486,11 @@ int main(int argc, char** argv)
 
 
   image::writeImage(outputHDRImagePath, image, image::EImageColorSpace::AUTO);
-  if(!outputResponsePath.empty())   response.write(outputResponsePath);
+  if(!outputResponsePath.empty())
+  {
+    response.write(outputResponsePath);
+    ALICEVISION_LOG_INFO("Camera response function written as " << outputResponsePath);
+  }
 
 
   // test of recovery of source target image from HDR
@@ -509,6 +514,7 @@ int main(int argc, char** argv)
   }
 
   ALICEVISION_LOG_INFO("Successfull HDR fusion of " << nbImages << " LDR images centered on " << target);
+  ALICEVISION_LOG_INFO("HDR image written as " << outputHDRImagePath);
 
   return EXIT_SUCCESS;
 }
