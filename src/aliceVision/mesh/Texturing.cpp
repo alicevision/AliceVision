@@ -509,15 +509,20 @@ void Texturing::generateTexturesSubSet(const mvsUtils::MultiViewParams& mp,
                     // retrieve triangle 3D and UV coordinates
                     Point2d triPixs[3];
                     Point3d triPts[3];
+                    auto triangleUvIds = trisUvIds[triangleId];
+                    // compute the Bottom-Left minima of the current UDIM for [0,1] range remapping
+                    Point2d udimBL;
+                    udimBL.x = std::floor(std::min(std::min(uvCoords[triangleUvIds[0]].x, uvCoords[triangleUvIds[1]].x), uvCoords[triangleUvIds[2]].x));
+                    udimBL.y = std::floor(std::min(std::min(uvCoords[triangleUvIds[0]].y, uvCoords[triangleUvIds[1]].y), uvCoords[triangleUvIds[2]].y));
 
                     for(int k = 0; k < 3; k++)
                     {
                        const int pointIndex = (*me->tris)[triangleId].v[k];
                        triPts[k] = (*me->pts)[pointIndex];                               // 3D coordinates
-                       const int uvPointIndex = trisUvIds[triangleId].m[k];
+                       const int uvPointIndex = triangleUvIds.m[k];
                        Point2d uv = uvCoords[uvPointIndex];
-                       uv.x -= std::floor(uv.x);
-                       uv.y -= std::floor(uv.y);
+                       // UDIM: remap coordinates between [0,1]
+                       uv = uv - udimBL;
 
                        triPixs[k] = uv * texParams.textureSide;   // UV coordinates
                     }
@@ -802,7 +807,6 @@ void Texturing::writeTexture(AccuImage& atlasTexture, const std::size_t atlasID,
     if(texParams.downscale > 1)
     {
         Image resizedColorBuffer;
-        outTextureSide = texParams.textureSide / texParams.downscale;
 
         ALICEVISION_LOG_INFO("  - Downscaling texture (" << texParams.downscale << "x).");
         imageIO::resizeImage(texParams.downscale, atlasTexture.img, resizedColorBuffer);
@@ -814,7 +818,8 @@ void Texturing::writeTexture(AccuImage& atlasTexture, const std::size_t atlasID,
     ALICEVISION_LOG_INFO("  - Writing texture file: " << texturePath.string());
 
     using namespace imageIO;
-    writeImage(texturePath.string(), atlasTexture.img, EImageQuality::OPTIMIZED, OutputFileColorSpace(EImageColorSpace::SRGB, EImageColorSpace::AUTO));
+    OutputFileColorSpace colorspace(EImageColorSpace::SRGB, EImageColorSpace::AUTO);
+    writeImage(texturePath.string(), atlasTexture.img, EImageQuality::OPTIMIZED, colorspace);
 }
 
 
