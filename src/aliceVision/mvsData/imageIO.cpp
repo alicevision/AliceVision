@@ -10,6 +10,7 @@
 #include <aliceVision/mvsData/Color.hpp>
 #include <aliceVision/mvsData/Rgb.hpp>
 #include <aliceVision/mvsData/Image.hpp>
+#include <aliceVision/mvsData/imageAlgo.hpp>
 
 #include <OpenImageIO/imageio.h>
 #include <OpenImageIO/imagebuf.h>
@@ -18,7 +19,7 @@
 #include <OpenEXR/half.h>
 
 #include <boost/filesystem.hpp>
-#include  <boost/algorithm/string/case_conv.hpp>
+#include <boost/algorithm/string/case_conv.hpp>
 
 #include <iostream>
 #include <algorithm>
@@ -28,6 +29,7 @@
 #include <stdexcept>
 #include <memory>
 #include <string>
+
 
 namespace fs = boost::filesystem;
 
@@ -41,9 +43,20 @@ std::string EImageColorSpace_enumToString(const EImageColorSpace colorSpace)
     {
     case EImageColorSpace::SRGB:  return "sRGB"; // WARNING: string should match with OIIO definitions
     case EImageColorSpace::LINEAR:   return "Linear";
+    case EImageColorSpace::LAB: return "LAB";
+    case EImageColorSpace::XYZ: return "XYZ";
     default: ;
     }
     throw std::out_of_range("No string defined for EImageColorSpace: " + std::to_string(int(colorSpace)));
+}
+
+EImageColorSpace EImageColorSpace_stringToEnum(const std::string& colorspace)
+{
+    if(colorspace == "sRGB") return EImageColorSpace::SRGB;
+    if(colorspace == "LAB") return  EImageColorSpace::LAB;
+    if(colorspace == "XYZ") return EImageColorSpace::XYZ;
+
+    throw std::out_of_range("No EImageColorSpace defined for string: " + colorspace);
 }
 
 
@@ -204,15 +217,39 @@ void readImage(const std::string& path,
     configSpec.attribute("raw:auto_bright", 0);       // don't want exposure correction
     configSpec.attribute("raw:use_camera_wb", 1);     // want white balance correction
     configSpec.attribute("raw:use_camera_matrix", 3); // want to use embeded color profile
+#if OIIO_VERSION <= (10000 * 2 + 100 * 0 + 8) // OIIO_VERSION <= 2.0.8
+    // In these previous versions of oiio, there was no Linear option
+    configSpec.attribute("raw:ColorSpace", "sRGB");   // want colorspace sRGB
+#else
+    configSpec.attribute("raw:ColorSpace", "Linear");   // want linear colorspace with sRGB primaries
+#endif
 
     oiio::ImageBuf inBuf(path, 0, 0, NULL, &configSpec);
 
     inBuf.read(0, 0, true, oiio::TypeDesc::FLOAT); // force image convertion to float (for grayscale and color space convertion)
 
     if(!inBuf.initialized())
-        throw std::runtime_error("Can't find/open image file '" + path + "'.");
+        throw std::runtime_error("Cannot find/open image file '" + path + "'.");
 
+#if OIIO_VERSION <= (10000 * 2 + 100 * 0 + 8) // OIIO_VERSION <= 2.0.8
+    // Workaround for bug in RAW colorspace management in previous versions of OIIO:
+    //     When asking sRGB we got sRGB primaries with linear gamma,
+    //     but oiio::ColorSpace was wrongly set to sRGB.
+    oiio::ImageSpec inSpec = inBuf.spec();
+    if(inSpec.get_string_attribute("oiio:ColorSpace", "") == "sRGB")
+    {
+        const auto in = oiio::ImageInput::open(path, nullptr);
+        const std::string formatStr = in->format_name();
+        if(formatStr == "raw")
+        {
+            // For the RAW plugin: override colorspace as linear (as the content is linear with sRGB primaries but declared as sRGB)
+            inSpec.attribute("oiio:ColorSpace", "Linear");
+            ALICEVISION_LOG_TRACE("OIIO workaround: RAW input image " << path << " is in Linear.");
+        }
+    }
+#else
     const oiio::ImageSpec& inSpec = inBuf.spec();
+#endif
 
     // check picture channels number
     if(inSpec.nchannels != 1 && inSpec.nchannels < 3)
@@ -220,19 +257,46 @@ void readImage(const std::string& path,
 
     // color conversion
     if(imageColorSpace == EImageColorSpace::AUTO)
-      throw std::runtime_error("You must specify a requested color space for image file '" + path + "'.");
+        throw std::runtime_error("You must specify a requested color space for image file '" + path + "'.");
+
+    const std::string& colorSpace = inSpec.get_string_attribute("oiio:ColorSpace", "sRGB"); // default image color space is sRGB
+    ALICEVISION_LOG_TRACE("Read image " << path << " (encoded in " << colorSpace << " colorspace).");
 
     if(imageColorSpace == EImageColorSpace::SRGB) // color conversion to sRGB
     {
-      const std::string& colorSpace = inSpec.get_string_attribute("oiio:ColorSpace", "sRGB"); // default image color space is sRGB
-      if(colorSpace != "sRGB")
-        oiio::ImageBufAlgo::colorconvert(inBuf, inBuf, colorSpace, "sRGB");
+        if(colorSpace != "sRGB")
+        {
+            oiio::ImageBufAlgo::colorconvert(inBuf, inBuf, colorSpace, "sRGB");
+            ALICEVISION_LOG_TRACE("Convert image " << path << " from " << colorSpace << " to sRGB colorspace");
+        }
     }
     else if(imageColorSpace == EImageColorSpace::LINEAR) // color conversion to linear
     {
-      const std::string& colorSpace = inSpec.get_string_attribute("oiio:ColorSpace", "sRGB");
-      if(colorSpace != "Linear")
-        oiio::ImageBufAlgo::colorconvert(inBuf, inBuf, colorSpace, "Linear");
+        if(colorSpace != "Linear")
+        {
+            oiio::ImageBufAlgo::colorconvert(inBuf, inBuf, colorSpace, "Linear");
+            ALICEVISION_LOG_TRACE("Convert image " << path << " from " << colorSpace << " to Linear colorspace");
+        }
+    }
+    else if(imageColorSpace == EImageColorSpace::LAB) //color conversion to LAB
+    {
+        if(colorSpace != "Linear") // image need to be converted in Linear colorspace first
+        {
+            oiio::ImageBufAlgo::colorconvert(inBuf, inBuf, colorSpace, "Linear");
+            ALICEVISION_LOG_TRACE("Convert image " << path << " from " << colorSpace << " to Linear colorspace for La*b* conversion");
+        }
+        imageAlgo::processImage(inBuf, &imageAlgo::RGBtoLAB);
+        ALICEVISION_LOG_TRACE("Convert image " << path << " from Linear to La*b* colorspace");
+    }
+    else if(imageColorSpace == EImageColorSpace::XYZ)
+    {
+        if(colorSpace != "Linear") // image need to be converted in Linear colorspace first
+        {
+            oiio::ImageBufAlgo::colorconvert(inBuf, inBuf, colorSpace, "Linear");
+            ALICEVISION_LOG_TRACE("Convert image " << path << " from " << colorSpace << " to Linear colorspace for La*b* conversion");
+        }
+        imageAlgo::processImage(inBuf, &imageAlgo::RGBtoXYZ);
+        ALICEVISION_LOG_TRACE("Convert image " << path << " from Linear to XYZ colorspace");
     }
 
     // convert to grayscale if needed
@@ -342,6 +406,7 @@ void writeImage(const std::string& path,
         colorspace.to = EImageColorSpace::LINEAR;
     }
 
+
     ALICEVISION_LOG_DEBUG("[IO] Write Image: " << path << std::endl
                        << "\t- width: " << width << std::endl
                        << "\t- height: " << height << std::endl
@@ -360,6 +425,18 @@ void writeImage(const std::string& path,
     oiio::ImageBuf colorspaceBuf;  // buffer for image colorspace modification
     if(colorspace.from != colorspace.to)
     {
+      if(colorspace.from == imageIO::EImageColorSpace::LAB)
+      {
+          imageAlgo::processImage(colorspaceBuf, *outBuf, &imageAlgo::LABtoRGB);
+          outBuf = &colorspaceBuf;
+          colorspace.from = imageIO::EImageColorSpace::LINEAR;
+      }
+      if(colorspace.from == imageIO::EImageColorSpace::XYZ)
+      {
+          imageAlgo::processImage(colorspaceBuf, *outBuf, &imageAlgo::XYZtoRGB);
+          outBuf = &colorspaceBuf;
+          colorspace.from = imageIO::EImageColorSpace::LINEAR;
+      }
       oiio::ImageBufAlgo::colorconvert(colorspaceBuf, *outBuf, EImageColorSpace_enumToString(colorspace.from), EImageColorSpace_enumToString(colorspace.to));
       outBuf = &colorspaceBuf;
     }
@@ -379,32 +456,32 @@ void writeImage(const std::string& path,
     fs::rename(tmpPath, path);
 }
 
-void writeImage(const std::string& path, int width, int height, const std::vector<unsigned char>& buffer, EImageQuality imageQuality, OutputFileColorSpace colorspace, const oiio::ParamValueList& metadata)
+void writeImage(const std::string& path, int width, int height, const std::vector<unsigned char>& buffer, EImageQuality imageQuality, OutputFileColorSpace& colorspace, const oiio::ParamValueList& metadata)
 {
     writeImage(path, oiio::TypeDesc::UCHAR, width, height, 1, buffer, imageQuality, colorspace, metadata);
 }
 
-void writeImage(const std::string& path, int width, int height, const std::vector<unsigned short>& buffer, EImageQuality imageQuality,  OutputFileColorSpace colorspace, const oiio::ParamValueList& metadata)
+void writeImage(const std::string& path, int width, int height, const std::vector<unsigned short>& buffer, EImageQuality imageQuality,  OutputFileColorSpace& colorspace, const oiio::ParamValueList& metadata)
 {
     writeImage(path, oiio::TypeDesc::UINT16, width, height, 1, buffer, imageQuality, colorspace, metadata);
 }
 
-void writeImage(const std::string& path, int width, int height, const std::vector<rgb>& buffer, EImageQuality imageQuality, OutputFileColorSpace colorspace, const oiio::ParamValueList& metadata)
+void writeImage(const std::string& path, int width, int height, const std::vector<rgb>& buffer, EImageQuality imageQuality, OutputFileColorSpace& colorspace, const oiio::ParamValueList& metadata)
 {
     writeImage(path, oiio::TypeDesc::UCHAR, width, height, 3, buffer, imageQuality, colorspace, metadata);
 }
 
-void writeImage(const std::string& path, int width, int height, const std::vector<float>& buffer, EImageQuality imageQuality, OutputFileColorSpace colorspace, const oiio::ParamValueList& metadata)
+void writeImage(const std::string& path, int width, int height, const std::vector<float>& buffer, EImageQuality imageQuality, OutputFileColorSpace& colorspace, const oiio::ParamValueList& metadata)
 {
     writeImage(path, oiio::TypeDesc::FLOAT, width, height, 1, buffer, imageQuality, colorspace, metadata);
 }
 
-void writeImage(const std::string& path, int width, int height, const std::vector<Color>& buffer, EImageQuality imageQuality, OutputFileColorSpace colorspace, const oiio::ParamValueList& metadata)
+void writeImage(const std::string& path, int width, int height, const std::vector<Color>& buffer, EImageQuality imageQuality, OutputFileColorSpace& colorspace, const oiio::ParamValueList& metadata)
 {
     writeImage(path, oiio::TypeDesc::FLOAT, width, height, 3, buffer, imageQuality, colorspace, metadata);
 }
 
-void writeImage(const std::string &path, Image &image, EImageQuality imageQuality, OutputFileColorSpace colorspace, const oiio::ParamValueList& metadata)
+void writeImage(const std::string &path, Image &image, EImageQuality imageQuality, OutputFileColorSpace& colorspace, const oiio::ParamValueList& metadata)
 {
     writeImage(path, oiio::TypeDesc::FLOAT, image.width(), image.height(), 3, image.data(), imageQuality, colorspace, metadata);
 }
@@ -434,172 +511,6 @@ void convertImage(oiio::TypeDesc typeDesc,
 void convertImage(Image& image, EImageColorSpace fromColorSpace, EImageColorSpace toColorSpace)
 {
     convertImage(oiio::TypeDesc::FLOAT, image.width(), image.height(), 3, image.data(), fromColorSpace, toColorSpace);
-}
-
-template<typename T>
-void transposeImage(oiio::TypeDesc typeDesc,
-                    int width,
-                    int height,
-                    int nchannels,
-                    std::vector<T>& buffer)
-{
-    oiio::ImageSpec imageSpec(width, height, nchannels, typeDesc);
-
-    oiio::ImageBuf inBuf(imageSpec, buffer.data());
-    oiio::ImageBuf transposeBuf;
-
-    oiio::ImageBufAlgo::transpose(transposeBuf, inBuf, oiio::ROI::All());
-
-    transposeBuf.get_pixels(oiio::ROI::All(), typeDesc, buffer.data());
-}
-
-void transposeImage(int width, int height, std::vector<unsigned char>& buffer)
-{
-    transposeImage(oiio::TypeDesc::UCHAR, width, height, 1, buffer);
-}
-
-void transposeImage(int width, int height, std::vector<rgb>& buffer)
-{
-    transposeImage(oiio::TypeDesc::UCHAR, width, height, 3, buffer);
-}
-
-void transposeImage(int width, int height, std::vector<float>& buffer)
-{
-    transposeImage(oiio::TypeDesc::FLOAT, width, height, 1, buffer);
-}
-
-void transposeImage(int width, int height, std::vector<Color>& buffer)
-{
-    transposeImage(oiio::TypeDesc::FLOAT, width, height, 3, buffer);
-}
-
-void transposeImage(Image &image)
-{
-    transposeImage(oiio::TypeDesc::FLOAT, image.width(), image.height(), 3, image.data());
-}
-
-template<typename T>
-void resizeImage(oiio::TypeDesc typeDesc,
-                 int inWidth,
-                 int inHeight,
-                 int nchannels,
-                 int downscale,
-                 const std::vector<T>& inBuffer,
-                 std::vector<T>& outBuffer,
-                 const std::string& filter = "",
-                 float filterSize = 0)
-{
-    const int outWidth = inWidth / downscale;
-    const int outHeight = inHeight / downscale;
-
-    outBuffer.resize(outWidth * outHeight);
-
-    const oiio::ImageBuf inBuf(oiio::ImageSpec(inWidth, inHeight, nchannels, typeDesc), const_cast<T*>(inBuffer.data()));
-    oiio::ImageBuf outBuf(oiio::ImageSpec(outWidth, outHeight, nchannels, typeDesc), outBuffer.data());
-
-    oiio::ImageBufAlgo::resize(outBuf, inBuf, filter, filterSize, oiio::ROI::All());
-}
-
-void resizeImage(int inWidth, int inHeight, int downscale, const std::vector<unsigned char>& inBuffer, std::vector<unsigned char>& outBuffer, const std::string& filter, float filterSize)
-{
-    resizeImage(oiio::TypeDesc::UCHAR, inWidth, inHeight, 1, downscale, inBuffer, outBuffer, filter, filterSize);
-}
-
-void resizeImage(int inWidth, int inHeight, int downscale, const std::vector<rgb>& inBuffer, std::vector<rgb>& outBuffer, const std::string& filter, float filterSize)
-{
-    resizeImage(oiio::TypeDesc::UCHAR, inWidth, inHeight, 3, downscale, inBuffer, outBuffer, filter, filterSize);
-}
-
-void resizeImage(int inWidth, int inHeight, int downscale, const std::vector<float>& inBuffer, std::vector<float>& outBuffer, const std::string& filter, float filterSize)
-{
-    resizeImage(oiio::TypeDesc::FLOAT, inWidth, inHeight, 1, downscale, inBuffer, outBuffer, filter, filterSize);
-}
-
-void resizeImage(int inWidth, int inHeight, int downscale, const std::vector<Color>& inBuffer, std::vector<Color>& outBuffer, const std::string& filter, float filterSize)
-{
-    resizeImage(oiio::TypeDesc::FLOAT, inWidth, inHeight, 3, downscale, inBuffer, outBuffer, filter, filterSize);
-}
-
-void resizeImage(int downscale, const Image &inImage, Image &outImage, const std::string &filter, float filterSize)
-{
-    resizeImage(oiio::TypeDesc::FLOAT, inImage.width(), inImage.height(), 3, downscale, inImage.data(), outImage.data(), filter, filterSize);
-    outImage.setHeight(inImage.height() / downscale);
-    outImage.setWidth(inImage.width() / downscale);
-}
-
-template<typename T>
-void convolveImage(oiio::TypeDesc typeDesc,
-                   int inWidth,
-                   int inHeight,
-                   int nchannels,
-                   const std::vector<T>& inBuffer,
-                   std::vector<T>& outBuffer,
-                   const std::string& kernel,
-                   float kernelWidth,
-                   float kernelHeight)
-{
-    outBuffer.resize(inBuffer.size());
-
-    const oiio::ImageBuf inBuf(oiio::ImageSpec(inWidth, inHeight, nchannels, typeDesc), const_cast<T*>(inBuffer.data()));
-    oiio::ImageBuf outBuf(oiio::ImageSpec(inWidth, inHeight, nchannels, typeDesc), outBuffer.data());
-
-    oiio::ImageBuf K;
-    oiio::ImageBufAlgo::make_kernel(K, kernel, kernelWidth, kernelHeight);
-
-    oiio::ImageBufAlgo::convolve(outBuf, inBuf, K);
-}
-
-
-void convolveImage(int inWidth, int inHeight, const std::vector<unsigned char>& inBuffer, std::vector<unsigned char>& outBuffer, const std::string& kernel, float kernelWidth, float kernelHeight)
-{
-  convolveImage(oiio::TypeDesc::UCHAR, inWidth, inHeight, 1, inBuffer, outBuffer, kernel, kernelWidth, kernelHeight);
-}
-
-void convolveImage(int inWidth, int inHeight, const std::vector<rgb>& inBuffer, std::vector<rgb>& outBuffer, const std::string& kernel, float kernelWidth, float kernelHeight)
-{
-  convolveImage(oiio::TypeDesc::UCHAR, inWidth, inHeight, 3, inBuffer, outBuffer, kernel, kernelWidth, kernelHeight);
-}
-
-void convolveImage(int inWidth, int inHeight, const std::vector<float>& inBuffer, std::vector<float>& outBuffer, const std::string& kernel, float kernelWidth, float kernelHeight)
-{
-  convolveImage(oiio::TypeDesc::FLOAT, inWidth, inHeight, 1, inBuffer, outBuffer, kernel, kernelWidth, kernelHeight);
-}
-
-void convolveImage(int inWidth, int inHeight, const std::vector<Color>& inBuffer, std::vector<Color>& outBuffer, const std::string& kernel, float kernelWidth, float kernelHeight)
-{
-  convolveImage(oiio::TypeDesc::FLOAT, inWidth, inHeight, 3, inBuffer, outBuffer, kernel, kernelWidth, kernelHeight);
-}
-
-void convolveImage(const Image &inImage, Image &outImage, const std::string &kernel, float kernelWidth, float kernelHeight)
-{
-    convolveImage(oiio::TypeDesc::FLOAT, inImage.width(), inImage.height(), 3, inImage.data(), outImage.data(), kernel, kernelWidth, kernelHeight);
-    outImage.setHeight(inImage.height());
-    outImage.setWidth(inImage.width());
-}
-
-void fillHoles(int inWidth, int inHeight, std::vector<Color>& colorBuffer, const std::vector<float>& alphaBuffer)
-{
-    oiio::ImageBuf rgbBuf(oiio::ImageSpec(inWidth, inHeight, 3, oiio::TypeDesc::FLOAT), colorBuffer.data());
-    const oiio::ImageBuf alphaBuf(oiio::ImageSpec(inWidth, inHeight, 1, oiio::TypeDesc::FLOAT), const_cast<float*>(alphaBuffer.data()));
-
-    // Create RGBA ImageBuf from source buffers with correct channel names
-    // (identified alpha channel is needed for fillholes_pushpull)
-    oiio::ImageBuf rgbaBuf;
-    oiio::ImageBufAlgo::channel_append(rgbaBuf, rgbBuf, alphaBuf);
-    rgbaBuf.specmod().default_channel_names();
-
-    // Temp RGBA buffer to store fillholes result
-    oiio::ImageBuf filledBuf;
-    oiio::ImageBufAlgo::fillholes_pushpull(filledBuf, rgbaBuf);
-    rgbaBuf.clear();
-
-    // Copy result to original RGB buffer
-    oiio::ImageBufAlgo::copy(rgbBuf, filledBuf);
-}
-
-void fillHoles(Image& image, const std::vector<float>& alphaBuffer)
-{
-    fillHoles(image.width(), image.height(), image.data(), alphaBuffer);
 }
 
 } // namespace imageIO

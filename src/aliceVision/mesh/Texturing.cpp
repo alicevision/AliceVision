@@ -16,6 +16,7 @@
 #include <aliceVision/mvsData/Pixel.hpp>
 #include <aliceVision/mvsData/Image.hpp>
 #include <aliceVision/mvsData/imageIO.hpp>
+#include <aliceVision/mvsData/imageAlgo.hpp>
 
 #include <geogram/basic/common.h>
 #include <geogram/basic/geometry_nd.h>
@@ -273,10 +274,10 @@ void Texturing::generateTextures(const mvsUtils::MultiViewParams &mp,
     {
         ALICEVISION_LOG_INFO("  - " << c);
     }
-
     std::partial_sum(m.begin(), m.end(), m.begin());
 
-    mvsUtils::ImagesCache imageCache(&mp, imageIO::EImageColorSpace::SRGB, texParams.correctEV);
+    ALICEVISION_LOG_INFO("Texturing in " + imageIO::EImageColorSpace_enumToString(texParams.processColorspace) + " colorspace.");
+    mvsUtils::ImagesCache imageCache(&mp, texParams.processColorspace, texParams.correctEV);
     imageCache.setCacheSize(2);
     ALICEVISION_LOG_INFO("Images loaded from cache with: " + imageCache.ECorrectEV_enumToString(texParams.correctEV));
 
@@ -509,15 +510,20 @@ void Texturing::generateTexturesSubSet(const mvsUtils::MultiViewParams& mp,
                     // retrieve triangle 3D and UV coordinates
                     Point2d triPixs[3];
                     Point3d triPts[3];
+                    auto triangleUvIds = trisUvIds[triangleId];
+                    // compute the Bottom-Left minima of the current UDIM for [0,1] range remapping
+                    Point2d udimBL;
+                    udimBL.x = std::floor(std::min(std::min(uvCoords[triangleUvIds[0]].x, uvCoords[triangleUvIds[1]].x), uvCoords[triangleUvIds[2]].x));
+                    udimBL.y = std::floor(std::min(std::min(uvCoords[triangleUvIds[0]].y, uvCoords[triangleUvIds[1]].y), uvCoords[triangleUvIds[2]].y));
 
                     for(int k = 0; k < 3; k++)
                     {
                        const int pointIndex = (*me->tris)[triangleId].v[k];
                        triPts[k] = (*me->pts)[pointIndex];                               // 3D coordinates
-                       const int uvPointIndex = trisUvIds[triangleId].m[k];
+                       const int uvPointIndex = triangleUvIds.m[k];
                        Point2d uv = uvCoords[uvPointIndex];
-                       uv.x -= std::floor(uv.x);
-                       uv.y -= std::floor(uv.y);
+                       // UDIM: remap coordinates between [0,1]
+                       uv = uv - udimBL;
 
                        triPixs[k] = uv * texParams.textureSide;   // UV coordinates
                     }
@@ -600,26 +606,34 @@ void Texturing::generateTexturesSubSet(const mvsUtils::MultiViewParams& mp,
 #if TEXTURING_MBB_DEBUG
         {
             // write the number of contribution per atlas frequency bands
-            for(std::size_t level = 0; level < accuPyramid.pyramid.size(); ++level)
+            if(!texParams.useScore)
             {
-                AccuImage& atlasLevelTexture =  accuPyramid.pyramid[level];
-
-                //write the number of contributions for each texture
-                std::vector<float> imgContrib(textureSize);
-
-                for(unsigned int yp = 0; yp < texParams.textureSide; ++yp)
+                for(std::size_t level = 0; level < accuPyramid.pyramid.size(); ++level)
                 {
-                    unsigned int yoffset = yp * texParams.textureSide;
-                    for(unsigned int xp = 0; xp < texParams.textureSide; ++xp)
-                    {
-                        unsigned int xyoffset = yoffset + xp;
-                        imgContrib[xyoffset] = atlasLevelTexture.imgCount[xyoffset];
-                    }
-                }
+                    AccuImage& atlasLevelTexture =  accuPyramid.pyramid[level];
 
-                const std::string textureName = "contrib_" + std::to_string(1001 + atlasID) + std::string("_") + std::to_string(level) + std::string(".") + EImageFileType_enumToString(textureFileType); // starts at '1001' for UDIM compatibility
-                bfs::path texturePath = outPath / textureName;
-                imageIO::writeImage(texturePath.string(), texParams.textureSide, texParams.textureSide, imgContrib, imageIO::EImageQuality::OPTIMIZED, imageIO::EImageColorSpace::AUTO);
+                    //write the number of contributions for each texture
+                    std::vector<float> imgContrib(textureSize);
+
+                    for(unsigned int yp = 0; yp < texParams.textureSide; ++yp)
+                    {
+                        unsigned int yoffset = yp * texParams.textureSide;
+                        for(unsigned int xp = 0; xp < texParams.textureSide; ++xp)
+                        {
+                            unsigned int xyoffset = yoffset + xp;
+                            imgContrib[xyoffset] = atlasLevelTexture.imgCount[xyoffset];
+                        }
+                    }
+
+                    const std::string textureName = "contrib_" + std::to_string(1001 + atlasID) + std::string("_") + std::to_string(level) + std::string(".") + EImageFileType_enumToString(textureFileType); // starts at '1001' for UDIM compatibility
+                    bfs::path texturePath = outPath / textureName;
+
+                    using namespace imageIO;
+                    OutputFileColorSpace colorspace(EImageColorSpace::SRGB, EImageColorSpace::AUTO);
+                    if(texParams.convertLAB)
+                        colorspace.from = EImageColorSpace::LAB;
+                    writeImage(texturePath.string(), texParams.textureSide, texParams.textureSide, imgContrib, EImageQuality::OPTIMIZED, colorspace);
+                }
             }
         }
 #endif
@@ -794,7 +808,7 @@ void Texturing::writeTexture(AccuImage& atlasTexture, const std::size_t atlasID,
                 alphaBuffer[xyoffset] = atlasTexture.imgCount[xyoffset] ? 1 : 0;
             }
         }
-        imageIO::fillHoles(atlasTexture.img, alphaBuffer);
+        imageAlgo::fillHoles(atlasTexture.img, alphaBuffer);
         alphaBuffer.clear();
     }
 
@@ -802,10 +816,9 @@ void Texturing::writeTexture(AccuImage& atlasTexture, const std::size_t atlasID,
     if(texParams.downscale > 1)
     {
         Image resizedColorBuffer;
-        outTextureSide = texParams.textureSide / texParams.downscale;
 
         ALICEVISION_LOG_INFO("  - Downscaling texture (" << texParams.downscale << "x).");
-        imageIO::resizeImage(texParams.downscale, atlasTexture.img, resizedColorBuffer);
+        imageAlgo::resizeImage(texParams.downscale, atlasTexture.img, resizedColorBuffer);
         std::swap(resizedColorBuffer, atlasTexture.img);
     }
 
@@ -814,7 +827,8 @@ void Texturing::writeTexture(AccuImage& atlasTexture, const std::size_t atlasID,
     ALICEVISION_LOG_INFO("  - Writing texture file: " << texturePath.string());
 
     using namespace imageIO;
-    writeImage(texturePath.string(), atlasTexture.img, EImageQuality::OPTIMIZED, OutputFileColorSpace(EImageColorSpace::SRGB, EImageColorSpace::AUTO));
+    OutputFileColorSpace colorspace(texParams.processColorspace, EImageColorSpace::AUTO);
+    writeImage(texturePath.string(), atlasTexture.img, EImageQuality::OPTIMIZED, colorspace);
 }
 
 

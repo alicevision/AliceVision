@@ -8,7 +8,7 @@
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/mvsUtils/common.hpp>
 #include <aliceVision/mvsUtils/MultiViewParams.hpp>
-#include <aliceVision/mvsData/imageIO.hpp>
+#include <aliceVision/mvsData/imageAlgo.hpp>
 #include <aliceVision/mvsData/Image.hpp>
 
 #include <boost/filesystem/operations.hpp>
@@ -377,11 +377,9 @@ void loadImage(const std::string& path, const MultiViewParams* mp, int camId, Im
     {
         ALICEVISION_LOG_DEBUG("Downscale (x" << processScale << ") image: " << mp->getViewId(camId) << ".");
         Image bmpr;
-        imageIO::resizeImage(processScale, img, bmpr);
+        imageAlgo::resizeImage(processScale, img, bmpr);
         img.swap(bmpr);
     }
-
-
 }
 
 bool DeleteDirectory(const std::string& sPath)

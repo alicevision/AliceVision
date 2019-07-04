@@ -74,7 +74,6 @@ alicevision_add_software(aliceVision_exportColoredPointCloud
         aliceVision_feature
         aliceVision_sfmData
         aliceVision_sfmDataIO
-        aliceVision_mesh
         ${Boost_LIBRARIES}
 )
 
