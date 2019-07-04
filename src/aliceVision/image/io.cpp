@@ -197,10 +197,7 @@ void readImage(const std::string& path,
   oiio::ImageSpec inSpec = inBuf.spec();
   if(inSpec.get_string_attribute("oiio:ColorSpace", "") == "sRGB")
   {
-    const auto in = oiio::ImageInput::open(path, nullptr);
-    const std::string formatStr = in->format_name();
-    ALICEVISION_LOG_INFO("************** inBuf.file_format_name(): " << inBuf.file_format_name());
-    if(formatStr == "raw")
+    if(inBuf.file_format_name() == "raw")
     {
       // For the RAW plugin: override colorspace as linear (as the content is linear with sRGB primaries but declared as sRGB)
       inSpec.attribute("oiio:ColorSpace", "Linear");
