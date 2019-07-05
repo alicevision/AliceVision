@@ -188,12 +188,12 @@ bool isSupportedUndistortFormat(const std::string &ext);
  * @param[out] buffer The output image buffer
  * @param[in] image color space
  */
-void readImage(const std::string& path, int& width, int& height, std::vector<unsigned char>& buffer, EImageColorSpace imageColorSpace);
-void readImage(const std::string& path, int& width, int& height, std::vector<unsigned short>& buffer, EImageColorSpace imageColorSpace);
-void readImage(const std::string& path, int& width, int& height, std::vector<rgb>& buffer, EImageColorSpace imageColorSpace);
-void readImage(const std::string& path, int& width, int& height, std::vector<float>& buffer, EImageColorSpace imageColorSpace);
-void readImage(const std::string& path, int& width, int& height, std::vector<Color>& buffer, EImageColorSpace imageColorSpace);
-void readImage(const std::string& path, Image& image, EImageColorSpace imageColorSpace);
+void readImage(const std::string& path, int& width, int& height, std::vector<unsigned char>& buffer, EImageColorSpace toColorSpace);
+void readImage(const std::string& path, int& width, int& height, std::vector<unsigned short>& buffer, EImageColorSpace toColorSpace);
+void readImage(const std::string& path, int& width, int& height, std::vector<rgb>& buffer, EImageColorSpace toColorSpace);
+void readImage(const std::string& path, int& width, int& height, std::vector<float>& buffer, EImageColorSpace toColorSpace);
+void readImage(const std::string& path, int& width, int& height, std::vector<Color>& buffer, EImageColorSpace toColorSpace);
+void readImage(const std::string& path, Image& image, EImageColorSpace toColorSpace);
 
 /**
  * @brief write an image with a given path and buffer
@@ -209,6 +209,5 @@ void writeImage(const std::string& path, int width, int height, const std::vecto
 void writeImage(const std::string& path, int width, int height, const std::vector<Color>& buffer, EImageQuality imageQuality, OutputFileColorSpace& colorspace, const oiio::ParamValueList& metadata = oiio::ParamValueList());
 void writeImage(const std::string& path, Image& image, EImageQuality imageQuality, OutputFileColorSpace& colorspace, const oiio::ParamValueList& metadata = oiio::ParamValueList());
 
-void convertImage(Image& image, EImageColorSpace fromColorSpace, EImageColorSpace toColorSpace);
 } // namespace imageIO
 } // namespace aliceVision

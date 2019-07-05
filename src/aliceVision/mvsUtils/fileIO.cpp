@@ -366,7 +366,7 @@ void loadImage(const std::string& path, const MultiViewParams* mp, int camId, Im
             for(int pix = 0; pix < img.size(); ++pix)
                 img[pix] = img[pix] * exposureCompensation;
 
-            imageIO::convertImage(img, imageIO::EImageColorSpace::LINEAR, colorspace);
+            imageAlgo::colorconvert(img, imageIO::EImageColorSpace::LINEAR, colorspace);
         }
     }
 
