@@ -495,12 +495,12 @@ void Texturing::generateTexturesSubSet(const mvsUtils::MultiViewParams& mp,
         for(const auto& c : cameraContributions)
         {
             AtlasIndex atlasID = c.first;
-            ALICEVISION_LOG_INFO("  - Texture file: " << atlasID);
+            ALICEVISION_LOG_INFO("  - Texture file: " << atlasID + 1);
             //for each frequency band
             for(int band = 0; band < c.second.size(); ++band)
             {
                 const ScorePerTriangle& trianglesId = c.second[band];
-                ALICEVISION_LOG_INFO("      - band " << band << ": " << trianglesId.size() << " triangles.");
+                ALICEVISION_LOG_INFO("      - band " << band + 1 << ": " << trianglesId.size() << " triangles.");
 
                 // for each triangle
                 #pragma omp parallel for
@@ -602,7 +602,7 @@ void Texturing::generateTexturesSubSet(const mvsUtils::MultiViewParams& mp,
     {
         AccuPyramid& accuPyramid = accuPyramids.at(atlasID);
         AccuImage& atlasTexture = accuPyramid.pyramid[0];
-        ALICEVISION_LOG_INFO("Create texture " << atlasID);
+        ALICEVISION_LOG_INFO("Create texture " << atlasID + 1);
 
 #if TEXTURING_MBB_DEBUG
         {
