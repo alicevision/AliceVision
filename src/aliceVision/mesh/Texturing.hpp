@@ -77,7 +77,7 @@ struct TexturingParams
 
     unsigned int textureSide = 8192;
     unsigned int padding = 5;
-    unsigned int downscale = 2;
+    unsigned int downscale = 1;
     bool fillHoles = false;
     bool useUDIM = true;
 };
