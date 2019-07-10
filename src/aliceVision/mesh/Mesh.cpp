@@ -2353,9 +2353,9 @@ StaticVector<int>* Mesh::getLargestConnectedComponentTrisIds() const
 {
     StaticVector<StaticVector<int>*>* ptsNeighPtsOrdered = getPtsNeighPtsOrdered();
 
-    StaticVector<int>* colors = new StaticVector<int>();
-    colors->reserve(pts->size());
-    colors->resize_with(pts->size(), -1);
+    StaticVector<int>* colorLabels = new StaticVector<int>();
+    colorLabels->reserve(pts->size());
+    colorLabels->resize_with(pts->size(), -1);
     StaticVector<int>* buff = new StaticVector<int>();
     buff->reserve(pts->size());
     int col = 0;
@@ -2363,7 +2363,7 @@ StaticVector<int>* Mesh::getLargestConnectedComponentTrisIds() const
     int bestCol = -1;
     for(int i = 0; i < pts->size(); ++i)
     {
-        if((*colors)[i] != -1) // already labelled with a color id
+        if((*colorLabels)[i] != -1) // already labelled with a color id
             continue;
 
         buff->resize(0);
@@ -2372,16 +2372,16 @@ StaticVector<int>* Mesh::getLargestConnectedComponentTrisIds() const
         while(buff->size() > 0)
         {
             int ptid = buff->pop();
-            if((*colors)[ptid] == -1)
+            if((*colorLabels)[ptid] == -1)
             {
-                (*colors)[ptid] = col;
+                (*colorLabels)[ptid] = col;
                 ++nptsOfCol;
             }
             else
             {
-                if((*colors)[ptid] != col)
+                if((*colorLabels)[ptid] != col)
                 {
-                    delete colors;
+                    delete colorLabels;
                     delete buff;
                     deleteArrayOfArrays<int>(&ptsNeighPtsOrdered);
                     throw std::runtime_error("getLargestConnectedComponentTrisIds: bad condition.");
@@ -2390,7 +2390,7 @@ StaticVector<int>* Mesh::getLargestConnectedComponentTrisIds() const
             for(int j = 0; j < sizeOfStaticVector<int>((*ptsNeighPtsOrdered)[ptid]); ++j)
             {
                 int nptid = (*(*ptsNeighPtsOrdered)[ptid])[j];
-                if((nptid > -1) && ((*colors)[nptid] == -1))
+                if((nptid > -1) && ((*colorLabels)[nptid] == -1))
                 {
                     if(buff->size() >= buff->capacity()) // should not happen but no problem
                     {
@@ -2415,15 +2415,15 @@ StaticVector<int>* Mesh::getLargestConnectedComponentTrisIds() const
     for(int i = 0; i < tris->size(); i++)
     {
         if(((*tris)[i].alive) &&
-           ((*colors)[(*tris)[i].v[0]] == bestCol) &&
-           ((*colors)[(*tris)[i].v[1]] == bestCol) &&
-           ((*colors)[(*tris)[i].v[2]] == bestCol))
+           ((*colorLabels)[(*tris)[i].v[0]] == bestCol) &&
+           ((*colorLabels)[(*tris)[i].v[1]] == bestCol) &&
+           ((*colorLabels)[(*tris)[i].v[2]] == bestCol))
         {
             out->push_back(i);
         }
     }
 
-    delete colors;
+    delete colorLabels;
     delete buff;
     deleteArrayOfArrays<int>(&ptsNeighPtsOrdered);
 
