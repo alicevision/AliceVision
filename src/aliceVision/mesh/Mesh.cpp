@@ -117,85 +117,45 @@ void Mesh::saveToBin(std::string binFileName)
 
 void Mesh::addMesh(Mesh* me)
 {
-    int npts = sizeOfStaticVector<Point3d>(pts);
-    int ntris = sizeOfStaticVector<Mesh::triangle>(tris);
-    int npts1 = sizeOfStaticVector<Point3d>(me->pts);
-    int ntris1 = sizeOfStaticVector<Mesh::triangle>(me->tris);
+    // initialize data members if required
+    if(pts == nullptr)
+      pts = new StaticVector<Point3d>();
 
-    //	printf("pts needed %i of %i allocated\n",npts+npts1,pts->reserved());
-    //	printf("tris needed %i of %i allocated\n",ntris+ntris1,tris->reserved());
+    const std::size_t npts = pts->size();
 
-    if((pts != nullptr) && (tris != nullptr) && (npts + npts1 <= pts->capacity()) &&
-       (ntris + ntris1 <= tris->capacity()))
+    pts->reserveAdd(me->pts->size());
+    std::copy(me->pts->begin(), me->pts->end(), std::back_inserter(pts->getDataWritable()));
+
+    if(colors == nullptr && me->colors != nullptr)
+      colors = new StaticVector<rgb>();
+
+    if(me->colors != nullptr)
     {
-        for(int i = 0; i < npts1; i++)
-        {
-            pts->push_back((*me->pts)[i]);
-        }
-        for(int i = 0; i < ntris1; i++)
-        {
-            Mesh::triangle t = (*me->tris)[i];
-            if((t.v[0] >= 0) && (t.v[0] < npts1) && (t.v[1] >= 0) && (t.v[1] < npts1) && (t.v[2] >= 0) &&
-               (t.v[2] < npts1))
-            {
-                t.v[0] += npts;
-                t.v[1] += npts;
-                t.v[2] += npts;
-                tris->push_back(t);
-            }
-            else
-            {
-                ALICEVISION_LOG_WARNING("addMesh: bad triangle index: " << t.v[0] << " " << t.v[1] << " " << t.v[2] << ", npts: " << npts1);
-            }
-        }
+        colors->reserveAdd(me->colors->size());
+        std::copy(me->colors->begin(), me->colors->end(), std::back_inserter(colors->getDataWritable()));
     }
-    else
+
+    if(tris == nullptr)
+      tris = new StaticVector<triangle>();
+
+    tris->reserveAdd(me->tris->size());
+    for(int i = 0; i < me->tris->size(); i++)
     {
-        StaticVector<Point3d>* ptsnew = new StaticVector<Point3d>();
-        ptsnew->reserve(npts + npts1);
-        StaticVector<Mesh::triangle>* trisnew = new StaticVector<Mesh::triangle>();
-        trisnew->reserve(ntris + ntris1);
-
-        for(int i = 0; i < npts; i++)
+        Mesh::triangle t = (*me->tris)[i];
+        // check triangles indices validity
+        if(   (t.v[0] >= 0 && t.v[0] < me->pts->size()) 
+           && (t.v[1] >= 0 && t.v[1] < me->pts->size()) 
+           && (t.v[2] >= 0 && t.v[2] < me->pts->size()))
         {
-            ptsnew->push_back((*pts)[i]);
+            t.v[0] += npts;
+            t.v[1] += npts;
+            t.v[2] += npts;
+            tris->push_back(t);
         }
-        for(int i = 0; i < npts1; i++)
+        else
         {
-            ptsnew->push_back((*me->pts)[i]);
+            ALICEVISION_LOG_WARNING("addMesh: bad triangle index: " << t.v[0] << " " << t.v[1] << " " << t.v[2] << ", npts: " << me->pts->size());
         }
-
-        for(int i = 0; i < ntris; i++)
-        {
-            trisnew->push_back((*tris)[i]);
-        }
-        for(int i = 0; i < ntris1; i++)
-        {
-            Mesh::triangle t = (*me->tris)[i];
-            if((t.v[0] >= 0) && (t.v[0] < npts1) && (t.v[1] >= 0) && (t.v[1] < npts1) && (t.v[2] >= 0) &&
-               (t.v[2] < npts1))
-            {
-                t.v[0] += npts;
-                t.v[1] += npts;
-                t.v[2] += npts;
-                trisnew->push_back(t);
-            }
-            else
-            {
-                ALICEVISION_LOG_WARNING("addMesh: bad triangle index: " << t.v[0] << " " << t.v[1] << " " << t.v[2] << ", npts: " << npts1);
-            }
-        }
-
-        if(pts != nullptr)
-        {
-            delete pts;
-        }
-        if(tris != nullptr)
-        {
-            delete tris;
-        }
-        pts = ptsnew;
-        tris = trisnew;
     }
 }
 
