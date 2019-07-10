@@ -28,6 +28,7 @@ Mesh::~Mesh()
 {
     delete pts;
     delete tris;
+    delete colors;
 }
 
 void Mesh::saveToObj(const std::string& filename)
