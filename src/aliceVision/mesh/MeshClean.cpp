@@ -897,6 +897,19 @@ int MeshClean::cleanMesh()
         path pth(this, i);
         nWrongPts += static_cast<int>(pth.deployAll() > 0);
     }
+    // update vertex color data (if any) if points were modified
+    if(colors != nullptr && newPtsOldPtId->size() != 0)
+    {
+        StaticVector<rgb>* newColors = new StaticVector<rgb>(pts->size(), {0, 0, 0});
+        for(std::size_t newId = 0; newId < newPtsOldPtId->size(); ++newId)
+        {
+            const std::size_t oldId = (*newPtsOldPtId)[newId];
+            (*newColors)[newId] = (*colors)[oldId];
+        }
+        delete colors;
+        colors = newColors;
+    }
+
     ALICEVISION_LOG_INFO("cleanMesh:" << std::endl
                       << "\t- # wrong points: " << nWrongPts << std::endl
                       << "\t- # new points: " << (pts->size() - nv));
