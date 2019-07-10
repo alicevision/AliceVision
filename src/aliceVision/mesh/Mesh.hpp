@@ -105,7 +105,8 @@ public:
 public:
     StaticVector<Point3d>* pts = nullptr;
     StaticVector<Mesh::triangle>* tris = nullptr;
-    Matrix3x4 transformGlobal;
+    /// Per-vertex color data
+    StaticVector<rgb>* colors = nullptr;
 
     Mesh();
     ~Mesh();

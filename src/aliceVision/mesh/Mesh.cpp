@@ -43,8 +43,22 @@ void Mesh::saveToObj(const std::string& filename)
   fprintf(f, "# Created with AliceVision\n");
   fprintf(f, "# \n");
   fprintf(f, "g Mesh\n");
-  for(int i = 0; i < pts->size(); i++)
-      fprintf(f, "v %f %f %f\n", (*pts)[i].x, (*pts)[i].y, (*pts)[i].z);
+
+  if(colors && colors->size() == pts->size())
+  {
+    std::size_t i = 0;
+    for(const auto& point : *pts)
+    {
+      rgb col = (*colors)[i];
+      fprintf(f, "v %f %f %f %f %f %f\n", point.x, point.y, point.z, col.r/255.0f, col.g/255.0f, col.b/255.0f);
+      ++i;
+    }
+  }
+  else
+  {
+    for(const auto& point : *pts)
+      fprintf(f, "v %f %f %f\n", point.x, point.y, point.z);    
+  }
 
   for(int i = 0; i < tris->size(); i++)
   {
@@ -2441,6 +2455,7 @@ bool Mesh::loadFromObjAscii(int& nmtls, StaticVector<int>& trisMtlIds, StaticVec
     int nuvs = 0;
     int nnorms = 0;
     int nlines = 0;
+    bool useColors = false;
 
     {
         std::ifstream in(objAsciiFileName.c_str());
@@ -2449,6 +2464,10 @@ bool Mesh::loadFromObjAscii(int& nmtls, StaticVector<int>& trisMtlIds, StaticVec
         {
             if((line[0] == 'v') && (line[1] == ' '))
             {
+                if(npts == 0)
+                {
+                  useColors = mvsUtils::findNSubstrsInString(line, ".") == 6;
+                }
                 npts += 1;
             }
             if((line[0] == 'v') && (line[1] == 'n') && (line[2] == ' '))
@@ -2492,6 +2511,11 @@ bool Mesh::loadFromObjAscii(int& nmtls, StaticVector<int>& trisMtlIds, StaticVec
     normals.reserve(nnorms);
     trisNormalsIds.reserve(ntris);
     trisMtlIds.reserve(ntris);
+    if(useColors)
+    {
+        colors = new StaticVector<rgb>();
+        colors->reserve(npts);
+    }
 
     std::map<std::string, int> materialCache;
 
@@ -2521,7 +2545,21 @@ bool Mesh::loadFromObjAscii(int& nmtls, StaticVector<int>& trisMtlIds, StaticVec
             else if((line[0] == 'v') && (line[1] == ' '))
             {
                 Point3d pt;
-                sscanf(line.c_str(), "v %lf %lf %lf", &pt.x, &pt.y, &pt.z);
+                if(useColors)
+                {
+                    float r, g, b;
+                    sscanf(line.c_str(), "v %lf %lf %lf %f %f %f", &pt.x, &pt.y, &pt.z, &r, &g, &b);
+                    // convert float color data to uchar
+                    colors->push_back({
+                        static_cast<unsigned char>(r*255.0f),
+                        static_cast<unsigned char>(g*255.0f),
+                        static_cast<unsigned char>(b*255.0f)
+                    });
+                }
+                else
+                {
+                    sscanf(line.c_str(), "v %lf %lf %lf", &pt.x, &pt.y, &pt.z);
+                }
                 pts->push_back(pt);
             }
             else if((line[0] == 'v') && (line[1] == 'n') && (line[2] == ' '))
