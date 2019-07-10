@@ -12,6 +12,7 @@
 #include <aliceVision/fuseCut/DelaunayGraphCut.hpp>
 #include <aliceVision/mesh/meshPostProcessing.hpp>
 #include <aliceVision/mvsData/Point3d.hpp>
+#include <aliceVision/mvsData/Rgb.hpp>
 #include <aliceVision/mvsData/StaticVector.hpp>
 #include <aliceVision/mvsUtils/common.hpp>
 #include <aliceVision/mvsUtils/MultiViewParams.hpp>
@@ -85,13 +86,18 @@ void exportPointCloud(const std::string& path,
                       const mvsUtils::MultiViewParams& mp,
                       const sfmData::SfMData& sfmData,
                       const std::vector<Point3d>& vertices,
-                      const StaticVector<StaticVector<int>*> cams)
+                      const StaticVector<StaticVector<int>*> cams,
+                      sfmData::SfMData& densePointCloud,
+                      std::vector<IndexT>& verticesMapping
+)
 {
-  sfmData::SfMData densePointCloud = sfmData;
+  densePointCloud = sfmData;
   densePointCloud.getLandmarks().clear();
-  int outputIndex = 0;
+  std::size_t outputIndex = 0;
+  verticesMapping.clear();
+  verticesMapping.resize(vertices.size(), UndefinedIndexT);
 
-  for(int i = 0; i < vertices.size(); ++i)
+  for(std::size_t i = 0; i < vertices.size(); ++i)
   {
     const Point3d& point = vertices.at(i);
 
@@ -107,6 +113,7 @@ void exportPointCloud(const std::string& path,
         landmark.observations[view.getViewId()] = observation;
       }
       densePointCloud.getLandmarks()[outputIndex] = landmark;
+      verticesMapping[i] = outputIndex;
       ++outputIndex;
     }
   }
@@ -480,7 +487,7 @@ int main(int argc, char* argv[])
                     {
                       ALICEVISION_LOG_INFO("Save dense point cloud before cut and filtering.");
                       StaticVector<StaticVector<int>*>* ptsCams = delaunayGC.createPtsCams();
-                      exportPointCloud((outDirectory/"densePointCloud_raw.abc").string(), mp, sfmData, delaunayGC._verticesCoords, *ptsCams);
+                      exportPointCloud((outDirectory/"densePointCloud_raw.abc").string(), mp, sfmData, delaunayGC._verticesCoords, *ptsCams, sfmData::SfMData(), std::vector<IndexT>());
                       deleteArrayOfArrays<int>(&ptsCams);
                     }
 
@@ -498,11 +505,22 @@ int main(int argc, char* argv[])
                     mesh::meshPostProcessing(mesh, ptsCams, mp, outDirectory.string()+"/", hexahsToExcludeFromResultingMesh, &hexah[0]);
 
                     ALICEVISION_LOG_INFO("Save dense point cloud.");
-                    exportPointCloud(outputDensePointCloud, mp, sfmData, mesh->pts->getData(), *ptsCams);
+                    sfmData::SfMData densePointCloud;
+                    std::vector<IndexT> verticesMapping;
+                    exportPointCloud(outputDensePointCloud, mp, sfmData, mesh->pts->getData(), *ptsCams, densePointCloud, verticesMapping);
 
-                    //mesh->saveToBin((outDirectory/"denseReconstruction.bin").string());
+                    const auto& landmarks = densePointCloud.getLandmarks();
+                    mesh->colors = new StaticVector<rgb>(mesh->pts->size(), {0, 0, 0});
+                    for(std::size_t vertexId = 0; vertexId < verticesMapping.size(); ++vertexId)
+                    {
+                      const auto landmarkId = verticesMapping[vertexId];
+                      if(landmarkId != UndefinedIndexT)
+                      {
+                        const auto& c = landmarks.at(landmarkId).rgb;
+                        (*mesh->colors)[vertexId] = {c.r(), c.g(), c.b()};
+                      }
+                    }
 
-                    //saveArrayOfArraysToFile<int>((outDirectory/"meshPtsCamsFromDGC.bin").string(), ptsCams);
                     deleteArrayOfArrays<int>(&ptsCams);
                     delete voxels;
 
