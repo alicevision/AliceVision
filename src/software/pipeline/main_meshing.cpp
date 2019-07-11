@@ -87,6 +87,7 @@ void exportPointCloud(const std::string& path,
                       const sfmData::SfMData& sfmData,
                       const std::vector<Point3d>& vertices,
                       const StaticVector<StaticVector<int>*> cams,
+                      bool colorize,
                       sfmData::SfMData& densePointCloud,
                       std::vector<IndexT>& verticesMapping
 )
@@ -117,7 +118,8 @@ void exportPointCloud(const std::string& path,
       ++outputIndex;
     }
   }
-  sfmData::colorizeTracks(densePointCloud);
+  if(colorize)
+    sfmData::colorizeTracks(densePointCloud);
   sfmDataIO::Save(densePointCloud, path, sfmDataIO::ESfMData::ALL_DENSE);
 }
 
@@ -141,6 +143,7 @@ int main(int argc, char* argv[])
     bool estimateSpaceFromSfM = true;
     bool addLandmarksToTheDensePointCloud = false;
     bool saveRawDensePointCloud = false;
+    bool colorizeOutput = false;
 
     fuseCut::FuseParams fuseParams;
 
@@ -181,7 +184,9 @@ int main(int argc, char* argv[])
         ("estimateSpaceFromSfM", po::value<bool>(&estimateSpaceFromSfM)->default_value(estimateSpaceFromSfM),
             "Estimate the 3d space from the SfM.")
         ("addLandmarksToTheDensePointCloud", po::value<bool>(&addLandmarksToTheDensePointCloud)->default_value(addLandmarksToTheDensePointCloud),
-            "Add SfM Landmarks into the dense point cloud (created from depth maps). If only the SfM is provided in input, SfM landmarks will be used regardless of this option.");
+            "Add SfM Landmarks into the dense point cloud (created from depth maps). If only the SfM is provided in input, SfM landmarks will be used regardless of this option.")
+        ("colorizeOutput", po::value<bool>(&colorizeOutput)->default_value(colorizeOutput),
+            "Whether to colorize output dense point cloud and mesh.");
 
     po::options_description advancedParams("Advanced parameters");
     advancedParams.add_options()
@@ -487,7 +492,9 @@ int main(int argc, char* argv[])
                     {
                       ALICEVISION_LOG_INFO("Save dense point cloud before cut and filtering.");
                       StaticVector<StaticVector<int>*>* ptsCams = delaunayGC.createPtsCams();
-                      exportPointCloud((outDirectory/"densePointCloud_raw.abc").string(), mp, sfmData, delaunayGC._verticesCoords, *ptsCams, sfmData::SfMData(), std::vector<IndexT>());
+                      sfmData::SfMData densePC;
+                      std::vector<IndexT> mapping;
+                      exportPointCloud((outDirectory/"densePointCloud_raw.abc").string(), mp, sfmData, delaunayGC._verticesCoords, *ptsCams, colorizeOutput, densePC, mapping);
                       deleteArrayOfArrays<int>(&ptsCams);
                     }
 
@@ -505,20 +512,24 @@ int main(int argc, char* argv[])
                     mesh::meshPostProcessing(mesh, ptsCams, mp, outDirectory.string()+"/", hexahsToExcludeFromResultingMesh, &hexah[0]);
 
                     ALICEVISION_LOG_INFO("Save dense point cloud.");
+                    
                     sfmData::SfMData densePointCloud;
                     std::vector<IndexT> verticesMapping;
-                    exportPointCloud(outputDensePointCloud, mp, sfmData, mesh->pts->getData(), *ptsCams, densePointCloud, verticesMapping);
+                    exportPointCloud(outputDensePointCloud, mp, sfmData, mesh->pts->getData(), *ptsCams, colorizeOutput, densePointCloud, verticesMapping);
 
-                    const auto& landmarks = densePointCloud.getLandmarks();
-                    std::vector<rgb>& colors = mesh->colors();
-                    colors.resize(mesh->pts->size(), {0, 0, 0});
-                    for(std::size_t vertexId = 0; vertexId < verticesMapping.size(); ++vertexId)
+                    if(colorizeOutput)
                     {
-                      const auto landmarkId = verticesMapping[vertexId];
-                      if(landmarkId != UndefinedIndexT)
+                      const auto& landmarks = densePointCloud.getLandmarks();
+                      std::vector<rgb>& colors = mesh->colors();
+                      colors.resize(mesh->pts->size(), {0, 0, 0});
+                      for(std::size_t vertexId = 0; vertexId < verticesMapping.size(); ++vertexId)
                       {
-                        const auto& c = landmarks.at(landmarkId).rgb;
-                        colors[vertexId] = {c.r(), c.g(), c.b()};
+                        const auto landmarkId = verticesMapping[vertexId];
+                        if(landmarkId != UndefinedIndexT)
+                        {
+                          const auto& c = landmarks.at(landmarkId).rgb;
+                          colors[vertexId] = {c.r(), c.g(), c.b()};
+                        }
                       }
                     }
 
