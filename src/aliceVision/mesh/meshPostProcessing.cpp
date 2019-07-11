@@ -72,7 +72,7 @@ void meshPostProcessing(Mesh*& inout_mesh, StaticVector<StaticVector<int>*>*& in
         ALICEVISION_LOG_INFO("Mesh Cleaning.");
 
         MeshEnergyOpt meOpt(&mp);
-        meOpt.addMesh(inout_mesh);
+        meOpt.addMesh(*inout_mesh);
         delete inout_mesh;
 
         meOpt.init();
@@ -109,7 +109,7 @@ void meshPostProcessing(Mesh*& inout_mesh, StaticVector<StaticVector<int>*>*& in
 
             meOpt.subdivideMeshMaxEdgeLengthUpdatePtsCams(&mp, subdivideMeshNTimesAvEdgeLengthThr *
                                                           meOpt.computeAverageEdgeLength(),
-                                                          inout_ptsCams, subdivideMaxPtsThr);
+                                                          *inout_ptsCams, subdivideMaxPtsThr);
             meOpt.deallocateCleaningAttributes();
             meOpt.init();
             meOpt.cleanMesh(1); // has to be here
@@ -164,7 +164,7 @@ void meshPostProcessing(Mesh*& inout_mesh, StaticVector<StaticVector<int>*>*& in
         meOpt.deallocateCleaningAttributes();
 
         inout_mesh = new Mesh();
-        inout_mesh->addMesh(&meOpt);
+        inout_mesh->addMesh(meOpt);
     }
     mvsUtils::printfElapsedTime(timer, "Mesh post-processing ");
     ALICEVISION_LOG_INFO("Mesh post-processing done.");

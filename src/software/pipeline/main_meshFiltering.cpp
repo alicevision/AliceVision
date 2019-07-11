@@ -131,7 +131,7 @@ int main(int argc, char* argv[])
     mesh::MeshEnergyOpt meOpt(nullptr);
     {
         ALICEVISION_LOG_INFO("Start mesh filtering.");
-        meOpt.addMesh(mesh);
+        meOpt.addMesh(*mesh);
         meOpt.init();
         meOpt.cleanMesh(10);
 
@@ -143,14 +143,14 @@ int main(int argc, char* argv[])
 
     if(keepLargestMeshOnly)
     {
-        StaticVector<int>* trisIdsToStay = meOpt.getLargestConnectedComponentTrisIds();
+        StaticVector<int> trisIdsToStay;
+        meOpt.getLargestConnectedComponentTrisIds(trisIdsToStay);
         meOpt.letJustTringlesIdsInMesh(trisIdsToStay);
-        delete trisIdsToStay;
         ALICEVISION_LOG_INFO("Mesh after keepLargestMeshOnly: " << meOpt.pts.size() << " vertices and " << meOpt.tris.size() << " facets.");
     }
 
     mesh::Mesh outMesh;
-    outMesh.addMesh(&meOpt);
+    outMesh.addMesh(meOpt);
 
     ALICEVISION_COUT("Output mesh: " << mesh->pts.size() << " vertices and " << mesh->tris.size() << " facets.");
 

@@ -664,7 +664,7 @@ void MeshClean::init()
 {
     deallocateCleaningAttributes();
 
-    ptsNeighTrisSortedAsc = getPtsNeighborTriangles();
+    getPtsNeighborTriangles(*ptsNeighTrisSortedAsc);
     for(int i = 0; i < pts.size(); i++)
     {
         StaticVector<int>* ptNeigTris = (*ptsNeighTrisSortedAsc)[i];

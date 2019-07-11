@@ -404,14 +404,13 @@ StaticVector<Point3d>* lineSegmentHexahedronIntersection(Point3d& linePoint1, Po
     return out;
 }
 
-StaticVector<Point3d>* triangleRectangleIntersection(Point3d& A, Point3d& B, Point3d& C, const MultiViewParams* mp, int rc,
-                                                     Point2d P[4])
+void triangleRectangleIntersection(Point3d& A, Point3d& B, Point3d& C, const MultiViewParams* mp, int rc,
+                                                     Point2d P[4], StaticVector<Point3d>& out)
 {
     float maxd =
         std::max(std::max((mp->CArr[rc] - A).size(), (mp->CArr[rc] - B).size()), (mp->CArr[rc] - C).size()) * 1000.0f;
 
-    StaticVector<Point3d>* out = new StaticVector<Point3d>();
-    out->reserve(40);
+    out.reserve(40);
 
     Point3d a, b, c;
     int coplanar;
@@ -423,8 +422,8 @@ StaticVector<Point3d>* triangleRectangleIntersection(Point3d& A, Point3d& B, Poi
     bool ok = (bool)tri_tri_intersect_with_isectline(A.m, B.m, C.m, a.m, b.m, c.m, &coplanar, i1.m, i2.m);
     if(ok)
     {
-        out->push_back(i1);
-        out->push_back(i2);
+        out.push_back(i1);
+        out.push_back(i2);
     }
 
     a = mp->CArr[rc];
@@ -433,8 +432,8 @@ StaticVector<Point3d>* triangleRectangleIntersection(Point3d& A, Point3d& B, Poi
     ok = (bool)tri_tri_intersect_with_isectline(A.m, B.m, C.m, a.m, b.m, c.m, &coplanar, i1.m, i2.m);
     if(ok)
     {
-        out->push_back(i1);
-        out->push_back(i2);
+        out.push_back(i1);
+        out.push_back(i2);
     }
 
     a = mp->CArr[rc];
@@ -443,8 +442,8 @@ StaticVector<Point3d>* triangleRectangleIntersection(Point3d& A, Point3d& B, Poi
     ok = (bool)tri_tri_intersect_with_isectline(A.m, B.m, C.m, a.m, b.m, c.m, &coplanar, i1.m, i2.m);
     if(ok)
     {
-        out->push_back(i1);
-        out->push_back(i2);
+        out.push_back(i1);
+        out.push_back(i2);
     }
 
     a = mp->CArr[rc];
@@ -453,14 +452,12 @@ StaticVector<Point3d>* triangleRectangleIntersection(Point3d& A, Point3d& B, Poi
     ok = (bool)tri_tri_intersect_with_isectline(A.m, B.m, C.m, a.m, b.m, c.m, &coplanar, i1.m, i2.m);
     if(ok)
     {
-        out->push_back(i1);
-        out->push_back(i2);
+        out.push_back(i1);
+        out.push_back(i2);
     }
 
     // Point3d lp;
     // if lineSegmentPlaneIntersect(&lp,A,B,mp->CArr[rc],n);
-
-    return out;
 }
 
 bool isPointInHexahedron(const Point3d& p, const Point3d* hexah)

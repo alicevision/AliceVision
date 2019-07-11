@@ -177,7 +177,7 @@ public:
 using StaticVectorBool = StaticVector<char>;
 
 template <class T>
-int sizeOfStaticVector(StaticVector<T>* a)
+int sizeOfStaticVector(const StaticVector<T>* a)
 {
     if(a == nullptr)
         return 0;

@@ -423,7 +423,7 @@ mesh::Mesh* joinMeshes(const std::vector<std::string>& recsDirs, StaticVector<Po
             mei->removeTrianglesOutsideHexahedron(hexah);
 
             ALICEVISION_LOG_DEBUG("Adding mesh part "<< i << " to mesh");
-            me->addMesh(mei);
+            me->addMesh(*mei);
 
             ALICEVISION_LOG_DEBUG("Merging colors of part: s" << i);
             fileName = folderName + "meshAvImgCol.ply.ptsColors";
