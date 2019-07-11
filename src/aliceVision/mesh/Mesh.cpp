@@ -28,7 +28,6 @@ Mesh::~Mesh()
 {
     delete pts;
     delete tris;
-    delete colors;
 }
 
 void Mesh::saveToObj(const std::string& filename)
@@ -45,12 +44,12 @@ void Mesh::saveToObj(const std::string& filename)
   fprintf(f, "# \n");
   fprintf(f, "g Mesh\n");
 
-  if(colors && colors->size() == pts->size())
+  if(_colors.size() == pts->size())
   {
     std::size_t i = 0;
     for(const auto& point : *pts)
     {
-      rgb col = (*colors)[i];
+      const rgb& col = _colors[i];
       fprintf(f, "v %f %f %f %f %f %f\n", point.x, point.y, point.z, col.r/255.0f, col.g/255.0f, col.b/255.0f);
       ++i;
     }
@@ -127,14 +126,8 @@ void Mesh::addMesh(Mesh* me)
     pts->reserveAdd(me->pts->size());
     std::copy(me->pts->begin(), me->pts->end(), std::back_inserter(pts->getDataWritable()));
 
-    if(colors == nullptr && me->colors != nullptr)
-      colors = new StaticVector<rgb>();
-
-    if(me->colors != nullptr)
-    {
-        colors->reserveAdd(me->colors->size());
-        std::copy(me->colors->begin(), me->colors->end(), std::back_inserter(colors->getDataWritable()));
-    }
+    _colors.reserve(_colors.size() + me->_colors.size());
+    std::copy(me->_colors.begin(), me->_colors.end(), std::back_inserter(_colors));
 
     if(tris == nullptr)
       tris = new StaticVector<triangle>();
@@ -2474,8 +2467,7 @@ bool Mesh::loadFromObjAscii(int& nmtls, StaticVector<int>& trisMtlIds, StaticVec
     trisMtlIds.reserve(ntris);
     if(useColors)
     {
-        colors = new StaticVector<rgb>();
-        colors->reserve(npts);
+        _colors.reserve(npts);
     }
 
     std::map<std::string, int> materialCache;
@@ -2511,11 +2503,11 @@ bool Mesh::loadFromObjAscii(int& nmtls, StaticVector<int>& trisMtlIds, StaticVec
                     float r, g, b;
                     sscanf(line.c_str(), "v %lf %lf %lf %f %f %f", &pt.x, &pt.y, &pt.z, &r, &g, &b);
                     // convert float color data to uchar
-                    colors->push_back({
-                        static_cast<unsigned char>(r*255.0f),
-                        static_cast<unsigned char>(g*255.0f),
-                        static_cast<unsigned char>(b*255.0f)
-                    });
+                    _colors.emplace_back(
+                      static_cast<unsigned char>(r*255.0f),
+                      static_cast<unsigned char>(g*255.0f),
+                      static_cast<unsigned char>(b*255.0f)
+                    );
                 }
                 else
                 {

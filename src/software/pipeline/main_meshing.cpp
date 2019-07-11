@@ -510,14 +510,15 @@ int main(int argc, char* argv[])
                     exportPointCloud(outputDensePointCloud, mp, sfmData, mesh->pts->getData(), *ptsCams, densePointCloud, verticesMapping);
 
                     const auto& landmarks = densePointCloud.getLandmarks();
-                    mesh->colors = new StaticVector<rgb>(mesh->pts->size(), {0, 0, 0});
+                    std::vector<rgb>& colors = mesh->colors();
+                    colors.resize(mesh->pts->size(), {0, 0, 0});
                     for(std::size_t vertexId = 0; vertexId < verticesMapping.size(); ++vertexId)
                     {
                       const auto landmarkId = verticesMapping[vertexId];
                       if(landmarkId != UndefinedIndexT)
                       {
                         const auto& c = landmarks.at(landmarkId).rgb;
-                        (*mesh->colors)[vertexId] = {c.r(), c.g(), c.b()};
+                        colors[vertexId] = {c.r(), c.g(), c.b()};
                       }
                     }
 
