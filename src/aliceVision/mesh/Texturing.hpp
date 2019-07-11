@@ -85,24 +85,14 @@ struct TexturingParams
 struct Texturing
 {
     TexturingParams texParams;
-
-    int nmtls = 0;
-    StaticVector<int> trisMtlIds;
-    StaticVector<Point2d> uvCoords;
-    StaticVector<Voxel> trisUvIds;
-    StaticVector<Point3d> normals;
-    StaticVector<Voxel> trisNormalsIds;
-    PointsVisibility* pointsVisibilities = nullptr;
-    Mesh* me = nullptr;
+    Mesh* mesh = nullptr;
 
     /// texture atlas to 3D triangle ids
     std::vector<std::vector<int>> _atlases;
 
     ~Texturing()
     {
-        if(pointsVisibilities != nullptr)
-            deleteArrayOfArrays<int>(&pointsVisibilities);
-        delete me;
+        delete mesh;
     }
 
 public:
@@ -132,7 +122,7 @@ public:
     void replaceMesh(const std::string& otherMeshPath, bool flipNormals=false);
 
     /// Returns whether UV coordinates are available
-    inline bool hasUVs() const { return !uvCoords.empty(); }
+    inline bool hasUVs() const { return !mesh->uvCoords.empty(); }
 
     /**
      * @brief Unwrap mesh with the given 'method'.

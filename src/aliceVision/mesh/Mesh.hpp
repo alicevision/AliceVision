@@ -17,6 +17,9 @@
 namespace aliceVision {
 namespace mesh {
 
+using PointVisibility = StaticVector<int>;
+using PointsVisibility = StaticVector<PointVisibility*>;
+
 class Mesh
 {
 public:
@@ -106,6 +109,14 @@ public:
     StaticVector<Point3d>* pts = nullptr;
     StaticVector<Mesh::triangle>* tris = nullptr;
     Matrix3x4 transformGlobal;
+
+    int nmtls = 0;
+    StaticVector<int> trisMtlIds;
+    StaticVector<Point2d> uvCoords;
+    StaticVector<Voxel> trisUvIds;
+    StaticVector<Point3d> normals;
+    StaticVector<Voxel> trisNormalsIds;
+    PointsVisibility* pointsVisibilities = nullptr;
 
     Mesh();
     ~Mesh();

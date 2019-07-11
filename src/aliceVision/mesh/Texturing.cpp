@@ -129,26 +129,29 @@ Point3d barycentricToCartesian(const Point3d* triangle, const Point2d& coords)
 
 void Texturing::generateUVsBasicMethod(mvsUtils::MultiViewParams& mp)
 {
-    if(!me)
+    if(!mesh)
         throw std::runtime_error("Can't generate UVs without a mesh");
 
     // automatic uv atlasing
     ALICEVISION_LOG_INFO("Generating UVs (textureSide: " << texParams.textureSide << "; padding: " << texParams.padding << ").");
     UVAtlas mua(*me, mp, pointsVisibilities, texParams.textureSide, texParams.padding);
+
     // create a new mesh to store data
+    const size_t nbPts = mesh->pts->size();
+    const size_t nbTris = mesh->tris->size();
     Mesh* m = new Mesh();
     m->pts = new StaticVector<Point3d>();
-    m->pts->reserve(me->pts->size());
     m->tris = new StaticVector<Mesh::triangle>();
-    m->tris->reserve(me->tris->size());
-    trisUvIds.reserve(me->tris->size());
-    uvCoords.reserve(me->pts->size());
+    m->pts->reserve(nbPts);
+    m->tris->reserve(nbTris);
+    mesh->trisUvIds.reserve(nbTris);
+    mesh->uvCoords.reserve(nbPts);
     _atlases.clear();
     _atlases.resize(mua.atlases().size());
 
     std::map<int, int> vertexCache;
     PointsVisibility* updatedPointsCams = new PointsVisibility;
-    updatedPointsCams->reserve(pointsVisibilities->size());
+    updatedPointsCams->reserve(mesh->pointsVisibilities->size());
 
     int atlasId = 0;
     int triangleCount = 0;
@@ -174,9 +177,9 @@ void Texturing::generateUVsBasicMethod(mvsUtils::MultiViewParams& mp)
                 // for each point
                 for(int k = 0; k < 3; ++k)
                 {
-                    int pointId = (*me->tris)[triangleID].v[k];
+                    int pointId = (*mesh->tris)[triangleID].v[k];
                     // get 3d triangle points
-                    Point3d p = (*me->pts)[pointId];
+                    Point3d p = (*mesh->pts)[pointId];
                     Point2d uvPix;
                     if(chart.refCameraID != -1)
                     {
@@ -216,7 +219,7 @@ void Texturing::generateUVsBasicMethod(mvsUtils::MultiViewParams& mp)
                         newPointIdx = m->pts->size() - 1;
                         // map point visibilities
                         StaticVector<int>* pOther = new StaticVector<int>();
-                        StaticVector<int>* pRef = (*pointsVisibilities)[pointId];
+                        StaticVector<int>* pRef = (*(mesh->pointsVisibilities))[pointId];
                         if(pRef)
                             *pOther = *pRef;
                         updatedPointsCams->push_back(pOther);
@@ -232,8 +235,8 @@ void Texturing::generateUVsBasicMethod(mvsUtils::MultiViewParams& mp)
                     auto uvcacheIt = uvCache.find(newPointIdx);
                     if(uvcacheIt == uvCache.end())
                     {
-                        uvCoords.push_back(uvPix);
-                        uvIdx = uvCoords.size() - 1;
+                        mesh->uvCoords.push_back(uvPix);
+                        uvIdx = mesh->uvCoords.size() - 1;
                         uvCache[newPointIdx] = uvIdx;
                     }
                     else
@@ -241,7 +244,7 @@ void Texturing::generateUVsBasicMethod(mvsUtils::MultiViewParams& mp)
                     triUv.m[k] = uvIdx;
                 }
                 m->tris->push_back(t);
-                trisUvIds.push_back(triUv);
+                mesh->trisUvIds.push_back(triUv);
                 triangleCount++;
             }
         }
@@ -249,10 +252,10 @@ void Texturing::generateUVsBasicMethod(mvsUtils::MultiViewParams& mp)
     }
 
     // replace internal mesh
-    std::swap(me, m);
+    std::swap(mesh, m);
     delete m;
     // replace visibilities
-    std::swap(pointsVisibilities, updatedPointsCams);
+    std::swap(mesh->pointsVisibilities, updatedPointsCams);
     deleteArrayOfArrays<int>(&updatedPointsCams);
 }
 
@@ -350,8 +353,8 @@ void Texturing::generateTexturesSubSet(const mvsUtils::MultiViewParams& mp,
             std::vector<int> allTriCams;
             for (int k = 0; k < 3; k++)
             {
-                const int pointIndex = (*me->tris)[triangleID].v[k];
-                const StaticVector<int>* pointVisibilities = (*pointsVisibilities)[pointIndex];
+                const int pointIndex = (*mesh->tris)[triangleID].v[k];
+                const StaticVector<int>* pointVisibilities = (*(mesh->pointsVisibilities))[pointIndex];
                 if (pointVisibilities != nullptr)
                 {
                     std::copy(pointVisibilities->begin(), pointVisibilities->end(), std::inserter(allTriCams, allTriCams.end()));
@@ -387,8 +390,8 @@ void Texturing::generateTexturesSubSet(const mvsUtils::MultiViewParams& mp,
             Point3d triangleCenter;
             if (texParams.angleHardThreshold != 0.0)
             {
-                triangleNormal = me->computeTriangleNormal(triangleID);
-                triangleCenter = me->computeTriangleCenterOfGravity(triangleID);
+                triangleNormal = mesh->computeTriangleNormal(triangleID);
+                triangleCenter = mesh->computeTriangleCenterOfGravity(triangleID);
             }
             using ScoreCamId = std::tuple<int, double, int>; // <nbVertex, score, camId>
             std::vector<ScoreCamId> scorePerCamId;
@@ -410,13 +413,13 @@ void Texturing::generateTexturesSubSet(const mvsUtils::MultiViewParams& mp,
                 const int w = mp.getWidth(camId);
                 const int h = mp.getHeight(camId);
 
-                const Mesh::triangle_proj tProj = me->getTriangleProjection(triangleID, &mp, camId, w, h);
-                const int nbVertex = me->getTriangleNbVertexInImage(mp, tProj, camId, 20);
+                const Mesh::triangle_proj tProj = mesh->getTriangleProjection(triangleID, &mp, camId, w, h);
+                const int nbVertex = mesh->getTriangleNbVertexInImage(mp, tProj, camId, 20);
                 if(nbVertex == 0)
                     // No triangle vertex in the image
                     continue;
 
-                const double area = me->computeTriangleProjectionArea(tProj);
+                const double area = mesh->computeTriangleProjectionArea(tProj);
                 const double score = area * double(verticesSupport);
                 scorePerCamId.emplace_back(nbVertex, score, camId);
             }
@@ -509,16 +512,17 @@ void Texturing::generateTexturesSubSet(const mvsUtils::MultiViewParams& mp,
                     // retrieve triangle 3D and UV coordinates
                     Point2d triPixs[3];
                     Point3d triPts[3];
-                    auto triangleUvIds = trisUvIds[triangleId];
+                    auto triangleUvIds = mesh->trisUvIds[triangleId];
                     // compute the Bottom-Left minima of the current UDIM for [0,1] range remapping
                     Point2d udimBL;
+                    StaticVector<Point2d>& uvCoords = mesh->uvCoords;
                     udimBL.x = std::floor(std::min(std::min(uvCoords[triangleUvIds[0]].x, uvCoords[triangleUvIds[1]].x), uvCoords[triangleUvIds[2]].x));
                     udimBL.y = std::floor(std::min(std::min(uvCoords[triangleUvIds[0]].y, uvCoords[triangleUvIds[1]].y), uvCoords[triangleUvIds[2]].y));
 
                     for(int k = 0; k < 3; k++)
                     {
-                       const int pointIndex = (*me->tris)[triangleId].v[k];
-                       triPts[k] = (*me->pts)[pointIndex];                               // 3D coordinates
+                       const int pointIndex = (*mesh->tris)[triangleId].v[k];
+                       triPts[k] = (*mesh->pts)[pointIndex];                               // 3D coordinates
                        const int uvPointIndex = triangleUvIds.m[k];
                        Point2d uv = uvCoords[uvPointIndex];
                        // UDIM: remap coordinates between [0,1]
@@ -833,28 +837,15 @@ void Texturing::writeTexture(AccuImage& atlasTexture, const std::size_t atlasID,
 
 void Texturing::clear()
 {
-    trisMtlIds.clear();
-    uvCoords.clear();
-    trisUvIds.clear();
-    normals.clear();
-    trisNormalsIds.clear();
-    _atlases.clear();
-
-    if(pointsVisibilities != nullptr)
-    {
-        deleteArrayOfArrays<int>(&pointsVisibilities);
-        pointsVisibilities = nullptr;
-    }
-
-    delete me;
-    me = nullptr;
+    delete mesh;
+    mesh = nullptr;
 }
 
 void Texturing::loadFromOBJ(const std::string& filename, bool flipNormals)
 {
     // Clear internal data
     clear();
-    me = new Mesh();
+    mesh = new Mesh();
     // Load .obj
     if(!me->loadFromObjAscii(nmtls, trisMtlIds, normals, trisNormalsIds, uvCoords, trisUvIds,
                              filename.c_str()))
@@ -864,50 +855,49 @@ void Texturing::loadFromOBJ(const std::string& filename, bool flipNormals)
 
     // Handle normals flipping
     if(flipNormals)
-        me->invertTriangleOrientations();
+        mesh->invertTriangleOrientations();
 
     // Fill atlases (1 atlas per material) with corresponding rectangles
     // if no material, create only one atlas with all triangles
-    _atlases.resize(std::max(1, nmtls));
-    for(int triangleID = 0; triangleID < trisMtlIds.size(); triangleID++)
+    _atlases.resize(std::max(1, mesh->nmtls));
+    for(int triangleID = 0; triangleID < mesh->trisMtlIds.size(); triangleID++)
     {
-        unsigned int atlasID = nmtls ? trisMtlIds[triangleID] : 0;
+        unsigned int atlasID = mesh->nmtls ? mesh->trisMtlIds[triangleID] : 0;
         _atlases[atlasID].push_back(triangleID);
     }
 }
 
 void Texturing::remapVisibilities(EVisibilityRemappingMethod remappingMethod, const Mesh& refMesh, const mesh::PointsVisibility& refPointsVisibilities)
 {
-  assert(pointsVisibilities == nullptr);
-  pointsVisibilities = new mesh::PointsVisibility();
+  assert(mesh->pointsVisibilities == nullptr);
+  mesh->pointsVisibilities = new mesh::PointsVisibility();
 
   // remap visibilities from the reference onto the mesh
   if(remappingMethod == EVisibilityRemappingMethod::PullPush || remappingMethod == mesh::EVisibilityRemappingMethod::Pull)
     remapMeshVisibilities_pullVerticesVisibility(refMesh, refPointsVisibilities, *me, *pointsVisibilities);
   if(remappingMethod == EVisibilityRemappingMethod::PullPush || remappingMethod == mesh::EVisibilityRemappingMethod::Push)
     remapMeshVisibilities_pushVerticesVisibilityToTriangles(refMesh, refPointsVisibilities, *me, *pointsVisibilities);
-  if(pointsVisibilities->empty())
+  if(mesh->pointsVisibilities->empty())
     throw std::runtime_error("No visibility after visibility remapping.");
 }
 
 void Texturing::replaceMesh(const std::string& otherMeshPath, bool flipNormals)
 {
     // keep previous mesh/visibilities as reference
-    Mesh* refMesh = me;
-    PointsVisibility* refVisibilities = pointsVisibilities;
+    Mesh* refMesh = mesh;
     // set pointers to null to avoid deallocation by 'loadFromObj'
-    me = nullptr;
-    pointsVisibilities = nullptr;
+    mesh = nullptr;
+    mesh->pointsVisibilities = nullptr;
     // load input obj file
     loadFromOBJ(otherMeshPath, flipNormals);
     // allocate pointsVisibilities for new internal mesh
-    pointsVisibilities = new PointsVisibility();
+    mesh->pointsVisibilities = new PointsVisibility();
     // remap visibilities from reconstruction onto input mesh
     if(texParams.visibilityRemappingMethod & EVisibilityRemappingMethod::Pull)
-        remapMeshVisibilities_pullVerticesVisibility(*refMesh, *refVisibilities, *me, *pointsVisibilities);
+        remapMeshVisibilities_pullVerticesVisibility(*refMesh, *mesh);
     if (texParams.visibilityRemappingMethod & EVisibilityRemappingMethod::Push)
         remapMeshVisibilities_pushVerticesVisibilityToTriangles(*refMesh, *refVisibilities, *me, *pointsVisibilities);
-    if(pointsVisibilities->empty())
+    if(mesh->pointsVisibilities->empty())
         throw std::runtime_error("No visibility after visibility remapping.");
 
     // delete ref mesh and visibilities
@@ -925,14 +915,14 @@ void Texturing::unwrap(mvsUtils::MultiViewParams& mp, EUnwrapMethod method)
     else
     {
         GEO::initialize();
-        GEO::Mesh mesh;
-        toGeoMesh(*me, mesh);
+        GEO::Mesh geoMesh;
+        toGeoMesh(*mesh, geoMesh);
 
         // perform parametrization with Geogram
         const GEO::ChartParameterizer param = (method == mesh::EUnwrapMethod::ABF) ? GEO::PARAM_ABF : GEO::PARAM_SPECTRAL_LSCM;
 
         ALICEVISION_LOG_INFO("Start mesh atlasing (using Geogram " << EUnwrapMethod_enumToString(method) << ").");
-        GEO::mesh_make_atlas(mesh, 45.0, param);
+        GEO::mesh_make_atlas(geoMesh, 45.0, param);
         ALICEVISION_LOG_INFO("Mesh atlasing done.");
 
         // TODO: retrieve computed UV coordinates and find a way to update internal data
@@ -946,7 +936,7 @@ void Texturing::unwrap(mvsUtils::MultiViewParams& mp, EUnwrapMethod method)
         // and reload it
         const std::string tmpObjPath = (bfs::temp_directory_path() / bfs::unique_path()).string() + ".obj";
         // save temp mesh with UVs
-        GEO::mesh_save(mesh, tmpObjPath);
+        GEO::mesh_save(geoMesh, tmpObjPath);
         // replace initial mesh
         replaceMesh(tmpObjPath);
         // remove temp mesh
@@ -974,13 +964,13 @@ void Texturing::saveAsOBJ(const bfs::path& dir, const std::string& basename, ima
     fprintf(fobj, "g TexturedMesh\n");
 
     // write vertices
-    auto vertices = me->pts;
+    auto vertices = mesh->pts;
     for(int i = 0; i < vertices->size(); ++i)
         fprintf(fobj, "v %f %f %f\n", (*vertices)[i].x, (*vertices)[i].y, (*vertices)[i].z);
 
     // write UV coordinates
-    for(int i=0; i < uvCoords.size(); ++i)
-        fprintf(fobj, "vt %f %f\n", uvCoords[i].x, uvCoords[i].y);
+    for(int i=0; i < mesh->uvCoords.size(); ++i)
+        fprintf(fobj, "vt %f %f\n", mesh->uvCoords[i].x, mesh->uvCoords[i].y);
 
     // write faces per texture atlas
     for(std::size_t atlasId=0; atlasId < _atlases.size(); ++atlasId)
@@ -990,13 +980,13 @@ void Texturing::saveAsOBJ(const bfs::path& dir, const std::string& basename, ima
         for(const auto triangleID : _atlases[atlasId])
         {
             // vertex IDs
-            int vertexID1 = (*me->tris)[triangleID].v[0];
-            int vertexID2 = (*me->tris)[triangleID].v[1];
-            int vertexID3 = (*me->tris)[triangleID].v[2];
+            int vertexID1 = (*mesh->tris)[triangleID].v[0];
+            int vertexID2 = (*mesh->tris)[triangleID].v[1];
+            int vertexID3 = (*mesh->tris)[triangleID].v[2];
 
-            int uvID1 = trisUvIds[triangleID].m[0];
-            int uvID2 = trisUvIds[triangleID].m[1];
-            int uvID3 = trisUvIds[triangleID].m[2];
+            int uvID1 = mesh->trisUvIds[triangleID].m[0];
+            int uvID2 = mesh->trisUvIds[triangleID].m[1];
+            int uvID3 = mesh->trisUvIds[triangleID].m[2];
 
             fprintf(fobj, "f %i/%i %i/%i %i/%i\n", vertexID1 + 1, uvID1 + 1, vertexID2 + 1, uvID2 + 1, vertexID3 + 1, uvID3 + 1); // indexed from 1
         }

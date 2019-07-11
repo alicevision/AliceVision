@@ -104,7 +104,7 @@ int main(int argc, char* argv[])
 
     mesh::Texturing texturing;
     texturing.loadFromOBJ(inputMeshPath);
-    mesh::Mesh* mesh = texturing.me;
+    mesh::Mesh* mesh = texturing.mesh;
 
     if(!mesh)
     {

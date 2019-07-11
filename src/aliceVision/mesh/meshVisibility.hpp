@@ -12,9 +12,6 @@
 namespace aliceVision {
 namespace mesh {
 
-using PointVisibility = StaticVector<int>;
-using PointsVisibility = StaticVector<PointVisibility*>;
-
 /**
  * @brief Retrieve the nearest neighbor vertex in @p refMesh for each vertex in @p mesh.
  * @param[in] refMesh input reference mesh

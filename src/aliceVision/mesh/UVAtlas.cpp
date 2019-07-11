@@ -23,7 +23,7 @@ UVAtlas::UVAtlas(const Mesh& mesh, mvsUtils::MultiViewParams& mp, StaticVector<S
     vector<Chart> charts;
 
     // create texture charts
-    createCharts(charts, mp, ptsCams);
+    createCharts(charts, mp, mesh.pointsVisibilities);
 
     // pack texture charts
     packCharts(charts, mp);
