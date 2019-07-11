@@ -404,11 +404,11 @@ StaticVector<Point3d>* lineSegmentHexahedronIntersection(Point3d& linePoint1, Po
     return out;
 }
 
-void triangleRectangleIntersection(Point3d& A, Point3d& B, Point3d& C, const MultiViewParams* mp, int rc,
+void triangleRectangleIntersection(Point3d& A, Point3d& B, Point3d& C, const MultiViewParams& mp, int rc,
                                                      Point2d P[4], StaticVector<Point3d>& out)
 {
     float maxd =
-        std::max(std::max((mp->CArr[rc] - A).size(), (mp->CArr[rc] - B).size()), (mp->CArr[rc] - C).size()) * 1000.0f;
+        std::max(std::max((mp.CArr[rc] - A).size(), (mp.CArr[rc] - B).size()), (mp.CArr[rc] - C).size()) * 1000.0f;
 
     out.reserve(40);
 
@@ -416,9 +416,9 @@ void triangleRectangleIntersection(Point3d& A, Point3d& B, Point3d& C, const Mul
     int coplanar;
     Point3d i1, i2;
 
-    a = mp->CArr[rc];
-    b = mp->CArr[rc] + (mp->iCamArr[rc] * P[0]).normalize() * maxd;
-    c = mp->CArr[rc] + (mp->iCamArr[rc] * P[1]).normalize() * maxd;
+    a = mp.CArr[rc];
+    b = mp.CArr[rc] + (mp.iCamArr[rc] * P[0]).normalize() * maxd;
+    c = mp.CArr[rc] + (mp.iCamArr[rc] * P[1]).normalize() * maxd;
     bool ok = (bool)tri_tri_intersect_with_isectline(A.m, B.m, C.m, a.m, b.m, c.m, &coplanar, i1.m, i2.m);
     if(ok)
     {
@@ -426,9 +426,9 @@ void triangleRectangleIntersection(Point3d& A, Point3d& B, Point3d& C, const Mul
         out.push_back(i2);
     }
 
-    a = mp->CArr[rc];
-    b = mp->CArr[rc] + (mp->iCamArr[rc] * P[1]).normalize() * maxd;
-    c = mp->CArr[rc] + (mp->iCamArr[rc] * P[2]).normalize() * maxd;
+    a = mp.CArr[rc];
+    b = mp.CArr[rc] + (mp.iCamArr[rc] * P[1]).normalize() * maxd;
+    c = mp.CArr[rc] + (mp.iCamArr[rc] * P[2]).normalize() * maxd;
     ok = (bool)tri_tri_intersect_with_isectline(A.m, B.m, C.m, a.m, b.m, c.m, &coplanar, i1.m, i2.m);
     if(ok)
     {
@@ -436,9 +436,9 @@ void triangleRectangleIntersection(Point3d& A, Point3d& B, Point3d& C, const Mul
         out.push_back(i2);
     }
 
-    a = mp->CArr[rc];
-    b = mp->CArr[rc] + (mp->iCamArr[rc] * P[2]).normalize() * maxd;
-    c = mp->CArr[rc] + (mp->iCamArr[rc] * P[3]).normalize() * maxd;
+    a = mp.CArr[rc];
+    b = mp.CArr[rc] + (mp.iCamArr[rc] * P[2]).normalize() * maxd;
+    c = mp.CArr[rc] + (mp.iCamArr[rc] * P[3]).normalize() * maxd;
     ok = (bool)tri_tri_intersect_with_isectline(A.m, B.m, C.m, a.m, b.m, c.m, &coplanar, i1.m, i2.m);
     if(ok)
     {
@@ -446,9 +446,9 @@ void triangleRectangleIntersection(Point3d& A, Point3d& B, Point3d& C, const Mul
         out.push_back(i2);
     }
 
-    a = mp->CArr[rc];
-    b = mp->CArr[rc] + (mp->iCamArr[rc] * P[3]).normalize() * maxd;
-    c = mp->CArr[rc] + (mp->iCamArr[rc] * P[0]).normalize() * maxd;
+    a = mp.CArr[rc];
+    b = mp.CArr[rc] + (mp.iCamArr[rc] * P[3]).normalize() * maxd;
+    c = mp.CArr[rc] + (mp.iCamArr[rc] * P[0]).normalize() * maxd;
     ok = (bool)tri_tri_intersect_with_isectline(A.m, B.m, C.m, a.m, b.m, c.m, &coplanar, i1.m, i2.m);
     if(ok)
     {

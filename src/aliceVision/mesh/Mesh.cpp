@@ -182,15 +182,15 @@ void Mesh::addMesh(const Mesh& mesh)
     }
 }
 
-Mesh::triangle_proj Mesh::getTriangleProjection(int triid, const mvsUtils::MultiViewParams* mp, int rc, int w, int h) const
+Mesh::triangle_proj Mesh::getTriangleProjection(int triid, const mvsUtils::MultiViewParams& mp, int rc, int w, int h) const
 {
-    int ow = mp->getWidth(rc);
-    int oh = mp->getHeight(rc);
+    int ow = mp.getWidth(rc);
+    int oh = mp.getHeight(rc);
 
     triangle_proj tp;
     for(int j = 0; j < 3; j++)
     {
-        mp->getPixelFor3DPoint(&tp.tp2ds[j], pts[tris[triid].v[j]], rc);
+        mp.getPixelFor3DPoint(&tp.tp2ds[j], pts[tris[triid].v[j]], rc);
         tp.tp2ds[j].x = (tp.tp2ds[j].x / (float)ow) * (float)w;
         tp.tp2ds[j].y = (tp.tp2ds[j].y / (float)oh) * (float)h;
         tp.tpixs[j].x = (int)floor(tp.tp2ds[j].x);
@@ -332,8 +332,8 @@ void Mesh::getTrianglePixelIntersectionsAndInternalPoints(Mesh::triangle_proj& t
     }
 }
 
-void Mesh::getTrianglePixelIntersectionsAndInternalPoints(const mvsUtils::MultiViewParams* mp, int idTri, Pixel&  /*pix*/,
-                                                                int rc, Mesh::triangle_proj* tp, Mesh::rectangle* re,
+void Mesh::getTrianglePixelIntersectionsAndInternalPoints(const mvsUtils::MultiViewParams& mp, int idTri, Pixel&  /*pix*/,
+                                                                int rc, Mesh::triangle_proj& tp, Mesh::rectangle& re,
                                                                 StaticVector<Point3d>& out)
 {
 
@@ -341,20 +341,20 @@ void Mesh::getTrianglePixelIntersectionsAndInternalPoints(const mvsUtils::MultiV
     Point3d B = pts[tris[idTri].v[1]];
     Point3d C = pts[tris[idTri].v[2]];
 
-    triangleRectangleIntersection(A, B, C, mp, rc, re->P, out);
+    triangleRectangleIntersection(A, B, C, mp, rc, re.P, out);
 
-    if((isPointInTriangle(re->P[0], re->P[1], re->P[2], tp->tp2ds[0])) ||
-       (isPointInTriangle(re->P[2], re->P[3], re->P[0], tp->tp2ds[0])))
+    if((isPointInTriangle(re.P[0], re.P[1], re.P[2], tp.tp2ds[0])) ||
+       (isPointInTriangle(re.P[2], re.P[3], re.P[0], tp.tp2ds[0])))
     {
         out.push_back(A);
     }
-    if((isPointInTriangle(re->P[0], re->P[1], re->P[2], tp->tp2ds[1])) ||
-       (isPointInTriangle(re->P[2], re->P[3], re->P[0], tp->tp2ds[1])))
+    if((isPointInTriangle(re.P[0], re.P[1], re.P[2], tp.tp2ds[1])) ||
+       (isPointInTriangle(re.P[2], re.P[3], re.P[0], tp.tp2ds[1])))
     {
         out.push_back(B);
     }
-    if((isPointInTriangle(re->P[0], re->P[1], re->P[2], tp->tp2ds[2])) ||
-       (isPointInTriangle(re->P[2], re->P[3], re->P[0], tp->tp2ds[2])))
+    if((isPointInTriangle(re.P[0], re.P[1], re.P[2], tp.tp2ds[2])) ||
+       (isPointInTriangle(re.P[2], re.P[3], re.P[0], tp.tp2ds[2])))
     {
         out.push_back(C);
     }
@@ -624,7 +624,7 @@ void Mesh::getPtsNeighPtsOrdered(StaticVector<StaticVector<int>*>& out_ptsNeighP
     }
 }
 
-void Mesh::getTrisMap(StaticVector<StaticVector<int>*>& out, const mvsUtils::MultiViewParams* mp, int rc, int  /*scale*/, int w, int h)
+void Mesh::getTrisMap(StaticVector<StaticVector<int>*>& out, const mvsUtils::MultiViewParams& mp, int rc, int  /*scale*/, int w, int h)
 {
     long tstart = clock();
 
@@ -637,7 +637,7 @@ void Mesh::getTrisMap(StaticVector<StaticVector<int>*>& out, const mvsUtils::Mul
     for(int i = 0; i < tris.size(); i++)
     {
         triangle_proj tp = getTriangleProjection(i, mp, rc, w, h);
-        if((isTriangleProjectionInImage(*mp, tp, rc, 0)))
+        if((isTriangleProjectionInImage(mp, tp, rc, 0)))
         {
             Pixel pix;
             for(pix.x = tp.lu.x; pix.x <= tp.rd.x; pix.x++)
@@ -676,7 +676,7 @@ void Mesh::getTrisMap(StaticVector<StaticVector<int>*>& out, const mvsUtils::Mul
     for(int i = 0; i < tris.size(); i++)
     {
         triangle_proj tp = getTriangleProjection(i, mp, rc, w, h);
-        if((isTriangleProjectionInImage(*mp, tp, rc, 0)))
+        if((isTriangleProjectionInImage(mp, tp, rc, 0)))
         {
             Pixel pix;
             for(pix.x = tp.lu.x; pix.x <= tp.rd.x; pix.x++)
@@ -698,7 +698,7 @@ void Mesh::getTrisMap(StaticVector<StaticVector<int>*>& out, const mvsUtils::Mul
     mvsUtils::printfElapsedTime(tstart);
 }
 
-void Mesh::getTrisMap(StaticVector<StaticVector<int>*>& out, StaticVector<int>* visTris, const mvsUtils::MultiViewParams* mp, int rc,
+void Mesh::getTrisMap(StaticVector<StaticVector<int>*>& out, StaticVector<int>& visTris, const mvsUtils::MultiViewParams& mp, int rc,
                                                       int  /*scale*/, int w, int h)
 {
     long tstart = clock();
@@ -709,11 +709,11 @@ void Mesh::getTrisMap(StaticVector<StaticVector<int>*>& out, StaticVector<int>* 
     nmap->resize_with(w * h, 0);
 
     long t1 = mvsUtils::initEstimate();
-    for(int m = 0; m < visTris->size(); m++)
+    for(int m = 0; m < visTris.size(); m++)
     {
-        int i = (*visTris)[m];
+        int i = visTris[m];
         triangle_proj tp = getTriangleProjection(i, mp, rc, w, h);
-        if((isTriangleProjectionInImage(*mp, tp, rc, 0)))
+        if((isTriangleProjectionInImage(mp, tp, rc, 0)))
         {
             Pixel pix;
             for(pix.x = tp.lu.x; pix.x <= tp.rd.x; pix.x++)
@@ -748,11 +748,11 @@ void Mesh::getTrisMap(StaticVector<StaticVector<int>*>& out, StaticVector<int>* 
 
     // fill
     t1 = mvsUtils::initEstimate();
-    for(int m = 0; m < visTris->size(); m++)
+    for(int m = 0; m < visTris.size(); m++)
     {
-        int i = (*visTris)[m];
+        int i = visTris[m];
         triangle_proj tp = getTriangleProjection(i, mp, rc, w, h);
-        if((isTriangleProjectionInImage(*mp, tp, rc, 0)))
+        if((isTriangleProjectionInImage(mp, tp, rc, 0)))
         {
             Pixel pix;
             for(pix.x = tp.lu.x; pix.x <= tp.rd.x; pix.x++)
@@ -774,14 +774,14 @@ void Mesh::getTrisMap(StaticVector<StaticVector<int>*>& out, StaticVector<int>* 
     mvsUtils::printfElapsedTime(tstart);
 }
 
-void Mesh::getDepthMap(StaticVector<float>& depthMap, const mvsUtils::MultiViewParams* mp, int rc, int scale, int w, int h)
+void Mesh::getDepthMap(StaticVector<float>& depthMap, const mvsUtils::MultiViewParams& mp, int rc, int scale, int w, int h)
 {
     StaticVector<StaticVector<int>*> tmp;
     getTrisMap(tmp, mp, rc, scale, w, h);
     getDepthMap(depthMap, tmp, mp, rc, scale, w, h);
 }
 
-void Mesh::getDepthMap(StaticVector<float>& depthMap, StaticVector<StaticVector<int>*>& tmp, const mvsUtils::MultiViewParams* mp,
+void Mesh::getDepthMap(StaticVector<float>& depthMap, StaticVector<StaticVector<int>*>& tmp, const mvsUtils::MultiViewParams& mp,
                           int rc, int scale, int w, int h)
 {
     depthMap.resize_with(w * h, -1.0f);
@@ -837,10 +837,10 @@ void Mesh::getDepthMap(StaticVector<float>& depthMap, StaticVector<StaticVector<
                     for(int k = 0; k < tpis.size(); k++)
                     {
                         Point3d lpi = linePlaneIntersect(
-                            mp->CArr[rc], (mp->iCamArr[rc] * (tpis[k] * (float)scale)).normalize(), tri.p, tri.n);
-                        if(!std::isnan(angleBetwV1andV2((mp->CArr[rc] - tri.p).normalize(), tri.n)))
+                            mp.CArr[rc], (mp.iCamArr[rc] * (tpis[k] * (float)scale)).normalize(), tri.p, tri.n);
+                        if(!std::isnan(angleBetwV1andV2((mp.CArr[rc] - tri.p).normalize(), tri.n)))
                         {
-                            maxd = std::max(maxd, (mp->CArr[rc] - lpi).size());
+                            maxd = std::max(maxd, (mp.CArr[rc] - lpi).size());
                         }
                         else
                         {
@@ -855,7 +855,7 @@ void Mesh::getDepthMap(StaticVector<float>& depthMap, StaticVector<StaticVector<
                             printf("ids %i %i %i\n", (*tris)[idTri].i[0], (*tris)[idTri].i[1], (*tris)[idTri].i[2]);
                             */
 
-                            maxd = std::max(maxd, (mp->CArr[rc] - pts[tris[idTri].v[1]]).size());
+                            maxd = std::max(maxd, (mp.CArr[rc] - pts[tris[idTri].v[1]]).size());
 
                             /*
                             StaticVector<Point3d> *tpis1 = getTrianglePixelIntersectionsAndInternalPoints(mp, idTri,
@@ -910,36 +910,36 @@ void Mesh::getDepthMap(StaticVector<float>& depthMap, StaticVector<StaticVector<
 }
 
 void Mesh::getVisibleTrianglesIndexes(StaticVector<int>& out_visTri, std::string depthMapFileName, std::string trisMapFileName,
-                                                       const mvsUtils::MultiViewParams* mp, int rc, int w, int h)
+                                                       const mvsUtils::MultiViewParams& mp, int rc, int w, int h)
 {
-    StaticVector<float>* depthMap = loadArrayFromFile<float>(depthMapFileName);
+    StaticVector<float> depthMap;
+    loadArrayFromFile<float>(depthMap, depthMapFileName);
     StaticVector<StaticVector<int>*>* trisMap = loadArrayOfArraysFromFile<int>(trisMapFileName);
 
-    getVisibleTrianglesIndexes(out_visTri, trisMap, depthMap, mp, rc, w, h);
+    getVisibleTrianglesIndexes(out_visTri, *trisMap, depthMap, mp, rc, w, h);
 
     deleteArrayOfArrays<int>(&trisMap);
-    delete depthMap;
 }
 
-void Mesh::getVisibleTrianglesIndexes(StaticVector<int>& out_visTri, std::string tmpDir, const mvsUtils::MultiViewParams* mp, int rc, int w, int h)
+void Mesh::getVisibleTrianglesIndexes(StaticVector<int>& out_visTri, std::string tmpDir, const mvsUtils::MultiViewParams& mp, int rc, int w, int h)
 {
-    std::string depthMapFileName = tmpDir + "depthMap" + std::to_string(mp->getViewId(rc)) + ".bin";
-    std::string trisMapFileName = tmpDir + "trisMap" + std::to_string(mp->getViewId(rc)) + ".bin";
+    std::string depthMapFileName = tmpDir + "depthMap" + std::to_string(mp.getViewId(rc)) + ".bin";
+    std::string trisMapFileName = tmpDir + "trisMap" + std::to_string(mp.getViewId(rc)) + ".bin";
 
-    StaticVector<float>* depthMap = loadArrayFromFile<float>(depthMapFileName);
+    StaticVector<float> depthMap;
+    loadArrayFromFile<float>(depthMap, depthMapFileName);
     StaticVector<StaticVector<int>*>* trisMap = loadArrayOfArraysFromFile<int>(trisMapFileName);
 
-    getVisibleTrianglesIndexes(out_visTri, trisMap, depthMap, mp, rc, w, h);
+    getVisibleTrianglesIndexes(out_visTri, *trisMap, depthMap, mp, rc, w, h);
 
     deleteArrayOfArrays<int>(&trisMap);
-    delete depthMap;
 }
 
-void Mesh::getVisibleTrianglesIndexes(StaticVector<int>& out_visTri, StaticVector<float>* depthMap, const mvsUtils::MultiViewParams* mp, int rc,
+void Mesh::getVisibleTrianglesIndexes(StaticVector<int>& out_visTri, StaticVector<float>& depthMap, const mvsUtils::MultiViewParams& mp, int rc,
                                                        int w, int h)
 {
-    int ow = mp->getWidth(rc);
-    int oh = mp->getHeight(rc);
+    int ow = mp.getWidth(rc);
+    int oh = mp.getHeight(rc);
 
     out_visTri.reserve(tris.size());
 
@@ -947,15 +947,15 @@ void Mesh::getVisibleTrianglesIndexes(StaticVector<int>& out_visTri, StaticVecto
     {
         Point3d cg = computeTriangleCenterOfGravity(i);
         Pixel pix;
-        mp->getPixelFor3DPoint(&pix, cg, rc);
-        if(mp->isPixelInImage(pix, rc, 1))
+        mp.getPixelFor3DPoint(&pix, cg, rc);
+        if(mp.isPixelInImage(pix, rc, 1))
         {
             pix.x = (int)(((float)pix.x / (float)ow) * (float)w);
             pix.y = (int)(((float)pix.y / (float)oh) * (float)h);
-            float depth = (*depthMap)[pix.x * h + pix.y];
-            float pixSize = mp->getCamPixelSize(cg, rc) * 6.0f;
+            float depth = depthMap[pix.x * h + pix.y];
+            float pixSize = mp.getCamPixelSize(cg, rc) * 6.0f;
             // if (depth-pixSize<(mp->CArr[rc]-cg).size()) {
-            if(fabs(depth - (mp->CArr[rc] - cg).size()) < pixSize)
+            if(fabs(depth - (mp.CArr[rc] - cg).size()) < pixSize)
             {
                 out_visTri.push_back(i);
             }
@@ -963,12 +963,12 @@ void Mesh::getVisibleTrianglesIndexes(StaticVector<int>& out_visTri, StaticVecto
     }
 }
 
-void Mesh::getVisibleTrianglesIndexes(StaticVector<int>& out_visTri, StaticVector<StaticVector<int>*>* trisMap,
-                                                       StaticVector<float>* depthMap, const mvsUtils::MultiViewParams* mp, int rc,
+void Mesh::getVisibleTrianglesIndexes(StaticVector<int>& out_visTri, StaticVector<StaticVector<int>*>& trisMap,
+                                                       StaticVector<float>& depthMap, const mvsUtils::MultiViewParams& mp, int rc,
                                                        int w, int h)
 {
-    int ow = mp->getWidth(rc);
-    int oh = mp->getHeight(rc);
+    int ow = mp.getWidth(rc);
+    int oh = mp.getHeight(rc);
 
     StaticVectorBool* btris = new StaticVectorBool();
     btris->reserve(tris.size());
@@ -980,14 +980,14 @@ void Mesh::getVisibleTrianglesIndexes(StaticVector<int>& out_visTri, StaticVecto
         for(pix.y = 0; pix.y < h; pix.y++)
         {
 
-            StaticVector<int>* ti = (*trisMap)[pix.x * h + pix.y];
+            StaticVector<int>* ti = trisMap[pix.x * h + pix.y];
             if(ti != nullptr)
             {
                 Point2d p;
                 p.x = (float)pix.x;
                 p.y = (float)pix.y;
 
-                float depth = (*depthMap)[pix.x * h + pix.y];
+                float depth = depthMap[pix.x * h + pix.y];
                 for(int i = 0; i < ti->size(); i++)
                 {
                     int idTri = (*ti)[i];
@@ -1022,9 +1022,9 @@ void Mesh::getVisibleTrianglesIndexes(StaticVector<int>& out_visTri, StaticVecto
                     tpip.x = (tpip.x / (float)w) * (float)ow;
                     tpip.y = (tpip.y / (float)h) * (float)oh;
 
-                    Point3d lpi = linePlaneIntersect(mp->CArr[rc], (mp->iCamArr[rc] * tpip).normalize(), tri.p, tri.n);
-                    float lpidepth = (mp->CArr[rc] - lpi).size();
-                    float pixSize = mp->getCamPixelSize(lpi, rc) * 2.0f;
+                    Point3d lpi = linePlaneIntersect(mp.CArr[rc], (mp.iCamArr[rc] * tpip).normalize(), tri.p, tri.n);
+                    float lpidepth = (mp.CArr[rc] - lpi).size();
+                    float pixSize = mp.getCamPixelSize(lpi, rc) * 2.0f;
                     if(fabs(depth - lpidepth) < pixSize)
                     {
                         (*btris)[idTri] = true;
@@ -1057,10 +1057,8 @@ void Mesh::getVisibleTrianglesIndexes(StaticVector<int>& out_visTri, StaticVecto
     delete btris;
 }
 
-Mesh* Mesh::generateMeshFromTrianglesSubset(const StaticVector<int>& visTris, StaticVector<int>** out_ptIdToNewPtId) const
+void Mesh::generateMeshFromTrianglesSubset(const StaticVector<int>& visTris, Mesh& outMesh, StaticVector<int>& out_ptIdToNewPtId) const
 {
-    Mesh* outMesh = new Mesh();
-
     StaticVector<int> newIndexPerInputPts;
     newIndexPerInputPts.resize_with(pts.size(), -1); // -1 means unused
     for(int i = 0; i < visTris.size(); i++)
@@ -1081,19 +1079,19 @@ Mesh* Mesh::generateMeshFromTrianglesSubset(const StaticVector<int>& visTris, St
         }
     }
 
-    outMesh->pts = StaticVector<Point3d>();
-    outMesh->pts.reserve(j);
+    outMesh.pts = StaticVector<Point3d>();
+    outMesh.pts.reserve(j);
 
     for(int i = 0; i < pts.size(); i++)
     {
         if(newIndexPerInputPts[i] > -1)
         {
-            outMesh->pts.push_back(pts[i]);
+            outMesh.pts.push_back(pts[i]);
         }
     }
 
-    outMesh->tris = StaticVector<Mesh::triangle>();
-    outMesh->tris.reserve(visTris.size());
+    outMesh.tris = StaticVector<Mesh::triangle>();
+    outMesh.tris.reserve(visTris.size());
     for(int i = 0; i < visTris.size(); i++)
     {
         int idTri = visTris[i];
@@ -1102,86 +1100,75 @@ Mesh* Mesh::generateMeshFromTrianglesSubset(const StaticVector<int>& visTris, St
         t.v[0] = newIndexPerInputPts[tris[idTri].v[0]];
         t.v[1] = newIndexPerInputPts[tris[idTri].v[1]];
         t.v[2] = newIndexPerInputPts[tris[idTri].v[2]];
-        outMesh->tris.push_back(t);
+        outMesh.tris.push_back(t);
     }
 
-    if(out_ptIdToNewPtId != nullptr)
-    {
-        (*out_ptIdToNewPtId) = new StaticVector<int>();
-        (*out_ptIdToNewPtId)->swap(newIndexPerInputPts);
-    }
-
-    return outMesh;
+    out_ptIdToNewPtId.swap(newIndexPerInputPts);
 }
 
-void Mesh::getNotOrientedEdges(StaticVector<StaticVector<int>*>** edgesNeighTris,
-                                  StaticVector<Pixel>** edgesPointsPairs)
+void Mesh::getNotOrientedEdges(StaticVector<StaticVector<int>*>& edgesNeighTris,
+                                  StaticVector<Pixel>& edgesPointsPairs)
 {
     // printf("getNotOrientedEdges\n");
-    StaticVector<Voxel>* edges = new StaticVector<Voxel>();
-    edges->reserve(tris.size() * 3);
+    StaticVector<Voxel> edges;
+    edges.reserve(tris.size() * 3);
 
     for(int i = 0; i < tris.size(); i++)
     {
         int a = tris[i].v[0];
         int b = tris[i].v[1];
         int c = tris[i].v[2];
-        edges->push_back(Voxel(std::min(a, b), std::max(a, b), i));
-        edges->push_back(Voxel(std::min(b, c), std::max(b, c), i));
-        edges->push_back(Voxel(std::min(c, a), std::max(c, a), i));
+        edges.push_back(Voxel(std::min(a, b), std::max(a, b), i));
+        edges.push_back(Voxel(std::min(b, c), std::max(b, c), i));
+        edges.push_back(Voxel(std::min(c, a), std::max(c, a), i));
     }
 
-    qsort(&(*edges)[0], edges->size(), sizeof(Voxel), qSortCompareVoxelByXAsc);
+    qsort(&edges[0], edges.size(), sizeof(Voxel), qSortCompareVoxelByXAsc);
 
-    StaticVector<StaticVector<int>*>* _edgesNeighTris = new StaticVector<StaticVector<int>*>();
-    StaticVector<Pixel>* _edgesPointsPairs = new StaticVector<Pixel>();
+    StaticVector<StaticVector<int>*> _edgesNeighTris;
+    StaticVector<Pixel> _edgesPointsPairs;
 
-    _edgesNeighTris->reserve(tris.size() * 3);
-    _edgesPointsPairs->reserve(tris.size() * 3);
+    _edgesNeighTris.reserve(tris.size() * 3);
+    _edgesPointsPairs.reserve(tris.size() * 3);
     // remove duplicities
     int i0 = 0;
     long t1 = mvsUtils::initEstimate();
-    for(int i = 0; i < edges->size(); i++)
+    for(int i = 0; i < edges.size(); i++)
     {
-        if((i == edges->size() - 1) || ((*edges)[i].x != (*edges)[i + 1].x))
+        if((i == edges.size() - 1) || (edges[i].x != edges[i + 1].x))
         {
-            StaticVector<Voxel>* edges1 = new StaticVector<Voxel>();
-            edges1->reserve(i - i0 + 1);
+            StaticVector<Voxel> edges1;
+            edges1.reserve(i - i0 + 1);
             for(int j = i0; j <= i; j++)
             {
-                edges1->push_back((*edges)[j]);
+                edges1.push_back(edges[j]);
             }
-            qsort(&(*edges1)[0], edges1->size(), sizeof(Voxel), qSortCompareVoxelByYAsc);
+            qsort(&edges1[0], edges1.size(), sizeof(Voxel), qSortCompareVoxelByYAsc);
 
             int j0 = 0;
-            for(int j = 0; j < edges1->size(); j++)
+            for(int j = 0; j < edges1.size(); j++)
             {
-                if((j == edges1->size() - 1) || ((*edges1)[j].y != (*edges1)[j + 1].y))
+                if((j == edges1.size() - 1) || (edges1[j].y != edges1[j + 1].y))
                 {
-                    _edgesPointsPairs->push_back(Pixel((*edges1)[j].x, (*edges1)[j].y));
+                    _edgesPointsPairs.push_back(Pixel(edges1[j].x, edges1[j].y));
                     StaticVector<int>* neighTris = new StaticVector<int>();
                     neighTris->reserve(j - j0 + 1);
                     for(int k = j0; k <= j; k++)
                     {
-                        neighTris->push_back((*edges1)[k].z);
+                        neighTris->push_back(edges1[k].z);
                     }
-                    _edgesNeighTris->push_back(neighTris);
+                    _edgesNeighTris.push_back(neighTris);
                     j0 = j + 1;
                 }
             }
-
-            delete edges1;
             i0 = i + 1;
         }
-
-        mvsUtils::printfEstimate(i, edges->size(), t1);
+        mvsUtils::printfEstimate(i, edges.size(), t1);
     }
     mvsUtils::finishEstimate();
 
-    (*edgesNeighTris) = _edgesNeighTris;
-    (*edgesPointsPairs) = _edgesPointsPairs;
-
-    delete edges;
+    edgesNeighTris = _edgesNeighTris;
+    edgesPointsPairs = _edgesPointsPairs;
 }
 
 void Mesh::getLaplacianSmoothingVectors(StaticVector<StaticVector<int>*>& ptsNeighPts, StaticVector<Point3d>& out_nms,
@@ -1367,7 +1354,7 @@ void Mesh::smoothNormals(StaticVector<Point3d>& nms, StaticVector<StaticVector<i
     }
 }
 
-void Mesh::removeFreePointsFromMesh(StaticVector<int>** out_ptIdToNewPtId)
+void Mesh::removeFreePointsFromMesh(StaticVector<int>& out_ptIdToNewPtId)
 {
     ALICEVISION_LOG_INFO("remove free points from mesh.");
 
@@ -1379,12 +1366,11 @@ void Mesh::removeFreePointsFromMesh(StaticVector<int>** out_ptIdToNewPtId)
         visTris.push_back(i);
     }
     // generate a new mesh from all triangles so all unused points will be removed
-    Mesh* cleanedMesh = generateMeshFromTrianglesSubset(visTris, out_ptIdToNewPtId);
+    Mesh cleanedMesh;
+    generateMeshFromTrianglesSubset(visTris, cleanedMesh, out_ptIdToNewPtId);
 
-    std::swap(cleanedMesh->pts, pts);
-    std::swap(cleanedMesh->tris, tris);
-
-    delete cleanedMesh;
+    std::swap(cleanedMesh.pts, pts);
+    std::swap(cleanedMesh.tris, tris);
 }
 
 double Mesh::computeTriangleProjectionArea(const triangle_proj& tp) const
@@ -1574,31 +1560,31 @@ void Mesh::subdivideMeshCase3(int i, StaticVector<Pixel>& edgesi, Pixel& neptIdE
     }
 }
 
-void Mesh::subdivideMesh(const mvsUtils::MultiViewParams* mp, float maxTriArea, std::string tmpDir, int maxMeshPts)
+void Mesh::subdivideMesh(const mvsUtils::MultiViewParams& mp, float maxTriArea, std::string tmpDir, int maxMeshPts)
 {
-    StaticVector<StaticVector<int>*>* trisCams = computeTrisCams(mp, tmpDir);
+    StaticVector<StaticVector<int>*> trisCams;
     StaticVector<StaticVector<int>*> trisCams1;
-    subdivideMesh(trisCams1, mp, maxTriArea, 0.0f, true, *trisCams, maxMeshPts);
-    deleteArrayOfArrays<int>(&trisCams);
+    computeTrisCams(trisCams, mp, tmpDir);
+    subdivideMesh(trisCams1, mp, maxTriArea, 0.0f, true, trisCams, maxMeshPts);
 }
 
-void Mesh::subdivideMesh(StaticVector<StaticVector<int>*>& out_trisCams, const mvsUtils::MultiViewParams* mp, float maxTriArea, float maxEdgeLength,
+void Mesh::subdivideMesh(StaticVector<StaticVector<int>*>& out_trisCams, const mvsUtils::MultiViewParams& mp, float maxTriArea, float maxEdgeLength,
                                                          bool useMaxTrisAreaOrAvEdgeLength,
                                                          StaticVector<StaticVector<int>*>& trisCams, int maxMeshPts)
 {
     ALICEVISION_LOG_INFO("Subdivide mesh.");
 
-    StaticVector<int>* trisCamsId = new StaticVector<int>();
-    trisCamsId->reserve(tris.size());
+    StaticVector<int> trisCamsId;
+    trisCamsId.reserve(tris.size());
     for(int i = 0; i < tris.size(); ++i)
     {
-        trisCamsId->push_back(i);
+        trisCamsId.push_back(i);
     }
 
     int nsubd = 1000;
     while((pts.size() < maxMeshPts) && (nsubd > 10))
     {
-        nsubd = subdivideMesh(mp, maxTriArea, maxEdgeLength, useMaxTrisAreaOrAvEdgeLength, trisCams, &trisCamsId);
+        nsubd = subdivideMesh(mp, maxTriArea, maxEdgeLength, useMaxTrisAreaOrAvEdgeLength, trisCams, trisCamsId);
         ALICEVISION_LOG_DEBUG("subdivided: " << nsubd);
     }
     // subdivideMesh(mp, maxTriArea, trisCams, &trisCamsId);
@@ -1610,7 +1596,7 @@ void Mesh::subdivideMesh(StaticVector<StaticVector<int>*>& out_trisCams, const m
         out_trisCams.reserve(tris.size());
         for(int i = 0; i < tris.size(); i++)
         {
-            int tcid = (*trisCamsId)[i];
+            int tcid = trisCamsId[i];
             if(trisCams[tcid] != nullptr)
             {
                 StaticVector<int>* cams = new StaticVector<int>();
@@ -1626,20 +1612,19 @@ void Mesh::subdivideMesh(StaticVector<StaticVector<int>*>& out_trisCams, const m
                 out_trisCams.push_back(nullptr);
             }
         }
-        delete trisCamsId;
     }
 }
 
-void Mesh::subdivideMeshMaxEdgeLengthUpdatePtsCams(const mvsUtils::MultiViewParams* mp, float maxEdgeLength,
+void Mesh::subdivideMeshMaxEdgeLengthUpdatePtsCams(const mvsUtils::MultiViewParams& mp, float maxEdgeLength,
                                                       StaticVector<StaticVector<int>*>& ptsCams, int maxMeshPts)
 {
     ALICEVISION_LOG_INFO("Subdivide mesh.");
 
-    StaticVector<int>* trisCamsId = new StaticVector<int>();
-    trisCamsId->reserve(tris.size());
+    StaticVector<int> trisCamsId;
+    trisCamsId.reserve(tris.size());
     for(int i = 0; i < tris.size(); i++)
     {
-        trisCamsId->push_back(i);
+        trisCamsId.push_back(i);
     }
 
     int oldNPts = pts.size();
@@ -1651,7 +1636,7 @@ void Mesh::subdivideMeshMaxEdgeLengthUpdatePtsCams(const mvsUtils::MultiViewPara
     int nsubd = 1000;
     while((pts.size() < maxMeshPts) && (nsubd > 10))
     {
-        nsubd = subdivideMesh(mp, 0.0f, maxEdgeLength, false, ptsCams, &trisCamsId);
+        nsubd = subdivideMesh(mp, 0.0f, maxEdgeLength, false, ptsCams, trisCamsId);
         ALICEVISION_LOG_DEBUG("subdivided: " << nsubd);
     }
     // subdivideMesh(mp, maxTriArea, trisCams, &trisCamsId);
@@ -1664,10 +1649,10 @@ void Mesh::subdivideMeshMaxEdgeLengthUpdatePtsCams(const mvsUtils::MultiViewPara
         newPtsOldTriId->resize_with(pts.size() - oldNPts, -1);
         for(int i = oldNTris; i < tris.size(); i++)
         {
-            int tcid = (*trisCamsId)[i];
+            int tcid = trisCamsId[i];
             while(tcid > oldNTris)
             {
-                tcid = (*trisCamsId)[tcid];
+                tcid = trisCamsId[tcid];
             }
             for(int k = 0; k < 3; k++)
             {
@@ -1717,19 +1702,18 @@ void Mesh::subdivideMeshMaxEdgeLengthUpdatePtsCams(const mvsUtils::MultiViewPara
     }
 
     delete oldTris;
-    delete trisCamsId;
 }
 
-int Mesh::subdivideMesh(const mvsUtils::MultiViewParams* mp, float maxTriArea, float maxEdgeLength,
+int Mesh::subdivideMesh(const mvsUtils::MultiViewParams& mp, float maxTriArea, float maxEdgeLength,
                            bool useMaxTrisAreaOrAvEdgeLength, StaticVector<StaticVector<int>*>& trisCams,
-                           StaticVector<int>** trisCamsId)
+                           StaticVector<int>& trisCamsId)
 {
 
-    StaticVector<StaticVector<int>*>* edgesNeighTris;
-    StaticVector<Pixel>* edgesPointsPairs;
-    getNotOrientedEdges(&edgesNeighTris, &edgesPointsPairs);
+    StaticVector<StaticVector<int>*> edgesNeighTris;
+    StaticVector<Pixel> edgesPointsPairs;
+    getNotOrientedEdges(edgesNeighTris, edgesPointsPairs);
     StaticVector<Voxel> trisEdges;
-    getTrianglesEdgesIds(trisEdges, *edgesNeighTris);
+    getTrianglesEdgesIds(trisEdges, edgesNeighTris);
 
     // which triangles should be subdivided
     int nTrisToSubdivide = 0;
@@ -1737,7 +1721,7 @@ int Mesh::subdivideMesh(const mvsUtils::MultiViewParams* mp, float maxTriArea, f
     trisToSubdivide->reserve(tris.size());
     for(int i = 0; i < tris.size(); i++)
     {
-        int tcid = (*(*trisCamsId))[i];
+        int tcid = trisCamsId[i];
         bool subdivide = false;
 
         if(useMaxTrisAreaOrAvEdgeLength)
@@ -1745,8 +1729,8 @@ int Mesh::subdivideMesh(const mvsUtils::MultiViewParams* mp, float maxTriArea, f
             for(int j = 0; j < sizeOfStaticVector<int>(trisCams[tcid]); j++)
             {
                 int rc = (*trisCams[tcid])[j];
-                int w = mp->getWidth(rc);
-                int h = mp->getHeight(rc);
+                int w = mp.getWidth(rc);
+                int h = mp.getHeight(rc);
                 triangle_proj tp = getTriangleProjection(i, mp, rc, w, h);
                 if(computeTriangleProjectionArea(tp) > maxTriArea)
                 {
@@ -1768,13 +1752,13 @@ int Mesh::subdivideMesh(const mvsUtils::MultiViewParams* mp, float maxTriArea, f
 
     // which edges are going to be subdivided
     StaticVector<int>* edgesToSubdivide = new StaticVector<int>();
-    edgesToSubdivide->reserve(edgesNeighTris->size());
-    for(int i = 0; i < edgesNeighTris->size(); i++)
+    edgesToSubdivide->reserve(edgesNeighTris.size());
+    for(int i = 0; i < edgesNeighTris.size(); i++)
     {
         bool hasNeigTriToSubdivide = false;
-        for(int j = 0; j < (*edgesNeighTris)[i]->size(); j++)
+        for(int j = 0; j < edgesNeighTris[i]->size(); j++)
         {
-            int idTri = (*(*edgesNeighTris)[i])[j];
+            int idTri = (*edgesNeighTris[i])[j];
             if((*trisToSubdivide)[idTri])
             {
                 hasNeigTriToSubdivide = true;
@@ -1808,7 +1792,7 @@ int Mesh::subdivideMesh(const mvsUtils::MultiViewParams* mp, float maxTriArea, f
     {
         if((*edgesToSubdivide)[i] > -1)
         {
-            Point3d p = (pts[(*edgesPointsPairs)[i].x] + pts[(*edgesPointsPairs)[i].y]) / 2.0f;
+            Point3d p = (pts[edgesPointsPairs[i].x] + pts[edgesPointsPairs[i].y]) / 2.0f;
             pts1->push_back(p);
         }
     }
@@ -1827,10 +1811,10 @@ int Mesh::subdivideMesh(const mvsUtils::MultiViewParams* mp, float maxTriArea, f
     ALICEVISION_LOG_INFO("\t- # triangles to subdivide: " << nTrisToSubdivide);
     ALICEVISION_LOG_INFO("\t- # pts to add: " << nEdgesToSubdivide);
 
-    StaticVector<int>* trisCamsId1 = new StaticVector<int>();
+    StaticVector<int> trisCamsId1;
     StaticVector<Mesh::triangle>* tris1 = new StaticVector<Mesh::triangle>();
 
-    trisCamsId1->reserve(tris.size() - nTrisToSubdivide + 4 * nTrisToSubdivide);
+    trisCamsId1.reserve(tris.size() - nTrisToSubdivide + 4 * nTrisToSubdivide);
     tris1->reserve(tris.size() - nTrisToSubdivide + 4 * nTrisToSubdivide);
 
     for(int i = 0; i < tris.size(); i++)
@@ -1860,41 +1844,41 @@ int Mesh::subdivideMesh(const mvsUtils::MultiViewParams* mp, float maxTriArea, f
 
             if(n == 1)
             {
-                subdivideMeshCase1(i, *edgesPointsPairs, newPtsIds[0], *tris1);
+                subdivideMeshCase1(i, edgesPointsPairs, newPtsIds[0], *tris1);
 
-                trisCamsId1->push_back((*(*trisCamsId))[i]);
-                trisCamsId1->push_back((*(*trisCamsId))[i]);
+                trisCamsId1.push_back(trisCamsId[i]);
+                trisCamsId1.push_back(trisCamsId[i]);
             }
 
             if(n == 2)
             {
-                subdivideMeshCase2(i, *edgesPointsPairs, newPtsIds[0], newPtsIds[1], *tris1);
-                subdivideMeshCase2(i, *edgesPointsPairs, newPtsIds[1], newPtsIds[0], *tris1);
+                subdivideMeshCase2(i, edgesPointsPairs, newPtsIds[0], newPtsIds[1], *tris1);
+                subdivideMeshCase2(i, edgesPointsPairs, newPtsIds[1], newPtsIds[0], *tris1);
 
-                trisCamsId1->push_back((*(*trisCamsId))[i]);
-                trisCamsId1->push_back((*(*trisCamsId))[i]);
-                trisCamsId1->push_back((*(*trisCamsId))[i]);
+                trisCamsId1.push_back(trisCamsId[i]);
+                trisCamsId1.push_back(trisCamsId[i]);
+                trisCamsId1.push_back(trisCamsId[i]);
             }
 
             if(n == 3)
             {
-                subdivideMeshCase3(i, *edgesPointsPairs, newPtsIds[0], newPtsIds[1], newPtsIds[2], *tris1);
-                subdivideMeshCase3(i, *edgesPointsPairs, newPtsIds[0], newPtsIds[2], newPtsIds[1], *tris1);
-                subdivideMeshCase3(i, *edgesPointsPairs, newPtsIds[1], newPtsIds[0], newPtsIds[2], *tris1);
-                subdivideMeshCase3(i, *edgesPointsPairs, newPtsIds[1], newPtsIds[2], newPtsIds[0], *tris1);
-                subdivideMeshCase3(i, *edgesPointsPairs, newPtsIds[2], newPtsIds[0], newPtsIds[1], *tris1);
-                subdivideMeshCase3(i, *edgesPointsPairs, newPtsIds[2], newPtsIds[1], newPtsIds[0], *tris1);
+                subdivideMeshCase3(i, edgesPointsPairs, newPtsIds[0], newPtsIds[1], newPtsIds[2], *tris1);
+                subdivideMeshCase3(i, edgesPointsPairs, newPtsIds[0], newPtsIds[2], newPtsIds[1], *tris1);
+                subdivideMeshCase3(i, edgesPointsPairs, newPtsIds[1], newPtsIds[0], newPtsIds[2], *tris1);
+                subdivideMeshCase3(i, edgesPointsPairs, newPtsIds[1], newPtsIds[2], newPtsIds[0], *tris1);
+                subdivideMeshCase3(i, edgesPointsPairs, newPtsIds[2], newPtsIds[0], newPtsIds[1], *tris1);
+                subdivideMeshCase3(i, edgesPointsPairs, newPtsIds[2], newPtsIds[1], newPtsIds[0], *tris1);
 
-                trisCamsId1->push_back((*(*trisCamsId))[i]);
-                trisCamsId1->push_back((*(*trisCamsId))[i]);
-                trisCamsId1->push_back((*(*trisCamsId))[i]);
-                trisCamsId1->push_back((*(*trisCamsId))[i]);
+                trisCamsId1.push_back(trisCamsId[i]);
+                trisCamsId1.push_back(trisCamsId[i]);
+                trisCamsId1.push_back(trisCamsId[i]);
+                trisCamsId1.push_back(trisCamsId[i]);
             }
         }
         else
         {
             tris1->push_back(tris[i]);
-            trisCamsId1->push_back((*(*trisCamsId))[i]);
+            trisCamsId1.push_back(trisCamsId[i]);
         }
     }
 
@@ -1903,11 +1887,8 @@ int Mesh::subdivideMesh(const mvsUtils::MultiViewParams* mp, float maxTriArea, f
     pts = *pts1;
     tris = *tris1;
 
-    delete(*trisCamsId);
-    (*trisCamsId) = trisCamsId1;
+    trisCamsId.swap(trisCamsId1);
 
-    deleteArrayOfArrays<int>(&edgesNeighTris);
-    delete edgesPointsPairs;
     delete trisToSubdivide;
     delete edgesToSubdivide;
 
@@ -1947,74 +1928,69 @@ void Mesh::letJustTringlesIdsInMesh(StaticVector<int>& trisIdsToStay)
     tris = *trisTmp;
 }
 
-StaticVector<StaticVector<int>*>* Mesh::computeTrisCams(const mvsUtils::MultiViewParams* mp, std::string tmpDir)
+void Mesh::computeTrisCams(StaticVector<StaticVector<int>*>& trisCams, const mvsUtils::MultiViewParams& mp, std::string tmpDir)
 {
-    if(mp->verbose)
+    if(mp.verbose)
         ALICEVISION_LOG_DEBUG("Computing tris cams.");
 
-    StaticVector<int>* ntrisCams = new StaticVector<int>();
-    ntrisCams->reserve(tris.size());
-    ntrisCams->resize_with(tris.size(), 0);
+    StaticVector<int> ntrisCams;
+    ntrisCams.reserve(tris.size());
+    ntrisCams.resize_with(tris.size(), 0);
 
     long t1 = mvsUtils::initEstimate();
-    for(int rc = 0; rc < mp->ncams; ++rc)
+    for(int rc = 0; rc < mp.ncams; ++rc)
     {
-        std::string visTrisFileName = tmpDir + "visTris" + std::to_string(mp->getViewId(rc)) + ".bin";
-        StaticVector<int>* visTris = loadArrayFromFile<int>(visTrisFileName);
-        if(visTris != nullptr)
+        std::string visTrisFileName = tmpDir + "visTris" + std::to_string(mp.getViewId(rc)) + ".bin";
+        StaticVector<int> visTris;
+        loadArrayFromFile<int>(visTris, visTrisFileName);
+        if(visTris.size() != 0)
         {
-            for(int i = 0; i < visTris->size(); ++i)
+            for(int i = 0; i < visTris.size(); ++i)
             {
-                int idTri = (*visTris)[i];
-                (*ntrisCams)[idTri]++;
+                int idTri = visTris[i];
+                ntrisCams[idTri]++;
             }
-            delete visTris;
         }
-        mvsUtils::printfEstimate(rc, mp->ncams, t1);
+        mvsUtils::printfEstimate(rc, mp.ncams, t1);
     }
     mvsUtils::finishEstimate();
 
-    StaticVector<StaticVector<int>*>* trisCams = new StaticVector<StaticVector<int>*>();
-    trisCams->reserve(tris.size());
+    trisCams.reserve(tris.size());
 
     for(int i = 0; i < tris.size(); ++i)
     {
         StaticVector<int>* cams = nullptr;
-        if((*ntrisCams)[i] > 0)
+        if(ntrisCams[i] > 0)
         {
             cams = new StaticVector<int>();
-            cams->reserve((*ntrisCams)[i]);
+            cams->reserve(ntrisCams[i]);
         }
-        trisCams->push_back(cams);
+        trisCams.push_back(cams);
     }
 
     t1 = mvsUtils::initEstimate();
-    for(int rc = 0; rc < mp->ncams; ++rc)
+    for(int rc = 0; rc < mp.ncams; ++rc)
     {
-        std::string visTrisFileName = tmpDir + "visTris" + std::to_string(mp->getViewId(rc)) + ".bin";
-        StaticVector<int>* visTris = loadArrayFromFile<int>(visTrisFileName);
-        if(visTris != nullptr)
+        std::string visTrisFileName = tmpDir + "visTris" + std::to_string(mp.getViewId(rc)) + ".bin";
+        StaticVector<int> visTris;
+        loadArrayFromFile<int>(visTris, visTrisFileName);
+        if(visTris.size() != 0)
         {
-            for(int i = 0; i < visTris->size(); ++i)
+            for(int i = 0; i < visTris.size(); ++i)
             {
-                int idTri = (*visTris)[i];
-                (*trisCams)[idTri]->push_back(rc);
+                int idTri = visTris[i];
+                trisCams[idTri]->push_back(rc);
             }
-            delete visTris;
         }
-        mvsUtils::printfEstimate(rc, mp->ncams, t1);
+        mvsUtils::printfEstimate(rc, mp.ncams, t1);
     }
     mvsUtils::finishEstimate();
-
-    delete ntrisCams;
-    return trisCams;
 }
 
-StaticVector<StaticVector<int>*>* Mesh::computeTrisCamsFromPtsCams() const
+void Mesh::computeTrisCamsFromPtsCams(StaticVector<StaticVector<int>*>& trisCams) const
 {
     // TODO: try intersection
-    StaticVector<StaticVector<int>*>* trisCams = new StaticVector<StaticVector<int>*>();
-    trisCams->reserve(tris.size());
+    trisCams.reserve(tris.size());
 
     for(int idTri = 0; idTri < tris.size(); idTri++)
     {
@@ -2030,27 +2006,25 @@ StaticVector<StaticVector<int>*>* Mesh::computeTrisCamsFromPtsCams() const
                 cams->push_back_distinct((*pointsVisibilities[tris[idTri].v[k]])[i]);
             }
         }
-        trisCams->push_back(cams);
+        trisCams.push_back(cams);
     }
-
-    return trisCams;
 }
 
-void Mesh::initFromDepthMap(const mvsUtils::MultiViewParams* mp, StaticVector<float>* depthMap, int rc, int scale, float alpha)
+void Mesh::initFromDepthMap(const mvsUtils::MultiViewParams& mp, StaticVector<float>& depthMap, int rc, int scale, float alpha)
 {
-    initFromDepthMap(mp, &(*depthMap)[0], rc, scale, 1, alpha);
+    initFromDepthMap(mp, &depthMap[0], rc, scale, 1, alpha);
 }
 
-void Mesh::initFromDepthMap(const mvsUtils::MultiViewParams* mp, float* depthMap, int rc, int scale, int step, float alpha)
+void Mesh::initFromDepthMap(const mvsUtils::MultiViewParams& mp, float* depthMap, int rc, int scale, int step, float alpha)
 {
     initFromDepthMap(1, mp, depthMap, rc, scale, step, alpha);
 }
 
-void Mesh::initFromDepthMap(int stepDetail, const mvsUtils::MultiViewParams* mp, float* depthMap, int rc, int scale, int step,
+void Mesh::initFromDepthMap(int stepDetail, const mvsUtils::MultiViewParams& mp, float* depthMap, int rc, int scale, int step,
                                float alpha)
 {
-    int w = mp->getWidth(rc) / (scale * step);
-    int h = mp->getHeight(rc) / (scale * step);
+    int w = mp.getWidth(rc) / (scale * step);
+    int h = mp.getHeight(rc) / (scale * step);
 
     pts = StaticVector<Point3d>();
     pts.reserve(w * h);
@@ -2063,8 +2037,8 @@ void Mesh::initFromDepthMap(int stepDetail, const mvsUtils::MultiViewParams* mp,
         float depth = depthMap[i];
         if(depth > 0.0f)
         {
-            Point3d p = mp->CArr[rc] +
-                        (mp->iCamArr[rc] * Point2d((float)x * (float)(scale * step), (float)y * (float)(scale * step)))
+            Point3d p = mp.CArr[rc] +
+                        (mp.iCamArr[rc] * Point2d((float)x * (float)(scale * step), (float)y * (float)(scale * step)))
                                 .normalize() *
                             depth;
             pts.push_back(p);
@@ -2091,7 +2065,7 @@ void Mesh::initFromDepthMap(int stepDetail, const mvsUtils::MultiViewParams* mp,
             if((*usedMap)[x * h + y] && (*usedMap)[(x + stepDetail) * h + y] &&
                (*usedMap)[(x + stepDetail) * h + y + stepDetail] && (*usedMap)[x * h + y + stepDetail])
             {
-                float d = mp->getCamPixelSize(p1, rc, alpha);
+                float d = mp.getCamPixelSize(p1, rc, alpha);
                 if(((p1 - p2).size() < d) && ((p1 - p3).size() < d) && ((p1 - p4).size() < d) &&
                    ((p2 - p3).size() < d) && ((p3 - p4).size() < d))
                 {
@@ -2114,7 +2088,8 @@ void Mesh::initFromDepthMap(int stepDetail, const mvsUtils::MultiViewParams* mp,
 
     delete usedMap;
 
-    removeFreePointsFromMesh(nullptr);
+    StaticVector<int> ptIdToNewPtId;
+    removeFreePointsFromMesh(ptIdToNewPtId);
 }
 
 void Mesh::removeTrianglesInHexahedrons(StaticVector<Point3d>* hexahsToExcludeFromResultingMesh)
@@ -2617,20 +2592,20 @@ bool Mesh::loadFromObjAscii(const std::string& objAsciiFileName)
     return npts != 0 && ntris != 0;
 }
 
-bool Mesh::getEdgeNeighTrisInterval(Pixel& itr, Pixel edge, StaticVector<Voxel>* edgesXStat,
-                                       StaticVector<Voxel>* edgesXYStat)
+bool Mesh::getEdgeNeighTrisInterval(Pixel& itr, Pixel& edge, StaticVector<Voxel>& edgesXStat,
+                                       StaticVector<Voxel>& edgesXYStat)
 {
     int ptId1 = std::max(edge.x, edge.y);
     int ptId2 = std::min(edge.x, edge.y);
     itr = Pixel(-1, -1);
 
-    int i1 = indexOfSortedVoxelArrByX(ptId1, edgesXStat, 0, edgesXStat->size() - 1);
+    int i1 = indexOfSortedVoxelArrByX(ptId1, edgesXStat, 0, edgesXStat.size() - 1);
     if(i1 > -1)
     {
-        int i2 = indexOfSortedVoxelArrByX(ptId2, edgesXYStat, (*edgesXStat)[i1].y, (*edgesXStat)[i1].z);
+        int i2 = indexOfSortedVoxelArrByX(ptId2, edgesXYStat, edgesXStat[i1].y, edgesXStat[i1].z);
         if(i2 > -1)
         {
-            itr = Pixel((*edgesXYStat)[i2].y, (*edgesXYStat)[i2].z);
+            itr = Pixel(edgesXYStat[i2].y, edgesXYStat[i2].z);
         }
         else
         {

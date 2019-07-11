@@ -18,7 +18,7 @@ namespace mesh {
 
 namespace bfs = boost::filesystem;
 
-void meshPostProcessing(Mesh*& inout_mesh, StaticVector<StaticVector<int>*>*& inout_ptsCams, mvsUtils::MultiViewParams& mp,
+void meshPostProcessing(Mesh* inout_mesh, StaticVector<StaticVector<int>*>*& inout_ptsCams, mvsUtils::MultiViewParams& mp,
                       const std::string& debugFolderName,
                       StaticVector<Point3d>* hexahsToExcludeFromResultingMesh, Point3d* hexah)
 {
@@ -33,7 +33,7 @@ void meshPostProcessing(Mesh*& inout_mesh, StaticVector<StaticVector<int>*>*& in
     // copy ptsCams
     {
         StaticVector<StaticVector<int>*>* ptsCamsOld = inout_ptsCams;
-        StaticVector<int>* ptIdToNewPtId;
+        StaticVector<int> ptIdToNewPtId;
 
         bool doRemoveTrianglesInhexahsToExcludeFromResultingMesh =
             (bool)mp.userParams.get<bool>("LargeScale.doRemoveTrianglesInhexahsToExcludeFromResultingMesh",
@@ -43,14 +43,14 @@ void meshPostProcessing(Mesh*& inout_mesh, StaticVector<StaticVector<int>*>*& in
             inout_mesh->removeTrianglesInHexahedrons(hexahsToExcludeFromResultingMesh);
         }
 
-        inout_mesh->removeFreePointsFromMesh(&ptIdToNewPtId);
+        inout_mesh->removeFreePointsFromMesh(ptIdToNewPtId);
 
         // remap visibilities
         inout_ptsCams = new StaticVector<StaticVector<int>*>();
         inout_ptsCams->resize(inout_mesh->pts.size(), nullptr);
-        for(int i = 0; i < ptIdToNewPtId->size(); ++i)
+        for(int i = 0; i < ptIdToNewPtId.size(); ++i)
         {
-            int newId = (*ptIdToNewPtId)[i];
+            int newId = ptIdToNewPtId[i];
             if(newId > -1)
             {
                 StaticVector<int>* ptCamsNew = new StaticVector<int>();
@@ -64,7 +64,6 @@ void meshPostProcessing(Mesh*& inout_mesh, StaticVector<StaticVector<int>*>*& in
         }
 
         deleteArrayOfArrays<int>(&ptsCamsOld);
-        delete ptIdToNewPtId;
     }
 
     if(true) // TODO: how to remove it?
@@ -107,7 +106,7 @@ void meshPostProcessing(Mesh*& inout_mesh, StaticVector<StaticVector<int>*>*& in
             int subdivideMaxPtsThr =
                 mp.userParams.get<int>("meshEnergyOpt.subdivideMaxPtsThr", 6000000);
 
-            meOpt.subdivideMeshMaxEdgeLengthUpdatePtsCams(&mp, subdivideMeshNTimesAvEdgeLengthThr *
+            meOpt.subdivideMeshMaxEdgeLengthUpdatePtsCams(mp, subdivideMeshNTimesAvEdgeLengthThr *
                                                           meOpt.computeAverageEdgeLength(),
                                                           *inout_ptsCams, subdivideMaxPtsThr);
             meOpt.deallocateCleaningAttributes();

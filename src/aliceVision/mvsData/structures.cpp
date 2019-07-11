@@ -118,26 +118,26 @@ int qSortComparePixelByXAsc(const void* ia, const void* ib)
     return 1;
 }
 
-int indexOfSortedVoxelArrByX(int val, StaticVector<Voxel>* values, int startId, int stopId)
+int indexOfSortedVoxelArrByX(int val, StaticVector<Voxel>& values, int startId, int stopId)
 {
     int lef = startId;
     int rig = stopId;
     int mid = lef + (rig - lef) / 2;
     while((rig - lef) > 1)
     {
-        if((val >= (*values)[lef].x) && (val < (*values)[mid].x))
+        if((val >= values[lef].x) && (val < values[mid].x))
         {
             //lef = lef;
             rig = mid;
             mid = lef + (rig - lef) / 2;
         }
-        if((val >= (*values)[mid].x) && (val <= (*values)[rig].x))
+        if((val >= values[mid].x) && (val <= values[rig].x))
         {
             lef = mid;
             //rig = rig;
             mid = lef + (rig - lef) / 2;
         }
-        if((val < (*values)[lef].x) || (val > (*values)[rig].x))
+        if((val < values[lef].x) || (val > values[rig].x))
         {
             lef = 0;
             rig = 0;
@@ -146,11 +146,11 @@ int indexOfSortedVoxelArrByX(int val, StaticVector<Voxel>* values, int startId, 
     }
 
     int id = -1;
-    if(val == (*values)[lef].x)
+    if(val == values[lef].x)
     {
         id = lef;
     }
-    if(val == (*values)[rig].x)
+    if(val == values[rig].x)
     {
         id = rig;
     }

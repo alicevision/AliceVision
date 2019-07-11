@@ -40,23 +40,24 @@ void UVAtlas::createCharts(vector<Chart>& charts, mvsUtils::MultiViewParams& mp)
     ALICEVISION_LOG_INFO("Creating texture charts.");
 
     // compute per cam triangle visibility
-    StaticVector<StaticVector<int>*>* trisCams = _mesh.computeTrisCamsFromPtsCams();
+    StaticVector<StaticVector<int>*> trisCams;
+    _mesh.computeTrisCamsFromPtsCams(trisCams);
 
     // create one chart per triangle
     _triangleCameraIDs.resize(_mesh.tris.size());
     charts.resize(_mesh.tris.size());
     #pragma omp parallel for
-    for(int i = 0; i < trisCams->size(); ++i)
+    for(int i = 0; i < trisCams.size(); ++i)
     {
         std::vector<std::pair<float, int>> commonCameraIDs;
 
         // project triangle in all cams
-        auto cameras = (*trisCams)[i];
+        auto cameras = trisCams[i];
         for(int c = 0; c < cameras->size(); ++c)
         {
             int cameraID = (*cameras)[c];
             // project triangle
-            Mesh::triangle_proj tProj = _mesh.getTriangleProjection(i, &mp, cameraID, mp.getWidth(cameraID), mp.getHeight(cameraID));
+            Mesh::triangle_proj tProj = _mesh.getTriangleProjection(i, mp, cameraID, mp.getWidth(cameraID), mp.getHeight(cameraID));
 
             if(!_mesh.isTriangleProjectionInImage(mp, tProj, cameraID, 10))
                 continue;
@@ -85,7 +86,6 @@ void UVAtlas::createCharts(vector<Chart>& charts, mvsUtils::MultiViewParams& mp)
         // store triangle ID
         chart.triangleIDs.emplace_back(i); // one triangle per chart in a first place
     }
-    deleteArrayOfArrays<int>(&trisCams);
 }
 
 void UVAtlas::packCharts(vector<Chart>& charts, mvsUtils::MultiViewParams& mp)
@@ -212,7 +212,7 @@ void UVAtlas::finalizeCharts(vector<Chart>& charts, mvsUtils::MultiViewParams& m
         
             for(auto it = chart.triangleIDs.begin(); it != chart.triangleIDs.end(); ++it)
             {
-                Mesh::triangle_proj tp = _mesh.getTriangleProjection(*it, &mp, camId, mp.getWidth(camId), mp.getHeight(camId));
+                Mesh::triangle_proj tp = _mesh.getTriangleProjection(*it, mp, camId, mp.getWidth(camId), mp.getHeight(camId));
                 sourceLU.x = min(sourceLU.x, tp.lu.x);
                 sourceLU.y = min(sourceLU.y, tp.lu.y);
                 sourceRD.x = max(sourceRD.x, tp.rd.x);

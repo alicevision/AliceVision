@@ -640,13 +640,15 @@ bool MeshClean::getEdgeNeighTrisInterval(Pixel& itr, int _ptId1, int _ptId2)
     int ptId2 = std::min(_ptId1, _ptId2);
     itr = Pixel(-1, -1);
 
-    int i1 = indexOfSortedVoxelArrByX(ptId1, edgesXStat, 0, edgesXStat->size() - 1);
+    StaticVector<Voxel> edgesXStat, edgesXYStat;
+
+    int i1 = indexOfSortedVoxelArrByX(ptId1, edgesXStat, 0, edgesXStat.size() - 1);
     if(i1 > -1)
     {
-        int i2 = indexOfSortedVoxelArrByX(ptId2, edgesXYStat, (*edgesXStat)[i1].y, (*edgesXStat)[i1].z);
+        int i2 = indexOfSortedVoxelArrByX(ptId2, edgesXYStat, edgesXStat[i1].y, edgesXStat[i1].z);
         if(i2 > -1)
         {
-            itr = Pixel((*edgesXYStat)[i2].y, (*edgesXYStat)[i2].z);
+            itr = Pixel(edgesXYStat[i2].y, edgesXYStat[i2].z);
         }
         else
         {
