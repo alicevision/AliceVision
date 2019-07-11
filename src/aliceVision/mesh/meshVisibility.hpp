@@ -29,7 +29,7 @@ int getNearestVertices(const Mesh& refMesh, const Mesh& mesh, StaticVector<int>&
  * @param[in] refMesh input reference mesh
  * @param[in] mesh input target mesh
  */
-void remapMeshVisibilities_pullVerticesVisibility(const Mesh& refMesh, const Mesh& mesh);
+void remapMeshVisibilities_pullVerticesVisibility(const Mesh& refMesh, Mesh &mesh);
 
 /**
 * @brief Transfer the visibility per vertex from one mesh to another.
@@ -39,7 +39,7 @@ void remapMeshVisibilities_pullVerticesVisibility(const Mesh& refMesh, const Mes
 * @param[in] refMesh input reference mesh
 * @param[in] mesh input target mesh
 */
-void remapMeshVisibilities_pushVerticesVisibilityToTriangles(const Mesh& refMesh, const Mesh& mesh);
+void remapMeshVisibilities_pushVerticesVisibilityToTriangles(const Mesh& refMesh, Mesh& mesh);
 
 
 } // namespace mesh

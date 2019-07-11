@@ -50,9 +50,9 @@ double MeshAnalyze::getRegionArea(int vertexIdInTriangle, int triId)
     }
     else
     {
-        Point3d A = (*pts)[(*tris)[triId].v[(vertexIdInTriangle + 0) % 3]];
-        Point3d B = (*pts)[(*tris)[triId].v[(vertexIdInTriangle + 1) % 3]];
-        Point3d C = (*pts)[(*tris)[triId].v[(vertexIdInTriangle + 2) % 3]];
+        Point3d A = pts[tris[triId].v[(vertexIdInTriangle + 0) % 3]];
+        Point3d B = pts[tris[triId].v[(vertexIdInTriangle + 1) % 3]];
+        Point3d C = pts[tris[triId].v[(vertexIdInTriangle + 2) % 3]];
         return (getCotanOfAngle(B, A, C) * (A - C).size2() + getCotanOfAngle(C, A, B) * (A - B).size2()) / 8.0;
     }
 }
@@ -61,7 +61,7 @@ int MeshAnalyze::getVertexIdInTriangleForPtId(int ptId, int triId)
 {
     for(int i = 0; i < 3; i++)
     {
-        if((*tris)[triId].v[i] == ptId)
+        if(tris[triId].v[i] == ptId)
         {
             return i;
         }
@@ -117,9 +117,9 @@ bool MeshAnalyze::getVertexMeanCurvatureNormal(int ptId, Point3d& Kh)
         {
             ip1 = 0;
         }
-        Point3d v = (*pts)[ptId];
-        Point3d v1 = (*pts)[(*ptNeighPtsOrdered)[i]];
-        Point3d v2 = (*pts)[(*ptNeighPtsOrdered)[ip1]];
+        Point3d v = pts[ptId];
+        Point3d v1 = pts[(*ptNeighPtsOrdered)[i]];
+        Point3d v2 = pts[(*ptNeighPtsOrdered)[ip1]];
 
         float temp = getCotanOfAngle(v1, v, v2);
         Kh = Kh + (v2 - v) * temp;
@@ -197,7 +197,7 @@ bool MeshAnalyze::applyLaplacianOperator(int ptId, StaticVector<Point3d>* ptsToA
 // page 3 eq (3)
 bool MeshAnalyze::getLaplacianSmoothingVector(int ptId, Point3d& ln)
 {
-    return applyLaplacianOperator(ptId, pts, ln);
+    return applyLaplacianOperator(ptId, &pts, ln);
 }
 
 // kobbelt kampagna 98 Interactive Multi-Resolution Modeling on Arbitrary Meshes

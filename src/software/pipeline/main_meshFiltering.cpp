@@ -112,20 +112,20 @@ int main(int argc, char* argv[])
         return EXIT_FAILURE;
     }
 
-    if(mesh->pts->empty() || mesh->tris->empty())
+    if(mesh->pts.empty() || mesh->tris.empty())
     {
         ALICEVISION_LOG_ERROR("Error: empty mesh from the file " << inputMeshPath);
-        ALICEVISION_LOG_ERROR("Input mesh: " << mesh->pts->size() << " vertices and " << mesh->tris->size() << " facets.");
+        ALICEVISION_LOG_ERROR("Input mesh: " << mesh->pts.size() << " vertices and " << mesh->tris.size() << " facets.");
         return EXIT_FAILURE;
     }
 
     ALICEVISION_LOG_INFO("Mesh file: \"" << inputMeshPath << "\" loaded.");
-    ALICEVISION_LOG_INFO("Input mesh: " << mesh->pts->size() << " vertices and " << mesh->tris->size() << " facets.");
+    ALICEVISION_LOG_INFO("Input mesh: " << mesh->pts.size() << " vertices and " << mesh->tris.size() << " facets.");
 
     if(removeLargeTrianglesFactor != 0.0)
     {
         mesh->filterLargeEdgeTriangles(removeLargeTrianglesFactor);
-        ALICEVISION_LOG_INFO("Mesh after large triangles removal: " << mesh->pts->size() << " vertices and " << mesh->tris->size() << " facets.");
+        ALICEVISION_LOG_INFO("Mesh after large triangles removal: " << mesh->pts.size() << " vertices and " << mesh->tris.size() << " facets.");
     }
 
     mesh::MeshEnergyOpt meOpt(nullptr);
@@ -138,7 +138,7 @@ int main(int argc, char* argv[])
         StaticVectorBool* ptsCanMove = nullptr;
         meOpt.optimizeSmooth(lambda, smoothNIter, ptsCanMove);
 
-        ALICEVISION_LOG_INFO("Mesh filtering done: " << meOpt.pts->size() << " vertices and " << meOpt.tris->size() << " facets.");
+        ALICEVISION_LOG_INFO("Mesh filtering done: " << meOpt.pts.size() << " vertices and " << meOpt.tris.size() << " facets.");
     }
 
     if(keepLargestMeshOnly)
@@ -146,18 +146,18 @@ int main(int argc, char* argv[])
         StaticVector<int>* trisIdsToStay = meOpt.getLargestConnectedComponentTrisIds();
         meOpt.letJustTringlesIdsInMesh(trisIdsToStay);
         delete trisIdsToStay;
-        ALICEVISION_LOG_INFO("Mesh after keepLargestMeshOnly: " << meOpt.pts->size() << " vertices and " << meOpt.tris->size() << " facets.");
+        ALICEVISION_LOG_INFO("Mesh after keepLargestMeshOnly: " << meOpt.pts.size() << " vertices and " << meOpt.tris.size() << " facets.");
     }
 
     mesh::Mesh outMesh;
     outMesh.addMesh(&meOpt);
 
-    ALICEVISION_COUT("Output mesh: " << mesh->pts->size() << " vertices and " << mesh->tris->size() << " facets.");
+    ALICEVISION_COUT("Output mesh: " << mesh->pts.size() << " vertices and " << mesh->tris.size() << " facets.");
 
-    if(outMesh.pts->empty() || outMesh.tris->empty())
+    if(outMesh.pts.empty() || outMesh.tris.empty())
     {
         ALICEVISION_CERR("Failed: the output mesh is empty.");
-        ALICEVISION_LOG_INFO("Output mesh: " << outMesh.pts->size() << " vertices and " << outMesh.tris->size() << " facets.");
+        ALICEVISION_LOG_INFO("Output mesh: " << outMesh.pts.size() << " vertices and " << outMesh.tris.size() << " facets.");
         return EXIT_FAILURE;
     }
 

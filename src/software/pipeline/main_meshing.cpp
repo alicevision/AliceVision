@@ -317,7 +317,7 @@ int main(int argc, char* argv[])
                     // Join meshes
                     mesh::Mesh* mesh = fuseCut::joinMeshes(voxelsArrayFileName, &lsbase);
 
-                    if(mesh->pts->empty() || mesh->tris->empty())
+                    if(mesh->pts.empty() || mesh->tris.empty())
                       throw std::runtime_error("Empty mesh");
 
                     ALICEVISION_LOG_INFO("Saving joined meshes...");
@@ -395,7 +395,7 @@ int main(int argc, char* argv[])
 
                     // Save mesh as .bin and .obj
                     mesh::Mesh* mesh = delaunayGC.createMesh();
-                    if(mesh->pts->empty() || mesh->tris->empty())
+                    if(mesh->pts.empty() || mesh->tris.empty())
                       throw std::runtime_error("Empty mesh");
 
                     StaticVector<StaticVector<int>*>* ptsCams = delaunayGC.createPtsCams();
@@ -489,7 +489,7 @@ int main(int argc, char* argv[])
 
                     // Save mesh as .bin and .obj
                     mesh::Mesh* mesh = delaunayGC.createMesh();
-                    if(mesh->pts->empty() || mesh->tris->empty())
+                    if(mesh->pts.empty() || mesh->tris.empty())
                         throw std::runtime_error("Empty mesh");
 
                     StaticVector<StaticVector<int>*>* ptsCams = delaunayGC.createPtsCams();
@@ -498,7 +498,7 @@ int main(int argc, char* argv[])
                     mesh::meshPostProcessing(mesh, ptsCams, mp, outDirectory.string()+"/", hexahsToExcludeFromResultingMesh, &hexah[0]);
 
                     ALICEVISION_LOG_INFO("Save dense point cloud.");
-                    exportPointCloud(outputDensePointCloud, mp, sfmData, mesh->pts->getData(), *ptsCams);
+                    exportPointCloud(outputDensePointCloud, mp, sfmData, mesh->pts.getData(), *ptsCams);
 
                     //mesh->saveToBin((outDirectory/"denseReconstruction.bin").string());
 

@@ -106,8 +106,8 @@ public:
     };
 
 public:
-    StaticVector<Point3d>* pts = nullptr;
-    StaticVector<Mesh::triangle>* tris = nullptr;
+    StaticVector<Point3d> pts;
+    StaticVector<Mesh::triangle> tris;
     Matrix3x4 transformGlobal;
 
     int nmtls = 0;
@@ -116,7 +116,7 @@ public:
     StaticVector<Voxel> trisUvIds;
     StaticVector<Point3d> normals;
     StaticVector<Voxel> trisNormalsIds;
-    PointsVisibility* pointsVisibilities = nullptr;
+    PointsVisibility pointsVisibilities;
 
     Mesh();
     ~Mesh();
@@ -127,7 +127,7 @@ public:
     void saveToBin(const std::string& binFileName);
     bool loadFromObjAscii(const std::string& objAsciiFileName);
 
-    void addMesh(Mesh* me);
+    void addMesh(Mesh* mesh);
 
     StaticVector<StaticVector<int>*>* getTrisMap(const mvsUtils::MultiViewParams* mp, int rc, int scale, int w, int h);
     StaticVector<StaticVector<int>*>* getTrisMap(StaticVector<int>* visTris, const mvsUtils::MultiViewParams* mp, int rc, int scale,

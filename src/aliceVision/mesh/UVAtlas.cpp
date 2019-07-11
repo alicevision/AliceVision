@@ -23,7 +23,7 @@ UVAtlas::UVAtlas(const Mesh& mesh, mvsUtils::MultiViewParams& mp,
     vector<Chart> charts;
 
     // create texture charts
-    createCharts(charts, mp, mesh.pointsVisibilities);
+    createCharts(charts, mp);
 
     // pack texture charts
     packCharts(charts, mp);
@@ -35,7 +35,7 @@ UVAtlas::UVAtlas(const Mesh& mesh, mvsUtils::MultiViewParams& mp,
     createTextureAtlases(charts, mp);
 }
 
-void UVAtlas::createCharts(vector<Chart>& charts, mvsUtils::MultiViewParams& mp, StaticVector<StaticVector<int>*>* ptsCams)
+void UVAtlas::createCharts(vector<Chart>& charts, mvsUtils::MultiViewParams& mp)
 {
     ALICEVISION_LOG_INFO("Creating texture charts.");
 
@@ -43,8 +43,8 @@ void UVAtlas::createCharts(vector<Chart>& charts, mvsUtils::MultiViewParams& mp,
     StaticVector<StaticVector<int>*>* trisCams = _mesh.computeTrisCamsFromPtsCams();
 
     // create one chart per triangle
-    _triangleCameraIDs.resize(_mesh.tris->size());
-    charts.resize(_mesh.tris->size());
+    _triangleCameraIDs.resize(_mesh.tris.size());
+    charts.resize(_mesh.tris.size());
     #pragma omp parallel for
     for(int i = 0; i < trisCams->size(); ++i)
     {
@@ -106,11 +106,11 @@ void UVAtlas::packCharts(vector<Chart>& charts, mvsUtils::MultiViewParams& mp)
 
     // list mesh edges (with duplicates)
     vector<Edge> alledges;
-    for(int i = 0; i < _mesh.tris->size(); ++i)
+    for(int i = 0; i < _mesh.tris.size(); ++i)
     {
-        int a = (*_mesh.tris)[i].v[0];
-        int b = (*_mesh.tris)[i].v[1];
-        int c = (*_mesh.tris)[i].v[2];
+        int a = _mesh.tris[i].v[0];
+        int b = _mesh.tris[i].v[1];
+        int c = _mesh.tris[i].v[2];
         Edge e1;
         e1.pointIDs = make_pair(min(a, b), max(a, b));
         e1.triangleIDs.emplace_back(i);

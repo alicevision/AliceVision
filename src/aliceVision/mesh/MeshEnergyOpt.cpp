@@ -26,12 +26,12 @@ MeshEnergyOpt::~MeshEnergyOpt() = default;
 StaticVector<Point3d>* MeshEnergyOpt::computeLaplacianPtsParallel()
 {
     StaticVector<Point3d>* lapPts = new StaticVector<Point3d>();
-    lapPts->reserve(pts->size());
-    lapPts->resize_with(pts->size(), Point3d(0.0f, 0.0f, 0.f));
+    lapPts->reserve(pts.size());
+    lapPts->resize_with(pts.size(), Point3d(0.0f, 0.0f, 0.f));
     int nlabpts = 0;
 
 #pragma omp parallel for
-    for(int i = 0; i < pts->size(); i++)
+    for(int i = 0; i < pts.size(); i++)
     {
         Point3d lapPt;
         if(getLaplacianSmoothingVector(i, lapPt))
@@ -51,11 +51,11 @@ void MeshEnergyOpt::updateGradientParallel(float lambda, const Point3d& LU,
     StaticVector<Point3d>* lapPts = computeLaplacianPtsParallel();
 
     StaticVector<Point3d>* newPts = new StaticVector<Point3d>();
-    newPts->reserve(pts->size());
-    newPts->push_back_arr(pts);
+    newPts->reserve(pts.size());
+    newPts->push_back_arr(&pts);
 
 #pragma omp parallel for
-    for(int i = 0; i < pts->size(); ++i)
+    for(int i = 0; i < pts.size(); ++i)
     {
         if((ptsCanMove == nullptr) || ((*ptsCanMove)[i]))
         {
@@ -72,14 +72,14 @@ void MeshEnergyOpt::updateGradientParallel(float lambda, const Point3d& LU,
         }
     }
 
-    delete pts;
-    pts = newPts;
+    pts.clear();
+    pts = *newPts;
     delete lapPts;
 }
 
 bool MeshEnergyOpt::optimizeSmooth(float lambda, int niter, StaticVectorBool* ptsCanMove)
 {
-    if(pts->size() <= 4)
+    if(pts.size() <= 4)
     {
         return false;
     }
@@ -87,16 +87,16 @@ bool MeshEnergyOpt::optimizeSmooth(float lambda, int niter, StaticVectorBool* pt
     bool saveDebug = mp ? mp->userParams.get<bool>("meshEnergyOpt.saveAllIterations", false) : false;
 
     Point3d LU, RD;
-    LU = (*pts)[0];
-    RD = (*pts)[0];
-    for(int i = 0; i < pts->size(); i++)
+    LU = pts[0];
+    RD = pts[0];
+    for(int i = 0; i < pts.size(); i++)
     {
-        LU.x = std::min(LU.x, (*pts)[i].x);
-        LU.y = std::min(LU.y, (*pts)[i].y);
-        LU.z = std::min(LU.z, (*pts)[i].z);
-        RD.x = std::max(RD.x, (*pts)[i].x);
-        RD.y = std::max(RD.y, (*pts)[i].y);
-        RD.z = std::max(RD.z, (*pts)[i].z);
+        LU.x = std::min(LU.x, pts[i].x);
+        LU.y = std::min(LU.y, pts[i].y);
+        LU.z = std::min(LU.z, pts[i].z);
+        RD.x = std::max(RD.x, pts[i].x);
+        RD.y = std::max(RD.y, pts[i].y);
+        RD.z = std::max(RD.z, pts[i].z);
     }
 
     ALICEVISION_LOG_INFO("Optimizing mesh smooth: " << std::endl

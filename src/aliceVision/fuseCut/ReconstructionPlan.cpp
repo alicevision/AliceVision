@@ -343,17 +343,17 @@ StaticVector<StaticVector<int>*>* loadLargeScalePtsCams(const std::vector<std::s
 StaticVector<rgb>* getTrisColorsRgb(mesh::Mesh* me, StaticVector<rgb>* ptsColors)
 {
     StaticVector<rgb>* trisColors = new StaticVector<rgb>();
-    trisColors->resize(me->tris->size());
-    for(int i = 0; i < me->tris->size(); i++)
+    trisColors->resize(me->tris.size());
+    for(int i = 0; i < me->tris.size(); i++)
     {
         float r = 0.0f;
         float g = 0.0f;
         float b = 0.0f;
         for(int j = 0; j < 3; j++)
         {
-            r += (float)(*ptsColors)[(*me->tris)[i].v[j]].r;
-            g += (float)(*ptsColors)[(*me->tris)[i].v[j]].g;
-            b += (float)(*ptsColors)[(*me->tris)[i].v[j]].b;
+            r += (float)(*ptsColors)[me->tris[i].v[j]].r;
+            g += (float)(*ptsColors)[me->tris[i].v[j]].g;
+            b += (float)(*ptsColors)[me->tris[i].v[j]].b;
         }
         (*trisColors)[i].r = (unsigned char)(r / 3.0f);
         (*trisColors)[i].g = (unsigned char)(g / 3.0f);
@@ -379,11 +379,11 @@ mesh::Mesh* joinMeshes(const std::vector<std::string>& recsDirs, StaticVector<Po
         {
             mesh::Mesh* mei = new mesh::Mesh();
             mei->loadFromBin(fileName);
-            npts += mei->pts->size();
-            ntris += mei->tris->size();
+            npts += mei->pts.size();
+            ntris += mei->tris.size();
 
-            ALICEVISION_LOG_DEBUG("npts: " << npts << " " << mei->pts->size());
-            ALICEVISION_LOG_DEBUG("ntris: " << ntris << " " << mei->tris->size());
+            ALICEVISION_LOG_DEBUG("npts: " << npts << " " << mei->pts.size());
+            ALICEVISION_LOG_DEBUG("ntris: " << ntris << " " << mei->tris.size());
 
             delete mei;
         }
@@ -393,10 +393,10 @@ mesh::Mesh* joinMeshes(const std::vector<std::string>& recsDirs, StaticVector<Po
 
     mesh::Mesh* me = new mesh::Mesh();
 
-    me->pts = new StaticVector<Point3d>();
-    me->pts->reserve(npts);
-    me->tris = new StaticVector<mesh::Mesh::triangle>();
-    me->tris->reserve(ntris);
+    me->pts = StaticVector<Point3d>();
+    me->pts.reserve(npts);
+    me->tris = StaticVector<mesh::Mesh::triangle>();
+    me->tris.reserve(ntris);
 
     StaticVector<rgb>* trisCols = new StaticVector<rgb>();
     trisCols->reserve(ntris);

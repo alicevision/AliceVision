@@ -68,7 +68,7 @@ public:
     inline int chartMaxSize() const { return (_textureSide - 1) - _gutterSize * 2; }
 
 private:
-    void createCharts(std::vector<Chart>& charts, mvsUtils::MultiViewParams& mp, StaticVector<StaticVector<int>*>* ptsCams);
+    void createCharts(std::vector<Chart>& charts, mvsUtils::MultiViewParams& mp);
     void packCharts(std::vector<Chart>& charts, mvsUtils::MultiViewParams& mp);
     void finalizeCharts(std::vector<Chart>& charts, mvsUtils::MultiViewParams& mp);
     void createTextureAtlases(std::vector<Chart>& charts, mvsUtils::MultiViewParams& mp);

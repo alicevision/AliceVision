@@ -2736,12 +2736,12 @@ mesh::Mesh* DelaunayGraphCut::createMesh(bool filterHelperPointsTriangles)
     mesh::Mesh* me = new mesh::Mesh();
 
     // TODO: copy only surface points and remap visibilities
-    me->pts = new StaticVector<Point3d>();
-    me->pts->reserve(_verticesCoords.size());
+    me->pts = StaticVector<Point3d>();
+    me->pts.reserve(_verticesCoords.size());
 
     for(const Point3d& p: _verticesCoords)
     {
-        me->pts->push_back(p);
+        me->pts.push_back(p);
     }
 
     std::vector<bool> reliableVertices;
@@ -2790,8 +2790,8 @@ mesh::Mesh* DelaunayGraphCut::createMesh(bool filterHelperPointsTriangles)
         }
     }
 
-    me->tris = new StaticVector<mesh::Mesh::triangle>();
-    me->tris->reserve(nbSurfaceFacets);
+    me->tris = StaticVector<mesh::Mesh::triangle>();
+    me->tris.reserve(nbSurfaceFacets);
 
     // loop over all facets
     for(CellIndex ci = 0; ci < _cellIsFull.size(); ++ci)
@@ -2878,7 +2878,7 @@ mesh::Mesh* DelaunayGraphCut::createMesh(bool filterHelperPointsTriangles)
                 t.v[0] = vertices[0];
                 t.v[1] = vertices[1];
                 t.v[2] = vertices[2];
-                me->tris->push_back(t);
+                me->tris.push_back(t);
             }
             else
             {
@@ -2887,7 +2887,7 @@ mesh::Mesh* DelaunayGraphCut::createMesh(bool filterHelperPointsTriangles)
                 t.v[0] = vertices[0];
                 t.v[1] = vertices[2];
                 t.v[2] = vertices[1];
-                me->tris->push_back(t);
+                me->tris.push_back(t);
             }
         }
     }

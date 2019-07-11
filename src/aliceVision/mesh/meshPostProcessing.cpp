@@ -47,7 +47,7 @@ void meshPostProcessing(Mesh*& inout_mesh, StaticVector<StaticVector<int>*>*& in
 
         // remap visibilities
         inout_ptsCams = new StaticVector<StaticVector<int>*>();
-        inout_ptsCams->resize(inout_mesh->pts->size(), nullptr);
+        inout_ptsCams->resize(inout_mesh->pts.size(), nullptr);
         for(int i = 0; i < ptIdToNewPtId->size(); ++i)
         {
             int newId = (*ptIdToNewPtId)[i];
@@ -132,13 +132,13 @@ void meshPostProcessing(Mesh*& inout_mesh, StaticVector<StaticVector<int>*>*& in
             float avel = 10.0f * meOpt.computeAverageEdgeLength();
 
             ptsCanMove = new StaticVectorBool();
-            ptsCanMove->reserve(meOpt.pts->size());
-            ptsCanMove->resize_with(meOpt.pts->size(), true);
-            for(int i = 0; i < meOpt.pts->size(); i++)
+            ptsCanMove->reserve(meOpt.pts.size());
+            ptsCanMove->resize_with(meOpt.pts.size(), true);
+            for(int i = 0; i < meOpt.pts.size(); i++)
             {
-                float x = pointPlaneDistance((*meOpt.pts)[i], O, vx);
-                float y = pointPlaneDistance((*meOpt.pts)[i], O, vy);
-                float z = pointPlaneDistance((*meOpt.pts)[i], O, vz);
+                float x = pointPlaneDistance(meOpt.pts[i], O, vx);
+                float y = pointPlaneDistance(meOpt.pts[i], O, vy);
+                float z = pointPlaneDistance(meOpt.pts[i], O, vz);
                 bool isHexahBorderPt = ((x < avel) || (x > svx - avel) || (y < avel) || (y > svy - avel) ||
                                         (z < avel) || (z > svz - avel));
                 (*ptsCanMove)[i] = ((isHexahBorderPt == false) || (sizeOfStaticVector<int>((*inout_ptsCams)[i]) > 0));

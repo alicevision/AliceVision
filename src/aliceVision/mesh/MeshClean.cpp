@@ -266,9 +266,9 @@ void MeshClean::path::deployTriangle(int triId)
 int MeshClean::path::deployTriangles(StaticVector<int>* trisIds, bool isBoundaryPt)
 {
     // add new pt to pts
-    m_me->pts->reserveAddIfNeeded(1, 1000);
-    m_me->pts->push_back((*m_me->pts)[m_ptId]);
-    int newPtId = m_me->pts->size() - 1;
+    m_me->pts.reserveAddIfNeeded(1, 1000);
+    m_me->pts.push_back(m_me->pts[m_ptId]);
+    int newPtId = m_me->pts.size() - 1;
 
     int origPtId = m_ptId;
     while(origPtId >= m_me->nPtsInit)
@@ -665,7 +665,7 @@ void MeshClean::init()
     deallocateCleaningAttributes();
 
     ptsNeighTrisSortedAsc = getPtsNeighborTriangles();
-    for(int i = 0; i < pts->size(); i++)
+    for(int i = 0; i < pts.size(); i++)
     {
         StaticVector<int>* ptNeigTris = (*ptsNeighTrisSortedAsc)[i];
         if(sizeOfStaticVector<int>(ptNeigTris) > 1)
@@ -675,31 +675,31 @@ void MeshClean::init()
     }
 
     ptsNeighPtsOrdered = new StaticVector<StaticVector<int>*>();
-    ptsNeighPtsOrdered->reserve(pts->size());
-    ptsNeighPtsOrdered->resize_with(pts->size(), nullptr);
+    ptsNeighPtsOrdered->reserve(pts.size());
+    ptsNeighPtsOrdered->resize_with(pts.size(), nullptr);
 
     ptsBoundary = new StaticVectorBool();
-    ptsBoundary->reserve(pts->size());
-    ptsBoundary->resize_with(pts->size(), true);
+    ptsBoundary->reserve(pts.size());
+    ptsBoundary->resize_with(pts.size(), true);
 
     newPtsOldPtId = new StaticVector<int>();
-    newPtsOldPtId->reserve(pts->size());
-    nPtsInit = pts->size();
+    newPtsOldPtId->reserve(pts.size());
+    nPtsInit = pts.size();
 
     edgesNeigTrisAlive = new StaticVectorBool();
-    edgesNeigTrisAlive->reserve(tris->size() * 3);
+    edgesNeigTrisAlive->reserve(tris.size() * 3);
     edgesNeigTris = new StaticVector<Voxel>();
-    edgesNeigTris->reserve(tris->size() * 3);
+    edgesNeigTris->reserve(tris.size() * 3);
     edgesXStat = new StaticVector<Voxel>();
-    edgesXStat->reserve(pts->size());
+    edgesXStat->reserve(pts.size());
     edgesXYStat = new StaticVector<Voxel>();
-    edgesXYStat->reserve(tris->size() * 3);
+    edgesXYStat->reserve(tris.size() * 3);
 
-    for(int i = 0; i < tris->size(); i++)
+    for(int i = 0; i < tris.size(); i++)
     {
-        int a = (*tris)[i].v[0];
-        int b = (*tris)[i].v[1];
-        int c = (*tris)[i].v[2];
+        int a = tris[i].v[0];
+        int b = tris[i].v[1];
+        int c = tris[i].v[2];
         edgesNeigTris->push_back(Voxel(std::max(a, b), std::min(a, b), i));
         edgesNeigTris->push_back(Voxel(std::max(b, c), std::min(b, c), i));
         edgesNeigTris->push_back(Voxel(std::max(c, a), std::min(c, a), i));
@@ -761,11 +761,11 @@ void MeshClean::testPtsNeighTrisSortedAsc()
 {
     ALICEVISION_LOG_DEBUG("Testing if each point of each triangle has the triangleid in ptsNeighTris array.");
     int n = 0;
-    for(int i = 0; i < tris->size(); i++)
+    for(int i = 0; i < tris.size(); i++)
     {
         for(int k = 0; k < 3; k++)
         {
-            int ptId = (*tris)[i].v[k];
+            int ptId = tris[i].v[k];
             if((*ptsNeighTrisSortedAsc)[ptId]->indexOf(i) == -1)
             {
                 n++;
@@ -784,7 +784,7 @@ void MeshClean::testPtsNeighTrisSortedAsc()
 
     ALICEVISION_LOG_DEBUG("Testing for each pt if all neigh triangles are sorted by id in asc");
     n = 0;
-    for(int i = 0; i < pts->size(); i++)
+    for(int i = 0; i < pts.size(); i++)
     {
         StaticVector<int>* ptNeighTris = (*ptsNeighTrisSortedAsc)[i];
         int lastid = -1;
@@ -811,13 +811,13 @@ void MeshClean::testEdgesNeighTris()
 {
     ALICEVISION_LOG_DEBUG("Testing if each edge of each triangle has the triangleid in edgeNeighTris array");
     int n = 0;
-    for(int i = 0; i < tris->size(); i++)
+    for(int i = 0; i < tris.size(); i++)
     {
         for(int k = 0; k < 3; k++)
         {
             int k1 = (k + 1) % 3;
-            int ptId1 = (*tris)[i].v[k];
-            int ptId2 = (*tris)[i].v[k1];
+            int ptId1 = tris[i].v[k];
+            int ptId2 = tris[i].v[k1];
             Pixel itr;
             if(getEdgeNeighTrisInterval(itr, ptId1, ptId2))
             {
@@ -851,13 +851,13 @@ void MeshClean::testPtsNeighPtsOrdered()
 {
     ALICEVISION_LOG_DEBUG("Testing if each edge of each triangle has both pts in ptsNeighPtsOrdered");
     int n = 0;
-    for(int i = 0; i < tris->size(); i++)
+    for(int i = 0; i < tris.size(); i++)
     {
         for(int k = 0; k < 3; k++)
         {
             int k1 = (k + 1) % 3;
-            int ptId1 = (*tris)[i].v[k];
-            int ptId2 = (*tris)[i].v[k1];
+            int ptId1 = tris[i].v[k];
+            int ptId2 = tris[i].v[k1];
 
             if(sizeOfStaticVector<int>((*ptsNeighPtsOrdered)[ptId1]) == 0)
             {
@@ -891,7 +891,7 @@ void MeshClean::testPtsNeighPtsOrdered()
 int MeshClean::cleanMesh()
 {
     int nWrongPts = 0;
-    int nv = pts->size();
+    int nv = pts.size();
     for(int i = 0; i < nv; i++)
     {
         path pth(this, i);
@@ -899,9 +899,9 @@ int MeshClean::cleanMesh()
     }
     ALICEVISION_LOG_INFO("cleanMesh:" << std::endl
                       << "\t- # wrong points: " << nWrongPts << std::endl
-                      << "\t- # new points: " << (pts->size() - nv));
+                      << "\t- # new points: " << (pts.size() - nv));
 
-    return pts->size() - nv;
+    return pts.size() - nv;
 }
 
 int MeshClean::cleanMesh(int maxIters)
