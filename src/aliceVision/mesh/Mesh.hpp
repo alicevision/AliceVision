@@ -123,11 +123,9 @@ public:
 
     void saveToObj(const std::string& filename);
 
-    bool loadFromBin(std::string binFileName);
-    void saveToBin(std::string binFileName);
-    bool loadFromObjAscii(int& nmtls, StaticVector<int>& trisMtlIds, StaticVector<Point3d>& normals,
-                          StaticVector<Voxel>& trisNormalsIds, StaticVector<Point2d>& uvCoords,
-                          StaticVector<Voxel>& trisUvIds, std::string objAsciiFileName);
+    bool loadFromBin(const std::string& binFileName);
+    void saveToBin(const std::string& binFileName);
+    bool loadFromObjAscii(const std::string& objAsciiFileName);
 
     void addMesh(Mesh* me);
 
@@ -207,7 +205,7 @@ public:
                             Pixel& neptIdEdgeId3, StaticVector<Mesh::triangle>* tris1);
 
     StaticVector<StaticVector<int>*>* computeTrisCams(const mvsUtils::MultiViewParams* mp, std::string tmpDir);
-    StaticVector<StaticVector<int>*>* computeTrisCamsFromPtsCams(StaticVector<StaticVector<int>*>* ptsCams) const;
+    StaticVector<StaticVector<int>*>* computeTrisCamsFromPtsCams() const;
 
     void initFromDepthMap(const mvsUtils::MultiViewParams* mp, float* depthMap, int rc, int scale, int step, float alpha);
     void initFromDepthMap(const mvsUtils::MultiViewParams* mp, StaticVector<float>* depthMap, int rc, int scale, float alpha);

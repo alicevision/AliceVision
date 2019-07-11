@@ -134,7 +134,7 @@ void Texturing::generateUVsBasicMethod(mvsUtils::MultiViewParams& mp)
 
     // automatic uv atlasing
     ALICEVISION_LOG_INFO("Generating UVs (textureSide: " << texParams.textureSide << "; padding: " << texParams.padding << ").");
-    UVAtlas mua(*me, mp, pointsVisibilities, texParams.textureSide, texParams.padding);
+    UVAtlas mua(*mesh, mp, texParams.textureSide, texParams.padding);
 
     // create a new mesh to store data
     const size_t nbPts = mesh->pts->size();
@@ -166,7 +166,7 @@ void Texturing::generateUVsBasicMethod(mvsUtils::MultiViewParams& mp)
             Point2d targetLU(chart.targetLU.x, chart.targetLU.y);
 
             // for each triangle in this chart
-            for(size_t i = 0 ; i<chart.triangleIDs.size(); ++i)
+            for(size_t i = 0; i < chart.triangleIDs.size(); ++i)
             {
                 int triangleID = chart.triangleIDs[i];
                 // register triangle in corresponding atlas
@@ -847,8 +847,7 @@ void Texturing::loadFromOBJ(const std::string& filename, bool flipNormals)
     clear();
     mesh = new Mesh();
     // Load .obj
-    if(!me->loadFromObjAscii(nmtls, trisMtlIds, normals, trisNormalsIds, uvCoords, trisUvIds,
-                             filename.c_str()))
+    if(!mesh->loadFromObjAscii(filename.c_str()))
     {
         throw std::runtime_error("Unable to load: " + filename);
     }
@@ -867,16 +866,16 @@ void Texturing::loadFromOBJ(const std::string& filename, bool flipNormals)
     }
 }
 
-void Texturing::remapVisibilities(EVisibilityRemappingMethod remappingMethod, const Mesh& refMesh, const mesh::PointsVisibility& refPointsVisibilities)
+void Texturing::remapVisibilities(EVisibilityRemappingMethod remappingMethod, const Mesh& refMesh)
 {
   assert(mesh->pointsVisibilities == nullptr);
   mesh->pointsVisibilities = new mesh::PointsVisibility();
 
   // remap visibilities from the reference onto the mesh
   if(remappingMethod == EVisibilityRemappingMethod::PullPush || remappingMethod == mesh::EVisibilityRemappingMethod::Pull)
-    remapMeshVisibilities_pullVerticesVisibility(refMesh, refPointsVisibilities, *me, *pointsVisibilities);
+    remapMeshVisibilities_pullVerticesVisibility(refMesh, *mesh);
   if(remappingMethod == EVisibilityRemappingMethod::PullPush || remappingMethod == mesh::EVisibilityRemappingMethod::Push)
-    remapMeshVisibilities_pushVerticesVisibilityToTriangles(refMesh, refPointsVisibilities, *me, *pointsVisibilities);
+    remapMeshVisibilities_pushVerticesVisibilityToTriangles(refMesh, *mesh);
   if(mesh->pointsVisibilities->empty())
     throw std::runtime_error("No visibility after visibility remapping.");
 }
@@ -896,13 +895,12 @@ void Texturing::replaceMesh(const std::string& otherMeshPath, bool flipNormals)
     if(texParams.visibilityRemappingMethod & EVisibilityRemappingMethod::Pull)
         remapMeshVisibilities_pullVerticesVisibility(*refMesh, *mesh);
     if (texParams.visibilityRemappingMethod & EVisibilityRemappingMethod::Push)
-        remapMeshVisibilities_pushVerticesVisibilityToTriangles(*refMesh, *refVisibilities, *me, *pointsVisibilities);
+        remapMeshVisibilities_pushVerticesVisibilityToTriangles(*refMesh, *mesh);
     if(mesh->pointsVisibilities->empty())
         throw std::runtime_error("No visibility after visibility remapping.");
 
     // delete ref mesh and visibilities
     delete refMesh;
-    deleteArrayOfArrays(&refVisibilities);
 }
 
 void Texturing::unwrap(mvsUtils::MultiViewParams& mp, EUnwrapMethod method)

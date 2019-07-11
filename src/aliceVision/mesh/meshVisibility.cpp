@@ -37,11 +37,12 @@ int getNearestVertices(const Mesh& refMesh, const Mesh& mesh, StaticVector<int>&
 }
 
 
-void remapMeshVisibilities_pullVerticesVisibility(
-    const Mesh& refMesh, const PointsVisibility& refPtsVisibilities,
-    const Mesh& mesh, PointsVisibility& out_ptsVisibilities)
+void remapMeshVisibilities_pullVerticesVisibility(const Mesh& refMesh, const Mesh& mesh)
 {
     ALICEVISION_LOG_DEBUG("remapMeshVisibility based on closest vertex start.");
+
+    const PointsVisibility& refPtsVisibilities = *refMesh.pointsVisibilities;
+    PointsVisibility& out_ptsVisibilities = *mesh.pointsVisibilities;
 
     GEO::AdaptiveKdTree refMesh_kdTree(3);
     refMesh_kdTree.set_points(refMesh.pts->size(), refMesh.pts->front().m);
@@ -80,11 +81,12 @@ double mesh_facet_edges_length(const GEO::Mesh &M, GEO::index_t f)
     return (p1 - p0).length() + (p2 - p1).length() + (p0 - p2).length();
 }
 
-void remapMeshVisibilities_pushVerticesVisibilityToTriangles(
-    const Mesh& refMesh, const PointsVisibility& refPtsVisibilities,
-    const Mesh& mesh, PointsVisibility& out_ptsVisibilities)
+void remapMeshVisibilities_pushVerticesVisibilityToTriangles(const Mesh& refMesh, const Mesh& mesh)
 {
     ALICEVISION_LOG_INFO("remapMeshVisibility based on triangles start.");
+
+    const PointsVisibility& refPtsVisibilities = *refMesh.pointsVisibilities;
+    PointsVisibility& out_ptsVisibilities = *mesh.pointsVisibilities;
 
     GEO::initialize();
     GEO::Mesh meshG;

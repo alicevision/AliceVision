@@ -14,7 +14,7 @@ namespace mesh {
 
 using namespace std;
 
-UVAtlas::UVAtlas(const Mesh& mesh, mvsUtils::MultiViewParams& mp, StaticVector<StaticVector<int>*>* ptsCams,
+UVAtlas::UVAtlas(const Mesh& mesh, mvsUtils::MultiViewParams& mp,
                                  unsigned int textureSide, unsigned int gutterSize)
     : _textureSide(textureSide)
     , _gutterSize(gutterSize)
@@ -40,7 +40,7 @@ void UVAtlas::createCharts(vector<Chart>& charts, mvsUtils::MultiViewParams& mp,
     ALICEVISION_LOG_INFO("Creating texture charts.");
 
     // compute per cam triangle visibility
-    StaticVector<StaticVector<int>*>* trisCams = _mesh.computeTrisCamsFromPtsCams(ptsCams);
+    StaticVector<StaticVector<int>*>* trisCams = _mesh.computeTrisCamsFromPtsCams();
 
     // create one chart per triangle
     _triangleCameraIDs.resize(_mesh.tris->size());

@@ -57,7 +57,7 @@ public:
     };
 
 public:
-    UVAtlas(const Mesh& mesh, mvsUtils::MultiViewParams& mp, StaticVector<StaticVector<int>*>* ptsCams,
+    UVAtlas(const Mesh& mesh, mvsUtils::MultiViewParams& mp,
                     unsigned int textureSide, unsigned int gutterSize);
 
 public:

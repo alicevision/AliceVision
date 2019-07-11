@@ -56,7 +56,7 @@ void Mesh::saveToObj(const std::string& filename)
   ALICEVISION_LOG_INFO("Save mesh to obj done.");
 }
 
-bool Mesh::loadFromBin(std::string binFileName)
+bool Mesh::loadFromBin(const std::string& binFileName)
 {
     FILE* f = fopen(binFileName.c_str(), "rb");
 
@@ -80,7 +80,7 @@ bool Mesh::loadFromBin(std::string binFileName)
     return true;
 }
 
-void Mesh::saveToBin(std::string binFileName)
+void Mesh::saveToBin(const std::string& binFileName)
 {
     long t = std::clock();
     ALICEVISION_LOG_DEBUG("Save mesh to bin.");
@@ -2061,7 +2061,7 @@ StaticVector<StaticVector<int>*>* Mesh::computeTrisCams(const mvsUtils::MultiVie
     return trisCams;
 }
 
-StaticVector<StaticVector<int>*>* Mesh::computeTrisCamsFromPtsCams(StaticVector<StaticVector<int>*>* ptsCams) const
+StaticVector<StaticVector<int>*>* Mesh::computeTrisCamsFromPtsCams() const
 {
     // TODO: try intersection
     StaticVector<StaticVector<int>*>* trisCams = new StaticVector<StaticVector<int>*>();
@@ -2069,16 +2069,16 @@ StaticVector<StaticVector<int>*>* Mesh::computeTrisCamsFromPtsCams(StaticVector<
 
     for(int idTri = 0; idTri < tris->size(); idTri++)
     {
-        int maxcams = sizeOfStaticVector<int>((*ptsCams)[(*tris)[idTri].v[0]]) +
-                      sizeOfStaticVector<int>((*ptsCams)[(*tris)[idTri].v[1]]) +
-                      sizeOfStaticVector<int>((*ptsCams)[(*tris)[idTri].v[2]]);
+        int maxcams = sizeOfStaticVector<int>((*pointsVisibilities)[(*tris)[idTri].v[0]]) +
+                      sizeOfStaticVector<int>((*pointsVisibilities)[(*tris)[idTri].v[1]]) +
+                      sizeOfStaticVector<int>((*pointsVisibilities)[(*tris)[idTri].v[2]]);
         StaticVector<int>* cams = new StaticVector<int>();
         cams->reserve(maxcams);
         for(int k = 0; k < 3; k++)
         {
-            for(int i = 0; i < sizeOfStaticVector<int>((*ptsCams)[(*tris)[idTri].v[k]]); i++)
+            for(int i = 0; i < sizeOfStaticVector<int>((*pointsVisibilities)[(*tris)[idTri].v[k]]); i++)
             {
-                cams->push_back_distinct((*(*ptsCams)[(*tris)[idTri].v[k]])[i]);
+                cams->push_back_distinct((*(*pointsVisibilities)[(*tris)[idTri].v[k]])[i]);
             }
         }
         trisCams->push_back(cams);
@@ -2431,10 +2431,8 @@ StaticVector<int>* Mesh::getLargestConnectedComponentTrisIds() const
     return out;
 }
 
-bool Mesh::loadFromObjAscii(int& nmtls, StaticVector<int>& trisMtlIds, StaticVector<Point3d>& normals,
-                               StaticVector<Voxel>& trisNormalsIds, StaticVector<Point2d>& uvCoords,
-                               StaticVector<Voxel>& trisUvIds, std::string objAsciiFileName)
-{
+bool Mesh::loadFromObjAscii(const std::string& objAsciiFileName)
+{  
     ALICEVISION_LOG_INFO("Loading mesh from obj file: " << objAsciiFileName);
     // read number of points, triangles, uvcoords
     int npts = 0;
@@ -2442,7 +2440,6 @@ bool Mesh::loadFromObjAscii(int& nmtls, StaticVector<int>& trisMtlIds, StaticVec
     int nuvs = 0;
     int nnorms = 0;
     int nlines = 0;
-
     {
         std::ifstream in(objAsciiFileName.c_str());
         std::string line;

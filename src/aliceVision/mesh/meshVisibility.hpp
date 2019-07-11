@@ -27,13 +27,9 @@ int getNearestVertices(const Mesh& refMesh, const Mesh& mesh, StaticVector<int>&
  * @note The visibility information is a list of camera IDs seeing the vertex.
  *
  * @param[in] refMesh input reference mesh
- * @param[in] refPtsVisibilities visibility array per vertex of @p refMesh
  * @param[in] mesh input target mesh
- * @param[out] out_ptsVisibilities visibility array per vertex of @p mesh
  */
-void remapMeshVisibilities_pullVerticesVisibility(
-    const Mesh& refMesh, const PointsVisibility& refPtsVisibilities,
-    const Mesh& mesh, PointsVisibility& out_ptsVisibilities);
+void remapMeshVisibilities_pullVerticesVisibility(const Mesh& refMesh, const Mesh& mesh);
 
 /**
 * @brief Transfer the visibility per vertex from one mesh to another.
@@ -41,13 +37,9 @@ void remapMeshVisibilities_pullVerticesVisibility(
 * @note The visibility information is a list of camera IDs seeing the vertex.
 *
 * @param[in] refMesh input reference mesh
-* @param[in] refPtsVisibilities visibility array per vertex of @p refMesh
 * @param[in] mesh input target mesh
-* @param[out] out_ptsVisibilities visibility array per vertex of @p mesh
 */
-void remapMeshVisibilities_pushVerticesVisibilityToTriangles(
-    const Mesh& refMesh, const PointsVisibility& refPtsVisibilities,
-    const Mesh& mesh, PointsVisibility& out_ptsVisibilities);
+void remapMeshVisibilities_pushVerticesVisibilityToTriangles(const Mesh& refMesh, const Mesh& mesh);
 
 
 } // namespace mesh

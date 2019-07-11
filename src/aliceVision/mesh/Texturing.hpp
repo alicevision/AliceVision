@@ -110,7 +110,7 @@ public:
      * @param[in] refMesh the reference mesh
      * @param[in] refPointsVisibilities the reference visibilities
      */
-    void remapVisibilities(EVisibilityRemappingMethod remappingMethod, const Mesh& refMesh, const mesh::PointsVisibility& refPointsVisibilities);
+    void remapVisibilities(EVisibilityRemappingMethod remappingMethod, const Mesh& refMesh);
 
     /**
      * @brief Replace inner mesh with the mesh loaded from 'otherMeshPath'
