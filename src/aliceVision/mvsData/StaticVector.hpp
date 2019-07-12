@@ -185,6 +185,14 @@ int sizeOfStaticVector(const StaticVector<T>* a)
 }
 
 template <class T>
+int sizeOfStaticVector(const StaticVector<T>& a)
+{
+    if(a.empty())
+        return 0;
+    return a.size();
+}
+
+template <class T>
 int indexOf(T* arr, int n, const T& what)
 {
     int isthereindex = -1;
