@@ -1085,12 +1085,19 @@ Mesh* Mesh::generateMeshFromTrianglesSubset(const StaticVector<int>& visTris, St
 
     outMesh->pts = new StaticVector<Point3d>();
     outMesh->pts->reserve(j);
+    
+    // also update vertex color data if any
+    const bool updateColors = _colors.size() != 0;
+    auto& outColors = outMesh->colors();
+    outColors.reserve(_colors.size());
 
     for(int i = 0; i < pts->size(); i++)
     {
         if(newIndexPerInputPts[i] > -1)
         {
             outMesh->pts->push_back((*pts)[i]);
+            if(updateColors)
+                outColors.push_back(_colors[i]);
         }
     }
 
@@ -1394,6 +1401,7 @@ void Mesh::removeFreePointsFromMesh(StaticVector<int>** out_ptIdToNewPtId)
 
     std::swap(cleanedMesh->pts, pts);
     std::swap(cleanedMesh->tris, tris);
+    std::swap(cleanedMesh->_colors, _colors);
 
     delete cleanedMesh;
 }
