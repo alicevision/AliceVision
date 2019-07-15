@@ -194,15 +194,16 @@ bool prepareDenseScene(const SfMData& sfmData,
 
       readImage(srcImage, image, image::EImageColorSpace::LINEAR);
 
+      // add exposure values to images metadata
+      float exposure = view->getEv();
+      float exposureCompensation = view->getEvCompensation(medianEv);
+      metadata.push_back(oiio::ParamValue("AliceVision:EV", exposure));
+      metadata.push_back(oiio::ParamValue("AliceVision:EVComp", exposureCompensation));
+
       //exposure correction
       if(evCorrection)
       {
-          float exposureCompensation = view->getEvCompensation(medianEv);
-
-          //metadata & log
-          metadata.push_back(oiio::ParamValue("AliceVision:EV", view->getEv()));
-          metadata.push_back(oiio::ParamValue("AliceVision:EVComp", exposureCompensation));
-          ALICEVISION_LOG_INFO("image " + std::to_string(viewId) + " Ev : " + std::to_string(view->getEv()));
+          ALICEVISION_LOG_INFO("image " + std::to_string(viewId) + " Ev : " + std::to_string(exposure));
           ALICEVISION_LOG_INFO("image " + std::to_string(viewId) + " Ev compensation : " + std::to_string(exposureCompensation));
 
           for(int pix = 0; pix < image.Width() * image.Height(); ++pix)
