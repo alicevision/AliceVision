@@ -74,6 +74,7 @@ std::istream& operator>>(std::istream& in, EImageFileType& imageFileType)
   return in;
 }
 
+// Warning: type conversion problems from string to param value, we may lose some metadata with string maps
 oiio::ParamValueList getMetadataFromMap(const std::map<std::string, std::string>& metadataMap)
 {
   oiio::ParamValueList metadata;
@@ -116,6 +117,7 @@ oiio::ParamValueList readImageMetadata(const std::string& path)
   return readImageMetadata(path, w, h);
 }
 
+// Warning: type conversion problems from string to param value, we may lose some metadata with string maps
 void readImageMetadata(const std::string& path, int& width, int& height, std::map<std::string, std::string>& metadata)
 {
   oiio::ParamValueList oiioMetadadata = readImageMetadata(path, width, height);
