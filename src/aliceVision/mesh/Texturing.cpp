@@ -280,25 +280,27 @@ void Texturing::generateTextures(const mvsUtils::MultiViewParams &mp,
     mvsUtils::ImagesCache imageCache(&mp, 0, texParams.processColorspace);
     imageCache.setCacheSize(2);
 
-    //calculate the maximum number of atlases in memory in Mb
+    //calculate the maximum number of atlases in memory in MB
     system::MemoryInfo memInfo = system::getMemoryInfo();
-    const std::size_t atlasContribMemSize = texParams.textureSide * texParams.textureSide * (sizeof(Color)+sizeof(int)) / std::pow(2,20); //Mb
-    const std::size_t imageMaxMemSize =  mp.getMaxImageWidth() * mp.getMaxImageHeight() * sizeof(Color) / std::pow(2,20); //Mb
-    const std::size_t pyramidMaxMemSize = texParams.nbBand * atlasContribMemSize;
+    const std::size_t imageMaxMemSize =  mp.getMaxImageWidth() * mp.getMaxImageHeight() * sizeof(Color) / std::pow(2,20); //MB
+    const std::size_t imagePyramidMaxMemSize = texParams.nbBand * imageMaxMemSize;
+    const std::size_t atlasContribMemSize = texParams.textureSide * texParams.textureSide * (sizeof(Color)+sizeof(float)) / std::pow(2,20); //MB
+    const std::size_t atlasPyramidMaxMemSize = texParams.nbBand * atlasContribMemSize;
 
-    const int freeMem = int(memInfo.freeRam / std::pow(2,20));
-    const int availableMem = freeMem - 2 * imageMaxMemSize - imageMaxMemSize * texParams.nbBand; // keep some memory for the input image buffer and its laplacian pyramid
-    int nbAtlasMax = std::floor(availableMem / pyramidMaxMemSize); //maximum number of textures in RAM
+    const int freeRam = int(memInfo.freeRam / std::pow(2,20));
+    const int availableMem = freeRam - 2 * imageMaxMemSize - imagePyramidMaxMemSize; // keep some memory for the 2 input images in cache and one laplacian pyramid
+
     const int nbAtlas = _atlases.size();
-    nbAtlasMax = std::max(1, nbAtlasMax); //if not enough memory, do it one by one
+    int nbAtlasMax = std::floor(availableMem / atlasPyramidMaxMemSize); //maximum number of textures laplacian pyramid in RAM
     nbAtlasMax = std::min(nbAtlas, nbAtlasMax); //if enough memory, do it with all atlases
-   // if (availableMem - nbAtlasMax*pyramidMaxMemSize < 1000 && nbAtlasMax > 1) //keep margin in memory
-   //     nbAtlasMax -= 1;
+    if (availableMem - nbAtlasMax*atlasPyramidMaxMemSize < 1000) //keep 1 GB margin in memory
+        nbAtlasMax -= 1;
+    nbAtlasMax = std::max(1, nbAtlasMax); //if not enough memory, do it one by one
 
-    ALICEVISION_LOG_INFO("Total amount of free memory  : " << freeMem << " Mb.");
-    ALICEVISION_LOG_INFO("Total amount of memory available : " << availableMem << " Mb.");
-    ALICEVISION_LOG_INFO("Total amount of an image in memory  : " << imageMaxMemSize << " Mb.");
-    ALICEVISION_LOG_INFO("Total amount of an atlas pyramid in memory: " << pyramidMaxMemSize << " Mb.");
+    ALICEVISION_LOG_INFO("Total amount of free RAM  : " << freeRam << " MB.");
+    ALICEVISION_LOG_INFO("Total amount of memory available : " << availableMem << " MB.");
+    ALICEVISION_LOG_INFO("Total amount of an image in memory  : " << imageMaxMemSize << " MB.");
+    ALICEVISION_LOG_INFO("Total amount of an atlas pyramid in memory: " << atlasPyramidMaxMemSize << " MB.");
     ALICEVISION_LOG_INFO("Processing " << nbAtlas << " atlases by chunks of " << nbAtlasMax);
 
     //generateTexture for the maximum number of atlases, and iterate
@@ -493,12 +495,12 @@ void Texturing::generateTexturesSubSet(const mvsUtils::MultiViewParams& mp,
         for(const auto& c : cameraContributions)
         {
             AtlasIndex atlasID = c.first;
-            ALICEVISION_LOG_INFO("  - Texture file: " << atlasID);
+            ALICEVISION_LOG_INFO("  - Texture file: " << atlasID + 1);
             //for each frequency band
             for(int band = 0; band < c.second.size(); ++band)
             {
                 const ScorePerTriangle& trianglesId = c.second[band];
-                ALICEVISION_LOG_INFO("      - band " << band << ": " << trianglesId.size() << " triangles.");
+                ALICEVISION_LOG_INFO("      - band " << band + 1 << ": " << trianglesId.size() << " triangles.");
 
                 // for each triangle
                 #pragma omp parallel for
@@ -600,7 +602,7 @@ void Texturing::generateTexturesSubSet(const mvsUtils::MultiViewParams& mp,
     {
         AccuPyramid& accuPyramid = accuPyramids.at(atlasID);
         AccuImage& atlasTexture = accuPyramid.pyramid[0];
-        ALICEVISION_LOG_INFO("Create texture " << atlasID);
+        ALICEVISION_LOG_INFO("Create texture " << atlasID + 1);
 
 #if TEXTURING_MBB_DEBUG
         {
