@@ -387,8 +387,9 @@ int main(int argc, char** argv)
       std::vector<float>::iterator it = std::find(ldrTimes.begin(), ldrTimes.end(), ldrTimes_sorted.at(i));
       if(it != ldrTimes.end())
       {
-          ldrImageGroups_sorted.at(0).at(i) = ldrImages.at(std::distance(ldrTimes.begin(), it));
-          nameImages_sorted.at(i) = nameImages.at(std::distance(ldrTimes.begin(), it));
+          std::size_t index = std::distance(ldrTimes.begin(), it);
+          ldrImageGroups_sorted.at(0).at(i) = ldrImages.at(index);
+          nameImages_sorted.at(i) = nameImages.at(index);
       }
       else
           ALICEVISION_LOG_ERROR("sorting failed");
@@ -400,35 +401,22 @@ int main(int argc, char** argv)
   {
       nameImages.insert(nameImages.end(), stemImages.begin(), stemImages.end());
       nameImages.insert(nameImages.end(), inputImagesNames.begin(), inputImagesNames.end());    //search target for filenames only, filenames + extensions and complete paths
-      std::size_t targetIndex = std::distance(nameImages.begin(), std::find(nameImages.begin(), nameImages.end(), target));
+      std::size_t targetIndex = std::distance(nameImages.begin(), std::find(nameImages.begin(), nameImages.end(), target)) % nbImages;
       try
       {
         targetTime = ldrTimes.at(targetIndex);
       }
       catch(std::exception& e)
       {
-          try
-          {
-              targetTime = ldrTimes.at(targetIndex - ldrTimes.size());
-          }
-          catch(std::exception& e)
-          {
-              try
-              {
-                  targetTime = ldrTimes.at(targetIndex - 2 * ldrTimes.size());
-              }
-              catch(std::exception& e)
-              {
-                  ALICEVISION_CERR("Invalid name of target");
-                  return EXIT_FAILURE;
-              }
-          }
+          ALICEVISION_CERR("Invalid name of target");
+          return EXIT_FAILURE;
       }
   }
   else
   {
       targetTime = ldrTimes_sorted.at(ldrTimes_sorted.size()/2);
-      target = nameImages_sorted.at(nbImages/2);
+      std::size_t targetIndex = std::distance(ldrTimes.begin(), std::find(ldrTimes.begin(), ldrTimes.end(), targetTime));
+      target = nameImages.at(targetIndex);
   }
 
 
