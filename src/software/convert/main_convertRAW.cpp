@@ -33,6 +33,7 @@ int main(int argc, char** argv)
   std::vector<std::string> imagePaths;
   std::string outputFolder;
   std::string outImageFileTypeName = image::EImageFileType_enumToString(image::EImageFileType::EXR);
+  int nbImages = 0;
 
   po::options_description allParams("AliceVision convertRAW");
 
@@ -102,6 +103,8 @@ int main(int argc, char** argv)
       return EXIT_FAILURE;
     }
 
+    nbImages += 1;
+
     // genrate output filename
     std::string outputPath = (outputFolder + "/" + fs::path(path).filename().replace_extension(image::EImageFileType_enumToString(outputFileType)).string());
 
@@ -117,6 +120,7 @@ int main(int argc, char** argv)
 
     try
     {
+      ALICEVISION_LOG_INFO("Reading " << path);
       image::readImage(path, image, image::EImageColorSpace::LINEAR);
     }
     catch(std::exception& e)
@@ -136,6 +140,7 @@ int main(int argc, char** argv)
       return EXIT_FAILURE;
     }
   }
+  ALICEVISION_LOG_INFO("Successfull conversion of " << nbImages << " image(s).");
   return EXIT_SUCCESS;
 }
 
