@@ -397,11 +397,13 @@ int main(int argc, char** argv)
 
   // find target exposure time corresponding to the image name given by user
   float targetTime;
+  oiio::ParamValueList targetMetadata;
   if(!target.empty())
   {
       nameImages.insert(nameImages.end(), stemImages.begin(), stemImages.end());
       nameImages.insert(nameImages.end(), inputImagesNames.begin(), inputImagesNames.end());    //search target for filenames only, filenames + extensions and complete paths
       std::size_t targetIndex = std::distance(nameImages.begin(), std::find(nameImages.begin(), nameImages.end(), target)) % nbImages;
+      targetMetadata = metadatas[targetIndex];
       try
       {
         targetTime = ldrTimes.at(targetIndex);
@@ -417,6 +419,7 @@ int main(int argc, char** argv)
       targetTime = ldrTimes_sorted.at(ldrTimes_sorted.size()/2);
       std::size_t targetIndex = std::distance(ldrTimes.begin(), std::find(ldrTimes.begin(), ldrTimes.end(), targetTime));
       target = nameImages.at(targetIndex);
+      targetMetadata = metadatas[targetIndex];
   }
 
 
@@ -473,7 +476,7 @@ int main(int argc, char** argv)
   merge.process(ldrImageGroups_sorted.at(0), ldrTimes_sorted, fusionWeight, response, image, targetTime, false, clampedValueCorrection);
 
 
-  image::writeImage(outputHDRImagePath, image, image::EImageColorSpace::AUTO);
+  image::writeImage(outputHDRImagePath, image, image::EImageColorSpace::AUTO, targetMetadata);
   if(!outputResponsePath.empty())
   {
     response.write(outputResponsePath);
