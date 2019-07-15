@@ -117,11 +117,13 @@ int main(int argc, char** argv)
     // read input image
     // only read the 3 first channels
     image::Image<image::RGBColor> image;
+    oiio::ParamValueList metadata;
 
     try
     {
       ALICEVISION_LOG_INFO("Reading " << path);
       image::readImage(path, image, image::EImageColorSpace::LINEAR);
+      metadata = image::readImageMetadata(path);
     }
     catch(std::exception& e)
     {
@@ -132,7 +134,7 @@ int main(int argc, char** argv)
     // write output image
     try
     {
-      image::writeImage(outputPath, image, image::EImageColorSpace::AUTO);
+      image::writeImage(outputPath, image, image::EImageColorSpace::AUTO, metadata);
     }
     catch(std::exception& e)
     {
