@@ -76,7 +76,7 @@ bool prepareDenseScene(const SfMData& sfmData,
   // export data
   boost::progress_display progressBar(viewIds.size(), std::cout, "Exporting Scene Undistorted Images\n");
 
-#pragma omp parallel for num_threads(3)
+ #pragma omp parallel for num_threads(3)
   for(int i = 0; i < viewIds.size(); ++i)
   {
     auto itView = viewIds.begin();
@@ -90,7 +90,9 @@ bool prepareDenseScene(const SfMData& sfmData,
     //we have a valid view with a corresponding camera & pose
     const std::string baseFilename = std::to_string(viewId);
 
-    oiio::ParamValueList metadata = image::getMetadataFromMap(view->getMetadata());
+    // get metadata from source image to be sure we get all metadata (type conversion problems with string maps)
+    std::string srcImage = view->getImagePath();
+    oiio::ParamValueList metadata = image::readImageMetadata(srcImage);
 
     // export camera
     if(saveMetadata || saveMatricesFiles)
@@ -156,9 +158,7 @@ bool prepareDenseScene(const SfMData& sfmData,
     }
 
     // export undistort image
-    {
-      std::string srcImage = view->getImagePath();
-
+    {      
       if(!imagesFolders.empty())
       {
         bool found = false;
