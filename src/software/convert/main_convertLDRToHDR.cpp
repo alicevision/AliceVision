@@ -331,18 +331,16 @@ int main(int argc, char** argv)
 
   int nbImages = inputImagesNames.size();
   ldrImages.resize(nbImages);
+  std::vector<oiio::ParamValueList> metadatas(nbImages);
   for(int i=0; i<nbImages; ++i)
   {
     std::string imagePath = inputImagesNames.at(i);
-    int w, h;
-
-    std::map<std::string, std::string> metadata;
 
     ALICEVISION_LOG_INFO("Reading " << imagePath);
 
     image::readImage(imagePath, ldrImages.at(i), loadColorSpace);
 
-    image::readImageMetadata(imagePath, w, h, metadata);
+     metadatas[i] = image::readImageMetadata(imagePath);
 
     // Debevec and Robertson algorithms use shutter speed as ev value
     // TODO: in the future, we should use EVs instead of just shutter speed.
@@ -350,9 +348,11 @@ int main(int argc, char** argv)
     {
 //      const float iso = std::stof(metadata.at("Exif:PhotographicSensitivity"));
 //      const float iso = std::stof(metadata.at("Exif:ISOSpeedRatings"));
-      aperture.emplace_back(std::stof(metadata.at("FNumber")));
-      ldrTimes.emplace_back(std::stof(metadata.at("ExposureTime")));
-      colorSpace.emplace_back(metadata.at("oiio:ColorSpace"));
+
+     aperture.emplace_back(metadatas[i].get_float("FNumber"));
+     ldrTimes.emplace_back(metadatas[i].get_float("ExposureTime"));
+     colorSpace.emplace_back(metadatas[i].get_string("oiio:ColorSpace"));
+
 //      ldrEv.push_back(std::log2(pow(aperture, 2) / shutter) + std::log2(iso/100));
     }
     catch(std::exception& e)
