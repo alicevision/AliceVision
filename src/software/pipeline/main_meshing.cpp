@@ -85,7 +85,7 @@ void exportPointCloud(const std::string& path,
                       const mvsUtils::MultiViewParams& mp,
                       const sfmData::SfMData& sfmData,
                       const std::vector<Point3d>& vertices,
-                      const StaticVector<StaticVector<int>*> cams)
+                      const StaticVector<StaticVector<int>*>& cams)
 {
   sfmData::SfMData densePointCloud = sfmData;
   densePointCloud.getLandmarks().clear();

@@ -50,21 +50,22 @@ public:
         path(MeshClean* _me, int _ptId);
         ~path();
 
-        void printfState(StaticVector<pathPart>* _pth);
-        bool addNextTriIdToPathBack(int nextTriId, StaticVector<pathPart>* _pth);
-        bool addNextTriIdToPathFront(int nextTriId, StaticVector<pathPart>* _pth);
+        void printfState(StaticVector<pathPart>& path);
+        bool addNextTriIdToPathBack(int nextTriId, StaticVector<pathPart>& path);
+        bool addNextTriIdToPathFront(int nextTriId, StaticVector<pathPart>& path);
         int getNextNeighBouringUnprocessedLast(StaticVector<int>* ptNeighTrisSortedAscToProcess,
-                                               StaticVector<pathPart>* _pth);
+                                               StaticVector<pathPart>& out_path);
         int getNextNeighBouringUnprocessedFirst(StaticVector<int>* ptNeighTrisSortedAscToProcess,
-                                                StaticVector<pathPart>* _pth);
-        int nCrossings(StaticVector<pathPart>* _pth);
-        StaticVector<pathPart>* removeCycleFromPath(StaticVector<pathPart>* _pth);
+                                                StaticVector<pathPart>& out_path);
+        int nCrossings(StaticVector<pathPart>& path);
+        void removeCycleFromPath(StaticVector<MeshClean::path::pathPart>& inPath, StaticVector<MeshClean::path::pathPart>& outPath);
         void deployTriangle(int triId);
-        int deployTriangles(StaticVector<int>* trisIds, bool isBoundaryPt);
-        void deployPath(StaticVector<pathPart>* _pth);
-        bool isClodePath(StaticVector<pathPart>* _pth);
-        void updatePtNeighPtsOrderedByPath(int _ptId, StaticVector<pathPart>* _pth);
-        StaticVector<pathPart>* createPath(StaticVector<int>* ptNeighTrisSortedAscToProcess);
+        int deployTriangles(StaticVector<int>& trisIds, bool isBoundaryPt);
+        void deployPath(StaticVector<pathPart>& path);
+        bool isClodePath(StaticVector<pathPart>& path);
+        void clearPointNeighbors(int ptId);
+        void updatePtNeighPtsOrderedByPath(int ptId, StaticVector<pathPart>& path);
+        void createPath(StaticVector<int>* ptNeighTrisSortedAscToProcess, StaticVector<pathPart>& out_path);
         int deployAll();
         bool isWrongPt();
     };
