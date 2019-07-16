@@ -227,28 +227,17 @@ Mesh::triangle_proj Mesh::getTriangleProjection(int triid, const mvsUtils::Multi
     return tp;
 }
 
-bool Mesh::isTriangleProjectionInImage(const Mesh::triangle_proj& tp, int width, int height, int margin) const
+bool Mesh::isTriangleProjectionInImage(const mvsUtils::MultiViewParams& mp, const Mesh::triangle_proj& tp, int camId, int margin) const
 {
-    int w = width - margin;
-    int h = height - margin;
-    for(int j = 0; j < 3; j++)
-    {
-        if(!((tp.tpixs[j].x > margin) && (tp.tpixs[j].x < w) && (tp.tpixs[j].y > margin) && (tp.tpixs[j].y < h)))
-        {
-            return false;
-        }
-    }
-    return true;
+    return (getTriangleNbVertexInImage(mp, tp, camId, margin) == 3);
 }
 
-int Mesh::getTriangleNbVertexInImage(const Mesh::triangle_proj& tp, int width, int height, int margin) const
+int Mesh::getTriangleNbVertexInImage(const mvsUtils::MultiViewParams& mp, const Mesh::triangle_proj& tp, int camId, int margin) const
 {
     int nbVertexInImage = 0;
-    int w = width - margin;
-    int h = height - margin;
     for (int j = 0; j < 3; j++)
     {
-        if ((tp.tpixs[j].x > margin) && (tp.tpixs[j].x < w) && (tp.tpixs[j].y > margin) && (tp.tpixs[j].y < h))
+        if(mp.isPixelInImage(tp.tpixs[j], camId, margin) && mp.isPixelInSourceImage(tp.tpixs[j], camId, margin))
         {
             ++nbVertexInImage;
         }
@@ -665,7 +654,7 @@ StaticVector<StaticVector<int>*>* Mesh::getTrisMap(const mvsUtils::MultiViewPara
     for(int i = 0; i < tris->size(); i++)
     {
         triangle_proj tp = getTriangleProjection(i, mp, rc, w, h);
-        if((isTriangleProjectionInImage(tp, w, h, 0)))
+        if((isTriangleProjectionInImage(*mp, tp, rc, 0)))
         {
             Pixel pix;
             for(pix.x = tp.lu.x; pix.x <= tp.rd.x; pix.x++)
@@ -705,7 +694,7 @@ StaticVector<StaticVector<int>*>* Mesh::getTrisMap(const mvsUtils::MultiViewPara
     for(int i = 0; i < tris->size(); i++)
     {
         triangle_proj tp = getTriangleProjection(i, mp, rc, w, h);
-        if((isTriangleProjectionInImage(tp, w, h, 0)))
+        if((isTriangleProjectionInImage(*mp, tp, rc, 0)))
         {
             Pixel pix;
             for(pix.x = tp.lu.x; pix.x <= tp.rd.x; pix.x++)
@@ -744,7 +733,7 @@ StaticVector<StaticVector<int>*>* Mesh::getTrisMap(StaticVector<int>* visTris, c
     {
         int i = (*visTris)[m];
         triangle_proj tp = getTriangleProjection(i, mp, rc, w, h);
-        if((isTriangleProjectionInImage(tp, w, h, 0)))
+        if((isTriangleProjectionInImage(*mp, tp, rc, 0)))
         {
             Pixel pix;
             for(pix.x = tp.lu.x; pix.x <= tp.rd.x; pix.x++)
@@ -785,7 +774,7 @@ StaticVector<StaticVector<int>*>* Mesh::getTrisMap(StaticVector<int>* visTris, c
     {
         int i = (*visTris)[m];
         triangle_proj tp = getTriangleProjection(i, mp, rc, w, h);
-        if((isTriangleProjectionInImage(tp, w, h, 0)))
+        if((isTriangleProjectionInImage(*mp, tp, rc, 0)))
         {
             Pixel pix;
             for(pix.x = tp.lu.x; pix.x <= tp.rd.x; pix.x++)
@@ -989,7 +978,7 @@ StaticVector<int>* Mesh::getVisibleTrianglesIndexes(StaticVector<float>* depthMa
         Point3d cg = computeTriangleCenterOfGravity(i);
         Pixel pix;
         mp->getPixelFor3DPoint(&pix, cg, rc);
-        if(mp->isPixelInImage(pix, 1, rc))
+        if(mp->isPixelInImage(pix, rc, 1))
         {
             pix.x = (int)(((float)pix.x / (float)ow) * (float)w);
             pix.y = (int)(((float)pix.y / (float)oh) * (float)h);

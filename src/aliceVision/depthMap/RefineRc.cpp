@@ -12,7 +12,7 @@
 #include <aliceVision/mvsData/Point3d.hpp>
 #include <aliceVision/mvsUtils/common.hpp>
 #include <aliceVision/mvsUtils/fileIO.hpp>
-#include <aliceVision/imageIO/image.hpp>
+#include <aliceVision/mvsData/imageIO.hpp>
 #include <aliceVision/alicevision_omp.hpp>
 
 #include <boost/filesystem.hpp>
@@ -352,10 +352,8 @@ void estimateAndRefineDepthMaps(int cudaDeviceNo, mvsUtils::MultiViewParams* mp,
                            "\t- step: " << sgmStep);
   }
 
-  const int bandType = 0;
-
   // load images from files into RAM
-  mvsUtils::ImagesCache ic(mp, bandType);
+  mvsUtils::ImagesCache ic(mp, imageIO::EImageColorSpace::LINEAR);
   // load stuff on GPU memory and creates multi-level images and computes gradients
   PlaneSweepingCuda cps(cudaDeviceNo, ic, mp, sgmScale);
   // init plane sweeping parameters
@@ -385,10 +383,9 @@ void computeNormalMaps(int CUDADeviceNo, mvsUtils::MultiViewParams* mp, const St
 {
   const float igammaC = 1.0f;
   const float igammaP = 1.0f;
-  const int bandType = 0;
   const int wsh = 3;
 
-  mvsUtils::ImagesCache ic(mp, bandType);
+  mvsUtils::ImagesCache ic(mp, imageIO::EImageColorSpace::LINEAR);
   PlaneSweepingCuda cps(CUDADeviceNo, ic, mp, 1);
 
   for(const int rc : cams)
@@ -407,7 +404,9 @@ void computeNormalMaps(int CUDADeviceNo, mvsUtils::MultiViewParams* mp, const St
       
       cps.computeNormalMap(&depthMap, &normalMap, rc, 1, igammaC, igammaP, wsh);
 
-      imageIO::writeImage(normalMapFilepath, mp->getWidth(rc), mp->getHeight(rc), normalMap.getDataWritable(), imageIO::EImageQuality::LOSSLESS, imageIO::EImageColorSpace::NO_CONVERSION);
+      using namespace imageIO;
+      OutputFileColorSpace colorspace(EImageColorSpace::NO_CONVERSION);
+      writeImage(normalMapFilepath, mp->getWidth(rc), mp->getHeight(rc), normalMap.getDataWritable(), EImageQuality::LOSSLESS, colorspace);
     }
   }
 }

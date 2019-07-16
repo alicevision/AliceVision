@@ -14,8 +14,7 @@
 #include <aliceVision/mvsData/Point3d.hpp>
 #include <aliceVision/mvsUtils/common.hpp>
 #include <aliceVision/mvsUtils/fileIO.hpp>
-#include <aliceVision/imageIO/image.hpp>
-#include <aliceVision/imageIO/imageScaledColors.hpp>
+#include <aliceVision/mvsData/imageIO.hpp>
 #include <aliceVision/alicevision_omp.hpp>
 
 #include <boost/filesystem.hpp>
@@ -528,7 +527,10 @@ bool SemiGlobalMatchingRc::sgmrc(bool checkIfExists)
         std::vector<unsigned short> volumeBestId(_volumeBestIdVal->size());
         for(int i = 0; i < _volumeBestIdVal->size(); i++)
           volumeBestId.at(i) = std::max(0, (*_volumeBestIdVal)[i].id);
-        imageIO::writeImage(_sp->getSGM_idDepthMapFileName(_sp->mp->getViewId(_rc), _scale, _step), _width, _height, volumeBestId, imageIO::EImageQuality::LOSSLESS, imageIO::EImageColorSpace::NO_CONVERSION);
+
+        using namespace imageIO;
+        OutputFileColorSpace colorspace(EImageColorSpace::NO_CONVERSION);
+        writeImage(_sp->getSGM_idDepthMapFileName(_sp->mp->getViewId(_rc), _scale, _step), _width, _height, volumeBestId, EImageQuality::LOSSLESS, colorspace);
     }
     return true;
 }

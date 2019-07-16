@@ -13,99 +13,114 @@
 namespace aliceVision {
 namespace mvsUtils {
 
-ImagesCache::ImagesCache(const MultiViewParams* _mp, int _bandType)
-  : mp(_mp)
-  , bandType( _bandType )
+std::string ImagesCache::ECorrectEV_enumToString(const ECorrectEV correctEV)
 {
-    std::vector<std::string> _imagesNames;
+    switch(correctEV)
+    {
+    case ECorrectEV::NO_CORRECTION:  return "no exposure correction";
+    case ECorrectEV::APPLY_CORRECTION:   return "exposure correction";
+    default: ;
+    }
+    throw std::out_of_range("No string defined for ECorrectEV: " + std::to_string(int(correctEV)));
+}
+
+
+ImagesCache::ImagesCache(const MultiViewParams* mp, imageIO::EImageColorSpace colorspace, ECorrectEV correctEV)
+  : _mp(mp)
+  , _colorspace(colorspace)
+  , _correctEV(correctEV)
+{
+    std::vector<std::string> imagesNames;
     for(int rc = 0; rc < _mp->getNbCameras(); rc++)
     {
-        _imagesNames.push_back(_mp->getImagePath(rc));
+        imagesNames.push_back(_mp->getImagePath(rc));
     }
-    initIC( _imagesNames );
+    initIC( imagesNames );
 }
 
-ImagesCache::ImagesCache(const MultiViewParams* _mp, int _bandType, std::vector<std::string>& _imagesNames)
-  : mp(_mp)
-  , bandType( _bandType )
+ImagesCache::ImagesCache(const MultiViewParams* mp, imageIO::EImageColorSpace colorspace, std::vector<std::string>& imagesNames
+                        , ECorrectEV correctEV)
+  : _mp(mp)
+  , _colorspace(colorspace)
+  , _correctEV(correctEV)
 {
-    initIC( _imagesNames );
+    initIC( imagesNames );
 }
 
-void ImagesCache::initIC( std::vector<std::string>& _imagesNames )
+void ImagesCache::initIC( std::vector<std::string>& imagesNames )
 {
-    float oneimagemb = (sizeof(Color) * mp->getMaxImageWidth() * mp->getMaxImageHeight()) / 1024.f / 1024.f;
-    float maxmbCPU = (float)mp->userParams.get<int>("images_cache.maxmbCPU", 5000);
-    int _npreload = std::max((int)(maxmbCPU / oneimagemb), 5); // image cache has a minimum size of 5
-    N_PRELOADED_IMAGES = std::min(mp->ncams, _npreload);
+    float oneimagemb = (sizeof(Color) * _mp->getMaxImageWidth() * _mp->getMaxImageHeight()) / 1024.f / 1024.f;
+    float maxmbCPU = (float)_mp->userParams.get<int>("images_cache.maxmbCPU", 5000);
+    int npreload = std::max((int)(maxmbCPU / oneimagemb), 5); // image cache has a minimum size of 5
+    npreload = std::min(_mp->ncams, npreload);
 
-    for(int rc = 0; rc < mp->ncams; rc++)
+    for(int rc = 0; rc < _mp->ncams; rc++)
     {
-        imagesNames.push_back(_imagesNames[rc]);
+        _imagesNames.push_back(imagesNames[rc]);
     }
 
-    imgs.resize(N_PRELOADED_IMAGES); // = new Color*[N_PRELOADED_IMAGES];
-
-    camIdMapId.resize( mp->ncams, -1 );
-    mapIdCamId.resize( N_PRELOADED_IMAGES, -1 );
-    mapIdClock.resize( N_PRELOADED_IMAGES, clock() );
+    _camIdMapId.resize( _mp->ncams, -1 );
+    setCacheSize(npreload);
 
     {
         // Cannot resize the vector<mutex> directly, as mutex class is not move-constructible.
         // imagesMutexes.resize(mp->ncams); // cannot compile
         // So, we do the same with a new vector and swap.
-        std::vector<std::mutex> imagesMutexesTmp(mp->ncams);
-        imagesMutexes.swap(imagesMutexesTmp);
+        std::vector<std::mutex> imagesMutexesTmp(_mp->ncams);
+        _imagesMutexes.swap(imagesMutexesTmp);
     }
 
 
 }
 
-ImagesCache::~ImagesCache()
+void ImagesCache::setCacheSize(int nbPreload)
 {
+    _N_PRELOADED_IMAGES = nbPreload;
+    _imgs.resize(_N_PRELOADED_IMAGES);
+    _mapIdCamId.resize( _N_PRELOADED_IMAGES, -1 );
+    _mapIdClock.resize( _N_PRELOADED_IMAGES, clock() );
 }
 
 void ImagesCache::refreshData(int camId)
 {
     // printf("camId %i\n",camId);
     // test if the image is in the memory
-    if(camIdMapId[camId] == -1)
+    if(_camIdMapId[camId] == -1)
     {
         // remove the oldest one
-        int mapId = mapIdClock.minValId();
-        int oldCamId = mapIdCamId[mapId];
+        int mapId = _mapIdClock.minValId();
+        int oldCamId = _mapIdCamId[mapId];
         if(oldCamId>=0)
-            camIdMapId[oldCamId] = -1;
+            _camIdMapId[oldCamId] = -1;
             // TODO: oldCamId should be protected if already used
 
         // replace with new new
-        camIdMapId[camId] = mapId;
-        mapIdCamId[mapId] = camId;
-        mapIdClock[mapId] = clock();
+        _camIdMapId[camId] = mapId;
+        _mapIdCamId[mapId] = camId;
+        _mapIdClock[mapId] = clock();
 
         // reload data from files
         long t1 = clock();
-        if (imgs[mapId] == nullptr)
+        if (_imgs[mapId] == nullptr)
         {
-            const std::size_t maxSize = mp->getMaxImageWidth() * mp->getMaxImageHeight();
-            imgs[mapId] = std::make_shared<Img>( maxSize );
+            const int maxWidth = _mp->getMaxImageWidth();
+            const int maxHeight = _mp->getMaxImageHeight();
+            _imgs[mapId] = std::make_shared<Image>(maxWidth, maxHeight);
         }
 
-        const std::string imagePath = imagesNames.at(camId);
-        memcpyRGBImageFromFileToArr(camId, imgs[mapId]->data, imagePath, mp, bandType);
-        imgs[mapId]->setWidth(  mp->getWidth(camId) );
-        imgs[mapId]->setHeight( mp->getHeight(camId) );
+        const std::string imagePath = _imagesNames.at(camId);
+        loadImage(imagePath, _mp, camId, *(_imgs[mapId]), _colorspace, _correctEV);
 
         ALICEVISION_LOG_DEBUG("Add " << imagePath << " to image cache. " << formatElapsedTime(t1));
     }
     else
     {
-      ALICEVISION_LOG_DEBUG("Reuse " << imagesNames.at(camId) << " from image cache. ");
+      ALICEVISION_LOG_DEBUG("Reuse " << _imagesNames.at(camId) << " from image cache. ");
     }
 }
 void ImagesCache::refreshData_sync(int camId)
 {
-  std::lock_guard<std::mutex> lock(imagesMutexes[camId]);
+  std::lock_guard<std::mutex> lock(_imagesMutexes[camId]);
   refreshData(camId);
 }
 
@@ -117,8 +132,8 @@ std::future<void> ImagesCache::refreshData_async(int camId)
 Color ImagesCache::getPixelValueInterpolated(const Point2d* pix, int camId)
 {
     // get the image index in the memory
-    const int i = camIdMapId[camId];
-    const ImgPtr& img = imgs[i];
+    const int i = _camIdMapId[camId];
+    const ImgSharedPtr& img = _imgs[i];
     
     const int xp = static_cast<int>(pix->x);
     const int yp = static_cast<int>(pix->y);
