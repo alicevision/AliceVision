@@ -102,10 +102,13 @@ public:
         }
     };
 
+protected:
+    /// Per-vertex color data
+    std::vector<rgb> _colors;
+
 public:
     StaticVector<Point3d>* pts = nullptr;
     StaticVector<Mesh::triangle>* tris = nullptr;
-    Matrix3x4 transformGlobal;
 
     Mesh();
     ~Mesh();
@@ -119,6 +122,11 @@ public:
                           StaticVector<Voxel>& trisUvIds, std::string objAsciiFileName);
 
     void addMesh(Mesh* me);
+
+    /// Per-vertex color data const accessor
+    const std::vector<rgb>& colors() const { return _colors; }
+    /// Per-vertex color data accessor
+    std::vector<rgb>& colors() { return _colors; }
 
     StaticVector<StaticVector<int>*>* getTrisMap(const mvsUtils::MultiViewParams* mp, int rc, int scale, int w, int h);
     StaticVector<StaticVector<int>*>* getTrisMap(StaticVector<int>* visTris, const mvsUtils::MultiViewParams* mp, int rc, int scale,

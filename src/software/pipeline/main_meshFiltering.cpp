@@ -148,6 +148,9 @@ int main(int argc, char* argv[])
         delete trisIdsToStay;
         ALICEVISION_LOG_INFO("Mesh after keepLargestMeshOnly: " << meOpt.pts->size() << " vertices and " << meOpt.tris->size() << " facets.");
     }
+    
+    // clear potential free points created by triangles removal in previous cleaning operations 
+    meOpt.removeFreePointsFromMesh();
 
     mesh::Mesh outMesh;
     outMesh.addMesh(&meOpt);
