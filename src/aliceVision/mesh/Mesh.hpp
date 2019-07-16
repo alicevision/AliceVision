@@ -136,8 +136,8 @@ public:
     void getDepthMap(StaticVector<float>& depthMap, StaticVector<StaticVector<int>*>& tmp, const mvsUtils::MultiViewParams& mp, int rc,
                      int scale, int w, int h);
 
-    StaticVector<StaticVector<int>*>* getPtsNeighborTriangles() const;
-    StaticVector<StaticVector<int>*>* getPtsNeighPtsOrdered() const;
+    void getPtsNeighborTriangles(StaticVector<StaticVector<int>*>& out_ptsNeighTris) const;
+    void getPtsNeighPtsOrdered(StaticVector<StaticVector<int>*>& out_ptsNeighTris) const;
 
     void getVisibleTrianglesIndexes(StaticVector<int>& out_visTri, std::string tmpDir, const mvsUtils::MultiViewParams& mp, int rc, int w, int h);
     void getVisibleTrianglesIndexes(StaticVector<int>& out_visTri, std::string depthMapFileName, std::string trisMapFileName,
