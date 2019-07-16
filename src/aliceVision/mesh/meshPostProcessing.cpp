@@ -115,7 +115,7 @@ void meshPostProcessing(Mesh* inout_mesh, StaticVector<StaticVector<int>*>*& ino
         }
 
         /////////////////////////////
-        StaticVectorBool* ptsCanMove = nullptr;
+        StaticVectorBool ptsCanMove;
         if(hexah != nullptr)
         {
             Point3d O = hexah[0];
@@ -130,9 +130,8 @@ void meshPostProcessing(Mesh* inout_mesh, StaticVector<StaticVector<int>*>*& ino
             vz = vz.normalize();
             float avel = 10.0f * meOpt.computeAverageEdgeLength();
 
-            ptsCanMove = new StaticVectorBool();
-            ptsCanMove->reserve(meOpt.pts.size());
-            ptsCanMove->resize_with(meOpt.pts.size(), true);
+            ptsCanMove.reserve(meOpt.pts.size());
+            ptsCanMove.resize_with(meOpt.pts.size(), true);
             for(int i = 0; i < meOpt.pts.size(); i++)
             {
                 float x = pointPlaneDistance(meOpt.pts[i], O, vx);
@@ -140,7 +139,7 @@ void meshPostProcessing(Mesh* inout_mesh, StaticVector<StaticVector<int>*>*& ino
                 float z = pointPlaneDistance(meOpt.pts[i], O, vz);
                 bool isHexahBorderPt = ((x < avel) || (x > svx - avel) || (y < avel) || (y > svy - avel) ||
                                         (z < avel) || (z > svz - avel));
-                (*ptsCanMove)[i] = ((isHexahBorderPt == false) || (sizeOfStaticVector<int>((*inout_ptsCams)[i]) > 0));
+                ptsCanMove[i] = ((isHexahBorderPt == false) || (sizeOfStaticVector<int>((*inout_ptsCams)[i]) > 0));
                 //(*ptsCanMove)[i] = (isHexahBorderPt==false);
             }
         }
@@ -159,7 +158,6 @@ void meshPostProcessing(Mesh* inout_mesh, StaticVector<StaticVector<int>*>*& ino
                 meOpt.saveToObj(debugFolderName + "mesh_smoothed.obj");
         }
 
-        delete ptsCanMove;
         meOpt.deallocateCleaningAttributes();
 
         inout_mesh = new Mesh();

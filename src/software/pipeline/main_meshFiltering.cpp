@@ -135,7 +135,7 @@ int main(int argc, char* argv[])
         meOpt.init();
         meOpt.cleanMesh(10);
 
-        StaticVectorBool* ptsCanMove = nullptr;
+        StaticVectorBool ptsCanMove;
         meOpt.optimizeSmooth(lambda, smoothNIter, ptsCanMove);
 
         ALICEVISION_LOG_INFO("Mesh filtering done: " << meOpt.pts.size() << " vertices and " << meOpt.tris.size() << " facets.");

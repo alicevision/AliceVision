@@ -151,7 +151,7 @@ void MeshAnalyze::getVertexPrincipalCurvatures(double Kh, double Kg, double& K1,
     K2 = Kh - temp;
 }
 
-bool MeshAnalyze::applyLaplacianOperator(int ptId, StaticVector<Point3d>* ptsToApplyLaplacianOp, Point3d& ln)
+bool MeshAnalyze::applyLaplacianOperator(int ptId, StaticVector<Point3d>& ptsToApplyLaplacianOp, Point3d& ln)
 {
     StaticVector<int>* ptNeighPtsOrdered = (*ptsNeighPtsOrdered)[ptId];
     if(ptNeighPtsOrdered == nullptr)
@@ -162,7 +162,7 @@ bool MeshAnalyze::applyLaplacianOperator(int ptId, StaticVector<Point3d>* ptsToA
     ln = Point3d(0.0f, 0.0f, 0.0f);
     for(int i = 0; i < ptNeighPtsOrdered->size(); i++)
     {
-        Point3d npt = (*ptsToApplyLaplacianOp)[(*ptNeighPtsOrdered)[i]];
+        Point3d npt = ptsToApplyLaplacianOp[(*ptNeighPtsOrdered)[i]];
 
         if((npt.x == 0.0f) && (npt.y == 0.0f) && (npt.z == 0.0f))
         {
@@ -171,7 +171,7 @@ bool MeshAnalyze::applyLaplacianOperator(int ptId, StaticVector<Point3d>* ptsToA
         }
         ln = ln + npt;
     }
-    ln = (ln / (float)ptNeighPtsOrdered->size()) - (*ptsToApplyLaplacianOp)[ptId];
+    ln = (ln / (float)ptNeighPtsOrdered->size()) - ptsToApplyLaplacianOp[ptId];
 
     Point3d n = ln;
     float d = n.size();
@@ -197,13 +197,13 @@ bool MeshAnalyze::applyLaplacianOperator(int ptId, StaticVector<Point3d>* ptsToA
 // page 3 eq (3)
 bool MeshAnalyze::getLaplacianSmoothingVector(int ptId, Point3d& ln)
 {
-    return applyLaplacianOperator(ptId, &pts, ln);
+    return applyLaplacianOperator(ptId, pts, ln);
 }
 
 // kobbelt kampagna 98 Interactive Multi-Resolution Modeling on Arbitrary Meshes
 // page 5 - U1 - laplacian is obtained when apply to origina pts , U2 - bi-laplacian is obtained when apply to laplacian
 // pts
-bool MeshAnalyze::getBiLaplacianSmoothingVector(int ptId, StaticVector<Point3d>* ptsLaplacian, Point3d& tp)
+bool MeshAnalyze::getBiLaplacianSmoothingVector(int ptId, StaticVector<Point3d>& ptsLaplacian, Point3d& tp)
 {
     if(applyLaplacianOperator(ptId, ptsLaplacian, tp))
     {
