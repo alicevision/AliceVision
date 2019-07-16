@@ -44,8 +44,8 @@ public:
             }
         };
 
-        MeshClean* m_me;
-        int m_ptId;
+        MeshClean* meshClean;
+        int ptId;
 
         path(MeshClean* _me, int _ptId);
         ~path();
@@ -74,20 +74,20 @@ public:
 
     StaticVector<StaticVector<int>*>* ptsNeighTrisSortedAsc;
     StaticVector<StaticVector<int>*>* ptsNeighPtsOrdered;
-    StaticVectorBool* ptsBoundary;
-    StaticVector<int>* newPtsOldPtId;
+    StaticVectorBool ptsBoundary;
+    StaticVector<int> newPtsOldPtId;
 
-    StaticVectorBool* edgesNeigTrisAlive;
-    StaticVector<Voxel>* edgesNeigTris;
-    StaticVector<Voxel>* edgesXStat;
-    StaticVector<Voxel>* edgesXYStat;
+    StaticVectorBool edgesNeigTrisAlive;
+    StaticVector<Voxel> edgesNeigTris;
+    StaticVector<Voxel> edgesXStat;
+    StaticVector<Voxel> edgesXYStat;
 
     int nPtsInit;
 
     explicit MeshClean(mvsUtils::MultiViewParams* _mp);
     ~MeshClean();
 
-    bool getEdgeNeighTrisInterval(Pixel& itr, int _ptId1, int _ptId2);
+    bool getEdgeNeighTrisInterval(Pixel& itr, int ptId1, int ptId2);
     bool isIsBoundaryPt(int ptId);
 
     void deallocateCleaningAttributes();

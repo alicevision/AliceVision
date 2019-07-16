@@ -83,10 +83,10 @@ void meshPostProcessing(Mesh*& inout_mesh, StaticVector<StaticVector<int>*>*& in
         /////////////////////////////
         {
             // Update pointCams after clean
-            inout_ptsCams->reserveAdd(meOpt.newPtsOldPtId->size());
-            for(int i = 0; i < meOpt.newPtsOldPtId->size(); i++)
+            inout_ptsCams->reserveAdd(meOpt.newPtsOldPtId.size());
+            for(int i = 0; i < meOpt.newPtsOldPtId.size(); i++)
             {
-                int oldPtId = (*meOpt.newPtsOldPtId)[i];
+                int oldPtId = meOpt.newPtsOldPtId[i];
                 StaticVector<int>* ptCams = new StaticVector<int>();
                 ptCams->reserve(sizeOfStaticVector<int>((*inout_ptsCams)[oldPtId]));
                 for(int j = 0; j < sizeOfStaticVector<int>((*inout_ptsCams)[oldPtId]); j++)
