@@ -175,41 +175,38 @@ int main(int argc, char* argv[])
 
     fs::create_directory(outputFolder);
 
-    if(!mesh.hasUVs())
     {
-      ALICEVISION_LOG_INFO("Input mesh has no UV coordinates, start unwrapping (" + unwrapMethod +")");
-      mesh.unwrap(mp, mesh::EUnwrapMethod_stringToEnum(unwrapMethod));
-      ALICEVISION_LOG_INFO("Unwrapping done.");
-    }
-
-    // save final obj file
-    mesh.saveAsOBJ(outputFolder, "texturedMesh", outputTextureFileType);
       // load reference dense point cloud with visibilities
       mesh::Mesh refMesh;
       mesh::PointsVisibility& refVisibilities = refMesh.pointsVisibilities;
       const std::size_t nbPoints = sfmData.getLandmarks().size();
-      refMesh.pts = StaticVector<Point3d>();
       refMesh.pts.reserve(nbPoints);
       refVisibilities.reserve(nbPoints);
 
       for(const auto& landmarkPair : sfmData.getLandmarks())
       {
         const sfmData::Landmark& landmark = landmarkPair.second;
-        mesh::PointVisibility pointVisibility = mesh::PointVisibility();
+        mesh::PointVisibility* pointVisibility = new mesh::PointVisibility();
 
-        pointVisibility.reserve(landmark.observations.size());
+        pointVisibility->reserve(landmark.observations.size());
         for(const auto& observationPair : landmark.observations)
-          pointVisibility.push_back(mp.getIndexFromViewId(observationPair.first));
+          pointVisibility->push_back(mp.getIndexFromViewId(observationPair.first));
 
-        refVisibilities.push_back(&pointVisibility);
+        refVisibilities.push_back(pointVisibility);
         refMesh.pts.push_back(Point3d(landmark.X(0), landmark.X(1), landmark.X(2)));
       }
 
       mesh.remapVisibilities(texParams.visibilityRemappingMethod, refMesh);
-
-      // delete visibilities
-      refVisibilities.clear();
     }
+
+    if(!mesh.hasUVs())
+    {
+      ALICEVISION_LOG_INFO("Input mesh has no UV coordinates, start unwrapping (" + unwrapMethod +")");
+      mesh.unwrap(mp, mesh::EUnwrapMethod_stringToEnum(unwrapMethod));
+      ALICEVISION_LOG_INFO("Unwrapping done.");
+    }
+    // save final obj file
+    mesh.saveAsOBJ(outputFolder, "texturedMesh", outputTextureFileType);
 
     // generate textures
     ALICEVISION_LOG_INFO("Generate textures.");

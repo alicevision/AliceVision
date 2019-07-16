@@ -487,7 +487,7 @@ bool Mesh::doesTriangleIntersectsRectangle(Mesh::triangle_proj& tp, Mesh::rectan
     */
 }
 
-void Mesh::getPtsNeighborTriangles(StaticVector<StaticVector<int>*>& out_ptsNeighTris) const
+StaticVector<StaticVector<int>*>* Mesh::getPtsNeighborTriangles() const
 {
     // array of tuples <x: vertexIndex, y: triangleIndex, z: numberOfNeighbors>
     StaticVector<Voxel> vertexNeighborhoodPairs;
@@ -519,8 +519,9 @@ void Mesh::getPtsNeighborTriangles(StaticVector<StaticVector<int>*>& out_ptsNeig
     }
     int npts = j;
 
-    out_ptsNeighTris.reserve(pts.size());
-    out_ptsNeighTris.resize_with(pts.size(), nullptr);
+    StaticVector<StaticVector<int>*>* out_ptsNeighTris = new StaticVector<StaticVector<int>*>();
+    out_ptsNeighTris->reserve(pts.size());
+    out_ptsNeighTris->resize_with(pts.size(), nullptr);
 
     i = 0;
     for(j = 0; j < npts; ++j)
@@ -538,20 +539,20 @@ void Mesh::getPtsNeighborTriangles(StaticVector<StaticVector<int>*>& out_ptsNeig
             triTmp->push_back(vertexNeighborhoodPairs[l].y); // index of triangle
         }
 
-        out_ptsNeighTris[middlePtId] = triTmp;
+        (*out_ptsNeighTris)[middlePtId] = triTmp;
     }
+    return out_ptsNeighTris;
 }
 
-void Mesh::getPtsNeighPtsOrdered(StaticVector<StaticVector<int>*>& out_ptsNeighPts) const
+StaticVector<StaticVector<int>*>* Mesh::getPtsNeighPtsOrdered() const
 {
-    StaticVector<StaticVector<int>*> ptsNeighborTriangles;
-    getPtsNeighborTriangles(ptsNeighborTriangles);
-
-    out_ptsNeighPts.resize_with(pts.size(), nullptr);
+    StaticVector<StaticVector<int>*>* ptsNeighborTriangles = getPtsNeighborTriangles();
+    StaticVector<StaticVector<int>*>* out_ptsNeighPts = new StaticVector<StaticVector<int>*>();
+    out_ptsNeighPts->resize_with(pts.size(), nullptr);
 
     for(int middlePtId = 0; middlePtId < pts.size(); ++middlePtId)
     {
-        StaticVector<int>* neighborTriangles = ptsNeighborTriangles[middlePtId];
+        StaticVector<int>* neighborTriangles = (*ptsNeighborTriangles)[middlePtId];
         if((neighborTriangles == nullptr) || neighborTriangles->empty())
             continue;
 
@@ -619,9 +620,11 @@ void Mesh::getPtsNeighPtsOrdered(StaticVector<StaticVector<int>*>& out_ptsNeighP
                 }
             }
 
-            out_ptsNeighPts[middlePtId] = vhid1;
+            (*out_ptsNeighPts)[middlePtId] = vhid1;
         }
     }
+    deleteArrayOfArrays<int>(&ptsNeighborTriangles);
+    return out_ptsNeighPts;
 }
 
 void Mesh::getTrisMap(StaticVector<StaticVector<int>*>& out, const mvsUtils::MultiViewParams& mp, int rc, int  /*scale*/, int w, int h)
@@ -1233,9 +1236,8 @@ void Mesh::getLaplacianSmoothingVectors(StaticVector<StaticVector<int>*>& ptsNei
 
 void Mesh::laplacianSmoothPts(float maximalNeighDist)
 {
-    StaticVector<StaticVector<int>*> ptsNei;
-    getPtsNeighPtsOrdered(ptsNei);
-    laplacianSmoothPts(ptsNei, maximalNeighDist);
+    StaticVector<StaticVector<int>*>* ptsNei = getPtsNeighPtsOrdered();
+    laplacianSmoothPts(*ptsNei, maximalNeighDist);
 }
 
 void Mesh::laplacianSmoothPts(StaticVector<StaticVector<int>*>& ptsNeighPts, double maximalNeighDist)
@@ -1278,9 +1280,8 @@ double Mesh::computeTriangleMinEdgeLength(int idTri) const
 
 void Mesh::computeNormalsForPts(StaticVector<Point3d>& out_nms)
 {
-    StaticVector<StaticVector<int>*> ptsNeighTris;
-    getPtsNeighborTriangles(ptsNeighTris);
-    computeNormalsForPts(ptsNeighTris, out_nms);
+    StaticVector<StaticVector<int>*>* ptsNeighTris = getPtsNeighborTriangles();
+    computeNormalsForPts(*ptsNeighTris, out_nms);
 }
 
 void Mesh::computeNormalsForPts(StaticVector<StaticVector<int>*>& ptsNeighTris, StaticVector<Point3d>& out_nms)
@@ -2271,8 +2272,7 @@ bool Mesh::isTriangleObtuse(int triId) const
 
 void Mesh::getLargestConnectedComponentTrisIds(StaticVector<int>& out) const
 {
-    StaticVector<StaticVector<int>*> ptsNeighPtsOrdered;
-    getPtsNeighPtsOrdered(ptsNeighPtsOrdered);
+    StaticVector<StaticVector<int>*>* ptsNeighPtsOrdered = getPtsNeighPtsOrdered();
 
     StaticVector<int>* colors = new StaticVector<int>();
     colors->reserve(pts.size());
@@ -2304,12 +2304,13 @@ void Mesh::getLargestConnectedComponentTrisIds(StaticVector<int>& out) const
                 {
                     delete colors;
                     delete buff;
+                    deleteArrayOfArrays<int>(&ptsNeighPtsOrdered);
                     throw std::runtime_error("getLargestConnectedComponentTrisIds: bad condition.");
                 }
             }
-            for(int j = 0; j < sizeOfStaticVector<int>(ptsNeighPtsOrdered[ptid]); ++j)
+            for(int j = 0; j < sizeOfStaticVector<int>((*ptsNeighPtsOrdered)[ptid]); ++j)
             {
-                int nptid = (*ptsNeighPtsOrdered[ptid])[j];
+                int nptid = (*(*ptsNeighPtsOrdered)[ptid])[j];
                 if((nptid > -1) && ((*colors)[nptid] == -1))
                 {
                     if(buff->size() >= buff->capacity()) // should not happen but no problem
@@ -2344,6 +2345,7 @@ void Mesh::getLargestConnectedComponentTrisIds(StaticVector<int>& out) const
 
     delete colors;
     delete buff;
+    deleteArrayOfArrays<int>(&ptsNeighPtsOrdered);
 }
 
 bool Mesh::loadFromObjAscii(const std::string& objAsciiFileName)
