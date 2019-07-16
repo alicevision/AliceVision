@@ -112,7 +112,6 @@ void GrossbergCalibrate::process(const std::vector< std::vector< image::Image<im
 
       Mat A = Mat::Zero(nbPoints*(nbImages-1)*channels, _dimension);
       Vec b = Vec::Zero(nbPoints*(nbImages-1)*channels);
-      int count = 0;
 
       ALICEVISION_LOG_TRACE("filling A and b matrices");
 
@@ -126,6 +125,8 @@ void GrossbergCalibrate::process(const std::vector< std::vector< image::Image<im
         const int xMax = std::floor(center(0) + minSize/2);
         const int yMax = std::floor(center(1) + minSize/2);
         const std::size_t maxDist2 = pow(minSize * 0.5, 2);
+
+        int count = 0;
 
         for(unsigned int channel=0; channel<channels; ++channel)
         {
