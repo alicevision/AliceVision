@@ -95,7 +95,9 @@ bool prepareDenseScene(const SfMData& sfmData,
     //we have a valid view with a corresponding camera & pose
     const std::string baseFilename = std::to_string(viewId);
 
-    oiio::ParamValueList metadata = image::getMetadataFromMap(view->getMetadata());
+    // get metadata from source image to be sure we get all metadata. We don't use the metadatas from the Views inside the SfMData to avoid type conversion problems with string maps.
+    std::string srcImage = view->getImagePath();
+    oiio::ParamValueList metadata = image::readImageMetadata(srcImage);
 
     // export camera
     if(saveMetadata || saveMatricesFiles)
@@ -161,9 +163,7 @@ bool prepareDenseScene(const SfMData& sfmData,
     }
 
     // export undistort image
-    {
-      std::string srcImage = view->getImagePath();
-
+    {      
       if(!imagesFolders.empty())
       {
         bool found = false;

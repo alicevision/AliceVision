@@ -31,6 +31,7 @@ public:
                const std::size_t channelQuantization,
                const std::vector< std::vector<float> > &times,
                const int nbPoints,
+               const bool fisheye,
                const rgbCurve &weight,
                const float lambda,
                rgbCurve &response);
