@@ -17,6 +17,8 @@
 
 #include <algorithm>
 #include <string>
+#include <regex>
+
 
 // These constants define the current software version.
 // They must be updated when the command line is changed.
@@ -142,6 +144,18 @@ int main(int argc, char **argv)
   // image white list filter
   if(!imageWhiteList.empty())
   {
+    std::vector<std::regex> imageWhiteRegexList;
+    imageWhiteRegexList.reserve(imageWhiteList.size());
+    for (const std::string& exp : imageWhiteList)
+    {
+      std::string filterToRegex = exp;
+      filterToRegex = std::regex_replace(filterToRegex, std::regex("\\*"), std::string("(.*)"));
+      filterToRegex = std::regex_replace(filterToRegex, std::regex("\\?"), std::string("(.)"));
+      filterToRegex = std::regex_replace(filterToRegex, std::regex("\\@"), std::string("[0-9]+")); // one @ correspond to one or more digits
+      filterToRegex = std::regex_replace(filterToRegex, std::regex("\\#"), std::string("[0-9]"));  // each # in pattern correspond to a digit
+      imageWhiteRegexList.emplace_back(filterToRegex);
+    }
+    
     std::vector<IndexT> viewsToRemove;
     std::vector<IndexT> posesToRemove;
     std::vector<IndexT> landmarksToRemove;
@@ -151,11 +165,15 @@ int main(int argc, char **argv)
       const sfmData::View& view = *(viewPair.second);
       bool toRemove = true;
 
-      for(const std::string& imageId : imageWhiteList)
+      for(int i = 0; i < imageWhiteList.size(); ++i)
       {
-        if(fs::path(imageId).stem() == fs::path(view.getImagePath()).stem() ||
-           imageId == std::to_string(view.getViewId()))
+        if (fs::path(imageWhiteList[i]).stem() == fs::path(view.getImagePath()).stem() ||
+            imageWhiteList[i] == std::to_string(view.getViewId()) ||
+            std::regex_match(view.getImagePath(), imageWhiteRegexList[i])
+            )
+        {
           toRemove = false;
+        }
       }
 
       if(toRemove)
