@@ -95,7 +95,7 @@ bool prepareDenseScene(const SfMData& sfmData,
     //we have a valid view with a corresponding camera & pose
     const std::string baseFilename = std::to_string(viewId);
 
-    // get metadata from source image to be sure we get all metadata (type conversion problems with string maps)
+    // get metadata from source image to be sure we get all metadata. We don't use the metadatas from the Views inside the SfMData to avoid type conversion problems with string maps.
     std::string srcImage = view->getImagePath();
     oiio::ParamValueList metadata = image::readImageMetadata(srcImage);
 

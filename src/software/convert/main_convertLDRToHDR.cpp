@@ -410,7 +410,7 @@ int main(int argc, char** argv)
       }
       catch(std::exception& e)
       {
-          ALICEVISION_CERR("Invalid name of target");
+          ALICEVISION_CERR("Invalid target name: \"" << target << "\"");
           return EXIT_FAILURE;
       }
   }
