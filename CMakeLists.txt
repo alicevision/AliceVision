@@ -449,8 +449,8 @@ set(ALEMBIC_CMAKE_FLAGS -DAlembic_DIR:PATH=${BUILD_DIR}/alembic_build/lib/cmake/
 if(AV_BUILD_OPENCV)
 set(OPENCV_TARGET opencv)
 ExternalProject_Add(opencv_contrib
-  URL https://github.com/opencv/opencv_contrib/archive/3.4.2.zip
-  URL_MD5 171a0c9eabbdc3332164de6221684beb
+  URL https://github.com/opencv/opencv_contrib/archive/4.1.0.zip
+  URL_MD5 3cd00bbfdebb69ad24756ccfb801ebac
   SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/opencv_contrib
   UPDATE_COMMAND ""
   CONFIGURE_COMMAND ""
@@ -459,8 +459,8 @@ ExternalProject_Add(opencv_contrib
 )
 ExternalProject_Add(${OPENCV_TARGET}
   DEPENDS opencv_contrib ${TBB_TARGET} ${ZLIB_TARGET}
-  URL https://github.com/opencv/opencv/archive/3.4.2.zip
-  URL_MD5 9e9ebe9c1fe98c468f6e53f5c3c49716
+  URL https://github.com/opencv/opencv/archive/4.1.0.zip
+  URL_MD5 5c5a9ce3519415b263d512e7f6a1e2af
   UPDATE_COMMAND ""
   SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/opencv
   BINARY_DIR ${BUILD_DIR}/opencv_build
@@ -487,7 +487,7 @@ ExternalProject_Add(${OPENCV_TARGET}
     ../${OPENCV_SRC_PATH}
 )
 # set(OPENCV_CMAKE_FLAGS -DOpenCV_DIR=${BUILD_DIR}/opencv_install -DCMAKE_PREFIX_PATH=${BUILD_DIR}/opencv_install)
-set(OPENCV_CMAKE_FLAGS -DOpenCV_DIR=${BUILD_DIR}/opencv_install -DOPENCV_DIR=${BUILD_DIR}/opencv_install)
+set(OPENCV_CMAKE_FLAGS -DOpenCV_DIR=${BUILD_DIR}/opencv_install/${CMAKE_INSTALL_LIBDIR}/cmake/opencv4 -DOPENCV_DIR=${BUILD_DIR}/opencv_install/${CMAKE_INSTALL_LIBDIR}/cmake/opencv4)
 endif()
 
 # Add CCTag
