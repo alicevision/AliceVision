@@ -344,16 +344,16 @@ public:
   }
 
   /**
-    * @brief Get inferior index value corresponding to float sample and scale between inferior and superior indexes
-    * @param[in] float sample between 0 and 1
-    * @param[out] float scale between inferior and superior indexes
-    * @return int inferior index of curve
+    * @brief Get inferior index value corresponding to float sample and fractionalPart between inferior and superior indexes
+    * @param[in] sample between 0 and 1
+    * @param[out] fractionalPart between inferior and superior indexes
+    * @return inferior index of curve
     */
-  std::size_t getIndex(float sample, float scale) const
+  std::size_t getIndex(float sample, float& fractionalPart) const
   {
     assert(getSize() != 0);
     float infIndex;
-    scale = std::modf(std::max(0.f, std::min(1.f, sample)) * getSize() - 2, &infIndex);
+    fractionalPart = std::modf(std::max(0.f, std::min(1.f, sample)) * getSize() - 2, &infIndex);
     return std::size_t(infIndex);
   }
 

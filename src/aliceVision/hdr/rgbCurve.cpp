@@ -272,9 +272,9 @@ void rgbCurve::exponential()
 float rgbCurve::operator() (float sample, std::size_t channel) const
 {
   assert(channel < _data.size());
-  float scale;
-  std::size_t infIndex = getIndex(sample, scale);
-  return scale * _data[channel][infIndex] + (1-scale) * _data[channel][infIndex + 1];
+  float fractionalPart = 0.0;
+  std::size_t infIndex = getIndex(sample, fractionalPart);
+  return fractionalPart * _data[channel][infIndex] + (1.0f - fractionalPart) * _data[channel][infIndex + 1];
 }
 
 const rgbCurve rgbCurve::operator+(const rgbCurve &other) const
