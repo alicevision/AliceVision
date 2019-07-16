@@ -71,8 +71,8 @@ int MeshAnalyze::getVertexIdInTriangleForPtId(int ptId, int triId)
 
 bool MeshAnalyze::getVertexSurfaceNormal(int ptId, Point3d& N)
 {
-    StaticVector<int>* ptNeighPtsOrdered = (*ptsNeighPtsOrdered)[ptId];
-    StaticVector<int>* ptNeighTris = (*ptsNeighTrisSortedAsc)[ptId];
+    StaticVector<int>* ptNeighPtsOrdered = ptsNeighPtsOrdered[ptId];
+    StaticVector<int>* ptNeighTris = ptsNeighTrisSortedAsc[ptId];
     if((isIsBoundaryPt(ptId)) || (ptNeighPtsOrdered == nullptr) || (ptNeighTris == nullptr) ||
        (ptNeighTris->size() == 0))
     {
@@ -93,8 +93,8 @@ bool MeshAnalyze::getVertexSurfaceNormal(int ptId, Point3d& N)
 // gts_vertex_mean_curvature_normal [Meyer et al 2002]
 bool MeshAnalyze::getVertexMeanCurvatureNormal(int ptId, Point3d& Kh)
 {
-    StaticVector<int>* ptNeighPtsOrdered = (*ptsNeighPtsOrdered)[ptId];
-    StaticVector<int>* ptNeighTris = (*ptsNeighTrisSortedAsc)[ptId];
+    StaticVector<int>* ptNeighPtsOrdered = ptsNeighPtsOrdered[ptId];
+    StaticVector<int>* ptNeighTris = ptsNeighTrisSortedAsc[ptId];
     if((isIsBoundaryPt(ptId)) || (ptNeighPtsOrdered == nullptr) || (ptNeighTris == nullptr))
     {
         return false;
@@ -153,7 +153,7 @@ void MeshAnalyze::getVertexPrincipalCurvatures(double Kh, double Kg, double& K1,
 
 bool MeshAnalyze::applyLaplacianOperator(int ptId, StaticVector<Point3d>& ptsToApplyLaplacianOp, Point3d& ln)
 {
-    StaticVector<int>* ptNeighPtsOrdered = (*ptsNeighPtsOrdered)[ptId];
+    StaticVector<int>* ptNeighPtsOrdered = ptsNeighPtsOrdered[ptId];
     if(ptNeighPtsOrdered == nullptr)
     {
         return false;
@@ -207,8 +207,8 @@ bool MeshAnalyze::getBiLaplacianSmoothingVector(int ptId, StaticVector<Point3d>&
 {
     if(applyLaplacianOperator(ptId, ptsLaplacian, tp))
     {
-        StaticVector<int>* ptNeighPtsOrdered = (*ptsNeighPtsOrdered)[ptId];
-        StaticVector<int>* ptNeighTris = (*ptsNeighTrisSortedAsc)[ptId];
+        StaticVector<int>* ptNeighPtsOrdered = ptsNeighPtsOrdered[ptId];
+        StaticVector<int>* ptNeighTris = ptsNeighTrisSortedAsc[ptId];
         if((ptNeighPtsOrdered == nullptr) || (ptNeighTris == nullptr))
         {
             return false;
@@ -217,7 +217,7 @@ bool MeshAnalyze::getBiLaplacianSmoothingVector(int ptId, StaticVector<Point3d>&
         float sum = 0.0f;
         for(int i = 0; i < sizeOfStaticVector<int>(ptNeighPtsOrdered); i++)
         {
-            int neighValence = sizeOfStaticVector<int>((*ptsNeighPtsOrdered)[(*ptNeighPtsOrdered)[i]]);
+            int neighValence = sizeOfStaticVector<int>(ptsNeighPtsOrdered[(*ptNeighPtsOrdered)[i]]);
             if(neighValence > 0)
             {
                 sum += 1.0f / (float)neighValence;

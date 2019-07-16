@@ -659,6 +659,20 @@ void deleteArrayOfArrays(StaticVector<StaticVector<T>*>** aa)
 }
 
 template <class T>
+void deleteArrayOfArrays(StaticVector<StaticVector<T>*>& aa)
+{
+    for(int i = 0; i < aa.size(); i++)
+    {
+        if(aa[i] != NULL)
+        {
+            delete aa[i];
+            aa[i] = NULL;
+        };
+    };
+    aa.clear();
+}
+
+template <class T>
 StaticVector<StaticVector<T>*>* cloneArrayOfArrays(StaticVector<StaticVector<T>*>* inAOA)
 {
     StaticVector<StaticVector<T>*>* outAOA = new StaticVector<StaticVector<T>*>();

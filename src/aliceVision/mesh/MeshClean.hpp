@@ -28,11 +28,11 @@ public:
               : triId(-1)
             {}
 
-            pathPart(int _triId, int _ptId1, int _ptId2)
+            pathPart(int id, int ptId1, int ptId2)
             {
-                triId = _triId;
-                ptsIds[0] = _ptId1;
-                ptsIds[1] = _ptId2;
+                triId = id;
+                ptsIds[0] = ptId1;
+                ptsIds[1] = ptId2;
             }
 
             pathPart& operator=(const pathPart& m)
@@ -47,15 +47,15 @@ public:
         MeshClean* meshClean;
         int ptId;
 
-        path(MeshClean* _me, int _ptId);
+        path(MeshClean* mesh, int ptId);
         ~path();
 
         void printfState(StaticVector<pathPart>& path);
         bool addNextTriIdToPathBack(int nextTriId, StaticVector<pathPart>& path);
         bool addNextTriIdToPathFront(int nextTriId, StaticVector<pathPart>& path);
-        int getNextNeighBouringUnprocessedLast(StaticVector<int>* ptNeighTrisSortedAscToProcess,
+        int getNextNeighBouringUnprocessedLast(StaticVector<int>& ptNeighTrisSortedAscToProcess,
                                                StaticVector<pathPart>& out_path);
-        int getNextNeighBouringUnprocessedFirst(StaticVector<int>* ptNeighTrisSortedAscToProcess,
+        int getNextNeighBouringUnprocessedFirst(StaticVector<int>& ptNeighTrisSortedAscToProcess,
                                                 StaticVector<pathPart>& out_path);
         int nCrossings(StaticVector<pathPart>& path);
         void removeCycleFromPath(StaticVector<MeshClean::path::pathPart>& inPath, StaticVector<MeshClean::path::pathPart>& outPath);
@@ -65,15 +65,15 @@ public:
         bool isClodePath(StaticVector<pathPart>& path);
         void clearPointNeighbors(int ptId);
         void updatePtNeighPtsOrderedByPath(int ptId, StaticVector<pathPart>& path);
-        void createPath(StaticVector<int>* ptNeighTrisSortedAscToProcess, StaticVector<pathPart>& out_path);
+        void createPath(StaticVector<int>& ptNeighTrisSortedAscToProcess, StaticVector<pathPart>& out_path);
         int deployAll();
         bool isWrongPt();
     };
 
     mvsUtils::MultiViewParams* mp;
 
-    StaticVector<StaticVector<int>*>* ptsNeighTrisSortedAsc;
-    StaticVector<StaticVector<int>*>* ptsNeighPtsOrdered;
+    StaticVector<StaticVector<int>*> ptsNeighTrisSortedAsc;
+    StaticVector<StaticVector<int>*> ptsNeighPtsOrdered;
     StaticVectorBool ptsBoundary;
     StaticVector<int> newPtsOldPtId;
 
