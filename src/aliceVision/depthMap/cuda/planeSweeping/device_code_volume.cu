@@ -4,6 +4,11 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
+#pragma once
+
+#include <aliceVision/depthMap/cuda/deviceCommon/device_matrix.cu>
+
+
 namespace aliceVision {
 namespace depthMap {
 
@@ -286,11 +291,31 @@ __global__ void volume_slice_kernel(
     }
 }
 
+__device__ float depthPlaneToDepth(
+    const CameraStructBase& cam,
+    const float2& pix,
+    float fpPlaneDepth)
+{
+    float3 planen = M3x3mulV3(cam.iR, make_float3(0.0f, 0.0f, 1.0f));
+    normalize(planen);
+    float3 planep = cam.C + planen * fpPlaneDepth;
+    float3 v = M3x3mulV2(cam.iP, pix);
+    normalize(v);
+    float3 p = linePlaneIntersect(cam.C, v, planep, planen);
+    float depth = size(cam.C - p);
+    return depth;
+}
+
 
 __global__ void volume_retrieveBestZ_kernel(
-  float2* bestZ, int bestZ_s,
+  const CameraStructBase& cam,
+  float* bestDepthM, int bestDepthM_s,
+  float* bestSimM, int bestSimM_s,
+  const float* depths_d,
   const TSim* simVolume, int simVolume_s, int simVolume_p,
-  int volDimX, int volDimY, int volDimZ, int zBorder)
+  int volDimX, int volDimY, int volDimZ,
+  int scaleStep,
+  bool interpolate)
 {
   int x = blockIdx.x * blockDim.x + threadIdx.x;
   int y = blockIdx.y * blockDim.y + threadIdx.y;
@@ -298,18 +323,44 @@ __global__ void volume_retrieveBestZ_kernel(
   if(x >= volDimX || y >= volDimY)
     return;
 
-  float2* outPix = get2DBufferAt(bestZ, bestZ_s, x, y);
-  outPix->x = -1;
-  outPix->y = 255.0;
+  float bestSim = 255.0;
+  int bestZIdx = -1;
   for (int z = 0; z < volDimZ; ++z)
   {
     const float simAtZ = *get3DBufferAt(simVolume, simVolume_s, simVolume_p, x, y, z);
-    if (simAtZ < outPix->y)
+    if (simAtZ < bestSim)
     {
-      outPix->x = z;
-      outPix->y = simAtZ;
+      bestSim = simAtZ;
+      bestZIdx = z;
     }
   }
+  
+  float2 pix{x * scaleStep, y * scaleStep };
+  // Without depth interpolation (for debug purpose only)
+  if(!interpolate)
+  {
+    *get2DBufferAt(bestDepthM, bestDepthM_s, x, y) = depthPlaneToDepth(cam, pix, depths_d[bestZIdx]);
+    *get2DBufferAt(bestSimM, bestSimM_s, x, y) = bestSim;
+    return;
+  }
+
+  // With depth/sim interpolation
+  int bestZIdx_m1 = max(0, bestZIdx - 1);
+  int bestZIdx_p1 = min(volDimZ-1, bestZIdx + 1);
+  float3 depths;
+  depths.x = depths_d[bestZIdx_m1];
+  depths.y = depths_d[bestZIdx];
+  depths.z = depths_d[bestZIdx_p1];
+  float3 sims;
+  sims.x = *get3DBufferAt(simVolume, simVolume_s, simVolume_p, x, y, bestZIdx_m1);
+  sims.y = bestSim;
+  sims.z = *get3DBufferAt(simVolume, simVolume_s, simVolume_p, x, y, bestZIdx_p1);
+
+  // Interpolation between the 3 depth planes candidates
+  const float refinedDepth = refineDepthSubPixel(depths, sims);
+
+  *get2DBufferAt(bestDepthM, bestDepthM_s, x, y) = depthPlaneToDepth(cam, pix, refinedDepth);
+  *get2DBufferAt(bestSimM, bestSimM_s, x, y) = bestSim;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

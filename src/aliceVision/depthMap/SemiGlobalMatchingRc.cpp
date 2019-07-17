@@ -36,6 +36,7 @@ SemiGlobalMatchingRc::SemiGlobalMatchingRc(int rc, int scale, int step, SemiGlob
     , _scale(scale)
     , _step(step)
     , _sp(sp)
+    , _sgmDepthSimMap(rc, sp.mp, scale, step)
 {
     const int nbNearestCams = _sp.mp.userParams.get<int>("semiGlobalMatching.maxTCams", 10);
     _width  = _sp.mp.getWidth(rc)  / (scale * step);
@@ -512,12 +513,8 @@ bool SemiGlobalMatchingRc::sgmrc(bool checkIfExists)
         exportSimilaritySamplesCSV(volumeSecBestSim_h, _depths, _rc, _scale, _step, "afterFiltering", _sp.mp.getDepthMapsFolder() + std::to_string(_sp.mp.getViewId(_rc)) + "_9p.csv");
     }
 
-    // vector<z, sim>
-    _volumeBestIdVal.resize_with(volDimX * volDimY, IdValue(-1, 1.0f));
-
     // For each pixel: choose the voxel with the minimal similarity value
-    int zborder = 2;
-    _sp.cps.SGMretrieveBestDepth(_volumeBestIdVal, volumeSecBestSim_d, volDimX, volDimY, volDimZ, zborder);
+    _sp.cps.SGMretrieveBestDepth(_sgmDepthSimMap, volumeSecBestSim_d, _depths, _rc, volDimX, volDimY, volDimZ, _scale * _step, true); // interpolate=true
 
     /*
     if(rcSilhoueteMap != nullptr)
@@ -539,10 +536,14 @@ bool SemiGlobalMatchingRc::sgmrc(bool checkIfExists)
 
     if(_sp.exportIntermediateResults)
     {
-        DepthSimMap depthSimMapFinal(_rc, _sp.mp, _scale, _step);
-        _sp.getDepthSimMapFromBestIdVal(depthSimMapFinal, _width, _height, _volumeBestIdVal, _scale, _step, _rc, zborder, _depths);
-        // depthSimMapFinal.saveToImage(_sp.mp.getDepthMapsFolder() + std::to_string(_sp.mp.getViewId(_rc)) + "_sgm" + "_scale" + mvsUtils::num2str(depthSimMapFinal._scale) + "_step" + mvsUtils::num2str(depthSimMapFinal._step) + ".png", 1.0f);
-        depthSimMapFinal.save("_sgm");
+        // {
+        //     // Export RAW SGM results with the depths based on the input planes without interpolation
+        //     DepthSimMap depthSimMapRawPlanes(_rc, _sp.mp, _scale, _step);
+        //     _sp.cps.SGMretrieveBestDepth(depthSimMapRawPlanes, volumeSecBestSim_d, _depths, volDimX, volDimY, volDimZ, false); // interpolate=false
+        //     depthSimMapRawPlanes.save("_sgmPlanes");
+        // }
+        _sgmDepthSimMap.save("_sgm");
+        _sgmDepthSimMap.save("_sgmStep1", true);
 
         // std::vector<unsigned short> volumeBestId(_volumeBestIdVal.size());
         // for(int i = 0; i < _volumeBestIdVal.size(); i++)

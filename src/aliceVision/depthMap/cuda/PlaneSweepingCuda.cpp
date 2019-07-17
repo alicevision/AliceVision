@@ -15,6 +15,7 @@
 #include <aliceVision/mvsUtils/fileIO.hpp>
 #include <aliceVision/depthMap/cuda/planeSweeping/plane_sweeping_cuda.hpp>
 #include <aliceVision/depthMap/cuda/planeSweeping/host_utils.h>
+#include <aliceVision/depthMap/cuda/images/gauss_filter.hpp>
 
 #include <iostream>
 #include <sstream>
@@ -901,33 +902,55 @@ bool PlaneSweepingCuda::SGMoptimizeSimVolume(int rc, CudaDeviceMemoryPitched<TSi
     return true;
 }
 
-void PlaneSweepingCuda::SGMretrieveBestDepth(StaticVector<IdValue>& bestDepth, CudaDeviceMemoryPitched<TSim, 3>& volSim_dmp,
-  int volDimX, int volDimY, int volDimZ, int zBorder)
+void PlaneSweepingCuda::SGMretrieveBestDepth(DepthSimMap& bestDepth, CudaDeviceMemoryPitched<TSim, 3>& volSim_dmp, const StaticVector<float>& depths, const int rcCamId,
+  int volDimX, int volDimY, int volDimZ, int scaleStep, bool interpolate)
 {
   ALICEVISION_LOG_DEBUG("SGMretrieveBestDepth:" << std::endl
     << "\t- volDimX: " << volDimX << std::endl
     << "\t- volDimY: " << volDimY << std::endl
     << "\t- volDimZ: " << volDimZ);
 
-  CudaDeviceMemoryPitched<float2, 2> bestDepth_dmp(CudaSize<2>(volDimX, volDimY));
+  int camCacheIndex = addCam(rcCamId, 1, __FUNCTION__);
+  _camsBasesDev.copyFrom(_camsBasesHst);
+
+  CudaDeviceMemory<float> depths_d(depths.getData().data(), depths.size());
+
+  CudaDeviceMemoryPitched<float, 2> bestDepth_dmp(CudaSize<2>(volDimX, volDimY));
+  CudaDeviceMemoryPitched<float, 2> bestSim_dmp(CudaSize<2>(volDimX, volDimY));
+
   long t1 = clock();
   ps_SGMretrieveBestDepth(
     bestDepth_dmp,
+    bestSim_dmp,
+    _cams[camCacheIndex],
+    depths_d,
     volSim_dmp,
-    volDimX, volDimY, volDimZ, zBorder);
+    volDimX, volDimY, volDimZ,
+    scaleStep,
+    interpolate);
 
-  CudaHostMemoryHeap<float2, 2> bestDepth_hmh(CudaSize<2>(volDimX, volDimY));
+  /*
+  {
+      CudaTexture<float> bestDepth_tex(bestDepth_dmp);
+      ps_medianFilter3(bestDepth_tex.textureObj, bestDepth_dmp);
+  }
+  */
+
+  CudaHostMemoryHeap<float, 2> bestDepth_hmh(CudaSize<2>(volDimX, volDimY));
   bestDepth_hmh.copyFrom(bestDepth_dmp);
   bestDepth_dmp.deallocate();
-  bestDepth.resize(volDimX*volDimY);
+
+  CudaHostMemoryHeap<float, 2> bestSim_hmh(CudaSize<2>(volDimX, volDimY));
+  bestSim_hmh.copyFrom(bestSim_dmp);
+  bestSim_dmp.deallocate();
+
   for (int y = 0; y < volDimY; ++y)
   {
     for (int x = 0; x < volDimX; ++x)
     {
-      IdValue& out = bestDepth[y * volDimX + x];
-      float2& in = bestDepth_hmh(x, y);
-      out.id = in.x; // depth
-      out.value = in.y; // sim
+      DepthSim& out = bestDepth._dsm[y * volDimX + x];
+      out.depth = bestDepth_hmh(x, y);
+      out.sim = bestSim_hmh(x, y);
     }
   }
   mvsUtils::printfElapsedTime(t1);

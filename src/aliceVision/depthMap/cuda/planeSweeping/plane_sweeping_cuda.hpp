@@ -81,8 +81,12 @@ void ps_SGMoptimizeSimVolume(
     int CUDAdeviceNo,
     int ncamsAllocated);
 
-  void ps_SGMretrieveBestDepth(CudaDeviceMemoryPitched<float2, 2>& bestDepth_dmp, CudaDeviceMemoryPitched<TSim, 3>& volSim_dmp,
-    int volDimX, int volDimY, int volDimZ, int zBorder);
+  void ps_SGMretrieveBestDepth(
+    CudaDeviceMemoryPitched<float, 2>& bestDepth_dmp, CudaDeviceMemoryPitched<float, 2>& bestSim_dmp,
+    const CameraStruct& rccam,
+    const CudaDeviceMemory<float>& depths_d,
+    CudaDeviceMemoryPitched<TSim, 3>& volSim_dmp,
+    int volDimX, int volDimY, int volDimZ, int scaleStep, bool interpolate);
 
 int ps_listCUDADevices(bool verbose);
 

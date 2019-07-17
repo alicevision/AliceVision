@@ -51,25 +51,8 @@ void RefineRc::getDepthPixSizeMapFromSGM(DepthSimMap& out_depthSimMapScale1Step1
 {
     const int w11 = _sp.mp.getWidth(_rc);
     const int h11 = _sp.mp.getHeight(_rc);
-    const int zborder = 2;
 
-    StaticVector<IdValue> volumeBestIdVal(_width * _height);
-
-    for(int i = 0; i < _volumeBestIdVal.size(); i++)
-    {
-        // float sim = depthSimMapFinal->dsm[i].y;
-        // sim = std::min(sim,mp->simThr);
-        const float sim = _sp.mp.simThr - 0.0001;
-        const int id = _volumeBestIdVal[i].id;
-
-        volumeBestIdVal[i] = IdValue(std::max(0, id), sim);
-    }
-
-    {
-        DepthSimMap depthSimMap(_rc, _sp.mp, _scale, _step);
-        _sp.getDepthSimMapFromBestIdVal(depthSimMap, _width, _height, volumeBestIdVal, _scale, _step, _rc, zborder, _depths);
-        out_depthSimMapScale1Step1.initFromSmaller(depthSimMap);
-    }
+    out_depthSimMapScale1Step1.initFromSmaller(_sgmDepthSimMap);
 
     // set sim (y) to pixsize
     for(int y = 0; y < h11; ++y)
@@ -225,6 +208,11 @@ bool RefineRc::refinerc(bool checkIfExists)
 
     DepthSimMap depthPixSizeMapVis(_rc, _sp.mp, 1, 1);
     getDepthPixSizeMapFromSGM(depthPixSizeMapVis);
+
+    if (_sp.exportIntermediateResults)
+    {
+        depthPixSizeMapVis.save("_sgmRescaled");
+    }
 
     DepthSimMap depthSimMapPhoto(_rc, _sp.mp, 1, 1);
 

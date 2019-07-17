@@ -553,20 +553,30 @@ void ps_SGMoptimizeSimVolume(Pyramids& ps_texs_arr,
         printf("ps_SGMoptimizeSimVolume done\n");
 }
 
-void ps_SGMretrieveBestDepth(CudaDeviceMemoryPitched<float2, 2>& bestDepth_dmp, CudaDeviceMemoryPitched<TSim, 3>& volSim_dmp,
-    int volDimX, int volDimY, int volDimZ, int zBorder)
+void ps_SGMretrieveBestDepth(
+    CudaDeviceMemoryPitched<float, 2>& bestDepth_dmp, CudaDeviceMemoryPitched<float, 2>& bestSim_dmp,
+    const CameraStruct& rccam,
+    const CudaDeviceMemory<float>& depths_d,
+    CudaDeviceMemoryPitched<TSim, 3>& volSim_dmp,
+    int volDimX, int volDimY, int volDimZ, int scaleStep, bool interpolate)
 {
   int block_size = 8;
   dim3 block(block_size, block_size, 1);
   dim3 grid(divUp(volDimX, block_size), divUp(volDimY, block_size), 1);
 
   volume_retrieveBestZ_kernel<<<grid, block>>>(
+    *rccam.param_dev,
     bestDepth_dmp.getBuffer(),
     bestDepth_dmp.getBytesPaddedUpToDim(0),
+    bestSim_dmp.getBuffer(),
+    bestSim_dmp.getBytesPaddedUpToDim(0),
+    depths_d.getBuffer(),
     volSim_dmp.getBuffer(),
     volSim_dmp.getBytesPaddedUpToDim(1),
     volSim_dmp.getBytesPaddedUpToDim(0),
-    volDimX, volDimY, volDimZ, zBorder);
+    volDimX, volDimY, volDimZ,
+    scaleStep,
+    interpolate);
 }
 
 

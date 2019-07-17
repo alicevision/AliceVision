@@ -37,7 +37,7 @@ protected:
 
     StaticVector<int> _sgmTCams;
     StaticVector<Pixel> _depthsTcamsLimits;
-    StaticVector<IdValue> _volumeBestIdVal;
+    DepthSimMap _sgmDepthSimMap;
     StaticVector<float> _depths;
 
     SemiGlobalMatchingParams& _sp;
