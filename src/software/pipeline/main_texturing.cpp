@@ -186,11 +186,11 @@ int main(int argc, char* argv[])
       for(const auto& landmarkPair : sfmData.getLandmarks())
       {
         const sfmData::Landmark& landmark = landmarkPair.second;
-        mesh::PointVisibility* pointVisibility = new mesh::PointVisibility();
+        mesh::PointVisibility pointVisibility;
 
-        pointVisibility->reserve(landmark.observations.size());
+        pointVisibility.reserve(landmark.observations.size());
         for(const auto& observationPair : landmark.observations)
-          pointVisibility->push_back(mp.getIndexFromViewId(observationPair.first));
+          pointVisibility.push_back(mp.getIndexFromViewId(observationPair.first));
 
         refVisibilities.push_back(pointVisibility);
         refMesh.pts.push_back(Point3d(landmark.X(0), landmark.X(1), landmark.X(2)));

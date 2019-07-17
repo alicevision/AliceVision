@@ -1958,7 +1958,7 @@ void Mesh::computeTrisCamsFromPtsCams(StaticVector<StaticVector<int>>& trisCams)
         {
             for(int i = 0; i < sizeOfStaticVector<int>(pointsVisibilities[tris[idTri].v[k]]); i++)
             {
-                cams.push_back_distinct((*pointsVisibilities[tris[idTri].v[k]])[i]);
+                cams.push_back_distinct(pointsVisibilities[tris[idTri].v[k]][i]);
             }
         }
         trisCams.push_back(cams);

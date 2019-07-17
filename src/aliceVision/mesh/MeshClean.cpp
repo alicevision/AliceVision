@@ -370,39 +370,36 @@ void MeshClean::path::deployPath(StaticVector<MeshClean::path::pathPart>& path)
     int newPtId = deployTriangles(trisIds, (!isClodePath(path)));
 
     meshClean->ptsNeighPtsOrdered.reserveAddIfNeeded(1, 1000);
-    meshClean->ptsNeighPtsOrdered.push_back(nullptr);
     updatePtNeighPtsOrderedByPath(newPtId, path);
 }
 
 void MeshClean::path::clearPointNeighbors(int ptId)
 {
-    StaticVector<int>*& ptNeighPtsOrderedByPath = meshClean->ptsNeighPtsOrdered[ptId];
+    StaticVector<int>& ptNeighPtsOrderedByPath = meshClean->ptsNeighPtsOrdered[ptId];
 
-    if(ptNeighPtsOrderedByPath != nullptr)
+    if(!ptNeighPtsOrderedByPath.empty())
     {
-        delete ptNeighPtsOrderedByPath;
-        ptNeighPtsOrderedByPath = nullptr;
+        ptNeighPtsOrderedByPath.clear();
     }
 }
 
 void MeshClean::path::updatePtNeighPtsOrderedByPath(int ptId, StaticVector<MeshClean::path::pathPart>& path)
 {
-    StaticVector<int>*& ptNeighPtsOrderedByPath = meshClean->ptsNeighPtsOrdered[ptId];
+    StaticVector<int>& ptNeighPtsOrderedByPath = meshClean->ptsNeighPtsOrdered[ptId];
 
     clearPointNeighbors(ptId);
 
     if( !path.empty() )
     {
-        ptNeighPtsOrderedByPath = new StaticVector<int>();
-        ptNeighPtsOrderedByPath->reserve(path.size() + 1);
+        ptNeighPtsOrderedByPath.reserve(path.size() + 1);
 
         if(!isClodePath(path))
         {
-            ptNeighPtsOrderedByPath->push_back(path[0].ptsIds[0]);
+            ptNeighPtsOrderedByPath.push_back(path[0].ptsIds[0]);
         }
         for(int i = 0; i < path.size(); i++)
         {
-            ptNeighPtsOrderedByPath->push_back(path[i].ptsIds[1]);
+            ptNeighPtsOrderedByPath.push_back(path[i].ptsIds[1]);
         }
     }
 }
@@ -471,7 +468,6 @@ int MeshClean::path::deployAll()
     {
         int newPtId = deployTriangles(ptNeighTrisSortedAscToProcess, true);
         meshClean->ptsNeighPtsOrdered.reserveAddIfNeeded(1, 1000);
-        meshClean->ptsNeighPtsOrdered.push_back(nullptr);
         clearPointNeighbors(newPtId);
         ptNeighTrisSortedAscToProcess.resize(0);
         nNewPts++;
@@ -598,7 +594,7 @@ void MeshClean::deallocateCleaningAttributes()
     }
     if(!ptsNeighPtsOrdered.empty())
     {
-        deleteArrayOfArrays<int>(ptsNeighPtsOrdered);
+        ptsNeighPtsOrdered.clear();
     }
     if(!newPtsOldPtId.empty())
     {
@@ -649,7 +645,7 @@ void MeshClean::init()
     }
 
     ptsNeighPtsOrdered.reserve(pts.size());
-    ptsNeighPtsOrdered.resize_with(pts.size(), nullptr);
+    ptsNeighPtsOrdered.resize(pts.size());
 
     ptsBoundary.reserve(pts.size());
     ptsBoundary.resize_with(pts.size(), true);
@@ -832,7 +828,7 @@ void MeshClean::testPtsNeighPtsOrdered()
             }
             else
             {
-                n += static_cast<int>(ptsNeighPtsOrdered[ptId1]->indexOf(ptId2) == -1);
+                n += static_cast<int>(ptsNeighPtsOrdered[ptId1].indexOf(ptId2) == -1);
             }
 
             if(sizeOfStaticVector<int>(ptsNeighPtsOrdered[ptId2]) == 0)
@@ -841,7 +837,7 @@ void MeshClean::testPtsNeighPtsOrdered()
             }
             else
             {
-                n += static_cast<int>(ptsNeighPtsOrdered[ptId2]->indexOf(ptId1) == -1);
+                n += static_cast<int>(ptsNeighPtsOrdered[ptId2].indexOf(ptId1) == -1);
             }
         }
     }

@@ -18,7 +18,7 @@ namespace aliceVision {
 namespace mesh {
 
 using PointVisibility = StaticVector<int>;
-using PointsVisibility = StaticVector<PointVisibility*>;
+using PointsVisibility = StaticVector<PointVisibility>;
 
 class Mesh
 {

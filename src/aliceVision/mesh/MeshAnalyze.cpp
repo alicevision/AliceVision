@@ -71,9 +71,9 @@ int MeshAnalyze::getVertexIdInTriangleForPtId(int ptId, int triId)
 
 bool MeshAnalyze::getVertexSurfaceNormal(int ptId, Point3d& N)
 {
-    StaticVector<int>* ptNeighPtsOrdered = ptsNeighPtsOrdered[ptId];
+    StaticVector<int>& ptNeighPtsOrdered = ptsNeighPtsOrdered[ptId];
     StaticVector<int>& ptNeighTris = ptsNeighTrisSortedAsc[ptId];
-    if((isIsBoundaryPt(ptId)) || (ptNeighPtsOrdered == nullptr) || ptNeighTris.empty() )
+    if((isIsBoundaryPt(ptId)) || ptNeighPtsOrdered.empty() || ptNeighTris.empty() )
     {
         return false;
     }
@@ -92,9 +92,9 @@ bool MeshAnalyze::getVertexSurfaceNormal(int ptId, Point3d& N)
 // gts_vertex_mean_curvature_normal [Meyer et al 2002]
 bool MeshAnalyze::getVertexMeanCurvatureNormal(int ptId, Point3d& Kh)
 {
-    StaticVector<int>* ptNeighPtsOrdered = ptsNeighPtsOrdered[ptId];
+    StaticVector<int>& ptNeighPtsOrdered = ptsNeighPtsOrdered[ptId];
     StaticVector<int>& ptNeighTris = ptsNeighTrisSortedAsc[ptId];
-    if((isIsBoundaryPt(ptId)) || (ptNeighPtsOrdered == nullptr) || ptNeighTris.empty())
+    if((isIsBoundaryPt(ptId)) || ptNeighPtsOrdered.empty() || ptNeighTris.empty())
     {
         return false;
     }
@@ -109,16 +109,16 @@ bool MeshAnalyze::getVertexMeanCurvatureNormal(int ptId, Point3d& Kh)
 
     Kh = Point3d(0.0f, 0.0f, 0.0f);
 
-    for(int i = 0; i < ptNeighPtsOrdered->size(); i++)
+    for(int i = 0; i < ptNeighPtsOrdered.size(); i++)
     {
         int ip1 = i + 1;
-        if(ip1 >= ptNeighPtsOrdered->size())
+        if(ip1 >= ptNeighPtsOrdered.size())
         {
             ip1 = 0;
         }
         Point3d v = pts[ptId];
-        Point3d v1 = pts[(*ptNeighPtsOrdered)[i]];
-        Point3d v2 = pts[(*ptNeighPtsOrdered)[ip1]];
+        Point3d v1 = pts[ptNeighPtsOrdered[i]];
+        Point3d v2 = pts[ptNeighPtsOrdered[ip1]];
 
         float temp = getCotanOfAngle(v1, v, v2);
         Kh = Kh + (v2 - v) * temp;
@@ -152,16 +152,16 @@ void MeshAnalyze::getVertexPrincipalCurvatures(double Kh, double Kg, double& K1,
 
 bool MeshAnalyze::applyLaplacianOperator(int ptId, StaticVector<Point3d>& ptsToApplyLaplacianOp, Point3d& ln)
 {
-    StaticVector<int>* ptNeighPtsOrdered = ptsNeighPtsOrdered[ptId];
-    if(ptNeighPtsOrdered == nullptr)
+    StaticVector<int>& ptNeighPtsOrdered = ptsNeighPtsOrdered[ptId];
+    if(ptNeighPtsOrdered.empty())
     {
         return false;
     }
 
     ln = Point3d(0.0f, 0.0f, 0.0f);
-    for(int i = 0; i < ptNeighPtsOrdered->size(); i++)
+    for(int i = 0; i < ptNeighPtsOrdered.size(); i++)
     {
-        Point3d npt = ptsToApplyLaplacianOp[(*ptNeighPtsOrdered)[i]];
+        Point3d npt = ptsToApplyLaplacianOp[ptNeighPtsOrdered[i]];
 
         if((npt.x == 0.0f) && (npt.y == 0.0f) && (npt.z == 0.0f))
         {
@@ -170,7 +170,7 @@ bool MeshAnalyze::applyLaplacianOperator(int ptId, StaticVector<Point3d>& ptsToA
         }
         ln = ln + npt;
     }
-    ln = (ln / (float)ptNeighPtsOrdered->size()) - ptsToApplyLaplacianOp[ptId];
+    ln = (ln / (float)ptNeighPtsOrdered.size()) - ptsToApplyLaplacianOp[ptId];
 
     Point3d n = ln;
     float d = n.size();
@@ -206,9 +206,9 @@ bool MeshAnalyze::getBiLaplacianSmoothingVector(int ptId, StaticVector<Point3d>&
 {
     if(applyLaplacianOperator(ptId, ptsLaplacian, tp))
     {
-        StaticVector<int>* ptNeighPtsOrdered = ptsNeighPtsOrdered[ptId];
+        StaticVector<int>& ptNeighPtsOrdered = ptsNeighPtsOrdered[ptId];
         StaticVector<int>& ptNeighTris = ptsNeighTrisSortedAsc[ptId];
-        if((ptNeighPtsOrdered == nullptr) || ptNeighTris.empty() )
+        if(ptNeighPtsOrdered.empty() || ptNeighTris.empty() )
         {
             return false;
         }
@@ -216,7 +216,7 @@ bool MeshAnalyze::getBiLaplacianSmoothingVector(int ptId, StaticVector<Point3d>&
         float sum = 0.0f;
         for(int i = 0; i < sizeOfStaticVector<int>(ptNeighPtsOrdered); i++)
         {
-            int neighValence = sizeOfStaticVector<int>(ptsNeighPtsOrdered[(*ptNeighPtsOrdered)[i]]);
+            int neighValence = sizeOfStaticVector<int>(ptsNeighPtsOrdered[ptNeighPtsOrdered[i]]);
             if(neighValence > 0)
             {
                 sum += 1.0f / (float)neighValence;

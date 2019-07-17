@@ -318,10 +318,10 @@ void Texturing::generateTexturesSubSet(const mvsUtils::MultiViewParams& mp,
             for (int k = 0; k < 3; k++)
             {
                 const int pointIndex = mesh->tris[triangleID].v[k];
-                const StaticVector<int>* pointVisibilities = mesh->pointsVisibilities[pointIndex];
-                if (pointVisibilities != nullptr)
+                const StaticVector<int> pointVisibilities = mesh->pointsVisibilities[pointIndex];
+                if (!pointVisibilities.empty())
                 {
-                    std::copy(pointVisibilities->begin(), pointVisibilities->end(), std::inserter(allTriCams, allTriCams.end()));
+                    std::copy(pointVisibilities.begin(), pointVisibilities.end(), std::inserter(allTriCams, allTriCams.end()));
                 }
             }
             if (allTriCams.empty())

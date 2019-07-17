@@ -73,7 +73,7 @@ public:
     mvsUtils::MultiViewParams* mp;
 
     StaticVector<StaticVector<int>> ptsNeighTrisSortedAsc;
-    StaticVector<StaticVector<int>*> ptsNeighPtsOrdered;
+    StaticVector<StaticVector<int>> ptsNeighPtsOrdered;
     StaticVectorBool ptsBoundary;
     StaticVector<int> newPtsOldPtId;
 

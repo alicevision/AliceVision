@@ -47,26 +47,21 @@ void remapMeshVisibilities_pullVerticesVisibility(const Mesh& refMesh, Mesh& mes
     GEO::AdaptiveKdTree refMesh_kdTree(3);
     refMesh_kdTree.set_points(refMesh.pts.size(), refMesh.pts.front().m);
 
-    out_ptsVisibilities.resize(mesh.pts.size(), nullptr);
+    out_ptsVisibilities.resize(mesh.pts.size());
 
     #pragma omp parallel for
     for(int i = 0; i < mesh.pts.size(); ++i)
     {
-        PointVisibility* pOut = out_ptsVisibilities[i];
-        if(pOut == nullptr)
-        {
-            pOut = new StaticVector<int>();
-            out_ptsVisibilities[i] = pOut; // give ownership
-        }
+        PointVisibility& pOut = out_ptsVisibilities[i];
 
         int iRef = refMesh_kdTree.get_nearest_neighbor(mesh.pts[i].m);
         if(iRef == -1)
             continue;
-        PointVisibility* pRef = refPtsVisibilities[iRef];
-        if(pRef == nullptr)
+        const PointVisibility& pRef = refPtsVisibilities[iRef];
+        if(pRef.empty())
             continue;
 
-        *pOut = *pRef;
+        pOut = pRef;
     }
 
     ALICEVISION_LOG_DEBUG("remapMeshVisibility done.");
@@ -103,19 +98,14 @@ void remapMeshVisibilities_pushVerticesVisibilityToTriangles(const Mesh& refMesh
 
     if (out_ptsVisibilities.size() != mesh.pts.size())
     {
-        out_ptsVisibilities.resize(mesh.pts.size(), nullptr);
-        for (int vi = 0; vi < mesh.pts.size(); ++vi)
-        {
-            if(out_ptsVisibilities[vi] == nullptr)
-                out_ptsVisibilities[vi] = new StaticVector<int>(); // create and give ownership
-        }
+        out_ptsVisibilities.resize(mesh.pts.size());
     }
 
     #pragma omp parallel for
     for (int rvi = 0; rvi < refMesh.pts.size(); ++rvi)
     {
-        PointVisibility* rpVis = refPtsVisibilities[rvi];
-        if (rpVis == nullptr)
+        const PointVisibility& rpVis = refPtsVisibilities[rvi];
+        if (rpVis.empty())
             continue;
 
         const GEO::vec3 rp(refMesh.pts[rvi].m);
@@ -138,10 +128,10 @@ void remapMeshVisibilities_pushVerticesVisibilityToTriangles(const Mesh& refMesh
                 GEO::index_t v = meshG.facets.vertex(f, i);
                 if (v == GEO::NO_VERTEX)
                     continue;
-                PointVisibility* pOut = out_ptsVisibilities[reorderedVertices[v]];
+                PointVisibility& pOut = out_ptsVisibilities[reorderedVertices[v]];
                 
-                for(int j = 0; j < rpVis->size(); ++j)
-                    pOut->push_back_distinct((*rpVis)[j]);
+                for(int j = 0; j < rpVis.size(); ++j)
+                    pOut.push_back_distinct(rpVis[j]);
             }
         }
     }

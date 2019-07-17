@@ -101,8 +101,7 @@ void meshPostProcessing(Mesh*& inout_mesh, StaticVector<StaticVector<int>>& inou
             int subdivideMaxPtsThr =
                 mp.userParams.get<int>("meshEnergyOpt.subdivideMaxPtsThr", 6000000);
 
-            meOpt.subdivideMeshMaxEdgeLengthUpdatePtsCams(mp, subdivideMeshNTimesAvEdgeLengthThr *
-                                                          meOpt.computeAverageEdgeLength(),
+            meOpt.subdivideMeshMaxEdgeLengthUpdatePtsCams(mp, subdivideMeshNTimesAvEdgeLengthThr * meOpt.computeAverageEdgeLength(),
                                                           inout_ptsCams, subdivideMaxPtsThr);
             meOpt.deallocateCleaningAttributes();
             meOpt.init();
