@@ -72,20 +72,19 @@ int MeshAnalyze::getVertexIdInTriangleForPtId(int ptId, int triId)
 bool MeshAnalyze::getVertexSurfaceNormal(int ptId, Point3d& N)
 {
     StaticVector<int>* ptNeighPtsOrdered = ptsNeighPtsOrdered[ptId];
-    StaticVector<int>* ptNeighTris = ptsNeighTrisSortedAsc[ptId];
-    if((isIsBoundaryPt(ptId)) || (ptNeighPtsOrdered == nullptr) || (ptNeighTris == nullptr) ||
-       (ptNeighTris->size() == 0))
+    StaticVector<int>& ptNeighTris = ptsNeighTrisSortedAsc[ptId];
+    if((isIsBoundaryPt(ptId)) || (ptNeighPtsOrdered == nullptr) || ptNeighTris.empty() )
     {
         return false;
     }
 
     N = Point3d();
-    for(int i = 0; i < ptNeighTris->size(); i++)
+    for(int i = 0; i < ptNeighTris.size(); i++)
     {
-        int triId = (*ptNeighTris)[i];
+        int triId = ptNeighTris[i];
         N = N + computeTriangleNormal(triId);
     }
-    N = N / (float)ptNeighTris->size();
+    N = N / (float)ptNeighTris.size();
 
     return true;
 }
@@ -94,16 +93,16 @@ bool MeshAnalyze::getVertexSurfaceNormal(int ptId, Point3d& N)
 bool MeshAnalyze::getVertexMeanCurvatureNormal(int ptId, Point3d& Kh)
 {
     StaticVector<int>* ptNeighPtsOrdered = ptsNeighPtsOrdered[ptId];
-    StaticVector<int>* ptNeighTris = ptsNeighTrisSortedAsc[ptId];
-    if((isIsBoundaryPt(ptId)) || (ptNeighPtsOrdered == nullptr) || (ptNeighTris == nullptr))
+    StaticVector<int>& ptNeighTris = ptsNeighTrisSortedAsc[ptId];
+    if((isIsBoundaryPt(ptId)) || (ptNeighPtsOrdered == nullptr) || ptNeighTris.empty())
     {
         return false;
     }
 
     double area = 0.0;
-    for(int i = 0; i < ptNeighTris->size(); i++)
+    for(int i = 0; i < ptNeighTris.size(); i++)
     {
-        int triId = (*ptNeighTris)[i];
+        int triId = ptNeighTris[i];
         int vertexIdInTriangle = getVertexIdInTriangleForPtId(ptId, triId);
         area += getRegionArea(vertexIdInTriangle, triId);
     }
@@ -208,8 +207,8 @@ bool MeshAnalyze::getBiLaplacianSmoothingVector(int ptId, StaticVector<Point3d>&
     if(applyLaplacianOperator(ptId, ptsLaplacian, tp))
     {
         StaticVector<int>* ptNeighPtsOrdered = ptsNeighPtsOrdered[ptId];
-        StaticVector<int>* ptNeighTris = ptsNeighTrisSortedAsc[ptId];
-        if((ptNeighPtsOrdered == nullptr) || (ptNeighTris == nullptr))
+        StaticVector<int>& ptNeighTris = ptsNeighTrisSortedAsc[ptId];
+        if((ptNeighPtsOrdered == nullptr) || ptNeighTris.empty() )
         {
             return false;
         }

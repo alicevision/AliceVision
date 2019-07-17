@@ -275,13 +275,13 @@ int MeshClean::path::deployTriangles(StaticVector<int>& trisIds, bool isBoundary
 
     // update ptsNeighTrisSortedAsc
     meshClean->ptsNeighTrisSortedAsc.reserveAddIfNeeded(trisIds.size(), 1000);
-    StaticVector<int>* newPtNeighTrisSortedAsc = new StaticVector<int>();
-    newPtNeighTrisSortedAsc->reserve(trisIds.size());
+    StaticVector<int> newPtNeighTrisSortedAsc;
+    newPtNeighTrisSortedAsc.reserve(trisIds.size());
     for(int i = 0; i < trisIds.size(); i++)
     {
-        newPtNeighTrisSortedAsc->push_back(trisIds[i]);
+        newPtNeighTrisSortedAsc.push_back(trisIds[i]);
     }
-    qsort(&(*newPtNeighTrisSortedAsc)[0], newPtNeighTrisSortedAsc->size(), sizeof(int), qSortCompareIntAsc);
+    qsort(&newPtNeighTrisSortedAsc[0], newPtNeighTrisSortedAsc.size(), sizeof(int), qSortCompareIntAsc);
     meshClean->ptsNeighTrisSortedAsc.push_back(newPtNeighTrisSortedAsc);
 
     // if ((m_ptId==148062)||(m_ptId==177810))
@@ -452,7 +452,7 @@ int MeshClean::path::deployAll()
     StaticVector<MeshClean::path::pathPart> path;
 
     {
-      StaticVector<int>* ptsNeighTrisSortedAsc = meshClean->ptsNeighTrisSortedAsc[ptId];
+      StaticVector<int>& ptsNeighTrisSortedAsc = meshClean->ptsNeighTrisSortedAsc[ptId];
       if(sizeOfStaticVector<int>(ptsNeighTrisSortedAsc) == 0)
       {
         return 0;
@@ -493,29 +493,29 @@ int MeshClean::path::deployAll()
         {
             // get an up-to-date pointer to data since me->ptsNeighTrisSortedAsc might have been
             // modified inside the while loop by 'deployPath'
-            StaticVector<int>* toUpdate = meshClean->ptsNeighTrisSortedAsc[ptId];
-            if(toUpdate == nullptr)
+            StaticVector<int>& toUpdate = meshClean->ptsNeighTrisSortedAsc[ptId];
+            if(toUpdate.empty())
             {
                 printfState(path);
                 printfState(pathNew);
                 throw std::runtime_error("deployAll: bad condition, pthNew size: " + std::to_string(pathNew.size()));
             }
 
-            if(toUpdate->capacity() < pathNew.size())
+            if(toUpdate.capacity() < pathNew.size())
             {
                 printfState(path);
                 printfState(pathNew);
                 throw std::runtime_error("deployAll: bad condition, pthNew size: " + std::to_string(pathNew.size()));
             }
 
-            toUpdate->resize(0);
+            toUpdate.resize(0);
             for(int i = 0; i < pathNew.size(); i++)
             {
-                toUpdate->push_back(pathNew[i].triId);
+                toUpdate.push_back(pathNew[i].triId);
             }
             if(pathNew.size() > 0)
             {
-                qsort(&(*toUpdate)[0], toUpdate->size(), sizeof(int), qSortCompareIntAsc);
+                qsort(&toUpdate[0], toUpdate.size(), sizeof(int), qSortCompareIntAsc);
             }
 
             meshClean->ptsBoundary[ptId] = (!isClodePath(pathNew));
@@ -594,7 +594,7 @@ void MeshClean::deallocateCleaningAttributes()
     }
     if(!ptsNeighTrisSortedAsc.empty())
     {
-        deleteArrayOfArrays<int>(ptsNeighTrisSortedAsc);
+        ptsNeighTrisSortedAsc.clear();
     }
     if(!ptsNeighPtsOrdered.empty())
     {
@@ -641,10 +641,10 @@ void MeshClean::init()
     getPtsNeighborTriangles(ptsNeighTrisSortedAsc);
     for(int i = 0; i < pts.size(); i++)
     {
-        StaticVector<int>* ptNeigTris = ptsNeighTrisSortedAsc[i];
+        StaticVector<int>& ptNeigTris = ptsNeighTrisSortedAsc[i];
         if(sizeOfStaticVector<int>(ptNeigTris) > 1)
         {
-            qsort(&(*ptNeigTris)[0], ptNeigTris->size(), sizeof(int), qSortCompareIntAsc);
+            qsort(&ptNeigTris[0], ptNeigTris.size(), sizeof(int), qSortCompareIntAsc);
         }
     }
 
@@ -733,7 +733,7 @@ void MeshClean::testPtsNeighTrisSortedAsc()
         for(int k = 0; k < 3; k++)
         {
             int ptId = tris[i].v[k];
-            if(ptsNeighTrisSortedAsc[ptId]->indexOf(i) == -1)
+            if(ptsNeighTrisSortedAsc[ptId].indexOf(i) == -1)
             {
                 n++;
                 ALICEVISION_LOG_DEBUG("\t- ptid: " << ptId << "triid: " <<  i);
@@ -753,15 +753,15 @@ void MeshClean::testPtsNeighTrisSortedAsc()
     n = 0;
     for(int i = 0; i < pts.size(); i++)
     {
-        StaticVector<int>* ptNeighTris = ptsNeighTrisSortedAsc[i];
+        StaticVector<int>& ptNeighTris = ptsNeighTrisSortedAsc[i];
         int lastid = -1;
         for(int k = 0; k < sizeOfStaticVector<int>(ptNeighTris); k++)
         {
-            if(lastid > (*ptNeighTris)[k])
+            if(lastid > ptNeighTris[k])
             {
                 n++;
             }
-            lastid = (*ptNeighTris)[k];
+            lastid = ptNeighTris[k];
         }
     }
     if(n == 0)

@@ -136,8 +136,8 @@ public:
     void getDepthMap(StaticVector<float>& depthMap, StaticVector<StaticVector<int>>& tmp, const mvsUtils::MultiViewParams& mp, int rc,
                      int scale, int w, int h);
 
-    void getPtsNeighborTriangles(StaticVector<StaticVector<int>*>& out_ptsNeighTris) const;
-    void getPtsNeighPtsOrdered(StaticVector<StaticVector<int>*>& out_ptsNeighTris) const;
+    void getPtsNeighborTriangles(StaticVector<StaticVector<int>>& out_ptsNeighTris) const;
+    void getPtsNeighPtsOrdered(StaticVector<StaticVector<int>>& out_ptsNeighTris) const;
 
     void getVisibleTrianglesIndexes(StaticVector<int>& out_visTri, std::string tmpDir, const mvsUtils::MultiViewParams& mp, int rc, int w, int h);
     void getVisibleTrianglesIndexes(StaticVector<int>& out_visTri, std::string depthMapFileName, std::string trisMapFileName,
@@ -153,12 +153,12 @@ public:
     void getNotOrientedEdges(StaticVector<StaticVector<int>*>& edgesNeighTris, StaticVector<Pixel>& edgesPointsPairs);
     void getTrianglesEdgesIds(StaticVector<Voxel>& out, StaticVector<StaticVector<int>*>& edgesNeighTris) const;
 
-    void getLaplacianSmoothingVectors(StaticVector<StaticVector<int>*>& ptsNeighPts, StaticVector<Point3d>& out_nms,
+    void getLaplacianSmoothingVectors(StaticVector<StaticVector<int>>& ptsNeighPts, StaticVector<Point3d>& out_nms,
                                       double maximalNeighDist = -1.0f);
     void laplacianSmoothPts(float maximalNeighDist = -1.0f);
-    void laplacianSmoothPts(StaticVector<StaticVector<int>*>& ptsNeighPts, double maximalNeighDist = -1.0f);
+    void laplacianSmoothPts(StaticVector<StaticVector<int>>& ptsNeighPts, double maximalNeighDist = -1.0f);
     void computeNormalsForPts(StaticVector<Point3d>& out_nms);
-    void computeNormalsForPts(StaticVector<StaticVector<int>*>& ptsNeighTris, StaticVector<Point3d>& out_nms);
+    void computeNormalsForPts(StaticVector<StaticVector<int>>& ptsNeighTris, StaticVector<Point3d>& out_nms);
     void smoothNormals(StaticVector<Point3d>& nms, StaticVector<StaticVector<int>*>& ptsNeighPts);
     Point3d computeTriangleNormal(int idTri);
     Point3d computeTriangleCenterOfGravity(int idTri) const;

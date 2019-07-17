@@ -110,6 +110,11 @@ public:
         _data.insert(_data.end(), arr->getData().begin(), arr->getData().end());
     }
 
+    void push_back_arr(StaticVector<T>& arr)
+    {
+        _data.insert(_data.end(), arr.getData().begin(), arr.getData().end());
+    }
+
     void remove(int i)
     {
         _data.erase(_data.begin() + i);
