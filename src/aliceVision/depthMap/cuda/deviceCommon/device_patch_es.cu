@@ -413,9 +413,6 @@ __device__ float computePixSize(const CameraStructBase& cam, const float3& p)
 
 __device__ float refineDepthSubPixel(const float3& depths, const float3& sims)
 {
-//    float floatDepth = depths.y;
-    float outDepth = -1.0f;
-
     // subpixel refinement
     // subpixel refine by Stereo Matching with Color-Weighted Correlation, Hierarchical Belief Propagation, and
     // Occlusion Handling Qingxiong pami08
@@ -426,35 +423,40 @@ __device__ float refineDepthSubPixel(const float3& depths, const float3& sims)
     // B bx B c.
     
     float simM1 = sims.x;
+    float sim = sims.y;
     float simP1 = sims.z;
-    float sim1 = sims.y;
     simM1 = (simM1 + 1.0f) / 2.0f;
+    sim = (sim + 1.0f) / 2.0f;
     simP1 = (simP1 + 1.0f) / 2.0f;
-    sim1 = (sim1 + 1.0f) / 2.0f;
 
-    if((simM1 > sim1) && (simP1 > sim1))
-    {
-        float dispStep = -((simP1 - simM1) / (2.0f * (simP1 + simM1 - 2.0f * sim1)));
+    // sim is supposed to be the best one (so the smallest one)
+    if((simM1 < sim) || (simP1 < sim))
+        return depths.y; // return the input
 
-        float floatDepthM1 = depths.x;
-        float floatDepthP1 = depths.z;
+    float dispStep = -((simP1 - simM1) / (2.0f * (simP1 + simM1 - 2.0f * sim)));
 
-        //-1 : floatDepthM1
-        // 0 : floatDepth
-        //+1 : floatDepthP1
-        // linear function fit
-        // f(x)=a*x+b
-        // floatDepthM1=-a+b
-        // floatDepthP1= a+b
-        // a = b - floatDepthM1
-        // floatDepthP1=2*b-floatDepthM1
-        float b = (floatDepthP1 + floatDepthM1) / 2.0f;
-        float a = b - floatDepthM1;
+    float floatDepthM1 = depths.x;
+    float floatDepthP1 = depths.z;
 
-        outDepth = a * dispStep + b;
-    }
+    //-1 : floatDepthM1
+    // 0 : floatDepth
+    //+1 : floatDepthP1
+    // linear function fit
+    // f(x)=a*x+b
+    // floatDepthM1=-a+b
+    // floatDepthP1= a+b
+    // a = b - floatDepthM1
+    // floatDepthP1=2*b-floatDepthM1
+    float b = (floatDepthP1 + floatDepthM1) / 2.0f;
+    float a = b - floatDepthM1;
 
-    return outDepth;
+    float interpDepth = a * dispStep + b;
+
+    // Ensure that the interpolated value is isfinite  (i.e. neither infinite nor NaN)
+    if(!isfinite(interpDepth) || interpDepth <= 0.0f)
+        return depths.y; // return the input
+
+    return interpDepth;
 }
 
 } // namespace depthMap
