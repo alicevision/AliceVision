@@ -12,9 +12,14 @@
 #include <aliceVision/mvsData/Point3d.hpp>
 #include <aliceVision/mvsData/StaticVector.hpp>
 #include <aliceVision/mvsUtils/MultiViewParams.hpp>
+#include <aliceVision/mvsUtils/ImagesCache.hpp>
 #include <aliceVision/mvsData/imageIO.hpp>
 
 #include <fstream>
+
+#include <OpenImageIO/paramlist.h>
+
+namespace oiio = OIIO;
 
 namespace aliceVision {
 namespace mvsUtils {
@@ -27,7 +32,7 @@ std::string getFileNameFromIndex(const MultiViewParams* mp, int index, EFileType
 FILE* mv_openFile(const MultiViewParams* mp, int index, EFileType mv_file_type, const char* readWrite);
 Matrix3x4 load3x4MatrixFromFile(FILE* fi);
 void loadImage(const std::string& path, const MultiViewParams* mp, int camId, Image& img,
-                                 int bandType, imageIO::EImageColorSpace colorspace);
+                                 imageIO::EImageColorSpace colorspace, ImagesCache::ECorrectEV correctEV);
 
 bool DeleteDirectory(const std::string& sPath);
 

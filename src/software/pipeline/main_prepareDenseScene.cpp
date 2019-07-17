@@ -95,7 +95,9 @@ bool prepareDenseScene(const SfMData& sfmData,
     //we have a valid view with a corresponding camera & pose
     const std::string baseFilename = std::to_string(viewId);
 
-    oiio::ParamValueList metadata = image::getMetadataFromMap(view->getMetadata());
+    // get metadata from source image to be sure we get all metadata. We don't use the metadatas from the Views inside the SfMData to avoid type conversion problems with string maps.
+    std::string srcImage = view->getImagePath();
+    oiio::ParamValueList metadata = image::readImageMetadata(srcImage);
 
     // export camera
     if(saveMetadata || saveMatricesFiles)
@@ -161,9 +163,7 @@ bool prepareDenseScene(const SfMData& sfmData,
     }
 
     // export undistort image
-    {
-      std::string srcImage = view->getImagePath();
-
+    {      
       if(!imagesFolders.empty())
       {
         bool found = false;
@@ -194,15 +194,16 @@ bool prepareDenseScene(const SfMData& sfmData,
 
       readImage(srcImage, image, image::EImageColorSpace::LINEAR);
 
+      // add exposure values to images metadata
+      float exposure = view->getEv();
+      float exposureCompensation = view->getEvCompensation(medianEv);
+      metadata.push_back(oiio::ParamValue("AliceVision:EV", exposure));
+      metadata.push_back(oiio::ParamValue("AliceVision:EVComp", exposureCompensation));
+
       //exposure correction
       if(evCorrection)
       {
-          float exposureCompensation = view->getEvCompensation(medianEv);
-
-          //metadata & log
-          metadata.push_back(oiio::ParamValue("AliceVision:EV", view->getEv()));
-          metadata.push_back(oiio::ParamValue("AliceVision:EVComp", exposureCompensation));
-          ALICEVISION_LOG_INFO("image " + std::to_string(viewId) + " Ev : " + std::to_string(view->getEv()));
+          ALICEVISION_LOG_INFO("image " + std::to_string(viewId) + " Ev : " + std::to_string(exposure));
           ALICEVISION_LOG_INFO("image " + std::to_string(viewId) + " Ev compensation : " + std::to_string(exposureCompensation));
 
           for(int pix = 0; pix < image.Width() * image.Height(); ++pix)

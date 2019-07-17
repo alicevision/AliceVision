@@ -23,7 +23,7 @@ void hdrMerge::process(const std::vector< image::Image<image::RGBfColor> > &imag
                               image::Image<image::RGBfColor> &radiance,
                               float targetTime,
                               bool robCalibrate,
-                              float threshold)
+                              float clampedValueCorrection)
 {
   //checks
   assert(!response.isEmpty());
@@ -83,19 +83,15 @@ void hdrMerge::process(const std::vector< image::Image<image::RGBfColor> > &imag
         double clampedLowValue = 1.0 / (1.0 + expf(10.0 * ((lowValue - 0.005) / 0.01)));
 
 
-        if(!robCalibrate && threshold != 0.f)
+        if(!robCalibrate && clampedValueCorrection != 0.f)
         {
-//        radianceColor(channel) = (1.0 - clampedHighValue - clampedLowValue) * wsum / std::max(0.001, wdiv) * targetTime + clampedHighValue * maxLum + clampedLowValue * minLum;
-//        radianceColor(channel) = (1.0 - clampedHighValue - clampedLowValue) * wsum / std::max(0.001, wdiv) * targetTime + clampedHighValue * maxLum * threshold + clampedLowValue * minLum * threshold * targetTime;
-            radianceColor(channel) = (1.0 - clampedHighValue - clampedLowValue) * wsum / std::max(0.001, wdiv) * targetTime + clampedHighValue * maxLum * threshold + clampedLowValue * minLum * threshold;
+          radianceColor(channel) = (1.0 - clampedHighValue - clampedLowValue) * wsum / std::max(0.001, wdiv) * targetTime + clampedHighValue * maxLum * clampedValueCorrection + clampedLowValue * minLum * clampedValueCorrection;
+//          radianceColor(channel) = (1.0 - clampedHighValue - clampedLowValue) * wsum / std::max(0.001, wdiv) + clampedHighValue * maxLum * clampedValueCorrection + clampedLowValue * minLum * clampedValueCorrection;
         }
         else
         {
           radianceColor(channel) = wsum / std::max(0.001, wdiv) * targetTime;
-//          if(wdiv < 0.001 && highValue > 0.5)
-//            radianceColor(channel) = images.at(images.size()-1)(y, x)(channel);
-//          else
-//            radianceColor(channel) = wsum / std::max(0.001, wdiv) * targetTime;
+//          radianceColor(channel) = wsum / std::max(0.001, wdiv);
         }
 
 
@@ -117,7 +113,7 @@ void hdrMerge::process(const std::vector< image::Image<image::RGBfColor> > &imag
 //          wsum = minTrustedValue;
 //          wdiv = maxTimeSaturation;
 //        }
-//
+//2
 //        if((wdiv == 0.0f) &&
 //               (minTimeSaturation < std::numeric_limits<float>::max()))
 //        {

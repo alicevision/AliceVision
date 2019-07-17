@@ -12,6 +12,7 @@
 #include <aliceVision/mvsData/imageIO.hpp>
 #include <aliceVision/mvsUtils/common.hpp>
 #include <aliceVision/mvsUtils/MultiViewParams.hpp>
+#include <aliceVision/mvsUtils/ImagesCache.hpp>
 #include <aliceVision/system/cmdline.hpp>
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/Timer.hpp>
@@ -46,6 +47,7 @@ int main(int argc, char* argv[])
     std::string outTextureFileTypeName = imageIO::EImageFileType_enumToString(imageIO::EImageFileType::PNG);
     std::string processColorspaceName = imageIO::EImageColorSpace_enumToString(imageIO::EImageColorSpace::SRGB);
     bool flipNormals = false;
+    bool correctEV = false;
 
     mesh::TexturingParams texParams;
     std::string unwrapMethod = mesh::EUnwrapMethod_enumToString(mesh::EUnwrapMethod::Basic);
@@ -86,6 +88,8 @@ int main(int argc, char* argv[])
             "Texture edge padding size in pixel")
         ("flipNormals", po::value<bool>(&flipNormals)->default_value(flipNormals),
             "Option to flip face normals. It can be needed as it depends on the vertices order in triangles and the convention change from one software to another.")
+        ("correctEV", po::value<bool>(&correctEV)->default_value(correctEV),
+            "Option to uniformize images exposure.")
         ("useScore", po::value<bool>(&texParams.useScore)->default_value(texParams.useScore),
              "Use triangles scores (based on observations and re-projected areas in source images) for weighting contributions.")
         ("processColorspace", po::value<std::string>(&processColorspaceName)->default_value(processColorspaceName),
@@ -150,6 +154,9 @@ int main(int argc, char* argv[])
     texParams.processColorspace = imageIO::EImageColorSpace_stringToEnum(processColorspaceName);
     // set output texture file type
     const imageIO::EImageFileType outputTextureFileType = imageIO::EImageFileType_stringToEnum(outTextureFileTypeName);
+
+    texParams.correctEV = mvsUtils::ImagesCache::ECorrectEV::NO_CORRECTION;
+    if(correctEV) { texParams.correctEV = mvsUtils::ImagesCache::ECorrectEV::APPLY_CORRECTION; }
 
     // read the input SfM scene
     sfmData::SfMData sfmData;

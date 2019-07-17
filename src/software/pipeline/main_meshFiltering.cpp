@@ -148,6 +148,11 @@ int main(int argc, char* argv[])
         meOpt.letJustTringlesIdsInMesh(trisIdsToStay);
         ALICEVISION_LOG_INFO("Mesh after keepLargestMeshOnly: " << meOpt.pts.size() << " vertices and " << meOpt.tris.size() << " facets.");
     }
+    
+    // clear potential free points created by triangles removal in previous cleaning operations 
+    StaticVector<int> ptIdToNewPtId;
+    meOpt.removeFreePointsFromMesh(ptIdToNewPtId);
+    ptIdToNewPtId.clear();
 
     mesh::Mesh outMesh;
     outMesh.addMesh(meOpt);

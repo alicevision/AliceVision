@@ -37,11 +37,11 @@ public:
    * @param[out] camera response function
    */
   void process(const std::vector< std::vector< image::Image<image::RGBfColor> > > &ldrImageGroups,
-               std::size_t channelQuantization,
+               const std::size_t channelQuantization,
                const std::vector< std::vector<float> > &times,
-               int nbPoints,
+               const int nbPoints,
+               const bool fisheye,
                const rgbCurve &weight,
-               float targetTime,
                rgbCurve &response);
 
 

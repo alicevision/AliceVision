@@ -105,10 +105,13 @@ public:
         }
     };
 
+protected:
+    /// Per-vertex color data
+    std::vector<rgb> _colors;
+
 public:
     StaticVector<Point3d> pts;
     StaticVector<Mesh::triangle> tris;
-    Matrix3x4 transformGlobal;
 
     int nmtls = 0;
     StaticVector<int> trisMtlIds;
@@ -131,7 +134,12 @@ public:
 
     void getTrisMap(StaticVector<StaticVector<int>>& out, const mvsUtils::MultiViewParams& mp, int rc, int scale, int w, int h);
     void getTrisMap(StaticVector<StaticVector<int>>& out, StaticVector<int>& visTris, const mvsUtils::MultiViewParams& mp, int rc, int scale,
-                                                 int w, int h);
+                    int w, int h);
+    /// Per-vertex color data const accessor
+    const std::vector<rgb>& colors() const { return _colors; }
+    /// Per-vertex color data accessor
+    std::vector<rgb>& colors() { return _colors; }
+
     void getDepthMap(StaticVector<float>& depthMap, const mvsUtils::MultiViewParams& mp, int rc, int scale, int w, int h);
     void getDepthMap(StaticVector<float>& depthMap, StaticVector<StaticVector<int>>& tmp, const mvsUtils::MultiViewParams& mp, int rc,
                      int scale, int w, int h);

@@ -41,8 +41,22 @@ void Mesh::saveToObj(const std::string& filename)
   fprintf(f, "# Created with AliceVision\n");
   fprintf(f, "# \n");
   fprintf(f, "g Mesh\n");
-  for(int i = 0; i < pts.size(); i++)
-      fprintf(f, "v %f %f %f\n", pts[i].x, pts[i].y, pts[i].z);
+
+  if(_colors.size() == pts.size())
+  {
+    std::size_t i = 0;
+    for(const auto& point : pts)
+    {
+      const rgb& col = _colors[i];
+      fprintf(f, "v %f %f %f %f %f %f\n", point.x, point.y, point.z, col.r/255.0f, col.g/255.0f, col.b/255.0f);
+      ++i;
+    }
+  }
+  else
+  {
+    for(const auto& point : pts)
+      fprintf(f, "v %f %f %f\n", point.x, point.y, point.z);    
+  }
 
   for(int i = 0; i < tris.size(); i++)
   {
@@ -103,82 +117,32 @@ void Mesh::saveToBin(const std::string& binFileName)
 
 void Mesh::addMesh(const Mesh& mesh)
 {
-    int npts = sizeOfStaticVector<Point3d>(&pts);
-    int ntris = sizeOfStaticVector<Mesh::triangle>(&tris);
-    int npts1 = sizeOfStaticVector<Point3d>(&mesh.pts);
-    int ntris1 = sizeOfStaticVector<Mesh::triangle>(&mesh.tris);
+    const std::size_t npts = pts.size();
 
-    //	printf("pts needed %i of %i allocated\n",npts+npts1,pts->reserved());
-    //	printf("tris needed %i of %i allocated\n",ntris+ntris1,tris->reserved());
+    pts.reserveAdd(mesh.pts.size());
+    std::copy(mesh.pts.begin(), mesh.pts.end(), std::back_inserter(pts.getDataWritable()));
 
-    if((pts.size() != 0) && (tris.size() != 0) && (npts + npts1 <= pts.capacity()) &&
-       (ntris + ntris1 <= tris.capacity()))
+    _colors.reserve(_colors.size() + mesh._colors.size());
+    std::copy(mesh._colors.begin(), mesh._colors.end(), std::back_inserter(_colors));
+
+    tris.reserveAdd(mesh.tris.size());
+    for(int i = 0; i < mesh.tris.size(); i++)
     {
-        for(int i = 0; i < npts1; i++)
+        Mesh::triangle t = mesh.tris[i];
+        // check triangles indices validity
+        if(   (t.v[0] >= 0 && t.v[0] < mesh.pts.size())
+           && (t.v[1] >= 0 && t.v[1] < mesh.pts.size())
+           && (t.v[2] >= 0 && t.v[2] < mesh.pts.size()))
         {
-            pts.push_back(mesh.pts[i]);
+            t.v[0] += npts;
+            t.v[1] += npts;
+            t.v[2] += npts;
+            tris.push_back(t);
         }
-        for(int i = 0; i < ntris1; i++)
+        else
         {
-            Mesh::triangle t = mesh.tris[i];
-            if((t.v[0] >= 0) && (t.v[0] < npts1) && (t.v[1] >= 0) && (t.v[1] < npts1) && (t.v[2] >= 0) &&
-               (t.v[2] < npts1))
-            {
-                t.v[0] += npts;
-                t.v[1] += npts;
-                t.v[2] += npts;
-                tris.push_back(t);
-            }
-            else
-            {
-                ALICEVISION_LOG_WARNING("addMesh: bad triangle index: " << t.v[0] << " " << t.v[1] << " " << t.v[2] << ", npts: " << npts1);
-            }
+            ALICEVISION_LOG_WARNING("addMesh: bad triangle index: " << t.v[0] << " " << t.v[1] << " " << t.v[2] << ", npts: " << mesh.pts.size());
         }
-    }
-    else
-    {
-        StaticVector<Point3d> ptsnew;
-        ptsnew.reserve(npts + npts1);
-        StaticVector<Mesh::triangle> trisnew;
-        trisnew.reserve(ntris + ntris1);
-
-        for(int i = 0; i < npts; i++)
-        {
-            ptsnew.push_back(pts[i]);
-        }
-        for(int i = 0; i < npts1; i++)
-        {
-            ptsnew.push_back(mesh.pts[i]);
-        }
-
-        for(int i = 0; i < ntris; i++)
-        {
-            trisnew.push_back(tris[i]);
-        }
-        for(int i = 0; i < ntris1; i++)
-        {
-            Mesh::triangle t = (mesh.tris)[i];
-            if((t.v[0] >= 0) && (t.v[0] < npts1) && (t.v[1] >= 0) && (t.v[1] < npts1) && (t.v[2] >= 0) &&
-               (t.v[2] < npts1))
-            {
-                t.v[0] += npts;
-                t.v[1] += npts;
-                t.v[2] += npts;
-                trisnew.push_back(t);
-            }
-            else
-            {
-                ALICEVISION_LOG_WARNING("addMesh: bad triangle index: " << t.v[0] << " " << t.v[1] << " " << t.v[2] << ", npts: " << npts1);
-            }
-        }
-
-        if(pts.size() != 0)
-            pts.clear();
-        if(tris.size() != 0)
-            tris.clear();
-
-        pts.swap(ptsnew);
-        tris.swap(trisnew);
     }
 }
 
@@ -1062,11 +1026,19 @@ void Mesh::generateMeshFromTrianglesSubset(const StaticVector<int>& visTris, Mes
     }
 
     outMesh.pts.reserve(j);
+    
+    // also update vertex color data if any
+    const bool updateColors = _colors.size() != 0;
+    auto& outColors = outMesh.colors();
+    outColors.reserve(_colors.size());
+
     for(int i = 0; i < pts.size(); i++)
     {
         if(out_ptIdToNewPtId[i] > -1)
         {
             outMesh.pts.push_back(pts[i]);
+            if(updateColors)
+                outColors.push_back(_colors[i]);
         }
     }
 
@@ -1341,6 +1313,7 @@ void Mesh::removeFreePointsFromMesh(StaticVector<int>& out_ptIdToNewPtId)
 
     std::swap(cleanedMesh.pts, pts);
     std::swap(cleanedMesh.tris, tris);
+    std::swap(cleanedMesh._colors, _colors);
 }
 
 double Mesh::computeTriangleProjectionArea(const triangle_proj& tp) const
@@ -2305,6 +2278,8 @@ bool Mesh::loadFromObjAscii(const std::string& objAsciiFileName)
     int nuvs = 0;
     int nnorms = 0;
     int nlines = 0;
+    bool useColors = false;
+
     {
         std::ifstream in(objAsciiFileName.c_str());
         std::string line;
@@ -2312,6 +2287,10 @@ bool Mesh::loadFromObjAscii(const std::string& objAsciiFileName)
         {
             if((line[0] == 'v') && (line[1] == ' '))
             {
+                if(npts == 0)
+                {
+                  useColors = mvsUtils::findNSubstrsInString(line, ".") == 6;
+                }
                 npts += 1;
             }
             if((line[0] == 'v') && (line[1] == 'n') && (line[2] == ' '))
@@ -2355,6 +2334,10 @@ bool Mesh::loadFromObjAscii(const std::string& objAsciiFileName)
     normals.reserve(nnorms);
     trisNormalsIds.reserve(ntris);
     trisMtlIds.reserve(ntris);
+    if(useColors)
+    {
+        _colors.reserve(npts);
+    }
 
     std::map<std::string, int> materialCache;
 
@@ -2384,7 +2367,21 @@ bool Mesh::loadFromObjAscii(const std::string& objAsciiFileName)
             else if((line[0] == 'v') && (line[1] == ' '))
             {
                 Point3d pt;
-                sscanf(line.c_str(), "v %lf %lf %lf", &pt.x, &pt.y, &pt.z);
+                if(useColors)
+                {
+                    float r, g, b;
+                    sscanf(line.c_str(), "v %lf %lf %lf %f %f %f", &pt.x, &pt.y, &pt.z, &r, &g, &b);
+                    // convert float color data to uchar
+                    _colors.emplace_back(
+                      static_cast<unsigned char>(r*255.0f),
+                      static_cast<unsigned char>(g*255.0f),
+                      static_cast<unsigned char>(b*255.0f)
+                    );
+                }
+                else
+                {
+                    sscanf(line.c_str(), "v %lf %lf %lf", &pt.x, &pt.y, &pt.z);
+                }
                 pts.push_back(pt);
             }
             else if((line[0] == 'v') && (line[1] == 'n') && (line[2] == ' '))

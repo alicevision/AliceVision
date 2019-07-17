@@ -41,8 +41,8 @@ std::string EImageColorSpace_enumToString(const EImageColorSpace colorSpace)
 {
     switch(colorSpace)
     {
-    case EImageColorSpace::SRGB:  return "sRGB"; // WARNING: string should match with OIIO definitions
-    case EImageColorSpace::LINEAR:   return "Linear";
+    case EImageColorSpace::SRGB: return "sRGB"; // WARNING: string should match with OIIO definitions or implemented conversion
+    case EImageColorSpace::LINEAR: return "Linear";
     case EImageColorSpace::LAB: return "LAB";
     case EImageColorSpace::XYZ: return "XYZ";
     default: ;
@@ -52,6 +52,7 @@ std::string EImageColorSpace_enumToString(const EImageColorSpace colorSpace)
 
 EImageColorSpace EImageColorSpace_stringToEnum(const std::string& colorspace)
 {
+    if(colorspace == "Linear") return EImageColorSpace::LINEAR;
     if(colorspace == "sRGB") return EImageColorSpace::SRGB;
     if(colorspace == "LAB") return  EImageColorSpace::LAB;
     if(colorspace == "XYZ") return EImageColorSpace::XYZ;
@@ -204,7 +205,7 @@ void readImage(const std::string& path,
                int& width,
                int& height,
                std::vector<T>& buffer,
-               EImageColorSpace imageColorSpace)
+               EImageColorSpace toColorSpace)
 {
     ALICEVISION_LOG_DEBUG("[IO] Read Image: " << path);
 
@@ -256,48 +257,14 @@ void readImage(const std::string& path,
         throw std::runtime_error("Can't load channels of image file '" + path + "'.");
 
     // color conversion
-    if(imageColorSpace == EImageColorSpace::AUTO)
+    if(toColorSpace == EImageColorSpace::AUTO)
         throw std::runtime_error("You must specify a requested color space for image file '" + path + "'.");
 
-    const std::string& colorSpace = inSpec.get_string_attribute("oiio:ColorSpace", "sRGB"); // default image color space is sRGB
-    ALICEVISION_LOG_TRACE("Read image " << path << " (encoded in " << colorSpace << " colorspace).");
+    const std::string& fromColorSpaceName = inSpec.get_string_attribute("oiio:ColorSpace", "sRGB"); // default image color space is sRGB
+    ALICEVISION_LOG_TRACE("Read image " << path << " (encoded in " << fromColorSpaceName << " colorspace).");
+    const EImageColorSpace fromColorSpace = EImageColorSpace_stringToEnum(fromColorSpaceName);
 
-    if(imageColorSpace == EImageColorSpace::SRGB) // color conversion to sRGB
-    {
-        if(colorSpace != "sRGB")
-        {
-            oiio::ImageBufAlgo::colorconvert(inBuf, inBuf, colorSpace, "sRGB");
-            ALICEVISION_LOG_TRACE("Convert image " << path << " from " << colorSpace << " to sRGB colorspace");
-        }
-    }
-    else if(imageColorSpace == EImageColorSpace::LINEAR) // color conversion to linear
-    {
-        if(colorSpace != "Linear")
-        {
-            oiio::ImageBufAlgo::colorconvert(inBuf, inBuf, colorSpace, "Linear");
-            ALICEVISION_LOG_TRACE("Convert image " << path << " from " << colorSpace << " to Linear colorspace");
-        }
-    }
-    else if(imageColorSpace == EImageColorSpace::LAB) //color conversion to LAB
-    {
-        if(colorSpace != "Linear") // image need to be converted in Linear colorspace first
-        {
-            oiio::ImageBufAlgo::colorconvert(inBuf, inBuf, colorSpace, "Linear");
-            ALICEVISION_LOG_TRACE("Convert image " << path << " from " << colorSpace << " to Linear colorspace for La*b* conversion");
-        }
-        imageAlgo::processImage(inBuf, &imageAlgo::RGBtoLAB);
-        ALICEVISION_LOG_TRACE("Convert image " << path << " from Linear to La*b* colorspace");
-    }
-    else if(imageColorSpace == EImageColorSpace::XYZ)
-    {
-        if(colorSpace != "Linear") // image need to be converted in Linear colorspace first
-        {
-            oiio::ImageBufAlgo::colorconvert(inBuf, inBuf, colorSpace, "Linear");
-            ALICEVISION_LOG_TRACE("Convert image " << path << " from " << colorSpace << " to Linear colorspace for La*b* conversion");
-        }
-        imageAlgo::processImage(inBuf, &imageAlgo::RGBtoXYZ);
-        ALICEVISION_LOG_TRACE("Convert image " << path << " from Linear to XYZ colorspace");
-    }
+    imageAlgo::colorconvert(inBuf, fromColorSpace, toColorSpace);
 
     // convert to grayscale if needed
     if(nchannels == 1 && inSpec.nchannels >= 3)
@@ -346,35 +313,35 @@ void readImage(const std::string& path,
     }
 }
 
-void readImage(const std::string& path, int& width, int& height, std::vector<unsigned char>& buffer, EImageColorSpace imageColorSpace)
+void readImage(const std::string& path, int& width, int& height, std::vector<unsigned char>& buffer, EImageColorSpace toColorSpace)
 {
-    readImage(path, oiio::TypeDesc::UCHAR, 1, width, height, buffer, imageColorSpace);
+    readImage(path, oiio::TypeDesc::UCHAR, 1, width, height, buffer, toColorSpace);
 }
 
-void readImage(const std::string& path, int& width, int& height, std::vector<unsigned short>& buffer, EImageColorSpace imageColorSpace)
+void readImage(const std::string& path, int& width, int& height, std::vector<unsigned short>& buffer, EImageColorSpace toColorSpace)
 {
-    readImage(path, oiio::TypeDesc::UINT16, 1, width, height, buffer, imageColorSpace);
+    readImage(path, oiio::TypeDesc::UINT16, 1, width, height, buffer, toColorSpace);
 }
 
-void readImage(const std::string& path, int& width, int& height, std::vector<rgb>& buffer, EImageColorSpace imageColorSpace)
+void readImage(const std::string& path, int& width, int& height, std::vector<rgb>& buffer, EImageColorSpace toColorSpace)
 {
-    readImage(path, oiio::TypeDesc::UCHAR, 3, width, height, buffer, imageColorSpace);
+    readImage(path, oiio::TypeDesc::UCHAR, 3, width, height, buffer, toColorSpace);
 }
 
-void readImage(const std::string& path, int& width, int& height, std::vector<float>& buffer, EImageColorSpace imageColorSpace)
+void readImage(const std::string& path, int& width, int& height, std::vector<float>& buffer, EImageColorSpace toColorSpace)
 {
-    readImage(path, oiio::TypeDesc::FLOAT, 1, width, height, buffer, imageColorSpace);
+    readImage(path, oiio::TypeDesc::FLOAT, 1, width, height, buffer, toColorSpace);
 }
 
-void readImage(const std::string& path, int& width, int& height, std::vector<Color>& buffer, EImageColorSpace imageColorSpace)
+void readImage(const std::string& path, int& width, int& height, std::vector<Color>& buffer, EImageColorSpace toColorSpace)
 {
-    readImage(path, oiio::TypeDesc::FLOAT, 3, width, height, buffer, imageColorSpace);
+    readImage(path, oiio::TypeDesc::FLOAT, 3, width, height, buffer, toColorSpace);
 }
 
-void readImage(const std::string& path, Image& image, EImageColorSpace imageColorSpace)
+void readImage(const std::string& path, Image& image, EImageColorSpace toColorSpace)
 {
     int width, height;
-    readImage(path, oiio::TypeDesc::FLOAT, 3, width, height, image.data(), imageColorSpace);
+    readImage(path, oiio::TypeDesc::FLOAT, 3, width, height, image.data(), toColorSpace);
     image.setWidth(width);
     image.setHeight(height);
 }
@@ -423,23 +390,8 @@ void writeImage(const std::string& path,
     const oiio::ImageBuf* outBuf = &imgBuf;  // buffer to write
 
     oiio::ImageBuf colorspaceBuf;  // buffer for image colorspace modification
-    if(colorspace.from != colorspace.to)
-    {
-      if(colorspace.from == imageIO::EImageColorSpace::LAB)
-      {
-          imageAlgo::processImage(colorspaceBuf, *outBuf, &imageAlgo::LABtoRGB);
-          outBuf = &colorspaceBuf;
-          colorspace.from = imageIO::EImageColorSpace::LINEAR;
-      }
-      if(colorspace.from == imageIO::EImageColorSpace::XYZ)
-      {
-          imageAlgo::processImage(colorspaceBuf, *outBuf, &imageAlgo::XYZtoRGB);
-          outBuf = &colorspaceBuf;
-          colorspace.from = imageIO::EImageColorSpace::LINEAR;
-      }
-      oiio::ImageBufAlgo::colorconvert(colorspaceBuf, *outBuf, EImageColorSpace_enumToString(colorspace.from), EImageColorSpace_enumToString(colorspace.to));
-      outBuf = &colorspaceBuf;
-    }
+    imageAlgo::colorconvert(colorspaceBuf, *outBuf, colorspace.from, colorspace.to);
+    outBuf = &colorspaceBuf;
 
     oiio::ImageBuf formatBuf; // buffer for image format modification
     if(imageQuality == EImageQuality::OPTIMIZED && isEXR)

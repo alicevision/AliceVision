@@ -109,6 +109,73 @@ void processImage(oiio::ImageBuf& dst, const oiio::ImageBuf& src, std::function<
     processImage(dst, pixelFunc);
 }
 
+void colorconvert(oiio::ImageBuf& imgBuf, imageIO::EImageColorSpace fromColorSpace, imageIO::EImageColorSpace toColorSpace)
+{
+    std::string fromColorSpaceName = EImageColorSpace_enumToString(fromColorSpace);
+    std::string toColorSpaceName = EImageColorSpace_enumToString(toColorSpace);
+
+    if(fromColorSpace == toColorSpace)
+        return;
+
+    else if(toColorSpaceName == "Linear")
+    {
+        if(fromColorSpaceName == "sRGB")
+            oiio::ImageBufAlgo::colorconvert(imgBuf, imgBuf, "sRGB", "Linear");
+        else if(fromColorSpaceName == "XYZ")
+            processImage(imgBuf, &XYZtoRGB);
+        else if(fromColorSpaceName == "LAB")
+            processImage(imgBuf, &LABtoRGB);
+    }
+    else if(toColorSpaceName == "sRGB")
+    {
+        if(fromColorSpaceName == "XYZ")
+            processImage(imgBuf, &XYZtoRGB);
+        else if(fromColorSpaceName == "LAB")
+            processImage(imgBuf, &LABtoRGB);
+        oiio::ImageBufAlgo::colorconvert(imgBuf, imgBuf, "Linear", "sRGB");
+    }
+    else if(toColorSpaceName == "XYZ")
+    {
+        if(fromColorSpaceName == "Linear")
+            processImage(imgBuf, &RGBtoXYZ);
+        else if(fromColorSpaceName == "sRGB")
+        {
+            oiio::ImageBufAlgo::colorconvert(imgBuf, imgBuf, "sRGB", "Linear");
+            processImage(imgBuf, &RGBtoXYZ);
+        }
+        else if(fromColorSpaceName == "LAB")
+            processImage(imgBuf, &LABtoXYZ);
+    }
+    else if(toColorSpaceName == "LAB")
+    {
+        if(fromColorSpaceName == "Linear")
+            processImage(imgBuf, &RGBtoLAB);
+        else if(fromColorSpaceName == "sRGB")
+        {
+            oiio::ImageBufAlgo::colorconvert(imgBuf, imgBuf, "sRGB", "Linear");
+            processImage(imgBuf, &RGBtoLAB);
+        }
+        else if(fromColorSpaceName == "XYZ")
+            processImage(imgBuf, &XYZtoLAB);
+    }
+    ALICEVISION_LOG_TRACE("Convert image from " << EImageColorSpace_enumToString(fromColorSpace) << " to " << EImageColorSpace_enumToString(toColorSpace));
+}
+
+void colorconvert(Image& image, imageIO::EImageColorSpace fromColorSpace, imageIO::EImageColorSpace toColorSpace)
+{
+    oiio::ImageSpec imageSpec(image.width(), image.height(), 3, oiio::TypeDesc::FLOAT);
+    std::vector<Color>& buffer = image.data();
+    oiio::ImageBuf imageBuf(imageSpec, buffer.data());
+
+    colorconvert(imageBuf, fromColorSpace, toColorSpace);
+}
+
+void colorconvert(oiio::ImageBuf& dst, const oiio::ImageBuf& src, imageIO::EImageColorSpace fromColorSpace, imageIO::EImageColorSpace toColorSpace)
+{
+    dst.copy(src);
+    colorconvert(dst, fromColorSpace, toColorSpace);
+}
+
 template<typename T>
 void transposeImage(oiio::TypeDesc typeDesc,
                     int width,

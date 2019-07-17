@@ -2,6 +2,8 @@
 
 #include <string>
 
+#include <aliceVision/mvsData/imageIO.hpp>
+
 #include <OpenImageIO/paramlist.h>
 #include <OpenImageIO/imagebufalgo_util.h>
 
@@ -34,6 +36,10 @@ void LABtoRGB(oiio::ImageBuf::Iterator<float>& pixel);
  */
 void processImage(oiio::ImageBuf& image, std::function<void(oiio::ImageBuf::Iterator<float>&)> pixelFunc);
 void processImage(oiio::ImageBuf& dst, const oiio::ImageBuf& src, std::function<void(oiio::ImageBuf::Iterator<float>&)> pixelFunc);
+
+void colorconvert(oiio::ImageBuf& image, imageIO::EImageColorSpace fromColorSpace, imageIO::EImageColorSpace toColorSpace);
+void colorconvert(Image& image, imageIO::EImageColorSpace fromColorSpace, imageIO::EImageColorSpace toColorSpace);
+void colorconvert(oiio::ImageBuf& dst, const oiio::ImageBuf& src, imageIO::EImageColorSpace fromColorSpace, imageIO::EImageColorSpace toColorSpace);
 
 /**
  * @brief transpose a given image buffer

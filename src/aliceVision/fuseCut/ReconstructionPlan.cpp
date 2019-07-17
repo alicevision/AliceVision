@@ -340,6 +340,22 @@ StaticVector<StaticVector<int>*>* loadLargeScalePtsCams(const std::vector<std::s
     return ptsCamsFromDct;
 }
 
+void loadLargeScalePtsCams(const std::vector<std::string>& recsDirs, StaticVector<StaticVector<int>>& out_ptsCams)
+{
+    for(int i = 0; i < recsDirs.size(); ++i)
+    {
+        std::string folderName = recsDirs[i];
+
+        std::string filePtsCamsFromDCTName = folderName + "meshPtsCamsFromDGC.bin";
+
+        if(!mvsUtils::FileExists(filePtsCamsFromDCTName))
+        {
+            throw std::runtime_error("Missing file: " + filePtsCamsFromDCTName);
+        }
+        loadArrayOfArraysFromFile<int>(out_ptsCams, filePtsCamsFromDCTName);
+    }
+}
+
 StaticVector<rgb>* getTrisColorsRgb(mesh::Mesh* me, StaticVector<rgb>* ptsColors)
 {
     StaticVector<rgb>* trisColors = new StaticVector<rgb>();
