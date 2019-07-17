@@ -297,6 +297,15 @@ void DepthSimMap::getDepthMap(StaticVector<float>& out_depthMap) const
     }
 }
 
+void DepthSimMap::getSimMap(StaticVector<float>& out_simMap) const
+{
+    out_simMap.resize(_dsm.size());
+    for (int i = 0; i < _dsm.size(); i++)
+    {
+        out_simMap[i] = _dsm[i].sim;
+    }
+}
+
 void DepthSimMap::saveToImage(const std::string& filename, float simThr) const
 {
     const int bufferWidth = 2 * _w;
@@ -341,20 +350,31 @@ void DepthSimMap::saveToImage(const std::string& filename, float simThr) const
     }
 }
 
-void DepthSimMap::save(const std::string& customSuffix) const
+void DepthSimMap::save(const std::string& customSuffix, bool useStep1) const
 {
     StaticVector<float> depthMap;
-    getDepthMapStep1(depthMap);
     StaticVector<float> simMap;
-    getSimMapStep1(simMap);
+    if (useStep1)
+    {
+        getDepthMapStep1(depthMap);
+        getSimMapStep1(simMap);
+    }
+    else
+    {
+        getDepthMap(depthMap);
+        getSimMap(simMap);
+    }
 
-    const int width = _mp.getWidth(_rc) / _scale;
-    const int height = _mp.getHeight(_rc) / _scale;
+    const int step = (useStep1 ? 1 : _step);
+    const int scaleStep = _scale * step;
 
-    double s = _scale;
+    const int width = _mp.getWidth(_rc) / scaleStep;
+    const int height = _mp.getHeight(_rc) / scaleStep;
+
     oiio::ParamValueList metadata = imageIO::getMetadataFromMap(_mp.getMetadata(_rc));
-    metadata.push_back(oiio::ParamValue("AliceVision:downscale", _mp.getDownscaleFactor(_rc) * _scale));
+    metadata.push_back(oiio::ParamValue("AliceVision:downscale", _mp.getDownscaleFactor(_rc) * scaleStep));
 
+    double s = scaleStep;
     Point3d C = _mp.CArr[_rc];
     Matrix3x3 iP = _mp.iCamArr[_rc];
     if (s > 1.0)
