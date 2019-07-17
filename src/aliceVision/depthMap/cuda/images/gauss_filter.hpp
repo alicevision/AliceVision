@@ -36,6 +36,8 @@ extern void ps_downscale_gauss( Pyramids& ps_texs_arr,
                                 int w, int h, int radius );
 
 
+#ifdef ALICEVISION_TMP_WITH_BILATERALFILTER
+
 //Euclidean Distance (x, y, d) = exp((|x - y| / d)^2 / 2)
 template<class Type>
 __device__ inline float euclideanLen(Type a, Type b, float d);
@@ -157,67 +159,11 @@ __host__ void ps_bilateralFilter(
             radius, scale
             );
 }
+#endif
 
-/**
- * @warning: use an hardcoded buffer size, so max radius value is 3.
- */
-template<class Type>
-__global__ void medianFilter_kernel(
-    cudaTextureObject_t rgbaTex,
-    Type* texLab, int texLab_p,
-    int width, int height,
-    int radius, int scale)
-{
-    const int x = blockIdx.x * blockDim.x + threadIdx.x;
-    const int y = blockIdx.y * blockDim.y + threadIdx.y;
-
-    if ((x >= width - radius) || (y >= height - radius) ||
-        (x < radius) || (y < radius))
-        return;
-
-    const int filterWidth = radius * 2 + 1;
-    const int filterNbPixels = filterWidth * filterWidth;
-
-    Type buf[7*7]; // filterNbPixels
-
-    // Assign masked values to buf
-    for (int yi = 0; yi < filterWidth; ++yi)
-    {
-        for (int xi = 0; xi < filterWidth; ++xi)
-        {
-            Type pix = tex2D<Type>(rgbaTex, x + xi - radius, y + yi - radius);
-            buf[yi * filterWidth + xi] = pix;
-        }
-    }
-
-    // Calculate until we get the median value
-    for (int k = 0; k < (filterNbPixels + 1) / 2; ++k)
-        for (int l = 0; l < filterNbPixels; ++l)
-            if (buf[k] < buf[l])
-                swap(buf[k], buf[l]);
-
-    BufPtr<Type>(texLab, texLab_p).at(x, y) = buf[radius * filterWidth + radius];
-}
-
-
-template<class Type>
-__host__ void ps_medianFilter(
-    cudaTextureObject_t rgbaTex,
-    CudaDeviceMemoryPitched<Type, 2>& img,
-    int radius)
-{
-    int scale = 1;
-    const dim3 block(32, 2, 1);
-    const dim3 grid(divUp(img.getSize()[0], block.x), divUp(img.getSize()[1], block.y), 1);
-
-    medianFilter_kernel
-        <<<grid, block>>>
-        (rgbaTex,
-            img.getBuffer(), img.getPitch(),
-            img.getSize()[0], img.getSize()[1],
-            radius, scale
-            );
-}
+__host__ void ps_medianFilter3(
+    cudaTextureObject_t tex,
+    CudaDeviceMemoryPitched<float, 2>& img);
 
 
 } // namespace depthMap

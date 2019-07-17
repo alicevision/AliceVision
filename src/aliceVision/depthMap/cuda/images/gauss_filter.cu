@@ -157,6 +157,72 @@ __global__ void downscale_gauss_smooth_lab_kernel(
     }
 }
 
+__device__ void cuda_swap_float(float& a, float& b)
+{
+    float temp = a;
+    a = b;
+    b = temp;
+}
+
+/**
+* @warning: use an hardcoded buffer size, so max radius value is 3.
+*/
+__global__ void medianFilter3_kernel(
+    cudaTextureObject_t tex,
+    float* texLab, int texLab_p,
+    int width, int height,
+    int scale)
+{
+    static const int radius = 3;
+    const int x = blockIdx.x * blockDim.x + threadIdx.x;
+    const int y = blockIdx.y * blockDim.y + threadIdx.y;
+
+    if ((x >= width - radius) || (y >= height - radius) ||
+        (x < radius) || (y < radius))
+        return;
+
+    static const int filterWidth = radius * 2 + 1;
+    static const int filterNbPixels = filterWidth * filterWidth;
+
+    float buf[filterNbPixels]; // filterNbPixels
+
+    // Assign masked values to buf
+    for (int yi = 0; yi < filterWidth; ++yi)
+    {
+        for (int xi = 0; xi < filterWidth; ++xi)
+        {
+            float pix = tex2D<float>(tex, x + xi - radius, y + yi - radius);
+            buf[yi * filterWidth + xi] = pix;
+        }
+    }
+
+    // Calculate until we get the median value
+    for (int k = 0; k < filterNbPixels; ++k) // (filterNbPixels + 1) / 2
+        for (int l = 0; l < filterNbPixels; ++l)
+            if (buf[k] < buf[l])
+                cuda_swap_float(buf[k], buf[l]);
+
+    BufPtr<float>(texLab, texLab_p).at(x, y) = buf[radius * filterWidth + radius];
+}
+
+
+__host__ void ps_medianFilter3(
+    cudaTextureObject_t tex,
+    CudaDeviceMemoryPitched<float, 2>& img)
+{
+    int scale = 1;
+    const dim3 block(32, 2, 1);
+    const dim3 grid(divUp(img.getSize()[0], block.x), divUp(img.getSize()[1], block.y), 1);
+
+    medianFilter3_kernel
+        <<<grid, block>>>
+        (tex,
+            img.getBuffer(), img.getPitch(),
+            img.getSize()[0], img.getSize()[1],
+            scale
+            );
+}
+
 
 } // namespace depthMap
 } // namespace aliceVision
