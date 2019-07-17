@@ -625,7 +625,7 @@ void Mesh::getPtsNeighPtsOrdered(StaticVector<StaticVector<int>*>& out_ptsNeighP
     deleteArrayOfArrays<int>(ptsNeighborTriangles);
 }
 
-void Mesh::getTrisMap(StaticVector<StaticVector<int>*>& out, const mvsUtils::MultiViewParams& mp, int rc, int  /*scale*/, int w, int h)
+void Mesh::getTrisMap(StaticVector<StaticVector<int>>& out, const mvsUtils::MultiViewParams& mp, int rc, int  /*scale*/, int w, int h)
 {
     long tstart = clock();
 
@@ -659,16 +659,13 @@ void Mesh::getTrisMap(StaticVector<StaticVector<int>*>& out, const mvsUtils::Mul
 
     // allocate
     out.reserve(w * h);
-    out.resize_with(w * h, nullptr);
-    StaticVector<int>** ptmp = &out[0];
+    out.resize(w * h);
     for(int i = 0; i < w * h; i++)
     {
         if(nmap[i] > 0)
         {
-            *ptmp = new StaticVector<int>();
-            (*ptmp)->reserve(nmap[i]);
+            out[i].reserve(nmap[i]);
         }
-        ptmp++;
     }
 
     // fill
@@ -686,7 +683,7 @@ void Mesh::getTrisMap(StaticVector<StaticVector<int>*>& out, const mvsUtils::Mul
                     Mesh::rectangle re = Mesh::rectangle(pix, 1);
                     if(doesTriangleIntersectsRectangle(tp, re))
                     {
-                        out[pix.x * h + pix.y]->push_back(i);
+                        out[pix.x * h + pix.y].push_back(i);
                     }
                 } // for y
             }     // for x
@@ -698,7 +695,7 @@ void Mesh::getTrisMap(StaticVector<StaticVector<int>*>& out, const mvsUtils::Mul
     mvsUtils::printfElapsedTime(tstart);
 }
 
-void Mesh::getTrisMap(StaticVector<StaticVector<int>*>& out, StaticVector<int>& visTris, const mvsUtils::MultiViewParams& mp, int rc,
+void Mesh::getTrisMap(StaticVector<StaticVector<int>>& out, StaticVector<int>& visTris, const mvsUtils::MultiViewParams& mp, int rc,
                                                       int  /*scale*/, int w, int h)
 {
     long tstart = clock();
@@ -733,16 +730,13 @@ void Mesh::getTrisMap(StaticVector<StaticVector<int>*>& out, StaticVector<int>& 
     mvsUtils::finishEstimate();
 
     // allocate
-    out.resize_with(w * h, nullptr);
-    StaticVector<int>** ptmp = &out[0];
+    out.resize(w * h);
     for(int i = 0; i < w * h; i++)
     {
         if(nmap[i] > 0)
         {
-            *ptmp = new StaticVector<int>();
-            (*ptmp)->reserve(nmap[i]);
+            out[i].reserve(nmap[i]);
         }
-        ptmp++;
     }
 
     // fill
@@ -761,7 +755,7 @@ void Mesh::getTrisMap(StaticVector<StaticVector<int>*>& out, StaticVector<int>& 
                     Mesh::rectangle re = Mesh::rectangle(pix, 1);
                     if(doesTriangleIntersectsRectangle(tp, re))
                     {
-                        out[pix.x * h + pix.y]->push_back(i);
+                        out[pix.x * h + pix.y].push_back(i);
                     }
                 } // for y
             }     // for x
@@ -775,12 +769,12 @@ void Mesh::getTrisMap(StaticVector<StaticVector<int>*>& out, StaticVector<int>& 
 
 void Mesh::getDepthMap(StaticVector<float>& depthMap, const mvsUtils::MultiViewParams& mp, int rc, int scale, int w, int h)
 {
-    StaticVector<StaticVector<int>*> tmp;
+    StaticVector<StaticVector<int>> tmp;
     getTrisMap(tmp, mp, rc, scale, w, h);
     getDepthMap(depthMap, tmp, mp, rc, scale, w, h);
 }
 
-void Mesh::getDepthMap(StaticVector<float>& depthMap, StaticVector<StaticVector<int>*>& tmp, const mvsUtils::MultiViewParams& mp,
+void Mesh::getDepthMap(StaticVector<float>& depthMap, StaticVector<StaticVector<int>>& tmp, const mvsUtils::MultiViewParams& mp,
                           int rc, int scale, int w, int h)
 {
     depthMap.resize_with(w * h, -1.0f);
@@ -791,8 +785,8 @@ void Mesh::getDepthMap(StaticVector<float>& depthMap, StaticVector<StaticVector<
         for(pix.y = 0; pix.y < h; pix.y++)
         {
 
-            StaticVector<int>* ti = tmp[pix.x * h + pix.y];
-            if((ti != nullptr) && (ti->size() > 0))
+            StaticVector<int> ti = tmp[pix.x * h + pix.y];
+            if(!ti.empty())
             {
                 Point2d p;
                 p.x = (double)pix.x;
@@ -800,9 +794,9 @@ void Mesh::getDepthMap(StaticVector<float>& depthMap, StaticVector<StaticVector<
 
                 double mindepth = 10000000.0;
 
-                for(int i = 0; i < ti->size(); i++)
+                for(int i = 0; i < ti.size(); i++)
                 {
-                    int idTri = (*ti)[i];
+                    int idTri = ti[i];
                     OrientedPoint tri;
                     tri.p = pts[tris[idTri].v[0]];
                     tri.n = cross((pts[tris[idTri].v[1]] - pts[tris[idTri].v[0]]).normalize(),
@@ -829,7 +823,7 @@ void Mesh::getDepthMap(StaticVector<float>& depthMap, StaticVector<StaticVector<
                     }
                     */
 
-                    StaticVector<Point2d> tpis = StaticVector<Point2d>();
+                    StaticVector<Point2d> tpis;
                     getTrianglePixelIntersectionsAndInternalPoints(tp, re, tpis);
 
                     double maxd = -1.0;
@@ -913,11 +907,10 @@ void Mesh::getVisibleTrianglesIndexes(StaticVector<int>& out_visTri, std::string
 {
     StaticVector<float> depthMap;
     loadArrayFromFile<float>(depthMap, depthMapFileName);
-    StaticVector<StaticVector<int>*>* trisMap = loadArrayOfArraysFromFile<int>(trisMapFileName);
+    StaticVector<StaticVector<int>> trisMap;
+    loadArrayOfArraysFromFile<int>(trisMap, trisMapFileName);
 
-    getVisibleTrianglesIndexes(out_visTri, *trisMap, depthMap, mp, rc, w, h);
-
-    deleteArrayOfArrays<int>(&trisMap);
+    getVisibleTrianglesIndexes(out_visTri, trisMap, depthMap, mp, rc, w, h);
 }
 
 void Mesh::getVisibleTrianglesIndexes(StaticVector<int>& out_visTri, std::string tmpDir, const mvsUtils::MultiViewParams& mp, int rc, int w, int h)
@@ -927,11 +920,10 @@ void Mesh::getVisibleTrianglesIndexes(StaticVector<int>& out_visTri, std::string
 
     StaticVector<float> depthMap;
     loadArrayFromFile<float>(depthMap, depthMapFileName);
-    StaticVector<StaticVector<int>*>* trisMap = loadArrayOfArraysFromFile<int>(trisMapFileName);
+    StaticVector<StaticVector<int>> trisMap;
+    loadArrayOfArraysFromFile<int>(trisMap, trisMapFileName);
 
-    getVisibleTrianglesIndexes(out_visTri, *trisMap, depthMap, mp, rc, w, h);
-
-    deleteArrayOfArrays<int>(&trisMap);
+    getVisibleTrianglesIndexes(out_visTri, trisMap, depthMap, mp, rc, w, h);
 }
 
 void Mesh::getVisibleTrianglesIndexes(StaticVector<int>& out_visTri, StaticVector<float>& depthMap, const mvsUtils::MultiViewParams& mp, int rc,
@@ -962,7 +954,7 @@ void Mesh::getVisibleTrianglesIndexes(StaticVector<int>& out_visTri, StaticVecto
     }
 }
 
-void Mesh::getVisibleTrianglesIndexes(StaticVector<int>& out_visTri, StaticVector<StaticVector<int>*>& trisMap,
+void Mesh::getVisibleTrianglesIndexes(StaticVector<int>& out_visTri, StaticVector<StaticVector<int>>& trisMap,
                                                        StaticVector<float>& depthMap, const mvsUtils::MultiViewParams& mp, int rc,
                                                        int w, int h)
 {
@@ -979,17 +971,17 @@ void Mesh::getVisibleTrianglesIndexes(StaticVector<int>& out_visTri, StaticVecto
         for(pix.y = 0; pix.y < h; pix.y++)
         {
 
-            StaticVector<int>* ti = trisMap[pix.x * h + pix.y];
-            if(ti != nullptr)
+            StaticVector<int> ti = trisMap[pix.x * h + pix.y];
+            if(!ti.empty())
             {
                 Point2d p;
                 p.x = (float)pix.x;
                 p.y = (float)pix.y;
 
                 float depth = depthMap[pix.x * h + pix.y];
-                for(int i = 0; i < ti->size(); i++)
+                for(int i = 0; i < ti.size(); i++)
                 {
-                    int idTri = (*ti)[i];
+                    int idTri = ti[i];
                     OrientedPoint tri;
                     tri.p = pts[tris[idTri].v[0]];
                     tri.n = cross((pts[tris[idTri].v[1]] - pts[tris[idTri].v[0]]).normalize(),

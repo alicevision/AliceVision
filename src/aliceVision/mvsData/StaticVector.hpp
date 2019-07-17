@@ -286,6 +286,51 @@ StaticVector<StaticVector<T>*>* loadArrayOfArraysFromFile(std::string fileName)
 }
 
 template <class T>
+void loadArrayOfArraysFromFile(StaticVector<StaticVector<T>>& out_aa, const std::string fileName)
+{
+    ALICEVISION_LOG_DEBUG("[IO] loadArrayOfArraysFromFile: " << fileName);
+    FILE* f = fopen(fileName.c_str(), "rb");
+    if(f == nullptr)
+    {
+        ALICEVISION_THROW_ERROR("[IO] loadArrayOfArraysFromFile: can't open file " << fileName);
+    }
+
+    int n = 0;
+    size_t retval = fread(&n, sizeof(int), 1, f);
+    if( retval != 1 )
+    {
+        fclose(f);
+        ALICEVISION_THROW_ERROR("[IO] loadArrayOfArraysFromFile: can't read outer array size");
+    }
+
+    out_aa.reserve(n);
+    out_aa.resize(n);
+    for(int i = 0; i < n; i++)
+    {
+        int m = 0;
+        retval = fread(&m, sizeof(int), 1, f);
+        if( retval != 1 )
+        {
+            fclose(f);
+            ALICEVISION_THROW_ERROR("[IO] loadArrayOfArraysFromFile: can't read inner array size");
+        }
+        if(m > 0)
+        {
+            StaticVector<T>& a = out_aa[i];
+            a.resize(m);
+            retval = fread(&a[0], sizeof(T), m, f);
+            if( retval != m )
+            {
+                fclose(f);
+                ALICEVISION_THROW_ERROR("[IO] loadArrayOfArraysFromFile: can't read vector element");
+            }
+        };
+    };
+    fclose(f);
+}
+
+
+template <class T>
 void saveArrayToFile(std::string fileName, const StaticVector<T>& a, bool docompress = true)
 {
     saveArrayToFile( fileName, &a, docompress );

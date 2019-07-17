@@ -129,11 +129,11 @@ public:
 
     void addMesh(const Mesh& mesh);
 
-    void getTrisMap(StaticVector<StaticVector<int>*>& out, const mvsUtils::MultiViewParams& mp, int rc, int scale, int w, int h);
-    void getTrisMap(StaticVector<StaticVector<int>*>& out, StaticVector<int>& visTris, const mvsUtils::MultiViewParams& mp, int rc, int scale,
+    void getTrisMap(StaticVector<StaticVector<int>>& out, const mvsUtils::MultiViewParams& mp, int rc, int scale, int w, int h);
+    void getTrisMap(StaticVector<StaticVector<int>>& out, StaticVector<int>& visTris, const mvsUtils::MultiViewParams& mp, int rc, int scale,
                                                  int w, int h);
     void getDepthMap(StaticVector<float>& depthMap, const mvsUtils::MultiViewParams& mp, int rc, int scale, int w, int h);
-    void getDepthMap(StaticVector<float>& depthMap, StaticVector<StaticVector<int>*>& tmp, const mvsUtils::MultiViewParams& mp, int rc,
+    void getDepthMap(StaticVector<float>& depthMap, StaticVector<StaticVector<int>>& tmp, const mvsUtils::MultiViewParams& mp, int rc,
                      int scale, int w, int h);
 
     void getPtsNeighborTriangles(StaticVector<StaticVector<int>*>& out_ptsNeighTris) const;
@@ -142,7 +142,7 @@ public:
     void getVisibleTrianglesIndexes(StaticVector<int>& out_visTri, std::string tmpDir, const mvsUtils::MultiViewParams& mp, int rc, int w, int h);
     void getVisibleTrianglesIndexes(StaticVector<int>& out_visTri, std::string depthMapFileName, std::string trisMapFileName,
                                                   const mvsUtils::MultiViewParams& mp, int rc, int w, int h);
-    void getVisibleTrianglesIndexes(StaticVector<int>& out_visTri, StaticVector<StaticVector<int>*>& trisMap,
+    void getVisibleTrianglesIndexes(StaticVector<int>& out_visTri, StaticVector<StaticVector<int>>& trisMap,
                                                   StaticVector<float>& depthMap, const mvsUtils::MultiViewParams& mp, int rc, int w,
                                                   int h);
     void getVisibleTrianglesIndexes(StaticVector<int>& out_visTri, StaticVector<float>& depthMap, const mvsUtils::MultiViewParams& mp, int rc, int w,
@@ -151,7 +151,7 @@ public:
     void generateMeshFromTrianglesSubset(const StaticVector<int>& visTris, Mesh& outMesh, StaticVector<int>& out_ptIdToNewPtId) const;
 
     void getNotOrientedEdges(StaticVector<StaticVector<int>*>& edgesNeighTris, StaticVector<Pixel>& edgesPointsPairs);
-    void getTrianglesEdgesIds(StaticVector<Voxel>& out, StaticVector<StaticVector<int>*>&edgesNeighTris) const;
+    void getTrianglesEdgesIds(StaticVector<Voxel>& out, StaticVector<StaticVector<int>*>& edgesNeighTris) const;
 
     void getLaplacianSmoothingVectors(StaticVector<StaticVector<int>*>& ptsNeighPts, StaticVector<Point3d>& out_nms,
                                       double maximalNeighDist = -1.0f);
