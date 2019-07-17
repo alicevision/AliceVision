@@ -40,7 +40,7 @@ void UVAtlas::createCharts(vector<Chart>& charts, mvsUtils::MultiViewParams& mp)
     ALICEVISION_LOG_INFO("Creating texture charts.");
 
     // compute per cam triangle visibility
-    StaticVector<StaticVector<int>*> trisCams;
+    StaticVector<StaticVector<int>> trisCams;
     _mesh.computeTrisCamsFromPtsCams(trisCams);
 
     // create one chart per triangle
@@ -53,9 +53,9 @@ void UVAtlas::createCharts(vector<Chart>& charts, mvsUtils::MultiViewParams& mp)
 
         // project triangle in all cams
         auto cameras = trisCams[i];
-        for(int c = 0; c < cameras->size(); ++c)
+        for(int c = 0; c < cameras.size(); ++c)
         {
-            int cameraID = (*cameras)[c];
+            int cameraID = cameras[c];
             // project triangle
             Mesh::triangle_proj tProj = _mesh.getTriangleProjection(i, mp, cameraID, mp.getWidth(cameraID), mp.getHeight(cameraID));
 

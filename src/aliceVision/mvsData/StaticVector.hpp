@@ -244,6 +244,34 @@ void saveArrayOfArraysToFile(std::string fileName, StaticVector<StaticVector<T>*
 }
 
 template <class T>
+void saveArrayOfArraysToFile(const std::string fileName, StaticVector<StaticVector<T>>& aa)
+{
+    ALICEVISION_LOG_DEBUG("[IO] saveArrayOfArraysToFile: " << fileName);
+    FILE* f = fopen(fileName.c_str(), "wb");
+    int n = aa.size();
+    fwrite(&n, sizeof(int), 1, f);
+    for(int i = 0; i < n; i++)
+    {
+        int m = 0;
+        StaticVector<T>& a = aa[i];
+        if(a.empty())
+        {
+            fwrite(&m, sizeof(int), 1, f);
+        }
+        else
+        {
+            m = a.size();
+            fwrite(&m, sizeof(int), 1, f);
+            if(m > 0)
+            {
+                fwrite(&a[0], sizeof(T), m, f);
+            };
+        };
+    };
+    fclose(f);
+}
+
+template <class T>
 StaticVector<StaticVector<T>*>* loadArrayOfArraysFromFile(std::string fileName)
 {
     ALICEVISION_LOG_DEBUG("[IO] loadArrayOfArraysFromFile: " << fileName);

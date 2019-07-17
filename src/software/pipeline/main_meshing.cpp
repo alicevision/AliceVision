@@ -85,7 +85,7 @@ void exportPointCloud(const std::string& path,
                       const mvsUtils::MultiViewParams& mp,
                       const sfmData::SfMData& sfmData,
                       const std::vector<Point3d>& vertices,
-                      const StaticVector<StaticVector<int>*>& cams)
+                      const StaticVector<StaticVector<int>>& cams)
 {
   sfmData::SfMData densePointCloud = sfmData;
   densePointCloud.getLandmarks().clear();
@@ -95,11 +95,11 @@ void exportPointCloud(const std::string& path,
   {
     const Point3d& point = vertices.at(i);
 
-    if(!cams[i]->empty())
+    if(!cams[i].empty())
     {
       const Vec3 pt3D(point.x, point.y, point.z);
       sfmData::Landmark landmark(pt3D, feature::EImageDescriberType::UNKNOWN);
-      for(int cam : *(cams[i]))
+      for(int cam : cams[i])
       {
         const sfmData::View& view = sfmData.getView(mp.getViewId(cam));
         const camera::IntrinsicBase* intrinsicPtr = sfmData.getIntrinsicPtr(view.getIntrinsicId());
@@ -398,14 +398,14 @@ int main(int argc, char* argv[])
                     if(mesh->pts.empty() || mesh->tris.empty())
                       throw std::runtime_error("Empty mesh");
 
-                    StaticVector<StaticVector<int>*>* ptsCams = delaunayGC.createPtsCams();
+                    StaticVector<StaticVector<int>> ptsCams;
+                    delaunayGC.createPtsCams(ptsCams);
 
                     StaticVector<Point3d>* hexahsToExcludeFromResultingMesh = nullptr;
                     mesh::meshPostProcessing(mesh, ptsCams, mp, outDirectory.string()+"/", hexahsToExcludeFromResultingMesh, hexah);
                     mesh->saveToBin((outDirectory/"denseReconstruction.bin").string());
 
                     saveArrayOfArraysToFile<int>((outDirectory/"meshPtsCamsFromDGC.bin").string(), ptsCams);
-                    deleteArrayOfArrays<int>(&ptsCams);
 
                     mesh->saveToObj(outputMesh);
 
@@ -479,9 +479,9 @@ int main(int argc, char* argv[])
                     if(saveRawDensePointCloud)
                     {
                       ALICEVISION_LOG_INFO("Save dense point cloud before cut and filtering.");
-                      StaticVector<StaticVector<int>*>* ptsCams = delaunayGC.createPtsCams();
-                      exportPointCloud((outDirectory/"densePointCloud_raw.abc").string(), mp, sfmData, delaunayGC._verticesCoords, *ptsCams);
-                      deleteArrayOfArrays<int>(&ptsCams);
+                      StaticVector<StaticVector<int>> ptsCams;
+                      delaunayGC.createPtsCams(ptsCams);
+                      exportPointCloud((outDirectory/"densePointCloud_raw.abc").string(), mp, sfmData, delaunayGC._verticesCoords, ptsCams);
                     }
 
                     delaunayGC.createGraphCut(&hexah[0], cams, nullptr, outDirectory.string()+"/", outDirectory.string()+"/SpaceCamsTracks/", false, spaceSteps);
@@ -492,18 +492,18 @@ int main(int argc, char* argv[])
                     if(mesh->pts.empty() || mesh->tris.empty())
                         throw std::runtime_error("Empty mesh");
 
-                    StaticVector<StaticVector<int>*>* ptsCams = delaunayGC.createPtsCams();
+                    StaticVector<StaticVector<int>> ptsCams;
+                    delaunayGC.createPtsCams(ptsCams);
 
                     StaticVector<Point3d>* hexahsToExcludeFromResultingMesh = nullptr;
                     mesh::meshPostProcessing(mesh, ptsCams, mp, outDirectory.string()+"/", hexahsToExcludeFromResultingMesh, &hexah[0]);
 
                     ALICEVISION_LOG_INFO("Save dense point cloud.");
-                    exportPointCloud(outputDensePointCloud, mp, sfmData, mesh->pts.getData(), *ptsCams);
+                    exportPointCloud(outputDensePointCloud, mp, sfmData, mesh->pts.getData(), ptsCams);
 
                     //mesh->saveToBin((outDirectory/"denseReconstruction.bin").string());
 
                     //saveArrayOfArraysToFile<int>((outDirectory/"meshPtsCamsFromDGC.bin").string(), ptsCams);
-                    deleteArrayOfArrays<int>(&ptsCams);
                     delete voxels;
 
                     ALICEVISION_LOG_INFO("Save obj mesh file.");

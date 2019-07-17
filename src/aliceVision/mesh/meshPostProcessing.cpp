@@ -18,7 +18,7 @@ namespace mesh {
 
 namespace bfs = boost::filesystem;
 
-void meshPostProcessing(Mesh*& inout_mesh, StaticVector<StaticVector<int>*>*& inout_ptsCams, mvsUtils::MultiViewParams& mp,
+void meshPostProcessing(Mesh*& inout_mesh, StaticVector<StaticVector<int>>& inout_ptsCams, mvsUtils::MultiViewParams& mp,
                       const std::string& debugFolderName,
                       StaticVector<Point3d>* hexahsToExcludeFromResultingMesh, Point3d* hexah)
 {
@@ -32,7 +32,7 @@ void meshPostProcessing(Mesh*& inout_mesh, StaticVector<StaticVector<int>*>*& in
 
     // copy ptsCams
     {
-        StaticVector<StaticVector<int>*>* ptsCamsOld = inout_ptsCams;
+        StaticVector<StaticVector<int>> ptsCamsOld = inout_ptsCams;
         StaticVector<int> ptIdToNewPtId;
 
         bool doRemoveTrianglesInhexahsToExcludeFromResultingMesh =
@@ -46,24 +46,20 @@ void meshPostProcessing(Mesh*& inout_mesh, StaticVector<StaticVector<int>*>*& in
         inout_mesh->removeFreePointsFromMesh(ptIdToNewPtId);
 
         // remap visibilities
-        inout_ptsCams = new StaticVector<StaticVector<int>*>();
-        inout_ptsCams->resize(inout_mesh->pts.size(), nullptr);
+        inout_ptsCams.resize(inout_mesh->pts.size());
         for(int i = 0; i < ptIdToNewPtId.size(); ++i)
         {
             int newId = ptIdToNewPtId[i];
             if(newId > -1)
             {
-                StaticVector<int>* ptCamsNew = new StaticVector<int>();
-                ptCamsNew->reserve(sizeOfStaticVector<int>((*ptsCamsOld)[i]));
-                for(int j = 0; j < sizeOfStaticVector<int>((*ptsCamsOld)[i]); ++j)
+                StaticVector<int>& ptCamsNew = inout_ptsCams[newId];
+                ptCamsNew.reserve(sizeOfStaticVector<int>(ptsCamsOld[i]));
+                for(int j = 0; j < sizeOfStaticVector<int>(ptsCamsOld[i]); ++j)
                 {
-                    ptCamsNew->push_back((*(*ptsCamsOld)[i])[j]);
+                    ptCamsNew.push_back(ptsCamsOld[i][j]);
                 }
-                (*inout_ptsCams)[newId] = ptCamsNew;
             }
         }
-
-        deleteArrayOfArrays<int>(&ptsCamsOld);
     }
 
     if(true) // TODO: how to remove it?
@@ -83,17 +79,16 @@ void meshPostProcessing(Mesh*& inout_mesh, StaticVector<StaticVector<int>*>*& in
         /////////////////////////////
         {
             // Update pointCams after clean
-            inout_ptsCams->reserveAdd(meOpt.newPtsOldPtId.size());
+            inout_ptsCams.reserveAdd(meOpt.newPtsOldPtId.size());
             for(int i = 0; i < meOpt.newPtsOldPtId.size(); i++)
             {
                 int oldPtId = meOpt.newPtsOldPtId[i];
-                StaticVector<int>* ptCams = new StaticVector<int>();
-                ptCams->reserve(sizeOfStaticVector<int>((*inout_ptsCams)[oldPtId]));
-                for(int j = 0; j < sizeOfStaticVector<int>((*inout_ptsCams)[oldPtId]); j++)
+                StaticVector<int>& ptCams = inout_ptsCams[i];
+                ptCams.reserve(sizeOfStaticVector<int>(inout_ptsCams[oldPtId]));
+                for(int j = 0; j < sizeOfStaticVector<int>(inout_ptsCams[oldPtId]); j++)
                 {
-                    ptCams->push_back((*(*inout_ptsCams)[oldPtId])[j]);
+                    ptCams.push_back(inout_ptsCams[oldPtId][j]);
                 }
-                inout_ptsCams->push_back(ptCams);
             }
         }
 
@@ -108,7 +103,7 @@ void meshPostProcessing(Mesh*& inout_mesh, StaticVector<StaticVector<int>*>*& in
 
             meOpt.subdivideMeshMaxEdgeLengthUpdatePtsCams(mp, subdivideMeshNTimesAvEdgeLengthThr *
                                                           meOpt.computeAverageEdgeLength(),
-                                                          *inout_ptsCams, subdivideMaxPtsThr);
+                                                          inout_ptsCams, subdivideMaxPtsThr);
             meOpt.deallocateCleaningAttributes();
             meOpt.init();
             meOpt.cleanMesh(1); // has to be here
@@ -139,7 +134,7 @@ void meshPostProcessing(Mesh*& inout_mesh, StaticVector<StaticVector<int>*>*& in
                 float z = pointPlaneDistance(meOpt.pts[i], O, vz);
                 bool isHexahBorderPt = ((x < avel) || (x > svx - avel) || (y < avel) || (y > svy - avel) ||
                                         (z < avel) || (z > svz - avel));
-                ptsCanMove[i] = ((isHexahBorderPt == false) || (sizeOfStaticVector<int>((*inout_ptsCams)[i]) > 0));
+                ptsCanMove[i] = ((isHexahBorderPt == false) || (sizeOfStaticVector<int>(inout_ptsCams[i]) > 0));
                 //(*ptsCanMove)[i] = (isHexahBorderPt==false);
             }
         }

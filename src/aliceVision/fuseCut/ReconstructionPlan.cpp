@@ -283,14 +283,14 @@ void reconstructSpaceAccordingToVoxelsArray(const std::string& voxelsArrayFileNa
 
             // Save mesh as .bin and .obj
             mesh::Mesh* mesh = delaunayGC.createMesh();
-            StaticVector<StaticVector<int>*>* ptsCams = delaunayGC.createPtsCams();
+            StaticVector<StaticVector<int>> ptsCams;
+            delaunayGC.createPtsCams(ptsCams);
 
             mesh::meshPostProcessing(mesh, ptsCams, *ls->mp, folderName, hexahsToExcludeFromResultingMesh, hexah);
             mesh->saveToBin(folderName + "mesh.bin");
             mesh->saveToObj(folderName + "mesh.obj");
 
             saveArrayOfArraysToFile<int>(folderName + "meshPtsCamsFromDGC.bin", ptsCams);
-            deleteArrayOfArrays<int>(&ptsCams);
 
             delete mesh;
         }

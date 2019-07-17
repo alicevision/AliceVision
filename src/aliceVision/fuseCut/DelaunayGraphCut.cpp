@@ -542,6 +542,30 @@ StaticVector<StaticVector<int>*>* DelaunayGraphCut::createPtsCams()
     return out;
 }
 
+void DelaunayGraphCut::createPtsCams(StaticVector<StaticVector<int>>& out_ptsCams)
+{
+    long t = std::clock();
+    ALICEVISION_LOG_INFO("Extract visibilities.");
+    int npts = getNbVertices();
+
+    out_ptsCams.reserve(npts);
+
+    for(const GC_vertexInfo& v: _verticesAttr)
+    {
+        StaticVector<int> cams;
+        cams.reserve(v.getNbCameras());
+        for(int c = 0; c < v.getNbCameras(); c++)
+        {
+            cams.push_back(v.cams[c]);
+        }
+        out_ptsCams.push_back(cams);
+    } // for i
+
+    ALICEVISION_LOG_INFO("Extract visibilities done.");
+
+    mvsUtils::printfElapsedTime(t, "Extract visibilities ");
+}
+
 StaticVector<int>* DelaunayGraphCut::getPtsCamsHist()
 {
     int maxnCams = 0;
