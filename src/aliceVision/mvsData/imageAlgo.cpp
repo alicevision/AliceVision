@@ -111,51 +111,54 @@ void processImage(oiio::ImageBuf& dst, const oiio::ImageBuf& src, std::function<
 
 void colorconvert(oiio::ImageBuf& imgBuf, imageIO::EImageColorSpace fromColorSpace, imageIO::EImageColorSpace toColorSpace)
 {
-    std::string fromColorSpaceName = EImageColorSpace_enumToString(fromColorSpace);
-    std::string toColorSpaceName = EImageColorSpace_enumToString(toColorSpace);
+    using namespace imageIO;
 
     if(fromColorSpace == toColorSpace)
         return;
 
-    else if(toColorSpaceName == "Linear")
+    else if(toColorSpace == EImageColorSpace::LINEAR)
     {
-        if(fromColorSpaceName == "sRGB")
-            oiio::ImageBufAlgo::colorconvert(imgBuf, imgBuf, "sRGB", "Linear");
-        else if(fromColorSpaceName == "XYZ")
+        if(fromColorSpace == EImageColorSpace::SRGB)
+            oiio::ImageBufAlgo::colorconvert(imgBuf, imgBuf,
+                                             EImageColorSpace_enumToString(EImageColorSpace::SRGB), EImageColorSpace_enumToString(EImageColorSpace::LINEAR));
+        else if(fromColorSpace == EImageColorSpace::XYZ)
             processImage(imgBuf, &XYZtoRGB);
-        else if(fromColorSpaceName == "LAB")
+        else if(fromColorSpace == EImageColorSpace::LAB)
             processImage(imgBuf, &LABtoRGB);
     }
-    else if(toColorSpaceName == "sRGB")
+    else if(toColorSpace == EImageColorSpace::SRGB)
     {
-        if(fromColorSpaceName == "XYZ")
+        if(fromColorSpace == EImageColorSpace::XYZ)
             processImage(imgBuf, &XYZtoRGB);
-        else if(fromColorSpaceName == "LAB")
+        else if(fromColorSpace == EImageColorSpace::LAB)
             processImage(imgBuf, &LABtoRGB);
-        oiio::ImageBufAlgo::colorconvert(imgBuf, imgBuf, "Linear", "sRGB");
+        oiio::ImageBufAlgo::colorconvert(imgBuf, imgBuf,
+                                         EImageColorSpace_enumToString(EImageColorSpace::LINEAR), EImageColorSpace_enumToString(EImageColorSpace::SRGB));
     }
-    else if(toColorSpaceName == "XYZ")
+    else if(toColorSpace == EImageColorSpace::XYZ)
     {
-        if(fromColorSpaceName == "Linear")
+        if(fromColorSpace == EImageColorSpace::LINEAR)
             processImage(imgBuf, &RGBtoXYZ);
-        else if(fromColorSpaceName == "sRGB")
+        else if(fromColorSpace == EImageColorSpace::SRGB)
         {
-            oiio::ImageBufAlgo::colorconvert(imgBuf, imgBuf, "sRGB", "Linear");
+            oiio::ImageBufAlgo::colorconvert(imgBuf, imgBuf,
+                                             EImageColorSpace_enumToString(EImageColorSpace::SRGB), EImageColorSpace_enumToString(EImageColorSpace::LINEAR));
             processImage(imgBuf, &RGBtoXYZ);
         }
-        else if(fromColorSpaceName == "LAB")
+        else if(fromColorSpace == EImageColorSpace::LAB)
             processImage(imgBuf, &LABtoXYZ);
     }
-    else if(toColorSpaceName == "LAB")
+    else if(toColorSpace == EImageColorSpace::LAB)
     {
-        if(fromColorSpaceName == "Linear")
+        if(fromColorSpace == EImageColorSpace::LINEAR)
             processImage(imgBuf, &RGBtoLAB);
-        else if(fromColorSpaceName == "sRGB")
+        else if(fromColorSpace == EImageColorSpace::SRGB)
         {
-            oiio::ImageBufAlgo::colorconvert(imgBuf, imgBuf, "sRGB", "Linear");
+            oiio::ImageBufAlgo::colorconvert(imgBuf, imgBuf,
+                                             EImageColorSpace_enumToString(EImageColorSpace::SRGB), EImageColorSpace_enumToString(EImageColorSpace::LINEAR));
             processImage(imgBuf, &RGBtoLAB);
         }
-        else if(fromColorSpaceName == "XYZ")
+        else if(fromColorSpace == EImageColorSpace::XYZ)
             processImage(imgBuf, &XYZtoLAB);
     }
     ALICEVISION_LOG_TRACE("Convert image from " << EImageColorSpace_enumToString(fromColorSpace) << " to " << EImageColorSpace_enumToString(toColorSpace));
