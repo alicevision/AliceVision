@@ -264,7 +264,8 @@ void readImage(const std::string& path,
     ALICEVISION_LOG_TRACE("Read image " << path << " (encoded in " << fromColorSpaceName << " colorspace).");
     const EImageColorSpace fromColorSpace = EImageColorSpace_stringToEnum(fromColorSpaceName);
 
-    imageAlgo::colorconvert(inBuf, fromColorSpace, toColorSpace);
+    if(toColorSpace != EImageColorSpace::NO_CONVERSION)
+        imageAlgo::colorconvert(inBuf, fromColorSpace, toColorSpace);
 
     // convert to grayscale if needed
     if(nchannels == 1 && inSpec.nchannels >= 3)
