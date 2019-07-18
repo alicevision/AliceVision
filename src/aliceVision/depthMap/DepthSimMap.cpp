@@ -11,7 +11,8 @@
 #include <aliceVision/mvsData/Color.hpp>
 #include <aliceVision/mvsData/geometry.hpp>
 #include <aliceVision/mvsData/jetColorMap.hpp>
-#include <aliceVision/imageIO/image.hpp>
+#include <aliceVision/mvsData/imageIO.hpp>
+#include <aliceVision/mvsData/imageAlgo.hpp>
 
 #include <iostream>
 
@@ -342,7 +343,9 @@ void DepthSimMap::saveToImage(const std::string& filename, float simThr) const
             }
         }
 
-        imageIO::writeImage(filename, bufferWidth, _h, colorBuffer, imageIO::EImageQuality::LOSSLESS, imageIO::EImageColorSpace::AUTO);
+        oiio::ParamValueList metadata;
+        using namespace imageIO;
+        writeImage(filename, bufferWidth, _h, colorBuffer, EImageQuality::LOSSLESS, OutputFileColorSpace(EImageColorSpace::NO_CONVERSION), metadata);
     }
     catch (...)
     {
@@ -405,8 +408,9 @@ void DepthSimMap::save(const std::string& customSuffix, bool useStep1) const
         metadata.push_back(oiio::ParamValue("AliceVision:P", oiio::TypeDesc(oiio::TypeDesc::DOUBLE, oiio::TypeDesc::MATRIX44), 1, matrixP.data()));
     }
 
-    imageIO::writeImage(getFileNameFromIndex(_mp, _rc, mvsUtils::EFileType::depthMap, _scale, customSuffix), width, height, depthMap.getDataWritable(), imageIO::EImageQuality::LOSSLESS, imageIO::EImageColorSpace::NO_CONVERSION, metadata);
-    imageIO::writeImage(getFileNameFromIndex(_mp, _rc, mvsUtils::EFileType::simMap, _scale, customSuffix), width, height, simMap.getDataWritable(), imageIO::EImageQuality::OPTIMIZED, imageIO::EImageColorSpace::NO_CONVERSION, metadata);
+    using namespace imageIO;
+    writeImage(getFileNameFromIndex(_mp, _rc, mvsUtils::EFileType::depthMap, _scale, customSuffix), width, height, depthMap.getDataWritable(), EImageQuality::LOSSLESS, OutputFileColorSpace(EImageColorSpace::NO_CONVERSION), metadata);
+    writeImage(getFileNameFromIndex(_mp, _rc, mvsUtils::EFileType::simMap, _scale, customSuffix), width, height, simMap.getDataWritable(), imageIO::EImageQuality::OPTIMIZED, OutputFileColorSpace(EImageColorSpace::NO_CONVERSION), metadata);
 }
 
 void DepthSimMap::load(int fromScale)
@@ -416,8 +420,9 @@ void DepthSimMap::load(int fromScale)
     StaticVector<float> depthMap;
     StaticVector<float> simMap;
 
-    imageIO::readImage(getFileNameFromIndex(_mp, _rc, mvsUtils::EFileType::depthMap, fromScale), width, height, depthMap.getDataWritable(), imageIO::EImageColorSpace::NO_CONVERSION);
-    imageIO::readImage(getFileNameFromIndex(_mp, _rc, mvsUtils::EFileType::simMap, fromScale), width, height, simMap.getDataWritable(), imageIO::EImageColorSpace::NO_CONVERSION);
+    using namespace imageIO;
+    readImage(getFileNameFromIndex(_mp, _rc, mvsUtils::EFileType::depthMap, fromScale), width, height, depthMap.getDataWritable(), EImageColorSpace::NO_CONVERSION);
+    readImage(getFileNameFromIndex(_mp, _rc, mvsUtils::EFileType::simMap, fromScale), width, height, simMap.getDataWritable(), EImageColorSpace::NO_CONVERSION);
 
     initFromDepthMapAndSimMap(&depthMap, &simMap, fromScale);
 }

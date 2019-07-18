@@ -21,6 +21,7 @@
 #include <iostream>
 #include <cmath>
 
+
 namespace fs = boost::filesystem;
 
 namespace aliceVision {
@@ -73,6 +74,7 @@ std::istream& operator>>(std::istream& in, EImageFileType& imageFileType)
   return in;
 }
 
+// Warning: type conversion problems from string to param value, we may lose some metadata with string maps
 oiio::ParamValueList getMetadataFromMap(const std::map<std::string, std::string>& metadataMap)
 {
   oiio::ParamValueList metadata;
@@ -81,36 +83,47 @@ oiio::ParamValueList getMetadataFromMap(const std::map<std::string, std::string>
   return metadata;
 }
 
-oiio::ParamValueList readImageMetadata(const std::string& path)
+oiio::ParamValueList readImageMetadata(const std::string& path, int& width, int& height)
 {
   std::unique_ptr<oiio::ImageInput> in(oiio::ImageInput::open(path));
+  oiio::ImageSpec spec = in->spec();
 
   if(!in)
     throw std::runtime_error("Can't find/open image file '" + path + "'.");
 
-  oiio::ParamValueList metadata = in->spec().extra_attribs;
+#if OIIO_VERSION <= (10000 * 2 + 100 * 0 + 8) // OIIO_VERSION <= 2.0.8
+  const std::string formatStr = in->format_name();
+  if(formatStr == "raw")
+  {
+    // For the RAW plugin: override colorspace as linear (as the content is linear with sRGB primaries but declared as sRGB)
+    spec.attribute("oiio:ColorSpace", "Linear");
+    ALICEVISION_LOG_TRACE("OIIO workaround: RAW input image " << path << " is in Linear.");
+  }
+#endif
+
+  width = spec.width;
+  height = spec.height;
+
+  oiio::ParamValueList metadata = spec.extra_attribs;
 
   in->close();
 
   return metadata;
 }
 
+oiio::ParamValueList readImageMetadata(const std::string& path)
+{
+  int w, h;
+  return readImageMetadata(path, w, h);
+}
+
+// Warning: type conversion problems from string to param value, we may lose some metadata with string maps
 void readImageMetadata(const std::string& path, int& width, int& height, std::map<std::string, std::string>& metadata)
 {
-  std::unique_ptr<oiio::ImageInput> in(oiio::ImageInput::open(path));
+  oiio::ParamValueList oiioMetadadata = readImageMetadata(path, width, height);
 
-  if(!in)
-    throw std::runtime_error("Can't find/open image file '" + path + "'.");
-
-  const oiio::ImageSpec &spec = in->spec();
-
-  width = spec.width;
-  height = spec.height;
-
-  for(const auto& param : spec.extra_attribs)
+  for(const auto& param : oiioMetadadata)
     metadata.emplace(param.name().string(), param.get_string());
-
-  in->close();
 }
 
 template<typename T>
@@ -164,17 +177,38 @@ void readImage(const std::string& path,
   // libRAW configuration
   configSpec.attribute("raw:auto_bright", 0);       // don't want exposure correction
   configSpec.attribute("raw:use_camera_wb", 1);     // want white balance correction
-  configSpec.attribute("raw:ColorSpace", "sRGB");   // want colorspace sRGB
   configSpec.attribute("raw:use_camera_matrix", 3); // want to use embeded color profile
+#if OIIO_VERSION <= (10000 * 2 + 100 * 0 + 8) // OIIO_VERSION <= 2.0.8
+                                                    // In these previous versions of oiio, there was no Linear option
+  configSpec.attribute("raw:ColorSpace", "sRGB");   // want colorspace sRGB
+#else
+  configSpec.attribute("raw:ColorSpace", "Linear");   // want linear colorspace with sRGB primaries
+#endif
 
   oiio::ImageBuf inBuf(path, 0, 0, NULL, &configSpec);
 
   inBuf.read(0, 0, true, oiio::TypeDesc::FLOAT); // force image convertion to float (for grayscale and color space convertion)
 
   if(!inBuf.initialized())
-    throw std::runtime_error("Can't find/open image file '" + path + "'.");
+    throw std::runtime_error("Cannot find/open image file '" + path + "'.");
 
+#if OIIO_VERSION <= (10000 * 2 + 100 * 0 + 8) // OIIO_VERSION <= 2.0.8
+  // Workaround for bug in RAW colorspace management in previous versions of OIIO:
+  //     When asking sRGB we got sRGB primaries with linear gamma,
+  //     but oiio::ColorSpace was wrongly set to sRGB.
+  oiio::ImageSpec inSpec = inBuf.spec();
+  if(inSpec.get_string_attribute("oiio:ColorSpace", "") == "sRGB")
+  {
+    if(inBuf.file_format_name() == "raw")
+    {
+      // For the RAW plugin: override colorspace as linear (as the content is linear with sRGB primaries but declared as sRGB)
+      inSpec.attribute("oiio:ColorSpace", "Linear");
+      ALICEVISION_LOG_TRACE("OIIO workaround: RAW input image " << path << " is in Linear.");
+    }
+  }
+#else
   const oiio::ImageSpec& inSpec = inBuf.spec();
+#endif
 
   // check picture channels number
   if(inSpec.nchannels != 1 && inSpec.nchannels < 3)
@@ -184,17 +218,24 @@ void readImage(const std::string& path,
   if(imageColorSpace == EImageColorSpace::AUTO)
     throw std::runtime_error("You must specify a requested color space for image file '" + path + "'.");
 
+  const std::string& colorSpace = inSpec.get_string_attribute("oiio:ColorSpace", "sRGB"); // default image color space is sRGB
+  ALICEVISION_LOG_TRACE("Read image " << path << " (encoded in " << colorSpace << " colorspace).");
+
   if(imageColorSpace == EImageColorSpace::SRGB) // color conversion to sRGB
   {
-    const std::string& colorSpace = inSpec.get_string_attribute("oiio:ColorSpace", "sRGB"); // default image color space is sRGB
-    if(colorSpace != "sRGB")
-     oiio::ImageBufAlgo::colorconvert(inBuf, inBuf, colorSpace, "sRGB");
+    if (colorSpace != "sRGB")
+    {
+      oiio::ImageBufAlgo::colorconvert(inBuf, inBuf, colorSpace, "sRGB");
+      ALICEVISION_LOG_TRACE("Convert image " << path << " from " << colorSpace << " to sRGB colorspace");
+    }
   }
   else if(imageColorSpace == EImageColorSpace::LINEAR) // color conversion to linear
   {
-    const std::string& colorSpace = inSpec.get_string_attribute("oiio:ColorSpace", "sRGB");
-    if(colorSpace != "Linear")
-     oiio::ImageBufAlgo::colorconvert(inBuf, inBuf, colorSpace, "Linear");
+    if (colorSpace != "Linear")
+    {
+      oiio::ImageBufAlgo::colorconvert(inBuf, inBuf, colorSpace, "Linear");
+      ALICEVISION_LOG_TRACE("Convert image " << path << " from " << colorSpace << " to Linear colorspace");
+    }
   }
 
   // convert to grayscale if needed

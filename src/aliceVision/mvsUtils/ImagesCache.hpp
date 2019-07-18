@@ -11,6 +11,8 @@
 #include <aliceVision/mvsData/Rgb.hpp>
 #include <aliceVision/mvsData/StaticVector.hpp>
 #include <aliceVision/mvsUtils/MultiViewParams.hpp>
+#include <aliceVision/mvsData/imageIO.hpp>
+#include <aliceVision/mvsData/Image.hpp>
 
 #include <future>
 #include <mutex>
@@ -21,73 +23,50 @@ namespace mvsUtils {
 class ImagesCache
 {
 public:
-    class Img
+
+    enum class ECorrectEV
     {
-        int  _width = 0;
-        int  _height = 0;
-    public:
-        Img( )
-        { }
-        Img( size_t sz )
-            : data(sz)
-        { }
-
-        ~Img( )
-        {
-        }
-
-        inline void setWidth(  int w ) { _width  = w; }
-        inline void setHeight( int h ) { _height = h; }
-
-        inline int  getWidth()  const { return _width;  }
-        inline int  getHeight() const { return _height; }
-
-        inline Color& at( int x, int y )
-        {
-            return data[y * _width + x];
-        }
-
-        inline const Color& at( int x, int y ) const
-        {
-            return data[y * _width + x];
-        }
-
-        std::vector<Color> data;
+        NO_CORRECTION,
+        APPLY_CORRECTION
     };
 
-    typedef std::shared_ptr<Img> ImgPtr;
+    std::string ECorrectEV_enumToString(const ECorrectEV correctEV);
 
-public:
-    const MultiViewParams& _mp;
+    typedef std::shared_ptr<Image> ImgSharedPtr;
 
 private:
     ImagesCache(const ImagesCache&) = delete;
 
-    int N_PRELOADED_IMAGES;
-    std::vector<ImgPtr> imgs;
+    const MultiViewParams& _mp;
 
-    std::vector<int> camIdMapId;
-    std::vector<int> mapIdCamId;
-    StaticVector<long> mapIdClock;
+    int _N_PRELOADED_IMAGES;
+    std::vector<ImgSharedPtr> _imgs;
 
-    std::vector<std::mutex> imagesMutexes;
-    std::vector<std::string> imagesNames;
+    std::vector<int> _camIdMapId;
+    std::vector<int> _mapIdCamId;
+    StaticVector<long> _mapIdClock;
 
-    const int bandType;
+    std::vector<std::mutex> _imagesMutexes;
+    std::vector<std::string> _imagesNames;
 
     std::list<std::future<void>> _asyncObjects;
 
-public:
-    ImagesCache(const MultiViewParams& mp, int _bandType);
-    ImagesCache(const MultiViewParams& mp, int _bandType, std::vector<std::string>& _imagesNames);
-    void initIC(std::vector<std::string>& _imagesNames);
-    ~ImagesCache();
+    imageIO::EImageColorSpace _colorspace{imageIO::EImageColorSpace::AUTO};
+    ECorrectEV _correctEV{ECorrectEV::NO_CORRECTION};
 
-    inline ImgPtr getImg_sync( int camId )
+public:
+    ImagesCache( const MultiViewParams& mp, imageIO::EImageColorSpace colorspace, ECorrectEV correctEV = ECorrectEV::NO_CORRECTION);
+    ImagesCache( const MultiViewParams& mp, imageIO::EImageColorSpace colorspace, std::vector<std::string>& imagesNames, ECorrectEV correctEV = ECorrectEV::NO_CORRECTION);
+    void initIC( std::vector<std::string>& imagesNames );
+    void setCacheSize(int nbPreload);
+    void setCorrectEV(const ECorrectEV correctEV) { _correctEV = correctEV; }
+    ~ImagesCache() = default;
+
+    inline ImgSharedPtr getImg_sync( int camId )
     {
         refreshImage_sync(camId);
-        const int imageId = camIdMapId[camId];
-        return imgs[imageId];
+        const int imageId = _camIdMapId[camId];
+        return _imgs[imageId];
     }
 
     void refreshData(int camId);

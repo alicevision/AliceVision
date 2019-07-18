@@ -12,7 +12,7 @@
 #include <aliceVision/mvsData/Point3d.hpp>
 #include <aliceVision/mvsUtils/common.hpp>
 #include <aliceVision/mvsUtils/fileIO.hpp>
-#include <aliceVision/imageIO/image.hpp>
+#include <aliceVision/mvsData/imageIO.hpp>
 #include <aliceVision/alicevision_omp.hpp>
 
 #include <boost/filesystem.hpp>
@@ -278,10 +278,8 @@ void estimateAndRefineDepthMaps(int cudaDeviceIndex, mvsUtils::MultiViewParams& 
       "\t- scale: " << sgmScale << "\n"
       "\t- stepXY: " << sgmStepXY);
 
-  const int bandType = 0;
-
   // load images from files into RAM
-  mvsUtils::ImagesCache ic(mp, bandType);
+  mvsUtils::ImagesCache ic(mp, imageIO::EImageColorSpace::LINEAR);
   // load stuff on GPU memory and creates multi-level images and computes gradients
   PlaneSweepingCuda cps(cudaDeviceIndex, ic, mp, sgmScale);
   // init plane sweeping parameters
@@ -315,10 +313,10 @@ void computeNormalMaps(int cudaDeviceIndex, mvsUtils::MultiViewParams& mp, const
 {
   const float igammaC = 1.0f;
   const float igammaP = 1.0f;
-  const int bandType = 0;
   const int wsh = 3;
 
-  mvsUtils::ImagesCache ic(mp, bandType);
+  using namespace imageIO;
+  mvsUtils::ImagesCache ic(mp, EImageColorSpace::LINEAR);
   PlaneSweepingCuda cps(cudaDeviceIndex, ic, mp, 1);
 
   for(const int rc : cams)
@@ -330,14 +328,14 @@ void computeNormalMaps(int cudaDeviceIndex, mvsUtils::MultiViewParams& mp, const
       StaticVector<float> depthMap;
       int w = 0;
       int h = 0;
-      imageIO::readImage(getFileNameFromIndex(mp, rc, mvsUtils::EFileType::depthMap, 0), w, h, depthMap.getDataWritable(), imageIO::EImageColorSpace::NO_CONVERSION);
+      readImage(getFileNameFromIndex(mp, rc, mvsUtils::EFileType::depthMap, 0), w, h, depthMap.getDataWritable(), EImageColorSpace::NO_CONVERSION);
 
       StaticVector<Color> normalMap;
       normalMap.resize(mp.getWidth(rc) * mp.getHeight(rc));
       
       cps.computeNormalMap(&depthMap, &normalMap, rc, 1, igammaC, igammaP, wsh);
 
-      imageIO::writeImage(normalMapFilepath, mp.getWidth(rc), mp.getHeight(rc), normalMap.getDataWritable(), imageIO::EImageQuality::LOSSLESS, imageIO::EImageColorSpace::NO_CONVERSION);
+      writeImage(normalMapFilepath, mp.getWidth(rc), mp.getHeight(rc), normalMap.getDataWritable(), EImageQuality::LOSSLESS, OutputFileColorSpace(EImageColorSpace::NO_CONVERSION));
     }
   }
 }

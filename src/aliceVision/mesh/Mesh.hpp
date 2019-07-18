@@ -102,10 +102,13 @@ public:
         }
     };
 
+protected:
+    /// Per-vertex color data
+    std::vector<rgb> _colors;
+
 public:
     StaticVector<Point3d>* pts = nullptr;
     StaticVector<Mesh::triangle>* tris = nullptr;
-    Matrix3x4 transformGlobal;
 
     Mesh();
     ~Mesh();
@@ -119,6 +122,11 @@ public:
                           StaticVector<Voxel>& trisUvIds, std::string objAsciiFileName);
 
     void addMesh(Mesh* me);
+
+    /// Per-vertex color data const accessor
+    const std::vector<rgb>& colors() const { return _colors; }
+    /// Per-vertex color data accessor
+    std::vector<rgb>& colors() { return _colors; }
 
     StaticVector<StaticVector<int>*>* getTrisMap(const mvsUtils::MultiViewParams* mp, int rc, int scale, int w, int h);
     StaticVector<StaticVector<int>*>* getTrisMap(StaticVector<int>* visTris, const mvsUtils::MultiViewParams* mp, int rc, int scale,
@@ -169,8 +177,8 @@ public:
     double computeTriangleProjectionArea(const triangle_proj& tp) const;
     double computeTriangleArea(int idTri) const;
     Mesh::triangle_proj getTriangleProjection(int triid, const mvsUtils::MultiViewParams* mp, int rc, int w, int h) const;
-    bool isTriangleProjectionInImage(const Mesh::triangle_proj& tp, int width, int height, int margin) const;
-    int getTriangleNbVertexInImage(const Mesh::triangle_proj& tp, int width, int height, int margin) const;
+    bool isTriangleProjectionInImage(const mvsUtils::MultiViewParams& mp, const Mesh::triangle_proj& tp, int camId, int margin) const;
+    int getTriangleNbVertexInImage(const mvsUtils::MultiViewParams& mp, const Mesh::triangle_proj& tp, int camId, int margin) const;
     bool doesTriangleIntersectsRectangle(Mesh::triangle_proj* tp, Mesh::rectangle* re);
     StaticVector<Point2d>* getTrianglePixelIntersectionsAndInternalPoints(Mesh::triangle_proj* tp,
                                                                           Mesh::rectangle* re);

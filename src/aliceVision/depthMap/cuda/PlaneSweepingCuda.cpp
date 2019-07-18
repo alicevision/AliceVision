@@ -117,7 +117,7 @@ static void cps_host_fillCameraData(mvsUtils::ImagesCache& ic, CameraStruct& cam
 {
     ALICEVISION_LOG_DEBUG("cps_host_fillCameraData [" << c << "]: " << mp.getWidth(c) << "x" << mp.getHeight(c));
     clock_t t1 = tic();
-    mvsUtils::ImagesCache::ImgPtr img = ic.getImg_sync( c );
+    mvsUtils::ImagesCache::ImgSharedPtr img = ic.getImg_sync( c );
     ALICEVISION_LOG_DEBUG("cps_host_fillCameraData: " << c << " -a- Retrieve from ImagesCache elapsed time: " << toc(t1) << " ms.");
     t1 = tic();
 

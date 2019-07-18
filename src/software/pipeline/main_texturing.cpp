@@ -9,9 +9,10 @@
 #include <aliceVision/mesh/Mesh.hpp>
 #include <aliceVision/mesh/Texturing.hpp>
 #include <aliceVision/mesh/meshVisibility.hpp>
-#include <aliceVision/mvsData/image.hpp>
+#include <aliceVision/mvsData/imageIO.hpp>
 #include <aliceVision/mvsUtils/common.hpp>
 #include <aliceVision/mvsUtils/MultiViewParams.hpp>
+#include <aliceVision/mvsUtils/ImagesCache.hpp>
 #include <aliceVision/system/cmdline.hpp>
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/Timer.hpp>
@@ -43,8 +44,10 @@ int main(int argc, char* argv[])
     std::string inputMeshFilepath;
     std::string outputFolder;
     std::string imagesFolder;
-    std::string outTextureFileTypeName = EImageFileType_enumToString(EImageFileType::PNG);
+    std::string outTextureFileTypeName = imageIO::EImageFileType_enumToString(imageIO::EImageFileType::PNG);
+    std::string processColorspaceName = imageIO::EImageColorSpace_enumToString(imageIO::EImageColorSpace::SRGB);
     bool flipNormals = false;
+    bool correctEV = false;
 
     mesh::TexturingParams texParams;
     std::string unwrapMethod = mesh::EUnwrapMethod_enumToString(mesh::EUnwrapMethod::Basic);
@@ -67,7 +70,7 @@ int main(int argc, char* argv[])
           "Use images from a specific folder instead of those specify in the SfMData file.\n"
           "Filename should be the image uid.")
         ("outputTextureFileType", po::value<std::string>(&outTextureFileTypeName)->default_value(outTextureFileTypeName),
-          EImageFileType_informations().c_str())
+          imageIO::EImageFileType_informations().c_str())
         ("textureSide", po::value<unsigned int>(&texParams.textureSide)->default_value(texParams.textureSide),
             "Output texture size")
         ("downscale", po::value<unsigned int>(&texParams.downscale)->default_value(texParams.downscale),
@@ -85,8 +88,16 @@ int main(int argc, char* argv[])
             "Texture edge padding size in pixel")
         ("flipNormals", po::value<bool>(&flipNormals)->default_value(flipNormals),
             "Option to flip face normals. It can be needed as it depends on the vertices order in triangles and the convention change from one software to another.")
-        ("maxNbImagesForFusion", po::value<int>(&texParams.maxNbImagesForFusion)->default_value(texParams.maxNbImagesForFusion),
-            "Max number of images to combine to create the final texture.")
+        ("correctEV", po::value<bool>(&correctEV)->default_value(correctEV),
+            "Option to uniformize images exposure.")
+        ("useScore", po::value<bool>(&texParams.useScore)->default_value(texParams.useScore),
+             "Use triangles scores (based on observations and re-projected areas in source images) for weighting contributions.")
+        ("processColorspace", po::value<std::string>(&processColorspaceName)->default_value(processColorspaceName),
+            "Colorspace for the texturing internal computation (does not impact the output file colorspace).")
+        ("multiBandDownscale", po::value<unsigned int>(&texParams.multiBandDownscale)->default_value(texParams.multiBandDownscale),
+            "Width of frequency bands.")
+        ("multiBandNbContrib", po::value<std::vector<int>>(&texParams.multiBandNbContrib)->default_value(texParams.multiBandNbContrib)->multitoken(),
+             "Number of contributions per frequency band.")
         ("bestScoreThreshold", po::value<double>(&texParams.bestScoreThreshold)->default_value(texParams.bestScoreThreshold),
             "(0.0 to disable filtering based on threshold to relative best score).")
         ("angleHardThreshold", po::value<double>(&texParams.angleHardThreshold)->default_value(texParams.angleHardThreshold),
@@ -140,8 +151,12 @@ int main(int argc, char* argv[])
     system::Logger::get()->setLogLevel(verboseLevel);
 
     texParams.visibilityRemappingMethod = mesh::EVisibilityRemappingMethod_stringToEnum(visibilityRemappingMethod);
+    texParams.processColorspace = imageIO::EImageColorSpace_stringToEnum(processColorspaceName);
     // set output texture file type
-    const EImageFileType outputTextureFileType = EImageFileType_stringToEnum(outTextureFileTypeName);
+    const imageIO::EImageFileType outputTextureFileType = imageIO::EImageFileType_stringToEnum(outTextureFileTypeName);
+
+    texParams.correctEV = mvsUtils::ImagesCache::ECorrectEV::NO_CORRECTION;
+    if(correctEV) { texParams.correctEV = mvsUtils::ImagesCache::ECorrectEV::APPLY_CORRECTION; }
 
     // read the input SfM scene
     sfmData::SfMData sfmData;

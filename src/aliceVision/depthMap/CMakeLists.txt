@@ -71,7 +71,6 @@ alicevision_add_library(aliceVision_depthMap
     ${depthMap_cuda_files_sources}
   PUBLIC_LINKS
     aliceVision_mvsData
-    aliceVision_imageIO
     aliceVision_mvsUtils
     aliceVision_system
     ${Boost_FILESYSTEM_LIBRARY}
