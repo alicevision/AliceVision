@@ -81,7 +81,7 @@ bool MeshEnergyOpt::optimizeSmooth(float lambda, int niter, StaticVectorBool& pt
         return false;
     }
 
-   // bool saveDebug = mp ? mp.userParams.get<bool>("meshEnergyOpt.saveAllIterations", false) : false;
+   // bool saveDebug = mp ? mp->userParams.get<bool>("meshEnergyOpt.saveAllIterations", false) : false;
 
     Point3d LU, RD;
     LU = pts[0];

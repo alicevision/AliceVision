@@ -358,9 +358,6 @@ bool MeshClean::path::isClodePath(StaticVector<MeshClean::path::pathPart>& path)
 
 void MeshClean::path::deployPath(StaticVector<MeshClean::path::pathPart>& path)
 {
-    // printf("deploying path:\n");
-    // printfState(_pth);
-
     StaticVector<int> trisIds;
     trisIds.reserve(path.size());
     for(int i = 0; i < path.size(); i++)
@@ -420,7 +417,6 @@ void MeshClean::path::createPath(StaticVector<int>& ptNeighTrisSortedAscToProces
 
     int nextTriId;
 
-    // printf("front\n");
     nextTriId = out_path[0].triId;
     while(nextTriId > -1)
     {
@@ -431,7 +427,6 @@ void MeshClean::path::createPath(StaticVector<int>& ptNeighTrisSortedAscToProces
         }
     }
 
-    // printf("back\n");
     nextTriId = out_path[0].triId;
     while(nextTriId > -1)
     {
@@ -471,7 +466,6 @@ int MeshClean::path::deployAll()
         clearPointNeighbors(newPtId);
         ptNeighTrisSortedAscToProcess.resize(0);
         nNewPts++;
-        // printf("WARNING createPath :: ptNeighTrisSortedAscToProcess->size()>0\n");
     }
 
     // extract from path all cycles and last (cycle or path) remains
@@ -685,7 +679,6 @@ void MeshClean::init()
             if(i - i0 + 1 > 1)
                 qsort(&edgesNeigTris[i0], i - i0 + 1, sizeof(Voxel), qSortCompareVoxelByYAsc);
 
-            // printf("i0 %i - i %i\n",i0,i);
             int xyI0 = edgesXYStat.size();
 
             int j0 = i0;
@@ -693,15 +686,9 @@ void MeshClean::init()
             {
                 if((j == i) || (edgesNeigTris[j].y != edgesNeigTris[j + 1].y))
                 {
-                    // printf("j0 %i - j %i\n",j0,j);
                     if(j - j0 + 1 > 1)
                         qsort(&edgesNeigTris[j0], j - j0 + 1, sizeof(Voxel), qSortCompareVoxelByZAsc);
 
-                    // for (int k=j0;k<=j;k++) {
-                    //	printf("%i %i %i %i\n",k,(*edgesNeigTris)[k].x,(*edgesNeigTris)[k].y,(*edgesNeigTris)[k].z);
-                    //};
-
-                    // printf("%i of %i\n",edgesXYStat->size(),edgesXYStat->reserved());
                     edgesXYStat.push_back(Voxel(edgesNeigTris[j].y, j0, j));
                     j0 = j + 1;
                 }

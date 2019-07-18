@@ -167,7 +167,7 @@ public:
     void laplacianSmoothPts(StaticVector<StaticVector<int>>& ptsNeighPts, double maximalNeighDist = -1.0f);
     void computeNormalsForPts(StaticVector<Point3d>& out_nms);
     void computeNormalsForPts(StaticVector<StaticVector<int>>& ptsNeighTris, StaticVector<Point3d>& out_nms);
-    void smoothNormals(StaticVector<Point3d>& nms, StaticVector<StaticVector<int>*>& ptsNeighPts);
+    void smoothNormals(StaticVector<Point3d>& nms, StaticVector<StaticVector<int>>& ptsNeighPts);
     Point3d computeTriangleNormal(int idTri);
     Point3d computeTriangleCenterOfGravity(int idTri) const;
     double computeTriangleMaxEdgeLength(int idTri) const;

@@ -175,15 +175,13 @@ bool MeshAnalyze::applyLaplacianOperator(int ptId, StaticVector<Point3d>& ptsToA
     Point3d n = ln;
     float d = n.size();
     n = n.normalize();
-    if(std::isnan(d) || std::isnan(n.x) || std::isnan(n.y) || std::isnan(n.z) || (d != d) || (n.x != n.x) ||
-       (n.y != n.y) || (n.z != n.z)) // check if is not NaN
+    if(std::isnan(d) || std::isnan(n.x) || std::isnan(n.y) || std::isnan(n.z)) // check if is not NaN
     {
         ALICEVISION_LOG_WARNING("MeshAnalyze::applyLaplacianOperator: nan");
         return false;
     }
 
-    if(std::isnan(d) || std::isnan(n.x) || std::isnan(n.y) || std::isnan(n.z) || (d != d) || (n.x != n.x) ||
-       (n.y != n.y) || (n.z != n.z)) // check if is not NaN
+    if(std::isnan(d) || std::isnan(n.x) || std::isnan(n.y) || std::isnan(n.z)) // check if is not NaN
     {
         ALICEVISION_LOG_WARNING("MeshAnalyze::applyLaplacianOperator: nan");
         return false;
@@ -229,8 +227,7 @@ bool MeshAnalyze::getBiLaplacianSmoothingVector(int ptId, StaticVector<Point3d>&
         Point3d n = tp;
         float d = n.size();
         n = n.normalize();
-        if(std::isnan(d) || std::isnan(n.x) || std::isnan(n.y) || std::isnan(n.z) || (d != d) || (n.x != n.x) ||
-           (n.y != n.y) || (n.z != n.z)) // check if is not NaN
+        if(std::isnan(d) || std::isnan(n.x) || std::isnan(n.y) || std::isnan(n.z)) // check if is not NaN
         {
             return false;
         }
