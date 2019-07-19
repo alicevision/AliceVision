@@ -335,7 +335,7 @@ int main(int argc, char* argv[])
                     }
                     fuseCut::reconstructSpaceAccordingToVoxelsArray(voxelsArrayFileName, &lsbase);
                     // Join meshes and ptsCams
-                    mesh::Mesh* mesh = fuseCut::joinMeshes(voxelsArrayFileName, &lsbase);
+                    mesh = fuseCut::joinMeshes(voxelsArrayFileName, &lsbase);
                     ptsCams = fuseCut::loadLargeScalePtsCams(lsbase.getRecsDirs(voxelsArray));
                     break;
                 }
