@@ -165,7 +165,7 @@ int main(int argc, char **argv)
       const sfmData::View& view = *(viewPair.second);
       bool toRemove = true;
 
-      for(int i = 0; i < imageWhiteList.size(); ++i)
+      for(std::size_t i = 0; i < imageWhiteList.size(); ++i)
       {
         // Compare to filename, stem (filename without extension), view UID or regex on the full path
         if (imageWhiteList[i] == fs::path(view.getImagePath()).filename() ||
