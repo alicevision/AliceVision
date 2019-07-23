@@ -63,7 +63,7 @@ int main(int argc, char **argv)
     ("describerTypes,d", po::value<std::string>(&describerTypesName)->default_value(describerTypesName),
       feature::EImageDescriberType_informations().c_str())
     ("imageWhiteList", po::value<std::vector<std::string>>(&imageWhiteList)->multitoken()->default_value(imageWhiteList),
-      "image white list (uid, image filename or regex on the image file path).")
+      "image white list containing uid(s), image filenames or regex(es) on the image file path (supported regex: '#' matches a single digit, '@' one or more digits, '?' one character and '*' zero or more)")
     ("views", po::value<bool>(&flagViews)->default_value(flagViews),
       "Export views.")
     ("intrinsics", po::value<bool>(&flagIntrinsics)->default_value(flagIntrinsics),
