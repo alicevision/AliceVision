@@ -1020,10 +1020,10 @@ install(FILES "${configfile}"
         DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/aliceVision")
 
 # Add uninstall target
+set(cmakeUninstallFile "${CMAKE_CURRENT_BINARY_DIR}/cmake/cmake_uninstall.cmake")
 configure_file(
-  "${CMAKE_CURRENT_SOURCE_DIR}/cmake/cmake_uninstall.cmake.in"
-  "${CMAKE_CURRENT_BINARY_DIR}/cmake/cmake_uninstall.cmake"
+  "${CMAKE_CURRENT_SOURCE_DIR}/cmake/cmake_uninstall.cmake.in" ${cmakeUninstallFile}
   IMMEDIATE @ONLY
 )
 
-add_custom_target(uninstall "${CMAKE_COMMAND}" -P "${CMAKE_CURRENT_BINARY_DIR}/../cmake/cmake_uninstall.cmake")
+add_custom_target(uninstall "${CMAKE_COMMAND}" -P "${cmakeUninstallFile}")
