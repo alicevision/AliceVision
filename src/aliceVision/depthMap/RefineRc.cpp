@@ -57,12 +57,12 @@ DepthSimMap* RefineRc::getDepthPixSizeMapFromSGM()
     StaticVector<IdValue> volumeBestIdVal;
     volumeBestIdVal.reserve(_width * _height);
 
-    for(int i = 0; i < _volumeBestIdVal->size(); i++)
+    for(int i = 0; i < _volumeBestIdVal.size(); i++)
     {
         // float sim = (*depthSimMapFinal->dsm)[i].y;
         // sim = std::min(sim,mp->simThr);
         const float sim = _sp->mp->simThr - 0.0001;
-        const int id = (*_volumeBestIdVal)[i].id;
+        const int id = _volumeBestIdVal[i].id;
 
         if(id > 0)
           volumeBestIdVal.push_back(IdValue(id, sim));
