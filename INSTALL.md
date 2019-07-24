@@ -350,9 +350,7 @@ Using AliceVision as a third party library dependency in cmake
 --------------------------------------------------------------
 
 AliceVision can be used as a third party once it have been installed.
-Because it can use its own Ceres version, it is better to install it locally and not in system files.
-So please consider using the `CMAKE_INSTALL_PREFIX` cmake variable to specify a local installation directory.
-
+Consider using the `CMAKE_INSTALL_PREFIX` cmake variable to specify a local installation directory.
 Here the syntax to add the variable to the cmake command line (use absolute path), e.g.: 
 ```bash
 -DCMAKE_INSTALL_PREFIX="/home/user/dev/AliceVision_install"
@@ -360,15 +358,23 @@ Here the syntax to add the variable to the cmake command line (use absolute path
 
 Perform `make` and `make install`
 
-Then you will be able to use AliceVision as an external library in your `CMakeLists.txt`:
+Then you will be able to use AliceVision as an external library in your `CMakeLists.txt` using
+the modern CMake approach as imported target. For example, if your target `main` depends on the 
+aliceVision module `aliceVision_sfmDataIO`:
+
 ```cmake
-find_package(AliceVision REQUIRED)
-include_directories(${ALICEVISION_INCLUDE_DIRS})
+find_package(aliceVision CONFIG REQUIRED)
+message(STATUS "Found AliceVision : ${aliceVision_FOUND}")
+message(STATUS "Found AliceVision version: ${aliceVision_VERSION}")
 add_executable(main main.cpp)
-target_link_libraries(main ${ALICEVISION_LIBRARIES})
+target_link_libraries(main PUBLIC aliceVision_sfmDataIO)
 ```
 
-Specify to CMake where AliceVision is installed by using the `AliceVision_DIR` cmake variable: `-DAliceVision_DIR:STRING="YourInstallPath"/share/aliceVision/cmake`
+In general, you need to specify the list of the aliceVision modules that your library or executable
+depends on.
+
+Specify to CMake where AliceVision is installed by using the `AliceVision_DIR` cmake variable: `-DAliceVision_DIR:PATH="YourInstallPath"/share/aliceVision/cmake`
+or by simply adding the installation path to your `CMAKE_PREFIX_PATH`, i.e. `-DCMAKE_PREFIX_PATH:PATH="YourInstallPath"`.
 
 
 ### Docker image
