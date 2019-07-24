@@ -191,24 +191,23 @@ bool Fuser::filterGroupsRC(int rc, int pixSizeBall, int pixSizeBallWSP, int nNea
 
         StaticVector<float> tcdepthMap;
 
-        {
-            int width, height;
-            imageIO::readImage(getFileNameFromIndex(mp, tc, mvsUtils::EFileType::depthMap, 1), width, height, tcdepthMap.getDataWritable(), imageIO::EImageColorSpace::NO_CONVERSION);
-        }
+        int tcWidth, tcHeight;
+        imageIO::readImage(getFileNameFromIndex(mp, tc, mvsUtils::EFileType::depthMap, 1), tcWidth, tcHeight, tcdepthMap.getDataWritable(), imageIO::EImageColorSpace::NO_CONVERSION);
 
         if(!tcdepthMap.empty())
         {
-            for(int y = 0; y < h; ++y)
-                for(int x = 0; x < w; ++x)
+            for(int y = 0; y < tcHeight; ++y)
+            {
+                for(int x = 0; x < tcWidth; ++x)
                 {
-                    float depth = tcdepthMap[y * w + x];
+                    float depth = tcdepthMap[y * tcWidth + x];
                     if(depth > 0.0f)
                     {
                       Point3d p = mp->CArr[tc] + (mp->iCamArr[tc] * Point2d((float)x, (float)y)).normalize() * depth;
                       updateInSurr(pixSizeBall, pixSizeBallWSP, p, rc, tc, numOfPtsMap, &depthMap, &simMap, 1);
                     }
                 }
-
+            }
 
             for(int i = 0; i < w * h; i++)
             {
