@@ -978,46 +978,48 @@ add_subdirectory(software)
 # Install rules
 # ==============================================================================
 
-install(EXPORT aliceVision-targets
-    DESTINATION ${CMAKE_INSTALL_DATADIR}/aliceVision/cmake FILE AliceVisionTargets.cmake)
+# Include module with fuction 'write_basic_package_version_file'
+include(CMakePackageConfigHelpers)
 
-#Adapt build include paths to install path
-set(ALICEVISION_INCLUDE_DIRS
-  "${ALICEVISION_INCLUDE_DIRS}"
-  "${CMAKE_INSTALL_PREFIX}/include/aliceVision")
+# name of the exported project (cannot use PROJECT_NAME as it is AliceVisionSrc
+set(exportedProjectName "aliceVision")
+# the generated cmake config file
+set(cmakeVersionConfig "${generatedDir}/${exportedProjectName}ConfigVersion.cmake")
+# the generated cmake version file
+set(cmakeProjectConfig "${generatedDir}/${exportedProjectName}Config.cmake")
+# place to install the cmake-related files
+set(cmakeConfigInstallDir "${CMAKE_INSTALL_DATADIR}/${exportedProjectName}/cmake")
+# the name of the cmake Target file to export
+set(targetsExportName "${exportedProjectName}Targets")
 
-list(REMOVE_ITEM ALICEVISION_INCLUDE_DIRS ${generatedDir})
-string(REGEX REPLACE
-  "${CMAKE_CURRENT_SOURCE_DIR}"
-  "${CMAKE_INSTALL_PREFIX}/include"
-  ALICEVISION_INCLUDE_DIRS
-  "${ALICEVISION_INCLUDE_DIRS}"
-)
+# generate '<PROJECT-NAME>ConfigVersion.cmake'
+# Note: major version number must be the same as requested
+write_basic_package_version_file("${cmakeVersionConfig}" COMPATIBILITY SameMajorVersion)
 
-string(REGEX REPLACE
-  "dependencies"
-  "aliceVision_dependencies"
-  ALICEVISION_INCLUDE_DIRS
-  "${ALICEVISION_INCLUDE_DIRS}"
-)
+# Configure '<PROJECT-NAME>Config.cmake'
+configure_package_config_file("${CMAKE_CURRENT_SOURCE_DIR}/cmake/AliceVisionConfig.cmake.in"
+        "${cmakeProjectConfig}"
+        INSTALL_DESTINATION "${cmakeConfigInstallDir}")
 
-# Create a AliceVisionConfig.cmake file. <name>Config.cmake files are searched by
-# find_package() automatically. We configure that file so that we can put any
-# information we want in it, e.g. version numbers, include directories, etc.
-configure_file("${CMAKE_CURRENT_SOURCE_DIR}/cmake/AliceVisionConfig.cmake.in"
-               "${CMAKE_CURRENT_BINARY_DIR}/AliceVisionConfig.cmake" @ONLY)
+# this exports the targets only to be used for the in-tree compilation, do not export this
+export(EXPORT aliceVision-targets FILE "${generatedDir}/${targetsExportName}.cmake")
 
-install(FILES "${CMAKE_CURRENT_BINARY_DIR}/AliceVisionConfig.cmake"
-        DESTINATION ${CMAKE_INSTALL_DATADIR}/aliceVision/cmake)
+# generate and install the target.cmake file to be used when the library is installed.
+install(EXPORT aliceVision-targets DESTINATION ${CMAKE_INSTALL_DATADIR}/aliceVision/cmake FILE ${targetsExportName}.cmake)
+
+# install ${PROJECT_NAME}ConfigVersion.cmake and ${PROJECT_NAME}Config.cmake
+install(FILES "${cmakeProjectConfig}" "${cmakeVersionConfig}"
+        DESTINATION "${cmakeConfigInstallDir}")
+
 
 # create the config.hpp file containing all the preprocessor definitions
 set(configfile "${generatedDir}/aliceVision/config.hpp")
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/cmake/config.hpp.in"
                "${configfile}" @ONLY)
 
-
 install(FILES "${configfile}"
         DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/aliceVision")
+
 
 # Add uninstall target
 set(cmakeUninstallFile "${CMAKE_CURRENT_BINARY_DIR}/cmake/cmake_uninstall.cmake")
