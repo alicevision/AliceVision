@@ -96,7 +96,7 @@ if(ALICEVISION_USE_RPATH)
     set(CMAKE_INSTALL_RPATH "\\$ORIGIN/../${CMAKE_INSTALL_LIBDIR}:\\$ORIGIN")
   endif()
 endif()
- 
+
 
 # Set build path
 set(EXECUTABLE_OUTPUT_PATH "${ALICEVISION_ROOT}/${CMAKE_SYSTEM_NAME}-${CMAKE_SYSTEM_PROCESSOR}")
@@ -369,7 +369,7 @@ if(ALICEVISION_BUILD_SFM)
     message(STATUS "CERES_LIBRARIES: ${CERES_LIBRARIES}")
     message(STATUS "CERES_INCLUDE_DIRS: ${CERES_INCLUDE_DIRS}")
     if(WIN32)
-        # avoid 'ERROR' macro clashing on Windows 
+        # avoid 'ERROR' macro clashing on Windows
         add_definitions(-DGLOG_NO_ABBREVIATED_SEVERITIES)
     endif()
     include_directories(${CERES_INCLUDE_DIRS})
@@ -496,7 +496,7 @@ set(ALICEVISION_HAVE_OCVSIFT 0)
 if(ALICEVISION_BUILD_SFM)
   if(NOT ALICEVISION_USE_OPENCV STREQUAL "OFF")
     find_package(OpenCV COMPONENTS core imgproc video imgcodecs videoio features2d xfeatures2d)
-    
+
     # We do not set the minimal version directly in find_package
     # due to this issue in opencv: https://github.com/opencv/opencv/issues/5931
     # which considers major version as exact requirement.
@@ -684,7 +684,7 @@ if(NOT ALICEVISION_USE_CUDA STREQUAL "OFF")
     set(CUDA_USE_STATIC_CUDA_RUNTIME OFF)
     # Workaround to force deactivation of cuda static runtime for cmake < 3.10
     set(CUDA_cudart_static_LIBRARY 0)
-  else() 
+  else()
     message(STATUS "BUILD_SHARED_LIBS OFF")
     option(CUDA_USE_STATIC_CUDA_RUNTIME "Use the static version of the CUDA runtime library if available" ON)
     set(CUDA_USE_STATIC_CUDA_RUNTIME ON)
@@ -982,7 +982,7 @@ add_subdirectory(software)
 include(CMakePackageConfigHelpers)
 
 # name of the exported project (cannot use PROJECT_NAME as it is AliceVisionSrc
-set(exportedProjectName "aliceVision")
+set(exportedProjectName "AliceVision")
 # the generated cmake config file
 set(cmakeVersionConfig "${generatedDir}/${exportedProjectName}ConfigVersion.cmake")
 # the generated cmake version file
@@ -1005,7 +1005,7 @@ configure_package_config_file("${CMAKE_CURRENT_SOURCE_DIR}/cmake/AliceVisionConf
 export(EXPORT aliceVision-targets FILE "${generatedDir}/${targetsExportName}.cmake")
 
 # generate and install the target.cmake file to be used when the library is installed.
-install(EXPORT aliceVision-targets DESTINATION ${CMAKE_INSTALL_DATADIR}/aliceVision/cmake FILE ${targetsExportName}.cmake)
+install(EXPORT aliceVision-targets DESTINATION ${CMAKE_INSTALL_DATADIR}/${exportedProjectName}/cmake FILE ${targetsExportName}.cmake)
 
 # install ${PROJECT_NAME}ConfigVersion.cmake and ${PROJECT_NAME}Config.cmake
 install(FILES "${cmakeProjectConfig}" "${cmakeVersionConfig}"

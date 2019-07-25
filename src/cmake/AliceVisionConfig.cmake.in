@@ -1,18 +1,18 @@
-# Config file for aliceVision library - Find aliceVision & dependencies.
+# Config file for aliceVision library - Find AliceVision & dependencies.
 #
-# This file is used by CMake when find_package(aliceVision) is invoked (and
+# This file is used by CMake when find_package(AliceVision) is invoked (and
 # the directory containing this file is present in CMAKE_MODULE_PATH
-# (if aliceVision was installed), or exists in the local CMake package registry if
-# the aliceVision build directory was exported.
+# (if AliceVision was installed), or exists in the local CMake package registry if
+# the AliceVision build directory was exported.
 #
 # This module defines the targets needed to compile and link against the library.
 # The target(s) automatically propagate the dependencies of the library.
 #
 # In your CMakeLists.txt file just add the dependency
 #
-# find_package(aliceVision CONFIG REQUIRED)
-# message(STATUS "Found AliceVision : ${aliceVision_FOUND}")
-# message(STATUS "Found AliceVision version: ${aliceVision_VERSION}")
+# find_package(AliceVision CONFIG REQUIRED)
+# message(STATUS "Found AliceVision : ${AliceVision_FOUND}")
+# message(STATUS "Found AliceVision version: ${AliceVision_VERSION}")
 #
 # Then in order to link your executable to one of the modules of the library (say,
 # aliceVision_sfmDataIO), only target_link_libraries() is needed to specify the
@@ -26,8 +26,8 @@
 #
 # Note that target_include_directories() is not necessary.
 #
-# Beside the Cmake automatically generated variables such as aliceVision_FOUND and
-# aliceVision_VERSION, this module also defines some convenient variables that
+# Beside the Cmake automatically generated variables such as AliceVision_FOUND and
+# AliceVision_VERSION, this module also defines some convenient variables that
 # defines some properties and option with which the library was built:
 #
 # ALICEVISION_HAVE_CCTAG   -  TRUE if the library is built with CCTAG support
