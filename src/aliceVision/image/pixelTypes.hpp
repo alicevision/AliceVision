@@ -199,10 +199,9 @@ namespace aliceVision
       * @param blue component value
       * @param alpha component value
       */
-      inline Rgba( const T red, const T green, const T blue, const T alpha = static_cast<T>( 1 ) )
+      inline Rgba( const T red, const T green, const T blue, const T alpha = T(1) )
         : Base( red, green, blue, alpha )
       {
-
       }
 
       /**
@@ -212,29 +211,38 @@ namespace aliceVision
       explicit inline Rgba( const Base& val )
         : Base( val )
       {
-
       }
 
       /**
-      * @brief RGB constructor with default alpha value
+      * @brief RGBA constructor with default alpha value to 1
       * @param val Value to set in each RGB component
       * @note This is equivalent to RGBA( val , val , val , 1 )
       */
-      explicit inline Rgba( const T val = 0 )
-        : Base( val, val, val, static_cast<T>( 1 ) )
+      explicit inline Rgba( const T val )
+        : Base( val, val, val, T(1) )
       {
+      }
 
+      /**
+       * @brief Default RGBA constructor set all channels to zero (including the alpha channel)
+       * @warning The alpha channel is initialized to 0.
+       *          It is used in generic/templated code like "sampler"
+       *          which creates an empty color and accumulate color contributions.
+       */
+      explicit inline Rgba()
+        : Base( T(0), T(0), T(0), T(0) )
+      {
       }
 
       /**
       * @brief Copy constructor
       * @param val Source RGBA value
       */
-      inline Rgba( const RGBColor & val )
-        : Base( val.r(), val.g(), val.b(), static_cast<T>( 1 ) )
+      inline Rgba( const RGBColor & val, const T alpha = 1 )
+        : Base( val.r(), val.g(), val.b(), alpha )
       {
-
       }
+
       //-- construction method
       //------------------------------
 
