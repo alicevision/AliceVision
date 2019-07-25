@@ -135,6 +135,11 @@ void getBufferFromImage(Image<unsigned char>& image, oiio::ImageBuf& buffer)
   getBufferFromImage(image, oiio::TypeDesc::UINT8, 1, buffer);
 }
 
+void getBufferFromImage(Image<RGBAfColor>& image, oiio::ImageBuf& buffer)
+{
+  getBufferFromImage(image, oiio::TypeDesc::FLOAT, 4, buffer);
+}
+
 void getBufferFromImage(Image<RGBAColor>& image, oiio::ImageBuf& buffer)
 {
   getBufferFromImage(image, oiio::TypeDesc::UINT8, 4, buffer);
@@ -338,6 +343,11 @@ void readImage(const std::string& path, Image<unsigned char>& image, EImageColor
   readImage(path, oiio::TypeDesc::UINT8, 1, image, imageColorSpace);
 }
 
+void readImage(const std::string& path, Image<RGBAfColor>& image, EImageColorSpace imageColorSpace)
+{
+  readImage(path, oiio::TypeDesc::FLOAT, 4, image, imageColorSpace);
+}
+
 void readImage(const std::string& path, Image<RGBAColor>& image, EImageColorSpace imageColorSpace)
 {
   readImage(path, oiio::TypeDesc::UINT8, 4, image, imageColorSpace);
@@ -356,6 +366,11 @@ void readImage(const std::string& path, Image<RGBColor>& image, EImageColorSpace
 void writeImage(const std::string& path, const Image<unsigned char>& image, EImageColorSpace imageColorSpace, const oiio::ParamValueList& metadata)
 {
   writeImage(path, oiio::TypeDesc::UINT8, 1, image, imageColorSpace, metadata);
+}
+
+void writeImage(const std::string& path, const Image<RGBAfColor>& image, EImageColorSpace imageColorSpace, const oiio::ParamValueList& metadata)
+{
+  writeImage(path, oiio::TypeDesc::FLOAT, 4, image, imageColorSpace, metadata);
 }
 
 void writeImage(const std::string& path, const Image<RGBAColor>& image, EImageColorSpace imageColorSpace, const oiio::ParamValueList& metadata)

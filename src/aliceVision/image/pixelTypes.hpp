@@ -362,7 +362,11 @@ namespace aliceVision
                      T( ( Z )( *this )( 3 ) * val ) );
       }
     };
+
+    /// Instantiation for unsigned char color component
     typedef Rgba<unsigned char> RGBAColor;
+    /// Instantiation for float color component
+    typedef Rgba<float> RGBAfColor;
 
     const RGBColor WHITE( 255, 255, 255 );
     const RGBColor BLACK( 0, 0, 0 );
