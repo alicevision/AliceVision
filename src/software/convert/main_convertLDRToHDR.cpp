@@ -237,11 +237,13 @@ int main(int argc, char** argv)
   {
     channelQuantization = std::pow(2, 10); //RAW 10 bit precision, 2^10 values between black and white point
     response.resize(channelQuantization);
-    if(calibrationMethod == ECalibrationMethod::LINEAR)
-      loadColorSpace = image::EImageColorSpace::LINEAR;
-    else
-      loadColorSpace = image::EImageColorSpace::SRGB;
   }
+
+  // set correct color space according to calibration method
+  if(calibrationMethod == ECalibrationMethod::LINEAR)
+    loadColorSpace = image::EImageColorSpace::LINEAR;
+  else
+    loadColorSpace = image::EImageColorSpace::SRGB;
 
   // force clamped value correction between 0 and 1
   clampedValueCorrection = clamp(clampedValueCorrection, 0.f, 1.f);
