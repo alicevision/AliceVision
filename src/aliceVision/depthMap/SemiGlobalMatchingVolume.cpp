@@ -271,16 +271,15 @@ void SemiGlobalMatchingVolume::SGMoptimizeVolumeStepZ(int rc, int volStepXY, int
         mvsUtils::printfElapsedTime(tall, "SemiGlobalMatchingVolume::SGMoptimizeVolumeStepZ");
 }
 
-StaticVector<IdValue>* SemiGlobalMatchingVolume::getOrigVolumeBestIdValFromVolumeStepZ(int zborder)
+void SemiGlobalMatchingVolume::getOrigVolumeBestIdValFromVolumeStepZ(StaticVector<IdValue>& out_volumeBestIdVal, int zborder)
 {
     long tall = clock();
 
-    StaticVector<IdValue>* volumeBestIdVal = new StaticVector<IdValue>();
-    volumeBestIdVal->reserve(volDimX * volDimY);
-    volumeBestIdVal->resize_with(volDimX * volDimY, IdValue(-1, 1.0f));
+    out_volumeBestIdVal.reserve(volDimX * volDimY);
+    out_volumeBestIdVal.resize_with(volDimX * volDimY, IdValue(-1, 1.0f));
     unsigned char* _volumeStepZPtr = _volumeStepZ->getDataWritable().data();
     int* _volumeBestZPtr = _volumeBestZ->getDataWritable().data();
-    IdValue* volumeBestIdValPtr = volumeBestIdVal->getDataWritable().data();
+    IdValue* out_volumeBestIdValPtr = out_volumeBestIdVal.getDataWritable().data();
     for(int z = zborder; z < volDimZ / volStepZ - zborder; z++)
     {
         for(int y = 1; y < volDimY - 1; y++)
@@ -291,7 +290,7 @@ StaticVector<IdValue>* SemiGlobalMatchingVolume::getOrigVolumeBestIdValFromVolum
                 // value from volumeStepZ converted from (0, 255) to (-1, +1)
                 float val = (((float)_volumeStepZPtr[volumeIndex]) / 255.0f) * 2.0f - 1.0f;
                 int bestZ = _volumeBestZPtr[volumeIndex]; // TODO: what is bestZ?
-                IdValue& idVal = volumeBestIdValPtr[y * volDimX + x];
+                IdValue& idVal = out_volumeBestIdValPtr[y * volDimX + x];
                 assert(bestZ >= 0);
 
                 if(idVal.id == -1)
@@ -312,8 +311,6 @@ StaticVector<IdValue>* SemiGlobalMatchingVolume::getOrigVolumeBestIdValFromVolum
 
     if(sp->mp->verbose)
         mvsUtils::printfElapsedTime(tall, "SemiGlobalMatchingVolume::getOrigVolumeBestIdValFromVolumeStepZ ");
-
-    return volumeBestIdVal;
 }
 
 void SemiGlobalMatchingVolume::copyVolume(const StaticVector<unsigned char>* volume, int zFrom, int nZSteps)

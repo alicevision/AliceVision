@@ -1,4 +1,4 @@
-ARG CUDA_TAG=7.0
+ARG CUDA_TAG=8.0
 ARG OS_TAG=7
 ARG NPROC=1
 FROM nvidia/cuda:${CUDA_TAG}-devel-centos${OS_TAG}
@@ -17,6 +17,13 @@ LABEL maintainer="AliceVision Team alicevision-team@googlegroups.com"
 # OS/Version (FILE): cat /etc/issue.net
 # Cuda version (ENV): $CUDA_VERSION
 
+ENV AV_DEV=/opt/AliceVision_git \
+    AV_BUILD=/tmp/AliceVision_build \
+    AV_INSTALL=/opt/AliceVision_install \
+    AV_BUNDLE=/opt/AliceVision_bundle \
+    PATH="${PATH}:${AV_BUNDLE}" \
+    VERBOSE=1
+
 # Install all compilation tools
 # - file and openssl are needed for cmake
 RUN yum -y install \
@@ -34,15 +41,9 @@ RUN yum -y install \
         openssl-devel \
         gcc-gfortran
 
-# Manually install cmake 3.11
+# Manually install cmake 3.14
 WORKDIR /opt
-RUN wget https://cmake.org/files/v3.13/cmake-3.13.2.tar.gz && tar zxvf cmake-3.13.2.tar.gz && cd cmake-3.13.2 && ./bootstrap --prefix=/usr/local  -- -DCMAKE_BUILD_TYPE:STRING=Release -DCMAKE_USE_OPENSSL:BOOL=ON && make -j8 && make install
-
-ENV AV_DEV=/opt/AliceVision_git \
-    AV_BUILD=/tmp/AliceVision_build \
-    AV_INSTALL=/opt/AliceVision_install \
-    AV_BUNDLE=/opt/AliceVision_bundle \
-    PATH="${PATH}:${AV_BUNDLE}"
+RUN wget https://cmake.org/files/v3.14/cmake-3.14.5.tar.gz && tar zxvf cmake-3.14.5.tar.gz && cd cmake-3.14.5 && ./bootstrap --prefix=/usr/local  -- -DCMAKE_BUILD_TYPE:STRING=Release -DCMAKE_USE_OPENSSL:BOOL=ON && make -j8 && make install
 
 COPY . "${AV_DEV}"
 
