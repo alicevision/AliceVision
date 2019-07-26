@@ -79,11 +79,20 @@ public:
   }
 };
 
+
 float sigmoid(float x, float sigwidth, float sigMid)
 {
   return 1.0f / (1.0f + expf(10.0f * ((x - sigMid) / sigwidth)));
 }
 
+
+/**
+ * @brief Function to set fisheye images with correct orientation and add an alpha channel
+ * @param[in] imageIn - input RGBf fisheye image
+ * @param[in] metadata - contains orientation information
+ * @param[out] buffer - to store input metadata in output image
+ * @param[out] imageAlpha - output RGBAf fisheye image correctly oriented
+ */
 void setFisheyeImage(image::Image<image::RGBfColor>& imageIn, const oiio::ParamValueList& metadata, oiio::ImageBuf& buffer, image::Image<image::RGBAfColor>& imageAlpha)
 {
   image::getBufferFromImage(imageIn, buffer);
@@ -131,6 +140,14 @@ void setFisheyeImage(image::Image<image::RGBfColor>& imageIn, const oiio::ParamV
 }
 
 
+/**
+ * @brief Project fisheye image into an equirectangular map and merge it to output panorama
+ * @param[in] imageIn - input RGBAf fisheye image
+ * @param[in] nbImages
+ * @param[in] iter - index of input image for merging into panorama
+ * @param[in] rotations - contains adjustment rotations on each image set by user
+ * @param[out] imageOut - output panorama which is incremented at each call
+ */
 void fisheyeToEquirectangular(image::Image<image::RGBAfColor>& imageIn, const int nbImages, int iter, const std::array<std::vector<double>, 3> rotations, image::Image<image::RGBAfColor>& imageOut)
 {
   std::size_t inWidth = imageIn.Width();
@@ -167,6 +184,13 @@ void fisheyeToEquirectangular(image::Image<image::RGBAfColor>& imageIn, const in
 
 
 void stitchPanorama(const std::vector<std::string>& imagePaths, const std::vector<oiio::ParamValueList>& metadatas, const std::array<std::vector<double>, 3> rotations, const std::string& outputFolder)
+/**
+ * @brief Load input images and call functions to stitch 360° panorama
+ * @param[in] imagePaths - input images paths
+ * @param[in] metadatas - input metadata for each image
+ * @param[in] rotations - contains adjustment rotations on each image set by user
+ * @param[out] outputFolder - output folder path to write panorama
+ */
 {
   int nbImages = imagePaths.size();
   image::Image<image::RGBAfColor> imageOut;
