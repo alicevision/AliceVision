@@ -154,9 +154,9 @@ void fisheyeToEquirectangular(image::Image<image::RGBAfColor>& imageIn, const in
   std::size_t inHeight = imageIn.Height();
   std::size_t inSize = std::min(inWidth, inHeight);
 
-  double xRotation = -5.0 + rotations[0].at(iter);
-  double zRotation = double(iter * -360.0 / nbImages) + rotations[2].at(iter);
-  double yRotation = double(-(180.0 + zRotation)/60.0) + rotations[1].at(iter);
+  double zRotation = double(30.0 - iter * 360.0 / nbImages) + rotations[2].at(iter);
+  double xRotation = double(-abs(90.0 - abs(zRotation))/30.0) + rotations[0].at(iter);
+  double yRotation = rotations[1].at(iter);
 
   const image::Sampler2d<image::SamplerLinear> sampler;
   for(int j = 0; j < inSize; ++j)
