@@ -452,6 +452,7 @@ ExternalProject_Add(opencv_contrib
   URL https://github.com/opencv/opencv_contrib/archive/4.1.0.zip
   URL_MD5 3cd00bbfdebb69ad24756ccfb801ebac
   SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/opencv_contrib
+  BUILD_ALWAYS 0
   UPDATE_COMMAND ""
   CONFIGURE_COMMAND ""
   BUILD_COMMAND ""
@@ -462,11 +463,15 @@ ExternalProject_Add(${OPENCV_TARGET}
   URL https://github.com/opencv/opencv/archive/4.1.0.zip
   URL_MD5 5c5a9ce3519415b263d512e7f6a1e2af
   UPDATE_COMMAND ""
+  BUILD_IN_SOURCE 0
+  BUILD_ALWAYS 0
   SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/opencv
   BINARY_DIR ${BUILD_DIR}/opencv_build
   INSTALL_DIR ${BUILD_DIR}/opencv_install
   CONFIGURE_COMMAND ${CMAKE_COMMAND} ${CMAKE_CORE_BUILD_FLAGS} -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR> <SOURCE_DIR>
     -DOPENCV_EXTRA_MODULES_PATH=${CMAKE_CURRENT_BINARY_DIR}/opencv_contrib/modules
+    ${ZLIB_CMAKE_FLAGS}
+    ${TBB_CMAKE_FLAGS}
     -DWITH_TBB=ON
     -DBUILD_opencv_python2=OFF
     -DBUILD_opencv_python3=OFF

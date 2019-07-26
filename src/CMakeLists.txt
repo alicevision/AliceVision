@@ -497,15 +497,18 @@ if(ALICEVISION_BUILD_SFM)
   if(NOT ALICEVISION_USE_OPENCV STREQUAL "OFF")
     find_package(OpenCV COMPONENTS core imgproc video imgcodecs videoio features2d xfeatures2d)
 
-    # We do not set the minimal version directly in find_package
-    # due to this issue in opencv: https://github.com/opencv/opencv/issues/5931
-    # which considers major version as exact requirement.
-    if(OpenCV_VERSION VERSION_LESS "3.2.0")
-        message(SEND_ERROR "Failed to find OpenCV 3.2.0+")
-    endif()
     if(OpenCV_FOUND)
-      set(ALICEVISION_HAVE_OPENCV 1)
-      message(STATUS "OpenCV found.")
+      # We do not set the minimal version directly in find_package
+      # due to this issue in opencv: https://github.com/opencv/opencv/issues/5931
+      # which considers major version as exact requirement.
+      if(OpenCV_VERSION VERSION_LESS "3.2.0")
+        if(ALICEVISION_USE_OPENCV STREQUAL "ON")
+          message(SEND_ERROR "Failed to find OpenCV 3.2.0+")
+        endif()
+      else()
+        set(ALICEVISION_HAVE_OPENCV 1)
+        message(STATUS "OpenCV found.")
+      endif()
     elseif(ALICEVISION_USE_OPENCV STREQUAL "ON")
       message(SEND_ERROR "Failed to find OpenCV.")
     endif()

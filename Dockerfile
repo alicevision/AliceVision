@@ -21,9 +21,8 @@ ENV AV_DEV=/opt/AliceVision_git \
     AV_BUILD=/tmp/AliceVision_build \
     AV_INSTALL=/opt/AliceVision_install \
     AV_BUNDLE=/opt/AliceVision_bundle \
-    PATH="${PATH}:${AV_BUNDLE}"
-
-COPY . "${AV_DEV}"
+    PATH="${PATH}:${AV_BUNDLE}" \
+    VERBOSE=1
 
 # Install all compilation tools
 # - file and openssl are needed for cmake
@@ -45,6 +44,8 @@ RUN yum -y install \
 # Manually install cmake 3.14
 WORKDIR /opt
 RUN wget https://cmake.org/files/v3.14/cmake-3.14.5.tar.gz && tar zxvf cmake-3.14.5.tar.gz && cd cmake-3.14.5 && ./bootstrap --prefix=/usr/local  -- -DCMAKE_BUILD_TYPE:STRING=Release -DCMAKE_USE_OPENSSL:BOOL=ON && make -j8 && make install
+
+COPY . "${AV_DEV}"
 
 WORKDIR "${AV_BUILD}"
 RUN cmake "${AV_DEV}" -DCMAKE_BUILD_TYPE=Release -DALICEVISION_BUILD_DEPENDENCIES:BOOL=ON -DINSTALL_DEPS_BUILD:BOOL=ON -DCMAKE_INSTALL_PREFIX="${AV_INSTALL}" -DALICEVISION_BUNDLE_PREFIX="${AV_BUNDLE}"
