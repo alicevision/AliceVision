@@ -41,10 +41,6 @@ void GrossbergCalibrate::process(const std::vector< std::vector< image::Image<im
     //initialize response with g0 from invEmor
     response = rgbCurve(channelQuantization);
     response.setEmor();
-//    response.write("/s/prods/mvg/_source_global/samples/HDR_selection/samsung/8bits/emor.ods");
-//    const double* ptrf0 = getEmorInvCurve(0);
-//    std::vector<double> f0;
-//    f0.assign(ptrf0, ptrf0 + channelQuantization);
 
     const std::size_t emorSize = std::pow(2, 10);
 
