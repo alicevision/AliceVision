@@ -183,7 +183,6 @@ void fisheyeToEquirectangular(image::Image<image::RGBAfColor>& imageIn, const in
 }
 
 
-void stitchPanorama(const std::vector<std::string>& imagePaths, const std::vector<oiio::ParamValueList>& metadatas, const std::array<std::vector<double>, 3> rotations, const std::string& outputFolder)
 /**
  * @brief Load input images and call functions to stitch 360° panorama
  * @param[in] imagePaths - input images paths
@@ -191,6 +190,7 @@ void stitchPanorama(const std::vector<std::string>& imagePaths, const std::vecto
  * @param[in] rotations - contains adjustment rotations on each image set by user
  * @param[out] outputFolder - output folder path to write panorama
  */
+void stitchPanorama(const std::vector<std::string>& imagePaths, const std::vector<oiio::ParamValueList>& metadatas, const std::array<std::vector<double>, 3> rotations, std::string& outputPath)
 {
   int nbImages = imagePaths.size();
   image::Image<image::RGBAfColor> imageOut;
@@ -227,11 +227,13 @@ void stitchPanorama(const std::vector<std::string>& imagePaths, const std::vecto
   }
 
   // save equirectangular image with fisheye's metadata
-  std::string outputPath;
-  if(outputFolder.back() == '/')
-    outputPath = std::string(outputFolder + "panorama.exr");
-  else
-    outputPath = std::string(outputFolder + "/panorama.exr");
+  if(fs::is_directory(fs::path(outputPath)))
+  {
+    if(outputPath.back() == '/')
+      outputPath = std::string(outputPath + "panorama.exr");
+    else
+      outputPath = std::string(outputPath + "/panorama.exr");
+  }
   image::writeImage(outputPath, imageOut, image::EImageColorSpace::AUTO, bufferOut.specmod().extra_attribs);
 
   ALICEVISION_LOG_INFO("Panorama successfully written as " << outputPath);
@@ -256,7 +258,7 @@ int main(int argc, char** argv)
     ("input,i", po::value<std::vector<std::string>>(&inputPath)->required()->multitoken(),
       "List of fisheye images or a folder containing them.")
     ("output,o", po::value<std::string>(&outputFolder)->required(),
-      "Output folder to write equirectangular images");
+      "Output panorama folder or complete path");
 
   po::options_description optionalParams("Optional parameters");
   optionalParams.add_options()
@@ -309,11 +311,6 @@ int main(int argc, char** argv)
   {
     const fs::path outDir = fs::absolute(outputFolder);
     outputFolder = outDir.string();
-    if(!fs::is_directory(outDir))
-    {
-      ALICEVISION_LOG_ERROR("Can't find folder " << outputFolder);
-      return EXIT_FAILURE;
-    }
   }
 
   std::vector<std::string> imagePaths;
