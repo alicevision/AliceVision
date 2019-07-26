@@ -155,7 +155,7 @@ int main(int argc, char** argv)
     ("input,i", po::value<std::vector<std::string>>(&imagesFolder)->required()->multitoken(),
       "List of LDR images or a folder containing them (accepted formats are: .jpg .jpeg .png .tif .tiff or RAW image file extensions: .3fr .arw .crw .cr2 .cr3 .dng .kdc .mrw .nef .nrw .orf .ptx .pef .raf .R3D .rw2 .srw .x3f")
     ("output,o", po::value<std::string>(&outputHDRImagePath)->required(),
-      "Output HDR image complete name.");
+      "Output HDR image folder or complete path.");
 
   po::options_description optionalParams("Optional Parameters");
   optionalParams.add_options()
@@ -174,7 +174,7 @@ int main(int argc, char** argv)
     ("fusionWeight,W", po::value<hdr::EFunctionType>(&fusionWeightFunction)->default_value(fusionWeightFunction),
        "Weight function used to fuse all LDR images together (gaussian, triangle, plateau).")
     ("outputResponse", po::value<std::string>(&outputResponsePath),
-       "(For debug) Output camera response function complete name.")
+       "(For debug) Output camera response function folder or complete path.")
     ("recoverPath", po::value<std::string>(&recoverSourcePath)->default_value(recoverSourcePath),
       "(For debug) Name of recovered LDR image at the target exposure by applying inverse response on HDR image.");
 
@@ -477,10 +477,25 @@ int main(int argc, char** argv)
   hdr::hdrMerge merge;
   merge.process(ldrImageGroups_sorted.at(0), ldrTimes_sorted, fusionWeight, response, image, targetTime, false, clampedValueCorrection);
 
+  if(fs::is_directory(fs::path(outputHDRImagePath)))
+  {
+    if(outputHDRImagePath.back() == '/')
+      outputHDRImagePath += std::string("hdr.exr");
+    else
+      outputHDRImagePath += std::string("/hdr.exr");
+  }
 
   image::writeImage(outputHDRImagePath, image, image::EImageColorSpace::AUTO, targetMetadata);
   if(!outputResponsePath.empty())
   {
+    if(fs::is_directory(fs::path(outputResponsePath)))
+    {
+      if(outputResponsePath.back() == '/')
+        outputResponsePath += std::string("response.csv");
+      else
+        outputResponsePath += std::string("/response.csv");
+    }
+
     response.write(outputResponsePath);
     ALICEVISION_LOG_INFO("Camera response function written as " << outputResponsePath);
   }
