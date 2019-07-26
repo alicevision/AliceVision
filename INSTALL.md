@@ -373,7 +373,7 @@ target_link_libraries(main PUBLIC aliceVision_sfmDataIO)
 In general, you need to specify the list of the AliceVision modules that your library or executable
 depends on.
 
-Specify to CMake where AliceVision is installed by using the `AliceVision_DIR` cmake variable: `-DAliceVision_DIR:PATH="YourInstallPath"/share/AliceVision/cmake`
+Specify to CMake where AliceVision is installed by using the `AliceVision_DIR` cmake variable: `-DAliceVision_DIR:PATH="YourInstallPath"/share/aliceVision/cmake`
 or by simply adding the installation path to your `CMAKE_PREFIX_PATH`, i.e. `-DCMAKE_PREFIX_PATH:PATH="YourInstallPath"`.
 
 

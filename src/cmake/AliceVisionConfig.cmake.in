@@ -1,4 +1,4 @@
-# Config file for aliceVision library - Find AliceVision & dependencies.
+# Config file for AliceVision library - Find AliceVision & dependencies.
 #
 # This file is used by CMake when find_package(AliceVision) is invoked (and
 # the directory containing this file is present in CMAKE_MODULE_PATH

@@ -988,7 +988,7 @@ set(cmakeVersionConfig "${generatedDir}/${exportedProjectName}ConfigVersion.cmak
 # the generated cmake version file
 set(cmakeProjectConfig "${generatedDir}/${exportedProjectName}Config.cmake")
 # place to install the cmake-related files
-set(cmakeConfigInstallDir "${CMAKE_INSTALL_DATADIR}/${exportedProjectName}/cmake")
+set(cmakeConfigInstallDir "${CMAKE_INSTALL_DATADIR}/aliceVision/cmake")
 # the name of the cmake Target file to export
 set(targetsExportName "${exportedProjectName}Targets")
 
@@ -1005,7 +1005,7 @@ configure_package_config_file("${CMAKE_CURRENT_SOURCE_DIR}/cmake/AliceVisionConf
 export(EXPORT aliceVision-targets FILE "${generatedDir}/${targetsExportName}.cmake")
 
 # generate and install the target.cmake file to be used when the library is installed.
-install(EXPORT aliceVision-targets DESTINATION ${CMAKE_INSTALL_DATADIR}/${exportedProjectName}/cmake FILE ${targetsExportName}.cmake)
+install(EXPORT aliceVision-targets DESTINATION ${cmakeConfigInstallDir} FILE ${targetsExportName}.cmake)
 
 # install ${PROJECT_NAME}ConfigVersion.cmake and ${PROJECT_NAME}Config.cmake
 install(FILES "${cmakeProjectConfig}" "${cmakeVersionConfig}"
