@@ -221,21 +221,17 @@ int main(int argc, char* argv[])
         ALICEVISION_LOG_INFO("nb pts init: " << mesh.mesh->pts.size());
         ALICEVISION_LOG_INFO("nb pts visibilities init: " << mesh.mesh->pointsVisibilities.size());
 
-        float subdivideMeshNTimesAvEdgeLengthThr = mesh.mesh->computeAverageEdgeLength() * 0.01f;
-        int subdivideMaxPtsThr = static_cast<int>(refMesh.pts.size() * 0.1f);
+        float subdivideMeshNTimesAvEdgeLengthThr = mesh.mesh->computeAverageEdgeLength() * 0.1f;
+        int subdivideMaxPtsThr = static_cast<int>(mesh.mesh->pts.size() * 100);
 
         mesh.mesh->subdivideMeshMaxEdgeLengthUpdatePtsCams(mp, subdivideMeshNTimesAvEdgeLengthThr, mesh.mesh->pointsVisibilities, subdivideMaxPtsThr);
+        mesh.updateAtlases();
 
         ALICEVISION_LOG_INFO("nb pts after subdivision: " << mesh.mesh->pts.size());
         ALICEVISION_LOG_INFO("nb tris after subdivision: " << mesh.mesh->tris.size());
         ALICEVISION_LOG_INFO("nb pts visibilities after subdivision: " << mesh.mesh->pointsVisibilities.size());
 
         mesh.remapVisibilities(texParams.visibilityRemappingMethod, refMesh);
-
-        mesh._atlases.clear();
-        mesh._atlases.resize(1);
-        mesh._atlases[0].resize(mesh.mesh->tris.size());
-        std::iota(mesh._atlases[0].begin(), mesh._atlases[0].end(), 0);
     }
 
     // save final obj file

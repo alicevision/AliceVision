@@ -223,6 +223,19 @@ void Texturing::generateUVsBasicMethod(mvsUtils::MultiViewParams& mp)
     }
 }
 
+void Texturing::updateAtlases()
+{
+    ALICEVISION_LOG_INFO("updateAtlases");
+    // Fill atlases (1 atlas per material) with triangles issued from mesh subdivision
+    _atlases.clear();
+    _atlases.resize(std::max(1, mesh->nmtls));
+    for(int triangleID = 0; triangleID < mesh->trisMtlIds().size(); triangleID++)
+    {
+        unsigned int atlasID = mesh->nmtls ? mesh->trisMtlIds()[triangleID] : 0;
+        _atlases[atlasID].push_back(triangleID);
+    }
+}
+
 void Texturing::generateTextures(const mvsUtils::MultiViewParams &mp,
                                  const boost::filesystem::path &outPath, imageIO::EImageFileType textureFileType)
 {
@@ -826,9 +839,9 @@ void Texturing::loadFromOBJ(const std::string& filename, bool flipNormals)
     // Fill atlases (1 atlas per material) with corresponding rectangles
     // if no material, create only one atlas with all triangles
     _atlases.resize(std::max(1, mesh->nmtls));
-    for(int triangleID = 0; triangleID < mesh->trisMtlIds.size(); triangleID++)
+    for(int triangleID = 0; triangleID < mesh->trisMtlIds().size(); triangleID++)
     {
-        unsigned int atlasID = mesh->nmtls ? mesh->trisMtlIds[triangleID] : 0;
+        unsigned int atlasID = mesh->nmtls ? mesh->trisMtlIds()[triangleID] : 0;
         _atlases[atlasID].push_back(triangleID);
     }
 }

@@ -108,13 +108,14 @@ public:
 protected:
     /// Per-vertex color data
     std::vector<rgb> _colors;
+    /// Per triangle material id
+    std::vector<int> _trisMtlIds;
 
 public:
     StaticVector<Point3d> pts;
     StaticVector<Mesh::triangle> tris;
 
     int nmtls = 0;
-    StaticVector<int> trisMtlIds;
     StaticVector<Point2d> uvCoords;
     StaticVector<Voxel> trisUvIds;
     StaticVector<Point3d> normals;
@@ -139,6 +140,9 @@ public:
     const std::vector<rgb>& colors() const { return _colors; }
     /// Per-vertex color data accessor
     std::vector<rgb>& colors() { return _colors; }
+
+    /// Per-triangle material ids const accessor
+    const std::vector<int>& trisMtlIds() const { return _trisMtlIds; }
 
     void getDepthMap(StaticVector<float>& depthMap, const mvsUtils::MultiViewParams& mp, int rc, int scale, int w, int h);
     void getDepthMap(StaticVector<float>& depthMap, StaticVector<StaticVector<int>>& tmp, const mvsUtils::MultiViewParams& mp, int rc,
@@ -205,11 +209,11 @@ public:
     int subdivideMesh(const mvsUtils::MultiViewParams& mp, float maxTriArea, float maxEdgeLength, bool useMaxTrisAreaOrAvEdgeLength,
                       StaticVector<StaticVector<int>>& trisCams, StaticVector<int>& trisCamsId);
     void subdivideMeshCase1(int i, StaticVector<Pixel>& edgesi, Pixel& newptIdEdgeId,
-                            StaticVector<triangle>& tris1, StaticVector<Voxel>& trisUvIds1, StaticVector<Point2d>& uvCoords1);
+                            StaticVector<triangle>& tris1, StaticVector<Voxel>& trisUvIds1, StaticVector<Point2d>& uvCoords1, std::vector<int>& trisMtlIds1);
     void subdivideMeshCase2(int i, StaticVector<Pixel>& edgesi, Pixel& newptIdEdgeId1, Pixel& newptIdEdgeId2,
-                            StaticVector<Mesh::triangle>& tris1, StaticVector<Voxel>& trisUvIds1, StaticVector<Point2d>& uvCoords1);
-    void subdivideMeshCase3(int i, StaticVector<Pixel>& edgesi, Pixel& newptIdEdgeId1, Pixel& newptIdEdgeId2,
-                            Pixel& newptIdEdgeId3, StaticVector<Mesh::triangle>& tris1, StaticVector<Voxel>& trisUvIds1, StaticVector<Point2d>& uvCoords1);
+                            StaticVector<Mesh::triangle>& tris1, StaticVector<Voxel>& trisUvIds1, StaticVector<Point2d>& uvCoords1, std::vector<int>& trisMtlIds1);
+    void subdivideMeshCase3(int i, StaticVector<Pixel>& edgesi, Pixel& newptIdEdgeId1, Pixel& newptIdEdgeId2, Pixel& newptIdEdgeId3,
+                            StaticVector<Mesh::triangle>& tris1, StaticVector<Voxel>& trisUvIds1, StaticVector<Point2d>& uvCoords1, std::vector<int>& trisMtlIds1);
 
     void computeTrisCams(StaticVector<StaticVector<int>>& trisCams, const mvsUtils::MultiViewParams& mp, std::string tmpDir);
     void computeTrisCamsFromPtsCams(StaticVector<StaticVector<int>>& trisCams) const;

@@ -141,6 +141,13 @@ public:
      */
     void generateUVsBasicMethod(mvsUtils::MultiViewParams &mp);
 
+    /**
+     * @brief Update texture atlases, useful when the internal mesh has been sudivise
+     *
+     * Requires internal mesh to be initialized
+     */
+    void updateAtlases();
+
     // Create buffer for the set of output textures
     struct AccuImage
     {
