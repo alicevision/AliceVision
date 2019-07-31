@@ -19,7 +19,7 @@ namespace mesh {
  * @param[out] out_nearestVertex index of the nearest vertex in @p refMesh for each vertex in @p mesh
  * @return the nearest vertex in @p refMesh for each vertex in @p mesh
  */
-int getNearestVertices(const Mesh& refMesh, const Mesh& mesh, StaticVector<int>& out_nearestVertex);
+void getNearestVertices(const Mesh& refMesh, const Mesh& mesh, StaticVector<int>& out_nearestVertex);
 
 /**
  * @brief Transfer the visibility per vertex from one mesh to another.

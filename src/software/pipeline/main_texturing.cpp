@@ -9,6 +9,7 @@
 #include <aliceVision/mesh/Mesh.hpp>
 #include <aliceVision/mesh/Texturing.hpp>
 #include <aliceVision/mesh/meshVisibility.hpp>
+#include <aliceVision/mesh/meshPostProcessing.hpp>
 #include <aliceVision/mvsData/imageIO.hpp>
 #include <aliceVision/mvsUtils/common.hpp>
 #include <aliceVision/mvsUtils/MultiViewParams.hpp>
@@ -182,36 +183,61 @@ int main(int argc, char* argv[])
 
     fs::create_directory(outputFolder);
 
-    {
-      // load reference dense point cloud with visibilities
-      mesh::Mesh refMesh;
-      mesh::PointsVisibility& refVisibilities = refMesh.pointsVisibilities;
-      const std::size_t nbPoints = sfmData.getLandmarks().size();
-      refMesh.pts.reserve(nbPoints);
-      refVisibilities.reserve(nbPoints);
 
-      for(const auto& landmarkPair : sfmData.getLandmarks())
-      {
+    // load reference dense point cloud with visibilities
+    mesh::Mesh refMesh;
+    mesh::PointsVisibility& refVisibilities = refMesh.pointsVisibilities;
+    const std::size_t nbPoints = sfmData.getLandmarks().size();
+    refMesh.pts.reserve(nbPoints);
+    refVisibilities.reserve(nbPoints);
+
+    for(const auto& landmarkPair : sfmData.getLandmarks())
+    {
         const sfmData::Landmark& landmark = landmarkPair.second;
         mesh::PointVisibility pointVisibility;
 
         pointVisibility.reserve(landmark.observations.size());
         for(const auto& observationPair : landmark.observations)
-          pointVisibility.push_back(mp.getIndexFromViewId(observationPair.first));
+            pointVisibility.push_back(mp.getIndexFromViewId(observationPair.first));
 
         refVisibilities.push_back(pointVisibility);
         refMesh.pts.push_back(Point3d(landmark.X(0), landmark.X(1), landmark.X(2)));
-      }
-
-      mesh.remapVisibilities(texParams.visibilityRemappingMethod, refMesh);
     }
 
+    mesh.remapVisibilities(texParams.visibilityRemappingMethod, refMesh);
+
+    // Generate UVs if necessary
     if(!mesh.hasUVs())
     {
       ALICEVISION_LOG_INFO("Input mesh has no UV coordinates, start unwrapping (" + unwrapMethod +")");
       mesh.unwrap(mp, mesh::EUnwrapMethod_stringToEnum(unwrapMethod));
       ALICEVISION_LOG_INFO("Unwrapping done.");
     }
+
+    // Subdivide mesh
+    else
+    {
+        ALICEVISION_LOG_INFO("Input mesh has UV coordinates, start subdivision");
+        ALICEVISION_LOG_INFO("nb pts init: " << mesh.mesh->pts.size());
+        ALICEVISION_LOG_INFO("nb pts visibilities init: " << mesh.mesh->pointsVisibilities.size());
+
+        float subdivideMeshNTimesAvEdgeLengthThr = mesh.mesh->computeAverageEdgeLength() * 0.01f;
+        int subdivideMaxPtsThr = static_cast<int>(refMesh.pts.size() * 0.1f);
+
+        mesh.mesh->subdivideMeshMaxEdgeLengthUpdatePtsCams(mp, subdivideMeshNTimesAvEdgeLengthThr, mesh.mesh->pointsVisibilities, subdivideMaxPtsThr);
+
+        ALICEVISION_LOG_INFO("nb pts after subdivision: " << mesh.mesh->pts.size());
+        ALICEVISION_LOG_INFO("nb tris after subdivision: " << mesh.mesh->tris.size());
+        ALICEVISION_LOG_INFO("nb pts visibilities after subdivision: " << mesh.mesh->pointsVisibilities.size());
+
+        mesh.remapVisibilities(texParams.visibilityRemappingMethod, refMesh);
+
+        mesh._atlases.clear();
+        mesh._atlases.resize(1);
+        mesh._atlases[0].resize(mesh.mesh->tris.size());
+        std::iota(mesh._atlases[0].begin(), mesh._atlases[0].end(), 0);
+    }
+
     // save final obj file
     mesh.saveAsOBJ(outputFolder, "texturedMesh", outputTextureFileType);
 

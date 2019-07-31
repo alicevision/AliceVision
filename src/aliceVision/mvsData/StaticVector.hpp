@@ -65,6 +65,9 @@ public:
     Reference front() { return _data.front(); }
     ConstReference front() const { return _data.front(); }
 
+    Reference back() { return _data.back(); }
+    ConstReference back() const { return _data.back(); }
+
     const std::vector<T>& getData() const { return _data; }
     std::vector<T>& getDataWritable() { return _data; }
     int size() const { return _data.size(); }

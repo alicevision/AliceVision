@@ -144,6 +144,17 @@ void Mesh::addMesh(const Mesh& mesh)
             ALICEVISION_LOG_WARNING("addMesh: bad triangle index: " << t.v[0] << " " << t.v[1] << " " << t.v[2] << ", npts: " << mesh.pts.size());
         }
     }
+
+    if(!mesh.uvCoords.empty())
+    {
+        uvCoords.reserve(mesh.uvCoords.size());
+        std::copy(mesh.uvCoords.begin(), mesh.uvCoords.end(), std::back_inserter(uvCoords.getDataWritable()));
+    }
+    if(!mesh.trisUvIds.empty())
+    {
+        trisUvIds.reserve(mesh.trisUvIds.size());
+        std::copy(mesh.trisUvIds.begin(), mesh.trisUvIds.end(), std::back_inserter(trisUvIds.getDataWritable()));
+    }
 }
 
 Mesh::triangle_proj Mesh::getTriangleProjection(int triid, const mvsUtils::MultiViewParams& mp, int rc, int w, int h) const
@@ -1062,7 +1073,8 @@ void Mesh::getNotOrientedEdges(StaticVector<StaticVector<int>>& edgesNeighTris, 
                 if((j == edges1.size() - 1) || (edges1[j].y != edges1[j + 1].y))
                 {
                     edgesPointsPairs.push_back(Pixel(edges1[j].x, edges1[j].y));
-                    StaticVector<int>& neighTris = edgesNeighTris[j];
+                    edgesNeighTris.resize(edgesNeighTris.size() + 1);
+                    StaticVector<int>& neighTris = edgesNeighTris.back();
                     neighTris.reserve(j - j0 + 1);
                     for(int k = j0; k <= j; k++)
                     {
@@ -1300,7 +1312,7 @@ double Mesh::computeTriangleArea(int idTri) const
     return sqrt(p * (p - a) * (p - b) * (p - c));
 }
 
-void Mesh::getTrianglesEdgesIds(StaticVector<StaticVector<int>>& edgesNeighTris, StaticVector<Voxel>& out) const
+void Mesh::getTrianglesEdgesIds(const StaticVector<StaticVector<int>>& edgesNeighTris, StaticVector<Voxel>& out) const
 {
     out.reserve(tris.size());
     out.resize_with(tris.size(), Voxel(-1, -1, -1));
@@ -1347,8 +1359,8 @@ void Mesh::getTrianglesEdgesIds(StaticVector<StaticVector<int>>& edgesNeighTris,
     }
 }
 
-void Mesh::subdivideMeshCase1(int i, StaticVector<Pixel>& edgesi, Pixel& neptIdEdgeId,
-                                 StaticVector<Mesh::triangle>& tris1)
+void Mesh::subdivideMeshCase1(int i, StaticVector<Pixel>& edgesi, Pixel& newptIdEdgeId,
+                                 StaticVector<Mesh::triangle>& tris1, StaticVector<Voxel>& trisUvIds1, StaticVector<Point2d>& uvCoords1)
 {
     int ii[5];
     ii[0] = tris[i].v[0];
@@ -1361,26 +1373,36 @@ void Mesh::subdivideMeshCase1(int i, StaticVector<Pixel>& edgesi, Pixel& neptIdE
         int a = ii[k];
         int b = ii[k + 1];
         int c = ii[k + 2];
-        if(((edgesi[neptIdEdgeId.y].x == a) && (edgesi[neptIdEdgeId.y].y == b)) ||
-           ((edgesi[neptIdEdgeId.y].y == a) && (edgesi[neptIdEdgeId.y].x == b)))
+        if(((edgesi[newptIdEdgeId.y].x == a) && (edgesi[newptIdEdgeId.y].y == b)) ||
+           ((edgesi[newptIdEdgeId.y].y == a) && (edgesi[newptIdEdgeId.y].x == b)))
         {
+            int uvIdxa = trisUvIds[i].m[k%3];
+            int uvIdxb = trisUvIds[i].m[(k+1)%3];
+            int uvIdxc = trisUvIds[i].m[(k+2)%3];
+
+            int newuvIdx = uvCoords1.size();
+            Point2d uv = (uvCoords[uvIdxa] + uvCoords[uvIdxb]) / 2.0f;
+            uvCoords1.push_back(uv);
+
             Mesh::triangle t;
             t.alive = true;
             t.v[0] = a;
-            t.v[1] = neptIdEdgeId.x;
+            t.v[1] = newptIdEdgeId.x;
             t.v[2] = c;
             tris1.push_back(t);
+            trisUvIds1.push_back(Voxel(uvIdxa, newuvIdx, uvIdxc));
 
-            t.v[0] = neptIdEdgeId.x;
+            t.v[0] = newptIdEdgeId.x;
             t.v[1] = b;
             t.v[2] = c;
             tris1.push_back(t);
+            trisUvIds1.push_back(Voxel(newuvIdx, uvIdxb, uvIdxc));
         }
     }
 }
 
-void Mesh::subdivideMeshCase2(int i, StaticVector<Pixel>& edgesi, Pixel& neptIdEdgeId1, Pixel& neptIdEdgeId2,
-                                 StaticVector<Mesh::triangle>& tris1)
+void Mesh::subdivideMeshCase2(int i, StaticVector<Pixel>& edgesi, Pixel& newptIdEdgeId1, Pixel& newptIdEdgeId2,
+                                 StaticVector<Mesh::triangle>& tris1, StaticVector<Voxel>& trisUvIds1, StaticVector<Point2d>& uvCoords1)
 {
     int ii[5];
     ii[0] = tris[i].v[0];
@@ -1393,65 +1415,100 @@ void Mesh::subdivideMeshCase2(int i, StaticVector<Pixel>& edgesi, Pixel& neptIdE
         int a = ii[k];
         int b = ii[k + 1];
         int c = ii[k + 2];
-        if((((edgesi[neptIdEdgeId1.y].x == a) && (edgesi[neptIdEdgeId1.y].y == b)) ||
-            ((edgesi[neptIdEdgeId1.y].y == a) && (edgesi[neptIdEdgeId1.y].x == b))) &&
-           (((edgesi[neptIdEdgeId2.y].x == b) && (edgesi[neptIdEdgeId2.y].y == c)) ||
-            ((edgesi[neptIdEdgeId2.y].y == b) && (edgesi[neptIdEdgeId2.y].x == c))))
+        if((((edgesi[newptIdEdgeId1.y].x == a) && (edgesi[newptIdEdgeId1.y].y == b)) ||
+            ((edgesi[newptIdEdgeId1.y].y == a) && (edgesi[newptIdEdgeId1.y].x == b))) &&
+           (((edgesi[newptIdEdgeId2.y].x == b) && (edgesi[newptIdEdgeId2.y].y == c)) ||
+            ((edgesi[newptIdEdgeId2.y].y == b) && (edgesi[newptIdEdgeId2.y].x == c))))
         {
+            int uvIdxa = trisUvIds[i].m[k%3];
+            int uvIdxb = trisUvIds[i].m[(k+1)%3];
+            int uvIdxc = trisUvIds[i].m[(k+2)%3];
+
+            int newuvIdx1 = uvCoords1.size();
+            Point2d uv1 = (uvCoords[uvIdxa] + uvCoords[uvIdxb]) / 2.0f;
+            uvCoords1.push_back(uv1);
+
+            int newuvIdx2 = uvCoords1.size();
+            Point2d uv2 = (uvCoords[uvIdxb] + uvCoords[uvIdxc]) / 2.0f;
+            uvCoords1.push_back(uv2);
+
+
             Mesh::triangle t;
             t.alive = true;
             t.v[0] = a;
-            t.v[1] = neptIdEdgeId1.x;
-            t.v[2] = neptIdEdgeId2.x;
+            t.v[1] = newptIdEdgeId1.x;
+            t.v[2] = newptIdEdgeId2.x;
             tris1.push_back(t);
+            trisUvIds1.push_back(Voxel(uvIdxa, newuvIdx1, newuvIdx2));
 
-            t.v[0] = neptIdEdgeId1.x;
+            t.v[0] = newptIdEdgeId1.x;
             t.v[1] = b;
-            t.v[2] = neptIdEdgeId2.x;
+            t.v[2] = newptIdEdgeId2.x;
             tris1.push_back(t);
+            trisUvIds1.push_back(Voxel(newuvIdx1, uvIdxb, newuvIdx2));
 
-            t.v[0] = neptIdEdgeId2.x;
+            t.v[0] = newptIdEdgeId2.x;
             t.v[1] = c;
             t.v[2] = a;
             tris1.push_back(t);
+            trisUvIds1.push_back(Voxel(newuvIdx2, uvIdxc, uvIdxa));
         }
     }
 }
 
-void Mesh::subdivideMeshCase3(int i, StaticVector<Pixel>& edgesi, Pixel& neptIdEdgeId1, Pixel& neptIdEdgeId2,
-                                 Pixel& neptIdEdgeId3, StaticVector<Mesh::triangle>& tris1)
+void Mesh::subdivideMeshCase3(int i, StaticVector<Pixel>& edgesi, Pixel& newptIdEdgeId1, Pixel& newptIdEdgeId2,
+                                 Pixel& newptIdEdgeId3, StaticVector<Mesh::triangle>& tris1, StaticVector<Voxel>& trisUvIds1, StaticVector<Point2d>& uvCoords1)
 {
     int a = tris[i].v[0];
     int b = tris[i].v[1];
     int c = tris[i].v[2];
-    if((((edgesi[neptIdEdgeId1.y].x == a) && (edgesi[neptIdEdgeId1.y].y == b)) ||
-        ((edgesi[neptIdEdgeId1.y].y == a) && (edgesi[neptIdEdgeId1.y].x == b))) &&
-       (((edgesi[neptIdEdgeId2.y].x == b) && (edgesi[neptIdEdgeId2.y].y == c)) ||
-        ((edgesi[neptIdEdgeId2.y].y == b) && (edgesi[neptIdEdgeId2.y].x == c))) &&
-       (((edgesi[neptIdEdgeId3.y].x == c) && (edgesi[neptIdEdgeId3.y].y == a)) ||
-        ((edgesi[neptIdEdgeId3.y].y == c) && (edgesi[neptIdEdgeId3.y].x == a))))
+    if((((edgesi[newptIdEdgeId1.y].x == a) && (edgesi[newptIdEdgeId1.y].y == b)) ||
+        ((edgesi[newptIdEdgeId1.y].y == a) && (edgesi[newptIdEdgeId1.y].x == b))) &&
+       (((edgesi[newptIdEdgeId2.y].x == b) && (edgesi[newptIdEdgeId2.y].y == c)) ||
+        ((edgesi[newptIdEdgeId2.y].y == b) && (edgesi[newptIdEdgeId2.y].x == c))) &&
+       (((edgesi[newptIdEdgeId3.y].x == c) && (edgesi[newptIdEdgeId3.y].y == a)) ||
+        ((edgesi[newptIdEdgeId3.y].y == c) && (edgesi[newptIdEdgeId3.y].x == a))))
     {
+        int uvIdxa = trisUvIds[i].m[0];
+        int uvIdxb = trisUvIds[i].m[1];
+        int uvIdxc = trisUvIds[i].m[2];
+
+        int newuvIdx1 = uvCoords1.size();
+        Point2d uv1 = (uvCoords[uvIdxa] + uvCoords[uvIdxb]) / 2.0f;
+        uvCoords1.push_back(uv1);
+        int newuvIdx2 = uvCoords1.size();
+        Point2d uv2 = (uvCoords[uvIdxb] + uvCoords[uvIdxc]) / 2.0f;
+        uvCoords1.push_back(uv2);
+        int newuvIdx3 = uvCoords1.size();
+        Point2d uv3 = (uvCoords[uvIdxc] + uvCoords[uvIdxa]) / 2.0f;
+        uvCoords1.push_back(uv3);
+
+
         Mesh::triangle t;
         t.alive = true;
         t.v[0] = a;
-        t.v[1] = neptIdEdgeId1.x;
-        t.v[2] = neptIdEdgeId3.x;
+        t.v[1] = newptIdEdgeId1.x;
+        t.v[2] = newptIdEdgeId3.x;
         tris1.push_back(t);
+        trisUvIds1.push_back(Voxel(uvIdxa, newuvIdx1, newuvIdx3));
 
-        t.v[0] = neptIdEdgeId1.x;
+        t.v[0] = newptIdEdgeId1.x;
         t.v[1] = b;
-        t.v[2] = neptIdEdgeId2.x;
+        t.v[2] = newptIdEdgeId2.x;
         tris1.push_back(t);
+        trisUvIds1.push_back(Voxel(newuvIdx1, uvIdxb, newuvIdx2));
 
-        t.v[0] = neptIdEdgeId2.x;
+        t.v[0] = newptIdEdgeId2.x;
         t.v[1] = c;
-        t.v[2] = neptIdEdgeId3.x;
+        t.v[2] = newptIdEdgeId3.x;
         tris1.push_back(t);
+        trisUvIds1.push_back(Voxel(newuvIdx2, uvIdxc, newuvIdx3));
 
-        t.v[0] = neptIdEdgeId1.x;
-        t.v[1] = neptIdEdgeId2.x;
-        t.v[2] = neptIdEdgeId3.x;
+        t.v[0] = newptIdEdgeId1.x;
+        t.v[1] = newptIdEdgeId2.x;
+        t.v[2] = newptIdEdgeId3.x;
         tris1.push_back(t);
+        trisUvIds1.push_back(Voxel(newuvIdx1, newuvIdx2, newuvIdx3));
     }
 }
 
@@ -1520,14 +1577,14 @@ void Mesh::subdivideMeshMaxEdgeLengthUpdatePtsCams(const mvsUtils::MultiViewPara
     oldTris.push_back_arr(&tris);
 
     int nsubd = 1000;
-    while((pts.size() < maxMeshPts) && (nsubd > 10))
+    while((pts.size() < maxMeshPts) && (nsubd > 1))
     {
         nsubd = subdivideMesh(mp, 0.0f, maxEdgeLength, false, ptsCams, trisCamsId);
         ALICEVISION_LOG_DEBUG("subdivided: " << nsubd);
     }
     // subdivideMesh(mp, maxTriArea, trisCams, &trisCamsId);
     // subdivideMesh(mp, maxTriArea, trisCams, &trisCamsId);
-
+/*
     if(pts.size() - oldNPts > 0)
     {
         StaticVector<int> newPtsOldTriId;
@@ -1582,7 +1639,9 @@ void Mesh::subdivideMeshMaxEdgeLengthUpdatePtsCams(const mvsUtils::MultiViewPara
         {
             throw std::runtime_error("subdivideMeshMaxEdgeLengthUpdatePtsCams: different size!");
         }
-    }
+
+
+    }*/
 }
 
 int Mesh::subdivideMesh(const mvsUtils::MultiViewParams& mp, float maxTriArea, float maxEdgeLength,
@@ -1663,11 +1722,17 @@ int Mesh::subdivideMesh(const mvsUtils::MultiViewParams& mp, float maxTriArea, f
 
     // copy old pts
     StaticVector<Point3d> pts1;
+    StaticVector<Point2d> uvCoords1;
+
     pts1.reserve(pts.size() + nEdgesToSubdivide);
     for(int i = 0; i < pts.size(); i++)
     {
         pts1.push_back(pts[i]);
     }
+
+    uvCoords1.reserve(uvCoords.size() + nEdgesToSubdivide);
+    std::copy(uvCoords.begin(), uvCoords.end(), std::back_inserter(uvCoords1.getDataWritable()));
+
 
     // add new pts ... middle of edge
     for(int i = 0; i < edgesToSubdivide.size(); i++)
@@ -1678,6 +1743,7 @@ int Mesh::subdivideMesh(const mvsUtils::MultiViewParams& mp, float maxTriArea, f
             pts1.push_back(p);
         }
     }
+
 
     // there might be needed to subdivide more triangles ... find them
     nTrisToSubdivide = 0;
@@ -1693,11 +1759,16 @@ int Mesh::subdivideMesh(const mvsUtils::MultiViewParams& mp, float maxTriArea, f
     ALICEVISION_LOG_INFO("\t- # triangles to subdivide: " << nTrisToSubdivide);
     ALICEVISION_LOG_INFO("\t- # pts to add: " << nEdgesToSubdivide);
 
+    if(nTrisToSubdivide == 0)
+        return 0;
+
     StaticVector<int> trisCamsId1;
     StaticVector<Mesh::triangle> tris1;
+    StaticVector<Voxel> trisUvIds1;
 
     trisCamsId1.reserve(tris.size() - nTrisToSubdivide + 4 * nTrisToSubdivide);
     tris1.reserve(tris.size() - nTrisToSubdivide + 4 * nTrisToSubdivide);
+    trisUvIds1.reserve(trisUvIds.size() - nTrisToSubdivide + 4 * nTrisToSubdivide);
 
     for(int i = 0; i < tris.size(); i++)
     {
@@ -1726,7 +1797,8 @@ int Mesh::subdivideMesh(const mvsUtils::MultiViewParams& mp, float maxTriArea, f
 
             if(n == 1)
             {
-                subdivideMeshCase1(i, edgesPointsPairs, newPtsIds[0], tris1);
+                //ALICEVISION_LOG_INFO("subdivideMeshCase1: " << i);
+                subdivideMeshCase1(i, edgesPointsPairs, newPtsIds[0], tris1, trisUvIds1, uvCoords1);
 
                 trisCamsId1.push_back(trisCamsId[i]);
                 trisCamsId1.push_back(trisCamsId[i]);
@@ -1734,8 +1806,9 @@ int Mesh::subdivideMesh(const mvsUtils::MultiViewParams& mp, float maxTriArea, f
 
             if(n == 2)
             {
-                subdivideMeshCase2(i, edgesPointsPairs, newPtsIds[0], newPtsIds[1], tris1);
-                subdivideMeshCase2(i, edgesPointsPairs, newPtsIds[1], newPtsIds[0], tris1);
+                //ALICEVISION_LOG_INFO("subdivideMeshCase2: " << i);
+                subdivideMeshCase2(i, edgesPointsPairs, newPtsIds[0], newPtsIds[1], tris1, trisUvIds1, uvCoords1);
+                subdivideMeshCase2(i, edgesPointsPairs, newPtsIds[1], newPtsIds[0], tris1, trisUvIds1, uvCoords1);
 
                 trisCamsId1.push_back(trisCamsId[i]);
                 trisCamsId1.push_back(trisCamsId[i]);
@@ -1744,12 +1817,13 @@ int Mesh::subdivideMesh(const mvsUtils::MultiViewParams& mp, float maxTriArea, f
 
             if(n == 3)
             {
-                subdivideMeshCase3(i, edgesPointsPairs, newPtsIds[0], newPtsIds[1], newPtsIds[2], tris1);
-                subdivideMeshCase3(i, edgesPointsPairs, newPtsIds[0], newPtsIds[2], newPtsIds[1], tris1);
-                subdivideMeshCase3(i, edgesPointsPairs, newPtsIds[1], newPtsIds[0], newPtsIds[2], tris1);
-                subdivideMeshCase3(i, edgesPointsPairs, newPtsIds[1], newPtsIds[2], newPtsIds[0], tris1);
-                subdivideMeshCase3(i, edgesPointsPairs, newPtsIds[2], newPtsIds[0], newPtsIds[1], tris1);
-                subdivideMeshCase3(i, edgesPointsPairs, newPtsIds[2], newPtsIds[1], newPtsIds[0], tris1);
+                //ALICEVISION_LOG_INFO("subdivideMeshCase3: " << i);
+                subdivideMeshCase3(i, edgesPointsPairs, newPtsIds[0], newPtsIds[1], newPtsIds[2], tris1, trisUvIds1, uvCoords1);
+                subdivideMeshCase3(i, edgesPointsPairs, newPtsIds[0], newPtsIds[2], newPtsIds[1], tris1, trisUvIds1, uvCoords1);
+                subdivideMeshCase3(i, edgesPointsPairs, newPtsIds[1], newPtsIds[0], newPtsIds[2], tris1, trisUvIds1, uvCoords1);
+                subdivideMeshCase3(i, edgesPointsPairs, newPtsIds[1], newPtsIds[2], newPtsIds[0], tris1, trisUvIds1, uvCoords1);
+                subdivideMeshCase3(i, edgesPointsPairs, newPtsIds[2], newPtsIds[0], newPtsIds[1], tris1, trisUvIds1, uvCoords1);
+                subdivideMeshCase3(i, edgesPointsPairs, newPtsIds[2], newPtsIds[1], newPtsIds[0], tris1, trisUvIds1, uvCoords1);
 
                 trisCamsId1.push_back(trisCamsId[i]);
                 trisCamsId1.push_back(trisCamsId[i]);
@@ -1761,16 +1835,20 @@ int Mesh::subdivideMesh(const mvsUtils::MultiViewParams& mp, float maxTriArea, f
         {
             tris1.push_back(tris[i]);
             trisCamsId1.push_back(trisCamsId[i]);
+
+            int uvIdxa = trisUvIds[i].m[0];
+            int uvIdxb = trisUvIds[i].m[1];
+            int uvIdxc = trisUvIds[i].m[2];
+
+            trisUvIds1.push_back({uvIdxa, uvIdxb, uvIdxc});
         }
     }
-
-    pts.clear();
-    tris.clear();
-    trisCamsId.clear();
 
     pts.swap(pts1);
     tris.swap(tris1);
     trisCamsId.swap(trisCamsId1);
+    uvCoords.swap(uvCoords1);
+    trisUvIds.swap(trisUvIds1);
 
     return nTrisToSubdivide;
 }

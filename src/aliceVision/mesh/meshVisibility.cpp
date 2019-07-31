@@ -19,7 +19,7 @@
 namespace aliceVision {
 namespace mesh {
 
-int getNearestVertices(const Mesh& refMesh, const Mesh& mesh, StaticVector<int>& out_nearestVertex)
+void getNearestVertices(const Mesh& refMesh, const Mesh& mesh, StaticVector<int>& out_nearestVertex)
 {
     ALICEVISION_LOG_DEBUG("getNearestVertices start.");
     out_nearestVertex.resize(mesh.pts.size(), -1);
@@ -33,7 +33,6 @@ int getNearestVertices(const Mesh& refMesh, const Mesh& mesh, StaticVector<int>&
         out_nearestVertex[i] = refMesh_kdTree.get_nearest_neighbor(mesh.pts[i].m);
     }
     ALICEVISION_LOG_DEBUG("getNearestVertices done.");
-    return 0;
 }
 
 

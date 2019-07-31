@@ -161,5 +161,6 @@ void meshPostProcessing(Mesh*& inout_mesh, StaticVector<StaticVector<int>>& inou
     ALICEVISION_LOG_INFO("Mesh post-processing done.");
 }
 
+
 } // namespace mesh
 } // namespace aliceVision
