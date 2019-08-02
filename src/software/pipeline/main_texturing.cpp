@@ -204,38 +204,34 @@ int main(int argc, char* argv[])
         refMesh.pts.push_back(Point3d(landmark.X(0), landmark.X(1), landmark.X(2)));
     }
 
-    mesh.remapVisibilities(texParams.visibilityRemappingMethod, refMesh);
-
     // Generate UVs if necessary
     if(!mesh.hasUVs())
     {
-      ALICEVISION_LOG_INFO("Input mesh has no UV coordinates, start unwrapping (" + unwrapMethod +")");
-      mesh.unwrap(mp, mesh::EUnwrapMethod_stringToEnum(unwrapMethod));
-      ALICEVISION_LOG_INFO("Unwrapping done.");
+        mesh.remapVisibilities(texParams.visibilityRemappingMethod, refMesh);
+        ALICEVISION_LOG_INFO("Input mesh has no UV coordinates, start unwrapping (" + unwrapMethod +")");
+        mesh.unwrap(mp, mesh::EUnwrapMethod_stringToEnum(unwrapMethod));
+        ALICEVISION_LOG_INFO("Unwrapping done.");
+        // save final obj file
+        mesh.saveAsOBJ(outputFolder, "texturedMesh", outputTextureFileType);
     }
 
     // Subdivide mesh
     else
     {
+        // save final obj file
+        mesh.saveAsOBJ(outputFolder, "texturedMesh", outputTextureFileType);
+
         ALICEVISION_LOG_INFO("Input mesh has UV coordinates, start subdivision");
         ALICEVISION_LOG_INFO("nb pts init: " << mesh.mesh->pts.size());
         ALICEVISION_LOG_INFO("nb pts visibilities init: " << mesh.mesh->pointsVisibilities.size());
 
-        float subdivideMeshNTimesAvEdgeLengthThr = mesh.mesh->computeAverageEdgeLength() * 0.1f;
-        int subdivideMaxPtsThr = static_cast<int>(mesh.mesh->pts.size() * 100);
+        float maxEdgeLength = mesh.mesh->computeAverageEdgeLength() * 0.5f;
+        int maxMeshPts = static_cast<int>(mesh.mesh->pts.size() * 100);
 
-        mesh.mesh->subdivideMeshMaxEdgeLengthUpdatePtsCams(mp, subdivideMeshNTimesAvEdgeLengthThr, mesh.mesh->pointsVisibilities, subdivideMaxPtsThr);
+        mesh.mesh->subdivideMesh(maxEdgeLength, maxMeshPts);
         mesh.updateAtlases();
-
-        ALICEVISION_LOG_INFO("nb pts after subdivision: " << mesh.mesh->pts.size());
-        ALICEVISION_LOG_INFO("nb tris after subdivision: " << mesh.mesh->tris.size());
-        ALICEVISION_LOG_INFO("nb pts visibilities after subdivision: " << mesh.mesh->pointsVisibilities.size());
-
         mesh.remapVisibilities(texParams.visibilityRemappingMethod, refMesh);
     }
-
-    // save final obj file
-    mesh.saveAsOBJ(outputFolder, "texturedMesh", outputTextureFileType);
 
     // generate textures
     ALICEVISION_LOG_INFO("Generate textures.");

@@ -64,6 +64,17 @@ std::string EUnwrapMethod_enumToString(EUnwrapMethod method)
     throw std::out_of_range("Unrecognized EUnwrapMethod");
 }
 
+EVisibilityRemappingMethod EVisibilityRemappingMethod_stringToEnum(const std::string& method)
+{
+    if (method == "Pull")
+        return EVisibilityRemappingMethod::Pull;
+    if (method == "Push")
+        return EVisibilityRemappingMethod::Push;
+    if (method == "PullPush")
+        return EVisibilityRemappingMethod::PullPush;
+    throw std::out_of_range("Invalid visibilities remapping method " + method);
+}
+
 std::string EVisibilityRemappingMethod_enumToString(EVisibilityRemappingMethod method)
 {
     switch (method)
@@ -77,20 +88,6 @@ std::string EVisibilityRemappingMethod_enumToString(EVisibilityRemappingMethod m
     }
     throw std::out_of_range("Unrecognized EVisibilityRemappingMethod");
 }
-
-EVisibilityRemappingMethod EVisibilityRemappingMethod_stringToEnum(const std::string& method)
-{
-    std::string m = method;
-    boost::to_lower(m);
-    if (m == "pull")
-        return EVisibilityRemappingMethod::Pull;
-    if (m == "push")
-        return EVisibilityRemappingMethod::Push;
-    if (m == "pullpush")
-        return EVisibilityRemappingMethod::PullPush;
-    throw std::out_of_range("Invalid unwrap method " + method);
-}
-
 
 /**
  * @brief Return whether a pixel is contained in or intersected by a 2D triangle.

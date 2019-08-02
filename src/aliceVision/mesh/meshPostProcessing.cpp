@@ -93,22 +93,6 @@ void meshPostProcessing(Mesh*& inout_mesh, StaticVector<StaticVector<int>>& inou
         }
 
         /////////////////////////////
-        bool doSubdivideMesh = mp.userParams.get<bool>("meshEnergyOpt.doSubdivideMesh", false);
-        if(doSubdivideMesh == true)
-        {
-            float subdivideMeshNTimesAvEdgeLengthThr =
-                (float)mp.userParams.get<double>("meshEnergyOpt.doSubdivideMesh", 20.0);
-            int subdivideMaxPtsThr =
-                mp.userParams.get<int>("meshEnergyOpt.subdivideMaxPtsThr", 6000000);
-
-            meOpt.subdivideMeshMaxEdgeLengthUpdatePtsCams(mp, subdivideMeshNTimesAvEdgeLengthThr * meOpt.computeAverageEdgeLength(),
-                                                          inout_ptsCams, subdivideMaxPtsThr);
-            meOpt.deallocateCleaningAttributes();
-            meOpt.init();
-            meOpt.cleanMesh(1); // has to be here
-        }
-
-        /////////////////////////////
         StaticVectorBool ptsCanMove;
         if(hexah != nullptr)
         {

@@ -46,7 +46,6 @@ EUnwrapMethod EUnwrapMethod_stringToEnum(const std::string& method);
  */
 std::string EUnwrapMethod_enumToString(EUnwrapMethod method);
 
-
 /**
  * @brief Method to remap visibilities from the reconstruction onto an other mesh.
  */
@@ -58,8 +57,9 @@ enum EVisibilityRemappingMethod {
 
 ALICEVISION_BITMASK(EVisibilityRemappingMethod);
 
-std::string EVisibilityRemappingMethod_enumToString(EVisibilityRemappingMethod method);
 EVisibilityRemappingMethod EVisibilityRemappingMethod_stringToEnum(const std::string& method);
+std::string EVisibilityRemappingMethod_enumToString(EVisibilityRemappingMethod method);
+
 
 
 struct TexturingParams

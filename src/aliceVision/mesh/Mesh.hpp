@@ -23,6 +23,48 @@ using PointsVisibility = StaticVector<PointVisibility>;
 class Mesh
 {
 public:
+
+    struct edge
+    {
+        // local id in the triangle local coordinate system (0, 1 or 2)
+        int localIdA;
+        int localIdB;
+        // if edge to subdivide : global id of the new point
+        int new_pointId;
+
+        edge()
+        {
+            localIdA = -1;
+            localIdB = -1;
+            new_pointId = -1;
+        }
+
+        edge(int a, int b, int newId = -1)
+        {
+            localIdA = a;
+            localIdB = b;
+            new_pointId = newId;
+        }
+
+        edge& operator=(const edge& other)
+        {
+            localIdA = other.localIdA;
+            localIdB = other.localIdB;
+            new_pointId = other.new_pointId;
+            return *this;
+        }
+
+        // (A,B) = (0,1) or (1,2) or (2,0)
+        void orient()
+        {
+            if(localIdB != (localIdA + 1) % 3)
+            {
+                localIdA = localIdB;
+                localIdB = (localIdA + 1) % 3;
+            }
+        }
+    };
+
     struct triangle
     {
         int v[3]; ///< vertex indexes
@@ -200,20 +242,10 @@ public:
 
     Point2d getTrianglePixelInternalPoint(Mesh::triangle_proj& tp, Mesh::rectangle& re);
 
-    void subdivideMesh(const mvsUtils::MultiViewParams& mp, float maxTriArea, std::string tmpDir, int maxMeshPts);
-    void subdivideMeshMaxEdgeLengthUpdatePtsCams(const mvsUtils::MultiViewParams& mp, float maxEdgeLength,
-                                                 StaticVector<StaticVector<int>>& ptsCams, int maxMeshPts);
-    void subdivideMesh(StaticVector<StaticVector<int>>& out_trisCams, const mvsUtils::MultiViewParams& mp, float maxTriArea, float maxEdgeLength,
-                                                    bool useMaxTrisAreaOrAvEdgeLength,
-                                                    StaticVector<StaticVector<int>>& trisCams, int maxMeshPts);
-    int subdivideMesh(const mvsUtils::MultiViewParams& mp, float maxTriArea, float maxEdgeLength, bool useMaxTrisAreaOrAvEdgeLength,
-                      StaticVector<StaticVector<int>>& trisCams, StaticVector<int>& trisCamsId);
-    void subdivideMeshCase1(int i, StaticVector<Pixel>& edgesi, Pixel& newptIdEdgeId,
-                            StaticVector<triangle>& tris1, StaticVector<Voxel>& trisUvIds1, StaticVector<Point2d>& uvCoords1, std::vector<int>& trisMtlIds1);
-    void subdivideMeshCase2(int i, StaticVector<Pixel>& edgesi, Pixel& newptIdEdgeId1, Pixel& newptIdEdgeId2,
-                            StaticVector<Mesh::triangle>& tris1, StaticVector<Voxel>& trisUvIds1, StaticVector<Point2d>& uvCoords1, std::vector<int>& trisMtlIds1);
-    void subdivideMeshCase3(int i, StaticVector<Pixel>& edgesi, Pixel& newptIdEdgeId1, Pixel& newptIdEdgeId2, Pixel& newptIdEdgeId3,
-                            StaticVector<Mesh::triangle>& tris1, StaticVector<Voxel>& trisUvIds1, StaticVector<Point2d>& uvCoords1, std::vector<int>& trisMtlIds1);
+    void subdivideMesh(float maxEdgeLength, int maxMeshPts);
+    int subdivideMesh(StaticVector<int>& trisCamsId, float maxEdgeLength);
+    void subdivideTriangle(int triangleId, std::vector<edge>& edgesToSubdivide, StaticVector<triangle>& new_tris,
+                           StaticVector<Voxel>& new_trisUvIds, StaticVector<Point2d>& new_uvCoords, std::vector<int>& new_trisMtlIds);
 
     void computeTrisCams(StaticVector<StaticVector<int>>& trisCams, const mvsUtils::MultiViewParams& mp, std::string tmpDir);
     void computeTrisCamsFromPtsCams(StaticVector<StaticVector<int>>& trisCams) const;
