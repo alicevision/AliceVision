@@ -70,12 +70,12 @@ int main(int argc, char* argv[])
         ("imagesFolder", po::value<std::string>(&imagesFolder),
           "Use images from a specific folder instead of those specify in the SfMData file.\n"
           "Filename should be the image uid.")
-        ("outputTextureFileType", po::value<std::string>(&outTextureFileTypeName)->default_value(outTextureFileTypeName),
-          imageIO::EImageFileType_informations().c_str())
         ("textureSide", po::value<unsigned int>(&texParams.textureSide)->default_value(texParams.textureSide),
             "Output texture size")
         ("downscale", po::value<unsigned int>(&texParams.downscale)->default_value(texParams.downscale),
             "Texture downscale factor")
+        ("outputTextureFileType", po::value<std::string>(&outTextureFileTypeName)->default_value(outTextureFileTypeName),
+          imageIO::EImageFileType_informations().c_str())
         ("unwrapMethod", po::value<std::string>(&unwrapMethod)->default_value(unwrapMethod),
             "Method to unwrap input mesh if it does not have UV coordinates.\n"
             " * Basic (> 600k faces) fast and simple. Can generate multiple atlases.\n"
@@ -87,29 +87,35 @@ int main(int argc, char* argv[])
             "Fill texture holes with plausible values.")
         ("padding", po::value<unsigned int>(&texParams.padding)->default_value(texParams.padding),
             "Texture edge padding size in pixel")
-        ("flipNormals", po::value<bool>(&flipNormals)->default_value(flipNormals),
-            "Option to flip face normals. It can be needed as it depends on the vertices order in triangles and the convention change from one software to another.")
-        ("correctEV", po::value<bool>(&correctEV)->default_value(correctEV),
-            "Option to uniformize images exposure.")
-        ("useScore", po::value<bool>(&texParams.useScore)->default_value(texParams.useScore),
-             "Use triangles scores (based on observations and re-projected areas in source images) for weighting contributions.")
-        ("processColorspace", po::value<std::string>(&processColorspaceName)->default_value(processColorspaceName),
-            "Colorspace for the texturing internal computation (does not impact the output file colorspace).")
         ("multiBandDownscale", po::value<unsigned int>(&texParams.multiBandDownscale)->default_value(texParams.multiBandDownscale),
             "Width of frequency bands.")
         ("multiBandNbContrib", po::value<std::vector<int>>(&texParams.multiBandNbContrib)->default_value(texParams.multiBandNbContrib)->multitoken(),
              "Number of contributions per frequency band.")
+        ("useScore", po::value<bool>(&texParams.useScore)->default_value(texParams.useScore),
+             "Use triangles scores (based on observations and re-projected areas in source images) for weighting contributions.")
         ("bestScoreThreshold", po::value<double>(&texParams.bestScoreThreshold)->default_value(texParams.bestScoreThreshold),
             "(0.0 to disable filtering based on threshold to relative best score).")
         ("angleHardThreshold", po::value<double>(&texParams.angleHardThreshold)->default_value(texParams.angleHardThreshold),
             "(0.0 to disable angle hard threshold filtering).")
+        ("processColorspace", po::value<std::string>(&processColorspaceName)->default_value(processColorspaceName),
+            "Colorspace for the texturing internal computation (does not impact the output file colorspace).")
+        ("correctEV", po::value<bool>(&correctEV)->default_value(correctEV),
+            "Option to uniformize images exposure.")
         ("forceVisibleByAllVertices", po::value<bool>(&texParams.forceVisibleByAllVertices)->default_value(texParams.forceVisibleByAllVertices),
             "triangle visibility is based on the union of vertices visiblity.")
+        ("flipNormals", po::value<bool>(&flipNormals)->default_value(flipNormals),
+            "Option to flip face normals. It can be needed as it depends on the vertices order in triangles and the convention change from one software to another.")
         ("visibilityRemappingMethod", po::value<std::string>(&visibilityRemappingMethod)->default_value(visibilityRemappingMethod),
             "Method to remap visibilities from the reconstruction to the input mesh.\n"
             " * Pull: For each vertex of the input mesh, pull the visibilities from the closest vertex in the reconstruction.\n"
             " * Push: For each vertex of the reconstruction, push the visibilities to the closest triangle in the input mesh.\n"
-            " * PullPush: Combine results from Pull and Push results.'");
+            " * PullPush: Combine results from Pull and Push results.'")
+        ("retopoMesh", po::value<bool>(&texParams.retopoMesh)->default_value(texParams.retopoMesh),
+            "Check if the mesh has been simplified - it will be subdivide to recover texture precision.")
+        ("edgeLengthSubdivisionFactor", po::value<float>(&texParams.edgeLengthSubdivisionFactor)->default_value(texParams.edgeLengthSubdivisionFactor),
+            "Edge length subdivision factor, needed if the mesh has been simplified and must be subdivide for texturing efficiency.")
+        ("nbPtsSubdivisionFactor", po::value<int>(&texParams.nbPtsSubdivisionFactor)->default_value(texParams.nbPtsSubdivisionFactor),
+            "Number of points multiplication factor, needed if the mesh has been simplified and must be subdivide for texturing efficiency.");
 
     po::options_description logParams("Log parameters");
     logParams.add_options()
@@ -215,8 +221,8 @@ int main(int argc, char* argv[])
         mesh.saveAsOBJ(outputFolder, "texturedMesh", outputTextureFileType);
     }
 
-    // Subdivide mesh
-    else
+    // Subdivide simplified mesh for texturing
+    else if(texParams.retopoMesh)
     {
         // save final obj file
         mesh.saveAsOBJ(outputFolder, "texturedMesh", outputTextureFileType);
@@ -225,8 +231,8 @@ int main(int argc, char* argv[])
         ALICEVISION_LOG_INFO("nb pts init: " << mesh.mesh->pts.size());
         ALICEVISION_LOG_INFO("nb pts visibilities init: " << mesh.mesh->pointsVisibilities.size());
 
-        float maxEdgeLength = mesh.mesh->computeAverageEdgeLength() * 0.5f;
-        int maxMeshPts = static_cast<int>(mesh.mesh->pts.size() * 100);
+        float maxEdgeLength = mesh.mesh->computeAverageEdgeLength() * texParams.edgeLengthSubdivisionFactor ;
+        int maxMeshPts = mesh.mesh->pts.size() * texParams.nbPtsSubdivisionFactor;
 
         mesh.mesh->subdivideMesh(maxEdgeLength, maxMeshPts);
         mesh.updateAtlases();

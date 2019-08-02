@@ -64,23 +64,30 @@ std::string EVisibilityRemappingMethod_enumToString(EVisibilityRemappingMethod m
 
 struct TexturingParams
 {
-    bool useScore = true;
+    unsigned int textureSide = 8192;
+    unsigned int downscale = 1;
+    bool useUDIM = true;
+    bool fillHoles = false;
+    unsigned int padding = 5;
+
+    // Multi-band blending
     unsigned int nbBand = 4;
     unsigned int multiBandDownscale = 4;
     std::vector<int> multiBandNbContrib = {1, 5, 10, 0}; // number of contributions per frequency band for the multi-band blending
+
+    bool useScore = true;
+    double bestScoreThreshold = 0.1; //< 0.0 to disable filtering based on threshold to relative best score
+    double angleHardThreshold = 90.0; //< 0.0 to disable angle hard threshold filtering
+
     imageIO::EImageColorSpace processColorspace = imageIO::EImageColorSpace::SRGB; // colorspace for the texturing internal computation
     mvsUtils::ImagesCache::ECorrectEV correctEV{mvsUtils::ImagesCache::ECorrectEV::NO_CORRECTION};
 
-    double bestScoreThreshold = 0.1; //< 0.0 to disable filtering based on threshold to relative best score
-    double angleHardThreshold = 90.0; //< 0.0 to disable angle hard threshold filtering
     bool forceVisibleByAllVertices = false; //< triangle visibility is based on the union of vertices visiblity
     EVisibilityRemappingMethod visibilityRemappingMethod = EVisibilityRemappingMethod::PullPush;
 
-    unsigned int textureSide = 8192;
-    unsigned int padding = 5;
-    unsigned int downscale = 1;
-    bool fillHoles = false;
-    bool useUDIM = true;
+    bool retopoMesh = false;
+    float edgeLengthSubdivisionFactor = 0.5;
+    int nbPtsSubdivisionFactor = 500;
 };
 
 struct Texturing
