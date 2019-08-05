@@ -243,7 +243,7 @@ public:
     Point2d getTrianglePixelInternalPoint(Mesh::triangle_proj& tp, Mesh::rectangle& re);
 
     void subdivideMesh(float maxEdgeLength, int maxMeshPts);
-    int subdivideMesh(StaticVector<int>& trisCamsId, float maxEdgeLength);
+    int subdivideMesh(float maxEdgeLength);
     void subdivideTriangle(int triangleId, std::vector<edge>& edgesToSubdivide, StaticVector<triangle>& new_tris,
                            StaticVector<Voxel>& new_trisUvIds, StaticVector<Point2d>& new_uvCoords, std::vector<int>& new_trisMtlIds);
 

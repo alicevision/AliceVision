@@ -1363,18 +1363,10 @@ void Mesh::subdivideMesh(float maxEdgeLength, int maxMeshPts)
 {
     ALICEVISION_LOG_INFO("Subdivide mesh.");
 
-    StaticVector<int> trisCamsId;
-    trisCamsId.reserve(tris.size());
-    for(int i = 0; i < tris.size(); i++)
-    {
-        trisCamsId.push_back(i);
-    }
-
-
     int nsubd = 1000;
     while((pts.size() < maxMeshPts) && (nsubd > 1))
     {
-        nsubd = subdivideMesh(trisCamsId, maxEdgeLength);
+        nsubd = subdivideMesh(maxEdgeLength);
         ALICEVISION_LOG_DEBUG("subdivided: " << nsubd);
     }
 
@@ -1382,14 +1374,12 @@ void Mesh::subdivideMesh(float maxEdgeLength, int maxMeshPts)
     ALICEVISION_LOG_INFO("Nb tris after subdivision: " << tris.size());
 }
 
-int Mesh::subdivideMesh(StaticVector<int>& trisCamsId, float maxEdgeLength)
+int Mesh::subdivideMesh(float maxEdgeLength)
 {
 
     StaticVector<StaticVector<int>> edgesNeighTris;
     StaticVector<Pixel> edgesPointsPairs;
     getNotOrientedEdges(edgesNeighTris, edgesPointsPairs);
-    StaticVector<Voxel> trisEdges;
-    getTrianglesEdgesIds(edgesNeighTris, trisEdges);
 
     ////// NEW VERSION //////
     // for edge (A,B): <A, B, newPointId> with A,B in triangle local system (0, 1 or 2)
@@ -1444,13 +1434,11 @@ int Mesh::subdivideMesh(StaticVector<int>& trisCamsId, float maxEdgeLength)
 
     new_uvCoords.reserveAdd(nEdgesToSubdivide);
 
-    StaticVector<int> new_trisCamsId;
     StaticVector<Mesh::triangle> new_tris;
     StaticVector<Voxel> new_trisUvIds;
     std::vector<int> new_trisMtlIds;
 
     std::size_t nTrianglesToSubdivide = trianglesToSubdivide.size();
-    new_trisCamsId.reserve(tris.size() - nTrianglesToSubdivide + 4 * nTrianglesToSubdivide);
     new_tris.reserve(tris.size() - nTrianglesToSubdivide + 4 * nTrianglesToSubdivide);
     new_trisUvIds.reserve(trisUvIds.size() - nTrianglesToSubdivide + 4 * nTrianglesToSubdivide);
     new_trisMtlIds.reserve(_trisMtlIds.size() - nTrianglesToSubdivide + 4 * nTrianglesToSubdivide);
@@ -1468,7 +1456,6 @@ int Mesh::subdivideMesh(StaticVector<int>& trisCamsId, float maxEdgeLength)
         else
         {
             new_tris.push_back(tris[triangleId]);
-            new_trisCamsId.push_back(trisCamsId[triangleId]);
 
             int triMtlId = _trisMtlIds[triangleId];
             int uvIdxa = trisUvIds[triangleId].m[0];
@@ -1482,7 +1469,6 @@ int Mesh::subdivideMesh(StaticVector<int>& trisCamsId, float maxEdgeLength)
 
     pts.swap(new_pts);
     tris.swap(new_tris);
-    trisCamsId.swap(new_trisCamsId);
     uvCoords.swap(new_uvCoords);
     trisUvIds.swap(new_trisUvIds);
     _trisMtlIds.swap(new_trisMtlIds);
