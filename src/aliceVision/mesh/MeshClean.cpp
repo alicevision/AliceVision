@@ -23,7 +23,7 @@ bool MeshClean::path::addNextTriIdToPathBack(int nextTriId, StaticVector<MeshCle
     int lastTriId = path[path.size() - 1].triId;
     int ptId2 = path[path.size() - 1].ptsIds[1];
 
-    Pixel others2 = meshClean->getTriOtherPtsIds(nextTriId, ptId);
+    Pixel others2 = meshClean->getTriOtherPtsIds(nextTriId, _ptId);
 
     // printf("lastTriId %i, others %i %i \n",lastTriId,others2[0],others2[1]);
 
@@ -55,7 +55,7 @@ bool MeshClean::path::addNextTriIdToPathFront(int nextTriId, StaticVector<MeshCl
     int firstTriId = path[0].triId;
     int ptId1 = path[0].ptsIds[0];
 
-    Pixel others2 = meshClean->getTriOtherPtsIds(nextTriId, ptId);
+    Pixel others2 = meshClean->getTriOtherPtsIds(nextTriId, _ptId);
 
     if((firstTriId == nextTriId) || ((ptId1 == others2.x) && (ptId1 == others2.y)))
     {
@@ -92,7 +92,7 @@ int MeshClean::path::getNextNeighBouringUnprocessedLast(StaticVector<int>& ptNei
     }
 
     Pixel itr;
-    if(meshClean->getEdgeNeighTrisInterval(itr, ptId, ptId2))
+    if(meshClean->getEdgeNeighTrisInterval(itr, _ptId, ptId2))
     {
         for(int j = itr.x; j <= itr.y; j++)
         {
@@ -100,7 +100,7 @@ int MeshClean::path::getNextNeighBouringUnprocessedLast(StaticVector<int>& ptNei
             {
                 int nextTriId = meshClean->edgesNeigTris[j].z;
                 if((ptNeighTrisSortedAscToProcess.indexOfSorted(nextTriId) > -1) &&
-                   (meshClean->areTwoTrisSameOriented(lastTriId, nextTriId, ptId, ptId2)))
+                   (meshClean->areTwoTrisSameOriented(lastTriId, nextTriId, _ptId, ptId2)))
                 {
                     return nextTriId;
                 }
@@ -126,7 +126,7 @@ int MeshClean::path::getNextNeighBouringUnprocessedFirst(StaticVector<int>& ptNe
     // ",(*ptNeighTrisSortedAscToProcess)[i]); };printf("\n");
 
     Pixel itr;
-    if(meshClean->getEdgeNeighTrisInterval(itr, ptId, ptId1))
+    if(meshClean->getEdgeNeighTrisInterval(itr, _ptId, ptId1))
     {
         for(int j = itr.x; j <= itr.y; j++)
         {
@@ -134,7 +134,7 @@ int MeshClean::path::getNextNeighBouringUnprocessedFirst(StaticVector<int>& ptNe
             {
                 int nextTriId = meshClean->edgesNeigTris[j].z;
                 if((ptNeighTrisSortedAscToProcess.indexOfSorted(nextTriId) > -1) &&
-                   (meshClean->areTwoTrisSameOriented(firstTriId, nextTriId, ptId, ptId1)))
+                   (meshClean->areTwoTrisSameOriented(firstTriId, nextTriId, _ptId, ptId1)))
                 {
                     return nextTriId;
                 }
@@ -147,7 +147,7 @@ int MeshClean::path::getNextNeighBouringUnprocessedFirst(StaticVector<int>& ptNe
 
 void MeshClean::path::printfState(StaticVector<MeshClean::path::pathPart>& path)
 {
-    ALICEVISION_LOG_DEBUG("ptid: " << ptId);
+    ALICEVISION_LOG_DEBUG("ptid: " << _ptId);
     ALICEVISION_LOG_DEBUG("tris in path:");
     for(int i = 0; i < path.size(); i++)
     {
@@ -235,11 +235,11 @@ void MeshClean::path::removeCycleFromPath(StaticVector<MeshClean::path::pathPart
 void MeshClean::path::deployTriangle(int triId)
 {
     // printf("triId %i\n");
-    Pixel others = meshClean->getTriOtherPtsIds(triId, ptId);
+    Pixel others = meshClean->getTriOtherPtsIds(triId, _ptId);
     for(int i = 0; i < 2; i++)
     {
         Pixel itr;
-        if(meshClean->getEdgeNeighTrisInterval(itr, ptId, others[i]))
+        if(meshClean->getEdgeNeighTrisInterval(itr, _ptId, others[i]))
         {
             for(int j = itr.x; j <= itr.y; j++)
             {
@@ -260,10 +260,10 @@ int MeshClean::path::deployTriangles(StaticVector<int>& trisIds, bool isBoundary
 {
     // add new pt to pts
     meshClean->pts.reserveAddIfNeeded(1, 1000);
-    meshClean->pts.push_back(meshClean->pts[ptId]);
+    meshClean->pts.push_back(meshClean->pts[_ptId]);
     int newPtId = meshClean->pts.size() - 1;
 
-    int origPtId = ptId;
+    int origPtId = _ptId;
     while(origPtId >= meshClean->nPtsInit)
     {
         origPtId = meshClean->newPtsOldPtId[origPtId - meshClean->nPtsInit];
@@ -299,7 +299,7 @@ int MeshClean::path::deployTriangles(StaticVector<int>& trisIds, bool isBoundary
     // change actual tris to new pt
     for(int i = 0; i < trisIds.size(); i++)
     {
-        meshClean->changeTriPtId(trisIds[i], ptId, newPtId);
+        meshClean->changeTriPtId(trisIds[i], _ptId, newPtId);
     }
 
     meshClean->edgesNeigTrisAlive.reserveAddIfNeeded(trisIds.size() * 3, 3000);
@@ -412,7 +412,7 @@ void MeshClean::path::createPath(StaticVector<int>& ptNeighTrisSortedAscToProces
 
     // add first
     int firstTriId = ptNeighTrisSortedAscToProcess[ptNeighTrisSortedAscToProcess.size() - 1];
-    Pixel other = meshClean->getTriOtherPtsIds(firstTriId, ptId);
+    Pixel other = meshClean->getTriOtherPtsIds(firstTriId, _ptId);
     out_path.push_back(pathPart(firstTriId, other.x, other.y));
 
     int nextTriId;
@@ -444,7 +444,7 @@ int MeshClean::path::deployAll()
     StaticVector<MeshClean::path::pathPart> path;
 
     {
-      StaticVector<int>& ptsNeighTrisSortedAsc = meshClean->ptsNeighTrisSortedAsc[ptId];
+      StaticVector<int>& ptsNeighTrisSortedAsc = meshClean->ptsNeighTrisSortedAsc[_ptId];
       if(sizeOfStaticVector<int>(ptsNeighTrisSortedAsc) == 0)
       {
         return 0;
@@ -483,7 +483,7 @@ int MeshClean::path::deployAll()
         {
             // get an up-to-date pointer to data since me->ptsNeighTrisSortedAsc might have been
             // modified inside the while loop by 'deployPath'
-            StaticVector<int>& toUpdate = meshClean->ptsNeighTrisSortedAsc[ptId];
+            StaticVector<int>& toUpdate = meshClean->ptsNeighTrisSortedAsc[_ptId];
             if(toUpdate.empty())
             {
                 printfState(path);
@@ -508,8 +508,8 @@ int MeshClean::path::deployAll()
                 qsort(&toUpdate[0], toUpdate.size(), sizeof(int), qSortCompareIntAsc);
             }
 
-            meshClean->ptsBoundary[ptId] = (!isClodePath(pathNew));
-            updatePtNeighPtsOrderedByPath(ptId, pathNew);
+            meshClean->ptsBoundary[_ptId] = (!isClodePath(pathNew));
+            updatePtNeighPtsOrderedByPath(_ptId, pathNew);
         }
     }
 
@@ -520,8 +520,8 @@ bool MeshClean::path::isWrongPt()
 {
     int nNewPtsNeededToAdd = 0;
     StaticVector<int> ptNeighTrisSortedAscToProcess;
-    ptNeighTrisSortedAscToProcess.reserve(sizeOfStaticVector<int>(meshClean->ptsNeighTrisSortedAsc[ptId]));
-    ptNeighTrisSortedAscToProcess.push_back_arr(meshClean->ptsNeighTrisSortedAsc[ptId]);
+    ptNeighTrisSortedAscToProcess.reserve(sizeOfStaticVector<int>(meshClean->ptsNeighTrisSortedAsc[_ptId]));
+    ptNeighTrisSortedAscToProcess.push_back_arr(meshClean->ptsNeighTrisSortedAsc[_ptId]);
 
     StaticVector<MeshClean::path::pathPart> path;
     createPath(ptNeighTrisSortedAscToProcess, path);

@@ -193,8 +193,8 @@ public:
     void getPtsNeighborTriangles(StaticVector<StaticVector<int>>& out_ptsNeighTris) const;
     void getPtsNeighPtsOrdered(StaticVector<StaticVector<int>>& out_ptsNeighTris) const;
 
-    void getVisibleTrianglesIndexes(StaticVector<int>& out_visTri, std::string tmpDir, const mvsUtils::MultiViewParams& mp, int rc, int w, int h);
-    void getVisibleTrianglesIndexes(StaticVector<int>& out_visTri, std::string depthMapFileName, std::string trisMapFileName,
+    void getVisibleTrianglesIndexes(StaticVector<int>& out_visTri, const std::string& tmpDir, const mvsUtils::MultiViewParams& mp, int rc, int w, int h);
+    void getVisibleTrianglesIndexes(StaticVector<int>& out_visTri, const std::string& depthMapFileName, const std::string& trisMapFileName,
                                                   const mvsUtils::MultiViewParams& mp, int rc, int w, int h);
     void getVisibleTrianglesIndexes(StaticVector<int>& out_visTri, StaticVector<StaticVector<int>>& trisMap,
                                                   StaticVector<float>& depthMap, const mvsUtils::MultiViewParams& mp, int rc, int w,
@@ -247,7 +247,7 @@ public:
     void subdivideTriangle(int triangleId, std::vector<edge>& edgesToSubdivide, StaticVector<triangle>& new_tris,
                            StaticVector<Voxel>& new_trisUvIds, StaticVector<Point2d>& new_uvCoords, std::vector<int>& new_trisMtlIds);
 
-    void computeTrisCams(StaticVector<StaticVector<int>>& trisCams, const mvsUtils::MultiViewParams& mp, std::string tmpDir);
+    void computeTrisCams(StaticVector<StaticVector<int>>& trisCams, const mvsUtils::MultiViewParams& mp, const std::string tmpDir);
     void computeTrisCamsFromPtsCams(StaticVector<StaticVector<int>>& trisCams) const;
 
     void initFromDepthMap(const mvsUtils::MultiViewParams& mp, float* depthMap, int rc, int scale, int step, float alpha);

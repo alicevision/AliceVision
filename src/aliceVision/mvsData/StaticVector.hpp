@@ -275,7 +275,7 @@ void saveArrayOfArraysToFile(const std::string fileName, StaticVector<StaticVect
 }
 
 template <class T>
-StaticVector<StaticVector<T>*>* loadArrayOfArraysFromFile(std::string fileName)
+StaticVector<StaticVector<T>*>* loadArrayOfArraysFromFile(const std::string& fileName)
 {
     ALICEVISION_LOG_DEBUG("[IO] loadArrayOfArraysFromFile: " << fileName);
     FILE* f = fopen(fileName.c_str(), "rb");
@@ -322,7 +322,7 @@ StaticVector<StaticVector<T>*>* loadArrayOfArraysFromFile(std::string fileName)
 }
 
 template <class T>
-void loadArrayOfArraysFromFile(StaticVector<StaticVector<T>>& out_aa, const std::string fileName)
+void loadArrayOfArraysFromFile(StaticVector<StaticVector<T>>& out_aa, const std::string& fileName)
 {
     ALICEVISION_LOG_DEBUG("[IO] loadArrayOfArraysFromFile: " << fileName);
     FILE* f = fopen(fileName.c_str(), "rb");
@@ -367,13 +367,13 @@ void loadArrayOfArraysFromFile(StaticVector<StaticVector<T>>& out_aa, const std:
 
 
 template <class T>
-void saveArrayToFile(std::string fileName, const StaticVector<T>& a, bool docompress = true)
+void saveArrayToFile(const std::string& fileName, const StaticVector<T>& a, bool docompress = true)
 {
     saveArrayToFile( fileName, &a, docompress );
 }
 
 template <class T>
-void saveArrayToFile(std::string fileName, const StaticVector<T>* a, bool docompress = true)
+void saveArrayToFile(const std::string& fileName, const StaticVector<T>* a, bool docompress = true)
 {
     ALICEVISION_LOG_DEBUG("[IO] saveArrayToFile: " << fileName);
 
@@ -516,7 +516,7 @@ void saveArrayToFile(std::string fileName, const StaticVector<T>* a, bool docomp
 }
 
 template <class T>
-StaticVector<T>* loadArrayFromFile(std::string fileName, bool printfWarning = false)
+StaticVector<T>* loadArrayFromFile(const std::string& fileName, bool printfWarning = false)
 {
     ALICEVISION_LOG_DEBUG("[IO] loadArrayFromFile: " << fileName);
 
@@ -603,7 +603,7 @@ StaticVector<T>* loadArrayFromFile(std::string fileName, bool printfWarning = fa
 }
 
 template <class T>
-bool loadArrayFromFile( StaticVector<T>& out, std::string fileName, bool printfWarning = false)
+bool loadArrayFromFile( StaticVector<T>& out, const std::string& fileName, bool printfWarning = false)
 {
     ALICEVISION_LOG_DEBUG("[IO] loadArrayFromFile: " << fileName);
 
@@ -667,7 +667,7 @@ bool loadArrayFromFile( StaticVector<T>& out, std::string fileName, bool printfW
 }
 
 template <class T>
-void loadArrayFromFileIntoArray(StaticVector<T>* a, std::string fileName, bool printfWarning = false)
+void loadArrayFromFileIntoArray(StaticVector<T>* a, const std::string& fileName, bool printfWarning = false)
 {
     ALICEVISION_LOG_DEBUG("[IO] loadArrayFromFileIntoArray: " << fileName);
 

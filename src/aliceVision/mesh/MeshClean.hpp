@@ -45,7 +45,7 @@ public:
         };
 
         MeshClean* meshClean;
-        int ptId;
+        int _ptId;
 
         path(MeshClean* mesh, int ptId);
         ~path();

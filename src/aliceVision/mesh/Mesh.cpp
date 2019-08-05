@@ -843,7 +843,7 @@ void Mesh::getDepthMap(StaticVector<float>& depthMap, StaticVector<StaticVector<
     }     // for pix.x
 }
 
-void Mesh::getVisibleTrianglesIndexes(StaticVector<int>& out_visTri, std::string depthMapFileName, std::string trisMapFileName,
+void Mesh::getVisibleTrianglesIndexes(StaticVector<int>& out_visTri, const std::string& depthMapFileName, const std::string& trisMapFileName,
                                                        const mvsUtils::MultiViewParams& mp, int rc, int w, int h)
 {
     StaticVector<float> depthMap;
@@ -854,7 +854,7 @@ void Mesh::getVisibleTrianglesIndexes(StaticVector<int>& out_visTri, std::string
     getVisibleTrianglesIndexes(out_visTri, trisMap, depthMap, mp, rc, w, h);
 }
 
-void Mesh::getVisibleTrianglesIndexes(StaticVector<int>& out_visTri, std::string tmpDir, const mvsUtils::MultiViewParams& mp, int rc, int w, int h)
+void Mesh::getVisibleTrianglesIndexes(StaticVector<int>& out_visTri, const std::string& tmpDir, const mvsUtils::MultiViewParams& mp, int rc, int w, int h)
 {
     std::string depthMapFileName = tmpDir + "depthMap" + std::to_string(mp.getViewId(rc)) + ".bin";
     std::string trisMapFileName = tmpDir + "trisMap" + std::to_string(mp.getViewId(rc)) + ".bin";
@@ -1425,7 +1425,7 @@ int Mesh::subdivideMesh(StaticVector<int>& trisCamsId, float maxEdgeLength)
             // which triangles to subdivide (= edge neighbors triangles)
             for(int triangleId : edgesNeighTris[i])
             {
-                Mesh::triangle triangle = tris[triangleId];
+                const Mesh::triangle& triangle = tris[triangleId];
 
                 int localIdA = std::distance(triangle.v, std::find(triangle.v, triangle.v + 3, idA));
                 int localIdB = std::distance(triangle.v, std::find(triangle.v, triangle.v + 3, idB));
@@ -1660,7 +1660,7 @@ void Mesh::letJustTringlesIdsInMesh(StaticVector<int>& trisIdsToStay)
     tris.swap(trisTmp);
 }
 
-void Mesh::computeTrisCams(StaticVector<StaticVector<int>>& trisCams, const mvsUtils::MultiViewParams& mp, std::string tmpDir)
+void Mesh::computeTrisCams(StaticVector<StaticVector<int>>& trisCams, const mvsUtils::MultiViewParams& mp, const std::string tmpDir)
 {
     if(mp.verbose)
         ALICEVISION_LOG_DEBUG("Computing tris cams.");
