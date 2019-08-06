@@ -406,18 +406,15 @@ int main(int argc, char** argv)
   targets.resize(nbGroups);
   outputHDRImagesPath.resize(nbGroups);
 
-  std::string path = outputHDRImagesPath.front();
+  std::string outputPath = outputHDRImagesPath.front();
 
-  if(fs::is_directory(path))
+  if(fs::is_directory(outputPath))
   {
-    if(path.back() != '/')
-      path += std::string("/");
-
     if(nbGroups == 1)
-      outputHDRImagesPath.front() = path + std::string("hdr.exr");
+      outputHDRImagesPath.front() = (fs::path(outputPath) / ("hdr.exr")).string();
     else
       for(int g = 0; g < nbGroups; ++g)
-        outputHDRImagesPath[g] = path + std::string("hdr_") + std::to_string(g) + std::string(".exr");
+        outputHDRImagesPath[g] = (fs::path(outputPath) / ("hdr_" + std::to_string(g) + ".exr")).string();
   }
   else if(outputHDRImagesPath.size() != nbGroups)
   {
@@ -624,10 +621,7 @@ int main(int argc, char** argv)
     std::string methodName = ECalibrationMethod_enumToString(calibrationMethod);
     if(fs::is_directory(fs::path(outputResponsePath)))
     {
-      if(outputResponsePath.back() != '/')
-        outputResponsePath += std::string("/");
-
-      outputResponsePath += std::string("response_") + methodName + std::string(".csv");
+      outputResponsePath = (fs::path(outputResponsePath) / (std::string("response_") + methodName + std::string(".csv"))).string();
     }
 
     response.write(outputResponsePath);
