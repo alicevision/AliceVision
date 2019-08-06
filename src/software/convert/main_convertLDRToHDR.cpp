@@ -90,6 +90,144 @@ inline std::istream& operator>>(std::istream& in, ECalibrationMethod& calibratio
   return in;
 }
 
+
+/**
+ * @brief check if given file is regular and matches with authorized extensions
+ * @param[in] filepath
+ * @return true if valid file
+ */
+bool isValidImageFile(const fs::path& filepath)
+{
+  if(!fs::is_regular_file(filepath))
+    false;
+
+  const std::string validExtensions(
+  // Basic image file extensions
+  "jpg|jpeg|png|tiff|tif|"
+  // RAW image file extensions:
+  "3fr|" // Hasselblad
+  "arw|" // Sony
+  "crw|cr2|cr3|" // Canon
+  "dng|" // Adobe
+  "kdc|" // Kodak
+  "mrw|" // Minolta
+  "nef|nrw|" // Nikon
+  "orf|" // Olympus
+  "ptx|pef|" // Pentax
+  "raf|" // Fuji
+  "R3D|" // RED
+  "rw2|" // Panasonic
+  "srw|" // Samsung
+  "x3f" // Sigma
+  );
+  const std::regex validExtensionsExp("\\.(?:" + validExtensions + ")");
+
+  std::string extension = filepath.extension().string();
+  std::transform(extension.begin(), extension.end(), extension.begin(), ::tolower);
+
+  return std::regex_match(extension, validExtensionsExp);
+}
+
+
+/**
+ * @brief get image file paths in folder and add it to output vector if file is valid
+ * @param[in] folder - input folder path
+ * @param[out] out_imageFiles - vector of images paths
+ */
+void getImagesGroup(const fs::path& folder, std::vector<std::string>& out_imageFiles)
+{
+
+  for(const fs::directory_entry& file: fs::directory_iterator(folder))
+  {
+    if(isValidImageFile(file.path()))
+      out_imageFiles.push_back(file.path().string());
+  }
+}
+
+
+/**
+ * @brief get all input images paths from input provided by user
+ * @param[in] imagesFolder - input folder or list provided by user
+ * @param[out] ldrImagesPaths - vector of vector of images paths sorted by group
+ */
+void getInputPaths(const std::vector<std::string>& imagesFolder, std::vector<std::vector<std::string>>& ldrImagesPaths)
+{
+    std::vector<std::string> singleFiles;
+
+    for(const std::string& entry: imagesFolder)
+    {
+      fs::path entryPath = fs::path(entry);
+      if(fs::is_directory(entryPath))
+      {
+        std::vector<std::string> group;
+        getImagesGroup(entryPath, group);
+
+        if(group.empty())
+        {
+          // folder without image, assume it is a folder with sub-folders
+          for(const fs::directory_entry& subEntry: fs::directory_iterator(entryPath))
+          {
+            fs::path subEntryPath = fs::path(subEntry);
+            if(fs::is_directory(subEntryPath));
+            {
+              std::vector<std::string> subGroup;
+              getImagesGroup(subEntryPath, subGroup);
+              ldrImagesPaths.push_back(subGroup);
+            }
+          }
+        }
+        else
+        {
+          // folder with images
+          ldrImagesPaths.push_back(group);
+        }
+      }
+      // list of images
+      else if(fs::is_regular_file(entryPath))
+      {
+        if(isValidImageFile(entryPath))
+          singleFiles.push_back(entry);
+      }
+      else // is an expression
+      {
+        // extract folder / expression
+        std::string imagesExp = entryPath.stem().string();
+        std::string extension = entryPath.extension().string();
+        std::size_t pos = imagesExp.find("*");
+        if(pos != std::string::npos)
+        {
+          imagesExp.insert(pos, std::string("."));
+        }
+        else
+        {
+          throw std::runtime_error("[ldrToHdr] Invalid expression of input files.");
+        }
+        std::regex exp("\\.(?:" + imagesExp + "\\" + extension + ")");
+
+
+        for(const fs::directory_entry& file: fs::directory_iterator(entryPath.parent_path()))
+        {
+          if(fs::is_regular_file(file) && std::regex_match(file.path().string(), exp))
+            if(isValidImageFile(file.path()))
+              singleFiles.push_back(file.path().string());
+        }
+
+        if(singleFiles.empty())
+          throw std::runtime_error("[ldrToHdr] Invalid expression of input files.");
+      }
+    }
+
+    if(!singleFiles.empty())
+    {
+      if(!ldrImagesPaths.empty())
+      {
+        throw std::runtime_error("[ldrToHdr] Cannot mix files and folders in input.");
+      }
+      ldrImagesPaths.push_back(singleFiles);
+    }
+}
+
+
 /**
  * @brief recreate the source image at the target exposure by applying the inverse camera response function to HDR image
  * and calculate the offset between the mean value of target source image and the recovered image
