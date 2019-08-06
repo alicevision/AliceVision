@@ -337,7 +337,7 @@ int main(int argc, char** argv)
     ("outputResponse", po::value<std::string>(&outputResponsePath),
        "(For debug) Output camera response function folder or complete path.")
     ("recoverPath", po::value<std::string>(&recoverSourcePath)->default_value(recoverSourcePath),
-      "(For debug) Path for recovered LDR images at the target exposures by applying inverse response on HDR images.");
+      "(For debug) Folder path for recovering LDR images at the target exposures by applying inverse response on HDR images.");
 
   po::options_description logParams("Log parameters");
   logParams.add_options()
@@ -646,8 +646,7 @@ int main(int argc, char** argv)
   // test of recovery of source target image from HDR
   if(!recoverSourcePath.empty())
   {
-    if(recoverSourcePath.back() != '/')
-      recoverSourcePath += std::string("/");
+    fs::path recoverPath = fs::path(recoverSourcePath);
 
     for(int g = 0; g < nbGroups; ++g)
     {
@@ -672,7 +671,11 @@ int main(int argc, char** argv)
       }
       recoverSourceImage(HDRimage, response, channelQuantization, meanVal, targetRecover);
 
-      recoverSourcePath += std::string("recovered_") + std::to_string(g) + std::string(".exr");
+      if(nbGroups == 1)
+        recoverSourcePath = (recoverPath / (std::string("recovered.exr"))).string();
+      else
+        recoverSourcePath = (recoverPath / (std::string("recovered_") + std::to_string(g) + std::string(".exr"))).string();
+
       image::writeImage(recoverSourcePath, targetRecover, image::EImageColorSpace::AUTO);
       ALICEVISION_LOG_INFO("Recovered target source image written as " << recoverSourcePath);
     }
