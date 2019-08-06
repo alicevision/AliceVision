@@ -153,6 +153,7 @@ void getImagesGroup(const fs::path& folder, std::vector<std::string>& out_imageF
 void getInputPaths(const std::vector<std::string>& imagesFolder, std::vector<std::vector<std::string>>& ldrImagesPaths)
 {
     std::vector<std::string> singleFiles;
+    bool sub_folders = false;
 
     for(const std::string& entry: imagesFolder)
     {
@@ -165,6 +166,7 @@ void getInputPaths(const std::vector<std::string>& imagesFolder, std::vector<std
         if(group.empty())
         {
           // folder without image, assume it is a folder with sub-folders
+          sub_folders = true;
           for(const fs::directory_entry& subEntry: fs::directory_iterator(entryPath))
           {
             fs::path subEntryPath = fs::path(subEntry);
@@ -224,6 +226,31 @@ void getInputPaths(const std::vector<std::string>& imagesFolder, std::vector<std
         throw std::runtime_error("[ldrToHdr] Cannot mix files and folders in input.");
       }
       ldrImagesPaths.push_back(singleFiles);
+    }
+
+    // if folder with sub-folders we need to sort sub-folders in alphabetic order
+    if(sub_folders)
+    {
+      std::vector<std::vector<std::string>> ldrImagesPaths_copy = ldrImagesPaths;
+      std::vector<std::string> subFoldersNames;
+
+      for(const std::vector<std::string>& group: ldrImagesPaths)
+      {
+        fs::path firstPath = fs::path(group.front());
+        subFoldersNames.push_back(firstPath.parent_path().string());
+      }
+
+      std::vector<std::string> subFoldersNames_sorted = subFoldersNames;
+      std::sort(subFoldersNames_sorted.begin(), subFoldersNames_sorted.end());
+
+      for(std::size_t g = 0; g < ldrImagesPaths.size(); ++g)
+      {
+        std::vector<std::string>::iterator it = std::find(subFoldersNames.begin(), subFoldersNames.end(), subFoldersNames_sorted[g]);
+        if(it == subFoldersNames.end())
+          ALICEVISION_LOG_ERROR("Cannot sort folers, please store them in alphabetic order.");
+
+        ldrImagesPaths[g] = ldrImagesPaths_copy.at(std::distance(subFoldersNames.begin(), it));
+      }
     }
 }
 
