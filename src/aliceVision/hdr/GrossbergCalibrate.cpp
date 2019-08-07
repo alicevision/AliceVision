@@ -28,12 +28,9 @@ void GrossbergCalibrate::process(const std::vector< std::vector< image::Image<im
                                  const bool fisheye,
                                  rgbCurve &response)
 {
-
-    //checks
-    for (int g = 0; g < ldrImageGroups.size(); ++g)
-    {
-      assert(ldrImageGroups[g].size() == times[g].size());
-    }
+    const int nbGroups = ldrImageGroups.size();
+    const int nbImages = ldrImageGroups.front().size();
+    const int samplesPerImage = nbPoints / (nbGroups*nbImages);
 
     //set channels count always RGB
     static const std::size_t channels = 3;
@@ -41,10 +38,6 @@ void GrossbergCalibrate::process(const std::vector< std::vector< image::Image<im
     //initialize response with g0 from invEmor
     response = rgbCurve(channelQuantization);
     response.setEmor();
-//    response.write("/s/prods/mvg/_source_global/samples/HDR_selection/samsung/8bits/emor.ods");
-//    const double* ptrf0 = getEmorInvCurve(0);
-//    std::vector<double> f0;
-//    f0.assign(ptrf0, ptrf0 + channelQuantization);
 
     const std::size_t emorSize = std::pow(2, 10);
 
@@ -101,22 +94,21 @@ void GrossbergCalibrate::process(const std::vector< std::vector< image::Image<im
         H.col(i) = Eigen::Map<Vec>(hCurves[i].data(), channelQuantization);
     }
 
-    for(unsigned int g=0; g<ldrImageGroups.size(); ++g)
+    Mat A = Mat::Zero(samplesPerImage*(nbImages-1)*nbGroups*channels, _dimension);
+    Vec b = Vec::Zero(samplesPerImage*(nbImages-1)*nbGroups*channels);
+
+    if(fisheye)
     {
-      const std::vector< image::Image<image::RGBfColor> > &ldrImagesGroup = ldrImageGroups.at(g);
-      const std::vector<float> &ldrTimes= times.at(g);
+      int count = 0;
 
-      const int nbImages = ldrImagesGroup.size();
-      const std::size_t width = ldrImagesGroup.front().Width();
-      const std::size_t height = ldrImagesGroup.front().Height();
-
-      Mat A = Mat::Zero(nbPoints*(nbImages-1)*channels, _dimension);
-      Vec b = Vec::Zero(nbPoints*(nbImages-1)*channels);
-
-      ALICEVISION_LOG_TRACE("filling A and b matrices");
-
-      if(fisheye)
+      for(unsigned int g=0; g<nbGroups; ++g)
       {
+        const std::vector< image::Image<image::RGBfColor> > &ldrImagesGroup = ldrImageGroups[g];
+        const std::vector<float> &ldrTimes= times[g];
+
+        const std::size_t width = ldrImagesGroup.front().Width();
+        const std::size_t height = ldrImagesGroup.front().Height();
+
         const std::size_t minSize = std::min(width, height) * 0.97;
         const Vec2i center(width/2, height/2);
 
@@ -126,11 +118,11 @@ void GrossbergCalibrate::process(const std::vector< std::vector< image::Image<im
         const int yMax = std::floor(center(1) + minSize/2);
         const std::size_t maxDist2 = pow(minSize * 0.5, 2);
 
-        int count = 0;
+        ALICEVISION_LOG_TRACE("filling A and b matrices");
 
         for(unsigned int channel=0; channel<channels; ++channel)
         {
-          const int step = std::ceil(sqrt(std::ceil(minSize*minSize / nbPoints)));
+          const int step = std::ceil(minSize / sqrt(samplesPerImage));
           for(unsigned int j=0; j<nbImages-1; ++j)
           {
             const image::Image<image::RGBfColor> &image1 = ldrImagesGroup.at(j);
@@ -161,14 +153,25 @@ void GrossbergCalibrate::process(const std::vector< std::vector< image::Image<im
             }
           }
         }
-        A.conservativeResize(count, Eigen::NoChange_t::NoChange);
-        b.conservativeResize(count);
       }
-      else
+
+      A.conservativeResize(count, Eigen::NoChange_t::NoChange);
+      b.conservativeResize(count);
+    }
+
+    else
+    {
+      for(unsigned int g=0; g<nbGroups; ++g)
       {
+        const std::vector< image::Image<image::RGBfColor> > &ldrImagesGroup = ldrImageGroups[g];
+        const std::vector<float> &ldrTimes= times[g];
+
+        const std::size_t width = ldrImagesGroup.front().Width();
+        const std::size_t height = ldrImagesGroup.front().Height();
+
         for(unsigned int channel=0; channel<channels; ++channel)
         {
-          const int step = std::floor(width*height / nbPoints);
+          const int step = std::floor(width*height / samplesPerImage);
           for(unsigned int j=0; j<nbImages-1; ++j)
           {
             const image::Image<image::RGBfColor> &image1 = ldrImagesGroup.at(j);
@@ -176,7 +179,7 @@ void GrossbergCalibrate::process(const std::vector< std::vector< image::Image<im
             const double k = ldrTimes.at(j+1)/ldrTimes.at(j);
 
             // fill A and b matrices with the equations
-            for(unsigned int l=0; l<nbPoints; ++l)
+            for(unsigned int l=0; l<samplesPerImage; ++l)
             {
                 double sample1 = std::max(0.f, std::min(1.f, image1(step*l)(channel)));
                 double sample2 = std::max(0.f, std::min(1.f, image2(step*l)(channel)));
@@ -185,40 +188,41 @@ void GrossbergCalibrate::process(const std::vector< std::vector< image::Image<im
                 std::size_t index1 = std::round((channelQuantization-1) * sample1);
                 std::size_t index2 = std::round((channelQuantization-1) * sample2);
 
-                b(channels*j*nbPoints + channels*l + channel) = response.getCurve(channel).at(index2) - k * response.getCurve(channel).at(index1);
+                b(g*channels*(nbImages-1)*samplesPerImage + channel*(nbImages-1)*samplesPerImage + j*samplesPerImage + l) = response.getCurve(channel).at(index2) - k * response.getCurve(channel).at(index1);
                 for(unsigned int i=0; i<_dimension; ++i)
-                  A(channels*j*nbPoints + channels*l + channel, i) = k * H(index1, i) - H(index2, i);
+                  A(g*channels*(nbImages-1)*samplesPerImage + channel*(nbImages-1)*samplesPerImage + j*samplesPerImage + l, i) = k * H(index1, i) - H(index2, i);
             }
           }
         }
       }
-
-
-      ALICEVISION_LOG_TRACE("solving Ax=b system");
-
-      // solve the system using QR decomposition
-      Eigen::HouseholderQR<Mat> solver(A);
-      Vec c = solver.solve(b);
-
-      ALICEVISION_LOG_TRACE("system solved");
-
-      double relative_error = (A*c - b).norm() / b.norm();
-      ALICEVISION_LOG_DEBUG("relative error is : " << relative_error);
-
-      ALICEVISION_LOG_DEBUG("emor coefficients are : ");
-
-      for(unsigned int i=0; i<_dimension; ++i)
-      {
-        std::vector<double> temp_hCurve = hCurves[i];
-        for(auto &value : temp_hCurve)
-          value *= c(i);
-
-        ALICEVISION_LOG_DEBUG(c(i));
-
-        for(int channel=0; channel<channels; ++channel)
-          std::transform(response.getCurve(channel).begin(), response.getCurve(channel).end(), temp_hCurve.begin(), response.getCurve(channel).begin(), std::plus<float>());
-      }
     }
+
+
+    ALICEVISION_LOG_TRACE("solving Ax=b system");
+
+    // solve the system using QR decomposition
+    Eigen::HouseholderQR<Mat> solver(A);
+    Vec c = solver.solve(b);
+
+    ALICEVISION_LOG_TRACE("system solved");
+
+    double relative_error = (A*c - b).norm() / b.norm();
+    ALICEVISION_LOG_DEBUG("relative error is : " << relative_error);
+
+    ALICEVISION_LOG_DEBUG("emor coefficients are : ");
+
+    for(unsigned int i=0; i<_dimension; ++i)
+    {
+      std::vector<double> temp_hCurve = hCurves[i];
+      for(auto &value : temp_hCurve)
+        value *= c(i);
+
+      ALICEVISION_LOG_DEBUG(c(i));
+
+      for(int channel=0; channel<channels; ++channel)
+        std::transform(response.getCurve(channel).begin(), response.getCurve(channel).end(), temp_hCurve.begin(), response.getCurve(channel).begin(), std::plus<float>());
+    }
+
 }
 
 

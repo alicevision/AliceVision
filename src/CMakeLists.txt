@@ -509,6 +509,7 @@ if(ALICEVISION_BUILD_SFM)
         set(ALICEVISION_HAVE_OPENCV 1)
         message(STATUS "OpenCV found.")
       endif()
+
     elseif(ALICEVISION_USE_OPENCV STREQUAL "ON")
       message(SEND_ERROR "Failed to find OpenCV.")
     endif()
