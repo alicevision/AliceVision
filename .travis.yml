@@ -67,6 +67,7 @@ before_script:
   - >
      cmake \
        -DCMAKE_BUILD_TYPE=${BUILD_TYPE} \
+       -DCMAKE_INSTALL_PREFIX:PATH=${ALICEVISION_INSTALL} \
        -DTARGET_ARCHITECTURE=core \
        -DALICEVISION_BUILD_TESTS=ON \
        -DALICEVISION_BUILD_EXAMPLES=ON \
@@ -87,7 +88,7 @@ before_script:
 
 script:
 # limit GCC builds to a reduced number of thread for the virtual machine
-  - make -j 2 VERBOSE=1
+  - make install -j 2 VERBOSE=1
   - export OMP_NUM_THREADS=2
 # Perform unit tests only on GCC builds
   - if [ "$CC" = "gcc" ]; then make test; fi
