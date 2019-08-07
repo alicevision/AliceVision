@@ -192,12 +192,13 @@ void stitchPanorama(const std::vector<std::string>& imagePaths, const std::vecto
 {
   int nbImages = imagePaths.size();
   image::Image<image::RGBAfColor> imageOut;
-  oiio::ImageBuf bufferOut;
+  std::vector<oiio::ImageBuf> buffers(nbImages);
+  oiio::ImageBuf& bufferOut = buffers[0];
   std::size_t inSize;
 
   for(int i=0; i<nbImages; ++i)
   {
-    oiio::ImageBuf buffer;
+    oiio::ImageBuf& buffer = buffers[i];
     image::Image<image::RGBfColor> imageIn;
     image::Image<image::RGBAfColor> imageAlpha;
 
@@ -212,11 +213,13 @@ void stitchPanorama(const std::vector<std::string>& imagePaths, const std::vecto
         ALICEVISION_LOG_ERROR("Can't open image file : " << imagePaths[i]);
     }
 
+    image::getBufferFromImage(imageIn, buffer);
+    buffer.specmod().extra_attribs = metadatas[i];
+
     setFisheyeImage(imageIn, buffer, imageAlpha);
 
     if(i == 0)
     {
-      bufferOut = buffer;
       inSize = std::min(bufferOut.spec().width, bufferOut.spec().height);
       imageOut.resize(2*inSize, inSize, true, image::RGBAfColor(0.f, 0.f, 0.f, 0.f));
     }
