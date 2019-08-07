@@ -375,7 +375,7 @@ depends on.
 
 Specify to CMake where AliceVision is installed by using the `AliceVision_DIR` cmake variable: `-DAliceVision_DIR:PATH="YourInstallPath"/share/aliceVision/cmake`
 or by simply adding the installation path to your `CMAKE_PREFIX_PATH`, i.e. `-DCMAKE_PREFIX_PATH:PATH="YourInstallPath"`.
-
+Check the sample in [samples](src/samples/aliceVisionAs3rdParty) for an example of use.
 
 ### Docker image
 
