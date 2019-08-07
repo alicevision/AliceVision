@@ -5,7 +5,7 @@ Build instructions
 ------------------
 
 Required tools:
-* CMake >= 3.4 
+* CMake >= 3.4
 * Git
 * C/C++ compiler (gcc or visual studio or clang) with C++11 support.
 
@@ -67,18 +67,18 @@ To build AliceVision using vcpkg:
 1. Setup the environment
 
 #### Windows: CUDA and Visual Studio
-* CUDA >= 10.0  
-CUDA 10.0 is fully compatible with **Visual Studio 2017 (Update 8)** which allows to use 
-the most recent compiler toolset (v141) to build AliceVision and its dependencies. 
-VS2015 can also be used in this configuration.  
+* CUDA >= 10.0
+CUDA 10.0 is fully compatible with **Visual Studio 2017 (Update 8)** which allows to use
+the most recent compiler toolset (v141) to build AliceVision and its dependencies.
+VS2015 can also be used in this configuration.
 *This requires a recent version of CMake (tested with 3.12).*
 
-* CUDA < 10.0  
+* CUDA < 10.0
 Due to incompatibilities between CUDA and Visual Studio 2017, **Visual 2015 toolset** must be used to build AliceVision.
-Visual Studio 2017 can be used as an IDE, but v140 toolset must be installed and used for this to work. 
+Visual Studio 2017 can be used as an IDE, but v140 toolset must be installed and used for this to work.
 To setup a VS2017 command prompt using the v140 toolset:
 ```bash
-# Windows: CUDA < 10.0 + VS2017 v140 toolset 
+# Windows: CUDA < 10.0 + VS2017 v140 toolset
 "C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build\vcvarsall.bat" x64 -vcvars_ver=14.0
 nmake /version
 # should print Version 14.00.xxx
@@ -148,14 +148,14 @@ In order to build the library with existing versions of the dependencies (e.g. s
 * For FLANN library, `FLANN_INCLUDE_DIR_HINTS` can be passed pointing to the include directory, e.g.
   `-DFLANN_INCLUDE_DIR_HINTS:PATH=/path/to/flann/1.8.4/include/`
 
-* For Eigen library, `CMAKE_MODULE_PATH` should be passed pointing at the `<EigenInstallDir>/share/cmake/Modules/` directory of the Eigen installation, in which `Eigen-config.cmake` or `FindEigen3.cmake` can be found. 
+* For Eigen library, `CMAKE_MODULE_PATH` should be passed pointing at the `<EigenInstallDir>/share/cmake/Modules/` directory of the Eigen installation, in which `Eigen-config.cmake` or `FindEigen3.cmake` can be found.
   In case only `FindEigen3.cmake` is available (e.g. Homebrew installations), an environment variable `EIGEN_ROOT_DIR` must be set pointing at Eigen install directory.
   For example,
-  
+
   `-DCMAKE_MODULE_PATH:PATH=/usr/local/Cellar/eigen/3.3.4/share/cmake/Modules/`
 
   may require to set the environment variable if only `FindEigen3.cmake`, i.e.
-  
+
   `export EIGEN_ROOT_DIR=/usr/local/Cellar/eigen/3.3.4/`
 
 * For OpenEXR library, `OPENEXR_HOME` can be passed pointing to the install directory, e.g.
@@ -212,7 +212,7 @@ CMake Options
   Build with Alembic file format support (required version >= 1.7).
   `-DAlembic_DIR:PATH=/path/to/alembic/install/lib/cmake/Alembic/` (where AlembicConfig.cmake can be found)
   With old Alembic versions (<1.6), you need to set many variables: `ALEMBIC_ROOT`, `ALEMBIC_HDF5_ROOT`, `ALEMBIC_ILMBASE_ROOT`, `ALEMBIC_OPENEXR_ROOT`.
-   
+
 * `ALICEVISION_USE_OPENMP` (default: `AUTO`)
   Enable OpenMP parallelization
 
@@ -223,16 +223,16 @@ CMake Options
 * `ALICEVISION_USE_POPSIFT` (default: `AUTO`)
   Enable GPU SIFT implementation.
   `-DPopSift_DIR:PATH=/path/to/popsift/install/lib/cmake/PopSift` (where PopSiftConfig.cmake can be found)
-  
+
 * `ALICEVISION_USE_UNCERTAINTYTE` (default: `AUTO`)
   Enable Uncertainty computation.
   `-DUNCERTAINTYTE_DIR:PATH=/path/to/uncertaintyTE/install/` (where `inlude` and `lib` can be found)
   `-DMAGMA_ROOT:PATH=/path/to/magma/install/` (where `inlude` and `lib` can be found)
-  
+
 * `ALICEVISION_USE_OPENCV` (default: `OFF`)
   Build with openCV
   `-DOpenCV_DIR:PATH=/path/to/opencv/install/share/OpenCV/` (where OpenCVConfig.cmake can be found)
-  
+
 * `ALICEVISION_REQUIRE_CERES_WITH_SUITESPARSE` (default: `ON`)
   By default, aliceVision requires Ceres built with SuiteSparse to ensure best performances but you can make SuiteSparse optional with this flag.
 
@@ -350,26 +350,32 @@ Using AliceVision as a third party library dependency in cmake
 --------------------------------------------------------------
 
 AliceVision can be used as a third party once it have been installed.
-Because it can use its own Ceres version, it is better to install it locally and not in system files.
-So please consider using the `CMAKE_INSTALL_PREFIX` cmake variable to specify a local installation directory.
-
-Here the syntax to add the variable to the cmake command line (use absolute path), e.g.: 
+Consider using the `CMAKE_INSTALL_PREFIX` cmake variable to specify a local installation directory.
+Here the syntax to add the variable to the cmake command line (use absolute path), e.g.:
 ```bash
 -DCMAKE_INSTALL_PREFIX="/home/user/dev/AliceVision_install"
 ```
 
 Perform `make` and `make install`
 
-Then you will be able to use AliceVision as an external library in your `CMakeLists.txt`:
+Then you will be able to use AliceVision as an external library in your `CMakeLists.txt` using
+the modern CMake approach as imported target. For example, if your target `main` depends on the
+AliceVision module `aliceVision_sfmDataIO`:
+
 ```cmake
-find_package(AliceVision REQUIRED)
-include_directories(${ALICEVISION_INCLUDE_DIRS})
+find_package(AliceVision CONFIG REQUIRED)
+message(STATUS "Found AliceVision : ${AliceVision_FOUND}")
+message(STATUS "Found AliceVision version: ${AliceVision_VERSION}")
 add_executable(main main.cpp)
-target_link_libraries(main ${ALICEVISION_LIBRARIES})
+target_link_libraries(main PUBLIC aliceVision_sfmDataIO)
 ```
 
-Specify to CMake where AliceVision is installed by using the `AliceVision_DIR` cmake variable: `-DAliceVision_DIR:STRING="YourInstallPath"/share/aliceVision/cmake`
+In general, you need to specify the list of the AliceVision modules that your library or executable
+depends on.
 
+Specify to CMake where AliceVision is installed by using the `AliceVision_DIR` cmake variable: `-DAliceVision_DIR:PATH="YourInstallPath"/share/aliceVision/cmake`
+or by simply adding the installation path to your `CMAKE_PREFIX_PATH`, i.e. `-DCMAKE_PREFIX_PATH:PATH="YourInstallPath"`.
+Check the sample in [samples](src/samples/aliceVisionAs3rdParty) for an example of use.
 
 ### Docker image
 
