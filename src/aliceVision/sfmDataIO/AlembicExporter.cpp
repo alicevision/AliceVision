@@ -31,11 +31,11 @@ struct AlembicExporter::DataImpl
     , _topObj(_archive, Alembic::Abc::kTop)
   {
   // create MVG hierarchy
-    _mvgRoot = Alembic::Abc::OObject(_topObj, "mvgRoot");
-    _mvgCameras = Alembic::Abc::OObject(_mvgRoot, "mvgCameras");
-    _mvgCamerasUndefined = Alembic::Abc::OObject(_mvgRoot, "mvgCamerasUndefined");
-    _mvgCloud = Alembic::Abc::OObject(_mvgRoot, "mvgCloud");
-    _mvgPointCloud = Alembic::Abc::OObject(_mvgCloud, "mvgPointCloud");
+    _mvgRoot = Alembic::AbcGeom::OXform(_topObj, "mvgRoot");
+    _mvgCameras = Alembic::AbcGeom::OXform(_mvgRoot, "mvgCameras");
+    _mvgCamerasUndefined = Alembic::AbcGeom::OXform(_mvgRoot, "mvgCamerasUndefined");
+    _mvgCloud = Alembic::AbcGeom::OXform(_mvgRoot, "mvgCloud");
+    _mvgPointCloud = Alembic::AbcGeom::OXform(_mvgCloud, "mvgPointCloud");
 
     // add version as custom property
     const std::vector<::uint32_t> abcVersion = {1, 1};
@@ -67,11 +67,11 @@ struct AlembicExporter::DataImpl
   
   Alembic::Abc::OArchive _archive;
   Alembic::Abc::OObject _topObj;
-  Alembic::Abc::OObject _mvgRoot;
-  Alembic::Abc::OObject _mvgCameras;
-  Alembic::Abc::OObject _mvgCamerasUndefined;
-  Alembic::Abc::OObject _mvgCloud;
-  Alembic::Abc::OObject _mvgPointCloud;
+  Alembic::AbcGeom::OXform _mvgRoot;
+  Alembic::AbcGeom::OXform _mvgCameras;
+  Alembic::AbcGeom::OXform _mvgCamerasUndefined;
+  Alembic::AbcGeom::OXform _mvgCloud;
+  Alembic::AbcGeom::OXform _mvgPointCloud;
   Alembic::AbcGeom::OXform _xform;
   Alembic::AbcGeom::OCamera _camObj;
   Alembic::AbcGeom::OUInt32ArrayProperty _propSensorSize_pix;

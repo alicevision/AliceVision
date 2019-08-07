@@ -12,6 +12,7 @@
 #include <aliceVision/mvsData/geometry.hpp>
 #include <aliceVision/mvsData/jetColorMap.hpp>
 #include <aliceVision/mvsData/imageIO.hpp>
+#include <aliceVision/mvsData/imageAlgo.hpp>
 
 #include <iostream>
 
@@ -432,9 +433,6 @@ void DepthSimMap::load(int rc, int fromScale)
 
     imageIO::readImage(getFileNameFromIndex(mp, rc, mvsUtils::EFileType::depthMap, fromScale), width, height, depthMap.getDataWritable(), imageIO::EImageColorSpace::NO_CONVERSION);
     imageIO::readImage(getFileNameFromIndex(mp, rc, mvsUtils::EFileType::simMap, fromScale), width, height, simMap.getDataWritable(), imageIO::EImageColorSpace::NO_CONVERSION);
-
-    imageIO::transposeImage(width, height, depthMap.getDataWritable());
-    imageIO::transposeImage(width, height, simMap.getDataWritable());
 
     initFromDepthMapTAndSimMapT(&depthMap, &simMap, fromScale);
 }

@@ -4,6 +4,7 @@ set(mvsData_files_headers
   Image.hpp
   geometry.hpp
   geometryTriTri.hpp
+  imageAlgo.hpp
   imageIO.hpp
   jetColorMap.hpp
   Matrix3x3.hpp
@@ -25,6 +26,7 @@ set(mvsData_files_headers
 set(mvsData_files_sources
   jetColorMap.cpp
   Image.cpp
+  imageAlgo.cpp
   imageIO.cpp
   geometry.cpp
   geometryTriTri.cpp

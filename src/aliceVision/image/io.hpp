@@ -88,6 +88,15 @@ oiio::ParamValueList getMetadataFromMap(const std::map<std::string, std::string>
 /**
  * @brief extract metadata from an image for a given path
  * @param[in] path The given path to the image
+ * @param[out] width The image header width
+ * @param[out] height The image header height
+ * @return metadata All metadata find in the image
+ */
+oiio::ParamValueList readImageMetadata(const std::string& path, int& width, int& height);
+
+/**
+ * @brief extract metadata from an image for a given path
+ * @param[in] path The given path to the image
  * @return metadata All metadata find in the image
  */
 oiio::ParamValueList readImageMetadata(const std::string& path);

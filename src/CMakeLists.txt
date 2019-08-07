@@ -251,7 +251,7 @@ endif()
 # Boost
 # ==============================================================================
 option(BOOST_NO_CXX11 "if Boost is compiled without C++11 support (as it is often the case in OS packages) this must be enabled to avoid symbol conflicts (SCOPED_ENUM)." OFF)
-find_package(Boost 1.60.0 QUIET COMPONENTS atomic container date_time filesystem graph log log_setup program_options regex serialization system thread)
+find_package(Boost 1.60.0 QUIET COMPONENTS atomic container date_time filesystem graph log log_setup program_options regex serialization system thread timer)
 
 if(Boost_FOUND)
   message(STATUS "Boost ${Boost_LIB_VERSION} found.")
@@ -498,8 +498,18 @@ if(ALICEVISION_BUILD_SFM)
     find_package(OpenCV COMPONENTS core imgproc video imgcodecs videoio features2d xfeatures2d)
 
     if(OpenCV_FOUND)
-      set(ALICEVISION_HAVE_OPENCV 1)
-      message(STATUS "OpenCV found.")
+      # We do not set the minimal version directly in find_package
+      # due to this issue in opencv: https://github.com/opencv/opencv/issues/5931
+      # which considers major version as exact requirement.
+      if(OpenCV_VERSION VERSION_LESS "3.2.0")
+        if(ALICEVISION_USE_OPENCV STREQUAL "ON")
+          message(SEND_ERROR "Failed to find OpenCV 3.2.0+")
+        endif()
+      else()
+        set(ALICEVISION_HAVE_OPENCV 1)
+        message(STATUS "OpenCV found.")
+      endif()
+
     elseif(ALICEVISION_USE_OPENCV STREQUAL "ON")
       message(SEND_ERROR "Failed to find OpenCV.")
     endif()
@@ -696,13 +706,13 @@ endif()
 
 if(ALICEVISION_HAVE_CUDA)
   if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-    if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER "4.9.3")
+    if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL "5.0.0")
       if(CUDA_VERSION VERSION_LESS "8.0")
         MESSAGE(STATUS "Found gcc >=5 and CUDA <= 7.5, adding workaround C++ flags")
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_FORCE_INLINES -D_MWAITXINTRIN_H_INCLUDED -D__STRICT_ANSI__")
-      endif(CUDA_VERSION VERSION_LESS "8.0")
-    endif(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER "4.9.3")
-  endif(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+      endif()
+    endif()
+  endif()
 
   set(CUDA_SEPARABLE_COMPILATION ON)
   message("Build Mode: ${CMAKE_BUILD_TYPE}")
