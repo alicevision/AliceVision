@@ -92,6 +92,10 @@ script:
   - export OMP_NUM_THREADS=2
 # Perform unit tests only on GCC builds
   - if [ "$CC" = "gcc" ]; then make test; fi
+  - mkdir -p ${ALICEVISION_BUILD_AS3RDPARTY}
+  - cd ${ALICEVISION_BUILD_AS3RDPARTY}
+  - cmake -DCMAKE_PREFIX_PATH:PATH="${ALICEVISION_INSTALL};${DEPS_INSTALL_PATH}" ${ALICEVISION_SAMPLE_AS3RDPARTY}
+  - make
 # Perform benchmark through ground truth tests with different scenes
   - >
     if [ -n "$TRAVIS_PULL_REQUEST" ]; then # limit to PR builds

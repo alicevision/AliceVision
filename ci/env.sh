@@ -57,6 +57,8 @@ download_files_from_tar()
 export ALICEVISION_SOURCE="${TRAVIS_BUILD_DIR}"
 export ALICEVISION_BUILD="${TRAVIS_BUILD_DIR}/build"
 export ALICEVISION_INSTALL="${TRAVIS_BUILD_DIR}/install"
+export ALICEVISION_BUILD_AS3RDPARTY="${TRAVIS_BUILD_DIR}/buildAs3rdparty"
+export ALICEVISION_SAMPLE_AS3RDPARTY="${ALICEVISION_SOURCE}/src/samples/aliceVisionAs3rdParty/"
 # GT datasets for tests
 export GT_TEST_ROOT="${TRAVIS_BUILD_DIR}/gt_test"
 export GT_TEST_SOURCE="${GT_TEST_ROOT}/gt_source"
