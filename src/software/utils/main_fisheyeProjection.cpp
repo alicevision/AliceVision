@@ -202,7 +202,7 @@ void stitchPanorama(const std::vector<std::string>& imagePaths, const std::vecto
     image::Image<image::RGBfColor> imageIn;
     image::Image<image::RGBAfColor> imageAlpha;
 
-    ALICEVISION_LOG_INFO("Converting " << imagePaths[i]);
+    ALICEVISION_LOG_INFO("Projecting " << imagePaths[i] << " into equirectangular space");
 
     try
     {
