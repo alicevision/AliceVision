@@ -93,10 +93,8 @@ float sigmoid(float x, float sigwidth, float sigMid)
  * @param[out] buffer - to store input metadata in output image
  * @param[out] imageAlpha - output RGBAf fisheye image correctly oriented
  */
-void setFisheyeImage(image::Image<image::RGBfColor>& imageIn, const oiio::ParamValueList& metadata, oiio::ImageBuf& buffer, image::Image<image::RGBAfColor>& imageAlpha)
+void setFisheyeImage(image::Image<image::RGBfColor>& imageIn, oiio::ImageBuf& buffer, image::Image<image::RGBAfColor>& imageAlpha)
 {
-  image::getBufferFromImage(imageIn, buffer);
-  buffer.specmod().extra_attribs = metadata;
   bool correctOrientation = oiio::ImageBufAlgo::reorient(buffer, buffer);
 
   if(!correctOrientation)
@@ -214,7 +212,7 @@ void stitchPanorama(const std::vector<std::string>& imagePaths, const std::vecto
         ALICEVISION_LOG_ERROR("Can't open image file : " << imagePaths[i]);
     }
 
-    setFisheyeImage(imageIn, metadatas[i], buffer, imageAlpha);
+    setFisheyeImage(imageIn, buffer, imageAlpha);
 
     if(i == 0)
     {
