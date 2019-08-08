@@ -333,7 +333,7 @@ int main(int argc, char** argv)
     {
       for(fs::directory_entry& file : boost::make_iterator_range(fs::directory_iterator(path), {}))
       {
-        if(fs::is_regular_file(file.status()))
+        if(image::isSupported(file.path().extension().string()))
         {
           imagePaths.push_back(file.path().string());
 
@@ -358,7 +358,7 @@ int main(int argc, char** argv)
       }
     }
 
-    else if(fs::exists(path) && fs::is_regular_file(fs::path(entry)))
+    else if(fs::exists(path) && image::isSupported(path.extension().string()))
     {
       imagePaths.push_back(path.string());
 
