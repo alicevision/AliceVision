@@ -93,7 +93,7 @@ float sigmoid(float x, float sigwidth, float sigMid)
  * @param[out] buffer - to store input metadata in output image
  * @param[out] imageAlpha - output RGBAf fisheye image correctly oriented
  */
-void setFisheyeImage(image::Image<image::RGBfColor>& imageIn, oiio::ImageBuf& buffer, image::Image<image::RGBAfColor>& imageAlpha)
+void setFisheyeImage(image::Image<image::RGBfColor>& imageIn, const float blurWidth_param, oiio::ImageBuf& buffer, image::Image<image::RGBAfColor>& imageAlpha)
 {
   bool correctOrientation = oiio::ImageBufAlgo::reorient(buffer, buffer);
 
@@ -110,9 +110,9 @@ void setFisheyeImage(image::Image<image::RGBfColor>& imageIn, oiio::ImageBuf& bu
 
   imageAlpha.resize(width, height, false);
 
-  const float maxRadius = std::min(width, height) * 0.5 * 0.95;
-  const float blurWidth = maxRadius * 0.2;
-  const float blurMid = maxRadius * 0.95;
+  const float maxRadius = std::min(width, height) * 0.5;
+  const float blurWidth = maxRadius * blurWidth_param;
+  const float blurMid = maxRadius - blurWidth/2.f;
   const Vec2i center(width/2, height/2);
 
   for(std::size_t x = 0; x < width; ++x)
@@ -188,7 +188,7 @@ void fisheyeToEquirectangular(image::Image<image::RGBAfColor>& imageIn, const in
  * @param[in] rotations - contains adjustment rotations on each image set by user
  * @param[out] outputFolder - output folder path to write panorama
  */
-void stitchPanorama(const std::vector<std::string>& imagePaths, const std::vector<oiio::ParamValueList>& metadatas, const std::array<std::vector<double>, 3> rotations, std::string& outputPath)
+void stitchPanorama(const std::vector<std::string>& imagePaths, const std::vector<oiio::ParamValueList>& metadatas, const float blurWidth, const std::array<std::vector<double>, 3> rotations, std::string& outputPath)
 {
   int nbImages = imagePaths.size();
   image::Image<image::RGBAfColor> imageOut;
@@ -216,7 +216,7 @@ void stitchPanorama(const std::vector<std::string>& imagePaths, const std::vecto
     image::getBufferFromImage(imageIn, buffer);
     buffer.specmod().extra_attribs = metadatas[i];
 
-    setFisheyeImage(imageIn, buffer, imageAlpha);
+    setFisheyeImage(imageIn, blurWidth, buffer, imageAlpha);
 
     if(i == 0)
     {
@@ -247,6 +247,7 @@ int main(int argc, char** argv)
   std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
   std::vector<std::string> inputPath;                      // media file path list
   std::string outputFolder;                   // output folder for panorama
+  float blurWidth = 0.2f;
   std::vector<double> xRotation;
   std::vector<double> yRotation;
   std::vector<double> zRotation;
@@ -263,6 +264,8 @@ int main(int argc, char** argv)
 
   po::options_description optionalParams("Optional parameters");
   optionalParams.add_options()
+    ("blurWidth,b", po::value<float>(&blurWidth)->default_value(blurWidth),
+      "Blur width of alpha channel for all fisheye (between 0 and 1), determine the transitions sharpness.")
     ("xRotation,x", po::value<std::vector<double>>(&xRotation)->multitoken(),
       "Angles to rotate each image on axis x : horizontal axis on the panorama.")
     ("yRotation,y", po::value<std::vector<double>>(&yRotation)->multitoken(),
@@ -422,7 +425,7 @@ int main(int argc, char** argv)
 
   ALICEVISION_LOG_INFO(nbImages << " file paths found.");
 
-  stitchPanorama(imagePaths_sorted, metadatas_sorted, rotations, outputFolder);
+  stitchPanorama(imagePaths_sorted, metadatas_sorted, blurWidth, rotations, outputFolder);
 
   return EXIT_SUCCESS;
 }
