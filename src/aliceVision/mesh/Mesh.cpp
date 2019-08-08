@@ -515,6 +515,24 @@ void Mesh::getPtsNeighborTriangles(StaticVector<StaticVector<int>>& out_ptsNeigh
     }
 }
 
+void Mesh::getPtsNeighbors(std::vector<std::vector<int>>& out_ptsNeigh) const
+{
+    out_ptsNeigh.resize(pts.size());
+    for(int triangleId = 0; triangleId < tris.size(); ++triangleId)
+    {
+        const Mesh::triangle& triangle = tris[triangleId];
+        for(int k = 0; k < 3; ++k)
+        {
+            int ptId = triangle.v[k];
+            std::vector<int>& ptNeigh = out_ptsNeigh[ptId];
+            if(std::find(ptNeigh.begin(), ptNeigh.end(), triangle.v[(k+1)%3]) == ptNeigh.end())
+                ptNeigh.push_back(triangle.v[(k+1)%3]);
+            if(std::find(ptNeigh.begin(), ptNeigh.end(), triangle.v[(k+2)%3]) == ptNeigh.end())
+                ptNeigh.push_back(triangle.v[(k+2)%3]);
+        }
+    }
+}
+
 void Mesh::getPtsNeighPtsOrdered(StaticVector<StaticVector<int>>& out_ptsNeighPts) const
 {
     StaticVector<StaticVector<int>> ptsNeighborTriangles;
@@ -1359,29 +1377,50 @@ void Mesh::getTrianglesEdgesIds(const StaticVector<StaticVector<int>>& edgesNeig
     }
 }
 
-void Mesh::subdivideMesh(float maxEdgeLength, int maxMeshPts)
+void Mesh::subdivideMeshUpdateVisibilities(const Mesh& refMesh, float ratioSubdiv)
 {
     ALICEVISION_LOG_INFO("Subdivide mesh.");
+    ALICEVISION_LOG_INFO("nb pts init: " << pts.size());
+    ALICEVISION_LOG_INFO("nb tris init: " << tris.size());
 
-    int nsubd = 1000;
-    while((pts.size() < maxMeshPts) && (nsubd > 1))
+    int maxMeshPts = refMesh.pts.size() * ratioSubdiv + (1-ratioSubdiv) * pts.size();
+
+    std::vector<std::vector<int>> refPtsNeighbors;
+    refMesh.getPtsNeighbors(refPtsNeighbors);
+
+    GEO::AdaptiveKdTree refMesh_kdTree(3);
+    refMesh_kdTree.set_points(refMesh.pts.size(), refMesh.pts.front().m);
+
+    int nsubd = 0;
+    do
     {
-        nsubd = subdivideMesh(maxEdgeLength);
+        nsubd = subdivideMesh(refMesh, refMesh_kdTree, refPtsNeighbors, ratioSubdiv);
         ALICEVISION_LOG_DEBUG("subdivided: " << nsubd);
-    }
+    } while( pts.size()+nsubd < maxMeshPts && nsubd > 10);
 
     ALICEVISION_LOG_INFO("Nb points after subdivision: " << pts.size());
     ALICEVISION_LOG_INFO("Nb tris after subdivision: " << tris.size());
+
+    pointsVisibilities.resize(pts.size());
+    for(int i = 0; i < pts.size(); ++i)
+    {
+        int iRef = refMesh_kdTree.get_nearest_neighbor(pts[i].m);
+        if(iRef == -1)
+            continue;
+
+        PointVisibility& ptVisibilities = pointsVisibilities[i];
+        const PointVisibility& refVisibilities = refMesh.pointsVisibilities[iRef];
+        std::copy(refVisibilities.begin(), refVisibilities.end(), std::back_inserter(ptVisibilities.getDataWritable()));
+    }
 }
 
-int Mesh::subdivideMesh(float maxEdgeLength)
+int Mesh::subdivideMesh(const Mesh& refMesh, const GEO::AdaptiveKdTree& refMesh_kdTree, const std::vector<std::vector<int>>& refPtsNeighbors, float ratioSubdiv)
 {
 
     StaticVector<StaticVector<int>> edgesNeighTris;
     StaticVector<Pixel> edgesPointsPairs;
     getNotOrientedEdges(edgesNeighTris, edgesPointsPairs);
 
-    ////// NEW VERSION //////
     // for edge (A,B): <A, B, newPointId> with A,B in triangle local system (0, 1 or 2)
     // Edges to subdivise per triangle
     std::map<int, std::vector<edge>> trianglesToSubdivide;
@@ -1400,12 +1439,20 @@ int Mesh::subdivideMesh(float maxEdgeLength)
     {
         int idA = edgesPointsPairs[i].x;
         int idB = edgesPointsPairs[i].y;
+        int idRefA = refMesh_kdTree.get_nearest_neighbor(pts[idA].m);
+        int idRefB = refMesh_kdTree.get_nearest_neighbor(pts[idB].m);
+        if(idRefA == -1 || idRefB == -1)
+            continue;
+
         Point3d& pointA = pts[idA];
         Point3d& pointB = pts[idB];
 
-        const double edgeLength = (pointA - pointB).size();
+        const double edgeLength = dist(pointA, pointB);
+        const double refLocalEdgeLength = (refMesh.computeLocalAverageEdgeLength(refPtsNeighbors, idRefA) + refMesh.computeLocalAverageEdgeLength(refPtsNeighbors, idRefB)) / 2.0;
+//        ALICEVISION_LOG_INFO("edge length: " << edgeLength);
+//        ALICEVISION_LOG_INFO("refLocalEdgeLength: " << refLocalEdgeLength);
 
-        if(edgeLength > maxEdgeLength)
+        if(refLocalEdgeLength > 0 && edgeLength > refLocalEdgeLength / ratioSubdiv )
         {
             // add new point
             Point3d newPoint = (pointA + pointB) / 2.0;
@@ -1632,6 +1679,27 @@ double Mesh::computeAverageEdgeLength() const
     }
 
     return (s / n);
+}
+
+double Mesh::computeLocalAverageEdgeLength(const std::vector<std::vector<int>>& ptsNeighbors, int ptId) const
+{
+    double localAverageEdgeLength = 0.0;
+
+    const Point3d& point = pts[ptId];
+    const std::vector<int>& ptNeighbors = ptsNeighbors[ptId];
+    const int nbNeighbors = ptNeighbors.size();
+
+    if(nbNeighbors == 0)
+        return -1;
+
+    for(int i = 0; i < nbNeighbors; ++i)
+    {
+        const Point3d& pointNeighbor = pts[ptNeighbors[i]];
+        localAverageEdgeLength += dist(point, pointNeighbor);
+    }
+    localAverageEdgeLength /= static_cast<double>(nbNeighbors);
+
+    return localAverageEdgeLength;
 }
 
 void Mesh::letJustTringlesIdsInMesh(StaticVector<int>& trisIdsToStay)

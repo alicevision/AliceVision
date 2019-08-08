@@ -103,10 +103,17 @@ public:
         return x * x + y * y + z * z;
     }
 
+    friend double dist(const Point3d& p1, const Point3d& p2);
+
     friend double dot(const Point3d& p1, const Point3d& p2);
     friend Point3d cross(const Point3d& a, const Point3d& b);
     friend Point3d proj(Point3d& e, Point3d& a);
 };
+
+inline double dist(const Point3d& p1, const Point3d& p2)
+{
+    return (p1 - p2).size();
+}
 
 inline double dot(const Point3d& p1, const Point3d& p2)
 {

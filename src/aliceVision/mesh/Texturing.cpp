@@ -140,6 +140,7 @@ void Texturing::generateUVsBasicMethod(mvsUtils::MultiViewParams& mp)
     mesh->uvCoords.reserve(mesh->pts.size()); // not sufficient
     _atlases.clear();
     _atlases.resize(mua.atlases().size());
+    mesh->nmtls = mua.atlases().size();
 
     // std::map<int, int> vertexCache;
     // PointsVisibility* updatedPointsCams = new PointsVisibility;
@@ -164,6 +165,7 @@ void Texturing::generateUVsBasicMethod(mvsUtils::MultiViewParams& mp)
             {
                 int triangleID = chart.triangleIDs[i];
                 // register triangle in corresponding atlas
+                mesh->trisMtlIds()[triangleID] = atlasId;
                 _atlases[atlasId].push_back(triangleID);
 
                 Voxel& triUvIds = mesh->trisUvIds[triangleID];
@@ -215,6 +217,7 @@ void Texturing::generateUVsBasicMethod(mvsUtils::MultiViewParams& mp)
                     triUvIds.m[k] = uvIdx;
                 }
             }
+
         }
         atlasId++;
     }
@@ -229,12 +232,13 @@ void Texturing::updateAtlases()
     for(int triangleID = 0; triangleID < mesh->trisMtlIds().size(); triangleID++)
     {
         unsigned int atlasID = mesh->nmtls ? mesh->trisMtlIds()[triangleID] : 0;
-        _atlases[atlasID].push_back(triangleID);
+        if(mesh->trisMtlIds()[triangleID] != -1)
+            _atlases[atlasID].push_back(triangleID);
     }
 }
 
-void Texturing::generateTextures(const mvsUtils::MultiViewParams &mp,
-                                 const boost::filesystem::path &outPath, imageIO::EImageFileType textureFileType)
+void Texturing::generateTextures(const mvsUtils::MultiViewParams& mp,
+                                 const boost::filesystem::path& outPath, imageIO::EImageFileType textureFileType)
 {
     // Ensure that contribution levels do not contain 0 and are sorted (as each frequency band contributes to lower bands).
     auto& m = texParams.multiBandNbContrib;

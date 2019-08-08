@@ -43,6 +43,7 @@ int main(int argc, char* argv[])
     std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
     std::string sfmDataFilename;
     std::string inputMeshFilepath;
+    std::string retopoMeshFilepath;
     std::string outputFolder;
     std::string imagesFolder;
     std::string outTextureFileTypeName = imageIO::EImageFileType_enumToString(imageIO::EImageFileType::PNG);
@@ -112,10 +113,12 @@ int main(int argc, char* argv[])
             " * PullPush: Combine results from Pull and Push results.'")
         ("retopoMesh", po::value<bool>(&texParams.retopoMesh)->default_value(texParams.retopoMesh),
             "Check if the mesh has been simplified - it will be subdivide to recover texture precision.")
-        ("edgeLengthSubdivisionFactor", po::value<float>(&texParams.edgeLengthSubdivisionFactor)->default_value(texParams.edgeLengthSubdivisionFactor),
-            "Edge length subdivision factor, needed if the mesh has been simplified and must be subdivide for texturing efficiency.")
-        ("nbPtsSubdivisionFactor", po::value<int>(&texParams.nbPtsSubdivisionFactor)->default_value(texParams.nbPtsSubdivisionFactor),
-            "Number of points multiplication factor, needed if the mesh has been simplified and must be subdivide for texturing efficiency.");
+        ("inputRetopoMesh", po::value<std::string>(&retopoMeshFilepath),
+            "File path to the retopo mesh.")
+        ("ratioSubdivision", po::value<float>(&texParams.ratioSubdivision)->default_value(texParams.ratioSubdivision),
+            "Ratio between densities of reference and retopo meshes. \n"
+            "Needed if the mesh has been simplified and must be subdivide for texturing efficiency.");
+
 
     po::options_description logParams("Log parameters");
     logParams.add_options()
@@ -178,36 +181,64 @@ int main(int argc, char* argv[])
 
     mesh::Texturing mesh;
     mesh.texParams = texParams;
-
-    // load and remap mesh
-    {
-      mesh.clear();
-
-      // load input obj file
-      mesh.loadFromOBJ(inputMeshFilepath, flipNormals);
-    }
+    mesh::Mesh refMesh;
 
     fs::create_directory(outputFolder);
 
-
-    // load reference dense point cloud with visibilities
-    mesh::Mesh refMesh;
-    mesh::PointsVisibility& refVisibilities = refMesh.pointsVisibilities;
-    const std::size_t nbPoints = sfmData.getLandmarks().size();
-    refMesh.pts.reserve(nbPoints);
-    refVisibilities.reserve(nbPoints);
-
-    for(const auto& landmarkPair : sfmData.getLandmarks())
+    // load and remap mesh
     {
-        const sfmData::Landmark& landmark = landmarkPair.second;
-        mesh::PointVisibility pointVisibility;
+        mesh.clear();
 
-        pointVisibility.reserve(landmark.observations.size());
-        for(const auto& observationPair : landmark.observations)
-            pointVisibility.push_back(mp.getIndexFromViewId(observationPair.first));
+        // load input mesh (to texture) obj file
+        if(texParams.retopoMesh)
+        {
+            if(retopoMeshFilepath.empty())
+                throw std::invalid_argument("You need to specify the path to the retopo mesh. Input Mesh is the reference mesh, computed by Meshroom.");
 
-        refVisibilities.push_back(pointVisibility);
-        refMesh.pts.push_back(Point3d(landmark.X(0), landmark.X(1), landmark.X(2)));
+            mesh.loadFromOBJ(retopoMeshFilepath, flipNormals);
+            refMesh.loadFromObjAscii(inputMeshFilepath);
+
+            // load reference dense point cloud with visibilities
+            mesh::PointsVisibility& refVisibilities = refMesh.pointsVisibilities;
+            const std::size_t nbPoints = sfmData.getLandmarks().size();
+            refMesh.pts.reserve(nbPoints);
+            refVisibilities.reserve(nbPoints);
+            ALICEVISION_LOG_INFO("Loading reference mesh.");
+            for(const auto& landmarkPair : sfmData.getLandmarks())
+            {
+                const sfmData::Landmark& landmark = landmarkPair.second;
+                mesh::PointVisibility pointVisibility;
+
+                pointVisibility.reserve(landmark.observations.size());
+                for(const auto& observationPair : landmark.observations)
+                    pointVisibility.push_back(mp.getIndexFromViewId(observationPair.first));
+
+                refVisibilities.push_back(pointVisibility);
+            }
+        }
+        else
+        {
+            mesh.loadFromOBJ(inputMeshFilepath, flipNormals);
+
+            // load reference dense point cloud with visibilities
+            mesh::PointsVisibility& refVisibilities = refMesh.pointsVisibilities;
+            const std::size_t nbPoints = sfmData.getLandmarks().size();
+            refMesh.pts.reserve(nbPoints);
+            refVisibilities.reserve(nbPoints);
+            ALICEVISION_LOG_INFO("Loading reference mesh.");
+            for(const auto& landmarkPair : sfmData.getLandmarks())
+            {
+                const sfmData::Landmark& landmark = landmarkPair.second;
+                mesh::PointVisibility pointVisibility;
+
+                pointVisibility.reserve(landmark.observations.size());
+                for(const auto& observationPair : landmark.observations)
+                    pointVisibility.push_back(mp.getIndexFromViewId(observationPair.first));
+
+                refVisibilities.push_back(pointVisibility);
+                refMesh.pts.push_back(Point3d(landmark.X(0), landmark.X(1), landmark.X(2)));
+            }
+        }
     }
 
     // Generate UVs if necessary
@@ -217,27 +248,17 @@ int main(int argc, char* argv[])
         ALICEVISION_LOG_INFO("Input mesh has no UV coordinates, start unwrapping (" + unwrapMethod +")");
         mesh.unwrap(mp, mesh::EUnwrapMethod_stringToEnum(unwrapMethod));
         ALICEVISION_LOG_INFO("Unwrapping done.");
-        // save final obj file
-        mesh.saveAsOBJ(outputFolder, "texturedMesh", outputTextureFileType);
     }
 
-    // Subdivide simplified mesh for texturing
-    else if(texParams.retopoMesh)
+    if(texParams.retopoMesh)
     {
-        // save final obj file
-        mesh.saveAsOBJ(outputFolder, "texturedMesh", outputTextureFileType);
-
-        ALICEVISION_LOG_INFO("Input mesh has UV coordinates, start subdivision");
-        ALICEVISION_LOG_INFO("nb pts init: " << mesh.mesh->pts.size());
-        ALICEVISION_LOG_INFO("nb pts visibilities init: " << mesh.mesh->pointsVisibilities.size());
-
-        float maxEdgeLength = mesh.mesh->computeAverageEdgeLength() * texParams.edgeLengthSubdivisionFactor ;
-        int maxMeshPts = mesh.mesh->pts.size() * texParams.nbPtsSubdivisionFactor;
-
-        mesh.mesh->subdivideMesh(maxEdgeLength, maxMeshPts);
+        mesh.mesh->subdivideMeshUpdateVisibilities(refMesh, texParams.ratioSubdivision);
         mesh.updateAtlases();
-        mesh.remapVisibilities(texParams.visibilityRemappingMethod, refMesh);
+        // mesh.remapVisibilities(texParams.visibilityRemappingMethod, refMesh);
     }
+
+    // save final obj file
+    mesh.saveAsOBJ(outputFolder, "texturedMesh", outputTextureFileType);
 
     // generate textures
     ALICEVISION_LOG_INFO("Generate textures.");

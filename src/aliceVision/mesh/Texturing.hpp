@@ -86,8 +86,8 @@ struct TexturingParams
     EVisibilityRemappingMethod visibilityRemappingMethod = EVisibilityRemappingMethod::PullPush;
 
     bool retopoMesh = false;
-    float edgeLengthSubdivisionFactor = 0.5;
-    int nbPtsSubdivisionFactor = 500;
+    std::string retopoMeshFilePath;
+    float ratioSubdivision = 0.5;
 };
 
 struct Texturing

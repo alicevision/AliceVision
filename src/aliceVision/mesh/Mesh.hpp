@@ -14,6 +14,8 @@
 #include <aliceVision/mvsData/Voxel.hpp>
 #include <aliceVision/mvsUtils/common.hpp>
 
+#include <geogram/points/kd_tree.h>
+
 namespace aliceVision {
 namespace mesh {
 
@@ -185,11 +187,13 @@ public:
 
     /// Per-triangle material ids const accessor
     const std::vector<int>& trisMtlIds() const { return _trisMtlIds; }
+    std::vector<int>& trisMtlIds() { return _trisMtlIds; }
 
     void getDepthMap(StaticVector<float>& depthMap, const mvsUtils::MultiViewParams& mp, int rc, int scale, int w, int h);
     void getDepthMap(StaticVector<float>& depthMap, StaticVector<StaticVector<int>>& tmp, const mvsUtils::MultiViewParams& mp, int rc,
                      int scale, int w, int h);
 
+    void getPtsNeighbors(std::vector<std::vector<int>>& out_ptsNeighTris) const;
     void getPtsNeighborTriangles(StaticVector<StaticVector<int>>& out_ptsNeighTris) const;
     void getPtsNeighPtsOrdered(StaticVector<StaticVector<int>>& out_ptsNeighTris) const;
 
@@ -224,6 +228,7 @@ public:
     void letJustTringlesIdsInMesh(StaticVector<int>& trisIdsToStay);
 
     double computeAverageEdgeLength() const;
+    double computeLocalAverageEdgeLength(const std::vector<std::vector<int>>& ptsNeighbors, int ptId) const;
 
     bool isTriangleAngleAtVetexObtuse(int vertexIdInTriangle, int triId) const;
     bool isTriangleObtuse(int triId) const;
@@ -242,8 +247,8 @@ public:
 
     Point2d getTrianglePixelInternalPoint(Mesh::triangle_proj& tp, Mesh::rectangle& re);
 
-    void subdivideMesh(float maxEdgeLength, int maxMeshPts);
-    int subdivideMesh(float maxEdgeLength);
+    void subdivideMeshUpdateVisibilities(const Mesh& refMesh, float ratioSubdiv);
+    int subdivideMesh(const Mesh& refMesh, const GEO::AdaptiveKdTree& refMesh_kdTree, const std::vector<std::vector<int>>& refPtsNeighbors, float ratioSubdiv);
     void subdivideTriangle(int triangleId, std::vector<edge>& edgesToSubdivide, StaticVector<triangle>& new_tris,
                            StaticVector<Voxel>& new_trisUvIds, StaticVector<Point2d>& new_uvCoords, std::vector<int>& new_trisMtlIds);
 
