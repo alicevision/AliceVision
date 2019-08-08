@@ -13,6 +13,7 @@
 #include <OpenImageIO/paramlist.h>
 #include <OpenImageIO/imagebuf.h>
 
+#include <boost/algorithm/string.hpp>
 #include <string>
 
 namespace oiio = OIIO;
@@ -77,6 +78,13 @@ std::ostream& operator<<(std::ostream& os, EImageFileType imageFileType);
  * @return the modified stream without the read enum.
  */
 std::istream& operator>>(std::istream& in, EImageFileType& imageFileType);
+
+/**
+ * @brief Check if input image extension is supported by openImageIO ie exists in extension_list from imageio.h
+ * @param[in] ext - image extension
+ * @return true if valid extension
+ */
+bool isSupported(const std::string &ext);
 
 /**
  * @brief convert a metadata string map into an oiio::ParamValueList
