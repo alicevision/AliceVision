@@ -387,6 +387,12 @@ int main(int argc, char** argv)
     }
   }
 
+  if(imagePaths.empty())
+  {
+    ALICEVISION_LOG_ERROR("No valid image file found in input folder or paths");
+    return EXIT_FAILURE;
+  }
+
   int nbImages = imagePaths.size();
   std::vector<float> times_sorted = times;
   std::vector<std::string> imagePaths_sorted;
