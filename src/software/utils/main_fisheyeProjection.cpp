@@ -47,11 +47,9 @@ namespace bmf =  boost::math::float_constants;
 /**
  * @brief Function to map 3D coordinates onto a 2D image according a spherical projection
  */
-class SphericalMapping
+namespace SphericalMapping
 {
-public:
-
-  static Vec3 get3DPoint(const Vec2& pos2d, int width, int height)
+  Vec3 get3DPoint(const Vec2& pos2d, int width, int height)
   {
     const double x = pos2d(0) - width;
     const double y = height/2.0 - pos2d(1);
@@ -66,7 +64,7 @@ public:
     return Vec3(Px, Py, Pz);
   }
 
-  static Vec2 get2DCoordinates(const Vec3& ray, const int inSize)
+  Vec2 get2DCoordinates(const Vec3& ray, int inSize)
   {
     const double Px = ray(0);
     const double Py = ray(1);
@@ -75,12 +73,12 @@ public:
 //    float aperture = 2.0 * std::atan(36.0 / (8.0 * 2.0));
 //    float aperture = 2.0 * asin(1.0 / (2.0 * fNumber));
 
-    float r = 2.0 * atan2(sqrt(Square(Px) + Square(Pz)), Py) / M_PI;
-    float theta = atan2(Pz, Px);
-    Vec2 v(r*cos(theta), r*sin(theta));
+    const float r = 2.f * std::atan2(std::sqrt(Square(Px) + Square(Pz)), Py) / bmf::pi;
+    const float theta = atan2(Pz, Px);
+    const Vec2 v(r*cos(theta), r*sin(theta));
     return v * inSize/2;
   }
-};
+}
 
 
 float sigmoid(float x, float sigwidth, float sigMid)
