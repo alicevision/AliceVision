@@ -86,6 +86,29 @@ float sigmoid(float x, float sigwidth, float sigMid)
   return 1.0f / (1.0f + expf(10.0f * ((x - sigMid) / sigwidth)));
 }
 
+/**
+ * @brief convert metadata "exif:OriginalDateTime" into float and fill a vector with returned value
+ * @param[in] dateTime - input string containing date and time of photo shooting
+ * @param[out] times - vector containing all times of photo shooting in float
+ */
+void convertTime(const std::string& dateTime, std::vector<float>& times)
+{
+  const boost::regex dateTimeExp(
+  // Syntax of Exif:DateTimeOriginal tag
+      "(?<date>[\\d\\:]*) "   // YYYY:MM:DD date separated with time with a space
+      "(?<h>\\d*):"  // HH: hour
+      "(?<m>\\d*):"  // MM: minutes
+      "(?<s>\\d*)"   // SS: seconds
+  );
+
+  // convert time from string to float to sort images by time for future stitching
+  boost::smatch what;
+  if(boost::regex_search(dateTime, what, dateTimeExp))
+  {
+      times.push_back(24.0 * std::stof(what["h"]) + 60.0 * std::stof(what["m"]) + std::stof(what["s"]));
+  }
+}
+
 
 /**
  * @brief Function to set fisheye images with correct orientation and add an alpha channel
@@ -306,14 +329,6 @@ int main(int argc, char** argv)
   std::vector<float> times;
   std::vector<oiio::ParamValueList> metadatas;
 
-  const boost::regex dateTimeExp(
-  // Syntax of Exif:DateTimeOriginal tag
-      "(?<date>[\\d\\:]*) "   // YYYY:MM:DD date separated with time with a space
-      "(?<h>\\d*):"  // HH: hour
-      "(?<m>\\d*):"  // MM: minutes
-      "(?<s>\\d*)"   // SS: seconds
-  );
-
   for(const std::string& entry: inputPath)
   {
     const fs::path path = fs::absolute(entry);
@@ -335,13 +350,7 @@ int main(int argc, char** argv)
             ALICEVISION_LOG_ERROR("Can't sort images : no time metadata in " << file.path().string());
             return EXIT_FAILURE;
           }
-
-          // convert time from string to float to sort images by time for future stitching
-          boost::smatch what;
-          if(boost::regex_search(dateTime, what, dateTimeExp))
-          {
-              times.push_back(24.0 * std::stof(what["h"]) + 60.0 * std::stof(what["m"]) + std::stof(what["s"]));
-          }
+          convertTime(dateTime, times);
         }
       }
     }
@@ -359,13 +368,7 @@ int main(int argc, char** argv)
         ALICEVISION_LOG_ERROR("Can't sort images : no time metadata in " << entry);
         return EXIT_FAILURE;
       }
-
-      // convert time from string to float to sort images by time for future stitching
-      boost::smatch what;
-      if(boost::regex_search(dateTime, what, dateTimeExp))
-      {
-          times.push_back(24.0 * std::stof(what["h"]) + 60.0 * std::stof(what["m"]) + std::stof(what["s"]));
-      }
+      convertTime(dateTime, times);
     }
 
     else
