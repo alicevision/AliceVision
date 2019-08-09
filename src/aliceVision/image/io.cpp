@@ -84,7 +84,7 @@ bool isSupported(const std::string &ext)
   for(const std::string& format: supportedFormat)
   {
     std::vector<std::string> extensions;
-    std::string str = format.substr(format.find(":")+1);
+    const std::string str = format.substr(format.find(":")+1);
     boost::split(extensions, str, boost::is_any_of(","), boost::token_compress_on);
     for(std::string& extension: extensions)
       supportedExtensions.push_back(extension.insert(0, "."));
