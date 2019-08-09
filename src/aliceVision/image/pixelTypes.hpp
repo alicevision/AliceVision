@@ -21,8 +21,8 @@ namespace aliceVision
     template <typename T>
     class Rgb : public Eigen::Matrix<T, 3, 1, 0, 3, 1>
     {
-      typedef Eigen::Matrix<T, 3, 1, 0, 3, 1> Base;
-      typedef T TBase;
+      using Base = Eigen::Matrix<T, 3, 1, 0, 3, 1>;
+      using TBase = T;
     public:
 
       //------------------------------
@@ -177,9 +177,9 @@ namespace aliceVision
     };
 
     /// Instantiation for unsigned char color component
-    typedef Rgb<unsigned char> RGBColor;
+    using RGBColor = Rgb<unsigned char>;
     /// Instantiation for float color component
-    typedef Rgb<float> RGBfColor;
+    using RGBfColor = Rgb<float>;
 
     /**
     * @brief RGBA templated pixel type
@@ -187,7 +187,7 @@ namespace aliceVision
     template <typename T>
     class Rgba : public Eigen::Matrix<T, 4, 1, 0, 4, 1>
     {
-      typedef Eigen::Matrix<T, 4, 1, 0, 4, 1> Base;
+      using Base = Eigen::Matrix<T, 4, 1, 0, 4, 1>;
     public:
 
       //------------------------------
@@ -372,9 +372,9 @@ namespace aliceVision
     };
 
     /// Instantiation for unsigned char color component
-    typedef Rgba<unsigned char> RGBAColor;
+    using RGBAColor = Rgba<unsigned char>;
     /// Instantiation for float color component
-    typedef Rgba<float> RGBAfColor;
+    using RGBAfColor = Rgba<float>;
 
     const RGBColor WHITE( 255, 255, 255 );
     const RGBColor BLACK( 0, 0, 0 );
