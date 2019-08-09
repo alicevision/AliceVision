@@ -28,6 +28,8 @@
 #include <fstream>
 #include <vector>
 #include <boost/regex.hpp>
+#include <boost/math/constants/constants.hpp>
+
 
 // These constants define the current software version.
 // They must be updated when the command line is changed.
@@ -39,6 +41,7 @@ using namespace aliceVision;
 namespace fs = boost::filesystem;
 namespace po = boost::program_options;
 namespace oiio = OIIO;
+namespace bmf =  boost::math::float_constants;
 
 
 /**
@@ -93,7 +96,7 @@ float sigmoid(float x, float sigwidth, float sigMid)
  * @param[out] buffer - to store input metadata in output image
  * @param[out] imageAlpha - output RGBAf fisheye image correctly oriented
  */
-void setFisheyeImage(image::Image<image::RGBfColor>& imageIn, const float blurWidth_param, oiio::ImageBuf& buffer, image::Image<image::RGBAfColor>& imageAlpha)
+void setFisheyeImage(image::Image<image::RGBfColor>& imageIn, float blurWidth_param, oiio::ImageBuf& buffer, image::Image<image::RGBAfColor>& imageAlpha)
 {
   bool correctOrientation = oiio::ImageBufAlgo::reorient(buffer, buffer);
 
@@ -110,10 +113,10 @@ void setFisheyeImage(image::Image<image::RGBfColor>& imageIn, const float blurWi
 
   imageAlpha.resize(width, height, false);
 
-  const float maxRadius = std::min(width, height) * 0.5;
+  const float maxRadius = std::min(width, height) * 0.5f;
   const float blurWidth = maxRadius * blurWidth_param;
   const float blurMid = maxRadius - blurWidth/2.f;
-  const Vec2i center(width/2, height/2);
+  const Vec2i center(width/2.f, height/2.f);
 
   for(std::size_t x = 0; x < width; ++x)
   {
@@ -121,7 +124,7 @@ void setFisheyeImage(image::Image<image::RGBfColor>& imageIn, const float blurWi
     {
       const image::RGBfColor& inPixel = imageIn(y, x);
       image::RGBAfColor& alphaPixel = imageAlpha(y, x);
-      float dist = sqrt((x-center(0)) * (x-center(0)) + (y-center(1)) * (y-center(1)));
+      const float dist = std::sqrt((x-center(0)) * (x-center(0)) + (y-center(1)) * (y-center(1)));
       if(dist > maxRadius)
       {
         alphaPixel.a() = 0.f;
@@ -146,30 +149,28 @@ void setFisheyeImage(image::Image<image::RGBfColor>& imageIn, const float blurWi
  * @param[in] rotations - contains adjustment rotations on each image set by user
  * @param[out] imageOut - output panorama which is incremented at each call
  */
-void fisheyeToEquirectangular(image::Image<image::RGBAfColor>& imageIn, const int nbImages, int iter, const std::array<std::vector<double>, 3> rotations, image::Image<image::RGBAfColor>& imageOut)
+void fisheyeToEquirectangular(image::Image<image::RGBAfColor>& imageIn, int nbImages, int iter, const std::array<std::vector<double>, 3>& rotations, image::Image<image::RGBAfColor>& imageOut)
 {
   std::size_t inWidth = imageIn.Width();
   std::size_t inHeight = imageIn.Height();
   std::size_t inSize = std::min(inWidth, inHeight);
 
-  double zRotation = double(30.0 - iter * 360.0 / nbImages) + rotations[2].at(iter);
-  double xRotation = double(-abs(90.0 - abs(zRotation))/30.0) + rotations[0].at(iter);
-  double yRotation = rotations[1].at(iter);
+  const double zRotation = double(30.0 - iter * 360.0 / nbImages) + rotations[2].at(iter);
+  const double xRotation = double(-abs(90.0 - abs(zRotation))/30.0) + rotations[0].at(iter);
+  const double yRotation = rotations[1].at(iter);
 
   const image::Sampler2d<image::SamplerLinear> sampler;
   for(int j = 0; j < inSize; ++j)
   {
     for(int i = 0; i < 2 * inSize; ++i)
     {
-      image::RGBAfColor pixel(0.f, 0.f, 0.f, 0.f);
-
       Vec3 ray = SphericalMapping::get3DPoint(Vec2(i,j), 2*inSize, inSize);
 
       ray = rotationXYZ(degreeToRadian(xRotation), degreeToRadian(yRotation), degreeToRadian(zRotation)) * ray;
       const Vec2 x = SphericalMapping::get2DCoordinates(ray, inSize);
       const Vec2 xFish(inWidth/2 - x(0), inHeight/2 - x(1));
 
-      pixel = sampler(imageIn, xFish(1), xFish(0));
+      const image::RGBAfColor& pixel = sampler(imageIn, xFish(1), xFish(0));
       float alpha = pixel.a();
 
       imageOut(j, i).r() = pixel.r()*alpha + imageOut(j, i).r()*(1.f-alpha);
@@ -188,7 +189,7 @@ void fisheyeToEquirectangular(image::Image<image::RGBAfColor>& imageIn, const in
  * @param[in] rotations - contains adjustment rotations on each image set by user
  * @param[out] outputFolder - output folder path to write panorama
  */
-void stitchPanorama(const std::vector<std::string>& imagePaths, const std::vector<oiio::ParamValueList>& metadatas, const float blurWidth, const std::array<std::vector<double>, 3> rotations, std::string& outputPath)
+void stitchPanorama(const std::vector<std::string>& imagePaths, const std::vector<oiio::ParamValueList>& metadatas, float blurWidth, const std::array<std::vector<double>, 3>& rotations, std::string& outputPath)
 {
   int nbImages = imagePaths.size();
   image::Image<image::RGBAfColor> imageOut;
@@ -204,15 +205,7 @@ void stitchPanorama(const std::vector<std::string>& imagePaths, const std::vecto
 
     ALICEVISION_LOG_INFO("Projecting " << imagePaths[i] << " into equirectangular space");
 
-    try
-    {
-      image::readImage(imagePaths[i], imageIn, image::EImageColorSpace::LINEAR);
-    }
-    catch(fs::filesystem_error& e)
-    {
-        ALICEVISION_LOG_ERROR("Can't open image file : " << imagePaths[i]);
-    }
-
+    image::readImage(imagePaths[i], imageIn, image::EImageColorSpace::LINEAR);
     image::getBufferFromImage(imageIn, buffer);
     buffer.specmod().extra_attribs = metadatas[i];
 
@@ -230,10 +223,7 @@ void stitchPanorama(const std::vector<std::string>& imagePaths, const std::vecto
   // save equirectangular image with fisheye's metadata
   if(fs::is_directory(fs::path(outputPath)))
   {
-    if(outputPath.back() == '/')
-      outputPath = std::string(outputPath + "panorama.exr");
-    else
-      outputPath = std::string(outputPath + "/panorama.exr");
+    outputPath = (fs::path(outputPath) / ("panorama.exr")).string();
   }
   image::writeImage(outputPath, imageOut, image::EImageColorSpace::AUTO, bufferOut.specmod().extra_attribs);
 
@@ -312,10 +302,7 @@ int main(int argc, char** argv)
   system::Logger::get()->setLogLevel(verboseLevel);
   
   // check output folder and update to its absolute path
-  {
-    const fs::path outDir = fs::absolute(outputFolder);
-    outputFolder = outDir.string();
-  }
+  outputFolder = fs::absolute(outputFolder).string();
 
   std::vector<std::string> imagePaths;
   std::vector<float> times;
@@ -340,7 +327,7 @@ int main(int argc, char** argv)
         {
           imagePaths.push_back(file.path().string());
 
-          oiio::ParamValueList metadata = image::readImageMetadata(file.path().string());
+          const oiio::ParamValueList metadata = image::readImageMetadata(file.path().string());
           metadatas.push_back(metadata);
           std::string dateTime;
           dateTime = metadata.get_string("Exif:DateTimeOriginal");
@@ -396,7 +383,7 @@ int main(int argc, char** argv)
     return EXIT_FAILURE;
   }
 
-  int nbImages = imagePaths.size();
+  const auto nbImages = imagePaths.size();
   std::vector<float> times_sorted = times;
   std::vector<std::string> imagePaths_sorted;
   std::vector<oiio::ParamValueList> metadatas_sorted;
@@ -407,12 +394,12 @@ int main(int argc, char** argv)
 
   // sort images according to their metadata "DateTime"
   std::sort(times_sorted.begin(), times_sorted.end());
-  for(int i=0; i<nbImages; ++i)
+  for(std::size_t i=0; i<nbImages; ++i)
   {
     std::vector<float>::iterator it = std::find(times.begin(), times.end(), times_sorted[i]);
     if(it != times.end())
     {
-      std::size_t index = std::distance(times.begin(), it);
+      const std::size_t index = std::distance(times.begin(), it);
       imagePaths_sorted.push_back(imagePaths.at(index));
       metadatas_sorted.push_back(metadatas.at(index));
     }
