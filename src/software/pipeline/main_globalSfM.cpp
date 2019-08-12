@@ -43,8 +43,8 @@ int main(int argc, char **argv)
 
   std::string outSfMDataFilename = "SfmData.json";
   std::string describerTypesName = feature::EImageDescriberType_enumToString(feature::EImageDescriberType::SIFT);
-  int rotationAveragingMethod = static_cast<int>(sfm::ROTATION_AVERAGING_L2);
-  int translationAveragingMethod = static_cast<int>(sfm::TRANSLATION_AVERAGING_SOFTL1);
+  sfm::ERotationAveragingMethod rotationAveragingMethod = sfm::ROTATION_AVERAGING_L2;
+  sfm::ETranslationAveragingMethod translationAveragingMethod = sfm::TRANSLATION_AVERAGING_SOFTL1;
   bool lockAllIntrinsics = false;
 
   po::options_description allParams("Implementation of the paper\n"
@@ -70,12 +70,13 @@ int main(int argc, char **argv)
       "Filename of the output SfMData file.")
     ("describerTypes,d", po::value<std::string>(&describerTypesName)->default_value(describerTypesName),
       feature::EImageDescriberType_informations().c_str())
-    ("rotationAveraging", po::value<int>(&rotationAveragingMethod)->default_value(rotationAveragingMethod),
+    ("rotationAveraging", po::value<sfm::ERotationAveragingMethod>(&rotationAveragingMethod)->default_value(rotationAveragingMethod),
       "* 1: L1 minimization\n"
       "* 2: L2 minimization")
-    ("translationAveraging", po::value<int>(&translationAveragingMethod)->default_value(translationAveragingMethod),
+    ("translationAveraging", po::value<sfm::ETranslationAveragingMethod>(&translationAveragingMethod)->default_value(translationAveragingMethod),
       "* 1: L1 minimization\n"
-      "* 2: L2 minimization of sum of squared Chordal distances")
+      "* 2: L2 minimization of sum of squared Chordal distances\n"
+      "* 3: L1 soft minimization")
     ("lockAllIntrinsics", po::value<bool>(&lockAllIntrinsics)->default_value(lockAllIntrinsics),
       "Force lock of all camera intrinsic parameters, so they will not be refined during Bundle Adjustment.");
 
