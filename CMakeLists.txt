@@ -11,7 +11,9 @@ option(AV_BUILD_JPEG "Enable building an embedded Jpeg" ON)
 option(AV_BUILD_PNG "Enable building an embedded Png" ON)
 option(AV_BUILD_LIBRAW "Enable building an embedded libraw" ON)
 option(AV_BUILD_POPSIFT "Enable building an embedded PopSift" ON)
+option(AV_BUILD_CCTAG "Enable building an embedded CCTag" ON)
 option(AV_BUILD_OPENGV "Enable building an embedded OpenGV" ON)
+option(AV_BUILD_OPENCV "Enable building an embedded OpenCV" ON)
 option(AV_BUILD_LAPACK "Enable building an embedded Lapack" ON)
 option(AV_BUILD_SUITESPARSE "Enable building an embedded SuiteSparse" ON)
 
@@ -54,8 +56,10 @@ message(STATUS "AV_BUILD_TIFF: ${AV_BUILD_TIFF}")
 message(STATUS "AV_BUILD_JPEG: ${AV_BUILD_JPEG}")
 message(STATUS "AV_BUILD_PNG: ${AV_BUILD_PNG}")
 message(STATUS "AV_BUILD_LIBRAW: ${AV_BUILD_LIBRAW}")
+message(STATUS "AV_BUILD_CCTAG: ${AV_BUILD_CCTAG}")
 message(STATUS "AV_BUILD_POPSIFT: ${AV_BUILD_POPSIFT}")
 message(STATUS "AV_BUILD_OPENGV: ${AV_BUILD_OPENGV}")
+message(STATUS "AV_BUILD_OPENCV: ${AV_BUILD_OPENCV}")
 message(STATUS "AV_BUILD_LAPACK: ${AV_BUILD_LAPACK}")
 message(STATUS "AV_BUILD_SUITESPARSE: ${AV_BUILD_SUITESPARSE}")
 message(STATUS "CMAKE_BUILD_TYPE: ${CMAKE_BUILD_TYPE}")
@@ -171,8 +175,9 @@ ExternalProject_Add(${TBB_TARGET}
        INSTALL_DIR ${BUILD_DIR}/tbb_build
        CONFIGURE_COMMAND ""
        BUILD_COMMAND PREFIX=<INSTALL_DIR> make PREFIX=<INSTALL_DIR>
-       INSTALL_COMMAND mkdir -p <INSTALL_DIR>/${CMAKE_INSTALL_LIBDIR} && echo "cp <BINARY_DIR>/build/linux_*_release/*.so <INSTALL_DIR>/${CMAKE_INSTALL_LIBDIR}" > tbb_so_files.sh && sh tbb_so_files.sh && cp -r "<BINARY_DIR>/include" "<INSTALL_DIR>"
+       INSTALL_COMMAND mkdir -p <INSTALL_DIR>/${CMAKE_INSTALL_LIBDIR} && echo "cp <BINARY_DIR>/build/linux_*_release/*.so* <INSTALL_DIR>/${CMAKE_INSTALL_LIBDIR}" > tbb_so_files.sh && sh tbb_so_files.sh && cp -r "<BINARY_DIR>/include" "<INSTALL_DIR>"
        )
+set(TBB_CMAKE_FLAGS -DTBB_INCLUDE_DIRS:PATH=${BUILD_DIR}/tbb_build/include -DTBB_LIBRARIES=${BUILD_DIR}/tbb_build/${CMAKE_INSTALL_LIBDIR}/libtbb.so)
 
 # Add Eigen
 set(EIGEN_TARGET eigen)
@@ -187,7 +192,7 @@ ExternalProject_Add(${EIGEN_TARGET}
        INSTALL_DIR ${BUILD_DIR}/eigen_build
        CONFIGURE_COMMAND ${CMAKE_COMMAND} ${CMAKE_CORE_BUILD_FLAGS} -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR> <SOURCE_DIR>
        )
-set(EIGEN_CMAKE_FLAGS -DEigen3_DIR:PATH=${BUILD_DIR}/eigen_build/share/eigen3/cmake -DEIGEN3_INCLUDE_DIR=${BUILD_DIR}/eigen_build/include/eigen3 -DEIGEN_INCLUDE_DIR=${BUILD_DIR}/eigen_build/include/eigen3)
+set(EIGEN_CMAKE_FLAGS -DEigen3_DIR:PATH=${BUILD_DIR}/eigen_build/share/eigen3/cmake -DEIGEN3_INCLUDE_DIR=${BUILD_DIR}/eigen_build/include/eigen3 -DEIGEN_INCLUDE_DIR=${BUILD_DIR}/eigen_build/include/eigen3 -DEigen_INCLUDE_DIR=${BUILD_DIR}/eigen_build/include/eigen3)
 
 if(AV_BUILD_OPENGV)
 set(OPENGV_TARGET opengv)
@@ -206,7 +211,6 @@ ExternalProject_Add(${OPENGV_TARGET}
        )
 set(OPENGV_CMAKE_FLAGS -DOPENGV_DIR=${BUILD_DIR}/opengv_install)
 endif()
-
 
 if(AV_BUILD_LAPACK)
 set(LAPACK_TARGET lapack)
@@ -401,7 +405,7 @@ ExternalProject_Add(${BOOST_TARGET}
        SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/boost
        BINARY_DIR ${BUILD_DIR}/boost_build
        INSTALL_DIR ${BUILD_DIR}/boost_build
-       CONFIGURE_COMMAND cd <SOURCE_DIR> && ./bootstrap.${SCRIPT_EXTENSION} --prefix=<INSTALL_DIR> --with-libraries=atomic,container,date_time,exception,filesystem,graph,log,math,program_options,regex,serialization,system,test,thread
+       CONFIGURE_COMMAND cd <SOURCE_DIR> && ./bootstrap.${SCRIPT_EXTENSION} --prefix=<INSTALL_DIR> --with-libraries=atomic,container,date_time,exception,filesystem,graph,log,math,program_options,regex,serialization,system,test,thread,stacktrace,timer
        BUILD_COMMAND cd <SOURCE_DIR> && ./b2 --prefix=<INSTALL_DIR> variant=${DEPS_CMAKE_BUILD_TYPE_LOWERCASE} link=shared threading=multi -j8
        INSTALL_COMMAND cd <SOURCE_DIR> && ./b2 variant=${DEPS_CMAKE_BUILD_TYPE_LOWERCASE} link=shared threading=multi install
        DEPENDS ${ZLIB_TARGET}
@@ -411,7 +415,7 @@ set(BOOST_CMAKE_FLAGS -DBOOST_ROOT=${BUILD_DIR}/boost_build)
 # Add OpenImageIO
 set(OPENIMAGEIO_TARGET openimageio)
 ExternalProject_Add(${OPENIMAGEIO_TARGET}
-      URL https://github.com/OpenImageIO/oiio/archive/Release-2.0.3.tar.gz
+      URL https://github.com/OpenImageIO/oiio/archive/Release-2.0.10.tar.gz
       PREFIX ${BUILD_DIR}
       BUILD_IN_SOURCE 0
       BUILD_ALWAYS 0
@@ -442,6 +446,74 @@ ExternalProject_Add(${ALEMBIC_TARGET}
       )
 set(ALEMBIC_CMAKE_FLAGS -DAlembic_DIR:PATH=${BUILD_DIR}/alembic_build/lib/cmake/Alembic)
 
+if(AV_BUILD_OPENCV)
+set(OPENCV_TARGET opencv)
+ExternalProject_Add(opencv_contrib
+  URL https://github.com/opencv/opencv_contrib/archive/4.1.0.zip
+  URL_MD5 3cd00bbfdebb69ad24756ccfb801ebac
+  SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/opencv_contrib
+  BUILD_ALWAYS 0
+  UPDATE_COMMAND ""
+  CONFIGURE_COMMAND ""
+  BUILD_COMMAND ""
+  INSTALL_COMMAND ""
+)
+ExternalProject_Add(${OPENCV_TARGET}
+  DEPENDS opencv_contrib ${TBB_TARGET} ${ZLIB_TARGET}
+  URL https://github.com/opencv/opencv/archive/4.1.0.zip
+  URL_MD5 5c5a9ce3519415b263d512e7f6a1e2af
+  UPDATE_COMMAND ""
+  BUILD_IN_SOURCE 0
+  BUILD_ALWAYS 0
+  SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/opencv
+  BINARY_DIR ${BUILD_DIR}/opencv_build
+  INSTALL_DIR ${BUILD_DIR}/opencv_install
+  CONFIGURE_COMMAND ${CMAKE_COMMAND} ${CMAKE_CORE_BUILD_FLAGS} -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR> <SOURCE_DIR>
+    -DOPENCV_EXTRA_MODULES_PATH=${CMAKE_CURRENT_BINARY_DIR}/opencv_contrib/modules
+    ${ZLIB_CMAKE_FLAGS}
+    ${TBB_CMAKE_FLAGS}
+    -DWITH_TBB=ON
+    -DBUILD_opencv_python2=OFF
+    -DBUILD_opencv_python3=OFF
+    -DWITH_GTK_2_X=OFF
+    -DWITH_V4L=OFF
+    -DINSTALL_C_EXAMPLES=OFF
+    -DINSTALL_PYTHON_EXAMPLES=OFF
+    -DBUILD_EXAMPLES=OFF
+    -DWITH_QT=OFF
+    -DWITH_OPENGL=OFF
+    -DWITH_VTK=OFF
+    -DENABLE_PRECOMPILED_HEADERS=OFF
+    -DBUILD_SHARED_LIBS=ON
+    -DWITH_CUDA=OFF
+    -DWITH_OPENCL=OFF
+    -DBUILD_TESTS=OFF
+    -DBUILD_LIST=core,improc,photo,objdetect,video,imgcodecs,videoio,features2d,xfeatures2d,version
+    ../${OPENCV_SRC_PATH}
+)
+# set(OPENCV_CMAKE_FLAGS -DOpenCV_DIR=${BUILD_DIR}/opencv_install -DCMAKE_PREFIX_PATH=${BUILD_DIR}/opencv_install)
+set(OPENCV_CMAKE_FLAGS -DOpenCV_DIR=${BUILD_DIR}/opencv_install/${CMAKE_INSTALL_LIBDIR}/cmake/opencv4 -DOPENCV_DIR=${BUILD_DIR}/opencv_install/${CMAKE_INSTALL_LIBDIR}/cmake/opencv4)
+endif()
+
+# Add CCTag
+if(AV_BUILD_CCTAG)
+set(CCTAG_TARGET cctag)
+ExternalProject_Add(${CCTAG_TARGET}
+      GIT_REPOSITORY https://github.com/alicevision/CCTag
+      GIT_TAG develop
+      PREFIX ${BUILD_DIR}
+      BUILD_IN_SOURCE 0
+      BUILD_ALWAYS 0
+      UPDATE_COMMAND ""
+      SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/cctag
+      BINARY_DIR ${BUILD_DIR}/cctag_build
+      INSTALL_DIR ${BUILD_DIR}/cctag_build
+      CONFIGURE_COMMAND ${CMAKE_COMMAND} ${CMAKE_CORE_BUILD_FLAGS} ${BOOST_CMAKE_FLAGS} ${CUDA_CMAKE_FLAGS} ${OPENCV_CMAKE_FLAGS} ${EIGEN_CMAKE_FLAGS} ${TBB_CMAKE_FLAGS} -DCCTAG_WITH_CUDA:BOOL=ON -DBUILD_TESTS=OFF -DBUILD_APPS=OFF -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR> <SOURCE_DIR>
+      DEPENDS ${BOOST_TARGET} ${CUDA_TARGET} ${OPENCV_TARGET} ${EIGEN_TARGET} ${TBB_TARGET}
+      )
+set(CCTAG_CMAKE_FLAGS -DCCTag_DIR:PATH=${BUILD_DIR}/cctag_build/lib/cmake/CCTag)
+endif()
+
 # Add PopSift
 if(AV_BUILD_POPSIFT)
 set(POPSIFT_TARGET popsift)
@@ -468,6 +540,7 @@ set(AV_DEPS
   ${TBB_TARGET}
   ${EIGEN_TARGET}
   ${OPENGV_TARGET}
+  ${OPENCV_TARGET}
   ${LAPACK_TARGET}
   ${SUITESPARSE_TARGET}
   ${CERES_TARGET}
@@ -479,6 +552,7 @@ set(AV_DEPS
   ${BOOST_TARGET}
   ${OPENIMAGEIO_TARGET}
   ${ALEMBIC_TARGET}
+  ${CCTAG_TARGET}
   ${POPSIFT_TARGET}
 )
 
@@ -489,7 +563,7 @@ ExternalProject_Add(aliceVision
        SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src
        BINARY_DIR ${BUILD_DIR}/aliceVision_build
        INSTALL_DIR ${BUILD_DIR}/aliceVision_build
-       CONFIGURE_COMMAND ${CMAKE_COMMAND} -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} -DBUILD_SHARED_LIBS:BOOL=ON -DTARGET_ARCHITECTURE=core -DALICEVISION_ROOT=${ALICEVISION_ROOT} -DALICEVISION_USE_ALEMBIC=ON -DMINIGLOG=ON -DALICEVISION_USE_OPENCV=OFF -DALICEVISION_USE_OPENGV=ON -DALICEVISION_USE_POPSIFT=${AV_BUILD_POPSIFT} -DALICEVISION_USE_CUDA=${AV_USE_CUDA} -DALICEVISION_BUILD_DOC=OFF -DALICEVISION_BUILD_EXAMPLES=OFF ${ZLIB_CMAKE_FLAGS} ${EIGEN_CMAKE_FLAGS} ${OPENIMAGEIO_CMAKE_FLAGS} ${OPENEXR_CMAKE_FLAGS} ${BOOST_CMAKE_FLAGS} ${ALEMBIC_CMAKE_FLAGS} ${GEOGRAM_CMAKE_FLAGS} ${LAPACK_CMAKE_FLAGS} ${CERES_CMAKE_FLAGS} ${CUDA_CMAKE_FLAGS} ${POPSIFT_CMAKE_FLAGS} ${OPENGV_CMAKE_FLAGS} -DALICEVISION_BUILD_SHARED=ON -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR> <SOURCE_DIR>
+       CONFIGURE_COMMAND ${CMAKE_COMMAND} -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} -DBUILD_SHARED_LIBS:BOOL=ON -DTARGET_ARCHITECTURE=core -DALICEVISION_ROOT=${ALICEVISION_ROOT} -DALICEVISION_USE_ALEMBIC=ON -DMINIGLOG=ON -DALICEVISION_USE_CCTAG=${AV_BUILD_CCTAG} -DALICEVISION_USE_OPENCV=${AV_BUILD_OPENCV} -DALICEVISION_USE_OPENGV=${AV_BUILD_OPENGV} -DALICEVISION_USE_POPSIFT=${AV_BUILD_POPSIFT} -DALICEVISION_USE_CUDA=${AV_USE_CUDA} -DALICEVISION_BUILD_DOC=OFF -DALICEVISION_BUILD_EXAMPLES=OFF ${ZLIB_CMAKE_FLAGS} ${EIGEN_CMAKE_FLAGS} ${OPENIMAGEIO_CMAKE_FLAGS} ${OPENEXR_CMAKE_FLAGS} ${BOOST_CMAKE_FLAGS} ${ALEMBIC_CMAKE_FLAGS} ${GEOGRAM_CMAKE_FLAGS} ${LAPACK_CMAKE_FLAGS} ${CERES_CMAKE_FLAGS} ${CUDA_CMAKE_FLAGS} ${POPSIFT_CMAKE_FLAGS} ${OPENGV_CMAKE_FLAGS} ${OPENCV_CMAKE_FLAGS} ${CCTAG_CMAKE_FLAGS} -DALICEVISION_BUILD_SHARED=ON -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR> <SOURCE_DIR>
        DEPENDS ${AV_DEPS}
        )
 
