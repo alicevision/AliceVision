@@ -79,6 +79,7 @@ public:
   bool Run(ERotationAveragingMethod eRotationAveragingMethod,
            ERelativeRotationInferenceMethod eRelativeRotationInferenceMethod,
            const rotationAveraging::RelativeRotations& relativeRot_In,
+           const double max_angular_error,
            HashMap<IndexT, Mat3>& map_globalR) const;
 
   /**

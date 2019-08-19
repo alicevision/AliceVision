@@ -197,7 +197,8 @@ bool ReconstructionEngine_globalSfM::Compute_Global_Rotations(const rotationAver
   const ERelativeRotationInferenceMethod eRelativeRotationInferenceMethod = TRIPLET_ROTATION_INFERENCE_COMPOSITION_ERROR; //TRIPLET_ROTATION_INFERENCE_NONE;
 
   GlobalSfMRotationAveragingSolver rotationAveraging_solver;
-  const bool b_rotationAveraging = rotationAveraging_solver.Run(_eRotationAveragingMethod, eRelativeRotationInferenceMethod, relatives_R, global_rotations);
+  //-- Rejection triplet that are 'not' identity rotation (error to identity > 5°)
+  const bool b_rotationAveraging = rotationAveraging_solver.Run(_eRotationAveragingMethod, eRelativeRotationInferenceMethod, relatives_R, 5.0, global_rotations);
 
   ALICEVISION_LOG_DEBUG("Found #global_rotations: " << global_rotations.size());
 

@@ -27,6 +27,7 @@ bool GlobalSfMRotationAveragingSolver::Run(
   ERotationAveragingMethod eRotationAveragingMethod,
   ERelativeRotationInferenceMethod eRelativeRotationInferenceMethod,
   const RelativeRotations& relativeRot_In,
+  const double max_angular_error,
   HashMap<IndexT, Mat3>& map_globalR
 ) const
 {
@@ -43,8 +44,8 @@ bool GlobalSfMRotationAveragingSolver::Run(
       //-------------------
       PairSet pairs = getPairs(relativeRotations);
       std::vector< graph::Triplet > vec_triplets = graph::tripletListing(pairs);
-      //-- Rejection triplet that are 'not' identity rotation (error to identity > 5°)
-      TripletRotationRejection(5.0f, vec_triplets, relativeRotations);
+      //-- Rejection triplet that are 'not' identity rotation (error to identity > max_angular_error)
+      TripletRotationRejection(max_angular_error, vec_triplets, relativeRotations);
 
       pairs = getPairs(relativeRotations);
       const std::set<IndexT> set_remainingIds = graph::CleanGraph_KeepLargestBiEdge_Nodes<PairSet, IndexT>(pairs);
