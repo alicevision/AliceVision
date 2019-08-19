@@ -26,47 +26,6 @@ class Mesh
 {
 public:
 
-    struct edge
-    {
-        // local id in the triangle local coordinate system (0, 1 or 2)
-        int localIdA;
-        int localIdB;
-        // if edge to subdivide : global id of the new point
-        int new_pointId;
-
-        edge()
-        {
-            localIdA = -1;
-            localIdB = -1;
-            new_pointId = -1;
-        }
-
-        edge(int a, int b, int newId = -1)
-        {
-            localIdA = a;
-            localIdB = b;
-            new_pointId = newId;
-        }
-
-        edge& operator=(const edge& other)
-        {
-            localIdA = other.localIdA;
-            localIdB = other.localIdB;
-            new_pointId = other.new_pointId;
-            return *this;
-        }
-
-        // (A,B) = (0,1) or (1,2) or (2,0)
-        void orient()
-        {
-            if(localIdB != (localIdA + 1) % 3)
-            {
-                localIdA = localIdB;
-                localIdB = (localIdA + 1) % 3;
-            }
-        }
-    };
-
     struct triangle
     {
         int v[3]; ///< vertex indexes
@@ -249,8 +208,6 @@ public:
 
     void subdivideMeshUpdateVisibilities(const Mesh& refMesh, float ratioSubdiv);
     int subdivideMesh(const Mesh& refMesh, const GEO::AdaptiveKdTree& refMesh_kdTree, const std::vector<std::vector<int>>& refPtsNeighbors, float ratioSubdiv);
-    void subdivideTriangle(int triangleId, std::vector<edge>& edgesToSubdivide, StaticVector<triangle>& new_tris,
-                           StaticVector<Voxel>& new_trisUvIds, StaticVector<Point2d>& new_uvCoords, std::vector<int>& new_trisMtlIds);
 
     void computeTrisCams(StaticVector<StaticVector<int>>& trisCams, const mvsUtils::MultiViewParams& mp, const std::string tmpDir);
     void computeTrisCamsFromPtsCams(StaticVector<StaticVector<int>>& trisCams) const;

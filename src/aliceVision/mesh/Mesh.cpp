@@ -533,6 +533,7 @@ void Mesh::getPtsNeighbors(std::vector<std::vector<int>>& out_ptsNeigh) const
     }
 }
 
+
 void Mesh::getPtsNeighPtsOrdered(StaticVector<StaticVector<int>>& out_ptsNeighPts) const
 {
     StaticVector<StaticVector<int>> ptsNeighborTriangles;
@@ -1377,6 +1378,191 @@ void Mesh::getTrianglesEdgesIds(const StaticVector<StaticVector<int>>& edgesNeig
     }
 }
 
+
+namespace subdiv {
+struct edge
+{
+    // local id in the triangle local coordinate system (0, 1 or 2)
+    int localIdA;
+    int localIdB;
+    // if edge to subdivide : global id of the new point
+    int new_pointId;
+
+    edge()
+    {
+        localIdA = -1;
+        localIdB = -1;
+        new_pointId = -1;
+    }
+
+    edge(int a, int b, int newId = -1)
+    {
+        localIdA = a;
+        localIdB = b;
+        new_pointId = newId;
+    }
+
+    edge& operator=(const edge& other)
+    {
+        localIdA = other.localIdA;
+        localIdB = other.localIdB;
+        new_pointId = other.new_pointId;
+        return *this;
+    }
+
+    // (A,B) = (0,1) or (1,2) or (2,0)
+    void orient()
+    {
+        if(localIdB != (localIdA + 1) % 3)
+        {
+            localIdA = localIdB;
+            localIdB = (localIdA + 1) % 3;
+        }
+    }
+};
+
+
+void subdivideTriangle(const Mesh& mesh, int triangleId, std::vector<edge>& edgesToSubdivide, StaticVector<Mesh::triangle>& new_tris,
+                       StaticVector<Voxel>& new_trisUvIds, StaticVector<Point2d>& new_uvCoords, std::vector<int>& new_trisMtlIds)
+{
+    int nEdgesToSubdivide = edgesToSubdivide.size();
+    // Triangle (A,B,C)
+    const Mesh::triangle& triangleToSubdivide = mesh.tris[triangleId];
+    int triMtlId = mesh.trisMtlIds()[triangleId];
+    // PointA
+    int localIdA = edgesToSubdivide[0].localIdA;
+    int idA = triangleToSubdivide.v[localIdA];
+    int uvIdA = mesh.trisUvIds[triangleId].m[localIdA];
+    // PointB
+    int localIdB = edgesToSubdivide[0].localIdB;
+    int idB = triangleToSubdivide.v[localIdB];
+    int uvIdB = mesh.trisUvIds[triangleId].m[localIdB];
+    // PointC
+    int localIdC = (localIdB + 1) % 3;
+    int idC = triangleToSubdivide.v[localIdC];
+    int uvIdC = mesh.trisUvIds[triangleId].m[localIdC];
+
+    /*
+                 A
+                  /|
+                 / |
+              1 /  |
+               /\  |
+              /  \ |
+           B /____\| C
+
+    */
+
+    // Subdivide into 2 new triangles
+    if(nEdgesToSubdivide == 1)
+    {
+        // New point
+        int new_id = edgesToSubdivide[0].new_pointId;
+        int new_uvId = new_uvCoords.size();
+        Point2d uv = (mesh.uvCoords[uvIdA] + mesh.uvCoords[uvIdB]) / 2.0f;
+        new_uvCoords.push_back(uv);
+
+        new_tris.push_back({idA, new_id, idC});
+        new_trisUvIds.push_back({uvIdA, new_uvId, uvIdC});
+        new_trisMtlIds.push_back(triMtlId);
+
+        new_tris.push_back({new_id, idB, idC});
+        new_trisUvIds.push_back({new_uvId, uvIdB, uvIdC});
+        new_trisMtlIds.push_back(triMtlId);
+    }
+
+    /*
+                B
+                /|
+               / |
+            2 /__| 1
+             /\  |
+            /  \ |
+         C /____\| A
+
+    */
+
+    // Subdivide into 3 new triangles
+    else if(nEdgesToSubdivide == 2)
+    {
+        // New point 1
+        int new_id1 = edgesToSubdivide[0].new_pointId;
+        int new_uvId1 = new_uvCoords.size();
+        Point2d uv1 = (mesh.uvCoords[uvIdA] + mesh.uvCoords[uvIdB]) / 2.0;
+        new_uvCoords.push_back(uv1);
+
+        // New point 2
+        int new_id2 = edgesToSubdivide[1].new_pointId;
+        int new_uvId2 = new_uvCoords.size();
+        Point2d uv2 = (mesh.uvCoords[uvIdB] + mesh.uvCoords[uvIdC]) / 2.0;
+        new_uvCoords.push_back(uv2);
+
+        new_tris.push_back({idA, new_id1, new_id2});
+        new_trisUvIds.push_back({uvIdA, new_uvId1, new_uvId2});
+        new_trisMtlIds.push_back(triMtlId);
+
+        new_tris.push_back({new_id1, idB, new_id2});
+        new_trisUvIds.push_back({new_uvId1, uvIdB, new_uvId2});
+        new_trisMtlIds.push_back(triMtlId);
+
+        new_tris.push_back({new_id2, idC, idA});
+        new_trisUvIds.push_back({new_uvId2, uvIdC, uvIdA});
+        new_trisMtlIds.push_back(triMtlId);
+    }
+
+    /*
+                 B
+                  /\
+                 /  \
+                /    \
+             1 /______\ 2
+              / \    / \
+             /   \  /   \
+          A /_____\/_____\ C
+                  3
+    */
+
+    // Subdivide into 4 new triangles
+    else if(nEdgesToSubdivide == 3)
+    {
+        // New point 1
+        int new_id1 = edgesToSubdivide[0].new_pointId;
+        int new_uvId1 = new_uvCoords.size();
+        Point2d uv1 = (mesh.uvCoords[uvIdA] + mesh.uvCoords[uvIdB]) / 2.0f;
+        new_uvCoords.push_back(uv1);
+
+        // New point 2
+        int new_id2 = edgesToSubdivide[1].new_pointId;
+        int new_uvId2 = new_uvCoords.size();
+        Point2d uv2 = (mesh.uvCoords[uvIdB] + mesh.uvCoords[uvIdC]) / 2.0f;
+        new_uvCoords.push_back(uv2);
+
+        // New point 3
+        int new_id3 = edgesToSubdivide[2].new_pointId;
+        int new_uvId3 = new_uvCoords.size();
+        Point2d uv3 = (mesh.uvCoords[uvIdC] + mesh.uvCoords[uvIdA]) / 2.0f;
+        new_uvCoords.push_back(uv3);
+
+        new_tris.push_back({idA, new_id1, new_id3});
+        new_trisUvIds.push_back({uvIdA, new_uvId1, new_uvId3});
+        new_trisMtlIds.push_back(triMtlId);
+
+        new_tris.push_back({new_id1, idB, new_id2});
+        new_trisUvIds.push_back({new_uvId1, uvIdB, new_uvId2});
+        new_trisMtlIds.push_back(triMtlId);
+
+        new_tris.push_back({new_id2, idC, new_id3});
+        new_trisUvIds.push_back({new_uvId2, uvIdC, new_uvId3});
+        new_trisMtlIds.push_back(triMtlId);
+
+        new_tris.push_back({new_id1, new_id2, new_id3});
+        new_trisUvIds.push_back({new_uvId1, new_uvId2, new_uvId3});
+        new_trisMtlIds.push_back(triMtlId);
+    }
+}
+
+}
+
 void Mesh::subdivideMeshUpdateVisibilities(const Mesh& refMesh, float ratioSubdiv)
 {
     ALICEVISION_LOG_INFO("Subdivide mesh.");
@@ -1423,7 +1609,7 @@ int Mesh::subdivideMesh(const Mesh& refMesh, const GEO::AdaptiveKdTree& refMesh_
 
     // for edge (A,B): <A, B, newPointId> with A,B in triangle local system (0, 1 or 2)
     // Edges to subdivise per triangle
-    std::map<int, std::vector<edge>> trianglesToSubdivide;
+    std::map<int, std::vector<subdiv::edge>> trianglesToSubdivide;
 
     // copy old pts & their uv coords
     StaticVector<Point3d> new_pts;
@@ -1467,7 +1653,7 @@ int Mesh::subdivideMesh(const Mesh& refMesh, const GEO::AdaptiveKdTree& refMesh_
                 int localIdA = std::distance(triangle.v, std::find(triangle.v, triangle.v + 3, idA));
                 int localIdB = std::distance(triangle.v, std::find(triangle.v, triangle.v + 3, idB));
 
-                Mesh::edge newEdge(localIdA, localIdB, newPointId);
+                subdiv::edge newEdge(localIdA, localIdB, newPointId);
                 newEdge.orient();
 
                 trianglesToSubdivide[triangleId].push_back(newEdge);
@@ -1495,10 +1681,10 @@ int Mesh::subdivideMesh(const Mesh& refMesh, const GEO::AdaptiveKdTree& refMesh_
         if(trianglesToSubdivide.find(triangleId) != trianglesToSubdivide.end())
         {
             // sort edges in ascending & adjacent order in the triangle coordinate system
-            std::sort(trianglesToSubdivide[triangleId].begin(), trianglesToSubdivide[triangleId].end(), [](const edge& a, const edge& b) {
+            std::sort(trianglesToSubdivide[triangleId].begin(), trianglesToSubdivide[triangleId].end(), [](const subdiv::edge& a, const subdiv::edge& b) {
                 return (a.localIdB == b.localIdA) ;
             });
-            subdivideTriangle(triangleId, trianglesToSubdivide.at(triangleId), new_tris, new_trisUvIds, new_uvCoords, new_trisMtlIds);
+            subdiv::subdivideTriangle(*this, triangleId, trianglesToSubdivide.at(triangleId), new_tris, new_trisUvIds, new_uvCoords, new_trisMtlIds);
         }
         else
         {
@@ -1522,147 +1708,6 @@ int Mesh::subdivideMesh(const Mesh& refMesh, const GEO::AdaptiveKdTree& refMesh_
 
     return trianglesToSubdivide.size();
 }
-
-void Mesh::subdivideTriangle(int triangleId, std::vector<edge>& edgesToSubdivide, StaticVector<triangle>& new_tris,
-                       StaticVector<Voxel>& new_trisUvIds, StaticVector<Point2d>& new_uvCoords, std::vector<int>& new_trisMtlIds)
-{
-    int nEdgesToSubdivide = edgesToSubdivide.size();
-    // Triangle (A,B,C)
-    Mesh::triangle& triangleToSubdivide = tris[triangleId];
-    int triMtlId = _trisMtlIds[triangleId];
-    // PointA
-    int localIdA = edgesToSubdivide[0].localIdA;
-    int idA = triangleToSubdivide.v[localIdA];
-    int uvIdA = trisUvIds[triangleId].m[localIdA];
-    // PointB
-    int localIdB = edgesToSubdivide[0].localIdB;
-    int idB = triangleToSubdivide.v[localIdB];
-    int uvIdB = trisUvIds[triangleId].m[localIdB];
-    // PointC
-    int localIdC = (localIdB + 1) % 3;
-    int idC = triangleToSubdivide.v[localIdC];
-    int uvIdC = trisUvIds[triangleId].m[localIdC];
-
-    /*
-                 A
-                  /|
-                 / |
-              1 /  |
-               /\  |
-              /  \ |
-           B /____\| C
-
-    */
-
-    // Subdivide into 2 new triangles
-    if(nEdgesToSubdivide == 1)
-    {
-        // New point
-        int new_id = edgesToSubdivide[0].new_pointId;
-        int new_uvId = new_uvCoords.size();
-        Point2d uv = (uvCoords[uvIdA] + uvCoords[uvIdB]) / 2.0f;
-        new_uvCoords.push_back(uv);
-
-        new_tris.push_back({idA, new_id, idC});
-        new_trisUvIds.push_back({uvIdA, new_uvId, uvIdC});
-        new_trisMtlIds.push_back(triMtlId);
-
-        new_tris.push_back({new_id, idB, idC});
-        new_trisUvIds.push_back({new_uvId, uvIdB, uvIdC});
-        new_trisMtlIds.push_back(triMtlId);
-    }
-
-    /*
-                B
-                /|
-               / |
-            2 /__| 1
-             /\  |
-            /  \ |
-         C /____\| A
-
-    */
-
-    // Subdivide into 3 new triangles
-    else if(nEdgesToSubdivide == 2)
-    {
-        // New point 1
-        int new_id1 = edgesToSubdivide[0].new_pointId;
-        int new_uvId1 = new_uvCoords.size();
-        Point2d uv1 = (uvCoords[uvIdA] + uvCoords[uvIdB]) / 2.0;
-        new_uvCoords.push_back(uv1);
-
-        // New point 2
-        int new_id2 = edgesToSubdivide[1].new_pointId;
-        int new_uvId2 = new_uvCoords.size();
-        Point2d uv2 = (uvCoords[uvIdB] + uvCoords[uvIdC]) / 2.0;
-        new_uvCoords.push_back(uv2);
-
-        new_tris.push_back({idA, new_id1, new_id2});
-        new_trisUvIds.push_back({uvIdA, new_uvId1, new_uvId2});
-        new_trisMtlIds.push_back(triMtlId);
-
-        new_tris.push_back({new_id1, idB, new_id2});
-        new_trisUvIds.push_back({new_uvId1, uvIdB, new_uvId2});
-        new_trisMtlIds.push_back(triMtlId);
-
-        new_tris.push_back({new_id2, idC, idA});
-        new_trisUvIds.push_back({new_uvId2, uvIdC, uvIdA});
-        new_trisMtlIds.push_back(triMtlId);
-    }
-
-    /*
-                 B
-                  /\
-                 /  \
-                /    \
-             1 /______\ 2
-              / \    / \
-             /   \  /   \
-          A /_____\/_____\ C
-                  3
-    */
-
-    // Subdivide into 4 new triangles
-    else if(nEdgesToSubdivide == 3)
-    {
-        // New point 1
-        int new_id1 = edgesToSubdivide[0].new_pointId;
-        int new_uvId1 = new_uvCoords.size();
-        Point2d uv1 = (uvCoords[uvIdA] + uvCoords[uvIdB]) / 2.0f;
-        new_uvCoords.push_back(uv1);
-
-        // New point 2
-        int new_id2 = edgesToSubdivide[1].new_pointId;
-        int new_uvId2 = new_uvCoords.size();
-        Point2d uv2 = (uvCoords[uvIdB] + uvCoords[uvIdC]) / 2.0f;
-        new_uvCoords.push_back(uv2);
-
-        // New point 3
-        int new_id3 = edgesToSubdivide[2].new_pointId;
-        int new_uvId3 = new_uvCoords.size();
-        Point2d uv3 = (uvCoords[uvIdC] + uvCoords[uvIdA]) / 2.0f;
-        new_uvCoords.push_back(uv3);
-
-        new_tris.push_back({idA, new_id1, new_id3});
-        new_trisUvIds.push_back({uvIdA, new_uvId1, new_uvId3});
-        new_trisMtlIds.push_back(triMtlId);
-
-        new_tris.push_back({new_id1, idB, new_id2});
-        new_trisUvIds.push_back({new_uvId1, uvIdB, new_uvId2});
-        new_trisMtlIds.push_back(triMtlId);
-
-        new_tris.push_back({new_id2, idC, new_id3});
-        new_trisUvIds.push_back({new_uvId2, uvIdC, new_uvId3});
-        new_trisMtlIds.push_back(triMtlId);
-
-        new_tris.push_back({new_id1, new_id2, new_id3});
-        new_trisUvIds.push_back({new_uvId1, new_uvId2, new_uvId3});
-        new_trisMtlIds.push_back(triMtlId);
-    }
-
-}
-
 
 double Mesh::computeAverageEdgeLength() const
 {
