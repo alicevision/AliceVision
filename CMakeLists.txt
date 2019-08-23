@@ -165,7 +165,7 @@ endif()
 # Add Tbb
 set(TBB_TARGET tbb)
 ExternalProject_Add(${TBB_TARGET}
-       URL https://github.com/01org/tbb/archive/2018_U5.tar.gz
+       URL https://github.com/01org/tbb/archive/2019_U6.tar.gz
        PREFIX ${BUILD_DIR}
        BUILD_IN_SOURCE 0
        BUILD_ALWAYS 0
@@ -433,7 +433,7 @@ set(OPENIMAGEIO_CMAKE_FLAGS -DOPENIMAGEIO_LIBRARY_DIR_HINTS=${BUILD_DIR}/openima
 # Add Alembic: I/O for Point Cloud and Cameras
 set(ALEMBIC_TARGET alembic)
 ExternalProject_Add(${ALEMBIC_TARGET}
-      URL https://github.com/alembic/alembic/archive/1.7.10.tar.gz
+      URL https://github.com/alembic/alembic/archive/1.7.11.tar.gz
       PREFIX ${BUILD_DIR}
       BUILD_IN_SOURCE 0
       BUILD_ALWAYS 0
