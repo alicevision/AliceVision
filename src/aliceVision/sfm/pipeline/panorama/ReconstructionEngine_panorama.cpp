@@ -56,7 +56,7 @@ bool robustRelativeRotation_fromE(
   const size_t max_iteration_count)
 {
   // Use the 5 point solver to estimate E
-  typedef aliceVision::essential::kernel::FivePointKernel SolverType;
+  typedef essential::kernel::FivePointKernel SolverType;
   // Define the AContrario adaptor
   typedef ACKernelAdaptorEssential<
       SolverType,
@@ -105,8 +105,8 @@ bool robustRelativeRotation_fromE(
  * @param[in] K2 3x3 calibration matrix of the second view.
  * @return The 3x3 rotation matrix corresponding to the pure rotation between the views.
  */
-aliceVision::Mat3 decomposePureRotationHomography(const aliceVision::Mat3 &homography, const aliceVision::Mat3 &K1,
-                                                  const aliceVision::Mat3 &K2)
+aliceVision::Mat3 decomposePureRotationHomography(const Mat3 &homography, const Mat3 &K1,
+                                                  const Mat3 &K2)
 {
     // G is the "calibrated" homography inv(K2) * H * K1
     const auto G = K2.inverse() * homography * K1;
@@ -117,7 +117,7 @@ aliceVision::Mat3 decomposePureRotationHomography(const aliceVision::Mat3 &homog
     //@fixme find possible bad cases?
 
     // compute and return the closest rotation matrix
-    Eigen::JacobiSVD<aliceVision::Mat3> usv(rotation, Eigen::ComputeFullU | Eigen::ComputeFullV);
+    Eigen::JacobiSVD<Mat3> usv(rotation, Eigen::ComputeFullU | Eigen::ComputeFullV);
     const auto &u = usv.matrixU();
     const auto vt = usv.matrixV().transpose();
     return u * vt;
@@ -133,25 +133,25 @@ aliceVision::Mat3 decomposePureRotationHomography(const aliceVision::Mat3 &homog
  * @param[out] vec_inliers The inliers satisfying the homography as a list of indices.
  * @return the status of the estimation.
  */
-aliceVision::EstimationStatus robustHomographyEstimationAC(const aliceVision::Mat2X &x1,
-                                                           const aliceVision::Mat2X &x2,
+aliceVision::EstimationStatus robustHomographyEstimationAC(const Mat2X &x1,
+                                                           const Mat2X &x2,
                                                            const std::pair<std::size_t, std::size_t> &imgSize1,
                                                            const std::pair<std::size_t, std::size_t> &imgSize2,
-                                                           aliceVision::Mat3 &H,
+                                                           Mat3 &H,
                                                            std::vector<std::size_t> &vec_inliers)
 {
-    using KernelType = aliceVision::robustEstimation::ACKernelAdaptor<
-            aliceVision::homography::kernel::FourPointSolver,
-            aliceVision::homography::kernel::AsymmetricError,
-            aliceVision::UnnormalizerI,
-            aliceVision::Mat3>;
+    using KernelType = robustEstimation::ACKernelAdaptor<
+            homography::kernel::FourPointSolver,
+            homography::kernel::AsymmetricError,
+            UnnormalizerI,
+            Mat3>;
 
     KernelType kernel(x1, imgSize1.first, imgSize1.second,
                       x2, imgSize2.first, imgSize2.second,
                       false); // configure as point to point error model.
 
 
-    const std::pair<double, double> ACRansacOut = aliceVision::robustEstimation::ACRANSAC(kernel, vec_inliers,
+    const std::pair<double, double> ACRansacOut = robustEstimation::ACRANSAC(kernel, vec_inliers,
                                                                                           1024,
                                                                                           &H,
                                                                                           std::numeric_limits<double>::infinity());
