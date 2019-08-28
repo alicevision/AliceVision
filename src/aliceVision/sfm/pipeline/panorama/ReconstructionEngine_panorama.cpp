@@ -707,13 +707,12 @@ void ReconstructionEngine_panorama::Compute_Relative_Rotations(rotationAveraging
       // Since we use normalized features, we will use unit image size and intrinsic matrix:
       const std::pair<size_t, size_t> imageSize(1., 1.);
       const Mat3 K  = Mat3::Identity();
-      const size_t maxIterations = 256;
 
       switch(_eRelativeRotationMethod)
       {
         case RELATIVE_ROTATION_FROM_E:
         {
-          if(!robustRelativeRotation_fromE(K, K, x1, x2, relativePose_info, imageSize, imageSize, maxIterations))
+          if(!robustRelativeRotation_fromE(K, K, x1, x2, imageSize, imageSize, relativePose_info))
           {
             ALICEVISION_LOG_INFO("Relative pose computation: i: " << i << ", (" << I << ", " << J <<") => FAILED");
             continue;
@@ -727,7 +726,7 @@ void ReconstructionEngine_panorama::Compute_Relative_Rotations(rotationAveraging
             cam_I->imagePlane_toCameraPlaneError(2.5) *
             cam_J->imagePlane_toCameraPlaneError(2.5),
             1./2.);
-          if(!robustRelativeRotation_fromH(K, K, x1, x2, relativeRotation_info, imageSize, imageSize, maxIterations))
+          if(!robustRelativeRotation_fromH(K, K, x1, x2, imageSize, imageSize, relativeRotation_info))
           {
             ALICEVISION_LOG_INFO("Relative pose computation: i: " << i << ", (" << I << ", " << J <<") => FAILED");
             continue;
