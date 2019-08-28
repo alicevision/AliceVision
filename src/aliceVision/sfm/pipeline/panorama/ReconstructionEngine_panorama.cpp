@@ -50,9 +50,9 @@ using namespace aliceVision::robustEstimation;
 bool robustRelativeRotation_fromE(
   const Mat3 & K1, const Mat3 & K2,
   const Mat & x1, const Mat & x2,
-  RelativePoseInfo & relativePose_info,
   const std::pair<size_t, size_t> & size_ima1,
   const std::pair<size_t, size_t> & size_ima2,
+  RelativePoseInfo & relativePose_info,
   const size_t max_iteration_count)
 {
   // Use the 5 point solver to estimate E
@@ -163,49 +163,14 @@ aliceVision::EstimationStatus robustHomographyEstimationAC(const Mat2X &x1,
     return {valid, hasStrongSupport};
 }
 
-/**
- * @brief A struct containing the information of the relative rotation.
- */
-struct RelativeRotationInfo
-{
-    /**
-     * @brief Default constructor.
-     */
-    RelativeRotationInfo() = default;
-
-    /// the homography.
-    aliceVision::Mat3 _homography{};
-    /// the relative rotation.
-    aliceVision::Mat3 _relativeRotation{};
-    /// the inliers.
-    std::vector<size_t> _inliers{};
-    /// initial threshold for the acransac process.
-    double _initialResidualTolerance{std::numeric_limits<double>::infinity()};
-    /// the estimated threshold found by acransac.
-    double _foundResidualPrecision{std::numeric_limits<double>::infinity()};
-
-};
-
-/**
- * @brief Estimate the relative rotation between two views related by a pure rotation.
- * @param[in] K1 3x3 calibration matrix of the first view.
- * @param[in] K2 3x3 calibration matrix of the second view.
- * @param[in] x1 The points on the first image.
- * @param[in] x2 The corresponding points on the second image.
- * @param[in] imgSize1 The size of the first image.
- * @param[in] imgSize2 The size of the second image.
- * @param[out] relativeRotationInfo Contains the result of the estimation.
- * @param[in] maxIterationCount Max number of iteration for the ransac process.
- * @return true if a homography has been estimated.
- */
-bool robustRelativeRotation_fromH(const aliceVision::Mat3 &K1,
-                            const aliceVision::Mat3 &K2,
-                            const aliceVision::Mat2X &x1,
-                            const aliceVision::Mat2X &x2,
-                            RelativeRotationInfo &relativeRotationInfo,
+bool robustRelativeRotation_fromH(const Mat3 &K1,
+                            const Mat3 &K2,
+                            const Mat2X &x1,
+                            const Mat2X &x2,
                             const std::pair<size_t, size_t> &imgSize1,
                             const std::pair<size_t, size_t> &imgSize2,
-                            const size_t maxIterationCount)
+                            RelativeRotationInfo &relativeRotationInfo,
+                            const size_t max_iteration_count)
 {
     std::vector<std::size_t> vec_inliers{};
 
