@@ -122,7 +122,7 @@ elseif(UNIX)
 endif()
 set(GEOGRAM_TARGET geogram)
 ExternalProject_Add(${GEOGRAM_TARGET}
-       URL https://github.com/alicevision/geogram/archive/v1.6.6.tar.gz
+       URL https://github.com/alicevision/geogram/archive/v1.7.1.fix.1.tar.gz
        PREFIX ${BUILD_DIR}
        BUILD_IN_SOURCE 0
        BUILD_ALWAYS 0
