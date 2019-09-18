@@ -175,7 +175,6 @@ void computeNewCoordinateSystemFromSingleCamera(const sfmData::SfMData& sfmData,
     }
   }
 
-
   if(viewId == -1)
     throw std::invalid_argument("The camera name \"" + camName + "\" is not found in the sfmData.");
   else if(!sfmData.isPoseAndIntrinsicDefined(viewId))
@@ -184,22 +183,31 @@ void computeNewCoordinateSystemFromSingleCamera(const sfmData::SfMData& sfmData,
   switch(orientation)
   {
     case sfmData::EEXIFOrientation::RIGHT:
-          out_R = Eigen::AngleAxisd(degreeToRadian(180.0),  Vec3(0,1,0)) * Eigen::AngleAxisd(degreeToRadian(90.0),  Vec3(0,0,1)) * sfmData.getAbsolutePose(viewId).getTransform().rotation();
+          ALICEVISION_LOG_TRACE("computeNewCoordinateSystemFromSingleCamera orientation: RIGHT");
+          out_R = Eigen::AngleAxisd(degreeToRadian(180.0),  Vec3(0,1,0))
+                  * Eigen::AngleAxisd(degreeToRadian(90.0),  Vec3(0,0,1))
+                  * sfmData.getAbsolutePose(viewId).getTransform().rotation();
           break;
     case sfmData::EEXIFOrientation::LEFT:
-          out_R = Eigen::AngleAxisd(degreeToRadian(180.0),  Vec3(0,1,0)) * Eigen::AngleAxisd(degreeToRadian(270.0),  Vec3(0,0,1)) * sfmData.getAbsolutePose(viewId).getTransform().rotation();
+          ALICEVISION_LOG_TRACE("computeNewCoordinateSystemFromSingleCamera orientation: LEFT");
+          out_R = Eigen::AngleAxisd(degreeToRadian(180.0),  Vec3(0,1,0))
+                  * Eigen::AngleAxisd(degreeToRadian(270.0),  Vec3(0,0,1))
+                  * sfmData.getAbsolutePose(viewId).getTransform().rotation();
           break;
     case sfmData::EEXIFOrientation::UPSIDEDOWN:
-          out_R = Eigen::AngleAxisd(degreeToRadian(180.0),  Vec3(0,1,0)) * sfmData.getAbsolutePose(viewId).getTransform().rotation();
+          ALICEVISION_LOG_TRACE("computeNewCoordinateSystemFromSingleCamera orientation: UPSIDEDOWN");
+          out_R = Eigen::AngleAxisd(degreeToRadian(180.0),  Vec3(0,1,0))
+                  * sfmData.getAbsolutePose(viewId).getTransform().rotation();
           break;
     case sfmData::EEXIFOrientation::NONE:
-          out_R = Eigen::AngleAxisd(degreeToRadian(180.0),  Vec3(0,1,0)) * Eigen::AngleAxisd(degreeToRadian(180.0), Vec3(0,0,1)) * sfmData.getAbsolutePose(viewId).getTransform().rotation();
-          break;
     default:
-          out_R = Eigen::AngleAxisd(degreeToRadian(180.0),  Vec3(0,1,0)) * Eigen::AngleAxisd(degreeToRadian(180.0), Vec3(0,0,1)) * sfmData.getAbsolutePose(viewId).getTransform().rotation();
+          ALICEVISION_LOG_TRACE("computeNewCoordinateSystemFromSingleCamera orientation: NONE");
+          out_R = Eigen::AngleAxisd(degreeToRadian(180.0),  Vec3(0,1,0))
+                  * Eigen::AngleAxisd(degreeToRadian(180.0), Vec3(0,0,1))
+                  * sfmData.getAbsolutePose(viewId).getTransform().rotation();
           break;
   }
-  
+
   out_t = - out_R * sfmData.getAbsolutePose(viewId).getTransform().center();    
   out_S = 1;
 }
