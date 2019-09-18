@@ -82,6 +82,8 @@ int main(int argc, char **argv)
   float fisheyeMaskingMargin = 0.05f;
   float transitionSize = 10.0f;
 
+  int maxNbImages = 0;
+
   po::options_description allParams(
     "Perform panorama stiching of cameras around a nodal point for 360° panorama creation.\n"
     "AliceVision PanoramaStitching");
@@ -103,6 +105,8 @@ int main(int argc, char **argv)
       "Margin for fisheye images (in percentage of the image).")
     ("transitionSize", po::value<float>(&transitionSize)->default_value(transitionSize),
       "Size of the transition between images (in pixels).")
+    ("maxNbImages", po::value<int>(&maxNbImages)->default_value(maxNbImages),
+      "For debug only: Max number of images to merge.")
     //("panoramaSize", po::value<std::pair<int, int>>(&panoramaSize)->default_value(panoramaSize),
     //  "Image size of the output panorama image file.")
     ;
@@ -209,6 +213,7 @@ int main(int argc, char **argv)
   // Create panorama buffer
   image::Image<image::RGBAfColor> imageOut(panoramaSize.first, panoramaSize.second, true, image::RGBAfColor(0.0f, 0.0f, 0.0f, 0.0f));
 
+  int imageIndex = 0;
   for(auto& viewIt: sfmData.getViews())
   {
     IndexT viewId = viewIt.first;
@@ -216,17 +221,21 @@ int main(int argc, char **argv)
     if(!sfmData.isPoseAndIntrinsicDefined(&view))
       continue;
 
+    if(maxNbImages != 0 && imageIndex >= maxNbImages)
+      break;
+    ++imageIndex;
+
     const sfmData::CameraPose camPose = sfmData.getPose(view);
     const camera::IntrinsicBase& intrinsic = *sfmData.getIntrinsicPtr(view.getIntrinsicId());
 
     std::string imagePath = view.getImagePath();
 
-    // Image RGB(A)f
+    // Image RGB
     image::Image<image::RGBfColor> imageIn;
 
     ALICEVISION_LOG_INFO("Reading " << imagePath);
     image::readImage(imagePath, imageIn, image::EImageColorSpace::LINEAR);
-
+    ALICEVISION_LOG_INFO(" - " << imageIn.Width() << "x" << imageIn.Height());
 
     const float maxRadius = std::min(imageIn.Width(), imageIn.Height()) * 0.5f * (1.0 - fisheyeMaskingMargin);
     const float blurWidth = maxRadius * transitionSize;
