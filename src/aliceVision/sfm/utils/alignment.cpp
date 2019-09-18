@@ -145,9 +145,8 @@ void computeNewCoordinateSystemFromSingleCamera(const sfmData::SfMData& sfmData,
                                            double& out_S,
                                            Mat3& out_R,
                                            Vec3& out_t)
-{  
+{
   IndexT viewId = -1;
-  sfmData::EEXIFOrientation orientation = sfmData::EEXIFOrientation::UNKNOWN;
 
   try
   {
@@ -166,7 +165,6 @@ void computeNewCoordinateSystemFromSingleCamera(const sfmData::SfMData& sfmData,
     {
       std::string path = view.second->getImagePath();      
       std::size_t found = path.find(camName);
-      orientation = view.second->getMetadataOrientation();
       if (found!=std::string::npos)
       {
           viewId = view.second->getViewId();          
@@ -179,6 +177,9 @@ void computeNewCoordinateSystemFromSingleCamera(const sfmData::SfMData& sfmData,
     throw std::invalid_argument("The camera name \"" + camName + "\" is not found in the sfmData.");
   else if(!sfmData.isPoseAndIntrinsicDefined(viewId))
     throw std::invalid_argument("The camera \"" + camName + "\" exists in the sfmData but is not reconstructed.");
+
+  sfmData::EEXIFOrientation orientation = sfmData.getView(viewId).getMetadataOrientation();
+  ALICEVISION_LOG_TRACE("computeNewCoordinateSystemFromSingleCamera orientation: " << int(orientation));
 
   switch(orientation)
   {
@@ -200,8 +201,9 @@ void computeNewCoordinateSystemFromSingleCamera(const sfmData::SfMData& sfmData,
                   * sfmData.getAbsolutePose(viewId).getTransform().rotation();
           break;
     case sfmData::EEXIFOrientation::NONE:
-    default:
           ALICEVISION_LOG_TRACE("computeNewCoordinateSystemFromSingleCamera orientation: NONE");
+    default:
+          ALICEVISION_LOG_TRACE("computeNewCoordinateSystemFromSingleCamera orientation: default");
           out_R = Eigen::AngleAxisd(degreeToRadian(180.0),  Vec3(0,1,0))
                   * Eigen::AngleAxisd(degreeToRadian(180.0), Vec3(0,0,1))
                   * sfmData.getAbsolutePose(viewId).getTransform().rotation();
