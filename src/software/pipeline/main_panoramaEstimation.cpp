@@ -194,7 +194,7 @@ int main(int argc, char **argv)
   if(!fs::exists(outDirectory))
     fs::create_directory(outDirectory);
 
-  // global SfM reconstruction process
+  // Panorama reconstruction process
   aliceVision::system::Timer timer;
   sfm::ReconstructionEngine_panorama sfmEngine(
     inputSfmData,
@@ -224,17 +224,14 @@ int main(int argc, char **argv)
     sfmEngine.getSfMData().setAbsolutePath(outSfMDataFilename);
   }
 
-  // get the color for the 3D points
-  sfmEngine.colorize();
-
   sfmData::SfMData& outSfmData = sfmEngine.getSfMData();
 
-  ALICEVISION_LOG_INFO("Global structure from motion took (s): " << timer.elapsed());
+  ALICEVISION_LOG_INFO("Panorama solve took (s): " << timer.elapsed());
   ALICEVISION_LOG_INFO("Generating HTML report...");
 
   sfm::generateSfMReport(outSfmData, (fs::path(outDirectory) / "sfm_report.html").string());
 
-  ALICEVISION_LOG_INFO("Structure from Motion results:" << std::endl
+  ALICEVISION_LOG_INFO("Panorama results:" << std::endl
     << "\t- # input images: " << outSfmData.getViews().size() << std::endl
     << "\t- # cameras calibrated: " << outSfmData.getPoses().size() << std::endl
     << "\t- # landmarks: " << outSfmData.getLandmarks().size());
@@ -258,50 +255,52 @@ int main(int argc, char **argv)
       if(!outSfmData.isPoseAndIntrinsicDefined(&view))
         continue;
       std::string datetime = view.getMetadataDateTimeOriginal();
-      ALICEVISION_LOG_INFO("Shot datetime candidate: " << datetime << ".");
+      ALICEVISION_LOG_TRACE("Shot datetime candidate: " << datetime << ".");
       if(firstShot_datetime.empty() || datetime < firstShot_datetime)
       {
         firstShot_datetime = datetime;
         firstShot_viewId = viewId;
-        ALICEVISION_LOG_INFO("Update shot datetime: " << firstShot_datetime << ".");
+        ALICEVISION_LOG_TRACE("Update shot datetime: " << firstShot_datetime << ".");
       }
     }
     ALICEVISION_LOG_INFO("First shot datetime: " << firstShot_datetime << ".");
-    ALICEVISION_LOG_INFO("Reset orientation from: " << firstShot_viewId << ".");
+    ALICEVISION_LOG_TRACE("Reset orientation to view: " << firstShot_viewId << ".");
 
     double S;
     Mat3 R = Mat3::Identity();
     Vec3 t;
 
+    ALICEVISION_LOG_INFO("orientation: " << orientation);
     if(orientation == 0)
     {
-      // case sfmData::EEXIFOrientation::RIGHT:
+      ALICEVISION_LOG_INFO("Orientation: RIGHT");
       R = Eigen::AngleAxisd(degreeToRadian(180.0), Vec3(0,1,0))
           * Eigen::AngleAxisd(degreeToRadian(90.0), Vec3(0,0,1))
           * outSfmData.getAbsolutePose(firstShot_viewId).getTransform().rotation();
     }
     else if(orientation == 1)
     {
-      // case sfmData::EEXIFOrientation::LEFT:
+      ALICEVISION_LOG_INFO("Orientation: LEFT");
       R = Eigen::AngleAxisd(degreeToRadian(180.0),  Vec3(0,1,0))
           * Eigen::AngleAxisd(degreeToRadian(270.0),  Vec3(0,0,1))
           * outSfmData.getAbsolutePose(firstShot_viewId).getTransform().rotation();
     }
     else if(orientation == 2)
     {
-      // case sfmData::EEXIFOrientation::UPSIDEDOWN:
+      ALICEVISION_LOG_INFO("Orientation: UPSIDEDOWN");
       R = Eigen::AngleAxisd(degreeToRadian(180.0),  Vec3(0,1,0))
           * outSfmData.getAbsolutePose(firstShot_viewId).getTransform().rotation();
     }
     else if(orientation == 3)
     {
-      // case sfmData::EEXIFOrientation::NONE:
+      ALICEVISION_LOG_INFO("Orientation: NONE");
       R = Eigen::AngleAxisd(degreeToRadian(180.0), Vec3(0,1,0))
           * Eigen::AngleAxisd(degreeToRadian(180.0), Vec3(0,0,1))
           * outSfmData.getAbsolutePose(firstShot_viewId).getTransform().rotation();
     }
     else if(orientation == 4)
     {
+      ALICEVISION_LOG_INFO("Orientation: FROM IMAGES");
       sfm::computeNewCoordinateSystemFromSingleCamera(outSfmData, std::to_string(firstShot_viewId), S, R, t);
     }
 
