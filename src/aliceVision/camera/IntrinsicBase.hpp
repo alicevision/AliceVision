@@ -124,6 +124,20 @@ struct IntrinsicBase
       return this->cam2ima( X.head<2>()/X(2) );
   }
 
+  inline Vec3 backproject(const geometry::Pose3& pose, const Vec2& pt2D, double depth, bool applyUndistortion = true) const
+  {
+    Vec2 pt2DCam;
+    if (applyUndistortion && this->have_disto()) // apply disto & intrinsics
+      pt2DCam = this->ima2cam(this->remove_disto(pt2D));
+    else
+      pt2DCam = this->ima2cam(pt2D);
+
+    const Vec3 pt2DCamN = pt2DCam.homogeneous().normalized();
+    const Vec3 pt3d = depth * pt2DCamN;
+    const Vec3 output = pose.inverse()(pt3d);
+    return output;
+  }
+
   /**
    * @brief Compute the residual between the 3D projected point X and an image observation x
    * @param[in] pose The pose
