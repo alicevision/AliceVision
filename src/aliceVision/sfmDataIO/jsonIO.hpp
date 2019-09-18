@@ -184,16 +184,24 @@ void loadRig(IndexT& rigId, sfmData::Rig& rig, bpt::ptree& rigTree);
  * @param[in] landmarkId The landmark Id
  * @param[in] landmark The landmark
  * @param[out] parentTree The parent tree
+ *
+ * Optional:
+ * @param[in] saveObservations Save landmark observations (default: true)
+ * @param[in] saveFeatures Save landmark observations features (default: true)
  */
-void saveLandmark(const std::string& name, IndexT landmarkId, const sfmData::Landmark& landmark, bpt::ptree& parentTree);
+void saveLandmark(const std::string& name, IndexT landmarkId, const sfmData::Landmark& landmark, bpt::ptree& parentTree, bool saveObservations = true, bool saveFeatures = true);
 
 /**
  * @brief Load a Landmark from a boost property tree.
  * @param[out] landmarkId The output Landmark Id
  * @param[out] landmark The output Landmmark
  * @param[in,out] landmarkTree The input tree
+ *
+ * Optional:
+ * @param[in] loadObservations Load landmark observations (default: true)
+ * @param[in] loadFeatures Load landmark observations features (default: true)
  */
-void loadLandmark(IndexT& landmarkId, sfmData::Landmark& landmark, bpt::ptree& landmarkTree);
+void loadLandmark(IndexT& landmarkId, sfmData::Landmark& landmark, bpt::ptree& landmarkTree, bool loadObservations = true, bool loadFeatures = true);
 
 /**
  * @brief Save an SfMData in a JSON file with a boost property tree.

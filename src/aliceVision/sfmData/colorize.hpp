@@ -8,21 +8,17 @@
 #pragma once
 
 namespace aliceVision {
-
 namespace sfmData {
-class SfMData;
-} // namespace sfmData
 
-namespace sfm {
+class SfMData;
 
 /**
  * @brief colorizeTracks Add the associated color to each 3D point of
- * the sfm_data, using the track to determine the best view from which
+ * the sfmData, using the track to determine the best view from which
  * to get the color.
  * @param[in,out] sfmData The container of the data
- * @return true if everything went well
  */
-bool colorizeTracks(sfmData::SfMData& sfmData);
+void colorizeTracks(SfMData& sfmData);
 
-} // namespace sfm
+} // namespace sfmData
 } // namespace aliceVision

@@ -4,6 +4,7 @@
 # Software PROPERTY FOLDER is 'Software/Export'
 set(FOLDER_SOFTWARE_EXPORT "Software/Export")
 
+if(ALICEVISION_BUILD_SFM)
 # Export an alembic animated camera from a SfMData file
 if(ALICEVISION_HAVE_ALEMBIC)
   alicevision_add_software(aliceVision_exportAnimatedCamera
@@ -55,6 +56,18 @@ alicevision_add_software(aliceVision_exportTracks
 # Export a SfM aliceVision scene to PMVS format
 alicevision_add_software(aliceVision_exportPMVS
   SOURCE main_exportPMVS.cpp
+  FOLDER ${FOLDER_SOFTWARE_EXPORT}
+  LINKS aliceVision_system
+        aliceVision_image
+        aliceVision_feature
+        aliceVision_sfmData
+        aliceVision_sfmDataIO
+        ${Boost_LIBRARIES}
+)
+
+# Export point cloud
+alicevision_add_software(aliceVision_exportColoredPointCloud
+  SOURCE main_exportColoredPointCloud.cpp
   FOLDER ${FOLDER_SOFTWARE_EXPORT}
   LINKS aliceVision_system
         aliceVision_image
@@ -138,3 +151,4 @@ alicevision_add_software(aliceVision_exportCameraFrustums
         aliceVision_sfmDataIO
         ${Boost_LIBRARIES}
 )
+endif()

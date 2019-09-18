@@ -74,6 +74,30 @@ public:
         return Color(r / d, g / d, b / d);
     }
 
+    inline Color& operator+=(const Color& _p)
+    {
+        r += _p.r;
+        g += _p.g;
+        b += _p.b;
+        return *this;
+    }
+
+    inline Color& operator-=(const Color& _p)
+    {
+        r -= _p.r;
+        g -= _p.g;
+        b -= _p.b;
+        return *this;
+    }
+
+    inline Color& operator/=(const int d)
+    {
+        r /= d;
+        g /= d;
+        b /= d;
+        return *this;
+    }
+
     inline Color normalize() const
     {
         float d = std::sqrt(r * r + g * g + b * b);

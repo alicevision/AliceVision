@@ -1,6 +1,9 @@
 # Common modules
 
+add_subdirectory(image)
+add_subdirectory(numeric)
 add_subdirectory(system)
+
 
 # SfM modules
 
@@ -12,14 +15,12 @@ if(ALICEVISION_BUILD_SFM)
   add_subdirectory(geometry)
   add_subdirectory(graph)
   add_subdirectory(gpu)
-  add_subdirectory(image)
   add_subdirectory(keyframe)
   add_subdirectory(linearProgramming)
   add_subdirectory(localization)
   add_subdirectory(matching)
   add_subdirectory(matchingImageCollection)
   add_subdirectory(multiview)
-  add_subdirectory(numeric)
   add_subdirectory(rig)
   add_subdirectory(robustEstimation)
   add_subdirectory(sensorDB)
@@ -35,10 +36,13 @@ if(ALICEVISION_BUILD_SFM)
   endif()
 endif()
 
+if(ALICEVISION_BUILD_HDR)
+add_subdirectory(hdr)
+endif()
+
 # MVS modules
 
 if(ALICEVISION_BUILD_MVS)
-  add_subdirectory(imageIO)
   add_subdirectory(lightingEstimation)
   add_subdirectory(mesh)
   add_subdirectory(mvsData)

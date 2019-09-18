@@ -14,7 +14,8 @@
 #include <aliceVision/mvsData/Point2d.hpp>
 #include <aliceVision/mvsData/Universe.hpp>
 #include <aliceVision/mvsUtils/fileIO.hpp>
-#include <aliceVision/imageIO/image.hpp>
+#include <aliceVision/mvsData/imageIO.hpp>
+#include <aliceVision/mvsData/imageAlgo.hpp>
 #include <aliceVision/alicevision_omp.hpp>
 
 #include "nanoflann.hpp"
@@ -297,7 +298,7 @@ void createVerticesWithVisibilities(const StaticVector<int>& cams, std::vector<P
         int width, height;
         {
             const std::string depthMapFilepath = getFileNameFromIndex(mp, c, mvsUtils::EFileType::depthMap, 0);
-            imageIO::readImage(depthMapFilepath, width, height, depthMap);
+            imageIO::readImage(depthMapFilepath, width, height, depthMap, imageIO::EImageColorSpace::NO_CONVERSION);
             if(depthMap.empty())
             {
                 ALICEVISION_LOG_WARNING("Empty depth map: " << depthMapFilepath);
@@ -305,12 +306,12 @@ void createVerticesWithVisibilities(const StaticVector<int>& cams, std::vector<P
             }
             int wTmp, hTmp;
             const std::string simMapFilepath = getFileNameFromIndex(mp, c, mvsUtils::EFileType::simMap, 0);
-            imageIO::readImage(simMapFilepath, wTmp, hTmp, simMap);
+            imageIO::readImage(simMapFilepath, wTmp, hTmp, simMap, imageIO::EImageColorSpace::NO_CONVERSION);
             if(wTmp != width || hTmp != height)
                 throw std::runtime_error("Similarity map size doesn't match the depth map size: " + simMapFilepath + ", " + depthMapFilepath);
             {
                 std::vector<float> simMapTmp(simMap.size());
-                imageIO::convolveImage(width, height, simMap, simMapTmp, "gaussian", simGaussianSize, simGaussianSize);
+                imageAlgo::convolveImage(width, height, simMap, simMapTmp, "gaussian", simGaussianSize, simGaussianSize);
                 simMap.swap(simMapTmp);
             }
         }
@@ -325,7 +326,7 @@ void createVerticesWithVisibilities(const StaticVector<int>& cams, std::vector<P
                 if(depth <= 0.0f)
                     continue;
 
-                const Point3d p = mp->CArr[c] + (mp->iCamArr[c] * Point2d((float)x, (float)y)).normalize() * depth;
+                const Point3d p = mp->backproject(c, Point2d(x, y), depth);
                 const double pixSize = mp->getCamPixelSize(p, c);
 #ifdef USE_GEOGRAM_KDTREE
                 const std::size_t nearestVertexIndex = kdTree.get_nearest_neighbor(p.m);
@@ -857,7 +858,7 @@ void DelaunayGraphCut::fuseFromDepthMaps(const StaticVector<int>& cams, const Po
             int width, height;
             {
                 const std::string depthMapFilepath = getFileNameFromIndex(mp, c, mvsUtils::EFileType::depthMap, 0);
-                imageIO::readImage(depthMapFilepath, width, height, depthMap);
+                imageIO::readImage(depthMapFilepath, width, height, depthMap, imageIO::EImageColorSpace::NO_CONVERSION);
                 if(depthMap.empty())
                 {
                     ALICEVISION_LOG_WARNING("Empty depth map: " << depthMapFilepath);
@@ -865,17 +866,17 @@ void DelaunayGraphCut::fuseFromDepthMaps(const StaticVector<int>& cams, const Po
                 }
                 int wTmp, hTmp;
                 const std::string simMapFilepath = getFileNameFromIndex(mp, c, mvsUtils::EFileType::simMap, 0);
-                imageIO::readImage(simMapFilepath, wTmp, hTmp, simMap);
+                imageIO::readImage(simMapFilepath, wTmp, hTmp, simMap, imageIO::EImageColorSpace::NO_CONVERSION);
                 if(wTmp != width || hTmp != height)
                     throw std::runtime_error("Wrong sim map dimensions: " + simMapFilepath);
                 {
                     std::vector<float> simMapTmp(simMap.size());
-                    imageIO::convolveImage(width, height, simMap, simMapTmp, "gaussian", params.simGaussianSizeInit, params.simGaussianSizeInit);
+                    imageAlgo::convolveImage(width, height, simMap, simMapTmp, "gaussian", params.simGaussianSizeInit, params.simGaussianSizeInit);
                     simMap.swap(simMapTmp);
                 }
 
                 const std::string nmodMapFilepath = getFileNameFromIndex(mp, c, mvsUtils::EFileType::nmodMap, 0);
-                imageIO::readImage(nmodMapFilepath, wTmp, hTmp, numOfModalsMap);
+                imageIO::readImage(nmodMapFilepath, wTmp, hTmp, numOfModalsMap, imageIO::EImageColorSpace::NO_CONVERSION);
                 if(wTmp != width || hTmp != height)
                     throw std::runtime_error("Wrong nmod map dimensions: " + nmodMapFilepath);
             }

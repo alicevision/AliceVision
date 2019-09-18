@@ -11,6 +11,7 @@
 #include <aliceVision/image/pixelTypes.hpp>
 
 #include <OpenImageIO/paramlist.h>
+#include <OpenImageIO/imagebuf.h>
 
 #include <string>
 
@@ -18,6 +19,17 @@ namespace oiio = OIIO;
 
 namespace aliceVision {
 namespace image {
+
+/**
+ * @brief Available image color space for pipeline input
+ */
+enum class EImageColorSpace
+{
+  AUTO,
+  LINEAR,
+  SRGB,
+  NO_CONVERSION
+};
 
 /**
  * @brief Available image file type for pipeline output
@@ -67,6 +79,29 @@ std::ostream& operator<<(std::ostream& os, EImageFileType imageFileType);
 std::istream& operator>>(std::istream& in, EImageFileType& imageFileType);
 
 /**
+ * @brief convert a metadata string map into an oiio::ParamValueList
+ * @param[in] metadataMap string map
+ * @return oiio::ParamValueList
+ */
+oiio::ParamValueList getMetadataFromMap(const std::map<std::string, std::string>& metadataMap);
+
+/**
+ * @brief extract metadata from an image for a given path
+ * @param[in] path The given path to the image
+ * @param[out] width The image header width
+ * @param[out] height The image header height
+ * @return metadata All metadata find in the image
+ */
+oiio::ParamValueList readImageMetadata(const std::string& path, int& width, int& height);
+
+/**
+ * @brief extract metadata from an image for a given path
+ * @param[in] path The given path to the image
+ * @return metadata All metadata find in the image
+ */
+oiio::ParamValueList readImageMetadata(const std::string& path);
+
+/**
  * @brief extract metadata from an image for a given path
  * @param[in] path The given path to the image
  * @param[out] width The image header width
@@ -76,25 +111,37 @@ std::istream& operator>>(std::istream& in, EImageFileType& imageFileType);
 void readImageMetadata(const std::string& path, int& width, int& height, std::map<std::string, std::string>& metadata);
 
 /**
+ * @brief get OIIO buffer from an AliceVision image
+ * @param[in] image Image class
+ * @param[out] buffer OIIO buffer
+ */
+void getBufferFromImage(Image<float>& image, oiio::ImageBuf& buffer);
+void getBufferFromImage(Image<unsigned char>& image, oiio::ImageBuf& buffer);
+void getBufferFromImage(Image<RGBAColor>& image, oiio::ImageBuf& buffer);
+void getBufferFromImage(Image<RGBfColor>& image, oiio::ImageBuf& buffer);
+void getBufferFromImage(Image<RGBColor>& image, oiio::ImageBuf& buffer);
+
+/**
  * @brief read an image with a given path and buffer
  * @param[in] path The given path to the image
  * @param[out] image The output image buffer
+ * @param[in] image color space
  */
-void readImage(const std::string& path, Image<float>& image);
-void readImage(const std::string& path, Image<unsigned char>& image);
-void readImage(const std::string& path, Image<RGBAColor>& image);
-void readImage(const std::string& path, Image<RGBfColor>& image);
-void readImage(const std::string& path, Image<RGBColor>& image);
+void readImage(const std::string& path, Image<float>& image, EImageColorSpace imageColorSpace);
+void readImage(const std::string& path, Image<unsigned char>& image, EImageColorSpace imageColorSpace);
+void readImage(const std::string& path, Image<RGBAColor>& image, EImageColorSpace imageColorSpace);
+void readImage(const std::string& path, Image<RGBfColor>& image, EImageColorSpace imageColorSpace);
+void readImage(const std::string& path, Image<RGBColor>& image, EImageColorSpace imageColorSpace);
 
 /**
  * @brief write an image with a given path and buffer
  * @param[in] path The given path to the image
  * @param[in] image The output image buffer
  */
-void writeImage(const std::string& path, const Image<unsigned char>& image, const oiio::ParamValueList& metadata = oiio::ParamValueList());
-void writeImage(const std::string& path, const Image<RGBAColor>& image, const oiio::ParamValueList& metadata = oiio::ParamValueList());
-void writeImage(const std::string& path, const Image<RGBfColor>& image, const oiio::ParamValueList& metadata = oiio::ParamValueList());
-void writeImage(const std::string& path, const Image<RGBColor>& image, const oiio::ParamValueList& metadata = oiio::ParamValueList());
+void writeImage(const std::string& path, const Image<unsigned char>& image, EImageColorSpace imageColorSpace, const oiio::ParamValueList& metadata = oiio::ParamValueList());
+void writeImage(const std::string& path, const Image<RGBAColor>& image, EImageColorSpace imageColorSpace, const oiio::ParamValueList& metadata = oiio::ParamValueList());
+void writeImage(const std::string& path, const Image<RGBfColor>& image, EImageColorSpace imageColorSpace, const oiio::ParamValueList& metadata = oiio::ParamValueList());
+void writeImage(const std::string& path, const Image<RGBColor>& image, EImageColorSpace imageColorSpace, const oiio::ParamValueList& metadata = oiio::ParamValueList());
 
 }  // namespace image
 }  // namespace aliceVision

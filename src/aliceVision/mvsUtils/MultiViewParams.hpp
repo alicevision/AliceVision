@@ -67,6 +67,7 @@ enum class EFileType {
     mapPtsSimsTmp = 40,
     nmodMap = 41,
     D = 42,
+    normalMap = 43,
 };
 
 class MultiViewParams
@@ -109,6 +110,11 @@ public:
 
     ~MultiViewParams();
 
+    inline Point3d backproject(const int camIndex, const Point2d& pix, double depth) const
+    {
+        const Point3d p = CArr[camIndex] + (iCamArr[camIndex] * pix).normalize() * depth;
+        return p;
+    }
     inline const std::string& getImagePath(int index) const
     {
         return _imagesParams.at(index).path;
@@ -245,9 +251,11 @@ public:
     double getCamsMinPixelSize(const Point3d& x0, std::vector<unsigned short>* tcams) const;
     double getCamsMinPixelSize(const Point3d& x0, StaticVector<int>& tcams) const;
 
-    bool isPixelInImage(const Pixel& pix, int d, int camId) const;
+    bool isPixelInSourceImage(const Pixel& pixRC, int camId, int margin) const;
+    bool isPixelInImage(const Pixel& pix, int camId, int margin) const;
     bool isPixelInImage(const Pixel& pix, int camId) const;
     bool isPixelInImage(const Point2d& pix, int camId) const;
+    bool isPixelInImage(const Point2d& pix, int camId, int margin) const;
     void decomposeProjectionMatrix(Point3d& Co, Matrix3x3& Ro, Matrix3x3& iRo, Matrix3x3& Ko, Matrix3x3& iKo, Matrix3x3& iPo, const Matrix3x4& P) const;
 
     /**

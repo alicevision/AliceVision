@@ -75,12 +75,14 @@ void filterTopMatches(
  * @param[in] extension: txt or bin file format
  * @param[in] matchFilePerImage: do we store a global match file
  *            or one match file per image
+ * @param[in] prefix: optional prefix for the output file(s)
  */
 bool Save(
   const PairwiseMatches& matches,
   const std::string& folder,
   const std::string& extension,
-  bool matchFilePerImage);
+  bool matchFilePerImage,
+  const std::string& prefix="");
 
 }  // namespace matching
 }  // namespace aliceVision

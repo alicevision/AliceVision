@@ -38,7 +38,7 @@ int main(int argc, char** argv)
 
   po::options_description requiredParams("Required parameters");
   requiredParams.add_options()
-    ("input,i", po::value<std::vector<std::string>>(&imagePaths)->required(),
+    ("input,i", po::value<std::vector<std::string>>(&imagePaths)->required()->multitoken(),
       "Image path.")
     ("outputFolder,o", po::value<std::string>(&outputFolder)->required(),
       "The convertion output folder.");
@@ -93,6 +93,7 @@ int main(int argc, char** argv)
   if(!fs::is_directory(outputFolder))
     fs::create_directory(outputFolder);
 
+  int nbImages = 0;
   for(const std::string& path : imagePaths)
   {
     // check input path
@@ -101,6 +102,8 @@ int main(int argc, char** argv)
       ALICEVISION_LOG_ERROR("Error: Can't find image '" + path + "'.");
       return EXIT_FAILURE;
     }
+
+    nbImages += 1;
 
     // genrate output filename
     std::string outputPath = (outputFolder + "/" + fs::path(path).filename().replace_extension(image::EImageFileType_enumToString(outputFileType)).string());
@@ -114,10 +117,13 @@ int main(int argc, char** argv)
     // read input image
     // only read the 3 first channels
     image::Image<image::RGBColor> image;
+    oiio::ParamValueList metadata;
 
     try
     {
-      image::readImage(path, image);
+      ALICEVISION_LOG_INFO("Reading " << path);
+      image::readImage(path, image, image::EImageColorSpace::LINEAR);
+      metadata = image::readImageMetadata(path);
     }
     catch(std::exception& e)
     {
@@ -128,7 +134,7 @@ int main(int argc, char** argv)
     // write output image
     try
     {
-      image::writeImage(outputPath, image);
+      image::writeImage(outputPath, image, image::EImageColorSpace::AUTO, metadata);
     }
     catch(std::exception& e)
     {
@@ -136,6 +142,7 @@ int main(int argc, char** argv)
       return EXIT_FAILURE;
     }
   }
+  ALICEVISION_LOG_INFO("Successfull conversion of " << nbImages << " image(s).");
   return EXIT_SUCCESS;
 }
 

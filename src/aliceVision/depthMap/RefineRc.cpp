@@ -12,7 +12,7 @@
 #include <aliceVision/mvsData/Point3d.hpp>
 #include <aliceVision/mvsUtils/common.hpp>
 #include <aliceVision/mvsUtils/fileIO.hpp>
-#include <aliceVision/imageIO/image.hpp>
+#include <aliceVision/mvsData/imageIO.hpp>
 #include <aliceVision/alicevision_omp.hpp>
 
 #include <boost/filesystem.hpp>
@@ -57,12 +57,12 @@ DepthSimMap* RefineRc::getDepthPixSizeMapFromSGM()
     StaticVector<IdValue> volumeBestIdVal;
     volumeBestIdVal.reserve(_width * _height);
 
-    for(int i = 0; i < _volumeBestIdVal->size(); i++)
+    for(int i = 0; i < _volumeBestIdVal.size(); i++)
     {
         // float sim = (*depthSimMapFinal->dsm)[i].y;
         // sim = std::min(sim,mp->simThr);
         const float sim = _sp->mp->simThr - 0.0001;
-        const int id = (*_volumeBestIdVal)[i].id;
+        const int id = _volumeBestIdVal[i].id;
 
         if(id > 0)
           volumeBestIdVal.push_back(IdValue(id, sim));
@@ -238,10 +238,9 @@ bool RefineRc::refinerc(bool checkIfExists)
         ALICEVISION_LOG_DEBUG("Refine CUDA (rc: " << (_rc + 1) << " / " << _sp->mp->ncams << ")");
 
     // generate default depthSimMap if rc has no tcam
-    if(_refineTCams.size() == 0 || _depths == nullptr)
+    if(_refineTCams.size() == 0 || _depths.empty())
     {
-        DepthSimMap depthSimMapOpt(_rc, _sp->mp, 1, 1);
-        depthSimMapOpt.save(_rc, StaticVector<int>() );
+        _depthSimMapOpt = new DepthSimMap(_rc, _sp->mp, 1, 1);
         return true;
     }
 
@@ -353,10 +352,8 @@ void estimateAndRefineDepthMaps(int cudaDeviceNo, mvsUtils::MultiViewParams* mp,
                            "\t- step: " << sgmStep);
   }
 
-  const int bandType = 0;
-
   // load images from files into RAM
-  mvsUtils::ImagesCache ic(mp, bandType, true);
+  mvsUtils::ImagesCache ic(mp, imageIO::EImageColorSpace::LINEAR);
   // load stuff on GPU memory and creates multi-level images and computes gradients
   PlaneSweepingCuda cps(cudaDeviceNo, ic, mp, sgmScale);
   // init plane sweeping parameters
@@ -378,6 +375,97 @@ void estimateAndRefineDepthMaps(int cudaDeviceNo, mvsUtils::MultiViewParams* mp,
       sgmRefineRc.writeDepthMap();
   }
 }
+
+
+
+
+void computeNormalMaps(int CUDADeviceNo, mvsUtils::MultiViewParams* mp, const StaticVector<int>& cams)
+{
+  const float igammaC = 1.0f;
+  const float igammaP = 1.0f;
+  const int wsh = 3;
+
+  mvsUtils::ImagesCache ic(mp, imageIO::EImageColorSpace::LINEAR);
+  PlaneSweepingCuda cps(CUDADeviceNo, ic, mp, 1);
+
+  for(const int rc : cams)
+  {
+    const std::string normalMapFilepath = getFileNameFromIndex(mp, rc, mvsUtils::EFileType::normalMap, 0);
+
+    if(!mvsUtils::FileExists(normalMapFilepath))
+    {
+      StaticVector<float> depthMap;
+      int w = 0;
+      int h = 0;
+      imageIO::readImage(getFileNameFromIndex(mp, rc, mvsUtils::EFileType::depthMap, 0), w, h, depthMap.getDataWritable(), imageIO::EImageColorSpace::NO_CONVERSION);
+
+      StaticVector<Color> normalMap;
+      normalMap.resize(mp->getWidth(rc) * mp->getHeight(rc));
+      
+      cps.computeNormalMap(&depthMap, &normalMap, rc, 1, igammaC, igammaP, wsh);
+
+      using namespace imageIO;
+      OutputFileColorSpace colorspace(EImageColorSpace::NO_CONVERSION);
+      writeImage(normalMapFilepath, mp->getWidth(rc), mp->getHeight(rc), normalMap.getDataWritable(), EImageQuality::LOSSLESS, colorspace);
+    }
+  }
+}
+
+void computeNormalMaps(mvsUtils::MultiViewParams* mp, const StaticVector<int>& cams)
+{
+  const int nbGPUs = listCUDADevices(true);
+  const int nbCPUThreads = omp_get_num_procs();
+
+  ALICEVISION_LOG_INFO("Number of GPU devices: " << nbGPUs << ", number of CPU threads: " << nbCPUThreads);
+
+  const int nbGPUsToUse = mp->userParams.get<int>("refineRc.num_gpus_to_use", 1);
+  int nbThreads = std::min(nbGPUs, nbCPUThreads);
+
+  if(nbGPUsToUse > 0)
+  {
+    nbThreads = nbGPUsToUse;
+  }
+
+  if(nbThreads == 1)
+  {
+    const int CUDADeviceNo = 0;
+    computeNormalMaps(CUDADeviceNo, mp, cams);
+  }
+  else
+  {
+    omp_set_num_threads(nbThreads); // create as many CPU threads as there are CUDA devices
+#pragma omp parallel
+    {
+      const int cpuThreadId = omp_get_thread_num();
+      const int CUDADeviceNo = cpuThreadId % nbThreads;
+
+      ALICEVISION_LOG_INFO("CPU thread " << cpuThreadId << " (of " << nbThreads << ") uses CUDA device: " << CUDADeviceNo);
+
+      const int nbCamsPerThread = (cams.size() / nbThreads);
+      const int rcFrom = CUDADeviceNo * nbCamsPerThread;
+      int rcTo = (CUDADeviceNo + 1) * nbCamsPerThread;
+
+      if(CUDADeviceNo == nbThreads - 1)
+      {
+        rcTo = cams.size();
+      }
+
+      StaticVector<int> subcams;
+      subcams.reserve(cams.size());
+
+      for(int rc = rcFrom; rc < rcTo; ++rc)
+      {
+        subcams.push_back(cams[rc]);
+      }
+
+      computeNormalMaps(CUDADeviceNo, mp, subcams);
+    }
+  }
+}
+
+
+
+
 
 } // namespace depthMap
 } // namespace aliceVision

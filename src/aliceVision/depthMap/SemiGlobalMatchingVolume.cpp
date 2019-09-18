@@ -7,7 +7,11 @@
 #include "SemiGlobalMatchingVolume.hpp"
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/mvsData/Point3d.hpp>
+#include <aliceVision/mvsData/jetColorMap.hpp>
 #include <aliceVision/mvsUtils/common.hpp>
+
+#include <aliceVision/sfmData/SfMData.hpp>
+#include <aliceVision/sfmDataIO/sfmDataIO.hpp>
 
 namespace aliceVision {
 namespace depthMap {
@@ -137,6 +141,122 @@ void SemiGlobalMatchingVolume::cloneVolumeSecondStepZ()
         mvsUtils::printfElapsedTime(tall, "SemiGlobalMatchingVolume::cloneVolumeSecondStepZ ");
 }
 
+void SemiGlobalMatchingVolume::exportVolume(StaticVector<float>& depths, int camIndex,  int scale, int step, const std::string& filepath) const
+{
+    sfmData::SfMData pointCloud;
+    const unsigned char* _volumeSecondBestPtr = _volumeSecondBest->getData().data();
+    const mvsUtils::MultiViewParams* mp = sp->mp;
+    int eStep = 10;
+
+    IndexT landmarkId;
+    for(int z = 0; z < volDimZ; ++z)
+    {
+        for(int y = 0; y < volDimY; y+=eStep)
+        {
+            for(int x = 0; x < volDimX; x+=eStep)
+            {
+                const double planeDepth = depths[z];
+                const Point3d planen = (mp->iRArr[camIndex] * Point3d(0.0f, 0.0f, 1.0f)).normalize();
+                const Point3d planep = mp->CArr[camIndex] + planen * planeDepth;
+                const Point3d v = (mp->iCamArr[camIndex] * Point2d(x * scale * step, y * scale * step)).normalize();
+                const Point3d p = linePlaneIntersect(mp->CArr[camIndex], v, planep, planen);
+
+                const int index = z * volDimX * volDimY + y * volDimX + x;
+                const int maxValue = 80;
+                if(_volumeSecondBestPtr[index] > maxValue)
+                  continue;
+                const rgb c = getRGBFromJetColorMap(static_cast<double>(_volumeSecondBestPtr[index]) / double(maxValue));
+                pointCloud.getLandmarks()[landmarkId] = sfmData::Landmark(Vec3(p.x, p.y, p.z), feature::EImageDescriberType::UNKNOWN, sfmData::Observations(), image::RGBColor(c.r, c.g, c.b));
+
+                ++landmarkId;
+            }
+        }
+    }
+
+    sfmDataIO::Save(pointCloud, filepath, sfmDataIO::ESfMData::STRUCTURE);
+}
+
+void SemiGlobalMatchingVolume::exportVolumeStep(StaticVector<float>& depths, int camIndex,  int scale, int step, const std::string& filepath) const
+{
+    sfmData::SfMData pointCloud;
+    const unsigned char* volumePtr = _volumeStepZ->getData().data();
+    const mvsUtils::MultiViewParams* mp = sp->mp;
+    int eStep = 10;
+
+    IndexT landmarkId;
+    for(int stepZ = 0; stepZ < (volDimZ / volStepZ); ++stepZ)
+    {
+        for(int y = 0; y < volDimY; y+=eStep)
+        {
+            for(int x = 0; x < volDimX; x+=eStep)
+            {
+                const int z = (*_volumeBestZ)[stepZ * volDimX * volDimY + y * volDimX + x];
+                const double planeDepth = depths[z];
+                const Point3d planen = (mp->iRArr[camIndex] * Point3d(0.0f, 0.0f, 1.0f)).normalize();
+                const Point3d planep = mp->CArr[camIndex] + planen * planeDepth;
+                const Point3d v = (mp->iCamArr[camIndex] * Point2d(x * scale * step, y * scale * step)).normalize();
+                const Point3d p = linePlaneIntersect(mp->CArr[camIndex], v, planep, planen);
+
+                const int index = stepZ * volDimX * volDimY + y * volDimX + x;
+                const int maxValue = 80;
+                if(volumePtr[index] > maxValue)
+                  continue;
+                const rgb c = getRGBFromJetColorMap(static_cast<double>(volumePtr[index]) / double(maxValue));
+                pointCloud.getLandmarks()[landmarkId] = sfmData::Landmark(Vec3(p.x, p.y, p.z), feature::EImageDescriberType::UNKNOWN, sfmData::Observations(), image::RGBColor(c.r, c.g, c.b));
+
+                ++landmarkId;
+            }
+        }
+    }
+
+    sfmDataIO::Save(pointCloud, filepath, sfmDataIO::ESfMData::STRUCTURE);
+}
+
+void SemiGlobalMatchingVolume::export9PCSV(StaticVector<float>& depths, int camIndex,  int scale, int step, const std::string& name, const std::string& filepath) const
+{
+    const unsigned char* volumePtr = _volumeStepZ->getData().data();
+
+    const int xOffset = std::floor(volDimX / 4.0f);
+    const int yOffset = std::floor(volDimY / 4.0f);
+
+    std::array<std::vector<double>, 9> ptsDepths;
+
+    for(int iy = 0; iy < 3; ++iy)
+    {
+        for(int ix = 0; ix < 3; ++ix)
+        {
+            const int x = (ix + 1) * xOffset;
+            const int y = (iy + 1) * yOffset;
+
+            std::vector<double>& pDepths = ptsDepths.at(iy * 3 + ix);
+
+            for(int stepZ = 0; stepZ < (volDimZ / volStepZ); ++stepZ)
+            {
+                pDepths.push_back(volumePtr[stepZ * volDimX * volDimY + y * volDimX + x]);
+            }
+        }
+    }
+
+    std::stringstream ss;
+    {
+      ss << name << "\n";
+      int ptId = 1;
+      for(const std::vector<double>& pDepths : ptsDepths)
+      {
+        ss << "p" << ptId << ";";
+        for(const double& depth : pDepths)
+          ss << depth << ";";
+        ss << "\n";
+        ++ptId;
+      }
+    }
+
+    std::ofstream file;
+    file.open(filepath, std::ios_base::app);
+    if(file.is_open())
+      file << ss.str();
+}
+
 /**
  * @param[in] volStepXY step in the image space
  */
@@ -151,16 +271,15 @@ void SemiGlobalMatchingVolume::SGMoptimizeVolumeStepZ(int rc, int volStepXY, int
         mvsUtils::printfElapsedTime(tall, "SemiGlobalMatchingVolume::SGMoptimizeVolumeStepZ");
 }
 
-StaticVector<IdValue>* SemiGlobalMatchingVolume::getOrigVolumeBestIdValFromVolumeStepZ(int zborder)
+void SemiGlobalMatchingVolume::getOrigVolumeBestIdValFromVolumeStepZ(StaticVector<IdValue>& out_volumeBestIdVal, int zborder)
 {
     long tall = clock();
 
-    StaticVector<IdValue>* volumeBestIdVal = new StaticVector<IdValue>();
-    volumeBestIdVal->reserve(volDimX * volDimY);
-    volumeBestIdVal->resize_with(volDimX * volDimY, IdValue(-1, 1.0f));
+    out_volumeBestIdVal.reserve(volDimX * volDimY);
+    out_volumeBestIdVal.resize_with(volDimX * volDimY, IdValue(-1, 1.0f));
     unsigned char* _volumeStepZPtr = _volumeStepZ->getDataWritable().data();
     int* _volumeBestZPtr = _volumeBestZ->getDataWritable().data();
-    IdValue* volumeBestIdValPtr = volumeBestIdVal->getDataWritable().data();
+    IdValue* out_volumeBestIdValPtr = out_volumeBestIdVal.getDataWritable().data();
     for(int z = zborder; z < volDimZ / volStepZ - zborder; z++)
     {
         for(int y = 1; y < volDimY - 1; y++)
@@ -171,7 +290,7 @@ StaticVector<IdValue>* SemiGlobalMatchingVolume::getOrigVolumeBestIdValFromVolum
                 // value from volumeStepZ converted from (0, 255) to (-1, +1)
                 float val = (((float)_volumeStepZPtr[volumeIndex]) / 255.0f) * 2.0f - 1.0f;
                 int bestZ = _volumeBestZPtr[volumeIndex]; // TODO: what is bestZ?
-                IdValue& idVal = volumeBestIdValPtr[y * volDimX + x];
+                IdValue& idVal = out_volumeBestIdValPtr[y * volDimX + x];
                 assert(bestZ >= 0);
 
                 if(idVal.id == -1)
@@ -192,8 +311,6 @@ StaticVector<IdValue>* SemiGlobalMatchingVolume::getOrigVolumeBestIdValFromVolum
 
     if(sp->mp->verbose)
         mvsUtils::printfElapsedTime(tall, "SemiGlobalMatchingVolume::getOrigVolumeBestIdValFromVolumeStepZ ");
-
-    return volumeBestIdVal;
 }
 
 void SemiGlobalMatchingVolume::copyVolume(const StaticVector<unsigned char>* volume, int zFrom, int nZSteps)

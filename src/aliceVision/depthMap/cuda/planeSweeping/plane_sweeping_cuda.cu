@@ -36,7 +36,7 @@ namespace depthMap {
 }
 
 
-__host__ float3 ps_M3x3mulV3(float* M3x3, const float3& V)
+__host__ float3 ps_M3x3mulV3(const float* M3x3, const float3& V)
 {
     return make_float3(M3x3[0] * V.x + M3x3[3] * V.y + M3x3[6] * V.z, M3x3[1] * V.x + M3x3[4] * V.y + M3x3[7] * V.z,
                        M3x3[2] * V.x + M3x3[5] * V.y + M3x3[8] * V.z);
@@ -81,8 +81,7 @@ float3 ps_getDeviceMemoryInfo()
     return make_float3(avail, total, used);
 }
 
-__host__ void ps_init_reference_camera_matrices(float* _P, float* _iP, float* _R, float* _iR, float* _K, float* _iK,
-                                                float* _C)
+__host__ void ps_init_reference_camera_matrices(const float* _P, const float* _iP, const float* _R, const float* _iR, const float* _K, const float* _iK, const float* _C)
 {
     cudaMemcpyToSymbol(sg_s_rP, _P, sizeof(float) * 3 * 4);
     cudaMemcpyToSymbol(sg_s_riP, _iP, sizeof(float) * 3 * 3);
@@ -1480,6 +1479,52 @@ void ps_getSilhoueteMap(CudaArray<uchar4, 2>** ps_texs_arr, CudaHostMemoryHeap<b
 
     if(verbose)
         printf("gpu elapsed time: %f ms \n", toc(tall));
+}
+
+
+void ps_computeNormalMap(CudaArray<uchar4, 2>** ps_texs_arr, CudaHostMemoryHeap<float3, 2>* normalMap_hmh,
+  CudaHostMemoryHeap<float, 2>* depthMap_hmh, const cameraStruct& camera, int width, int height,
+  int scale, int CUDAdeviceNo, int ncamsAllocated, int scales, int wsh, bool verbose,
+  float gammaC, float gammaP)
+{
+  clock_t tall = tic();
+  testCUDAdeviceNo(CUDAdeviceNo);
+
+  CudaArray<float, 2> depthMap_arr(*depthMap_hmh);
+  cudaBindTextureToArray(depthsTex, depthMap_arr.getArray(), cudaCreateChannelDesc<float>());
+
+  ps_init_reference_camera_matrices(camera.P, camera.iP, camera.R, camera.iR, camera.K, camera.iK, camera.C);
+
+  CudaDeviceMemoryPitched<float3, 2> normalMap_dmp(*normalMap_hmh);
+
+  int block_size = 8;
+  dim3 block(block_size, block_size, 1);
+  dim3 grid(divUp(width, block_size), divUp(height, block_size), 1);
+
+  if (verbose)
+    printf("computeNormalMap_kernel\n");
+
+  //------------------------------------------------------------------------------------------------
+  // compute normal map
+  computeNormalMap_kernel<<<grid, block>>>(
+    normalMap_dmp.getBuffer(),
+    normalMap_dmp.getPitch(),
+    width, height, wsh,
+    gammaC, gammaP);
+  cudaThreadSynchronize();
+  CHECK_CUDA_ERROR();
+
+  if (verbose)
+    printf("copy normal map to host\n");
+
+  copy((*normalMap_hmh), normalMap_dmp);
+  CHECK_CUDA_ERROR();
+
+  if (verbose)
+    printf("gpu elapsed time: %f ms \n", toc(tall));
+
+  cudaUnbindTexture(r4tex);
+  cudaUnbindTexture(depthsTex);
 }
 
 } // namespace depthMap

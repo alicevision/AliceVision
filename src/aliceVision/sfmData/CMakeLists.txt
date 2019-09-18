@@ -6,12 +6,14 @@ set(sfmData_files_headers
   View.hpp
   Rig.hpp
   uid.hpp
+  colorize.hpp
 )
 
 # Sources
 set(sfmData_files_sources
   SfMData.cpp
   uid.cpp
+  colorize.cpp
 )
 
 alicevision_add_library(aliceVision_sfmData
@@ -28,3 +30,9 @@ alicevision_add_library(aliceVision_sfmData
 )
 
 # Unit tests
+
+alicevision_add_test(sfmData_test.cpp
+  NAME "sfmData"
+  LINKS aliceVision_sfmData
+        aliceVision_system
+)

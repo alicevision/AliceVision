@@ -1,6 +1,6 @@
 #pragma once
 
-// Function used to safely check defines
+/// Function used to safely check defines
 #define ALICEVISION_IS_DEFINED(F) F() == 1
 
 #define ALICEVISION_HAVE_OPENMP() @ALICEVISION_HAVE_OPENMP@

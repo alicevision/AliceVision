@@ -191,6 +191,35 @@ public:
     return (!isPartOfRig() || _isIndependantPose);
   }
 
+  float getEv() const
+  {
+      const float shutter = getMetadataShutter();
+      const float aperture = getMetadataAperture();
+      const float iso = static_cast<float>(getMetadataISO());
+
+      if(shutter < 0 || aperture < 0 || iso < 0)
+          return -1;
+
+      // WIKIPEDIA : + log2f(iso/100.f)
+      float ev = log2f(std::pow(aperture, 2.0f) / shutter) - log2f(iso/100.f);
+      return ev;
+  }
+
+  /**
+   * @brief Get the value of the gap bewteen the view's exposition and a reference exposition
+   * @param [refEv] the median exposition of all views
+   * @return the exposure compensation
+   */
+  float getEvCompensation(float refEv) const
+    {
+        const float ev = getEv();
+        if(ev == -1)
+            return 1.0f;
+
+        return std::pow(2.0f, ev - refEv);
+    }
+
+
   /**
    * @brief Return true if the given metadata name exists
    * @param[in] name The metadata name
@@ -317,6 +346,39 @@ public:
     if(hasDigitMetadata("focalLength"))
       return std::stod(getMetadata("focalLength"));
     return -1;
+  }
+
+  /**
+     * @brief Get the corresponding "ExposureTime" (shutter) metadata value
+     * @return the metadata value float or -1 if no corresponding value
+     */
+  float getMetadataShutter() const
+  {
+      if(hasDigitMetadata("ExposureTime"))
+          return std::stof(getMetadata("ExposureTime"));
+      return -1;
+  }
+
+  /**
+     * @brief Get the corresponding "FNumber" (aperture) metadata value
+     * @return the metadata value float or -1 if no corresponding value
+     */
+  float getMetadataAperture() const
+  {
+      if(hasDigitMetadata("FNumber"))
+          return std::stof(getMetadata("FNumber"));
+      return -1;
+  }
+
+  /**
+     * @brief Get the corresponding "PhotographicSensitivity" (ISO) metadata value
+     * @return the metadata value int or -1 if no corresponding value
+     */
+  float getMetadataISO() const
+  {
+      if(hasDigitMetadata("Exif:PhotographicSensitivity"))
+          return std::stoi(getMetadata("Exif:PhotographicSensitivity"));
+      return -1;
   }
 
   /**

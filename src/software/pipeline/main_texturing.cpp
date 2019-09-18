@@ -9,9 +9,10 @@
 #include <aliceVision/mesh/Mesh.hpp>
 #include <aliceVision/mesh/Texturing.hpp>
 #include <aliceVision/mesh/meshVisibility.hpp>
-#include <aliceVision/mvsData/image.hpp>
+#include <aliceVision/mvsData/imageIO.hpp>
 #include <aliceVision/mvsUtils/common.hpp>
 #include <aliceVision/mvsUtils/MultiViewParams.hpp>
+#include <aliceVision/mvsUtils/ImagesCache.hpp>
 #include <aliceVision/system/cmdline.hpp>
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/Timer.hpp>
@@ -21,7 +22,7 @@
 
 // These constants define the current software version.
 // They must be updated when the command line is changed.
-#define ALICEVISION_SOFTWARE_VERSION_MAJOR 2
+#define ALICEVISION_SOFTWARE_VERSION_MAJOR 3
 #define ALICEVISION_SOFTWARE_VERSION_MINOR 0
 
 using namespace aliceVision;
@@ -40,12 +41,14 @@ int main(int argc, char* argv[])
 
     std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
     std::string sfmDataFilename;
-    std::string inputDenseReconstruction;
     std::string inputMeshFilepath;
     std::string outputFolder;
     std::string imagesFolder;
-    std::string outTextureFileTypeName = EImageFileType_enumToString(EImageFileType::PNG);
+    std::string outTextureFileTypeName = imageIO::EImageFileType_enumToString(imageIO::EImageFileType::PNG);
+    std::string processColorspaceName = imageIO::EImageColorSpace_enumToString(imageIO::EImageColorSpace::SRGB);
     bool flipNormals = false;
+    bool correctEV = false;
+
     mesh::TexturingParams texParams;
     std::string unwrapMethod = mesh::EUnwrapMethod_enumToString(mesh::EUnwrapMethod::Basic);
     std::string visibilityRemappingMethod = mesh::EVisibilityRemappingMethod_enumToString(texParams.visibilityRemappingMethod);
@@ -55,9 +58,9 @@ int main(int argc, char* argv[])
     po::options_description requiredParams("Required parameters");
     requiredParams.add_options()
         ("input,i", po::value<std::string>(&sfmDataFilename)->required(),
-          "SfMData file.")
-        ("inputDenseReconstruction", po::value<std::string>(&inputDenseReconstruction)->required(),
-            "Path to the dense reconstruction (mesh with per vertex visibility).")
+          "Dense point cloud SfMData file.")
+        ("inputMesh", po::value<std::string>(&inputMeshFilepath)->required(),
+            "Input mesh to texture.")
         ("output,o", po::value<std::string>(&outputFolder)->required(),
             "Folder for output mesh: OBJ, material and texture files.");
 
@@ -67,7 +70,7 @@ int main(int argc, char* argv[])
           "Use images from a specific folder instead of those specify in the SfMData file.\n"
           "Filename should be the image uid.")
         ("outputTextureFileType", po::value<std::string>(&outTextureFileTypeName)->default_value(outTextureFileTypeName),
-          EImageFileType_informations().c_str())
+          imageIO::EImageFileType_informations().c_str())
         ("textureSide", po::value<unsigned int>(&texParams.textureSide)->default_value(texParams.textureSide),
             "Output texture size")
         ("downscale", po::value<unsigned int>(&texParams.downscale)->default_value(texParams.downscale),
@@ -77,16 +80,24 @@ int main(int argc, char* argv[])
             " * Basic (> 600k faces) fast and simple. Can generate multiple atlases.\n"
             " * LSCM (<= 600k faces): optimize space. Generates one atlas.\n"
             " * ABF (<= 300k faces): optimize space and stretch. Generates one atlas.'")
+        ("useUDIM", po::value<bool>(&texParams.useUDIM)->default_value(texParams.useUDIM),
+            "Use UDIM UV mapping.")
         ("fillHoles", po::value<bool>(&texParams.fillHoles)->default_value(texParams.fillHoles),
             "Fill texture holes with plausible values.")
         ("padding", po::value<unsigned int>(&texParams.padding)->default_value(texParams.padding),
             "Texture edge padding size in pixel")
-        ("inputMesh", po::value<std::string>(&inputMeshFilepath),
-            "Optional input mesh to texture. By default, it will texture the inputReconstructionMesh.")
         ("flipNormals", po::value<bool>(&flipNormals)->default_value(flipNormals),
             "Option to flip face normals. It can be needed as it depends on the vertices order in triangles and the convention change from one software to another.")
-        ("maxNbImagesForFusion", po::value<int>(&texParams.maxNbImagesForFusion)->default_value(texParams.maxNbImagesForFusion),
-            "Max number of images to combine to create the final texture.")
+        ("correctEV", po::value<bool>(&correctEV)->default_value(correctEV),
+            "Option to uniformize images exposure.")
+        ("useScore", po::value<bool>(&texParams.useScore)->default_value(texParams.useScore),
+             "Use triangles scores (based on observations and re-projected areas in source images) for weighting contributions.")
+        ("processColorspace", po::value<std::string>(&processColorspaceName)->default_value(processColorspaceName),
+            "Colorspace for the texturing internal computation (does not impact the output file colorspace).")
+        ("multiBandDownscale", po::value<unsigned int>(&texParams.multiBandDownscale)->default_value(texParams.multiBandDownscale),
+            "Width of frequency bands.")
+        ("multiBandNbContrib", po::value<std::vector<int>>(&texParams.multiBandNbContrib)->default_value(texParams.multiBandNbContrib)->multitoken(),
+             "Number of contributions per frequency band.")
         ("bestScoreThreshold", po::value<double>(&texParams.bestScoreThreshold)->default_value(texParams.bestScoreThreshold),
             "(0.0 to disable filtering based on threshold to relative best score).")
         ("angleHardThreshold", po::value<double>(&texParams.angleHardThreshold)->default_value(texParams.angleHardThreshold),
@@ -140,12 +151,16 @@ int main(int argc, char* argv[])
     system::Logger::get()->setLogLevel(verboseLevel);
 
     texParams.visibilityRemappingMethod = mesh::EVisibilityRemappingMethod_stringToEnum(visibilityRemappingMethod);
+    texParams.processColorspace = imageIO::EImageColorSpace_stringToEnum(processColorspaceName);
     // set output texture file type
-    const EImageFileType outputTextureFileType = EImageFileType_stringToEnum(outTextureFileTypeName);
+    const imageIO::EImageFileType outputTextureFileType = imageIO::EImageFileType_stringToEnum(outTextureFileTypeName);
+
+    texParams.correctEV = mvsUtils::ImagesCache::ECorrectEV::NO_CORRECTION;
+    if(correctEV) { texParams.correctEV = mvsUtils::ImagesCache::ECorrectEV::APPLY_CORRECTION; }
 
     // read the input SfM scene
     sfmData::SfMData sfmData;
-    if(!sfmDataIO::Load(sfmData, sfmDataFilename, sfmDataIO::ESfMData::ALL))
+    if(!sfmDataIO::Load(sfmData, sfmDataFilename, sfmDataIO::ESfMData::ALL_DENSE))
     {
       ALICEVISION_LOG_ERROR("The input SfMData file '" << sfmDataFilename << "' cannot be read.");
       return EXIT_FAILURE;
@@ -157,17 +172,41 @@ int main(int argc, char* argv[])
     mesh::Texturing mesh;
     mesh.texParams = texParams;
 
-    // load dense reconstruction
-    const fs::path reconstructionMeshFolder = fs::path(inputDenseReconstruction).parent_path();
-    mesh.loadFromMeshing(inputDenseReconstruction, (reconstructionMeshFolder/"meshPtsCamsFromDGC.bin").string());
+    // load and remap mesh
+    {
+      mesh.clear();
+
+      // load input obj file
+      mesh.loadFromOBJ(inputMeshFilepath, flipNormals);
+
+      // load reference dense point cloud with visibilities
+      mesh::Mesh refPoints;
+      mesh::PointsVisibility* refVisibilities = new mesh::PointsVisibility();
+      const std::size_t nbPoints = sfmData.getLandmarks().size();
+      refPoints.pts = new StaticVector<Point3d>();
+      refPoints.pts->reserve(nbPoints);
+      refVisibilities->reserve(nbPoints);
+
+      for(const auto& landmarkPair : sfmData.getLandmarks())
+      {
+        const sfmData::Landmark& landmark = landmarkPair.second;
+        mesh::PointVisibility* pointVisibility = new mesh::PointVisibility();
+
+        pointVisibility->reserve(landmark.observations.size());
+        for(const auto& observationPair : landmark.observations)
+          pointVisibility->push_back(mp.getIndexFromViewId(observationPair.first));
+
+        refVisibilities->push_back(pointVisibility);
+        refPoints.pts->push_back(Point3d(landmark.X(0), landmark.X(1), landmark.X(2)));
+      }
+
+      mesh.remapVisibilities(texParams.visibilityRemappingMethod, refPoints, *refVisibilities);
+
+      // delete visibilities
+      deleteArrayOfArrays(&refVisibilities);
+    }
 
     fs::create_directory(outputFolder);
-
-    // texturing from input mesh
-    if(!inputMeshFilepath.empty())
-    {
-      mesh.replaceMesh(inputMeshFilepath, flipNormals);
-    }
 
     if(!mesh.hasUVs())
     {

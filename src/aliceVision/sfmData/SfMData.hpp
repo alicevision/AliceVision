@@ -298,49 +298,100 @@ public:
   }
 
   /**
-   * @brief Add the given features Folder
-   * @param[in] featuresFolder The given features folder
+   * @brief Get the median Exposure Value (Ev) of
+   * @return
    */
-  void addFeaturesFolder(const std::string& featuresFolder)
+  float getMedianEv() const
   {
-    _featuresFolders.emplace_back(featuresFolder);
+    std::vector<float> evList;
+    evList.reserve(views.size());
+
+    for(const auto& view : views)
+    {
+        float ev = view.second->getEv();
+        if(ev != -1.0f)
+        {
+            auto find = std::find(std::begin(evList), std::end(evList), ev);
+            if(find == std::end(evList))
+                evList.emplace_back(ev);
+        }
+    }
+
+    std::nth_element(evList.begin(), evList.begin() + evList.size()/2, evList.end());
+    float evMedian = evList[evList.size()/2];
+
+    return evMedian;
   }
 
   /**
-   * @brief A the given matches Folder
-   * @param[in] matchesFolder The given mathes folder
+   * @brief Add the given \p folder to features folders.
+   * @note If SfmData's absolutePath has been set, 
+   *       an absolute path will be converted to a relative one.
+   * @param[in] folder path to a folder containing features
    */
-  void addMatchesFolder(const std::string& matchesFolder)
+  inline void addFeaturesFolder(const std::string& folder)
   {
-    _matchesFolders.emplace_back(matchesFolder);
+    addFeaturesFolders({folder});
   }
 
   /**
-   * @brief Set the given features folders
-   * @param[in] featuresFolders The given features folders
+   * @brief Add the given \p folders to features folders.
+   * @note If SfmData's absolutePath has been set, 
+   *       absolute paths will be converted to relative ones.
+   * @param[in] folders paths to folders containing features
    */
-  void setFeaturesFolders(const std::vector<std::string>& featuresFolders)
+  void addFeaturesFolders(const std::vector<std::string>& folders);
+
+  /**
+   * @brief Add the given \p folder to matches folders.
+   * @note If SfmData's absolutePath has been set, 
+   *       an absolute path will be converted to a relative one.
+   * @param[in] folder path to a folder containing matches
+   */
+  inline void addMatchesFolder(const std::string& folder)
   {
-    _featuresFolders = featuresFolders;
+    addMatchesFolders({folder});
   }
 
   /**
-   * @brief Set the given mathes folders
-   * @param[in] matchesFolders The given mathes folders
+   * @brief Add the given \p folders to matches folders.
+   * @note If SfmData's absolutePath has been set, 
+   *       absolute paths will be converted to relative ones.
+   * @param[in] folders paths to folders containing matches
    */
-  void setMatchesFolders(const std::vector<std::string>& matchesFolders)
+  void addMatchesFolders(const std::vector<std::string>& folders);
+
+  /**
+   * @brief Replace the current features folders by the given ones.
+   * @note If SfmData's absolutePath has been set, 
+   *       absolute paths will be converted to relative ones.
+   * @param[in] folders paths to folders containing features
+   */
+  inline void setFeaturesFolders(const std::vector<std::string>& folders)
   {
-    _matchesFolders = matchesFolders;
+    _featuresFolders.clear();
+    addFeaturesFolders(folders);
   }
 
   /**
-   * @brief Set the SfMData file folder absolute path
+   * @brief Replace the current matches folders by the given ones.
+   * @note If SfmData's absolutePath has been set, 
+   *       absolute paths will be converted to relative ones.
+   * @param[in] folders paths to folders containing matches
+   */
+  inline void setMatchesFolders(const std::vector<std::string>& folders)
+  {
+    _matchesFolders.clear();
+    addMatchesFolders(folders);
+  }
+
+  /**
+   * @brief Set the SfMData file absolute path.
+   * @note Internal relative features/matches folders will be remapped 
+   *       to be relative to the new absolute \p path.
    * @param[in] path The absolute path to the SfMData file folder
    */
-  void setAbsolutePath(const std::string& path)
-  {
-    _absolutePath = path;
-  }
+  void setAbsolutePath(const std::string& path);
 
   /**
    * @brief Set the given pose for the given view

@@ -10,9 +10,10 @@
 #include <aliceVision/mvsData/geometry.hpp>
 #include <aliceVision/mvsData/Matrix3x4.hpp>
 #include <aliceVision/mvsData/Pixel.hpp>
+#include <aliceVision/mvsData/imageIO.hpp>
 #include <aliceVision/mvsUtils/fileIO.hpp>
 #include <aliceVision/mvsUtils/common.hpp>
-#include <aliceVision/imageIO/image.hpp>
+#include <aliceVision/mvsData/imageIO.hpp>
 #include <aliceVision/numeric/numeric.hpp>
 #include <aliceVision/numeric/projection.hpp>
 
@@ -72,7 +73,8 @@ MultiViewParams::MultiViewParams(const sfmData::SfMData& sfmData,
             const fs::recursive_directory_iterator end;
             const auto findIt = std::find_if(fs::recursive_directory_iterator(_imagesFolder), end,
                                      [&view](const fs::directory_entry& e) {
-                                        return e.path().stem() == std::to_string(view.getViewId());
+                                        return (e.path().stem() == std::to_string(view.getViewId()) &&
+                                        (imageIO::isSupportedUndistortFormat(e.path().extension().string())));
                                      });
 
             if(findIt == end)
@@ -509,19 +511,35 @@ double MultiViewParams::getCamsMinPixelSize(const Point3d& x0, StaticVector<int>
     return minPixSize;
 }
 
-bool MultiViewParams::isPixelInImage(const Pixel& pix, int d, int camId) const
+bool MultiViewParams::isPixelInSourceImage(const Pixel& pixRC, int camId, int margin) const
 {
-    return ((pix.x >= d) && (pix.x < getWidth(camId) - d) && (pix.y >= d) && (pix.y < getHeight(camId) - d));
+    const IndexT viewId = getViewId(camId);
+    const sfmData::View& view = *(_sfmData.getViews().at(viewId));
+    const camera::IntrinsicBase* intrinsicPtr = _sfmData.getIntrinsicPtr(view.getIntrinsicId());
+
+    const double s = getDownscaleFactor(camId);
+    Vec2 pix_disto = intrinsicPtr->get_d_pixel({pixRC.x * s, pixRC.y * s}) / s;
+    return isPixelInImage(Pixel(pix_disto.x(), pix_disto.y()), camId, margin);
+}
+
+bool MultiViewParams::isPixelInImage(const Pixel& pix, int camId, int margin) const
+{
+    return ((pix.x >= margin) && (pix.x < getWidth(camId) - margin) &&
+            (pix.y >= margin) && (pix.y < getHeight(camId) - margin));
 }
 bool MultiViewParams::isPixelInImage(const Pixel& pix, int camId) const
 {
-    return ((pix.x >= g_border) && (pix.x < getWidth(camId) - g_border) &&
-            (pix.y >= g_border) && (pix.y < getHeight(camId) - g_border));
+    return isPixelInImage(pix, camId, g_border);
 }
 
 bool MultiViewParams::isPixelInImage(const Point2d& pix, int camId) const
 {
     return isPixelInImage(Pixel(pix), camId);
+}
+
+bool MultiViewParams::isPixelInImage(const Point2d& pix, int camId, int margin) const
+{
+    return isPixelInImage(Pixel(pix), camId, margin);
 }
 
 void MultiViewParams::decomposeProjectionMatrix(Point3d& Co, Matrix3x3& Ro, Matrix3x3& iRo, Matrix3x3& Ko,

@@ -25,6 +25,7 @@ set(depthMap_cuda_files_headers
   # Headers
   cuda/deviceCommon/device_patch_es_glob.hpp
   cuda/planeSweeping/host_utils.h
+  cuda/planeSweeping/plane_sweeping_cuda.hpp
   # deviceCommon
   cuda/deviceCommon/device_color.cu
   cuda/deviceCommon/device_eig33.cu
@@ -65,7 +66,6 @@ alicevision_add_library(aliceVision_depthMap
     ${depthMap_cuda_files_sources}
   PUBLIC_LINKS
     aliceVision_mvsData
-    aliceVision_imageIO
     aliceVision_mvsUtils
     aliceVision_system
     ${Boost_FILESYSTEM_LIBRARY}
@@ -73,6 +73,8 @@ alicevision_add_library(aliceVision_depthMap
     ${CUDA_CUBLAS_LIBRARIES} #TODO shouldn't be here, but required to build on some machines
   PRIVATE_LINKS
     aliceVision_gpu
+    aliceVision_sfmData
+    aliceVision_sfmDataIO
   PUBLIC_INCLUDE_DIRS
     ${CUDA_INCLUDE_DIRS}
 )

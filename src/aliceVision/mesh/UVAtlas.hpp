@@ -33,9 +33,17 @@ public:
         Pixel sourceLU;                                         // left-up pixel coordinates (in refCamera space)
         Pixel sourceRD;                                         // right-down pixel coordinates (in refCamera space)
         Pixel targetLU;                                         // left-up pixel coordinates (in uvatlas texture)
+        float downscale = 1.0f;                                 // downscale factor applied to this chart
         int mergedWith = -1;                                    // ID of target chart, or -1 (not merged)
-        int width() const { return sourceRD.x - sourceLU.x; }
-        int height() const { return sourceRD.y - sourceLU.y; }
+
+        /// Chart width in refCamera space
+        int sourceWidth() const { return (sourceRD.x - sourceLU.x); }
+        /// Chart height in refCamera space
+        int sourceHeight() const { return (sourceRD.y - sourceLU.y); }
+        /// Chart target width (uv space, taking downscale into account)
+        int targetWidth() const { return sourceWidth() * downscale; }
+        /// Chart target height (uv space, taking downscale into account)
+        int targetHeight() const { return sourceHeight() * downscale; }
     };
 
     struct ChartRect
@@ -57,6 +65,7 @@ public:
     const std::vector<int>& visibleCameras(int triangleID) const { return _triangleCameraIDs[triangleID]; }
     int textureSide() const { return _textureSide; }
     const Mesh& mesh() const { return _mesh; }
+    inline int chartMaxSize() const { return (_textureSide - 1) - _gutterSize * 2; }
 
 private:
     void createCharts(std::vector<Chart>& charts, mvsUtils::MultiViewParams& mp, StaticVector<StaticVector<int>*>* ptsCams);

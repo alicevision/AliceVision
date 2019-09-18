@@ -12,7 +12,6 @@
 #include <boost/filesystem.hpp>
 #include <boost/progress.hpp>
 
-#include <OpenImageIO/imagebuf.h>
 #include <OpenImageIO/imagebufalgo.h>
 
 #include <fstream>
@@ -116,7 +115,7 @@ int main(int argc, char **argv)
     }
 
     image::Image<image::RGBColor> image, imageUd;
-    image::readImage(view.getImagePath(), image);
+    image::readImage(view.getImagePath(), image, image::EImageColorSpace::LINEAR);
 
     // compute undistorted image
     if(intrinsicPtr->isValid() && intrinsicPtr->have_disto())
@@ -125,21 +124,31 @@ int main(int argc, char **argv)
       imageUd = image;
 
     // export images
-    const oiio::ImageBuf imageBuf(oiio::ImageSpec(imageUd.Width(), imageUd.Height(), 3, oiio::TypeDesc::UINT8), imageUd.data());
+    oiio::ImageBuf imageBuf;
+    image::getBufferFromImage(imageUd, imageBuf);
+
+    image::Image<image::RGBColor> imageProxy(image.Width()/2, image.Height()/2);
+    image::Image<image::RGBColor> imageThumbnail(256, image.Height() / (image.Width() / 256.0f)); // width = 256px, keep height ratio
 
     oiio::ImageBuf proxyBuf;
     oiio::ImageBuf thumbnailBuf;
 
-    const oiio::ROI proxyROI(0, image.Width()/2, 0, image.Height()/2, 0, 1, 0, 3);
-    const oiio::ROI thumbnailROI(0, 256, 0, image.Height() / (image.Width() / 256.0f), 0, 1, 0, 3); // width = 256px, keep height ratio
+    image::getBufferFromImage(imageProxy, proxyBuf);
+    image::getBufferFromImage(imageThumbnail, thumbnailBuf);
+
+    const oiio::ROI proxyROI(0, imageProxy.Width(), 0, imageProxy.Height(), 0, 1, 0, 3);
+    const oiio::ROI thumbnailROI(0, imageThumbnail.Width(), 0, imageThumbnail.Height(), 0, 1, 0, 3);
 
     oiio::ImageBufAlgo::resample(proxyBuf,     imageBuf, false,     proxyROI); // no interpolation
     oiio::ImageBufAlgo::resample(thumbnailBuf, imageBuf, false, thumbnailROI); // no interpolation
 
     const std::string basename = fs::path(view.getImagePath()).stem().string();
 
-    proxyBuf.write(outputFolder + "/undistort/proxy/" + basename + "-" + std::to_string(view.getViewId()) + "-UOP.jpg");
-    thumbnailBuf.write(outputFolder + "/undistort/thumbnail/" + basename + "-" + std::to_string(view.getViewId()) + "-UOT.jpg");
+    image::writeImage(outputFolder + "/undistort/proxy/" + basename + "-" + std::to_string(view.getViewId()) + "-UOP.jpg",
+                      imageProxy, image::EImageColorSpace::AUTO);
+
+    image::writeImage(outputFolder + "/undistort/thumbnail/" + basename + "-" + std::to_string(view.getViewId()) + "-UOT.jpg",
+                      imageThumbnail, image::EImageColorSpace::AUTO);
 
     ++progressBar;
   }

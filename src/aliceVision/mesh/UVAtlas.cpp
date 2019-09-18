@@ -57,9 +57,8 @@ void UVAtlas::createCharts(vector<Chart>& charts, mvsUtils::MultiViewParams& mp,
             int cameraID = (*cameras)[c];
             // project triangle
             Mesh::triangle_proj tProj = _mesh.getTriangleProjection(i, &mp, cameraID, mp.getWidth(cameraID), mp.getHeight(cameraID));
-            if(!mp.isPixelInImage(Pixel(tProj.tp2ds[0]), 10, cameraID)
-                    || !mp.isPixelInImage(Pixel(tProj.tp2ds[1]), 10, cameraID)
-                    || !mp.isPixelInImage(Pixel(tProj.tp2ds[2]), 10, cameraID))
+
+            if(!_mesh.isTriangleProjectionInImage(mp, tProj, cameraID, 10))
                 continue;
 
             const float area = _mesh.computeTriangleProjectionArea(tProj);
@@ -226,6 +225,14 @@ void UVAtlas::finalizeCharts(vector<Chart>& charts, mvsUtils::MultiViewParams& m
                 chart.sourceRD = sourceRD;
             }
         }
+
+        const int largerSize = std::max(chart.sourceWidth(), chart.sourceHeight());
+        if(largerSize > chartMaxSize())
+        {
+            chart.downscale = static_cast<float>(chartMaxSize()) / static_cast<float>(largerSize);
+            ALICEVISION_LOG_WARNING("Downscaling chart (by " + std::to_string(chart.downscale) + ") to fit in texture."
+                "Set higher texture size for better results.");
+        }
     }
 }
 
@@ -236,10 +243,10 @@ void UVAtlas::createTextureAtlases(vector<Chart>& charts, mvsUtils::MultiViewPar
     // sort charts by size, descending
     std::sort(charts.begin(), charts.end(), [](const Chart& a, const Chart& b)
     {
-        int wa = a.width();
-        int wb = b.width();
+        int wa = a.targetWidth();
+        int wb = b.targetWidth();
         if(wa == wb)
-            return a.height() > b.height();
+            return a.targetHeight() > b.targetHeight();
         return wa > wb;
     });
 
@@ -281,6 +288,9 @@ void UVAtlas::createTextureAtlases(vector<Chart>& charts, mvsUtils::MultiViewPar
         // fill potential empty space (i != j) in backward direction
         while(j > i && insertChart(j)) { --j; }
 
+        if(atlas.empty())
+            throw std::runtime_error("Unable to add any chart to this atlas");
+
         // atlas is full or all charts have been handled
         ALICEVISION_LOG_INFO("Filled with " << atlas.size() << " charts.");
         // store this texture
@@ -315,8 +325,8 @@ UVAtlas::ChartRect* UVAtlas::ChartRect::insert(Chart& chart, size_t gutter)
     }
     else
     {
-        size_t chartWidth = chart.width() + gutter * 2;
-        size_t chartHeight = chart.height() + gutter * 2;
+        size_t chartWidth = chart.targetWidth() + gutter * 2;
+        size_t chartHeight = chart.targetHeight() + gutter * 2;
         // if there is already a chart here
         if(c) return nullptr;
         // not enough space

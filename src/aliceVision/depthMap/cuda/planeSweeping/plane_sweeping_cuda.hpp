@@ -149,6 +149,20 @@ void ps_getSilhoueteMap(
     uchar4 maskColorRgb,
     bool verbose);
 
+void ps_computeNormalMap(
+  CudaArray<uchar4, 2>** ps_texs_arr,
+  CudaHostMemoryHeap<float3, 2>* normalMap_hmh,
+  CudaHostMemoryHeap<float, 2>* depthMap_hmh,
+  const cameraStruct& camera,
+  int width, int height,
+  int scale,
+  int CUDAdeviceNo,
+  int ncamsAllocated,
+  int scales,
+  int wsh,
+  bool verbose,
+  float gammaC, float gammaP);
+
 #if 0
 void ps_smoothDepthMap(
     CudaArray<uchar4, 2>** ps_texs_arr,
@@ -176,20 +190,6 @@ void ps_filterDepthMap(
     bool verbose,
     float gammaC,
     float minCostThr);
-
-void ps_computeNormalMap(
-    CudaArray<uchar4, 2>** ps_texs_arr,
-    CudaHostMemoryHeap<float3, 2>* normalMap_hmh,
-    CudaHostMemoryHeap<float, 2>* depthMap_hmh,
-    cameraStruct** cams,
-    int width, int height,
-    int scale,
-    int CUDAdeviceNo,
-    int ncamsAllocated,
-    int scales,
-    int wsh,
-    bool verbose,
-    float gammaC, float gammaP);
 
 void ps_alignSourceDepthMapToTarget(
     CudaArray<uchar4, 2>** ps_texs_arr,

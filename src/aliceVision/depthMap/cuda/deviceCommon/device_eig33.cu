@@ -431,7 +431,7 @@ struct cuda_stat3d
         if(count < 3.0)
         {
             return false;
-        };
+        }
 
         float3 cg, v1, v2, v3;
         float d1, d2, d3;

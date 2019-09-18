@@ -1,59 +1,50 @@
 # Config file for AliceVision library - Find AliceVision & dependencies.
 #
-# This file is used by CMake when FIND_PACKAGE( AliceVision ) is invoked (and
-# the directory containing this file is present in CMAKE_MODULE_PATH).
+# This file is used by CMake when find_package(AliceVision) is invoked (and
+# the directory containing this file is present in CMAKE_MODULE_PATH
+# (if AliceVision was installed), or exists in the local CMake package registry if
+# the AliceVision build directory was exported.
 #
-# This module defines the following variables:
+# This module defines the targets needed to compile and link against the library.
+# The target(s) automatically propagate the dependencies of the library.
 #
-# ALICEVISION_FOUND: True if AliceVision has been successfully found.
+# In your CMakeLists.txt file just add the dependency
 #
-# ALICEVISION_VERSION: Version of AliceVision found.
+# find_package(AliceVision CONFIG REQUIRED)
+# message(STATUS "Found AliceVision : ${AliceVision_FOUND}")
+# message(STATUS "Found AliceVision version: ${AliceVision_VERSION}")
 #
-# ALICEVISION_INCLUDE_DIRS: Include directories for AliceVision and the
-#                       dependencies which appear in the AliceVision public
-#                       API and are thus required to use AliceVision.
+# Then in order to link your executable to one of the modules of the library (say,
+# aliceVision_sfmDataIO), only target_link_libraries() is needed to specify the
+# dependency.
 #
-# ALICEVISION_LIBRARIES: Libraries for AliceVision and all
-#                    dependencies against which AliceVision was
-#                    compiled.
+# add_executable(test yourfile.cpp)
+#
+# Then to the library
+#
+# target_link_libraries(test PUBLIC aliceVision_sfmDataIO)
+#
+# Note that target_include_directories() is not necessary.
+#
+# Beside the Cmake automatically generated variables such as AliceVision_FOUND and
+# AliceVision_VERSION, this module also defines some convenient variables that
+# defines some properties and option with which the library was built:
+#
+# ALICEVISION_HAVE_CCTAG   -  TRUE if the library is built with CCTAG support
+# ALICEVISION_HAVE_POPSIFT -  TRUE if the library is built with PopSift support
+# ALICEVISION_HAVE_OPENCV  -  TRUE if the library is built with OpenCV support
+# ALICEVISION_HAVE_OPENMP  -  TRUE if the library is built with openMP support
+# ALICEVISION_HAVE_OPENGV  -  TRUE if the library is built with openGV support
+# ALICEVISION_HAVE_ALEMBIC -  TRUE if the library is built with Alembic support
+#
+################################################################################
 
-# Called if we failed to find Ceres or any of it's required dependencies,
-# unsets all public (designed to be used externally) variables and reports
-# error message at priority depending upon [REQUIRED/QUIET/<NONE>] argument.
-macro(ALICEVISION_REPORT_NOT_FOUND REASON_MSG)
-  # FindPackage() only references Ceres_FOUND, and requires it to be
-  # explicitly set FALSE to denote not found (not merely undefined).
-  set(ALICEVISION_FOUND FALSE)
-  unset(ALICEVISION_INCLUDE_DIRS)
-  unset(ALICEVISION_LIBRARIES)
-
-  # Reset the CMake module path to its state when this script was called.
-  set(CMAKE_MODULE_PATH ${CALLERS_CMAKE_MODULE_PATH})
-
-  # Note <package>_FIND_[REQUIRED/QUIETLY] variables defined by
-  # FindPackage() use the camelcase library name, not uppercase.
-  if(ALICEVISION_FIND_QUIETLY)
-    message(STATUS "Failed to find ALICEVISION - " ${REASON_MSG} ${ARGN})
-  else(ALICEVISION_FIND_REQUIRED)
-    message(FATAL_ERROR "Failed to find ALICEVISION - " ${REASON_MSG} ${ARGN})
-  else()
-    # Neither QUIETLY nor REQUIRED, use SEND_ERROR which emits an error
-    # that prevents generation, but continues configuration.
-    message(SEND_ERROR "Failed to find ALICEVISION - " ${REASON_MSG} ${ARGN})
-  endif()
-  return()
-endmacro(ALICEVISION_REPORT_NOT_FOUND)
+@PACKAGE_INIT@.
 
 ## Public dependencies that needs to be propagated
 include(CMakeFindDependencyMacro)
 
-set(ALICEVISION_USE_INTERNAL_CERES @ALICEVISION_USE_INTERNAL_CERES@)
-
-if(ALICEVISION_USE_INTERNAL_CERES)
-  set(Ceres_DIR @CMAKE_INSTALL_PREFIX@/share/Ceres/)
-else()
-  set(Ceres_DIR @Ceres_DIR@)
-endif()
+set(Ceres_DIR @Ceres_DIR@)
 find_dependency(Ceres)
 
 # whether it is built with CCTags
@@ -71,8 +62,7 @@ if(ALICEVISION_HAVE_POPSIFT)
   find_dependency(PopSift 1.0.0)
 endif()
 
-
-# whether it is built with CCTags
+# whether it is built with OpenCV
 set(ALICEVISION_HAVE_OPENCV @ALICEVISION_HAVE_OPENCV@)
 
 if(ALICEVISION_HAVE_OPENCV)
@@ -97,63 +87,9 @@ endif()
 # propagate other building options
 set(ALICEVISION_HAVE_OPENGV @ALICEVISION_HAVE_OPENGV@)
 set(ALICEVISION_HAVE_ALEMBIC @ALICEVISION_HAVE_ALEMBIC@)
-set(ALICEVISION_USE_LOG @ALICEVISION_USE_LOG@)
 
-# Set the version.
-set(ALICEVISION_VERSION @ALICEVISION_VERSION@)
+message(STATUS "Found AliceVision version: ${@exportedProjectName@_VERSION}")
 
-# Get the (current, i.e. installed) directory containing this file.
-get_filename_component(CURRENT_CONFIG_INSTALL_DIR
-  "${CMAKE_CURRENT_LIST_FILE}" PATH)
-
-# Record the state of the CMake module path when this script was
-# called so that we can ensure that we leave it in the same state on
-# exit as it was on entry, but modify it locally.
-set(CALLERS_CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH})
-# Reset CMake module path to the installation directory of this
-# script.
-set(CMAKE_MODULE_PATH ${CURRENT_CONFIG_INSTALL_DIR})
-
-# Build the absolute root install directory as a relative path
-get_filename_component(CURRENT_ROOT_INSTALL_DIR
-  ${CMAKE_MODULE_PATH}/../../../ ABSOLUTE)
-if(NOT EXISTS ${CURRENT_ROOT_INSTALL_DIR})
-  ALICEVISION_REPORT_NOT_FOUND(
-    "AliceVision install root: ${CURRENT_ROOT_INSTALL_DIR}, "
-    "determined from relative path from AliceVisionConfig.cmake install location: "
-    "${CMAKE_MODULE_PATH}, does not exist.")
-endif()
-
-# Check if AliceVision header is installed
-if(NOT EXISTS ${CURRENT_ROOT_INSTALL_DIR}/include/aliceVision/version.hpp)
-  ALICEVISION_REPORT_NOT_FOUND(
-    "AliceVision install root: ${CMAKE_MODULE_PATH}. "
-    "Cannot find aliceVision include files.")
-endif()
-
-# Set the include directories for AliceVision (itself) and all (potentially optional)
-# dependencies with which AliceVision was compiled.
-set(ALICEVISION_INCLUDE_DIRS "@ALICEVISION_INCLUDE_DIRS@")
-
-##### the libraries themselves come in via AliceVisionTargets-<release/debug>.cmake
-# as link libraries rules as target.
-
-# Import exported AliceVision targets
-set(ALICEVISION_LIBRARIES @ALICEVISION_LIBRARIES@)
-include(${CURRENT_CONFIG_INSTALL_DIR}/AliceVisionTargets.cmake)
-
-# As we use ALICEVISION_REPORT_NOT_FOUND() to abort, if we reach this point we have
-# found AliceVision and all required dependencies.
-message(STATUS "----")
-message(STATUS "AliceVision Find_Package")
-message(STATUS "----")
-message(STATUS "Found AliceVision version: ${ALICEVISION_VERSION}")
-message(STATUS "Installed in: ${CURRENT_ROOT_INSTALL_DIR}")
-message(STATUS "Used AliceVision libraries: ${ALICEVISION_LIBRARIES}")
-message(STATUS "----")
-
-set(ALICEVISION_FOUND TRUE)
-
-# Reset the CMake module path to its state when this script was called.
-set(CMAKE_MODULE_PATH ${CALLERS_CMAKE_MODULE_PATH})
+include("${CMAKE_CURRENT_LIST_DIR}/@targetsExportName@.cmake")
+check_required_components("@exportedProjectName@")
 
