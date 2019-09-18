@@ -165,6 +165,7 @@ int main(int argc, char **argv)
 
   if(panoramaSize.first == 0 || panoramaSize.second == 0)
   {
+    sfmData::EEXIFOrientation orientation = sfmData.getView(*validViews.begin()).getMetadataOrientation();
     if(panoramaSize.first != 0 || panoramaSize.second != 0)
     {
       int s = std::max(panoramaSize.first, panoramaSize.second);
@@ -181,8 +182,20 @@ int main(int argc, char **argv)
         const sfmData::View& view = *viewIt.second.get();
         if(!sfmData.isPoseAndIntrinsicDefined(&view))
           continue;
-        panoramaSize.first += view.getWidth();
-        panoramaSize.second = std::max(panoramaSize.second, int(view.getHeight()));
+
+        if(orientation == sfmData::EEXIFOrientation::RIGHT ||
+           orientation == sfmData::EEXIFOrientation::LEFT ||
+           orientation == sfmData::EEXIFOrientation::RIGHT_REVERSED ||
+           orientation == sfmData::EEXIFOrientation::LEFT_REVERSED)
+        {
+            panoramaSize.first += view.getHeight();
+            panoramaSize.second = std::max(panoramaSize.second, int(view.getWidth()));
+        }
+        else
+        {
+            panoramaSize.first += view.getWidth();
+            panoramaSize.second = std::max(panoramaSize.second, int(view.getHeight()));
+        }
         ALICEVISION_LOG_INFO("Update output panorama size: " << panoramaSize.first << ", " << panoramaSize.second);
       }
     }
