@@ -273,35 +273,35 @@ int main(int argc, char **argv)
     ALICEVISION_LOG_INFO("orientation: " << orientation);
     if(orientation == 0)
     {
+        ALICEVISION_LOG_INFO("Orientation: FROM IMAGES");
+        sfm::computeNewCoordinateSystemFromSingleCamera(outSfmData, std::to_string(firstShot_viewId), S, R, t);
+    }
+    else if(orientation == 1)
+    {
       ALICEVISION_LOG_INFO("Orientation: RIGHT");
       R = Eigen::AngleAxisd(degreeToRadian(180.0), Vec3(0,1,0))
           * Eigen::AngleAxisd(degreeToRadian(90.0), Vec3(0,0,1))
           * outSfmData.getAbsolutePose(firstShot_viewId).getTransform().rotation();
     }
-    else if(orientation == 1)
+    else if(orientation == 2)
     {
       ALICEVISION_LOG_INFO("Orientation: LEFT");
       R = Eigen::AngleAxisd(degreeToRadian(180.0),  Vec3(0,1,0))
           * Eigen::AngleAxisd(degreeToRadian(270.0),  Vec3(0,0,1))
           * outSfmData.getAbsolutePose(firstShot_viewId).getTransform().rotation();
     }
-    else if(orientation == 2)
+    else if(orientation == 3)
     {
       ALICEVISION_LOG_INFO("Orientation: UPSIDEDOWN");
       R = Eigen::AngleAxisd(degreeToRadian(180.0),  Vec3(0,1,0))
           * outSfmData.getAbsolutePose(firstShot_viewId).getTransform().rotation();
     }
-    else if(orientation == 3)
+    else if(orientation == 4)
     {
       ALICEVISION_LOG_INFO("Orientation: NONE");
       R = Eigen::AngleAxisd(degreeToRadian(180.0), Vec3(0,1,0))
           * Eigen::AngleAxisd(degreeToRadian(180.0), Vec3(0,0,1))
           * outSfmData.getAbsolutePose(firstShot_viewId).getTransform().rotation();
-    }
-    else if(orientation == 4)
-    {
-      ALICEVISION_LOG_INFO("Orientation: FROM IMAGES");
-      sfm::computeNewCoordinateSystemFromSingleCamera(outSfmData, std::to_string(firstShot_viewId), S, R, t);
     }
 
     // We only need to correct the rotation
