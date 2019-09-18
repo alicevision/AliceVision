@@ -389,7 +389,16 @@ public:
   {
     if(hasDigitMetadata("Orientation"))
       return  static_cast<EEXIFOrientation>(std::stoi(getMetadata("Orientation")));
+    if(hasDigitMetadata("Exif:Orientation"))
+      return  static_cast<EEXIFOrientation>(std::stoi(getMetadata("Exif:Orientation")));
     return EEXIFOrientation::UNKNOWN;
+  }
+
+  std::string getMetadataDateTimeOriginal() const
+  {
+    if(hasMetadata("Exif:DateTimeOriginal"))
+      return getMetadata("Exif:DateTimeOriginal");
+    return "";
   }
 
   /**
