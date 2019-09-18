@@ -148,6 +148,7 @@ protected:
   bool Compute_Global_Rotations(const aliceVision::rotationAveraging::RelativeRotations& vec_relatives_R,
                                 HashMap<IndexT, Mat3>& map_globalR);
 
+public:
   /// Compute the initial structure of the scene
   bool Compute_Initial_Structure(matching::PairwiseMatches& tripletWise_matches);
 

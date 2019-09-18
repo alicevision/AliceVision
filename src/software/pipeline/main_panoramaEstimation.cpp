@@ -58,6 +58,7 @@ int main(int argc, char **argv)
   std::string describerTypesName = feature::EImageDescriberType_enumToString(feature::EImageDescriberType::SIFT);
   sfm::ERotationAveragingMethod rotationAveragingMethod = sfm::ROTATION_AVERAGING_L2;
   sfm::ERelativeRotationMethod relativeRotationMethod = sfm::RELATIVE_ROTATION_FROM_E;
+  bool refine = true;
   bool lockAllIntrinsics = false;
   int orientation = 0;
 
@@ -80,8 +81,6 @@ int main(int argc, char **argv)
   optionalParams.add_options()
     ("outSfMDataFilename", po::value<std::string>(&outSfMDataFilename)->default_value(outSfMDataFilename),
       "Filename of the output SfMData file.")
-    ("orientation", po::value<int>(&orientation)->default_value(orientation),
-      "Orientation")
     ("describerTypes,d", po::value<std::string>(&describerTypesName)->default_value(describerTypesName),
       feature::EImageDescriberType_informations().c_str())
     ("rotationAveraging", po::value<sfm::ERotationAveragingMethod>(&rotationAveragingMethod)->default_value(rotationAveragingMethod),
@@ -90,6 +89,10 @@ int main(int argc, char **argv)
     ("relativeRotation", po::value<sfm::ERelativeRotationMethod>(&relativeRotationMethod)->default_value(relativeRotationMethod),
       "* from essential matrix"
       "* from homography matrix")
+    ("orientation", po::value<int>(&orientation)->default_value(orientation),
+      "Orientation")
+    ("refine", po::value<bool>(&refine)->default_value(refine),
+      "Refine cameras with a Bundle Adjustment")
     ("lockAllIntrinsics", po::value<bool>(&lockAllIntrinsics)->default_value(lockAllIntrinsics),
       "Force lock of all camera intrinsic parameters, so they will not be refined during Bundle Adjustment.");
 
@@ -217,11 +220,23 @@ int main(int argc, char **argv)
   if(!sfmEngine.process())
     return EXIT_FAILURE;
 
+  sfmEngine.Compute_Initial_Structure(pairwiseMatches);
+  sfmEngine.colorize();
+
   // set featuresFolders and matchesFolders relative paths
   {
     sfmEngine.getSfMData().addFeaturesFolders(featuresFolders);
     sfmEngine.getSfMData().addMatchesFolders(matchesFolders);
     sfmEngine.getSfMData().setAbsolutePath(outSfMDataFilename);
+  }
+
+  if(refine)
+  {
+    sfmDataIO::Save(sfmEngine.getSfMData(), (fs::path(outDirectory) / "BA_before.abc").string(), sfmDataIO::ESfMData::ALL);
+
+    sfmEngine.Adjust();
+
+    sfmDataIO::Save(sfmEngine.getSfMData(), (fs::path(outDirectory) / "BA_after.abc").string(), sfmDataIO::ESfMData::ALL);
   }
 
   sfmData::SfMData& outSfmData = sfmEngine.getSfMData();

@@ -414,7 +414,6 @@ bool ReconstructionEngine_panorama::Compute_Initial_Structure(matching::Pairwise
     // Use triplet validated matches
     tracksBuilder.build(tripletWise_matches);
 #endif
-    tracksBuilder.filter(3);
     TracksMap map_selectedTracks; // reconstructed track (visibility per 3D point)
     tracksBuilder.exportToSTL(map_selectedTracks);
 
@@ -438,24 +437,22 @@ bool ReconstructionEngine_panorama::Compute_Initial_Structure(matching::Pairwise
         const PointFeature & pt = _featuresPerView->getFeatures(imaIndex, track.descType)[featIndex];
         obs[imaIndex] = Observation(pt.coords().cast<double>(), featIndex);
 
-        /*
         {
           // back project a feature from the first observation
           const sfmData::View * view = _sfmData.views.at(imaIndex).get();
           if (_sfmData.isPoseAndIntrinsicDefined(view))
           {
-            const IntrinsicBase * cam = _sfmData.getIntrinsics().at(view->getIntrinsicId()).get();
+            const IntrinsicBase& cam = *_sfmData.getIntrinsics().at(view->getIntrinsicId()).get();
             const Pose3 pose = _sfmData.getPose(*view).getTransform();
-            Vec3 v = cam.backproject(pose, pt.coords().cast<double>(), 1.0, true);
+            Vec3 v = cam.backproject(pose, pt.coords().cast<double>(), 10.0, true);
             pos3d.push_back(v);
           }
-        }*/
+        }
       }
-      /*
       newLandmark.X = Vec3::Zero();
       for(const Vec3& p: pos3d)
         newLandmark.X += p;
-      newLandmark.X /= pos.size();*/
+      newLandmark.X /= pos3d.size();
     }
 
     ALICEVISION_LOG_DEBUG("Track stats");
@@ -487,25 +484,12 @@ bool ReconstructionEngine_panorama::Compute_Initial_Structure(matching::Pairwise
     }
   }
 
-  // Compute 3D position of the landmark of the structure by triangulation of the observations
+  // Export initial structure
+  if (!_loggingFile.empty())
   {
-    aliceVision::system::Timer timer;
-/*
-    const IndexT trackCountBefore = _sfmData.getLandmarks().size();
-    StructureComputation_blind structure_estimator(true);
-    structure_estimator.triangulate(_sfmData);
-
-    ALICEVISION_LOG_DEBUG("#removed tracks (invalid triangulation): " <<
-      trackCountBefore - IndexT(_sfmData.getLandmarks().size()));
-    ALICEVISION_LOG_DEBUG("  Triangulation took (s): " << timer.elapsed());
-*/
-    // Export initial structure
-    if (!_loggingFile.empty())
-    {
-      sfmDataIO::Save(_sfmData,
-                     (fs::path(_loggingFile).parent_path() / "initial_structure.ply").string(),
-                     sfmDataIO::ESfMData(sfmDataIO::EXTRINSICS | sfmDataIO::STRUCTURE));
-    }
+    sfmDataIO::Save(_sfmData,
+                   (fs::path(_loggingFile).parent_path() / "initial_structure.ply").string(),
+                   sfmDataIO::ESfMData(sfmDataIO::EXTRINSICS | sfmDataIO::STRUCTURE));
   }
   return !_sfmData.structure.empty();
 }
@@ -519,60 +503,39 @@ bool ReconstructionEngine_panorama::Adjust()
 
   BundleAdjustmentCeres BA(options);
   // - refine only Structure and translations
-  bool success = BA.adjust(_sfmData, BundleAdjustment::REFINE_TRANSLATION | BundleAdjustment::REFINE_STRUCTURE);
+  bool success = BA.adjust(_sfmData, BundleAdjustment::REFINE_STRUCTURE); // BundleAdjustment::REFINE_ROTATION |
   if(success)
   {
-    if(!_loggingFile.empty())
-      sfmDataIO::Save(_sfmData, (fs::path(_loggingFile).parent_path() / "structure_00_refine_T_Xi.ply").string(), sfmDataIO::ESfMData(sfmDataIO::EXTRINSICS | sfmDataIO::STRUCTURE));
-
-    // refine only structure and rotations & translations
-    success = BA.adjust(_sfmData, BundleAdjustment::REFINE_ROTATION | BundleAdjustment::REFINE_TRANSLATION | BundleAdjustment::REFINE_STRUCTURE);
-
-    if(success && !_loggingFile.empty())
-      sfmDataIO::Save(_sfmData, (fs::path(_loggingFile).parent_path() / "structure_01_refine_RT_Xi.ply").string(), sfmDataIO::ESfMData(sfmDataIO::EXTRINSICS | sfmDataIO::STRUCTURE));
+    ALICEVISION_LOG_DEBUG("Rotations successfully refined.");
+  }
+  else
+  {
+    ALICEVISION_LOG_DEBUG("Failed to refine the rotations only.");
   }
 
   if(success && !_lockAllIntrinsics)
   {
-    // refine all: Structure, motion:{rotations, translations} and optics:{intrinsics}
-    success = BA.adjust(_sfmData, BundleAdjustment::REFINE_ALL);
-    if(success && !_loggingFile.empty())
-      sfmDataIO::Save(_sfmData, (fs::path(_loggingFile).parent_path() / "structure_02_refine_KRT_Xi.ply").string(), sfmDataIO::ESfMData(sfmDataIO::EXTRINSICS | sfmDataIO::STRUCTURE));
+    success = BA.adjust(_sfmData, BundleAdjustment::REFINE_STRUCTURE | BundleAdjustment::REFINE_INTRINSICS_FOCAL | BundleAdjustment::REFINE_INTRINSICS_DISTORTION); // BundleAdjustment::REFINE_ROTATION | REFINE_INTRINSICS_OPTICALCENTER_ALWAYS
+    if(success)
+    {
+      ALICEVISION_LOG_DEBUG("Rotations and intrinsics successfully refined.");
+    }
+    else
+    {
+      ALICEVISION_LOG_DEBUG("Failed to refine the rotations/intrinsics.");
+    }
   }
 
-  // Remove outliers (max_angle, residual error)
+  /*
+  // Remove outliers (residual error)
   const size_t pointcount_initial = _sfmData.structure.size();
   RemoveOutliers_PixelResidualError(_sfmData, 4.0);
   const size_t pointcount_pixelresidual_filter = _sfmData.structure.size();
-  RemoveOutliers_AngleError(_sfmData, 2.0);
-  const size_t pointcount_angular_filter = _sfmData.structure.size();
+
   ALICEVISION_LOG_DEBUG("Outlier removal (remaining points):\n"
                         "\t- # landmarks initial: " << pointcount_initial << "\n"
-                        "\t- # landmarks after pixel residual filter: " << pointcount_pixelresidual_filter << "\n"
-                        "\t- # landmarks after angular filter: " << pointcount_angular_filter);
-
-  if(!_loggingFile.empty())
-    sfmDataIO::Save(_sfmData, (fs::path(_loggingFile).parent_path() / "structure_03_outlier_removed.ply").string(), sfmDataIO::ESfMData(sfmDataIO::EXTRINSICS | sfmDataIO::STRUCTURE));
-
-  // check that poses & intrinsic cover some measures (after outlier removal)
-  const IndexT minPointPerPose = 12; // 6 min
-  const IndexT minTrackLength = 3; // 2 min todo param@L
-  
-  if (eraseUnstablePosesAndObservations(_sfmData, minPointPerPose, minTrackLength))
-  {
-    // TODO: must ensure that track graph is producing a single connected component
-
-    const size_t pointcount_cleaning = _sfmData.structure.size();
-    ALICEVISION_LOG_DEBUG("# landmarks after eraseUnstablePosesAndObservations: " << pointcount_cleaning);
-  }
-
-  BundleAdjustment::ERefineOptions refineOptions = BundleAdjustment::REFINE_ROTATION | BundleAdjustment::REFINE_TRANSLATION | BundleAdjustment::REFINE_STRUCTURE;
-  if(!_lockAllIntrinsics)
-    refineOptions |= BundleAdjustment::REFINE_INTRINSICS_ALL;
-  success = BA.adjust(_sfmData, refineOptions);
-
-  if(success && !_loggingFile.empty())
-    sfmDataIO::Save(_sfmData, (fs::path(_loggingFile).parent_path() / "structure_04_outlier_removed.ply").string(), sfmDataIO::ESfMData(sfmDataIO::EXTRINSICS | sfmDataIO::STRUCTURE));
+                        "\t- # landmarks after pixel residual filter: " << pointcount_pixelresidual_filter);
+  */
 
   return success;
 }
