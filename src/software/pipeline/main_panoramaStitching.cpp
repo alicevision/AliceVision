@@ -259,21 +259,28 @@ int main(int argc, char **argv)
           continue;
         }
 
-        const image::RGBfColor pixel = sampler(imageIn, pix_disto(1), pix_disto(0));
         float contribution = 1.0f;
-
         if(fisheyeMasking)
         {
-          // TODO: if image is fisheye, skip the undefined part of the image
-          const float dist = std::sqrt((x-center(0)) * (x-center(0)) + (y-center(1)) * (y-center(1)));
-          contribution = (dist > maxRadius) ? 0.0 : sigmoid(dist, transitionSize, blurMid);
+          const float dist = std::sqrt((pix_disto(0)-center(0)) * (pix_disto(0)-center(0)) + (pix_disto(1)-center(1)) * (pix_disto(1)-center(1)));
+          if(dist > maxRadius)
+          {
+              // contribution = 0.0f;
+              continue;
+          }
+          else
+          {
+              contribution = sigmoid(dist, transitionSize, blurMid);
+          }
         }
+
+        const image::RGBfColor pixel = sampler(imageIn, pix_disto(1), pix_disto(0));
         if(contribution > 0.0f)
         {
-          imageOut(y, x).r() = pixel.r() * contribution;
-          imageOut(y, x).g() = pixel.g() * contribution;
-          imageOut(y, x).b() = pixel.b() * contribution;
-          imageOut(y, x).a() = imageOut(y, x).a() + contribution;
+          imageOut(y, x).r() += pixel.r() * contribution;
+          imageOut(y, x).g() += pixel.g() * contribution;
+          imageOut(y, x).b() += pixel.b() * contribution;
+          imageOut(y, x).a() += contribution;
         }
       }
     }
