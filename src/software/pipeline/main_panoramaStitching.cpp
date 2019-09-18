@@ -82,7 +82,8 @@ int main(int argc, char **argv)
   float fisheyeMaskingMargin = 0.05f;
   float transitionSize = 10.0f;
 
-  int maxNbImages = 0;
+  int debugSubsetStart = 0;
+  int debugSubsetSize = 0;
 
   po::options_description allParams(
     "Perform panorama stiching of cameras around a nodal point for 360° panorama creation.\n"
@@ -105,8 +106,10 @@ int main(int argc, char **argv)
       "Margin for fisheye images (in percentage of the image).")
     ("transitionSize", po::value<float>(&transitionSize)->default_value(transitionSize),
       "Size of the transition between images (in pixels).")
-    ("maxNbImages", po::value<int>(&maxNbImages)->default_value(maxNbImages),
-      "For debug only: Max number of images to merge.")
+    ("debugSubsetStart", po::value<int>(&debugSubsetStart)->default_value(debugSubsetStart),
+     "For debug only: Index of first image of the subset to merge.")
+    ("debugSubsetSize", po::value<int>(&debugSubsetSize)->default_value(debugSubsetSize),
+      "For debug only: Number of images in the subset to merge.")
     //("panoramaSize", po::value<std::pair<int, int>>(&panoramaSize)->default_value(panoramaSize),
     //  "Image size of the output panorama image file.")
     ;
@@ -221,8 +224,18 @@ int main(int argc, char **argv)
     if(!sfmData.isPoseAndIntrinsicDefined(&view))
       continue;
 
-    if(maxNbImages != 0 && imageIndex >= maxNbImages)
-      break;
+    if(debugSubsetSize != 0)
+    {
+      if(imageIndex < debugSubsetStart)
+      {
+        ++imageIndex;
+        continue;
+      }
+      else if(imageIndex >= debugSubsetStart + debugSubsetSize)
+      {
+        break;
+      }
+    }
     ++imageIndex;
 
     const sfmData::CameraPose camPose = sfmData.getPose(view);
@@ -249,7 +262,6 @@ int main(int argc, char **argv)
       for(int x = 0; x < imageOut.Width(); ++x)
       {
         // equirectangular to unit vector
-        // Vec3 ray = SphericalMapping::get3DPoint(Vec2(y,x), imageOut.Height(), imageOut.Width());
         Vec3 ray = SphericalMapping::get3DPoint(Vec2(x,y), imageOut.Width(), imageOut.Height());
 
         if(camPose.getTransform().depth(ray) < 0)
@@ -305,7 +317,7 @@ int main(int argc, char **argv)
         pixel.r() /= pixel.a();
         pixel.g() /= pixel.a();
         pixel.b() /= pixel.a();
-        // pixel.a() = 1.0f; // TMP: keep the alpha with the contribution for debugging
+        pixel.a() = 1.0f; // TMP: comment to keep the alpha with the number of contribution for debugging
       }
     }
   }
