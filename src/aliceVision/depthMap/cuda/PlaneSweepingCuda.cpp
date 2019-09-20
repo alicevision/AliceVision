@@ -576,7 +576,7 @@ StaticVector<float>* PlaneSweepingCuda::getDepthsRcTc(int rc, int tc, int scale,
     delete out1;
 
     // we want to have it in ascending order
-    if((*out)[0] > (*out)[out->size() - 1])
+    if(out->size() > 0 && (*out)[0] > (*out)[out->size() - 1])
     {
         StaticVector<float>* outTmp = new StaticVector<float>();
         outTmp->reserve(out->size());
