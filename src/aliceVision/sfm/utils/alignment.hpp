@@ -156,5 +156,26 @@ void computeNewCoordinateSystemFromSingleCamera(const sfmData::SfMData& sfmData,
                                                 Mat3& out_R,
                                                 Vec3& out_t);
 
+using MarkerWithCoord = std::pair<int, Vec3>;
+
+/**
+* @brief Compute a new coordinate system so that markers are aligned with the target coordinates.
+*
+* @param[in] sfmData
+* @param[in] imageDescriberType
+* @param[in] markers: markers id associated to a target 3D coordinate
+* @param[in] withScaling
+* @param[out] out_S scale
+* @param[out] out_R rotation
+* @param[out] out_t translation
+*/
+bool computeNewCoordinateSystemFromSpecificMarkers(const sfmData::SfMData& sfmData,
+    const feature::EImageDescriberType& imageDescriberType,
+    const std::vector<MarkerWithCoord>& markers,
+    bool withScaling,
+    double& out_S,
+    Mat3& out_R,
+    Vec3& out_t);
+
 } // namespace sfm
 } // namespace aliceVision

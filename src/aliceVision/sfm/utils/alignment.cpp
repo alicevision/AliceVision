@@ -267,5 +267,64 @@ void computeNewCoordinateSystemFromLandmarks(const sfmData::SfMData& sfmData,
     out_t = - out_S * out_R * meanPoints;
 }
 
+
+bool computeNewCoordinateSystemFromSpecificMarkers(const sfmData::SfMData& sfmData,
+    const feature::EImageDescriberType& imageDescriberType,
+    const std::vector<MarkerWithCoord>& markers,
+    bool withScaling,
+    double& out_S,
+    Mat3& out_R,
+    Vec3& out_t
+    )
+{
+    std::vector<int> landmarksIds(markers.size(), -1);
+
+    int maxLandmarkIdx = 0;
+    for (const auto& landmarkIt : sfmData.getLandmarks())
+    {
+        if(landmarkIt.first > maxLandmarkIdx)
+            maxLandmarkIdx = landmarkIt.first;
+        if(landmarkIt.second.descType != imageDescriberType)
+            continue;
+        for (int i = 0; i < markers.size(); ++i)
+        {
+            if (landmarkIt.second.rgb.r() == markers[i].first)
+            {
+                landmarksIds[i] = landmarkIt.first;
+            }
+        }
+    }
+
+    for (int i = 0; i < landmarksIds.size(); ++i)
+    {
+        int landmarkId = landmarksIds[i];
+        if (landmarkId == -1)
+        {
+            ALICEVISION_LOG_ERROR("Failed to find marker: " << int(markers[i].first));
+            ALICEVISION_THROW_ERROR("Failed to find marker: " << int(markers[i].first));
+        }
+    }
+
+    Mat ptsSrc = Mat3X(3, markers.size());
+    Mat ptsDst = Mat3X(3, markers.size());
+    for (std::size_t i = 0; i < markers.size(); ++i)
+    {
+        ptsSrc.col(i) = sfmData.getLandmarks().at(landmarksIds[i]).X;
+        ptsDst.col(i) = markers[i].second;
+    }
+
+    if (markers.size() == 1)
+    {
+        out_S = 1;
+        out_R = Mat3::Identity();
+        out_t = ptsDst.col(0) - ptsSrc.col(0);
+        return true;
+    }
+
+    const Mat4 RTS = Eigen::umeyama(ptsSrc, ptsDst, withScaling);
+
+    return geometry::decomposeRTS(RTS, out_S, out_t, out_R);
+}
+
 } // namespace sfm
 } // namespace aliceVision
