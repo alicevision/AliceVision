@@ -16,7 +16,7 @@
 #include <numeric>
 
 namespace cctag {
-  class Parameters; // Hidden implementation
+  struct Parameters; // Hidden implementation
 }
 
 namespace aliceVision {
