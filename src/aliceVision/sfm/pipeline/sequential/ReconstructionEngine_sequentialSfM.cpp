@@ -722,6 +722,12 @@ void ReconstructionEngine_sequentialSfM::exportStatistics(double reconstructionT
     << "\t- elapsed time: " << reconstructionTime << std::endl
     << "\t- residual RMSE: " <<  residual);
 
+  std::map<feature::EImageDescriberType, int> descTypeUsage = _sfmData.getLandmarkDescTypesUsages();
+  for(const auto& d: descTypeUsage)
+  {
+    ALICEVISION_LOG_INFO(" - # " << EImageDescriberType_enumToString(d.first) << ": " << d.second);
+  }
+
   // residual histogram
   Histogram<double> residualHistogram;
   computeResidualsHistogram(&residualHistogram);
