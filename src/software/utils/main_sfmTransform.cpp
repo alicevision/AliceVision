@@ -78,6 +78,16 @@ EAlignmentMethod EAlignmentMethod_stringToEnum(const std::string& alignmentMetho
   throw std::out_of_range("Invalid SfM alignment method : " + alignmentMethod);
 }
 
+
+inline std::istream& operator>>(std::istream& in, EAlignmentMethod& alignment)
+{
+    std::string token;
+    in >> token;
+    alignment = EAlignmentMethod_stringToEnum(token);
+    return in;
+}
+
+
 static bool parseAlignScale(const std::string& alignScale, double& S, Mat3& R, Vec3& t)
 {
   double rx, ry, rz, rr;
@@ -130,7 +140,8 @@ int main(int argc, char **argv)
   std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
   std::string sfmDataFilename;
   std::string outSfMDataFilename;
-  std::string alignmentMethodName;
+  EAlignmentMethod alignmentMethod = EAlignmentMethod::AUTO_FROM_CAMERAS;
+
 
   // user optional parameters
 
@@ -149,15 +160,17 @@ int main(int argc, char **argv)
     ("input,i", po::value<std::string>(&sfmDataFilename)->required(),
       "SfMData file to align.")
     ("output,o", po::value<std::string>(&outSfMDataFilename)->required(),
-      "Output SfMData scene.")
-    ("method", po::value<std::string>(&alignmentMethodName)->required(),
-      "Transform method:\n"
-      "\t- transformation: Apply a given transformation\n"
-      "\t- auto_from_cameras: Use cameras\n"
-      "\t- auto_from_landmarks: Use landmarks\n");
+      "Output SfMData scene.");
 
   po::options_description optionalParams("Optional parameters");
   optionalParams.add_options()
+    ("method", po::value<EAlignmentMethod>(&alignmentMethod)->default_value(alignmentMethod),
+        "Transform Method:\n"
+        "\t- transformation: Apply a given transformation\n"
+        "\t- auto_from_cameras: Use cameras\n"
+        "\t- auto_from_landmarks: Use landmarks\n"
+        "\t- from_single_camera: Use camera specified by --tranformation\n"
+        "\t- from_markers: Use markers specified by --markers\n")
     ("transformation", po::value<std::string>(&transform)->default_value(transform),
       "required only for 'transformation' and 'single camera' methods:\n"
       "Transformation: Align [X,Y,Z] to +Y-axis, rotate around Y by R deg, scale by S; syntax: X,Y,Z;R;S\n"
@@ -216,9 +229,6 @@ int main(int argc, char **argv)
 
   // set verbose level
   system::Logger::get()->setLogLevel(verboseLevel);
-
-  // set alignment method
-  const EAlignmentMethod alignmentMethod = EAlignmentMethod_stringToEnum(alignmentMethodName);
 
   if(transform.empty() && (
      alignmentMethod == EAlignmentMethod::TRANSFOMATION ||
