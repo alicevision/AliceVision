@@ -59,6 +59,20 @@ inline void getCommonPoseId(const sfmData::SfMData& sfmDataA,
 }
 
 
+void matchViewsByFilePattern(
+    const sfmData::SfMData& sfmDataA,
+    const sfmData::SfMData& sfmDataB,
+    const std::string& filePatternMatching,
+    std::vector<std::pair<IndexT, IndexT>>& out_commonViewIds);
+
+
+void matchViewsByMetadataMatching(
+    const sfmData::SfMData& sfmDataA,
+    const sfmData::SfMData& sfmDataB,
+    const std::vector<std::string>& metadataList,
+    std::vector<std::pair<IndexT, IndexT>>& out_commonViewIds);
+
+
 /**
  * @brief Compute a 5DOF rigid transform between the two set of cameras based on common viewIds.
  *
