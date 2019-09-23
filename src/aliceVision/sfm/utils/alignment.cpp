@@ -35,23 +35,32 @@ bool computeSimilarityFromCommonViews(const sfmData::SfMData& sfmDataA,
     assert(out_R != nullptr);
     assert(out_t != nullptr);
 
-    if (commonViewIds.empty())
+    std::vector<std::pair<IndexT, IndexT>> reconstructedCommonViewIds;
+    for (const auto& c : commonViewIds)
+    {
+        if (sfmDataA.isPoseAndIntrinsicDefined(c.first) && sfmDataB.isPoseAndIntrinsicDefined(c.second))
+        {
+            reconstructedCommonViewIds.emplace_back(c);
+        }
+    }
+
+    if (reconstructedCommonViewIds.empty())
     {
         ALICEVISION_LOG_WARNING("Cannot compute similarities without common view.");
         return false;
     }
 
     // Move input point in appropriate container
-    Mat xA(3, commonViewIds.size());
-    Mat xB(3, commonViewIds.size());
-    for (std::size_t i = 0; i < commonViewIds.size(); ++i)
+    Mat xA(3, reconstructedCommonViewIds.size());
+    Mat xB(3, reconstructedCommonViewIds.size());
+    for (std::size_t i = 0; i < reconstructedCommonViewIds.size(); ++i)
     {
-        auto viewIdPair = commonViewIds[i];
+        auto viewIdPair = reconstructedCommonViewIds[i];
         xA.col(i) = sfmDataA.getPose(sfmDataA.getView(viewIdPair.first)).getTransform().center();
         xB.col(i) = sfmDataB.getPose(sfmDataB.getView(viewIdPair.second)).getTransform().center();
     }
 
-    if (commonViewIds.size() == 1)
+    if (reconstructedCommonViewIds.size() == 1)
     {
         *out_S = 1.0;
         *out_R = Mat3::Identity();
@@ -68,7 +77,7 @@ bool computeSimilarityFromCommonViews(const sfmData::SfMData& sfmDataA,
     if (!aliceVision::geometry::ACRansac_FindRTS(xA, xB, S, t, R, inliers, true))
         return false;
 
-    ALICEVISION_LOG_DEBUG("There are " << commonViewIds.size() << " common cameras and " << inliers.size() << " were used to compute the similarity transform.");
+    ALICEVISION_LOG_DEBUG("There are " << reconstructedCommonViewIds.size() << " common cameras and " << inliers.size() << " were used to compute the similarity transform.");
 
     *out_S = S;
     *out_R = R;
