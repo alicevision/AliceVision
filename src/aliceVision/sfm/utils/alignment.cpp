@@ -15,13 +15,69 @@
 #include <boost/lexical_cast.hpp>
 
 #include <algorithm>
+#include <regex>
+
 
 namespace bacc = boost::accumulators;
 
 namespace aliceVision {
 namespace sfm {
 
-bool computeSimilarity(const sfmData::SfMData& sfmDataA,
+
+bool computeSimilarityFromCommonViews(const sfmData::SfMData& sfmDataA,
+    const sfmData::SfMData& sfmDataB,
+    const std::vector<std::pair<IndexT, IndexT>>& commonViewIds,
+    double* out_S,
+    Mat3* out_R,
+    Vec3* out_t)
+{
+    assert(out_S != nullptr);
+    assert(out_R != nullptr);
+    assert(out_t != nullptr);
+
+    if (commonViewIds.empty())
+    {
+        ALICEVISION_LOG_WARNING("Cannot compute similarities without common view.");
+        return false;
+    }
+
+    // Move input point in appropriate container
+    Mat xA(3, commonViewIds.size());
+    Mat xB(3, commonViewIds.size());
+    for (std::size_t i = 0; i < commonViewIds.size(); ++i)
+    {
+        auto viewIdPair = commonViewIds[i];
+        xA.col(i) = sfmDataA.getPose(sfmDataA.getView(viewIdPair.first)).getTransform().center();
+        xB.col(i) = sfmDataB.getPose(sfmDataB.getView(viewIdPair.second)).getTransform().center();
+    }
+
+    if (commonViewIds.size() == 1)
+    {
+        *out_S = 1.0;
+        *out_R = Mat3::Identity();
+        *out_t = xB.col(0) - xA.col(0);
+        return true;
+    }
+
+    // Compute rigid transformation p'i = S R pi + t
+    double S;
+    Vec3 t;
+    Mat3 R;
+    std::vector<std::size_t> inliers;
+
+    if (!aliceVision::geometry::ACRansac_FindRTS(xA, xB, S, t, R, inliers, true))
+        return false;
+
+    ALICEVISION_LOG_DEBUG("There are " << commonViewIds.size() << " common cameras and " << inliers.size() << " were used to compute the similarity transform.");
+
+    *out_S = S;
+    *out_R = R;
+    *out_t = t;
+
+    return true;
+}
+
+bool computeSimilarityFromCommonCameras_viewId(const sfmData::SfMData& sfmDataA,
                        const sfmData::SfMData& sfmDataB,
                        double* out_S,
                        Mat3* out_R,
@@ -33,39 +89,354 @@ bool computeSimilarity(const sfmData::SfMData& sfmDataA,
   
   std::vector<IndexT> commonViewIds;
   getCommonViewsWithPoses(sfmDataA, sfmDataB, commonViewIds);
-  if(commonViewIds.size() < 2)
-  {
-    ALICEVISION_LOG_WARNING("Cannot compute similarities. Need at least 2 common views.");
-    return false;
-  }
   ALICEVISION_LOG_DEBUG("Found " << commonViewIds.size() << " common views.");
 
-  // Move input point in appropriate container
-  Mat xA(3, commonViewIds.size());
-  Mat xB(3, commonViewIds.size());
-  for(std::size_t i = 0; i  < commonViewIds.size(); ++i)
+  std::vector<std::pair<IndexT, IndexT>> commonViewIds_pairs;
+  for (IndexT id : commonViewIds)
   {
-    IndexT viewId = commonViewIds[i];
-    xA.col(i) = sfmDataA.getAbsolutePose(sfmDataA.getViews().at(viewId)->getPoseId()).getTransform().center();
-    xB.col(i) = sfmDataB.getAbsolutePose(sfmDataB.getViews().at(viewId)->getPoseId()).getTransform().center();
+      commonViewIds_pairs.push_back(std::make_pair(id, id));
   }
+  return computeSimilarityFromCommonViews(sfmDataA, sfmDataB, commonViewIds_pairs, out_S, out_R, out_t);
+}
 
-  // Compute rigid transformation p'i = S R pi + t
-  double S;
-  Vec3 t;
-  Mat3 R;
-  std::vector<std::size_t> inliers;
+bool computeSimilarityFromCommonCameras_poseId(
+        const sfmData::SfMData& sfmDataA,
+        const sfmData::SfMData& sfmDataB,
+        double* out_S,
+        Mat3* out_R,
+        Vec3* out_t)
+{
+    assert(out_S != nullptr);
+    assert(out_R != nullptr);
+    assert(out_t != nullptr);
 
-  if(!aliceVision::geometry::ACRansac_FindRTS(xA, xB, S, t, R, inliers, true))
-    return false;
+    std::vector<IndexT> commonPoseIds;
+    getCommonPoseId(sfmDataA, sfmDataB, commonPoseIds);
+    ALICEVISION_LOG_DEBUG("Found " << commonPoseIds.size() << " common views.");
+    if (commonPoseIds.empty())
+    {
+        ALICEVISION_LOG_WARNING("Cannot compute similarities without common pose.");
+        return false;
+    }
 
-  ALICEVISION_LOG_DEBUG("There are " << commonViewIds.size() << " common cameras and " << inliers.size() << " were used to compute the similarity transform.");
+    // Move input point in appropriate container
+    Mat xA(3, commonPoseIds.size());
+    Mat xB(3, commonPoseIds.size());
+    for (std::size_t i = 0; i < commonPoseIds.size(); ++i)
+    {
+        IndexT poseId = commonPoseIds[i];
+        xA.col(i) = sfmDataA.getAbsolutePose(poseId).getTransform().center();
+        xB.col(i) = sfmDataB.getAbsolutePose(poseId).getTransform().center();
+    }
+    if (commonPoseIds.size() == 1)
+    {
+        *out_S = 1.0;
+        *out_R = Mat3::Identity();
+        *out_t = xB.col(0) - xA.col(0);
+        return true;
+    }
 
-  *out_S = S;
-  *out_R = R;
-  *out_t = t;
+    // Compute rigid transformation p'i = S R pi + t
+    double S;
+    Vec3 t;
+    Mat3 R;
+    std::vector<std::size_t> inliers;
 
-  return true;
+    if (!aliceVision::geometry::ACRansac_FindRTS(xA, xB, S, t, R, inliers, true))
+        return false;
+
+    ALICEVISION_LOG_DEBUG("There are " << commonPoseIds.size() << " common camera poses and " << inliers.size() << " were used to compute the similarity transform.");
+
+    *out_S = S;
+    *out_R = R;
+    *out_t = t;
+
+    return true;
+}
+
+
+std::map<std::string, IndexT> retrieveMatchingFilepath(
+    const sfmData::SfMData& sfmData,
+    const std::string& filePatternMatching)
+{
+    std::set<std::string> duplicates;
+    std::map<std::string, IndexT> uniqueFileparts;
+    for (auto& viewIt : sfmData.getViews())
+    {
+        const std::string& imagePath = viewIt.second->getImagePath();
+        std::string cumulatedValues;
+        if (filePatternMatching.empty())
+        {
+            cumulatedValues = imagePath;
+        }
+        else
+        {
+            std::regex re(filePatternMatching);
+            std::smatch matches;
+            if (std::regex_match(imagePath, matches, re))
+            {
+                for(int i = 1; i < matches.size(); ++i)
+                {
+                    const std::ssub_match& submatch = matches[i];
+                    cumulatedValues += submatch.str();
+                }
+            }
+        }
+        ALICEVISION_LOG_TRACE("retrieveMatchingFilepath: " << imagePath << " -> " << cumulatedValues);
+        auto& it = uniqueFileparts.find(cumulatedValues);
+        if (it != uniqueFileparts.end())
+        {
+            duplicates.insert(cumulatedValues);
+        }
+        else
+        {
+            uniqueFileparts[cumulatedValues] = viewIt.first;
+        }
+    }
+    for (const std::string& d : duplicates)
+    {
+        uniqueFileparts.erase(d);
+    }
+    return uniqueFileparts;
+}
+
+void matchViewsByFilePattern(
+    const sfmData::SfMData& sfmDataA,
+    const sfmData::SfMData& sfmDataB,
+    const std::string& filePatternMatching,
+    std::vector<std::pair<IndexT, IndexT>>& out_commonViewIds)
+{
+    out_commonViewIds.clear();
+    std::map<std::string, IndexT> filepathValuesA = retrieveMatchingFilepath(sfmDataA, filePatternMatching);
+    std::map<std::string, IndexT> filepathValuesB = retrieveMatchingFilepath(sfmDataB, filePatternMatching);
+
+    using P = std::pair<std::string, IndexT>;
+    std::vector<P> commonMetadataValues;
+    std::set_intersection(
+        filepathValuesA.begin(), filepathValuesA.end(), // already sorted
+        filepathValuesB.begin(), filepathValuesB.end(), // already sorted
+        std::back_inserter(commonMetadataValues),
+        [](const P& p1, const P& p2) {
+            return p1.first < p2.first;
+        }
+    );
+
+    for (const P& p : commonMetadataValues)
+    {
+        out_commonViewIds.emplace_back(filepathValuesA.at(p.first), filepathValuesB.at(p.first));
+    }
+}
+
+
+bool computeSimilarityFromCommonCameras_imageFileMatching(
+    const sfmData::SfMData& sfmDataA,
+    const sfmData::SfMData& sfmDataB,
+    const std::string& filePatternMatching,
+    double* out_S,
+    Mat3* out_R,
+    Vec3* out_t)
+{
+    assert(out_S != nullptr);
+    assert(out_R != nullptr);
+    assert(out_t != nullptr);
+
+    std::vector<std::pair<IndexT, IndexT>> commonViewIds;
+    matchViewsByFilePattern(sfmDataA, sfmDataB, filePatternMatching, commonViewIds);
+
+    ALICEVISION_LOG_DEBUG("Found " << commonViewIds.size() << " common views.");
+
+    return computeSimilarityFromCommonViews(sfmDataA, sfmDataB, commonViewIds, out_S, out_R, out_t);
+}
+
+
+
+std::map<std::string, IndexT> retrieveUniqueMetadataValues(
+    const sfmData::SfMData& sfmData,
+    const std::vector<std::string>& metadataList)
+{
+    std::set<std::string> duplicates;
+    std::map<std::string, IndexT> uniqueMetadataValues;
+    for (auto& viewIt : sfmData.getViews())
+    {
+        const std::map<std::string, std::string>& m = viewIt.second->getMetadata();
+        std::string cumulatedValues;
+        for (const std::string& k : metadataList)
+        {
+            const auto mIt = m.find(k);
+            if (mIt != m.end())
+                cumulatedValues += mIt->second;
+        }
+        ALICEVISION_LOG_TRACE("retrieveUniqueMetadataValues: " << viewIt.second->getImagePath() << " -> " << cumulatedValues);
+        auto& it = uniqueMetadataValues.find(cumulatedValues);
+        if (it != uniqueMetadataValues.end())
+        {
+            duplicates.insert(cumulatedValues);
+        }
+        else
+        {
+            uniqueMetadataValues[cumulatedValues] = viewIt.first;
+        }
+    }
+    for (const std::string& d: duplicates)
+    {
+        uniqueMetadataValues.erase(d);
+    }
+    return uniqueMetadataValues;
+}
+
+void matchViewsByMetadataMatching(
+    const sfmData::SfMData& sfmDataA,
+    const sfmData::SfMData& sfmDataB,
+    const std::vector<std::string>& metadataList,
+    std::vector<std::pair<IndexT, IndexT>>& out_commonViewIds)
+{
+    out_commonViewIds.clear();
+    std::map<std::string, IndexT> metadataValuesA = retrieveUniqueMetadataValues(sfmDataA, metadataList);
+    std::map<std::string, IndexT> metadataValuesB = retrieveUniqueMetadataValues(sfmDataB, metadataList);
+
+    using P = std::pair<std::string, IndexT>;
+    std::vector<P> commonMetadataValues;
+    std::set_intersection(
+        metadataValuesA.begin(), metadataValuesA.end(), // already sorted
+        metadataValuesB.begin(), metadataValuesB.end(), // already sorted
+        std::back_inserter(commonMetadataValues),
+        [](const P& p1, const P& p2) {
+            return p1.first < p2.first;
+        }
+    );
+    for (const P& p : commonMetadataValues)
+    {
+        out_commonViewIds.emplace_back(metadataValuesA.at(p.first), metadataValuesB.at(p.first));
+    }
+}
+
+bool computeSimilarityFromCommonCameras_metadataMatching(
+    const sfmData::SfMData& sfmDataA,
+    const sfmData::SfMData& sfmDataB,
+    const std::vector<std::string>& metadataList,
+    double* out_S,
+    Mat3* out_R,
+    Vec3* out_t)
+{
+    assert(out_S != nullptr);
+    assert(out_R != nullptr);
+    assert(out_t != nullptr);
+
+    std::vector<std::pair<IndexT, IndexT>> commonViewIds;
+    matchViewsByMetadataMatching(sfmDataA, sfmDataB, metadataList, commonViewIds);
+
+    ALICEVISION_LOG_DEBUG("Found " << commonViewIds.size() << " common views.");
+
+    return computeSimilarityFromCommonViews(sfmDataA, sfmDataB, commonViewIds, out_S, out_R, out_t);
+}
+
+
+/**
+ * @return map<pair<DescType, markerId>, landmarkId>
+ */
+std::map<std::pair<feature::EImageDescriberType, int>, IndexT> getUniqueMarkers(const sfmData::SfMData& sfmDataA)
+{
+    std::set<std::pair<feature::EImageDescriberType, int>> duplicates;
+    std::map<std::pair<feature::EImageDescriberType, int>, IndexT> markers;
+
+    for (const auto& landmarkIt : sfmDataA.getLandmarks())
+    {
+        if (isMarker(landmarkIt.second.descType))
+        {
+            const auto p = std::make_pair(landmarkIt.second.descType, landmarkIt.second.rgb.r());
+            if (markers.find(p) == markers.end())
+            {
+                markers[p] = landmarkIt.first;
+            }
+            else
+            {
+                duplicates.insert(p); // multiple usages
+            }
+        }
+    }
+    for (const auto& d : duplicates)
+    {
+        markers.erase(d);
+    }
+    return markers;
+}
+
+
+bool computeSimilarityFromCommonMarkers(
+    const sfmData::SfMData& sfmDataA,
+    const sfmData::SfMData& sfmDataB,
+    double* out_S,
+    Mat3* out_R,
+    Vec3* out_t)
+{
+    assert(out_S != nullptr);
+    assert(out_R != nullptr);
+    assert(out_t != nullptr);
+
+    std::map<std::pair<feature::EImageDescriberType, int>, IndexT> markers_A = getUniqueMarkers(sfmDataA);
+    std::map<std::pair<feature::EImageDescriberType, int>, IndexT> markers_B = getUniqueMarkers(sfmDataB);
+
+    using P = std::pair<std::pair<feature::EImageDescriberType, int>, IndexT>;
+    std::vector<P> commonMarkers;
+    std::set_intersection(
+        markers_A.begin(), markers_A.end(), // already sorted
+        markers_B.begin(), markers_B.end(), // already sorted
+        std::back_inserter(commonMarkers),
+        [](const P& p1, const P& p2) {
+            return p1.first < p2.first;
+        }
+    );
+
+    ALICEVISION_LOG_DEBUG("Found " << commonMarkers.size() << " common markers.");
+    if (commonMarkers.empty())
+    {
+        ALICEVISION_LOG_WARNING("Cannot compute similarities without common marker.");
+        return false;
+    }
+
+    std::map<IndexT, std::pair<IndexT, IndexT>> commonLandmarks;
+    for (auto& m : commonMarkers)
+    {
+        auto& markerLandmarks = commonLandmarks[m.first.second];
+        markerLandmarks.first = markers_A.at(m.first);
+        markerLandmarks.second = markers_B.at(m.first);
+    }
+
+    // Move input point in appropriate container
+    Mat xA(3, commonLandmarks.size());
+    Mat xB(3, commonLandmarks.size());
+    auto it = commonLandmarks.begin();
+    for (std::size_t i = 0; i < commonLandmarks.size(); ++i, ++it)
+    {
+        const std::pair<IndexT, IndexT>& commonLandmark = it->second;
+        xA.col(i) = sfmDataA.getLandmarks().at(commonLandmark.first).X;
+        xB.col(i) = sfmDataB.getLandmarks().at(commonLandmark.second).X;
+    }
+
+    if (commonLandmarks.size() == 1)
+    {
+        *out_S = 1.0;
+        *out_R = Mat3::Identity();
+        *out_t = xB.col(0) - xA.col(0);
+        return true;
+    }
+
+    // Compute rigid transformation p'i = S R pi + t
+    double S;
+    Vec3 t;
+    Mat3 R;
+    std::vector<std::size_t> inliers;
+
+    if (!aliceVision::geometry::ACRansac_FindRTS(xA, xB, S, t, R, inliers, true))
+        return false;
+
+    ALICEVISION_LOG_DEBUG("There are " << commonLandmarks.size() << " common markers and " << inliers.size() << " were used to compute the similarity transform.");
+
+    *out_S = S;
+    *out_R = R;
+    *out_t = t;
+
+    return true;
 }
 
 void computeNewCoordinateSystemFromCameras(const sfmData::SfMData& sfmData,
