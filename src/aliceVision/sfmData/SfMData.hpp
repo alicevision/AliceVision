@@ -9,6 +9,7 @@
 
 #include <aliceVision/sfmData/CameraPose.hpp>
 #include <aliceVision/sfmData/Landmark.hpp>
+#include <aliceVision/sfmData/Constraint2D.hpp>
 #include <aliceVision/sfmData/View.hpp>
 #include <aliceVision/sfmData/Rig.hpp>
 #include <aliceVision/camera/camera.hpp>
@@ -41,6 +42,9 @@ using PosesUncertainty = HashMap<IndexT, Vec6>;
 /// Define uncertainty per landmark
 using LandmarksUncertainty = HashMap<IndexT, Vec3>;
 
+///Define a collection of constraints
+using Constraints2D = std::vector<Constraint2D>;
+
 /**
  * @brief SfMData container
  * Store structure and camera properties
@@ -60,6 +64,8 @@ public:
   PosesUncertainty _posesUncertainty;
   /// Uncertainty per landmark
   LandmarksUncertainty _landmarksUncertainty;
+  /// 2D Constraints
+  Constraints2D constraints2d;
 
   // Operators
 
@@ -101,6 +107,13 @@ public:
    */
   const Landmarks& getLandmarks() const {return structure;}
   Landmarks& getLandmarks() {return structure;}
+
+  /**
+   * @brief Get Constraints2D
+   * @return Constraints2D
+   */
+  const Constraints2D& getConstraints2D() const {return constraints2d;}
+  Constraints2D& getConstraints2D() {return constraints2d;}
 
   /**
    * @brief Get control points
