@@ -77,6 +77,10 @@ inline std::istream& operator>>(std::istream& in, EMatchingMethod& alignment)
     return in;
 }
 
+inline std::ostream& operator<<(std::ostream& os, EMatchingMethod e)
+{
+    return os << EMatchingMethod_enumToString(e);
+}
 
 
 int main(int argc, char **argv)

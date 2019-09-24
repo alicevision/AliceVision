@@ -225,7 +225,15 @@ void computeNewCoordinateSystemFromSingleCamera(const sfmData::SfMData& sfmData,
                                                 Mat3& out_R,
                                                 Vec3& out_t);
 
-using MarkerWithCoord = std::pair<int, Vec3>;
+struct MarkerWithCoord
+{
+    int id;
+    Vec3 coord;
+};
+
+std::istream& operator>>(std::istream& in, MarkerWithCoord& marker);
+
+std::ostream& operator<<(std::ostream& os, const MarkerWithCoord& marker);
 
 /**
 * @brief Compute a new coordinate system so that markers are aligned with the target coordinates.

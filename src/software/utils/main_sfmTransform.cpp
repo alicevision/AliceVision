@@ -12,9 +12,6 @@
 #include <aliceVision/config.hpp>
 
 #include <boost/program_options.hpp>
-#include <boost/algorithm/string/split.hpp>
-#include <boost/algorithm/string/classification.hpp>
-#include <boost/lexical_cast.hpp>
 
 #include <string>
 #include <sstream>
@@ -87,6 +84,12 @@ inline std::istream& operator>>(std::istream& in, EAlignmentMethod& alignment)
     return in;
 }
 
+inline std::ostream& operator<<(std::ostream& os, EAlignmentMethod e)
+{
+    return os << EAlignmentMethod_enumToString(e);
+}
+
+
 
 static bool parseAlignScale(const std::string& alignScale, double& S, Mat3& R, Vec3& t)
 {
@@ -110,28 +113,6 @@ static bool parseAlignScale(const std::string& alignScale, double& S, Mat3& R, V
   return true;
 }
 
-
-inline std::istream& operator>>(std::istream& in, sfm::MarkerWithCoord& marker)
-{
-    std::string token;
-    in >> token;
-    std::vector<std::string> markerCoord;
-    boost::split(markerCoord, token, boost::algorithm::is_any_of(":="));
-    if(markerCoord.size() != 2)
-        throw std::invalid_argument("Failed to parse MarkerWithCoord from: " + token);
-    marker.first = boost::lexical_cast<int>(markerCoord.front());
-
-    std::vector<std::string> coord;
-    boost::split(coord, markerCoord.back(), boost::algorithm::is_any_of(",;_"));
-    if (coord.size() != 3)
-        throw std::invalid_argument("Failed to parse Marker coordinates from: " + markerCoord.back());
-
-    for (int i = 0; i < 3; ++i)
-    {
-        marker.second(i) = boost::lexical_cast<double>(coord[i]);
-    }
-    return in;
-}
 
 int main(int argc, char **argv)
 {

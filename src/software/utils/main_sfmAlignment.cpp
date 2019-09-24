@@ -83,6 +83,10 @@ inline std::istream& operator>>(std::istream& in, EAlignmentMethod& alignment)
     return in;
 }
 
+inline std::ostream& operator<<(std::ostream& os, EAlignmentMethod e)
+{
+    return os << EAlignmentMethod_enumToString(e);
+}
 
 
 int main(int argc, char **argv)

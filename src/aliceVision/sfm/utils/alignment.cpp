@@ -14,6 +14,10 @@
 #include <boost/accumulators/statistics/max.hpp>
 #include <boost/lexical_cast.hpp>
 
+#include <boost/algorithm/string/split.hpp>
+#include <boost/algorithm/string/classification.hpp>
+#include <boost/lexical_cast.hpp>
+
 #include <algorithm>
 #include <regex>
 
@@ -23,6 +27,34 @@ namespace bacc = boost::accumulators;
 namespace aliceVision {
 namespace sfm {
 
+
+std::istream& operator>>(std::istream& in, MarkerWithCoord& marker)
+{
+    std::string token;
+    in >> token;
+    std::vector<std::string> markerCoord;
+    boost::split(markerCoord, token, boost::algorithm::is_any_of(":="));
+    if(markerCoord.size() != 2)
+        throw std::invalid_argument("Failed to parse MarkerWithCoord from: " + token);
+    marker.id = boost::lexical_cast<int>(markerCoord.front());
+
+    std::vector<std::string> coord;
+    boost::split(coord, markerCoord.back(), boost::algorithm::is_any_of(",;_"));
+    if (coord.size() != 3)
+        throw std::invalid_argument("Failed to parse Marker coordinates from: " + markerCoord.back());
+
+    for (int i = 0; i < 3; ++i)
+    {
+        marker.coord(i) = boost::lexical_cast<double>(coord[i]);
+    }
+    return in;
+}
+
+std::ostream& operator<<(std::ostream& os, const MarkerWithCoord& marker)
+{
+    os << marker.id << ":" << marker.coord(0) << "," << marker.coord(1) << "," << marker.coord(2);
+    return os;
+}
 
 bool computeSimilarityFromCommonViews(const sfmData::SfMData& sfmDataA,
     const sfmData::SfMData& sfmDataB,
@@ -192,7 +224,7 @@ std::map<std::string, IndexT> retrieveMatchingFilepath(
             }
         }
         ALICEVISION_LOG_TRACE("retrieveMatchingFilepath: " << imagePath << " -> " << cumulatedValues);
-        auto& it = uniqueFileparts.find(cumulatedValues);
+        auto it = uniqueFileparts.find(cumulatedValues);
         if (it != uniqueFileparts.end())
         {
             duplicates.insert(cumulatedValues);
@@ -276,7 +308,7 @@ std::map<std::string, IndexT> retrieveUniqueMetadataValues(
                 cumulatedValues += mIt->second;
         }
         ALICEVISION_LOG_TRACE("retrieveUniqueMetadataValues: " << viewIt.second->getImagePath() << " -> " << cumulatedValues);
-        auto& it = uniqueMetadataValues.find(cumulatedValues);
+        auto it = uniqueMetadataValues.find(cumulatedValues);
         if (it != uniqueMetadataValues.end())
         {
             duplicates.insert(cumulatedValues);
@@ -668,7 +700,7 @@ bool computeNewCoordinateSystemFromSpecificMarkers(const sfmData::SfMData& sfmDa
             continue;
         for (int i = 0; i < markers.size(); ++i)
         {
-            if (landmarkIt.second.rgb.r() == markers[i].first)
+            if (landmarkIt.second.rgb.r() == markers[i].id)
             {
                 landmarksIds[i] = landmarkIt.first;
             }
@@ -680,8 +712,8 @@ bool computeNewCoordinateSystemFromSpecificMarkers(const sfmData::SfMData& sfmDa
         int landmarkId = landmarksIds[i];
         if (landmarkId == -1)
         {
-            ALICEVISION_LOG_ERROR("Failed to find marker: " << int(markers[i].first));
-            ALICEVISION_THROW_ERROR("Failed to find marker: " << int(markers[i].first));
+            ALICEVISION_LOG_ERROR("Failed to find marker: " << int(markers[i].id));
+            ALICEVISION_THROW_ERROR("Failed to find marker: " << int(markers[i].id));
         }
     }
 
@@ -690,7 +722,7 @@ bool computeNewCoordinateSystemFromSpecificMarkers(const sfmData::SfMData& sfmDa
     for (std::size_t i = 0; i < markers.size(); ++i)
     {
         ptsSrc.col(i) = sfmData.getLandmarks().at(landmarksIds[i]).X;
-        ptsDst.col(i) = markers[i].second;
+        ptsDst.col(i) = markers[i].coord;
     }
 
     if (markers.size() == 1)
