@@ -220,9 +220,6 @@ int main(int argc, char **argv)
   if(!sfmEngine.process())
     return EXIT_FAILURE;
 
-  sfmEngine.Compute_Initial_Structure(pairwiseMatches);
-  sfmEngine.colorize();
-
   // set featuresFolders and matchesFolders relative paths
   {
     sfmEngine.getSfMData().addFeaturesFolders(featuresFolders);
@@ -248,8 +245,7 @@ int main(int argc, char **argv)
 
   ALICEVISION_LOG_INFO("Panorama results:" << std::endl
     << "\t- # input images: " << outSfmData.getViews().size() << std::endl
-    << "\t- # cameras calibrated: " << outSfmData.getPoses().size() << std::endl
-    << "\t- # landmarks: " << outSfmData.getLandmarks().size());
+    << "\t- # cameras calibrated: " << outSfmData.getPoses().size());
 
   auto validViews = outSfmData.getValidViews();
   int nbCameras = outSfmData.getValidViews().size();
