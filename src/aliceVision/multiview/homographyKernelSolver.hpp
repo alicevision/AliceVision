@@ -23,24 +23,24 @@ struct FourPointSolver {
   enum { MINIMUM_SAMPLES = 4 };
   enum { MAX_MODELS = 1 };
   /**
-   * Computes the homography that transforms x to y with the Direct Linear
+   * Computes the homography that transforms p1 to p2 with the Direct Linear
    * Transform (DLT).
    *
-   * \param x  A 2xN matrix of column vectors.
-   * \param y  A 2xN matrix of column vectors.
+   * \param p1  A 2xN matrix of column vectors.
+   * \param p2  A 2xN matrix of column vectors.
    * \param Hs A vector into which the computed homography is stored.
    *
-   * The estimated homography should approximately hold the condition y = H x.
+   * The estimated homography should approximately hold the condition p2 = H p1.
    */
-  static void Solve(const Mat &x, const Mat &y, vector<Mat3> *Hs);
+  static void Solve(const Mat &p1, const Mat &p2, vector<Mat3> *Hs);
 };
 
 // Should be distributed as Chi-squared with k = 2.
 struct AsymmetricError {
-  static double Error(const Mat &H, const Vec2 &x1, const Vec2 &x2) {
-    Vec3 x2h_est = H * EuclideanToHomogeneous(x1);
-    Vec2 x2_est = x2h_est.head<2>() / x2h_est[2];
-    return (x2 - x2_est).squaredNorm();
+  static double Error(const Mat &H, const Vec2 &p1, const Vec2 &p2) {
+    Vec3 p2h_est = H * EuclideanToHomogeneous(p1);
+    Vec2 p2_est = p2h_est.head<2>() / p2h_est[2];
+    return (p2 - p2_est).squaredNorm();
   }
 };
 
