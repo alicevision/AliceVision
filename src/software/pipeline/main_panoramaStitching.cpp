@@ -53,9 +53,9 @@ namespace SphericalMapping
     const double longitude = M_PI * 2.0 * x / width;  // between -PI and PI
     const double latitude = M_PI * y / height;        // between -PI/2 and PI/2
 
-    const double Px = cos(latitude) * cos(longitude);
-    const double Py = cos(latitude) * sin(longitude);
-    const double Pz = sin(latitude);
+    const double Px = cos(latitude) * sin(longitude);
+    const double Py = sin(latitude);
+    const double Pz = cos(latitude) * cos(longitude);
 
     return Vec3(Px, Py, Pz);
   }
