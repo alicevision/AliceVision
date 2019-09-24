@@ -659,7 +659,8 @@ bool ReconstructionEngine_sequentialSfM::bundleAdjustment(std::set<IndexT>& newR
     // - the number of cameras to refine cannot be < to the number of newly added cameras (set to 'refine' by default)
     if((nbRefinedPoses <= newReconstructedViews.size()) && _sfmData.getRigs().empty())
     {
-      throw std::runtime_error("The local bundle adjustment refinement has not been done: the new cameras are not connected to the rest of the graph.");
+      ALICEVISION_LOG_INFO("Local bundle adjustment: the new cameras are not connected to the rest of the graph"
+                           " (nbRefinedPoses: " << nbRefinedPoses << ", newReconstructedViews.size(): " << newReconstructedViews.size() << ").");
     }
   }
 
