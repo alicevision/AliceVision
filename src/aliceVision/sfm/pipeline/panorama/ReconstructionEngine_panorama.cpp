@@ -391,119 +391,15 @@ bool ReconstructionEngine_panorama::Compute_Global_Rotations(const rotationAvera
   return b_rotationAveraging;
 }
 
-/// Compute the initial structure of the scene
-bool ReconstructionEngine_panorama::Compute_Initial_Structure(matching::PairwiseMatches& tripletWise_matches)
-{
-  // Build tracks from selected triplets (Union of all the validated triplet tracks (_tripletWise_matches))
-  {
-    using namespace aliceVision::track;
-    TracksBuilder tracksBuilder;
-#ifdef USE_ALL_VALID_MATCHES // not used by default
-    matching::PairwiseMatches pose_supported_matches;
-    for (const auto & pairwiseMatchesIt :  *_pairwiseMatches)
-    {
-      const View * vI = _sfm_data.getViews().at(pairwiseMatchesIt.first.first).get();
-      const View * vJ = _sfm_data.getViews().at(pairwiseMatchesIt.first.second).get();
-      if (_sfm_data.isPoseAndIntrinsicDefined(vI) && _sfm_data.isPoseAndIntrinsicDefined(vJ))
-      {
-        pose_supported_matches.insert(pairwiseMatchesIt);
-      }
-    }
-    tracksBuilder.Build(pose_supported_matches);
-#else
-    // Use triplet validated matches
-    tracksBuilder.build(tripletWise_matches);
-#endif
-    TracksMap map_selectedTracks; // reconstructed track (visibility per 3D point)
-    tracksBuilder.exportToSTL(map_selectedTracks);
-
-    // Fill sfm_data with the computed tracks (no 3D yet)
-    Landmarks & structure = _sfmData.structure;
-    IndexT idx(0);
-    for (TracksMap::const_iterator itTracks = map_selectedTracks.begin();
-      itTracks != map_selectedTracks.end();
-      ++itTracks, ++idx)
-    {
-      const Track & track = itTracks->second;
-      Landmark& newLandmark = structure[idx];
-      newLandmark.descType = track.descType;
-      Observations & obs = newLandmark.observations;
-      std::vector<Vec3> pos3d;
-      pos3d.reserve(track.featPerView.size());
-      for (Track::FeatureIdPerView::const_iterator it = track.featPerView.begin(); it != track.featPerView.end(); ++it)
-      {
-        const size_t imaIndex = it->first;
-        const size_t featIndex = it->second;
-        const PointFeature & pt = _featuresPerView->getFeatures(imaIndex, track.descType)[featIndex];
-        obs[imaIndex] = Observation(pt.coords().cast<double>(), featIndex);
-
-        {
-          // back project a feature from the first observation
-          const sfmData::View * view = _sfmData.views.at(imaIndex).get();
-          if (_sfmData.isPoseAndIntrinsicDefined(view))
-          {
-            const IntrinsicBase& cam = *_sfmData.getIntrinsics().at(view->getIntrinsicId()).get();
-            const Pose3 pose = _sfmData.getPose(*view).getTransform();
-            Vec3 v = cam.backproject(pose, pt.coords().cast<double>(), 10.0, true);
-            pos3d.push_back(v);
-          }
-        }
-      }
-      newLandmark.X = Vec3::Zero();
-      for(const Vec3& p: pos3d)
-        newLandmark.X += p;
-      newLandmark.X /= pos3d.size();
-    }
-
-    ALICEVISION_LOG_DEBUG("Track stats");
-    {
-      std::ostringstream osTrack;
-      //-- Display stats:
-      //    - number of images
-      //    - number of tracks
-      std::set<size_t> set_imagesId;
-      tracksUtilsMap::imageIdInTracks(map_selectedTracks, set_imagesId);
-      osTrack << "------------------" << "\n"
-        << "-- Tracks Stats --" << "\n"
-        << " Tracks number: " << tracksBuilder.nbTracks() << "\n"
-        << " Images Id: " << "\n";
-      std::copy(set_imagesId.begin(),
-        set_imagesId.end(),
-        std::ostream_iterator<size_t>(osTrack, ", "));
-      osTrack << "\n------------------" << "\n";
-
-      std::map<size_t, size_t> map_Occurence_TrackLength;
-      tracksUtilsMap::tracksLength(map_selectedTracks, map_Occurence_TrackLength);
-      osTrack << "TrackLength, Occurrence" << "\n";
-      for (std::map<size_t, size_t>::const_iterator iter = map_Occurence_TrackLength.begin();
-        iter != map_Occurence_TrackLength.end(); ++iter)  {
-        osTrack << "\t" << iter->first << "\t" << iter->second << "\n";
-      }
-      osTrack << "\n";
-      ALICEVISION_LOG_DEBUG(osTrack.str());
-    }
-  }
-
-  // Export initial structure
-  if (!_loggingFile.empty())
-  {
-    sfmDataIO::Save(_sfmData,
-                   (fs::path(_loggingFile).parent_path() / "initial_structure.ply").string(),
-                   sfmDataIO::ESfMData(sfmDataIO::EXTRINSICS | sfmDataIO::STRUCTURE));
-  }
-  return !_sfmData.structure.empty();
-}
-
 // Adjust the scene (& remove outliers)
 bool ReconstructionEngine_panorama::Adjust()
 {
-  // refine sfm  scene (in a 3 iteration process (free the parameters regarding their incertainty order)):
   BundleAdjustmentCeres::CeresOptions options;
-  options.useParametersOrdering = false; // disable parameters ordering
-
+  options.useParametersOrdering = false;
+  options.summary = true;
+  
   BundleAdjustmentCeres BA(options);
-  // - refine only Structure and translations
-  bool success = BA.adjust(_sfmData, BundleAdjustment::REFINE_STRUCTURE); // BundleAdjustment::REFINE_ROTATION |
+  bool success = BA.adjust(_sfmData, BundleAdjustment::REFINE_ROTATION | BundleAdjustment::REFINE_INTRINSICS_FOCAL | BundleAdjustment::REFINE_INTRINSICS_OPTICALCENTER_IF_ENOUGH_DATA);
   if(success)
   {
     ALICEVISION_LOG_DEBUG("Rotations successfully refined.");
@@ -512,30 +408,6 @@ bool ReconstructionEngine_panorama::Adjust()
   {
     ALICEVISION_LOG_DEBUG("Failed to refine the rotations only.");
   }
-
-  if(success && !_lockAllIntrinsics)
-  {
-    success = BA.adjust(_sfmData, BundleAdjustment::REFINE_STRUCTURE | BundleAdjustment::REFINE_INTRINSICS_FOCAL | BundleAdjustment::REFINE_INTRINSICS_DISTORTION); // BundleAdjustment::REFINE_ROTATION | REFINE_INTRINSICS_OPTICALCENTER_ALWAYS
-    if(success)
-    {
-      ALICEVISION_LOG_DEBUG("Rotations and intrinsics successfully refined.");
-    }
-    else
-    {
-      ALICEVISION_LOG_DEBUG("Failed to refine the rotations/intrinsics.");
-    }
-  }
-
-  /*
-  // Remove outliers (residual error)
-  const size_t pointcount_initial = _sfmData.structure.size();
-  RemoveOutliers_PixelResidualError(_sfmData, 4.0);
-  const size_t pointcount_pixelresidual_filter = _sfmData.structure.size();
-
-  ALICEVISION_LOG_DEBUG("Outlier removal (remaining points):\n"
-                        "\t- # landmarks initial: " << pointcount_initial << "\n"
-                        "\t- # landmarks after pixel residual filter: " << pointcount_pixelresidual_filter);
-  */
 
   return success;
 }
@@ -559,18 +431,11 @@ void ReconstructionEngine_panorama::Compute_Relative_Rotations(rotationAveraging
     poseWiseMatches[Pair(v1->getPoseId(), v2->getPoseId())].insert(pair);
   }
 
-  sfm::Constraints2D constraints2d = _sfmData.getConstraints2D();
+  sfm::Constraints2D & constraints2d = _sfmData.getConstraints2D();
 
   ALICEVISION_LOG_INFO("Relative pose computation:");
-//  boost::progress_display progressBar( poseWiseMatches.size(), std::cout, "\n- Relative pose computation -\n" );
-//  #pragma omp parallel for schedule(dynamic)
-  // Compute the relative pose from pairwise point matches:
   for (int i = 0; i < poseWiseMatches.size(); ++i)
   {
-//    #pragma omp critical
-//    {
-//      ++progressBar;
-//    }
     {
       PoseWiseMatches::const_iterator iter (poseWiseMatches.begin());
       std::advance(iter, i);

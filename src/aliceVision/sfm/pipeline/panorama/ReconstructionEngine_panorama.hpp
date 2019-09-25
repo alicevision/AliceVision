@@ -149,9 +149,6 @@ protected:
                                 HashMap<IndexT, Mat3>& map_globalR);
 
 public:
-  /// Compute the initial structure of the scene
-  bool Compute_Initial_Structure(matching::PairwiseMatches& tripletWise_matches);
-
   /// Adjust the scene (& remove outliers)
   bool Adjust();
 
