@@ -559,6 +559,8 @@ void ReconstructionEngine_panorama::Compute_Relative_Rotations(rotationAveraging
     poseWiseMatches[Pair(v1->getPoseId(), v2->getPoseId())].insert(pair);
   }
 
+  sfm::Constraints2D constraints2d = _sfmData.getConstraints2D();
+
   ALICEVISION_LOG_INFO("Relative pose computation:");
 //  boost::progress_display progressBar( poseWiseMatches.size(), std::cout, "\n- Relative pose computation -\n" );
 //  #pragma omp parallel for schedule(dynamic)
@@ -675,76 +677,32 @@ void ReconstructionEngine_panorama::Compute_Relative_Rotations(rotationAveraging
                            << ", initial_residual_tolerance: " << relativePose_info.initial_residual_tolerance
                            << ", found_residual_precision: " << relativePose_info.found_residual_precision);
 
-      const bool refineUsingBA = false;
-      if(refineUsingBA)
+
+      /*Sort all inliers by increasing ids*/
+      std::sort(relativePose_info.vec_inliers.begin(), relativePose_info.vec_inliers.end());
+
+      size_t index = 0;
+      size_t index_inlier = 0;
+      for(const auto& matchesPerDescIt: matchesPerDesc)
       {
-        // Refine the defined scene
-        SfMData tinyScene;
-        tinyScene.views.insert(*_sfmData.getViews().find(view_I->getViewId()));
-        tinyScene.views.insert(*_sfmData.getViews().find(view_J->getViewId()));
-        tinyScene.intrinsics.insert(*_sfmData.getIntrinsics().find(view_I->getIntrinsicId()));
-        tinyScene.intrinsics.insert(*_sfmData.getIntrinsics().find(view_J->getIntrinsicId()));
+        const feature::EImageDescriberType descType = matchesPerDescIt.first;
+        const matching::IndMatches & matches = matchesPerDescIt.second;
 
-        // Init poses
-        const Pose3& poseI = Pose3(Mat3::Identity(), Vec3::Zero());
-        const Pose3& poseJ = relativePose_info.relativePose;
-
-        tinyScene.setPose(*view_I, CameraPose(poseI));
-        tinyScene.setPose(*view_J, CameraPose(poseJ));
-
-        // Init structure
-        const Mat34 P1 = cam_I->get_projective_equivalent(poseI);
-        const Mat34 P2 = cam_J->get_projective_equivalent(poseJ);
-        Landmarks & landmarks = tinyScene.structure;
-
-        size_t landmarkId = 0;
-        for(const auto& matchesPerDescIt: matchesPerDesc)
+        for (const auto & match : matches)
         {
-          const feature::EImageDescriberType descType = matchesPerDescIt.first;
-          assert(descType != feature::EImageDescriberType::UNINITIALIZED);
-          if(descType == feature::EImageDescriberType::UNINITIALIZED)
-            throw std::logic_error("descType UNINITIALIZED");
-          const matching::IndMatches & matches = matchesPerDescIt.second;
-          for (const matching::IndMatch& match: matches)
-          {
-            const Vec2 x1_ = _featuresPerView->getFeatures(I, descType)[match._i].coords().cast<double>();
-            const Vec2 x2_ = _featuresPerView->getFeatures(J, descType)[match._j].coords().cast<double>();
-            Vec3 X;
-            TriangulateDLT(P1, x1_, P2, x2_, &X);
-            Observations obs;
-            obs[view_I->getViewId()] = Observation(x1_, match._i);
-            obs[view_J->getViewId()] = Observation(x2_, match._j);
-            Landmark& newLandmark = landmarks[landmarkId++];
-            newLandmark.descType = descType;
-            newLandmark.observations = obs;
-            newLandmark.X = X;
+          size_t next_inlier = relativePose_info.vec_inliers[index_inlier];
+          if (index == next_inlier) {
+            
+            Vec2 pt1 = _featuresPerView->getFeatures(I, descType)[match._i].coords().cast<double>();
+            Vec2 pt2 = _featuresPerView->getFeatures(J, descType)[match._j].coords().cast<double>();
+
+            sfm::Constraint2D constraint(I, sfm::Observation(pt1, 0), J, sfm::Observation(pt2, 0));
+            constraints2d.push_back(constraint);
+
+            index_inlier++;
           }
-        }
-        // - refine only Structure and Rotations & translations (keep intrinsic constant)
-        BundleAdjustmentCeres::CeresOptions options(false, false);
-        options.linearSolverType = ceres::DENSE_SCHUR;
-        BundleAdjustmentCeres bundle_adjustment_obj(options);
-        if(bundle_adjustment_obj.adjust(tinyScene, BundleAdjustment::REFINE_ROTATION | BundleAdjustment::REFINE_TRANSLATION | BundleAdjustment::REFINE_STRUCTURE))
-        {
-          // --> to debug: save relative pair geometry on disk
-          // std::ostringstream os;
-          // os << relative_pose_pair.first << "_" << relative_pose_pair.second << ".ply";
-          // Save(tiny_scene, os.str(), ESfMData(STRUCTURE | EXTRINSICS));
-          //
 
-          const geometry::Pose3 poseI = tinyScene.getPose(*view_I).getTransform();
-          const geometry::Pose3 poseJ = tinyScene.getPose(*view_J).getTransform();
-
-          const Mat3 R1 = poseI.rotation();
-          const Mat3 R2 = poseJ.rotation();
-          const Vec3 t1 = poseI.translation();
-          const Vec3 t2 = poseJ.translation();
-          // Compute relative motion and save it
-          Mat3 Rrel;
-          Vec3 trel;
-          RelativeCameraMotion(R1, t1, R2, t2, &Rrel, &trel);
-          // Update found relative pose
-          relativePose_info.relativePose = Pose3(Rrel, -Rrel.transpose() * trel);
+          index++;
         }
       }
 

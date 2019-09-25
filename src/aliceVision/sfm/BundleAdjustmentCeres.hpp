@@ -207,6 +207,14 @@ private:
   void addLandmarksToProblem(const sfmData::SfMData& sfmData, ERefineOptions refineOptions, ceres::Problem& problem);
 
   /**
+   * @brief Create a residual block for each 2D constraints
+   * @param[in] sfmData The input SfMData contains all the information about the reconstruction, notably the intrinsics
+   * @param[in] refineOptions The chosen refine flag
+   * @param[out] problem The Ceres bundle adjustement problem
+   */
+  void addConstraints2DToProblem(const sfmData::SfMData& sfmData, ERefineOptions refineOptions, ceres::Problem& problem);
+
+  /**
    * @brief Create the Ceres bundle adjustement problem with:
    *  - extrincics and intrinsics parameters blocks.
    *  - residuals blocks for each observation.
