@@ -7,16 +7,18 @@
 
 #include <aliceVision/sfm/BundleAdjustmentCeres.hpp>
 #include <aliceVision/sfm/ResidualErrorFunctor.hpp>
+#include <aliceVision/sfm/ResidualErrorConstraintFunctor.hpp>
 #include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/alicevision_omp.hpp>
 #include <aliceVision/config.hpp>
-
 
 #include <boost/filesystem.hpp>
 
 #include <ceres/rotation.h>
 
 #include <fstream>
+
+
 
 namespace fs = boost::filesystem;
 
@@ -77,6 +79,23 @@ ceres::CostFunction* createRigCostFunctionFromIntrinsics(const IntrinsicBase* in
       return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_PinholeFisheye1, 2, 4, 6, 6, 3>(new ResidualErrorFunctor_PinholeFisheye1(observation.data()));
     default:
       throw std::logic_error("Cannot create rig cost function, unrecognized intrinsic type in BA.");
+  }
+}
+
+/**
+ * @brief Create the appropriate cost functor according the provided input camera intrinsic model
+ * @param[in] intrinsicPtr The intrinsic pointer
+ * @param[in] observation The corresponding observation
+ * @return cost functor
+ */
+ceres::CostFunction* createConstraintsCostFunctionFromIntrinsics(const IntrinsicBase* intrinsicPtr, const Vec2& observation_first, const Vec2& observation_second)
+{
+  switch(intrinsicPtr->getType())
+  {
+    case PINHOLE_CAMERA:
+      return new ceres::AutoDiffCostFunction<ResidualErrorConstraintFunctor_Pinhole, 2, 3, 3, 3, 3>(new ResidualErrorConstraintFunctor_Pinhole(observation_first.data(), observation_second.data()));
+    default:
+      throw std::logic_error("Cannot create cost function, unrecognized intrinsic type in BA.");
   }
 }
 
