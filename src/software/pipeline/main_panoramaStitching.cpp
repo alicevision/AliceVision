@@ -68,6 +68,108 @@ inline std::istream& operator>>(std::istream& in, std::pair<int, int>& out)
     return in;
 }
 
+bool estimate_panorama_size(const sfmData::SfMData & sfmData, float fisheyeMaskingMargin, std::pair<int, int> & panoramaSize) {
+
+  panoramaSize.first = 256;
+  panoramaSize.second = 128;
+
+  image::Image<image::RGBAfColor> BufferCoords(panoramaSize.first, panoramaSize.second, true, image::RGBAfColor(0.0f, 0.0f, 0.0f, 0.0f));
+  {
+    int imageIndex = 0;
+    std::vector<float> determinants;
+
+    for(auto& viewIt: sfmData.getViews())
+    {
+      IndexT viewId = viewIt.first;
+      const sfmData::View& view = *viewIt.second.get();
+      if(!sfmData.isPoseAndIntrinsicDefined(&view))
+        continue;
+        
+
+      const sfmData::CameraPose camPose = sfmData.getPose(view);
+      const camera::IntrinsicBase& intrinsic = *sfmData.getIntrinsicPtr(view.getIntrinsicId());
+    
+
+      const float maxRadius = std::min(intrinsic.w(), intrinsic.h()) * 0.5f * (1.0 - fisheyeMaskingMargin);
+      const Vec2i center(intrinsic.w()/2.f, intrinsic.h()/2.f);
+
+      for(int y = 0; y < panoramaSize.second; ++y)
+      {
+        for(int x = 0; x < panoramaSize.first; ++x)
+        {
+          BufferCoords(y, x).a() = 0.0;
+          // equirectangular to unit vector
+          Vec3 ray = SphericalMapping::get3DPoint(Vec2(x,y), panoramaSize.first, panoramaSize.second);
+
+          if(camPose.getTransform().depth(ray) < 0)
+          {
+            // point is not in front of the camera
+            continue;
+          }
+
+          // unit vector to camera
+          const Vec2 pix_disto = intrinsic.project(camPose.getTransform(), ray, true);
+
+          if( pix_disto(0) < 0 || pix_disto(0) >= intrinsic.w() ||
+              pix_disto(1) < 0 || pix_disto(1) >= intrinsic.h())
+          {
+            //the pixel is out of the image
+            continue;
+          }
+
+          const float dist = std::sqrt((pix_disto(0)-center(0)) * (pix_disto(0)-center(0)) + (pix_disto(1)-center(1)) * (pix_disto(1)-center(1)));
+          if (dist > maxRadius * 0.8)
+          {
+            continue;
+          }
+
+          BufferCoords(y, x).r() = pix_disto(0);
+          BufferCoords(y, x).g() = pix_disto(1);
+          BufferCoords(y, x).a() = 1.0;
+        }
+      }
+
+      for(int y = 1; y < panoramaSize.second - 1; ++y)
+      {
+        for(int x = 1; x < panoramaSize.first - 1; ++x)
+        {
+          double x00 = BufferCoords(y, x).r();
+          double x10 = BufferCoords(y, x + 1).r();
+          double x01 = BufferCoords(y + 1, x).r();
+          
+          double y00 = BufferCoords(y, x).g();
+          double y10 = BufferCoords(y, x + 1).g();
+          double y01 = BufferCoords(y + 1, x).g();
+
+          double m00 = BufferCoords(y, x).a();
+          double m10 = BufferCoords(y, x + 1).a();
+          double m01 = BufferCoords(y + 1, x).a();
+
+          if (m00 != 1.0 || m10  != 1.0 || m01 != 1.0) {
+            continue;
+          }
+
+          double dxx = x10 - x00;
+          double dxy = x01 - x00;
+          double dyx = y10 - y00;
+          double dyy = y01 - y00;
+
+          float det = std::abs(dxx*dyy - dxy*dyx);
+          determinants.push_back(det);
+        }
+      }
+    }
+
+    std::nth_element(determinants.begin(), determinants.begin() + determinants.size() / 5, determinants.end());
+    double scale = sqrt(determinants[determinants.size() / 5]);
+    
+    panoramaSize.first *= scale;
+    panoramaSize.second *= scale;
+  }
+
+  return true;
+}
+
 int main(int argc, char **argv)
 {
   // command-line parameters
@@ -172,40 +274,7 @@ int main(int argc, char **argv)
 
   if(panoramaSize.first == 0 || panoramaSize.second == 0)
   {
-    sfmData::EEXIFOrientation orientation = sfmData.getView(*validViews.begin()).getMetadataOrientation();
-    if(panoramaSize.first != 0 || panoramaSize.second != 0)
-    {
-      int s = std::max(panoramaSize.first, panoramaSize.second);
-      panoramaSize.first = panoramaSize.second = s;
-    }
-    else
-    {
-      ALICEVISION_LOG_INFO("Automatic panorama size choice.");
-      // TODO: better heuristic to decide the output resolution
-      panoramaSize.first = 0;
-      for(auto& viewIt: sfmData.getViews())
-      {
-        IndexT viewId = viewIt.first;
-        const sfmData::View& view = *viewIt.second.get();
-        if(!sfmData.isPoseAndIntrinsicDefined(&view))
-          continue;
-
-        if(orientation == sfmData::EEXIFOrientation::RIGHT ||
-           orientation == sfmData::EEXIFOrientation::LEFT ||
-           orientation == sfmData::EEXIFOrientation::RIGHT_REVERSED ||
-           orientation == sfmData::EEXIFOrientation::LEFT_REVERSED)
-        {
-            panoramaSize.first += view.getHeight();
-            panoramaSize.second = std::max(panoramaSize.second, int(view.getWidth()));
-        }
-        else
-        {
-            panoramaSize.first += view.getWidth();
-            panoramaSize.second = std::max(panoramaSize.second, int(view.getHeight()));
-        }
-        ALICEVISION_LOG_INFO("Update output panorama size: " << panoramaSize.first << ", " << panoramaSize.second);
-      }
-    }
+    estimate_panorama_size(sfmData, fisheyeMasking, panoramaSize);
   }
 
   panoramaSize.first *= scaleFactor;
