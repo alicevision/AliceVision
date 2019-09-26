@@ -398,15 +398,27 @@ bool ReconstructionEngine_panorama::Adjust()
   options.useParametersOrdering = false;
   options.summary = true;
   
+  /*Minimize only rotation first*/
   BundleAdjustmentCeres BA(options);
-  bool success = BA.adjust(_sfmData, BundleAdjustment::REFINE_ROTATION | BundleAdjustment::REFINE_INTRINSICS_FOCAL | BundleAdjustment::REFINE_INTRINSICS_OPTICALCENTER_IF_ENOUGH_DATA);
+  bool success = BA.adjust(_sfmData, BundleAdjustment::REFINE_ROTATION);
   if(success)
   {
-    ALICEVISION_LOG_DEBUG("Rotations successfully refined.");
+    ALICEVISION_LOG_INFO("Rotations successfully refined.");
   }
   else
   {
-    ALICEVISION_LOG_DEBUG("Failed to refine the rotations only.");
+    ALICEVISION_LOG_INFO("Failed to refine the rotations only.");
+  }
+
+  /*Minimize All then*/
+  success = BA.adjust(_sfmData, BundleAdjustment::REFINE_ROTATION | BundleAdjustment::REFINE_INTRINSICS_ALL);
+  if(success)
+  {
+    ALICEVISION_LOG_INFO("Bundle successfully refined.");
+  }
+  else
+  {
+    ALICEVISION_LOG_INFO("Failed to refine Everything.");
   }
 
   return success;

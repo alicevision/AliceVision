@@ -288,6 +288,7 @@ private:
   /// rig sub-poses blocks wrapper
   /// block: ceres angleAxis(3) + translation(3)
   HashMap<IndexT, HashMap<IndexT, std::array<double,6>>> _rigBlocks;
+
 };
 
 } // namespace sfm

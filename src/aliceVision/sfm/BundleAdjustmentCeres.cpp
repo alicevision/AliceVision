@@ -90,14 +90,12 @@ ceres::CostFunction* createRigCostFunctionFromIntrinsics(const IntrinsicBase* in
  */
 ceres::CostFunction* createConstraintsCostFunctionFromIntrinsics(const IntrinsicBase* intrinsicPtr, const Vec2& observation_first, const Vec2& observation_second)
 {
-    
-
   switch(intrinsicPtr->getType())
   {
     case PINHOLE_CAMERA:
       return new ceres::AutoDiffCostFunction<ResidualErrorConstraintFunctor_Pinhole, 2, 3, 6, 6>(new ResidualErrorConstraintFunctor_Pinhole(observation_first.homogeneous(), observation_second.homogeneous()));
-    /*case PINHOLE_CAMERA:
-      return new ceres::AutoDiffCostFunction<ResidualErrorConstraintFunctor_Pinhole, 2, 3, 6, 6>(new ResidualErrorConstraintFunctor_PinholeRadialK1(observation_first.homogeneous(), observation_second.homogeneous()));*/
+    case PINHOLE_CAMERA_RADIAL1:
+      return new ceres::AutoDiffCostFunction<ResidualErrorConstraintFunctor_PinholeRadialK1, 2, 4, 6, 6>(new ResidualErrorConstraintFunctor_PinholeRadialK1(observation_first.homogeneous(), observation_second.homogeneous()));
     default:
       throw std::logic_error("Cannot create cost function, unrecognized intrinsic type in BA.");
   }
@@ -271,6 +269,7 @@ void BundleAdjustmentCeres::setSolverOptions(ceres::Solver::Options& solverOptio
   solverOptions.minimizer_progress_to_stdout = _ceresOptions.verbose;
   solverOptions.logging_type = ceres::SILENT;
   solverOptions.num_threads = _ceresOptions.nbThreads;
+  
 #if CERES_VERSION_MAJOR < 2
   solverOptions.num_linear_solver_threads = _ceresOptions.nbThreads;
 #endif
@@ -627,7 +626,6 @@ void BundleAdjustmentCeres::addConstraints2DToProblem(const sfmData::SfMData& sf
     assert(intrinsicBlockPtr_1 == intrinsicBlockPtr_2);
 
     ceres::CostFunction* costFunction = createConstraintsCostFunctionFromIntrinsics(sfmData.getIntrinsicPtr(view_1.getIntrinsicId()), constraint.ObservationFirst.x, constraint.ObservationSecond.x);
-
     problem.AddResidualBlock(costFunction, lossFunction, intrinsicBlockPtr_1, poseBlockPtr_1, poseBlockPtr_2);
   }
 }
