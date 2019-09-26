@@ -17,6 +17,7 @@
 #include <sstream>
 #include <vector>
 
+
 // These constants define the current software version.
 // They must be updated when the command line is changed.
 #define ALICEVISION_SOFTWARE_VERSION_MAJOR 1
@@ -35,6 +36,7 @@ enum class EAlignmentMethod: unsigned char
   , AUTO_FROM_CAMERAS
   , AUTO_FROM_LANDMARKS
   , FROM_SINGLE_CAMERA
+  , FROM_MARKERS
 };
 
 /**
@@ -50,6 +52,7 @@ std::string EAlignmentMethod_enumToString(EAlignmentMethod alignmentMethod)
     case EAlignmentMethod::AUTO_FROM_CAMERAS:   return "auto_from_cameras";
     case EAlignmentMethod::AUTO_FROM_LANDMARKS: return "auto_from_landmarks";
     case EAlignmentMethod::FROM_SINGLE_CAMERA:  return "from_single_camera";
+    case EAlignmentMethod::FROM_MARKERS:        return "from_markers";
   }
   throw std::out_of_range("Invalid EAlignmentMethod enum");
 }
@@ -67,9 +70,26 @@ EAlignmentMethod EAlignmentMethod_stringToEnum(const std::string& alignmentMetho
   if(method == "transformation")      return EAlignmentMethod::TRANSFOMATION;
   if(method == "auto_from_cameras")   return EAlignmentMethod::AUTO_FROM_CAMERAS;
   if(method == "auto_from_landmarks") return EAlignmentMethod::AUTO_FROM_LANDMARKS;
-  if(method == "from_single_camera")   return EAlignmentMethod::FROM_SINGLE_CAMERA;
+  if(method == "from_single_camera")  return EAlignmentMethod::FROM_SINGLE_CAMERA;
+  if(method == "from_markers")        return EAlignmentMethod::FROM_MARKERS;
   throw std::out_of_range("Invalid SfM alignment method : " + alignmentMethod);
 }
+
+
+inline std::istream& operator>>(std::istream& in, EAlignmentMethod& alignment)
+{
+    std::string token;
+    in >> token;
+    alignment = EAlignmentMethod_stringToEnum(token);
+    return in;
+}
+
+inline std::ostream& operator<<(std::ostream& os, EAlignmentMethod e)
+{
+    return os << EAlignmentMethod_enumToString(e);
+}
+
+
 
 static bool parseAlignScale(const std::string& alignScale, double& S, Mat3& R, Vec3& t)
 {
@@ -93,6 +113,7 @@ static bool parseAlignScale(const std::string& alignScale, double& S, Mat3& R, V
   return true;
 }
 
+
 int main(int argc, char **argv)
 {
   // command-line parameters
@@ -100,13 +121,18 @@ int main(int argc, char **argv)
   std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
   std::string sfmDataFilename;
   std::string outSfMDataFilename;
-  std::string alignmentMethodName;
+  EAlignmentMethod alignmentMethod = EAlignmentMethod::AUTO_FROM_CAMERAS;
+
 
   // user optional parameters
 
   std::string transform;
   std::string landmarksDescriberTypesName;
   double userScale = 1;
+  bool applyScale = true;
+  bool applyRotation = true;
+  bool applyTranslation = true;
+  std::vector<sfm::MarkerWithCoord> markers;
 
   po::options_description allParams("AliceVision sfmTransform");
 
@@ -115,15 +141,17 @@ int main(int argc, char **argv)
     ("input,i", po::value<std::string>(&sfmDataFilename)->required(),
       "SfMData file to align.")
     ("output,o", po::value<std::string>(&outSfMDataFilename)->required(),
-      "Output SfMData scene.")
-    ("method", po::value<std::string>(&alignmentMethodName)->required(),
-      "Transform method:\n"
-      "\t- transformation: Apply a given transformation\n"
-      "\t- auto_from_cameras: Use cameras\n"
-      "\t- auto_from_landmarks: Use landmarks\n");
+      "Output SfMData scene.");
 
   po::options_description optionalParams("Optional parameters");
   optionalParams.add_options()
+    ("method", po::value<EAlignmentMethod>(&alignmentMethod)->default_value(alignmentMethod),
+        "Transform Method:\n"
+        "\t- transformation: Apply a given transformation\n"
+        "\t- auto_from_cameras: Use cameras\n"
+        "\t- auto_from_landmarks: Use landmarks\n"
+        "\t- from_single_camera: Use camera specified by --tranformation\n"
+        "\t- from_markers: Use markers specified by --markers\n")
     ("transformation", po::value<std::string>(&transform)->default_value(transform),
       "required only for 'transformation' and 'single camera' methods:\n"
       "Transformation: Align [X,Y,Z] to +Y-axis, rotate around Y by R deg, scale by S; syntax: X,Y,Z;R;S\n"
@@ -134,7 +162,16 @@ int main(int argc, char **argv)
       "Use all of them if empty\n"
       + feature::EImageDescriberType_informations()).c_str())
     ("scale", po::value<double>(&userScale)->default_value(userScale),
-      "Additional scale to apply.");
+      "Additional scale to apply.")
+    ("applyScale", po::value<bool>(&applyScale)->default_value(applyScale),
+        "Apply scale transformation.")
+    ("applyRotation", po::value<bool>(&applyRotation)->default_value(applyRotation),
+        "Apply rotation transformation.")
+    ("applyTranslation", po::value<bool>(&applyTranslation)->default_value(applyTranslation),
+        "Apply translation transformation.")
+    ("markers", po::value<std::vector<sfm::MarkerWithCoord>>(&markers)->multitoken(),
+        "Markers ID and target coordinates 'ID:x,y,z'.")
+    ;
 
   po::options_description logParams("Log parameters");
   logParams.add_options()
@@ -174,9 +211,6 @@ int main(int argc, char **argv)
   // set verbose level
   system::Logger::get()->setLogLevel(verboseLevel);
 
-  // set alignment method
-  const EAlignmentMethod alignmentMethod = EAlignmentMethod_stringToEnum(alignmentMethodName);
-
   if(transform.empty() && (
      alignmentMethod == EAlignmentMethod::TRANSFOMATION ||
      alignmentMethod == EAlignmentMethod::FROM_SINGLE_CAMERA)
@@ -184,6 +218,12 @@ int main(int argc, char **argv)
   {
     ALICEVISION_LOG_ERROR("Missing --transformation option");
     return EXIT_FAILURE;
+  }
+
+  if (alignmentMethod == EAlignmentMethod::FROM_MARKERS && markers.empty())
+  {
+      ALICEVISION_LOG_ERROR("Missing --markers option");
+      return EXIT_FAILURE;
   }
 
   // Load input scene
@@ -219,22 +259,68 @@ int main(int argc, char **argv)
     break;
 
     case EAlignmentMethod::FROM_SINGLE_CAMERA:
-      sfm::computeNewCoordinateSystemFromSingleCamera(sfmDataIn,transform, S, R, t);
+      sfm::computeNewCoordinateSystemFromSingleCamera(sfmDataIn, transform, S, R, t);
     break;
-  }
 
-  {
-    std::stringstream ss;
-    ss << "Transformation:" << std::endl;
-    ss << "\t- Scale: " << S << std::endl;
-    ss << "\t- Rotation:\n" << R << std::endl;
-    ss << "\t- Translate: " << t.transpose() << std::endl;
-    ALICEVISION_LOG_INFO(ss.str());
+    case EAlignmentMethod::FROM_MARKERS:
+    {
+        std::vector<feature::EImageDescriberType> markersDescTypes = {
+#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_CCTAG)
+            feature::EImageDescriberType::CCTAG3, feature::EImageDescriberType::CCTAG4
+#endif
+        };
+        std::set<feature::EImageDescriberType> usedDescTypes = sfmDataIn.getLandmarkDescTypes();
+
+        std::vector<feature::EImageDescriberType> usedMarkersDescTypes;
+        std::set_intersection(
+            usedDescTypes.begin(), usedDescTypes.end(),
+            markersDescTypes.begin(), markersDescTypes.end(),
+            std::back_inserter(usedMarkersDescTypes)
+        );
+        std::vector<feature::EImageDescriberType> inDescTypes = feature::EImageDescriberType_stringToEnums(landmarksDescriberTypesName);
+
+        std::vector<feature::EImageDescriberType> vDescTypes;
+        std::set_intersection(
+            usedMarkersDescTypes.begin(), usedMarkersDescTypes.end(),
+            inDescTypes.begin(), inDescTypes.end(),
+            std::back_inserter(vDescTypes)
+            );
+        if (vDescTypes.size() != 1)
+        {
+            ALICEVISION_LOG_ERROR("Alignment from markers: Invalid number of image describer types: " << vDescTypes.size());
+            for (auto d : vDescTypes)
+            {
+                ALICEVISION_LOG_ERROR(" - " << feature::EImageDescriberType_enumToString(d));
+            }
+            return EXIT_FAILURE;
+        }
+        const bool success = sfm::computeNewCoordinateSystemFromSpecificMarkers(sfmDataIn, vDescTypes.front(), markers, applyScale, S, R, t);
+        if (!success)
+        {
+            ALICEVISION_LOG_ERROR("Failed to find a valid transformation for these " << markers.size() << " markers.");
+            return EXIT_FAILURE;
+        }
+        break;
+    }
   }
 
   // apply user scale
   S *= userScale;
   t *= userScale;
+
+  if (!applyScale)
+      S = 1;
+  if (!applyRotation)
+      R = Mat3::Identity();
+  if (!applyTranslation)
+      t = Vec3::Zero();
+
+  {
+      ALICEVISION_LOG_INFO("Transformation:" << std::endl
+          << "\t- Scale: " << S << std::endl
+          << "\t- Rotation:\n" << R << std::endl
+          << "\t- Translate: " << t.transpose());
+  }
 
   sfm::applyTransform(sfmDataIn, S, R, t);
 

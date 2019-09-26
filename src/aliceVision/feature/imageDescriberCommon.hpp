@@ -67,6 +67,15 @@ EImageDescriberType EImageDescriberType_stringToEnum(const std::string& imageDes
   */
 std::vector<EImageDescriberType> EImageDescriberType_stringToEnums(const std::string& describerMethods);
 
+inline bool isMarker(EImageDescriberType imageDescriberType)
+{
+#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_CCTAG)
+    return imageDescriberType == EImageDescriberType::CCTAG3 || imageDescriberType == EImageDescriberType::CCTAG4;
+#else
+    return false;
+#endif
+}
+
 /**
  * @brief getStrongSupportCoeff
  * @param imageDescriberType
