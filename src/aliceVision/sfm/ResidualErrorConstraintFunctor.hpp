@@ -252,5 +252,182 @@ struct ResidualErrorConstraintFunctor_PinholeRadialK1
 };
 
 
+/**
+ * @brief Ceres functor to use a pair of fisheye on a pure rotation 2D constraint.
+ *
+ *  Data parameter blocks are the following <2,7,6,6>
+ *  - 2 => dimension of the residuals,
+ *  - 4 => the intrinsic data block for the first view ,
+ *  - 3 => the camera extrinsic data block for the first view 
+ *  - 3 => the camera extrinsic data block for the second view 
+ *
+ */
+
+struct ResidualErrorConstraintFunctor_PinholeFisheye
+{
+  ResidualErrorConstraintFunctor_PinholeFisheye(const Vec3 & pos_2dpoint_first, const Vec3 & pos_2dpoint_second) 
+  : m_pos_2dpoint_first(pos_2dpoint_first), m_pos_2dpoint_second(pos_2dpoint_second)
+  {
+  }
+
+  enum {
+    OFFSET_FOCAL_LENGTH = 0,
+    OFFSET_PRINCIPAL_POINT_X = 1,
+    OFFSET_PRINCIPAL_POINT_Y = 2,
+    OFFSET_DISTO_K1 = 3,
+    OFFSET_DISTO_K2 = 4,
+    OFFSET_DISTO_K3 = 5,
+    OFFSET_DISTO_K4 = 6,
+  };
+
+  template <typename T>
+  void lift(const T* const cam_K, const Vec3 pt, Eigen::Vector<T, 3> & out) const
+  {
+    const T& focal = cam_K[OFFSET_FOCAL_LENGTH];
+    const T& principal_point_x = cam_K[OFFSET_PRINCIPAL_POINT_X];
+    const T& principal_point_y = cam_K[OFFSET_PRINCIPAL_POINT_Y];
+    const T& k1 = cam_K[OFFSET_DISTO_K1];
+    const T& k2 = cam_K[OFFSET_DISTO_K2];
+    const T& k3 = cam_K[OFFSET_DISTO_K3];
+    const T& k4 = cam_K[OFFSET_DISTO_K4];
+
+    //Unshift then unscale back to meters
+    T xd = (pt(0) - principal_point_x) / focal;
+    T yd = (pt(1) - principal_point_y) / focal;
+    T distorted_radius = sqrt(xd*xd + yd*yd);
+    
+    /*A hack to obtain undistorted point even if using automatic diff*/
+    double xd_real, yd_real, k1_real, k2_real, k3_real, k4_real; 
+    xd_real = getJetValue<T>(xd);
+    yd_real = getJetValue<T>(yd);
+    k1_real = getJetValue<T>(k1);
+    k2_real = getJetValue<T>(k2);
+    k3_real = getJetValue<T>(k3);
+    k4_real = getJetValue<T>(k4);
+
+    double scale = 1.0;
+    {
+      const double eps = 1e-8;
+      const double theta_dist = sqrt(xd_real * xd_real + yd_real * yd_real);
+      if (theta_dist > eps)
+      {
+        double theta = theta_dist;
+        for (int j = 0; j < 10; ++j)
+        {
+          const double theta2 = theta*theta;
+          const double theta4 = theta2*theta2;
+          const double theta6 = theta4*theta2;
+          const double theta8 = theta6*theta2;
+          
+          double theta_fix = (theta * (1.0 + k1_real * theta2 + k2_real * theta4 + k3_real * theta6 + k4_real * theta8) - theta_dist) / (1.0 + 3.0 * k1_real * theta2 + 5.0 * k2_real * theta4 + 7.0 * k3_real * theta6 + 9.0 *k4_real * theta8);
+
+          theta = theta - theta_fix;
+        }
+    
+        scale = std::tan(theta);
+      }
+    }
+
+    if (distorted_radius < 1e-12) {
+      out(0) = xd;
+      out(1) = yd;
+      out(2) = static_cast<T>(1.0);
+    }
+    else {
+      out(0) = (xd / distorted_radius) * static_cast<T>(scale);
+      out(1) = (yd / distorted_radius) * static_cast<T>(scale);    
+      out(2) = static_cast<T>(1.0);
+    }
+  }
+
+  template <typename T>
+  void unlift(const T* const cam_K, const Eigen::Vector<T, 3> & pt, Eigen::Vector<T, 3> & out) const
+  {
+    const T& focal = cam_K[OFFSET_FOCAL_LENGTH];
+    const T& principal_point_x = cam_K[OFFSET_PRINCIPAL_POINT_X];
+    const T& principal_point_y = cam_K[OFFSET_PRINCIPAL_POINT_Y];
+    const T& k1 = cam_K[OFFSET_DISTO_K1];
+    const T& k2 = cam_K[OFFSET_DISTO_K2];
+    const T& k3 = cam_K[OFFSET_DISTO_K3];
+    const T& k4 = cam_K[OFFSET_DISTO_K4];
+
+    //Project on plane
+    Eigen::Vector<T, 3> proj_pt = pt / pt(2);
+
+    //Apply distortion
+    const T x_u = proj_pt(0);
+    const T y_u = proj_pt(1);
+    const T dist = sqrt(x_u*x_u + y_u*y_u);
+    const T theta = atan(dist);
+    const T theta2 = theta*theta;
+    const T theta3 = theta2*theta;
+    const T theta4 = theta2*theta2;
+    const T theta5 = theta4*theta;
+    const T theta6 = theta3*theta3;
+    const T theta7 = theta6*theta;
+    const T theta8 = theta4*theta4;
+    const T theta9 = theta8*theta;
+
+    const T theta_dist = theta + k1*theta3 + k2*theta5 + k3*theta7 + k4*theta9;
+
+    const T inv_r = dist > T(1e-8) ? T(1.0)/dist : T(1.0);
+    const T cdist = dist > T(1e-8) ? theta_dist * inv_r : T(1);
+
+    const T x_d = x_u * cdist;
+    const T y_d = y_u * cdist;
+
+    //Scale and shift
+    out(0) = x_d * focal + principal_point_x;
+    out(1) = y_d * focal + principal_point_y;
+    out(2) = static_cast<T>(1.0);
+  }
+
+  /**
+   * @param[in] cam_K: Camera intrinsics( focal, principal point [x,y] )
+   * @param[in] cam_Rt: Camera parameterized using one block of 6 parameters [R;t]:
+   *   - 3 for rotation(angle axis), 3 for translation
+   * @param[in] pos_3dpoint
+   * @param[out] out_residuals
+   */
+  template <typename T>
+  bool operator()(
+    const T* const cam_K,
+    const T* const cam_R1,
+    const T* const cam_R2,
+    T* out_residuals) const
+  {
+    Eigen::Matrix<T, 3, 3> oneRo, twoRo, twoRone;
+    
+    Eigen::Vector<T, 3> pt3d_1;
+
+    //From pixel to meters
+    lift(cam_K, m_pos_2dpoint_first, pt3d_1);
+
+    //Build relative rotation
+    ceres::AngleAxisToRotationMatrix(cam_R1, oneRo.data());
+    ceres::AngleAxisToRotationMatrix(cam_R2, twoRo.data());
+    twoRone = twoRo * oneRo.transpose();
+
+    //Transform point
+    Eigen::Vector<T, 3> pt3d_2_est = twoRone * pt3d_1;
+
+    //Project back to image space in pixels
+    Eigen::Vector<T, 3> pt2d_2_est;
+    unlift(cam_K, pt3d_2_est, pt2d_2_est);
+
+    //Compute residual
+    Eigen::Vector<T, 3> residual = pt2d_2_est - m_pos_2dpoint_second;
+
+    out_residuals[0] = residual(0);
+    out_residuals[1] = residual(1);
+
+    return true;
+  }
+
+  Vec3 m_pos_2dpoint_first; // The 2D observation in first view
+  Vec3 m_pos_2dpoint_second; // The 2D observation in second view
+};
+
+
 } // namespace sfm
 } // namespace aliceVision

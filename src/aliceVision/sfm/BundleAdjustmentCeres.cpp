@@ -96,6 +96,8 @@ ceres::CostFunction* createConstraintsCostFunctionFromIntrinsics(const Intrinsic
       return new ceres::AutoDiffCostFunction<ResidualErrorConstraintFunctor_Pinhole, 2, 3, 6, 6>(new ResidualErrorConstraintFunctor_Pinhole(observation_first.homogeneous(), observation_second.homogeneous()));
     case PINHOLE_CAMERA_RADIAL1:
       return new ceres::AutoDiffCostFunction<ResidualErrorConstraintFunctor_PinholeRadialK1, 2, 4, 6, 6>(new ResidualErrorConstraintFunctor_PinholeRadialK1(observation_first.homogeneous(), observation_second.homogeneous()));
+    case PINHOLE_CAMERA_FISHEYE:
+      return new ceres::AutoDiffCostFunction<ResidualErrorConstraintFunctor_PinholeFisheye, 2, 7, 6, 6>(new ResidualErrorConstraintFunctor_PinholeFisheye(observation_first.homogeneous(), observation_second.homogeneous()));
     default:
       throw std::logic_error("Cannot create cost function, unrecognized intrinsic type in BA.");
   }

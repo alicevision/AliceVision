@@ -99,6 +99,14 @@ class PinholeFisheye : public Pinhole
   {
     return cam2ima( add_disto(ima2cam(p)) );
   }
+
+  virtual bool isVisibleRay(const Vec3 & ray) const override {
+    if (ray(2) < 0.0) {
+      return false;
+    }
+    
+    return true;
+  }
 };
 
 } // namespace camera
