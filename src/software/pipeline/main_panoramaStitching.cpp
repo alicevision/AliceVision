@@ -274,7 +274,7 @@ int main(int argc, char **argv)
 
   if(panoramaSize.first == 0 || panoramaSize.second == 0)
   {
-    estimate_panorama_size(sfmData, fisheyeMasking, panoramaSize);
+    estimate_panorama_size(sfmData, fisheyeMaskingMargin, panoramaSize);
   }
 
   panoramaSize.first *= scaleFactor;
@@ -331,11 +331,11 @@ int main(int argc, char **argv)
       for(int x = 0; x < imageOut.Width(); ++x)
       {
         // equirectangular to unit vector
-        Vec3 ray = SphericalMapping::get3DPoint(Vec2(x,y), imageOut.Width(), imageOut.Height());
+        Vec3 ray = SphericalMapping::get3DPoint(Vec2(x,y), imageOut.Width(), imageOut.Height());       
 
-        if(camPose.getTransform().depth(ray) < 0)
-        {
-          // point is not in front of the camera
+        //Check that this ray should be visible
+        Vec3 transformedRay = camPose.getTransform()(ray);
+        if (!intrinsic.isVisibleRay(transformedRay)) {
           continue;
         }
 
@@ -363,6 +363,8 @@ int main(int argc, char **argv)
               contribution = sigmoid(dist, transitionSize, blurMid);
           }
         }
+
+        
 
         const image::RGBfColor pixel = sampler(imageIn, pix_disto(1), pix_disto(0));
         if(contribution > 0.0f)

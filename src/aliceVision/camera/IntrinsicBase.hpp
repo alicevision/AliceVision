@@ -350,6 +350,12 @@ struct IntrinsicBase
   }
 
   /**
+   * @brief Return true if this ray should be visible in the image
+   * @return true if this ray is visible theorically
+   */
+  virtual bool isVisibleRay(const Vec3 & ray) const = 0;
+
+  /**
    * @brief Generate an unique Hash from the camera parameters (used for grouping)
    * @return Unique Hash from the camera parameters
    */

@@ -60,15 +60,15 @@ class PinholeRadialK1 : public Pinhole
   {
   }
 
-  PinholeRadialK1* clone() const { return new PinholeRadialK1(*this); }
-  void assign(const IntrinsicBase& other) { *this = dynamic_cast<const PinholeRadialK1&>(other); }
+  PinholeRadialK1* clone() const override { return new PinholeRadialK1(*this); }
+  void assign(const IntrinsicBase& other) override { *this = dynamic_cast<const PinholeRadialK1&>(other); }
 
-  EINTRINSIC getType() const { return PINHOLE_CAMERA_RADIAL1; }
+  EINTRINSIC getType() const override { return PINHOLE_CAMERA_RADIAL1; }
 
-  virtual bool have_disto() const {  return true; }
+  virtual bool have_disto() const override {  return true; }
 
   /// Add distortion to the point p (assume p is in the camera frame [normalized coordinates])
-  virtual Vec2 add_disto(const Vec2 & p) const {
+  virtual Vec2 add_disto(const Vec2 & p) const override{
 
     const double k1 = _distortionParams.at(0);
 
@@ -79,7 +79,7 @@ class PinholeRadialK1 : public Pinhole
   }
 
   /// Remove distortion (return p' such that disto(p') = p)
-  virtual Vec2 remove_disto(const Vec2& p) const {
+  virtual Vec2 remove_disto(const Vec2& p) const override {
     // Compute the radius from which the point p comes from thanks to a bisection
     // Minimize disto(radius(p')^2) == actual Squared(radius(p))
 
@@ -91,17 +91,18 @@ class PinholeRadialK1 : public Pinhole
   }
 
   /// Return the un-distorted pixel (with removed distortion)
-  virtual Vec2 get_ud_pixel(const Vec2& p) const
+  virtual Vec2 get_ud_pixel(const Vec2& p) const override
   {
     return cam2ima( remove_disto(ima2cam(p)) );
   }
 
   /// Return the distorted pixel (with added distortion)
-  virtual Vec2 get_d_pixel(const Vec2& p) const
+  virtual Vec2 get_d_pixel(const Vec2& p) const override
   {
     return cam2ima( add_disto(ima2cam(p)) );
   }
 
+ 
   private:
 
   /// Functor to solve Square(disto(radius(p'))) = r^2
