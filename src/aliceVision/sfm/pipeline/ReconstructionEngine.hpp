@@ -15,6 +15,9 @@
 namespace aliceVision {
 namespace sfm {
 
+void retrieveMarkersId(sfmData::SfMData& sfmData);
+
+
 /**
  * @brief Basic Reconstruction Engine.
  * Process Function handle the reconstruction.
@@ -68,12 +71,18 @@ public:
     sfmData::colorizeTracks(_sfmData);
   }
 
+  void retrieveMarkersId()
+  {
+      aliceVision::sfm::retrieveMarkersId(_sfmData);
+  }
+
 protected:
   /// Output folder where outputs will be stored
   std::string _outputFolder;
   /// Internal SfMData
   sfmData::SfMData _sfmData;
 };
+
 
 } // namespace sfm
 } // namespace aliceVision

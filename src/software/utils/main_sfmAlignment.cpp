@@ -26,6 +26,69 @@ using namespace aliceVision::sfm;
 
 namespace po = boost::program_options;
 
+
+/**
+* @brief Alignment method enum
+*/
+enum class EAlignmentMethod : unsigned char
+{
+    FROM_CAMERAS_VIEWID = 0
+    , FROM_CAMERAS_POSEID
+    , FROM_CAMERAS_FILEPATH
+    , FROM_CAMERAS_METADATA
+    , FROM_MARKERS
+};
+
+/**
+* @brief Convert an EAlignmentMethod enum to its corresponding string
+* @param[in] alignmentMethod The given EAlignmentMethod enum
+* @return string
+*/
+std::string EAlignmentMethod_enumToString(EAlignmentMethod alignmentMethod)
+{
+    switch (alignmentMethod)
+    {
+    case EAlignmentMethod::FROM_CAMERAS_VIEWID:   return "from_cameras_viewid";
+    case EAlignmentMethod::FROM_CAMERAS_POSEID:   return "from_cameras_poseid";
+    case EAlignmentMethod::FROM_CAMERAS_FILEPATH: return "from_cameras_filepath";
+    case EAlignmentMethod::FROM_CAMERAS_METADATA: return "from_cameras_metadata";
+    case EAlignmentMethod::FROM_MARKERS:          return "from_markers";
+    }
+    throw std::out_of_range("Invalid EAlignmentMethod enum");
+}
+
+/**
+* @brief Convert a string to its corresponding EAlignmentMethod enum
+* @param[in] alignmentMethod The given string
+* @return EAlignmentMethod enum
+*/
+EAlignmentMethod EAlignmentMethod_stringToEnum(const std::string& alignmentMethod)
+{
+    std::string method = alignmentMethod;
+    std::transform(method.begin(), method.end(), method.begin(), ::tolower); //tolower
+
+    if (method == "from_cameras_viewid")   return EAlignmentMethod::FROM_CAMERAS_VIEWID;
+    if (method == "from_cameras_poseid")   return EAlignmentMethod::FROM_CAMERAS_POSEID;
+    if (method == "from_cameras_filepath") return EAlignmentMethod::FROM_CAMERAS_FILEPATH;
+    if (method == "from_cameras_metadata") return EAlignmentMethod::FROM_CAMERAS_METADATA;
+    if (method == "from_markers")          return EAlignmentMethod::FROM_MARKERS;
+    throw std::out_of_range("Invalid SfM alignment method : " + alignmentMethod);
+}
+
+inline std::istream& operator>>(std::istream& in, EAlignmentMethod& alignment)
+{
+    std::string token;
+    in >> token;
+    alignment = EAlignmentMethod_stringToEnum(token);
+    return in;
+}
+
+inline std::ostream& operator<<(std::ostream& os, EAlignmentMethod e)
+{
+    return os << EAlignmentMethod_enumToString(e);
+}
+
+
 int main(int argc, char **argv)
 {
   // command-line parameters
@@ -34,6 +97,12 @@ int main(int argc, char **argv)
   std::string sfmDataFilename;
   std::string outSfMDataFilename;
   std::string sfmDataReferenceFilename;
+  bool applyScale = true;
+  bool applyRotation = true;
+  bool applyTranslation = true;
+  EAlignmentMethod alignmentMethod = EAlignmentMethod::FROM_CAMERAS_VIEWID;
+  std::string fileMatchingPattern;
+  std::vector<std::string> metadataMatchingList = {"Make", "Model", "Exif:BodySerialNumber" , "Exif:LensSerialNumber" };
 
   po::options_description allParams("AliceVision sfmAlignment");
 
@@ -46,12 +115,33 @@ int main(int argc, char **argv)
     ("reference,r", po::value<std::string>(&sfmDataReferenceFilename)->required(),
       "Path to the scene used as the reference coordinate system.");
 
+  po::options_description optionalParams("Optional parameters");
+  optionalParams.add_options()
+    ("method", po::value<EAlignmentMethod>(&alignmentMethod)->default_value(alignmentMethod),
+        "Alignment Method:\n"
+        "\t- from_cameras_viewid: Align cameras with same view Id\n"
+        "\t- from_cameras_poseid: Align cameras with same pose Id\n"
+        "\t- from_cameras_filepath: Align cameras with a filepath matching, using --fileMatchingPattern\n"
+        "\t- from_cameras_metadata: Align cameras with matching metadata, using --metadataMatchingList\n"
+        "\t- from_markers: Align from markers with the same Id\n")
+    ("fileMatchingPattern", po::value<std::string>(&fileMatchingPattern)->default_value(fileMatchingPattern),
+        "Matching pattern for the from_cameras_filepath method.\n")
+    ("metadataMatchingList", po::value<std::vector<std::string>>(&metadataMatchingList)->multitoken()->default_value(metadataMatchingList),
+        "List of metadata that should match to create the correspondences.\n")
+    ("applyScale", po::value<bool>(&applyScale)->default_value(applyScale),
+      "Apply scale transformation.")
+    ("applyRotation", po::value<bool>(&applyRotation)->default_value(applyRotation),
+      "Apply rotation transformation.")
+    ("applyTranslation", po::value<bool>(&applyTranslation)->default_value(applyTranslation),
+      "Apply translation transformation.")
+    ;
+
   po::options_description logParams("Log parameters");
   logParams.add_options()
     ("verboseLevel,v", po::value<std::string>(&verboseLevel)->default_value(verboseLevel),
       "verbosity level (fatal,  error, warning, info, debug, trace).");
 
-  allParams.add(requiredParams).add(logParams);
+  allParams.add(requiredParams).add(optionalParams).add(logParams);
 
   po::variables_map vm;
   try
@@ -105,7 +195,36 @@ int main(int argc, char **argv)
   double S;
   Mat3 R;
   Vec3 t;
-  bool hasValidSimilarity = sfm::computeSimilarity(sfmDataIn, sfmDataInRef, &S, &R, &t);
+  bool hasValidSimilarity = false;
+  
+  switch(alignmentMethod)
+  {
+    case EAlignmentMethod::FROM_CAMERAS_VIEWID:
+    {
+      hasValidSimilarity = sfm::computeSimilarityFromCommonCameras_viewId(sfmDataIn, sfmDataInRef, &S, &R, &t);
+      break;
+    }
+    case EAlignmentMethod::FROM_CAMERAS_POSEID:
+    {
+      hasValidSimilarity = sfm::computeSimilarityFromCommonCameras_poseId(sfmDataIn, sfmDataInRef, &S, &R, &t);
+      break;
+    }
+    case EAlignmentMethod::FROM_CAMERAS_FILEPATH:
+    {
+      hasValidSimilarity = sfm::computeSimilarityFromCommonCameras_imageFileMatching(sfmDataIn, sfmDataInRef, fileMatchingPattern, &S, &R, &t);
+      break;
+    }
+    case EAlignmentMethod::FROM_CAMERAS_METADATA:
+    {
+      hasValidSimilarity = sfm::computeSimilarityFromCommonCameras_metadataMatching(sfmDataIn, sfmDataInRef, metadataMatchingList, &S, &R, &t);
+      break;
+    }
+    case EAlignmentMethod::FROM_MARKERS:
+    {
+      hasValidSimilarity = sfm::computeSimilarityFromCommonMarkers(sfmDataIn, sfmDataInRef, &S, &R, &t);
+      break;
+    }
+  }
 
   if(!hasValidSimilarity)
   {
@@ -125,6 +244,13 @@ int main(int argc, char **argv)
     ss << "\t- Translate: " << t.transpose() << std::endl;
     ALICEVISION_LOG_INFO(ss.str());
   }
+
+  if (!applyScale)
+      S = 1;
+  if (!applyRotation)
+      R = Mat3::Identity();
+  if (!applyTranslation)
+      t = Vec3::Zero();
 
   sfm::applyTransform(sfmDataIn, S, R, t);
 

@@ -881,6 +881,9 @@ void Texturing::loadFromOBJ(const std::string& filename, bool flipNormals)
 
 void Texturing::remapVisibilities(EVisibilityRemappingMethod remappingMethod, const Mesh& refMesh, const mesh::PointsVisibility& refPointsVisibilities)
 {
+  if (refPointsVisibilities.empty())
+    throw std::runtime_error("Texturing: Cannot remap visibilities as there is no reference points.");
+
   assert(pointsVisibilities == nullptr);
   pointsVisibilities = new mesh::PointsVisibility();
 
