@@ -37,7 +37,7 @@ int main(int argc, char * argv[]) {
   requiredParams.add_options()
     ("config,c", po::value<std::string>(&externalInfoFilename)->required(), "External info xml file.")
     ("input,i", po::value<std::string>(&sfmInputDataFilename)->required(), "SfMData file input.")
-    ("output,o", po::value<std::string>(&sfmOutputDataFilename)->required(), "SfMData file output.")
+    ("outSfMDataFilename,o", po::value<std::string>(&sfmOutputDataFilename)->required(), "SfMData file output.")
     ;
 
   po::options_description optionalParams("Optional parameters");
@@ -120,24 +120,38 @@ int main(int argc, char * argv[]) {
       return EXIT_FAILURE;
     }
 
+    
+
+    
+
+    Eigen::AngleAxis<double> Fyaw(0, Eigen::Vector3d::UnitY());
+    Eigen::AngleAxis<double> Fpitch(M_PI_2, Eigen::Vector3d::UnitX());
+    Eigen::AngleAxis<double> Froll(M_PI_2, Eigen::Vector3d::UnitZ());
+    Eigen::Matrix3d oRi = Fyaw.toRotationMatrix() * Fpitch.toRotationMatrix() * Froll.toRotationMatrix();
+
     double yaw_degree = it.second.get<double>("position.<xmlattr>.yaw");
     double pitch_degree = it.second.get<double>("position.<xmlattr>.pitch");
     double roll_degree = it.second.get<double>("position.<xmlattr>.roll");
-
     double yaw = degreeToRadian(yaw_degree);
     double pitch = degreeToRadian(pitch_degree);
     double roll = degreeToRadian(roll_degree);
 
-    Eigen::AngleAxis<double> Myaw(yaw, Eigen::Vector3d::UnitZ());
-    Eigen::AngleAxis<double> Mpitch(pitch, Eigen::Vector3d::UnitY());
-    Eigen::AngleAxis<double> Mroll(roll, Eigen::Vector3d::UnitX());
+    Eigen::AngleAxis<double> Myaw(yaw, Eigen::Vector3d::UnitY());
+    Eigen::AngleAxis<double> Mpitch(pitch, Eigen::Vector3d::UnitX());
+    Eigen::AngleAxis<double> Mroll(roll, Eigen::Vector3d::UnitZ());
 
-    Eigen::Matrix3d R = Myaw.toRotationMatrix() * Mpitch.toRotationMatrix() * Mroll.toRotationMatrix();
+    Eigen::AngleAxis<double> Mimage(M_PI, Eigen::Vector3d::UnitZ());
 
-    rotations[id] = R;
+    Eigen::Matrix3d cRo =  Mimage.toRotationMatrix() * Mroll.toRotationMatrix() * Mpitch.toRotationMatrix() * Myaw.toRotationMatrix();
+    Eigen::Matrix3d iRo =  Mimage.toRotationMatrix() * Froll.toRotationMatrix() * Fpitch.toRotationMatrix() * Fyaw.toRotationMatrix();    
+    Eigen::Matrix3d cRi =  cRo * iRo.transpose();
+
+
+
+    rotations[id] = cRi;
   }
 
-  std::vector<std::pair<std::string, int>> names_with_id;
+  
 
   /**
    * Update sfm accordingly
@@ -159,6 +173,7 @@ int main(int argc, char * argv[]) {
    * The xml file describe rotations for view ids which are not correlated with Alicevision view id
    * Let assume that the order of xml views ids is the lexicographic order of the image names.
   */
+  std::vector<std::pair<std::string, int>> names_with_id;
   for (auto v : sfmData.getViews()) {
     names_with_id.push_back(std::make_pair(v.second->getImagePath(), v.first));
   }
@@ -169,9 +184,11 @@ int main(int argc, char * argv[]) {
 
     IndexT viewIdx = names_with_id[index].second;
 
-    sfmData::CameraPose pose(geometry::Pose3(item_rotation.second, Eigen::Vector3d::Zero()));
 
-    sfmData.setAbsolutePose(viewIdx, pose);
+    if (item_rotation.second.trace() != 0) {
+      sfmData::CameraPose pose(geometry::Pose3 (item_rotation.second, Eigen::Vector3d::Zero()));
+      sfmData.setAbsolutePose(viewIdx, pose);
+    }
         
     index++;
   }

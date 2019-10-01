@@ -280,6 +280,7 @@ int main(int argc, char **argv)
   panoramaSize.first *= scaleFactor;
   panoramaSize.second *= scaleFactor;
 
+
   ALICEVISION_LOG_INFO("Output panorama size: " << panoramaSize.first << ", " << panoramaSize.second);
 
   // Create panorama buffer
@@ -288,7 +289,13 @@ int main(int argc, char **argv)
   int imageIndex = 0;
   for(auto& viewIt: sfmData.getViews())
   {
+    
     IndexT viewId = viewIt.first;
+
+    if (!sfmData.isPoseAndIntrinsicDefined(viewId)) {
+      continue;
+    }
+
     const sfmData::View& view = *viewIt.second.get();
     if(!sfmData.isPoseAndIntrinsicDefined(&view))
       continue;
@@ -306,14 +313,19 @@ int main(int argc, char **argv)
       }
     }
     ++imageIndex;
+  
+    
 
     const sfmData::CameraPose camPose = sfmData.getPose(view);
     const camera::IntrinsicBase& intrinsic = *sfmData.getIntrinsicPtr(view.getIntrinsicId());
 
     std::string imagePath = view.getImagePath();
 
+
     // Image RGB
     image::Image<image::RGBfColor> imageIn;
+
+    
 
     ALICEVISION_LOG_INFO("Reading " << imagePath);
     image::readImage(imagePath, imageIn, image::EImageColorSpace::LINEAR);
