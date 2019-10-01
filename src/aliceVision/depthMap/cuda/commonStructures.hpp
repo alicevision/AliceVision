@@ -295,7 +295,7 @@ protected:
 
 template <class Type, unsigned Dim> class CudaHostMemoryHeap : public CudaMemorySizeBase<Type,Dim>
 {
-    Type* buffer;
+    Type* buffer = nullptr;
 public:
     CudaHostMemoryHeap( )
         : buffer( nullptr )
@@ -408,7 +408,7 @@ public:
 
 template <class Type, unsigned Dim> class CudaDeviceMemoryPitched : public CudaMemorySizeBase<Type,Dim>
 {
-    Type* buffer;
+    Type* buffer = nullptr;
 public:
     CudaDeviceMemoryPitched( )
         : buffer( nullptr )
@@ -577,7 +577,7 @@ public:
 
 template <class Type> class CudaDeviceMemory : public CudaMemorySizeBase<Type,1>
 {
-    Type* buffer;
+    Type* buffer = nullptr;
 public:
     explicit CudaDeviceMemory(const size_t size)
     {
