@@ -108,6 +108,8 @@ int main(int argc, char * argv[]) {
     return EXIT_FAILURE;
   }
 
+  
+
   std::map<int, Eigen::Matrix3d> rotations;
   
   for (auto it : shoot) {
@@ -120,18 +122,10 @@ int main(int argc, char * argv[]) {
       return EXIT_FAILURE;
     }
 
-    
-
-    
-
-    Eigen::AngleAxis<double> Fyaw(0, Eigen::Vector3d::UnitY());
-    Eigen::AngleAxis<double> Fpitch(M_PI_2, Eigen::Vector3d::UnitX());
-    Eigen::AngleAxis<double> Froll(M_PI_2, Eigen::Vector3d::UnitZ());
-    Eigen::Matrix3d oRi = Fyaw.toRotationMatrix() * Fpitch.toRotationMatrix() * Froll.toRotationMatrix();
-
     double yaw_degree = it.second.get<double>("position.<xmlattr>.yaw");
     double pitch_degree = it.second.get<double>("position.<xmlattr>.pitch");
     double roll_degree = it.second.get<double>("position.<xmlattr>.roll");
+
     double yaw = degreeToRadian(yaw_degree);
     double pitch = degreeToRadian(pitch_degree);
     double roll = degreeToRadian(roll_degree);
@@ -139,20 +133,14 @@ int main(int argc, char * argv[]) {
     Eigen::AngleAxis<double> Myaw(yaw, Eigen::Vector3d::UnitY());
     Eigen::AngleAxis<double> Mpitch(pitch, Eigen::Vector3d::UnitX());
     Eigen::AngleAxis<double> Mroll(roll, Eigen::Vector3d::UnitZ());
+    Eigen::AngleAxis<double> Mimage(-M_PI_2, Eigen::Vector3d::UnitZ());
 
-    Eigen::AngleAxis<double> Mimage(M_PI, Eigen::Vector3d::UnitZ());
+    Eigen::Matrix3d cRo = Myaw.toRotationMatrix() * Mpitch.toRotationMatrix() *  Mroll.toRotationMatrix() * Mimage.toRotationMatrix()  ;
 
-    Eigen::Matrix3d cRo =  Mimage.toRotationMatrix() * Mroll.toRotationMatrix() * Mpitch.toRotationMatrix() * Myaw.toRotationMatrix();
-    Eigen::Matrix3d iRo =  Mimage.toRotationMatrix() * Froll.toRotationMatrix() * Fpitch.toRotationMatrix() * Fyaw.toRotationMatrix();    
-    Eigen::Matrix3d cRi =  cRo * iRo.transpose();
-
-
-
-    rotations[id] = cRi;
+    rotations[id] = cRo.transpose();
   }
 
   
-
   /**
    * Update sfm accordingly
    */
@@ -167,6 +155,7 @@ int main(int argc, char * argv[]) {
     ALICEVISION_LOG_ERROR("The input SfMData has an incorrect number of views.");
     return EXIT_FAILURE; 
   }
+
 
   /**
    * HEURISTIC : 
