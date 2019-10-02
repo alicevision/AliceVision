@@ -718,10 +718,10 @@ void PlaneSweepingCuda::sweepPixelsToVolume( CudaDeviceMemoryPitched<TSim, 3>& v
         int tc = tcams[tci];
 
         const int rcamCacheId = addCam(rc, scale, __FUNCTION__);
-        CameraStruct rcam = _cams[rcamCacheId];
+        CameraStruct& rcam = _cams[rcamCacheId];
 
         const int tcamCacheId = addCam(tc, scale, __FUNCTION__);
-        CameraStruct tcam = _cams[tcamCacheId];
+        CameraStruct& tcam = _cams[tcamCacheId];
 
         _camsBasesDev.copyFrom(_camsBasesHst);
 
