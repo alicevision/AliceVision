@@ -14,6 +14,8 @@
 #include <sstream>
 #include <iostream>
 #include <vector>
+#include <cstring>
+
 
 #define THROW_ON_CUDA_ERROR(rcode, message) \
   if (rcode != cudaSuccess) {  \

@@ -173,7 +173,7 @@ __global__ void medianFilter3_kernel(
     int width, int height,
     int scale)
 {
-    static const int radius = 3;
+    const int radius = 3;
     const int x = blockIdx.x * blockDim.x + threadIdx.x;
     const int y = blockIdx.y * blockDim.y + threadIdx.y;
 
@@ -181,8 +181,8 @@ __global__ void medianFilter3_kernel(
         (x < radius) || (y < radius))
         return;
 
-    static const int filterWidth = radius * 2 + 1;
-    static const int filterNbPixels = filterWidth * filterWidth;
+    const int filterWidth = radius * 2 + 1;
+    const int filterNbPixels = filterWidth * filterWidth;
 
     float buf[filterNbPixels]; // filterNbPixels
 
