@@ -16,6 +16,8 @@ namespace aliceVision {
 
 class Image
 {
+public:
+    using Color = ColorRGBf;
 private:
     std::vector<Color> _data;
     int _width{0};

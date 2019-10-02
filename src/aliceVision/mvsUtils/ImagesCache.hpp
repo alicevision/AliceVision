@@ -32,6 +32,7 @@ public:
 
     std::string ECorrectEV_enumToString(const ECorrectEV correctEV);
 
+    using Color = Image::Color;
     typedef std::shared_ptr<Image> ImgSharedPtr;
 
 private:

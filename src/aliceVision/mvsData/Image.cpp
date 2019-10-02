@@ -55,7 +55,7 @@ void Image::laplacianPyramid(std::vector<Image>& out_pyramidL, int nbBand, unsig
         ALICEVISION_LOG_DEBUG("laplacianDownscalePyramid: Size level " << i << " : " << out_pyramidL[i].width() << "x" << out_pyramidL[i].height());
 }
 
-Color Image::getInterpolateColor(const Point2d& pix) const
+Image::Color Image::getInterpolateColor(const Point2d& pix) const
 {
     const int xp = std::min(static_cast<int>(pix.x), _width-2);
     const int yp = std::min(static_cast<int>(pix.y), _height-2);
@@ -76,7 +76,7 @@ Color Image::getInterpolateColor(const Point2d& pix) const
     return out;
 }
 
-Color Image::getNearestPixelColor(const Point2d& pix) const
+Image::Color Image::getNearestPixelColor(const Point2d& pix) const
 {
     const int xp = std::min(static_cast<int>(pix.x), _width-1);
     const int yp = std::min(static_cast<int>(pix.y), _height-1);

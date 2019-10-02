@@ -48,18 +48,18 @@ rgb getRGBFromJetColorMap(float value)
     return c;
 }
 
-Color getColorFromJetColorMap(float value)
+ColorRGBf getColorFromJetColorMap(float value)
 {
     if(value <= 0.0f)
-        return Color(0, 0, 0);
+        return ColorRGBf(0, 0, 0);
     if(value >= 1.0f)
-        return Color(1.0f, 1.0f, 1.0f);
+        return ColorRGBf(1.0f, 1.0f, 1.0f);
     float idx_f = value * 63.0f;
     float fractA, fractB, integral;
     fractB = std::modf(idx_f, &integral);
     fractA = 1.0f - fractB;
     int idx = static_cast<int>(integral);
-    Color c;
+    ColorRGBf c;
     c.r = jetr[idx] * fractA + jetr[idx + 1] * fractB;
     c.g = jetg[idx] * fractA + jetg[idx + 1] * fractB;
     c.b = jetb[idx] * fractA + jetb[idx + 1] * fractB;

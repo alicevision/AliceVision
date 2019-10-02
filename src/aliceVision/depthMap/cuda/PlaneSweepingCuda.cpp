@@ -127,7 +127,7 @@ static void cps_host_fillCameraData(mvsUtils::ImagesCache& ic, CameraStruct& cam
     {
         for(int x = 0; x < w; ++x)
         {
-            const Color& floatRGB = img->at(x, y);
+            const ColorRGBf& floatRGB = img->at(x, y);
             float4& pix_rgba = (*cam.tex_rgba_hmh)(x, y);
             pix_rgba.x = floatRGB.r * 255.0f;
             pix_rgba.y = floatRGB.g * 255.0f;
@@ -1071,7 +1071,7 @@ bool PlaneSweepingCuda::optimizeDepthSimMapGradientDescent(StaticVector<DepthSim
 }
 
 bool PlaneSweepingCuda::computeNormalMap(
-    StaticVector<float>* depthMap, StaticVector<Color>* normalMap, int rc,
+    StaticVector<float>* depthMap, StaticVector<ColorRGBf>* normalMap, int rc,
     int scale, float igammaC, float igammaP, int wsh)
 {
   const int w = _mp.getWidth(rc) / scale;

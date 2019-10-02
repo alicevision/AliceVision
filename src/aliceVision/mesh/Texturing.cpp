@@ -283,9 +283,9 @@ void Texturing::generateTextures(const mvsUtils::MultiViewParams &mp,
 
     //calculate the maximum number of atlases in memory in MB
     system::MemoryInfo memInfo = system::getMemoryInfo();
-    const std::size_t imageMaxMemSize =  mp.getMaxImageWidth() * mp.getMaxImageHeight() * sizeof(Color) / std::pow(2,20); //MB
+    const std::size_t imageMaxMemSize =  mp.getMaxImageWidth() * mp.getMaxImageHeight() * sizeof(ColorRGBf) / std::pow(2,20); //MB
     const std::size_t imagePyramidMaxMemSize = texParams.nbBand * imageMaxMemSize;
-    const std::size_t atlasContribMemSize = texParams.textureSide * texParams.textureSide * (sizeof(Color)+sizeof(float)) / std::pow(2,20); //MB
+    const std::size_t atlasContribMemSize = texParams.textureSide * texParams.textureSide * (sizeof(ColorRGBf)+sizeof(float)) / std::pow(2,20); //MB
     const std::size_t atlasPyramidMaxMemSize = texParams.nbBand * atlasContribMemSize;
 
     const int freeRam = int(memInfo.freeRam / std::pow(2,20));
@@ -575,7 +575,7 @@ void Texturing::generateTexturesSubSet(const mvsUtils::MultiViewParams& mp,
                                continue;
 
                            // If the color is pure zero (ie. no contributions), we consider it as an invalid pixel.
-                           if(camImg.getInterpolateColor(pixRC) == Color(0.f, 0.f, 0.f))
+                           if(camImg.getInterpolateColor(pixRC) == ColorRGBf(0.f, 0.f, 0.f))
                                continue;
 
                            // Fill the accumulated pyramid for this pixel

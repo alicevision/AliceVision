@@ -330,7 +330,7 @@ void computeNormalMaps(int cudaDeviceIndex, mvsUtils::MultiViewParams& mp, const
       int h = 0;
       readImage(getFileNameFromIndex(mp, rc, mvsUtils::EFileType::depthMap, 0), w, h, depthMap.getDataWritable(), EImageColorSpace::NO_CONVERSION);
 
-      StaticVector<Color> normalMap;
+      StaticVector<ColorRGBf> normalMap;
       normalMap.resize(mp.getWidth(rc) * mp.getHeight(rc));
       
       cps.computeNormalMap(&depthMap, &normalMap, rc, 1, igammaC, igammaP, wsh);

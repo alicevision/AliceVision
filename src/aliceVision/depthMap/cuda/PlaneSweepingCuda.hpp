@@ -141,7 +141,7 @@ public:
                                             int rc, int nSamplesHalf,
                                             int nDepthsToRefine, float sigma, int nIters, int yFrom, int hPart);
 
-    bool computeNormalMap(StaticVector<float>* depthMap, StaticVector<Color>* normalMap, int rc,
+    bool computeNormalMap(StaticVector<float>* depthMap, StaticVector<ColorRGBf>* normalMap, int rc,
                           int scale, float igammaC, float igammaP, int wsh);
 
     bool getSilhoueteMap(StaticVectorBool* oMap, int scale, int step, const rgb maskColor, int rc);

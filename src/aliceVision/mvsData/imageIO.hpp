@@ -15,7 +15,7 @@ namespace oiio = OIIO;
 namespace aliceVision {
 
 class rgb;
-class Color;
+class ColorRGBf;
 class Image;
 
 namespace imageIO {
@@ -192,7 +192,7 @@ void readImage(const std::string& path, int& width, int& height, std::vector<uns
 void readImage(const std::string& path, int& width, int& height, std::vector<unsigned short>& buffer, EImageColorSpace toColorSpace);
 void readImage(const std::string& path, int& width, int& height, std::vector<rgb>& buffer, EImageColorSpace toColorSpace);
 void readImage(const std::string& path, int& width, int& height, std::vector<float>& buffer, EImageColorSpace toColorSpace);
-void readImage(const std::string& path, int& width, int& height, std::vector<Color>& buffer, EImageColorSpace toColorSpace);
+void readImage(const std::string& path, int& width, int& height, std::vector<ColorRGBf>& buffer, EImageColorSpace toColorSpace);
 void readImage(const std::string& path, Image& image, EImageColorSpace toColorSpace);
 
 /**
@@ -206,7 +206,7 @@ void writeImage(const std::string& path, int width, int height, const std::vecto
 void writeImage(const std::string& path, int width, int height, const std::vector<unsigned short>& buffer, EImageQuality imageQuality, OutputFileColorSpace& colorspace, const oiio::ParamValueList& metadata = oiio::ParamValueList());
 void writeImage(const std::string& path, int width, int height, const std::vector<rgb>& buffer, EImageQuality imageQuality, OutputFileColorSpace& colorspace, const oiio::ParamValueList& metadata = oiio::ParamValueList());
 void writeImage(const std::string& path, int width, int height, const std::vector<float>& buffer, EImageQuality imageQuality, OutputFileColorSpace& colorspace, const oiio::ParamValueList& metadata = oiio::ParamValueList());
-void writeImage(const std::string& path, int width, int height, const std::vector<Color>& buffer, EImageQuality imageQuality, OutputFileColorSpace& colorspace, const oiio::ParamValueList& metadata = oiio::ParamValueList());
+void writeImage(const std::string& path, int width, int height, const std::vector<ColorRGBf>& buffer, EImageQuality imageQuality, OutputFileColorSpace& colorspace, const oiio::ParamValueList& metadata = oiio::ParamValueList());
 void writeImage(const std::string& path, Image& image, EImageQuality imageQuality, OutputFileColorSpace& colorspace, const oiio::ParamValueList& metadata = oiio::ParamValueList());
 
 } // namespace imageIO
