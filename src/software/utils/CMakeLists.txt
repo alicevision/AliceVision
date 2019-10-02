@@ -107,6 +107,18 @@ alicevision_add_software(aliceVision_utils_sfmAlignment
         ${Boost_LIBRARIES}
 )
 
+# SfM transfer
+alicevision_add_software(aliceVision_utils_sfmTransfer
+  SOURCE main_sfmTransfer.cpp
+  FOLDER ${FOLDER_SOFTWARE_UTILS}
+  LINKS aliceVision_system
+        aliceVision_feature
+        aliceVision_sfm
+        aliceVision_sfmData
+        aliceVision_sfmDataIO
+        ${Boost_LIBRARIES}
+)
+
 # SfM transform
 alicevision_add_software(aliceVision_utils_sfmTransform
   SOURCE main_sfmTransform.cpp

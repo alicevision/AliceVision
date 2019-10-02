@@ -298,15 +298,16 @@ int main(int argc, char **argv)
   if(!sfmEngine.process())
     return EXIT_FAILURE;
 
-  // get the color for the 3D points
-  sfmEngine.colorize();
-
   // set featuresFolders and matchesFolders relative paths
   {
-    sfmEngine.getSfMData().addFeaturesFolders(featuresFolders);
-    sfmEngine.getSfMData().addMatchesFolders(matchesFolders);
-    sfmEngine.getSfMData().setAbsolutePath(outputSfM);
+      sfmEngine.getSfMData().addFeaturesFolders(featuresFolders);
+      sfmEngine.getSfMData().addMatchesFolders(matchesFolders);
+      sfmEngine.getSfMData().setAbsolutePath(outputSfM);
   }
+
+  // get the color for the 3D points
+  sfmEngine.colorize();
+  sfmEngine.retrieveMarkersId();
 
   ALICEVISION_LOG_INFO("Structure from motion took (s): " + std::to_string(timer.elapsed()));
   ALICEVISION_LOG_INFO("Generating HTML report...");
