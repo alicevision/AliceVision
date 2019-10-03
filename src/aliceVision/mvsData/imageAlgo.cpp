@@ -164,7 +164,7 @@ void colorconvert(oiio::ImageBuf& imgBuf, imageIO::EImageColorSpace fromColorSpa
     ALICEVISION_LOG_TRACE("Convert image from " << EImageColorSpace_enumToString(fromColorSpace) << " to " << EImageColorSpace_enumToString(toColorSpace));
 }
 
-void colorconvert(Image& image, imageIO::EImageColorSpace fromColorSpace, imageIO::EImageColorSpace toColorSpace)
+void colorconvert(ImageRGBf& image, imageIO::EImageColorSpace fromColorSpace, imageIO::EImageColorSpace toColorSpace)
 {
     oiio::ImageSpec imageSpec(image.width(), image.height(), 3, oiio::TypeDesc::FLOAT);
     std::vector<ColorRGBf>& buffer = image.data();
@@ -216,7 +216,7 @@ void transposeImage(int width, int height, std::vector<ColorRGBf>& buffer)
     transposeImage(oiio::TypeDesc::FLOAT, width, height, 3, buffer);
 }
 
-void transposeImage(Image &image)
+void transposeImage(ImageRGBf &image)
 {
     transposeImage(oiio::TypeDesc::FLOAT, image.width(), image.height(), 3, image.data());
 }
@@ -263,7 +263,7 @@ void resizeImage(int inWidth, int inHeight, int downscale, const std::vector<Col
     resizeImage(oiio::TypeDesc::FLOAT, inWidth, inHeight, 3, downscale, inBuffer, outBuffer, filter, filterSize);
 }
 
-void resizeImage(int downscale, const Image &inImage, Image &outImage, const std::string &filter, float filterSize)
+void resizeImage(int downscale, const ImageRGBf &inImage, ImageRGBf &outImage, const std::string &filter, float filterSize)
 {
     resizeImage(oiio::TypeDesc::FLOAT, inImage.width(), inImage.height(), 3, downscale, inImage.data(), outImage.data(), filter, filterSize);
     outImage.setHeight(inImage.height() / downscale);
@@ -313,7 +313,7 @@ void convolveImage(int inWidth, int inHeight, const std::vector<ColorRGBf>& inBu
   convolveImage(oiio::TypeDesc::FLOAT, inWidth, inHeight, 3, inBuffer, outBuffer, kernel, kernelWidth, kernelHeight);
 }
 
-void convolveImage(const Image &inImage, Image &outImage, const std::string &kernel, float kernelWidth, float kernelHeight)
+void convolveImage(const ImageRGBf &inImage, ImageRGBf &outImage, const std::string &kernel, float kernelWidth, float kernelHeight)
 {
     convolveImage(oiio::TypeDesc::FLOAT, inImage.width(), inImage.height(), 3, inImage.data(), outImage.data(), kernel, kernelWidth, kernelHeight);
     outImage.setHeight(inImage.height());
@@ -340,7 +340,7 @@ void fillHoles(int inWidth, int inHeight, std::vector<ColorRGBf>& colorBuffer, c
     oiio::ImageBufAlgo::copy(rgbBuf, filledBuf);
 }
 
-void fillHoles(Image& image, const std::vector<float>& alphaBuffer)
+void fillHoles(ImageRGBf& image, const std::vector<float>& alphaBuffer)
 {
     fillHoles(image.width(), image.height(), image.data(), alphaBuffer);
 }

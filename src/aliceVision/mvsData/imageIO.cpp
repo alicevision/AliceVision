@@ -339,7 +339,7 @@ void readImage(const std::string& path, int& width, int& height, std::vector<Col
     readImage(path, oiio::TypeDesc::FLOAT, 3, width, height, buffer, toColorSpace);
 }
 
-void readImage(const std::string& path, Image& image, EImageColorSpace toColorSpace)
+void readImage(const std::string& path, ImageRGBf& image, EImageColorSpace toColorSpace)
 {
     int width, height;
     readImage(path, oiio::TypeDesc::FLOAT, 3, width, height, image.data(), toColorSpace);
@@ -434,7 +434,7 @@ void writeImage(const std::string& path, int width, int height, const std::vecto
     writeImage(path, oiio::TypeDesc::FLOAT, width, height, 3, buffer, imageQuality, colorspace, metadata);
 }
 
-void writeImage(const std::string &path, Image &image, EImageQuality imageQuality, OutputFileColorSpace& colorspace, const oiio::ParamValueList& metadata)
+void writeImage(const std::string &path, ImageRGBf &image, EImageQuality imageQuality, OutputFileColorSpace& colorspace, const oiio::ParamValueList& metadata)
 {
     writeImage(path, oiio::TypeDesc::FLOAT, image.width(), image.height(), 3, image.data(), imageQuality, colorspace, metadata);
 }

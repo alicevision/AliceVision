@@ -16,7 +16,8 @@ namespace aliceVision {
 
 class rgb;
 class ColorRGBf;
-class Image;
+template<typename Color> class Image;
+using ImageRGBf = Image<ColorRGBf>;
 
 namespace imageIO {
 
@@ -193,7 +194,7 @@ void readImage(const std::string& path, int& width, int& height, std::vector<uns
 void readImage(const std::string& path, int& width, int& height, std::vector<rgb>& buffer, EImageColorSpace toColorSpace);
 void readImage(const std::string& path, int& width, int& height, std::vector<float>& buffer, EImageColorSpace toColorSpace);
 void readImage(const std::string& path, int& width, int& height, std::vector<ColorRGBf>& buffer, EImageColorSpace toColorSpace);
-void readImage(const std::string& path, Image& image, EImageColorSpace toColorSpace);
+void readImage(const std::string& path, ImageRGBf& image, EImageColorSpace toColorSpace);
 
 /**
  * @brief write an image with a given path and buffer
@@ -207,7 +208,7 @@ void writeImage(const std::string& path, int width, int height, const std::vecto
 void writeImage(const std::string& path, int width, int height, const std::vector<rgb>& buffer, EImageQuality imageQuality, OutputFileColorSpace& colorspace, const oiio::ParamValueList& metadata = oiio::ParamValueList());
 void writeImage(const std::string& path, int width, int height, const std::vector<float>& buffer, EImageQuality imageQuality, OutputFileColorSpace& colorspace, const oiio::ParamValueList& metadata = oiio::ParamValueList());
 void writeImage(const std::string& path, int width, int height, const std::vector<ColorRGBf>& buffer, EImageQuality imageQuality, OutputFileColorSpace& colorspace, const oiio::ParamValueList& metadata = oiio::ParamValueList());
-void writeImage(const std::string& path, Image& image, EImageQuality imageQuality, OutputFileColorSpace& colorspace, const oiio::ParamValueList& metadata = oiio::ParamValueList());
+void writeImage(const std::string& path, ImageRGBf& image, EImageQuality imageQuality, OutputFileColorSpace& colorspace, const oiio::ParamValueList& metadata = oiio::ParamValueList());
 
 } // namespace imageIO
 } // namespace aliceVision

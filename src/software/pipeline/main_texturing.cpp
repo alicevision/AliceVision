@@ -155,8 +155,8 @@ int main(int argc, char* argv[])
     // set output texture file type
     const imageIO::EImageFileType outputTextureFileType = imageIO::EImageFileType_stringToEnum(outTextureFileTypeName);
 
-    texParams.correctEV = mvsUtils::ImagesCache::ECorrectEV::NO_CORRECTION;
-    if(correctEV) { texParams.correctEV = mvsUtils::ImagesCache::ECorrectEV::APPLY_CORRECTION; }
+    texParams.correctEV = mvsUtils::ECorrectEV::NO_CORRECTION;
+    if(correctEV) { texParams.correctEV = mvsUtils::ECorrectEV::APPLY_CORRECTION; }
 
     // read the input SfM scene
     sfmData::SfMData sfmData;

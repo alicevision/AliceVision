@@ -277,9 +277,9 @@ void Texturing::generateTextures(const mvsUtils::MultiViewParams &mp,
     std::partial_sum(m.begin(), m.end(), m.begin());
 
     ALICEVISION_LOG_INFO("Texturing in " + imageIO::EImageColorSpace_enumToString(texParams.processColorspace) + " colorspace.");
-    mvsUtils::ImagesCache imageCache(mp, texParams.processColorspace, texParams.correctEV);
+    mvsUtils::ImagesCache<ImageRGBf> imageCache(mp, texParams.processColorspace, texParams.correctEV);
     imageCache.setCacheSize(2);
-    ALICEVISION_LOG_INFO("Images loaded from cache with: " + imageCache.ECorrectEV_enumToString(texParams.correctEV));
+    ALICEVISION_LOG_INFO("Images loaded from cache with: " + ECorrectEV_enumToString(texParams.correctEV));
 
     //calculate the maximum number of atlases in memory in MB
     system::MemoryInfo memInfo = system::getMemoryInfo();
@@ -325,7 +325,7 @@ void Texturing::generateTextures(const mvsUtils::MultiViewParams &mp,
 }
 
 void Texturing::generateTexturesSubSet(const mvsUtils::MultiViewParams& mp,
-                                const std::vector<size_t>& atlasIDs, mvsUtils::ImagesCache& imageCache, const bfs::path& outPath, imageIO::EImageFileType textureFileType)
+                                const std::vector<size_t>& atlasIDs, mvsUtils::ImagesCache<ImageRGBf>& imageCache, const bfs::path& outPath, imageIO::EImageFileType textureFileType)
 {
     if(atlasIDs.size() > _atlases.size())
         throw std::runtime_error("Invalid atlas IDs ");
@@ -485,12 +485,12 @@ void Texturing::generateTexturesSubSet(const mvsUtils::MultiViewParams& mp,
         ALICEVISION_LOG_INFO("- camera " << mp.getViewId(camId) << " (" << camId + 1 << "/" << mp.ncams << ") with contributions to " << cameraContributions.size() << " texture files:");
 
         // Load camera image from cache
-        mvsUtils::ImagesCache::ImgSharedPtr imgPtr = imageCache.getImg_sync(camId);
-        const Image& camImg = *imgPtr;
+        mvsUtils::ImagesCache<ImageRGBf>::ImgSharedPtr imgPtr = imageCache.getImg_sync(camId);
+        const ImageRGBf& camImg = *imgPtr;
 
         // Calculate laplacianPyramid
-        std::vector<Image> pyramidL; //laplacian pyramid
-        camImg.laplacianPyramid(pyramidL, texParams.nbBand, texParams.multiBandDownscale);
+        std::vector<ImageRGBf> pyramidL; //laplacian pyramid
+        laplacianPyramid(pyramidL, camImg, texParams.nbBand, texParams.multiBandDownscale);
 
         // for each output texture file
         for(const auto& c : cameraContributions)
@@ -817,7 +817,7 @@ void Texturing::writeTexture(AccuImage& atlasTexture, const std::size_t atlasID,
     // downscale texture if required
     if(texParams.downscale > 1)
     {
-        Image resizedColorBuffer;
+        ImageRGBf resizedColorBuffer;
 
         ALICEVISION_LOG_INFO("  - Downscaling texture (" << texParams.downscale << "x).");
         imageAlgo::resizeImage(texParams.downscale, atlasTexture.img, resizedColorBuffer);

@@ -113,11 +113,11 @@ static void cps_host_fillCamera(CameraStructBase& base, int c, mvsUtils::MultiVi
     ps_initCameraMatrix( base );
 }
 
-static void cps_host_fillCameraData(mvsUtils::ImagesCache& ic, CameraStruct& cam, int c, mvsUtils::MultiViewParams& mp)
+static void cps_host_fillCameraData(mvsUtils::ImagesCache<ImageRGBf>& ic, CameraStruct& cam, int c, mvsUtils::MultiViewParams& mp)
 {
     ALICEVISION_LOG_DEBUG("cps_host_fillCameraData [" << c << "]: " << mp.getWidth(c) << "x" << mp.getHeight(c));
     clock_t t1 = tic();
-    mvsUtils::ImagesCache::ImgSharedPtr img = ic.getImg_sync( c );
+    mvsUtils::ImagesCache<ImageRGBf>::ImgSharedPtr img = ic.getImg_sync( c ); // TODO RGBA
     ALICEVISION_LOG_DEBUG("cps_host_fillCameraData: " << c << " -a- Retrieve from ImagesCache elapsed time: " << toc(t1) << " ms.");
     t1 = tic();
 
@@ -177,7 +177,7 @@ void copy(StaticVector<DepthSim>& outDepthSimMap, const CudaHostMemoryHeap<float
 
 
 PlaneSweepingCuda::PlaneSweepingCuda( int CUDADeviceNo,
-                                      mvsUtils::ImagesCache&     ic,
+                                      mvsUtils::ImagesCache<ImageRGBf>&     ic,
                                       mvsUtils::MultiViewParams& mp,
                                       int scales )
     : _scales( scales )
