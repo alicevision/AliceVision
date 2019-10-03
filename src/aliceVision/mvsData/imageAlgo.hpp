@@ -41,6 +41,7 @@ void processImage(oiio::ImageBuf& dst, const oiio::ImageBuf& src, std::function<
 
 void colorconvert(oiio::ImageBuf& image, imageIO::EImageColorSpace fromColorSpace, imageIO::EImageColorSpace toColorSpace);
 void colorconvert(ImageRGBf& image, imageIO::EImageColorSpace fromColorSpace, imageIO::EImageColorSpace toColorSpace);
+void colorconvert(ImageRGBAf& image, imageIO::EImageColorSpace fromColorSpace, imageIO::EImageColorSpace toColorSpace);
 void colorconvert(oiio::ImageBuf& dst, const oiio::ImageBuf& src, imageIO::EImageColorSpace fromColorSpace, imageIO::EImageColorSpace toColorSpace);
 
 /**
@@ -71,7 +72,8 @@ void resizeImage(int inWidth, int inHeight, int downscale, const std::vector<uns
 void resizeImage(int inWidth, int inHeight, int downscale, const std::vector<rgb>& inBuffer, std::vector<rgb>& outBuffer, const std::string& filter = "", float filterSize = 0);
 void resizeImage(int inWidth, int inHeight, int downscale, const std::vector<float>& inBuffer, std::vector<float>& outBuffer, const std::string& filter = "", float filterSize = 0);
 void resizeImage(int inWidth, int inHeight, int downscale, const std::vector<ColorRGBf>& inBuffer, std::vector<ColorRGBf>& outBuffer, const std::string& filter = "", float filterSize = 0);
-void resizeImage(int downscale, const ImageRGBf& inImage, ImageRGBf& outImage,  const std::string& filter = "", float filterSize = 0);
+void resizeImage(int downscale, const ImageRGBf& inImage, ImageRGBf& outImage, const std::string& filter = "", float filterSize = 0);
+void resizeImage(int downscale, const ImageRGBAf& inImage, ImageRGBAf& outImage, const std::string& filter = "", float filterSize = 0);
 
 /**
  * @brief convolve a given image buffer

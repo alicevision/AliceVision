@@ -173,6 +173,15 @@ void colorconvert(ImageRGBf& image, imageIO::EImageColorSpace fromColorSpace, im
     colorconvert(imageBuf, fromColorSpace, toColorSpace);
 }
 
+void colorconvert(ImageRGBAf& image, imageIO::EImageColorSpace fromColorSpace, imageIO::EImageColorSpace toColorSpace)
+{
+    oiio::ImageSpec imageSpec(image.width(), image.height(), 4, oiio::TypeDesc::FLOAT);
+    std::vector<ColorRGBAf>& buffer = image.data();
+    oiio::ImageBuf imageBuf(imageSpec, buffer.data());
+
+    colorconvert(imageBuf, fromColorSpace, toColorSpace);
+}
+
 void colorconvert(oiio::ImageBuf& dst, const oiio::ImageBuf& src, imageIO::EImageColorSpace fromColorSpace, imageIO::EImageColorSpace toColorSpace)
 {
     dst.copy(src);
@@ -266,6 +275,13 @@ void resizeImage(int inWidth, int inHeight, int downscale, const std::vector<Col
 void resizeImage(int downscale, const ImageRGBf &inImage, ImageRGBf &outImage, const std::string &filter, float filterSize)
 {
     resizeImage(oiio::TypeDesc::FLOAT, inImage.width(), inImage.height(), 3, downscale, inImage.data(), outImage.data(), filter, filterSize);
+    outImage.setHeight(inImage.height() / downscale);
+    outImage.setWidth(inImage.width() / downscale);
+}
+
+void resizeImage(int downscale, const ImageRGBAf &inImage, ImageRGBAf &outImage, const std::string &filter, float filterSize)
+{
+    resizeImage(oiio::TypeDesc::FLOAT, inImage.width(), inImage.height(), 4, downscale, inImage.data(), outImage.data(), filter, filterSize);
     outImage.setHeight(inImage.height() / downscale);
     outImage.setWidth(inImage.width() / downscale);
 }

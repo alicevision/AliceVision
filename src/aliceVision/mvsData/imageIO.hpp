@@ -16,8 +16,10 @@ namespace aliceVision {
 
 class rgb;
 class ColorRGBf;
+class ColorRGBAf;
 template<typename Color> class Image;
 using ImageRGBf = Image<ColorRGBf>;
+using ImageRGBAf = Image<ColorRGBAf>;
 
 namespace imageIO {
 
@@ -194,7 +196,9 @@ void readImage(const std::string& path, int& width, int& height, std::vector<uns
 void readImage(const std::string& path, int& width, int& height, std::vector<rgb>& buffer, EImageColorSpace toColorSpace);
 void readImage(const std::string& path, int& width, int& height, std::vector<float>& buffer, EImageColorSpace toColorSpace);
 void readImage(const std::string& path, int& width, int& height, std::vector<ColorRGBf>& buffer, EImageColorSpace toColorSpace);
+void readImage(const std::string& path, int& width, int& height, std::vector<ColorRGBAf>& buffer, EImageColorSpace toColorSpace);
 void readImage(const std::string& path, ImageRGBf& image, EImageColorSpace toColorSpace);
+void readImage(const std::string& path, ImageRGBAf& image, EImageColorSpace toColorSpace);
 
 /**
  * @brief write an image with a given path and buffer

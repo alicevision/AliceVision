@@ -178,6 +178,7 @@ typename ImagesCache<Image>::Color ImagesCache<Image>::getPixelValueInterpolated
 }
 
 template class ImagesCache<ImageRGBf>;
+template class ImagesCache<ImageRGBAf>;
 
 } // namespace mvsUtils
 } // namespace aliceVision

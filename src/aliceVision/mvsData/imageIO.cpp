@@ -339,10 +339,23 @@ void readImage(const std::string& path, int& width, int& height, std::vector<Col
     readImage(path, oiio::TypeDesc::FLOAT, 3, width, height, buffer, toColorSpace);
 }
 
+void readImage(const std::string& path, int& width, int& height, std::vector<ColorRGBAf>& buffer, EImageColorSpace toColorSpace)
+{
+    readImage(path, oiio::TypeDesc::FLOAT, 4, width, height, buffer, toColorSpace);
+}
+
 void readImage(const std::string& path, ImageRGBf& image, EImageColorSpace toColorSpace)
 {
     int width, height;
-    readImage(path, oiio::TypeDesc::FLOAT, 3, width, height, image.data(), toColorSpace);
+    readImage(path, width, height, image.data(), toColorSpace);
+    image.setWidth(width);
+    image.setHeight(height);
+}
+
+void readImage(const std::string& path, ImageRGBAf& image, EImageColorSpace toColorSpace)
+{
+    int width, height;
+    readImage(path, width, height, image.data(), toColorSpace);
     image.setWidth(width);
     image.setHeight(height);
 }

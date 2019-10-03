@@ -43,8 +43,10 @@ inline std::string getFileNameFromIndex(const MultiViewParams& mp, int index, EF
 FILE* mv_openFile(const MultiViewParams& mp, int index, EFileType mv_file_type, const char* readWrite);
 Matrix3x4 load3x4MatrixFromFile(FILE* fi);
 
-void loadImage(const std::string& path, const MultiViewParams& mp, int camId, ImageRGBf& img,
-                                 imageIO::EImageColorSpace colorspace, ECorrectEV correctEV);
+
+template<class Image>
+void loadImage(const std::string& path, const MultiViewParams& mp, int camId, Image& img,
+    imageIO::EImageColorSpace colorspace, ECorrectEV correctEV);
 
 bool DeleteDirectory(const std::string& sPath);
 

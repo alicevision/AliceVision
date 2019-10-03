@@ -123,6 +123,7 @@ public:
 };
 
 using ImageRGBf = Image<ColorRGBf>;
+using ImageRGBAf = Image<ColorRGBAf>;
 
 
 /**

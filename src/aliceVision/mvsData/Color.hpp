@@ -139,4 +139,112 @@ inline ColorRGBf cross(const ColorRGBf& a, const ColorRGBf& b)
     return vc;
 }
 
+
+class ColorRGBAf
+{
+public:
+    union {
+        struct
+        {
+            float r, g, b, a;
+        };
+        float m[4];
+    };
+
+    inline ColorRGBAf()
+    {
+        r = 0.0;
+        g = 0.0;
+        b = 0.0;
+        a = 0.0;
+    }
+
+    inline ColorRGBAf(float _r, float _g, float _b, float _a)
+    {
+        r = _r;
+        g = _g;
+        b = _b;
+        a = _a;
+    }
+
+    inline ColorRGBAf& operator=(const ColorRGBAf& param)
+    {
+        r = param.r;
+        g = param.g;
+        b = param.b;
+        a = param.a;
+        return *this;
+    }
+
+    inline bool operator==(const ColorRGBAf& param)
+    {
+        return (r == param.r) && (g == param.g) && (b == param.b) && (a == param.a);
+    }
+
+    inline ColorRGBAf operator-(const ColorRGBAf& _p) const
+    {
+        return ColorRGBAf(r - _p.r, g - _p.g, b - _p.b, a);
+    }
+
+    inline ColorRGBAf operator-() const
+    {
+        return ColorRGBAf(-r, -g, -b, a);
+    }
+
+    inline ColorRGBAf operator+(const ColorRGBAf& _p) const
+    {
+        return ColorRGBAf(r + _p.r, g + _p.g, b + _p.b, a);
+    }
+
+    inline ColorRGBAf operator*(const float d) const
+    {
+        return ColorRGBAf(r * d, g * d, b * d, a);
+    }
+
+    inline ColorRGBAf operator/(const float d) const
+    {
+        return ColorRGBAf(r / d, g / d, b / d, a);
+    }
+
+    inline ColorRGBAf& operator+=(const ColorRGBAf& _p)
+    {
+        r += _p.r;
+        g += _p.g;
+        b += _p.b;
+        return *this;
+    }
+
+    inline ColorRGBAf& operator-=(const ColorRGBAf& _p)
+    {
+        r -= _p.r;
+        g -= _p.g;
+        b -= _p.b;
+        return *this;
+    }
+
+    inline ColorRGBAf& operator/=(const int d)
+    {
+        r /= d;
+        g /= d;
+        b /= d;
+        return *this;
+    }
+
+    inline float size() const
+    {
+        float d = r * r + g * g + b * b;
+        if (d == 0.0)
+        {
+            return 0.0;
+        }
+
+        return sqrt(d);
+    }
+
+    inline float size2() const
+    {
+        return r * r + g * g + b * b;
+    }
+};
+
 } // namespace aliceVision
