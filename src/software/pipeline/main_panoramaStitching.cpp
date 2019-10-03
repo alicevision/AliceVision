@@ -45,13 +45,10 @@ float sigmoid(float x, float sigwidth, float sigMid)
  */
 namespace SphericalMapping
 {
-  Vec3 get3DPoint(const Vec2& pos2d, int width, int height)
+  Vec3 fromEquirectangular(const Vec2& pos2d, int width, int height)
   {
-    const double x = pos2d(0) - width;
-    const double y = height/2.0 - pos2d(1);
-
-    const double longitude = M_PI * 2.0 * x / width;  // between -PI and PI
-    const double latitude = M_PI * y / height;        // between -PI/2 and PI/2
+    const double latitude = (pos2d(1) / double(height)) * M_PI  - M_PI_2;
+    const double longitude = ((pos2d(0) / double(width)) * 2.0 * M_PI) - M_PI;
 
     const double Px = cos(latitude) * sin(longitude);
     const double Py = sin(latitude);
@@ -88,7 +85,6 @@ bool estimate_panorama_size(const sfmData::SfMData & sfmData, float fisheyeMaski
 
       const sfmData::CameraPose camPose = sfmData.getPose(view);
       const camera::IntrinsicBase& intrinsic = *sfmData.getIntrinsicPtr(view.getIntrinsicId());
-    
 
       const float maxRadius = std::min(intrinsic.w(), intrinsic.h()) * 0.5f * (1.0 - fisheyeMaskingMargin);
       const Vec2i center(intrinsic.w()/2.f, intrinsic.h()/2.f);
@@ -99,7 +95,7 @@ bool estimate_panorama_size(const sfmData::SfMData & sfmData, float fisheyeMaski
         {
           BufferCoords(y, x).a() = 0.0;
           // equirectangular to unit vector
-          Vec3 ray = SphericalMapping::get3DPoint(Vec2(x,y), panoramaSize.first, panoramaSize.second);
+          Vec3 ray = SphericalMapping::fromEquirectangular(Vec2(x,y), panoramaSize.first, panoramaSize.second);
 
           if(camPose.getTransform().depth(ray) < 0)
           {
@@ -343,7 +339,7 @@ int main(int argc, char **argv)
       for(int x = 0; x < imageOut.Width(); ++x)
       {
         // equirectangular to unit vector
-        Vec3 ray = SphericalMapping::get3DPoint(Vec2(x,y), imageOut.Width(), imageOut.Height());       
+        Vec3 ray = SphericalMapping::fromEquirectangular(Vec2(x,y), imageOut.Width(), imageOut.Height());       
 
         //Check that this ray should be visible
         Vec3 transformedRay = camPose.getTransform()(ray);
