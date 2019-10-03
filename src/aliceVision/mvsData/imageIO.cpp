@@ -210,7 +210,10 @@ void readImage(const std::string& path,
     ALICEVISION_LOG_DEBUG("[IO] Read Image: " << path);
 
     // check requested channels number
-    assert(nchannels == 1 || nchannels >= 3);
+    if (nchannels == 0)
+        throw std::runtime_error("Requested channels is 0. Image file: '" + path + "'.");
+    if (nchannels == 2)
+        throw std::runtime_error("Load of 2 channels is not supported. Image file: '" + path + "'.");
 
     oiio::ImageSpec configSpec;
 
@@ -253,8 +256,10 @@ void readImage(const std::string& path,
 #endif
 
     // check picture channels number
-    if(inSpec.nchannels != 1 && inSpec.nchannels < 3)
-        throw std::runtime_error("Can't load channels of image file '" + path + "'.");
+    if (inSpec.nchannels == 0)
+        throw std::runtime_error("No channel in the input image file: '" + path + "'.");
+    if (inSpec.nchannels == 2)
+        throw std::runtime_error("Load of 2 channels is not supported. Image file: '" + path + "'.");
 
     // color conversion
     if(toColorSpace == EImageColorSpace::AUTO)
@@ -281,23 +286,33 @@ void readImage(const std::string& path,
         oiio::ImageBuf grayscaleBuf;
         oiio::ImageBufAlgo::channel_sum(grayscaleBuf, inBuf, weights, convertionROI);
         inBuf.copy(grayscaleBuf);
+
+        // TODO: if inSpec.nchannels == 4: premult?
     }
 
-    // add missing channels
-    if(nchannels > inSpec.nchannels)
+    // duplicate first channel for RGB
+    if (nchannels >= 3 && inSpec.nchannels == 1)
     {
-        oiio::ImageSpec requestedSpec(inSpec.width, inSpec.height, nchannels, typeDesc);
+        oiio::ImageSpec requestedSpec(inSpec.width, inSpec.height, 3, typeDesc);
         oiio::ImageBuf requestedBuf(requestedSpec);
+        int channelOrder[] = { 0, 0, 0 };
+        float channelValues[] = { 0 /*ignore*/, 0 /*ignore*/, 0 /*ignore*/ };
+        oiio::ImageBufAlgo::channels(requestedBuf, inBuf, 3, channelOrder, channelValues);
+        inBuf.swap(requestedBuf);
+    }
 
-        // duplicate first channel for RGB
-        if(requestedSpec.nchannels >= 3 && inSpec.nchannels < 3)
-        {
-            oiio::ImageBufAlgo::paste(requestedBuf, 0, 0, 0, 0, inBuf);
-            oiio::ImageBufAlgo::paste(requestedBuf, 0, 0, 0, 1, inBuf);
-            oiio::ImageBufAlgo::paste(requestedBuf, 0, 0, 0, 2, inBuf);
-        }
-
-        inBuf.copy(requestedBuf);
+    // Add an alpha channel if needed
+    if (nchannels == 4 && inBuf.spec().nchannels == 3)
+    {
+        oiio::ImageSpec requestedSpec(inSpec.width, inSpec.height, 3, typeDesc);
+        oiio::ImageBuf requestedBuf(requestedSpec);
+        int channelOrder[] = { 0, 1, 2, -1 /*constant value*/ };
+        float channelValues[] = { 0 /*ignore*/, 0 /*ignore*/, 0 /*ignore*/, 1.0 };
+        oiio::ImageBufAlgo::channels(requestedBuf, inBuf,
+                                     4, // create an image with 4 channels
+                                     channelOrder,
+                                     channelValues); // only the 4th value is used
+        inBuf.swap(requestedBuf);
     }
 
     width = inSpec.width;
