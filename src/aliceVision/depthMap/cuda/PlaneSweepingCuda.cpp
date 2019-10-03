@@ -113,11 +113,11 @@ static void cps_host_fillCamera(CameraStructBase& base, int c, mvsUtils::MultiVi
     ps_initCameraMatrix( base );
 }
 
-static void cps_host_fillCameraData(mvsUtils::ImagesCache<ImageRGBf>& ic, CameraStruct& cam, int c, mvsUtils::MultiViewParams& mp)
+static void cps_host_fillCameraData(mvsUtils::ImagesCache<ImageRGBAf>& ic, CameraStruct& cam, int c, mvsUtils::MultiViewParams& mp)
 {
     ALICEVISION_LOG_DEBUG("cps_host_fillCameraData [" << c << "]: " << mp.getWidth(c) << "x" << mp.getHeight(c));
     clock_t t1 = tic();
-    mvsUtils::ImagesCache<ImageRGBf>::ImgSharedPtr img = ic.getImg_sync( c ); // TODO RGBA
+    mvsUtils::ImagesCache<ImageRGBAf>::ImgSharedPtr img = ic.getImg_sync( c ); // TODO RGBA
     ALICEVISION_LOG_DEBUG("cps_host_fillCameraData: " << c << " -a- Retrieve from ImagesCache elapsed time: " << toc(t1) << " ms.");
     t1 = tic();
 
@@ -127,12 +127,12 @@ static void cps_host_fillCameraData(mvsUtils::ImagesCache<ImageRGBf>& ic, Camera
     {
         for(int x = 0; x < w; ++x)
         {
-            const ColorRGBf& floatRGB = img->at(x, y);
+            const ColorRGBAf& floatRGBA = img->at(x, y);
             float4& pix_rgba = (*cam.tex_rgba_hmh)(x, y);
-            pix_rgba.x = floatRGB.r * 255.0f;
-            pix_rgba.y = floatRGB.g * 255.0f;
-            pix_rgba.z = floatRGB.b * 255.0f;
-            pix_rgba.w = 255.0f;
+            pix_rgba.x = floatRGBA.r * 255.0f;
+            pix_rgba.y = floatRGBA.g * 255.0f;
+            pix_rgba.z = floatRGBA.b * 255.0f;
+            pix_rgba.w = floatRGBA.a * 255.0f;
         }
     }
     ALICEVISION_LOG_DEBUG("cps_host_fillCameraData: " << c << " -b- Copy to HMH elapsed time: " << toc(t1) << " ms.");
@@ -177,7 +177,7 @@ void copy(StaticVector<DepthSim>& outDepthSimMap, const CudaHostMemoryHeap<float
 
 
 PlaneSweepingCuda::PlaneSweepingCuda( int CUDADeviceNo,
-                                      mvsUtils::ImagesCache<ImageRGBf>&     ic,
+                                      mvsUtils::ImagesCache<ImageRGBAf>&     ic,
                                       mvsUtils::MultiViewParams& mp,
                                       int scales )
     : _scales( scales )

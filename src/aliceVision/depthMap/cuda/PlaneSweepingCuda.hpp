@@ -70,11 +70,11 @@ public:
     const int  _nbestkernelSizeHalf = 1;
     int  _nImgsInGPUAtTime = 2;
     int  _varianceWSH = 1;
-    mvsUtils::ImagesCache<ImageRGBf>& _ic;
+    mvsUtils::ImagesCache<ImageRGBAf>& _ic;
 
     inline int maxImagesInGPU() const { return _nImgsInGPUAtTime; }
 
-    PlaneSweepingCuda(int CUDADeviceNo, mvsUtils::ImagesCache<ImageRGBf>& _ic, mvsUtils::MultiViewParams& _mp, int scales);
+    PlaneSweepingCuda(int CUDADeviceNo, mvsUtils::ImagesCache<ImageRGBAf>& _ic, mvsUtils::MultiViewParams& _mp, int scales);
     ~PlaneSweepingCuda();
 
     void cameraToDevice( int rc, const StaticVector<int>& tcams );
