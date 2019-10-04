@@ -35,9 +35,227 @@ using namespace aliceVision;
 namespace po = boost::program_options;
 namespace fs = boost::filesystem;
 
+class LaplacianPyramid {
+public:
+  LaplacianPyramid(const size_t width_base, const size_t height_base) :
+    _width_base(width_base), 
+    _height_base(height_base)
+  {
+    _kernel = oiio::ImageBufAlgo::make_kernel("gaussian", 5.0f, 5.0f);
+
+    size_t min_dim = std::min(_width_base, _height_base);
+    size_t scales = static_cast<size_t>(floor(log2(double(min_dim))));
+    scales = 4;
+    
+    size_t new_width = _width_base;
+    size_t new_height = _height_base;
+    for (int i = 0; i < scales; i++) {
+
+      _difference_buffers.push_back(image::Image<image::RGBAfColor>(new_width, new_height));
+      _work_buffers_1.push_back(image::Image<image::RGBAfColor>(new_width, new_height));
+      _work_buffers_2.push_back(image::Image<image::RGBAfColor>(new_width, new_height));
+      _work_buffers_3.push_back(image::Image<image::RGBAfColor>(new_width, new_height));
+
+      new_height /= 2;
+      new_width /= 2;
+    }
+  }
+
+  bool process(const image::Image<image::RGBAfColor> & input) {
+
+    
+    _work_buffers_1[0] = input;
+
+
+    /*
+    Loop over the levels.
+    0 being the base level with full resolution
+    levels.size() - 1 being the least defined image
+    */
+    for (int lvl = 0; lvl < _difference_buffers.size() - 1; lvl++) {
+
+      oiio::ImageSpec spec_base(_difference_buffers[lvl].Width(), _difference_buffers[lvl].Height(), 4, oiio::TypeDesc::FLOAT);
+      oiio::ImageSpec spec_base_half(_difference_buffers[lvl + 1].Width(), _difference_buffers[lvl + 1].Height(), 4, oiio::TypeDesc::FLOAT);
+
+      oiio::ImageBuf _difference_buffer_oiio(spec_base, (void*)(_difference_buffers[lvl].data()));
+      oiio::ImageBuf _work_buffer_1_oiio(spec_base, (void*)(_work_buffers_1[lvl].data()));
+      oiio::ImageBuf _work_buffer_2_oiio(spec_base, (void*)(_work_buffers_2[lvl].data()));
+      oiio::ImageBuf _work_buffer_3_oiio(spec_base, (void*)(_work_buffers_3[lvl].data()));
+      oiio::ImageBuf _difference_buffer_half_oiio(spec_base_half, (void*)(_difference_buffers[lvl + 1].data()));
+      oiio::ImageBuf _work_buffer_1_half_oiio(spec_base_half, (void*)(_work_buffers_1[lvl + 1].data()));
+      oiio::ImageBuf _work_buffer_2_half_oiio(spec_base_half, (void*)(_work_buffers_2[lvl + 1].data()));
+      
+      
+      
+      /*First, low pass the image*/
+      oiio::ImageBufAlgo::convolve(_work_buffer_2_oiio, _work_buffer_1_oiio, _kernel, false);
+      divideByAlpha(_work_buffers_2[lvl]);
+      copyMask(_work_buffers_2[lvl], _work_buffers_1[lvl]);
+
+      /*Subsample image*/
+      oiio::ImageBufAlgo::resample(_work_buffer_1_half_oiio, _work_buffer_2_oiio, false);
+      divideByAlpha(_work_buffers_1[lvl + 1]);
+
+      /*Upsample back reduced image*/
+      oiio::ImageBufAlgo::resample(_work_buffer_2_oiio, _work_buffer_1_half_oiio, false);
+      divideByAlpha(_work_buffers_2[lvl]);
+
+      /*Low pass upsampled image*/
+      oiio::ImageBufAlgo::convolve(_work_buffer_3_oiio, _work_buffer_2_oiio, _kernel, true);
+      divideByAlpha(_work_buffers_3[lvl]);
+      copyMask(_work_buffers_3[lvl], _work_buffers_2[lvl]);
+
+      /*Difference*/
+      substract(_difference_buffers[lvl], _work_buffers_1[lvl], _work_buffers_3[lvl]);
+    }
+
+    _difference_buffers[_difference_buffers.size() - 1] = _work_buffers_1[_work_buffers_1.size() - 1];
+
+    return true;
+  }
+
+  bool rebuild(image::Image<image::RGBAfColor> & output) {
+
+    _work_buffers_1[_difference_buffers.size() - 1] = _difference_buffers[_difference_buffers.size() - 1];
+
+    for (int lvl = _difference_buffers.size() - 2; lvl >= 0; lvl--) {
+
+      oiio::ImageSpec spec_base(_difference_buffers[lvl].Width(), _difference_buffers[lvl].Height(), 4, oiio::TypeDesc::FLOAT);
+      oiio::ImageSpec spec_base_half(_difference_buffers[lvl + 1].Width(), _difference_buffers[lvl + 1].Height(), 4, oiio::TypeDesc::FLOAT);
+
+      oiio::ImageBuf _work_buffer_1_oiio(spec_base, (void*)(_work_buffers_1[lvl].data()));
+      oiio::ImageBuf _work_buffer_2_oiio(spec_base, (void*)(_work_buffers_2[lvl].data()));
+      oiio::ImageBuf _work_buffer_1_half_oiio(spec_base_half, (void*)(_work_buffers_1[lvl + 1].data()));
+      oiio::ImageBuf _difference_buffer_half_oiio(spec_base_half, (void*)(_difference_buffers[lvl + 1].data()));
+
+      /*Upsample back reduced image*/
+      oiio::ImageBufAlgo::resample(_work_buffer_1_oiio, _work_buffer_1_half_oiio, false);
+      divideByAlpha(_work_buffers_1[lvl]);
+
+      /*Low pass upsampled image*/
+      oiio::ImageBufAlgo::convolve(_work_buffer_2_oiio, _work_buffer_1_oiio, _kernel, true);
+      divideByAlpha(_work_buffers_2[lvl]);
+      copyMask(_work_buffers_2[lvl], _work_buffers_1[lvl]);
+
+      /*Add with next*/
+      add(_work_buffers_1[lvl], _difference_buffers[lvl], _work_buffers_2[lvl]);
+    }
+
+    output = _work_buffers_1[0];
+
+    return true;
+  }
+
+  void divideByAlpha(image::Image<image::RGBAfColor> & image) {
+
+    for(int y = 0; y < image.Height(); ++y) {
+      for(int x = 0; x < image.Width(); ++x) {
+        image::RGBAfColor& pixel = image(y, x);
+        if(pixel.a() > 0.01f) {
+          pixel = pixel / pixel.a();
+        }
+      }
+    }
+  }
+
+  void copyMask(image::Image<image::RGBAfColor> & dst, const image::Image<image::RGBAfColor> & src) {
+
+    for(int y = 0; y < src.Height(); ++y) {
+      for(int x = 0; x < src.Width(); ++x) {
+        const image::RGBAfColor & pixelSrc = src(y, x);
+        image::RGBAfColor & pixelDst = dst(y, x);
+        
+        pixelDst = pixelDst * pixelSrc.a();
+      }
+    }
+  }
+
+  void substract(image::Image<image::RGBAfColor> & result, const image::Image<image::RGBAfColor> & A, const image::Image<image::RGBAfColor> & B) {
+
+    for(int y = 0; y < A.Height(); ++y) {
+      for(int x = 0; x < A.Width(); ++x) {
+        const image::RGBAfColor & pixelA = A(y, x);
+        const image::RGBAfColor & pixelB = B(y, x);
+        image::RGBAfColor & pixelR = result(y, x);
+        
+        if(pixelA.a() > std::numeric_limits<float>::epsilon()) {
+          pixelR.r() = pixelA.r() - pixelB.r();
+          pixelR.g() = pixelA.g() - pixelB.g();
+          pixelR.b() = pixelA.b() - pixelB.b();
+          pixelR.a() = 1.0f;
+        }
+        else {
+          pixelR.r() = 0.0f;
+          pixelR.g() = 0.0f;
+          pixelR.b() = 0.0f;
+          pixelR.a() = 0.0f;
+        }
+      }
+    }
+  }
+
+
+  void add(image::Image<image::RGBAfColor> & result, const image::Image<image::RGBAfColor> & A, const image::Image<image::RGBAfColor> & B) {
+
+    for(int y = 0; y < A.Height(); ++y) {
+      for(int x = 0; x < A.Width(); ++x) {
+        const image::RGBAfColor & pixelA = A(y, x);
+        const image::RGBAfColor & pixelB = B(y, x);
+        image::RGBAfColor & pixelR = result(y, x);
+        
+        if(pixelA.a() > std::numeric_limits<float>::epsilon()) {
+          pixelR.r() = pixelA.r() + pixelB.r();
+          pixelR.g() = pixelA.g() + pixelB.g();
+          pixelR.b() = pixelA.b() + pixelB.b();
+          pixelR.a() = 1.0f;
+        }
+        else {
+          pixelR.r() = 0.0f;
+          pixelR.g() = 0.0f;
+          pixelR.b() = 0.0f;
+          pixelR.a() = 0.0f;
+        }
+      }
+    }
+  }
+
+ 
+
+public:
+  size_t _width_base;
+  size_t _height_base;
+  oiio::ImageBuf _kernel;
+
+  std::vector<image::Image<image::RGBAfColor>> _difference_buffers;
+  std::vector<image::Image<image::RGBAfColor>> _work_buffers_1;
+  std::vector<image::Image<image::RGBAfColor>> _work_buffers_2;
+  std::vector<image::Image<image::RGBAfColor>> _work_buffers_3;
+};
+
 float sigmoid(float x, float sigwidth, float sigMid)
 {
   return 1.0f / (1.0f + expf(10.0f * ((x - sigMid) / sigwidth)));
+}
+
+Eigen::Matrix3d rotationBetweenVectors(const Vec3 & v1, const Vec3 & v2) {
+
+  const Vec3 v1n = v1.normalized();
+  const Vec3 v2n = v2.normalized();
+  const Vec3 cr = v1n.cross(v2n);
+  const Vec3 axis = cr.normalized();
+
+  double cosangle = v1n.dot(v2n);
+  double sinangle = cr.norm();
+
+  Eigen::Matrix3d S = Eigen::Matrix3d::Zero();
+  S(0, 1) = -axis(2);
+  S(0, 2) = axis(1);
+  S(1, 0) = axis(2);
+  S(1, 2) = -axis(0);
+  S(2, 0) = -axis(1);
+  S(2, 1) = axis(0);
+
+  return Eigen::Matrix3d::Identity() + sinangle * S + (1 - cosangle) * S * S;
 }
 
 /**
@@ -45,16 +263,35 @@ float sigmoid(float x, float sigwidth, float sigMid)
  */
 namespace SphericalMapping
 {
-  Vec3 fromEquirectangular(const Vec2& pos2d, int width, int height)
+  Vec3 fromEquirectangular(const Vec2 & equirectangular, int width, int height)
   {
-    const double latitude = (pos2d(1) / double(height)) * M_PI  - M_PI_2;
-    const double longitude = ((pos2d(0) / double(width)) * 2.0 * M_PI) - M_PI;
+    const double latitude = (equirectangular(1) / double(height)) * M_PI  - M_PI_2;
+    const double longitude = ((equirectangular(0) / double(width)) * 2.0 * M_PI) - M_PI;
 
     const double Px = cos(latitude) * sin(longitude);
     const double Py = sin(latitude);
     const double Pz = cos(latitude) * cos(longitude);
 
     return Vec3(Px, Py, Pz);
+  }
+
+  Vec2 toEquirectangular(const Vec3 & spherical, int width, int height) {
+
+    double vertical_angle = asin(spherical(1));
+    double horizontal_angle = atan2(spherical(0), spherical(2));
+
+    double latitude =  ((vertical_angle + M_PI_2) / M_PI) * height;
+    double longitude =  ((horizontal_angle + M_PI) / (2.0 * M_PI)) * width;
+
+    return Vec2(longitude, latitude);
+  }
+
+  Vec2 toLongitudeLatitude(const Vec3 & spherical) {
+    
+    double latitude = asin(spherical(1));
+    double longitude = atan2(spherical(0), spherical(2));
+
+    return Vec2(longitude, latitude);
   }
 }
 
@@ -67,8 +304,8 @@ inline std::istream& operator>>(std::istream& in, std::pair<int, int>& out)
 
 bool estimate_panorama_size(const sfmData::SfMData & sfmData, float fisheyeMaskingMargin, std::pair<int, int> & panoramaSize) {
 
-  panoramaSize.first = 256;
-  panoramaSize.second = 128;
+  panoramaSize.first = 512;
+  panoramaSize.second = 256;
 
   image::Image<image::RGBAfColor> BufferCoords(panoramaSize.first, panoramaSize.second, true, image::RGBAfColor(0.0f, 0.0f, 0.0f, 0.0f));
   {
@@ -106,8 +343,7 @@ bool estimate_panorama_size(const sfmData::SfMData & sfmData, float fisheyeMaski
           // unit vector to camera
           const Vec2 pix_disto = intrinsic.project(camPose.getTransform(), ray, true);
 
-          if( pix_disto(0) < 0 || pix_disto(0) >= intrinsic.w() ||
-              pix_disto(1) < 0 || pix_disto(1) >= intrinsic.h())
+          if( pix_disto(0) < 0 || pix_disto(0) >= intrinsic.w() || pix_disto(1) < 0 || pix_disto(1) >= intrinsic.h())
           {
             //the pixel is out of the image
             continue;
@@ -124,6 +360,8 @@ bool estimate_panorama_size(const sfmData::SfMData & sfmData, float fisheyeMaski
           BufferCoords(y, x).a() = 1.0;
         }
       }
+
+
 
       for(int y = 1; y < panoramaSize.second - 1; ++y)
       {
@@ -154,10 +392,12 @@ bool estimate_panorama_size(const sfmData::SfMData & sfmData, float fisheyeMaski
           determinants.push_back(det);
         }
       }
+
+      break;
     }
 
     std::nth_element(determinants.begin(), determinants.begin() + determinants.size() / 5, determinants.end());
-    double scale = sqrt(determinants[determinants.size() / 5]);
+    double scale = sqrt(determinants[determinants.size() / 2]);
     
     panoramaSize.first *= scale;
     panoramaSize.second *= scale;
@@ -165,6 +405,7 @@ bool estimate_panorama_size(const sfmData::SfMData & sfmData, float fisheyeMaski
 
   return true;
 }
+
 
 int main(int argc, char **argv)
 {
@@ -179,7 +420,6 @@ int main(int argc, char **argv)
   bool fisheyeMasking = false;
   float fisheyeMaskingMargin = 0.05f;
   float transitionSize = 10.0f;
-
   int debugSubsetStart = 0;
   int debugSubsetSize = 0;
 
@@ -276,6 +516,9 @@ int main(int argc, char **argv)
   panoramaSize.first *= scaleFactor;
   panoramaSize.second *= scaleFactor;
 
+  /*Make sure panorama size is even */
+  panoramaSize.first = 2 * (panoramaSize.first / 2);
+  panoramaSize.second = 2 * (panoramaSize.second / 2);
 
   ALICEVISION_LOG_INFO("Output panorama size: " << panoramaSize.first << ", " << panoramaSize.second);
 
@@ -314,13 +557,52 @@ int main(int argc, char **argv)
 
     const sfmData::CameraPose camPose = sfmData.getPose(view);
     const camera::IntrinsicBase& intrinsic = *sfmData.getIntrinsicPtr(view.getIntrinsicId());
-
     std::string imagePath = view.getImagePath();
+
+
+    /*Vec2 pix_hg(0, 0);
+    Vec2 pix_hd(intrinsic.w(), 0);
+    Vec2 pix_bd(intrinsic.w(), intrinsic.h());
+    Vec2 pix_bg(0, intrinsic.h());
+
+    Vec2 pix_h  = 0.5 * (pix_hg + pix_bg);
+    Vec2 pix_b  = 0.5 * (pix_bg + pix_bd);
+    Vec2 pix_g  = 0.5 * (pix_hg + pix_bg);
+    Vec2 pix_d  = 0.5 * (pix_hd + pix_bd);
+    
+    Vec3 cam_hg = intrinsic.remove_disto(intrinsic.ima2cam(pix_hg)).homogeneous().normalized();
+    Vec3 cam_hd = intrinsic.remove_disto(intrinsic.ima2cam(pix_hd)).homogeneous().normalized();
+    Vec3 cam_bg = intrinsic.remove_disto(intrinsic.ima2cam(pix_bg)).homogeneous().normalized();
+    Vec3 cam_bd = intrinsic.remove_disto(intrinsic.ima2cam(pix_bd)).homogeneous().normalized();
+
+    Vec3 cam_h = intrinsic.remove_disto(intrinsic.ima2cam(pix_h)).homogeneous().normalized();
+    Vec3 cam_b = intrinsic.remove_disto(intrinsic.ima2cam(pix_b)).homogeneous().normalized();
+    Vec3 cam_g = intrinsic.remove_disto(intrinsic.ima2cam(pix_g)).homogeneous().normalized();
+    Vec3 cam_d = intrinsic.remove_disto(intrinsic.ima2cam(pix_d)).homogeneous().normalized();
+
+    Vec3 pano_hg = camPose.getTransform().rotation().transpose() * cam_hg;
+    Vec3 pano_hd = camPose.getTransform().rotation().transpose() * cam_hd;
+    Vec3 pano_bd = camPose.getTransform().rotation().transpose() * cam_bd;
+    Vec3 pano_bg = camPose.getTransform().rotation().transpose() * cam_bg;
+
+    Vec2 pix_pano_hg = SphericalMapping::toEquirectangular(pano_hg, panoramaSize.first, panoramaSize.second);
+    Vec2 pix_pano_hd = SphericalMapping::toEquirectangular(pano_hd, panoramaSize.first, panoramaSize.second);
+    Vec2 pix_pano_bd = SphericalMapping::toEquirectangular(pano_bd, panoramaSize.first, panoramaSize.second);
+    Vec2 pix_pano_bg = SphericalMapping::toEquirectangular(pano_bg, panoramaSize.first, panoramaSize.second);
+    
+    double minx = std::min(std::min(std::min(pix_pano_hg(0), pix_pano_hd(0)), pix_pano_bd(0)), pix_pano_bg(0));
+    double miny = std::min(std::min(std::min(pix_pano_hg(1), pix_pano_hd(1)), pix_pano_bd(1)), pix_pano_bg(1));
+    double maxx = std::max(std::max(std::max(pix_pano_hg(0), pix_pano_hd(0)), pix_pano_bd(0)), pix_pano_bg(0));
+    double maxy = std::max(std::max(std::max(pix_pano_hg(1), pix_pano_hd(1)), pix_pano_bd(1)), pix_pano_bg(1));
+
+    int iminx = std::max(0, int(floor(minx)));
+    int iminy = std::max(0, int(floor(miny)));
+    int imaxx = std::max(panoramaSize.first, int(ceil(maxx)));
+    int imaxy = std::max(panoramaSize.second, int(ceil(maxy)));   */
 
 
     // Image RGB
     image::Image<image::RGBfColor> imageIn;
-
     
 
     ALICEVISION_LOG_INFO("Reading " << imagePath);
@@ -332,14 +614,16 @@ int main(int argc, char **argv)
     const float blurMid = maxRadius - transitionSize/2.f;
     const Vec2i center(imageIn.Width()/2.f, imageIn.Height()/2.f);
 
-    const image::Sampler2d<image::SamplerLinear> sampler;
+    const image::Sampler2d<image::SamplerLinear> sampler;   
 
-    for(int y = 0; y < imageOut.Height(); ++y)
+    image::Image<image::RGBAfColor> perCameraOutput(panoramaSize.first, panoramaSize.second, true, image::RGBAfColor(0.0f, 0.0f, 0.0f, 0.0f));
+
+    for(int y = 0; y < panoramaSize.second; ++y)
     {
-      for(int x = 0; x < imageOut.Width(); ++x)
+      for(int x = 0; x < panoramaSize.first; ++x)
       {
         // equirectangular to unit vector
-        Vec3 ray = SphericalMapping::fromEquirectangular(Vec2(x,y), imageOut.Width(), imageOut.Height());       
+        Vec3 ray = SphericalMapping::fromEquirectangular(Vec2(x,y), imageOut.Width(), imageOut.Height());    
 
         //Check that this ray should be visible
         Vec3 transformedRay = camPose.getTransform()(ray);
@@ -350,8 +634,7 @@ int main(int argc, char **argv)
         // unit vector to camera
         const Vec2 pix_disto = intrinsic.project(camPose.getTransform(), ray, true);
 
-        if( pix_disto(0) < 0 || pix_disto(0) >= imageIn.Width() ||
-            pix_disto(1) < 0 || pix_disto(1) >= imageIn.Height())
+        if( pix_disto(0) < 0 || pix_disto(0) >= imageIn.Width() || pix_disto(1) < 0 || pix_disto(1) >= imageIn.Height())
         {
           // the pixel is out of the image
           continue;
@@ -370,23 +653,36 @@ int main(int argc, char **argv)
           {
               contribution = sigmoid(dist, transitionSize, blurMid);
           }
-        }
-
-        
+        }       
 
         const image::RGBfColor pixel = sampler(imageIn, pix_disto(1), pix_disto(0));
         if(contribution > 0.0f)
         {
-          imageOut(y, x).r() += pixel.r() * contribution;
-          imageOut(y, x).g() += pixel.g() * contribution;
-          imageOut(y, x).b() += pixel.b() * contribution;
-          imageOut(y, x).a() += contribution;
+          perCameraOutput(y, x).r() += pixel.r() * contribution;
+          perCameraOutput(y, x).g() += pixel.g() * contribution;
+          perCameraOutput(y, x).b() += pixel.b() * contribution;
+          perCameraOutput(y, x).a() += contribution;
         }
       }
-    }
+    }   
+
+
+    LaplacianPyramid pyramid(panoramaSize.first, panoramaSize.second);
+    image::Image<image::RGBAfColor> output;
+
+    pyramid.process(perCameraOutput);
+    pyramid.rebuild(output);
+
+    
+
+    char filename[512];
+    sprintf(filename, "%s%d_old.png", outputPanorama.c_str(), imageIndex);
+    image::writeImage(filename, perCameraOutput, image::EImageColorSpace::AUTO);
+    sprintf(filename, "%s%d.png", outputPanorama.c_str(), imageIndex);
+    image::writeImage(filename, output, image::EImageColorSpace::AUTO);
   }
 
-  for(int y = 0; y < imageOut.Height(); ++y)
+  /*for(int y = 0; y < imageOut.Height(); ++y)
   {
     for(int x = 0; x < imageOut.Width(); ++x)
     {
@@ -399,9 +695,11 @@ int main(int argc, char **argv)
         pixel.a() = 1.0f; // TMP: comment to keep the alpha with the number of contribution for debugging
       }
     }
-  }
+  }*/
 
-  image::writeImage(outputPanorama, imageOut, image::EImageColorSpace::AUTO);
+  
+
+  //image::writeImage(outputPanorama, imageOut, image::EImageColorSpace::AUTO);
 
   return EXIT_SUCCESS;
 }
