@@ -45,7 +45,7 @@ public:
 
     size_t min_dim = std::min(_width_base, _height_base);
     size_t scales = static_cast<size_t>(floor(log2(double(min_dim))));
-    scales = 4;
+    scales = 6;
     
     size_t new_width = _width_base;
     size_t new_height = _height_base;
@@ -142,6 +142,38 @@ public:
     }
 
     output = _work_buffers_1[0];
+
+    return true;
+  }
+
+  bool blend(const LaplacianPyramid & other) {
+
+    if (_difference_buffers.size() != other._difference_buffers.size()) {
+      return false;
+    }
+
+    for (size_t lvl = 0; lvl < _difference_buffers.size(); lvl++) {
+
+      image::Image<image::RGBAfColor> & img_first = _difference_buffers[lvl];
+      const image::Image<image::RGBAfColor> & img_second = other._difference_buffers[lvl];
+      
+      for (int i = 0; i < img_first.Height(); i++) {
+        for (int j = 0; j < img_first.Width(); j++) {
+          
+          image::RGBAfColor & pix_first = img_first(i, j);
+          const image::RGBAfColor & pix_second = img_second(i, j);
+
+          float sum = pix_first.a() + pix_second.a();
+          if (std::abs(sum) > std::numeric_limits<float>::epsilon()) {
+            float scale = 1.0f / sum;
+            pix_first.r() = scale * (pix_first.a() * pix_first.r() + pix_second.a() * pix_second.r());
+            pix_first.g() = scale * (pix_first.a() * pix_first.g() + pix_second.a() * pix_second.g());
+            pix_first.b() = scale * (pix_first.a() * pix_first.b() + pix_second.a() * pix_second.b());
+            pix_first.a() = 1.0f;
+          }
+        }
+      }
+    }
 
     return true;
   }
@@ -523,7 +555,10 @@ int main(int argc, char **argv)
   ALICEVISION_LOG_INFO("Output panorama size: " << panoramaSize.first << ", " << panoramaSize.second);
 
   // Create panorama buffer
+  LaplacianPyramid blending_pyramid(panoramaSize.first, panoramaSize.second);
+  image::Image<image::RGBAfColor> output;
   image::Image<image::RGBAfColor> imageOut(panoramaSize.first, panoramaSize.second, true, image::RGBAfColor(0.0f, 0.0f, 0.0f, 0.0f));
+
 
   int imageIndex = 0;
   for(auto& viewIt: sfmData.getViews())
@@ -559,52 +594,8 @@ int main(int argc, char **argv)
     const camera::IntrinsicBase& intrinsic = *sfmData.getIntrinsicPtr(view.getIntrinsicId());
     std::string imagePath = view.getImagePath();
 
-
-    /*Vec2 pix_hg(0, 0);
-    Vec2 pix_hd(intrinsic.w(), 0);
-    Vec2 pix_bd(intrinsic.w(), intrinsic.h());
-    Vec2 pix_bg(0, intrinsic.h());
-
-    Vec2 pix_h  = 0.5 * (pix_hg + pix_bg);
-    Vec2 pix_b  = 0.5 * (pix_bg + pix_bd);
-    Vec2 pix_g  = 0.5 * (pix_hg + pix_bg);
-    Vec2 pix_d  = 0.5 * (pix_hd + pix_bd);
-    
-    Vec3 cam_hg = intrinsic.remove_disto(intrinsic.ima2cam(pix_hg)).homogeneous().normalized();
-    Vec3 cam_hd = intrinsic.remove_disto(intrinsic.ima2cam(pix_hd)).homogeneous().normalized();
-    Vec3 cam_bg = intrinsic.remove_disto(intrinsic.ima2cam(pix_bg)).homogeneous().normalized();
-    Vec3 cam_bd = intrinsic.remove_disto(intrinsic.ima2cam(pix_bd)).homogeneous().normalized();
-
-    Vec3 cam_h = intrinsic.remove_disto(intrinsic.ima2cam(pix_h)).homogeneous().normalized();
-    Vec3 cam_b = intrinsic.remove_disto(intrinsic.ima2cam(pix_b)).homogeneous().normalized();
-    Vec3 cam_g = intrinsic.remove_disto(intrinsic.ima2cam(pix_g)).homogeneous().normalized();
-    Vec3 cam_d = intrinsic.remove_disto(intrinsic.ima2cam(pix_d)).homogeneous().normalized();
-
-    Vec3 pano_hg = camPose.getTransform().rotation().transpose() * cam_hg;
-    Vec3 pano_hd = camPose.getTransform().rotation().transpose() * cam_hd;
-    Vec3 pano_bd = camPose.getTransform().rotation().transpose() * cam_bd;
-    Vec3 pano_bg = camPose.getTransform().rotation().transpose() * cam_bg;
-
-    Vec2 pix_pano_hg = SphericalMapping::toEquirectangular(pano_hg, panoramaSize.first, panoramaSize.second);
-    Vec2 pix_pano_hd = SphericalMapping::toEquirectangular(pano_hd, panoramaSize.first, panoramaSize.second);
-    Vec2 pix_pano_bd = SphericalMapping::toEquirectangular(pano_bd, panoramaSize.first, panoramaSize.second);
-    Vec2 pix_pano_bg = SphericalMapping::toEquirectangular(pano_bg, panoramaSize.first, panoramaSize.second);
-    
-    double minx = std::min(std::min(std::min(pix_pano_hg(0), pix_pano_hd(0)), pix_pano_bd(0)), pix_pano_bg(0));
-    double miny = std::min(std::min(std::min(pix_pano_hg(1), pix_pano_hd(1)), pix_pano_bd(1)), pix_pano_bg(1));
-    double maxx = std::max(std::max(std::max(pix_pano_hg(0), pix_pano_hd(0)), pix_pano_bd(0)), pix_pano_bg(0));
-    double maxy = std::max(std::max(std::max(pix_pano_hg(1), pix_pano_hd(1)), pix_pano_bd(1)), pix_pano_bg(1));
-
-    int iminx = std::max(0, int(floor(minx)));
-    int iminy = std::max(0, int(floor(miny)));
-    int imaxx = std::max(panoramaSize.first, int(ceil(maxx)));
-    int imaxy = std::max(panoramaSize.second, int(ceil(maxy)));   */
-
-
     // Image RGB
     image::Image<image::RGBfColor> imageIn;
-    
-
     ALICEVISION_LOG_INFO("Reading " << imagePath);
     image::readImage(imagePath, imageIn, image::EImageColorSpace::LINEAR);
     ALICEVISION_LOG_INFO(" - " << imageIn.Width() << "x" << imageIn.Height());
@@ -617,13 +608,14 @@ int main(int argc, char **argv)
     const image::Sampler2d<image::SamplerLinear> sampler;   
 
     image::Image<image::RGBAfColor> perCameraOutput(panoramaSize.first, panoramaSize.second, true, image::RGBAfColor(0.0f, 0.0f, 0.0f, 0.0f));
+    
 
     for(int y = 0; y < panoramaSize.second; ++y)
     {
       for(int x = 0; x < panoramaSize.first; ++x)
       {
         // equirectangular to unit vector
-        Vec3 ray = SphericalMapping::fromEquirectangular(Vec2(x,y), imageOut.Width(), imageOut.Height());    
+        Vec3 ray = SphericalMapping::fromEquirectangular(Vec2(x,y), panoramaSize.first, panoramaSize.second);    
 
         //Check that this ray should be visible
         Vec3 transformedRay = camPose.getTransform()(ray);
@@ -658,36 +650,40 @@ int main(int argc, char **argv)
         const image::RGBfColor pixel = sampler(imageIn, pix_disto(1), pix_disto(0));
         if(contribution > 0.0f)
         {
-          perCameraOutput(y, x).r() += pixel.r() * contribution;
-          perCameraOutput(y, x).g() += pixel.g() * contribution;
-          perCameraOutput(y, x).b() += pixel.b() * contribution;
-          perCameraOutput(y, x).a() += contribution;
+          contribution = 1.0f;
+          imageOut(y, x).r() += pixel.r() * contribution;
+          imageOut(y, x).g() += pixel.g() * contribution;
+          imageOut(y, x).b() += pixel.b() * contribution;
+          imageOut(y, x).a() += contribution;
         }
       }
     }   
 
 
-    LaplacianPyramid pyramid(panoramaSize.first, panoramaSize.second);
-    image::Image<image::RGBAfColor> output;
-
+   /*LaplacianPyramid pyramid(panoramaSize.first, panoramaSize.second);
     pyramid.process(perCameraOutput);
+    blending_pyramid.blend(pyramid);
+
+    image::Image<image::RGBAfColor> output;
     pyramid.rebuild(output);
 
-    
 
     char filename[512];
     sprintf(filename, "%s%d_old.png", outputPanorama.c_str(), imageIndex);
     image::writeImage(filename, perCameraOutput, image::EImageColorSpace::AUTO);
     sprintf(filename, "%s%d.png", outputPanorama.c_str(), imageIndex);
-    image::writeImage(filename, output, image::EImageColorSpace::AUTO);
+    image::writeImage(filename, output, image::EImageColorSpace::AUTO);*/
   }
 
-  /*for(int y = 0; y < imageOut.Height(); ++y)
+  
+  //blending_pyramid.rebuild(output);
+
+  for(int y = 0; y < output.Height(); ++y)
   {
-    for(int x = 0; x < imageOut.Width(); ++x)
+    for(int x = 0; x < output.Width(); ++x)
     {
-      image::RGBAfColor& pixel = imageOut(y, x);
-      if(pixel.a() > 0.0001f)
+      image::RGBAfColor& pixel = output(y, x);
+      if(pixel.a() > std::numeric_limits<float>::epsilon())
       {
         pixel.r() /= pixel.a();
         pixel.g() /= pixel.a();
@@ -695,11 +691,9 @@ int main(int argc, char **argv)
         pixel.a() = 1.0f; // TMP: comment to keep the alpha with the number of contribution for debugging
       }
     }
-  }*/
+  }
 
-  
-
-  //image::writeImage(outputPanorama, imageOut, image::EImageColorSpace::AUTO);
+  image::writeImage(outputPanorama, imageOut, image::EImageColorSpace::AUTO);
 
   return EXIT_SUCCESS;
 }
