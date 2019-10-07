@@ -544,6 +544,8 @@ int main(int argc, char** argv)
       ldrImageGroups_sorted[g].at(i) = ldrImages.at(std::distance(ldrTimes.begin(), it));
     }
 
+    ldrImages.clear();
+
     // find target exposure time corresponding to the image name given by user
     if(!targets[g].empty())
     {
