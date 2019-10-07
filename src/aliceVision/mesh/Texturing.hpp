@@ -69,7 +69,7 @@ struct TexturingParams
     unsigned int multiBandDownscale = 4;
     std::vector<int> multiBandNbContrib = {1, 5, 10, 0}; // number of contributions per frequency band for the multi-band blending
     imageIO::EImageColorSpace processColorspace = imageIO::EImageColorSpace::SRGB; // colorspace for the texturing internal computation
-    mvsUtils::ImagesCache::ECorrectEV correctEV{mvsUtils::ImagesCache::ECorrectEV::NO_CORRECTION};
+    mvsUtils::ECorrectEV correctEV{mvsUtils::ECorrectEV::NO_CORRECTION};
 
     double bestScoreThreshold = 0.1; //< 0.0 to disable filtering based on threshold to relative best score
     double angleHardThreshold = 90.0; //< 0.0 to disable angle hard threshold filtering
@@ -154,7 +154,7 @@ public:
     // Create buffer for the set of output textures
     struct AccuImage
     {
-        Image img;
+        ImageRGBf img;
         std::vector<float> imgCount;
 
         void resize(int width, int height)
@@ -181,7 +181,7 @@ public:
 
     /// Generate texture files for the given sub-set of texture atlases
     void generateTexturesSubSet(const mvsUtils::MultiViewParams& mp,
-                         const std::vector<size_t>& atlasIDs, mvsUtils::ImagesCache& imageCache,
+                         const std::vector<size_t>& atlasIDs, mvsUtils::ImagesCache<ImageRGBf>& imageCache,
                          const bfs::path &outPath, imageIO::EImageFileType textureFileType = imageIO::EImageFileType::PNG);
 
     ///Fill holes and write texture files for the given texture atlas

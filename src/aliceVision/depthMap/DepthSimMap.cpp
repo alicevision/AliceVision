@@ -310,7 +310,7 @@ void DepthSimMap::getSimMap(StaticVector<float>& out_simMap) const
 void DepthSimMap::saveToImage(const std::string& filename, float simThr) const
 {
     const int bufferWidth = 2 * _w;
-    std::vector<Color> colorBuffer(bufferWidth * _h);
+    std::vector<ColorRGBf> colorBuffer(bufferWidth * _h);
 
     try
     {

@@ -13,7 +13,7 @@
 namespace aliceVision {
 namespace mvsUtils {
 
-std::string ImagesCache::ECorrectEV_enumToString(const ECorrectEV correctEV)
+std::string ECorrectEV_enumToString(const ECorrectEV correctEV)
 {
     switch(correctEV)
     {
@@ -25,7 +25,8 @@ std::string ImagesCache::ECorrectEV_enumToString(const ECorrectEV correctEV)
 }
 
 
-ImagesCache::ImagesCache(const MultiViewParams& mp, imageIO::EImageColorSpace colorspace, ECorrectEV correctEV)
+template<typename Image>
+ImagesCache<Image>::ImagesCache(const MultiViewParams& mp, imageIO::EImageColorSpace colorspace, ECorrectEV correctEV)
   : _mp(mp)
   , _colorspace(colorspace)
   , _correctEV(correctEV)
@@ -38,7 +39,8 @@ ImagesCache::ImagesCache(const MultiViewParams& mp, imageIO::EImageColorSpace co
     initIC( imagesNames );
 }
 
-ImagesCache::ImagesCache(const MultiViewParams& mp, imageIO::EImageColorSpace colorspace, std::vector<std::string>& imagesNames
+template<typename Image>
+ImagesCache<Image>::ImagesCache(const MultiViewParams& mp, imageIO::EImageColorSpace colorspace, std::vector<std::string>& imagesNames
                         , ECorrectEV correctEV)
   : _mp(mp)
   , _colorspace(colorspace)
@@ -47,7 +49,8 @@ ImagesCache::ImagesCache(const MultiViewParams& mp, imageIO::EImageColorSpace co
     initIC( imagesNames );
 }
 
-void ImagesCache::initIC( std::vector<std::string>& imagesNames )
+template<typename Image>
+void ImagesCache<Image>::initIC( std::vector<std::string>& imagesNames )
 {
     float oneimagemb = (sizeof(Color) * _mp.getMaxImageWidth() * _mp.getMaxImageHeight()) / 1024.f / 1024.f;
     float maxmbCPU = (float)_mp.userParams.get<int>("images_cache.maxmbCPU", 5000);
@@ -73,7 +76,8 @@ void ImagesCache::initIC( std::vector<std::string>& imagesNames )
 
 }
 
-void ImagesCache::setCacheSize(int nbPreload)
+template<typename Image>
+void ImagesCache<Image>::setCacheSize(int nbPreload)
 {
     _N_PRELOADED_IMAGES = nbPreload;
     _imgs.resize(_N_PRELOADED_IMAGES);
@@ -81,7 +85,8 @@ void ImagesCache::setCacheSize(int nbPreload)
     _mapIdClock.resize( _N_PRELOADED_IMAGES, clock() );
 }
 
-void ImagesCache::refreshData(int camId)
+template<typename Image>
+void ImagesCache<Image>::refreshData(int camId)
 {
     // printf("camId %i\n",camId);
     // test if the image is in the memory
@@ -119,29 +124,34 @@ void ImagesCache::refreshData(int camId)
     }
 }
 
-void ImagesCache::refreshImage_sync(int camId)
+template<typename Image>
+void ImagesCache<Image>::refreshImage_sync(int camId)
 {
   std::lock_guard<std::mutex> lock(_imagesMutexes[camId]);
   refreshData(camId);
 }
 
-void ImagesCache::refreshImage_async(int camId)
+template<typename Image>
+void ImagesCache<Image>::refreshImage_async(int camId)
 {
-    _asyncObjects.emplace_back(std::async(std::launch::async, &ImagesCache::refreshImage_sync, this, camId));
+    _asyncObjects.emplace_back(std::async(std::launch::async, &ImagesCache<Image>::refreshImage_sync, this, camId));
 }
 
-void ImagesCache::refreshImages_sync(const std::vector<int>& camIds)
+template<typename Image>
+void ImagesCache<Image>::refreshImages_sync(const std::vector<int>& camIds)
 {
     for(int camId: camIds)
         refreshImage_sync(camId);
 }
 
-void ImagesCache::refreshImages_async(const std::vector<int>& camIds)
+template<typename Image>
+void ImagesCache<Image>::refreshImages_async(const std::vector<int>& camIds)
 {
-    _asyncObjects.emplace_back(std::async(std::launch::async, &ImagesCache::refreshImages_sync, this, camIds));
+    _asyncObjects.emplace_back(std::async(std::launch::async, &ImagesCache<Image>::refreshImages_sync, this, camIds));
 }
 
-Color ImagesCache::getPixelValueInterpolated(const Point2d* pix, int camId)
+template<typename Image>
+typename ImagesCache<Image>::Color ImagesCache<Image>::getPixelValueInterpolated(const Point2d* pix, int camId)
 {
     // get the image index in the memory
     const int i = _camIdMapId[camId];
@@ -167,6 +177,8 @@ Color ImagesCache::getPixelValueInterpolated(const Point2d* pix, int camId)
     return out;
 }
 
+template class ImagesCache<ImageRGBf>;
+template class ImagesCache<ImageRGBAf>;
 
 } // namespace mvsUtils
 } // namespace aliceVision

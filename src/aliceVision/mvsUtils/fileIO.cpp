@@ -323,7 +323,8 @@ Matrix3x4 load3x4MatrixFromFile(FILE* fi)
     return m;
 }
 
-void loadImage(const std::string& path, const MultiViewParams& mp, int camId, Image& img, imageIO::EImageColorSpace colorspace, ImagesCache::ECorrectEV correctEV)
+template<class Image>
+void loadImage(const std::string& path, const MultiViewParams& mp, int camId, Image& img, imageIO::EImageColorSpace colorspace, ECorrectEV correctEV)
 {
     // check image size
     auto checkImageSize = [&path, &mp, camId, &img](){
@@ -338,7 +339,7 @@ void loadImage(const std::string& path, const MultiViewParams& mp, int camId, Im
         }
     };
 
-    if(correctEV == ImagesCache::ECorrectEV::NO_CORRECTION)
+    if(correctEV == ECorrectEV::NO_CORRECTION)
     {
         imageIO::readImage(path, img, colorspace);
         checkImageSize();
@@ -381,6 +382,9 @@ void loadImage(const std::string& path, const MultiViewParams& mp, int camId, Im
         img.swap(bmpr);
     }
 }
+
+template void loadImage<ImageRGBf>(const std::string& path, const MultiViewParams& mp, int camId, ImageRGBf& img, imageIO::EImageColorSpace colorspace, ECorrectEV correctEV);
+template void loadImage<ImageRGBAf>(const std::string& path, const MultiViewParams& mp, int camId, ImageRGBAf& img, imageIO::EImageColorSpace colorspace, ECorrectEV correctEV);
 
 bool DeleteDirectory(const std::string& sPath)
 {

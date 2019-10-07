@@ -11,7 +11,7 @@
 
 namespace aliceVision {
 
-class Color
+class ColorRGBf
 {
 public:
     union {
@@ -22,21 +22,21 @@ public:
         float m[3];
     };
 
-    inline Color()
+    inline ColorRGBf()
     {
         r = 0.0;
         g = 0.0;
         b = 0.0;
     }
 
-    inline Color(float _r, float _g, float _b)
+    inline ColorRGBf(float _r, float _g, float _b)
     {
         r = _r;
         g = _g;
         b = _b;
     }
 
-    inline Color& operator=(const Color& param)
+    inline ColorRGBf& operator=(const ColorRGBf& param)
     {
         r = param.r;
         g = param.g;
@@ -44,37 +44,37 @@ public:
         return *this;
     }
 
-    inline bool operator==(const Color& param)
+    inline bool operator==(const ColorRGBf& param)
     {
         return (r == param.r) && (g == param.g) && (b == param.b);
     }
 
-    inline Color operator-(const Color& _p) const
+    inline ColorRGBf operator-(const ColorRGBf& _p) const
     {
-        return Color(r - _p.r, g - _p.g, b - _p.b);
+        return ColorRGBf(r - _p.r, g - _p.g, b - _p.b);
     }
 
-    inline Color operator-() const
+    inline ColorRGBf operator-() const
     {
-        return Color(-r, -g, -b);
+        return ColorRGBf(-r, -g, -b);
     }
 
-    inline Color operator+(const Color& _p) const
+    inline ColorRGBf operator+(const ColorRGBf& _p) const
     {
-        return Color(r + _p.r, g + _p.g, b + _p.b);
+        return ColorRGBf(r + _p.r, g + _p.g, b + _p.b);
     }
 
-    inline Color operator*(const float d) const
+    inline ColorRGBf operator*(const float d) const
     {
-        return Color(r * d, g * d, b * d);
+        return ColorRGBf(r * d, g * d, b * d);
     }
 
-    inline Color operator/(const float d) const
+    inline ColorRGBf operator/(const float d) const
     {
-        return Color(r / d, g / d, b / d);
+        return ColorRGBf(r / d, g / d, b / d);
     }
 
-    inline Color& operator+=(const Color& _p)
+    inline ColorRGBf& operator+=(const ColorRGBf& _p)
     {
         r += _p.r;
         g += _p.g;
@@ -82,7 +82,7 @@ public:
         return *this;
     }
 
-    inline Color& operator-=(const Color& _p)
+    inline ColorRGBf& operator-=(const ColorRGBf& _p)
     {
         r -= _p.r;
         g -= _p.g;
@@ -90,7 +90,7 @@ public:
         return *this;
     }
 
-    inline Color& operator/=(const int d)
+    inline ColorRGBf& operator/=(const int d)
     {
         r /= d;
         g /= d;
@@ -98,10 +98,10 @@ public:
         return *this;
     }
 
-    inline Color normalize() const
+    inline ColorRGBf normalize() const
     {
         float d = std::sqrt(r * r + g * g + b * b);
-        return Color(r / d, g / d, b / d);
+        return ColorRGBf(r / d, g / d, b / d);
     }
 
     inline float size() const
@@ -120,23 +120,131 @@ public:
         return r * r + g * g + b * b;
     }
 
-    friend float dot(const Color& p1, const Color& p2);
-    friend Color cross(const Color& a, const Color& b);
+    friend float dot(const ColorRGBf& p1, const ColorRGBf& p2);
+    friend ColorRGBf cross(const ColorRGBf& a, const ColorRGBf& b);
 };
 
-inline float dot(const Color& p1, const Color& p2)
+inline float dot(const ColorRGBf& p1, const ColorRGBf& p2)
 {
     return p1.r * p2.r + p1.g * p2.g + p1.b * p2.b;
 }
 
-inline Color cross(const Color& a, const Color& b)
+inline ColorRGBf cross(const ColorRGBf& a, const ColorRGBf& b)
 {
-    Color vc;
+    ColorRGBf vc;
     vc.r = a.g * b.b - a.b * b.g;
     vc.g = a.b * b.r - a.r * b.b;
     vc.b = a.r * b.g - a.g * b.r;
 
     return vc;
 }
+
+
+class ColorRGBAf
+{
+public:
+    union {
+        struct
+        {
+            float r, g, b, a;
+        };
+        float m[4];
+    };
+
+    inline ColorRGBAf()
+    {
+        r = 0.0;
+        g = 0.0;
+        b = 0.0;
+        a = 0.0;
+    }
+
+    inline ColorRGBAf(float _r, float _g, float _b, float _a)
+    {
+        r = _r;
+        g = _g;
+        b = _b;
+        a = _a;
+    }
+
+    inline ColorRGBAf& operator=(const ColorRGBAf& param)
+    {
+        r = param.r;
+        g = param.g;
+        b = param.b;
+        a = param.a;
+        return *this;
+    }
+
+    inline bool operator==(const ColorRGBAf& param)
+    {
+        return (r == param.r) && (g == param.g) && (b == param.b) && (a == param.a);
+    }
+
+    inline ColorRGBAf operator-(const ColorRGBAf& _p) const
+    {
+        return ColorRGBAf(r - _p.r, g - _p.g, b - _p.b, a);
+    }
+
+    inline ColorRGBAf operator-() const
+    {
+        return ColorRGBAf(-r, -g, -b, a);
+    }
+
+    inline ColorRGBAf operator+(const ColorRGBAf& _p) const
+    {
+        return ColorRGBAf(r + _p.r, g + _p.g, b + _p.b, a);
+    }
+
+    inline ColorRGBAf operator*(const float d) const
+    {
+        return ColorRGBAf(r * d, g * d, b * d, a);
+    }
+
+    inline ColorRGBAf operator/(const float d) const
+    {
+        return ColorRGBAf(r / d, g / d, b / d, a);
+    }
+
+    inline ColorRGBAf& operator+=(const ColorRGBAf& _p)
+    {
+        r += _p.r;
+        g += _p.g;
+        b += _p.b;
+        return *this;
+    }
+
+    inline ColorRGBAf& operator-=(const ColorRGBAf& _p)
+    {
+        r -= _p.r;
+        g -= _p.g;
+        b -= _p.b;
+        return *this;
+    }
+
+    inline ColorRGBAf& operator/=(const int d)
+    {
+        r /= d;
+        g /= d;
+        b /= d;
+        return *this;
+    }
+
+    inline float size() const
+    {
+        float d = r * r + g * g + b * b;
+        if (d == 0.0)
+        {
+            return 0.0;
+        }
+
+        return sqrt(d);
+    }
+
+    inline float size2() const
+    {
+        return r * r + g * g + b * b;
+    }
+};
 
 } // namespace aliceVision

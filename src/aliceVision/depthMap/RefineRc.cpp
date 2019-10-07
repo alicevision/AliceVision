@@ -283,7 +283,7 @@ void estimateAndRefineDepthMaps(int cudaDeviceIndex, mvsUtils::MultiViewParams& 
       "\t- stepXY: " << sgmStepXY);
 
   // load images from files into RAM
-  mvsUtils::ImagesCache ic(mp, imageIO::EImageColorSpace::LINEAR);
+  mvsUtils::ImagesCache<ImageRGBAf> ic(mp, imageIO::EImageColorSpace::LINEAR);
   // load stuff on GPU memory and creates multi-level images and computes gradients
   PlaneSweepingCuda cps(cudaDeviceIndex, ic, mp, sgmScale);
   // init plane sweeping parameters
@@ -320,7 +320,7 @@ void computeNormalMaps(int cudaDeviceIndex, mvsUtils::MultiViewParams& mp, const
   const int wsh = 3;
 
   using namespace imageIO;
-  mvsUtils::ImagesCache ic(mp, EImageColorSpace::LINEAR);
+  mvsUtils::ImagesCache<ImageRGBAf> ic(mp, EImageColorSpace::LINEAR);
   PlaneSweepingCuda cps(cudaDeviceIndex, ic, mp, 1);
 
   for(const int rc : cams)
@@ -334,7 +334,7 @@ void computeNormalMaps(int cudaDeviceIndex, mvsUtils::MultiViewParams& mp, const
       int h = 0;
       readImage(getFileNameFromIndex(mp, rc, mvsUtils::EFileType::depthMap, 0), w, h, depthMap.getDataWritable(), EImageColorSpace::NO_CONVERSION);
 
-      StaticVector<Color> normalMap;
+      StaticVector<ColorRGBf> normalMap;
       normalMap.resize(mp.getWidth(rc) * mp.getHeight(rc));
       
       cps.computeNormalMap(&depthMap, &normalMap, rc, 1, igammaC, igammaP, wsh);

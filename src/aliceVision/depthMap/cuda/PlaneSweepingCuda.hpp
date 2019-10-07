@@ -70,11 +70,11 @@ public:
     const int  _nbestkernelSizeHalf = 1;
     int  _nImgsInGPUAtTime = 2;
     int  _varianceWSH = 1;
-    mvsUtils::ImagesCache& _ic;
+    mvsUtils::ImagesCache<ImageRGBAf>& _ic;
 
     inline int maxImagesInGPU() const { return _nImgsInGPUAtTime; }
 
-    PlaneSweepingCuda(int CUDADeviceNo, mvsUtils::ImagesCache& _ic, mvsUtils::MultiViewParams& _mp, int scales);
+    PlaneSweepingCuda(int CUDADeviceNo, mvsUtils::ImagesCache<ImageRGBAf>& _ic, mvsUtils::MultiViewParams& _mp, int scales);
     ~PlaneSweepingCuda();
 
     void cameraToDevice( int rc, const StaticVector<int>& tcams );
@@ -141,7 +141,7 @@ public:
                                             int rc, int nSamplesHalf,
                                             int nDepthsToRefine, float sigma, int nIters, int yFrom, int hPart);
 
-    bool computeNormalMap(StaticVector<float>* depthMap, StaticVector<Color>* normalMap, int rc,
+    bool computeNormalMap(StaticVector<float>* depthMap, StaticVector<ColorRGBf>* normalMap, int rc,
                           int scale, float igammaC, float igammaP, int wsh);
 
     bool getSilhoueteMap(StaticVectorBool* oMap, int scale, int step, const rgb maskColor, int rc);

@@ -20,19 +20,21 @@
 namespace aliceVision {
 namespace mvsUtils {
 
+enum class ECorrectEV
+{
+    NO_CORRECTION,
+    APPLY_CORRECTION
+};
+
+std::string ECorrectEV_enumToString(const ECorrectEV correctEV);
+
+
+template<typename Image>
 class ImagesCache
 {
 public:
-
-    enum class ECorrectEV
-    {
-        NO_CORRECTION,
-        APPLY_CORRECTION
-    };
-
-    std::string ECorrectEV_enumToString(const ECorrectEV correctEV);
-
-    typedef std::shared_ptr<Image> ImgSharedPtr;
+    using Color = typename Image::Color;
+    using ImgSharedPtr = std::shared_ptr<Image>;
 
 private:
     ImagesCache(const ImagesCache&) = delete;

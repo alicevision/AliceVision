@@ -113,11 +113,11 @@ static void cps_host_fillCamera(CameraStructBase& base, int c, mvsUtils::MultiVi
     ps_initCameraMatrix( base );
 }
 
-static void cps_host_fillCameraData(mvsUtils::ImagesCache& ic, CameraStruct& cam, int c, mvsUtils::MultiViewParams& mp)
+static void cps_host_fillCameraData(mvsUtils::ImagesCache<ImageRGBAf>& ic, CameraStruct& cam, int c, mvsUtils::MultiViewParams& mp)
 {
     ALICEVISION_LOG_DEBUG("cps_host_fillCameraData [" << c << "]: " << mp.getWidth(c) << "x" << mp.getHeight(c));
     clock_t t1 = tic();
-    mvsUtils::ImagesCache::ImgSharedPtr img = ic.getImg_sync( c );
+    mvsUtils::ImagesCache<ImageRGBAf>::ImgSharedPtr img = ic.getImg_sync( c ); // TODO RGBA
     ALICEVISION_LOG_DEBUG("cps_host_fillCameraData: " << c << " -a- Retrieve from ImagesCache elapsed time: " << toc(t1) << " ms.");
     t1 = tic();
 
@@ -127,12 +127,12 @@ static void cps_host_fillCameraData(mvsUtils::ImagesCache& ic, CameraStruct& cam
     {
         for(int x = 0; x < w; ++x)
         {
-            const Color& floatRGB = img->at(x, y);
+            const ColorRGBAf& floatRGBA = img->at(x, y);
             float4& pix_rgba = (*cam.tex_rgba_hmh)(x, y);
-            pix_rgba.x = floatRGB.r * 255.0f;
-            pix_rgba.y = floatRGB.g * 255.0f;
-            pix_rgba.z = floatRGB.b * 255.0f;
-            pix_rgba.w = 255.0f;
+            pix_rgba.x = floatRGBA.r * 255.0f;
+            pix_rgba.y = floatRGBA.g * 255.0f;
+            pix_rgba.z = floatRGBA.b * 255.0f;
+            pix_rgba.w = floatRGBA.a * 255.0f;
         }
     }
     ALICEVISION_LOG_DEBUG("cps_host_fillCameraData: " << c << " -b- Copy to HMH elapsed time: " << toc(t1) << " ms.");
@@ -177,7 +177,7 @@ void copy(StaticVector<DepthSim>& outDepthSimMap, const CudaHostMemoryHeap<float
 
 
 PlaneSweepingCuda::PlaneSweepingCuda( int CUDADeviceNo,
-                                      mvsUtils::ImagesCache&     ic,
+                                      mvsUtils::ImagesCache<ImageRGBAf>&     ic,
                                       mvsUtils::MultiViewParams& mp,
                                       int scales )
     : _scales( scales )
@@ -718,10 +718,10 @@ void PlaneSweepingCuda::sweepPixelsToVolume( CudaDeviceMemoryPitched<TSim, 3>& v
         int tc = tcams[tci];
 
         const int rcamCacheId = addCam(rc, scale, __FUNCTION__);
-        CameraStruct rcam = _cams[rcamCacheId];
+        CameraStruct& rcam = _cams[rcamCacheId];
 
         const int tcamCacheId = addCam(tc, scale, __FUNCTION__);
-        CameraStruct tcam = _cams[tcamCacheId];
+        CameraStruct& tcam = _cams[tcamCacheId];
 
         _camsBasesDev.copyFrom(_camsBasesHst);
 
@@ -1071,7 +1071,7 @@ bool PlaneSweepingCuda::optimizeDepthSimMapGradientDescent(StaticVector<DepthSim
 }
 
 bool PlaneSweepingCuda::computeNormalMap(
-    StaticVector<float>* depthMap, StaticVector<Color>* normalMap, int rc,
+    StaticVector<float>* depthMap, StaticVector<ColorRGBf>* normalMap, int rc,
     int scale, float igammaC, float igammaP, int wsh)
 {
   const int w = _mp.getWidth(rc) / scale;
