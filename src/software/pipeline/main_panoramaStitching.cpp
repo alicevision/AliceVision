@@ -650,7 +650,35 @@ int main(int argc, char **argv)
         const image::RGBfColor pixel = sampler(imageIn, pix_disto(1), pix_disto(0));
         if(contribution > 0.0f)
         {
-          contribution = 1.0f;
+          image::RGBfColor linear, linear2;
+          double a = 0.055;
+
+          if (pixel.r() <= 0.04045) {
+            linear.r() = pixel.r() / 12.92;
+          }
+          else {
+            linear.r() = pow(double((pixel.r() + a)/(1.0 + a)), 2.4);
+          }
+
+          if (pixel.g() <= 0.04045) {
+            linear.g() = pixel.g() / 12.92;
+          }
+          else {
+            linear.g() = pow(double((pixel.g() + a)/(1.0 + a)), 2.4);
+          }
+
+          if (pixel.b() <= 0.04045) {
+            linear.b() = pixel.b() / 12.92;
+          }
+          else {
+            linear.b() = pow(double((pixel.b() + a)/(1.0 + a)), 2.4);
+          }
+
+          linear2.r() = 0.4124 * linear.r() + 0.3576 * linear.g() + 0.1805 * linear.b();
+          linear2.g() = 0.2126 * linear.r() + 0.7152 * linear.g() + 0.0722 * linear.b();
+          linear2.b() = 0.0193 * linear.r() + 0.1192 * linear.g() + 0.9505 * linear.b();
+
+
           imageOut(y, x).r() += pixel.r() * contribution;
           imageOut(y, x).g() += pixel.g() * contribution;
           imageOut(y, x).b() += pixel.b() * contribution;
@@ -693,7 +721,7 @@ int main(int argc, char **argv)
     }
   }
 
-  image::writeImage(outputPanorama, imageOut, image::EImageColorSpace::AUTO);
+  image::writeImage(outputPanorama, imageOut, image::EImageColorSpace::LINEAR);
 
   return EXIT_SUCCESS;
 }
