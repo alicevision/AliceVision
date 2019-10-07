@@ -20,6 +20,7 @@
 
 #include <algorithm>
 #include <string>
+#include <sstream>
 #include <regex>
 
 // These constants define the current software version.
@@ -413,8 +414,11 @@ int main(int argc, char** argv)
     if(nbGroups == 1)
       outputHDRImagesPath.front() = (fs::path(outputPath) / ("hdr.exr")).string();
     else
-      for(int g = 0; g < nbGroups; ++g)
-        outputHDRImagesPath[g] = (fs::path(outputPath) / ("hdr_" + std::to_string(g) + ".exr")).string();
+      for(int g = 0; g < nbGroups; ++g) {
+        std::ostringstream ss;
+        ss << std::setw(4) << std::setfill('0') << g;
+        outputHDRImagesPath[g] = (fs::path(outputPath) / ("hdr_" + ss.str() + ".exr")).string();
+      }
   }
   else if(outputHDRImagesPath.size() != nbGroups)
   {
