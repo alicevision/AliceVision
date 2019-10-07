@@ -257,21 +257,25 @@ void estimateAndRefineDepthMaps(int cudaDeviceIndex, mvsUtils::MultiViewParams& 
   const int fileScale = 1; // input images scale (should be one)
   int sgmScale = mp.userParams.get<int>("semiGlobalMatching.scale", -1);
   int sgmStepXY = mp.userParams.get<int>("semiGlobalMatching.stepXY", -1);
-  const int maxSideXY = mp.userParams.get<int>("semiGlobalMatching.maxSideXY", 700);
+  const int maxSideXY = mp.userParams.get<int>("semiGlobalMatching.maxSideXY", 700) / mp.getProcessDownscale();
+  const int maxImageW = mp.getMaxImageWidth();
+  const int maxImageH = mp.getMaxImageHeight();
+  int maxSgmW = maxSideXY;
+  int maxSgmH = maxSideXY * 0.8;
+  if (maxImageW < maxImageH)
+      std::swap(maxSgmW, maxSgmH);
 
   if(sgmScale == -1)
   {
       // compute the number of scales that will be used in the plane sweeping.
-      // the highest scale should have a minimum resolution of 700x550.
-      const int width = mp.getMaxImageWidth();
-      const int height = mp.getMaxImageHeight();
-      const int scaleTmp = computeStep(mp, fileScale, maxSideXY, maxSideXY);
+      // the highest scale should have a resolution close to 700x550 (or less).
+      const int scaleTmp = computeStep(mp, fileScale, maxSgmW, maxSgmH);
 
       sgmScale = std::min(2, scaleTmp);
   }
   if (sgmStepXY == -1)
   {
-      sgmStepXY = computeStep(mp, fileScale * sgmScale, maxSideXY, maxSideXY);
+      sgmStepXY = computeStep(mp, fileScale * sgmScale, maxSgmW, maxSgmH);
   }
 
   ALICEVISION_LOG_INFO("Plane sweeping parameters:\n"
