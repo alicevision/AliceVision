@@ -330,20 +330,25 @@ void ps_aggregatePathVolume(CudaDeviceMemoryPitched<TSim, 3>& d_volSimT,
     dim3 gridvolrow(divUp(volDimX, block_sizenmxs), 1, 1);
     dim3 gridvolrowAllCols(divUp(volDimX, block_sizenmxs), volDimY, 1);
 
-    CudaDeviceMemoryPitched<TSim, 2> d_xySliceForZ(CudaSize<2>(volDimX, volDimY));
-    CudaDeviceMemoryPitched<TSim, 2> d_xySliceForZM1(CudaSize<2>(volDimX, volDimY));
+    CudaDeviceMemoryPitched<TSim, 2> d_sliceBufferA(CudaSize<2>(volDimX, volDimY));
+    CudaDeviceMemoryPitched<TSim, 2> d_sliceBufferB(CudaSize<2>(volDimX, volDimY));
+
+    CudaDeviceMemoryPitched<TSim, 2>* d_xySliceForZ = &d_sliceBufferA;
+    CudaDeviceMemoryPitched<TSim, 2>* d_xySliceForZM1 = &d_sliceBufferB;
+
     CudaDeviceMemoryPitched<TSim, 2> d_xSliceBestInColSimForZM1(CudaSize<2>(volDimX, 1));
 
     int zStart = doInvZ ? volDimZ - 1 : 0;
 
     // Copy the first Z plane from 'd_volSimT' into 'xysliceForZ_dmp'
     volume_getVolumeXYSliceAtZ_kernel<TSim, TSim><<<gridvol, blockvol>>>(
-        d_xySliceForZ.getBuffer(),
-        d_xySliceForZ.getPitch(),
+        d_xySliceForZ->getBuffer(),
+        d_xySliceForZ->getPitch(),
         d_volSimT.getBuffer(),
         d_volSimT.getBytesPaddedUpToDim(1),
         d_volSimT.getBytesPaddedUpToDim(0),
         volDimX, volDimY, volDimZ, zStart); // Z=0
+    copy(*d_xySliceForZM1, *d_xySliceForZ);
     CHECK_CUDA_ERROR();
 
     // Set the first Z plane from 'd_volSimT' to 255
@@ -358,21 +363,19 @@ void ps_aggregatePathVolume(CudaDeviceMemoryPitched<TSim, 3>& d_volSimT,
     {
         int z = doInvZ ? volDimZ - 1 - iz : iz;
 
-        copy(d_xySliceForZM1, d_xySliceForZ);
-
         // For each column: compute the best score
         // Foreach x:
         //   d_xSliceBestInColSimForZM1[x] = min(d_xySliceForZ[1:height])
         volume_computeBestXSlice_kernel<<<gridvolrow, blockvolrow>>>(
-            d_xySliceForZM1.getBuffer(), d_xySliceForZM1.getPitch(),
+            d_xySliceForZM1->getBuffer(), d_xySliceForZM1->getPitch(),
             d_xSliceBestInColSimForZM1.getBuffer(),
             volDimX, volDimY);
         CHECK_CUDA_ERROR();
 
         // Copy the 'z' plane from 'd_volSimT' into 'd_xySliceForZ'
         volume_getVolumeXYSliceAtZ_kernel<TSim, TSim><<<gridvol, blockvol>>>(
-            d_xySliceForZ.getBuffer(),
-            d_xySliceForZ.getPitch(),
+            d_xySliceForZ->getBuffer(),
+            d_xySliceForZ->getPitch(),
             d_volSimT.getBuffer(),
             d_volSimT.getBytesPaddedUpToDim(1),
             d_volSimT.getBytesPaddedUpToDim(0),
@@ -381,8 +384,8 @@ void ps_aggregatePathVolume(CudaDeviceMemoryPitched<TSim, 3>& d_volSimT,
 
         volume_agregateCostVolumeAtZinSlices_kernel<<<gridvolrowAllCols, blockvolrow>>>(
             rc_tex,
-            d_xySliceForZ.getBuffer(), d_xySliceForZ.getPitch(),              // inout: xySliceForZ
-            d_xySliceForZM1.getBuffer(), d_xySliceForZM1.getPitch(),          // in:    xySliceForZM1
+            d_xySliceForZ->getBuffer(), d_xySliceForZ->getPitch(),              // inout: xySliceForZ
+            d_xySliceForZM1->getBuffer(), d_xySliceForZM1->getPitch(),          // in:    xySliceForZM1
             d_xSliceBestInColSimForZM1.getBuffer(),                          // in:    xSliceBestInColSimForZM1
             d_volSimT.getBuffer(), d_volSimT.getBytesPaddedUpToDim(1), d_volSimT.getBytesPaddedUpToDim(0), // out:   volSimT
             volDimX, volDimY, volDimZ,
@@ -390,6 +393,8 @@ void ps_aggregatePathVolume(CudaDeviceMemoryPitched<TSim, 3>& d_volSimT,
             dimTrnZ, doInvZ);
         cudaThreadSynchronize();
         CHECK_CUDA_ERROR();
+
+        std::swap(d_xySliceForZM1, d_xySliceForZ);
     }
 
     if(verbose)
