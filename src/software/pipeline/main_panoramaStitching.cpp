@@ -41,21 +41,23 @@ public:
     _width_base(width_base), 
     _height_base(height_base)
   {
-    _kernel = oiio::ImageBufAlgo::make_kernel("gaussian", 11.0f, 11.0f);
-    _kernel_alphas = oiio::ImageBufAlgo::make_kernel("gaussian", 21.0f, 21.0f);
+    _kernel = oiio::ImageBufAlgo::make_kernel("gaussian", 5.0f, 5.0f);
+    _kernel_alphas = oiio::ImageBufAlgo::make_kernel("gaussian", 5.0f, 5.0f);
 
     size_t min_dim = std::min(_width_base, _height_base);
-    size_t scales = static_cast<size_t>(floor(log2(double(min_dim))));
-    
+    size_t scales = static_cast<size_t>(floor(log2(double(min_dim) / 32.0)));
+    scales = 2;
+
+    /*Create pyramid*/
     size_t new_width = _width_base;
     size_t new_height = _height_base;
     for (int i = 0; i < scales; i++) {
 
       _difference_buffers.push_back(image::Image<image::RGBAfColor>(new_width, new_height, true, image::RGBAfColor(0.0f, 0.0f, 0.0f, 0.0f)));
+      _work_buffers_1.push_back(image::Image<image::RGBAfColor>(new_width, new_height, true, image::RGBAfColor(0.0f, 0.0f, 0.0f, 0.0f)));
+      _work_buffers_2.push_back(image::Image<image::RGBAfColor>(new_width, new_height, true, image::RGBAfColor(0.0f, 0.0f, 0.0f, 0.0f)));
+      _work_buffers_3.push_back(image::Image<image::RGBAfColor>(new_width, new_height, true, image::RGBAfColor(0.0f, 0.0f, 0.0f, 0.0f)));
       _alphas.push_back(image::Image<image::RGBAfColor>(new_width, new_height, true, image::RGBAfColor(0.0f, 0.0f, 0.0f, 0.0f)));
-      _work_buffers_1.push_back(image::Image<image::RGBAfColor>(new_width, new_height));
-      _work_buffers_2.push_back(image::Image<image::RGBAfColor>(new_width, new_height));
-      _work_buffers_3.push_back(image::Image<image::RGBAfColor>(new_width, new_height));
 
       new_height /= 2;
       new_width /= 2;
@@ -79,7 +81,6 @@ public:
         }
       }
     }
-  
 
     /*
     Loop over the levels.
@@ -104,31 +105,33 @@ public:
       
       /*Low pass alpha*/
       oiio::ImageBufAlgo::convolve(_work_buffer_2_oiio, _alphas_buffer_oiio, _kernel_alphas, false);
-
+      divideByAlpha(_work_buffers_2[lvl]);
+  
       /*Subsample alpha*/
       oiio::ImageBufAlgo::resample(_alphas_buffer_half_oiio, _work_buffer_2_oiio, false);
 
       /*First, low pass the image*/
-      oiio::ImageBufAlgo::convolve(_work_buffer_2_oiio, _work_buffer_1_oiio, _kernel, false);
-      trimAlpha(_work_buffers_2[lvl]);
+      oiio::ImageBufAlgo::convolve(_work_buffer_2_oiio, _work_buffer_1_oiio, _kernel, true);
+      divideByAlpha(_work_buffers_2[lvl]); //Take into account borders
 
+      
       /*Subsample image*/
       oiio::ImageBufAlgo::resample(_work_buffer_1_half_oiio, _work_buffer_2_oiio, false);
-      trimAlpha(_work_buffers_1[lvl + 1]);
 
       /*Upsample back reduced image*/
       oiio::ImageBufAlgo::resample(_work_buffer_2_oiio, _work_buffer_1_half_oiio, false);
-      trimAlpha(_work_buffers_2[lvl]);
 
       /*Low pass upsampled image*/
-      oiio::ImageBufAlgo::convolve(_work_buffer_3_oiio, _work_buffer_2_oiio, _kernel, true);
-      trimAlpha(_work_buffers_3[lvl]);
+      oiio::ImageBufAlgo::convolve(_work_buffer_3_oiio, _work_buffer_2_oiio, _kernel, false);
+      divideByAlpha(_work_buffers_3[lvl]); //Take into account borders
 
       /*Difference*/
       substract(_difference_buffers[lvl], _work_buffers_1[lvl], _work_buffers_3[lvl]);
     }
 
     _difference_buffers[_difference_buffers.size() - 1] = _work_buffers_1[_work_buffers_1.size() - 1];
+
+    
 
     return true;
   }
@@ -144,22 +147,33 @@ public:
 
       oiio::ImageBuf _work_buffer_1_oiio(spec_base, (void*)(_work_buffers_1[lvl].data()));
       oiio::ImageBuf _work_buffer_2_oiio(spec_base, (void*)(_work_buffers_2[lvl].data()));
+      oiio::ImageBuf _work_buffer_3_oiio(spec_base, (void*)(_work_buffers_3[lvl].data()));
       oiio::ImageBuf _work_buffer_1_half_oiio(spec_base_half, (void*)(_work_buffers_1[lvl + 1].data()));
       oiio::ImageBuf _difference_buffer_half_oiio(spec_base_half, (void*)(_difference_buffers[lvl + 1].data()));
 
       /*Upsample back reduced image*/
-      oiio::ImageBufAlgo::resample(_work_buffer_1_oiio, _work_buffer_1_half_oiio, false);
-      trimAlpha(_work_buffers_1[lvl]);
+      oiio::ImageBufAlgo::resample(_work_buffer_2_oiio, _work_buffer_1_half_oiio, false);
 
       /*Low pass upsampled image*/
-      oiio::ImageBufAlgo::convolve(_work_buffer_2_oiio, _work_buffer_1_oiio, _kernel, false);
-      trimAlpha(_work_buffers_2[lvl]);
+      oiio::ImageBufAlgo::convolve(_work_buffer_3_oiio, _work_buffer_2_oiio, _kernel, false);
+      divideByAlpha(_work_buffers_3[lvl]);
 
       /*Add with next*/
-      add(_work_buffers_1[lvl], _difference_buffers[lvl], _work_buffers_2[lvl]);
+      add(_work_buffers_1[lvl], _difference_buffers[lvl], _work_buffers_3[lvl]);
     }
-
+    
+    
     output = _work_buffers_1[0];
+
+    const image::Image<image::RGBAfColor> & test = _difference_buffers[_difference_buffers.size() - 1];
+      for (int i = 0; i < test.Height(); i++) {
+        for (int j = 0; j < test.Width(); j++) {
+          
+          if (test(i ,j).r() < 0.0 || test(i, j).g() < 0.0 || test(i, j).b() < 0.0) {
+            std::cout << "???" << std::endl;
+          }
+        }
+      }
 
     return true;
   }
@@ -185,7 +199,7 @@ public:
           const image::RGBAfColor & pix_second = img_second(i, j);
           const image::RGBAfColor & pix_alpha = alpha(i, j);
 
-          double weight = 0.5f;
+          double weight = 1.0f;//pix_alpha.r();
           
           if (pix_second.a() == 0.0) {
             continue;
@@ -195,7 +209,7 @@ public:
             pix_first.r() = pix_second.r();
             pix_first.g() = pix_second.g();
             pix_first.b() = pix_second.b();
-            pix_first.a() = pix_second.a();
+            pix_first.a() = 1.0f;
             continue;
           }
 
@@ -217,7 +231,7 @@ public:
     for(int y = 0; y < image.Height(); ++y) {
       for(int x = 0; x < image.Width(); ++x) {
         image::RGBAfColor& pixel = image(y, x);
-        if(pixel.a() > 0.01f) {
+        if(pixel.a() > std::numeric_limits<float>::epsilon()) {
           pixel = pixel / pixel.a();
         }
       }
@@ -229,7 +243,8 @@ public:
     for(int y = 0; y < image.Height(); ++y) {
       for(int x = 0; x < image.Width(); ++x) {
         image::RGBAfColor& pixel = image(y, x);
-        if(pixel.a() != 1.0f) {
+        
+        if(std::abs(pixel.a() - 1.0f) > 1e-02) {
           pixel.r() = 0.0;
           pixel.g() = 0.0;
           pixel.b() = 0.0;
@@ -259,7 +274,7 @@ public:
         const image::RGBAfColor & pixelB = B(y, x);
         image::RGBAfColor & pixelR = result(y, x);
         
-        if(pixelA.a() > std::numeric_limits<float>::epsilon()) {
+        if ((pixelA.a() > std::numeric_limits<float>::epsilon()) && (pixelB.a() > std::numeric_limits<float>::epsilon())) {
           pixelR.r() = pixelA.r() - pixelB.r();
           pixelR.g() = pixelA.g() - pixelB.g();
           pixelR.b() = pixelA.b() - pixelB.b();
@@ -284,11 +299,11 @@ public:
         const image::RGBAfColor & pixelB = B(y, x);
         image::RGBAfColor & pixelR = result(y, x);
         
-        if(pixelA.a() > std::numeric_limits<float>::epsilon()) {
+        if(pixelA.a() > std::numeric_limits<float>::epsilon() && pixelB.a() > std::numeric_limits<float>::epsilon()) {
           pixelR.r() = pixelA.r() + pixelB.r();
           pixelR.g() = pixelA.g() + pixelB.g();
           pixelR.b() = pixelA.b() + pixelB.b();
-          pixelR.a() = 1.0f;
+          pixelR.a() = 1.0f;          
         }
         else {
           pixelR.r() = 0.0f;
@@ -505,6 +520,7 @@ int main(int argc, char **argv)
   float transitionSize = 1000.0f;
   int debugSubsetStart = 0;
   int debugSubsetSize = 0;
+  char filename[512];
 
   po::options_description allParams(
     "Perform panorama stiching of cameras around a nodal point for 360° panorama creation.\n"
@@ -606,7 +622,6 @@ int main(int argc, char **argv)
   ALICEVISION_LOG_INFO("Output panorama size: " << panoramaSize.first << ", " << panoramaSize.second);
 
   // Create panorama buffer
-  LaplacianPyramid blending_pyramid(panoramaSize.first, panoramaSize.second);
   image::Image<image::RGBAfColor> output;
   image::Image<image::RGBAfColor> imageOut(panoramaSize.first, panoramaSize.second, true, image::RGBAfColor(0.0f, 0.0f, 0.0f, 0.0f));
 
@@ -648,7 +663,12 @@ int main(int argc, char **argv)
     // Image RGB
     image::Image<image::RGBfColor> imageIn;
     ALICEVISION_LOG_INFO("Reading " << imagePath);
+    //sprintf(filename, "%s.png", imagePath.c_str());
     image::readImage(imagePath, imageIn, image::EImageColorSpace::LINEAR);
+
+    
+    
+    //image::writeImage(filename, imageIn, image::EImageColorSpace::AUTO);
     ALICEVISION_LOG_INFO(" - " << imageIn.Width() << "x" << imageIn.Height());
 
     const float maxRadius = std::min(imageIn.Width(), imageIn.Height()) * 0.5f * (1.0 - fisheyeMaskingMargin);
@@ -676,7 +696,7 @@ int main(int argc, char **argv)
         // unit vector to camera
         const Vec2 pix_disto = intrinsic.project(camPose.getTransform(), ray, true);
 
-        if( pix_disto(0) < 0 || pix_disto(0) >= imageIn.Width() || pix_disto(1) < 0 || pix_disto(1) >= imageIn.Height())
+        if( pix_disto(0) < 0 || pix_disto(0) >= imageIn.Width() - 1 || pix_disto(1) < 0 || pix_disto(1) >= imageIn.Height() - 1)
         {
           // the pixel is out of the image
           continue;
@@ -700,6 +720,7 @@ int main(int argc, char **argv)
         const image::RGBfColor pixel = sampler(imageIn, pix_disto(1), pix_disto(0));
         if(contribution > 0.0f)
         {
+          //contribution = 1.0f;
           perCameraOutput(y, x).r() += pixel.r() * contribution;
           perCameraOutput(y, x).g() += pixel.g() * contribution;
           perCameraOutput(y, x).b() += pixel.b() * contribution;
@@ -711,20 +732,54 @@ int main(int argc, char **argv)
 
     LaplacianPyramid pyramid(panoramaSize.first, panoramaSize.second);
     pyramid.process(perCameraOutput);
+
+    
+
+    LaplacianPyramid blending_pyramid(panoramaSize.first, panoramaSize.second);
+    blending_pyramid.process(imageOut);
     blending_pyramid.blend(pyramid);
 
-    /*image::Image<image::RGBAfColor> output;
-    pyramid.rebuild(output);*/
+    /*for (int i = 0; i < pyramid._difference_buffers.size(); i++) {
+      char filename[512];
+      sprintf(filename, "%s_differences_%d_%d.exr", outputPanorama.c_str(), imageIndex, i);
+      image::writeImage(filename, pyramid._difference_buffers[i], image::EImageColorSpace::LINEAR);
+    }*/
 
-    /*blending_pyramid.rebuild(imageOut);
+    //image::Image<image::RGBAfColor> output;
+    //pyramid.rebuild(output);
+
+    blending_pyramid.rebuild(imageOut);
     
-    char filename[512];
-    sprintf(filename, "%s%d.png", outputPanorama.c_str(), imageIndex);
-    image::writeImage(filename, imageOut, image::EImageColorSpace::AUTO);*/
+    for(int y = 0; y < imageOut.Height(); ++y)
+    {
+      for(int x = 0; x < imageOut.Width(); ++x)
+      {
+        image::RGBAfColor& pixel = imageOut(y, x);
+        if(pixel.a() > std::numeric_limits<float>::epsilon())
+        {
+          pixel.r() /= pixel.a();
+          pixel.g() /= pixel.a();
+          pixel.b() /= pixel.a();
+
+          /*pixel.r() = std::min(1.0f, std::max(0.0f, pixel.r()));
+          pixel.g() = std::min(1.0f, std::max(0.0f, pixel.g()));
+          pixel.b() = std::min(1.0f, std::max(0.0f, pixel.b()));*/
+
+          pixel.a() = 1.0f; // TMP: comment to keep the alpha with the number of contribution for debugging          
+        }
+      }
+    }
+
+
+    sprintf(filename, "%s_rebuild_%d.exr", outputPanorama.c_str(), imageIndex);
+    image::writeImage(filename, perCameraOutput, image::EImageColorSpace::SRGB);
+
+    sprintf(filename, "%s_blend_%d.exr", outputPanorama.c_str(), imageIndex);
+    image::writeImage(filename, imageOut, image::EImageColorSpace::SRGB);
   }
 
   
-  blending_pyramid.rebuild(imageOut);
+  /*blending_pyramid.rebuild(imageOut);
 
   for(int y = 0; y < imageOut.Height(); ++y)
   {
@@ -741,7 +796,7 @@ int main(int argc, char **argv)
     }
   }
 
-  image::writeImage(outputPanorama, imageOut, image::EImageColorSpace::SRGB);
+  image::writeImage(outputPanorama, imageOut, image::EImageColorSpace::LINEAR);*/
 
   return EXIT_SUCCESS;
 }
