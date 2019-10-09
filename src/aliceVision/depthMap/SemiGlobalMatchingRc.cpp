@@ -476,15 +476,16 @@ bool SemiGlobalMatchingRc::sgmrc(bool checkIfExists)
         ALICEVISION_LOG_DEBUG( "Allocating " << volDimX << " x " << volDimY << " x " << volDimZ << " on device " << devid << ".");
     }
 
-    CudaDeviceMemoryPitched<TSim, 3> volumeBestSim_d(CudaSize<3>(volDimX, volDimY, volDimZ));
     CudaDeviceMemoryPitched<TSim, 3> volumeSecBestSim_d(CudaSize<3>(volDimX, volDimY, volDimZ));
 
     SemiGlobalMatchingRcTc srt( _depths.getData(),
                                 _depthsTcamsLimits.getData(),
                                 _rc, _sgmTCams, _scale, _step, _sp );
-    srt.computeDepthSimMapVolume(volumeBestSim_d, volumeSecBestSim_d, _sgmWsh, _sgmGammaC, _sgmGammaP);
 
-    volumeBestSim_d.deallocate();
+    {
+        CudaDeviceMemoryPitched<TSim, 3> volumeBestSim_d(CudaSize<3>(volDimX, volDimY, volDimZ));
+        srt.computeDepthSimMapVolume(volumeBestSim_d, volumeSecBestSim_d, _sgmWsh, _sgmGammaC, _sgmGammaP);
+    }
 
     if (_sp.exportIntermediateResults)
     {
