@@ -41,23 +41,20 @@ public:
     _width_base(width_base), 
     _height_base(height_base)
   {
-    _kernel = oiio::ImageBufAlgo::make_kernel("gaussian", 5.0f, 5.0f);
-    _kernel_alphas = oiio::ImageBufAlgo::make_kernel("gaussian", 5.0f, 5.0f);
-
     size_t min_dim = std::min(_width_base, _height_base);
-    size_t scales = static_cast<size_t>(floor(log2(double(min_dim) / 32.0)));
-    scales = 2;
+    _scales = static_cast<size_t>(floor(log2(double(min_dim) / 32.0)));
 
     /*Create pyramid*/
     size_t new_width = _width_base;
     size_t new_height = _height_base;
-    for (int i = 0; i < scales; i++) {
+    for (int i = 0; i < _scales; i++) {
 
-      _difference_buffers.push_back(image::Image<image::RGBAfColor>(new_width, new_height, true, image::RGBAfColor(0.0f, 0.0f, 0.0f, 0.0f)));
-      _work_buffers_1.push_back(image::Image<image::RGBAfColor>(new_width, new_height, true, image::RGBAfColor(0.0f, 0.0f, 0.0f, 0.0f)));
-      _work_buffers_2.push_back(image::Image<image::RGBAfColor>(new_width, new_height, true, image::RGBAfColor(0.0f, 0.0f, 0.0f, 0.0f)));
-      _work_buffers_3.push_back(image::Image<image::RGBAfColor>(new_width, new_height, true, image::RGBAfColor(0.0f, 0.0f, 0.0f, 0.0f)));
-      _alphas.push_back(image::Image<image::RGBAfColor>(new_width, new_height, true, image::RGBAfColor(0.0f, 0.0f, 0.0f, 0.0f)));
+      _pyramid.push_back(image::Image<image::RGBAfColor>(new_width, new_height, true, image::RGBAfColor(0.0f, 0.0f, 0.0f, 0.0f)));
+      _differences.push_back(image::Image<image::RGBAfColor>(new_width, new_height, true, image::RGBAfColor(0.0f, 0.0f, 0.0f, 0.0f)));
+      _differences_full.push_back(image::Image<image::RGBAfColor>(_width_base, _height_base, true, image::RGBAfColor(0.0f, 0.0f, 0.0f, 0.0f)));
+      _buffer_1.push_back(image::Image<image::RGBAfColor>(new_width, new_height, true, image::RGBAfColor(0.0f, 0.0f, 0.0f, 0.0f)));
+      _buffer_2.push_back(image::Image<image::RGBAfColor>(new_width, new_height, true, image::RGBAfColor(0.0f, 0.0f, 0.0f, 0.0f)));
+    
 
       new_height /= 2;
       new_width /= 2;
@@ -66,159 +63,40 @@ public:
 
   bool process(const image::Image<image::RGBAfColor> & input) {
 
-    
-    _work_buffers_1[0] = input;
+    //Build pyramid
+    _pyramid[0] = input;
+    for (int lvl = 1; lvl < _scales; lvl++) {
+      downscale(_pyramid[lvl], _pyramid[lvl - 1]);
+    }
 
-    for (int i = 0; i < input.Height(); i++) {
-      for (int j = 0; j < input.Width(); j++) {
-        _alphas[0](i, j).r() = input(i, j).a();
-        _alphas[0](i, j).g() = input(i, j).a();
-        _alphas[0](i, j).b() = input(i, j).a();
-        _alphas[0](i, j).a() = 1.0;
+    //Differences    
+    for (int lvl = 0; lvl < _scales - 1; lvl++) {
+      upscale(_buffer_1[lvl], _pyramid[lvl + 1]);
+      substract(_differences[lvl], _pyramid[lvl], _buffer_1[lvl]);
+    }
 
-        if (_work_buffers_1[0](i, j).a() > std::numeric_limits<float>::epsilon()) {
-          _work_buffers_1[0](i, j).a() = 1.0f;
-        }
+    _differences[_differences.size() - 1] = _pyramid[_differences.size() - 1];
+
+    /*Upscale to the max*/
+    for (int max_level = 0; max_level < _scales; max_level++) {
+
+      image::Image<image::RGBAfColor> & refOut = _differences_full[max_level];
+      
+      _buffer_1[max_level] = _differences[max_level];
+      for (int lvl = max_level - 1; lvl >= 0; lvl--) {  
+        upscale(_buffer_1[lvl], _buffer_1[lvl + 1]);
       }
-    }
-
-    /*
-    Loop over the levels.
-    0 being the base level with full resolution
-    levels.size() - 1 being the least defined image
-    */
-    for (int lvl = 0; lvl < _difference_buffers.size() - 1; lvl++) {
-
-      oiio::ImageSpec spec_base(_difference_buffers[lvl].Width(), _difference_buffers[lvl].Height(), 4, oiio::TypeDesc::FLOAT);
-      oiio::ImageSpec spec_base_half(_difference_buffers[lvl + 1].Width(), _difference_buffers[lvl + 1].Height(), 4, oiio::TypeDesc::FLOAT);
-
-      oiio::ImageBuf _difference_buffer_oiio(spec_base, (void*)(_difference_buffers[lvl].data()));
-      oiio::ImageBuf _work_buffer_1_oiio(spec_base, (void*)(_work_buffers_1[lvl].data()));
-      oiio::ImageBuf _work_buffer_2_oiio(spec_base, (void*)(_work_buffers_2[lvl].data()));
-      oiio::ImageBuf _work_buffer_3_oiio(spec_base, (void*)(_work_buffers_3[lvl].data()));
-      oiio::ImageBuf _alphas_buffer_oiio(spec_base, (void*)(_alphas[lvl].data()));
-      oiio::ImageBuf _difference_buffer_half_oiio(spec_base_half, (void*)(_difference_buffers[lvl + 1].data()));
-      oiio::ImageBuf _work_buffer_1_half_oiio(spec_base_half, (void*)(_work_buffers_1[lvl + 1].data()));
-      oiio::ImageBuf _work_buffer_2_half_oiio(spec_base_half, (void*)(_work_buffers_2[lvl + 1].data()));
-      oiio::ImageBuf _alphas_buffer_half_oiio(spec_base_half, (void*)(_alphas[lvl + 1].data()));
-      
-      
-      /*Low pass alpha*/
-      oiio::ImageBufAlgo::convolve(_work_buffer_2_oiio, _alphas_buffer_oiio, _kernel_alphas, false);
-      divideByAlpha(_work_buffers_2[lvl]);
-  
-      /*Subsample alpha*/
-      oiio::ImageBufAlgo::resample(_alphas_buffer_half_oiio, _work_buffer_2_oiio, false);
-
-      /*First, low pass the image*/
-      oiio::ImageBufAlgo::convolve(_work_buffer_2_oiio, _work_buffer_1_oiio, _kernel, true);
-      divideByAlpha(_work_buffers_2[lvl]); //Take into account borders
+      refOut = _buffer_1[0];
 
       
-      /*Subsample image*/
-      oiio::ImageBufAlgo::resample(_work_buffer_1_half_oiio, _work_buffer_2_oiio, false);
-
-      /*Upsample back reduced image*/
-      oiio::ImageBufAlgo::resample(_work_buffer_2_oiio, _work_buffer_1_half_oiio, false);
-
-      /*Low pass upsampled image*/
-      oiio::ImageBufAlgo::convolve(_work_buffer_3_oiio, _work_buffer_2_oiio, _kernel, false);
-      divideByAlpha(_work_buffers_3[lvl]); //Take into account borders
-
-      /*Difference*/
-      substract(_difference_buffers[lvl], _work_buffers_1[lvl], _work_buffers_3[lvl]);
-    }
-
-    _difference_buffers[_difference_buffers.size() - 1] = _work_buffers_1[_work_buffers_1.size() - 1];
-
-    
-
-    return true;
-  }
-
-  bool rebuild(image::Image<image::RGBAfColor> & output) {
-
-    _work_buffers_1[_difference_buffers.size() - 1] = _difference_buffers[_difference_buffers.size() - 1];
-
-    for (int lvl = _difference_buffers.size() - 2; lvl >= 0; lvl--) {
-
-      oiio::ImageSpec spec_base(_difference_buffers[lvl].Width(), _difference_buffers[lvl].Height(), 4, oiio::TypeDesc::FLOAT);
-      oiio::ImageSpec spec_base_half(_difference_buffers[lvl + 1].Width(), _difference_buffers[lvl + 1].Height(), 4, oiio::TypeDesc::FLOAT);
-
-      oiio::ImageBuf _work_buffer_1_oiio(spec_base, (void*)(_work_buffers_1[lvl].data()));
-      oiio::ImageBuf _work_buffer_2_oiio(spec_base, (void*)(_work_buffers_2[lvl].data()));
-      oiio::ImageBuf _work_buffer_3_oiio(spec_base, (void*)(_work_buffers_3[lvl].data()));
-      oiio::ImageBuf _work_buffer_1_half_oiio(spec_base_half, (void*)(_work_buffers_1[lvl + 1].data()));
-      oiio::ImageBuf _difference_buffer_half_oiio(spec_base_half, (void*)(_difference_buffers[lvl + 1].data()));
-
-      /*Upsample back reduced image*/
-      oiio::ImageBufAlgo::resample(_work_buffer_2_oiio, _work_buffer_1_half_oiio, false);
-
-      /*Low pass upsampled image*/
-      oiio::ImageBufAlgo::convolve(_work_buffer_3_oiio, _work_buffer_2_oiio, _kernel, false);
-      divideByAlpha(_work_buffers_3[lvl]);
-
-      /*Add with next*/
-      add(_work_buffers_1[lvl], _difference_buffers[lvl], _work_buffers_3[lvl]);
-    }
-    
-    
-    output = _work_buffers_1[0];
-
-    const image::Image<image::RGBAfColor> & test = _difference_buffers[_difference_buffers.size() - 1];
-      for (int i = 0; i < test.Height(); i++) {
-        for (int j = 0; j < test.Width(); j++) {
-          
-          if (test(i ,j).r() < 0.0 || test(i, j).g() < 0.0 || test(i, j).b() < 0.0) {
-            std::cout << "???" << std::endl;
+      for (int i = 0; i < refOut.Height(); i++) {
+        for (int j = 0; j < refOut.Width(); j++) { 
+          if (!(input(i, j).a() > std::numeric_limits<float>::epsilon())) {
+            refOut(i, j).r() = 0.0f;
+            refOut(i, j).g() = 0.0f;
+            refOut(i, j).b() = 0.0f;
+            refOut(i, j).a() = 0.0f;
           }
-        }
-      }
-
-    return true;
-  }
-
-  bool blend(const LaplacianPyramid & other) {
-
-    if (_difference_buffers.size() != other._difference_buffers.size()) {
-      return false;
-    }
-
-    for (size_t lvl = 0; lvl < _difference_buffers.size(); lvl++) {
-
-      //_difference_buffers[lvl].fill(image::RGBAfColor(0.0f,0.0f,0.0f,0.0f));
-
-      image::Image<image::RGBAfColor> & img_first = _difference_buffers[lvl];
-      const image::Image<image::RGBAfColor> & img_second = other._difference_buffers[lvl];
-      const image::Image<image::RGBAfColor> & alpha = other._alphas[lvl];
-      
-      for (int i = 0; i < img_first.Height(); i++) {
-        for (int j = 0; j < img_first.Width(); j++) {
-          
-          image::RGBAfColor & pix_first = img_first(i, j);
-          const image::RGBAfColor & pix_second = img_second(i, j);
-          const image::RGBAfColor & pix_alpha = alpha(i, j);
-
-          double weight = 1.0f;//pix_alpha.r();
-          
-          if (pix_second.a() == 0.0) {
-            continue;
-          }
-          
-          if (pix_first.a() == 0.0) {
-            pix_first.r() = pix_second.r();
-            pix_first.g() = pix_second.g();
-            pix_first.b() = pix_second.b();
-            pix_first.a() = 1.0f;
-            continue;
-          }
-
-          double mweight = 1.0 - weight;
-
-          pix_first.r() = mweight * pix_first.r() + weight * pix_second.r();
-          pix_first.g() = mweight * pix_first.g() + weight * pix_second.g();
-          pix_first.b() = mweight * pix_first.b() + weight * pix_second.b(); 
-          pix_first.a() = 1.0f;
         }
       }
     }
@@ -226,108 +104,167 @@ public:
     return true;
   }
 
-  void divideByAlpha(image::Image<image::RGBAfColor> & image) {
+  bool rebuild(image::Image<image::RGBAfColor> & output) {
 
-    for(int y = 0; y < image.Height(); ++y) {
-      for(int x = 0; x < image.Width(); ++x) {
-        image::RGBAfColor& pixel = image(y, x);
-        if(pixel.a() > std::numeric_limits<float>::epsilon()) {
-          pixel = pixel / pixel.a();
-        }
-      }
+    output = _differences_full[_scales - 1];
+    for (int lvl = _scales - 2; lvl >= 0; lvl--) {
+      add(output, output, _differences_full[lvl]);
     }
+
+    return true;
   }
 
-  void trimAlpha(image::Image<image::RGBAfColor> & image) {
+  bool blend(const LaplacianPyramid & other, const image::Image<float> & weightMap) {
 
-    for(int y = 0; y < image.Height(); ++y) {
-      for(int x = 0; x < image.Width(); ++x) {
-        image::RGBAfColor& pixel = image(y, x);
-        
-        if(std::abs(pixel.a() - 1.0f) > 1e-02) {
-          pixel.r() = 0.0;
-          pixel.g() = 0.0;
-          pixel.b() = 0.0;
-          pixel.a() = 0.0;
-        }
-      }
+    for (int lvl = 0; lvl < _scales; lvl++) {
+
+      blend(_differences_full[lvl], _differences_full[lvl], other._differences_full[lvl], weightMap);
     }
+
+    return true;
   }
-
-  void copyMask(image::Image<image::RGBAfColor> & dst, const image::Image<image::RGBAfColor> & src) {
-
-    for(int y = 0; y < src.Height(); ++y) {
-      for(int x = 0; x < src.Width(); ++x) {
-        const image::RGBAfColor & pixelSrc = src(y, x);
-        image::RGBAfColor & pixelDst = dst(y, x);
-        
-        pixelDst = pixelDst * pixelSrc.a();
-      }
-    }
-  }
-
-  void substract(image::Image<image::RGBAfColor> & result, const image::Image<image::RGBAfColor> & A, const image::Image<image::RGBAfColor> & B) {
-
-    for(int y = 0; y < A.Height(); ++y) {
-      for(int x = 0; x < A.Width(); ++x) {
-        const image::RGBAfColor & pixelA = A(y, x);
-        const image::RGBAfColor & pixelB = B(y, x);
-        image::RGBAfColor & pixelR = result(y, x);
-        
-        if ((pixelA.a() > std::numeric_limits<float>::epsilon()) && (pixelB.a() > std::numeric_limits<float>::epsilon())) {
-          pixelR.r() = pixelA.r() - pixelB.r();
-          pixelR.g() = pixelA.g() - pixelB.g();
-          pixelR.b() = pixelA.b() - pixelB.b();
-          pixelR.a() = 1.0f;
-        }
-        else {
-          pixelR.r() = 0.0f;
-          pixelR.g() = 0.0f;
-          pixelR.b() = 0.0f;
-          pixelR.a() = 0.0f;
-        }
-      }
-    }
-  }
-
-
-  void add(image::Image<image::RGBAfColor> & result, const image::Image<image::RGBAfColor> & A, const image::Image<image::RGBAfColor> & B) {
-
-    for(int y = 0; y < A.Height(); ++y) {
-      for(int x = 0; x < A.Width(); ++x) {
-        const image::RGBAfColor & pixelA = A(y, x);
-        const image::RGBAfColor & pixelB = B(y, x);
-        image::RGBAfColor & pixelR = result(y, x);
-        
-        if(pixelA.a() > std::numeric_limits<float>::epsilon() && pixelB.a() > std::numeric_limits<float>::epsilon()) {
-          pixelR.r() = pixelA.r() + pixelB.r();
-          pixelR.g() = pixelA.g() + pixelB.g();
-          pixelR.b() = pixelA.b() + pixelB.b();
-          pixelR.a() = 1.0f;          
-        }
-        else {
-          pixelR.r() = 0.0f;
-          pixelR.g() = 0.0f;
-          pixelR.b() = 0.0f;
-          pixelR.a() = 0.0f;
-        }
-      }
-    }
-  }
-
  
+  bool downscale(image::Image<image::RGBAfColor> & output, const image::Image<image::RGBAfColor> & input) {
+
+    for (int i = 0; i < output.Height(); i++) {
+      for (int j = 0; j < output.Width(); j++) {
+
+        output(i, j) = input(i * 2, j * 2);
+      }
+    }
+
+    return true;
+  }
+
+  bool upscale(image::Image<image::RGBAfColor> & output, const image::Image<image::RGBAfColor> & input) {
+
+    int width = output.Width();
+    int height = output.Height();
+
+    width = 2 * (width / 2);
+    height = 2 * (height / 2);
+
+
+    for (int i = 0; i < height; i++) {
+      for (int j = 0; j < width; j++) {
+
+        output(i, j) = input(i / 2, j / 2);
+      }
+    }
+
+    return true;
+  }
+
+  bool blend(image::Image<image::RGBAfColor> & output, const image::Image<image::RGBAfColor> & inputA, const image::Image<image::RGBAfColor> & inputB, const image::Image<float> & weightMap) {
+
+    
+
+    for (int i = 0; i < output.Height(); i++) {
+      for (int j = 0; j < output.Width(); j++) {
+
+        float weight = weightMap(i, j);
+        float mweight = 1.0f - weight;
+
+  
+
+        const image::RGBAfColor & pixA = inputA(i, j);
+        const image::RGBAfColor & pixB = inputB(i, j);
+
+        if (pixA.a() > std::numeric_limits<float>::epsilon()) {
+
+          if (pixB.a() > std::numeric_limits<float>::epsilon()) {
+            output(i, j).r() = mweight * pixA.r() +  weight * pixB.r();
+            output(i, j).g() = mweight * pixA.g() +  weight * pixB.g();
+            output(i, j).b() = mweight * pixA.b() +  weight * pixB.b();
+            output(i, j).a() = 1.0f;
+          }
+          else {
+            output(i, j) = pixA;
+          }
+        }
+        else {
+          if (pixB.a() > std::numeric_limits<float>::epsilon()) {
+            output(i, j) = pixB;
+          }
+          else {
+            output(i, j).r() = 0.0f;
+            output(i, j).g() = 0.0f;
+            output(i, j).b() = 0.0f;
+            output(i, j).a() = 0.0f;
+          }
+        }
+
+        
+      }
+    }
+
+    return true;
+  }
+
+  bool substract(image::Image<image::RGBAfColor> & output, const image::Image<image::RGBAfColor> & inputA, const image::Image<image::RGBAfColor> & inputB) {
+
+    for (int i = 0; i < output.Height(); i++) {
+      for (int j = 0; j < output.Width(); j++) {
+
+        output(i, j).r() = inputA(i, j).r() - inputB(i, j).r();
+        output(i, j).g() = inputA(i, j).g() - inputB(i, j).g();
+        output(i, j).b() = inputA(i, j).b() - inputB(i, j).b();
+        output(i, j).a() = 1.0f;
+
+        if (!(inputA(i, j).a() > std::numeric_limits<float>::epsilon())) {
+          output(i, j).r() = 0.0f;
+          output(i, j).g() = 0.0f;
+          output(i, j).b() = 0.0f;
+          output(i, j).a() = 0.0f;
+        }
+      }
+    }
+
+    return true;
+  }
+
+  bool add(image::Image<image::RGBAfColor> & output, const image::Image<image::RGBAfColor> & inputA, const image::Image<image::RGBAfColor> & inputB) {
+
+    for (int i = 0; i < output.Height(); i++) {
+      for (int j = 0; j < output.Width(); j++) {
+
+      
+        if (inputA(i, j).a() > std::numeric_limits<float>::epsilon()) {
+          if (inputB(i, j).a() > std::numeric_limits<float>::epsilon()) {
+            output(i, j).r() = inputA(i, j).r() + inputB(i, j).r();
+            output(i, j).g() = inputA(i, j).g() + inputB(i, j).g();
+            output(i, j).b() = inputA(i, j).b() + inputB(i, j).b();
+            output(i, j).a() = 1.0f;
+          }
+          else {
+            output(i, j).r() = inputA(i, j).r();
+            output(i, j).g() = inputA(i, j).g();
+            output(i, j).b() = inputA(i, j).b();
+            output(i, j).a() = 1.0f;
+          }
+        }
+        else {
+          output(i, j).r() = 0.0f;
+          output(i, j).g() = 0.0f;
+          output(i, j).b() = 0.0f;
+          output(i, j).a() = 0.0f;
+        }
+      }
+    }
+
+    return true;
+  }
 
 public:
+  std::vector<image::Image<image::RGBAfColor>> _pyramid;
+  std::vector<image::Image<image::RGBAfColor>> _differences;
+  std::vector<image::Image<image::RGBAfColor>> _differences_full;
+  std::vector<image::Image<image::RGBAfColor>> _buffer_1;
+  std::vector<image::Image<image::RGBAfColor>> _buffer_2;
+
   size_t _width_base;
   size_t _height_base;
-  oiio::ImageBuf _kernel;
-  oiio::ImageBuf _kernel_alphas;
-
-  std::vector<image::Image<image::RGBAfColor>> _difference_buffers;
-  std::vector<image::Image<image::RGBAfColor>> _alphas;
-  std::vector<image::Image<image::RGBAfColor>> _work_buffers_1;
-  std::vector<image::Image<image::RGBAfColor>> _work_buffers_2;
-  std::vector<image::Image<image::RGBAfColor>> _work_buffers_3;
+  size_t _scales;
 };
 
 float sigmoid(float x, float sigwidth, float sigMid)
@@ -354,6 +291,97 @@ Eigen::Matrix3d rotationBetweenVectors(const Vec3 & v1, const Vec3 & v2) {
   S(2, 1) = axis(0);
 
   return Eigen::Matrix3d::Identity() + sinangle * S + (1 - cosangle) * S * S;
+}
+
+bool computeDistanceMap(image::Image<int> & distance, const image::Image<image::RGBAfColor> & imageWithMask) {
+
+  int m = imageWithMask.Height();
+  int n = imageWithMask.Width();
+
+  int maxval = m * n;
+
+  distance = image::Image<int> (n, m, false); 
+  for(int x = 0; x < n; ++x) {
+
+    //A corner is when mask becomes 0
+    bool b = (imageWithMask(0, x).a() > std::numeric_limits<float>::epsilon()) ? false : true;
+    if (b) {
+      distance(0, x) = 0;
+    }
+    else {
+      distance(0, x) = maxval * maxval;
+    }
+
+    for (int y = 1; y < m; y++) {
+      bool b = (imageWithMask(y, x).a() > std::numeric_limits<float>::epsilon()) ? false : true;
+      if (b) {
+        distance(y, x) = 0;
+      }
+      else {          
+        distance(y, x) = 1 + distance(y - 1, x);
+      }
+    }
+
+    for (int y = m - 2; y >= 0; y--) {
+      if (distance(y + 1, x) < distance(y, x)) {
+        distance(y, x) = 1 + distance(y + 1, x);
+      }
+    }
+  }
+
+  for (int y = 0; y < m; y++) {  
+    int q;
+    std::map<int, int> s;
+    std::map<int, int> t;
+
+    q = 0;
+    s[0] = 0;
+    t[0] = 0;
+
+    std::function<int (int, int)> f = [distance, y](int x, int i) { 
+      int gi = distance(y, i);
+      return (x - i)*(x - i) + gi * gi; 
+    };
+
+    std::function<int (int, int)> sep = [distance, y](int i, int u) { 
+      int gu = distance(y, u);
+      int gi = distance(y, i);
+
+      int nom = (u * u) - (i * i) + (gu * gu) - (gi * gi);
+      int denom = 2 * (u - i);
+
+      return nom / denom;
+    };
+
+    for (int u = 1; u < n; u++) {
+
+      while (q >= 0 && (f(t[q], s[q]) > f(t[q], u))) {
+        q = q - 1;
+      }
+
+      if (q < 0) {
+        q = 0;
+        s[0] = u;
+      }
+      else {
+        int w = 1 + sep(s[q], u);
+        if (w  < n) {
+          q = q + 1;
+          s[q] = u;
+          t[q] = w;
+        }
+      }
+    }
+
+    for (int u = n - 1; u >= 0; u--) {
+      distance(y, u) = f(u, s[q]);
+      if (u == t[q]) {
+        q = q - 1;
+      }
+    }
+  }
+
+  return true;
 }
 
 /**
@@ -653,7 +681,7 @@ int main(int argc, char **argv)
       }
     }
     ++imageIndex;
-  
+    //if (imageIndex != 0 && imageIndex != 4 && imageIndex != 8) continue;
     
 
     const sfmData::CameraPose camPose = sfmData.getPose(view);
@@ -684,6 +712,9 @@ int main(int argc, char **argv)
     {
       for(int x = 0; x < panoramaSize.first; ++x)
       {
+        //if (x < 596 || x > 643) continue;
+        //if (y < 255 || y > 285) continue;
+
         // equirectangular to unit vector
         Vec3 ray = SphericalMapping::fromEquirectangular(Vec2(x,y), panoramaSize.first, panoramaSize.second);    
 
@@ -720,7 +751,7 @@ int main(int argc, char **argv)
         const image::RGBfColor pixel = sampler(imageIn, pix_disto(1), pix_disto(0));
         if(contribution > 0.0f)
         {
-          //contribution = 1.0f;
+          contribution = 1.0f;
           perCameraOutput(y, x).r() += pixel.r() * contribution;
           perCameraOutput(y, x).g() += pixel.g() * contribution;
           perCameraOutput(y, x).b() += pixel.b() * contribution;
@@ -729,53 +760,46 @@ int main(int argc, char **argv)
       }
     }   
 
-
-    LaplacianPyramid pyramid(panoramaSize.first, panoramaSize.second);
-    pyramid.process(perCameraOutput);
-
     
 
-    LaplacianPyramid blending_pyramid(panoramaSize.first, panoramaSize.second);
-    blending_pyramid.process(imageOut);
-    blending_pyramid.blend(pyramid);
+    image::Image<int> distanceMap;
+    image::Image<float> weightMap(perCameraOutput.Width(), perCameraOutput.Height());
+    computeDistanceMap(distanceMap, perCameraOutput);
 
-    /*for (int i = 0; i < pyramid._difference_buffers.size(); i++) {
-      char filename[512];
-      sprintf(filename, "%s_differences_%d_%d.exr", outputPanorama.c_str(), imageIndex, i);
-      image::writeImage(filename, pyramid._difference_buffers[i], image::EImageColorSpace::LINEAR);
-    }*/
-
-    //image::Image<image::RGBAfColor> output;
-    //pyramid.rebuild(output);
-
-    blending_pyramid.rebuild(imageOut);
-    
-    for(int y = 0; y < imageOut.Height(); ++y)
+    for(int y = 0; y < perCameraOutput.Height(); ++y)
     {
-      for(int x = 0; x < imageOut.Width(); ++x)
-      {
-        image::RGBAfColor& pixel = imageOut(y, x);
-        if(pixel.a() > std::numeric_limits<float>::epsilon())
+      for(int x = 0; x < perCameraOutput.Width(); ++x)
+       {
+        int dist = distanceMap(y, x);
+
+        weightMap(y, x) = 0.0f;
+        if (dist > 0)
         {
-          pixel.r() /= pixel.a();
-          pixel.g() /= pixel.a();
-          pixel.b() /= pixel.a();
-
-          /*pixel.r() = std::min(1.0f, std::max(0.0f, pixel.r()));
-          pixel.g() = std::min(1.0f, std::max(0.0f, pixel.g()));
-          pixel.b() = std::min(1.0f, std::max(0.0f, pixel.b()));*/
-
-          pixel.a() = 1.0f; // TMP: comment to keep the alpha with the number of contribution for debugging          
+          float fdist = sqrtf(float(dist));
+          weightMap(y, x) = 1.0f - sigmoid(fdist, 100, 50);
         }
       }
     }
 
+    LaplacianPyramid pyramid(panoramaSize.first, panoramaSize.second);
+    pyramid.process(perCameraOutput);
 
-    sprintf(filename, "%s_rebuild_%d.exr", outputPanorama.c_str(), imageIndex);
-    image::writeImage(filename, perCameraOutput, image::EImageColorSpace::SRGB);
+    LaplacianPyramid blending_pyramid(panoramaSize.first, panoramaSize.second);
+    blending_pyramid.process(imageOut);
+    blending_pyramid.blend(pyramid, weightMap);
+    blending_pyramid.rebuild(imageOut);
+    
 
     sprintf(filename, "%s_blend_%d.exr", outputPanorama.c_str(), imageIndex);
-    image::writeImage(filename, imageOut, image::EImageColorSpace::SRGB);
+    image::writeImage(filename, imageOut, image::EImageColorSpace::NO_CONVERSION);
+
+    /*for (int i = 0; i < pyramid._scales; i++) {
+      sprintf(filename, "%s_diff_%d_%d.exr", outputPanorama.c_str(), imageIndex, i);
+      image::writeImage(filename, pyramid._differences_full[i], image::EImageColorSpace::NO_CONVERSION);
+    }
+
+    sprintf(filename, "%s_cam_%d.exr", outputPanorama.c_str(), imageIndex);
+    image::writeImage(filename, perCameraOutput, image::EImageColorSpace::NO_CONVERSION);*/
   }
 
   
