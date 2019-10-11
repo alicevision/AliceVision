@@ -698,15 +698,12 @@ void PlaneSweepingCuda::sweepPixelsToVolume( CudaDeviceMemoryPitched<TSim, 3>& v
       volSecBestSim_dmp,
       volDimX, volDimY, volDimZ);
 
-    cudaDeviceSynchronize();
     // copy the vector of depths to GPU
     CudaDeviceMemory<float> depths_d(rc_depths.data(), rc_depths.size());
 
 #ifdef PLANE_SWEEPING_PRECOMPUTED_COLORS
     CudaDeviceMemoryPitched<float4, 3> volTcamColors_dmp(CudaSize<3>(volDimX, volDimY, volDimZ)); // TODO FACA: move out of the loop (max of depthsToSearch)
 #endif
-
-    cudaDeviceSynchronize();
 
     int s = scale - 1;
 
@@ -817,7 +814,7 @@ void PlaneSweepingCuda::sweepPixelsToVolume( CudaDeviceMemoryPitched<TSim, 3>& v
                 << "\t- volDimY: " << volDimY);
 
             // last synchronous step
-            cudaDeviceSynchronize();
+            // cudaDeviceSynchronize();
 #ifdef PLANE_SWEEPING_PRECOMPUTED_COLORS
             int s = scale - 1;
             ps_computeSimilarityVolume_precomputedColors(
@@ -860,10 +857,8 @@ void PlaneSweepingCuda::sweepPixelsToVolume( CudaDeviceMemoryPitched<TSim, 3>& v
 #endif
         }
         // cudaDestroyTextureObject(volTcamColors_tex3D);
-
-        cudaDeviceSynchronize();
     }
-    cudaDeviceSynchronize();
+    // cudaDeviceSynchronize();
 }
 
 

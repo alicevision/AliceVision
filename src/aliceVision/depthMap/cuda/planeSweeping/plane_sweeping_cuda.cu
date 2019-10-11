@@ -354,24 +354,20 @@ void ps_aggregatePathVolume(
     CudaDeviceMemoryPitched<TSim, 2> d_bestSimInYm1(CudaSize<2>(volDimZ, 1)); // best sim score along the Y axis for each Z value
 
     // Copy the first XZ plane (at Y=0) from 'd_volSim' into 'd_xzSliceForYm1'
-    volume_getVolumeXZSlice_kernel<TSim, TSim> << <gridVolXZ, blockVolXZ >> >(
+    volume_getVolumeXZSlice_kernel<TSim, TSim><<<gridVolXZ, blockVolXZ>>>(
         d_xzSliceForYm1->getBuffer(),
         d_xzSliceForYm1->getPitch(),
         d_volSim.getBuffer(),
         d_volSim.getBytesPaddedUpToDim(1),
         d_volSim.getBytesPaddedUpToDim(0),
         volDim_, axisT_, 0); // Y=0
-    // cudaThreadSynchronize();
-    CHECK_CUDA_ERROR();
 
     // Set the first Z plane from 'd_volAgr' to 255
-    volume_initVolumeYSlice_kernel<TSim><<<gridVolXZ, blockVolXZ >>>(
+    volume_initVolumeYSlice_kernel<TSim><<<gridVolXZ, blockVolXZ>>>(
         d_volAgr.getBuffer(),
         d_volAgr.getBytesPaddedUpToDim(1),
         d_volAgr.getBytesPaddedUpToDim(0),
         volDim_, axisT_, 0, 255);
-    // cudaThreadSynchronize();
-    CHECK_CUDA_ERROR();
 
     for(int iy = 1; iy < volDimY; ++iy)
     {
@@ -380,25 +376,21 @@ void ps_aggregatePathVolume(
         // For each column: compute the best score
         // Foreach x:
         //   d_zBestSimInYm1[x] = min(d_xzSliceForY[1:height])
-        volume_computeBestZInSlice_kernel<<<gridColZ, blockColZ >>>(
+        volume_computeBestZInSlice_kernel<<<gridColZ, blockColZ>>>(
             d_xzSliceForYm1->getBuffer(), d_xzSliceForYm1->getPitch(),
             d_bestSimInYm1.getBuffer(),
             volDimX, volDimZ);
-        // cudaThreadSynchronize();
-        CHECK_CUDA_ERROR();
 
         // Copy the 'z' plane from 'd_volSimT' into 'd_xzSliceForY'
-        volume_getVolumeXZSlice_kernel<TSim, TSim><<<gridVolXZ, blockVolXZ >>>(
+        volume_getVolumeXZSlice_kernel<TSim, TSim><<<gridVolXZ, blockVolXZ>>>(
             d_xzSliceForY->getBuffer(),
             d_xzSliceForY->getPitch(),
             d_volSim.getBuffer(),
             d_volSim.getBytesPaddedUpToDim(1),
             d_volSim.getBytesPaddedUpToDim(0),
             volDim_, axisT_, y);
-        // cudaThreadSynchronize();
-        CHECK_CUDA_ERROR();
 
-        volume_agregateCostVolumeAtXinSlices_kernel<<<gridVolSlide, blockVolSlide >>>(
+        volume_agregateCostVolumeAtXinSlices_kernel<<<gridVolSlide, blockVolSlide>>>(
             rc_tex,
             d_xzSliceForY->getBuffer(), d_xzSliceForY->getPitch(),              // inout: xzSliceForY
             d_xzSliceForYm1->getBuffer(), d_xzSliceForYm1->getPitch(),          // in:    xzSliceForYm1
@@ -408,11 +400,10 @@ void ps_aggregatePathVolume(
             y, P1, P2,
             ySign, filteringIndex);
 
-        cudaThreadSynchronize();
-        CHECK_CUDA_ERROR();
-
         std::swap(d_xzSliceForYm1, d_xzSliceForY);
     }
+
+    // CHECK_CUDA_ERROR();
 
     if(verbose)
         printf("ps_aggregatePathVolume done\n");
@@ -566,8 +557,8 @@ void ps_initColorVolumeFromCamera(
         << "\t- volColor_dmp.getBytesPaddedUpToDim(0): " << volColor_dmp.getBytesPaddedUpToDim(0) << std::endl
         );
 
-    cudaDeviceSynchronize();
-    CHECK_CUDA_ERROR();
+    // cudaDeviceSynchronize();
+    // CHECK_CUDA_ERROR();
 
     volume_initCameraColor_kernel
         <<<grid, block>>>
@@ -582,8 +573,8 @@ void ps_initColorVolumeFromCamera(
          depths_d.getBuffer(),
          volDimX, volDimY, usedVolDimZ, volStepXY);
 
-    cudaDeviceSynchronize();
-    CHECK_CUDA_ERROR();
+    // cudaDeviceSynchronize();
+    // CHECK_CUDA_ERROR();
 }
 
 
@@ -626,8 +617,8 @@ void ps_computeSimilarityVolume_precomputedColors(
     ALICEVISION_CU_PRINT_DEBUG("rcWidth / scale: " << rcWidth / scale << "x" << rcHeight / scale);
     ALICEVISION_CU_PRINT_DEBUG("====================");
 
-    cudaDeviceSynchronize();
-    CHECK_CUDA_ERROR();
+    // cudaDeviceSynchronize();
+    // CHECK_CUDA_ERROR();
 
     volume_estimateSim_twoViews_kernel
         <<<volume_slice_kernel_grid, volume_slice_kernel_block>>>
@@ -652,10 +643,8 @@ void ps_computeSimilarityVolume_precomputedColors(
          scale, volStepXY,
          volDimX, volDimY);
 
-    cudaDeviceSynchronize();
-    CHECK_CUDA_ERROR();
-
-    cudaDeviceSynchronize();
+    // cudaDeviceSynchronize();
+    // CHECK_CUDA_ERROR();
 }
 
 
@@ -672,8 +661,8 @@ void ps_computeSimilarityVolume(Pyramids& ps_texs_arr,
                                 bool verbose,
                                 float gammaC, float gammaP)
 {
-    CHECK_CUDA_ERROR();
-    cudaDeviceSynchronize();
+    // CHECK_CUDA_ERROR();
+    // cudaDeviceSynchronize();
 
     configure_volume_slice_kernel();
 
@@ -743,11 +732,11 @@ void ps_computeSimilarityVolume(Pyramids& ps_texs_arr,
               volStepXY,
               volDimX, volDimY);
 
-        cudaDeviceSynchronize();
-        CHECK_CUDA_ERROR();
+        // cudaDeviceSynchronize();
+        // CHECK_CUDA_ERROR();
     }
 
-    cudaDeviceSynchronize();
+    // cudaDeviceSynchronize();
 }
 
 void ps_refineRcDepthMap(Pyramids& ps_texs_arr, float* out_osimMap_hmh,
@@ -1097,8 +1086,8 @@ void ps_computeNormalMap(
     width, height, wsh,
     gammaC, gammaP);
 
-  cudaThreadSynchronize();
-  CHECK_CUDA_ERROR();
+  // cudaThreadSynchronize();
+  // CHECK_CUDA_ERROR();
 
   if (verbose)
     printf("copy normal map to host\n");
