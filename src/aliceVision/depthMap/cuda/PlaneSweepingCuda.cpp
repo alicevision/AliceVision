@@ -209,12 +209,9 @@ PlaneSweepingCuda::PlaneSweepingCuda( int CUDADeviceNo,
     _nImgsInGPUAtTime = (int)(maxmbGPU / oneimagemb);
     _nImgsInGPUAtTime = std::max(2, std::min(mp.ncams, _nImgsInGPUAtTime));
 
-    _varianceWSH = mp.userParams.get<int>("global.varianceWSH", _varianceWSH);
-
     ALICEVISION_LOG_INFO("PlaneSweepingCuda:" << std::endl
                          << "\t- _nImgsInGPUAtTime: " << _nImgsInGPUAtTime << std::endl
-                         << "\t- scales: " << _scales << std::endl
-                         << "\t- varianceWSH: " << _varianceWSH);
+                         << "\t- scales: " << _scales);
 
     // allocate global on the device
     ps_deviceAllocate(_pyramids, _nImgsInGPUAtTime, maxImageWidth, maxImageHeight, _scales, _CUDADeviceNo);

@@ -69,7 +69,6 @@ public:
 
     const int  _nbestkernelSizeHalf = 1;
     int  _nImgsInGPUAtTime = 2;
-    int  _varianceWSH = 1;
     mvsUtils::ImagesCache<ImageRGBAf>& _ic;
 
     inline int maxImagesInGPU() const { return _nImgsInGPUAtTime; }
