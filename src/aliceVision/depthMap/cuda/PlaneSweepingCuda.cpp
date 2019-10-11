@@ -873,7 +873,9 @@ void PlaneSweepingCuda::sweepPixelsToVolume( CudaDeviceMemoryPitched<TSim, 3>& v
 /**
  * @param[inout] volume input similarity volume
  */
-bool PlaneSweepingCuda::SGMoptimizeSimVolume(int rc, CudaDeviceMemoryPitched<TSim, 3>& volSim_dmp,
+bool PlaneSweepingCuda::SGMoptimizeSimVolume(int rc,
+                                             const CudaDeviceMemoryPitched<TSim, 3>& volSim_dmp,
+                                             CudaDeviceMemoryPitched<TSim, 3>& volSimFiltered_dmp,
                                              int volDimX, int volDimY, int volDimZ,
                                              const std::string& filteringAxes,
                                              int scale, unsigned char P1, unsigned char P2)
@@ -892,6 +894,7 @@ bool PlaneSweepingCuda::SGMoptimizeSimVolume(int rc, CudaDeviceMemoryPitched<TSi
     ps_SGMoptimizeSimVolume(_pyramids,
                             _cams[camCacheIndex],
                             volSim_dmp,
+                            volSimFiltered_dmp,
                             volDimX, volDimY, volDimZ,
                             filteringAxes,
                             _mp.verbose, P1, P2, scale,

@@ -307,190 +307,116 @@ void ps_deviceDeallocate(Pyramids& ps_texs_arr, int CUDAdeviceNo, int ncams, int
     }
 }
 
+
 /**
- * @param[inout] d_volSimT similarity volume with some transposition applied
+ * @param[inout] d_volSimT similarity volume
  */
-void ps_aggregatePathVolume(CudaDeviceMemoryPitched<TSim, 3>& d_volSimT,
-                            int volDimX, int volDimY, int volDimZ,
-                            cudaTextureObject_t rc_tex,
-                            float P1, float P2,
-                            int dimTrnZ, bool doInvZ, bool verbose)
+void ps_aggregatePathVolume(
+    CudaDeviceMemoryPitched<TSim, 3>& d_volAgr,
+    const CudaDeviceMemoryPitched<TSim, 3>& d_volSim,
+    const CudaSize<3>& volDim,
+    const CudaSize<3>& axisT,
+    cudaTextureObject_t rc_tex,
+    float P1, float P2,
+    bool invY, int filteringIndex,
+    bool verbose)
 {
     if(verbose)
         printf("ps_aggregatePathVolume\n");
 
+    size_t volDimX = volDim[axisT[0]];
+    size_t volDimY = volDim[axisT[1]];
+    size_t volDimZ = volDim[axisT[2]];
+
+    int3 volDim_ = make_int3(volDim[0], volDim[1], volDim[2]);
+    int3 axisT_ = make_int3(axisT[0], axisT[1], axisT[2]);
+    int ySign = (invY ? -1 : 1);
+
     ///////////////////////////////////////////////////////////////////////////////
     // setup block and grid
-    int block_size = 8;
-    dim3 blockvol(block_size, block_size, 1);
-    dim3 gridvol(divUp(volDimX, block_size), divUp(volDimY, block_size), 1);
+    const int blockSize = 8;
+    const dim3 blockVolXZ(blockSize, blockSize, 1);
+    const dim3 gridVolXZ(divUp(volDimX, blockVolXZ.x), divUp(volDimZ, blockVolXZ.y), 1);
 
-    int block_sizenmxs = 64;
-    dim3 blockvolrow(block_sizenmxs, 1, 1);
-    dim3 gridvolrow(divUp(volDimX, block_sizenmxs), 1, 1);
-    dim3 gridvolrowAllCols(divUp(volDimX, block_sizenmxs), volDimY, 1);
+    const int blockSizeL = 64;
+    const dim3 blockColZ(blockSizeL, 1, 1);
+    const dim3 gridColZ(divUp(volDimZ, blockColZ.x), 1, 1);
 
-    CudaDeviceMemoryPitched<TSim, 2> d_sliceBufferA(CudaSize<2>(volDimX, volDimY));
-    CudaDeviceMemoryPitched<TSim, 2> d_sliceBufferB(CudaSize<2>(volDimX, volDimY));
+    const dim3 blockVolSlide(blockSizeL, 1, 1);
+    const dim3 gridVolSlide(divUp(volDimX, blockVolSlide.x), volDimZ, 1);
 
-    CudaDeviceMemoryPitched<TSim, 2>* d_xySliceForZ = &d_sliceBufferA;
-    CudaDeviceMemoryPitched<TSim, 2>* d_xySliceForZM1 = &d_sliceBufferB;
+    CudaDeviceMemoryPitched<TSim, 2> d_sliceBufferA(CudaSize<2>(volDimX, volDimZ));
+    CudaDeviceMemoryPitched<TSim, 2> d_sliceBufferB(CudaSize<2>(volDimX, volDimZ));
 
-    CudaDeviceMemoryPitched<TSim, 2> d_xSliceBestInColSimForZM1(CudaSize<2>(volDimX, 1));
+    CudaDeviceMemoryPitched<TSim, 2>* d_xzSliceForY = &d_sliceBufferA; // Y slice
+    CudaDeviceMemoryPitched<TSim, 2>* d_xzSliceForYm1 = &d_sliceBufferB; // Y-1 slice
 
-    int zStart = doInvZ ? volDimZ - 1 : 0;
+    CudaDeviceMemoryPitched<TSim, 2> d_bestSimInYm1(CudaSize<2>(volDimZ, 1)); // best sim score along the Y axis for each Z value
 
-    // Copy the first Z plane from 'd_volSimT' into 'xysliceForZ_dmp'
-    volume_getVolumeXYSliceAtZ_kernel<TSim, TSim><<<gridvol, blockvol>>>(
-        d_xySliceForZ->getBuffer(),
-        d_xySliceForZ->getPitch(),
-        d_volSimT.getBuffer(),
-        d_volSimT.getBytesPaddedUpToDim(1),
-        d_volSimT.getBytesPaddedUpToDim(0),
-        volDimX, volDimY, volDimZ, zStart); // Z=0
-    copy(*d_xySliceForZM1, *d_xySliceForZ);
+    // Copy the first XZ plane (at Y=0) from 'd_volSim' into 'd_xzSliceForYm1'
+    volume_getVolumeXZSlice_kernel<TSim, TSim> << <gridVolXZ, blockVolXZ >> >(
+        d_xzSliceForYm1->getBuffer(),
+        d_xzSliceForYm1->getPitch(),
+        d_volSim.getBuffer(),
+        d_volSim.getBytesPaddedUpToDim(1),
+        d_volSim.getBytesPaddedUpToDim(0),
+        volDim_, axisT_, 0); // Y=0
+    // cudaThreadSynchronize();
     CHECK_CUDA_ERROR();
 
-    // Set the first Z plane from 'd_volSimT' to 255
-    volume_initVolume_kernel<TSim><<<gridvol, blockvol>>>(
-        d_volSimT.getBuffer(),
-        d_volSimT.getBytesPaddedUpToDim(1),
-        d_volSimT.getBytesPaddedUpToDim(0),
-        volDimX, volDimY, volDimZ, 0, TSim(255.0f));
+    // Set the first Z plane from 'd_volAgr' to 255
+    volume_initVolumeYSlice_kernel<TSim><<<gridVolXZ, blockVolXZ >>>(
+        d_volAgr.getBuffer(),
+        d_volAgr.getBytesPaddedUpToDim(1),
+        d_volAgr.getBytesPaddedUpToDim(0),
+        volDim_, axisT_, 0, 255);
+    // cudaThreadSynchronize();
     CHECK_CUDA_ERROR();
 
-    for(int iz = 1; iz < volDimZ; iz++)
+    for(int iy = 1; iy < volDimY; ++iy)
     {
-        int z = doInvZ ? volDimZ - 1 - iz : iz;
+        int y = invY ? volDimY - 1 - iy : iy;
 
         // For each column: compute the best score
         // Foreach x:
-        //   d_xSliceBestInColSimForZM1[x] = min(d_xySliceForZ[1:height])
-        volume_computeBestXSlice_kernel<<<gridvolrow, blockvolrow>>>(
-            d_xySliceForZM1->getBuffer(), d_xySliceForZM1->getPitch(),
-            d_xSliceBestInColSimForZM1.getBuffer(),
-            volDimX, volDimY);
+        //   d_zBestSimInYm1[x] = min(d_xzSliceForY[1:height])
+        volume_computeBestZInSlice_kernel<<<gridColZ, blockColZ >>>(
+            d_xzSliceForYm1->getBuffer(), d_xzSliceForYm1->getPitch(),
+            d_bestSimInYm1.getBuffer(),
+            volDimX, volDimZ);
+        // cudaThreadSynchronize();
         CHECK_CUDA_ERROR();
 
-        // Copy the 'z' plane from 'd_volSimT' into 'd_xySliceForZ'
-        volume_getVolumeXYSliceAtZ_kernel<TSim, TSim><<<gridvol, blockvol>>>(
-            d_xySliceForZ->getBuffer(),
-            d_xySliceForZ->getPitch(),
-            d_volSimT.getBuffer(),
-            d_volSimT.getBytesPaddedUpToDim(1),
-            d_volSimT.getBytesPaddedUpToDim(0),
-            volDimX, volDimY, volDimZ, z);
+        // Copy the 'z' plane from 'd_volSimT' into 'd_xzSliceForY'
+        volume_getVolumeXZSlice_kernel<TSim, TSim><<<gridVolXZ, blockVolXZ >>>(
+            d_xzSliceForY->getBuffer(),
+            d_xzSliceForY->getPitch(),
+            d_volSim.getBuffer(),
+            d_volSim.getBytesPaddedUpToDim(1),
+            d_volSim.getBytesPaddedUpToDim(0),
+            volDim_, axisT_, y);
+        // cudaThreadSynchronize();
         CHECK_CUDA_ERROR();
 
-        volume_agregateCostVolumeAtZinSlices_kernel<<<gridvolrowAllCols, blockvolrow>>>(
+        volume_agregateCostVolumeAtXinSlices_kernel<<<gridVolSlide, blockVolSlide >>>(
             rc_tex,
-            d_xySliceForZ->getBuffer(), d_xySliceForZ->getPitch(),              // inout: xySliceForZ
-            d_xySliceForZM1->getBuffer(), d_xySliceForZM1->getPitch(),          // in:    xySliceForZM1
-            d_xSliceBestInColSimForZM1.getBuffer(),                          // in:    xSliceBestInColSimForZM1
-            d_volSimT.getBuffer(), d_volSimT.getBytesPaddedUpToDim(1), d_volSimT.getBytesPaddedUpToDim(0), // out:   volSimT
-            volDimX, volDimY, volDimZ,
-            z, P1, P2,
-            dimTrnZ, doInvZ);
+            d_xzSliceForY->getBuffer(), d_xzSliceForY->getPitch(),              // inout: xzSliceForY
+            d_xzSliceForYm1->getBuffer(), d_xzSliceForYm1->getPitch(),          // in:    xzSliceForYm1
+            d_bestSimInYm1.getBuffer(),                                         // in:    bestSimInYm1
+            d_volAgr.getBuffer(), d_volAgr.getBytesPaddedUpToDim(1), d_volAgr.getBytesPaddedUpToDim(0), // out:   volAgr
+            volDim_, axisT_,
+            y, P1, P2,
+            ySign, filteringIndex);
+
         cudaThreadSynchronize();
         CHECK_CUDA_ERROR();
 
-        std::swap(d_xySliceForZM1, d_xySliceForZ);
+        std::swap(d_xzSliceForYm1, d_xzSliceForY);
     }
 
     if(verbose)
         printf("ps_aggregatePathVolume done\n");
 }
-
-/**
- * @param[out] volAgr_dmp output volume where we will aggregate the best XXX
- * @param[in] d_volSim input similarity volume
- */
-void ps_updateAggrVolume(CudaDeviceMemoryPitched<TSim, 3>& volAgr_dmp,
-                         const CudaDeviceMemoryPitched<TSim, 3>& d_volSim,
-                         int volDimX, int volDimY, int volDimZ,
-                         int dimTrnX, int dimTrnY, int dimTrnZ,
-                         cudaTextureObject_t rc_tex,
-                         float P1, float P2,
-                         bool verbose, bool doInvZ, int lastN)
-{
-    if(verbose)
-        printf("ps_updateAggrVolume\n");
-
-    int dimsTrn[3];
-    dimsTrn[0] = dimTrnX;
-    dimsTrn[1] = dimTrnY;
-    dimsTrn[2] = dimTrnZ;
-    int volDims[3];
-    volDims[0] = volDimX;
-    volDims[1] = volDimY;
-    volDims[2] = volDimZ;
-
-    int dimsTri[3];
-    dimsTri[dimTrnX] = 0;
-    dimsTri[dimTrnY] = 1;
-    dimsTri[dimTrnZ] = 2;
-
-    ///////////////////////////////////////////////////////////////////////////////
-    // setup block and grid
-    int block_size = 8;
-    dim3 block(block_size, block_size, 1);
-    dim3 grid(divUp(volDimX, block_size), divUp(volDimY, block_size), 1);
-
-    dim3 blockT(block_size, block_size, 1);
-    dim3 gridT(divUp(volDims[dimsTrn[0]], block_size), divUp(volDims[dimsTrn[1]], block_size), 1);
-
-    //--------------------------------------------------------------------------------------------------
-    // aggregate similarity volume
-    // clock_t tall = tic();
-    CudaDeviceMemoryPitched<TSim, 3> d_volSimT(
-        CudaSize<3>(volDims[dimsTrn[0]], volDims[dimsTrn[1]], volDims[dimsTrn[2]]));
-    for(int z = 0; z < volDimZ; z++)
-    {
-        volume_transposeVolume_kernel<<<grid, block>>>(
-            d_volSimT.getBuffer(),
-            d_volSimT.getBytesPaddedUpToDim(1),
-            d_volSimT.getBytesPaddedUpToDim(0), // output
-            d_volSim.getBuffer(),
-            d_volSim.getBytesPaddedUpToDim(1),
-            d_volSim.getBytesPaddedUpToDim(0), // input
-            volDimX, volDimY, volDimZ,
-            dimTrnX, dimTrnY, dimTrnZ,
-            z);
-    }
-    CHECK_CUDA_ERROR();
-    // if (verbose) printf("transpose volume gpu elapsed time: %f ms \n", toc(tall));
-    // pr_printfDeviceMemoryInfo();
-
-    // clock_t tall = tic();
-    ps_aggregatePathVolume(
-        d_volSimT, volDims[dimsTrn[0]], volDims[dimsTrn[1]], volDims[dimsTrn[2]],
-        rc_tex,
-        P1, P2,
-        dimTrnZ, doInvZ, verbose);
-    // if (verbose) printf("aggregate volume gpu elapsed time: %f ms \n", toc(tall));
-    // pr_printfDeviceMemoryInfo();
-
-    // clock_t tall = tic();
-    for(int zT = 0; zT < volDims[dimsTrn[2]]; zT++)
-    {
-        volume_transposeAddAvgVolume_kernel<<<gridT, blockT>>>(
-            volAgr_dmp.getBuffer(),
-            volAgr_dmp.getBytesPaddedUpToDim(1),
-            volAgr_dmp.getBytesPaddedUpToDim(0),
-            d_volSimT.getBuffer(),
-            d_volSimT.getBytesPaddedUpToDim(1),
-            d_volSimT.getBytesPaddedUpToDim(0),
-            volDims[dimsTrn[0]], volDims[dimsTrn[1]], volDims[dimsTrn[2]],
-            dimsTri[0], dimsTri[1], dimsTri[2], zT, lastN);
-    }
-    CHECK_CUDA_ERROR();
-    // if (verbose) printf("transpose volume gpu elapsed time: %f ms \n", toc(tall));
-    // pr_printfDeviceMemoryInfo();
-
-    if(verbose)
-        printf("ps_updateAggrVolume done\n");
-}
-
 
 /**
 * @param[in] ps_texs_arr table of image (in Lab colorspace) for all scales
@@ -499,7 +425,8 @@ void ps_updateAggrVolume(CudaDeviceMemoryPitched<TSim, 3>& volAgr_dmp,
 */
 void ps_SGMoptimizeSimVolume(Pyramids& ps_texs_arr,
                              const CameraStruct& rccam,
-                             CudaDeviceMemoryPitched<TSim, 3>& volSim_dmp,
+                             const CudaDeviceMemoryPitched<TSim, 3>& volSim_dmp,
+                             CudaDeviceMemoryPitched<TSim, 3>& volSimFiltered_dmp,
                              int volDimX, int volDimY, int volDimZ,
                              const std::string& filteringAxes,
                              bool verbose, float P1, float P2,
@@ -515,47 +442,47 @@ void ps_SGMoptimizeSimVolume(Pyramids& ps_texs_arr,
     if (verbose)
         printf("ps_SGMoptimizeSimVolume: Total size of volume map in GPU memory: %f\n", double(volSim_dmp.getBytesPadded())/(1024.0*1024.0));
 
-    // Don't need to initialize this buffer
-    // ps_updateAggrVolume multiplies the initial value by npaths, which is 0 at first call
-    CudaDeviceMemoryPitched<TSim, 3> volAgr_dmp(CudaSize<3>(volDimX, volDimY, volDimZ));
-
     // update aggregation volume
     int npaths = 0;
     cudaTextureObject_t rc_tex = ps_texs_arr[rccam.camId][scale - 1].tex;
 
-    const auto updateAggrVolume = [&](const std::array<int, 3>& dimTrn, bool invZ) 
+    CudaSize<3> volDim(volDimX, volDimY, volDimZ);
+
+    const auto updateAggrVolume = [&](const std::array<int, 3>& axisTrn, bool invX)
                                   {
-                                      ps_updateAggrVolume(volAgr_dmp,
+                                      CudaSize<3> axisT(axisTrn[0], axisTrn[1], axisTrn[2]);
+
+                                      ps_aggregatePathVolume(volSimFiltered_dmp,
                                                           volSim_dmp,
-                                                          volDimX, volDimY, volDimZ,
-                                                          dimTrn[0], dimTrn[1], dimTrn[2],
+                                                          volDim,
+                                                          axisT,
                                                           rc_tex,
-                                                          P1, P2, verbose,
-                                                          invZ,
-                                                          npaths);
+                                                          P1, P2,
+                                                          invX,
+                                                          npaths,
+                                                          verbose);
                                       npaths++;
                                   };
+
     // Filtering is done on the last axis
     const std::map<char, std::array<int, 3>> mapAxes = {
-        {'Y', {0, 2, 1}}, // XYZ -> XZY
-        {'X', {1, 2, 0}}, // XYZ -> YZX
+        {'X', {1, 0, 2}}, // XYZ -> YXZ
+        {'Y', {0, 1, 2}}, // XYZ
         {'Z', {0, 1, 2}}, // XYZ
     };
 
     for (char axis : filteringAxes)
     {
-        const std::array<int, 3>& dimTrn = mapAxes.at(axis);
-        updateAggrVolume(dimTrn, false); // without transpose
-        updateAggrVolume(dimTrn, true); // with transpose of the last axis
+        const std::array<int, 3>& axisT = mapAxes.at(axis);
+        updateAggrVolume(axisT, false); // without transpose
+        updateAggrVolume(axisT, true); // with transpose of the last axis
     }
 
-    if(verbose)
+    if (verbose)
+    {
         printf("SGM volume gpu elapsed time: %f ms \n", toc(tall));
-
-    volSim_dmp.copyFrom(volAgr_dmp);
-
-    if(verbose)
         printf("ps_SGMoptimizeSimVolume done\n");
+    }
 }
 
 void ps_SGMretrieveBestDepth(
@@ -582,50 +509,6 @@ void ps_SGMretrieveBestDepth(
     volDimX, volDimY, volDimZ,
     scaleStep,
     interpolate);
-}
-
-
-void ps_transposeVolume(CudaHostMemoryHeap<unsigned char, 3>* ovol_hmh,
-                        CudaHostMemoryHeap<unsigned char, 3>* ivol_hmh, int volDimX, int volDimY, int volDimZ,
-                        int dimTrnX, int dimTrnY, int dimTrnZ, bool verbose)
-{
-    clock_t tall = tic();
-
-    CudaDeviceMemoryPitched<unsigned char, 3> volSim_dmp(*ivol_hmh);
-
-    int dimsTrn[3];
-    dimsTrn[0] = dimTrnX;
-    dimsTrn[1] = dimTrnY;
-    dimsTrn[2] = dimTrnZ;
-    int volDims[3];
-    volDims[0] = volDimX;
-    volDims[1] = volDimY;
-    volDims[2] = volDimZ;
-
-    int block_size = 8;
-    dim3 block(block_size, block_size, 1);
-    dim3 grid(divUp(volDimX, block_size), divUp(volDimY, block_size), 1);
-
-    CudaDeviceMemoryPitched<unsigned char, 3> volTra_dmp(
-        CudaSize<3>(volDims[dimsTrn[0]], volDims[dimsTrn[1]], volDims[dimsTrn[2]]));
-    for(int z = 0; z < volDimZ; z++)
-    {
-        volume_transposeVolume_kernel<<<grid, block>>>(volTra_dmp.getBuffer(),
-                                                       volTra_dmp.getBytesPaddedUpToDim(1),
-                                                       volTra_dmp.getBytesPaddedUpToDim(0),
-                                                       volSim_dmp.getBuffer(),
-                                                       volSim_dmp.getBytesPaddedUpToDim(1),
-                                                       volSim_dmp.getBytesPaddedUpToDim(0),
-                                                       volDimX, volDimY, volDimZ,
-                                                       dimTrnX, dimTrnY, dimTrnZ,
-                                                       z);
-        CHECK_CUDA_ERROR();
-    }
-
-    if(verbose)
-        printf("gpu elapsed time: %f ms \n", toc(tall));
-
-    copy((*ovol_hmh), volTra_dmp);
 }
 
 

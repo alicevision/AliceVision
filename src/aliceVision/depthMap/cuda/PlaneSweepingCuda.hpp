@@ -121,10 +121,12 @@ public:
         int wsh, float gammaC, float gammaP,
         int scale);
 
-    bool SGMoptimizeSimVolume(int rc, CudaDeviceMemoryPitched<TSim, 3>& volSim_dmp,
-                              int volDimX, int volDimY, int volDimZ,
-                              const std::string& filteringAxes,
-                              int scale, unsigned char P1, unsigned char P2);
+    bool SGMoptimizeSimVolume(int rc,
+        const CudaDeviceMemoryPitched<TSim, 3>& volSim_dmp,
+        CudaDeviceMemoryPitched<TSim, 3>& volSimFiltered_dmp,
+        int volDimX, int volDimY, int volDimZ,
+        const std::string& filteringAxes,
+        int scale, unsigned char P1, unsigned char P2);
 
     void SGMretrieveBestDepth(DepthSimMap& bestDepth, CudaDeviceMemoryPitched<TSim, 3>& volSim_dmp, const StaticVector<float>& depths, const int rcCamId,
         int volDimX, int volDimY, int volDimZ, int scaleStep, bool interpolate);

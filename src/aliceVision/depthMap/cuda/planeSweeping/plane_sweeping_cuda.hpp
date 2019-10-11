@@ -72,7 +72,8 @@ void ps_computeSimilarityVolume(
 void ps_SGMoptimizeSimVolume(
     Pyramids& ps_texs_arr,
     const CameraStruct& rccam,
-    CudaDeviceMemoryPitched<TSim, 3>& volSim_dmp,
+    const CudaDeviceMemoryPitched<TSim, 3>& volSim_dmp,
+    CudaDeviceMemoryPitched<TSim, 3>& volSimFiltered_dmp,
     int volDimX, int volDimY, int volDimZ,
     const std::string& filteringAxes,
     bool verbose,

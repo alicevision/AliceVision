@@ -365,170 +365,60 @@ __global__ void volume_retrieveBestZ_kernel(
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-__global__ void volume_transposeAddAvgVolume_kernel(TSim* volumeT, int volumeT_s, int volumeT_p,
-                                                    const TSim* volume, int volume_s, int volume_p, int volDimX,
-                                                    int volDimY, int volDimZ, int dimTrnX, int dimTrnY, int dimTrnZ,
-                                                    int z, int lastN)
-{
-    int vx = blockIdx.x * blockDim.x + threadIdx.x;
-    int vy = blockIdx.y * blockDim.y + threadIdx.y;
-    int vz = z;
-
-    if(vx >= volDimX || vy >= volDimY) // || vz >= volDimZ)
-        return;
-
-    int v[3];
-    v[0] = vx;
-    v[1] = vy;
-    v[2] = vz;
-
-    int dimsTrn[3];
-    dimsTrn[0] = dimTrnX;
-    dimsTrn[1] = dimTrnY;
-    dimsTrn[2] = dimTrnZ;
-
-    int vTx = v[dimsTrn[0]];
-    int vTy = v[dimsTrn[1]];
-    int vTz = v[dimsTrn[2]];
-
-    TSim* oldVal_ptr = get3DBufferAt(volumeT, volumeT_s, volumeT_p, vTx, vTy, vTz);
-    float newVal = *get3DBufferAt(volume, volume_s, volume_p, vx, vy, vz);
-    float val = (*oldVal_ptr * (float)lastN + newVal) / (float)(lastN + 1);
-
-    *oldVal_ptr = val;
-}
-
 template <typename T>
-__global__ void volume_transposeVolume_kernel(T* volumeT, int volumeT_s, int volumeT_p, 
-                                              const T* volume, int volume_s, int volume_p, 
-                                              int volDimX, int volDimY, int volDimZ, 
-                                              int dimTrnX, int dimTrnY, int dimTrnZ, 
-                                              int z)
+__global__ void volume_initVolumeYSlice_kernel(T* volume, int volume_s, int volume_p, const int3 volDim, const int3 axisT, int y, T cst)
 {
-    int vx = blockIdx.x * blockDim.x + threadIdx.x;
-    int vy = blockIdx.y * blockDim.y + threadIdx.y;
-    int vz = z;
+    int x = blockIdx.x * blockDim.x + threadIdx.x;
+    int z = blockIdx.y * blockDim.y + threadIdx.y;
 
-    if(vx >= volDimX || vy >= volDimY) // || vz >= volDimZ)
-        return;
+    int3 v;
+    (&v.x)[axisT.x] = x;
+    (&v.x)[axisT.y] = y;
+    (&v.x)[axisT.z] = z;
 
-    int v[3];
-    v[0] = vx;
-    v[1] = vy;
-    v[2] = vz;
-
-    int dimsTrn[3];
-    dimsTrn[0] = dimTrnX;
-    dimsTrn[1] = dimTrnY;
-    dimsTrn[2] = dimTrnZ;
-
-    int vTx = v[dimsTrn[0]];
-    int vTy = v[dimsTrn[1]];
-    int vTz = v[dimsTrn[2]];
-
-    T* oldVal_ptr = get3DBufferAt(volumeT, volumeT_s, volumeT_p, vTx, vTy, vTz);
-    T newVal = *get3DBufferAt(volume, volume_s, volume_p, vx, vy, vz);
-    *oldVal_ptr = newVal;
-}
-
-template <typename T>
-__global__ void volume_initVolume_kernel(T* volume, int volume_s, int volume_p, int volDimX, int volDimY, int volDimZ,
-                                         int vz, T cst)
-{
-    int vx = blockIdx.x * blockDim.x + threadIdx.x;
-    int vy = blockIdx.y * blockDim.y + threadIdx.y;
-
-    if (vx >= volDimX || vy >= volDimY) // || vz >= volDimZ)
-      return;
-
-    T* volume_zyx = get3DBufferAt(volume, volume_s, volume_p, vx, vy, vz);
-    *volume_zyx = cst;
-}
-
-__global__ void volume_updateMinXSlice_kernel(TSim* volume, int volume_s, int volume_p,
-                                              TSim* xySliceBestSim, int xySliceBestSim_p,
-                                              int* xySliceBestZ, int xySliceBestZ_p,
-                                              int volDimX, int volDimY, int volDimZ, int vz)
-{
-    int vx = blockIdx.x * blockDim.x + threadIdx.x;
-    int vy = blockIdx.y * blockDim.y + threadIdx.y;
-
-    if( vx >= volDimX || vy >= volDimY) // || vz >= volDimZ || vz < 0 )
-        return;
-
-    TSim sim = *get3DBufferAt(volume, volume_s, volume_p, vx, vy, vz);
-    BufPtr<TSim> xySliceBest( xySliceBestSim, xySliceBestSim_p );
-    TSim actSim_ptr = xySliceBest.at(vx, vy);
-    if((sim < actSim_ptr) || (vz == 0))
+    if ((x >= 0) && (x < (&volDim.x)[axisT.x]) && (z >= 0) && (z < (&volDim.x)[axisT.z]))
     {
-        xySliceBest                              .at(vx,vy) = sim;
-        BufPtr<int>(xySliceBestZ, xySliceBestZ_p).at(vx,vy) = vz;
+        T* volume_zyx = get3DBufferAt(volume, volume_s, volume_p, v.x, v.y, v.z);
+        *volume_zyx = cst;
     }
 }
 
 template <typename T1, typename T2>
-__global__ void volume_getVolumeXYSliceAtZ_kernel(T1* xySlice, int xySlice_p, T2* volume, int volume_s, int volume_p,
-                                                  int volDimX, int volDimY, int volDimZ, int vz)
+__global__ void volume_getVolumeXZSlice_kernel(T1* slice, int slice_p,
+                                               const T2* volume, int volume_s, int volume_p,
+                                               const int3 volDim, const int3 axisT, int y)
 {
-    int vx = blockIdx.x * blockDim.x + threadIdx.x;
-    int vy = blockIdx.y * blockDim.y + threadIdx.y;
+    int x = blockIdx.x * blockDim.x + threadIdx.x;
+    int z = blockIdx.y * blockDim.y + threadIdx.y;
 
+    int3 v;
+    (&v.x)[axisT.x] = x;
+    (&v.x)[axisT.y] = y;
+    (&v.x)[axisT.z] = z;
 
-    if (vx >= volDimX || vy >= volDimY) // || vz >= volDimZ)
+    if (x >= (&volDim.x)[axisT.x] || z >= (&volDim.x)[axisT.z])
       return;
 
-    T2* volume_zyx = get3DBufferAt(volume, volume_s, volume_p, vx, vy, vz);
-    T1* xySlice_yx = get2DBufferAt(xySlice, xySlice_p, vx, vy);
-    *xySlice_yx = (T1)(*volume_zyx);
+    const T2* volume_xyz = get3DBufferAt(volume, volume_s, volume_p, v);
+    T1* slice_xz = get2DBufferAt(slice, slice_p, x, z);
+    *slice_xz = (T1)(*volume_xyz);
 }
 
-__global__ void volume_agregateCostVolumeAtZ_kernel(TSim* volume, int volume_s, int volume_p,
-                                                    TSim* xsliceBestInColCst, int volDimX, int volDimY,
-                                                    int volDimZ, int vz, float P1, float P2,
-                                                    bool transfer)
+__global__ void volume_computeBestZInSlice_kernel(TSim* xzSlice, int xzSlice_p, TSim* ySliceBestInColCst, int volDimX, int volDimZ)
 {
-    int vx = blockIdx.x * blockDim.x + threadIdx.x;
-    int vy = blockIdx.y * blockDim.y + threadIdx.y;
+    int x = blockIdx.x * blockDim.x + threadIdx.x;
 
-    if (vx >= volDimX || vy >= volDimY) // || vz >= volDimZ)
-      return;
-
-    TSim* sim_ptr = get3DBufferAt(volume, volume_s, volume_p, vx, vy, vz);
-    TSim sim = *sim_ptr;
-    float pathCost = (transfer == true) ? sim : 255.0f;
-
-    if((vz >= 1) && (vy >= 1) && (vy < volDimY - 1))
-    {
-        float bestCostM = xsliceBestInColCst[vx];
-        float pathCostMDM1 = volume[(vz - 1) * volume_s + (vy - 1) * volume_p + vx];
-        float pathCostMD = volume[(vz - 1) * volume_s + (vy + 0) * volume_p + vx];
-        float pathCostMDP1 = volume[(vz - 1) * volume_s + (vy + 1) * volume_p + vx];
-        pathCost = sim + multi_fminf(pathCostMD, pathCostMDM1 + P1, pathCostMDP1 + P1, bestCostM + P2) - bestCostM;
-#ifdef TSIM_USE_FLOAT
-        // no clamp
-#else
-        pathCost = fminf(255.0f, fmaxf(0.0f, pathCost));
-#endif
-    }
-
-    *sim_ptr = pathCost;
-}
-
-__global__ void volume_computeBestXSlice_kernel(TSim* xySlice, int xySlice_p, TSim* xsliceBestInColCst, int volDimX, int volDimY)
-{
-    int vx = blockIdx.x * blockDim.x + threadIdx.x;
-
-    if(vx >= volDimX)
+    if(x >= volDimX)
         return;
 
-    float bestCst = *get2DBufferAt(xySlice, xySlice_p, vx, 0);
+    float bestCst = *get2DBufferAt(xzSlice, xzSlice_p, x, 0);
 
-    for(int vy = 0; vy < volDimY; vy++)
+    for(int z = 0; z < volDimZ; ++z)
     {
-        float cst = *get2DBufferAt(xySlice, xySlice_p, vx, vy);
-        bestCst = cst < bestCst ? cst : bestCst;
+        float cst = *get2DBufferAt(xzSlice, xzSlice_p, x, z);
+        bestCst = cst < bestCst ? cst : bestCst;  // min(cst, bestCst);
     }
-    xsliceBestInColCst[vx] = bestCst;
+    ySliceBestInColCst[x] = bestCst;
 }
 
 /**
@@ -537,52 +427,44 @@ __global__ void volume_computeBestXSlice_kernel(TSim* xySlice, int xySlice_p, TS
  * @param[in] xSliceBestInColCst
  * @param[out] volSimT output similarity volume
  */
-__global__ void volume_agregateCostVolumeAtZinSlices_kernel(cudaTextureObject_t rc_tex,
-            TSim* xySliceForZ, int xySliceForZ_p,
-            const TSim* xySliceForZM1, int xySliceForZM1_p,
-            const TSim* xSliceBestInColSimForZM1,
-            TSim* volSimT, int volSimT_s, int volSimT_p,
-            int volDimX, int volDimY, int volDimZ, 
-            int vz, float _P1, float _P2,
-            int dimTrnZ, bool doInvZ)
+__global__ void volume_agregateCostVolumeAtXinSlices_kernel(
+            cudaTextureObject_t rc_tex,
+            TSim* xzSliceForY, int xzSliceForY_p,
+            const TSim* xzSliceForYm1, int xzSliceForYm1_p,
+            const TSim* bestSimInYm1,
+            TSim* volAgr, int volAgr_s, int volAgr_p,
+            const int3 volDim,
+            const int3 axisT,
+            int y, float _P1, float _P2,
+            int ySign, int filteringIndex)
 {
-    int vx = blockIdx.x * blockDim.x + threadIdx.x;
-    int vy = blockIdx.y * blockDim.y + threadIdx.y;
+    int x = blockIdx.x * blockDim.x + threadIdx.x;
+    int z = blockIdx.y * blockDim.y + threadIdx.y;
 
-    if (vx >= volDimX && vy >= volDimY) // && vz >= volDimZ)
+    int3 v;
+    (&v.x)[axisT.x] = x;
+    (&v.x)[axisT.y] = y;
+    (&v.x)[axisT.z] = z;
+
+    if (x >= (&volDim.x)[axisT.x] || z >= volDim.z)
         return;
 
-    TSim* sim_yx = get2DBufferAt(xySliceForZ, xySliceForZ_p, vx, vy);
-    float sim = *sim_yx;
+    TSim* sim_xz = get2DBufferAt(xzSliceForY, xzSliceForY_p, x, z);
+    float sim = *sim_xz;
     float pathCost = 255.0f;
 
-    if((vz >= 1) && (vy >= 1) && (vy < volDimY - 1))
+    if((z >= 1) && (z < volDim.z - 1))
     {
-        int z1 = doInvZ ? vz + 1 : vz - 1; // M1
+        const int imX0 = v.x; // current
+        const int imY0 = v.y;
 
-        int imX0 = 0; // current
-        int imY0 = 0;
-        int imX1 = 0; // M1
-        int imY1 = 0;
-        if (dimTrnZ == 1) // Y is on Z axis
-        {
-            // 0,2,1 / XZY
-            imX0 = vx; // current
-            imY0 = vz;
-            imX1 = vx; // M1
-            imY1 = z1;
-        }
-        else if(dimTrnZ == 0) // X is on Z axis
-        {
-            // 1,2,0 / YZX
-            imX0 = vz; // current
-            imY0 = vx;
-            imX1 = z1; // M1
-            imY1 = vx;
-        }
-        float4 gcr0 = tex2D<float4>(rc_tex, float(imX0) + 0.5f, float(imY0) + 0.5f);
-        float4 gcr1 = tex2D<float4>(rc_tex, float(imX1) + 0.5f, float(imY1) + 0.5f);
-        float deltaC = Euclidean3(gcr0, gcr1);
+        const int imX1 = imX0 - ySign * (axisT.y == 0); // M1
+        const int imY1 = imY0 - ySign * (axisT.y == 1);
+
+        const float4 gcr0 = tex2D<float4>(rc_tex, float(imX0) + 0.5f, float(imY0) + 0.5f);
+        const float4 gcr1 = tex2D<float4>(rc_tex, float(imX1) + 0.5f, float(imY1) + 0.5f);
+
+        const float deltaC = Euclidean3(gcr0, gcr1);
         // unsigned int P1 = (unsigned int)sigmoid(5.0f,20.0f,60.0f,10.0f,deltaC);
         float P1 = _P1;
         // 15.0 + (255.0 - 15.0) * (1.0 / (1.0 + exp(10.0 * ((x - 20.) / 80.))))
@@ -593,24 +475,28 @@ __global__ void volume_agregateCostVolumeAtZinSlices_kernel(cudaTextureObject_t 
         else
             P2 = std::abs(_P2);
 
-        float bestCostInColM1 = xSliceBestInColSimForZM1[vx];
-        float pathCostMDM1 = *get2DBufferAt(xySliceForZM1, xySliceForZM1_p, vx, vy - 1); // M1: minus 1 over depths
-        float pathCostMD   = *get2DBufferAt(xySliceForZM1, xySliceForZM1_p, vx, vy);
-        float pathCostMDP1 = *get2DBufferAt(xySliceForZM1, xySliceForZM1_p, vx, vy + 1); // P1: plus 1 over depths
-        float minCost = multi_fminf(pathCostMD, pathCostMDM1 + P1, pathCostMDP1 + P1, bestCostInColM1 + P2);
+        const float bestCostInColM1 = bestSimInYm1[x];
+        const float pathCostMDM1 = *get2DBufferAt(xzSliceForYm1, xzSliceForYm1_p, x, z - 1); // M1: minus 1 over depths
+        const float pathCostMD   = *get2DBufferAt(xzSliceForYm1, xzSliceForYm1_p, x, z);
+        const float pathCostMDP1 = *get2DBufferAt(xzSliceForYm1, xzSliceForYm1_p, x, z + 1); // P1: plus 1 over depths
+        const float minCost = multi_fminf(pathCostMD, pathCostMDM1 + P1, pathCostMDP1 + P1, bestCostInColM1 + P2);
 
         // if 'pathCostMD' is the minimal value of the depth
-        pathCost = sim + minCost - bestCostInColM1;
+        pathCost = (*sim_xz) + minCost - bestCostInColM1;
     }
-    TSim* volume_zyx = get3DBufferAt(volSimT, volSimT_s, volSimT_p, vx, vy, vz);
-#ifdef TSIM_USE_FLOAT
-    // no clamp
-#else
+
+#ifndef TSIM_USE_FLOAT
+    // clamp if we use uchar
     pathCost = fminf(255.0f, fmaxf(0.0f, pathCost));
 #endif
 
-    *volume_zyx = pathCost;
-    *sim_yx = pathCost;
+    // fill the current slice with the new similarity score
+    *sim_xz = pathCost;
+
+    // aggregate into the final output
+    TSim* volume_xyz = get3DBufferAt(volAgr, volAgr_s, volAgr_p, v.x, v.y, v.z);
+    const float val = (float(*volume_xyz) * float(filteringIndex) + pathCost) / (float)(filteringIndex + 1);
+    *volume_xyz = (unsigned char)(val);
 }
 
 } // namespace depthMap
