@@ -78,6 +78,339 @@ namespace SphericalMapping
   }
 }
 
+class Pyramid {
+public:
+  Pyramid(const size_t width_base, const size_t height_base, const size_t limit_scales = 64) :
+    _width_base(width_base), 
+    _height_base(height_base)
+  {
+    /**
+     * Compute optimal scale
+     * The smallest level will be at least of size min_size
+     */
+    size_t min_dim = std::min(_width_base, _height_base);
+    size_t min_size = 32;
+    _scales = std::min(limit_scales, static_cast<size_t>(floor(log2(double(min_dim) / float(min_size)))));
+    
+
+    /**
+     * Create pyramid
+     **/
+    size_t new_width = _width_base;
+    size_t new_height = _height_base;
+    for (int i = 0; i < _scales; i++) {
+
+      _pyramid_color.push_back(image::Image<image::RGBfColor>(new_width, new_height, true, image::RGBfColor(0.0f, 0.0f, 0.0f)));
+      _pyramid_mask.push_back(image::Image<bool>(new_width, new_height, true, false));
+      new_height /= 2;
+      new_width /= 2;
+    }
+  }
+
+  bool process(const image::Image<image::RGBfColor> & input, const image::Image<bool> & mask) {
+
+    if (input.Height() != _pyramid_color[0].Height()) return false;
+    if (input.Width() != _pyramid_color[0].Width()) return false;
+    if (input.Height() != mask.Height()) return false;
+    if (input.Width() != mask.Width()) return false;
+
+
+    /** 
+     * Build pyramid
+     */
+    _pyramid_color[0] = input;
+    _pyramid_mask[0] = mask;
+    for (int lvl = 1; lvl < _scales; lvl++) {
+      downscale(_pyramid_color[lvl], _pyramid_color[lvl - 1]);
+      downscale(_pyramid_mask[lvl], _pyramid_mask[lvl - 1]);
+    }
+
+    return true;
+  }
+ 
+  static bool downscale(image::Image<image::RGBfColor> & output, const image::Image<image::RGBfColor> & input) {
+
+    for (int i = 0; i < output.Height(); i++) {
+      for (int j = 0; j < output.Width(); j++) {
+
+        output(i, j) = input(i * 2, j * 2);
+      }
+    }
+
+    return true;
+  }
+
+  static bool downscale(image::Image<bool> & output, const image::Image<bool> & input) {
+
+    for (int i = 0; i < output.Height(); i++) {
+      for (int j = 0; j < output.Width(); j++) {
+
+        output(i, j) = input(i * 2, j * 2);
+      }
+    }
+
+    return true;
+  }
+
+  const size_t getScalesCount() const {
+    return _scales;
+  }
+
+  const std::vector<image::Image<image::RGBfColor>> & getPyramidColor() const {
+    return _pyramid_color;
+  }
+
+  const std::vector<image::Image<bool>> & getPyramidMask() const {
+    return _pyramid_mask;
+  }
+
+  std::vector<image::Image<image::RGBfColor>> & getPyramidColor() {
+    return _pyramid_color;
+  }
+
+  std::vector<image::Image<bool>> & getPyramidMask() {
+    return _pyramid_mask;
+  }
+
+protected:
+  std::vector<image::Image<image::RGBfColor>> _pyramid_color;
+  std::vector<image::Image<bool>> _pyramid_mask;
+  size_t _width_base;
+  size_t _height_base;
+  size_t _scales;
+};
+
+class LaplacianPyramid {
+public:
+  LaplacianPyramid(const size_t width_base, const size_t height_base, const size_t limit_scales = 64)
+  : 
+  _pyramid(width_base, height_base, limit_scales),
+  _pyramid_differences(width_base, height_base, limit_scales),
+  _pyramid_buffer(width_base, height_base, limit_scales)
+  {
+    for (int i = 0; i < _pyramid.getScalesCount(); i++) {
+      _differences_full.push_back(image::Image<image::RGBfColor>(width_base, height_base, true, image::RGBfColor(0.0f, 0.0f, 0.0f)));
+      _differences_masks_full.push_back(image::Image<bool>(width_base, height_base, true, false));
+    }
+  }
+
+  bool process(const image::Image<image::RGBfColor> & input, const image::Image<bool> & mask) {
+
+    /**
+     * Compute pyramid of images
+     */
+    if (!_pyramid.process(input, mask)) {
+      return false;
+    }
+
+    /**
+     * For each level, upscale once and differentiate with upper level
+     */
+    const std::vector<image::Image<image::RGBfColor>> & pyramid_color = _pyramid.getPyramidColor();
+    const std::vector<image::Image<bool>> & pyramid_mask = _pyramid.getPyramidMask();
+    std::vector<image::Image<image::RGBfColor>> & difference_color = _pyramid_differences.getPyramidColor();
+    std::vector<image::Image<bool>> & difference_mask = _pyramid_differences.getPyramidMask();
+    std::vector<image::Image<image::RGBfColor>> & buffers_color = _pyramid_buffer.getPyramidColor();
+    std::vector<image::Image<bool>> & buffers_mask = _pyramid_buffer.getPyramidMask();
+    
+    for (int lvl = 0; lvl < _pyramid.getScalesCount() - 1; lvl++) {
+
+      upscale(buffers_color[lvl], pyramid_color[lvl + 1]);
+      upscale(buffers_mask[lvl], pyramid_mask[lvl + 1]);
+      
+      substract(difference_color[lvl], difference_mask[lvl], pyramid_color[lvl], pyramid_mask[lvl], buffers_color[lvl], buffers_mask[lvl]);
+    }
+
+    /**
+     * Last level is simply a copy of the original pyramid last level (nothing to substract with)
+     */
+    difference_color[_pyramid.getScalesCount() - 1] = pyramid_color[_pyramid.getScalesCount() - 1];
+    difference_mask[_pyramid.getScalesCount() - 1] = pyramid_mask[_pyramid.getScalesCount() - 1];
+
+    /*Upscale to the max each level*/
+    for (int max_level = 0; max_level < _pyramid.getScalesCount(); max_level++) {
+
+      image::Image<image::RGBfColor> & refOut = _differences_full[max_level];
+      image::Image<bool> & maskOut = _differences_masks_full[max_level];
+
+      buffers_color[max_level] = difference_color[max_level];
+      buffers_mask[max_level] = difference_mask[max_level];
+      for (int lvl = max_level - 1; lvl >= 0; lvl--) {  
+        upscale(buffers_color[lvl], buffers_color[lvl + 1]);
+        upscale(buffers_mask[lvl], buffers_mask[lvl + 1]);
+      }
+
+      refOut = buffers_color[0];
+      maskOut = buffers_mask[0];
+    }
+
+    return true;
+  }
+
+  bool blend(const LaplacianPyramid & other) {
+
+    for (int lvl = 0; lvl < _pyramid.getScalesCount(); lvl++) {
+
+      image::Image<image::RGBfColor> & output = _differences_full[lvl];
+      image::Image<bool> & mask = _differences_masks_full[lvl];
+
+      const image::Image<image::RGBfColor> & inputA = _differences_full[lvl];
+      const image::Image<bool> & maskA = _differences_masks_full[lvl];
+      const image::Image<image::RGBfColor> & inputB = other._differences_full[lvl];
+      const image::Image<bool> & maskB = other._differences_masks_full[lvl];
+
+      for (int i = 0; i < output.Height(); i++) {
+        for (int j = 0; j < output.Width(); j++) {
+
+          float weight = 0.5f;
+          float mweight = 1.0f - weight;
+
+          const image::RGBfColor & pixA = inputA(i, j);
+          const image::RGBfColor & pixB = inputB(i, j);
+
+          if (maskA(i, j)) {
+            if (maskB(i, j)) {
+              output(i, j).r() = mweight * pixA.r() +  weight * pixB.r();
+              output(i, j).g() = mweight * pixA.g() +  weight * pixB.g();
+              output(i, j).b() = mweight * pixA.b() +  weight * pixB.b();
+              mask(i, j) = true;
+            }
+            else {
+              output(i, j) = pixA;
+              mask(i, j) = true;
+            }
+          }
+          else {
+            if (maskB(i, j)) {
+              output(i, j) = pixB;
+              mask(i, j) = true;
+            }
+            else {
+              output(i, j).r() = 0.0f;
+              output(i, j).g() = 0.0f;
+              output(i, j).b() = 0.0f;
+              mask(i, j) = false;
+            }
+          }
+        }
+      }
+    }
+
+    return true;
+  }
+
+  bool rebuild(image::Image<image::RGBfColor> & output, image::Image<bool> & mask) {
+
+    size_t scales = _pyramid.getScalesCount();
+    output = _differences_full[scales - 1];
+    mask = _differences_masks_full[scales - 1];
+
+    for (int lvl = scales - 2; lvl >= 0; lvl--) {
+      add(output, mask, output, mask, _differences_full[lvl], _differences_masks_full[lvl]);
+    }
+
+    return true;
+  }
+
+private:
+  bool upscale(image::Image<image::RGBfColor> & output, const image::Image<image::RGBfColor> & input) {
+
+    int width = output.Width();
+    int height = output.Height();
+
+    width = 2 * (width / 2);
+    height = 2 * (height / 2);
+
+    for (int i = 0; i < height; i++) {
+      for (int j = 0; j < width; j++) {
+
+        output(i, j) = input(i / 2, j / 2);
+      }
+    }
+
+    return true;
+  }
+
+  bool upscale(image::Image<bool> & output, const image::Image<bool> & input) {
+
+    int width = output.Width();
+    int height = output.Height();
+
+    width = 2 * (width / 2);
+    height = 2 * (height / 2);
+
+    for (int i = 0; i < height; i++) {
+      for (int j = 0; j < width; j++) {
+
+        output(i, j) = input(i / 2, j / 2);
+      }
+    }
+
+    return true;
+  }
+
+  bool substract(image::Image<image::RGBfColor> & output, image::Image<bool> & output_mask, const image::Image<image::RGBfColor> & inputA, const image::Image<bool> & maskA, const image::Image<image::RGBfColor> & inputB, const image::Image<bool> & maskB) {
+
+    for (int i = 0; i < output.Height(); i++) {
+      for (int j = 0; j < output.Width(); j++) {
+
+        if ((!maskA(i, j)) || (!maskB(i, j))) {
+          output_mask(i, j) = false;
+        }
+        else {
+          output(i, j).r() = inputA(i, j).r() - inputB(i, j).r();
+          output(i, j).g() = inputA(i, j).g() - inputB(i, j).g();
+          output(i, j).b() = inputA(i, j).b() - inputB(i, j).b();
+          output_mask(i, j) = true;
+        }        
+      }
+    }
+
+    return true;
+  }
+
+  bool add(image::Image<image::RGBfColor> & output, image::Image<bool> & output_mask, const image::Image<image::RGBfColor> & inputA, const image::Image<bool> & maskA, const image::Image<image::RGBfColor> & inputB, const image::Image<bool> & maskB) {
+
+    for (int i = 0; i < output.Height(); i++) {
+      for (int j = 0; j < output.Width(); j++) {
+
+        
+        if (maskA(i, j)) {
+          if (maskB(i, j)) {
+            output(i, j).r() = inputA(i, j).r() + inputB(i, j).r();
+            output(i, j).g() = inputA(i, j).g() + inputB(i, j).g();
+            output(i, j).b() = inputA(i, j).b() + inputB(i, j).b();
+            output_mask(i, j) = true;
+          }
+          else {
+            output(i, j).r() = inputA(i, j).r();
+            output(i, j).g() = inputA(i, j).g();
+            output(i, j).b() = inputA(i, j).b();
+            output_mask(i, j) = true;
+          }
+        }
+        else {
+          output(i, j).r() = 0.0f;
+          output(i, j).g() = 0.0f;
+          output(i, j).b() = 0.0f;
+          output_mask(i, j) = false;
+        }
+      }
+    }
+
+    return true;
+  }
+ 
+
+private:
+  Pyramid _pyramid;
+  Pyramid _pyramid_differences;
+  Pyramid _pyramid_buffer;
+  
+  std::vector<image::Image<image::RGBfColor>> _differences_full;
+  std::vector<image::Image<bool>> _differences_masks_full;
+};
+
 class CoordinatesMap {
 public:
   /**
@@ -147,13 +480,8 @@ public:
     _coordinates = aliceVision::image::Image<Eigen::Vector2d>(rectified_width, rectified_height, false);
     _mask = aliceVision::image::Image<bool>(rectified_width, rectified_height, true, false);
 
-    for (int i = 0; i < _real_height; i++) {
-      for (int j = 0; j < _real_width; j++) {
-
-        _coordinates(i, j) = buffer_coordinates(_offset_y + i, _offset_x + j);
-        _mask(i, j) = buffer_mask(_offset_y + i, _offset_x + j);
-      }
-    }
+    _coordinates.block(0, 0, _real_height, _real_width) =  buffer_coordinates.block(_offset_y, _offset_x, _real_height, _real_width);
+    _mask.block(0, 0, _real_height, _real_width) =  buffer_mask.block(_offset_y, _offset_x, _real_height, _real_width);
 
     return true;
   }
@@ -196,17 +524,31 @@ class Warper {
 public:
   virtual bool warp(const CoordinatesMap & map, const aliceVision::image::Image<image::RGBfColor> & source) {
 
-    const aliceVision::image::Image<Eigen::Vector2d> & coordinates = map.getCoordinates();
-    const aliceVision::image::Image<bool> & mask = map.getMask();
+    /**
+     * Copy additional info from map
+     */
+    _offset_x = map.getOffsetX();
+    _offset_y = map.getOffsetY();
+    _real_width = map.getWidth();
+    _real_height = map.getHeight();
+    _mask = map.getMask();
 
+    const image::Sampler2d<image::SamplerLinear> sampler;
+    const aliceVision::image::Image<Eigen::Vector2d> & coordinates = map.getCoordinates();
+
+    /**
+     * Create buffer
+     */
     _color = aliceVision::image::Image<image::RGBfColor>(coordinates.Width(), coordinates.Height());
     
-    const image::Sampler2d<image::SamplerLinear> sampler;
 
+    /**
+     * Simple warp
+     */
     for (size_t i = 0; i < _color.Height(); i++) {
       for (size_t j = 0; j < _color.Width(); j++) {
 
-        bool valid = mask(i, j);
+        bool valid = _mask(i, j);
         if (!valid) {
           continue;
         }
@@ -225,40 +567,70 @@ public:
     return _color;
   }
 
+  const aliceVision::image::Image<bool> & getMask() const {
+    return _mask;
+  }
+  
+
+  size_t getOffsetX() const {
+    return _offset_x;
+  }
+
+  size_t getOffsetY() const {
+    return _offset_y;
+  }
+
+  size_t getWidth() const {
+    return _real_width;
+  }
+
+  size_t getHeight() const {
+    return _real_height;
+  }
+
 private:
+  size_t _offset_x = 0;
+  size_t _offset_y = 0;
+  size_t _real_width = 0;
+  size_t _real_height = 0;
+
   aliceVision::image::Image<image::RGBfColor> _color;
+  aliceVision::image::Image<bool> _mask;
 };
 
 class Compositer {
 public:
   Compositer(size_t outputWidth, size_t outputHeight) :
-  _panorama(outputWidth, outputHeight, true, image::RGBfColor(0.0f, 0.0f, 0.0f)) {
+  _panorama(outputWidth, outputHeight, true, image::RGBfColor(0.0f, 0.0f, 0.0f)), 
+  _mask(outputWidth, outputHeight, true, false)
+  {
   }
 
-  bool append(const CoordinatesMap & map, const Warper & warper) {
+  bool append(const Warper & warper) {
 
-    const aliceVision::image::Image<bool> & mask = map.getMask(); 
+    const aliceVision::image::Image<bool> & inputMask = warper.getMask(); 
     const aliceVision::image::Image<image::RGBfColor> & color = warper.getColor(); 
 
-    for (size_t i = 0; i < map.getHeight(); i++) {
+    for (size_t i = 0; i < warper.getHeight(); i++) {
 
-      size_t pano_i = map.getOffsetY() + i;
+      size_t pano_i = warper.getOffsetY() + i;
       if (pano_i >= _panorama.Height()) {
         continue;
       }
 
-      for (size_t j = 0; j < map.getWidth(); j++) {
+      for (size_t j = 0; j < warper.getWidth(); j++) {
         
-        if (!mask(i, j)) {
+        if (!inputMask(i, j)) {
           continue;
         }
         
-        size_t pano_j = map.getOffsetX() + j;
+        size_t pano_j = warper.getOffsetX() + j;
         if (pano_j >= _panorama.Width()) {
           continue;
         }
 
         _panorama(pano_i, pano_j) = color(i, j);
+        _mask(pano_i, pano_j) = true;
       }
     }
 
@@ -269,9 +641,108 @@ public:
     return _panorama;
   }
 
-private:
+  const aliceVision::image::Image<bool> & getPanoramaMask() const {
+    return _mask;
+  }
+
+protected:
   aliceVision::image::Image<image::RGBfColor> _panorama;
+  aliceVision::image::Image<bool> _mask;
 };
+
+
+class AverageCompositer : public Compositer {
+  
+public:
+
+  AverageCompositer(size_t outputWidth, size_t outputHeight) : Compositer(outputWidth, outputHeight) {
+    
+  }
+
+  bool append(const Warper & warper) {
+
+    const aliceVision::image::Image<bool> & inputMask = warper.getMask(); 
+    const aliceVision::image::Image<image::RGBfColor> & color = warper.getColor(); 
+
+    for (size_t i = 0; i < warper.getHeight(); i++) {
+
+      size_t pano_i = warper.getOffsetY() + i;
+      if (pano_i >= _panorama.Height()) {
+        continue;
+      }
+
+      for (size_t j = 0; j < warper.getWidth(); j++) {
+        
+        if (!inputMask(i, j)) {
+          continue;
+        }
+        
+        size_t pano_j = warper.getOffsetX() + j;
+        if (pano_j >= _panorama.Width()) {
+          continue;
+        }
+
+        if (!_mask(pano_i, pano_j)) {
+          _panorama(pano_i, pano_j) = color(i, j);
+        }
+        else {
+          _panorama(pano_i, pano_j).r() = 0.5 * (_panorama(pano_i, pano_j).r() + color(i, j).r());
+          _panorama(pano_i, pano_j).g() = 0.5 * (_panorama(pano_i, pano_j).g() + color(i, j).g());
+          _panorama(pano_i, pano_j).b() = 0.5 * (_panorama(pano_i, pano_j).b() + color(i, j).b());
+          
+        }
+
+        _mask(pano_i, pano_j) = true;
+      }
+    }
+
+    return true;
+  }
+};
+
+class LaplacianCompositer : public Compositer {
+public:
+
+  LaplacianCompositer(size_t outputWidth, size_t outputHeight) :
+  Compositer(outputWidth, outputHeight)
+  {
+    
+  }
+
+  bool append(const Warper & warper) {
+
+    const aliceVision::image::Image<bool> & inputMask = warper.getMask(); 
+    const aliceVision::image::Image<image::RGBfColor> & color = warper.getColor(); 
+
+    aliceVision::image::Image<bool> enlargedMask(_panorama.Width(), _panorama.Height(), true, false);
+    aliceVision::image::Image<image::RGBfColor> enlargedInput(_panorama.Width(), _panorama.Height(), false);
+
+    enlargedMask.block(warper.getOffsetY(), warper.getOffsetX(), warper.getHeight(), warper.getWidth()) = inputMask.block(0, 0, warper.getHeight(), warper.getWidth());
+    enlargedInput.block(warper.getOffsetY(), warper.getOffsetX(), warper.getHeight(), warper.getWidth()) = color.block(0, 0, warper.getHeight(), warper.getWidth());
+
+    LaplacianPyramid pyramid_camera(_panorama.Width(), _panorama.Height());
+    pyramid_camera.process(enlargedInput, enlargedMask);
+    
+    
+    LaplacianPyramid pyramid_panorama(_panorama.Width(), _panorama.Height());
+    pyramid_panorama.process(_panorama, _mask);
+    pyramid_panorama.blend(pyramid_camera);
+    pyramid_panorama.rebuild(_panorama, _mask);
+
+    for (int i = 0; i < _panorama.Height(); i++) {
+      for (int j = 0; j < _panorama.Width(); j++) {
+        if (!_mask(i, j)) {
+          _panorama(i, j).r() = 0.0f;
+          _panorama(i, j).g() = 0.0f;
+          _panorama(i, j).b() = 0.0f;
+        }
+      }
+    }
+
+    return true;
+  }
+};
+
 
 int main(int argc, char **argv) {
 
@@ -298,7 +769,7 @@ int main(int argc, char **argv) {
   /**
    * Description of optional parameters
    */
-  std::pair<int, int> panoramaSize = {1024, 512};
+  std::pair<int, int> panoramaSize = {2048, 1024};
   po::options_description optionalParams("Optional parameters");
   allParams.add(optionalParams);
 
@@ -365,7 +836,7 @@ int main(int argc, char **argv) {
   /**
    * Create compositer
   */
-  Compositer compositer(panoramaSize.first, panoramaSize.second);
+  LaplacianCompositer compositer(size_t(panoramaSize.first), size_t(panoramaSize.second));
   
 
   /**
@@ -413,7 +884,7 @@ int main(int argc, char **argv) {
     /**
      *Composite image into output
     */
-    compositer.append(map, warper);
+    compositer.append(warper);
     
     /**
     const aliceVision::image::Image<image::RGBfColor> & color = warper.getColor();
@@ -426,6 +897,8 @@ int main(int argc, char **argv) {
     sprintf(filename, "%s_source_%d.exr", outputPanorama.c_str(), pos);
     image::writeImage(filename, panorama, image::EImageColorSpace::NO_CONVERSION);
     pos++;
+
+  
   }
 
   return EXIT_SUCCESS;
