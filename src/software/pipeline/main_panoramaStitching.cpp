@@ -117,7 +117,7 @@ public:
 
     /** 
      * Build pyramid
-     */
+    */
     _pyramid_color[0] = input;
     _pyramid_mask[0] = mask;
     for (int lvl = 1; lvl < _scales; lvl++) {
@@ -133,7 +133,9 @@ public:
     for (int i = 0; i < output.Height(); i++) {
       for (int j = 0; j < output.Width(); j++) {
 
-        output(i, j) = input(i * 2, j * 2);
+        output(i, j).r() = 0.25 * (input(i * 2, j * 2).r() + input(i * 2 + 1, j * 2).r() + input(i * 2, j * 2 + 1).r() + input(i * 2 + 1, j * 2 + 1).r());
+        output(i, j).g() = 0.25 * (input(i * 2, j * 2).g() + input(i * 2 + 1, j * 2).g() + input(i * 2, j * 2 + 1).g() + input(i * 2 + 1, j * 2 + 1).g());
+        output(i, j).b() = 0.25 * (input(i * 2, j * 2).b() + input(i * 2 + 1, j * 2).b() + input(i * 2, j * 2 + 1).b() + input(i * 2 + 1, j * 2 + 1).b());
       }
     }
 
@@ -145,7 +147,7 @@ public:
     for (int i = 0; i < output.Height(); i++) {
       for (int j = 0; j < output.Width(); j++) {
 
-        output(i, j) = input(i * 2, j * 2);
+        output(i, j) = input(i * 2, j * 2) & input(i * 2 + 1, j * 2) & input(i * 2, j * 2 + 1) & input(i * 2 + 1, j * 2 + 1) ;
       }
     }
 
@@ -354,14 +356,19 @@ private:
     for (int i = 0; i < output.Height(); i++) {
       for (int j = 0; j < output.Width(); j++) {
 
-        if ((!maskA(i, j)) || (!maskB(i, j))) {
-          output_mask(i, j) = false;
+        if (maskA(i, j)) {
+          if (maskB(i, j)) {
+            output(i, j).r() = inputA(i, j).r() - inputB(i, j).r();
+            output(i, j).g() = inputA(i, j).g() - inputB(i, j).g();
+            output(i, j).b() = inputA(i, j).b() - inputB(i, j).b();
+          }
+          else {
+            output(i, j) = inputA(i, j);
+          }
+          output_mask(i, j) = true;
         }
         else {
-          output(i, j).r() = inputA(i, j).r() - inputB(i, j).r();
-          output(i, j).g() = inputA(i, j).g() - inputB(i, j).g();
-          output(i, j).b() = inputA(i, j).b() - inputB(i, j).b();
-          output_mask(i, j) = true;
+          output_mask(i, j) = false;
         }        
       }
     }
@@ -383,17 +390,21 @@ private:
             output_mask(i, j) = true;
           }
           else {
-            output(i, j).r() = inputA(i, j).r();
-            output(i, j).g() = inputA(i, j).g();
-            output(i, j).b() = inputA(i, j).b();
+            output(i, j) = inputA(i, j);
             output_mask(i, j) = true;
           }
         }
         else {
-          output(i, j).r() = 0.0f;
-          output(i, j).g() = 0.0f;
-          output(i, j).b() = 0.0f;
-          output_mask(i, j) = false;
+          if (maskB(i, j)) {
+            output(i, j) = inputB(i, j);
+            output_mask(i, j) = true;
+          }
+          else {
+            output(i, j).r() = 0.0f;
+            output(i, j).g() = 0.0f;
+            output(i, j).b() = 0.0f;
+            output_mask(i, j) = false;
+          }
         }
       }
     }
@@ -769,7 +780,7 @@ int main(int argc, char **argv) {
   /**
    * Description of optional parameters
    */
-  std::pair<int, int> panoramaSize = {2048, 1024};
+  std::pair<int, int> panoramaSize = {1024, 512};
   po::options_description optionalParams("Optional parameters");
   allParams.add(optionalParams);
 
@@ -864,6 +875,7 @@ int main(int argc, char **argv) {
     /**
      * Prepare coordinates map
     */
+   if (pos == 3 || pos == 7 ||  pos  == 15) {
     CoordinatesMap map;
     map.build(panoramaSize, camPose, intrinsic);
 
@@ -896,6 +908,7 @@ int main(int argc, char **argv) {
     char filename[512];
     sprintf(filename, "%s_source_%d.exr", outputPanorama.c_str(), pos);
     image::writeImage(filename, panorama, image::EImageColorSpace::NO_CONVERSION);
+   }
     pos++;
 
   
