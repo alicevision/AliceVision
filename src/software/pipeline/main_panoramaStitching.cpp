@@ -25,6 +25,102 @@ using namespace aliceVision;
 
 namespace po = boost::program_options;
 
+float sigmoid(float x, float sigwidth, float sigMid)
+{
+  return 1.0f / (1.0f + expf(10.0f * ((x - sigMid) / sigwidth)));
+}
+
+bool computeDistanceMap(image::Image<int> & distance, const image::Image<bool> & mask) {
+
+  int m = mask.Height();
+  int n = mask.Width();
+
+  int maxval = m * n;
+
+  distance = image::Image<int> (n, m, false); 
+  for(int x = 0; x < n; ++x) {
+
+    //A corner is when mask becomes 0
+    bool b = !mask(0, x);
+    if (b) {
+      distance(0, x) = 0;
+    }
+    else {
+      distance(0, x) = maxval * maxval;
+    }
+
+    for (int y = 1; y < m; y++) {
+      bool b = !mask(y, x);
+      if (b) {
+        distance(y, x) = 0;
+      }
+      else {          
+        distance(y, x) = 1 + distance(y - 1, x);
+      }
+    }
+
+    for (int y = m - 2; y >= 0; y--) {
+      if (distance(y + 1, x) < distance(y, x)) {
+        distance(y, x) = 1 + distance(y + 1, x);
+      }
+    }
+  }
+
+  for (int y = 0; y < m; y++) {  
+    int q;
+    std::map<int, int> s;
+    std::map<int, int> t;
+
+    q = 0;
+    s[0] = 0;
+    t[0] = 0;
+
+    std::function<int (int, int)> f = [distance, y](int x, int i) { 
+      int gi = distance(y, i);
+      return (x - i)*(x - i) + gi * gi; 
+    };
+
+    std::function<int (int, int)> sep = [distance, y](int i, int u) { 
+      int gu = distance(y, u);
+      int gi = distance(y, i);
+
+      int nom = (u * u) - (i * i) + (gu * gu) - (gi * gi);
+      int denom = 2 * (u - i);
+
+      return nom / denom;
+    };
+
+    for (int u = 1; u < n; u++) {
+
+      while (q >= 0 && (f(t[q], s[q]) > f(t[q], u))) {
+        q = q - 1;
+      }
+
+      if (q < 0) {
+        q = 0;
+        s[0] = u;
+      }
+      else {
+        int w = 1 + sep(s[q], u);
+        if (w  < n) {
+          q = q + 1;
+          s[q] = u;
+          t[q] = w;
+        }
+      }
+    }
+
+    for (int u = n - 1; u >= 0; u--) {
+      distance(y, u) = f(u, s[q]);
+      if (u == t[q]) {
+        q = q - 1;
+      }
+    }
+  }
+
+  return true;
+}
+
 namespace SphericalMapping
 {
   /**
@@ -78,6 +174,7 @@ namespace SphericalMapping
   }
 }
 
+template <typename T>
 class Pyramid {
 public:
   Pyramid(const size_t width_base, const size_t height_base, const size_t limit_scales = 64) :
@@ -100,14 +197,14 @@ public:
     size_t new_height = _height_base;
     for (int i = 0; i < _scales; i++) {
 
-      _pyramid_color.push_back(image::Image<image::RGBfColor>(new_width, new_height, true, image::RGBfColor(0.0f, 0.0f, 0.0f)));
+      _pyramid_color.push_back(image::Image<T>(new_width, new_height, true, T(0)));
       _pyramid_mask.push_back(image::Image<bool>(new_width, new_height, true, false));
       new_height /= 2;
       new_width /= 2;
     }
   }
 
-  bool process(const image::Image<image::RGBfColor> & input, const image::Image<bool> & mask) {
+  bool process(const image::Image<T> & input, const image::Image<bool> & mask) {
 
     if (input.Height() != _pyramid_color[0].Height()) return false;
     if (input.Width() != _pyramid_color[0].Width()) return false;
@@ -121,33 +218,56 @@ public:
     _pyramid_color[0] = input;
     _pyramid_mask[0] = mask;
     for (int lvl = 1; lvl < _scales; lvl++) {
-      downscale(_pyramid_color[lvl], _pyramid_color[lvl - 1]);
-      downscale(_pyramid_mask[lvl], _pyramid_mask[lvl - 1]);
-    }
-
-    return true;
-  }
- 
-  static bool downscale(image::Image<image::RGBfColor> & output, const image::Image<image::RGBfColor> & input) {
-
-    for (int i = 0; i < output.Height(); i++) {
-      for (int j = 0; j < output.Width(); j++) {
-
-        output(i, j).r() = 0.25 * (input(i * 2, j * 2).r() + input(i * 2 + 1, j * 2).r() + input(i * 2, j * 2 + 1).r() + input(i * 2 + 1, j * 2 + 1).r());
-        output(i, j).g() = 0.25 * (input(i * 2, j * 2).g() + input(i * 2 + 1, j * 2).g() + input(i * 2, j * 2 + 1).g() + input(i * 2 + 1, j * 2 + 1).g());
-        output(i, j).b() = 0.25 * (input(i * 2, j * 2).b() + input(i * 2 + 1, j * 2).b() + input(i * 2, j * 2 + 1).b() + input(i * 2 + 1, j * 2 + 1).b());
-      }
+      downscale(_pyramid_color[lvl], _pyramid_mask[lvl], _pyramid_color[lvl - 1], _pyramid_mask[lvl - 1]);      
     }
 
     return true;
   }
 
-  static bool downscale(image::Image<bool> & output, const image::Image<bool> & input) {
+
+  static bool downscale(image::Image<T> & output, image::Image<bool> & output_mask, const image::Image<T> & input, const image::Image<bool> & input_mask) {
 
     for (int i = 0; i < output.Height(); i++) {
-      for (int j = 0; j < output.Width(); j++) {
+      int ui = i * 2;
 
-        output(i, j) = input(i * 2, j * 2) & input(i * 2 + 1, j * 2) & input(i * 2, j * 2 + 1) & input(i * 2 + 1, j * 2 + 1) ;
+      for (int j = 0; j < output.Width(); j++) {
+        int uj = j * 2;
+        
+        bool one = input_mask(ui, uj) || input_mask(ui, uj + 1) || input_mask(ui + 1, uj) || input_mask(ui + 1, uj + 1);
+
+        if (!one) {
+          output(i, j) = T(0.0f);
+          output_mask(i, j) = false;
+        }
+        else {
+          size_t count = 0;
+          T color = T(0.0f);
+
+          if (input_mask(ui, uj)) {
+            color = input(ui, uj);
+            count++;
+          }
+          
+          if (input_mask(ui, uj + 1)) {
+            color += input(ui, uj + 1);
+            count++;
+          }
+
+          if (input_mask(ui + 1, uj)) {
+            color += input(ui + 1, uj);
+            count++;
+          }
+
+          if (input_mask(ui + 1, uj + 1)) {
+            color += input(ui + 1, uj + 1);
+            count++;
+          }
+
+          color /= float(count);
+
+          output(i, j) = color;
+          output_mask(i, j) = true;
+        }
       }
     }
 
@@ -158,7 +278,7 @@ public:
     return _scales;
   }
 
-  const std::vector<image::Image<image::RGBfColor>> & getPyramidColor() const {
+  const std::vector<image::Image<T>> & getPyramidColor() const {
     return _pyramid_color;
   }
 
@@ -166,7 +286,7 @@ public:
     return _pyramid_mask;
   }
 
-  std::vector<image::Image<image::RGBfColor>> & getPyramidColor() {
+  std::vector<image::Image<T>> & getPyramidColor() {
     return _pyramid_color;
   }
 
@@ -175,7 +295,7 @@ public:
   }
 
 protected:
-  std::vector<image::Image<image::RGBfColor>> _pyramid_color;
+  std::vector<image::Image<T>> _pyramid_color;
   std::vector<image::Image<bool>> _pyramid_mask;
   size_t _width_base;
   size_t _height_base;
@@ -190,10 +310,6 @@ public:
   _pyramid_differences(width_base, height_base, limit_scales),
   _pyramid_buffer(width_base, height_base, limit_scales)
   {
-    for (int i = 0; i < _pyramid.getScalesCount(); i++) {
-      _differences_full.push_back(image::Image<image::RGBfColor>(width_base, height_base, true, image::RGBfColor(0.0f, 0.0f, 0.0f)));
-      _differences_masks_full.push_back(image::Image<bool>(width_base, height_base, true, false));
-    }
   }
 
   bool process(const image::Image<image::RGBfColor> & input, const image::Image<bool> & mask) {
@@ -229,70 +345,94 @@ public:
     difference_color[_pyramid.getScalesCount() - 1] = pyramid_color[_pyramid.getScalesCount() - 1];
     difference_mask[_pyramid.getScalesCount() - 1] = pyramid_mask[_pyramid.getScalesCount() - 1];
 
-    /*Upscale to the max each level*/
-    for (int max_level = 0; max_level < _pyramid.getScalesCount(); max_level++) {
-
-      image::Image<image::RGBfColor> & refOut = _differences_full[max_level];
-      image::Image<bool> & maskOut = _differences_masks_full[max_level];
-
-      buffers_color[max_level] = difference_color[max_level];
-      buffers_mask[max_level] = difference_mask[max_level];
-      for (int lvl = max_level - 1; lvl >= 0; lvl--) {  
-        upscale(buffers_color[lvl], buffers_color[lvl + 1]);
-        upscale(buffers_mask[lvl], buffers_mask[lvl + 1]);
-      }
-
-      refOut = buffers_color[0];
-      maskOut = buffers_mask[0];
-    }
-
     return true;
   }
 
-  bool blend(const LaplacianPyramid & other) {
+  bool blend(image::Image<image::RGBfColor> & output, image::Image<bool> & output_mask, const LaplacianPyramid & other, const image::Image<float> & weights) {
 
-    for (int lvl = 0; lvl < _pyramid.getScalesCount(); lvl++) {
+    const auto & differences = _pyramid_differences.getPyramidColor();
+    const auto & differences_masks = _pyramid_differences.getPyramidMask();
+    const auto & other_differences = other._pyramid_differences.getPyramidColor();
+    const auto & other_differences_masks = other._pyramid_differences.getPyramidMask();
+    auto & rescaleds = _pyramid_buffer.getPyramidColor();
+    auto & rescaleds_masks = _pyramid_buffer.getPyramidMask();
+    const auto & original_camera_mask = other._pyramid_differences.getPyramidMask()[0];
 
-      image::Image<image::RGBfColor> & output = _differences_full[lvl];
-      image::Image<bool> & mask = _differences_masks_full[lvl];
+    output.fill(image::RGBfColor(0.0f));
+    output_mask.fill(false);
 
-      const image::Image<image::RGBfColor> & inputA = _differences_full[lvl];
-      const image::Image<bool> & maskA = _differences_masks_full[lvl];
-      const image::Image<image::RGBfColor> & inputB = other._differences_full[lvl];
-      const image::Image<bool> & maskB = other._differences_masks_full[lvl];
+    for (int lvl = _pyramid.getScalesCount() - 1; lvl >= 0; lvl--) {
 
-      for (int i = 0; i < output.Height(); i++) {
-        for (int j = 0; j < output.Width(); j++) {
+      /*Rescale this level to the 0 level size for the added camera*/
+      rescaleds[lvl] = other_differences[lvl];
+      rescaleds_masks[lvl] = other_differences_masks[lvl];
+      for (int slvl = lvl - 1; slvl >= 0; slvl--) {
+        upscale(rescaleds[slvl], rescaleds[slvl + 1]);
+        upscale(rescaleds_masks[slvl], rescaleds_masks[slvl + 1]);
+      }
 
-          float weight = 0.5f;
-          float mweight = 1.0f - weight;
+      auto rescaled_other = rescaleds[0];
+      auto rescaled_masks_other = rescaleds_masks[0];
 
-          const image::RGBfColor & pixA = inputA(i, j);
-          const image::RGBfColor & pixB = inputB(i, j);
+      for (int i = 0; i < rescaled_other.Height(); i++) {
+        for (int j = 0; j < rescaled_other.Width(); j++) {
+          if (!original_camera_mask(i, j)) {
+            rescaled_other(i, j) = image::RGBfColor(0.0f);
+            rescaled_masks_other(i, j) = false;
+          }
+        }
+      }
 
-          if (maskA(i, j)) {
-            if (maskB(i, j)) {
-              output(i, j).r() = mweight * pixA.r() +  weight * pixB.r();
-              output(i, j).g() = mweight * pixA.g() +  weight * pixB.g();
-              output(i, j).b() = mweight * pixA.b() +  weight * pixB.b();
-              mask(i, j) = true;
+      /*Rescale this level to the 0 level size*/
+      rescaleds[lvl] = differences[lvl];
+      rescaleds_masks[lvl] = differences_masks[lvl];
+      for (int slvl = lvl - 1; slvl >= 0; slvl--) {
+        upscale(rescaleds[slvl], rescaleds[slvl + 1]);
+        upscale(rescaleds_masks[slvl], rescaleds_masks[slvl + 1]);
+      }
+
+      auto rescaled_origin = rescaleds[0];
+      auto rescaled_masks_origin = rescaleds_masks[0];
+
+      for (int i = 0; i < rescaled_origin.Height(); i++) {
+        for (int j = 0; j < rescaled_origin.Width(); j++) {
+          if (rescaled_masks_origin(i, j)) {
+            if (rescaled_masks_other(i, j)) {
+
+              float weight = weights(i, j);
+              float mweight = 1.0f - weight;
+
+              rescaled_origin(i, j).r() = mweight * rescaled_origin(i, j).r() + weight * rescaled_other(i, j).r();
+              rescaled_origin(i, j).g() = mweight * rescaled_origin(i, j).g() + weight * rescaled_other(i, j).g();
+              rescaled_origin(i, j).b() = mweight * rescaled_origin(i, j).b() + weight * rescaled_other(i, j).b();
+              rescaled_masks_origin(i, j) = true;
             }
             else {
-              output(i, j) = pixA;
-              mask(i, j) = true;
+              //Nothing to do
+              rescaled_masks_origin(i, j) = true;
             }
           }
           else {
-            if (maskB(i, j)) {
-              output(i, j) = pixB;
-              mask(i, j) = true;
+            if (rescaled_masks_other(i, j)) {
+              rescaled_origin(i, j) = rescaled_other(i, j);
+              rescaled_masks_origin(i, j) = rescaled_masks_other(i, j);
+              rescaled_masks_origin(i, j) = true;
             }
             else {
-              output(i, j).r() = 0.0f;
-              output(i, j).g() = 0.0f;
-              output(i, j).b() = 0.0f;
-              mask(i, j) = false;
+              rescaled_origin(i, j) = image::RGBfColor(0.0f);
+              rescaled_masks_origin(i, j) = false;
             }
+          }
+        }
+      }
+
+      for (int i = 0; i < rescaled_origin.Height(); i++) {
+        for (int j = 0; j < rescaled_origin.Width(); j++) {
+          if (rescaled_masks_origin(i, j)) {
+            output(i, j).r() = output(i, j).r() + rescaled_origin(i, j).r();
+            output(i, j).g() = output(i, j).g() + rescaled_origin(i, j).g();
+            output(i, j).b() = output(i, j).b() + rescaled_origin(i, j).b();
+            output_mask(i, j) = true;
           }
         }
       }
@@ -301,18 +441,6 @@ public:
     return true;
   }
 
-  bool rebuild(image::Image<image::RGBfColor> & output, image::Image<bool> & mask) {
-
-    size_t scales = _pyramid.getScalesCount();
-    output = _differences_full[scales - 1];
-    mask = _differences_masks_full[scales - 1];
-
-    for (int lvl = scales - 2; lvl >= 0; lvl--) {
-      add(output, mask, output, mask, _differences_full[lvl], _differences_masks_full[lvl]);
-    }
-
-    return true;
-  }
 
 private:
   bool upscale(image::Image<image::RGBfColor> & output, const image::Image<image::RGBfColor> & input) {
@@ -392,6 +520,11 @@ private:
           else {
             output(i, j) = inputA(i, j);
             output_mask(i, j) = true;
+
+            output(i, j).r() = 0.0f;
+            output(i, j).g() = 0.0f;
+            output(i, j).b() = 0.0f;
+            output_mask(i, j) = false;
           }
         }
         else {
@@ -414,12 +547,9 @@ private:
  
 
 private:
-  Pyramid _pyramid;
-  Pyramid _pyramid_differences;
-  Pyramid _pyramid_buffer;
-  
-  std::vector<image::Image<image::RGBfColor>> _differences_full;
-  std::vector<image::Image<bool>> _differences_masks_full;
+  Pyramid<image::RGBfColor> _pyramid;
+  Pyramid<image::RGBfColor> _pyramid_differences;
+  Pyramid<image::RGBfColor> _pyramid_buffer;
 };
 
 class CoordinatesMap {
@@ -734,11 +864,28 @@ public:
     LaplacianPyramid pyramid_camera(_panorama.Width(), _panorama.Height());
     pyramid_camera.process(enlargedInput, enlargedMask);
     
-    
+    image::Image<int> distanceMap;
+    computeDistanceMap(distanceMap, enlargedMask);
+
+    image::Image<float> weightMap(_panorama.Width(), _panorama.Height());
+    for(int y = 0; y < _panorama.Height(); ++y)
+    {
+      for(int x = 0; x < _panorama.Width(); ++x)
+       {
+        int dist = distanceMap(y, x);
+
+        weightMap(y, x) = 0.0f;
+        if (dist > 0)
+        {
+          float fdist = sqrtf(float(dist));
+          weightMap(y, x) = std::min(1.0f, std::max(0.0f, 1.0f - sigmoid(fdist, 100, 50)));
+        }
+      }
+    }
+
     LaplacianPyramid pyramid_panorama(_panorama.Width(), _panorama.Height());
     pyramid_panorama.process(_panorama, _mask);
-    pyramid_panorama.blend(pyramid_camera);
-    pyramid_panorama.rebuild(_panorama, _mask);
+    pyramid_panorama.blend(_panorama, _mask, pyramid_camera, weightMap);
 
     for (int i = 0; i < _panorama.Height(); i++) {
       for (int j = 0; j < _panorama.Width(); j++) {
@@ -780,7 +927,7 @@ int main(int argc, char **argv) {
   /**
    * Description of optional parameters
    */
-  std::pair<int, int> panoramaSize = {1024, 512};
+  std::pair<int, int> panoramaSize = {4096, 2048};
   po::options_description optionalParams("Optional parameters");
   allParams.add(optionalParams);
 
@@ -848,7 +995,7 @@ int main(int argc, char **argv) {
    * Create compositer
   */
   LaplacianCompositer compositer(size_t(panoramaSize.first), size_t(panoramaSize.second));
-  
+
 
   /**
    * Preprocessing per view
@@ -875,7 +1022,6 @@ int main(int argc, char **argv) {
     /**
      * Prepare coordinates map
     */
-   if (pos == 3 || pos == 7 ||  pos  == 15) {
     CoordinatesMap map;
     map.build(panoramaSize, camPose, intrinsic);
 
@@ -897,21 +1043,12 @@ int main(int argc, char **argv) {
      *Composite image into output
     */
     compositer.append(warper);
-    
-    /**
-    const aliceVision::image::Image<image::RGBfColor> & color = warper.getColor();
-    char filename[512];
-    sprintf(filename, "%s_source_%d.exr", outputPanorama.c_str(), view.getViewId());
-    image::writeImage(filename, color, image::EImageColorSpace::NO_CONVERSION);
-    */
+   
     const aliceVision::image::Image<image::RGBfColor> & panorama = compositer.getPanorama();
     char filename[512];
     sprintf(filename, "%s_source_%d.exr", outputPanorama.c_str(), pos);
     image::writeImage(filename, panorama, image::EImageColorSpace::NO_CONVERSION);
-   }
     pos++;
-
-  
   }
 
   return EXIT_SUCCESS;
