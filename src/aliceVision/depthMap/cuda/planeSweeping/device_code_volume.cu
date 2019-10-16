@@ -450,7 +450,6 @@ __global__ void volume_agregateCostVolumeAtXinSlices_kernel(
         return;
 
     TSim* sim_xz = get2DBufferAt(xzSliceForY, xzSliceForY_p, x, z);
-    float sim = *sim_xz;
     float pathCost = 255.0f;
 
     if((z >= 1) && (z < volDim.z - 1))

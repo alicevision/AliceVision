@@ -75,8 +75,13 @@ inline __device__ float multi_fminf(float a, float b, float c, float d)
 
 inline __device__ float4 tex2D_float4(cudaTextureObject_t rc_tex, float x, float y)
 {
+    // cudaReadElementType
     uchar4 a = tex2D<uchar4>(rc_tex, x, y);
     return make_float4(a.x, a.y, a.z, a.w);
+
+    // cudaReadNormalizedFloat
+    // float4 a = tex2D<float4>(rc_tex, x, y);
+    // return make_float4(a.x*255.0f, a.y*255.0f, a.z*255.0f, a.w*255.0f);
 }
 
 #else
