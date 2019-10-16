@@ -8,6 +8,7 @@
  * Image stuff
  */
 #include <aliceVision/image/all.hpp>
+#include <aliceVision/mvsData/imageAlgo.hpp>
 
 /*Logging stuff*/
 #include <aliceVision/system/Logger.hpp>
@@ -173,6 +174,103 @@ namespace SphericalMapping
     return Vec2(longitude, latitude);
   }
 }
+
+class GaussianPyramidNoMask {
+public:
+  GaussianPyramidNoMask(const size_t width_base, const size_t height_base, const size_t limit_scales = 64) :
+    _width_base(width_base), 
+    _height_base(height_base)
+  {
+    /**
+     * Compute optimal scale
+     * The smallest level will be at least of size min_size
+     */
+    size_t min_dim = std::min(_width_base, _height_base);
+    size_t min_size = 32;
+    _scales = std::min(limit_scales, static_cast<size_t>(floor(log2(double(min_dim) / float(min_size)))));
+    
+
+    /**
+     * Create pyramid
+     **/
+    size_t new_width = _width_base;
+    size_t new_height = _height_base;
+    for (int i = 0; i < _scales; i++) {
+
+      _pyramid_color.push_back(image::Image<image::RGBfColor>(new_width, new_height, true, image::RGBfColor(0)));
+      _filter_buffer.push_back(image::Image<image::RGBfColor>(new_width, new_height, true, image::RGBfColor(0)));
+      new_height /= 2;
+      new_width /= 2;
+    }
+  }
+
+  bool process(const image::Image<image::RGBfColor> & input) {
+
+    if (input.Height() != _pyramid_color[0].Height()) return false;
+    if (input.Width() != _pyramid_color[0].Width()) return false;
+
+
+    /**
+     * Kernel
+     */
+    oiio::ImageBuf K = oiio::ImageBufAlgo::make_kernel("gaussian", 5, 5);
+
+    /** 
+     * Build pyramid
+    */
+    _pyramid_color[0] = input;
+    for (int lvl = 0; lvl < _scales - 1; lvl++) {
+      
+      const image::Image<image::RGBfColor> & source = _pyramid_color[lvl];
+      image::Image<image::RGBfColor> & dst = _filter_buffer[lvl];
+
+      oiio::ImageSpec spec(source.Width(), source.Height(), 3, oiio::TypeDesc::FLOAT);
+
+      const oiio::ImageBuf inBuf(spec, const_cast<image::RGBfColor*>(source.data()));
+      oiio::ImageBuf outBuf(spec, dst.data());    
+      oiio::ImageBufAlgo::convolve(outBuf, inBuf, K);
+
+      downscale(_pyramid_color[lvl + 1], _filter_buffer[lvl]);      
+    }
+
+    return true;
+  }
+
+
+  bool downscale(image::Image<image::RGBfColor> & output, const image::Image<image::RGBfColor> & input) {
+
+    for (int i = 0; i < output.Height(); i++) {
+      int ui = i * 2;
+
+      for (int j = 0; j < output.Width(); j++) {
+        int uj = j * 2;
+
+        output(i, j) = input(ui, uj);
+      }
+    }
+
+    return true;
+  }
+
+  const size_t getScalesCount() const {
+    return _scales;
+  }
+
+  const std::vector<image::Image<image::RGBfColor>> & getPyramidColor() const {
+    return _pyramid_color;
+  }
+
+  std::vector<image::Image<image::RGBfColor>> & getPyramidColor() {
+    return _pyramid_color;
+  }
+
+protected:
+  std::vector<image::Image<image::RGBfColor>> _pyramid_color;
+  std::vector<image::Image<image::RGBfColor>> _filter_buffer;
+  size_t _width_base;
+  size_t _height_base;
+  size_t _scales;
+};
 
 template <typename T>
 class Pyramid {
@@ -729,7 +827,7 @@ public:
     return _real_height;
   }
 
-private:
+protected:
   size_t _offset_x = 0;
   size_t _offset_y = 0;
   size_t _real_width = 0;
@@ -739,10 +837,91 @@ private:
   aliceVision::image::Image<bool> _mask;
 };
 
+class GaussianWarper : public Warper {
+public:
+  virtual bool warp(const CoordinatesMap & map, const aliceVision::image::Image<image::RGBfColor> & source) {
+
+    /**
+     * Copy additional info from map
+     */
+    _offset_x = map.getOffsetX();
+    _offset_y = map.getOffsetY();
+    _real_width = map.getWidth();
+    _real_height = map.getHeight();
+    _mask = map.getMask();
+
+    const image::Sampler2d<image::SamplerLinear> sampler;
+    const aliceVision::image::Image<Eigen::Vector2d> & coordinates = map.getCoordinates();
+
+    /**
+     * Create a pyramid for input
+     */
+    GaussianPyramidNoMask pyramid(source.Width(), source.Height());
+    pyramid.process(source);
+    const std::vector<image::Image<image::RGBfColor>> & mlsource = pyramid.getPyramidColor();
+    size_t max_level = pyramid.getScalesCount() - 1; 
+
+    /**
+     * Create buffer
+     */
+    _color = aliceVision::image::Image<image::RGBfColor>(coordinates.Width(), coordinates.Height());
+    
+
+    /**
+     * Multi level warp
+     */
+    for (size_t i = 0; i < _color.Height(); i++) {
+      for (size_t j = 0; j < _color.Width(); j++) {
+
+        bool valid = _mask(i, j);
+        if (!valid) {
+          continue;
+        }
+
+        if (i == _color.Height() - 1 || j == _color.Width() - 1 || !_mask(i + 1, j) || !_mask(i, j + 1)) {
+          const Eigen::Vector2d & coord = coordinates(i, j);
+          const image::RGBfColor pixel = sampler(source, coord(1), coord(0));
+          _color(i, j) = pixel;
+          continue;
+        }
+
+        const Eigen::Vector2d & coord_mm = coordinates(i, j);
+        const Eigen::Vector2d & coord_mp = coordinates(i, j + 1);
+        const Eigen::Vector2d & coord_pm = coordinates(i + 1, j);
+        
+        double dxx = coord_pm(0) - coord_mm(0);
+        double dxy = coord_mp(0) - coord_mm(0);
+        double dyx = coord_pm(1) - coord_mm(1);
+        double dyy = coord_mp(1) - coord_mm(1);
+        double det = std::abs(dxx*dyy - dxy*dyx);
+        double scale = sqrt(det);
+        
+
+        double flevel = log2(scale);
+        size_t blevel = std::min(max_level, size_t(floor(flevel)));        
+
+        double dscale, x, y;
+        dscale = 1.0 / pow(2.0, blevel);
+        x = coord_mm(0) * dscale;
+        y = coord_mm(1) * dscale;
+        /*Fallback to first level if outside*/
+        if (x >= mlsource[blevel].Width() - 1 || y >= mlsource[blevel].Height() - 1) {
+          _color(i, j) = sampler(mlsource[0], coord_mm(1), coord_mm(0));
+          continue;
+        }
+
+        _color(i, j) = sampler(mlsource[blevel], y, x);
+      }
+    }
+
+    return true;
+  }
+};
+
 class Compositer {
 public:
   Compositer(size_t outputWidth, size_t outputHeight) :
-  _panorama(outputWidth, outputHeight, true, image::RGBfColor(0.0f, 0.0f, 0.0f)), 
+  _panorama(outputWidth, outputHeight, true, image::RGBfColor(1.0f, 0.0f, 0.0f)), 
   _mask(outputWidth, outputHeight, true, false)
   {
   }
@@ -927,7 +1106,7 @@ int main(int argc, char **argv) {
   /**
    * Description of optional parameters
    */
-  std::pair<int, int> panoramaSize = {4096, 2048};
+  std::pair<int, int> panoramaSize = {2048, 1024};
   po::options_description optionalParams("Optional parameters");
   allParams.add(optionalParams);
 
@@ -1019,6 +1198,9 @@ int main(int argc, char **argv) {
     const geometry::Pose3 & camPose = sfmData.getPose(view).getTransform();
     const camera::IntrinsicBase & intrinsic = *sfmData.getIntrinsicPtr(view.getIntrinsicId());
 
+    std::cout << camPose.rotation() << std::endl;
+
+    /*if (pos == 8) */{
     /**
      * Prepare coordinates map
     */
@@ -1035,7 +1217,7 @@ int main(int argc, char **argv) {
     /**
      * Warp image
      */
-    Warper warper;
+    GaussianWarper warper;
     warper.warp(map, source);
 
 
@@ -1043,11 +1225,13 @@ int main(int argc, char **argv) {
      *Composite image into output
     */
     compositer.append(warper);
-   
+    {
     const aliceVision::image::Image<image::RGBfColor> & panorama = compositer.getPanorama();
     char filename[512];
     sprintf(filename, "%s_source_%d.exr", outputPanorama.c_str(), pos);
     image::writeImage(filename, panorama, image::EImageColorSpace::NO_CONVERSION);
+    }
+    }
     pos++;
   }
 

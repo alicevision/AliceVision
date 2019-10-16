@@ -168,6 +168,13 @@ int main(int argc, char **argv)
     return EXIT_FAILURE;
   }
 
+  sfmData::Poses & initial_poses = inputSfmData.getPoses();
+  Eigen::Matrix3d ref_R_base = Eigen::Matrix3d::Identity();
+  if (!initial_poses.empty()) { 
+    
+    ref_R_base = initial_poses.begin()->second.getTransform().rotation();
+  }
+
   // get describerTypes
   const std::vector<feature::EImageDescriberType> describerTypes = feature::EImageDescriberType_stringToEnums(describerTypesName);
 
@@ -217,6 +224,7 @@ int main(int argc, char **argv)
   // configure relative rotation method (from essential or from homography matrix)
   sfmEngine.SetRelativeRotationMethod(sfm::ERelativeRotationMethod(relativeRotationMethod));
 
+
   if(!sfmEngine.process())
     return EXIT_FAILURE;
 
@@ -235,8 +243,28 @@ int main(int argc, char **argv)
 
     sfmDataIO::Save(sfmEngine.getSfMData(), (fs::path(outDirectory) / "BA_after.abc").string(), sfmDataIO::ESfMData::ALL);
   }
+  
 
   sfmData::SfMData& outSfmData = sfmEngine.getSfMData();
+  
+  
+  /**
+   * If an initial set of poses was available, make sure at least one pose is aligned with it
+   */
+  sfmData::Poses & final_poses = outSfmData.getPoses();
+  if (!final_poses.empty()) { 
+    
+    Eigen::Matrix3d ref_R_current = final_poses.begin()->second.getTransform().rotation();
+    Eigen::Matrix3d R_restore = ref_R_current.transpose() * ref_R_base;
+    
+    for (auto & pose : outSfmData.getPoses()) {    
+      geometry::Pose3 p = pose.second.getTransform();
+      Eigen::Matrix3d newR = p.rotation() * R_restore ;
+      p.rotation() = newR;
+      pose.second.setTransform(p);
+    }
+  }
+
 
   ALICEVISION_LOG_INFO("Panorama solve took (s): " << timer.elapsed());
   ALICEVISION_LOG_INFO("Generating HTML report...");
@@ -255,6 +283,7 @@ int main(int argc, char **argv)
     return -1;
   }
 
+  if (initial_poses.empty()) 
   {
     std::string firstShot_datetime;
     IndexT firstShot_viewId = 0;
@@ -318,6 +347,7 @@ int main(int argc, char **argv)
     // We only need to correct the rotation
     S = 1.0;
     t = Vec3::Zero();
+
     sfm::applyTransform(outSfmData, S, R, t);
   }
 
