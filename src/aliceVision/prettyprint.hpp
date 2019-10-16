@@ -427,12 +427,20 @@ bucket_print(const T & m, typename T::size_type n)
 // Main magic entry point: An overload snuck into namespace std.
 // Can we do better?
 
+namespace Eigen {
+template <typename T>
+class EigenBase;
+}
+
 namespace std
 {
     // Prints a container to the stream using default delimiters
+    template <typename T>
+    struct is_eigen_object : std::is_base_of<Eigen::EigenBase<T>, T>
+    {};
 
     template<typename T, typename TChar, typename TCharTraits>
-    inline typename enable_if< ::pretty_print::is_container<T>::value,
+    inline typename enable_if< ::pretty_print::is_container<T>::value  && !is_eigen_object<T>::value,
                               basic_ostream<TChar, TCharTraits> &>::type
     operator<<(basic_ostream<TChar, TCharTraits> & stream, const T & container)
     {
