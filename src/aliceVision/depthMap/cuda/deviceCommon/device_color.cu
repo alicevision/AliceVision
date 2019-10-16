@@ -173,7 +173,7 @@ inline __device__ float CostYKfromLab(const float4 c1, const float4 c2, const fl
     return __expf(-(deltaC / gammaC)); // Yoon & Kweon
 }
 */
-__global__ void rgb2lab_kernel(float4* irgbaOlab, int irgbaOlab_p, int width, int height)
+__global__ void rgb2lab_kernel(CudaRGBA* irgbaOlab, int irgbaOlab_p, int width, int height)
 {
     int x = blockIdx.x * blockDim.x + threadIdx.x;
     int y = blockIdx.y * blockDim.y + threadIdx.y;
@@ -181,12 +181,12 @@ __global__ void rgb2lab_kernel(float4* irgbaOlab, int irgbaOlab_p, int width, in
     if((x >= width) || (y >= height))
         return;
 
-    float4* rgb = get2DBufferAt(irgbaOlab, irgbaOlab_p, x, y);
+    CudaRGBA* rgb = get2DBufferAt(irgbaOlab, irgbaOlab_p, x, y);
     float3 flab = xyz2lab(rgb2xyz(make_float3(rgb->x / 255.f, rgb->y / 255.f, rgb->z / 255.f)));
 
-    float4 lab = make_float4(flab.x, flab.y, flab.z, rgb->w);
-
-    *rgb = lab;
+    rgb->x = flab.x;
+    rgb->y = flab.y;
+    rgb->z = flab.z;
 }
 
 /*

@@ -201,7 +201,7 @@ void ps_deviceAllocate(Pyramids& ps_texs_arr, int ncams, int width, int height, 
             int w = width / (s + 1);
             int h = height / (s + 1);
             printf("ps_deviceAllocate: CudaDeviceMemoryPitched: [c%i][s%i] %ix%i\n", c, s, w, h);
-            ps_texs_arr[c][s].arr = new CudaDeviceMemoryPitched<float4, 2>(CudaSize<2>(w, h));
+            ps_texs_arr[c][s].arr = new CudaDeviceMemoryPitched<CudaRGBA, 2>(CudaSize<2>(w, h));
             allBytes += ps_texs_arr[c][s].arr->getBytesPadded();
 
             cudaTextureDesc  tex_desc;
@@ -210,12 +210,18 @@ void ps_deviceAllocate(Pyramids& ps_texs_arr, int ncams, int width, int height, 
             tex_desc.addressMode[0]   = cudaAddressModeClamp;
             tex_desc.addressMode[1]   = cudaAddressModeClamp;
             tex_desc.addressMode[2]   = cudaAddressModeClamp;
-            tex_desc.readMode         = cudaReadModeElementType; // transform uchar to float
-            tex_desc.filterMode       = cudaFilterModeLinear; // with interpolation
+            tex_desc.readMode = cudaReadModeElementType;
+#ifdef ALICEVISION_DEPTHMAP_TEXTURE_USE_INTERPOLATION
+            // with subpixel interpolation (can have a large performance impact on some graphic cards)
+            tex_desc.filterMode = cudaFilterModeLinear;
+#else
+            // without interpolation
+            tex_desc.filterMode       = cudaFilterModePoint;
+#endif
 
             cudaResourceDesc res_desc;
             res_desc.resType = cudaResourceTypePitch2D;
-            res_desc.res.pitch2D.desc = cudaCreateChannelDesc<float4>();
+            res_desc.res.pitch2D.desc = cudaCreateChannelDesc<CudaRGBA>();
             res_desc.res.pitch2D.devPtr       = ps_texs_arr[c][s].arr->getBuffer();
             res_desc.res.pitch2D.width        = ps_texs_arr[c][s].arr->getSize()[0];
             res_desc.res.pitch2D.height       = ps_texs_arr[c][s].arr->getSize()[1];

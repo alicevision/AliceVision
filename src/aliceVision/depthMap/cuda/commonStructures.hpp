@@ -1215,18 +1215,31 @@ struct CameraStructBase
 
 typedef CameraStructBase DeviceCameraStructBase;
 
+// #define ALICEVISION_DEPTHMAP_TEXTURE_USE_UCHAR
+
+#ifdef ALICEVISION_DEPTHMAP_TEXTURE_USE_UCHAR
+using CudaColorBaseType = unsigned char;
+using CudaRGBA = uchar4;
+
+#else
+using CudaColorBaseType = float;
+using CudaRGBA = float4;
+
+#endif
+
+
 struct CameraStruct
 {
     const CameraStructBase* param_hst = nullptr;
     const CameraStructBase* param_dev = nullptr;
-    CudaHostMemoryHeap<float4, 2>* tex_rgba_hmh = nullptr;
+    CudaHostMemoryHeap<CudaRGBA, 2>* tex_rgba_hmh = nullptr;
     int camId;
     cudaStream_t stream; // allow async work on cameras used in parallel
 };
 
 struct TexturedArray
 {
-    CudaDeviceMemoryPitched<float4, 2>* arr = nullptr;
+    CudaDeviceMemoryPitched<CudaRGBA, 2>* arr = nullptr;
     cudaTextureObject_t tex;
 };
 

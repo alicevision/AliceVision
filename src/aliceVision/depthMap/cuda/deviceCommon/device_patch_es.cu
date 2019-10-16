@@ -195,8 +195,8 @@ __device__ float compNCCby3DptsYK( cudaTextureObject_t rc_tex,
 
     // see CUDA_C_Programming_Guide.pdf ... E.2 pp132-133 ... adding 0.5 caises that tex2D return for point i,j exactly
     // value od I(i,j) ... it is what we want
-    float4 gcr = tex2D<float4>(rc_tex, rp.x + 0.5f, rp.y + 0.5f);
-    float4 gct = tex2D<float4>(tc_tex, tp.x + 0.5f, tp.y + 0.5f);
+    float4 gcr = tex2D_float4(rc_tex, rp.x + 0.5f, rp.y + 0.5f);
+    float4 gct = tex2D_float4(tc_tex, tp.x + 0.5f, tp.y + 0.5f);
 
     // printf("gcr: R: %f, G: %f, B: %f, A: %f", gcr.x, gcr.y, gcr.z, gcr.w);
     // printf("gct: R: %f, G: %f, B: %f, A: %f", gct.x, gct.y, gct.z, gct.w);
@@ -220,8 +220,8 @@ __device__ float compNCCby3DptsYK( cudaTextureObject_t rc_tex,
 
             // see CUDA_C_Programming_Guide.pdf ... E.2 pp132-133 ... adding 0.5 caises that tex2D return for point i,j
             // exactly value od I(i,j) ... it is what we want
-            float4 gcr1 = tex2D<float4>(rc_tex, rp1.x + 0.5f, rp1.y + 0.5f);
-            float4 gct1 = tex2D<float4>(tc_tex, tp1.x + 0.5f, tp1.y + 0.5f);
+            float4 gcr1 = tex2D_float4(rc_tex, rp1.x + 0.5f, rp1.y + 0.5f);
+            float4 gct1 = tex2D_float4(tc_tex, tp1.x + 0.5f, tp1.y + 0.5f);
 
             // TODO: Does it make a difference to accurately test it for each pixel of the patch?
             // if (gcr1.w == 0.0f || gct1.w == 0.0f)
@@ -273,7 +273,7 @@ __device__ float compNCCby3DptsYK_vol(
 {
     // const dim3 coord = { coordX, coordY, coordZ };
 
-    const float4 gcr = tex2D<float4>(rc_tex, coordX * volStepXY + 0.5f, coordY * volStepXY + 0.5f);
+    const float4 gcr = tex2D_float4(rc_tex, coordX * volStepXY + 0.5f, coordY * volStepXY + 0.5f);
 
 #ifdef PLANE_SWEEPING_PRECOMPUTED_COLORS_TEXTURE
     const float4 gct = tex3D<float4>(tc_tex3D, coordX + 0.5f, coordY + 0.5f, coordZ + 0.5f);
@@ -299,7 +299,7 @@ __device__ float compNCCby3DptsYK_vol(
             if (int(coord_i.x) < 0 || int(coord_i.x) >= volDimX)
                 continue;
 
-            const float4 gcr_i = tex2D<float4>(rc_tex, coord_i.x * volStepXY + 0.5f, coord_i.y * volStepXY + 0.5f);
+            const float4 gcr_i = tex2D_float4(rc_tex, coord_i.x * volStepXY + 0.5f, coord_i.y * volStepXY + 0.5f);
             if (gcr_i.w == 0.0f)
                 continue;
 

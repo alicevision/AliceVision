@@ -60,16 +60,33 @@ __device__ const T* get3DBufferAt(const T* ptr, int spitch, int pitch, const int
 }
 
 
-__device__ float multi_fminf(float a, float b, float c)
+inline __device__ float multi_fminf(float a, float b, float c)
 {
   return fminf(fminf(a, b), c);
 }
 
-__device__ float multi_fminf(float a, float b, float c, float d)
+inline __device__ float multi_fminf(float a, float b, float c, float d)
 {
   return fminf(fminf(fminf(a, b), c), d);
 }
 
+
+#ifdef ALICEVISION_DEPTHMAP_TEXTURE_USE_UCHAR
+
+inline __device__ float4 tex2D_float4(cudaTextureObject_t rc_tex, float x, float y)
+{
+    uchar4 a = tex2D<uchar4>(rc_tex, x, y);
+    return make_float4(a.x, a.y, a.z, a.w);
+}
+
+#else
+
+inline __device__ float4 tex2D_float4(cudaTextureObject_t rc_tex, float x, float y)
+{
+    return tex2D<float4>(rc_tex, x, y);
+}
+
+#endif
 
 } // namespace depthMap
 } // namespace aliceVision

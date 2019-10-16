@@ -128,7 +128,7 @@ static void cps_host_fillCameraData(mvsUtils::ImagesCache<ImageRGBAf>& ic, Camer
         for(int x = 0; x < w; ++x)
         {
             const ColorRGBAf& floatRGBA = img->at(x, y);
-            float4& pix_rgba = (*cam.tex_rgba_hmh)(x, y);
+            CudaRGBA& pix_rgba = (*cam.tex_rgba_hmh)(x, y);
             pix_rgba.x = floatRGBA.r * 255.0f;
             pix_rgba.y = floatRGBA.g * 255.0f;
             pix_rgba.z = floatRGBA.b * 255.0f;
@@ -286,7 +286,7 @@ int PlaneSweepingCuda::addCam( int rc, int scale,
         if(cam.tex_rgba_hmh == nullptr)
         {
             cam.tex_rgba_hmh =
-                new CudaHostMemoryHeap<float4, 2>(CudaSize<2>(_mp.getMaxImageWidth(), _mp.getMaxImageHeight()));
+                new CudaHostMemoryHeap<CudaRGBA, 2>(CudaSize<2>(_mp.getMaxImageWidth(), _mp.getMaxImageHeight()));
         }
         else
         {

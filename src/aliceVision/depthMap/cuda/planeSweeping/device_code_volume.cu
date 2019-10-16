@@ -80,7 +80,7 @@ __global__ void volume_initCameraColor_kernel(
     }
 
     // Read the interpolated color in the T camera
-    float4 color = tex2D<float4>(tc_tex, p_tc.x + 0.5f, p_tc.y + 0.5f);
+    float4 color = tex2D_float4(tc_tex, p_tc.x + 0.5f, p_tc.y + 0.5f);
 
     /*
     // int verbose = (vx % 200 == 0 && vy % 200 == 0 && vz % 50 == 0 && vz > 300);
@@ -461,8 +461,8 @@ __global__ void volume_agregateCostVolumeAtXinSlices_kernel(
         const int imX1 = imX0 - ySign * (axisT.y == 0); // M1
         const int imY1 = imY0 - ySign * (axisT.y == 1);
 
-        const float4 gcr0 = tex2D<float4>(rc_tex, float(imX0) + 0.5f, float(imY0) + 0.5f);
-        const float4 gcr1 = tex2D<float4>(rc_tex, float(imX1) + 0.5f, float(imY1) + 0.5f);
+        const float4 gcr0 = tex2D_float4(rc_tex, float(imX0) + 0.5f, float(imY0) + 0.5f);
+        const float4 gcr1 = tex2D_float4(rc_tex, float(imX1) + 0.5f, float(imY1) + 0.5f);
 
         const float deltaC = Euclidean3(gcr0, gcr1);
         // unsigned int P1 = (unsigned int)sigmoid(5.0f,20.0f,60.0f,10.0f,deltaC);

@@ -12,6 +12,8 @@
 #include <aliceVision/depthMap/cuda/planeSweeping/device_utils.h>
 #include <aliceVision/depthMap/cuda/commonStructures.hpp>
 
+#include <aliceVision/depthMap/cuda/planeSweeping/device_utils.cu>
+
 
 namespace aliceVision {
 namespace depthMap {
@@ -28,7 +30,7 @@ __device__ __constant__ float d_gaussianArray[MAX_CONSTANT_GAUSS_MEM_SIZE];
  *********************************************************************************/
 __global__ void downscale_gauss_smooth_lab_kernel(
     cudaTextureObject_t rc_tex,
-    float4* texLab, int texLab_p,
+    CudaRGBA* texLab, int texLab_p,
     int width, int height, int scale, int radius);
 
 /*********************************************************************************
@@ -125,7 +127,7 @@ __host__ void ps_downscale_gauss( Pyramids& ps_texs_arr,
 
 __global__ void downscale_gauss_smooth_lab_kernel(
     cudaTextureObject_t rc_tex,
-    float4* texLab, int texLab_p,
+    CudaRGBA* texLab, int texLab_p,
     int width, int height, int scale, int radius)
 {
     int x = blockIdx.x * blockDim.x + threadIdx.x;
@@ -140,7 +142,7 @@ __global__ void downscale_gauss_smooth_lab_kernel(
         {
             for(int j = -radius; j <= radius; j++)
             {
-                float4 curPix = tex2D<float4>(rc_tex, (float)(x * scale + j) + s,
+                float4 curPix = tex2D_float4(rc_tex, (float)(x * scale + j) + s,
                                                (float)(y * scale + i) + s);
                 float factor = getGauss( scale-1, i + radius )
                              * getGauss( scale-1, j + radius ); // domain factor
@@ -153,7 +155,11 @@ __global__ void downscale_gauss_smooth_lab_kernel(
         t.z = t.z / sum;
         t.w = t.w / sum;
 
-        BufPtr<float4>(texLab, texLab_p).at(x,y) = t;
+        CudaRGBA& out = BufPtr<CudaRGBA>(texLab, texLab_p).at(x,y);
+        out.x = t.x;
+        out.w = t.y;
+        out.z = t.z;
+        out.w = t.w;
     }
 }
 
