@@ -414,6 +414,11 @@ void writeImage(const std::string& path, const Image<RGBfColor>& image, EImageCo
   writeImage(path, oiio::TypeDesc::FLOAT, 3, image, imageColorSpace, metadata);
 }
 
+void writeImage(const std::string& path, const Image<float>& image, EImageColorSpace imageColorSpace, const oiio::ParamValueList& metadata)
+{
+  writeImage(path, oiio::TypeDesc::FLOAT, 1, image, imageColorSpace, metadata);
+}
+
 void writeImage(const std::string& path, const Image<RGBColor>& image, EImageColorSpace imageColorSpace, const oiio::ParamValueList& metadata)
 {
   writeImage(path, oiio::TypeDesc::UINT8, 3, image, imageColorSpace, metadata);
