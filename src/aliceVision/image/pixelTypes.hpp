@@ -148,6 +148,29 @@ namespace aliceVision
       }
 
       /**
+      * @brief Elementwise substraction
+      * @param other the other element to substract
+      * @return Rgb color after substraction
+      * @note This does not modify the Rgb value (ie: only return a modified copy)
+      */
+      inline Rgb operator -( const Rgb& other ) const
+      {
+        return Rgb( ((*this)(0) - other(0)), ((*this)(1) - other(1)), ((*this)(2) - other(2)));
+      }
+
+      /**
+      * @brief Elementwise addition
+      * @param other the other element to substract
+      * @return Rgb color after addition
+      * @note This does not modify the Rgb value (ie: only return a modified copy)
+      */
+      inline Rgb operator +( const Rgb& other ) const
+      {
+        return Rgb( (*this(0) + other(0)), (*this(1) + other(1)), (*this(2) + other(2)));
+      }
+
+    
+      /**
       * @brief scalar division
       * @param val Scalar divisor factor
       * @return Rgb color after scalar division
