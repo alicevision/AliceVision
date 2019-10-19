@@ -145,10 +145,10 @@ void RigSequence::computeScores()
       const IndexT frameId = frameInfoPair.first;
       const RigFrame& rigFrame = frameInfoPair.second;
 
-      const auto curentSubPoseIt = rigFrame.find(subPoseId);
+      const auto currentSubPoseIt = rigFrame.find(subPoseId);
 
       // skip current sub-pose
-      if(curentSubPoseIt == rigFrame.end())
+      if(currentSubPoseIt == rigFrame.end())
         continue;
 
       // compute frame score
@@ -161,7 +161,7 @@ void RigSequence::computeScores()
 
         // score relative to other localized cameras of the rig
         if(otherPoseIt.first != subPoseId && otherPoseIt.second.score != 0.0)
-          frameScore += curentSubPoseIt->second.score * otherPoseIt.second.score;
+          frameScore += currentSubPoseIt->second.score * otherPoseIt.second.score;
       }
 
       // keep best frame score
