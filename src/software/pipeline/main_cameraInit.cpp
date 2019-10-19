@@ -738,8 +738,7 @@ int aliceVision_main(int argc, char **argv)
         // check nbPoses
         if(nbPosePerSubPoseId.second != nbPoses)
         {
-          ALICEVISION_LOG_ERROR("Wrong number of poses per subPose in detected rig structure (" << nbPosePerSubPoseId.second << " != " << nbPoses << ").");
-          return EXIT_FAILURE;
+          ALICEVISION_LOG_WARNING("Wrong number of poses per subPose in detected rig structure (" << nbPosePerSubPoseId.second << " != " << nbPoses << ").");
         }
       }
 
