@@ -97,14 +97,14 @@ int main(int argc, char **argv)
     ("input,i", po::value<std::string>(&sfmDataFilename)->required(),
       "SfMData file.")
     ("output,o", po::value<std::string>(&outputSfM)->required(),
-      "Path to the output SfMData file.")
-    ("featuresFolders,f", po::value<std::vector<std::string>>(&featuresFolders)->multitoken()->required(),
-      "Path to folder(s) containing the extracted features.")
-    ("matchesFolders,m", po::value<std::vector<std::string>>(&matchesFolders)->multitoken()->required(),
-      "Path to folder(s) in which computed matches are stored.");
+      "Path to the output SfMData file.");
 
   po::options_description optionalParams("Optional parameters");
   optionalParams.add_options()
+    ("featuresFolders,f", po::value<std::vector<std::string>>(&featuresFolders)->multitoken(),
+      "Path to folder(s) containing the extracted features.")
+    ("matchesFolders,m", po::value<std::vector<std::string>>(&matchesFolders)->multitoken(),
+      "Path to folder(s) in which computed matches are stored.")
     ("outputViewsAndPoses", po::value<std::string>(&outputSfMViewsAndPoses)->default_value(outputSfMViewsAndPoses),
       "Path to the output SfMData file (with only views and poses).")
     ("extraInfoFolder", po::value<std::string>(&extraInfoFolder)->default_value(extraInfoFolder),
