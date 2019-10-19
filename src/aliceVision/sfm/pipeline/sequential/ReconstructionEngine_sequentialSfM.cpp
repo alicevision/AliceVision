@@ -372,7 +372,7 @@ void ReconstructionEngine_sequentialSfM::remapLandmarkIdsToTrackIds()
     }
   }
 
-  ALICEVISION_LOG_INFO("Landmark ids to track ids reampping: " << std::endl
+  ALICEVISION_LOG_INFO("Landmark ids to track ids remapping: " << std::endl
                         << "\t- # tracks: " << _map_tracks.size() << std::endl
                         << "\t- # input landmarks: " << landmarks.size() << std::endl
                         << "\t- # output landmarks: " << _sfmData.getLandmarks().size());
