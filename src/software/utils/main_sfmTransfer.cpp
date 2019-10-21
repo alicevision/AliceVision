@@ -5,6 +5,7 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include <aliceVision/sfmData/SfMData.hpp>
+#include <aliceVision/sfm/pipeline/RigSequence.hpp>
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
 #include <aliceVision/sfm/utils/alignment.hpp>
 #include <aliceVision/system/Logger.hpp>
@@ -221,30 +222,92 @@ int main(int argc, char **argv)
     {
         for (const auto& matchingViews: commonViewIds)
         {
-            if(!sfmDataIn.isPoseAndIntrinsicDefined(matchingViews.first) &&
-                sfmDataInRef.isPoseAndIntrinsicDefined(matchingViews.second))
+            // !sfmDataIn.isPoseAndIntrinsicDefined(matchingViews.first)
+            if(sfmDataInRef.isPoseAndIntrinsicDefined(matchingViews.second))
             {
                 // Missing pose in sfmDataIn and valid pose in sfmDataInRef,
                 // so we can transfer the pose.
 
                 auto& viewA = sfmDataIn.getView(matchingViews.first);
                 const auto& viewB = sfmDataInRef.getView(matchingViews.second);
-                if (viewA.isPartOfRig() || viewB.isPartOfRig())
-                {
-                    ALICEVISION_LOG_DEBUG("Rig poses are not yet supported in SfMTransfer.");
-                    continue;
-                }
 
                 if (transferPoses)
                 {
-                    sfmDataIn.getPoses()[viewA.getPoseId()] = sfmDataInRef.getPoses().at(viewB.getPoseId());
+                    ALICEVISION_LOG_TRACE("Transfer pose (pose id: " << viewA.getPoseId() << " <- " << viewB.getPoseId() << ", " << viewA.getImagePath() << " <- " << viewB.getImagePath() << ").");
+
+                    if (viewA.isPartOfRig() && viewB.isPartOfRig())
+                    {
+                        ALICEVISION_LOG_TRACE("Transfer rig (rig id: " << viewA.getRigId() << " <- " << viewB.getRigId() << ", " << viewA.getImagePath() << " <- " << viewB.getImagePath() << ").");
+
+                        if (!viewB.isPoseIndependant())
+                        {
+                            if (viewA.isPoseIndependant())
+                            {
+                                IndexT rigPoseId = sfm::getRigPoseId(viewA.getRigId(), viewA.getFrameId());
+                                viewA.setPoseId(rigPoseId);
+                                viewA.setIndependantPose(false);
+                            }
+                            else
+                            {
+                                if (viewA.getPoseId() == viewA.getPoseId())
+                                    throw std::runtime_error("Invalid RigId/PoseId (in rig) for view: " + viewA.getImagePath());
+                            }
+                        }
+                        else
+                        {
+                            if (!viewA.isPoseIndependant())
+                            {
+                                viewA.setPoseId(viewA.getViewId());
+                                viewA.setIndependantPose(viewB.isPoseIndependant());
+                            }
+                            else
+                            {
+                                if (viewA.getPoseId() != viewA.getPoseId())
+                                    throw std::runtime_error("Invalid RigId/PoseId (out of rig) for view: " + viewA.getImagePath());
+                            }
+                        }
+                        // copy the pose of the rig or the independant pose
+                        sfmDataIn.getPoses()[viewA.getPoseId()] = sfmDataInRef.getPoses().at(viewB.getPoseId());
+
+                        // warning: we copy the full rig (and not only the subpose corresponding to the view).
+                        sfmDataIn.getRigs()[viewA.getRigId()] = sfmDataInRef.getRigs()[viewB.getRigId()];
+                    }
+                    else
+                    {
+                        if (viewA.isPartOfRig() && !viewA.isPoseIndependant())
+                        {
+                            viewA.setPoseId(viewA.getViewId());
+                            viewA.setIndependantPose(true);
+                        }
+                        sfmDataIn.getPoses()[viewA.getPoseId()] = sfmDataInRef.getPose(viewB);
+                    }
                 }
                 if (transferIntrinsics)
                 {
+                    ALICEVISION_LOG_TRACE("Transfer intrinsics (intrinsic id: " << viewA.getIntrinsicId() << " <- " << viewB.getIntrinsicId() << ", " << viewA.getImagePath() << " <- " << viewB.getImagePath() << ").");
                     sfmDataIn.getIntrinsicPtr(viewA.getIntrinsicId())->assign(*sfmDataInRef.getIntrinsicPtr(viewB.getIntrinsicId()));
                 }
             }
         }
+    }
+
+    // Pose Id to remove
+    {
+        std::set<IndexT> usedPoseIds;
+        for (auto viewIt : sfmDataIn.getViews())
+        {
+            usedPoseIds.insert(viewIt.second->getPoseId());
+        }
+        std::set<IndexT> poseIdsToRemove;
+        for (auto poseIt : sfmDataIn.getPoses())
+        {
+            if (usedPoseIds.find(poseIt.first) == usedPoseIds.end())
+            {
+                poseIdsToRemove.insert(poseIt.first);
+            }
+        }
+        for (auto r : poseIdsToRemove)
+            sfmDataIn.getPoses().erase(r);
     }
 
     ALICEVISION_LOG_INFO("Save into '" << outSfMDataFilename << "'");
