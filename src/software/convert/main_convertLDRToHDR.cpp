@@ -493,8 +493,18 @@ int main(int argc, char** argv)
       ALICEVISION_LOG_INFO("Reading " << imagePath);
 
       image::readImage(imagePath, ldrImages[i], loadColorSpace);
-
       metadatas[i] = image::readImageMetadata(imagePath);
+
+      if (ldrImages[i].Height() < ldrImages[i].Width()) {
+        image::Image<image::RGBfColor> rotate(ldrImages[i].Height(), ldrImages[i].Width());
+        for (int k = 0; k < rotate.Height(); k++) {
+          for (int l = 0; l < rotate.Width(); l++) {
+            rotate(k, l) = ldrImages[i](l, rotate.Height() - 1 - k);
+          }
+        }
+        ldrImages[i] = rotate;
+      }
+      
 
       // Debevec and Robertson algorithms use shutter speed as ev value
       // TODO: in the future, we should use EVs instead of just shutter speed.
