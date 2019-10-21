@@ -168,35 +168,41 @@ bool ReconstructionEngine_sequentialSfM::process()
     throw std::runtime_error("No valid tracks.");
   }
 
+  if (!_sfmData.getLandmarks().empty())
+  {
+      if (_sfmData.getPoses().empty())
+        throw std::runtime_error("You cannot have landmarks without valid poses.");
+
+      // If we have already reconstructed landmarks, we need to recognize the corresponding tracks
+      // and update the landmarkIds accordingly.
+      // Note: each landmark has a corresponding track with the same id (landmarkId == trackId).
+      remapLandmarkIdsToTrackIds();
+
+      if (_params.useLocalBundleAdjustment)
+      {
+          const std::set<IndexT> reconstructedViews = _sfmData.getValidViews();
+          if (!reconstructedViews.empty())
+          {
+              // Add the reconstructed views to the LocalBA graph
+              _localStrategyGraph->updateGraphWithNewViews(_sfmData, _map_tracksPerView, reconstructedViews, _params.kMinNbOfMatches);
+              _localStrategyGraph->updateRigEdgesToTheGraph(_sfmData);
+          }
+      }
+  }
+
   // initial pair choice
   if(_sfmData.getPoses().empty())
   {
     std::vector<Pair> initialImagePairCandidates = getInitialImagePairsCandidates();
     createInitialReconstruction(initialImagePairCandidates);
   }
-  else if(_sfmData.getLandmarks().empty())
+  else
   {
+    // If we don't have any landmark, we need to triangulate them from the known poses.
+    // But even if we already have landmarks, we need to try to triangulate new points with the current set of parameters.
     std::set<IndexT> prevReconstructedViews = _sfmData.getValidViews();
     triangulate({}, prevReconstructedViews);
     bundleAdjustment(prevReconstructedViews);
-  }
-  else
-  {
-    // If we have already reconstructed landmarks, we need to recognize the corresponding tracks
-    // and update the landmarkIds accordingly.
-    // Note: each landmark has a corresponding track with the same id (landmarkId == trackId).
-    remapLandmarkIdsToTrackIds();
-
-    if(_params.useLocalBundleAdjustment)
-    {
-      const std::set<IndexT> reconstructedViews = _sfmData.getValidViews();
-      if(!reconstructedViews.empty())
-      {
-        // Add the reconstructed views to the LocalBA graph
-        _localStrategyGraph->updateGraphWithNewViews(_sfmData, _map_tracksPerView, reconstructedViews, _params.kMinNbOfMatches);
-        _localStrategyGraph->updateRigEdgesToTheGraph(_sfmData);
-      }
-    }
   }
 
   // reconstruction
