@@ -334,8 +334,9 @@ __global__ void volume_retrieveBestZ_kernel(
       bestZIdx = z;
     }
   }
+  bestZIdx = max(0, bestZIdx);
   
-  float2 pix{x * scaleStep, y * scaleStep };
+  float2 pix{float(x * scaleStep), float(y * scaleStep) };
   // Without depth interpolation (for debug purpose only)
   if(!interpolate)
   {
