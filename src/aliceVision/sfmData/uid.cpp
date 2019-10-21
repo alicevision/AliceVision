@@ -9,7 +9,9 @@
 
 #include <aliceVision/sfmData/View.hpp>
 
+#include <boost/algorithm/string/case_conv.hpp> 
 #include <boost/filesystem.hpp>
+
 
 namespace fs = boost::filesystem;
 
@@ -19,24 +21,38 @@ namespace sfmData {
 std::size_t computeViewUID(const View& view)
 {
   std::size_t uid = 0;
+  const fs::path imagePath = view.getImagePath();
+
+  {
+      std::string ext = imagePath.extension().string();
+      boost::to_lower(ext);
+      stl::hash_combine(uid, ext);
+  }
 
   const std::string& bodySerialNumber = view.getMetadataBodySerialNumber();
   const std::string& lensSerialNumber = view.getMetadataLensSerialNumber();
 
-  if(view.hasMetadata("Exif:ImageUniqueID") ||
-     !bodySerialNumber.empty() ||
-     !lensSerialNumber.empty())
+  if(view.hasMetadata("Exif:ImageUniqueID"))
   {
     stl::hash_combine(uid, view.getMetadataOrEmpty("Exif:ImageUniqueID"));
-    stl::hash_combine(uid, bodySerialNumber);
-    stl::hash_combine(uid, lensSerialNumber);
+  }
+  else if(
+        (!bodySerialNumber.empty() || !lensSerialNumber.empty()) &&
+        (view.hasMetadata("Exif:DateTimeOriginal") || view.hasMetadata("imageCounter"))
+        )
+  {
+    // We can identify the image uniquely, so there is no need to use the image path into the UID.
   }
   else
   {
     // no metadata to identify the image, fallback to the filename
-    const fs::path imagePath = view.getImagePath();
     stl::hash_combine(uid, imagePath.stem().string() + imagePath.extension().string());
   }
+
+  if(!bodySerialNumber.empty())
+    stl::hash_combine(uid, bodySerialNumber);
+  if(!lensSerialNumber.empty())
+    stl::hash_combine(uid, lensSerialNumber);
 
   if(view.hasMetadata("Exif:DateTimeOriginal"))
   {
@@ -48,10 +64,16 @@ std::size_t computeViewUID(const View& view)
     // if the view is from a video camera
     stl::hash_combine(uid, view.getMetadataOrEmpty("imageCounter"));
   }
-  else
+  else if (view.hasMetadata("DateTime"))
   {
     // if no original date/time, fallback to the file date/time
     stl::hash_combine(uid, view.getMetadataOrEmpty("DateTime"));
+  }
+  else
+  {
+      // if no original date/time, fallback to the file date/time
+      std::time_t t = fs::last_write_time(imagePath);
+      stl::hash_combine(uid, t);
   }
 
   // can't use view.getWidth() and view.getHeight() directly
