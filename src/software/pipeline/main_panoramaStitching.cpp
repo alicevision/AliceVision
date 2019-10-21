@@ -981,14 +981,29 @@ public:
 
     size_t ox = warper.getOffsetX();
     size_t oy = warper.getOffsetY();
+    size_t pwidth = _panorama.Width();
+    size_t pheight = _panorama.Height();
 
     /**
      * Create a copy of panorama related pixels
      */
     aliceVision::image::Image<image::RGBfColor> panorama_subcolor(camera_weights.Width(), camera_weights.Height(), true, image::RGBfColor(0.0f, 0.0f, 0.0f));
     aliceVision::image::Image<unsigned char> panorama_submask(camera_weights.Width(), camera_weights.Height(), true, false);
-    panorama_subcolor.block(0, 0, warper.getHeight(), warper.getWidth()) = _panorama.block(oy, ox, warper.getHeight(), warper.getWidth());
-    panorama_submask.block(0, 0, warper.getHeight(), warper.getWidth()) = _mask.block(oy, ox, warper.getHeight(), warper.getWidth());
+
+    if (ox + warper.getWidth() > pwidth) {
+
+      int left_width = ox + warper.getWidth() - pwidth;
+      int right_width = warper.getWidth() - left_width;
+      panorama_subcolor.block(0, 0, warper.getHeight(), right_width) = _panorama.block(oy, ox, warper.getHeight(), right_width);
+      panorama_subcolor.block(0, right_width, warper.getHeight(), left_width) = _panorama.block(oy, 0, warper.getHeight(), left_width);
+      panorama_submask.block(0, 0, warper.getHeight(), right_width) = _mask.block(oy, ox, warper.getHeight(), right_width);
+      panorama_submask.block(0, right_width, warper.getHeight(), left_width) = _mask.block(oy, 0, warper.getHeight(), left_width);
+    }
+    else {
+      panorama_subcolor.block(0, 0, warper.getHeight(), warper.getWidth()) = _panorama.block(oy, ox, warper.getHeight(), warper.getWidth());
+      panorama_submask.block(0, 0, warper.getHeight(), warper.getWidth()) = _mask.block(oy, ox, warper.getHeight(), warper.getWidth());
+    }
+    
 
     /**
      * Compute optimal scale
@@ -1033,16 +1048,23 @@ public:
         }
 
         float cw = camera_weights(i, j);
-        float pw = _weightmap(oy + i, ox + j);
+
+        int pano_y = oy + i;
+        int pano_x = ox + j;
+        if (pano_x >= pwidth) {
+          pano_x = pano_x - pwidth;
+        }
+
+        float pw = _weightmap(pano_y, pano_x);
 
         if (cw > pw) {
           maxweightmap(i, j) = 1.0f;
-          _weightmap(oy + i, ox + j) = cw;
+          _weightmap(pano_y, pano_x) = cw;
         }
       }
     }
 
-    Eigen::MatrixXf kernel = gaussian_kernel(5, 1.0f);
+    Eigen::MatrixXf kernel = gaussian_kernel(5, 2.0f);
 
     /*Create scales*/
     camera_colors[0] = camera_color;
@@ -1100,9 +1122,6 @@ public:
     }
 
     /*Rebuild*/
-    _panorama.block(oy, ox, warper.getHeight(), warper.getWidth()).fill(image::RGBfColor(0.0f, 0.0f, 0.0f));
-    _mask.block(oy, ox, warper.getHeight(), warper.getWidth()).fill(0);
-
     for (int level = scales - 1; level >= 0; level--) {
       
       aliceVision::image::Image<image::RGBfColor> & imgblend = blended_differences[level];
@@ -1110,9 +1129,21 @@ public:
 
       for (int i = 0; i < warper.getHeight(); i++) {
         for (int j = 0; j < warper.getWidth(); j++) {
+          
+          int pano_y = oy + i;
+          int pano_x = ox + j;
+          if (pano_x >= pwidth) {
+            pano_x = pano_x - pwidth;
+          }
+
           if (maskblend(i, j)) {
-            _panorama(oy + i, ox + j) += imgblend(i, j);
-            _mask(oy + i, ox + j) = 1;
+            if (level == scales - 1) {
+              _panorama(pano_y, pano_x) = image::RGBfColor(0.0f);
+              _mask(pano_y, pano_x) = 0;
+            }
+
+            _panorama(pano_y, pano_x) += imgblend(i, j);
+            _mask(pano_y, pano_x) = 1;
           }
         }
       }
@@ -1251,7 +1282,7 @@ int main(int argc, char **argv) {
     const camera::IntrinsicBase & intrinsic = *sfmData.getIntrinsicPtr(view.getIntrinsicId());
 
 
-    if (pos == 3 || pos == 7 || pos == 15) {
+    /*if (pos == 3 || pos == 7 || pos == 15)*/ {
     /**
      * Prepare coordinates map
     */
@@ -1265,12 +1296,22 @@ int main(int argc, char **argv) {
     image::Image<image::RGBfColor> source;
     image::readImage(imagePath, source, image::EImageColorSpace::LINEAR);
 
+    float min = 10000.0;
+    float max = -10000.0;
+    for (int i = 0; i < source.Height(); i++) {
+      for (int j = 0; j < source.Width(); j++) {
+        min = std::min(min, source(i, j).r());
+        max = std::max(max, source(i, j).r());
+      }
+    }
+
+    
+
     /**
      * Warp image
      */
     GaussianWarper warper;
     warper.warp(map, source);
-
 
     
     AlphaBuilder alphabuilder;
