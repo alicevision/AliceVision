@@ -59,10 +59,12 @@ public:
 
     mvsUtils::MultiViewParams& _mp;
     const int _CUDADeviceNo = 0;
-    Pyramids _pyramids;
+private:
+    Pyramids _hidden_pyramids;
 
-    CameraStructSet*           _camsBasesDev;
-    CameraStructSet*           _camsBasesHst;
+public:
+    CameraStructBase*          _camsBasesDev;
+    CameraStructBase*          _camsBasesHst;
     std::vector<CameraStruct>  _cams;
     StaticVector<int>          _camsRcs;
     StaticVector<long>         _camsTimes;
@@ -78,8 +80,7 @@ public:
 
     void cameraToDevice( int rc, const StaticVector<int>& tcams );
 
-    int addCam( int rc, int scale,
-                const char* calling_func );
+    int addCam( int rc, int scale );
 
     void getMinMaxdepths(int rc, const StaticVector<int>& tcams, float& minDepth, float& midDepth, float& maxDepth);
 

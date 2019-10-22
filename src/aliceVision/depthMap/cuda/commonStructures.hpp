@@ -1217,11 +1217,6 @@ struct CameraStructBase
 
 // typedef CameraStructBase DeviceCameraStructBase;
 
-struct CameraStructSet
-{
-    CameraStructBase s[2][MAX_CONCURRENT_IMAGES_IN_DEPTHMAP];
-};
-
 // #define ALICEVISION_DEPTHMAP_TEXTURE_USE_UCHAR
 
 #ifdef ALICEVISION_DEPTHMAP_TEXTURE_USE_UCHAR
@@ -1235,15 +1230,6 @@ using CudaRGBA = float4;
 #endif
 
 
-struct CameraStruct
-{
-    const CameraStructBase* param_hst = nullptr;
-    const CameraStructBase* param_dev = nullptr;
-    CudaHostMemoryHeap<CudaRGBA, 2>* tex_rgba_hmh = nullptr;
-    int camId;
-    cudaStream_t stream; // allow async work on cameras used in parallel
-};
-
 struct TexturedArray
 {
     CudaDeviceMemoryPitched<CudaRGBA, 2>* arr = nullptr;
@@ -1252,6 +1238,16 @@ struct TexturedArray
 
 typedef std::vector<TexturedArray> Pyramid;
 typedef std::vector<Pyramid> Pyramids;
+
+struct CameraStruct
+{
+    const CameraStructBase* param_hst = nullptr;
+    const CameraStructBase* param_dev = nullptr;
+    CudaHostMemoryHeap<CudaRGBA, 2>* tex_rgba_hmh = nullptr;
+    Pyramid*                         pyramid = nullptr;
+    int camId;
+    cudaStream_t stream; // allow async work on cameras used in parallel
+};
 
 /**
 * @notes: use normalized coordinates

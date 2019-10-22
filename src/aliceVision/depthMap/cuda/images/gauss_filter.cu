@@ -105,8 +105,8 @@ __host__ void ps_create_gaussian_arr( int deviceId, int scales ) // float delta,
     cudaFreeHost( h_gaussianArray );
 }
 
-__host__ void ps_downscale_gauss( Pyramids& ps_texs_arr,
-                                  int camId, int scale,
+__host__ void ps_downscale_gauss( Pyramid& pyramid,
+                                  int scale,
                                   int w, int h, int radius )
 {
     const dim3 block(32, 2, 1);
@@ -114,9 +114,9 @@ __host__ void ps_downscale_gauss( Pyramids& ps_texs_arr,
 
     downscale_gauss_smooth_lab_kernel
         <<<grid, block>>>
-        ( ps_texs_arr[camId][0].tex,
-          ps_texs_arr[camId][scale].arr->getBuffer(),
-          ps_texs_arr[camId][scale].arr->getPitch(),
+        ( pyramid[0].tex,
+          pyramid[scale].arr->getBuffer(),
+          pyramid[scale].arr->getPitch(),
           w / (scale + 1), h / (scale + 1), scale + 1,
           radius //, 15.5f
           );
@@ -125,6 +125,7 @@ __host__ void ps_downscale_gauss( Pyramids& ps_texs_arr,
  * kernel definitions
  *********************************************************************************/
 
+/* This is a bad Gaussian filter implementation - the Gaussian filter is separable. */
 __global__ void downscale_gauss_smooth_lab_kernel(
     cudaTextureObject_t rc_tex,
     CudaRGBA* texLab, int texLab_p,
