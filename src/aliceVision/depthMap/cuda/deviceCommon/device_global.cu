@@ -4,7 +4,8 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
-#pragma once
+#ifndef ALICEVISION_CUDA_deviceCommon_device_global_cu
+#define ALICEVISION_CUDA_deviceCommon_device_global_cu
 
 #include <aliceVision/depthMap/cuda/commonStructures.hpp>
 
@@ -41,3 +42,6 @@ __device__ __constant__ unsigned char distFcnConst3[3] = {0, 94, 125};
 } // namespace depthMap
 } // namespace aliceVision
 
+#else // ALICEVISION_CUDA_deviceCommon_device_global_cu
+#error "deviceCommon/device_global.cu has been included twice"
+#endif // ALICEVISION_CUDA_deviceCommon_device_global_cu

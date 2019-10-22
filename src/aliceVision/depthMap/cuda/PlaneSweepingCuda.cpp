@@ -213,6 +213,18 @@ PlaneSweepingCuda::PlaneSweepingCuda( int CUDADeviceNo,
                          << "\t- _nImgsInGPUAtTime: " << _nImgsInGPUAtTime << std::endl
                          << "\t- scales: " << _scales);
 
+    if( _nImgsInGPUAtTime > MAX_CONCURRENT_IMAGES_IN_DEPTHMAP )
+    {
+        ALICEVISION_LOG_ERROR( "DepthMap has been compiled with a hard limit of "
+                               << MAX_CONCURRENT_IMAGES_IN_DEPTHMAP
+                               << " concurrent images. "<< std::endl
+                               << "Recompilation required for larger values." << std::endl
+                               << "Change define MAX_CONCURRENT_IMAGES_IN_DEPTHMAP "
+                               << " but consider hardware limits for CUDA constant memory." );
+        exit( -1 );
+
+    }
+
     // allocate global on the device
     ps_deviceAllocate(_pyramids, _nImgsInGPUAtTime, maxImageWidth, maxImageHeight, _scales, _CUDADeviceNo);
 
