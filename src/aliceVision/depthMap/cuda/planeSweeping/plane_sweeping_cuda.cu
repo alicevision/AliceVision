@@ -1109,5 +1109,16 @@ void ps_computeNormalMap(
     printf("gpu elapsed time: %f ms \n", toc(tall));
 }
 
+void ps_loadCameraStructs( CameraStructSet*       dev,
+                           const CameraStructSet* hst )
+{
+    cudaMemcpyKind kind = cudaMemcpyHostToDevice;
+    cudaError_t err = cudaMemcpy( dev,
+                                  hst,
+                                  sizeof(CameraStructSet),
+                                  kind );
+    THROW_ON_CUDA_ERROR( err, "Failed to copy CameraStructs from host to device in " << __FILE__ << ":" << __LINE__ << ": " << cudaGetErrorString(err) );
+}
+
 } // namespace depthMap
 } // namespace aliceVision

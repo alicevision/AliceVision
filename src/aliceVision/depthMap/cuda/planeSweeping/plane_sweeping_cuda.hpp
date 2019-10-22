@@ -169,6 +169,9 @@ void ps_computeNormalMap(
     int scale, int ncamsAllocated, int scales, int wsh, bool verbose,
     float gammaC, float gammaP);
 
+void ps_loadCameraStructs( CameraStructSet*       dev,
+                           const CameraStructSet* hst );
+
 } // namespace depthMap
 } // namespace aliceVision
 

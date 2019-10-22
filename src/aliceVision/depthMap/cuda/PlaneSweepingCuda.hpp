@@ -61,11 +61,11 @@ public:
     const int _CUDADeviceNo = 0;
     Pyramids _pyramids;
 
-    CudaDeviceMemoryPitched<CameraStructBase,2> _camsBasesDev;
-    CudaHostMemoryHeap<CameraStructBase,2>      _camsBasesHst;
-    std::vector<CameraStruct>                   _cams;
-    StaticVector<int>                           _camsRcs;
-    StaticVector<long>                          _camsTimes;
+    CameraStructSet*           _camsBasesDev;
+    CameraStructSet*           _camsBasesHst;
+    std::vector<CameraStruct>  _cams;
+    StaticVector<int>          _camsRcs;
+    StaticVector<long>         _camsTimes;
 
     const int  _nbestkernelSizeHalf = 1;
     int  _nImgsInGPUAtTime = 2;

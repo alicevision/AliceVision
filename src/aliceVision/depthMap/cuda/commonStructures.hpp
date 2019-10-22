@@ -1215,7 +1215,12 @@ struct CameraStructBase
     float3 ZVect;
 };
 
-typedef CameraStructBase DeviceCameraStructBase;
+// typedef CameraStructBase DeviceCameraStructBase;
+
+struct CameraStructSet
+{
+    CameraStructBase s[2][MAX_CONCURRENT_IMAGES_IN_DEPTHMAP];
+};
 
 // #define ALICEVISION_DEPTHMAP_TEXTURE_USE_UCHAR
 
