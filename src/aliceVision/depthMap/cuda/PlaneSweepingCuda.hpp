@@ -65,6 +65,7 @@ private:
 public:
     CameraStructBase*          _camsBasesDev;
     CameraStructBase*          _camsBasesHst;
+    std::vector<int>           _camsBasesHstScale;
     std::vector<CameraStruct>  _cams;
     StaticVector<int>          _camsRcs;
     StaticVector<long>         _camsTimes;

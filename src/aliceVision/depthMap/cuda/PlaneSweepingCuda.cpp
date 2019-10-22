@@ -234,6 +234,8 @@ PlaneSweepingCuda::PlaneSweepingCuda( int CUDADeviceNo,
     err = cudaMallocHost( &_camsBasesHst, MAX_CONCURRENT_IMAGES_IN_DEPTHMAP*sizeof(CameraStructBase) );
     THROW_ON_CUDA_ERROR( err, "Could not allocate set of camera structs in pinned host memory in " << __FILE__ << ":" << __LINE__ << ", " << cudaGetErrorString(err) );
 
+    _camsBasesHstScale.resize( MAX_CONCURRENT_IMAGES_IN_DEPTHMAP, -1 );
+
     _cams     .resize(_nImgsInGPUAtTime);
     _camsRcs  .resize(_nImgsInGPUAtTime);
     _camsTimes.resize(_nImgsInGPUAtTime);
@@ -315,6 +317,8 @@ int PlaneSweepingCuda::addCam( int global_cam_id, int scale )
 
         cps_host_fillCamera(_camsBasesHst[id], global_cam_id, _mp, scale);
 
+        _camsBasesHstScale[id] = scale;
+
         /* Copy data for cached image "global_cam_id" into the host-side data buffer managed
          * by data structure "cam". */
         cps_host_fillCameraData(_ic, cam, global_cam_id, _mp);
@@ -328,6 +332,12 @@ int PlaneSweepingCuda::addCam( int global_cam_id, int scale )
         mvsUtils::printfElapsedTime(t1, "Copy image (camera id="+std::to_string(global_cam_id)+") from CPU to GPU");
 
         _camsRcs[id] = global_cam_id;
+
+        ps_loadCameraStructs( _camsBasesDev, _camsBasesHst, id );
+    }
+    else if( _camsBasesHstScale[id] == scale )
+    {
+        /* do nothing, the CameraStruct at position id is unchanged */
     }
     else
     {
@@ -336,8 +346,13 @@ int PlaneSweepingCuda::addCam( int global_cam_id, int scale )
          * is identical to the old one.
          */
         cps_host_fillCamera(_camsBasesHst[id], global_cam_id, _mp, scale);
+
+        _camsBasesHstScale[id] = scale;
+
         // ps_device_updateCam((CameraStruct*)(*cams)[id], id, _scales);
         ALICEVISION_LOG_DEBUG("Reuse image (camera id=" + std::to_string(global_cam_id) + ") already on the GPU.");
+
+        ps_loadCameraStructs( _camsBasesDev, _camsBasesHst, id );
     }
     _camsTimes[id] = clock();
 
@@ -687,7 +702,6 @@ bool PlaneSweepingCuda::refineRcTcDepthMap(bool useTcOrRcPixSize, int nStepsToRe
 
     int rc_idx = addCam(rc_global_id, scale );
     int tc_idx = addCam(tc_global_id, scale );
-    ps_loadCameraStructs( _camsBasesDev, _camsBasesHst ); // call only if addCam changed cache
 
     // sweep
     ps_refineRcDepthMap(out_simMap.getDataWritable().data(),
@@ -746,7 +760,6 @@ void PlaneSweepingCuda::sweepPixelsToVolume( CudaDeviceMemoryPitched<TSim, 3>& v
         const int tcamCacheId = addCam(tc_global_id, scale );
         CameraStruct& tcam = _cams[tcamCacheId];
 
-        ps_loadCameraStructs( _camsBasesDev, _camsBasesHst );
 
         ALICEVISION_LOG_DEBUG("rc: " << rc_global_id << " tcams: " << tc_global_id);
         ALICEVISION_LOG_DEBUG("rcamCacheId: " << rcamCacheId << ", tcamCacheId: " << tcamCacheId);
@@ -909,7 +922,6 @@ bool PlaneSweepingCuda::SGMoptimizeSimVolume(int rc,
                           << "\t- filteringAxes: " << filteringAxes);
 
     int rc_cam_idx = addCam(rc, scale );
-    ps_loadCameraStructs( _camsBasesDev, _camsBasesHst );
 
     ps_SGMoptimizeSimVolume(_cams[rc_cam_idx],
                             volSim_dmp,
@@ -933,7 +945,6 @@ void PlaneSweepingCuda::SGMretrieveBestDepth(DepthSimMap& bestDepth, CudaDeviceM
     << "\t- volDimZ: " << volDimZ);
 
   int rc_cam_idx = addCam(rcCamId, 1 );
-  ps_loadCameraStructs( _camsBasesDev, _camsBasesHst );
 
   CudaDeviceMemory<float> depths_d(depths.getData().data(), depths.size());
 
@@ -1058,7 +1069,6 @@ bool PlaneSweepingCuda::optimizeDepthSimMapGradientDescent(StaticVector<DepthSim
     long t1 = clock();
 
     int rc_idx = addCam(rc_global_id, scale );
-    ps_loadCameraStructs( _camsBasesDev, _camsBasesHst );
 
     ALICEVISION_LOG_DEBUG("rc: " << rc_global_id);
 

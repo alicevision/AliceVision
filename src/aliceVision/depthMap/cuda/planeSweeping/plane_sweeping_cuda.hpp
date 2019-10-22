@@ -162,7 +162,8 @@ void ps_computeNormalMap(
     float gammaC, float gammaP);
 
 void ps_loadCameraStructs( CameraStructBase*       dev,
-                           const CameraStructBase* hst );
+                           const CameraStructBase* hst,
+                           int                     offset );
 
 } // namespace depthMap
 } // namespace aliceVision

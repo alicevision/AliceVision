@@ -1215,8 +1215,6 @@ struct CameraStructBase
     float3 ZVect;
 };
 
-// typedef CameraStructBase DeviceCameraStructBase;
-
 // #define ALICEVISION_DEPTHMAP_TEXTURE_USE_UCHAR
 
 #ifdef ALICEVISION_DEPTHMAP_TEXTURE_USE_UCHAR

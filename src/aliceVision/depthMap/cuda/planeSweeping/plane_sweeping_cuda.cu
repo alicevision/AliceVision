@@ -1129,12 +1129,13 @@ void ps_computeNormalMap(
 }
 
 void ps_loadCameraStructs( CameraStructBase*       dev,
-                           const CameraStructBase* hst )
+                           const CameraStructBase* hst,
+                           int                     offset )
 {
     cudaMemcpyKind kind = cudaMemcpyHostToDevice;
-    cudaError_t err = cudaMemcpy( dev,
-                                  hst,
-                                  MAX_CONCURRENT_IMAGES_IN_DEPTHMAP*sizeof(CameraStructBase),
+    cudaError_t err = cudaMemcpy( &dev[offset],
+                                  &hst[offset],
+                                  sizeof(CameraStructBase),
                                   kind );
     THROW_ON_CUDA_ERROR( err, "Failed to copy CameraStructs from host to device in " << __FILE__ << ":" << __LINE__ << ": " << cudaGetErrorString(err) );
 }
