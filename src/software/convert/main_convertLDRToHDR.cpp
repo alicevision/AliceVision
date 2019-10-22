@@ -20,6 +20,7 @@
 
 #include <algorithm>
 #include <string>
+#include <sstream>
 #include <regex>
 
 // These constants define the current software version.
@@ -285,10 +286,10 @@ void recoverSourceImage(const image::Image<image::RGBfColor>& hdrImage, hdr::rgb
       }
       meanRecovered[channel] /= hdrImage.size();
     }
-    float offset[3];
+    std::stringstream offsets;
     for(int i=0; i<3; ++i)
-        offset[i] = std::abs(meanRecovered[i] - meanVal[i]);
-    ALICEVISION_LOG_INFO("Offset between target source image and recovered from hdr = " << offset);
+        offsets << std::abs(meanRecovered[i] - meanVal[i]) << ' ';
+    ALICEVISION_LOG_INFO("Offset between target source image and recovered from hdr = " << offsets.str());
 }
 
 
