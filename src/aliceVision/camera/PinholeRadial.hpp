@@ -90,6 +90,22 @@ class PinholeRadialK1 : public Pinhole
     return radius * p;
   }
 
+  /**
+   * @brief Assuming the distortion is a function of radius, estimate the 
+   * maximal undistorted radius for a range of distorted radius.
+   * @param min_radius the minimal radius to consider
+   * @param max_radius the maximal radius to consider
+   * @return the maximal undistorted radius
+   */
+  virtual float getMaximalDistortion(double min_radius, double max_radius) const override {
+
+    float ud = std::sqrt(radial_distortion::bisection_Radius_Solve(_distortionParams, max_radius * max_radius, distoFunctor));
+
+
+    /*Without distortion, obvious*/
+    return ud;
+  }
+
   /// Return the un-distorted pixel (with removed distortion)
   virtual Vec2 get_ud_pixel(const Vec2& p) const override
   {

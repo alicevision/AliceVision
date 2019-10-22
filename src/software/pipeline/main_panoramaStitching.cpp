@@ -432,24 +432,168 @@ public:
    */
   bool build(const std::pair<int, int> & panoramaSize, const geometry::Pose3 & pose, const aliceVision::camera::IntrinsicBase & intrinsics) {
 
-    aliceVision::image::Image<Eigen::Vector2d> buffer_coordinates(panoramaSize.first, panoramaSize.second, false);
-    aliceVision::image::Image<unsigned char> buffer_mask(panoramaSize.first, panoramaSize.second, true, false);
+    /**
+     * First of all :
+     * Compute a bouding box for this image in the panorama.
+     * This bounding box is not optimal and may be too large (not too small).
+     */
+
+    /*Estimate distorted maximal distance from optical center*/
+    Vec2 pts[] = {{0.0f, 0.0f}, {intrinsics.w(), 0.0f}, {intrinsics.w(), intrinsics.h()}, {0.0f, intrinsics.h()}};
+    float max_radius = 0.0;
+    for (int i = 0; i < 4; i++) {
+
+      Vec2 ptmeter = intrinsics.ima2cam(pts[i]);
+      float radius = ptmeter.norm();
+      max_radius = std::max(max_radius, radius);
+    }
+
+    /* Estimate undistorted maximal distance from optical center */
+    float max_radius_distorted = intrinsics.getMaximalDistortion(0.0, max_radius);
+    Vec2 pts_radius[] = {
+        {-max_radius_distorted, -max_radius_distorted}, 
+        {max_radius_distorted, -max_radius_distorted}, 
+        {max_radius_distorted, max_radius_distorted},
+        {-max_radius_distorted, max_radius_distorted}
+      };
+
+
+    /* 
+    Transform bounding box into the panorama frame.
+    Point are on a unit sphere.
+    */
+    Vec3 rotated_pts[4];
+    for (int i = 0; i < 4; i++) {
+      Vec3 pt3d = pts_radius[i].homogeneous().normalized();
+      rotated_pts[i] = pose.rotation().transpose() * pt3d;
+    }
+
+
+    /* Check if the image is across the two side of panorama (angle is modulo 2pi)*/
+    bool crossH;
+    double sum = 0.0;
+    for (int i = 0; i < 4; i++) {
+      int i2 = i + 1;
+      if (i2 > 3) i2 = 0;
+      
+      bool cross = crossHorizontalLoop(rotated_pts[i], rotated_pts[i2]);
+      if (i == 0) crossH = cross;
+      else crossH |= cross;
+    }
+  
+    
+    /* Compute optimal bounds for vertical */
+    int bound_top = panoramaSize.second;
+    int bound_bottom = 0;
+    for (int i = 0; i < 4; i++) {
+      int i2 = i + 1;
+      if (i2 > 3) i2 = 0;
+      
+      Vec3 extremaY = getExtremaY(rotated_pts[i], rotated_pts[i2]);
+
+      Vec2 res;
+      res = SphericalMapping::toEquirectangular(extremaY, panoramaSize.first, panoramaSize.second);
+      bound_top = std::min(int(floor(res(1))), bound_top);
+      bound_bottom = std::max(int(ceil(res(1))), bound_bottom);
+
+      res = SphericalMapping::toEquirectangular(rotated_pts[i], panoramaSize.first, panoramaSize.second);
+      bound_top = std::min(int(floor(res(1))), bound_top);
+      bound_bottom = std::max(int(ceil(res(1))), bound_bottom);
+    }
+
+    /* 
+    Check if our region circumscribe a pole of the sphere :
+    Check that the region projected on the Y=0 plane contains the point (0, 0)
+     */
+    bool pole = isPoleInTriangle(rotated_pts[0], rotated_pts[1], rotated_pts[3]);
+    pole |= isPoleInTriangle(rotated_pts[1], rotated_pts[2], rotated_pts[3]);
+    if (pole) {
+
+      Vec3 normal = (rotated_pts[1] - rotated_pts[0]).cross(rotated_pts[3] - rotated_pts[0]);
+      if (normal(1) > 0) {
+        //Lower pole
+        bound_bottom = panoramaSize.second - 1;
+      }
+      else {
+        //upper pole
+        bound_top = 0;
+      }
+    }
+
+    int height = bound_bottom - bound_top + 1;
+      
+
+    int bound_left, bound_right;
+    int width;
+
+    if (pole) {
+      bound_left = 0;
+      bound_right = panoramaSize.first - 1;
+      width = bound_right - bound_left + 1;
+    }
+    else if (crossH) {
+
+      bound_left = panoramaSize.first;
+      bound_right = 0;
+      for (int i = 0; i < 4; i++) {
+        int i2 = i + 1;
+        if (i2 > 3) i2 = 0;
+
+        if (crossHorizontalLoop(rotated_pts[i], rotated_pts[i2])) {
+          Vec2 res_left = SphericalMapping::toEquirectangular(rotated_pts[i], panoramaSize.first, panoramaSize.second);
+          Vec2 res_right = SphericalMapping::toEquirectangular(rotated_pts[i2], panoramaSize.first, panoramaSize.second);
+
+          if (res_left(0) > res_right(0)) {
+            //border --> right ; Left --> border
+            bound_left = std::min(bound_left, int(floor(res_left(0))));
+            bound_right = std::max(bound_right, int(ceil(res_right(0))));
+          }
+          else {
+            //border --> left ; right --> border
+            bound_left = std::min(bound_left, int(floor(res_right(0))));
+            bound_right = std::max(bound_right, int(ceil(res_left(0))));
+          }
+        }
+      }
+    
+      width = bound_right + 1 + (panoramaSize.first - bound_left + 1);
+
+    } else {
+      bound_left = panoramaSize.first;
+      bound_right = 0;
+
+      for (int i = 0; i < 4; i++) {
+        Vec2 res = SphericalMapping::toEquirectangular(rotated_pts[i], panoramaSize.first, panoramaSize.second);
+        bound_left = std::min(int(floor(res(0))), bound_left);
+        bound_right = std::max(int(ceil(res(0))), bound_right);
+      }
+
+      bound_left = 0;
+      bound_right = panoramaSize.first;
+
+      width = bound_right - bound_left + 1;
+    }
+
+    
+    aliceVision::image::Image<Eigen::Vector2d> buffer_coordinates(width, height, false);
+    aliceVision::image::Image<unsigned char> buffer_mask(width, height, true, false);
+
+
 
     size_t max_x = 0;
     size_t max_y = 0;
     size_t min_x = panoramaSize.first;
     size_t min_y = panoramaSize.second;
 
-    std::vector<size_t> counts_per_column;
-    for (size_t x = 0; x < panoramaSize.first; x++) {
-      counts_per_column.push_back(0);
-    }
+    for (size_t y = 0; y < height; y++) {
 
-    for (size_t y = 0; y < panoramaSize.second; y++) {
+      size_t cy = y + bound_top;
 
-      for (size_t x = 0; x < panoramaSize.first; x++) {
+      for (size_t x = 0; x < width; x++) {
 
-        Vec3 ray = SphericalMapping::fromEquirectangular(Vec2(x,y), panoramaSize.first, panoramaSize.second);
+        size_t cx = x + bound_left;
+
+        Vec3 ray = SphericalMapping::fromEquirectangular(Vec2(cx, cy), panoramaSize.first, panoramaSize.second);
 
         /**
         * Check that this ray should be visible.
@@ -472,9 +616,9 @@ public:
           continue;
         }
 
+
         buffer_coordinates(y, x) = pix_disto;
         buffer_mask(y, x) = 1;
-        counts_per_column[x]++;
   
         min_x = std::min(x, min_x);
         min_y = std::min(y, min_y);
@@ -482,79 +626,22 @@ public:
         max_y = std::max(y, max_y);
       }
     }
+   
+    _offset_x = bound_left + min_x;
+    _offset_y = bound_top + min_y;
+    _real_width = max_x - min_x + 1;
+    _real_height = max_y - min_y + 1;
 
-    bool had_data = false;
-    std::vector<std::pair<int, int>> blocks;
-    std::pair<int, int> block;
-    for (int x = 0; x < panoramaSize.first; x++) {
-      
-      if (counts_per_column[x] > 0) {
-        if (!had_data) {
-          block.first = x;
-        }
-        block.second = x;
-        had_data = true;
-      } 
-      else {
-        if (had_data) {
-          blocks.push_back(block);
-        }
-        had_data = false;
-      }
-    }
-    if (had_data) {
-      blocks.push_back(block);
-    }
-
-    bool divided = false;
-    if (blocks.size() == 2) {
-      if (blocks[0].first == 0 && blocks[1].second == panoramaSize.first - 1) {
-        divided = true;
-      }
-    }
-
-    if (!divided) {
-      _offset_x = min_x;
-      _offset_y = min_y;
-
-      _real_width = max_x - min_x + 1;
-      _real_height = max_y - min_y + 1;
-
-      /* Make sure the buffer is a power of 2 for potential pyramids*/
-      size_t rectified_width = pow(2.0, ceil(log2(double(_real_width))));
-      size_t rectified_height = pow(2.0, ceil(log2(double(_real_height))));
+    /* Make sure the buffer is a power of 2 for potential pyramids*/
+    size_t rectified_width = pow(2.0, ceil(log2(double(_real_width))));
+    size_t rectified_height = pow(2.0, ceil(log2(double(_real_height))));
 
       /* Resize buffers */
-      _coordinates = aliceVision::image::Image<Eigen::Vector2d>(rectified_width, rectified_height, false);
-      _mask = aliceVision::image::Image<unsigned char>(rectified_width, rectified_height, true, 0);
+    _coordinates = aliceVision::image::Image<Eigen::Vector2d>(rectified_width, rectified_height, false);
+    _mask = aliceVision::image::Image<unsigned char>(rectified_width, rectified_height, true, 0);
 
-      _coordinates.block(0, 0, _real_height, _real_width) =  buffer_coordinates.block(_offset_y, _offset_x, _real_height, _real_width);
-      _mask.block(0, 0, _real_height, _real_width) =  buffer_mask.block(_offset_y, _offset_x, _real_height, _real_width);
-    }
-    else {
-      _offset_x = blocks[1].first;
-      _offset_y = min_y;
-
-      size_t width_block_1 = (blocks[0].second - blocks[0].first + 1);
-      size_t width_block_2 = (blocks[1].second - blocks[1].first + 1);
-
-      _real_width = width_block_1 + width_block_2;
-      _real_height = max_y - min_y + 1;
-
-      /* Make sure the buffer is a power of 2 for potential pyramids*/
-      size_t rectified_width = pow(2.0, ceil(log2(double(_real_width))));
-      size_t rectified_height = pow(2.0, ceil(log2(double(_real_height))));
-
-      /* Resize buffers */
-      _coordinates = aliceVision::image::Image<Eigen::Vector2d>(rectified_width, rectified_height, false);
-      _mask = aliceVision::image::Image<unsigned char>(rectified_width, rectified_height, true, 0);
-
-
-      _coordinates.block(0, 0, _real_height, width_block_2) = buffer_coordinates.block(_offset_y, _offset_x, _real_height, width_block_2);
-      _coordinates.block(0, width_block_2, _real_height, width_block_1) = buffer_coordinates.block(_offset_y, 0, _real_height, width_block_1);
-      _mask.block(0, 0, _real_height, width_block_2) = buffer_mask.block(_offset_y, _offset_x, _real_height, width_block_2);
-      _mask.block(0, width_block_2, _real_height, width_block_1) = buffer_mask.block(_offset_y, 0, _real_height, width_block_1);
-    }
+    _coordinates.block(0, 0, _real_height, _real_width) =  buffer_coordinates.block(min_y, min_x, _real_height, _real_width);
+    _mask.block(0, 0, _real_height, _real_width) =  buffer_mask.block(min_y, min_x, _real_height, _real_width);
 
     return true;
   }
@@ -581,6 +668,56 @@ public:
 
   const aliceVision::image::Image<unsigned char> & getMask() const {
     return _mask;
+  }
+
+private:
+  Vec3 getExtremaY(const Vec3 & pt1, const Vec3 & pt2) {
+    Vec3 delta = pt2 - pt1;
+    double dx = delta(0);
+    double dy = delta(1);
+    double dz = delta(2);
+    double sx = pt1(0);
+    double sy = pt1(1);
+    double sz = pt1(2);
+
+    double ot_y = -(dx*sx*sy - (dy*sx)*(dy*sx) - (dy*sz)*(dy*sz) + dz*sy*sz)/(dx*dx*sy - dx*dy*sx - dy*dz*sz + dz*dz*sy);
+
+    Vec3 pt_extrema = pt1 + ot_y * delta;
+
+    return pt_extrema.normalized();
+  }
+
+  bool crossHorizontalLoop(const Vec3 & pt1, const Vec3 & pt2) {
+    Vec3 direction = pt2 - pt1;
+
+    /*Vertical line*/
+    if (std::abs(direction(0)) < 1e-12) {
+      return false;
+    }
+
+    double t = - pt1(0) / direction(0); 
+    Vec3 cross = pt1 + direction * t;
+
+    if (t >= 0.0 && t < 1.0) {
+      if (cross(2) < 0.0) {
+        return true;
+      } 
+    }
+
+    return false;
+  }
+
+  bool isPoleInTriangle(const Vec3 & pt1, const Vec3 & pt2, const Vec3 & pt3) {
+   
+    double a = (pt2.x()*pt3.z() - pt3.x()*pt2.z())/(pt1.x()*pt2.z() - pt1.x()*pt3.z() - pt2.x()*pt1.z() + pt2.x()*pt3.z() + pt3.x()*pt1.z() - pt3.x()*pt2.z());
+    double b = (-pt1.x()*pt3.z() + pt3.x()*pt1.z())/(pt1.x()*pt2.z() - pt1.x()*pt3.z() - pt2.x()*pt1.z() + pt2.x()*pt3.z() + pt3.x()*pt1.z() - pt3.x()*pt2.z());
+    double c = 1.0 - a - b;
+
+    if (a < 0.0 || a > 1.0) return false;
+    if (b < 0.0 || b > 1.0) return false;
+    if (c < 0.0 || c > 1.0) return false;
+ 
+    return true;
   }
 
 private:
@@ -1256,7 +1393,7 @@ int main(int argc, char **argv) {
   /**
    * Create compositer
   */
-  LaplacianCompositer compositer(size_t(panoramaSize.first), size_t(panoramaSize.second));
+  AlphaCompositer compositer(size_t(panoramaSize.first), size_t(panoramaSize.second));
 
 
   /**
@@ -1282,12 +1419,13 @@ int main(int argc, char **argv) {
     const camera::IntrinsicBase & intrinsic = *sfmData.getIntrinsicPtr(view.getIntrinsicId());
 
 
-    /*if (pos == 3 || pos == 7 || pos == 15)*/ {
+     {
     /**
      * Prepare coordinates map
     */
     CoordinatesMap map;
     map.build(panoramaSize, camPose, intrinsic);
+
 
     /**
      * Load image and convert it to linear colorspace
@@ -1295,16 +1433,6 @@ int main(int argc, char **argv) {
     std::string imagePath = view.getImagePath();
     image::Image<image::RGBfColor> source;
     image::readImage(imagePath, source, image::EImageColorSpace::LINEAR);
-
-    float min = 10000.0;
-    float max = -10000.0;
-    for (int i = 0; i < source.Height(); i++) {
-      for (int j = 0; j < source.Width(); j++) {
-        min = std::min(min, source(i, j).r());
-        max = std::max(max, source(i, j).r());
-      }
-    }
-
     
 
     /**
@@ -1312,12 +1440,10 @@ int main(int argc, char **argv) {
      */
     GaussianWarper warper;
     warper.warp(map, source);
-
     
     AlphaBuilder alphabuilder;
     alphabuilder.build(map, intrinsic);
     
-
     /**
      *Composite image into output
     */
@@ -1330,7 +1456,7 @@ int main(int argc, char **argv) {
     image::writeImage(filename, panorama, image::EImageColorSpace::NO_CONVERSION);
     }
 
-    {
+   {
     const aliceVision::image::Image<image::RGBfColor> & panorama = warper.getColor();
     char filename[512];
     sprintf(filename, "%s_source_%d.exr", outputPanorama.c_str(), pos);

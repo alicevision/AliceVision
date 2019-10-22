@@ -371,6 +371,19 @@ struct IntrinsicBase
   }
 
   /**
+   * @brief Assuming the distortion is a function of radius, estimate the 
+   * maximal undistorted radius for a range of distorted radius.
+   * @param min_radius the minimal radius to consider
+   * @param max_radius the maximal radius to consider
+   * @return the maximal undistorted radius
+   */
+  virtual float getMaximalDistortion(double min_radius, double max_radius) const {
+
+    /*Without distortion, obvious*/
+    return max_radius;
+  }
+
+  /**
    * @brief Generate an unique Hash from the camera parameters (used for grouping)
    * @return Unique Hash from the camera parameters
    */
