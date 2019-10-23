@@ -444,6 +444,7 @@ public:
     if (!computeCoarseBB(coarse_bbox, panoramaSize, pose, intrinsics)) {
       return false;
     }
+    
 
     /* Effectively compute the warping map */
     aliceVision::image::Image<Eigen::Vector2d> buffer_coordinates(coarse_bbox.width, coarse_bbox.height, false);
@@ -509,6 +510,11 @@ public:
     }
    
     _offset_x = coarse_bbox.left + min_x;
+    if (_offset_x > panoramaSize.first) {
+      /*The coarse bounding box may cross the borders where as the true coordinates may not*/
+      int ox = int(_offset_x) - int(panoramaSize.first);
+      _offset_x = ox;
+    }
     _offset_y = coarse_bbox.top + min_y;
     _real_width = max_x - min_x + 1;
     _real_height = max_y - min_y + 1;
@@ -1228,7 +1234,7 @@ public:
     size_t oy = warper.getOffsetY();
     size_t pwidth = _panorama.Width();
     size_t pheight = _panorama.Height();
-
+ 
     /**
      * Create a copy of panorama related pixels
      */
@@ -1248,7 +1254,6 @@ public:
       panorama_subcolor.block(0, 0, warper.getHeight(), warper.getWidth()) = _panorama.block(oy, ox, warper.getHeight(), warper.getWidth());
       panorama_submask.block(0, 0, warper.getHeight(), warper.getWidth()) = _mask.block(oy, ox, warper.getHeight(), warper.getWidth());
     }
-    
 
     /**
      * Compute optimal scale
@@ -1308,7 +1313,7 @@ public:
         }
       }
     }
-
+    
     Eigen::MatrixXf kernel = gaussian_kernel(5, 2.0f);
 
     /*Create scales*/
@@ -1554,8 +1559,10 @@ int main(int argc, char **argv) {
     return EXIT_FAILURE;
   }
 
- 
-  //computeOptimalPanoramaSize();
+  std::pair<int, int> optimalPanoramaSize;
+  if (computeOptimalPanoramaSize(optimalPanoramaSize, sfmData)) {
+    ALICEVISION_LOG_INFO("Optimal panorama size : "  << optimalPanoramaSize.first << "x" << optimalPanoramaSize.second);
+  }
 
   /**
    * Create compositer
@@ -1584,7 +1591,6 @@ int main(int argc, char **argv) {
     const geometry::Pose3 camPose = sfmData.getPose(view).getTransform();
     const camera::IntrinsicBase & intrinsic = *sfmData.getIntrinsicPtr(view.getIntrinsicId());
 
-
     /**
      * Prepare coordinates map
     */
@@ -1606,6 +1612,13 @@ int main(int argc, char **argv) {
     ALICEVISION_LOG_INFO("Warp\n");
     GaussianWarper warper;
     warper.warp(map, source);
+
+    {
+    const aliceVision::image::Image<image::RGBfColor> & panorama = warper.getColor();
+    char filename[512];
+    sprintf(filename, "%s_source_%d.exr", outputPanorama.c_str(), pos);
+    image::writeImage(filename, panorama, image::EImageColorSpace::SRGB);
+    }
     
     AlphaBuilder alphabuilder;
     alphabuilder.build(map, intrinsic);
@@ -1615,6 +1628,7 @@ int main(int argc, char **argv) {
     */
     ALICEVISION_LOG_INFO("Composite\n");
     compositer.append(warper, alphabuilder);
+    
 
     {
     const aliceVision::image::Image<image::RGBfColor> & panorama = compositer.getPanorama();
@@ -1622,13 +1636,7 @@ int main(int argc, char **argv) {
     sprintf(filename, "%s_intermediate_%d.exr", outputPanorama.c_str(), pos);
     image::writeImage(filename, panorama, image::EImageColorSpace::SRGB);
     }
-
-    {
-    const aliceVision::image::Image<image::RGBfColor> & panorama = warper.getColor();
-    char filename[512];
-    sprintf(filename, "%s_source_%d.exr", outputPanorama.c_str(), pos);
-    image::writeImage(filename, panorama, image::EImageColorSpace::SRGB);
-    }
+    
     pos++;
   }
 
