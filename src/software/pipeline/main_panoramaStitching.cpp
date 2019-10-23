@@ -575,19 +575,25 @@ public:
     }
 
     
+    /* Effectively compute the warping map */
     aliceVision::image::Image<Eigen::Vector2d> buffer_coordinates(width, height, false);
     aliceVision::image::Image<unsigned char> buffer_mask(width, height, true, false);
-
-
 
     size_t max_x = 0;
     size_t max_y = 0;
     size_t min_x = panoramaSize.first;
     size_t min_y = panoramaSize.second;
-
+    
+    #pragma omp parallel for reduction(min: min_x, min_y) reduction(max: max_x, max_y)
     for (size_t y = 0; y < height; y++) {
 
       size_t cy = y + bound_top;
+
+      size_t row_max_x = 0;
+      size_t row_max_y = 0;
+      size_t row_min_x = panoramaSize.first;
+      size_t row_min_y = panoramaSize.second;
+
 
       for (size_t x = 0; x < width; x++) {
 
@@ -620,11 +626,16 @@ public:
         buffer_coordinates(y, x) = pix_disto;
         buffer_mask(y, x) = 1;
   
-        min_x = std::min(x, min_x);
-        min_y = std::min(y, min_y);
-        max_x = std::max(x, max_x);
-        max_y = std::max(y, max_y);
+        row_min_x = std::min(x, row_min_x);
+        row_min_y = std::min(y, row_min_y);
+        row_max_x = std::max(x, row_max_x);
+        row_max_y = std::max(y, row_max_y);
       }
+
+      min_x = std::min(row_min_x, min_x);
+      min_y = std::min(row_min_y, min_y);
+      max_x = std::max(row_max_x, max_x);
+      max_y = std::max(row_max_y, max_y);
     }
    
     _offset_x = bound_left + min_x;
@@ -1068,6 +1079,7 @@ public:
         
         size_t pano_j = warper.getOffsetX() + j;
         if (pano_j >= _panorama.Width()) {
+          pano_j = pano_j - _panorama.Width();
           continue;
         }
 
@@ -1326,7 +1338,7 @@ int main(int argc, char **argv) {
   /**
    * Description of optional parameters
    */
-  std::pair<int, int> panoramaSize = {1024, 512};
+  std::pair<int, int> panoramaSize = {20000, 10000};
   po::options_description optionalParams("Optional parameters");
   allParams.add(optionalParams);
 
@@ -1393,7 +1405,7 @@ int main(int argc, char **argv) {
   /**
    * Create compositer
   */
-  AlphaCompositer compositer(size_t(panoramaSize.first), size_t(panoramaSize.second));
+  LaplacianCompositer compositer(size_t(panoramaSize.first), size_t(panoramaSize.second));
 
 
   /**
@@ -1419,17 +1431,16 @@ int main(int argc, char **argv) {
     const camera::IntrinsicBase & intrinsic = *sfmData.getIntrinsicPtr(view.getIntrinsicId());
 
 
-     {
     /**
      * Prepare coordinates map
     */
     CoordinatesMap map;
     map.build(panoramaSize, camPose, intrinsic);
 
-
     /**
      * Load image and convert it to linear colorspace
      */
+    ALICEVISION_LOG_INFO("Load image\n");
     std::string imagePath = view.getImagePath();
     image::Image<image::RGBfColor> source;
     image::readImage(imagePath, source, image::EImageColorSpace::LINEAR);
@@ -1438,6 +1449,7 @@ int main(int argc, char **argv) {
     /**
      * Warp image
      */
+    ALICEVISION_LOG_INFO("Warp\n");
     GaussianWarper warper;
     warper.warp(map, source);
     
@@ -1447,6 +1459,7 @@ int main(int argc, char **argv) {
     /**
      *Composite image into output
     */
+   ALICEVISION_LOG_INFO("Composite\n");
     compositer.append(warper, alphabuilder);
 
     {
@@ -1456,12 +1469,11 @@ int main(int argc, char **argv) {
     image::writeImage(filename, panorama, image::EImageColorSpace::NO_CONVERSION);
     }
 
-   {
+    {
     const aliceVision::image::Image<image::RGBfColor> & panorama = warper.getColor();
     char filename[512];
     sprintf(filename, "%s_source_%d.exr", outputPanorama.c_str(), pos);
     image::writeImage(filename, panorama, image::EImageColorSpace::NO_CONVERSION);
-    }
     }
     pos++;
   }
