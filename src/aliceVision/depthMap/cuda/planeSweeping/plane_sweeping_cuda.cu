@@ -729,8 +729,8 @@ void ps_computeSimilarityVolume(CudaDeviceMemoryPitched<TSim, 3>& volBestSim_dmp
       ALICEVISION_CU_PRINT_DEBUG("====================");
       Pyramid& rc_pyramid = *rcam.pyramid;
       Pyramid& tc_pyramid = *tcam.pyramid;
-      cudaTextureObject_t rc_tex = rc_pyramid[scale].tex;
-      cudaTextureObject_t tc_tex = tc_pyramid[scale].tex;
+      cudaTextureObject_t rc_tex = rc_pyramid[s].tex;
+      cudaTextureObject_t tc_tex = tc_pyramid[s].tex;
       volume_slice_kernel
             <<<volume_slice_kernel_grid, volume_slice_kernel_block>>>
             ( rc_tex,
