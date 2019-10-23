@@ -33,23 +33,42 @@ namespace{
   {
     return cv::Mat(result.rows(), result.cols(), CV_8UC1, result.data(), result.rowStride());
   }
+
+  void rotateHue(cv::Mat & hsv, uint8_t delta)
+  {
+    // cannot use cv::add because it saturates the output.
+    // do not use forEach because this call is already parallelized.
+    for (int r = 0; r < hsv.rows; r++)
+    {
+      for ( int c = 0; c < hsv.cols; c++)
+      {
+        auto & pixel = hsv.at<cv::Point3_<uint8_t>>(r, c);
+        pixel.x += delta;
+      }
+    }
+  }
 }
 
 void hsv(OutImage& result, const InImagePath& inputPath, float hue, float hueRange, float minSaturation, float minValue)
 {
+  // HSV's hue channel is an rotation angle: it wraps at 0deg/360deg.
+  // Hue for blue is 240deg. With hueRange=0.1, pixels are selected if (hue > 204deg && hue < 276deg).
+  // Hue for red is 0deg. With hueRange=0.1, pixels are selected if (hue < 36deg && hue > 324deg).
+  // For consistency, we rotate the hue channel so the selected hue is always at 180deg.
+  // Then, with hueRange=0.1, pixels are selected if (hue > 180-36deg && hue < 180+36deg).
   image::Image<image::RGBColor> input;
   image::readImage(inputPath, input, image::EImageColorSpace::SRGB);
 
   cv::Mat input_hsv;
   cv::eigen2cv(input.GetMat(), input_hsv);  // copy the buffer, but a copy is needed to convert to HSV colorspace anyway.
-  cv::cvtColor(input_hsv, input_hsv, cv::COLOR_RGB2HSV);
+  cv::cvtColor(input_hsv, input_hsv, cv::COLOR_RGB2HSV_FULL);  // "_FULL" to encode hue in the [0, 255] range.
+  rotateHue(input_hsv, uint8_t((0.5f - hue)*256.f));  // hue == 0 <=> hue == 1
 
   result.resize(input.Width(), input.Height(), false);  // allocate un-initialized
   const cv::Mat result_cv = wrapCvMask(result);
 
-  // OpenCV hue is in [0, 179] range -> remap [0, 1] -> [0, 179]
-  const uint8_t lowH = uint8_t(std::max(0.f, hue - hueRange) * 180.f);
-  const uint8_t highH = uint8_t(std::min(1.f, hue + hueRange) * 180.f);
+  const uint8_t lowH = remap_float2uint8(0.5f - hueRange);
+  const uint8_t highH = remap_float2uint8(0.5f + hueRange);
   const uint8_t lowS = remap_float2uint8(minSaturation);
   const uint8_t highS = 255;
   const uint8_t lowV = remap_float2uint8(minValue);
