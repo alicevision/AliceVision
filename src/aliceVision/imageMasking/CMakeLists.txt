@@ -1,6 +1,7 @@
 # Headers
 set(imageMasking_files_headers
   imageMasking.hpp
+  eigen2cvHelpers.hpp
 )
 
 # Sources
