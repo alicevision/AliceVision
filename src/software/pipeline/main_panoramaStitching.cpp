@@ -31,7 +31,7 @@ float sigmoid(float x, float sigwidth, float sigMid)
   return 1.0f / (1.0f + expf(10.0f * ((x - sigMid) / sigwidth)));
 }
 
-Eigen::MatrixXf gaussian_kernel(size_t kernel_length, float sigma) {
+Eigen::VectorXf gaussian_kernel_vector(size_t kernel_length, float sigma) {
   
   Eigen::VectorXd x;
   x.setLinSpaced(kernel_length + 1, -sigma, +sigma);
@@ -46,14 +46,25 @@ Eigen::MatrixXf gaussian_kernel(size_t kernel_length, float sigma) {
     k1d(i) = cdf(i + 1) - cdf(i);
   }
 
-  Eigen::MatrixXd K = k1d * k1d.transpose();
+  double sum = k1d.sum();
+  k1d = k1d / sum;
+
+  return k1d.cast<float>();
+}
+
+Eigen::MatrixXf gaussian_kernel(size_t kernel_length, float sigma) {
+  
+  Eigen::VectorXf k1d = gaussian_kernel_vector(kernel_length, sigma);
+  Eigen::MatrixXf K = k1d * k1d.transpose();
   
 
   double sum = K.sum();
   K = K / sum;
 
-  return K.cast<float>();
+  return K;
 }
+
+
 
 bool convolve(image::Image<float> & output, const image::Image<float> & input, const image::Image<unsigned char> & mask, const Eigen::MatrixXf & kernel) {
 
@@ -1182,7 +1193,6 @@ public:
         size_t pano_j = warper.getOffsetX() + j;
         if (pano_j >= _panorama.Width()) {
           pano_j = pano_j - _panorama.Width();
-          continue;
         }
 
         if (!_mask(pano_i, pano_j)) {
@@ -1399,14 +1409,6 @@ public:
       }
     }
     
-    /*auto & tosave = camera_weightmaps[0];
-    for (int i = 0; i < camera_weights.Height(); i++) {
-      for (int j = 0; j < camera_weights.Width(); j++) {
-        tosave(i, j) *= 100.0f;
-      }
-    }*/
-    /*image::writeImage("/home/servantf/test.png", camera_colors[0], image::EImageColorSpace::SRGB);
-    image::writeImage("/home/servantf/test2.png", camera_colors[scales - 1], image::EImageColorSpace::SRGB);*/
 
     return true;
   }
@@ -1562,19 +1564,21 @@ int main(int argc, char **argv) {
   std::pair<int, int> optimalPanoramaSize;
   if (computeOptimalPanoramaSize(optimalPanoramaSize, sfmData)) {
     ALICEVISION_LOG_INFO("Optimal panorama size : "  << optimalPanoramaSize.first << "x" << optimalPanoramaSize.second);
+    panoramaSize = optimalPanoramaSize;
   }
 
   /**
    * Create compositer
   */
-  LaplacianCompositer compositer(size_t(panoramaSize.first), size_t(panoramaSize.second));
+  AlphaCompositer compositer(size_t(panoramaSize.first), size_t(panoramaSize.second));
 
   /**
    * Preprocessing per view
    */
   size_t pos = 0;
   for (auto & viewIt: sfmData.getViews()) {
-  
+    
+    /*if (pos == 12) */{
     /**
      * Retrieve view
      */
@@ -1628,16 +1632,17 @@ int main(int argc, char **argv) {
     */
     ALICEVISION_LOG_INFO("Composite\n");
     compositer.append(warper, alphabuilder);
+    }
     
+    pos++;
+  }
 
-    {
+  {
+    ALICEVISION_LOG_INFO("Save\n");
     const aliceVision::image::Image<image::RGBfColor> & panorama = compositer.getPanorama();
     char filename[512];
     sprintf(filename, "%s_intermediate_%d.exr", outputPanorama.c_str(), pos);
     image::writeImage(filename, panorama, image::EImageColorSpace::SRGB);
-    }
-    
-    pos++;
   }
 
   return EXIT_SUCCESS;
