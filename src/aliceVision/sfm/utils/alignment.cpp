@@ -7,6 +7,7 @@
 
 #include <aliceVision/sfm/utils/alignment.hpp>
 #include <aliceVision/geometry/rigidTransformation3D.hpp>
+#include <aliceVision/stl/regex.hpp>
 
 #include <boost/accumulators/accumulators.hpp>
 #include <boost/accumulators/statistics/stats.hpp>
@@ -561,6 +562,8 @@ void computeNewCoordinateSystemFromSingleCamera(const sfmData::SfMData& sfmData,
   IndexT viewId = -1;
   sfmData::EEXIFOrientation orientation = sfmData::EEXIFOrientation::UNKNOWN;
 
+  std::regex cameraRegex = simpleFilterToRegex_noThrow(camName);
+
   try
   {
     viewId = boost::lexical_cast<IndexT>(camName);
@@ -576,17 +579,15 @@ void computeNewCoordinateSystemFromSingleCamera(const sfmData::SfMData& sfmData,
   {
     for(const auto & view : sfmData.getViews())
     {
-      std::string path = view.second->getImagePath();      
-      std::size_t found = path.find(camName);
-      orientation = view.second->getMetadataOrientation();
-      if (found!=std::string::npos)
+      const std::string path = view.second->getImagePath();
+      if (std::regex_match(path, cameraRegex))
       {
-          viewId = view.second->getViewId();          
+          orientation = view.second->getMetadataOrientation();
+          viewId = view.second->getViewId();
           break;
       }
     }
   }
-
 
   if(viewId == -1)
     throw std::invalid_argument("The camera name \"" + camName + "\" is not found in the sfmData.");
