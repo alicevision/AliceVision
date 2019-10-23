@@ -186,7 +186,7 @@ void RigSequence::setupRelativePoses()
   {
     for(const auto& subPoseInfoPair : _rigInfoPerSubPose)
     {
-      if(subPoseInfoPair.second.nbPose > 20 &&
+      if(subPoseInfoPair.second.nbPose > _params.minNbCamerasForCalibration &&
          !subPoseInfoPair.second.isInitialized)
         subPosesToInitialized.emplace_back(subPoseInfoPair.first);
     }

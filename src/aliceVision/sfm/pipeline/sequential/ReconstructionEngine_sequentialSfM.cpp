@@ -7,7 +7,6 @@
 
 #include <aliceVision/sfm/pipeline/sequential/ReconstructionEngine_sequentialSfM.hpp>
 #include <aliceVision/sfm/pipeline/RelativePoseInfo.hpp>
-#include <aliceVision/sfm/pipeline/RigSequence.hpp>
 #include <aliceVision/sfm/utils/statistics.hpp>
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
 #include <aliceVision/sfm/BundleAdjustmentCeres.hpp>
@@ -471,7 +470,7 @@ double ReconstructionEngine_sequentialSfM::incrementalReconstruction()
       ++resectionId;
     }
 
-    if(_params.useRigConstraint && !_sfmData.getRigs().empty())
+    if(_params.rig.useRigConstraint && !_sfmData.getRigs().empty())
     {
       ALICEVISION_LOG_INFO("Rig(s) calibration start");
 
@@ -670,7 +669,7 @@ bool ReconstructionEngine_sequentialSfM::bundleAdjustment(std::set<IndexT>& newR
     }
   }
 
-  BundleAdjustmentCeres BA(options);
+  BundleAdjustmentCeres BA(options, _params.minNbCamerasToRefinePrincipalPoint);
 
   // give the local strategy graph is local strategy is enable
   if(enableLocalStrategy)
@@ -830,7 +829,7 @@ void ReconstructionEngine_sequentialSfM::calibrateRigs(std::set<IndexT>& updated
 {
   for(const std::pair<IndexT, Rig>& rigPair : _sfmData.getRigs())
   {
-    RigSequence sequence(_sfmData, rigPair.first);
+    RigSequence sequence(_sfmData, rigPair.first, _params.rig);
     sequence.init(_map_tracksPerView);
     sequence.updateSfM(updatedViews);
   }
