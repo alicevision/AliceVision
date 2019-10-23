@@ -45,7 +45,7 @@ struct ResidualErrorConstraintFunctor_Pinhole
   };
 
   template <typename T>
-  void lift(const T* const cam_K, const Vec3 pt, Eigen::Vector< T, 3> & out) const
+  void lift(const T* const cam_K, const Vec3 pt, Eigen::Matrix< T, 3, 1> & out) const
   {
     const T& focal = cam_K[OFFSET_FOCAL_LENGTH];
     const T& principal_point_x = cam_K[OFFSET_PRINCIPAL_POINT_X];
@@ -58,13 +58,13 @@ struct ResidualErrorConstraintFunctor_Pinhole
   }
 
   template <typename T>
-  void unlift(const T* const cam_K, const Eigen::Vector<T, 3> & pt, Eigen::Vector<T, 3> & out) const
+  void unlift(const T* const cam_K, const Eigen::Matrix< T, 3, 1> & pt, Eigen::Matrix< T, 3, 1> & out) const
   {
     const T& focal = cam_K[OFFSET_FOCAL_LENGTH];
     const T& principal_point_x = cam_K[OFFSET_PRINCIPAL_POINT_X];
     const T& principal_point_y = cam_K[OFFSET_PRINCIPAL_POINT_Y];
 
-    Eigen::Vector<T, 3> proj_pt = pt / pt(2);
+    Eigen::Matrix< T, 3, 1> proj_pt = pt / pt(2);
 
     out(0) = proj_pt(0) * focal + principal_point_x;
     out(1) = proj_pt(1) * focal + principal_point_y;
@@ -87,7 +87,7 @@ struct ResidualErrorConstraintFunctor_Pinhole
   {
     Eigen::Matrix<T, 3, 3> oneRo, twoRo, twoRone;
     
-    Eigen::Vector<T, 3> pt3d_1;
+    Eigen::Matrix< T, 3, 1> pt3d_1;
 
     lift(cam_K, m_pos_2dpoint_first, pt3d_1);
 
@@ -96,12 +96,12 @@ struct ResidualErrorConstraintFunctor_Pinhole
 
     twoRone = twoRo * oneRo.transpose();
 
-    Eigen::Vector<T, 3> pt3d_2_est = twoRone * pt3d_1;
+    Eigen::Matrix< T, 3, 1> pt3d_2_est = twoRone * pt3d_1;
 
-    Eigen::Vector<T, 3> pt2d_2_est;
+    Eigen::Matrix< T, 3, 1> pt2d_2_est;
     unlift(cam_K, pt3d_2_est, pt2d_2_est);
 
-    Eigen::Vector<T, 3> residual = pt2d_2_est - m_pos_2dpoint_second;
+    Eigen::Matrix< T, 3, 1> residual = pt2d_2_est - m_pos_2dpoint_second;
 
     out_residuals[0] = residual(0);
     out_residuals[1] = residual(1);
@@ -147,7 +147,7 @@ struct ResidualErrorConstraintFunctor_PinholeRadialK1
   }
 
   template <typename T>
-  void lift(const T* const cam_K, const Vec3 pt, Eigen::Vector<T, 3> & out) const
+  void lift(const T* const cam_K, const Vec3 pt, Eigen::Matrix< T, 3, 1> & out) const
   {
     const T& focal = cam_K[OFFSET_FOCAL_LENGTH];
     const T& principal_point_x = cam_K[OFFSET_PRINCIPAL_POINT_X];
@@ -183,7 +183,7 @@ struct ResidualErrorConstraintFunctor_PinholeRadialK1
   }
 
   template <typename T>
-  void unlift(const T* const cam_K, const Eigen::Vector<T, 3> & pt, Eigen::Vector<T, 3> & out) const
+  void unlift(const T* const cam_K, const Eigen::Matrix< T, 3, 1> & pt, Eigen::Matrix< T, 3, 1> & out) const
   {
     const T& focal = cam_K[OFFSET_FOCAL_LENGTH];
     const T& principal_point_x = cam_K[OFFSET_PRINCIPAL_POINT_X];
@@ -191,7 +191,7 @@ struct ResidualErrorConstraintFunctor_PinholeRadialK1
     const T& k1 = cam_K[OFFSET_DISTO_K1];
 
     //Project on plane
-    Eigen::Vector<T, 3> proj_pt = pt / pt(2);
+    Eigen::Matrix< T, 3, 1> proj_pt = pt / pt(2);
 
     //Apply distortion
     const T r2 = proj_pt(0)*proj_pt(0) + proj_pt(1)*proj_pt(1);
@@ -221,7 +221,7 @@ struct ResidualErrorConstraintFunctor_PinholeRadialK1
   {
     Eigen::Matrix<T, 3, 3> oneRo, twoRo, twoRone;
     
-    Eigen::Vector<T, 3> pt3d_1;
+    Eigen::Matrix< T, 3, 1> pt3d_1;
 
     //From pixel to meters
     lift(cam_K, m_pos_2dpoint_first, pt3d_1);
@@ -232,14 +232,14 @@ struct ResidualErrorConstraintFunctor_PinholeRadialK1
     twoRone = twoRo * oneRo.transpose();
 
     //Transform point
-    Eigen::Vector<T, 3> pt3d_2_est = twoRone * pt3d_1;
+    Eigen::Matrix< T, 3, 1> pt3d_2_est = twoRone * pt3d_1;
 
     //Project back to image space in pixels
-    Eigen::Vector<T, 3> pt2d_2_est;
+    Eigen::Matrix< T, 3, 1> pt2d_2_est;
     unlift(cam_K, pt3d_2_est, pt2d_2_est);
 
     //Compute residual
-    Eigen::Vector<T, 3> residual = pt2d_2_est - m_pos_2dpoint_second;
+    Eigen::Matrix< T, 3, 1> residual = pt2d_2_est - m_pos_2dpoint_second;
 
     out_residuals[0] = residual(0);
     out_residuals[1] = residual(1);
@@ -281,7 +281,7 @@ struct ResidualErrorConstraintFunctor_PinholeFisheye
   };
 
   template <typename T>
-  void lift(const T* const cam_K, const Vec3 pt, Eigen::Vector<T, 3> & out) const
+  void lift(const T* const cam_K, const Vec3 pt, Eigen::Matrix< T, 3, 1> & out) const
   {
     const T& focal = cam_K[OFFSET_FOCAL_LENGTH];
     const T& principal_point_x = cam_K[OFFSET_PRINCIPAL_POINT_X];
@@ -341,7 +341,7 @@ struct ResidualErrorConstraintFunctor_PinholeFisheye
   }
 
   template <typename T>
-  void unlift(const T* const cam_K, const Eigen::Vector<T, 3> & pt, Eigen::Vector<T, 3> & out) const
+  void unlift(const T* const cam_K, const Eigen::Matrix< T, 3, 1> & pt, Eigen::Matrix< T, 3, 1> & out) const
   {
     const T& focal = cam_K[OFFSET_FOCAL_LENGTH];
     const T& principal_point_x = cam_K[OFFSET_PRINCIPAL_POINT_X];
@@ -352,7 +352,7 @@ struct ResidualErrorConstraintFunctor_PinholeFisheye
     const T& k4 = cam_K[OFFSET_DISTO_K4];
 
     //Project on plane
-    Eigen::Vector<T, 3> proj_pt = pt / pt(2);
+    Eigen::Matrix< T, 3, 1> proj_pt = pt / pt(2);
 
     //Apply distortion
     const T x_u = proj_pt(0);
@@ -398,7 +398,7 @@ struct ResidualErrorConstraintFunctor_PinholeFisheye
   {
     Eigen::Matrix<T, 3, 3> oneRo, twoRo, twoRone;
     
-    Eigen::Vector<T, 3> pt3d_1;
+    Eigen::Matrix< T, 3, 1> pt3d_1;
 
     //From pixel to meters
     lift(cam_K, m_pos_2dpoint_first, pt3d_1);
@@ -409,14 +409,14 @@ struct ResidualErrorConstraintFunctor_PinholeFisheye
     twoRone = twoRo * oneRo.transpose();
 
     //Transform point
-    Eigen::Vector<T, 3> pt3d_2_est = twoRone * pt3d_1;
+    Eigen::Matrix< T, 3, 1> pt3d_2_est = twoRone * pt3d_1;
 
     //Project back to image space in pixels
-    Eigen::Vector<T, 3> pt2d_2_est;
+    Eigen::Matrix< T, 3, 1> pt2d_2_est;
     unlift(cam_K, pt3d_2_est, pt2d_2_est);
 
     //Compute residual
-    Eigen::Vector<T, 3> residual = pt2d_2_est - m_pos_2dpoint_second;
+    Eigen::Matrix< T, 3, 1> residual = pt2d_2_est - m_pos_2dpoint_second;
 
     out_residuals[0] = residual(0);
     out_residuals[1] = residual(1);
