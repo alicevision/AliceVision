@@ -1109,19 +1109,24 @@ bool PlaneSweepingCuda::computeNormalMap(
 
   ALICEVISION_LOG_DEBUG("computeNormalMap rc: " << rc);
 
-  CameraStruct camera;
-
   // Fill Camera Struct
-  CudaDeviceMemoryPitched<CameraStructBase, 2> camsBasesDev(CudaSize<2>(1, 1));
-  CudaHostMemoryHeap<CameraStructBase, 2>      camsBasesHst(CudaSize<2>(1, 1));
-  camera.param_hst    = &camsBasesHst(0, 0);
-  camera.param_dev    = &camsBasesDev(0, 0);
-  camera.tex_rgba_hmh = 0; // texture remains invalid
-  camera.pyramid      = 0; // downscaled images remain invalid
-  camera.camId        = rc;
-  cps_host_fillCamera(camsBasesHst(0, 0), rc, _mp, scale);
-  camsBasesDev.copyFrom(camsBasesHst);
+  CameraStructBase* camsBasesHst;
+  CameraStructBase* camsBasesDev;
+  cudaError_t err;
 
+  err = cudaMallocHost( &camsBasesHst, sizeof(CameraStructBase) );
+  THROW_ON_CUDA_ERROR( err, "Failed to allocate camera parameters on host in normal mapping" );
+
+  err = cudaMalloc(     &camsBasesDev, sizeof(CameraStructBase) );
+  THROW_ON_CUDA_ERROR( err, "Failed to allocate camera parameters on device in normal mapping" );
+
+  cps_host_fillCamera(*camsBasesHst, rc, _mp, scale);
+
+  err = cudaMemcpy( camsBasesDev,
+                    camsBasesHst,
+                    sizeof(CameraStructBase),
+                    cudaMemcpyHostToDevice );
+  THROW_ON_CUDA_ERROR( err, "Failed to copy camera parameters from host to device in normal mapping" );
 
   CudaHostMemoryHeap<float3, 2> normalMap_hmh(CudaSize<2>(w, h));
   CudaHostMemoryHeap<float, 2> depthMap_hmh(CudaSize<2>(w, h));
@@ -1132,7 +1137,7 @@ bool PlaneSweepingCuda::computeNormalMap(
   }
 
   ps_computeNormalMap( normalMap_hmh, depthMap_hmh,
-                       camera,
+                       camsBasesDev,
                        w, h, scale - 1,
                        _nImgsInGPUAtTime,
                        _scales, wsh, _mp.verbose, igammaC, igammaP);
@@ -1143,6 +1148,9 @@ bool PlaneSweepingCuda::computeNormalMap(
     (*normalMap)[i].g = normalMap_hmh.getBuffer()[i].y;
     (*normalMap)[i].b = normalMap_hmh.getBuffer()[i].z;
   }
+
+  cudaFree(     camsBasesDev );
+  cudaFreeHost( camsBasesHst );
 
   if (_mp.verbose)
     mvsUtils::printfElapsedTime(t1);

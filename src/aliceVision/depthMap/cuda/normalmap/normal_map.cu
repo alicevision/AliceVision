@@ -134,7 +134,8 @@ __global__ void computeNormalMap_kernel(
 void ps_computeNormalMap(
     CudaHostMemoryHeap<float3, 2>& normalMap_hmh,
     CudaHostMemoryHeap<float, 2>& depthMap_hmh,
-    const CameraStruct& camera, int width, int height,
+    const CameraStructBase* camera,
+    int width, int height,
     int scale, int ncamsAllocated, int scales, int wsh, bool verbose,
     float gammaC, float gammaP)
 {
@@ -152,7 +153,7 @@ void ps_computeNormalMap(
 
   // compute normal map
   computeNormalMap_kernel<<<grid, block>>>(
-    *camera.param_dev,
+    *camera,
     depthMap_dmp.getBuffer(),
     depthMap_dmp.getPitch(),
     normalMap_dmp.getBuffer(),
