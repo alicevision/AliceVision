@@ -256,43 +256,6 @@ void getInputPaths(const std::vector<std::string>& imagesFolder, std::vector<std
 }
 
 
-/**
- * @brief recreate the source image at the target exposure by applying the inverse camera response function to HDR image
- * and calculate the offset between the mean value of target source image and the recovered image
- * @param[in] hdrImage
- * @param[in] response
- * @param[in] channelQuantization
- * @param[in] path to write the output image
- */
-void recoverSourceImage(const image::Image<image::RGBfColor>& hdrImage, hdr::rgbCurve& response, float channelQuantization, float meanVal[], image::Image<image::RGBfColor> &targetRecover)
-{
-    float meanRecovered[3] = {0.f, 0.f, 0.f};
-    for(std::size_t channel = 0; channel < 3; ++channel)
-    {
-      std::vector<float>::iterator first = response.getCurve(channel).begin();
-      std::vector<float>::iterator last = response.getCurve(channel).end();
-      for(std::size_t y = 0; y < hdrImage.Height(); ++y)
-      {
-        for(std::size_t x = 0; x < hdrImage.Width(); ++x)
-        {
-          const float &pixelValue = hdrImage(y, x)(channel);
-          std::vector<float>::iterator it = std::lower_bound(first, last, pixelValue);
-          float value = float(std::distance(response.getCurve(channel).begin(), it)) / (channelQuantization - 1.f);
-          targetRecover(y, x)(channel) =  value;
-
-          meanRecovered[channel] += value;
-
-        }
-      }
-      meanRecovered[channel] /= hdrImage.size();
-    }
-    float offset[3];
-    for(int i=0; i<3; ++i)
-        offset[i] = std::abs(meanRecovered[i] - meanVal[i]);
-    ALICEVISION_LOG_INFO("Offset between target source image and recovered from hdr = " << offset[0] << " " << offset[1] << " " << offset[2]);
-}
-
-
 int main(int argc, char** argv)
 {
   // command-line parameters
@@ -308,7 +271,6 @@ int main(int argc, char** argv)
   std::vector<std::string> targets;
   float clampedValueCorrection = 1.f;
   bool fisheye = true;
-  std::string recoverSourcePath;
 
   po::options_description allParams("AliceVision convertLDRToHDR");
 
@@ -336,9 +298,7 @@ int main(int argc, char** argv)
     ("fusionWeight,W", po::value<hdr::EFunctionType>(&fusionWeightFunction)->default_value(fusionWeightFunction),
        "Weight function used to fuse all LDR images together (gaussian, triangle, plateau).")
     ("outputResponse", po::value<std::string>(&outputResponsePath),
-       "(For debug) Output camera response function folder or complete path.")
-    ("recoverPath", po::value<std::string>(&recoverSourcePath)->default_value(recoverSourcePath),
-      "(For debug) Folder path for recovering LDR images at the target exposures by applying inverse response on HDR images.");
+       "(For debug) Output camera response function folder or complete path.");
 
   po::options_description logParams("Log parameters");
   logParams.add_options()
@@ -494,16 +454,6 @@ int main(int argc, char** argv)
 
       image::readImage(imagePath, ldrImages[i], loadColorSpace);
       metadatas[i] = image::readImageMetadata(imagePath);
-
-      if (ldrImages[i].Height() < ldrImages[i].Width()) {
-        image::Image<image::RGBfColor> rotate(ldrImages[i].Height(), ldrImages[i].Width());
-        for (int k = 0; k < rotate.Height(); k++) {
-          for (int l = 0; l < rotate.Width(); l++) {
-            rotate(k, l) = ldrImages[i](l, rotate.Height() - 1 - k);
-          }
-        }
-        ldrImages[i] = rotate;
-      }
       
 
       // Debevec and Robertson algorithms use shutter speed as ev value
@@ -658,44 +608,6 @@ int main(int argc, char** argv)
     ALICEVISION_LOG_INFO("HDR image written as " << outputHDRImagesPath[g]);
   }
 
-
-  // test of recovery of source target image from HDR
-  if(!recoverSourcePath.empty())
-  {
-    fs::path recoverPath = fs::path(recoverSourcePath);
-
-    for(int g = 0; g < nbGroups; ++g)
-    {
-      image::Image<image::RGBfColor> HDRimage;
-      image::readImage(outputHDRImagesPath[g], HDRimage, image::EImageColorSpace::NO_CONVERSION);
-
-      // calcul of mean value of target images
-      std::size_t targetIndex = std::distance(times[g].begin(), std::find(times[g].begin(), times[g].end(), targetTimes[g]));
-      float meanVal[3] = {0.f, 0.f, 0.f};
-      image::Image<image::RGBfColor> &targetImage = ldrImageGroups[g].at(targetIndex);
-      image::Image<image::RGBfColor> targetRecover(targetImage.Width(), targetImage.Height(), false);
-      for(std::size_t channel=0; channel<3; ++channel)
-      {
-        for(std::size_t y = 0; y < targetImage.Height(); ++y)
-        {
-          for(std::size_t x = 0; x < targetImage.Width(); ++x)
-          {
-            meanVal[channel] += targetImage(y, x)(channel);
-          }
-        }
-        meanVal[channel] /= targetImage.size();
-      }
-      recoverSourceImage(HDRimage, response, channelQuantization, meanVal, targetRecover);
-
-      if(nbGroups == 1)
-        recoverSourcePath = (recoverPath / (std::string("recovered.exr"))).string();
-      else
-        recoverSourcePath = (recoverPath / (std::string("recovered_") + std::to_string(g) + std::string(".exr"))).string();
-
-      image::writeImage(recoverSourcePath, targetRecover, image::EImageColorSpace::AUTO);
-      ALICEVISION_LOG_INFO("Recovered target source image written as " << recoverSourcePath);
-    }
-  }
 
   return EXIT_SUCCESS;
 }
