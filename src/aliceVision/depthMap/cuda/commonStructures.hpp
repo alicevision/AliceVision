@@ -467,6 +467,8 @@ public:
     void copyFrom( const Type* src, size_t sx, size_t sy );
     void copyFrom( const CudaDeviceMemoryPitched<Type, Dim>& src );
 
+    void copyTo( Type* dst, size_t sx, size_t sy ) const;
+
     Type* getBuffer()
     {
         return buffer;
@@ -879,6 +881,26 @@ void CudaHostMemoryHeap<Type, Dim>::copyFrom( const CudaDeviceMemoryPitched<Type
                                         this->getUnpaddedBytesInRow(),
                                         number_of_rows,
                                         kind);
+
+        THROW_ON_CUDA_ERROR(err, "Failed to copy (" << __FILE__ << " " << __LINE__ << ")");
+    }
+}
+
+template<class Type, unsigned Dim>
+void CudaDeviceMemoryPitched<Type, Dim>::copyTo( Type* dst, size_t sx, size_t sy ) const
+{
+    if(Dim == 2)
+    {
+        const size_t dst_pitch  = sx * sizeof(Type);
+        const size_t dst_width  = sx * sizeof(Type);
+        const size_t dst_height = sy;
+        cudaError_t err = cudaMemcpy2D(dst,
+                                       dst_pitch,
+                                       this->getBytePtr(),
+                                       this->getPitch(),
+                                       dst_width,
+                                       dst_height,
+                                       cudaMemcpyDeviceToHost);
 
         THROW_ON_CUDA_ERROR(err, "Failed to copy (" << __FILE__ << " " << __LINE__ << ")");
     }

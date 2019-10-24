@@ -1098,9 +1098,22 @@ bool PlaneSweepingCuda::optimizeDepthSimMapGradientDescent(StaticVector<DepthSim
     return true;
 }
 
+NormalMapping* PlaneSweepingCuda::createNormalMapping()
+{
+    return new NormalMapping;
+}
+
+void PlaneSweepingCuda::deleteNormalMapping( NormalMapping* m )
+{
+    delete m;
+}
+
 bool PlaneSweepingCuda::computeNormalMap(
-    StaticVector<float>* depthMap, StaticVector<ColorRGBf>* normalMap, int rc,
-    int scale, float igammaC, float igammaP, int wsh)
+    NormalMapping*            mapping,
+    const std::vector<float>& depthMap,
+    std::vector<ColorRGBf>&   normalMap,
+    int rc, int scale,
+    float igammaC, float igammaP, int wsh)
 {
   const int w = _mp.getWidth(rc) / scale;
   const int h = _mp.getHeight(rc) / scale;
@@ -1110,47 +1123,33 @@ bool PlaneSweepingCuda::computeNormalMap(
   ALICEVISION_LOG_DEBUG("computeNormalMap rc: " << rc);
 
   // Fill Camera Struct
-  CameraStructBase* camsBasesHst;
-  CameraStructBase* camsBasesDev;
-  cudaError_t err;
 
-  err = cudaMallocHost( &camsBasesHst, sizeof(CameraStructBase) );
-  THROW_ON_CUDA_ERROR( err, "Failed to allocate camera parameters on host in normal mapping" );
+  cps_host_fillCamera( *mapping->camsBasesHst, rc, _mp, scale );
+  mapping->loadCameraParameters();
+  mapping->allocHostMaps( w, h );
+  mapping->copyDepthMap( depthMap );
 
-  err = cudaMalloc(     &camsBasesDev, sizeof(CameraStructBase) );
-  THROW_ON_CUDA_ERROR( err, "Failed to allocate camera parameters on device in normal mapping" );
-
-  cps_host_fillCamera(*camsBasesHst, rc, _mp, scale);
-
-  err = cudaMemcpy( camsBasesDev,
-                    camsBasesHst,
-                    sizeof(CameraStructBase),
-                    cudaMemcpyHostToDevice );
-  THROW_ON_CUDA_ERROR( err, "Failed to copy camera parameters from host to device in normal mapping" );
-
-  CudaHostMemoryHeap<float3, 2> normalMap_hmh(CudaSize<2>(w, h));
-  CudaHostMemoryHeap<float, 2> depthMap_hmh(CudaSize<2>(w, h));
-
-  for (int i = 0; i < w * h; i++)
-  {
-    depthMap_hmh.getBuffer()[i] = (*depthMap)[i];
-  }
-
-  ps_computeNormalMap( normalMap_hmh, depthMap_hmh,
-                       camsBasesDev,
+  ps_computeNormalMap( mapping,
                        w, h, scale - 1,
                        _nImgsInGPUAtTime,
                        _scales, wsh, _mp.verbose, igammaC, igammaP);
 
-  for (int i = 0; i < w * h; i++)
-  {
-    (*normalMap)[i].r = normalMap_hmh.getBuffer()[i].x;
-    (*normalMap)[i].g = normalMap_hmh.getBuffer()[i].y;
-    (*normalMap)[i].b = normalMap_hmh.getBuffer()[i].z;
-  }
+  float3* normalMapPtr = mapping->getNormalMapHst();
 
-  cudaFree(     camsBasesDev );
-  cudaFreeHost( camsBasesHst );
+  constexpr bool q = ( sizeof(ColorRGBf[2]) == sizeof(float3[2]) );
+  if( q == true )
+  {
+    memcpy( normalMap.data(), mapping->getNormalMapHst(), w*h*sizeof(float3) );
+  }
+  else
+  {
+    for (int i = 0; i < w * h; i++)
+    {
+        normalMap[i].r = normalMapPtr[i].x;
+        normalMap[i].g = normalMapPtr[i].y;
+        normalMap[i].b = normalMapPtr[i].z;
+    }
+  }
 
   if (_mp.verbose)
     mvsUtils::printfElapsedTime(t1);

@@ -11,10 +11,31 @@
 namespace aliceVision {
 namespace depthMap {
 
+class NormalMapping
+{
+public:
+    NormalMapping();
+    ~NormalMapping();
+
+    void loadCameraParameters();
+    void allocHostMaps( int w, int h );
+    void copyDepthMap( const std::vector<float>& depthMap );
+
+    const float* getDepthMapHst()  const; // an input
+    float3*      getNormalMapHst();       // an output
+
+public:
+    CameraStructBase*   camsBasesHst;
+    CameraStructBase*   camsBasesDev;
+
+private:
+    int     _allocated_floats;
+    float*  _depthMapHst;
+    float3* _normalMapHst;
+};
+
 void ps_computeNormalMap(
-    CudaHostMemoryHeap<float3, 2>& normalMap_hmh,
-    CudaHostMemoryHeap<float, 2>& depthMap_hmh,
-    const CameraStructBase* camera,
+    NormalMapping* mapping,
     int width, int height,
     int scale, int ncamsAllocated, int scales, int wsh, bool verbose,
     float gammaC, float gammaP);

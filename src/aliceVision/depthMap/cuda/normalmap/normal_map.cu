@@ -8,14 +8,8 @@
 #include <aliceVision/depthMap/cuda/planeSweeping/host_utils.h>
 #include <aliceVision/depthMap/cuda/deviceCommon/device_matrix.cuh>
 #include <aliceVision/depthMap/cuda/deviceCommon/device_utils.cuh>
+#include <aliceVision/depthMap/cuda/normalmap/normal_map.hpp>
 #include <aliceVision/depthMap/cuda/normalmap/device_eig33.cuh>
-// #include <aliceVision/depthMap/cuda/deviceCommon/device_patch_es.cu>
-// #include <aliceVision/depthMap/cuda/planeSweeping/device_code.cu>
-// #include <aliceVision/depthMap/cuda/planeSweeping/device_code_refine.cu>
-// #include <aliceVision/depthMap/cuda/planeSweeping/device_code_volume.cu>
-// #include <aliceVision/depthMap/cuda/planeSweeping/device_code_fuse.cu>
-// #include <aliceVision/depthMap/cuda/planeSweeping/plane_sweeping_cuda.hpp>
-// #include <aliceVision/depthMap/cuda/images/gauss_filter.hpp>
 
 #include <math_constants.h>
 
@@ -132,17 +126,19 @@ __global__ void computeNormalMap_kernel(
 }
 
 void ps_computeNormalMap(
-    CudaHostMemoryHeap<float3, 2>& normalMap_hmh,
-    CudaHostMemoryHeap<float, 2>& depthMap_hmh,
-    const CameraStructBase* camera,
+    NormalMapping* mapping,
     int width, int height,
     int scale, int ncamsAllocated, int scales, int wsh, bool verbose,
     float gammaC, float gammaP)
 {
   clock_t tall = tic();
 
-  CudaDeviceMemoryPitched<float, 2> depthMap_dmp(depthMap_hmh);
-  CudaDeviceMemoryPitched<float3, 2> normalMap_dmp(normalMap_hmh);
+  const CameraStructBase* camera = mapping->camsBasesDev;
+
+  CudaDeviceMemoryPitched<float, 2>  depthMap_dmp(CudaSize<2>( width, height ));
+  depthMap_dmp.copyFrom( mapping->getDepthMapHst(), width, height );
+
+  CudaDeviceMemoryPitched<float3, 2> normalMap_dmp(CudaSize<2>( width, height ));
 
   int block_size = 8;
   dim3 block(block_size, block_size, 1);
@@ -167,12 +163,95 @@ void ps_computeNormalMap(
   if (verbose)
     printf("copy normal map to host\n");
 
-  copy(normalMap_hmh, normalMap_dmp);
+  normalMap_dmp.copyTo( mapping->getNormalMapHst(), width, height );
   CHECK_CUDA_ERROR();
 
   if (verbose)
     printf("gpu elapsed time: %f ms \n", toc(tall));
 }
 
+NormalMapping::NormalMapping()
+    : _allocated_floats(0)
+    , _depthMapHst(0)
+    , _normalMapHst(0)
+{
+    cudaError_t err;
+
+    err = cudaMallocHost( &camsBasesHst, sizeof(CameraStructBase) );
+    THROW_ON_CUDA_ERROR( err, "Failed to allocate camera parameters on host in normal mapping" );
+
+    err = cudaMalloc(     &camsBasesDev, sizeof(CameraStructBase) );
+    THROW_ON_CUDA_ERROR( err, "Failed to allocate camera parameters on device in normal mapping" );
+}
+
+NormalMapping::~NormalMapping()
+{
+    cudaFree(     camsBasesDev );
+    cudaFreeHost( camsBasesHst );
+
+    if( _depthMapHst  ) cudaFreeHost( _depthMapHst );
+    if( _normalMapHst ) cudaFreeHost( _normalMapHst );
+}
+
+void NormalMapping::loadCameraParameters()
+{
+    cudaError_t err;
+    err = cudaMemcpy( camsBasesDev,
+                      camsBasesHst,
+                      sizeof(CameraStructBase),
+                      cudaMemcpyHostToDevice );
+    THROW_ON_CUDA_ERROR( err, "Failed to copy camera parameters from host to device in normal mapping" );
+}
+
+void NormalMapping::allocHostMaps( int w, int h )
+{
+    cudaError_t err;
+    if( _depthMapHst )
+    {
+        if( w*h > _allocated_floats );
+        {
+            err = cudaFreeHost( _depthMapHst );
+            THROW_ON_CUDA_ERROR( err, "Failed to free host depth map in normal mapping" );
+            err = cudaMallocHost( &_depthMapHst, w*h*sizeof(float) );
+            THROW_ON_CUDA_ERROR( err, "Failed to re-allocate host depth map in normal mapping" );
+
+            err = cudaFreeHost( _normalMapHst );
+            THROW_ON_CUDA_ERROR( err, "Failed to free host normal map in normal mapping" );
+            err = cudaMallocHost( &_normalMapHst, w*h*sizeof(float3) );
+            THROW_ON_CUDA_ERROR( err, "Failed to re-allocate host normal map in normal mapping" );
+            _allocated_floats = w * h;
+        }
+    }
+    else
+    {
+        err = cudaMallocHost( &_depthMapHst, w*h*sizeof(float) );
+        THROW_ON_CUDA_ERROR( err, "Failed to allocate host depth map in normal mapping" );
+        err = cudaMallocHost( &_normalMapHst, w*h*sizeof(float3) );
+        THROW_ON_CUDA_ERROR( err, "Failed to allocate host normal map in normal mapping" );
+        _allocated_floats = w * h;
+    }
+}
+
+void NormalMapping::copyDepthMap( const std::vector<float>& depthMap )
+{
+    if( _allocated_floats > depthMap.size() )
+    {
+        std::cerr << "WARNING: " << __FILE__ << ":" << __LINE__
+                  << ": copying depthMap whose origin is too small" << std::endl;
+    }
+    memcpy( _depthMapHst, depthMap.data(), _allocated_floats*sizeof(float) );
+}
+
+const float* NormalMapping::getDepthMapHst() const
+{
+    return _depthMapHst;
+}
+
+float3* NormalMapping::getNormalMapHst()
+{
+    return _normalMapHst;
+}
+
 } // namespace depthMap
 } // namespace aliceVision
+

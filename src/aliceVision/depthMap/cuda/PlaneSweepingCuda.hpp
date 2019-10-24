@@ -19,6 +19,7 @@
 #include <aliceVision/depthMap/DepthSimMap.hpp>
 #include <aliceVision/depthMap/cuda/commonStructures.hpp>
 #include <aliceVision/depthMap/cuda/tcinfo.hpp>
+#include <aliceVision/depthMap/cuda/normalmap/normal_map.hpp>
 
 namespace aliceVision {
 namespace depthMap {
@@ -144,8 +145,17 @@ public:
                                             int rc, int nSamplesHalf,
                                             int nDepthsToRefine, float sigma, int nIters, int yFrom, int hPart);
 
-    bool computeNormalMap(StaticVector<float>* depthMap, StaticVector<ColorRGBf>* normalMap, int rc,
-                          int scale, float igammaC, float igammaP, int wsh);
+    /* create object to store intermediate data for repeated use */
+    NormalMapping* createNormalMapping();
+
+    /* delete object to store intermediate data for repeated use */
+    void deleteNormalMapping( NormalMapping* m );
+
+    bool computeNormalMap( NormalMapping* mapping,
+                           const std::vector<float>& depthMap,
+                           std::vector<ColorRGBf>&   normalMap,
+                           int rc, int scale,
+                           float igammaC, float igammaP, int wsh);
 
     bool getSilhoueteMap(StaticVectorBool* oMap, int scale, int step, const rgb maskColor, int rc);
 };
