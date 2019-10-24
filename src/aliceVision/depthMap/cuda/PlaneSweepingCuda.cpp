@@ -229,8 +229,8 @@ PlaneSweepingCuda::PlaneSweepingCuda( int CUDADeviceNo,
     // allocate global on the device
     ps_deviceAllocate(_hidden_pyramids, _nImgsInGPUAtTime, maxImageWidth, maxImageHeight, _scales, _CUDADeviceNo);
 
-    err = cudaMalloc( &_camsBasesDev, MAX_CONCURRENT_IMAGES_IN_DEPTHMAP*sizeof(CameraStructBase) );
-    THROW_ON_CUDA_ERROR( err, "Could not allocate set of camera structs in device memory in " << __FILE__ << ":" << __LINE__ << ", " << cudaGetErrorString(err) );
+    // err = cudaMalloc( &_camsBasesDev, MAX_CONCURRENT_IMAGES_IN_DEPTHMAP*sizeof(CameraStructBase) );
+    // THROW_ON_CUDA_ERROR( err, "Could not allocate set of camera structs in device memory in " << __FILE__ << ":" << __LINE__ << ", " << cudaGetErrorString(err) );
 
     err = cudaMallocHost( &_camsBasesHst, MAX_CONCURRENT_IMAGES_IN_DEPTHMAP*sizeof(CameraStructBase) );
     THROW_ON_CUDA_ERROR( err, "Could not allocate set of camera structs in pinned host memory in " << __FILE__ << ":" << __LINE__ << ", " << cudaGetErrorString(err) );
@@ -244,7 +244,7 @@ PlaneSweepingCuda::PlaneSweepingCuda( int CUDADeviceNo,
     for( int rc = 0; rc < _nImgsInGPUAtTime; ++rc )
     {
         _cams[rc].param_hst = &_camsBasesHst[rc];
-        _cams[rc].param_dev = &_camsBasesDev[rc];
+        _cams[rc].param_dev = rc;
         _cams[rc].pyramid   = &_hidden_pyramids[rc];
 
         err = cudaStreamCreate( &_cams[rc].stream );
@@ -269,7 +269,7 @@ PlaneSweepingCuda::~PlaneSweepingCuda()
     // deallocate global on the device
     ps_deviceDeallocate(_hidden_pyramids, _CUDADeviceNo, _nImgsInGPUAtTime, _scales);
 
-    cudaFree(     _camsBasesDev );
+    // cudaFree(     _camsBasesDev );
     cudaFreeHost( _camsBasesHst );
 
     for(int c = 0; c < _cams.size(); c++)
@@ -334,7 +334,7 @@ int PlaneSweepingCuda::addCam( int global_cam_id, int scale )
 
         _camsRcs[id] = global_cam_id;
 
-        ps_loadCameraStructs( _camsBasesDev, _camsBasesHst, id );
+        ps_loadCameraStructs( _camsBasesHst, id );
     }
     else if( _camsBasesHstScale[id] == scale )
     {
@@ -353,7 +353,7 @@ int PlaneSweepingCuda::addCam( int global_cam_id, int scale )
         // ps_device_updateCam((CameraStruct*)(*cams)[id], id, _scales);
         ALICEVISION_LOG_DEBUG("Reuse image (camera id=" + std::to_string(global_cam_id) + ") already on the GPU.");
 
-        ps_loadCameraStructs( _camsBasesDev, _camsBasesHst, id );
+        ps_loadCameraStructs( _camsBasesHst, id );
     }
     _camsTimes[id] = clock();
 
@@ -956,7 +956,7 @@ void PlaneSweepingCuda::SGMretrieveBestDepth(DepthSimMap& bestDepth, CudaDeviceM
   ps_SGMretrieveBestDepth(
     bestDepth_dmp,
     bestSim_dmp,
-    _cams[rc_cam_idx],
+    rc_cam_idx, // _cams[rc_cam_idx],
     depths_d,
     volSim_dmp,
     volDimX, volDimY, volDimZ,

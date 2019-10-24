@@ -64,7 +64,7 @@ private:
     Pyramids _hidden_pyramids;
 
 public:
-    CameraStructBase*          _camsBasesDev;
+    // CameraStructBase*          _camsBasesDev;
     CameraStructBase*          _camsBasesHst;
     std::vector<int>           _camsBasesHstScale;
     std::vector<CameraStruct>  _cams;

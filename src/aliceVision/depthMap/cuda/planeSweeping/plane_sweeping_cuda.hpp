@@ -82,7 +82,7 @@ void ps_SGMoptimizeSimVolume(
 
   void ps_SGMretrieveBestDepth(
     CudaDeviceMemoryPitched<float, 2>& bestDepth_dmp, CudaDeviceMemoryPitched<float, 2>& bestSim_dmp,
-    const CameraStruct& rccam,
+    int rccam, // const CameraStruct& rccam,
     const CudaDeviceMemory<float>& depths_d,
     CudaDeviceMemoryPitched<TSim, 3>& volSim_dmp,
     int volDimX, int volDimY, int volDimZ, int scaleStep, bool interpolate);
@@ -154,8 +154,7 @@ void ps_getSilhoueteMap(
     uchar4 maskColorRgb,
     bool verbose);
 
-void ps_loadCameraStructs( CameraStructBase*       dev,
-                           const CameraStructBase* hst,
+void ps_loadCameraStructs( const CameraStructBase* hst,
                            int                     offset );
 
 } // namespace depthMap
