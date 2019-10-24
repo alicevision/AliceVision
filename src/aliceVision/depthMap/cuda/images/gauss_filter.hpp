@@ -7,7 +7,7 @@
 #pragma once
 
 #include <aliceVision/depthMap/cuda/commonStructures.hpp>
-#include <aliceVision/depthMap/cuda/planeSweeping/device_utils.h>
+#include <aliceVision/depthMap/cuda/deviceCommon/device_utils.h>
 
 #include <set>
 

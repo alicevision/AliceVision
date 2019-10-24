@@ -10,7 +10,7 @@
 #include <aliceVision/depthMap/cuda/deviceCommon/device_matrix.cu>
 #include <aliceVision/depthMap/cuda/deviceCommon/device_patch_es_glob.hpp>
 #include <aliceVision/depthMap/cuda/deviceCommon/device_simStat.cu>
-#include <aliceVision/depthMap/cuda/planeSweeping/device_utils.cu>
+#include <aliceVision/depthMap/cuda/deviceCommon/device_utils.cuh>
 
 #include <math_constants.h>
 

@@ -16,7 +16,7 @@
 #include <aliceVision/mvsUtils/fileIO.hpp>
 #include <aliceVision/depthMap/cuda/planeSweeping/plane_sweeping_cuda.hpp>
 #include <aliceVision/depthMap/cuda/planeSweeping/host_utils.h>
-#include <aliceVision/depthMap/cuda/planeSweeping/device_utils.h>
+#include <aliceVision/depthMap/cuda/deviceCommon/device_utils.h>
 
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
 

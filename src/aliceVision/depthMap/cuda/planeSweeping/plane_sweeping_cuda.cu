@@ -7,7 +7,7 @@
 #include <aliceVision/depthMap/cuda/commonStructures.hpp>
 #include <aliceVision/depthMap/cuda/deviceCommon/device_color.cu>
 #include <aliceVision/depthMap/cuda/deviceCommon/device_patch_es.cu>
-#include <aliceVision/depthMap/cuda/deviceCommon/device_eig33.cu>
+// #include <aliceVision/depthMap/cuda/deviceCommon/device_eig33.cu>
 #include <aliceVision/depthMap/cuda/planeSweeping/device_code.cu>
 #include <aliceVision/depthMap/cuda/planeSweeping/device_code_refine.cu>
 #include <aliceVision/depthMap/cuda/planeSweeping/device_code_volume.cu>
@@ -1085,48 +1085,6 @@ void ps_getSilhoueteMap(CudaHostMemoryHeap<bool, 2>* omap_hmh, int width,
         printf("gpu elapsed time: %f ms \n", toc(tall));
 }
 
-
-void ps_computeNormalMap(
-    CudaHostMemoryHeap<float3, 2>& normalMap_hmh,
-    CudaHostMemoryHeap<float, 2>& depthMap_hmh,
-    const CameraStruct& camera, int width, int height,
-    int scale, int ncamsAllocated, int scales, int wsh, bool verbose,
-    float gammaC, float gammaP)
-{
-  clock_t tall = tic();
-
-  CudaDeviceMemoryPitched<float, 2> depthMap_dmp(depthMap_hmh);
-  CudaDeviceMemoryPitched<float3, 2> normalMap_dmp(normalMap_hmh);
-
-  int block_size = 8;
-  dim3 block(block_size, block_size, 1);
-  dim3 grid(divUp(width, block_size), divUp(height, block_size), 1);
-
-  if (verbose)
-    printf("computeNormalMap_kernel\n");
-
-  // compute normal map
-  computeNormalMap_kernel<<<grid, block>>>(
-    *camera.param_dev,
-    depthMap_dmp.getBuffer(),
-    depthMap_dmp.getPitch(),
-    normalMap_dmp.getBuffer(),
-    normalMap_dmp.getPitch(),
-    width, height, wsh,
-    gammaC, gammaP);
-
-  // cudaThreadSynchronize();
-  // CHECK_CUDA_ERROR();
-
-  if (verbose)
-    printf("copy normal map to host\n");
-
-  copy(normalMap_hmh, normalMap_dmp);
-  CHECK_CUDA_ERROR();
-
-  if (verbose)
-    printf("gpu elapsed time: %f ms \n", toc(tall));
-}
 
 void ps_loadCameraStructs( CameraStructBase*       dev,
                            const CameraStructBase* hst,
