@@ -1497,9 +1497,12 @@ int main(int argc, char **argv) {
   /**
    * Description of optional parameters
    */
-  std::pair<int, int> panoramaSize = {1024, 512};
+  std::pair<int, int> panoramaSize = {1024, 0};
   po::options_description optionalParams("Optional parameters");
+  optionalParams.add_options()
+    ("panoramaWidth,w", po::value<int>(&panoramaSize.first)->default_value(panoramaSize.first), "Panorama Width in pixels.");
   allParams.add(optionalParams);
+  panoramaSize.second = panoramaSize.first / 2;
 
   /**
    * Setup log level given command line
@@ -1561,10 +1564,13 @@ int main(int argc, char **argv) {
     return EXIT_FAILURE;
   }
 
-  std::pair<int, int> optimalPanoramaSize;
-  if (computeOptimalPanoramaSize(optimalPanoramaSize, sfmData)) {
-    ALICEVISION_LOG_INFO("Optimal panorama size : "  << optimalPanoramaSize.first << "x" << optimalPanoramaSize.second);
-    panoramaSize = optimalPanoramaSize;
+  /*If panorama width is undefined, estimate it*/
+  if (panoramaSize.first <= 0) {
+    std::pair<int, int> optimalPanoramaSize;
+    if (computeOptimalPanoramaSize(optimalPanoramaSize, sfmData)) {
+      ALICEVISION_LOG_INFO("Optimal panorama size : "  << optimalPanoramaSize.first << "x" << optimalPanoramaSize.second);
+      panoramaSize = optimalPanoramaSize;
+    }
   }
 
   /**
@@ -1617,12 +1623,12 @@ int main(int argc, char **argv) {
     GaussianWarper warper;
     warper.warp(map, source);
 
-    {
+    /*{
     const aliceVision::image::Image<image::RGBfColor> & panorama = warper.getColor();
     char filename[512];
     sprintf(filename, "%s_source_%d.exr", outputPanorama.c_str(), pos);
     image::writeImage(filename, panorama, image::EImageColorSpace::SRGB);
-    }
+    }*/
     
     AlphaBuilder alphabuilder;
     alphabuilder.build(map, intrinsic);
@@ -1641,7 +1647,7 @@ int main(int argc, char **argv) {
     ALICEVISION_LOG_INFO("Save\n");
     const aliceVision::image::Image<image::RGBfColor> & panorama = compositer.getPanorama();
     char filename[512];
-    sprintf(filename, "%s_intermediate_%d.exr", outputPanorama.c_str(), pos);
+    sprintf(filename, "%s.exr", outputPanorama.c_str());
     image::writeImage(filename, panorama, image::EImageColorSpace::SRGB);
   }
 
