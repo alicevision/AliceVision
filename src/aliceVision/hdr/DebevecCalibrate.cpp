@@ -10,23 +10,25 @@
 #include <cassert>
 #include <aliceVision/alicevision_omp.hpp>
 #include <aliceVision/system/Logger.hpp>
+#include <aliceVision/image/all.hpp>
+#include <aliceVision/image/io.hpp>
 
 namespace aliceVision {
 namespace hdr {
 
 using T = Eigen::Triplet<double>;
 
-void DebevecCalibrate::process(const std::vector< std::vector< image::Image<image::RGBfColor> > > &ldrImageGroups,
+void DebevecCalibrate::process(const std::vector< std::vector<std::string>> & imagePathsGroups,
                                const std::size_t channelQuantization,
-                               const std::vector< std::vector<float> > &times,
+                               const std::vector<std::vector<float> > &times,
                                const int nbPoints,
                                const bool fisheye,
                                const rgbCurve &weight,
                                const float lambda,
                                rgbCurve &response)
 {
-  const int nbGroups = ldrImageGroups.size();
-  const int nbImages = ldrImageGroups.front().size();
+  const int nbGroups = imagePathsGroups.size();
+  const int nbImages = imagePathsGroups.front().size();
   const int samplesPerImage = nbPoints / (nbGroups*nbImages);
 
   //set channels count always RGB
@@ -47,7 +49,13 @@ void DebevecCalibrate::process(const std::vector< std::vector< image::Image<imag
 
     for(unsigned int g=0; g<nbGroups; ++g)
     {
-      const std::vector< image::Image<image::RGBfColor> > &ldrImagesGroup = ldrImageGroups[g];
+      const std::vector<std::string > &imagePaths = imagePathsGroups[g];
+      std::vector<image::Image<image::RGBfColor>> ldrImagesGroup(imagePaths.size());
+
+      for (int i = 0; i < imagePaths.size(); i++) {
+        image::readImage(imagePaths[i], ldrImagesGroup[i], image::EImageColorSpace::SRGB);
+      }
+
       const std::vector<float> &ldrTimes = times[g];
       const std::size_t width = ldrImagesGroup.front().Width();
       const std::size_t height = ldrImagesGroup.front().Height();
@@ -151,11 +159,10 @@ void DebevecCalibrate::process(const std::vector< std::vector< image::Image<imag
     double relative_error = (A*x - b).norm() / b.norm();
     ALICEVISION_LOG_DEBUG("relative error is : " << relative_error);
 
-    for(std::size_t k=0; k<channelQuantization; ++k)
+    for(std::size_t k=0; k<channelQuantization; ++k) {
       response.setValue(k, channel, x(k));
-
+    }
   }
-
 }
 
 } // namespace hdr

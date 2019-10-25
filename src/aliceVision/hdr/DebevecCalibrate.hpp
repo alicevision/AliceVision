@@ -27,9 +27,9 @@ public:
    * @param[in] lambda (parameter of smoothness)
    * @param[out] camera response function
    */
-  void process(const std::vector< std::vector< image::Image<image::RGBfColor> > > &ldrImageGroups,
+  void process(const std::vector<std::vector<std::string>> &ldrImageGroups,
                const std::size_t channelQuantization,
-               const std::vector< std::vector<float> > &times,
+               const std::vector<std::vector<float>> &times,
                const int nbPoints,
                const bool fisheye,
                const rgbCurve &weight,
