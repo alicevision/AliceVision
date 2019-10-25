@@ -1094,10 +1094,10 @@ void ps_loadCameraStructs( const CameraStructBase* hst,
 {
     cudaMemcpyKind kind = cudaMemcpyHostToDevice;
     cudaError_t err = cudaMemcpyToSymbol( camsBasesDev,
-                                  &hst[offset],
-                                  sizeof(CameraStructBase),
-                                  offset*sizeof(CameraStructBase),
-                                  kind );
+                                          hst,
+                                          sizeof(CameraStructBase),
+                                          offset*sizeof(CameraStructBase),
+                                          kind );
     THROW_ON_CUDA_ERROR( err, "Failed to copy CameraStructs from host to device in " << __FILE__ << ":" << __LINE__ << ": " << cudaGetErrorString(err) );
 }
 

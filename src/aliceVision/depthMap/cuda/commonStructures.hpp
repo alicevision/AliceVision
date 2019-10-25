@@ -1261,7 +1261,6 @@ typedef std::vector<Pyramid> Pyramids;
 
 struct CameraStruct
 {
-    const CameraStructBase* param_hst = nullptr;
     int                     param_dev = 0;
     // const CameraStructBase* param_dev = nullptr;
     CudaHostMemoryHeap<CudaRGBA, 2>* tex_rgba_hmh = nullptr;

@@ -232,7 +232,7 @@ PlaneSweepingCuda::PlaneSweepingCuda( int CUDADeviceNo,
     // err = cudaMalloc( &_camsBasesDev, MAX_CONCURRENT_IMAGES_IN_DEPTHMAP*sizeof(CameraStructBase) );
     // THROW_ON_CUDA_ERROR( err, "Could not allocate set of camera structs in device memory in " << __FILE__ << ":" << __LINE__ << ", " << cudaGetErrorString(err) );
 
-    err = cudaMallocHost( &_camsBasesHst, MAX_CONCURRENT_IMAGES_IN_DEPTHMAP*sizeof(CameraStructBase) );
+    err = cudaMallocHost( &_camsBasesHst, sizeof(CameraStructBase) );
     THROW_ON_CUDA_ERROR( err, "Could not allocate set of camera structs in pinned host memory in " << __FILE__ << ":" << __LINE__ << ", " << cudaGetErrorString(err) );
 
     _camsBasesHstScale.resize( MAX_CONCURRENT_IMAGES_IN_DEPTHMAP, -1 );
@@ -243,7 +243,6 @@ PlaneSweepingCuda::PlaneSweepingCuda( int CUDADeviceNo,
 
     for( int rc = 0; rc < _nImgsInGPUAtTime; ++rc )
     {
-        _cams[rc].param_hst = &_camsBasesHst[rc];
         _cams[rc].param_dev = rc;
         _cams[rc].pyramid   = &_hidden_pyramids[rc];
 
@@ -316,7 +315,7 @@ int PlaneSweepingCuda::addCam( int global_cam_id, int scale )
         }
         long t1 = clock();
 
-        cps_host_fillCamera(_camsBasesHst[id], global_cam_id, _mp, scale);
+        cps_host_fillCamera(*_camsBasesHst, global_cam_id, _mp, scale);
 
         _camsBasesHstScale[id] = scale;
 
@@ -346,7 +345,7 @@ int PlaneSweepingCuda::addCam( int global_cam_id, int scale )
          * It is not sensible to waste cycles on refilling the camera struct if the new one
          * is identical to the old one.
          */
-        cps_host_fillCamera(_camsBasesHst[id], global_cam_id, _mp, scale);
+        cps_host_fillCamera( *_camsBasesHst, global_cam_id, _mp, scale);
 
         _camsBasesHstScale[id] = scale;
 
