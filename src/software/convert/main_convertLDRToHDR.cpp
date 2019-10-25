@@ -109,8 +109,12 @@ int main(int argc, char * argv[]) {
     return EXIT_FAILURE;
   }
 
+  /*Analyze path*/
+  boost::filesystem::path path(sfmOutputDataFilename);
+  std::string output_path = path.parent_path().string();
+
   /**
-   * Update sfm accordingly
+   * Read sfm data
    */
   sfmData::SfMData sfmData;
   if(!sfmDataIO::Load(sfmData, sfmInputDataFilename, sfmDataIO::ESfMData(sfmDataIO::VIEWS | sfmDataIO::INTRINSICS))) {
@@ -132,23 +136,108 @@ int main(int argc, char * argv[]) {
   size_t countGroups = countImages / groupSize;
 
   /*Make sure there is only one kind of image in dataset*/
-  if (sfmData.getIntrinsics().size() != 1) {
+  if (sfmData.getIntrinsics().size() > 2) {
     ALICEVISION_LOG_ERROR("Multiple intrinsics : Different kind of images in dataset");
     return EXIT_FAILURE;
   }
 
-  /*Order views by their image names*/
+  /*If two intrinsics, may be some images are simply rotated*/
+  if (sfmData.getIntrinsics().size() == 2) {
+    const sfmData::Intrinsics & intrinsics = sfmData.getIntrinsics();
+    
+    unsigned int w = intrinsics.begin()->second->w();
+    unsigned int h = intrinsics.begin()->second->h();
+    unsigned int rw = intrinsics.rbegin()->second->w();
+    unsigned int rh = intrinsics.rbegin()->second->h();
+
+    if (w != rh || h != rw) {
+      ALICEVISION_LOG_ERROR("Multiple intrinsics : Different kind of images in dataset");
+      return EXIT_FAILURE;
+    }
+
+    IndexT firstId = intrinsics.begin()->first;
+    IndexT secondId = intrinsics.rbegin()->first;
+
+    size_t first = 0;
+    size_t second = 0;
+    sfmData::Views & views = sfmData.getViews();
+    for (const auto & v : views) {
+      if (v.second->getIntrinsicId() == firstId) {
+        first++;
+      }
+      else {
+        second++;
+      }
+    }
+
+    /* Set all view with the majority intrinsics */
+    if (first > second) {
+      for (const auto & v : views) {
+        v.second->setIntrinsicId(firstId);
+      }
+
+      sfmData.getIntrinsics().erase(secondId);
+    }
+    else {
+      for (const auto & v : views) {
+        v.second->setIntrinsicId(secondId);
+      }
+
+      sfmData.getIntrinsics().erase(firstId);
+    }
+  }
+
+  /* Rotate needed images */
+  {
+    const sfmData::Intrinsics & intrinsics = sfmData.getIntrinsics();
+    unsigned int w = intrinsics.begin()->second->w();
+    unsigned int h = intrinsics.begin()->second->h();
+
+    sfmData::Views & views = sfmData.getViews();
+    for (auto & v : views) {
+      if (v.second->getWidth() == h && v.second->getHeight() == w) {
+        ALICEVISION_LOG_INFO("Create intermediate rotated image !");
+
+        /*Read original image*/
+        image::Image<image::RGBfColor> originalImage;
+        image::readImage(v.second->getImagePath(), originalImage, image::EImageColorSpace::SRGB);
+
+        /*Create a rotated image*/
+        image::Image<image::RGBfColor> rotated(w, h);
+        for (int k = 0; k < h; k++) {
+          for (int l = 0; l < w; l++) {
+            rotated(k, l) = originalImage(l, rotated.Height() - 1 - k);
+          }
+        }
+
+        boost::filesystem::path old_path(v.second->getImagePath());
+        std::string old_filename = old_path.stem().string();
+
+        /*Save this image*/
+        std::stringstream sstream;
+        sstream << output_path << "/" << old_filename << ".exr";
+        oiio::ParamValueList metadata = image::readImageMetadata(v.second->getImagePath());
+        image::writeImage(sstream.str(), rotated, image::EImageColorSpace::AUTO, metadata);
+
+        v.second->setImagePath(sstream.str());
+      }
+    }
+  }
+
+  /*Order views by their image names (without path and extension to make sure we handle rotated images) */
   std::vector<std::shared_ptr<sfmData::View>> viewsOrderedByName;
   for (auto & viewIt: sfmData.getViews()) {
     viewsOrderedByName.push_back(viewIt.second);
   }
   std::sort(viewsOrderedByName.begin(), viewsOrderedByName.end(), [](const std::shared_ptr<sfmData::View> & a, const std::shared_ptr<sfmData::View> & b) -> bool { 
     if (a == nullptr || b == nullptr) return true;
-    return (a->getImagePath() < b->getImagePath());
+    
+    boost::filesystem::path path_a(a->getImagePath());
+    boost::filesystem::path path_b(b->getImagePath());
+
+    return (path_a.stem().string() < path_b.stem().string());
   });
 
-  boost::filesystem::path path(sfmOutputDataFilename);
-  std::string output_path = path.parent_path().string();
 
 
   /*
