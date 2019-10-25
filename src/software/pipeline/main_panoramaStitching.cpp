@@ -17,6 +17,9 @@
 #include <boost/program_options.hpp>
 #include <aliceVision/system/cmdline.hpp>
 
+/*IO*/
+#include <fstream>
+
 // These constants define the current software version.
 // They must be updated when the command line is changed.
 #define ALICEVISION_SOFTWARE_VERSION_MAJOR 1
@@ -970,6 +973,25 @@ public:
     return _real_height;
   }
 
+  void dump(std::ofstream & output) {
+    output.write((char*)&_offset_x, sizeof(_offset_x));
+    output.write((char*)&_offset_y, sizeof(_offset_y));
+    output.write((char*)&_real_width, sizeof(_real_width));
+    output.write((char*)&_real_height, sizeof(_real_height));
+    
+    char * ptr_color = (char*)(_color.data());
+    for (int i = 0; i < _real_height; i++) {
+      output.write(ptr_color, _real_width * sizeof(decltype(_color)::Scalar));
+      ptr_color += _color.rowStride();
+    }
+
+    char * ptr_mask = (char*)(_mask.data());
+    for (int i = 0; i < _real_height; i++) {
+      output.write(ptr_mask, _real_width * sizeof(decltype(_mask)::Scalar));
+      ptr_mask += _mask.rowStride();
+    }
+  }
+
 protected:
   size_t _offset_x = 0;
   size_t _offset_y = 0;
@@ -1502,7 +1524,6 @@ int main(int argc, char **argv) {
   optionalParams.add_options()
     ("panoramaWidth,w", po::value<int>(&panoramaSize.first)->default_value(panoramaSize.first), "Panorama Width in pixels.");
   allParams.add(optionalParams);
-  panoramaSize.second = panoramaSize.first / 2;
 
   /**
    * Setup log level given command line
@@ -1564,31 +1585,46 @@ int main(int argc, char **argv) {
     return EXIT_FAILURE;
   }
 
+
+  /*Order views by their image names for easier debugging*/
+  std::vector<std::shared_ptr<sfmData::View>> viewsOrderedByName;
+  for (auto & viewIt: sfmData.getViews()) {
+    viewsOrderedByName.push_back(viewIt.second);
+  }
+  std::sort(viewsOrderedByName.begin(), viewsOrderedByName.end(), [](const std::shared_ptr<sfmData::View> & a, const std::shared_ptr<sfmData::View> & b) -> bool { 
+    if (a == nullptr || b == nullptr) return true;
+    return (a->getImagePath() < b->getImagePath());
+  });
+
+
   /*If panorama width is undefined, estimate it*/
   if (panoramaSize.first <= 0) {
     std::pair<int, int> optimalPanoramaSize;
     if (computeOptimalPanoramaSize(optimalPanoramaSize, sfmData)) {
-      ALICEVISION_LOG_INFO("Optimal panorama size : "  << optimalPanoramaSize.first << "x" << optimalPanoramaSize.second);
       panoramaSize = optimalPanoramaSize;
     }
   }
+  else {
+    panoramaSize.second = panoramaSize.first / 2;
+  }
+
+  ALICEVISION_LOG_INFO("Choosen panorama size : "  << panoramaSize.first << "x" << panoramaSize.second);
 
   /**
    * Create compositer
   */
-  AlphaCompositer compositer(size_t(panoramaSize.first), size_t(panoramaSize.second));
+  LaplacianCompositer compositer(size_t(panoramaSize.first), size_t(panoramaSize.second));
 
   /**
    * Preprocessing per view
    */
   size_t pos = 0;
-  for (auto & viewIt: sfmData.getViews()) {
-    
-    /*if (pos == 12) */{
+  for (const std::shared_ptr<sfmData::View> & viewIt: viewsOrderedByName) {
+
     /**
      * Retrieve view
      */
-    const sfmData::View& view = *viewIt.second.get();
+    const sfmData::View& view = *viewIt;
     if (!sfmData.isPoseAndIntrinsicDefined(&view)) {
       continue;
     }
@@ -1610,46 +1646,42 @@ int main(int argc, char **argv) {
     /**
      * Load image and convert it to linear colorspace
      */
-    ALICEVISION_LOG_INFO("Load image\n");
     std::string imagePath = view.getImagePath();
+    ALICEVISION_LOG_INFO("Load image with path " << imagePath);
     image::Image<image::RGBfColor> source;
     image::readImage(imagePath, source, image::EImageColorSpace::LINEAR);
-    
+
+      
 
     /**
      * Warp image
      */
-    ALICEVISION_LOG_INFO("Warp\n");
     GaussianWarper warper;
     warper.warp(map, source);
 
-    /*{
-    const aliceVision::image::Image<image::RGBfColor> & panorama = warper.getColor();
-    char filename[512];
-    sprintf(filename, "%s_source_%d.exr", outputPanorama.c_str(), pos);
-    image::writeImage(filename, panorama, image::EImageColorSpace::SRGB);
-    }*/
+    /*std::ofstream out("/home/mmoc/test.dat", std::ios::binary);
+    warper.dump(out);
+    out.close();*/
     
+    /**
+     * Alpha mask
+     */
     AlphaBuilder alphabuilder;
     alphabuilder.build(map, intrinsic);
     
     /**
      *Composite image into output
     */
-    ALICEVISION_LOG_INFO("Composite\n");
+    ALICEVISION_LOG_INFO("Composite to final panorama\n");
     compositer.append(warper, alphabuilder);
-    }
     
     pos++;
   }
 
-  {
-    ALICEVISION_LOG_INFO("Save\n");
-    const aliceVision::image::Image<image::RGBfColor> & panorama = compositer.getPanorama();
-    char filename[512];
-    sprintf(filename, "%s.exr", outputPanorama.c_str());
-    image::writeImage(filename, panorama, image::EImageColorSpace::SRGB);
-  }
+
+  ALICEVISION_LOG_INFO("Save final panoram\n");
+  const aliceVision::image::Image<image::RGBfColor> & panorama = compositer.getPanorama();
+  image::writeImage(outputPanorama, panorama, image::EImageColorSpace::SRGB);
 
   return EXIT_SUCCESS;
 }
