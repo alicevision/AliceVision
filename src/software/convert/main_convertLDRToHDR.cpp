@@ -58,6 +58,8 @@ int main(int argc, char * argv[]) {
     ;
 
   po::options_description optionalParams("Optional parameters");
+  optionalParams.add_options()
+    ("expandDynamicRange,e", po::value<float>(&clampedValueCorrection)->default_value(clampedValueCorrection), "float value between 0 and 1 to correct clamped high values in dynamic range: use 0 for no correction, 0.5 for interior lighting and 1 for outdoor lighting.");
 
   po::options_description logParams("Log parameters");
   logParams.add_options()
@@ -234,7 +236,13 @@ int main(int argc, char * argv[]) {
   calibrationWeight.setTriangular();
 
   hdr::DebevecCalibrate calibration;
-  calibration.process(groupedFilenames, channelQuantization, groupedExposures, nbPoints, fisheye, calibrationWeight, lambda, response);
+  if (!calibration.process(groupedFilenames, channelQuantization, groupedExposures, nbPoints, fisheye, calibrationWeight, lambda, response)) {
+     ALICEVISION_LOG_ERROR("Calibration failed.");
+    return EXIT_FAILURE;
+  }
+
+  ALICEVISION_LOG_INFO("Calibration done.");
+
   response.exponential();
   response.scale();
 
@@ -268,7 +276,7 @@ int main(int argc, char * argv[]) {
     /*Output image file path*/
     std::string hdr_output_path;
     std::stringstream  sstream;
-    sstream << output_path << "/" << "hdr_" << std::setfill('0') << std::setw(4) << ".exr";
+    sstream << output_path << "/" << "hdr_" << std::setfill('0') << std::setw(4) << g << ".exr";
 
     /*Write an image with parameters from the target view*/
     oiio::ParamValueList targetMetadata = image::readImageMetadata(targetView->getImagePath());
