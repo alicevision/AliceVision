@@ -1613,7 +1613,7 @@ int main(int argc, char **argv) {
   /**
    * Create compositer
   */
-  LaplacianCompositer compositer(size_t(panoramaSize.first), size_t(panoramaSize.second));
+  AlphaCompositer compositer(size_t(panoramaSize.first), size_t(panoramaSize.second));
 
   /**
    * Preprocessing per view
