@@ -153,6 +153,7 @@ int main(int argc, char * argv[]) {
 
   if (sfmData.getViews().size() != rotations.size()) {
     ALICEVISION_LOG_ERROR("The input SfMData has an incorrect number of views.");
+    ALICEVISION_LOG_ERROR("Input has " << sfmData.getViews().size() << ", xml has " << rotations.size());
     return EXIT_FAILURE; 
   }
 

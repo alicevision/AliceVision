@@ -37,10 +37,6 @@ void hdrMerge::process(const std::vector< image::Image<image::RGBfColor> > &imag
   const std::size_t width = images.front().Width();
   const std::size_t height = images.front().Height();
 
-//  //min and max trusted values
-//  const float minTrustedValue = 0.0f - std::numeric_limits<float>::epsilon();
-//  const float maxTrustedValue = 1.0f + std::numeric_limits<float>::epsilon();
-
   const float maxLum = 1000.0;
   const float minLum = 0.0001;
 
@@ -52,18 +48,12 @@ void hdrMerge::process(const std::vector< image::Image<image::RGBfColor> > &imag
       //for each pixels
       image::RGBfColor &radianceColor = radiance(y, x);
 
-//      double highValue = images.at(0)(y, x).maxCoeff();
-//      double lowValue = images.at(images.size()-1)(y, x).minCoeff();
-
       for(std::size_t channel = 0; channel < 3; ++channel)
       {
         double wsum = 0.0;
         double wdiv = 0.0;
-        double highValue = images.at(0)(y, x)(channel);
-        double lowValue = images.at(images.size()-1)(y, x)(channel);
-
-//        float minTimeSaturation = std::numeric_limits<float>::max();
-//        float maxTimeSaturation = std::numeric_limits<float>::min();
+        double lowValue = images.at(0)(y, x)(channel);
+        double highValue = images.at(images.size()-1)(y, x)(channel);
 
 
         for(std::size_t i = 0; i < images.size(); ++i)
@@ -86,43 +76,12 @@ void hdrMerge::process(const std::vector< image::Image<image::RGBfColor> > &imag
         if(!robCalibrate && clampedValueCorrection != 0.f)
         {
           radianceColor(channel) = (1.0 - clampedHighValue - clampedLowValue) * wsum / std::max(0.001, wdiv) * targetTime + clampedHighValue * maxLum * clampedValueCorrection + clampedLowValue * minLum * clampedValueCorrection;
-//          radianceColor(channel) = (1.0 - clampedHighValue - clampedLowValue) * wsum / std::max(0.001, wdiv) + clampedHighValue * maxLum * clampedValueCorrection + clampedLowValue * minLum * clampedValueCorrection;
         }
         else
         {
           radianceColor(channel) = wsum / std::max(0.001, wdiv) * targetTime;
-//          radianceColor(channel) = wsum / std::max(0.001, wdiv);
         }
-
-
-//          //saturation detection
-//          if(value > maxTrustedValue)
-//          {
-//            minTimeSaturation = std::min(minTimeSaturation, time);
-//          }
-//
-//          if(value < minTrustedValue)
-//          {
-//            maxTimeSaturation = std::max(maxTimeSaturation, time);
-//          }
-
-//        //saturation correction
-//        if((wdiv == 0.0f) &&
-//               (maxTimeSaturation > std::numeric_limits<float>::min()))
-//        {
-//          wsum = minTrustedValue;
-//          wdiv = maxTimeSaturation;
-//        }
-//2
-//        if((wdiv == 0.0f) &&
-//               (minTimeSaturation < std::numeric_limits<float>::max()))
-//        {
-//          wsum = maxTrustedValue;
-//          wdiv = minTimeSaturation;
-//        }
-
       }
-
     }
   }
 }

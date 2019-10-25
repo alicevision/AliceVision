@@ -66,81 +66,27 @@ bool DebevecCalibrate::process(const std::vector< std::vector<std::string>> & im
     const std::size_t width = ldrImagesGroup.front().Width();
     const std::size_t height = ldrImagesGroup.front().Height();
 
-    /* 
-    Include the data-fitting equations.
-    If images are fisheye, we take only pixels inside a disk with a radius of image's minimum side
-    */
-    if(fisheye)
+    
+    const int step = std::floor(width*height / samplesPerImage);
+    for(unsigned int j=0; j<nbImages; ++j)
     {
-      const std::size_t minSize = std::min(width, height) * 0.97;
-      const Vec2i center(width/2, height/2);
-
-      const int xMin = std::ceil(center(0) - minSize/2);
-      const int yMin = std::ceil(center(1) - minSize/2);
-      const int xMax = std::floor(center(0) + minSize/2);
-      const int yMax = std::floor(center(1) + minSize/2);
-      const std::size_t maxDist2 = pow(minSize * 0.5, 2);
-
-      const int step = std::ceil(minSize / sqrt(samplesPerImage));
-      for(unsigned int j=0; j<nbImages; ++j)
-      {
-        int countValidPixels = 0;
+      const image::Image<image::RGBfColor> &image = ldrImagesGroup.at(j);
+      const float time = std::log(ldrTimes.at(j));
         
-        const image::Image<image::RGBfColor> &image = ldrImagesGroup.at(j);
-        const float time = std::log(ldrTimes.at(j));
-        for(int y = yMin; y < yMax-step; y+=step)
-        {
-          for(int x = xMin; x < xMax-step; x+=step)
-          {
-            std::size_t dist2 = pow(center(0)-x, 2) + pow(center(1)-y, 2);
-
-            /*This looks stupid ...*/
-            if(dist2 > maxDist2) {
-                continue;
-            }
-
-
-            for (int channel = 0; channel < channelsCount; channel++) {
-              float sample = clamp(image(y, x)(channel), 0.f, 1.f);
-              float w_ij = weight(sample, channel);
-              std::size_t index = std::round(sample * (channelQuantization - 1));
-
-              tripletList_array[channel].push_back(T(count, index, w_ij));
-              tripletList_array[channel].push_back(T(count, channelQuantization + g * samplesPerImage + countValidPixels, -w_ij));
-
-              b_array[channel](count) = w_ij * time;
-            }
-
-            count += 1;
-            countValidPixels += 1;
-          }
-        }
-      }
-    }
-    else
-    {
-      const int step = std::floor(width*height / samplesPerImage);
-      for(unsigned int j=0; j<nbImages; ++j)
+      for(unsigned int i=0; i<samplesPerImage; ++i)
       {
-        const image::Image<image::RGBfColor> &image = ldrImagesGroup.at(j);
-        const float time = std::log(ldrTimes.at(j));
-        
-        for(unsigned int i=0; i<samplesPerImage; ++i)
-        {
-          for (int channel = 0; channel < channelsCount; channel++) {
+        for (int channel = 0; channel < channelsCount; channel++) {
+          float sample = clamp(image(step*i)(channel), 0.f, 1.f);
+          float w_ij = weight(sample, channel);
+          std::size_t index = std::round(sample * (channelQuantization - 1));
 
-            float sample = clamp(image(step*i)(channel), 0.f, 1.f);
-            float w_ij = weight(sample, channel);
-            std::size_t index = std::round(sample * (channelQuantization - 1));
+          tripletList_array[channel].push_back(T(count, index, w_ij));
+          tripletList_array[channel].push_back(T(count, channelQuantization + g*samplesPerImage + i, -w_ij));
 
-            tripletList_array[channel].push_back(T(count, index, w_ij));
-            tripletList_array[channel].push_back(T(count, channelQuantization + g*samplesPerImage + i, -w_ij));
-
-            b_array[channel](count) = w_ij * time;
-          }
-
-          count += 1;
+          b_array[channel](count) = w_ij * time;
         }
+
+        count += 1;
       }
     }
   }
