@@ -55,10 +55,12 @@ bool DebevecCalibrate::process(const std::vector< std::vector<std::string>> & im
   size_t count = 0;
   for (unsigned int g = 0; g < nbGroups; g++)
   {
+    
     const std::vector<std::string > &imagePaths = imagePathsGroups[g];
     std::vector<image::Image<image::RGBfColor>> ldrImagesGroup(imagePaths.size());
  
     for (int i = 0; i < imagePaths.size(); i++) {
+      ALICEVISION_LOG_INFO("Load " << imagePaths[i]);
       image::readImage(imagePaths[i], ldrImagesGroup[i], image::EImageColorSpace::SRGB);
     }
 

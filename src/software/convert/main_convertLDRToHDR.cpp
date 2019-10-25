@@ -219,6 +219,9 @@ int main(int argc, char * argv[]) {
         oiio::ParamValueList metadata = image::readImageMetadata(v.second->getImagePath());
         image::writeImage(sstream.str(), rotated, image::EImageColorSpace::AUTO, metadata);
 
+        /*Update view for this modification*/
+        v.second->setWidth(w);
+        v.second->setHeight(h);
         v.second->setImagePath(sstream.str());
       }
     }
@@ -351,6 +354,7 @@ int main(int argc, char * argv[]) {
 
     /* Load all images of the group */
     for (int i = 0; i < groupSize; i++) {
+      ALICEVISION_LOG_INFO("Load " << groupedFilenames[g][i]);
       image::readImage(groupedFilenames[g][i], images[i], image::EImageColorSpace::SRGB);
     }
 
