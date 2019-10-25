@@ -289,7 +289,7 @@ int main(int argc, char * argv[]) {
   /*
   Save output sfmdata
   */
-  if (!sfmDataIO::Save(outputSfm, sfmOutputDataFilename, sfmDataIO::ESfMData(sfmDataIO::VIEWS|sfmDataIO::INTRINSICS)))
+  if (!sfmDataIO::Save(sfmData, sfmOutputDataFilename, sfmDataIO::ESfMData(sfmDataIO::VIEWS|sfmDataIO::INTRINSICS)))
   {
     ALICEVISION_LOG_ERROR("Can not save output sfm file at " << sfmOutputDataFilename);
     return EXIT_FAILURE;
