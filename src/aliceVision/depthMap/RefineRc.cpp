@@ -323,25 +323,28 @@ void computeNormalMaps(int cudaDeviceIndex, mvsUtils::MultiViewParams& mp, const
   mvsUtils::ImagesCache<ImageRGBAf> ic(mp, EImageColorSpace::LINEAR);
   PlaneSweepingCuda cps(cudaDeviceIndex, ic, mp, 1);
 
+  NormalMapping* mapping = cps.createNormalMapping();
+
   for(const int rc : cams)
   {
     const std::string normalMapFilepath = getFileNameFromIndex(mp, rc, mvsUtils::EFileType::normalMap, 0);
 
     if(!mvsUtils::FileExists(normalMapFilepath))
     {
-      StaticVector<float> depthMap;
+      std::vector<float> depthMap;
       int w = 0;
       int h = 0;
-      readImage(getFileNameFromIndex(mp, rc, mvsUtils::EFileType::depthMap, 0), w, h, depthMap.getDataWritable(), EImageColorSpace::NO_CONVERSION);
+      readImage(getFileNameFromIndex(mp, rc, mvsUtils::EFileType::depthMap, 0), w, h, depthMap, EImageColorSpace::NO_CONVERSION);
 
-      StaticVector<ColorRGBf> normalMap;
+      std::vector<ColorRGBf> normalMap;
       normalMap.resize(mp.getWidth(rc) * mp.getHeight(rc));
       
-      cps.computeNormalMap(&depthMap, &normalMap, rc, 1, igammaC, igammaP, wsh);
+      cps.computeNormalMap( mapping, depthMap, normalMap, rc, 1, igammaC, igammaP, wsh);
 
-      writeImage(normalMapFilepath, mp.getWidth(rc), mp.getHeight(rc), normalMap.getDataWritable(), EImageQuality::LOSSLESS, OutputFileColorSpace(EImageColorSpace::NO_CONVERSION));
+      writeImage(normalMapFilepath, mp.getWidth(rc), mp.getHeight(rc), normalMap, EImageQuality::LOSSLESS, OutputFileColorSpace(EImageColorSpace::NO_CONVERSION));
     }
   }
+  cps.deleteNormalMapping( mapping );
 }
 
 

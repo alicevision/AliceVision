@@ -19,8 +19,8 @@ using TSim = unsigned char;
 #endif
 
 
-inline __device__ void volume_computePatch( const CameraStructBase& rc_cam,
-                                            const CameraStructBase& tc_cam,
+inline __device__ void volume_computePatch( int rc_cam, // const CameraStructBase& rc_cam,
+                                            int tc_cam, // const CameraStructBase& tc_cam,
                                             Patch& ptch,
                                             const float fpPlaneDepth, const int2& pix )
 {
@@ -45,8 +45,8 @@ __global__ void volume_init_kernel(TSim* volume, int volume_s, int volume_p,
 
 __global__ void volume_initCameraColor_kernel(
     float4* volume, int volume_s, int volume_p,
-    const CameraStructBase& rc_cam,
-    const CameraStructBase& tc_cam,
+    int rc_cam, // const CameraStructBase& rc_cam,
+    int tc_cam, // const CameraStructBase& tc_cam,
     cudaTextureObject_t tc_tex,
     const int tcWidth, const int tcHeight,
     const int depthToStart,
@@ -71,7 +71,7 @@ __global__ void volume_initCameraColor_kernel(
     // Convert the voxel into a 3D coordinate
     float3 p = get3DPointForPixelAndFrontoParellePlaneRC(rc_cam, make_int2(x, y), fpPlaneDepth); // no texture use
     // Project the 3D point in the image of the T camera
-    float2 p_tc = project3DPoint(tc_cam.P, p);
+    float2 p_tc = project3DPoint(camsBasesDev[tc_cam].P, p);
 
     if (p_tc.x < 0.0f || p_tc.y < 0.0f || p_tc.x >= tcWidth || p_tc.y >= tcHeight)
     {
@@ -201,8 +201,8 @@ __global__ void volume_estimateSim_twoViews_kernel(
 __global__ void volume_slice_kernel(
                                     cudaTextureObject_t rc_tex,
                                     cudaTextureObject_t tc_tex,
-                                    const CameraStructBase& rc_cam,
-                                    const CameraStructBase& tc_cam,
+                                    int rc_cam, // const CameraStructBase& rc_cam,
+                                    int tc_cam, // const CameraStructBase& tc_cam,
                                     const float* depths_d,
                                     const int lowestUsedDepth,
                                     const int nbDepthsToSearch,
@@ -292,23 +292,23 @@ __global__ void volume_slice_kernel(
 }
 
 __device__ float depthPlaneToDepth(
-    const CameraStructBase& cam,
+    int cam, // const CameraStructBase& cam,
     const float2& pix,
     float fpPlaneDepth)
 {
-    float3 planen = M3x3mulV3(cam.iR, make_float3(0.0f, 0.0f, 1.0f));
+    float3 planen = M3x3mulV3(camsBasesDev[cam].iR, make_float3(0.0f, 0.0f, 1.0f));
     normalize(planen);
-    float3 planep = cam.C + planen * fpPlaneDepth;
-    float3 v = M3x3mulV2(cam.iP, pix);
+    float3 planep = camsBasesDev[cam].C + planen * fpPlaneDepth;
+    float3 v = M3x3mulV2(camsBasesDev[cam].iP, pix);
     normalize(v);
-    float3 p = linePlaneIntersect(cam.C, v, planep, planen);
-    float depth = size(cam.C - p);
+    float3 p = linePlaneIntersect(camsBasesDev[cam].C, v, planep, planen);
+    float depth = size(camsBasesDev[cam].C - p);
     return depth;
 }
 
 
 __global__ void volume_retrieveBestZ_kernel(
-  const CameraStructBase& cam,
+  int cam, // const CameraStructBase& cam,
   float* bestDepthM, int bestDepthM_s,
   float* bestSimM, int bestSimM_s,
   const float* depths_d,
@@ -334,8 +334,9 @@ __global__ void volume_retrieveBestZ_kernel(
       bestZIdx = z;
     }
   }
+  bestZIdx = max(0, bestZIdx);
   
-  float2 pix{x * scaleStep, y * scaleStep };
+  float2 pix{float(x * scaleStep), float(y * scaleStep) };
   // Without depth interpolation (for debug purpose only)
   if(!interpolate)
   {

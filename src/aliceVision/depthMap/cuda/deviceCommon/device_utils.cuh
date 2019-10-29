@@ -6,8 +6,8 @@
 
 #pragma once
 
-#include <aliceVision/depthMap/cuda/planeSweeping/device_utils.h>
-
+#include <cuda_runtime.h>
+#include <aliceVision/depthMap/cuda/deviceCommon/device_utils.h>
 
 namespace aliceVision {
 namespace depthMap {
@@ -21,7 +21,8 @@ namespace depthMap {
 * @return
 */
 template <typename T>
-__device__ T* get2DBufferAt(T* ptr, int pitch, int x, int y)
+__device__ static inline
+T* get2DBufferAt(T* ptr, int pitch, int x, int y)
 {
     return &(BufPtr<T>(ptr,pitch).at(x,y));
 }
@@ -36,36 +37,41 @@ __device__ T* get2DBufferAt(T* ptr, int pitch, int x, int y)
 * @return
 */
 template <typename T>
-__device__ T* get3DBufferAt(T* ptr, int spitch, int pitch, int x, int y, int z)
+__device__ static inline
+T* get3DBufferAt(T* ptr, int spitch, int pitch, int x, int y, int z)
 {
     return ((T*)(((char*)ptr) + z * spitch + y * pitch)) + x;
 }
 
 template <typename T>
-__device__ const T* get3DBufferAt(const T* ptr, int spitch, int pitch, int x, int y, int z)
+__device__ static inline
+const T* get3DBufferAt(const T* ptr, int spitch, int pitch, int x, int y, int z)
 {
     return ((const T*)(((const char*)ptr) + z * spitch + y * pitch)) + x;
 }
 
 template <typename T>
-__device__ T* get3DBufferAt(T* ptr, int spitch, int pitch, const int3& v)
+__device__ static inline
+T* get3DBufferAt(T* ptr, int spitch, int pitch, const int3& v)
 {
     return get3DBufferAt(ptr, spitch, pitch, v.x, v.y, v.z);
 }
 
 template <typename T>
-__device__ const T* get3DBufferAt(const T* ptr, int spitch, int pitch, const int3& v)
+__device__ static inline
+const T* get3DBufferAt(const T* ptr, int spitch, int pitch, const int3& v)
 {
     return get3DBufferAt(ptr, spitch, pitch, v.x, v.y, v.z);
 }
 
-
-inline __device__ float multi_fminf(float a, float b, float c)
+__device__ static inline
+float multi_fminf(float a, float b, float c)
 {
   return fminf(fminf(a, b), c);
 }
 
-inline __device__ float multi_fminf(float a, float b, float c, float d)
+__device__ static inline
+float multi_fminf(float a, float b, float c, float d)
 {
   return fminf(fminf(fminf(a, b), c), d);
 }
@@ -73,7 +79,8 @@ inline __device__ float multi_fminf(float a, float b, float c, float d)
 
 #ifdef ALICEVISION_DEPTHMAP_TEXTURE_USE_UCHAR
 
-inline __device__ float4 tex2D_float4(cudaTextureObject_t rc_tex, float x, float y)
+__device__ static inline
+float4 tex2D_float4(cudaTextureObject_t rc_tex, float x, float y)
 {
     // cudaReadElementType
     uchar4 a = tex2D<uchar4>(rc_tex, x, y);
@@ -86,7 +93,8 @@ inline __device__ float4 tex2D_float4(cudaTextureObject_t rc_tex, float x, float
 
 #else
 
-inline __device__ float4 tex2D_float4(cudaTextureObject_t rc_tex, float x, float y)
+__device__ static inline
+float4 tex2D_float4(cudaTextureObject_t rc_tex, float x, float y)
 {
     return tex2D<float4>(rc_tex, x, y);
 }
@@ -95,3 +103,4 @@ inline __device__ float4 tex2D_float4(cudaTextureObject_t rc_tex, float x, float
 
 } // namespace depthMap
 } // namespace aliceVision
+

@@ -10,7 +10,7 @@
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/gpu/gpu.hpp>
 
-#include <aliceVision/depthMap/cuda/planeSweeping/device_utils.h>
+#include <aliceVision/depthMap/cuda/deviceCommon/device_utils.h>
 #include <aliceVision/depthMap/SemiGlobalMatchingRcTc.hpp>
 #include <aliceVision/mvsData/OrientedPoint.hpp>
 #include <aliceVision/mvsData/Point3d.hpp>
