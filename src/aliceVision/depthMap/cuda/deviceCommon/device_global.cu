@@ -4,7 +4,8 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
-#pragma once
+#ifndef ALICEVISION_CUDA_deviceCommon_device_global_cu
+#define ALICEVISION_CUDA_deviceCommon_device_global_cu
 
 #include <aliceVision/depthMap/cuda/commonStructures.hpp>
 
@@ -23,21 +24,26 @@ __device__ int clamp(int x, int a, int b)
 // CONSTANT MEMORY
 
 // MATLAB: x = [-2:2]; delta = 1; y = exp( - (x .* x) / (2 * delta * delta)); format long g; y
-__device__ __constant__ float gauss5[5] = {0.135335283236613f, 0.606530659712633f, 1.0f, 0.606530659712633f,
+__constant__ float gauss5[5] = {0.135335283236613f, 0.606530659712633f, 1.0f, 0.606530659712633f,
                                            0.135335283236613f};
-__device__ __constant__ float sumGauss55 = 6.16892408102888f;
+__constant__ float sumGauss55 = 6.16892408102888f;
 
 // MATLAB: distFcnHeight=1.0; maxDist = 0.3;  dist = 0:0.01:1; y =
 // 1-distFcnHeight*exp(-(dist.*dist)/(2*maxDist*maxDist)); plot(dist,y);
 // MATLAB: distFcnHeight=1.0; maxDist = 0.3;  dist = 0:0.25:1; y =
 // 1-distFcnHeight*exp(-(dist.*dist)/(2*maxDist*maxDist)); plot(dist,y); int32(125*y)
-__device__ __constant__ unsigned char distFcnConst5[5] = {0, 37, 94, 120, 125};
+__constant__ unsigned char distFcnConst5[5] = {0, 37, 94, 120, 125};
 
 // MATLAB: distFcnHeight=1.0; maxDist = 0.3;  dist = 0:1/2:1; y =
 // 1-distFcnHeight*exp(-(dist.*dist)/(2*maxDist*maxDist)); plot(dist,y); int32(125*y)
-__device__ __constant__ unsigned char distFcnConst3[3] = {0, 94, 125};
+__constant__ unsigned char distFcnConst3[3] = {0, 94, 125};
+
+__constant__ CameraStructBase camsBasesDev[MAX_CONCURRENT_IMAGES_IN_DEPTHMAP];
 
 
 } // namespace depthMap
 } // namespace aliceVision
 
+#else // ALICEVISION_CUDA_deviceCommon_device_global_cu
+#error "deviceCommon/device_global.cu has been included twice"
+#endif // ALICEVISION_CUDA_deviceCommon_device_global_cu

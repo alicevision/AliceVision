@@ -27,6 +27,8 @@
 namespace aliceVision {
 namespace depthMap {
 
+#define MAX_CONCURRENT_IMAGES_IN_DEPTHMAP   10
+
 /*********************************************************************************
  * forward declarations
  *********************************************************************************/
@@ -465,6 +467,8 @@ public:
     void copyFrom( const Type* src, size_t sx, size_t sy );
     void copyFrom( const CudaDeviceMemoryPitched<Type, Dim>& src );
 
+    void copyTo( Type* dst, size_t sx, size_t sy ) const;
+
     Type* getBuffer()
     {
         return buffer;
@@ -882,6 +886,26 @@ void CudaHostMemoryHeap<Type, Dim>::copyFrom( const CudaDeviceMemoryPitched<Type
     }
 }
 
+template<class Type, unsigned Dim>
+void CudaDeviceMemoryPitched<Type, Dim>::copyTo( Type* dst, size_t sx, size_t sy ) const
+{
+    if(Dim == 2)
+    {
+        const size_t dst_pitch  = sx * sizeof(Type);
+        const size_t dst_width  = sx * sizeof(Type);
+        const size_t dst_height = sy;
+        cudaError_t err = cudaMemcpy2D(dst,
+                                       dst_pitch,
+                                       this->getBytePtr(),
+                                       this->getPitch(),
+                                       dst_width,
+                                       dst_height,
+                                       cudaMemcpyDeviceToHost);
+
+        THROW_ON_CUDA_ERROR(err, "Failed to copy (" << __FILE__ << " " << __LINE__ << ")");
+    }
+}
+
 /*********************************************************************************
  * copy functions
  *********************************************************************************/
@@ -1213,8 +1237,6 @@ struct CameraStructBase
     float3 ZVect;
 };
 
-typedef CameraStructBase DeviceCameraStructBase;
-
 // #define ALICEVISION_DEPTHMAP_TEXTURE_USE_UCHAR
 
 #ifdef ALICEVISION_DEPTHMAP_TEXTURE_USE_UCHAR
@@ -1228,15 +1250,6 @@ using CudaRGBA = float4;
 #endif
 
 
-struct CameraStruct
-{
-    const CameraStructBase* param_hst = nullptr;
-    const CameraStructBase* param_dev = nullptr;
-    CudaHostMemoryHeap<CudaRGBA, 2>* tex_rgba_hmh = nullptr;
-    int camId;
-    cudaStream_t stream; // allow async work on cameras used in parallel
-};
-
 struct TexturedArray
 {
     CudaDeviceMemoryPitched<CudaRGBA, 2>* arr = nullptr;
@@ -1245,6 +1258,16 @@ struct TexturedArray
 
 typedef std::vector<TexturedArray> Pyramid;
 typedef std::vector<Pyramid> Pyramids;
+
+struct CameraStruct
+{
+    int                     param_dev = 0;
+    // const CameraStructBase* param_dev = nullptr;
+    CudaHostMemoryHeap<CudaRGBA, 2>* tex_rgba_hmh = nullptr;
+    Pyramid*                         pyramid = nullptr;
+    int camId;
+    cudaStream_t stream; // allow async work on cameras used in parallel
+};
 
 /**
 * @notes: use normalized coordinates

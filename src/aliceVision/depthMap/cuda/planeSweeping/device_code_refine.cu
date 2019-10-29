@@ -7,7 +7,8 @@
 namespace aliceVision {
 namespace depthMap {
 
-__global__ void refine_compUpdateYKNCCSimMapPatch_kernel(const CameraStructBase& rc_cam, const CameraStructBase& tc_cam,
+__global__ void refine_compUpdateYKNCCSimMapPatch_kernel(int rc_cam, // const CameraStructBase& rc_cam,
+                                                         int tc_cam, // const CameraStructBase& tc_cam,
                                                          cudaTextureObject_t rc_tex, cudaTextureObject_t tc_tex,
                                                          float* osimMap, int osimMap_p, float* odptMap, int odptMap_p,
                                                          float* depthMap, int depthMap_p, int width, int height,
@@ -37,7 +38,7 @@ __global__ void refine_compUpdateYKNCCSimMapPatch_kernel(const CameraStructBase&
         // move3DPointByTcPixStep(p, tcStep);
         move3DPointByTcOrRcPixStep(rc_cam, tc_cam, pix, p, tcStep, moveByTcOrRc);
 
-        odpt = size(p - rc_cam.C);
+        odpt = size(p - camsBasesDev[rc_cam].C);
 
         Patch ptch;
         ptch.p = p;
@@ -67,7 +68,8 @@ __global__ void refine_compUpdateYKNCCSimMapPatch_kernel(const CameraStructBase&
     }
 }
 
-__global__ void refine_compYKNCCSimMapPatch_kernel(const CameraStructBase& rc_cam, const CameraStructBase& tc_cam,
+__global__ void refine_compYKNCCSimMapPatch_kernel(int rc_cam, // const CameraStructBase& rc_cam,
+                                                   int tc_cam, // const CameraStructBase& tc_cam,
                                                    cudaTextureObject_t rc_tex, cudaTextureObject_t tc_tex,
                                                    float* osimMap, int osimMap_p, float* depthMap, int depthMap_p,
                                                    int width, int height, int wsh, float gammaC,
@@ -128,7 +130,8 @@ __global__ void refine_setLastThreeSimsMap_kernel(float3* lastThreeSimsMap, int 
     }
 }
 
-__global__ void refine_computeDepthSimMapFromLastThreeSimsMap_kernel(const CameraStructBase& rc_cam, const CameraStructBase& tc_cam,
+__global__ void refine_computeDepthSimMapFromLastThreeSimsMap_kernel(int rc_cam, // const CameraStructBase& rc_cam,
+                                                                     int tc_cam, // const CameraStructBase& tc_cam,
                                                                      float* osimMap, int osimMap_p, float* iodepthMap,
                                                                      int iodepthMap_p, float3* lastThreeSimsMap,
                                                                      int lastThreeSimsMap_p, int width, int height,
@@ -157,9 +160,9 @@ __global__ void refine_computeDepthSimMapFromLastThreeSimsMap_kernel(const Camer
         move3DPointByTcOrRcPixStep(rc_cam, tc_cam, pix, pp1, +1.0f, moveByTcOrRc);
 
         float3 depths;
-        depths.x = size(pm1 - rc_cam.C);
+        depths.x = size(pm1 - camsBasesDev[rc_cam].C);
         depths.y = midDepth;
-        depths.z = size(pp1 - rc_cam.C);
+        depths.z = size(pp1 - camsBasesDev[rc_cam].C);
 
         float refinedDepth = refineDepthSubPixel(depths, sims);
         if(refinedDepth > 0.0f)

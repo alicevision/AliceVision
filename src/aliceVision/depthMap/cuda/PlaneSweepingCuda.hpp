@@ -19,6 +19,7 @@
 #include <aliceVision/depthMap/DepthSimMap.hpp>
 #include <aliceVision/depthMap/cuda/commonStructures.hpp>
 #include <aliceVision/depthMap/cuda/tcinfo.hpp>
+#include <aliceVision/depthMap/cuda/normalmap/normal_map.hpp>
 
 namespace aliceVision {
 namespace depthMap {
@@ -59,13 +60,16 @@ public:
 
     mvsUtils::MultiViewParams& _mp;
     const int _CUDADeviceNo = 0;
-    Pyramids _pyramids;
+private:
+    Pyramids _hidden_pyramids;
 
-    CudaDeviceMemoryPitched<CameraStructBase,2> _camsBasesDev;
-    CudaHostMemoryHeap<CameraStructBase,2>      _camsBasesHst;
-    std::vector<CameraStruct>                   _cams;
-    StaticVector<int>                           _camsRcs;
-    StaticVector<long>                          _camsTimes;
+public:
+    // CameraStructBase*          _camsBasesDev;
+    CameraStructBase*          _camsBasesHst;
+    std::vector<int>           _camsBasesHstScale;
+    std::vector<CameraStruct>  _cams;
+    StaticVector<int>          _camsRcs;
+    StaticVector<long>         _camsTimes;
 
     const int  _nbestkernelSizeHalf = 1;
     int  _nImgsInGPUAtTime = 2;
@@ -78,8 +82,7 @@ public:
 
     void cameraToDevice( int rc, const StaticVector<int>& tcams );
 
-    int addCam( int rc, int scale,
-                const char* calling_func );
+    int addCam( int rc, int scale );
 
     void getMinMaxdepths(int rc, const StaticVector<int>& tcams, float& minDepth, float& midDepth, float& maxDepth);
 
@@ -142,8 +145,17 @@ public:
                                             int rc, int nSamplesHalf,
                                             int nDepthsToRefine, float sigma, int nIters, int yFrom, int hPart);
 
-    bool computeNormalMap(StaticVector<float>* depthMap, StaticVector<ColorRGBf>* normalMap, int rc,
-                          int scale, float igammaC, float igammaP, int wsh);
+    /* create object to store intermediate data for repeated use */
+    NormalMapping* createNormalMapping();
+
+    /* delete object to store intermediate data for repeated use */
+    void deleteNormalMapping( NormalMapping* m );
+
+    bool computeNormalMap( NormalMapping* mapping,
+                           const std::vector<float>& depthMap,
+                           std::vector<ColorRGBf>&   normalMap,
+                           int rc, int scale,
+                           float igammaC, float igammaP, int wsh);
 
     bool getSilhoueteMap(StaticVectorBool* oMap, int scale, int step, const rgb maskColor, int rc);
 };
