@@ -20,6 +20,9 @@
 /*IO*/
 #include <fstream>
 
+#include <algorithm>
+
+
 // These constants define the current software version.
 // They must be updated when the command line is changed.
 #define ALICEVISION_SOFTWARE_VERSION_MAJOR 1
@@ -469,8 +472,13 @@ public:
     size_t max_y = 0;
     size_t min_x = panoramaSize.first;
     size_t min_y = panoramaSize.second;
-    
+
+#ifdef _MSC_VER
+    // TODO
+    // no support for reduction min in MSVC implementation of openmp
+#else
     #pragma omp parallel for reduction(min: min_x, min_y) reduction(max: max_x, max_y)
+#endif
     for (size_t y = 0; y < coarse_bbox.height; y++) {
 
       size_t cy = y + coarse_bbox.top;
