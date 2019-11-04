@@ -200,7 +200,7 @@ int main(int argc, char * argv[]) {
 
         /*Read original image*/
         image::Image<image::RGBfColor> originalImage;
-        image::readImage(v.second->getImagePath(), originalImage, image::EImageColorSpace::SRGB);
+        image::readImage(v.second->getImagePath(), originalImage, image::EImageColorSpace::LINEAR);
 
         /*Create a rotated image*/
         image::Image<image::RGBfColor> rotated(w, h);
