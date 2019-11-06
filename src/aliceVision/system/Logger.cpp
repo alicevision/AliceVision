@@ -31,6 +31,49 @@
 namespace aliceVision {
 namespace system {
 
+std::string EVerboseLevel_enumToString(const EVerboseLevel verboseLevel)
+{
+    switch(verboseLevel)
+    {
+        case EVerboseLevel::Fatal:   return "fatal";
+        case EVerboseLevel::Error:   return "error";
+        case EVerboseLevel::Warning: return "warning";
+        case EVerboseLevel::Info:    return "info";
+        case EVerboseLevel::Debug:   return "debug";
+        case EVerboseLevel::Trace:   return "trace";
+    }
+    throw std::out_of_range("Invalid verbose level enum");
+}
+
+EVerboseLevel EVerboseLevel_stringToEnum(const std::string& verboseLevel)
+{
+    std::string level = verboseLevel;
+    std::transform(level.begin(), level.end(), level.begin(), ::tolower);
+
+    if(verboseLevel == "fatal")   return EVerboseLevel::Fatal;
+    if(verboseLevel == "error")   return EVerboseLevel::Error;
+    if(verboseLevel == "warning") return EVerboseLevel::Warning;
+    if(verboseLevel == "info")    return EVerboseLevel::Info;
+    if(verboseLevel == "debug")   return EVerboseLevel::Debug;
+    if(verboseLevel == "trace")   return EVerboseLevel::Trace;
+
+    throw std::out_of_range("Invalid verbose level : '" + verboseLevel + "'");
+}
+
+std::ostream& operator<<(std::ostream& os, const EVerboseLevel verboseLevel)
+{
+    os << EVerboseLevel_enumToString(verboseLevel);
+    return os;
+}
+
+std::istream& operator>>(std::istream& in, EVerboseLevel& verboseLevel)
+{
+    std::string token;
+    in >> token;
+    verboseLevel = EVerboseLevel_stringToEnum(token);
+    return in;
+}
+
 std::shared_ptr<Logger> Logger::_instance = nullptr;
 
 Logger::Logger()
