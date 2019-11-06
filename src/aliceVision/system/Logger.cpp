@@ -32,7 +32,7 @@
 namespace aliceVision {
 namespace system {
 
-std::string EVerboseLevel_enumToString(const EVerboseLevel verboseLevel)
+std::string EVerboseLevel_enumToString(EVerboseLevel verboseLevel)
 {
     switch(verboseLevel)
     {
@@ -60,7 +60,7 @@ EVerboseLevel EVerboseLevel_stringToEnum(std::string verboseLevel)
     throw std::out_of_range("Invalid verbose level : '" + verboseLevel + "'");
 }
 
-std::ostream& operator<<(std::ostream& os, const EVerboseLevel verboseLevel)
+std::ostream& operator<<(std::ostream& os, EVerboseLevel verboseLevel)
 {
     os << EVerboseLevel_enumToString(verboseLevel);
     return os;

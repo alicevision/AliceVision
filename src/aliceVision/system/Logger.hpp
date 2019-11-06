@@ -63,18 +63,18 @@ enum class EVerboseLevel
  * @param[in] verboseLevel The verbose level.
  * @return the string corresponding to the verbose level.
  */
-std::string EVerboseLevel_enumToString(const EVerboseLevel verboseLevel);
+std::string EVerboseLevel_enumToString(EVerboseLevel verboseLevel);
 
 /**
  * @brief convert a string  to its corresponding enum EVerboseLevel
  * @param[in] verboseLevel the string with the verbose level
  * @return the corresponding EVerboseLevel
  */
-inline EVerboseLevel EVerboseLevel_stringToEnum(std::string verboseLevel);
+EVerboseLevel EVerboseLevel_stringToEnum(std::string verboseLevel);
 
-inline std::ostream& operator<<(std::ostream& os, const EVerboseLevel verboseLevel);
+std::ostream& operator<<(std::ostream& os, EVerboseLevel verboseLevel);
 
-inline std::istream& operator>>(std::istream& in, EVerboseLevel& verboseLevel);
+std::istream& operator>>(std::istream& in, EVerboseLevel& verboseLevel);
 
 class Logger
 {
