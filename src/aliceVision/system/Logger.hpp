@@ -70,7 +70,7 @@ std::string EVerboseLevel_enumToString(const EVerboseLevel verboseLevel);
  * @param[in] verboseLevel the string with the verbose level
  * @return the corresponding EVerboseLevel
  */
-inline EVerboseLevel EVerboseLevel_stringToEnum(const std::string& verboseLevel);
+inline EVerboseLevel EVerboseLevel_stringToEnum(std::string verboseLevel);
 
 inline std::ostream& operator<<(std::ostream& os, const EVerboseLevel verboseLevel);
 

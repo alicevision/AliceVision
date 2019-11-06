@@ -19,6 +19,7 @@
 #include <boost/log/expressions/attr.hpp>
 #include <boost/log/expressions/message.hpp>
 #include <boost/log/support/date_time.hpp>
+#include <boost/algorithm/string.hpp>
 
 #if BOOST_VERSION >= 105600
 #include <boost/core/null_deleter.hpp>
@@ -45,10 +46,9 @@ std::string EVerboseLevel_enumToString(const EVerboseLevel verboseLevel)
     throw std::out_of_range("Invalid verbose level enum");
 }
 
-EVerboseLevel EVerboseLevel_stringToEnum(const std::string& verboseLevel)
+EVerboseLevel EVerboseLevel_stringToEnum(std::string verboseLevel)
 {
-    std::string level = verboseLevel;
-    std::transform(level.begin(), level.end(), level.begin(), ::tolower);
+    boost::to_lower(verboseLevel);
 
     if(verboseLevel == "fatal")   return EVerboseLevel::Fatal;
     if(verboseLevel == "error")   return EVerboseLevel::Error;
