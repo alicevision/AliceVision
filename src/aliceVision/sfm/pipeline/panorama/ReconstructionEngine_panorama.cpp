@@ -463,6 +463,37 @@ void ReconstructionEngine_panorama::Compute_Relative_Rotations(rotationAveraging
   /// pairwise view relation between poseIds
   typedef std::map<Pair, PairSet> PoseWiseMatches;
 
+  sfmData::RotationPriors & rotationpriors = _sfmData.getRotationPriors();
+  for (auto & iter_v1 :_sfmData.getViews()) {
+
+    if (!_sfmData.isPoseAndIntrinsicDefined(iter_v1.first)) {
+      continue;
+    }
+
+    for (auto & iter_v2 :_sfmData.getViews()) {
+      if (iter_v1.first == iter_v2.first) {
+        continue;
+      }
+
+      if (!_sfmData.isPoseAndIntrinsicDefined(iter_v2.first)) {
+        continue;
+      }
+
+      IndexT pid1 = iter_v1.second->getPoseId();
+      IndexT pid2 = iter_v2.second->getPoseId();
+
+      CameraPose oneTo = _sfmData.getAbsolutePose(iter_v1.second->getPoseId());
+      CameraPose twoTo = _sfmData.getAbsolutePose(iter_v2.second->getPoseId());
+      Eigen::Matrix3d oneRo = oneTo.getTransform().rotation();
+      Eigen::Matrix3d twoRo = twoTo.getTransform().rotation();
+      Eigen::Matrix3d twoRone = twoRo * oneRo.transpose();
+
+      sfmData::RotationPrior prior(iter_v1.first, iter_v2.first, twoRone); 
+      rotationpriors.push_back(prior);
+    }
+  }
+
+
   // List shared correspondences (pairs) between poses
   PoseWiseMatches poseWiseMatches;
   for (matching::PairwiseMatches::const_iterator iterMatches = _pairwiseMatches->begin(); iterMatches != _pairwiseMatches->end(); ++iterMatches)
