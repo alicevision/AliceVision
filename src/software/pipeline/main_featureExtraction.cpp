@@ -121,6 +121,11 @@ public:
     _maxThreads = maxThreads;
   }
 
+  void setMasksFolder(const std::string& folder)
+  {
+    _masksFolder = folder;
+  }
+
   void setOutputFolder(const std::string& folder)
   {
     _outputFolder = folder;
@@ -241,8 +246,25 @@ private:
   {
     image::Image<float> imageGrayFloat;
     image::Image<unsigned char> imageGrayUChar;
+    image::Image<unsigned char> mask;
 
     image::readImage(job.view.getImagePath(), imageGrayFloat, image::EImageColorSpace::SRGB);
+
+    if(!_masksFolder.empty() && fs::exists(_masksFolder))
+    {
+      const auto masksFolder = fs::path(_masksFolder);
+      const auto idMaskPath = masksFolder / fs::path(std::to_string(job.view.getViewId())).replace_extension("png");
+      const auto nameMaskPath = masksFolder / fs::path(job.view.getImagePath()).filename().replace_extension("png");
+
+      if(fs::exists(idMaskPath))
+      {
+        image::readImage(idMaskPath.string(), mask, image::EImageColorSpace::LINEAR);
+      }
+      else if(fs::exists(nameMaskPath))
+      {
+        image::readImage(nameMaskPath.string(), mask, image::EImageColorSpace::LINEAR);
+      }
+    }
 
     const auto imageDescriberIndexes = useGPU ? job.gpuImageDescriberIndexes : job.cpuImageDescriberIndexes;
 
@@ -268,6 +290,36 @@ private:
           imageGrayUChar = (imageGrayFloat.GetMat() * 255.f).cast<unsigned char>();
         imageDescriber->describe(imageGrayUChar, regions);
       }
+
+      if(mask.Height() > 0)
+      {
+        std::vector<feature::FeatureInImage> selectedIndices;
+        for(size_t i=0, n=regions->RegionCount(); i != n; ++i)
+        {
+          const Vec2 position = regions->GetRegionPosition(i);
+          const int x = int(position.x());
+          const int y = int(position.y());
+
+          bool masked = false;
+          if(x < mask.Width() && y < mask.Height())
+          {
+            if(mask(y, x) == 0)
+            {
+              masked = true;
+            }
+          }
+
+          if(!masked)
+          {
+            selectedIndices.push_back({IndexT(i), 0});
+          }
+        }
+
+        std::vector<IndexT> out_associated3dPoint;
+        std::map<IndexT, IndexT> out_mapFullToLocal;
+        regions = regions->createFilteredRegions(selectedIndices, out_associated3dPoint, out_mapFullToLocal);
+      }
+
       imageDescriber->Save(regions.get(), job.getFeaturesPath(imageDescriberType), job.getDescriptorPath(imageDescriberType));
       ALICEVISION_LOG_INFO(std::left << std::setw(6) << " " << regions->RegionCount() << " " << imageDescriberTypeName  << " features extracted from view '" << job.view.getImagePath() << "'");
     }
@@ -275,6 +327,7 @@ private:
 
   const sfmData::SfMData& _sfmData;
   std::vector<std::shared_ptr<feature::ImageDescriber>> _imageDescribers;
+  std::string _masksFolder;
   std::string _outputFolder;
   int _rangeStart = -1;
   int _rangeSize = -1;
@@ -292,6 +345,7 @@ int aliceVision_main(int argc, char **argv)
 
   system::EVerboseLevel verboseLevel = system::Logger::getDefaultVerboseLevel();
   std::string sfmDataFilename;
+  std::string masksFolder;
   std::string outputFolder;
 
   // user optional parameters
@@ -331,6 +385,8 @@ int aliceVision_main(int argc, char **argv)
        "Peak Threshold relative to median of gradiants.")
     ("forceCpuExtraction", po::value<bool>(&forceCpuExtraction)->default_value(forceCpuExtraction),
       "Use only CPU feature extraction methods.")
+    ("masksFolder", po::value<std::string>(&masksFolder),
+      "Masks folder.")
     ("rangeStart", po::value<int>(&rangeStart)->default_value(rangeStart),
       "Range image index start.")
     ("rangeSize", po::value<int>(&rangeSize)->default_value(rangeSize),
@@ -408,6 +464,7 @@ int aliceVision_main(int argc, char **argv)
 
   // create feature extractor
   FeatureExtractor extractor(sfmData);
+  extractor.setMasksFolder(masksFolder);
   extractor.setOutputFolder(outputFolder);
 
   // set maxThreads
