@@ -268,7 +268,7 @@ int main(int argc, char **argv)
       imageMasking::postprocess_closing(result, closingRadius);
     }
 
-    const auto resultFilename = fs::path(view.getImagePath()).filename().replace_extension("png");
+    const auto resultFilename = fs::path(std::to_string(index)).replace_extension("png");
     const std::string resultPath = (fs::path(outputFilePath) / resultFilename).string();
     image::writeImage(resultPath, result, image::EImageColorSpace::LINEAR);
   }
