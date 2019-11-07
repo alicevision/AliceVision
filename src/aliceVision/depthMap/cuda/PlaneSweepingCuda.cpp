@@ -169,6 +169,7 @@ PlaneSweepingCuda::PlaneSweepingCuda( int CUDADeviceNo,
     , _hidden( 0 )
     , _ic( ic )
     , _mp(mp)
+    , _cameraParamCache( MAX_CONCURRENT_IMAGES_IN_DEPTHMAP )
 {
     /* The caller knows all camera that will become rc cameras, but it does not
      * pass that information to this function.
@@ -199,7 +200,7 @@ PlaneSweepingCuda::PlaneSweepingCuda( int CUDADeviceNo,
     err = cudaMallocHost( &_camsBasesHst, sizeof(CameraStructBase) );
     THROW_ON_CUDA_ERROR( err, "Could not allocate set of camera structs in pinned host memory in " << __FILE__ << ":" << __LINE__ << ", " << cudaGetErrorString(err) );
 
-    _camsBasesHstScale.resize( MAX_CONCURRENT_IMAGES_IN_DEPTHMAP, -1 );
+    // _camsBasesHstScale.resize( MAX_CONCURRENT_IMAGES_IN_DEPTHMAP, -1 );
 
     _cams    .resize(_nImgsInGPUAtTime);
     _camsHost.resize(_nImgsInGPUAtTime);
@@ -229,8 +230,6 @@ PlaneSweepingCuda::~PlaneSweepingCuda()
 
     for(int c = 0; c < _cams.size(); c++)
     {
-        delete _cams[c].tex_rgba_hmh;
-
         cudaStreamDestroy( _cams[c].stream );
     }
 }
@@ -281,58 +280,57 @@ void PlaneSweepingCuda::cameraToDevice( int rc, const StaticVector<int>& tcams )
     ALICEVISION_LOG_DEBUG( ostr.str() );
 }
 
+int PlaneSweepingCuda::loadCameraParam( int global_cam_id, int scale )
+{
+    CamSelection newP( global_cam_id, scale );
+    int newPIndex;
+
+    bool newCamParam = _cameraParamCache.insert( newP, &newPIndex );
+    if( newCamParam )
+    {
+        cps_host_fillCamera(*_camsBasesHst, global_cam_id, _mp, scale);
+
+        CamCacheIdx idx( newPIndex );
+        ps_loadCameraStructs( _camsBasesHst, idx );
+
+        // _camsBasesHstScale[newPIndex] = scale;
+    }
+
+    return newPIndex;
+}
+
 int PlaneSweepingCuda::addCam( int global_cam_id, int scale )
 {
     // first is oldest
-    int id;
-    bool newInsertion = _camsHost.insert( global_cam_id, &id );
+    int local_frame_id;
+    bool newInsertion = _camsHost.insert( global_cam_id, &local_frame_id );
+
+    CameraStruct& cam = _cams[local_frame_id];
+
     if( newInsertion )
     {
-        CameraStruct& cam = _cams[id];
-        cam.camId = id;
+        cam.camId = local_frame_id;
 
-        if(cam.tex_rgba_hmh == nullptr)
-        {
-            cam.tex_rgba_hmh =
-                new CudaHostMemoryHeap<CudaRGBA, 2>(CudaSize<2>(_mp.getMaxImageWidth(), _mp.getMaxImageHeight()));
-        }
-        else
-        {
-            assert(cam.tex_rgba_hmh->getSize() == CudaSize<2>(_mp.getMaxImageWidth(), _mp.getMaxImageHeight()));
-        }
         long t1 = clock();
 
-        cps_host_fillCamera(*_camsBasesHst, global_cam_id, _mp, scale);
-
-        _camsBasesHstScale[id] = scale;
-
         /* Fill slot id in the GPU-sided frame cache from the global image cache */
-        _hidden->fillFrame( id, global_cam_id, _ic, _mp );
+        _hidden->fillFrame( local_frame_id, global_cam_id, _ic, _mp );
 
         mvsUtils::printfElapsedTime(t1, "Copy image (camera id="+std::to_string(global_cam_id)+") from CPU to GPU");
-
-        ps_loadCameraStructs( _camsBasesHst, id );
     }
-    else if( _camsBasesHstScale[id] == scale )
-    {
-        /* do nothing, the CameraStruct at position id is unchanged */
-    }
-    else
-    {
-        /*
-         * It is not sensible to waste cycles on refilling the camera struct if the new one
-         * is identical to the old one.
-         */
-        cps_host_fillCamera( *_camsBasesHst, global_cam_id, _mp, scale);
+    // else if( _camsBasesHstScale[local_frame_id] == scale )
+    // {
+        /* fetch slot in constant memory that contains the camera parameters */
+        // ALICEVISION_LOG_DEBUG("Reuse image (camera id=" + std::to_string(global_cam_id) + ") already on the GPU.");
+    // }
 
-        _camsBasesHstScale[id] = scale;
+    /* Fetch slot in constant memory that contains the camera parameters,
+     * and fill it needed. */
+    cam.param_dev = loadCameraParam( global_cam_id, scale );
 
-        ALICEVISION_LOG_DEBUG("Reuse image (camera id=" + std::to_string(global_cam_id) + ") already on the GPU.");
+    _hidden->setLocalCamId( local_frame_id, cam.param_dev.i );
 
-        ps_loadCameraStructs( _camsBasesHst, id );
-    }
-
-    if( _cams[id].camId != id )
+    if( _cams[local_frame_id].camId != local_frame_id )
     {
         std::cerr << "BUG in " << __FILE__ << ":" << __LINE__ << " ?"
                   << " The camId member should be initialized with the return value of addCam()."
@@ -340,7 +338,7 @@ int PlaneSweepingCuda::addCam( int global_cam_id, int scale )
         exit( -1 );
     }
 
-    return id;
+    return local_frame_id;
 }
 
 void PlaneSweepingCuda::getMinMaxdepths(int rc, const StaticVector<int>& tcams, float& minDepth, float& midDepth,
@@ -920,7 +918,9 @@ void PlaneSweepingCuda::SGMretrieveBestDepth(DepthSimMap& bestDepth, CudaDeviceM
     << "\t- volDimY: " << volDimY << std::endl
     << "\t- volDimZ: " << volDimZ);
 
-  int rc_cam_idx = addCam(rcCamId, 1 );
+  int rc_frame_cache_idx = addCam(rcCamId, 1 );
+
+  int rc_cam_cache_idx = _hidden->getLocalCamId(rc_frame_cache_idx);
 
   CudaDeviceMemory<float> depths_d(depths.getData().data(), depths.size());
 
@@ -928,10 +928,11 @@ void PlaneSweepingCuda::SGMretrieveBestDepth(DepthSimMap& bestDepth, CudaDeviceM
   CudaDeviceMemoryPitched<float, 2> bestSim_dmp(CudaSize<2>(volDimX, volDimY));
 
   long t1 = clock();
+
   ps_SGMretrieveBestDepth(
     bestDepth_dmp,
     bestSim_dmp,
-    rc_cam_idx,
+    rc_cam_cache_idx,
     depths_d,
     volSim_dmp,
     volDimX, volDimY, volDimZ,
@@ -1171,8 +1172,9 @@ bool PlaneSweepingCuda::getSilhoueteMap(StaticVectorBool* oMap, int scale, int s
  * FrameCacheEntry
  *********************************************************************************/
 
-FrameCacheEntry::FrameCacheEntry( int cache_cam_id, int w, int h, int s )
-    : _cache_cam_id( cache_cam_id )
+FrameCacheEntry::FrameCacheEntry( int cache_frame_id, int w, int h, int s )
+    : _cache_frame_id( cache_frame_id )
+    , _cache_cam_id( -1 )
     , _global_cam_id( -1 )
     , _width( w )
     , _height( h )
@@ -1228,10 +1230,10 @@ void FrameCacheEntry::fillHostCameraData(
     int c,
     mvsUtils::MultiViewParams& mp )
 {
-    ALICEVISION_LOG_DEBUG("cps_host_fillCameraData [" << c << "]: " << mp.getWidth(c) << "x" << mp.getHeight(c));
+    ALICEVISION_LOG_DEBUG(__FUNCTION__ << ": " << c << " " << mp.getWidth(c) << "x" << mp.getHeight(c));
     clock_t t1 = tic();
     mvsUtils::ImagesCache<ImageRGBAf>::ImgSharedPtr img = ic.getImg_sync( c ); // TODO RGBA
-    ALICEVISION_LOG_DEBUG("cps_host_fillCameraData: " << c << " -a- Retrieve from ImagesCache elapsed time: " << toc(t1) << " ms.");
+    ALICEVISION_LOG_DEBUG(__FUNCTION__ << ": " << c << " -a- Retrieve from ImagesCache elapsed time: " << toc(t1) << " ms.");
     t1 = tic();
 
     const int h = mp.getHeight(c);
@@ -1241,7 +1243,6 @@ void FrameCacheEntry::fillHostCameraData(
         for(int x = 0; x < w; ++x)
         {
             const ColorRGBAf& floatRGBA = img->at(x, y);
-            // CudaRGBA& pix_rgba = (*cam.tex_rgba_hmh)(x, y);
             CudaRGBA& pix_rgba = (*hostFrame)(x, y);
             pix_rgba.x = floatRGBA.r * 255.0f;
             pix_rgba.y = floatRGBA.g * 255.0f;
@@ -1249,7 +1250,17 @@ void FrameCacheEntry::fillHostCameraData(
             pix_rgba.w = floatRGBA.a * 255.0f;
         }
     }
-    ALICEVISION_LOG_DEBUG("cps_host_fillCameraData: " << c << " -b- Copy to HMH elapsed time: " << toc(t1) << " ms.");
+    ALICEVISION_LOG_DEBUG(__FUNCTION__ << ": " << c << " -b- Copy to HMH elapsed time: " << toc(t1) << " ms.");
+}
+
+void FrameCacheEntry::setLocalCamId( int cache_cam_id )
+{
+    _cache_cam_id = cache_cam_id;
+}
+
+int FrameCacheEntry::getLocalCamId( ) const
+{
+    return _cache_cam_id;
 }
 
 /*********************************************************************************
@@ -1287,12 +1298,22 @@ FrameCacheMemory::~FrameCacheMemory( )
     }
 }
 
-void FrameCacheMemory::fillFrame( int cache_id,
+void FrameCacheMemory::fillFrame( int cache_frame_id,
                                   int global_cam_id,
                                   mvsUtils::ImagesCache<ImageRGBAf>& imageCache,
                                   mvsUtils::MultiViewParams& mp )
 {
-    _v[cache_id]->fillFrame( global_cam_id, imageCache, mp );
+    _v[cache_frame_id]->fillFrame( global_cam_id, imageCache, mp );
+}
+
+void FrameCacheMemory::setLocalCamId( int cache_frame_id, int cache_cam_id )
+{
+    _v[cache_frame_id]->setLocalCamId( cache_cam_id );
+}
+
+int FrameCacheMemory::getLocalCamId( int cache_frame_id ) const
+{
+    return _v[cache_frame_id]->getLocalCamId( );
 }
 
 /*********************************************************************************

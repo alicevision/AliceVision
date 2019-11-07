@@ -1256,15 +1256,20 @@ struct TexturedArray
     cudaTextureObject_t tex;
 };
 
+struct CamCacheIdx
+{
+    int i;
+
+    CamCacheIdx( int val ) : i(val) { }
+};
+
 typedef std::vector<TexturedArray> Pyramid;
 
 struct CameraStruct
 {
-    int                     param_dev = 0;
-    // const CameraStructBase* param_dev = nullptr;
-    CudaHostMemoryHeap<CudaRGBA, 2>* tex_rgba_hmh = nullptr;
-    Pyramid*                         pyramid = nullptr;
-    int camId;
+    CamCacheIdx  param_dev = 0;
+    Pyramid*     pyramid = nullptr;
+    int          camId;
     cudaStream_t stream; // allow async work on cameras used in parallel
 };
 

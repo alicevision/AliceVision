@@ -97,7 +97,7 @@ public:
 
     inline bool insert( const T& val, int* position )
     {
-        int dummy;
+        T dummy;
         return insert( val, *position, dummy );
     }
 

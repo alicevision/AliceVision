@@ -456,8 +456,9 @@ void ps_SGMoptimizeSimVolume(const CameraStruct& rccam,
 }
 
 void ps_SGMretrieveBestDepth(
-    CudaDeviceMemoryPitched<float, 2>& bestDepth_dmp, CudaDeviceMemoryPitched<float, 2>& bestSim_dmp,
-    int rccam,
+    CudaDeviceMemoryPitched<float, 2>& bestDepth_dmp,
+    CudaDeviceMemoryPitched<float, 2>& bestSim_dmp,
+    int rc_cam_cache_idx,
     const CudaDeviceMemory<float>& depths_d,
     CudaDeviceMemoryPitched<TSim, 3>& volSim_dmp,
     int volDimX, int volDimY, int volDimZ, int scaleStep, bool interpolate)
@@ -467,7 +468,7 @@ void ps_SGMretrieveBestDepth(
   dim3 grid(divUp(volDimX, block_size), divUp(volDimY, block_size), 1);
 
   volume_retrieveBestZ_kernel<<<grid, block>>>(
-    rccam,
+    rc_cam_cache_idx,
     bestDepth_dmp.getBuffer(),
     bestDepth_dmp.getBytesPaddedUpToDim(0),
     bestSim_dmp.getBuffer(),
@@ -544,8 +545,8 @@ void ps_initColorVolumeFromCamera(
         (volColor_dmp.getBuffer(),
          volColor_dmp.getBytesPaddedUpToDim(1),
          volColor_dmp.getBytesPaddedUpToDim(0),
-         rcam.param_dev,
-         tcam.param_dev,
+         rcam.param_dev.i,
+         tcam.param_dev.i,
          tcam_tex,
          tcWidth, tcHeight,
          depthToStart,
@@ -696,8 +697,8 @@ void ps_computeSimilarityVolume(CudaDeviceMemoryPitched<TSim, 3>& volBestSim_dmp
             <<<volume_slice_kernel_grid, volume_slice_kernel_block>>>
             ( rc_tex,
               tc_tex,
-              rcam.param_dev,
-              tcam.param_dev,
+              rcam.param_dev.i,
+              tcam.param_dev.i,
               depths_d.getBuffer(),
               startDepthIndex,
               nbDepthsToSearch,
@@ -752,8 +753,8 @@ void ps_refineRcDepthMap(float* out_osimMap_hmh,
     for(int i = 0; i < ntcsteps; ++i) // Default ntcsteps = 31
     {
         refine_compUpdateYKNCCSimMapPatch_kernel<<<grid, block>>>(
-            rc_cam.param_dev,
-            tc_cam.param_dev,
+            rc_cam.param_dev.i,
+            tc_cam.param_dev.i,
             rc_tex, tc_tex,
             bestSimMap_dmp.getBuffer(), bestSimMap_dmp.getPitch(),
             bestDptMap_dmp.getBuffer(), bestDptMap_dmp.getPitch(),
@@ -798,7 +799,7 @@ void ps_refineRcDepthMap(float* out_osimMap_hmh,
             /*
             // Compute NCC for depth-1
             refine_compYKNCCSimMapPatch_kernel << <grid, block >> >(
-                *rc_cam.param_dev, *tc_cam.param_dev,
+                *rc_cam.param_dev.i, *tc_cam.param_dev.i,
                 rc_tex, tc_tex,
                 simMap_dmp.getBuffer(), simMap_dmp.getPitch(),
                 bestDptMap_dmp.getBuffer(), bestDptMap_dmp.getPitch(),
@@ -817,8 +818,8 @@ void ps_refineRcDepthMap(float* out_osimMap_hmh,
         {
             // Compute NCC for depth-1
             refine_compYKNCCSimMapPatch_kernel<<<grid, block>>>(
-                rc_cam.param_dev,
-                tc_cam.param_dev, 
+                rc_cam.param_dev.i,
+                tc_cam.param_dev.i, 
                 rc_tex, tc_tex,
                 simMap_dmp.getBuffer(), simMap_dmp.getPitch(),
                 bestDptMap_dmp.getBuffer(), bestDptMap_dmp.getPitch(),
@@ -836,8 +837,8 @@ void ps_refineRcDepthMap(float* out_osimMap_hmh,
         {
             // Compute NCC for depth+1
             refine_compYKNCCSimMapPatch_kernel<<<grid, block>>>(
-                rc_cam.param_dev,
-                tc_cam.param_dev,
+                rc_cam.param_dev.i,
+                tc_cam.param_dev.i,
                 rc_tex, tc_tex,
                 simMap_dmp.getBuffer(), simMap_dmp.getPitch(),
                 bestDptMap_dmp.getBuffer(), bestDptMap_dmp.getPitch(),
@@ -854,8 +855,8 @@ void ps_refineRcDepthMap(float* out_osimMap_hmh,
 
         // Interpolation from the lastThreeSimsMap_dmp
         refine_computeDepthSimMapFromLastThreeSimsMap_kernel<<<grid, block>>>(
-            rc_cam.param_dev,
-            tc_cam.param_dev,
+            rc_cam.param_dev.i,
+            tc_cam.param_dev.i,
             bestSimMap_dmp.getBuffer(), bestSimMap_dmp.getPitch(),
             bestDptMap_dmp.getBuffer(), bestDptMap_dmp.getPitch(),
             lastThreeSimsMap_dmp.getBuffer(), lastThreeSimsMap_dmp.getPitch(),
@@ -994,7 +995,7 @@ void ps_optimizeDepthSimMapGradientDescent(
         // Adjust depth/sim by using previously computed depths
         fuse_optimizeDepthSimMap_kernel<<<grid, block>>>(
             rc_tex,
-            rc_cam.param_dev,
+            rc_cam.param_dev.i,
             imgVarianceTex.textureObj, depthTex.textureObj,
             optDepthSimMap_dmp.getBuffer(), optDepthSimMap_dmp.getPitch(),
             sgmDepthPixSizeMap_dmp.getBuffer(), sgmDepthPixSizeMap_dmp.getPitch(),
@@ -1051,13 +1052,13 @@ void ps_getSilhoueteMap(CudaHostMemoryHeap<bool, 2>* omap_hmh, int width,
 
 
 void ps_loadCameraStructs( const CameraStructBase* hst,
-                           int                     offset )
+                           const CamCacheIdx&      offset )
 {
     cudaMemcpyKind kind = cudaMemcpyHostToDevice;
     cudaError_t err = cudaMemcpyToSymbol( camsBasesDev,
                                           hst,
                                           sizeof(CameraStructBase),
-                                          offset*sizeof(CameraStructBase),
+                                          offset.i*sizeof(CameraStructBase),
                                           kind );
     THROW_ON_CUDA_ERROR( err, "Failed to copy CameraStructs from host to device in " << __FILE__ << ":" << __LINE__ << ": " << cudaGetErrorString(err) );
 }

@@ -82,7 +82,7 @@ void ps_SGMoptimizeSimVolume(
 
   void ps_SGMretrieveBestDepth(
     CudaDeviceMemoryPitched<float, 2>& bestDepth_dmp, CudaDeviceMemoryPitched<float, 2>& bestSim_dmp,
-    int rccam, // const CameraStruct& rccam,
+    int rc_cam_cache_id,
     const CudaDeviceMemory<float>& depths_d,
     CudaDeviceMemoryPitched<TSim, 3>& volSim_dmp,
     int volDimX, int volDimY, int volDimZ, int scaleStep, bool interpolate);
@@ -153,7 +153,7 @@ void ps_getSilhoueteMap(
     bool verbose);
 
 void ps_loadCameraStructs( const CameraStructBase* hst,
-                           int                     offset );
+                           const CamCacheIdx&      offset );
 
 } // namespace depthMap
 } // namespace aliceVision

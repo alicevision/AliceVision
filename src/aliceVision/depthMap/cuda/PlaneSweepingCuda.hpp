@@ -36,7 +36,26 @@ namespace depthMap {
  * Support class for operating an LRU cache of the currently selection cameras
  *********************************************************************************/
 
-typedef std::pair<int,int> CamSelection;
+struct CamSelection : public std::pair<int,int>
+{
+    CamSelection( )
+        : std::pair<int,int>( 0, 0 )
+    { }
+
+    CamSelection( int i )
+        : std::pair<int,int>( i, i )
+    { }
+
+    CamSelection( int i, int j )
+        : std::pair<int,int>( i, j )
+    { }
+
+    CamSelection& operator=( int i )
+    {
+        this->first = this->second = i;
+        return *this;
+    }
+};
 
 bool operator==( const CamSelection& l, const CamSelection& r );
 bool operator<( const CamSelection& l, const CamSelection& r );
@@ -52,9 +71,15 @@ bool operator<( const CamSelection& l, const CamSelection& r );
 
 class FrameCacheEntry
 {
-    // identical to index in this vector
-    const int                        _cache_cam_id;
+    // cache slot for image, identical to index in FrameCacheMemory vector
+    const int                        _cache_frame_id;
+
+    // cache slot for camera parameters
+    int                              _cache_cam_id;
+
+    // cache slot in the global host-sided image cache
     int                              _global_cam_id;
+
     Pyramid                          _pyramid;
     CudaHostMemoryHeap<CudaRGBA, 2>* _host_frame;
     int                              _width;
@@ -63,7 +88,7 @@ class FrameCacheEntry
     int                              _memBytes;
 
 public:
-    FrameCacheEntry( int cache_cam_id, int w, int h, int s );
+    FrameCacheEntry( int cache_frame_id, int w, int h, int s );
 
     ~FrameCacheEntry( );
 
@@ -76,6 +101,10 @@ public:
     void fillFrame( int global_cam_id,
                     mvsUtils::ImagesCache<ImageRGBAf>& imageCache,
                     mvsUtils::MultiViewParams& mp );
+
+    void setLocalCamId( int cache_cam_id );
+    int  getLocalCamId( ) const;
+
 private:
     static void fillHostCameraData(
                     mvsUtils::ImagesCache<ImageRGBAf>& ic,
@@ -113,6 +142,8 @@ public:
                     int global_cam_id,
                     mvsUtils::ImagesCache<ImageRGBAf>& imageCache,
                     mvsUtils::MultiViewParams& mp );
+    void setLocalCamId( int cache_id, int cache_cam_id );
+    int  getLocalCamId( int cache_id ) const;
 };
 
 /*********************************************************************************
@@ -156,9 +187,10 @@ private:
 
 public:
     CameraStructBase*          _camsBasesHst;
-    std::vector<int>           _camsBasesHstScale;
+    // std::vector<int>           _camsBasesHstScale;
     std::vector<CameraStruct>  _cams;
     LRUCache<int>              _camsHost;
+    LRUCache<CamSelection>     _cameraParamCache;
 
     const int  _nbestkernelSizeHalf = 1;
     int  _nImgsInGPUAtTime = 2;
@@ -249,6 +281,11 @@ public:
     bool getSilhoueteMap(StaticVectorBool* oMap, int scale, int step, const rgb maskColor, int rc);
 
 private:
+    /* Support function for addCam that loads cameraStructs into the GPU constant
+     * memory if necessary.
+     * Returns the index in the constant cache. */
+    int loadCameraParam( int global_cam_id, int scale );
+
     /* Compute the number of images that can be stored in the current GPU. Called only by
      * the constructor. */
     static int imagesInGPUAtTime( mvsUtils::MultiViewParams& mp, int scales );

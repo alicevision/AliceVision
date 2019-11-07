@@ -48,52 +48,52 @@ __global__ void compute_varLofLABtoW_kernel(cudaTextureObject_t rc_tex, float* v
     }
 }
 
-__device__ void move3DPointByRcPixSize( int rc_cam, // const CameraStructBase& rc_cam,
+__device__ void move3DPointByRcPixSize( int cam_cache_idx,
                                         float3& p, float rcPixSize)
 {
-    float3 rpv = p - camsBasesDev[rc_cam].C;
+    float3 rpv = p - camsBasesDev[cam_cache_idx].C;
     normalize(rpv);
     p = p + rpv * rcPixSize;
 }
 
-__device__ void move3DPointByTcPixStep( int rc_cam, // const CameraStructBase& rc_cam,
-                                        int tc_cam, // const CameraStructBase& tc_cam,
+__device__ void move3DPointByTcPixStep( int rc_cam_cache_idx,
+                                        int tc_cam_cache_idx,
                                         float3& p, float tcPixStep)
 {
-    float3 rpv = camsBasesDev[rc_cam].C - p;
+    float3 rpv = camsBasesDev[rc_cam_cache_idx].C - p;
     float3 prp = p;
     float3 prp1 = p + rpv / 2.0f;
 
     float2 rp;
-    getPixelFor3DPoint(rc_cam, rp, prp);
+    getPixelFor3DPoint(rc_cam_cache_idx, rp, prp);
 
     float2 tpo;
-    getPixelFor3DPoint(tc_cam, tpo, prp);
+    getPixelFor3DPoint(tc_cam_cache_idx, tpo, prp);
 
     float2 tpv;
-    getPixelFor3DPoint(tc_cam, tpv, prp1);
+    getPixelFor3DPoint(tc_cam_cache_idx, tpv, prp1);
 
     tpv = tpv - tpo;
     normalize(tpv);
 
     float2 tpd = tpo + tpv * tcPixStep;
 
-    p = triangulateMatchRef(rc_cam, tc_cam, rp, tpd);
+    p = triangulateMatchRef(rc_cam_cache_idx, tc_cam_cache_idx, rp, tpd);
 }
 
-__device__ float move3DPointByTcOrRcPixStep( int rc_cam, // const CameraStructBase& rc_cam,
-                                             int tc_cam, // const CameraStructBase& tc_cam,
+__device__ float move3DPointByTcOrRcPixStep( int rc_cam_cache_idx,
+                                             int tc_cam_cache_idx,
                                              int2& pix, float3& p, float pixStep, bool moveByTcOrRc)
 {
     if(moveByTcOrRc == true)
     {
-        move3DPointByTcPixStep(rc_cam, tc_cam, p, pixStep);
+        move3DPointByTcPixStep(rc_cam_cache_idx, tc_cam_cache_idx, p, pixStep);
         return 0.0f;
     }
     else
     {
-        float pixSize = pixStep * computePixSize(rc_cam, p);
-        move3DPointByRcPixSize(rc_cam, p, pixSize);
+        float pixSize = pixStep * computePixSize(rc_cam_cache_idx, p);
+        move3DPointByRcPixSize(rc_cam_cache_idx, p, pixSize);
 
         return pixSize;
     }

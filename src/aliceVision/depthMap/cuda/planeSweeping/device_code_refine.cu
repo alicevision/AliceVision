@@ -7,8 +7,8 @@
 namespace aliceVision {
 namespace depthMap {
 
-__global__ void refine_compUpdateYKNCCSimMapPatch_kernel(int rc_cam, // const CameraStructBase& rc_cam,
-                                                         int tc_cam, // const CameraStructBase& tc_cam,
+__global__ void refine_compUpdateYKNCCSimMapPatch_kernel(int rc_cam_cache_idx,
+                                                         int tc_cam_cache_idx,
                                                          cudaTextureObject_t rc_tex, cudaTextureObject_t tc_tex,
                                                          float* osimMap, int osimMap_p, float* odptMap, int odptMap_p,
                                                          float* depthMap, int depthMap_p, int width, int height,
@@ -34,18 +34,18 @@ __global__ void refine_compUpdateYKNCCSimMapPatch_kernel(int rc_cam, // const Ca
     // If we have an initial depth value, we can refine it
     if(odpt > 0.0f)
     {
-        float3 p = get3DPointForPixelAndDepthFromRC(rc_cam, pix, odpt);
+        float3 p = get3DPointForPixelAndDepthFromRC(rc_cam_cache_idx, pix, odpt);
         // move3DPointByTcPixStep(p, tcStep);
-        move3DPointByTcOrRcPixStep(rc_cam, tc_cam, pix, p, tcStep, moveByTcOrRc);
+        move3DPointByTcOrRcPixStep(rc_cam_cache_idx, tc_cam_cache_idx, pix, p, tcStep, moveByTcOrRc);
 
-        odpt = size(p - camsBasesDev[rc_cam].C);
+        odpt = size(p - camsBasesDev[rc_cam_cache_idx].C);
 
         Patch ptch;
         ptch.p = p;
-        ptch.d = computePixSize(rc_cam, p);
+        ptch.d = computePixSize(rc_cam_cache_idx, p);
         // TODO: we could compute the orientation of the path from the input depth map instead of relying on the cameras orientations
-        computeRotCSEpip(rc_cam, tc_cam, ptch);
-        osim = compNCCby3DptsYK(rc_tex, tc_tex, rc_cam, tc_cam, ptch, wsh, rcWidth, rcHeight, tcWidth, tcHeight, gammaC, gammaP);
+        computeRotCSEpip(rc_cam_cache_idx, tc_cam_cache_idx, ptch);
+        osim = compNCCby3DptsYK(rc_tex, tc_tex, rc_cam_cache_idx, tc_cam_cache_idx, ptch, wsh, rcWidth, rcHeight, tcWidth, tcHeight, gammaC, gammaP);
     }
 
     float* osim_ptr = get2DBufferAt(osimMap, osimMap_p, x, y);
@@ -68,8 +68,8 @@ __global__ void refine_compUpdateYKNCCSimMapPatch_kernel(int rc_cam, // const Ca
     }
 }
 
-__global__ void refine_compYKNCCSimMapPatch_kernel(int rc_cam, // const CameraStructBase& rc_cam,
-                                                   int tc_cam, // const CameraStructBase& tc_cam,
+__global__ void refine_compYKNCCSimMapPatch_kernel(int rc_cam_cache_idx,
+                                                   int tc_cam_cache_idx,
                                                    cudaTextureObject_t rc_tex, cudaTextureObject_t tc_tex,
                                                    float* osimMap, int osimMap_p, float* depthMap, int depthMap_p,
                                                    int width, int height, int wsh, float gammaC,
@@ -91,15 +91,15 @@ __global__ void refine_compYKNCCSimMapPatch_kernel(int rc_cam, // const CameraSt
 
     if(depth > 0.0f)
     {
-        float3 p = get3DPointForPixelAndDepthFromRC(rc_cam, pix, depth);
+        float3 p = get3DPointForPixelAndDepthFromRC(rc_cam_cache_idx, pix, depth);
         // move3DPointByTcPixStep(p, tcStep);
-        move3DPointByTcOrRcPixStep(rc_cam, tc_cam, pix, p, tcStep, moveByTcOrRc);
+        move3DPointByTcOrRcPixStep(rc_cam_cache_idx, tc_cam_cache_idx, pix, p, tcStep, moveByTcOrRc);
 
         Patch ptch;
         ptch.p = p;
-        ptch.d = computePixSize(rc_cam, p);
-        computeRotCSEpip(rc_cam, tc_cam, ptch);
-        osim = compNCCby3DptsYK(rc_tex, tc_tex, rc_cam, tc_cam, ptch, wsh, rcWidth, rcHeight, tcWidth, tcHeight, gammaC, gammaP);
+        ptch.d = computePixSize(rc_cam_cache_idx, p);
+        computeRotCSEpip(rc_cam_cache_idx, tc_cam_cache_idx, ptch);
+        osim = compNCCby3DptsYK(rc_tex, tc_tex, rc_cam_cache_idx, tc_cam_cache_idx, ptch, wsh, rcWidth, rcHeight, tcWidth, tcHeight, gammaC, gammaP);
     }
     *get2DBufferAt(osimMap, osimMap_p, x, y) = osim;
 }
@@ -130,8 +130,8 @@ __global__ void refine_setLastThreeSimsMap_kernel(float3* lastThreeSimsMap, int 
     }
 }
 
-__global__ void refine_computeDepthSimMapFromLastThreeSimsMap_kernel(int rc_cam, // const CameraStructBase& rc_cam,
-                                                                     int tc_cam, // const CameraStructBase& tc_cam,
+__global__ void refine_computeDepthSimMapFromLastThreeSimsMap_kernel(int rc_cam_cache_idx,
+                                                                     int tc_cam_cache_idx,
                                                                      float* osimMap, int osimMap_p, float* iodepthMap,
                                                                      int iodepthMap_p, float3* lastThreeSimsMap,
                                                                      int lastThreeSimsMap_p, int width, int height,
@@ -153,16 +153,16 @@ __global__ void refine_computeDepthSimMapFromLastThreeSimsMap_kernel(int rc_cam,
 
     if(outDepth > 0.0f)
     {
-        float3 pMid = get3DPointForPixelAndDepthFromRC(rc_cam, pix, midDepth);
+        float3 pMid = get3DPointForPixelAndDepthFromRC(rc_cam_cache_idx, pix, midDepth);
         float3 pm1 = pMid;
         float3 pp1 = pMid;
-        move3DPointByTcOrRcPixStep(rc_cam, tc_cam, pix, pm1, -1.0f, moveByTcOrRc);
-        move3DPointByTcOrRcPixStep(rc_cam, tc_cam, pix, pp1, +1.0f, moveByTcOrRc);
+        move3DPointByTcOrRcPixStep(rc_cam_cache_idx, tc_cam_cache_idx, pix, pm1, -1.0f, moveByTcOrRc);
+        move3DPointByTcOrRcPixStep(rc_cam_cache_idx, tc_cam_cache_idx, pix, pp1, +1.0f, moveByTcOrRc);
 
         float3 depths;
-        depths.x = size(pm1 - camsBasesDev[rc_cam].C);
+        depths.x = size(pm1 - camsBasesDev[rc_cam_cache_idx].C);
         depths.y = midDepth;
-        depths.z = size(pp1 - camsBasesDev[rc_cam].C);
+        depths.z = size(pp1 - camsBasesDev[rc_cam_cache_idx].C);
 
         float refinedDepth = refineDepthSubPixel(depths, sims);
         if(refinedDepth > 0.0f)

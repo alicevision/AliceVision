@@ -56,7 +56,7 @@ float3 get3DPointForPixelAndDepthFromRC(const CameraStructBase& rc_cam, const in
 
 __device__ static inline
 float orientedPointPlaneDistanceNormalizedNormal(const float3& point, const float3& planePoint,
-                                                            const float3& planeNormalNormalized)
+                                                 const float3& planeNormalNormalized)
 {
     return (dot(point, planeNormalNormalized) - dot(planePoint, planeNormalNormalized));
 }
