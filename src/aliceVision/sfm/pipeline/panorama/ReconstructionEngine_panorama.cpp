@@ -493,7 +493,6 @@ void ReconstructionEngine_panorama::Compute_Relative_Rotations(rotationAveraging
     }
   }
 
-
   // List shared correspondences (pairs) between poses
   PoseWiseMatches poseWiseMatches;
   for (matching::PairwiseMatches::const_iterator iterMatches = _pairwiseMatches->begin(); iterMatches != _pairwiseMatches->end(); ++iterMatches)
@@ -695,14 +694,14 @@ void ReconstructionEngine_panorama::Compute_Relative_Rotations(rotationAveraging
   }
 
   /*If a best view is defined, lock it*/
-  sfmData::Poses & poses = _sfmData.getPoses();
+  /*sfmData::Poses & poses = _sfmData.getPoses();
   if (max_index != UndefinedIndexT) {
     sfmData::View & v = _sfmData.getView(max_index);
     IndexT poseid = v.getPoseId();
     if (poseid != UndefinedIndexT) {
       poses[v.getPoseId()].lock();
     }
-  }
+  }*/
 
   /*Debug result*/
   ALICEVISION_LOG_DEBUG("Compute_Relative_Rotations: vec_relatives_R.size(): " << vec_relatives_R.size());
