@@ -19,6 +19,7 @@
 #include <aliceVision/depthMap/DepthSimMap.hpp>
 #include <aliceVision/depthMap/cuda/commonStructures.hpp>
 #include <aliceVision/depthMap/cuda/tcinfo.hpp>
+#include <aliceVision/depthMap/cuda/lrucache.hpp>
 #include <aliceVision/depthMap/cuda/normalmap/normal_map.hpp>
 
 namespace aliceVision {
@@ -30,7 +31,96 @@ namespace depthMap {
     using TSim = unsigned char;
 #endif
 
+/*********************************************************************************
+ * CamSelection
+ * Support class for operating an LRU cache of the currently selection cameras
+ *********************************************************************************/
 
+typedef std::pair<int,int> CamSelection;
+
+bool operator==( const CamSelection& l, const CamSelection& r );
+bool operator<( const CamSelection& l, const CamSelection& r );
+
+/*********************************************************************************
+ * FrameCacheEntry
+ * Support class to maintain CUDA memory and textures for an image frame in
+ * the GPU Cache.
+ * _cache_cam_id contains the own position in the memory array.
+ * _global_cam_id should contain the global frame that is currently stored in
+ *                this cache slot.
+ *********************************************************************************/
+
+class FrameCacheEntry
+{
+    // identical to index in this vector
+    const int                        _cache_cam_id;
+    int                              _global_cam_id;
+    Pyramid                          _pyramid;
+    CudaHostMemoryHeap<CudaRGBA, 2>* _host_frame;
+    int                              _width;
+    int                              _height;
+    int                              _scales;
+    int                              _memBytes;
+
+public:
+    FrameCacheEntry( int cache_cam_id, int w, int h, int s );
+
+    ~FrameCacheEntry( );
+
+    Pyramid& getPyramid();
+
+    Pyramid* getPyramidPtr();
+
+    int getPyramidMem() const;
+
+    void fillFrame( int global_cam_id,
+                    mvsUtils::ImagesCache<ImageRGBAf>& imageCache,
+                    mvsUtils::MultiViewParams& mp );
+private:
+    static void fillHostCameraData(
+                    mvsUtils::ImagesCache<ImageRGBAf>& ic,
+                    CudaHostMemoryHeap<CudaRGBA, 2>* hostFrame,
+                    int c,
+                    mvsUtils::MultiViewParams& mp );
+};
+
+/*********************************************************************************
+ * FrameCacheMemory
+ * Support class that maintains the memory for the GPU memory used for caching
+ * currently loaded images.
+ *********************************************************************************/
+
+class FrameCacheMemory
+{
+    std::vector<FrameCacheEntry*> _v;
+
+public:
+    FrameCacheMemory( int ImgsInGPUAtTime, int maxWidth, int maxHeight, int scales, int CUDADeviceNO );
+
+    ~FrameCacheMemory( );
+
+    inline Pyramid& getPyramid( int camera )
+    {
+        return _v[camera]->getPyramid();
+    }
+
+    inline Pyramid* getPyramidPtr( int camera )
+    {
+        return _v[camera]->getPyramidPtr();
+    }
+
+    void fillFrame( int cache_id,
+                    int global_cam_id,
+                    mvsUtils::ImagesCache<ImageRGBAf>& imageCache,
+                    mvsUtils::MultiViewParams& mp );
+};
+
+/*********************************************************************************
+ * PlaneSweepingCuda
+ * Class for performing plane sweeping for some images on a selected GPU.
+ * There may be several instances of these class that are operating on the same
+ * GPU. It must therefore switch GPUs by ID.
+ *********************************************************************************/
 class PlaneSweepingCuda
 {
 public:
@@ -60,16 +150,15 @@ public:
 
     mvsUtils::MultiViewParams& _mp;
     const int _CUDADeviceNo = 0;
+
 private:
-    Pyramids _hidden_pyramids;
+    FrameCacheMemory* _hidden;
 
 public:
-    // CameraStructBase*          _camsBasesDev;
     CameraStructBase*          _camsBasesHst;
     std::vector<int>           _camsBasesHstScale;
     std::vector<CameraStruct>  _cams;
-    StaticVector<int>          _camsRcs;
-    StaticVector<long>         _camsTimes;
+    LRUCache<int>              _camsHost;
 
     const int  _nbestkernelSizeHalf = 1;
     int  _nImgsInGPUAtTime = 2;
@@ -100,7 +189,7 @@ private:
     void sweepPixelsToVolumeSubset(
         CudaDeviceMemoryPitched<TSim, 3>& volBestSim_dmp,
         CudaDeviceMemoryPitched<TSim, 3>& volSecBestSim_dmp,
-        CudaDeviceMemoryPitched<float4, 3>& volTcamColors_dmp, // cudaTextureObject_t volTcamColors_tex3D,
+        CudaDeviceMemoryPitched<float4, 3>& volTcamColors_dmp,
         const int volDimX, const int volDimY, const int volStepXY,
         const std::vector<OneTC>& cells,
         const CudaDeviceMemory<float>& depths_d,
@@ -158,6 +247,12 @@ public:
                            float igammaC, float igammaP, int wsh);
 
     bool getSilhoueteMap(StaticVectorBool* oMap, int scale, int step, const rgb maskColor, int rc);
+
+private:
+    /* Compute the number of images that can be stored in the current GPU. Called only by
+     * the constructor. */
+    static int imagesInGPUAtTime( mvsUtils::MultiViewParams& mp, int scales );
+
 };
 
 int listCUDADevices(bool verbose);

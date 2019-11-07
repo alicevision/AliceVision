@@ -171,7 +171,7 @@ int ps_listCUDADevices(bool verbose)
     return num_gpus;
 }
 
-static int ps_sub_deviceAllocate(Pyramid& pyramid, int width, int height, int scales )
+int ps_deviceAllocate(Pyramid& pyramid, int width, int height, int scales )
 {
     int bytesAllocated = 0;
 
@@ -219,38 +219,14 @@ static int ps_sub_deviceAllocate(Pyramid& pyramid, int width, int height, int sc
     return bytesAllocated;
 }
 
-void ps_deviceAllocate(Pyramids& ps_texs_arr, int ncams, int width, int height, int scales,
-                       int deviceId)
+void ps_deviceDeallocate( Pyramid& pyramid, int scales )
 {
-
-    cudaError_t outval = cudaSetDevice(deviceId);
-    if( outval != cudaSuccess )
+    for( TexturedArray& entry : pyramid )
     {
-        ALICEVISION_CU_PRINT_ERROR( "Failed to set CUDA device " << deviceId << " for thread: " << cudaGetErrorString(outval) );
+        delete entry.arr;
+        cudaDestroyTextureObject( entry.tex );
     }
-    printf("Setting CUDA device to %i\n", deviceId);
-
-    pr_printfDeviceMemoryInfo();
-
-    // copy textures to the device
-    int allBytes = 0;
-    ps_texs_arr.resize(ncams);
-    for(int c = 0; c < ncams; c++)
-    {
-        allBytes += ps_sub_deviceAllocate( ps_texs_arr[c], width, height, scales );
-    }
-
-    CHECK_CUDA_ERROR();
-
-    // calcDCTCoefficients();
-    // CHECK_CUDA_ERROR();
-
-    printf("scales %i\n",scales);
-
-    printf("total size of preallocated images in GPU memory: %f\n",double(allBytes)/(1024.0*1024.0));
-
-    pr_printfDeviceMemoryInfo();
-    // printf("ps_deviceAllocate - done\n");
+    pyramid.clear();
 }
 
 void ps_testCUDAdeviceNo(int CUDAdeviceNo)
@@ -263,20 +239,21 @@ void ps_testCUDAdeviceNo(int CUDAdeviceNo)
     }
 }
 
-void ps_device_updateCam( const CameraStruct& cam, int CUDAdeviceNo,
+// void ps_device_updateCam( const CameraStruct& cam, int CUDAdeviceNo,
+//                           int scales, int w, int h)
+void ps_device_updateCam( Pyramid& pyramid,
+                          CudaHostMemoryHeap<CudaRGBA, 2>* host_frame,
                           int scales, int w, int h)
 {
     ALICEVISION_CU_PRINT_DEBUG(std::endl
               << "Calling " << __FUNCTION__ << std::endl
-              << "    for camera id " << cam.camId << " and " << scales << " scales"
+              << "    for " << scales << " scales"
               << ", w: " << w << ", h: " << h
               << std::endl);
 
-    Pyramid& pyramid = *cam.pyramid;
-
     {
         /* copy texture's data from host to device */
-        pyramid[0].arr->copyFrom( (*cam.tex_rgba_hmh) );
+        pyramid[0].arr->copyFrom( *host_frame );
 
         const dim3 block(32, 2, 1);
         const dim3 grid(divUp(w, block.x), divUp(h, block.y), 1);
@@ -284,14 +261,10 @@ void ps_device_updateCam( const CameraStruct& cam, int CUDAdeviceNo,
 
         /* in-place color conversion into CIELAB */
         rgb2lab_kernel<<<grid, block>>>(
-            pyramid[0].arr->getBuffer(), (*cam.pyramid)[0].arr->getPitch(),
+            pyramid[0].arr->getBuffer(), pyramid[0].arr->getPitch(),
             w, h);
         CHECK_CUDA_ERROR();
     }
-
-    /* If not done before, initialize Gaussian filters in GPU constant mem.  */
-    ps_create_gaussian_arr( CUDAdeviceNo, scales );
-    CHECK_CUDA_ERROR();
 
     /* For each scale, create a Gaussian-filtered and scaled version of the
      * initial texture */
@@ -311,18 +284,6 @@ void ps_device_updateCam( const CameraStruct& cam, int CUDAdeviceNo,
     }
 
     CHECK_CUDA_ERROR();
-}
-
-void ps_deviceDeallocate(Pyramids& ps_texs_arr, int CUDAdeviceNo, int ncams, int scales)
-{
-    for(int c = 0; c < ncams; c++)
-    {
-        for(int s = 0; s < scales; s++)
-        {
-            delete ps_texs_arr[c][s].arr;
-            cudaDestroyTextureObject( ps_texs_arr[c][s].tex );
-        }
-    }
 }
 
 

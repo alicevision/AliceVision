@@ -1257,7 +1257,6 @@ struct TexturedArray
 };
 
 typedef std::vector<TexturedArray> Pyramid;
-typedef std::vector<Pyramid> Pyramids;
 
 struct CameraStruct
 {

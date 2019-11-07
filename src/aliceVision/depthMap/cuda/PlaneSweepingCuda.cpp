@@ -114,31 +114,6 @@ static void cps_host_fillCamera(CameraStructBase& base, int c, mvsUtils::MultiVi
     ps_initCameraMatrix( base );
 }
 
-static void cps_host_fillCameraData(mvsUtils::ImagesCache<ImageRGBAf>& ic, CameraStruct& cam, int c, mvsUtils::MultiViewParams& mp)
-{
-    ALICEVISION_LOG_DEBUG("cps_host_fillCameraData [" << c << "]: " << mp.getWidth(c) << "x" << mp.getHeight(c));
-    clock_t t1 = tic();
-    mvsUtils::ImagesCache<ImageRGBAf>::ImgSharedPtr img = ic.getImg_sync( c ); // TODO RGBA
-    ALICEVISION_LOG_DEBUG("cps_host_fillCameraData: " << c << " -a- Retrieve from ImagesCache elapsed time: " << toc(t1) << " ms.");
-    t1 = tic();
-
-    const int h = mp.getHeight(c);
-    const int w = mp.getWidth(c);
-    for(int y = 0; y < h; ++y)
-    {
-        for(int x = 0; x < w; ++x)
-        {
-            const ColorRGBAf& floatRGBA = img->at(x, y);
-            CudaRGBA& pix_rgba = (*cam.tex_rgba_hmh)(x, y);
-            pix_rgba.x = floatRGBA.r * 255.0f;
-            pix_rgba.y = floatRGBA.g * 255.0f;
-            pix_rgba.z = floatRGBA.b * 255.0f;
-            pix_rgba.w = floatRGBA.a * 255.0f;
-        }
-    }
-    ALICEVISION_LOG_DEBUG("cps_host_fillCameraData: " << c << " -b- Copy to HMH elapsed time: " << toc(t1) << " ms.");
-}
-
 
 void copy(CudaHostMemoryHeap<float2, 2>& outHmh, const StaticVector<DepthSim>& inDepthSimMap, int yFrom)
 {
@@ -175,7 +150,15 @@ void copy(StaticVector<DepthSim>& outDepthSimMap, const CudaHostMemoryHeap<float
     }
 }
 
+int listCUDADevices(bool verbose)
+{
+    return ps_listCUDADevices(verbose);
+}
 
+
+/*********************************************************************************
+ * PlaneSweepingCuda
+ *********************************************************************************/
 
 PlaneSweepingCuda::PlaneSweepingCuda( int CUDADeviceNo,
                                       mvsUtils::ImagesCache<ImageRGBAf>&     ic,
@@ -183,13 +166,10 @@ PlaneSweepingCuda::PlaneSweepingCuda( int CUDADeviceNo,
                                       int scales )
     : _scales( scales )
     , _CUDADeviceNo( CUDADeviceNo )
+    , _hidden( 0 )
     , _ic( ic )
     , _mp(mp)
 {
-    ps_testCUDAdeviceNo( _CUDADeviceNo );
-
-    cudaError_t err;
-
     /* The caller knows all camera that will become rc cameras, but it does not
      * pass that information to this function.
      * It knows the nearest cameras for each of those rc cameras, but it doesn't
@@ -198,23 +178,82 @@ PlaneSweepingCuda::PlaneSweepingCuda( int CUDADeviceNo,
      * will hold CUDA memory for camera structs and bitmaps.
      */
 
-    const int maxImageWidth = mp.getMaxImageWidth();
-    const int maxImageHeight = mp.getMaxImageHeight();
+    ps_testCUDAdeviceNo( _CUDADeviceNo );
 
-    float oneimagemb = 4.0f * sizeof(float) * (((float)(maxImageWidth * maxImageHeight) / 1024.0f) / 1024.0f);
-    for(int scale = 2; scale <= _scales; ++scale)
-    {
-        oneimagemb += 4.0 * sizeof(float) * (((float)((maxImageWidth / scale) * (maxImageHeight / scale)) / 1024.0) / 1024.0);
-    }
-    float maxmbGPU = 400.0f; // TODO FACA
-    _nImgsInGPUAtTime = (int)(maxmbGPU / oneimagemb);
-    _nImgsInGPUAtTime = std::max(2, std::min(mp.ncams, _nImgsInGPUAtTime));
+    _nImgsInGPUAtTime = imagesInGPUAtTime( mp, scales );
+
+    // allocate global on the device
+    _hidden = new FrameCacheMemory( _nImgsInGPUAtTime,
+                                    mp.getMaxImageWidth(),
+                                    mp.getMaxImageHeight(),
+                                    scales,
+                                    _CUDADeviceNo );
+
 
     ALICEVISION_LOG_INFO("PlaneSweepingCuda:" << std::endl
                          << "\t- _nImgsInGPUAtTime: " << _nImgsInGPUAtTime << std::endl
                          << "\t- scales: " << _scales);
 
-    if( _nImgsInGPUAtTime > MAX_CONCURRENT_IMAGES_IN_DEPTHMAP )
+    cudaError_t err;
+
+    err = cudaMallocHost( &_camsBasesHst, sizeof(CameraStructBase) );
+    THROW_ON_CUDA_ERROR( err, "Could not allocate set of camera structs in pinned host memory in " << __FILE__ << ":" << __LINE__ << ", " << cudaGetErrorString(err) );
+
+    _camsBasesHstScale.resize( MAX_CONCURRENT_IMAGES_IN_DEPTHMAP, -1 );
+
+    _cams    .resize(_nImgsInGPUAtTime);
+    _camsHost.resize(_nImgsInGPUAtTime);
+
+    for( int rc = 0; rc < _nImgsInGPUAtTime; ++rc )
+    {
+        _cams[rc].camId = -1;
+        _cams[rc].param_dev = rc;
+        _cams[rc].pyramid   = _hidden->getPyramidPtr(rc); // &_hidden_pyramids[rc];
+
+        err = cudaStreamCreate( &_cams[rc].stream );
+        if( err != cudaSuccess )
+        {
+            ALICEVISION_LOG_WARNING("Failed to create a CUDA stream object for async sweeping");
+            _cams[rc].stream = 0;
+        }
+    }
+}
+
+PlaneSweepingCuda::~PlaneSweepingCuda()
+{
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    // deallocate global on the device
+    delete _hidden;
+
+    cudaFreeHost( _camsBasesHst );
+
+    for(int c = 0; c < _cams.size(); c++)
+    {
+        delete _cams[c].tex_rgba_hmh;
+
+        cudaStreamDestroy( _cams[c].stream );
+    }
+}
+
+/* static private function called by the constructor */
+int PlaneSweepingCuda::imagesInGPUAtTime( mvsUtils::MultiViewParams& mp, int scales )
+{
+    int value;
+
+    const int maxImageWidth = mp.getMaxImageWidth();
+    const int maxImageHeight = mp.getMaxImageHeight();
+
+    float oneimagemb = 4.0f * sizeof(float) * (((float)(maxImageWidth * maxImageHeight) / 1024.0f) / 1024.0f);
+    for(int scale = 2; scale <= scales; ++scale)
+    {
+        oneimagemb += 4.0 * sizeof(float) * (((float)((maxImageWidth / scale) * (maxImageHeight / scale)) / 1024.0) / 1024.0);
+    }
+    float maxmbGPU = 400.0f; // TODO FACA
+
+    value = (int)(maxmbGPU / oneimagemb);
+    value = std::max(2, std::min(mp.ncams, value));
+
+    if( value > MAX_CONCURRENT_IMAGES_IN_DEPTHMAP )
     {
         ALICEVISION_LOG_ERROR( "DepthMap has been compiled with a hard limit of "
                                << MAX_CONCURRENT_IMAGES_IN_DEPTHMAP
@@ -226,59 +265,8 @@ PlaneSweepingCuda::PlaneSweepingCuda( int CUDADeviceNo,
 
     }
 
-    // allocate global on the device
-    ps_deviceAllocate(_hidden_pyramids, _nImgsInGPUAtTime, maxImageWidth, maxImageHeight, _scales, _CUDADeviceNo);
-
-    // err = cudaMalloc( &_camsBasesDev, MAX_CONCURRENT_IMAGES_IN_DEPTHMAP*sizeof(CameraStructBase) );
-    // THROW_ON_CUDA_ERROR( err, "Could not allocate set of camera structs in device memory in " << __FILE__ << ":" << __LINE__ << ", " << cudaGetErrorString(err) );
-
-    err = cudaMallocHost( &_camsBasesHst, sizeof(CameraStructBase) );
-    THROW_ON_CUDA_ERROR( err, "Could not allocate set of camera structs in pinned host memory in " << __FILE__ << ":" << __LINE__ << ", " << cudaGetErrorString(err) );
-
-    _camsBasesHstScale.resize( MAX_CONCURRENT_IMAGES_IN_DEPTHMAP, -1 );
-
-    _cams     .resize(_nImgsInGPUAtTime);
-    _camsRcs  .resize(_nImgsInGPUAtTime);
-    _camsTimes.resize(_nImgsInGPUAtTime);
-
-    for( int rc = 0; rc < _nImgsInGPUAtTime; ++rc )
-    {
-        _cams[rc].param_dev = rc;
-        _cams[rc].pyramid   = &_hidden_pyramids[rc];
-
-        err = cudaStreamCreate( &_cams[rc].stream );
-        if( err != cudaSuccess )
-        {
-            ALICEVISION_LOG_WARNING("Failed to create a CUDA stream object for async sweeping");
-            _cams[rc].stream = 0;
-        }
-    }
-
-    for(int rc = 0; rc < _nImgsInGPUAtTime; ++rc)
-    {
-        _cams[rc].camId = -1;
-        _camsRcs[rc]   = -1;
-        _camsTimes[rc] = 0;
-    }
+    return value;
 }
-
-PlaneSweepingCuda::~PlaneSweepingCuda()
-{
-    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    // deallocate global on the device
-    ps_deviceDeallocate(_hidden_pyramids, _CUDADeviceNo, _nImgsInGPUAtTime, _scales);
-
-    // cudaFree(     _camsBasesDev );
-    cudaFreeHost( _camsBasesHst );
-
-    for(int c = 0; c < _cams.size(); c++)
-    {
-        delete _cams[c].tex_rgba_hmh;
-
-        cudaStreamDestroy( _cams[c].stream );
-    }
-}
-
 void PlaneSweepingCuda::cameraToDevice( int rc, const StaticVector<int>& tcams )
 {
     std::ostringstream ostr;
@@ -296,11 +284,10 @@ void PlaneSweepingCuda::cameraToDevice( int rc, const StaticVector<int>& tcams )
 int PlaneSweepingCuda::addCam( int global_cam_id, int scale )
 {
     // first is oldest
-    int id = _camsRcs.indexOf(global_cam_id);
-    if(id == -1)
+    int id;
+    bool newInsertion = _camsHost.insert( global_cam_id, &id );
+    if( newInsertion )
     {
-        // get oldest id
-        id = _camsTimes.minValId();
         CameraStruct& cam = _cams[id];
         cam.camId = id;
 
@@ -319,19 +306,10 @@ int PlaneSweepingCuda::addCam( int global_cam_id, int scale )
 
         _camsBasesHstScale[id] = scale;
 
-        /* Copy data for cached image "global_cam_id" into the host-side data buffer managed
-         * by data structure "cam". */
-        cps_host_fillCameraData(_ic, cam, global_cam_id, _mp);
-
-        /* Copy data from host-sided cache in "cam" onto the GPU and create
-         * downscaled and Gauss-filtered versions on the GPU. */
-        ps_device_updateCam(cam,
-                            _CUDADeviceNo,
-                            _scales, _mp.getWidth(global_cam_id), _mp.getHeight(global_cam_id));
+        /* Fill slot id in the GPU-sided frame cache from the global image cache */
+        _hidden->fillFrame( id, global_cam_id, _ic, _mp );
 
         mvsUtils::printfElapsedTime(t1, "Copy image (camera id="+std::to_string(global_cam_id)+") from CPU to GPU");
-
-        _camsRcs[id] = global_cam_id;
 
         ps_loadCameraStructs( _camsBasesHst, id );
     }
@@ -349,12 +327,10 @@ int PlaneSweepingCuda::addCam( int global_cam_id, int scale )
 
         _camsBasesHstScale[id] = scale;
 
-        // ps_device_updateCam((CameraStruct*)(*cams)[id], id, _scales);
         ALICEVISION_LOG_DEBUG("Reuse image (camera id=" + std::to_string(global_cam_id) + ") already on the GPU.");
 
         ps_loadCameraStructs( _camsBasesHst, id );
     }
-    _camsTimes[id] = clock();
 
     if( _cams[id].camId != id )
     {
@@ -955,7 +931,7 @@ void PlaneSweepingCuda::SGMretrieveBestDepth(DepthSimMap& bestDepth, CudaDeviceM
   ps_SGMretrieveBestDepth(
     bestDepth_dmp,
     bestSim_dmp,
-    rc_cam_idx, // _cams[rc_cam_idx],
+    rc_cam_idx,
     depths_d,
     volSim_dmp,
     volDimX, volDimY, volDimZ,
@@ -1191,9 +1167,147 @@ bool PlaneSweepingCuda::getSilhoueteMap(StaticVectorBool* oMap, int scale, int s
     return true;
 }
 
-int listCUDADevices(bool verbose)
+/*********************************************************************************
+ * FrameCacheEntry
+ *********************************************************************************/
+
+FrameCacheEntry::FrameCacheEntry( int cache_cam_id, int w, int h, int s )
+    : _cache_cam_id( cache_cam_id )
+    , _global_cam_id( -1 )
+    , _width( w )
+    , _height( h )
+    , _scales( s )
+    , _memBytes( 0 )
 {
-    return ps_listCUDADevices(verbose);
+    CudaSize<2> sz( w, h );
+    _host_frame = new CudaHostMemoryHeap<CudaRGBA, 2>( sz );
+    _memBytes = ps_deviceAllocate( _pyramid, w, h, s );
+}
+
+FrameCacheEntry::~FrameCacheEntry( )
+{
+    ps_deviceDeallocate( _pyramid, _scales );
+    delete _host_frame;
+}
+
+Pyramid& FrameCacheEntry::getPyramid()
+{
+    return _pyramid;
+}
+
+Pyramid* FrameCacheEntry::getPyramidPtr()
+{
+    return &_pyramid;
+}
+
+int FrameCacheEntry::getPyramidMem() const
+{
+    return _memBytes;
+}
+
+void FrameCacheEntry::fillFrame( int global_cam_id,
+                                 mvsUtils::ImagesCache<ImageRGBAf>& imageCache,
+                                 mvsUtils::MultiViewParams& mp )
+{
+    /* Copy data for cached image "global_cam_id" into the host-side data buffer managed
+     * by data structure "cam". */
+    fillHostCameraData( imageCache, _host_frame, global_cam_id, mp );
+
+    /* Copy data from host-sided cache in "cam" onto the GPU and create
+     * downscaled and Gauss-filtered versions on the GPU. */
+    ps_device_updateCam( _pyramid,
+                         _host_frame,
+                         _scales,
+                         mp.getWidth(global_cam_id),
+                         mp.getHeight(global_cam_id) );
+}
+
+void FrameCacheEntry::fillHostCameraData(
+    mvsUtils::ImagesCache<ImageRGBAf>& ic,
+    CudaHostMemoryHeap<CudaRGBA, 2>* hostFrame, // CameraStruct& cam,
+    int c,
+    mvsUtils::MultiViewParams& mp )
+{
+    ALICEVISION_LOG_DEBUG("cps_host_fillCameraData [" << c << "]: " << mp.getWidth(c) << "x" << mp.getHeight(c));
+    clock_t t1 = tic();
+    mvsUtils::ImagesCache<ImageRGBAf>::ImgSharedPtr img = ic.getImg_sync( c ); // TODO RGBA
+    ALICEVISION_LOG_DEBUG("cps_host_fillCameraData: " << c << " -a- Retrieve from ImagesCache elapsed time: " << toc(t1) << " ms.");
+    t1 = tic();
+
+    const int h = mp.getHeight(c);
+    const int w = mp.getWidth(c);
+    for(int y = 0; y < h; ++y)
+    {
+        for(int x = 0; x < w; ++x)
+        {
+            const ColorRGBAf& floatRGBA = img->at(x, y);
+            // CudaRGBA& pix_rgba = (*cam.tex_rgba_hmh)(x, y);
+            CudaRGBA& pix_rgba = (*hostFrame)(x, y);
+            pix_rgba.x = floatRGBA.r * 255.0f;
+            pix_rgba.y = floatRGBA.g * 255.0f;
+            pix_rgba.z = floatRGBA.b * 255.0f;
+            pix_rgba.w = floatRGBA.a * 255.0f;
+        }
+    }
+    ALICEVISION_LOG_DEBUG("cps_host_fillCameraData: " << c << " -b- Copy to HMH elapsed time: " << toc(t1) << " ms.");
+}
+
+/*********************************************************************************
+ * FrameCacheMemory
+ *********************************************************************************/
+
+FrameCacheMemory::FrameCacheMemory( int ImgsInGPUAtTime,
+                                    int maxWidth, int maxHeight, int scales, int CUDAdeviceNo )
+{
+    int allBytes = 0;
+
+    /* If not done before, initialize Gaussian filters in GPU constant mem.  */
+    ps_create_gaussian_arr( CUDAdeviceNo, scales );
+
+    pr_printfDeviceMemoryInfo();
+
+    _v.resize( ImgsInGPUAtTime );
+
+    for( int i=0; i<ImgsInGPUAtTime; i++ )
+    {
+        _v[i] = new FrameCacheEntry( i, maxWidth, maxHeight, scales );
+        allBytes += _v[i]->getPyramidMem();
+    }
+
+    ALICEVISION_LOG_INFO( "FrameCache for GPU " << CUDAdeviceNo << ", " << scales << " scales, allocated " << allBytes << " on GPU" );
+
+    pr_printfDeviceMemoryInfo();
+}
+
+FrameCacheMemory::~FrameCacheMemory( )
+{
+    for( auto ptr : _v )
+    {
+        delete ptr;
+    }
+}
+
+void FrameCacheMemory::fillFrame( int cache_id,
+                                  int global_cam_id,
+                                  mvsUtils::ImagesCache<ImageRGBAf>& imageCache,
+                                  mvsUtils::MultiViewParams& mp )
+{
+    _v[cache_id]->fillFrame( global_cam_id, imageCache, mp );
+}
+
+/*********************************************************************************
+ * CamSelection
+ *********************************************************************************/
+
+bool operator==( const CamSelection& l, const CamSelection& r )
+{
+    return ( l.first == r.first && l.second == r.second );
+}
+
+bool operator<( const CamSelection& l, const CamSelection& r )
+{
+    return ( l.first < r.first || 
+           ( l.first == r.first && l.second < r.second ) );
 }
 
 } // namespace depthMap

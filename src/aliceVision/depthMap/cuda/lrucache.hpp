@@ -23,6 +23,16 @@ public:
         , _max_size( size )
     { }
 
+    LRUCache( )
+        : _max_size( 0 )
+    { }
+
+    void resize( int size )
+    {
+        _max_size = size;
+        _owner.resize( size, -1 );
+    }
+
     inline int getIndex( const T& val )
     {
         typename std::vector<T>::iterator o_it = std::find( _owner.begin(), _owner.end(), val );
@@ -45,6 +55,12 @@ public:
      */
     inline bool insert( const T& val, int& position, T& oldVal )
     {
+        if( _max_size == 0 )
+        {
+            std::cerr << __FILE__ << ":" << __LINE__ << " ERROR: LRUCache must be resized before inserting elements (setting max size to 2)" << std::endl;
+            resize( 2 );
+        }
+
         int cell;
         typename std::vector<T>::iterator o_it;
         
@@ -77,6 +93,17 @@ public:
             position = ( o_it - _owner.begin() );
             return true;
         }
+    }
+
+    inline bool insert( const T& val, int* position )
+    {
+        int dummy;
+        return insert( val, *position, dummy );
+    }
+
+    inline bool insert( const T& val, int* position, T* oldVal )
+    {
+        return insert( val, *position, *oldVal );
     }
 
     inline void clear()

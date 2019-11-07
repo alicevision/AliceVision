@@ -89,24 +89,22 @@ void ps_SGMoptimizeSimVolume(
 
 int ps_listCUDADevices(bool verbose);
 
-void ps_deviceAllocate(
-    Pyramids& ps_texs_arr,
-    int ncams,
-    int width, int height,
-    int scales,
-    int deviceId);
+int ps_deviceAllocate(
+    Pyramid& pyramid,
+    int width,
+    int height,
+    int scales );
+
+void ps_deviceDeallocate(
+    Pyramid& pyramid,
+    int scales );
 
 void ps_testCUDAdeviceNo(int CUDAdeviceNo);
 
 void ps_device_updateCam(
-    const CameraStruct& cam,
-    int CUDAdeviceNo,
-    int scales,
-    int w, int h);
-
-void ps_deviceDeallocate(
-    Pyramids& ps_texs_arr,
-    int CUDAdeviceNo, int ncams, int scales);
+    Pyramid& pyramid,
+    CudaHostMemoryHeap<CudaRGBA, 2>* host_frame,
+    int scales, int w, int h);
 
 void ps_refineRcDepthMap(
     float* out_osimMap_hmh,
