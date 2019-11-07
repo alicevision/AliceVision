@@ -194,6 +194,23 @@ class Pinhole : public IntrinsicBase
   /// Return the distorted pixel (with added distortion)
   virtual Vec2 get_d_pixel(const Vec2& p) const override {return p;}
 
+  /**
+   * @brief Rescale intrinsics to reflect a rescale of the camera image
+   * @param factor a scale factor
+   */
+  virtual void rescale(float factor) override {
+
+    IntrinsicBase::rescale(factor);
+
+    Mat3 scale;
+    scale.setIdentity();
+    scale(0, 0) = factor;
+    scale(1, 1) = factor;
+
+    _K = scale * _K;
+    _Kinv = _K.inverse();
+  }
+
 private:
   // Focal & principal point are embed into the calibration matrix K
   Mat3 _K, _Kinv;

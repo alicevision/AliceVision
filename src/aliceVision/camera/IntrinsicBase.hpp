@@ -400,6 +400,16 @@ struct IntrinsicBase
     return seed;
   }
 
+  /**
+   * @brief Rescale intrinsics to reflect a rescale of the camera image
+   * @param factor a scale factor
+   */
+  virtual void rescale(float factor) {
+
+    _w = (unsigned int)(floor(float(_w) * factor));
+    _h = (unsigned int)(floor(float(_h) * factor));
+  }
+
 private:
 
   /// initialization mode
@@ -462,6 +472,7 @@ inline double AngleBetweenRays(const geometry::Pose3& pose1,
   const Vec3 ray2 = pt3D - pose2.center();
   return AngleBetweenRays(ray1, ray2);
 }
+
 
 } // namespace camera
 } // namespace aliceVision
