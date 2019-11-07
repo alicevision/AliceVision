@@ -31,5 +31,7 @@ using OutImage = image::Image<unsigned char>;
  */
 void hsv(OutImage& result, const InImagePath& inputPath, float hue, float hueRange, float minSaturation, float minValue);
 
+void postprocess_closing(OutImage& result, int iterations);
+
 }//namespace imageMasking
 }//namespace aliceVision

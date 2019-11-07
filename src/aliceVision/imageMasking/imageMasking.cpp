@@ -76,5 +76,13 @@ void hsv(OutImage& result, const InImagePath& inputPath, float hue, float hueRan
   cv::inRange(input_hsv, cv::Scalar(lowH, lowS, lowV), cv::Scalar(highH, highS, highV), result_cv);
 };
 
+void postprocess_closing(OutImage& result, int iterations)
+{
+  const cv::Mat result_cv = wrapCvMask(result);
+  const auto kernel = cv::getStructuringElement(cv::MORPH_RECT, {3, 3});
+  const auto anchor = cv::Point(-1, -1);
+  cv::morphologyEx(result_cv, result_cv, cv::MORPH_CLOSE, kernel, anchor, iterations);
+}
+
 }//namespace imageMasking
 }//namespace aliceVision
