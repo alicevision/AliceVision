@@ -75,6 +75,9 @@ int main(int argc, char **argv)
   std::string outputFilePath;
   std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
 
+  // misc.
+  int closingRadius = 0;
+
   // program range
   int rangeStart = 0;
   int rangeSize = -1;
@@ -110,6 +113,8 @@ int main(int argc, char **argv)
 
   po::options_description optionalParams("Optional parameters");
   optionalParams.add_options()
+    ("closingRadius", po::value<int>(&closingRadius)->default_value(closingRadius),
+      "Grow the selected area to try to fill holes, then contract it. The resulting area has a similar size.")
     ("rangeStart", po::value<int>(&rangeStart)->default_value(rangeStart),
       "Compute a sub-range of images from index rangeStart to rangeStart+rangeSize.")
     ("rangeSize", po::value<int>(&rangeSize)->default_value(rangeSize),
@@ -192,6 +197,13 @@ int main(int argc, char **argv)
     }
   }
 
+  // check misc. params
+  if(closingRadius < 0)
+  {
+    ALICEVISION_LOG_ERROR("Invalid closing radius.");
+    return EXIT_FAILURE;
+  }
+
   // check program range
   if(rangeStart < 0 || rangeStart >= sfmData.views.size())
   {
@@ -250,6 +262,11 @@ int main(int argc, char **argv)
 
     image::Image<unsigned char> result;
     process(result, view.getImagePath());
+
+    if(closingRadius > 0)
+    {
+      imageMasking::postprocess_closing(result, closingRadius);
+    }
 
     const auto resultFilename = fs::path(view.getImagePath()).filename().replace_extension("png");
     const std::string resultPath = (fs::path(outputFilePath) / resultFilename).string();
