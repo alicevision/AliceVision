@@ -609,192 +609,6 @@ private:
     coarse_bbox.width = panoramaSize.first;
     coarse_bbox.height = panoramaSize.second;
     
-    int bbox_left, bbox_top;
-    int bbox_right, bbox_bottom;
-    int bbox_width, bbox_height;
-
-    /*Estimate distorted maximal distance from optical center*/
-    Vec2 pts[] = {{0.0f, 0.0f}, {intrinsics.w(), 0.0f}, {intrinsics.w(), intrinsics.h()}, {0.0f, intrinsics.h()}};
-    float max_radius = 0.0;
-    for (int i = 0; i < 4; i++) {
-
-      Vec2 ptmeter = intrinsics.ima2cam(pts[i]);
-      float radius = ptmeter.norm();
-      max_radius = std::max(max_radius, radius);
-    }
-
-    /* Estimate undistorted maximal distance from optical center */
-    float max_radius_distorted = intrinsics.getMaximalDistortion(0.0, max_radius);
-
-    /* 
-    Coarse rectangle bouding box in camera space 
-    We add intermediate points to ensure arclength between 2 points is never more than 180°
-    */
-    Vec2 pts_radius[] = {
-        {-max_radius_distorted, -max_radius_distorted}, 
-        {0, -max_radius_distorted},
-        {max_radius_distorted, -max_radius_distorted}, 
-        {max_radius_distorted, 0},
-        {max_radius_distorted, max_radius_distorted},
-        {0, max_radius_distorted},
-        {-max_radius_distorted, max_radius_distorted},
-        {-max_radius_distorted, 0}
-      };
-
-
-    /* 
-    Transform bounding box into the panorama frame.
-    Point are on a unit sphere.
-    */
-    Vec3 rotated_pts[8];
-    for (int i = 0; i < 8; i++) {
-      Vec3 pt3d = pts_radius[i].homogeneous().normalized();
-      rotated_pts[i] = pose.rotation().transpose() * pt3d;
-    }
-
-    /* Vertical Default solution : no pole*/
-    bbox_top = panoramaSize.second;
-    bbox_bottom = 0;
-
-    for (int i = 0; i < 8; i++) {
-      int i2 = i + 1;
-      if (i2 > 7) i2 = 0;
-      
-      Vec3 extremaY = getExtremaY(rotated_pts[i], rotated_pts[i2]);
-
-      Vec2 res;
-      res = SphericalMapping::toEquirectangular(extremaY, panoramaSize.first, panoramaSize.second);
-      bbox_top = std::min(int(floor(res(1))), bbox_top);
-      bbox_bottom = std::max(int(ceil(res(1))), bbox_bottom);
-
-      res = SphericalMapping::toEquirectangular(rotated_pts[i], panoramaSize.first, panoramaSize.second);
-      bbox_top = std::min(int(floor(res(1))), bbox_top);
-      bbox_bottom = std::max(int(ceil(res(1))), bbox_bottom);
-    }
-
-    /* 
-    Check if our region circumscribe a pole of the sphere :
-    Check that the region projected on the Y=0 plane contains the point (0, 0)
-    This is a special projection case
-    */
-    bool pole = isPoleInTriangle(rotated_pts[0], rotated_pts[1], rotated_pts[7]);
-    pole |= isPoleInTriangle(rotated_pts[1], rotated_pts[2], rotated_pts[3]);
-    pole |= isPoleInTriangle(rotated_pts[3], rotated_pts[4], rotated_pts[5]);
-    pole |= isPoleInTriangle(rotated_pts[7], rotated_pts[5], rotated_pts[6]);
-    pole |= isPoleInTriangle(rotated_pts[1], rotated_pts[3], rotated_pts[5]);
-    pole |= isPoleInTriangle(rotated_pts[1], rotated_pts[5], rotated_pts[7]);
-    
-    
-    if (pole) {
-      Vec3 normal = (rotated_pts[1] - rotated_pts[0]).cross(rotated_pts[3] - rotated_pts[0]);
-      if (normal(1) > 0) {
-        //Lower pole
-        bbox_bottom = panoramaSize.second - 1;
-      }
-      else {
-        //upper pole
-        bbox_top = 0;
-      }
-    }
-
-    bbox_height = bbox_bottom - bbox_top + 1;
-
-
-    /*Check if we cross the horizontal loop*/
-    bool crossH;
-    for (int i = 0; i < 8; i++) {
-      int i2 = i + 1;
-      if (i2 > 7) i2 = 0;
-      
-      bool cross = crossHorizontalLoop(rotated_pts[i], rotated_pts[i2]);
-      if (i == 0) crossH = cross;
-      else crossH |= cross;
-    }
-
-
-    if (pole) {
-      /*Easy : if we cross the pole, the width is full*/
-      bbox_left = 0;
-      bbox_right = panoramaSize.first - 1;
-      bbox_width = bbox_right - bbox_left + 1;
-    }
-    else if (crossH) {
-
-      bbox_left = panoramaSize.first;
-      bbox_right = 0;
-
-      for (int i = 0; i < 8; i++) {
-        int i2 = i + 1;
-        if (i2 > 7) i2 = 0;
-
-        Vec2 res_left = SphericalMapping::toEquirectangular(rotated_pts[i], panoramaSize.first, panoramaSize.second);
-        Vec2 res_right = SphericalMapping::toEquirectangular(rotated_pts[i2], panoramaSize.first, panoramaSize.second);
-
-        if (crossHorizontalLoop(rotated_pts[i], rotated_pts[i2])) {
-
-          if (res_left(0) > res_right(0)) {
-            //Left --> border; border --> right
-            bbox_left = std::min(bbox_left, int(floor(res_left(0))));
-            bbox_right = std::max(bbox_right, int(ceil(res_right(0))));
-
-            if (i % 2 == 0) {
-              //next segment is continuity
-              int next = i2 + 1;
-              if (next > 7) next = 0;
-
-              Vec2 res = SphericalMapping::toEquirectangular(rotated_pts[next], panoramaSize.first, panoramaSize.second);
-              bbox_right = std::max(bbox_right, int(ceil(res(0))));
-            }
-            else {
-              int prev = i - 1;
-              if (prev < 0) prev = 7;
-              Vec2 res = SphericalMapping::toEquirectangular(rotated_pts[prev], panoramaSize.first, panoramaSize.second);
-              bbox_left = std::min(bbox_left, int(ceil(res(0))));
-            }
-          }
-          else {
-            //right --> border; border --> left
-            bbox_left = std::min(bbox_left, int(floor(res_right(0))));
-            bbox_right = std::max(bbox_right, int(ceil(res_left(0))));
-
-            if (i % 2 == 0) {
-              //next segment is continuity
-              int next = i2 + 1;
-              if (next > 7) next = 0;
-
-              Vec2 res = SphericalMapping::toEquirectangular(rotated_pts[next], panoramaSize.first, panoramaSize.second);
-              bbox_left = std::min(bbox_left, int(ceil(res(0))));
-            }
-            else {
-              int prev = i - 1;
-              if (prev < 0) prev = 7;
-              Vec2 res = SphericalMapping::toEquirectangular(rotated_pts[prev], panoramaSize.first, panoramaSize.second);
-              bbox_right = std::max(bbox_right, int(ceil(res(0))));
-            }
-          }
-        }
-      }
-    
-      bbox_width = bbox_right + 1 + (panoramaSize.first - bbox_left + 1);
-    }
-    else {
-      /*horizontal default solution : no border crossing, no pole*/
-      bbox_left = panoramaSize.first;
-      bbox_right = 0;
-      for (int i = 0; i < 8; i++) {
-        Vec2 res = SphericalMapping::toEquirectangular(rotated_pts[i], panoramaSize.first, panoramaSize.second);
-        bbox_left = std::min(int(floor(res(0))), bbox_left);
-        bbox_right = std::max(int(ceil(res(0))), bbox_right);
-      }
-      bbox_width = bbox_right - bbox_left + 1;
-    }
-
-    /*Assign solution to result*/
-    coarse_bbox.left = bbox_left;
-    coarse_bbox.top = bbox_top;
-    coarse_bbox.width = bbox_width;
-    coarse_bbox.height = bbox_height;
-
     return true;
   }
 
@@ -1629,6 +1443,7 @@ int main(int argc, char **argv) {
       continue;
     }
 
+    /*if (pos >= 2 && pos < 3)*/ {
     ALICEVISION_LOG_INFO("Processing view " << view.getViewId());
 
     /**
@@ -1659,10 +1474,6 @@ int main(int argc, char **argv) {
     GaussianWarper warper;
     warper.warp(map, source);
 
-    /*std::ofstream out("/home/mmoc/test.dat", std::ios::binary);
-    warper.dump(out);
-    out.close();*/
-    
     /**
      * Alpha mask
      */
@@ -1674,7 +1485,18 @@ int main(int argc, char **argv) {
     */
     ALICEVISION_LOG_INFO("Composite to final panorama\n");
     compositer.append(warper, alphabuilder);
-    
+
+    ALICEVISION_LOG_INFO("Save final panoram\n");
+
+    char filename[512];
+    const aliceVision::image::Image<image::RGBfColor> & panorama = compositer.getPanorama();
+    sprintf(filename, "%s_intermediate%d.exr", outputPanorama.c_str(), pos);
+    image::writeImage(filename, panorama, image::EImageColorSpace::SRGB);
+
+    const aliceVision::image::Image<image::RGBfColor> & cam = warper.getColor();
+    sprintf(filename, "%s_view%d.exr", outputPanorama.c_str(), pos);
+    image::writeImage(filename, cam, image::EImageColorSpace::SRGB);
+    }
     pos++;
   }
 
