@@ -720,18 +720,58 @@ private:
     }
     else if (crossH) {
 
-      for (int i = 0; i < 8; i+= 2) {
+      int first_cross = 0;
+      for (int i = 0; i < 8; i++) {
         int i2 = i + 1;
-        int i3 = i + 2;
-        if (i3 >= 8) {
-          i3 = 0;
+        bool cross = crossHorizontalLoop(rotated_pts[i], rotated_pts[i2]);
+        if (cross) {
+          first_cross = i;
+          break;
         }
-
-
       }
-      bbox_left = 0;
-      bbox_right = panoramaSize.first - 1;
-      bbox_width = bbox_right - bbox_left + 1;
+
+      bbox_left = panoramaSize.first - 1;
+      bbox_right = 0;
+      bool is_right = true;
+      for (int index = 0; index < 8; index++) {
+
+        int i = index + first_cross;
+        int i2 = i + 1;
+
+        if (i > 7) i = i - 8;
+        if (i2 > 7) i2 = i2 - 8;
+
+        Vec2 res_1 = SphericalMapping::toEquirectangular(rotated_pts[i], panoramaSize.first, panoramaSize.second);
+        Vec2 res_2 = SphericalMapping::toEquirectangular(rotated_pts[i2], panoramaSize.first, panoramaSize.second);
+
+        /*[----right ////  left-----]*/
+        bool cross = crossHorizontalLoop(rotated_pts[i], rotated_pts[i2]);
+        if (cross) {
+          if (res_1(0) > res_2(0)) { /*[----res2 //// res1----]*/
+            bbox_left = std::min(int(res_1(0)), bbox_left);
+            bbox_right = std::max(int(res_2(0)), bbox_right);
+            is_right = true;
+          }
+          else { /*[----res1 //// res2----]*/
+            bbox_left = std::min(int(res_2(0)), bbox_left);
+            bbox_right = std::max(int(res_1(0)), bbox_right);
+            is_right = false;
+          }
+        }
+        else {
+          if (is_right) {
+            bbox_right = std::max(int(res_1(0)), bbox_right);
+            bbox_right = std::max(int(res_2(0)), bbox_right);
+          }
+          else {
+            bbox_left = std::min(int(res_1(0)), bbox_left);
+            bbox_left = std::min(int(res_2(0)), bbox_left);
+          }
+        }
+      }
+
+  
+      bbox_width = bbox_right + (panoramaSize.first - bbox_left);
     }
     else {
       /*horizontal default solution : no border crossing, no pole*/
@@ -1630,16 +1670,14 @@ int main(int argc, char **argv) {
     ALICEVISION_LOG_INFO("Composite to final panorama\n");
     compositer.append(warper, alphabuilder);
 
-    ALICEVISION_LOG_INFO("Save final panoram\n");
-
-    /*char filename[512];
+    char filename[512];
     const aliceVision::image::Image<image::RGBfColor> & panorama = compositer.getPanorama();
     sprintf(filename, "%s_intermediate%d.exr", outputPanorama.c_str(), pos);
     image::writeImage(filename, panorama, image::EImageColorSpace::SRGB);
 
     const aliceVision::image::Image<image::RGBfColor> & cam = warper.getColor();
     sprintf(filename, "%s_view%d.exr", outputPanorama.c_str(), pos);
-    image::writeImage(filename, cam, image::EImageColorSpace::SRGB);*/
+    image::writeImage(filename, cam, image::EImageColorSpace::SRGB);
     }
     pos++;
   }
