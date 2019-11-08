@@ -27,7 +27,7 @@
 namespace aliceVision {
 namespace depthMap {
 
-#define MAX_CONCURRENT_IMAGES_IN_DEPTHMAP   10
+#define MAX_CONSTANT_CAMERA_PARAM_SETS   10
 
 /*********************************************************************************
  * forward declarations

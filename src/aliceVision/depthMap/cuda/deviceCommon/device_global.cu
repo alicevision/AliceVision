@@ -38,7 +38,7 @@ __constant__ unsigned char distFcnConst5[5] = {0, 37, 94, 120, 125};
 // 1-distFcnHeight*exp(-(dist.*dist)/(2*maxDist*maxDist)); plot(dist,y); int32(125*y)
 __constant__ unsigned char distFcnConst3[3] = {0, 94, 125};
 
-__constant__ CameraStructBase camsBasesDev[MAX_CONCURRENT_IMAGES_IN_DEPTHMAP];
+__constant__ CameraStructBase camsBasesDev[MAX_CONSTANT_CAMERA_PARAM_SETS];
 
 
 } // namespace depthMap

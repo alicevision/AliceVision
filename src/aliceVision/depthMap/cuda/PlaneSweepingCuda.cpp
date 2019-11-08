@@ -169,7 +169,7 @@ PlaneSweepingCuda::PlaneSweepingCuda( int CUDADeviceNo,
     , _hidden( 0 )
     , _ic( ic )
     , _mp(mp)
-    , _cameraParamCache( MAX_CONCURRENT_IMAGES_IN_DEPTHMAP )
+    , _cameraParamCache( MAX_CONSTANT_CAMERA_PARAM_SETS )
 {
     /* The caller knows all camera that will become rc cameras, but it does not
      * pass that information to this function.
@@ -200,7 +200,7 @@ PlaneSweepingCuda::PlaneSweepingCuda( int CUDADeviceNo,
     err = cudaMallocHost( &_camsBasesHst, sizeof(CameraStructBase) );
     THROW_ON_CUDA_ERROR( err, "Could not allocate set of camera structs in pinned host memory in " << __FILE__ << ":" << __LINE__ << ", " << cudaGetErrorString(err) );
 
-    // _camsBasesHstScale.resize( MAX_CONCURRENT_IMAGES_IN_DEPTHMAP, -1 );
+    // _camsBasesHstScale.resize( MAX_CONSTANT_CAMERA_PARAM_SETS, -1 );
 
     _cams    .resize(_nImgsInGPUAtTime);
     _camsHost.resize(_nImgsInGPUAtTime);
@@ -252,13 +252,13 @@ int PlaneSweepingCuda::imagesInGPUAtTime( mvsUtils::MultiViewParams& mp, int sca
     value = (int)(maxmbGPU / oneimagemb);
     value = std::max(2, std::min(mp.ncams, value));
 
-    if( value > MAX_CONCURRENT_IMAGES_IN_DEPTHMAP )
+    if( value > MAX_CONSTANT_CAMERA_PARAM_SETS )
     {
         ALICEVISION_LOG_ERROR( "DepthMap has been compiled with a hard limit of "
-                               << MAX_CONCURRENT_IMAGES_IN_DEPTHMAP
+                               << MAX_CONSTANT_CAMERA_PARAM_SETS
                                << " concurrent images. "<< std::endl
                                << "Recompilation required for larger values." << std::endl
-                               << "Change define MAX_CONCURRENT_IMAGES_IN_DEPTHMAP "
+                               << "Change define MAX_CONSTANT_CAMERA_PARAM_SETS "
                                << " but consider hardware limits for CUDA constant memory." );
         exit( -1 );
 
