@@ -105,13 +105,14 @@ __host__ void ps_create_gaussian_arr( int deviceId, int scales ) // float delta,
 
 __host__ void ps_downscale_gauss( Pyramid& pyramid,
                                   int scale,
-                                  int w, int h, int radius )
+                                  int w, int h, int radius,
+                                  cudaStream_t stream )
 {
     const dim3 block(32, 2, 1);
     const dim3 grid(divUp(w / (scale + 1), block.x), divUp(h / (scale + 1), block.y), 1);
 
     downscale_gauss_smooth_lab_kernel
-        <<<grid, block>>>
+        <<<grid, block, 0, stream>>>
         ( pyramid[0].tex,
           pyramid[scale].arr->getBuffer(),
           pyramid[scale].arr->getPitch(),

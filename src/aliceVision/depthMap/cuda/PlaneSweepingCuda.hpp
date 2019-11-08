@@ -100,7 +100,8 @@ public:
 
     void fillFrame( int global_cam_id,
                     mvsUtils::ImagesCache<ImageRGBAf>& imageCache,
-                    mvsUtils::MultiViewParams& mp );
+                    mvsUtils::MultiViewParams& mp,
+                    cudaStream_t stream );
 
     void setLocalCamId( int cache_cam_id );
     int  getLocalCamId( ) const;
@@ -141,7 +142,8 @@ public:
     void fillFrame( int cache_id,
                     int global_cam_id,
                     mvsUtils::ImagesCache<ImageRGBAf>& imageCache,
-                    mvsUtils::MultiViewParams& mp );
+                    mvsUtils::MultiViewParams& mp,
+                    cudaStream_t stream );
     void setLocalCamId( int cache_id, int cache_cam_id );
     int  getLocalCamId( int cache_id ) const;
 };
@@ -203,7 +205,7 @@ public:
 
     void cameraToDevice( int rc, const StaticVector<int>& tcams );
 
-    int addCam( int rc, int scale );
+    int addCam( int rc, int scale, cudaStream_t stream = 0 );
 
     void getMinMaxdepths(int rc, const StaticVector<int>& tcams, float& minDepth, float& midDepth, float& maxDepth);
 
@@ -284,7 +286,7 @@ private:
     /* Support function for addCam that loads cameraStructs into the GPU constant
      * memory if necessary.
      * Returns the index in the constant cache. */
-    int loadCameraParam( int global_cam_id, int scale );
+    int loadCameraParam( int global_cam_id, int scale, cudaStream_t stream );
 
     /* Compute the number of images that can be stored in the current GPU. Called only by
      * the constructor. */

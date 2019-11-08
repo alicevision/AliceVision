@@ -241,24 +241,10 @@ __global__ void volume_slice_kernel(
     const int zIndex = lowestUsedDepth + vz;
     const float fpPlaneDepth = depths_d[zIndex];
 
-    /*
-    // int verbose = (vx % 100 == 0 && vy % 100 == 0 && vz % 100 == 0);
-
-    if (verbose)
-    {
-        printf("______________________________________\n");
-        printf("volume_slice_kernel: vx: %i, vy: %i, vz: %i, x: %i, y: %i\n", vx, vy, vz, x, y);
-        printf("volume_slice_kernel: volStepXY: %i, volDimX: %i, volDimY: %i\n", volStepXY, volDimX, volDimY);
-        printf("volume_slice_kernel: wsh: %i\n", wsh);
-        printf("volume_slice_kernel: rcWidth: %i, rcHeight: %i\n", rcWidth, rcHeight);
-        printf("volume_slice_kernel: lowestUsedDepth: %i, nbDepthsToSearch: %i\n", lowestUsedDepth, nbDepthsToSearch);
-        printf("volume_slice_kernel: zIndex: %i, fpPlaneDepth: %f\n", zIndex, fpPlaneDepth);
-        printf("volume_slice_kernel: gammaC: %f, gammaP: %f, epipShift: %f\n", gammaC, gammaP, epipShift);
-        printf("______________________________________\n");
-    }
-    */
     Patch ptcho;
-    volume_computePatch(rc_cam_cache_idx, tc_cam_cache_idx, ptcho, fpPlaneDepth, make_int2(x, y)); // no texture use
+    volume_computePatch( rc_cam_cache_idx,
+                         tc_cam_cache_idx,
+                         ptcho, fpPlaneDepth, make_int2(x, y)); // no texture use
 
     float fsim = compNCCby3DptsYK(rc_tex, tc_tex,
                                   rc_cam_cache_idx, tc_cam_cache_idx,
@@ -267,9 +253,10 @@ __global__ void volume_slice_kernel(
                                   tcWidth, tcHeight,
                                   gammaC, gammaP);
 
-    const float fminVal = -1.0f;
-    const float fmaxVal = 1.0f;
-    fsim = (fsim - fminVal) / (fmaxVal - fminVal);
+    constexpr const float fminVal = -1.0f;
+    constexpr const float fmaxVal = 1.0f;
+    constexpr const float fmultiplier = 1.0f / (fmaxVal - fminVal);
+    fsim = (fsim - fminVal) * fmultiplier;
 #ifdef TSIM_USE_FLOAT
     // no clamp
 #else

@@ -33,7 +33,8 @@ extern void ps_create_gaussian_arr( int deviceId, int scales );
 
 extern void ps_downscale_gauss( Pyramid& pyramid,
                                 int scale,
-                                int w, int h, int radius );
+                                int w, int h, int radius,
+                                cudaStream_t stream );
 
 
 #ifdef ALICEVISION_TMP_WITH_BILATERALFILTER
