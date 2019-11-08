@@ -37,9 +37,6 @@ void hdrMerge::process(const std::vector< image::Image<image::RGBfColor> > &imag
   const std::size_t width = images.front().Width();
   const std::size_t height = images.front().Height();
 
-  const float maxLum = 1000.0;
-  const float minLum = 0.0001;
-
   #pragma omp parallel for
   for(int y = 0; y < height; ++y)
   {
@@ -52,35 +49,20 @@ void hdrMerge::process(const std::vector< image::Image<image::RGBfColor> > &imag
       {
         double wsum = 0.0;
         double wdiv = 0.0;
-        double highValue = images.at(0)(y, x)(channel);
-        double lowValue = images.at(images.size()-1)(y, x)(channel);
-
 
         for(std::size_t i = 0; i < images.size(); ++i)
         {
           //for each images
           const double value = images[i](y, x)(channel);
           const double time = times[i];
-          double w = std::max(0.f, weight(value, channel) - weight(0.05, 0));
-
+          double w = std::max(0.f, weight(value, channel));
           const double r = response(value, channel);
-
           wsum += w * r / time;
           wdiv += w;
         }
 
-        double clampedHighValue = 1.0 - (1.0 / (1.0 + expf(10.0 * ((highValue - 0.9) / 0.2))));
-        double clampedLowValue = 1.0 / (1.0 + expf(10.0 * ((lowValue - 0.005) / 0.01)));
-
-
-        if(!robCalibrate && clampedValueCorrection != 0.f)
-        {
-          radianceColor(channel) = (1.0 - clampedHighValue - clampedLowValue) * wsum / std::max(0.001, wdiv) * targetTime + clampedHighValue * maxLum * clampedValueCorrection + clampedLowValue * minLum * clampedValueCorrection;
-        }
-        else
-        {
-          radianceColor(channel) = wsum / std::max(0.001, wdiv) * targetTime;
-        }
+        
+        radianceColor(channel) = wsum / std::max(1e-08, wdiv) * targetTime;
       }
 
     }
