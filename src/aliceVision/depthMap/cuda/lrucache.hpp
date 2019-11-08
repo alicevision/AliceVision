@@ -14,6 +14,18 @@
 namespace aliceVision {
 namespace depthMap {
 
+/* The LRUCache template takes a type T.
+ * T must be copyable and offer operator<, operator==, as well as operator=(int)
+ * and constructors T(), T(const T&) and T(int).
+ * T is treated like an intrinsic type, but is not restricted to these types.
+ *
+ * Implement LRU caching functionality. This is meant to decouple the LRU-style use of
+ * two pieces of cached information on the GPU:
+ * - the dynamically allocated image pyramids
+ * - the size of the GPU-constant camera parameters that is fixed at compile time
+ * The LRUCache class may be more generally useful, for example for the host-sided
+ * image cache.
+ */
 template <typename T>
 class LRUCache
 {
