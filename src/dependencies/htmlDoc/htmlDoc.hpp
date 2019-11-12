@@ -150,7 +150,7 @@ namespace htmlDocument
         << range.first.second << ","<< range.second.first <<"]);\n";
     }
 
-    void addLine(double x0, double y0, double x1, double y1, std::string color ="00ff00")
+    void addLine(double x0, double y0, double x1, double y1, const std::string& color ="00ff00")
     {
       size_t index0 = cpt++;
       size_t index1 = cpt++;
@@ -163,7 +163,7 @@ namespace htmlDocument
 
     template<typename T, typename T2>
     void addXYChart(const std::vector<T> & vec_x, const std::vector<T2> & vec_y,
-      std::string stype)
+      const std::string& stype, const std::string& strokeColor = "0000ff")
     {
       size_t index0 = cpt++;
       size_t index1 = cpt++;
@@ -182,11 +182,11 @@ namespace htmlDocument
 
       stream << "board.createElement('chart', "
         <<osData.str()
-        <<", {chartStyle:'"<< stype <<"',labels:"<<osData.str()<<"});\n";
+        << ", {chartStyle:'" << stype << "',labels:" << osData.str() << ",strokeColor:'#" << strokeColor << "',highlightStrokeColor:'#" << strokeColor << "'});\n";
     }
 
     template<typename T>
-    void addYChart(const std::vector<T> & vec_y, std::string stype)
+    void addYChart(const std::vector<T> & vec_y, const std::string& stype, const std::string& strokeColor = "0000ff")
     {
       size_t index0 = cpt++;
 
@@ -195,7 +195,7 @@ namespace htmlDocument
       stream << "];\n";
       stream << "board.createElement('chart', "
         <<"data"<<index0
-        <<", {chartStyle:'"<< stype <<"',labels:"<<"data"<<index0<<"});\n";
+        <<", {chartStyle:'"<< stype <<"',labels:"<<"data"<<index0 << ",strokeColor:'#" << strokeColor << "',highlightStrokeColor:'#" << strokeColor << "'});\n";
     }
 
     void UnsuspendUpdate()
@@ -249,19 +249,36 @@ namespace htmlDocument
     }
 
     template<typename T, typename T2>
-    void pushXYChart(const std::vector<T>& vec_x, const std::vector<T2>& vec_y,std::string name)
+    void pushXYChart(const std::vector<T>& vec_x, const std::vector<T2>& vec_y, const std::string& name, const std::string& color = "0000ff")
     {
       std::pair< std::pair<double,double>, std::pair<double,double> > range = autoJSXGraphViewport<double>(vec_x, vec_y);
 
       htmlDocument::JSXGraphWrapper jsxGraph;
       jsxGraph.init(name,600,300);
-      jsxGraph.addXYChart(vec_x, vec_y, "line,point");
+      jsxGraph.addXYChart(vec_x, vec_y, "line,point", color);
       jsxGraph.UnsuspendUpdate();
       jsxGraph.setViewport(range);
       jsxGraph.close();
       pushInfo(jsxGraph.toStr());
     }
-    
+
+    template<typename T, typename T2>
+    void pushXYChart(const std::vector<T>& vec_x, const std::vector<std::vector<T2>>& vec_y, const std::string& name, const std::vector<std::string>& colors, const std::string& sType= "line,point")
+    {
+        std::pair< std::pair<double, double>, std::pair<double, double> > range = autoJSXGraphViewport<double>(vec_x, vec_y.front());
+
+        htmlDocument::JSXGraphWrapper jsxGraph;
+        jsxGraph.init(name, 600, 300);
+        for (int i = 0; i < vec_y.size(); ++i)
+        {
+            jsxGraph.addXYChart(vec_x, vec_y[i], sType, colors[i]);
+        }
+        jsxGraph.UnsuspendUpdate();
+        jsxGraph.setViewport(range);
+        jsxGraph.close();
+        pushInfo(jsxGraph.toStr());
+    }
+
     std::string getDoc()
     {
       return htmlMarkup("html", htmlStream.str());

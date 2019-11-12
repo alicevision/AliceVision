@@ -9,7 +9,11 @@
 #include <fstream>
 #include <iostream>
 #include <sstream>
+#include <numeric>
+
 #include <aliceVision/system/Logger.hpp>
+
+#include <dependencies/htmlDoc/htmlDoc.hpp>
 
 
 namespace aliceVision {
@@ -175,6 +179,17 @@ void rgbCurve::inverseAllValues()
             {
                 value = 1.f / value;
             }
+        }
+    }
+}
+
+void rgbCurve::invertAndScaleSecondPart(float scale)
+{
+    for (auto &curve : _data)
+    {
+        for (std::size_t i = curve.size()/2; i < curve.size(); ++i)
+        {
+            curve[i] = (1.f - curve[i]) * scale;
         }
     }
 }
@@ -387,6 +402,33 @@ void rgbCurve::write(const std::string &path, const std::string &name) const
     file << text;
     file.close();
 }
+
+void rgbCurve::writeHtml(const std::string& path, const std::string& title) const
+{
+    using namespace htmlDocument;
+
+    std::vector<double> xBin(getCurveRed().size());
+    std::iota(xBin.begin(), xBin.end(), 0);
+
+    std::pair< std::pair<double, double>, std::pair<double, double> > range = autoJSXGraphViewport<double>(xBin, getCurveRed());
+
+    JSXGraphWrapper jsxGraph;
+    jsxGraph.init(title, 800, 600);
+
+    jsxGraph.addXYChart(xBin, getCurveRed(), "line", "ff0000");
+    jsxGraph.addXYChart(xBin, getCurveGreen(), "line", "00ff00");
+    jsxGraph.addXYChart(xBin, getCurveBlue(), "line", "0000ff");
+
+    jsxGraph.UnsuspendUpdate();
+    jsxGraph.setViewport(range);
+    jsxGraph.close();
+
+    // save the reconstruction Log
+    std::ofstream htmlFileStream(path.c_str());
+    htmlFileStream << htmlDocumentStream(title).getDoc();
+    htmlFileStream << jsxGraph.toStr();
+}
+
 
 void rgbCurve::read(const std::string &path)
 {

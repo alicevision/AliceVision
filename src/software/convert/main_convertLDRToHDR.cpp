@@ -34,6 +34,69 @@
 using namespace aliceVision;
 
 namespace po = boost::program_options;
+namespace fs = boost::filesystem;
+
+
+
+enum class ECalibrationMethod
+{
+    LINEAR,
+    ROBERTSON,
+    DEBEVEC,
+    GROSSBERG
+};
+
+/**
+* @brief convert an enum ECalibrationMethod to its corresponding string
+* @param ECalibrationMethod
+* @return String
+*/
+inline std::string ECalibrationMethod_enumToString(const ECalibrationMethod calibrationMethod)
+{
+    switch (calibrationMethod)
+    {
+    case ECalibrationMethod::LINEAR:      return "linear";
+    case ECalibrationMethod::ROBERTSON:   return "robertson";
+    case ECalibrationMethod::DEBEVEC:     return "debevec";
+    case ECalibrationMethod::GROSSBERG:   return "grossberg";
+    }
+    throw std::out_of_range("Invalid method name enum");
+}
+
+/**
+* @brief convert a string calibration method name to its corresponding enum ECalibrationMethod
+* @param ECalibrationMethod
+* @return String
+*/
+inline ECalibrationMethod ECalibrationMethod_stringToEnum(const std::string& calibrationMethodName)
+{
+    std::string methodName = calibrationMethodName;
+    std::transform(methodName.begin(), methodName.end(), methodName.begin(), ::tolower);
+
+    if (methodName == "linear")      return ECalibrationMethod::LINEAR;
+    if (methodName == "robertson")   return ECalibrationMethod::ROBERTSON;
+    if (methodName == "debevec")     return ECalibrationMethod::DEBEVEC;
+    if (methodName == "grossberg")   return ECalibrationMethod::GROSSBERG;
+
+    throw std::out_of_range("Invalid method name : '" + calibrationMethodName + "'");
+}
+
+inline std::ostream& operator<<(std::ostream& os, ECalibrationMethod calibrationMethodName)
+{
+    os << ECalibrationMethod_enumToString(calibrationMethodName);
+    return os;
+}
+
+inline std::istream& operator>>(std::istream& in, ECalibrationMethod& calibrationMethod)
+{
+    std::string token;
+    in >> token;
+    calibrationMethod = ECalibrationMethod_stringToEnum(token);
+    return in;
+}
+
+
+
 
 int main(int argc, char * argv[]) {
 
@@ -41,7 +104,15 @@ int main(int argc, char * argv[]) {
   std::string sfmInputDataFilename = "";
   std::string sfmOutputDataFilename = "";
   int groupSize = 3;
+  ECalibrationMethod calibrationMethod = ECalibrationMethod::LINEAR;
   float clampedValueCorrection = 1.0f;
+  bool fisheye = false;
+  int channelQuantizationPower = 10;
+  int calibrationNbPoints = 0;
+
+  std::string calibrationWeightFunction = "default";
+  hdr::EFunctionType fusionWeightFunction = hdr::EFunctionType::GAUSSIAN;
+
 
   /*****
   * DESCRIBE COMMAND LINE PARAMETERS 
@@ -59,7 +130,21 @@ int main(int argc, char * argv[]) {
 
   po::options_description optionalParams("Optional parameters");
   optionalParams.add_options()
-    ("expandDynamicRange,e", po::value<float>(&clampedValueCorrection)->default_value(clampedValueCorrection), "float value between 0 and 1 to correct clamped high values in dynamic range: use 0 for no correction, 0.5 for interior lighting and 1 for outdoor lighting.");
+    ("calibrationMethod,m", po::value<ECalibrationMethod>(&calibrationMethod)->default_value(calibrationMethod),
+        "Name of method used for camera calibration: linear, robertson (slow), debevec, grossberg.")
+    ("expandDynamicRange,e", po::value<float>(&clampedValueCorrection)->default_value(clampedValueCorrection),
+        "float value between 0 and 1 to correct clamped high values in dynamic range: use 0 for no correction, 0.5 for interior lighting and 1 for outdoor lighting.")
+    ("fisheyeLens,f", po::value<bool>(&fisheye)->default_value(fisheye),
+        "Set to 1 if images are taken with a fisheye lens and to 0 if not. Default value is set to 1.")
+    ("channelQuantizationPower", po::value<int>(&channelQuantizationPower)->default_value(channelQuantizationPower),
+        "Quantization level like 8 bits or 10 bits.")      
+    ("calibrationWeight,w", po::value<std::string>(&calibrationWeightFunction)->default_value(calibrationWeightFunction),
+        "Weight function used to calibrate camera response (default depends on the calibration method, gaussian, triangle, plateau).")
+    ("fusionWeight,W", po::value<hdr::EFunctionType>(&fusionWeightFunction)->default_value(fusionWeightFunction),
+        "Weight function used to fuse all LDR images together (gaussian, triangle, plateau).")
+    ("calibrationNbPoints", po::value<int>(&calibrationNbPoints)->default_value(calibrationNbPoints),
+        "Number of points used to calibrate (Use 0 for automatic selection based on the calibration method).")
+    ;
 
   po::options_description logParams("Log parameters");
   logParams.add_options()
@@ -241,8 +326,6 @@ int main(int argc, char * argv[]) {
     return (path_a.stem().string() < path_b.stem().string());
   });
 
-
-
   /*
   Make sure all images have same aperture
   */
@@ -269,7 +352,8 @@ int main(int argc, char * argv[]) {
   }
 
   std::vector<std::shared_ptr<sfmData::View>> targetViews;
-  for (auto & group : groupedViews) {
+  for (auto & group : groupedViews)
+  {
     /*Sort all images by exposure time*/
     std::sort(group.begin(), group.end(), [](const std::shared_ptr<sfmData::View> & a, const std::shared_ptr<sfmData::View> & b) -> bool { 
       if (a == nullptr || b == nullptr) return true;
@@ -289,11 +373,13 @@ int main(int argc, char * argv[]) {
 
   /*Build exposure times table*/
   std::vector<std::vector<float>> groupedExposures;
-  for (int i = 0; i < groupedViews.size(); i++) {
+  for (int i = 0; i < groupedViews.size(); i++)
+  {
     const std::vector<std::shared_ptr<sfmData::View>> & group = groupedViews[i];
     std::vector<float> exposures;
 
-    for (int j = 0; j < group.size(); j++) {
+    for (int j = 0; j < group.size(); j++)
+    {
       float etime = group[j]->getMetadataShutter();
       exposures.push_back(etime);
     }
@@ -302,42 +388,134 @@ int main(int argc, char * argv[]) {
 
   /*Build table of file names*/
   std::vector<std::vector<std::string>> groupedFilenames;
-  for (int i = 0; i < groupedViews.size(); i++) {
+  for (int i = 0; i < groupedViews.size(); i++)
+  {
     const std::vector<std::shared_ptr<sfmData::View>> & group = groupedViews[i];
 
     std::vector<std::string> filenames;
 
-    for (int j = 0; j < group.size(); j++) {
-
+    for (int j = 0; j < group.size(); j++)
+    {
       filenames.push_back(group[j]->getImagePath());
     }
 
     groupedFilenames.push_back(filenames);
   }
-  
 
-  size_t channelQuantization = std::pow(2, 10);
-  hdr::rgbCurve response(channelQuantization);
+
+  size_t channelQuantization = std::pow(2, channelQuantizationPower);
+  // set the correct weight functions corresponding to the string parameter
   hdr::rgbCurve calibrationWeight(channelQuantization);
-  hdr::rgbCurve fusionWeight(channelQuantization);
+  std::transform(calibrationWeightFunction.begin(), calibrationWeightFunction.end(), calibrationWeightFunction.begin(), ::tolower);
+  if (calibrationWeightFunction == "default")
+  {
+    switch (calibrationMethod)
+    {
+      case ECalibrationMethod::LINEAR:      break;
+      case ECalibrationMethod::DEBEVEC:     calibrationWeight.setTriangular();  break;
+      case ECalibrationMethod::ROBERTSON:   calibrationWeight.setRobertsonWeight(); break;
+      case ECalibrationMethod::GROSSBERG:   break;
+    }
+  }
+  else
+  {
+    calibrationWeight.setFunction(hdr::EFunctionType_stringToEnum(calibrationWeightFunction));
+  }
+
+  hdr::rgbCurve response(channelQuantization);
 
   const float lambda = channelQuantization * 1.f;
-  const int nbPoints = 10000;
-  bool fisheye = false;
-  fusionWeight.setFunction(hdr::EFunctionType::GAUSSIAN);
   calibrationWeight.setTriangular();
 
-  hdr::DebevecCalibrate calibration;
-  if (!calibration.process(groupedFilenames, channelQuantization, groupedExposures, nbPoints, fisheye, calibrationWeight, lambda, response)) {
-     ALICEVISION_LOG_ERROR("Calibration failed.");
-    return EXIT_FAILURE;
+  // calculate the response function according to the method given in argument or take the response provided by the user
+  {
+      switch (calibrationMethod)
+      {
+      case ECalibrationMethod::LINEAR:
+      {
+          // set the response function to linear
+          response.setLinear();
+
+          {
+              hdr::rgbCurve r = response;
+              r.exponential(); // TODO
+              std::string outputFolder = fs::path(sfmOutputDataFilename).parent_path().string();
+              std::string methodName = ECalibrationMethod_enumToString(calibrationMethod);
+              std::string outputResponsePath = (fs::path(outputFolder) / (std::string("response_log_") + methodName + std::string(".csv"))).string();
+              std::string outputResponsePathHtml = (fs::path(outputFolder) / (std::string("response_log_") + methodName + std::string(".html"))).string();
+
+              r.write(outputResponsePath);
+              r.writeHtml(outputResponsePathHtml, "Camera Response Curve " + methodName);
+              ALICEVISION_LOG_INFO("Camera response function written as " << outputResponsePath);
+          }
+
+      }
+      break;
+      case ECalibrationMethod::DEBEVEC:
+      {
+          ALICEVISION_LOG_INFO("Debevec calibration");
+          const float lambda = channelQuantization * 1.f;
+          if(calibrationNbPoints == 0)
+              calibrationNbPoints = 10000;
+          hdr::DebevecCalibrate calibration;
+          calibration.process(groupedFilenames, channelQuantization, groupedExposures, calibrationNbPoints, fisheye, calibrationWeight, lambda, response);
+
+          {
+              std::string outputFolder = fs::path(sfmOutputDataFilename).parent_path().string();
+              std::string methodName = ECalibrationMethod_enumToString(calibrationMethod);
+              std::string outputResponsePath = (fs::path(outputFolder) / (std::string("response_log_") + methodName + std::string(".csv"))).string();
+              std::string outputResponsePathHtml = (fs::path(outputFolder) / (std::string("response_log_") + methodName + std::string(".html"))).string();
+
+              response.write(outputResponsePath);
+              response.writeHtml(outputResponsePathHtml, "Camera Response Curve " + methodName);
+              ALICEVISION_LOG_INFO("Camera response function written as " << outputResponsePath);
+          }
+
+          response.exponential();
+          response.scale();
+      }
+      break;
+      case ECalibrationMethod::ROBERTSON:
+      {
+          /*
+          ALICEVISION_LOG_INFO("Robertson calibration");
+          hdr::RobertsonCalibrate calibration(10);
+          if(calibrationNbPoints == 0)
+            calibrationNbPoints = 1000000;
+          calibration.process(groupedFilenames, channelQuantization, groupedExposures, calibrationNbPoints, fisheye, calibrationWeight, response);
+          response.scale();
+          */
+      }
+      break;
+      case ECalibrationMethod::GROSSBERG:
+      {
+          ALICEVISION_LOG_INFO("Grossberg calibration");
+          if (calibrationNbPoints == 0)
+              calibrationNbPoints = 1000000;
+          hdr::GrossbergCalibrate calibration(3);
+          calibration.process(groupedFilenames, channelQuantization, groupedExposures, calibrationNbPoints, fisheye, response);
+      }
+      break;
+      }
   }
 
   ALICEVISION_LOG_INFO("Calibration done.");
 
-  response.exponential();
-  response.scale();
+  {
+      std::string outputFolder = fs::path(sfmOutputDataFilename).parent_path().string();
+      std::string methodName = ECalibrationMethod_enumToString(calibrationMethod);
+      std::string outputResponsePath = (fs::path(outputFolder) / (std::string("response_") + methodName + std::string(".csv"))).string();
+      std::string outputResponsePathHtml = (fs::path(outputFolder) / (std::string("response_") + methodName + std::string(".html"))).string();
 
+      response.write(outputResponsePath);
+      response.writeHtml(outputResponsePathHtml, "Camera Response Curve " + methodName);
+      ALICEVISION_LOG_INFO("Camera response function written as " << outputResponsePath);
+  }
+
+  // HDR Fusion
+
+  hdr::rgbCurve fusionWeight(channelQuantization);
+  fusionWeight.setFunction(fusionWeightFunction);
 
   sfmData::SfMData outputSfm;
   sfmData::Views & vs = outputSfm.getViews();
@@ -347,31 +525,31 @@ int main(int argc, char * argv[]) {
   {
     std::vector<image::Image<image::RGBfColor>> images(groupSize);
     std::shared_ptr<sfmData::View> targetView = targetViews[g];
-    if (targetView == nullptr) {
+    if (targetView == nullptr)
+    {
       ALICEVISION_LOG_ERROR("Null view");
       return EXIT_FAILURE;
     }
 
     /* Load all images of the group */
-    for (int i = 0; i < groupSize; i++) {
+    for (int i = 0; i < groupSize; i++)
+    {
       ALICEVISION_LOG_INFO("Load " << groupedFilenames[g][i]);
-      image::readImage(groupedFilenames[g][i], images[i], image::EImageColorSpace::SRGB);
+      image::readImage(groupedFilenames[g][i], images[i], (calibrationMethod == ECalibrationMethod::LINEAR) ? image::EImageColorSpace::LINEAR : image::EImageColorSpace::SRGB);
     }
 
-    
-
-    /**/
+    /* Merge HDR images */
     hdr::hdrMerge merge;
     float targetTime = targetView->getMetadataShutter();
     image::Image<image::RGBfColor> HDRimage(targetView->getWidth(), targetView->getHeight(), false);
     merge.process(images, groupedExposures[g], fusionWeight, response, HDRimage, targetTime, false, clampedValueCorrection);
 
-    /*Output image file path*/
+    /* Output image file path */
     std::string hdr_output_path;
     std::stringstream  sstream;
     sstream << output_path << "/" << "hdr_" << std::setfill('0') << std::setw(4) << g << ".exr";
 
-    /*Write an image with parameters from the target view*/
+    /* Write an image with parameters from the target view */
     oiio::ParamValueList targetMetadata = image::readImageMetadata(targetView->getImagePath());
     image::writeImage(sstream.str(), HDRimage, image::EImageColorSpace::AUTO, targetMetadata);
 

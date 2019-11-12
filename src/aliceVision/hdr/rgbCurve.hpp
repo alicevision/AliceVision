@@ -193,6 +193,8 @@ public:
     */
   void inverseAllValues();
 
+  void invertAndScaleSecondPart(float scale);
+
   /**
     * @brief change all value of the image by their absolute value
     */
@@ -292,6 +294,12 @@ public:
     * @param[in] path
     */
   void write(const std::string &path, const std::string &name = "rgbCurve") const;
+
+  /**
+  * @brief Write in an html file
+  * @param[in] path
+  */
+  void writeHtml(const std::string &path, const std::string& title) const;
 
   /**
     * @brief Read and fill curves from a csv file
