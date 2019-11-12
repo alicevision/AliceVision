@@ -183,6 +183,17 @@ void rgbCurve::inverseAllValues()
     }
 }
 
+void rgbCurve::invertAndScaleSecondPart(float scale)
+{
+    for (auto &curve : _data)
+    {
+        for (std::size_t i = curve.size()/2; i < curve.size(); ++i)
+        {
+            curve[i] = (1.f - curve[i]) * scale;
+        }
+    }
+}
+
 void rgbCurve::setAllAbsolute()
 {
     for(auto &curve : _data)

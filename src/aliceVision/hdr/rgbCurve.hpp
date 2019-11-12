@@ -193,6 +193,8 @@ public:
     */
   void inverseAllValues();
 
+  void invertAndScaleSecondPart(float scale);
+
   /**
     * @brief change all value of the image by their absolute value
     */
