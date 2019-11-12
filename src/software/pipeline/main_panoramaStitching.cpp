@@ -617,7 +617,7 @@ private:
     coarse_bbox.top = 0;
     coarse_bbox.width = panoramaSize.first;
     coarse_bbox.height = panoramaSize.second;
-    
+
     int bbox_left, bbox_top;
     int bbox_right, bbox_bottom;
     int bbox_width, bbox_height;
@@ -729,62 +729,18 @@ private:
     }
     else if (crossH) {
 
-      bbox_left = panoramaSize.first;
-      bbox_right = 0;
-
-      for (int i = 0; i < 8; i++) {
+      for (int i = 0; i < 8; i+= 2) {
         int i2 = i + 1;
-        if (i2 > 7) i2 = 0;
-
-        Vec2 res_left = SphericalMapping::toEquirectangular(rotated_pts[i], panoramaSize.first, panoramaSize.second);
-        Vec2 res_right = SphericalMapping::toEquirectangular(rotated_pts[i2], panoramaSize.first, panoramaSize.second);
-
-        if (crossHorizontalLoop(rotated_pts[i], rotated_pts[i2])) {
-
-          if (res_left(0) > res_right(0)) {
-            //Left --> border; border --> right
-            bbox_left = std::min(bbox_left, int(floor(res_left(0))));
-            bbox_right = std::max(bbox_right, int(ceil(res_right(0))));
-
-            if (i % 2 == 0) {
-              //next segment is continuity
-              int next = i2 + 1;
-              if (next > 7) next = 0;
-
-              Vec2 res = SphericalMapping::toEquirectangular(rotated_pts[next], panoramaSize.first, panoramaSize.second);
-              bbox_right = std::max(bbox_right, int(ceil(res(0))));
-            }
-            else {
-              int prev = i - 1;
-              if (prev < 0) prev = 7;
-              Vec2 res = SphericalMapping::toEquirectangular(rotated_pts[prev], panoramaSize.first, panoramaSize.second);
-              bbox_left = std::min(bbox_left, int(ceil(res(0))));
-            }
-          }
-          else {
-            //right --> border; border --> left
-            bbox_left = std::min(bbox_left, int(floor(res_right(0))));
-            bbox_right = std::max(bbox_right, int(ceil(res_left(0))));
-
-            if (i % 2 == 0) {
-              //next segment is continuity
-              int next = i2 + 1;
-              if (next > 7) next = 0;
-
-              Vec2 res = SphericalMapping::toEquirectangular(rotated_pts[next], panoramaSize.first, panoramaSize.second);
-              bbox_left = std::min(bbox_left, int(ceil(res(0))));
-            }
-            else {
-              int prev = i - 1;
-              if (prev < 0) prev = 7;
-              Vec2 res = SphericalMapping::toEquirectangular(rotated_pts[prev], panoramaSize.first, panoramaSize.second);
-              bbox_right = std::max(bbox_right, int(ceil(res(0))));
-            }
-          }
+        int i3 = i + 2;
+        if (i3 >= 8) {
+          i3 = 0;
         }
+
+
       }
-    
-      bbox_width = bbox_right + 1 + (panoramaSize.first - bbox_left + 1);
+      bbox_left = 0;
+      bbox_right = panoramaSize.first - 1;
+      bbox_width = bbox_right - bbox_left + 1;
     }
     else {
       /*horizontal default solution : no border crossing, no pole*/
@@ -803,7 +759,7 @@ private:
     coarse_bbox.top = bbox_top;
     coarse_bbox.width = bbox_width;
     coarse_bbox.height = bbox_height;
-
+    
     return true;
   }
 
@@ -1071,7 +1027,9 @@ public:
         double scale = sqrt(det);
         
 
-        double flevel = log2(scale);
+        
+
+        double flevel = std::max(0.0, log2(scale));
         size_t blevel = std::min(max_level, size_t(floor(flevel)));        
 
         double dscale, x, y;
@@ -1638,6 +1596,7 @@ int main(int argc, char **argv) {
       continue;
     }
 
+    /*if (pos >= 20 && pos < 305)*/ {
     ALICEVISION_LOG_INFO("Processing view " << view.getViewId());
 
     /**
@@ -1668,10 +1627,6 @@ int main(int argc, char **argv) {
     GaussianWarper warper;
     warper.warp(map, source);
 
-    /*std::ofstream out("/home/mmoc/test.dat", std::ios::binary);
-    warper.dump(out);
-    out.close();*/
-    
     /**
      * Alpha mask
      */
@@ -1683,7 +1638,18 @@ int main(int argc, char **argv) {
     */
     ALICEVISION_LOG_INFO("Composite to final panorama\n");
     compositer.append(warper, alphabuilder);
-    
+
+    ALICEVISION_LOG_INFO("Save final panoram\n");
+
+    /*char filename[512];
+    const aliceVision::image::Image<image::RGBfColor> & panorama = compositer.getPanorama();
+    sprintf(filename, "%s_intermediate%d.exr", outputPanorama.c_str(), pos);
+    image::writeImage(filename, panorama, image::EImageColorSpace::SRGB);
+
+    const aliceVision::image::Image<image::RGBfColor> & cam = warper.getColor();
+    sprintf(filename, "%s_view%d.exr", outputPanorama.c_str(), pos);
+    image::writeImage(filename, cam, image::EImageColorSpace::SRGB);*/
+    }
     pos++;
   }
 

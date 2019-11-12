@@ -8,6 +8,7 @@
 #include <aliceVision/sfm/BundleAdjustmentCeres.hpp>
 #include <aliceVision/sfm/ResidualErrorFunctor.hpp>
 #include <aliceVision/sfm/ResidualErrorConstraintFunctor.hpp>
+#include <aliceVision/sfm/ResidualErrorRotationPriorFunctor.hpp>
 #include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/alicevision_omp.hpp>
 #include <aliceVision/config.hpp>
@@ -271,7 +272,8 @@ void BundleAdjustmentCeres::setSolverOptions(ceres::Solver::Options& solverOptio
   solverOptions.minimizer_progress_to_stdout = _ceresOptions.verbose;
   solverOptions.logging_type = ceres::SILENT;
   solverOptions.num_threads = _ceresOptions.nbThreads;
-  
+
+
 #if CERES_VERSION_MAJOR < 2
   solverOptions.num_linear_solver_threads = _ceresOptions.nbThreads;
 #endif
@@ -632,6 +634,28 @@ void BundleAdjustmentCeres::addConstraints2DToProblem(const sfmData::SfMData& sf
   }
 }
 
+void BundleAdjustmentCeres::addRotationPriorsToProblem(const sfmData::SfMData& sfmData, ERefineOptions refineOptions, ceres::Problem& problem)
+{
+  // set a LossFunction to be less penalized by false measurements.
+  // note: set it to NULL if you don't want use a lossFunction.
+  ceres::LossFunction* lossFunction = nullptr;
+
+  for (const auto & prior : sfmData.getRotationPriors()) {
+    const sfmData::View& view_1 = sfmData.getView(prior.ViewFirst);
+    const sfmData::View& view_2 = sfmData.getView(prior.ViewSecond);
+
+    assert(getPoseState(view_1.getPoseId()) != EParameterState::IGNORED);
+    assert(getPoseState(view_2.getPoseId()) != EParameterState::IGNORED);
+
+    double * poseBlockPtr_1 = _posesBlocks.at(view_1.getPoseId()).data();
+    double * poseBlockPtr_2 = _posesBlocks.at(view_2.getPoseId()).data();
+
+
+    ceres::CostFunction* costFunction = new ceres::AutoDiffCostFunction<ResidualErrorRotationPriorFunctor, 3, 6, 6>(new ResidualErrorRotationPriorFunctor(prior._second_R_first));
+    problem.AddResidualBlock(costFunction, lossFunction, poseBlockPtr_1, poseBlockPtr_2);
+  }
+}
+
 void BundleAdjustmentCeres::createProblem(const sfmData::SfMData& sfmData,
                                           ERefineOptions refineOptions,
                                           ceres::Problem& problem)
@@ -654,6 +678,9 @@ void BundleAdjustmentCeres::createProblem(const sfmData::SfMData& sfmData,
 
   // add 2D constraints to the Ceres problem
   addConstraints2DToProblem(sfmData, refineOptions, problem);
+
+  // add rotation priors to the Ceres problem
+  addRotationPriorsToProblem(sfmData, refineOptions, problem);
 }
 
 void BundleAdjustmentCeres::updateFromSolution(sfmData::SfMData& sfmData, ERefineOptions refineOptions) const
@@ -769,7 +796,7 @@ bool BundleAdjustmentCeres::adjust(sfmData::SfMData& sfmData, ERefineOptions ref
   setSolverOptions(options);
 
   // solve BA
-  ceres::Solver::Summary summary;
+  ceres::Solver::Summary summary;  
   ceres::Solve(options, &problem, &summary);
 
   // print summary

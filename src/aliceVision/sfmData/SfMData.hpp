@@ -10,6 +10,7 @@
 #include <aliceVision/sfmData/CameraPose.hpp>
 #include <aliceVision/sfmData/Landmark.hpp>
 #include <aliceVision/sfmData/Constraint2D.hpp>
+#include <aliceVision/sfmData/RotationPrior.hpp>
 #include <aliceVision/sfmData/View.hpp>
 #include <aliceVision/sfmData/Rig.hpp>
 #include <aliceVision/camera/camera.hpp>
@@ -45,6 +46,9 @@ using LandmarksUncertainty = HashMap<IndexT, Vec3>;
 ///Define a collection of constraints
 using Constraints2D = std::vector<Constraint2D>;
 
+///Define a collection of rotation priors
+using RotationPriors = std::vector<RotationPrior>;
+
 /**
  * @brief SfMData container
  * Store structure and camera properties
@@ -66,6 +70,8 @@ public:
   LandmarksUncertainty _landmarksUncertainty;
   /// 2D Constraints
   Constraints2D constraints2d;
+  /// Rotation priors
+  RotationPriors rotationpriors;
 
   // Operators
 
@@ -114,6 +120,13 @@ public:
    */
   const Constraints2D& getConstraints2D() const {return constraints2d;}
   Constraints2D& getConstraints2D() {return constraints2d;}
+
+  /**
+   * @brief Get RotationPriors
+   * @return RotationPriors
+   */
+  const RotationPriors& getRotationPriors() const {return rotationpriors;}
+  RotationPriors& getRotationPriors() {return rotationpriors;}
 
   /**
    * @brief Get control points

@@ -118,7 +118,6 @@ void hdrMerge::process(const std::vector< image::Image<image::RGBfColor> > &imag
           double w = std::max(0.f, weight(value, channel)); //  - weight(0.05, 0)
 
           const double r = response(value, channel);
-
           wsum += w * r / time;
           wdiv += w;
         }

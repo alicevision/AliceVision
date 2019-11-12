@@ -221,7 +221,7 @@ struct ResidualErrorConstraintFunctor_PinholeRadialK1
   {
     Eigen::Matrix<T, 3, 3> oneRo, twoRo, twoRone;
     
-    Eigen::Matrix< T, 3, 1> pt3d_1;
+    Eigen::Matrix<T, 3, 1> pt3d_1;
 
     //From pixel to meters
     lift(cam_K, m_pos_2dpoint_first, pt3d_1);
