@@ -44,23 +44,22 @@ bool DebevecCalibrate::process(const std::vector< std::vector<std::string>> & im
   std::vector<T> tripletList_array[channelsCount];
 
   /* Initialize intermediate buffers */
-  for(unsigned int channel=0; channel < channelsCount; ++channel) {
+  for(unsigned int channel=0; channel < channelsCount; ++channel)
+  {
     Vec & b = b_array[channel];
     b = Vec::Zero(nbPoints + channelQuantization + 1);
     std::vector<T> & tripletList = tripletList_array[channel];
     tripletList.reserve(2 * nbPoints + 1 + 3 * channelQuantization);
   }
 
-  
   size_t count = 0;
   for (unsigned int g = 0; g < nbGroups; g++)
   {
-    
     const std::vector<std::string > &imagePaths = imagePathsGroups[g];
     std::vector<image::Image<image::RGBfColor>> ldrImagesGroup(imagePaths.size());
  
-    for (int i = 0; i < imagePaths.size(); i++) {
-      ALICEVISION_LOG_INFO("Load " << imagePaths[i]);
+    for (int i = 0; i < imagePaths.size(); i++)
+    {
       image::readImage(imagePaths[i], ldrImagesGroup[i], image::EImageColorSpace::SRGB);
     }
 
@@ -97,12 +96,14 @@ bool DebevecCalibrate::process(const std::vector< std::vector<std::string>> & im
             std::size_t dist2 = pow(center(0)-x, 2) + pow(center(1)-y, 2);
 
             /*This looks stupid ...*/
-            if(dist2 > maxDist2) {
+            if(dist2 > maxDist2)
+            {
                 continue;
             }
 
 
-            for (int channel = 0; channel < channelsCount; channel++) {
+            for (int channel = 0; channel < channelsCount; channel++)
+            {
               float sample = clamp(image(y, x)(channel), 0.f, 1.f);
               float w_ij = weight(sample, channel);
               std::size_t index = std::round(sample * (channelQuantization - 1));
@@ -129,8 +130,8 @@ bool DebevecCalibrate::process(const std::vector< std::vector<std::string>> & im
         
         for(unsigned int i=0; i<samplesPerImage; ++i)
         {
-          for (int channel = 0; channel < channelsCount; channel++) {
-
+          for (int channel = 0; channel < channelsCount; channel++)
+          {
             float sample = clamp(image(step*i)(channel), 0.f, 1.f);
             float w_ij = weight(sample, channel);
             std::size_t index = std::round(sample * (channelQuantization - 1));
@@ -148,7 +149,8 @@ bool DebevecCalibrate::process(const std::vector< std::vector<std::string>> & im
   }
 
   // fix the curve by setting its middle value to zero
-  for (int channel = 0; channel < channelsCount; channel ++) {
+  for (int channel = 0; channel < channelsCount; channel++)
+  {
     tripletList_array[channel].push_back(T(count, std::floor(channelQuantization/2), 1.f));
   }
   count += 1;
@@ -157,7 +159,8 @@ bool DebevecCalibrate::process(const std::vector< std::vector<std::string>> & im
 
   for(std::size_t k = 0; k<channelQuantization - 2; k++)
   {
-    for (int channel = 0; channel < channelsCount; channel++) {
+    for (int channel = 0; channel < channelsCount; channel++)
+    {
       float w = weight.getValue(k + 1, channel);
       tripletList_array[channel].push_back(T(count, k, lambda * w));
       tripletList_array[channel].push_back(T(count, k + 1, - 2.f * lambda * w));
@@ -167,10 +170,8 @@ bool DebevecCalibrate::process(const std::vector< std::vector<std::string>> & im
     count++;
   }
 
-
-
-  for (int channel = 0; channel < channelsCount; channel ++) {
-
+  for (int channel = 0; channel < channelsCount; channel ++)
+  {
     sMat A(count, channelQuantization + samplesPerImage * nbGroups);
     A.setFromTriplets(tripletList_array[channel].begin(), tripletList_array[channel].end());
     b_array[channel].conservativeResize(count);
@@ -183,21 +184,24 @@ bool DebevecCalibrate::process(const std::vector< std::vector<std::string>> & im
     solver.compute(A);
 
     /*Check solver failure*/
-    if (solver.info() != Eigen::Success) {
+    if (solver.info() != Eigen::Success)
+    {
       return false;
     }
 
     Vec x = solver.solve(b_array[channel]);
 
     /*Check solver failure*/
-    if(solver.info() != Eigen::Success) {
+    if(solver.info() != Eigen::Success)
+    {
       return false;
     }
 
     double relative_error = (A*x - b_array[channel]).norm() / b_array[channel].norm();
 
     /* Save result to response curve*/
-    for(std::size_t k = 0; k < channelQuantization; ++k) {
+    for(std::size_t k = 0; k < channelQuantization; ++k)
+    {
       response.setValue(k, channel, x(k));
     }
   }
