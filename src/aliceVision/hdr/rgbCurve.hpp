@@ -294,6 +294,12 @@ public:
   void write(const std::string &path, const std::string &name = "rgbCurve") const;
 
   /**
+  * @brief Write in an html file
+  * @param[in] path
+  */
+  void writeHtml(const std::string &path, const std::string& title) const;
+
+  /**
     * @brief Read and fill curves from a csv file
     * @param[in] path
     */
