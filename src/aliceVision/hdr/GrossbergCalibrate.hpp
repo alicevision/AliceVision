@@ -29,7 +29,7 @@ public:
    * @param[in] calibration weight function
    * @param[out] camera response function
    */
-  void process(const std::vector< std::vector< image::Image<image::RGBfColor> > > &ldrImageGroups,
+  void process(const std::vector<std::vector<std::string>>& imagePathsGroups,
                const std::size_t channelQuantization,
                const std::vector< std::vector<float> > &times,
                const int nbPoints,
