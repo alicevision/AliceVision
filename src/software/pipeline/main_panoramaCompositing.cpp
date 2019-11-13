@@ -19,9 +19,9 @@
 
 /*IO*/
 #include <fstream>
-
 #include <algorithm>
-
+#include <boost/property_tree/ptree.hpp>
+#include <boost/property_tree/json_parser.hpp>
 
 // These constants define the current software version.
 // They must be updated when the command line is changed.
@@ -31,6 +31,7 @@
 using namespace aliceVision;
 
 namespace po = boost::program_options;
+namespace bpt = boost::property_tree;
 
 float sigmoid(float x, float sigwidth, float sigMid)
 {
@@ -539,19 +540,16 @@ public:
       _offset_x = ox;
     }
     _offset_y = coarse_bbox.top + min_y;
-    _real_width = max_x - min_x + 1;
-    _real_height = max_y - min_y + 1;
-
-    /* Make sure the buffer is a power of 2 for potential pyramids*/
-    size_t rectified_width = pow(2.0, ceil(log2(double(_real_width))));
-    size_t rectified_height = pow(2.0, ceil(log2(double(_real_height))));
+    
+    size_t real_width = max_x - min_x + 1;
+    size_t real_height = max_y - min_y + 1;
 
       /* Resize buffers */
-    _coordinates = aliceVision::image::Image<Eigen::Vector2d>(rectified_width, rectified_height, false);
-    _mask = aliceVision::image::Image<unsigned char>(rectified_width, rectified_height, true, 0);
+    _coordinates = aliceVision::image::Image<Eigen::Vector2d>(real_width, real_height, false);
+    _mask = aliceVision::image::Image<unsigned char>(real_width, real_height, true, 0);
 
-    _coordinates.block(0, 0, _real_height, _real_width) =  buffer_coordinates.block(min_y, min_x, _real_height, _real_width);
-    _mask.block(0, 0, _real_height, _real_width) =  buffer_mask.block(min_y, min_x, _real_height, _real_width);
+    _coordinates.block(0, 0, real_height, real_width) =  buffer_coordinates.block(min_y, min_x, real_height, real_width);
+    _mask.block(0, 0, real_height, real_width) =  buffer_mask.block(min_y, min_x, real_height, real_width);
 
     return true;
   }
@@ -559,9 +557,11 @@ public:
   bool computeScale(double & result) {
     
     std::vector<double> scales;
+    size_t real_height = _coordinates.Height();
+    size_t real_width = _coordinates.Width();
 
-    for (int i = 0; i < _real_height - 1; i++) {
-      for (int j = 0; j < _real_width - 1; j++) {
+    for (int i = 0; i < real_height - 1; i++) {
+      for (int j = 0; j < real_width - 1; j++) {
         if (!_mask(i, j) || !_mask(i, j + 1) || !_mask(i + 1, j)) {
           continue;
         }
@@ -591,14 +591,6 @@ public:
 
   size_t getOffsetY() const {
     return _offset_y;
-  }
-
-  size_t getWidth() const {
-    return _real_width;
-  }
-
-  size_t getHeight() const {
-    return _real_height;
   }
 
   const aliceVision::image::Image<Eigen::Vector2d> & getCoordinates() const {
@@ -815,60 +807,11 @@ private:
 private:
   size_t _offset_x = 0;
   size_t _offset_y = 0;
-  size_t _real_width = 0;
-  size_t _real_height = 0;
 
   aliceVision::image::Image<Eigen::Vector2d> _coordinates;
   aliceVision::image::Image<unsigned char> _mask;
 };
 
-class AlphaBuilder {
-public:
-  virtual bool build(const CoordinatesMap & map, const aliceVision::camera::IntrinsicBase & intrinsics) {
-    
-    float w = static_cast<float>(intrinsics.w());
-    float h = static_cast<float>(intrinsics.h());
-    float cx = w / 2.0f;
-    float cy = h / 2.0f;
-    
-
-    const aliceVision::image::Image<Eigen::Vector2d> & coordinates = map.getCoordinates();
-    const aliceVision::image::Image<unsigned char> & mask = map.getMask();
-
-    _weights = aliceVision::image::Image<float>(coordinates.Width(), coordinates.Height());
-
-    for (int i = 0; i < _weights.Height(); i++) {
-      for (int j = 0; j < _weights.Width(); j++) {
-        
-        _weights(i, j) = 0.0f;
-
-        bool valid = mask(i, j);
-        if (!valid) {
-          continue;
-        }
-
-        const Vec2 & coords = coordinates(i, j);
-
-        float x = coords(0);
-        float y = coords(1);
-
-        float wx = 1.0f - std::abs((x - cx) / cx);
-        float wy = 1.0f - std::abs((y - cy) / cy);
-        
-        _weights(i, j) = wx * wy;
-      }
-    }
-
-    return true;
-  }
-
-  const aliceVision::image::Image<float> & getWeights() const {
-    return _weights;
-  }
-
-private:
-  aliceVision::image::Image<float> _weights;
-};
 
 class Warper {
 public:
@@ -879,8 +822,6 @@ public:
      */
     _offset_x = map.getOffsetX();
     _offset_y = map.getOffsetY();
-    _real_width = map.getWidth();
-    _real_height = map.getHeight();
     _mask = map.getMask();
 
     const image::Sampler2d<image::SamplerLinear> sampler;
@@ -888,10 +829,10 @@ public:
 
     /**
      * Create buffer
+     * No longer need to keep a 2**x size
      */
     _color = aliceVision::image::Image<image::RGBfColor>(coordinates.Width(), coordinates.Height());
     
-
     /**
      * Simple warp
      */
@@ -930,39 +871,10 @@ public:
     return _offset_y;
   }
 
-  size_t getWidth() const {
-    return _real_width;
-  }
-
-  size_t getHeight() const {
-    return _real_height;
-  }
-
-  void dump(std::ofstream & output) {
-    output.write((char*)&_offset_x, sizeof(_offset_x));
-    output.write((char*)&_offset_y, sizeof(_offset_y));
-    output.write((char*)&_real_width, sizeof(_real_width));
-    output.write((char*)&_real_height, sizeof(_real_height));
-    
-    char * ptr_color = (char*)(_color.data());
-    for (int i = 0; i < _real_height; i++) {
-      output.write(ptr_color, _real_width * sizeof(decltype(_color)::Scalar));
-      ptr_color += _color.rowStride();
-    }
-
-    char * ptr_mask = (char*)(_mask.data());
-    for (int i = 0; i < _real_height; i++) {
-      output.write(ptr_mask, _real_width * sizeof(decltype(_mask)::Scalar));
-      ptr_mask += _mask.rowStride();
-    }
-  }
-
 protected:
   size_t _offset_x = 0;
   size_t _offset_y = 0;
-  size_t _real_width = 0;
-  size_t _real_height = 0;
-
+  
   aliceVision::image::Image<image::RGBfColor> _color;
   aliceVision::image::Image<unsigned char> _mask;
 };
@@ -976,8 +888,6 @@ public:
      */
     _offset_x = map.getOffsetX();
     _offset_y = map.getOffsetY();
-    _real_width = map.getWidth();
-    _real_height = map.getHeight();
     _mask = map.getMask();
 
     const image::Sampler2d<image::SamplerLinear> sampler;
@@ -1050,362 +960,6 @@ public:
   }
 };
 
-class Compositer {
-public:
-  Compositer(size_t outputWidth, size_t outputHeight) :
-  _panorama(outputWidth, outputHeight, true, image::RGBfColor(1.0f, 0.0f, 0.0f)), 
-  _mask(outputWidth, outputHeight, true, false)
-  {
-  }
-
-  virtual bool append(const Warper & warper) {
-
-    const aliceVision::image::Image<unsigned char> & inputMask = warper.getMask(); 
-    const aliceVision::image::Image<image::RGBfColor> & color = warper.getColor(); 
-
-    for (size_t i = 0; i < warper.getHeight(); i++) {
-
-      size_t pano_i = warper.getOffsetY() + i;
-      if (pano_i >= _panorama.Height()) {
-        continue;
-      }
-
-      for (size_t j = 0; j < warper.getWidth(); j++) {
-        
-        if (!inputMask(i, j)) {
-          continue;
-        }
-        
-        size_t pano_j = warper.getOffsetX() + j;
-        if (pano_j >= _panorama.Width()) {
-          continue;
-        }
-
-        _panorama(pano_i, pano_j) = color(i, j);
-        _mask(pano_i, pano_j) = 1;
-      }
-    }
-
-    return true;
-  }
-
-  const aliceVision::image::Image<image::RGBfColor> & getPanorama() const {
-    return _panorama;
-  }
-
-  const aliceVision::image::Image<unsigned char> & getPanoramaMask() const {
-    return _mask;
-  }
-
-protected:
-  aliceVision::image::Image<image::RGBfColor> _panorama;
-  aliceVision::image::Image<unsigned char> _mask;
-};
-
-
-class AverageCompositer : public Compositer {
-public:
-
-  AverageCompositer(size_t outputWidth, size_t outputHeight) : Compositer(outputWidth, outputHeight) {
-    
-  }
-
-  virtual bool append(const Warper & warper) {
-
-    const aliceVision::image::Image<unsigned char> & inputMask = warper.getMask(); 
-    const aliceVision::image::Image<image::RGBfColor> & color = warper.getColor(); 
-
-    for (size_t i = 0; i < warper.getHeight(); i++) {
-
-      size_t pano_i = warper.getOffsetY() + i;
-      if (pano_i >= _panorama.Height()) {
-        continue;
-      }
-
-      for (size_t j = 0; j < warper.getWidth(); j++) {
-        
-        if (!inputMask(i, j)) {
-          continue;
-        }
-        
-        size_t pano_j = warper.getOffsetX() + j;
-        if (pano_j >= _panorama.Width()) {
-          continue;
-        }
-
-        if (!_mask(pano_i, pano_j)) {
-          _panorama(pano_i, pano_j) = color(i, j);
-        }
-        else {
-          _panorama(pano_i, pano_j).r() = 0.5 * (_panorama(pano_i, pano_j).r() + color(i, j).r());
-          _panorama(pano_i, pano_j).g() = 0.5 * (_panorama(pano_i, pano_j).g() + color(i, j).g());
-          _panorama(pano_i, pano_j).b() = 0.5 * (_panorama(pano_i, pano_j).b() + color(i, j).b());
-          
-        }
-
-        _mask(pano_i, pano_j) = true;
-      }
-    }
-
-    return true;
-  }
-};
-
-class AlphaCompositer : public Compositer {
-public:
-
-  AlphaCompositer(size_t outputWidth, size_t outputHeight) : 
-  Compositer(outputWidth, outputHeight),
-  _weightmap(outputWidth, outputHeight, true, 0.0f) {
-    
-  }
-
-  virtual bool append(const Warper & warper, const AlphaBuilder & alpha) {
-
-    const aliceVision::image::Image<unsigned char> & inputMask = warper.getMask(); 
-    const aliceVision::image::Image<image::RGBfColor> & color = warper.getColor(); 
-    const aliceVision::image::Image<float> & inputWeights = alpha.getWeights(); 
-
-    for (size_t i = 0; i < warper.getHeight(); i++) {
-
-      size_t pano_i = warper.getOffsetY() + i;
-      if (pano_i >= _panorama.Height()) {
-        continue;
-      }
-
-      for (size_t j = 0; j < warper.getWidth(); j++) {
-        
-        if (!inputMask(i, j)) {
-          continue;
-        }
-        
-        size_t pano_j = warper.getOffsetX() + j;
-        if (pano_j >= _panorama.Width()) {
-          pano_j = pano_j - _panorama.Width();
-        }
-
-        if (!_mask(pano_i, pano_j)) {
-          _panorama(pano_i, pano_j) = color(i, j);
-          _weightmap(pano_i, pano_j) = inputWeights(i, j);
-        }
-        else {
-          float wp = _weightmap(pano_i, pano_j);
-          float wc = inputWeights(i, j);
-          float wtotal = wp + wc;
-          wp /= wtotal;
-          wc /= wtotal;
-
-          _panorama(pano_i, pano_j).r() = wp * _panorama(pano_i, pano_j).r() + wc * color(i, j).r();
-          _panorama(pano_i, pano_j).g() = wp * _panorama(pano_i, pano_j).g() + wc * color(i, j).g();
-          _panorama(pano_i, pano_j).b() = wp * _panorama(pano_i, pano_j).b() + wc * color(i, j).b();
-          
-          _weightmap(pano_i, pano_j) = wtotal;
-        }
-
-        _mask(pano_i, pano_j) = true;
-      }
-    }
-
-    return true;
-  }
-
-protected:
-  aliceVision::image::Image<float> _weightmap;
-};
-
-class LaplacianCompositer : public AlphaCompositer {
-public:
-
-  LaplacianCompositer(size_t outputWidth, size_t outputHeight) : 
-  AlphaCompositer(outputWidth, outputHeight),
-  _maxweightmap(outputWidth, outputHeight, true, 0.0f) {
-    
-    
-  }
-
-  virtual bool append(const Warper & warper, const AlphaBuilder & alpha) {
-
-    const aliceVision::image::Image<float> & camera_weights = alpha.getWeights();
-    const aliceVision::image::Image<unsigned char> & camera_mask = warper.getMask();
-    const aliceVision::image::Image<image::RGBfColor> & camera_color = warper.getColor();
-
-    size_t ox = warper.getOffsetX();
-    size_t oy = warper.getOffsetY();
-    size_t pwidth = _panorama.Width();
-    size_t pheight = _panorama.Height();
- 
-    /**
-     * Create a copy of panorama related pixels
-     */
-    aliceVision::image::Image<image::RGBfColor> panorama_subcolor(camera_weights.Width(), camera_weights.Height(), true, image::RGBfColor(0.0f, 0.0f, 0.0f));
-    aliceVision::image::Image<unsigned char> panorama_submask(camera_weights.Width(), camera_weights.Height(), true, false);
-
-    if (ox + warper.getWidth() > pwidth) {
-
-      int left_width = ox + warper.getWidth() - pwidth;
-      int right_width = warper.getWidth() - left_width;
-      panorama_subcolor.block(0, 0, warper.getHeight(), right_width) = _panorama.block(oy, ox, warper.getHeight(), right_width);
-      panorama_subcolor.block(0, right_width, warper.getHeight(), left_width) = _panorama.block(oy, 0, warper.getHeight(), left_width);
-      panorama_submask.block(0, 0, warper.getHeight(), right_width) = _mask.block(oy, ox, warper.getHeight(), right_width);
-      panorama_submask.block(0, right_width, warper.getHeight(), left_width) = _mask.block(oy, 0, warper.getHeight(), left_width);
-    }
-    else {
-      panorama_subcolor.block(0, 0, warper.getHeight(), warper.getWidth()) = _panorama.block(oy, ox, warper.getHeight(), warper.getWidth());
-      panorama_submask.block(0, 0, warper.getHeight(), warper.getWidth()) = _mask.block(oy, ox, warper.getHeight(), warper.getWidth());
-    }
-
-    /**
-     * Compute optimal scale
-     * The smallest level will be at least of size min_size
-     */
-    size_t min_dim = std::min(camera_weights.Width(), camera_weights.Height());
-    size_t min_size = 4;
-    size_t limit_scales = 10;
-    size_t scales = std::min(limit_scales, static_cast<size_t>(floor(log2(double(min_dim) / float(min_size)))));
-
-    /**
-     * Create buffers
-     */
-    std::vector<aliceVision::image::Image<float>> camera_weightmaps(scales);
-    std::vector<aliceVision::image::Image<image::RGBfColor>> camera_colors(scales);
-    std::vector<aliceVision::image::Image<image::RGBfColor>> camera_differences(scales);
-    std::vector<aliceVision::image::Image<image::RGBfColor>> panorama_colors(scales);
-    std::vector<aliceVision::image::Image<image::RGBfColor>> panorama_differences(scales);
-    std::vector<aliceVision::image::Image<image::RGBfColor>> blended_differences(scales);
-    std::vector<aliceVision::image::Image<unsigned char>> blended_mask(scales);
-
-    for (int level = 0; level < scales; level++) {
-      camera_weightmaps[level] = aliceVision::image::Image<float>(camera_weights.Width(), camera_weights.Height());
-      camera_colors[level] = aliceVision::image::Image<image::RGBfColor>(camera_weights.Width(), camera_weights.Height());
-      camera_differences[level] = aliceVision::image::Image<image::RGBfColor>(camera_weights.Width(), camera_weights.Height());
-      panorama_colors[level] = aliceVision::image::Image<image::RGBfColor>(camera_weights.Width(), camera_weights.Height());
-      panorama_differences[level] = aliceVision::image::Image<image::RGBfColor>(camera_weights.Width(), camera_weights.Height());
-      blended_differences[level] = aliceVision::image::Image<image::RGBfColor>(camera_weights.Width(), camera_weights.Height());
-      blended_mask[level] = aliceVision::image::Image<unsigned char>(camera_weights.Width(), camera_weights.Height());
-    }
-
-    /* Build max weight map for first level */
-    auto & maxweightmap = camera_weightmaps[0];
-
-    for (int i = 0; i < camera_weights.Height(); i++) {
-      for (int j = 0; j < camera_weights.Width(); j++) {
-
-        maxweightmap(i, j) = 0.0f;
-
-        if (!camera_mask(i, j)) {
-          continue;
-        }
-
-        float cw = camera_weights(i, j);
-
-        int pano_y = oy + i;
-        int pano_x = ox + j;
-        if (pano_x >= pwidth) {
-          pano_x = pano_x - pwidth;
-        }
-
-        float pw = _weightmap(pano_y, pano_x);
-
-        if (cw > pw) {
-          maxweightmap(i, j) = 1.0f;
-          _weightmap(pano_y, pano_x) = cw;
-        }
-      }
-    }
-    
-    Eigen::MatrixXf kernel = gaussian_kernel(5, 2.0f);
-
-    /*Create scales*/
-    camera_colors[0] = camera_color;
-    panorama_colors[0] = panorama_subcolor;
-    for (int level = 1; level < scales; level++) {
-      convolve(camera_weightmaps[level], camera_weightmaps[level - 1], camera_mask, kernel);
-      convolve(camera_colors[level], camera_colors[level - 1], camera_mask, kernel);
-      convolve(panorama_colors[level], panorama_colors[level - 1], panorama_submask, kernel);
-    }
-
-  
-    /*Compute differences*/
-    for (int level = 0; level < scales - 1; level++) {
-      camera_differences[level] = camera_colors[level] - camera_colors[level + 1];
-      panorama_differences[level] = panorama_colors[level] - panorama_colors[level + 1];
-    }
-    camera_differences[scales - 1] = camera_colors[scales - 1];
-    panorama_differences[scales - 1] = panorama_colors[scales - 1];
-
-    /*Blend*/
-    for (int level = 0; level < scales; level++) {
-      const aliceVision::image::Image<image::RGBfColor> & imgpano = panorama_differences[level];
-      const aliceVision::image::Image<image::RGBfColor> & imgcam = camera_differences[level];
-      const aliceVision::image::Image<float> & weights = camera_weightmaps[level];
-      aliceVision::image::Image<image::RGBfColor> & imgblend = blended_differences[level];
-      aliceVision::image::Image<unsigned char> & maskblend = blended_mask[level];
-
-      for (int i = 0; i < camera_weights.Height(); i++) {
-        for (int j = 0; j < camera_weights.Width(); j++) {
-          if (camera_mask(i, j)) {
-            if (panorama_submask(i, j)) {
-              float w = weights(i, j);
-              float mw = 1.0f - w;
-              imgblend(i, j).r() = mw * imgpano(i, j).r() + w * imgcam(i, j).r();
-              imgblend(i, j).g() = mw * imgpano(i, j).g() + w * imgcam(i, j).g();
-              imgblend(i, j).b() = mw * imgpano(i, j).b() + w * imgcam(i, j).b();
-              maskblend(i, j) = 1;
-            }
-            else {
-              imgblend(i, j) = imgcam(i, j);
-              maskblend(i, j) = 1;
-            }
-          }
-          else {
-            if (panorama_submask(i, j)) {
-              imgblend(i, j) = imgpano(i, j);
-              maskblend(i, j) = 1;
-            }
-            else {
-              maskblend(i, j) = 0;
-            }
-          }
-        }
-      }
-    }
-
-    /*Rebuild*/
-    for (int level = scales - 1; level >= 0; level--) {
-      
-      aliceVision::image::Image<image::RGBfColor> & imgblend = blended_differences[level];
-      aliceVision::image::Image<unsigned char> & maskblend = blended_mask[level];
-
-      for (int i = 0; i < warper.getHeight(); i++) {
-        for (int j = 0; j < warper.getWidth(); j++) {
-          
-          int pano_y = oy + i;
-          int pano_x = ox + j;
-          if (pano_x >= pwidth) {
-            pano_x = pano_x - pwidth;
-          }
-
-          if (maskblend(i, j)) {
-            if (level == scales - 1) {
-              _panorama(pano_y, pano_x) = image::RGBfColor(0.0f);
-              _mask(pano_y, pano_x) = 0;
-            }
-
-            _panorama(pano_y, pano_x) += imgblend(i, j);
-            _mask(pano_y, pano_x) = 1;
-          }
-        }
-      }
-    }
-    
-
-    return true;
-  }
-
-private:
-  aliceVision::image::Image<float> _maxweightmap;
-};
-
 bool computeOptimalPanoramaSize(std::pair<int, int> & optimalSize, const sfmData::SfMData & sfmData) {
 
   optimalSize.first = 512;
@@ -1468,28 +1022,25 @@ int main(int argc, char **argv) {
    * Program description
   */
   po::options_description allParams (
-    "Perform panorama stiching of cameras around a nodal point for 360° panorama creation.\n"
-    "AliceVision PanoramaStitching"
+    "Perform panorama stiching of cameras around a nodal point for 360° panorama creation. \n"
+    "AliceVision PanoramaCompositing"
   );
 
   /**
    * Description of mandatory parameters
    */
-  std::string sfmDataFilename;
+  std::string inputDirectory;
   std::string outputPanorama;
   po::options_description requiredParams("Required parameters");
   requiredParams.add_options()
-    ("input,i", po::value<std::string>(&sfmDataFilename)->required(), "SfMData file.")
-    ("output,o", po::value<std::string>(&outputPanorama)->required(), "Path of the output folder.");
+    ("input,i", po::value<std::string>(&inputDirectory)->required(), "SfMData file.")
+    ("output,o", po::value<std::string>(&outputPanorama)->required(), "Path of the output panorama.");
   allParams.add(requiredParams);
 
   /**
    * Description of optional parameters
    */
-  std::pair<int, int> panoramaSize = {1024, 0};
   po::options_description optionalParams("Optional parameters");
-  optionalParams.add_options()
-    ("panoramaWidth,w", po::value<int>(&panoramaSize.first)->default_value(panoramaSize.first), "Panorama Width in pixels.");
   allParams.add(optionalParams);
 
   /**
@@ -1539,124 +1090,6 @@ int main(int argc, char **argv) {
    */
   system::Logger::get()->setLogLevel(verboseLevel);
 
-  /**
-   * Load information about inputs
-   * Camera images
-   * Camera intrinsics
-   * Camera extrinsics
-   */
-  sfmData::SfMData sfmData;
-  if(!sfmDataIO::Load(sfmData, sfmDataFilename, sfmDataIO::ESfMData(sfmDataIO::VIEWS| sfmDataIO::INTRINSICS| sfmDataIO::EXTRINSICS)))
-  {
-    ALICEVISION_LOG_ERROR("The input SfMData file '" << sfmDataFilename << "' cannot be read.");
-    return EXIT_FAILURE;
-  }
-
-
-  /*Order views by their image names for easier debugging*/
-  std::vector<std::shared_ptr<sfmData::View>> viewsOrderedByName;
-  for (auto & viewIt: sfmData.getViews()) {
-    viewsOrderedByName.push_back(viewIt.second);
-  }
-  std::sort(viewsOrderedByName.begin(), viewsOrderedByName.end(), [](const std::shared_ptr<sfmData::View> & a, const std::shared_ptr<sfmData::View> & b) -> bool { 
-    if (a == nullptr || b == nullptr) return true;
-    return (a->getImagePath() < b->getImagePath());
-  });
-
-
-  /*If panorama width is undefined, estimate it*/
-  if (panoramaSize.first <= 0) {
-    std::pair<int, int> optimalPanoramaSize;
-    if (computeOptimalPanoramaSize(optimalPanoramaSize, sfmData)) {
-      panoramaSize = optimalPanoramaSize;
-    }
-  }
-  else {
-    panoramaSize.second = panoramaSize.first / 2;
-  }
-
-  ALICEVISION_LOG_INFO("Choosen panorama size : "  << panoramaSize.first << "x" << panoramaSize.second);
-
-  /**
-   * Create compositer
-  */
-  AlphaCompositer compositer(size_t(panoramaSize.first), size_t(panoramaSize.second));
-
-  /**
-   * Preprocessing per view
-   */
-  size_t pos = 0;
-  for (const std::shared_ptr<sfmData::View> & viewIt: viewsOrderedByName) {
-
-    /**
-     * Retrieve view
-     */
-    const sfmData::View& view = *viewIt;
-    if (!sfmData.isPoseAndIntrinsicDefined(&view)) {
-      continue;
-    }
-
-    /*if (pos >= 20 && pos < 305)*/ {
-    ALICEVISION_LOG_INFO("Processing view " << view.getViewId());
-
-    /**
-     * Get intrinsics and extrinsics
-     */
-    const geometry::Pose3 camPose = sfmData.getPose(view).getTransform();
-    const camera::IntrinsicBase & intrinsic = *sfmData.getIntrinsicPtr(view.getIntrinsicId());
-
-    /**
-     * Prepare coordinates map
-    */
-    CoordinatesMap map;
-    map.build(panoramaSize, camPose, intrinsic);
-
-    /**
-     * Load image and convert it to linear colorspace
-     */
-    std::string imagePath = view.getImagePath();
-    ALICEVISION_LOG_INFO("Load image with path " << imagePath);
-    image::Image<image::RGBfColor> source;
-    image::readImage(imagePath, source, image::EImageColorSpace::LINEAR);
-
-      
-
-    /**
-     * Warp image
-     */
-    GaussianWarper warper;
-    warper.warp(map, source);
-
-    /**
-     * Alpha mask
-     */
-    AlphaBuilder alphabuilder;
-    alphabuilder.build(map, intrinsic);
-    
-    /**
-     *Composite image into output
-    */
-    ALICEVISION_LOG_INFO("Composite to final panorama\n");
-    compositer.append(warper, alphabuilder);
-
-    ALICEVISION_LOG_INFO("Save final panoram\n");
-
-    /*char filename[512];
-    const aliceVision::image::Image<image::RGBfColor> & panorama = compositer.getPanorama();
-    sprintf(filename, "%s_intermediate%d.exr", outputPanorama.c_str(), pos);
-    image::writeImage(filename, panorama, image::EImageColorSpace::SRGB);
-
-    const aliceVision::image::Image<image::RGBfColor> & cam = warper.getColor();
-    sprintf(filename, "%s_view%d.exr", outputPanorama.c_str(), pos);
-    image::writeImage(filename, cam, image::EImageColorSpace::SRGB);*/
-    }
-    pos++;
-  }
-
-
-  ALICEVISION_LOG_INFO("Save final panoram\n");
-  const aliceVision::image::Image<image::RGBfColor> & panorama = compositer.getPanorama();
-  image::writeImage(outputPanorama, panorama, image::EImageColorSpace::SRGB);
 
   return EXIT_SUCCESS;
 }

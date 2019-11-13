@@ -100,8 +100,19 @@ if(ALICEVISION_BUILD_SFM)
           aliceVision_sfmDataIO
           ${Boost_LIBRARIES}
   )
-  alicevision_add_software(aliceVision_panoramaStitching
-    SOURCE main_panoramaStitching.cpp
+  alicevision_add_software(aliceVision_panoramaWarping
+    SOURCE main_panoramaWarping.cpp
+    FOLDER ${FOLDER_SOFTWARE_PIPELINE}
+    LINKS aliceVision_system
+          aliceVision_image
+          aliceVision_feature
+          aliceVision_sfm
+          aliceVision_sfmData
+          aliceVision_sfmDataIO
+          ${Boost_LIBRARIES}
+  )
+  alicevision_add_software(aliceVision_panoramaCompositing
+    SOURCE main_panoramaCompositing.cpp
     FOLDER ${FOLDER_SOFTWARE_PIPELINE}
     LINKS aliceVision_system
           aliceVision_image
