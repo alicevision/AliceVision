@@ -852,6 +852,53 @@ private:
   aliceVision::image::Image<unsigned char> _mask;
 };
 
+class AlphaBuilder {
+public:
+  virtual bool build(const CoordinatesMap & map, const aliceVision::camera::IntrinsicBase & intrinsics) {
+    
+    float w = static_cast<float>(intrinsics.w());
+    float h = static_cast<float>(intrinsics.h());
+    float cx = w / 2.0f;
+    float cy = h / 2.0f;
+    
+
+    const aliceVision::image::Image<Eigen::Vector2d> & coordinates = map.getCoordinates();
+    const aliceVision::image::Image<unsigned char> & mask = map.getMask();
+
+    _weights = aliceVision::image::Image<float>(coordinates.Width(), coordinates.Height());
+
+    for (int i = 0; i < _weights.Height(); i++) {
+      for (int j = 0; j < _weights.Width(); j++) {
+        
+        _weights(i, j) = 0.0f;
+
+        bool valid = mask(i, j);
+        if (!valid) {
+          continue;
+        }
+
+        const Vec2 & coords = coordinates(i, j);
+
+        float x = coords(0);
+        float y = coords(1);
+
+        float wx = 1.0f - std::abs((x - cx) / cx);
+        float wy = 1.0f - std::abs((y - cy) / cy);
+        
+        _weights(i, j) = wx * wy;
+      }
+    }
+
+    return true;
+  }
+
+  const aliceVision::image::Image<float> & getWeights() const {
+    return _weights;
+  }
+
+private:
+  aliceVision::image::Image<float> _weights;
+};
 
 class Warper {
 public:
@@ -1209,48 +1256,66 @@ int main(int argc, char **argv) {
     image::Image<image::RGBfColor> source;
     image::readImage(imagePath, source, image::EImageColorSpace::LINEAR);
 
-      
-
     /**
      * Warp image
      */
     GaussianWarper warper;
     warper.warp(map, source);
 
+    /**
+    * Alpha mask
+    */
+    AlphaBuilder alphabuilder;
+    alphabuilder.build(map, intrinsic);
+
+
+    /**
+     * Combine mask and image
+     */
+    const aliceVision::image::Image<image::RGBfColor> & cam = warper.getColor();
+    const aliceVision::image::Image<unsigned char> & mask = warper.getMask();
+    const aliceVision::image::Image<float> & weights = alphabuilder.getWeights();
 
     /**
      * Store result image
      */
-    std::stringstream ss;
-    const aliceVision::image::Image<image::RGBfColor> & cam = warper.getColor();
-    ss << outputDirectory << "/view_" << pos << ".exr";
-    std::string filename_view = ss.str();
-
-<<<<<<< HEAD:src/software/pipeline/main_panoramaStitching.cpp
-    char filename[512];
-    const aliceVision::image::Image<image::RGBfColor> & panorama = compositer.getPanorama();
-    sprintf(filename, "%s_intermediate%d.exr", outputPanorama.c_str(), pos);
-    image::writeImage(filename, panorama, image::EImageColorSpace::SRGB);
-
-    const aliceVision::image::Image<image::RGBfColor> & cam = warper.getColor();
-    sprintf(filename, "%s_view%d.exr", outputPanorama.c_str(), pos);
-    image::writeImage(filename, cam, image::EImageColorSpace::SRGB);
-    }
-=======
-    ALICEVISION_LOG_INFO("Store view " << pos << " with path " << filename_view);
-    image::writeImage(filename_view, cam, image::EImageColorSpace::SRGB);
-
-
-    /**
-     * Store view info
-     */
     bpt::ptree viewTree;
-    viewTree.put("filename", filename_view);
+    std::string path;
+
+    {
+    std::stringstream ss;
+    ss << outputDirectory << "/view_" << pos << ".exr";
+    path = ss.str();
+    viewTree.put("filename_view", path);
+    ALICEVISION_LOG_INFO("Store view " << pos << " with path " << path);
+    image::writeImage(path, cam, image::EImageColorSpace::NO_CONVERSION);
+    }
+
+    {
+    std::stringstream ss;
+    ss << outputDirectory << "/mask_" << pos << ".png";
+    path = ss.str();
+    viewTree.put("filename_mask", path);
+    ALICEVISION_LOG_INFO("Store mask " << pos << " with path " << path);
+    image::writeImage(path, mask, image::EImageColorSpace::NO_CONVERSION);
+    }
+
+    {
+    std::stringstream ss;
+    ss << outputDirectory << "/weightmap_" << pos << ".exr";
+    path = ss.str();
+    viewTree.put("filename_weights", path);
+    ALICEVISION_LOG_INFO("Store weightmap " << pos << " with path " << path);
+    image::writeImage(path, weights, image::EImageColorSpace::NO_CONVERSION);
+    }
+  
+    /**
+    * Store view info
+    */
     viewTree.put("offsetx", warper.getOffsetX());
     viewTree.put("offsety", warper.getOffsetY());
     viewsTree.push_back(std::make_pair("", viewTree));
 
->>>>>>> b4f7dd16d8ca5185f3b26536adabebcedeca2bc3:src/software/pipeline/main_panoramaWarping.cpp
     pos++;
   }
 
@@ -1266,7 +1331,7 @@ int main(int argc, char **argv) {
   std::stringstream ss;
   ss << outputDirectory << "/config_views.json";
   ALICEVISION_LOG_INFO("Save config with path " << ss.str());
-  bpt::write_json(ss, configTree);
+  bpt::write_json(ss.str(), configTree, std::locale(), true);
 
   return EXIT_SUCCESS;
 }
