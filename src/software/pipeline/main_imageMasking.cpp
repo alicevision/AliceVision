@@ -65,6 +65,18 @@ inline std::istream& operator>>(std::istream& in, EAlgorithm& s)
     return in;
 }
 
+template <class T>
+auto optInRange(T min, T max, const char * opt_name)
+{
+  return [=] (T v)
+  { 
+    if(v < min || v > max)
+    { 
+      throw po::validation_error(po::validation_error::invalid_option_value, opt_name, std::to_string(v));
+    }
+  };
+};
+
 /**
  * @brief Write mask images from input images based on chosen algorithm.
  */
@@ -83,7 +95,13 @@ int main(int argc, char **argv)
   int rangeSize = -1;
 
   EAlgorithm algorithm = EAlgorithm::HSV;
-  float hue = 0.33f, hueRange = 0.1f, minSaturation = 0.3f, minValue = 0.3f;
+  struct
+  {
+    float hue = 0.33f;
+    float hueRange = 0.1f;
+    float minSaturation = 0.3f;
+    float minValue = 0.3f;
+  } hsv;
 
   po::options_description allParams("AliceVision masking");
 
@@ -101,13 +119,13 @@ int main(int argc, char **argv)
 
   po::options_description hsvParams("HSV parameters");
   hsvParams.add_options()
-    ("hue", po::value<float>(&hue)->default_value(hue),
+    ("hsv-hue", po::value<float>(&hsv.hue)->default_value(hsv.hue)->notifier(optInRange(0.f, 1.f, "hsv-hue")),
       "Hue value to isolate in [0,1] range. 0 = red, 0.33 = green, 0.66 = blue, 1 = red.")
-    ("hueRange", po::value<float>(&hueRange)->default_value(hueRange),
+    ("hsv-hueRange", po::value<float>(&hsv.hueRange)->default_value(hsv.hueRange)->notifier(optInRange(0.f, 1.f, "hsv-hueRange")),
       "Tolerance around the hue value to isolate.")
-    ("minSaturation", po::value<float>(&minSaturation)->default_value(minSaturation),
+    ("hsv-minSaturation", po::value<float>(&hsv.minSaturation)->default_value(hsv.minSaturation)->notifier(optInRange(0.f, 1.f, "hsv-minSaturation")),
       "Hue is meaningless if saturation is low. Do not mask pixels below this threshold.")
-    ("minValue", po::value<float>(&minValue)->default_value(minValue),
+    ("hsv-minValue", po::value<float>(&hsv.minValue)->default_value(hsv.minValue)->notifier(optInRange(0.f, 1.f, "hsv-minValue")),
       "Hue is meaningless if value is low. Do not mask pixels below this threshold.")
       ;
 
@@ -217,28 +235,9 @@ int main(int argc, char **argv)
   std::function<void(OutImage&, const InImagePath&)> process;
   if(algorithm == EAlgorithm::HSV)
   {
-    // check options
-    if(hue < 0.f || hue > 1.f)
-    {
-      ALICEVISION_LOG_ERROR("hue must be in the [0, 1] range");
-      return EXIT_FAILURE;
-    }
-
-    if(minSaturation < 0.f || minSaturation > 1.f)
-    {
-      ALICEVISION_LOG_ERROR("minSaturation must be in the [0, 1] range");
-      return EXIT_FAILURE;
-    }
-
-    if(minValue < 0.f || minValue > 1.f)
-    {
-      ALICEVISION_LOG_ERROR("minValue must be in the [0, 1] range");
-      return EXIT_FAILURE;
-    }
-
     process = [&](OutImage& result, const InImagePath& inputPath)
     {
-      imageMasking::hsv(result, inputPath, hue, hueRange, minSaturation, minValue);
+      imageMasking::hsv(result, inputPath, hsv.hue, hsv.hueRange, hsv.minSaturation, hsv.minValue);
     };
   }
 
