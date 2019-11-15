@@ -49,7 +49,7 @@ namespace{
   }
 }
 
-void hsv(OutImage& result, const InImagePath& inputPath, float hue, float hueRange, float minSaturation, float minValue)
+void hsv(OutImage& result, const InImagePath& inputPath, float hue, float hueRange, float minSaturation, float maxSaturation, float minValue, float maxValue)
 {
   // HSV's hue channel is an rotation angle: it wraps at 0deg/360deg.
   // Hue for blue is 240deg. With hueRange=0.1, pixels are selected if (hue > 204deg && hue < 276deg).
@@ -70,18 +70,43 @@ void hsv(OutImage& result, const InImagePath& inputPath, float hue, float hueRan
   const uint8_t lowH = remap_float2uint8(0.5f - hueRange);
   const uint8_t highH = remap_float2uint8(0.5f + hueRange);
   const uint8_t lowS = remap_float2uint8(minSaturation);
-  const uint8_t highS = 255;
+  const uint8_t highS = remap_float2uint8(maxSaturation);
   const uint8_t lowV = remap_float2uint8(minValue);
-  const uint8_t highV = 255;
+  const uint8_t highV = remap_float2uint8(maxValue);
+  printf("%d %d", (int)lowV, (int)highV);
   cv::inRange(input_hsv, cv::Scalar(lowH, lowS, lowV), cv::Scalar(highH, highS, highV), result_cv);
 };
 
-void postprocess_closing(OutImage& result, int iterations)
+void postprocess_invert(OutImage& result)
 {
   const cv::Mat result_cv = wrapCvMask(result);
-  const auto kernel = cv::getStructuringElement(cv::MORPH_RECT, {3, 3});
-  const auto anchor = cv::Point(-1, -1);
-  cv::morphologyEx(result_cv, result_cv, cv::MORPH_CLOSE, kernel, anchor, iterations);
+  cv::bitwise_not(result_cv, result_cv);
+}
+
+namespace
+{
+  void morph(OutImage& result, cv::MorphTypes type, int iterations)
+  {
+    const cv::Mat result_cv = wrapCvMask(result);
+    const auto kernel = cv::getStructuringElement(cv::MORPH_RECT, {3, 3});
+    const auto anchor = cv::Point(-1, -1);
+    cv::morphologyEx(result_cv, result_cv, type, kernel, anchor, iterations);
+  }
+}
+
+void postprocess_closing(OutImage& result, int iterations)
+{
+  morph(result, cv::MORPH_CLOSE, iterations);
+}
+
+void postprocess_dilate(OutImage& result, int iterations)
+{
+  morph(result, cv::MORPH_DILATE, iterations);
+}
+
+void postprocess_erode(OutImage& result, int iterations)
+{
+  morph(result, cv::MORPH_ERODE, iterations);
 }
 
 }//namespace imageMasking

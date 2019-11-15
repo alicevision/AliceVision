@@ -88,7 +88,9 @@ int main(int argc, char **argv)
   std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
 
   // misc.
-  int closingRadius = 0;
+  bool invert = false;
+  int growRadius = 0;
+  int shrinkRadius = 0;
 
   // program range
   int rangeStart = 0;
@@ -100,7 +102,9 @@ int main(int argc, char **argv)
     float hue = 0.33f;
     float hueRange = 0.1f;
     float minSaturation = 0.3f;
+    float maxSaturation = 1.f;
     float minValue = 0.3f;
+    float maxValue = 1.f;
   } hsv;
 
   po::options_description allParams("AliceVision masking");
@@ -125,14 +129,22 @@ int main(int argc, char **argv)
       "Tolerance around the hue value to isolate.")
     ("hsv-minSaturation", po::value<float>(&hsv.minSaturation)->default_value(hsv.minSaturation)->notifier(optInRange(0.f, 1.f, "hsv-minSaturation")),
       "Hue is meaningless if saturation is low. Do not mask pixels below this threshold.")
+    ("hsv-maxSaturation", po::value<float>(&hsv.maxSaturation)->default_value(hsv.maxSaturation)->notifier(optInRange(0.f, 1.f, "hsv-maxSaturation")),
+      "Do not mask pixels above this threshold. It might be useful to mask white/black pixels.")
     ("hsv-minValue", po::value<float>(&hsv.minValue)->default_value(hsv.minValue)->notifier(optInRange(0.f, 1.f, "hsv-minValue")),
       "Hue is meaningless if value is low. Do not mask pixels below this threshold.")
+    ("hsv-maxValue", po::value<float>(&hsv.maxValue)->default_value(hsv.maxValue)->notifier(optInRange(0.f, 1.f, "hsv-maxValue")),
+      "Do not mask pixels above this threshold. It might be useful to mask white/black pixels.")
       ;
 
   po::options_description optionalParams("Optional parameters");
   optionalParams.add_options()
-    ("closingRadius", po::value<int>(&closingRadius)->default_value(closingRadius),
-      "Grow the selected area to try to fill holes, then contract it. The resulting area has a similar size.")
+    ("invert", po::value<bool>(&invert)->default_value(invert),
+      "Invert the mask.")
+    ("growRadius", po::value<int>(&growRadius)->default_value(growRadius)->notifier(optInRange(0, INT_MAX, "growRadius")),
+      "Grow the selected area. It might be used to fill the holes: then use shrinkRadius to restore the initial coutours.")
+    ("shrinkRadius", po::value<int>(&shrinkRadius)->default_value(shrinkRadius)->notifier(optInRange(0, INT_MAX, "shrinkRadius")),
+      "Shrink the selected area.")
     ("rangeStart", po::value<int>(&rangeStart)->default_value(rangeStart),
       "Compute a sub-range of images from index rangeStart to rangeStart+rangeSize.")
     ("rangeSize", po::value<int>(&rangeSize)->default_value(rangeSize),
@@ -215,13 +227,6 @@ int main(int argc, char **argv)
     }
   }
 
-  // check misc. params
-  if(closingRadius < 0)
-  {
-    ALICEVISION_LOG_ERROR("Invalid closing radius.");
-    return EXIT_FAILURE;
-  }
-
   // check program range
   if(rangeStart < 0 || rangeStart >= sfmData.views.size())
   {
@@ -235,9 +240,21 @@ int main(int argc, char **argv)
   std::function<void(OutImage&, const InImagePath&)> process;
   if(algorithm == EAlgorithm::HSV)
   {
+    // check options
+    if(hsv.minSaturation > hsv.maxSaturation)
+    {
+      ALICEVISION_LOG_ERROR("hsv-minSaturation must be lower than hsv-maxSaturation");
+      return EXIT_FAILURE;
+    }
+    if(hsv.minValue > hsv.maxValue)
+    {
+      ALICEVISION_LOG_ERROR("hsv-minValue must be lower than hsv-maxValue");
+      return EXIT_FAILURE;
+    }
+
     process = [&](OutImage& result, const InImagePath& inputPath)
     {
-      imageMasking::hsv(result, inputPath, hsv.hue, hsv.hueRange, hsv.minSaturation, hsv.minValue);
+      imageMasking::hsv(result, inputPath, hsv.hue, hsv.hueRange, hsv.minSaturation, hsv.maxSaturation, hsv.minValue, hsv.maxValue);
     };
   }
 
@@ -262,9 +279,17 @@ int main(int argc, char **argv)
     image::Image<unsigned char> result;
     process(result, view.getImagePath());
 
-    if(closingRadius > 0)
+    if(invert)
     {
-      imageMasking::postprocess_closing(result, closingRadius);
+      imageMasking::postprocess_invert(result);
+    }
+    if(growRadius > 0)
+    {
+      imageMasking::postprocess_dilate(result, growRadius);
+    }
+    if(shrinkRadius > 0)
+    {
+      imageMasking::postprocess_erode(result, shrinkRadius);
     }
 
     const auto resultFilename = fs::path(std::to_string(index)).replace_extension("png");
