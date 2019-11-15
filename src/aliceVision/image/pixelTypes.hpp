@@ -363,6 +363,7 @@ namespace aliceVision
       }
     };
     typedef Rgba<unsigned char> RGBAColor;
+    typedef Rgba<float> RGBAfColor;
 
     const RGBColor WHITE( 255, 255, 255 );
     const RGBColor BLACK( 0, 0, 0 );
