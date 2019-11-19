@@ -323,7 +323,7 @@ __global__ void volume_retrieveBestZ_kernel(
   if(x >= volDimX || y >= volDimY)
     return;
 
-  float bestSim = 255.0;
+  float bestSim = 255.0f;
   int bestZIdx = -1;
   for (int z = 0; z < volDimZ; ++z)
   {
@@ -334,9 +334,17 @@ __global__ void volume_retrieveBestZ_kernel(
       bestZIdx = z;
     }
   }
-  bestZIdx = max(0, bestZIdx);
-  
-  float2 pix{float(x * scaleStep), float(y * scaleStep) };
+
+  // TODO: consider filtering out the values with a too bad score like (bestSim > 200.0f)
+  //       to reduce the storage volume of the depth maps
+  if (bestZIdx == -1)
+  {
+      *get2DBufferAt(bestDepthM, bestDepthM_s, x, y) = -1.0f;
+      *get2DBufferAt(bestSimM, bestSimM_s, x, y) = 255.0f;
+      return;
+  }
+
+  float2 pix{float(x * scaleStep), float(y * scaleStep)};
   // Without depth interpolation (for debug purpose only)
   if(!interpolate)
   {
