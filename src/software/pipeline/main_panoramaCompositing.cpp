@@ -91,8 +91,6 @@ bool convolveHorizontal(image::Image<image::RGBfColor> & output, const image::Im
         continue;
       }
 
-      
-
       for (int k = 0; k < kernel.size(); k++) {
 
         double w = kernel(k);
@@ -187,7 +185,13 @@ bool downscale(aliceVision::image::Image<image::RGBfColor> & outputColor, aliceV
   for (int i = 0; i < output_height; i++) {
     for (int j = 0; j < output_width; j++) {
       outputMask(i, j) = inputMask(i * 2, j * 2);
-      outputColor(i, j) = inputColor(i * 2, j * 2);
+
+      if (!outputMask(i, j)) {
+        outputColor(i, j) = image::RGBfColor(0.0f);
+      }
+      else {
+        outputColor(i, j) = inputColor(i * 2, j * 2);
+      }
     }
   }
 
@@ -217,7 +221,16 @@ bool upscale(aliceVision::image::Image<image::RGBfColor> & outputColor, aliceVis
       int dj = j * 2;
 
       if (!inputMask(i, j)) {
+        outputColor(di, dj) = image::RGBfColor(0.0f);
+        outputColor(di, dj + 1) = image::RGBfColor(0.0f);
+        outputColor(di + 1, dj) = image::RGBfColor(0.0f);
+        outputColor(di + 1, dj + 1) = image::RGBfColor(0.0f);
+
         outputMask(di, dj) = 0;
+        outputMask(di, dj + 1) = 0;
+        outputMask(di + 1, dj) = 0;
+        outputMask(di + 1, dj + 1) = 0;
+        
         continue;
       }
 
@@ -225,6 +238,7 @@ bool upscale(aliceVision::image::Image<image::RGBfColor> & outputColor, aliceVis
       outputColor(di, dj + 1) = inputColor(i, j);
       outputColor(di + 1, dj) = inputColor(i, j);
       outputColor(di + 1, dj + 1) = inputColor(i, j);
+
       outputMask(di, dj) = 255;
       outputMask(di, dj + 1) = 255;
       outputMask(di + 1, dj) = 255;
@@ -275,9 +289,11 @@ bool difference(aliceVision::image::Image<image::RGBfColor> & outputColor, alice
       }
       else {
         if (bMask(i, j)) {
+          outputColor(i, j) = image::RGBfColor(0.0f);
           outputMask(i, j) = 0;
         }
         else {
+          outputColor(i, j) = image::RGBfColor(0.0f);
           outputMask(i, j) = 0;
         }
       }
@@ -324,8 +340,8 @@ bool addition(aliceVision::image::Image<image::RGBfColor> & outputColor, aliceVi
           outputMask(i, j) = 1;
         }
         else {
-          outputColor(i, j) = aColor(i, j);
-          outputMask(i, j) = 1;
+          outputColor(i, j) = image::RGBfColor(0.0f);
+          outputMask(i, j) = 0;
         }
       }
       else {
@@ -334,6 +350,7 @@ bool addition(aliceVision::image::Image<image::RGBfColor> & outputColor, aliceVi
           outputMask(i, j) = 1;
         }
         else {
+          outputColor(i, j) = image::RGBfColor(0.0f);
           outputMask(i, j) = 0;
         }
       }
@@ -439,6 +456,9 @@ class LaplacianPyramid {
 public:
   bool process(const aliceVision::image::Image<image::RGBfColor> & inputColor, const aliceVision::image::Image<unsigned char> & inputMask) {
 
+    _original_width = inputColor.Width();
+    _original_height = inputColor.Height();
+
     GaussianPyramid gp;
     if (!gp.process(inputColor, inputMask)) {
       return false;
@@ -446,8 +466,6 @@ public:
 
     const std::vector<image::Image<image::RGBfColor>> & gp_colors = gp.getColors();
     const std::vector<image::Image<unsigned char>> & gp_masks = gp.getMasks();
-
-    image::writeImage("/home/mmoc/test2.exr", gp_colors[0], image::EImageColorSpace::SRGB);
 
     /*Create the gaussian kernel*/
     Eigen::VectorXf kernel = gaussian_kernel_vector(7, 2.0);
@@ -487,7 +505,7 @@ public:
     return true;
   }
 
-  bool stack() {
+  bool stack(int max_level) {
 
     image::Image<image::RGBfColor> prev_color =  _pyramid_color[_pyramid_color.size() - 1];
     image::Image<unsigned char> prev_mask =  _pyramid_mask[_pyramid_mask.size() - 1];
@@ -495,45 +513,131 @@ public:
     /*Create the gaussian kernel*/
     Eigen::VectorXf kernel = gaussian_kernel_vector(7, 2.0);
 
-    for (int level = _pyramid_color.size() - 2; level >= 0; level--) {
+    for (int level = _pyramid_color.size() - 2; level >= max_level; level--) {
       
       const image::Image<image::RGBfColor> diff_color = _pyramid_color[level];
       const image::Image<unsigned char> diff_mask = _pyramid_mask[level];
 
       image::Image<image::RGBfColor> prev_color_upscaled(diff_color.Width(), diff_color.Height());
       image::Image<image::RGBfColor> buffer(diff_color.Width(), diff_color.Height());
-      image::Image<image::RGBfColor> smoothed(diff_color.Width(), diff_color.Height());
+      image::Image<image::RGBfColor> smoothed(diff_color.Width(), diff_color.Height(), true, image::RGBfColor(0.0f));
       image::Image<unsigned char> prev_mask_upscaled(diff_mask.Width(), diff_mask.Height());
 
-      upscale(prev_color_upscaled, prev_mask_upscaled, prev_color, prev_mask);
-      convolveHorizontal(buffer, prev_color_upscaled, prev_mask_upscaled, kernel);
-      convolveVertical(smoothed, buffer, prev_mask_upscaled, kernel);
+      if (!upscale(prev_color_upscaled, prev_mask_upscaled, prev_color, prev_mask)) {
+        return false;
+      }
 
-      prev_color = image::Image<image::RGBfColor>(diff_color.Width(), diff_color.Height());
-      prev_mask = image::Image<unsigned char>(diff_mask.Width(), diff_mask.Height());
+      if (!convolveHorizontal(buffer, prev_color_upscaled, prev_mask_upscaled, kernel)) {
+        return false;
+      }
 
-      std::cout << prev_color.Width() << " ";
-      std::cout << prev_mask.Width() << " ";
-      std::cout << smoothed.Width() << " ";
-      std::cout << prev_mask_upscaled.Width() << " ";
-      std::cout << diff_color.Width() << " ";
-      std::cout << diff_mask.Width() << std::endl;
+      if (!convolveVertical(smoothed, buffer, prev_mask_upscaled, kernel)) {
+        return false;
+      }
+
+      prev_color = image::Image<image::RGBfColor>(diff_color.Width(), diff_color.Height(), true, image::RGBfColor(0.0f));
+      prev_mask = image::Image<unsigned char>(diff_mask.Width(), diff_mask.Height(), true, 0);
+
 
       if (!addition(prev_color, prev_mask, smoothed, prev_mask_upscaled, diff_color, diff_mask)) {
-        std::cout << "ok" << std::endl;
         return false;
+      }
+    }    
+
+    _stack_result = prev_color;
+    _stack_mask = prev_mask;
+
+    return true;
+  }
+
+  bool merge(const LaplacianPyramid & other) {
+
+    for (int level = 0; level < _pyramid_color.size(); level++) {
+
+      image::Image<image::RGBfColor> & aColor = _pyramid_color[level];
+      image::Image<unsigned char> & aMask = _pyramid_mask[level];
+      const image::Image<image::RGBfColor> & bColor = other._pyramid_color[level];
+      const image::Image<unsigned char> & bMask = other._pyramid_mask[level];
+
+      for (int i = 0; i < bColor.Height(); i++) {
+      
+        for (int j = 0; j < bColor.Width(); j++) {
+
+          if (aMask(i, j)) {
+            if (bMask(i, j)) {
+              aColor(i, j).r() = 0.5f * aColor(i, j).r() + 0.5f * bColor(i, j).r();
+              aColor(i, j).g() = 0.5f * aColor(i, j).g() + 0.5f * bColor(i, j).g();
+              aColor(i, j).b() = 0.5f * aColor(i, j).b() + 0.5f * bColor(i, j).b();
+            }
+            else {
+              //do nothing
+            }
+          }
+          else {
+            if (bMask(i, j)) {
+              aColor(i, j) = bColor(i, j);
+              aMask(i, j) = 1;
+            }
+            else {
+              aColor(i, j) = image::RGBfColor(0.0f);
+              aMask(i, j) = 0;
+            }
+          }
+        }
       }
     }
 
-    image::writeImage("/home/mmoc/test.exr", prev_color, image::EImageColorSpace::SRGB);
-    
+    return true;
+  }
+
+  bool reducePyramidDepth(size_t newSize) {
+
+    if (newSize == 0) {
+      return false;
+    }
+
+    if (newSize > _pyramid_color.size()) {
+      return false;
+    }
+
+    if (newSize == _pyramid_color.size()) {
+      return true;
+    }
+
+    if (!stack(newSize - 1)) {
+      return false;
+    }
+
+    _pyramid_color[newSize - 1] = _stack_result;
+    _pyramid_mask[newSize - 1] = _stack_mask;
+
+    _pyramid_color.resize(newSize);
+    _pyramid_mask.resize(newSize);
 
     return true;
+  }
+
+  const image::Image<image::RGBfColor> & getStackResult() const {
+    return _stack_result;
+  }
+
+  const image::Image<unsigned char> & getStackMask() const {
+    return _stack_mask;
+  }
+
+  size_t getDepth() const {
+    return _pyramid_color.size();
   }
 
 protected:
   std::vector<image::Image<image::RGBfColor>> _pyramid_color;
   std::vector<image::Image<unsigned char>> _pyramid_mask;
+  
+  image::Image<image::RGBfColor> _stack_result;
+  image::Image<unsigned char> _stack_mask;
+
+  size_t _original_width;
+  size_t _original_height;
 };
 
 class Compositer {
@@ -653,28 +757,55 @@ public:
 
   virtual bool append(const aliceVision::image::Image<image::RGBfColor> & color, const aliceVision::image::Image<unsigned char> & inputMask, const aliceVision::image::Image<float> & inputWeights, size_t offset_x, size_t offset_y) {
 
-   /* if (first) {
-      prev_color = color;
-      prev_inputMask = inputMask;
-      first = false;
-      return true;
-    }*/
+    LaplacianPyramid pyramid_panorama;
+    pyramid_panorama.process(_panorama, _mask);
 
-    LaplacianPyramid pyr1;
-    pyr1.process(color, inputMask);
-    pyr1.stack();
+    aliceVision::image::Image<image::RGBfColor> view(_panorama.Width(), _panorama.Height(), true, image::RGBfColor(0.0f));
+    aliceVision::image::Image<unsigned char> viewmask(_panorama.Width(), _panorama.Height(), true, 0);
 
-    /*LaplacianPyramid pyr2;
-    pyr2.process(color, inputMask);*/
+    for (int i = 0; i < color.Height(); i++) {
+
+      int di = i + offset_y;
+
+      for (int j = 0; j < color.Width(); j++) {
+
+        int dj = j + offset_x;
+
+        if (dj >= view.Width()) {
+          dj = dj - view.Width();
+        }
+
+        view(di, dj) = color(i, j);
+        viewmask(di, dj) = inputMask(i, j);
+      }
+    }
+
+    LaplacianPyramid pyramid_add;
+    pyramid_add.process(view, viewmask);
+
+
+    if (pyramid_panorama.getDepth() > pyramid_add.getDepth()) {
+      pyramid_panorama.reducePyramidDepth(pyramid_add.getDepth());
+    }
+    else if (pyramid_panorama.getDepth() < pyramid_add.getDepth()) {
+      pyramid_add.reducePyramidDepth(pyramid_panorama.getDepth());
+    }
+
+    pyramid_panorama.merge(pyramid_add);
+    pyramid_panorama.stack(0);
+
+    const aliceVision::image::Image<image::RGBfColor> & img = pyramid_panorama.getStackResult(); 
+    const aliceVision::image::Image<unsigned char> & mask = pyramid_panorama.getStackMask();
+
+    _panorama = img.block(0, 0, _panorama.Height(), _panorama.Width());
+    _mask = mask.block(0, 0, _panorama.Height(), _panorama.Width());
+
+    image::writeImage("/home/mmoc/test/out.exr", pyramid_panorama.getStackResult(), image::EImageColorSpace::NO_CONVERSION);
 
     return true;
   }
 
 protected:
-  bool first = true;
-  aliceVision::image::Image<image::RGBfColor>  prev_color;
-  aliceVision::image::Image<unsigned char> prev_inputMask;
-  aliceVision::image::Image<float> _weightmap;
 };
 
 int main(int argc, char **argv) {
@@ -776,7 +907,7 @@ int main(int argc, char **argv) {
   for (auto & item : configTree.get_child("views")) {
     ConfigView cv;
 
-    if (pos == 24 /*|| pos == 25*//* && pos < 28*/) {
+    if (pos == 24 || pos == 25 || pos == 28) {
     cv.img_path = item.second.get<std::string>("filename_view");
     cv.mask_path = item.second.get<std::string>("filename_mask");
     cv.weights_path = item.second.get<std::string>("filename_weights");
