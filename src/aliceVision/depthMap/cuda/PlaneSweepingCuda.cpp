@@ -8,6 +8,7 @@
 #include <aliceVision/depthMap/volumeIO.hpp>
 
 #include <aliceVision/system/Logger.hpp>
+#include <aliceVision/system/nvtx.hpp>
 #include <aliceVision/mvsData/Matrix3x3.hpp>
 #include <aliceVision/mvsData/Matrix3x4.hpp>
 #include <aliceVision/mvsData/OrientedPoint.hpp>
@@ -114,31 +115,6 @@ static void cps_host_fillCamera(CameraStructBase& base, int c, mvsUtils::MultiVi
     ps_initCameraMatrix( base );
 }
 
-static void cps_host_fillCameraData(mvsUtils::ImagesCache<ImageRGBAf>& ic, CameraStruct& cam, int c, mvsUtils::MultiViewParams& mp)
-{
-    ALICEVISION_LOG_DEBUG("cps_host_fillCameraData [" << c << "]: " << mp.getWidth(c) << "x" << mp.getHeight(c));
-    clock_t t1 = tic();
-    mvsUtils::ImagesCache<ImageRGBAf>::ImgSharedPtr img = ic.getImg_sync( c ); // TODO RGBA
-    ALICEVISION_LOG_DEBUG("cps_host_fillCameraData: " << c << " -a- Retrieve from ImagesCache elapsed time: " << toc(t1) << " ms.");
-    t1 = tic();
-
-    const int h = mp.getHeight(c);
-    const int w = mp.getWidth(c);
-    for(int y = 0; y < h; ++y)
-    {
-        for(int x = 0; x < w; ++x)
-        {
-            const ColorRGBAf& floatRGBA = img->at(x, y);
-            CudaRGBA& pix_rgba = (*cam.tex_rgba_hmh)(x, y);
-            pix_rgba.x = floatRGBA.r * 255.0f;
-            pix_rgba.y = floatRGBA.g * 255.0f;
-            pix_rgba.z = floatRGBA.b * 255.0f;
-            pix_rgba.w = floatRGBA.a * 255.0f;
-        }
-    }
-    ALICEVISION_LOG_DEBUG("cps_host_fillCameraData: " << c << " -b- Copy to HMH elapsed time: " << toc(t1) << " ms.");
-}
-
 
 void copy(CudaHostMemoryHeap<float2, 2>& outHmh, const StaticVector<DepthSim>& inDepthSimMap, int yFrom)
 {
@@ -175,7 +151,15 @@ void copy(StaticVector<DepthSim>& outDepthSimMap, const CudaHostMemoryHeap<float
     }
 }
 
+int listCUDADevices(bool verbose)
+{
+    return ps_listCUDADevices(verbose);
+}
 
+
+/*********************************************************************************
+ * PlaneSweepingCuda
+ *********************************************************************************/
 
 PlaneSweepingCuda::PlaneSweepingCuda( int CUDADeviceNo,
                                       mvsUtils::ImagesCache<ImageRGBAf>&     ic,
@@ -183,13 +167,11 @@ PlaneSweepingCuda::PlaneSweepingCuda( int CUDADeviceNo,
                                       int scales )
     : _scales( scales )
     , _CUDADeviceNo( CUDADeviceNo )
+    , _hidden( 0 )
     , _ic( ic )
     , _mp(mp)
+    , _cameraParamCache( MAX_CONSTANT_CAMERA_PARAM_SETS )
 {
-    ps_testCUDAdeviceNo( _CUDADeviceNo );
-
-    cudaError_t err;
-
     /* The caller knows all camera that will become rc cameras, but it does not
      * pass that information to this function.
      * It knows the nearest cameras for each of those rc cameras, but it doesn't
@@ -198,53 +180,37 @@ PlaneSweepingCuda::PlaneSweepingCuda( int CUDADeviceNo,
      * will hold CUDA memory for camera structs and bitmaps.
      */
 
-    const int maxImageWidth = mp.getMaxImageWidth();
-    const int maxImageHeight = mp.getMaxImageHeight();
+    ps_testCUDAdeviceNo( _CUDADeviceNo );
 
-    float oneimagemb = 4.0f * sizeof(float) * (((float)(maxImageWidth * maxImageHeight) / 1024.0f) / 1024.0f);
-    for(int scale = 2; scale <= _scales; ++scale)
-    {
-        oneimagemb += 4.0 * sizeof(float) * (((float)((maxImageWidth / scale) * (maxImageHeight / scale)) / 1024.0) / 1024.0);
-    }
-    float maxmbGPU = 400.0f; // TODO FACA
-    _nImgsInGPUAtTime = (int)(maxmbGPU / oneimagemb);
-    _nImgsInGPUAtTime = std::max(2, std::min(mp.ncams, _nImgsInGPUAtTime));
+    _nImgsInGPUAtTime = imagesInGPUAtTime( mp, scales );
+
+    // allocate global on the device
+    _hidden = new FrameCacheMemory( _nImgsInGPUAtTime,
+                                    mp.getMaxImageWidth(),
+                                    mp.getMaxImageHeight(),
+                                    scales,
+                                    _CUDADeviceNo );
+
 
     ALICEVISION_LOG_INFO("PlaneSweepingCuda:" << std::endl
                          << "\t- _nImgsInGPUAtTime: " << _nImgsInGPUAtTime << std::endl
                          << "\t- scales: " << _scales);
 
-    if( _nImgsInGPUAtTime > MAX_CONCURRENT_IMAGES_IN_DEPTHMAP )
-    {
-        ALICEVISION_LOG_ERROR( "DepthMap has been compiled with a hard limit of "
-                               << MAX_CONCURRENT_IMAGES_IN_DEPTHMAP
-                               << " concurrent images. "<< std::endl
-                               << "Recompilation required for larger values." << std::endl
-                               << "Change define MAX_CONCURRENT_IMAGES_IN_DEPTHMAP "
-                               << " but consider hardware limits for CUDA constant memory." );
-        exit( -1 );
+    cudaError_t err;
 
-    }
-
-    // allocate global on the device
-    ps_deviceAllocate(_hidden_pyramids, _nImgsInGPUAtTime, maxImageWidth, maxImageHeight, _scales, _CUDADeviceNo);
-
-    // err = cudaMalloc( &_camsBasesDev, MAX_CONCURRENT_IMAGES_IN_DEPTHMAP*sizeof(CameraStructBase) );
-    // THROW_ON_CUDA_ERROR( err, "Could not allocate set of camera structs in device memory in " << __FILE__ << ":" << __LINE__ << ", " << cudaGetErrorString(err) );
-
-    err = cudaMallocHost( &_camsBasesHst, sizeof(CameraStructBase) );
+    err = cudaMallocHost( &_camsBasesHst, MAX_CONSTANT_CAMERA_PARAM_SETS*sizeof(CameraStructBase) );
     THROW_ON_CUDA_ERROR( err, "Could not allocate set of camera structs in pinned host memory in " << __FILE__ << ":" << __LINE__ << ", " << cudaGetErrorString(err) );
 
-    _camsBasesHstScale.resize( MAX_CONCURRENT_IMAGES_IN_DEPTHMAP, -1 );
+    // _camsBasesHstScale.resize( MAX_CONSTANT_CAMERA_PARAM_SETS, -1 );
 
-    _cams     .resize(_nImgsInGPUAtTime);
-    _camsRcs  .resize(_nImgsInGPUAtTime);
-    _camsTimes.resize(_nImgsInGPUAtTime);
+    _cams    .resize(_nImgsInGPUAtTime);
+    _camsHost.resize(_nImgsInGPUAtTime);
 
     for( int rc = 0; rc < _nImgsInGPUAtTime; ++rc )
     {
+        _cams[rc].camId = -1;
         _cams[rc].param_dev = rc;
-        _cams[rc].pyramid   = &_hidden_pyramids[rc];
+        _cams[rc].pyramid   = _hidden->getPyramidPtr(rc); // &_hidden_pyramids[rc];
 
         err = cudaStreamCreate( &_cams[rc].stream );
         if( err != cudaSuccess )
@@ -253,32 +219,54 @@ PlaneSweepingCuda::PlaneSweepingCuda( int CUDADeviceNo,
             _cams[rc].stream = 0;
         }
     }
-
-    for(int rc = 0; rc < _nImgsInGPUAtTime; ++rc)
-    {
-        _cams[rc].camId = -1;
-        _camsRcs[rc]   = -1;
-        _camsTimes[rc] = 0;
-    }
 }
 
 PlaneSweepingCuda::~PlaneSweepingCuda()
 {
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // deallocate global on the device
-    ps_deviceDeallocate(_hidden_pyramids, _CUDADeviceNo, _nImgsInGPUAtTime, _scales);
+    delete _hidden;
 
-    // cudaFree(     _camsBasesDev );
     cudaFreeHost( _camsBasesHst );
 
     for(int c = 0; c < _cams.size(); c++)
     {
-        delete _cams[c].tex_rgba_hmh;
-
         cudaStreamDestroy( _cams[c].stream );
     }
 }
 
+/* static private function called by the constructor */
+int PlaneSweepingCuda::imagesInGPUAtTime( mvsUtils::MultiViewParams& mp, int scales )
+{
+    int value;
+
+    const int maxImageWidth = mp.getMaxImageWidth();
+    const int maxImageHeight = mp.getMaxImageHeight();
+
+    float oneimagemb = 4.0f * sizeof(float) * (((float)(maxImageWidth * maxImageHeight) / 1024.0f) / 1024.0f);
+    for(int scale = 2; scale <= scales; ++scale)
+    {
+        oneimagemb += 4.0 * sizeof(float) * (((float)((maxImageWidth / scale) * (maxImageHeight / scale)) / 1024.0) / 1024.0);
+    }
+    float maxmbGPU = 400.0f; // TODO FACA
+
+    value = (int)(maxmbGPU / oneimagemb);
+    value = std::max(2, std::min(mp.ncams, value));
+
+    if( value > MAX_CONSTANT_CAMERA_PARAM_SETS )
+    {
+        ALICEVISION_LOG_ERROR( "DepthMap has been compiled with a hard limit of "
+                               << MAX_CONSTANT_CAMERA_PARAM_SETS
+                               << " concurrent images. "<< std::endl
+                               << "Recompilation required for larger values." << std::endl
+                               << "Change define MAX_CONSTANT_CAMERA_PARAM_SETS "
+                               << " but consider hardware limits for CUDA constant memory." );
+        exit( -1 );
+
+    }
+
+    return value;
+}
 void PlaneSweepingCuda::cameraToDevice( int rc, const StaticVector<int>& tcams )
 {
     std::ostringstream ostr;
@@ -293,70 +281,49 @@ void PlaneSweepingCuda::cameraToDevice( int rc, const StaticVector<int>& tcams )
     ALICEVISION_LOG_DEBUG( ostr.str() );
 }
 
-int PlaneSweepingCuda::addCam( int global_cam_id, int scale )
+int PlaneSweepingCuda::loadCameraParam( int global_cam_id, int scale, cudaStream_t stream )
+{
+    CamSelection newP( global_cam_id, scale );
+    int newPIndex;
+
+    bool newCamParam = _cameraParamCache.insert( newP, &newPIndex );
+    if( newCamParam )
+    {
+        CamCacheIdx idx( newPIndex );
+        cps_host_fillCamera(_camsBasesHst[newPIndex], global_cam_id, _mp, scale);
+        ps_loadCameraStructs( _camsBasesHst, idx, stream );
+    }
+
+    return newPIndex;
+}
+
+int PlaneSweepingCuda::addCam( int global_cam_id, int scale, cudaStream_t stream )
 {
     // first is oldest
-    int id = _camsRcs.indexOf(global_cam_id);
-    if(id == -1)
-    {
-        // get oldest id
-        id = _camsTimes.minValId();
-        CameraStruct& cam = _cams[id];
-        cam.camId = id;
+    int local_frame_id;
+    bool newInsertion = _camsHost.insert( global_cam_id, &local_frame_id );
 
-        if(cam.tex_rgba_hmh == nullptr)
-        {
-            cam.tex_rgba_hmh =
-                new CudaHostMemoryHeap<CudaRGBA, 2>(CudaSize<2>(_mp.getMaxImageWidth(), _mp.getMaxImageHeight()));
-        }
-        else
-        {
-            assert(cam.tex_rgba_hmh->getSize() == CudaSize<2>(_mp.getMaxImageWidth(), _mp.getMaxImageHeight()));
-        }
+    CameraStruct& cam = _cams[local_frame_id];
+
+    if( newInsertion )
+    {
+        cam.camId = local_frame_id;
+
         long t1 = clock();
 
-        cps_host_fillCamera(*_camsBasesHst, global_cam_id, _mp, scale);
-
-        _camsBasesHstScale[id] = scale;
-
-        /* Copy data for cached image "global_cam_id" into the host-side data buffer managed
-         * by data structure "cam". */
-        cps_host_fillCameraData(_ic, cam, global_cam_id, _mp);
-
-        /* Copy data from host-sided cache in "cam" onto the GPU and create
-         * downscaled and Gauss-filtered versions on the GPU. */
-        ps_device_updateCam(cam,
-                            _CUDADeviceNo,
-                            _scales, _mp.getWidth(global_cam_id), _mp.getHeight(global_cam_id));
+        /* Fill slot id in the GPU-sided frame cache from the global image cache */
+        _hidden->fillFrame( local_frame_id, global_cam_id, _ic, _mp, stream );
 
         mvsUtils::printfElapsedTime(t1, "Copy image (camera id="+std::to_string(global_cam_id)+") from CPU to GPU");
-
-        _camsRcs[id] = global_cam_id;
-
-        ps_loadCameraStructs( _camsBasesHst, id );
     }
-    else if( _camsBasesHstScale[id] == scale )
-    {
-        /* do nothing, the CameraStruct at position id is unchanged */
-    }
-    else
-    {
-        /*
-         * It is not sensible to waste cycles on refilling the camera struct if the new one
-         * is identical to the old one.
-         */
-        cps_host_fillCamera( *_camsBasesHst, global_cam_id, _mp, scale);
 
-        _camsBasesHstScale[id] = scale;
+    /* Fetch slot in constant memory that contains the camera parameters,
+     * and fill it needed. */
+    cam.param_dev = loadCameraParam( global_cam_id, scale, stream );
 
-        // ps_device_updateCam((CameraStruct*)(*cams)[id], id, _scales);
-        ALICEVISION_LOG_DEBUG("Reuse image (camera id=" + std::to_string(global_cam_id) + ") already on the GPU.");
+    _hidden->setLocalCamId( local_frame_id, cam.param_dev.i );
 
-        ps_loadCameraStructs( _camsBasesHst, id );
-    }
-    _camsTimes[id] = clock();
-
-    if( _cams[id].camId != id )
+    if( _cams[local_frame_id].camId != local_frame_id )
     {
         std::cerr << "BUG in " << __FILE__ << ":" << __LINE__ << " ?"
                   << " The camId member should be initialized with the return value of addCam()."
@@ -364,7 +331,7 @@ int PlaneSweepingCuda::addCam( int global_cam_id, int scale )
         exit( -1 );
     }
 
-    return id;
+    return local_frame_id;
 }
 
 void PlaneSweepingCuda::getMinMaxdepths(int rc, const StaticVector<int>& tcams, float& minDepth, float& midDepth,
@@ -733,52 +700,58 @@ void PlaneSweepingCuda::sweepPixelsToVolume( CudaDeviceMemoryPitched<TSim, 3>& v
                                              int rc_global_id,
                                              const StaticVector<int>& tc_global_list,
                                              int wsh, float gammaC, float gammaP,
-                                             int scale)
+                                             const int scale)
 {
-    int volDimZ = rc_depths.size();
-    ps_initSimilarityVolume(
-      volBestSim_dmp,
-      volSecBestSim_dmp,
-      volDimX, volDimY, volDimZ);
+    nvtxPush("preload host cache ");
+    _ic.getImg_sync( rc_global_id );
+    for( auto tc : tc_global_list ) _ic.getImg_sync( tc );
+    nvtxPop("preload host cache ");
 
-    // copy the vector of depths to GPU
-    CudaDeviceMemory<float> depths_d(rc_depths.data(), rc_depths.size());
+    const int volDimZ = rc_depths.size();
 
-#ifdef PLANE_SWEEPING_PRECOMPUTED_COLORS
-    CudaDeviceMemoryPitched<float4, 3> volTcamColors_dmp(CudaSize<3>(volDimX, volDimY, volDimZ)); // TODO FACA: move out of the loop (max of depthsToSearch)
-#endif
+    ps::SimilarityVolume vol( volDimX, volDimY, volDimZ,
+                              volStepXY,
+                              scale,
+                              rc_depths,
+                              _mp.verbose );
 
-    int s = scale - 1;
+    vol.initOutputVolumes( volBestSim_dmp,
+                           volSecBestSim_dmp,
+                           0 );
+    vol.WaitSweepStream( 0 );
 
     for(int tci = 0; tci < tc_global_list.size(); ++tci)
     {
+        if( tci % MAX_CONSTANT_CAMERA_PARAM_SETS == MAX_CONSTANT_CAMERA_PARAM_SETS - 1 )
+        {
+            vol.WaitSweepStream( tci );
+        }
+
         int tc_global_id = tc_global_list[tci];
 
-        const int rcamCacheId = addCam(rc_global_id, scale );
+        const int rcamCacheId = addCam(rc_global_id, vol.Scale(), vol.SweepStream( tci ) );
         CameraStruct& rcam = _cams[rcamCacheId];
 
-        const int tcamCacheId = addCam(tc_global_id, scale );
+        const int tcamCacheId = addCam(tc_global_id, vol.Scale(), vol.SweepStream( tci ) );
         CameraStruct& tcam = _cams[tcamCacheId];
-
 
         ALICEVISION_LOG_DEBUG("rc: " << rc_global_id << " tcams: " << tc_global_id);
         ALICEVISION_LOG_DEBUG("rcamCacheId: " << rcamCacheId << ", tcamCacheId: " << tcamCacheId);
-
-        // CudaDeviceMemoryPitched<float4, 3> volTcamColors_dmp(CudaSize<3>(volDimX, volDimY, tcs[tci].getDepthsToSearch())); // TODO FACA: move out of the loop (max of depthsToSearch)
 
         {
             pr_printfDeviceMemoryInfo();
             ALICEVISION_LOG_DEBUG(__FUNCTION__ << ": total size of one similarity volume map in GPU memory: approx " << volBestSim_dmp.getBytesPadded() / (1024.0 * 1024.0) << " MB");
             ALICEVISION_LOG_DEBUG(__FUNCTION__ << ": UNPADDED total size of one similarity volume map in GPU memory: approx " << volBestSim_dmp.getBytesUnpadded() / (1024.0 * 1024.0) << " MB");
-#ifdef PLANE_SWEEPING_PRECOMPUTED_COLORS
-            ALICEVISION_LOG_DEBUG(__FUNCTION__ << ": total size of one color volume map in GPU memory: approx " << volTcamColors_dmp.getBytesPadded() / (1024.0 * 1024.0) << " MB");
-            ALICEVISION_LOG_DEBUG(__FUNCTION__ << ": UNPADDED total size of one color volume map in GPU memory: approx " << volTcamColors_dmp.getBytesUnpadded() / (1024.0 * 1024.0) << " MB");
-#endif
+
+// #ifdef PLANE_SWEEPING_PRECOMPUTED_COLORS
+            // ALICEVISION_LOG_DEBUG(__FUNCTION__ << ": total size of one color volume map in GPU memory: approx " << volTcamColors_dmp.getBytesPadded() / (1024.0 * 1024.0) << " MB");
+            // ALICEVISION_LOG_DEBUG(__FUNCTION__ << ": UNPADDED total size of one color volume map in GPU memory: approx " << volTcamColors_dmp.getBytesUnpadded() / (1024.0 * 1024.0) << " MB");
+// #endif
         }
 
-        const int rcWidth = _mp.getWidth(rc_global_id);
+        const int rcWidth  = _mp.getWidth(rc_global_id);
         const int rcHeight = _mp.getHeight(rc_global_id);
-        const int tcWidth = _mp.getWidth(tc_global_id);
+        const int tcWidth  = _mp.getWidth(tc_global_id);
         const int tcHeight = _mp.getHeight(tc_global_id);
 
         ALICEVISION_LOG_DEBUG("sweepPixelsToVolume:" << std::endl
@@ -787,22 +760,19 @@ void PlaneSweepingCuda::sweepPixelsToVolume( CudaDeviceMemoryPitched<TSim, 3>& v
             << "\t- tcs[tci].getDepthsToSearch(): " << tcs[tci].getDepthsToSearch() << std::endl
             << "\t- volBestSim_dmp : " << volBestSim_dmp.getUnitsInDim(0) << ", " << volBestSim_dmp.getUnitsInDim(1) << ", " << volBestSim_dmp.getUnitsInDim(2) << std::endl
             << "\t- volSecBestSim_dmp : " << volSecBestSim_dmp.getUnitsInDim(0) << ", " << volSecBestSim_dmp.getUnitsInDim(1) << ", " << volSecBestSim_dmp.getUnitsInDim(2) << std::endl
-            << "\t- scale: " << scale << std::endl
-            << "\t- volStepXY: " << volStepXY << std::endl
-            << "\t- volDimX: " << volDimX << std::endl
-            << "\t- volDimY: " << volDimY << std::endl
-            << "\t- volDimZ: " << volDimZ);
-#ifdef PLANE_SWEEPING_PRECOMPUTED_COLORS
-        ALICEVISION_LOG_DEBUG("\t- volTcamColors_dmp : " << volTcamColors_dmp.getUnitsInDim(0) << ", " << volTcamColors_dmp.getUnitsInDim(1) << ", " << volTcamColors_dmp.getUnitsInDim(2));
-#endif
+            << "\t- scale: " << vol.Scale() << std::endl
+            << "\t- volStepXY: " << vol.StepXY() << std::endl
+            << "\t- volDimX: " << vol.DimX() << std::endl
+            << "\t- volDimY: " << vol.DimY() << std::endl
+            << "\t- volDimZ: " << vol.DimZ());
 
 #ifdef PLANE_SWEEPING_PRECOMPUTED_COLORS
-        ps_initColorVolumeFromCamera(volTcamColors_dmp,
-                                     rcam, tcam,
-                                     (*tcam.pyramid)[s].tex,
-                                     tcWidth, tcHeight,
-                                     tcs[tci].getDepthToStart(), depths_d,
-                                     volDimX, volDimY, tcs[tci].getDepthsToSearch(), volStepXY);
+        vol.initColorVolumeFromCamera(rcam, tcam,
+                                      (*tcam.pyramid)[vol.PrevScale()].tex,
+                                      tcWidth, tcHeight,
+                                      tcs[tci].getDepthToStart(),
+                                      tcs[tci].getDepthsToSearch(),
+                                      tci );
 
         /*
         if (true) // debug
@@ -814,34 +784,6 @@ void PlaneSweepingCuda::sweepPixelsToVolume( CudaDeviceMemoryPitched<TSim, 3>& v
         }*/
 #endif
 
-// #define PLANE_SWEEPING_PRECOMPUTED_COLORS_TEXTURE 1
-#ifdef PLANE_SWEEPING_PRECOMPUTED_COLORS_TEXTURE
-        cudaTextureObject_t volTcamColors_tex3D;
-        {
-            cudaTextureDesc  tex_desc;
-            memset(&tex_desc, 0, sizeof(cudaTextureDesc));
-            tex_desc.normalizedCoords = 0; // addressed (x,y,z) in [width,height,depth]
-            tex_desc.addressMode[0] = cudaAddressModeClamp;
-            tex_desc.addressMode[1] = cudaAddressModeClamp;
-            tex_desc.addressMode[2] = cudaAddressModeClamp;
-            tex_desc.readMode = cudaReadModeElementType;
-            tex_desc.filterMode = cudaFilterModePoint;
-
-            cudaResourceDesc res_desc;
-            res_desc.resType = cudaResourceTypePitch2D;
-            res_desc.res.pitch2D.desc = cudaCreateChannelDesc<float4>();
-            res_desc.res.pitch2D.devPtr = volTcamColors_dmp.getBuffer();
-            res_desc.res.pitch2D.width = volTcamColors_dmp.getSize()[0];
-            res_desc.res.pitch2D.height = volTcamColors_dmp.getSize()[1];
-            res_desc.res.pitch2D.pitchInBytes = volTcamColors_dmp.getPitch();
-
-            // create texture object
-            cudaError_t err = cudaCreateTextureObject(&volTcamColors_tex3D, &res_desc, &tex_desc, NULL);
-
-            THROW_ON_CUDA_ERROR(err, "Could not create the 3D texture object in " << __FILE__ << ":" << __LINE__ << ", " << cudaGetErrorString(err));
-        }
-#endif
-
         // FACA WIP: for now, only create one cell for a TC
         std::vector<OneTC> cells;
         cells.push_back(tcs[tci]);
@@ -850,45 +792,34 @@ void PlaneSweepingCuda::sweepPixelsToVolume( CudaDeviceMemoryPitched<TSim, 3>& v
             clock_t t1 = tic();
 
             ALICEVISION_LOG_DEBUG("ps_computeSimilarityVolume:" << std::endl
-                << "\t- scale: " << scale << std::endl
-                << "\t- volStepXY: " << volStepXY << std::endl
-                << "\t- volDimX: " << volDimX << std::endl
-                << "\t- volDimY: " << volDimY);
+                << "\t- scale: " << vol.Scale() << std::endl
+                << "\t- volStepXY: " << vol.StepXY() << std::endl
+                << "\t- volDimX: " << vol.DimX() << std::endl
+                << "\t- volDimY: " << vol.DimY());
 
             // last synchronous step
             // cudaDeviceSynchronize();
 #ifdef PLANE_SWEEPING_PRECOMPUTED_COLORS
-            int s = scale - 1;
-            ps_computeSimilarityVolume_precomputedColors(
-                (*rcam.pyramid)[s].tex,
-#ifdef PLANE_SWEEPING_PRECOMPUTED_COLORS_TEXTURE
-                volTcamColors_tex3D,
-#else
-                volTcamColors_dmp,
-#endif
+            vol.computePrecomputedColors(
+                (*rcam.pyramid)[vol.PrevScale()].tex,
                 volBestSim_dmp,
                 volSecBestSim_dmp,
                 rcam, rcWidth, rcHeight,
-                volStepXY, volDimX, volDimY,
                 cells.front(),
                 wsh, _nbestkernelSizeHalf,
-                scale,
-                _mp.verbose,
-                gammaC, gammaP);
+                gammaC, gammaP,
+                tci );
 #else
-            ps_computeSimilarityVolume(
+            vol.compute(
                 volBestSim_dmp,
                 volSecBestSim_dmp,
                 rcam, rcWidth, rcHeight,
                 tcam, tcWidth, tcHeight,
-                volStepXY, volDimX, volDimY,
-                depths_d,
                 cells,
                 wsh,
                 _nbestkernelSizeHalf,
-                scale,
-                _mp.verbose,
-                gammaC, gammaP);
+                gammaC, gammaP,
+                tci );
 #endif
 
 #ifdef PLANE_SWEEPING_PRECOMPUTED_COLORS
@@ -897,9 +828,7 @@ void PlaneSweepingCuda::sweepPixelsToVolume( CudaDeviceMemoryPitched<TSim, 3>& v
             ALICEVISION_LOG_DEBUG("ps_computeSimilarityVolume without precomputedColors elapsed time: " << toc(t1) << " ms.");
 #endif
         }
-        // cudaDestroyTextureObject(volTcamColors_tex3D);
     }
-    // cudaDeviceSynchronize();
 }
 
 
@@ -944,7 +873,9 @@ void PlaneSweepingCuda::SGMretrieveBestDepth(DepthSimMap& bestDepth, CudaDeviceM
     << "\t- volDimY: " << volDimY << std::endl
     << "\t- volDimZ: " << volDimZ);
 
-  int rc_cam_idx = addCam(rcCamId, 1 );
+  int rc_frame_cache_idx = addCam(rcCamId, 1 );
+
+  int rc_cam_cache_idx = _hidden->getLocalCamId(rc_frame_cache_idx);
 
   CudaDeviceMemory<float> depths_d(depths.getData().data(), depths.size());
 
@@ -952,10 +883,11 @@ void PlaneSweepingCuda::SGMretrieveBestDepth(DepthSimMap& bestDepth, CudaDeviceM
   CudaDeviceMemoryPitched<float, 2> bestSim_dmp(CudaSize<2>(volDimX, volDimY));
 
   long t1 = clock();
+
   ps_SGMretrieveBestDepth(
     bestDepth_dmp,
     bestSim_dmp,
-    rc_cam_idx, // _cams[rc_cam_idx],
+    rc_cam_cache_idx,
     depths_d,
     volSim_dmp,
     volDimX, volDimY, volDimZ,
@@ -1191,9 +1123,170 @@ bool PlaneSweepingCuda::getSilhoueteMap(StaticVectorBool* oMap, int scale, int s
     return true;
 }
 
-int listCUDADevices(bool verbose)
+/*********************************************************************************
+ * FrameCacheEntry
+ *********************************************************************************/
+
+FrameCacheEntry::FrameCacheEntry( int cache_frame_id, int w, int h, int s )
+    : _cache_frame_id( cache_frame_id )
+    , _cache_cam_id( -1 )
+    , _global_cam_id( -1 )
+    , _width( w )
+    , _height( h )
+    , _scales( s )
+    , _memBytes( 0 )
 {
-    return ps_listCUDADevices(verbose);
+    CudaSize<2> sz( w, h );
+    _host_frame = new CudaHostMemoryHeap<CudaRGBA, 2>( sz );
+    _memBytes = ps_deviceAllocate( _pyramid, w, h, s );
+}
+
+FrameCacheEntry::~FrameCacheEntry( )
+{
+    ps_deviceDeallocate( _pyramid, _scales );
+    delete _host_frame;
+}
+
+Pyramid& FrameCacheEntry::getPyramid()
+{
+    return _pyramid;
+}
+
+Pyramid* FrameCacheEntry::getPyramidPtr()
+{
+    return &_pyramid;
+}
+
+int FrameCacheEntry::getPyramidMem() const
+{
+    return _memBytes;
+}
+
+void FrameCacheEntry::fillFrame( int global_cam_id,
+                                 mvsUtils::ImagesCache<ImageRGBAf>& imageCache,
+                                 mvsUtils::MultiViewParams& mp,
+                                 cudaStream_t stream )
+{
+    /* Copy data for cached image "global_cam_id" into the host-side data buffer managed
+     * by data structure "cam". */
+    fillHostCameraData( imageCache, _host_frame, global_cam_id, mp );
+
+    /* Copy data from host-sided cache in "cam" onto the GPU and create
+     * downscaled and Gauss-filtered versions on the GPU. */
+    ps_device_updateCam( _pyramid,
+                         _host_frame,
+                         _scales,
+                         mp.getWidth(global_cam_id),
+                         mp.getHeight(global_cam_id),
+                         stream );
+}
+
+void FrameCacheEntry::fillHostCameraData(
+    mvsUtils::ImagesCache<ImageRGBAf>& ic,
+    CudaHostMemoryHeap<CudaRGBA, 2>* hostFrame, // CameraStruct& cam,
+    int c,
+    mvsUtils::MultiViewParams& mp )
+{
+    ALICEVISION_LOG_DEBUG(__FUNCTION__ << ": " << c << " " << mp.getWidth(c) << "x" << mp.getHeight(c));
+    clock_t t1 = tic();
+    mvsUtils::ImagesCache<ImageRGBAf>::ImgSharedPtr img = ic.getImg_sync( c ); // TODO RGBA
+    ALICEVISION_LOG_DEBUG(__FUNCTION__ << ": " << c << " -a- Retrieve from ImagesCache elapsed time: " << toc(t1) << " ms.");
+    t1 = tic();
+
+    const int h = mp.getHeight(c);
+    const int w = mp.getWidth(c);
+    for(int y = 0; y < h; ++y)
+    {
+        for(int x = 0; x < w; ++x)
+        {
+            const ColorRGBAf& floatRGBA = img->at(x, y);
+            CudaRGBA& pix_rgba = (*hostFrame)(x, y);
+            pix_rgba.x = floatRGBA.r * 255.0f;
+            pix_rgba.y = floatRGBA.g * 255.0f;
+            pix_rgba.z = floatRGBA.b * 255.0f;
+            pix_rgba.w = floatRGBA.a * 255.0f;
+        }
+    }
+    ALICEVISION_LOG_DEBUG(__FUNCTION__ << ": " << c << " -b- Copy to HMH elapsed time: " << toc(t1) << " ms.");
+}
+
+void FrameCacheEntry::setLocalCamId( int cache_cam_id )
+{
+    _cache_cam_id = cache_cam_id;
+}
+
+int FrameCacheEntry::getLocalCamId( ) const
+{
+    return _cache_cam_id;
+}
+
+/*********************************************************************************
+ * FrameCacheMemory
+ *********************************************************************************/
+
+FrameCacheMemory::FrameCacheMemory( int ImgsInGPUAtTime,
+                                    int maxWidth, int maxHeight, int scales, int CUDAdeviceNo )
+{
+    int allBytes = 0;
+
+    /* If not done before, initialize Gaussian filters in GPU constant mem.  */
+    ps_create_gaussian_arr( CUDAdeviceNo, scales );
+
+    pr_printfDeviceMemoryInfo();
+
+    _v.resize( ImgsInGPUAtTime );
+
+    for( int i=0; i<ImgsInGPUAtTime; i++ )
+    {
+        _v[i] = new FrameCacheEntry( i, maxWidth, maxHeight, scales );
+        allBytes += _v[i]->getPyramidMem();
+    }
+
+    ALICEVISION_LOG_INFO( "FrameCache for GPU " << CUDAdeviceNo << ", " << scales << " scales, allocated " << allBytes << " on GPU" );
+
+    pr_printfDeviceMemoryInfo();
+}
+
+FrameCacheMemory::~FrameCacheMemory( )
+{
+    for( auto ptr : _v )
+    {
+        delete ptr;
+    }
+}
+
+void FrameCacheMemory::fillFrame( int cache_frame_id,
+                                  int global_cam_id,
+                                  mvsUtils::ImagesCache<ImageRGBAf>& imageCache,
+                                  mvsUtils::MultiViewParams& mp,
+                                  cudaStream_t stream )
+{
+    _v[cache_frame_id]->fillFrame( global_cam_id, imageCache, mp, stream );
+}
+
+void FrameCacheMemory::setLocalCamId( int cache_frame_id, int cache_cam_id )
+{
+    _v[cache_frame_id]->setLocalCamId( cache_cam_id );
+}
+
+int FrameCacheMemory::getLocalCamId( int cache_frame_id ) const
+{
+    return _v[cache_frame_id]->getLocalCamId( );
+}
+
+/*********************************************************************************
+ * CamSelection
+ *********************************************************************************/
+
+bool operator==( const CamSelection& l, const CamSelection& r )
+{
+    return ( l.first == r.first && l.second == r.second );
+}
+
+bool operator<( const CamSelection& l, const CamSelection& r )
+{
+    return ( l.first < r.first || 
+           ( l.first == r.first && l.second < r.second ) );
 }
 
 } // namespace depthMap

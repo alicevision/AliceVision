@@ -27,7 +27,11 @@
 namespace aliceVision {
 namespace depthMap {
 
-#define MAX_CONCURRENT_IMAGES_IN_DEPTHMAP   10
+#define MAX_CONSTANT_CAMERA_PARAM_SETS   10
+
+#undef  PLANE_SWEEPING_PRECOMPUTED_COLORS
+#undef  PLANE_SWEEPING_PRECOMPUTED_COLORS_TEXTURE
+
 
 /*********************************************************************************
  * forward declarations
@@ -463,7 +467,7 @@ public:
     }
 
     // see below with copy() functions
-    void copyFrom( const CudaHostMemoryHeap<Type, Dim>& src );
+    void copyFrom( const CudaHostMemoryHeap<Type, Dim>& src, cudaStream_t stream = 0 );
     void copyFrom( const Type* src, size_t sx, size_t sy );
     void copyFrom( const CudaDeviceMemoryPitched<Type, Dim>& src );
 
@@ -782,15 +786,23 @@ public:
  *********************************************************************************/
 
 template<class Type, unsigned Dim>
-void CudaDeviceMemoryPitched<Type, Dim>::copyFrom( const CudaHostMemoryHeap<Type, Dim>& src )
+void CudaDeviceMemoryPitched<Type, Dim>::copyFrom( const CudaHostMemoryHeap<Type, Dim>& src, cudaStream_t stream )
 {
     const cudaMemcpyKind kind = cudaMemcpyHostToDevice;
+    cudaError_t err;
     if(Dim == 1)
     {
-        cudaError_t err = cudaMemcpy(this->getBytePtr(),
-                                     src.getBytePtr(),
-                                     src.getBytesUnpadded(),
-                                     kind);
+        if( stream == 0 )
+            err = cudaMemcpy( this->getBytePtr(),
+                              src.getBytePtr(),
+                              src.getBytesUnpadded(),
+                              kind );
+        else
+            err = cudaMemcpyAsync( this->getBytePtr(),
+                                   src.getBytePtr(),
+                                   src.getBytesUnpadded(),
+                                   kind,
+                                   stream );
         THROW_ON_CUDA_ERROR(err, "Failed to copy (" << __FILE__ << " " << __LINE__ << ")");
     }
     else if(Dim >= 2)
@@ -798,13 +810,23 @@ void CudaDeviceMemoryPitched<Type, Dim>::copyFrom( const CudaHostMemoryHeap<Type
         size_t number_of_rows = 1;
         for( int i=1; i<Dim; i++ ) number_of_rows *= src.getUnitsInDim(i);
 
-        cudaError_t err = cudaMemcpy2D( this->getBytePtr(),
-                                        this->getPitch(),
-                                        src.getBytePtr(),
-                                        src.getPitch(),
-                                        src.getUnpaddedBytesInRow(),
-                                        number_of_rows,
-                                        kind);
+        if( stream == 0 )
+            err = cudaMemcpy2D( this->getBytePtr(),
+                                this->getPitch(),
+                                src.getBytePtr(),
+                                src.getPitch(),
+                                src.getUnpaddedBytesInRow(),
+                                number_of_rows,
+                                kind );
+        else
+            err = cudaMemcpy2DAsync( this->getBytePtr(),
+                                     this->getPitch(),
+                                     src.getBytePtr(),
+                                     src.getPitch(),
+                                     src.getUnpaddedBytesInRow(),
+                                     number_of_rows,
+                                     kind,
+                                     stream );
         THROW_ON_CUDA_ERROR(err, "Failed to copy (" << __FILE__ << " " << __LINE__ << ")");
     }
 }
@@ -1256,16 +1278,20 @@ struct TexturedArray
     cudaTextureObject_t tex;
 };
 
+struct CamCacheIdx
+{
+    int i;
+
+    CamCacheIdx( int val ) : i(val) { }
+};
+
 typedef std::vector<TexturedArray> Pyramid;
-typedef std::vector<Pyramid> Pyramids;
 
 struct CameraStruct
 {
-    int                     param_dev = 0;
-    // const CameraStructBase* param_dev = nullptr;
-    CudaHostMemoryHeap<CudaRGBA, 2>* tex_rgba_hmh = nullptr;
-    Pyramid*                         pyramid = nullptr;
-    int camId;
+    CamCacheIdx  param_dev = 0;
+    Pyramid*     pyramid = nullptr;
+    int          camId;
     cudaStream_t stream; // allow async work on cameras used in parallel
 };
 

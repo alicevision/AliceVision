@@ -93,7 +93,7 @@ __global__ void fuse_getOptDeptMapFromOPtDepthSimMap_kernel(float* optDepthMap, 
 /**
  * @return (smoothStep, energy)
  */
-__device__ float2 getCellSmoothStepEnergy( int rc_cam, // const CameraStructBase& rc_cam,
+__device__ float2 getCellSmoothStepEnergy( int rc_cam_cache_idx,
                                            cudaTextureObject_t depthTex, const int2& cell0)
 {
     float2 out = make_float2(0.0f, 180.0f);
@@ -118,11 +118,11 @@ __device__ float2 getCellSmoothStepEnergy( int rc_cam, // const CameraStructBase
     float dB = tex2D<float>(depthTex, float(cellB.x) + 0.5f, float(cellB.y) + 0.5f);
 
     // Get associated 3D points
-    float3 p0 = get3DPointForPixelAndDepthFromRC(rc_cam, cell0, d0);
-    float3 pL = get3DPointForPixelAndDepthFromRC(rc_cam, cellL, dL);
-    float3 pR = get3DPointForPixelAndDepthFromRC(rc_cam, cellR, dR);
-    float3 pU = get3DPointForPixelAndDepthFromRC(rc_cam, cellU, dU);
-    float3 pB = get3DPointForPixelAndDepthFromRC(rc_cam, cellB, dB);
+    float3 p0 = get3DPointForPixelAndDepthFromRC(rc_cam_cache_idx, cell0, d0);
+    float3 pL = get3DPointForPixelAndDepthFromRC(rc_cam_cache_idx, cellL, dL);
+    float3 pR = get3DPointForPixelAndDepthFromRC(rc_cam_cache_idx, cellR, dR);
+    float3 pU = get3DPointForPixelAndDepthFromRC(rc_cam_cache_idx, cellU, dU);
+    float3 pB = get3DPointForPixelAndDepthFromRC(rc_cam_cache_idx, cellB, dB);
 
     // Compute the average point based on neighbors (cg)
     float3 cg = make_float3(0.0f, 0.0f, 0.0f);
@@ -137,12 +137,12 @@ __device__ float2 getCellSmoothStepEnergy( int rc_cam, // const CameraStructBase
     if(n > 1.0f)
     {
         cg = cg / n; // average of x, y, depth
-        float3 vcn = camsBasesDev[rc_cam].C - p0;
+        float3 vcn = camsBasesDev[rc_cam_cache_idx].C - p0;
         normalize(vcn);
         // pS: projection of cg on the line from p0 to camera
         float3 pS = closestPointToLine3D(cg, p0, vcn);
         // keep the depth difference between pS and p0 as the smoothing step
-        out.x = size(camsBasesDev[rc_cam].C - pS) - d0;
+        out.x = size(camsBasesDev[rc_cam_cache_idx].C - pS) - d0;
     }
 
     float e = 0.0f;
@@ -168,7 +168,7 @@ __device__ float2 getCellSmoothStepEnergy( int rc_cam, // const CameraStructBase
 }
 
 __global__ void fuse_optimizeDepthSimMap_kernel(cudaTextureObject_t rc_tex,
-                                                int rc_cam, // const CameraStructBase& rc_cam,
+                                                int rc_cam_cache_idx,
                                                 cudaTextureObject_t imgVarianceTex,
                                                 cudaTextureObject_t depthTex,
                                                 float2* out_optDepthSimMap, int optDepthSimMap_p,
@@ -196,7 +196,7 @@ __global__ void fuse_optimizeDepthSimMap_kernel(cudaTextureObject_t rc_tex,
 
     if (depthOpt > 0.0f)
     {
-        const float2 depthSmoothStepEnergy = getCellSmoothStepEnergy(rc_cam, depthTex, pix); // (smoothStep, energy)
+        const float2 depthSmoothStepEnergy = getCellSmoothStepEnergy(rc_cam_cache_idx, depthTex, pix); // (smoothStep, energy)
         float stepToSmoothDepth = depthSmoothStepEnergy.x;
         stepToSmoothDepth = copysign(fminf(fabsf(stepToSmoothDepth), roughPixSize / 10.0f), stepToSmoothDepth);
         const float depthEnergy = depthSmoothStepEnergy.y; // max angle with neighbors

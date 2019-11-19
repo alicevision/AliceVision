@@ -14,6 +14,18 @@
 namespace aliceVision {
 namespace depthMap {
 
+/* The LRUCache template takes a type T.
+ * T must be copyable and offer operator<, operator==, as well as operator=(int)
+ * and constructors T(), T(const T&) and T(int).
+ * T is treated like an intrinsic type, but is not restricted to these types.
+ *
+ * Implement LRU caching functionality. This is meant to decouple the LRU-style use of
+ * two pieces of cached information on the GPU:
+ * - the dynamically allocated image pyramids
+ * - the size of the GPU-constant camera parameters that is fixed at compile time
+ * The LRUCache class may be more generally useful, for example for the host-sided
+ * image cache.
+ */
 template <typename T>
 class LRUCache
 {
@@ -22,6 +34,16 @@ public:
         : _owner( size, -1 )
         , _max_size( size )
     { }
+
+    LRUCache( )
+        : _max_size( 0 )
+    { }
+
+    void resize( int size )
+    {
+        _max_size = size;
+        _owner.resize( size, -1 );
+    }
 
     inline int getIndex( const T& val )
     {
@@ -45,6 +67,12 @@ public:
      */
     inline bool insert( const T& val, int& position, T& oldVal )
     {
+        if( _max_size == 0 )
+        {
+            std::cerr << __FILE__ << ":" << __LINE__ << " ERROR: LRUCache must be resized before inserting elements (setting max size to 2)" << std::endl;
+            resize( 2 );
+        }
+
         int cell;
         typename std::vector<T>::iterator o_it;
         
@@ -77,6 +105,17 @@ public:
             position = ( o_it - _owner.begin() );
             return true;
         }
+    }
+
+    inline bool insert( const T& val, int* position )
+    {
+        T dummy;
+        return insert( val, *position, dummy );
+    }
+
+    inline bool insert( const T& val, int* position, T* oldVal )
+    {
+        return insert( val, *position, *oldVal );
     }
 
     inline void clear()
