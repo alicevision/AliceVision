@@ -59,7 +59,9 @@ void process(const std::string &dstColorImage, const IntrinsicBase* cam, const o
   if(cam->isValid() && cam->have_disto())
   {
     // undistort the image and save it
-    UndistortImage(image, cam, image_ud, ImageT::Tpixel(ImageT::Tpixel::Zero()));
+    using Pix = typename ImageT::Tpixel;
+    Pix pixZero(Pix::Zero());
+    UndistortImage(image, cam, image_ud, pixZero);
     writeImage(dstColorImage, image_ud, image::EImageColorSpace::AUTO, metadata);
   }
   else
