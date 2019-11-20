@@ -235,9 +235,9 @@ bool upscale(aliceVision::image::Image<image::RGBfColor> & outputColor, aliceVis
       }
 
       outputColor(di, dj) = inputColor(i, j);
-      outputColor(di, dj + 1) = inputColor(i, j);
-      outputColor(di + 1, dj) = inputColor(i, j);
-      outputColor(di + 1, dj + 1) = inputColor(i, j);
+      outputColor(di, dj + 1) = image::RGBfColor(0.0f);
+      outputColor(di + 1, dj) = image::RGBfColor(0.0f);
+      outputColor(di + 1, dj + 1) = image::RGBfColor(0.0f);
 
       outputMask(di, dj) = 255;
       outputMask(di, dj + 1) = 255;
@@ -800,8 +800,6 @@ public:
     _panorama = img.block(0, 0, _panorama.Height(), _panorama.Width());
     _mask = mask.block(0, 0, _panorama.Height(), _panorama.Width());
 
-    image::writeImage("/home/mmoc/test/out.exr", pyramid_panorama.getStackResult(), image::EImageColorSpace::NO_CONVERSION);
-
     return true;
   }
 
@@ -907,7 +905,7 @@ int main(int argc, char **argv) {
   for (auto & item : configTree.get_child("views")) {
     ConfigView cv;
 
-    if (pos == 24 || pos == 25 || pos == 28) {
+    if (pos == 24 || pos == 25 || pos == 26) {
     cv.img_path = item.second.get<std::string>("filename_view");
     cv.mask_path = item.second.get<std::string>("filename_mask");
     cv.weights_path = item.second.get<std::string>("filename_weights");
