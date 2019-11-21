@@ -70,7 +70,7 @@ void process(const std::string &dstColorImage, const IntrinsicBase* cam, const o
   }
 }
 
-bool tryLoadMask(image::Image<unsigned char> mask, const std::vector<std::string>& masksFolders, const IndexT viewId, const std::string & srcImage)
+bool tryLoadMask(image::Image<unsigned char>* mask, const std::vector<std::string>& masksFolders, const IndexT viewId, const std::string & srcImage)
 {
   for(const auto & masksFolder_str : masksFolders)
   {
@@ -82,12 +82,12 @@ bool tryLoadMask(image::Image<unsigned char> mask, const std::vector<std::string
 
       if(fs::exists(idMaskPath))
       {
-        image::readImage(idMaskPath.string(), mask, image::EImageColorSpace::LINEAR);
+        image::readImage(idMaskPath.string(), *mask, image::EImageColorSpace::LINEAR);
         return true;
       }
       else if(fs::exists(nameMaskPath))
       {
-        image::readImage(nameMaskPath.string(), mask, image::EImageColorSpace::LINEAR);
+        image::readImage(nameMaskPath.string(), *mask, image::EImageColorSpace::LINEAR);
         return true;
       }
     }
@@ -263,7 +263,7 @@ bool prepareDenseScene(const SfMData& sfmData,
       }
 
       image::Image<unsigned char> mask;
-      if(tryLoadMask(mask, masksFolders, viewId, srcImage))
+      if(tryLoadMask(&mask, masksFolders, viewId, srcImage))
       {
         process<Image<RGBAfColor>>(dstColorImage, cam, metadata, srcImage, evCorrection, exposureCompensation, [&mask] (Image<RGBAfColor> & image)
         {
