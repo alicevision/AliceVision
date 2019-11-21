@@ -8,10 +8,10 @@ namespace cv{
 template<> class DataType<aliceVision::image::RGBColor>
 {
 public:
-    typedef uchar       value_type;
-    typedef int         work_type;
-    typedef value_type  channel_type;
-    typedef value_type  vec_type;
+    using value_type = uchar;
+    using work_type = int;
+    using channel_type = value_type ;
+    using vec_type = value_type;
     enum { generic_type = 0,
            depth        = CV_8U,
            channels     = 3,

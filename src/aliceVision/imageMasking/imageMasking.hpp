@@ -10,9 +10,9 @@
 
 namespace aliceVision{
 
-  namespace image{
-    template <class> class Image;
-  }
+namespace image{
+template <class> class Image;
+}
 
 namespace imageMasking{
 
@@ -22,7 +22,7 @@ using OutImage = image::Image<unsigned char>;
 /**
  * @brief Create a mask based on the hue of each pixel.
  *
- * @param[in] result The resulting binary mask.
+ * @param[out] result The resulting binary mask.
  * @param[in] inputPath The path of the image to mask.
  * @param[in] hue Hue value to isolate in [0,1] range. 0 = red, 0.33 = green, 0.66 = blue, 1 = red.
  * @param[in] hueRange Tolerance around the hue value to isolate..
@@ -33,9 +33,31 @@ using OutImage = image::Image<unsigned char>;
  */
 void hsv(OutImage& result, const InImagePath& inputPath, float hue, float hueRange, float minSaturation, float maxSaturation, float minValue, float maxValue);
 
+/**
+ * @brief Invert a binary image (white <-> black)
+ * @param[inout] result A binary image
+ */
 void postprocess_invert(OutImage& result);
+
+/**
+ * @brief Apply a closing morphological transform
+ * @param[inout] result A binary image.
+ * @param[in] iterations How many times the 3x3 kernel is applied.
+ */
 void postprocess_closing(OutImage& result, int iterations);
+
+/**
+ * @brief Dilate (expand) white pixels of a binary image
+ * @param[inout] result A binary image.
+ * @param[in] iterations How many times the 3x3 kernel is applied.
+ */
 void postprocess_dilate(OutImage& result, int iterations);
+
+/**
+ * @brief Erode (contract) white pixels of a binary image
+ * @param[inout] result A binary image.
+ * @param[in] iterations How many times the 3x3 kernel is applied.
+ */
 void postprocess_erode(OutImage& result, int iterations);
 
 }//namespace imageMasking
