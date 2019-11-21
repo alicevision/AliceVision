@@ -10,7 +10,9 @@
 #include <limits>
 #include <iostream>
 #include <fstream>
+
 #include <aliceVision/alicevision_omp.hpp>
+#include <aliceVision/system/Logger.hpp>
 
 
 namespace aliceVision {
@@ -54,12 +56,18 @@ void hdrMerge::process(const std::vector< image::Image<image::RGBfColor> > &imag
   assert(!images.empty());
   assert(images.size() == times.size());
 
-  //reset radiance image
-  radiance.fill(image::RGBfColor(0.f, 0.f, 0.f));
-
-  //get images width, height
+  // get images width, height
   const std::size_t width = images.front().Width();
   const std::size_t height = images.front().Height();
+
+  // resize and reset radiance image to 0.0
+  radiance.resize(width, height, true, image::RGBfColor(0.f, 0.f, 0.f));
+
+  ALICEVISION_LOG_TRACE("[hdrMerge] Images to fuse:");
+  for(int i = 0; i < images.size(); ++i)
+  {
+    ALICEVISION_LOG_TRACE(images[i].Width() << "x" << images[i].Height() << ", time: " << times[i]);
+  }
 
   const float maxLum = 1000.0f;
   const float minLum = 0.0001f;

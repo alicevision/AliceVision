@@ -541,7 +541,7 @@ int main(int argc, char * argv[]) {
     /* Merge HDR images */
     hdr::hdrMerge merge;
     float targetTime = targetView->getMetadataShutter();
-    image::Image<image::RGBfColor> HDRimage(targetView->getWidth(), targetView->getHeight(), false);
+    image::Image<image::RGBfColor> HDRimage;
     merge.process(images, groupedExposures[g], fusionWeight, response, HDRimage, targetTime, false, clampedValueCorrection);
 
     /* Output image file path */
