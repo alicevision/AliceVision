@@ -7,9 +7,9 @@
             ],
             "defines": [],
             "compilerPath": "/usr/bin/clang",
-            "intelliSenseMode": "clang-x64",
             "configurationProvider": "vector-of-bool.cmake-tools",
-            "compileCommands": "${workspaceFolder}/build/compile_commands.json"
+            "compileCommands": "${workspaceFolder}/build/compile_commands.json",
+            
         }
     ],
     "version": 4
