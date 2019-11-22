@@ -448,10 +448,9 @@ void BundleAdjustmentCeres::addIntrinsicsToProblem(const sfmData::SfMData& sfmDa
       constantIntrinisc.push_back(0);
     }
 
-    const std::size_t minImagesForOpticalCenter = 3;
-
     // optical center
-    if(refineIntrinsicsOpticalCenter && (usageCount > minImagesForOpticalCenter))
+    if((refineOptions & REFINE_INTRINSICS_OPTICALCENTER_ALWAYS) ||
+       ((refineOptions & REFINE_INTRINSICS_OPTICALCENTER_IF_ENOUGH_DATA) && _minNbImagesToRefineOpticalCenter > 0 && usageCount >= _minNbImagesToRefineOpticalCenter))
     {
       // refine optical center within 10% of the image size.
       assert(intrinsicBlock.size() >= 3);

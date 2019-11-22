@@ -221,13 +221,16 @@ public:
 
 
   /**
-   * @brief Return true if the given metadata name exists
+   * @brief Return true if the given metadata name exists and is not empty
    * @param[in] name The metadata name
    * @return true if the corresponding metadata value exists
    */
   bool hasMetadata(const std::string& name) const
   {
-    return (_metadata.find(name) != _metadata.end());
+    auto it = _metadata.find(name);
+    if(it == _metadata.end())
+      return false;
+    return !it->second.empty();
   }
 
   /**

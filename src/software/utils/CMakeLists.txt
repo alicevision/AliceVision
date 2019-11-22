@@ -174,6 +174,16 @@ alicevision_add_software(aliceVision_utils_keyframeSelection
 )
 
 
+# Print distances between 3D objects
+alicevision_add_software(aliceVision_utils_sfmDistances
+  SOURCE main_sfmDistances.cpp
+  FOLDER ${FOLDER_SOFTWARE_UTILS}
+  LINKS aliceVision_sfm
+        aliceVision_sfmData
+        aliceVision_sfmDataIO
+        ${Boost_LIBRARIES}
+)
+
 # Split 360 images in input in order to export square images
 alicevision_add_software(aliceVision_utils_split360Images
   SOURCE main_split360Images.cpp

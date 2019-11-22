@@ -23,6 +23,8 @@
 #include <string>
 #include <vector>
 #include <cstdlib>
+#include <regex>
+
 
 // These constants define the current software version.
 // They must be updated when the command line is changed.
@@ -407,30 +409,74 @@ int main(int argc, char **argv)
   // create missing intrinsics
   auto viewPairItBegin = sfmData.getViews().begin();
 
-  #pragma omp parallel for
+  std::regex extractComposedNumberRegex("\\d+(?:[\\-\\:\\_\\.]\\d+)*");
+  std::regex extractNumberRegex("\\d+");
+
   for(int i = 0; i < sfmData.getViews().size(); ++i)
   {
     sfmData::View& view = *(std::next(viewPairItBegin,i)->second);
 
     // try to detect rig structure in the input folder
     const fs::path parentPath = fs::path(view.getImagePath()).parent_path();
-    if(parentPath.parent_path().stem() == "rig")
+    if(boost::starts_with(parentPath.parent_path().stem().string(), "rig"))
     {
-      try
-      {
-        const int frameId = std::stoi(fs::path(view.getImagePath()).stem().string());
-        const int subPoseId = std::stoi(parentPath.stem().string());
-        std::hash<std::string> hash; // TODO use boost::hash_combine
-        view.setRigAndSubPoseId(hash(parentPath.parent_path().string()), subPoseId);
-        view.setFrameId(static_cast<IndexT>(frameId));
+        {
+            // Extract the rig index from the folder name.
+            // Warning: Needs to be an index starting from 0 (and not a random number)
+            std::smatch matches;
+            std::string p = parentPath.stem().string();
+            if (std::regex_search(p, matches, extractNumberRegex))
+            {
+                std::string s = matches[matches.size() - 1].str();
+                int subPoseId = boost::lexical_cast<IndexT>(s);
+                view.setRigAndSubPoseId(std::hash<std::string>()(parentPath.parent_path().string()), subPoseId);
+            }
+            else
+            {
+                ALICEVISION_LOG_WARNING("Invalid rig structure for view: " << view.getImagePath() << ", p: " << p << ". Used as single image.");
+            }
+        }
+        {
+            // Extract the frame ID which will be used to associate the frames from the different cameras of the rig.
+            IndexT frameId = 0;
+            std::string p = fs::path(view.getImagePath()).stem().string();
+
+            {
+                std::smatch matches;
+                std::string s = p;
+                std::string out;
+                while (std::regex_search(s, matches, extractComposedNumberRegex))
+                {
+                    out = matches[0];
+                    s = matches.suffix().str();
+                }
+                out = std::regex_replace(out, std::regex("\\D"), std::string(""));
+                if (!out.empty())
+                {
+                    frameId = boost::lexical_cast<IndexT>(out);
+                }
+                else
+                {
+                    frameId = std::hash<std::string>()(p);
+                }
+            }
+            view.setFrameId(frameId);
+        }
 
         #pragma omp critical
         detectedRigs[view.getRigId()][view.getSubPoseId()]++;
-      }
-      catch(std::exception& e)
-      {
-        ALICEVISION_LOG_WARNING("Invalid rig structure for view: " << view.getImagePath() << std::endl << "Used as single image.");
-      }
+    }
+    else
+    {
+        // Extract a frame number if there is one.
+        std::smatch matches;
+        std::string p = fs::path(view.getImagePath()).stem().string();
+        if (std::regex_search(p, matches, extractNumberRegex))
+        {
+            std::string s = matches[matches.size() - 1].str();
+            IndexT frameId = boost::lexical_cast<IndexT>(s);
+            view.setFrameId(frameId);
+        }
     }
 
     IndexT intrinsicId = view.getIntrinsicId();
@@ -653,17 +699,21 @@ int main(int argc, char **argv)
       for(const auto& nbPosePerSubPoseId : subPosesPerRigId.second)
       {
         // check subPoseId
-        if((nbPosePerSubPoseId.first >= nbSubPose) || (nbPosePerSubPoseId.first < 0))
+        if(nbPosePerSubPoseId.first >= nbSubPose)
         {
-          ALICEVISION_LOG_ERROR("Wrong subPoseId in detected rig structure.");
+            ALICEVISION_LOG_ERROR("Wrong subPoseId in rig structure: it should be an index not a random number (subPoseId: " << nbPosePerSubPoseId.first << ", number of subposes: " << nbSubPose << ").");
+            return EXIT_FAILURE;
+        }
+        if(nbPosePerSubPoseId.first < 0)
+        {
+          ALICEVISION_LOG_ERROR("Wrong subPoseId in rig structure: cannot contain negative value: " << nbPosePerSubPoseId.first);
           return EXIT_FAILURE;
         }
 
         // check nbPoses
         if(nbPosePerSubPoseId.second != nbPoses)
         {
-          ALICEVISION_LOG_ERROR("Wrong number of poses per subPose in detected rig structure (" << nbPosePerSubPoseId.second << " != " << nbPoses << ").");
-          return EXIT_FAILURE;
+          ALICEVISION_LOG_WARNING("Wrong number of poses per subPose in detected rig structure (" << nbPosePerSubPoseId.second << " != " << nbPoses << ").");
         }
       }
 
