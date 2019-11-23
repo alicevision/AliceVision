@@ -27,6 +27,12 @@
 namespace aliceVision {
 namespace depthMap {
 
+#define MAX_CONSTANT_CAMERA_PARAM_SETS   10
+
+#undef  PLANE_SWEEPING_PRECOMPUTED_COLORS
+#undef  PLANE_SWEEPING_PRECOMPUTED_COLORS_TEXTURE
+
+
 /*********************************************************************************
  * forward declarations
  *********************************************************************************/
@@ -461,9 +467,11 @@ public:
     }
 
     // see below with copy() functions
-    void copyFrom( const CudaHostMemoryHeap<Type, Dim>& src );
+    void copyFrom( const CudaHostMemoryHeap<Type, Dim>& src, cudaStream_t stream = 0 );
     void copyFrom( const Type* src, size_t sx, size_t sy );
     void copyFrom( const CudaDeviceMemoryPitched<Type, Dim>& src );
+
+    void copyTo( Type* dst, size_t sx, size_t sy ) const;
 
     Type* getBuffer()
     {
@@ -778,15 +786,23 @@ public:
  *********************************************************************************/
 
 template<class Type, unsigned Dim>
-void CudaDeviceMemoryPitched<Type, Dim>::copyFrom( const CudaHostMemoryHeap<Type, Dim>& src )
+void CudaDeviceMemoryPitched<Type, Dim>::copyFrom( const CudaHostMemoryHeap<Type, Dim>& src, cudaStream_t stream )
 {
     const cudaMemcpyKind kind = cudaMemcpyHostToDevice;
+    cudaError_t err;
     if(Dim == 1)
     {
-        cudaError_t err = cudaMemcpy(this->getBytePtr(),
-                                     src.getBytePtr(),
-                                     src.getBytesUnpadded(),
-                                     kind);
+        if( stream == 0 )
+            err = cudaMemcpy( this->getBytePtr(),
+                              src.getBytePtr(),
+                              src.getBytesUnpadded(),
+                              kind );
+        else
+            err = cudaMemcpyAsync( this->getBytePtr(),
+                                   src.getBytePtr(),
+                                   src.getBytesUnpadded(),
+                                   kind,
+                                   stream );
         THROW_ON_CUDA_ERROR(err, "Failed to copy (" << __FILE__ << " " << __LINE__ << ")");
     }
     else if(Dim >= 2)
@@ -794,13 +810,23 @@ void CudaDeviceMemoryPitched<Type, Dim>::copyFrom( const CudaHostMemoryHeap<Type
         size_t number_of_rows = 1;
         for( int i=1; i<Dim; i++ ) number_of_rows *= src.getUnitsInDim(i);
 
-        cudaError_t err = cudaMemcpy2D( this->getBytePtr(),
-                                        this->getPitch(),
-                                        src.getBytePtr(),
-                                        src.getPitch(),
-                                        src.getUnpaddedBytesInRow(),
-                                        number_of_rows,
-                                        kind);
+        if( stream == 0 )
+            err = cudaMemcpy2D( this->getBytePtr(),
+                                this->getPitch(),
+                                src.getBytePtr(),
+                                src.getPitch(),
+                                src.getUnpaddedBytesInRow(),
+                                number_of_rows,
+                                kind );
+        else
+            err = cudaMemcpy2DAsync( this->getBytePtr(),
+                                     this->getPitch(),
+                                     src.getBytePtr(),
+                                     src.getPitch(),
+                                     src.getUnpaddedBytesInRow(),
+                                     number_of_rows,
+                                     kind,
+                                     stream );
         THROW_ON_CUDA_ERROR(err, "Failed to copy (" << __FILE__ << " " << __LINE__ << ")");
     }
 }
@@ -877,6 +903,26 @@ void CudaHostMemoryHeap<Type, Dim>::copyFrom( const CudaDeviceMemoryPitched<Type
                                         this->getUnpaddedBytesInRow(),
                                         number_of_rows,
                                         kind);
+
+        THROW_ON_CUDA_ERROR(err, "Failed to copy (" << __FILE__ << " " << __LINE__ << ")");
+    }
+}
+
+template<class Type, unsigned Dim>
+void CudaDeviceMemoryPitched<Type, Dim>::copyTo( Type* dst, size_t sx, size_t sy ) const
+{
+    if(Dim == 2)
+    {
+        const size_t dst_pitch  = sx * sizeof(Type);
+        const size_t dst_width  = sx * sizeof(Type);
+        const size_t dst_height = sy;
+        cudaError_t err = cudaMemcpy2D(dst,
+                                       dst_pitch,
+                                       this->getBytePtr(),
+                                       this->getPitch(),
+                                       dst_width,
+                                       dst_height,
+                                       cudaMemcpyDeviceToHost);
 
         THROW_ON_CUDA_ERROR(err, "Failed to copy (" << __FILE__ << " " << __LINE__ << ")");
     }
@@ -1213,8 +1259,6 @@ struct CameraStructBase
     float3 ZVect;
 };
 
-typedef CameraStructBase DeviceCameraStructBase;
-
 // #define ALICEVISION_DEPTHMAP_TEXTURE_USE_UCHAR
 
 #ifdef ALICEVISION_DEPTHMAP_TEXTURE_USE_UCHAR
@@ -1228,23 +1272,28 @@ using CudaRGBA = float4;
 #endif
 
 
-struct CameraStruct
-{
-    const CameraStructBase* param_hst = nullptr;
-    const CameraStructBase* param_dev = nullptr;
-    CudaHostMemoryHeap<CudaRGBA, 2>* tex_rgba_hmh = nullptr;
-    int camId;
-    cudaStream_t stream; // allow async work on cameras used in parallel
-};
-
 struct TexturedArray
 {
     CudaDeviceMemoryPitched<CudaRGBA, 2>* arr = nullptr;
     cudaTextureObject_t tex;
 };
 
+struct CamCacheIdx
+{
+    int i;
+
+    CamCacheIdx( int val ) : i(val) { }
+};
+
 typedef std::vector<TexturedArray> Pyramid;
-typedef std::vector<Pyramid> Pyramids;
+
+struct CameraStruct
+{
+    CamCacheIdx  param_dev = 0;
+    Pyramid*     pyramid = nullptr;
+    int          camId;
+    cudaStream_t stream; // allow async work on cameras used in parallel
+};
 
 /**
 * @notes: use normalized coordinates

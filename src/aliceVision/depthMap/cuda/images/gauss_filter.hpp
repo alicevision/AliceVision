@@ -7,7 +7,7 @@
 #pragma once
 
 #include <aliceVision/depthMap/cuda/commonStructures.hpp>
-#include <aliceVision/depthMap/cuda/planeSweeping/device_utils.h>
+#include <aliceVision/depthMap/cuda/deviceCommon/device_utils.h>
 
 #include <set>
 
@@ -31,9 +31,10 @@ __device__ inline float getGauss(int scale, int idx)
 
 extern void ps_create_gaussian_arr( int deviceId, int scales );
 
-extern void ps_downscale_gauss( Pyramids& ps_texs_arr,
-                                int camId, int scale,
-                                int w, int h, int radius );
+extern void ps_downscale_gauss( Pyramid& pyramid,
+                                int scale,
+                                int w, int h, int radius,
+                                cudaStream_t stream );
 
 
 #ifdef ALICEVISION_TMP_WITH_BILATERALFILTER

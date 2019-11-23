@@ -44,17 +44,18 @@ private:
 
 
 template <typename T>
-inline T* get3DBufferAt_h(T* ptr, int spitch, int pitch, int x, int y, int z)
+static inline
+T* get3DBufferAt_h(T* ptr, int spitch, int pitch, int x, int y, int z)
 {
     return ((T*)(((char*)ptr) + z * spitch + y * pitch)) + x;
 }
 
 template <typename T>
-inline const T* get3DBufferAt_h(const T* ptr, int spitch, int pitch, int x, int y, int z)
+static inline
+const T* get3DBufferAt_h(const T* ptr, int spitch, int pitch, int x, int y, int z)
 {
     return ((const T*)(((const char*)ptr) + z * spitch + y * pitch)) + x;
 }
-
 
 } // namespace depthMap
 } // namespace aliceVision
