@@ -154,13 +154,19 @@ inline __device__ float CostYKfromLab(const int dx, const int dy, const float4 c
     //);
 
     // Euclidean distance in Lab, assuming linear RGB
-    const float deltaC = Euclidean3(c1, c2);
+    float deltaC = Euclidean3(c1, c2);
     // const float deltaC = fmaxf(fabs(c1.x-c2.x),fmaxf(fabs(c1.y-c2.y),fabs(c1.z-c2.z)));
 
-    // spatial distance to the center of the patch (in pixels)
-    const float deltaP = sqrtf(float(dx * dx + dy * dy));
+    deltaC /= gammaC;
 
-    return __expf(-(deltaC / gammaC + deltaP / gammaP)); // Yoon & Kweon
+    // spatial distance to the center of the patch (in pixels)
+    float deltaP = sqrtf(float(dx * dx + dy * dy));
+
+    deltaP /= gammaP;
+
+    deltaC += deltaP;
+
+    return expf(-deltaC); // Yoon & Kweon
     // return __expf(-(deltaC * deltaC / (2 * gammaC * gammaC))) * sqrtf(__expf(-(deltaP * deltaP / (2 * gammaP * gammaP)))); // DCB
 }
 /*
