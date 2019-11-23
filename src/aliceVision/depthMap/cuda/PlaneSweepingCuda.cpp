@@ -255,14 +255,13 @@ int PlaneSweepingCuda::imagesInGPUAtTime( mvsUtils::MultiViewParams& mp, int sca
 
     if( value > MAX_CONSTANT_CAMERA_PARAM_SETS )
     {
-        ALICEVISION_LOG_ERROR( "DepthMap has been compiled with a hard limit of "
-                               << MAX_CONSTANT_CAMERA_PARAM_SETS
-                               << " concurrent images. "<< std::endl
-                               << "Recompilation required for larger values." << std::endl
-                               << "Change define MAX_CONSTANT_CAMERA_PARAM_SETS "
-                               << " but consider hardware limits for CUDA constant memory." );
-        exit( -1 );
-
+        ALICEVISION_LOG_WARNING( "DepthMap has been compiled with a hard limit of "
+                                 << MAX_CONSTANT_CAMERA_PARAM_SETS
+                                 << " concurrent images. "<< std::endl
+                                 << "Recompilation required for larger values." << std::endl
+                                 << "Change define MAX_CONSTANT_CAMERA_PARAM_SETS "
+                                 << " but consider hardware limits for CUDA constant memory." );
+        value = MAX_CONSTANT_CAMERA_PARAM_SETS;
     }
 
     return value;
