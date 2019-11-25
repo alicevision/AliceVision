@@ -42,7 +42,7 @@ typedef struct {
 } ConfigView;
 
 Eigen::VectorXf gaussian_kernel_vector(size_t kernel_length, float sigma) {
-  
+
   int radius = kernel_length / 2;
 
   Eigen::VectorXd x(kernel_length + 1);
@@ -54,7 +54,7 @@ Eigen::VectorXf gaussian_kernel_vector(size_t kernel_length, float sigma) {
   for (int i = 0; i < kernel_length + 1; i++) {
     cdf(i) = 0.5 * (1.0 + std::erf(x(i)/(sigma * sqrt(2.0))));
   }
-  
+
 
   Eigen::VectorXd k1d(kernel_length);
   for (int i = 0; i < kernel_length; i++) {
@@ -91,7 +91,7 @@ bool convolveHorizontal(image::Image<image::RGBfColor> & output, const image::Im
       float sum_mask = 0.0f;
 
       if (!mask(i, j)) {
-        output(i, j) = image::RGBfColor(0.0); 
+        output(i, j) = image::RGBfColor(0.0);
         continue;
       }
 
@@ -181,11 +181,11 @@ bool convolveVertical(image::Image<image::RGBfColor> & output, const image::Imag
       float sum_mask = 0.0f;
 
       if (!mask(i, j)) {
-        output(i, j) = image::RGBfColor(0.0); 
+        output(i, j) = image::RGBfColor(0.0);
         continue;
       }
 
-      
+
       for (int k = 0; k < kernel.size(); k++) {
 
         double w = kernel(k);
@@ -223,7 +223,7 @@ bool convolveVertical(image::Image<float> & output, const image::Image<float> & 
 
       float sum = 0.0f;
       float sum_mask = 0.0f;
-      
+
       for (int k = 0; k < kernel.size(); k++) {
 
         double w = kernel(k);
@@ -326,7 +326,7 @@ bool upscale(aliceVision::image::Image<image::RGBfColor> & outputColor, aliceVis
         outputMask(di, dj + 1) = 0;
         outputMask(di + 1, dj) = 0;
         outputMask(di + 1, dj + 1) = 0;
-        
+
         continue;
       }
 
@@ -372,7 +372,7 @@ bool difference(aliceVision::image::Image<image::RGBfColor> & outputColor, alice
 
   for (int i = 0; i < height; i++) {
     for (int j = 0; j < width; j++) {
-      
+
       if (aMask(i, j)) {
         if (bMask(i, j)) {
           outputColor(i, j) = aColor(i, j) - bColor(i, j);
@@ -427,7 +427,7 @@ bool addition(aliceVision::image::Image<image::RGBfColor> & outputColor, aliceVi
 
   for (int i = 0; i < height; i++) {
     for (int j = 0; j < width; j++) {
-      
+
       if (aMask(i, j)) {
         if (bMask(i, j)) {
           outputColor(i, j).r() = aColor(i, j).r() + bColor(i, j).r();
@@ -485,7 +485,7 @@ public:
     image::Image<float> inputPot(widthPot, heightPot, true, 0.0f);
     inputPot.block(0, 0, height, width) = input;
 
-    _pyramid.push_back(inputPot);    
+    _pyramid.push_back(inputPot);
 
     /*Create the gaussian kernel*/
     Eigen::VectorXf kernel(5);
@@ -512,7 +512,7 @@ public:
       heightPot = heightPot / 2;
       image::Image<float> reduced;
       downscale(reduced, smoothed);
-      
+
       _pyramid.push_back(reduced);
     }
 
@@ -555,7 +555,7 @@ public:
 
     _pyramid_color.push_back(inputColorPot);
     _pyramid_mask.push_back(inputMaskPot);
-    
+
 
     /*Create the gaussian kernel*/
     Eigen::VectorXf kernel(5);
@@ -589,10 +589,12 @@ public:
       image::Image<image::RGBfColor> reducedColor;
       image::Image<unsigned char> reducedMask;
       downscale(reducedColor, reducedMask, smoothed, _pyramid_mask[level]);
-      
+
       countValidPixels = countValid(reducedMask);
       _pyramid_color.push_back(reducedColor);
       _pyramid_mask.push_back(reducedMask);
+
+      break;
     }
 
 
@@ -649,7 +651,7 @@ public:
 
       image::Image<image::RGBfColor> prev_color_upscaled(color.Width(), color.Height());
       image::Image<unsigned char> prev_mask_upscaled(mask.Width(), mask.Height());
-      
+
       image::Image<image::RGBfColor> diff_color(color.Width(), color.Height());
       image::Image<image::RGBfColor> buffer(color.Width(), color.Height());
       image::Image<image::RGBfColor> smoothed(color.Width(), color.Height());
@@ -659,7 +661,7 @@ public:
 
       convolveHorizontal(buffer, prev_color_upscaled, prev_mask_upscaled, kernel);
       convolveVertical(smoothed, buffer, prev_mask_upscaled, kernel);
-      
+
       if (!difference(diff_color, diff_mask, color, mask, smoothed, prev_mask_upscaled)) {
        return false;
       }
@@ -667,7 +669,7 @@ public:
       _pyramid_color.push_back(diff_color);
       _pyramid_mask.push_back(diff_mask);
 
-      
+
     }
 
     _pyramid_color.push_back(gp_colors[gp_colors.size() - 1]);
@@ -690,8 +692,9 @@ public:
     kernel[3] = 4.0f;
     kernel[4] = 1.0f;
 
+
     for (int level = _pyramid_color.size() - 2; level >= max_level; level--) {
-      
+
       const image::Image<image::RGBfColor> diff_color = _pyramid_color[level];
       const image::Image<unsigned char> diff_mask = _pyramid_mask[level];
 
@@ -720,10 +723,10 @@ public:
         return false;
       }
 
-      char filename[FILENAME_MAX];
+      /*char filename[FILENAME_MAX];
       sprintf(filename, "/home/mmoc/output_%d.exr", level);
-      image::writeImage(filename, prev_color, image::EImageColorSpace::NO_CONVERSION);
-    }    
+      image::writeImage(filename, prev_color, image::EImageColorSpace::NO_CONVERSION);*/
+    }
 
     _stack_result = prev_color;
     _stack_mask = prev_mask;
@@ -735,7 +738,7 @@ public:
 
     GaussianPyramidNoMask pyramid_weights;
     pyramid_weights.process(weights);
-  
+
 
     const std::vector<image::Image<float>> & vector_weights = pyramid_weights.getLevels();
 
@@ -750,15 +753,15 @@ public:
       const image::Image<float> & lweights = vector_weights[level];
 
       for (int i = 0; i < bColor.Height(); i++) {
-      
+
         for (int j = 0; j < bColor.Width(); j++) {
 
           if (aMask(i, j)) {
             if (bMask(i, j)) {
 
-              float w = 0.5f;//lweights(i, j);
+              float w = lweights(i, j);
               float iw = 1.0f - w;
-              
+
 
               aColor(i, j).r() = iw * aColor(i, j).r() + w * bColor(i, j).r();
               aColor(i, j).g() = iw * aColor(i, j).g() + w * bColor(i, j).g();
@@ -827,7 +830,7 @@ public:
 protected:
   std::vector<image::Image<image::RGBfColor>> _pyramid_color;
   std::vector<image::Image<unsigned char>> _pyramid_mask;
-  
+
   image::Image<image::RGBfColor> _stack_result;
   image::Image<unsigned char> _stack_mask;
 
@@ -838,12 +841,12 @@ protected:
 class Compositer {
 public:
   Compositer(size_t outputWidth, size_t outputHeight) :
-  _panorama(outputWidth, outputHeight, true, image::RGBfColor(1.0f, 0.0f, 0.0f)), 
+  _panorama(outputWidth, outputHeight, true, image::RGBfColor(1.0f, 0.0f, 0.0f)),
   _mask(outputWidth, outputHeight, true, false)
   {
   }
 
-  virtual bool append(const aliceVision::image::Image<image::RGBfColor> & color, const aliceVision::image::Image<unsigned char> & inputMask, size_t offset_x, size_t offset_y) {
+  virtual bool append(const aliceVision::image::Image<image::RGBfColor> & color, const aliceVision::image::Image<unsigned char> & inputMask, const aliceVision::image::Image<float> & inputWeights, size_t offset_x, size_t offset_y) {
 
     for (size_t i = 0; i < color.Height(); i++) {
 
@@ -853,11 +856,11 @@ public:
       }
 
       for (size_t j = 0; j < color.Width(); j++) {
-        
+
         if (!inputMask(i, j)) {
           continue;
         }
-        
+
         size_t pano_j = offset_x + j;
         if (pano_j >= _panorama.Width()) {
           pano_j = pano_j - _panorama.Width();
@@ -887,10 +890,10 @@ protected:
 class AlphaCompositer : public Compositer {
 public:
 
-  AlphaCompositer(size_t outputWidth, size_t outputHeight) : 
+  AlphaCompositer(size_t outputWidth, size_t outputHeight) :
   Compositer(outputWidth, outputHeight),
   _weightmap(outputWidth, outputHeight, true, 0.0f) {
-    
+
   }
 
   virtual bool append(const aliceVision::image::Image<image::RGBfColor> & color, const aliceVision::image::Image<unsigned char> & inputMask, const aliceVision::image::Image<float> & inputWeights, size_t offset_x, size_t offset_y) {
@@ -903,11 +906,11 @@ public:
       }
 
       for (size_t j = 0; j < color.Width(); j++) {
-        
+
         if (!inputMask(i, j)) {
           continue;
         }
-        
+
         size_t pano_j = offset_x + j;
         if (pano_j >= _panorama.Width()) {
           pano_j = pano_j - _panorama.Width();
@@ -927,7 +930,7 @@ public:
           _panorama(pano_i, pano_j).r() = wp * _panorama(pano_i, pano_j).r() + wc * color(i, j).r();
           _panorama(pano_i, pano_j).g() = wp * _panorama(pano_i, pano_j).g() + wc * color(i, j).g();
           _panorama(pano_i, pano_j).b() = wp * _panorama(pano_i, pano_j).b() + wc * color(i, j).b();
-          
+
           _weightmap(pano_i, pano_j) = wtotal;
         }
 
@@ -945,9 +948,9 @@ protected:
 class LaplacianCompositer : public AlphaCompositer {
 public:
 
-  LaplacianCompositer(size_t outputWidth, size_t outputHeight) : 
+  LaplacianCompositer(size_t outputWidth, size_t outputHeight) :
   AlphaCompositer(outputWidth, outputHeight) {
-    
+
   }
 
   virtual bool append(const aliceVision::image::Image<image::RGBfColor> & color, const aliceVision::image::Image<unsigned char> & inputMask, const aliceVision::image::Image<float> & inputWeights, size_t offset_x, size_t offset_y) {
@@ -995,11 +998,11 @@ public:
       pyramid_add.reducePyramidDepth(pyramid_panorama.getDepth());
     }
 
-    
+
     pyramid_panorama.merge(pyramid_add, weight);
     pyramid_panorama.stack(0);
 
-    const aliceVision::image::Image<image::RGBfColor> & img = pyramid_panorama.getStackResult(); 
+    const aliceVision::image::Image<image::RGBfColor> & img = pyramid_panorama.getStackResult();
     const aliceVision::image::Image<unsigned char> & mask = pyramid_panorama.getStackMask();
 
     _panorama = img.block(0, 0, _panorama.Height(), _panorama.Width());
@@ -1020,7 +1023,7 @@ public:
         if (!inputMask(i, j)) {
           continue;
         }
-       
+
         _weightmap(di, dj) = std::max(_weightmap(di, dj), inputWeights(i, j));
       }
     }
@@ -1056,7 +1059,10 @@ int main(int argc, char **argv) {
   /**
    * Description of optional parameters
    */
+  bool multiband = false;
   po::options_description optionalParams("Optional parameters");
+  optionalParams.add_options()
+    ("multiband,m", po::value<bool>(&multiband)->required(), "Use multi-band blending.");
   allParams.add(optionalParams);
 
   /**
@@ -1106,7 +1112,7 @@ int main(int argc, char **argv) {
    */
   system::Logger::get()->setLogLevel(verboseLevel);
 
-  
+
   /*Load output from previous warping step*/
   std::stringstream ss;
   ss << inputDirectory << "/config_views.json";
@@ -1119,7 +1125,7 @@ int main(int argc, char **argv) {
   bpt::ptree configTree;
   bpt::read_json(ss.str(), configTree);
 
-  
+
   std::pair<int, int> panoramaSize;
   panoramaSize.first = configTree.get<size_t>("panoramaWidth");
   panoramaSize.second = configTree.get<size_t>("panoramaHeight");
@@ -1131,7 +1137,7 @@ int main(int argc, char **argv) {
   for (auto & item : configTree.get_child("views")) {
     ConfigView cv;
 
-    /*if (pos == 24 || pos == 25 || pos == 26)*/ {
+    {
     cv.img_path = item.second.get<std::string>("filename_view");
     cv.mask_path = item.second.get<std::string>("filename_mask");
     cv.weights_path = item.second.get<std::string>("filename_weights");
@@ -1142,10 +1148,16 @@ int main(int argc, char **argv) {
     pos++;
   }
 
-
-  LaplacianCompositer compositer(panoramaSize.first, panoramaSize.second);
+  std::unique_ptr<Compositer> compositer;
+  if (multiband) {
+    compositer = std::unique_ptr<Compositer>(new LaplacianCompositer(panoramaSize.first, panoramaSize.second));
+  }
+  else {
+    compositer = std::unique_ptr<Compositer>(new AlphaCompositer(panoramaSize.first, panoramaSize.second));
+  }
+  
   for (const ConfigView & cv : configViews) {
-    
+
     /**
      * Load image and convert it to linear colorspace
      */
@@ -1171,15 +1183,15 @@ int main(int argc, char **argv) {
     image::readImage(weightsPath, weights, image::EImageColorSpace::NO_CONVERSION);
 
 
-    compositer.append(source, mask, weights, cv.offset_x, cv.offset_y);
+    compositer->append(source, mask, weights, cv.offset_x, cv.offset_y);
   }
 
   ALICEVISION_LOG_INFO("Write output panorama to file " << outputPanorama);
-  const aliceVision::image::Image<image::RGBfColor> & panorama = compositer.getPanorama();
+  const aliceVision::image::Image<image::RGBfColor> & panorama = compositer->getPanorama();
   image::writeImage(outputPanorama, panorama, image::EImageColorSpace::SRGB);
 
 
-  
+
 
   return EXIT_SUCCESS;
 }
