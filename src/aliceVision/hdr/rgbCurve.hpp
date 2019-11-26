@@ -193,6 +193,8 @@ public:
     */
   void inverseAllValues();
 
+  void freezeSecondPartValues();
+
   void invertAndScaleSecondPart(float scale);
 
   /**

@@ -70,10 +70,9 @@ void hdrMerge::process(const std::vector< image::Image<image::RGBfColor> > &imag
   }
 
   const float maxLum = 1000.0f;
-  const float minLum = 0.0001f;
 
   rgbCurve weightShortestExposure = weight;
-  weightShortestExposure.invertAndScaleSecondPart(1.0f + clampedValueCorrection * maxLum);
+  weightShortestExposure.freezeSecondPartValues(); // invertAndScaleSecondPart(clampedValueCorrection * maxLum);
 
   #pragma omp parallel for
   for(int y = 0; y < height; ++y)
@@ -83,6 +82,8 @@ void hdrMerge::process(const std::vector< image::Image<image::RGBfColor> > &imag
       //for each pixels
       image::RGBfColor &radianceColor = radiance(y, x);
 
+      double isPixelClamped = 0.0;
+
       for(std::size_t channel = 0; channel < 3; ++channel)
       {
         double wsum = 0.0;
@@ -90,40 +91,39 @@ void hdrMerge::process(const std::vector< image::Image<image::RGBfColor> > &imag
 
         {
             int exposureIndex = 0;
-            // float highValue = images[exposureIndex](y, x)(channel);
-            // // https://www.desmos.com/calculator/xamvguu8zw
-            // //                       ____
-            // // sigmoid inv:  _______/
-            // //                  0    1
-            // float clampedHighValue = sigmoidInv(0.0f, 1.0f, /*sigWidth=*/0.2f,  /*sigMid=*/0.9f, highValue);
-            //////////
 
-            // for each images
+            // for each image
             const double value = images[exposureIndex](y, x)(channel);
             const double time = times[exposureIndex];
+
+            // https://www.desmos.com/calculator/xamvguu8zw
+            //                       ____
+            // sigmoid inv:  _______/
+            //                  0    1
+            const float isChannelClamped = sigmoidInv(0.0f, 1.0f, /*sigWidth=*/0.2f,  /*sigMid=*/0.9f, value);
+            isPixelClamped += isChannelClamped;
+
             //
-            //                                       /
-            // weightShortestExposure:          ____/
+            // weightShortestExposure:          _______
             //                          _______/
             //                                0      1
-            double w = std::max(0.f, weightShortestExposure(value, channel)); //  - weight(0.05, 0)
+            double w = std::max(0.f, weightShortestExposure(value, channel));
 
             const double r = response(value, channel);
 
             wsum += w * r / time;
             wdiv += w;
-
         }
         for(std::size_t i = 1; i < images.size(); ++i)
         {
-          // for each images
+          // for each image
           const double value = images[i](y, x)(channel);
           const double time = times[i];
           //
           // weight:          ____
           //          _______/    \________
           //                0      1
-          double w = std::max(0.f, weight(value, channel)); //  - weight(0.05, 0)
+          double w = std::max(0.f, weight(value, channel));
 
           const double r = response(value, channel);
           wsum += w * r / time;
@@ -140,6 +140,15 @@ void hdrMerge::process(const std::vector< image::Image<image::RGBfColor> > &imag
         //}
 
         radianceColor(channel) = wsum / std::max(0.001, wdiv) * targetTime;
+      }
+      double clampedValueLuminanceCompensation = isPixelClamped / 3.0;
+      double clampedValueLuminanceCompensationInv = (1.0 - clampedValueLuminanceCompensation);
+      assert(clampedValueLuminanceCompensation <= 1.0);
+
+      for(std::size_t channel = 0; channel < 3; ++channel)
+      {
+        radianceColor(channel) = clampedValueLuminanceCompensationInv * radianceColor(channel) +
+                                 clampedValueLuminanceCompensation * clampedValueCorrection * maxLum;
       }
     }
   }
