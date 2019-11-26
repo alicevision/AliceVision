@@ -41,309 +41,6 @@ typedef struct {
   std::string weights_path;
 } ConfigView;
 
-Eigen::VectorXf gaussian_kernel_vector(size_t kernel_length, float sigma) {
-
-  int radius = kernel_length / 2;
-
-  Eigen::VectorXd x(kernel_length + 1);
-  for (int i = 0; i < kernel_length + 1; i++) {
-    x(i) = i - radius;
-  }
-
-  Eigen::VectorXd cdf(kernel_length + 1);
-  for (int i = 0; i < kernel_length + 1; i++) {
-    cdf(i) = 0.5 * (1.0 + std::erf(x(i)/(sigma * sqrt(2.0))));
-  }
-
-
-  Eigen::VectorXd k1d(kernel_length);
-  for (int i = 0; i < kernel_length; i++) {
-    k1d(i) = cdf(i + 1) - cdf(i);
-  }
-
-  double sum = k1d.sum();
-  k1d = k1d / sum;
-
-  return k1d.cast<float>();
-}
-
-bool convolveHorizontal(image::Image<image::RGBfColor> & output, const image::Image<image::RGBfColor> & input, const image::Image<unsigned char> & mask, const Eigen::VectorXf & kernel) {
-
-  if (output.size() != input.size()) {
-    return false;
-  }
-
-  if (output.size() != mask.size()) {
-    return false;
-  }
-
-  if (kernel.size() % 2 == 0) {
-    return false;
-  }
-
-  int radius = kernel.size() / 2;
-
-
-  for (int i = 0; i < output.Height(); i++) {
-    for (int j = 0; j < output.Width(); j++) {
-
-      image::RGBfColor sum = image::RGBfColor(0.0);
-      float sum_mask = 0.0f;
-
-      if (!mask(i, j)) {
-        output(i, j) = image::RGBfColor(0.0);
-        continue;
-      }
-
-      for (int k = 0; k < kernel.size(); k++) {
-
-        double w = kernel(k);
-        int col = j + k - radius;
-
-        if (col < 0 || col >= input.Width()) {
-          continue;
-        }
-
-        if (!mask(i, col)) {
-          continue;
-        }
-
-        sum += w * input(i, col);
-        sum_mask += w;
-      }
-
-      output(i, j) = sum / sum_mask;
-    }
-  }
-
-  return true;
-}
-
-bool convolveHorizontal(image::Image<float> & output, const image::Image<float> & input, const Eigen::VectorXf & kernel) {
-
-  if (output.size() != input.size()) {
-    return false;
-  }
-
-  if (kernel.size() % 2 == 0) {
-    return false;
-  }
-
-  int radius = kernel.size() / 2;
-
-
-  for (int i = 0; i < output.Height(); i++) {
-    for (int j = 0; j < output.Width(); j++) {
-
-      float sum = 0.0f;
-      float sum_mask = 0.0f;
-
-      for (int k = 0; k < kernel.size(); k++) {
-
-        double w = kernel(k);
-        int col = j + k - radius;
-
-        if (col < 0 || col >= input.Width()) {
-          continue;
-        }
-
-        sum += w * input(i, col);
-        sum_mask += w;
-      }
-
-      output(i, j) = sum / sum_mask;
-    }
-  }
-
-  return true;
-}
-
-bool convolveVertical(image::Image<image::RGBfColor> & output, const image::Image<image::RGBfColor> & input, const image::Image<unsigned char> & mask, const Eigen::VectorXf & kernel) {
-
-  if (output.size() != input.size()) {
-    return false;
-  }
-
-  if (output.size() != mask.size()) {
-    return false;
-  }
-
-  if (kernel.size() % 2 == 0) {
-    return false;
-  }
-
-  int radius = kernel.size() / 2;
-
-  for (int i = 0; i < output.Height(); i++) {
-    for (int j = 0; j < output.Width(); j++) {
-
-      image::RGBfColor sum = image::RGBfColor(0.0);
-      float sum_mask = 0.0f;
-
-      if (!mask(i, j)) {
-        output(i, j) = image::RGBfColor(0.0);
-        continue;
-      }
-
-
-      for (int k = 0; k < kernel.size(); k++) {
-
-        double w = kernel(k);
-        int row = i + k - radius;
-
-        if (row < 0 || row >= input.Height()) {
-          continue;
-        }
-
-        sum += w * input(row, j);
-        sum_mask += w;
-      }
-
-      output(i, j) = sum / sum_mask;
-    }
-  }
-
-  return true;
-}
-
-bool convolveVertical(image::Image<float> & output, const image::Image<float> & input, const Eigen::VectorXf & kernel) {
-
-  if (output.size() != input.size()) {
-    return false;
-  }
-
-  if (kernel.size() % 2 == 0) {
-    return false;
-  }
-
-  int radius = kernel.size() / 2;
-
-  for (int i = 0; i < output.Height(); i++) {
-    for (int j = 0; j < output.Width(); j++) {
-
-      float sum = 0.0f;
-      float sum_mask = 0.0f;
-
-      for (int k = 0; k < kernel.size(); k++) {
-
-        double w = kernel(k);
-        int row = i + k - radius;
-
-        if (row < 0 || row >= input.Height()) {
-          continue;
-        }
-
-        sum += w * input(row, j);
-        sum_mask += w;
-      }
-
-      output(i, j) = sum / sum_mask;
-    }
-  }
-
-  return true;
-}
-
-bool downscale(aliceVision::image::Image<image::RGBfColor> & outputColor, aliceVision::image::Image<unsigned char> & outputMask, const aliceVision::image::Image<image::RGBfColor> & inputColor, const aliceVision::image::Image<unsigned char> & inputMask) {
-
-  size_t width = inputColor.Width();
-  size_t height = inputColor.Height();
-
-  if (inputMask.Width() != width || inputMask.Height() != height) {
-    return false;
-  }
-
-  size_t output_width = width / 2;
-  size_t output_height = height / 2;
-
-  outputColor = image::Image<image::RGBfColor>(output_width, output_height);
-  outputMask = image::Image<unsigned char>(output_width, output_height);
-
-  for (int i = 0; i < output_height; i++) {
-    for (int j = 0; j < output_width; j++) {
-      outputMask(i, j) = inputMask(i * 2, j * 2);
-
-      if (!outputMask(i, j)) {
-        outputColor(i, j) = image::RGBfColor(0.0f);
-      }
-      else {
-        outputColor(i, j) = inputColor(i * 2, j * 2);
-      }
-    }
-  }
-
-  return true;
-}
-
-bool downscale(aliceVision::image::Image<float> & outputColor, const aliceVision::image::Image<float> & inputColor) {
-
-  size_t width = inputColor.Width();
-  size_t height = inputColor.Height();
-
-  size_t output_width = width / 2;
-  size_t output_height = height / 2;
-
-  outputColor = image::Image<float>(output_width, output_height);
-
-  for (int i = 0; i < output_height; i++) {
-    for (int j = 0; j < output_width; j++) {
-      outputColor(i, j) = inputColor(i * 2, j * 2);
-    }
-  }
-
-  return true;
-}
-
-bool upscale(aliceVision::image::Image<image::RGBfColor> & outputColor, aliceVision::image::Image<unsigned char> & outputMask, const aliceVision::image::Image<image::RGBfColor> & inputColor, const aliceVision::image::Image<unsigned char> & inputMask) {
-
-  size_t width = inputColor.Width();
-  size_t height = inputColor.Height();
-
-  if (inputMask.Width() != width || inputMask.Height() != height) {
-    return false;
-  }
-
-  size_t output_width = width * 2;
-  size_t output_height = height * 2;
-
-  outputColor = image::Image<image::RGBfColor>(output_width, output_height);
-  outputMask = image::Image<unsigned char>(output_width, output_height);
-
-  for (int i = 0; i < height; i++) {
-
-    int di = i * 2;
-
-    for (int j = 0; j < width; j++) {
-      int dj = j * 2;
-
-      if (!inputMask(i, j)) {
-        outputColor(di, dj) = image::RGBfColor(0.0f);
-        outputColor(di, dj + 1) = image::RGBfColor(0.0f);
-        outputColor(di + 1, dj) = image::RGBfColor(0.0f);
-        outputColor(di + 1, dj + 1) = image::RGBfColor(0.0f);
-
-        outputMask(di, dj) = 0;
-        outputMask(di, dj + 1) = 0;
-        outputMask(di + 1, dj) = 0;
-        outputMask(di + 1, dj + 1) = 0;
-
-        continue;
-      }
-
-      outputColor(di, dj).r() = inputColor(i, j);
-      outputColor(di, dj + 1) = inputColor(i, j);
-      outputColor(di + 1, dj) = inputColor(i, j);
-      outputColor(di + 1, dj + 1) = inputColor(i, j);
-
-      outputMask(di, dj) = 255;
-      outputMask(di, dj + 1) = 255;
-      outputMask(di + 1, dj) = 255;
-      outputMask(di + 1, dj + 1) = 255;
-    }
-  }
-
-  return true;
-}
 
 bool difference(aliceVision::image::Image<image::RGBfColor> & outputColor, aliceVision::image::Image<unsigned char> & outputMask, const aliceVision::image::Image<image::RGBfColor> & aColor, const aliceVision::image::Image<unsigned char> & aMask, const aliceVision::image::Image<image::RGBfColor> & bColor, const aliceVision::image::Image<unsigned char> & bMask) {
 
@@ -471,346 +168,179 @@ size_t countValid(const aliceVision::image::Image<unsigned char> & inputMask) {
   return count;
 }
 
-class GaussianPyramidNoMask {
-public:
-  bool process(const aliceVision::image::Image<float> & input) {
-
-    _pyramid.clear();
-
-    /*Make a 2**n size image, easier for multiple consecutive half size*/
-    size_t width = input.Width();
-    size_t height = input.Height();
-    size_t widthPot = pow(2.0, std::ceil(std::log2(width)));
-    size_t heightPot = pow(2.0, std::ceil(std::log2(height)));
-    image::Image<float> inputPot(widthPot, heightPot, true, 0.0f);
-    inputPot.block(0, 0, height, width) = input;
-
-    _pyramid.push_back(inputPot);
-
-    /*Create the gaussian kernel*/
-    Eigen::VectorXf kernel(5);
-    kernel[0] = 1.0f;
-    kernel[1] = 4.0f;
-    kernel[2] = 6.0f;
-    kernel[3] = 4.0f;
-    kernel[4] = 1.0f;
-
-
-    while (true) {
-
-      if (widthPot < 32 || heightPot < 32) break;
-
-      size_t level = _pyramid.size() - 1;
-
-      image::Image<float> buffer(widthPot, heightPot);
-      image::Image<float> smoothed(widthPot, heightPot);
-
-      convolveHorizontal(buffer, _pyramid[level], kernel);
-      convolveVertical(smoothed, buffer, kernel);
-
-      widthPot = widthPot / 2;
-      heightPot = heightPot / 2;
-      image::Image<float> reduced;
-      downscale(reduced, smoothed);
-
-      _pyramid.push_back(reduced);
-    }
-
-
-    return true;
-  }
-
-  size_t getPyramidSize() {
-    return _pyramid.size();
-  }
-
-  const std::vector<image::Image<float>> & getLevels() {
-    return _pyramid;
-  }
-
-protected:
-  std::vector<image::Image<float>> _pyramid;
-};
-
-class GaussianPyramid {
-public:
-  bool process(const aliceVision::image::Image<image::RGBfColor> & inputColor, const aliceVision::image::Image<unsigned char> & inputMask) {
-
-    _pyramid_color.clear();
-    _pyramid_mask.clear();
-
-    if (inputColor.size() != inputMask.size()) {
-      return false;
-    }
-
-    /*Make a 2**n size image, easier for multiple consecutive half size*/
-    size_t width = inputColor.Width();
-    size_t height = inputColor.Height();
-    size_t widthPot = pow(2.0, std::ceil(std::log2(width)));
-    size_t heightPot = pow(2.0, std::ceil(std::log2(height)));
-    image::Image<image::RGBfColor> inputColorPot(widthPot, heightPot, true, image::RGBfColor(0.0f, 0.0f, 0.0f));
-    image::Image<unsigned char> inputMaskPot(widthPot, heightPot, true, 0);
-    inputColorPot.block(0, 0, height, width) = inputColor;
-    inputMaskPot.block(0, 0, height, width) = inputMask;
-
-    _pyramid_color.push_back(inputColorPot);
-    _pyramid_mask.push_back(inputMaskPot);
-
-
-    /*Create the gaussian kernel*/
-    Eigen::VectorXf kernel(5);
-    kernel[0] = 1.0f;
-    kernel[1] = 4.0f;
-    kernel[2] = 6.0f;
-    kernel[3] = 4.0f;
-    kernel[4] = 1.0f;
-
-
-    /*Compute initial count of valid pixels*/
-    size_t countValidPixels = countValid(inputMask);
-
-    while (true) {
-
-      if (widthPot < 32 || heightPot < 32) break;
-
-      /* Make sure enough pixels are valid*/
-      if (countValidPixels < 4) break;
-
-      size_t level = _pyramid_color.size() - 1;
-
-      image::Image<image::RGBfColor> buffer(widthPot, heightPot);
-      image::Image<image::RGBfColor> smoothed(widthPot, heightPot);
-
-      convolveHorizontal(buffer, _pyramid_color[level], _pyramid_mask[level], kernel);
-      convolveVertical(smoothed, buffer, _pyramid_mask[level], kernel);
-
-      widthPot = widthPot / 2;
-      heightPot = heightPot / 2;
-      image::Image<image::RGBfColor> reducedColor;
-      image::Image<unsigned char> reducedMask;
-      downscale(reducedColor, reducedMask, smoothed, _pyramid_mask[level]);
-
-      countValidPixels = countValid(reducedMask);
-      _pyramid_color.push_back(reducedColor);
-      _pyramid_mask.push_back(reducedMask);
-
-      break;
-    }
-
-
-    return true;
-  }
-
-  size_t getPyramidSize() {
-    return _pyramid_color.size();
-  }
-
-  const std::vector<image::Image<image::RGBfColor>> & getColors() {
-    return _pyramid_color;
-  }
-
-  const std::vector<image::Image<unsigned char>> & getMasks() {
-    return _pyramid_mask;
-  }
-
-protected:
-  std::vector<image::Image<image::RGBfColor>> _pyramid_color;
-  std::vector<image::Image<unsigned char>> _pyramid_mask;
-};
 
 class LaplacianPyramid {
 public:
-  bool process(const aliceVision::image::Image<image::RGBfColor> & inputColor, const aliceVision::image::Image<unsigned char> & inputMask) {
+  bool process(const aliceVision::image::Image<image::RGBfColor> & inputColor, const image::Image<float> & weights, size_t max_levels) {
 
     _original_width = inputColor.Width();
     _original_height = inputColor.Height();
 
-    GaussianPyramid gp;
-    if (!gp.process(inputColor, inputMask)) {
-      return false;
-    }
+    std::vector<image::Image<image::RGBfColor>> pyramid_gaussian;
 
-    const std::vector<image::Image<image::RGBfColor>> & gp_colors = gp.getColors();
-    const std::vector<image::Image<unsigned char>> & gp_masks = gp.getMasks();
+    pyramid_gaussian.push_back(inputColor);
+    _pyramid_weights.push_back(weights);
 
-    /*Create the gaussian kernel*/
-    Eigen::VectorXf kernel(5);
-    kernel[0] = 1.0f;
-    kernel[1] = 4.0f;
-    kernel[2] = 6.0f;
-    kernel[3] = 4.0f;
-    kernel[4] = 1.0f;
+    /*Build pyramid using 2x2 kernel **/
+    for (int level = 0; level < max_levels; level++) {
 
+      const image::Image<image::RGBfColor> & color = pyramid_gaussian[level];
+      const image::Image<float> & weight = _pyramid_weights[level];
 
-    for (int level = 0; level < gp_colors.size() - 1; level++) {
+      image::Image<image::RGBfColor> nextColor(color.Width() / 2, color.Height() / 2, true, image::RGBfColor(0.0f));
+      image::Image<float> nextWeight(weight.Width() / 2, weight.Height() / 2, true, 0.0f);
 
-      const image::Image<image::RGBfColor> prev_color = gp_colors[level + 1];
-      const image::Image<unsigned char> prev_mask = gp_masks[level + 1];
-      const image::Image<image::RGBfColor> color = gp_colors[level];
-      const image::Image<unsigned char> mask = gp_masks[level];
+      for (int i = 0; i < nextColor.Height(); i++) {
 
-      image::Image<image::RGBfColor> prev_color_upscaled(color.Width(), color.Height());
-      image::Image<unsigned char> prev_mask_upscaled(mask.Width(), mask.Height());
+        int di = i * 2;
 
-      image::Image<image::RGBfColor> diff_color(color.Width(), color.Height());
-      image::Image<image::RGBfColor> buffer(color.Width(), color.Height());
-      image::Image<image::RGBfColor> smoothed(color.Width(), color.Height());
-      image::Image<unsigned char> diff_mask(mask.Width(), mask.Height());
+        for (int j = 0; j < nextColor.Width(); j++) {
+          int dj = j * 2;
 
-      upscale(prev_color_upscaled, prev_mask_upscaled, prev_color, prev_mask);
-
-      convolveHorizontal(buffer, prev_color_upscaled, prev_mask_upscaled, kernel);
-      convolveVertical(smoothed, buffer, prev_mask_upscaled, kernel);
-
-      if (!difference(diff_color, diff_mask, color, mask, smoothed, prev_mask_upscaled)) {
-       return false;
+          nextColor(i, j).r() = 0.25f * (weight(di, dj) * color(di, dj).r() + weight(di, dj + 1) * color(di, dj + 1).r() + weight(di + 1, dj) * color(di + 1, dj).r() + weight(di + 1, dj + 1) * color(di + 1, dj + 1).r());
+          nextColor(i, j).g() = 0.25f * (weight(di, dj) * color(di, dj).g() + weight(di, dj + 1) * color(di, dj + 1).g() + weight(di + 1, dj) * color(di + 1, dj).g() + weight(di + 1, dj + 1) * color(di + 1, dj + 1).g());
+          nextColor(i, j).b() = 0.25f * (weight(di, dj) * color(di, dj).b() + weight(di, dj + 1) * color(di, dj + 1).b() + weight(di + 1, dj) * color(di + 1, dj).b() + weight(di + 1, dj + 1) * color(di + 1, dj + 1).b());
+          nextWeight(i, j) = 0.25f * (weight(di, dj) + weight(di, dj + 1) + weight(di + 1, dj) + weight(di + 1, dj + 1));
+        }
       }
 
-      _pyramid_color.push_back(diff_color);
-      _pyramid_mask.push_back(diff_mask);
+      pyramid_gaussian.push_back(nextColor);
+      _pyramid_weights.push_back(nextWeight);
+    } 
 
+    /*Compute laplacian*/
+    for (int level = 0; level < pyramid_gaussian.size() - 1; level++) {
 
+      const image::Image<image::RGBfColor> & color = pyramid_gaussian[level];
+      const image::Image<image::RGBfColor> & next_color = pyramid_gaussian[level + 1];
+
+      image::Image<image::RGBfColor> upscaled(color.Width(), color.Height(), true, image::RGBfColor(0.0f));
+      image::Image<image::RGBfColor> difference(color.Width(), color.Height(), true, image::RGBfColor(0.0f));
+
+      for (int i = 0; i < next_color.Height(); i++) {
+        int di = i * 2;
+        for (int j = 0; j < next_color.Width(); j++) {
+          int dj = j * 2;
+          upscaled(di, dj) = next_color(i, j);
+          upscaled(di, dj + 1) = next_color(i, j);
+          upscaled(di + 1, dj) = next_color(i, j);
+          upscaled(di + 1, dj + 1) = next_color(i, j);
+        }
+      }
+
+      for (int i = 0; i < color.Height(); i++) {
+        for (int j = 0; j < color.Width(); j++) {
+          difference(i, j) = color(i, j) - upscaled(i, j);
+        }
+      }
+
+      _pyramid_color.push_back(difference);
     }
 
-    _pyramid_color.push_back(gp_colors[gp_colors.size() - 1]);
-    _pyramid_mask.push_back(gp_masks[gp_masks.size() - 1]);
+    _pyramid_color.push_back(pyramid_gaussian[pyramid_gaussian.size() - 1]);
 
+    
+    return true;
+  }
+
+  bool stack() {
+
+    image::Image<image::RGBfColor> prev = _pyramid_color[_pyramid_color.size() - 1];
+
+    for (int level = _pyramid_color.size() - 2; level >= 0; level--) {
+
+      
+
+      image::Image<image::RGBfColor> current = _pyramid_color[level];
+      image::Image<image::RGBfColor> rescaled(prev.Width() * 2, prev.Height() * 2, true, image::RGBfColor(0.0f));
+
+
+      for (int i = 0; i < prev.Height(); i++) {
+
+        int di = i * 2;
+
+        for (int j = 0; j < prev.Width(); j++) {
+
+          int dj = j * 2;
+
+          rescaled(di, dj) = prev(i, j);
+          rescaled(di, dj + 1) = prev(i, j);
+          rescaled(di + 1, dj) = prev(i, j);
+          rescaled(di + 1, dj + 1) = prev(i, j);
+        }
+      }
+
+      for (int i = 0; i < rescaled.Height(); i++) {
+        for (int j = 0; j < rescaled.Width(); j++) {
+          rescaled(i, j).r() = rescaled(i, j).r() + current(i, j).r();
+          rescaled(i, j).g() = rescaled(i, j).g() + current(i, j).g();
+          rescaled(i, j).b() = rescaled(i, j).b() + current(i, j).b();
+        }
+      }
+
+      prev = rescaled;
+    }
+
+
+    _stack_result = prev;
 
     return true;
   }
 
-  bool stack(int max_level) {
+  bool merge(const LaplacianPyramid & other) {
 
-    image::Image<image::RGBfColor> prev_color =  _pyramid_color[_pyramid_color.size() - 1];
-    image::Image<unsigned char> prev_mask =  _pyramid_mask[_pyramid_mask.size() - 1];
-
-    /*Create the gaussian kernel*/
-    Eigen::VectorXf kernel(5);
-    kernel[0] = 1.0f;
-    kernel[1] = 4.0f;
-    kernel[2] = 6.0f;
-    kernel[3] = 4.0f;
-    kernel[4] = 1.0f;
-
-
-    for (int level = _pyramid_color.size() - 2; level >= max_level; level--) {
-
-      const image::Image<image::RGBfColor> diff_color = _pyramid_color[level];
-      const image::Image<unsigned char> diff_mask = _pyramid_mask[level];
-
-      image::Image<image::RGBfColor> prev_color_upscaled(diff_color.Width(), diff_color.Height());
-      image::Image<image::RGBfColor> buffer(diff_color.Width(), diff_color.Height());
-      image::Image<image::RGBfColor> smoothed(diff_color.Width(), diff_color.Height(), true, image::RGBfColor(0.0f));
-      image::Image<unsigned char> prev_mask_upscaled(diff_mask.Width(), diff_mask.Height());
-
-      if (!upscale(prev_color_upscaled, prev_mask_upscaled, prev_color, prev_mask)) {
-        return false;
-      }
-
-      if (!convolveHorizontal(buffer, prev_color_upscaled, prev_mask_upscaled, kernel)) {
-        return false;
-      }
-
-      if (!convolveVertical(smoothed, buffer, prev_mask_upscaled, kernel)) {
-        return false;
-      }
-
-      prev_color = image::Image<image::RGBfColor>(diff_color.Width(), diff_color.Height(), true, image::RGBfColor(0.0f));
-      prev_mask = image::Image<unsigned char>(diff_mask.Width(), diff_mask.Height(), true, 0);
-
-
-      if (!addition(prev_color, prev_mask, smoothed, prev_mask_upscaled, diff_color, diff_mask)) {
-        return false;
-      }
-
-      /*char filename[FILENAME_MAX];
-      sprintf(filename, "/home/mmoc/output_%d.exr", level);
-      image::writeImage(filename, prev_color, image::EImageColorSpace::NO_CONVERSION);*/
+    if (_pyramid_color.size() == 0) {
+      _pyramid_color = other._pyramid_color;
+      _pyramid_weights = other._pyramid_weights;
+      return true;
     }
 
-    _stack_result = prev_color;
-    _stack_mask = prev_mask;
+    for (int level = 0; level <  _pyramid_color.size() - 1; level++) {
+      image::Image<image::RGBfColor> & color = _pyramid_color[level];
+      image::Image<float> & weight = _pyramid_weights[level];
 
-    return true;
-  }
+      const image::Image<image::RGBfColor> & ocolor = other._pyramid_color[level];
+      const image::Image<float> & oweight = other._pyramid_weights[level];
 
-  bool merge(const LaplacianPyramid & other, const image::Image<float> & weights) {
+      for (int i = 0; i < color.Height(); i++) {
+        for (int j = 0; j < color.Width(); j++) {
 
-    GaussianPyramidNoMask pyramid_weights;
-    pyramid_weights.process(weights);
-
-
-    const std::vector<image::Image<float>> & vector_weights = pyramid_weights.getLevels();
-
-
-
-    for (int level = 0; level < _pyramid_color.size(); level++) {
-
-      image::Image<image::RGBfColor> & aColor = _pyramid_color[level];
-      image::Image<unsigned char> & aMask = _pyramid_mask[level];
-      const image::Image<image::RGBfColor> & bColor = other._pyramid_color[level];
-      const image::Image<unsigned char> & bMask = other._pyramid_mask[level];
-      const image::Image<float> & lweights = vector_weights[level];
-
-      for (int i = 0; i < bColor.Height(); i++) {
-
-        for (int j = 0; j < bColor.Width(); j++) {
-
-          if (aMask(i, j)) {
-            if (bMask(i, j)) {
-
-              float w = lweights(i, j);
-              float iw = 1.0f - w;
-
-
-              aColor(i, j).r() = iw * aColor(i, j).r() + w * bColor(i, j).r();
-              aColor(i, j).g() = iw * aColor(i, j).g() + w * bColor(i, j).g();
-              aColor(i, j).b() = iw * aColor(i, j).b() + w * bColor(i, j).b();
-            }
-            else {
-              //do nothing
-            }
-          }
-          else {
-            if (bMask(i, j)) {
-              aColor(i, j) = bColor(i, j);
-              aMask(i, j) = 1;
-            }
-            else {
-              aColor(i, j) = image::RGBfColor(0.0f);
-              aMask(i, j) = 0;
-            }
+          if (weight(i, j) < oweight(i, j)) {
+            color(i, j) = ocolor(i, j);
           }
         }
       }
     }
 
-    return true;
-  }
+    size_t max_level = _pyramid_color.size() - 1;
+    image::Image<image::RGBfColor> & color = _pyramid_color[max_level];
+    image::Image<float> & weight = _pyramid_weights[max_level];
+    const image::Image<image::RGBfColor> & ocolor = other._pyramid_color[max_level];
+    const image::Image<float> & oweight = other._pyramid_weights[max_level];
 
-  bool reducePyramidDepth(size_t newSize) {
+    for (int i = 0; i < color.Height(); i++) {
+      for (int j = 0; j < color.Width(); j++) {
 
-    if (newSize == 0) {
-      return false;
+        float w = weight(i, j);
+        float ow = oweight(i, j);
+        float sum = w + ow;
+
+        if (sum > 1e-8) {
+          w = w / sum;
+          ow = ow / sum;
+
+          color(i, j).r() = w * color(i, j).r() + ow * ocolor(i, j).r();
+          color(i, j).g() = w * color(i, j).g() + ow * ocolor(i, j).g();
+          color(i, j).b() = w * color(i, j).b() + ow * ocolor(i, j).b();
+        }
+      }
     }
 
-    if (newSize > _pyramid_color.size()) {
-      return false;
+    for (int level = 0; level < _pyramid_color.size(); level++) {
+      char filename[512];
+      sprintf(filename, "/home/mmoc/color_%d.exr", level);
+      image::writeImage(filename, _pyramid_color[level], image::EImageColorSpace::NO_CONVERSION);
     }
-
-    if (newSize == _pyramid_color.size()) {
-      return true;
-    }
-
-    if (!stack(newSize - 1)) {
-      return false;
-    }
-
-    _pyramid_color[newSize - 1] = _stack_result;
-    _pyramid_mask[newSize - 1] = _stack_mask;
-
-    _pyramid_color.resize(newSize);
-    _pyramid_mask.resize(newSize);
 
     return true;
   }
@@ -829,7 +359,7 @@ public:
 
 protected:
   std::vector<image::Image<image::RGBfColor>> _pyramid_color;
-  std::vector<image::Image<unsigned char>> _pyramid_mask;
+  std::vector<image::Image<float>> _pyramid_weights;
 
   image::Image<image::RGBfColor> _stack_result;
   image::Image<unsigned char> _stack_mask;
@@ -955,11 +485,7 @@ public:
 
   virtual bool append(const aliceVision::image::Image<image::RGBfColor> & color, const aliceVision::image::Image<unsigned char> & inputMask, const aliceVision::image::Image<float> & inputWeights, size_t offset_x, size_t offset_y) {
 
-    LaplacianPyramid pyramid_panorama;
-    pyramid_panorama.process(_panorama, _mask);
-
     aliceVision::image::Image<image::RGBfColor> view(_panorama.Width(), _panorama.Height(), true, image::RGBfColor(0.0f));
-    aliceVision::image::Image<unsigned char> viewmask(_panorama.Width(), _panorama.Height(), true, 0);
     aliceVision::image::Image<float> weight(_panorama.Width(), _panorama.Height(), true, 0);
 
     for (int i = 0; i < color.Height(); i++) {
@@ -974,39 +500,32 @@ public:
           dj = dj - view.Width();
         }
 
-        view(di, dj) = color(i, j);
-        viewmask(di, dj) = inputMask(i, j);
-
+        /* Create binary mask */
         if (inputMask(i ,j)) {
+          view(di, dj) = color(i, j);
+
           if (inputWeights(i,j) > _weightmap(di, dj)) {
-            weight(di, dj) = 1.0;
+            weight(di, dj) = 1.0f;
           }
           else {
-            weight(di, dj) = 0.0;
+            weight(di, dj) = 0.0f;
           }
         }
       }
     }
 
-    LaplacianPyramid pyramid_add;
-    pyramid_add.process(view, viewmask);
-
-    if (pyramid_panorama.getDepth() > pyramid_add.getDepth()) {
-      pyramid_panorama.reducePyramidDepth(pyramid_add.getDepth());
-    }
-    else if (pyramid_panorama.getDepth() < pyramid_add.getDepth()) {
-      pyramid_add.reducePyramidDepth(pyramid_panorama.getDepth());
-    }
+    LaplacianPyramid pyramid;
+    pyramid.process(view, weight, 4);
+    _pyramid_panorama.merge(pyramid);
+    _pyramid_panorama.stack();
 
 
-    pyramid_panorama.merge(pyramid_add, weight);
-    pyramid_panorama.stack(0);
-
-    const aliceVision::image::Image<image::RGBfColor> & img = pyramid_panorama.getStackResult();
-    const aliceVision::image::Image<unsigned char> & mask = pyramid_panorama.getStackMask();
+    
+    const aliceVision::image::Image<image::RGBfColor> & img = _pyramid_panorama.getStackResult();
+    //const aliceVision::image::Image<unsigned char> & mask = _pyramid_panorama.getStackMask();
 
     _panorama = img.block(0, 0, _panorama.Height(), _panorama.Width());
-    _mask = mask.block(0, 0, _panorama.Height(), _panorama.Width());
+    //_mask = mask.block(0, 0, _panorama.Height(), _panorama.Width());*/
 
     for (int i = 0; i < inputWeights.Height(); i++) {
 
@@ -1033,6 +552,7 @@ public:
   }
 
 protected:
+  LaplacianPyramid _pyramid_panorama;
 };
 
 int main(int argc, char **argv) {
@@ -1137,6 +657,7 @@ int main(int argc, char **argv) {
   for (auto & item : configTree.get_child("views")) {
     ConfigView cv;
 
+    if (pos == 24 || pos == 25)
     {
     cv.img_path = item.second.get<std::string>("filename_view");
     cv.mask_path = item.second.get<std::string>("filename_mask");
