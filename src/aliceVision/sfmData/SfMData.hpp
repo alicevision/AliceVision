@@ -324,29 +324,29 @@ public:
   }
 
   /**
-   * @brief Get the median Exposure Value (Ev) of
+   * @brief Get the median Camera Exposure Setting
    * @return
    */
-  float getMedianEv() const
+  float getMedianCameraExposureSetting() const
   {
-    std::vector<float> evList;
-    evList.reserve(views.size());
+    std::vector<float> cameraExposureList;
+    cameraExposureList.reserve(views.size());
 
     for(const auto& view : views)
     {
-        float ev = view.second->getEv();
-        if(ev != -1.0f)
+        float ce = view.second->getCameraExposureSetting();
+        if(ce != -1.0f)
         {
-            auto find = std::find(std::begin(evList), std::end(evList), ev);
-            if(find == std::end(evList))
-                evList.emplace_back(ev);
+            auto find = std::find(std::begin(cameraExposureList), std::end(cameraExposureList), ce);
+            if(find == std::end(cameraExposureList))
+                cameraExposureList.emplace_back(ce);
         }
     }
 
-    std::nth_element(evList.begin(), evList.begin() + evList.size()/2, evList.end());
-    float evMedian = evList[evList.size()/2];
+    std::nth_element(cameraExposureList.begin(), cameraExposureList.begin() + cameraExposureList.size()/2, cameraExposureList.end());
+    float ceMedian = cameraExposureList[cameraExposureList.size()/2];
 
-    return evMedian;
+    return ceMedian;
   }
 
   /**

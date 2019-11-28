@@ -191,34 +191,29 @@ public:
     return (!isPartOfRig() || _isIndependantPose);
   }
 
-  float getEv() const
+  /**
+   * 
+  */
+  float getCameraExposureSetting() const
   {
-      const float shutter = getMetadataShutter();
-      const float aperture = getMetadataAperture();
-      const float iso = static_cast<float>(getMetadataISO());
+    const float shutter = getMetadataShutter();
+    const float aperture = getMetadataAperture();
+    if (shutter < 0 || aperture < 0)
+        return -1.f;
 
-      if(shutter < 0 || aperture < 0 || iso < 0)
-          return -1;
+    const float iso = getMetadataISO();
+    const float isoRatio = (iso < 0.f) ? 1.0 : (iso / 100.f);
 
-      // WIKIPEDIA : + log2f(iso/100.f)
-      float ev = log2f(std::pow(aperture, 2.0f) / shutter) - log2f(iso/100.f);
-      return ev;
+    // The value of the constant must be within the range 10.6 to 13.4, according to the standard.
+    const float K = 12.07488f;
+    float cameraExposure = (shutter * isoRatio) / (aperture * aperture * K);
+    return cameraExposure;
   }
 
-  /**
-   * @brief Get the value of the gap bewteen the view's exposition and a reference exposition
-   * @param [refEv] the median exposition of all views
-   * @return the exposure compensation
-   */
-  float getEvCompensation(float refEv) const
-    {
-        const float ev = getEv();
-        if(ev == -1)
-            return 1.0f;
-
-        return std::pow(2.0f, ev - refEv);
-    }
-
+  float getEv() const
+  {
+    return std::log2(1.f/getCameraExposureSetting());
+  }
 
   /**
    * @brief Return true if the given metadata name exists

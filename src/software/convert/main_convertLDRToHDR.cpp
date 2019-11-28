@@ -326,20 +326,25 @@ int main(int argc, char * argv[]) {
     return (path_a.stem().string() < path_b.stem().string());
   });
 
-  /*
-  Make sure all images have same aperture
-  */
-  float aperture = viewsOrderedByName[0]->getMetadataAperture();
-  for (auto & view : viewsOrderedByName) {
-    
-    if (view->getMetadataAperture() != aperture) {
-      ALICEVISION_LOG_ERROR("Different apertures amongst the dataset");
-      return EXIT_FAILURE;
+  {
+    // Put a warning, if the aperture changes.
+    std::set<float> apertures;
+    for (auto & view : viewsOrderedByName)
+    {
+      apertures.insert(view->getMetadataAperture());
+    }
+    if(apertures.size() != 1)
+    {
+      ALICEVISION_LOG_WARNING("Different apertures amongst the dataset. For correct HDR, you should only change the shutter speed (and eventually the ISO).");
+      ALICEVISION_LOG_WARNING("Used apertures:");
+      for (auto a : apertures)
+      {
+        ALICEVISION_LOG_WARNING(" * " << a);
+      }
     }
   }
 
-
-  /*Make groups*/
+  // Make groups
   std::vector<std::vector<std::shared_ptr<sfmData::View>>> groupedViews;
   std::vector<std::shared_ptr<sfmData::View>> group;
   for (auto & view : viewsOrderedByName) {
@@ -357,7 +362,7 @@ int main(int argc, char * argv[]) {
     /*Sort all images by exposure time*/
     std::sort(group.begin(), group.end(), [](const std::shared_ptr<sfmData::View> & a, const std::shared_ptr<sfmData::View> & b) -> bool { 
       if (a == nullptr || b == nullptr) return true;
-      return (a->getMetadataShutter() < b->getMetadataShutter());
+      return (a->getCameraExposureSetting() < b->getCameraExposureSetting());
     });
 
     /*Target views are the middle exposed views*/
@@ -380,7 +385,7 @@ int main(int argc, char * argv[]) {
 
     for (int j = 0; j < group.size(); j++)
     {
-      float etime = group[j]->getMetadataShutter();
+      float etime = group[j]->getCameraExposureSetting();
       exposures.push_back(etime);
     }
     groupedExposures.push_back(exposures); 
@@ -540,9 +545,9 @@ int main(int argc, char * argv[]) {
 
     /* Merge HDR images */
     hdr::hdrMerge merge;
-    float targetTime = targetView->getMetadataShutter();
+    float targetCameraExposure = targetView->getCameraExposureSetting();
     image::Image<image::RGBfColor> HDRimage;
-    merge.process(images, groupedExposures[g], fusionWeight, response, HDRimage, targetTime, false, clampedValueCorrection);
+    merge.process(images, groupedExposures[g], fusionWeight, response, HDRimage, targetCameraExposure, false, clampedValueCorrection);
 
     /* Output image file path */
     std::string hdr_output_path;

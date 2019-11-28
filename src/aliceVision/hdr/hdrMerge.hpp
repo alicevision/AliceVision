@@ -21,7 +21,7 @@ public:
    * @param images
    * @param radiance
    * @param times
-   * @param targetTime
+   * @param targetCameraExposure
    * @param response
    */
   void process(const std::vector< image::Image<image::RGBfColor> > &images,
@@ -29,7 +29,7 @@ public:
                 const rgbCurve &weight,
                 const rgbCurve &response,
                 image::Image<image::RGBfColor> &radiance,
-                float targetTime,
+                float targetCameraExposure,
                 bool robCalibrate = false,
                 float clampedValueCorrection = 1.f);
   

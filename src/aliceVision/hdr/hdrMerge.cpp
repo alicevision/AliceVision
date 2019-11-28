@@ -47,7 +47,7 @@ void hdrMerge::process(const std::vector< image::Image<image::RGBfColor> > &imag
                               const rgbCurve &weight,
                               const rgbCurve &response,
                               image::Image<image::RGBfColor> &radiance,
-                              float targetTime,
+                              float targetCameraExposure,
                               bool robCalibrate,
                               float clampedValueCorrection)
 {
@@ -139,7 +139,7 @@ void hdrMerge::process(const std::vector< image::Image<image::RGBfColor> > &imag
         //    double clampedLowValue = sigmoid(0.0f, 1.0f, /*sigWidth=*/0.01f, /*sigMid=*/0.005, lowValue);            
         //}
 
-        radianceColor(channel) = wsum / std::max(0.001, wdiv) * targetTime;
+        radianceColor(channel) = wsum / std::max(0.001, wdiv) * targetCameraExposure;
       }
       double clampedValueLuminanceCompensation = isPixelClamped / 3.0;
       double clampedValueLuminanceCompensationInv = (1.0 - clampedValueLuminanceCompensation);
