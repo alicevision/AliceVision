@@ -96,10 +96,8 @@ inline std::istream& operator>>(std::istream& in, ECalibrationMethod& calibratio
 }
 
 
-
-
-int main(int argc, char * argv[]) {
-
+int main(int argc, char * argv[])
+{
   std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
   std::string sfmInputDataFilename = "";
   std::string sfmOutputDataFilename = "";
@@ -113,10 +111,7 @@ int main(int argc, char * argv[]) {
   std::string calibrationWeightFunction = "default";
   hdr::EFunctionType fusionWeightFunction = hdr::EFunctionType::GAUSSIAN;
 
-
-  /*****
-  * DESCRIBE COMMAND LINE PARAMETERS 
-  */
+  // Command line parameters
   po::options_description allParams(
     "Parse external information about cameras used in a panorama.\n"
     "AliceVision PanoramaExternalInfo");
@@ -153,9 +148,6 @@ int main(int argc, char * argv[]) {
   
   allParams.add(requiredParams).add(optionalParams).add(logParams);
 
-   /**
-   * READ COMMAND LINE
-   */
   po::variables_map vm;
   try
   {
@@ -184,50 +176,49 @@ int main(int argc, char * argv[]) {
   ALICEVISION_COUT("Program called with the following parameters:");
   ALICEVISION_COUT(vm);
 
-  /**
-   *  set verbose level
-   **/
   system::Logger::get()->setLogLevel(verboseLevel);
 
-  if (groupSize < 0) {
+  if (groupSize < 0)
+  {
     ALICEVISION_LOG_ERROR("Invalid number of brackets");
     return EXIT_FAILURE;
   }
 
-  /*Analyze path*/
+  // Analyze path
   boost::filesystem::path path(sfmOutputDataFilename);
-  std::string output_path = path.parent_path().string();
+  std::string outputPath = path.parent_path().string();
 
-  /**
-   * Read sfm data
-   */
+  // Read sfm data
   sfmData::SfMData sfmData;
   if(!sfmDataIO::Load(sfmData, sfmInputDataFilename, sfmDataIO::ESfMData(sfmDataIO::VIEWS | sfmDataIO::INTRINSICS))) {
     ALICEVISION_LOG_ERROR("The input SfMData file '" << sfmInputDataFilename << "' cannot be read.");
     return EXIT_FAILURE;
   }
-  
 
   size_t countImages = sfmData.getViews().size();
-  if (countImages == 0) {
+  if (countImages == 0)
+  {
     ALICEVISION_LOG_ERROR("The input SfMData contains no input !");
     return EXIT_FAILURE;
   }
 
-  if (countImages % groupSize != 0) {
+  if (countImages % groupSize != 0)
+  {
     ALICEVISION_LOG_ERROR("The input SfMData file is not compatible with this bracket size");
     return EXIT_FAILURE;
   }
   size_t countGroups = countImages / groupSize;
 
-  /*Make sure there is only one kind of image in dataset*/
-  if (sfmData.getIntrinsics().size() > 2) {
+  // Make sure there is only one kind of image in dataset
+  if (sfmData.getIntrinsics().size() > 2)
+  {
     ALICEVISION_LOG_ERROR("Multiple intrinsics : Different kind of images in dataset");
     return EXIT_FAILURE;
   }
 
-  /*If two intrinsics, may be some images are simply rotated*/
-  if (sfmData.getIntrinsics().size() == 2) {
+  // If two intrinsics, may be some images are simply rotated
+  if (sfmData.getIntrinsics().size() == 2)
+  {
     const sfmData::Intrinsics & intrinsics = sfmData.getIntrinsics();
     
     unsigned int w = intrinsics.begin()->second->w();
@@ -235,7 +226,8 @@ int main(int argc, char * argv[]) {
     unsigned int rw = intrinsics.rbegin()->second->w();
     unsigned int rh = intrinsics.rbegin()->second->h();
 
-    if (w != rh || h != rw) {
+    if (w != rh || h != rw)
+    {
       ALICEVISION_LOG_ERROR("Multiple intrinsics : Different kind of images in dataset");
       return EXIT_FAILURE;
     }
@@ -246,25 +238,32 @@ int main(int argc, char * argv[]) {
     size_t first = 0;
     size_t second = 0;
     sfmData::Views & views = sfmData.getViews();
-    for (const auto & v : views) {
-      if (v.second->getIntrinsicId() == firstId) {
+    for (const auto & v : views)
+    {
+      if (v.second->getIntrinsicId() == firstId)
+      {
         first++;
       }
-      else {
+      else
+      {
         second++;
       }
     }
 
-    /* Set all view with the majority intrinsics */
-    if (first > second) {
-      for (const auto & v : views) {
+    // Set all view with the majority intrinsics
+    if (first > second)
+    {
+      for (const auto & v : views)
+      {
         v.second->setIntrinsicId(firstId);
       }
 
       sfmData.getIntrinsics().erase(secondId);
     }
-    else {
-      for (const auto & v : views) {
+    else
+    {
+      for (const auto & v : views)
+      {
         v.second->setIntrinsicId(secondId);
       }
 
@@ -272,49 +271,53 @@ int main(int argc, char * argv[]) {
     }
   }
 
-  /* Rotate needed images */
+  // Rotate needed images
   {
     const sfmData::Intrinsics & intrinsics = sfmData.getIntrinsics();
     unsigned int w = intrinsics.begin()->second->w();
     unsigned int h = intrinsics.begin()->second->h();
 
     sfmData::Views & views = sfmData.getViews();
-    for (auto & v : views) {
-      if (v.second->getWidth() == h && v.second->getHeight() == w) {
+    for (auto & v : views)
+    {
+      if (v.second->getWidth() == h && v.second->getHeight() == w)
+      {
         ALICEVISION_LOG_INFO("Create intermediate rotated image !");
 
-        /*Read original image*/
+        // Read original image
         image::Image<image::RGBfColor> originalImage;
         image::readImage(v.second->getImagePath(), originalImage, image::EImageColorSpace::LINEAR);
 
-        /*Create a rotated image*/
+        // Create a rotated image
         image::Image<image::RGBfColor> rotated(w, h);
-        for (int k = 0; k < h; k++) {
-          for (int l = 0; l < w; l++) {
-            rotated(k, l) = originalImage(l, rotated.Height() - 1 - k);
+        for (int y = 0; y < h; ++y)
+        {
+          for (int x = 0; x < w; x++)
+          {
+            rotated(y, x) = originalImage(x, rotated.Height() - 1 - y);
           }
         }
 
-        boost::filesystem::path old_path(v.second->getImagePath());
-        std::string old_filename = old_path.stem().string();
+        boost::filesystem::path origImgPath(v.second->getImagePath());
+        std::string origFilename = origImgPath.stem().string();
 
-        /*Save this image*/
-        std::stringstream sstream;
-        sstream << output_path << "/" << old_filename << ".exr";
+        // Save this image
+        std::string rotatedImagePath = (fs::path(outputPath) / (origFilename + ".exr")).string();
         oiio::ParamValueList metadata = image::readImageMetadata(v.second->getImagePath());
-        image::writeImage(sstream.str(), rotated, image::EImageColorSpace::AUTO, metadata);
+        image::writeImage(rotatedImagePath, rotated, image::EImageColorSpace::AUTO, metadata);
 
-        /*Update view for this modification*/
+        // Update view for this modification
         v.second->setWidth(w);
         v.second->setHeight(h);
-        v.second->setImagePath(sstream.str());
+        v.second->setImagePath(rotatedImagePath);
       }
     }
   }
 
-  /*Order views by their image names (without path and extension to make sure we handle rotated images) */
+  // Order views by their image names (without path and extension to make sure we handle rotated images)
   std::vector<std::shared_ptr<sfmData::View>> viewsOrderedByName;
-  for (auto & viewIt: sfmData.getViews()) {
+  for (auto & viewIt: sfmData.getViews())
+  {
     viewsOrderedByName.push_back(viewIt.second);
   }
   std::sort(viewsOrderedByName.begin(), viewsOrderedByName.end(), [](const std::shared_ptr<sfmData::View> & a, const std::shared_ptr<sfmData::View> & b) -> bool { 
@@ -359,16 +362,16 @@ int main(int argc, char * argv[]) {
   std::vector<std::shared_ptr<sfmData::View>> targetViews;
   for (auto & group : groupedViews)
   {
-    /*Sort all images by exposure time*/
+    // Sort all images by exposure time
     std::sort(group.begin(), group.end(), [](const std::shared_ptr<sfmData::View> & a, const std::shared_ptr<sfmData::View> & b) -> bool { 
       if (a == nullptr || b == nullptr) return true;
       return (a->getCameraExposureSetting() < b->getCameraExposureSetting());
     });
 
-    /*Target views are the middle exposed views*/
+    // Target views are the middle exposed views
     int middleIndex = group.size() / 2;
 
-    /*If odd size, choose the more exposed view*/
+    // If odd size, choose the more exposed view
     if (group.size() % 2 && group.size() > 1) {
       middleIndex++;
     }
@@ -376,7 +379,7 @@ int main(int argc, char * argv[]) {
     targetViews.push_back(group[middleIndex]);
   }
 
-  /*Build exposure times table*/
+  // Build exposure times table
   std::vector<std::vector<float>> groupedExposures;
   for (int i = 0; i < groupedViews.size(); i++)
   {
@@ -391,7 +394,7 @@ int main(int argc, char * argv[]) {
     groupedExposures.push_back(exposures); 
   }
 
-  /*Build table of file names*/
+  // Build table of file names
   std::vector<std::vector<std::string>> groupedFilenames;
   for (int i = 0; i < groupedViews.size(); i++)
   {
@@ -444,16 +447,14 @@ int main(int argc, char * argv[]) {
           {
               hdr::rgbCurve r = response;
               r.exponential(); // TODO
-              std::string outputFolder = fs::path(sfmOutputDataFilename).parent_path().string();
               std::string methodName = ECalibrationMethod_enumToString(calibrationMethod);
-              std::string outputResponsePath = (fs::path(outputFolder) / (std::string("response_log_") + methodName + std::string(".csv"))).string();
-              std::string outputResponsePathHtml = (fs::path(outputFolder) / (std::string("response_log_") + methodName + std::string(".html"))).string();
+              std::string outputResponsePath = (fs::path(outputPath) / (std::string("response_log_") + methodName + std::string(".csv"))).string();
+              std::string outputResponsePathHtml = (fs::path(outputPath) / (std::string("response_log_") + methodName + std::string(".html"))).string();
 
               r.write(outputResponsePath);
               r.writeHtml(outputResponsePathHtml, "Camera Response Curve " + methodName);
               ALICEVISION_LOG_INFO("Camera response function written as " << outputResponsePath);
           }
-
       }
       break;
       case ECalibrationMethod::DEBEVEC:
@@ -466,10 +467,9 @@ int main(int argc, char * argv[]) {
           calibration.process(groupedFilenames, channelQuantization, groupedExposures, calibrationNbPoints, fisheye, calibrationWeight, lambda, response);
 
           {
-              std::string outputFolder = fs::path(sfmOutputDataFilename).parent_path().string();
               std::string methodName = ECalibrationMethod_enumToString(calibrationMethod);
-              std::string outputResponsePath = (fs::path(outputFolder) / (std::string("response_log_") + methodName + std::string(".csv"))).string();
-              std::string outputResponsePathHtml = (fs::path(outputFolder) / (std::string("response_log_") + methodName + std::string(".html"))).string();
+              std::string outputResponsePath = (fs::path(outputPath) / (std::string("response_log_") + methodName + std::string(".csv"))).string();
+              std::string outputResponsePathHtml = (fs::path(outputPath) / (std::string("response_log_") + methodName + std::string(".html"))).string();
 
               response.write(outputResponsePath);
               response.writeHtml(outputResponsePathHtml, "Camera Response Curve " + methodName);
@@ -507,10 +507,9 @@ int main(int argc, char * argv[]) {
   ALICEVISION_LOG_INFO("Calibration done.");
 
   {
-      std::string outputFolder = fs::path(sfmOutputDataFilename).parent_path().string();
       std::string methodName = ECalibrationMethod_enumToString(calibrationMethod);
-      std::string outputResponsePath = (fs::path(outputFolder) / (std::string("response_") + methodName + std::string(".csv"))).string();
-      std::string outputResponsePathHtml = (fs::path(outputFolder) / (std::string("response_") + methodName + std::string(".html"))).string();
+      std::string outputResponsePath = (fs::path(outputPath) / (std::string("response_") + methodName + std::string(".csv"))).string();
+      std::string outputResponsePathHtml = (fs::path(outputPath) / (std::string("response_") + methodName + std::string(".html"))).string();
 
       response.write(outputResponsePath);
       response.writeHtml(outputResponsePathHtml, "Camera Response Curve " + methodName);
@@ -530,42 +529,36 @@ int main(int argc, char * argv[]) {
   {
     std::vector<image::Image<image::RGBfColor>> images(groupSize);
     std::shared_ptr<sfmData::View> targetView = targetViews[g];
-    if (targetView == nullptr)
-    {
-      ALICEVISION_LOG_ERROR("Null view");
-      return EXIT_FAILURE;
-    }
 
-    /* Load all images of the group */
+    // Load all images of the group
     for (int i = 0; i < groupSize; i++)
     {
       ALICEVISION_LOG_INFO("Load " << groupedFilenames[g][i]);
       image::readImage(groupedFilenames[g][i], images[i], (calibrationMethod == ECalibrationMethod::LINEAR) ? image::EImageColorSpace::LINEAR : image::EImageColorSpace::SRGB);
     }
 
-    /* Merge HDR images */
+    // Merge HDR images
     hdr::hdrMerge merge;
     float targetCameraExposure = targetView->getCameraExposureSetting();
     image::Image<image::RGBfColor> HDRimage;
     merge.process(images, groupedExposures[g], fusionWeight, response, HDRimage, targetCameraExposure, false, clampedValueCorrection);
 
-    /* Output image file path */
-    std::string hdr_output_path;
+    // Output image file path
     std::stringstream  sstream;
-    sstream << output_path << "/" << "hdr_" << std::setfill('0') << std::setw(4) << g << ".exr";
+    sstream << "hdr_" << std::setfill('0') << std::setw(4) << g << ".exr";
 
-    /* Write an image with parameters from the target view */
+    std::string hdrImagePath = (fs::path(outputPath) / sstream.str()).string();
+
+    // Write an image with parameters from the target view
     oiio::ParamValueList targetMetadata = image::readImageMetadata(targetView->getImagePath());
-    image::writeImage(sstream.str(), HDRimage, image::EImageColorSpace::AUTO, targetMetadata);
+    image::writeImage(hdrImagePath, HDRimage, image::EImageColorSpace::AUTO, targetMetadata);
 
     targetViews[g]->setImagePath(sstream.str());
     vs[targetViews[g]->getViewId()] = targetViews[g];
   }
 
-  /*
-  Save output sfmdata
-  */
-  if (!sfmDataIO::Save(outputSfm, sfmOutputDataFilename, sfmDataIO::ESfMData(sfmDataIO::VIEWS|sfmDataIO::INTRINSICS)))
+  // Export output sfmData
+  if (!sfmDataIO::Save(outputSfm, sfmOutputDataFilename, sfmDataIO::ESfMData::ALL))
   {
     ALICEVISION_LOG_ERROR("Can not save output sfm file at " << sfmOutputDataFilename);
     return EXIT_FAILURE;
