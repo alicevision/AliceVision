@@ -104,23 +104,13 @@ void rgbCurve::setEmor()
   }
 }
 
-//void rgbCurve::setGaussian(double size)
-//{
-//  const float coefficient = 1.f / (static_cast<float>(getSize() - 1) / 4.0f);
-//  for(std::size_t i = 0; i < getSize(); ++i)
-//  {
-//    float factor = i / size * coefficient - 2.0f / size;
-//    setAllChannels(i, std::exp( -factor * factor ));
-//  }
-//}
-
 void rgbCurve::setGaussian(double mu, double sigma)
 {
+    // https://www.desmos.com/calculator/s3q3ow1mpy
     for(std::size_t i = 0; i < getSize(); ++i)
     {
         float factor = i / (static_cast<float>(getSize() - 1)) - mu;
         setAllChannels(i, std::exp( -factor * factor / (2.0 * sigma * sigma)));
-        //    setAllChannels(i, std::max(0.0, std::exp( -factor * factor / (2.0 * sigma * sigma)) - 0.005));
     }
 }
 
@@ -135,26 +125,27 @@ void rgbCurve::setRobertsonWeight()
 
 void rgbCurve::setTriangular()
 {
-    const float coefficient = 1.f / static_cast<float>(getSize() - 1);
+    const float coefficient = 2.f / static_cast<float>(getSize() - 1);
     for(std::size_t i = 0; i < getSize(); ++i)
     {
         float value = i * coefficient;
-        if (value > 0.5f)
+        if (value > 1.0f)
         {
             value = 1.0f - value;
         }
-        setAllChannels(i, 2.f * value);
+        setAllChannels(i, value);
     }
 }
 
 
-void rgbCurve::setPlateau()
+void rgbCurve::setPlateau(float weight)
 {
+    // https://www.desmos.com/calculator/mouwyuvjvw
+
     const float coefficient = 1.f / static_cast<float>(getSize() - 1);
     for(std::size_t i = 0; i < getSize(); ++i)
     {
-        setAllChannels(i, 1.0f - std::pow((2.0f * i * coefficient - 1.0f), 12.0f));
-        //      setAllChannels(i, 1.0f - std::pow((2.0f * i * coefficient - 1.0f), 4.0f));
+        setAllChannels(i, 1.0f - std::pow((2.0f * i * coefficient - 1.0f), weight));
     }
 }
 

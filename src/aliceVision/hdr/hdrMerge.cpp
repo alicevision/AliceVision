@@ -43,13 +43,11 @@ inline float sigmoidInv(float zeroVal, float endVal, float sigwidth, float sigMi
 }
 
 void hdrMerge::process(const std::vector< image::Image<image::RGBfColor> > &images,
-                              const std::vector<float> &times,
-                              const rgbCurve &weight,
-                              const rgbCurve &response,
-                              image::Image<image::RGBfColor> &radiance,
-                              float targetCameraExposure,
-                              bool robCalibrate,
-                              float clampedValueCorrection)
+                        const std::vector<float> &times,
+                        const rgbCurve &weight,
+                        const rgbCurve &response,
+                        image::Image<image::RGBfColor> &radiance,
+                        float targetCameraExposure)
 {
   //checks
   assert(!response.isEmpty());
@@ -69,10 +67,8 @@ void hdrMerge::process(const std::vector< image::Image<image::RGBfColor> > &imag
     ALICEVISION_LOG_TRACE(images[i].Width() << "x" << images[i].Height() << ", time: " << times[i]);
   }
 
-  const float maxLum = 1000.0f;
-
   rgbCurve weightShortestExposure = weight;
-  weightShortestExposure.freezeSecondPartValues(); // invertAndScaleSecondPart(clampedValueCorrection * maxLum);
+  weightShortestExposure.freezeSecondPartValues();
 
   #pragma omp parallel for
   for(int y = 0; y < height; ++y)
@@ -81,8 +77,6 @@ void hdrMerge::process(const std::vector< image::Image<image::RGBfColor> > &imag
     {
       //for each pixels
       image::RGBfColor &radianceColor = radiance(y, x);
-
-      double isPixelClamped = 0.0;
 
       for(std::size_t channel = 0; channel < 3; ++channel)
       {
@@ -95,13 +89,6 @@ void hdrMerge::process(const std::vector< image::Image<image::RGBfColor> > &imag
             // for each image
             const double value = images[exposureIndex](y, x)(channel);
             const double time = times[exposureIndex];
-
-            // https://www.desmos.com/calculator/xamvguu8zw
-            //                       ____
-            // sigmoid inv:  _______/
-            //                  0    1
-            const float isChannelClamped = sigmoidInv(0.0f, 1.0f, /*sigWidth=*/0.2f,  /*sigMid=*/0.9f, value);
-            isPixelClamped += isChannelClamped;
 
             //
             // weightShortestExposure:          _______
@@ -129,31 +116,90 @@ void hdrMerge::process(const std::vector< image::Image<image::RGBfColor> > &imag
           wsum += w * r / time;
           wdiv += w;
         }
-        //{
-        //    int exposureIndex = images.size() - 1;
-        //    double lowValue = images[exposureIndex](y, x)(channel);
-        //    // https://www.desmos.com/calculator/cvu8s3rlvy
-        //    //              ____
-        //    // sigmoid:         \________
-        //    //                  0    1
-        //    double clampedLowValue = sigmoid(0.0f, 1.0f, /*sigWidth=*/0.01f, /*sigMid=*/0.005, lowValue);            
-        //}
 
         radianceColor(channel) = wsum / std::max(0.001, wdiv) * targetCameraExposure;
-      }
-      double clampedValueLuminanceCompensation = isPixelClamped / 3.0;
-      double clampedValueLuminanceCompensationInv = (1.0 - clampedValueLuminanceCompensation);
-      assert(clampedValueLuminanceCompensation <= 1.0);
-
-      for(std::size_t channel = 0; channel < 3; ++channel)
-      {
-        radianceColor(channel) = clampedValueLuminanceCompensationInv * radianceColor(channel) +
-                                 clampedValueLuminanceCompensation * clampedValueCorrection * maxLum;
       }
     }
   }
 }
 
+void hdrMerge::postProcessHighlight(const std::vector< image::Image<image::RGBfColor> > &images,
+    const std::vector<float> &times,
+    const rgbCurve &weight,
+    const rgbCurve &response,
+    image::Image<image::RGBfColor> &radiance,
+    float targetCameraExposure,
+    float highlightCorrectionFactor,
+    float highlightTargetLux)
+{
+    //checks
+    assert(!response.isEmpty());
+    assert(!images.empty());
+    assert(images.size() == times.size());
+
+    if (highlightCorrectionFactor == 0.0f)
+        return;
+
+    const image::Image<image::RGBfColor>& inputImage = images.front();
+    // Target Camera Exposure = 1 for EV-0 (iso=100, shutter=1, fnumber=1) => 2.5 lux
+    float highlightTarget = highlightTargetLux * targetCameraExposure * 2.5;
+
+    // get images width, height
+    const std::size_t width = inputImage.Width();
+    const std::size_t height = inputImage.Height();
+
+    image::Image<float> isPixelClamped(width, height);
+
+#pragma omp parallel for
+    for (int y = 0; y < height; ++y)
+    {
+        for (int x = 0; x < width; ++x)
+        {
+            //for each pixels
+            image::RGBfColor &radianceColor = radiance(y, x);
+
+            float& isClamped = isPixelClamped(y, x);
+            isClamped = 0.0f;
+
+            for (std::size_t channel = 0; channel < 3; ++channel)
+            {
+                const float value = inputImage(y, x)(channel);
+
+                // https://www.desmos.com/calculator/vpvzmidy1a
+                //                       ____
+                // sigmoid inv:  _______/
+                //                  0    1
+                const float isChannelClamped = sigmoidInv(0.0f, 1.0f, /*sigWidth=*/0.08f,  /*sigMid=*/0.95f, value);
+                isClamped += isChannelClamped;
+            }
+            isPixelClamped(y, x) /= 3.0;
+        }
+    }
+
+    image::Image<float> isPixelClamped_g(width, height);
+    image::ImageGaussianFilter(isPixelClamped, 1.0f, isPixelClamped_g, 3, 3);
+
+#pragma omp parallel for
+    for (int y = 0; y < height; ++y)
+    {
+        for (int x = 0; x < width; ++x)
+        {
+            image::RGBfColor& radianceColor = radiance(y, x);
+
+            double clampingCompensation = highlightCorrectionFactor * (isPixelClamped_g(y, x) / 3.0);
+            double clampingCompensationInv = (1.0 - clampingCompensation);
+            assert(clampingCompensation <= 1.0);
+
+            for (std::size_t channel = 0; channel < 3; ++channel)
+            {
+                if(highlightTarget > radianceColor(channel))
+                {
+                    radianceColor(channel) = clampingCompensation * highlightTarget + clampingCompensationInv * radianceColor(channel);
+                }
+            }
+        }
+    }
+}
 
 } // namespace hdr
 } // namespace aliceVision

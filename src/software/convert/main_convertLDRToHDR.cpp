@@ -103,7 +103,8 @@ int main(int argc, char * argv[])
   std::string sfmOutputDataFilename = "";
   int groupSize = 3;
   ECalibrationMethod calibrationMethod = ECalibrationMethod::LINEAR;
-  float clampedValueCorrection = 1.0f;
+  float highlightCorrectionFactor = 1.0f;
+  float highlightTargetLux = 100000.0f;
   bool fisheye = false;
   int channelQuantizationPower = 10;
   int calibrationNbPoints = 0;
@@ -127,8 +128,10 @@ int main(int argc, char * argv[])
   optionalParams.add_options()
     ("calibrationMethod,m", po::value<ECalibrationMethod>(&calibrationMethod)->default_value(calibrationMethod),
         "Name of method used for camera calibration: linear, robertson (slow), debevec, grossberg.")
-    ("expandDynamicRange,e", po::value<float>(&clampedValueCorrection)->default_value(clampedValueCorrection),
-        "float value between 0 and 1 to correct clamped high values in dynamic range: use 0 for no correction, 0.5 for interior lighting and 1 for outdoor lighting.")
+    ("highlightsMaxLuminance", po::value<float>(&highlightTargetLux)->default_value(highlightTargetLux),
+        "Highlights maximum luminance.")
+    ("expandDynamicRange"/*"highlightCorrectionFactor"*/, po::value<float>(&highlightCorrectionFactor)->default_value(highlightCorrectionFactor),
+        "float value between 0 and 1 to correct clamped highlights in dynamic range: use 0 for no correction, 1 for full correction to maxLuminance.")
     ("fisheyeLens,f", po::value<bool>(&fisheye)->default_value(fisheye),
         "Set to 1 if images are taken with a fisheye lens and to 0 if not. Default value is set to 1.")
     ("channelQuantizationPower", po::value<int>(&channelQuantizationPower)->default_value(channelQuantizationPower),
@@ -190,7 +193,8 @@ int main(int argc, char * argv[])
 
   // Read sfm data
   sfmData::SfMData sfmData;
-  if(!sfmDataIO::Load(sfmData, sfmInputDataFilename, sfmDataIO::ESfMData(sfmDataIO::VIEWS | sfmDataIO::INTRINSICS))) {
+  if(!sfmDataIO::Load(sfmData, sfmInputDataFilename, sfmDataIO::ESfMData::ALL))
+  {
     ALICEVISION_LOG_ERROR("The input SfMData file '" << sfmInputDataFilename << "' cannot be read.");
     return EXIT_FAILURE;
   }
@@ -330,19 +334,19 @@ int main(int argc, char * argv[])
   });
 
   {
-    // Put a warning, if the aperture changes.
-    std::set<float> apertures;
+    // Print a warning if the aperture changes.
+    std::set<float> fnumbers;
     for (auto & view : viewsOrderedByName)
     {
-      apertures.insert(view->getMetadataAperture());
+      fnumbers.insert(view->getMetadataFNumber());
     }
-    if(apertures.size() != 1)
+    if(fnumbers.size() != 1)
     {
       ALICEVISION_LOG_WARNING("Different apertures amongst the dataset. For correct HDR, you should only change the shutter speed (and eventually the ISO).");
-      ALICEVISION_LOG_WARNING("Used apertures:");
-      for (auto a : apertures)
+      ALICEVISION_LOG_WARNING("Used f-numbers:");
+      for (auto f : fnumbers)
       {
-        ALICEVISION_LOG_WARNING(" * " << a);
+        ALICEVISION_LOG_WARNING(" * " << f);
       }
     }
   }
@@ -350,10 +354,11 @@ int main(int argc, char * argv[])
   // Make groups
   std::vector<std::vector<std::shared_ptr<sfmData::View>>> groupedViews;
   std::vector<std::shared_ptr<sfmData::View>> group;
-  for (auto & view : viewsOrderedByName) {
-    
+  for (auto & view : viewsOrderedByName)
+  {
     group.push_back(view);
-    if (group.size() == groupSize) {
+    if (group.size() == groupSize)
+    {
       groupedViews.push_back(group);
       group.clear();
     }
@@ -372,14 +377,15 @@ int main(int argc, char * argv[])
     int middleIndex = group.size() / 2;
 
     // If odd size, choose the more exposed view
-    if (group.size() % 2 && group.size() > 1) {
+    if (group.size() % 2 && group.size() > 1)
+    {
       middleIndex++;
     }
 
     targetViews.push_back(group[middleIndex]);
   }
 
-  // Build exposure times table
+  // Build camera exposure table
   std::vector<std::vector<float>> groupedExposures;
   for (int i = 0; i < groupedViews.size(); i++)
   {
@@ -433,7 +439,6 @@ int main(int argc, char * argv[])
   hdr::rgbCurve response(channelQuantization);
 
   const float lambda = channelQuantization * 1.f;
-  calibrationWeight.setTriangular();
 
   // calculate the response function according to the method given in argument or take the response provided by the user
   {
@@ -461,7 +466,7 @@ int main(int argc, char * argv[])
       {
           ALICEVISION_LOG_INFO("Debevec calibration");
           const float lambda = channelQuantization * 1.f;
-          if(calibrationNbPoints == 0)
+          if(calibrationNbPoints < 0)
               calibrationNbPoints = 10000;
           hdr::DebevecCalibrate calibration;
           calibration.process(groupedFilenames, channelQuantization, groupedExposures, calibrationNbPoints, fisheye, calibrationWeight, lambda, response);
@@ -485,7 +490,7 @@ int main(int argc, char * argv[])
           /*
           ALICEVISION_LOG_INFO("Robertson calibration");
           hdr::RobertsonCalibrate calibration(10);
-          if(calibrationNbPoints == 0)
+          if(calibrationNbPoints < 0)
             calibrationNbPoints = 1000000;
           calibration.process(groupedFilenames, channelQuantization, groupedExposures, calibrationNbPoints, fisheye, calibrationWeight, response);
           response.scale();
@@ -495,7 +500,7 @@ int main(int argc, char * argv[])
       case ECalibrationMethod::GROSSBERG:
       {
           ALICEVISION_LOG_INFO("Grossberg calibration");
-          if (calibrationNbPoints == 0)
+          if (calibrationNbPoints < 0)
               calibrationNbPoints = 1000000;
           hdr::GrossbergCalibrate calibration(3);
           calibration.process(groupedFilenames, channelQuantization, groupedExposures, calibrationNbPoints, fisheye, response);
@@ -541,19 +546,35 @@ int main(int argc, char * argv[])
     hdr::hdrMerge merge;
     float targetCameraExposure = targetView->getCameraExposureSetting();
     image::Image<image::RGBfColor> HDRimage;
-    merge.process(images, groupedExposures[g], fusionWeight, response, HDRimage, targetCameraExposure, false, clampedValueCorrection);
+    merge.process(images, groupedExposures[g], fusionWeight, response, HDRimage, targetCameraExposure);
+
+    // TO REMOVE: Temporary export for debug
+    {
+        // Output image file path
+        std::stringstream  sstream;
+        sstream << "hdr_" << std::setfill('0') << std::setw(4) << g << "_beforeCorrection.exr";
+        std::string hdrImagePath = (fs::path(outputPath) / sstream.str()).string();
+
+        // Write an image with parameters from the target view
+        oiio::ParamValueList targetMetadata = image::readImageMetadata(targetView->getImagePath());
+        image::writeImage(hdrImagePath, HDRimage, image::EImageColorSpace::AUTO, targetMetadata);
+    }
+
+    if(highlightCorrectionFactor > 0.0)
+    {
+      merge.postProcessHighlight(images, groupedExposures[g], fusionWeight, response, HDRimage, targetCameraExposure, highlightCorrectionFactor, highlightTargetLux);
+    }
 
     // Output image file path
     std::stringstream  sstream;
     sstream << "hdr_" << std::setfill('0') << std::setw(4) << g << ".exr";
-
     std::string hdrImagePath = (fs::path(outputPath) / sstream.str()).string();
 
     // Write an image with parameters from the target view
     oiio::ParamValueList targetMetadata = image::readImageMetadata(targetView->getImagePath());
     image::writeImage(hdrImagePath, HDRimage, image::EImageColorSpace::AUTO, targetMetadata);
 
-    targetViews[g]->setImagePath(sstream.str());
+    targetViews[g]->setImagePath(hdrImagePath);
     vs[targetViews[g]->getViewId()] = targetViews[g];
   }
 

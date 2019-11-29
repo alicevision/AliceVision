@@ -164,7 +164,6 @@ public:
   /**
     *@brief Set curves to gaussian
     */
-//      void setGaussian(double mu = 0.5, double sigma = 1.0 / (4.0 * sqrt(2.0)));
   void setGaussian(double mu = 0.5, double sigma = 1.0 / (5.0 * sqrt(2.0)));
 
   /**
@@ -178,9 +177,9 @@ public:
   void setTriangular();
 
   /**
-    *@brief Set curves to plateau
+    * @brief Set curves to plateau
     */
-  void setPlateau();
+  void setPlateau(float weight = 8.0f);
 
   /**
     *@brief Set curves to log10

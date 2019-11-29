@@ -197,16 +197,14 @@ public:
   float getCameraExposureSetting() const
   {
     const float shutter = getMetadataShutter();
-    const float aperture = getMetadataAperture();
-    if (shutter < 0 || aperture < 0)
+    const float fnumber = getMetadataFNumber();
+    if (shutter < 0 || fnumber < 0)
         return -1.f;
 
     const float iso = getMetadataISO();
     const float isoRatio = (iso < 0.f) ? 1.0 : (iso / 100.f);
 
-    // The value of the constant must be within the range 10.6 to 13.4, according to the standard.
-    const float K = 12.07488f;
-    float cameraExposure = (shutter * isoRatio) / (aperture * aperture * K);
+    float cameraExposure = (shutter * isoRatio) / (fnumber * fnumber);
     return cameraExposure;
   }
 
@@ -355,13 +353,21 @@ public:
   }
 
   /**
-     * @brief Get the corresponding "FNumber" (aperture) metadata value
-     * @return the metadata value float or -1 if no corresponding value
-     */
-  float getMetadataAperture() const
+   * @brief Get the corresponding "FNumber" (relative aperture) metadata value
+   * @return the metadata value float or -1 if no corresponding value
+   */
+  float getMetadataFNumber() const
   {
       if(hasDigitMetadata("FNumber"))
+      {
           return std::stof(getMetadata("FNumber"));
+      }
+      if (hasDigitMetadata("ApertureValue"))
+      {
+          const float aperture = std::stof(getMetadata("ApertureValue"));
+          // fnumber = 2^(aperture/2)
+          return std::pow(2.0f, aperture / 2.0f);
+      }
       return -1;
   }
 

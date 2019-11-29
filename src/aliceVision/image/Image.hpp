@@ -182,6 +182,10 @@ namespace aliceVision
       {
         return ( *this );
       }
+      inline Base& GetMat()
+      {
+          return (*this);
+      }
 
       //-- accessors/getters methods
       //------------------------------
