@@ -31,19 +31,17 @@ bool DebevecCalibrate::process(const std::vector< std::vector<std::string>> & im
   const int nbImages = imagePathsGroups.front().size();
   const int samplesPerImage = nbPoints / (nbGroups*nbImages);
 
-  /*
-  Always 3 channels for the input images ...
-  */
+  // Always 3 channels for the input images
   static const std::size_t channelsCount = 3;
 
-  //initialize response
+  // Initialize response
   response = rgbCurve(channelQuantization);
 
-  /*Store intermediate data for all three channels*/
+  // Store intermediate data for all three channels
   Vec b_array[channelsCount];
   std::vector<T> tripletList_array[channelsCount];
 
-  /* Initialize intermediate buffers */
+  // Initialize intermediate buffers
   for(unsigned int channel=0; channel < channelsCount; ++channel)
   {
     Vec & b = b_array[channel];
@@ -67,10 +65,7 @@ bool DebevecCalibrate::process(const std::vector< std::vector<std::string>> & im
     const std::size_t width = ldrImagesGroup.front().Width();
     const std::size_t height = ldrImagesGroup.front().Height();
 
-    /* 
-    Include the data-fitting equations.
-    If images are fisheye, we take only pixels inside a disk with a radius of image's minimum side
-    */
+    // If images are fisheye, we take only pixels inside a disk with a radius of image's minimum side
     if(fisheye)
     {
       const std::size_t minSize = std::min(width, height) * 0.97;
@@ -95,12 +90,10 @@ bool DebevecCalibrate::process(const std::vector< std::vector<std::string>> & im
           {
             std::size_t dist2 = pow(center(0)-x, 2) + pow(center(1)-y, 2);
 
-            /*This looks stupid ...*/
             if(dist2 > maxDist2)
             {
                 continue;
             }
-
 
             for (int channel = 0; channel < channelsCount; channel++)
             {
@@ -155,8 +148,7 @@ bool DebevecCalibrate::process(const std::vector< std::vector<std::string>> & im
   }
   count += 1;
 
-    /* include the smoothness equations */
-
+  // include the smoothness equations
   for(std::size_t k = 0; k<channelQuantization - 2; k++)
   {
     for (int channel = 0; channel < channelsCount; channel++)
@@ -176,14 +168,12 @@ bool DebevecCalibrate::process(const std::vector< std::vector<std::string>> & im
     A.setFromTriplets(tripletList_array[channel].begin(), tripletList_array[channel].end());
     b_array[channel].conservativeResize(count);
 
-    /* 
-    solve the system using SVD decomposition
-    */
+    // solve the system using SVD decomposition
     A.makeCompressed();
     Eigen::SparseQR<sMat, Eigen::COLAMDOrdering<int>> solver;
     solver.compute(A);
 
-    /*Check solver failure*/
+    // Check solver failure
     if (solver.info() != Eigen::Success)
     {
       return false;
@@ -191,7 +181,7 @@ bool DebevecCalibrate::process(const std::vector< std::vector<std::string>> & im
 
     Vec x = solver.solve(b_array[channel]);
 
-    /*Check solver failure*/
+    // Check solver failure
     if(solver.info() != Eigen::Success)
     {
       return false;
@@ -199,7 +189,7 @@ bool DebevecCalibrate::process(const std::vector< std::vector<std::string>> & im
 
     double relative_error = (A*x - b_array[channel]).norm() / b_array[channel].norm();
 
-    /* Save result to response curve*/
+    // Copy the result to the response curve
     for(std::size_t k = 0; k < channelQuantization; ++k)
     {
       response.setValue(k, channel, x(k));
