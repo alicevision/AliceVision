@@ -466,7 +466,7 @@ int main(int argc, char * argv[])
       {
           ALICEVISION_LOG_INFO("Debevec calibration");
           const float lambda = channelQuantization * 1.f;
-          if(calibrationNbPoints < 0)
+          if(calibrationNbPoints <= 0)
               calibrationNbPoints = 10000;
           hdr::DebevecCalibrate calibration;
           calibration.process(groupedFilenames, channelQuantization, groupedExposures, calibrationNbPoints, fisheye, calibrationWeight, lambda, response);
@@ -490,7 +490,7 @@ int main(int argc, char * argv[])
           /*
           ALICEVISION_LOG_INFO("Robertson calibration");
           hdr::RobertsonCalibrate calibration(10);
-          if(calibrationNbPoints < 0)
+          if(calibrationNbPoints <= 0)
             calibrationNbPoints = 1000000;
           calibration.process(groupedFilenames, channelQuantization, groupedExposures, calibrationNbPoints, fisheye, calibrationWeight, response);
           response.scale();
@@ -500,7 +500,7 @@ int main(int argc, char * argv[])
       case ECalibrationMethod::GROSSBERG:
       {
           ALICEVISION_LOG_INFO("Grossberg calibration");
-          if (calibrationNbPoints < 0)
+          if (calibrationNbPoints <= 0)
               calibrationNbPoints = 1000000;
           hdr::GrossbergCalibrate calibration(3);
           calibration.process(groupedFilenames, channelQuantization, groupedExposures, calibrationNbPoints, fisheye, response);
