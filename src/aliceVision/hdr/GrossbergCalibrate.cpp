@@ -49,46 +49,46 @@ void GrossbergCalibrate::process(const std::vector<std::vector<std::string>>& im
         const double *h = getEmorInvCurve(i+1);
         if(emorSize == channelQuantization)
         {
-          hCurves[i].assign(h, h + emorSize);
+            hCurves[i].assign(h, h + emorSize);
         }
         else if(emorSize > channelQuantization)
         {
-          std::vector<double> emorH;
-          emorH.assign(h, h + emorSize);
-          std::vector<double> h0 = std::vector<double>(emorH.begin(), emorH.end());
+            std::vector<double> emorH;
+            emorH.assign(h, h + emorSize);
+            std::vector<double> h0 = std::vector<double>(emorH.begin(), emorH.end());
 
-          std::size_t step = emorSize/channelQuantization;
-          for(std::size_t k = 0; k<channelQuantization; ++k)
-            hCurves[i].emplace_back(h0.at(k*step));
+            std::size_t step = emorSize/channelQuantization;
+            for(std::size_t k = 0; k<channelQuantization; ++k)
+                hCurves[i].emplace_back(h0.at(k*step));
         }
         else
         {
-          std::vector<double> emorH;
-          emorH.assign(h, h + emorSize);
-          std::vector<double> h0 = std::vector<double>(emorH.begin(), emorH.end());
+            std::vector<double> emorH;
+            emorH.assign(h, h + emorSize);
+            std::vector<double> h0 = std::vector<double>(emorH.begin(), emorH.end());
 
-          std::size_t step = channelQuantization/emorSize;
-          hCurves[i].resize(channelQuantization, 0.0);
-          for(std::size_t k = 0; k<emorSize-1; ++k)
-          {
-            hCurves[i].at(k*step) = h0.at(k);
-          }
-          hCurves[i].at(emorSize*step-1) = h0.at(emorSize-1);
-          std::size_t previousValidIndex = 0;
-          for(std::size_t index = 1; index<channelQuantization; ++index)
-          {
-              if(hCurves[i].at(index) != 0.0f)
-              {
-                  if(previousValidIndex+1 < index)
-                  {
-                      const float inter = (hCurves[i].at(index) - hCurves[i].at(previousValidIndex)) / (index - previousValidIndex);
-                      for(std::size_t j = previousValidIndex+1; j < index; ++j)
-                      {
-                          hCurves[i].at(j) = hCurves[i].at(previousValidIndex) + inter * (j-previousValidIndex);
-                      }
-                  }
-                  previousValidIndex = index;
-              }
+            std::size_t step = channelQuantization/emorSize;
+            hCurves[i].resize(channelQuantization, 0.0);
+            for(std::size_t k = 0; k<emorSize-1; ++k)
+            {
+                hCurves[i].at(k*step) = h0.at(k);
+            }
+            hCurves[i].at(emorSize*step-1) = h0.at(emorSize-1);
+            std::size_t previousValidIndex = 0;
+            for(std::size_t index = 1; index<channelQuantization; ++index)
+            {
+                if(hCurves[i].at(index) != 0.0f)
+                {
+                    if(previousValidIndex+1 < index)
+                    {
+                        const float inter = (hCurves[i].at(index) - hCurves[i].at(previousValidIndex)) / (index - previousValidIndex);
+                        for(std::size_t j = previousValidIndex+1; j < index; ++j)
+                        {
+                            hCurves[i].at(j) = hCurves[i].at(previousValidIndex) + inter * (j-previousValidIndex);
+                        }
+                    }
+                    previousValidIndex = index;
+                }
             }
         }
         H.col(i) = Eigen::Map<Vec>(hCurves[i].data(), channelQuantization);
