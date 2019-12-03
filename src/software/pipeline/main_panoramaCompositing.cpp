@@ -165,7 +165,7 @@ bool convolveHorizontal(image::Image<image::RGBAfColor> & output, const image::I
   for (int i = 0; i < output.Height(); i++) {
     for (int j = 0; j < output.Width(); j++) {
 
-      image::RGBAfColor sum = image::RGBAfColor(0.0);
+      image::RGBAfColor sum = image::RGBAfColor(0.0,0.0,0.0,0.0);
 
       if (input(i, j).a() < 1e-5) {
         output(i,j) = sum;
@@ -206,7 +206,7 @@ bool convolveVertical(image::Image<image::RGBAfColor> & output, const image::Ima
   for (int i = 0; i < output.Height(); i++) {
     for (int j = 0; j < output.Width(); j++) {
 
-      image::RGBAfColor sum = image::RGBAfColor(0.0);
+      image::RGBAfColor sum = image::RGBAfColor(0.0,0.0,0.0,0.0);
 
       if (input(i, j).a() < 1e-5) {
         output(i,j) = sum;
@@ -264,9 +264,9 @@ bool upscale(aliceVision::image::Image<image::RGBAfColor> & outputColor, const a
     for (int j = 0; j < width; j++) {
       int dj = j * 2;
 
-      outputColor(di, dj) = image::RGBAfColor(0.0);
-      outputColor(di, dj + 1) = image::RGBAfColor(0.0);
-      outputColor(di + 1, dj) = image::RGBAfColor(0.0);
+      outputColor(di, dj) = image::RGBAfColor(0.0,0.0,0.0,inputColor(i, j).a());
+      outputColor(di, dj + 1) = image::RGBAfColor(0.0,0.0,0.0,inputColor(i, j).a());
+      outputColor(di + 1, dj) = image::RGBAfColor(0.0,0.0,0.0,inputColor(i, j).a());
       outputColor(di + 1, dj + 1) = inputColor(i, j);
     }
   }
@@ -356,7 +356,7 @@ public:
 
     for (int lvl = 0; lvl < max_levels; lvl++) {
 
-      _levels.push_back(aliceVision::image::Image<image::RGBAfColor>(base_width, base_height, true, image::RGBAfColor(0.0f)));
+      _levels.push_back(aliceVision::image::Image<image::RGBAfColor>(base_width, base_height, true, image::RGBAfColor(0.0f,0.0f,0.0f,0.0f)));
       
       base_height /= 2;
       base_width /= 2;
@@ -382,11 +382,9 @@ public:
       aliceVision::image::Image<image::RGBAfColor> buf2(_levels[l - 1].Width(), _levels[l - 1].Height());
       convolveHorizontal(buf, _levels[l - 1], kernel);
       convolveVertical(buf2, buf, kernel);
+      divideByAlpha(buf2);
       downscale(_levels[l],  buf2);
-      //divideByAlpha(_levels[l]);
     }
-
-
 
     for (int l = 0; l < _levels.size() - 1; l++) {
       aliceVision::image::Image<image::RGBAfColor> buf(_levels[l].Width(), _levels[l].Height());
@@ -396,8 +394,7 @@ public:
       upscale(buf, _levels[l + 1]);
       convolveHorizontal(buf2, buf, kernel * 4.0f);
       convolveVertical(buf3, buf2, kernel * 4.0f);
-      //divideByAlpha(buf3);
-
+      divideByAlpha(buf3);
       substract(_levels[l], _levels[l], buf3);
     }
 
@@ -418,6 +415,18 @@ public:
 
     for (int l = _levels.size() - 2; l >= 0; l--) {
 
+      divideByAlpha(_levels[l]);
+      for (int i = 0; i < _levels[l].Height(); i++) {
+        for (int j = 0; j < _levels[l].Width(); j++) {
+          if (_levels[l](i, j).a() > 1e-5) {
+            _levels[l](i, j).a() = 1.0;
+          }
+          else {
+            _levels[l](i, j).a() = 0.0;
+          }
+        }
+      }
+
       aliceVision::image::Image<image::RGBAfColor> buf(_levels[l].Width(), _levels[l].Height());
       aliceVision::image::Image<image::RGBAfColor> buf2(_levels[l].Width(), _levels[l].Height());
       aliceVision::image::Image<image::RGBAfColor> buf3(_levels[l].Width(), _levels[l].Height());
@@ -425,26 +434,52 @@ public:
       upscale(buf, _levels[l + 1]);
       convolveHorizontal(buf2, buf, kernel);
       convolveVertical(buf3, buf2, kernel);
-      addition(_levels[l], _levels[l], buf3);
-    }
+      divideByAlpha(buf3);
 
-    for (int  l = 0; l < _levels.size(); l++) {
-      
-      char filename[FILENAME_MAX];
-      
-      image::Image<image::RGBfColor> tmp(_levels[l].Width(), _levels[l].Height(), true, image::RGBfColor(0.0));
-      sprintf(filename, "/home/mmoc/test%d.exr", l);
-      for (int i = 0; i  < _levels[l].Height(); i++) {
-        for (int j = 0; j < _levels[l].Width(); j++) {
-          if (_levels[0](i, j).a() > 1e-3) {
-            tmp(i, j).r() = (_levels[l](i, j).r());
-            tmp(i, j).g() = (_levels[l](i, j).g());
-            tmp(i, j).b() = (_levels[l](i, j).b());
+      addition(_levels[l], _levels[l], buf3);
+
+       {
+        char filename[FILENAME_MAX];
+        const image::Image<image::RGBAfColor> & img =  _levels[l];
+        image::Image<image::RGBfColor> tmp(img.Width(), img.Height(), true, image::RGBfColor(0.0));
+        sprintf(filename, "/home/mmoc/test%d.exr", l);
+        for (int i = 0; i  < img.Height(); i++) {
+          for (int j = 0; j < img.Width(); j++) {
+            //if (img(i, j).a() > 1e-3) {
+              tmp(i, j).r() = img(i, j).r();
+              tmp(i, j).g() = img(i, j).g();
+              tmp(i, j).b() = img(i, j).b();
+            //}
           }
         }
+        image::writeImage(filename, tmp, image::EImageColorSpace::NO_CONVERSION);
       }
-      image::writeImage(filename, tmp, image::EImageColorSpace::NO_CONVERSION);
+      
     }
+    
+
+    return true;
+  }
+
+  bool merge(const LaplacianPyramid & other) {
+
+    for (int l = 0; l < _levels.size(); l++) {
+
+      image::Image<image::RGBAfColor> & img = _levels[l];
+      const image::Image<image::RGBAfColor> & oimg = other._levels[l];
+
+      for (int i = 0; i  < img.Height(); i++) {
+        for (int j = 0; j < img.Width(); j++) {
+          
+
+          img(i, j).r() += oimg(i, j).r() * oimg(i, j).a();
+          img(i, j).g() += oimg(i, j).g() * oimg(i, j).a();
+          img(i, j).b() += oimg(i, j).b() * oimg(i, j).a();
+          img(i, j).a() += oimg(i, j).a();
+        }
+      }
+    }
+    
 
     return true;
   }
@@ -453,18 +488,20 @@ private:
   std::vector<aliceVision::image::Image<image::RGBAfColor>> _levels;
 };
 
+int count = 0;
+
 class LaplacianCompositer : public AlphaCompositer {
 public:
 
   LaplacianCompositer(size_t outputWidth, size_t outputHeight) :
   AlphaCompositer(outputWidth, outputHeight),
-  _pyramid_panorama(outputWidth, outputHeight, 4) {
+  _pyramid_panorama(outputWidth, outputHeight, 8) {
 
   }
 
   virtual bool append(const aliceVision::image::Image<image::RGBfColor> & color, const aliceVision::image::Image<unsigned char> & inputMask, const aliceVision::image::Image<float> & inputWeights, size_t offset_x, size_t offset_y) {
 
-    aliceVision::image::Image<image::RGBAfColor> view(_panorama.Width(), _panorama.Height(), true, image::RGBAfColor(0.0f));
+    aliceVision::image::Image<image::RGBAfColor> view(_panorama.Width(), _panorama.Height(), true, image::RGBAfColor(0.0f, 0.0f, 0.0f, 0.0f));
 
     for (int i = 0; i < color.Height(); i++) {
 
@@ -494,12 +531,17 @@ public:
       }
     }
 
-    LaplacianPyramid pyramid(_panorama.Width(), _panorama.Height(), 4);
+    LaplacianPyramid pyramid(_panorama.Width(), _panorama.Height(), 8);
     pyramid.apply(view);
-    pyramid.rebuild();
     
-    /*_pyramid_panorama.merge(pyramid);
-    _pyramid_panorama.stack();*/
+    
+    
+    _pyramid_panorama.merge(pyramid);
+    if (count == 28) {
+      
+      _pyramid_panorama.rebuild();
+    }
+    count++;
 
 
     
@@ -639,7 +681,7 @@ int main(int argc, char **argv) {
   for (auto & item : configTree.get_child("views")) {
     ConfigView cv;
 
-    if (pos == 24 || pos == 25)
+    //if (pos == 24 || pos == 25)
     {
     cv.img_path = item.second.get<std::string>("filename_view");
     cv.mask_path = item.second.get<std::string>("filename_mask");
