@@ -42,331 +42,6 @@ typedef struct {
 } ConfigView;
 
 
-bool difference(aliceVision::image::Image<image::RGBfColor> & outputColor, aliceVision::image::Image<unsigned char> & outputMask, const aliceVision::image::Image<image::RGBfColor> & aColor, const aliceVision::image::Image<unsigned char> & aMask, const aliceVision::image::Image<image::RGBfColor> & bColor, const aliceVision::image::Image<unsigned char> & bMask) {
-
-  size_t width = outputColor.Width();
-  size_t height = outputColor.Height();
-
-  if (outputMask.Width() != width || outputMask.Height() != height) {
-    return false;
-  }
-
-  if (aColor.Width() != width || aColor.Height() != height) {
-    return false;
-  }
-
-  if (aMask.Width() != width || aMask.Height() != height) {
-    return false;
-  }
-
-  if (bColor.Width() != width || bColor.Height() != height) {
-    return false;
-  }
-
-  if (bMask.Width() != width || bMask.Height() != height) {
-    return false;
-  }
-
-  for (int i = 0; i < height; i++) {
-    for (int j = 0; j < width; j++) {
-
-      if (aMask(i, j)) {
-        if (bMask(i, j)) {
-          outputColor(i, j) = aColor(i, j) - bColor(i, j);
-          outputMask(i, j) = 1;
-        }
-        else {
-          outputColor(i, j) = aColor(i, j);
-          outputMask(i, j) = 1;
-        }
-      }
-      else {
-        if (bMask(i, j)) {
-          outputColor(i, j) = image::RGBfColor(0.0f);
-          outputMask(i, j) = 0;
-        }
-        else {
-          outputColor(i, j) = image::RGBfColor(0.0f);
-          outputMask(i, j) = 0;
-        }
-      }
-    }
-  }
-
-  return true;
-}
-
-bool addition(aliceVision::image::Image<image::RGBfColor> & outputColor, aliceVision::image::Image<unsigned char> & outputMask, const aliceVision::image::Image<image::RGBfColor> & aColor, const aliceVision::image::Image<unsigned char> & aMask, const aliceVision::image::Image<image::RGBfColor> & bColor, const aliceVision::image::Image<unsigned char> & bMask) {
-
-  size_t width = outputColor.Width();
-  size_t height = outputColor.Height();
-
-
-  if (outputMask.Width() != width || outputMask.Height() != height) {
-    return false;
-  }
-
-  if (aColor.Width() != width || aColor.Height() != height) {
-    return false;
-  }
-
-  if (aMask.Width() != width || aMask.Height() != height) {
-    return false;
-  }
-
-  if (bColor.Width() != width || bColor.Height() != height) {
-    return false;
-  }
-
-  if (bMask.Width() != width || bMask.Height() != height) {
-    return false;
-  }
-
-  for (int i = 0; i < height; i++) {
-    for (int j = 0; j < width; j++) {
-
-      if (aMask(i, j)) {
-        if (bMask(i, j)) {
-          outputColor(i, j).r() = aColor(i, j).r() + bColor(i, j).r();
-          outputColor(i, j).g() = aColor(i, j).g() + bColor(i, j).g();
-          outputColor(i, j).b() = aColor(i, j).b() + bColor(i, j).b();
-          outputMask(i, j) = 1;
-        }
-        else {
-          outputColor(i, j) = image::RGBfColor(0.0f);
-          outputMask(i, j) = 0;
-        }
-      }
-      else {
-        if (bMask(i, j)) {
-          outputColor(i, j) = bColor(i, j);
-          outputMask(i, j) = 1;
-        }
-        else {
-          outputColor(i, j) = image::RGBfColor(0.0f);
-          outputMask(i, j) = 0;
-        }
-      }
-    }
-  }
-
-  return true;
-}
-
-size_t countValid(const aliceVision::image::Image<unsigned char> & inputMask) {
-
-  size_t count = 0;
-
-  for (int i = 0; i < inputMask.Height(); i++) {
-    for (int j = 0; j < inputMask.Width(); j++) {
-      if (inputMask(i, j)) {
-        count++;
-      }
-    }
-  }
-
-  return count;
-}
-
-
-class LaplacianPyramid {
-public:
-  bool process(const aliceVision::image::Image<image::RGBfColor> & inputColor, const image::Image<float> & weights, size_t max_levels) {
-
-    _original_width = inputColor.Width();
-    _original_height = inputColor.Height();
-
-    std::vector<image::Image<image::RGBfColor>> pyramid_gaussian;
-
-    pyramid_gaussian.push_back(inputColor);
-    _pyramid_weights.push_back(weights);
-
-    /*Build pyramid using 2x2 kernel **/
-    for (int level = 0; level < max_levels; level++) {
-
-      const image::Image<image::RGBfColor> & color = pyramid_gaussian[level];
-      const image::Image<float> & weight = _pyramid_weights[level];
-
-      image::Image<image::RGBfColor> nextColor(color.Width() / 2, color.Height() / 2, true, image::RGBfColor(0.0f));
-      image::Image<float> nextWeight(weight.Width() / 2, weight.Height() / 2, true, 0.0f);
-
-      for (int i = 0; i < nextColor.Height(); i++) {
-
-        int di = i * 2;
-
-        for (int j = 0; j < nextColor.Width(); j++) {
-          int dj = j * 2;
-
-          nextColor(i, j).r() = 0.25f * (weight(di, dj) * color(di, dj).r() + weight(di, dj + 1) * color(di, dj + 1).r() + weight(di + 1, dj) * color(di + 1, dj).r() + weight(di + 1, dj + 1) * color(di + 1, dj + 1).r());
-          nextColor(i, j).g() = 0.25f * (weight(di, dj) * color(di, dj).g() + weight(di, dj + 1) * color(di, dj + 1).g() + weight(di + 1, dj) * color(di + 1, dj).g() + weight(di + 1, dj + 1) * color(di + 1, dj + 1).g());
-          nextColor(i, j).b() = 0.25f * (weight(di, dj) * color(di, dj).b() + weight(di, dj + 1) * color(di, dj + 1).b() + weight(di + 1, dj) * color(di + 1, dj).b() + weight(di + 1, dj + 1) * color(di + 1, dj + 1).b());
-          nextWeight(i, j) = 0.25f * (weight(di, dj) + weight(di, dj + 1) + weight(di + 1, dj) + weight(di + 1, dj + 1));
-        }
-      }
-
-      pyramid_gaussian.push_back(nextColor);
-      _pyramid_weights.push_back(nextWeight);
-    } 
-
-    /*Compute laplacian*/
-    for (int level = 0; level < pyramid_gaussian.size() - 1; level++) {
-
-      const image::Image<image::RGBfColor> & color = pyramid_gaussian[level];
-      const image::Image<image::RGBfColor> & next_color = pyramid_gaussian[level + 1];
-
-      image::Image<image::RGBfColor> upscaled(color.Width(), color.Height(), true, image::RGBfColor(0.0f));
-      image::Image<image::RGBfColor> difference(color.Width(), color.Height(), true, image::RGBfColor(0.0f));
-
-      for (int i = 0; i < next_color.Height(); i++) {
-        int di = i * 2;
-        for (int j = 0; j < next_color.Width(); j++) {
-          int dj = j * 2;
-          upscaled(di, dj) = next_color(i, j);
-          upscaled(di, dj + 1) = next_color(i, j);
-          upscaled(di + 1, dj) = next_color(i, j);
-          upscaled(di + 1, dj + 1) = next_color(i, j);
-        }
-      }
-
-      for (int i = 0; i < color.Height(); i++) {
-        for (int j = 0; j < color.Width(); j++) {
-          difference(i, j) = color(i, j) - upscaled(i, j);
-        }
-      }
-
-      _pyramid_color.push_back(difference);
-    }
-
-    _pyramid_color.push_back(pyramid_gaussian[pyramid_gaussian.size() - 1]);
-
-    
-    return true;
-  }
-
-  bool stack() {
-
-    image::Image<image::RGBfColor> prev = _pyramid_color[_pyramid_color.size() - 1];
-
-    for (int level = _pyramid_color.size() - 2; level >= 0; level--) {
-
-      
-
-      image::Image<image::RGBfColor> current = _pyramid_color[level];
-      image::Image<image::RGBfColor> rescaled(prev.Width() * 2, prev.Height() * 2, true, image::RGBfColor(0.0f));
-
-
-      for (int i = 0; i < prev.Height(); i++) {
-
-        int di = i * 2;
-
-        for (int j = 0; j < prev.Width(); j++) {
-
-          int dj = j * 2;
-
-          rescaled(di, dj) = prev(i, j);
-          rescaled(di, dj + 1) = prev(i, j);
-          rescaled(di + 1, dj) = prev(i, j);
-          rescaled(di + 1, dj + 1) = prev(i, j);
-        }
-      }
-
-      for (int i = 0; i < rescaled.Height(); i++) {
-        for (int j = 0; j < rescaled.Width(); j++) {
-          rescaled(i, j).r() = rescaled(i, j).r() + current(i, j).r();
-          rescaled(i, j).g() = rescaled(i, j).g() + current(i, j).g();
-          rescaled(i, j).b() = rescaled(i, j).b() + current(i, j).b();
-        }
-      }
-
-      prev = rescaled;
-    }
-
-
-    _stack_result = prev;
-
-    return true;
-  }
-
-  bool merge(const LaplacianPyramid & other) {
-
-    if (_pyramid_color.size() == 0) {
-      _pyramid_color = other._pyramid_color;
-      _pyramid_weights = other._pyramid_weights;
-      return true;
-    }
-
-    for (int level = 0; level <  _pyramid_color.size() - 1; level++) {
-      image::Image<image::RGBfColor> & color = _pyramid_color[level];
-      image::Image<float> & weight = _pyramid_weights[level];
-
-      const image::Image<image::RGBfColor> & ocolor = other._pyramid_color[level];
-      const image::Image<float> & oweight = other._pyramid_weights[level];
-
-      for (int i = 0; i < color.Height(); i++) {
-        for (int j = 0; j < color.Width(); j++) {
-
-          if (weight(i, j) < oweight(i, j)) {
-            color(i, j) = ocolor(i, j);
-          }
-        }
-      }
-    }
-
-    size_t max_level = _pyramid_color.size() - 1;
-    image::Image<image::RGBfColor> & color = _pyramid_color[max_level];
-    image::Image<float> & weight = _pyramid_weights[max_level];
-    const image::Image<image::RGBfColor> & ocolor = other._pyramid_color[max_level];
-    const image::Image<float> & oweight = other._pyramid_weights[max_level];
-
-    for (int i = 0; i < color.Height(); i++) {
-      for (int j = 0; j < color.Width(); j++) {
-
-        float w = weight(i, j);
-        float ow = oweight(i, j);
-        float sum = w + ow;
-
-        if (sum > 1e-8) {
-          w = w / sum;
-          ow = ow / sum;
-
-          color(i, j).r() = w * color(i, j).r() + ow * ocolor(i, j).r();
-          color(i, j).g() = w * color(i, j).g() + ow * ocolor(i, j).g();
-          color(i, j).b() = w * color(i, j).b() + ow * ocolor(i, j).b();
-        }
-      }
-    }
-
-    for (int level = 0; level < _pyramid_color.size(); level++) {
-      char filename[512];
-      sprintf(filename, "/home/mmoc/color_%d.exr", level);
-      image::writeImage(filename, _pyramid_color[level], image::EImageColorSpace::NO_CONVERSION);
-    }
-
-    return true;
-  }
-
-  const image::Image<image::RGBfColor> & getStackResult() const {
-    return _stack_result;
-  }
-
-  const image::Image<unsigned char> & getStackMask() const {
-    return _stack_mask;
-  }
-
-  size_t getDepth() const {
-    return _pyramid_color.size();
-  }
-
-protected:
-  std::vector<image::Image<image::RGBfColor>> _pyramid_color;
-  std::vector<image::Image<float>> _pyramid_weights;
-
-  image::Image<image::RGBfColor> _stack_result;
-  image::Image<unsigned char> _stack_mask;
-
-  size_t _original_width;
-  size_t _original_height;
-};
 
 class Compositer {
 public:
@@ -475,18 +150,321 @@ protected:
   aliceVision::image::Image<float> _weightmap;
 };
 
+bool convolveHorizontal(image::Image<image::RGBAfColor> & output, const image::Image<image::RGBAfColor> & input, const Eigen::VectorXf & kernel) {
+
+  if (output.size() != input.size()) {
+    return false;
+  }
+
+  if (kernel.size() % 2 == 0) {
+    return false;
+  }
+
+  int radius = kernel.size() / 2;
+
+  for (int i = 0; i < output.Height(); i++) {
+    for (int j = 0; j < output.Width(); j++) {
+
+      image::RGBAfColor sum = image::RGBAfColor(0.0);
+
+      if (input(i, j).a() < 1e-5) {
+        output(i,j) = sum;
+        continue;
+      }
+
+      for (int k = 0; k < kernel.size(); k++) {
+
+        double w = kernel(k);
+        int col = j + k - radius;
+
+        if (col < 0 || col >= input.Width()) {
+          continue;
+        }
+
+        sum += w * input(i, col);
+      }
+
+      output(i, j) = sum;
+    }
+  }
+
+  return true;
+}
+
+bool convolveVertical(image::Image<image::RGBAfColor> & output, const image::Image<image::RGBAfColor> & input, const Eigen::VectorXf & kernel) {
+
+  if (output.size() != input.size()) {
+    return false;
+  }
+
+  if (kernel.size() % 2 == 0) {
+    return false;
+  }
+
+  int radius = kernel.size() / 2;
+
+  for (int i = 0; i < output.Height(); i++) {
+    for (int j = 0; j < output.Width(); j++) {
+
+      image::RGBAfColor sum = image::RGBAfColor(0.0);
+
+      if (input(i, j).a() < 1e-5) {
+        output(i,j) = sum;
+        continue;
+      }
+
+      for (int k = 0; k < kernel.size(); k++) {
+
+        double w = kernel(k);
+        int row = i + k - radius;
+
+        if (row < 0 || row >= input.Height()) {
+          continue;
+        }
+
+        sum += w * input(row, j);
+      }
+
+      output(i, j) = sum;
+    }
+  }
+
+  return true;
+}
+
+bool downscale(aliceVision::image::Image<image::RGBAfColor> & outputColor, const aliceVision::image::Image<image::RGBAfColor> & inputColor) {
+
+  size_t width = inputColor.Width();
+  size_t height = inputColor.Height();
+
+  size_t output_width = width / 2;
+  size_t output_height = height / 2;
+
+  for (int i = 0; i < output_height; i++) {
+    for (int j = 0; j < output_width; j++) {
+      outputColor(i, j) = inputColor(i * 2, j * 2);
+    }
+  }
+
+  return true;
+}
+
+bool upscale(aliceVision::image::Image<image::RGBAfColor> & outputColor, const aliceVision::image::Image<image::RGBAfColor> & inputColor) {
+
+  size_t width = inputColor.Width();
+  size_t height = inputColor.Height();
+
+  size_t output_width = width * 2;
+  size_t output_height = height * 2;
+
+  for (int i = 0; i < height; i++) {
+
+    int di = i * 2;
+
+    for (int j = 0; j < width; j++) {
+      int dj = j * 2;
+
+      outputColor(di, dj) = image::RGBAfColor(0.0);
+      outputColor(di, dj + 1) = image::RGBAfColor(0.0);
+      outputColor(di + 1, dj) = image::RGBAfColor(0.0);
+      outputColor(di + 1, dj + 1) = inputColor(i, j);
+    }
+  }
+
+  return true;
+}
+
+bool divideByAlpha(aliceVision::image::Image<image::RGBAfColor> & inputOutputColor) {
+
+  size_t width = inputOutputColor.Width();
+  size_t height = inputOutputColor.Height();
+
+
+  for (int i = 0; i < height; i++) {
+
+    for (int j = 0; j < width; j++) {
+    
+      inputOutputColor(i, j).r() = inputOutputColor(i, j).r() / (inputOutputColor(i, j).a() + 1e-5);
+      inputOutputColor(i, j).g() = inputOutputColor(i, j).g() / (inputOutputColor(i, j).a() + 1e-5);
+      inputOutputColor(i, j).b() = inputOutputColor(i, j).b() / (inputOutputColor(i, j).a() + 1e-5);
+    }
+  }
+
+  return true;
+}
+
+bool substract(aliceVision::image::Image<image::RGBAfColor> & AminusB, const aliceVision::image::Image<image::RGBAfColor> & A, const aliceVision::image::Image<image::RGBAfColor> & B) {
+
+  size_t width = AminusB.Width();
+  size_t height = AminusB.Height();
+
+  if (AminusB.size() != A.size()) {
+    return false;
+  }
+
+  if (AminusB.size() != B.size()) {
+    return false;
+  }
+
+  for (int i = 0; i < height; i++) {
+
+    for (int j = 0; j < width; j++) {
+
+      AminusB(i, j).r() = A(i, j).r() - B(i, j).r();
+      AminusB(i, j).g() = A(i, j).g() - B(i, j).g();
+      AminusB(i, j).b() = A(i, j).b() - B(i, j).b();
+      AminusB(i, j).a() = A(i, j).a() - B(i, j).a();
+    }
+  }
+
+  return true;
+}
+
+bool addition(aliceVision::image::Image<image::RGBAfColor> & AplusB, const aliceVision::image::Image<image::RGBAfColor> & A, const aliceVision::image::Image<image::RGBAfColor> & B) {
+
+  size_t width = AplusB.Width();
+  size_t height = AplusB.Height();
+
+  if (AplusB.size() != A.size()) {
+    return false;
+  }
+
+  if (AplusB.size() != B.size()) {
+    return false;
+  }
+
+  for (int i = 0; i < height; i++) {
+
+    for (int j = 0; j < width; j++) {
+
+      AplusB(i, j).r() = A(i, j).r() + B(i, j).r();
+      AplusB(i, j).g() = A(i, j).g() + B(i, j).g();
+      AplusB(i, j).b() = A(i, j).b() + B(i, j).b();
+      AplusB(i, j).a() = A(i, j).a() + B(i, j).a();
+    }
+  }
+
+  return true;
+}
+
+class LaplacianPyramid {
+public:
+  LaplacianPyramid(size_t base_width, size_t base_height, size_t max_levels) {
+
+    size_t width = base_width;
+    size_t height = base_height;
+
+    for (int lvl = 0; lvl < max_levels; lvl++) {
+
+      _levels.push_back(aliceVision::image::Image<image::RGBAfColor>(base_width, base_height, true, image::RGBAfColor(0.0f)));
+      
+      base_height /= 2;
+      base_width /= 2;
+    }
+  }
+
+  bool apply(const aliceVision::image::Image<image::RGBAfColor> & source) {
+
+    /*Create the gaussian kernel*/
+    Eigen::VectorXf kernel(5);
+    kernel[0] = 1.0f;
+    kernel[1] = 4.0f;
+    kernel[2] = 6.0f;
+    kernel[3] = 4.0f;
+    kernel[4] = 1.0f;
+    kernel.normalize();
+
+    _levels[0] = source;
+
+    for (int l = 1; l < _levels.size(); l++) {
+
+      aliceVision::image::Image<image::RGBAfColor> buf(_levels[l - 1].Width(), _levels[l - 1].Height());
+      aliceVision::image::Image<image::RGBAfColor> buf2(_levels[l - 1].Width(), _levels[l - 1].Height());
+      convolveHorizontal(buf, _levels[l - 1], kernel);
+      convolveVertical(buf2, buf, kernel);
+      downscale(_levels[l],  buf2);
+      //divideByAlpha(_levels[l]);
+    }
+
+
+
+    for (int l = 0; l < _levels.size() - 1; l++) {
+      aliceVision::image::Image<image::RGBAfColor> buf(_levels[l].Width(), _levels[l].Height());
+      aliceVision::image::Image<image::RGBAfColor> buf2(_levels[l].Width(), _levels[l].Height());
+      aliceVision::image::Image<image::RGBAfColor> buf3(_levels[l].Width(), _levels[l].Height());
+
+      upscale(buf, _levels[l + 1]);
+      convolveHorizontal(buf2, buf, kernel * 4.0f);
+      convolveVertical(buf3, buf2, kernel * 4.0f);
+      //divideByAlpha(buf3);
+
+      substract(_levels[l], _levels[l], buf3);
+    }
+
+    return true;
+  }
+
+  bool rebuild() {
+
+    /*Create the gaussian kernel*/
+    Eigen::VectorXf kernel(5);
+    kernel[0] = 1.0f;
+    kernel[1] = 4.0f;
+    kernel[2] = 6.0f;
+    kernel[3] = 4.0f;
+    kernel[4] = 1.0f;
+    kernel.normalize();
+    kernel *= 4.0f;
+
+    for (int l = _levels.size() - 2; l >= 0; l--) {
+
+      aliceVision::image::Image<image::RGBAfColor> buf(_levels[l].Width(), _levels[l].Height());
+      aliceVision::image::Image<image::RGBAfColor> buf2(_levels[l].Width(), _levels[l].Height());
+      aliceVision::image::Image<image::RGBAfColor> buf3(_levels[l].Width(), _levels[l].Height());
+
+      upscale(buf, _levels[l + 1]);
+      convolveHorizontal(buf2, buf, kernel);
+      convolveVertical(buf3, buf2, kernel);
+      addition(_levels[l], _levels[l], buf3);
+    }
+
+    for (int  l = 0; l < _levels.size(); l++) {
+      
+      char filename[FILENAME_MAX];
+      
+      image::Image<image::RGBfColor> tmp(_levels[l].Width(), _levels[l].Height(), true, image::RGBfColor(0.0));
+      sprintf(filename, "/home/mmoc/test%d.exr", l);
+      for (int i = 0; i  < _levels[l].Height(); i++) {
+        for (int j = 0; j < _levels[l].Width(); j++) {
+          if (_levels[0](i, j).a() > 1e-3) {
+            tmp(i, j).r() = (_levels[l](i, j).r());
+            tmp(i, j).g() = (_levels[l](i, j).g());
+            tmp(i, j).b() = (_levels[l](i, j).b());
+          }
+        }
+      }
+      image::writeImage(filename, tmp, image::EImageColorSpace::NO_CONVERSION);
+    }
+
+    return true;
+  }
+
+private:
+  std::vector<aliceVision::image::Image<image::RGBAfColor>> _levels;
+};
+
 class LaplacianCompositer : public AlphaCompositer {
 public:
 
   LaplacianCompositer(size_t outputWidth, size_t outputHeight) :
-  AlphaCompositer(outputWidth, outputHeight) {
+  AlphaCompositer(outputWidth, outputHeight),
+  _pyramid_panorama(outputWidth, outputHeight, 4) {
 
   }
 
   virtual bool append(const aliceVision::image::Image<image::RGBfColor> & color, const aliceVision::image::Image<unsigned char> & inputMask, const aliceVision::image::Image<float> & inputWeights, size_t offset_x, size_t offset_y) {
 
-    aliceVision::image::Image<image::RGBfColor> view(_panorama.Width(), _panorama.Height(), true, image::RGBfColor(0.0f));
-    aliceVision::image::Image<float> weight(_panorama.Width(), _panorama.Height(), true, 0);
+    aliceVision::image::Image<image::RGBAfColor> view(_panorama.Width(), _panorama.Height(), true, image::RGBAfColor(0.0f));
 
     for (int i = 0; i < color.Height(); i++) {
 
@@ -502,29 +480,33 @@ public:
 
         /* Create binary mask */
         if (inputMask(i ,j)) {
-          view(di, dj) = color(i, j);
+          view(di, dj).r() = color(i, j).r();
+          view(di, dj).g() = color(i, j).g();
+          view(di, dj).b() = color(i, j).b();
 
           if (inputWeights(i,j) > _weightmap(di, dj)) {
-            weight(di, dj) = 1.0f;
+            view(di, dj).a() = 1.0f;
           }
           else {
-            weight(di, dj) = 0.0f;
+            view(di, dj).a() = 0.0f;
           }
         }
       }
     }
 
-    LaplacianPyramid pyramid;
-    pyramid.process(view, weight, 4);
-    _pyramid_panorama.merge(pyramid);
-    _pyramid_panorama.stack();
+    LaplacianPyramid pyramid(_panorama.Width(), _panorama.Height(), 4);
+    pyramid.apply(view);
+    pyramid.rebuild();
+    
+    /*_pyramid_panorama.merge(pyramid);
+    _pyramid_panorama.stack();*/
 
 
     
-    const aliceVision::image::Image<image::RGBfColor> & img = _pyramid_panorama.getStackResult();
+    //const aliceVision::image::Image<image::RGBfColor> & img = _pyramid_panorama.getStackResult();
     //const aliceVision::image::Image<unsigned char> & mask = _pyramid_panorama.getStackMask();
 
-    _panorama = img.block(0, 0, _panorama.Height(), _panorama.Width());
+    //_panorama = img.block(0, 0, _panorama.Height(), _panorama.Width());
     //_mask = mask.block(0, 0, _panorama.Height(), _panorama.Width());*/
 
     for (int i = 0; i < inputWeights.Height(); i++) {
