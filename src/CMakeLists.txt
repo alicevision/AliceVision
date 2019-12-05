@@ -274,9 +274,6 @@ if(BOOST_NO_CXX11)
   add_definitions(-DBOOST_NO_CXX11_SCOPED_ENUMS)
 endif()
 
-include_directories(${Boost_INCLUDE_DIRS})
-link_directories(${Boost_LIBRARY_DIRS})
-add_definitions(${Boost_DEFINITIONS})
 
 # ==============================================================================
 # OpenEXR

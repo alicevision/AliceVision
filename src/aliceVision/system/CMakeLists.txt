@@ -20,14 +20,11 @@ set(system_files_sources
 alicevision_add_library(aliceVision_system
   SOURCES ${system_files_headers} ${system_files_sources}
   PUBLIC_LINKS
-    ${Boost_LOG_LIBRARY}
-    ${Boost_THREAD_LIBRARY}
-    ${Boost_LOG_SETUP_LIBRARY}
-    ${Boost_DETAIL_LIBRARY}
-    ${Boost_SYSTEM_LIBRARY}
-    ${Boost_DATE_TIME_LIBRARY}
-    ${Boost_PROGRAM_OPTIONS_LIBRARY}
+    Boost::log
+    Boost::thread
+    Boost::log_setup
+    Boost::system
+    Boost::date_time
+    Boost::program_options
     ${ALICEVISION_NVTX_LIBRARY}
-  PUBLIC_INCLUDE_DIRS
-    ${Boost_INCLUDE_DIR}
 )

@@ -10,5 +10,4 @@ alicevision_add_software(aliceVision_samples_kvldFilter
         aliceVision_feature
         aliceVision_matching
         vlsift
-        ${Boost_LIBRARIES}
 )

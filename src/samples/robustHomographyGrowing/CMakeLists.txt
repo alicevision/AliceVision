@@ -9,5 +9,5 @@ alicevision_add_software(aliceVision_samples_robustHomographyGrowing
         aliceVision_matching
         aliceVision_matchingImageCollection
         vlsift
-        ${Boost_LIBRARIES}
+        Boost::program_options
 )

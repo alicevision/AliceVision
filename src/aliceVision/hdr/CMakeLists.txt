@@ -24,7 +24,7 @@ alicevision_add_library(aliceVision_hdr
   PRIVATE_LINKS
     aliceVision_system
     aliceVision_image
-    ${Boost_FILESYSTEM_LIBRARY}
+    Boost::filesystem
 )
 
 # Unit tests

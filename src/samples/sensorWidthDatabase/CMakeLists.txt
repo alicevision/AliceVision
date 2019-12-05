@@ -3,5 +3,5 @@ alicevision_add_software(aliceVision_samples_parseDatabase
   FOLDER ${FOLDER_SAMPLES}
   LINKS aliceVision_system
         aliceVision_sensorDB
-        ${Boost_LIBRARIES}
+        Boost::program_options
 )

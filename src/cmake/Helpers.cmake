@@ -219,7 +219,6 @@ function(alicevision_add_test test_file)
 
   target_include_directories(${TEST_EXECUTABLE_NAME}
     PUBLIC ${TEST_INCLUDE_DIRS}
-           ${Boost_INCLUDE_DIRS}
   )
 
   set_property(TARGET ${TEST_EXECUTABLE_NAME}
