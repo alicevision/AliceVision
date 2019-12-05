@@ -192,6 +192,8 @@ public:
     */
   void inverseAllValues();
 
+  void freezeFirstPartValues();
+
   void freezeSecondPartValues();
 
   void invertAndScaleSecondPart(float scale);

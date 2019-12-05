@@ -69,6 +69,8 @@ void hdrMerge::process(const std::vector< image::Image<image::RGBfColor> > &imag
 
   rgbCurve weightShortestExposure = weight;
   weightShortestExposure.freezeSecondPartValues();
+  rgbCurve weightLongestExposure = weight;
+  weightLongestExposure.freezeFirstPartValues();
 
   #pragma omp parallel for
   for(int y = 0; y < height; ++y)
@@ -83,25 +85,26 @@ void hdrMerge::process(const std::vector< image::Image<image::RGBfColor> > &imag
         double wsum = 0.0;
         double wdiv = 0.0;
 
+        // Merge shortest exposure
         {
             int exposureIndex = 0;
 
             // for each image
             const double value = images[exposureIndex](y, x)(channel);
             const double time = times[exposureIndex];
-
             //
             // weightShortestExposure:          _______
             //                          _______/
             //                                0      1
-            double w = std::max(0.f, weightShortestExposure(value, channel));
+            double w = std::max(0.001f, weightShortestExposure(value, channel));
 
             const double r = response(value, channel);
 
             wsum += w * r / time;
             wdiv += w;
         }
-        for(std::size_t i = 1; i < images.size(); ++i)
+        // Merge intermediate exposures
+        for(std::size_t i = 1; i < images.size() - 1; ++i)
         {
           // for each image
           const double value = images[i](y, x)(channel);
@@ -110,13 +113,30 @@ void hdrMerge::process(const std::vector< image::Image<image::RGBfColor> > &imag
           // weight:          ____
           //          _______/    \________
           //                0      1
-          double w = std::max(0.f, weight(value, channel));
+          double w = std::max(0.001f, weight(value, channel));
 
           const double r = response(value, channel);
           wsum += w * r / time;
           wdiv += w;
         }
+        // Merge longest exposure
+        {
+            int exposureIndex = images.size() - 1;
 
+            // for each image
+            const double value = images[exposureIndex](y, x)(channel);
+            const double time = times[exposureIndex];
+            //
+            // weightLongestExposure:  ____________
+            //                                      \_______
+            //                                0      1
+            double w = std::max(0.001f, weightLongestExposure(value, channel));
+
+            const double r = response(value, channel);
+
+            wsum += w * r / time;
+            wdiv += w;
+        }
         radianceColor(channel) = wsum / std::max(0.001, wdiv) * targetCameraExposure;
       }
     }

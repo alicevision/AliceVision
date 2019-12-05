@@ -174,6 +174,18 @@ void rgbCurve::inverseAllValues()
     }
 }
 
+void rgbCurve::freezeFirstPartValues()
+{
+    for (auto &curve : _data)
+    {
+        std::size_t midIndex = (curve.size() / 2);
+        for (std::size_t i = 0; i < midIndex; ++i)
+        {
+            curve[i] = curve[midIndex];
+        }
+    }
+}
+
 void rgbCurve::freezeSecondPartValues()
 {
     for (auto &curve : _data)
