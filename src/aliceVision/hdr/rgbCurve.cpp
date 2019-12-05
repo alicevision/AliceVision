@@ -235,6 +235,53 @@ void rgbCurve::setAllAbsolute()
     }
 }
 
+inline float gammaFunction(float value, float gamma)
+{
+    // 1/0.45 = 2.22
+    if (value < 0.018)
+    {
+        return 4.5 * value;
+    }
+    else
+    {
+        return 1.099 * std::pow(value, 0.45) - 0.099;
+    }
+}
+
+inline float inverseGammaFunction(float value, float gamma)
+{
+    if (value <= 0.0812f)
+    {
+        return value / 4.5f;
+    }
+    else
+    {
+        return pow((value + 0.099f) / 1.099f, gamma);
+    }
+}
+
+void rgbCurve::applyGamma(float gamma)
+{
+    for (auto &curve : _data)
+    {
+        for (auto &value : curve)
+        {
+            value = gammaFunction(value, gamma);
+        }
+    }
+}
+
+void rgbCurve::applyGammaInv(float gamma)
+{
+    for (auto &curve : _data)
+    {
+        for (auto &value : curve)
+        {
+            value = inverseGammaFunction(value, gamma);
+        }
+    }
+}
+
 void rgbCurve::normalize()
 {
     for(auto &curve : _data)

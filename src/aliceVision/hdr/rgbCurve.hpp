@@ -205,6 +205,10 @@ public:
     */
   void setAllAbsolute();
 
+  void applyGamma(float gamma = 2.2);
+
+  void applyGammaInv(float gamma = 2.2);
+
   /**
     * @brief normalize the curve
     */
