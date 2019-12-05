@@ -181,6 +181,8 @@ public:
     */
   void setPlateau(float weight = 8.0f);
 
+  void setPlateauSigmoid(float cA = 0.2, float wA = 0.5, float cB = 0.85, float wB = 0.22);
+
   /**
     *@brief Set curves to log10
     */

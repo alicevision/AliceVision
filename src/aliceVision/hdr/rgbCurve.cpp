@@ -40,7 +40,7 @@ void rgbCurve::setFunction(EFunctionType functionType)
         case EFunctionType::LINEAR:     setLinear(); return;
         case EFunctionType::GAUSSIAN:   setGaussian(); return;
         case EFunctionType::TRIANGLE:   setTriangular(); return;
-        case EFunctionType::PLATEAU:    setPlateau(); return;
+        case EFunctionType::PLATEAU:    setPlateauSigmoid(); return;
         case EFunctionType::GAMMA:      setGamma(); return;
         case EFunctionType::LOG10:      setLog10(); return;
     }
@@ -146,6 +146,21 @@ void rgbCurve::setPlateau(float weight)
     for(std::size_t i = 0; i < getSize(); ++i)
     {
         setAllChannels(i, 1.0f - std::pow((2.0f * i * coefficient - 1.0f), weight));
+    }
+}
+
+inline float plateauSigmoidFunction(float cA, float wA, float cB, float wB, float x)
+{
+    // https://www.desmos.com/calculator/aoojidncmi
+    return 1.0 / (1.0 + std::exp(10.0 * (x - cB) / wB)) - 1.0 / (1.0 + std::exp(10.0 * (x - cA) / wA));
+}
+
+void rgbCurve::setPlateauSigmoid(float cA, float wA, float cB, float wB)
+{
+    const float coefficient = 1.f / static_cast<float>(getSize() - 1);
+    for (std::size_t i = 0; i < getSize(); ++i)
+    {
+        setAllChannels(i, plateauSigmoidFunction(cA, wA, cB, wB, i * coefficient));
     }
 }
 
