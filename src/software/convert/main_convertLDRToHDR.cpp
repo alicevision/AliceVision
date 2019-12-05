@@ -421,19 +421,27 @@ int main(int argc, char * argv[])
   // set the correct weight functions corresponding to the string parameter
   hdr::rgbCurve calibrationWeight(channelQuantization);
   std::transform(calibrationWeightFunction.begin(), calibrationWeightFunction.end(), calibrationWeightFunction.begin(), ::tolower);
+  std::string calibrationWeightFunctionV = calibrationWeightFunction;
   if (calibrationWeightFunction == "default")
   {
     switch (calibrationMethod)
     {
       case ECalibrationMethod::LINEAR:      break;
-      case ECalibrationMethod::DEBEVEC:     calibrationWeight.setTriangular();  break;
-      case ECalibrationMethod::ROBERTSON:   calibrationWeight.setRobertsonWeight(); break;
+      case ECalibrationMethod::DEBEVEC:     calibrationWeight.setTriangular(); calibrationWeightFunctionV="triangular"; break;
+      case ECalibrationMethod::ROBERTSON:   calibrationWeight.setRobertsonWeight(); calibrationWeightFunctionV = "robertsonWeight"; break;
       case ECalibrationMethod::GROSSBERG:   break;
     }
   }
   else
   {
     calibrationWeight.setFunction(hdr::EFunctionType_stringToEnum(calibrationWeightFunction));
+  }
+
+  {
+      std::string methodName = calibrationWeightFunctionV;
+      std::string outputHtmlPath = (fs::path(outputPath) / (std::string("calibration_weight_") + methodName + std::string(".html"))).string();
+
+      calibrationWeight.writeHtml(outputHtmlPath, "Calibration weight: " + methodName);
   }
 
   hdr::rgbCurve response(channelQuantization);
@@ -525,6 +533,13 @@ int main(int argc, char * argv[])
 
   hdr::rgbCurve fusionWeight(channelQuantization);
   fusionWeight.setFunction(fusionWeightFunction);
+
+  {
+      std::string methodName = EFunctionType_enumToString(fusionWeightFunction);
+      std::string outputHtmlPath = (fs::path(outputPath) / (std::string("fusion_weight_") + methodName + std::string(".html"))).string();
+
+      calibrationWeight.writeHtml(outputHtmlPath, "Fusion weight: " + methodName);
+  }
 
   sfmData::SfMData outputSfm;
   sfmData::Views & vs = outputSfm.getViews();
