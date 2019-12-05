@@ -131,7 +131,7 @@ void rgbCurve::setTriangular()
         float value = i * coefficient;
         if (value > 1.0f)
         {
-            value = 1.0f - value;
+            value = 2.0f - value;
         }
         setAllChannels(i, value);
     }
