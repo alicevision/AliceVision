@@ -1,6 +1,7 @@
 
 # Headers
 set(hdr_files_headers
+ BundleAdjustmentCalibration.hpp
  rgbCurve.hpp
  RobertsonCalibrate.hpp
  hdrMerge.hpp
@@ -12,6 +13,7 @@ set(hdr_files_headers
 # Sources
 set(hdr_files_sources
  rgbCurve.cpp
+ BundleAdjustmentCalibration.cpp
  RobertsonCalibrate.cpp
  hdrMerge.cpp
  DebevecCalibrate.cpp
@@ -25,6 +27,7 @@ alicevision_add_library(aliceVision_hdr
     aliceVision_system
     aliceVision_image
     ${Boost_FILESYSTEM_LIBRARY}
+    ${CERES_LIBRARIES}
 )
 
 # Unit tests

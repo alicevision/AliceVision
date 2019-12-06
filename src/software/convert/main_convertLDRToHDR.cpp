@@ -20,6 +20,7 @@
 #include <aliceVision/hdr/DebevecCalibrate.hpp>
 #include <aliceVision/hdr/GrossbergCalibrate.hpp>
 #include <aliceVision/hdr/emorCurve.hpp>
+#include <aliceVision/hdr/BundleAdjustmentCalibration.hpp>
 
 /*Command line parameters*/
 #include <boost/program_options.hpp>
@@ -43,7 +44,8 @@ enum class ECalibrationMethod
     LINEAR,
     ROBERTSON,
     DEBEVEC,
-    GROSSBERG
+    GROSSBERG,
+    LAGUERRE,
 };
 
 /**
@@ -59,6 +61,7 @@ inline std::string ECalibrationMethod_enumToString(const ECalibrationMethod cali
     case ECalibrationMethod::ROBERTSON:   return "robertson";
     case ECalibrationMethod::DEBEVEC:     return "debevec";
     case ECalibrationMethod::GROSSBERG:   return "grossberg";
+    case ECalibrationMethod::LAGUERRE:    return "laguerre";
     }
     throw std::out_of_range("Invalid method name enum");
 }
@@ -77,6 +80,7 @@ inline ECalibrationMethod ECalibrationMethod_stringToEnum(const std::string& cal
     if (methodName == "robertson")   return ECalibrationMethod::ROBERTSON;
     if (methodName == "debevec")     return ECalibrationMethod::DEBEVEC;
     if (methodName == "grossberg")   return ECalibrationMethod::GROSSBERG;
+    if (methodName == "laguerre")    return ECalibrationMethod::LAGUERRE;
 
     throw std::out_of_range("Invalid method name : '" + calibrationMethodName + "'");
 }
@@ -127,7 +131,7 @@ int main(int argc, char * argv[])
   po::options_description optionalParams("Optional parameters");
   optionalParams.add_options()
     ("calibrationMethod,m", po::value<ECalibrationMethod>(&calibrationMethod)->default_value(calibrationMethod),
-        "Name of method used for camera calibration: linear, robertson (slow), debevec, grossberg.")
+        "Name of method used for camera calibration: linear, robertson (slow), debevec, grossberg, laguerre.")
     ("highlightsMaxLuminance", po::value<float>(&highlightTargetLux)->default_value(highlightTargetLux),
         "Highlights maximum luminance.")
     ("expandDynamicRange"/*"highlightCorrectionFactor"*/, po::value<float>(&highlightCorrectionFactor)->default_value(highlightCorrectionFactor),
@@ -430,6 +434,7 @@ int main(int argc, char * argv[])
       case ECalibrationMethod::DEBEVEC:     calibrationWeight.setTriangular(); calibrationWeightFunctionV="triangular"; break;
       case ECalibrationMethod::ROBERTSON:   calibrationWeight.setRobertsonWeight(); calibrationWeightFunctionV = "robertsonWeight"; break;
       case ECalibrationMethod::GROSSBERG:   break;
+      case ECalibrationMethod::LAGUERRE:    break;
     }
   }
   else
@@ -459,7 +464,7 @@ int main(int argc, char * argv[])
 
           {
               hdr::rgbCurve r = response;
-              r.exponential(); // TODO
+              r.applyGamma(2.2);
               std::string methodName = ECalibrationMethod_enumToString(calibrationMethod);
               std::string outputResponsePath = (fs::path(outputPath) / (std::string("response_log_") + methodName + std::string(".csv"))).string();
               std::string outputResponsePathHtml = (fs::path(outputPath) / (std::string("response_log_") + methodName + std::string(".html"))).string();
@@ -489,6 +494,18 @@ int main(int argc, char * argv[])
               ALICEVISION_LOG_INFO("Camera response function written as " << outputResponsePath);
           }
 
+          {
+              hdr::rgbCurve r = response;
+              r.applyGammaInv(2.2);
+              std::string methodName = ECalibrationMethod_enumToString(calibrationMethod);
+              std::string outputResponsePath = (fs::path(outputPath) / (std::string("response_invGamma_") + methodName + std::string(".csv"))).string();
+              std::string outputResponsePathHtml = (fs::path(outputPath) / (std::string("response_invGamma_") + methodName + std::string(".html"))).string();
+
+              r.write(outputResponsePath);
+              r.writeHtml(outputResponsePathHtml, "Camera Response Curve " + methodName);
+              ALICEVISION_LOG_INFO("Camera response function written as " << outputResponsePath);
+          }
+
           response.exponential();
           response.scale();
       }
@@ -512,6 +529,16 @@ int main(int argc, char * argv[])
               calibrationNbPoints = 1000000;
           hdr::GrossbergCalibrate calibration(3);
           calibration.process(groupedFilenames, channelQuantization, groupedExposures, calibrationNbPoints, fisheye, response);
+      }
+      break;
+      case ECalibrationMethod::LAGUERRE:
+      {
+          ALICEVISION_LOG_INFO("Laguerre calibration");
+          if (calibrationNbPoints <= 0)
+              calibrationNbPoints = 1000000;
+          hdr::BundleAdjustmentCalibration calibration;
+          bool refineExposures = false;
+          calibration.process(groupedFilenames, channelQuantization, groupedExposures, calibrationNbPoints, fisheye, refineExposures, response);
       }
       break;
       }
@@ -545,6 +572,20 @@ int main(int argc, char * argv[])
   sfmData::Views & vs = outputSfm.getViews();
   outputSfm.getIntrinsics() = sfmData.getIntrinsics();
 
+  image::EImageColorSpace mergeColorspace = image::EImageColorSpace::LINEAR;
+
+  switch (calibrationMethod)
+  {
+  case ECalibrationMethod::LINEAR:
+  case ECalibrationMethod::GROSSBERG:
+  case ECalibrationMethod::LAGUERRE:
+      mergeColorspace = image::EImageColorSpace::LINEAR;
+      break;
+  case ECalibrationMethod::DEBEVEC:
+  case ECalibrationMethod::ROBERTSON:
+      mergeColorspace = image::EImageColorSpace::SRGB;
+      break;
+  }
   for(int g = 0; g < groupedFilenames.size(); ++g)
   {
     std::vector<image::Image<image::RGBfColor>> images(groupSize);
@@ -554,7 +595,7 @@ int main(int argc, char * argv[])
     for (int i = 0; i < groupSize; i++)
     {
       ALICEVISION_LOG_INFO("Load " << groupedFilenames[g][i]);
-      image::readImage(groupedFilenames[g][i], images[i], (calibrationMethod == ECalibrationMethod::LINEAR) ? image::EImageColorSpace::LINEAR : image::EImageColorSpace::SRGB);
+      image::readImage(groupedFilenames[g][i], images[i], mergeColorspace);
     }
 
     // Merge HDR images
