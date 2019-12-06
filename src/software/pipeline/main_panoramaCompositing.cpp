@@ -166,15 +166,11 @@ bool convolveHorizontal(image::Image<image::RGBAfColor> & output, const image::I
     for (int j = 0; j < output.Width(); j++) {
 
       image::RGBAfColor sum = image::RGBAfColor(0.0,0.0,0.0,0.0);
-
-      if (input(i, j).a() < 1e-5) {
-        output(i,j) = sum;
-        continue;
-      }
+      float sumw = 0.0f;
 
       for (int k = 0; k < kernel.size(); k++) {
 
-        double w = kernel(k);
+        float w = kernel(k);
         int col = j + k - radius;
 
         if (col < 0 || col >= input.Width()) {
@@ -182,9 +178,13 @@ bool convolveHorizontal(image::Image<image::RGBAfColor> & output, const image::I
         }
 
         sum += w * input(i, col);
+        sumw += w;
       }
 
-      output(i, j) = sum;
+      output(i, j).r() = sum.r();
+      output(i, j).g() = sum.g();
+      output(i, j).b() = sum.b();
+      output(i, j).a() = sum.a();
     }
   }
 
@@ -207,15 +207,12 @@ bool convolveVertical(image::Image<image::RGBAfColor> & output, const image::Ima
     for (int j = 0; j < output.Width(); j++) {
 
       image::RGBAfColor sum = image::RGBAfColor(0.0,0.0,0.0,0.0);
-
-      if (input(i, j).a() < 1e-5) {
-        output(i,j) = sum;
-        continue;
-      }
+      float w = 0.0f;
+      float sumw = 0.0f;
 
       for (int k = 0; k < kernel.size(); k++) {
 
-        double w = kernel(k);
+        float w = kernel(k);
         int row = i + k - radius;
 
         if (row < 0 || row >= input.Height()) {
@@ -223,9 +220,13 @@ bool convolveVertical(image::Image<image::RGBAfColor> & output, const image::Ima
         }
 
         sum += w * input(row, j);
+        sumw += w;
       }
 
-      output(i, j) = sum;
+      output(i, j).r() = sum.r();
+      output(i, j).g() = sum.g();
+      output(i, j).b() = sum.b();
+      output(i, j).a() = sum.a();
     }
   }
 
@@ -264,10 +265,10 @@ bool upscale(aliceVision::image::Image<image::RGBAfColor> & outputColor, const a
     for (int j = 0; j < width; j++) {
       int dj = j * 2;
 
-      outputColor(di, dj) = image::RGBAfColor(0.0,0.0,0.0,inputColor(i, j).a());
-      outputColor(di, dj + 1) = image::RGBAfColor(0.0,0.0,0.0,inputColor(i, j).a());
-      outputColor(di + 1, dj) = image::RGBAfColor(0.0,0.0,0.0,inputColor(i, j).a());
-      outputColor(di + 1, dj + 1) = inputColor(i, j);
+      outputColor(di, dj) = inputColor(i, j);
+      outputColor(di, dj + 1) = image::RGBAfColor(0.0f,0.0f,0.0f,0.0f);
+      outputColor(di + 1, dj) = image::RGBAfColor(0.0f,0.0f,0.0f,0.0f);
+      outputColor(di + 1, dj + 1) = image::RGBAfColor(0.0f,0.0f,0.0f,0.0f);
     }
   }
 
@@ -283,7 +284,7 @@ bool divideByAlpha(aliceVision::image::Image<image::RGBAfColor> & inputOutputCol
   for (int i = 0; i < height; i++) {
 
     for (int j = 0; j < width; j++) {
-    
+            
       inputOutputColor(i, j).r() = inputOutputColor(i, j).r() / (inputOutputColor(i, j).a() + 1e-5);
       inputOutputColor(i, j).g() = inputOutputColor(i, j).g() / (inputOutputColor(i, j).a() + 1e-5);
       inputOutputColor(i, j).b() = inputOutputColor(i, j).b() / (inputOutputColor(i, j).a() + 1e-5);
@@ -357,6 +358,7 @@ public:
     for (int lvl = 0; lvl < max_levels; lvl++) {
 
       _levels.push_back(aliceVision::image::Image<image::RGBAfColor>(base_width, base_height, true, image::RGBAfColor(0.0f,0.0f,0.0f,0.0f)));
+      _weights.push_back(aliceVision::image::Image<float>(base_width, base_height, true, 0.0f));
       
       base_height /= 2;
       base_width /= 2;
@@ -372,9 +374,10 @@ public:
     kernel[2] = 6.0f;
     kernel[3] = 4.0f;
     kernel[4] = 1.0f;
-    kernel.normalize();
+    kernel = kernel / kernel.sum();
 
     _levels[0] = source;
+
 
     for (int l = 1; l < _levels.size(); l++) {
 
@@ -382,8 +385,15 @@ public:
       aliceVision::image::Image<image::RGBAfColor> buf2(_levels[l - 1].Width(), _levels[l - 1].Height());
       convolveHorizontal(buf, _levels[l - 1], kernel);
       convolveVertical(buf2, buf, kernel);
-      divideByAlpha(buf2);
-      downscale(_levels[l],  buf2);
+      downscale(_levels[l],  buf2);      
+    }
+
+    for (int l = 0; l < _levels.size(); l++) {
+      for (int i = 0; i < _levels[l].Height(); i++) {
+        for (int j = 0; j < _levels[l].Width(); j++) {
+          _weights[l](i,j) = _levels[l](i, j).a();
+        }
+      }
     }
 
     for (int l = 0; l < _levels.size() - 1; l++) {
@@ -392,16 +402,24 @@ public:
       aliceVision::image::Image<image::RGBAfColor> buf3(_levels[l].Width(), _levels[l].Height());
 
       upscale(buf, _levels[l + 1]);
-      convolveHorizontal(buf2, buf, kernel * 4.0f);
-      convolveVertical(buf3, buf2, kernel * 4.0f);
-      divideByAlpha(buf3);
+      convolveHorizontal(buf2, buf, kernel );
+      convolveVertical(buf3, buf2, kernel );
+
+      for (int i = 0; i  < buf3.Height(); i++) {
+          for (int j = 0; j < buf3.Width(); j++) {
+            buf3(i,j) *= 4.0f;
+          }
+      }
+
       substract(_levels[l], _levels[l], buf3);
     }
+
+    
 
     return true;
   }
 
-  bool rebuild() {
+  bool rebuild(image::Image<image::RGBAfColor> & output) {
 
     /*Create the gaussian kernel*/
     Eigen::VectorXf kernel(5);
@@ -410,22 +428,48 @@ public:
     kernel[2] = 6.0f;
     kernel[3] = 4.0f;
     kernel[4] = 1.0f;
-    kernel.normalize();
-    kernel *= 4.0f;
+    kernel = kernel / kernel.sum();
 
-    for (int l = _levels.size() - 2; l >= 0; l--) {
-
-      divideByAlpha(_levels[l]);
+    for (int l = 0; l < _levels.size(); l++) {
       for (int i = 0; i < _levels[l].Height(); i++) {
         for (int j = 0; j < _levels[l].Width(); j++) {
-          if (_levels[l](i, j).a() > 1e-5) {
-            _levels[l](i, j).a() = 1.0;
+          if (_weights[l](i, j) < 1e-12) {
+            _levels[l](i, j) = image::RGBAfColor(0.0,0.0,0.0,0.0);
+            continue;  
           }
-          else {
-            _levels[l](i, j).a() = 0.0;
+          _levels[l](i, j).r() = _levels[l](i, j).r() / _weights[l](i, j);
+          _levels[l](i, j).g() = _levels[l](i, j).g() / _weights[l](i, j);
+          _levels[l](i, j).b() = _levels[l](i, j).b() / _weights[l](i, j);
+        }
+      }
+    }
+
+    {
+      image::Image<image::RGBAfColor> & img = _levels[_levels.size() - 1];
+      for (int i = 0; i < img.Height(); i++) {
+        for (int j = 0; j < img.Width(); j++) {
+          image::RGBAfColor & pix = img(i, j);
+          image::RGBAfColor rpix;
+          rpix.r() = std::exp(pix.r());
+          rpix.g() = std::exp(pix.g());
+          rpix.b() = std::exp(pix.b());
+
+          if (rpix.r() < 0.0) {
+            pix.r() = 0.0;
+          }
+
+          if (rpix.g() < 0.0) {
+            pix.g() = 0.0;
+          }
+
+          if (rpix.b() < 0.0) {
+            pix.b() = 0.0;
           }
         }
       }
+    }
+
+    for (int l = _levels.size() - 2; l >= 0; l--) {
 
       aliceVision::image::Image<image::RGBAfColor> buf(_levels[l].Width(), _levels[l].Height());
       aliceVision::image::Image<image::RGBAfColor> buf2(_levels[l].Width(), _levels[l].Height());
@@ -434,29 +478,42 @@ public:
       upscale(buf, _levels[l + 1]);
       convolveHorizontal(buf2, buf, kernel);
       convolveVertical(buf3, buf2, kernel);
-      divideByAlpha(buf3);
+      
+      for (int i = 0; i  < buf3.Height(); i++) {
+          for (int j = 0; j < buf3.Width(); j++) {
+            buf3(i,j) *= 4.0f;
+          }
+      }
 
       addition(_levels[l], _levels[l], buf3);
 
-       {
-        char filename[FILENAME_MAX];
-        const image::Image<image::RGBAfColor> & img =  _levels[l];
-        image::Image<image::RGBfColor> tmp(img.Width(), img.Height(), true, image::RGBfColor(0.0));
-        sprintf(filename, "/home/mmoc/test%d.exr", l);
-        for (int i = 0; i  < img.Height(); i++) {
+      {
+        image::Image<image::RGBAfColor> & img = _levels[l];
+        for (int i = 0; i < img.Height(); i++) {
           for (int j = 0; j < img.Width(); j++) {
-            //if (img(i, j).a() > 1e-3) {
-              tmp(i, j).r() = img(i, j).r();
-              tmp(i, j).g() = img(i, j).g();
-              tmp(i, j).b() = img(i, j).b();
-            //}
+            image::RGBAfColor & pix = img(i, j);
+            image::RGBAfColor rpix;
+            rpix.r() = std::exp(pix.r());
+            rpix.g() = std::exp(pix.g());
+            rpix.b() = std::exp(pix.b());
+
+            if (rpix.r() < 0.0) {
+              pix.r() = 0.0;
+            }
+
+            if (rpix.g() < 0.0) {
+              pix.g() = 0.0;
+            }
+
+            if (rpix.b() < 0.0) {
+              pix.b() = 0.0;
+            }
           }
         }
-        image::writeImage(filename, tmp, image::EImageColorSpace::NO_CONVERSION);
       }
-      
     }
     
+    output = _levels[0];
 
     return true;
   }
@@ -468,14 +525,17 @@ public:
       image::Image<image::RGBAfColor> & img = _levels[l];
       const image::Image<image::RGBAfColor> & oimg = other._levels[l];
 
+      image::Image<float> & weight = _weights[l];
+      const image::Image<float> & oweight = other._weights[l];
+
       for (int i = 0; i  < img.Height(); i++) {
         for (int j = 0; j < img.Width(); j++) {
           
 
-          img(i, j).r() += oimg(i, j).r() * oimg(i, j).a();
-          img(i, j).g() += oimg(i, j).g() * oimg(i, j).a();
-          img(i, j).b() += oimg(i, j).b() * oimg(i, j).a();
-          img(i, j).a() += oimg(i, j).a();
+          img(i, j).r() += oimg(i, j).r() * oweight(i, j);
+          img(i, j).g() += oimg(i, j).g() * oweight(i, j);
+          img(i, j).b() += oimg(i, j).b() * oweight(i, j);
+          weight(i, j) += oweight(i, j);
         }
       }
     }
@@ -486,6 +546,7 @@ public:
 
 private:
   std::vector<aliceVision::image::Image<image::RGBAfColor>> _levels;
+  std::vector<aliceVision::image::Image<float>> _weights;
 };
 
 int count = 0;
@@ -495,13 +556,123 @@ public:
 
   LaplacianCompositer(size_t outputWidth, size_t outputHeight) :
   AlphaCompositer(outputWidth, outputHeight),
-  _pyramid_panorama(outputWidth, outputHeight, 8) {
+  _pyramid_panorama(outputWidth, outputHeight, 6) {
 
+  }
+
+  bool feathering(aliceVision::image::Image<image::RGBfColor> & output, const aliceVision::image::Image<image::RGBfColor> & color, const aliceVision::image::Image<unsigned char> & inputMask) {
+
+    std::vector<image::Image<image::RGBfColor>> feathering;
+    std::vector<image::Image<unsigned char>> feathering_mask;
+    feathering.push_back(color);
+    feathering_mask.push_back(inputMask);
+
+    int lvl = 0;
+    int width = color.Width();
+    int height = color.Height();
+    
+    while (1) {
+      const image::Image<image::RGBfColor> & src = feathering[lvl];
+      const image::Image<unsigned char> & src_mask = feathering_mask[lvl];
+    
+      image::Image<image::RGBfColor> half(width / 2, height / 2);
+      image::Image<unsigned char> half_mask(width / 2, height / 2);
+
+      for (int i = 0; i < half.Height(); i++) {
+
+        int di = i * 2;
+        for (int j = 0; j < half.Width(); j++) {
+          int dj = j * 2;
+
+          int count = 0;
+          half(i, j) = image::RGBfColor(0.0,0.0,0.0);
+          
+          if (src_mask(di, dj)) {
+            half(i, j) += src(di, dj);
+            count++;
+          }
+
+          if (src_mask(di, dj + 1)) {
+            half(i, j) += src(di, dj + 1);
+            count++;
+          }
+
+          if (src_mask(di + 1, dj)) {
+            half(i, j) += src(di + 1, dj);
+            count++;
+          }
+
+          if (src_mask(di + 1, dj + 1)) {
+            half(i, j) += src(di + 1, dj + 1);
+            count++;
+          }
+
+          if (count > 0) {
+            half(i, j) /= float(count);
+            half_mask(i, j) = 1;
+          } 
+          else {
+            half_mask(i, j) = 0;
+          }
+        }
+
+        
+      }
+
+      feathering.push_back(half);
+      feathering_mask.push_back(half_mask);
+
+      
+      width = half.Width();
+      height = half.Height();
+
+      if (width < 2 || height < 2) break;
+
+      lvl++;  
+    }
+
+
+    for (int lvl = feathering.size() - 2; lvl >= 0; lvl--) {
+      
+      image::Image<image::RGBfColor> & src = feathering[lvl];
+      image::Image<unsigned char> & src_mask = feathering_mask[lvl];
+      image::Image<image::RGBfColor> & ref = feathering[lvl + 1];
+      image::Image<unsigned char> & ref_mask = feathering_mask[lvl + 1];
+
+      for (int i = 0; i < src_mask.Height(); i++) {
+        for (int j = 0; j < src_mask.Width(); j++) {
+          if (!src_mask(i, j)) {
+            int mi = i / 2;
+            int mj = j / 2;
+
+            if (mi >= ref_mask.Height()) {
+              mi = ref_mask.Height() - 1;
+            }
+
+            if (mj >= ref_mask.Width()) {
+              mj = ref_mask.Width() - 1;
+            }
+
+            src_mask(i, j) = ref_mask(mi, mj);
+            src(i, j) = ref(mi, mj);
+          }
+        }
+      }
+    }
+
+    output = feathering[0];
+
+    return true;
   }
 
   virtual bool append(const aliceVision::image::Image<image::RGBfColor> & color, const aliceVision::image::Image<unsigned char> & inputMask, const aliceVision::image::Image<float> & inputWeights, size_t offset_x, size_t offset_y) {
 
-    aliceVision::image::Image<image::RGBAfColor> view(_panorama.Width(), _panorama.Height(), true, image::RGBAfColor(0.0f, 0.0f, 0.0f, 0.0f));
+    aliceVision::image::Image<image::RGBfColor> color_big(_panorama.Width(), _panorama.Height(), true, image::RGBfColor(0.0f, 0.0f, 0.0f));
+    aliceVision::image::Image<unsigned char> inputMask_big(_panorama.Width(), _panorama.Height(), true, 0);
+    aliceVision::image::Image<float> inputWeights_big(_panorama.Width(), _panorama.Height(), true, 0);
+    aliceVision::image::Image<image::RGBfColor> color_big_feathered;
+
+  
 
     for (int i = 0; i < color.Height(); i++) {
 
@@ -511,35 +682,78 @@ public:
 
         int dj = j + offset_x;
 
-        if (dj >= view.Width()) {
-          dj = dj - view.Width();
+        if (dj >= color_big.Width()) {
+          dj = dj - color_big.Width();
         }
 
-        /* Create binary mask */
-        if (inputMask(i ,j)) {
-          view(di, dj).r() = color(i, j).r();
-          view(di, dj).g() = color(i, j).g();
-          view(di, dj).b() = color(i, j).b();
+        color_big(di, dj).r() = color(i, j).r();
+        color_big(di, dj).g() = color(i, j).g();
+        color_big(di, dj).b() = color(i, j).b();
+        inputMask_big(di, dj) = inputMask(i, j);
+        inputWeights_big(di, dj) = inputWeights(i, j);
+      }
+    }
 
-          if (inputWeights(i,j) > _weightmap(di, dj)) {
-            view(di, dj).a() = 1.0f;
+    aliceVision::image::Image<image::RGBfColor> feathered;
+    feathering(feathered, color_big, inputMask_big);
+
+
+    aliceVision::image::Image<image::RGBAfColor> view(_panorama.Width(), _panorama.Height(), true, image::RGBAfColor(0.0f, 0.0f, 0.0f, 0.0f));
+
+    const image::Image<image::RGBfColor> & img = feathered;
+
+
+    for (int i = 0; i < view.Height(); i++) {
+
+      for (int j = 0; j < view.Width(); j++) {
+
+        view(i, j).r() = std::log(std::max(0.001f, feathered(i, j).r()));
+        view(i, j).g() = std::log(std::max(0.001f, feathered(i, j).g()));
+        view(i, j).b() = std::log(std::max(0.001f, feathered(i, j).b()));
+        
+        if (inputMask_big(i ,j)) {
+
+          if (inputWeights_big(i,j) > _weightmap(i, j)) {
+            view(i, j).a() = 1.0f;
           }
           else {
-            view(di, dj).a() = 0.0f;
+            view(i, j).a() = 0.0f;
           }
         }
       }
     }
 
-    LaplacianPyramid pyramid(_panorama.Width(), _panorama.Height(), 8);
+
+    LaplacianPyramid pyramid(_panorama.Width(), _panorama.Height(), 6);
     pyramid.apply(view);
-    
-    
+
     
     _pyramid_panorama.merge(pyramid);
-    if (count == 28) {
-      
-      _pyramid_panorama.rebuild();
+
+   
+
+    if (count == 72) {
+      image::Image<image::RGBAfColor> res;
+      _pyramid_panorama.rebuild(res);
+
+       {
+        char filename[FILENAME_MAX];
+        const image::Image<image::RGBAfColor> & img =  res;
+        image::Image<image::RGBfColor> tmp(img.Width(), img.Height(), true, image::RGBfColor(0.0));
+        sprintf(filename, "/home/mmoc/out.exr");
+        for (int i = 0; i  < img.Height(); i++) {
+          for (int j = 0; j < img.Width(); j++) {
+            //if (img(i, j).a() > 1e-3) {
+              tmp(i, j).r() = std::exp(img(i, j).r());
+              tmp(i, j).g() = std::exp(img(i, j).g());
+              tmp(i, j).b() = std::exp(img(i, j).b());
+             
+            //}
+          }
+        }
+
+        image::writeImage(filename, tmp, image::EImageColorSpace::SRGB);
+      }
     }
     count++;
 
@@ -681,7 +895,7 @@ int main(int argc, char **argv) {
   for (auto & item : configTree.get_child("views")) {
     ConfigView cv;
 
-    //if (pos == 24 || pos == 25)
+    if (1/*pos == 24 || pos == 25*/)
     {
     cv.img_path = item.second.get<std::string>("filename_view");
     cv.mask_path = item.second.get<std::string>("filename_mask");
