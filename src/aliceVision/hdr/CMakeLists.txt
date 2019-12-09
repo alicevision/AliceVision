@@ -1,7 +1,7 @@
 
 # Headers
 set(hdr_files_headers
- BundleAdjustmentCalibration.hpp
+ LaguerreBACalibration.hpp
  sampling.hpp
  rgbCurve.hpp
  RobertsonCalibrate.hpp
@@ -13,7 +13,7 @@ set(hdr_files_headers
 
 # Sources
 set(hdr_files_sources
- BundleAdjustmentCalibration.cpp
+ LaguerreBACalibration.cpp
  sampling.cpp
  rgbCurve.cpp
  RobertsonCalibrate.cpp

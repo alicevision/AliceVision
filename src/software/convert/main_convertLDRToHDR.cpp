@@ -20,7 +20,7 @@
 #include <aliceVision/hdr/DebevecCalibrate.hpp>
 #include <aliceVision/hdr/GrossbergCalibrate.hpp>
 #include <aliceVision/hdr/emorCurve.hpp>
-#include <aliceVision/hdr/BundleAdjustmentCalibration.hpp>
+#include <aliceVision/hdr/LaguerreBACalibration.hpp>
 
 /*Command line parameters*/
 #include <boost/program_options.hpp>
@@ -536,7 +536,7 @@ int main(int argc, char * argv[])
           ALICEVISION_LOG_INFO("Laguerre calibration");
           if (calibrationNbPoints <= 0)
               calibrationNbPoints = 1000000;
-          hdr::BundleAdjustmentCalibration calibration;
+          hdr::LaguerreBACalibration calibration;
           bool refineExposures = false;
           calibration.process(groupedFilenames, channelQuantization, groupedExposures, calibrationNbPoints, fisheye, refineExposures, response);
       }

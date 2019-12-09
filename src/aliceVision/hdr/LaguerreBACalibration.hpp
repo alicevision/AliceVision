@@ -23,13 +23,13 @@ namespace hdr {
  * http://www.cs.columbia.edu/CAVE/publications/pdfs/Mitsunaga_CVPR99.pdf
  *
  * Some precisions are also provided in:
- * "Radiometric alignment and vignetting calibration", Pablo d’Angelo, ICVS 2007
+ * "Radiometric alignment and vignetting calibration", Pablo d'Angelo, ICVS 2007
  * http://hugin.sourceforge.net/tech/icvs2007_final.pdf
  */
-class BundleAdjustmentCalibration
+class LaguerreBACalibration
 {
 public:
-  explicit BundleAdjustmentCalibration();
+  explicit LaguerreBACalibration();
 
   /**
    * @brief
@@ -48,10 +48,6 @@ public:
       bool fisheye,
       bool refineExposures,
       rgbCurve &response);
-
-private:
-  /// Dimension of the response ie number of basis vectors to calculate the response function
-  unsigned int _dimension;
 };
 
 } // namespace hdr

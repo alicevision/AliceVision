@@ -4,7 +4,7 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
-#include "BundleAdjustmentCalibration.hpp"
+#include "LaguerreBACalibration.hpp"
 #include "sampling.hpp"
 
 #include <aliceVision/alicevision_omp.hpp>
@@ -25,7 +25,7 @@ namespace hdr {
 
 using namespace aliceVision::image;
 
-BundleAdjustmentCalibration::BundleAdjustmentCalibration()
+LaguerreBACalibration::LaguerreBACalibration()
 {
 }
 
@@ -114,7 +114,7 @@ private:
     const Rgb<double>& _colorB;
 };
 
-void BundleAdjustmentCalibration::process(
+void LaguerreBACalibration::process(
                                 const std::vector<std::vector<std::string>>& imagePathsGroups,
                                 const std::size_t channelQuantization,
                                 const std::vector<std::vector<float>>& cameraExposures,
