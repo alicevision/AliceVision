@@ -43,8 +43,9 @@ public:
   void process(
       const std::vector<std::vector<std::string>>& imagePathsGroups,
       const std::size_t channelQuantization,
-      const std::vector<std::vector<float>>& cameraExposures,
+      std::vector<std::vector<float>>& cameraExposures,
       int nbPoints,
+      int imageDownscale,
       bool fisheye,
       bool refineExposures,
       rgbCurve &response);

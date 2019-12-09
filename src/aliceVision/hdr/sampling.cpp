@@ -9,6 +9,8 @@
 #include <aliceVision/alicevision_omp.hpp>
 #include <aliceVision/system/Logger.hpp>
 
+#include <OpenImageIO/imagebufalgo.h>
+
 
 namespace aliceVision {
 namespace hdr {
@@ -19,8 +21,9 @@ void extractSamples(
     std::vector<std::vector<ImageSamples>>& out_samples,
     const std::vector<std::vector<std::string>>& imagePathsGroups,
     const std::vector< std::vector<float> >& cameraExposures,
-    const int nbPoints,
-    const bool fisheye
+    int nbPoints,
+    int calibrationDownscale,
+    bool fisheye
     )
 {
     const int nbGroups = imagePathsGroups.size();
@@ -53,6 +56,27 @@ void extractSamples(
 
             Image<RGBfColor> img;
             readImage(imagePaths[i], img, EImageColorSpace::LINEAR);
+            if (calibrationDownscale != 1.0f)
+            {
+                unsigned int w = img.Width();
+                unsigned int h = img.Height();
+                unsigned int nw = (unsigned int)(floor(float(w) / calibrationDownscale));
+                unsigned int nh = (unsigned int)(floor(float(h) / calibrationDownscale));
+
+                image::Image<image::RGBfColor> rescaled(nw, nh);
+
+                oiio::ImageSpec imageSpecResized(nw, nh, 3, oiio::TypeDesc::FLOAT);
+                oiio::ImageSpec imageSpecOrigin(w, h, 3, oiio::TypeDesc::FLOAT);
+                oiio::ImageBuf bufferOrigin(imageSpecOrigin, img.data());
+                oiio::ImageBuf bufferResized(imageSpecResized, rescaled.data());
+                oiio::ImageBufAlgo::resample(bufferResized, bufferOrigin);
+
+                const oiio::ImageBuf inBuf(oiio::ImageSpec(w, h, 3, oiio::TypeDesc::FLOAT), img.data());
+                oiio::ImageBuf outBuf(oiio::ImageSpec(nw, nh, 3, oiio::TypeDesc::FLOAT), rescaled.data());
+
+                oiio::ImageBufAlgo::resize(outBuf, inBuf);
+                img.swap(rescaled);
+            }
 
             const std::size_t width = img.Width();
             const std::size_t height = img.Height();

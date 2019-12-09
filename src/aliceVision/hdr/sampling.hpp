@@ -25,8 +25,9 @@ void extractSamples(
     std::vector<std::vector<ImageSamples>>& out_samples,
     const std::vector<std::vector<std::string>>& imagePathsGroups,
     const std::vector< std::vector<float> >& cameraExposures,
-    const int nbPoints,
-    const bool fisheye);
+    int nbPoints,
+    int calibrationDownscale,
+    bool fisheye);
 
 
 } // namespace hdr

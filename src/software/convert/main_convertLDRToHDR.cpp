@@ -112,6 +112,8 @@ int main(int argc, char * argv[])
   bool fisheye = false;
   int channelQuantizationPower = 10;
   int calibrationNbPoints = 0;
+  int calibrationDownscale = 4;
+  bool refineExposures = false;
 
   std::string calibrationWeightFunction = "default";
   hdr::EFunctionType fusionWeightFunction = hdr::EFunctionType::GAUSSIAN;
@@ -146,6 +148,10 @@ int main(int argc, char * argv[])
         "Weight function used to fuse all LDR images together (gaussian, triangle, plateau).")
     ("calibrationNbPoints", po::value<int>(&calibrationNbPoints)->default_value(calibrationNbPoints),
         "Number of points used to calibrate (Use 0 for automatic selection based on the calibration method).")
+    ("calibrationDownscale", po::value<int>(&calibrationDownscale)->default_value(calibrationDownscale),
+        "Image downscale used to calibration the response function.")
+    ("calibrationRefineExposures", po::value<bool>(&refineExposures)->default_value(refineExposures),
+        "Refine exposures provided by metadata (shutter speed, f-number, iso). Only available for 'laguerre' calibration method. Default value is set to 0.")
     ;
 
   po::options_description logParams("Log parameters");
@@ -482,7 +488,7 @@ int main(int argc, char * argv[])
           if(calibrationNbPoints <= 0)
               calibrationNbPoints = 10000;
           hdr::DebevecCalibrate calibration;
-          calibration.process(groupedFilenames, channelQuantization, groupedExposures, calibrationNbPoints, fisheye, calibrationWeight, lambda, response);
+          calibration.process(groupedFilenames, channelQuantization, groupedExposures, calibrationNbPoints, calibrationDownscale, fisheye, calibrationWeight, lambda, response);
 
           {
               std::string methodName = ECalibrationMethod_enumToString(calibrationMethod);
@@ -537,8 +543,7 @@ int main(int argc, char * argv[])
           if (calibrationNbPoints <= 0)
               calibrationNbPoints = 1000000;
           hdr::LaguerreBACalibration calibration;
-          bool refineExposures = false;
-          calibration.process(groupedFilenames, channelQuantization, groupedExposures, calibrationNbPoints, fisheye, refineExposures, response);
+          calibration.process(groupedFilenames, channelQuantization, groupedExposures, calibrationNbPoints, calibrationDownscale, fisheye, refineExposures, response);
       }
       break;
       }

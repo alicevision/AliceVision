@@ -13,6 +13,9 @@
 #include <aliceVision/image/all.hpp>
 #include <aliceVision/image/io.hpp>
 
+#include <OpenImageIO/imagebufalgo.h>
+
+
 namespace aliceVision {
 namespace hdr {
 
@@ -22,6 +25,7 @@ bool DebevecCalibrate::process(const std::vector< std::vector<std::string>> & im
                                const std::size_t channelQuantization,
                                const std::vector<std::vector<float> > &times,
                                const int nbPoints,
+                               const int calibrationDownscale,
                                const bool fisheye,
                                const rgbCurve &weight,
                                const float lambda,
@@ -59,6 +63,28 @@ bool DebevecCalibrate::process(const std::vector< std::vector<std::string>> & im
     for (int i = 0; i < imagePaths.size(); i++)
     {
       image::readImage(imagePaths[i], ldrImagesGroup[i], image::EImageColorSpace::SRGB);
+      if (calibrationDownscale != 1.0f)
+      {
+          image::Image<image::RGBfColor>& img = ldrImagesGroup[i];
+          unsigned int w = img.Width();
+          unsigned int h = img.Height();
+          unsigned int nw = (unsigned int)(floor(float(w) / calibrationDownscale));
+          unsigned int nh = (unsigned int)(floor(float(h) / calibrationDownscale));
+
+          image::Image<image::RGBfColor> rescaled(nw, nh);
+
+          oiio::ImageSpec imageSpecResized(nw, nh, 3, oiio::TypeDesc::FLOAT);
+          oiio::ImageSpec imageSpecOrigin(w, h, 3, oiio::TypeDesc::FLOAT);
+          oiio::ImageBuf bufferOrigin(imageSpecOrigin, img.data());
+          oiio::ImageBuf bufferResized(imageSpecResized, rescaled.data());
+          oiio::ImageBufAlgo::resample(bufferResized, bufferOrigin);
+
+          const oiio::ImageBuf inBuf(oiio::ImageSpec(w, h, 3, oiio::TypeDesc::FLOAT), img.data());
+          oiio::ImageBuf outBuf(oiio::ImageSpec(nw, nh, 3, oiio::TypeDesc::FLOAT), rescaled.data());
+
+          oiio::ImageBufAlgo::resize(outBuf, inBuf);
+          img.swap(rescaled);
+      }
     }
 
     const std::vector<float> & ldrTimes = times[g];
