@@ -42,6 +42,60 @@ typedef struct {
 } ConfigView;
 
 
+template <class T>
+bool makeImagePyramidCompatible(image::Image<T> & output, size_t & out_offset_x, size_t & out_offset_y, const image::Image<T> & input, size_t offset_x, size_t offset_y, size_t num_levels) {
+
+  if (num_levels == 0) {
+    return false;
+  }
+
+  double max_scale = 1.0 / pow(2.0, num_levels - 1);
+
+  double low_offset_x = double(offset_x) * max_scale;
+  double low_offset_y = double(offset_y) * max_scale;
+
+  /*Make sure offset is integer even at the lowest level*/
+  double corrected_low_offset_x = floor(low_offset_x);
+  double corrected_low_offset_y = floor(low_offset_y);
+
+  /*Add some borders on the top and left to make sure mask can be smoothed*/
+  corrected_low_offset_x = std::max(0.0, corrected_low_offset_x - 3.0);
+  corrected_low_offset_y = std::max(0.0, corrected_low_offset_y - 3.0);
+
+  /*Compute offset at largest level*/
+  out_offset_x = size_t(corrected_low_offset_x / max_scale);
+  out_offset_y = size_t(corrected_low_offset_y / max_scale);
+
+  /*Compute difference*/
+  double doffset_x = double(offset_x) - double(out_offset_x);
+  double doffset_y = double(offset_y) - double(out_offset_y);
+  
+  /* update size with border update */
+  double large_width = double(input.Width()) + doffset_x;
+  double large_height = double(input.Height()) + doffset_y;
+  
+  /* compute size at largest scale */
+  double low_width = large_width * max_scale;
+  double low_height = large_height * max_scale;
+
+  /*Make sure width is integer event at the lowest level*/
+  double corrected_low_width = ceil(low_width);
+  double corrected_low_height = ceil(low_height);  
+
+  /*Add some borders on the right and bottom to make sure mask can be smoothed*/
+  corrected_low_width = corrected_low_width + 3;
+  corrected_low_height = corrected_low_height + 3;
+
+  /*Compute size at largest level*/
+  size_t width = size_t(corrected_low_width / max_scale);
+  size_t height = size_t(corrected_low_height / max_scale);
+
+  output = image::Image<T>(width, height, true, T(0.0f));
+  output.block(doffset_y, doffset_x, input.Height(), input.Width()) = input;
+
+  return true;
+}
+
 
 class Compositer {
 public:
@@ -76,6 +130,10 @@ public:
       }
     }
 
+    return true;
+  }
+
+  virtual bool terminate() {
     return true;
   }
 
@@ -173,18 +231,23 @@ bool convolveHorizontal(image::Image<image::RGBAfColor> & output, const image::I
         float w = kernel(k);
         int col = j + k - radius;
 
-        if (col < 0 || col >= input.Width()) {
-          continue;
+        /* mirror 5432 | 123456 | 5432 */
+        if (col < 0) {
+          col = - col;
+        }
+
+        if (col >= input.Width()) {
+          col = input.Width() - 1 - (col + 1 - input.Width());
         }
 
         sum += w * input(i, col);
         sumw += w;
       }
 
-      output(i, j).r() = sum.r();
-      output(i, j).g() = sum.g();
-      output(i, j).b() = sum.b();
-      output(i, j).a() = sum.a();
+      output(i, j).r() = sum.r() / sumw;
+      output(i, j).g() = sum.g() / sumw;
+      output(i, j).b() = sum.b() / sumw;
+      output(i, j).a() = sum.a() / sumw;
     }
   }
 
@@ -215,18 +278,22 @@ bool convolveVertical(image::Image<image::RGBAfColor> & output, const image::Ima
         float w = kernel(k);
         int row = i + k - radius;
 
-        if (row < 0 || row >= input.Height()) {
-          continue;
+        if (row < 0) {
+          row = -row;
+        }
+
+        if (row >= input.Height()) {
+          row = input.Height() - 1 - (row + 1 - input.Height());
         }
 
         sum += w * input(row, j);
         sumw += w;
       }
 
-      output(i, j).r() = sum.r();
-      output(i, j).g() = sum.g();
-      output(i, j).b() = sum.b();
-      output(i, j).a() = sum.a();
+      output(i, j).r() = sum.r() / sumw;
+      output(i, j).g() = sum.g() / sumw;
+      output(i, j).b() = sum.b() / sumw;
+      output(i, j).a() = sum.a() / sumw;
     }
   }
 
@@ -433,10 +500,11 @@ public:
     for (int l = 0; l < _levels.size(); l++) {
       for (int i = 0; i < _levels[l].Height(); i++) {
         for (int j = 0; j < _levels[l].Width(); j++) {
-          if (_weights[l](i, j) < 1e-12) {
+          if (_weights[l](i, j) < 1e-6) {
             _levels[l](i, j) = image::RGBAfColor(0.0,0.0,0.0,0.0);
             continue;  
           }
+          
           _levels[l](i, j).r() = _levels[l](i, j).r() / _weights[l](i, j);
           _levels[l](i, j).g() = _levels[l](i, j).g() / _weights[l](i, j);
           _levels[l](i, j).b() = _levels[l](i, j).b() / _weights[l](i, j);
@@ -518,7 +586,7 @@ public:
     return true;
   }
 
-  bool merge(const LaplacianPyramid & other) {
+  bool merge(const LaplacianPyramid & other, size_t offset_x, size_t offset_y) {
 
     for (int l = 0; l < _levels.size(); l++) {
 
@@ -528,16 +596,27 @@ public:
       image::Image<float> & weight = _weights[l];
       const image::Image<float> & oweight = other._weights[l];
 
-      for (int i = 0; i  < img.Height(); i++) {
-        for (int j = 0; j < img.Width(); j++) {
-          
+      for (int i = 0; i  < oimg.Height(); i++) {
 
-          img(i, j).r() += oimg(i, j).r() * oweight(i, j);
-          img(i, j).g() += oimg(i, j).g() * oweight(i, j);
-          img(i, j).b() += oimg(i, j).b() * oweight(i, j);
-          weight(i, j) += oweight(i, j);
+        int di = i + offset_y;
+        if (di >= img.Height()) continue;
+
+        for (int j = 0; j < oimg.Width(); j++) {
+          
+          int dj = j + offset_x;
+          if (dj >= weight.Width()) {
+            dj = dj - weight.Width();
+          }
+
+          img(di, dj).r() += oimg(i, j).r() * oweight(i, j);
+          img(di, dj).g() += oimg(i, j).g() * oweight(i, j);
+          img(di, dj).b() += oimg(i, j).b() * oweight(i, j);
+          weight(di, dj) += oweight(i, j);
         }
       }
+
+      offset_x /= 2;
+      offset_y /= 2;
     }
     
 
@@ -549,13 +628,56 @@ private:
   std::vector<aliceVision::image::Image<float>> _weights;
 };
 
-int count = 0;
+class DistanceSeams {
+public:
+  DistanceSeams(size_t outputWidth, size_t outputHeight) :
+  _weights(outputWidth, outputHeight, true, 0.0f)
+  {
+  }
 
-class LaplacianCompositer : public AlphaCompositer {
+  virtual bool append(aliceVision::image::Image<float> & output, const aliceVision::image::Image<unsigned char> & inputMask, const aliceVision::image::Image<float> & inputWeights, size_t offset_x, size_t offset_y) {
+
+    if (inputMask.size() != inputWeights.size()) {
+      return false;
+    }
+
+    for (int i = 0; i < inputMask.Height(); i++) {
+
+      int di = i + offset_y;
+
+      for (int j = 0; j < inputMask.Width(); j++) {
+
+        output(i, j) = 0.0f;
+
+        if (!inputMask(i, j)) {
+          continue;
+        }
+        
+        int dj = j + offset_x;
+        if (dj >= _weights.Width()) {
+          dj = dj - _weights.Width();
+        }
+
+        if (inputWeights(i, j) > _weights(di, dj)) {
+          output(i, j) = 1.0f;
+          _weights(di, dj) = inputWeights(i, j);
+        }
+      }
+    }
+
+    return true;
+  }
+
+
+private:
+  image::Image<float> _weights;
+};
+
+class LaplacianCompositer : public Compositer {
 public:
 
   LaplacianCompositer(size_t outputWidth, size_t outputHeight) :
-  AlphaCompositer(outputWidth, outputHeight),
+  Compositer(outputWidth, outputHeight),
   _pyramid_panorama(outputWidth, outputHeight, 6) {
 
   }
@@ -667,95 +789,50 @@ public:
 
   virtual bool append(const aliceVision::image::Image<image::RGBfColor> & color, const aliceVision::image::Image<unsigned char> & inputMask, const aliceVision::image::Image<float> & inputWeights, size_t offset_x, size_t offset_y) {
 
-    aliceVision::image::Image<image::RGBfColor> color_big(_panorama.Width(), _panorama.Height(), true, image::RGBfColor(0.0f, 0.0f, 0.0f));
-    aliceVision::image::Image<unsigned char> inputMask_big(_panorama.Width(), _panorama.Height(), true, 0);
-    aliceVision::image::Image<float> inputWeights_big(_panorama.Width(), _panorama.Height(), true, 0);
     aliceVision::image::Image<image::RGBfColor> color_big_feathered;
 
+    size_t new_offset_x, new_offset_y;
+    aliceVision::image::Image<image::RGBfColor> color_pot;
+    aliceVision::image::Image<unsigned char> mask_pot;
+    aliceVision::image::Image<float> weights_pot;
+    makeImagePyramidCompatible(color_pot, new_offset_x, new_offset_y, color, offset_x, offset_y, 6);
+    makeImagePyramidCompatible(mask_pot, new_offset_x, new_offset_y, inputMask, offset_x, offset_y, 6);
+    makeImagePyramidCompatible(weights_pot, new_offset_x, new_offset_y, inputWeights, offset_x, offset_y, 6);
   
 
-    for (int i = 0; i < color.Height(); i++) {
-
-      int di = i + offset_y;
-
-      for (int j = 0; j < color.Width(); j++) {
-
-        int dj = j + offset_x;
-
-        if (dj >= color_big.Width()) {
-          dj = dj - color_big.Width();
-        }
-
-        color_big(di, dj).r() = color(i, j).r();
-        color_big(di, dj).g() = color(i, j).g();
-        color_big(di, dj).b() = color(i, j).b();
-        inputMask_big(di, dj) = inputMask(i, j);
-        inputWeights_big(di, dj) = inputWeights(i, j);
-      }
-    }
 
     aliceVision::image::Image<image::RGBfColor> feathered;
-    feathering(feathered, color_big, inputMask_big);
+    feathering(feathered, color_pot, mask_pot);
 
 
-    aliceVision::image::Image<image::RGBAfColor> view(_panorama.Width(), _panorama.Height(), true, image::RGBAfColor(0.0f, 0.0f, 0.0f, 0.0f));
-
+    aliceVision::image::Image<image::RGBAfColor> view(feathered.Width(), feathered.Height(), true, image::RGBAfColor(0.0f, 0.0f, 0.0f, 0.0f));
     const image::Image<image::RGBfColor> & img = feathered;
-
 
     for (int i = 0; i < view.Height(); i++) {
 
       for (int j = 0; j < view.Width(); j++) {
 
-        view(i, j).r() = std::log(std::max(0.001f, feathered(i, j).r()));
-        view(i, j).g() = std::log(std::max(0.001f, feathered(i, j).g()));
-        view(i, j).b() = std::log(std::max(0.001f, feathered(i, j).b()));
+        view(i, j).r() = std::log(std::max(1e-8f, feathered(i, j).r()));
+        view(i, j).g() = std::log(std::max(1e-8f, feathered(i, j).g()));
+        view(i, j).b() = std::log(std::max(1e-8f, feathered(i, j).b()));
         
-        if (inputMask_big(i ,j)) {
+        if (mask_pot(i ,j)) {
 
-          if (inputWeights_big(i,j) > _weightmap(i, j)) {
-            view(i, j).a() = 1.0f;
-          }
-          else {
-            view(i, j).a() = 0.0f;
-          }
+          view(i, j).a() = weights_pot(i, j);
+          
         }
       }
     }
 
 
-    LaplacianPyramid pyramid(_panorama.Width(), _panorama.Height(), 6);
+    LaplacianPyramid pyramid(feathered.Width(), feathered.Height(), 6);
     pyramid.apply(view);
-
-    
-    _pyramid_panorama.merge(pyramid);
+  
+    _pyramid_panorama.merge(pyramid, new_offset_x, new_offset_y);
 
    
 
-    if (count == 72) {
-      image::Image<image::RGBAfColor> res;
-      _pyramid_panorama.rebuild(res);
-
-       {
-        char filename[FILENAME_MAX];
-        const image::Image<image::RGBAfColor> & img =  res;
-        image::Image<image::RGBfColor> tmp(img.Width(), img.Height(), true, image::RGBfColor(0.0));
-        sprintf(filename, "/home/mmoc/out.exr");
-        for (int i = 0; i  < img.Height(); i++) {
-          for (int j = 0; j < img.Width(); j++) {
-            //if (img(i, j).a() > 1e-3) {
-              tmp(i, j).r() = std::exp(img(i, j).r());
-              tmp(i, j).g() = std::exp(img(i, j).g());
-              tmp(i, j).b() = std::exp(img(i, j).b());
-             
-            //}
-          }
-        }
-
-        image::writeImage(filename, tmp, image::EImageColorSpace::SRGB);
-      }
-    }
-    count++;
+    
 
 
     
@@ -765,26 +842,29 @@ public:
     //_panorama = img.block(0, 0, _panorama.Height(), _panorama.Width());
     //_mask = mask.block(0, 0, _panorama.Height(), _panorama.Width());*/
 
-    for (int i = 0; i < inputWeights.Height(); i++) {
 
-      int di = i + offset_y;
+    return true;
+  }
 
-      for (int j = 0; j < inputWeights.Width(); j++) {
+  virtual bool terminate() {
 
-        int dj = j + offset_x;
+    image::Image<image::RGBAfColor> res;
+    _pyramid_panorama.rebuild(res);
 
-        if (dj >= _panorama.Width()) {
-          dj = dj - _panorama.Width();
-        }
-
-        if (!inputMask(i, j)) {
-          continue;
-        }
-
-        _weightmap(di, dj) = std::max(_weightmap(di, dj), inputWeights(i, j));
+    
+    char filename[FILENAME_MAX];
+    const image::Image<image::RGBAfColor> & img =  res;
+    image::Image<image::RGBfColor> tmp(img.Width(), img.Height(), true, image::RGBfColor(0.0));
+    sprintf(filename, "/home/mmoc/out.exr");
+    for (int i = 0; i  < img.Height(); i++) {
+      for (int j = 0; j < img.Width(); j++) {
+        tmp(i, j).r() = std::exp(img(i, j).r());
+        tmp(i, j).g() = std::exp(img(i, j).g());
+        tmp(i, j).b() = std::exp(img(i, j).b());
       }
     }
 
+    image::writeImage(filename, tmp, image::EImageColorSpace::SRGB);
 
     return true;
   }
@@ -895,7 +975,7 @@ int main(int argc, char **argv) {
   for (auto & item : configTree.get_child("views")) {
     ConfigView cv;
 
-    if (1/*pos == 24 || pos == 25*/)
+    if (pos == 24 || pos == 25)
     {
     cv.img_path = item.second.get<std::string>("filename_view");
     cv.mask_path = item.second.get<std::string>("filename_mask");
@@ -914,6 +994,8 @@ int main(int argc, char **argv) {
   else {
     compositer = std::unique_ptr<Compositer>(new AlphaCompositer(panoramaSize.first, panoramaSize.second));
   }
+
+  DistanceSeams distanceseams(panoramaSize.first, panoramaSize.second);
   
   for (const ConfigView & cv : configViews) {
 
@@ -941,9 +1023,13 @@ int main(int argc, char **argv) {
     image::Image<float> weights;
     image::readImage(weightsPath, weights, image::EImageColorSpace::NO_CONVERSION);
 
+    image::Image<float> seams(weights.Width(), weights.Height());
+    distanceseams.append(seams, mask, weights, cv.offset_x, cv.offset_y);
 
-    compositer->append(source, mask, weights, cv.offset_x, cv.offset_y);
+    compositer->append(source, mask, seams, cv.offset_x, cv.offset_y);
   }
+
+  compositer->terminate();
 
   ALICEVISION_LOG_INFO("Write output panorama to file " << outputPanorama);
   const aliceVision::image::Image<image::RGBfColor> & panorama = compositer->getPanorama();

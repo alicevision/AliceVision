@@ -991,7 +991,7 @@ public:
     /**
      * Create buffer
      */
-    _color = aliceVision::image::Image<image::RGBfColor>(coordinates.Width(), coordinates.Height());
+    _color = aliceVision::image::Image<image::RGBfColor>(coordinates.Width(), coordinates.Height(), true, image::RGBfColor(1.0, 0.0, 0.0));
     
 
     /**
@@ -1225,7 +1225,7 @@ int main(int argc, char **argv) {
    */
   size_t pos = 0;
   for (const std::shared_ptr<sfmData::View> & viewIt: viewsOrderedByName) {
-
+    
     /**
      * Retrieve view
      */
