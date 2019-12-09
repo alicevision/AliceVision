@@ -12,8 +12,8 @@ set(hdr_files_headers
 
 # Sources
 set(hdr_files_sources
- rgbCurve.cpp
  BundleAdjustmentCalibration.cpp
+ rgbCurve.cpp
  RobertsonCalibrate.cpp
  hdrMerge.cpp
  DebevecCalibrate.cpp

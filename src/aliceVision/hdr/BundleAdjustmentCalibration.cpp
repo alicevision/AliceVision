@@ -202,16 +202,21 @@ void BundleAdjustmentCalibration::process(
                                 bool refineExposures,
                                 rgbCurve &response)
 {
-    ALICEVISION_LOG_TRACE("Extract color samples");
+    ALICEVISION_LOG_DEBUG("Extract color samples");
     std::vector<std::vector<ImageSamples>> samples;
     extractSamples(samples, imagePathsGroups, cameraExposures, nbPoints, fisheye);
 
-    ALICEVISION_LOG_TRACE("Create exposure list");
+    ALICEVISION_LOG_DEBUG("Create exposure list");
     std::map<std::pair<int, float>, double> exposures;
-    for(const auto& camExp: cameraExposures)
+    for(int i = 0; i < cameraExposures.size(); ++i)
     {
-        for (const auto& exp : camExp)
+        const std::vector<float>& camExp = cameraExposures[i];
+        for (int j = 0; j < camExp.size(); ++j)
         {
+            const auto& exp = camExp[j];
+
+            ALICEVISION_LOG_TRACE(" * " << imagePathsGroups[i][j] << ": " << exp);
+
             // TODO: camId
             exposures[std::make_pair(0, exp)] = exp;
         }
@@ -219,32 +224,97 @@ void BundleAdjustmentCalibration::process(
     std::array<double, 3> laguerreParam = { 0.0, 0.0, 0.0 };
     std::array<double, 3> relativeWB = { 0.0, 0.0, 0.0 };
 
-    ALICEVISION_LOG_TRACE("Create BA problem");
+    ALICEVISION_LOG_DEBUG("Create BA problem");
     ceres::Problem problem;
 
-    // TODO: make the LOSS function and the parameter an option
+    // Should we expose the LOSS function parameter?
     ceres::LossFunction* lossFunction = new ceres::HuberLoss(Square(0.12)); // 0.12 ~= 30/255
+
+    // In the Bundle Adjustment each image is optimized relativelty to the next one. The images are ordered by exposures.
+    // But the exposures need to be different between 2 consecutive images to get constraints.
+    // So if multiple images have been taken with the same parameters, we search for the next closest exposure (larger or smaller).
+    // For example a dataset of 6 images with 4 different exposures:
+    //       0        1        2        3        4        5
+    //     1/800    1/800 -- 1/400 -- 1/200    1/200 -- 1/100
+    //       \_________________/        \________________/
+    // Without duplicates the relative indexes would be: [1, 2, 3, 4, 5, 4]
+    // In this example with 2 duplicates, the relative indexes are: [2, 2, 3, 5, 5, 3]
+    std::vector<std::vector<int>> closestRelativeExpIndex;
+    {
+        closestRelativeExpIndex.resize(cameraExposures.size());
+        for(int i = 0; i < cameraExposures.size(); ++i)
+        {
+            const std::vector<float>& camExp = cameraExposures[i];
+            std::vector<int>& camRelativeExpIndex = closestRelativeExpIndex[i];
+            camRelativeExpIndex.resize(camExp.size(), -1);
+            for(int j = 0; j < camExp.size(); ++j)
+            {
+                // Search in the following indexes
+                for (int rj = j + 1; rj < camExp.size(); ++rj)
+                {
+                    if (camExp[rj] != camExp[j])
+                    {
+                        camRelativeExpIndex[j] = rj;
+                        break;
+                    }
+                }
+                if(camRelativeExpIndex[j] != -1)
+                    continue;
+                // Search in backward direction
+                for (int rj = j - 1; rj >= 0; --rj)
+                {
+                    if (camExp[rj] != camExp[j])
+                    {
+                        camRelativeExpIndex[j] = rj;
+                        break;
+                    }
+                }
+            }
+        }
+        /*
+        // Log relative indexes
+        for (int i = 0; i < closestRelativeExpIndex.size(); ++i)
+        {
+            std::vector<int>& camRelativeExpIndex = closestRelativeExpIndex[i];
+            for (int j = 0; j < camRelativeExpIndex.size(); ++j)
+            {
+                ALICEVISION_LOG_TRACE(" * closestRelativeExpIndex[" << i << "][" << j << "] = " << closestRelativeExpIndex[i][j]);
+            }
+        }*/
+    }
 
     for (int g = 0; g < samples.size(); ++g)
     {
         std::vector<ImageSamples>& hdrSamples = samples[g];
 
+        ALICEVISION_LOG_TRACE("Group: " << g << ", hdr brakets: " << hdrSamples.size() << ", nb color samples: " << hdrSamples[0].colors.size());
+
         for (int i = 0; i < hdrSamples[0].colors.size(); ++i)
         {
-            for (int h = 0; h < hdrSamples.size() - 1; ++h)
+            for (int h = 0; h < hdrSamples.size(); ++h)
             {
+                int hNext = closestRelativeExpIndex[g][h];
+                if(h == hNext)
+                    throw std::runtime_error("Error in exposure chain. Relative exposure refer to itself (h: " + std::to_string(h) + ").");
+                if (hNext < h)
+                {
+                    // The residual cost is bidirectional. So if 2 elements refer to each other, it will be a duplicates, so we have to skip one of them.
+                    int hNextNext = closestRelativeExpIndex[g][hNext];
+                    if(hNextNext == h)
+                        continue;
+                }
                 ceres::CostFunction* cost_function = new ceres::AutoDiffCostFunction<HdrResidual, 3, 3, 1, 1, 1, 1>(
-                                                new HdrResidual(hdrSamples[h].colors[i], hdrSamples[h+1].colors[i]));
+                                                new HdrResidual(hdrSamples[h].colors[i], hdrSamples[hNext].colors[i]));
 
                 double& expA = exposures[std::make_pair(0, cameraExposures[g][h])];
-                double& expB = exposures[std::make_pair(0, cameraExposures[g][h+1])];
+                double& expB = exposures[std::make_pair(0, cameraExposures[g][hNext])];
 
                 problem.AddResidualBlock(cost_function, lossFunction, laguerreParam.data(), &relativeWB[0], &relativeWB[2], &expA, &expB);
             }
         }
     }
 
-    ALICEVISION_LOG_DEBUG("BA Solve");
+    ALICEVISION_LOG_INFO("BA Solve");
 
     ceres::Solver::Options solverOptions;
     solverOptions.linear_solver_type = ceres::SPARSE_NORMAL_CHOLESKY;
@@ -253,15 +323,14 @@ void BundleAdjustmentCalibration::process(
     ceres::Solver::Summary summary;
     ceres::Solve(solverOptions, &problem, &summary);
 
-    ALICEVISION_LOG_DEBUG(summary.BriefReport());
+    ALICEVISION_LOG_TRACE(summary.BriefReport());
 
-    ALICEVISION_LOG_TRACE("laguerreParam: " << laguerreParam);
-    ALICEVISION_LOG_TRACE("relativeWB: " << relativeWB);
-
-    ALICEVISION_LOG_TRACE("Exposures:");
+    ALICEVISION_LOG_INFO("Laguerre params: " << laguerreParam);
+    ALICEVISION_LOG_INFO("Relative WB: " << relativeWB);
+    ALICEVISION_LOG_INFO("Exposures:");
     for (const auto& expIt: exposures)
     {
-        ALICEVISION_LOG_TRACE(" * [" << expIt.first.first << ", " << expIt.first.second << "]: " << expIt.second);
+        ALICEVISION_LOG_INFO(" * [" << expIt.first.first << ", " << expIt.first.second << "]: " << expIt.second);
     }
 
     for(unsigned int channel = 0; channel < 3; ++channel)
