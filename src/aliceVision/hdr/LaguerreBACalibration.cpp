@@ -264,6 +264,24 @@ void LaguerreBACalibration::process(
             curve[i] = relativeWB[channel] + laguerreFunction(offset + laguerreParam[channel], i * step);
         }
     }
+
+    if (refineExposures)
+    {
+        {
+            // TODO: realign exposures on input values?
+        }
+
+
+        // Update input exposures with optimized exposure values
+        for (int i = 0; i < cameraExposures.size(); ++i)
+        {
+            std::vector<float>& camExp = cameraExposures[i];
+            for (int j = 0; j < camExp.size(); ++j)
+            {
+                camExp[j] = exposures[std::make_pair(0, camExp[j])];
+            }
+        }
+    }
 }
 
 
