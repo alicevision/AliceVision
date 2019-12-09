@@ -2,6 +2,7 @@
 # Headers
 set(hdr_files_headers
  BundleAdjustmentCalibration.hpp
+ sampling.hpp
  rgbCurve.hpp
  RobertsonCalibrate.hpp
  hdrMerge.hpp
@@ -13,6 +14,7 @@ set(hdr_files_headers
 # Sources
 set(hdr_files_sources
  BundleAdjustmentCalibration.cpp
+ sampling.cpp
  rgbCurve.cpp
  RobertsonCalibrate.cpp
  hdrMerge.cpp
