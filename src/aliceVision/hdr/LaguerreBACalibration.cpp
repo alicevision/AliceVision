@@ -235,6 +235,14 @@ void LaguerreBACalibration::process(
         }
     }
 
+    if (!refineExposures)
+    {
+        for(auto& exp: exposures)
+        {
+            problem.SetParameterBlockConstant(&exp.second);
+        }
+    }
+
     ALICEVISION_LOG_INFO("BA Solve");
 
     ceres::Solver::Options solverOptions;
