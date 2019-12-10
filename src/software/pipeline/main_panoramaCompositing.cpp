@@ -460,78 +460,80 @@ public:
     }
   }
 
-  bool apply(const aliceVision::image::Image<image::RGBfColor> & source, const aliceVision::image::Image<float> & weights) {
+  bool apply(const aliceVision::image::Image<image::RGBfColor> & source, const aliceVision::image::Image<float> & weights, size_t offset_x, size_t offset_y) {
 
+    int width = source.Width();
+    int height = source.Height();
 
-    _levels[0] = source;
-    _weights[0] = weights;
-
-    for (int l = 1; l < _levels.size(); l++) {
-
-      aliceVision::image::Image<image::RGBfColor> buf(_levels[l - 1].Width(), _levels[l - 1].Height());
-      convolveGaussian5x5<image::RGBfColor>(buf, _levels[l - 1]);
-      downscale(_levels[l],  buf);
-
-      aliceVision::image::Image<float> bufw(_weights[l - 1].Width(), _weights[l - 1].Height());
-      convolveGaussian5x5<float>(bufw, _weights[l - 1]);
-      downscale(_weights[l],  bufw);
-    }
-
+    image::Image<image::RGBfColor> current_color = source;
+    image::Image<image::RGBfColor> next_color;
+    image::Image<float> current_weights = weights;
+    image::Image<float> next_weights;
 
     for (int l = 0; l < _levels.size() - 1; l++) {
-      aliceVision::image::Image<image::RGBfColor> buf(_levels[l].Width(), _levels[l].Height());
-      aliceVision::image::Image<image::RGBfColor> buf2(_levels[l].Width(), _levels[l].Height());
 
-      upscale(buf, _levels[l + 1]);
+      aliceVision::image::Image<image::RGBfColor> buf(width, height);
+      aliceVision::image::Image<image::RGBfColor> buf2(width, height);
+      aliceVision::image::Image<float> bufw(width, height);
+      
+      next_color = aliceVision::image::Image<image::RGBfColor>(width / 2, height / 2);
+      next_weights = aliceVision::image::Image<float>(width / 2, height / 2);
+
+      convolveGaussian5x5<image::RGBfColor>(buf, current_color);
+      downscale(next_color,  buf);
+
+      convolveGaussian5x5<float>(bufw, current_weights);
+      downscale(next_weights,  bufw);
+
+      upscale(buf, next_color);
       convolveGaussian5x5<image::RGBfColor>(buf2, buf);
 
       for (int i = 0; i  < buf2.Height(); i++) {
-          for (int j = 0; j < buf2.Width(); j++) {
-            buf2(i,j) *= 4.0f;
-          }
+        for (int j = 0; j < buf2.Width(); j++) {
+          buf2(i,j) *= 4.0f;
+        }
       }
 
-      substract(_levels[l], _levels[l], buf2);
+      substract(current_color, current_color, buf2);
+
+      merge(current_color, current_weights, l, offset_x, offset_y);
+      
+      current_color = next_color;
+      current_weights = next_weights;
+      width /= 2;
+      height /= 2;
+      offset_x /= 2;
+      offset_y /= 2;
     }
 
-    
+    merge(current_color, current_weights, _levels.size() - 1, offset_x, offset_y);
 
     return true;
   }
   
-  bool merge(const LaplacianPyramid & other, size_t offset_x, size_t offset_y) {
+  bool merge(const aliceVision::image::Image<image::RGBfColor> & oimg, const aliceVision::image::Image<float> & oweight, size_t level, size_t offset_x, size_t offset_y) {
 
-    for (int l = 0; l < _levels.size(); l++) {
+    image::Image<image::RGBfColor> & img = _levels[level];
+    image::Image<float> & weight = _weights[level];
 
-      image::Image<image::RGBfColor> & img = _levels[l];
-      const image::Image<image::RGBfColor> & oimg = other._levels[l];
+    for (int i = 0; i  < oimg.Height(); i++) {
 
-      image::Image<float> & weight = _weights[l];
-      const image::Image<float> & oweight = other._weights[l];
+      int di = i + offset_y;
+      if (di >= img.Height()) continue;
 
-      for (int i = 0; i  < oimg.Height(); i++) {
-
-        int di = i + offset_y;
-        if (di >= img.Height()) continue;
-
-        for (int j = 0; j < oimg.Width(); j++) {
+      for (int j = 0; j < oimg.Width(); j++) {
           
-          int dj = j + offset_x;
-          if (dj >= weight.Width()) {
-            dj = dj - weight.Width();
-          }
-
-          img(di, dj).r() += oimg(i, j).r() * oweight(i, j);
-          img(di, dj).g() += oimg(i, j).g() * oweight(i, j);
-          img(di, dj).b() += oimg(i, j).b() * oweight(i, j);
-          weight(di, dj) += oweight(i, j);
+        int dj = j + offset_x;
+        if (dj >= weight.Width()) {
+          dj = dj - weight.Width();
         }
-      }
 
-      offset_x /= 2;
-      offset_y /= 2;
-    }
-    
+        img(di, dj).r() += oimg(i, j).r() * oweight(i, j);
+        img(di, dj).g() += oimg(i, j).g() * oweight(i, j);
+        img(di, dj).b() += oimg(i, j).b() * oweight(i, j);
+        weight(di, dj) += oweight(i, j);
+      }
+    }    
 
     return true;
   }
@@ -779,12 +781,8 @@ public:
         feathered(i, j).b() = std::log(std::max(1e-8f, feathered(i, j).b()));
       }
     }
-
-
-    LaplacianPyramid pyramid(feathered.Width(), feathered.Height(), _bands);
-    pyramid.apply(feathered, weights_pot);
   
-    _pyramid_panorama.merge(pyramid, new_offset_x, new_offset_y);
+    _pyramid_panorama.apply(feathered, weights_pot, new_offset_x, new_offset_y);
 
     return true;
   }
