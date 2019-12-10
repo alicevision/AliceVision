@@ -166,7 +166,7 @@ namespace aliceVision
       */
       inline Rgb operator +( const Rgb& other ) const
       {
-        return Rgb( (*this(0) + other(0)), (*this(1) + other(1)), (*this(2) + other(2)));
+        return Rgb( ((*this)(0) + other(0)), ((*this)(1) + other(1)), ((*this)(2) + other(2)));
       }
 
     
