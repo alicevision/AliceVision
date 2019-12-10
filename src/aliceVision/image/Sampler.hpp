@@ -477,7 +477,15 @@ struct Sampler2d
     // If value too small, it should be so instable, so return the sampled value
     if( total_weight <= 0.2 )
     {
-      return T();
+      int row = floor(y);
+      int col = floor(x);
+
+      if (row < 0) row = 0;
+      if (col < 0) col = 0;
+      if (row >= im_height) row = im_height - 1;
+      if (col >= im_width) col = im_width - 1;
+
+      return src(row, col);
     }
 
     if( total_weight != 1.0 )
