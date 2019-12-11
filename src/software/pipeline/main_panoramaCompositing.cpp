@@ -100,8 +100,7 @@ bool makeImagePyramidCompatible(image::Image<T> & output, size_t & out_offset_x,
 class Compositer {
 public:
   Compositer(size_t outputWidth, size_t outputHeight) :
-  _panorama(outputWidth, outputHeight, true, image::RGBfColor(1.0f, 0.0f, 0.0f)),
-  _mask(outputWidth, outputHeight, true, false)
+  _panorama(outputWidth, outputHeight, true, image::RGBAfColor(0.0f, 0.0f, 0.0f, 0.0f))
   {
   }
 
@@ -125,8 +124,10 @@ public:
           pano_j = pano_j - _panorama.Width();
         }
 
-        _panorama(pano_i, pano_j) = color(i, j);
-        _mask(pano_i, pano_j) = 1;
+        _panorama(pano_i, pano_j).r() = color(i, j).r();
+        _panorama(pano_i, pano_j).g() = color(i, j).g();
+        _panorama(pano_i, pano_j).b() = color(i, j).b();
+        _panorama(pano_i, pano_j).a() = 1.0f;
       }
     }
 
@@ -137,25 +138,19 @@ public:
     return true;
   }
 
-  const aliceVision::image::Image<image::RGBfColor> & getPanorama() const {
+  const aliceVision::image::Image<image::RGBAfColor> & getPanorama() const {
     return _panorama;
   }
 
-  const aliceVision::image::Image<unsigned char> & getPanoramaMask() const {
-    return _mask;
-  }
-
 protected:
-  aliceVision::image::Image<image::RGBfColor> _panorama;
-  aliceVision::image::Image<unsigned char> _mask;
+  aliceVision::image::Image<image::RGBAfColor> _panorama;
 };
 
 class AlphaCompositer : public Compositer {
 public:
 
   AlphaCompositer(size_t outputWidth, size_t outputHeight) :
-  Compositer(outputWidth, outputHeight),
-  _weightmap(outputWidth, outputHeight, true, 0.0f) {
+  Compositer(outputWidth, outputHeight) {
 
   }
 
@@ -179,33 +174,40 @@ public:
           pano_j = pano_j - _panorama.Width();
         }
 
-        if (!_mask(pano_i, pano_j)) {
-          _panorama(pano_i, pano_j) = color(i, j);
-          _weightmap(pano_i, pano_j) = inputWeights(i, j);
-        }
-        else {
-          float wp = _weightmap(pano_i, pano_j);
-          float wc = inputWeights(i, j);
-          float wtotal = wp + wc;
-          wp /= wtotal;
-          wc /= wtotal;
-
-          _panorama(pano_i, pano_j).r() = wp * _panorama(pano_i, pano_j).r() + wc * color(i, j).r();
-          _panorama(pano_i, pano_j).g() = wp * _panorama(pano_i, pano_j).g() + wc * color(i, j).g();
-          _panorama(pano_i, pano_j).b() = wp * _panorama(pano_i, pano_j).b() + wc * color(i, j).b();
-
-          _weightmap(pano_i, pano_j) = wtotal;
-        }
-
-        _mask(pano_i, pano_j) = true;
+        float wc = inputWeights(i, j);
+          
+        _panorama(pano_i, pano_j).r() += wc * color(i, j).r();
+        _panorama(pano_i, pano_j).g() += wc * color(i, j).g();
+        _panorama(pano_i, pano_j).b() += wc * color(i, j).b();
+        _panorama(pano_i, pano_j).a() += wc;
       }
     }
 
     return true;
   }
 
-protected:
-  aliceVision::image::Image<float> _weightmap;
+  virtual bool terminate() {
+
+    for (int i = 0; i  < _panorama.Height(); i++) {
+      for (int j = 0; j < _panorama.Width(); j++) {
+        
+        if (_panorama(i, j).a() < 1e-6) {
+          _panorama(i, j).r() = 1.0f;
+          _panorama(i, j).g() = 0.0f;
+          _panorama(i, j).b() = 0.0f;
+          _panorama(i, j).a() = 0.0f;
+        }
+        else {
+          _panorama(i, j).r() = _panorama(i, j).r() / _panorama(i, j).a();
+          _panorama(i, j).g() = _panorama(i, j).g() / _panorama(i, j).a();
+          _panorama(i, j).b() = _panorama(i, j).b() / _panorama(i, j).a();
+          _panorama(i, j).a() = 1.0f;
+        }
+      }
+    }
+
+    return true;
+  }
 };
 
 template<class T>
@@ -446,10 +448,12 @@ public:
     size_t width = base_width;
     size_t height = base_height;
 
+    /*Make sure pyramid size can be divided by 2 on each levels*/
     double max_scale = 1.0 / pow(2.0, max_levels - 1);
     width = size_t(ceil(double(width) * max_scale) / max_scale);
     height = size_t(ceil(double(height) * max_scale) / max_scale);
 
+    /*Prepare pyramid*/
     for (int lvl = 0; lvl < max_levels; lvl++) {
 
       _levels.push_back(aliceVision::image::Image<image::RGBfColor>(width, height, true, image::RGBfColor(0.0f,0.0f,0.0f)));
@@ -538,9 +542,7 @@ public:
     return true;
   }
 
-  bool rebuild(image::Image<image::RGBfColor> & output, image::Image<unsigned char> & mask) {
-
-    mask.fill(0);
+  bool rebuild(image::Image<image::RGBAfColor> & output) {
 
     for (int l = 0; l < _levels.size(); l++) {
       for (int i = 0; i < _levels[l].Height(); i++) {
@@ -553,12 +555,6 @@ public:
           _levels[l](i, j).r() = _levels[l](i, j).r() / _weights[l](i, j);
           _levels[l](i, j).g() = _levels[l](i, j).g() / _weights[l](i, j);
           _levels[l](i, j).b() = _levels[l](i, j).b() / _weights[l](i, j);
-          
-          if (l == 0) {
-            if (i < mask.Height() && j < mask.Width()) {
-              mask(i, j) = 1;
-            }
-          }
         }
       }
     }
@@ -583,7 +579,21 @@ public:
       removeNegativeValues(_levels[l]);
     }
     
-    output = _levels[0].block(0, 0, output.Height(), output.Width());
+    /*Write output to RGBA*/
+    for (int i = 0; i < output.Height(); i++) {
+      for (int j = 0; j < output.Width(); j++) {
+        output(i, j).r() = _levels[0](i, j).r();
+        output(i, j).g() = _levels[0](i, j).g();
+        output(i, j).b() = _levels[0](i, j).b();
+
+        if (_weights[0](i, j) < 1e-6) {
+          output(i, j).a() = 0.0f;
+        }
+        else {
+          output(i, j).a() = 1.0f;
+        }
+      }
+    }
 
     return true;
   }
@@ -789,7 +799,7 @@ public:
 
   virtual bool terminate() {
 
-    _pyramid_panorama.rebuild(_panorama, _mask);
+    _pyramid_panorama.rebuild(_panorama);
 
     /*Go back to normal space from log space*/
     for (int i = 0; i  < _panorama.Height(); i++) {
@@ -972,7 +982,7 @@ int main(int argc, char **argv) {
 
   /* Store output */
   ALICEVISION_LOG_INFO("Write output panorama to file " << outputPanorama);
-  const aliceVision::image::Image<image::RGBfColor> & panorama = compositer->getPanorama();
+  const aliceVision::image::Image<image::RGBAfColor> & panorama = compositer->getPanorama();
   image::writeImage(outputPanorama, panorama, image::EImageColorSpace::SRGB);
 
 
