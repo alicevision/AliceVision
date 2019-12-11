@@ -114,6 +114,7 @@ int main(int argc, char * argv[])
   int calibrationNbPoints = 0;
   int calibrationDownscale = 4;
   bool refineExposures = false;
+  bool byPass = false;
 
   std::string calibrationWeightFunction = "default";
   hdr::EFunctionType fusionWeightFunction = hdr::EFunctionType::GAUSSIAN;
@@ -140,6 +141,8 @@ int main(int argc, char * argv[])
         "float value between 0 and 1 to correct clamped highlights in dynamic range: use 0 for no correction, 1 for full correction to maxLuminance.")
     ("fisheyeLens,f", po::value<bool>(&fisheye)->default_value(fisheye),
         "Set to 1 if images are taken with a fisheye lens and to 0 if not. Default value is set to 1.")
+    ("byPass", po::value<bool>(&byPass)->default_value(byPass),
+        "bypass HDR creation and use medium bracket as input for next steps")
     ("channelQuantizationPower", po::value<int>(&channelQuantizationPower)->default_value(channelQuantizationPower),
         "Quantization level like 8 bits or 10 bits.")      
     ("calibrationWeight,w", po::value<std::string>(&calibrationWeightFunction)->default_value(calibrationWeightFunction),
@@ -427,6 +430,28 @@ int main(int argc, char * argv[])
   }
 
 
+  sfmData::SfMData outputSfm;
+  sfmData::Views & vs = outputSfm.getViews();
+  outputSfm.getIntrinsics() = sfmData.getIntrinsics();
+
+  /*If bypass, simply use central bracket*/
+  if (byPass) {
+    for(int g = 0; g < groupedFilenames.size(); ++g)
+    {
+      vs[targetViews[g]->getViewId()] = targetViews[g];
+    }
+
+    // Export output sfmData
+    if (!sfmDataIO::Save(outputSfm, sfmOutputDataFilename, sfmDataIO::ESfMData::ALL))
+    {
+      ALICEVISION_LOG_ERROR("Can not save output sfm file at " << sfmOutputDataFilename);
+      return EXIT_FAILURE;
+    } 
+
+    return EXIT_SUCCESS;
+  }
+  
+
   size_t channelQuantization = std::pow(2, channelQuantizationPower);
   // set the correct weight functions corresponding to the string parameter
   hdr::rgbCurve calibrationWeight(channelQuantization);
@@ -572,10 +597,6 @@ int main(int argc, char * argv[])
 
       calibrationWeight.writeHtml(outputHtmlPath, "Fusion weight: " + methodName);
   }
-
-  sfmData::SfMData outputSfm;
-  sfmData::Views & vs = outputSfm.getViews();
-  outputSfm.getIntrinsics() = sfmData.getIntrinsics();
 
   image::EImageColorSpace mergeColorspace = image::EImageColorSpace::LINEAR;
 
