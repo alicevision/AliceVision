@@ -61,6 +61,8 @@ int main(int argc, char **argv)
   bool refine = true;
   bool lockAllIntrinsics = false;
   int orientation = 0;
+  float offsetLongitude = 0.0f;
+  float offsetLatitude = 0.0f;
 
   po::options_description allParams(
     "Perform estimation of cameras orientation around a nodal point for 360° panorama.\n"
@@ -91,6 +93,10 @@ int main(int argc, char **argv)
       "* from homography matrix")
     ("orientation", po::value<int>(&orientation)->default_value(orientation),
       "Orientation")
+    ("offsetLongitude", po::value<float>(&offsetLongitude)->default_value(offsetLongitude),
+      "offset to camera longitude")
+    ("offsetLatitude", po::value<float>(&offsetLatitude)->default_value(offsetLatitude),
+      "offset to camera latitude")
     ("refine", po::value<bool>(&refine)->default_value(refine),
       "Refine cameras with a Bundle Adjustment")
     ("lockAllIntrinsics", po::value<bool>(&lockAllIntrinsics)->default_value(lockAllIntrinsics),
@@ -349,6 +355,15 @@ int main(int argc, char **argv)
     t = Vec3::Zero();
 
     sfm::applyTransform(outSfmData, S, R, t);
+  }
+
+  /*Add offsets to rotations*/
+  for (auto& pose: outSfmData.getPoses()) {
+
+    geometry::Pose3 p = pose.second.getTransform();
+    Eigen::Matrix3d newR = p.rotation() *  Eigen::AngleAxisd(degreeToRadian(offsetLongitude), Vec3(0,1,0))  *  Eigen::AngleAxisd(degreeToRadian(offsetLatitude), Vec3(1,0,0));
+    p.rotation() = newR;
+    pose.second.setTransform(p);
   }
 
   // export to disk computed scene (data & visualizable results)
