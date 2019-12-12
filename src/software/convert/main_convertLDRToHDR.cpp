@@ -630,18 +630,6 @@ int main(int argc, char * argv[])
     image::Image<image::RGBfColor> HDRimage;
     merge.process(images, groupedExposures[g], fusionWeight, response, HDRimage, targetCameraExposure);
 
-    // TO REMOVE: Temporary export for debug
-    {
-        // Output image file path
-        std::stringstream  sstream;
-        sstream << "hdr_" << std::setfill('0') << std::setw(4) << g << "_beforeCorrection.exr";
-        std::string hdrImagePath = (fs::path(outputPath) / sstream.str()).string();
-
-        // Write an image with parameters from the target view
-        oiio::ParamValueList targetMetadata = image::readImageMetadata(targetView->getImagePath());
-        image::writeImage(hdrImagePath, HDRimage, image::EImageColorSpace::AUTO, targetMetadata);
-    }
-
     if(highlightCorrectionFactor > 0.0)
     {
       merge.postProcessHighlight(images, groupedExposures[g], fusionWeight, response, HDRimage, targetCameraExposure, highlightCorrectionFactor, highlightTargetLux);
