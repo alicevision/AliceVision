@@ -42,33 +42,9 @@ T laguerreFunctionInv(const T& a, const T& x)
     return laguerreFunction(-a, x);
 }
 
-
-struct GaussianWeight
-{
-    template<typename T>
-    T operator()(const T& x) const
-    {
-        static const double mu = 0.5;
-        static const double sigma = 1.0 / (5.0 * std::sqrt(2.0));
-        const T v = x - 0.5;
-        return exp(-v * v / (2.0 * sigma * sigma));
-    }
-};
-
-struct NoWeight
-{
-    template<typename T>
-    T operator()(const T& x) const
-    {
-        return T(1.0);
-    }
-};
-
-
 /**
  * 
  */
-template<class WeightFunc>
 struct HdrResidual
 {
     HdrResidual(const Rgb<double>& a, const Rgb<double>& b)
@@ -79,7 +55,6 @@ struct HdrResidual
     template <typename T>
     bool operator()(const T* const laguerreParam, const T* const relativeWB_R, const T* const relativeWB_B, const T* const expA, const T* const expB, T* residual) const
     {
-        static const WeightFunc _weightFunc;
         static const int red = 0;
         static const int green = 1;
         static const int blue = 2;
@@ -115,8 +90,7 @@ struct HdrResidual
             // T b = laguerreFunction(greenParam, colorB);
             T errorCost = abs(laguerreFunctionInv(greenParam, laguerreFunction(greenParam, colorA) * (*expB) / (*expA)) - colorB)
                         + abs(laguerreFunctionInv(greenParam, laguerreFunction(greenParam, colorB) * (*expA) / (*expB)) - colorA);
-            T weight = _weightFunc(colorA) * _weightFunc(colorB); // weight by the validity on the input values
-            residual[green] = errorCost * weight;
+            residual[green] = errorCost;
         }
         {
             // RED
@@ -127,8 +101,7 @@ struct HdrResidual
             // T b = *relativeWB_R * laguerreFunction(redParam, colorB);
             T errorCost = abs(laguerreFunctionInv(redParam, laguerreFunction(redParam, colorA) * (*expB) / (*expA)) - colorB)
                         + abs(laguerreFunctionInv(redParam, laguerreFunction(redParam, colorB) * (*expA) / (*expB)) - colorA);
-            T weight = _weightFunc(colorA) * _weightFunc(colorB); // weight by the validity on the input values
-            residual[red] = errorCost * weight;
+            residual[red] = errorCost;
         }
         {
             // BLUE
@@ -139,8 +112,7 @@ struct HdrResidual
             // T b = *relativeWB_B * laguerreFunction(blueParam, colorB);
             T errorCost = abs(laguerreFunctionInv(blueParam, laguerreFunction(blueParam, colorA) * (*expB) / (*expA)) - colorB)
                         + abs(laguerreFunctionInv(blueParam, laguerreFunction(blueParam, colorB) * (*expA) / (*expB)) - colorA);
-            T weight = _weightFunc(colorA) * _weightFunc(colorB); // weight by the validity on the input values
-            residual[blue] = errorCost * weight;
+            residual[blue] = errorCost;
         }
 
         return true;
@@ -181,7 +153,7 @@ void LaguerreBACalibration::process(
         }
     }
     std::array<double, 3> laguerreParam = { 0.0, 0.0, 0.0 };
-    std::array<double, 3> relativeWB = { 0.0, 0.0, 0.0 };
+    std::array<double, 3> relativeWB = { 1.0, 1.0, 1.0 };
 
     ALICEVISION_LOG_DEBUG("Create BA problem");
     ceres::Problem problem;
@@ -263,8 +235,8 @@ void LaguerreBACalibration::process(
                     if(hNextNext == h)
                         continue;
                 }
-                ceres::CostFunction* cost_function = new ceres::AutoDiffCostFunction<HdrResidual<GaussianWeight>, 3, 3, 1, 1, 1, 1>(
-                                                new HdrResidual<GaussianWeight>(hdrSamples[h].colors[i], hdrSamples[hNext].colors[i]));
+                ceres::CostFunction* cost_function = new ceres::AutoDiffCostFunction<HdrResidual, 3, 3, 1, 1, 1, 1>(
+                                                new HdrResidual(hdrSamples[h].colors[i], hdrSamples[hNext].colors[i]));
 
                 double& expA = exposures[std::make_pair(0, cameraExposures[g][h])];
                 double& expB = exposures[std::make_pair(0, cameraExposures[g][hNext])];
@@ -304,11 +276,11 @@ void LaguerreBACalibration::process(
     for(unsigned int channel = 0; channel < 3; ++channel)
     {
         std::vector<float>& curve = response.getCurve(channel);
-        double step = 1.0f / curve.size();
+        const double step = 1.0 / double(curve.size());
         for (unsigned int i = 0; i < curve.size(); ++i)
         {
             const double offset = ((channel == 1) ? 0 : laguerreParam[1]);  // non-green channels are relative to green channel
-            curve[i] = relativeWB[channel] + laguerreFunction(offset + laguerreParam[channel], i * step);
+            curve[i] = relativeWB[channel] * laguerreFunction(offset + laguerreParam[channel], i * step);
         }
     }
 

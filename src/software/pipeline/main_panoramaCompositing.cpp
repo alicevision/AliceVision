@@ -211,7 +211,7 @@ public:
 };
 
 template<class T>
-inline void convolveRow(typename image::Image<T>::RowXpr output_row, typename image::Image<T>::ConstRowXpr input_row, const Eigen::Vector<float, 5> & kernel) {
+inline void convolveRow(typename image::Image<T>::RowXpr output_row, typename image::Image<T>::ConstRowXpr input_row, const Eigen::Matrix<float, 5, 1> & kernel) {
 
   const int radius = 2;
 
@@ -243,7 +243,7 @@ inline void convolveRow(typename image::Image<T>::RowXpr output_row, typename im
 }
 
 template<class T>
-inline void convolveColumns(typename image::Image<T>::RowXpr output_row, const image::Image<T> & input_rows, const Eigen::Vector<float, 5> & kernel) {
+inline void convolveColumns(typename image::Image<T>::RowXpr output_row, const image::Image<T> & input_rows, const Eigen::Matrix<float, 5, 1> & kernel) {
   
   for (int j = 0; j < output_row.cols(); j++) {
 
@@ -268,7 +268,7 @@ bool convolveGaussian5x5(image::Image<T> & output, const image::Image<T> & input
     return false;
   }
 
-  Eigen::Vector<float, 5> kernel;
+  Eigen::Matrix<float, 5, 1> kernel;
   kernel[0] = 1.0f;
   kernel[1] = 4.0f;
   kernel[2] = 6.0f;
