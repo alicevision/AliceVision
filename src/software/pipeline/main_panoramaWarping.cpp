@@ -1288,7 +1288,7 @@ int main(int argc, char **argv) {
     path = ss.str();
     viewTree.put("filename_view", path);
     ALICEVISION_LOG_INFO("Store view " << pos << " with path " << path);
-    image::writeImage(path, cam, image::EImageColorSpace::NO_CONVERSION);
+    image::writeImage(path, cam, image::EImageColorSpace::AUTO);
     }
 
     {
@@ -1306,7 +1306,7 @@ int main(int argc, char **argv) {
     path = ss.str();
     viewTree.put("filename_weights", path);
     ALICEVISION_LOG_INFO("Store weightmap " << pos << " with path " << path);
-    image::writeImage(path, weights, image::EImageColorSpace::NO_CONVERSION);
+    image::writeImage(path, weights, image::EImageColorSpace::AUTO);
     }
   
     /**
