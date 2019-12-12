@@ -108,7 +108,7 @@ int main(int argc, char * argv[])
   int groupSize = 3;
   ECalibrationMethod calibrationMethod = ECalibrationMethod::LINEAR;
   float highlightCorrectionFactor = 1.0f;
-  float highlightTargetLux = 100000.0f;
+  float highlightTargetLux = 120000.0f;
   bool fisheye = false;
   int channelQuantizationPower = 10;
   int calibrationNbPoints = 0;
@@ -135,9 +135,9 @@ int main(int argc, char * argv[])
   optionalParams.add_options()
     ("calibrationMethod,m", po::value<ECalibrationMethod>(&calibrationMethod)->default_value(calibrationMethod),
         "Name of method used for camera calibration: linear, robertson (slow), debevec, grossberg, laguerre.")
-    ("highlightsMaxLuminance", po::value<float>(&highlightTargetLux)->default_value(highlightTargetLux),
+    ("highlightTargetLux", po::value<float>(&highlightTargetLux)->default_value(highlightTargetLux),
         "Highlights maximum luminance.")
-    ("expandDynamicRange"/*"highlightCorrectionFactor"*/, po::value<float>(&highlightCorrectionFactor)->default_value(highlightCorrectionFactor),
+    ("highlightCorrectionFactor", po::value<float>(&highlightCorrectionFactor)->default_value(highlightCorrectionFactor),
         "float value between 0 and 1 to correct clamped highlights in dynamic range: use 0 for no correction, 1 for full correction to maxLuminance.")
     ("fisheyeLens,f", po::value<bool>(&fisheye)->default_value(fisheye),
         "Set to 1 if images are taken with a fisheye lens and to 0 if not. Default value is set to 1.")
