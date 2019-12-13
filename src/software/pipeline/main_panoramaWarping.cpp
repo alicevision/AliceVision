@@ -1213,8 +1213,12 @@ int main(int argc, char **argv) {
     }
   }
   else {
+    double max_scale = 1.0 / pow(2.0, 10);
+    panoramaSize.first = int(ceil(double(panoramaSize.first) * max_scale) / max_scale);
     panoramaSize.second = panoramaSize.first / 2;
   }
+
+
 
   ALICEVISION_LOG_INFO("Choosen panorama size : "  << panoramaSize.first << "x" << panoramaSize.second);
 
