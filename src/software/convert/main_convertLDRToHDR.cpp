@@ -105,7 +105,7 @@ int main(int argc, char * argv[])
   std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
   std::string sfmInputDataFilename = "";
   std::string sfmOutputDataFilename = "";
-  int groupSize = 3;
+  int nbBrackets = 0;
   ECalibrationMethod calibrationMethod = ECalibrationMethod::LINEAR;
   float highlightCorrectionFactor = 1.0f;
   float highlightTargetLux = 120000.0f;
@@ -128,11 +128,11 @@ int main(int argc, char * argv[])
   requiredParams.add_options()
     ("input,i", po::value<std::string>(&sfmInputDataFilename)->required(), "SfMData file input.")
     ("outSfMDataFilename,o", po::value<std::string>(&sfmOutputDataFilename)->required(), "SfMData file output.")
-    ("groupSize,g", po::value<int>(&groupSize)->required(), "bracket count per HDR image.")
     ;
 
   po::options_description optionalParams("Optional parameters");
   optionalParams.add_options()
+    ("nbBrackets,b", po::value<int>(&nbBrackets)->default_value(nbBrackets), "bracket count per HDR image (0 means automatic).")
     ("calibrationMethod,m", po::value<ECalibrationMethod>(&calibrationMethod)->default_value(calibrationMethod),
         "Name of method used for camera calibration: linear, robertson (slow), debevec, grossberg, laguerre.")
     ("highlightTargetLux", po::value<float>(&highlightTargetLux)->default_value(highlightTargetLux),
@@ -194,12 +194,6 @@ int main(int argc, char * argv[])
 
   system::Logger::get()->setLogLevel(verboseLevel);
 
-  if (groupSize < 0)
-  {
-    ALICEVISION_LOG_ERROR("Invalid number of brackets");
-    return EXIT_FAILURE;
-  }
-
   // Analyze path
   boost::filesystem::path path(sfmOutputDataFilename);
   std::string outputPath = path.parent_path().string();
@@ -219,12 +213,11 @@ int main(int argc, char * argv[])
     return EXIT_FAILURE;
   }
 
-  if (countImages % groupSize != 0)
+  if (nbBrackets > 0 && countImages % nbBrackets != 0)
   {
-    ALICEVISION_LOG_ERROR("The input SfMData file is not compatible with this bracket size");
+    ALICEVISION_LOG_ERROR("The input SfMData file is not compatible with the number of brackets.");
     return EXIT_FAILURE;
   }
-  size_t countGroups = countImages / groupSize;
 
   // Make sure there is only one kind of image in dataset
   if (sfmData.getIntrinsics().size() > 2)
@@ -366,15 +359,52 @@ int main(int argc, char * argv[])
 
   // Make groups
   std::vector<std::vector<std::shared_ptr<sfmData::View>>> groupedViews;
-  std::vector<std::shared_ptr<sfmData::View>> group;
-  for (auto & view : viewsOrderedByName)
   {
-    group.push_back(view);
-    if (group.size() == groupSize)
-    {
-      groupedViews.push_back(group);
-      group.clear();
-    }
+      std::vector<std::shared_ptr<sfmData::View>> group;
+      std::vector<float> exposures;
+      for (auto & view : viewsOrderedByName)
+      {
+          if (nbBrackets > 0)
+          {
+              group.push_back(view);
+              if (group.size() == nbBrackets)
+              {
+                  groupedViews.push_back(group);
+                  group.clear();
+              }
+          }
+          else
+          {
+              // Automatically determines the number of brackets
+              float exp = view->getCameraExposureSetting();
+              if (!exposures.empty() && exp != exposures.back() && exp == exposures.front())
+              {
+                  groupedViews.push_back(group);
+                  group.clear();
+                  exposures.clear();
+              }
+              exposures.push_back(exp);
+              group.push_back(view);
+          }
+      }
+      if (!group.empty())
+          groupedViews.push_back(group);
+  }
+  if (nbBrackets <= 0)
+  {
+      std::set<std::size_t> sizeOfGroups;
+      for (auto & group : groupedViews)
+      {
+          sizeOfGroups.insert(group.size());
+      }
+      if (sizeOfGroups.size() == 1)
+      {
+          ALICEVISION_LOG_INFO("Number of brackets automatically detected: " << *sizeOfGroups.begin() << ". It will generate " << groupedViews.size() << " hdr images.");
+      }
+      else
+      {
+          ALICEVISION_LOG_ERROR("Exposure groups do not have a consistent number of brackets.");
+      }
   }
 
   std::vector<std::shared_ptr<sfmData::View>> targetViews;
@@ -614,11 +644,11 @@ int main(int argc, char * argv[])
   }
   for(int g = 0; g < groupedFilenames.size(); ++g)
   {
-    std::vector<image::Image<image::RGBfColor>> images(groupSize);
+    std::vector<image::Image<image::RGBfColor>> images(groupedViews[g].size());
     std::shared_ptr<sfmData::View> targetView = targetViews[g];
 
     // Load all images of the group
-    for (int i = 0; i < groupSize; i++)
+    for (int i = 0; i < images.size(); i++)
     {
       ALICEVISION_LOG_INFO("Load " << groupedFilenames[g][i]);
       image::readImage(groupedFilenames[g][i], images[i], mergeColorspace);
