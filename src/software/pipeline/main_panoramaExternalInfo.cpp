@@ -104,10 +104,9 @@ int main(int argc, char * argv[]) {
 
   /*Make sure we control everything for debug purpose*/
   if (lensType != "rectilinear") {
-    std::cout << "Lens type is unusual !"  << std::endl;
+    ALICEVISION_CERR("Lens type not supported: " << lensType);
     return EXIT_FAILURE;
   }
-
   
 
   std::map<int, Eigen::Matrix3d> rotations;
@@ -118,7 +117,7 @@ int main(int argc, char * argv[]) {
     int bracket = it.second.get<double>("<xmlattr>.bracket");
 
     if (rotations.find(id) != rotations.end()) {
-      std::cout << "Multiple information with a same id !"  << std::endl;
+      ALICEVISION_CERR("Multiple xml attributes with a same id: " << id);
       return EXIT_FAILURE;
     }
 
