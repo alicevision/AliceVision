@@ -601,14 +601,6 @@ public:
 
       addition(_levels[l], _levels[l], buf2);
       removeNegativeValues(_levels[l]);
-
-      for (int i = 0; i < _levels[l].Height(); i++) {
-        for (int j = 0; j < _levels[l].Width(); j++) {
-          buf(i, j).r() = std::exp(_levels[l](i, j).r());
-          buf(i, j).g() = std::exp(_levels[l](i, j).g());
-          buf(i, j).b() = std::exp(_levels[l](i, j).b());
-        }
-      }
     }
     
     /*Write output to RGBA*/
@@ -974,7 +966,7 @@ int main(int argc, char **argv) {
   std::unique_ptr<Compositer> compositer;
   bool isMultiBand = false;
   if (compositerType == "multiband") {
-    compositer = std::unique_ptr<Compositer>(new LaplacianCompositer(panoramaSize.first, panoramaSize.second, 10));
+    compositer = std::unique_ptr<Compositer>(new LaplacianCompositer(panoramaSize.first, panoramaSize.second, 8));
     isMultiBand = true;
   }
   else if (compositerType == "alpha") {
