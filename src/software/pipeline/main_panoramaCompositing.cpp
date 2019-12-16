@@ -842,10 +842,10 @@ int main(int argc, char **argv) {
   /**
    * Description of optional parameters
    */
-  bool multiband = false;
+  std::string compositerType = "multiband";
   po::options_description optionalParams("Optional parameters");
   optionalParams.add_options()
-    ("multiband,m", po::value<bool>(&multiband)->required(), "Use multi-band blending.");
+    ("compositerType,c", po::value<std::string>(&compositerType)->required(), "Compositer Type [replace, alpha, multiband].");
   allParams.add(optionalParams);
 
   /**
@@ -933,11 +933,16 @@ int main(int argc, char **argv) {
   }
 
   std::unique_ptr<Compositer> compositer;
-  if (multiband) {
+  bool isMultiBand = false;
+  if (compositerType == "multiband") {
     compositer = std::unique_ptr<Compositer>(new LaplacianCompositer(panoramaSize.first, panoramaSize.second, 8));
+    isMultiBand = true;
+  }
+  else if (compositerType == "alpha") {
+    compositer = std::unique_ptr<Compositer>(new AlphaCompositer(panoramaSize.first, panoramaSize.second));
   }
   else {
-    compositer = std::unique_ptr<Compositer>(new AlphaCompositer(panoramaSize.first, panoramaSize.second));
+    compositer = std::unique_ptr<Compositer>(new Compositer(panoramaSize.first, panoramaSize.second));
   }
 
   DistanceSeams distanceseams(panoramaSize.first, panoramaSize.second);
@@ -968,12 +973,18 @@ int main(int argc, char **argv) {
     image::Image<float> weights;
     image::readImage(weightsPath, weights, image::EImageColorSpace::NO_CONVERSION);
 
-    /*Build weight map*/
-    image::Image<float> seams(weights.Width(), weights.Height());
-    distanceseams.append(seams, mask, weights, cv.offset_x, cv.offset_y);
 
-    /* Composite image into panorama */
-    compositer->append(source, mask, seams, cv.offset_x, cv.offset_y);
+    /*Build weight map*/
+    if (isMultiBand) {
+      image::Image<float> seams(weights.Width(), weights.Height());
+      distanceseams.append(seams, mask, weights, cv.offset_x, cv.offset_y);
+
+      /* Composite image into panorama */
+      compositer->append(source, mask, seams, cv.offset_x, cv.offset_y);
+    }
+    else {
+      compositer->append(source, mask, weights, cv.offset_x, cv.offset_y);
+    }
   }
 
   /* Build image */
