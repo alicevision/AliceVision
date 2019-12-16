@@ -42,6 +42,30 @@ typedef struct {
 } ConfigView;
 
 
+void getMaskFromLabels(aliceVision::image::Image<float> & mask, aliceVision::image::Image<unsigned char> & labels, unsigned char index, size_t offset_x, size_t offset_y) {
+
+  for (int i = 0; i < mask.Height(); i++) {
+
+    int di = i + offset_y;
+
+    for (int j = 0; j < mask.Width(); j++) {
+
+      int dj = j + offset_x;
+      if (dj >= labels.Width()) {
+        dj = dj - labels.Width();
+      }
+
+
+      if (labels(di, dj) == index) {
+        mask(i, j) = 1.0f;
+      }
+      else {
+        mask(i, j) = 0.0f;
+      }
+    }
+  }
+}
+
 template <class T>
 bool makeImagePyramidCompatible(image::Image<T> & output, size_t & out_offset_x, size_t & out_offset_y, const image::Image<T> & input, size_t offset_x, size_t offset_y, size_t num_levels) {
 
@@ -577,6 +601,14 @@ public:
 
       addition(_levels[l], _levels[l], buf2);
       removeNegativeValues(_levels[l]);
+
+      for (int i = 0; i < _levels[l].Height(); i++) {
+        for (int j = 0; j < _levels[l].Width(); j++) {
+          buf(i, j).r() = std::exp(_levels[l](i, j).r());
+          buf(i, j).g() = std::exp(_levels[l](i, j).g());
+          buf(i, j).b() = std::exp(_levels[l](i, j).b());
+        }
+      }
     }
     
     /*Write output to RGBA*/
@@ -608,11 +640,13 @@ private:
 class DistanceSeams {
 public:
   DistanceSeams(size_t outputWidth, size_t outputHeight) :
-  _weights(outputWidth, outputHeight, true, 0.0f)
+  _weights(outputWidth, outputHeight, true, 0.0f),
+  _labels(outputWidth, outputHeight, true, 255),
+  currentIndex(0)
   {
   }
 
-  virtual bool append(aliceVision::image::Image<float> & output, const aliceVision::image::Image<unsigned char> & inputMask, const aliceVision::image::Image<float> & inputWeights, size_t offset_x, size_t offset_y) {
+  virtual bool append(const aliceVision::image::Image<unsigned char> & inputMask, const aliceVision::image::Image<float> & inputWeights, size_t offset_x, size_t offset_y) {
 
     if (inputMask.size() != inputWeights.size()) {
       return false;
@@ -624,8 +658,6 @@ public:
 
       for (int j = 0; j < inputMask.Width(); j++) {
 
-        output(i, j) = 0.0f;
-
         if (!inputMask(i, j)) {
           continue;
         }
@@ -636,18 +668,25 @@ public:
         }
 
         if (inputWeights(i, j) > _weights(di, dj)) {
-          output(i, j) = 1.0f;
+          _labels(di, dj) = currentIndex;
           _weights(di, dj) = inputWeights(i, j);
         }
       }
     }
 
+    currentIndex++;
+
     return true;
   }
 
+  const image::Image<unsigned char> & getLabels() {
+    return _labels;
+  }
 
 private:
   image::Image<float> _weights;
+  image::Image<unsigned char> _labels;
+  unsigned char currentIndex;
 };
 
 class LaplacianCompositer : public Compositer {
@@ -920,7 +959,7 @@ int main(int argc, char **argv) {
   for (auto & item : configTree.get_child("views")) {
     ConfigView cv;
 
-    if (1/*pos == 24 || pos == 25*/)
+    /*if (pos == 32 || pos == 33 || pos == 34)*/
     {
     cv.img_path = item.second.get<std::string>("filename_view");
     cv.mask_path = item.second.get<std::string>("filename_mask");
@@ -935,7 +974,7 @@ int main(int argc, char **argv) {
   std::unique_ptr<Compositer> compositer;
   bool isMultiBand = false;
   if (compositerType == "multiband") {
-    compositer = std::unique_ptr<Compositer>(new LaplacianCompositer(panoramaSize.first, panoramaSize.second, 8));
+    compositer = std::unique_ptr<Compositer>(new LaplacianCompositer(panoramaSize.first, panoramaSize.second, 10));
     isMultiBand = true;
   }
   else if (compositerType == "alpha") {
@@ -945,8 +984,36 @@ int main(int argc, char **argv) {
     compositer = std::unique_ptr<Compositer>(new Compositer(panoramaSize.first, panoramaSize.second));
   }
 
-  DistanceSeams distanceseams(panoramaSize.first, panoramaSize.second);
+  /*Compute seams*/
+  std::unique_ptr<DistanceSeams> distanceseams(new DistanceSeams(panoramaSize.first, panoramaSize.second));
+  if (isMultiBand) {
+    for (const ConfigView & cv : configViews) {
+
+      /**
+       * Load mask
+       */
+      std::string maskPath = cv.mask_path;
+      ALICEVISION_LOG_INFO("Load mask with path " << maskPath);
+      image::Image<unsigned char> mask;
+      image::readImage(maskPath, mask, image::EImageColorSpace::NO_CONVERSION);
+
+      /**
+       * Load Weights
+       */
+      std::string weightsPath = cv.weights_path;
+      ALICEVISION_LOG_INFO("Load weights with path " << weightsPath);
+      image::Image<float> weights;
+      image::readImage(weightsPath, weights, image::EImageColorSpace::NO_CONVERSION);
+      
+      distanceseams->append(mask, weights, cv.offset_x, cv.offset_y);
+    }
+  }
+  image::Image<unsigned char> labels = distanceseams->getLabels();
+  distanceseams.reset();
+  distanceseams = nullptr;
   
+  /*Do compositing*/
+  pos = 0;
   for (const ConfigView & cv : configViews) {
 
     /**
@@ -977,7 +1044,7 @@ int main(int argc, char **argv) {
     /*Build weight map*/
     if (isMultiBand) {
       image::Image<float> seams(weights.Width(), weights.Height());
-      distanceseams.append(seams, mask, weights, cv.offset_x, cv.offset_y);
+      getMaskFromLabels(seams, labels, pos, cv.offset_x, cv.offset_y);
 
       /* Composite image into panorama */
       compositer->append(source, mask, seams, cv.offset_x, cv.offset_y);
@@ -985,6 +1052,8 @@ int main(int argc, char **argv) {
     else {
       compositer->append(source, mask, weights, cv.offset_x, cv.offset_y);
     }
+
+    pos++;
   }
 
   /* Build image */
