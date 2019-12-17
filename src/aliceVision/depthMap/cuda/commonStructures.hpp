@@ -573,7 +573,7 @@ public:
         if( err != cudaSuccess )
         {
             std::stringstream ss;
-            ss << "Device free failed, " << cudaGetErrorString(err);
+            ss << "CudaDeviceMemoryPitched: Device free failed, " << cudaGetErrorString(err);
             throw std::runtime_error(ss.str());
         }
 
@@ -673,7 +673,7 @@ public:
         if( err != cudaSuccess )
         {
             std::stringstream ss;
-            ss << "Device free failed, " << cudaGetErrorString(err);
+            ss << "CudaDeviceMemory: Device free failed, " << cudaGetErrorString(err);
             throw std::runtime_error(ss.str());
         }
 
