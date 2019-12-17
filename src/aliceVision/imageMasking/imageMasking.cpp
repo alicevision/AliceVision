@@ -4,11 +4,12 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
-#include "aliceVision/imageMasking/imageMasking.hpp"
-#include "aliceVision/imageMasking/eigen2cvHelpers.hpp"
+#include "imageMasking.hpp"
+#include "eigen2cvHelpers.hpp"
 
-#include "aliceVision/image/Image.hpp"
-#include "aliceVision/image/io.hpp"
+#include <aliceVision/image/Image.hpp>
+#include <aliceVision/image/io.hpp>
+#include <aliceVision/system/Logger.hpp>
 
 #include <opencv2/opencv.hpp>
 #include <opencv2/core/core.hpp>
@@ -49,7 +50,7 @@ void rotateHue(cv::Mat & hsv, uint8_t delta)
 }
 }
 
-void hsv(OutImage& result, const InImagePath& inputPath, float hue, float hueRange, float minSaturation, float maxSaturation, float minValue, float maxValue)
+void hsv(OutImage& result, const std::string& inputPath, float hue, float hueRange, float minSaturation, float maxSaturation, float minValue, float maxValue)
 {
     // HSV's hue channel is an rotation angle: it wraps at 0deg/360deg.
     // Hue for blue is 240deg. With hueRange=0.1, pixels are selected if (hue > 204deg && hue < 276deg).
@@ -75,6 +76,22 @@ void hsv(OutImage& result, const InImagePath& inputPath, float hue, float hueRan
     const uint8_t highV = remap_float2uint8(maxValue);
     cv::inRange(input_hsv, cv::Scalar(lowH, lowS, lowV), cv::Scalar(highH, highS, highV), result_cv);
 };
+
+void autoGrayscaleThreshold(OutImage& result, const std::string& inputPath)
+{
+    image::Image<unsigned char> input;
+    image::readImage(inputPath, input, image::EImageColorSpace::SRGB);
+
+    // allocate un-initialized output
+    result.resize(input.Width(), input.Height(), false);
+
+    cv::Mat input_cv = wrapCvMask(input);
+    assert(input_cv.data);
+    const cv::Mat result_cv = wrapCvMask(result);
+    assert(result_cv.data);
+
+    cv::threshold(input_cv, result_cv, 0, 255, cv::THRESH_BINARY|cv::THRESH_OTSU);
+}
 
 void postprocess_invert(OutImage& result)
 {

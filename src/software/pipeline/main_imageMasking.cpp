@@ -12,9 +12,12 @@
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/cmdline.hpp>
 
+#include <OpenImageIO/imagebuf.h>
+#include <OpenImageIO/imagebufalgo.h>
+
 #include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>
-
+#include <boost/algorithm/string/case_conv.hpp> 
 
 // These constants define the current software version.
 // They must be updated when the command line is changed.
@@ -29,6 +32,7 @@ namespace fs = boost::filesystem;
 enum class EAlgorithm {
     HSV,
     GrabCut,
+    AutoGrayscaleThreshold,
 };
 
 inline std::string EAlgorithm_enumToString(EAlgorithm value)
@@ -39,16 +43,21 @@ inline std::string EAlgorithm_enumToString(EAlgorithm value)
             return "hsv";
         case EAlgorithm::GrabCut:
             return "grabcut";
+        case EAlgorithm::AutoGrayscaleThreshold:
+            return "autograyscalethreshold";
     }
     throw std::out_of_range("Invalid Algorithm type Enum: " + std::to_string(int(value)));
 }
 
-inline EAlgorithm EAlgorithm_stringToEnum(const std::string& value)
+inline EAlgorithm EAlgorithm_stringToEnum(std::string value)
 {
+    boost::to_lower(value);
     if(value == "hsv")
         return EAlgorithm::HSV;
     if(value == "grabcut")
         return EAlgorithm::GrabCut;
+    if(value == "autograyscalethreshold")
+        return EAlgorithm::AutoGrayscaleThreshold;
     throw std::out_of_range("Invalid Algorithm type string " + value);
 }
 
@@ -107,22 +116,25 @@ int main(int argc, char **argv)
         float maxValue = 1.f;
     } hsv;
 
+    std::string depthMapFolder;
+    std::string depthMapExp;
+
     po::options_description allParams("AliceVision masking");
 
     po::options_description requiredParams("Required parameters");
     requiredParams.add_options()
-        ("input,i", po::value<std::string>(&sfmFilePath)->default_value(sfmFilePath),
+        ("input,i", po::value<std::string>(&sfmFilePath)->required(),
             "A SfMData file (*.sfm) [if specified, --imageFolder cannot be used].")
+        ("output,o", po::value<std::string>(&outputFilePath)->required(),
+            "Output file path for the new SfMData file");
+
+    po::options_description hsvParams("HSV parameters");
+    hsvParams.add_options()
         ("algorithm,a", po::value<EAlgorithm>(&algorithm)->default_value(algorithm),
             std::string("Masking algorithm:\n"
             " * " + EAlgorithm_enumToString(EAlgorithm::HSV) + ": selected range in the Hue Saturation Value color space.\n"
             " * " + EAlgorithm_enumToString(EAlgorithm::GrabCut) + ": not implemented"
             ).c_str())
-        ("output,o", po::value<std::string>(&outputFilePath)->default_value("cameraInit.sfm"),
-            "Output file path for the new SfMData file");
-
-    po::options_description hsvParams("HSV parameters");
-    hsvParams.add_options()
         ("hsv-hue", po::value<float>(&hsv.hue)->default_value(hsv.hue)->notifier(optInRange(0.f, 1.f, "hsv-hue")),
             "Hue value to isolate in [0,1] range. 0 = red, 0.33 = green, 0.66 = blue, 1 = red.")
         ("hsv-hueRange", po::value<float>(&hsv.hueRange)->default_value(hsv.hueRange)->notifier(optInRange(0.f, 1.f, "hsv-hueRange")),
@@ -135,6 +147,10 @@ int main(int argc, char **argv)
             "Hue is meaningless if value is low. Do not mask pixels below this threshold.")
         ("hsv-maxValue", po::value<float>(&hsv.maxValue)->default_value(hsv.maxValue)->notifier(optInRange(0.f, 1.f, "hsv-maxValue")),
             "Do not mask pixels above this threshold. It might be useful to mask white/black pixels.")
+        ("depthMapFolder", po::value<std::string>(&depthMapFolder)->default_value(depthMapFolder),
+            "Optional input depth map folder to use instead of the color image to generate the mask.")
+        ("depthMapExp", po::value<std::string>(&depthMapExp)->default_value(depthMapExp),
+            "Optional expression to find and use the input depth map instead of the color image to generate the mask.")
         ;
 
     po::options_description optionalParams("Optional parameters");
@@ -235,27 +251,37 @@ int main(int argc, char **argv)
     }
 
     // algorithms
-    using OutImage = imageMasking::OutImage;
-    using InImagePath = imageMasking::InImagePath;
-    std::function<void(OutImage&, const InImagePath&)> process;
-    if(algorithm == EAlgorithm::HSV)
+    using imageMasking::OutImage;
+    std::function<void(OutImage&, const std::string&)> process;
+    switch(algorithm)
     {
-        // check options
-        if(hsv.minSaturation > hsv.maxSaturation)
+        case EAlgorithm::HSV:
         {
-            ALICEVISION_LOG_ERROR("hsv-minSaturation must be lower than hsv-maxSaturation");
-            return EXIT_FAILURE;
-        }
-        if(hsv.minValue > hsv.maxValue)
-        {
-            ALICEVISION_LOG_ERROR("hsv-minValue must be lower than hsv-maxValue");
-            return EXIT_FAILURE;
-        }
+            // check options
+            if(hsv.minSaturation > hsv.maxSaturation)
+            {
+                ALICEVISION_LOG_ERROR("hsv-minSaturation must be lower than hsv-maxSaturation");
+                return EXIT_FAILURE;
+            }
+            if(hsv.minValue > hsv.maxValue)
+            {
+                ALICEVISION_LOG_ERROR("hsv-minValue must be lower than hsv-maxValue");
+                return EXIT_FAILURE;
+            }
 
-        process = [&](OutImage& result, const InImagePath& inputPath)
+            process = [&](OutImage& result, const std::string& inputPath)
+            {
+                imageMasking::hsv(result, inputPath, hsv.hue, hsv.hueRange, hsv.minSaturation, hsv.maxSaturation, hsv.minValue, hsv.maxValue);
+            };
+            break;
+        }
+        case EAlgorithm::AutoGrayscaleThreshold:
         {
-            imageMasking::hsv(result, inputPath, hsv.hue, hsv.hueRange, hsv.minSaturation, hsv.maxSaturation, hsv.minValue, hsv.maxValue);
-        };
+            process = imageMasking::autoGrayscaleThreshold;
+            break;
+        }
+        case EAlgorithm::GrabCut:
+            throw std::runtime_error("GrabCut not yet implemented.");
     }
 
     if(!process)
@@ -269,15 +295,85 @@ int main(int argc, char **argv)
     const auto viewPairItBegin = views.begin();
     const int size = std::min(int(views.size()) - rangeStart, (rangeSize < 0 ? std::numeric_limits<int>::max() : rangeSize));
 
-    #pragma omp parallel for
+    const std::string k_depthMapFolder = "{depthMapFolder}";
+    const std::string k_inputFolder = "{inputFolder}";
+    const std::string k_filename = "{filename}";
+    const std::string k_stem = "{stem}";
+    const std::string k_ext = "{ext}";
+
+    bool useDepthMap = !depthMapExp.empty() || !depthMapFolder.empty();
+
+    // #pragma omp parallel for
     for(int i = 0; i < size; ++i)
     {
         const auto& item = std::next(viewPairItBegin, rangeStart + i);
         const IndexT& index = item->first;
         const sfmData::View& view = *item->second;
 
+        std::string imgPath = view.getImagePath();
+        std::string depthMapPath;
+        if(!depthMapExp.empty())
+        {
+            depthMapPath = depthMapExp;
+            {
+                const auto pos = depthMapPath.find(k_depthMapFolder);
+                if(pos != std::string::npos)
+                    depthMapPath.replace(pos, k_depthMapFolder.size(), depthMapFolder);
+            }
+            {
+                const auto pos = depthMapPath.find(k_inputFolder);
+                if(pos != std::string::npos)
+                    depthMapPath.replace(pos, k_inputFolder.size(), fs::path(imgPath).parent_path().string());
+            }
+            {
+                const auto pos = depthMapPath.find(k_filename);
+                if(pos != std::string::npos)
+                    depthMapPath.replace(pos, k_filename.size(), fs::path(imgPath).filename().string());
+            }
+            {
+                const auto pos = depthMapPath.find(k_stem);
+                if(pos != std::string::npos)
+                    depthMapPath.replace(pos, k_stem.size(), fs::path(imgPath).stem().string());
+            }
+            {
+                const auto pos = depthMapPath.find(k_ext);
+                if(pos != std::string::npos)
+                    depthMapPath.replace(pos, k_stem.size(), fs::path(imgPath).extension().string().substr(1));
+            }
+            if(!fs::exists(depthMapPath))
+            {
+                ALICEVISION_LOG_DEBUG("depthMapPath from expression: \"" << depthMapPath << "\" not found.");
+                depthMapPath.clear();
+            }
+            else
+            {
+                ALICEVISION_LOG_DEBUG("depthMapPath from expression: \"" << depthMapPath << "\" found.");
+            }
+        }
+        else if(!depthMapFolder.empty())
+        {
+            // Look for View UID
+            fs::path p = fs::path(depthMapFolder) / (std::to_string(view.getViewId()) + fs::path(imgPath).extension().string());
+            if(fs::exists(p))
+            {
+                depthMapPath = p.string();
+                ALICEVISION_LOG_DEBUG("depthMapPath found from folder and View UID: \"" << depthMapPath << "\".");
+            }
+            else
+            {
+                // Look for an image with the same filename
+                p = fs::path(depthMapFolder) / fs::path(imgPath).filename();
+                if(fs::exists(p))
+                {
+                    depthMapPath = p.string();
+                    ALICEVISION_LOG_DEBUG("depthMapPath found from folder and input filename: \"" << depthMapPath << "\".");
+                }
+            }
+        }
+
+        const std::string p = useDepthMap ? depthMapPath : imgPath;
         image::Image<unsigned char> result;
-        process(result, view.getImagePath());
+        process(result, p);
 
         if(invert)
         {
@@ -292,6 +388,30 @@ int main(int argc, char **argv)
             imageMasking::postprocess_erode(result, shrinkRadius);
         }
 
+        if(useDepthMap)
+        {
+            bool viewHorizontal = view.getWidth() > view.getHeight();
+            bool depthMapHorizontal = result.Width() > result.Height();
+            if(viewHorizontal != depthMapHorizontal)
+            {
+                ALICEVISION_LOG_ERROR("Image " << imgPath << " : " << view.getWidth() << "x" << view.getHeight());
+                ALICEVISION_LOG_ERROR("Depth Map " << depthMapPath << " : " << result.Width() << "x" << result.Height());
+                throw std::runtime_error("Depth map orientation is not aligned with source image.");
+            }
+            if(view.getWidth() != result.Width())
+            {
+                ALICEVISION_LOG_DEBUG("Rescale depth map \"" << imgPath << "\" from: " << result.Width() << "x" << result.Height() << ", to: " << view.getWidth() << "x" << view.getHeight());
+
+                image::Image<unsigned char> rescaled(view.getWidth(), view.getHeight());
+
+                const oiio::ImageBuf inBuf(oiio::ImageSpec(result.Width(), result.Height(), 1, oiio::TypeDesc::UINT8), result.data());
+                oiio::ImageBuf outBuf(oiio::ImageSpec(rescaled.Width(), rescaled.Height(), 1, oiio::TypeDesc::UINT8), rescaled.data());
+
+                oiio::ImageBufAlgo::resize(outBuf, inBuf);
+
+                result.swap(rescaled);
+            }
+        }
         const auto resultFilename = fs::path(std::to_string(index)).replace_extension("png");
         const std::string resultPath = (fs::path(outputFilePath) / resultFilename).string();
         image::writeImage(resultPath, result, image::EImageColorSpace::LINEAR);
