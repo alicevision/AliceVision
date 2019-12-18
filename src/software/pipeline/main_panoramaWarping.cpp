@@ -822,7 +822,7 @@ private:
     double t = - pt1(0) / direction(0); 
     Vec3 cross = pt1 + direction * t;
 
-    if (t >= 0.0 && t < 1.0) {
+    if (t >= 0.0 && t <= 1.0) {
       if (cross(2) < 0.0) {
         return true;
       } 

@@ -235,7 +235,7 @@ public:
 };
 
 template<class T>
-inline void convolveRow(typename image::Image<T>::RowXpr output_row, typename image::Image<T>::ConstRowXpr input_row, const Eigen::Matrix<float, 5, 1> & kernel) {
+inline void convolveRow(typename image::Image<T>::RowXpr output_row, typename image::Image<T>::ConstRowXpr input_row, const Eigen::Matrix<float, 5, 1> & kernel, bool loop) {
 
   const int radius = 2;
 
@@ -250,12 +250,24 @@ inline void convolveRow(typename image::Image<T>::RowXpr output_row, typename im
       int col = j + k - radius;
 
       /* mirror 5432 | 123456 | 5432 */
-      if (col < 0) {
-        col = - col;
-      }
 
-      if (col >= input_row.cols()) {
-        col = input_row.cols() - 1 - (col + 1 - input_row.cols());
+      if (!loop) {
+        if (col < 0) {
+          col = - col;
+        }
+
+        if (col >= input_row.cols()) {
+          col = input_row.cols() - 1 - (col + 1 - input_row.cols());
+        }
+      }
+      else {
+        if (col < 0) {
+          col = input_row.cols() + col;
+        }
+
+        if (col >= input_row.cols()) {
+          col = col - input_row.cols();
+        }
       }
 
       sum += w * input_row(col);
@@ -286,7 +298,7 @@ inline void convolveColumns(typename image::Image<T>::RowXpr output_row, const i
 }
 
 template<class T>
-bool convolveGaussian5x5(image::Image<T> & output, const image::Image<T> & input) {
+bool convolveGaussian5x5(image::Image<T> & output, const image::Image<T> & input, bool loop = false) {
 
   if (output.size() != input.size()) {
     return false;
@@ -304,11 +316,11 @@ bool convolveGaussian5x5(image::Image<T> & output, const image::Image<T> & input
 
   int radius = 2;
 
-  convolveRow<T>(buf.row(0), input.row(2), kernel);
-  convolveRow<T>(buf.row(1), input.row(1), kernel);
-  convolveRow<T>(buf.row(2), input.row(0), kernel);
-  convolveRow<T>(buf.row(3), input.row(1), kernel);
-  convolveRow<T>(buf.row(4), input.row(2), kernel);
+  convolveRow<T>(buf.row(0), input.row(2), kernel, loop);
+  convolveRow<T>(buf.row(1), input.row(1), kernel, loop);
+  convolveRow<T>(buf.row(2), input.row(0), kernel, loop);
+  convolveRow<T>(buf.row(3), input.row(1), kernel, loop);
+  convolveRow<T>(buf.row(4), input.row(2), kernel, loop);
 
   for (int i = 0; i < output.Height() - 3; i++) {
 
@@ -319,7 +331,7 @@ bool convolveGaussian5x5(image::Image<T> & output, const image::Image<T> & input
     buf.row(1) = buf.row(2);
     buf.row(2) = buf.row(3);
     buf.row(3) = buf.row(4);
-    convolveRow<T>(buf.row(4), input.row(i + 3), kernel);
+    convolveRow<T>(buf.row(4), input.row(i + 3), kernel, loop);
   }
 
   /**
@@ -333,14 +345,14 @@ bool convolveGaussian5x5(image::Image<T> & output, const image::Image<T> & input
   buf.row(1) = buf.row(2);
   buf.row(2) = buf.row(3);
   buf.row(3) = buf.row(4);
-  convolveRow<T>(buf.row(4), input.row(output.Height() - 2), kernel);
+  convolveRow<T>(buf.row(4), input.row(output.Height() - 2), kernel, loop);
   convolveColumns<T>(output.row(output.Height() - 2), buf, kernel);
 
   buf.row(0) = buf.row(1);
   buf.row(1) = buf.row(2);
   buf.row(2) = buf.row(3);
   buf.row(3) = buf.row(4);
-  convolveRow<T>(buf.row(4), input.row(output.Height() - 3), kernel);
+  convolveRow<T>(buf.row(4), input.row(output.Height() - 3), kernel, loop);
   convolveColumns<T>(output.row(output.Height() - 1), buf, kernel);
 
   return true;
@@ -381,10 +393,10 @@ bool upscale(aliceVision::image::Image<T> & outputColor, const aliceVision::imag
     for (int j = 0; j < width; j++) {
       int dj = j * 2;
 
-      outputColor(di, dj) = inputColor(i, j);
+      outputColor(di, dj) = T();
       outputColor(di, dj + 1) = T();
       outputColor(di + 1, dj) = T();
-      outputColor(di + 1, dj + 1) = T();
+      outputColor(di + 1, dj + 1) = inputColor(i, j);
     }
   }
 
@@ -591,7 +603,7 @@ public:
       aliceVision::image::Image<image::RGBfColor> buf2(_levels[l].Width(), _levels[l].Height());
 
       upscale(buf, _levels[l + 1]);
-      convolveGaussian5x5<image::RGBfColor>(buf2, buf);
+      convolveGaussian5x5<image::RGBfColor>(buf2, buf, true);
       
       for (int i = 0; i  < buf2.Height(); i++) {
         for (int j = 0; j < buf2.Width(); j++) {
@@ -621,8 +633,6 @@ public:
 
     return true;
   }
-
-  
 
 private:
   std::vector<aliceVision::image::Image<image::RGBfColor>> _levels;
