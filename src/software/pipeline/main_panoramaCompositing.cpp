@@ -381,10 +381,10 @@ bool upscale(aliceVision::image::Image<T> & outputColor, const aliceVision::imag
     for (int j = 0; j < width; j++) {
       int dj = j * 2;
 
-      outputColor(di, dj) = inputColor(i, j);
+      outputColor(di, dj) = T();
       outputColor(di, dj + 1) = T();
       outputColor(di + 1, dj) = T();
-      outputColor(di + 1, dj + 1) = T();
+      outputColor(di + 1, dj + 1) = inputColor(i, j);
     }
   }
 
