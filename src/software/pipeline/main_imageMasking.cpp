@@ -75,7 +75,7 @@ inline std::istream& operator>>(std::istream& in, EAlgorithm& s)
 }
 
 template <class T>
-auto optInRange(T min, T max, const char * opt_name)
+std::function<void(T)> optInRange(T min, T max, const char * opt_name)
 {
     return [=] (T v)
     { 
