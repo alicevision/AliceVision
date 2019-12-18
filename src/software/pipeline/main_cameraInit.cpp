@@ -15,6 +15,7 @@
 #include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/algorithm/string.hpp>
+#include <boost/regex.hpp>
 
 #include <iostream>
 #include <fstream>
@@ -23,7 +24,6 @@
 #include <string>
 #include <vector>
 #include <cstdlib>
-#include <regex>
 
 
 // These constants define the current software version.
@@ -409,8 +409,8 @@ int main(int argc, char **argv)
   // create missing intrinsics
   auto viewPairItBegin = sfmData.getViews().begin();
 
-  std::regex extractComposedNumberRegex("\\d+(?:[\\-\\:\\_\\.]\\d+)*");
-  std::regex extractNumberRegex("\\d+");
+  boost::regex extractComposedNumberRegex("\\d+(?:[\\-\\:\\_\\.]\\d+)*");
+  boost::regex extractNumberRegex("\\d+");
 
   for(int i = 0; i < sfmData.getViews().size(); ++i)
   {
@@ -423,9 +423,9 @@ int main(int argc, char **argv)
         {
             // Extract the rig index from the folder name.
             // Warning: Needs to be an index starting from 0 (and not a random number)
-            std::smatch matches;
+            boost::smatch matches;
             std::string p = parentPath.stem().string();
-            if (std::regex_search(p, matches, extractNumberRegex))
+            if (boost::regex_search(p, matches, extractNumberRegex))
             {
                 std::string s = matches[matches.size() - 1].str();
                 int subPoseId = boost::lexical_cast<IndexT>(s);
@@ -442,15 +442,15 @@ int main(int argc, char **argv)
             std::string p = fs::path(view.getImagePath()).stem().string();
 
             {
-                std::smatch matches;
+                boost::smatch matches;
                 std::string s = p;
                 std::string out;
-                while (std::regex_search(s, matches, extractComposedNumberRegex))
+                while (boost::regex_search(s, matches, extractComposedNumberRegex))
                 {
                     out = matches[0];
                     s = matches.suffix().str();
                 }
-                out = std::regex_replace(out, std::regex("\\D"), std::string(""));
+                out = boost::regex_replace(out, boost::regex("\\D"), std::string(""));
                 if (!out.empty())
                 {
                     frameId = boost::lexical_cast<IndexT>(out);
@@ -469,9 +469,9 @@ int main(int argc, char **argv)
     else
     {
         // Extract a frame number if there is one.
-        std::smatch matches;
+        boost::smatch matches;
         std::string p = fs::path(view.getImagePath()).stem().string();
-        if (std::regex_search(p, matches, extractNumberRegex))
+        if (boost::regex_search(p, matches, extractNumberRegex))
         {
             std::string s = matches[matches.size() - 1].str();
             IndexT frameId = boost::lexical_cast<IndexT>(s);
