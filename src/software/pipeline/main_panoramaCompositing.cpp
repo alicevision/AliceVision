@@ -41,6 +41,112 @@ typedef struct {
   std::string weights_path;
 } ConfigView;
 
+void drawBorders(aliceVision::image::Image<image::RGBAfColor> & inout, aliceVision::image::Image<unsigned char> & mask, size_t offset_x, size_t offset_y) {
+
+  
+  for (int i = 0; i < mask.Height(); i++) {
+    int j = 0;
+    int di = i + offset_y;
+    int dj = j + offset_x;
+    if (dj >= inout.Width()) {
+      dj = dj - inout.Width();
+    }
+
+    if (mask(i, j)) {
+      inout(di, dj) = image::RGBAfColor(1.0f, 0.0f, 0.0f, 1.0f);
+    }
+  }
+
+  for (int i = 0; i < mask.Height(); i++) {
+    int j = mask.Width() - 1;
+    int di = i + offset_y;
+    int dj = j + offset_x;
+    if (dj >= inout.Width()) {
+      dj = dj - inout.Width();
+    }
+
+    if (mask(i, j)) {
+      inout(di, dj) = image::RGBAfColor(1.0f, 0.0f, 0.0f, 1.0f);
+    }
+  }
+
+  for (int j = 0; j < mask.Width(); j++) {
+    int i = 0;
+    int di = i + offset_y;
+    int dj = j + offset_x;
+    if (dj >= inout.Width()) {
+      dj = dj - inout.Width();
+    }
+
+    if (mask(i, j)) {
+      inout(di, dj) = image::RGBAfColor(1.0f, 0.0f, 0.0f, 1.0f);
+    }
+  }
+
+  for (int j = 0; j < mask.Width(); j++) {
+    int i = mask.Height() - 1;
+    int di = i + offset_y;
+    int dj = j + offset_x;
+    if (dj >= inout.Width()) {
+      dj = dj - inout.Width();
+    }
+
+    if (mask(i, j)) {
+      inout(di, dj) = image::RGBAfColor(1.0f, 0.0f, 0.0f, 1.0f);
+    }
+  }
+  
+  for (int i = 1; i < mask.Height() - 1; i++) {
+
+    int di = i + offset_y;
+
+    for (int j = 1; j < mask.Width() - 1; j++) {
+
+      int dj = j + offset_x;
+      if (dj >= inout.Width()) {
+        dj = dj - inout.Width();
+      }
+
+      if (!mask(i, j)) continue;
+
+      unsigned char others = true;
+      others &= mask(i - 1, j - 1);
+      others &= mask(i - 1, j + 1);
+      others &= mask(i, j - 1);
+      others &= mask(i, j + 1);
+      others &= mask(i + 1, j - 1);
+      others &= mask(i + 1, j + 1);
+      if (others) continue;
+
+      inout(di, dj) = image::RGBAfColor(1.0f, 0.0f, 0.0f, 1.0f);
+    }
+  }
+}
+
+void drawSeams(aliceVision::image::Image<image::RGBAfColor> & inout, aliceVision::image::Image<unsigned char> & labels) {
+
+  for (int i = 1; i < labels.Height() - 1; i++) {
+
+    for (int j = 1; j < labels.Width() - 1; j++) {
+
+      unsigned char label = labels(i, j);
+      unsigned char same = true;
+
+      same &= (labels(i - 1, j - 1) == label);
+      same &= (labels(i - 1, j + 1) == label);
+      same &= (labels(i, j - 1) == label);
+      same &= (labels(i, j + 1) == label);
+      same &= (labels(i + 1, j - 1) == label);
+      same &= (labels(i + 1, j + 1) == label);
+
+      if (same) {
+        continue;
+      }
+
+      inout(i, j) = image::RGBAfColor(1.0f, 0.0f, 0.0f, 1.0f);
+    }
+  }
+}
 
 void getMaskFromLabels(aliceVision::image::Image<float> & mask, aliceVision::image::Image<unsigned char> & labels, unsigned char index, size_t offset_x, size_t offset_y) {
 
@@ -162,7 +268,7 @@ public:
     return true;
   }
 
-  const aliceVision::image::Image<image::RGBAfColor> & getPanorama() const {
+  aliceVision::image::Image<image::RGBAfColor> & getPanorama() {
     return _panorama;
   }
 
@@ -878,9 +984,11 @@ int main(int argc, char **argv) {
    * Description of optional parameters
    */
   std::string compositerType = "multiband";
+  std::string overlayType = "none";
   po::options_description optionalParams("Optional parameters");
   optionalParams.add_options()
-    ("compositerType,c", po::value<std::string>(&compositerType)->required(), "Compositer Type [replace, alpha, multiband].");
+    ("compositerType,c", po::value<std::string>(&compositerType)->required(), "Compositer Type [replace, alpha, multiband].")
+    ("overlayType,c", po::value<std::string>(&overlayType)->required(), "Overlay Type [none, borders, seams].");
   allParams.add(optionalParams);
 
   /**
@@ -1054,6 +1162,23 @@ int main(int argc, char **argv) {
 
   /* Build image */
   compositer->terminate();
+
+  if (overlayType == "borders") {
+    for (const ConfigView & cv : configViews) {
+      /**
+       * Load mask
+       */
+      std::string maskPath = cv.mask_path;
+      ALICEVISION_LOG_INFO("Load mask with path " << maskPath);
+      image::Image<unsigned char> mask;
+      image::readImage(maskPath, mask, image::EImageColorSpace::NO_CONVERSION);
+
+      drawBorders(compositer->getPanorama(), mask, cv.offset_x, cv.offset_y);
+    }
+  }
+  else if (overlayType == "seams") {
+    drawSeams(compositer->getPanorama(), labels);
+  }
 
 
   /* Store output */
