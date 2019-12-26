@@ -5654,6 +5654,7 @@ Sony;ILCE-5000;23.2;usercontribution
 Sony;ILCE-5100;23.5;usercontribution
 Sony;ILCE-6000;23.5;usercontribution
 Sony;ILCE-6300;23.5;usercontribution
+Sony;ILCE-6400;23.5;sony
 Sony;ILCE-6500;23.5;usercontribution
 Sony;ILCE-7;35.8
 Sony;ILCE-7M2;35.8
@@ -5672,6 +5673,7 @@ Sony;Sony A5000;23.2;dxomark
 Sony;Sony A5100;23.5;dxomark
 Sony;Sony a6000;23.5;dpreview
 Sony;Sony a6300;23.5;dpreview
+Sony;Sony a6400;23.5;sony
 Sony;Sony a6500;23.5;dpreview
 Sony;Sony a7;35.8;dpreview
 Sony;Sony a7 II;35.8;dpreview
@@ -5712,6 +5714,7 @@ Sony;Sony Alpha a5000;23.5;digicamdb
 Sony;Sony Alpha a5100;23.5;dpreview,digicamdb
 Sony;Sony Alpha a6000;23.5;digicamdb
 Sony;Sony Alpha a6300;23.5;digicamdb
+Sony;Sony Alpha a6400;23.5;sony
 Sony;Sony Alpha a6500;23.5;digicamdb
 Sony;Sony Alpha A7 III;35.6;digicamdb
 Sony;Sony Alpha a7R III;35.9;digicamdb
@@ -5743,6 +5746,7 @@ Sony;Sony Alpha ILCE-A5000;23.2;imaging-resource
 Sony;Sony Alpha ILCE-A5100;23.5;imaging-resource
 Sony;Sony Alpha ILCE-A6000;23.5;imaging-resource
 Sony;Sony Alpha ILCE-A6300;23.5;imaging-resource
+Sony;Sony Alpha ILCE-A6400;23.5;sony
 Sony;Sony Alpha ILCE-A6500;23.5;imaging-resource
 Sony;Sony Alpha ILCE-A7;35.8;imaging-resource
 Sony;Sony Alpha ILCE-A7 II;35.8;imaging-resource
