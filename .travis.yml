@@ -67,18 +67,19 @@ before_script:
   - >
      cmake \
        -DCMAKE_BUILD_TYPE=${BUILD_TYPE} \
+       -DCMAKE_INSTALL_PREFIX:PATH=${ALICEVISION_INSTALL} \
        -DTARGET_ARCHITECTURE=core \
-       -DALICEVISION_BUILD_TESTS=ON \
-       -DALICEVISION_BUILD_EXAMPLES=ON \
-       -DALICEVISION_USE_OPENCV=ON \
-       -DALICEVISION_USE_CUDA=OFF \
-       -DOpenCV_DIR="${DEPS_INSTALL_PATH}/share/OpenCV" \
-       -DALICEVISION_USE_OPENGV=ON \
-       -DOPENGV_DIR="${DEPS_INSTALL_PATH}" \
-       -DBOOST_NO_CXX11=ON \
-       -DCeres_DIR="${DEPS_INSTALL_PATH}/share/Ceres" \
-       -DEIGEN_INCLUDE_DIR_HINTS="${DEPS_INSTALL_PATH}" \
-       -DALICEVISION_USE_CCTAG=OFF \
+       -DALICEVISION_BUILD_TESTS:BOOL=ON \
+       -DALICEVISION_BUILD_EXAMPLES:BOOL=ON \
+       -DALICEVISION_USE_OPENCV:BOOL=ON \
+       -DALICEVISION_USE_CUDA:BOOL=OFF \
+       -DOpenCV_DIR:PATH="${DEPS_INSTALL_PATH}/share/OpenCV" \
+       -DALICEVISION_USE_OPENGV:BOOL=ON \
+       -DOPENGV_DIR:PATH="${DEPS_INSTALL_PATH}" \
+       -DBOOST_NO_CXX11:BOOL=ON \
+       -DCeres_DIR:PATH="${DEPS_INSTALL_PATH}/share/Ceres" \
+       -DEIGEN_INCLUDE_DIR_HINTS:PATH="${DEPS_INSTALL_PATH}" \
+       -DALICEVISION_USE_CCTAG:BOOL=OFF \
        -DALICEVISION_USE_ALEMBIC:BOOL=ON  \
        -DAlembic_DIR:PATH="${DEPS_INSTALL_PATH}/lib/cmake/Alembic" \
        . $ALICEVISION_SOURCE
@@ -87,10 +88,14 @@ before_script:
 
 script:
 # limit GCC builds to a reduced number of thread for the virtual machine
-  - make -j 2 VERBOSE=1
+  - make install -j 2 VERBOSE=1
   - export OMP_NUM_THREADS=2
 # Perform unit tests only on GCC builds
   - if [ "$CC" = "gcc" ]; then make test; fi
+  - mkdir -p ${ALICEVISION_BUILD_AS3RDPARTY}
+  - cd ${ALICEVISION_BUILD_AS3RDPARTY}
+  - cmake -DCMAKE_PREFIX_PATH:PATH="${ALICEVISION_INSTALL};${DEPS_INSTALL_PATH}" ${ALICEVISION_SAMPLE_AS3RDPARTY}
+  - make
 # Perform benchmark through ground truth tests with different scenes
   - >
     if [ -n "$TRAVIS_PULL_REQUEST" ]; then # limit to PR builds

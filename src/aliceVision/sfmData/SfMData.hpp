@@ -297,6 +297,33 @@ public:
     return _rigs.at(view.getRigId());
   }
 
+  std::set<feature::EImageDescriberType> getLandmarkDescTypes() const
+  {
+    std::set<feature::EImageDescriberType> output;
+    for (auto s : getLandmarks())
+    {
+      output.insert(s.second.descType);
+    }
+    return output;
+  }
+
+  std::map<feature::EImageDescriberType, int> getLandmarkDescTypesUsages() const
+  {
+    std::map<feature::EImageDescriberType, int> output;
+    for (auto s : getLandmarks())
+    {
+      if (output.find(s.second.descType) == output.end())
+      {
+        output[s.second.descType] = 1;
+      }
+      else
+      {
+        ++output[s.second.descType];
+      }
+    }
+    return output;
+  }
+
   /**
    * @brief Get the median Exposure Value (Ev) of
    * @return

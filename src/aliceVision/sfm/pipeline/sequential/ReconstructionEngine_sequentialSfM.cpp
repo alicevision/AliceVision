@@ -246,6 +246,13 @@ std::size_t ReconstructionEngine_sequentialSfM::fuseMatchesIntoTracks()
     // build tracks with STL compliant type
     tracksBuilder.exportToSTL(_map_tracks);
     ALICEVISION_LOG_DEBUG("Build tracks per view");
+
+    // Init tracksPerView to have an entry in the map for each view (even if there is no track at all)
+    for(const auto& viewIt: _sfmData.views)
+    {
+        // create an entry in the map
+        _map_tracksPerView[viewIt.first];
+    }
     track::tracksUtilsMap::computeTracksPerView(_map_tracks, _map_tracksPerView);
     ALICEVISION_LOG_DEBUG("Build tracks pyramid per view");
     computeTracksPyramidPerView(
@@ -652,7 +659,8 @@ bool ReconstructionEngine_sequentialSfM::bundleAdjustment(std::set<IndexT>& newR
     // - the number of cameras to refine cannot be < to the number of newly added cameras (set to 'refine' by default)
     if((nbRefinedPoses <= newReconstructedViews.size()) && _sfmData.getRigs().empty())
     {
-      throw std::runtime_error("The local bundle adjustment refinement has not been done: the new cameras are not connected to the rest of the graph.");
+      ALICEVISION_LOG_INFO("Local bundle adjustment: the new cameras are not connected to the rest of the graph"
+                           " (nbRefinedPoses: " << nbRefinedPoses << ", newReconstructedViews.size(): " << newReconstructedViews.size() << ").");
     }
   }
 
@@ -721,6 +729,12 @@ void ReconstructionEngine_sequentialSfM::exportStatistics(double reconstructionT
     << "\t- # landmarks: " << _sfmData.getLandmarks().size() << std::endl
     << "\t- elapsed time: " << reconstructionTime << std::endl
     << "\t- residual RMSE: " <<  residual);
+
+  std::map<feature::EImageDescriberType, int> descTypeUsage = _sfmData.getLandmarkDescTypesUsages();
+  for(const auto& d: descTypeUsage)
+  {
+    ALICEVISION_LOG_INFO(" - # " << EImageDescriberType_enumToString(d.first) << ": " << d.second);
+  }
 
   // residual histogram
   Histogram<double> residualHistogram;
@@ -843,11 +857,7 @@ bool ReconstructionEngine_sequentialSfM::findConnectedViews(
     const bool isIntrinsicsReconstructed = reconstructedIntrinsics.count(intrinsicId);
 
     // Compute 2D - 3D possible content
-    aliceVision::track::TracksPerView::const_iterator tracksIdsIt = _map_tracksPerView.find(viewId);
-    if(tracksIdsIt == _map_tracksPerView.end())
-      continue;
-
-    const aliceVision::track::TrackIdSet& set_tracksIds = tracksIdsIt->second;
+    const aliceVision::track::TrackIdSet& set_tracksIds = _map_tracksPerView.at(viewId);
     if (set_tracksIds.empty())
       continue;
 

@@ -2008,9 +2008,10 @@ Gome;Gome K1;4.74;devicespecifications
 Gome;Gome U7;4.73;devicespecifications
 Google;Google Pixel;6.25;devicespecifications
 Google;Google Pixel 2;5.5;imaging-resource
-Google;Google Pixel 2 XL;5.5;devicespecifications
+Google;Pixel 2 XL;5.5;devicespecifications
 Google;Google Pixel 3;5.76;techradar
-Google;Google Pixel 3 XL;5.76;techradar
+Google;Pixel 3a;5.76;devicespecifications
+Google;Pixel 3 XL;5.76;techradar
 Google;Google Pixel XL;6.25;devicespecifications
 GoPro;GoPro Fusion;6.17;dpreview
 GoPro;GoPro Hero 2018;6.17;dpreview
@@ -2072,6 +2073,7 @@ Hisense;Hisense PureShot;4.69;devicespecifications
 Hisense;Hisense PureShot+;4.69;devicespecifications
 Hisense;Hisense T5;2.92;devicespecifications
 Hisense;Hisense T5 Plus;2.92;devicespecifications
+HMD Global;Nokia 8;8.3;usercontribution
 Homtom;Homtom C1;2.92;devicespecifications
 Homtom;Homtom HT16;2.92;devicespecifications
 Homtom;Homtom HT17;3.67;devicespecifications
@@ -2200,6 +2202,7 @@ Huawei;Huawei Ascend Mate7;4.69;devicespecifications
 Huawei;Huawei Ascend Mate7 Monarch;4.69;devicespecifications
 Huawei;Huawei C199;4.69;devicespecifications
 Huawei;Huawei C199S;4.69;devicespecifications
+Huawei;Huawei EML-l29;6.17;
 Huawei;Huawei G Play mini;4.69;devicespecifications
 Huawei;Huawei G7 Plus;4.71;devicespecifications
 Huawei;Huawei G8;4.71;devicespecifications
@@ -2936,6 +2939,7 @@ Lg;Lg G4;5.95;devicespecifications
 Lg;Lg G5;5.95;devicespecifications
 Lg;Lg G5 SE;5.95;devicespecifications
 Lg;Lg G6;4.71;devicespecifications
+LG Electronics;LG-H870;4.71
 Lg;Lg G6+;4.71;devicespecifications
 Lg;Lg Google Nexus 5;4.54;devicespecifications
 Lg;Lg K8;4.6;devicespecifications
@@ -2945,6 +2949,7 @@ Lg;Lg Optimus G LS970;4.69;devicespecifications
 Lg;Lg V10;5.95;devicespecifications
 Lg;Lg V20;5.22;devicespecifications
 Lg;Lg Zero;3.7;devicespecifications
+LG Electronics;LG-H870;4.71;usercontribution
 LG Electronics;LG-H870DS;5.867
 LG Electronics;LG-H930;5.893
 LG Electronics;LG-H932;5.893
@@ -4145,6 +4150,7 @@ Oneplus;Oneplus 5T;5.22;devicespecifications
 OnePlus;Oneplus 6;5.5;devicespecifications
 OnePlus;Oneplus 6T;5.5;devicespecifications
 OnePlus;Oneplus A5000;5.22;devicespecifications
+OnePlus;Oneplus A5010;5.22;devicespecifications
 OnePlus;Oneplus A6000;5.5;devicespecifications
 OnePlus;Oneplus A6003;5.5;devicespecifications
 OnePlus;Oneplus A6010;5.5;devicespecifications
@@ -4893,7 +4899,8 @@ Qmobile;Qmobile Noir S6;4.69;devicespecifications
 Ramos;Ramos M7;4.82;devicespecifications
 Ramos;Ramos MOS1 Max;4.69;devicespecifications
 Ramos;Ramos R9;4.69;devicespecifications
-RaspberryPi;RP_OV5647;3.76;
+RaspberryPi;RP_imx219;3.6736;devicespecifications
+RaspberryPi;RP_OV5647;3.6288;devicespecifications
 Realme;Realme 2 Pro;5.22;devicespecifications
 Red;Epic Dragon;30.7;
 Red;Red Dragon 4K HD;19.19;
@@ -5488,6 +5495,7 @@ Samsung;Samsung WP10;6.08;dpreview,digicamdb
 Samsung;Samsung-SGH-I537;3.0;
 samsung;SM-G920F;5.95;
 samsung;SM-G930F;5.76;
+samsung;SM-J111M;3.6;usercontribution
 SAMSUNG;SM-N9005;4.69;
 Santin;Santin Max 4 Pro;4.74;devicespecifications
 Santin;Santin N1;4.71;devicespecifications
@@ -6257,6 +6265,7 @@ Sony;Sony ILCE 5100;23.5;
 Sony;Sony ILCE 6000;23.5;
 Sony;Sony ILCE-6000;23.5;
 Sony;Sony ILCE-6300;23.5;dpreview
+Sony;Sony IMX179;6.18;
 Sony;Sony Mavica CD1000;5.312;dpreview,digicamdb
 Sony;Sony Mavica CD200;5.312;dpreview,digicamdb
 Sony;Sony Mavica CD250;5.312;dpreview,digicamdb
@@ -6674,7 +6683,7 @@ Xiaomi;Xiaomi Mi 5s;6.25;devicespecifications
 Xiaomi;Xiaomi Mi 5s Plus;4.71;devicespecifications
 Xiaomi;Xiaomi Mi 5X;5.11;devicespecifications
 Xiaomi;Xiaomi Mi 6;4.96;devicespecifications
-Xiaomi;Xiaomi Mi A1;5.11;devicespecifications
+Xiaomi;Mi A1;5.11;devicespecifications
 Xiaomi;Xiaomi Mi A2 Lite;2.98;devicespecifications
 Xiaomi;Xiaomi Mi Max;4.74;devicespecifications
 Xiaomi;Xiaomi Mi Max 2;4.96;devicespecifications
@@ -6721,6 +6730,7 @@ Xiaomi;Xiaomi Redmi Note 5 SD625 India;5.11;devicespecifications
 Xiaomi;Xiaomi Redmi Note 5 SD636 China;4.75;devicespecifications
 Xiaomi;Xiaomi Redmi Note 5A High Edition;4.75;devicespecifications
 Xiaomi;Xiaomi Redmi Note 5A Standard Edition;4.69;devicespecifications
+Xiaomi;Xiaomi Redmi Note 7;6.4;devicespecifications
 Xiaomi;Xiaomi Redmi Note MT6592M;4.6;devicespecifications
 Xiaomi;Xiaomi Redmi Pro Exclusive Edition;4.71;devicespecifications
 Xiaomi;Xiaomi Redmi Pro High Edition;4.71;devicespecifications

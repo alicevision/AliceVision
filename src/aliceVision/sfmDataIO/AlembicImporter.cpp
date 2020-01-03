@@ -439,7 +439,7 @@ bool readCamera(const ICamera& camera, const M44d& mat, sfmData::SfMData& sfmDat
       if(userProps.getPropertyHeader("mvg_intrinsicParams"))
       {
         Alembic::Abc::IDoubleArrayProperty prop(userProps, "mvg_intrinsicParams");
-        std::shared_ptr<DoubleArraySample> sample;
+        Alembic::Abc::IDoubleArrayProperty::sample_ptr_type sample;
         prop.get(sample, ISampleSelector(sampleFrame));
         mvg_intrinsicParams.assign(sample->get(), sample->get()+sample->size());
       }

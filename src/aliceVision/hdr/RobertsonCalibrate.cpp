@@ -22,21 +22,15 @@ void RobertsonCalibrate::process(const std::vector< std::vector< image::Image<im
                                  const rgbCurve &weight,
                                  rgbCurve &response)
 {
-  //checks
-  for (int g = 0; g < ldrImageGroups.size(); ++g)
-  {
-    assert(ldrImageGroups[g].size() == times[g].size());
-  }
+  const int nbGroups = ldrImageGroups.size();
+  const int nbImages = ldrImageGroups.front().size();
+  const int samplesPerImage = nbPoints / (nbGroups*nbImages);
 
   //set channels count always RGB
   static const std::size_t channels = 3;
 
   //create radiance vector of image
-  _radiance = std::vector< image::Image<image::RGBfColor> >(ldrImageGroups.size());
-  for(auto& radianceImg: _radiance)
-  {
-    radianceImg.resize(ldrImageGroups[0][0].Width(), ldrImageGroups[0][0].Height(), false);
-  }
+  _radiance = std::vector< image::Image<image::RGBfColor> >(nbGroups);
 
   //initialize response
   response = rgbCurve(channelQuantization);
@@ -48,12 +42,13 @@ void RobertsonCalibrate::process(const std::vector< std::vector< image::Image<im
   card.setZero();
 
   //compute cardinal curve
-  for(unsigned int g = 0; g < ldrImageGroups.size(); ++g)
+  for(unsigned int g = 0; g < nbGroups; ++g)
   {
-    const std::vector< image::Image<image::RGBfColor> > &ldrImagesGroup = ldrImageGroups.at(g);
-    const int nbImages = ldrImagesGroup.size();
+    const std::vector< image::Image<image::RGBfColor> > &ldrImagesGroup = ldrImageGroups[g];
     const std::size_t width = ldrImagesGroup.front().Width();
     const std::size_t height = ldrImagesGroup.front().Height();
+
+    _radiance[g].resize(width, height, false);
 
     // if images are fisheye, we take only pixels inside a disk with a radius of image's minimum side
     if(fisheye)
@@ -67,7 +62,7 @@ void RobertsonCalibrate::process(const std::vector< std::vector< image::Image<im
       const int xMax = std::floor(center(0) + minSize/2);
       const int yMax = std::floor(center(1) + minSize/2);
 
-      const int step = std::ceil(sqrt(std::ceil(minSize*minSize / nbPoints)));
+      const int step = std::ceil(minSize / sqrt(samplesPerImage));
 
       for(unsigned int j=0; j<nbImages; ++j)
       {
@@ -94,7 +89,7 @@ void RobertsonCalibrate::process(const std::vector< std::vector< image::Image<im
     }
     else
     {
-      const int step = std::floor(width * height / nbPoints);
+      const int step = std::floor(width * height / samplesPerImage);
       for(unsigned int j=0; j<nbImages; ++j)
       {
         const image::Image<image::RGBfColor> &image = ldrImagesGroup.at(j);
@@ -127,9 +122,9 @@ void RobertsonCalibrate::process(const std::vector< std::vector< image::Image<im
 
     ALICEVISION_LOG_TRACE("1) compute radiance ");
     //initialize radiance
-    for(std::size_t g = 0; g < ldrImageGroups.size(); ++g)
+    for(std::size_t g = 0; g < nbGroups; ++g)
     {
-      merge.process(ldrImageGroups.at(g), times.at(g), weight, response, _radiance.at(g), 1.f, true);
+      merge.process(ldrImageGroups[g], times[g], weight, response, _radiance[g], 1.f, true);
     }
 
     ALICEVISION_LOG_TRACE("2) initialization new response ");
@@ -139,15 +134,15 @@ void RobertsonCalibrate::process(const std::vector< std::vector< image::Image<im
 
     ALICEVISION_LOG_TRACE("3) compute new response ");
     //compute new response
-    for(unsigned int g = 0; g < ldrImageGroups.size(); ++g)
+    for(unsigned int g = 0; g < nbGroups; ++g)
     {
-      const std::vector< image::Image<image::RGBfColor> > &ldrImagesGroup = ldrImageGroups.at(g);
-      const std::vector<float> &ldrTimes = times.at(g);
+      const std::vector< image::Image<image::RGBfColor> > &ldrImagesGroup = ldrImageGroups[g];
+      const std::vector<float> &ldrTimes = times[g];
       const int nbImages = ldrImagesGroup.size();
       const std::size_t width = ldrImagesGroup.front().Width();
       const std::size_t height = ldrImagesGroup.front().Height();
 
-      const image::Image<image::RGBfColor> &radiance = _radiance.at(g);
+      const image::Image<image::RGBfColor> &radiance = _radiance[g];
 
       if(fisheye)
       {
@@ -160,7 +155,7 @@ void RobertsonCalibrate::process(const std::vector< std::vector< image::Image<im
         const int xMax = std::floor(center(0) + minSize/2);
         const int yMax = std::floor(center(1) + minSize/2);
 
-        const int step = std::ceil(sqrt(std::ceil(minSize*minSize / nbPoints)));
+        const int step = std::ceil(minSize / sqrt(samplesPerImage));
 
         for(unsigned int j=0; j<nbImages; ++j)
         {
@@ -188,7 +183,7 @@ void RobertsonCalibrate::process(const std::vector< std::vector< image::Image<im
       }
       else
       {
-        const int step = std::floor(width * height / nbPoints);
+        const int step = std::floor(width * height / samplesPerImage);
         for(unsigned int j=0; j<nbImages; ++j)
         {
           #pragma omp parallel for
