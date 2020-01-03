@@ -123,8 +123,6 @@ struct ResidualErrorConstraintFunctor_Pinhole
  *  - 3 => the camera extrinsic data block for the second view 
  *
  */
-
-
 struct ResidualErrorConstraintFunctor_PinholeRadialK1
 {
   ResidualErrorConstraintFunctor_PinholeRadialK1(const Vec3 & pos_2dpoint_first, const Vec3 & pos_2dpoint_second) 

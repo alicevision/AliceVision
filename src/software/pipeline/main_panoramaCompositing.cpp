@@ -362,11 +362,8 @@ bool convolveGaussian5x5(image::Image<T> & output, const image::Image<T> & input
 template <class T>
 bool downscale(aliceVision::image::Image<T> & outputColor, const aliceVision::image::Image<T> & inputColor) {
 
-  size_t width = inputColor.Width();
-  size_t height = inputColor.Height();
-
-  size_t output_width = width / 2;
-  size_t output_height = height / 2;
+  size_t output_width = inputColor.Width() / 2;
+  size_t output_height = inputColor.Height() / 2;
 
   for (int i = 0; i < output_height; i++) {
     for (int j = 0; j < output_width; j++) {
@@ -382,9 +379,6 @@ bool upscale(aliceVision::image::Image<T> & outputColor, const aliceVision::imag
 
   size_t width = inputColor.Width();
   size_t height = inputColor.Height();
-
-  size_t output_width = width * 2;
-  size_t output_height = height * 2;
 
   for (int i = 0; i < height; i++) {
 

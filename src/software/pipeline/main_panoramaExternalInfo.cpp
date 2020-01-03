@@ -100,7 +100,7 @@ int main(int argc, char * argv[]) {
   pt::ptree shoot = tree.get_child("papywizard.shoot");
 
   std::string lensType = lens.get<std::string>("<xmlattr>.type");
-  double lensFocal = lens.get<double>("focal");
+  // double lensFocal = lens.get<double>("focal");
 
   /*Make sure we control everything for debug purpose*/
   if (lensType != "rectilinear") {

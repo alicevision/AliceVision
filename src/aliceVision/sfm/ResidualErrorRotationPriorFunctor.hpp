@@ -18,11 +18,10 @@ namespace sfm {
  */
 struct ResidualErrorRotationPriorFunctor
 {
-  ResidualErrorRotationPriorFunctor(const Eigen::Matrix3d & two_R_one) 
+  explicit ResidualErrorRotationPriorFunctor(const Eigen::Matrix3d & two_R_one) 
   : m_two_R_one(two_R_one)
   {
   }
-
 
   /**
    * @param[in] cam_Rt: Camera parameterized using one block of 6 parameters [R;t]:

@@ -33,10 +33,6 @@ using namespace aliceVision;
 namespace po = boost::program_options;
 namespace bpt = boost::property_tree;
 
-float sigmoid(float x, float sigwidth, float sigMid)
-{
-  return 1.0f / (1.0f + expf(10.0f * ((x - sigMid) / sigwidth)));
-}
 
 Eigen::VectorXf gaussian_kernel_vector(size_t kernel_length, float sigma) {
   
@@ -1014,9 +1010,6 @@ public:
         double dyy = coord_mp(1) - coord_mm(1);
         double det = std::abs(dxx*dyy - dxy*dyx);
         double scale = sqrt(det);
-        
-
-        
 
         double flevel = std::max(0.0, log2(scale));
         size_t blevel = std::min(max_level, size_t(floor(flevel)));        

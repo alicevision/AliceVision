@@ -353,7 +353,6 @@ bool ReconstructionEngine_panorama::Compute_Global_Rotations(const rotationAvera
   If a view with a pose prior is not found in the relative rotation,
   make sure we add a fake link to adjust globally everything.
   */
-  size_t count = 0;
   sfmData::Poses & poses = _sfmData.getPoses();
   if (poses.size() > 0) {
 
@@ -376,8 +375,6 @@ bool ReconstructionEngine_panorama::Compute_Global_Rotations(const rotationAvera
       }
     }
   }
-
-  
 
   // Global Rotation solver:
   const ERelativeRotationInferenceMethod eRelativeRotationInferenceMethod = TRIPLET_ROTATION_INFERENCE_NONE; // TRIPLET_ROTATION_INFERENCE_COMPOSITION_ERROR;
@@ -681,7 +678,8 @@ void ReconstructionEngine_panorama::Compute_Relative_Rotations(rotationAveraging
     }
   } // for all relative pose
 
-  /*Find best connection with pose prior*/
+  /*
+  // Find best connection with pose prior
   size_t max_val = 0;
   IndexT max_index = UndefinedIndexT;
   for (auto & item : connection_size) {
@@ -693,15 +691,16 @@ void ReconstructionEngine_panorama::Compute_Relative_Rotations(rotationAveraging
     }
   }
 
-  /*If a best view is defined, lock it*/
-  /*sfmData::Poses & poses = _sfmData.getPoses();
+  // If a best view is defined, lock it
+  sfmData::Poses & poses = _sfmData.getPoses();
   if (max_index != UndefinedIndexT) {
     sfmData::View & v = _sfmData.getView(max_index);
     IndexT poseid = v.getPoseId();
     if (poseid != UndefinedIndexT) {
       poses[v.getPoseId()].lock();
     }
-  }*/
+  }
+  */
 
   /*Debug result*/
   ALICEVISION_LOG_DEBUG("Compute_Relative_Rotations: vec_relatives_R.size(): " << vec_relatives_R.size());
