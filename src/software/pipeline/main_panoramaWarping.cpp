@@ -658,8 +658,7 @@ private:
     bbox_bottom = 0;
 
     for (int i = 0; i < 8; i++) {
-      int i2 = i + 1;
-      if (i2 > 7) i2 = 0;
+      int i2 = (i + 1) % 8;
       
       Vec3 extremaY = getExtremaY(rotated_pts[i], rotated_pts[i2]);
 
@@ -702,16 +701,13 @@ private:
 
 
     /*Check if we cross the horizontal loop*/
-    bool crossH;
+    bool crossH = false;
     for (int i = 0; i < 8; i++) {
-      int i2 = i + 1;
-      if (i2 > 7) i2 = 0;
-      
-      bool cross = crossHorizontalLoop(rotated_pts[i], rotated_pts[i2]);
-      if (i == 0) crossH = cross;
-      else crossH |= cross;
-    }
+      int i2 = (i + 1) % 8;
 
+      bool cross = crossHorizontalLoop(rotated_pts[i], rotated_pts[i2]);
+      crossH |= cross;
+    }
 
     if (pole) {
       /*Easy : if we cross the pole, the width is full*/
@@ -723,7 +719,7 @@ private:
 
       int first_cross = 0;
       for (int i = 0; i < 8; i++) {
-        int i2 = i + 1;
+        int i2 = (i + 1) % 8;
         bool cross = crossHorizontalLoop(rotated_pts[i], rotated_pts[i2]);
         if (cross) {
           first_cross = i;
@@ -736,11 +732,8 @@ private:
       bool is_right = true;
       for (int index = 0; index < 8; index++) {
 
-        int i = index + first_cross;
-        int i2 = i + 1;
-
-        if (i > 7) i = i - 8;
-        if (i2 > 7) i2 = i2 - 8;
+        int i = (index + first_cross) % 8;
+        int i2 = (i + 1) % 8;
 
         Vec2 res_1 = SphericalMapping::toEquirectangular(rotated_pts[i], panoramaSize.first, panoramaSize.second);
         Vec2 res_2 = SphericalMapping::toEquirectangular(rotated_pts[i2], panoramaSize.first, panoramaSize.second);
@@ -771,7 +764,6 @@ private:
         }
       }
 
-  
       bbox_width = bbox_right + (panoramaSize.first - bbox_left);
     }
     else {
