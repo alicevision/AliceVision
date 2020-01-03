@@ -261,7 +261,7 @@ namespace aliceVision
       * @brief Copy constructor
       * @param val Source RGBA value
       */
-      inline Rgba( const RGBColor & val, const T alpha = 1 )
+      inline Rgba( const RGBColor & val, const T alpha )
         : Base( val.r(), val.g(), val.b(), alpha )
       {
       }
