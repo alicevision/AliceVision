@@ -1365,7 +1365,6 @@ DJI;DJI FC350;6.17;usercontribution
 DJI;DJI FC550;17.3;usercontribution
 DJI;DJI FC550RAW;17.3;usercontribution
 DJI;DJI FC6310;13.2;usercontribution
-DJI;DJI FC6310;13.2;usercontribution
 DJI;DJI FC6310R;13.2;usercontribution
 DJI;DJI FC6310S;13.2;usercontribution
 DJI;DJI FC6510;13.2;usercontribution
@@ -3235,7 +3234,6 @@ NIKON;E990;7.176;usercontribution
 NIKON;E995;7.176;usercontribution
 Nikon;Nikon 1 AW1;13.2;dpreview,digicamdb,dxomark
 Nikon;Nikon 1 J1;13.2;dpreview,digicamdb,dxomark
-Nikon;Nikon 1 J1;13.2;usercontribution
 Nikon;Nikon 1 J2;13.2;dpreview,digicamdb,dxomark
 Nikon;Nikon 1 J3;13.2;dpreview,digicamdb,dxomark
 Nikon;Nikon 1 J4;13.2;dpreview,digicamdb,dxomark
@@ -3847,7 +3845,6 @@ Olympus;Olympus FE-5035;6.08;digicamdb
 Olympus;Olympus FE-5040;6.17;dpreview,digicamdb,imaging-resource
 Olympus;Olympus FE-5050;6.16;digicamdb,imaging-resource
 Olympus;Olympus FE-5500;5.744;dpreview
-Olympus;Olympus FE4040;6.08;usercontribution
 Olympus;Olympus IR 500;5.33;digicamdb
 Olympus;Olympus IR-300;5.744;dpreview,digicamdb
 Olympus;Olympus m:robe MR 500i;3.2;digicamdb
@@ -4452,7 +4449,6 @@ Panasonic;Panasonic Lumix DMC-FZ38;6.08;dpreview,digicamdb
 Panasonic;Panasonic Lumix DMC-FZ4;5.744;dpreview,digicamdb
 Panasonic;Panasonic Lumix DMC-FZ40;6.08;dpreview,digicamdb,imaging-resource
 Panasonic;Panasonic Lumix DMC-FZ45;6.08;dpreview,digicamdb
-Panasonic;Panasonic Lumix DMC-FZ45;6.08;usercontribution
 Panasonic;Panasonic Lumix DMC-FZ47;6.08;dpreview,digicamdb,imaging-resource
 Panasonic;Panasonic Lumix DMC-FZ48;6.08;dpreview,digicamdb
 Panasonic;Panasonic Lumix DMC-FZ5;5.744;dpreview,digicamdb
@@ -4524,7 +4520,6 @@ Panasonic;Panasonic Lumix DMC-LX100;17.3;dpreview,digicamdb,imaging-resource,dxo
 Panasonic;Panasonic Lumix DMC-LX15;13.2;dpreview,digicamdb
 Panasonic;Panasonic Lumix DMC-LX2;7.76;digicamdb,imaging-resource
 Panasonic;Panasonic Lumix DMC-LX3;7.85;digicamdb
-Panasonic;Panasonic Lumix DMC-LX3;7.85;usercontribution
 Panasonic;Panasonic Lumix DMC-LX5;7.85;digicamdb
 Panasonic;Panasonic Lumix DMC-LX7;7.44;dpreview,digicamdb,imaging-resource
 Panasonic;Panasonic Lumix DMC-LX9;13.2;digicamdb
