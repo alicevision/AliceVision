@@ -168,7 +168,7 @@ Allview;Allview X4 Soul Lite;4.71;devicespecifications
 Allview;Allview X4 Soul mini;4.69;devicespecifications
 Allview;Allview X4 Soul Style;4.71;devicespecifications
 Allview;Allview X4 Xtreme;4.71;devicespecifications
-Apple;iPad 3;4.54;
+Apple;iPad 3;4.54;usercontribution
 Apple;iPad mini 4;3.6;devicespecifications
 Apple;iPhone 3G;3.56;vfxcamdb
 Apple;iPhone 3GS;3.6;vfxcamdb
@@ -202,12 +202,12 @@ Archos;Archos Diamond Plus;5.95;devicespecifications
 Archos;Archos Sense 50DC;4.69;devicespecifications
 Archos;Archos Sense 55DC;4.69;devicespecifications
 Archos;Archos Sense 55s;3.67;devicespecifications
-ARRI;ARRI Alexa Mini;28.25;
-ARRI;ARRI Alexa Plus 4:3 SXT;28.25;
-ARRI;ARRI Alexa Plus 4:3 XT;23.76;
-ARRI;ARRI Alexa SXT;28.25;
-ARRI;ARRI Alexa SXT Plus;28.25;
-ARRI;ARRI Alexa XT;23.76;
+ARRI;ARRI Alexa Mini;28.25;usercontribution
+ARRI;ARRI Alexa Plus 4:3 SXT;28.25;usercontribution
+ARRI;ARRI Alexa Plus 4:3 XT;23.76;usercontribution
+ARRI;ARRI Alexa SXT;28.25;usercontribution
+ARRI;ARRI Alexa SXT Plus;28.25;usercontribution
+ARRI;ARRI Alexa XT;23.76;usercontribution
 Asus;Asus 2016;4.69;devicespecifications
 Asus;Asus Google Nexus 7;2.46;devicespecifications
 Asus;Asus Google Nexus 7 2013;3.67;devicespecifications
@@ -248,7 +248,7 @@ Asus;Asus ZenPad S 8.0 Z580CA 16GB;3.6;devicespecifications
 Axgio;Axgio N3;4.69;devicespecifications
 BenQ;BenQ AC100;6.16;digicamdb
 BenQ;BenQ AE100;6.16;digicamdb
-BenQ;BenQ C1420;6.08;
+BenQ;BenQ C1420;6.08;usercontribution
 BenQ;BenQ DC 2300;4.5;digicamdb
 BenQ;BenQ DC 2410;5.33;digicamdb
 BenQ;BenQ DC 3400;4.5;digicamdb
@@ -319,13 +319,13 @@ BenQ;BenQ DC E43;5.75;digicamdb
 BenQ;BenQ DC E510;5.75;digicamdb
 BenQ;BenQ DC E520;5.75;digicamdb
 BenQ;BenQ DC E520 plus;5.75;digicamdb
-BenQ;BenQ DC E520+;5.75;
+BenQ;BenQ DC E520+;5.75;usercontribution
 BenQ;BenQ DC E53;5.75;digicamdb
 BenQ;BenQ DC E600;5.75;digicamdb
 BenQ;BenQ DC E605;5.75;digicamdb
 BenQ;BenQ DC E610;5.75;digicamdb
 BenQ;BenQ DC E63 Plus;5.75;digicamdb
-BenQ;BenQ DC E63+;5.75;
+BenQ;BenQ DC E63+;5.75;usercontribution
 BenQ;BenQ DC E720;5.75;digicamdb
 BenQ;BenQ DC E800;5.75;digicamdb
 BenQ;BenQ DC E820;5.75;digicamdb
@@ -351,15 +351,15 @@ BenQ;BenQ DC X725;5.75;digicamdb
 BenQ;BenQ DC X735;5.75;digicamdb
 BenQ;BenQ DC X800;5.75;digicamdb
 BenQ;BenQ DC X835;5.75;digicamdb
-BenQ;BenQ E1480;6.16;
+BenQ;BenQ E1480;6.16;usercontribution
 BenQ;BenQ G1;6.16;digicamdb
 BenQ;BenQ GH200;6.16;digicamdb
 BenQ;BenQ GH600;6.16;digicamdb
 BenQ;BenQ GH700;6.16;digicamdb
 BenQ;BenQ LM100;6.16;digicamdb
-BenQ;BenQ S1410;6.08;
-BenQ;BenQ S1420;6.16;
-BenQ;BenQ T1460;6.16;
+BenQ;BenQ S1410;6.08;usercontribution
+BenQ;BenQ S1420;6.16;usercontribution
+BenQ;BenQ T1460;6.16;usercontribution
 Black fox;Black fox B3 Fox;3.67;devicespecifications
 Black fox;Black fox B3 Fox+;3.67;devicespecifications
 Black fox;Black fox B5Fox+;3.67;devicespecifications
@@ -372,7 +372,7 @@ Blackberry;Blackberry Motion;6.25;devicespecifications
 Blackberry;Blackberry Priv;0.28;devicespecifications
 Blackberry;Blackberry Q10;4.8;devicespecifications
 Blackberry;Blackberry Q5;4.8;devicespecifications
-Blackmagic;Blackmagic Studio Camera HD;12.48;
+Blackmagic;Blackmagic Studio Camera HD;12.48;usercontribution
 Blackview;Blackview A10;2.8;devicespecifications
 Blackview;Blackview A20 Pro;3.67;devicespecifications
 Blackview;Blackview A30;3.67;devicespecifications
@@ -477,7 +477,8 @@ Bq mobile;Bq mobile BQ-5504 Strike Selfie Max;4.69;devicespecifications
 Bq mobile;Bq mobile BQ-5508L Next LTE;3.67;devicespecifications
 Bq mobile;Bq mobile BQ-6001L Jumbo;4.69;devicespecifications
 Bravis;Bravis S500 Diamond;3.67;devicespecifications
-Canon;Canon 550D;22.3;
+Canon;Canon 550D;22.3;usercontribution
+Canon;Canon Canon IXUS 185;5.33;usercontribution
 Canon;Canon Digital IXUS;5.33;digicamdb
 Canon;Canon Digital IXUS 100 IS;6.17;dpreview,digicamdb
 Canon;Canon Digital IXUS 110 IS;6.16;digicamdb
@@ -525,11 +526,11 @@ Canon;Canon Digital IXUS Wireless;5.744;dpreview
 Canon;Canon ELPH 100 HS;6.17;dpreview
 Canon;Canon ELPH 115 IS;6.17;dpreview
 Canon;Canon ELPH 130;6.17;dpreview
-Canon;Canon ELPH 135;6.16;
-Canon;Canon ELPH 140 IS;6.16;
-Canon;Canon ELPH 150 IS;6.16;
-Canon;Canon ELPH 160;6.16;
-Canon;Canon ELPH 170 IS;6.16;
+Canon;Canon ELPH 135;6.16;usercontribution
+Canon;Canon ELPH 140 IS;6.16;usercontribution
+Canon;Canon ELPH 150 IS;6.16;usercontribution
+Canon;Canon ELPH 160;6.16;usercontribution
+Canon;Canon ELPH 170 IS;6.16;usercontribution
 Canon;Canon ELPH 300 HS;6.17;dpreview
 Canon;Canon ELPH 310 HS;6.17;dpreview
 Canon;Canon ELPH 500 HS;6.17;dpreview
@@ -673,7 +674,7 @@ Canon;Canon IXUS 175;6.16;digicamdb
 Canon;Canon IXUS 180;6.16;digicamdb
 Canon;Canon IXUS 210;6.16;digicamdb
 Canon;Canon IXUS 220 HS;6.17;dpreview,digicamdb
-Canon;Canon IXUS 220HS;6.16;
+Canon;Canon IXUS 220HS;6.16;usercontribution
 Canon;Canon IXUS 230 HS;6.17;dpreview,digicamdb
 Canon;Canon IXUS 240 HS;6.16;digicamdb
 Canon;Canon IXUS 255 HS;6.17;dpreview,digicamdb
@@ -760,35 +761,35 @@ Canon;Canon IXY DIGITAL WIRELESS;5.75;digicamdb
 Canon;Canon PowerShot 350;4.8;dpreview,digicamdb
 Canon;Canon PowerShot 600;4.8;dpreview,digicamdb
 Canon;Canon PowerShot A10;5.312;dpreview,digicamdb
-Canon;Canon Powershot A100;4.544;
+Canon;Canon Powershot A100;4.544;usercontribution
 Canon;Canon PowerShot A1000 IS;6.17;dpreview,digicamdb,imaging-resource
-Canon;Canon Powershot A1100 IS;6.16;
-Canon;Canon Powershot A1200;6.16;
+Canon;Canon Powershot A1100 IS;6.16;usercontribution
+Canon;Canon Powershot A1200;6.16;usercontribution
 Canon;Canon PowerShot A1300;6.17;dpreview,digicamdb,imaging-resource
 Canon;Canon PowerShot A1400;6.17;dpreview,digicamdb,imaging-resource
 Canon;Canon PowerShot A20;5.312;dpreview,digicamdb
-Canon;Canon Powershot A200;4.544;
+Canon;Canon Powershot A200;4.544;usercontribution
 Canon;Canon PowerShot A2000 IS;6.17;dpreview,digicamdb,imaging-resource
-Canon;Canon Powershot A2100 IS;6.16;
-Canon;Canon Powershot A2200;6.16;
+Canon;Canon Powershot A2100 IS;6.16;usercontribution
+Canon;Canon Powershot A2200;6.16;usercontribution
 Canon;Canon PowerShot A2300;6.17;dpreview,digicamdb,imaging-resource
 Canon;Canon PowerShot A2400 IS;6.17;dpreview,digicamdb,imaging-resource
 Canon;Canon PowerShot A2500;6.17;dpreview,digicamdb,imaging-resource
 Canon;Canon PowerShot A2600;6.16;digicamdb,imaging-resource
 Canon;Canon PowerShot A30;5.312;dpreview,digicamdb
 Canon;Canon PowerShot A300;5.312;dpreview,digicamdb
-Canon;Canon Powershot A3000 IS;6.16;
+Canon;Canon Powershot A3000 IS;6.16;usercontribution
 Canon;Canon PowerShot A310;5.312;dpreview,digicamdb
-Canon;Canon Powershot A3100 IS;6.16;
-Canon;Canon Powershot A3200 IS;6.16;
-Canon;Canon Powershot A3300 IS;6.16;
+Canon;Canon Powershot A3100 IS;6.16;usercontribution
+Canon;Canon Powershot A3200 IS;6.16;usercontribution
+Canon;Canon Powershot A3300 IS;6.16;usercontribution
 Canon;Canon PowerShot A3400 IS;6.17;dpreview,digicamdb,imaging-resource
 Canon;Canon PowerShot A3500 IS;6.17;dpreview,digicamdb
 Canon;Canon PowerShot A40;5.312;dpreview,digicamdb
 Canon;Canon PowerShot A400;4.544;dpreview,digicamdb
 Canon;Canon PowerShot A4000 IS;6.17;dpreview,digicamdb,imaging-resource
-Canon;Canon Powershot A410;4.544;
-Canon;Canon Powershot A420;4.8;
+Canon;Canon Powershot A410;4.544;usercontribution
+Canon;Canon Powershot A420;4.8;usercontribution
 Canon;Canon PowerShot A430;4.8;dpreview,digicamdb,imaging-resource
 Canon;Canon PowerShot A450;4.8;dpreview,digicamdb
 Canon;Canon PowerShot A460;4.8;dpreview,digicamdb,imaging-resource
@@ -799,7 +800,7 @@ Canon;Canon PowerShot A495;6.17;dpreview,digicamdb,imaging-resource
 Canon;Canon PowerShot A5;4.8;dpreview,digicamdb
 Canon;Canon PowerShot A5 Zoom;4.8;dpreview,digicamdb
 Canon;Canon PowerShot A50;4.8;dpreview,digicamdb
-Canon;Canon Powershot A510;5.33;
+Canon;Canon Powershot A510;5.33;usercontribution
 Canon;Canon PowerShot A520;5.744;dpreview,digicamdb
 Canon;Canon PowerShot A530;5.744;dpreview,digicamdb,imaging-resource
 Canon;Canon PowerShot A540;5.744;dpreview,digicamdb,imaging-resource
@@ -809,7 +810,7 @@ Canon;Canon PowerShot A570 IS;5.744;dpreview,digicamdb,imaging-resource
 Canon;Canon PowerShot A580;5.744;dpreview,digicamdb,imaging-resource
 Canon;Canon PowerShot A590 IS;5.744;dpreview,digicamdb,imaging-resource
 Canon;Canon PowerShot A60;5.312;dpreview,digicamdb
-Canon;Canon Powershot A610;7.144;
+Canon;Canon Powershot A610;7.144;usercontribution
 Canon;Canon PowerShot A620;7.144;dpreview,digicamdb
 Canon;Canon PowerShot A630;7.144;dpreview,digicamdb
 Canon;Canon PowerShot A640;7.144;dpreview,digicamdb
@@ -819,7 +820,7 @@ Canon;Canon PowerShot A700;5.744;dpreview,digicamdb,imaging-resource
 Canon;Canon PowerShot A710 IS;5.744;dpreview,digicamdb,imaging-resource
 Canon;Canon PowerShot A720 IS;5.744;dpreview,digicamdb,imaging-resource
 Canon;Canon PowerShot A75;5.312;dpreview,digicamdb
-Canon;Canon Powershot A80;7.144;
+Canon;Canon Powershot A80;7.144;usercontribution
 Canon;Canon PowerShot A800;6.17;dpreview,digicamdb,imaging-resource
 Canon;Canon PowerShot A810;6.17;dpreview,digicamdb,imaging-resource
 Canon;Canon PowerShot A85;5.312;dpreview,digicamdb
@@ -852,7 +853,7 @@ Canon;Canon PowerShot ELPH 500 HS;6.16;digicamdb,imaging-resource
 Canon;Canon PowerShot ELPH 510 HS;6.16;digicamdb,imaging-resource
 Canon;Canon PowerShot ELPH 520 HS;6.16;digicamdb,imaging-resource
 Canon;Canon PowerShot Elph 530 HS;6.16;digicamdb
-Canon;Canon Powershot G1;7.144;
+Canon;Canon Powershot G1;7.144;usercontribution
 Canon;Canon PowerShot G1 X;18.7;dpreview,digicamdb,imaging-resource
 Canon;Canon PowerShot G1 X Mark II;18.7;dpreview,digicamdb,imaging-resource
 Canon;Canon PowerShot G1 X Mark III;22.3;dpreview,digicamdb,imaging-resource,dxomark
@@ -862,10 +863,10 @@ Canon;Canon PowerShot G12;7.44;dpreview,digicamdb,imaging-resource,dxomark
 Canon;Canon Powershot G15;7.44;dxomark
 Canon;Canon PowerShot G16;7.44;dpreview,digicamdb,imaging-resource,dxomark
 Canon;Canon PowerShot G1X;18.7;dxomark
-Canon;Canon Powershot G2;7.144;
-Canon;Canon Powershot G3;7.144;
+Canon;Canon Powershot G2;7.144;usercontribution
+Canon;Canon Powershot G3;7.144;usercontribution
 Canon;Canon PowerShot G3 X;13.2;dpreview,digicamdb,imaging-resource,dxomark
-Canon;Canon Powershot G5;7.144;
+Canon;Canon Powershot G5;7.144;usercontribution
 Canon;Canon PowerShot G5 X;13.2;dpreview,digicamdb,imaging-resource,dxomark
 Canon;Canon PowerShot G6;7.144;dpreview,digicamdb
 Canon;Canon PowerShot G7;7.144;dpreview,digicamdb
@@ -882,36 +883,36 @@ Canon;Canon PowerShot Pro1;8.8;dpreview,digicamdb
 Canon;Canon PowerShot Pro70;6.4;dpreview,digicamdb
 Canon;Canon PowerShot Pro90 IS;7.144;dpreview,digicamdb
 Canon;Canon PowerShot S1 IS;5.312;dpreview,digicamdb
-Canon;Canon Powershot S10;6.4;
+Canon;Canon Powershot S10;6.4;usercontribution
 Canon;Canon PowerShot S100;7.44;dpreview,digicamdb,imaging-resource,dxomark
 Canon;Canon PowerShot S100 DIGITAL ELPH;5.33;digicamdb
-Canon;Canon PowerShot S100 Digital IXUS;5.33;
+Canon;Canon PowerShot S100 Digital IXUS;5.33;usercontribution
 Canon;Canon Powershot S110;7.44;dxomark
 Canon;Canon PowerShot S110 DIGITAL ELPH;5.33;digicamdb
 Canon;Canon PowerShot S120;7.44;dpreview,digicamdb,imaging-resource,dxomark
 Canon;Canon PowerShot S2 IS;5.744;dpreview,digicamdb
-Canon;Canon Powershot S20;7.144;
+Canon;Canon Powershot S20;7.144;usercontribution
 Canon;Canon PowerShot S200;7.44;dpreview
 Canon;Canon PowerShot S200 DIGITAL ELPH;5.33;digicamdb
 Canon;Canon PowerShot S230;5.312;dpreview
 Canon;Canon PowerShot S230 DIGITAL ELPH;5.33;digicamdb
 Canon;Canon PowerShot S3 IS;5.744;dpreview,digicamdb,imaging-resource
-Canon;Canon Powershot S30;7.144;
+Canon;Canon Powershot S30;7.144;usercontribution
 Canon;Canon PowerShot S300;5.312;dpreview
 Canon;Canon PowerShot S300 DIGITAL ELPH;5.33;digicamdb
 Canon;Canon PowerShot S330;5.312;dpreview
 Canon;Canon PowerShot S330 DIGITAL ELPH;5.33;digicamdb
-Canon;Canon Powershot S40;7.144;
+Canon;Canon Powershot S40;7.144;usercontribution
 Canon;Canon PowerShot S400;7.144;dpreview
 Canon;Canon PowerShot S400 DIGITAL ELPH;7.11;digicamdb
 Canon;Canon PowerShot S410;7.144;dpreview,digicamdb
-Canon;Canon Powershot S45;7.144;
+Canon;Canon Powershot S45;7.144;usercontribution
 Canon;Canon PowerShot S5 IS;5.744;dpreview,digicamdb,imaging-resource
-Canon;Canon Powershot S50;7.144;
+Canon;Canon Powershot S50;7.144;usercontribution
 Canon;Canon PowerShot S500;7.144;dpreview,digicamdb
 Canon;Canon PowerShot S60;7.144;dpreview,digicamdb
 Canon;Canon PowerShot S70;7.144;dpreview,digicamdb
-Canon;Canon Powershot S80;7.144;
+Canon;Canon Powershot S80;7.144;usercontribution
 Canon;Canon PowerShot S90;7.44;dpreview,digicamdb,imaging-resource,dxomark
 Canon;Canon PowerShot S95;7.44;dpreview,digicamdb,imaging-resource,dxomark
 Canon;Canon PowerShot SD10;5.744;dpreview,digicamdb
@@ -995,25 +996,25 @@ Canon;Canon PowerShot SX720 HS;6.17;dpreview,digicamdb,imaging-resource
 Canon;Canon PowerShot SX730 HS;6.17;dpreview,digicamdb,imaging-resource
 Canon;Canon PowerShot SX740 HS;6.17;dpreview,digicamdb,imaging-resource
 Canon;Canon PowerShot TX1;5.744;dpreview,digicamdb,imaging-resource
-Canon;Canon Pro90 IS;7.11;
+Canon;Canon Pro90 IS;7.11;usercontribution
 Canon;Canon Rebel XS, Canon 1000D;22.2;imaging-resource
 Canon;Canon Rebel XSi, Canon 450D;22.2;imaging-resource
-Canon;Canon S200;7.53;
+Canon;Canon S200;7.53;usercontribution
 Canon;Canon SX220 HS;6.17;dpreview
 Canon;Canon XC10;12.8;dpreview
 Canon;Canon XC10 4K Digital Camcorder;12.8;imaging-resource
-Casio;Casio EX-FR10;6.16;
-Casio;Casio EX-N1;6.16;
-Casio;Casio EX-N10;6.16;
-Casio;Casio EX-N20;6.16;
-Casio;Casio EX-N5;6.16;
-Casio;Casio EX-N50;6.16;
-Casio;Casio EX-TR10;6.16;
-Casio;Casio EX-TR15;6.16;
-Casio;Casio EX-ZR400;6.16;
-Casio;Casio EX-ZR700;6.16;
-Casio;Casio EX-ZR800;6.16;
-Casio;Casio EX-ZS30;6.16;
+Casio;Casio EX-FR10;6.16;usercontribution
+Casio;Casio EX-N1;6.16;usercontribution
+Casio;Casio EX-N10;6.16;usercontribution
+Casio;Casio EX-N20;6.16;usercontribution
+Casio;Casio EX-N5;6.16;usercontribution
+Casio;Casio EX-N50;6.16;usercontribution
+Casio;Casio EX-TR10;6.16;usercontribution
+Casio;Casio EX-TR15;6.16;usercontribution
+Casio;Casio EX-ZR400;6.16;usercontribution
+Casio;Casio EX-ZR700;6.16;usercontribution
+Casio;Casio EX-ZR800;6.16;usercontribution
+Casio;Casio EX-ZS30;6.16;usercontribution
 Casio;Casio EXILIM  EX-FC100;6.2;imaging-resource
 Casio;Casio EXILIM  EX-FS10;6.2;imaging-resource
 Casio;Casio Exilim  EX-JE10;6.16;digicamdb
@@ -1028,26 +1029,26 @@ Casio;Casio EXILIM CARD EX-S880;5.8;imaging-resource
 Casio;Casio Exilim EX-10;7.44;dpreview,digicamdb
 Casio;Casio Exilim EX-100;7.44;dpreview,digicamdb
 Casio;Casio Exilim EX-100F;7.6;dxomark
-Casio;Casio EXILIM EX-FC100;6.16;
+Casio;Casio EXILIM EX-FC100;6.16;usercontribution
 Casio;Casio EXILIM EX-FC150;6.16;imaging-resource
-Casio;Casio EXILIM EX-FC160s;6.16;
+Casio;Casio EXILIM EX-FC160s;6.16;usercontribution
 Casio;Casio EXILIM EX-FH100;6.16;imaging-resource
-Casio;Casio EXILIM EX-FH150;6.16;
+Casio;Casio EXILIM EX-FH150;6.16;usercontribution
 Casio;Casio EXILIM EX-FH20;6.16;imaging-resource
 Casio;Casio EXILIM EX-FH25;6.16;imaging-resource
 Casio;Casio Exilim EX-FR10;6.16;digicamdb
-Casio;Casio EXILIM EX-FS10;6.16;
+Casio;Casio EXILIM EX-FS10;6.16;usercontribution
 Casio;Casio EXILIM EX-G1;6.16;imaging-resource
-Casio;Casio EXILIM EX-H10;6.16;
-Casio;Casio EXILIM EX-H15;6.16;
-Casio;Casio EXILIM EX-H20G;6.16;
+Casio;Casio EXILIM EX-H10;6.16;usercontribution
+Casio;Casio EXILIM EX-H15;6.16;usercontribution
+Casio;Casio EXILIM EX-H20G;6.16;usercontribution
 Casio;Casio EXILIM EX-H30;6.16;imaging-resource
-Casio;Casio EXILIM EX-H5;6.16;
-Casio;Casio EXILIM EX-H50;6.16;
-Casio;Casio EXILIM EX-JE10;6.16;
-Casio;Casio EXILIM EX-M1;5.33;
-Casio;Casio EXILIM EX-M2;7.11;
-Casio;Casio EXILIM EX-M20;5.33;
+Casio;Casio EXILIM EX-H5;6.16;usercontribution
+Casio;Casio EXILIM EX-H50;6.16;usercontribution
+Casio;Casio EXILIM EX-JE10;6.16;usercontribution
+Casio;Casio EXILIM EX-M1;5.33;usercontribution
+Casio;Casio EXILIM EX-M2;7.11;usercontribution
+Casio;Casio EXILIM EX-M20;5.33;usercontribution
 Casio;Casio Exilim EX-N1;6.16;digicamdb
 Casio;Casio Exilim EX-N10;6.16;digicamdb
 Casio;Casio Exilim EX-N20;6.16;digicamdb
@@ -1056,116 +1057,116 @@ Casio;Casio Exilim EX-N50;6.16;digicamdb
 Casio;Casio Exilim EX-P505;5.744;dpreview,digicamdb
 Casio;Casio Exilim EX-P600;7.144;dpreview,digicamdb
 Casio;Casio Exilim EX-P700;7.144;dpreview,digicamdb
-Casio;Casio EXILIM EX-S1;5.33;
-Casio;Casio EXILIM EX-S10;6.16;
+Casio;Casio EXILIM EX-S1;5.33;usercontribution
+Casio;Casio EXILIM EX-S10;6.16;usercontribution
 Casio;Casio Exilim EX-S100;4.544;dpreview,digicamdb
-Casio;Casio EXILIM EX-S12;6.16;
-Casio;Casio EXILIM EX-S2;7.11;
+Casio;Casio EXILIM EX-S12;6.16;usercontribution
+Casio;Casio EXILIM EX-S2;7.11;usercontribution
 Casio;Casio Exilim EX-S20;5.312;dpreview,digicamdb
-Casio;Casio EXILIM EX-S200;6.16;
-Casio;Casio EXILIM EX-S3;7.144;
-Casio;Casio EXILIM EX-S5;6.16;
+Casio;Casio EXILIM EX-S200;6.16;usercontribution
+Casio;Casio EXILIM EX-S3;7.144;usercontribution
+Casio;Casio EXILIM EX-S5;6.16;usercontribution
 Casio;Casio Exilim EX-S500;5.744;dpreview,digicamdb
 Casio;Casio Exilim EX-S600;5.744;dpreview,digicamdb
 Casio;Casio Exilim EX-S600d;5.744;dpreview
 Casio;Casio EXILIM EX-S7;6.16;imaging-resource
 Casio;Casio Exilim EX-S770;5.744;dpreview,digicamdb
-Casio;Casio EXILIM EX-S770D;5.75;
-Casio;Casio EXILIM EX-S8;6.08;
+Casio;Casio EXILIM EX-S770D;5.75;usercontribution
+Casio;Casio EXILIM EX-S8;6.08;usercontribution
 Casio;Casio Exilim EX-S880;5.744;dpreview,digicamdb
 Casio;Casio Exilim EX-TR10;6.16;digicamdb
-Casio;Casio EXILIM EX-TR100;6.16;
+Casio;Casio EXILIM EX-TR100;6.16;usercontribution
 Casio;Casio Exilim EX-TR15;6.16;digicamdb
-Casio;Casio EXILIM EX-TR150;6.16;
+Casio;Casio EXILIM EX-TR150;6.16;usercontribution
 Casio;Casio Exilim EX-TR50;7.44;dpreview
 Casio;Casio Exilim EX-V7;5.744;dpreview,digicamdb
 Casio;Casio Exilim EX-V8;5.744;dpreview,digicamdb
-Casio;Casio EXILIM EX-Z1;6.16;
+Casio;Casio EXILIM EX-Z1;6.16;usercontribution
 Casio;Casio Exilim EX-Z10;5.744;dpreview,digicamdb
-Casio;Casio EXILIM EX-Z100;6.16;
-Casio;Casio EXILIM EX-Z1000;7.144;
-Casio;Casio EXILIM EX-Z1050;7.31;
-Casio;Casio EXILIM EX-Z1080;7.31;
+Casio;Casio EXILIM EX-Z100;6.16;usercontribution
+Casio;Casio EXILIM EX-Z1000;7.144;usercontribution
+Casio;Casio EXILIM EX-Z1050;7.31;usercontribution
+Casio;Casio EXILIM EX-Z1080;7.31;usercontribution
 Casio;Casio Exilim EX-Z110;5.744;dpreview,digicamdb
-Casio;Casio EXILIM EX-Z120;7.144;
+Casio;Casio EXILIM EX-Z120;7.144;usercontribution
 Casio;Casio Exilim EX-Z1200 SR;7.44;dpreview,digicamdb
-Casio;Casio EXILIM EX-Z150;5.75;
+Casio;Casio EXILIM EX-Z150;5.75;usercontribution
 Casio;Casio EXILIM EX-Z16;6.16;imaging-resource
-Casio;Casio EXILIM EX-Z19;5.75;
-Casio;Casio EXILIM EX-Z2;6.16;
-Casio;Casio EXILIM EX-Z20;5.75;
-Casio;Casio EXILIM EX-Z200;6.16;
-Casio;Casio EXILIM EX-Z2000;6.16;
-Casio;Casio EXILIM EX-Z2300;6.16;
-Casio;Casio EXILIM EX-Z25;6.16;
-Casio;Casio EXILIM EX-Z250;5.75;
+Casio;Casio EXILIM EX-Z19;5.75;usercontribution
+Casio;Casio EXILIM EX-Z2;6.16;usercontribution
+Casio;Casio EXILIM EX-Z20;5.75;usercontribution
+Casio;Casio EXILIM EX-Z200;6.16;usercontribution
+Casio;Casio EXILIM EX-Z2000;6.16;usercontribution
+Casio;Casio EXILIM EX-Z2300;6.16;usercontribution
+Casio;Casio EXILIM EX-Z25;6.16;usercontribution
+Casio;Casio EXILIM EX-Z250;5.75;usercontribution
 Casio;Casio Exilim EX-Z270;5.744;dpreview,digicamdb
-Casio;Casio EXILIM EX-Z280;5.75;
+Casio;Casio EXILIM EX-Z280;5.75;usercontribution
 Casio;Casio Exilim EX-Z29;5.744;dpreview,digicamdb
 Casio;Casio Exilim EX-Z3;5.744;dpreview,digicamdb
 Casio;Casio Exilim EX-Z30;5.744;dpreview,digicamdb
-Casio;Casio EXILIM EX-Z300;6.16;
-Casio;Casio EXILIM EX-Z3000;6.16;
-Casio;Casio EXILIM EX-Z33;6.16;
-Casio;Casio EXILIM EX-Z330;6.16;
-Casio;Casio EXILIM EX-Z35;6.16;
-Casio;Casio EXILIM EX-Z350;6.16;
+Casio;Casio EXILIM EX-Z300;6.16;usercontribution
+Casio;Casio EXILIM EX-Z3000;6.16;usercontribution
+Casio;Casio EXILIM EX-Z33;6.16;usercontribution
+Casio;Casio EXILIM EX-Z330;6.16;usercontribution
+Casio;Casio EXILIM EX-Z35;6.16;usercontribution
+Casio;Casio EXILIM EX-Z350;6.16;usercontribution
 Casio;Casio Exilim EX-Z4;5.744;dpreview,digicamdb
 Casio;Casio Exilim EX-Z40;5.744;dpreview,digicamdb
-Casio;Casio EXILIM EX-Z400;6.16;
-Casio;Casio EXILIM EX-Z450;6.16;
+Casio;Casio EXILIM EX-Z400;6.16;usercontribution
+Casio;Casio EXILIM EX-Z450;6.16;usercontribution
 Casio;Casio Exilim EX-Z5;5.744;dpreview,digicamdb
 Casio;Casio Exilim EX-Z50;5.744;dpreview,digicamdb
 Casio;Casio Exilim EX-Z500;5.744;dpreview,digicamdb
 Casio;Casio Exilim EX-Z55;5.744;dpreview,digicamdb
-Casio;Casio EXILIM EX-Z550;6.16;
+Casio;Casio EXILIM EX-Z550;6.16;usercontribution
 Casio;Casio Exilim EX-Z57;5.744;dpreview,digicamdb
-Casio;Casio EXILIM EX-Z6;5.75;
-Casio;Casio EXILIM EX-Z60;7.11;
-Casio;Casio EXILIM EX-Z600;5.75;
-Casio;Casio EXILIM EX-Z65;5.75;
-Casio;Casio EXILIM EX-Z7;5.75;
+Casio;Casio EXILIM EX-Z6;5.75;usercontribution
+Casio;Casio EXILIM EX-Z60;7.11;usercontribution
+Casio;Casio EXILIM EX-Z600;5.75;usercontribution
+Casio;Casio EXILIM EX-Z65;5.75;usercontribution
+Casio;Casio EXILIM EX-Z7;5.75;usercontribution
 Casio;Casio Exilim EX-Z70;5.744;dpreview,digicamdb
 Casio;Casio Exilim EX-Z700;5.744;dpreview,digicamdb
 Casio;Casio Exilim EX-Z75;5.744;dpreview,digicamdb
 Casio;Casio Exilim EX-Z750;7.144;dpreview,digicamdb
 Casio;Casio Exilim EX-Z77;5.744;dpreview,digicamdb
-Casio;Casio EXILIM EX-Z8;5.75;
+Casio;Casio EXILIM EX-Z8;5.75;usercontribution
 Casio;Casio Exilim EX-Z80;5.744;dpreview,digicamdb
-Casio;Casio EXILIM EX-Z800;6.16;
+Casio;Casio EXILIM EX-Z800;6.16;usercontribution
 Casio;Casio Exilim EX-Z85;5.744;dpreview,digicamdb
-Casio;Casio EXILIM EX-Z850;7.144;
+Casio;Casio EXILIM EX-Z850;7.144;usercontribution
 Casio;Casio Exilim EX-Z9;5.744;dpreview,digicamdb
-Casio;Casio EXILIM EX-Z90;6.16;
+Casio;Casio EXILIM EX-Z90;6.16;usercontribution
 Casio;Casio EXILIM EX-ZR10;6.16;imaging-resource
 Casio;Casio EXILIM EX-ZR100;6.16;imaging-resource
 Casio;Casio Exilim EX-ZR1000;6.17;dpreview,digicamdb
 Casio;Casio Exilim EX-ZR1100;6.16;digicamdb
 Casio;Casio EXILIM EX-ZR15;6.16;imaging-resource
-Casio;Casio EXILIM EX-ZR20;6.16;
+Casio;Casio EXILIM EX-ZR20;6.16;usercontribution
 Casio;Casio Exilim EX-ZR200;6.16;digicamdb
-Casio;Casio EXILIM EX-ZR300;6.16;
+Casio;Casio EXILIM EX-ZR300;6.16;usercontribution
 Casio;Casio Exilim EX-ZR3000;7.6;dxomark
 Casio;Casio Exilim EX-ZR400;6.17;dpreview,digicamdb
 Casio;Casio Exilim EX-ZR5000;7.44;dpreview
 Casio;Casio Exilim EX-ZR700;6.17;dpreview,digicamdb
 Casio;Casio Exilim EX-ZR800;6.17;dpreview,digicamdb,dxomark
 Casio;Casio Exilim EX-ZS10;6.16;digicamdb
-Casio;Casio EXILIM EX-ZS100;6.16;
-Casio;Casio EXILIM EX-ZS12;6.16;
-Casio;Casio EXILIM EX-ZS15;6.16;
-Casio;Casio EXILIM EX-ZS150;6.16;
-Casio;Casio EXILIM EX-ZS20;6.16;
+Casio;Casio EXILIM EX-ZS100;6.16;usercontribution
+Casio;Casio EXILIM EX-ZS12;6.16;usercontribution
+Casio;Casio EXILIM EX-ZS15;6.16;usercontribution
+Casio;Casio EXILIM EX-ZS150;6.16;usercontribution
+Casio;Casio EXILIM EX-ZS20;6.16;usercontribution
 Casio;Casio Exilim EX-ZS30;6.16;digicamdb
 Casio;Casio Exilim EX-ZS5;6.16;digicamdb
-Casio;Casio EXILIM EX-ZS6;6.16;
+Casio;Casio EXILIM EX-ZS6;6.16;usercontribution
 Casio;Casio EXILIM Hi-Zoom EX-H15;6.2;imaging-resource
 Casio;Casio EXILIM Hi-Zoom EX-H20G;6.2;imaging-resource
 Casio;Casio EXILIM Hi-Zoom EX-V7;5.8;imaging-resource
 Casio;Casio EXILIM Hi-Zoom EX-V8;5.8;imaging-resource
-Casio;Casio EXILIM Pro EX-F1;7.144;
+Casio;Casio EXILIM Pro EX-F1;7.144;usercontribution
 Casio;Casio EXILIM Pro EX-F1 ;7.2;imaging-resource
-Casio;Casio EXILIM QV-R100;6.16;
+Casio;Casio EXILIM QV-R100;6.16;usercontribution
 Casio;Casio Exilim TRYX;6.17;dpreview,digicamdb
 Casio;Casio EXILIM Zoom EX-Z100 ;6.2;imaging-resource
 Casio;Casio EXILIM ZOOM EX-Z1000;7.2;imaging-resource
@@ -1348,19 +1349,37 @@ Dexp;Dexp Ixion X355 Zenith;4.82;devicespecifications
 Dexp;Dexp Ixion XL 5;4.69;devicespecifications
 Dexp;Dexp Ixion XL140 Flash;3.67;devicespecifications
 Dexp;Dexp Ixion XL240 Triforce;3.6;devicespecifications
-DJI;DJI FC220;6.17;
-DJI;DJI FC300S;6.16;
-DJI;DJI FC300X;6.16;
-DJI;DJI FC350;6.17;
+DJI;DJI FC1102;6.17;usercontribution
+DJI;DJI FC2103;6.17;usercontribution
+DJI;DJI FC220;6.17;usercontribution
+DJI;DJI FC220;6.17;usercontribution
+DJI;DJI FC300C;6.17;usercontribution
+DJI;DJI FC300S;6.16;usercontribution
+DJI;DJI FC300S;6.16;usercontribution
+DJI;DJI FC300X;6.16;usercontribution
+DJI;DJI FC300X;6.16;usercontribution
+DJI;DJI FC300XW;6.17;usercontribution
+DJI;DJI FC330;6.17;usercontribution
+DJI;DJI FC350;6.17;usercontribution
+DJI;DJI FC350;6.17;usercontribution
+DJI;DJI FC550;17.3;usercontribution
+DJI;DJI FC550RAW;17.3;usercontribution
 DJI;DJI FC6310;13.2;usercontribution
+DJI;DJI FC6310;13.2;usercontribution
+DJI;DJI FC6310R;13.2;usercontribution
+DJI;DJI FC6310S;13.2;usercontribution
+DJI;DJI FC6510;13.2;usercontribution
+DJI;DJI FC6520;17.3;usercontribution
+DJI;DJI FC6540;23.5;usercontribution
 DJI;DJI Phantom 4;6.3;dxomark
-DJI;DJI PHANTOM VISION FC200;6.17;
+DJI;DJI PHANTOM VISION FC200;6.17;usercontribution
+DJI;DJI PHANTOM VISION FC200;6.17;usercontribution
 DJI;DJI Phantom4 Pro;13.2;dxomark
 DJI;DJI Zenmuse X4S;13.2;dxomark
 DJI;DJI Zenmuse X5S;17.3;dxomark
 DJI;DJI Zenmuse X7;23.5;dxomark
-DJI;X3;6.17;
-DJI;X5R;17.3;
+DJI;X3;6.17;usercontribution
+DJI;X5R;17.3;usercontribution
 Doogee;Doogee BL12000;4.74;devicespecifications
 Doogee;Doogee BL12000 Pro;4.74;devicespecifications
 Doogee;Doogee BL5000;4.69;devicespecifications
@@ -1410,7 +1429,7 @@ Doov;Doov iSuper S5;4.69;devicespecifications
 Doov;Doov L5 Plus;4.69;devicespecifications
 Doov;Doov Nike V1;4.69;devicespecifications
 DxO;DxO ONE;13.2;imaging-resource
-Dxo_labs;DxO One;13.2;
+Dxo_labs;DxO One;13.2;usercontribution
 Dxo_labs;Dxo_labs 2016;13.2;dpreview
 Effire;Effire A7;4.69;devicespecifications
 Elephone;Elephone 2017;5.99;devicespecifications
@@ -1447,7 +1466,7 @@ Elephone;Elephone Vowney;5.99;devicespecifications
 Elephone;Elephone Vowney Lite;5.99;devicespecifications
 Energy sistem;Energy sistem Energy Phone Max 2+;4.69;devicespecifications
 Energy sistem;Energy sistem Energy Phone Pro 3;4.71;devicespecifications
-Epson;Epson L-500V;5.75;
+Epson;Epson L-500V;5.75;usercontribution
 Epson;Epson PhotoPC 3000 Zoom;7.144;dpreview,digicamdb
 Epson;Epson PhotoPC 3100 Zoom;7.144;dpreview,digicamdb
 Epson;Epson PhotoPC 500;4.8;dpreview,digicamdb
@@ -1478,7 +1497,7 @@ Fly;Fly Tornado One;4.69;devicespecifications
 Fujifilm;Fujifilm A150 ;6.2;imaging-resource
 Fujifilm;Fujifilm A170;6.2;imaging-resource
 Fujifilm;Fujifilm A220;6.2;imaging-resource
-Fujifilm;Fujifilm A850;5.75;
+Fujifilm;Fujifilm A850;5.75;usercontribution
 Fujifilm;Fujifilm Bigjob HD-3W;5.75;digicamdb
 Fujifilm;Fujifilm Bigjob HD1;5.33;digicamdb
 Fujifilm;Fujifilm Digital Q1;6.4;digicamdb
@@ -1748,6 +1767,7 @@ Fujifilm;Fujifilm FinePix S3000 Z;5.312;dpreview,digicamdb
 Fujifilm;Fujifilm FinePix S304;5.312;dpreview,digicamdb
 Fujifilm;Fujifilm FinePix S3200;6.16;digicamdb,imaging-resource
 Fujifilm;Fujifilm FinePix S3250;6.17;dpreview,digicamdb
+Fujifilm;Fujifilm FinePix S3280;6.4;usercontribution
 Fujifilm;Fujifilm FinePix S3300;6.16;digicamdb
 Fujifilm;Fujifilm FinePix S3350;6.16;digicamdb
 Fujifilm;Fujifilm FinePix S3400;6.16;digicamdb
@@ -1837,7 +1857,7 @@ Fujifilm;Fujifilm FinePix XP60;6.17;dpreview,digicamdb,imaging-resource
 Fujifilm;Fujifilm FinePix XP70;6.17;dpreview,digicamdb,imaging-resource
 Fujifilm;Fujifilm FinePix XP80;6.16;digicamdb,imaging-resource
 Fujifilm;Fujifilm FinePix XP90;6.16;imaging-resource
-Fujifilm;Fujifilm FinePix XP90 XP91 XP95;6.16;
+Fujifilm;Fujifilm FinePix XP90 XP91 XP95;6.16;usercontribution
 Fujifilm;Fujifilm FinePix Z1;5.744;dpreview,digicamdb
 Fujifilm;Fujifilm FinePix Z1000EXR;6.4;dpreview,digicamdb
 Fujifilm;Fujifilm FinePix Z100fd;5.744;dpreview,digicamdb,imaging-resource
@@ -2008,17 +2028,19 @@ Gome;Gome K1;4.74;devicespecifications
 Gome;Gome U7;4.73;devicespecifications
 Google;Google Pixel;6.25;devicespecifications
 Google;Google Pixel 2;5.5;imaging-resource
-Google;Pixel 2 XL;5.5;devicespecifications
 Google;Google Pixel 3;5.76;techradar
-Google;Pixel 3a;5.76;devicespecifications
-Google;Pixel 3 XL;5.76;techradar
 Google;Google Pixel XL;6.25;devicespecifications
+Google;Pixel 2 XL;5.5;devicespecifications
+Google;Pixel 3 XL;5.76;techradar
+Google;Pixel 3a;5.76;devicespecifications
 GoPro;GoPro Fusion;6.17;dpreview
 GoPro;GoPro Hero 2018;6.17;dpreview
-GoPro;HERO;6.17;
+GoPro;GoPro Hero3-Silver Edition;5.37;usercontribution
+GoPro;GoPro HERO7 Black;6.17;usercontribution
+GoPro;HERO;6.17;usercontribution
 GoPro;HERO3+ Black Edition;6.17;vfxcamdb
 GoPro;HERO4 Black;6.17;vfxcamdb
-GoPro;HERO4 Silver;6.17;
+GoPro;HERO4 Silver;6.17;usercontribution
 GoPro;HERO5 Black;6.17;dpreview,vfxcamdb
 GoPro;HERO6 Black;6.17;vfxcamdb
 Gretel;Gretel A6;2.8;devicespecifications
@@ -2037,6 +2059,7 @@ Hasselblad;Hasselblad H5D 50c;43.8;dxomark
 Hasselblad;Hasselblad H6D-100c;53.4;dxomark
 Hasselblad;Hasselblad H6D-50c;43.8;dxomark
 Hasselblad;Hasselblad HV;35.8;dxomark
+Hasselblad;Hasselblad L1D-20c;13.2;usercontribution
 Hasselblad;Hasselblad Lunar;23.5;dxomark
 Hasselblad;Hasselblad Lusso;35.9;dxomark
 Hasselblad;Hasselblad Stellar;13.2;dxomark
@@ -2073,6 +2096,9 @@ Hisense;Hisense PureShot;4.69;devicespecifications
 Hisense;Hisense PureShot+;4.69;devicespecifications
 Hisense;Hisense T5;2.92;devicespecifications
 Hisense;Hisense T5 Plus;2.92;devicespecifications
+HMD Global;Nokia 3;3.67;devicespecifications
+HMD Global;Nokia 6;4.74;devicespecifications
+HMD Global;Nokia 7 plus;5.75;devicespecifications
 HMD Global;Nokia 8;8.3;usercontribution
 Homtom;Homtom C1;2.92;devicespecifications
 Homtom;Homtom HT16;2.92;devicespecifications
@@ -2194,7 +2220,7 @@ Htc;Htc One mini 2;4.8;devicespecifications
 Htc;Htc One Remix;4.8;devicespecifications
 Htc;Htc One S9;4.69;devicespecifications
 Htc;Htc U Ultra;6.25;devicespecifications
-HUAWEI;H60-L04;4.69;
+HUAWEI;H60-L04;4.69;usercontribution
 Huawei;Huawei Ascend G6;3.67;devicespecifications
 Huawei;Huawei Ascend G6 4G;3.67;devicespecifications
 Huawei;Huawei Ascend G7;4.69;devicespecifications
@@ -2202,7 +2228,7 @@ Huawei;Huawei Ascend Mate7;4.69;devicespecifications
 Huawei;Huawei Ascend Mate7 Monarch;4.69;devicespecifications
 Huawei;Huawei C199;4.69;devicespecifications
 Huawei;Huawei C199S;4.69;devicespecifications
-Huawei;Huawei EML-l29;6.17;
+Huawei;Huawei EML-l29;6.17;usercontribution
 Huawei;Huawei G Play mini;4.69;devicespecifications
 Huawei;Huawei G7 Plus;4.71;devicespecifications
 Huawei;Huawei G8;4.71;devicespecifications
@@ -2233,7 +2259,7 @@ Huawei;Huawei P9 Lite Premium;4.69;devicespecifications
 Huawei;Huawei P9 Premium Edition;4.54;devicespecifications
 I-mobile;I-mobile IQ X Pro 2;6.17;devicespecifications
 Iberry;Iberry Prime P8000;4.69;devicespecifications
-IDS;UI 3360CP;8.8;
+IDS;UI 3360CP;8.8;usercontribution
 Iman;Iman Victor;4.69;devicespecifications
 Iman;Iman Victor S;3.67;devicespecifications
 Inew;Inew i4000s;4.69;devicespecifications
@@ -2431,7 +2457,7 @@ Kodak;Kodak DC3800;7.53;digicamdb
 Kodak;Kodak DC4800;7.27;digicamdb
 Kodak;Kodak DC5000;7.27;digicamdb
 Kodak;Kodak DCS Pro 14n;36.0;dpreview,digicamdb
-Kodak;Kodak DCS Pro SLR;36.0;
+Kodak;Kodak DCS Pro SLR;36.0;usercontribution
 Kodak;Kodak DCS315;27.65;digicamdb
 Kodak;Kodak DCS330;18.1;digicamdb
 Kodak;Kodak DCS420;14.0;digicamdb
@@ -2448,9 +2474,9 @@ Kodak;Kodak DX3500;6.4;dpreview
 Kodak;Kodak DX3600;6.4;dpreview
 Kodak;Kodak DX3700;7.144;dpreview
 Kodak;Kodak DX3900;7.144;dpreview
-Kodak;Kodak DX4330;5.75;
-Kodak;Kodak DX4530;5.75;
-Kodak;Kodak DX4900;5.75;
+Kodak;Kodak DX4330;5.75;usercontribution
+Kodak;Kodak DX4530;5.75;usercontribution
+Kodak;Kodak DX4900;5.75;usercontribution
 Kodak;Kodak DX6340;5.312;dpreview
 Kodak;Kodak DX6440;5.744;dpreview
 Kodak;Kodak DX6490;5.744;dpreview
@@ -2575,7 +2601,7 @@ Kodak;Kodak EasyShare MD853;5.75;digicamdb
 Kodak;Kodak EasyShare MD863;5.75;digicamdb
 Kodak;Kodak EasyShare Mini;4.8;dpreview,digicamdb
 Kodak;Kodak EasyShare MX1063;6.08;digicamdb
-Kodak;Kodak EasyShare One;5.75;
+Kodak;Kodak EasyShare One;5.75;usercontribution
 Kodak;Kodak EasyShare One 6MP;5.75;digicamdb
 Kodak;Kodak EasyShare P712;5.744;dpreview,digicamdb
 Kodak;Kodak EasyShare P850;5.744;dpreview,digicamdb
@@ -2623,15 +2649,15 @@ Kodak;Kodak EasyShare Z990;6.08;dpreview,digicamdb
 Kodak;Kodak EasyShare ZD15;6.16;digicamdb
 Kodak;Kodak EasyShare ZD710;5.75;digicamdb
 Kodak;Kodak EasyShare ZD8612 IS;5.75;digicamdb
-Kodak;Kodak EasyShare-One 6MP;5.75;
+Kodak;Kodak EasyShare-One 6MP;5.75;usercontribution
 Kodak;Kodak Ektra;5.99;devicespecifications
-Kodak;Kodak LS420;7.11;
-Kodak;Kodak LS443;5.33;
-Kodak;Kodak LS633;5.75;
-Kodak;Kodak LS743;7.11;
-Kodak;Kodak LS753;7.11;
+Kodak;Kodak LS420;7.11;usercontribution
+Kodak;Kodak LS443;5.33;usercontribution
+Kodak;Kodak LS633;5.75;usercontribution
+Kodak;Kodak LS743;7.11;usercontribution
+Kodak;Kodak LS753;7.11;usercontribution
 Kodak;Kodak LS755;5.744;dpreview
-Kodak;Kodak M590;4.8;
+Kodak;Kodak M590;4.8;usercontribution
 Kodak;Kodak mc3;6.4;digicamdb
 Kodak;Kodak Pixpro Astro Zoom AZ651;6.17;dpreview
 Kodak;Kodak PixPro AZ251;6.16;digicamdb
@@ -2646,8 +2672,9 @@ Kodak;Kodak PixPro FZ201;6.16;digicamdb
 Kodak;Kodak PixPro FZ41;6.16;digicamdb
 Kodak;Kodak PixPro FZ51;6.16;digicamdb
 Kodak;Kodak PixPro S-1;17.3;digicamdb
-Kodak;Kodak S-1;17.3;
+Kodak;Kodak S-1;17.3;usercontribution
 Kodak;Kodak Slice;6.16;digicamdb
+Kodak;Kodak Z612;5.75;usercontribution
 Konica;Konica DG-2;5.33;digicamdb
 Konica;Konica DG-3Z;5.33;digicamdb
 Konica;Konica Q-M100;4.8;digicamdb
@@ -2863,7 +2890,7 @@ Leica;Leica S (Typ 006);45.0;imaging-resource
 Leica;Leica S (Typ 007);45.0;imaging-resource
 Leica;Leica S (Type 007);45.0;digicamdb
 Leica;Leica S Typ 007;45.0;dxomark
-Leica;Leica S-E;45;
+Leica;Leica S-E;45;usercontribution
 Leica;Leica S-E (Typ 006);45.0;digicamdb,imaging-resource
 Leica;Leica S-E Typ 006;45.0;dxomark
 Leica;Leica S2;45.0;dpreview,digicamdb,imaging-resource
@@ -2939,7 +2966,6 @@ Lg;Lg G4;5.95;devicespecifications
 Lg;Lg G5;5.95;devicespecifications
 Lg;Lg G5 SE;5.95;devicespecifications
 Lg;Lg G6;4.71;devicespecifications
-LG Electronics;LG-H870;4.71
 Lg;Lg G6+;4.71;devicespecifications
 Lg;Lg Google Nexus 5;4.54;devicespecifications
 Lg;Lg K8;4.6;devicespecifications
@@ -2949,11 +2975,13 @@ Lg;Lg Optimus G LS970;4.69;devicespecifications
 Lg;Lg V10;5.95;devicespecifications
 Lg;Lg V20;5.22;devicespecifications
 Lg;Lg Zero;3.7;devicespecifications
+Lg;LG-H815;5.08;usercontribution
 LG Electronics;LG-H870;4.71;usercontribution
-LG Electronics;LG-H870DS;5.867
-LG Electronics;LG-H930;5.893
-LG Electronics;LG-H932;5.893
-LGE;Nexus 5X;6.25;
+LG Electronics;LG-H870;4.71;usercontribution
+LG Electronics;LG-H870DS;5.867;usercontribution
+LG Electronics;LG-H930;5.893;usercontribution
+LG Electronics;LG-H932;5.893;usercontribution
+LGE;Nexus 5X;6.25;usercontribution
 Lyf;Lyf Water 2;4.69;devicespecifications
 Lyf;Lyf Wind 4;3.6;devicespecifications
 Lyf;Lyf Wind 4S;3.6;devicespecifications
@@ -3040,7 +3068,7 @@ Micromax;Micromax Dual 5;4.71;devicespecifications
 Micromax;Micromax Evok Dual Note;4.71;devicespecifications
 Micromax;Micromax Selfie 2;4.69;devicespecifications
 Micromax;Micromax Selfie 2 Note Q4601;4.69;devicespecifications
-Microsoft;Lumia 950 Dual SIM;5.76;
+Microsoft;Lumia 950 Dual SIM;5.76;usercontribution
 Microsoft;Microsoft Lumia 430 Dual SIM;2.83;devicespecifications
 Microsoft;Microsoft Lumia 435;2.83;devicespecifications
 Microsoft;Microsoft Lumia 435 Dual SIM;2.83;devicespecifications
@@ -3144,11 +3172,11 @@ Mlais;Mlais MX Base;3.67;devicespecifications
 Mobiistar;Mobiistar Prime X Grand;3.67;devicespecifications
 Mobiistar;Mobiistar Prime X Max;5.99;devicespecifications
 Mobiwire;Mobiwire Tala;4.74;devicespecifications
-Motorola;Moto G (4);6.06;
+Motorola;Moto G (4);6.06;usercontribution
 motorola;moto x4;4.0;usercontribution
 Motorola;Motorola 2nd Gen;4.69;devicespecifications
 Motorola;Motorola 3rd Gen;4.69;devicespecifications
-Motorola;Motorola 4;6.06;
+Motorola;Motorola 4;6.06;usercontribution
 Motorola;Motorola Droid Maxx 2;5.99;devicespecifications
 Motorola;Motorola Droid Turbo 2;5.99;devicespecifications
 Motorola;Motorola Moto G;4.69;devicespecifications
@@ -3168,8 +3196,8 @@ Motorola;Motorola Moto Z2 Force Edition;4.96;devicespecifications
 Motorola;Motorola Moto Z2 Play;3.67;devicespecifications
 Motorola;Motorola Nexus 6;4.69;devicespecifications
 Motorola;Motorola P30;4.74;devicespecifications
-Motorola;XT1033;3.8;
-motorola;XT1635-02;6.06;
+Motorola;XT1033;3.8;usercontribution
+motorola;XT1635-02;6.06;usercontribution
 Multilaser;Multilaser MS60Z;4.69;devicespecifications
 Myphone;Myphone Hammer Axe Pro;4.69;devicespecifications
 Myphone;Myphone Hammer Energy 18x9;4.69;devicespecifications
@@ -3207,6 +3235,7 @@ NIKON;E990;7.176;usercontribution
 NIKON;E995;7.176;usercontribution
 Nikon;Nikon 1 AW1;13.2;dpreview,digicamdb,dxomark
 Nikon;Nikon 1 J1;13.2;dpreview,digicamdb,dxomark
+Nikon;Nikon 1 J1;13.2;usercontribution
 Nikon;Nikon 1 J2;13.2;dpreview,digicamdb,dxomark
 Nikon;Nikon 1 J3;13.2;dpreview,digicamdb,dxomark
 Nikon;Nikon 1 J4;13.2;dpreview,digicamdb,dxomark
@@ -3508,6 +3537,8 @@ Nikon;Nikon S2;13.1;imaging-resource
 Nikon;Nikon V1;13.2;imaging-resource
 Nikon;Nikon V2;13.2;imaging-resource
 Nikon;Nikon V3;13.2;imaging-resource
+Nikon;Nikon Z 6;35.9;usercontribution
+Nikon;Nikon Z 7;35.9;usercontribution
 Nikon;Nikon Z6;35.9;dpreview,digicamdb,imaging-resource
 Nikon;Nikon Z7;35.9;dpreview,digicamdb,imaging-resource
 Noa;Noa H10;4.69;devicespecifications
@@ -3525,9 +3556,6 @@ Nokia;Nokia 225 Dual SIM;2.83;devicespecifications
 Nokia;Nokia 3;3.67;devicespecifications
 Nokia;Nokia 6;4.74;devicespecifications
 Nokia;Nokia 7 plus;5.75;devicespecifications
-HMD Global;Nokia 3;3.67;devicespecifications
-HMD Global;Nokia 6;4.74;devicespecifications
-HMD Global;Nokia 7 plus;5.75;devicespecifications
 Nokia;Nokia 808 PureView;10.67;devicespecifications
 Nokia;Nokia Asha 502;3.67;devicespecifications
 Nokia;Nokia Lumia 1020;8.8;devicespecifications
@@ -3716,7 +3744,7 @@ Olympus;Olympus D-535 Zoom;5.312;dpreview,digicamdb
 Olympus;Olympus D-540 Zoom;5.312;dpreview,digicamdb
 Olympus;Olympus D-545 Zoom;5.744;dpreview,digicamdb
 Olympus;Olympus D-560 Zoom;5.744;dpreview,digicamdb
-Olympus;Olympus D-575 Zoom;5.75;
+Olympus;Olympus D-575 Zoom;5.75;usercontribution
 Olympus;Olympus D-580 Zoom;5.312;dpreview,digicamdb
 Olympus;Olympus D-595 Zoom;5.744;dpreview,digicamdb
 Olympus;Olympus D-600L;8.8;dpreview,digicamdb
@@ -3740,6 +3768,14 @@ Olympus;Olympus E-510;17.3;dpreview,digicamdb
 Olympus;Olympus E-520;17.3;dpreview,digicamdb,imaging-resource
 Olympus;Olympus E-600;17.3;dpreview,digicamdb,imaging-resource
 Olympus;Olympus E-620;17.3;dpreview,digicamdb,imaging-resource
+Olympus;Olympus E-M1;17.3;usercontribution
+Olympus;Olympus E-M10;17.3;usercontribution
+Olympus;Olympus E-M10 Mark III;17.3;usercontribution
+Olympus;Olympus E-M10MarkII;17.3;usercontribution
+Olympus;Olympus E-M5;17.3;usercontribution
+Olympus;Olympus E-PL5;17.3;usercontribution
+Olympus;Olympus E-PL6;17.3;usercontribution
+Olympus;Olympus E-PM1;17.3;usercontribution
 Olympus;Olympus E3;17.0;dxomark
 Olympus;Olympus E30;17.3;dxomark
 Olympus;Olympus E410;18.0;dxomark
@@ -3811,6 +3847,7 @@ Olympus;Olympus FE-5035;6.08;digicamdb
 Olympus;Olympus FE-5040;6.17;dpreview,digicamdb,imaging-resource
 Olympus;Olympus FE-5050;6.16;digicamdb,imaging-resource
 Olympus;Olympus FE-5500;5.744;dpreview
+Olympus;Olympus FE4040;6.08;usercontribution
 Olympus;Olympus IR 500;5.33;digicamdb
 Olympus;Olympus IR-300;5.744;dpreview,digicamdb
 Olympus;Olympus m:robe MR 500i;3.2;digicamdb
@@ -3997,7 +4034,7 @@ Olympus;Olympus Stylus Tough-8000;6.1;imaging-resource
 Olympus;Olympus Stylus Tough-8010;6.2;imaging-resource
 Olympus;Olympus Stylus Verve;5.744;dpreview,digicamdb
 Olympus;Olympus Stylus Verve  S;5.744;dpreview,digicamdb
-Olympus;Olympus Stylus Verve S;5.75;
+Olympus;Olympus Stylus Verve S;5.75;usercontribution
 Olympus;Olympus Stylus XZ-10;6.17;dpreview,digicamdb,imaging-resource,dxomark
 Olympus;Olympus Stylus XZ-2;7.6;imaging-resource
 Olympus;Olympus Stylus-5010;6.2;imaging-resource
@@ -4023,8 +4060,11 @@ Olympus;Olympus SZ-31MR iHS;6.17;dpreview,digicamdb
 Olympus;Olympus T-10;6.16;digicamdb,imaging-resource
 Olympus;Olympus T-100;6.16;digicamdb
 Olympus;Olympus T-110;6.16;digicamdb,imaging-resource
+Olympus;Olympus TG-1;6.16;usercontribution
+Olympus;Olympus TG-3;6.16;usercontribution
 Olympus;Olympus TG-310;6.17;dpreview,digicamdb
 Olympus;Olympus TG-320;6.17;dpreview,digicamdb
+Olympus;Olympus TG-5;6.16;usercontribution
 Olympus;Olympus TG-610;6.17;dpreview,digicamdb
 Olympus;Olympus TG-630 iHS;6.17;dpreview,digicamdb
 Olympus;Olympus TG-810;6.17;dpreview,digicamdb
@@ -4073,7 +4113,7 @@ Olympus;Olympus VR-350;6.16;digicamdb
 Olympus;Olympus VR-360;6.16;digicamdb,imaging-resource
 Olympus;Olympus VR-370;6.16;digicamdb
 Olympus;Olympus X-15;6.03;digicamdb
-Olympus;Olympus X-350 Zoom;5.75;
+Olympus;Olympus X-350 Zoom;5.75;usercontribution
 Olympus;Olympus X-700;5.744;dpreview
 Olympus;Olympus X-705;5.744;dpreview
 Olympus;Olympus X-710;5.744;dpreview
@@ -4412,6 +4452,7 @@ Panasonic;Panasonic Lumix DMC-FZ38;6.08;dpreview,digicamdb
 Panasonic;Panasonic Lumix DMC-FZ4;5.744;dpreview,digicamdb
 Panasonic;Panasonic Lumix DMC-FZ40;6.08;dpreview,digicamdb,imaging-resource
 Panasonic;Panasonic Lumix DMC-FZ45;6.08;dpreview,digicamdb
+Panasonic;Panasonic Lumix DMC-FZ45;6.08;usercontribution
 Panasonic;Panasonic Lumix DMC-FZ47;6.08;dpreview,digicamdb,imaging-resource
 Panasonic;Panasonic Lumix DMC-FZ48;6.08;dpreview,digicamdb
 Panasonic;Panasonic Lumix DMC-FZ5;5.744;dpreview,digicamdb
@@ -4446,10 +4487,12 @@ Panasonic;Panasonic Lumix DMC-GH2;17.3;dpreview,digicamdb,imaging-resource
 Panasonic;Panasonic Lumix DMC-GH3;17.3;dpreview,digicamdb,imaging-resource,dxomark
 Panasonic;Panasonic Lumix DMC-GH4;17.3;dpreview,digicamdb,imaging-resource,dxomark
 Panasonic;Panasonic Lumix DMC-GM1;17.3;dpreview,digicamdb,imaging-resource,dxomark
+Panasonic;Panasonic Lumix DMC-GM1S;17.3;usercontribution
 Panasonic;Panasonic Lumix DMC-GM5;17.3;dpreview,digicamdb,imaging-resource,dxomark
 Panasonic;Panasonic Lumix DMC-GX1;17.3;dpreview,digicamdb,imaging-resource
 Panasonic;Panasonic Lumix DMC-GX7;17.3;dpreview,digicamdb,imaging-resource,dxomark
 Panasonic;Panasonic Lumix DMC-GX7 Mark II;17.3;digicamdb
+Panasonic;Panasonic Lumix DMC-GX7MK2;17.3;usercontribution
 Panasonic;Panasonic Lumix DMC-GX8;17.3;dpreview,digicamdb,imaging-resource,dxomark
 Panasonic;Panasonic Lumix DMC-GX80;17.3;dpreview,digicamdb,dxomark
 Panasonic;Panasonic Lumix DMC-GX85;17.3;dpreview,digicamdb,imaging-resource
@@ -4481,6 +4524,7 @@ Panasonic;Panasonic Lumix DMC-LX100;17.3;dpreview,digicamdb,imaging-resource,dxo
 Panasonic;Panasonic Lumix DMC-LX15;13.2;dpreview,digicamdb
 Panasonic;Panasonic Lumix DMC-LX2;7.76;digicamdb,imaging-resource
 Panasonic;Panasonic Lumix DMC-LX3;7.85;digicamdb
+Panasonic;Panasonic Lumix DMC-LX3;7.85;usercontribution
 Panasonic;Panasonic Lumix DMC-LX5;7.85;digicamdb
 Panasonic;Panasonic Lumix DMC-LX7;7.44;dpreview,digicamdb,imaging-resource
 Panasonic;Panasonic Lumix DMC-LX9;13.2;digicamdb
@@ -4569,7 +4613,7 @@ Panasonic;Panasonic Lumix Smart Camera CM1;13.2;devicespecifications
 Panasonic;Panasonic P9;3.68;devicespecifications
 Panasonic;Panasonic PV DC3000;7.11;digicamdb
 Panasonic;Panasonic T44;2.95;devicespecifications
-Parrot;Bebop;8.4;
+Parrot;Bebop;8.4;usercontribution
 PENTAX;Optio330RS;7.176;usercontribution
 Pentax;Pentax *ist D;23.5;dpreview,digicamdb
 Pentax;Pentax *ist DL;23.5;dpreview,digicamdb
@@ -4741,6 +4785,7 @@ Phase One;IQ260;53.9;usercontribution
 Phase One;IQ280;53.7;usercontribution
 Phase One;IQ280;53.7;usercontribution
 Phase One;Phase One IQ180 Digital Back;53.7;dxomark
+Phase One;Phase One IQ3 100MP;53.7;usercontribution
 Phase One;Phase One P40 Plus;43.9;dxomark
 Phase One;Phase One P45 Plus;49.0;dxomark
 Phase One;Phase One P65 Plus;53.9;dxomark
@@ -4766,7 +4811,7 @@ Praktica;Praktica DC 52;5.75;digicamdb
 Praktica;Praktica DC 60;5.75;digicamdb
 Praktica;Praktica DC Slim 2;6.4;digicamdb
 Praktica;Praktica DC Slim 5;7.11;digicamdb
-Praktica;Praktica DC440;5.75;
+Praktica;Praktica DC440;5.75;usercontribution
 Praktica;Praktica DCZ 1.3;6.4;digicamdb
 Praktica;Praktica DCZ 10.1;7.11;digicamdb
 Praktica;Praktica DCZ 10.2;6.16;digicamdb
@@ -4887,8 +4932,8 @@ Praktica;Praktica V2.1;6.4;digicamdb
 Praktica;Praktica V3.2;6.4;digicamdb
 Prestigio;Prestigio MultiPad Visconte A;2.84;devicespecifications
 Prestigio;Prestigio MultiPhone 5550 Duo;4.54;devicespecifications
-PtGrey;PtGrey Grasshopper3 1920x1440;6.73;
-PtGrey;PtGrey Grasshopper3 2048x1536;7.18;
+PtGrey;PtGrey Grasshopper3 1920x1440;6.73;usercontribution
+PtGrey;PtGrey Grasshopper3 2048x1536;7.18;usercontribution
 Q-mobile;Q-mobile Dream EI;3.6;devicespecifications
 Qiku;Qiku Q Terra Exclusive Edition;4.71;devicespecifications
 Qiku;Qiku Q Terra Ultimate;4.71;devicespecifications
@@ -4902,10 +4947,10 @@ Ramos;Ramos R9;4.69;devicespecifications
 RaspberryPi;RP_imx219;3.6736;devicespecifications
 RaspberryPi;RP_OV5647;3.6288;devicespecifications
 Realme;Realme 2 Pro;5.22;devicespecifications
-Red;Epic Dragon;30.7;
-Red;Red Dragon 4K HD;19.19;
-Red;Red Mysterium-X 4K HD;20.74;
-Red;Red Helium 8K S35;29.90;
+Red;Epic Dragon;30.7;usercontribution
+Red;Red Dragon 4K HD;19.19;usercontribution
+Red;Red Helium 8K S35;29.90;usercontribution
+Red;Red Mysterium-X 4K HD;20.74;usercontribution
 Ricoh;Ricoh Caplio 400G Wide;5.33;digicamdb
 Ricoh;Ricoh Caplio 500G;7.144;dpreview,digicamdb
 Ricoh;Ricoh Caplio 500G Wide;7.11;digicamdb
@@ -4961,7 +5006,7 @@ Ricoh;Ricoh GR Digital III;7.44;dpreview
 Ricoh;Ricoh GR Digital IV;7.6;imaging-resource,dxomark
 Ricoh;Ricoh GR II;23.7;dpreview,digicamdb,imaging-resource,dxomark
 Ricoh;Ricoh GR III;23.5;dpreview,imaging-resource
-Ricoh;Ricoh GX200;7.53;
+Ricoh;Ricoh GX200;7.53;usercontribution
 Ricoh;Ricoh GXR;23.7;imaging-resource
 Ricoh;Ricoh GXR A12 50mm F2.5 Macro;23.6;dpreview,digicamdb
 Ricoh;Ricoh GXR A16 24-85mm F3.5-5.5;23.6;dpreview,digicamdb
@@ -4982,7 +5027,7 @@ Ricoh;Ricoh RDC-6000;6.4;dpreview,digicamdb
 Ricoh;Ricoh RDC-7;7.144;dpreview,digicamdb
 Ricoh;Ricoh RDC-i500;7.144;dpreview,digicamdb
 Ricoh;Ricoh RDC-i700;7.144;dpreview,digicamdb
-RICOH;RICOH THETA S;6.17;
+RICOH;RICOH THETA S;6.17;usercontribution
 Ricoh;Ricoh Theta SC;6.2;imaging-resource
 Ricoh;Ricoh Theta V;6.17;dpreview,imaging-resource
 Ricoh;Ricoh WG-20;6.17;dpreview,digicamdb,imaging-resource
@@ -5279,7 +5324,6 @@ Samsung;Samsung Galaxy S7 Active;3.2;devicespecifications
 Samsung;Samsung Galaxy S7 Edge Exynos;3.2;devicespecifications
 Samsung;Samsung Galaxy S7 Edge SD820;3.2;devicespecifications
 Samsung;Samsung Galaxy S7 Exynos;3.2;devicespecifications
-Samsung;Samsung SM-G935F;3.2;devicespecifications
 Samsung;Samsung Galaxy S7 SD820;3.2;devicespecifications
 Samsung;Samsung Galaxy Tab S 10.5 LTE;3.6;devicespecifications
 Samsung;Samsung Galaxy Tab S 10.5 Wi-Fi;3.6;devicespecifications
@@ -5418,7 +5462,14 @@ Samsung;Samsung SL620;6.08;dpreview,digicamdb
 Samsung;Samsung SL630;6.08;digicamdb
 Samsung;Samsung SL720;6.08;dpreview,digicamdb
 Samsung;Samsung SL820;6.08;dpreview,digicamdb
+Samsung;Samsung SM-A320FL;24;usercontribution
+Samsung;Samsung SM-C200;6.16;usercontribution
 Samsung;Samsung SM-G9198;5.95;devicespecifications
+Samsung;Samsung SM-G930F;5.76;usercontribution
+Samsung;Samsung SM-G935F;3.2;devicespecifications
+Samsung;Samsung SM-G935F;5.76;usercontribution
+Samsung;Samsung SM-G950F;5.76;usercontribution
+Samsung;Samsung SM-G955F;5.76;usercontribution
 Samsung;Samsung ST10;5.744;dpreview,digicamdb
 Samsung;Samsung ST100;6.17;dpreview,digicamdb
 Samsung;Samsung ST1000;6.16;digicamdb
@@ -5492,11 +5543,11 @@ Samsung;Samsung WB800F;6.17;dpreview,digicamdb
 Samsung;Samsung WB850F;6.17;dpreview,digicamdb
 Samsung;Samsung Wi-Fi;6.17;dpreview
 Samsung;Samsung WP10;6.08;dpreview,digicamdb
-Samsung;Samsung-SGH-I537;3.0;
-samsung;SM-G920F;5.95;
-samsung;SM-G930F;5.76;
+Samsung;Samsung-SGH-I537;3.0;usercontribution
+samsung;SM-G920F;5.95;usercontribution
+samsung;SM-G930F;5.76;usercontribution
 samsung;SM-J111M;3.6;usercontribution
-SAMSUNG;SM-N9005;4.69;
+SAMSUNG;SM-N9005;4.69;usercontribution
 Santin;Santin Max 4 Pro;4.74;devicespecifications
 Santin;Santin N1;4.71;devicespecifications
 Santin;Santin N1 Max;4.75;devicespecifications
@@ -5587,6 +5638,7 @@ Sanyo;Sanyo Xacti VPC-T850;5.75;digicamdb
 Sanyo;Sanyo Xacti VPC-W800;5.75;digicamdb
 Sanyo;Sanyo Xacti VPC-X1200;6.16;digicamdb
 Sealife;SeaLife DC2000;13.2;dpreview
+Sensefly;SenseFly S.O.D.A.;12.75;usercontribution
 Sharp;Sharp Z3;5.22;devicespecifications
 Sigma;Sigma dp0 Quattro;23.5;dpreview,imaging-resource,dxomark
 Sigma;Sigma DP1;20.7;dpreview,digicamdb,imaging-resource
@@ -5634,10 +5686,10 @@ Smartisan;Smartisan T1;4.69;devicespecifications
 Smartisan;Smartisan T2;4.69;devicespecifications
 Smartisan;Smartisan U1;4.69;devicespecifications
 Smartron;Smartron t.phone;5.44;devicespecifications
-Sony;A7SM2;35.6
-Sony;DSC-HX60V;7.76
-Sony;DSC-P200;7.11
-Sony;DSC-RX100M4;13.2
+Sony;A7SM2;35.6;usercontribution
+Sony;DSC-HX60V;7.76;usercontribution
+Sony;DSC-P200;7.11;usercontribution
+Sony;DSC-RX100M4;13.2;usercontribution
 Sony;DSC-RX10M2;13.2;usercontribution
 Sony;DSC-RX10M3;25.4;usercontribution
 Sony;DSC-RX1RM2;35.9;usercontribution
@@ -5648,22 +5700,22 @@ Sony;G3212;6.17;devicespecifications
 Sony;G3221;6.17;devicespecifications
 Sony;G3223;6.17;devicespecifications
 Sony;G3226;6.17;devicespecifications
-Sony;H3113;6.17
+Sony;H3113;6.17;usercontribution
 Sony;ILCA-77M2;23.5;usercontribution
 Sony;ILCE-5000;23.2;usercontribution
 Sony;ILCE-5100;23.5;usercontribution
 Sony;ILCE-6000;23.5;usercontribution
 Sony;ILCE-6300;23.5;usercontribution
 Sony;ILCE-6500;23.5;usercontribution
-Sony;ILCE-7;35.8
-Sony;ILCE-7M2;35.8
-Sony;ILCE-7M3;35.6
-Sony;ILCE-7R;35.9
-Sony;ILCE-7RM2;35.9
-Sony;ILCE-7RM3;35.9
-Sony;ILCE-7S;35.6
-Sony;ILCE-7SM2;35.6
-Sony;NEX-3N;23.5
+Sony;ILCE-7;35.8;usercontribution
+Sony;ILCE-7M2;35.8;usercontribution
+Sony;ILCE-7M3;35.6;usercontribution
+Sony;ILCE-7R;35.9;usercontribution
+Sony;ILCE-7RM2;35.9;usercontribution
+Sony;ILCE-7RM3;35.9;usercontribution
+Sony;ILCE-7S;35.6;usercontribution
+Sony;ILCE-7SM2;35.6;usercontribution
+Sony;NEX-3N;23.5;usercontribution
 Sony;SLT-A77V;23.5;usercontribution
 Sony;SLT-A99V;35.8;usercontribution
 Sony;Sony A3000;23.5;dxomark
@@ -5676,7 +5728,7 @@ Sony;Sony a6500;23.5;dpreview
 Sony;Sony a7;35.8;dpreview
 Sony;Sony a7 II;35.8;dpreview
 Sony;Sony A7 III;35.6;dxomark
-Sony;Sony A77 II;23.5
+Sony;Sony A77 II;23.5;usercontribution
 Sony;Sony a7R;35.9;dpreview
 Sony;Sony a7R II;35.9;dpreview
 Sony;Sony a7R III;35.9;dpreview
@@ -6024,248 +6076,265 @@ Sony;Sony Cyber-shot DSC-WX7;6.16;digicamdb
 Sony;Sony Cyber-shot DSC-WX70;6.17;dpreview,digicamdb,imaging-resource
 Sony;Sony Cyber-shot DSC-WX80;6.17;dpreview,digicamdb,imaging-resource
 Sony;Sony Cyber-shot DSC-WX9;6.17;dpreview,digicamdb,imaging-resource
-Sony;Sony Cybershot DSC D700;6.4;
-Sony;Sony Cybershot DSC D770;6.4;
-Sony;Sony Cybershot DSC F505;6.4;
-Sony;Sony Cybershot DSC F505v;7.11;
-Sony;Sony Cybershot DSC F55;6.4;
-Sony;Sony Cybershot DSC F55v;7.11;
-Sony;Sony Cybershot DSC F707;8.8;
-Sony;Sony Cybershot DSC F717;8.8;
-Sony;Sony Cybershot DSC F77;7.11;
-Sony;Sony Cybershot DSC F828;8.8;
-Sony;Sony Cybershot DSC F88;5.9;
-Sony;Sony Cybershot DSC FX77;7.11;
-Sony;Sony Cybershot DSC G1;5.75;
-Sony;Sony Cybershot DSC G3;6.16;
-Sony;Sony Cybershot DSC H1;5.75;
-Sony;Sony Cybershot DSC H10;5.75;
-Sony;Sony Cybershot DSC H100;6.16;
-Sony;Sony Cybershot DSC H2;5.75;
-Sony;Sony Cybershot DSC H20;6.16;
-Sony;Sony Cybershot DSC H200;6.16;
-Sony;Sony Cybershot DSC H3;5.75;
-Sony;Sony Cybershot DSC H300;6.16;
-Sony;Sony Cybershot DSC H400;6.16;
-Sony;Sony Cybershot DSC H5;5.75;
-Sony;Sony Cybershot DSC H50;6.16;
-Sony;Sony Cybershot DSC H55;6.16;
-Sony;Sony Cybershot DSC H7;5.75;
-Sony;Sony Cybershot DSC H70;6.16;
-Sony;Sony Cybershot DSC H9;5.75;
-Sony;Sony Cybershot DSC H90;6.16;
-Sony;Sony Cybershot DSC HX1;5.9;
-Sony;Sony CyberShot DSC HX100V;6.16;
-Sony;Sony Cybershot DSC HX10V;6.16;
-Sony;Sony Cybershot DSC HX200V;6.16;
-Sony;Sony Cybershot DSC HX20V;6.16;
-Sony;Sony Cybershot DSC HX30V;6.16;
-Sony;Sony Cybershot DSC HX5;5.9;
-Sony;Sony Cybershot DSC HX50;6.16;
-Sony;Sony Cybershot DSC HX60;6.16;
-Sony;Sony CyberShot DSC HX7V;6.16;
-Sony;Sony CyberShot DSC HX9V;6.16;
-Sony;Sony Cybershot DSC J10;6.16;
-Sony;Sony Cybershot DSC L1;5.33;
-Sony;Sony Cybershot DSC M1;5.9;
-Sony;Sony Cybershot DSC M2;5.75;
-Sony;Sony Cybershot DSC N1;7.11;
-Sony;Sony Cybershot DSC N2;7.53;
-Sony;Sony Cybershot DSC P1;7.11;
-Sony;Sony Cybershot DSC P10;7.11;
-Sony;Sony Cybershot DSC P100;7.11;
-Sony;Sony Cybershot DSC P12;7.11;
-Sony;Sony Cybershot DSC P120;7.11;
-Sony;Sony Cybershot DSC P150;7.11;
-Sony;Sony Cybershot DSC P2;5.33;
-Sony;Sony Cybershot DSC P20;5.33;
-Sony;Sony Cybershot DSC P200;7.11;
-Sony;Sony Cybershot DSC P3;7.11;
-Sony;Sony Cybershot DSC P30;5.33;
-Sony;Sony Cybershot DSC P31;5.33;
-Sony;Sony Cybershot DSC P32;5.33;
-Sony;Sony Cybershot DSC P41;5.33;
-Sony;Sony Cybershot DSC P43;5.33;
-Sony;Sony Cybershot DSC P5;7.11;
-Sony;Sony Cybershot DSC P50;5.33;
-Sony;Sony Cybershot DSC P51;5.33;
-Sony;Sony Cybershot DSC P52;5.33;
-Sony;Sony Cybershot DSC P7;7.11;
-Sony;Sony Cybershot DSC P71;7.11;
-Sony;Sony Cybershot DSC P72;7.11;
-Sony;Sony Cybershot DSC P73;5.33;
-Sony;Sony Cybershot DSC P8;5.33;
-Sony;Sony Cybershot DSC P9;7.11;
-Sony;Sony Cybershot DSC P92;7.11;
-Sony;Sony Cybershot DSC P93;7.11;
-Sony;Sony Cybershot DSC R1;21.5;
-Sony;Sony Cybershot DSC RX100;13.2;
-Sony;Sony Cybershot DSC RX100 II;13.2;
-Sony;Sony Cybershot DSC RX100M4;13.2;
-Sony;Sony Cybershot DSC RX1R;35.8;
-Sony;Sony Cybershot DSC S2000;6.16;
-Sony;Sony Cybershot DSC S2100;6.16;
-Sony;Sony Cybershot DSC S30;5.33;
-Sony;Sony Cybershot DSC S3000;4.96;
-Sony;Sony Cybershot DSC S40;5.33;
-Sony;Sony Cybershot DSC S45;5.75;
-Sony;Sony Cybershot DSC S50;5.33;
-Sony;Sony Cybershot DSC S5000;6.16;
-Sony;Sony Cybershot DSC S60;5.33;
-Sony;Sony Cybershot DSC S600;5.75;
-Sony;Sony Cybershot DSC S650;5.75;
-Sony;Sony Cybershot DSC S70;7.11;
-Sony;Sony Cybershot DSC S700;5.75;
-Sony;Sony Cybershot DSC S730;5.75;
-Sony;Sony Cybershot DSC S75;7.11;
-Sony;Sony Cybershot DSC S750;5.75;
-Sony;Sony Cybershot DSC S780;5.75;
-Sony;Sony Cybershot DSC S80;5.33;
-Sony;Sony Cybershot DSC S800;7.11;
-Sony;Sony Cybershot DSC S85;7.11;
-Sony;Sony Cybershot DSC S90;5.33;
-Sony;Sony Cybershot DSC S930;6.08;
-Sony;Sony Cybershot DSC S950;6.16;
-Sony;Sony Cybershot DSC S980;6.08;
-Sony;Sony Cybershot DSC T1;5.9;
-Sony;Sony Cybershot DSC T10;5.75;
-Sony;Sony Cybershot DSC T100;5.75;
-Sony;Sony Cybershot DSC T11;5.9;
-Sony;Sony Cybershot DSC T110;6.16;
-Sony;Sony Cybershot DSC T2;5.75;
-Sony;Sony Cybershot DSC T20;5.75;
-Sony;Sony Cybershot DSC T200;5.75;
-Sony;Sony Cybershot DSC T3;5.9;
-Sony;Sony Cybershot DSC T30;5.75;
-Sony;Sony Cybershot DSC T300;6.16;
-Sony;Sony Cybershot DSC T33;5.9;
-Sony;Sony Cybershot DSC T5;5.75;
-Sony;Sony Cybershot DSC T50;5.75;
-Sony;Sony Cybershot DSC T500;6.16;
-Sony;Sony Cybershot DSC T7;5.9;
-Sony;Sony Cybershot DSC T70;5.75;
-Sony;Sony Cybershot DSC T700;6.16;
-Sony;Sony Cybershot DSC T77;6.16;
-Sony;Sony Cybershot DSC T9;5.75;
-Sony;Sony Cybershot DSC T90;6.16;
-Sony;Sony Cybershot DSC T900;6.16;
-Sony;Sony Cybershot DSC T99;6.16;
-Sony;Sony Cybershot DSC TX1;5.9;
-Sony;Sony Cybershot DSC TX10;6.16;
-Sony;Sony Cybershot DSC TX100V;6.16;
-Sony;Sony Cybershot DSC TX20;6.16;
-Sony;Sony Cybershot DSC TX200V;6.16;
-Sony;Sony Cybershot DSC TX5;5.9;
-Sony;Sony Cybershot DSC TX55;6.16;
-Sony;Sony Cybershot DSC TX66;6.16;
-Sony;Sony Cybershot DSC TX7;5.9;
-Sony;Sony Cybershot DSC TX9;6.16;
-Sony;Sony Cybershot DSC U10;5.33;
-Sony;Sony Cybershot DSC U20;5.33;
-Sony;Sony Cybershot DSC U30;5.33;
-Sony;Sony Cybershot DSC U40;5.33;
-Sony;Sony Cybershot DSC U50;5.33;
-Sony;Sony Cybershot DSC U60;5.33;
-Sony;Sony Cybershot DSC V1;7.11;
-Sony;Sony Cybershot DSC V3;7.11;
-Sony;Sony Cybershot DSC W1;7.11;
-Sony;Sony Cybershot DSC W100;7.11;
-Sony;Sony Cybershot DSC W110;5.75;
-Sony;Sony Cybershot DSC W115;5.75;
-Sony;Sony Cybershot DSC W12;7.11;
-Sony;Sony Cybershot DSC W120;5.75;
-Sony;Sony Cybershot DSC W125;5.75;
-Sony;Sony Cybershot DSC W130;5.75;
-Sony;Sony Cybershot DSC W150;5.75;
-Sony;Sony Cybershot DSC W17;7.11;
-Sony;Sony Cybershot DSC W170;6.16;
-Sony;Sony Cybershot DSC W180;6.08;
-Sony;Sony Cybershot DSC W190;6.08;
-Sony;Sony Cybershot DSC W200;7.53;
-Sony;Sony Cybershot DSC W210;6.16;
-Sony;Sony Cybershot DSC W215;6.16;
-Sony;Sony Cybershot DSC W220;6.16;
-Sony;Sony Cybershot DSC W230;6.16;
-Sony;Sony Cybershot DSC W270;7.53;
-Sony;Sony Cybershot DSC W275;6.16;
-Sony;Sony Cybershot DSC W290;6.16;
-Sony;Sony Cybershot DSC W30;5.75;
-Sony;Sony Cybershot DSC W300;7.53;
-Sony;Sony Cybershot DSC W310;6.16;
-Sony;Sony Cybershot DSC W320;6.16;
-Sony;Sony Cybershot DSC W330;6.16;
-Sony;Sony Cybershot DSC W35;5.75;
-Sony;Sony Cybershot DSC W350;6.16;
-Sony;Sony Cybershot DSC W360;6.16;
-Sony;Sony Cybershot DSC W370;6.16;
-Sony;Sony Cybershot DSC W380;6.16;
-Sony;Sony Cybershot DSC W40;5.75;
-Sony;Sony Cybershot DSC W5;7.11;
-Sony;Sony Cybershot DSC W50;5.75;
-Sony;Sony Cybershot DSC W510;6.16;
-Sony;Sony Cybershot DSC W520;6.16;
-Sony;Sony Cybershot DSC W530;6.16;
-Sony;Sony Cybershot DSC W55;5.75;
-Sony;Sony Cybershot DSC W550;6.16;
-Sony;Sony Cybershot DSC W560;6.16;
-Sony;Sony Cybershot DSC W570;6.16;
-Sony;Sony Cybershot DSC W580;6.16;
-Sony;Sony Cybershot DSC W610;6.16;
-Sony;Sony Cybershot DSC W620;6.16;
-Sony;Sony Cybershot DSC W630;6.16;
-Sony;Sony Cybershot DSC W650;6.16;
-Sony;Sony Cybershot DSC W670;6.16;
-Sony;Sony Cybershot DSC W690;6.16;
-Sony;Sony Cybershot DSC W7;7.11;
-Sony;Sony Cybershot DSC W70;5.75;
-Sony;Sony Cybershot DSC W710;6.16;
-Sony;Sony Cybershot DSC W730;6.16;
-Sony;Sony Cybershot DSC W80;5.75;
-Sony;Sony Cybershot DSC W800;6.16;
-Sony;Sony Cybershot DSC W810;6.16;
-Sony;Sony Cybershot DSC W830;6.16;
-Sony;Sony Cybershot DSC W85;5.75;
-Sony;Sony Cybershot DSC W90;5.75;
-Sony;Sony Cybershot DSC WX1;5.9;
-Sony;Sony Cybershot DSC WX10;6.16;
-Sony;Sony Cybershot DSC WX100;6.16;
-Sony;Sony Cybershot DSC WX150;6.16;
-Sony;Sony Cybershot DSC WX220;6.16;
-Sony;Sony Cybershot DSC WX30;6.16;
-Sony;Sony Cybershot DSC WX350;6.16;
-Sony;Sony Cybershot DSC WX5;6.16;
-Sony;Sony Cybershot DSC WX50;6.16;
-Sony;Sony Cybershot DSC WX7;6.16;
-Sony;Sony Cybershot DSC WX70;6.16;
-Sony;Sony Cybershot DSC WX9;6.16;
-Sony;Sony Cybershot DSC-HX300;6.16;
-Sony;Sony Cybershot DSC-HX400;6.16;
-Sony;Sony CyberShot DSC-HX7V;6.16;
-Sony;Sony Cybershot DSC-HX90V;6.16;
-Sony;Sony Cybershot DSC-QX10;6.16;
-Sony;Sony Cybershot DSC-QX100;13.2;
-Sony;Sony Cybershot DSC-RX10;13.2;
-Sony;Sony Cybershot DSC-RX10 II;13.2;
+Sony;Sony Cybershot DSC D700;6.4;usercontribution
+Sony;Sony Cybershot DSC D770;6.4;usercontribution
+Sony;Sony Cybershot DSC F505;6.4;usercontribution
+Sony;Sony Cybershot DSC F505v;7.11;usercontribution
+Sony;Sony Cybershot DSC F55;6.4;usercontribution
+Sony;Sony Cybershot DSC F55v;7.11;usercontribution
+Sony;Sony Cybershot DSC F707;8.8;usercontribution
+Sony;Sony Cybershot DSC F717;8.8;usercontribution
+Sony;Sony Cybershot DSC F77;7.11;usercontribution
+Sony;Sony Cybershot DSC F828;8.8;usercontribution
+Sony;Sony Cybershot DSC F88;5.9;usercontribution
+Sony;Sony Cybershot DSC FX77;7.11;usercontribution
+Sony;Sony Cybershot DSC G1;5.75;usercontribution
+Sony;Sony Cybershot DSC G3;6.16;usercontribution
+Sony;Sony Cybershot DSC H1;5.75;usercontribution
+Sony;Sony Cybershot DSC H10;5.75;usercontribution
+Sony;Sony Cybershot DSC H100;6.16;usercontribution
+Sony;Sony Cybershot DSC H2;5.75;usercontribution
+Sony;Sony Cybershot DSC H20;6.16;usercontribution
+Sony;Sony Cybershot DSC H200;6.16;usercontribution
+Sony;Sony Cybershot DSC H3;5.75;usercontribution
+Sony;Sony Cybershot DSC H300;6.16;usercontribution
+Sony;Sony Cybershot DSC H400;6.16;usercontribution
+Sony;Sony Cybershot DSC H5;5.75;usercontribution
+Sony;Sony Cybershot DSC H50;6.16;usercontribution
+Sony;Sony Cybershot DSC H55;6.16;usercontribution
+Sony;Sony Cybershot DSC H7;5.75;usercontribution
+Sony;Sony Cybershot DSC H70;6.16;usercontribution
+Sony;Sony Cybershot DSC H9;5.75;usercontribution
+Sony;Sony Cybershot DSC H90;6.16;usercontribution
+Sony;Sony Cybershot DSC HX1;5.9;usercontribution
+Sony;Sony CyberShot DSC HX100V;6.16;usercontribution
+Sony;Sony Cybershot DSC HX10V;6.16;usercontribution
+Sony;Sony Cybershot DSC HX200V;6.16;usercontribution
+Sony;Sony Cybershot DSC HX20V;6.16;usercontribution
+Sony;Sony Cybershot DSC HX30V;6.16;usercontribution
+Sony;Sony Cybershot DSC HX5;5.9;usercontribution
+Sony;Sony Cybershot DSC HX50;6.16;usercontribution
+Sony;Sony Cybershot DSC HX60;6.16;usercontribution
+Sony;Sony CyberShot DSC HX7V;6.16;usercontribution
+Sony;Sony CyberShot DSC HX9V;6.16;usercontribution
+Sony;Sony Cybershot DSC J10;6.16;usercontribution
+Sony;Sony Cybershot DSC L1;5.33;usercontribution
+Sony;Sony Cybershot DSC M1;5.9;usercontribution
+Sony;Sony Cybershot DSC M2;5.75;usercontribution
+Sony;Sony Cybershot DSC N1;7.11;usercontribution
+Sony;Sony Cybershot DSC N2;7.53;usercontribution
+Sony;Sony Cybershot DSC P1;7.11;usercontribution
+Sony;Sony Cybershot DSC P10;7.11;usercontribution
+Sony;Sony Cybershot DSC P100;7.11;usercontribution
+Sony;Sony Cybershot DSC P12;7.11;usercontribution
+Sony;Sony Cybershot DSC P120;7.11;usercontribution
+Sony;Sony Cybershot DSC P150;7.11;usercontribution
+Sony;Sony Cybershot DSC P2;5.33;usercontribution
+Sony;Sony Cybershot DSC P20;5.33;usercontribution
+Sony;Sony Cybershot DSC P200;7.11;usercontribution
+Sony;Sony Cybershot DSC P3;7.11;usercontribution
+Sony;Sony Cybershot DSC P30;5.33;usercontribution
+Sony;Sony Cybershot DSC P31;5.33;usercontribution
+Sony;Sony Cybershot DSC P32;5.33;usercontribution
+Sony;Sony Cybershot DSC P41;5.33;usercontribution
+Sony;Sony Cybershot DSC P43;5.33;usercontribution
+Sony;Sony Cybershot DSC P5;7.11;usercontribution
+Sony;Sony Cybershot DSC P50;5.33;usercontribution
+Sony;Sony Cybershot DSC P51;5.33;usercontribution
+Sony;Sony Cybershot DSC P52;5.33;usercontribution
+Sony;Sony Cybershot DSC P7;7.11;usercontribution
+Sony;Sony Cybershot DSC P71;7.11;usercontribution
+Sony;Sony Cybershot DSC P72;7.11;usercontribution
+Sony;Sony Cybershot DSC P73;5.33;usercontribution
+Sony;Sony Cybershot DSC P8;5.33;usercontribution
+Sony;Sony Cybershot DSC P9;7.11;usercontribution
+Sony;Sony Cybershot DSC P92;7.11;usercontribution
+Sony;Sony Cybershot DSC P93;7.11;usercontribution
+Sony;Sony Cybershot DSC R1;21.5;usercontribution
+Sony;Sony Cybershot DSC RX100;13.2;usercontribution
+Sony;Sony Cybershot DSC RX100 II;13.2;usercontribution
+Sony;Sony Cybershot DSC RX100M4;13.2;usercontribution
+Sony;Sony Cybershot DSC RX1R;35.8;usercontribution
+Sony;Sony Cybershot DSC S2000;6.16;usercontribution
+Sony;Sony Cybershot DSC S2100;6.16;usercontribution
+Sony;Sony Cybershot DSC S30;5.33;usercontribution
+Sony;Sony Cybershot DSC S3000;4.96;usercontribution
+Sony;Sony Cybershot DSC S40;5.33;usercontribution
+Sony;Sony Cybershot DSC S45;5.75;usercontribution
+Sony;Sony Cybershot DSC S50;5.33;usercontribution
+Sony;Sony Cybershot DSC S5000;6.16;usercontribution
+Sony;Sony Cybershot DSC S60;5.33;usercontribution
+Sony;Sony Cybershot DSC S600;5.75;usercontribution
+Sony;Sony Cybershot DSC S650;5.75;usercontribution
+Sony;Sony Cybershot DSC S70;7.11;usercontribution
+Sony;Sony Cybershot DSC S700;5.75;usercontribution
+Sony;Sony Cybershot DSC S730;5.75;usercontribution
+Sony;Sony Cybershot DSC S75;7.11;usercontribution
+Sony;Sony Cybershot DSC S750;5.75;usercontribution
+Sony;Sony Cybershot DSC S780;5.75;usercontribution
+Sony;Sony Cybershot DSC S80;5.33;usercontribution
+Sony;Sony Cybershot DSC S800;7.11;usercontribution
+Sony;Sony Cybershot DSC S85;7.11;usercontribution
+Sony;Sony Cybershot DSC S90;5.33;usercontribution
+Sony;Sony Cybershot DSC S930;6.08;usercontribution
+Sony;Sony Cybershot DSC S950;6.16;usercontribution
+Sony;Sony Cybershot DSC S980;6.08;usercontribution
+Sony;Sony Cybershot DSC T1;5.9;usercontribution
+Sony;Sony Cybershot DSC T10;5.75;usercontribution
+Sony;Sony Cybershot DSC T100;5.75;usercontribution
+Sony;Sony Cybershot DSC T11;5.9;usercontribution
+Sony;Sony Cybershot DSC T110;6.16;usercontribution
+Sony;Sony Cybershot DSC T2;5.75;usercontribution
+Sony;Sony Cybershot DSC T20;5.75;usercontribution
+Sony;Sony Cybershot DSC T200;5.75;usercontribution
+Sony;Sony Cybershot DSC T3;5.9;usercontribution
+Sony;Sony Cybershot DSC T30;5.75;usercontribution
+Sony;Sony Cybershot DSC T300;6.16;usercontribution
+Sony;Sony Cybershot DSC T33;5.9;usercontribution
+Sony;Sony Cybershot DSC T5;5.75;usercontribution
+Sony;Sony Cybershot DSC T50;5.75;usercontribution
+Sony;Sony Cybershot DSC T500;6.16;usercontribution
+Sony;Sony Cybershot DSC T7;5.9;usercontribution
+Sony;Sony Cybershot DSC T70;5.75;usercontribution
+Sony;Sony Cybershot DSC T700;6.16;usercontribution
+Sony;Sony Cybershot DSC T77;6.16;usercontribution
+Sony;Sony Cybershot DSC T9;5.75;usercontribution
+Sony;Sony Cybershot DSC T90;6.16;usercontribution
+Sony;Sony Cybershot DSC T900;6.16;usercontribution
+Sony;Sony Cybershot DSC T99;6.16;usercontribution
+Sony;Sony Cybershot DSC TX1;5.9;usercontribution
+Sony;Sony Cybershot DSC TX10;6.16;usercontribution
+Sony;Sony Cybershot DSC TX100V;6.16;usercontribution
+Sony;Sony Cybershot DSC TX20;6.16;usercontribution
+Sony;Sony Cybershot DSC TX200V;6.16;usercontribution
+Sony;Sony Cybershot DSC TX5;5.9;usercontribution
+Sony;Sony Cybershot DSC TX55;6.16;usercontribution
+Sony;Sony Cybershot DSC TX66;6.16;usercontribution
+Sony;Sony Cybershot DSC TX7;5.9;usercontribution
+Sony;Sony Cybershot DSC TX9;6.16;usercontribution
+Sony;Sony Cybershot DSC U10;5.33;usercontribution
+Sony;Sony Cybershot DSC U20;5.33;usercontribution
+Sony;Sony Cybershot DSC U30;5.33;usercontribution
+Sony;Sony Cybershot DSC U40;5.33;usercontribution
+Sony;Sony Cybershot DSC U50;5.33;usercontribution
+Sony;Sony Cybershot DSC U60;5.33;usercontribution
+Sony;Sony Cybershot DSC V1;7.11;usercontribution
+Sony;Sony Cybershot DSC V3;7.11;usercontribution
+Sony;Sony Cybershot DSC W1;7.11;usercontribution
+Sony;Sony Cybershot DSC W100;7.11;usercontribution
+Sony;Sony Cybershot DSC W110;5.75;usercontribution
+Sony;Sony Cybershot DSC W115;5.75;usercontribution
+Sony;Sony Cybershot DSC W12;7.11;usercontribution
+Sony;Sony Cybershot DSC W120;5.75;usercontribution
+Sony;Sony Cybershot DSC W125;5.75;usercontribution
+Sony;Sony Cybershot DSC W130;5.75;usercontribution
+Sony;Sony Cybershot DSC W150;5.75;usercontribution
+Sony;Sony Cybershot DSC W17;7.11;usercontribution
+Sony;Sony Cybershot DSC W170;6.16;usercontribution
+Sony;Sony Cybershot DSC W180;6.08;usercontribution
+Sony;Sony Cybershot DSC W190;6.08;usercontribution
+Sony;Sony Cybershot DSC W200;7.53;usercontribution
+Sony;Sony Cybershot DSC W210;6.16;usercontribution
+Sony;Sony Cybershot DSC W215;6.16;usercontribution
+Sony;Sony Cybershot DSC W220;6.16;usercontribution
+Sony;Sony Cybershot DSC W230;6.16;usercontribution
+Sony;Sony Cybershot DSC W270;7.53;usercontribution
+Sony;Sony Cybershot DSC W275;6.16;usercontribution
+Sony;Sony Cybershot DSC W290;6.16;usercontribution
+Sony;Sony Cybershot DSC W30;5.75;usercontribution
+Sony;Sony Cybershot DSC W300;7.53;usercontribution
+Sony;Sony Cybershot DSC W310;6.16;usercontribution
+Sony;Sony Cybershot DSC W320;6.16;usercontribution
+Sony;Sony Cybershot DSC W330;6.16;usercontribution
+Sony;Sony Cybershot DSC W35;5.75;usercontribution
+Sony;Sony Cybershot DSC W350;6.16;usercontribution
+Sony;Sony Cybershot DSC W360;6.16;usercontribution
+Sony;Sony Cybershot DSC W370;6.16;usercontribution
+Sony;Sony Cybershot DSC W380;6.16;usercontribution
+Sony;Sony Cybershot DSC W40;5.75;usercontribution
+Sony;Sony Cybershot DSC W5;7.11;usercontribution
+Sony;Sony Cybershot DSC W50;5.75;usercontribution
+Sony;Sony Cybershot DSC W510;6.16;usercontribution
+Sony;Sony Cybershot DSC W520;6.16;usercontribution
+Sony;Sony Cybershot DSC W530;6.16;usercontribution
+Sony;Sony Cybershot DSC W55;5.75;usercontribution
+Sony;Sony Cybershot DSC W550;6.16;usercontribution
+Sony;Sony Cybershot DSC W560;6.16;usercontribution
+Sony;Sony Cybershot DSC W570;6.16;usercontribution
+Sony;Sony Cybershot DSC W580;6.16;usercontribution
+Sony;Sony Cybershot DSC W610;6.16;usercontribution
+Sony;Sony Cybershot DSC W620;6.16;usercontribution
+Sony;Sony Cybershot DSC W630;6.16;usercontribution
+Sony;Sony Cybershot DSC W650;6.16;usercontribution
+Sony;Sony Cybershot DSC W670;6.16;usercontribution
+Sony;Sony Cybershot DSC W690;6.16;usercontribution
+Sony;Sony Cybershot DSC W7;7.11;usercontribution
+Sony;Sony Cybershot DSC W70;5.75;usercontribution
+Sony;Sony Cybershot DSC W710;6.16;usercontribution
+Sony;Sony Cybershot DSC W730;6.16;usercontribution
+Sony;Sony Cybershot DSC W80;5.75;usercontribution
+Sony;Sony Cybershot DSC W800;6.16;usercontribution
+Sony;Sony Cybershot DSC W810;6.16;usercontribution
+Sony;Sony Cybershot DSC W830;6.16;usercontribution
+Sony;Sony Cybershot DSC W85;5.75;usercontribution
+Sony;Sony Cybershot DSC W90;5.75;usercontribution
+Sony;Sony Cybershot DSC WX1;5.9;usercontribution
+Sony;Sony Cybershot DSC WX10;6.16;usercontribution
+Sony;Sony Cybershot DSC WX100;6.16;usercontribution
+Sony;Sony Cybershot DSC WX150;6.16;usercontribution
+Sony;Sony Cybershot DSC WX220;6.16;usercontribution
+Sony;Sony Cybershot DSC WX30;6.16;usercontribution
+Sony;Sony Cybershot DSC WX350;6.16;usercontribution
+Sony;Sony Cybershot DSC WX5;6.16;usercontribution
+Sony;Sony Cybershot DSC WX50;6.16;usercontribution
+Sony;Sony Cybershot DSC WX7;6.16;usercontribution
+Sony;Sony Cybershot DSC WX70;6.16;usercontribution
+Sony;Sony Cybershot DSC WX9;6.16;usercontribution
+Sony;Sony Cybershot DSC-HX300;6.16;usercontribution
+Sony;Sony Cybershot DSC-HX400;6.16;usercontribution
+Sony;Sony CyberShot DSC-HX7V;6.16;usercontribution
+Sony;Sony Cybershot DSC-HX90V;6.16;usercontribution
+Sony;Sony Cybershot DSC-QX10;6.16;usercontribution
+Sony;Sony Cybershot DSC-QX100;13.2;usercontribution
+Sony;Sony Cybershot DSC-RX10;13.2;usercontribution
+Sony;Sony Cybershot DSC-RX10 II;13.2;usercontribution
 Sony;Sony Cybershot DSC-RX10 III;13.2;dxomark
 Sony;Sony Cybershot DSC-RX10 IV;13.2;dxomark
-Sony;Sony Cybershot DSC-RX100 III;13.2;
-Sony;Sony Cybershot DSC-RX100 IV;13.2;
-Sony;Sony Cybershot DSC-TF1;6.16;
-Sony;Sony Cybershot DSC-TX30;6.16;
-Sony;Sony Cybershot DSC-WX200;6.16;
-Sony;Sony Cybershot DSC-WX300;6.16;
-Sony;Sony Cybershot DSC-WX500;6.16;
-Sony;Sony Cybershot DSC-WX60;6.16;
-Sony;Sony Cybershot DSC-WX80;6.16;
+Sony;Sony Cybershot DSC-RX100 III;13.2;usercontribution
+Sony;Sony Cybershot DSC-RX100 IV;13.2;usercontribution
+Sony;Sony Cybershot DSC-TF1;6.16;usercontribution
+Sony;Sony Cybershot DSC-TX30;6.16;usercontribution
+Sony;Sony Cybershot DSC-WX200;6.16;usercontribution
+Sony;Sony Cybershot DSC-WX300;6.16;usercontribution
+Sony;Sony Cybershot DSC-WX500;6.16;usercontribution
+Sony;Sony Cybershot DSC-WX60;6.16;usercontribution
+Sony;Sony Cybershot DSC-WX80;6.16;usercontribution
+Sony;Sony DSC-HX5V;5.90;usercontribution
+Sony;Sony DSC-HX60;6.16;usercontribution
+Sony;Sony DSC-HX60V;6.16;usercontribution
+Sony;Sony DSC-HX7V;6.16;usercontribution
+Sony;Sony DSC-QX30U;6.16;usercontribution
 Sony;Sony DSC-RX0;13.2;dpreview,dxomark
+Sony;Sony DSC-RX10;13.2;usercontribution
+Sony;Sony DSC-RX100M5;13.2;usercontribution
+Sony;Sony DSC-T110;6.16;usercontribution
+Sony;Sony DSC-WX500;6.16;usercontribution
+Sony;Sony DSLR-A100;23.6;usercontribution
+Sony;Sony DSLR-A700;23.5;usercontribution
+Sony;Sony DSLR-A900;35.9;usercontribution
+Sony;Sony FDR-X1000V;6.19;usercontribution
 Sony;Sony FDR-X3000;5.744;dpreview
 Sony;Sony HDR-AS300;5.744;dpreview
 Sony;Sony ILCE 5000;23.2;dpreview
-Sony;Sony ILCE 5100;23.5;
-Sony;Sony ILCE 6000;23.5;
-Sony;Sony ILCE-6000;23.5;
+Sony;Sony ILCE 5100;23.5;usercontribution
+Sony;Sony ILCE 6000;23.5;usercontribution
+Sony;Sony ILCE-3500;23.5;usercontribution
+Sony;Sony ILCE-6000;23.5;usercontribution
 Sony;Sony ILCE-6300;23.5;dpreview
-Sony;Sony IMX179;6.18;
+Sony;Sony ILCE-7M3;35.6;usercontribution
+Sony;Sony ILCE-7RM3;35.9;usercontribution
+Sony;Sony ILCE-QX1;23.2;usercontribution
+Sony;Sony IMX179;6.18;usercontribution
 Sony;Sony Mavica CD1000;5.312;dpreview,digicamdb
 Sony;Sony Mavica CD200;5.312;dpreview,digicamdb
 Sony;Sony Mavica CD250;5.312;dpreview,digicamdb
@@ -6299,8 +6368,8 @@ Sony;Sony NEX-F3;23.5;dxomark
 Sony;Sony NEX-VG10;23.7;imaging-resource
 Sony;Sony NEX3;23.4;dxomark
 Sony;Sony NEX5;23.4;dxomark
-Sony;Sony QX1;23.5;
-Sony;Sony QX30;6.16;
+Sony;Sony QX1;23.5;usercontribution
+Sony;Sony QX30;6.16;usercontribution
 Sony;Sony SLT Alpha 33;23.4;dxomark
 Sony;Sony SLT Alpha 35;23.5;dxomark
 Sony;Sony SLT Alpha 37;23.5;dxomark
@@ -6318,12 +6387,12 @@ Sony;Sony SLT-A35;23.5;dpreview
 Sony;Sony SLT-A37;23.5;dpreview
 Sony;Sony SLT-A55;23.5;dpreview
 Sony;Sony SLT-A57;23.5;dpreview
-Sony;Sony SLT-A58;23.2;
+Sony;Sony SLT-A58;23.2;usercontribution
 Sony;Sony SLT-A65;23.5;dpreview
 Sony;Sony SLT-A68;23.5;dpreview
 Sony;Sony SLT-A77;23.5;dpreview
 Sony;Sony SLT-A77 II;23.5;dpreview
-Sony;Sony SLT-A99;35.8;
+Sony;Sony SLT-A99;35.8;usercontribution
 Sony;Sony Xperia A2 SO-04F;6.17;devicespecifications
 Sony;Sony Xperia A4 SO-04G;6.17;devicespecifications
 Sony;Sony Xperia J1 Compact;6.17;devicespecifications
@@ -6577,7 +6646,7 @@ Vertex;Vertex Impress Razor;2.92;devicespecifications
 Vertex;Vertex Impress X;2.8;devicespecifications
 Vertu;Vertu 2017;6.25;devicespecifications
 Vertu;Vertu Constellation;6.25;devicespecifications
-Vivitar;Vivitar V8025;7.11;
+Vivitar;Vivitar V8025;7.11;usercontribution
 Vivitar;Vivitar ViviCam 5105s;5.75;digicamdb
 Vivitar;Vivitar ViviCam 5150s;5.75;digicamdb
 Vivitar;Vivitar ViviCam 5160s;5.75;digicamdb
@@ -6670,6 +6739,7 @@ Winnovo;Winnovo K54;2.65;devicespecifications
 Winnovo;Winnovo K56;2.65;devicespecifications
 Wolder;Wolder Wiam #65;5.99;devicespecifications
 Xgody;Xgody Y20;3.68;devicespecifications
+Xiaomi;Mi A1;5.11;devicespecifications
 Xiaomi;Xiaomi Mi 3;4.69;devicespecifications
 Xiaomi;Xiaomi Mi 3 TD;4.69;devicespecifications
 Xiaomi;Xiaomi Mi 4;4.69;devicespecifications
@@ -6683,7 +6753,6 @@ Xiaomi;Xiaomi Mi 5s;6.25;devicespecifications
 Xiaomi;Xiaomi Mi 5s Plus;4.71;devicespecifications
 Xiaomi;Xiaomi Mi 5X;5.11;devicespecifications
 Xiaomi;Xiaomi Mi 6;4.96;devicespecifications
-Xiaomi;Mi A1;5.11;devicespecifications
 Xiaomi;Xiaomi Mi A2 Lite;2.98;devicespecifications
 Xiaomi;Xiaomi Mi Max;4.74;devicespecifications
 Xiaomi;Xiaomi Mi Max 2;4.96;devicespecifications
