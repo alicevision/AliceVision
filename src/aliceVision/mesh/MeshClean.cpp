@@ -403,11 +403,12 @@ void MeshClean::path::updatePtNeighPtsOrderedByPath(int ptId, StaticVector<MeshC
 
 void MeshClean::path::createPath(StaticVector<int>& ptNeighTrisSortedAscToProcess, StaticVector<MeshClean::path::pathPart>& out_path)
 {
+    out_path.clear();
     out_path.reserve(sizeOfStaticVector<int>(ptNeighTrisSortedAscToProcess));
 
     if(sizeOfStaticVector<int>(ptNeighTrisSortedAscToProcess) == 0)
     {
-        out_path.clear();
+        return;
     }
 
     // add first
