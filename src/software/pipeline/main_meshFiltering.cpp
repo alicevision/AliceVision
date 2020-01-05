@@ -103,7 +103,7 @@ int main(int argc, char* argv[])
         bfs::create_directory(outDirectory);
 
     mesh::Texturing texturing;
-    texturing.loadFromOBJ(inputMeshPath);
+    texturing.loadOBJWithAtlas(inputMeshPath);
     mesh::Mesh* mesh = texturing.mesh;
 
     if(!mesh)

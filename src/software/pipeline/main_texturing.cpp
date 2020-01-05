@@ -195,7 +195,7 @@ int main(int argc, char* argv[])
             if(retopoMeshFilepath.empty())
                 throw std::invalid_argument("You need to specify the path to the retopo mesh. Input Mesh is the reference mesh, computed by Meshroom.");
 
-            mesh.loadFromOBJ(retopoMeshFilepath, flipNormals);
+            mesh.loadOBJWithAtlas(retopoMeshFilepath, flipNormals);
             refMesh.loadFromObjAscii(inputMeshFilepath);
 
             // load reference dense point cloud with visibilities
@@ -218,7 +218,7 @@ int main(int argc, char* argv[])
         }
         else
         {
-            mesh.loadFromOBJ(inputMeshFilepath, flipNormals);
+            mesh.loadOBJWithAtlas(inputMeshFilepath, flipNormals);
 
             // load reference dense point cloud with visibilities
             mesh::PointsVisibility& refVisibilities = refMesh.pointsVisibilities;
