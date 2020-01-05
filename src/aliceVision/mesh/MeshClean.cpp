@@ -11,9 +11,9 @@ namespace aliceVision {
 namespace mesh {
 
 MeshClean::path::path(MeshClean* mesh, int ptId)
+: meshClean(mesh)
+, _ptId(ptId)
 {
-    meshClean = mesh;
-    ptId = ptId;
 }
 
 MeshClean::path::~path() = default;
