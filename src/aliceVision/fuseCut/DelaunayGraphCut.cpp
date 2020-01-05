@@ -872,8 +872,8 @@ void DelaunayGraphCut::fuseFromDepthMaps(const StaticVector<int>& cams, const Po
 
     ALICEVISION_LOG_INFO("Load depth maps and add points.");
     {
-        //omp_set_nested(1);
-        //#pragma omp parallel for num_threads(3)
+        omp_set_nested(1);
+        #pragma omp parallel for num_threads(3)
         for(int c = 0; c < cams.size(); c++)
         {
             std::vector<float> depthMap;
@@ -882,9 +882,7 @@ void DelaunayGraphCut::fuseFromDepthMaps(const StaticVector<int>& cams, const Po
             int width, height;
             {
                 const std::string depthMapFilepath = getFileNameFromIndex(mp, c, mvsUtils::EFileType::depthMap, 0);
-                ALICEVISION_LOG_INFO("BEFORE READIMAGE " << c);
                 imageIO::readImage(depthMapFilepath, width, height, depthMap, imageIO::EImageColorSpace::NO_CONVERSION);
-                ALICEVISION_LOG_INFO("AFTER READIMAGE " << c);
                 if(depthMap.empty())
                 {
                     ALICEVISION_LOG_WARNING("Empty depth map: " << depthMapFilepath);
@@ -907,10 +905,9 @@ void DelaunayGraphCut::fuseFromDepthMaps(const StaticVector<int>& cams, const Po
                     throw std::runtime_error("Wrong nmod map dimensions: " + nmodMapFilepath);
             }
 
-            ALICEVISION_LOG_INFO("cams size: " << cams.size());
             int syMax = std::ceil(height/step);
             int sxMax = std::ceil(width/step);
-            //#pragma omp parallel for
+            #pragma omp parallel for
             for(int sy = 0; sy < syMax; ++sy)
             {
                 for(int sx = 0; sx < sxMax; ++sx)
@@ -987,7 +984,7 @@ void DelaunayGraphCut::fuseFromDepthMaps(const StaticVector<int>& cams, const Po
                 }
             }
         }
-        //omp_set_nested(0);
+        omp_set_nested(0);
     }
 
     ALICEVISION_LOG_INFO("Filter initial 3D points by pixel size to remove duplicates.");
