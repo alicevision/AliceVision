@@ -185,6 +185,7 @@ Apple;iPhone 7;4.89;phonearena
 Apple;iPhone 7 Plus;4.89;phonearena
 Apple;iPhone 8;4.89;phonearena
 Apple;iPhone 8 Plus;4.89;imaging-resource,phonearena
+Apple;iPhone 11 Pro;5.75;usercontribution
 Apple;iPhone SE;4.89;phonearena,devicespecifications
 Apple;iPhone X;4.89;phonearena
 Apple;iPhone XR;5.60;dpreview
@@ -638,6 +639,7 @@ Canon;Canon EOS Rebel T7;22.3;dpreview,digicamdb,imaging-resource
 Canon;Canon EOS Rebel T7i;22.3;dpreview,digicamdb,imaging-resource
 Canon;Canon EOS Rebel XS;22.2;dpreview
 Canon;Canon EOS Rebel XSi;22.2;dpreview
+Canon;Canon EOS RP;35.9;dpreview,digicamdb,imaging-resource
 Canon;Canon EOS XS;22.2;imaging-resource
 Canon;Canon EOS XSi;22.2;imaging-resource
 Canon;Canon EOS-1D;28.7;dpreview,digicamdb
@@ -1470,6 +1472,8 @@ Epson;Epson RD-1s;23.7;digicamdb
 Estar;Estar Takee 1;4.69;devicespecifications
 Eton;Eton Extreme 95;4.69;devicespecifications
 Fairphone;Fairphone 2;4.61;devicespecifications
+Fairphone;Fairphone 3;5.75;usercontribution
+Fairphone;FP3;5.75;usercontribution
 Fairphone;FP2;4.61;devicespecifications
 Firefly;Firefly Aurii Envy;4.69;devicespecifications
 Firefly;Firefly Aurii Secret;4.71;devicespecifications
@@ -2951,6 +2955,7 @@ Lg;Lg V20;5.22;devicespecifications
 Lg;Lg Zero;3.7;devicespecifications
 LG Electronics;LG-H870;4.71;usercontribution
 LG Electronics;LG-H870DS;5.867
+LG Electronics;LG-H873;4.8;usercontribution
 LG Electronics;LG-H930;5.893
 LG Electronics;LG-H932;5.893
 LGE;Nexus 5X;6.25;
@@ -5279,6 +5284,8 @@ Samsung;Samsung Galaxy S7 Active;3.2;devicespecifications
 Samsung;Samsung Galaxy S7 Edge Exynos;3.2;devicespecifications
 Samsung;Samsung Galaxy S7 Edge SD820;3.2;devicespecifications
 Samsung;Samsung Galaxy S7 Exynos;3.2;devicespecifications
+Samsung;Samsung Galaxy S8;5.75;usercontribution
+Samsung;Samsung Galaxy S9;5.75;usercontribution
 Samsung;Samsung SM-G935F;3.2;devicespecifications
 Samsung;Samsung Galaxy S7 SD820;3.2;devicespecifications
 Samsung;Samsung Galaxy Tab S 10.5 LTE;3.6;devicespecifications
