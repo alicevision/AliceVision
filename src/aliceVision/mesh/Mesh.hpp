@@ -206,8 +206,8 @@ public:
 
     Point2d getTrianglePixelInternalPoint(Mesh::triangle_proj& tp, Mesh::rectangle& re);
 
-    void subdivideMeshUpdateVisibilities(const Mesh& refMesh, float ratioSubdiv);
-    int subdivideMesh(const Mesh& refMesh, const GEO::AdaptiveKdTree& refMesh_kdTree, const std::vector<std::vector<int>>& refPtsNeighbors, float ratioSubdiv);
+    int subdivideMesh(const Mesh& refMesh, float ratioSubdiv, bool remapVisibilities);
+    int subdivideMeshOnce(const Mesh& refMesh, const GEO::AdaptiveKdTree& refMesh_kdTree, float ratioSubdiv);
 
     void computeTrisCams(StaticVector<StaticVector<int>>& trisCams, const mvsUtils::MultiViewParams& mp, const std::string tmpDir);
     void computeTrisCamsFromPtsCams(StaticVector<StaticVector<int>>& trisCams) const;

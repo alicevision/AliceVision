@@ -1563,44 +1563,51 @@ void subdivideTriangle(const Mesh& mesh, int triangleId, std::vector<edge>& edge
 
 }
 
-void Mesh::subdivideMeshUpdateVisibilities(const Mesh& refMesh, float ratioSubdiv)
+int Mesh::subdivideMesh(const Mesh& refMesh, float ratioSubdiv, bool remapVisibilities)
 {
     ALICEVISION_LOG_INFO("Subdivide mesh.");
     ALICEVISION_LOG_INFO("nb pts init: " << pts.size());
     ALICEVISION_LOG_INFO("nb tris init: " << tris.size());
 
-    int maxMeshPts = refMesh.pts.size() * ratioSubdiv + (1-ratioSubdiv) * pts.size();
-
-    std::vector<std::vector<int>> refPtsNeighbors;
-    refMesh.getPtsNeighbors(refPtsNeighbors);
+    const int maxMeshPts = refMesh.pts.size() * ratioSubdiv + (1-ratioSubdiv) * pts.size();
 
     GEO::AdaptiveKdTree refMesh_kdTree(3);
     refMesh_kdTree.set_points(refMesh.pts.size(), refMesh.pts.front().m);
 
+    int nbAllSubdiv = 0;
     int nsubd = 0;
     do
     {
-        nsubd = subdivideMesh(refMesh, refMesh_kdTree, refPtsNeighbors, ratioSubdiv);
+        nsubd = subdivideMeshOnce(refMesh, refMesh_kdTree, ratioSubdiv);
+        nbAllSubdiv += nsubd;
         ALICEVISION_LOG_DEBUG("subdivided: " << nsubd);
     } while( pts.size()+nsubd < maxMeshPts && nsubd > 10);
 
     ALICEVISION_LOG_INFO("Nb points after subdivision: " << pts.size());
     ALICEVISION_LOG_INFO("Nb tris after subdivision: " << tris.size());
 
-    pointsVisibilities.resize(pts.size());
-    for(int i = 0; i < pts.size(); ++i)
+    if (remapVisibilities)
     {
-        int iRef = refMesh_kdTree.get_nearest_neighbor(pts[i].m);
-        if(iRef == -1)
-            continue;
+        pointsVisibilities.resize(pts.size());
+        for (int i = 0; i < pts.size(); ++i)
+        {
+            int iRef = refMesh_kdTree.get_nearest_neighbor(pts[i].m);
+            if (iRef == -1)
+                continue;
 
-        PointVisibility& ptVisibilities = pointsVisibilities[i];
-        const PointVisibility& refVisibilities = refMesh.pointsVisibilities[iRef];
-        std::copy(refVisibilities.begin(), refVisibilities.end(), std::back_inserter(ptVisibilities.getDataWritable()));
+            PointVisibility& ptVisibilities = pointsVisibilities[i];
+            const PointVisibility& refVisibilities = refMesh.pointsVisibilities[iRef];
+            std::copy(refVisibilities.begin(), refVisibilities.end(), std::back_inserter(ptVisibilities.getDataWritable()));
+        }
     }
+    else
+    {
+        pointsVisibilities.clear();
+    }
+    return nbAllSubdiv;
 }
 
-int Mesh::subdivideMesh(const Mesh& refMesh, const GEO::AdaptiveKdTree& refMesh_kdTree, const std::vector<std::vector<int>>& refPtsNeighbors, float ratioSubdiv)
+int Mesh::subdivideMeshOnce(const Mesh& refMesh, const GEO::AdaptiveKdTree& refMesh_kdTree, float ratioSubdiv)
 {
 
     StaticVector<StaticVector<int>> edgesNeighTris;
@@ -1620,28 +1627,52 @@ int Mesh::subdivideMesh(const Mesh& refMesh, const GEO::AdaptiveKdTree& refMesh_
     std::copy(uvCoords.begin(), uvCoords.end(), std::back_inserter(new_uvCoords.getDataWritable()));
 
     int nEdgesToSubdivide = 0;
-    // find which edges to subidivide
+    // find which edges to subdivide
     for(int i = 0; i < edgesPointsPairs.size(); ++i)
     {
         int idA = edgesPointsPairs[i].x;
         int idB = edgesPointsPairs[i].y;
-        int idRefA = refMesh_kdTree.get_nearest_neighbor(pts[idA].m);
-        int idRefB = refMesh_kdTree.get_nearest_neighbor(pts[idB].m);
-        if(idRefA == -1 || idRefB == -1)
-            continue;
+
+        double refLocalEdgeLength = 0; // rough estimation of points distances around point A and B
+        {
+            int j = 0;
+            GEO::index_t neighborsId[8];
+            double sqDist[8];
+            refMesh_kdTree.get_nearest_neighbors(4, pts[idA].m, neighborsId, sqDist);
+            refMesh_kdTree.get_nearest_neighbors(4, pts[idB].m, neighborsId + 4, sqDist + 4);
+            if (GEO::signed_index_t(neighborsId[0]) == -1 || GEO::signed_index_t(neighborsId[4]) == -1)
+                continue;
+
+            for (int i = 1; i < 4; ++i)
+            {
+                if (GEO::signed_index_t(neighborsId[i]) != -1)
+                {
+                    refLocalEdgeLength += std::sqrt(sqDist[i]);
+                    ++j;
+                }
+            }
+            for (int i = 5; i < 8; ++i)
+            {
+                if (GEO::signed_index_t(neighborsId[i]) != -1)
+                {
+                    refLocalEdgeLength += std::sqrt(sqDist[i]);
+                    ++j;
+                }
+            }
+            refLocalEdgeLength /= j;
+        }
 
         Point3d& pointA = pts[idA];
         Point3d& pointB = pts[idB];
 
         const double edgeLength = dist(pointA, pointB);
-        const double refLocalEdgeLength = (refMesh.computeLocalAverageEdgeLength(refPtsNeighbors, idRefA) + refMesh.computeLocalAverageEdgeLength(refPtsNeighbors, idRefB)) / 2.0;
 //        ALICEVISION_LOG_INFO("edge length: " << edgeLength);
 //        ALICEVISION_LOG_INFO("refLocalEdgeLength: " << refLocalEdgeLength);
 
-        if(refLocalEdgeLength > 0 && edgeLength > refLocalEdgeLength / ratioSubdiv )
+        if(refLocalEdgeLength > 0 && edgeLength * ratioSubdiv > refLocalEdgeLength)
         {
             // add new point
-            Point3d newPoint = (pointA + pointB) / 2.0;
+            Point3d newPoint = (pointA + pointB) * 0.5;
             int newPointId = new_pts.size();
             new_pts.push_back(newPoint);
 

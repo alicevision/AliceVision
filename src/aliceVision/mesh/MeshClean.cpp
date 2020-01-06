@@ -367,11 +367,17 @@ void MeshClean::path::deployPath(StaticVector<MeshClean::path::pathPart>& path)
     int newPtId = deployTriangles(trisIds, (!isClodePath(path)));
 
     meshClean->ptsNeighPtsOrdered.reserveAddIfNeeded(1, 1000);
+    // meshClean->ptsNeighPtsOrdered.push_back({});
     updatePtNeighPtsOrderedByPath(newPtId, path);
 }
 
 void MeshClean::path::clearPointNeighbors(int ptId)
 {
+    if (ptId < 0 || ptId >= meshClean->ptsNeighPtsOrdered.size())
+    {
+        ALICEVISION_LOG_ERROR("MeshClean::path::clearPointNeighbors ptId: " << ptId << ", meshClean->ptsNeighPtsOrdered.size(): " << meshClean->ptsNeighPtsOrdered.size());
+        throw std::runtime_error("MeshClean::path::clearPointNeighbors ptId: " + std::to_string(ptId) + ", meshClean->ptsNeighPtsOrdered.size(): " + std::to_string(meshClean->ptsNeighPtsOrdered.size()));
+    }
     StaticVector<int>& ptNeighPtsOrderedByPath = meshClean->ptsNeighPtsOrdered[ptId];
 
     if(!ptNeighPtsOrderedByPath.empty())
@@ -382,12 +388,11 @@ void MeshClean::path::clearPointNeighbors(int ptId)
 
 void MeshClean::path::updatePtNeighPtsOrderedByPath(int ptId, StaticVector<MeshClean::path::pathPart>& path)
 {
-    StaticVector<int>& ptNeighPtsOrderedByPath = meshClean->ptsNeighPtsOrdered[ptId];
-
     clearPointNeighbors(ptId);
 
     if( !path.empty() )
     {
+        StaticVector<int>& ptNeighPtsOrderedByPath = meshClean->ptsNeighPtsOrdered[ptId];
         ptNeighPtsOrderedByPath.reserve(path.size() + 1);
 
         if(!isClodePath(path))
@@ -464,6 +469,7 @@ int MeshClean::path::deployAll()
     {
         int newPtId = deployTriangles(ptNeighTrisSortedAscToProcess, true);
         meshClean->ptsNeighPtsOrdered.reserveAddIfNeeded(1, 1000);
+        // meshClean->ptsNeighPtsOrdered.push_back({});
         clearPointNeighbors(newPtId);
         ptNeighTrisSortedAscToProcess.resize(0);
         nNewPts++;
@@ -872,8 +878,7 @@ int MeshClean::cleanMesh(int maxIters)
     testPtsNeighTrisSortedAsc();
     testEdgesNeighTris();
     int nupd = 1;
-    int iter = 0;
-    while((iter < maxIters) && (nupd > 0))
+    for(int iter = 0; (iter < maxIters) && (nupd > 0); ++iter)
     {
         nupd = cleanMesh();
         testPtsNeighTrisSortedAsc();

@@ -85,9 +85,8 @@ struct TexturingParams
     bool forceVisibleByAllVertices = false; //< triangle visibility is based on the union of vertices visiblity
     EVisibilityRemappingMethod visibilityRemappingMethod = EVisibilityRemappingMethod::PullPush;
 
-    bool retopoMesh = false;
-    std::string retopoMeshFilePath;
-    float ratioSubdivision = 0.5;
+    bool allowSubdivision = true;
+    float subdivisionFactor = 0.5;
 };
 
 struct Texturing
