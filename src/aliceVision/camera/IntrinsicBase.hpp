@@ -22,12 +22,9 @@ namespace camera {
  * @brief Basis class for all intrinsic parameters of a camera
  *  Store the image size & define all basis optical modelization of a camera
  */
-struct IntrinsicBase
+class IntrinsicBase
 {
-  unsigned int _w = 0;
-  unsigned int _h = 0;
-  double _initialFocalLengthPix = -1;
-  std::string _serialNumber;
+public:
 
   IntrinsicBase(unsigned int width = 0, unsigned int height = 0, const std::string& serialNumber = "")
     : _w(width)
@@ -383,12 +380,16 @@ struct IntrinsicBase
     _h = (unsigned int)(floor(float(_h) * factor));
   }
 
-private:
+protected:
 
   /// initialization mode
   EIntrinsicInitMode _initializationMode = EIntrinsicInitMode::NONE;
   /// intrinsic lock
   bool _locked = false;
+  unsigned int _w = 0;
+  unsigned int _h = 0;
+  double _initialFocalLengthPix = -1;
+  std::string _serialNumber;
 };
 
 /**
@@ -445,6 +446,7 @@ inline double AngleBetweenRays(const geometry::Pose3& pose1,
   const Vec3 ray2 = pt3D - pose2.center();
   return AngleBetweenRays(ray1, ray2);
 }
+
 
 
 } // namespace camera
