@@ -115,28 +115,7 @@ struct IntrinsicBase
    * @param[in] applyDistortion If true apply distrortion if any
    * @return The 2d projection in the camera plane
    */
-  inline Vec2 project(const geometry::Pose3& pose, const Vec3& pt3D, bool applyDistortion = true) const
-  {
-    const Vec3 X = pose(pt3D); // apply pose
-    if (applyDistortion && this->have_disto()) // apply disto & intrinsics
-      return this->cam2ima( this->add_disto(X.head<2>()/X(2)) );
-    else // apply intrinsics
-      return this->cam2ima( X.head<2>()/X(2) );
-  }
-
-  inline Vec3 backproject(const geometry::Pose3& pose, const Vec2& pt2D, double depth, bool applyUndistortion = true) const
-  {
-    Vec2 pt2DCam;
-    if (applyUndistortion && this->have_disto()) // apply disto & intrinsics
-      pt2DCam = this->ima2cam(this->remove_disto(pt2D));
-    else
-      pt2DCam = this->ima2cam(pt2D);
-
-    const Vec3 pt2DCamN = pt2DCam.homogeneous().normalized();
-    const Vec3 pt3d = depth * pt2DCamN;
-    const Vec3 output = pose.inverse()(pt3d);
-    return output;
-  }
+  virtual Vec2 project(const geometry::Pose3& pose, const Vec3& pt3D, bool applyDistortion = true) const = 0;
 
   /**
    * @brief Compute the residual between the 3D projected point X and an image observation x
@@ -328,12 +307,6 @@ struct IntrinsicBase
    */
   virtual double imagePlane_toCameraPlaneError(double value) const = 0;
 
-  /**
-   * @brief Return the intrinsic (interior & exterior) as a simplified projective projection
-   * @param[in] pose The camera Pose
-   * @return Simplified projective projection
-   */
-  virtual Mat34 get_projective_equivalent(const geometry::Pose3& pose) const = 0;
 
   /**
    * @brief Return true if the intrinsic is valid

@@ -80,6 +80,15 @@ class Pinhole : public IntrinsicBase
     return (_Kinv * p3).normalized();
   }
 
+  virtual Vec2 project(const geometry::Pose3& pose, const Vec3& pt3D, bool applyDistortion = true) const override
+  {
+    const Vec3 X = pose(pt3D); // apply pose
+    if (applyDistortion && this->have_disto()) // apply disto & intrinsics
+      return this->cam2ima( this->add_disto(X.head<2>()/X(2)) );
+    else // apply intrinsics
+      return this->cam2ima( X.head<2>()/X(2) );
+  }
+
   // Transform a point from the camera plane to the image plane
   Vec2 cam2ima(const Vec2& p) const override
   {
@@ -103,7 +112,7 @@ class Pinhole : public IntrinsicBase
     return value / focal();
   }
 
-  virtual Mat34 get_projective_equivalent(const geometry::Pose3 & pose) const override
+  virtual Mat34 get_projective_equivalent(const geometry::Pose3 & pose) const
   {
     Mat34 P;
     P_From_KRt(K(), pose.rotation(), pose.translation(), &P);
@@ -187,6 +196,8 @@ class Pinhole : public IntrinsicBase
 
     return true;
   }
+
+  
 
   /// Return the un-distorted pixel (with removed distortion)
   virtual Vec2 get_ud_pixel(const Vec2& p) const override {return p;}

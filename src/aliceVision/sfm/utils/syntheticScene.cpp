@@ -187,7 +187,15 @@ sfmData::SfMData getInputRigScene(const NViewDataSet& d,
     {
       const sfmData::View& view = *sfmData.views.at(viewId);
       const geometry::Pose3 camPose = sfmData.getPose(view).getTransform();
-      const Vec2 pt = Project(sfmData.intrinsics.at(0)->get_projective_equivalent(camPose), landmark.X);
+
+      std::shared_ptr<camera::IntrinsicBase> cam = sfmData.intrinsics.at(0);
+      std::shared_ptr<camera::Pinhole> camPinHole = std::dynamic_pointer_cast<camera::Pinhole>(cam);
+      if (!camPinHole) {
+        ALICEVISION_LOG_ERROR("Camera is not pinhole in getInputRigScene");
+        continue;
+      }
+
+      const Vec2 pt = Project(camPinHole->get_projective_equivalent(camPose), landmark.X);
       landmark.observations[viewId] = sfmData::Observation(pt, landmarkId);
     }
     sfmData.structure[landmarkId] = landmark;

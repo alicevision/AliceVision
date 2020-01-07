@@ -505,8 +505,20 @@ void ReconstructionEngine_globalSfM::Compute_Relative_Rotations(rotationAveragin
       }
       assert(nbBearing == iBearing);
 
-      const IntrinsicBase* cam_I = _sfmData.getIntrinsics().at(view_I->getIntrinsicId()).get();
-      const IntrinsicBase* cam_J = _sfmData.getIntrinsics().at(view_J->getIntrinsicId()).get();
+
+      std::shared_ptr<camera::IntrinsicBase> cam_I = _sfmData.getIntrinsics().at(view_I->getIntrinsicId());
+      std::shared_ptr<camera::Pinhole> camIPinHole = std::dynamic_pointer_cast<camera::Pinhole>(cam_I);
+      if (!camIPinHole) {
+        ALICEVISION_LOG_ERROR("Camera is not pinhole in Compute_Relative_Rotations");
+        continue;
+      }
+
+      std::shared_ptr<camera::IntrinsicBase> cam_J = _sfmData.getIntrinsics().at(view_J->getIntrinsicId());
+      std::shared_ptr<camera::Pinhole> camJPinHole = std::dynamic_pointer_cast<camera::Pinhole>(cam_J);
+      if (!camJPinHole) {
+        ALICEVISION_LOG_ERROR("Camera is not pinhole in Compute_Relative_Rotations");
+        continue;
+      }
 
       RelativePoseInfo relativePose_info;
       // Compute max authorized error as geometric mean of camera plane tolerated residual error
@@ -542,8 +554,8 @@ void ReconstructionEngine_globalSfM::Compute_Relative_Rotations(rotationAveragin
         tinyScene.setPose(*view_J, CameraPose(poseJ));
 
         // Init structure
-        const Mat34 P1 = cam_I->get_projective_equivalent(poseI);
-        const Mat34 P2 = cam_J->get_projective_equivalent(poseJ);
+        const Mat34 P1 = camIPinHole->get_projective_equivalent(poseI);
+        const Mat34 P2 = camJPinHole->get_projective_equivalent(poseJ);
         Landmarks & landmarks = tinyScene.structure;
 
         size_t landmarkId = 0;

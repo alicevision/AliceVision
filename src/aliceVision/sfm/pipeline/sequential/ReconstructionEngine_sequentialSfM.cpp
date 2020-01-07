@@ -1787,17 +1787,30 @@ void ReconstructionEngine_sequentialSfM::triangulate_multiViewsLORANSAC(SfMData&
       IndexT J =  *(observations.rbegin());
       const View* viewI = scene.getViews().at(I).get();
       const View* viewJ = scene.getViews().at(J).get();
-      const IntrinsicBase* camI = scene.getIntrinsics().at(viewI->getIntrinsicId()).get();
-      const IntrinsicBase* camJ = scene.getIntrinsics().at(viewJ->getIntrinsicId()).get();
+
+      std::shared_ptr<camera::IntrinsicBase> camI = scene.getIntrinsics().at(viewI->getIntrinsicId());
+      std::shared_ptr<camera::Pinhole> camIPinHole = std::dynamic_pointer_cast<camera::Pinhole>(camI);
+      if (!camIPinHole) {
+        ALICEVISION_LOG_ERROR("Camera is not pinhole in triangulate_multiViewsLORANSAC");
+        continue;
+      }
+
+      std::shared_ptr<camera::IntrinsicBase> camJ = scene.getIntrinsics().at(viewJ->getIntrinsicId());
+      std::shared_ptr<camera::Pinhole> camJPinHole = std::dynamic_pointer_cast<camera::Pinhole>(camJ);
+      if (!camJPinHole) {
+        ALICEVISION_LOG_ERROR("Camera is not pinhole in triangulate_multiViewsLORANSAC");
+        continue;
+      }
+
       const Pose3 poseI = scene.getPose(*viewI).getTransform();
       const Pose3 poseJ = scene.getPose(*viewJ).getTransform();
       const Vec2 xI = _featuresPerView->getFeatures(I, track.descType)[track.featPerView.at(I)].coords().cast<double>();
       const Vec2 xJ = _featuresPerView->getFeatures(J, track.descType)[track.featPerView.at(J)].coords().cast<double>();
   
       // -- Triangulate:
-      TriangulateDLT(camI->get_projective_equivalent(poseI), 
+      TriangulateDLT(camIPinHole->get_projective_equivalent(poseI), 
                      camI->get_ud_pixel(xI), 
-                     camJ->get_projective_equivalent(poseJ), 
+                     camJPinHole->get_projective_equivalent(poseJ), 
                      camI->get_ud_pixel(xJ), 
                      &X_euclidean);
       
@@ -1811,7 +1824,7 @@ void ReconstructionEngine_sequentialSfM::triangulate_multiViewsLORANSAC(SfMData&
       const double& acThresholdI = (acThresholdItI != _map_ACThreshold.end()) ? acThresholdItI->second : 4.0;
       const double& acThresholdJ = (acThresholdItJ != _map_ACThreshold.end()) ? acThresholdItJ->second : 4.0;
       
-      if (AngleBetweenRays(poseI, camI, poseJ, camJ, xI, xJ) < _params.minAngleForTriangulation ||
+      if (AngleBetweenRays(poseI, camI.get(), poseJ, camJ.get(), xI, xJ) < _params.minAngleForTriangulation ||
           poseI.depth(X_euclidean) < 0 || 
           poseJ.depth(X_euclidean) < 0 || 
           camI->residual(poseI, X_euclidean, xI).norm() > acThresholdI || 
@@ -1834,11 +1847,18 @@ void ReconstructionEngine_sequentialSfM::triangulate_multiViewsLORANSAC(SfMData&
         for (const IndexT& viewId : observations)
         {
           const View* view = scene.getViews().at(viewId).get();
-          const IntrinsicBase* cam = scene.getIntrinsics().at(view->getIntrinsicId()).get();
+  
+          std::shared_ptr<camera::IntrinsicBase> cam = scene.getIntrinsics().at(view->getIntrinsicId());
+          std::shared_ptr<camera::Pinhole> camPinHole = std::dynamic_pointer_cast<camera::Pinhole>(cam);
+          if (!camPinHole) {
+            ALICEVISION_LOG_ERROR("Camera is not pinhole in triangulate_multiViewsLORANSAC");
+            continue;
+          }
+
           const Vec2 x_ud = cam->get_ud_pixel(_featuresPerView->getFeatures(viewId, track.descType)[track.featPerView.at(viewId)].coords().cast<double>()); // undistorted 2D point
           features(0,i) = x_ud(0); 
           features(1,i) = x_ud(1);  
-          Ps.push_back(cam->get_projective_equivalent(scene.getPose(*view).getTransform()));
+          Ps.push_back(camPinHole->get_projective_equivalent(scene.getPose(*view).getTransform()));
           i++;
         }
       }
@@ -1932,8 +1952,22 @@ void ReconstructionEngine_sequentialSfM::triangulate_2Views(SfMData& scene, cons
 
       const View* viewI = scene.getViews().at(I).get();
       const View* viewJ = scene.getViews().at(J).get();
-      const IntrinsicBase* camI = scene.getIntrinsics().at(viewI->getIntrinsicId()).get();
-      const IntrinsicBase* camJ = scene.getIntrinsics().at(viewJ->getIntrinsicId()).get();
+      
+      std::shared_ptr<camera::IntrinsicBase> camI = scene.getIntrinsics().at(viewI->getIntrinsicId());
+      std::shared_ptr<camera::Pinhole> camIPinHole = std::dynamic_pointer_cast<camera::Pinhole>(camI);
+      if (!camIPinHole) {
+        ALICEVISION_LOG_ERROR("Camera is not pinhole in triangulate_multiViewsLORANSAC");
+        continue;
+      }
+
+      std::shared_ptr<camera::IntrinsicBase> camJ = scene.getIntrinsics().at(viewJ->getIntrinsicId());
+      std::shared_ptr<camera::Pinhole> camJPinHole = std::dynamic_pointer_cast<camera::Pinhole>(camJ);
+      if (!camJPinHole) {
+        ALICEVISION_LOG_ERROR("Camera is not pinhole in triangulate_multiViewsLORANSAC");
+        continue;
+      }
+      
+
       const Pose3 poseI = scene.getPose(*viewI).getTransform();
       const Pose3 poseJ = scene.getPose(*viewJ).getTransform();
       
@@ -1995,8 +2029,8 @@ void ReconstructionEngine_sequentialSfM::triangulate_2Views(SfMData& scene, cons
           Vec3 X_euclidean = Vec3::Zero();
           const Vec2 xI_ud = camI->get_ud_pixel(xI);
           const Vec2 xJ_ud = camJ->get_ud_pixel(xJ);
-          const Mat34 pI = camI->get_projective_equivalent(poseI);
-          const Mat34 pJ = camJ->get_projective_equivalent(poseJ);
+          const Mat34 pI = camIPinHole->get_projective_equivalent(poseI);
+          const Mat34 pJ = camJPinHole->get_projective_equivalent(poseJ);
           
           TriangulateDLT(pI, xI_ud, pJ, xJ_ud, &X_euclidean);
           
@@ -2004,7 +2038,7 @@ void ReconstructionEngine_sequentialSfM::triangulate_2Views(SfMData& scene, cons
           //  - Check angle (small angle leads imprecise triangulation)
           //  - Check positive depth
           //  - Check residual values
-          const double angle = AngleBetweenRays(poseI, camI, poseJ, camJ, xI, xJ);
+          const double angle = AngleBetweenRays(poseI, camI.get(), poseJ, camJ.get(), xI, xJ);
           const Vec2 residualI = camI->residual(poseI, X_euclidean, xI);
           const Vec2 residualJ = camJ->residual(poseJ, X_euclidean, xJ);
           
