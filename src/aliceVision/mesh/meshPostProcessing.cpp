@@ -83,12 +83,7 @@ void meshPostProcessing(Mesh*& inout_mesh, StaticVector<StaticVector<int>>& inou
             for(int i = 0; i < meOpt.newPtsOldPtId.size(); i++)
             {
                 int oldPtId = meOpt.newPtsOldPtId[i];
-                StaticVector<int>& ptCams = inout_ptsCams[i];
-                ptCams.reserve(sizeOfStaticVector<int>(inout_ptsCams[oldPtId]));
-                for(int j = 0; j < sizeOfStaticVector<int>(inout_ptsCams[oldPtId]); j++)
-                {
-                    ptCams.push_back(inout_ptsCams[oldPtId][j]);
-                }
+                inout_ptsCams.push_back(inout_ptsCams[oldPtId]);
             }
         }
 
