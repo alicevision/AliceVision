@@ -48,8 +48,8 @@ void fillMatricesWithUndistortFeaturesMatches(const matching::IndMatches &putati
 {
   typedef typename MatT::Scalar Scalar; // Output matrix type
 
-  const bool I_hasValidIntrinsics = cam_I && cam_I->isValid() && cam_I->hasDistortion();
-  const bool J_hasValidIntrinsics = cam_J && cam_J->isValid() && cam_J->hasDistortion();
+  const bool I_hasValidIntrinsics = cam_I && cam_I->isValid() && cam_I->have_disto();
+  const bool J_hasValidIntrinsics = cam_J && cam_J->isValid() && cam_J->have_disto();
 
   for (size_t i = 0; i < putativeMatches.size(); ++i)
   {

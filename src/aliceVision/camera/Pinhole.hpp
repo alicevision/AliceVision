@@ -34,12 +34,8 @@ class Pinhole : public IntrinsicsScaleOffsetDisto
   {
   }
 
-  Pinhole(
-    unsigned int w, unsigned int h,
-    double focal_length_pix,
-    double ppx, double ppy, const std::vector<double>& distortionParams = {})
-    : IntrinsicsScaleOffsetDisto(w,h, focal_length_pix, focal_length_pix, ppx, ppy)
-    , _distortionParams(distortionParams)
+  Pinhole(unsigned int w, unsigned int h, double focal_length_pix, double ppx, double ppy, std::shared_ptr<Distortion> distortion = nullptr)
+  : IntrinsicsScaleOffsetDisto(w,h, focal_length_pix, focal_length_pix, ppx, ppy, distortion)
   {
   }
 
@@ -110,19 +106,7 @@ class Pinhole : public IntrinsicsScaleOffsetDisto
     }
   }
 
-  virtual bool have_disto() const override {  
-    return false; 
-  }
-
-  virtual Vec2 add_disto(const Vec2& p) const override { 
-    
-    return p; 
-  }
-
-  virtual Vec2 remove_disto(const Vec2& p) const override { 
-    return p; 
-  }
-
+  
   virtual double imagePlane_toCameraPlaneError(double value) const override
   {
     return value / focal();
@@ -145,42 +129,27 @@ class Pinhole : public IntrinsicsScaleOffsetDisto
   std::vector<double> getParams() const override
   {
     std::vector<double> params = {_scale_x, _offset_x, _offset_y};
-    params.insert(params.end(), _distortionParams.begin(), _distortionParams.end());
+
+    if (have_disto()) {
+
+      params.insert(params.end(), _pDistortion->getParameters().begin(), _pDistortion->getParameters().end());
+    }
+    
     return params;
-  }
-
-  bool hasDistortion() const override
-  {
-    for(double d: _distortionParams) {
-      if(d != 0.0) {
-        return true;
-      }
-    }
-
-    return false;
-  }
-
-  const std::vector<double>& getDistortionParams() const
-  {
-    return _distortionParams;
-  }
-
-  void setDistortionParams(const std::vector<double>& distortionParams)
-  {
-    if(distortionParams.size() != _distortionParams.size())
-    {
-        std::stringstream s;
-        s << "Pinhole::setDistortionParams: wrong number of distortion parameters (expected: " << _distortionParams.size() << ", given:" << distortionParams.size() << ").";
-        throw std::runtime_error(s.str());
-    }
-    _distortionParams = distortionParams;
   }
 
   // Data wrapper for non linear optimization (update from data)
   bool updateFromParams(const std::vector<double>& params) override
   {
-    if (params.size() != (3 + _distortionParams.size()))
+    if (_pDistortion == nullptr) {
+      if (params.size() != 3) {
+        return false;
+      }
+    }
+
+    if (params.size() != (3 + _pDistortion->getDistortionParametersCount())) {
       return false;
+    }
 
     _scale_x = params[0];
     _scale_y = params[0];
@@ -226,19 +195,6 @@ class Pinhole : public IntrinsicsScaleOffsetDisto
 
     return true;
   }
-
-  /// Return the un-distorted pixel (with removed distortion)
-  virtual Vec2 get_ud_pixel(const Vec2& p) const override {
-    return cam2ima(remove_disto(ima2cam(p)));
-  }
-
-  /// Return the distorted pixel (with added distortion)
-  virtual Vec2 get_d_pixel(const Vec2& p) const override {
-    return cam2ima(add_disto(ima2cam(p)));
-  }
-
-protected:
-  std::vector<double> _distortionParams;
 };
 
 } // namespace camera

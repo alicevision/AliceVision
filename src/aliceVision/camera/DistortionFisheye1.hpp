@@ -18,6 +18,10 @@ public:
     _distortionParams = {0.0};
   }
 
+  DistortionFisheye1(double p1) {
+    _distortionParams = {p1};
+  }
+
   /// Add distortion to the point p (assume p is in the camera frame [normalized coordinates])
   virtual Vec2 add_disto(const Vec2 & p) const override
   {

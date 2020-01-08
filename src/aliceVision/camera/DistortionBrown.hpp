@@ -18,6 +18,10 @@ public:
     _distortionParams = {0.0, 0.0, 0.0, 0.0, 0.0};
   }
 
+  DistortionBrown(double p1, double p2, double p3, double p4, double p5) {
+    _distortionParams = {p1, p2, p3, p4, p5};
+  }
+
   /// Add distortion to the point p (assume p is in the camera frame [normalized coordinates])
   virtual Vec2 add_disto(const Vec2 & p) const override
   {

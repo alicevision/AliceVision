@@ -12,6 +12,10 @@ public:
 
   }
 
+  std::vector<double> & getParameters() {
+    return _distortionParams;
+  }
+
   size_t getDistortionParametersCount() {
     return _distortionParams.size();
   }
