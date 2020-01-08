@@ -167,7 +167,7 @@ std::shared_ptr<camera::IntrinsicBase> getViewIntrinsic(const sfmData::View& vie
     // if the focal lens is short, the fisheye model should fit better.
     intrinsicType = camera::PINHOLE_CAMERA_FISHEYE;
   }
-  else if(intrinsicType == camera::PINHOLE_CAMERA_START)
+  else if(intrinsicType == camera::CAMERA_END)
   {
     // choose a default camera model if no default type
     // use standard lens with radial distortion by default

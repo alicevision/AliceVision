@@ -38,8 +38,7 @@ inline std::shared_ptr<Pinhole> createPinholeIntrinsic(EINTRINSIC intrinsicType,
       return std::make_shared<PinholeFisheye>(w, h, focal_length_pix, ppx, ppy);
     case EINTRINSIC::PINHOLE_CAMERA_FISHEYE1:
       return std::make_shared<PinholeFisheye1>(w, h, focal_length_pix, ppx, ppy);
-    case EINTRINSIC::PINHOLE_CAMERA_END:
-    case EINTRINSIC::PINHOLE_CAMERA_START:
+    case EINTRINSIC::CAMERA_END:
       break;
   }
   throw std::out_of_range("Unrecognized Intrinsic Enum");

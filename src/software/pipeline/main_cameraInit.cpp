@@ -259,7 +259,7 @@ int main(int argc, char **argv)
   system::Logger::get()->setLogLevel(verboseLevel);
 
   // set user camera model
-  camera::EINTRINSIC defaultCameraModel = camera::EINTRINSIC::PINHOLE_CAMERA_START;
+  camera::EINTRINSIC defaultCameraModel = camera::EINTRINSIC::CAMERA_END;
   if(!defaultCameraModelName.empty())
       defaultCameraModel = camera::EINTRINSIC_stringToEnum(defaultCameraModelName);
 

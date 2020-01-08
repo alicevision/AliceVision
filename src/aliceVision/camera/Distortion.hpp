@@ -31,6 +31,10 @@ public:
     return p;
   }
 
+  virtual double getUndistortedRadius(double r) const {
+    return r;
+  }
+
 protected:
   std::vector<double> _distortionParams;
 };

@@ -16,14 +16,13 @@ namespace camera {
 
 enum EINTRINSIC
 {
-  PINHOLE_CAMERA_START = 0,
-  PINHOLE_CAMERA = 1,          // no distortion
-  PINHOLE_CAMERA_RADIAL1 = 2,  // radial distortion K1
-  PINHOLE_CAMERA_RADIAL3 = 3,  // radial distortion K1,K2,K3
-  PINHOLE_CAMERA_BROWN = 4,    // radial distortion K1,K2,K3, tangential distortion T1,T2
-  PINHOLE_CAMERA_FISHEYE = 5,  // a simple Fish-eye distortion model with 4 distortion coefficients
-  PINHOLE_CAMERA_FISHEYE1 = 6, // a simple Fish-eye distortion model with 1 distortion coefficient
-  PINHOLE_CAMERA_END
+  PINHOLE_CAMERA = 0,          // no distortion
+  PINHOLE_CAMERA_RADIAL1 = 1,  // radial distortion K1
+  PINHOLE_CAMERA_RADIAL3 = 2,  // radial distortion K1,K2,K3
+  PINHOLE_CAMERA_BROWN = 3,    // radial distortion K1,K2,K3, tangential distortion T1,T2
+  PINHOLE_CAMERA_FISHEYE = 4,  // a simple Fish-eye distortion model with 4 distortion coefficients
+  PINHOLE_CAMERA_FISHEYE1 = 5, // a simple Fish-eye distortion model with 1 distortion coefficient
+  CAMERA_END
 };
 
 inline std::string EINTRINSIC_enumToString(EINTRINSIC intrinsic)
@@ -36,8 +35,7 @@ inline std::string EINTRINSIC_enumToString(EINTRINSIC intrinsic)
     case PINHOLE_CAMERA_BROWN:    return "brown";
     case PINHOLE_CAMERA_FISHEYE:  return "fisheye4";
     case PINHOLE_CAMERA_FISHEYE1: return "fisheye1";
-    case PINHOLE_CAMERA_START:
-    case PINHOLE_CAMERA_END:
+    case CAMERA_END:
       break;
   }
   throw std::out_of_range("Invalid Intrinsic Enum");
@@ -61,12 +59,22 @@ inline EINTRINSIC EINTRINSIC_stringToEnum(const std::string& intrinsic)
 // Return if the camera type is a valid enum
 inline bool isValid(EINTRINSIC eintrinsic)
 {
-  return eintrinsic > PINHOLE_CAMERA_START && eintrinsic < PINHOLE_CAMERA_END;
+  return eintrinsic > PINHOLE_CAMERA && eintrinsic < CAMERA_END;
 }
 
 inline bool isPinhole(EINTRINSIC eintrinsic)
 {
-  return eintrinsic > PINHOLE_CAMERA_START && eintrinsic < PINHOLE_CAMERA_END;
+  switch (eintrinsic) {
+  case PINHOLE_CAMERA:
+  case PINHOLE_CAMERA_RADIAL1:
+  case PINHOLE_CAMERA_RADIAL3:
+  case PINHOLE_CAMERA_BROWN:
+  case PINHOLE_CAMERA_FISHEYE:
+  case PINHOLE_CAMERA_FISHEYE1:
+    return true;
+  default:
+    return false;
+  }
 }
 
 } // namespace camera

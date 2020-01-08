@@ -73,6 +73,10 @@ public:
     return radius * p;
   }
 
+  virtual double getUndistortedRadius(double r) const override {
+    return std::sqrt(radial_distortion::bisection_Radius_Solve(_distortionParams, r * r, distoFunctor));
+  }
+
   /// Functor to solve Square(disto(radius(p'))) = r^2
   static double distoFunctor(const std::vector<double> & params, double r2)
   {
@@ -114,6 +118,10 @@ public:
       1. :
       ::sqrt(radial_distortion::bisection_Radius_Solve(_distortionParams, r2, distoFunctor) / r2);
     return radius * p;;
+  }
+
+  virtual double getUndistortedRadius(double r) const override {
+    return std::sqrt(radial_distortion::bisection_Radius_Solve(_distortionParams, r * r, distoFunctor));
   }
 
   /// Functor to solve Square(disto(radius(p'))) = r^2

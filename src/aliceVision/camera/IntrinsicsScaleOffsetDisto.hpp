@@ -39,6 +39,7 @@ public:
 
     return _pDistortion->add_disto(p); 
   }
+  
 
   virtual Vec2 remove_disto(const Vec2& p) const override { 
     if (_pDistortion == nullptr) {
@@ -83,6 +84,14 @@ public:
     _pDistortion->getParameters() = distortionParams;
   }
 
+  virtual float getMaximalDistortion(double min_radius, double max_radius) const override {
+
+    if (_pDistortion == nullptr) {
+      return max_radius;
+    }
+
+    return _pDistortion->getUndistortedRadius(max_radius);
+  }
 
 protected:
   std::shared_ptr<Distortion> _pDistortion;
