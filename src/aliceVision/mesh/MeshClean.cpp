@@ -367,7 +367,7 @@ void MeshClean::path::deployPath(StaticVector<MeshClean::path::pathPart>& path)
     int newPtId = deployTriangles(trisIds, (!isClodePath(path)));
 
     meshClean->ptsNeighPtsOrdered.reserveAddIfNeeded(1, 1000);
-    // meshClean->ptsNeighPtsOrdered.push_back({});
+    meshClean->ptsNeighPtsOrdered.push_back({});
     updatePtNeighPtsOrderedByPath(newPtId, path);
 }
 
@@ -469,7 +469,7 @@ int MeshClean::path::deployAll()
     {
         int newPtId = deployTriangles(ptNeighTrisSortedAscToProcess, true);
         meshClean->ptsNeighPtsOrdered.reserveAddIfNeeded(1, 1000);
-        // meshClean->ptsNeighPtsOrdered.push_back({});
+        meshClean->ptsNeighPtsOrdered.push_back({});
         clearPointNeighbors(newPtId);
         ptNeighTrisSortedAscToProcess.resize(0);
         nNewPts++;
