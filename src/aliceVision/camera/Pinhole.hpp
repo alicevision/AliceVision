@@ -9,9 +9,11 @@
 
 #include <aliceVision/numeric/numeric.hpp>
 #include <aliceVision/camera/cameraCommon.hpp>
-#include <aliceVision/camera/IntrinsicsScaleOffset.hpp>
+#include <aliceVision/camera/IntrinsicsScaleOffsetDisto.hpp>
 #include <aliceVision/geometry/Pose3.hpp>
 #include <aliceVision/multiview/projection.hpp>
+
+#include "DistortionFisheye1.hpp"
 
 #include <vector>
 #include <sstream>
@@ -20,16 +22,15 @@
 namespace aliceVision {
 namespace camera {
 
-/// Define a classic Pinhole camera (store a K 3x3 matrix)
-///  with intrinsic parameters defining the K calibration matrix
-class Pinhole : public IntrinsicsScaleOffset
+/// Define a classic Pinhole camera
+class Pinhole : public IntrinsicsScaleOffsetDisto
 {
   public:
 
   Pinhole() = default;
 
   Pinhole(unsigned int w, unsigned int h, const Mat3 K) : 
-  IntrinsicsScaleOffset(w, h, K(0, 0), K(1, 1), K(0, 2), K(1, 2))
+  IntrinsicsScaleOffsetDisto(w, h, K(0, 0), K(1, 1), K(0, 2), K(1, 2))
   {
   }
 
@@ -37,22 +38,32 @@ class Pinhole : public IntrinsicsScaleOffset
     unsigned int w, unsigned int h,
     double focal_length_pix,
     double ppx, double ppy, const std::vector<double>& distortionParams = {})
-    : IntrinsicsScaleOffset(w,h, focal_length_pix, focal_length_pix, ppx, ppy)
+    : IntrinsicsScaleOffsetDisto(w,h, focal_length_pix, focal_length_pix, ppx, ppy)
     , _distortionParams(distortionParams)
   {
   }
 
   virtual ~Pinhole() {}
 
-  virtual Pinhole* clone() const override { return new Pinhole(*this); }
-  virtual void assign(const IntrinsicBase& other) override { *this = dynamic_cast<const Pinhole&>(other); }
-  
-  virtual bool isValid() const override { return focal() > 0 && IntrinsicBase::isValid(); }
-  
-  virtual EINTRINSIC getType() const override { return PINHOLE_CAMERA; }
-  std::string getTypeStr() const { return EINTRINSIC_enumToString(getType()); }
+  virtual Pinhole* clone() const override { 
+    return new Pinhole(*this); 
+  }
 
+  virtual void assign(const IntrinsicBase& other) override { 
+    *this = dynamic_cast<const Pinhole&>(other); 
+  }
   
+  virtual bool isValid() const override { 
+    return focal() > 0 && IntrinsicBase::isValid(); 
+  }
+  
+  virtual EINTRINSIC getType() const override { 
+    return PINHOLE_CAMERA; 
+  }
+
+  std::string getTypeStr() const { 
+    return EINTRINSIC_enumToString(getType()); 
+  }
 
   Mat3 K() const { 
     Mat3 K;
@@ -104,6 +115,7 @@ class Pinhole : public IntrinsicsScaleOffset
   }
 
   virtual Vec2 add_disto(const Vec2& p) const override { 
+    
     return p; 
   }
 
@@ -214,14 +226,15 @@ class Pinhole : public IntrinsicsScaleOffset
 
     return true;
   }
+
   /// Return the un-distorted pixel (with removed distortion)
   virtual Vec2 get_ud_pixel(const Vec2& p) const override {
-    return p;
+    return cam2ima(remove_disto(ima2cam(p)));
   }
 
   /// Return the distorted pixel (with added distortion)
   virtual Vec2 get_d_pixel(const Vec2& p) const override {
-    return p;
+    return cam2ima(add_disto(ima2cam(p)));
   }
 
 protected:

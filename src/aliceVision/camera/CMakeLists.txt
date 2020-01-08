@@ -5,6 +5,13 @@ set(camera_files_headers
 	cameraUndistortImage.hpp
 	IntrinsicBase.hpp
 	IntrinsicInitMode.hpp
+	Distortion.hpp
+	DistortionRadial.hpp
+	DistortionBrown.hpp
+	DistortionFisheye.hpp
+	DistortionFisheye1.hpp
+	IntrinsicsScaleOffset.hpp
+	IntrinsicsScaleOffsetDisto.hpp
 	Pinhole.hpp
 	PinholeBrown.hpp
 	PinholeFisheye.hpp
