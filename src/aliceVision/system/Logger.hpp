@@ -60,56 +60,21 @@ enum class EVerboseLevel
 
 /**
  * @brief convert an enum EVerboseLevel to its corresponding string
- * @param EVerboseLevel
- * @return String
+ * @param[in] verboseLevel The verbose level.
+ * @return the string corresponding to the verbose level.
  */
-inline std::string EVerboseLevel_enumToString(const EVerboseLevel verboseLevel)
-{
-  switch(verboseLevel)
-  {
-    case EVerboseLevel::Fatal:   return "fatal";
-    case EVerboseLevel::Error:   return "error";
-    case EVerboseLevel::Warning: return "warning";
-    case EVerboseLevel::Info:    return "info";
-    case EVerboseLevel::Debug:   return "debug";
-    case EVerboseLevel::Trace:   return "trace";
-   }
-  throw std::out_of_range("Invalid verbose level enum");
-}
+std::string EVerboseLevel_enumToString(EVerboseLevel verboseLevel);
 
 /**
- * @brief convert a string verboseLevel to its corresponding enum EVerboseLevel
- * @param String
- * @return EVerboseLevel
+ * @brief convert a string  to its corresponding enum EVerboseLevel
+ * @param[in] verboseLevel the string with the verbose level
+ * @return the corresponding EVerboseLevel
  */
-inline EVerboseLevel EVerboseLevel_stringToEnum(const std::string& verboseLevel)
-{
-  std::string level = verboseLevel;
-  std::transform(level.begin(), level.end(), level.begin(), ::tolower);
+EVerboseLevel EVerboseLevel_stringToEnum(std::string verboseLevel);
 
-  if(verboseLevel == "fatal")   return EVerboseLevel::Fatal;
-  if(verboseLevel == "error")   return EVerboseLevel::Error;
-  if(verboseLevel == "warning") return EVerboseLevel::Warning;
-  if(verboseLevel == "info")    return EVerboseLevel::Info;
-  if(verboseLevel == "debug")   return EVerboseLevel::Debug;
-  if(verboseLevel == "trace")   return EVerboseLevel::Trace;
+std::ostream& operator<<(std::ostream& os, EVerboseLevel verboseLevel);
 
-  throw std::out_of_range("Invalid verbose level : '" + verboseLevel + "'");
-}
-
-inline std::ostream& operator<<(std::ostream& os, const EVerboseLevel verboseLevel)
-{
-  os << EVerboseLevel_enumToString(verboseLevel);
-  return os;
-}
-
-inline std::istream& operator>>(std::istream& in, EVerboseLevel& verboseLevel)
-{
-  std::string token;
-  in >> token;
-  verboseLevel = EVerboseLevel_stringToEnum(token);
-  return in;
-}
+std::istream& operator>>(std::istream& in, EVerboseLevel& verboseLevel);
 
 class Logger
 {

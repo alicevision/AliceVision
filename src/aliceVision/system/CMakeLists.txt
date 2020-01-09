@@ -31,3 +31,5 @@ alicevision_add_library(aliceVision_system
   PUBLIC_INCLUDE_DIRS
     ${Boost_INCLUDE_DIR}
 )
+
+alicevision_add_test(Logger_test.cpp NAME "system_Logger" LINKS aliceVision_system)
