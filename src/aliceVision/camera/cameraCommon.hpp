@@ -22,6 +22,7 @@ enum EINTRINSIC
   PINHOLE_CAMERA_BROWN = 3,    // radial distortion K1,K2,K3, tangential distortion T1,T2
   PINHOLE_CAMERA_FISHEYE = 4,  // a simple Fish-eye distortion model with 4 distortion coefficients
   PINHOLE_CAMERA_FISHEYE1 = 5, // a simple Fish-eye distortion model with 1 distortion coefficient
+  EQUIDISTANT_CAMERA = 6,
   CAMERA_END
 };
 
@@ -35,6 +36,7 @@ inline std::string EINTRINSIC_enumToString(EINTRINSIC intrinsic)
     case PINHOLE_CAMERA_BROWN:    return "brown";
     case PINHOLE_CAMERA_FISHEYE:  return "fisheye4";
     case PINHOLE_CAMERA_FISHEYE1: return "fisheye1";
+    case EQUIDISTANT_CAMERA:      return "equidistant";
     case CAMERA_END:
       break;
   }
@@ -52,6 +54,7 @@ inline EINTRINSIC EINTRINSIC_stringToEnum(const std::string& intrinsic)
   if(type == "brown")    return PINHOLE_CAMERA_BROWN;
   if(type == "fisheye4") return PINHOLE_CAMERA_FISHEYE;
   if(type == "fisheye1") return PINHOLE_CAMERA_FISHEYE1;
+  if(type == "equidistant") return EQUIDISTANT_CAMERA;
 
   throw std::out_of_range(intrinsic);
 }

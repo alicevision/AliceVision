@@ -13,8 +13,6 @@
 #include <aliceVision/geometry/Pose3.hpp>
 #include <aliceVision/multiview/projection.hpp>
 
-#include "DistortionFisheye1.hpp"
-
 #include <vector>
 #include <sstream>
 
@@ -98,11 +96,13 @@ class Pinhole : public IntrinsicsScaleOffsetDisto
   virtual Vec2 project(const geometry::Pose3& pose, const Vec3& pt3D, bool applyDistortion = true) const override
   {
     const Vec3 X = pose(pt3D); // apply pose
+    const Vec2 P = X.head<2>() / X(2);
+
     if (applyDistortion && this->have_disto()) {
-      return this->cam2ima( this->add_disto(X.head<2>()/X(2)));
+      return this->cam2ima( this->add_disto(P));
     }
     else {
-      return this->cam2ima( X.head<2>()/X(2));
+      return this->cam2ima(P);
     }
   }
 

@@ -458,20 +458,20 @@ bool readCamera(const ICamera& camera, const M44d& mat, sfmData::SfMData& sfmDat
     // imgHeight = vaperture_cm * 10.0 * mm2pix;
 
     // create intrinsic parameters object
-    std::shared_ptr<Pinhole> pinholeIntrinsic = createPinholeIntrinsic(EINTRINSIC_stringToEnum(mvg_intrinsicType));
+    std::shared_ptr<camera::IntrinsicBase> intrinsic = createIntrinsic(EINTRINSIC_stringToEnum(mvg_intrinsicType));
 
-    pinholeIntrinsic->setWidth(sensorSize_pix.at(0));
-    pinholeIntrinsic->setHeight(sensorSize_pix.at(1));
-    pinholeIntrinsic->updateFromParams(mvg_intrinsicParams);
-    pinholeIntrinsic->setInitialFocalLengthPix(initialFocalLengthPix);
-    pinholeIntrinsic->setInitializationMode(EIntrinsicInitMode_stringToEnum(mvg_intrinsicInitializationMode));
+    intrinsic->setWidth(sensorSize_pix.at(0));
+    intrinsic->setHeight(sensorSize_pix.at(1));
+    intrinsic->updateFromParams(mvg_intrinsicParams);
+    intrinsic->setInitialFocalLengthPix(initialFocalLengthPix);
+    intrinsic->setInitializationMode(EIntrinsicInitMode_stringToEnum(mvg_intrinsicInitializationMode));
 
     if(intrinsicLocked)
-      pinholeIntrinsic->lock();
+      intrinsic->lock();
     else
-      pinholeIntrinsic->unlock();
+      intrinsic->unlock();
 
-    sfmData.intrinsics[intrinsicId] = pinholeIntrinsic;
+    sfmData.intrinsics[intrinsicId] = intrinsic;
   }
 
   // add imported data to the SfMData container TODO use UID
