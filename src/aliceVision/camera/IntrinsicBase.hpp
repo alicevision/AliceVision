@@ -227,6 +227,14 @@ public:
   virtual EINTRINSIC getType() const = 0;
 
   /**
+   * get a string
+   * @return the string describing the intrinsic type
+   */
+  std::string getTypeStr() const { 
+    return EINTRINSIC_enumToString(getType()); 
+  }
+
+  /**
    * @brief Get intrinsic parameters
    * @return intrinsic parameters
    */

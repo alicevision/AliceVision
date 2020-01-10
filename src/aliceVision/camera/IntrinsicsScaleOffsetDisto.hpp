@@ -68,26 +68,61 @@ public:
     return _pDistortion->getParameters();
   }
 
-  void setDistortionParams(const std::vector<double> & distortionParams)
+  // Data wrapper for non linear optimization (get data)
+  std::vector<double> getParams() const override
   {
-    if (distortionParams.size() == 0) {
-      return;
+    std::vector<double> params = {_scale_x, _offset_x, _offset_y};
+
+    if (have_disto()) {
+
+      params.insert(params.end(), _pDistortion->getParameters().begin(), _pDistortion->getParameters().end());
     }
     
-    if (_pDistortion == nullptr) {
-      std::stringstream s;
-      s << "IntrinsicsScaleOffsetDisto::setDistortionParams: wrong number of distortion parameters (expected 0, given:" << distortionParams.size() << ").";
-      throw std::runtime_error(s.str());
+    return params;
+  }
+
+  void setDistortionParams(const std::vector<double> & distortionParams) {
+
+    int expected = 0;
+    if (_pDistortion != nullptr) {
+      expected = _pDistortion->getDistortionParametersCount();
     }
 
-    if (distortionParams.size() != _pDistortion->getDistortionParametersCount())
+    if (distortionParams.size() != expected)
     {
         std::stringstream s;
-        s << "IntrinsicsScaleOffsetDisto::setDistortionParams: wrong number of distortion parameters (expected: " << _pDistortion->getDistortionParametersCount() << ", given:" << distortionParams.size() << ").";
+        s << "IntrinsicsScaleOffsetDisto::setDistortionParams: wrong number of distortion parameters (expected: " << expected << ", given:" << distortionParams.size() << ").";
         throw std::runtime_error(s.str());
     }
 
-    _pDistortion->getParameters() = distortionParams;
+    if (_pDistortion) {
+      _pDistortion->getParameters() = distortionParams;
+    }
+  }
+
+  // Data wrapper for non linear optimization (update from data)
+  virtual bool updateFromParams(const std::vector<double>& params) override
+  {
+    if (_pDistortion == nullptr) {
+      if (params.size() != 3) {
+        return false;
+      }
+    }
+    else {
+      if (params.size() != (3 + _pDistortion->getDistortionParametersCount())) {
+        return false;
+      }
+    }
+
+    _scale_x = params[0];
+    _scale_y = params[0];
+    _offset_x = params[1];
+    _offset_y = params[2];
+
+
+    setDistortionParams({params.begin() + 3, params.end()});
+
+    return true;
   }
 
   virtual float getMaximalDistortion(double min_radius, double max_radius) const override {

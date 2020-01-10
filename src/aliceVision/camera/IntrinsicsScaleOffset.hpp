@@ -66,6 +66,21 @@ public:
     _offset_y *= factor;
   }
 
+  // Data wrapper for non linear optimization (update from data)
+  virtual bool updateFromParams(const std::vector<double>& params) override
+  {
+    if (params.size() != 3) {
+      return false;
+    }
+
+    _scale_x = params[0];
+    _scale_y = params[0];
+    _offset_x = params[1];
+    _offset_y = params[2];
+
+    return true;
+  }
+
 protected:
   double _scale_x = 1.0;
   double _scale_y = 1.0;

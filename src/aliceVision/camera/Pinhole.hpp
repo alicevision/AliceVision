@@ -55,10 +55,6 @@ class Pinhole : public IntrinsicsScaleOffsetDisto
     return PINHOLE_CAMERA; 
   }
 
-  std::string getTypeStr() const { 
-    return EINTRINSIC_enumToString(getType()); 
-  }
-
   Mat3 K() const { 
     Mat3 K;
     
@@ -123,43 +119,6 @@ class Pinhole : public IntrinsicsScaleOffsetDisto
 
     P_From_KRt(K, pose.rotation(), pose.translation(), &P);
     return P;
-  }
-
-  // Data wrapper for non linear optimization (get data)
-  std::vector<double> getParams() const override
-  {
-    std::vector<double> params = {_scale_x, _offset_x, _offset_y};
-
-    if (have_disto()) {
-
-      params.insert(params.end(), _pDistortion->getParameters().begin(), _pDistortion->getParameters().end());
-    }
-    
-    return params;
-  }
-
-  // Data wrapper for non linear optimization (update from data)
-  bool updateFromParams(const std::vector<double>& params) override
-  {
-    if (_pDistortion == nullptr) {
-      if (params.size() != 3) {
-        return false;
-      }
-    }
-
-    if (params.size() != (3 + _pDistortion->getDistortionParametersCount())) {
-      return false;
-    }
-
-    _scale_x = params[0];
-    _scale_y = params[0];
-    _offset_x = params[1];
-    _offset_y = params[2];
-
-
-    setDistortionParams({params.begin() + 3, params.end()});
-
-    return true;
   }
 
   /**

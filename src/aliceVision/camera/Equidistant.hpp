@@ -51,12 +51,7 @@ class EquiDistant : public IntrinsicsScaleOffsetDisto
   virtual EINTRINSIC getType() const override { 
     return EQUIDISTANT_CAMERA; 
   }
-
-  std::string getTypeStr() const { 
-    return EINTRINSIC_enumToString(getType()); 
-  }
-
-
+  
   // Get bearing vector of p point (image coord)
   Vec3 operator () (const Vec2& p) const override
   {
@@ -98,43 +93,6 @@ class EquiDistant : public IntrinsicsScaleOffsetDisto
   virtual double imagePlane_toCameraPlaneError(double value) const override
   {
     return value / focal();
-  }
-
-  // Data wrapper for non linear optimization (get data)
-  std::vector<double> getParams() const override
-  {
-    std::vector<double> params = {_scale_x, _offset_x, _offset_y};
-
-    if (have_disto()) {
-
-      params.insert(params.end(), _pDistortion->getParameters().begin(), _pDistortion->getParameters().end());
-    }
-    
-    return params;
-  }
-
-  // Data wrapper for non linear optimization (update from data)
-  bool updateFromParams(const std::vector<double>& params) override
-  {
-    if (_pDistortion == nullptr) {
-      if (params.size() != 3) {
-        return false;
-      }
-    }
-
-    if (params.size() != (3 + _pDistortion->getDistortionParametersCount())) {
-      return false;
-    }
-
-    _scale_x = params[0];
-    _scale_y = params[0];
-    _offset_x = params[1];
-    _offset_y = params[2];
-
-
-    setDistortionParams({params.begin() + 3, params.end()});
-
-    return true;
   }
 
   /**
