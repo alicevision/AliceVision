@@ -140,31 +140,32 @@ void loadIntrinsic(IndexT& intrinsicId, std::shared_ptr<camera::IntrinsicBase>& 
   Vec2 principalPoint;
   loadMatrix("principalPoint", principalPoint, intrinsicTree);
 
-  // check if the camera is a Pinhole model
-  if(!camera::isPinhole(intrinsicType))
-    throw std::out_of_range("Only Pinhole camera model supported");
 
   // pinhole parameters
-  std::shared_ptr<camera::Pinhole> pinholeIntrinsic = camera::createPinholeIntrinsic(intrinsicType, width, height, pxFocalLength, principalPoint(0), principalPoint(1));
-  pinholeIntrinsic->setInitialFocalLengthPix(intrinsicTree.get<double>("pxInitialFocalLength"));
-  pinholeIntrinsic->setSerialNumber(intrinsicTree.get<std::string>("serialNumber"));
-  pinholeIntrinsic->setInitializationMode(initializationMode);
-
-  std::vector<double> distortionParams;
-  for(bpt::ptree::value_type &paramNode : intrinsicTree.get_child("distortionParams"))
-    distortionParams.emplace_back(paramNode.second.get_value<double>());
-
-  // ensure that we have the right number of params
-  distortionParams.resize(pinholeIntrinsic->getDistortionParams().size(), 0.0);
-
-  pinholeIntrinsic->setDistortionParams(distortionParams);
-  intrinsic = std::static_pointer_cast<camera::IntrinsicBase>(pinholeIntrinsic);
+  intrinsic = camera::createIntrinsic(intrinsicType, width, height, pxFocalLength, principalPoint(0), principalPoint(1));  
+  intrinsic->setInitialFocalLengthPix(intrinsicTree.get<double>("pxInitialFocalLength"));
+  intrinsic->setSerialNumber(intrinsicTree.get<std::string>("serialNumber"));
+  intrinsic->setInitializationMode(initializationMode);
 
   // intrinsic lock
-  if(intrinsicTree.get<bool>("locked", false))
+  if(intrinsicTree.get<bool>("locked", false)) {
     intrinsic->lock();
-  else
+  }
+  else {
     intrinsic->unlock();
+  }
+
+  /*Load distortion*/
+  std::shared_ptr<camera::IntrinsicsScaleOffsetDisto> intrinsicWithDistoEnabled = std::static_pointer_cast<camera::Pinhole>(intrinsic);
+  if (intrinsicWithDistoEnabled != nullptr) {
+    std::vector<double> distortionParams;
+    for(bpt::ptree::value_type &paramNode : intrinsicTree.get_child("distortionParams"))
+      distortionParams.emplace_back(paramNode.second.get_value<double>());
+
+    //ensure that we have the right number of params
+    distortionParams.resize(intrinsicWithDistoEnabled->getDistortionParams().size(), 0.0);
+    intrinsicWithDistoEnabled->setDistortionParams(distortionParams);
+  }
 }
 
 void saveRig(const std::string& name, IndexT rigId, const sfmData::Rig& rig, bpt::ptree& parentTree)
