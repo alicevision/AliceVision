@@ -70,8 +70,14 @@ public:
 
   void setDistortionParams(const std::vector<double> & distortionParams)
   {
+    if (distortionParams.size() == 0) {
+      return;
+    }
+    
     if (_pDistortion == nullptr) {
-      throw std::runtime_error("No distortion parameters available");
+      std::stringstream s;
+      s << "IntrinsicsScaleOffsetDisto::setDistortionParams: wrong number of distortion parameters (expected 0, given:" << distortionParams.size() << ").";
+      throw std::runtime_error(s.str());
     }
 
     if (distortionParams.size() != _pDistortion->getDistortionParametersCount())

@@ -29,11 +29,6 @@ class EquiDistant : public IntrinsicsScaleOffsetDisto
 
   EquiDistant() = default;
 
-  EquiDistant(unsigned int w, unsigned int h, const Mat3 K) : 
-  IntrinsicsScaleOffsetDisto(w, h, K(0, 0), K(1, 1), K(0, 2), K(1, 2))
-  {
-  }
-
   EquiDistant(unsigned int w, unsigned int h, double focal_length_pix, double ppx, double ppy, std::shared_ptr<Distortion> distortion = nullptr)
   : IntrinsicsScaleOffsetDisto(w,h, focal_length_pix, focal_length_pix, ppx, ppy, distortion)
   {

@@ -103,16 +103,14 @@ void saveIntrinsic(const std::string& name, IndexT intrinsicId, const std::share
   intrinsicTree.put("initializationMode", camera::EIntrinsicInitMode_enumToString(intrinsic->getInitializationMode()));
   intrinsicTree.put("pxInitialFocalLength", intrinsic->initialFocalLengthPix());
 
-  if(camera::isPinhole(intrinsicType))
-  {
-    const camera::Pinhole& pinholeIntrinsic = dynamic_cast<camera::Pinhole&>(*intrinsic);
-
-    intrinsicTree.put("pxFocalLength", pinholeIntrinsic.getFocalLengthPix());
-    saveMatrix("principalPoint", pinholeIntrinsic.getPrincipalPoint(), intrinsicTree);
+  std::shared_ptr<camera::IntrinsicsScaleOffsetDisto> intrinsicScaleOffsetDisto = std::dynamic_pointer_cast<camera::IntrinsicsScaleOffsetDisto>(intrinsic);
+  if (intrinsicScaleOffsetDisto) {
+    intrinsicTree.put("pxFocalLength", intrinsicScaleOffsetDisto->getFocalLengthPix());
+    saveMatrix("principalPoint", intrinsicScaleOffsetDisto->getPrincipalPoint(), intrinsicTree);
 
     bpt::ptree distParamsTree;
 
-    for(double param : pinholeIntrinsic.getDistortionParams())
+    for(double param : intrinsicScaleOffsetDisto->getDistortionParams())
     {
       bpt::ptree paramTree;
       paramTree.put("", param);
