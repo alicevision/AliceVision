@@ -163,7 +163,7 @@ struct EpipolarSphericalDistanceError {
     // See page 287 equation (11.9) of HZ.
    
     Vec3 F_x = F * x;
-    return Square(F_x.dot(y)) /  F_x.head<2>().squaredNorm();
+    return Square(F_x.dot(y));
   }
 };
 typedef EpipolarSphericalDistanceError SimpleSphericalError;
