@@ -185,6 +185,80 @@ protected:
   bool bPointToLine_; // Store if error model is pointToLine or point to point
 };
 
+/// Two view Kernel adapter in case of spherical camera for the A contrario model estimator
+/// Handle data normalization and compute the corresponding logalpha 0
+/// that depends of the error model (point to line, or point to point)
+/// This kernel adapter is working for affine, homography, fundamental matrix
+/// estimation.
+
+template <typename SolverArg,
+typename ErrorArg,
+typename UnnormalizerArg,
+typename ModelArg = Mat3>
+class ACKernelAdaptorSpherical
+{
+public:
+  typedef SolverArg Solver;
+  typedef ModelArg Model;
+  typedef ErrorArg ErrorT;
+
+  ACKernelAdaptorSpherical(const Mat &x1, const Mat &x2)
+  : x1_(x1), x2_(x2),logalpha0_(M_PI)
+  {
+  }
+
+  enum
+  {
+    MINIMUM_SAMPLES = Solver::MINIMUM_SAMPLES
+  };
+
+  enum
+  {
+    MAX_MODELS = Solver::MAX_MODELS
+  };
+
+  void Fit(const std::vector<std::size_t> &samples, std::vector<Model> *models) const
+  {
+    const Mat x1 = ExtractColumns(x1_, samples);
+    const Mat x2 = ExtractColumns(x2_, samples);
+    Solver::Solve(x1, x2, models);
+  }
+  
+  double Error(std::size_t sample, const Model &model) const
+  {
+    return ErrorT::Error(model, x1_.col(sample), x2_.col(sample));
+  }
+
+  void Errors(const Model & model, std::vector<double> & vec_errors) const
+  {
+    vec_errors.resize(x1_.cols());
+    for(std::size_t sample = 0; sample < x1_.cols(); ++sample)
+      vec_errors[sample] = ErrorT::Error(model, x1_.col(sample), x2_.col(sample));
+  }
+
+  std::size_t NumSamples() const
+  {
+    return static_cast<std::size_t> (x1_.cols());
+  }
+
+  void Unnormalize(Model * model) const
+  {
+  }
+
+  double logalpha0() const {return logalpha0_;}
+
+  double multError() const {return 1.0;}
+
+  Mat3 normalizer1() const {return Mat3::Identity();}
+  Mat3 normalizer2() const {return Mat3::Identity();}
+
+  double unormalizeError(double val) const {return sqrt(val);}
+
+protected:
+  Mat x1_, x2_; // Normalized input data
+  double logalpha0_; // Alpha0 is used to make the error adaptive to the image size
+};
+
 struct UnnormalizerResection
 {
 

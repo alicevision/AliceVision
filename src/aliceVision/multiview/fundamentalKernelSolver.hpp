@@ -36,6 +36,12 @@ struct SevenPointSolver {
   static void Solve(const Mat &x1, const Mat &x2, vector<Mat3> *F);
 };
 
+struct SevenPointSphericalSolver {
+  enum { MINIMUM_SAMPLES = 7 };
+  enum { MAX_MODELS = 3 };
+  static void Solve(const Mat &x1, const Mat &x2, vector<Mat3> *F);
+};
+
 struct EightPointSolver {
   enum { MINIMUM_SAMPLES = 8 };
   enum { MAX_MODELS = 1 };
@@ -86,6 +92,33 @@ inline void EncodeEpipolarEquation(const TMatX &x1, const TMatX &x2, TMatA *A, c
   }
 }
 
+template<typename TMatX, typename TMatA>
+inline void EncodeEpipolarSphericalEquation(const TMatX &x1, const TMatX &x2, TMatA *A, const vector<double> *weights = nullptr) 
+{
+  assert(x1.cols()==x2.cols());
+  if(weights)
+  {
+    assert(x1.cols()==weights->size());
+  }
+  for (typename TMatX::Index i = 0; i < x1.cols(); ++i) 
+  {
+    const Vec3 xx1 = x1.col(i);
+    const Vec3 xx2 = x2.col(i);
+    A->row(i) <<
+      xx2(0) * xx1(0),  // 0 represents x coords,
+      xx2(0) * xx1(1),  // 1 represents y coords.
+      xx2(0) * xx1(2),
+      xx2(1) * xx1(0),
+      xx2(1) * xx1(1),
+      xx2(1) * xx1(2),
+      xx2(2) * xx1(0),
+      xx2(2) * xx1(1),
+      xx2(2) * xx1(2);
+    if(weights)
+      A->row(i) *= (*weights)[i];
+  }
+}
+
 /// Compute SampsonError related to the Fundamental matrix and 2 correspondences
 struct SampsonError {
   static double Error(const Mat3 &F, const Vec2 &x1, const Vec2 &x2) {
@@ -123,6 +156,17 @@ struct EpipolarDistanceError {
   }
 };
 typedef EpipolarDistanceError SimpleError;
+
+struct EpipolarSphericalDistanceError {
+  static double Error(const Mat3 &F, const Vec3 &x, const Vec3 &y) {
+    // Transfer error in image 2
+    // See page 287 equation (11.9) of HZ.
+   
+    Vec3 F_x = F * x;
+    return Square(F_x.dot(y)) /  F_x.head<2>().squaredNorm();
+  }
+};
+typedef EpipolarSphericalDistanceError SimpleSphericalError;
 
 //-- Kernel solver for the 8pt Fundamental Matrix Estimation
 typedef twoView::kernel::Kernel<SevenPointSolver, SampsonError, Mat3>
