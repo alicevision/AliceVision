@@ -89,6 +89,21 @@ class EquiDistant : public IntrinsicsScaleOffsetDisto
     }
   }
 
+  Vec3 lift(const Vec2 & imcoords) const {
+
+    const Vec2 camcoords = remove_disto(ima2cam(imcoords));
+
+    double angle_radial = atan2(camcoords(1), camcoords(0));
+    double angle_Z = camcoords.norm();
+
+    Vec3 ret;
+    ret(0) = cos(angle_Z);
+    ret(1) = cos(angle_radial) /** / 1.0 / **/ * sin(angle_Z);
+    ret(2) = sin(angle_radial) /** / 1.0 / **/ * sin(angle_Z);
+
+    return ret;
+  }
+
   
   virtual double imagePlane_toCameraPlaneError(double value) const override
   {
