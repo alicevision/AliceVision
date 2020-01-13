@@ -678,6 +678,8 @@ int main(int argc, char * argv[])
     vs[targetViews[g]->getViewId()] = targetViews[g];
   }
 
+  std::cout << "-------------------------" << outputSfm.getViews().size() << std::endl;
+
   // Export output sfmData
   if (!sfmDataIO::Save(outputSfm, sfmOutputDataFilename, sfmDataIO::ESfMData::ALL))
   {

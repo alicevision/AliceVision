@@ -81,7 +81,7 @@ public:
     return params;
   }
 
-  void setDistortionParams(const std::vector<double> & distortionParams) {
+  void setDistortionParams(const std::vector<double> & distortionParams) {
 
     int expected = 0;
     if (_pDistortion != nullptr) {

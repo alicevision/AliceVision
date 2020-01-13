@@ -62,13 +62,17 @@ struct GeometricFilterMatrix_E_AC : public GeometricFilterMatrix
     const sfmData::View * view_J = sfmData->views.at(jIndex).get();
 
     // Check that valid cameras can be retrieved for the pair of views
-    const camera::IntrinsicBase * cam_I = sfmData->getIntrinsicPtr(view_I->getIntrinsicId());
-    const camera::IntrinsicBase * cam_J = sfmData->getIntrinsicPtr(view_J->getIntrinsicId());
+    std::shared_ptr<camera::IntrinsicBase> cam_I = sfmData->getIntrinsicsharedPtr(view_I->getIntrinsicId());
+    std::shared_ptr<camera::IntrinsicBase> cam_J = sfmData->getIntrinsicsharedPtr(view_J->getIntrinsicId());
 
     if (!cam_I || !cam_J)
       return EstimationStatus(false, false);
-    if ( !isPinhole(cam_I->getType()) || !isPinhole(cam_J->getType()))
+
+    std::shared_ptr<camera::IntrinsicsScaleOffset> castedCam_I = std::dynamic_pointer_cast<camera::IntrinsicsScaleOffset>(cam_I);
+    std::shared_ptr<camera::IntrinsicsScaleOffset> castedCam_J = std::dynamic_pointer_cast<camera::IntrinsicsScaleOffset>(cam_J);
+    if (castedCam_I == nullptr || castedCam_J == nullptr) {
       return EstimationStatus(false, false);
+    }
 
     // Get corresponding point regions arrays
     Mat xI,xJ;
@@ -82,13 +86,10 @@ struct GeometricFilterMatrix_E_AC : public GeometricFilterMatrix
         Mat3>
         KernelType;
 
-    const camera::Pinhole * ptrPinhole_I = (const camera::Pinhole*)(cam_I);
-    const camera::Pinhole * ptrPinhole_J = (const camera::Pinhole*)(cam_J);
-
     KernelType kernel(
       xI, sfmData->getViews().at(iIndex)->getWidth(), sfmData->getViews().at(iIndex)->getHeight(),
       xJ, sfmData->getViews().at(jIndex)->getWidth(), sfmData->getViews().at(jIndex)->getHeight(),
-      ptrPinhole_I->K(), ptrPinhole_J->K());
+      castedCam_I->K(), castedCam_J->K());
 
     // Robustly estimate the Essential matrix with A Contrario ransac
     const double upper_bound_precision = Square(m_dPrecision);

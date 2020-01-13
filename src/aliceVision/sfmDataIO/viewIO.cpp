@@ -130,6 +130,7 @@ std::shared_ptr<camera::IntrinsicBase> getViewIntrinsic(const sfmData::View& vie
     ppy = defaultPPy;
   }
 
+
   // handle case where focal length (mm) is unset or false
   if(mmFocalLength <= 0.0)
   {
@@ -142,6 +143,8 @@ std::shared_ptr<camera::IntrinsicBase> getViewIntrinsic(const sfmData::View& vie
     pxFocalLength = std::max(view.getWidth(), view.getHeight()) * mmFocalLength / sensorWidth;
     hasFocalLengthInput = true;
 
+    
+
     //fieldOfView = radianToDegree(2.0 * std::atan(sensorWidth / (mmFocalLength * 2.0))); // [rectilinear] AFOV = 2 * arctan(sensorSize / (2 * focalLength))
     //fieldOfView = radianToDegree(4.0 * std::asin(sensorWidth / (mmFocalLength * 4.0))); // [fisheye] AFOV = 4 * arcsin(sensorSize / (4 * focalLength))
 
@@ -149,29 +152,31 @@ std::shared_ptr<camera::IntrinsicBase> getViewIntrinsic(const sfmData::View& vie
   }
 
   // choose intrinsic type
-  if(cameraBrand == "Custom")
-  {
-    intrinsicType = camera::EINTRINSIC_stringToEnum(cameraModel);
-  }
-  /*
-  // Warning: This resize heuristic is disabled as RAW images have a different size in metadata.
-  else if(isResized)
-  {
-    // if the image has been resized, we assume that it has been undistorted
-    // and we use a camera without lens distortion.
-    intrinsicType = camera::PINHOLE_CAMERA;
-  }
-  */
-  else if((focalLengthIn35mm > 0.0 && focalLengthIn35mm < 18.0) || (defaultFieldOfView > 100.0))
-  {
-    // if the focal lens is short, the fisheye model should fit better.
-    intrinsicType = camera::PINHOLE_CAMERA_FISHEYE;
-  }
-  else if(intrinsicType == camera::CAMERA_END)
-  {
-    // choose a default camera model if no default type
-    // use standard lens with radial distortion by default
-    intrinsicType = camera::PINHOLE_CAMERA_RADIAL3;
+  if (defaultIntrinsicType == camera::EINTRINSIC::CAMERA_END) {
+    if(cameraBrand == "Custom")
+    {
+      intrinsicType = camera::EINTRINSIC_stringToEnum(cameraModel);
+    }
+    /*
+    // Warning: This resize heuristic is disabled as RAW images have a different size in metadata.
+    else if(isResized)
+    {
+      // if the image has been resized, we assume that it has been undistorted
+      // and we use a camera without lens distortion.
+      intrinsicType = camera::PINHOLE_CAMERA;
+    }
+    */
+    else if((focalLengthIn35mm > 0.0 && focalLengthIn35mm < 18.0) || (defaultFieldOfView > 100.0))
+    {
+      // if the focal lens is short, the fisheye model should fit better.
+      intrinsicType = camera::PINHOLE_CAMERA_FISHEYE;
+    }
+    else if(intrinsicType == camera::CAMERA_END)
+    {
+      // choose a default camera model if no default type
+      // use standard lens with radial distortion by default
+      intrinsicType = camera::PINHOLE_CAMERA_RADIAL3;
+    }
   }
 
   // create the desired intrinsic

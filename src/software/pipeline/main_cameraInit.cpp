@@ -209,7 +209,7 @@ int main(int argc, char **argv)
     ("defaultIntrinsic", po::value<std::string>(&defaultIntrinsicKMatrix)->default_value(defaultIntrinsicKMatrix),
       "Intrinsics Kmatrix \"f;0;ppx;0;f;ppy;0;0;1\".")
     ("defaultCameraModel", po::value<std::string>(&defaultCameraModelName)->default_value(defaultCameraModelName),
-      "Camera model type (pinhole, radial1, radial3, brown, fisheye4, fisheye1).")
+      "Camera model type (pinhole, radial1, radial3, brown, fisheye4, fisheye1, equidistant).")
     ("groupCameraFallback", po::value<EGroupCameraFallback>(&groupCameraFallback)->default_value(groupCameraFallback),
       std::string("When there is no serial number in the image metadata, we cannot know if the images come from the same camera. "
       "This is problematic for grouping images sharing the same internal camera settings and we have to decide on a fallback strategy:\n"
@@ -379,7 +379,7 @@ int main(int argc, char **argv)
     sfmData::Views& views = sfmData.getViews();
     std::vector<std::string> imagePaths;
 
-    if(listFiles(imageFolder, {".jpg", ".jpeg", ".tif", ".tiff", ".exr"},  imagePaths))
+    if(listFiles(imageFolder, {".cr2"},  imagePaths))
     {
       std::vector<sfmData::View> incompleteViews(imagePaths.size());
 
@@ -556,7 +556,9 @@ int main(int argc, char **argv)
 
     // build intrinsic
     std::shared_ptr<camera::IntrinsicBase> intrinsicBase = sfmDataIO::getViewIntrinsic(view, focalLengthmm, sensorWidth, defaultFocalLengthPixel, defaultFieldOfView, defaultCameraModel, defaultPPx, defaultPPy);
-    camera::Pinhole* intrinsic = dynamic_cast<camera::Pinhole*>(intrinsicBase.get());
+    std::shared_ptr<camera::IntrinsicsScaleOffset> intrinsic = std::dynamic_pointer_cast<camera::IntrinsicsScaleOffset>(intrinsicBase);
+
+    ALICEVISION_LOG_ERROR("!:!!!" << intrinsicBase->getType());
 
     // set initialization mode
     intrinsic->setInitializationMode(intrinsicInitMode);
@@ -741,7 +743,7 @@ int main(int argc, char **argv)
   }
 
   // store SfMData views & intrinsic data
-  if(!sfmDataIO::Save(sfmData, outputFilePath, sfmDataIO::ESfMData(sfmDataIO::VIEWS|sfmDataIO::INTRINSICS|sfmDataIO::EXTRINSICS)))
+  if(!sfmDataIO::Save(sfmData, outputFilePath, sfmDataIO::ESfMData(sfmDataIO::VIEWS | sfmDataIO::INTRINSICS | sfmDataIO::EXTRINSICS)))
   {
     return EXIT_FAILURE;
   }

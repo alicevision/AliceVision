@@ -211,6 +211,17 @@ public:
   }
 
   /**
+   * @brief Return a shared pointer to an intrinsic if available or nullptr otherwise.
+   * @param[in] intrinsicId
+   */
+  const std::shared_ptr<camera::IntrinsicBase> getIntrinsicsharedPtr(IndexT intrinsicId) const
+  {
+    if(intrinsics.count(intrinsicId))
+      return intrinsics.at(intrinsicId);
+    return nullptr;
+  }
+
+  /**
    * @brief Get a set of views keys
    * @return set of views keys
    */
