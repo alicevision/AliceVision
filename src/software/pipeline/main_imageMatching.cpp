@@ -6,6 +6,7 @@
 
 #include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
+#include <aliceVision/sfm/FrustumFilter.hpp>
 #include <aliceVision/voctree/Database.hpp>
 #include <aliceVision/voctree/VocabularyTree.hpp>
 #include <aliceVision/voctree/databaseIO.hpp>
@@ -105,7 +106,8 @@ enum class EImageMatchingMethod
   EXHAUSTIVE = 0,
   VOCABULARYTREE = 1,
   SEQUENTIAL = 2,
-  SEQUENTIAL_AND_VOCABULARYTREE = 3
+  SEQUENTIAL_AND_VOCABULARYTREE = 3,
+  FRUSTUM=4
 };
 
 /**
@@ -120,6 +122,7 @@ inline std::string EImageMatchingMethod_enumToString(EImageMatchingMethod m)
     case EImageMatchingMethod::VOCABULARYTREE: return "VocabularyTree";
     case EImageMatchingMethod::SEQUENTIAL: return "Sequential";
     case EImageMatchingMethod::SEQUENTIAL_AND_VOCABULARYTREE: return "SequentialAndVocabularyTree";
+    case EImageMatchingMethod::FRUSTUM: return "Frustum";
   }
   throw std::out_of_range("Invalid EImageMatchingMethod enum: " + std::to_string(int(m)));
 }
@@ -138,6 +141,7 @@ inline EImageMatchingMethod EImageMatchingMethod_stringToEnum(const std::string&
   if(mode == "vocabularytree") return EImageMatchingMethod::VOCABULARYTREE;
   if(mode == "sequential") return EImageMatchingMethod::SEQUENTIAL;
   if(mode == "sequentialandvocabularytree") return EImageMatchingMethod::SEQUENTIAL_AND_VOCABULARYTREE;
+  if(mode == "frustum") return EImageMatchingMethod::FRUSTUM;
 
   throw std::out_of_range("Invalid EImageMatchingMethod: " + m);
 }
@@ -742,6 +746,15 @@ int main(int argc, char** argv)
       conditionVocTree(treeName, withWeights, weightsName, matchingMode,featuresFolders, sfmDataA, nbMaxDescriptors, sfmDataFilenameA, sfmDataB,
                        sfmDataFilenameB, useMultiSfM, descriptorsFilesA,  numImageQuery, selectedPairs);
       break;
+    }
+    case EImageMatchingMethod::FRUSTUM:
+    {
+        PairSet pairs = sfm::FrustumFilter(sfmDataA).getFrustumIntersectionPairs();
+        for(PairSet::iterator it=pairs.begin(); it != pairs.end(); it++)
+        {
+            selectedPairs[it->first].insert(it->second);
+        }
+        break;
     }
   }
 
