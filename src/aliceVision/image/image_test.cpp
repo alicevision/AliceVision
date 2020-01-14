@@ -71,7 +71,7 @@ BOOST_AUTO_TEST_CASE(Image_PixelTypes)
   // RGBColor  c(0); // Not accepted because can cause bad pixel affectation value (mixed type...)
   // The following issue must used : (at your own risk)
   RGBColor  b(static_cast<unsigned char>(0));
-  RGBAColor d(BLACK);
+  RGBAColor d(BLACK, 255);
 }
 
 BOOST_AUTO_TEST_CASE(Image_ImageConverter)

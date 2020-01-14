@@ -27,11 +27,14 @@ bool GlobalSfMRotationAveragingSolver::Run(
   ERotationAveragingMethod eRotationAveragingMethod,
   ERelativeRotationInferenceMethod eRelativeRotationInferenceMethod,
   const RelativeRotations& relativeRot_In,
+  const double max_angular_error,
   HashMap<IndexT, Mat3>& map_globalR
 ) const
 {
   RelativeRotations relativeRotations = relativeRot_In;
   // We work on a copy, since inference can remove some relative motions
+
+  ALICEVISION_LOG_DEBUG("GlobalSfMRotationAveragingSolver: A) relativeRotations.size(): " << relativeRotations.size());
 
   //-> Test there is only one graph and at least 3 camera?
   switch(eRelativeRotationInferenceMethod)
@@ -42,9 +45,13 @@ bool GlobalSfMRotationAveragingSolver::Run(
       // Triplet inference (test over the composition error)
       //-------------------
       PairSet pairs = getPairs(relativeRotations);
+      ALICEVISION_LOG_DEBUG("GlobalSfMRotationAveragingSolver: pairs.size(): " << pairs.size());
+
       std::vector< graph::Triplet > vec_triplets = graph::tripletListing(pairs);
-      //-- Rejection triplet that are 'not' identity rotation (error to identity > 5°)
-      TripletRotationRejection(5.0f, vec_triplets, relativeRotations);
+      ALICEVISION_LOG_DEBUG("GlobalSfMRotationAveragingSolver: vec_triplets.size(): " << vec_triplets.size());
+
+      //-- Rejection triplet that are 'not' identity rotation (error to identity > max_angular_error)
+      TripletRotationRejection(max_angular_error, vec_triplets, relativeRotations);
 
       pairs = getPairs(relativeRotations);
       const std::set<IndexT> set_remainingIds = graph::CleanGraph_KeepLargestBiEdge_Nodes<PairSet, IndexT>(pairs);
@@ -75,6 +82,9 @@ bool GlobalSfMRotationAveragingSolver::Run(
   //- B. solve global rotation computation
   bool bSuccess = false;
   std::vector<Mat3> vec_globalR(_reindexForward.size());
+
+  ALICEVISION_LOG_DEBUG("GlobalSfMRotationAveragingSolver: B) vec_globalR.size(): " << vec_globalR.size());
+
   switch(eRotationAveragingMethod)
   {
     case ROTATION_AVERAGING_L2:
@@ -84,11 +94,16 @@ bool GlobalSfMRotationAveragingSolver::Run(
         _reindexForward.size(),
         relativeRotations,
         vec_globalR);
+
+      ALICEVISION_LOG_DEBUG("rotationAveraging::l2::L2RotationAveraging: success: " << bSuccess);
       //- Non linear refinement of the global rotations
       if (bSuccess)
+      {
         bSuccess = rotationAveraging::l2::L2RotationAveraging_Refine(
           relativeRotations,
           vec_globalR);
+        ALICEVISION_LOG_DEBUG("rotationAveraging::l2::L2RotationAveraging_Refine: success: " << bSuccess);
+      }
 
       // save kept pairs (restore original pose indices using the backward reindexing)
       for(RelativeRotations::iterator iter = relativeRotations.begin();  iter != relativeRotations.end(); ++iter)
@@ -110,6 +125,7 @@ bool GlobalSfMRotationAveragingSolver::Run(
       bSuccess = rotationAveraging::l1::GlobalRotationsRobust(
         relativeRotations, vec_globalR, nMainViewID, 0.0f, &vec_inliers);
 
+      ALICEVISION_LOG_DEBUG("rotationAveraging::l1::GlobalRotationsRobust: success: " << bSuccess);
       ALICEVISION_LOG_DEBUG("inliers: " << vec_inliers);
 
       // save kept pairs (restore original pose indices using the backward reindexing)
@@ -170,6 +186,8 @@ void GlobalSfMRotationAveragingSolver::TripletRotationRejection(
     const graph::Triplet & triplet = vec_triplets[i];
     const IndexT I = triplet.i, J = triplet.j , K = triplet.k;
 
+    ALICEVISION_LOG_DEBUG("GlobalSfMRotationAveragingSolver::TripletRotationRejection: i: " << i << ", (" << I << ", " << J << ", " << K << ").");
+
     //-- Find the three relative rotations
     const Pair ij(I,J), ji(J,I);
     const Mat3 RIJ = (map_relatives.count(ij)) ?
@@ -205,6 +223,10 @@ void GlobalSfMRotationAveragingSolver::TripletRotationRejection(
         map_relatives_validated[ki] = map_relatives.at(ki);
       else
         map_relatives_validated[ik] = map_relatives.at(ik);
+    }
+    else
+    {
+      ALICEVISION_LOG_DEBUG("GlobalSfMRotationAveragingSolver::TripletRotationRejection: i: " << i << ", angularErrorDegree: " << angularErrorDegree << ", max_angular_error: " << max_angular_error);
     }
   }
   map_relatives = std::move(map_relatives_validated);

@@ -191,34 +191,27 @@ public:
     return (!isPartOfRig() || _isIndependantPose);
   }
 
-  float getEv() const
+  /**
+   * 
+  */
+  float getCameraExposureSetting() const
   {
-      const float shutter = getMetadataShutter();
-      const float aperture = getMetadataAperture();
-      const float iso = static_cast<float>(getMetadataISO());
+    const float shutter = getMetadataShutter();
+    const float fnumber = getMetadataFNumber();
+    if (shutter < 0 || fnumber < 0)
+        return -1.f;
 
-      if(shutter < 0 || aperture < 0 || iso < 0)
-          return -1;
+    const float iso = getMetadataISO();
+    const float isoRatio = (iso < 0.f) ? 1.0 : (iso / 100.f);
 
-      // WIKIPEDIA : + log2f(iso/100.f)
-      float ev = log2f(std::pow(aperture, 2.0f) / shutter) - log2f(iso/100.f);
-      return ev;
+    float cameraExposure = (shutter * isoRatio) / (fnumber * fnumber);
+    return cameraExposure;
   }
 
-  /**
-   * @brief Get the value of the gap bewteen the view's exposition and a reference exposition
-   * @param [refEv] the median exposition of all views
-   * @return the exposure compensation
-   */
-  float getEvCompensation(float refEv) const
-    {
-        const float ev = getEv();
-        if(ev == -1)
-            return 1.0f;
-
-        return std::pow(2.0f, ev - refEv);
-    }
-
+  float getEv() const
+  {
+    return std::log2(1.f/getCameraExposureSetting());
+  }
 
   /**
    * @brief Return true if the given metadata name exists
@@ -360,13 +353,21 @@ public:
   }
 
   /**
-     * @brief Get the corresponding "FNumber" (aperture) metadata value
-     * @return the metadata value float or -1 if no corresponding value
-     */
-  float getMetadataAperture() const
+   * @brief Get the corresponding "FNumber" (relative aperture) metadata value
+   * @return the metadata value float or -1 if no corresponding value
+   */
+  float getMetadataFNumber() const
   {
       if(hasDigitMetadata("FNumber"))
+      {
           return std::stof(getMetadata("FNumber"));
+      }
+      if (hasDigitMetadata("ApertureValue"))
+      {
+          const float aperture = std::stof(getMetadata("ApertureValue"));
+          // fnumber = 2^(aperture/2)
+          return std::pow(2.0f, aperture / 2.0f);
+      }
       return -1;
   }
 
@@ -389,7 +390,16 @@ public:
   {
     if(hasDigitMetadata("Orientation"))
       return  static_cast<EEXIFOrientation>(std::stoi(getMetadata("Orientation")));
+    if(hasDigitMetadata("Exif:Orientation"))
+      return  static_cast<EEXIFOrientation>(std::stoi(getMetadata("Exif:Orientation")));
     return EEXIFOrientation::UNKNOWN;
+  }
+
+  std::string getMetadataDateTimeOriginal() const
+  {
+    if(hasMetadata("Exif:DateTimeOriginal"))
+      return getMetadata("Exif:DateTimeOriginal");
+    return "";
   }
 
   /**

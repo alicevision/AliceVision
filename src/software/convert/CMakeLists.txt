@@ -43,6 +43,8 @@ alicevision_add_software(aliceVision_convertLDRToHDR
   LINKS aliceVision_system
         aliceVision_image
         aliceVision_hdr
+        aliceVision_sfmData
+        aliceVision_sfmDataIO
         ${Boost_LIBRARIES}
 )
 endif()

@@ -9,7 +9,11 @@
 #include <fstream>
 #include <iostream>
 #include <sstream>
+#include <numeric>
+
 #include <aliceVision/system/Logger.hpp>
+
+#include <dependencies/htmlDoc/htmlDoc.hpp>
 
 
 namespace aliceVision {
@@ -36,7 +40,7 @@ void rgbCurve::setFunction(EFunctionType functionType)
         case EFunctionType::LINEAR:     setLinear(); return;
         case EFunctionType::GAUSSIAN:   setGaussian(); return;
         case EFunctionType::TRIANGLE:   setTriangular(); return;
-        case EFunctionType::PLATEAU:    setPlateau(); return;
+        case EFunctionType::PLATEAU:    setPlateauSigmoid(); return;
         case EFunctionType::GAMMA:      setGamma(); return;
         case EFunctionType::LOG10:      setLog10(); return;
     }
@@ -100,23 +104,13 @@ void rgbCurve::setEmor()
   }
 }
 
-//void rgbCurve::setGaussian(double size)
-//{
-//  const float coefficient = 1.f / (static_cast<float>(getSize() - 1) / 4.0f);
-//  for(std::size_t i = 0; i < getSize(); ++i)
-//  {
-//    float factor = i / size * coefficient - 2.0f / size;
-//    setAllChannels(i, std::exp( -factor * factor ));
-//  }
-//}
-
 void rgbCurve::setGaussian(double mu, double sigma)
 {
+    // https://www.desmos.com/calculator/s3q3ow1mpy
     for(std::size_t i = 0; i < getSize(); ++i)
     {
         float factor = i / (static_cast<float>(getSize() - 1)) - mu;
         setAllChannels(i, std::exp( -factor * factor / (2.0 * sigma * sigma)));
-        //    setAllChannels(i, std::max(0.0, std::exp( -factor * factor / (2.0 * sigma * sigma)) - 0.005));
     }
 }
 
@@ -131,26 +125,42 @@ void rgbCurve::setRobertsonWeight()
 
 void rgbCurve::setTriangular()
 {
-    const float coefficient = 1.f / static_cast<float>(getSize() - 1);
+    const float coefficient = 2.f / static_cast<float>(getSize() - 1);
     for(std::size_t i = 0; i < getSize(); ++i)
     {
         float value = i * coefficient;
-        if (value > 0.5f)
+        if (value > 1.0f)
         {
-            value = 1.0f - value;
+            value = 2.0f - value;
         }
-        setAllChannels(i, 2.f * value);
+        setAllChannels(i, value);
     }
 }
 
 
-void rgbCurve::setPlateau()
+void rgbCurve::setPlateau(float weight)
 {
+    // https://www.desmos.com/calculator/mouwyuvjvw
+
     const float coefficient = 1.f / static_cast<float>(getSize() - 1);
     for(std::size_t i = 0; i < getSize(); ++i)
     {
-        setAllChannels(i, 1.0f - std::pow((2.0f * i * coefficient - 1.0f), 12.0f));
-        //      setAllChannels(i, 1.0f - std::pow((2.0f * i * coefficient - 1.0f), 4.0f));
+        setAllChannels(i, 1.0f - std::pow((2.0f * i * coefficient - 1.0f), weight));
+    }
+}
+
+inline float plateauSigmoidFunction(float cA, float wA, float cB, float wB, float x)
+{
+    // https://www.desmos.com/calculator/aoojidncmi
+    return 1.0 / (1.0 + std::exp(10.0 * (x - cB) / wB)) - 1.0 / (1.0 + std::exp(10.0 * (x - cA) / wA));
+}
+
+void rgbCurve::setPlateauSigmoid(float cA, float wA, float cB, float wB)
+{
+    const float coefficient = 1.f / static_cast<float>(getSize() - 1);
+    for (std::size_t i = 0; i < getSize(); ++i)
+    {
+        setAllChannels(i, plateauSigmoidFunction(cA, wA, cB, wB, i * coefficient));
     }
 }
 
@@ -179,6 +189,41 @@ void rgbCurve::inverseAllValues()
     }
 }
 
+void rgbCurve::freezeFirstPartValues()
+{
+    for (auto &curve : _data)
+    {
+        std::size_t midIndex = (curve.size() / 2);
+        for (std::size_t i = 0; i < midIndex; ++i)
+        {
+            curve[i] = curve[midIndex];
+        }
+    }
+}
+
+void rgbCurve::freezeSecondPartValues()
+{
+    for (auto &curve : _data)
+    {
+        std::size_t midIndex = (curve.size() / 2);
+        for (std::size_t i = midIndex + 1; i < curve.size(); ++i)
+        {
+            curve[i] = curve[midIndex];
+        }
+    }
+}
+
+void rgbCurve::invertAndScaleSecondPart(float scale)
+{
+    for (auto &curve : _data)
+    {
+        for (std::size_t i = curve.size()/2; i < curve.size(); ++i)
+        {
+            curve[i] = (1.f - curve[i]) * scale;
+        }
+    }
+}
+
 void rgbCurve::setAllAbsolute()
 {
     for(auto &curve : _data)
@@ -186,6 +231,53 @@ void rgbCurve::setAllAbsolute()
         for(auto &value : curve)
         {
             value = std::abs(value);
+        }
+    }
+}
+
+inline float gammaFunction(float value, float gamma)
+{
+    // 1/0.45 = 2.22
+    if (value < 0.018)
+    {
+        return 4.5 * value;
+    }
+    else
+    {
+        return 1.099 * std::pow(value, 0.45) - 0.099;
+    }
+}
+
+inline float inverseGammaFunction(float value, float gamma)
+{
+    if (value <= 0.0812f)
+    {
+        return value / 4.5f;
+    }
+    else
+    {
+        return pow((value + 0.099f) / 1.099f, gamma);
+    }
+}
+
+void rgbCurve::applyGamma(float gamma)
+{
+    for (auto &curve : _data)
+    {
+        for (auto &value : curve)
+        {
+            value = gammaFunction(value, gamma);
+        }
+    }
+}
+
+void rgbCurve::applyGammaInv(float gamma)
+{
+    for (auto &curve : _data)
+    {
+        for (auto &value : curve)
+        {
+            value = inverseGammaFunction(value, gamma);
         }
     }
 }
@@ -387,6 +479,33 @@ void rgbCurve::write(const std::string &path, const std::string &name) const
     file << text;
     file.close();
 }
+
+void rgbCurve::writeHtml(const std::string& path, const std::string& title) const
+{
+    using namespace htmlDocument;
+
+    std::vector<double> xBin(getCurveRed().size());
+    std::iota(xBin.begin(), xBin.end(), 0);
+
+    std::pair< std::pair<double, double>, std::pair<double, double> > range = autoJSXGraphViewport<double>(xBin, getCurveRed());
+
+    JSXGraphWrapper jsxGraph;
+    jsxGraph.init(title, 800, 600);
+
+    jsxGraph.addXYChart(xBin, getCurveRed(), "line", "ff0000");
+    jsxGraph.addXYChart(xBin, getCurveGreen(), "line", "00ff00");
+    jsxGraph.addXYChart(xBin, getCurveBlue(), "line", "0000ff");
+
+    jsxGraph.UnsuspendUpdate();
+    jsxGraph.setViewport(range);
+    jsxGraph.close();
+
+    // save the reconstruction Log
+    std::ofstream htmlFileStream(path.c_str());
+    htmlFileStream << htmlDocumentStream(title).getDoc();
+    htmlFileStream << jsxGraph.toStr();
+}
+
 
 void rgbCurve::read(const std::string &path)
 {

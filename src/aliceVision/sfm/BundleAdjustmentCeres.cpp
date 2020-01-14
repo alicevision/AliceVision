@@ -7,16 +7,19 @@
 
 #include <aliceVision/sfm/BundleAdjustmentCeres.hpp>
 #include <aliceVision/sfm/ResidualErrorFunctor.hpp>
+#include <aliceVision/sfm/ResidualErrorConstraintFunctor.hpp>
+#include <aliceVision/sfm/ResidualErrorRotationPriorFunctor.hpp>
 #include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/alicevision_omp.hpp>
 #include <aliceVision/config.hpp>
-
 
 #include <boost/filesystem.hpp>
 
 #include <ceres/rotation.h>
 
 #include <fstream>
+
+
 
 namespace fs = boost::filesystem;
 
@@ -80,10 +83,33 @@ ceres::CostFunction* createRigCostFunctionFromIntrinsics(const IntrinsicBase* in
   }
 }
 
+/**
+ * @brief Create the appropriate cost functor according the provided input camera intrinsic model
+ * @param[in] intrinsicPtr The intrinsic pointer
+ * @param[in] observation The corresponding observation
+ * @return cost functor
+ */
+ceres::CostFunction* createConstraintsCostFunctionFromIntrinsics(const IntrinsicBase* intrinsicPtr, const Vec2& observation_first, const Vec2& observation_second)
+{
+  switch(intrinsicPtr->getType())
+  {
+    case PINHOLE_CAMERA:
+      return new ceres::AutoDiffCostFunction<ResidualErrorConstraintFunctor_Pinhole, 2, 3, 6, 6>(new ResidualErrorConstraintFunctor_Pinhole(observation_first.homogeneous(), observation_second.homogeneous()));
+    case PINHOLE_CAMERA_RADIAL1:
+      return new ceres::AutoDiffCostFunction<ResidualErrorConstraintFunctor_PinholeRadialK1, 2, 4, 6, 6>(new ResidualErrorConstraintFunctor_PinholeRadialK1(observation_first.homogeneous(), observation_second.homogeneous()));
+    case PINHOLE_CAMERA_RADIAL3:
+      return new ceres::AutoDiffCostFunction<ResidualErrorConstraintFunctor_PinholeRadialK3, 2, 6, 6, 6>(new ResidualErrorConstraintFunctor_PinholeRadialK3(observation_first.homogeneous(), observation_second.homogeneous()));
+    case PINHOLE_CAMERA_FISHEYE:
+      return new ceres::AutoDiffCostFunction<ResidualErrorConstraintFunctor_PinholeFisheye, 2, 7, 6, 6>(new ResidualErrorConstraintFunctor_PinholeFisheye(observation_first.homogeneous(), observation_second.homogeneous()));
+    default:
+      throw std::logic_error("Cannot create cost function, unrecognized intrinsic type in BA.");
+  } 
+}
+
 void BundleAdjustmentCeres::CeresOptions::setDenseBA()
 {
   // default configuration use a DENSE representation
-  preconditionerType = ceres::JACOBI;
+  preconditionerType  = ceres::JACOBI;
   linearSolverType = ceres::DENSE_SCHUR;
   sparseLinearAlgebraLibraryType = ceres::SUITE_SPARSE; // not used but just to avoid a warning in ceres
   ALICEVISION_LOG_DEBUG("BundleAdjustment[Ceres]: DENSE_SCHUR");
@@ -248,6 +274,8 @@ void BundleAdjustmentCeres::setSolverOptions(ceres::Solver::Options& solverOptio
   solverOptions.minimizer_progress_to_stdout = _ceresOptions.verbose;
   solverOptions.logging_type = ceres::SILENT;
   solverOptions.num_threads = _ceresOptions.nbThreads;
+
+
 #if CERES_VERSION_MAJOR < 2
   solverOptions.num_linear_solver_threads = _ceresOptions.nbThreads;
 #endif
@@ -579,6 +607,57 @@ void BundleAdjustmentCeres::addLandmarksToProblem(const sfmData::SfMData& sfmDat
   }
 }
 
+void BundleAdjustmentCeres::addConstraints2DToProblem(const sfmData::SfMData& sfmData, ERefineOptions refineOptions, ceres::Problem& problem)
+{
+  // set a LossFunction to be less penalized by false measurements.
+  // note: set it to NULL if you don't want use a lossFunction.
+  ceres::LossFunction* lossFunction = new ceres::HuberLoss(Square(4.0)); // TODO: make the LOSS function and the parameter an option
+
+  for (const auto & constraint : sfmData.getConstraints2D()) {
+    const sfmData::View& view_1 = sfmData.getView(constraint.ViewFirst);
+    const sfmData::View& view_2 = sfmData.getView(constraint.ViewSecond);
+
+    assert(getPoseState(view_1.getPoseId()) != EParameterState::IGNORED);
+    assert(getIntrinsicState(view_1.getIntrinsicId()) != EParameterState::IGNORED);
+    assert(getPoseState(view_2.getPoseId()) != EParameterState::IGNORED);
+    assert(getIntrinsicState(view_2.getIntrinsicId()) != EParameterState::IGNORED);
+
+    double * poseBlockPtr_1 = _posesBlocks.at(view_1.getPoseId()).data();
+    double * poseBlockPtr_2 = _posesBlocks.at(view_2.getPoseId()).data();
+
+    double * intrinsicBlockPtr_1 = _intrinsicsBlocks.at(view_1.getIntrinsicId()).data();
+    double * intrinsicBlockPtr_2 = _intrinsicsBlocks.at(view_2.getIntrinsicId()).data();
+
+    //For the moment assume a unique camera
+    assert(intrinsicBlockPtr_1 == intrinsicBlockPtr_2);
+
+    ceres::CostFunction* costFunction = createConstraintsCostFunctionFromIntrinsics(sfmData.getIntrinsicPtr(view_1.getIntrinsicId()), constraint.ObservationFirst.x, constraint.ObservationSecond.x);
+    problem.AddResidualBlock(costFunction, lossFunction, intrinsicBlockPtr_1, poseBlockPtr_1, poseBlockPtr_2);
+  }
+}
+
+void BundleAdjustmentCeres::addRotationPriorsToProblem(const sfmData::SfMData& sfmData, ERefineOptions refineOptions, ceres::Problem& problem)
+{
+  // set a LossFunction to be less penalized by false measurements.
+  // note: set it to NULL if you don't want use a lossFunction.
+  ceres::LossFunction* lossFunction = nullptr;
+
+  for (const auto & prior : sfmData.getRotationPriors()) {
+    const sfmData::View& view_1 = sfmData.getView(prior.ViewFirst);
+    const sfmData::View& view_2 = sfmData.getView(prior.ViewSecond);
+
+    assert(getPoseState(view_1.getPoseId()) != EParameterState::IGNORED);
+    assert(getPoseState(view_2.getPoseId()) != EParameterState::IGNORED);
+
+    double * poseBlockPtr_1 = _posesBlocks.at(view_1.getPoseId()).data();
+    double * poseBlockPtr_2 = _posesBlocks.at(view_2.getPoseId()).data();
+
+
+    ceres::CostFunction* costFunction = new ceres::AutoDiffCostFunction<ResidualErrorRotationPriorFunctor, 3, 6, 6>(new ResidualErrorRotationPriorFunctor(prior._second_R_first));
+    problem.AddResidualBlock(costFunction, lossFunction, poseBlockPtr_1, poseBlockPtr_2);
+  }
+}
+
 void BundleAdjustmentCeres::createProblem(const sfmData::SfMData& sfmData,
                                           ERefineOptions refineOptions,
                                           ceres::Problem& problem)
@@ -598,6 +677,12 @@ void BundleAdjustmentCeres::createProblem(const sfmData::SfMData& sfmData,
 
   // add SfM landmarks to the Ceres problem
   addLandmarksToProblem(sfmData, refineOptions, problem);
+
+  // add 2D constraints to the Ceres problem
+  addConstraints2DToProblem(sfmData, refineOptions, problem);
+
+  // add rotation priors to the Ceres problem
+  addRotationPriorsToProblem(sfmData, refineOptions, problem);
 }
 
 void BundleAdjustmentCeres::updateFromSolution(sfmData::SfMData& sfmData, ERefineOptions refineOptions) const
@@ -713,12 +798,12 @@ bool BundleAdjustmentCeres::adjust(sfmData::SfMData& sfmData, ERefineOptions ref
   setSolverOptions(options);
 
   // solve BA
-  ceres::Solver::Summary summary;
+  ceres::Solver::Summary summary;  
   ceres::Solve(options, &problem, &summary);
 
   // print summary
   if(_ceresOptions.summary)
-    ALICEVISION_LOG_DEBUG(summary.FullReport());
+    ALICEVISION_LOG_INFO(summary.FullReport());
 
   // solution is not usable
   if(!summary.IsSolutionUsable())

@@ -24,6 +24,42 @@ enum ETranslationAveragingMethod
   TRANSLATION_AVERAGING_SOFTL1 = 3
 };
 
+inline std::string ETranslationAveragingMethod_enumToString(ETranslationAveragingMethod eTranslationAveragingMethod)
+{
+  switch(eTranslationAveragingMethod)
+  {
+    case ETranslationAveragingMethod::TRANSLATION_AVERAGING_L1:
+      return "L1_minimization";
+    case ETranslationAveragingMethod::TRANSLATION_AVERAGING_L2_DISTANCE_CHORDAL:
+      return "L2_minimization";
+  case ETranslationAveragingMethod::TRANSLATION_AVERAGING_SOFTL1:
+    return "L1_soft_minimization";
+  }
+  throw std::out_of_range("Invalid translation averaging method type");
+}
+
+inline ETranslationAveragingMethod ETranslationAveragingMethod_stringToEnum(const std::string& TranslationAveragingMethodName)
+{
+  if(TranslationAveragingMethodName == "L1_minimization")      return ETranslationAveragingMethod::TRANSLATION_AVERAGING_L1;
+  if(TranslationAveragingMethodName == "L2_minimization")   return ETranslationAveragingMethod::TRANSLATION_AVERAGING_L2_DISTANCE_CHORDAL;
+  if(TranslationAveragingMethodName == "L1_soft_minimization")      return ETranslationAveragingMethod::TRANSLATION_AVERAGING_SOFTL1;
+
+  throw std::out_of_range("Invalid translation averaging method name : '" + TranslationAveragingMethodName + "'");
+}
+
+inline std::ostream& operator<<(std::ostream& os, ETranslationAveragingMethod e)
+{
+    return os << ETranslationAveragingMethod_enumToString(e);
+}
+
+inline std::istream& operator>>(std::istream& in, ETranslationAveragingMethod& translationType)
+{
+    std::string token;
+    in >> token;
+    translationType = ETranslationAveragingMethod_stringToEnum(token);
+    return in;
+}
+
 class GlobalSfMTranslationAveragingSolver
 {
   translationAveraging::RelativeInfoVec m_vec_initialRijTijEstimates;

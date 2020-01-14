@@ -74,6 +74,27 @@ std::istream& operator>>(std::istream& in, EImageFileType& imageFileType)
   return in;
 }
 
+bool isSupported(const std::string &ext)
+{
+  static const std::string extensionList = oiio::get_string_attribute("extension_list");
+  std::vector<std::string> supportedExtensions;
+
+  std::vector<std::string> supportedFormat;
+  boost::split(supportedFormat, extensionList, boost::is_any_of(";"), boost::token_compress_on);
+  for(const std::string& format: supportedFormat)
+  {
+    std::vector<std::string> extensions;
+    const std::string str = format.substr(format.find(":")+1);
+    boost::split(extensions, str, boost::is_any_of(","), boost::token_compress_on);
+    for(std::string& extension: extensions)
+      supportedExtensions.push_back(extension.insert(0, "."));
+  }
+
+  const auto start = supportedExtensions.begin();
+  const auto end = supportedExtensions.end();
+  return (std::find(start, end, boost::to_lower_copy(ext)) != end);
+}
+
 // Warning: type conversion problems from string to param value, we may lose some metadata with string maps
 oiio::ParamValueList getMetadataFromMap(const std::map<std::string, std::string>& metadataMap)
 {
@@ -145,6 +166,11 @@ void getBufferFromImage(Image<float>& image, oiio::ImageBuf& buffer)
 void getBufferFromImage(Image<unsigned char>& image, oiio::ImageBuf& buffer)
 {
   getBufferFromImage(image, oiio::TypeDesc::UINT8, 1, buffer);
+}
+
+void getBufferFromImage(Image<RGBAfColor>& image, oiio::ImageBuf& buffer)
+{
+  getBufferFromImage(image, oiio::TypeDesc::FLOAT, 4, buffer);
 }
 
 void getBufferFromImage(Image<RGBAColor>& image, oiio::ImageBuf& buffer)
@@ -348,6 +374,11 @@ void readImage(const std::string& path, Image<unsigned char>& image, EImageColor
   readImage(path, oiio::TypeDesc::UINT8, 1, image, imageColorSpace);
 }
 
+void readImage(const std::string& path, Image<RGBAfColor>& image, EImageColorSpace imageColorSpace)
+{
+  readImage(path, oiio::TypeDesc::FLOAT, 4, image, imageColorSpace);
+}
+
 void readImage(const std::string& path, Image<RGBAColor>& image, EImageColorSpace imageColorSpace)
 {
   readImage(path, oiio::TypeDesc::UINT8, 4, image, imageColorSpace);
@@ -368,6 +399,11 @@ void writeImage(const std::string& path, const Image<unsigned char>& image, EIma
   writeImage(path, oiio::TypeDesc::UINT8, 1, image, imageColorSpace, metadata);
 }
 
+void writeImage(const std::string& path, const Image<RGBAfColor>& image, EImageColorSpace imageColorSpace, const oiio::ParamValueList& metadata)
+{
+  writeImage(path, oiio::TypeDesc::FLOAT, 4, image, imageColorSpace, metadata);
+}
+
 void writeImage(const std::string& path, const Image<RGBAColor>& image, EImageColorSpace imageColorSpace, const oiio::ParamValueList& metadata)
 {
   writeImage(path, oiio::TypeDesc::UINT8, 4, image, imageColorSpace, metadata);
@@ -376,6 +412,11 @@ void writeImage(const std::string& path, const Image<RGBAColor>& image, EImageCo
 void writeImage(const std::string& path, const Image<RGBfColor>& image, EImageColorSpace imageColorSpace, const oiio::ParamValueList& metadata)
 {
   writeImage(path, oiio::TypeDesc::FLOAT, 3, image, imageColorSpace, metadata);
+}
+
+void writeImage(const std::string& path, const Image<float>& image, EImageColorSpace imageColorSpace, const oiio::ParamValueList& metadata)
+{
+  writeImage(path, oiio::TypeDesc::FLOAT, 1, image, imageColorSpace, metadata);
 }
 
 void writeImage(const std::string& path, const Image<RGBColor>& image, EImageColorSpace imageColorSpace, const oiio::ParamValueList& metadata)

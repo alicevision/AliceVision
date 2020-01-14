@@ -21,8 +21,8 @@ namespace aliceVision
     template <typename T>
     class Rgb : public Eigen::Matrix<T, 3, 1, 0, 3, 1>
     {
-      typedef Eigen::Matrix<T, 3, 1, 0, 3, 1> Base;
-      typedef T TBase;
+      using Base = Eigen::Matrix<T, 3, 1, 0, 3, 1>;
+      using TBase = T;
     public:
 
       //------------------------------
@@ -148,6 +148,29 @@ namespace aliceVision
       }
 
       /**
+      * @brief Elementwise substraction
+      * @param other the other element to substract
+      * @return Rgb color after substraction
+      * @note This does not modify the Rgb value (ie: only return a modified copy)
+      */
+      inline Rgb operator -( const Rgb& other ) const
+      {
+        return Rgb( ((*this)(0) - other(0)), ((*this)(1) - other(1)), ((*this)(2) - other(2)));
+      }
+
+      /**
+      * @brief Elementwise addition
+      * @param other the other element to substract
+      * @return Rgb color after addition
+      * @note This does not modify the Rgb value (ie: only return a modified copy)
+      */
+      inline Rgb operator +( const Rgb& other ) const
+      {
+        return Rgb( ((*this)(0) + other(0)), ((*this)(1) + other(1)), ((*this)(2) + other(2)));
+      }
+
+    
+      /**
       * @brief scalar division
       * @param val Scalar divisor factor
       * @return Rgb color after scalar division
@@ -177,9 +200,9 @@ namespace aliceVision
     };
 
     /// Instantiation for unsigned char color component
-    typedef Rgb<unsigned char> RGBColor;
+    using RGBColor = Rgb<unsigned char>;
     /// Instantiation for float color component
-    typedef Rgb<float> RGBfColor;
+    using RGBfColor = Rgb<float>;
 
     /**
     * @brief RGBA templated pixel type
@@ -187,7 +210,7 @@ namespace aliceVision
     template <typename T>
     class Rgba : public Eigen::Matrix<T, 4, 1, 0, 4, 1>
     {
-      typedef Eigen::Matrix<T, 4, 1, 0, 4, 1> Base;
+      using Base = Eigen::Matrix<T, 4, 1, 0, 4, 1>;
     public:
 
       //------------------------------
@@ -199,10 +222,9 @@ namespace aliceVision
       * @param blue component value
       * @param alpha component value
       */
-      inline Rgba( const T red, const T green, const T blue, const T alpha = static_cast<T>( 1 ) )
+      inline Rgba( const T red, const T green, const T blue, const T alpha = T(1) )
         : Base( red, green, blue, alpha )
       {
-
       }
 
       /**
@@ -212,29 +234,38 @@ namespace aliceVision
       explicit inline Rgba( const Base& val )
         : Base( val )
       {
-
       }
 
       /**
-      * @brief RGB constructor with default alpha value
+      * @brief RGBA constructor with default alpha value to 1
       * @param val Value to set in each RGB component
       * @note This is equivalent to RGBA( val , val , val , 1 )
       */
-      explicit inline Rgba( const T val = 0 )
-        : Base( val, val, val, static_cast<T>( 1 ) )
+      explicit inline Rgba( const T val )
+        : Base( val, val, val, T(1) )
       {
+      }
 
+      /**
+       * @brief Default RGBA constructor set all channels to zero (including the alpha channel)
+       * @warning The alpha channel is initialized to 0.
+       *          It is used in generic/templated code like "sampler"
+       *          which creates an empty color and accumulate color contributions.
+       */
+      explicit inline Rgba()
+        : Base( T(0), T(0), T(0), T(0) )
+      {
       }
 
       /**
       * @brief Copy constructor
       * @param val Source RGBA value
       */
-      inline Rgba( const RGBColor & val )
-        : Base( val.r(), val.g(), val.b(), static_cast<T>( 1 ) )
+      inline Rgba( const RGBColor & val, const T alpha )
+        : Base( val.r(), val.g(), val.b(), alpha )
       {
-
       }
+
       //-- construction method
       //------------------------------
 
@@ -362,7 +393,11 @@ namespace aliceVision
                      T( ( Z )( *this )( 3 ) * val ) );
       }
     };
-    typedef Rgba<unsigned char> RGBAColor;
+
+    /// Instantiation for unsigned char color component
+    using RGBAColor = Rgba<unsigned char>;
+    /// Instantiation for float color component
+    using RGBAfColor = Rgba<float>;
 
     const RGBColor WHITE( 255, 255, 255 );
     const RGBColor BLACK( 0, 0, 0 );

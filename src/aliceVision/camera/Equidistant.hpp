@@ -20,15 +20,15 @@
 namespace aliceVision {
 namespace camera {
 
-/// Define a classic Pinhole camera (store a K 3x3 matrix)
+/// Define an equidistant camera (store a K 3x3 matrix)
 ///  with intrinsic parameters defining the K calibration matrix
-class Pinhole : public IntrinsicBase
+class Equidistant : public IntrinsicBase
 {
   public:
 
-  Pinhole() = default;
+  Equidistant() = default;
 
-  Pinhole(
+  Equidistant(
     unsigned int w, unsigned int h,
     const Mat3 K)
     :IntrinsicBase(w,h)
@@ -37,7 +37,7 @@ class Pinhole : public IntrinsicBase
     _Kinv = _K.inverse();
   }
 
-  Pinhole(
+  Equidistant(
     unsigned int w, unsigned int h,
     double focal_length_pix,
     double ppx, double ppy, const std::vector<double>& distortionParams = {})
@@ -47,14 +47,14 @@ class Pinhole : public IntrinsicBase
     setK(focal_length_pix, ppx, ppy);
   }
 
-  virtual ~Pinhole() {}
+  virtual ~Equidistant() {}
 
-  virtual Pinhole* clone() const override { return new Pinhole(*this); }
-  virtual void assign(const IntrinsicBase& other) override { *this = dynamic_cast<const Pinhole&>(other); }
+  virtual Equidistant* clone() const override { return new Equidistant(*this); }
+  virtual void assign(const IntrinsicBase& other) override { *this = dynamic_cast<const Equidistant&>(other); }
   
   virtual bool isValid() const override { return focal() > 0 && IntrinsicBase::isValid(); }
   
-  virtual EINTRINSIC getType() const override { return PINHOLE_CAMERA; }
+  virtual EINTRINSIC getType() const override { return EQUIDISTANT_CAMERA; }
   std::string getTypeStr() const { return EINTRINSIC_enumToString(getType()); }
 
   double getFocalLengthPix() const { return _K(0,0); }
@@ -164,27 +164,6 @@ class Pinhole : public IntrinsicBase
       return false;
     }
 
-    Vec2 proj = ray.head(2) / ray(2);
-
-    double xmin;
-    double ymin;
-    double xmax;
-    double ymax;
-
-    Vec2 p1 = remove_disto(ima2cam(Vec2(0,0)));
-    Vec2 p2 = remove_disto(ima2cam(Vec2(_w,0)));
-    Vec2 p3 = remove_disto(ima2cam(Vec2(_w,_h)));
-    Vec2 p4 = remove_disto(ima2cam(Vec2(0,_h)));
-
-    xmin = std::min(p4(0), (std::min(p3(0), std::min(p1(0), p2(0)))));
-    ymin = std::min(p4(1), (std::min(p3(1), std::min(p1(1), p2(1)))));
-    xmax = std::max(p4(0), (std::max(p3(0), std::max(p1(0), p2(0)))));
-    ymax = std::max(p4(1), (std::max(p3(1), std::max(p1(1), p2(1)))));
-
-    if (proj(0) < xmin || proj(0) > xmax || proj(1) < ymin || proj(1) > ymax) {
-      return false;
-    }
-
     return true;
   }
 
@@ -193,23 +172,6 @@ class Pinhole : public IntrinsicBase
 
   /// Return the distorted pixel (with added distortion)
   virtual Vec2 get_d_pixel(const Vec2& p) const override {return p;}
-
-  /**
-   * @brief Rescale intrinsics to reflect a rescale of the camera image
-   * @param factor a scale factor
-   */
-  virtual void rescale(float factor) override {
-
-    IntrinsicBase::rescale(factor);
-
-    Mat3 scale;
-    scale.setIdentity();
-    scale(0, 0) = factor;
-    scale(1, 1) = factor;
-
-    _K = scale * _K;
-    _Kinv = _K.inverse();
-  }
 
 private:
   // Focal & principal point are embed into the calibration matrix K

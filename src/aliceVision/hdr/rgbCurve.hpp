@@ -164,7 +164,6 @@ public:
   /**
     *@brief Set curves to gaussian
     */
-//      void setGaussian(double mu = 0.5, double sigma = 1.0 / (4.0 * sqrt(2.0)));
   void setGaussian(double mu = 0.5, double sigma = 1.0 / (5.0 * sqrt(2.0)));
 
   /**
@@ -178,9 +177,11 @@ public:
   void setTriangular();
 
   /**
-    *@brief Set curves to plateau
+    * @brief Set curves to plateau
     */
-  void setPlateau();
+  void setPlateau(float weight = 8.0f);
+
+  void setPlateauSigmoid(float cA = 0.2, float wA = 0.5, float cB = 0.85, float wB = 0.22);
 
   /**
     *@brief Set curves to log10
@@ -193,10 +194,20 @@ public:
     */
   void inverseAllValues();
 
+  void freezeFirstPartValues();
+
+  void freezeSecondPartValues();
+
+  void invertAndScaleSecondPart(float scale);
+
   /**
     * @brief change all value of the image by their absolute value
     */
   void setAllAbsolute();
+
+  void applyGamma(float gamma = 2.2);
+
+  void applyGammaInv(float gamma = 2.2);
 
   /**
     * @brief normalize the curve
@@ -292,6 +303,12 @@ public:
     * @param[in] path
     */
   void write(const std::string &path, const std::string &name = "rgbCurve") const;
+
+  /**
+  * @brief Write in an html file
+  * @param[in] path
+  */
+  void writeHtml(const std::string &path, const std::string& title) const;
 
   /**
     * @brief Read and fill curves from a csv file
