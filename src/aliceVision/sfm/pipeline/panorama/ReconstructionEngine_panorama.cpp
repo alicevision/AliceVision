@@ -140,23 +140,14 @@ aliceVision::EstimationStatus robustHomographyEstimationAC(const Mat2X &x1,
                                                            Mat3 &H,
                                                            std::vector<std::size_t> &vec_inliers)
 {
-    using KernelType = robustEstimation::ACKernelAdaptor<
-            homography::kernel::FourPointSolver,
-            homography::kernel::AsymmetricError,
-            UnnormalizerI,
-            Mat3>;
+    using KernelType = robustEstimation::ACKernelAdaptor<homography::kernel::FourPointSolver, homography::kernel::AsymmetricError, UnnormalizerI, Mat3>;
 
-    KernelType kernel(x1, imgSize1.first, imgSize1.second,
-                      x2, imgSize2.first, imgSize2.second,
-                      false); // configure as point to point error model.
-
-
-    const std::pair<double, double> ACRansacOut = robustEstimation::ACRANSAC(kernel, vec_inliers,
-                                                                                          1024,
-                                                                                          &H,
-                                                                                          std::numeric_limits<double>::infinity());
+    KernelType kernel(x1, imgSize1.first, imgSize1.second, x2, imgSize2.first, imgSize2.second, false); // configure as point to point error model.
+    
+    const std::pair<double, double> ACRansacOut = robustEstimation::ACRANSAC(kernel, vec_inliers, 1024, &H, std::numeric_limits<double>::infinity());
 
     const bool valid{!vec_inliers.empty()};
+    
     //@fixme
     const bool hasStrongSupport{vec_inliers.size() > KernelType::MINIMUM_SAMPLES * 2.5};
 
@@ -172,22 +163,17 @@ bool robustRelativeRotation_fromH(const Mat3 &K1,
                             RelativeRotationInfo &relativeRotationInfo,
                             const size_t max_iteration_count)
 {
-    std::vector<std::size_t> vec_inliers{};
+  std::vector<std::size_t> vec_inliers{};
 
-    // estimate the homography
-    const auto status = robustHomographyEstimationAC(x1, x2, imgSize1, imgSize2, relativeRotationInfo._homography,
-                                                     relativeRotationInfo._inliers);
+  // estimate the homography
+  const auto status = robustHomographyEstimationAC(x1, x2, imgSize1, imgSize2, relativeRotationInfo._homography, relativeRotationInfo._inliers);
+  if (!status.isValid && !status.hasStrongSupport) {
+    return false;
+  }
 
-    if (!status.isValid && !status.hasStrongSupport)
-    {
-        return false;
-    }
+  relativeRotationInfo._relativeRotation = decomposePureRotationHomography(relativeRotationInfo._homography, K1, K2);
 
-    relativeRotationInfo._relativeRotation = decomposePureRotationHomography(relativeRotationInfo._homography, K1, K2);
-    //ALICEVISION_LOG_INFO("Found homography H:\n" << relativeRotationInfo._homography);
-    //ALICEVISION_LOG_INFO("Homography H decomposes to rotation R:\n" << relativeRotationInfo._relativeRotation);
-
-    return true;
+  return true;
 }
 
 
@@ -234,8 +220,7 @@ void ReconstructionEngine_panorama::SetFeaturesProvider(feature::FeaturesPerView
   // Copy features and save a normalized version
   _normalizedFeaturesPerView = std::make_shared<FeaturesPerView>(*featuresPerView);
   #pragma omp parallel
-  for(MapFeaturesPerView::iterator iter = _normalizedFeaturesPerView->getData().begin();
-    iter != _normalizedFeaturesPerView->getData().end(); ++iter)
+  for(MapFeaturesPerView::iterator iter = _normalizedFeaturesPerView->getData().begin(); iter != _normalizedFeaturesPerView->getData().end(); ++iter)
   {
     #pragma omp single nowait
     {
@@ -246,8 +231,7 @@ void ReconstructionEngine_panorama::SetFeaturesProvider(feature::FeaturesPerView
         const std::shared_ptr<IntrinsicBase> cam = _sfmData.getIntrinsics().find(view->getIntrinsicId())->second;
         for(auto& iterFeatPerDesc: iter->second)
         {
-          for (PointFeatures::iterator iterPt = iterFeatPerDesc.second.begin();
-            iterPt != iterFeatPerDesc.second.end(); ++iterPt)
+          for (PointFeatures::iterator iterPt = iterFeatPerDesc.second.begin(); iterPt != iterFeatPerDesc.second.end(); ++iterPt)
           {
             const Vec3 bearingVector = (*cam)(cam->get_ud_pixel(iterPt->coords().cast<double>()));
             iterPt->coords() << (bearingVector.head(2) / bearingVector(2)).cast<float>();
@@ -402,16 +386,6 @@ bool ReconstructionEngine_panorama::Compute_Global_Rotations(const rotationAvera
         const std::string sGraph_name = "global_relative_rotation_pose_graph_final";
         graph::indexedGraph putativeGraph(set_pose_ids, rotationAveraging_solver.GetUsedPairs());
         graph::exportToGraphvizData((fs::path(_outputFolder) / (sGraph_name + ".dot")).string(), putativeGraph.g);
-
-        /*
-        using namespace htmlDocument;
-        std::ostringstream os;
-        os << "<br>" << sGraph_name << "<br>"
-           << "<img src=\""
-           << (fs::path(_sOutDirectory) / (sGraph_name + "svg")).string()
-           << "\" height=\"600\">\n";
-        _htmlDocStream->pushInfo(os.str());
-        */
       }
     }
   }
@@ -596,6 +570,13 @@ void ReconstructionEngine_panorama::Compute_Relative_Rotations(rotationAveraging
           relativePose_info.initial_residual_tolerance = relativeRotation_info._initialResidualTolerance;
           relativePose_info.found_residual_precision = relativeRotation_info._foundResidualPrecision;
           relativePose_info.vec_inliers = relativeRotation_info._inliers;
+
+
+          Eigen::AngleAxisd checker;
+          checker.fromRotationMatrix(relativeRotation_info._relativeRotation);
+          
+          std::cout << checker.angle() << std::endl;
+          std::cout << checker.axis().transpose() << std::endl;
         }
         break;
       default:

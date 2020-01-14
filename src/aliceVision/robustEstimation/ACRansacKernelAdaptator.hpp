@@ -193,7 +193,6 @@ protected:
 
 template <typename SolverArg,
 typename ErrorArg,
-typename UnnormalizerArg,
 typename ModelArg = Mat3>
 class ACKernelAdaptorSpherical
 {
@@ -203,7 +202,7 @@ public:
   typedef ErrorArg ErrorT;
 
   ACKernelAdaptorSpherical(const Mat &x1, const Mat &x2)
-  : x1_(x1), x2_(x2),logalpha0_(M_PI)
+  : x1_(x1), x2_(x2), logalpha0_(M_PI)
   {
   }
 

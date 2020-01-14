@@ -55,12 +55,7 @@ class EquiDistant : public IntrinsicsScaleOffsetDisto
   // Get bearing vector of p point (image coord)
   Vec3 operator () (const Vec2& p) const override
   {
-    double x = (p(0) - _offset_x) / _scale_x;
-    double y = (p(1) - _offset_y) / _scale_y;
-
-    Vec3 p3(x, y, 1.0);
-
-    return p3.normalized();
+    return lift(p);
   }
 
   virtual Vec2 project(const geometry::Pose3& pose, const Vec3& pt3D, bool applyDistortion = true) const override

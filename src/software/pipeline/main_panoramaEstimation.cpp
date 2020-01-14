@@ -265,6 +265,7 @@ int main(int argc, char **argv)
     
     for (auto & pose : outSfmData.getPoses()) {    
       geometry::Pose3 p = pose.second.getTransform();
+
       Eigen::Matrix3d newR = p.rotation() * R_restore ;
       p.rotation() = newR;
       pose.second.setTransform(p);

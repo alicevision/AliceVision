@@ -8,6 +8,7 @@ set(multiview_files_headers
   essentialKernelSolver.hpp
   fundamentalKernelSolver.hpp
   homographyKernelSolver.hpp
+  rotationKernelSolver.hpp
   knownRotationTranslationKernel.hpp
   twoViewKernel.hpp
   resection/P3PSolver.hpp

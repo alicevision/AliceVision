@@ -35,6 +35,22 @@ struct FourPointSolver {
   static void Solve(const Mat &p1, const Mat &p2, vector<Mat3> *Hs);
 };
 
+struct FourPointSphericalSolver {
+  enum { MINIMUM_SAMPLES = 4 };
+  enum { MAX_MODELS = 1 };
+  /**
+   * Computes the homography that transforms p1 to p2 with the Direct Linear
+   * Transform (DLT).
+   *
+   * \param p1  A 3xN matrix of column vectors.
+   * \param p2  A 3xN matrix of column vectors.
+   * \param Hs A vector into which the computed homography is stored.
+   *
+   * The estimated homography should approximately hold the condition p2 = H p1.
+   */
+  static void Solve(const Mat &p1, const Mat &p2, vector<Mat3> *Hs);
+};
+
 // Should be distributed as Chi-squared with k = 2.
 struct AsymmetricError {
   static double Error(const Mat &H, const Vec2 &p1, const Vec2 &p2) {

@@ -164,7 +164,7 @@ struct GeometricFilterMatrix_F_AC: public GeometricFilterMatrix
 
     
     // Define the AContrario adapted Fundamental matrix solver
-    typedef ACKernelAdaptorSpherical<aliceVision::fundamental::kernel::SevenPointSphericalSolver, aliceVision::fundamental::kernel::SimpleSphericalError, UnnormalizerT, Mat3> KernelType;
+    typedef ACKernelAdaptorSpherical<aliceVision::fundamental::kernel::SevenPointSphericalSolver, aliceVision::fundamental::kernel::SimpleSphericalError, Mat3> KernelType;
 
     /*Lift points*/
     Mat xI_lifted(3, xI.cols());
