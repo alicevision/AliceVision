@@ -50,9 +50,9 @@ double MeshAnalyze::getRegionArea(int vertexIdInTriangle, int triId)
     }
     else
     {
-        Point3d A = (*pts)[(*tris)[triId].v[(vertexIdInTriangle + 0) % 3]];
-        Point3d B = (*pts)[(*tris)[triId].v[(vertexIdInTriangle + 1) % 3]];
-        Point3d C = (*pts)[(*tris)[triId].v[(vertexIdInTriangle + 2) % 3]];
+        Point3d A = pts[tris[triId].v[(vertexIdInTriangle + 0) % 3]];
+        Point3d B = pts[tris[triId].v[(vertexIdInTriangle + 1) % 3]];
+        Point3d C = pts[tris[triId].v[(vertexIdInTriangle + 2) % 3]];
         return (getCotanOfAngle(B, A, C) * (A - C).size2() + getCotanOfAngle(C, A, B) * (A - B).size2()) / 8.0;
     }
 }
@@ -61,7 +61,7 @@ int MeshAnalyze::getVertexIdInTriangleForPtId(int ptId, int triId)
 {
     for(int i = 0; i < 3; i++)
     {
-        if((*tris)[triId].v[i] == ptId)
+        if(tris[triId].v[i] == ptId)
         {
             return i;
         }
@@ -71,21 +71,20 @@ int MeshAnalyze::getVertexIdInTriangleForPtId(int ptId, int triId)
 
 bool MeshAnalyze::getVertexSurfaceNormal(int ptId, Point3d& N)
 {
-    StaticVector<int>* ptNeighPtsOrdered = (*ptsNeighPtsOrdered)[ptId];
-    StaticVector<int>* ptNeighTris = (*ptsNeighTrisSortedAsc)[ptId];
-    if((isIsBoundaryPt(ptId)) || (ptNeighPtsOrdered == nullptr) || (ptNeighTris == nullptr) ||
-       (ptNeighTris->size() == 0))
+    StaticVector<int>& ptNeighPtsOrdered = ptsNeighPtsOrdered[ptId];
+    StaticVector<int>& ptNeighTris = ptsNeighTrisSortedAsc[ptId];
+    if((isIsBoundaryPt(ptId)) || ptNeighPtsOrdered.empty() || ptNeighTris.empty() )
     {
         return false;
     }
 
     N = Point3d();
-    for(int i = 0; i < ptNeighTris->size(); i++)
+    for(int i = 0; i < ptNeighTris.size(); i++)
     {
-        int triId = (*ptNeighTris)[i];
+        int triId = ptNeighTris[i];
         N = N + computeTriangleNormal(triId);
     }
-    N = N / (float)ptNeighTris->size();
+    N = N / (float)ptNeighTris.size();
 
     return true;
 }
@@ -93,33 +92,33 @@ bool MeshAnalyze::getVertexSurfaceNormal(int ptId, Point3d& N)
 // gts_vertex_mean_curvature_normal [Meyer et al 2002]
 bool MeshAnalyze::getVertexMeanCurvatureNormal(int ptId, Point3d& Kh)
 {
-    StaticVector<int>* ptNeighPtsOrdered = (*ptsNeighPtsOrdered)[ptId];
-    StaticVector<int>* ptNeighTris = (*ptsNeighTrisSortedAsc)[ptId];
-    if((isIsBoundaryPt(ptId)) || (ptNeighPtsOrdered == nullptr) || (ptNeighTris == nullptr))
+    StaticVector<int>& ptNeighPtsOrdered = ptsNeighPtsOrdered[ptId];
+    StaticVector<int>& ptNeighTris = ptsNeighTrisSortedAsc[ptId];
+    if((isIsBoundaryPt(ptId)) || ptNeighPtsOrdered.empty() || ptNeighTris.empty())
     {
         return false;
     }
 
     double area = 0.0;
-    for(int i = 0; i < ptNeighTris->size(); i++)
+    for(int i = 0; i < ptNeighTris.size(); i++)
     {
-        int triId = (*ptNeighTris)[i];
+        int triId = ptNeighTris[i];
         int vertexIdInTriangle = getVertexIdInTriangleForPtId(ptId, triId);
         area += getRegionArea(vertexIdInTriangle, triId);
     }
 
     Kh = Point3d(0.0f, 0.0f, 0.0f);
 
-    for(int i = 0; i < ptNeighPtsOrdered->size(); i++)
+    for(int i = 0; i < ptNeighPtsOrdered.size(); i++)
     {
         int ip1 = i + 1;
-        if(ip1 >= ptNeighPtsOrdered->size())
+        if(ip1 >= ptNeighPtsOrdered.size())
         {
             ip1 = 0;
         }
-        Point3d v = (*pts)[ptId];
-        Point3d v1 = (*pts)[(*ptNeighPtsOrdered)[i]];
-        Point3d v2 = (*pts)[(*ptNeighPtsOrdered)[ip1]];
+        Point3d v = pts[ptId];
+        Point3d v1 = pts[ptNeighPtsOrdered[i]];
+        Point3d v2 = pts[ptNeighPtsOrdered[ip1]];
 
         float temp = getCotanOfAngle(v1, v, v2);
         Kh = Kh + (v2 - v) * temp;
@@ -151,18 +150,18 @@ void MeshAnalyze::getVertexPrincipalCurvatures(double Kh, double Kg, double& K1,
     K2 = Kh - temp;
 }
 
-bool MeshAnalyze::applyLaplacianOperator(int ptId, StaticVector<Point3d>* ptsToApplyLaplacianOp, Point3d& ln)
+bool MeshAnalyze::applyLaplacianOperator(int ptId, StaticVector<Point3d>& ptsToApplyLaplacianOp, Point3d& ln)
 {
-    StaticVector<int>* ptNeighPtsOrdered = (*ptsNeighPtsOrdered)[ptId];
-    if(ptNeighPtsOrdered == nullptr)
+    StaticVector<int>& ptNeighPtsOrdered = ptsNeighPtsOrdered[ptId];
+    if(ptNeighPtsOrdered.empty())
     {
         return false;
     }
 
     ln = Point3d(0.0f, 0.0f, 0.0f);
-    for(int i = 0; i < ptNeighPtsOrdered->size(); i++)
+    for(int i = 0; i < ptNeighPtsOrdered.size(); i++)
     {
-        Point3d npt = (*ptsToApplyLaplacianOp)[(*ptNeighPtsOrdered)[i]];
+        Point3d npt = ptsToApplyLaplacianOp[ptNeighPtsOrdered[i]];
 
         if((npt.x == 0.0f) && (npt.y == 0.0f) && (npt.z == 0.0f))
         {
@@ -171,20 +170,18 @@ bool MeshAnalyze::applyLaplacianOperator(int ptId, StaticVector<Point3d>* ptsToA
         }
         ln = ln + npt;
     }
-    ln = (ln / (float)ptNeighPtsOrdered->size()) - (*ptsToApplyLaplacianOp)[ptId];
+    ln = (ln / (float)ptNeighPtsOrdered.size()) - ptsToApplyLaplacianOp[ptId];
 
     Point3d n = ln;
     float d = n.size();
     n = n.normalize();
-    if(std::isnan(d) || std::isnan(n.x) || std::isnan(n.y) || std::isnan(n.z) || (d != d) || (n.x != n.x) ||
-       (n.y != n.y) || (n.z != n.z)) // check if is not NaN
+    if(std::isnan(d) || std::isnan(n.x) || std::isnan(n.y) || std::isnan(n.z)) // check if is not NaN
     {
         ALICEVISION_LOG_WARNING("MeshAnalyze::applyLaplacianOperator: nan");
         return false;
     }
 
-    if(std::isnan(d) || std::isnan(n.x) || std::isnan(n.y) || std::isnan(n.z) || (d != d) || (n.x != n.x) ||
-       (n.y != n.y) || (n.z != n.z)) // check if is not NaN
+    if(std::isnan(d) || std::isnan(n.x) || std::isnan(n.y) || std::isnan(n.z)) // check if is not NaN
     {
         ALICEVISION_LOG_WARNING("MeshAnalyze::applyLaplacianOperator: nan");
         return false;
@@ -203,13 +200,13 @@ bool MeshAnalyze::getLaplacianSmoothingVector(int ptId, Point3d& ln)
 // kobbelt kampagna 98 Interactive Multi-Resolution Modeling on Arbitrary Meshes
 // page 5 - U1 - laplacian is obtained when apply to origina pts , U2 - bi-laplacian is obtained when apply to laplacian
 // pts
-bool MeshAnalyze::getBiLaplacianSmoothingVector(int ptId, StaticVector<Point3d>* ptsLaplacian, Point3d& tp)
+bool MeshAnalyze::getBiLaplacianSmoothingVector(int ptId, StaticVector<Point3d>& ptsLaplacian, Point3d& tp)
 {
     if(applyLaplacianOperator(ptId, ptsLaplacian, tp))
     {
-        StaticVector<int>* ptNeighPtsOrdered = (*ptsNeighPtsOrdered)[ptId];
-        StaticVector<int>* ptNeighTris = (*ptsNeighTrisSortedAsc)[ptId];
-        if((ptNeighPtsOrdered == nullptr) || (ptNeighTris == nullptr))
+        StaticVector<int>& ptNeighPtsOrdered = ptsNeighPtsOrdered[ptId];
+        StaticVector<int>& ptNeighTris = ptsNeighTrisSortedAsc[ptId];
+        if(ptNeighPtsOrdered.empty() || ptNeighTris.empty() )
         {
             return false;
         }
@@ -217,7 +214,7 @@ bool MeshAnalyze::getBiLaplacianSmoothingVector(int ptId, StaticVector<Point3d>*
         float sum = 0.0f;
         for(int i = 0; i < sizeOfStaticVector<int>(ptNeighPtsOrdered); i++)
         {
-            int neighValence = sizeOfStaticVector<int>((*ptsNeighPtsOrdered)[(*ptNeighPtsOrdered)[i]]);
+            int neighValence = sizeOfStaticVector<int>(ptsNeighPtsOrdered[ptNeighPtsOrdered[i]]);
             if(neighValence > 0)
             {
                 sum += 1.0f / (float)neighValence;
@@ -230,8 +227,7 @@ bool MeshAnalyze::getBiLaplacianSmoothingVector(int ptId, StaticVector<Point3d>*
         Point3d n = tp;
         float d = n.size();
         n = n.normalize();
-        if(std::isnan(d) || std::isnan(n.x) || std::isnan(n.y) || std::isnan(n.z) || (d != d) || (n.x != n.x) ||
-           (n.y != n.y) || (n.z != n.z)) // check if is not NaN
+        if(std::isnan(d) || std::isnan(n.x) || std::isnan(n.y) || std::isnan(n.z)) // check if is not NaN
         {
             return false;
         }

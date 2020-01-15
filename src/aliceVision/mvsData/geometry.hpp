@@ -151,8 +151,8 @@ bool isLineSegmentInTriangle(Point3d& lpi, const Point3d& A, const Point3d& B, c
 Point2d computeBarycentricCoordinates(const Point2d& A, const Point2d& B, const Point2d& C, const Point2d& P);
 bool isPointInTriangle(const Point2d& barycUv);
 bool isPointInTriangle(const Point2d& A, const Point2d& B, const Point2d& C, const Point2d& P);
-bool lineSegmentsIntersect2DTest(const Point2d* A, const Point2d* B, const Point2d* C, const Point2d* D);
-bool lineSegmentsIntersect2DTest(Point2d* S, const Point2d* A, const Point2d* B, const Point2d* C, const Point2d* D);
+bool lineSegmentsIntersect2DTest(const Point2d& A, const Point2d& B, const Point2d& C, const Point2d& D);
+bool lineSegmentsIntersect2DTest(Point2d& S, const Point2d& A, const Point2d& B, const Point2d& C, const Point2d& D);
 
 bool interectsTriangleTriangle(const Point3d* tri1, const Point3d* tri2);
 
