@@ -117,6 +117,22 @@ bool robustRelativeRotation_fromH(const Mat2X &x1, const Mat2X &x2,
                                   RelativeRotationInfo &relativeRotationInfo,
                                   const size_t max_iteration_count = 4096);
 
+/**
+ * @brief Estimate the relative rotation between two views related by a pure rotation.
+ * @param[in] x1 The points on the first image.
+ * @param[in] x2 The corresponding points on the second image.
+ * @param[in] imgSize1 The size of the first image.
+ * @param[in] imgSize2 The size of the second image.
+ * @param[out] relativeRotationInfo Contains the result of the estimation.
+ * @param[in] maxIterationCount Max number of iteration for the ransac process.
+ * @return true if a homography has been estimated.
+ */
+bool robustRelativeRotation_fromR(const Mat3X &x1, const Mat3X &x2,
+                                  const std::pair<size_t, size_t> &imgSize1,
+                                  const std::pair<size_t, size_t> &imgSize2,
+                                  RelativeRotationInfo &relativeRotationInfo,
+                                  const size_t max_iteration_count = 4096);
+
 
 /// Panorama Pipeline Reconstruction Engine.
 /// - Method: Based on Global SfM but with no translations between cameras.
