@@ -25,7 +25,7 @@ install(FILES cameraSensors.db
 )
 
 # Unit tests
-alicevision_add_test(parseDatabase_test.cpp NAME "sensorDB_parseDatabase" LINKS aliceVision_sensorDB)
+alicevision_add_test(parseDatabase_test.cpp NAME "sensorDB_parseDatabase" LINKS aliceVision_sensorDB Boost::filesystem)
 
 
 
