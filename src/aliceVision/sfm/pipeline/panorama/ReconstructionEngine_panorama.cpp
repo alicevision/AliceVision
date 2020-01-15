@@ -102,18 +102,13 @@ bool robustRelativeRotation_fromE(
  * @brief Decompose a homography given known calibration matrices, assuming a pure rotation between the two views.
  * It is supposed that \f$ x_2 \sim H x_1 \f$ with \f$ H = K_2 * R * K_1^{-1} \f$
  * @param[in] homography  3x3 homography matrix H.
- * @param[in] K1 3x3 calibration matrix of the first view.
- * @param[in] K2 3x3 calibration matrix of the second view.
  * @return The 3x3 rotation matrix corresponding to the pure rotation between the views.
  */
-aliceVision::Mat3 decomposePureRotationHomography(const Mat3 &homography, const Mat3 &K1,
-                                                  const Mat3 &K2)
+aliceVision::Mat3 decomposePureRotationHomography(const Mat3 &homography)
 {
-    // G is the "calibrated" homography inv(K2) * H * K1
-    const auto G = K2.inverse() * homography * K1;
     // compute the scale factor lambda that makes det(lambda*G) = 1
-    const auto lambda = std::pow(1 / G.determinant(), 1 / 3);
-    const auto rotation = lambda * G;
+    const auto lambda = std::pow(1 / homography.determinant(), 1 / 3);
+    const auto rotation = lambda * homography;
 
     //@fixme find possible bad cases?
 
@@ -121,6 +116,7 @@ aliceVision::Mat3 decomposePureRotationHomography(const Mat3 &homography, const 
     Eigen::JacobiSVD<Mat3> usv(rotation, Eigen::ComputeFullU | Eigen::ComputeFullV);
     const auto &u = usv.matrixU();
     const auto vt = usv.matrixV().transpose();
+
     return u * vt;
 }
 
@@ -155,14 +151,7 @@ aliceVision::EstimationStatus robustHomographyEstimationAC(const Mat2X &x1,
     return {valid, hasStrongSupport};
 }
 
-bool robustRelativeRotation_fromH(const Mat3 &K1,
-                            const Mat3 &K2,
-                            const Mat2X &x1,
-                            const Mat2X &x2,
-                            const std::pair<size_t, size_t> &imgSize1,
-                            const std::pair<size_t, size_t> &imgSize2,
-                            RelativeRotationInfo &relativeRotationInfo,
-                            const size_t max_iteration_count)
+bool robustRelativeRotation_fromH(const Mat2X &x1, const Mat2X &x2, const std::pair<size_t, size_t> &imgSize1, const std::pair<size_t, size_t> &imgSize2, RelativeRotationInfo &relativeRotationInfo, const size_t max_iteration_count)
 {
   std::vector<std::size_t> vec_inliers{};
 
@@ -172,7 +161,7 @@ bool robustRelativeRotation_fromH(const Mat3 &K1,
     return false;
   }
 
-  relativeRotationInfo._relativeRotation = decomposePureRotationHomography(relativeRotationInfo._homography, K1, K2);
+  relativeRotationInfo._relativeRotation = decomposePureRotationHomography(relativeRotationInfo._homography);
 
   return true;
 }
@@ -518,13 +507,13 @@ void ReconstructionEngine_panorama::Compute_Relative_Rotations(rotationAveraging
         for (const auto & match : matches)
         {
           const feature::PointFeature & feat_I = feats_I[match._i];
-          const feature::PointFeature & feat_J = feats_I[match._j];
+          const feature::PointFeature & feat_J = feats_J[match._j];
 
           const Vec3 bearingVector_I = cam_I->operator()(cam_I->get_ud_pixel(feat_I.coords().cast<double>()));
           const Vec3 bearingVector_J = cam_J->operator()(cam_J->get_ud_pixel(feat_J.coords().cast<double>()));
 
           x1.col(iBearing) = bearingVector_I.head(2) / bearingVector_I(2);
-          x2.col(iBearing++) = bearingVector_I.head(2) / bearingVector_J(2);
+          x2.col(iBearing++) = bearingVector_J.head(2) / bearingVector_J(2);
         }
       }
       assert(nbBearing == iBearing);
@@ -555,7 +544,7 @@ void ReconstructionEngine_panorama::Compute_Relative_Rotations(rotationAveraging
           RelativeRotationInfo relativeRotation_info;
           relativeRotation_info._initialResidualTolerance = std::pow(cam_I->imagePlane_toCameraPlaneError(2.5) * cam_J->imagePlane_toCameraPlaneError(2.5), 1./2.);
           
-          if(!robustRelativeRotation_fromH(K, K, x1, x2, imageSize, imageSize, relativeRotation_info))
+          if(!robustRelativeRotation_fromH(x1, x2, imageSize, imageSize, relativeRotation_info))
           {
             ALICEVISION_LOG_INFO("Relative pose computation: i: " << i << ", (" << I << ", " << J <<") => FAILED");
             continue;

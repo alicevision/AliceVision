@@ -51,12 +51,6 @@ class EquiDistant : public IntrinsicsScaleOffsetDisto
   virtual EINTRINSIC getType() const override { 
     return EQUIDISTANT_CAMERA; 
   }
-  
-  // Get bearing vector of p point (image coord)
-  Vec3 operator () (const Vec2& p) const override
-  {
-    return lift(p);
-  }
 
   virtual Vec2 project(const geometry::Pose3& pose, const Vec3& pt3D, bool applyDistortion = true) const override
   {
@@ -84,9 +78,9 @@ class EquiDistant : public IntrinsicsScaleOffsetDisto
     }
   }
 
-  Vec3 lift(const Vec2 & imcoords) const {
+  virtual Vec3 toUnitSphere(const Vec2 & pt) const override {
 
-    const Vec2 camcoords = remove_disto(ima2cam(imcoords));
+    const Vec2 camcoords = remove_disto(ima2cam(pt));
 
     double angle_radial = atan2(camcoords(1), camcoords(0));
     double angle_Z = camcoords.norm();

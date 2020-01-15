@@ -172,7 +172,7 @@ struct GeometricFilterMatrix_F_AC: public GeometricFilterMatrix
       Vec2 src;
       src(0) = xI(0, i);
       src(1) = xI(1, i);
-      Vec3 dst = cam_I->lift(src);
+      Vec3 dst = cam_I->toUnitSphere(src);
       xI_lifted(0, i) = dst(0);
       xI_lifted(1, i) = dst(1);
       xI_lifted(2, i) = dst(2);
@@ -182,7 +182,7 @@ struct GeometricFilterMatrix_F_AC: public GeometricFilterMatrix
       Vec2 src;
       src(0) = xJ(0, i);
       src(1) = xJ(1, i);
-      Vec3 dst = cam_J->lift(src);
+      Vec3 dst = cam_J->toUnitSphere(src);
       xJ_lifted(0, i) = dst(0);
       xJ_lifted(1, i) = dst(1);
       xJ_lifted(2, i) = dst(2);

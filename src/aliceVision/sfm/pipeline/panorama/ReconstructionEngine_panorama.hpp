@@ -103,8 +103,6 @@ bool robustRelativeRotation_fromE(const Mat3 & K1, const Mat3 & K2,
 
 /**
  * @brief Estimate the relative rotation between two views related by a pure rotation.
- * @param[in] K1 3x3 calibration matrix of the first view.
- * @param[in] K2 3x3 calibration matrix of the second view.
  * @param[in] x1 The points on the first image.
  * @param[in] x2 The corresponding points on the second image.
  * @param[in] imgSize1 The size of the first image.
@@ -113,8 +111,7 @@ bool robustRelativeRotation_fromE(const Mat3 & K1, const Mat3 & K2,
  * @param[in] maxIterationCount Max number of iteration for the ransac process.
  * @return true if a homography has been estimated.
  */
-bool robustRelativeRotation_fromH(const Mat3 &K1, const Mat3 &K2,
-                                  const Mat2X &x1, const Mat2X &x2,
+bool robustRelativeRotation_fromH(const Mat2X &x1, const Mat2X &x2,
                                   const std::pair<size_t, size_t> &imgSize1,
                                   const std::pair<size_t, size_t> &imgSize2,
                                   RelativeRotationInfo &relativeRotationInfo,

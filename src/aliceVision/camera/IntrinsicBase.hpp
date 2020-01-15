@@ -252,7 +252,10 @@ public:
    * @param[in] p Vec2
    * @return Vec3 bearing vector
    */
-  virtual Vec3 operator () (const Vec2& p) const = 0;
+  virtual Vec3 operator () (const Vec2& p) const
+  {
+    return toUnitSphere(p);
+  }
 
   /**
    * @brief Transform a point from the camera plane to the image plane
@@ -387,6 +390,13 @@ public:
     _w = (unsigned int)(floor(float(_w) * factor));
     _h = (unsigned int)(floor(float(_h) * factor));
   }
+
+  /**
+   * @brief transform a given point (in pixels) to unit sphere in meters
+   * @param pt the input point
+   * @return a point on the unit sphere
+   */
+  virtual Vec3 toUnitSphere(const Vec2 & pt) const = 0;
 
 protected:
 
