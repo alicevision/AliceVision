@@ -1569,19 +1569,33 @@ int Mesh::subdivideMesh(const Mesh& refMesh, float ratioSubdiv, bool remapVisibi
     ALICEVISION_LOG_INFO("nb pts init: " << pts.size());
     ALICEVISION_LOG_INFO("nb tris init: " << tris.size());
 
-    const int maxMeshPts = refMesh.pts.size() * ratioSubdiv + (1-ratioSubdiv) * pts.size();
+    const int targetNbPts = refMesh.pts.size() * ratioSubdiv;
+    ALICEVISION_LOG_INFO("nb points in refMesh: " << refMesh.pts.size());
+    ALICEVISION_LOG_INFO("targetNbPts: " << targetNbPts);
 
     GEO::AdaptiveKdTree refMesh_kdTree(3);
     refMesh_kdTree.set_points(refMesh.pts.size(), refMesh.pts.front().m);
 
     int nbAllSubdiv = 0;
     int nsubd = 0;
-    do
+    while(pts.size() < targetNbPts)
     {
-        nsubd = subdivideMeshOnce(refMesh, refMesh_kdTree, ratioSubdiv);
+        // lengthRatio value is 0.5 with a margin to ensure that we will not generate more points than the reference mesh/pointCloud
+        const float lengthRatio = 0.45f;
+        nsubd = subdivideMeshOnce(refMesh, refMesh_kdTree, lengthRatio);
         nbAllSubdiv += nsubd;
-        ALICEVISION_LOG_DEBUG("subdivided: " << nsubd);
-    } while( pts.size()+nsubd < maxMeshPts && nsubd > 10);
+        ALICEVISION_LOG_DEBUG(" - subdivided: " << nsubd);
+        ALICEVISION_LOG_DEBUG(" - nb pts: " << pts.size());
+
+        // Stop iteration if we dont have enough subdivisions
+        if(nsubd <= 10)
+            break;
+    }
+    if(nbAllSubdiv == 0)
+    {
+        ALICEVISION_LOG_INFO("No subdivision needed.");
+        return 0;
+    }
 
     ALICEVISION_LOG_INFO("Nb points after subdivision: " << pts.size());
     ALICEVISION_LOG_INFO("Nb tris after subdivision: " << tris.size());
@@ -1607,9 +1621,8 @@ int Mesh::subdivideMesh(const Mesh& refMesh, float ratioSubdiv, bool remapVisibi
     return nbAllSubdiv;
 }
 
-int Mesh::subdivideMeshOnce(const Mesh& refMesh, const GEO::AdaptiveKdTree& refMesh_kdTree, float ratioSubdiv)
+int Mesh::subdivideMeshOnce(const Mesh& refMesh, const GEO::AdaptiveKdTree& refMesh_kdTree, float lengthRatio)
 {
-
     StaticVector<StaticVector<int>> edgesNeighTris;
     StaticVector<Pixel> edgesPointsPairs;
     getNotOrientedEdges(edgesNeighTris, edgesPointsPairs);
@@ -1669,7 +1682,7 @@ int Mesh::subdivideMeshOnce(const Mesh& refMesh, const GEO::AdaptiveKdTree& refM
 //        ALICEVISION_LOG_INFO("edge length: " << edgeLength);
 //        ALICEVISION_LOG_INFO("refLocalEdgeLength: " << refLocalEdgeLength);
 
-        if(refLocalEdgeLength > 0 && edgeLength * ratioSubdiv > refLocalEdgeLength)
+        if(refLocalEdgeLength > 0 && edgeLength * lengthRatio > refLocalEdgeLength)
         {
             // add new point
             Point3d newPoint = (pointA + pointB) * 0.5;

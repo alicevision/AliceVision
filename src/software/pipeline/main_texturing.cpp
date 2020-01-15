@@ -110,10 +110,8 @@ int main(int argc, char* argv[])
             " * Pull: For each vertex of the input mesh, pull the visibilities from the closest vertex in the reconstruction.\n"
             " * Push: For each vertex of the reconstruction, push the visibilities to the closest triangle in the input mesh.\n"
             " * PullPush: Combine results from Pull and Push results.'")
-        ("allowSubdivision", po::value<bool>(&texParams.allowSubdivision)->default_value(texParams.allowSubdivision),
-            "If the mesh is simplified, it will be subdivide for more fine grain decision on the best visibilities to use per triangle to create the final texture.")
-        ("subdivisionFactor", po::value<float>(&texParams.subdivisionFactor)->default_value(texParams.subdivisionFactor),
-            "Ratio to choose the density between input mesh and reconstruction (0: keep input mesh density, 1: use the full density of the reconstruction).");
+        ("subdivisionTargetRatio", po::value<float>(&texParams.subdivisionTargetRatio)->default_value(texParams.subdivisionTargetRatio),
+            "Percentage of the density of the reconstruction as the target for the subdivision (0: disable subdivision, 0.5: half density of the reconstruction, 1: full density of the reconstruction).");
 
     po::options_description logParams("Log parameters");
     logParams.add_options()
@@ -222,11 +220,11 @@ int main(int argc, char* argv[])
     // save final obj file
     mesh.saveAsOBJ(outputFolder, "texturedMesh", outputTextureFileType);
 
-    if(texParams.allowSubdivision)
+    if(texParams.subdivisionTargetRatio > 0)
     {
         const bool remapVisibilities = false;
-        const int nbSubdiv = mesh.mesh->subdivideMesh(refMesh, texParams.subdivisionFactor, remapVisibilities);
-        ALICEVISION_LOG_INFO("Number of mesh subdivisions: " << nbSubdiv);
+        const int nbSubdiv = mesh.mesh->subdivideMesh(refMesh, texParams.subdivisionTargetRatio, remapVisibilities);
+        ALICEVISION_LOG_INFO("Number of triangle subdivisions: " << nbSubdiv);
 
         mesh.updateAtlases();
 
