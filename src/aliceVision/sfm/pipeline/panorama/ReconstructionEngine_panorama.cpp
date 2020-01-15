@@ -24,6 +24,7 @@
 #include <aliceVision/robustEstimation/ACRansac.hpp>
 #include <aliceVision/robustEstimation/ACRansacKernelAdaptator.hpp>
 #include <aliceVision/multiview/homographyKernelSolver.hpp>
+#include <aliceVision/multiview/rotationKernelSolver.hpp>
 #include <aliceVision/multiview/conditioning.hpp>
 
 
@@ -184,7 +185,6 @@ ReconstructionEngine_panorama::ReconstructionEngine_panorama(const SfMData& sfmD
                                                                const std::string& loggingFile)
   : ReconstructionEngine(sfmData, outDirectory)
   , _loggingFile(loggingFile)
-  , _normalizedFeaturesPerView(nullptr)
 {
   if(!_loggingFile.empty())
   {
@@ -216,30 +216,6 @@ ReconstructionEngine_panorama::~ReconstructionEngine_panorama()
 void ReconstructionEngine_panorama::SetFeaturesProvider(feature::FeaturesPerView* featuresPerView)
 {
   _featuresPerView = featuresPerView;
-
-  // Copy features and save a normalized version
-  _normalizedFeaturesPerView = std::make_shared<FeaturesPerView>(*featuresPerView);
-  #pragma omp parallel
-  for(MapFeaturesPerView::iterator iter = _normalizedFeaturesPerView->getData().begin(); iter != _normalizedFeaturesPerView->getData().end(); ++iter)
-  {
-    #pragma omp single nowait
-    {
-      // get the related view & camera intrinsic and compute the corresponding bearing vectors
-      const View * view = _sfmData.getViews().at(iter->first).get();
-      if(_sfmData.getIntrinsics().count(view->getIntrinsicId()))
-      {
-        const std::shared_ptr<IntrinsicBase> cam = _sfmData.getIntrinsics().find(view->getIntrinsicId())->second;
-        for(auto& iterFeatPerDesc: iter->second)
-        {
-          for (PointFeatures::iterator iterPt = iterFeatPerDesc.second.begin(); iterPt != iterFeatPerDesc.second.end(); ++iterPt)
-          {
-            const Vec3 bearingVector = (*cam)(cam->get_ud_pixel(iterPt->coords().cast<double>()));
-            iterPt->coords() << (bearingVector.head(2) / bearingVector(2)).cast<float>();
-          }
-        }
-      }
-    }
-  }
 }
 
 void ReconstructionEngine_panorama::SetMatchesProvider(matching::PairwiseMatches* provider)
@@ -512,7 +488,18 @@ void ReconstructionEngine_panorama::Compute_Relative_Rotations(rotationAveraging
         continue;
       }
 
-      
+      std::shared_ptr<IntrinsicBase> cam_I = _sfmData.getIntrinsics().at(view_I->getIntrinsicId());
+      std::shared_ptr<IntrinsicBase> cam_J = _sfmData.getIntrinsics().at(view_J->getIntrinsicId());
+
+      std::shared_ptr<camera::EquiDistant> cam_I_equidistant = std::dynamic_pointer_cast<camera::EquiDistant>(cam_I);
+      std::shared_ptr<camera::EquiDistant> cam_J_equidistant = std::dynamic_pointer_cast<camera::EquiDistant>(cam_J);
+
+      bool useSpherical = false;
+      if (cam_I_equidistant && cam_J_equidistant) {
+        useSpherical = true;
+        std::cout << "use spherical" << std::endl;
+      }
+    
       /* Build a list of pairs in meters*/
       const matching::MatchesPerDescType & matchesPerDesc = _pairwiseMatches->at(pairIterator);
       const std::size_t nbBearing = matchesPerDesc.getNbAllMatches();
@@ -525,16 +512,24 @@ void ReconstructionEngine_panorama::Compute_Relative_Rotations(rotationAveraging
         assert(descType != feature::EImageDescriberType::UNINITIALIZED);
         const matching::IndMatches & matches = matchesPerDescIt.second;
 
+        const feature::PointFeatures & feats_I = _featuresPerView->getFeatures(I, descType);
+        const feature::PointFeatures & feats_J = _featuresPerView->getFeatures(J, descType);
+
         for (const auto & match : matches)
         {
-          x1.col(iBearing) = _normalizedFeaturesPerView->getFeatures(I, descType)[match._i].coords().cast<double>();
-          x2.col(iBearing++) = _normalizedFeaturesPerView->getFeatures(J, descType)[match._j].coords().cast<double>();
+          const feature::PointFeature & feat_I = feats_I[match._i];
+          const feature::PointFeature & feat_J = feats_I[match._j];
+
+          const Vec3 bearingVector_I = cam_I->operator()(cam_I->get_ud_pixel(feat_I.coords().cast<double>()));
+          const Vec3 bearingVector_J = cam_J->operator()(cam_J->get_ud_pixel(feat_J.coords().cast<double>()));
+
+          x1.col(iBearing) = bearingVector_I.head(2) / bearingVector_I(2);
+          x2.col(iBearing++) = bearingVector_I.head(2) / bearingVector_J(2);
         }
       }
       assert(nbBearing == iBearing);
 
-      const IntrinsicBase* cam_I = _sfmData.getIntrinsics().at(view_I->getIntrinsicId()).get();
-      const IntrinsicBase* cam_J = _sfmData.getIntrinsics().at(view_J->getIntrinsicId()).get();
+      
 
       RelativePoseInfo relativePose_info;
       // Compute max authorized error as geometric mean of camera plane tolerated residual error
@@ -570,13 +565,6 @@ void ReconstructionEngine_panorama::Compute_Relative_Rotations(rotationAveraging
           relativePose_info.initial_residual_tolerance = relativeRotation_info._initialResidualTolerance;
           relativePose_info.found_residual_precision = relativeRotation_info._foundResidualPrecision;
           relativePose_info.vec_inliers = relativeRotation_info._inliers;
-
-
-          Eigen::AngleAxisd checker;
-          checker.fromRotationMatrix(relativeRotation_info._relativeRotation);
-          
-          std::cout << checker.angle() << std::endl;
-          std::cout << checker.axis().transpose() << std::endl;
         }
         break;
       default:

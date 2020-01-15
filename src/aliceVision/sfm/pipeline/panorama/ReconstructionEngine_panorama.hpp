@@ -168,8 +168,6 @@ private:
   // Data provider
   feature::FeaturesPerView* _featuresPerView;
   matching::PairwiseMatches* _pairwiseMatches;
-
-  std::shared_ptr<feature::FeaturesPerView> _normalizedFeaturesPerView;
 };
 
 } // namespace sfm

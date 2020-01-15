@@ -25,13 +25,13 @@ void ThreePointRotationSolver::Solve(const Mat &p1, const Mat &p2, vector<Mat3> 
   Mat::Index n = p1.cols();
 
   Eigen::Matrix3d M = Eigen::Matrix3d::Zero();
-
+ 
   for (int i = 0; i < n; i++) {
     
-    for (int k = 0; k < 3; k++) {
+    for (int k = 0; k < 3; k++) { 
       for (int l = 0; l < 3; l++) {
 
-        M(k, l) += p1(k, i) * p2(l, i);
+        M(k, l) += p2(k, i) * p1(l, i);
       }
     }
   }
@@ -41,7 +41,7 @@ void ThreePointRotationSolver::Solve(const Mat &p1, const Mat &p2, vector<Mat3> 
   Eigen::Matrix3d V = svd.matrixV();
 
   Eigen::Matrix3d G = U * V.transpose();
-  Eigen::Matrix3d D = Einge::Matrix3d::Identity();
+  Eigen::Matrix3d D = Eigen::Matrix3d::Identity();
   D(2, 2) = 1.0 / G.determinant();
 
   Eigen::Matrix3d R = U * D * V.transpose();

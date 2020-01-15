@@ -37,7 +37,7 @@ struct ThreePointRotationSolver {
 struct RotationError {
   static double Error(const Mat &R, const Vec3 &p1, const Vec3 &p2) {
     
-    Eigen::Vec3 p1_est = R * p1;
+    Eigen::Vector3d p1_est = R * p1;
 
     double sina = (p1_est.cross(p2)).norm();
     double cosa = p1_est.dot(p2);

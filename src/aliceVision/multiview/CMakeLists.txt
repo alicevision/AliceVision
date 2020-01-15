@@ -36,6 +36,7 @@ set(multiview_files_sources
   essentialKernelSolver.cpp
   fundamentalKernelSolver.cpp
   homographyKernelSolver.cpp
+  rotationKernelSolver.cpp
   resection/ResectionKernel.cpp
   resection/P3PSolver.cpp
   resection/P4PfSolver.cpp
