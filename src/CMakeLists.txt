@@ -252,7 +252,10 @@ endif()
 # ==============================================================================
 option(BOOST_NO_CXX11 "if Boost is compiled without C++11 support (as it is often the case in OS packages) this must be enabled to avoid symbol conflicts (SCOPED_ENUM)." OFF)
 set(ALICEVISION_BOOST_COMPONENTS atomic container date_time filesystem graph log log_setup program_options regex serialization system thread timer)
-find_package(Boost 1.60.0 QUIET COMPONENTS ${ALICEVISION_BOOST_COMPONENTS} unit_test_framework)
+if(ALICEVISION_BUILD_TESTS)
+    set(ALICEVISION_BOOST_COMPONENT_UNITTEST unit_test_framework)
+endif()
+find_package(Boost 1.60.0 QUIET COMPONENTS ${ALICEVISION_BOOST_COMPONENTS} ${ALICEVISION_BOOST_COMPONENT_UNITTEST})
 
 if(Boost_FOUND)
   message(STATUS "Boost ${Boost_LIB_VERSION} found.")
