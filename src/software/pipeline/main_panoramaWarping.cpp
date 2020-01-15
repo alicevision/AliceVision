@@ -513,6 +513,13 @@ public:
           continue;
         }
 
+        Vec2 center = {3840/2, 5760/2};
+
+        double dist = (pix_disto - center).norm();
+        if (dist > (3840.0/2.0) * 0.90) {
+          continue;
+        }
+
 
         buffer_coordinates(y, x) = pix_disto;
         buffer_mask(y, x) = 1;
@@ -605,6 +612,8 @@ private:
     coarse_bbox.top = 0;
     coarse_bbox.width = panoramaSize.first;
     coarse_bbox.height = panoramaSize.second;
+
+    return true;
 
     int bbox_left, bbox_top;
     int bbox_right, bbox_bottom;

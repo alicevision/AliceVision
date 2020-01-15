@@ -524,7 +524,6 @@ void ReconstructionEngine_panorama::Compute_Relative_Rotations(rotationAveraging
       bool useSpherical = false;
       if (cam_I_equidistant && cam_J_equidistant) {
         useSpherical = true;
-        std::cout << "use spherical" << std::endl;
       }
 
       if (_eRelativeRotationMethod == RELATIVE_ROTATION_FROM_R) {
@@ -634,10 +633,10 @@ void ReconstructionEngine_panorama::Compute_Relative_Rotations(rotationAveraging
           relativePose_info.found_residual_precision = relativeRotation_info._foundResidualPrecision;
           relativePose_info.vec_inliers = relativeRotation_info._inliers;
 
-          Eigen::AngleAxisd checker;
+          /*Eigen::AngleAxisd checker;
           checker.fromRotationMatrix(relativeRotation_info._relativeRotation);
           std::cout << checker.axis().transpose() << std::endl;
-          std::cout << checker.angle() << std::endl;
+          std::cout << checker.angle() << std::endl;*/
         }
         break;
       default:
