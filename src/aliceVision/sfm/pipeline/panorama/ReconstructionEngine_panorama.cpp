@@ -170,7 +170,7 @@ aliceVision::EstimationStatus robustRotationEstimationAC(const Mat3X &x1, const 
     const std::pair<double, double> ACRansacOut = robustEstimation::ACRANSAC(kernel, vec_inliers, 1024, &R, std::numeric_limits<double>::infinity());
 
     const bool valid{!vec_inliers.empty()};
-    
+
     //@fixme
     const bool hasStrongSupport{vec_inliers.size() > KernelType::MINIMUM_SAMPLES * 2.5};
 
@@ -517,6 +517,7 @@ void ReconstructionEngine_panorama::Compute_Relative_Rotations(rotationAveraging
       std::shared_ptr<IntrinsicBase> cam_I = _sfmData.getIntrinsics().at(view_I->getIntrinsicId());
       std::shared_ptr<IntrinsicBase> cam_J = _sfmData.getIntrinsics().at(view_J->getIntrinsicId());
 
+
       std::shared_ptr<camera::EquiDistant> cam_I_equidistant = std::dynamic_pointer_cast<camera::EquiDistant>(cam_I);
       std::shared_ptr<camera::EquiDistant> cam_J_equidistant = std::dynamic_pointer_cast<camera::EquiDistant>(cam_J);
 
@@ -525,12 +526,26 @@ void ReconstructionEngine_panorama::Compute_Relative_Rotations(rotationAveraging
         useSpherical = true;
         std::cout << "use spherical" << std::endl;
       }
+
+      if (_eRelativeRotationMethod == RELATIVE_ROTATION_FROM_R) {
+        useSpherical = true;
+      }
     
       /* Build a list of pairs in meters*/
       const matching::MatchesPerDescType & matchesPerDesc = _pairwiseMatches->at(pairIterator);
       const std::size_t nbBearing = matchesPerDesc.getNbAllMatches();
       std::size_t iBearing = 0;
-      Mat x1(3, nbBearing), x2(3, nbBearing);
+
+      Mat x1, x2;
+      
+      if (useSpherical) {
+        x1 = Mat(3, nbBearing);
+        x2 = Mat(3, nbBearing);
+      }
+      else {
+        x1 = Mat(2, nbBearing);
+        x2 = Mat(2, nbBearing);
+      }
 
       for(const auto& matchesPerDescIt: matchesPerDesc)
       {
@@ -546,11 +561,19 @@ void ReconstructionEngine_panorama::Compute_Relative_Rotations(rotationAveraging
           const feature::PointFeature & feat_I = feats_I[match._i];
           const feature::PointFeature & feat_J = feats_J[match._j];
 
-          const Vec3 bearingVector_I = cam_I->operator()(cam_I->get_ud_pixel(feat_I.coords().cast<double>()));
-          const Vec3 bearingVector_J = cam_J->operator()(cam_J->get_ud_pixel(feat_J.coords().cast<double>()));
+          const Vec3 bearingVector_I = cam_I->toUnitSphere(cam_I->get_ud_pixel(feat_I.coords().cast<double>()));
+          const Vec3 bearingVector_J = cam_J->toUnitSphere(cam_J->get_ud_pixel(feat_J.coords().cast<double>()));
 
-          x1.col(iBearing) = bearingVector_I;//.head(2) / bearingVector_I(2);
-          x2.col(iBearing++) = bearingVector_J;//.head(2) / bearingVector_J(2);
+          
+
+          if (useSpherical) {
+            x1.col(iBearing) = bearingVector_I;
+            x2.col(iBearing++) = bearingVector_J;
+          }
+          else {
+            x1.col(iBearing) = bearingVector_I.head(2) / bearingVector_I(2);
+            x2.col(iBearing++) = bearingVector_J.head(2) / bearingVector_J(2);
+          }
         }
       }
       assert(nbBearing == iBearing);
@@ -567,7 +590,7 @@ void ReconstructionEngine_panorama::Compute_Relative_Rotations(rotationAveraging
 
       switch(_eRelativeRotationMethod)
       {
-        /*case RELATIVE_ROTATION_FROM_E:
+        case RELATIVE_ROTATION_FROM_E:
         {
           if(!robustRelativeRotation_fromE(K, K, x1, x2, imageSize, imageSize, relativePose_info))
           {
@@ -592,14 +615,16 @@ void ReconstructionEngine_panorama::Compute_Relative_Rotations(rotationAveraging
           relativePose_info.found_residual_precision = relativeRotation_info._foundResidualPrecision;
           relativePose_info.vec_inliers = relativeRotation_info._inliers;
         }
-        break;*/
-        case RELATIVE_ROTATION_FROM_H:
+        break;
+        case RELATIVE_ROTATION_FROM_R:
         {
           RelativeRotationInfo relativeRotation_info;
           relativeRotation_info._initialResidualTolerance = std::pow(cam_I->imagePlane_toCameraPlaneError(2.5) * cam_J->imagePlane_toCameraPlaneError(2.5), 1./2.);
           
           if(!robustRelativeRotation_fromR(x1, x2, imageSize, imageSize, relativeRotation_info))
           {
+            std::cout << view_I->getImagePath() << std::endl;
+            std::cout << view_J->getImagePath() << std::endl;
             ALICEVISION_LOG_INFO("Relative pose computation: i: " << i << ", (" << I << ", " << J <<") => FAILED");
             continue;
           }
@@ -608,6 +633,11 @@ void ReconstructionEngine_panorama::Compute_Relative_Rotations(rotationAveraging
           relativePose_info.initial_residual_tolerance = relativeRotation_info._initialResidualTolerance;
           relativePose_info.found_residual_precision = relativeRotation_info._foundResidualPrecision;
           relativePose_info.vec_inliers = relativeRotation_info._inliers;
+
+          Eigen::AngleAxisd checker;
+          checker.fromRotationMatrix(relativeRotation_info._relativeRotation);
+          std::cout << checker.axis().transpose() << std::endl;
+          std::cout << checker.angle() << std::endl;
         }
         break;
       default:

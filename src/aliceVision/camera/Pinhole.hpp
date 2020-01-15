@@ -70,7 +70,7 @@ class Pinhole : public IntrinsicsScaleOffsetDisto
 
   virtual Vec3 toUnitSphere(const Vec2 & pt) const override {
 
-    Vec3 ptcam = remove_disto(ima2cam(pt)).homogeneous();
+    Vec3 ptcam = (ima2cam(pt)).homogeneous();
 
     return ptcam / ptcam.norm();
   }

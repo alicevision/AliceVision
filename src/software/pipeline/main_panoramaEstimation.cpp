@@ -90,6 +90,7 @@ int main(int argc, char **argv)
       "* 2: L2 minimization")
     ("relativeRotation", po::value<sfm::ERelativeRotationMethod>(&relativeRotationMethod)->default_value(relativeRotationMethod),
       "* from essential matrix"
+      "* from rotation matrix"
       "* from homography matrix")
     ("orientation", po::value<int>(&orientation)->default_value(orientation),
       "Orientation")

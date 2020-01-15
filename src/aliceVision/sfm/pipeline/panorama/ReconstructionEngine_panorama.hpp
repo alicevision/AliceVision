@@ -18,8 +18,9 @@ namespace sfm{
 
 enum ERelativeRotationMethod
 {
-  RELATIVE_ROTATION_FROM_E,
-  RELATIVE_ROTATION_FROM_H
+  RELATIVE_ROTATION_FROM_E = 0,
+  RELATIVE_ROTATION_FROM_R = 1,
+  RELATIVE_ROTATION_FROM_H = 2
 };
 
 inline std::string ERelativeRotationMethod_enumToString(const ERelativeRotationMethod rotationMethod)
@@ -27,6 +28,7 @@ inline std::string ERelativeRotationMethod_enumToString(const ERelativeRotationM
   switch(rotationMethod)
   {
     case ERelativeRotationMethod::RELATIVE_ROTATION_FROM_E:      return "essential_matrix";
+    case ERelativeRotationMethod::RELATIVE_ROTATION_FROM_R:   return "rotation_matrix";
     case ERelativeRotationMethod::RELATIVE_ROTATION_FROM_H:   return "homography_matrix";
   }
   throw std::out_of_range("Invalid method name enum");
@@ -37,8 +39,9 @@ inline ERelativeRotationMethod ERelativeRotationMethod_stringToEnum(const std::s
   std::string methodName = rotationMethodName;
   std::transform(methodName.begin(), methodName.end(), methodName.begin(), ::tolower);
 
-  if(methodName == "essential_matrix")      return ERelativeRotationMethod::RELATIVE_ROTATION_FROM_E;
-  if(methodName == "homography_matrix")   return ERelativeRotationMethod::RELATIVE_ROTATION_FROM_H;
+  if (methodName == "essential_matrix") return ERelativeRotationMethod::RELATIVE_ROTATION_FROM_E;
+  if (methodName == "rotation_matrix") return ERelativeRotationMethod::RELATIVE_ROTATION_FROM_R;
+  if (methodName == "homography_matrix") return ERelativeRotationMethod::RELATIVE_ROTATION_FROM_H;
 
   throw std::out_of_range("Invalid method name : '" + rotationMethodName + "'");
 }

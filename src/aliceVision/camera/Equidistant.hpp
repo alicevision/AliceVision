@@ -80,15 +80,15 @@ class EquiDistant : public IntrinsicsScaleOffsetDisto
 
   virtual Vec3 toUnitSphere(const Vec2 & pt) const override {
 
-    const Vec2 camcoords = remove_disto(ima2cam(pt));
+    const Vec2 camcoords = (ima2cam(pt));
 
     double angle_radial = atan2(camcoords(1), camcoords(0));
     double angle_Z = camcoords.norm();
 
     Vec3 ret;
-    ret(0) = cos(angle_Z);
-    ret(1) = cos(angle_radial) /** / 1.0 / **/ * sin(angle_Z);
-    ret(2) = sin(angle_radial) /** / 1.0 / **/ * sin(angle_Z);
+    ret(2) = cos(angle_Z);
+    ret(0) = cos(angle_radial) /** / 1.0 / **/ * sin(angle_Z);
+    ret(1) = sin(angle_radial) /** / 1.0 / **/ * sin(angle_Z);
 
     return ret;
   }
@@ -105,24 +105,9 @@ class EquiDistant : public IntrinsicsScaleOffsetDisto
    */
   virtual bool isVisibleRay(const Vec3 & ray) const override {
     
-    Vec2 proj = ray.head(2) / ray(2);
+    Vec2 proj = project(geometry::Pose3(), ray, true);
 
-    double xmin;
-    double ymin;
-    double xmax;
-    double ymax;
-
-    Vec2 p1 = remove_disto(ima2cam(Vec2(0,0)));
-    Vec2 p2 = remove_disto(ima2cam(Vec2(_w,0)));
-    Vec2 p3 = remove_disto(ima2cam(Vec2(_w,_h)));
-    Vec2 p4 = remove_disto(ima2cam(Vec2(0,_h)));
-
-    xmin = std::min(p4(0), (std::min(p3(0), std::min(p1(0), p2(0)))));
-    ymin = std::min(p4(1), (std::min(p3(1), std::min(p1(1), p2(1)))));
-    xmax = std::max(p4(0), (std::max(p3(0), std::max(p1(0), p2(0)))));
-    ymax = std::max(p4(1), (std::max(p3(1), std::max(p1(1), p2(1)))));
-
-    if (proj(0) < xmin || proj(0) > xmax || proj(1) < ymin || proj(1) > ymax) {
+    if (proj(0) < 0 || proj(0) >= _w || proj(1) < 0 || proj(1) >= _h) {
       return false;
     }
 
