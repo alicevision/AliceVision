@@ -83,6 +83,15 @@ bool SfMData::operator==(const SfMData& other) const {
   if(control_points != other.control_points)
     return false;
 
+
+  Constraints2D::const_iterator constraint2dIt = constraints2d.begin();
+  Constraints2D::const_iterator otherconstraint2dIt = other.constraints2d.begin();
+  for(; constraint2dIt != constraints2d.end() && otherconstraint2dIt != other.constraints2d.end(); ++constraint2dIt, ++otherconstraint2dIt)
+  {
+      if(!(*constraint2dIt == *otherconstraint2dIt))
+        return false;
+  }
+
   // Root path can be reseted during exports
 
   return true;
@@ -248,6 +257,9 @@ void SfMData::combine(const SfMData& sfmData)
 
   // control points
   control_points.insert(sfmData.control_points.begin(), sfmData.control_points.end());
+
+  // constraints
+  constraints2d.insert(constraints2d.end(), sfmData.constraints2d.begin(), sfmData.constraints2d.end());
 }
 
 } // namespace sfmData

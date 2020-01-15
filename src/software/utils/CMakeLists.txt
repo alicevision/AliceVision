@@ -197,4 +197,16 @@ alicevision_add_software(aliceVision_utils_split360Images
         Boost::filesystem
 )
 
+
+# Project 180° fisheye images into equirectangular
+alicevision_add_software(aliceVision_utils_fisheyeProjection
+  SOURCE main_fisheyeProjection.cpp
+  FOLDER ${FOLDER_SOFTWARE_UTILS}
+  LINKS aliceVision_system
+        aliceVision_numeric
+        aliceVision_image
+        ${OPENIMAGEIO_LIBRARIES}
+        ${Boost_LIBRARIES}
+)
+
 endif() # ALICEVISION_BUILD_SFM

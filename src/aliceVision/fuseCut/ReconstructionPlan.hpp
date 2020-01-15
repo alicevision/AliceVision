@@ -39,6 +39,7 @@ mesh::Mesh* joinMeshes(int gl, LargeScale* ls);
 mesh::Mesh* joinMeshes(const std::string& voxelsArrayFileName, LargeScale* ls);
 
 StaticVector<StaticVector<int>*>* loadLargeScalePtsCams(const std::vector<std::string>& recsDirs);
+void loadLargeScalePtsCams(const std::vector<std::string>& recsDirs, StaticVector<StaticVector<int>>& out_ptsCams);
 
 } // namespace fuseCut
 } // namespace aliceVision

@@ -108,13 +108,13 @@ int main(int argc, char **argv)
  
     } 
  
-    float evMedian = sfm_data.getMedianEv(); 
-    ALICEVISION_LOG_INFO("  EV Median :" << evMedian); 
+    float cameraExposureMedian = sfm_data.getMedianCameraExposureSetting(); 
+    ALICEVISION_LOG_INFO("  EV Median :" << cameraExposureMedian); 
  
     for(int i = 0; i < sfm_data.views.size(); ++i) 
     { 
-        sfmData::View view = *(sfm_data.views[i]); 
-        float evComp = view.getEvCompensation(evMedian);
+        sfmData::View view = *(sfm_data.views[i]);
+        float evComp = cameraExposureMedian / view.getCameraExposureSetting();
  
         image::Image<image::RGBfColor> img; 
         image::readImage(view.getImagePath(), img, image::EImageColorSpace::LINEAR); 
@@ -123,9 +123,9 @@ int main(int argc, char **argv)
             img(pix) *= evComp; 
  
         ALICEVISION_LOG_INFO(fs::path(view.getImagePath()).stem()); 
-        ALICEVISION_LOG_INFO("  EV :" << view.getEv()); 
-        ALICEVISION_LOG_INFO("  EV Comp:" << view.getEvCompensation(evMedian));
- 
+        ALICEVISION_LOG_INFO("  EV: " << view.getEv()); 
+        ALICEVISION_LOG_INFO("  EV Compensation: " << evComp);
+
         std::string outputPath = outputFilePath + fs::path(view.getImagePath()).stem().string() + ".EXR"; 
         oiio::ParamValueList metadata = image::getMetadataFromMap(view.getMetadata()); 
         image::writeImage(outputPath, img, image::EImageColorSpace::LINEAR, metadata); 
@@ -167,8 +167,8 @@ int main(int argc, char **argv)
  
     // calculate median EV if necessary 
     std::sort(evList.begin(), evList.end()); 
-    evMedian = evList[evList.size()/2]; 
-    ALICEVISION_LOG_INFO("Median EV: " << evMedian); 
+    cameraExposureMedian = evList[evList.size()/2]; 
+    ALICEVISION_LOG_INFO("Median EV: " << cameraExposureMedian); 
  
     // write corrected images, not over exposed images 
     for(int i = 0; i < imgList.size(); ++i) 
@@ -176,7 +176,7 @@ int main(int argc, char **argv)
         Image& img = imgList[i]; 
         ALICEVISION_LOG_INFO(img.getName()); 
  
-        float evComp = std::pow(2.0f, img.getEv() - evMedian); 
+        float evComp = std::pow(2.0f, img.getEv() - cameraExposureMedian); 
         ALICEVISION_LOG_INFO("  EV Compensation: " << evComp); 
  
         for(int pix = 0; pix < img.width() * img.height(); ++pix) 

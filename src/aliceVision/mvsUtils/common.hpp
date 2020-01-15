@@ -47,9 +47,9 @@ void getCamHexahedron(const Point3d& position, const Matrix3x3& iCam, int width,
 bool intersectsHexahedronHexahedron(const Point3d rchex[8], const Point3d tchex[8]);
 StaticVector<Point3d>* lineSegmentHexahedronIntersection(Point3d& linePoint1, Point3d& linePoint2, Point3d hexah[8]);
 StaticVector<Point3d>* triangleHexahedronIntersection(Point3d& A, Point3d& B, Point3d& C, Point3d hexah[8]);
-StaticVector<Point3d>* triangleRectangleIntersection(Point3d& A, Point3d& B, Point3d& C, const MultiViewParams* mp, int rc,
-                                                     Point2d P[4]);
-bool isPointInHexahedron(const Point3d &p, const Point3d *hexah);
+void triangleRectangleIntersection(Point3d& A, Point3d& B, Point3d& C, const MultiViewParams& mp, int rc,
+                                               Point2d P[4], StaticVector<Point3d>& out);
+bool isPointInHexahedron(const Point3d &p, const Point3d* hexah);
 double computeHexahedronVolume(const Point3d* hexah);
 void inflateHexahedron(const Point3d hexahIn[8], Point3d hexahOut[8], float scale);
 bool checkPoint3d(Point3d n);

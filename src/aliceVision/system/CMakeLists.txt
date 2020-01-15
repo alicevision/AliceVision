@@ -28,3 +28,5 @@ alicevision_add_library(aliceVision_system
     Boost::program_options
     ${ALICEVISION_NVTX_LIBRARY}
 )
+
+alicevision_add_test(Logger_test.cpp NAME "system_Logger" LINKS aliceVision_system)

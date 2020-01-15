@@ -30,7 +30,7 @@ struct AlembicExporter::DataImpl
     : _archive(Alembic::AbcCoreOgawa::WriteArchive(), filename)
     , _topObj(_archive, Alembic::Abc::kTop)
   {
-  // create MVG hierarchy
+    // create MVG hierarchy
     _mvgRoot = Alembic::AbcGeom::OXform(_topObj, "mvgRoot");
     _mvgCameras = Alembic::AbcGeom::OXform(_mvgRoot, "mvgCameras");
     _mvgCamerasUndefined = Alembic::AbcGeom::OXform(_mvgRoot, "mvgCamerasUndefined");

@@ -28,11 +28,11 @@ public:
               : triId(-1)
             {}
 
-            pathPart(int _triId, int _ptId1, int _ptId2)
+            pathPart(int id, int ptId1, int ptId2)
             {
-                triId = _triId;
-                ptsIds[0] = _ptId1;
-                ptsIds[1] = _ptId2;
+                triId = id;
+                ptsIds[0] = ptId1;
+                ptsIds[1] = ptId2;
             }
 
             pathPart& operator=(const pathPart& m)
@@ -44,49 +44,50 @@ public:
             }
         };
 
-        MeshClean* m_me;
-        int m_ptId;
+        MeshClean* meshClean;
+        int _ptId;
 
-        path(MeshClean* _me, int _ptId);
+        path(MeshClean* mesh, int ptId);
         ~path();
 
-        void printfState(StaticVector<pathPart>* _pth);
-        bool addNextTriIdToPathBack(int nextTriId, StaticVector<pathPart>* _pth);
-        bool addNextTriIdToPathFront(int nextTriId, StaticVector<pathPart>* _pth);
-        int getNextNeighBouringUnprocessedLast(StaticVector<int>* ptNeighTrisSortedAscToProcess,
-                                               StaticVector<pathPart>* _pth);
-        int getNextNeighBouringUnprocessedFirst(StaticVector<int>* ptNeighTrisSortedAscToProcess,
-                                                StaticVector<pathPart>* _pth);
-        int nCrossings(StaticVector<pathPart>* _pth);
-        StaticVector<pathPart>* removeCycleFromPath(StaticVector<pathPart>* _pth);
+        void printfState(StaticVector<pathPart>& path);
+        bool addNextTriIdToPathBack(int nextTriId, StaticVector<pathPart>& path);
+        bool addNextTriIdToPathFront(int nextTriId, StaticVector<pathPart>& path);
+        int getNextNeighBouringUnprocessedLast(StaticVector<int>& ptNeighTrisSortedAscToProcess,
+                                               StaticVector<pathPart>& out_path);
+        int getNextNeighBouringUnprocessedFirst(StaticVector<int>& ptNeighTrisSortedAscToProcess,
+                                                StaticVector<pathPart>& out_path);
+        int nCrossings(StaticVector<pathPart>& path);
+        void removeCycleFromPath(StaticVector<MeshClean::path::pathPart>& inPath, StaticVector<MeshClean::path::pathPart>& outPath);
         void deployTriangle(int triId);
-        int deployTriangles(StaticVector<int>* trisIds, bool isBoundaryPt);
-        void deployPath(StaticVector<pathPart>* _pth);
-        bool isClodePath(StaticVector<pathPart>* _pth);
-        void updatePtNeighPtsOrderedByPath(int _ptId, StaticVector<pathPart>* _pth);
-        StaticVector<pathPart>* createPath(StaticVector<int>* ptNeighTrisSortedAscToProcess);
+        int deployTriangles(StaticVector<int>& trisIds, bool isBoundaryPt);
+        void deployPath(StaticVector<pathPart>& path);
+        bool isClodePath(StaticVector<pathPart>& path);
+        void clearPointNeighbors(int ptId);
+        void updatePtNeighPtsOrderedByPath(int ptId, StaticVector<pathPart>& path);
+        void createPath(StaticVector<int>& ptNeighTrisSortedAscToProcess, StaticVector<pathPart>& out_path);
         int deployAll();
         bool isWrongPt();
     };
 
     mvsUtils::MultiViewParams* mp;
 
-    StaticVector<StaticVector<int>*>* ptsNeighTrisSortedAsc;
-    StaticVector<StaticVector<int>*>* ptsNeighPtsOrdered;
-    StaticVectorBool* ptsBoundary;
-    StaticVector<int>* newPtsOldPtId;
+    StaticVector<StaticVector<int>> ptsNeighTrisSortedAsc;
+    StaticVector<StaticVector<int>> ptsNeighPtsOrdered;
+    StaticVectorBool ptsBoundary;
+    StaticVector<int> newPtsOldPtId;
 
-    StaticVectorBool* edgesNeigTrisAlive;
-    StaticVector<Voxel>* edgesNeigTris;
-    StaticVector<Voxel>* edgesXStat;
-    StaticVector<Voxel>* edgesXYStat;
+    StaticVectorBool edgesNeigTrisAlive;
+    StaticVector<Voxel> edgesNeigTris;
+    StaticVector<Voxel> edgesXStat;
+    StaticVector<Voxel> edgesXYStat;
 
     int nPtsInit;
 
     explicit MeshClean(mvsUtils::MultiViewParams* _mp);
     ~MeshClean();
 
-    bool getEdgeNeighTrisInterval(Pixel& itr, int _ptId1, int _ptId2);
+    bool getEdgeNeighTrisInterval(Pixel& itr, int ptId1, int ptId2);
     bool isIsBoundaryPt(int ptId);
 
     void deallocateCleaningAttributes();

@@ -49,12 +49,12 @@ class Pinhole : public IntrinsicBase
 
   virtual ~Pinhole() {}
 
-  virtual Pinhole* clone() const { return new Pinhole(*this); }
-  virtual void assign(const IntrinsicBase& other) { *this = dynamic_cast<const Pinhole&>(other); }
+  virtual Pinhole* clone() const override { return new Pinhole(*this); }
+  virtual void assign(const IntrinsicBase& other) override { *this = dynamic_cast<const Pinhole&>(other); }
   
-  virtual bool isValid() const { return focal() > 0 && IntrinsicBase::isValid(); }
+  virtual bool isValid() const override { return focal() > 0 && IntrinsicBase::isValid(); }
   
-  virtual EINTRINSIC getType() const { return PINHOLE_CAMERA; }
+  virtual EINTRINSIC getType() const override { return PINHOLE_CAMERA; }
   std::string getTypeStr() const { return EINTRINSIC_enumToString(getType()); }
 
   double getFocalLengthPix() const { return _K(0,0); }
@@ -74,36 +74,36 @@ class Pinhole : public IntrinsicBase
   inline Vec2 principal_point() const {return Vec2(_K(0,2), _K(1,2));}
 
   // Get bearing vector of p point (image coord)
-  Vec3 operator () (const Vec2& p) const
+  Vec3 operator () (const Vec2& p) const override
   {
     Vec3 p3(p(0),p(1),1.0);
     return (_Kinv * p3).normalized();
   }
 
   // Transform a point from the camera plane to the image plane
-  Vec2 cam2ima(const Vec2& p) const
+  Vec2 cam2ima(const Vec2& p) const override
   {
     return focal() * p + principal_point();
   }
 
   // Transform a point from the image plane to the camera plane
-  Vec2 ima2cam(const Vec2& p) const
+  Vec2 ima2cam(const Vec2& p) const override
   {
     return ( p -  principal_point() ) / focal();
   }
 
-  virtual bool have_disto() const {  return false; }
+  virtual bool have_disto() const override {  return false; }
 
-  virtual Vec2 add_disto(const Vec2& p) const  { return p; }
+  virtual Vec2 add_disto(const Vec2& p) const override { return p; }
 
-  virtual Vec2 remove_disto(const Vec2& p) const  { return p; }
+  virtual Vec2 remove_disto(const Vec2& p) const override { return p; }
 
-  virtual double imagePlane_toCameraPlaneError(double value) const
+  virtual double imagePlane_toCameraPlaneError(double value) const override
   {
     return value / focal();
   }
 
-  virtual Mat34 get_projective_equivalent(const geometry::Pose3 & pose) const
+  virtual Mat34 get_projective_equivalent(const geometry::Pose3 & pose) const override
   {
     Mat34 P;
     P_From_KRt(K(), pose.rotation(), pose.translation(), &P);
@@ -111,7 +111,7 @@ class Pinhole : public IntrinsicBase
   }
 
   // Data wrapper for non linear optimization (get data)
-  std::vector<double> getParams() const
+  std::vector<double> getParams() const override
   {
     std::vector<double> params = {_K(0,0), _K(0,2), _K(1,2)};
     params.insert(params.end(), _distortionParams.begin(), _distortionParams.end());
@@ -143,7 +143,7 @@ class Pinhole : public IntrinsicBase
   }
 
   // Data wrapper for non linear optimization (update from data)
-  bool updateFromParams(const std::vector<double>& params)
+  bool updateFromParams(const std::vector<double>& params) override
   {
     if (params.size() != (3 + _distortionParams.size()))
       return false;
@@ -154,11 +154,62 @@ class Pinhole : public IntrinsicBase
     return true;
   }
 
+  /**
+   * @brief Return true if this ray should be visible in the image
+   * @return true if this ray is visible theorically
+   */
+  virtual bool isVisibleRay(const Vec3 & ray) const override {
+    
+    if (ray(2) < 0) {
+      return false;
+    }
+
+    Vec2 proj = ray.head(2) / ray(2);
+
+    double xmin;
+    double ymin;
+    double xmax;
+    double ymax;
+
+    Vec2 p1 = remove_disto(ima2cam(Vec2(0,0)));
+    Vec2 p2 = remove_disto(ima2cam(Vec2(_w,0)));
+    Vec2 p3 = remove_disto(ima2cam(Vec2(_w,_h)));
+    Vec2 p4 = remove_disto(ima2cam(Vec2(0,_h)));
+
+    xmin = std::min(p4(0), (std::min(p3(0), std::min(p1(0), p2(0)))));
+    ymin = std::min(p4(1), (std::min(p3(1), std::min(p1(1), p2(1)))));
+    xmax = std::max(p4(0), (std::max(p3(0), std::max(p1(0), p2(0)))));
+    ymax = std::max(p4(1), (std::max(p3(1), std::max(p1(1), p2(1)))));
+
+    if (proj(0) < xmin || proj(0) > xmax || proj(1) < ymin || proj(1) > ymax) {
+      return false;
+    }
+
+    return true;
+  }
+
   /// Return the un-distorted pixel (with removed distortion)
-  virtual Vec2 get_ud_pixel(const Vec2& p) const {return p;}
+  virtual Vec2 get_ud_pixel(const Vec2& p) const override {return p;}
 
   /// Return the distorted pixel (with added distortion)
-  virtual Vec2 get_d_pixel(const Vec2& p) const {return p;}
+  virtual Vec2 get_d_pixel(const Vec2& p) const override {return p;}
+
+  /**
+   * @brief Rescale intrinsics to reflect a rescale of the camera image
+   * @param factor a scale factor
+   */
+  virtual void rescale(float factor) override {
+
+    IntrinsicBase::rescale(factor);
+
+    Mat3 scale;
+    scale.setIdentity();
+    scale(0, 0) = factor;
+    scale(1, 1) = factor;
+
+    _K = scale * _K;
+    _Kinv = _K.inverse();
+  }
 
 private:
   // Focal & principal point are embed into the calibration matrix K

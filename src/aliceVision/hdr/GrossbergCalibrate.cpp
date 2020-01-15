@@ -21,15 +21,15 @@ GrossbergCalibrate::GrossbergCalibrate(const unsigned int dimension)
     _dimension = dimension;
 }
 
-void GrossbergCalibrate::process(const std::vector< std::vector< image::Image<image::RGBfColor> > > &ldrImageGroups,
+void GrossbergCalibrate::process(const std::vector<std::vector<std::string>>& imagePathsGroups,
                                  const std::size_t channelQuantization,
                                  const std::vector< std::vector<float> > &times,
                                  const int nbPoints,
                                  const bool fisheye,
                                  rgbCurve &response)
 {
-    const int nbGroups = ldrImageGroups.size();
-    const int nbImages = ldrImageGroups.front().size();
+    const int nbGroups = imagePathsGroups.size();
+    const int nbImages = imagePathsGroups.front().size();
     const int samplesPerImage = nbPoints / (nbGroups*nbImages);
 
     //set channels count always RGB
@@ -49,46 +49,46 @@ void GrossbergCalibrate::process(const std::vector< std::vector< image::Image<im
         const double *h = getEmorInvCurve(i+1);
         if(emorSize == channelQuantization)
         {
-          hCurves[i].assign(h, h + emorSize);
+            hCurves[i].assign(h, h + emorSize);
         }
         else if(emorSize > channelQuantization)
         {
-          std::vector<double> emorH;
-          emorH.assign(h, h + emorSize);
-          std::vector<double> h0 = std::vector<double>(emorH.begin(), emorH.end());
+            std::vector<double> emorH;
+            emorH.assign(h, h + emorSize);
+            std::vector<double> h0 = std::vector<double>(emorH.begin(), emorH.end());
 
-          std::size_t step = emorSize/channelQuantization;
-          for(std::size_t k = 0; k<channelQuantization; ++k)
-            hCurves[i].emplace_back(h0.at(k*step));
+            std::size_t step = emorSize/channelQuantization;
+            for(std::size_t k = 0; k<channelQuantization; ++k)
+                hCurves[i].emplace_back(h0.at(k*step));
         }
         else
         {
-          std::vector<double> emorH;
-          emorH.assign(h, h + emorSize);
-          std::vector<double> h0 = std::vector<double>(emorH.begin(), emorH.end());
+            std::vector<double> emorH;
+            emorH.assign(h, h + emorSize);
+            std::vector<double> h0 = std::vector<double>(emorH.begin(), emorH.end());
 
-          std::size_t step = channelQuantization/emorSize;
-          hCurves[i].resize(channelQuantization, 0.0);
-          for(std::size_t k = 0; k<emorSize-1; ++k)
-          {
-            hCurves[i].at(k*step) = h0.at(k);
-          }
-          hCurves[i].at(emorSize*step-1) = h0.at(emorSize-1);
-          std::size_t previousValidIndex = 0;
-          for(std::size_t index = 1; index<channelQuantization; ++index)
-          {
-              if(hCurves[i].at(index) != 0.0f)
-              {
-                  if(previousValidIndex+1 < index)
-                  {
-                      const float inter = (hCurves[i].at(index) - hCurves[i].at(previousValidIndex)) / (index - previousValidIndex);
-                      for(std::size_t j = previousValidIndex+1; j < index; ++j)
-                      {
-                          hCurves[i].at(j) = hCurves[i].at(previousValidIndex) + inter * (j-previousValidIndex);
-                      }
-                  }
-                  previousValidIndex = index;
-              }
+            std::size_t step = channelQuantization/emorSize;
+            hCurves[i].resize(channelQuantization, 0.0);
+            for(std::size_t k = 0; k<emorSize-1; ++k)
+            {
+                hCurves[i].at(k*step) = h0.at(k);
+            }
+            hCurves[i].at(emorSize*step-1) = h0.at(emorSize-1);
+            std::size_t previousValidIndex = 0;
+            for(std::size_t index = 1; index<channelQuantization; ++index)
+            {
+                if(hCurves[i].at(index) != 0.0f)
+                {
+                    if(previousValidIndex+1 < index)
+                    {
+                        const float inter = (hCurves[i].at(index) - hCurves[i].at(previousValidIndex)) / (index - previousValidIndex);
+                        for(std::size_t j = previousValidIndex+1; j < index; ++j)
+                        {
+                            hCurves[i].at(j) = hCurves[i].at(previousValidIndex) + inter * (j-previousValidIndex);
+                        }
+                    }
+                    previousValidIndex = index;
+                }
             }
         }
         H.col(i) = Eigen::Map<Vec>(hCurves[i].data(), channelQuantization);
@@ -103,7 +103,14 @@ void GrossbergCalibrate::process(const std::vector< std::vector< image::Image<im
 
       for(unsigned int g=0; g<nbGroups; ++g)
       {
-        const std::vector< image::Image<image::RGBfColor> > &ldrImagesGroup = ldrImageGroups[g];
+        const std::vector<std::string > &imagePaths = imagePathsGroups[g];
+        std::vector<image::Image<image::RGBfColor>> ldrImagesGroup(imagePaths.size());
+
+        for (int i = 0; i < imagePaths.size(); i++)
+        {
+            image::readImage(imagePaths[i], ldrImagesGroup[i], image::EImageColorSpace::SRGB);
+        }
+
         const std::vector<float> &ldrTimes= times[g];
 
         const std::size_t width = ldrImagesGroup.front().Width();
@@ -158,12 +165,19 @@ void GrossbergCalibrate::process(const std::vector< std::vector< image::Image<im
       A.conservativeResize(count, Eigen::NoChange_t::NoChange);
       b.conservativeResize(count);
     }
-
     else
     {
       for(unsigned int g=0; g<nbGroups; ++g)
       {
-        const std::vector< image::Image<image::RGBfColor> > &ldrImagesGroup = ldrImageGroups[g];
+        const std::vector<std::string > &imagePaths = imagePathsGroups[g];
+        std::vector<image::Image<image::RGBfColor>> ldrImagesGroup(imagePaths.size());
+
+        for (int i = 0; i < imagePaths.size(); i++)
+        {
+            ALICEVISION_LOG_INFO("Load " << imagePaths[i]);
+            image::readImage(imagePaths[i], ldrImagesGroup[i], image::EImageColorSpace::SRGB);
+        }
+
         const std::vector<float> &ldrTimes= times[g];
 
         const std::size_t width = ldrImagesGroup.front().Width();
@@ -184,7 +198,6 @@ void GrossbergCalibrate::process(const std::vector< std::vector< image::Image<im
                 double sample1 = std::max(0.f, std::min(1.f, image1(step*l)(channel)));
                 double sample2 = std::max(0.f, std::min(1.f, image2(step*l)(channel)));
 
-
                 std::size_t index1 = std::round((channelQuantization-1) * sample1);
                 std::size_t index2 = std::round((channelQuantization-1) * sample2);
 
@@ -196,7 +209,6 @@ void GrossbergCalibrate::process(const std::vector< std::vector< image::Image<im
         }
       }
     }
-
 
     ALICEVISION_LOG_TRACE("solving Ax=b system");
 

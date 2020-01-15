@@ -46,7 +46,6 @@ EUnwrapMethod EUnwrapMethod_stringToEnum(const std::string& method);
  */
 std::string EUnwrapMethod_enumToString(EUnwrapMethod method);
 
-
 /**
  * @brief Method to remap visibilities from the reconstruction onto an other mesh.
  */
@@ -58,52 +57,48 @@ enum EVisibilityRemappingMethod {
 
 ALICEVISION_BITMASK(EVisibilityRemappingMethod);
 
-std::string EVisibilityRemappingMethod_enumToString(EVisibilityRemappingMethod method);
 EVisibilityRemappingMethod EVisibilityRemappingMethod_stringToEnum(const std::string& method);
+std::string EVisibilityRemappingMethod_enumToString(EVisibilityRemappingMethod method);
+
 
 
 struct TexturingParams
 {
-    bool useScore = true;
+    unsigned int textureSide = 8192;
+    unsigned int downscale = 1;
+    bool useUDIM = true;
+    bool fillHoles = false;
+    unsigned int padding = 5;
+
+    // Multi-band blending
     unsigned int nbBand = 4;
     unsigned int multiBandDownscale = 4;
     std::vector<int> multiBandNbContrib = {1, 5, 10, 0}; // number of contributions per frequency band for the multi-band blending
+
+    bool useScore = true;
+    double bestScoreThreshold = 0.1; //< 0.0 to disable filtering based on threshold to relative best score
+    double angleHardThreshold = 90.0; //< 0.0 to disable angle hard threshold filtering
+
     imageIO::EImageColorSpace processColorspace = imageIO::EImageColorSpace::SRGB; // colorspace for the texturing internal computation
     mvsUtils::ImagesCache::ECorrectEV correctEV{mvsUtils::ImagesCache::ECorrectEV::NO_CORRECTION};
 
-    double bestScoreThreshold = 0.1; //< 0.0 to disable filtering based on threshold to relative best score
-    double angleHardThreshold = 90.0; //< 0.0 to disable angle hard threshold filtering
     bool forceVisibleByAllVertices = false; //< triangle visibility is based on the union of vertices visiblity
     EVisibilityRemappingMethod visibilityRemappingMethod = EVisibilityRemappingMethod::PullPush;
 
-    unsigned int textureSide = 8192;
-    unsigned int padding = 5;
-    unsigned int downscale = 1;
-    bool fillHoles = false;
-    bool useUDIM = true;
+    float subdivisionTargetRatio = 0.8;
 };
 
 struct Texturing
 {
     TexturingParams texParams;
-
-    int nmtls = 0;
-    StaticVector<int> trisMtlIds;
-    StaticVector<Point2d> uvCoords;
-    StaticVector<Voxel> trisUvIds;
-    StaticVector<Point3d> normals;
-    StaticVector<Voxel> trisNormalsIds;
-    PointsVisibility* pointsVisibilities = nullptr;
-    Mesh* me = nullptr;
+    Mesh* mesh = nullptr;
 
     /// texture atlas to 3D triangle ids
     std::vector<std::vector<int>> _atlases;
 
     ~Texturing()
     {
-        if(pointsVisibilities != nullptr)
-            deleteArrayOfArrays<int>(&pointsVisibilities);
-        delete me;
+        delete mesh;
     }
 
 public:
@@ -112,7 +107,7 @@ public:
     void clear();
 
     /// Load a mesh from a .obj file and initialize internal structures
-    void loadFromOBJ(const std::string& filename, bool flipNormals=false);
+    void loadOBJWithAtlas(const std::string& filename, bool flipNormals=false);
 
     /**
      * @brief Remap visibilities
@@ -121,7 +116,7 @@ public:
      * @param[in] refMesh the reference mesh
      * @param[in] refPointsVisibilities the reference visibilities
      */
-    void remapVisibilities(EVisibilityRemappingMethod remappingMethod, const Mesh& refMesh, const mesh::PointsVisibility& refPointsVisibilities);
+    void remapVisibilities(EVisibilityRemappingMethod remappingMethod, const Mesh& refMesh);
 
     /**
      * @brief Replace inner mesh with the mesh loaded from 'otherMeshPath'
@@ -133,7 +128,7 @@ public:
     void replaceMesh(const std::string& otherMeshPath, bool flipNormals=false);
 
     /// Returns whether UV coordinates are available
-    inline bool hasUVs() const { return !uvCoords.empty(); }
+    inline bool hasUVs() const { return !mesh->uvCoords.empty(); }
 
     /**
      * @brief Unwrap mesh with the given 'method'.
@@ -150,6 +145,13 @@ public:
      * @param mp
      */
     void generateUVsBasicMethod(mvsUtils::MultiViewParams &mp);
+
+    /**
+     * @brief Update texture atlases, useful when the internal mesh has been sudivise
+     *
+     * Requires internal mesh to be initialized
+     */
+    void updateAtlases();
 
     // Create buffer for the set of output textures
     struct AccuImage

@@ -97,6 +97,63 @@ if(ALICEVISION_BUILD_SFM)
           Boost::filesystem
   )
 
+  # Panorama
+  alicevision_add_software(aliceVision_panoramaEstimation
+    SOURCE main_panoramaEstimation.cpp
+    FOLDER ${FOLDER_SOFTWARE_PIPELINE}
+    LINKS aliceVision_system
+          aliceVision_image
+          aliceVision_feature
+          aliceVision_sfm
+          aliceVision_sfmData
+          aliceVision_sfmDataIO
+          ${Boost_LIBRARIES}
+  )
+  alicevision_add_software(aliceVision_panoramaWarping
+    SOURCE main_panoramaWarping.cpp
+    FOLDER ${FOLDER_SOFTWARE_PIPELINE}
+    LINKS aliceVision_system
+          aliceVision_image
+          aliceVision_feature
+          aliceVision_sfm
+          aliceVision_sfmData
+          aliceVision_sfmDataIO
+          ${Boost_LIBRARIES}
+  )
+  alicevision_add_software(aliceVision_panoramaCompositing
+    SOURCE main_panoramaCompositing.cpp
+    FOLDER ${FOLDER_SOFTWARE_PIPELINE}
+    LINKS aliceVision_system
+          aliceVision_image
+          aliceVision_feature
+          aliceVision_sfm
+          aliceVision_sfmData
+          aliceVision_sfmDataIO
+          ${Boost_LIBRARIES}
+  )
+  alicevision_add_software(aliceVision_panoramaExternalInfo
+    SOURCE main_panoramaExternalInfo.cpp
+    FOLDER ${FOLDER_SOFTWARE_PIPELINE}
+    LINKS aliceVision_system
+          aliceVision_image
+          aliceVision_feature
+          aliceVision_sfm
+          aliceVision_sfmData
+          aliceVision_sfmDataIO
+          ${Boost_LIBRARIES}
+  )
+  alicevision_add_software(aliceVision_cameraDownscale
+    SOURCE main_cameraDownscale.cpp
+    FOLDER ${FOLDER_SOFTWARE_PIPELINE}
+    LINKS aliceVision_system
+          aliceVision_image
+          aliceVision_feature
+          aliceVision_sfm
+          aliceVision_sfmData
+          aliceVision_sfmDataIO
+          ${Boost_LIBRARIES}
+  )
+
   # Compute structure from known camera poses
   alicevision_add_software(aliceVision_computeStructureFromKnownPoses
     SOURCE main_computeStructureFromKnownPoses.cpp

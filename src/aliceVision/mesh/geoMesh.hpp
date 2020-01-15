@@ -18,27 +18,27 @@ namespace mesh {
 inline void toGeoMesh(const Mesh& src, GEO::Mesh& dst)
 {
     GEO::vector<double> vertices;
-    vertices.reserve(src.pts->size() * 3);
+    vertices.reserve(src.pts.size() * 3);
     GEO::vector<GEO::index_t> facets;
-    facets.reserve(src.tris->size() * 3);
+    facets.reserve(src.tris.size() * 3);
 
-    for (unsigned int i = 0; i < src.pts->size(); ++i)
+    for (unsigned int i = 0; i < src.pts.size(); ++i)
     {
-        const auto& point = (*src.pts)[i];
+        const auto& point = src.pts[i];
         vertices.insert(vertices.end(), std::begin(point.m), std::end(point.m));
     }
 
-    for (unsigned int i = 0; i < src.tris->size(); ++i)
+    for (unsigned int i = 0; i < src.tris.size(); ++i)
     {
-        const auto& tri = (*src.tris)[i];
+        const auto& tri = src.tris[i];
         facets.insert(facets.end(), std::begin(tri.v), std::end(tri.v));
     }
 
     dst.facets.assign_triangle_mesh(3, vertices, facets, true);
     dst.facets.connect();
 
-    assert(src.pts->size() == dst.vertices.nb());
-    assert(src.tris->size() == dst.facets.nb());
+    assert(src.pts.size() == dst.vertices.nb());
+    assert(src.tris.size() == dst.facets.nb());
 }
 
 }

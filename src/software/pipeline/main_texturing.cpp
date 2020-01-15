@@ -9,6 +9,7 @@
 #include <aliceVision/mesh/Mesh.hpp>
 #include <aliceVision/mesh/Texturing.hpp>
 #include <aliceVision/mesh/meshVisibility.hpp>
+#include <aliceVision/mesh/meshPostProcessing.hpp>
 #include <aliceVision/mvsData/imageIO.hpp>
 #include <aliceVision/mvsUtils/common.hpp>
 #include <aliceVision/mvsUtils/MultiViewParams.hpp>
@@ -69,12 +70,12 @@ int main(int argc, char* argv[])
         ("imagesFolder", po::value<std::string>(&imagesFolder),
           "Use images from a specific folder instead of those specify in the SfMData file.\n"
           "Filename should be the image uid.")
-        ("outputTextureFileType", po::value<std::string>(&outTextureFileTypeName)->default_value(outTextureFileTypeName),
-          imageIO::EImageFileType_informations().c_str())
         ("textureSide", po::value<unsigned int>(&texParams.textureSide)->default_value(texParams.textureSide),
             "Output texture size")
         ("downscale", po::value<unsigned int>(&texParams.downscale)->default_value(texParams.downscale),
             "Texture downscale factor")
+        ("outputTextureFileType", po::value<std::string>(&outTextureFileTypeName)->default_value(outTextureFileTypeName),
+          imageIO::EImageFileType_informations().c_str())
         ("unwrapMethod", po::value<std::string>(&unwrapMethod)->default_value(unwrapMethod),
             "Method to unwrap input mesh if it does not have UV coordinates.\n"
             " * Basic (> 600k faces) fast and simple. Can generate multiple atlases.\n"
@@ -86,29 +87,31 @@ int main(int argc, char* argv[])
             "Fill texture holes with plausible values.")
         ("padding", po::value<unsigned int>(&texParams.padding)->default_value(texParams.padding),
             "Texture edge padding size in pixel")
-        ("flipNormals", po::value<bool>(&flipNormals)->default_value(flipNormals),
-            "Option to flip face normals. It can be needed as it depends on the vertices order in triangles and the convention change from one software to another.")
-        ("correctEV", po::value<bool>(&correctEV)->default_value(correctEV),
-            "Option to uniformize images exposure.")
-        ("useScore", po::value<bool>(&texParams.useScore)->default_value(texParams.useScore),
-             "Use triangles scores (based on observations and re-projected areas in source images) for weighting contributions.")
-        ("processColorspace", po::value<std::string>(&processColorspaceName)->default_value(processColorspaceName),
-            "Colorspace for the texturing internal computation (does not impact the output file colorspace).")
         ("multiBandDownscale", po::value<unsigned int>(&texParams.multiBandDownscale)->default_value(texParams.multiBandDownscale),
             "Width of frequency bands.")
         ("multiBandNbContrib", po::value<std::vector<int>>(&texParams.multiBandNbContrib)->default_value(texParams.multiBandNbContrib)->multitoken(),
              "Number of contributions per frequency band.")
+        ("useScore", po::value<bool>(&texParams.useScore)->default_value(texParams.useScore),
+             "Use triangles scores (based on observations and re-projected areas in source images) for weighting contributions.")
         ("bestScoreThreshold", po::value<double>(&texParams.bestScoreThreshold)->default_value(texParams.bestScoreThreshold),
             "(0.0 to disable filtering based on threshold to relative best score).")
         ("angleHardThreshold", po::value<double>(&texParams.angleHardThreshold)->default_value(texParams.angleHardThreshold),
             "(0.0 to disable angle hard threshold filtering).")
+        ("processColorspace", po::value<std::string>(&processColorspaceName)->default_value(processColorspaceName),
+            "Colorspace for the texturing internal computation (does not impact the output file colorspace).")
+        ("correctEV", po::value<bool>(&correctEV)->default_value(correctEV),
+            "Option to uniformize images exposure.")
         ("forceVisibleByAllVertices", po::value<bool>(&texParams.forceVisibleByAllVertices)->default_value(texParams.forceVisibleByAllVertices),
             "triangle visibility is based on the union of vertices visiblity.")
+        ("flipNormals", po::value<bool>(&flipNormals)->default_value(flipNormals),
+            "Option to flip face normals. It can be needed as it depends on the vertices order in triangles and the convention change from one software to another.")
         ("visibilityRemappingMethod", po::value<std::string>(&visibilityRemappingMethod)->default_value(visibilityRemappingMethod),
             "Method to remap visibilities from the reconstruction to the input mesh.\n"
             " * Pull: For each vertex of the input mesh, pull the visibilities from the closest vertex in the reconstruction.\n"
             " * Push: For each vertex of the reconstruction, push the visibilities to the closest triangle in the input mesh.\n"
-            " * PullPush: Combine results from Pull and Push results.'");
+            " * PullPush: Combine results from Pull and Push results.'")
+        ("subdivisionTargetRatio", po::value<float>(&texParams.subdivisionTargetRatio)->default_value(texParams.subdivisionTargetRatio),
+            "Percentage of the density of the reconstruction as the target for the subdivision (0: disable subdivision, 0.5: half density of the reconstruction, 1: full density of the reconstruction).");
 
     po::options_description logParams("Log parameters");
     logParams.add_options()
@@ -159,6 +162,7 @@ int main(int argc, char* argv[])
     if(correctEV) { texParams.correctEV = mvsUtils::ImagesCache::ECorrectEV::APPLY_CORRECTION; }
 
     // read the input SfM scene
+    ALICEVISION_LOG_INFO("Load dense point cloud.");
     sfmData::SfMData sfmData;
     if(!sfmDataIO::Load(sfmData, sfmDataFilename, sfmDataIO::ESfMData::ALL_DENSE))
     {
@@ -171,52 +175,66 @@ int main(int argc, char* argv[])
 
     mesh::Texturing mesh;
     mesh.texParams = texParams;
-
-    // load and remap mesh
-    {
-      mesh.clear();
-
-      // load input obj file
-      mesh.loadFromOBJ(inputMeshFilepath, flipNormals);
-
-      // load reference dense point cloud with visibilities
-      mesh::Mesh refPoints;
-      mesh::PointsVisibility* refVisibilities = new mesh::PointsVisibility();
-      const std::size_t nbPoints = sfmData.getLandmarks().size();
-      refPoints.pts = new StaticVector<Point3d>();
-      refPoints.pts->reserve(nbPoints);
-      refVisibilities->reserve(nbPoints);
-
-      for(const auto& landmarkPair : sfmData.getLandmarks())
-      {
-        const sfmData::Landmark& landmark = landmarkPair.second;
-        mesh::PointVisibility* pointVisibility = new mesh::PointVisibility();
-
-        pointVisibility->reserve(landmark.observations.size());
-        for(const auto& observationPair : landmark.observations)
-          pointVisibility->push_back(mp.getIndexFromViewId(observationPair.first));
-
-        refVisibilities->push_back(pointVisibility);
-        refPoints.pts->push_back(Point3d(landmark.X(0), landmark.X(1), landmark.X(2)));
-      }
-
-      mesh.remapVisibilities(texParams.visibilityRemappingMethod, refPoints, *refVisibilities);
-
-      // delete visibilities
-      deleteArrayOfArrays(&refVisibilities);
-    }
+    mesh::Mesh refMesh;
 
     fs::create_directory(outputFolder);
 
+    // load and remap mesh
+    {
+        mesh.clear();
+
+        // load input mesh (to texture) obj file
+        ALICEVISION_LOG_INFO("Load input mesh.");
+        mesh.loadOBJWithAtlas(inputMeshFilepath, flipNormals);
+
+        // load reference dense point cloud with visibilities
+        ALICEVISION_LOG_INFO("Convert dense point cloud into ref mesh");
+        mesh::PointsVisibility& refVisibilities = refMesh.pointsVisibilities;
+        const std::size_t nbPoints = sfmData.getLandmarks().size();
+        refMesh.pts.reserve(nbPoints);
+        refVisibilities.reserve(nbPoints);
+        for(const auto& landmarkPair : sfmData.getLandmarks())
+        {
+            const sfmData::Landmark& landmark = landmarkPair.second;
+            mesh::PointVisibility pointVisibility;
+
+            pointVisibility.reserve(landmark.observations.size());
+            for(const auto& observationPair : landmark.observations)
+                pointVisibility.push_back(mp.getIndexFromViewId(observationPair.first));
+
+            refVisibilities.push_back(pointVisibility);
+            refMesh.pts.push_back(Point3d(landmark.X(0), landmark.X(1), landmark.X(2)));
+        }
+    }
+
+    // generate UVs if necessary
     if(!mesh.hasUVs())
     {
-      ALICEVISION_LOG_INFO("Input mesh has no UV coordinates, start unwrapping (" + unwrapMethod +")");
-      mesh.unwrap(mp, mesh::EUnwrapMethod_stringToEnum(unwrapMethod));
-      ALICEVISION_LOG_INFO("Unwrapping done.");
+        // Need visibilities to compute unwrap
+        mesh.remapVisibilities(texParams.visibilityRemappingMethod, refMesh);
+        ALICEVISION_LOG_INFO("Input mesh has no UV coordinates, start unwrapping (" + unwrapMethod +")");
+        mesh.unwrap(mp, mesh::EUnwrapMethod_stringToEnum(unwrapMethod));
+        ALICEVISION_LOG_INFO("Unwrapping done.");
     }
 
     // save final obj file
     mesh.saveAsOBJ(outputFolder, "texturedMesh", outputTextureFileType);
+
+    if(texParams.subdivisionTargetRatio > 0)
+    {
+        const bool remapVisibilities = false;
+        const int nbSubdiv = mesh.mesh->subdivideMesh(refMesh, texParams.subdivisionTargetRatio, remapVisibilities);
+        ALICEVISION_LOG_INFO("Number of triangle subdivisions: " << nbSubdiv);
+
+        mesh.updateAtlases();
+
+        // remap visibilities
+        mesh.mesh->pointsVisibilities.clear();
+        mesh.remapVisibilities(texParams.visibilityRemappingMethod, refMesh);
+
+        // DEBUG: export subdivided mesh
+        // mesh.saveAsOBJ(outputFolder, "subdividedMesh", outputTextureFileType);
+    }
 
     // generate textures
     ALICEVISION_LOG_INFO("Generate textures.");
