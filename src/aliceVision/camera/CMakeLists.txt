@@ -17,6 +17,7 @@ set(camera_files_headers
 	PinholeFisheye.hpp
 	PinholeFisheye1.hpp
 	PinholeRadial.hpp
+	EquidistantRadial.hpp
 )
 
 alicevision_add_interface(aliceVision_camera
