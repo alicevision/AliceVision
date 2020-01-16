@@ -5,5 +5,5 @@ alicevision_add_software(aliceVision_samples_multibandtest
   LINKS aliceVision_system
         aliceVision_mesh
         aliceVision_mvsData
-        ${Boost_LIBRARIES}
+        Boost::program_options
 )

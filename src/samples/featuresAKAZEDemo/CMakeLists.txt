@@ -15,5 +15,5 @@ alicevision_add_software(aliceVision_samples_computeAKAZE
         aliceVision_feature
         aliceVision_system
         ${ALICEVISION_LIBRARY_DEPENDENCIES}
-        ${Boost_FILESYSTEM_LIBRARIES}
+        Boost::filesystem
 )

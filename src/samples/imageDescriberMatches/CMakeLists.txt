@@ -8,5 +8,5 @@ alicevision_add_software(aliceVision_samples_describeAndMatch
         aliceVision_feature
         aliceVision_matching
         vlsift
-        ${Boost_LIBRARIES}
+        Boost::program_options
 )

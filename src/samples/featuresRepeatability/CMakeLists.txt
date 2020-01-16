@@ -7,5 +7,7 @@ alicevision_add_software(aliceVision_samples_repeatabilityDataset
         aliceVision_system
         aliceVision_multiview
         vlsift
-        ${Boost_LIBRARIES}
+        Boost::program_options
+        Boost::regex
+        Boost::filesystem
 )

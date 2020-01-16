@@ -14,7 +14,7 @@ set(stl_files_headers
 
 alicevision_add_interface(aliceVision_stl
   SOURCES ${stl_files_headers}
-  LINKS ${Boost_CONTAINER_LIBRARIES}
+  LINKS Boost::container
 )
 
 # Unit tests

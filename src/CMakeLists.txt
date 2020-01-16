@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.3)
+cmake_minimum_required(VERSION 3.11)
 
 # ==============================================================================
 # AliceVision version
@@ -251,7 +251,11 @@ endif()
 # Boost
 # ==============================================================================
 option(BOOST_NO_CXX11 "if Boost is compiled without C++11 support (as it is often the case in OS packages) this must be enabled to avoid symbol conflicts (SCOPED_ENUM)." OFF)
-find_package(Boost 1.60.0 QUIET COMPONENTS atomic container date_time filesystem graph log log_setup program_options regex serialization system thread timer)
+set(ALICEVISION_BOOST_COMPONENTS atomic container date_time filesystem graph log log_setup program_options regex serialization system thread timer)
+if(ALICEVISION_BUILD_TESTS)
+    set(ALICEVISION_BOOST_COMPONENT_UNITTEST unit_test_framework)
+endif()
+find_package(Boost 1.60.0 QUIET COMPONENTS ${ALICEVISION_BOOST_COMPONENTS} ${ALICEVISION_BOOST_COMPONENT_UNITTEST})
 
 if(Boost_FOUND)
   message(STATUS "Boost ${Boost_LIB_VERSION} found.")
@@ -273,9 +277,6 @@ if(BOOST_NO_CXX11)
   add_definitions(-DBOOST_NO_CXX11_SCOPED_ENUMS)
 endif()
 
-include_directories(${Boost_INCLUDE_DIRS})
-link_directories(${Boost_LIBRARY_DIRS})
-add_definitions(${Boost_DEFINITIONS})
 
 # ==============================================================================
 # OpenEXR
@@ -718,7 +719,7 @@ if(ALICEVISION_HAVE_CUDA)
   message("Build Mode: ${CMAKE_BUILD_TYPE}")
 
   set(CUDA_NVCC_FLAGS_DEBUG   "${CUDA_NVCC_FLAGS_DEBUG};-G;-g")
-  set(CUDA_NVCC_FLAGS_RELEASE "${CUDA_NVCC_FLAGS_RELEASE};-O3")
+  # set(CUDA_NVCC_FLAGS_RELEASE "${CUDA_NVCC_FLAGS_RELEASE};-O3")
   if(NOT CUDA_VERSION_MAJOR LESS 9)
     set(ALICEVISION_CUDA_CC_LIST_BASIC 30 35 50 52 60 61 62)
   elseif(CUDA_VERSION_MAJOR GREATER 7)

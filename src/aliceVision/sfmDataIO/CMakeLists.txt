@@ -33,9 +33,9 @@ alicevision_add_library(aliceVision_sfmDataIO
   SOURCES ${sfmDataIO_files_headers} ${sfmDataIO_files_sources}
   PUBLIC_LINKS
     aliceVision_sfmData
-    ${Boost_FILESYSTEM_LIBRARY}
+    Boost::filesystem
   PRIVATE_LINKS
-    ${Boost_REGEX_LIBRARY}
+    Boost::regex
 )
 
 

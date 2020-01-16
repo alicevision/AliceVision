@@ -214,12 +214,12 @@ function(alicevision_add_test test_file)
   target_link_libraries(${TEST_EXECUTABLE_NAME}
     PUBLIC ${TEST_LINKS}
            ${ALICEVISION_LIBRARY_DEPENDENCIES}
-           ${Boost_LIBRARIES}
+           Boost::unit_test_framework
+           Boost::log
   )
 
   target_include_directories(${TEST_EXECUTABLE_NAME}
     PUBLIC ${TEST_INCLUDE_DIRS}
-           ${Boost_INCLUDE_DIRS}
   )
 
   set_property(TARGET ${TEST_EXECUTABLE_NAME}

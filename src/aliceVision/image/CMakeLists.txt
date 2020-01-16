@@ -33,7 +33,7 @@ alicevision_add_library(aliceVision_image
   PRIVATE_LINKS
     aliceVision_system
     ${OPENEXR_LIBRARIES}
-    ${Boost_FILESYSTEM_LIBRARY}
+    Boost::filesystem
   PUBLIC_INCLUDE_DIRS
     ${OPENIMAGEIO_INCLUDE_DIRS}
   PRIVATE_INCLUDE_DIRS

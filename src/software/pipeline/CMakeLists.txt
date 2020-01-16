@@ -17,7 +17,9 @@ if(ALICEVISION_BUILD_SFM)
           aliceVision_feature
           aliceVision_sfmData
           aliceVision_sfmDataIO
-          ${Boost_LIBRARIES}
+          Boost::program_options
+          Boost::filesystem
+          Boost::boost
   )
 
   # Feature extraction
@@ -32,7 +34,10 @@ if(ALICEVISION_BUILD_SFM)
           aliceVision_sfmData
           aliceVision_sfmDataIO
           vlsift
-          ${Boost_LIBRARIES}
+          Boost::program_options
+          Boost::filesystem
+          Boost::boost
+          Boost::timer
   )
 
   # Image matching
@@ -44,7 +49,8 @@ if(ALICEVISION_BUILD_SFM)
           aliceVision_sfmData
           aliceVision_sfmDataIO
           aliceVision_voctree
-          ${Boost_LIBRARIES}
+          Boost::program_options
+          Boost::filesystem
   )
 
   # Feature matching
@@ -59,7 +65,8 @@ if(ALICEVISION_BUILD_SFM)
           aliceVision_sfm
           aliceVision_sfmData
           aliceVision_sfmDataIO
-          ${Boost_LIBRARIES}
+          Boost::program_options
+          Boost::filesystem
   )
 
   # Incremental / Sequential SfM
@@ -72,7 +79,8 @@ if(ALICEVISION_BUILD_SFM)
           aliceVision_sfm
           aliceVision_sfmData
           aliceVision_sfmDataIO
-          ${Boost_LIBRARIES}
+          Boost::program_options
+          Boost::filesystem
   )
 
   # Global SfM
@@ -85,7 +93,8 @@ if(ALICEVISION_BUILD_SFM)
           aliceVision_sfm
           aliceVision_sfmData
           aliceVision_sfmDataIO
-          ${Boost_LIBRARIES}
+          Boost::program_options
+          Boost::filesystem
   )
 
   # Panorama
@@ -154,7 +163,8 @@ if(ALICEVISION_BUILD_SFM)
           aliceVision_sfm
           aliceVision_sfmData
           aliceVision_sfmDataIO
-          ${Boost_LIBRARIES}
+          Boost::program_options
+          Boost::filesystem
   )
 
   # Calibrate a camera
@@ -166,8 +176,9 @@ if(ALICEVISION_BUILD_SFM)
             aliceVision_image
             aliceVision_calibration
             aliceVision_system
-            ${OpenCV_LIBRARIES}
-            ${Boost_LIBRARIES}
+            Boost::program_options
+            Boost::filesystem
+            Boost::boost
     )
   endif()
 
@@ -180,8 +191,10 @@ if(ALICEVISION_BUILD_SFM)
           aliceVision_dataio
           aliceVision_image
           aliceVision_feature
-          vlsift # TODO: delete vlsift
-          ${Boost_LIBRARIES}
+          Boost::program_options
+          Boost::filesystem
+          Boost::boost
+          Boost::timer
   )
 
   if(ALICEVISION_HAVE_CCTAG)
@@ -196,8 +209,10 @@ if(ALICEVISION_BUILD_SFM)
           aliceVision_dataio
           aliceVision_image
           aliceVision_feature
-          vlsift
-          ${Boost_LIBRARIES}
+          Boost::program_options
+          Boost::filesystem
+          Boost::boost
+          Boost::timer
   )
 
   if(ALICEVISION_HAVE_CCTAG)
@@ -213,8 +228,10 @@ if(ALICEVISION_BUILD_SFM)
           aliceVision_rig
           aliceVision_image
           aliceVision_feature
-          vlsift
-          ${Boost_LIBRARIES}
+          Boost::program_options
+          Boost::filesystem
+          Boost::boost
+          Boost::timer
   )
 
   if(ALICEVISION_HAVE_CCTAG)
@@ -230,7 +247,10 @@ if(ALICEVISION_BUILD_SFM)
           aliceVision_feature
           aliceVision_sfmData
           aliceVision_sfmDataIO
-          ${Boost_LIBRARIES}
+          Boost::program_options
+          Boost::filesystem
+          Boost::boost
+          Boost::timer
   )
 endif() # if(ALICEVISION_BUILD_SFM)
 
@@ -249,7 +269,8 @@ if(ALICEVISION_BUILD_MVS)
             aliceVision_depthMap
             aliceVision_sfmData
             aliceVision_sfmDataIO
-            ${Boost_LIBRARIES}
+            Boost::program_options
+            Boost::filesystem
     )
 
     # Depth Map Filtering
@@ -263,7 +284,8 @@ if(ALICEVISION_BUILD_MVS)
             aliceVision_depthMap
             aliceVision_sfmData
             aliceVision_sfmDataIO
-            ${Boost_LIBRARIES}
+            Boost::program_options
+            Boost::filesystem
     )
   endif()
 
@@ -278,7 +300,8 @@ if(ALICEVISION_BUILD_MVS)
           aliceVision_fuseCut
           aliceVision_sfmData
           aliceVision_sfmDataIO
-          ${Boost_LIBRARIES}
+          Boost::program_options
+          Boost::filesystem
   )
 
   if(ALICEVISION_HAVE_MESHSDFILTER)
@@ -291,7 +314,8 @@ if(ALICEVISION_BUILD_MVS)
             aliceVision_mvsUtils
             MeshSDLibrary
             Eigen3::Eigen
-            ${Boost_LIBRARIES}
+            Boost::program_options
+            Boost::filesystem
     )
 
     # Mesh Decimate
@@ -301,7 +325,8 @@ if(ALICEVISION_BUILD_MVS)
       LINKS aliceVision_system
             aliceVision_mvsUtils
             OpenMesh
-            ${Boost_LIBRARIES}
+            Boost::program_options
+            Boost::filesystem
     )
   endif()
 
@@ -312,7 +337,8 @@ if(ALICEVISION_BUILD_MVS)
     LINKS aliceVision_system
           aliceVision_mvsUtils
           aliceVision_mesh
-          ${Boost_LIBRARIES}
+          Boost::program_options
+          Boost::filesystem
   )
 
   # Mesh Resampling
@@ -322,7 +348,8 @@ if(ALICEVISION_BUILD_MVS)
     LINKS aliceVision_system
           aliceVision_mvsUtils
           Geogram::geogram
-          ${Boost_LIBRARIES}
+          Boost::program_options
+          Boost::filesystem
   )
 
   # Texturing
@@ -335,6 +362,7 @@ if(ALICEVISION_BUILD_MVS)
           aliceVision_mesh
           aliceVision_sfmData
           aliceVision_sfmDataIO
-          ${Boost_LIBRARIES}
+          Boost::program_options
+          Boost::filesystem
   )
 endif() # if(ALICEVISION_BUILD_MVS)
