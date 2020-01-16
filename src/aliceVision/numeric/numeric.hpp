@@ -62,6 +62,7 @@ typedef Eigen::Matrix<double, 9, 1> Vec9;
 typedef Eigen::Quaternion<double> Quaternion;
 
 typedef Eigen::Matrix<double, 3, 3> Mat3;
+typedef Eigen::Matrix<float, 3, 3> Mat3f;
 
 #if defined(ENV32BIT)
 typedef Eigen::Matrix<double, 2, 3, Eigen::DontAlign> Mat23;

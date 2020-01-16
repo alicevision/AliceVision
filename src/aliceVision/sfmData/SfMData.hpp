@@ -38,10 +38,10 @@ using Landmarks = HashMap<IndexT, Landmark>;
 using Rigs = std::map<IndexT, Rig>;
 
 /// Define uncertainty per pose
-using PosesUncertainty = HashMap<IndexT, Vec6>;
+using PosesUncertainty = HashMap<IndexT, Mat3>;
 
 /// Define uncertainty per landmark
-using LandmarksUncertainty = HashMap<IndexT, Vec3>;
+using LandmarksUncertainty = HashMap<IndexT, Mat3f>;
 
 ///Define a collection of constraints
 using Constraints2D = std::vector<Constraint2D>;

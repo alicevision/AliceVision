@@ -6,7 +6,7 @@ set(FOLDER_SOFTWARE_UTILS "Software/Utils")
 
 if(ALICEVISION_BUILD_SFM)
 # Uncertainty
-if(ALICEVISION_HAVE_UNCERTAINTYTE)
+if(ALICEVISION_HAVE_USFM)
     alicevision_add_software(aliceVision_utils_computeUncertainty
       SOURCE main_computeUncertainty.cpp
       FOLDER ${FOLDER_SOFTWARE_UTILS}
@@ -14,11 +14,11 @@ if(ALICEVISION_HAVE_UNCERTAINTYTE)
             ${CUDA_LIBRARIES}
             ${CUDA_CUBLAS_LIBRARIES}
             ${CUDA_cusparse_LIBRARY}
-            ${UNCERTAINTYTE_LIBRARY}
             Boost::program_options
-      INCLUDE_DIRS ${UNCERTAINTYTE_INCLUDE_DIR}
+            ${USFM_LIBRARY}
+      INCLUDE_DIRS ${USFM_INCLUDE_DIR}
     )
-# message(warning "UNCERTAINTYTE_LIBRARY: ${UNCERTAINTYTE_LIBRARY}")
+# message(warning "USFM_LIBRARY: ${USFM_LIBRARY}")
 # message(warning "CUDA_LIBRARIES: ${CUDA_LIBRARIES}")
 # message(warning "CUDA_CUBLAS_LIBRARIES: ${CUDA_CUBLAS_LIBRARIES}")
 # message(warning "CUDA_cusparse_LIBRARY: ${CUDA_cusparse_LIBRARY}")

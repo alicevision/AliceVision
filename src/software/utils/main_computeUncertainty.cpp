@@ -10,10 +10,15 @@
 #include <aliceVision/system/cmdline.hpp>
 #include <aliceVision/config.hpp>
 
-#include <uncertaintyTE/uncertainty.h>
-#include <uncertaintyTE/IO.h>
+#include <USfM/usfm_data_Scene.hpp>
+#include <USfM/usfm_IO.hpp>
+#include <USfM/usfm_IO_Factory.hpp>
+#include <USfM/usfm_Statistics.hpp>
+#include <USfM/usfm_Algorithm_Factory.hpp>
+#include <USfM/usfm_Projection_Radial3.hpp>
 
 #include <boost/program_options.hpp>
+#include <boost/filesystem.hpp>
 
 #include <string>
 #include <sstream>
@@ -28,7 +33,34 @@ using namespace aliceVision;
 using namespace aliceVision::sfm;
 using namespace aliceVision::sfmData;
 using namespace aliceVision::sfmDataIO;
+using namespace aliceVision::camera;
+
 namespace po = boost::program_options;
+namespace bf = boost::filesystem;
+
+
+inline usfm::ECameraModel intrinsic_aliceVision2usfm(EINTRINSIC intrinsicType)
+{
+  switch(intrinsicType)
+  {
+  case EINTRINSIC::PINHOLE_CAMERA:
+    return usfm::ECameraModel::eSimplePinhole;
+  case EINTRINSIC::PINHOLE_CAMERA_RADIAL1:
+    return usfm::ECameraModel::eRadial1;
+  case EINTRINSIC::PINHOLE_CAMERA_RADIAL3:
+    return usfm::ECameraModel::eRadial3;
+  case EINTRINSIC::PINHOLE_CAMERA_BROWN:
+    throw std::runtime_error("PINHOLE_CAMERA_BROWN not implemented");
+  case EINTRINSIC::PINHOLE_CAMERA_FISHEYE:
+    throw std::runtime_error("PINHOLE_CAMERA_FISHEYE not implemented");
+  case EINTRINSIC::PINHOLE_CAMERA_FISHEYE1:
+    throw std::runtime_error("PINHOLE_CAMERA_FISHEYE1 not implemented");
+  case EINTRINSIC::PINHOLE_CAMERA_END:
+  case EINTRINSIC::PINHOLE_CAMERA_START:
+    break;
+  }
+  throw std::runtime_error("intrinsic_aliceVision2usfm not defined");
+}
 
 
 int main(int argc, char **argv)
@@ -39,7 +71,7 @@ int main(int argc, char **argv)
   std::string sfmDataFilename;
   std::string outSfMDataFilename;
   std::string outputStats;
-  std::string algorithm = cov::EAlgorithm_enumToString(cov::eAlgorithmSvdTaylorExpansion);
+  std::string algorithm = "NBUP"; // cov::EAlgorithm_enumToString(cov::eAlgorithmSvdTaylorExpansion);
   bool debug = false;
 
   po::options_description params("AliceVision Uncertainty");
@@ -102,74 +134,105 @@ int main(int argc, char **argv)
     return EXIT_FAILURE;
   }
 
-  ceres::CRSMatrix jacobian;
+  usfm::Scene uScene;
+
+  for(auto& intrinsicIt: sfmData.intrinsics)
   {
-    BundleAdjustmentCeres bundleAdjustmentObj;
-    BundleAdjustment::ERefineOptions refineOptions = BundleAdjustment::REFINE_ROTATION | BundleAdjustment::REFINE_TRANSLATION | BundleAdjustment::REFINE_STRUCTURE;
-    bundleAdjustmentObj.createJacobian(sfmData, refineOptions, jacobian);
+    std::vector<double> p = intrinsicIt.second->getParams();
+    p.insert(p.begin(), (double)intrinsicIt.second->h());
+    p.insert(p.begin(), (double)intrinsicIt.second->w());
+
+    uScene._cameras[intrinsicIt.first] = usfm::Camera(intrinsicIt.first, intrinsic_aliceVision2usfm(intrinsicIt.second->getType()), p);
   }
 
+  for(auto& viewIt: sfmData.views)
   {
-    cov::Options options;
-    // Configure covariance engine (find the indexes of the most distatnt points etc.)
-    // setPts2Fix(opt, mutable_points.size() / 3, mutable_points.data());
-    options._numCams = sfmData.getValidViews().size();
-    options._camParams = 6;
-    options._numPoints = sfmData.structure.size();
-    options._numObs = jacobian.num_rows / 2;
-    options._algorithm = cov::EAlgorithm_stringToEnum(algorithm);
-    options._epsilon = 1e-10;
-    options._lambda = -1;
-    options._svdRemoveN = -1;
-    options._maxIterTE = -1;
-    options._debug = debug;
-
-    cov::Statistic statistic;
-    std::vector<double> points3D;
-    points3D.reserve(sfmData.structure.size() * 3);
-    for(auto& landmarkIt: sfmData.structure)
+    if(sfmData.isPoseAndIntrinsicDefined(viewIt.second.get()))
     {
-      double* p = landmarkIt.second.X.data();
-      points3D.push_back(p[0]);
-      points3D.push_back(p[1]);
-      points3D.push_back(p[2]);
+      usfm::Image& img = uScene._images[viewIt.first];
+      usfm::ProjectionRadial3 proj;
+      proj.initOffsets(&img);
+
+      img._id = viewIt.first;
+      img._cam_id = viewIt.second->getIntrinsicId();
+
+      // 
+      const geometry::Pose3& pose = sfmData.getPose(*viewIt.second).getTransform();
+      Vec3 c = pose.center();
+
+      // img._offset_in_parameters[usfm::e_aa] = 0;
+      // img._offset_in_parameters[usfm::e_C] = 3;
+      img._parameters.resize(22); // 6?
+      ceres::RotationMatrixToAngleAxis(pose.rotation().data(), img._parameters.data()); // 3 angles axis parameters first
+      img._parameters[3] = c(0);
+      img._parameters[4] = c(1);
+      img._parameters[5] = c(2);
+
+      img.setModel(usfm::eAAC);
+      // img._point2D will be filled later when iterating on landmarks
+    }
+  }
+
+  for(auto& landmarkIt: sfmData.structure)
+  {
+    usfm::Point3D p;
+    p._id = landmarkIt.first;
+    std::memcpy(p._X, landmarkIt.second.X.data(), 3*sizeof(double));
+    uScene._points3D[landmarkIt.first] = p;
+
+    for(auto& obsIt: landmarkIt.second.observations)
+    {
+      usfm::Point2D p;
+      p._id_point3D = landmarkIt.first;
+      p._xy[0] = obsIt.second.x(0);
+      p._xy[1] = obsIt.second.x(1);
+
+      IndexT viewId = obsIt.first;
+      uScene._images[viewId]._point2D.push_back(p); 
+    }
+  }
+
+  uScene.setInputCovarianceEstimator("UNIT");
+
+  ALICEVISION_LOG_INFO(uScene);
+
+  // init algorithm
+  std::shared_ptr<usfm::Algorithm> alg = usfm::Algorithm_Factory::initAlgorithm(algorithm);
+
+  usfm::Statistic statistic;
+  // run algorithm
+  alg->compute(uScene, statistic);
+
+  usfm::IO io;
+  // save the results
+  std::string outputFolder = bf::path(outputStats).parent_path().string();
+  io.writeCov2File(outputFolder, uScene, statistic);
+
+  std::cout << "Export cov into \"" << outputFolder << "\"" << std::endl;
+
+  // Retrieve uncertainty matrices from usfm and copy them into aliceVision::sfmData
+  {
+    int matrix_offset = 0;
+    for (auto &img : uScene._images)
+    {
+      std::shared_ptr<usfm::Projection> proj = usfm::Projection_Factory::createProjection(NULL, &img.second, NULL, NULL);
+      int num_img_params = proj->numImgParams();
+      usfm::DM img_cov_eig = uScene._iZ.block(matrix_offset+3, matrix_offset+3, 3, 3);
+      matrix_offset += num_img_params;
+
+      IndexT poseId = sfmData.views.at(img.second._id)->getPoseId();
+      sfmData._posesUncertainty[poseId] = img_cov_eig;
     }
 
-    cov::Uncertainty uncertainty;
-
-    getCovariances(options, statistic, jacobian, &points3D[0], uncertainty);
-
-    if(!outputStats.empty())
-      saveResults(outputStats, options, statistic, uncertainty);
-
+    auto pointIt = uScene._points3D.begin();
+    for (int k = 0; k < uScene._cov_pts.size(); ++k, ++pointIt)
     {
-      const std::vector<double> posesUncertainty = uncertainty.getCamerasUncEigenValues();
-
-      std::size_t indexPose = 0;
-      for (Poses::const_iterator itPose = sfmData.getPoses().begin(); itPose != sfmData.getPoses().end(); ++itPose, ++indexPose)
-      {
-        const IndexT idPose = itPose->first;
-        Vec6& u = sfmData._posesUncertainty[idPose]; // create uncertainty entry
-        const double* uIn = &posesUncertainty[indexPose*6];
-        u << uIn[0],  uIn[1],  uIn[2],  uIn[3],  uIn[4],  uIn[5];
-      }
-    }
-    {
-      const std::vector<double> landmarksUncertainty = uncertainty.getPointsUncEigenValues();
-
-      std::size_t indexLandmark = 0;
-      for (Landmarks::const_iterator itLandmark = sfmData.getLandmarks().begin(); itLandmark != sfmData.getLandmarks().end(); ++itLandmark, ++indexLandmark)
-      {
-        const IndexT idLandmark = itLandmark->first;
-        Vec3& u = sfmData._landmarksUncertainty[idLandmark]; // create uncertainty entry
-        const double* uIn = &landmarksUncertainty[indexLandmark*3];
-        u << uIn[0],  uIn[1],  uIn[2];
-      }
+      sfmData._landmarksUncertainty[pointIt->first] = uScene._cov_pts[k];
     }
   }
 
   std::cout << "Save into \"" << outSfMDataFilename << "\"" << std::endl;
-  
+
   // Export the SfMData scene in the expected format
   if (!Save(sfmData, outSfMDataFilename, ESfMData(ALL)))
   {

@@ -492,8 +492,9 @@ void AlembicExporter::addLandmarks(const sfmData::Landmarks& landmarks, const sf
     for(sfmData::Landmarks::const_iterator itLandmark = landmarks.begin(); itLandmark != landmarks.end(); ++itLandmark, ++indexLandmark)
     {
       const IndexT idLandmark = itLandmark->first;
-      const Vec3& u = landmarksUncertainty.at(idLandmark);
-      uncertainties.emplace_back(u[0], u[1], u[2]);
+      const Mat3f& u = landmarksUncertainty.at(idLandmark);
+      const Vec3f uD = u.diagonal(); // TODO USFM: do we export the full matrix
+      uncertainties.emplace_back(uD[0], uD[1], uD[2]);
     }
     // Uncertainty eigen values (x,y,z)
     OV3dArrayProperty propUncertainty(userProps, "mvg_uncertaintyEigenValues");
