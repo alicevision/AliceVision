@@ -749,12 +749,14 @@ int main(int argc, char** argv)
     }
     case EImageMatchingMethod::FRUSTUM:
     {
-        PairSet pairs = sfm::FrustumFilter(sfmDataA).getFrustumIntersectionPairs();
-        for(PairSet::iterator it=pairs.begin(); it != pairs.end(); it++)
-        {
-            selectedPairs[it->first].insert(it->second);
-        }
-        break;
+      // For all cameras with valid extrinsic/intrinsic, we select the camera with common visibilities based on cameras' frustum.
+      // We use an epsilon near value for the frustum, to ensure that mulitple images with a pure rotation will not intersect at the nodal point.
+      PairSet pairs = sfm::FrustumFilter(sfmDataA, 0.01).getFrustumIntersectionPairs();
+      for(PairSet::iterator it=pairs.begin(); it != pairs.end(); it++)
+      {
+          selectedPairs[it->first].insert(it->second);
+      }
+      break;
     }
   }
 
