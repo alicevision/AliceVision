@@ -243,6 +243,7 @@ public:
     void saveDh(const std::string& fileNameDh, const std::string& fileNameInfo);
 
     StaticVector<StaticVector<int>*>* createPtsCams();
+    void createPtsCams(StaticVector<StaticVector<int>>& out_ptsCams);
     StaticVector<int>* getPtsCamsHist();
     StaticVector<int>* getPtsNrcHist();
     StaticVector<int> getIsUsedPerCamera() const;

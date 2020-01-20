@@ -5,7 +5,8 @@ if(ALICEVISION_HAVE_OPENCV)
     FOLDER ${FOLDER_SAMPLES}
     LINKS aliceVision_multiview
           ${OpenCV_LIBS}
-          ${Boost_LIBRARIES}
+          Boost::boost
+          Boost::container
   )
 endif()
 

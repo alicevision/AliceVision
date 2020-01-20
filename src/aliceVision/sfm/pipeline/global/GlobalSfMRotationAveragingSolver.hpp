@@ -7,6 +7,10 @@
 
 #pragma once
 
+#include <string>
+#include <iostream>
+#include <aliceVision/system/Logger.hpp>
+
 namespace aliceVision {
 namespace sfm {
 
@@ -21,6 +25,39 @@ enum ERelativeRotationInferenceMethod
   TRIPLET_ROTATION_INFERENCE_NONE = 0,
   TRIPLET_ROTATION_INFERENCE_COMPOSITION_ERROR = 1
 };
+
+inline std::string ERotationAveragingMethod_enumToString(ERotationAveragingMethod eRotationAveragingMethod)
+{
+  switch(eRotationAveragingMethod)
+  {
+    case ERotationAveragingMethod::ROTATION_AVERAGING_L1:
+      return "L1_minimization";
+    case ERotationAveragingMethod::ROTATION_AVERAGING_L2:
+      return "L2_minimization";
+  }
+  throw std::out_of_range("Invalid rotation averaging method type");
+}
+
+inline ERotationAveragingMethod ERotationAveragingMethod_stringToEnum(const std::string& RotationAveragingMethodName)
+{
+  if(RotationAveragingMethodName == "L1_minimization")      return ERotationAveragingMethod::ROTATION_AVERAGING_L1;
+  if(RotationAveragingMethodName == "L2_minimization")   return ERotationAveragingMethod::ROTATION_AVERAGING_L2;
+
+  throw std::out_of_range("Invalid rotation averaging method name : '" + RotationAveragingMethodName + "'");
+}
+
+inline std::ostream& operator<<(std::ostream& os, ERotationAveragingMethod e)
+{
+    return os << ERotationAveragingMethod_enumToString(e);
+}
+
+inline std::istream& operator>>(std::istream& in, ERotationAveragingMethod& rotationType)
+{
+    std::string token;
+    in >> token;
+    rotationType = ERotationAveragingMethod_stringToEnum(token);
+    return in;
+}
 
 } // namespace sfm
 } // namespace aliceVision
@@ -42,6 +79,7 @@ public:
   bool Run(ERotationAveragingMethod eRotationAveragingMethod,
            ERelativeRotationInferenceMethod eRelativeRotationInferenceMethod,
            const rotationAveraging::RelativeRotations& relativeRot_In,
+           const double max_angular_error,
            HashMap<IndexT, Mat3>& map_globalR) const;
 
   /**

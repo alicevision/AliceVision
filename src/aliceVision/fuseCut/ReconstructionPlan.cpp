@@ -283,14 +283,14 @@ void reconstructSpaceAccordingToVoxelsArray(const std::string& voxelsArrayFileNa
 
             // Save mesh as .bin and .obj
             mesh::Mesh* mesh = delaunayGC.createMesh();
-            StaticVector<StaticVector<int>*>* ptsCams = delaunayGC.createPtsCams();
+            StaticVector<StaticVector<int>> ptsCams;
+            delaunayGC.createPtsCams(ptsCams);
 
             mesh::meshPostProcessing(mesh, ptsCams, *ls->mp, folderName, hexahsToExcludeFromResultingMesh, hexah);
             mesh->saveToBin(folderName + "mesh.bin");
             mesh->saveToObj(folderName + "mesh.obj");
 
             saveArrayOfArraysToFile<int>(folderName + "meshPtsCamsFromDGC.bin", ptsCams);
-            deleteArrayOfArrays<int>(&ptsCams);
 
             delete mesh;
         }
@@ -340,20 +340,36 @@ StaticVector<StaticVector<int>*>* loadLargeScalePtsCams(const std::vector<std::s
     return ptsCamsFromDct;
 }
 
+void loadLargeScalePtsCams(const std::vector<std::string>& recsDirs, StaticVector<StaticVector<int>>& out_ptsCams)
+{
+    for(int i = 0; i < recsDirs.size(); ++i)
+    {
+        std::string folderName = recsDirs[i];
+
+        std::string filePtsCamsFromDCTName = folderName + "meshPtsCamsFromDGC.bin";
+
+        if(!mvsUtils::FileExists(filePtsCamsFromDCTName))
+        {
+            throw std::runtime_error("Missing file: " + filePtsCamsFromDCTName);
+        }
+        loadArrayOfArraysFromFile<int>(out_ptsCams, filePtsCamsFromDCTName);
+    }
+}
+
 StaticVector<rgb>* getTrisColorsRgb(mesh::Mesh* me, StaticVector<rgb>* ptsColors)
 {
     StaticVector<rgb>* trisColors = new StaticVector<rgb>();
-    trisColors->resize(me->tris->size());
-    for(int i = 0; i < me->tris->size(); i++)
+    trisColors->resize(me->tris.size());
+    for(int i = 0; i < me->tris.size(); i++)
     {
         float r = 0.0f;
         float g = 0.0f;
         float b = 0.0f;
         for(int j = 0; j < 3; j++)
         {
-            r += (float)(*ptsColors)[(*me->tris)[i].v[j]].r;
-            g += (float)(*ptsColors)[(*me->tris)[i].v[j]].g;
-            b += (float)(*ptsColors)[(*me->tris)[i].v[j]].b;
+            r += (float)(*ptsColors)[me->tris[i].v[j]].r;
+            g += (float)(*ptsColors)[me->tris[i].v[j]].g;
+            b += (float)(*ptsColors)[me->tris[i].v[j]].b;
         }
         (*trisColors)[i].r = (unsigned char)(r / 3.0f);
         (*trisColors)[i].g = (unsigned char)(g / 3.0f);
@@ -379,11 +395,11 @@ mesh::Mesh* joinMeshes(const std::vector<std::string>& recsDirs, StaticVector<Po
         {
             mesh::Mesh* mei = new mesh::Mesh();
             mei->loadFromBin(fileName);
-            npts += mei->pts->size();
-            ntris += mei->tris->size();
+            npts += mei->pts.size();
+            ntris += mei->tris.size();
 
-            ALICEVISION_LOG_DEBUG("npts: " << npts << " " << mei->pts->size());
-            ALICEVISION_LOG_DEBUG("ntris: " << ntris << " " << mei->tris->size());
+            ALICEVISION_LOG_DEBUG("npts: " << npts << " " << mei->pts.size());
+            ALICEVISION_LOG_DEBUG("ntris: " << ntris << " " << mei->tris.size());
 
             delete mei;
         }
@@ -393,10 +409,10 @@ mesh::Mesh* joinMeshes(const std::vector<std::string>& recsDirs, StaticVector<Po
 
     mesh::Mesh* me = new mesh::Mesh();
 
-    me->pts = new StaticVector<Point3d>();
-    me->pts->reserve(npts);
-    me->tris = new StaticVector<mesh::Mesh::triangle>();
-    me->tris->reserve(ntris);
+    me->pts = StaticVector<Point3d>();
+    me->pts.reserve(npts);
+    me->tris = StaticVector<mesh::Mesh::triangle>();
+    me->tris.reserve(ntris);
 
     StaticVector<rgb>* trisCols = new StaticVector<rgb>();
     trisCols->reserve(ntris);
@@ -423,7 +439,7 @@ mesh::Mesh* joinMeshes(const std::vector<std::string>& recsDirs, StaticVector<Po
             mei->removeTrianglesOutsideHexahedron(hexah);
 
             ALICEVISION_LOG_DEBUG("Adding mesh part "<< i << " to mesh");
-            me->addMesh(mei);
+            me->addMesh(*mei);
 
             ALICEVISION_LOG_DEBUG("Merging colors of part: s" << i);
             fileName = folderName + "meshAvImgCol.ply.ptsColors";

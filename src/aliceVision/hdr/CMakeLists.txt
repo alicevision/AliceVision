@@ -1,6 +1,8 @@
 
 # Headers
 set(hdr_files_headers
+ LaguerreBACalibration.hpp
+ sampling.hpp
  rgbCurve.hpp
  RobertsonCalibrate.hpp
  hdrMerge.hpp
@@ -11,6 +13,8 @@ set(hdr_files_headers
 
 # Sources
 set(hdr_files_sources
+ LaguerreBACalibration.cpp
+ sampling.cpp
  rgbCurve.cpp
  RobertsonCalibrate.cpp
  hdrMerge.cpp
@@ -24,7 +28,8 @@ alicevision_add_library(aliceVision_hdr
   PRIVATE_LINKS
     aliceVision_system
     aliceVision_image
-    ${Boost_FILESYSTEM_LIBRARY}
+    Boost::filesystem
+    ${CERES_LIBRARIES}
 )
 
 # Unit tests

@@ -19,7 +19,7 @@ alicevision_add_library(aliceVision_keyframe
   PRIVATE_LINKS
     aliceVision_sensorDB
     aliceVision_system
-    ${Boost_FILESYSTEM_LIBRARY}
+    Boost::filesystem
   PUBLIC_INCLUDE_DIRS
     ${OPENIMAGEIO_INCLUDE_DIRS}
 )

@@ -31,14 +31,14 @@ class PinholeBrownT2 : public Pinhole
     {
     }
 
-    PinholeBrownT2* clone() const { return new PinholeBrownT2(*this); }
-    void assign(const IntrinsicBase& other) { *this = dynamic_cast<const PinholeBrownT2&>(other); }
+    PinholeBrownT2* clone() const override { return new PinholeBrownT2(*this); }
+    void assign(const IntrinsicBase& other) override { *this = dynamic_cast<const PinholeBrownT2&>(other); }
   
-    EINTRINSIC getType() const { return PINHOLE_CAMERA_BROWN; }
+    EINTRINSIC getType() const override { return PINHOLE_CAMERA_BROWN; }
 
-    virtual bool have_disto() const { return true;}
+    virtual bool have_disto() const override { return true;}
 
-    virtual Vec2 add_disto(const Vec2 & p) const{
+    virtual Vec2 add_disto(const Vec2 & p) const override{
         return (p + distoFunction(_distortionParams, p));
     }
 
@@ -46,7 +46,7 @@ class PinholeBrownT2 : public Pinhole
     // Heikkila J (2000) Geometric Camera Calibration Using Circular Control Points.
     // IEEE Trans. Pattern Anal. Mach. Intell., 22:1066-1077
 
-    virtual Vec2 remove_disto(const Vec2 & p) const{
+    virtual Vec2 remove_disto(const Vec2 & p) const override{
         const double epsilon = 1e-8; //criteria to stop the iteration
         Vec2 p_u = p;
 
@@ -59,13 +59,13 @@ class PinholeBrownT2 : public Pinhole
     }
 
     /// Return the un-distorted pixel (with removed distortion)
-    virtual Vec2 get_ud_pixel(const Vec2& p) const
+    virtual Vec2 get_ud_pixel(const Vec2& p) const override
     {
       return cam2ima( remove_disto(ima2cam(p)) );
     }
 
     /// Return the distorted pixel (with added distortion)
-    virtual Vec2 get_d_pixel(const Vec2& p) const
+    virtual Vec2 get_d_pixel(const Vec2& p) const override
     {
       return cam2ima( add_disto(ima2cam(p)) );
     }

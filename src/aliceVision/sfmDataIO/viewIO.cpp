@@ -153,12 +153,15 @@ std::shared_ptr<camera::IntrinsicBase> getViewIntrinsic(const sfmData::View& vie
   {
     intrinsicType = camera::EINTRINSIC_stringToEnum(cameraModel);
   }
+  /*
+  // Warning: This resize heuristic is disabled as RAW images have a different size in metadata.
   else if(isResized)
   {
     // if the image has been resized, we assume that it has been undistorted
     // and we use a camera without lens distortion.
     intrinsicType = camera::PINHOLE_CAMERA;
   }
+  */
   else if((focalLengthIn35mm > 0.0 && focalLengthIn35mm < 18.0) || (defaultFieldOfView > 100.0))
   {
     // if the focal lens is short, the fisheye model should fit better.

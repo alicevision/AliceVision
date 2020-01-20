@@ -7,5 +7,5 @@ alicevision_add_software(aliceVision_samples_robustFundamental
         aliceVision_matching
         aliceVision_system
         vlsift
-        ${Boost_LIBRARIES}
+        Boost::program_options
 )

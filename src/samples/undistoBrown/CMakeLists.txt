@@ -5,5 +5,8 @@ alicevision_add_software(aliceVision_samples_undistoBrown
         aliceVision_image
         aliceVision_multiview
         ${CERES_LIBRARIES}
-        ${Boost_LIBRARIES}
+        Boost::program_options
+        Boost::filesystem
+        Boost::regex
+        Boost::boost
 )

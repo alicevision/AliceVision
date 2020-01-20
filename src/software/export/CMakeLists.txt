@@ -13,7 +13,10 @@ if(ALICEVISION_HAVE_ALEMBIC)
     LINKS aliceVision_system
           aliceVision_sfmData
           aliceVision_sfmDataIO
-          ${Boost_LIBRARIES}
+          Boost::program_options
+          Boost::filesystem
+          Boost::boost
+          Boost::timer
   )
 endif()
 
@@ -26,7 +29,10 @@ alicevision_add_software(aliceVision_exportKeypoints
         aliceVision_sfm
         aliceVision_sfmData
         aliceVision_sfmDataIO
-        ${Boost_LIBRARIES}
+        Boost::program_options
+        Boost::filesystem
+        Boost::boost
+        Boost::timer
 )
 
 # Export view computed matches (putatives, geometrics) per image pair
@@ -38,7 +44,10 @@ alicevision_add_software(aliceVision_exportMatches
         aliceVision_sfm
         aliceVision_sfmData
         aliceVision_sfmDataIO
-        ${Boost_LIBRARIES}
+        Boost::program_options
+        Boost::filesystem
+        Boost::boost
+        Boost::timer
 )
 
 # Export view tracks per image pair
@@ -50,7 +59,10 @@ alicevision_add_software(aliceVision_exportTracks
         aliceVision_sfm
         aliceVision_sfmData
         aliceVision_sfmDataIO
-        ${Boost_LIBRARIES}
+        Boost::program_options
+        Boost::filesystem
+        Boost::boost
+        Boost::timer
 )
 
 # Export a SfM aliceVision scene to PMVS format
@@ -62,7 +74,10 @@ alicevision_add_software(aliceVision_exportPMVS
         aliceVision_feature
         aliceVision_sfmData
         aliceVision_sfmDataIO
-        ${Boost_LIBRARIES}
+        Boost::program_options
+        Boost::filesystem
+        Boost::boost
+        Boost::timer
 )
 
 # Export point cloud
@@ -74,7 +89,7 @@ alicevision_add_software(aliceVision_exportColoredPointCloud
         aliceVision_feature
         aliceVision_sfmData
         aliceVision_sfmDataIO
-        ${Boost_LIBRARIES}
+        Boost::program_options
 )
 
 # Export a SfM aliceVision scene to MayaMVG
@@ -87,7 +102,10 @@ if(ALICEVISION_HAVE_ALEMBIC) # maya can read alembic file
           aliceVision_feature
           aliceVision_sfmData
           aliceVision_sfmDataIO
-          ${Boost_LIBRARIES}
+          Boost::program_options
+          Boost::filesystem
+          Boost::boost
+          Boost::timer
           ${OPENIMAGEIO_LIBRARIES}
   )
 endif()
@@ -101,7 +119,10 @@ alicevision_add_software(aliceVision_exportMVE2
         aliceVision_feature
         aliceVision_sfmData
         aliceVision_sfmDataIO
-        ${Boost_LIBRARIES}
+        Boost::program_options
+        Boost::filesystem
+        Boost::boost
+        Boost::timer
 )
 
 # Export a SfM aliceVision scene to meshlab scene with rasters
@@ -113,7 +134,10 @@ alicevision_add_software(aliceVision_exportMeshlab
         aliceVision_feature
         aliceVision_sfmData
         aliceVision_sfmDataIO
-        ${Boost_LIBRARIES}
+        Boost::program_options
+        Boost::filesystem
+        Boost::boost
+        Boost::timer
 )
 
 # Export a SfM aliceVision scene to mvs-texturing scene folder
@@ -125,7 +149,8 @@ alicevision_add_software(aliceVision_exportMVSTexturing
         aliceVision_feature
         aliceVision_sfmData
         aliceVision_sfmDataIO
-        ${Boost_LIBRARIES}
+        Boost::program_options
+        Boost::filesystem
 )
 
 # Export a SfM aliceVision scene to Matlab
@@ -137,7 +162,10 @@ alicevision_add_software(aliceVision_exportMatlab
         aliceVision_feature
         aliceVision_sfmData
         aliceVision_sfmDataIO
-        ${Boost_LIBRARIES}
+        Boost::program_options
+        Boost::filesystem
+        Boost::boost
+        Boost::timer
 )
 
 # Export SfM aliceVision camera scene as triangle meshes
@@ -149,6 +177,7 @@ alicevision_add_software(aliceVision_exportCameraFrustums
         aliceVision_sfm
         aliceVision_sfmData
         aliceVision_sfmDataIO
-        ${Boost_LIBRARIES}
+        Boost::program_options
+        Boost::filesystem
 )
 endif()

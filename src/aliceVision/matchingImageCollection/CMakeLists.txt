@@ -33,7 +33,9 @@ alicevision_add_library(aliceVision_matchingImageCollection
     aliceVision_multiview
     aliceVision_robustEstimation
     aliceVision_sfmData
-    ${Boost_LIBRARIES}
+    Boost::boost
+    Boost::timer
+    Boost::filesystem
   PRIVATE_LINKS
     aliceVision_system
     ${CERES_LIBRARIES}

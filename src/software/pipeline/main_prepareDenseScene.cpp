@@ -137,8 +137,8 @@ bool prepareDenseScene(const SfMData& sfmData,
   boost::progress_display progressBar(viewIds.size(), std::cout, "Exporting Scene Undistorted Images\n");
 
   // for exposure correction
-  const float medianEv = sfmData.getMedianEv();
-  ALICEVISION_LOG_INFO("median Ev : " << medianEv);
+  const float medianCameraExposure = sfmData.getMedianCameraExposureSetting();
+  ALICEVISION_LOG_INFO("Median Camera Exposure: " << medianCameraExposure << ", Median EV: " << std::log2(1.0f/medianCameraExposure));
 
 #pragma omp parallel for num_threads(3)
   for(int i = 0; i < viewIds.size(); ++i)
@@ -251,15 +251,15 @@ bool prepareDenseScene(const SfMData& sfmData,
       const IntrinsicBase* cam = iterIntrinsic->second.get();
 
       // add exposure values to images metadata
-      float exposure = view->getEv();
-      float exposureCompensation = view->getEvCompensation(medianEv);
-      metadata.push_back(oiio::ParamValue("AliceVision:EV", exposure));
+      float cameraExposure = view->getCameraExposureSetting();
+      float ev = std::log2(1.0 / cameraExposure);
+      float exposureCompensation = medianCameraExposure / cameraExposure;
+      metadata.push_back(oiio::ParamValue("AliceVision:EV", ev));
       metadata.push_back(oiio::ParamValue("AliceVision:EVComp", exposureCompensation));
 
       if(evCorrection)
       {
-          ALICEVISION_LOG_INFO("image " + std::to_string(viewId) + " Ev : " + std::to_string(exposure));
-          ALICEVISION_LOG_INFO("image " + std::to_string(viewId) + " Ev compensation : " + std::to_string(exposureCompensation));
+          ALICEVISION_LOG_INFO("image " << viewId << ", exposure: " << cameraExposure << ", Ev " << ev << " Ev compensation: " + std::to_string(exposureCompensation));
       }
 
       image::Image<unsigned char> mask;

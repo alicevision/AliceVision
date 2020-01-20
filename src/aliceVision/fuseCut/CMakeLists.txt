@@ -31,9 +31,9 @@ alicevision_add_library(aliceVision_fuseCut
     aliceVision_mesh
     aliceVision_system
     Geogram::geogram
-    ${Boost_FILESYSTEM_LIBRARY}
-    ${Boost_GRAPH_LIBRARY}
-    ${Boost_CONTAINER_LIBRARY}
+    Boost::filesystem
+    Boost::graph
+    Boost::container
   PRIVATE_LINKS
     nanoflann
 )

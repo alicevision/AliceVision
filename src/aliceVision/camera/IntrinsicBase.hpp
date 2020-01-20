@@ -124,6 +124,20 @@ struct IntrinsicBase
       return this->cam2ima( X.head<2>()/X(2) );
   }
 
+  inline Vec3 backproject(const geometry::Pose3& pose, const Vec2& pt2D, double depth, bool applyUndistortion = true) const
+  {
+    Vec2 pt2DCam;
+    if (applyUndistortion && this->have_disto()) // apply disto & intrinsics
+      pt2DCam = this->ima2cam(this->remove_disto(pt2D));
+    else
+      pt2DCam = this->ima2cam(pt2D);
+
+    const Vec3 pt2DCamN = pt2DCam.homogeneous().normalized();
+    const Vec3 pt3d = depth * pt2DCamN;
+    const Vec3 output = pose.inverse()(pt3d);
+    return output;
+  }
+
   /**
    * @brief Compute the residual between the 3D projected point X and an image observation x
    * @param[in] pose The pose
@@ -336,6 +350,40 @@ struct IntrinsicBase
   }
 
   /**
+   * @brief Return true if this ray should be visible in the image
+   * @param ray input ray to check for visibility
+   * @return true if this ray is visible theorically
+   */
+  virtual bool isVisibleRay(const Vec3 & ray) const = 0;
+
+  /**
+   * @brief Return true if these pixel coordinates should be visible in the image
+   * @param pix input pixel coordinates to check for visibility
+   * @return true if visible
+   */
+  virtual bool isVisible(const Vec2 & pix) const {
+
+    if (pix(0) < 0 || pix(0) >= _w || pix(1) < 0 || pix(1) >= _h) {
+      return false;
+    }
+
+    return true;
+  }
+
+  /**
+   * @brief Assuming the distortion is a function of radius, estimate the 
+   * maximal undistorted radius for a range of distorted radius.
+   * @param min_radius the minimal radius to consider
+   * @param max_radius the maximal radius to consider
+   * @return the maximal undistorted radius
+   */
+  virtual float getMaximalDistortion(double min_radius, double max_radius) const {
+
+    /*Without distortion, obvious*/
+    return max_radius;
+  }
+
+  /**
    * @brief Generate an unique Hash from the camera parameters (used for grouping)
    * @return Unique Hash from the camera parameters
    */
@@ -350,6 +398,16 @@ struct IntrinsicBase
     for (size_t i=0; i < params.size(); ++i)
       stl::hash_combine(seed, params[i]);
     return seed;
+  }
+
+  /**
+   * @brief Rescale intrinsics to reflect a rescale of the camera image
+   * @param factor a scale factor
+   */
+  virtual void rescale(float factor) {
+
+    _w = (unsigned int)(floor(float(_w) * factor));
+    _h = (unsigned int)(floor(float(_h) * factor));
   }
 
 private:
@@ -414,6 +472,7 @@ inline double AngleBetweenRays(const geometry::Pose3& pose1,
   const Vec3 ray2 = pt3D - pose2.center();
   return AngleBetweenRays(ray1, ray2);
 }
+
 
 } // namespace camera
 } // namespace aliceVision

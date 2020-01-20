@@ -36,7 +36,7 @@ alicevision_add_library(aliceVision_localization
   PRIVATE_LINKS
     aliceVision_system
     aliceVision_matchingImageCollection
-    ${Boost_FILESYSTEM_LIBRARY}
+    Boost::filesystem
 )
 
 if(ALICEVISION_HAVE_CCTAG)
