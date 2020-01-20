@@ -821,6 +821,7 @@ bool BundleAdjustmentCeres::adjust(sfmData::SfMData& sfmData, ERefineOptions ref
   // update input sfmData with the solution
   updateFromSolution(sfmData, refineOptions);
 
+
   // store some statitics from the summary
   _statistics.time = summary.total_time_in_seconds;
   _statistics.nbSuccessfullIterations = summary.num_successful_steps;

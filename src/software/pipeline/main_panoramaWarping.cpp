@@ -373,7 +373,7 @@ public:
     if (input.Height() != _pyramid_color[0].Height()) return false;
     if (input.Width() != _pyramid_color[0].Width()) return false;
 
-
+    
     /**
      * Kernel
      */
@@ -459,7 +459,7 @@ public:
     if (!computeCoarseBB(coarse_bbox, panoramaSize, pose, intrinsics)) {
       return false;
     }
-    
+
 
     /* Effectively compute the warping map */
     aliceVision::image::Image<Eigen::Vector2d> buffer_coordinates(coarse_bbox.width, coarse_bbox.height, false);
@@ -513,12 +513,11 @@ public:
           continue;
         }
 
-        Vec2 center = {3840/2, 5760/2};
-
+        /*Vec2 center = {3840/2, 5760/2};
         double dist = (pix_disto - center).norm();
-        if (dist > (3840.0/2.0) * 0.90) {
+        if (dist > (3840.0/2.0) * 0.99) {
           continue;
-        }
+        }*/
 
 
         buffer_coordinates(y, x) = pix_disto;
@@ -1237,14 +1236,15 @@ int main(int argc, char **argv) {
     /**
      * Get intrinsics and extrinsics
      */
-    const geometry::Pose3 camPose = sfmData.getPose(view).getTransform();
-    const camera::IntrinsicBase & intrinsic = *sfmData.getIntrinsicPtr(view.getIntrinsicId());
+    geometry::Pose3 camPose = sfmData.getPose(view).getTransform();
+    std::shared_ptr<camera::IntrinsicBase> intrinsic = sfmData.getIntrinsicsharedPtr(view.getIntrinsicId());
+    std::shared_ptr<camera::IntrinsicsScaleOffsetDisto> casted = std::dynamic_pointer_cast<camera::IntrinsicsScaleOffsetDisto>(intrinsic);    
 
     /**
      * Prepare coordinates map
     */
     CoordinatesMap map;
-    map.build(panoramaSize, camPose, intrinsic);
+    map.build(panoramaSize, camPose, *(intrinsic.get()));
 
     /**
      * Load image and convert it to linear colorspace
@@ -1264,7 +1264,7 @@ int main(int argc, char **argv) {
     * Alpha mask
     */
     AlphaBuilder alphabuilder;
-    alphabuilder.build(map, intrinsic);
+    alphabuilder.build(map, *(intrinsic.get()));
 
 
     /**

@@ -259,7 +259,7 @@ int main(int argc, char **argv)
    * If an initial set of poses was available, make sure at least one pose is aligned with it
    */
   sfmData::Poses & final_poses = outSfmData.getPoses();
-  if (!final_poses.empty()) { 
+  if (!final_poses.empty() && !initial_poses.empty()) { 
     
     Eigen::Matrix3d ref_R_current = final_poses.begin()->second.getTransform().rotation();
     Eigen::Matrix3d R_restore = ref_R_current.transpose() * ref_R_base;

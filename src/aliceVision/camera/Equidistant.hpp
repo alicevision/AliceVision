@@ -60,22 +60,24 @@ class EquiDistant : public IntrinsicsScaleOffsetDisto
     X.normalize();
 
     /* Compute angle with optical center */
-    double angle_Z = std::acos(X(2));
+    double angle_Z = std::atan2(sqrt(X(0)*X(0)+ X(1)*X(1)), X(2));
 
     /* Ignore depth component and compute radial angle */
     double angle_radial = std::atan2(X(1), X(0));
 
+    double radius = angle_Z / _scale_x;
+
     /* radius = focal * angle_Z */
     Vec2 P;
-    P(0) = cos(angle_radial) * angle_Z;
-    P(1) = sin(angle_radial) * angle_Z;
+    P(0) = cos(angle_radial) * radius;
+    P(1) = sin(angle_radial) * radius;
 
-    if (applyDistortion && this->have_disto()) {
-      return this->cam2ima(this->add_disto(P));
-    }
-    else {
-      return this->cam2ima(P);
-    }
+    P = this->add_disto(P);
+
+    P(0) = 1909.11 * P(0) + _offset_x;
+    P(1) = 1909.11 * P(1) + _offset_x;
+
+    return P;
   }
 
   virtual Vec3 toUnitSphere(const Vec2 & pt) const override {
@@ -107,7 +109,11 @@ class EquiDistant : public IntrinsicsScaleOffsetDisto
     
     Vec2 proj = project(geometry::Pose3(), ray, true);
 
-    if (proj(0) < 0 || proj(0) >= _w || proj(1) < 0 || proj(1) >= _h) {
+    /*if (proj(0) < 0 || proj(0) >= _w || proj(1) < 0 || proj(1) >= _h) {
+      return false;
+    }*/
+
+    if (ray(2) < 0.0) {
       return false;
     }
 

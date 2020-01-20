@@ -614,6 +614,7 @@ void computeNewCoordinateSystemFromSingleCamera(const sfmData::SfMData& sfmData,
           break;
     case sfmData::EEXIFOrientation::NONE:
           ALICEVISION_LOG_TRACE("computeNewCoordinateSystemFromSingleCamera orientation: NONE");
+          break;
     default:
           ALICEVISION_LOG_TRACE("computeNewCoordinateSystemFromSingleCamera orientation: default");
           out_R = Eigen::AngleAxisd(degreeToRadian(180.0),  Vec3(0,1,0))

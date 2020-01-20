@@ -98,9 +98,13 @@ public:
   /// Add distortion to the point p (assume p is in the camera frame [normalized coordinates])
   virtual Vec2 add_disto(const Vec2 & p) const override
   {
-    const double k1 = _distortionParams[0], k2 = _distortionParams[1], k3 = _distortionParams[2];
+    const double k1 = _distortionParams[0];
+    const double k2 = _distortionParams[1];
+    const double k3 = _distortionParams[2];
 
-    const double r2 = p(0)*p(0) + p(1)*p(1);
+    const double r = sqrt(p(0)*p(0) + p(1)*p(1));
+    
+    const double r2 = r * r;
     const double r4 = r2 * r2;
     const double r6 = r4 * r2;
     const double r_coeff = (1. + k1*r2 + k2*r4 + k3*r6);
@@ -117,7 +121,7 @@ public:
     const double radius = (r2 == 0) ? //1. : ::sqrt(bisectionSolve(_distortionParams, r2) / r2);
       1. :
       ::sqrt(radial_distortion::bisection_Radius_Solve(_distortionParams, r2, distoFunctor) / r2);
-    return radius * p;;
+    return radius * p;
   }
 
   virtual double getUndistortedRadius(double r) const override {

@@ -27,6 +27,10 @@ public:
   inline double focal() const {
     return _scale_x;
   }
+
+  void setFocal(double f) {
+    _scale_x = f;
+  } 
   
   inline Vec2 principal_point() const {
     return Vec2(_offset_x, _offset_y);
