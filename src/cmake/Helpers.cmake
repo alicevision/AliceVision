@@ -162,26 +162,29 @@ function(alicevision_add_software software_name)
     list(APPEND SOFTWARE_SOURCE "${CMAKE_CURRENT_BINARY_DIR}/${software_name}_version.rc")
   endif()
 
-  add_executable(${software_name} ${SOFTWARE_SOURCE})
+  add_executable(${software_name}_exe ${SOFTWARE_SOURCE})
+  set_target_properties(${software_name}_exe PROPERTIES
+    OUTPUT_NAME ${software_name}
+    )
 
-  target_link_libraries(${software_name}
+  target_link_libraries(${software_name}_exe
     PUBLIC ${SOFTWARE_LINKS}
   )
 
-  target_include_directories(${software_name}
+  target_include_directories(${software_name}_exe
     PUBLIC ${SOFTWARE_INCLUDE_DIRS}
   )
 
-  set_property(TARGET ${software_name}
+  set_property(TARGET ${software_name}_exe
     PROPERTY FOLDER ${SOFTWARE_FOLDER}
   )
 
-  set_target_properties(${software_name}
+  set_target_properties(${software_name}_exe
      PROPERTIES SOVERSION ${ALICEVISION_SOFTWARE_VERSION_MAJOR}
      VERSION "${ALICEVISION_SOFTWARE_VERSION_MAJOR}.${ALICEVISION_SOFTWARE_VERSION_MINOR}"
   )
 
-  install(TARGETS ${software_name}
+  install(TARGETS ${software_name}_exe
     RUNTIME
       DESTINATION ${CMAKE_INSTALL_BINDIR}
   )

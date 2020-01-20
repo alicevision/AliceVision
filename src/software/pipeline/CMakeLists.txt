@@ -20,6 +20,21 @@ if(ALICEVISION_BUILD_SFM)
           ${Boost_LIBRARIES}
   )
 
+  # Image processing
+  if(ALICEVISION_HAVE_OPENCV)
+    alicevision_add_software(aliceVision_imageMasking
+      SOURCE main_imageMasking.cpp
+      FOLDER ${FOLDER_SOFTWARE_PIPELINE}
+      LINKS aliceVision_image
+            aliceVision_imageMasking
+            aliceVision_system
+            aliceVision_sfmData
+            aliceVision_sfmDataIO
+            ${OpenCV_LIBRARIES}
+            ${Boost_LIBRARIES}
+    )
+  endif()
+
   # Feature extraction
   alicevision_add_software(aliceVision_featureExtraction
     SOURCE main_featureExtraction.cpp
@@ -128,7 +143,7 @@ if(ALICEVISION_BUILD_SFM)
   )
 
   if(ALICEVISION_HAVE_CCTAG)
-    target_link_libraries(aliceVision_rigCalibration PUBLIC CCTag::CCTag)
+    target_link_libraries(aliceVision_rigCalibration_exe PUBLIC CCTag::CCTag)
   endif()
 
   # Localize a camera
@@ -144,7 +159,7 @@ if(ALICEVISION_BUILD_SFM)
   )
 
   if(ALICEVISION_HAVE_CCTAG)
-    target_link_libraries(aliceVision_cameraLocalization PUBLIC CCTag::CCTag)
+    target_link_libraries(aliceVision_cameraLocalization_exe PUBLIC CCTag::CCTag)
   endif()
 
   # Localize a rig
@@ -161,7 +176,7 @@ if(ALICEVISION_BUILD_SFM)
   )
 
   if(ALICEVISION_HAVE_CCTAG)
-    target_link_libraries(aliceVision_rigLocalization PUBLIC CCTag::CCTag)
+    target_link_libraries(aliceVision_rigLocalization_exe PUBLIC CCTag::CCTag)
   endif()
 
   # Prepare dense scene for MVS

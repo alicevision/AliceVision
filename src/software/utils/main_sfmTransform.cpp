@@ -309,11 +309,21 @@ int main(int argc, char **argv)
   t *= userScale;
 
   if (!applyScale)
+  {
+      if (applyTranslation)
+          t = t / S;
       S = 1;
+  }
   if (!applyRotation)
+  {
+      if (applyTranslation)
+          t = R.inverse() * t;
       R = Mat3::Identity();
+  }
   if (!applyTranslation)
+  {
       t = Vec3::Zero();
+  }
 
   {
       ALICEVISION_LOG_INFO("Transformation:" << std::endl

@@ -157,6 +157,14 @@ public:
   }
 
   /**
+  * @brief Get the sub-poses const vector
+  * @return rig sub-poses
+  */
+  std::vector<RigSubPose>& getSubPoses()
+  {
+      return _subPoses;
+  }
+  /**
    * @brief Get the sub-pose for the given sub-pose index
    * @param index The sub-pose index
    * @return corresponding rig sub-pose

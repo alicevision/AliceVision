@@ -308,6 +308,11 @@ struct RealPixel
   {
     return static_cast<base_type>( val );
   }
+
+  static real_type zero()
+  {
+    return real_type(0);
+  }
 };
 
 // overloading for unsigned char
@@ -331,6 +336,11 @@ struct RealPixel<unsigned char>
                     std::numeric_limits<base_type>::max() :
                     static_cast<base_type>( val + 0.5 ) ) ;
   }
+
+  static real_type zero()
+  {
+    return 0.;
+  }
 } ;
 
 // overloading for float
@@ -348,6 +358,11 @@ struct RealPixel<float>
   static base_type convert_from_real( const real_type & val )
   {
     return static_cast<base_type>(val);
+  }
+
+  static real_type zero()
+  {
+    return real_type(0);
   }
 };
 
@@ -369,6 +384,11 @@ struct RealPixel< Rgb<T> >
                       RealPixel<T>::convert_from_real( val.g() ) ,
                       RealPixel<T>::convert_from_real( val.b() ) ) ;
   }
+
+  static real_type zero()
+  {
+    return real_type(real_type::Zero());
+  }
 } ;
 
 // overloading for rgba
@@ -389,6 +409,11 @@ struct RealPixel< Rgba<T> >
                       RealPixel<T>::convert_from_real( val.g() ) ,
                       RealPixel<T>::convert_from_real( val.b() ) ,
                       RealPixel<T>::convert_from_real( val.a() ) ) ;
+  }
+
+  static real_type zero()
+  {
+    return real_type(real_type::Zero());
   }
 } ;
 
@@ -430,7 +455,7 @@ struct Sampler2d
     _sampler( dx , coefs_x ) ;
     _sampler( dy , coefs_y ) ;
 
-    typename RealPixel<T>::real_type res(0) ;
+    auto res = RealPixel<T>::zero();
 
     // integer position of sample (x,y)
     const int grid_x = static_cast<int>( floor( x ) );
