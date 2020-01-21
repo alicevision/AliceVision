@@ -162,10 +162,11 @@ struct TracksBuilder
 
   /**
    * @brief Remove bad tracks (too short or track with ids collision)
-   * @param[in] minTrackLength
+   * @param[in] clearForks: remove tracks with multiple observation in a single image
+   * @param[in] minTrackLength: minimal number of observations to keep the track
    * @param[in] multithreaded Is multithreaded
    */
-  void filter(std::size_t minTrackLength = 2, bool multithreaded = true);
+  void filter(bool clearForks = true, std::size_t minTrackLength = 2, bool multithreaded = true);
 
   /**
    * @brief Export to stream

@@ -15,6 +15,7 @@
 #include <aliceVision/system/cmdline.hpp>
 #include <aliceVision/types.hpp>
 #include <aliceVision/config.hpp>
+#include <aliceVision/track/Track.hpp>
 
 #include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>
@@ -30,6 +31,7 @@ using namespace aliceVision;
 
 namespace po = boost::program_options;
 namespace fs = boost::filesystem;
+using namespace aliceVision::track;
 
 /**
  * @brief Retrieve the view id in the sfmData from the image filename.
@@ -152,8 +154,8 @@ int main(int argc, char **argv)
     ("useOnlyMatchesFromInputFolder", po::value<bool>(&useOnlyMatchesFromInputFolder)->default_value(useOnlyMatchesFromInputFolder),
       "Use only matches from the input matchesFolder parameter.\n"
       "Matches folders previously added to the SfMData file will be ignored.")
-    ("useTrackFiltering", po::value<bool>(&sfmParams.useTrackFiltering)->default_value(sfmParams.useTrackFiltering),
-      "Enable/Disable the track filtering.\n")
+    ("filterTrackForks", po::value<bool>(&sfmParams.filterTrackForks)->default_value(sfmParams.filterTrackForks),
+      "Enable/Disable the track forks removal. A track contains a fork when incoherent matches leads to multiple features in the same image for a single track.\n")
     ("useRigConstraint", po::value<bool>(&sfmParams.useRigConstraint)->default_value(sfmParams.useRigConstraint),
       "Enable/Disable rig constraint.\n")
     ("lockScenePreviouslyReconstructed", po::value<bool>(&lockScenePreviouslyReconstructed)->default_value(lockScenePreviouslyReconstructed),

@@ -236,11 +236,8 @@ std::size_t ReconstructionEngine_sequentialSfM::fuseMatchesIntoTracks()
     ALICEVISION_LOG_DEBUG("Track building");
     tracksBuilder.build(matches);
 
-    if(_params.useTrackFiltering)
-    {
-      ALICEVISION_LOG_DEBUG("Track filtering");
-      tracksBuilder.filter(_params.minInputTrackLength);
-    }
+    ALICEVISION_LOG_DEBUG("Track filtering");
+    tracksBuilder.filter(_params.filterTrackForks, _params.minInputTrackLength);
 
     ALICEVISION_LOG_DEBUG("Track export to internal structure");
     // build tracks with STL compliant type
