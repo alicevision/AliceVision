@@ -35,6 +35,7 @@ inline bool loadPairwiseMatches(
     const std::vector<std::string>& folders,
     const std::vector<feature::EImageDescriberType>& descTypes,
     const int maxNbMatches = 0,
+    const int minNbMatches = 0,
     bool useOnlyMatchesFromFolder = false)
 {
   std::vector<std::string> matchesFolders;
@@ -47,7 +48,7 @@ inline bool loadPairwiseMatches(
   matchesFolders.insert(matchesFolders.end(), folders.begin(), folders.end());
 
   ALICEVISION_LOG_DEBUG("Loading matches");
-  if (!matching::Load(out_pairwiseMatches, sfmData.getViewsKeys(), matchesFolders, descTypes, maxNbMatches))
+  if (!matching::Load(out_pairwiseMatches, sfmData.getViewsKeys(), matchesFolders, descTypes, maxNbMatches, minNbMatches))
   {
     std::stringstream ss("Unable to read the matches file(s) from:\n");
     for(const std::string& folder : matchesFolders)

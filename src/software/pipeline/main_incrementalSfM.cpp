@@ -87,6 +87,7 @@ int main(int argc, char **argv)
   sfm::ReconstructionEngine_sequentialSfM::Params sfmParams;
   bool lockScenePreviouslyReconstructed = true;
   int maxNbMatches = 0;
+  int minNbMatches = 0;
   bool useOnlyMatchesFromInputFolder = false;
 
   po::options_description allParams(
@@ -118,6 +119,9 @@ int main(int argc, char **argv)
     ("maxNumberOfMatches", po::value<int>(&maxNbMatches)->default_value(maxNbMatches),
       "Maximum number of matches per image pair (and per feature type). "
       "This can be useful to have a quick reconstruction overview. 0 means no limit.")
+    ("minNumberOfMatches", po::value<int>(&minNbMatches)->default_value(minNbMatches),
+      "Minimum number of matches per image pair (and per feature type). "
+      "This can be useful to have a meaningful reconstruction with accurate keypoints. 0 means no limit.")
     ("minInputTrackLength", po::value<int>(&sfmParams.minInputTrackLength)->default_value(sfmParams.minInputTrackLength),
       "Minimum track length in input of SfM.")
     ("minAngleForTriangulation", po::value<double>(&sfmParams.minAngleForTriangulation)->default_value(sfmParams.minAngleForTriangulation),
@@ -242,7 +246,7 @@ int main(int argc, char **argv)
   
   // matches reading
   matching::PairwiseMatches pairwiseMatches;
-  if(!sfm::loadPairwiseMatches(pairwiseMatches, sfmData, matchesFolders, describerTypes, maxNbMatches, useOnlyMatchesFromInputFolder))
+  if(!sfm::loadPairwiseMatches(pairwiseMatches, sfmData, matchesFolders, describerTypes, maxNbMatches, minNbMatches, useOnlyMatchesFromInputFolder))
   {
     ALICEVISION_LOG_ERROR("Unable to load matches.");
     return EXIT_FAILURE;
