@@ -236,50 +236,6 @@ if(ALICEVISION_HAVE_OPENMP)
 endif()
 
 # ==============================================================================
-# CCTag
-# ==============================================================================
-# - optional, only external and enabled only if ALICEVISION_USE_CCTAG is ON
-# ==============================================================================
-set(ALICEVISION_HAVE_CCTAG 0)
-
-if(ALICEVISION_BUILD_SFM)
-  if(NOT ALICEVISION_USE_CCTAG STREQUAL "OFF")
-    if(ALICEVISION_HAVE_OPENCV)
-      find_package(CCTag 1.0.0 CONFIG)
-
-      if(CCTag_FOUND)
-        set(ALICEVISION_HAVE_CCTAG 1)
-        message(STATUS "CCTAG ${CCTag_VERSION} found.")
-      elseif(ALICEVISION_USE_CCTAG STREQUAL "ON")
-        message(SEND_ERROR "Failed to find CCTAG.")
-      endif()
-    elseif(ALICEVISION_USE_CCTAG STREQUAL "ON")
-      message(SEND_ERROR "Can't use CCTAG without OPENCV.")
-    endif()
-  endif()
-endif()
-
-# ==============================================================================
-# PopSift
-# ==============================================================================
-# - optional, only external and enabled only if ALICEVISION_USE_POPSIFT is ON
-# ==============================================================================
-set(ALICEVISION_HAVE_POPSIFT 0)
-
-if(ALICEVISION_BUILD_SFM)
-  if(NOT ALICEVISION_USE_POPSIFT STREQUAL "OFF")
-    find_package(PopSift CONFIG)
-
-    if(PopSift_FOUND)
-      set(ALICEVISION_HAVE_POPSIFT 1)
-      message(STATUS "PopSIFT found.")
-    elseif(ALICEVISION_USE_POPSIFT STREQUAL "ON")
-      message(SEND_ERROR "Failed to find PopSIFT.")
-    endif()
-  endif()
-endif()
-
-# ==============================================================================
 # Boost
 # ==============================================================================
 option(BOOST_NO_CXX11 "if Boost is compiled without C++11 support (as it is often the case in OS packages) this must be enabled to avoid symbol conflicts (SCOPED_ENUM)." OFF)
@@ -603,6 +559,50 @@ if(ALICEVISION_BUILD_SFM)
   if(ALICEVISION_HAVE_OPENGV)
     include_directories(${OPENGV_INCLUDE_DIR})
     link_directories(${OPENGV_LIBRARY_DIR})
+  endif()
+endif()
+
+# ==============================================================================
+# CCTag
+# ==============================================================================
+# - optional, only external and enabled only if ALICEVISION_USE_CCTAG is ON
+# ==============================================================================
+set(ALICEVISION_HAVE_CCTAG 0)
+
+if(ALICEVISION_BUILD_SFM)
+  if(NOT ALICEVISION_USE_CCTAG STREQUAL "OFF")
+    if(ALICEVISION_HAVE_OPENCV)
+      find_package(CCTag 1.0.0 CONFIG)
+
+      if(CCTag_FOUND)
+        set(ALICEVISION_HAVE_CCTAG 1)
+        message(STATUS "CCTAG ${CCTag_VERSION} found.")
+      elseif(ALICEVISION_USE_CCTAG STREQUAL "ON")
+        message(SEND_ERROR "Failed to find CCTAG.")
+      endif()
+    elseif(ALICEVISION_USE_CCTAG STREQUAL "ON")
+      message(SEND_ERROR "Can't use CCTAG without OPENCV.")
+    endif()
+  endif()
+endif()
+
+# ==============================================================================
+# PopSift
+# ==============================================================================
+# - optional, only external and enabled only if ALICEVISION_USE_POPSIFT is ON
+# ==============================================================================
+set(ALICEVISION_HAVE_POPSIFT 0)
+
+if(ALICEVISION_BUILD_SFM)
+  if(NOT ALICEVISION_USE_POPSIFT STREQUAL "OFF")
+    find_package(PopSift CONFIG)
+
+    if(PopSift_FOUND)
+      set(ALICEVISION_HAVE_POPSIFT 1)
+      message(STATUS "PopSIFT found.")
+    elseif(ALICEVISION_USE_POPSIFT STREQUAL "ON")
+      message(SEND_ERROR "Failed to find PopSIFT.")
+    endif()
   endif()
 endif()
 
