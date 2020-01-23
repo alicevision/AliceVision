@@ -12,6 +12,7 @@
 #include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/alicevision_omp.hpp>
 #include <aliceVision/config.hpp>
+#include <aliceVision/camera/Equidistant.hpp>
 
 #include <boost/filesystem.hpp>
 
@@ -91,6 +92,12 @@ ceres::CostFunction* createRigCostFunctionFromIntrinsics(const IntrinsicBase* in
  */
 ceres::CostFunction* createConstraintsCostFunctionFromIntrinsics(const IntrinsicBase* intrinsicPtr, const Vec2& observation_first, const Vec2& observation_second)
 {
+  double radius = 0.0;
+  const camera::EquiDistant * equi = dynamic_cast<const camera::EquiDistant *>(intrinsicPtr);
+  if (equi) {
+    radius = equi->getRadius();
+  }
+
   switch(intrinsicPtr->getType())
   {
     case PINHOLE_CAMERA:
@@ -102,11 +109,11 @@ ceres::CostFunction* createConstraintsCostFunctionFromIntrinsics(const Intrinsic
     case PINHOLE_CAMERA_FISHEYE:
       return new ceres::AutoDiffCostFunction<ResidualErrorConstraintFunctor_PinholeFisheye, 2, 7, 6, 6>(new ResidualErrorConstraintFunctor_PinholeFisheye(observation_first.homogeneous(), observation_second.homogeneous()));
     case EQUIDISTANT_CAMERA:
-      return new ceres::AutoDiffCostFunction<ResidualErrorConstraintFunctor_Equidistant, 2, 3, 6, 6>(new ResidualErrorConstraintFunctor_Equidistant(observation_first.homogeneous(), observation_second.homogeneous()));
+      return new ceres::AutoDiffCostFunction<ResidualErrorConstraintFunctor_Equidistant, 2, 3, 6, 6>(new ResidualErrorConstraintFunctor_Equidistant(observation_first.homogeneous(), observation_second.homogeneous(), radius));
     case EQUIDISTANT_CAMERA_RADIAL1:
-      return new ceres::AutoDiffCostFunction<ResidualErrorConstraintFunctor_EquidistantRadialK1, 2, 4, 6, 6>(new ResidualErrorConstraintFunctor_EquidistantRadialK1(observation_first.homogeneous(), observation_second.homogeneous()));
+      return new ceres::AutoDiffCostFunction<ResidualErrorConstraintFunctor_EquidistantRadialK1, 2, 4, 6, 6>(new ResidualErrorConstraintFunctor_EquidistantRadialK1(observation_first.homogeneous(), observation_second.homogeneous(), radius));
     case EQUIDISTANT_CAMERA_RADIAL3:
-      return new ceres::AutoDiffCostFunction<ResidualErrorConstraintFunctor_EquidistantRadialK3, 2, 6, 6, 6>(new ResidualErrorConstraintFunctor_EquidistantRadialK3(observation_first.homogeneous(), observation_second.homogeneous()));
+      return new ceres::AutoDiffCostFunction<ResidualErrorConstraintFunctor_EquidistantRadialK3, 2, 6, 6, 6>(new ResidualErrorConstraintFunctor_EquidistantRadialK3(observation_first.homogeneous(), observation_second.homogeneous(), radius));
     default:
       throw std::logic_error("Cannot create cost function, unrecognized intrinsic type in BA.");
   } 

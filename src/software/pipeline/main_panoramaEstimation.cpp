@@ -323,6 +323,7 @@ int main(int argc, char **argv)
     {
         ALICEVISION_LOG_INFO("Orientation: FROM IMAGES");
         sfm::computeNewCoordinateSystemFromSingleCamera(outSfmData, std::to_string(firstShot_viewId), S, R, t);
+        
     }
     else if(orientation == 1)
     {

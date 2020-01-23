@@ -68,19 +68,6 @@ public:
     return _pDistortion->getParameters();
   }
 
-  // Data wrapper for non linear optimization (get data)
-  std::vector<double> getParams() const override
-  {
-    std::vector<double> params = {_scale_x, _offset_x, _offset_y};
-
-    if (have_disto()) {
-
-      params.insert(params.end(), _pDistortion->getParameters().begin(), _pDistortion->getParameters().end());
-    }
-    
-    return params;
-  }
-
   void setDistortionParams(const std::vector<double> & distortionParams) {
 
     int expected = 0;
@@ -98,6 +85,19 @@ public:
     if (_pDistortion) {
       _pDistortion->getParameters() = distortionParams;
     }
+  }
+
+  // Data wrapper for non linear optimization (get data)
+  std::vector<double> getParams() const override
+  {
+    std::vector<double> params = {_scale_x, _offset_x, _offset_y};
+
+    if (have_disto()) {
+
+      params.insert(params.end(), _pDistortion->getParameters().begin(), _pDistortion->getParameters().end());
+    }
+    
+    return params;
   }
 
   // Data wrapper for non linear optimization (update from data)

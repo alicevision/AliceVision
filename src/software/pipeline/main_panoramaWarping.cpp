@@ -543,6 +543,11 @@ public:
     }
     _offset_y = coarse_bbox.top + min_y;
     
+    min_x = 0;
+    min_y = 0;
+    max_x = panoramaSize.first - 1;
+    max_y = panoramaSize.second - 1;
+
     size_t real_width = max_x - min_x + 1;
     size_t real_height = max_y - min_y + 1;
 
@@ -1096,6 +1101,15 @@ bool computeOptimalPanoramaSize(std::pair<int, int> & optimalSize, const sfmData
   return true;
 }
 
+Eigen::Matrix3d getAutoPanoRotation(double yaw, double pitch, double roll) {
+    
+  Eigen::AngleAxis<double> Myaw(- yaw * M_PI / 180.0, Eigen::Vector3d::UnitY());
+  Eigen::AngleAxis<double> Mpitch(- pitch * M_PI / 180.0, Eigen::Vector3d::UnitX());
+  Eigen::AngleAxis<double> Mroll(- roll * M_PI / 180.0, Eigen::Vector3d::UnitZ());
+    
+  return  Mroll.toRotationMatrix()* Mpitch.toRotationMatrix()  *  Myaw.toRotationMatrix();
+}
+
 int main(int argc, char **argv) {
 
   /**
@@ -1238,8 +1252,23 @@ int main(int argc, char **argv) {
      */
     geometry::Pose3 camPose = sfmData.getPose(view).getTransform();
     std::shared_ptr<camera::IntrinsicBase> intrinsic = sfmData.getIntrinsicsharedPtr(view.getIntrinsicId());
-    std::shared_ptr<camera::IntrinsicsScaleOffsetDisto> casted = std::dynamic_pointer_cast<camera::IntrinsicsScaleOffsetDisto>(intrinsic);    
+    std::shared_ptr<camera::EquiDistant> casted = std::dynamic_pointer_cast<camera::EquiDistant>(intrinsic);    
 
+    casted->updateFromParams({179.329*M_PI/180.0, 1920.0-28.05, 2880+70.07, 0.0, 0, 0});
+    casted->setRadius(1920);
+
+    if (pos == 0) {
+      camPose.rotation() = getAutoPanoRotation(0.0, 0.413, -1.511);
+    }
+    else if (pos == 1) {
+      camPose.rotation() = getAutoPanoRotation(121.017, 0.121, -1.507);
+    }
+    else {
+      camPose.rotation() = getAutoPanoRotation(-119.620, 0.248, -1.485);
+    }
+
+    
+    
     /**
      * Prepare coordinates map
     */

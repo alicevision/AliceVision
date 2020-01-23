@@ -586,8 +586,8 @@ struct ResidualErrorConstraintFunctor_PinholeFisheye
  */
 struct ResidualErrorConstraintFunctor_Equidistant
 {
-  ResidualErrorConstraintFunctor_Equidistant(const Vec3 & pos_2dpoint_first, const Vec3 & pos_2dpoint_second) 
-  : m_pos_2dpoint_first(pos_2dpoint_first), m_pos_2dpoint_second(pos_2dpoint_second)
+  ResidualErrorConstraintFunctor_Equidistant(const Vec3 & pos_2dpoint_first, const Vec3 & pos_2dpoint_second, double radius_size) 
+  : m_pos_2dpoint_first(pos_2dpoint_first), m_pos_2dpoint_second(pos_2dpoint_second), m_radius_size(radius_size)
   {
   }
 
@@ -601,18 +601,18 @@ struct ResidualErrorConstraintFunctor_Equidistant
   template <typename T>
   void lift(const T* const cam_K, const Vec3 pt, Eigen::Matrix< T, 3, 1> & out) const
   {
-    const T& focal = cam_K[OFFSET_FOCAL_LENGTH];
+    const T& fov = cam_K[OFFSET_FOCAL_LENGTH];
     const T& principal_point_x = cam_K[OFFSET_PRINCIPAL_POINT_X];
     const T& principal_point_y = cam_K[OFFSET_PRINCIPAL_POINT_Y];
 
 
     Eigen::Matrix< T, 2, 1> camcoords;
-    camcoords(0) = (pt(0) - principal_point_x) / focal;
-    camcoords(1) = (pt(1) - principal_point_y) / focal;
+    camcoords(0) = (pt(0) - principal_point_x) / (2.0 * m_radius_size);
+    camcoords(1) = (pt(1) - principal_point_y) / (2.0 * m_radius_size);
 
 
     T angle_radial = atan2(camcoords(1), camcoords(0));
-    T angle_Z = camcoords.norm();
+    T angle_Z = camcoords.norm() * fov;
 
     out(2) = cos(angle_Z);
     out(0) = cos(angle_radial) /** / 1.0 / **/ * sin(angle_Z);
@@ -622,7 +622,7 @@ struct ResidualErrorConstraintFunctor_Equidistant
   template <typename T>
   void unlift(const T* const cam_K, const Eigen::Matrix< T, 3, 1> & pt, Eigen::Matrix< T, 3, 1> & out) const
   {
-    const T& focal = cam_K[OFFSET_FOCAL_LENGTH];
+    const T& fov = cam_K[OFFSET_FOCAL_LENGTH];
     const T& principal_point_x = cam_K[OFFSET_PRINCIPAL_POINT_X];
     const T& principal_point_y = cam_K[OFFSET_PRINCIPAL_POINT_Y];
 
@@ -631,18 +631,19 @@ struct ResidualErrorConstraintFunctor_Equidistant
     pt_normalized.normalize();
 
     /* Compute angle with optical center */
-    T angle_Z = acos(pt_normalized(2));
+    T angle_Z = atan2(sqrt(pt_normalized(0) * pt_normalized(0) + pt_normalized(1) * pt_normalized(1)), pt_normalized(2));
+    T radius = angle_Z / fov;
 
     /* Ignore depth component and compute radial angle */
     T angle_radial = atan2(pt_normalized(1), pt_normalized(0));
 
     /* radius = focal * angle_Z */
     Eigen::Matrix< T, 2, 1> proj_pt;
-    proj_pt(0) = cos(angle_radial) * angle_Z;
-    proj_pt(1) = sin(angle_radial) * angle_Z;
+    proj_pt(0) = cos(angle_radial) * radius;
+    proj_pt(1) = sin(angle_radial) * radius;
 
-    out(0) = proj_pt(0) * focal + principal_point_x;
-    out(1) = proj_pt(1) * focal + principal_point_y;
+    out(0) = proj_pt(0) * 2.0 * m_radius_size + principal_point_x;
+    out(1) = proj_pt(1) * 2.0 * m_radius_size + principal_point_y;
     out(2) = static_cast<T>(1.0);
   }
 
@@ -654,11 +655,7 @@ struct ResidualErrorConstraintFunctor_Equidistant
    * @param[out] out_residuals
    */
   template <typename T>
-  bool operator()(
-    const T* const cam_K,
-    const T* const cam_R1,
-    const T* const cam_R2,
-    T* out_residuals) const
+  bool operator()(const T* const cam_K, const T* const cam_R1, const T* const cam_R2, T* out_residuals) const
   {
     Eigen::Matrix<T, 3, 3> oneRo, twoRo, twoRone;
     
@@ -686,6 +683,7 @@ struct ResidualErrorConstraintFunctor_Equidistant
 
   Vec3 m_pos_2dpoint_first; // The 2D observation in first view
   Vec3 m_pos_2dpoint_second; // The 2D observation in second view
+  double m_radius_size;
 };
 
 /**
@@ -700,8 +698,8 @@ struct ResidualErrorConstraintFunctor_Equidistant
  */
 struct ResidualErrorConstraintFunctor_EquidistantRadialK1
 {
-  ResidualErrorConstraintFunctor_EquidistantRadialK1(const Vec3 & pos_2dpoint_first, const Vec3 & pos_2dpoint_second) 
-  : m_pos_2dpoint_first(pos_2dpoint_first), m_pos_2dpoint_second(pos_2dpoint_second)
+  ResidualErrorConstraintFunctor_EquidistantRadialK1(const Vec3 & pos_2dpoint_first, const Vec3 & pos_2dpoint_second, double radius_size) 
+  : m_pos_2dpoint_first(pos_2dpoint_first), m_pos_2dpoint_second(pos_2dpoint_second), m_radius_size(radius_size)
   {
   }
 
@@ -722,14 +720,14 @@ struct ResidualErrorConstraintFunctor_EquidistantRadialK1
   template <typename T>
   void lift(const T* const cam_K, const Vec3 pt, Eigen::Matrix< T, 3, 1> & out) const
   {
-    const T& focal = cam_K[OFFSET_FOCAL_LENGTH];
+    const T& fov = cam_K[OFFSET_FOCAL_LENGTH];
     const T& principal_point_x = cam_K[OFFSET_PRINCIPAL_POINT_X];
     const T& principal_point_y = cam_K[OFFSET_PRINCIPAL_POINT_Y];
     const T& k1 = cam_K[OFFSET_DISTO_K1];
 
     //Unshift then unscale back to meters
-    T xd = (pt(0) - principal_point_x) / focal;
-    T yd = (pt(1) - principal_point_y) / focal;
+    T xd = (pt(0) - principal_point_x) / (2.0 * m_radius_size);
+    T yd = (pt(1) - principal_point_y) / (2.0 * m_radius_size);
     T distorted_radius = sqrt(xd*xd + yd*yd);
 
     /*A hack to obtain undistorted point even if using automatic diff*/
@@ -754,7 +752,7 @@ struct ResidualErrorConstraintFunctor_EquidistantRadialK1
     }
 
     T angle_radial = atan2(camcoords(1), camcoords(0));
-    T angle_Z = camcoords.norm();
+    T angle_Z = camcoords.norm() * fov;
 
     out(2) = cos(angle_Z);
     out(0) = cos(angle_radial) /** / 1.0 / **/ * sin(angle_Z);
@@ -764,7 +762,7 @@ struct ResidualErrorConstraintFunctor_EquidistantRadialK1
   template <typename T>
   void unlift(const T* const cam_K, const Eigen::Matrix< T, 3, 1> & pt, Eigen::Matrix< T, 3, 1> & out) const
   {
-    const T& focal = cam_K[OFFSET_FOCAL_LENGTH];
+    const T& fov = cam_K[OFFSET_FOCAL_LENGTH];
     const T& principal_point_x = cam_K[OFFSET_PRINCIPAL_POINT_X];
     const T& principal_point_y = cam_K[OFFSET_PRINCIPAL_POINT_Y];
     const T& k1 = cam_K[OFFSET_DISTO_K1];
@@ -774,15 +772,16 @@ struct ResidualErrorConstraintFunctor_EquidistantRadialK1
     pt_normalized.normalize();
 
     /* Compute angle with optical center */
-    T angle_Z = acos(pt_normalized(2));
+    T angle_Z = atan2(sqrt(pt_normalized(0) * pt_normalized(0) + pt_normalized(1) * pt_normalized(1)), pt_normalized(2));
+    T radius = angle_Z / fov;
 
     /* Ignore depth component and compute radial angle */
     T angle_radial = atan2(pt_normalized(1), pt_normalized(0));
 
     /* radius = focal * angle_Z */
     Eigen::Matrix< T, 2, 1> proj_pt;
-    proj_pt(0) = cos(angle_radial) * angle_Z;
-    proj_pt(1) = sin(angle_radial) * angle_Z;
+    proj_pt(0) = cos(angle_radial) * radius;
+    proj_pt(1) = sin(angle_radial) * radius;
 
     //Apply distortion
     const T r2 = proj_pt(0)*proj_pt(0) + proj_pt(1)*proj_pt(1);
@@ -791,8 +790,8 @@ struct ResidualErrorConstraintFunctor_EquidistantRadialK1
     const T y_d = proj_pt(1) * r_coeff;
     
     //Scale and shift
-    out(0) = x_d * focal + principal_point_x;
-    out(1) = y_d * focal + principal_point_y;
+    out(0) = x_d * 2.0 * m_radius_size + principal_point_x;
+    out(1) = y_d * 2.0 * m_radius_size + principal_point_y;
     out(2) = static_cast<T>(1.0);
   }
 
@@ -840,6 +839,7 @@ struct ResidualErrorConstraintFunctor_EquidistantRadialK1
 
   Vec3 m_pos_2dpoint_first; // The 2D observation in first view
   Vec3 m_pos_2dpoint_second; // The 2D observation in second view
+  double m_radius_size;
 };
 
 /**
@@ -854,8 +854,8 @@ struct ResidualErrorConstraintFunctor_EquidistantRadialK1
  */
 struct ResidualErrorConstraintFunctor_EquidistantRadialK3
 {
-  ResidualErrorConstraintFunctor_EquidistantRadialK3(const Vec3 & pos_2dpoint_first, const Vec3 & pos_2dpoint_second) 
-  : m_pos_2dpoint_first(pos_2dpoint_first), m_pos_2dpoint_second(pos_2dpoint_second)
+  ResidualErrorConstraintFunctor_EquidistantRadialK3(const Vec3 & pos_2dpoint_first, const Vec3 & pos_2dpoint_second, double radius_size) 
+  : m_pos_2dpoint_first(pos_2dpoint_first), m_pos_2dpoint_second(pos_2dpoint_second), m_radius_size(radius_size)
   {
   }
 
@@ -880,7 +880,7 @@ struct ResidualErrorConstraintFunctor_EquidistantRadialK3
   template <typename T>
   void lift(const T* const cam_K, const Vec3 pt, Eigen::Matrix< T, 3, 1> & out) const
   {
-    const T& focal = cam_K[OFFSET_FOCAL_LENGTH];
+    const T& fov = cam_K[OFFSET_FOCAL_LENGTH];
     const T& principal_point_x = cam_K[OFFSET_PRINCIPAL_POINT_X];
     const T& principal_point_y = cam_K[OFFSET_PRINCIPAL_POINT_Y];
     const T& k1 = cam_K[OFFSET_DISTO_K1];
@@ -888,8 +888,8 @@ struct ResidualErrorConstraintFunctor_EquidistantRadialK3
     const T& k3 = cam_K[OFFSET_DISTO_K3];
 
     //Unshift then unscale back to meters
-    T xd = (pt(0) - principal_point_x) / focal;
-    T yd = (pt(1) - principal_point_y) / focal;
+    T xd = (pt(0) - principal_point_x) / (2.0 * m_radius_size);
+    T yd = (pt(1) - principal_point_y) / (2.0 * m_radius_size);
     T distorted_radius = sqrt(xd*xd + yd*yd);
 
     /*A hack to obtain undistorted point even if using automatic diff*/
@@ -916,7 +916,7 @@ struct ResidualErrorConstraintFunctor_EquidistantRadialK3
     }
 
     T angle_radial = atan2(camcoords(1), camcoords(0));
-    T angle_Z = camcoords.norm();
+    T angle_Z = camcoords.norm() * fov;
 
     out(2) = cos(angle_Z);
     out(0) = cos(angle_radial) /** / 1.0 / **/ * sin(angle_Z);
@@ -926,7 +926,7 @@ struct ResidualErrorConstraintFunctor_EquidistantRadialK3
   template <typename T>
   void unlift(const T* const cam_K, const Eigen::Matrix< T, 3, 1> & pt, Eigen::Matrix< T, 3, 1> & out) const
   {
-    const T& focal = cam_K[OFFSET_FOCAL_LENGTH];
+    const T& fov = cam_K[OFFSET_FOCAL_LENGTH];
     const T& principal_point_x = cam_K[OFFSET_PRINCIPAL_POINT_X];
     const T& principal_point_y = cam_K[OFFSET_PRINCIPAL_POINT_Y];
     const T& k1 = cam_K[OFFSET_DISTO_K1];
@@ -938,15 +938,16 @@ struct ResidualErrorConstraintFunctor_EquidistantRadialK3
     pt_normalized.normalize();
 
     /* Compute angle with optical center */
-    T angle_Z = acos(pt_normalized(2));
+    T angle_Z = atan2(sqrt(pt_normalized(0) * pt_normalized(0) + pt_normalized(1) * pt_normalized(1)), pt_normalized(2));
+    T radius = angle_Z / fov;
 
     /* Ignore depth component and compute radial angle */
     T angle_radial = atan2(pt_normalized(1), pt_normalized(0));
 
     /* radius = focal * angle_Z */
     Eigen::Matrix< T, 2, 1> proj_pt;
-    proj_pt(0) = cos(angle_radial) * angle_Z;
-    proj_pt(1) = sin(angle_radial) * angle_Z;
+    proj_pt(0) = cos(angle_radial) * radius;
+    proj_pt(1) = sin(angle_radial) * radius;
 
     //Apply distortion
     const T r2 = proj_pt(0)*proj_pt(0) + proj_pt(1)*proj_pt(1);
@@ -957,8 +958,8 @@ struct ResidualErrorConstraintFunctor_EquidistantRadialK3
     const T y_d = proj_pt(1) * r_coeff;
     
     //Scale and shift
-    out(0) = x_d * focal + principal_point_x;
-    out(1) = y_d * focal + principal_point_y;
+    out(0) = x_d * 2.0 * m_radius_size + principal_point_x;
+    out(1) = y_d * 2.0 * m_radius_size + principal_point_y;
     out(2) = static_cast<T>(1.0);
   }
 
@@ -1006,6 +1007,7 @@ struct ResidualErrorConstraintFunctor_EquidistantRadialK3
 
   Vec3 m_pos_2dpoint_first; // The 2D observation in first view
   Vec3 m_pos_2dpoint_second; // The 2D observation in second view
+  double m_radius_size;
 };
 
 } // namespace sfm

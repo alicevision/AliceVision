@@ -55,6 +55,29 @@ class Pinhole : public IntrinsicsScaleOffsetDisto
     return PINHOLE_CAMERA; 
   }
 
+  Mat3 K() const { 
+    Mat3 K;
+    
+    K  << _scale_x, 0., _offset_y, 0., _scale_y, _offset_y, 0., 0., 1.;
+
+    return K; 
+  }
+
+  void setK(double focal_length_pix, double ppx, double ppy)
+  {
+    _scale_x = focal_length_pix;
+    _scale_y = focal_length_pix;
+    _offset_x = ppx;
+    _offset_y = ppy;
+  }
+  
+  void setK(const Mat3 & K) {
+    _scale_x = K(0, 0);
+    _scale_y = K(1, 1);
+    _offset_x = K(0, 2);
+    _offset_y = K(1, 2);
+  }
+
   virtual Vec2 project(const geometry::Pose3& pose, const Vec3& pt3D, bool applyDistortion = true) const override
   {
     const Vec3 X = pose(pt3D); // apply pose
