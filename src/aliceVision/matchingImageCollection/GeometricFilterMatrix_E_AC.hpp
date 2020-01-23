@@ -68,8 +68,8 @@ struct GeometricFilterMatrix_E_AC : public GeometricFilterMatrix
     if (!cam_I || !cam_J)
       return EstimationStatus(false, false);
 
-    std::shared_ptr<camera::IntrinsicsScaleOffset> castedCam_I = std::dynamic_pointer_cast<camera::IntrinsicsScaleOffset>(cam_I);
-    std::shared_ptr<camera::IntrinsicsScaleOffset> castedCam_J = std::dynamic_pointer_cast<camera::IntrinsicsScaleOffset>(cam_J);
+    std::shared_ptr<camera::Pinhole> castedCam_I = std::dynamic_pointer_cast<camera::Pinhole>(cam_I);
+    std::shared_ptr<camera::Pinhole> castedCam_J = std::dynamic_pointer_cast<camera::Pinhole>(cam_J);
     if (castedCam_I == nullptr || castedCam_J == nullptr) {
       return EstimationStatus(false, false);
     }

@@ -30,7 +30,7 @@ public:
   EquiDistant() = default;
 
   EquiDistant(unsigned int w, unsigned int h, double fov, double ppx, double ppy, double radiuspixels = 1980.00, std::shared_ptr<Distortion> distortion = nullptr)
-  : IntrinsicsScaleOffsetDisto(w, h, fov, fov, ppx, ppy, distortion), _radius(radiuspixels)
+  : IntrinsicsScaleOffsetDisto(w, h, fov, fov, ppx, ppy, distortion), _radius(radiuspixels), _center_x(w/2.0), _center_y(h/2.0)
   {
   }
 
@@ -125,7 +125,8 @@ public:
     
     Vec2 proj = project(geometry::Pose3(), ray, true);
 
-    if (ray(2) < 0.0) {
+    Vec2 centered = proj - Vec2(_center_x, _center_y);
+    if (centered.norm() > _radius) {
       return false;
     }
 
@@ -140,8 +141,27 @@ public:
     _radius = radius;
   }
 
+  double getCenterX() const {
+    return _center_x;
+  }
+
+  void setCenterX(double x) {
+    _center_x = x;
+  }
+
+  double getCenterY() const {
+    return _center_x;
+  }
+
+  void setCenterY(double y) {
+    _center_y = y;
+  }
+
+
 protected:
-  double _radius = 1.0;
+  double _radius;
+  double _center_x;
+  double _center_y;
 };
 
 } // namespace camera

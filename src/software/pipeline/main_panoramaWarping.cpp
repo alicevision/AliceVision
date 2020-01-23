@@ -474,7 +474,7 @@ public:
     // TODO
     // no support for reduction min in MSVC implementation of openmp
 #else
-    #pragma omp parallel for reduction(min: min_x, min_y) reduction(max: max_x, max_y)
+    //#pragma omp parallel for reduction(min: min_x, min_y) reduction(max: max_x, max_y)
 #endif
     for (size_t y = 0; y < coarse_bbox.height; y++) {
 
@@ -512,12 +512,6 @@ public:
         if (!intrinsics.isVisible(pix_disto)) {
           continue;
         }
-
-        /*Vec2 center = {3840/2, 5760/2};
-        double dist = (pix_disto - center).norm();
-        if (dist > (3840.0/2.0) * 0.99) {
-          continue;
-        }*/
 
 
         buffer_coordinates(y, x) = pix_disto;
@@ -1254,11 +1248,16 @@ int main(int argc, char **argv) {
     std::shared_ptr<camera::IntrinsicBase> intrinsic = sfmData.getIntrinsicsharedPtr(view.getIntrinsicId());
     std::shared_ptr<camera::EquiDistant> casted = std::dynamic_pointer_cast<camera::EquiDistant>(intrinsic);    
 
-    casted->updateFromParams({179.329*M_PI/180.0, 1920.0-28.05, 2880+70.07, 0.0, 0, 0});
+    double scale = 179.329*M_PI/180.0;
+    casted->setScale(scale, scale);
+    casted->setOffset(1920.0-27.67, 2880+73.62);
+    casted->setDistortionParams({0.0, 0.0, 0.0,});
     casted->setRadius(1920);
+    casted->setCenterX(1920.0);
+    casted->setCenterY(2880.0);
 
     if (pos == 0) {
-      camPose.rotation() = getAutoPanoRotation(0.0, 0.413, -1.511);
+      camPose.rotation() = getAutoPanoRotation(0.0, 0.251, -1.515);
     }
     else if (pos == 1) {
       camPose.rotation() = getAutoPanoRotation(121.017, 0.121, -1.507);
