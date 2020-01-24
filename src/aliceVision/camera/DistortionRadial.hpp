@@ -136,5 +136,61 @@ public:
   }
 };
 
+class DistortionRadialK3PT : public Distortion {
+public:
+  DistortionRadialK3PT() {
+    _distortionParams = {0.0, 0.0, 0.0};
+  }
+
+  DistortionRadialK3PT(double p1, double p2, double p3) {
+    _distortionParams = {p1, p2, p3};
+  }
+
+  /// Add distortion to the point p (assume p is in the camera frame [normalized coordinates])
+  virtual Vec2 add_disto(const Vec2 & p) const override
+  {
+    const double k1 = _distortionParams[0];
+    const double k2 = _distortionParams[1];
+    const double k3 = _distortionParams[2];
+
+    const double r = sqrt(p(0)*p(0) + p(1)*p(1));
+    
+    const double r2 = r * r;
+    const double r4 = r2 * r2;
+    const double r6 = r4 * r2;
+    const double r_coeff = (1.0 - (k1+k2+k3)) + k3*r + k2*r2 + k1*r2*r;
+
+    return (p * r_coeff);
+  }
+
+  /// Remove distortion (return p' such that disto(p') = p)
+  virtual Vec2 remove_disto(const Vec2& p) const override {
+    // Compute the radius from which the point p comes from thanks to a bisection
+    // Minimize disto(radius(p')^2) == actual Squared(radius(p))
+
+    const double r2 = p(0)*p(0) + p(1)*p(1);
+    const double radius = (r2 == 0) ? //1. : ::sqrt(bisectionSolve(_distortionParams, r2) / r2);
+      1. :
+      ::sqrt(radial_distortion::bisection_Radius_Solve(_distortionParams, r2, distoFunctor) / r2);
+    return radius * p;
+  }
+
+  virtual double getUndistortedRadius(double r) const override {
+    return std::sqrt(radial_distortion::bisection_Radius_Solve(_distortionParams, r * r, distoFunctor));
+  }
+
+  /// Functor to solve Square(disto(radius(p'))) = r^2
+  static double distoFunctor(const std::vector<double> & params, double r2)
+  {
+    const double k1 = params[0];
+    const double k2 = params[1];
+    const double k3 = params[2];
+
+    double r = sqrt(r2);
+
+    return r2 * Square((1.0 - (k1+k2+k3)) + k3*r + k2*r2 + k1*r2*r);
+  }
+};
+
 } // namespace camera
 } // namespace aliceVision

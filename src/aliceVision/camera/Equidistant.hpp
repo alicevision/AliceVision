@@ -66,7 +66,7 @@ public:
     double angle_radial = std::atan2(X(1), X(0));
 
     double fov = _scale_x;
-    double radius = angle_Z / fov;
+    double radius = angle_Z / (0.5 * fov);
 
     /* radius = focal * angle_Z */
     Vec2 P;
@@ -89,7 +89,7 @@ public:
 
     double fov = _scale_x;
     double angle_radial = atan2(camcoords(1), camcoords(0));
-    double angle_Z = camcoords.norm() * fov;
+    double angle_Z = camcoords.norm() * 0.5 * fov;
 
     Vec3 ret;
     ret(2) = cos(angle_Z);
@@ -108,13 +108,13 @@ public:
   // Transform a point from the camera plane to the image plane
   virtual Vec2 cam2ima(const Vec2& p) const override
   {
-    return _radius * 2.0 * p + principal_point();
+    return _radius * p + principal_point();
   }
 
   // Transform a point from the image plane to the camera plane
   virtual Vec2 ima2cam(const Vec2& p) const override
   {
-    return (p -  principal_point()) / (2.0 * _radius);
+    return (p -  principal_point()) / _radius;
   }
 
   /**
@@ -150,7 +150,7 @@ public:
   }
 
   double getCenterY() const {
-    return _center_x;
+    return _center_y;
   }
 
   void setCenterY(double y) {

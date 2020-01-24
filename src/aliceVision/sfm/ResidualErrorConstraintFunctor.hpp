@@ -874,7 +874,9 @@ struct ResidualErrorConstraintFunctor_EquidistantRadialK3
     const double k1 = params[0];
     const double k2 = params[1];
     const double k3 = params[2];
-    return r2 * Square(1.+r2*(k1+r2*(k2+r2*k3)));
+    double r = sqrt(r2);
+
+    return r2 * Square((1.0 - (k1+k2+k3)) + k3*r + k2*r2 + k1*r2*r);
   }
 
   template <typename T>
@@ -888,8 +890,8 @@ struct ResidualErrorConstraintFunctor_EquidistantRadialK3
     const T& k3 = cam_K[OFFSET_DISTO_K3];
 
     //Unshift then unscale back to meters
-    T xd = (pt(0) - principal_point_x) / (2.0 * m_radius_size);
-    T yd = (pt(1) - principal_point_y) / (2.0 * m_radius_size);
+    T xd = (pt(0) - principal_point_x) / (m_radius_size);
+    T yd = (pt(1) - principal_point_y) / (m_radius_size);
     T distorted_radius = sqrt(xd*xd + yd*yd);
 
     /*A hack to obtain undistorted point even if using automatic diff*/
@@ -916,7 +918,7 @@ struct ResidualErrorConstraintFunctor_EquidistantRadialK3
     }
 
     T angle_radial = atan2(camcoords(1), camcoords(0));
-    T angle_Z = camcoords.norm() * fov;
+    T angle_Z = camcoords.norm() * 0.5 * fov;
 
     out(2) = cos(angle_Z);
     out(0) = cos(angle_radial) /** / 1.0 / **/ * sin(angle_Z);
@@ -939,7 +941,7 @@ struct ResidualErrorConstraintFunctor_EquidistantRadialK3
 
     /* Compute angle with optical center */
     T angle_Z = atan2(sqrt(pt_normalized(0) * pt_normalized(0) + pt_normalized(1) * pt_normalized(1)), pt_normalized(2));
-    T radius = angle_Z / fov;
+    T radius = angle_Z / (0.5 * fov);
 
     /* Ignore depth component and compute radial angle */
     T angle_radial = atan2(pt_normalized(1), pt_normalized(0));
@@ -950,16 +952,17 @@ struct ResidualErrorConstraintFunctor_EquidistantRadialK3
     proj_pt(1) = sin(angle_radial) * radius;
 
     //Apply distortion
-    const T r2 = proj_pt(0)*proj_pt(0) + proj_pt(1)*proj_pt(1);
-    const T r4 = r2 * r2;
-    const T r6 = r4 * r2;
-    const T r_coeff = (T(1) + k1*r2 + k2*r4 + k3*r6);
+    const T r = sqrt(proj_pt(0)*proj_pt(0) + proj_pt(1)*proj_pt(1));
+    const T r2 = r * r;
+    const T r3 = r2 * r;
+    
+    const T r_coeff = (T(1) - (k1+k2+k3) + k3*r + k2*r2 + k1*r3);
     const T x_d = proj_pt(0) * r_coeff;
     const T y_d = proj_pt(1) * r_coeff;
     
     //Scale and shift
-    out(0) = x_d * 2.0 * m_radius_size + principal_point_x;
-    out(1) = y_d * 2.0 * m_radius_size + principal_point_y;
+    out(0) = x_d * m_radius_size + principal_point_x;
+    out(1) = y_d * m_radius_size + principal_point_y;
     out(2) = static_cast<T>(1.0);
   }
 
