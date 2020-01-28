@@ -42,7 +42,160 @@ inline std::istream& operator>>(std::istream& in, std::pair<int, int>& out)
     return in;
 }
 
-int main(int argc, char **argv)
+int main(int argc, char **argv) {
+
+  sfmData::SfMData inputSfmData;
+
+  double w = 3840;
+  double h = 5760;
+
+  camera::EquiDistantRadialK3 intrinsic(w, h, 176.0*M_PI/180.0, 1920+32.0, 2880-56.0, 1980, 0.1, 0, 0);
+  camera::EquiDistantRadialK3 intrinsic_base(w, h, 176.0*M_PI/180.0, 1920+32.0, 2880-56.0, 1980, 0.1, 0, 0);
+
+  inputSfmData.getIntrinsics()[0] = std::make_shared<camera::EquiDistantRadialK3>(intrinsic);
+
+  Eigen::AngleAxisd aa0(0.0, Eigen::Vector3d::UnitY());
+  Eigen::AngleAxisd aa1((1.0 / 3.0) * 2.0 * M_PI, Eigen::Vector3d::UnitY());
+  Eigen::AngleAxisd aa2((2.0 / 3.0) * 2.0 * M_PI, Eigen::Vector3d::UnitY());
+
+  inputSfmData.getPoses()[0] = sfmData::CameraPose(geometry::Pose3(Eigen::Matrix3d::Identity(), Eigen::Vector3d::Zero()));
+  inputSfmData.getPoses()[1] = sfmData::CameraPose(geometry::Pose3(aa1.toRotationMatrix(), Eigen::Vector3d::Zero()));
+  inputSfmData.getPoses()[2] = sfmData::CameraPose(geometry::Pose3(aa2.toRotationMatrix(), Eigen::Vector3d::Zero()));
+
+  inputSfmData.getViews()[0] = std::make_shared<sfmData::View>("toto", 0, 0, 0, w, h);
+  inputSfmData.getViews()[1] = std::make_shared<sfmData::View>("toto", 1, 0, 1, w, h);
+  inputSfmData.getViews()[2] = std::make_shared<sfmData::View>("toto", 2, 0, 2, w, h);
+
+
+  std::vector<Vec3> points;
+  for (int ith = 0; ith < 180; ith++) {
+    for (int jphi = 0; jphi < 360; jphi++) {
+      double theta = ith * M_PI / 180.0;
+      double phi = jphi * M_PI / 180.0;
+
+      const double Px = cos(theta) * sin(phi);
+      const double Py = sin(theta);
+      const double Pz = cos(theta) * cos(phi);
+
+      Vec3 pt(Px, Py, Pz);
+
+      points.push_back(pt);
+    }
+  }
+
+  typedef std::map<IndexT, int> MappedPoints;
+  std::map<IndexT, MappedPoints> projections;
+  feature::FeaturesPerView featuresPerView;
+
+  for (auto & pairView : inputSfmData.getViews()) {
+
+    std::shared_ptr<sfmData::View> v = pairView.second;
+    geometry::Pose3 T = inputSfmData.getAbsolutePose(v->getPoseId()).getTransform();
+
+    MappedPoints projected;
+    feature::PointFeatures featuresForView;
+
+    for (int index = 0; index < points.size(); index++) {
+    
+      Vec3 pt = points[index];
+
+      Vec3 transformedRay = T(pt);
+      if (!intrinsic.isVisibleRay(transformedRay)) {
+        continue;
+      }
+
+      Vec2 impt = intrinsic.project(T, pt, true);
+      if (!intrinsic.isVisible(impt)) {
+        continue;
+      }
+
+      IndexT current_feature = featuresForView.size();
+      featuresForView.push_back(feature::PointFeature(impt.x(), impt.y()));
+
+      projections[v->getViewId()][index] = current_feature;
+    }
+
+    featuresPerView.addFeatures(v->getViewId(), feature::EImageDescriberType::UNKNOWN, featuresForView);
+  }
+
+  matching::PairwiseMatches pwMatches;
+
+  for (auto it = projections.begin(); it != projections.end(); it++) {
+
+    for (auto next = std::next(it); next != projections.end(); next++) {
+
+      size_t count = 0;
+      matching::IndMatches matches;
+
+      for (auto item : it->second) {
+
+        size_t feature_id = item.first;
+        
+        auto partner = next->second.find(feature_id);
+        if (partner == next->second.end()) {
+          continue;
+        } 
+
+        matching::IndMatch match;
+        match._i = item.second;
+        match._j = partner->second;
+        match._distanceRatio = 0.4;
+
+        matches.push_back(match);
+      }
+
+      matching::MatchesPerDescType describedMatches;
+      describedMatches[feature::EImageDescriberType::UNKNOWN] = matches;
+
+      Pair pair;
+      pair.first = it->first;
+      pair.second = next->first;
+      pwMatches[pair] = describedMatches;
+    }
+  }
+
+  inputSfmData.getPoses().clear();
+  std::shared_ptr<camera::IntrinsicBase> cam = inputSfmData.getIntrinsics().begin()->second;
+  inputSfmData.getIntrinsics()[0] = std::make_shared<camera::EquiDistantRadialK3>(intrinsic_base);
+  
+
+  std::string outDirectory = "/home/mmoc/";
+  sfm::ReconstructionEngine_panorama sfmEngine(inputSfmData, outDirectory, (fs::path(outDirectory) / "sfm_log.html").string());
+
+  sfmEngine.SetFeaturesProvider(&featuresPerView);
+  sfmEngine.SetMatchesProvider(&pwMatches);
+  sfmEngine.setLockAllIntrinsics(false);
+  sfmEngine.SetRotationAveragingMethod(sfm::ROTATION_AVERAGING_L2);
+  sfmEngine.SetRelativeRotationMethod(sfm::RELATIVE_ROTATION_FROM_R);
+
+
+  if (!sfmEngine.process()) {
+    return EXIT_FAILURE;
+  }
+
+  /*{
+    std::shared_ptr<camera::IntrinsicBase> cam = sfmEngine.getSfMData().getIntrinsics().begin()->second;
+    *cam = intrinsic_base;
+
+    sfmEngine.getSfMData().getPoses()[0] = sfmData::CameraPose(geometry::Pose3(Eigen::Matrix3d::Identity(), Eigen::Vector3d::Zero()));
+    sfmEngine.getSfMData().getPoses()[1] = sfmData::CameraPose(geometry::Pose3(aa0.toRotationMatrix(), Eigen::Vector3d::Zero()));
+    sfmEngine.getSfMData().getPoses()[2] = sfmData::CameraPose(geometry::Pose3(aa0.toRotationMatrix(), Eigen::Vector3d::Zero()));
+  }*/
+
+  sfmEngine.Adjust();
+
+  {
+    std::shared_ptr<camera::IntrinsicBase> cam = sfmEngine.getSfMData().getIntrinsics().begin()->second;
+    std::shared_ptr<camera::EquiDistantRadialK3> eqcam = std::dynamic_pointer_cast<camera::EquiDistantRadialK3>(cam);
+    for (auto d : eqcam->getParams()) {
+      std::cout << d << std::endl;
+    }
+  }
+
+  return 0;
+}
+
+int main2(int argc, char **argv)
 {
   // command-line parameters
 
@@ -163,6 +316,16 @@ int main(int argc, char **argv)
     return EXIT_FAILURE;
   }
 
+  std::shared_ptr<camera::IntrinsicBase> intrinsic = inputSfmData.getIntrinsics().begin()->second;
+  std::shared_ptr<camera::EquiDistant> casted = std::dynamic_pointer_cast<camera::EquiDistant>(intrinsic);    
+  double scale = 179.329 * M_PI / 180.0;
+  casted->setScale(scale, scale);
+  casted->setOffset(1920.0-27.67, 2880+73.62);
+  casted->setDistortionParams({0.0, 0.0, 0.0});
+  casted->setRadius(1920);
+  casted->setCenterX(1920.0);
+  casted->setCenterY(2880.0);
+
   if(!inputSfmData.structure.empty())
   {
     ALICEVISION_LOG_ERROR("Part computed SfMData are not currently supported in Global SfM." << std::endl << "Please use Incremental SfM. Aborted");
@@ -174,6 +337,8 @@ int main(int argc, char **argv)
     ALICEVISION_LOG_ERROR("Rigs are not currently supported in Global SfM." << std::endl << "Please use Incremental SfM. Aborted");
     return EXIT_FAILURE;
   }
+
+  
 
   sfmData::Poses & initial_poses = inputSfmData.getPoses();
   Eigen::Matrix3d ref_R_base = Eigen::Matrix3d::Identity();
@@ -241,9 +406,11 @@ int main(int argc, char **argv)
     sfmEngine.getSfMData().addMatchesFolders(matchesFolders);
     sfmEngine.getSfMData().setAbsolutePath(outSfMDataFilename);
   }
-
+  
   if(refine)
   {
+    
+
     sfmDataIO::Save(sfmEngine.getSfMData(), (fs::path(outDirectory) / "BA_before.abc").string(), sfmDataIO::ESfMData::ALL);
 
     sfmEngine.Adjust();
@@ -252,6 +419,7 @@ int main(int argc, char **argv)
   }
   
 
+  
   sfmData::SfMData& outSfmData = sfmEngine.getSfMData();
   
   
@@ -360,6 +528,12 @@ int main(int argc, char **argv)
     sfm::applyTransform(outSfmData, S, R, t);
   }
 
+  {
+    std::shared_ptr<camera::IntrinsicBase> intrinsic = outSfmData.getIntrinsics().begin()->second;
+    std::shared_ptr<camera::EquiDistant> casted = std::dynamic_pointer_cast<camera::EquiDistant>(intrinsic);    
+    std::cout << casted->getPrincipalPoint()<< std::endl;
+  }
+
   /*Add offsets to rotations*/
   for (auto& pose: outSfmData.getPoses()) {
 
@@ -368,6 +542,8 @@ int main(int argc, char **argv)
     p.rotation() = newR;
     pose.second.setTransform(p);
   }
+
+  
 
   // export to disk computed scene (data & visualizable results)
   ALICEVISION_LOG_INFO("Export SfMData to disk");

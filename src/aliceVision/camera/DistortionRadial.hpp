@@ -158,7 +158,7 @@ public:
     const double r2 = r * r;
     const double r4 = r2 * r2;
     const double r6 = r4 * r2;
-    const double r_coeff = (1.0 - (k1+k2+k3)) + k3*r + k2*r2 + k1*r2*r;
+    const double r_coeff = (1.0 + k1*r2 + k2*r4 + k3*r6) / (1.0 + k1 + k2 + k3);
 
     return (p * r_coeff);
   }
@@ -186,9 +186,10 @@ public:
     const double k2 = params[1];
     const double k3 = params[2];
 
-    double r = sqrt(r2);
+    const double r4 = r2 * r2;
+    const double r6 = r4 * r2;
 
-    return r2 * Square((1.0 - (k1+k2+k3)) + k3*r + k2*r2 + k1*r2*r);
+    return r2 * Square((1.0 + k1*r2 + k2*r4 + k3*r6) / (1.0 + k1 + k2 + k3));
   }
 };
 

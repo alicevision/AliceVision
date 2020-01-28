@@ -41,7 +41,7 @@ class EquiDistantRadialK3 : public EquiDistant
   public:
 
   EquiDistantRadialK3(int w = 0, int h = 0, double focal = 0.0, double ppx = 0, double ppy = 0, double radius = 1980.0, double k1 = 0.0, double k2 = 0.0, double k3 = 0.0)
-  : EquiDistant(w, h, focal, ppx, ppy, radius, std::shared_ptr<Distortion>(new DistortionRadialK3(k1, k2, k3)))
+  : EquiDistant(w, h, focal, ppx, ppy, radius, std::shared_ptr<Distortion>(new DistortionRadialK3PT(k1, k2, k3)))
   {
   }
 

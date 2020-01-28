@@ -415,7 +415,7 @@ bool ReconstructionEngine_panorama::Adjust()
   }
 
   /*Minimize All then*/
-  success = BA.adjust(_sfmData, BundleAdjustment::REFINE_ROTATION | BundleAdjustment::REFINE_INTRINSICS_ALL);
+  success = BA.adjust(_sfmData, BundleAdjustment::REFINE_ROTATION | BundleAdjustment::REFINE_INTRINSICS_DISTORTION);
   if(success)
   {
     ALICEVISION_LOG_INFO("Bundle successfully refined.");
@@ -462,7 +462,7 @@ void ReconstructionEngine_panorama::Compute_Relative_Rotations(rotationAveraging
       Eigen::Matrix3d twoRone = twoRo * oneRo.transpose();
 
       sfmData::RotationPrior prior(iter_v1.first, iter_v2.first, twoRone); 
-      rotationpriors.push_back(prior);
+      //rotationpriors.push_back(prior);
     }
   }
 
@@ -667,8 +667,11 @@ void ReconstructionEngine_panorama::Compute_Relative_Rotations(rotationAveraging
           relativePose_info.relativePose = geometry::Pose3(jRi, Vec3::Zero());
           relativePose_info.vec_inliers.clear();
           weight = 1.0;
+          std::cout << " wtf" << std::endl;
         } 
       }
+
+      
 
       /*Add connection to find best constraints*/
       if (connection_size.find(I) == connection_size.end()) {
