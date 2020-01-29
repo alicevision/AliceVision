@@ -42,7 +42,7 @@ namespace feature {
     const ImageT & Lx ,
     const ImageT & Ly ,
     const int id_octave ,
-    const SIOPointFeature & ipt ,
+    const PointFeature & ipt ,
     Descriptor< Real , 64 > & desc )
   {
 
@@ -144,7 +144,7 @@ namespace feature {
     const ImageT & Lx ,
     const ImageT & Ly ,
     const int id_octave ,
-    const SIOPointFeature & ipt ,
+    const PointFeature & ipt ,
     Descriptor< unsigned char , 64 > & desc )
   {
     Descriptor< float , 64 > descFloat;

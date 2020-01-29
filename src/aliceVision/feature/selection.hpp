@@ -29,8 +29,8 @@ namespace feature {
 */
 void sortMatches_byFeaturesScale(
 	const aliceVision::matching::IndMatches& inputMatches,
-	const aliceVision::feature::FeatRegions<aliceVision::feature::SIOPointFeature>& regionsI,
-	const aliceVision::feature::FeatRegions<aliceVision::feature::SIOPointFeature>& regionsJ,
+    const aliceVision::feature::Regions& regionsI,
+    const aliceVision::feature::Regions& regionsJ,
 	aliceVision::matching::IndMatches& outputMatches);
 
 /** 
@@ -62,8 +62,8 @@ void thresholdMatches(aliceVision::matching::IndMatches& outputMatches, const st
  * @param[in] sfm_data The sfm data file
  * @param[out] outMatches The remaining matches
  */
-void matchesGridFiltering(const aliceVision::feature::FeatRegions<aliceVision::feature::SIOPointFeature>& lRegions, 
-        const aliceVision::feature::FeatRegions<aliceVision::feature::SIOPointFeature>& rRegions, 
+void matchesGridFiltering(const aliceVision::feature::Regions& lRegions,
+        const aliceVision::feature::Regions& rRegions,
         const aliceVision::Pair& indexImagePair,
         const aliceVision::sfmData::SfMData sfm_data, 
         aliceVision::matching::IndMatches& outMatches);

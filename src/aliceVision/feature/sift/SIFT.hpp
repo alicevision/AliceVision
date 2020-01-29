@@ -10,7 +10,7 @@
 #include <aliceVision/feature/Descriptor.hpp>
 #include <aliceVision/feature/ImageDescriber.hpp>
 #include <aliceVision/feature/regionsFactory.hpp>
-#include <aliceVision/config.hpp>
+// #include <aliceVision/config.hpp> // TO CHECK
 #include <aliceVision/system/Logger.hpp>
 
 extern "C" {
@@ -212,11 +212,11 @@ bool extractSIFT(const image::Image<float>& image,
   // Process SIFT computation
   vl_sift_process_first_octave(filt, image.data());
 
-  typedef ScalarRegions<SIOPointFeature,T,128> SIFT_Region_T;
-  regions.reset( new SIFT_Region_T );
+  using SIFT_Region_T = ScalarRegions<T,128>;
+  SIFT_Region_T * regionsCasted = new SIFT_Region_T();
+  regions.reset(regionsCasted);
   
   // Build alias to cached data
-  SIFT_Region_T * regionsCasted = dynamic_cast<SIFT_Region_T*>(regions.get());
   // reserve some memory for faster keypoint saving
   const std::size_t reserveSize = (params._gridSize && params._maxTotalKeypoints) ? params._maxTotalKeypoints : 2000;
   regionsCasted->Features().reserve(reserveSize);
@@ -254,7 +254,7 @@ bool extractSIFT(const image::Image<float>& image,
       for (int q=0 ; q < nangles ; ++q)
       {
         vl_sift_calc_keypoint_descriptor(filt, &vlFeatDescriptor[0], keys+i, angles[q]);
-        const SIOPointFeature fp(keys[i].x, keys[i].y,
+        const PointFeature fp(keys[i].x, keys[i].y,
           keys[i].sigma, static_cast<float>(angles[q]));
 
         convertSIFT<T>(&vlFeatDescriptor[0], descriptor, params._rootSift);
@@ -283,7 +283,7 @@ bool extractSIFT(const image::Image<float>& image,
     std::iota(indexSort.begin(), indexSort.end(), 0);
     std::sort(indexSort.begin(), indexSort.end(), [&](std::size_t a, std::size_t b){ return features[a].scale() > features[b].scale(); });
     
-    std::vector<typename SIFT_Region_T::FeatureT> sortedFeatures(features.size());
+    std::vector<PointFeature> sortedFeatures(features.size());
     std::vector<typename SIFT_Region_T::DescriptorT> sortedDescriptors(features.size());
     for(std::size_t i: indexSort)
     {
@@ -339,7 +339,7 @@ bool extractSIFT(const image::Image<float>& image,
         filtered_indexes.insert(filtered_indexes.end(), rejected_indexes.begin(), rejected_indexes.begin() + remainingElements);
       }
 
-      std::vector<typename SIFT_Region_T::FeatureT> filtered_features(filtered_indexes.size());
+      std::vector<PointFeature> filtered_features(filtered_indexes.size());
       std::vector<typename SIFT_Region_T::DescriptorT> filtered_descriptors(filtered_indexes.size());
       for(IndexT i = 0; i < filtered_indexes.size(); ++i)
       {

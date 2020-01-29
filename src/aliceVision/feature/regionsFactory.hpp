@@ -14,18 +14,18 @@ namespace aliceVision {
 namespace feature {
 
 /// Define the classic SIFT Keypoint
-typedef ScalarRegions<SIOPointFeature,unsigned char,128> SIFT_Regions;
+using SIFT_Regions = ScalarRegions<unsigned char,128>;
 /// Define the classic SIFT features using float representation
-typedef ScalarRegions<SIOPointFeature,float,128> SIFT_Float_Regions;
+using SIFT_Float_Regions = ScalarRegions<float,128>;
 /// Define the classic CCTag Keypoint
-typedef ScalarRegions<SIOPointFeature,unsigned char,128> CCTAG_Regions;
+using CCTAG_Regions = ScalarRegions<unsigned char,128>;
 /// Define the AKAZE Keypoint (with a float descriptor)
-typedef ScalarRegions<SIOPointFeature,float,64> AKAZE_Float_Regions;
+using AKAZE_Float_Regions = ScalarRegions<float,64>;
 /// Define the AKAZE Keypoint (with a LIOP descriptor)
-typedef ScalarRegions<SIOPointFeature,unsigned char,144> AKAZE_Liop_Regions;
+using AKAZE_Liop_Regions = ScalarRegions<unsigned char,144>;
 
 /// Define the AKAZE Keypoint (with a binary descriptor saved in an uchar array)
-typedef BinaryRegions<SIOPointFeature,64> AKAZE_BinaryRegions;
+using AKAZE_BinaryRegions = BinaryRegions<64>;
 
 } // namespace feature
 } // namespace aliceVision

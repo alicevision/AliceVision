@@ -191,8 +191,8 @@ void centerMatrix(const Eigen::Matrix2Xf & points2d, Mat3 & t);
  * @param[out] cJ The standardizing matrix to apply to (the subpart of) \c featuresJ
  * @param[in] usefulMatchesId To consider a subpart of \c matches only.
  */
-void centeringMatrices(const std::vector<feature::SIOPointFeature> & featuresI,
-                       const std::vector<feature::SIOPointFeature> & featuresJ,
+void centeringMatrices(const std::vector<feature::PointFeature> & featuresI,
+                       const std::vector<feature::PointFeature> & featuresJ,
                        const matching::IndMatches & matches,
                        Mat3 & cI,
                        Mat3 & cJ,
@@ -204,8 +204,8 @@ void centeringMatrices(const std::vector<feature::SIOPointFeature> & featuresI,
  * @param[in] feat2 The second feature with known scale & orientation.
  * @param[out] S The similarity transformation between f1 et f2 so that f2 = S * f1.
  */
-void computeSimilarity(const feature::SIOPointFeature & feat1,
-                       const feature::SIOPointFeature & feat2,
+void computeSimilarity(const feature::PointFeature & feat1,
+                       const feature::PointFeature & feat2,
                        Mat3 & S);
 
 /**
@@ -217,8 +217,8 @@ void computeSimilarity(const feature::SIOPointFeature & feat1,
  * @param[out] affineTransformation The estimated Affine transformation.
  * @param[in] usefulMatchesId To consider a subpart of \c matches only.
  */
-void estimateAffinity(const std::vector<feature::SIOPointFeature> & featuresI,
-                      const std::vector<feature::SIOPointFeature> & featuresJ,
+void estimateAffinity(const std::vector<feature::PointFeature> & featuresI,
+                      const std::vector<feature::PointFeature> & featuresJ,
                       const matching::IndMatches & matches,
                       Mat3 & affineTransformation,
                       const std::set<IndexT> & usefulMatchesId = std::set<IndexT>());
@@ -232,8 +232,8 @@ void estimateAffinity(const std::vector<feature::SIOPointFeature> & featuresI,
  * @param[out] H The estimated Homography transformation.
  * @param[in] usefulMatchesId To consider a subpart of \c matches only.
  */
-void estimateHomography(const std::vector<feature::SIOPointFeature> & featuresI,
-                        const std::vector<feature::SIOPointFeature> & featuresJ,
+void estimateHomography(const std::vector<feature::PointFeature> & featuresI,
+                        const std::vector<feature::PointFeature> & featuresJ,
                         const matching::IndMatches & matches,
                         Mat3 &H,
                         const std::set<IndexT> & usefulMatchesId = std::set<IndexT>());
@@ -247,8 +247,8 @@ void estimateHomography(const std::vector<feature::SIOPointFeature> & featuresI,
  * @param[in] tolerance The tolerated pixel error.
  * @param[in] inliersId The index in the \c matches vector.
  */
-void findTransformationInliers(const std::vector<feature::SIOPointFeature> & featuresI,
-                               const std::vector<feature::SIOPointFeature> & featuresJ, 
+void findTransformationInliers(const std::vector<feature::PointFeature> & featuresI,
+                               const std::vector<feature::PointFeature> & featuresJ,
                                const matching::IndMatches & matches,
                                const Mat3 & transformation,
                                double tolerance,
@@ -270,8 +270,8 @@ void findTransformationInliers(const Mat2X& featuresI,
                                std::set<IndexT> &inliersId);
 
 
-bool refineHomography(const std::vector<feature::SIOPointFeature> &featuresI,
-                      const std::vector<feature::SIOPointFeature> &featuresJ,
+bool refineHomography(const std::vector<feature::PointFeature> &featuresI,
+                      const std::vector<feature::PointFeature> &featuresJ,
                       const matching::IndMatches& remainingMatches,
                       Mat3& homography,
                       std::set<IndexT>& bestMatchesId,

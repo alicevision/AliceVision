@@ -539,8 +539,8 @@ int main(int argc, char **argv)
         assert(descType != feature::EImageDescriberType::UNINITIALIZED);
         const aliceVision::matching::IndMatches& inputMatches = match.second;
 
-        const feature::FeatRegions<feature::SIOPointFeature>* rRegions = dynamic_cast<const feature::FeatRegions<feature::SIOPointFeature>*>(&regionPerView.getRegions(indexImagePair.second, descType));
-        const feature::FeatRegions<feature::SIOPointFeature>* lRegions = dynamic_cast<const feature::FeatRegions<feature::SIOPointFeature>*>(&regionPerView.getRegions(indexImagePair.first, descType));
+        const feature::Regions* rRegions = &regionPerView.getRegions(indexImagePair.second, descType);
+        const feature::Regions* lRegions = &regionPerView.getRegions(indexImagePair.first, descType);
 
         // get the regions for the current view pair:
         if(rRegions && lRegions)

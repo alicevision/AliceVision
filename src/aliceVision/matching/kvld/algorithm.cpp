@@ -38,7 +38,7 @@ float getRange(
 
 //=============================IO interface======================//
 
-std::ofstream& writeDetector( std::ofstream& out, const aliceVision::feature::SIOPointFeature& feature )
+std::ofstream& writeDetector( std::ofstream& out, const aliceVision::feature::PointFeature& feature )
 {
   out << feature.x() << " "
     << feature.y() << " "
@@ -47,7 +47,7 @@ std::ofstream& writeDetector( std::ofstream& out, const aliceVision::feature::SI
   return out;
 }
 
-std::ifstream& readDetector( std::ifstream& in, aliceVision::feature::SIOPointFeature& point )
+std::ifstream& readDetector( std::ifstream& in, aliceVision::feature::PointFeature& point )
 {
   in >> point.x()
     >> point.y()

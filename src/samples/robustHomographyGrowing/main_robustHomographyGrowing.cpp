@@ -203,12 +203,6 @@ int main(int argc, char **argv)
   extract(imageDescriber, imageLeft, regions_perImage[0]);
   extract(imageDescriber, imageRight, regions_perImage[1]);
 
-  const std::vector<PointFeature>& pointsLeft = regions_perImage.at(0)->GetRegionsPositions();
-  const std::vector<PointFeature>& pointsRight = regions_perImage.at(1)->GetRegionsPositions();
-  // get the SIOPointFeature
-  const feature::FeatRegions<feature::SIOPointFeature>* siofeatures_I = dynamic_cast<const feature::FeatRegions<feature::SIOPointFeature>*>(regions_perImage.at(0).get());
-  const feature::FeatRegions<feature::SIOPointFeature>* siofeatures_J = dynamic_cast<const feature::FeatRegions<feature::SIOPointFeature>*>(regions_perImage.at(1).get());
-
 
   //--
   // Display images sides by side with extracted features
@@ -218,10 +212,10 @@ int main(int argc, char **argv)
     const string out_filename = "01.features."+describerTypesName+".svg";
     drawKeypointsSideBySide(filenameLeft,
                             imageLeftSize,
-                            feature::getSIOPointFeatures(*regions_perImage.at(0)),
+                            regions_perImage.at(0).get()->Features(),
                             filenameRight,
                             imageRightSize,
-                            feature::getSIOPointFeatures(*regions_perImage.at(1)),
+                            fregions_perImage.at(1).get()->Features(),
                             out_filename);
   }
 
@@ -234,8 +228,8 @@ int main(int argc, char **argv)
 
   matching::DistanceRatioMatch(ratioThreshold,
                                matching::BRUTE_FORCE_L2,
-                               *regions_perImage[0].get(),
-                               *regions_perImage[1].get(),
+                               *regions_perImage[0],
+                               *regions_perImage[1],
                                vec_PutativeMatches);
 
   // two ways to show the matches
@@ -243,10 +237,10 @@ int main(int argc, char **argv)
     // side by side
     drawMatchesSideBySide(filenameLeft,
                           imageLeftSize,
-                          feature::getSIOPointFeatures(*regions_perImage.at(0)),
+                          regions_perImage.at(0).get()->Features(),
                           filenameRight,
                           imageRightSize,
-                          feature::getSIOPointFeatures(*regions_perImage.at(1)),
+                          regions_perImage.at(1).get()->Features(),
                           vec_PutativeMatches,
                           "02.putativeMatchesSideBySide." + describerTypesName + ".svg");
   }
@@ -257,8 +251,8 @@ int main(int argc, char **argv)
     const bool richKpts = false;
     saveMatchesAsMotion(filenameLeft,
                         imageLeftSize,
-                        feature::getSIOPointFeatures(*regions_perImage.at(0)),
-                        feature::getSIOPointFeatures(*regions_perImage.at(1)),
+                        regions_perImage.at(0).get()->Features(),
+                        regions_perImage.at(1).get()->Features(),
                         vec_PutativeMatches,
                         "03.putativeMatchesMotion."+describerTypesName+".svg",
                         isLeft, richKpts);
@@ -282,8 +276,8 @@ int main(int argc, char **argv)
   // First sort the putative matches by increasing distance ratio value
   sortMatches_byDistanceRatio(vec_PutativeMatches);
 
-  matchingImageCollection::filterMatchesByHGrowing(siofeatures_I->Features(),
-                                                   siofeatures_J->Features(),
+  matchingImageCollection::filterMatchesByHGrowing(regions_perImage.at(0).get()->Features(),
+                                                   regions_perImage.at(1).get()->Features(),
                                                    vec_PutativeMatches,
                                                    homographiesAndMatches,
                                                    outGeometricInliers,
@@ -308,8 +302,8 @@ int main(int argc, char **argv)
     // first visualize all the filtered matched together, without distinction of which homography they belong to
     saveMatchesAsMotion(filenameLeft,
                         imageLeftSize,
-                        feature::getSIOPointFeatures(*regions_perImage.at(0)),
-                        feature::getSIOPointFeatures(*regions_perImage.at(1)),
+                        regions_perImage.at(0).get()->Features(),
+                        regions_perImage.at(1).get()->Features(),
                         outGeometricInliers,
                         "04.allGrownMatchesMotion."+describerTypesName+".svg",
                         isLeft, richKpts);
@@ -317,8 +311,8 @@ int main(int argc, char **argv)
     // now visualize the matches grouped by homography with different colors
     saveMatchesAsMotion(filenameLeft,
                         imageLeftSize,
-                        feature::getSIOPointFeatures(*regions_perImage.at(0)),
-                        feature::getSIOPointFeatures(*regions_perImage.at(1)),
+                        regions_perImage.at(0).get()->Features(),
+                        regions_perImage.at(1).get()->Features(),
                         homographiesAndMatches,
                         "05.allGrownMatchesByHomographyMotion."+describerTypesName+".svg",
                         isLeft, richKpts);
@@ -326,10 +320,10 @@ int main(int argc, char **argv)
     // finally we can visualize the pair of images size by size with the matches grouped by color
     drawHomographyMatches(filenameLeft,
                           imageLeftSize,
-                          feature::getSIOPointFeatures(*regions_perImage.at(0)),
+                          regions_perImage.at(0).get()->Features(),
                           filenameRight,
                           imageRightSize,
-                          feature::getSIOPointFeatures(*regions_perImage.at(1)),
+                          regions_perImage.at(1).get()->Features(),
                           homographiesAndMatches,
                           vec_PutativeMatches,
                           "06.allGrownMatchesByHomography."+describerTypesName+".svg");

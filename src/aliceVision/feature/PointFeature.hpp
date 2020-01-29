@@ -27,55 +27,26 @@ class PointFeature {
   friend std::istream& operator>>(std::istream& in, PointFeature& obj);
 
 public:
-  PointFeature(float x=0.0f, float y=0.0f)
-   : _coords(x, y) {}
+  PointFeature() {}
+  PointFeature(float x, float y, float scale, float orient)
+   : _coords(x, y),
+     _scale(scale),
+     _orientation(orient)
+  {}
 
   float x() const { return _coords(0); }
   float y() const { return _coords(1); }
   const Vec2f & coords() const { return _coords;}
+  float scale() const { return _scale; }
+  float& scale() { return _scale; }
 
   float& x() { return _coords(0); }
   float& y() { return _coords(1); }
   Vec2f& coords() { return _coords;}
 
-protected:
-  Vec2f _coords;  // (x, y)
-};
-
-typedef std::vector<PointFeature> PointFeatures;
-
-//with overloaded operators:
-inline std::ostream& operator<<(std::ostream& out, const PointFeature& obj)
-{
-  return out << obj._coords(0) << " " << obj._coords(1);
-}
-
-inline std::istream& operator>>(std::istream& in, PointFeature& obj)
-{
-  return in >> obj._coords(0) >> obj._coords(1);
-}
-
-/**
- * Base class for ScaleInvariant Oriented Point features.
- * Add scale and orientation description to basis PointFeature.
- */
-class SIOPointFeature : public PointFeature {
-
-  friend std::ostream& operator<<(std::ostream& out, const SIOPointFeature& obj);
-  friend std::istream& operator>>(std::istream& in, SIOPointFeature& obj);
-
-public:
-  SIOPointFeature(float x=0.0f, float y=0.0f,
-                  float scale=0.0f, float orient=0.0f)
-    : PointFeature(x,y)
-    , _scale(scale)
-    , _orientation(orient) {}
-
-  float scale() const { return _scale; }
-  float& scale() { return _scale; }
   float orientation() const { return _orientation; }
   float& orientation() { return _orientation; }
-  
+
   /**
     * @brief Return the orientation of the feature as an unit vector.
     * @return a unit vector corresponding to the orientation of the feature.
@@ -93,33 +64,34 @@ public:
   {
     return scale()*getOrientationVector();
   }
-  
-  bool operator ==(const SIOPointFeature& b) const {
+
+  bool operator ==(const PointFeature& b) const {
     return (_scale == b.scale()) &&
            (_orientation == b.orientation()) &&
            (x() == b.x()) && (y() == b.y()) ;
   }
 
-  bool operator !=(const SIOPointFeature& b) const {
+  bool operator !=(const PointFeature& b) const {
     return !((*this)==b);
   }
 
 protected:
-  float _scale;        // In pixels.
-  float _orientation;  // In radians.
+  Vec2f _coords = {0.0f, 0.0f};  // (x, y)
+  float _scale = 0.0f; // In pixels.
+  float _orientation = 0.0f;  // In radians.
 };
 
-//
-inline std::ostream& operator<<(std::ostream& out, const SIOPointFeature& obj)
+typedef std::vector<PointFeature> PointFeatures;
+
+//with overloaded operators:
+inline std::ostream& operator<<(std::ostream& out, const PointFeature& obj)
 {
-  const PointFeature *pf = static_cast<const PointFeature*>(&obj);
-  return out << *pf << " " << obj._scale << " " << obj._orientation;
+  return out << obj._coords(0) << " " << obj._coords(1) << " " << obj._scale << " " << obj._orientation;
 }
 
-inline std::istream& operator>>(std::istream& in, SIOPointFeature& obj)
+inline std::istream& operator>>(std::istream& in, PointFeature& obj)
 {
-  PointFeature *pf = static_cast<PointFeature*>(&obj);
-  return in >> *pf >> obj._scale >> obj._orientation;
+  return in >> obj._coords(0) >> obj._coords(1) >> obj._scale >> obj._orientation;
 }
 
 /// Read feats from file
