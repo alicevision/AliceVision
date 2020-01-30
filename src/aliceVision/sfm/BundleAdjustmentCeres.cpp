@@ -35,22 +35,22 @@ using namespace aliceVision::geometry;
  * @param[in] observation The corresponding observation
  * @return cost functor
  */
-ceres::CostFunction* createCostFunctionFromIntrinsics(const IntrinsicBase* intrinsicPtr, const Vec2& observation)
+ceres::CostFunction* createCostFunctionFromIntrinsics(const IntrinsicBase* intrinsicPtr, const sfmData::Observation& observation)
 {
   switch(intrinsicPtr->getType())
   {
     case PINHOLE_CAMERA:
-      return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_Pinhole, 2, 3, 6, 3>(new ResidualErrorFunctor_Pinhole(observation.data()));
+      return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_Pinhole, 2, 3, 6, 3>(new ResidualErrorFunctor_Pinhole(observation));
     case PINHOLE_CAMERA_RADIAL1:
-      return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_PinholeRadialK1, 2, 4, 6, 3>(new ResidualErrorFunctor_PinholeRadialK1(observation.data()));
+      return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_PinholeRadialK1, 2, 4, 6, 3>(new ResidualErrorFunctor_PinholeRadialK1(observation));
     case PINHOLE_CAMERA_RADIAL3:
-      return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_PinholeRadialK3, 2, 6, 6, 3>(new ResidualErrorFunctor_PinholeRadialK3(observation.data()));
+      return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_PinholeRadialK3, 2, 6, 6, 3>(new ResidualErrorFunctor_PinholeRadialK3(observation));
     case PINHOLE_CAMERA_BROWN:
-      return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_PinholeBrownT2, 2, 8, 6, 3>(new ResidualErrorFunctor_PinholeBrownT2(observation.data()));
+      return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_PinholeBrownT2, 2, 8, 6, 3>(new ResidualErrorFunctor_PinholeBrownT2(observation));
     case PINHOLE_CAMERA_FISHEYE:
-      return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_PinholeFisheye, 2, 7, 6, 3>(new ResidualErrorFunctor_PinholeFisheye(observation.data()));
+      return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_PinholeFisheye, 2, 7, 6, 3>(new ResidualErrorFunctor_PinholeFisheye(observation));
     case PINHOLE_CAMERA_FISHEYE1:
-      return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_PinholeFisheye1, 2, 4, 6, 3>(new ResidualErrorFunctor_PinholeFisheye1(observation.data()));
+      return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_PinholeFisheye1, 2, 4, 6, 3>(new ResidualErrorFunctor_PinholeFisheye1(observation));
     default:
       throw std::logic_error("Cannot create cost function, unrecognized intrinsic type in BA.");
   }
@@ -62,22 +62,22 @@ ceres::CostFunction* createCostFunctionFromIntrinsics(const IntrinsicBase* intri
  * @param[in] observation The corresponding observation
  * @return cost functor
  */
-ceres::CostFunction* createRigCostFunctionFromIntrinsics(const IntrinsicBase* intrinsicPtr, const Vec2& observation)
+ceres::CostFunction* createRigCostFunctionFromIntrinsics(const IntrinsicBase* intrinsicPtr, const sfmData::Observation& observation)
 {
   switch(intrinsicPtr->getType())
   {
     case PINHOLE_CAMERA:
-      return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_Pinhole, 2, 3, 6, 6, 3>(new ResidualErrorFunctor_Pinhole(observation.data()));
+      return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_Pinhole, 2, 3, 6, 6, 3>(new ResidualErrorFunctor_Pinhole(observation));
     case PINHOLE_CAMERA_RADIAL1:
-      return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_PinholeRadialK1, 2, 4, 6, 6, 3>(new ResidualErrorFunctor_PinholeRadialK1(observation.data()));
+      return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_PinholeRadialK1, 2, 4, 6, 6, 3>(new ResidualErrorFunctor_PinholeRadialK1(observation));
     case PINHOLE_CAMERA_RADIAL3:
-      return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_PinholeRadialK3, 2, 6, 6, 6, 3>(new ResidualErrorFunctor_PinholeRadialK3(observation.data()));
+      return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_PinholeRadialK3, 2, 6, 6, 6, 3>(new ResidualErrorFunctor_PinholeRadialK3(observation));
     case PINHOLE_CAMERA_BROWN:
-      return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_PinholeBrownT2, 2, 8, 6, 6, 3>(new ResidualErrorFunctor_PinholeBrownT2(observation.data()));
+      return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_PinholeBrownT2, 2, 8, 6, 6, 3>(new ResidualErrorFunctor_PinholeBrownT2(observation));
     case PINHOLE_CAMERA_FISHEYE:
-      return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_PinholeFisheye, 2, 7, 6, 6, 3>(new ResidualErrorFunctor_PinholeFisheye(observation.data()));
+      return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_PinholeFisheye, 2, 7, 6, 6, 3>(new ResidualErrorFunctor_PinholeFisheye(observation));
     case PINHOLE_CAMERA_FISHEYE1:
-      return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_PinholeFisheye1, 2, 4, 6, 6, 3>(new ResidualErrorFunctor_PinholeFisheye1(observation.data()));
+      return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_PinholeFisheye1, 2, 4, 6, 6, 3>(new ResidualErrorFunctor_PinholeFisheye1(observation));
     default:
       throw std::logic_error("Cannot create rig cost function, unrecognized intrinsic type in BA.");
   }
@@ -573,7 +573,7 @@ void BundleAdjustmentCeres::addLandmarksToProblem(const sfmData::SfMData& sfmDat
 
       if(view.isPartOfRig() && !view.isPoseIndependant())
       {
-        ceres::CostFunction* costFunction = createRigCostFunctionFromIntrinsics(sfmData.getIntrinsicPtr(view.getIntrinsicId()), observation.x);
+        ceres::CostFunction* costFunction = createRigCostFunctionFromIntrinsics(sfmData.getIntrinsicPtr(view.getIntrinsicId()), observation);
 
         problem.AddResidualBlock(costFunction,
             lossFunction,
@@ -584,7 +584,7 @@ void BundleAdjustmentCeres::addLandmarksToProblem(const sfmData::SfMData& sfmDat
       }
       else
       {
-        ceres::CostFunction* costFunction = createCostFunctionFromIntrinsics(sfmData.getIntrinsicPtr(view.getIntrinsicId()), observation.x);
+        ceres::CostFunction* costFunction = createCostFunctionFromIntrinsics(sfmData.getIntrinsicPtr(view.getIntrinsicId()), observation);
 
         problem.AddResidualBlock(costFunction,
             lossFunction,

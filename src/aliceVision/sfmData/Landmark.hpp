@@ -22,7 +22,7 @@ namespace sfmData {
 struct Observation
 {
   Observation(): id_feat(UndefinedIndexT) {}
-  Observation(const Vec2 & p, IndexT idFeat, double scale_ = 1.0) // TODO: remove default value to scale
+  Observation(const Vec2 & p, IndexT idFeat, double scale_)
     : x(p)
     , id_feat(idFeat)
     , scale(scale_)

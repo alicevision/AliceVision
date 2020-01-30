@@ -215,7 +215,7 @@ int main(int argc, char **argv)
                             regions_perImage.at(0).get()->Features(),
                             filenameRight,
                             imageRightSize,
-                            fregions_perImage.at(1).get()->Features(),
+                            regions_perImage.at(1).get()->Features(),
                             out_filename);
   }
 

@@ -25,7 +25,6 @@
 #include <aliceVision/system/Timer.hpp>
 #include <aliceVision/system/cpu.hpp>
 #include <aliceVision/system/MemoryInfo.hpp>
-#include <aliceVision/config.hpp>
 
 #include <dependencies/htmlDoc/htmlDoc.hpp>
 
@@ -1760,7 +1759,7 @@ void ReconstructionEngine_sequentialSfM::triangulate_multiViewsLORANSAC(SfMData&
   std::transform(mapTracksToTriangulate.begin(), mapTracksToTriangulate.end(),
                  std::inserter(setTracksId, setTracksId.begin()),
                  stl::RetrieveKey());
-                   
+
 #pragma omp parallel for 
   for (int i = 0; i < setTracksId.size(); i++) // each track (already reconstructed or not)
   {
@@ -1876,7 +1875,8 @@ void ReconstructionEngine_sequentialSfM::triangulate_multiViewsLORANSAC(SfMData&
       for (const IndexT & viewId : inliers) // add inliers as observations
       {
         const Vec2 x = _featuresPerView->getFeatures(viewId, track.descType)[track.featPerView.at(viewId)].coords().cast<double>();
-        landmark.observations[viewId] = Observation(x, track.featPerView.at(viewId));
+        const feature::PointFeature& p = _featuresPerView->getFeatures(viewId, track.descType)[track.featPerView.at(viewId)];
+        landmark.observations[viewId] = Observation(x, track.featPerView.at(viewId), p.scale());
       }
 #pragma omp critical
       {
@@ -1911,7 +1911,7 @@ void ReconstructionEngine_sequentialSfM::triangulate_2Views(SfMData& scene, cons
   std::set<IndexT> allReconstructedViews;
   allReconstructedViews.insert(previousReconstructedViews.begin(), previousReconstructedViews.end());
   allReconstructedViews.insert(newReconstructedViews.begin(), newReconstructedViews.end());
-  
+
 #pragma omp parallel for schedule(dynamic)
   for (ptrdiff_t i = 0; i < static_cast<ptrdiff_t>(allReconstructedViews.size()); ++i)
   {
@@ -1948,6 +1948,8 @@ void ReconstructionEngine_sequentialSfM::triangulate_2Views(SfMData& scene, cons
         const Vec2 xI = _featuresPerView->getFeatures(I, track.descType)[track.featPerView.at(I)].coords().cast<double>();
         const Vec2 xJ = _featuresPerView->getFeatures(J, track.descType)[track.featPerView.at(J)].coords().cast<double>();
         
+        const feature::PointFeature& featI = _featuresPerView->getFeatures(I, track.descType)[track.featPerView.at(I)];
+        const feature::PointFeature& featJ = _featuresPerView->getFeatures(J, track.descType)[track.featPerView.at(J)];
         // test if the track already exists in 3D
         bool trackIdExists;
 #pragma omp critical
@@ -1968,7 +1970,7 @@ void ReconstructionEngine_sequentialSfM::triangulate_2Views(SfMData& scene, cons
               const double acThreshold = (acThresholdIt != _map_ACThreshold.end()) ? acThresholdIt->second : 4.0;
               if (poseI.depth(landmark.X) > 0 && residual.norm() < std::max(4.0, acThreshold))
               {
-                landmark.observations[I] = Observation(xI, track.featPerView.at(I));
+                landmark.observations[I] = Observation(xI, track.featPerView.at(I), featI.scale());
                 ++extented_track;
               }
             }
@@ -1980,7 +1982,7 @@ void ReconstructionEngine_sequentialSfM::triangulate_2Views(SfMData& scene, cons
               const double acThreshold = (acThresholdIt != _map_ACThreshold.end()) ? acThresholdIt->second : 4.0;
               if (poseJ.depth(landmark.X) > 0 && residual.norm() < std::max(4.0, acThreshold))
               {
-                landmark.observations[J] = Observation(xJ, track.featPerView.at(J));
+                landmark.observations[J] = Observation(xJ, track.featPerView.at(J), featJ.scale());
                 ++extented_track;
               }
             }
@@ -2031,8 +2033,8 @@ void ReconstructionEngine_sequentialSfM::triangulate_2Views(SfMData& scene, cons
               landmark.X = X_euclidean;
               landmark.descType = track.descType;
               
-              landmark.observations[I] = Observation(xI, track.featPerView.at(I));
-              landmark.observations[J] = Observation(xJ, track.featPerView.at(J));
+              landmark.observations[I] = Observation(xI, track.featPerView.at(I), featI.scale());
+              landmark.observations[J] = Observation(xJ, track.featPerView.at(J), featJ.scale());
               
               ++new_added_track;
             } // critical

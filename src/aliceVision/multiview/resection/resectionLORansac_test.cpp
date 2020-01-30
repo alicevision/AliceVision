@@ -63,12 +63,13 @@ bool refinePoseAsItShouldbe(const Mat & pt3D,
   {
   });
   // structure data (2D-3D correspondences)
+  const double unknownScale = 0.0;
   for(size_t i = 0; i < vec_inliers.size(); ++i)
   {
     const size_t idx = vec_inliers[i];
     Landmark landmark;
     landmark.X = pt3D.col(idx);
-    landmark.observations[0] = Observation(pt2D.col(idx), UndefinedIndexT);
+    landmark.observations[0] = Observation(pt2D.col(idx), UndefinedIndexT, unknownScale);
     sfm_data.structure[i] = std::move(landmark);
   }
 

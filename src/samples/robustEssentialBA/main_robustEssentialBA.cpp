@@ -255,9 +255,9 @@ int main() {
       // Reject point that is behind the camera
       if (pose0.depth(X) < 0 && pose1.depth(X) < 0)
           continue;
-      // Add a new landmark (3D point with it's 2d observations)
-      landmarks[i].observations[tinyScene.views[0]->getViewId()] = sfmData::Observation(LL.coords().cast<double>(), vec_PutativeMatches[relativePose_info.vec_inliers[i]]._i);
-      landmarks[i].observations[tinyScene.views[1]->getViewId()] = sfmData::Observation(RR.coords().cast<double>(), vec_PutativeMatches[relativePose_info.vec_inliers[i]]._j);
+      // Add a new landmark (3D point with its 2d observations)
+      landmarks[i].observations[tinyScene.views[0]->getViewId()] = sfmData::Observation(LL.coords().cast<double>(), vec_PutativeMatches[relativePose_info.vec_inliers[i]]._i, LL.scale());
+      landmarks[i].observations[tinyScene.views[1]->getViewId()] = sfmData::Observation(RR.coords().cast<double>(), vec_PutativeMatches[relativePose_info.vec_inliers[i]]._j, RR.scale());
       landmarks[i].X = X;
     }
     sfmDataIO::Save(tinyScene, "EssentialGeometry_start.ply", sfmDataIO::ESfMData::ALL);

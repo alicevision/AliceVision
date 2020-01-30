@@ -301,7 +301,7 @@ bool ReconstructionEngine_globalSfM::Compute_Initial_Structure(matching::Pairwis
         const size_t imaIndex = it->first;
         const size_t featIndex = it->second;
         const PointFeature & pt = _featuresPerView->getFeatures(imaIndex, track.descType)[featIndex];
-        obs[imaIndex] = Observation(pt.coords().cast<double>(), featIndex);
+        obs[imaIndex] = Observation(pt.coords().cast<double>(), featIndex, pt.scale());
       }
     }
 
@@ -443,6 +443,7 @@ void ReconstructionEngine_globalSfM::Compute_Relative_Rotations(rotationAveragin
     poseWiseMatches[Pair(v1->getPoseId(), v2->getPoseId())].insert(pair);
   }
 
+  const double unknownScale = 0.0;
   boost::progress_display progressBar( poseWiseMatches.size(), std::cout, "\n- Relative pose computation -\n" );
   #pragma omp parallel for schedule(dynamic)
   // Compute the relative pose from pairwise point matches:
@@ -556,13 +557,15 @@ void ReconstructionEngine_globalSfM::Compute_Relative_Rotations(rotationAveragin
           const matching::IndMatches & matches = matchesPerDescIt.second;
           for (const matching::IndMatch& match: matches)
           {
-            const Vec2 x1_ = _featuresPerView->getFeatures(I, descType)[match._i].coords().cast<double>();
-            const Vec2 x2_ = _featuresPerView->getFeatures(J, descType)[match._j].coords().cast<double>();
+            const PointFeature& p1 = _featuresPerView->getFeatures(I, descType)[match._i];
+            const PointFeature& p2 = _featuresPerView->getFeatures(J, descType)[match._j];
+            const Vec2 x1_ = p1.coords().cast<double>();
+            const Vec2 x2_ = p2.coords().cast<double>();
             Vec3 X;
             TriangulateDLT(P1, x1_, P2, x2_, &X);
             Observations obs;
-            obs[view_I->getViewId()] = Observation(x1_, match._i);
-            obs[view_J->getViewId()] = Observation(x2_, match._j);
+            obs[view_I->getViewId()] = Observation(x1_, match._i, p1.scale());
+            obs[view_J->getViewId()] = Observation(x2_, match._j, p2.scale());
             Landmark& newLandmark = landmarks[landmarkId++];
             newLandmark.descType = descType;
             newLandmark.observations = obs;

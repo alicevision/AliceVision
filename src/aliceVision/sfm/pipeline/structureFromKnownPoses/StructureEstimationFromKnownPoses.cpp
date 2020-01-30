@@ -272,8 +272,10 @@ void StructureEstimationFromKnownPoses::triangulate(
     {
       const size_t imaIndex = it->first;
       const size_t featIndex = it->second;
-      const Vec2 pt = regionsPerView.getRegions(imaIndex, track.descType).GetRegionPosition(featIndex);
-      observations[imaIndex] = Observation(pt, featIndex);
+      const feature::Regions& regions = regionsPerView.getRegions(imaIndex, track.descType);
+      const feature::PointFeature& feat = regions.Features()[featIndex];
+
+      observations[imaIndex] = Observation(feat.coords().cast<double>(), featIndex, feat.scale());
     }
   }
 
