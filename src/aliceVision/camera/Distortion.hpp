@@ -35,6 +35,22 @@ public:
     return r;
   }
 
+  virtual Eigen::Matrix2d getDerivativeAddDistoWrtPt(const Vec2 & p) const {
+    return Eigen::Matrix2d::Identity();
+  }
+
+  virtual Eigen::MatrixXd getDerivativeAddDistoWrtDisto(const Vec2 & p) const {
+    return Eigen::MatrixXd(0, 0);
+  }
+
+  virtual Eigen::Matrix2d getDerivativeRemoveDistoWrtPt(const Vec2 & p) const {
+    return Eigen::Matrix2d::Identity();
+  }
+
+  virtual Eigen::MatrixXd getDerivativeRemoveDistoWrtDisto(const Vec2 & p) const {
+    return Eigen::MatrixXd(0, 0);
+  }
+
 protected:
   std::vector<double> _distortionParams;
 };

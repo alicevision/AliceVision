@@ -878,7 +878,7 @@ struct ResidualErrorConstraintFunctor_EquidistantRadialK3
     const double r4 = r2 * r2;
     const double r6 = r4 * r2;
 
-    return r2 * Square(1.0 + k1*r2 + k2*r4 + k3*r6) / (1.0 + k1 + k2 + k3);
+    return r2 * Square((1.0 + k1*r2 + k2*r4 + k3*r6) / (1.0 + k1 + k2 + k3));
   }
 
   template <typename T>

@@ -55,9 +55,6 @@ public:
   virtual Vec2 project(const geometry::Pose3& pose, const Vec3& pt3D, bool applyDistortion = true) const override
   {
     Vec3 X = pose(pt3D);
-    
-    /* To unit sphere */
-    X.normalize();
 
     /* Compute angle with optical center */
     double angle_Z = std::atan2(sqrt(X(0) * X(0) + X(1) * X(1)), X(2));
@@ -83,22 +80,206 @@ public:
     return P;
   }
 
-  virtual Vec3 toUnitSphere(const Vec2 & pt) const override {
+  Eigen::Matrix<double, 2, 3> getDerivativeProjectWrtPoint(const geometry::Pose3& pose, const Vec3 & pt) {
 
-    const Vec2 camcoords = ima2cam(pt);
+    Vec3 X = pose(pt);
+
+    Eigen::Matrix3d d_X_d_pt = pose.rotation();
+
+
+
+    /* Compute angle with optical center */
+    double len2d = sqrt(X(0) * X(0) + X(1) * X(1));
+    Eigen::Matrix<double, 2, 2> d_len2d_d_X;
+    d_len2d_d_X(0) = X(0) / len2d;
+    d_len2d_d_X(1) = X(1) / len2d;
+    
+    double angle_Z = std::atan2(len2d, X(2));
+    double d_angle_Z_d_len2d = X(2) / sqrt(len2d*len2d + X(2) * X(2));
+
+    /* Ignore depth component and compute radial angle */
+    double angle_radial = std::atan2(X(1), X(0));
+
+    
+
+    Eigen::Matrix<double, 2, 3> d_angles_d_X;
+    d_angles_d_X(0, 0) = - X(1) / len2d;
+    d_angles_d_X(0, 1) = X(0) / len2d;
+    d_angles_d_X(0, 2) = 0.0;
+
+    d_angles_d_X(1, 0) = d_angle_Z_d_len2d * d_len2d_d_X(0);
+    d_angles_d_X(1, 1) = d_angle_Z_d_len2d * d_len2d_d_X(1);
+    d_angles_d_X(1, 2) = - len2d / sqrt(len2d*len2d + X(2) * X(2));
+
 
     double fov = _scale_x;
-    double angle_radial = atan2(camcoords(1), camcoords(0));
-    double angle_Z = camcoords.norm() * 0.5 * fov;
+    double radius = angle_Z / (0.5 * fov);
+
+    double d_radius_d_angle_Z = 1.0 / (0.5 * fov);
+
+    /* radius = focal * angle_Z */
+    Vec2 P;
+    P(0) = cos(angle_radial) * radius;
+    P(1) = sin(angle_radial) * radius;
+
+    Eigen::Matrix<double, 2, 2> d_P_d_angles;
+    d_P_d_angles(0, 0) = - sin(angle_radial) * radius;
+    d_P_d_angles(0, 1) = cos(angle_radial) * d_radius_d_angle_Z;
+    d_P_d_angles(1, 0) = cos(angle_radial) * radius;
+    d_P_d_angles(1, 1) = sin(angle_radial) * d_radius_d_angle_Z;
+
+    Vec2 distorted = this->add_disto(P);
+    Vec2 impt = this->cam2ima(distorted);
+
+    return getDerivativeCam2ImaWrtPoint() * getDerivativeAddDistoWrtPt(P) * d_P_d_angles * d_angles_d_X * d_X_d_pt;
+  }
+
+  Eigen::Matrix<double, 2, 3> getDerivativeProjectWrtDisto(const geometry::Pose3& pose, const Vec3 & pt) {
+
+    Vec3 X = pose(pt);
+
+    /* Compute angle with optical center */
+    double len2d = sqrt(X(0) * X(0) + X(1) * X(1));
+    double angle_Z = std::atan2(len2d, X(2));
+  
+    /* Ignore depth component and compute radial angle */
+    double angle_radial = std::atan2(X(1), X(0));
+
+    double fov = _scale_x;
+    double radius = angle_Z / (0.5 * fov);
+
+    /* radius = focal * angle_Z */
+    Vec2 P;
+    P(0) = cos(angle_radial) * radius;
+    P(1) = sin(angle_radial) * radius;
+
+    Vec2 distorted = this->add_disto(P);
+    Vec2 impt = this->cam2ima(distorted);
+
+    return getDerivativeCam2ImaWrtPoint() * getDerivativeAddDistoWrtDisto(P);
+  }
+
+  Eigen::Matrix<double, 2, 1> getDerivativeProjectWrtFov(const geometry::Pose3& pose, const Vec3 & pt) {
+
+    Vec3 X = pose(pt);
+
+    /* Compute angle with optical center */
+    double len2d = sqrt(X(0) * X(0) + X(1) * X(1));
+    double angle_Z = std::atan2(len2d, X(2));
+  
+    /* Ignore depth component and compute radial angle */
+    double angle_radial = std::atan2(X(1), X(0));
+
+    double fov = _scale_x;
+    double radius = angle_Z / (0.5 * fov);
+
+    /* radius = focal * angle_Z */
+    Vec2 P;
+    P(0) = cos(angle_radial) * radius;
+    P(1) = sin(angle_radial) * radius;
+
+    Eigen::Matrix<double, 2, 1> d_P_d_radius;
+    d_P_d_radius(0, 0) = cos(angle_radial);
+    d_P_d_radius(1, 0) = sin(angle_radial);
+
+    Vec2 distorted = this->add_disto(P);
+    Vec2 impt = this->cam2ima(distorted);
+
+    Eigen::Matrix<double, 1, 1> d_radius_d_fov;
+    d_radius_d_fov(0, 0) = (- 2.0 * angle_Z / (fov * fov));
+
+    return getDerivativeCam2ImaWrtPoint() * getDerivativeAddDistoWrtPt(P) * d_P_d_radius * d_radius_d_fov;
+  }
+
+  Eigen::Matrix<double, 2, 2> getDerivativeProjectWrtPrincipalPoint(const geometry::Pose3& pose, const Vec3 & pt) {
+
+    return getDerivativeCam2ImaWrtPrincipalPoint();
+  }
+
+  Eigen::Matrix<double, 2, 2> getDerivativeAddDistoWrtPt(const Vec2 & pt) {
+    return this->_pDistortion->getDerivativeAddDistoWrtPt(pt);
+  }
+
+  Eigen::Matrix<double, 2, 2> getDerivativeRemoveDistoWrtPt(const Vec2 & pt) {
+    return this->_pDistortion->getDerivativeRemoveDistoWrtPt(pt);
+  }
+
+  Eigen::MatrixXd getDerivativeAddDistoWrtDisto(const Vec2 & pt) {
+    return this->_pDistortion->getDerivativeAddDistoWrtDisto(pt);
+  }
+
+  Eigen::MatrixXd getDerivativeRemoveDistoWrtDisto(const Vec2 & pt) {
+    return this->_pDistortion->getDerivativeRemoveDistoWrtDisto(pt);
+  }
+
+  virtual Vec3 toUnitSphere(const Vec2 & pt) const override {
+
+
+    double fov = _scale_x;
+    double angle_radial = atan2(pt(1), pt(0));
+    double angle_Z = pt.norm() * 0.5 * fov;
 
     Vec3 ret;
-    ret(2) = cos(angle_Z);
     ret(0) = cos(angle_radial) /** / 1.0 / **/ * sin(angle_Z);
     ret(1) = sin(angle_radial) /** / 1.0 / **/ * sin(angle_Z);
+    ret(2) = cos(angle_Z);
 
     return ret;
   }
 
+  Eigen::Matrix<double, 3, 2> getDerivativetoUnitSphereWrtPoint(const Vec2 & pt) {
+
+    double fov = _scale_x;
+    double angle_radial = atan2(pt(1), pt(0));
+    double angle_Z = pt.norm() * 0.5 * fov;
+
+    Vec3 ret;
+    ret(0) = cos(angle_radial) /** / 1.0 / **/ * sin(angle_Z);
+    ret(1) = sin(angle_radial) /** / 1.0 / **/ * sin(angle_Z);
+    ret(2) = cos(angle_Z);
+
+    Eigen::Matrix<double, 3, 2> d_ret_d_angles;
+    d_ret_d_angles(0, 0) = -sin(angle_radial) * sin(angle_Z);
+    d_ret_d_angles(0, 1) = cos(angle_radial) * cos(angle_Z);
+    d_ret_d_angles(1, 0) = cos(angle_radial) * sin(angle_Z);
+    d_ret_d_angles(1, 1) = sin(angle_radial) * cos(angle_Z);
+    d_ret_d_angles(2, 0) = 0;
+    d_ret_d_angles(2, 1) = -sin(angle_Z);
+
+    Eigen::Matrix<double, 2, 2> d_angles_d_pt;
+    d_angles_d_pt(0, 0) = - pt(1) / pt.norm();
+    d_angles_d_pt(0, 1) = pt(0) / pt.norm();
+    d_angles_d_pt(1, 0) = 0.5 * fov * pt(0) / pt.norm();
+    d_angles_d_pt(1, 1) = 0.5 * fov * pt(1) / pt.norm();
+
+    return d_ret_d_angles * d_angles_d_pt;
+  }
+
+  Eigen::Matrix<double, 3, 1> getDerivativetoUnitSphereWrtFov(const Vec2 & pt) {
+
+    double fov = _scale_x;
+    double angle_radial = atan2(pt(1), pt(0));
+    double angle_Z = pt.norm() * 0.5 * fov;
+
+    Vec3 ret;
+    ret(0) = cos(angle_radial) /** / 1.0 / **/ * sin(angle_Z);
+    ret(1) = sin(angle_radial) /** / 1.0 / **/ * sin(angle_Z);
+    ret(2) = cos(angle_Z);
+
+    Eigen::Matrix<double, 3, 2> d_ret_d_angles;
+    d_ret_d_angles(0, 0) = -sin(angle_radial) * sin(angle_Z);
+    d_ret_d_angles(0, 1) = cos(angle_radial) * cos(angle_Z);
+    d_ret_d_angles(1, 0) = cos(angle_radial) * sin(angle_Z);
+    d_ret_d_angles(1, 1) = sin(angle_radial) * cos(angle_Z);
+    d_ret_d_angles(2, 0) = 0;
+    d_ret_d_angles(2, 1) = -sin(angle_Z);
+
+    Eigen::Matrix<double, 2, 1> d_angles_d_fov;
+    d_angles_d_fov(0, 0) = pt.norm() * 0.5;
+    d_angles_d_fov(1, 0) = 0;
+
+    return d_ret_d_angles * d_angles_d_fov;
+  }
   
   virtual double imagePlane_toCameraPlaneError(double value) const override
   {
@@ -111,10 +292,30 @@ public:
     return _radius * p + principal_point();
   }
 
+  Eigen::Matrix2d getDerivativeCam2ImaWrtPoint() {
+
+    return Eigen::Matrix2d::Identity() * _radius;
+  }
+
+  Eigen::Matrix2d getDerivativeCam2ImaWrtPrincipalPoint() {
+
+    return Eigen::Matrix2d::Identity();
+  }
+
   // Transform a point from the image plane to the camera plane
   virtual Vec2 ima2cam(const Vec2& p) const override
   {
     return (p -  principal_point()) / _radius;
+  }
+
+  Eigen::Matrix2d getDerivativeIma2CamWrtPoint() {
+
+    return Eigen::Matrix2d::Identity() * (1.0 / _radius);
+  }
+
+  Eigen::Matrix2d getDerivativeIma2CamWrtPrincipalPoint() {
+
+    return Eigen::Matrix2d::Identity() * (-1.0 / _radius);
   }
 
   /**

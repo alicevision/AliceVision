@@ -404,7 +404,7 @@ bool ReconstructionEngine_panorama::Adjust()
   
   /*Minimize only rotation first*/
   BundleAdjustmentCeres BA(options);
-  bool success = BA.adjust(_sfmData, BundleAdjustment::REFINE_ROTATION);
+  /*bool success = BA.adjust(_sfmData, BundleAdjustment::REFINE_ROTATION);
   if(success)
   {
     ALICEVISION_LOG_INFO("Rotations successfully refined.");
@@ -412,10 +412,21 @@ bool ReconstructionEngine_panorama::Adjust()
   else
   {
     ALICEVISION_LOG_INFO("Failed to refine the rotations only.");
-  }
+  }*/
 
   /*Minimize All then*/
-  success = BA.adjust(_sfmData, BundleAdjustment::REFINE_ROTATION | BundleAdjustment::REFINE_INTRINSICS_DISTORTION);
+  /*success = BA.adjust(_sfmData, BundleAdjustment::REFINE_ROTATION | BundleAdjustment::REFINE_INTRINSICS_DISTORTION);
+  if(success)
+  {
+    ALICEVISION_LOG_INFO("Bundle successfully refined.");
+  }
+  else
+  {
+    ALICEVISION_LOG_INFO("Failed to refine Everything.");
+  }*/
+
+  /*Minimize All then*/
+  bool success = BA.adjust(_sfmData, BundleAdjustment::REFINE_INTRINSICS_DISTORTION);
   if(success)
   {
     ALICEVISION_LOG_INFO("Bundle successfully refined.");
@@ -560,8 +571,8 @@ void ReconstructionEngine_panorama::Compute_Relative_Rotations(rotationAveraging
           const feature::PointFeature & feat_I = feats_I[match._i];
           const feature::PointFeature & feat_J = feats_J[match._j];
 
-          const Vec3 bearingVector_I = cam_I->toUnitSphere(cam_I->get_ud_pixel(feat_I.coords().cast<double>()));
-          const Vec3 bearingVector_J = cam_J->toUnitSphere(cam_J->get_ud_pixel(feat_J.coords().cast<double>()));
+          const Vec3 bearingVector_I = cam_I->toUnitSphere(cam_I->remove_disto(cam_I->ima2cam(feat_I.coords().cast<double>())));
+          const Vec3 bearingVector_J = cam_J->toUnitSphere(cam_J->remove_disto(cam_J->ima2cam(feat_J.coords().cast<double>())));
 
           
 
@@ -696,8 +707,8 @@ void ReconstructionEngine_panorama::Compute_Relative_Rotations(rotationAveraging
 
           for (const auto & match : matches)
           {
-            size_t next_inlier = relativePose_info.vec_inliers[index_inlier];
-            if (index == next_inlier) {
+            /*size_t next_inlier = relativePose_info.vec_inliers[index_inlier];
+            if (index == next_inlier) {*/
               
               Vec2 pt1 = _featuresPerView->getFeatures(I, descType)[match._i].coords().cast<double>();
               Vec2 pt2 = _featuresPerView->getFeatures(J, descType)[match._j].coords().cast<double>();
@@ -705,8 +716,8 @@ void ReconstructionEngine_panorama::Compute_Relative_Rotations(rotationAveraging
               sfm::Constraint2D constraint(I, sfm::Observation(pt1, 0), J, sfm::Observation(pt2, 0));
               constraints2d.push_back(constraint);
 
-              index_inlier++;
-            }
+            /*  index_inlier++;
+            }*/
 
             index++;
           }

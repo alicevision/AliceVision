@@ -287,7 +287,7 @@ void BundleAdjustmentCeres::setSolverOptions(ceres::Solver::Options& solverOptio
   solverOptions.minimizer_progress_to_stdout = _ceresOptions.verbose;
   solverOptions.logging_type = ceres::SILENT;
   solverOptions.num_threads = 1;//_ceresOptions.nbThreads;
-  solverOptions.max_num_iterations = 0;
+  //solverOptions.max_num_iterations = 0;
 
 
 #if CERES_VERSION_MAJOR < 2
@@ -625,7 +625,7 @@ void BundleAdjustmentCeres::addConstraints2DToProblem(const sfmData::SfMData& sf
 {
   // set a LossFunction to be less penalized by false measurements.
   // note: set it to NULL if you don't want use a lossFunction.
-  ceres::LossFunction* lossFunction = new ceres::HuberLoss(Square(4.0)); // TODO: make the LOSS function and the parameter an option
+  ceres::LossFunction* lossFunction = nullptr; new ceres::HuberLoss(Square(4.0)); // TODO: make the LOSS function and the parameter an option
 
   for (const auto & constraint : sfmData.getConstraints2D()) {
     const sfmData::View& view_1 = sfmData.getView(constraint.ViewFirst);
