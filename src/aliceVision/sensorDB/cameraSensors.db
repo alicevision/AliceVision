@@ -1352,27 +1352,27 @@ Dexp;Dexp Ixion X355 Zenith;4.82;devicespecifications
 Dexp;Dexp Ixion XL 5;4.69;devicespecifications
 Dexp;Dexp Ixion XL140 Flash;3.67;devicespecifications
 Dexp;Dexp Ixion XL240 Triforce;3.6;devicespecifications
-DJI;DJI FC1102;6.17;usercontribution
-DJI;DJI FC2103;6.17;usercontribution
-DJI;DJI FC220;6.17;usercontribution
-DJI;DJI FC220;6.17;usercontribution
-DJI;DJI FC300C;6.17;usercontribution
-DJI;DJI FC300S;6.16;usercontribution
-DJI;DJI FC300S;6.16;usercontribution
-DJI;DJI FC300X;6.16;usercontribution
-DJI;DJI FC300X;6.16;usercontribution
-DJI;DJI FC300XW;6.17;usercontribution
-DJI;DJI FC330;6.17;usercontribution
-DJI;DJI FC350;6.17;usercontribution
-DJI;DJI FC350;6.17;usercontribution
-DJI;DJI FC550;17.3;usercontribution
-DJI;DJI FC550RAW;17.3;usercontribution
-DJI;DJI FC6310;13.2;usercontribution
-DJI;DJI FC6310R;13.2;usercontribution
-DJI;DJI FC6310S;13.2;usercontribution
-DJI;DJI FC6510;13.2;usercontribution
-DJI;DJI FC6520;17.3;usercontribution
-DJI;DJI FC6540;23.5;usercontribution
+DJI;FC1102;6.17;usercontribution
+DJI;FC2103;6.17;usercontribution
+DJI;FC220;6.17;usercontribution
+DJI;FC220;6.17;usercontribution
+DJI;FC300C;6.17;usercontribution
+DJI;FC300S;6.16;usercontribution
+DJI;FC300S;6.16;usercontribution
+DJI;FC300X;6.16;usercontribution
+DJI;FC300X;6.16;usercontribution
+DJI;FC300XW;6.17;usercontribution
+DJI;FC330;6.17;usercontribution
+DJI;FC350;6.17;usercontribution
+DJI;FC350;6.17;usercontribution
+DJI;FC550;17.3;usercontribution
+DJI;FC550RAW;17.3;usercontribution
+DJI;FC6310;13.2;usercontribution
+DJI;FC6310R;13.2;usercontribution
+DJI;FC6310S;13.2;usercontribution
+DJI;FC6510;13.2;usercontribution
+DJI;FC6520;17.3;usercontribution
+DJI;FC6540;23.5;usercontribution
 DJI;FC7203;6.16;usercontribution
 DJI;DJI Phantom 4;6.3;dxomark
 DJI;DJI PHANTOM VISION FC200;6.17;usercontribution
