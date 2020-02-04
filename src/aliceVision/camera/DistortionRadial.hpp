@@ -29,7 +29,7 @@ namespace radial_distortion{
     while (functor(params, upbound) < r2) upbound *= 1.05;
 
     // Perform a bisection until epsilon accuracy is not reached
-    while (epsilon < upbound - lowerbound)
+    while (epsilon < (upbound - lowerbound))
     {
       const double mid = .5*(lowerbound + upbound);
       if (functor(params, mid) > r2)
@@ -177,12 +177,33 @@ public:
     
     const double r2 = r * r;
     const double r3 = r2 * r;
-    const double r_coeff = ((1.0 - k1 - k2 - k3) + k1*r + k2*r2 + k3*r3);
+    const double r_coeff = ((1.0 - k1 - k2 - k3) + k1 * r + k2 * r2 + k3 * r3);
 
-    double d_r_coeff_d_r = k1 + 2 * k2 * r + 3 * k3 * r2;
+    double d_r_coeff_d_r = k1 + 2.0 * k2 * r + 3.0 * k3 * r2;
     Eigen::Matrix<double, 1, 2> d_r_coeff_d_p = d_r_coeff_d_r * d_r_d_p;
 
     return Eigen::Matrix2d::Identity() * r_coeff + p * d_r_coeff_d_p;
+  }
+
+  virtual Eigen::MatrixXd getDerivativeAddDistoWrtDisto(const Vec2 & p) const  override {
+    
+    const double k1 = _distortionParams[0];
+    const double k2 = _distortionParams[1];
+    const double k3 = _distortionParams[2];
+
+    const double r = sqrt(p(0)*p(0) + p(1)*p(1));
+    const double r2 = r * r;
+    const double r3 = r2 * r;
+    const double r_coeff = ((1.0 - k1 - k2 - k3) + k1 * r + k2 * r2 + k3 * r3);
+
+    Eigen::Matrix<double, 1, 3> d_rcoeff_d_params;
+    d_rcoeff_d_params(0, 0) = r - 1.0;
+    d_rcoeff_d_params(0, 1) = r2 - 1.0;
+    d_rcoeff_d_params(0, 2) = r3 - 1.0;
+
+    Eigen::MatrixXd ret = p * d_rcoeff_d_params;
+
+    return ret;
   }
 
   virtual Eigen::Matrix2d getDerivativeRemoveDistoWrtPt(const Vec2 & p) const override {
@@ -192,26 +213,6 @@ public:
     Eigen::Matrix2d Jinv = getDerivativeAddDistoWrtPt(undist);
 
     return Jinv.inverse();
-  }
-
-  virtual Eigen::MatrixXd getDerivativeAddDistoWrtDisto(const Vec2 & p) const  override {
-    
-
-    const double k1 = _distortionParams[0];
-    const double k2 = _distortionParams[1];
-    const double k3 = _distortionParams[2];
-
-    const double r = sqrt(p(0)*p(0) + p(1)*p(1));
-    const double r2 = r * r;
-    const double r3 = r2 * r;
-    const double r_coeff = ((1.0 - k1 - k2 - k3) + k1*r + k2*r2 + k3*r3);
-
-    Eigen::Matrix<double, 1, 3> d_rcoeff_d_params;
-    d_rcoeff_d_params(0, 0) = r - 1.0;
-    d_rcoeff_d_params(0, 1) = r2 - 1.0;
-    d_rcoeff_d_params(0, 2) = r3 - 1.0;
-
-    return p * d_rcoeff_d_params;
   }
 
   virtual Eigen::MatrixXd getDerivativeRemoveDistoWrtDisto(const Vec2 & p) const override {
@@ -255,8 +256,10 @@ public:
     const double r2 = p(0)*p(0) + p(1)*p(1);
     const double radius = (r2 == 0) ? //1. : ::sqrt(bisectionSolve(_distortionParams, r2) / r2);
       1. :
-      ::sqrt(radial_distortion::bisection_Radius_Solve(_distortionParams, r2, distoFunctor) / r2);
-    return radius * p;
+      ::sqrt(radial_distortion::bisection_Radius_Solve(_distortionParams, r2, distoFunctor, 1e-12) / r2);
+
+    Vec2 p_undist = radius * p;
+    return p_undist;
   }
 
   virtual double getUndistortedRadius(double r) const override {

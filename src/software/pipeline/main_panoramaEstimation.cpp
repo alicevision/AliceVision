@@ -24,7 +24,6 @@
 #include <OpenImageIO/imagebufalgo.h>
 
 #include <cstdlib>
-#include "matrix_derivatives.hpp"
 
 // These constants define the current software version.
 // They must be updated when the command line is changed.
@@ -43,11 +42,15 @@ inline std::istream& operator>>(std::istream& in, std::pair<int, int>& out)
     return in;
 }
 
+
+
+
 class SO3Parameterization : public ceres::LocalParameterization {
  public:
   virtual ~SO3Parameterization() {}
 
   virtual bool Plus(const double* x, const double* delta, double* x_plus_delta) const {
+ 
     double* ptrBase = (double*)x;
     double* ptrResult = (double*)x_plus_delta;
     Eigen::Map<Eigen::Matrix<double, 3, 3, Eigen::RowMajor> > rotation(ptrBase);
@@ -58,6 +61,7 @@ class SO3Parameterization : public ceres::LocalParameterization {
     axis(1) = delta[1];
     axis(2) = delta[2];
     double angle = axis.norm();
+
     axis.normalize();
 
     Eigen::AngleAxisd aa(angle, axis);
@@ -70,20 +74,18 @@ class SO3Parameterization : public ceres::LocalParameterization {
   }
 
   virtual bool ComputeJacobian(const double* /*x*/, double* jacobian) const {
-    double* row[9];
-    for (int i = 0; i < 9; i++) {
-      row[i] = &jacobian[i * 3];
-      for (int j = 0; j < 3; j++) {
-        row[i][j] = 0;
-      }
-    }
+    
+    Eigen::Map<Eigen::Matrix<double, 9, 3, Eigen::RowMajor>> J(jacobian);
+    //Eigen::Map<const Eigen::Matrix<double, 3, 3, Eigen::RowMajor>> R(x);
 
-    row[1][2] = 1;
-    row[2][1] = -1;
-    row[3][2] = -1;
-    row[5][0] = 1;
-    row[6][1] = 1;
-    row[7][0] = -1;
+    J.fill(0);
+
+    J(1, 2) = 1;
+    J(2, 1) = -1;
+    J(3, 2) = -1;
+    J(5, 0) = 1;
+    J(6, 1) = 1;
+    J(7, 0) = -1;
 
     return true;
   }
@@ -94,6 +96,7 @@ class SO3Parameterization : public ceres::LocalParameterization {
 };
 
 typedef Eigen::Matrix<double, 3, 3, Eigen::RowMajor> SO3Matrix;
+
 
 class Cost : public ceres::SizedCostFunction<2, 9, 9, 1, 2, 3, 1, 2, 3> {
 public:
@@ -109,8 +112,8 @@ public:
     Vec2 pt_i = {_fi.x(), _fi.y()};
     Vec2 pt_j = {_fj.x(), _fj.y()};
 
-    const double * parameter_Ri = parameters[0];
-    const double * parameter_Rj = parameters[1];
+    const double * parameter_rotation_i = parameters[0];
+    const double * parameter_rotation_j = parameters[1];
     const double * parameter_focal_i = parameters[2];
     const double * parameter_center_i = parameters[3];
     const double * parameter_disto_i = parameters[4];
@@ -118,61 +121,76 @@ public:
     const double * parameter_center_j = parameters[6];
     const double * parameter_disto_j = parameters[7];
 
+    const Eigen::Map<const Eigen::Matrix<double, 3, 3, Eigen::RowMajor>> iRo(parameter_rotation_i);
+    const Eigen::Map<const Eigen::Matrix<double, 3, 3, Eigen::RowMajor>> jRo(parameter_rotation_j);
 
-    camera::EquiDistantRadialK3 intrinsic_i(w, h, parameter_focal_i[0], parameter_center_i[0], parameter_center_i[1], 1980.0, parameter_disto_i[0], parameter_disto_i[1], parameter_disto_i[2]);
-    camera::EquiDistantRadialK3 intrinsic_j(w, h, parameter_focal_j[0], parameter_center_j[0], parameter_center_j[1], 1980.0, parameter_disto_j[0], parameter_disto_j[1], parameter_disto_j[2]);
+    camera::EquiDistantRadialK3 intrinsic_i(w, h, parameter_focal_i[0], parameter_center_i[0], parameter_center_i[1], 1980, parameter_disto_i[0], parameter_disto_i[1], parameter_disto_i[2]);
+    camera::EquiDistantRadialK3 intrinsic_j(w, h, parameter_focal_j[0], parameter_center_j[0], parameter_center_j[1], 1980, parameter_disto_j[0], parameter_disto_j[1], parameter_disto_j[2]);
 
-    const Eigen::Map<const Eigen::Matrix<double, 3, 3, Eigen::RowMajor>> iRo(parameter_Ri);
-    const Eigen::Map<const Eigen::Matrix<double, 3, 3, Eigen::RowMajor>> jRo(parameter_Rj);
 
-  
     Eigen::Matrix3d R = jRo * iRo.transpose();
+    geometry::Pose3 T(R, Vec3({0,0,0}));
 
     Vec2 pt_i_cam = intrinsic_i.ima2cam(pt_i);
     Vec2 pt_i_undist = intrinsic_i.remove_disto(pt_i_cam);
-    Vec3 ptI = intrinsic_i.toUnitSphere(pt_i_undist);
+    Vec3 pt_i_sphere = intrinsic_i.toUnitSphere(pt_i_undist);
 
-    geometry::Pose3 T(R, Vec3({0,0,0}));
-    
-    Vec2 pt_j_est = intrinsic_j.project((T), ptI, true);
+    Vec2 pt_j_est = intrinsic_j.project(T, pt_i_sphere, true);
 
-    residuals[0] = pt_j_est[0] - pt_j[0];
-    residuals[1] = pt_j_est[1] - pt_j[1];
+    residuals[0] = pt_j_est(0) - pt_j(0);
+    residuals[1] = pt_j_est(1) - pt_j(1);
 
     if (jacobians == nullptr) {
       return true;
     }
 
+    if (jacobians[0] != nullptr) {
+      Eigen::Map<Eigen::Matrix<double, 2, 9, Eigen::RowMajor>> J(jacobians[0]);
+
+      J = intrinsic_j.getDerivativeProjectWrtRotation(T, pt_i_sphere) * getJacobian_AB_wrt_B<3, 3, 3>(jRo, iRo.transpose()) * getJacobian_At_wrt_A<3, 3>() * getJacobian_AB_wrt_A<3, 3, 3>(Eigen::Matrix3d::Identity(), iRo);
+    }
+
+    if (jacobians[1] != nullptr) {
+      Eigen::Map<Eigen::Matrix<double, 2, 9, Eigen::RowMajor>> J(jacobians[1]);
+
+      J = intrinsic_j.getDerivativeProjectWrtRotation(T, pt_i_sphere) * getJacobian_AB_wrt_A<3, 3, 3>(jRo, iRo.transpose()) * getJacobian_AB_wrt_A<3, 3, 3>(Eigen::Matrix3d::Identity(), jRo);
+    }
+
     if (jacobians[2] != nullptr) {
       Eigen::Map<Eigen::Matrix<double, 2, 1>> J(jacobians[2]);
 
-      //J = intrinsic.getDerivativeProjectWrtFov(T, ptI) + intrinsic.getDerivativeProjectWrtPoint(T, ptI) * intrinsic.getDerivativetoUnitSphereWrtFov(pt_i_undist);
-    } 
+      J = intrinsic_j.getDerivativeProjectWrtPoint(T, pt_i_sphere) * intrinsic_i.getDerivativetoUnitSphereWrtFov(pt_i_undist);
+    }
 
     if (jacobians[3] != nullptr) {
-      Eigen::Map<Eigen::Matrix<double, 2, 2>> J(jacobians[3]);
+      Eigen::Map<Eigen::Matrix<double, 2, 2, Eigen::RowMajor>> J(jacobians[3]);
 
-      J = intrinsic_j.getDerivativeProjectWrtPoint(T, ptI) * intrinsic_i.getDerivativetoUnitSphereWrtPoint(pt_i_undist) * intrinsic_i.getDerivativeRemoveDistoWrtPt(pt_i_cam) * intrinsic_i.getDerivativeIma2CamWrtPrincipalPoint();
-    } 
+      J = intrinsic_j.getDerivativeProjectWrtPoint(T, pt_i_sphere) * intrinsic_i.getDerivativetoUnitSphereWrtPoint(pt_i_undist) * intrinsic_i.getDerivativeRemoveDistoWrtPt(pt_i_cam) * intrinsic_i.getDerivativeIma2CamWrtPrincipalPoint();
+    }
 
     if (jacobians[4] != nullptr) {
-      Eigen::Map<Eigen::Matrix<double, 2, 3>> J(jacobians[4]);
+      Eigen::Map<Eigen::Matrix<double, 2, 3, Eigen::RowMajor>> J(jacobians[4]);
 
-      J = intrinsic_j.getDerivativeProjectWrtPoint(T, ptI) * intrinsic_i.getDerivativetoUnitSphereWrtPoint(pt_i_undist) * intrinsic_i.getDerivativeRemoveDistoWrtDisto(pt_i_cam);
-    } 
+      J = intrinsic_j.getDerivativeProjectWrtPoint(T, pt_i_sphere) * intrinsic_i.getDerivativetoUnitSphereWrtPoint(pt_i_undist) * intrinsic_i.getDerivativeRemoveDistoWrtDisto(pt_i_cam);
+    }
 
-    if (jacobians[7] != nullptr) {
-      Eigen::Map<Eigen::Matrix<double, 2, 3>> J(jacobians[7]);
+    if (jacobians[5] != nullptr) {
+      Eigen::Map<Eigen::Matrix<double, 2, 1>> J(jacobians[5]);
 
-      J = intrinsic_j.getDerivativeProjectWrtDisto(T, ptI);
-    } 
+      J = intrinsic_j.getDerivativeProjectWrtFov(T, pt_i_sphere);
+    }
 
     if (jacobians[6] != nullptr) {
-      Eigen::Map<Eigen::Matrix<double, 2, 2>> J(jacobians[6]);
+      Eigen::Map<Eigen::Matrix<double, 2, 2, Eigen::RowMajor>> J(jacobians[6]);
 
-      J = intrinsic_j.getDerivativeProjectWrtPrincipalPoint(T, ptI);
-    } 
+      J = intrinsic_j.getDerivativeProjectWrtPrincipalPoint(T, pt_i_sphere);
+    }
 
+    if (jacobians[7] != nullptr) {
+      Eigen::Map<Eigen::Matrix<double, 2, 3, Eigen::RowMajor>> J(jacobians[7]);
+
+      J = intrinsic_j.getDerivativeProjectWrtDisto(T, pt_i_sphere);
+    }
 
     return true;
   }
@@ -187,21 +205,27 @@ int main(int argc, char **argv) {
   double w = 3840;
   double h = 5760;
 
+
   camera::EquiDistantRadialK3 intrinsics[3];
-  intrinsics[0] = camera::EquiDistantRadialK3(w, h, 176.0*M_PI/180.0, 1920+32.0, 2880-56.0, 1980, 0.004, 0.0, 0.0);
-  intrinsics[1] = camera::EquiDistantRadialK3(w, h, 176.0*M_PI/180.0, 1920+32.0, 2880-56.0, 1980, 0.004, 0.0, 0.0);
-  intrinsics[2] = camera::EquiDistantRadialK3(w, h, 176.0*M_PI/180.0, 1920+32.0, 2880-56.0, 1980, 0.004, 0.0, 0.0);
+  intrinsics[0] = camera::EquiDistantRadialK3(w, h, 176.0*M_PI/180.0, 1920+32.0, 2880-56.0, 1980, 0.0, 0.0, 0.0);
+  intrinsics[1] = camera::EquiDistantRadialK3(w, h, 176.0*M_PI/180.0, 1920+32.0, 2880-56.0, 1980, 0.0, 0.0, 0.0);
+  intrinsics[2] = camera::EquiDistantRadialK3(w, h, 176.0*M_PI/180.0, 1920+32.0, 2880-56.0, 1980, 0.0, 0.0, 0.0);
   
 
   Eigen::AngleAxisd aa0(0.0, Eigen::Vector3d::UnitY());
-  Eigen::AngleAxisd aa1((1.0 / 4.0) * 2.0 * M_PI, Eigen::Vector3d::UnitY());
-  Eigen::AngleAxisd aa2((2.0 / 4.0) * 2.0 * M_PI, Eigen::Vector3d::UnitY());
+  Eigen::AngleAxisd aa1((1.0 / 3.0) * 2.0 * M_PI, Eigen::Vector3d::UnitY());
+  Eigen::AngleAxisd aa2((2.0 / 3.0) * 2.0 * M_PI, Eigen::Vector3d::UnitY());
 
   SO3Matrix r[3];
-  
   r[0] = aa0.toRotationMatrix();
   r[1] = aa1.toRotationMatrix();
   r[2] = aa2.toRotationMatrix();
+
+  SO3Matrix r_est[3];
+  r_est[0] = aa0.toRotationMatrix();
+  r_est[1] = aa1.toRotationMatrix();
+  r_est[2] = aa2.toRotationMatrix();
+
 
   std::vector<Vec3> points;
   for (int ith = 0; ith < 180; ith++) {
@@ -253,7 +277,7 @@ int main(int argc, char **argv) {
     projections[idview] = projected;
     features[idview] = featuresForView;
   }
-
+  
   std::map<std::pair<int, int>, matching::IndMatches> pwMatches;
 
   for (auto it = projections.begin(); it != projections.end(); it++) {
@@ -291,41 +315,32 @@ int main(int argc, char **argv) {
 
   ceres::Problem problem;
   std::vector<double> params[3];
-  params[0] = intrinsics[0].getParams();
-  params[1] = intrinsics[1].getParams();
-  params[2] = intrinsics[2].getParams();
-
-  problem.AddParameterBlock(params[0].data(), 1);
-  problem.AddParameterBlock(params[0].data() + 1, 2);
-  problem.AddParameterBlock(params[0].data() + 3, 3);
-  problem.AddParameterBlock(params[1].data(), 1);
-  problem.AddParameterBlock(params[1].data() + 1, 2);
-  problem.AddParameterBlock(params[1].data() + 3, 3);
-  problem.AddParameterBlock(params[2].data(), 1);
-  problem.AddParameterBlock(params[2].data() + 1, 2);
-  problem.AddParameterBlock(params[2].data() + 3, 3);
   
-  problem.AddParameterBlock(r[0].data(), 9, new SO3Parameterization());
-  problem.AddParameterBlock(r[1].data(), 9, new SO3Parameterization());
-  problem.AddParameterBlock(r[2].data(), 9, new SO3Parameterization());
 
-  problem.SetParameterBlockConstant(params[0].data());
-  problem.SetParameterBlockConstant(params[0].data() + 1);
-  //problem.SetParameterBlockConstant(params[0].data() + 3);
-  problem.SetParameterBlockConstant(params[1].data());
-  problem.SetParameterBlockConstant(params[1].data() + 1);
-  //problem.SetParameterBlockConstant(params[1].data() + 3);
-  problem.SetParameterBlockConstant(params[2].data());
-  problem.SetParameterBlockConstant(params[2].data() + 1);
-  //problem.SetParameterBlockConstant(params[2].data() + 3);
-  problem.SetParameterBlockConstant(r[0].data());
-  problem.SetParameterBlockConstant(r[1].data());
-  problem.SetParameterBlockConstant(r[2].data());
- 
-  params[0][3] = 0.000;
-  params[1][3] = 0.000;
-  params[2][3] = 0.000;
+  Eigen::AngleAxisd aa_est2((2.1 / 3.0) * 2.0 * M_PI, Eigen::Vector3d::UnitY());
+  r_est[2] = aa_est2.toRotationMatrix();
 
+  for (int k = 0; k < 3; k++) {
+    params[k] = intrinsics[k].getParams();
+
+    problem.AddParameterBlock(r_est[k].data(), 9);
+    problem.AddParameterBlock(params[k].data(), 1);
+    problem.AddParameterBlock(params[k].data() + 1, 2);
+    problem.AddParameterBlock(params[k].data() + 3, 3);
+
+    problem.SetParameterization(r_est[k].data(), new SO3Parameterization);
+
+  }
+
+  params[0][0] = 3.14;
+  params[0][1] = 1920;
+  params[0][2] = 2880;
+  params[0][3] = 0.1;
+  params[0][4] = 0.1;
+  params[0][5] = 0.1;
+  params[2][0] = 3.14;
+  params[2][1] = 1920;
+  params[2][2] = 2880;
   
   for (auto matches : pwMatches) {
     std::pair<IndexT,IndexT> idviews = matches.first;
@@ -335,8 +350,8 @@ int main(int argc, char **argv) {
       feature::PointFeature fi = features[idviews.first][match._i];
       feature::PointFeature fj = features[idviews.second][match._j];
 
-      problem.AddResidualBlock(new Cost(fi, fj), nullptr, r[idviews.first].data(), r[idviews.second].data(), params[idviews.first].data(), params[idviews.first].data() + 1, params[idviews.first].data() + 3, params[idviews.second].data(), params[idviews.second].data() + 1, params[idviews.second].data() + 3);
-      problem.AddResidualBlock(new Cost(fj, fi), nullptr, r[idviews.second].data(), r[idviews.first].data(), params[idviews.second].data(), params[idviews.second].data() + 1, params[idviews.second].data() + 3, params[idviews.first].data(), params[idviews.first].data() + 1, params[idviews.first].data() + 3);
+      problem.AddResidualBlock(new Cost(fi, fj), nullptr, r_est[idviews.first].data(), r_est[idviews.second].data(), params[idviews.first].data(), params[idviews.first].data() + 1, params[idviews.first].data() + 3, params[idviews.second].data(), params[idviews.second].data() + 1, params[idviews.second].data() + 3);
+      problem.AddResidualBlock(new Cost(fj, fi), nullptr, r_est[idviews.second].data(), r_est[idviews.first].data(), params[idviews.second].data(), params[idviews.second].data() + 1, params[idviews.second].data() + 3, params[idviews.first].data(), params[idviews.first].data() + 1, params[idviews.first].data() + 3);
     }
   }
 
@@ -344,18 +359,23 @@ int main(int argc, char **argv) {
   ceres::Solver::Options options;
   options.max_num_iterations = 500;
   options.trust_region_strategy_type = ceres::LEVENBERG_MARQUARDT;
-  options.use_inner_iterations = true;
+  options.use_inner_iterations = false;
+  options.num_threads = 1;
+  options.minimizer_progress_to_stdout = true;
+  
 
   ceres::Solver::Summary summary;  
   ceres::Solve(options, &problem, &summary);
 
-  std::cout << summary.FullReport() << std::endl;
+  std::cout << summary.FullReport() << std::endl; 
+
   for (int k = 0; k < 3; k++) {
     for (int i = 0; i < 6; i++) {
       std::cout << params[k][i] << " ";
     }
     std::cout << std::endl;
   }
+  
   return 0;
 }
 

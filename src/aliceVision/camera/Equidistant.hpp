@@ -17,7 +17,78 @@
 
 #include <vector>
 #include <sstream>
+#include <math.h>
 
+template <size_t M, size_t N>
+Eigen::Matrix<double, M*N, M*N> getJacobian_At_wrt_A() {
+	Eigen::Matrix<double, M*N, M*N> ret;
+
+	/** vec(M1*M2*M3) = kron(M3.t, M1) * vec(M2) */
+	/** vec(IAtB) = kron(B.t, I) * vec(A) */
+	/** dvec(IAtB)/dA = kron(B.t, I) * dvec(At)/dA */
+
+	ret.fill(0);
+
+	size_t pos_at = 0;
+	for (size_t i = 0; i < M; i++) {
+		for (size_t j = 0; j < N; j++) {
+			size_t pos_a = N * j + i;
+			ret(pos_at, pos_a) = 1;
+
+			pos_at++;
+		}
+	}
+
+	return ret;
+}
+
+template <size_t M, size_t N, size_t K>
+Eigen::Matrix<double, M*K, M*N> getJacobian_AB_wrt_A(const Eigen::Matrix<double, M , N> & A, const Eigen::Matrix<double, N, K> & B)  {
+	Eigen::Matrix<double, M*K, M*N> ret;
+
+	/** vec(M1*M2*M3) = kron(M3.t, M1) * vec(M2) */
+	/** vec(IAB) = kron(B.t, I) * vec(A) */
+	/** dvec(IAB)/dA = kron(B.t, I) * dvec(A)/dA */
+	/** dvec(IAB)/dA = kron(B.t, I) */
+
+	ret.fill(0);
+
+	Eigen::Matrix<double, K, N> Bt = B.transpose();
+
+	for (size_t row = 0; row < K; row++) {
+		for (size_t col = 0; col < N; col++) {
+
+			ret.template block<M, M>(row * M, col * M) = Bt(row, col) * Eigen::Matrix<double, M, M>::Identity();
+		}
+	}
+
+
+	return ret;
+}
+
+template <size_t M, size_t N, size_t K>
+Eigen::Matrix<double, M*K, M*N> getJacobian_AtB_wrt_A(const Eigen::Matrix<double, M, N> & A, const Eigen::Matrix<double, M, K> & B) {
+	return getJacobian_AB_wrt_A<M, N, K>(A.transpose(), B) * getJacobian_At_wrt_A<M, N>();
+}
+
+template <size_t M, size_t N, size_t K>
+Eigen::Matrix<double, M*K, N*K> getJacobian_AB_wrt_B(const Eigen::Matrix<double, M, N> & A, const Eigen::Matrix<double, N, K> & B) {
+	Eigen::Matrix<double, M*K, N*K> ret;
+
+	/** vec(M1*M2*M3) = kron(M3.t, M1) * vec(M2) */
+	/** vec(ABI) = kron(I, A) * vec(B) */
+	/** dvec(ABI)/dB = kron(I, A) * dvec(B)/dB */
+	/** dvec(ABI)/dB = kron(I, A) */
+
+	ret.fill(0);
+
+	for (size_t index = 0; index < K; index++) {
+
+		ret.template block<M, N>(M * index, N * index) = A;
+	}
+
+	return ret;
+}
 
 namespace aliceVision {
 namespace camera {
@@ -53,7 +124,7 @@ public:
   }
 
   virtual Vec2 project(const geometry::Pose3& pose, const Vec3& pt3D, bool applyDistortion = true) const override
-  {
+  {    
     Vec3 X = pose(pt3D);
 
     /* Compute angle with optical center */
@@ -80,6 +151,56 @@ public:
     return P;
   }
 
+  Eigen::Matrix<double, 2, 9> getDerivativeProjectWrtRotation(const geometry::Pose3& pose, const Vec3 & pt) {
+    
+    Vec3 X = pose(pt);
+
+    Eigen::Matrix<double, 3, 9> d_X_d_R = getJacobian_AB_wrt_A<3, 3, 1>(pose.rotation(), pt);
+
+    /* Compute angle with optical center */
+    double len2d = sqrt(X(0) * X(0) + X(1) * X(1));
+    Eigen::Matrix<double, 2, 2> d_len2d_d_X;
+    d_len2d_d_X(0) = X(0) / len2d;
+    d_len2d_d_X(1) = X(1) / len2d;
+    
+    double angle_Z = std::atan2(len2d, X(2));
+    double d_angle_Z_d_len2d = X(2) / (len2d*len2d + X(2) * X(2));
+
+    /* Ignore depth component and compute radial angle */
+    double angle_radial = std::atan2(X(1), X(0));
+
+    Eigen::Matrix<double, 2, 3> d_angles_d_X;
+    d_angles_d_X(0, 0) = - X(1) / (X(0) * X(0) + X(1) * X(1));
+    d_angles_d_X(0, 1) = X(0) / (X(0) * X(0) + X(1) * X(1));
+    d_angles_d_X(0, 2) = 0.0;
+
+    d_angles_d_X(1, 0) = d_angle_Z_d_len2d * d_len2d_d_X(0);
+    d_angles_d_X(1, 1) = d_angle_Z_d_len2d * d_len2d_d_X(1);
+    d_angles_d_X(1, 2) = - len2d / (len2d * len2d + X(2) * X(2));
+
+
+    double fov = _scale_x;
+    double radius = angle_Z / (0.5 * fov);
+
+    double d_radius_d_angle_Z = 1.0 / (0.5 * fov);
+
+    /* radius = focal * angle_Z */
+    Vec2 P;
+    P(0) = cos(angle_radial) * radius;
+    P(1) = sin(angle_radial) * radius;
+
+    Eigen::Matrix<double, 2, 2> d_P_d_angles;
+    d_P_d_angles(0, 0) = - sin(angle_radial) * radius;
+    d_P_d_angles(0, 1) = cos(angle_radial) * d_radius_d_angle_Z;
+    d_P_d_angles(1, 0) = cos(angle_radial) * radius;
+    d_P_d_angles(1, 1) = sin(angle_radial) * d_radius_d_angle_Z;
+
+    Vec2 distorted = this->add_disto(P);
+    Vec2 impt = this->cam2ima(distorted);
+
+    return getDerivativeCam2ImaWrtPoint() * getDerivativeAddDistoWrtPt(P) * d_P_d_angles * d_angles_d_X * d_X_d_R;
+  }
+
   Eigen::Matrix<double, 2, 3> getDerivativeProjectWrtPoint(const geometry::Pose3& pose, const Vec3 & pt) {
 
     Vec3 X = pose(pt);
@@ -95,21 +216,19 @@ public:
     d_len2d_d_X(1) = X(1) / len2d;
     
     double angle_Z = std::atan2(len2d, X(2));
-    double d_angle_Z_d_len2d = X(2) / sqrt(len2d*len2d + X(2) * X(2));
+    double d_angle_Z_d_len2d = X(2) / (len2d*len2d + X(2) * X(2));
 
     /* Ignore depth component and compute radial angle */
     double angle_radial = std::atan2(X(1), X(0));
 
-    
-
     Eigen::Matrix<double, 2, 3> d_angles_d_X;
-    d_angles_d_X(0, 0) = - X(1) / len2d;
-    d_angles_d_X(0, 1) = X(0) / len2d;
+    d_angles_d_X(0, 0) = - X(1) / (X(0) * X(0) + X(1) * X(1));
+    d_angles_d_X(0, 1) = X(0) / (X(0) * X(0) + X(1) * X(1));
     d_angles_d_X(0, 2) = 0.0;
 
     d_angles_d_X(1, 0) = d_angle_Z_d_len2d * d_len2d_d_X(0);
     d_angles_d_X(1, 1) = d_angle_Z_d_len2d * d_len2d_d_X(1);
-    d_angles_d_X(1, 2) = - len2d / sqrt(len2d*len2d + X(2) * X(2));
+    d_angles_d_X(1, 2) = - len2d / (len2d * len2d + X(2) * X(2));
 
 
     double fov = _scale_x;
@@ -135,7 +254,7 @@ public:
   }
 
   Eigen::Matrix<double, 2, 3> getDerivativeProjectWrtDisto(const geometry::Pose3& pose, const Vec3 & pt) {
-
+    
     Vec3 X = pose(pt);
 
     /* Compute angle with optical center */
@@ -173,6 +292,10 @@ public:
     double fov = _scale_x;
     double radius = angle_Z / (0.5 * fov);
 
+    if (radius < 1e-8) {
+      return Eigen::Matrix<double, 2, 1>::Zero();
+    }
+
     /* radius = focal * angle_Z */
     Vec2 P;
     P(0) = cos(angle_radial) * radius;
@@ -187,6 +310,7 @@ public:
 
     Eigen::Matrix<double, 1, 1> d_radius_d_fov;
     d_radius_d_fov(0, 0) = (- 2.0 * angle_Z / (fov * fov));
+
 
     return getDerivativeCam2ImaWrtPoint() * getDerivativeAddDistoWrtPt(P) * d_P_d_radius * d_radius_d_fov;
   }
@@ -247,8 +371,8 @@ public:
     d_ret_d_angles(2, 1) = -sin(angle_Z);
 
     Eigen::Matrix<double, 2, 2> d_angles_d_pt;
-    d_angles_d_pt(0, 0) = - pt(1) / pt.norm();
-    d_angles_d_pt(0, 1) = pt(0) / pt.norm();
+    d_angles_d_pt(0, 0) = - pt(1) / (pt(0) * pt(0) + pt(1) * pt(1));
+    d_angles_d_pt(0, 1) = pt(0) / (pt(0) * pt(0) + pt(1) * pt(1));
     d_angles_d_pt(1, 0) = 0.5 * fov * pt(0) / pt.norm();
     d_angles_d_pt(1, 1) = 0.5 * fov * pt(1) / pt.norm();
 
@@ -275,8 +399,10 @@ public:
     d_ret_d_angles(2, 1) = -sin(angle_Z);
 
     Eigen::Matrix<double, 2, 1> d_angles_d_fov;
-    d_angles_d_fov(0, 0) = pt.norm() * 0.5;
-    d_angles_d_fov(1, 0) = 0;
+
+    d_angles_d_fov(0, 0) = 0;
+    d_angles_d_fov(1, 0) = pt.norm() * 0.5;
+    
 
     return d_ret_d_angles * d_angles_d_fov;
   }
@@ -289,7 +415,7 @@ public:
   // Transform a point from the camera plane to the image plane
   virtual Vec2 cam2ima(const Vec2& p) const override
   {
-    return _radius * p + principal_point();
+    return _radius * p  + principal_point();
   }
 
   Eigen::Matrix2d getDerivativeCam2ImaWrtPoint() {
