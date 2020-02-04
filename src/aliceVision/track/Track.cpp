@@ -85,11 +85,13 @@ void TracksBuilder::build(const PairwiseMatches& pairwiseMatches)
   }
 }
 
-void TracksBuilder::filter(std::size_t minTrackLength, bool multithreaded)
+void TracksBuilder::filter(bool clearForks, std::size_t minTrackLength, bool multithreaded)
 {
   // remove bad tracks:
   // - track that are too short,
   // - track with id conflicts (many times the same image index)
+  if(!clearForks && minTrackLength == 0)
+      return;
 
   std::set<int> set_classToErase;
 
@@ -106,7 +108,7 @@ void TracksBuilder::filter(std::size_t minTrackLength, bool multithreaded)
         myset.insert(_map_nodeToIndex[iit].first);
         ++cpt;
       }
-      if(myset.size() != cpt || myset.size() < minTrackLength)
+      if((clearForks && myset.size() != cpt) || myset.size() < minTrackLength)
       {
 #pragma omp critical
         set_classToErase.insert(cit.operator int());

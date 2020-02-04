@@ -57,7 +57,7 @@ public:
     double maxReprojectionError = 4.0;
     float minAngleInitialPair = 5.0f;
     float maxAngleInitialPair = 40.0f;
-    bool useTrackFiltering = true;
+    bool filterTrackForks = true;
     robustEstimation::ERobustEstimator localizerEstimator = robustEstimation::ERobustEstimator::ACRANSAC;
     double localizerEstimatorError = std::numeric_limits<double>::infinity();
     size_t localizerEstimatorMaxIterations = 4096;

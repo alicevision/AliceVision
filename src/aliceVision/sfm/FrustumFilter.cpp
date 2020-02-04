@@ -53,19 +53,9 @@ void FrustumFilter::initFrustum(const sfmData::SfMData& sfmData)
     if (cam == nullptr)
       continue;
 
-    if (!_bTruncated) // use infinite frustum
-    {
-      const Frustum f(
-        cam->w(), cam->h(), cam->K(),
-        pose.rotation(), pose.center());
-      frustum_perView[view->getViewId()] = f;
-    }
-    else // use truncated frustum with defined Near and Far planes
-    {
-      const Frustum f(cam->w(), cam->h(), cam->K(),
-        pose.rotation(), pose.center(), it->second.first, it->second.second);
-      frustum_perView[view->getViewId()] = f;
-    }
+    const Frustum f(cam->w(), cam->h(), cam->K(),
+      pose.rotation(), pose.center(), it->second.first, it->second.second);
+    frustum_perView[view->getViewId()] = f;
   }
 }
 

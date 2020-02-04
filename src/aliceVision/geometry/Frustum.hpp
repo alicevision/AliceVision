@@ -23,15 +23,17 @@ struct Frustum
 {
   Vec3 cones[5]; // camera centre and the 4 points that define the image plane
   Half_planes planes; // Define infinite frustum planes + 2 optional Near and Far Half Space
-  double z_near, z_far;
+  double z_near = -1., z_far = -1.;
   std::vector<Vec3> points;
 
-  Frustum() : z_near(-1.), z_far(-1.)  {}
+  Frustum() {}
 
   // Build a frustum from the image size, camera intrinsic and pose
-  Frustum(const int w, const int h, const Mat3 & K, const Mat3 & R, const Vec3 & C)
-    : z_near(-1.), z_far(-1.)
+  Frustum(const int w, const int h, const Mat3 & K, const Mat3 & R, const Vec3 & C, const double zNear = -1.0, const double zFar = -1.0)
+      : z_near(zNear)
+      , z_far(zFar)
   {
+    // supporting point are the points defined by the truncated cone
     const Mat3 Kinv = K.inverse();
     const Mat3 Rt = R.transpose();
 
@@ -48,40 +50,40 @@ struct Frustum
     planes.push_back( Half_plane_p(cones[0], cones[2], cones[3]) );
     planes.push_back( Half_plane_p(cones[0], cones[3], cones[4]) );
 
-    // supporting point for drawing is a normalized cone, since infinity cannot be represented
-    points = std::vector<Vec3>(&cones[0], &cones[0]+5);
-  }
-
-  Frustum(const int w, const int h, const Mat3 & K, const Mat3 & R, const Vec3 & C, const double zNear, const double zFar)
-  {
-    *this = Frustum(w,h,K,R,C);
-
-    // update near & far planes & clear set points
-    z_near = zNear;
-    z_far = zFar;
-    points.clear();
-    assert(zFar >= zNear);
-
     // Add Znear and ZFar half plane using the cam looking direction
     const Vec3 camLookDirection_n = R.row(2).normalized();
-    const double d_near = - zNear - camLookDirection_n.dot(C);
-    planes.push_back( Half_plane(camLookDirection_n, d_near) );
 
-    const double d_Far = zFar + camLookDirection_n.dot(C);
-    planes.push_back( Half_plane(-camLookDirection_n, d_Far) );
+    if(zNear > 0)
+    {
+        const double d_near = - zNear - camLookDirection_n.dot(C);
+        planes.push_back( Half_plane(camLookDirection_n, d_near) );
 
-    // supporting point are the points defined by the truncated cone
-    const Mat3 Kinv = K.inverse();
-    const Mat3 Rt = R.transpose();
-    points.push_back( Rt * (z_near * (Kinv * Vec3(0,0,1.0))) + C);
-    points.push_back( Rt * (z_near * (Kinv * Vec3(w,0,1.0))) + C);
-    points.push_back( Rt * (z_near * (Kinv * Vec3(w,h,1.0))) + C);
-    points.push_back( Rt * (z_near * (Kinv * Vec3(0,h,1.0))) + C);
+        points.push_back( Rt * (z_near * (Kinv * Vec3(0,0,1.0))) + C);
+        points.push_back( Rt * (z_near * (Kinv * Vec3(w,0,1.0))) + C);
+        points.push_back( Rt * (z_near * (Kinv * Vec3(w,h,1.0))) + C);
+        points.push_back( Rt * (z_near * (Kinv * Vec3(0,h,1.0))) + C);
+    }
+    else
+    {
+        points.push_back(cones[0]);
+    }
+    if(zFar > 0)
+    {
+        const double d_Far = zFar + camLookDirection_n.dot(C);
+        planes.push_back( Half_plane(-camLookDirection_n, d_Far) );
 
-    points.push_back( Rt * (z_far * (Kinv * Vec3(0,0,1.0))) + C);
-    points.push_back( Rt * (z_far * (Kinv * Vec3(w,0,1.0))) + C);
-    points.push_back( Rt * (z_far * (Kinv * Vec3(w,h,1.0))) + C);
-    points.push_back( Rt * (z_far * (Kinv * Vec3(0,h,1.0))) + C);
+        points.push_back( Rt * (z_far * (Kinv * Vec3(0,0,1.0))) + C);
+        points.push_back( Rt * (z_far * (Kinv * Vec3(w,0,1.0))) + C);
+        points.push_back( Rt * (z_far * (Kinv * Vec3(w,h,1.0))) + C);
+        points.push_back( Rt * (z_far * (Kinv * Vec3(0,h,1.0))) + C);
+    }
+    else
+    {
+        points.push_back(cones[1]);
+        points.push_back(cones[2]);
+        points.push_back(cones[3]);
+        points.push_back(cones[4]);
+    }
   }
 
   /// Test if two frustums intersect or not
@@ -105,6 +107,11 @@ struct Frustum
   bool isTruncated() const
   {
     return planes.size() == 6;
+  }
+
+  bool isPartiallyTruncated() const
+  {
+    return planes.size() == 5;
   }
 
   // Return the supporting frustum points (5 for the infinite, 8 for the truncated)
