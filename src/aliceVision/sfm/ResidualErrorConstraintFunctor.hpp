@@ -875,10 +875,10 @@ struct ResidualErrorConstraintFunctor_EquidistantRadialK3
     const double k2 = params[1];
     const double k3 = params[2];
     
-    const double r4 = r2 * r2;
-    const double r6 = r4 * r2;
+    const double r = sqrt(r2);
+    const double r3 = r2 * r;
 
-    return r2 * Square((1.0 + k1*r2 + k2*r4 + k3*r6) / (1.0 + k1 + k2 + k3));
+    return r2 * Square(((1.0 - k1 - k2 - k3) + k1 * r + k2 * r2 + k3 * r3));
   }
 
   template <typename T>
@@ -906,8 +906,7 @@ struct ResidualErrorConstraintFunctor_EquidistantRadialK3
 
     /*get rescaler*/
     std::vector<double> distortionParams = {k1_real, k2_real, k3_real};
-    double distorted_radius_square = xd_real * xd_real + yd_real * yd_real;
-    double rescaler = ::sqrt(camera::radial_distortion::bisection_Radius_Solve(distortionParams, distorted_radius_square, distoFunctor));;
+ 
     
     Eigen::Matrix<T, 2, 1> camcoords;
     if (distorted_radius < 1e-12) {
@@ -915,6 +914,8 @@ struct ResidualErrorConstraintFunctor_EquidistantRadialK3
       camcoords(1) = yd;
     }
     else {
+      double distorted_radius_square = xd_real * xd_real + yd_real * yd_real;
+      double rescaler = ::sqrt(camera::radial_distortion::bisection_Radius_Solve(distortionParams, distorted_radius_square, distoFunctor));;
       camcoords(0) = (xd / distorted_radius) * static_cast<T>(rescaler);
       camcoords(1) = (yd / distorted_radius) * static_cast<T>(rescaler);    
     }
@@ -956,10 +957,9 @@ struct ResidualErrorConstraintFunctor_EquidistantRadialK3
     //Apply distortion
     const T r = sqrt(proj_pt(0)*proj_pt(0) + proj_pt(1)*proj_pt(1));
     const T r2 = r * r;
-    const T r4 = r2 * r2;
-    const T r6 = r4 * r2;
+    const T r3 = r2 * r;
     
-    const T r_coeff = (T(1) + k1*r2 + k2*r4 + k3*r6) / (T(1) + k1 + k2 + k3);
+    const T r_coeff = ((T(1.0) - k1 - k2 - k3) + k1 * r + k2 * r2 + k3 * r3);
     const T x_d = proj_pt(0) * r_coeff;
     const T y_d = proj_pt(1) * r_coeff;
     
