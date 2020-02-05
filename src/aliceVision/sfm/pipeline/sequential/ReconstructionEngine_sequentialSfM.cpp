@@ -689,7 +689,7 @@ bool ReconstructionEngine_sequentialSfM::bundleAdjustment(std::set<IndexT>& newR
       statistics.show();
     }
 
-    nbOutliers = removeOutliers(_params.maxReprojectionError);
+    nbOutliers = removeOutliers();
 
     std::set<IndexT> removedViewsIdIteration;
     eraseUnstablePosesAndObservations(this->_sfmData, _params.minPointsPerPose, _params.minTrackLength, &removedViewsIdIteration);
@@ -2054,9 +2054,9 @@ void ReconstructionEngine_sequentialSfM::triangulate_2Views(SfMData& scene, cons
   }
 }
 
-std::size_t ReconstructionEngine_sequentialSfM::removeOutliers(double precision)
+std::size_t ReconstructionEngine_sequentialSfM::removeOutliers()
 {
-  const std::size_t nbOutliersResidualErr = RemoveOutliers_PixelResidualError(_sfmData, precision, 2);
+  const std::size_t nbOutliersResidualErr = RemoveOutliers_PixelResidualError(_sfmData, _params.featureConstraint, _params.maxReprojectionError, 2);
   const std::size_t nbOutliersAngleErr = RemoveOutliers_AngleError(_sfmData, _params.minAngleForLandmark);
 
   ALICEVISION_LOG_INFO("Remove outliers: " << std::endl

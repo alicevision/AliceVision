@@ -9,6 +9,7 @@
 #include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/stl/stl.hpp>
 #include <aliceVision/system/Logger.hpp>
+#include <aliceVision/sfm/BundleAdjustment.hpp>
 
 #include <iterator>
 
@@ -16,11 +17,13 @@ namespace aliceVision {
 namespace sfm {
 
 IndexT RemoveOutliers_PixelResidualError(sfmData::SfMData& sfmData,
+                                         EFeatureConstraint featureConstraint,
                                          const double dThresholdPixel,
                                          const unsigned int minTrackLength)
 {
   IndexT outlier_count = 0;
   sfmData::Landmarks::iterator iterTracks = sfmData.structure.begin();
+
 
   while(iterTracks != sfmData.structure.end())
   {
@@ -34,7 +37,7 @@ IndexT RemoveOutliers_PixelResidualError(sfmData::SfMData& sfmData,
       const camera::IntrinsicBase * intrinsic = sfmData.intrinsics.at(view->getIntrinsicId()).get();
 
       Vec2 residual = intrinsic->residual(pose, iterTracks->second.X, itObs->second.x);
-      if(itObs->second.scale > 0) // TODO-SCALE: add an option to use the scale optionally
+      if(featureConstraint == EFeatureConstraint::SCALE)
       {
           // Apply the scale of the feature to get a residual value
           // relative to the feature precision.

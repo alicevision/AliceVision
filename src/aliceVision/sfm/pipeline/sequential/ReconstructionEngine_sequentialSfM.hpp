@@ -55,6 +55,7 @@ public:
     double minAngleForTriangulation = 3.0;
     double minAngleForLandmark = 2.0;
     double maxReprojectionError = 4.0;
+    EFeatureConstraint featureConstraint = EFeatureConstraint::BASIC;
     float minAngleInitialPair = 5.0f;
     float maxAngleInitialPair = 40.0f;
     bool filterTrackForks = true;
@@ -355,7 +356,7 @@ private:
    * @param[in] precision
    * @return number of removed outliers
    */
-  std::size_t removeOutliers(double precision);
+  std::size_t removeOutliers();
 
 private:
 

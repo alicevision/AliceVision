@@ -361,7 +361,7 @@ bool ReconstructionEngine_globalSfM::Compute_Initial_Structure(matching::Pairwis
 bool ReconstructionEngine_globalSfM::Adjust()
 {
   // refine sfm  scene (in a 3 iteration process (free the parameters regarding their incertainty order)):
-  BundleAdjustmentCeres::CeresOptions options;
+  BundleAdjustmentCeres::CeresOptions options; 
   options.useParametersOrdering = false; // disable parameters ordering
 
   BundleAdjustmentCeres BA(options);
@@ -389,7 +389,7 @@ bool ReconstructionEngine_globalSfM::Adjust()
 
   // Remove outliers (max_angle, residual error)
   const size_t pointcount_initial = _sfmData.structure.size();
-  RemoveOutliers_PixelResidualError(_sfmData, 4.0);
+  RemoveOutliers_PixelResidualError(_sfmData, _featureConstraint, 4.0);
   const size_t pointcount_pixelresidual_filter = _sfmData.structure.size();
   RemoveOutliers_AngleError(_sfmData, 2.0);
   const size_t pointcount_angular_filter = _sfmData.structure.size();
