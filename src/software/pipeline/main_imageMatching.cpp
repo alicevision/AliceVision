@@ -604,7 +604,12 @@ int main(int argc, char** argv)
   po::options_description optionalParams("Optional parameters");
   optionalParams.add_options()
     ("method", po::value<EImageMatchingMethod>(&method)->default_value(method),
-      "Method used to select the image pairs to match.")
+      "Method used to select the image pairs to match:\n"
+      " * VocabularyTree: select images that appear to share content\n"
+      " * Sequential: use images neighbors based on filename\n"
+      " * SequentialAndVocabularyTree: combine both previous approaches\n"
+      " * Exhaustive: all images combinations\n"
+      " * Frustum: images with camera frustum intersection (only for cameras with known poses)\n")
     ("minNbImages", po::value<std::size_t>(&minNbImages)->default_value(minNbImages),
       "Minimal number of images to use the vocabulary tree. If we have less images than this threshold, we will compute all matching combinations.")
     ("maxDescriptors", po::value<std::size_t>(&nbMaxDescriptors)->default_value(nbMaxDescriptors),
