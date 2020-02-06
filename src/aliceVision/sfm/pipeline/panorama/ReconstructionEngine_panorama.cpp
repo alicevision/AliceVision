@@ -633,7 +633,7 @@ void ReconstructionEngine_panorama::Compute_Relative_Rotations(rotationAveraging
           relativePose_info.relativePose = geometry::Pose3(relativeRotation_info._relativeRotation, Vec3::Zero());
           relativePose_info.initial_residual_tolerance = relativeRotation_info._initialResidualTolerance;
           relativePose_info.found_residual_precision = relativeRotation_info._foundResidualPrecision;
-          relativePose_info.vec_inliers = relativeRotation_info._inliers;
+          relativePose_info.vec_inliers = relativeRotation_info._inliers; 
 
           /*Eigen::AngleAxisd checker;
           checker.fromRotationMatrix(relativeRotation_info._relativeRotation);
@@ -665,12 +665,12 @@ void ReconstructionEngine_panorama::Compute_Relative_Rotations(rotationAveraging
 
         Eigen::AngleAxisd checker;
         checker.fromRotationMatrix(jRi_est * jRi.transpose());
-        if (std::abs(radianToDegree(checker.angle())) > 5) {
+        /* if (std::abs(radianToDegree(checker.angle())) > 5) {
           relativePose_info.relativePose = geometry::Pose3(jRi, Vec3::Zero());
           relativePose_info.vec_inliers.clear();
           weight = 1.0;
           std::cout << " wtf" << std::endl;
-        } 
+        } */
       }
 
       

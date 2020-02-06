@@ -451,7 +451,7 @@ public:
   virtual bool isVisibleRay(const Vec3 & ray) const override {
     
     double angle = std::acos(ray.normalized().dot(Eigen::Vector3d::UnitZ()));
-    if (std::abs(angle) > (0.5 * _scale_x)) return false;
+    if (std::abs(angle) > 1.2 * (0.5 * _scale_x)) return false;
 
     Vec2 proj = project(geometry::Pose3(), ray, true);
 

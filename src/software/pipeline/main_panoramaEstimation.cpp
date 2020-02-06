@@ -266,6 +266,15 @@ int main2(int argc, char **argv) {
   return 0;
 }
 
+Eigen::Matrix3d getAutoPanoRotation(double yaw, double pitch, double roll) {
+    
+  Eigen::AngleAxis<double> Myaw(- yaw * M_PI / 180.0, Eigen::Vector3d::UnitY());
+  Eigen::AngleAxis<double> Mpitch(- pitch * M_PI / 180.0, Eigen::Vector3d::UnitX());
+  Eigen::AngleAxis<double> Mroll(- roll * M_PI / 180.0, Eigen::Vector3d::UnitZ());
+    
+  return  Mroll.toRotationMatrix()* Mpitch.toRotationMatrix()  *  Myaw.toRotationMatrix();
+}
+
 int main(int argc, char **argv)
 {
   // command-line parameters
@@ -390,9 +399,14 @@ int main(int argc, char **argv)
   std::shared_ptr<camera::IntrinsicBase> intrinsic = inputSfmData.getIntrinsics().begin()->second;
   std::shared_ptr<camera::EquiDistant> casted = std::dynamic_pointer_cast<camera::EquiDistant>(intrinsic);    
 
-  casted->setRadius(1850.0);
-  casted->setCenterX(1935.0);
-  casted->setCenterY(2898.0);
+ 
+  double scale = 180*M_PI/180.0;
+  casted->setScale(scale, scale);
+  //casted->setOffset(1935-31.67, 2898+76.72);
+  //casted->setDistortionParams({-0.035, -0.025, 0.0});
+  casted->setRadius(1880);
+  casted->setCenterX(1920.0);
+  casted->setCenterY(2880.0);
 
   if(!inputSfmData.structure.empty())
   {
@@ -478,6 +492,34 @@ int main(int argc, char **argv)
   if(refine)
   {
     
+    std::shared_ptr<camera::IntrinsicBase> intrinsic =  sfmEngine.getSfMData().getIntrinsicsharedPtr( sfmEngine.getSfMData().getViews().begin()->second->getIntrinsicId());
+    std::shared_ptr<camera::EquiDistant> casted = std::dynamic_pointer_cast<camera::EquiDistant>(intrinsic); 
+
+    /*double scale = 167.760*M_PI/180.0;
+    casted->setScale(scale, scale);
+    casted->setOffset(1935-31.67, 2898+76.72);
+    casted->setDistortionParams({-0.035, -0.025, 0.0});
+    casted->setRadius(1800);
+    casted->setCenterX(1935.0);
+    casted->setCenterY(2898.0);*/
+
+    /*int pos= 0;
+    for (auto & pose :  sfmEngine.getSfMData().getPoses()) {
+      Mat3 R;
+
+      if (pos == 1) {
+        R = getAutoPanoRotation(0.0, 0.031, -1.005);
+      }
+      else if (pos == 0) {
+        R = getAutoPanoRotation(119.712, 0.016, -1.012);
+      }
+      else {
+        R = getAutoPanoRotation(-119.844, 0.345, -1.013);
+      }
+
+      pose.second.setTransform(geometry::Pose3(R ,Vec3::Zero()));
+      pos++;
+    }*/
 
     sfmDataIO::Save(sfmEngine.getSfMData(), (fs::path(outDirectory) / "BA_before.abc").string(), sfmDataIO::ESfMData::ALL);
 
@@ -491,6 +533,7 @@ int main(int argc, char **argv)
   sfmData::SfMData& outSfmData = sfmEngine.getSfMData();
   
   
+
   /**
    * If an initial set of poses was available, make sure at least one pose is aligned with it
    */
@@ -596,20 +639,14 @@ int main(int argc, char **argv)
     sfm::applyTransform(outSfmData, S, R, t);
   }
 
-  {
-    std::shared_ptr<camera::IntrinsicBase> intrinsic = outSfmData.getIntrinsics().begin()->second;
-    std::shared_ptr<camera::EquiDistant> casted = std::dynamic_pointer_cast<camera::EquiDistant>(intrinsic);    
-    std::cout << casted->getPrincipalPoint()<< std::endl;
-  }
-
   /*Add offsets to rotations*/
-  for (auto& pose: outSfmData.getPoses()) {
+  /*for (auto& pose: outSfmData.getPoses()) {
 
     geometry::Pose3 p = pose.second.getTransform();
     Eigen::Matrix3d newR = p.rotation() *  Eigen::AngleAxisd(degreeToRadian(offsetLongitude), Vec3(0,1,0))  *  Eigen::AngleAxisd(degreeToRadian(offsetLatitude), Vec3(1,0,0));
     p.rotation() = newR;
     pose.second.setTransform(p);
-  }
+  }*/
 
   
 

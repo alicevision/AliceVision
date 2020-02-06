@@ -537,10 +537,6 @@ public:
     }
     _offset_y = coarse_bbox.top + min_y;
     
-    min_x = 0;
-    min_y = 0;
-    max_x = panoramaSize.first - 1;
-    max_y = panoramaSize.second - 1;
 
     size_t real_width = max_x - min_x + 1;
     size_t real_height = max_y - min_y + 1;
@@ -1248,23 +1244,23 @@ int main(int argc, char **argv) {
     std::shared_ptr<camera::IntrinsicBase> intrinsic = sfmData.getIntrinsicsharedPtr(view.getIntrinsicId());
     std::shared_ptr<camera::EquiDistant> casted = std::dynamic_pointer_cast<camera::EquiDistant>(intrinsic);    
 
-    double scale = 179.329*M_PI/180.0;
+    /*double scale = 167.760*M_PI/180.0;
     casted->setScale(scale, scale);
-    casted->setOffset(1920.0-27.67, 2880+73.62);
-    casted->setDistortionParams({0.0, 0.0, 0.0,});
-    casted->setRadius(1920);
-    casted->setCenterX(1920.0);
-    casted->setCenterY(2880.0);
+    casted->setOffset(1935-31.67, 2898+76.72);
+    casted->setDistortionParams({-0.035, -0.025, 0.0});*/
+    casted->setRadius(1880);
+    casted->setCenterX(1935.0);
+    casted->setCenterY(2898.0);
 
-    if (pos == 0) {
-      camPose.rotation() = getAutoPanoRotation(0.0, 0.251, -1.515);
+    /*if (pos == 0) {
+      camPose.rotation() = getAutoPanoRotation(0.0, 0.031, -1.005);
     }
     else if (pos == 1) {
-      camPose.rotation() = getAutoPanoRotation(121.017, 0.121, -1.507);
+      camPose.rotation() = getAutoPanoRotation(119.712, 0.016, -1.012);
     }
     else {
-      camPose.rotation() = getAutoPanoRotation(-119.620, 0.248, -1.485);
-    }
+      camPose.rotation() = getAutoPanoRotation(-119.844, 0.345, -1.013);
+    }*/
 
     
     

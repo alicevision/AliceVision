@@ -46,6 +46,9 @@ public:
     const Eigen::Map<const Eigen::Matrix<double, 3, 3, Eigen::RowMajor>> jRo(parameter_rotation_j);
 
     camera::EquiDistantRadialK3 intrinsic(w, h, parameter_intrinsics[0], parameter_intrinsics[1], parameter_intrinsics[2], 1980, parameter_intrinsics[3], parameter_intrinsics[4], parameter_intrinsics[5]);
+    intrinsic.setRadius(1880);
+    intrinsic.setCenterX(1920.0);
+    intrinsic.setCenterY(2880.0);
 
     Eigen::Matrix3d R = jRo * iRo.transpose();
     geometry::Pose3 T(R, Vec3({0,0,0}));
@@ -58,6 +61,14 @@ public:
 
     residuals[0] = pt_j_est(0) - pt_j(0);
     residuals[1] = pt_j_est(1) - pt_j(1);
+
+    /*std::cout << parameter_intrinsics[0] << " ";
+    std::cout << parameter_intrinsics[1] << " ";
+    std::cout << parameter_intrinsics[2] << " ";
+    std::cout << parameter_intrinsics[3] << " ";
+    std::cout << parameter_intrinsics[4] << " ";
+    std::cout << parameter_intrinsics[5] << " ";
+    std::cout << residuals[0] << " " << residuals[1] << std::endl;*/
 
     if (jacobians == nullptr) {
       return true;
@@ -273,7 +284,7 @@ void BundleAdjustmentCeresAlt::setSolverOptions(ceres::Solver::Options& solverOp
 
 
 #if CERES_VERSION_MAJOR < 2
-  solverOptions.num_linear_solver_threads = _ceresOptions.nbThreads;
+  //solverOptions.num_linear_solver_threads = _ceresOptions.nbThreads;
 #endif
 
   if(_ceresOptions.useParametersOrdering)
@@ -513,7 +524,7 @@ void BundleAdjustmentCeresAlt::addConstraints2DToProblem(const sfmData::SfMData&
 {
   // set a LossFunction to be less penalized by false measurements.
   // note: set it to NULL if you don't want use a lossFunction.
-  ceres::LossFunction* lossFunction = new ceres::HuberLoss(Square(2.0)); // TODO: make the LOSS function and the parameter an option
+  ceres::LossFunction* lossFunction = new ceres::HuberLoss(Square(8.0)); // TODO: make the LOSS function and the parameter an option
 
   for (const auto & constraint : sfmData.getConstraints2D()) {
     const sfmData::View& view_1 = sfmData.getView(constraint.ViewFirst);
@@ -539,8 +550,8 @@ void BundleAdjustmentCeresAlt::addConstraints2DToProblem(const sfmData::SfMData&
     }
 
     {
-      ceres::CostFunction* costFunction = new Cost(constraint.ObservationSecond.x, constraint.ObservationFirst.x);
-      problem.AddResidualBlock(costFunction, lossFunction, poseBlockPtr_2, poseBlockPtr_1, intrinsicBlockPtr_1);
+      //ceres::CostFunction* costFunction = new Cost(constraint.ObservationSecond.x, constraint.ObservationFirst.x);
+      //problem.AddResidualBlock(costFunction, lossFunction, poseBlockPtr_2, poseBlockPtr_1, intrinsicBlockPtr_1);
     }
   }
 }
