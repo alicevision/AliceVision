@@ -100,7 +100,7 @@ int main(int argc, char **argv)
   std::string geometricFilterTypeName = matchingImageCollection::EGeometricFilterType_enumToString(matchingImageCollection::EGeometricFilterType::FUNDAMENTAL_MATRIX);
   std::string describerTypesName = feature::EImageDescriberType_enumToString(feature::EImageDescriberType::SIFT);
   float distRatio = 0.8f;
-  std::string predefinedPairList;
+  std::vector<std::string> predefinedPairList;
   int rangeStart = -1;
   int rangeSize = 0;
   std::string nearestMatchingMethod = "ANN_L2";
@@ -140,8 +140,8 @@ int main(int argc, char **argv)
       matchingImageCollection::EGeometricFilterType_informations().c_str())
     ("describerTypes,d", po::value<std::string>(&describerTypesName)->default_value(describerTypesName),
       feature::EImageDescriberType_informations().c_str())
-    ("imagePairsList,l", po::value<std::string>(&predefinedPairList)->default_value(predefinedPairList),
-      "Path to a file which contains the list of image pairs to match.")
+    ("imagePairsList,l", po::value<std::vector<std::string>>(&predefinedPairList)->multitoken(),
+      "Path(s) to one or more files which contain the list of image pairs to match.")
     ("photometricMatchingMethod,p", po::value<std::string>(&nearestMatchingMethod)->default_value(nearestMatchingMethod),
       "For Scalar based regions descriptor:\n"
       "* BRUTE_FORCE_L2: L2 BruteForce matching\n"
@@ -271,9 +271,12 @@ int main(int argc, char **argv)
   }
   else
   {
-    ALICEVISION_LOG_INFO("Load pair list from file: " << predefinedPairList);
-    if(!loadPairs(predefinedPairList, pairs, rangeStart, rangeSize))
-        return EXIT_FAILURE;
+    for(const std::string& imagePairsFile: predefinedPairList)
+    {
+      ALICEVISION_LOG_INFO("Load pair list from file: " << imagePairsFile);
+      if(!loadPairs(imagePairsFile, pairs, rangeStart, rangeSize))
+          return EXIT_FAILURE;
+    }
   }
 
   if(pairs.empty())
