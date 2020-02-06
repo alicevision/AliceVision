@@ -49,6 +49,7 @@ set(sfm_files_sources
   utils/statistics.cpp
   utils/syntheticScene.cpp
   BundleAdjustmentCeres.cpp
+  BundleAdjustmentCeresAlt.cpp
   LocalBundleAdjustmentGraph.cpp
   FrustumFilter.cpp
   generateReport.cpp

@@ -27,6 +27,8 @@
 #include <aliceVision/multiview/rotationKernelSolver.hpp>
 #include <aliceVision/multiview/conditioning.hpp>
 
+#include <aliceVision/sfm/BundleAdjustmentCeresAlt.hpp>
+
 
 #include <dependencies/htmlDoc/htmlDoc.hpp>
 
@@ -398,13 +400,13 @@ bool ReconstructionEngine_panorama::Compute_Global_Rotations(const rotationAvera
 // Adjust the scene (& remove outliers)
 bool ReconstructionEngine_panorama::Adjust()
 {
-  BundleAdjustmentCeres::CeresOptions options;
+  BundleAdjustmentCeresAlt::CeresOptions options;
   options.useParametersOrdering = false;
   options.summary = true;
   
   /*Minimize only rotation first*/
-  BundleAdjustmentCeres BA(options);
-  /*bool success = BA.adjust(_sfmData, BundleAdjustment::REFINE_ROTATION);
+  BundleAdjustmentCeresAlt BA(options);
+  bool success = BA.adjust(_sfmData, BundleAdjustment::REFINE_ROTATION);
   if(success)
   {
     ALICEVISION_LOG_INFO("Rotations successfully refined.");
@@ -412,21 +414,10 @@ bool ReconstructionEngine_panorama::Adjust()
   else
   {
     ALICEVISION_LOG_INFO("Failed to refine the rotations only.");
-  }*/
-
-  /*Minimize All then*/
-  /*success = BA.adjust(_sfmData, BundleAdjustment::REFINE_ROTATION | BundleAdjustment::REFINE_INTRINSICS_DISTORTION);
-  if(success)
-  {
-    ALICEVISION_LOG_INFO("Bundle successfully refined.");
   }
-  else
-  {
-    ALICEVISION_LOG_INFO("Failed to refine Everything.");
-  }*/
 
   /*Minimize All then*/
-  bool success = BA.adjust(_sfmData, BundleAdjustment::REFINE_INTRINSICS_DISTORTION);
+  success = BA.adjust(_sfmData, BundleAdjustmentCeresAlt::REFINE_ROTATION | BundleAdjustmentCeresAlt::REFINE_INTRINSICS_ALL);
   if(success)
   {
     ALICEVISION_LOG_INFO("Bundle successfully refined.");
@@ -473,7 +464,7 @@ void ReconstructionEngine_panorama::Compute_Relative_Rotations(rotationAveraging
       Eigen::Matrix3d twoRone = twoRo * oneRo.transpose();
 
       sfmData::RotationPrior prior(iter_v1.first, iter_v2.first, twoRone); 
-      //rotationpriors.push_back(prior);
+      rotationpriors.push_back(prior);
     }
   }
 
@@ -707,8 +698,8 @@ void ReconstructionEngine_panorama::Compute_Relative_Rotations(rotationAveraging
 
           for (const auto & match : matches)
           {
-            /*size_t next_inlier = relativePose_info.vec_inliers[index_inlier];
-            if (index == next_inlier) {*/
+            size_t next_inlier = relativePose_info.vec_inliers[index_inlier];
+            if (index == next_inlier) {
               
               Vec2 pt1 = _featuresPerView->getFeatures(I, descType)[match._i].coords().cast<double>();
               Vec2 pt2 = _featuresPerView->getFeatures(J, descType)[match._j].coords().cast<double>();
@@ -716,8 +707,8 @@ void ReconstructionEngine_panorama::Compute_Relative_Rotations(rotationAveraging
               sfm::Constraint2D constraint(I, sfm::Observation(pt1, 0), J, sfm::Observation(pt2, 0));
               constraints2d.push_back(constraint);
 
-            /*  index_inlier++;
-            }*/
+               index_inlier++;
+            }
 
             index++;
           }

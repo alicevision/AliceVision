@@ -292,7 +292,7 @@ public:
     double fov = _scale_x;
     double radius = angle_Z / (0.5 * fov);
 
-    if (radius < 1e-8) {
+    if (radius < 1e-8 || radius > 1.0) {
       return Eigen::Matrix<double, 2, 1>::Zero();
     }
 
@@ -450,6 +450,9 @@ public:
    */
   virtual bool isVisibleRay(const Vec3 & ray) const override {
     
+    double angle = std::acos(ray.normalized().dot(Eigen::Vector3d::UnitZ()));
+    if (std::abs(angle) > (0.5 * _scale_x)) return false;
+
     Vec2 proj = project(geometry::Pose3(), ray, true);
 
     Vec2 centered = proj - Vec2(_center_x, _center_y);
