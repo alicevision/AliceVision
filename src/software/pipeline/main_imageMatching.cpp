@@ -714,6 +714,16 @@ int main(int argc, char** argv)
   if(useMultiSfM)
     aliceVision::voctree::getListOfDescriptorFiles(sfmDataB, featuresFolders, descriptorsFilesB);
 
+  // if not enough images to use the VOCABULARYTREE use the EXHAUSTIVE method
+  if(method == EImageMatchingMethod::VOCABULARYTREE || method == EImageMatchingMethod::SEQUENTIAL_AND_VOCABULARYTREE)
+  {
+    if((descriptorsFilesA.size() + descriptorsFilesB.size()) < minNbImages)
+    {
+      ALICEVISION_LOG_DEBUG("Use EXHAUSTIVE method instead of VOCABULARYTREE (less images than minNbImages).");
+      method = EImageMatchingMethod::EXHAUSTIVE;
+    }
+  }
+
   switch(method)
   {
     case EImageMatchingMethod::EXHAUSTIVE:
