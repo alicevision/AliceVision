@@ -42,8 +42,6 @@ inline std::shared_ptr<IntrinsicBase> createIntrinsic(EINTRINSIC intrinsicType,
       return std::make_shared<PinholeFisheye1>(w, h, focal_length_pix, ppx, ppy);
     case EINTRINSIC::EQUIDISTANT_CAMERA:
       return std::make_shared<EquiDistant>(w, h, focal_length_pix, ppx, ppy);
-    case EINTRINSIC::EQUIDISTANT_CAMERA_RADIAL1:
-      return std::make_shared<EquiDistantRadialK1>(w, h, focal_length_pix, ppx, ppy);
     case EINTRINSIC::EQUIDISTANT_CAMERA_RADIAL3:
       return std::make_shared<EquiDistantRadialK3>(w, h, focal_length_pix, ppx, ppy);
     case EINTRINSIC::CAMERA_END:

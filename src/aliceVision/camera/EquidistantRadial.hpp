@@ -17,23 +17,6 @@
 namespace aliceVision {
 namespace camera {
 
-/// Implement a Pinhole camera with a 1 radial distortion coefficient.
-/// x_d = x_u (1 + K_1 r^2)
-class EquiDistantRadialK1 : public EquiDistant
-{
-  public:
-
-  EquiDistantRadialK1(int w = 0, int h = 0, double focal = 0.0, double ppx = 0, double ppy = 0, double radius = 1980.0, double k1 = 0.0)
-  :EquiDistant(w, h, focal, ppx, ppy, radius, std::shared_ptr<Distortion>(new DistortionRadialK1(k1)))
-  {
-  }
-
-  EquiDistantRadialK1* clone() const override { return new EquiDistantRadialK1(*this); }
-  void assign(const IntrinsicBase& other) override { *this = dynamic_cast<const EquiDistantRadialK1&>(other); }
-
-  EINTRINSIC getType() const override { return EQUIDISTANT_CAMERA_RADIAL1; }
-};
-
 /// Implement a Pinhole camera with a 3 radial distortion coefficients.
 /// x_d = x_u (1 + K_1 r^2 + K_2 r^4 + K_3 r^6)
 class EquiDistantRadialK3 : public EquiDistant

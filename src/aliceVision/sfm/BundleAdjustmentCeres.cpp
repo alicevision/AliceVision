@@ -110,8 +110,6 @@ ceres::CostFunction* createConstraintsCostFunctionFromIntrinsics(const Intrinsic
       return new ceres::AutoDiffCostFunction<ResidualErrorConstraintFunctor_PinholeFisheye, 2, 7, 6, 6>(new ResidualErrorConstraintFunctor_PinholeFisheye(observation_first.homogeneous(), observation_second.homogeneous()));
     case EQUIDISTANT_CAMERA:
       return new ceres::AutoDiffCostFunction<ResidualErrorConstraintFunctor_Equidistant, 2, 3, 6, 6>(new ResidualErrorConstraintFunctor_Equidistant(observation_first.homogeneous(), observation_second.homogeneous(), radius));
-    case EQUIDISTANT_CAMERA_RADIAL1:
-      return new ceres::AutoDiffCostFunction<ResidualErrorConstraintFunctor_EquidistantRadialK1, 2, 4, 6, 6>(new ResidualErrorConstraintFunctor_EquidistantRadialK1(observation_first.homogeneous(), observation_second.homogeneous(), radius));
     case EQUIDISTANT_CAMERA_RADIAL3:
       return new ceres::AutoDiffCostFunction<ResidualErrorConstraintFunctor_EquidistantRadialK3, 2, 6, 6, 6>(new ResidualErrorConstraintFunctor_EquidistantRadialK3(observation_first.homogeneous(), observation_second.homogeneous(), radius));
     default:
