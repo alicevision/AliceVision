@@ -26,7 +26,7 @@ namespace aliceVision {
 
 class Cost : public ceres::SizedCostFunction<2, 9, 9, 6> {
 public:
-  Cost(Vec2 fi, Vec2 fj) : _fi(fi), _fj(fj) {
+  Cost(Vec2 fi, Vec2 fj, double centerx, double centery, double radius) : _fi(fi), _fj(fj), _center_x(centerx), _center_y(centery), _radius(radius) {
 
   }
 
@@ -46,9 +46,9 @@ public:
     const Eigen::Map<const Eigen::Matrix<double, 3, 3, Eigen::RowMajor>> jRo(parameter_rotation_j);
 
     camera::EquiDistantRadialK3 intrinsic(w, h, parameter_intrinsics[0], parameter_intrinsics[1], parameter_intrinsics[2], 1980, parameter_intrinsics[3], parameter_intrinsics[4], parameter_intrinsics[5]);
-    intrinsic.setRadius(1880);
-    intrinsic.setCenterX(1920.0);
-    intrinsic.setCenterY(2880.0);
+    intrinsic.setRadius(_radius);
+    intrinsic.setCenterX(_center_x);
+    intrinsic.setCenterY(_center_y);
 
     Eigen::Matrix3d R = jRo * iRo.transpose();
     geometry::Pose3 T(R, Vec3({0,0,0}));
@@ -61,14 +61,6 @@ public:
 
     residuals[0] = pt_j_est(0) - pt_j(0);
     residuals[1] = pt_j_est(1) - pt_j(1);
-
-    /*std::cout << parameter_intrinsics[0] << " ";
-    std::cout << parameter_intrinsics[1] << " ";
-    std::cout << parameter_intrinsics[2] << " ";
-    std::cout << parameter_intrinsics[3] << " ";
-    std::cout << parameter_intrinsics[4] << " ";
-    std::cout << parameter_intrinsics[5] << " ";
-    std::cout << residuals[0] << " " << residuals[1] << std::endl;*/
 
     if (jacobians == nullptr) {
       return true;
@@ -104,6 +96,9 @@ public:
 private:
   Vec2 _fi;
   Vec2 _fj;
+  double _center_x;
+  double _center_y;
+  double _radius;
 };
 
 namespace sfm {
@@ -543,15 +538,18 @@ void BundleAdjustmentCeresAlt::addConstraints2DToProblem(const sfmData::SfMData&
 
     //For the moment assume a unique camera
     assert(intrinsicBlockPtr_1 == intrinsicBlockPtr_2);
+
+    std::shared_ptr<IntrinsicBase> intrinsic = sfmData.getIntrinsicsharedPtr(view_1.getIntrinsicId());
+    std::shared_ptr<camera::EquiDistant> equidistant = std::dynamic_pointer_cast<camera::EquiDistant>(intrinsic);
   
     {
-      ceres::CostFunction* costFunction = new Cost(constraint.ObservationFirst.x, constraint.ObservationSecond.x);
+      ceres::CostFunction* costFunction = new Cost(constraint.ObservationFirst.x, constraint.ObservationSecond.x, equidistant->getCenterX(), equidistant->getCenterY(), equidistant->getRadius());
       problem.AddResidualBlock(costFunction, lossFunction, poseBlockPtr_1, poseBlockPtr_2, intrinsicBlockPtr_1);
     }
 
     {
-      //ceres::CostFunction* costFunction = new Cost(constraint.ObservationSecond.x, constraint.ObservationFirst.x);
-      //problem.AddResidualBlock(costFunction, lossFunction, poseBlockPtr_2, poseBlockPtr_1, intrinsicBlockPtr_1);
+      ceres::CostFunction* costFunction = new Cost(constraint.ObservationSecond.x, constraint.ObservationFirst.x, equidistant->getCenterX(), equidistant->getCenterY(), equidistant->getRadius());
+      problem.AddResidualBlock(costFunction, lossFunction, poseBlockPtr_2, poseBlockPtr_1, intrinsicBlockPtr_1);
     }
   }
 }

@@ -284,8 +284,7 @@ void BundleAdjustmentCeres::setSolverOptions(ceres::Solver::Options& solverOptio
   solverOptions.sparse_linear_algebra_library_type = _ceresOptions.sparseLinearAlgebraLibraryType;
   solverOptions.minimizer_progress_to_stdout = _ceresOptions.verbose;
   solverOptions.logging_type = ceres::SILENT;
-  solverOptions.num_threads = 1;//_ceresOptions.nbThreads;
-  //solverOptions.max_num_iterations = 0;
+  solverOptions.num_threads = /_ceresOptions.nbThreads;
 
 
 #if CERES_VERSION_MAJOR < 2
@@ -488,7 +487,7 @@ void BundleAdjustmentCeres::addIntrinsicsToProblem(const sfmData::SfMData& sfmDa
       constantIntrinisc.push_back(0);
     }
 
-    const std::size_t minImagesForOpticalCenter = 1;
+    const std::size_t minImagesForOpticalCenter = 3;
 
     // optical center
     if(refineIntrinsicsOpticalCenter && (usageCount > minImagesForOpticalCenter))

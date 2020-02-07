@@ -398,16 +398,6 @@ int main(int argc, char **argv)
 
   std::shared_ptr<camera::IntrinsicBase> intrinsic = inputSfmData.getIntrinsics().begin()->second;
   std::shared_ptr<camera::EquiDistant> casted = std::dynamic_pointer_cast<camera::EquiDistant>(intrinsic);    
-
- 
-  double scale = 180*M_PI/180.0;
-  casted->setScale(scale, scale);
-  //casted->setOffset(1935-31.67, 2898+76.72);
-  //casted->setDistortionParams({-0.035, -0.025, 0.0});
-  casted->setRadius(1880);
-  casted->setCenterX(1920.0);
-  casted->setCenterY(2880.0);
-
   if(!inputSfmData.structure.empty())
   {
     ALICEVISION_LOG_ERROR("Part computed SfMData are not currently supported in Global SfM." << std::endl << "Please use Incremental SfM. Aborted");
@@ -494,32 +484,6 @@ int main(int argc, char **argv)
     
     std::shared_ptr<camera::IntrinsicBase> intrinsic =  sfmEngine.getSfMData().getIntrinsicsharedPtr( sfmEngine.getSfMData().getViews().begin()->second->getIntrinsicId());
     std::shared_ptr<camera::EquiDistant> casted = std::dynamic_pointer_cast<camera::EquiDistant>(intrinsic); 
-
-    /*double scale = 167.760*M_PI/180.0;
-    casted->setScale(scale, scale);
-    casted->setOffset(1935-31.67, 2898+76.72);
-    casted->setDistortionParams({-0.035, -0.025, 0.0});
-    casted->setRadius(1800);
-    casted->setCenterX(1935.0);
-    casted->setCenterY(2898.0);*/
-
-    /*int pos= 0;
-    for (auto & pose :  sfmEngine.getSfMData().getPoses()) {
-      Mat3 R;
-
-      if (pos == 1) {
-        R = getAutoPanoRotation(0.0, 0.031, -1.005);
-      }
-      else if (pos == 0) {
-        R = getAutoPanoRotation(119.712, 0.016, -1.012);
-      }
-      else {
-        R = getAutoPanoRotation(-119.844, 0.345, -1.013);
-      }
-
-      pose.second.setTransform(geometry::Pose3(R ,Vec3::Zero()));
-      pos++;
-    }*/
 
     sfmDataIO::Save(sfmEngine.getSfMData(), (fs::path(outDirectory) / "BA_before.abc").string(), sfmDataIO::ESfMData::ALL);
 
