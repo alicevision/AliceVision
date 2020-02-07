@@ -233,6 +233,8 @@ private:
   unsigned int _nbTileSide = 20;
   /// Number of previous keyframe distances in order to evaluate distance score
   unsigned int _nbKeyFrameDist = 10;
+  /// Use padding on digits for exported frames
+  unsigned int _padding = 7;
   /// Sharpness threshold (image with higher sharpness will be selected)
   float _sharpnessThreshold = 15.0f;
   /// Distance max score (image with smallest distance from the last keyframe will be selected)
