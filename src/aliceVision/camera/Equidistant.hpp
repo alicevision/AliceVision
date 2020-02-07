@@ -73,7 +73,7 @@ public:
 
   
     Vec2 pt_disto = this->add_disto(P);
-    Vec2 pt_ima = this->cam2ima(P);
+    Vec2 pt_ima = this->cam2ima(pt_disto);
 
     return pt_ima;
   }
