@@ -78,17 +78,84 @@ class Pinhole : public IntrinsicsScaleOffsetDisto
     _offset_y = K(1, 2);
   }
 
-  virtual Vec2 project(const geometry::Pose3& pose, const Vec3& pt3D, bool applyDistortion = true) const override
+  virtual Vec2 project(const geometry::Pose3& pose, const Vec3& pt, bool applyDistortion = true) const override
   {
-    const Vec3 X = pose(pt3D); // apply pose
+    const Vec3 X = pose.rotation() * pt; // apply pose
     const Vec2 P = X.head<2>() / X(2);
 
-    if (applyDistortion && this->have_disto()) {
-      return this->cam2ima( this->add_disto(P));
-    }
-    else {
-      return this->cam2ima(P);
-    }
+    Vec2 distorted = this->add_disto(P);
+    Vec2 impt = this->cam2ima(distorted);
+
+    return impt;
+  }
+
+  Eigen::Matrix<double, 2, 9> getDerivativeProjectWrtRotation(const geometry::Pose3& pose, const Vec3 & pt) {
+    
+    const Vec3 X = pose.rotation() * pt; // apply pose
+
+    Eigen::Matrix<double, 3, 9> d_X_d_R = getJacobian_AB_wrt_A<3, 3, 1>(pose.rotation(), pt);
+
+    const Vec2 P = X.head<2>() / X(2);
+
+    Eigen::Matrix<double, 2, 3> d_P_d_X;
+    d_P_d_X(0, 0) = 1 / X(2);
+    d_P_d_X(0, 1) = 0;
+    d_P_d_X(0, 2) = - X(0) / (X(2) * X(2));
+    d_P_d_X(1, 0) = 0;
+    d_P_d_X(1, 1) = 1 / X(2);
+    d_P_d_X(1, 2) = - X(1) / (X(2) * X(2));
+
+    Vec2 distorted = this->add_disto(P);
+    Vec2 impt = this->cam2ima(distorted);
+
+    return getDerivativeCam2ImaWrtPoint() * getDerivativeAddDistoWrtPt(P) * d_P_d_X * d_X_d_R;
+  }
+
+  Eigen::Matrix<double, 2, 3> getDerivativeProjectWrtPoint(const geometry::Pose3& pose, const Vec3 & pt) {
+
+    const Vec3 X = pose.rotation() * pt; // apply pose
+
+    Eigen::Matrix<double, 3, 3> d_X_d_P = pose.rotation();
+
+    const Vec2 P = X.head<2>() / X(2);
+
+    Eigen::Matrix<double, 2, 3> d_P_d_X;
+    d_P_d_X(0, 0) = 1 / X(2);
+    d_P_d_X(0, 1) = 0;
+    d_P_d_X(0, 2) = - X(0) / (X(2) * X(2));
+    d_P_d_X(1, 0) = 0;
+    d_P_d_X(1, 1) = 1 / X(2);
+    d_P_d_X(1, 2) = - X(1) / (X(2) * X(2));
+
+    Vec2 distorted = this->add_disto(P);
+    Vec2 impt = this->cam2ima(distorted);
+
+    return getDerivativeCam2ImaWrtPoint() * getDerivativeAddDistoWrtPt(P) * d_P_d_X * d_X_d_P;
+  }
+
+  Eigen::Matrix<double, 2, 3> getDerivativeProjectWrtDisto(const geometry::Pose3& pose, const Vec3 & pt) {
+    const Vec3 X = pose.rotation() * pt; // apply pose
+    const Vec2 P = X.head<2>() / X(2);
+
+    Vec2 distorted = this->add_disto(P);
+    Vec2 impt = this->cam2ima(distorted);
+
+    return getDerivativeCam2ImaWrtPoint() * getDerivativeAddDistoWrtDisto(P);
+  }
+  
+  Eigen::Matrix<double, 2, 2> getDerivativeProjectWrtPrincipalPoint(const geometry::Pose3& pose, const Vec3 & pt) {
+
+    return getDerivativeCam2ImaWrtPrincipalPoint();
+  }
+
+  Eigen::Matrix<double, 2, 1> getDerivativeProjectWrtScale(const geometry::Pose3& pose, const Vec3 & pt) {
+
+    const Vec3 X = pose.rotation() * pt; // apply pose
+    const Vec2 P = X.head<2>() / X(2);
+
+    Vec2 distorted = this->add_disto(P);
+
+    return getDerivativeCam2ImaWrtScale(distorted);
   }
 
   virtual Vec3 toUnitSphere(const Vec2 & pt) const override {
@@ -96,6 +163,29 @@ class Pinhole : public IntrinsicsScaleOffsetDisto
     Vec3 ptcam = pt.homogeneous();
 
     return ptcam / ptcam.norm();
+  }
+
+  Eigen::Matrix<double, 3, 2> getDerivativetoUnitSphereWrtPoint(const Vec2 & pt) {
+
+    double norm2 = pt(0)*pt(0) + pt(1)*pt(1) + 1.0;
+    double norm = sqrt(norm2);
+
+    Vec3 ptcam = pt.homogeneous();
+
+    
+    Eigen::Matrix<double, 1, 2> d_norm_d_pt;
+    d_norm_d_pt(0, 0) = pt(0) / norm;
+    d_norm_d_pt(0, 1) = pt(1) / norm;
+
+    Eigen::Matrix<double, 3, 2> d_ptcam_d_pt;
+    d_ptcam_d_pt(0, 0) = 1.0;
+    d_ptcam_d_pt(0, 1) = 0.0;
+    d_ptcam_d_pt(1, 0) = 0.0;
+    d_ptcam_d_pt(1, 1) = 1.0;
+    d_ptcam_d_pt(2, 0) = 0.0;
+    d_ptcam_d_pt(2, 1) = 0.0;
+
+    return (norm * d_ptcam_d_pt - ptcam * d_norm_d_pt) / norm2;
   }
   
   virtual double imagePlane_toCameraPlaneError(double value) const override

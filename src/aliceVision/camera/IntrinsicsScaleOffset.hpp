@@ -56,10 +56,39 @@ public:
     return focal() * p + principal_point();
   }
 
+  virtual Eigen::Matrix<double, 2, 1> getDerivativeCam2ImaWrtScale(const Vec2& p) const {
+    return p;
+  }
+
+  virtual Eigen::Matrix2d getDerivativeCam2ImaWrtPoint() const {
+
+    return Eigen::Matrix2d::Identity() * focal();
+  }
+
+  virtual Eigen::Matrix2d getDerivativeCam2ImaWrtPrincipalPoint() const {
+
+    return Eigen::Matrix2d::Identity();
+  }
+
   // Transform a point from the image plane to the camera plane
   virtual Vec2 ima2cam(const Vec2& p) const override
   {
     return ( p -  principal_point() ) / focal();
+  }
+
+  virtual Eigen::Matrix<double, 2, 1> getDerivativeIma2CamWrtScale(const Vec2& p) const {
+
+    return - (p -  principal_point()) / (focal() * focal());;
+  }
+
+  virtual Eigen::Matrix2d getDerivativeIma2CamWrtPoint() const {
+
+    return Eigen::Matrix2d::Identity() * (1.0 / focal());
+  }
+
+  virtual Eigen::Matrix2d getDerivativeIma2CamWrtPrincipalPoint() const {
+
+    return Eigen::Matrix2d::Identity() * (-1.0 / focal());
   }
 
   /**

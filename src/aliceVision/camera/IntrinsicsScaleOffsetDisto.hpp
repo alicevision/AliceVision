@@ -134,6 +134,42 @@ public:
     return _pDistortion->getUndistortedRadius(max_radius);
   }
 
+  Eigen::Matrix<double, 2, 2> getDerivativeAddDistoWrtPt(const Vec2 & pt) {
+    
+    if (this->_pDistortion == nullptr) {
+      return Eigen::Matrix<double, 2, 2>::Identity();
+    }
+
+    return this->_pDistortion->getDerivativeAddDistoWrtPt(pt);
+  }
+
+  Eigen::Matrix<double, 2, 2> getDerivativeRemoveDistoWrtPt(const Vec2 & pt) {
+
+    if (this->_pDistortion == nullptr) {
+      return Eigen::Matrix<double, 2, 2>::Identity();
+    }
+
+    return this->_pDistortion->getDerivativeRemoveDistoWrtPt(pt);
+  }
+
+  Eigen::MatrixXd getDerivativeAddDistoWrtDisto(const Vec2 & pt) {
+
+    if (this->_pDistortion == nullptr) {
+      return Eigen::MatrixXd(0, 0);
+    }
+
+    return this->_pDistortion->getDerivativeAddDistoWrtDisto(pt);
+  }
+
+  Eigen::MatrixXd getDerivativeRemoveDistoWrtDisto(const Vec2 & pt) {
+
+    if (this->_pDistortion == nullptr) {
+      return Eigen::MatrixXd(0, 0);
+    }
+
+    return this->_pDistortion->getDerivativeRemoveDistoWrtDisto(pt);
+  }
+
 protected:
   std::shared_ptr<Distortion> _pDistortion;
 };
