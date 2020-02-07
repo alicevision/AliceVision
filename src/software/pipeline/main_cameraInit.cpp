@@ -379,7 +379,7 @@ int main(int argc, char **argv)
     sfmData::Views& views = sfmData.getViews();
     std::vector<std::string> imagePaths;
 
-    if(listFiles(imageFolder, {".cr2"},  imagePaths))
+    if(listFiles(imageFolder, {".jpg", ".jpeg", ".tif", ".tiff", ".exr"},  imagePaths))
     {
       std::vector<sfmData::View> incompleteViews(imagePaths.size());
 

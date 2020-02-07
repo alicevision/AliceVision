@@ -604,13 +604,13 @@ int main(int argc, char **argv)
   }
 
   /*Add offsets to rotations*/
-  /*for (auto& pose: outSfmData.getPoses()) {
+  for (auto& pose: outSfmData.getPoses()) {
 
     geometry::Pose3 p = pose.second.getTransform();
     Eigen::Matrix3d newR = p.rotation() *  Eigen::AngleAxisd(degreeToRadian(offsetLongitude), Vec3(0,1,0))  *  Eigen::AngleAxisd(degreeToRadian(offsetLatitude), Vec3(1,0,0));
     p.rotation() = newR;
     pose.second.setTransform(p);
-  }*/
+  }
 
   
 
