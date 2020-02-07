@@ -299,6 +299,9 @@ bool readCamera(const ICamera& camera, const M44d& mat, sfmData::SfMData& sfmDat
   std::string mvg_intrinsicInitializationMode = EIntrinsicInitMode_enumToString(EIntrinsicInitMode::CALIBRATED);
   std::vector<double> mvg_intrinsicParams;
   double initialFocalLengthPix = -1;
+  double fisheyeCenterX = 0.0;
+  double fisheyeCenterY = 0.0;
+  double fisheyeRadius = 1.0;
   std::vector<std::string> rawMetadata;
   IndexT viewId = sfmData.getViews().size();
   IndexT poseId = sfmData.getViews().size();
@@ -436,6 +439,18 @@ bool readCamera(const ICamera& camera, const M44d& mat, sfmData::SfMData& sfmDat
       {
         initialFocalLengthPix = getAbcProp<Alembic::Abc::IDoubleProperty>(userProps, *propHeader, "mvg_initialFocalLengthPix", sampleFrame);
       }
+      if(const Alembic::Abc::PropertyHeader *propHeader = userProps.getPropertyHeader("mvg_fisheyeCenterX"))
+      {
+        fisheyeCenterX = getAbcProp<Alembic::Abc::IDoubleProperty>(userProps, *propHeader, "mvg_fisheyeCenterX", sampleFrame);
+      }
+      if(const Alembic::Abc::PropertyHeader *propHeader = userProps.getPropertyHeader("mvg_fisheyeCenterY"))
+      {
+        fisheyeCenterY = getAbcProp<Alembic::Abc::IDoubleProperty>(userProps, *propHeader, "mvg_fisheyeCenterY", sampleFrame);
+      }
+      if(const Alembic::Abc::PropertyHeader *propHeader = userProps.getPropertyHeader("mvg_fisheyeRadius"))
+      {
+        fisheyeRadius = getAbcProp<Alembic::Abc::IDoubleProperty>(userProps, *propHeader, "mvg_fisheyeRadius", sampleFrame);
+      }
       if(userProps.getPropertyHeader("mvg_intrinsicParams"))
       {
         Alembic::Abc::IDoubleArrayProperty prop(userProps, "mvg_intrinsicParams");
@@ -465,6 +480,13 @@ bool readCamera(const ICamera& camera, const M44d& mat, sfmData::SfMData& sfmDat
     intrinsic->updateFromParams(mvg_intrinsicParams);
     intrinsic->setInitialFocalLengthPix(initialFocalLengthPix);
     intrinsic->setInitializationMode(EIntrinsicInitMode_stringToEnum(mvg_intrinsicInitializationMode));
+
+    std::shared_ptr<camera::EquiDistant> casted = std::dynamic_pointer_cast<camera::EquiDistant>(intrinsic);
+    if (casted) {
+      casted->setCenterX(fisheyeCenterX);
+      casted->setCenterY(fisheyeCenterY);
+      casted->setRadius(fisheyeRadius);
+    }
 
     if(intrinsicLocked)
       intrinsic->lock();

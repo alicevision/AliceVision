@@ -221,6 +221,14 @@ void AlembicExporter::DataImpl::addCamera(const std::string& name,
     camObj.getSchema().set(camSample);
   }
 
+  std::shared_ptr<camera::EquiDistant> intrinsicEquiCasted = std::dynamic_pointer_cast<camera::EquiDistant>(intrinsic);
+  if(intrinsicEquiCasted)
+  {
+    ODoubleProperty(userProps, "mvg_fisheyeCenterX").set(intrinsicEquiCasted->getCenterX());
+    ODoubleProperty(userProps, "mvg_fisheyeCenterY").set(intrinsicEquiCasted->getCenterY());
+    ODoubleProperty(userProps, "mvg_fisheyeRadius").set(intrinsicEquiCasted->getRadius());
+  }
+
   if(uncertainty)
   {
      std::vector<double> uncertaintyParams(uncertainty->data(), uncertainty->data()+6);
