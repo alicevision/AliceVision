@@ -209,7 +209,7 @@ int main(int argc, char **argv)
     ("defaultIntrinsic", po::value<std::string>(&defaultIntrinsicKMatrix)->default_value(defaultIntrinsicKMatrix),
       "Intrinsics Kmatrix \"f;0;ppx;0;f;ppy;0;0;1\".")
     ("defaultCameraModel", po::value<std::string>(&defaultCameraModelName)->default_value(defaultCameraModelName),
-      "Camera model type (pinhole, radial1, radial3, brown, fisheye4, fisheye1, equidistant, equidistant_r1, equidistant_r3).")
+      "Camera model type (pinhole, radial1, radial3, brown, fisheye4, fisheye1, equidistant_r3).")
     ("groupCameraFallback", po::value<EGroupCameraFallback>(&groupCameraFallback)->default_value(groupCameraFallback),
       std::string("When there is no serial number in the image metadata, we cannot know if the images come from the same camera. "
       "This is problematic for grouping images sharing the same internal camera settings and we have to decide on a fallback strategy:\n"
