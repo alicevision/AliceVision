@@ -46,14 +46,7 @@ inline std::istream& operator>>(std::istream& in, std::pair<int, int>& out)
 }
 
 
-
-
-
-
-
-
-
-int main2(int argc, char **argv) {
+int main(int argc, char **argv) {
 
   double w = 3840;
   double h = 5760;
@@ -214,26 +207,21 @@ int main2(int argc, char **argv) {
       //problem.AddResidualBlock(new Cost(fi, fj), nullptr, r_est[idviews.first].data(), r_est[idviews.second].data(), params.data(), params.data() + 1, params.data() + 3);
       //problem.AddResidualBlock(new Cost(fj, fi), nullptr, r_est[idviews.second].data(), r_est[idviews.first].data(), params.data(), params.data() + 1, params.data() + 3);
 
-      {
-        sfmData::Constraint2D c(idviews.first, sfmData::Observation(fi.coords().cast<double>(), 0), idviews.second, sfmData::Observation(fj.coords().cast<double>(), 0));
-        sfmdata.getConstraints2D().push_back(c);
-      }
-      {
-        sfmData::Constraint2D c(idviews.second, sfmData::Observation(fj.coords().cast<double>(), 0), idviews.first, sfmData::Observation(fi.coords().cast<double>(), 0));
-        sfmdata.getConstraints2D().push_back(c);
-      }
+      
+      sfmData::Constraint2D c(idviews.first, sfmData::Observation(fi.coords().cast<double>(), 0), idviews.second, sfmData::Observation(fj.coords().cast<double>(), 0));
+      sfmdata.getConstraints2D().push_back(c);
     }
   }
 
-  intrinsic->setScale(3.14, 3.14);
-  intrinsic->setOffset(1920.0, 2880.0);
-  intrinsic->setDistortionParams({0.0,0.0,0.0});
+  //intrinsic->setScale(3.14, 3.14);
+  //intrinsic->setOffset(1920.0, 2880.0);
+  //intrinsic->setDistortionParams({0.0,0.0,0.0});
   sfm::BundleAdjustmentCeresAlt::CeresOptions options;
   options.useParametersOrdering = false;
   options.summary = true;
 
   sfm::BundleAdjustmentCeresAlt BA(options);
-  bool success = BA.adjust(sfmdata, sfm::BundleAdjustment::REFINE_ROTATION | sfm::BundleAdjustment::REFINE_INTRINSICS_ALL);
+  bool success = BA.adjust(sfmdata, sfm::BundleAdjustment::REFINE_ROTATION | sfm::BundleAdjustment::REFINE_INTRINSICS_FOCAL | sfm::BundleAdjustment::REFINE_INTRINSICS_OPTICALCENTER_IF_ENOUGH_DATA);
   if(success)
   {
     ALICEVISION_LOG_INFO("Bundle successfully refined.");
@@ -275,7 +263,7 @@ Eigen::Matrix3d getAutoPanoRotation(double yaw, double pitch, double roll) {
   return  Mroll.toRotationMatrix()* Mpitch.toRotationMatrix()  *  Myaw.toRotationMatrix();
 }
 
-int main(int argc, char **argv)
+int main2(int argc, char **argv)
 {
   // command-line parameters
 

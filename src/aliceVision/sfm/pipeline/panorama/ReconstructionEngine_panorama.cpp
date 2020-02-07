@@ -400,12 +400,12 @@ bool ReconstructionEngine_panorama::Compute_Global_Rotations(const rotationAvera
 // Adjust the scene (& remove outliers)
 bool ReconstructionEngine_panorama::Adjust()
 {
-  BundleAdjustmentCeres::CeresOptions options;
+  BundleAdjustmentCeresAlt::CeresOptions options;
   options.useParametersOrdering = false;
   options.summary = true;
   
   /*Minimize only rotation first*/
-  BundleAdjustmentCeres BA(options);
+  BundleAdjustmentCeresAlt BA(options);
   bool success = BA.adjust(_sfmData, BundleAdjustment::REFINE_ROTATION);
   if(success)
   {

@@ -32,7 +32,7 @@ public:
 
   bool Evaluate(double const * const * parameters, double * residuals, double ** jacobians) const {
 
-    double w = 3840;
+    double w = 3840; //To replace with params
     double h = 5760;
 
     Vec2 pt_i = _fi;
