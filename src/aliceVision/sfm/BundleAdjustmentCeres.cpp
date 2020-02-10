@@ -666,7 +666,7 @@ void BundleAdjustmentCeres::addRotationPriorsToProblem(const sfmData::SfMData& s
 
 
     ceres::CostFunction* costFunction = new ceres::AutoDiffCostFunction<ResidualErrorRotationPriorFunctor, 3, 6, 6>(new ResidualErrorRotationPriorFunctor(prior._second_R_first));
-    problem.AddResidualBlock(costFunction, lossFunction, poseBlockPtr_1, poseBlockPtr_2);
+    //problem.AddResidualBlock(costFunction, lossFunction, poseBlockPtr_1, poseBlockPtr_2);
   }
 }
 

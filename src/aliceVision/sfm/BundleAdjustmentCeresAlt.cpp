@@ -24,9 +24,79 @@ namespace fs = boost::filesystem;
 
 namespace aliceVision {
 
-class Cost : public ceres::SizedCostFunction<2, 9, 9, 6> {
+class CostPinHole : public ceres::SizedCostFunction<2, 9, 9, 6> {
 public:
-  Cost(Vec2 fi, Vec2 fj, double centerx, double centery, double radius) : _fi(fi), _fj(fj), _center_x(centerx), _center_y(centery), _radius(radius) {
+  CostPinHole(Vec2 fi, Vec2 fj) : _fi(fi), _fj(fj) {
+  }
+
+  bool Evaluate(double const * const * parameters, double * residuals, double ** jacobians) const {
+
+    double w = 3840; //To replace with params
+    double h = 5760;
+
+    Vec2 pt_i = _fi;
+    Vec2 pt_j = _fj;
+
+    const double * parameter_rotation_i = parameters[0];
+    const double * parameter_rotation_j = parameters[1];
+    const double * parameter_intrinsics = parameters[2];
+
+    const Eigen::Map<const Eigen::Matrix<double, 3, 3, Eigen::RowMajor>> iRo(parameter_rotation_i);
+    const Eigen::Map<const Eigen::Matrix<double, 3, 3, Eigen::RowMajor>> jRo(parameter_rotation_j);
+
+    camera::PinholeRadialK3 intrinsic(w, h, parameter_intrinsics[0], parameter_intrinsics[1], parameter_intrinsics[2], parameter_intrinsics[3], parameter_intrinsics[4], parameter_intrinsics[5]);
+
+    Eigen::Matrix3d R = jRo * iRo.transpose();
+    geometry::Pose3 T(R, Vec3({0,0,0}));
+
+    Vec2 pt_i_cam = intrinsic.ima2cam(pt_i);
+    Vec2 pt_i_undist = intrinsic.remove_disto(pt_i_cam);
+    Vec3 pt_i_sphere = intrinsic.toUnitSphere(pt_i_undist);
+
+    Vec2 pt_j_est = intrinsic.project(T, pt_i_sphere, true);
+
+    residuals[0] = pt_j_est(0) - pt_j(0);
+    residuals[1] = pt_j_est(1) - pt_j(1);
+
+    if (jacobians == nullptr) {
+      return true;
+    }
+
+    if (jacobians[0] != nullptr) {
+      Eigen::Map<Eigen::Matrix<double, 2, 9, Eigen::RowMajor>> J(jacobians[0]);
+
+      J = intrinsic.getDerivativeProjectWrtRotation(T, pt_i_sphere) * getJacobian_AB_wrt_B<3, 3, 3>(jRo, iRo.transpose()) * getJacobian_At_wrt_A<3, 3>() * getJacobian_AB_wrt_A<3, 3, 3>(Eigen::Matrix3d::Identity(), iRo);
+    }
+
+    if (jacobians[1] != nullptr) {
+      Eigen::Map<Eigen::Matrix<double, 2, 9, Eigen::RowMajor>> J(jacobians[1]);
+
+      J = intrinsic.getDerivativeProjectWrtRotation(T, pt_i_sphere) * getJacobian_AB_wrt_A<3, 3, 3>(jRo, iRo.transpose()) * getJacobian_AB_wrt_A<3, 3, 3>(Eigen::Matrix3d::Identity(), jRo);
+    }
+
+    if (jacobians[2] != nullptr) {
+      Eigen::Map<Eigen::Matrix<double, 2, 6, Eigen::RowMajor>> J(jacobians[2]);
+
+      Eigen::Matrix<double, 2, 1> Jscale = intrinsic.getDerivativeProjectWrtScale(T, pt_i_sphere) + intrinsic.getDerivativeProjectWrtPoint(T, pt_i_sphere) * intrinsic.getDerivativetoUnitSphereWrtPoint(pt_i_undist) * intrinsic.getDerivativeRemoveDistoWrtPt(pt_i_cam) * intrinsic.getDerivativeIma2CamWrtScale(pt_i);
+      Eigen::Matrix<double, 2, 2> Jpp = intrinsic.getDerivativeProjectWrtPrincipalPoint(T, pt_i_sphere) + intrinsic.getDerivativeProjectWrtPoint(T, pt_i_sphere) * intrinsic.getDerivativetoUnitSphereWrtPoint(pt_i_undist) * intrinsic.getDerivativeRemoveDistoWrtPt(pt_i_cam) * intrinsic.getDerivativeIma2CamWrtPrincipalPoint();
+      Eigen::Matrix<double, 2, 3> Jdisto = intrinsic.getDerivativeProjectWrtDisto(T, pt_i_sphere) + intrinsic.getDerivativeProjectWrtPoint(T, pt_i_sphere) * intrinsic.getDerivativetoUnitSphereWrtPoint(pt_i_undist) * intrinsic.getDerivativeRemoveDistoWrtDisto(pt_i_cam);
+
+      J.block<2, 1>(0, 0) = Jscale;
+      J.block<2, 2>(0, 1) = Jpp;
+      J.block<2, 3>(0, 3) = Jdisto;
+    }
+
+    return true;
+  }
+
+private:
+  Vec2 _fi;
+  Vec2 _fj;
+};
+
+class CostEquiDistant : public ceres::SizedCostFunction<2, 9, 9, 6> {
+public:
+  CostEquiDistant(Vec2 fi, Vec2 fj, double centerx, double centery, double radius) : _fi(fi), _fj(fj), _center_x(centerx), _center_y(centery), _radius(radius) {
 
   }
 
@@ -540,15 +610,26 @@ void BundleAdjustmentCeresAlt::addConstraints2DToProblem(const sfmData::SfMData&
     assert(intrinsicBlockPtr_1 == intrinsicBlockPtr_2);
 
     std::shared_ptr<IntrinsicBase> intrinsic = sfmData.getIntrinsicsharedPtr(view_1.getIntrinsicId());
+    
     std::shared_ptr<camera::EquiDistant> equidistant = std::dynamic_pointer_cast<camera::EquiDistant>(intrinsic);
-  
+    if (equidistant != nullptr)  
     {
-      ceres::CostFunction* costFunction = new Cost(constraint.ObservationFirst.x, constraint.ObservationSecond.x, equidistant->getCenterX(), equidistant->getCenterY(), equidistant->getRadius());
+      ceres::CostFunction* costFunction = new CostEquiDistant(constraint.ObservationFirst.x, constraint.ObservationSecond.x, equidistant->getCenterX(), equidistant->getCenterY(), equidistant->getRadius());
       problem.AddResidualBlock(costFunction, lossFunction, poseBlockPtr_1, poseBlockPtr_2, intrinsicBlockPtr_1);
+
+      //Symmetry
+      costFunction = new CostEquiDistant(constraint.ObservationSecond.x, constraint.ObservationFirst.x, equidistant->getCenterX(), equidistant->getCenterY(), equidistant->getRadius());
+      problem.AddResidualBlock(costFunction, lossFunction, poseBlockPtr_2, poseBlockPtr_1, intrinsicBlockPtr_1);
     }
 
+    std::shared_ptr<camera::Pinhole> pinhole = std::dynamic_pointer_cast<camera::Pinhole>(intrinsic);
+    if (pinhole != nullptr)  
     {
-      ceres::CostFunction* costFunction = new Cost(constraint.ObservationSecond.x, constraint.ObservationFirst.x, equidistant->getCenterX(), equidistant->getCenterY(), equidistant->getRadius());
+      ceres::CostFunction* costFunction = new CostPinHole(constraint.ObservationFirst.x, constraint.ObservationSecond.x);
+      problem.AddResidualBlock(costFunction, lossFunction, poseBlockPtr_1, poseBlockPtr_2, intrinsicBlockPtr_1);
+
+      //Symmetry
+      costFunction = new CostPinHole(constraint.ObservationSecond.x, constraint.ObservationFirst.x);
       problem.AddResidualBlock(costFunction, lossFunction, poseBlockPtr_2, poseBlockPtr_1, intrinsicBlockPtr_1);
     }
   }
@@ -686,9 +767,10 @@ void BundleAdjustmentCeresAlt::createJacobian(const sfmData::SfMData& sfmData,
 bool BundleAdjustmentCeresAlt::adjust(sfmData::SfMData& sfmData, ERefineOptions refineOptions)
 {
   // create problem
-  ceres::Problem problem;
-  createProblem(sfmData, refineOptions, problem);
+  ceres::Problem problem;std::cout << "ok" << std::endl;
 
+  createProblem(sfmData, refineOptions, problem);
+  std::cout << "ok2" << std::endl;
   // configure a Bundle Adjustment engine and run it
   // make Ceres automatically detect the bundle structure.
   ceres::Solver::Options options;

@@ -721,10 +721,10 @@ struct ResidualErrorConstraintFunctor_EquidistantRadialK3
     const double k2 = params[1];
     const double k3 = params[2];
     
-    const double r = sqrt(r2);
-    const double r3 = r2 * r;
+    const double r4 = r2 * r2;
+    const double r6 = r4 * r2;
 
-    return r2 * Square(((1.0 - k1 - k2 - k3) + k1 * r + k2 * r2 + k3 * r3));
+    return r2 * Square(1.0 + k1 * r2 + k2 * r4 + k3 * r6);
   }
 
   template <typename T>
@@ -803,9 +803,10 @@ struct ResidualErrorConstraintFunctor_EquidistantRadialK3
     //Apply distortion
     const T r = sqrt(proj_pt(0)*proj_pt(0) + proj_pt(1)*proj_pt(1));
     const T r2 = r * r;
-    const T r3 = r2 * r;
+    const T r4 = r2 * r2;
+    const T r6 = r4 * r2;
     
-    const T r_coeff = ((T(1.0) - k1 - k2 - k3) + k1 * r + k2 * r2 + k3 * r3);
+    const T r_coeff = (T(1.0) + k1 * r2 + k2 * r4 + k3 * r6);
     const T x_d = proj_pt(0) * r_coeff;
     const T y_d = proj_pt(1) * r_coeff;
     

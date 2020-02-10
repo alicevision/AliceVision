@@ -46,12 +46,12 @@ inline std::istream& operator>>(std::istream& in, std::pair<int, int>& out)
 }
 
 
-int main(int argc, char **argv) {
+int main2(int argc, char **argv) {
 
   double w = 3840;
   double h = 5760;
 
-  std::shared_ptr<camera::EquiDistantRadialK3> intrinsic = std::make_shared<camera::EquiDistantRadialK3>(w, h, 176.0*M_PI/180.0, 1920+32.0, 2880-56.0, 1980, 0.1, -0.2, 0.02);
+  std::shared_ptr<camera::EquiDistantRadialK3> intrinsic = std::make_shared<camera::EquiDistantRadialK3>(w, h, 176.0*M_PI/180.0, 1920+32.0, 2880-56.0, 1980, 0.1, -0.1, 0.02);
   
   
 
@@ -207,7 +207,6 @@ int main(int argc, char **argv) {
       //problem.AddResidualBlock(new Cost(fi, fj), nullptr, r_est[idviews.first].data(), r_est[idviews.second].data(), params.data(), params.data() + 1, params.data() + 3);
       //problem.AddResidualBlock(new Cost(fj, fi), nullptr, r_est[idviews.second].data(), r_est[idviews.first].data(), params.data(), params.data() + 1, params.data() + 3);
 
-      
       sfmData::Constraint2D c(idviews.first, sfmData::Observation(fi.coords().cast<double>(), 0), idviews.second, sfmData::Observation(fj.coords().cast<double>(), 0));
       sfmdata.getConstraints2D().push_back(c);
     }
@@ -254,6 +253,201 @@ int main(int argc, char **argv) {
   return 0;
 }
 
+int main4(int argc, char **argv) {
+
+  double w = 3840;
+  double h = 5760;
+
+  std::shared_ptr<camera::PinholeRadialK3> intrinsic = std::make_shared<camera::PinholeRadialK3>(w, h, 3864, 1920+32.0, 2880-56.0, 0.1, -0.1, 0.02);
+    
+
+  const size_t count = 10;
+  SO3Matrix r[count];
+  for (int i = 0; i < 10; i++) {
+    Eigen::AngleAxisd aa((double(i) / double(count)) * 2.0 * M_PI, Eigen::Vector3d::UnitY());
+    r[i] = aa.toRotationMatrix();
+  }
+
+  std::vector<Vec3> points;
+  for (int ith = 0; ith < 180; ith++) {
+    for (int jphi = 0; jphi < 360; jphi++) {
+      double theta = ith * M_PI / 180.0;
+      double phi = jphi * M_PI / 180.0;
+
+      const double Px = cos(theta) * sin(phi);
+      const double Py = sin(theta);
+      const double Pz = cos(theta) * cos(phi);
+
+      Vec3 pt(Px, Py, Pz);
+
+      points.push_back(pt);
+    }
+  }
+
+  typedef std::map<int, int> MappedPoints;
+  std::map<int, MappedPoints> projections;
+  std::map<int, feature::PointFeatures> features;
+
+  for (int idview = 0; idview < count; idview++) {
+
+    geometry::Pose3 T(r[idview], Vec3::Zero());
+
+    MappedPoints projected;
+    feature::PointFeatures featuresForView;
+
+
+    for (int index = 0; index < points.size(); index++) {
+    
+      Vec3 pt = points[index];
+
+      Vec3 transformedRay = T(pt);
+      if (!intrinsic->isVisibleRay(transformedRay)) {
+        continue;
+      }
+
+      Vec2 impt = intrinsic->project(T, pt, true);
+      if (!intrinsic->isVisible(impt)) {
+        continue;
+      }
+
+      IndexT current_feature = featuresForView.size();
+      featuresForView.push_back(feature::PointFeature(impt.x(), impt.y()));
+      projected[index] = current_feature;
+    }
+
+    projections[idview] = projected;
+    features[idview] = featuresForView;
+  }
+  
+  std::map<std::pair<int, int>, matching::IndMatches> pwMatches;
+
+  for (auto it = projections.begin(); it != projections.end(); it++) {
+
+    for (auto next = std::next(it); next != projections.end(); next++) {
+
+      size_t count = 0;
+      matching::IndMatches matches;
+
+      for (auto item : it->second) {
+
+        size_t feature_id = item.first;
+        
+        auto partner = next->second.find(feature_id);
+        if (partner == next->second.end()) {
+          continue;
+        } 
+
+        matching::IndMatch match;
+        match._i = item.second;
+        match._j = partner->second;
+        match._distanceRatio = 0.4;
+
+        matches.push_back(match);
+      }
+
+
+      std::pair<int, int> pair;
+      pair.first = it->first;
+      pair.second = next->first;
+
+      pwMatches[pair] = matches;
+    }
+  }
+
+  ceres::Problem problem;
+  std::vector<double> params = intrinsic->getParams();
+  
+  SO3Matrix r_est[count];
+  for (int i = 0; i < count; i++) {
+    Eigen::AngleAxisd aa((double(i) / double(count)) * 2.0 * M_PI, Eigen::Vector3d::UnitY());
+    r_est[i] = aa.toRotationMatrix();
+  }
+
+
+  problem.AddParameterBlock(params.data(), 1);
+  problem.AddParameterBlock(params.data() + 1, 2);
+  problem.AddParameterBlock(params.data() + 3, 3);
+
+  for (int k = 0; k < count; k++) {
+    problem.AddParameterBlock(r_est[k].data(), 9);
+    problem.SetParameterization(r_est[k].data(), new SO3Parameterization);
+  }
+
+  //intrinsic->setScale(3.14, 3.14);
+  //intrinsic->setOffset(1920,2880);
+
+  sfmData::SfMData sfmdata;
+  for (int k = 0; k < count; k++) {
+    sfmdata.getPoses()[k] = sfmData::CameraPose(geometry::Pose3(r_est[k], Vec3(0,0,0)));
+  }
+
+  sfmdata.getIntrinsics()[0] = intrinsic;
+  
+  for (int k = 0; k < count; k++) {
+    sfmdata.getViews()[k] = std::make_shared<sfmData::View>("toto", k, 0, k, 3840, 5760);
+  }
+  
+  for (auto matches : pwMatches) {
+    std::pair<IndexT,IndexT> idviews = matches.first;
+
+    //if (idviews.first != 0) continue;
+    //if (idviews.second != 2) continue;
+
+    for (auto match : matches.second) {
+      
+      feature::PointFeature fi = features[idviews.first][match._i];
+      feature::PointFeature fj = features[idviews.second][match._j];
+
+      //problem.AddResidualBlock(new Cost(fi, fj), nullptr, r_est[idviews.first].data(), r_est[idviews.second].data(), params.data(), params.data() + 1, params.data() + 3);
+      //problem.AddResidualBlock(new Cost(fj, fi), nullptr, r_est[idviews.second].data(), r_est[idviews.first].data(), params.data(), params.data() + 1, params.data() + 3);
+      
+      sfmData::Constraint2D c(idviews.first, sfmData::Observation(fi.coords().cast<double>(), 0), idviews.second, sfmData::Observation(fj.coords().cast<double>(), 0));
+      sfmdata.getConstraints2D().push_back(c);
+    }
+  }
+
+  intrinsic->setScale(3800, 3800);
+  intrinsic->setOffset(1920.0, 2880.0);
+  //intrinsic->setDistortionParams({0.0,0.0,0.0});
+  sfm::BundleAdjustmentCeresAlt::CeresOptions options;
+  options.useParametersOrdering = false;
+  options.summary = true;
+  
+
+  sfm::BundleAdjustmentCeresAlt BA(options);
+  bool success = BA.adjust(sfmdata, sfm::BundleAdjustment::REFINE_ROTATION | sfm::BundleAdjustment::REFINE_INTRINSICS_FOCAL | sfm::BundleAdjustment::REFINE_INTRINSICS_OPTICALCENTER_IF_ENOUGH_DATA);
+  if(success)
+  {
+    ALICEVISION_LOG_INFO("Bundle successfully refined.");
+  }
+  else
+  {
+    ALICEVISION_LOG_INFO("Failed to refine Everything.");
+  }
+
+  /*ceres::Solver::Options options;
+  options.max_num_iterations = 500;
+  options.trust_region_strategy_type = ceres::LEVENBERG_MARQUARDT;
+  options.use_inner_iterations = false;
+  options.num_threads = 1;
+  options.minimizer_progress_to_stdout = true;
+  
+
+  ceres::Solver::Summary summary;  
+  ceres::Solve(options, &problem, &summary);*/
+
+  std::cout << intrinsic->getFocalLengthPix() << std::endl;
+  std::cout << intrinsic->getPrincipalPoint().transpose() << std::endl;
+  std::cout << intrinsic->getDistortionParams()[0] << " ";
+  std::cout << intrinsic->getDistortionParams()[1] << " ";
+  std::cout << intrinsic->getDistortionParams()[2] << std::endl;
+  
+  /*std::cout << sfmdata.getPoses()[0].getTransform().rotation() << std::endl;
+  std::cout << sfmdata.getPoses()[1].getTransform().rotation() << std::endl;
+  std::cout << sfmdata.getPoses()[2].getTransform().rotation() << std::endl;*/
+  return 0;
+}
+
 Eigen::Matrix3d getAutoPanoRotation(double yaw, double pitch, double roll) {
     
   Eigen::AngleAxis<double> Myaw(- yaw * M_PI / 180.0, Eigen::Vector3d::UnitY());
@@ -263,7 +457,7 @@ Eigen::Matrix3d getAutoPanoRotation(double yaw, double pitch, double roll) {
   return  Mroll.toRotationMatrix()* Mpitch.toRotationMatrix()  *  Myaw.toRotationMatrix();
 }
 
-int main2(int argc, char **argv)
+int main(int argc, char **argv)
 {
   // command-line parameters
 
