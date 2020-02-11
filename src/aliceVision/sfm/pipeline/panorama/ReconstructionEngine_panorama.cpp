@@ -26,8 +26,7 @@
 #include <aliceVision/multiview/homographyKernelSolver.hpp>
 #include <aliceVision/multiview/rotationKernelSolver.hpp>
 #include <aliceVision/multiview/conditioning.hpp>
-
-#include <aliceVision/sfm/BundleAdjustmentCeresAlt.hpp>
+#include <aliceVision/sfm/BundleAdjustmentPanoramaCeres.hpp>
 
 
 #include <dependencies/htmlDoc/htmlDoc.hpp>
@@ -400,13 +399,13 @@ bool ReconstructionEngine_panorama::Compute_Global_Rotations(const rotationAvera
 // Adjust the scene (& remove outliers)
 bool ReconstructionEngine_panorama::Adjust()
 {
-  BundleAdjustmentCeresAlt::CeresOptions options;
+  BundleAdjustmentPanoramaCeres::CeresOptions options;
   options.useParametersOrdering = false;
   options.summary = true;
   
   /*Minimize only rotation first*/
-  BundleAdjustmentCeresAlt BA(options);
-  bool success = BA.adjust(_sfmData, BundleAdjustment::REFINE_ROTATION);
+  BundleAdjustmentPanoramaCeres BA(options);
+  bool success = BA.adjust(_sfmData, BundleAdjustmentPanoramaCeres::REFINE_ROTATION);
   if(success)
   {
     ALICEVISION_LOG_INFO("Rotations successfully refined.");
@@ -417,7 +416,7 @@ bool ReconstructionEngine_panorama::Adjust()
   }
 
   /*Minimize All then*/
-  success = BA.adjust(_sfmData, BundleAdjustmentCeresAlt::REFINE_ROTATION | BundleAdjustmentCeresAlt::REFINE_INTRINSICS_ALL);
+  success = BA.adjust(_sfmData, BundleAdjustmentPanoramaCeres::REFINE_ROTATION | BundleAdjustmentPanoramaCeres::REFINE_INTRINSICS_FOCAL | BundleAdjustmentPanoramaCeres::REFINE_INTRINSICS_OPTICALCENTER_ALWAYS | BundleAdjustmentPanoramaCeres::REFINE_INTRINSICS_DISTORTION);
   if(success)
   {
     ALICEVISION_LOG_INFO("Bundle successfully refined.");
@@ -634,21 +633,11 @@ void ReconstructionEngine_panorama::Compute_Relative_Rotations(rotationAveraging
           relativePose_info.initial_residual_tolerance = relativeRotation_info._initialResidualTolerance;
           relativePose_info.found_residual_precision = relativeRotation_info._foundResidualPrecision;
           relativePose_info.vec_inliers = relativeRotation_info._inliers; 
-
-          /*Eigen::AngleAxisd checker;
-          checker.fromRotationMatrix(relativeRotation_info._relativeRotation);
-          std::cout << checker.axis().transpose() << std::endl;
-          std::cout << checker.angle() << std::endl;*/
         }
         break;
       default:
-        ALICEVISION_LOG_DEBUG(
-          "Unknown relative rotation method: " << ERelativeRotationMethod_enumToString(_eRelativeRotationMethod));
+        ALICEVISION_LOG_DEBUG("Unknown relative rotation method: " << ERelativeRotationMethod_enumToString(_eRelativeRotationMethod));
       }
-
-      //ALICEVISION_LOG_INFO("Relative pose computation: i: " << i << ", (" << I << ", " << J <<") => SUCCESS");
-      //ALICEVISION_LOG_INFO("Nb inliers: " << relativePose_info.vec_inliers.size() << ", initial_residual_tolerance: " << relativePose_info.initial_residual_tolerance  << ", found_residual_precision: " << relativePose_info.found_residual_precision);
-
       
       /*
       If an existing prior on rotation exists, then make sure the found detected rotation is not stupid
@@ -665,15 +654,12 @@ void ReconstructionEngine_panorama::Compute_Relative_Rotations(rotationAveraging
 
         Eigen::AngleAxisd checker;
         checker.fromRotationMatrix(jRi_est * jRi.transpose());
-        /* if (std::abs(radianToDegree(checker.angle())) > 5) {
+        if (std::abs(radianToDegree(checker.angle())) > 5) {
           relativePose_info.relativePose = geometry::Pose3(jRi, Vec3::Zero());
           relativePose_info.vec_inliers.clear();
           weight = 1.0;
-          std::cout << " wtf" << std::endl;
-        } */
+        }
       }
-
-      
 
       /*Add connection to find best constraints*/
       if (connection_size.find(I) == connection_size.end()) {
@@ -724,30 +710,7 @@ void ReconstructionEngine_panorama::Compute_Relative_Rotations(rotationAveraging
     }
   } // for all relative pose
 
-  /*
-  // Find best connection with pose prior
-  size_t max_val = 0;
-  IndexT max_index = UndefinedIndexT;
-  for (auto & item : connection_size) {
-    if (_sfmData.isPoseAndIntrinsicDefined(item.first)) {
-      if (item.second > max_val) {
-        max_index = item.first;
-        max_val = item.second;
-      }
-    }
-  }
-
-  // If a best view is defined, lock it
-  sfmData::Poses & poses = _sfmData.getPoses();
-  if (max_index != UndefinedIndexT) {
-    sfmData::View & v = _sfmData.getView(max_index);
-    IndexT poseid = v.getPoseId();
-    if (poseid != UndefinedIndexT) {
-      poses[v.getPoseId()].lock();
-    }
-  }
-  */
-
+ 
   /*Debug result*/
   ALICEVISION_LOG_DEBUG("Compute_Relative_Rotations: vec_relatives_R.size(): " << vec_relatives_R.size());
   for(rotationAveraging::RelativeRotation& rotation: vec_relatives_R)
@@ -780,16 +743,6 @@ void ReconstructionEngine_panorama::Compute_Relative_Rotations(rotationAveraging
       const std::string sGraph_name = "global_relative_rotation_pose_graph";
       graph::indexedGraph putativeGraph(set_pose_ids, relative_pose_pairs);
       graph::exportToGraphvizData((fs::path(_outputFolder) / (sGraph_name + ".dot")).string(), putativeGraph.g);
-      /*
-      using namespace htmlDocument;
-      std::ostringstream os;
-
-      os << "<br>" << "global_relative_rotation_pose_graph" << "<br>"
-         << "<img src=\""
-         << (fs::path(_sOutDirectory) / "global_relative_rotation_pose_graph.svg").string()
-         << "\" height=\"600\">\n";
-      _htmlDocStream->pushInfo(os.str());
-      */
     }
   }
 }

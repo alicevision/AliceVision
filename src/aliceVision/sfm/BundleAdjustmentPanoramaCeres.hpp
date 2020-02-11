@@ -77,7 +77,7 @@ class SfMData;
 
 namespace sfm {
 
-class BundleAdjustmentCeresAlt : public BundleAdjustment
+class BundleAdjustmentPanoramaCeres : public BundleAdjustment
 {
 public:
 
@@ -163,21 +163,13 @@ public:
   /**
    * @brief Bundle adjustment constructor
    * @param[in] options The user Ceres options
-   * @see BundleAdjustmentCeresAlt::CeresOptions
+   * @see BundleAdjustmentPanoramaCeres::CeresOptions
    */
-  BundleAdjustmentCeresAlt(const BundleAdjustmentCeresAlt::CeresOptions& options = CeresOptions())
+  BundleAdjustmentPanoramaCeres(const BundleAdjustmentPanoramaCeres::CeresOptions& options = CeresOptions())
     : _ceresOptions(options)
-  {}
-
-  /**
-   * @brief Create a jacobian CRSMatrix
-   * @param[in] sfmData The input SfMData contains all the information about the reconstruction
-   * @param[in] refineOptions The chosen refine flag
-   * @param[out] jacobian The jacobian CSRMatrix
-   */
-  void createJacobian(const sfmData::SfMData& sfmData,
-                      ERefineOptions refineOptions,
-                      ceres::CRSMatrix& jacobian);
+  {
+    
+  }
 
   /**
    * @brief Perform a Bundle Adjustment on the SfM scene with refinement of the requested parameters
@@ -188,14 +180,6 @@ public:
    */
   bool adjust(sfmData::SfMData& sfmData, ERefineOptions refineOptions = REFINE_ALL);
 
-  /**
-   * @brief Ajust parameters according to the local reconstruction graph in order do perfomr an optimezed bundle adjustmentor
-   * @param[in] localGraph The Local bundle adjustment graph pointer or nullptr (will refine everything)
-   */
-  inline void useLocalStrategyGraph(const std::shared_ptr<const LocalBundleAdjustmentGraph>& localGraph)
-  {
-    _localGraph = localGraph;
-  }
 
   /**
    * @brief Get bundle adjustment statistics structure
@@ -223,12 +207,8 @@ private:
   inline void resetProblem()
   {
     _statistics = Statistics();
-
-    _allParametersBlocks.clear();
     _posesBlocks.clear();
     _intrinsicsBlocks.clear();
-    _landmarksBlocks.clear();
-    _rigBlocks.clear();
   }
 
   /**
@@ -252,14 +232,6 @@ private:
    * @param[out] problem The Ceres bundle adjustement problem
    */
   void addIntrinsicsToProblem(const sfmData::SfMData& sfmData, ERefineOptions refineOptions, ceres::Problem& problem);
-
-  /**
-   * @brief Create a residual block for each landmarks according to the Ceres format
-   * @param[in] sfmData The input SfMData contains all the information about the reconstruction, notably the intrinsics
-   * @param[in] refineOptions The chosen refine flag
-   * @param[out] problem The Ceres bundle adjustement problem
-   */
-  void addLandmarksToProblem(const sfmData::SfMData& sfmData, ERefineOptions refineOptions, ceres::Problem& problem);
 
   /**
    * @brief Create a residual block for each 2D constraints
@@ -314,16 +286,6 @@ private:
     return (_localGraph != nullptr ? _localGraph->getIntrinsicState(intrinsicId) : BundleAdjustment::EParameterState::REFINED);
   }
 
-  /**
-   * @brief Return the BundleAdjustment::EParameterState for a specific landmark.
-   * @param[in] landmarkId The landmark id
-   * @return BundleAdjustment::EParameterState (always REFINED if no local strategy)
-   */
-  inline BundleAdjustment::EParameterState getLandmarkState(IndexT landmarkId) const
-  {
-    return (_localGraph != nullptr ? _localGraph->getLandmarkState(landmarkId) : BundleAdjustment::EParameterState::REFINED);
-  }
-
   // private members
 
   /// use or not the local budle adjustment strategy
@@ -336,21 +298,13 @@ private:
   Statistics _statistics;
 
   // data wrappers for refinement
-
-  /// all parameters blocks pointers
-  std::vector<double*> _allParametersBlocks;
   /// poses blocks wrapper
   /// block: ceres angleAxis(3) + translation(3)
   HashMap<IndexT, SO3Matrix> _posesBlocks; //TODO : maybe we can use boost::flat_map instead of HashMap ?
+
   /// intrinsics blocks wrapper
   /// block: intrinsics params
   HashMap<IndexT, std::vector<double>> _intrinsicsBlocks;
-  /// landmarks blocks wrapper
-  /// block: 3d position(3)
-  HashMap<IndexT, std::array<double,3>> _landmarksBlocks;
-  /// rig sub-poses blocks wrapper
-  /// block: ceres angleAxis(3) + translation(3)
-  HashMap<IndexT, HashMap<IndexT, std::array<double,6>>> _rigBlocks;
 
 };
 

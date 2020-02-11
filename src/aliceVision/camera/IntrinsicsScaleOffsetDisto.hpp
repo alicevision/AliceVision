@@ -139,7 +139,6 @@ public:
     if (this->_pDistortion == nullptr) {
       return Eigen::Matrix<double, 2, 2>::Identity();
     }
-
     return this->_pDistortion->getDerivativeAddDistoWrtPt(pt);
   }
 

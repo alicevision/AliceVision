@@ -219,10 +219,6 @@ public:
     double fov = _scale_x;
     double radius = angle_Z / (0.5 * fov);
 
-    if (radius < 1e-8 || radius > 1.0) {
-      return Eigen::Matrix<double, 2, 1>::Zero();
-    }
-
     /* radius = focal * angle_Z */
     Vec2 P;
     P(0) = cos(angle_radial) * radius;

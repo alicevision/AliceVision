@@ -72,6 +72,8 @@ public:
     Eigen::Matrix<double, 1, 2> d_r_d_p;
     d_r_d_p(0) = p(0) / r;
     d_r_d_p(1) = p(1) / r;
+
+    
     
     const double r2 = r * r;
     const double r_coeff = 1.0 + k1 * r2;
@@ -324,6 +326,10 @@ public:
     const double k3 = _distortionParams[2];
 
     const double r = sqrt(p(0)*p(0) + p(1)*p(1));
+    if (r < 1e-12) {
+      return Eigen::Matrix2d::Identity();
+    }
+
     Eigen::Matrix<double, 1, 2> d_r_d_p;
     d_r_d_p(0) = p(0) / r;
     d_r_d_p(1) = p(1) / r;

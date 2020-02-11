@@ -24,7 +24,8 @@
 #include <OpenImageIO/imagebufalgo.h>
 
 #include <aliceVision/sfm/BundleAdjustmentCeres.hpp>
-#include <aliceVision/sfm/BundleAdjustmentCeresAlt.hpp>
+#include <aliceVision/sfm/BundleAdjustmentPanoramaCeres.hpp>
+//#include <aliceVision/sfm/BundleAdjustmentCeresAlt.hpp>
 
 #include <cstdlib>
 
@@ -46,224 +47,19 @@ inline std::istream& operator>>(std::istream& in, std::pair<int, int>& out)
 }
 
 
-int main2(int argc, char **argv) {
+
+int main(int argc, char **argv) {
 
   double w = 3840;
   double h = 5760;
 
-  std::shared_ptr<camera::EquiDistantRadialK3> intrinsic = std::make_shared<camera::EquiDistantRadialK3>(w, h, 176.0*M_PI/180.0, 1920+32.0, 2880-56.0, 1980, 0.1, -0.1, 0.02);
-  
-  
-
-  Eigen::AngleAxisd aa0(0.0, Eigen::Vector3d::UnitY());
-  Eigen::AngleAxisd aa1((1.0 / 3.0) * 2.0 * M_PI, Eigen::Vector3d::UnitY());
-  Eigen::AngleAxisd aa2((2.0 / 3.0) * 2.0 * M_PI, Eigen::Vector3d::UnitY());
-
-  SO3Matrix r[3];
-  r[0] = aa0.toRotationMatrix();
-  r[1] = aa1.toRotationMatrix();
-  r[2] = aa2.toRotationMatrix();
-
-  std::vector<Vec3> points;
-  for (int ith = 0; ith < 180; ith++) {
-    for (int jphi = 0; jphi < 360; jphi++) {
-      double theta = ith * M_PI / 180.0;
-      double phi = jphi * M_PI / 180.0;
-
-      const double Px = cos(theta) * sin(phi);
-      const double Py = sin(theta);
-      const double Pz = cos(theta) * cos(phi);
-
-      Vec3 pt(Px, Py, Pz);
-
-      points.push_back(pt);
-    }
-  }
-
-  typedef std::map<int, int> MappedPoints;
-  std::map<int, MappedPoints> projections;
-  std::map<int, feature::PointFeatures> features;
-
-  for (int idview = 0; idview < 3; idview++) {
-
-    geometry::Pose3 T(r[idview], Vec3::Zero());
-
-    MappedPoints projected;
-    feature::PointFeatures featuresForView;
-
-
-    for (int index = 0; index < points.size(); index++) {
-    
-      Vec3 pt = points[index];
-
-      Vec3 transformedRay = T(pt);
-      if (!intrinsic->isVisibleRay(transformedRay)) {
-        continue;
-      }
-
-      Vec2 impt = intrinsic->project(T, pt, true);
-      if (!intrinsic->isVisible(impt)) {
-        continue;
-      }
-
-      IndexT current_feature = featuresForView.size();
-      featuresForView.push_back(feature::PointFeature(impt.x(), impt.y()));
-      projected[index] = current_feature;
-    }
-
-    projections[idview] = projected;
-    features[idview] = featuresForView;
-  }
-  
-  std::map<std::pair<int, int>, matching::IndMatches> pwMatches;
-
-  for (auto it = projections.begin(); it != projections.end(); it++) {
-
-    for (auto next = std::next(it); next != projections.end(); next++) {
-
-      size_t count = 0;
-      matching::IndMatches matches;
-
-      for (auto item : it->second) {
-
-        size_t feature_id = item.first;
-        
-        auto partner = next->second.find(feature_id);
-        if (partner == next->second.end()) {
-          continue;
-        } 
-
-        matching::IndMatch match;
-        match._i = item.second;
-        match._j = partner->second;
-        match._distanceRatio = 0.4;
-
-        matches.push_back(match);
-      }
-
-
-      std::pair<int, int> pair;
-      pair.first = it->first;
-      pair.second = next->first;
-
-      pwMatches[pair] = matches;
-    }
-  }
-
-  ceres::Problem problem;
-  std::vector<double> params = intrinsic->getParams();
-  
-  SO3Matrix r_est[3];
-  Eigen::AngleAxisd aa_est0(-0.2, Eigen::Vector3d::UnitY());
-  Eigen::AngleAxisd aa_est1((1.1 / 3.0) * 2.0 * M_PI, Eigen::Vector3d::UnitY());
-  Eigen::AngleAxisd aa_est2((2.1 / 3.0) * 2.0 * M_PI, Eigen::Vector3d::UnitY());
-  r_est[0] = aa_est0.toRotationMatrix();
-  r_est[1] = aa_est1.toRotationMatrix();
-  r_est[2] = aa_est2.toRotationMatrix();
-
-  
-
-  problem.AddParameterBlock(params.data(), 1);
-  problem.AddParameterBlock(params.data() + 1, 2);
-  problem.AddParameterBlock(params.data() + 3, 3);
-
-  for (int k = 0; k < 3; k++) {
-    problem.AddParameterBlock(r_est[k].data(), 9);
-    problem.SetParameterization(r_est[k].data(), new SO3Parameterization);
-  }
-
-  /*params[0] = 3.14;
-  params[1] = 1920;
-  params[2] = 2880;
-  params[3] = 0.0;
-  params[4] = 0.0;
-  params[5] = 0.0;*/
-  //intrinsic->setScale(3.14, 3.14);
-  //intrinsic->setOffset(1920,2880);
-
-  sfmData::SfMData sfmdata;
-  sfmdata.getPoses()[0] = sfmData::CameraPose(geometry::Pose3(r_est[0], Vec3(0,0,0)));
-  sfmdata.getPoses()[1] = sfmData::CameraPose(geometry::Pose3(r_est[1], Vec3(0,0,0)));
-  sfmdata.getPoses()[2] = sfmData::CameraPose(geometry::Pose3(r_est[2], Vec3(0,0,0)));  
-  sfmdata.getIntrinsics()[0] = intrinsic;
-  
-
-  sfmdata.getViews()[0] = std::make_shared<sfmData::View>("toto", 0, 0, 0, 3840, 5760);
-  sfmdata.getViews()[1] = std::make_shared<sfmData::View>("toto", 1, 0, 1, 3840, 5760);
-  sfmdata.getViews()[2] = std::make_shared<sfmData::View>("toto", 2, 0, 2, 3840, 5760);
-  
-  
-  for (auto matches : pwMatches) {
-    std::pair<IndexT,IndexT> idviews = matches.first;
-
-    //if (idviews.first != 0) continue;
-    //if (idviews.second != 2) continue;
-
-    for (auto match : matches.second) {
-      
-      feature::PointFeature fi = features[idviews.first][match._i];
-      feature::PointFeature fj = features[idviews.second][match._j];
-
-      //problem.AddResidualBlock(new Cost(fi, fj), nullptr, r_est[idviews.first].data(), r_est[idviews.second].data(), params.data(), params.data() + 1, params.data() + 3);
-      //problem.AddResidualBlock(new Cost(fj, fi), nullptr, r_est[idviews.second].data(), r_est[idviews.first].data(), params.data(), params.data() + 1, params.data() + 3);
-
-      sfmData::Constraint2D c(idviews.first, sfmData::Observation(fi.coords().cast<double>(), 0), idviews.second, sfmData::Observation(fj.coords().cast<double>(), 0));
-      sfmdata.getConstraints2D().push_back(c);
-    }
-  }
-
-  //intrinsic->setScale(3.14, 3.14);
-  //intrinsic->setOffset(1920.0, 2880.0);
-  //intrinsic->setDistortionParams({0.0,0.0,0.0});
-  sfm::BundleAdjustmentCeresAlt::CeresOptions options;
-  options.useParametersOrdering = false;
-  options.summary = true;
-
-  sfm::BundleAdjustmentCeresAlt BA(options);
-  bool success = BA.adjust(sfmdata, sfm::BundleAdjustment::REFINE_ROTATION | sfm::BundleAdjustment::REFINE_INTRINSICS_FOCAL | sfm::BundleAdjustment::REFINE_INTRINSICS_OPTICALCENTER_IF_ENOUGH_DATA);
-  if(success)
-  {
-    ALICEVISION_LOG_INFO("Bundle successfully refined.");
-  }
-  else
-  {
-    ALICEVISION_LOG_INFO("Failed to refine Everything.");
-  }
-
-  /*ceres::Solver::Options options;
-  options.max_num_iterations = 500;
-  options.trust_region_strategy_type = ceres::LEVENBERG_MARQUARDT;
-  options.use_inner_iterations = false;
-  options.num_threads = 1;
-  options.minimizer_progress_to_stdout = true;
-  
-
-  ceres::Solver::Summary summary;  
-  ceres::Solve(options, &problem, &summary);*/
-
-  std::cout << intrinsic->getFocalLengthPix() << std::endl;
-  std::cout << intrinsic->getPrincipalPoint().transpose() << std::endl;
-  std::cout << intrinsic->getDistortionParams()[0] << " ";
-  std::cout << intrinsic->getDistortionParams()[1] << " ";
-  std::cout << intrinsic->getDistortionParams()[2] << std::endl;
-  
-  /*std::cout << sfmdata.getPoses()[0].getTransform().rotation() << std::endl;
-  std::cout << sfmdata.getPoses()[1].getTransform().rotation() << std::endl;
-  std::cout << sfmdata.getPoses()[2].getTransform().rotation() << std::endl;*/
-  return 0;
-}
-
-int main4(int argc, char **argv) {
-
-  double w = 3840;
-  double h = 5760;
-
-  std::shared_ptr<camera::PinholeRadialK3> intrinsic = std::make_shared<camera::PinholeRadialK3>(w, h, 3864, 1920+32.0, 2880-56.0, 0.1, -0.1, 0.02);
+  //std::shared_ptr<camera::PinholeRadialK3> intrinsic = std::make_shared<camera::PinholeRadialK3>(w, h, 3864, 1920+32.0, 2880-56.0, 0.1, -0.1, 0.02);
+  std::shared_ptr<camera::EquiDistantRadialK3> intrinsic = std::make_shared<camera::EquiDistantRadialK3>(w, h,  176.0*M_PI/180.0, 1920+32.0, 2880-56.0, 1980.0,  0.1, -0.1, 0.02);
     
 
-  const size_t count = 10;
+  const size_t count = 3;
   SO3Matrix r[count];
-  for (int i = 0; i < 10; i++) {
+  for (int i = 0; i < count; i++) {
     Eigen::AngleAxisd aa((double(i) / double(count)) * 2.0 * M_PI, Eigen::Vector3d::UnitY());
     r[i] = aa.toRotationMatrix();
   }
@@ -359,7 +155,10 @@ int main4(int argc, char **argv) {
   
   SO3Matrix r_est[count];
   for (int i = 0; i < count; i++) {
+    
     Eigen::AngleAxisd aa((double(i) / double(count)) * 2.0 * M_PI, Eigen::Vector3d::UnitY());
+    if (i == 0) aa.angle() += 0.1;
+    
     r_est[i] = aa.toRotationMatrix();
   }
 
@@ -373,8 +172,6 @@ int main4(int argc, char **argv) {
     problem.SetParameterization(r_est[k].data(), new SO3Parameterization);
   }
 
-  //intrinsic->setScale(3.14, 3.14);
-  //intrinsic->setOffset(1920,2880);
 
   sfmData::SfMData sfmdata;
   for (int k = 0; k < count; k++) {
@@ -390,32 +187,26 @@ int main4(int argc, char **argv) {
   for (auto matches : pwMatches) {
     std::pair<IndexT,IndexT> idviews = matches.first;
 
-    //if (idviews.first != 0) continue;
-    //if (idviews.second != 2) continue;
-
     for (auto match : matches.second) {
       
       feature::PointFeature fi = features[idviews.first][match._i];
       feature::PointFeature fj = features[idviews.second][match._j];
 
-      //problem.AddResidualBlock(new Cost(fi, fj), nullptr, r_est[idviews.first].data(), r_est[idviews.second].data(), params.data(), params.data() + 1, params.data() + 3);
-      //problem.AddResidualBlock(new Cost(fj, fi), nullptr, r_est[idviews.second].data(), r_est[idviews.first].data(), params.data(), params.data() + 1, params.data() + 3);
-      
       sfmData::Constraint2D c(idviews.first, sfmData::Observation(fi.coords().cast<double>(), 0), idviews.second, sfmData::Observation(fj.coords().cast<double>(), 0));
       sfmdata.getConstraints2D().push_back(c);
     }
   }
 
-  intrinsic->setScale(3800, 3800);
+  intrinsic->setScale(3.14, 3.14);
   intrinsic->setOffset(1920.0, 2880.0);
-  //intrinsic->setDistortionParams({0.0,0.0,0.0});
-  sfm::BundleAdjustmentCeresAlt::CeresOptions options;
+  intrinsic->setDistortionParams({0.0, 0.0, 0.0});
+  sfm::BundleAdjustmentPanoramaCeres::CeresOptions options;
   options.useParametersOrdering = false;
   options.summary = true;
   
 
-  sfm::BundleAdjustmentCeresAlt BA(options);
-  bool success = BA.adjust(sfmdata, sfm::BundleAdjustment::REFINE_ROTATION | sfm::BundleAdjustment::REFINE_INTRINSICS_FOCAL | sfm::BundleAdjustment::REFINE_INTRINSICS_OPTICALCENTER_IF_ENOUGH_DATA);
+  sfm::BundleAdjustmentPanoramaCeres BA(options);
+  bool success = BA.adjust(sfmdata, sfm::BundleAdjustment::REFINE_ROTATION | sfm::BundleAdjustment::REFINE_INTRINSICS_OPTICALCENTER_ALWAYS | sfm::BundleAdjustment::REFINE_INTRINSICS_FOCAL | sfm::BundleAdjustment::REFINE_INTRINSICS_DISTORTION);
   if(success)
   {
     ALICEVISION_LOG_INFO("Bundle successfully refined.");
@@ -425,16 +216,6 @@ int main4(int argc, char **argv) {
     ALICEVISION_LOG_INFO("Failed to refine Everything.");
   }
 
-  /*ceres::Solver::Options options;
-  options.max_num_iterations = 500;
-  options.trust_region_strategy_type = ceres::LEVENBERG_MARQUARDT;
-  options.use_inner_iterations = false;
-  options.num_threads = 1;
-  options.minimizer_progress_to_stdout = true;
-  
-
-  ceres::Solver::Summary summary;  
-  ceres::Solve(options, &problem, &summary);*/
 
   std::cout << intrinsic->getFocalLengthPix() << std::endl;
   std::cout << intrinsic->getPrincipalPoint().transpose() << std::endl;
@@ -442,9 +223,6 @@ int main4(int argc, char **argv) {
   std::cout << intrinsic->getDistortionParams()[1] << " ";
   std::cout << intrinsic->getDistortionParams()[2] << std::endl;
   
-  /*std::cout << sfmdata.getPoses()[0].getTransform().rotation() << std::endl;
-  std::cout << sfmdata.getPoses()[1].getTransform().rotation() << std::endl;
-  std::cout << sfmdata.getPoses()[2].getTransform().rotation() << std::endl;*/
   return 0;
 }
 
@@ -457,7 +235,7 @@ Eigen::Matrix3d getAutoPanoRotation(double yaw, double pitch, double roll) {
   return  Mroll.toRotationMatrix()* Mpitch.toRotationMatrix()  *  Myaw.toRotationMatrix();
 }
 
-int main(int argc, char **argv)
+int main3(int argc, char **argv)
 {
   // command-line parameters
 
