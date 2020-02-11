@@ -48,16 +48,16 @@ inline std::istream& operator>>(std::istream& in, std::pair<int, int>& out)
 
 
 
-int main(int argc, char **argv) {
+int main2(int argc, char **argv) {
 
   double w = 3840;
   double h = 5760;
 
-  //std::shared_ptr<camera::PinholeRadialK3> intrinsic = std::make_shared<camera::PinholeRadialK3>(w, h, 3864, 1920+32.0, 2880-56.0, 0.1, -0.1, 0.02);
-  std::shared_ptr<camera::EquiDistantRadialK3> intrinsic = std::make_shared<camera::EquiDistantRadialK3>(w, h,  176.0*M_PI/180.0, 1920+32.0, 2880-56.0, 1980.0,  0.1, -0.1, 0.02);
+  std::shared_ptr<camera::PinholeRadialK3> intrinsic = std::make_shared<camera::PinholeRadialK3>(w, h, 3864, 1920+32.0, 2880-56.0, 0.1, -0.1, 0.02);
+  //std::shared_ptr<camera::EquiDistantRadialK3> intrinsic = std::make_shared<camera::EquiDistantRadialK3>(w, h,  176.0*M_PI/180.0, 1920+32.0, 2880-56.0, 1980.0,  0.1, -0.1, 0.02);
     
 
-  const size_t count = 3;
+  const size_t count = 10;
   SO3Matrix r[count];
   for (int i = 0; i < count; i++) {
     Eigen::AngleAxisd aa((double(i) / double(count)) * 2.0 * M_PI, Eigen::Vector3d::UnitY());
@@ -150,7 +150,6 @@ int main(int argc, char **argv) {
     }
   }
 
-  ceres::Problem problem;
   std::vector<double> params = intrinsic->getParams();
   
   SO3Matrix r_est[count];
@@ -160,16 +159,6 @@ int main(int argc, char **argv) {
     if (i == 0) aa.angle() += 0.1;
     
     r_est[i] = aa.toRotationMatrix();
-  }
-
-
-  problem.AddParameterBlock(params.data(), 1);
-  problem.AddParameterBlock(params.data() + 1, 2);
-  problem.AddParameterBlock(params.data() + 3, 3);
-
-  for (int k = 0; k < count; k++) {
-    problem.AddParameterBlock(r_est[k].data(), 9);
-    problem.SetParameterization(r_est[k].data(), new SO3Parameterization);
   }
 
 
@@ -197,7 +186,11 @@ int main(int argc, char **argv) {
     }
   }
 
-  intrinsic->setScale(3.14, 3.14);
+  sfmData::RotationPrior prior(0, 1, r[1] * r[0].transpose());
+  sfmdata.getRotationPriors().push_back(prior);
+
+  //intrinsic->setScale(3.14, 3.14);
+  intrinsic->setScale(3500, 3500);
   intrinsic->setOffset(1920.0, 2880.0);
   intrinsic->setDistortionParams({0.0, 0.0, 0.0});
   sfm::BundleAdjustmentPanoramaCeres::CeresOptions options;
@@ -235,7 +228,7 @@ Eigen::Matrix3d getAutoPanoRotation(double yaw, double pitch, double roll) {
   return  Mroll.toRotationMatrix()* Mpitch.toRotationMatrix()  *  Myaw.toRotationMatrix();
 }
 
-int main3(int argc, char **argv)
+int main(int argc, char **argv)
 {
   // command-line parameters
 

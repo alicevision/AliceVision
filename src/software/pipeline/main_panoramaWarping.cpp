@@ -648,7 +648,7 @@ private:
     */
     Vec3 rotated_pts[8];
     for (int i = 0; i < 8; i++) {
-      Vec3 pt3d = pts_radius[i].homogeneous().normalized();
+      Vec3 pt3d = intrinsics.toUnitSphere(pts_radius[i]);
       rotated_pts[i] = pose.rotation().transpose() * pt3d;
     }
 

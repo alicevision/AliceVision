@@ -20,57 +20,6 @@ namespace aliceVision {
 
 typedef Eigen::Matrix<double, 3, 3, Eigen::RowMajor> SO3Matrix;
 
-class SO3Parameterization : public ceres::LocalParameterization {
- public:
-  virtual ~SO3Parameterization() {}
-
-  virtual bool Plus(const double* x, const double* delta, double* x_plus_delta) const {
- 
-    double* ptrBase = (double*)x;
-    double* ptrResult = (double*)x_plus_delta;
-    Eigen::Map<Eigen::Matrix<double, 3, 3, Eigen::RowMajor> > rotation(ptrBase);
-    Eigen::Map<Eigen::Matrix<double, 3, 3, Eigen::RowMajor> > rotationResult(ptrResult);
-
-    Eigen::Vector3d axis;
-    axis(0) = delta[0];
-    axis(1) = delta[1];
-    axis(2) = delta[2];
-    double angle = axis.norm();
-
-    axis.normalize();
-
-    Eigen::AngleAxisd aa(angle, axis);
-    Eigen::Matrix3d Rupdate;
-    Rupdate = aa.toRotationMatrix();
-
-    rotationResult = Rupdate * rotation;
-
-    return true;
-  }
-
-  virtual bool ComputeJacobian(const double* /*x*/, double* jacobian) const {
-    
-    Eigen::Map<Eigen::Matrix<double, 9, 3, Eigen::RowMajor>> J(jacobian);
-    //Eigen::Map<const Eigen::Matrix<double, 3, 3, Eigen::RowMajor>> R(x);
-
-    J.fill(0);
-
-    J(1, 2) = 1;
-    J(2, 1) = -1;
-    J(3, 2) = -1;
-    J(5, 0) = 1;
-    J(6, 1) = 1;
-    J(7, 0) = -1;
-
-    return true;
-  }
-
-  virtual int GlobalSize() const { return 9; }
-
-  virtual int LocalSize() const { return 3; }
-};
-
-
 namespace sfmData {
 class SfMData;
 } // namespace sfmData
