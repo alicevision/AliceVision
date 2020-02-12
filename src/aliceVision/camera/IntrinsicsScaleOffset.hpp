@@ -120,11 +120,30 @@ public:
     return true;
   }
 
+  /**
+   * @brief Set initial Scale (for constraining minimization)
+   */
+  inline void setInitialScale(double initialScale)
+  {
+    _initialScale = initialScale;
+  }
+
+  /**
+   * @brief Get the intrinsic initial scale
+   * @return The intrinsic initial scale
+   */
+  inline double initialScale() const
+  {
+    return _initialScale;
+  }
+
+
 protected:
   double _scale_x = 1.0;
   double _scale_y = 1.0;
   double _offset_x = 0.0;
   double _offset_y = 0.0;
+  double _initialScale = -1;
 };
 
 } // namespace camera

@@ -72,15 +72,6 @@ public:
   }
 
   /**
-   * @brief Get the intrinsic initial focal length in px
-   * @return The intrinsic initial focal length in px
-   */
-  inline double initialFocalLengthPix() const
-  {
-    return _initialFocalLengthPix;
-  }
-
-  /**
    * @brief Get the intrinsic initialization mode
    * @return The intrinsic initialization mode
    */
@@ -99,7 +90,6 @@ public:
     return _w == other._w &&
            _h == other._h &&
            _serialNumber == other._serialNumber &&
-           _initialFocalLengthPix == other._initialFocalLengthPix &&
            _initializationMode == other._initializationMode &&
            getType() == other.getType() &&
            getParams() == other.getParams();
@@ -187,15 +177,6 @@ public:
   inline void setSerialNumber(const std::string& serialNumber)
   {
     _serialNumber = serialNumber;
-  }
-
-  /**
-   * @brief Set initial focal length in px
-   * @param[in] initialFocalLengthPix The nitial focal length in px
-   */
-  inline void setInitialFocalLengthPix(double initialFocalLengthPix)
-  {
-    _initialFocalLengthPix = initialFocalLengthPix;
   }
 
   /**
@@ -406,7 +387,6 @@ protected:
   bool _locked = false;
   unsigned int _w = 0;
   unsigned int _h = 0;
-  double _initialFocalLengthPix = -1;
   std::string _serialNumber;
 };
 

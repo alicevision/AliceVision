@@ -478,8 +478,12 @@ bool readCamera(const ICamera& camera, const M44d& mat, sfmData::SfMData& sfmDat
     intrinsic->setWidth(sensorSize_pix.at(0));
     intrinsic->setHeight(sensorSize_pix.at(1));
     intrinsic->updateFromParams(mvg_intrinsicParams);
-    intrinsic->setInitialFocalLengthPix(initialFocalLengthPix);
     intrinsic->setInitializationMode(EIntrinsicInitMode_stringToEnum(mvg_intrinsicInitializationMode));
+
+    std::shared_ptr<camera::IntrinsicsScaleOffset> intrinsicScale = std::dynamic_pointer_cast<camera::IntrinsicsScaleOffset>(intrinsic);
+    if (intrinsicScale) {
+      intrinsicScale->setInitialScale(initialFocalLengthPix);
+    }
 
     std::shared_ptr<camera::EquiDistant> casted = std::dynamic_pointer_cast<camera::EquiDistant>(intrinsic);
     if (casted) {

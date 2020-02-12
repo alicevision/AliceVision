@@ -214,7 +214,7 @@ void AlembicExporter::DataImpl::addCamera(const std::string& name,
     OUInt32ArrayProperty(userProps, "mvg_sensorSizePix").set(sensorSize_pix);
     OStringProperty(userProps, "mvg_intrinsicType").set(intrinsicCasted->getTypeStr());
     OStringProperty(userProps, "mvg_intrinsicInitializationMode").set(camera::EIntrinsicInitMode_enumToString(intrinsicCasted->getInitializationMode()));
-    ODoubleProperty(userProps, "mvg_initialFocalLengthPix").set(intrinsicCasted->initialFocalLengthPix());
+    ODoubleProperty(userProps, "mvg_initialFocalLengthPix").set(intrinsicCasted->initialScale());
     ODoubleArrayProperty(userProps, "mvg_intrinsicParams").set(intrinsicCasted->getParams());
     OBoolProperty(userProps, "mvg_intrinsicLocked").set(intrinsicCasted->isLocked());
 

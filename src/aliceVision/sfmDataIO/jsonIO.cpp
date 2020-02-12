@@ -101,10 +101,10 @@ void saveIntrinsic(const std::string& name, IndexT intrinsicId, const std::share
   intrinsicTree.put("serialNumber", intrinsic->serialNumber());
   intrinsicTree.put("type", camera::EINTRINSIC_enumToString(intrinsicType));
   intrinsicTree.put("initializationMode", camera::EIntrinsicInitMode_enumToString(intrinsic->getInitializationMode()));
-  intrinsicTree.put("pxInitialFocalLength", intrinsic->initialFocalLengthPix());
 
   std::shared_ptr<camera::IntrinsicsScaleOffset> intrinsicScaleOffset = std::dynamic_pointer_cast<camera::IntrinsicsScaleOffset>(intrinsic);
   if (intrinsicScaleOffset) {
+    intrinsicTree.put("pxInitialFocalLength", intrinsicScaleOffset->initialScale());
     intrinsicTree.put("pxFocalLength", intrinsicScaleOffset->getFocalLengthPix());
     saveMatrix("principalPoint", intrinsicScaleOffset->getPrincipalPoint(), intrinsicTree);
   }
@@ -151,7 +151,7 @@ void loadIntrinsic(IndexT& intrinsicId, std::shared_ptr<camera::IntrinsicBase>& 
 
   // pinhole parameters
   intrinsic = camera::createIntrinsic(intrinsicType, width, height, pxFocalLength, principalPoint(0), principalPoint(1));  
-  intrinsic->setInitialFocalLengthPix(intrinsicTree.get<double>("pxInitialFocalLength"));
+  
   intrinsic->setSerialNumber(intrinsicTree.get<std::string>("serialNumber"));
   intrinsic->setInitializationMode(initializationMode);
 
@@ -161,6 +161,11 @@ void loadIntrinsic(IndexT& intrinsicId, std::shared_ptr<camera::IntrinsicBase>& 
   }
   else {
     intrinsic->unlock();
+  }
+
+  std::shared_ptr<camera::IntrinsicsScaleOffset> intrinsicWithScale = std::dynamic_pointer_cast<camera::IntrinsicsScaleOffset>(intrinsic);
+  if (intrinsicWithScale != nullptr) {
+    intrinsicWithScale->setInitialScale(intrinsicTree.get<double>("pxInitialFocalLength"));
   }
 
   /*Load distortion*/

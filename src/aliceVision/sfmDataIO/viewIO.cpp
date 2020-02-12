@@ -181,8 +181,12 @@ std::shared_ptr<camera::IntrinsicBase> getViewIntrinsic(const sfmData::View& vie
 
   // create the desired intrinsic
   std::shared_ptr<camera::IntrinsicBase> intrinsic = camera::createIntrinsic(intrinsicType, view.getWidth(), view.getHeight(), pxFocalLength, ppx, ppy);
-  if(hasFocalLengthInput)
-    intrinsic->setInitialFocalLengthPix(pxFocalLength);
+  if(hasFocalLengthInput) {
+    std::shared_ptr<camera::IntrinsicsScaleOffset> intrinsicScaleOffset = std::dynamic_pointer_cast<camera::IntrinsicsScaleOffset>(intrinsic);
+    if (intrinsicScaleOffset) {
+      intrinsicScaleOffset->setInitialScale(pxFocalLength);
+    }
+  }
 
   // initialize distortion parameters
   switch(intrinsicType)
