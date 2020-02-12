@@ -63,6 +63,24 @@ public:
   }
 
   /**
+   * @brief Get the intrinsic sensor width
+   * @return The intrinsic sensor width
+   */
+  inline double sensorWidth() const
+  {
+    return _sensor_width;
+  }
+
+  /**
+   * @brief Get the intrinsic sensor height
+   * @return The intrinsic sensor height
+   */
+  inline double sensorHeight() const
+  {
+    return _sensor_height;
+  }
+
+  /**
    * @brief Get the intrinsic serial number
    * @return The intrinsic serial number
    */
@@ -89,6 +107,8 @@ public:
   {
     return _w == other._w &&
            _h == other._h &&
+           _sensor_width == other._sensor_width &&
+           _sensor_height == other._sensor_height &&
            _serialNumber == other._serialNumber &&
            _initializationMode == other._initializationMode &&
            getType() == other.getType() &&
@@ -168,6 +188,24 @@ public:
   inline void setHeight(unsigned int height)
   {
     _h = height;
+  }
+
+  /**
+   * @brief Set intrinsic sensor width
+   * @param[in] width The sensor width
+   */
+  inline void setSensorWidth(double width)
+  {
+    _sensor_width = width;
+  }
+
+  /**
+   * @brief Set intrinsic sensor height
+   * @param[in] height The sensor height
+   */
+  inline void setSensorHeight(double height)
+  {
+    _sensor_height = height;
   }
   
   /**
@@ -355,6 +393,8 @@ public:
     stl::hash_combine(seed, static_cast<int>(this->getType()));
     stl::hash_combine(seed, _w);
     stl::hash_combine(seed, _h);
+    stl::hash_combine(seed, _sensor_width);
+    stl::hash_combine(seed, _sensor_height);
     stl::hash_combine(seed, _serialNumber);
     const std::vector<double> params = this->getParams();
     for (size_t i=0; i < params.size(); ++i)
@@ -387,6 +427,8 @@ protected:
   bool _locked = false;
   unsigned int _w = 0;
   unsigned int _h = 0;
+  double _sensor_width = 36.0;
+  double _sensor_height = 24.0;
   std::string _serialNumber;
 };
 

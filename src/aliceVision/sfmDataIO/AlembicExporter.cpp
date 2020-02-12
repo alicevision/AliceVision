@@ -183,20 +183,15 @@ void AlembicExporter::DataImpl::addCamera(const std::string& name,
   {
     CameraSample camSample;
 
-    // Use a common sensor width if we don't have this information.
-    // We chose a full frame 24x36 camera
-    float sensorWidthMM = 36.0;
-
-    if(view.hasMetadata("AliceVision:SensorWidth"))
-      sensorWidthMM = std::stof(view.getMetadata("AliceVision:SensorWidth"));
-
     // Take the max of the image size to handle the case where the image is in portrait mode
     const float imgWidth = intrinsicCasted->w();
     const float imgHeight = intrinsicCasted->h();
+    const float sensorWidth = intrinsicCasted->sensorWidth();
+    const float sensorHeight = intrinsicCasted->sensorHeight();
     const float sensorWidth_pix = std::max(imgWidth, imgHeight);
     const float focalLength_pix = static_cast<const float>(intrinsicCasted->focal());
-    const float focalLength_mm = sensorWidthMM * focalLength_pix / sensorWidth_pix;
-    const float pix2mm = sensorWidthMM / sensorWidth_pix;
+    const float focalLength_mm = sensorWidth * focalLength_pix / sensorWidth_pix;
+    const float pix2mm = sensorWidth / sensorWidth_pix;
 
     // aliceVision: origin is (top,left) corner and orientation is (bottom,right)
     // ABC: origin is centered and orientation is (up,right)
@@ -210,8 +205,10 @@ void AlembicExporter::DataImpl::addCamera(const std::string& name,
 
     // Add sensor width (largest image side) in pixels as custom property
     std::vector<::uint32_t> sensorSize_pix = {intrinsicCasted->w(), intrinsicCasted->h()};
+    std::vector<double> sensorSize_mm = {intrinsicCasted->sensorWidth(), intrinsicCasted->sensorHeight()};
 
     OUInt32ArrayProperty(userProps, "mvg_sensorSizePix").set(sensorSize_pix);
+    ODoubleArrayProperty(userProps, "mvg_sensorSizeMm").set(sensorSize_mm);
     OStringProperty(userProps, "mvg_intrinsicType").set(intrinsicCasted->getTypeStr());
     OStringProperty(userProps, "mvg_intrinsicInitializationMode").set(camera::EIntrinsicInitMode_enumToString(intrinsicCasted->getInitializationMode()));
     ODoubleProperty(userProps, "mvg_initialFocalLengthPix").set(intrinsicCasted->initialScale());

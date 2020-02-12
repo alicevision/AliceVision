@@ -98,6 +98,8 @@ void saveIntrinsic(const std::string& name, IndexT intrinsicId, const std::share
   intrinsicTree.put("intrinsicId", intrinsicId);
   intrinsicTree.put("width", intrinsic->w());
   intrinsicTree.put("height", intrinsic->h());
+  intrinsicTree.put("sensorWidth", intrinsic->sensorWidth());
+  intrinsicTree.put("sensorHeight", intrinsic->sensorHeight());
   intrinsicTree.put("serialNumber", intrinsic->serialNumber());
   intrinsicTree.put("type", camera::EINTRINSIC_enumToString(intrinsicType));
   intrinsicTree.put("initializationMode", camera::EIntrinsicInitMode_enumToString(intrinsic->getInitializationMode()));
@@ -140,6 +142,8 @@ void loadIntrinsic(IndexT& intrinsicId, std::shared_ptr<camera::IntrinsicBase>& 
   intrinsicId = intrinsicTree.get<IndexT>("intrinsicId");
   const unsigned int width = intrinsicTree.get<unsigned int>("width");
   const unsigned int height = intrinsicTree.get<unsigned int>("height");
+  const double sensorWidth = intrinsicTree.get<double>("sensorWidth");
+  const double sensorHeight = intrinsicTree.get<double>("sensorHeight");
   const camera::EINTRINSIC intrinsicType = camera::EINTRINSIC_stringToEnum(intrinsicTree.get<std::string>("type"));
   const camera::EIntrinsicInitMode initializationMode = camera::EIntrinsicInitMode_stringToEnum(intrinsicTree.get<std::string>("initializationMode", camera::EIntrinsicInitMode_enumToString(camera::EIntrinsicInitMode::CALIBRATED)));
   const double pxFocalLength = intrinsicTree.get<double>("pxFocalLength");

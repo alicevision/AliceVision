@@ -295,6 +295,7 @@ bool readCamera(const ICamera& camera, const M44d& mat, sfmData::SfMData& sfmDat
   ICompoundProperty userProps = getAbcUserProperties(cs);
   std::string imagePath;
   std::vector<unsigned int> sensorSize_pix = {0, 0};
+  std::vector<double> sensorSize_mm = {0, 0};
   std::string mvg_intrinsicType = EINTRINSIC_enumToString(PINHOLE_CAMERA);
   std::string mvg_intrinsicInitializationMode = EIntrinsicInitMode_enumToString(EIntrinsicInitMode::CALIBRATED);
   std::vector<double> mvg_intrinsicParams;
@@ -426,6 +427,11 @@ bool readCamera(const ICamera& camera, const M44d& mat, sfmData::SfMData& sfmDat
           getAbcArrayProp<Alembic::Abc::IInt32ArrayProperty>(userProps, "mvg_sensorSizePix", sampleFrame, sensorSize_pix);
         }
         assert(sensorSize_pix.size() == 2);
+      }
+      if(userProps.getPropertyHeader("mvg_sensorSizeMm"))
+      {
+        getAbcArrayProp<Alembic::Abc::IDoubleArrayProperty>(userProps, "mvg_sensorSizeMm", sampleFrame, sensorSize_mm);
+        assert(sensorSize_mm.size() == 2);
       }
       if(const Alembic::Abc::PropertyHeader *propHeader = userProps.getPropertyHeader("mvg_intrinsicType"))
       {
