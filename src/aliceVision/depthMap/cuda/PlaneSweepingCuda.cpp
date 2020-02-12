@@ -741,11 +741,6 @@ void PlaneSweepingCuda::sweepPixelsToVolume( CudaDeviceMemoryPitched<TSim, 3>& v
             pr_printfDeviceMemoryInfo();
             ALICEVISION_LOG_DEBUG(__FUNCTION__ << ": total size of one similarity volume map in GPU memory: approx " << volBestSim_dmp.getBytesPadded() / (1024.0 * 1024.0) << " MB");
             ALICEVISION_LOG_DEBUG(__FUNCTION__ << ": UNPADDED total size of one similarity volume map in GPU memory: approx " << volBestSim_dmp.getBytesUnpadded() / (1024.0 * 1024.0) << " MB");
-
-// #ifdef PLANE_SWEEPING_PRECOMPUTED_COLORS
-            // ALICEVISION_LOG_DEBUG(__FUNCTION__ << ": total size of one color volume map in GPU memory: approx " << volTcamColors_dmp.getBytesPadded() / (1024.0 * 1024.0) << " MB");
-            // ALICEVISION_LOG_DEBUG(__FUNCTION__ << ": UNPADDED total size of one color volume map in GPU memory: approx " << volTcamColors_dmp.getBytesUnpadded() / (1024.0 * 1024.0) << " MB");
-// #endif
         }
 
         const int rcWidth  = _mp.getWidth(rc_global_id);
@@ -765,24 +760,6 @@ void PlaneSweepingCuda::sweepPixelsToVolume( CudaDeviceMemoryPitched<TSim, 3>& v
             << "\t- volDimY: " << vol.DimY() << std::endl
             << "\t- volDimZ: " << vol.DimZ());
 
-#ifdef PLANE_SWEEPING_PRECOMPUTED_COLORS
-        vol.initColorVolumeFromCamera(rcam, tcam,
-                                      (*tcam.pyramid)[vol.PrevScale()].tex,
-                                      tcWidth, tcHeight,
-                                      tcs[tci].getDepthToStart(),
-                                      tcs[tci].getDepthsToSearch(),
-                                      tci );
-
-        /*
-        if (true) // debug
-        {
-            CudaHostMemoryHeap<float4, 3> volTcamColors_h(volTcamColors_dmp.getSize());
-            volTcamColors_h.copyFrom(volTcamColors_dmp);
-
-            exportColorVolume(volTcamColors_h, rc_depths, tcs[tci].getDepthToStart(), tcs[tci].getDepthsToSearch(), _mp, rc, scale, volStepXY, _mp.getDepthMapsFolder() + std::to_string(_mp.getViewId(rc)) + "_" + std::to_string(_mp.getViewId(tc)) + "_vol_colors.abc");
-        }*/
-#endif
-
         // FACA WIP: for now, only create one cell for a TC
         std::vector<OneTC> cells;
         cells.push_back(tcs[tci]);
@@ -798,17 +775,6 @@ void PlaneSweepingCuda::sweepPixelsToVolume( CudaDeviceMemoryPitched<TSim, 3>& v
 
             // last synchronous step
             // cudaDeviceSynchronize();
-#ifdef PLANE_SWEEPING_PRECOMPUTED_COLORS
-            vol.computePrecomputedColors(
-                (*rcam.pyramid)[vol.PrevScale()].tex,
-                volBestSim_dmp,
-                volSecBestSim_dmp,
-                rcam, rcWidth, rcHeight,
-                cells.front(),
-                wsh, _nbestkernelSizeHalf,
-                gammaC, gammaP,
-                tci );
-#else
             vol.compute(
                 volBestSim_dmp,
                 volSecBestSim_dmp,
@@ -819,13 +785,8 @@ void PlaneSweepingCuda::sweepPixelsToVolume( CudaDeviceMemoryPitched<TSim, 3>& v
                 _nbestkernelSizeHalf,
                 gammaC, gammaP,
                 tci );
-#endif
 
-#ifdef PLANE_SWEEPING_PRECOMPUTED_COLORS
-            ALICEVISION_LOG_DEBUG("ps_computeSimilarityVolume_precomputedColors elapsed time: " << toc(t1) << " ms.");
-#else
             ALICEVISION_LOG_DEBUG("ps_computeSimilarityVolume without precomputedColors elapsed time: " << toc(t1) << " ms.");
-#endif
         }
     }
 }

@@ -471,14 +471,9 @@ SimilarityVolume::SimilarityVolume( int volDimX, int volDimY, int volDimZ,
     , _scale( scale )
     , _depths_d(depths_h.data(), depths_h.size())
     , _stream_max( 2 )
-#ifdef PLANE_SWEEPING_PRECOMPUTED_COLORS
-    , _volTcamColors_dmp(CudaSize<3>(_dimX, _dimY, _dimZ))
-#endif
     , _verbose( verbose )
 {
     configureGrid();
-
-    initTempVolumes();
 
     _sweep_stream.resize(_stream_max);
     for( cudaStream_t& stream : _sweep_stream )
@@ -495,12 +490,6 @@ SimilarityVolume::SimilarityVolume( int volDimX, int volDimY, int volDimZ,
 
 SimilarityVolume::~SimilarityVolume( )
 {
-#ifdef PLANE_SWEEPING_PRECOMPUTED_COLORS
-#ifdef PLANE_SWEEPING_PRECOMPUTED_COLORS_TEXTURE
-    cudaDestroyTextureObject( _volTcamColors_tex3D );
-#endif
-#endif
-
     for( cudaStream_t& stream : _sweep_stream )
     {
         cudaStreamSynchronize( stream );
@@ -531,141 +520,6 @@ void SimilarityVolume::initOutputVolumes(
       volSecBestSim_dmp.getBytesPaddedUpToDim(1),
       volSecBestSim_dmp.getBytesPaddedUpToDim(0),
       _dimX, _dimY);
-}
-
-void SimilarityVolume::initTempVolumes( )
-{
-#ifdef PLANE_SWEEPING_PRECOMPUTED_COLORS
-#ifdef PLANE_SWEEPING_PRECOMPUTED_COLORS_TEXTURE
-    cudaTextureDesc  tex_desc;
-    memset(&tex_desc, 0, sizeof(cudaTextureDesc));
-    tex_desc.normalizedCoords = 0; // addressed (x,y,z) in [width,height,depth]
-    tex_desc.addressMode[0] = cudaAddressModeClamp;
-    tex_desc.addressMode[1] = cudaAddressModeClamp;
-    tex_desc.addressMode[2] = cudaAddressModeClamp;
-    tex_desc.readMode = cudaReadModeElementType;
-    tex_desc.filterMode = cudaFilterModePoint;
-
-    cudaResourceDesc res_desc;
-    res_desc.resType = cudaResourceTypePitch2D;
-    res_desc.res.pitch2D.desc = cudaCreateChannelDesc<float4>();
-    res_desc.res.pitch2D.devPtr       = _volTcamColors_dmp.getBuffer();
-    res_desc.res.pitch2D.width        = _volTcamColors_dmp.getSize()[0];
-    res_desc.res.pitch2D.height       = _volTcamColors_dmp.getSize()[1];
-    res_desc.res.pitch2D.pitchInBytes = _volTcamColors_dmp.getPitch();
-
-    // create texture object
-    cudaError_t err = cudaCreateTextureObject(&_volTcamColors_tex3D, &res_desc, &tex_desc, NULL);
-
-    THROW_ON_CUDA_ERROR(err, "Could not create the 3D texture object in " << __FILE__ << ":" << __LINE__ << ", " << cudaGetErrorString(err));
-#endif
-#endif
-
-}
-
-void SimilarityVolume::initColorVolumeFromCamera(
-    const CameraStruct& rcam,
-    const CameraStruct& tcam,
-    cudaTextureObject_t tcam_tex,
-    const int tcWidth, const int tcHeight,
-    const int depthToStart,
-    int usedVolDimZ,
-    const int streamIndex )
-{
-#ifdef PLANE_SWEEPING_PRECOMPUTED_COLORS
-    dim3 block(32, 4, 1);
-
-    dim3 grid(divUp(_dimX, block.x),
-              divUp(_dimY, block.y),
-              usedVolDimZ);
-
-    ALICEVISION_CU_PRINT_DEBUG("ps_initColorVolumeFromCamera:" << std::endl
-        << "\t- tcam.camId: " << tcam.camId << std::endl
-        << "\t- block: " << block.x << ", " << block.y << ", " << block.z << std::endl
-        << "\t- grid: " << grid.x << ", " << grid.y << ", " << grid.z << std::endl
-        << "\t- dimX: " << _dimX << ", dimY: " << _dimY << ", stepXY: " << _stepXY << std::endl
-        << "\t- usedVolDimZ: " << usedVolDimZ << std::endl
-        << "\t- depthToStart: " << depthToStart << std::endl
-        << "\t- depths_d.getUnitsInDim(0): " << _depths_d.getUnitsInDim(0) << std::endl
-        << "\t- volColor_dmp.getSize(): " << _volTcamColors_dmp.getSize()[0] << ", " << _volTcamColors_dmp.getSize()[1] << ", " << _volTcamColors_dmp.getSize()[2] << std::endl
-        << "\t- volColor_dmp.getBytesPaddedUpToDim(1): " << _volTcamColors_dmp.getBytesPaddedUpToDim(1) << std::endl
-        << "\t- volColor_dmp.getBytesPaddedUpToDim(0): " << _volTcamColors_dmp.getBytesPaddedUpToDim(0) << std::endl
-        );
-
-    volume_initCameraColor_kernel
-        <<<grid, block, 0, SweepStream(streamIndex)>>>
-        (_volTcamColors_dmp.getBuffer(),
-         _volTcamColors_dmp.getBytesPaddedUpToDim(1),
-         _volTcamColors_dmp.getBytesPaddedUpToDim(0),
-         rcam.param_dev.i,
-         tcam.param_dev.i,
-         tcam_tex,
-         tcWidth, tcHeight,
-         depthToStart,
-         _depths_d.getBuffer(),
-         _dimX, _dimY, usedVolDimZ, _stepXY);
-#endif
-}
-
-void SimilarityVolume::computePrecomputedColors(
-            cudaTextureObject_t rc_tex,
-            CudaDeviceMemoryPitched<TSim, 3>& volBestSim_dmp,
-            CudaDeviceMemoryPitched<TSim, 3>& volSecBestSim_dmp,
-            const CameraStruct& rcam, int rcWidth, int rcHeight,
-            const OneTC& cell,
-            int wsh, int kernelSizeHalf,
-            float gammaC, float gammaP,
-            const int streamIndex )
-{
-#ifdef PLANE_SWEEPING_PRECOMPUTED_COLORS
-    printf("Start depth: %i, nb depths to search: %i \n", cell.getLowestUsedDepth(), cell.getDepthsToSearch());
-
-    dim3 volume_slice_kernel_grid(
-        divUp(_dimX, _block.x),
-        divUp(_dimY, _block.y),
-        cell.getDepthsToSearch());
-
-    ALICEVISION_CU_PRINT_DEBUG("====================");
-    ALICEVISION_CU_PRINT_DEBUG("RC: " << rcam.camId);
-    ALICEVISION_CU_PRINT_DEBUG("volume_slice_kernel_grid: " << volume_slice_kernel_grid.x << ", " << volume_slice_kernel_grid.y << ", " << volume_slice_kernel_grid.z);
-    ALICEVISION_CU_PRINT_DEBUG("block: " << _block.x << ", " << _block.y << ", " << _block.z);
-    ALICEVISION_CU_PRINT_DEBUG("startDepthIndex: " << cell.getDepthToStart());
-    ALICEVISION_CU_PRINT_DEBUG("nbDepthsToSearch: " << cell.getDepthsToSearch());
-    ALICEVISION_CU_PRINT_DEBUG("startDepthIndex+nbDepthsToSearch: " << cell.getDepthToStart() + cell.getDepthsToSearch());
-    ALICEVISION_CU_PRINT_DEBUG("dimX: " << _dimX << ", dimY: " << _dimY << ", stepXY: " << _stepXY);
-    ALICEVISION_CU_PRINT_DEBUG("scale: " << _scale);
-    ALICEVISION_CU_PRINT_DEBUG("rcWH / scale: " << rcWidth / _scale << "x" << rcHeight / _scale);
-    ALICEVISION_CU_PRINT_DEBUG("====================");
-
-    // cudaDeviceSynchronize();
-    // CHECK_CUDA_ERROR();
-
-    volume_estimateSim_twoViews_kernel
-        <<<volume_slice_kernel_grid, _block, 0, SweepStream(streamIndex)>>>
-        (rc_tex,
-#ifdef PLANE_SWEEPING_PRECOMPUTED_COLORS_TEXTURE
-         _volTcamColors_tex3D,
-#else
-         _volTcamColors_dmp.getBuffer(),
-         _volTcamColors_dmp.getBytesPaddedUpToDim(1),
-         _volTcamColors_dmp.getBytesPaddedUpToDim(0),
-#endif
-         cell.getDepthToStart(),
-         cell.getDepthsToSearch(),
-         rcWidth / _scale, rcHeight / _scale,
-         wsh, gammaC, gammaP,
-         volBestSim_dmp.getBuffer(),
-         volBestSim_dmp.getBytesPaddedUpToDim(1),
-         volBestSim_dmp.getBytesPaddedUpToDim(0),
-         volSecBestSim_dmp.getBuffer(),
-         volSecBestSim_dmp.getBytesPaddedUpToDim(1),
-         volSecBestSim_dmp.getBytesPaddedUpToDim(0),
-         _scale, _stepXY,
-         _dimX, _dimY);
-
-    // cudaDeviceSynchronize();
-    // CHECK_CUDA_ERROR();
-#endif // PLANE_SWEEPING_PRECOMPUTED_COLORS
 }
 
 void SimilarityVolume::compute(

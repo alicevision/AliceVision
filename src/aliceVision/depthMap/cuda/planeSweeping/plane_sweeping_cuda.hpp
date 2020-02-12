@@ -40,25 +40,6 @@ public:
         CudaDeviceMemoryPitched<TSim, 3>& volSecBestSim_dmp,
         const int streamIndex );
 
-    void initColorVolumeFromCamera(
-        const CameraStruct& rcam,
-        const CameraStruct& tcam,
-        cudaTextureObject_t tcam_tex,
-        const int tcWidth, const int tcHeight,
-        const int lowestUsedDepth,
-        int volDimZ,
-        int streamIndex );
-
-    void computePrecomputedColors(
-        cudaTextureObject_t rc_tex,
-        CudaDeviceMemoryPitched<TSim, 3>& volBestSim_dmp,
-        CudaDeviceMemoryPitched<TSim, 3>& volSecBestSim_dmp,
-        const CameraStruct& rcam, int rcWidth, int rcHeight,
-        const OneTC& cell,
-        int wsh, int kernelSizeHalf,
-        float gammaC, float gammaP,
-        int streamIndex );
-
     void compute(
           CudaDeviceMemoryPitched<TSim, 3>& volBestSim_dmp,
           CudaDeviceMemoryPitched<TSim, 3>& volSecBestSim_dmp,
@@ -86,13 +67,6 @@ private:
     const int  _stepXY;
     const int  _scale;
 
-#ifdef PLANE_SWEEPING_PRECOMPUTED_COLORS
-    CudaDeviceMemoryPitched<float4, 3> _volTcamColors_dmp;
-#ifdef PLANE_SWEEPING_PRECOMPUTED_COLORS_TEXTURE
-    cudaTextureObject_t _volTcamColors_tex3D;
-#endif
-#endif
-
     const bool _verbose;
 
     const CudaDeviceMemory<float> _depths_d;
@@ -108,8 +82,6 @@ private:
     static dim3 _block;
 
     static void configureGrid( );
-
-    void initTempVolumes();
 };
 }; // namespace ps
 

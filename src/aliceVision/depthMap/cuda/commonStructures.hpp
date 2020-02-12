@@ -29,8 +29,6 @@ namespace depthMap {
 
 #define MAX_CONSTANT_CAMERA_PARAM_SETS   10
 
-#undef  PLANE_SWEEPING_PRECOMPUTED_COLORS
-#undef  PLANE_SWEEPING_PRECOMPUTED_COLORS_TEXTURE
 
 
 /*********************************************************************************
