@@ -15,6 +15,7 @@
 #include <aliceVision/system/cmdline.hpp>
 #include <aliceVision/types.hpp>
 #include <aliceVision/config.hpp>
+#include <aliceVision/track/Track.hpp>
 
 #include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>
@@ -30,6 +31,7 @@ using namespace aliceVision;
 
 namespace po = boost::program_options;
 namespace fs = boost::filesystem;
+using namespace aliceVision::track;
 
 /**
  * @brief Retrieve the view id in the sfmData from the image filename.
@@ -85,6 +87,7 @@ int main(int argc, char **argv)
   sfm::ReconstructionEngine_sequentialSfM::Params sfmParams;
   bool lockScenePreviouslyReconstructed = true;
   int maxNbMatches = 0;
+  int minNbMatches = 0;
   bool useOnlyMatchesFromInputFolder = false;
 
   po::options_description allParams(
@@ -116,6 +119,9 @@ int main(int argc, char **argv)
     ("maxNumberOfMatches", po::value<int>(&maxNbMatches)->default_value(maxNbMatches),
       "Maximum number of matches per image pair (and per feature type). "
       "This can be useful to have a quick reconstruction overview. 0 means no limit.")
+    ("minNumberOfMatches", po::value<int>(&minNbMatches)->default_value(minNbMatches),
+      "Minimum number of matches per image pair (and per feature type). "
+      "This can be useful to have a meaningful reconstruction with accurate keypoints. 0 means no limit.")
     ("minInputTrackLength", po::value<int>(&sfmParams.minInputTrackLength)->default_value(sfmParams.minInputTrackLength),
       "Minimum track length in input of SfM.")
     ("minAngleForTriangulation", po::value<double>(&sfmParams.minAngleForTriangulation)->default_value(sfmParams.minAngleForTriangulation),
@@ -157,8 +163,8 @@ int main(int argc, char **argv)
     ("useOnlyMatchesFromInputFolder", po::value<bool>(&useOnlyMatchesFromInputFolder)->default_value(useOnlyMatchesFromInputFolder),
       "Use only matches from the input matchesFolder parameter.\n"
       "Matches folders previously added to the SfMData file will be ignored.")
-    ("useTrackFiltering", po::value<bool>(&sfmParams.useTrackFiltering)->default_value(sfmParams.useTrackFiltering),
-      "Enable/Disable the track filtering.\n")
+    ("filterTrackForks", po::value<bool>(&sfmParams.filterTrackForks)->default_value(sfmParams.filterTrackForks),
+      "Enable/Disable the track forks removal. A track contains a fork when incoherent matches leads to multiple features in the same image for a single track.\n")
     ("useRigConstraint", po::value<bool>(&sfmParams.rig.useRigConstraint)->default_value(sfmParams.rig.useRigConstraint),
       "Enable/Disable rig constraint.\n")
     ("rigMinNbCamerasForCalibration", po::value<int>(&sfmParams.rig.minNbCamerasForCalibration)->default_value(sfmParams.rig.minNbCamerasForCalibration),
@@ -247,7 +253,7 @@ int main(int argc, char **argv)
   
   // matches reading
   matching::PairwiseMatches pairwiseMatches;
-  if(!sfm::loadPairwiseMatches(pairwiseMatches, sfmData, matchesFolders, describerTypes, maxNbMatches, useOnlyMatchesFromInputFolder))
+  if(!sfm::loadPairwiseMatches(pairwiseMatches, sfmData, matchesFolders, describerTypes, maxNbMatches, minNbMatches, useOnlyMatchesFromInputFolder))
   {
     ALICEVISION_LOG_ERROR("Unable to load matches.");
     return EXIT_FAILURE;

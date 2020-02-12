@@ -431,7 +431,10 @@ void KeyframeSelector::writeKeyframe(const image::Image<image::RGBColor>& image,
   if(_feeds.size() > 1)
      folder  /= fs::path("rig") / fs::path(std::to_string(mediaIndex));
 
-  const auto filepath = (folder / fs::path(std::to_string(frameIndex) + ".jpg")).string();
+  std::ostringstream filenameSS;
+  filenameSS << std::setw(_padding) << std::setfill('0') << frameIndex << ".jpg";
+
+  const auto filepath = (folder / fs::path(filenameSS.str())).string();
 
   mediaInfo.spec.attribute("Exif:ImageUniqueID", std::to_string(getRandomInt()));
 
