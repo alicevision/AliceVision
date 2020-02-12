@@ -466,13 +466,14 @@ void BundleAdjustmentCeres::addIntrinsicsToProblem(const sfmData::SfMData& sfmDa
     // refine the focal length
     if(refineIntrinsicsFocalLength)
     {
-      if(intrinsicPtr->initialFocalLengthPix() > 0)
+      std::shared_ptr<camera::IntrinsicsScaleOffset> intrinsicScaleOffset = std::dynamic_pointer_cast<camera::IntrinsicsScaleOffset>(intrinsicPtr);
+      if(intrinsicScaleOffset->initialScale() > 0)
       {
         // if we have an initial guess, we only authorize a margin around this value.
         assert(intrinsicBlock.size() >= 1);
         const unsigned int maxFocalError = 0.2 * std::max(intrinsicPtr->w(), intrinsicPtr->h()); // TODO : check if rounding is needed
-        problem.SetParameterLowerBound(intrinsicBlockPtr, 0, static_cast<double>(intrinsicPtr->initialFocalLengthPix() - maxFocalError));
-        problem.SetParameterUpperBound(intrinsicBlockPtr, 0, static_cast<double>(intrinsicPtr->initialFocalLengthPix() + maxFocalError));
+        problem.SetParameterLowerBound(intrinsicBlockPtr, 0, static_cast<double>(intrinsicScaleOffset->initialScale() - maxFocalError));
+        problem.SetParameterUpperBound(intrinsicBlockPtr, 0, static_cast<double>(intrinsicScaleOffset->initialScale() + maxFocalError));
       }
       else // no initial guess
       {
@@ -487,7 +488,7 @@ void BundleAdjustmentCeres::addIntrinsicsToProblem(const sfmData::SfMData& sfmDa
       constantIntrinisc.push_back(0);
     }
 
-    const std::size_t minImagesForOpticalCenter = 1;
+    const std::size_t minImagesForOpticalCenter = 3;
 
     // optical center
     if(refineIntrinsicsOpticalCenter && (usageCount > minImagesForOpticalCenter))
@@ -666,7 +667,7 @@ void BundleAdjustmentCeres::addRotationPriorsToProblem(const sfmData::SfMData& s
 
 
     ceres::CostFunction* costFunction = new ceres::AutoDiffCostFunction<ResidualErrorRotationPriorFunctor, 3, 6, 6>(new ResidualErrorRotationPriorFunctor(prior._second_R_first));
-    //problem.AddResidualBlock(costFunction, lossFunction, poseBlockPtr_1, poseBlockPtr_2);
+    problem.AddResidualBlock(costFunction, lossFunction, poseBlockPtr_1, poseBlockPtr_2);
   }
 }
 

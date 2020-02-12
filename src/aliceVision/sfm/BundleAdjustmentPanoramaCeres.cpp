@@ -635,20 +635,9 @@ void BundleAdjustmentPanoramaCeres::addIntrinsicsToProblem(const sfmData::SfMDat
     // refine the focal length
     if(refineIntrinsicsFocalLength)
     {
-      if(intrinsicPtr->initialFocalLengthPix() > 0)
-      {
-        // if we have an initial guess, we only authorize a margin around this value.
-        assert(intrinsicBlock.size() >= 1);
-        const unsigned int maxFocalError = 0.2 * std::max(intrinsicPtr->w(), intrinsicPtr->h()); // TODO : check if rounding is needed
-        //problem.SetParameterLowerBound(intrinsicBlockPtr, 0, static_cast<double>(intrinsicPtr->initialFocalLengthPix() - maxFocalError));
-        //problem.SetParameterUpperBound(intrinsicBlockPtr, 0, static_cast<double>(intrinsicPtr->initialFocalLengthPix() + maxFocalError));
-      }
-      else // no initial guess
-      {
-        // we don't have an initial guess, but we assume that we use
-        // a converging lens, so the focal length should be positive.
-        problem.SetParameterLowerBound(intrinsicBlockPtr, 0, 0.0);
-      }
+      // we don't have an initial guess, but we assume that we use
+      // a converging lens, so the focal length should be positive.
+      problem.SetParameterLowerBound(intrinsicBlockPtr, 0, 0.0);
     }
     else
     {
