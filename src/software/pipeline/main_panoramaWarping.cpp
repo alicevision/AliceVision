@@ -460,7 +460,7 @@ public:
       return false;
     }
 
-
+    
     /* Effectively compute the warping map */
     aliceVision::image::Image<Eigen::Vector2d> buffer_coordinates(coarse_bbox.width, coarse_bbox.height, false);
     aliceVision::image::Image<unsigned char> buffer_mask(coarse_bbox.width, coarse_bbox.height, true, 0);
@@ -474,7 +474,7 @@ public:
     // TODO
     // no support for reduction min in MSVC implementation of openmp
 #else
-    //#pragma omp parallel for reduction(min: min_x, min_y) reduction(max: max_x, max_y)
+    #pragma omp parallel for reduction(min: min_x, min_y) reduction(max: max_x, max_y)
 #endif
     for (size_t y = 0; y < coarse_bbox.height; y++) {
 
@@ -513,7 +513,6 @@ public:
           continue;
         }
 
-
         buffer_coordinates(y, x) = pix_disto;
         buffer_mask(y, x) = 1;
   
@@ -536,7 +535,6 @@ public:
       _offset_x = ox;
     }
     _offset_y = coarse_bbox.top + min_y;
-    
 
     size_t real_width = max_x - min_x + 1;
     size_t real_height = max_y - min_y + 1;
@@ -602,12 +600,14 @@ private:
 
   bool computeCoarseBB(BBox & coarse_bbox, const std::pair<int, int> & panoramaSize, const geometry::Pose3 & pose, const aliceVision::camera::IntrinsicBase & intrinsics) {
 
-    coarse_bbox.left = 0;
-    coarse_bbox.top = 0;
-    coarse_bbox.width = panoramaSize.first;
-    coarse_bbox.height = panoramaSize.second;
+    if (!isPinhole(intrinsics.getType())) {
+      coarse_bbox.left = 0;
+      coarse_bbox.top = 0;
+      coarse_bbox.width = panoramaSize.first;
+      coarse_bbox.height = panoramaSize.second;
 
-    return true;
+      return true;
+    }
 
     int bbox_left, bbox_top;
     int bbox_right, bbox_bottom;
@@ -624,7 +624,7 @@ private:
     }
 
     /* Estimate undistorted maximal distance from optical center */
-    float max_radius_distorted = intrinsics.getMaximalDistortion(0.0, max_radius);
+    float max_radius_distorted = max_radius;//intrinsics.getMaximalDistortion(0.0, max_radius);
 
     /* 
     Coarse rectangle bouding box in camera space 
@@ -783,6 +783,7 @@ private:
     coarse_bbox.width = bbox_width;
     coarse_bbox.height = bbox_height;
     
+
     return true;
   }
 

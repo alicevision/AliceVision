@@ -566,7 +566,6 @@ int main(int argc, char **argv)
   }
 
   
-
   // export to disk computed scene (data & visualizable results)
   ALICEVISION_LOG_INFO("Export SfMData to disk");
   sfmDataIO::Save(outSfmData, outSfMDataFilename, sfmDataIO::ESfMData::ALL);

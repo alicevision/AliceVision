@@ -509,7 +509,7 @@ void BundleAdjustmentPanoramaCeres::setSolverOptions(ceres::Solver::Options& sol
   solverOptions.minimizer_progress_to_stdout = _ceresOptions.verbose;
   solverOptions.logging_type = ceres::SILENT;
   solverOptions.num_threads = _ceresOptions.nbThreads;
-  //solverOptions.max_num_iterations = 0;
+  solverOptions.max_num_iterations = 300;
 
 
 #if CERES_VERSION_MAJOR < 2

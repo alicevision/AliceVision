@@ -83,5 +83,16 @@ inline bool isPinhole(EINTRINSIC eintrinsic)
   }
 }
 
+inline bool isEquidistant(EINTRINSIC eintrinsic)
+{
+  switch (eintrinsic) {
+  case EQUIDISTANT_CAMERA:
+  case EQUIDISTANT_CAMERA_RADIAL3:
+    return true;
+  default:
+    return false;
+  }
+}
+
 } // namespace camera
 } // namespace aliceVision
