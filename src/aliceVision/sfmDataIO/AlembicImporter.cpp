@@ -433,6 +433,9 @@ bool readCamera(const ICamera& camera, const M44d& mat, sfmData::SfMData& sfmDat
         getAbcArrayProp<Alembic::Abc::IDoubleArrayProperty>(userProps, "mvg_sensorSizeMm", sampleFrame, sensorSize_mm);
         assert(sensorSize_mm.size() == 2);
       }
+      else {
+        sensorSize_mm = {24.0, 36.0};
+      }
       if(const Alembic::Abc::PropertyHeader *propHeader = userProps.getPropertyHeader("mvg_intrinsicType"))
       {
         mvg_intrinsicType = getAbcProp<Alembic::Abc::IStringProperty>(userProps, *propHeader, "mvg_intrinsicType", sampleFrame);

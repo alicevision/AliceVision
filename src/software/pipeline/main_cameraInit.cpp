@@ -371,7 +371,7 @@ int main(int argc, char **argv)
   if(imageFolder.empty())
   {
     // fill SfMData from the JSON file
-    sfmDataIO::loadJSON(sfmData, sfmFilePath, sfmDataIO::ESfMData(sfmDataIO::VIEWS|sfmDataIO::INTRINSICS|sfmDataIO::EXTRINSICS), true);
+    sfmDataIO::loadJSON(sfmData, sfmFilePath, sfmDataIO::ESfMData(sfmDataIO::VIEWS | sfmDataIO::INTRINSICS | sfmDataIO::EXTRINSICS), true);
   }
   else
   {
@@ -394,8 +394,9 @@ int main(int argc, char **argv)
       for(const auto& view : incompleteViews)
         views.emplace(view.getViewId(), std::make_shared<sfmData::View>(view));
     }
-    else
+    else {
       return EXIT_FAILURE;
+    }
   }
 
   if(sfmData.getViews().empty())
@@ -482,25 +483,28 @@ int main(int argc, char **argv)
                               << "\t- model: " << model << std::endl
                               << "\t- sensor width: " << datasheet._sensorSize << " mm");
 
-        if(datasheet._model != model) // the camera model in database is slightly different
+        if(datasheet._model != model) {
+          // the camera model in database is slightly different
           unsureSensors.emplace(std::make_pair(make, model), std::make_pair(view.getImagePath(), datasheet)); // will throw a warning message
+        }
 
         sensorWidth = datasheet._sensorSize;
         sensorWidthSource = ESensorWidthSource::FROM_DB;
 
-        if(focalLengthmm > 0.0)
+        if(focalLengthmm > 0.0) {
           intrinsicInitMode = camera::EIntrinsicInitMode::ESTIMATED;
+        }
       }
     }
 
     // try to find / compute with 'FocalLengthIn35mmFilm' metadata
-    if(hasFocalIn35mmMetadata)
+    if (hasFocalIn35mmMetadata)
     {
-      if(sensorWidth == -1.0)
+      if (sensorWidth == -1.0)
       {
         const double invRatio = 1.0 / imageRatio;
 
-        if(focalLengthmm > 0.0)
+        if (focalLengthmm > 0.0)
         {
           // no sensorWidth but valid focalLength and valid focalLengthIn35mm, so deduce sensorWith approximation
           const double sensorDiag = (focalLengthmm * diag24x36) / focalIn35mm; // 43.3 is the diagonal of 35mm film
@@ -547,11 +551,12 @@ int main(int argc, char **argv)
     else
     {
       // we have a valid sensorWidth information, so se store it into the metadata (where it would have been nice to have it in the first place)
-      if(sensorWidthSource == ESensorWidthSource::FROM_DB)
+      if(sensorWidthSource == ESensorWidthSource::FROM_DB) {
         view.addMetadata("AliceVision:SensorWidth", std::to_string(sensorWidth));
-      else if(sensorWidthSource == ESensorWidthSource::FROM_METADATA_ESTIMATION)
+      }
+      else if(sensorWidthSource == ESensorWidthSource::FROM_METADATA_ESTIMATION) {
         view.addMetadata("AliceVision:SensorWidthEstimation", std::to_string(sensorWidth));
-      // else it is just a guess, so there is no need to put it into the metadata.
+      }
     }
 
     // build intrinsic
@@ -560,6 +565,10 @@ int main(int argc, char **argv)
 
     // set initialization mode
     intrinsic->setInitializationMode(intrinsicInitMode);
+
+    // Set sensor size
+    intrinsicBase->setSensorWidth(sensorWidth);
+    intrinsicBase->setSensorHeight(sensorWidth / imageRatio);
 
     if(intrinsic && intrinsic->getFocalLengthPix() > 0)
     {
@@ -626,7 +635,7 @@ int main(int argc, char **argv)
         intrinsic->setSerialNumber(intrinsic->serialNumber() + "_FocalLengthMM_" + std::to_string(focalLengthmm));
       }
     }
-
+    
     // create intrinsic id
     // group camera that share common properties (leads to more faster & stable BA).
     if(intrinsicId == UndefinedIndexT)
@@ -739,7 +748,7 @@ int main(int argc, char **argv)
                           << "Check your input images metadata (brand, model, focal length, ...), more should be set and correct." << std::endl);
     return EXIT_FAILURE;
   }
-
+  
   // store SfMData views & intrinsic data
   if(!sfmDataIO::Save(sfmData, outputFilePath, sfmDataIO::ESfMData(sfmDataIO::VIEWS | sfmDataIO::INTRINSICS | sfmDataIO::EXTRINSICS)))
   {

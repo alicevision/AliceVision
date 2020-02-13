@@ -349,8 +349,6 @@ int main(int argc, char **argv)
     return EXIT_FAILURE;
   }
 
-  std::shared_ptr<camera::IntrinsicBase> intrinsic = inputSfmData.getIntrinsics().begin()->second;
-  std::shared_ptr<camera::EquiDistant> casted = std::dynamic_pointer_cast<camera::EquiDistant>(intrinsic);    
   if(!inputSfmData.structure.empty())
   {
     ALICEVISION_LOG_ERROR("Part computed SfMData are not currently supported in Global SfM." << std::endl << "Please use Incremental SfM. Aborted");
@@ -434,14 +432,8 @@ int main(int argc, char **argv)
   
   if(refine)
   {
-    
-    std::shared_ptr<camera::IntrinsicBase> intrinsic =  sfmEngine.getSfMData().getIntrinsicsharedPtr( sfmEngine.getSfMData().getViews().begin()->second->getIntrinsicId());
-    std::shared_ptr<camera::EquiDistant> casted = std::dynamic_pointer_cast<camera::EquiDistant>(intrinsic); 
-
     sfmDataIO::Save(sfmEngine.getSfMData(), (fs::path(outDirectory) / "BA_before.abc").string(), sfmDataIO::ESfMData::ALL);
-
     sfmEngine.Adjust();
-
     sfmDataIO::Save(sfmEngine.getSfMData(), (fs::path(outDirectory) / "BA_after.abc").string(), sfmDataIO::ESfMData::ALL);
   }
   

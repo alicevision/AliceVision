@@ -55,6 +55,11 @@ public:
 
   virtual Vec2 project(const geometry::Pose3& pose, const Vec3& pt, bool applyDistortion = true) const override
   {    
+    double rsensor = std::min(sensorWidth(), sensorHeight());
+    double rscale = sensorWidth() / std::max(w(), h());
+    double fmm = _scale_x * rscale;
+    double fov = rsensor / fmm;
+
     Vec3 X = pose.rotation() * pt;
 
     /* Compute angle with optical center */
@@ -63,7 +68,6 @@ public:
     /* Ignore depth component and compute radial angle */
     double angle_radial = std::atan2(X(1), X(0));
 
-    double fov = _scale_x;
     double radius = angle_Z / (0.5 * fov);
 
     /* radius = focal * angle_Z */
@@ -106,7 +110,11 @@ public:
     d_angles_d_X(1, 2) = - len2d / (len2d * len2d + X(2) * X(2));
 
 
-    double fov = _scale_x;
+    double rsensor = std::min(sensorWidth(), sensorHeight());
+    double rscale = sensorWidth() / std::max(w(), h());
+    double fmm = _scale_x * rscale;
+    double fov = rsensor / fmm;
+
     double radius = angle_Z / (0.5 * fov);
 
     double d_radius_d_angle_Z = 1.0 / (0.5 * fov);
@@ -134,8 +142,6 @@ public:
 
     Eigen::Matrix3d d_X_d_pt = pose.rotation();
 
-
-
     /* Compute angle with optical center */
     double len2d = sqrt(X(0) * X(0) + X(1) * X(1));
     Eigen::Matrix<double, 2, 2> d_len2d_d_X;
@@ -158,7 +164,10 @@ public:
     d_angles_d_X(1, 2) = - len2d / (len2d * len2d + X(2) * X(2));
 
 
-    double fov = _scale_x;
+    double rsensor = std::min(sensorWidth(), sensorHeight());
+    double rscale = sensorWidth() / std::max(w(), h());
+    double fmm = _scale_x * rscale;
+    double fov = rsensor / fmm;
     double radius = angle_Z / (0.5 * fov);
 
     double d_radius_d_angle_Z = 1.0 / (0.5 * fov);
@@ -191,7 +200,10 @@ public:
     /* Ignore depth component and compute radial angle */
     double angle_radial = std::atan2(X(1), X(0));
 
-    double fov = _scale_x;
+    double rsensor = std::min(sensorWidth(), sensorHeight());
+    double rscale = sensorWidth() / std::max(w(), h());
+    double fmm = _scale_x * rscale;
+    double fov = rsensor / fmm;
     double radius = angle_Z / (0.5 * fov);
 
     /* radius = focal * angle_Z */
@@ -205,7 +217,7 @@ public:
     return getDerivativeCam2ImaWrtPoint() * getDerivativeAddDistoWrtDisto(P);
   }
 
-  Eigen::Matrix<double, 2, 1> getDerivativeProjectWrtFov(const geometry::Pose3& pose, const Vec3 & pt) {
+  Eigen::Matrix<double, 2, 1> getDerivativeProjectWrtScale(const geometry::Pose3& pose, const Vec3 & pt) {
 
     Vec3 X = pose.rotation() * pt;
 
@@ -216,7 +228,10 @@ public:
     /* Ignore depth component and compute radial angle */
     double angle_radial = std::atan2(X(1), X(0));
 
-    double fov = _scale_x;
+    double rsensor = std::min(sensorWidth(), sensorHeight());
+    double rscale = sensorWidth() / std::max(w(), h());
+    double fmm = _scale_x * rscale;
+    double fov = rsensor / fmm;
     double radius = angle_Z / (0.5 * fov);
 
     /* radius = focal * angle_Z */
@@ -234,8 +249,11 @@ public:
     Eigen::Matrix<double, 1, 1> d_radius_d_fov;
     d_radius_d_fov(0, 0) = (- 2.0 * angle_Z / (fov * fov));
 
+    Eigen::Matrix<double, 1, 1> d_fov_d_scale;
+    d_fov_d_scale(0, 0) = - rsensor / (_scale_x * _scale_x * rscale);
 
-    return getDerivativeCam2ImaWrtPoint() * getDerivativeAddDistoWrtPt(P) * d_P_d_radius * d_radius_d_fov;
+
+    return getDerivativeCam2ImaWrtPoint() * getDerivativeAddDistoWrtPt(P) * d_P_d_radius * d_radius_d_fov * d_fov_d_scale;
   }
 
   Eigen::Matrix<double, 2, 2> getDerivativeProjectWrtPrincipalPoint(const geometry::Pose3& pose, const Vec3 & pt) {
@@ -245,7 +263,11 @@ public:
 
   virtual Vec3 toUnitSphere(const Vec2 & pt) const override {
 
-    double fov = _scale_x;
+    double rsensor = std::min(sensorWidth(), sensorHeight());
+    double rscale = sensorWidth() / std::max(w(), h());
+    double fmm = _scale_x * rscale;
+    double fov = rsensor / fmm;
+
     double angle_radial = atan2(pt(1), pt(0));
     double angle_Z = pt.norm() * 0.5 * fov;
 
@@ -259,7 +281,11 @@ public:
 
   Eigen::Matrix<double, 3, 2> getDerivativetoUnitSphereWrtPoint(const Vec2 & pt) {
 
-    double fov = _scale_x;
+    double rsensor = std::min(sensorWidth(), sensorHeight());
+    double rscale = sensorWidth() / std::max(w(), h());
+    double fmm = _scale_x * rscale;
+    double fov = rsensor / fmm;
+
     double angle_radial = atan2(pt(1), pt(0));
     double angle_Z = pt.norm() * 0.5 * fov;
 
@@ -285,9 +311,13 @@ public:
     return d_ret_d_angles * d_angles_d_pt;
   }
 
-  Eigen::Matrix<double, 3, 1> getDerivativetoUnitSphereWrtFov(const Vec2 & pt) {
+  Eigen::Matrix<double, 3, 1> getDerivativetoUnitSphereWrtScale(const Vec2 & pt) {
 
-    double fov = _scale_x;
+    double rsensor = std::min(sensorWidth(), sensorHeight());
+    double rscale = sensorWidth() / std::max(w(), h());
+    double fmm = _scale_x * rscale;
+    double fov = rsensor / fmm;
+
     double angle_radial = atan2(pt(1), pt(0));
     double angle_Z = pt.norm() * 0.5 * fov;
 
@@ -308,9 +338,11 @@ public:
 
     d_angles_d_fov(0, 0) = 0;
     d_angles_d_fov(1, 0) = pt.norm() * 0.5;
-    
 
-    return d_ret_d_angles * d_angles_d_fov;
+    Eigen::Matrix<double, 1, 1> d_fov_d_scale;
+    d_fov_d_scale(0, 0) = - rsensor / (_scale_x * _scale_x * rscale);  
+
+    return d_ret_d_angles * d_angles_d_fov * d_fov_d_scale;
   }
   
   virtual double imagePlane_toCameraPlaneError(double value) const override
@@ -350,9 +382,13 @@ public:
    * @return true if this ray is visible theorically
    */
   virtual bool isVisibleRay(const Vec3 & ray) const override {
-    
+    double rsensor = std::min(sensorWidth(), sensorHeight());
+    double rscale = sensorWidth() / std::max(w(), h());
+    double fmm = _scale_x * rscale;
+    double fov = rsensor / fmm;
+
     double angle = std::acos(ray.normalized().dot(Eigen::Vector3d::UnitZ()));
-    if (std::abs(angle) > 1.2 * (0.5 * _scale_x)) return false;
+    if (std::abs(angle) > 1.2 * (0.5 * fov)) return false;
 
     Vec2 proj = project(geometry::Pose3(), ray, true);
 
