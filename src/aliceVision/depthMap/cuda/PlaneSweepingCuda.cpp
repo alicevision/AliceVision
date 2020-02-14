@@ -697,13 +697,12 @@ void PlaneSweepingCuda::sweepPixelsToVolume( CudaDeviceMemoryPitched<TSim, 3>& v
                                              const std::vector<OneTC>& tcs,
                                              const std::vector<float>& rc_depths,
                                              int rc_global_id,
-                                             const StaticVector<int>& tc_global_list,
                                              int wsh, float gammaC, float gammaP,
                                              const int scale)
 {
     nvtxPush("preload host cache ");
     _ic.getImg_sync( rc_global_id );
-    for( auto tc : tc_global_list ) _ic.getImg_sync( tc );
+    for( const auto& tc : tcs) _ic.getImg_sync( tc.getTCIndex() );
     nvtxPop("preload host cache ");
 
     const int volDimZ = rc_depths.size();
@@ -719,14 +718,14 @@ void PlaneSweepingCuda::sweepPixelsToVolume( CudaDeviceMemoryPitched<TSim, 3>& v
                            0 );
     vol.WaitSweepStream( 0 );
 
-    for(int tci = 0; tci < tc_global_list.size(); ++tci)
+    for(int tci = 0; tci < tcs.size(); ++tci)
     {
         if( tci % MAX_CONSTANT_CAMERA_PARAM_SETS == MAX_CONSTANT_CAMERA_PARAM_SETS - 1 )
         {
             vol.WaitSweepStream( tci );
         }
 
-        int tc_global_id = tc_global_list[tci];
+        int tc_global_id = tcs[tci].getTCIndex();
 
         const int rcamCacheId = addCam(rc_global_id, vol.Scale(), vol.SweepStream( tci ) );
         CameraStruct& rcam = _cams[rcamCacheId];
@@ -760,10 +759,6 @@ void PlaneSweepingCuda::sweepPixelsToVolume( CudaDeviceMemoryPitched<TSim, 3>& v
             << "\t- volDimY: " << vol.DimY() << std::endl
             << "\t- volDimZ: " << vol.DimZ());
 
-        // FACA WIP: for now, only create one cell for a TC
-        std::vector<OneTC> cells;
-        cells.push_back(tcs[tci]);
-        
         {
             clock_t t1 = tic();
 
@@ -780,13 +775,12 @@ void PlaneSweepingCuda::sweepPixelsToVolume( CudaDeviceMemoryPitched<TSim, 3>& v
                 volSecBestSim_dmp,
                 rcam, rcWidth, rcHeight,
                 tcam, tcWidth, tcHeight,
-                cells,
+                tcs[tci],
                 wsh,
-                _nbestkernelSizeHalf,
                 gammaC, gammaP,
-                tci );
+                tci);
 
-            ALICEVISION_LOG_DEBUG("ps_computeSimilarityVolume without precomputedColors elapsed time: " << toc(t1) << " ms.");
+            ALICEVISION_LOG_DEBUG("ps_computeSimilarityVolume elapsed time: " << toc(t1) << " ms.");
         }
     }
 }

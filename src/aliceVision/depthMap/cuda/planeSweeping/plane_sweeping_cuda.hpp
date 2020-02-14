@@ -45,9 +45,8 @@ public:
           CudaDeviceMemoryPitched<TSim, 3>& volSecBestSim_dmp,
           const CameraStruct& rcam, int rcWidth, int rcHeight,
           const CameraStruct& tcams, int tcWidth, int tcHeight,
-          const std::vector<OneTC>&  cells,
-          int wsh, int kernelSizeHalf,
-          float gammaC, float gammaP,
+          const OneTC&  cell,
+          int wsh, float gammaC, float gammaP,
           int streamIndex );
 
     inline int DimX()      const { return _dimX; }

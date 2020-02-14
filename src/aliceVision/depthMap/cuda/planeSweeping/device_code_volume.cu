@@ -42,81 +42,13 @@ __global__ void volume_init_kernel(TSim* volume, int volume_s, int volume_p,
     *get3DBufferAt(volume, volume_s, volume_p, vx, vy, vz) = 255.0f;
 }
 
-
-__global__ void volume_initCameraColor_kernel(
-    float4* volume, int volume_s, int volume_p,
-    int rc_cam_cache_idx,
-    int tc_cam_cache_idx,
-    cudaTextureObject_t tc_tex,
-    const int tcWidth, const int tcHeight,
-    const int depthToStart,
-    const float* depths_d,
-    int volDimX, int volDimY, int volDimZ, int volStepXY)
-{
-    const int vx = blockIdx.x * blockDim.x + threadIdx.x;
-    const int vy = blockIdx.y * blockDim.y + threadIdx.y;
-    const int vz = blockIdx.z; // * blockDim.z + threadIdx.z;
-
-    if (vx >= volDimX || vy >= volDimY)
-        return;
-
-    const int x = vx * volStepXY;
-    const int y = vy * volStepXY;
-
-    // Remap kernel Z index into a volume voxel Z index
-    const int zIndex = depthToStart + vz;
-    // Read the depth value at the specific voxel Z index
-    const float fpPlaneDepth = depths_d[zIndex];
-
-    // Convert the voxel into a 3D coordinate
-    float3 p = get3DPointForPixelAndFrontoParellePlaneRC(rc_cam_cache_idx, make_int2(x, y), fpPlaneDepth); // no texture use
-    // Project the 3D point in the image of the T camera
-    float2 p_tc = project3DPoint(camsBasesDev[tc_cam_cache_idx].P, p);
-
-    if (p_tc.x < 0.0f || p_tc.y < 0.0f || p_tc.x >= tcWidth || p_tc.y >= tcHeight)
-    {
-        *get3DBufferAt(volume, volume_s, volume_p, vx, vy, vz) = make_float4(0.f, 0.f, 255.f, 0.f);
-        return;
-    }
-
-    // Read the interpolated color in the T camera
-    float4 color = tex2D_float4(tc_tex, p_tc.x + 0.5f, p_tc.y + 0.5f);
-
-    /*
-    // int verbose = (vx % 200 == 0 && vy % 200 == 0 && vz % 50 == 0 && vz > 300);
-    if (verbose)
-    {
-        printf("______________________________________\n");
-        printf("volume_initCameraColor_kernel: vx: %i, vy: %i, vz: %i, x: %i, y: %i\n", vx, vy, vz, x, y);
-        printf("volume_initCameraColor_kernel: p 3D: %f, %f, %f\n", p.x, p.y, p.z);
-        printf("volume_initCameraColor_kernel: p_tc: %f, %f\n", p_tc.x, p_tc.y);
-        printf("volume_initCameraColor_kernel: color: %f, %f, %f, %f\n", color.x, color.y, color.z, color.w);
-        printf("volume_initCameraColor_kernel: volStepXY: %i, volDimX: %i, volDimY: %i\n", volStepXY, volDimX, volDimY);
-        printf("volume_initCameraColor_kernel: depthToStart: %i\n", depthToStart);
-        printf("______________________________________\n");
-    }
-    */
-    *get3DBufferAt(volume, volume_s, volume_p, vx, vy, vz) = make_float4(color.x, color.x, color.x, 255.0f);
-/*
-    float* p = get3DBufferAt<float>(volume, volume_s, volume_p, vx*4, vy, vz);
-    p[0] = color.x;
-    p[1] = color.y;
-    p[2] = color.z;
-    p[3] = color.w;
-*/
-/*
-    float4* p = get3DBufferAt<float4>(volume, volume_s, volume_p, vx, vy, vz); // x * 4
-    p->x = 99.f;
-*/
-}
-
 __global__ void volume_slice_kernel(
                                     cudaTextureObject_t rc_tex,
                                     cudaTextureObject_t tc_tex,
                                     int rc_cam_cache_idx,
                                     int tc_cam_cache_idx,
                                     const float* depths_d,
-                                    const int lowestUsedDepth,
+                                    const int startDepthIndex,
                                     const int nbDepthsToSearch,
                                     int rcWidth, int rcHeight,
                                     int tcWidth, int tcHeight,
@@ -143,6 +75,7 @@ __global__ void volume_slice_kernel(
         return;
     // if (vz >= nbDepthsToSearch)
     //  return;
+    assert(vz < nbDepthsToSearch);
 
     const int x = vx * volStepXY;
     const int y = vy * volStepXY;
@@ -150,7 +83,7 @@ __global__ void volume_slice_kernel(
     // if(x >= rcWidth || y >= rcHeight)
     //     return;
 
-    const int zIndex = lowestUsedDepth + vz;
+    const int zIndex = startDepthIndex + vz;
     const float fpPlaneDepth = depths_d[zIndex];
 
     Patch ptcho;
@@ -186,7 +119,7 @@ __global__ void volume_slice_kernel(
     }
     else if (fsim < *fsim_2nd)
     {
-      *fsim_2nd = fsim;
+        *fsim_2nd = fsim;
     }
 }
 

@@ -69,22 +69,13 @@ void SemiGlobalMatchingRcTc::computeDepthSimMapVolume(
     const int volDimX   = _w;
     const int volDimY   = _h;
 
-    const int startingDepth = std::min_element( _rcTcDepthRanges.begin(),
-                                                _rcTcDepthRanges.end(),
-                                                MinOffX())->x;
-    auto depth_it = std::max_element( _rcTcDepthRanges.begin(),
-                                      _rcTcDepthRanges.end(),
-                                      MinOffXplusY());
-    const int stoppingDepth = depth_it->x + depth_it->y;
-
     std::vector<OneTC> tcs;
     for(int j = 0; j < _rcTcDepthRanges.size(); ++j)
     {
         tcs.push_back( OneTC( _tc[j],
                               _rcTcDepthRanges[j].x,
-                              _rcTcDepthRanges[j].y,
-                              startingDepth,
-                              stoppingDepth) );
+                              _rcTcDepthRanges[j].y)
+                              );
     }
 
     _sp.cps.sweepPixelsToVolume( volumeBestSim,
@@ -93,7 +84,7 @@ void SemiGlobalMatchingRcTc::computeDepthSimMapVolume(
                                  volStepXY,
                                  tcs,
                                  _rcDepths,
-                                 _rc, _tc,
+                                 _rc,
                                  wsh, gammaC, gammaP, _scale);
 
     ALICEVISION_LOG_INFO("==== computeDepthSimMapVolume done in : " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - startTime).count() << "ms.");

@@ -242,7 +242,6 @@ public:
         const std::vector<OneTC>& tcs,
         const std::vector<float>& rc_depths,
         int rc,
-        const StaticVector<int>& tcams,
         int wsh, float gammaC, float gammaP,
         int scale);
 

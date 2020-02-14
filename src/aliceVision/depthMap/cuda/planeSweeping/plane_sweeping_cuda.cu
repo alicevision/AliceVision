@@ -527,34 +527,21 @@ void SimilarityVolume::compute(
                         CudaDeviceMemoryPitched<TSim, 3>& volSecBestSim_dmp,
                         const CameraStruct& rcam, int rcWidth, int rcHeight,
                         const CameraStruct& tcam, int tcWidth, int tcHeight,
-                        const std::vector<OneTC>& cells,
-                        int wsh, int kernelSizeHalf,
-                        float gammaC, float gammaP,
+                        const OneTC& cell,
+                        int wsh, float gammaC, float gammaP,
                         const int streamIndex )
 {
-    const int max_cells = cells.size();
-
-    const int baseDepth = cells[0].getLowestUsedDepth();  // min of all cells
-    const int stopDepth = cells[0].getHighestUsedDepth(); // max of all cells
-
     TSim* gpu_volume_1st = volBestSim_dmp.getBuffer();
     TSim* gpu_volume_2nd = volSecBestSim_dmp.getBuffer();
 
     if(_verbose)
     {
-        for(int ci=0; ci<max_cells; ++ci)
-        {
-            printf("Nb all depths: %i, start depth: %i, nb depths to search: %i \n",
-                    (int)_depths_d.getUnitsTotal(),
-              cells[ci].getLowestUsedDepth(),
-              cells[ci].getDepthsToSearch() );
-        }
+        ALICEVISION_CU_PRINT_DEBUG("Cell RC: " << rcam.camId << ", TC: " << tcam.camId << ", nb all depths: " << (int)_depths_d.getUnitsTotal() << ", start depth: " << cell.getDepthToStart() << ", nb depths to search: " << cell.getDepthsToSearch());
     }
 
-    for(int ci=0; ci<max_cells; ci++)
     {
-      const int startDepthIndex = cells[ci].getDepthToStart();
-      const int nbDepthsToSearch = cells[ci].getDepthsToSearch();
+      const int startDepthIndex = cell.getDepthToStart();
+      const int nbDepthsToSearch = cell.getDepthsToSearch();
 
       dim3 grid(
         divUp(_dimX, _block.x),
@@ -563,6 +550,7 @@ void SimilarityVolume::compute(
 
       ALICEVISION_CU_PRINT_DEBUG("====================");
       ALICEVISION_CU_PRINT_DEBUG("RC: " << rcam.camId << ", TC: " << tcam.camId);
+      ALICEVISION_CU_PRINT_DEBUG("Cell TC index: " << cell.getTCIndex());
       ALICEVISION_CU_PRINT_DEBUG("grid:  " << grid.x << ", " << grid.y << ", " << grid.z);
       ALICEVISION_CU_PRINT_DEBUG("block: " << _block.x << ", " << _block.y << ", " << _block.z);
       ALICEVISION_CU_PRINT_DEBUG("startDepthIndex: " << startDepthIndex);
