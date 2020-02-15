@@ -157,28 +157,6 @@ public:
 class PlaneSweepingCuda
 {
 public:
-    struct parameters
-    {
-        int epipShift;
-        int rotX;
-        int rotY;
-        bool estimated;
-
-        parameters& operator=(const parameters& m)
-        {
-            epipShift = m.epipShift;
-            rotX = m.rotX;
-            rotY = m.rotY;
-            estimated = m.estimated;
-            return *this;
-        }
-
-        inline bool operator==(const parameters& m) const
-        {
-            return ((epipShift == m.epipShift) && (rotX == m.rotX) && (rotY == m.rotY));
-        }
-    };
-
     const int _scales;
 
     mvsUtils::MultiViewParams& _mp;
