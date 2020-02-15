@@ -263,7 +263,7 @@ private:
     /* Support function for addCam that loads cameraStructs into the GPU constant
      * memory if necessary.
      * Returns the index in the constant cache. */
-    int loadCameraParam( int global_cam_id, int scale, cudaStream_t stream );
+    CamCacheIdx loadCameraParam( int global_cam_id, int scale, cudaStream_t stream );
 
     /* Compute the number of images that can be stored in the current GPU. Called only by
      * the constructor. */

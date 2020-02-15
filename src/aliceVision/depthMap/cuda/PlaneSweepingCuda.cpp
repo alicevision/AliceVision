@@ -209,7 +209,7 @@ PlaneSweepingCuda::PlaneSweepingCuda( int CUDADeviceNo,
     for( int rc = 0; rc < _nImgsInGPUAtTime; ++rc )
     {
         _cams[rc].camId = -1;
-        _cams[rc].param_dev = rc;
+        _cams[rc].param_dev.i = rc;
         _cams[rc].pyramid   = _hidden->getPyramidPtr(rc); // &_hidden_pyramids[rc];
 
         err = cudaStreamCreate( &_cams[rc].stream );
@@ -280,17 +280,16 @@ void PlaneSweepingCuda::cameraToDevice( int rc, const StaticVector<int>& tcams )
     ALICEVISION_LOG_DEBUG( ostr.str() );
 }
 
-int PlaneSweepingCuda::loadCameraParam( int global_cam_id, int scale, cudaStream_t stream )
+CamCacheIdx PlaneSweepingCuda::loadCameraParam( int global_cam_id, int scale, cudaStream_t stream )
 {
     CamSelection newP( global_cam_id, scale );
-    int newPIndex;
+    CamCacheIdx newPIndex;
 
-    bool newCamParam = _cameraParamCache.insert( newP, &newPIndex );
+    bool newCamParam = _cameraParamCache.insert( newP, &newPIndex.i );
     if( newCamParam )
     {
-        CamCacheIdx idx( newPIndex );
-        cps_host_fillCamera(_camsBasesHst[newPIndex], global_cam_id, _mp, scale);
-        ps_loadCameraStructs( _camsBasesHst, idx, stream );
+        cps_host_fillCamera(_camsBasesHst[newPIndex.i], global_cam_id, _mp, scale);
+        ps_loadCameraStructs( _camsBasesHst, newPIndex, stream );
     }
 
     return newPIndex;
