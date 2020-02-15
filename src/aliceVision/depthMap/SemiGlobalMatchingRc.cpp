@@ -451,7 +451,7 @@ bool SemiGlobalMatchingRc::sgmrc(bool checkIfExists)
     const int volDimY = _height;
     const int volDimZ = _depths.size();
 
-    _sp.cps.cameraToDevice( _rc, _sgmTCams );
+    _sp.cps.logCamerasRcTc( _rc, _sgmTCams );
 
     if(_sp.mp.verbose)
     {

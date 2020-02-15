@@ -181,7 +181,7 @@ public:
     PlaneSweepingCuda(int CUDADeviceNo, mvsUtils::ImagesCache<ImageRGBAf>& _ic, mvsUtils::MultiViewParams& _mp, int scales);
     ~PlaneSweepingCuda();
 
-    void cameraToDevice( int rc, const StaticVector<int>& tcams );
+    void logCamerasRcTc( int rc, const StaticVector<int>& tcams );
 
     int addCam( int rc, int scale, cudaStream_t stream = 0 );
 

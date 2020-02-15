@@ -266,16 +266,17 @@ int PlaneSweepingCuda::imagesInGPUAtTime( mvsUtils::MultiViewParams& mp, int sca
 
     return value;
 }
-void PlaneSweepingCuda::cameraToDevice( int rc, const StaticVector<int>& tcams )
+void PlaneSweepingCuda::logCamerasRcTc( int rc, const StaticVector<int>& tcams )
 {
     std::ostringstream ostr;
 
-    ostr << "Called " << __FUNCTION__ << " with cameras" << std::endl
-         << "    rc = " << rc << std::endl;
+    ostr << "Called " << __FUNCTION__ << " with cameras:" << std::endl
+         << "    rc = " << rc << std::endl << ", tc = [";
     for( auto it : tcams )
     {
-        ostr << "    " << it << std::endl;
+        ostr << it << ", ";
     }
+    ostr << "]" << std::endl;
 
     ALICEVISION_LOG_DEBUG( ostr.str() );
 }
