@@ -1278,19 +1278,20 @@ struct TexturedArray
 
 struct CamCacheIdx
 {
-    int i;
+    int i = 0;
 
-    CamCacheIdx( int val ) : i(val) { }
+    CamCacheIdx() = default;
+    explicit CamCacheIdx( int val ) : i(val) { }
 };
 
 typedef std::vector<TexturedArray> Pyramid;
 
 struct CameraStruct
 {
-    CamCacheIdx  param_dev = 0;
+    CamCacheIdx  param_dev;
     Pyramid*     pyramid = nullptr;
-    int          camId;
-    cudaStream_t stream; // allow async work on cameras used in parallel
+    int          camId = -1;
+    cudaStream_t stream = 0; // allow async work on cameras used in parallel
 };
 
 /**
