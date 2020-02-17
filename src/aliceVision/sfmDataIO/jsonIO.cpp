@@ -499,11 +499,14 @@ bool loadJSON(sfmData::SfMData& sfmData, const std::string& filename, ESfMData p
         ++viewIndex;
       }
 
+      size_t count_intrinsics = sfmData.getIntrinsics().size();
+
       // update incomplete views
       #pragma omp parallel for
       for(int i = 0; i < incompleteViews.size(); ++i)
       {
         sfmData::View& v = incompleteViews.at(i);
+
         // if we have the intrinsics and the view has an valid associated intrinsics
         // update the width and height field of View (they are mirrored)
         if (loadIntrinsics && v.getIntrinsicId() != UndefinedIndexT)

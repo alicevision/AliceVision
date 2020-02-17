@@ -420,8 +420,9 @@ int main(int argc, char **argv)
   sfmEngine.SetRelativeRotationMethod(sfm::ERelativeRotationMethod(relativeRotationMethod));
 
 
-  if(!sfmEngine.process())
+  if(!sfmEngine.process()) {
     return EXIT_FAILURE;
+  }
 
   // set featuresFolders and matchesFolders relative paths
   {
@@ -433,7 +434,9 @@ int main(int argc, char **argv)
   if(refine)
   {
     sfmDataIO::Save(sfmEngine.getSfMData(), (fs::path(outDirectory) / "BA_before.abc").string(), sfmDataIO::ESfMData::ALL);
-    sfmEngine.Adjust();
+    if (!sfmEngine.Adjust()) {
+      return EXIT_FAILURE;
+    }
     sfmDataIO::Save(sfmEngine.getSfMData(), (fs::path(outDirectory) / "BA_after.abc").string(), sfmDataIO::ESfMData::ALL);
   }
   
@@ -441,8 +444,6 @@ int main(int argc, char **argv)
   
   sfmData::SfMData& outSfmData = sfmEngine.getSfMData();
   
-  
-
   /**
    * If an initial set of poses was available, make sure at least one pose is aligned with it
    */
@@ -462,103 +463,32 @@ int main(int argc, char **argv)
   }
 
 
+  /******
+   * Final report
+   */
   ALICEVISION_LOG_INFO("Panorama solve took (s): " << timer.elapsed());
   ALICEVISION_LOG_INFO("Generating HTML report...");
-
   sfm::generateSfMReport(outSfmData, (fs::path(outDirectory) / "sfm_report.html").string());
-
   ALICEVISION_LOG_INFO("Panorama results:" << std::endl
     << "\t- # input images: " << outSfmData.getViews().size() << std::endl
     << "\t- # cameras calibrated: " << outSfmData.getPoses().size());
 
-  auto validViews = outSfmData.getValidViews();
-  int nbCameras = outSfmData.getValidViews().size();
-  if(nbCameras == 0)
-  {
-    ALICEVISION_LOG_ERROR("Failed to get valid cameras from input images.");
-    return -1;
-  }
-
-  if (initial_poses.empty()) 
-  {
-    std::string firstShot_datetime;
-    IndexT firstShot_viewId = 0;
-
-    for(auto& viewIt: outSfmData.getViews())
-    {
-      IndexT viewId = viewIt.first;
-      const sfmData::View& view = *viewIt.second.get();
-      if(!outSfmData.isPoseAndIntrinsicDefined(&view))
-        continue;
-      std::string datetime = view.getMetadataDateTimeOriginal();
-      ALICEVISION_LOG_TRACE("Shot datetime candidate: " << datetime << ".");
-      if(firstShot_datetime.empty() || datetime < firstShot_datetime)
-      {
-        firstShot_datetime = datetime;
-        firstShot_viewId = viewId;
-        ALICEVISION_LOG_TRACE("Update shot datetime: " << firstShot_datetime << ".");
-      }
-    }
-    ALICEVISION_LOG_INFO("First shot datetime: " << firstShot_datetime << ".");
-    ALICEVISION_LOG_TRACE("Reset orientation to view: " << firstShot_viewId << ".");
-
-    double S;
-    Mat3 R = Mat3::Identity();
-    Vec3 t;
-
-    ALICEVISION_LOG_INFO("orientation: " << orientation);
-    if(orientation == 0)
-    {
-        ALICEVISION_LOG_INFO("Orientation: FROM IMAGES");
-        sfm::computeNewCoordinateSystemFromSingleCamera(outSfmData, std::to_string(firstShot_viewId), S, R, t);
-        
-    }
-    else if(orientation == 1)
-    {
-      ALICEVISION_LOG_INFO("Orientation: RIGHT");
-      R = Eigen::AngleAxisd(degreeToRadian(180.0), Vec3(0,1,0))
-          * Eigen::AngleAxisd(degreeToRadian(90.0), Vec3(0,0,1))
-          * outSfmData.getAbsolutePose(firstShot_viewId).getTransform().rotation();
-    }
-    else if(orientation == 2)
-    {
-      ALICEVISION_LOG_INFO("Orientation: LEFT");
-      R = Eigen::AngleAxisd(degreeToRadian(180.0),  Vec3(0,1,0))
-          * Eigen::AngleAxisd(degreeToRadian(270.0),  Vec3(0,0,1))
-          * outSfmData.getAbsolutePose(firstShot_viewId).getTransform().rotation();
-    }
-    else if(orientation == 3)
-    {
-      ALICEVISION_LOG_INFO("Orientation: UPSIDEDOWN");
-      R = Eigen::AngleAxisd(degreeToRadian(180.0),  Vec3(0,1,0))
-          * outSfmData.getAbsolutePose(firstShot_viewId).getTransform().rotation();
-    }
-    else if(orientation == 4)
-    {
-      ALICEVISION_LOG_INFO("Orientation: NONE");
-      R = Eigen::AngleAxisd(degreeToRadian(180.0), Vec3(0,1,0))
-          * Eigen::AngleAxisd(degreeToRadian(180.0), Vec3(0,0,1))
-          * outSfmData.getAbsolutePose(firstShot_viewId).getTransform().rotation();
-    }
-
-    // We only need to correct the rotation
-    S = 1.0;
-    t = Vec3::Zero();
-
-    sfm::applyTransform(outSfmData, S, R, t);
-  }
 
   /*Add offsets to rotations*/
   for (auto& pose: outSfmData.getPoses()) {
 
     geometry::Pose3 p = pose.second.getTransform();
-    Eigen::Matrix3d newR = p.rotation() *  Eigen::AngleAxisd(degreeToRadian(offsetLongitude), Vec3(0,1,0))  *  Eigen::AngleAxisd(degreeToRadian(offsetLatitude), Vec3(1,0,0));
+    Eigen::Matrix3d matLongitude = Eigen::AngleAxisd(degreeToRadian(offsetLongitude), Vec3(0,1,0)).toRotationMatrix();
+    Eigen::Matrix3d matLatitude = Eigen::AngleAxisd(degreeToRadian(offsetLatitude), Vec3(1,0,0)).toRotationMatrix();
+    Eigen::Matrix3d newR = p.rotation() * matLongitude * matLatitude;
     p.rotation() = newR;
     pose.second.setTransform(p);
   }
 
   
-  // export to disk computed scene (data & visualizable results)
+  /** 
+   * export to disk computed scene (data & visualizable results) 
+  **/
   ALICEVISION_LOG_INFO("Export SfMData to disk");
   sfmDataIO::Save(outSfmData, outSfMDataFilename, sfmDataIO::ESfMData::ALL);
   sfmDataIO::Save(outSfmData, (fs::path(outDirectory) / "cloud_and_poses.ply").string(), sfmDataIO::ESfMData::ALL);
