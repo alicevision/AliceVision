@@ -157,7 +157,7 @@ __global__ void downscale_gauss_smooth_lab_kernel(
 
         CudaRGBA& out = BufPtr<CudaRGBA>(texLab, texLab_p).at(x,y);
         out.x = t.x;
-        out.w = t.y;
+        out.y = t.y;
         out.z = t.z;
         out.w = t.w;
     }
