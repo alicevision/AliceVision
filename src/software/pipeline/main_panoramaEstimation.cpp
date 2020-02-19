@@ -463,6 +463,45 @@ int main(int argc, char **argv)
   }
 
 
+  /***
+   * Handle image orientation
+  */
+  Eigen::Matrix3d R_metadata = Eigen::Matrix3d::Identity();
+  sfmData::EEXIFOrientation metadata_orientation = outSfmData.getViews().begin()->second->getMetadataOrientation();
+  switch (metadata_orientation) {
+  case sfmData::EEXIFOrientation::REVERSED:
+    R_metadata = Eigen::AngleAxisd(M_PI, Vec3(0,1,0));
+    break;
+  case sfmData::EEXIFOrientation::UPSIDEDOWN:
+    R_metadata = Eigen::AngleAxisd(M_PI, Vec3(1,0,0));
+    break;
+  case sfmData::EEXIFOrientation::UPSIDEDOWN_REVERSED:
+    R_metadata = Eigen::AngleAxisd(M_PI, Vec3(1,0,0)) * Eigen::AngleAxisd(M_PI, Vec3(0,1,0));
+    break;
+  case sfmData::EEXIFOrientation::LEFT_REVERSED:
+    R_metadata = Eigen::AngleAxisd(-M_PI_2, Vec3(0,0,1)) * Eigen::AngleAxisd(M_PI, Vec3(0,1,0));
+    break;
+  case sfmData::EEXIFOrientation::LEFT:
+    R_metadata = Eigen::AngleAxisd(-M_PI_2, Vec3(0,0,1));
+    break;  
+  case sfmData::EEXIFOrientation::RIGHT_REVERSED:
+    R_metadata = Eigen::AngleAxisd(M_PI_2, Vec3(0,0,1)) * Eigen::AngleAxisd(M_PI, Vec3(0,1,0));
+    break;
+  case sfmData::EEXIFOrientation::RIGHT:
+    R_metadata = Eigen::AngleAxisd(M_PI_2, Vec3(0,0,1));
+    break;
+  default:
+    break;
+  }
+
+  for (auto & pose : outSfmData.getPoses()) {    
+    geometry::Pose3 p = pose.second.getTransform();
+    Eigen::Matrix3d newR = p.rotation() * R_metadata;
+    p.rotation() = newR;
+    pose.second.setTransform(p);
+  }
+
+
   /******
    * Final report
    */
