@@ -69,8 +69,9 @@ public:
     {
         if( _max_size == 0 )
         {
-            std::cerr << __FILE__ << ":" << __LINE__ << " ERROR: LRUCache must be resized before inserting elements (setting max size to 2)" << std::endl;
-            resize( 2 );
+            std::stringstream ss;
+            ss << __FILE__ << ":" << __LINE__ << " ERROR: LRUCache max size is 0, so we cannot insert any element." << std::endl;
+            throw std::runtime_error(ss.str());
         }
 
         int cell;
