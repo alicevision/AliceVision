@@ -115,11 +115,11 @@ __global__ void volume_slice_kernel(
     if (fsim < *fsim_1st)
     {
         *fsim_2nd = *fsim_1st;
-        *fsim_1st = fsim;
+        *fsim_1st = TSim(fsim);
     }
     else if (fsim < *fsim_2nd)
     {
-        *fsim_2nd = fsim;
+        *fsim_2nd = TSim(fsim);
     }
 }
 
