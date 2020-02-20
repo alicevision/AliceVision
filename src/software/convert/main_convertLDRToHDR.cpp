@@ -288,7 +288,7 @@ void recoverSourceImage(const image::Image<image::RGBfColor>& hdrImage, hdr::rgb
     float offset[3];
     for(int i=0; i<3; ++i)
         offset[i] = std::abs(meanRecovered[i] - meanVal[i]);
-    ALICEVISION_LOG_INFO("Offset between target source image and recovered from hdr = " << offset);
+    ALICEVISION_LOG_INFO("Offset between target source image and recovered from hdr = " << offset[0] << ", " << offset[1] << ", " << offset[2]);
 }
 
 
