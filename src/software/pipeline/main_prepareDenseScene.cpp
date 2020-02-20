@@ -282,8 +282,8 @@ bool prepareDenseScene(const SfMData& sfmData,
       }
       else
       {
-        const auto noMaskingFunc = [] (Image<RGBfColor> & image) {};
-        process<Image<RGBfColor>>(dstColorImage, cam, metadata, srcImage, evCorrection, exposureCompensation, noMaskingFunc);
+        const auto noMaskingFunc = [] (Image<RGBAfColor> & image) {};
+        process<Image<RGBAfColor>>(dstColorImage, cam, metadata, srcImage, evCorrection, exposureCompensation, noMaskingFunc);
       }
     }
 
