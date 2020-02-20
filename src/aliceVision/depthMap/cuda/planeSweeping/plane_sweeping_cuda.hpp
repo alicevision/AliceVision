@@ -117,7 +117,7 @@ void ps_deviceDeallocate(
 
 void ps_testCUDAdeviceNo(int CUDAdeviceNo);
 
-void ps_device_updateCam(
+void ps_device_fillPyramidFromHostFrame(
     Pyramid& pyramid,
     CudaHostMemoryHeap<CudaRGBA, 2>* host_frame,
     int scales, int w, int h,

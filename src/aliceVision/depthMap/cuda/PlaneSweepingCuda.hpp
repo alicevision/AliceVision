@@ -107,7 +107,7 @@ public:
     int  getLocalCamId( ) const;
 
 private:
-    static void fillHostCameraData(
+    static void fillHostFrameFromImageCache(
                     mvsUtils::ImagesCache<ImageRGBAf>& ic,
                     CudaHostMemoryHeap<CudaRGBA, 2>* hostFrame,
                     int c,

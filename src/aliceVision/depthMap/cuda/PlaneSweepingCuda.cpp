@@ -1121,13 +1121,15 @@ void FrameCacheEntry::fillFrame( int global_cam_id,
                                  mvsUtils::MultiViewParams& mp,
                                  cudaStream_t stream )
 {
+    ALICEVISION_LOG_TRACE(__FUNCTION__ << ": camera:" << global_cam_id << " " << mp.getWidth(global_cam_id) << "x" << mp.getHeight(global_cam_id));
+
     /* Copy data for cached image "global_cam_id" into the host-side data buffer managed
      * by data structure "cam". */
-    fillHostCameraData( imageCache, _host_frame, global_cam_id, mp );
+    fillHostFrameFromImageCache( imageCache, _host_frame, global_cam_id, mp );
 
     /* Copy data from host-sided cache in "cam" onto the GPU and create
      * downscaled and Gauss-filtered versions on the GPU. */
-    ps_device_updateCam( _pyramid,
+    ps_device_fillPyramidFromHostFrame( _pyramid,
                          _host_frame,
                          _scales,
                          mp.getWidth(global_cam_id),
@@ -1135,16 +1137,15 @@ void FrameCacheEntry::fillFrame( int global_cam_id,
                          stream );
 }
 
-void FrameCacheEntry::fillHostCameraData(
+void FrameCacheEntry::fillHostFrameFromImageCache(
     mvsUtils::ImagesCache<ImageRGBAf>& ic,
-    CudaHostMemoryHeap<CudaRGBA, 2>* hostFrame, // CameraStruct& cam,
+    CudaHostMemoryHeap<CudaRGBA, 2>* hostFrame,
     int c,
     mvsUtils::MultiViewParams& mp )
 {
-    ALICEVISION_LOG_DEBUG(__FUNCTION__ << ": " << c << " " << mp.getWidth(c) << "x" << mp.getHeight(c));
     clock_t t1 = tic();
-    mvsUtils::ImagesCache<ImageRGBAf>::ImgSharedPtr img = ic.getImg_sync( c ); // TODO RGBA
-    ALICEVISION_LOG_DEBUG(__FUNCTION__ << ": " << c << " -a- Retrieve from ImagesCache elapsed time: " << toc(t1) << " ms.");
+    mvsUtils::ImagesCache<ImageRGBAf>::ImgSharedPtr img = ic.getImg_sync( c );
+    ALICEVISION_LOG_TRACE(__FUNCTION__ << ": " << c << " -a- Retrieve from ImagesCache elapsed time: " << toc(t1) << " ms.");
     t1 = tic();
 
     const int h = mp.getHeight(c);
