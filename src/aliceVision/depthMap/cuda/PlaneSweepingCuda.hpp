@@ -163,11 +163,10 @@ public:
     const int _CUDADeviceNo = 0;
 
 private:
-    FrameCacheMemory* _hidden;
+    std::unique_ptr<FrameCacheMemory> _hidden;
 
 public:
     CameraStructBase*          _camsBasesHst;
-    // std::vector<int>           _camsBasesHstScale;
     std::vector<CameraStruct>  _cams;
     LRUCache<int>              _camsHost;
     LRUCache<CamSelection>     _cameraParamCache;

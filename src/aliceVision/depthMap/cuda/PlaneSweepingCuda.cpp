@@ -167,7 +167,6 @@ PlaneSweepingCuda::PlaneSweepingCuda( int CUDADeviceNo,
                                       int scales )
     : _scales( scales )
     , _CUDADeviceNo( CUDADeviceNo )
-    , _hidden( 0 )
     , _ic( ic )
     , _mp(mp)
     , _cameraParamCache( MAX_CONSTANT_CAMERA_PARAM_SETS )
@@ -185,11 +184,11 @@ PlaneSweepingCuda::PlaneSweepingCuda( int CUDADeviceNo,
     _nImgsInGPUAtTime = imagesInGPUAtTime( mp, scales );
 
     // allocate global on the device
-    _hidden = new FrameCacheMemory( _nImgsInGPUAtTime,
+    _hidden.reset(new FrameCacheMemory( _nImgsInGPUAtTime,
                                     mp.getMaxImageWidth(),
                                     mp.getMaxImageHeight(),
                                     scales,
-                                    _CUDADeviceNo );
+                                    _CUDADeviceNo));
 
 
     ALICEVISION_LOG_INFO("PlaneSweepingCuda:" << std::endl
@@ -198,10 +197,8 @@ PlaneSweepingCuda::PlaneSweepingCuda( int CUDADeviceNo,
 
     cudaError_t err;
 
-    err = cudaMallocHost( &_camsBasesHst, MAX_CONSTANT_CAMERA_PARAM_SETS*sizeof(CameraStructBase) );
+    err = cudaMallocHost(&_camsBasesHst, MAX_CONSTANT_CAMERA_PARAM_SETS * sizeof(CameraStructBase));
     THROW_ON_CUDA_ERROR( err, "Could not allocate set of camera structs in pinned host memory in " << __FILE__ << ":" << __LINE__ << ", " << cudaGetErrorString(err) );
-
-    // _camsBasesHstScale.resize( MAX_CONSTANT_CAMERA_PARAM_SETS, -1 );
 
     _cams    .resize(_nImgsInGPUAtTime);
     _camsHost.resize(_nImgsInGPUAtTime);
@@ -225,7 +222,6 @@ PlaneSweepingCuda::~PlaneSweepingCuda()
 {
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // deallocate global on the device
-    delete _hidden;
 
     cudaFreeHost( _camsBasesHst );
 
@@ -271,7 +267,7 @@ void PlaneSweepingCuda::logCamerasRcTc( int rc, const StaticVector<int>& tcams )
     std::ostringstream ostr;
 
     ostr << "Called " << __FUNCTION__ << " with cameras:" << std::endl
-         << "    rc = " << rc << std::endl << ", tc = [";
+         << "    rc = " << rc << ", tc = [";
     for( auto it : tcams )
     {
         ostr << it << ", ";
