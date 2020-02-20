@@ -82,13 +82,15 @@ float multi_fminf(float a, float b, float c, float d)
 __device__ static inline
 float4 tex2D_float4(cudaTextureObject_t rc_tex, float x, float y)
 {
+#ifdef ALICEVISION_DEPTHMAP_TEXTURE_USE_INTERPOLATION
+    // cudaReadNormalizedFloat
+    float4 a = tex2D<float4>(rc_tex, x, y);
+    return make_float4(a.x * 255.0f, a.y * 255.0f, a.z * 255.0f, a.w * 255.0f);
+#else
     // cudaReadElementType
     uchar4 a = tex2D<uchar4>(rc_tex, x, y);
     return make_float4(a.x, a.y, a.z, a.w);
-
-    // cudaReadNormalizedFloat
-    // float4 a = tex2D<float4>(rc_tex, x, y);
-    // return make_float4(a.x*255.0f, a.y*255.0f, a.z*255.0f, a.w*255.0f);
+#endif
 }
 
 #else

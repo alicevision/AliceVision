@@ -157,13 +157,14 @@ int ps_deviceAllocate(Pyramid& pyramid, int width, int height, int scales )
         tex_desc.addressMode[0]   = cudaAddressModeClamp;
         tex_desc.addressMode[1]   = cudaAddressModeClamp;
         tex_desc.addressMode[2]   = cudaAddressModeClamp;
-// #ifdef ALICEVISION_DEPTHMAP_TEXTURE_USE_UCHAR
-//      tex_desc.readMode = cudaReadModeNormalizedFloat; // uchar to float [0:1], see tex2d_float4 function
-// #else
+#if defined(ALICEVISION_DEPTHMAP_TEXTURE_USE_UCHAR) && defined(ALICEVISION_DEPTHMAP_TEXTURE_USE_INTERPOLATION)
+        tex_desc.readMode = cudaReadModeNormalizedFloat; // uchar to float [0:1], see tex2d_float4 function
+#else
         tex_desc.readMode = cudaReadModeElementType;
-// #endif
+#endif
 #ifdef ALICEVISION_DEPTHMAP_TEXTURE_USE_INTERPOLATION
         // with subpixel interpolation (can have a large performance impact on some graphic cards)
+        // but could be critical for quality during SGM in small resolution
         tex_desc.filterMode = cudaFilterModeLinear;
 #else
         // without interpolation
