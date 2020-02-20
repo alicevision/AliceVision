@@ -69,12 +69,29 @@ void SemiGlobalMatchingRcTc::computeDepthSimMapVolume(
     const int volDimX   = _w;
     const int volDimY   = _h;
 
-    std::vector<OneTC> tcs;
-    for(int j = 0; j < _rcTcDepthRanges.size(); ++j)
     {
-        tcs.push_back( OneTC( _tc[j],
-                              _rcTcDepthRanges[j].x,
-                              _rcTcDepthRanges[j].y)
+        const int startingDepth = std::min_element( _rcTcDepthRanges.begin(),
+                                                    _rcTcDepthRanges.end(),
+                                                    MinOffX())->x;
+        auto depth_it = std::max_element( _rcTcDepthRanges.begin(),
+                                          _rcTcDepthRanges.end(),
+                                          MinOffXplusY());
+        const int stoppingDepth = depth_it->x + depth_it->y;
+    
+        assert(startingDepth == 0);
+        assert(_rcDepths.size() == stoppingDepth);
+    }
+    ALICEVISION_LOG_DEBUG("RC depths: [" << _rcDepths[0] << "-" << _rcDepths[_rcDepths.size() - 1] << "], "
+                                         << _rcDepths.size() << " depth planes.");
+
+    std::vector<OneTC> tcs;
+    for(size_t j = 0; j < _rcTcDepthRanges.size(); ++j)
+    {
+        tcs.emplace_back(_tc[j], _rcTcDepthRanges[j].x, _rcTcDepthRanges[j].y);
+        ALICEVISION_LOG_DEBUG(" RC: " << _rc << ", TC: " << _tc[j] << ", "
+                              << _rcTcDepthRanges[j].y << " depth planes, "
+                              << "depth range=[" << _rcDepths[_rcTcDepthRanges[j].x] << "-" << _rcDepths[_rcTcDepthRanges[j].x + _rcTcDepthRanges[j].y - 1] << "], "
+                              << "range index=[" << _rcTcDepthRanges[j].x << "-" << _rcTcDepthRanges[j].x + _rcTcDepthRanges[j].y << "]"
                               );
     }
 

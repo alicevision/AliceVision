@@ -107,7 +107,7 @@ __global__ void volume_slice_kernel(
 #else
     fsim = fminf(1.0f, fmaxf(0.0f, fsim));
 #endif
-    fsim *= 255.0f; // Currently needed for the next step... (TODO: should be removed at some point)
+    fsim *= 255.0f; // needed to store in the volume in uchar
 
     TSim* fsim_1st = get3DBufferAt(volume_1st, volume1st_s, volume1st_p, vx, vy, zIndex);
     TSim* fsim_2nd = get3DBufferAt(volume_2nd, volume2nd_s, volume2nd_p, vx, vy, zIndex);
