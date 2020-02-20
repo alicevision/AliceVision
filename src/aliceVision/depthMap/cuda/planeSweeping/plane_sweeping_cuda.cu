@@ -208,7 +208,7 @@ void ps_testCUDAdeviceNo(int CUDAdeviceNo)
 
 // void ps_device_updateCam( const CameraStruct& cam, int CUDAdeviceNo,
 //                           int scales, int w, int h)
-void ps_device_updateCam( Pyramid& pyramid,
+void ps_device_fillPyramidFromHostFrame( Pyramid& pyramid,
                           CudaHostMemoryHeap<CudaRGBA, 2>* host_frame,
                           int scales, int w, int h,
                           cudaStream_t stream )
