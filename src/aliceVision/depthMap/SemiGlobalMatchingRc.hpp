@@ -47,7 +47,6 @@ private:
     float getMinTcStepAtDepth(float depth, float minDepth, float maxDepth, StaticVector<StaticVector<float>*>* alldepths);
     bool selectBestDepthsRange(int nDepthsThr, StaticVector<float>* rcSeedsDistsAsc);
     bool selectBestDepthsRange(int nDepthsThr, StaticVector<StaticVector<float>*>* alldepths);
-    void filterDepthsPerStepZ(int stepZ);
 
     /**
      * @brief Compute depths of the principal ray of reference camera rc visible by a pixel in a target camera tc
