@@ -278,23 +278,33 @@ void readImage(const std::string& path,
     oiio::ImageBuf grayscaleBuf;
     oiio::ImageBufAlgo::channel_sum(grayscaleBuf, inBuf, weights, convertionROI);
     inBuf.copy(grayscaleBuf);
+
+    // TODO: if inSpec.nchannels == 4: premult?
   }
 
-  // add missing channels
-  if(nchannels > inSpec.nchannels)
+  // duplicate first channel for RGB
+  if (nchannels >= 3 && inSpec.nchannels == 1)
   {
-    oiio::ImageSpec requestedSpec(inSpec.width, inSpec.height, nchannels, format);
+    oiio::ImageSpec requestedSpec(inSpec.width, inSpec.height, 3, format);
     oiio::ImageBuf requestedBuf(requestedSpec);
+    int channelOrder[] = { 0, 0, 0 };
+    float channelValues[] = { 0 /*ignore*/, 0 /*ignore*/, 0 /*ignore*/ };
+    oiio::ImageBufAlgo::channels(requestedBuf, inBuf, 3, channelOrder, channelValues);
+    inBuf.swap(requestedBuf);
+  }
 
-    // duplicate first channel for RGB
-    if(requestedSpec.nchannels >= 3 && inSpec.nchannels < 3)
-    {
-      oiio::ImageBufAlgo::paste(requestedBuf, 0, 0, 0, 0, inBuf);
-      oiio::ImageBufAlgo::paste(requestedBuf, 0, 0, 0, 1, inBuf);
-      oiio::ImageBufAlgo::paste(requestedBuf, 0, 0, 0, 2, inBuf);
-    }
-
-    inBuf.copy(requestedBuf);
+  // Add an alpha channel if needed
+  if (nchannels == 4 && inBuf.spec().nchannels == 3)
+  {
+    oiio::ImageSpec requestedSpec(inSpec.width, inSpec.height, 3, format);
+    oiio::ImageBuf requestedBuf(requestedSpec);
+    int channelOrder[] = { 0, 1, 2, -1 /*constant value*/ };
+    float channelValues[] = { 0 /*ignore*/, 0 /*ignore*/, 0 /*ignore*/, 1.0 };
+    oiio::ImageBufAlgo::channels(requestedBuf, inBuf,
+                                 4, // create an image with 4 channels
+                                 channelOrder,
+                                 channelValues); // only the 4th value is used
+    inBuf.swap(requestedBuf);
   }
 
   // copy pixels from oiio to eigen
