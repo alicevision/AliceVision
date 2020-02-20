@@ -166,7 +166,7 @@ inline __device__ float CostYKfromLab(const int dx, const int dy, const float4 c
 
     deltaC += deltaP;
 
-    return expf(-deltaC); // Yoon & Kweon
+    return __expf(-deltaC); // Yoon & Kweon
     // return __expf(-(deltaC * deltaC / (2 * gammaC * gammaC))) * sqrtf(__expf(-(deltaP * deltaP / (2 * gammaP * gammaP)))); // DCB
 }
 /*
