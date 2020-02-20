@@ -182,9 +182,12 @@ __device__ float compNCCby3DptsYK( cudaTextureObject_t rc_tex,
                                    int tc_width, int tc_height,
                                    const float _gammaC, const float _gammaP)
 {
+    const CameraStructBase& rcCam = camsBasesDev[rc_cam_cache_idx];
+    const CameraStructBase& tcCam = camsBasesDev[tc_cam_cache_idx];
+
     float3 p = ptch.p;
-    float2 rp = project3DPoint(camsBasesDev[rc_cam_cache_idx].P, p);
-    float2 tp = project3DPoint(camsBasesDev[tc_cam_cache_idx].P, p);
+    float2 rp = project3DPoint(rcCam.P, p);
+    float2 tp = project3DPoint(tcCam.P, p);
 
     const float dd = wsh + 2.0f; // TODO FACA
     if((rp.x < dd) || (rp.x > (float)(rc_width  - 1) - dd) ||
@@ -217,8 +220,8 @@ __device__ float compNCCby3DptsYK( cudaTextureObject_t rc_tex,
         for(int xp = -wsh; xp <= wsh; xp++)
         {
             p = ptch.p + ptch.x * (float)(ptch.d * (float)xp) + ptch.y * (float)(ptch.d * (float)yp);
-            float2 rp1 = project3DPoint(camsBasesDev[rc_cam_cache_idx].P, p);
-            float2 tp1 = project3DPoint(camsBasesDev[tc_cam_cache_idx].P, p);
+            float2 rp1 = project3DPoint(rcCam.P, p);
+            float2 tp1 = project3DPoint(tcCam.P, p);
 
             // see CUDA_C_Programming_Guide.pdf ... E.2 pp132-133 ... adding 0.5 caises that tex2D return for point i,j
             // exactly value od I(i,j) ... it is what we want
@@ -249,13 +252,16 @@ __device__ float compNCCby3DptsYK( cudaTextureObject_t rc_tex,
 __device__ void getPixelFor3DPoint( int cam_cache_idx,
                                     float2& out, float3& X)
 {
-    float3 p = M3x4mulV3(camsBasesDev[cam_cache_idx].P, X);
-    out = make_float2(p.x / p.z, p.y / p.z);
+    const CameraStructBase& cam = camsBasesDev[cam_cache_idx];
+    float3 p = M3x4mulV3(cam.P, X);
 
-    if(p.z < 0.0f)
+    if(p.z <= 0.0f)
     {
-        out.x = -1.0f;
-        out.y = -1.0f;
+        out = make_float2(-1.0f, -1.0f);
+    }
+    else
+    {
+        out = make_float2(p.x / p.z, p.y / p.z);
     }
 }
 
@@ -263,14 +269,14 @@ __device__ float3 get3DPointForPixelAndFrontoParellePlaneRC( int cam_cache_idx,
                                                              const float2& pix,
                                                              float fpPlaneDepth)
 {
-    float3 planep = camsBasesDev[cam_cache_idx].C
-                  + camsBasesDev[cam_cache_idx].ZVect * fpPlaneDepth;
-    float3 v = M3x3mulV2(camsBasesDev[cam_cache_idx].iP, pix);
+    const CameraStructBase& cam = camsBasesDev[cam_cache_idx];
+    const float3 planep = cam.C + cam.ZVect * fpPlaneDepth;
+    float3 v = M3x3mulV2(cam.iP, pix);
     normalize(v);
-    return linePlaneIntersect(camsBasesDev[cam_cache_idx].C,
+    return linePlaneIntersect(cam.C,
                               v,
                               planep,
-                              camsBasesDev[cam_cache_idx].ZVect);
+                              cam.ZVect);
 }
 
 __device__ float3 get3DPointForPixelAndFrontoParellePlaneRC( int cam_cache_idx,
@@ -286,9 +292,10 @@ __device__ float3 get3DPointForPixelAndFrontoParellePlaneRC( int cam_cache_idx,
 __device__ float3 get3DPointForPixelAndDepthFromRC( int cam_cache_idx,
                                                     const float2& pix, float depth)
 {
-    float3 rpv = M3x3mulV2(camsBasesDev[cam_cache_idx].iP, pix);
+    const CameraStructBase& cam = camsBasesDev[cam_cache_idx];
+    float3 rpv = M3x3mulV2(cam.iP, pix);
     normalize(rpv);
-    return camsBasesDev[cam_cache_idx].C + rpv * depth;
+    return cam.C + rpv * depth;
 }
 
 __device__ float3 get3DPointForPixelAndDepthFromRC( int cam_cache_idx,
@@ -304,35 +311,38 @@ __device__ float3 triangulateMatchRef( int rc_cam_cache_idx,
                                        int tc_cam_cache_idx,
                                        float2& refpix, float2& tarpix)
 {
-    float3 refvect = M3x3mulV2(camsBasesDev[rc_cam_cache_idx].iP, refpix);
+    const CameraStructBase& rcCam = camsBasesDev[rc_cam_cache_idx];
+    const CameraStructBase& tcCam = camsBasesDev[tc_cam_cache_idx];
+    float3 refvect = M3x3mulV2(rcCam.iP, refpix);
     normalize(refvect);
-    float3 refpoint = refvect + camsBasesDev[rc_cam_cache_idx].C;
+    float3 refpoint = refvect + rcCam.C;
 
-    float3 tarvect = M3x3mulV2(camsBasesDev[tc_cam_cache_idx].iP, tarpix);
+    float3 tarvect = M3x3mulV2(tcCam.iP, tarpix);
     normalize(tarvect);
-    float3 tarpoint = tarvect + camsBasesDev[tc_cam_cache_idx].C;
+    float3 tarpoint = tarvect + tcCam.C;
 
     float k, l;
     float3 lli1, lli2;
 
     lineLineIntersect(&k, &l, &lli1, &lli2,
-                      camsBasesDev[rc_cam_cache_idx].C,
+                      rcCam.C,
                       refpoint,
-                      camsBasesDev[tc_cam_cache_idx].C,
+                      tcCam.C,
                       tarpoint);
 
-    return camsBasesDev[rc_cam_cache_idx].C + refvect * k;
+    return rcCam.C + refvect * k;
 }
 
 __device__ float computePixSize( int cam_cache_idx,
                                  const float3& p)
 {
-    float2 rp = project3DPoint(camsBasesDev[cam_cache_idx].P, p);
+    const CameraStructBase& cam = camsBasesDev[cam_cache_idx];
+    float2 rp = project3DPoint(cam.P, p);
     float2 rp1 = rp + make_float2(1.0f, 0.0f);
 
-    float3 refvect = M3x3mulV2(camsBasesDev[cam_cache_idx].iP, rp1);
+    float3 refvect = M3x3mulV2(cam.iP, rp1);
     normalize(refvect);
-    return pointLineDistance3D(p, camsBasesDev[cam_cache_idx].C, refvect);
+    return pointLineDistance3D(p, cam.C, refvect);
 }
 
 __device__ float refineDepthSubPixel(const float3& depths, const float3& sims)
