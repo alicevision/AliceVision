@@ -42,7 +42,7 @@ int main(int argc, char * argv[]) {
     ("outSfMDataFilename,o", po::value<std::string>(&sfmOutputDataFilename)->required(), "SfMData file output.")
     ("offsetx,ox", po::value<double>(&offset_x)->required(), "Fisheye circle's center offset in X (pixels).")
     ("offsety,oy", po::value<double>(&offset_y)->required(), "Fisheye circle's center offset in Y (pixels).")
-    ("radius,r", po::value<double>(&radius)->required(), "Fisheye circle's radius (pixels).")
+    ("radius,r", po::value<double>(&radius)->required(), "Fisheye circle's radius (% of image shortest side).")
     ;
 
   po::options_description optionalParams("Optional parameters");
@@ -116,7 +116,8 @@ int main(int argc, char * argv[]) {
 
     equidistant->setCenterX(double(equidistant->w()) / 2.0 + offset_x);
     equidistant->setCenterY(double(equidistant->h()) / 2.0 + offset_y);
-    equidistant->setRadius(radius);
+    equidistant->setRadius(radius / 100.0 * 0.5 * std::min(double(equidistant->w()),double(equidistant->h())));
+
 
     count_equidistant++;
   }
