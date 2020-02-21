@@ -946,30 +946,27 @@ bool PlaneSweepingCuda::optimizeDepthSimMapGradientDescent(StaticVector<DepthSim
 
     int scale = 1;
     int w = _mp.getWidth(rc_global_id);
-    int h = hPart;
 
     long t1 = clock();
 
-    int rc_idx = addCam(rc_global_id, scale );
+    int rc_idx = addCam(rc_global_id, scale);
 
-    ALICEVISION_LOG_DEBUG("rc: " << rc_global_id);
-
-    CameraStruct& ttcam = _cams[rc_idx];
+    ALICEVISION_LOG_DEBUG(__FUNCTION__ << " RC: " << rc_global_id << ", rc_cache_idx: " << rc_idx);
 
     // sweep
-    CudaHostMemoryHeap<float2, 2> sgmDepthPixSizeMap_hmh(CudaSize<2>(w, h));
-    CudaHostMemoryHeap<float2, 2> refinedDepthSimMap_hmh(CudaSize<2>(w, h));
+    CudaHostMemoryHeap<float2, 2> sgmDepthPixSizeMap_hmh(CudaSize<2>(w, hPart));
+    CudaHostMemoryHeap<float2, 2> refinedDepthSimMap_hmh(CudaSize<2>(w, hPart));
     copy(sgmDepthPixSizeMap_hmh, sgmDepthPixSizeMap, yFrom);
     copy(refinedDepthSimMap_hmh, refinedDepthSimMap, yFrom);
 
-    CudaHostMemoryHeap<float2, 2> oDepthSimMap_hmh(CudaSize<2>(w, h));
+    CudaHostMemoryHeap<float2, 2> oDepthSimMap_hmh(CudaSize<2>(w, hPart));
 
     ps_optimizeDepthSimMapGradientDescent(
             oDepthSimMap_hmh,
             sgmDepthPixSizeMap_hmh, refinedDepthSimMap_hmh,
             nSamplesHalf, nDepthsToRefine, nIters, sigma,
-            _cams[rc_idx],
-            w, h, scale - 1, _CUDADeviceNo, _nImgsInGPUAtTime,
+            _cams[rc_idx], w, hPart,
+            scale - 1, _CUDADeviceNo, _nImgsInGPUAtTime,
             _mp.verbose, yFrom);
 
     copy(oDepthSimMap, oDepthSimMap_hmh, yFrom);

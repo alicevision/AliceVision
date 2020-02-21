@@ -172,7 +172,7 @@ void RefineRc::optimizeDepthSimMapCUDA(DepthSimMap& out_depthSimMapOptimized, //
 
     int h11 = _sp.mp.getHeight(_rc);
 
-    int nParts = 4;
+    int nParts = 4; // TODO: estimate the amount of VRAM available to decide the tiling
     int hPart = h11 / nParts;
     for(int part = 0; part < nParts; ++part)
     {

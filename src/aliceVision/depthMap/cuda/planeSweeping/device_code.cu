@@ -34,14 +34,15 @@ __device__ float computeGradientSizeOfL( cudaTextureObject_t rc_tex, int x, int 
     return size(g);
 }
 
-__global__ void compute_varLofLABtoW_kernel(cudaTextureObject_t rc_tex, float* varianceMap, int varianceMap_p, int width, int height)
+__global__ void compute_varLofLABtoW_kernel(cudaTextureObject_t rc_tex, float* varianceMap, int varianceMap_p,
+                                            int width, int partHeight, int yFrom)
 {
     int x = blockIdx.x * blockDim.x + threadIdx.x;
     int y = blockIdx.y * blockDim.y + threadIdx.y;
 
-    if(x < width && y < height)
+    if(x < width && y < partHeight)
     {
-        float grad = computeGradientSizeOfL(rc_tex, x, y);
+        float grad = computeGradientSizeOfL(rc_tex, x, y + yFrom);
 
         float* val = get2DBufferAt(varianceMap, varianceMap_p, x, y);
         *val = grad;

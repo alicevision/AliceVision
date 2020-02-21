@@ -79,12 +79,12 @@ __global__ void fuse_computeFusedDepthSimMapFromBestGaussianKernelVotingSampleMa
 
 __global__ void fuse_getOptDeptMapFromOPtDepthSimMap_kernel(float* optDepthMap, int optDepthMap_p,
                                                             float2* optDepthMapSimMap, int optDepthMapSimMap_p,
-                                                            int width, int height)
+                                                            int width, int partHeight)
 {
     int x = blockIdx.x * blockDim.x + threadIdx.x;
     int y = blockIdx.y * blockDim.y + threadIdx.y;
 
-    if(x < width && y < height)
+    if(x < width && y < partHeight)
     {
         *get2DBufferAt(optDepthMap, optDepthMap_p, x, y) = get2DBufferAt(optDepthMapSimMap, optDepthMapSimMap_p, x, y)->x;
     }
@@ -93,13 +93,14 @@ __global__ void fuse_getOptDeptMapFromOPtDepthSimMap_kernel(float* optDepthMap, 
 /**
  * @return (smoothStep, energy)
  */
-__device__ float2 getCellSmoothStepEnergy( int rc_cam_cache_idx,
-                                           cudaTextureObject_t depthTex, const int2& cell0)
+__device__ float2 getCellSmoothStepEnergy( int rc_cam_cache_idx, cudaTextureObject_t depthTex, const int2& cell0,
+                                          int yFrom)
 {
     float2 out = make_float2(0.0f, 180.0f);
 
     // Get pixel depth from the depth texture
-    float d0 = tex2D<float>(depthTex, float(cell0.x)+0.5f, float(cell0.y) + 0.5f);
+    // Note: we do not use 0.5f offset as we use nearest neighbor interpolation
+    float d0 = tex2D<float>(depthTex, float(cell0.x), float(cell0.y - yFrom));
 
     // Early exit: depth is <= 0
     if(d0 <= 0.0f)
@@ -112,10 +113,10 @@ __device__ float2 getCellSmoothStepEnergy( int rc_cam_cache_idx,
     int2 cellB = cell0 + make_int2(1, 0);	// Bottom
 
     // Get associated depths from depth texture
-    float dL = tex2D<float>(depthTex, float(cellL.x) + 0.5f, float(cellL.y) + 0.5f);
-    float dR = tex2D<float>(depthTex, float(cellR.x) + 0.5f, float(cellR.y) + 0.5f);
-    float dU = tex2D<float>(depthTex, float(cellU.x) + 0.5f, float(cellU.y) + 0.5f);
-    float dB = tex2D<float>(depthTex, float(cellB.x) + 0.5f, float(cellB.y) + 0.5f);
+    float dL = tex2D<float>(depthTex, float(cellL.x), float(cellL.y - yFrom));
+    float dR = tex2D<float>(depthTex, float(cellR.x), float(cellR.y - yFrom));
+    float dU = tex2D<float>(depthTex, float(cellU.x), float(cellU.y - yFrom));
+    float dB = tex2D<float>(depthTex, float(cellB.x), float(cellB.y - yFrom));
 
     // Get associated 3D points
     float3 p0 = get3DPointForPixelAndDepthFromRC(rc_cam_cache_idx, cell0, d0);
@@ -173,30 +174,32 @@ __global__ void fuse_optimizeDepthSimMap_kernel(cudaTextureObject_t rc_tex,
                                                 cudaTextureObject_t depthTex,
                                                 float2* out_optDepthSimMap, int optDepthSimMap_p,
                                                 const float2* roughDepthPixSizeMap, int roughDepthPixSizeMap_p,
-                                                const float2* fineDepthSimMap, int fineDepthSimMap_p, int width, int height,
+                                                const float2* fineDepthSimMap, int fineDepthSimMap_p, int width,
+                                                int partHeight,
                                                 int iter, float samplesPerPixSize, int yFrom)
 {
-    const int x = blockIdx.x * blockDim.x + threadIdx.x;
-    const int y = blockIdx.y * blockDim.y + threadIdx.y;
-    const int2 pix = make_int2(x, y);
+    const int tile_x = blockIdx.x * blockDim.x + threadIdx.x;
+    const int tile_y = blockIdx.y * blockDim.y + threadIdx.y;
 
-    if(x >= width || y >= height)
+    if(tile_x >= width || tile_y >= partHeight)
         return;
 
-    const float2 roughDepthPixSize = *get2DBufferAt(roughDepthPixSizeMap, roughDepthPixSizeMap_p, x, y);
+    const int2 pix = make_int2(tile_x, tile_y + yFrom);
+
+    const float2 roughDepthPixSize = *get2DBufferAt(roughDepthPixSizeMap, roughDepthPixSizeMap_p, tile_x, tile_y);
     const float roughDepth = roughDepthPixSize.x;
     const float roughPixSize = roughDepthPixSize.y;
-    const float2 fineDepthSim = *get2DBufferAt(fineDepthSimMap, fineDepthSimMap_p, x, y);
+    const float2 fineDepthSim = *get2DBufferAt(fineDepthSimMap, fineDepthSimMap_p, tile_x, tile_y);
     const float fineDepth = fineDepthSim.x;
     const float fineSim = fineDepthSim.y;
-    float2* out_optDepthSim_ptr = get2DBufferAt(out_optDepthSimMap, optDepthSimMap_p, x, y);
+    float2* out_optDepthSim_ptr = get2DBufferAt(out_optDepthSimMap, optDepthSimMap_p, tile_x, tile_y);
     float2 out_optDepthSim = (iter == 0) ? make_float2(roughDepth, fineSim) : *out_optDepthSim_ptr;
 
     const float depthOpt = out_optDepthSim.x;
 
     if (depthOpt > 0.0f)
     {
-        const float2 depthSmoothStepEnergy = getCellSmoothStepEnergy(rc_cam_cache_idx, depthTex, pix); // (smoothStep, energy)
+        const float2 depthSmoothStepEnergy = getCellSmoothStepEnergy(rc_cam_cache_idx, depthTex, pix, yFrom); // (smoothStep, energy)
         float stepToSmoothDepth = depthSmoothStepEnergy.x;
         stepToSmoothDepth = copysign(fminf(fabsf(stepToSmoothDepth), roughPixSize / 10.0f), stepToSmoothDepth);
         const float depthEnergy = depthSmoothStepEnergy.y; // max angle with neighbors
@@ -206,7 +209,7 @@ __global__ void fuse_optimizeDepthSimMap_kernel(cudaTextureObject_t rc_tex,
 
         const float stepToRoughDM = roughDepth - depthOpt; // distance to smooth/robust input depth map
 
-        const float imgColorVariance = tex2D<float>(imgVarianceTex, float(x) + 0.5f, float(y + yFrom) + 0.5f);
+        const float imgColorVariance = tex2D<float>(imgVarianceTex, float(tile_x) + 0.5f, float(tile_y) + 0.5f);
 
         const float colorVarianceThresholdForSmoothing = 20.0f;
         const float angleThresholdForSmoothing = 30.0f; // 30
