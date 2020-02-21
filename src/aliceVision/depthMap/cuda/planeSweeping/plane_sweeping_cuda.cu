@@ -638,7 +638,7 @@ void ps_refineRcDepthMap(float* out_osimMap_hmh,
                          int ntcsteps,
                          CameraStruct& rc_cam,
                          CameraStruct& tc_cam,
-                         int width, int height,
+                         int partWidth, int height,
                          int rcWidth, int rcHeight,
                          int tcWidth, int tcHeight,
                          int scale, int CUDAdeviceNo, int ncamsAllocated,
@@ -647,17 +647,17 @@ void ps_refineRcDepthMap(float* out_osimMap_hmh,
 {
     // setup block and grid
     dim3 block(16, 16, 1);
-    dim3 grid(divUp(width, block.x), divUp(height, block.y), 1);
+    dim3 grid(divUp(partWidth, block.x), divUp(height, block.y), 1);
 
     Pyramid& rc_pyramid = *rc_cam.pyramid;
     Pyramid& tc_pyramid = *tc_cam.pyramid;
     cudaTextureObject_t rc_tex = rc_pyramid[scale].tex;
     cudaTextureObject_t tc_tex = tc_pyramid[scale].tex;
 
-    CudaDeviceMemoryPitched<float, 2> rcDepthMap_dmp(CudaSize<2>(width, height));
-    copy(rcDepthMap_dmp, inout_rcDepthMap_hmh, width, height);
-    CudaDeviceMemoryPitched<float, 2> bestSimMap_dmp(CudaSize<2>(width, height));
-    CudaDeviceMemoryPitched<float, 2> bestDptMap_dmp(CudaSize<2>(width, height));
+    CudaDeviceMemoryPitched<float, 2> rcDepthMap_dmp(CudaSize<2>(partWidth, height));
+    copy(rcDepthMap_dmp, inout_rcDepthMap_hmh, partWidth, height);
+    CudaDeviceMemoryPitched<float, 2> bestSimMap_dmp(CudaSize<2>(partWidth, height));
+    CudaDeviceMemoryPitched<float, 2> bestDptMap_dmp(CudaSize<2>(partWidth, height));
 
     clock_t tall = tic();
 
@@ -670,7 +670,7 @@ void ps_refineRcDepthMap(float* out_osimMap_hmh,
             bestSimMap_dmp.getBuffer(), bestSimMap_dmp.getPitch(),
             bestDptMap_dmp.getBuffer(), bestDptMap_dmp.getPitch(),
             rcDepthMap_dmp.getBuffer(), rcDepthMap_dmp.getPitch(),
-            width, height, wsh, gammaC, gammaP,
+            partWidth, height, wsh, gammaC, gammaP,
             (float)(i - (ntcsteps - 1) / 2), i, moveByTcOrRc, xFrom,
             rcWidth, rcHeight,
             tcWidth, tcHeight);
@@ -698,15 +698,14 @@ void ps_refineRcDepthMap(float* out_osimMap_hmh,
     */
 
     {
-        CudaDeviceMemoryPitched<float3, 2> lastThreeSimsMap_dmp(CudaSize<2>(width, height));
-        CudaDeviceMemoryPitched<float, 2> simMap_dmp(CudaSize<2>(width, height));
+        CudaDeviceMemoryPitched<float3, 2> lastThreeSimsMap_dmp(CudaSize<2>(partWidth, height));
+        CudaDeviceMemoryPitched<float, 2> simMap_dmp(CudaSize<2>(partWidth, height));
 
         {
             // Set best sim map into lastThreeSimsMap_dmp.y
             refine_setLastThreeSimsMap_kernel<<<grid, block>>>(
                 lastThreeSimsMap_dmp.getBuffer(), lastThreeSimsMap_dmp.getPitch(),
-                bestSimMap_dmp.getBuffer(), bestSimMap_dmp.getPitch(),
-                width, height, 1);
+                bestSimMap_dmp.getBuffer(), bestSimMap_dmp.getPitch(), partWidth, height, 1);
             /*
             // Compute NCC for depth-1
             refine_compYKNCCSimMapPatch_kernel << <grid, block >> >(
@@ -714,7 +713,7 @@ void ps_refineRcDepthMap(float* out_osimMap_hmh,
                 rc_tex, tc_tex,
                 simMap_dmp.getBuffer(), simMap_dmp.getPitch(),
                 bestDptMap_dmp.getBuffer(), bestDptMap_dmp.getPitch(),
-                width,
+                partWidth,
                 height, wsh, gammaC, gammaP, 0.0f, moveByTcOrRc, xFrom,
                 rcWidth, rcHeight,
                 tcWidth, tcHeight);
@@ -722,7 +721,7 @@ void ps_refineRcDepthMap(float* out_osimMap_hmh,
             refine_setLastThreeSimsMap_kernel << <grid, block >> >(
                 lastThreeSimsMap_dmp.getBuffer(), lastThreeSimsMap_dmp.getPitch(),
                 simMap_dmp.getBuffer(), simMap_dmp.getPitch(),
-                width, height, 1);
+                partWidth, height, 1);
             */
         }
 
@@ -733,16 +732,14 @@ void ps_refineRcDepthMap(float* out_osimMap_hmh,
                 tc_cam.param_dev.i, 
                 rc_tex, tc_tex,
                 simMap_dmp.getBuffer(), simMap_dmp.getPitch(),
-                bestDptMap_dmp.getBuffer(), bestDptMap_dmp.getPitch(),
-                width,
+                bestDptMap_dmp.getBuffer(), bestDptMap_dmp.getPitch(), partWidth,
                 height, wsh, gammaC, gammaP, -1.0f, moveByTcOrRc, xFrom,
                 rcWidth, rcHeight,
                 tcWidth, tcHeight);
             // Set sim for depth-1 into lastThreeSimsMap_dmp.x
             refine_setLastThreeSimsMap_kernel<<<grid, block>>>(
                 lastThreeSimsMap_dmp.getBuffer(), lastThreeSimsMap_dmp.getPitch(),
-                simMap_dmp.getBuffer(), simMap_dmp.getPitch(),
-                width, height, 0);
+                simMap_dmp.getBuffer(), simMap_dmp.getPitch(), partWidth, height, 0);
         }
 
         {
@@ -752,16 +749,14 @@ void ps_refineRcDepthMap(float* out_osimMap_hmh,
                 tc_cam.param_dev.i,
                 rc_tex, tc_tex,
                 simMap_dmp.getBuffer(), simMap_dmp.getPitch(),
-                bestDptMap_dmp.getBuffer(), bestDptMap_dmp.getPitch(),
-                width,
+                bestDptMap_dmp.getBuffer(), bestDptMap_dmp.getPitch(), partWidth,
                 height, wsh, gammaC, gammaP, +1.0f, moveByTcOrRc, xFrom,
                 rcWidth, rcHeight,
                 tcWidth, tcHeight);
             // Set sim for depth+1 into lastThreeSimsMap_dmp.z
             refine_setLastThreeSimsMap_kernel<<<grid, block>>>(
                 lastThreeSimsMap_dmp.getBuffer(), lastThreeSimsMap_dmp.getPitch(),
-                simMap_dmp.getBuffer(), simMap_dmp.getPitch(),
-                width, height, 2);
+                simMap_dmp.getBuffer(), simMap_dmp.getPitch(), partWidth, height, 2);
         }
 
         // Interpolation from the lastThreeSimsMap_dmp
@@ -770,11 +765,10 @@ void ps_refineRcDepthMap(float* out_osimMap_hmh,
             tc_cam.param_dev.i,
             bestSimMap_dmp.getBuffer(), bestSimMap_dmp.getPitch(),
             bestDptMap_dmp.getBuffer(), bestDptMap_dmp.getPitch(),
-            lastThreeSimsMap_dmp.getBuffer(), lastThreeSimsMap_dmp.getPitch(),
-            width, height, moveByTcOrRc, xFrom);
+            lastThreeSimsMap_dmp.getBuffer(), lastThreeSimsMap_dmp.getPitch(), partWidth, height, moveByTcOrRc, xFrom);
     }
-    copy(out_osimMap_hmh, width, height, bestSimMap_dmp);
-    copy(inout_rcDepthMap_hmh, width, height, bestDptMap_dmp);
+    copy(out_osimMap_hmh, partWidth, height, bestSimMap_dmp);
+    copy(inout_rcDepthMap_hmh, partWidth, height, bestDptMap_dmp);
 
     if(verbose)
         printf("gpu elapsed time: %f ms \n", toc(tall));

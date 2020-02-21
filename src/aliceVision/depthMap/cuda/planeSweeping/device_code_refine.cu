@@ -11,32 +11,29 @@ __global__ void refine_compUpdateYKNCCSimMapPatch_kernel(int rc_cam_cache_idx,
                                                          int tc_cam_cache_idx,
                                                          cudaTextureObject_t rc_tex, cudaTextureObject_t tc_tex,
                                                          float* osimMap, int osimMap_p, float* odptMap, int odptMap_p,
-                                                         float* depthMap, int depthMap_p, int width, int height,
+                                                         float* depthMap, int depthMap_p, int partWidth, int height,
                                                          int wsh, float gammaC, float gammaP,
                                                          float tcStep, int id,
                                                          bool moveByTcOrRc, int xFrom,
                                                          int rcWidth, int rcHeight,
                                                          int tcWidth, int tcHeight)
 {
-    int x = blockIdx.x * blockDim.x + threadIdx.x;
-    int y = blockIdx.y * blockDim.y + threadIdx.y;
-    int2 pix;
-    pix.x = x + xFrom;
-    pix.y = y;
+    const int tile_x = blockIdx.x * blockDim.x + threadIdx.x;
+    const int tile_y = blockIdx.y * blockDim.y + threadIdx.y;
 
-    // if ((pix.x>wsh)&&(pix.y>wsh)&&(pix.x<width-wsh)&&(pix.y<height-wsh))
-    if(x >= width || y >= height)
+    if(tile_x >= partWidth || tile_y >= height)
         return;
 
-    float odpt = *get2DBufferAt(depthMap, depthMap_p, x, y);
+    const int2 pix = make_int2(tile_x + xFrom, tile_y);
+
+    float odpt = *get2DBufferAt(depthMap, depthMap_p, tile_x, tile_y);
     float osim = 1.0f;
 
     // If we have an initial depth value, we can refine it
     if(odpt > 0.0f)
     {
         float3 p = get3DPointForPixelAndDepthFromRC(rc_cam_cache_idx, pix, odpt);
-        // move3DPointByTcPixStep(p, tcStep);
-        move3DPointByTcOrRcPixStep(rc_cam_cache_idx, tc_cam_cache_idx, pix, p, tcStep, moveByTcOrRc);
+        move3DPointByTcOrRcPixStep(rc_cam_cache_idx, tc_cam_cache_idx, p, tcStep, moveByTcOrRc);
 
         odpt = size(p - camsBasesDev[rc_cam_cache_idx].C);
 
@@ -48,8 +45,8 @@ __global__ void refine_compUpdateYKNCCSimMapPatch_kernel(int rc_cam_cache_idx,
         osim = compNCCby3DptsYK(rc_tex, tc_tex, rc_cam_cache_idx, tc_cam_cache_idx, ptch, wsh, rcWidth, rcHeight, tcWidth, tcHeight, gammaC, gammaP);
     }
 
-    float* osim_ptr = get2DBufferAt(osimMap, osimMap_p, x, y);
-    float* odpt_ptr = get2DBufferAt(odptMap, odptMap_p, x, y);
+    float* osim_ptr = get2DBufferAt(osimMap, osimMap_p, tile_x, tile_y);
+    float* odpt_ptr = get2DBufferAt(odptMap, odptMap_p, tile_x, tile_y);
     if(id == 0)
     {
         // For the first iteration, we initialize the values
@@ -72,28 +69,26 @@ __global__ void refine_compYKNCCSimMapPatch_kernel(int rc_cam_cache_idx,
                                                    int tc_cam_cache_idx,
                                                    cudaTextureObject_t rc_tex, cudaTextureObject_t tc_tex,
                                                    float* osimMap, int osimMap_p, float* depthMap, int depthMap_p,
-                                                   int width, int height, int wsh, float gammaC,
+                                                   int partWidth, int height, int wsh, float gammaC,
                                                    float gammaP, float tcStep,
                                                    bool moveByTcOrRc, int xFrom, int rcWidth, int rcHeight, int tcWidth, int tcHeight)
 {
-    int x = blockIdx.x * blockDim.x + threadIdx.x;
-    int y = blockIdx.y * blockDim.y + threadIdx.y;
-    int2 pix;
-    pix.x = x + xFrom;
-    pix.y = y;
+    const int tile_x = blockIdx.x * blockDim.x + threadIdx.x;
+    const int tile_y = blockIdx.y * blockDim.y + threadIdx.y;
 
-    // if ((x>wsh)&&(y>wsh)&&(x<width-wsh)&&(y<height-wsh))
-    if(x >= width || y >= height)
+    if(tile_x >= partWidth || tile_y >= height)
         return;
 
-    float depth = *get2DBufferAt(depthMap, depthMap_p, x, y);
+    const int2 pix = make_int2(tile_x + xFrom, tile_y);
+
+    float depth = *get2DBufferAt(depthMap, depthMap_p, tile_x, tile_y);
     float osim = 1.1f;
 
     if(depth > 0.0f)
     {
         float3 p = get3DPointForPixelAndDepthFromRC(rc_cam_cache_idx, pix, depth);
         // move3DPointByTcPixStep(p, tcStep);
-        move3DPointByTcOrRcPixStep(rc_cam_cache_idx, tc_cam_cache_idx, pix, p, tcStep, moveByTcOrRc);
+        move3DPointByTcOrRcPixStep(rc_cam_cache_idx, tc_cam_cache_idx, p, tcStep, moveByTcOrRc);
 
         Patch ptch;
         ptch.p = p;
@@ -101,7 +96,7 @@ __global__ void refine_compYKNCCSimMapPatch_kernel(int rc_cam_cache_idx,
         computeRotCSEpip(rc_cam_cache_idx, tc_cam_cache_idx, ptch);
         osim = compNCCby3DptsYK(rc_tex, tc_tex, rc_cam_cache_idx, tc_cam_cache_idx, ptch, wsh, rcWidth, rcHeight, tcWidth, tcHeight, gammaC, gammaP);
     }
-    *get2DBufferAt(osimMap, osimMap_p, x, y) = osim;
+    *get2DBufferAt(osimMap, osimMap_p, tile_x, tile_y) = osim;
 }
 
 __global__ void refine_setLastThreeSimsMap_kernel(float3* lastThreeSimsMap, int lastThreeSimsMap_p, float* simMap,
@@ -134,20 +129,19 @@ __global__ void refine_computeDepthSimMapFromLastThreeSimsMap_kernel(int rc_cam_
                                                                      int tc_cam_cache_idx,
                                                                      float* osimMap, int osimMap_p, float* iodepthMap,
                                                                      int iodepthMap_p, float3* lastThreeSimsMap,
-                                                                     int lastThreeSimsMap_p, int width, int height,
+                                                                     int lastThreeSimsMap_p, int partWidth, int height,
                                                                      bool moveByTcOrRc, int xFrom)
 {
-    int x = blockIdx.x * blockDim.x + threadIdx.x;
-    int y = blockIdx.y * blockDim.y + threadIdx.y;
-    int2 pix;
-    pix.x = x + xFrom;
-    pix.y = y;
+    const int tile_x = blockIdx.x * blockDim.x + threadIdx.x;
+    const int tile_y = blockIdx.y * blockDim.y + threadIdx.y;
 
-    if(x >= width || y >= height)
+    if(tile_x >= partWidth || tile_y >= height)
         return;
 
-    float midDepth = *get2DBufferAt(iodepthMap, iodepthMap_p, x, y);
-    float3 sims = *get2DBufferAt(lastThreeSimsMap, lastThreeSimsMap_p, x, y);
+    const int2 pix = make_int2(tile_x + xFrom, tile_y);
+
+    float midDepth = *get2DBufferAt(iodepthMap, iodepthMap_p, tile_x, tile_y);
+    float3 sims = *get2DBufferAt(lastThreeSimsMap, lastThreeSimsMap_p, tile_x, tile_y);
     float outDepth = midDepth;
     float outSim = sims.y;
 
@@ -156,8 +150,8 @@ __global__ void refine_computeDepthSimMapFromLastThreeSimsMap_kernel(int rc_cam_
         float3 pMid = get3DPointForPixelAndDepthFromRC(rc_cam_cache_idx, pix, midDepth);
         float3 pm1 = pMid;
         float3 pp1 = pMid;
-        move3DPointByTcOrRcPixStep(rc_cam_cache_idx, tc_cam_cache_idx, pix, pm1, -1.0f, moveByTcOrRc);
-        move3DPointByTcOrRcPixStep(rc_cam_cache_idx, tc_cam_cache_idx, pix, pp1, +1.0f, moveByTcOrRc);
+        move3DPointByTcOrRcPixStep(rc_cam_cache_idx, tc_cam_cache_idx, pm1, -1.0f, moveByTcOrRc);
+        move3DPointByTcOrRcPixStep(rc_cam_cache_idx, tc_cam_cache_idx, pp1, +1.0f, moveByTcOrRc);
 
         float3 depths;
         depths.x = size(pm1 - camsBasesDev[rc_cam_cache_idx].C);
@@ -171,8 +165,8 @@ __global__ void refine_computeDepthSimMapFromLastThreeSimsMap_kernel(int rc_cam_
         }
     }
 
-    *get2DBufferAt(osimMap, osimMap_p, x, y) = outSim;
-    *get2DBufferAt(iodepthMap, iodepthMap_p, x, y) = outDepth;
+    *get2DBufferAt(osimMap, osimMap_p, tile_x, tile_y) = outSim;
+    *get2DBufferAt(iodepthMap, iodepthMap_p, tile_x, tile_y) = outDepth;
 }
 
 } // namespace depthMap

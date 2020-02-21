@@ -654,8 +654,6 @@ bool PlaneSweepingCuda::refineRcTcDepthMap(bool useTcOrRcPixSize, int nStepsToRe
                                              int tc_global_id, int scale, int wsh,
                                              float gammaC, float gammaP, int xFrom, int wPart)
 {
-    // int w = _mp.getWidth(rc_global_id)/scale;
-    int w = wPart;
     int h = _mp.getHeight(rc_global_id) / scale;
 
     long t1 = clock();
@@ -669,8 +667,7 @@ bool PlaneSweepingCuda::refineRcTcDepthMap(bool useTcOrRcPixSize, int nStepsToRe
     ps_refineRcDepthMap(out_simMap.getDataWritable().data(),
                         out_rcDepthMap.getDataWritable().data(), nStepsToRefine,
                         _cams[rc_idx],
-                        _cams[tc_idx],
-                        w, h,
+                        _cams[tc_idx], wPart, h,
                         _mp.getWidth(rc_global_id)/scale, _mp.getHeight(rc_global_id)/scale,
                         _mp.getWidth(tc_global_id)/scale, _mp.getHeight(tc_global_id)/scale,
                         scale - 1, _CUDADeviceNo, _nImgsInGPUAtTime, _mp.verbose, wsh,

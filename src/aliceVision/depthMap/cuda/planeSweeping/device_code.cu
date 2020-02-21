@@ -82,9 +82,9 @@ __device__ void move3DPointByTcPixStep( int rc_cam_cache_idx,
     p = triangulateMatchRef(rc_cam_cache_idx, tc_cam_cache_idx, rp, tpd);
 }
 
-__device__ float move3DPointByTcOrRcPixStep( int rc_cam_cache_idx,
-                                             int tc_cam_cache_idx,
-                                             int2& pix, float3& p, float pixStep, bool moveByTcOrRc)
+__device__ float move3DPointByTcOrRcPixStep(int rc_cam_cache_idx,
+                                            int tc_cam_cache_idx,
+                                            float3& p, float pixStep, bool moveByTcOrRc)
 {
     if(moveByTcOrRc == true)
     {
