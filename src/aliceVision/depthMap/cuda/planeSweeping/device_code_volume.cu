@@ -128,13 +128,14 @@ __device__ float depthPlaneToDepth(
     const float2& pix,
     float fpPlaneDepth)
 {
-    float3 planen = M3x3mulV3(camsBasesDev[cam_cache_idx].iR, make_float3(0.0f, 0.0f, 1.0f));
+    const CameraStructBase& cam = camsBasesDev[cam_cache_idx];
+    float3 planen = M3x3mulV3(cam.iR, make_float3(0.0f, 0.0f, 1.0f));
     normalize(planen);
-    float3 planep = camsBasesDev[cam_cache_idx].C + planen * fpPlaneDepth;
-    float3 v = M3x3mulV2(camsBasesDev[cam_cache_idx].iP, pix);
+    float3 planep = cam.C + planen * fpPlaneDepth;
+    float3 v = M3x3mulV2(cam.iP, pix);
     normalize(v);
-    float3 p = linePlaneIntersect(camsBasesDev[cam_cache_idx].C, v, planep, planen);
-    float depth = size(camsBasesDev[cam_cache_idx].C - p);
+    float3 p = linePlaneIntersect(cam.C, v, planep, planen);
+    float depth = size(cam.C - p);
     return depth;
 }
 
