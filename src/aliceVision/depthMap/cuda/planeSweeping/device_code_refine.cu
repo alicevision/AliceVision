@@ -158,11 +158,7 @@ __global__ void refine_computeDepthSimMapFromLastThreeSimsMap_kernel(int rc_cam_
         depths.y = midDepth;
         depths.z = size(pp1 - camsBasesDev[rc_cam_cache_idx].C);
 
-        float refinedDepth = refineDepthSubPixel(depths, sims);
-        if(refinedDepth > 0.0f)
-        {
-            outDepth = refinedDepth;
-        }
+        outDepth = refineDepthSubPixel(depths, sims);
     }
 
     *get2DBufferAt(osimMap, osimMap_p, tile_x, tile_y) = outSim;
