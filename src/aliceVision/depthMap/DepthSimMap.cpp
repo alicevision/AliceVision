@@ -16,6 +16,7 @@
 
 #include <iostream>
 
+
 namespace aliceVision {
 namespace depthMap {
 
@@ -34,7 +35,7 @@ DepthSimMap::~DepthSimMap()
 {
 }
 
-DepthSim getPixelValueInterpolated(const StaticVector<DepthSim>& depthSimMap, double x, double y, int width, int height)
+ DepthSim getPixelValueInterpolated(const StaticVector<DepthSim>& depthSimMap, float x, float y, int width, int height)
 {
     // get the image index in the memory
 
@@ -47,6 +48,41 @@ DepthSim getPixelValueInterpolated(const StaticVector<DepthSim>& depthSimMap, do
     const DepthSim ru = depthSimMap[yp       * width + xp + 1];
     const DepthSim rd = depthSimMap[(yp + 1) * width + xp + 1];
     const DepthSim ld = depthSimMap[(yp + 1) * width + xp    ];
+
+    if(lu.depth < 0.0f || ru.depth < 0.0f ||
+        rd.depth < 0.0f || ld.depth < 0.0f)
+    {
+        DepthSim acc(0.0f, 0.0f);
+        int count = 0;
+        if(lu.depth > 0.0f)
+        {
+            acc = acc + lu;
+            ++count;
+        }
+        if(ru.depth > 0.0f)
+        {
+            acc = acc + ru;
+            ++count;
+        }
+        if(rd.depth > 0.0f)
+        {
+            acc = acc + rd;
+            ++count;
+        }
+        if(ld.depth > 0.0f)
+        {
+            acc = acc + ld;
+            ++count;
+        }
+        if(count != 0)
+        {
+            return acc / float(count);
+        }
+        else
+        {
+            return DepthSim(-1.0f, -1.0f);
+        }
+    }
 
     // bilinear interpolation
     const double ui = x - static_cast<float>(xp);
