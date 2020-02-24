@@ -60,12 +60,25 @@ public:
         out.sim = sim - v.sim;
         return out;
     }
-    inline DepthSim operator*(double v) const
+    inline DepthSim operator*(float v) const
     {
         DepthSim out;
         out.depth = depth * v;
         out.sim = sim * v;
         return out;
+    }
+    inline DepthSim operator/(float v) const
+    {
+        DepthSim out;
+        out.depth = depth / v;
+        out.sim = sim / v;
+        return out;
+    }
+    inline bool operator<(const DepthSim& other) const
+    {
+        if(depth == other.depth)
+            return sim < other.sim;
+        return (depth < other.depth);
     }
 };
 
