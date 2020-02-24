@@ -77,8 +77,6 @@ int main(int argc, char* argv[])
             "* ITERATIVE_UPDATE(" BOOST_PP_STRINGIZE(SDFilter::MeshFilterParameters::ITERATIVE_UPDATE) ") (default): ShapeUp styled iterative solver\n"
             "* POISSON_UPDATE(" BOOST_PP_STRINGIZE(SDFilter::MeshFilterParameters::POISSON_UPDATE) "): Poisson-based update from [Wang et al. 2015] \"Rolling guidance normal filter for geometric processing\"\n");
 
-//     [Wang et al. 2015] Rolling guidance normal filter for geometric processing
-
     po::options_description logParams("Log parameters");
     logParams.add_options()
       ("verboseLevel,v", po::value<std::string>(&verboseLevel)->default_value(verboseLevel),
