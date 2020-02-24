@@ -10,10 +10,11 @@ namespace depthMap {
 __global__ void refine_compUpdateYKNCCSimMapPatch_kernel(int rc_cam_cache_idx,
                                                          int tc_cam_cache_idx,
                                                          cudaTextureObject_t rc_tex, cudaTextureObject_t tc_tex,
-                                                         float* osimMap, int osimMap_p, float* odptMap, int odptMap_p,
-                                                         float* depthMap, int depthMap_p, int partWidth, int height,
+                                                         float* osimMap, int osimMap_p,
+                                                         float* odptMap, int odptMap_p,
+                                                         const float* depthMap, int depthMap_p, int partWidth, int height,
                                                          int wsh, float gammaC, float gammaP,
-                                                         float tcStep, int id,
+                                                         float tcStep,
                                                          bool moveByTcOrRc, int xFrom,
                                                          int rcWidth, int rcHeight,
                                                          int tcWidth, int tcHeight)
@@ -47,7 +48,7 @@ __global__ void refine_compUpdateYKNCCSimMapPatch_kernel(int rc_cam_cache_idx,
 
     float* osim_ptr = get2DBufferAt(osimMap, osimMap_p, tile_x, tile_y);
     float* odpt_ptr = get2DBufferAt(odptMap, odptMap_p, tile_x, tile_y);
-    if(id == 0)
+    if(tcStep == 0.0f)
     {
         // For the first iteration, we initialize the values
         *osim_ptr = osim;

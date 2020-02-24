@@ -660,8 +660,8 @@ void ps_refineRcDepthMap(float* out_osimMap_hmh,
     CudaDeviceMemoryPitched<float, 2> bestDptMap_dmp(CudaSize<2>(partWidth, height));
 
     clock_t tall = tic();
-
-    for(int i = 0; i < ntcsteps; ++i) // Default ntcsteps = 31
+    int halfNSteps = ((ntcsteps - 1) / 2) + 1; // Default ntcsteps = 31
+    for(int i = 0; i < halfNSteps; ++i)
     {
         refine_compUpdateYKNCCSimMapPatch_kernel<<<grid, block>>>(
             rc_cam.param_dev.i,
@@ -671,9 +671,17 @@ void ps_refineRcDepthMap(float* out_osimMap_hmh,
             bestDptMap_dmp.getBuffer(), bestDptMap_dmp.getPitch(),
             rcDepthMap_dmp.getBuffer(), rcDepthMap_dmp.getPitch(),
             partWidth, height, wsh, gammaC, gammaP,
-            (float)(i - (ntcsteps - 1) / 2), i, moveByTcOrRc, xFrom,
+            float(i), moveByTcOrRc, xFrom,
             rcWidth, rcHeight,
             tcWidth, tcHeight);
+    }
+    for(int i = 1; i < halfNSteps; ++i)
+    {
+        refine_compUpdateYKNCCSimMapPatch_kernel<<<grid, block>>>(
+            rc_cam.param_dev.i, tc_cam.param_dev.i, rc_tex, tc_tex, bestSimMap_dmp.getBuffer(),
+            bestSimMap_dmp.getPitch(), bestDptMap_dmp.getBuffer(), bestDptMap_dmp.getPitch(),
+            rcDepthMap_dmp.getBuffer(), rcDepthMap_dmp.getPitch(), partWidth, height, wsh, gammaC, gammaP,
+            float(-i), moveByTcOrRc, xFrom, rcWidth, rcHeight, tcWidth, tcHeight);
     }
 
     /*
