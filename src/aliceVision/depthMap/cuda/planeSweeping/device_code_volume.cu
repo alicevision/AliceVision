@@ -255,7 +255,7 @@ __global__ void volume_computeBestZInSlice_kernel(TSim* xzSlice, int xzSlice_p, 
 
     float bestCst = *get2DBufferAt(xzSlice, xzSlice_p, x, 0);
 
-    for(int z = 0; z < volDimZ; ++z)
+    for(int z = 1; z < volDimZ; ++z)
     {
         float cst = *get2DBufferAt(xzSlice, xzSlice_p, x, z);
         bestCst = cst < bestCst ? cst : bestCst;  // min(cst, bestCst);
