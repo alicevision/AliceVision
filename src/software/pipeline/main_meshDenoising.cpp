@@ -75,7 +75,7 @@ int main(int argc, char* argv[])
         ("meshUpdateMethod", po::value<int>(&meshUpdateMethod)->default_value(meshUpdateMethod),
             "Mesh Update Method: \n"
             "* ITERATIVE_UPDATE(" BOOST_PP_STRINGIZE(SDFilter::MeshFilterParameters::ITERATIVE_UPDATE) ") (default): ShapeUp styled iterative solver\n"
-            "* POISSON_UPDATE(" BOOST_PP_STRINGIZE(SDFilter::MeshFilterParameters::POISSON_UPDATE) "): Poisson-based update from [Wang et al. 2015]\n");
+            "* POISSON_UPDATE(" BOOST_PP_STRINGIZE(SDFilter::MeshFilterParameters::POISSON_UPDATE) "): Poisson-based update from [Wang et al. 2015] \"Rolling guidance normal filter for geometric processing\"\n");
 
 //     [Wang et al. 2015] Rolling guidance normal filter for geometric processing
 
