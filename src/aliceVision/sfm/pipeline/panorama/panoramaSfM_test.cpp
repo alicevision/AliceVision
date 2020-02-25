@@ -65,7 +65,7 @@ BOOST_AUTO_TEST_CASE(PANORAMA_SFM)
     const double epsilon = 1e-4;
 
     // Relative Rotation from H
-    {
+  /*  {
         RelativeRotationInfo rotationInfo{};
     ALICEVISION_LOG_INFO("\n\n###########################################\nUncalibrated from H");
         robustRelativeRotation_fromH(K1, K2, pts1, pts2,
@@ -76,9 +76,9 @@ BOOST_AUTO_TEST_CASE(PANORAMA_SFM)
 
         EXPECT_MATRIX_NEAR(rotation, rotationInfo._relativeRotation, epsilon);
 
-
+*/
         // test the calibrated version, compute normalized points for each view (by multiplying by the inverse of K) and estimate H and R
-    ALICEVISION_LOG_INFO("\n\n###########################################\nCalibrated from H");
+    /*ALICEVISION_LOG_INFO("\n\n###########################################\nCalibrated from H");
         robustRelativeRotation_fromH(Mat3::Identity(), Mat3::Identity(),
                               (K1.inverse()*pts1.colwise().homogeneous()).colwise().hnormalized(),
                               (K2.inverse()*pts2.colwise().homogeneous()).colwise().hnormalized(),
@@ -88,7 +88,7 @@ BOOST_AUTO_TEST_CASE(PANORAMA_SFM)
         ALICEVISION_LOG_INFO("rotation.inverse() * rotationInfo._relativeRotation:\n" << rotation.inverse() * rotationInfo._relativeRotation);
 
         EXPECT_MATRIX_NEAR(rotation, rotationInfo._relativeRotation, epsilon);
-    }
+    }*/
 
   /*
     // Relative Rotation from E
