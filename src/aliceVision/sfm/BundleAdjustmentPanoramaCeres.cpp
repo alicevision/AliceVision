@@ -271,10 +271,15 @@ private:
   std::shared_ptr<camera::EquiDistant> _intrinsic;
 };
 
-class CostPinHole : public ceres::SizedCostFunction<2, 9, 9, 6> {
+class CostPinHole : public ceres::CostFunction {
 public:
   CostPinHole(Vec2 fi, Vec2 fj, std::shared_ptr<camera::Pinhole> & intrinsic) : _fi(fi), _fj(fj), _intrinsic(intrinsic) {
 
+    set_num_residuals(2);
+
+    mutable_parameter_block_sizes()->push_back(9);
+    mutable_parameter_block_sizes()->push_back(9);
+    mutable_parameter_block_sizes()->push_back(intrinsic->getParams().size());    
   }
 
   bool Evaluate(double const * const * parameters, double * residuals, double ** jacobians) const {
@@ -291,7 +296,15 @@ public:
 
     _intrinsic->setScale(parameter_intrinsics[0], parameter_intrinsics[0]);
     _intrinsic->setOffset(parameter_intrinsics[1], parameter_intrinsics[2]);
-    _intrinsic->setDistortionParams({parameter_intrinsics[3], parameter_intrinsics[4], parameter_intrinsics[5]});
+
+    std::vector<double> distortion_params;
+    size_t params_size = _intrinsic->getParams().size();
+    size_t disto_size = _intrinsic->getDistortionParams().size();
+    size_t offset = params_size - disto_size;
+    for (size_t index = offset; index < params_size; index++) {
+      distortion_params.push_back(parameter_intrinsics[index]);
+    }
+    _intrinsic->setDistortionParams(distortion_params);
 
     Eigen::Matrix3d R = jRo * iRo.transpose();
     geometry::Pose3 T(R, Vec3({0,0,0}));
@@ -322,15 +335,14 @@ public:
     }
 
     if (jacobians[2] != nullptr) {
-      Eigen::Map<Eigen::Matrix<double, 2, 6, Eigen::RowMajor>> J(jacobians[2]);
-
+      Eigen::Map<Eigen::Matrix<double,  Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>> J(jacobians[2], 2, params_size);
       Eigen::Matrix<double, 2, 1> Jscale = _intrinsic->getDerivativeProjectWrtScale(T, pt_i_sphere) + _intrinsic->getDerivativeProjectWrtPoint(T, pt_i_sphere) * _intrinsic->getDerivativetoUnitSphereWrtPoint(pt_i_undist) * _intrinsic->getDerivativeRemoveDistoWrtPt(pt_i_cam) * _intrinsic->getDerivativeIma2CamWrtScale(pt_i);
       Eigen::Matrix<double, 2, 2> Jpp = _intrinsic->getDerivativeProjectWrtPrincipalPoint(T, pt_i_sphere) + _intrinsic->getDerivativeProjectWrtPoint(T, pt_i_sphere) * _intrinsic->getDerivativetoUnitSphereWrtPoint(pt_i_undist) * _intrinsic->getDerivativeRemoveDistoWrtPt(pt_i_cam) * _intrinsic->getDerivativeIma2CamWrtPrincipalPoint();
-      Eigen::Matrix<double, 2, 3> Jdisto = _intrinsic->getDerivativeProjectWrtDisto(T, pt_i_sphere) + _intrinsic->getDerivativeProjectWrtPoint(T, pt_i_sphere) * _intrinsic->getDerivativetoUnitSphereWrtPoint(pt_i_undist) * _intrinsic->getDerivativeRemoveDistoWrtDisto(pt_i_cam);
+      Eigen::Matrix<double, 2, Eigen::Dynamic> Jdisto = _intrinsic->getDerivativeProjectWrtDisto(T, pt_i_sphere) + _intrinsic->getDerivativeProjectWrtPoint(T, pt_i_sphere) * _intrinsic->getDerivativetoUnitSphereWrtPoint(pt_i_undist) * _intrinsic->getDerivativeRemoveDistoWrtDisto(pt_i_cam);
 
       J.block<2, 1>(0, 0) = Jscale;
       J.block<2, 2>(0, 1) = Jpp;
-      J.block<2, 3>(0, 3) = Jdisto;
+      J.block(0, 3, 2, disto_size) = Jdisto;
     }
 
     return true;
@@ -729,7 +741,6 @@ void BundleAdjustmentPanoramaCeres::addConstraints2DToProblem(const sfmData::SfM
     {
       ceres::CostFunction* costFunction = new CostPinHole(constraint.ObservationFirst.x, constraint.ObservationSecond.x, pinhole);
       problem.AddResidualBlock(costFunction, lossFunction, poseBlockPtr_1, poseBlockPtr_2, intrinsicBlockPtr_1);
-
       /* Symmetry */
       costFunction = new CostPinHole(constraint.ObservationSecond.x, constraint.ObservationFirst.x, pinhole);
       problem.AddResidualBlock(costFunction, lossFunction, poseBlockPtr_2, poseBlockPtr_1, intrinsicBlockPtr_1);
