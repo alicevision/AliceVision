@@ -159,7 +159,7 @@ void loadIntrinsic(IndexT& intrinsicId, std::shared_ptr<camera::IntrinsicBase>& 
   intrinsic->setSerialNumber(intrinsicTree.get<std::string>("serialNumber"));
   intrinsic->setInitializationMode(initializationMode);
   intrinsic->setSensorWidth(sensorWidth);
-  intrinsic->setSensorWidth(sensorHeight);
+  intrinsic->setSensorHeight(sensorHeight);
 
   // intrinsic lock
   if(intrinsicTree.get<bool>("locked", false)) {
