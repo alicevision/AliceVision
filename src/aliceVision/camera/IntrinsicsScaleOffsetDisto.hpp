@@ -28,6 +28,10 @@ public:
   _pDistortion(distortion) {
   }
 
+  virtual void assign(const IntrinsicBase& other) override {
+    *this = dynamic_cast<const IntrinsicsScaleOffsetDisto&>(other);
+  }
+
   virtual bool have_disto() const override {  
     return (!(_pDistortion == nullptr));
   }
@@ -167,6 +171,11 @@ public:
     }
 
     return this->_pDistortion->getDerivativeRemoveDistoWrtDisto(pt);
+  }
+
+  std::shared_ptr<Distortion> getDistortion()
+  {
+      return _pDistortion;
   }
 
 protected:

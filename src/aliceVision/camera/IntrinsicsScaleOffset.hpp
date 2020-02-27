@@ -24,6 +24,11 @@ public:
   IntrinsicBase(w, h), _scale_x(scale_x), _scale_y(scale_y), _offset_x(offset_x), _offset_y(offset_y) {
   }
 
+  void copyFrom(const IntrinsicsScaleOffset& other)
+  {
+    *this = other;
+  }
+
   inline double focal() const {
     return _scale_x;
   }

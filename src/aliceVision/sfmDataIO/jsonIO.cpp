@@ -174,7 +174,7 @@ void loadIntrinsic(IndexT& intrinsicId, std::shared_ptr<camera::IntrinsicBase>& 
     intrinsicWithScale->setInitialScale(intrinsicTree.get<double>("pxInitialFocalLength"));
   }
 
-  /*Load distortion*/
+  // Load distortion
   std::shared_ptr<camera::IntrinsicsScaleOffsetDisto> intrinsicWithDistoEnabled = std::dynamic_pointer_cast<camera::IntrinsicsScaleOffsetDisto>(intrinsic);
   if (intrinsicWithDistoEnabled != nullptr) {
     std::vector<double> distortionParams;
@@ -186,7 +186,7 @@ void loadIntrinsic(IndexT& intrinsicId, std::shared_ptr<camera::IntrinsicBase>& 
     intrinsicWithDistoEnabled->setDistortionParams(distortionParams);
   }
 
-  /*Load distortion*/
+  // Load EquiDistant params
   std::shared_ptr<camera::EquiDistant> intrinsicEquiDistant = std::dynamic_pointer_cast<camera::EquiDistant>(intrinsic);
   if (intrinsicEquiDistant != nullptr) {
     intrinsicEquiDistant->setCenterX(intrinsicTree.get<double>("fisheyeCenterX", 0.0));
