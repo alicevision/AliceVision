@@ -132,8 +132,8 @@ if(ALICEVISION_BUILD_SFM)
           aliceVision_sfmDataIO
           ${Boost_LIBRARIES}
   )
-  alicevision_add_software(aliceVision_panoramaExternalInfo
-    SOURCE main_panoramaExternalInfo.cpp
+  alicevision_add_software(aliceVision_panoramaInit
+    SOURCE main_panoramaInit.cpp
     FOLDER ${FOLDER_SOFTWARE_PIPELINE}
     LINKS aliceVision_system
           aliceVision_image

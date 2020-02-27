@@ -30,7 +30,7 @@ int main(int argc, char * argv[])
   // Command line parameters
   po::options_description allParams(
     "Parse external information about cameras used in a panorama.\n"
-    "AliceVision PanoramaExternalInfo");
+    "AliceVision PanoramaInit");
 
   po::options_description requiredParams("Required parameters");
   requiredParams.add_options()
