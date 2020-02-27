@@ -8,9 +8,9 @@ namespace camera {
 
 class Distortion {
 public:
-  Distortion() {
+  Distortion() = default;
 
-  }
+  virtual Distortion* clone() const = 0;
 
   std::vector<double> & getParameters() {
     return _distortionParams;

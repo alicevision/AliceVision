@@ -53,6 +53,8 @@ public:
     _distortionParams = {p1};
   }
 
+  DistortionRadialK1* clone() const override { return new DistortionRadialK1(*this); }
+
   /// Add distortion to the point p (assume p is in the camera frame [normalized coordinates])
   virtual Vec2 add_disto(const Vec2 & p) const override
   {
@@ -181,6 +183,8 @@ public:
   explicit DistortionRadialK3(double p1, double p2, double p3) {
     _distortionParams = {p1, p2, p3};
   }
+
+  DistortionRadialK3* clone() const override { return new DistortionRadialK3(*this); }
 
   /// Add distortion to the point p (assume p is in the camera frame [normalized coordinates])
   virtual Vec2 add_disto(const Vec2 & p) const override
@@ -343,6 +347,8 @@ public:
   explicit DistortionRadialK3PT(double p1, double p2, double p3) {
     _distortionParams = {p1, p2, p3};
   }
+
+  DistortionRadialK3PT* clone() const override { return new DistortionRadialK3PT(*this); }
 
   /// Add distortion to the point p (assume p is in the camera frame [normalized coordinates])
   virtual Vec2 add_disto(const Vec2 & p) const override
