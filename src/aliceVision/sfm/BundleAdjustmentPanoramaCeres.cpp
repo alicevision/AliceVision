@@ -134,7 +134,7 @@ Eigen::Matrix<double, 3, 9> dlogmdr(const Eigen::Matrix3d & R) {
 	resnoscale(1) = p2;
 	resnoscale(2) = p3;
 
-  Eigen::Matrix<double, 3, 3> dresdp = Eigen::Matrix3d::Identity() * scale;
+  /*Eigen::Matrix<double, 3, 3> dresdp = Eigen::Matrix3d::Identity() * scale;*/
 	Eigen::Matrix<double, 3, 9> dpdmat;
   dpdmat.fill(0);
 	dpdmat(0, 5) = 1;
@@ -157,7 +157,7 @@ Eigen::Matrix<double, 3, 9> dlogmdr(const Eigen::Matrix3d & R) {
 
 class CostRotationPrior : public ceres::SizedCostFunction<3, 9, 9> {
 public:
-  CostRotationPrior(const Eigen::Matrix3d & two_R_one) : _two_R_one(two_R_one) {
+  explicit CostRotationPrior(const Eigen::Matrix3d & two_R_one) : _two_R_one(two_R_one) {
 
   }
 

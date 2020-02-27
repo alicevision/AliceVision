@@ -18,7 +18,7 @@ public:
     _distortionParams = {0.0};
   }
 
-  DistortionFisheye1(double p1) {
+  explicit DistortionFisheye1(double p1) {
     _distortionParams = {p1};
   }
 

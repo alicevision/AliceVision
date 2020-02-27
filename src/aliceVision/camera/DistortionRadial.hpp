@@ -49,7 +49,7 @@ public:
     _distortionParams = {0.0};
   }
 
-  DistortionRadialK1(double p1) {
+  explicit DistortionRadialK1(double p1) {
     _distortionParams = {p1};
   }
 
@@ -91,7 +91,7 @@ public:
     const double r = sqrt(p(0)*p(0) + p(1)*p(1));    
     const double r2 = r * r;
     
-    const double r_coeff = 1.0 + k1 * r2;
+    /*const double r_coeff = 1.0 + k1 * r2;*/
 
     Eigen::MatrixXd ret = p * 2.0 * k1 * r;
 
@@ -156,7 +156,7 @@ public:
     _distortionParams = {0.0, 0.0, 0.0};
   }
 
-  DistortionRadialK3(double p1, double p2, double p3) {
+  explicit DistortionRadialK3(double p1, double p2, double p3) {
     _distortionParams = {p1, p2, p3};
   }
 
@@ -213,8 +213,7 @@ public:
     const double r4 = r2 * r2;
     const double r6 = r4 * r2;
     
-
-    const double r_coeff = 1.0 + k1 * r2 + k2 * r4 + k3 * r6;
+    /*const double r_coeff = 1.0 + k1 * r2 + k2 * r4 + k3 * r6;*/
 
     Eigen::Matrix<double, 1, 3> d_r_coeff_d_params;
     d_r_coeff_d_params(0, 0) = r2;
@@ -297,7 +296,7 @@ public:
     _distortionParams = {0.0, 0.0, 0.0};
   }
 
-  DistortionRadialK3PT(double p1, double p2, double p3) {
+  explicit DistortionRadialK3PT(double p1, double p2, double p3) {
     _distortionParams = {p1, p2, p3};
   }
 
@@ -361,7 +360,7 @@ public:
     
     const double denum = (1.0 + k1 + k2 + k3);
     const double num = (1.0 + k1*r2 + k2*r4 + k3*r6);
-    const double r_coeff = num / denum;
+    /*const double r_coeff = num / denum;*/
 
     double denum2 = denum * denum;
     Eigen::Matrix<double, 1, 3> d_num_d_params;
@@ -391,8 +390,6 @@ public:
 
   virtual Eigen::MatrixXd getDerivativeRemoveDistoWrtDisto(const Vec2 & p) const override {
     
-    Vec2 p_undist = remove_disto(p);
-
     const double k1 = _distortionParams[0];
     const double k2 = _distortionParams[1];
     const double k3 = _distortionParams[2];

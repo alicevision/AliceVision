@@ -142,7 +142,7 @@ aliceVision::EstimationStatus robustHomographyEstimationAC(const Mat2X &x1,
 
     KernelType kernel(x1, imgSize1.first, imgSize1.second, x2, imgSize2.first, imgSize2.second, false); // configure as point to point error model.
     
-    const std::pair<double, double> ACRansacOut = robustEstimation::ACRANSAC(kernel, vec_inliers, 1024, &H, std::numeric_limits<double>::infinity());
+    /*const std::pair<double, double> ACRansacOut = */robustEstimation::ACRANSAC(kernel, vec_inliers, 1024, &H, std::numeric_limits<double>::infinity());
 
     const bool valid{!vec_inliers.empty()};
     

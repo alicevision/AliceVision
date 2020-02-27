@@ -58,7 +58,9 @@ class Pinhole : public IntrinsicsScaleOffsetDisto
   Mat3 K() const { 
     Mat3 K;
     
-    K  << _scale_x, 0., _offset_y, 0., _scale_y, _offset_y, 0., 0., 1.;
+    K  << _scale_x, 0.0, _offset_y, 
+          0.0, _scale_y, _offset_y, 
+          0.0, 0.0, 1.0;
 
     return K; 
   }
@@ -138,7 +140,7 @@ class Pinhole : public IntrinsicsScaleOffsetDisto
     const Vec2 P = X.head<2>() / X(2);
 
     Vec2 distorted = this->add_disto(P);
-    Vec2 impt = this->cam2ima(distorted);
+    /*Vec2 impt = this->cam2ima(distorted)*/;
 
     return getDerivativeCam2ImaWrtPoint() * getDerivativeAddDistoWrtDisto(P);
   }

@@ -150,7 +150,7 @@ int main2(int argc, char **argv) {
     }
   }
 
-  std::vector<double> params = intrinsic->getParams();
+  /*std::vector<double> params = intrinsic->getParams();*/
   
   SO3Matrix r_est[count];
   for (int i = 0; i < count; i++) {

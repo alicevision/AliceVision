@@ -114,8 +114,10 @@ inline void EncodeEpipolarSphericalEquation(const TMatX &x1, const TMatX &x2, TM
       xx2(2) * xx1(0),
       xx2(2) * xx1(1),
       xx2(2) * xx1(2);
-    if(weights)
+
+    if (weights) {
       A->row(i) *= (*weights)[i];
+    }
   }
 }
 
