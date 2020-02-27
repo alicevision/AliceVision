@@ -168,7 +168,7 @@ aliceVision::EstimationStatus robustRotationEstimationAC(const Mat3X &x1, const 
 
     KernelType kernel(x1, x2); // configure as point to point error model.
     
-    const std::pair<double, double> ACRansacOut = robustEstimation::ACRANSAC(kernel, vec_inliers, 1024, &R, std::numeric_limits<double>::infinity());
+    /*const std::pair<double, double> ACRansacOut =*/robustEstimation::ACRANSAC(kernel, vec_inliers, 1024, &R, std::numeric_limits<double>::infinity());
 
     const bool valid{!vec_inliers.empty()};
 
