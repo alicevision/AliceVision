@@ -205,7 +205,7 @@ void AlembicExporter::DataImpl::addCamera(const std::string& name,
 
     // Add sensor width (largest image side) in pixels as custom property
     std::vector<::uint32_t> sensorSize_pix = {intrinsicCasted->w(), intrinsicCasted->h()};
-    std::vector<double> sensorSize_mm = {intrinsicCasted->sensorWidth(), intrinsicCasted->sensorHeight()};
+    std::vector<double> sensorSize_mm = {sensorWidth, sensorHeight};
 
     OUInt32ArrayProperty(userProps, "mvg_sensorSizePix").set(sensorSize_pix);
     ODoubleArrayProperty(userProps, "mvg_sensorSizeMm").set(sensorSize_mm);

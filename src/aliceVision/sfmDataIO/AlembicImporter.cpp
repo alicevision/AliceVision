@@ -486,6 +486,8 @@ bool readCamera(const ICamera& camera, const M44d& mat, sfmData::SfMData& sfmDat
 
     intrinsic->setWidth(sensorSize_pix.at(0));
     intrinsic->setHeight(sensorSize_pix.at(1));
+    intrinsic->setSensorWidth(sensorSize_mm.at(0));
+    intrinsic->setSensorHeight(sensorSize_mm.at(1));
     intrinsic->updateFromParams(mvg_intrinsicParams);
     intrinsic->setInitializationMode(EIntrinsicInitMode_stringToEnum(mvg_intrinsicInitializationMode));
 

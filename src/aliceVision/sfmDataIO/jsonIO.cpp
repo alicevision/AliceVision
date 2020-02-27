@@ -158,6 +158,8 @@ void loadIntrinsic(IndexT& intrinsicId, std::shared_ptr<camera::IntrinsicBase>& 
   
   intrinsic->setSerialNumber(intrinsicTree.get<std::string>("serialNumber"));
   intrinsic->setInitializationMode(initializationMode);
+  intrinsic->setSensorWidth(sensorWidth);
+  intrinsic->setSensorWidth(sensorHeight);
 
   // intrinsic lock
   if(intrinsicTree.get<bool>("locked", false)) {
@@ -498,8 +500,6 @@ bool loadJSON(sfmData::SfMData& sfmData, const std::string& filename, ESfMData p
         loadView(incompleteViews.at(viewIndex), viewNode.second);
         ++viewIndex;
       }
-
-      size_t count_intrinsics = sfmData.getIntrinsics().size();
 
       // update incomplete views
       #pragma omp parallel for
