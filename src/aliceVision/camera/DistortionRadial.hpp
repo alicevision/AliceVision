@@ -69,6 +69,11 @@ public:
     const double k1 = _distortionParams[0];
 
     const double r = sqrt(p(0)*p(0) + p(1)*p(1));
+    const double eps = 1e-8;
+    if (r < eps) {
+      return Eigen::Matrix2d::Identity();
+    }
+
     Eigen::Matrix<double, 1, 2> d_r_d_p;
     d_r_d_p(0) = p(0) / r;
     d_r_d_p(1) = p(1) / r;
@@ -88,7 +93,12 @@ public:
     
     const double k1 = _distortionParams[0];
 
-    const double r = sqrt(p(0)*p(0) + p(1)*p(1));    
+    const double r = sqrt(p(0)*p(0) + p(1)*p(1));   
+    const double eps = 1e-8;
+    if (r < eps) {
+      return Eigen::Matrix<double, 2, 1>::Zero();
+    }
+
     const double r2 = r * r;
     
     /*const double r_coeff = 1.0 + k1 * r2;*/
@@ -110,6 +120,12 @@ public:
 
   virtual Eigen::Matrix2d getDerivativeRemoveDistoWrtPt(const Vec2 & p) const override {
 
+    const double r = sqrt(p(0)*p(0) + p(1)*p(1));
+    const double eps = 1e-8;
+    if (r < eps) {
+      return Eigen::Matrix2d::Identity();
+    }
+
     Vec2 undist = remove_disto(p);
 
     Eigen::Matrix2d Jinv = getDerivativeAddDistoWrtPt(undist);
@@ -119,11 +135,17 @@ public:
 
   virtual Eigen::MatrixXd getDerivativeRemoveDistoWrtDisto(const Vec2 & p) const override {
     
+    double r_dist = sqrt(p(0)*p(0) + p(1)*p(1));
+    const double eps = 1e-8;
+    if (r_dist < eps) {
+      return Eigen::Matrix<double, 2, 1>::Zero();
+    }
+
     Vec2 p_undist = remove_disto(p);
 
     const double k1 = _distortionParams[0];
 
-    const double r = sqrt(p(0)*p(0) + p(1)*p(1));
+    const double r = sqrt(p_undist(0)*p_undist(0) + p_undist(1)*p_undist(1));
     const double r2 = r * r;
     
     const double r_coeff = 1.0 + k1 * r2;
@@ -184,6 +206,11 @@ public:
     const double k3 = _distortionParams[2];
 
     const double r = sqrt(p(0)*p(0) + p(1)*p(1));
+    const double eps = 1e-8;
+    if (r < eps) {
+      return Eigen::Matrix2d::Identity();
+    }
+
     Eigen::Matrix<double, 1, 2> d_r_d_p;
     d_r_d_p(0) = p(0) / r;
     d_r_d_p(1) = p(1) / r;
@@ -209,6 +236,11 @@ public:
     const double k3 = _distortionParams[2];
 
     const double r = sqrt(p(0)*p(0) + p(1)*p(1));
+    const double eps = 1e-8;
+    if (r < eps) {
+      return Eigen::Matrix<double, 2, 3>::Zero();
+    }
+
     const double r2 = r * r;
     const double r4 = r2 * r2;
     const double r6 = r4 * r2;
@@ -240,6 +272,12 @@ public:
 
   virtual Eigen::Matrix2d getDerivativeRemoveDistoWrtPt(const Vec2 & p) const override {
 
+    double r = sqrt(p(0)*p(0) + p(1)*p(1));
+    const double eps = 1e-8;
+    if (r < eps) {
+      return Eigen::Matrix2d::Identity();
+    }
+
     Vec2 undist = remove_disto(p);
 
     Eigen::Matrix2d Jinv = getDerivativeAddDistoWrtPt(undist);
@@ -249,13 +287,19 @@ public:
 
   virtual Eigen::MatrixXd getDerivativeRemoveDistoWrtDisto(const Vec2 & p) const override {
     
+    double r_dist = sqrt(p(0)*p(0) + p(1)*p(1));
+    const double eps = 1e-8;
+    if (r_dist < eps) {
+      return Eigen::Matrix<double, 2, 3>::Zero();
+    }
+
     Vec2 p_undist = remove_disto(p);
 
     const double k1 = _distortionParams[0];
     const double k2 = _distortionParams[1];
     const double k3 = _distortionParams[2];
 
-    const double r = sqrt(p(0)*p(0) + p(1)*p(1));
+    const double r = sqrt(p_undist(0) * p_undist(0) + p_undist(1) * p_undist(1));
     const double r2 = r * r;
     const double r4 = r2 * r2;
     const double r6 = r4 * r2;
@@ -354,6 +398,11 @@ public:
     const double k3 = _distortionParams[2];
 
     const double r = sqrt(p(0)*p(0) + p(1)*p(1));
+    const double eps = 1e-8;
+    if (r < eps) {
+      return Eigen::Matrix<double, 2, 3>::Zero();
+    }
+
     const double r2 = r * r;
     const double r4 = r2 * r2;
     const double r6 = r4 * r2;
@@ -381,6 +430,12 @@ public:
 
   virtual Eigen::Matrix2d getDerivativeRemoveDistoWrtPt(const Vec2 & p) const override {
 
+    double r_dist = sqrt(p(0)*p(0) + p(1)*p(1));
+    const double eps = 1e-8;
+    if (r_dist < eps) {
+      return Eigen::Matrix2d::Identity();
+    }
+
     Vec2 undist = remove_disto(p);
 
     Eigen::Matrix2d Jinv = getDerivativeAddDistoWrtPt(undist);
@@ -394,7 +449,15 @@ public:
     const double k2 = _distortionParams[1];
     const double k3 = _distortionParams[2];
 
-    const double r = sqrt(p(0)*p(0) + p(1)*p(1));
+    double r_dist = sqrt(p(0)*p(0) + p(1)*p(1));
+    const double eps = 1e-8;
+    if (r_dist < eps) {
+      return Eigen::Matrix<double, 2, 3>::Zero();
+    }
+
+    Vec2 p_undist = remove_disto(p);
+    double r = sqrt(p_undist(0) * p_undist(0) + p_undist(1) * p_undist(1));
+
     const double r2 = r * r;
     const double r4 = r2 * r2;
     const double r6 = r4 * r2;
@@ -423,8 +486,6 @@ public:
     ret(1, 0) = - (p(1) * d_rcoeff_d_params(0, 0)) / (r_coeff * r_coeff);
     ret(1, 1) = - (p(1) * d_rcoeff_d_params(0, 1)) / (r_coeff * r_coeff);
     ret(1, 2) = - (p(1) * d_rcoeff_d_params(0, 2)) / (r_coeff * r_coeff);
-
-    
 
     return ret;
   }
