@@ -135,7 +135,7 @@ class Pinhole : public IntrinsicsScaleOffsetDisto
     return getDerivativeCam2ImaWrtPoint() * getDerivativeAddDistoWrtPt(P) * d_P_d_X * d_X_d_P;
   }
 
-  Eigen::Matrix<double, 2, 3> getDerivativeProjectWrtDisto(const geometry::Pose3& pose, const Vec3 & pt) {
+  Eigen::Matrix<double, 2, Eigen::Dynamic> getDerivativeProjectWrtDisto(const geometry::Pose3& pose, const Vec3 & pt) {
     const Vec3 X = pose.rotation() * pt; // apply pose
     const Vec2 P = X.head<2>() / X(2);
 
