@@ -12,24 +12,31 @@
 namespace aliceVision {
 namespace camera {
 
-class DistortionFisheye : public Distortion {
+class DistortionFisheye : public Distortion
+{
 public:
-  DistortionFisheye() {
+  DistortionFisheye()
+  {
     _distortionParams = {0.0, 0.0, 0.0, 0.0};
   }
 
-  DistortionFisheye(double p1, double p2, double p3, double p4) {
+  DistortionFisheye(double p1, double p2, double p3, double p4)
+  {
     _distortionParams = {p1, p2, p3, p4};
   }
 
-  DistortionFisheye* clone() const override { return new DistortionFisheye(*this); }
+  DistortionFisheye* clone() const override
+  {
+      return new DistortionFisheye(*this);
+  }
 
   /// Add distortion to the point p (assume p is in the camera frame [normalized coordinates])
-  virtual Vec2 add_disto(const Vec2 & p) const override
+  Vec2 add_disto(const Vec2 & p) const override
   {
     const double eps = 1e-8;
     const double r = std::hypot(p(0), p(1));
-    if (r < eps) {
+    if (r < eps)
+    {
       return p;
     }
 
@@ -53,46 +60,49 @@ public:
     return p * cdist;
   }
 
-   virtual Eigen::Matrix2d getDerivativeAddDistoWrtPt(const Vec2 & p) const override {
+   Eigen::Matrix2d getDerivativeAddDistoWrtPt(const Vec2 & p) const override
+  {
+      const double eps = 1e-8;
+      const double r = sqrt(p(0) * p(0) + p(1) * p(1));
+      if(r < eps)
+      {
+          return Eigen::Matrix2d::Identity();
+      }
 
-    const double eps = 1e-8;
-    const double r = sqrt(p(0)*p(0) + p(1)*p(1));
-    if (r < eps) {
-      return Eigen::Matrix2d::Identity();
-    }
+      const double k1 = _distortionParams.at(0);
+      const double k2 = _distortionParams.at(1);
+      const double k3 = _distortionParams.at(2);
+      const double k4 = _distortionParams.at(3);
 
-    const double k1 = _distortionParams.at(0);
-    const double k2 = _distortionParams.at(1);
-    const double k3 = _distortionParams.at(2);
-    const double k4 = _distortionParams.at(3);
-    
-    const double theta = std::atan(r);
-    const double theta2 = theta*theta;
-    const double theta3 = theta2*theta;
-    const double theta4 = theta2*theta2;
-    const double theta5 = theta4*theta;
-    const double theta6 = theta3*theta3;
-    const double theta7 = theta6*theta;
-    const double theta8 = theta4*theta4;
-    const double theta9 = theta8*theta;
-    const double theta_dist = theta + k1*theta3 + k2*theta5 + k3*theta7 + k4*theta9;
-    const double cdist = theta_dist / r;
+      const double theta = std::atan(r);
+      const double theta2 = theta * theta;
+      const double theta3 = theta2 * theta;
+      const double theta4 = theta2 * theta2;
+      const double theta5 = theta4 * theta;
+      const double theta6 = theta3 * theta3;
+      const double theta7 = theta6 * theta;
+      const double theta8 = theta4 * theta4;
+      const double theta9 = theta8 * theta;
+      const double theta_dist = theta + k1 * theta3 + k2 * theta5 + k3 * theta7 + k4 * theta9;
+      const double cdist = theta_dist / r;
 
-    double d_theta_dist_d_theta = 1.0 + 3.0*k1*theta2 + 5.0*k2*theta4 + 7.0*k3*theta6 + 9.0*k4*theta8;
-    Eigen::Matrix<double, 1, 2> d_r_d_p;
-    d_r_d_p(0) = p(0) / r;
-    d_r_d_p(1) = p(1) / r;
+      const double d_theta_dist_d_theta = 1.0 + 3.0 * k1 * theta2 + 5.0 * k2 * theta4 + 7.0 * k3 * theta6 + 9.0 * k4 * theta8;
+      Eigen::Matrix<double, 1, 2> d_r_d_p;
+      d_r_d_p(0) = p(0) / r;
+      d_r_d_p(1) = p(1) / r;
 
-    double d_cdist_d_r = -theta_dist / (r * r);
-    double d_cdist_d_theta_dist = 1.0 / r;
-    double d_theta_d_r = 1.0 / (r * r + 1.0);
+      const double d_cdist_d_r = -theta_dist / (r * r);
+      const double d_cdist_d_theta_dist = 1.0 / r;
+      const double d_theta_d_r = 1.0 / (r * r + 1.0);
 
-    Eigen::Matrix<double, 1, 2> d_cdist_d_p = d_cdist_d_r * d_r_d_p + d_cdist_d_theta_dist * d_theta_dist_d_theta * d_theta_d_r * d_r_d_p;    
+      const Eigen::Matrix<double, 1, 2> d_cdist_d_p =
+          d_cdist_d_r * d_r_d_p + d_cdist_d_theta_dist * d_theta_dist_d_theta * d_theta_d_r * d_r_d_p;
 
-    return Eigen::Matrix2d::Identity() * cdist + p * d_cdist_d_p;
+      return Eigen::Matrix2d::Identity() * cdist + p * d_cdist_d_p;
   }
 
-  virtual Eigen::MatrixXd getDerivativeAddDistoWrtDisto(const Vec2 & p) const  override {
+  Eigen::MatrixXd getDerivativeAddDistoWrtDisto(const Vec2 & p) const  override
+  {
     
     const double eps = 1e-8;
     const double k1 = _distortionParams.at(0);
@@ -101,7 +111,8 @@ public:
     const double k4 = _distortionParams.at(3);
 
     const double r = sqrt(p(0)*p(0) + p(1)*p(1));
-    if (r < eps) {
+    if (r < eps)
+    {
       return Eigen::Matrix<double, 2, 4>::Zero();
     }
 
@@ -115,7 +126,7 @@ public:
     const double theta8 = theta4*theta4;
     const double theta9 = theta8*theta;
 
-    double d_cdist_d_theta_dist = 1.0 / r;
+    const double d_cdist_d_theta_dist = 1.0 / r;
 
     Eigen::Matrix<double, 1, 4> d_r_theta_dist_d_params;
     d_r_theta_dist_d_params(0, 0) = theta3;
@@ -123,13 +134,14 @@ public:
     d_r_theta_dist_d_params(0, 2) = theta7;
     d_r_theta_dist_d_params(0, 3) = theta9;
 
-    Eigen::MatrixXd ret = p * d_cdist_d_theta_dist * d_r_theta_dist_d_params;
+    const Eigen::MatrixXd ret = p * d_cdist_d_theta_dist * d_r_theta_dist_d_params;
 
     return ret;
   }
 
   /// Remove distortion (return p' such that disto(p') = p)
-  virtual Vec2 remove_disto(const Vec2& p) const override {
+  Vec2 remove_disto(const Vec2& p) const override
+  {
     const double eps = 1e-8;
     double scale = 1.0;
     const double theta_dist = std::hypot(p[0], p[1]);
@@ -149,21 +161,23 @@ public:
     return p * scale;
   }
 
-  virtual Eigen::Matrix2d getDerivativeRemoveDistoWrtPt(const Vec2 & p) const override {
+  Eigen::Matrix2d getDerivativeRemoveDistoWrtPt(const Vec2 & p) const override
+  {
     const double eps = 1e-8;
     const double r = sqrt(p(0)*p(0) + p(1)*p(1));
-    if (r < eps) {
+    if (r < eps)
+    {
       return Eigen::Matrix2d::Identity();
     }
 
-    Vec2 undist = remove_disto(p);
+    const Vec2 undist = remove_disto(p);
 
-    Eigen::Matrix2d Jinv = getDerivativeAddDistoWrtPt(undist);
+    const Eigen::Matrix2d Jinv = getDerivativeAddDistoWrtPt(undist);
 
     return Jinv.inverse();
   }
 
-  virtual Eigen::MatrixXd getDerivativeRemoveDistoWrtDisto(const Vec2 & p) const override {
+  Eigen::MatrixXd getDerivativeRemoveDistoWrtDisto(const Vec2 & p) const override {
     
     double r_dist = sqrt(p(0)*p(0) + p(1)*p(1));
     const double eps = 1e-8;
@@ -171,8 +185,8 @@ public:
       return Eigen::Matrix<double, 2, 4>::Zero();
     }
 
-    Vec2 p_undist = remove_disto(p);
-    double r = sqrt(p_undist(0) * p_undist(0) + p_undist(1) * p_undist(1));
+    const Vec2 p_undist = remove_disto(p);
+    const double r = sqrt(p_undist(0) * p_undist(0) + p_undist(1) * p_undist(1));
 
     const double k1 = _distortionParams.at(0);
     const double k2 = _distortionParams.at(1);
