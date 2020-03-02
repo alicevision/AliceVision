@@ -64,6 +64,8 @@ public:
 
         return d;
     }
+
+    ~DistortionBrown() override = default;
 };
 
 } // namespace camera
