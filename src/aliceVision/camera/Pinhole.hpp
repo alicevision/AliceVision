@@ -37,7 +37,7 @@ class Pinhole : public IntrinsicsScaleOffsetDisto
   {
   }
 
-  virtual ~Pinhole() {}
+  ~Pinhole() override = default;
 
   Pinhole* clone() const override
   {
@@ -45,7 +45,7 @@ class Pinhole : public IntrinsicsScaleOffsetDisto
   }
 
   void assign(const IntrinsicBase& other) override
-  { 
+  {
     *this = dynamic_cast<const Pinhole&>(other); 
   }
   
