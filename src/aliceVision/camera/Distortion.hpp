@@ -61,6 +61,7 @@ public:
         return Eigen::MatrixXd(0, 0);
     }
 
+    virtual ~Distortion() = default;
 
 protected:
     std::vector<double> _distortionParams{};
