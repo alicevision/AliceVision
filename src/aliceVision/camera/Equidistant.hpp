@@ -215,7 +215,6 @@ public:
     P(1) = sin(angle_radial) * radius;
 
     const Vec2 distorted = this->add_disto(P);
-    const Vec2 impt = this->cam2ima(distorted);
 
     return getDerivativeCam2ImaWrtPoint() * getDerivativeAddDistoWrtDisto(P);
   }
@@ -247,8 +246,6 @@ public:
     d_P_d_radius(0, 0) = cos(angle_radial);
     d_P_d_radius(1, 0) = sin(angle_radial);
 
-    const Vec2 distorted = this->add_disto(P);
-    /*Vec2 impt = this->cam2ima(distorted);*/
 
     Eigen::Matrix<double, 1, 1> d_radius_d_fov;
     d_radius_d_fov(0, 0) = (- 2.0 * angle_Z / (fov * fov));
@@ -295,11 +292,6 @@ public:
 
     const double angle_radial = atan2(pt(1), pt(0));
     const double angle_Z = pt.norm() * 0.5 * fov;
-
-    Vec3 ret;
-    ret(0) = cos(angle_radial) /** / 1.0 / **/ * sin(angle_Z);
-    ret(1) = sin(angle_radial) /** / 1.0 / **/ * sin(angle_Z);
-    ret(2) = cos(angle_Z);
 
     Eigen::Matrix<double, 3, 2> d_ret_d_angles;
     d_ret_d_angles(0, 0) = -sin(angle_radial) * sin(angle_Z);

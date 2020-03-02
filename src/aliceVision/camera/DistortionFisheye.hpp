@@ -105,10 +105,6 @@ public:
   {
     
     const double eps = 1e-8;
-    const double k1 = _distortionParams.at(0);
-    const double k2 = _distortionParams.at(1);
-    const double k3 = _distortionParams.at(2);
-    const double k4 = _distortionParams.at(3);
 
     const double r = sqrt(p(0)*p(0) + p(1)*p(1));
     if (r < eps)

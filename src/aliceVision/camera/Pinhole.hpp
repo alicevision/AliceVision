@@ -134,9 +134,6 @@ class Pinhole : public IntrinsicsScaleOffsetDisto
     d_P_d_X(1, 1) = 1 / X(2);
     d_P_d_X(1, 2) = - X(1) / (X(2) * X(2));
 
-    const Vec2 distorted = this->add_disto(P);
-    const Vec2 impt = this->cam2ima(distorted);
-
     return getDerivativeCam2ImaWrtPoint() * getDerivativeAddDistoWrtPt(P) * d_P_d_X * d_X_d_P;
   }
 
@@ -144,8 +141,6 @@ class Pinhole : public IntrinsicsScaleOffsetDisto
   {
     const Vec3 X = pose.rotation() * pt; // apply pose
     const Vec2 P = X.head<2>() / X(2);
-
-    const Vec2 distorted = this->add_disto(P);
 
     return getDerivativeCam2ImaWrtPoint() * getDerivativeAddDistoWrtDisto(P);
   }
