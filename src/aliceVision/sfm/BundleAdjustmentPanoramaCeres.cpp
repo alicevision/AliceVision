@@ -26,7 +26,7 @@ namespace aliceVision {
 
 class SO3Parameterization : public ceres::LocalParameterization {
  public:
-  virtual ~SO3Parameterization() {}
+  ~SO3Parameterization() override = default;
 
   virtual bool Plus(const double* x, const double* delta, double* x_plus_delta) const {
  
@@ -52,7 +52,7 @@ class SO3Parameterization : public ceres::LocalParameterization {
     return true;
   }
 
-  virtual bool ComputeJacobian(const double* /*x*/, double* jacobian) const {
+  bool ComputeJacobian(const double* /*x*/, double* jacobian) const override {
     
     Eigen::Map<Eigen::Matrix<double, 9, 3, Eigen::RowMajor>> J(jacobian);
     //Eigen::Map<const Eigen::Matrix<double, 3, 3, Eigen::RowMajor>> R(x);
@@ -69,9 +69,9 @@ class SO3Parameterization : public ceres::LocalParameterization {
     return true;
   }
 
-  virtual int GlobalSize() const { return 9; }
+  int GlobalSize() const override { return 9; }
 
-  virtual int LocalSize() const { return 3; }
+  int LocalSize() const override { return 3; }
 };
 
 Eigen::Vector3d logm(const Eigen::Matrix3d & R) {
@@ -161,7 +161,7 @@ public:
 
   }
 
-  bool Evaluate(double const * const * parameters, double * residuals, double ** jacobians) const {
+  bool Evaluate(double const * const * parameters, double * residuals, double ** jacobians) const override {
 
     const double * parameter_rotation_one = parameters[0];
     const double * parameter_rotation_two = parameters[1];
@@ -206,7 +206,7 @@ public:
 
   }
 
-  bool Evaluate(double const * const * parameters, double * residuals, double ** jacobians) const {
+  bool Evaluate(double const * const * parameters, double * residuals, double ** jacobians) const override {
 
     Vec2 pt_i = _fi;
     Vec2 pt_j = _fj;
@@ -282,7 +282,7 @@ public:
     mutable_parameter_block_sizes()->push_back(intrinsic->getParams().size());    
   }
 
-  bool Evaluate(double const * const * parameters, double * residuals, double ** jacobians) const {
+  bool Evaluate(double const * const * parameters, double * residuals, double ** jacobians) const override {
 
     Vec2 pt_i = _fi;
     Vec2 pt_j = _fj;
@@ -618,7 +618,7 @@ void BundleAdjustmentPanoramaCeres::addIntrinsicsToProblem(const sfmData::SfMDat
     const std::size_t usageCount = usageIt->second;
 
     // do not refine an intrinsic does not used by any reconstructed view
-    if(usageCount <= 0 || getIntrinsicState(intrinsicId) == EParameterState::IGNORED)
+    if(usageCount == UndefinedIndexT || getIntrinsicState(intrinsicId) == EParameterState::IGNORED)
     {
       _statistics.addState(EParameter::INTRINSIC, EParameterState::IGNORED);
       continue;
