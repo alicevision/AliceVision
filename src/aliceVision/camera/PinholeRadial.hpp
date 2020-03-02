@@ -32,6 +32,8 @@ class PinholeRadialK1 : public Pinhole
   void assign(const IntrinsicBase& other) override { *this = dynamic_cast<const PinholeRadialK1&>(other); }
 
   EINTRINSIC getType() const override { return PINHOLE_CAMERA_RADIAL1; }
+
+  ~PinholeRadialK1() override = default;
 };
 
 /// Implement a Pinhole camera with a 3 radial distortion coefficients.
@@ -49,6 +51,8 @@ class PinholeRadialK3 : public Pinhole
   void assign(const IntrinsicBase& other) override { *this = dynamic_cast<const PinholeRadialK3&>(other); }
 
   EINTRINSIC getType() const override { return PINHOLE_CAMERA_RADIAL3; }
+
+  ~PinholeRadialK3() override = default;
 };
 
 } // namespace camera

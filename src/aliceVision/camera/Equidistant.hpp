@@ -434,7 +434,6 @@ public:
     _center_y = y;
   }
 
-
 protected:
   double _radius{};
   double _center_x{};
