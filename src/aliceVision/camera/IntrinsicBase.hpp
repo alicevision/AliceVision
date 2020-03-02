@@ -26,14 +26,13 @@ class IntrinsicBase
 {
 public:
 
-  IntrinsicBase(unsigned int width = 0, unsigned int height = 0, const std::string& serialNumber = "")
+  explicit IntrinsicBase(unsigned int width = 0, unsigned int height = 0, const std::string& serialNumber = "")
     : _w(width)
     , _h(height)
     , _serialNumber(serialNumber)
   {}
 
-  virtual ~IntrinsicBase()
-  {}
+  virtual ~IntrinsicBase() = default;
   
   /**
    * @brief Get the lock state of the intrinsic
@@ -397,8 +396,10 @@ public:
     stl::hash_combine(seed, _sensor_height);
     stl::hash_combine(seed, _serialNumber);
     const std::vector<double> params = this->getParams();
-    for (size_t i=0; i < params.size(); ++i)
-      stl::hash_combine(seed, params[i]);
+    for(double param : params)
+    {
+        stl::hash_combine(seed, param);
+    }
     return seed;
   }
 
@@ -490,7 +491,8 @@ inline double AngleBetweenRays(const geometry::Pose3& pose1,
 } // namespace camera
 
 template <size_t M, size_t N>
-Eigen::Matrix<double, M*N, M*N> getJacobian_At_wrt_A() {
+Eigen::Matrix<double, M*N, M*N> getJacobian_At_wrt_A()
+{
 	Eigen::Matrix<double, M*N, M*N> ret;
 
 	/** vec(M1*M2*M3) = kron(M3.t, M1) * vec(M2) */
@@ -513,7 +515,8 @@ Eigen::Matrix<double, M*N, M*N> getJacobian_At_wrt_A() {
 }
 
 template <size_t M, size_t N, size_t K>
-Eigen::Matrix<double, M*K, M*N> getJacobian_AB_wrt_A(const Eigen::Matrix<double, M , N> & A, const Eigen::Matrix<double, N, K> & B)  {
+Eigen::Matrix<double, M*K, M*N> getJacobian_AB_wrt_A(const Eigen::Matrix<double, M , N> & A, const Eigen::Matrix<double, N, K> & B)
+{
 	Eigen::Matrix<double, M*K, M*N> ret;
 
 	/** vec(M1*M2*M3) = kron(M3.t, M1) * vec(M2) */
@@ -537,12 +540,14 @@ Eigen::Matrix<double, M*K, M*N> getJacobian_AB_wrt_A(const Eigen::Matrix<double,
 }
 
 template <size_t M, size_t N, size_t K>
-Eigen::Matrix<double, M*K, M*N> getJacobian_AtB_wrt_A(const Eigen::Matrix<double, M, N> & A, const Eigen::Matrix<double, M, K> & B) {
+Eigen::Matrix<double, M*K, M*N> getJacobian_AtB_wrt_A(const Eigen::Matrix<double, M, N> & A, const Eigen::Matrix<double, M, K> & B)
+{
 	return getJacobian_AB_wrt_A<M, N, K>(A.transpose(), B) * getJacobian_At_wrt_A<M, N>();
 }
 
 template <size_t M, size_t N, size_t K>
-Eigen::Matrix<double, M*K, N*K> getJacobian_AB_wrt_B(const Eigen::Matrix<double, M, N> & A, const Eigen::Matrix<double, N, K> & B) {
+Eigen::Matrix<double, M*K, N*K> getJacobian_AB_wrt_B(const Eigen::Matrix<double, M, N> & A, const Eigen::Matrix<double, N, K> & B)
+{
 	Eigen::Matrix<double, M*K, N*K> ret;
 
 	/** vec(M1*M2*M3) = kron(M3.t, M1) * vec(M2) */
