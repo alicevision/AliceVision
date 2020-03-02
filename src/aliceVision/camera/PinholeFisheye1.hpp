@@ -43,6 +43,8 @@ public:
   }
 
   EINTRINSIC getType() const override { return PINHOLE_CAMERA_FISHEYE1; }
+
+  ~PinholeFisheye1() override = default;
 };
 
 } // namespace camera
