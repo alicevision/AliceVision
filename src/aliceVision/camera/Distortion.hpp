@@ -3,56 +3,67 @@
 #include <vector>
 #include <aliceVision/numeric/numeric.hpp>
 
-namespace aliceVision {
-namespace camera {
+namespace aliceVision{
+namespace camera{
 
-class Distortion {
+class Distortion
+{
 public:
-  Distortion() = default;
 
-  virtual Distortion* clone() const = 0;
+    Distortion() = default;
 
-  std::vector<double> & getParameters() {
-    return _distortionParams;
-  }
+    virtual Distortion* clone() const = 0;
 
-  size_t getDistortionParametersCount() {
-    return _distortionParams.size();
-  }
+    std::vector<double>& getParameters()
+    {
+        return _distortionParams;
+    }
 
-  /// Add distortion to the point p (assume p is in the camera frame [normalized coordinates])
-  virtual Vec2 add_disto(const Vec2 & p) const
-  {
-    return p;
-  }
+    size_t getDistortionParametersCount()
+    {
+        return _distortionParams.size();
+    }
 
-  /// Remove distortion (return p' such that disto(p') = p)
-  virtual Vec2 remove_disto(const Vec2& p) const {
-    return p;
-  }
+    /// Add distortion to the point p (assume p is in the camera frame [normalized coordinates])
+    virtual Vec2 add_disto(const Vec2& p) const
+    {
+        return p;
+    }
 
-  virtual double getUndistortedRadius(double r) const {
-    return r;
-  }
+    /// Remove distortion (return p' such that disto(p') = p)
+    virtual Vec2 remove_disto(const Vec2& p) const
+    {
+        return p;
+    }
 
-  virtual Eigen::Matrix2d getDerivativeAddDistoWrtPt(const Vec2 & p) const {
-    return Eigen::Matrix2d::Identity();
-  }
+    virtual double getUndistortedRadius(double r) const
+    {
+        return r;
+    }
 
-  virtual Eigen::MatrixXd getDerivativeAddDistoWrtDisto(const Vec2 & p) const {
-    return Eigen::MatrixXd(0, 0);
-  }
+    virtual Eigen::Matrix2d getDerivativeAddDistoWrtPt(const Vec2& p) const
+    {
+        return Eigen::Matrix2d::Identity();
+    }
 
-  virtual Eigen::Matrix2d getDerivativeRemoveDistoWrtPt(const Vec2 & p) const {
-    return Eigen::Matrix2d::Identity();
-  }
+    virtual Eigen::MatrixXd getDerivativeAddDistoWrtDisto(const Vec2& p) const
+    {
+        return Eigen::MatrixXd(0, 0);
+    }
 
-  virtual Eigen::MatrixXd getDerivativeRemoveDistoWrtDisto(const Vec2 & p) const {
-    return Eigen::MatrixXd(0, 0);
-  }
+    virtual Eigen::Matrix2d getDerivativeRemoveDistoWrtPt(const Vec2& p) const
+    {
+        return Eigen::Matrix2d::Identity();
+    }
+
+    virtual Eigen::MatrixXd getDerivativeRemoveDistoWrtDisto(const Vec2& p) const
+    {
+        return Eigen::MatrixXd(0, 0);
+    }
+
 
 protected:
-  std::vector<double> _distortionParams;
+    std::vector<double> _distortionParams{};
 };
 
 } // namespace camera
