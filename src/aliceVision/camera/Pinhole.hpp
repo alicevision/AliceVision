@@ -210,9 +210,9 @@ class Pinhole : public IntrinsicsScaleOffsetDisto
 
   /**
    * @brief Return true if this ray should be visible in the image
-   * @return true if this ray is visible theorically
+   * @return true if this ray is visible theoretically
    */
-  virtual bool isVisibleRay(const Vec3 & ray) const override {
+  bool isVisibleRay(const Vec3 & ray) const override {
     
     if (ray(2) < 0) {
       return false;
