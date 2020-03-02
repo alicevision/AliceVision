@@ -105,7 +105,7 @@ public:
       return Eigen::Matrix<double, 2, 1>::Zero();
     }
 
-    const double r2 = r * r;
+//    const double r2 = r * r;
     
     /*const double r_coeff = 1.0 + k1 * r2;*/
 
@@ -250,11 +250,6 @@ public:
 
   Eigen::MatrixXd getDerivativeAddDistoWrtDisto(const Vec2 & p) const  override
   {
-    
-    const double k1 = _distortionParams[0];
-    const double k2 = _distortionParams[1];
-    const double k3 = _distortionParams[2];
-
     const double r = sqrt(p(0)*p(0) + p(1)*p(1));
     const double eps = 1e-8;
     if (r < eps)
