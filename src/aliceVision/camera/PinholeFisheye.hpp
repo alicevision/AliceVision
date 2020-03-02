@@ -43,6 +43,8 @@ class PinholeFisheye : public Pinhole
   {
       return ray(2) >= 0.0;
   }
+
+  ~PinholeFisheye() override = default;
 };
 
 } // namespace camera
