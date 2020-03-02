@@ -100,7 +100,8 @@ public:
 
     const double r = sqrt(p(0)*p(0) + p(1)*p(1));   
     const double eps = 1e-8;
-    if (r < eps) {
+    if (r < eps)
+    {
       return Eigen::Matrix<double, 2, 1>::Zero();
     }
 
@@ -180,6 +181,8 @@ public:
     const double k1 = params[0];
     return r2 * Square(1.+r2*k1);
   }
+
+  ~DistortionRadialK1() override = default;
 };
 
 class DistortionRadialK3 : public Distortion {
@@ -354,6 +357,8 @@ public:
     const double k1 = params[0], k2 = params[1], k3 = params[2];
     return r2 * Square(1.+r2*(k1+r2*(k2+r2*k3)));
   }
+
+  ~DistortionRadialK3() override = default;
 };
 
 class DistortionRadialK3PT : public Distortion {
@@ -556,6 +561,8 @@ public:
 
     return r2 * Square(r_coeff);
   }
+
+  ~DistortionRadialK3PT() override = default;
 };
 
 } // namespace camera
