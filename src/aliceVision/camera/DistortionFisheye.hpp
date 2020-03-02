@@ -226,6 +226,8 @@ public:
 
     return ret;
   }
+
+  ~DistortionFisheye() override = default;
 };
 
 } // namespace camera
