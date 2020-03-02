@@ -15,7 +15,7 @@ namespace camera {
 class DistortionFisheye1 : public Distortion
 {
 public:
-    
+
   DistortionFisheye1()
   {
     _distortionParams = {0.0};
