@@ -197,6 +197,8 @@ public:
       return _pDistortion;
   }
 
+  ~IntrinsicsScaleOffsetDisto() override = default;
+
 protected:
   std::shared_ptr<Distortion> _pDistortion;
 };
