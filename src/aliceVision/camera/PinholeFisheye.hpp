@@ -26,22 +26,22 @@ class PinholeFisheye : public Pinhole
 {
   public:
 
-  PinholeFisheye(int w = 0, int h = 0, double focal = 0.0, double ppx = 0, double ppy = 0, double k1 = 0.0, double k2 = 0.0, double k3 = 0.0, double k4 = 0.0)
+  explicit PinholeFisheye(int w = 0, int h = 0, double focal = 0.0, double ppx = 0, double ppy = 0, double k1 = 0.0, double k2 = 0.0, double k3 = 0.0, double k4 = 0.0)
   :Pinhole(w, h, focal, ppx, ppy, std::shared_ptr<Distortion>(new DistortionFisheye(k1, k2, k3, k4)))
   {
   }
 
   PinholeFisheye* clone() const override { return new PinholeFisheye(*this); }
-  void assign(const IntrinsicBase& other) override { *this = dynamic_cast<const PinholeFisheye&>(other); }
+  void assign(const IntrinsicBase& other) override
+  {
+      *this = dynamic_cast<const PinholeFisheye&>(other);
+  }
 
   EINTRINSIC getType() const override { return PINHOLE_CAMERA_FISHEYE; }
 
-  virtual bool isVisibleRay(const Vec3 & ray) const override {
-    if (ray(2) < 0.0) {
-      return false;
-    }
-    
-    return true;
+  bool isVisibleRay(const Vec3 & ray) const override
+  {
+      return ray(2) >= 0.0;
   }
 };
 
