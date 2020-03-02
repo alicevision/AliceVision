@@ -89,8 +89,8 @@ class Pinhole : public IntrinsicsScaleOffsetDisto
     const Vec3 X = pose.rotation() * pt; // apply pose
     const Vec2 P = X.head<2>() / X(2);
 
-    Vec2 distorted = this->add_disto(P);
-    Vec2 impt = this->cam2ima(distorted);
+    const Vec2 distorted = this->add_disto(P);
+    const Vec2 impt = this->cam2ima(distorted);
 
     return impt;
   }
@@ -163,7 +163,7 @@ class Pinhole : public IntrinsicsScaleOffsetDisto
   Vec3 toUnitSphere(const Vec2 & pt) const override
   {
 
-    Vec3 ptcam = pt.homogeneous();
+    const Vec3 ptcam = pt.homogeneous();
 
     return ptcam / ptcam.norm();
   }
@@ -174,7 +174,7 @@ class Pinhole : public IntrinsicsScaleOffsetDisto
     double norm2 = pt(0)*pt(0) + pt(1)*pt(1) + 1.0;
     double norm = sqrt(norm2);
 
-    Vec3 ptcam = pt.homogeneous();
+    const Vec3 ptcam = pt.homogeneous();
 
     
     Eigen::Matrix<double, 1, 2> d_norm_d_pt;
