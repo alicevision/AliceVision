@@ -44,6 +44,8 @@ public:
     const double coef = 0.5 * std::tan(r * k1) / (std::tan(0.5 * k1) * r);
     return  p * coef;
   }
+
+  ~DistortionFisheye1() override  = default;
 };
 
 } // namespace camera
