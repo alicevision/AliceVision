@@ -39,7 +39,7 @@ public:
   } 
   
   inline Vec2 principal_point() const {
-    return Vec2(_offset_x, _offset_y);
+    return {_offset_x, _offset_y};
   }
 
   double getFocalLengthPix() const { 
@@ -47,7 +47,7 @@ public:
   }
 
   Vec2 getPrincipalPoint() const { 
-    return Vec2(_offset_x, _offset_y);
+    return {_offset_x, _offset_y};
   }
 
   void setOffset(double offset_x, double offset_y) {
@@ -56,7 +56,7 @@ public:
   }
 
   // Transform a point from the camera plane to the image plane
-  virtual Vec2 cam2ima(const Vec2& p) const override
+  Vec2 cam2ima(const Vec2& p) const override
   {
     return focal() * p + principal_point();
   }
@@ -76,7 +76,7 @@ public:
   }
 
   // Transform a point from the image plane to the camera plane
-  virtual Vec2 ima2cam(const Vec2& p) const override
+  Vec2 ima2cam(const Vec2& p) const override
   {
     return ( p -  principal_point() ) / focal();
   }
@@ -100,7 +100,7 @@ public:
    * @brief Rescale intrinsics to reflect a rescale of the camera image
    * @param factor a scale factor
    */
-  virtual void rescale(float factor) override {
+  void rescale(float factor) override {
 
     IntrinsicBase::rescale(factor);
 
@@ -111,7 +111,7 @@ public:
   }
 
   // Data wrapper for non linear optimization (update from data)
-  virtual bool updateFromParams(const std::vector<double>& params) override
+  bool updateFromParams(const std::vector<double>& params) override
   {
     if (params.size() != 3) {
       return false;
@@ -142,13 +142,14 @@ public:
     return _initialScale;
   }
 
+~IntrinsicsScaleOffset() override = default;
 
 protected:
-  double _scale_x = 1.0;
-  double _scale_y = 1.0;
-  double _offset_x = 0.0;
-  double _offset_y = 0.0;
-  double _initialScale = -1;
+  double _scale_x{1.0};
+  double _scale_y{1.0};
+  double _offset_x{0.0};
+  double _offset_y{0.0};
+  double _initialScale{-1};
 };
 
 } // namespace camera
