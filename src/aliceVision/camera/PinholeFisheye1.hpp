@@ -27,13 +27,20 @@ class PinholeFisheye1 : public Pinhole
 {
 public:
 
-  PinholeFisheye1(int w = 0, int h = 0, double focal = 0.0, double ppx = 0, double ppy = 0, double k1 = 0.0)
+  explicit PinholeFisheye1(int w = 0, int h = 0, double focal = 0.0, double ppx = 0, double ppy = 0, double k1 = 0.0)
   :Pinhole(w, h, focal, ppx, ppy, std::shared_ptr<Distortion>(new DistortionFisheye1(k1)))
   {
   }
 
-  PinholeFisheye1* clone() const override { return new PinholeFisheye1(*this); }
-  void assign(const IntrinsicBase& other) override { *this = dynamic_cast<const PinholeFisheye1&>(other); }
+  PinholeFisheye1* clone() const override
+  {
+      return new PinholeFisheye1(*this);
+  }
+
+  void assign(const IntrinsicBase& other) override
+  {
+      *this = dynamic_cast<const PinholeFisheye1&>(other);
+  }
 
   EINTRINSIC getType() const override { return PINHOLE_CAMERA_FISHEYE1; }
 };
