@@ -39,19 +39,23 @@ class Pinhole : public IntrinsicsScaleOffsetDisto
 
   virtual ~Pinhole() {}
 
-  virtual Pinhole* clone() const override { 
+  Pinhole* clone() const override
+  {
     return new Pinhole(*this); 
   }
 
-  virtual void assign(const IntrinsicBase& other) override { 
+  void assign(const IntrinsicBase& other) override
+  { 
     *this = dynamic_cast<const Pinhole&>(other); 
   }
   
-  virtual bool isValid() const override { 
+  bool isValid() const override
+  {
     return focal() > 0 && IntrinsicBase::isValid(); 
   }
   
-  virtual EINTRINSIC getType() const override { 
+  EINTRINSIC getType() const override
+  {
     return PINHOLE_CAMERA; 
   }
 
@@ -80,7 +84,7 @@ class Pinhole : public IntrinsicsScaleOffsetDisto
     _offset_y = K(1, 2);
   }
 
-  virtual Vec2 project(const geometry::Pose3& pose, const Vec3& pt, bool applyDistortion = true) const override
+  Vec2 project(const geometry::Pose3& pose, const Vec3& pt, bool applyDistortion = true) const override
   {
     const Vec3 X = pose.rotation() * pt; // apply pose
     const Vec2 P = X.head<2>() / X(2);
@@ -91,11 +95,12 @@ class Pinhole : public IntrinsicsScaleOffsetDisto
     return impt;
   }
 
-  Eigen::Matrix<double, 2, 9> getDerivativeProjectWrtRotation(const geometry::Pose3& pose, const Vec3 & pt) {
+  Eigen::Matrix<double, 2, 9> getDerivativeProjectWrtRotation(const geometry::Pose3& pose, const Vec3 & pt)
+  {
     
     const Vec3 X = pose.rotation() * pt; // apply pose
 
-    Eigen::Matrix<double, 3, 9> d_X_d_R = getJacobian_AB_wrt_A<3, 3, 1>(pose.rotation(), pt);
+    const Eigen::Matrix<double, 3, 9> d_X_d_R = getJacobian_AB_wrt_A<3, 3, 1>(pose.rotation(), pt);
 
     const Vec2 P = X.head<2>() / X(2);
 
@@ -107,8 +112,8 @@ class Pinhole : public IntrinsicsScaleOffsetDisto
     d_P_d_X(1, 1) = 1 / X(2);
     d_P_d_X(1, 2) = - X(1) / (X(2) * X(2));
 
-    Vec2 distorted = this->add_disto(P);
-    Vec2 impt = this->cam2ima(distorted);
+    const Vec2 distorted = this->add_disto(P);
+    const Vec2 impt = this->cam2ima(distorted);
 
     return getDerivativeCam2ImaWrtPoint() * getDerivativeAddDistoWrtPt(P) * d_P_d_X * d_X_d_R;
   }
@@ -117,7 +122,7 @@ class Pinhole : public IntrinsicsScaleOffsetDisto
 
     const Vec3 X = pose.rotation() * pt; // apply pose
 
-    Eigen::Matrix<double, 3, 3> d_X_d_P = pose.rotation();
+    const Eigen::Matrix<double, 3, 3>& d_X_d_P = pose.rotation();
 
     const Vec2 P = X.head<2>() / X(2);
 
@@ -129,18 +134,18 @@ class Pinhole : public IntrinsicsScaleOffsetDisto
     d_P_d_X(1, 1) = 1 / X(2);
     d_P_d_X(1, 2) = - X(1) / (X(2) * X(2));
 
-    Vec2 distorted = this->add_disto(P);
-    Vec2 impt = this->cam2ima(distorted);
+    const Vec2 distorted = this->add_disto(P);
+    const Vec2 impt = this->cam2ima(distorted);
 
     return getDerivativeCam2ImaWrtPoint() * getDerivativeAddDistoWrtPt(P) * d_P_d_X * d_X_d_P;
   }
 
-  Eigen::Matrix<double, 2, Eigen::Dynamic> getDerivativeProjectWrtDisto(const geometry::Pose3& pose, const Vec3 & pt) {
+  Eigen::Matrix<double, 2, Eigen::Dynamic> getDerivativeProjectWrtDisto(const geometry::Pose3& pose, const Vec3 & pt)
+  {
     const Vec3 X = pose.rotation() * pt; // apply pose
     const Vec2 P = X.head<2>() / X(2);
 
-    Vec2 distorted = this->add_disto(P);
-    /*Vec2 impt = this->cam2ima(distorted)*/;
+    const Vec2 distorted = this->add_disto(P);
 
     return getDerivativeCam2ImaWrtPoint() * getDerivativeAddDistoWrtDisto(P);
   }
@@ -150,24 +155,27 @@ class Pinhole : public IntrinsicsScaleOffsetDisto
     return getDerivativeCam2ImaWrtPrincipalPoint();
   }
 
-  Eigen::Matrix<double, 2, 1> getDerivativeProjectWrtScale(const geometry::Pose3& pose, const Vec3 & pt) {
+  Eigen::Matrix<double, 2, 1> getDerivativeProjectWrtScale(const geometry::Pose3& pose, const Vec3 & pt)
+  {
 
     const Vec3 X = pose.rotation() * pt; // apply pose
     const Vec2 P = X.head<2>() / X(2);
 
-    Vec2 distorted = this->add_disto(P);
+    const Vec2 distorted = this->add_disto(P);
 
     return getDerivativeCam2ImaWrtScale(distorted);
   }
 
-  virtual Vec3 toUnitSphere(const Vec2 & pt) const override {
+  Vec3 toUnitSphere(const Vec2 & pt) const override
+  {
 
     Vec3 ptcam = pt.homogeneous();
 
     return ptcam / ptcam.norm();
   }
 
-  Eigen::Matrix<double, 3, 2> getDerivativetoUnitSphereWrtPoint(const Vec2 & pt) {
+  Eigen::Matrix<double, 3, 2> getDerivativetoUnitSphereWrtPoint(const Vec2 & pt)
+  {
 
     double norm2 = pt(0)*pt(0) + pt(1)*pt(1) + 1.0;
     double norm = sqrt(norm2);
@@ -190,12 +198,12 @@ class Pinhole : public IntrinsicsScaleOffsetDisto
     return (norm * d_ptcam_d_pt - ptcam * d_norm_d_pt) / norm2;
   }
   
-  virtual double imagePlane_toCameraPlaneError(double value) const override
+  double imagePlane_toCameraPlaneError(double value) const override
   {
     return value / focal();
   }
 
-  virtual Mat34 get_projective_equivalent(const geometry::Pose3 & pose) const
+  Mat34 get_projective_equivalent(const geometry::Pose3 & pose) const
   {
     Mat34 P;
     Mat3 K = Eigen::Matrix3d::Identity();
@@ -212,30 +220,28 @@ class Pinhole : public IntrinsicsScaleOffsetDisto
    * @brief Return true if this ray should be visible in the image
    * @return true if this ray is visible theoretically
    */
-  bool isVisibleRay(const Vec3 & ray) const override {
+  bool isVisibleRay(const Vec3 & ray) const override
+  {
     
-    if (ray(2) < 0) {
+    if (ray(2) < 0)
+    {
       return false;
     }
 
-    Vec2 proj = ray.head(2) / ray(2);
+    const Vec2 proj = ray.head(2) / ray(2);
 
-    double xmin;
-    double ymin;
-    double xmax;
-    double ymax;
+    const Vec2 p1 = remove_disto(ima2cam(Vec2(0,0)));
+    const Vec2 p2 = remove_disto(ima2cam(Vec2(_w,0)));
+    const Vec2 p3 = remove_disto(ima2cam(Vec2(_w,_h)));
+    const Vec2 p4 = remove_disto(ima2cam(Vec2(0,_h)));
 
-    Vec2 p1 = remove_disto(ima2cam(Vec2(0,0)));
-    Vec2 p2 = remove_disto(ima2cam(Vec2(_w,0)));
-    Vec2 p3 = remove_disto(ima2cam(Vec2(_w,_h)));
-    Vec2 p4 = remove_disto(ima2cam(Vec2(0,_h)));
+    double xmin = std::min(p4(0), (std::min(p3(0), std::min(p1(0), p2(0)))));
+    double ymin = std::min(p4(1), (std::min(p3(1), std::min(p1(1), p2(1)))));
+    double xmax = std::max(p4(0), (std::max(p3(0), std::max(p1(0), p2(0)))));
+    double ymax = std::max(p4(1), (std::max(p3(1), std::max(p1(1), p2(1)))));
 
-    xmin = std::min(p4(0), (std::min(p3(0), std::min(p1(0), p2(0)))));
-    ymin = std::min(p4(1), (std::min(p3(1), std::min(p1(1), p2(1)))));
-    xmax = std::max(p4(0), (std::max(p3(0), std::max(p1(0), p2(0)))));
-    ymax = std::max(p4(1), (std::max(p3(1), std::max(p1(1), p2(1)))));
-
-    if (proj(0) < xmin || proj(0) > xmax || proj(1) < ymin || proj(1) > ymax) {
+    if (proj(0) < xmin || proj(0) > xmax || proj(1) < ymin || proj(1) > ymax)
+    {
       return false;
     }
 
