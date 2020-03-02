@@ -28,16 +28,19 @@ public:
   _pDistortion(distortion) {
   }
 
-  virtual void assign(const IntrinsicBase& other) override {
+  void assign(const IntrinsicBase& other) override {
     *this = dynamic_cast<const IntrinsicsScaleOffsetDisto&>(other);
   }
 
-  virtual bool have_disto() const override {  
+  bool have_disto() const override
+  {
     return (!(_pDistortion == nullptr));
   }
 
-  virtual Vec2 add_disto(const Vec2& p) const override { 
-    if (_pDistortion == nullptr) {
+  Vec2 add_disto(const Vec2& p) const override
+  {
+    if (_pDistortion == nullptr)
+    {
       return p;
     }
 
@@ -45,8 +48,10 @@ public:
   }
   
 
-  virtual Vec2 remove_disto(const Vec2& p) const override { 
-    if (_pDistortion == nullptr) {
+  Vec2 remove_disto(const Vec2& p) const override
+  {
+    if (_pDistortion == nullptr)
+    {
       return p;
     }
 
@@ -54,12 +59,14 @@ public:
   }
 
   /// Return the un-distorted pixel (with removed distortion)
-  virtual Vec2 get_ud_pixel(const Vec2& p) const override {
+  Vec2 get_ud_pixel(const Vec2& p) const override
+  {
     return cam2ima(remove_disto(ima2cam(p)));
   }
 
   /// Return the distorted pixel (with added distortion)
-  virtual Vec2 get_d_pixel(const Vec2& p) const override {
+  Vec2 get_d_pixel(const Vec2& p) const override
+  {
     return cam2ima(add_disto(ima2cam(p)));
   }
 
@@ -72,10 +79,12 @@ public:
     return _pDistortion->getParameters();
   }
 
-  void setDistortionParams(const std::vector<double> & distortionParams) {
+  void setDistortionParams(const std::vector<double> & distortionParams)
+  {
 
     int expected = 0;
-    if (_pDistortion != nullptr) {
+    if (_pDistortion != nullptr)
+    {
       expected = _pDistortion->getDistortionParametersCount();
     }
 
@@ -86,7 +95,8 @@ public:
         throw std::runtime_error(s.str());
     }
 
-    if (_pDistortion) {
+    if (_pDistortion)
+    {
       _pDistortion->getParameters() = distortionParams;
     }
   }
@@ -105,15 +115,19 @@ public:
   }
 
   // Data wrapper for non linear optimization (update from data)
-  virtual bool updateFromParams(const std::vector<double>& params) override
+  bool updateFromParams(const std::vector<double>& params) override
   {
-    if (_pDistortion == nullptr) {
-      if (params.size() != 3) {
+    if (_pDistortion == nullptr)
+    {
+      if (params.size() != 3)
+      {
         return false;
       }
     }
-    else {
-      if (params.size() != (3 + _pDistortion->getDistortionParametersCount())) {
+    else
+    {
+      if (params.size() != (3 + _pDistortion->getDistortionParametersCount()))
+      {
         return false;
       }
     }
@@ -129,7 +143,8 @@ public:
     return true;
   }
 
-  virtual float getMaximalDistortion(double min_radius, double max_radius) const override {
+  float getMaximalDistortion(double min_radius, double max_radius) const override
+  {
 
     if (_pDistortion == nullptr) {
       return max_radius;
@@ -138,7 +153,8 @@ public:
     return _pDistortion->getUndistortedRadius(max_radius);
   }
 
-  Eigen::Matrix<double, 2, 2> getDerivativeAddDistoWrtPt(const Vec2 & pt) {
+  Eigen::Matrix<double, 2, 2> getDerivativeAddDistoWrtPt(const Vec2 & pt)
+  {
     
     if (this->_pDistortion == nullptr) {
       return Eigen::Matrix<double, 2, 2>::Identity();
@@ -146,7 +162,8 @@ public:
     return this->_pDistortion->getDerivativeAddDistoWrtPt(pt);
   }
 
-  Eigen::Matrix<double, 2, 2> getDerivativeRemoveDistoWrtPt(const Vec2 & pt) {
+  Eigen::Matrix<double, 2, 2> getDerivativeRemoveDistoWrtPt(const Vec2 & pt)
+  {
 
     if (this->_pDistortion == nullptr) {
       return Eigen::Matrix<double, 2, 2>::Identity();
@@ -155,7 +172,8 @@ public:
     return this->_pDistortion->getDerivativeRemoveDistoWrtPt(pt);
   }
 
-  Eigen::MatrixXd getDerivativeAddDistoWrtDisto(const Vec2 & pt) {
+  Eigen::MatrixXd getDerivativeAddDistoWrtDisto(const Vec2 & pt)
+  {
 
     if (this->_pDistortion == nullptr) {
       return Eigen::MatrixXd(0, 0);
@@ -164,7 +182,8 @@ public:
     return this->_pDistortion->getDerivativeAddDistoWrtDisto(pt);
   }
 
-  Eigen::MatrixXd getDerivativeRemoveDistoWrtDisto(const Vec2 & pt) {
+  Eigen::MatrixXd getDerivativeRemoveDistoWrtDisto(const Vec2 & pt)
+  {
 
     if (this->_pDistortion == nullptr) {
       return Eigen::MatrixXd(0, 0);
