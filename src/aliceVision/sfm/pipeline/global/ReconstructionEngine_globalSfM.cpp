@@ -281,7 +281,7 @@ bool ReconstructionEngine_globalSfM::Compute_Initial_Structure(matching::Pairwis
     // Use triplet validated matches
     tracksBuilder.build(tripletWise_matches);
 #endif
-    tracksBuilder.filter(3);
+    tracksBuilder.filter(true,3);
     TracksMap map_selectedTracks; // reconstructed track (visibility per 3D point)
     tracksBuilder.exportToSTL(map_selectedTracks);
 
