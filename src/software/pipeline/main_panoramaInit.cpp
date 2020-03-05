@@ -737,54 +737,57 @@ int main(int argc, char * argv[])
   {
     int equidistantCount = 0;
 
-    if (fisheyeRadius == 0) {
+    if(fisheyeRadius == 0)
+    {
       
-      if (sfmData.getIntrinsics().size() != 1) {
+      if(sfmData.getIntrinsics().size() != 1)
+      {
         ALICEVISION_LOG_ERROR("Only one intrinsic allowed (" << sfmData.getIntrinsics().size() << " found)");
         return EXIT_FAILURE;
       }
 
       std::shared_ptr<camera::IntrinsicBase> intrinsic = sfmData.getIntrinsics().begin()->second;
-      if (intrinsic == nullptr) {
+      if(intrinsic == nullptr)
+      {
         ALICEVISION_LOG_ERROR("No valid intrinsic");
         return EXIT_FAILURE;
       }
 
-      if (!camera::isEquidistant(intrinsic->getType())) {
-        ALICEVISION_LOG_ERROR("Image is incompatible with fisheye detection");
-        return EXIT_FAILURE;
-      }
+      if(camera::isEquidistant(intrinsic->getType()))
+      {
+        CircleDetector detector(intrinsic->w(), intrinsic->h(), 256);
+        for(auto & v : sfmData.getViews()) {
+          /*Read original image*/
+          image::Image<float> grayscale;
+          image::readImage(v.second->getImagePath(), grayscale, image::EImageColorSpace::SRGB);
 
-      CircleDetector detector(intrinsic->w(), intrinsic->h(), 256);
-      for (auto & v : sfmData.getViews()) {
-        /*Read original image*/
-        image::Image<float> grayscale;
-        image::readImage(v.second->getImagePath(), grayscale, image::EImageColorSpace::SRGB);
+          bool res = detector.appendImage(grayscale);
+          if(!res)
+          {
+            ALICEVISION_LOG_ERROR("Image is incompatible with fisheye detection");
+            return EXIT_FAILURE;
+          }
+        }
 
-        bool res = detector.appendImage(grayscale);
-        if (!res) {
-          ALICEVISION_LOG_ERROR("Image is incompatible with fisheye detection");
+        if(!detector.process())
+        {
+          ALICEVISION_LOG_ERROR("Failed to find circle");
           return EXIT_FAILURE;
         }
+
+        double cx = detector.getCenterX();
+        double cy = detector.getCenterY();
+        double r = detector.getRadius();
+
+        // Update parameters with estimated values
+        fisheyeCenterOffset(0) = cx - 0.5*double(intrinsic->w());
+        fisheyeCenterOffset(1) = cy - 0.5*double(intrinsic->h());
+        fisheyeRadius = 98.0 * r / (0.5 * std::min(double(intrinsic->w()), double(intrinsic->h())));
+
+        ALICEVISION_LOG_INFO("Computing automatic fisheye circle");
+        ALICEVISION_LOG_INFO(" * Center Offset: " << fisheyeCenterOffset);
+        ALICEVISION_LOG_INFO(" * Radius: " << fisheyeRadius);
       }
-
-      if (!detector.process()) {
-        ALICEVISION_LOG_ERROR("Failed to find circle");
-        return EXIT_FAILURE;
-      }
-
-      double cx = detector.getCenterX();
-      double cy = detector.getCenterY();
-      double r = detector.getRadius();
-
-      // Update parameters with estimated values
-      fisheyeCenterOffset(0) = cx - 0.5*double(intrinsic->w());
-      fisheyeCenterOffset(1) = cy - 0.5*double(intrinsic->h());
-      fisheyeRadius = 100.0 * r / (0.5 * std::min(double(intrinsic->w()), double(intrinsic->h())));
-
-      ALICEVISION_LOG_INFO("Computing automatic fisheye circle");
-      ALICEVISION_LOG_INFO(" * Center Offset: " << fisheyeCenterOffset);
-      ALICEVISION_LOG_INFO(" * Radius: " << fisheyeRadius);
     }
 
     sfmData::Intrinsics & intrinsics = sfmData.getIntrinsics();
