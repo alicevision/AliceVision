@@ -567,8 +567,14 @@ int main(int argc, char **argv)
     intrinsic->setInitializationMode(intrinsicInitMode);
 
     // Set sensor size
-    intrinsicBase->setSensorWidth(sensorWidth);
-    intrinsicBase->setSensorHeight(sensorWidth / imageRatio);
+    if (imageRatio > 1.0) {
+      intrinsicBase->setSensorWidth(sensorWidth);
+      intrinsicBase->setSensorHeight(sensorWidth / imageRatio);
+    }
+    else {
+      intrinsicBase->setSensorWidth(sensorWidth * imageRatio);
+      intrinsicBase->setSensorHeight(sensorWidth);
+    }
 
     if(intrinsic && intrinsic->getFocalLengthPix() > 0)
     {
