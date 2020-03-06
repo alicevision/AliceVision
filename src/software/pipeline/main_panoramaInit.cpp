@@ -47,7 +47,7 @@ int main(int argc, char * argv[])
   std::string sfmOutputDataFilename;
 
   bool useFisheye = false;
-  std::vector<double> fisheyeCenterOffset;
+  Vec2 fisheyeCenterOffset(0, 0);
   double fisheyeRadius = 96.0;
 
   std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
@@ -71,7 +71,8 @@ int main(int argc, char * argv[])
   po::options_description fisheyeParams("Fisheye parameters");
   fisheyeParams.add_options()
     ("useFisheye", po::value<bool>(&useFisheye), "Declare all input images as fisheye with 'equidistant' model.")
-    ("fisheyeCenterOffset", po::value<std::vector<double>>(&fisheyeCenterOffset)->multitoken(), "Fisheye circle's center offset: X Y (pixels).")
+    ("fisheyeCenterOffset_x", po::value<double>(&fisheyeCenterOffset(0)), "Fisheye circle's center offset X (pixels).")
+    ("fisheyeCenterOffset_y", po::value<double>(&fisheyeCenterOffset(1)), "Fisheye circle's center offset Y (pixels).")
     ("fisheyeRadius,r", po::value<double>(&fisheyeRadius), "Fisheye circle's radius (% of image shortest side).")
     ;
 
@@ -251,21 +252,9 @@ int main(int argc, char * argv[])
         }
         ALICEVISION_LOG_INFO("Update EquiDistant camera intrinsic " << intrinsic_pair.first << " with center and offset.");
 
-        if(fisheyeCenterOffset.size() == 2)
-        {
-            equidistant->setCenterX(double(equidistant->w()) / 2.0 + fisheyeCenterOffset[0]);
-            equidistant->setCenterY(double(equidistant->h()) / 2.0 + fisheyeCenterOffset[1]);
-        }
-        else if(fisheyeCenterOffset.empty())
-        {
-            equidistant->setCenterX(double(equidistant->w()) / 2.0);
-            equidistant->setCenterY(double(equidistant->h()) / 2.0);
-        }
-        else
-        {
-            ALICEVISION_LOG_ERROR("The fisheyeCenterOffset should contain 2 values: X Y (" << fisheyeCenterOffset.size() << " values is an invalid number of arguments).");
-            return EXIT_FAILURE;
-        }
+        equidistant->setCenterX(double(equidistant->w()) / 2.0 + fisheyeCenterOffset(0));
+        equidistant->setCenterY(double(equidistant->h()) / 2.0 + fisheyeCenterOffset(1));
+
         equidistant->setRadius(fisheyeRadius / 100.0 * 0.5 * std::min(double(equidistant->w()),double(equidistant->h())));
 
         ++equidistantCount;
