@@ -312,6 +312,10 @@ bool ReconstructionEngine_panorama::process()
     _htmlDocStream->pushInfo(os.str());
   }
 
+  if (!buildLandmarks()) {
+    return false;
+  }
+
   return true;
 }
 
@@ -424,6 +428,10 @@ bool ReconstructionEngine_panorama::Adjust()
   else
   {
     ALICEVISION_LOG_INFO("Failed to refine Everything.");
+  }
+
+  if (!buildLandmarks()) {
+    return false;
   }
 
   return success;
@@ -745,6 +753,35 @@ void ReconstructionEngine_panorama::Compute_Relative_Rotations(rotationAveraging
       graph::exportToGraphvizData((fs::path(_outputFolder) / (sGraph_name + ".dot")).string(), putativeGraph.g);
     }
   }
+}
+
+bool ReconstructionEngine_panorama::buildLandmarks() {
+
+  /*Remove all landmarks*/
+  _sfmData.getLandmarks().clear();
+
+  size_t count = 0;
+  for (const sfmData::Constraint2D & c : _sfmData.getConstraints2D()) {
+
+    /*Retrieve camera parameters*/
+    const sfmData::View & v1 = _sfmData.getView(c.ViewFirst);
+    std::shared_ptr<camera::IntrinsicBase> cam1 = _sfmData.getIntrinsicsharedPtr(v1.getIntrinsicId());
+    sfmData::CameraPose pose = _sfmData.getPose(v1);
+
+    /*From 2D to sphere*/
+    Vec3 pt = cam1->toUnitSphere(cam1->remove_disto(cam1->ima2cam(c.ObservationFirst.x)));
+
+    /*To world coordinates*/
+    Vec3 wpt = pose.getTransform().rotation().transpose() * pt;
+
+    /*Store landmark*/
+    Landmark l;
+    l.X = wpt;
+    _sfmData.getLandmarks()[count] = l;
+    count++;
+  }
+
+  return true;
 }
 
 } // namespace sfm
