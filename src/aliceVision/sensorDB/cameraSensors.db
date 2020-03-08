@@ -1352,34 +1352,35 @@ Dexp;Dexp Ixion X355 Zenith;4.82;devicespecifications
 Dexp;Dexp Ixion XL 5;4.69;devicespecifications
 Dexp;Dexp Ixion XL140 Flash;3.67;devicespecifications
 Dexp;Dexp Ixion XL240 Triforce;3.6;devicespecifications
-DJI;DJI FC1102;6.17;usercontribution
-DJI;DJI FC2103;6.17;usercontribution
-DJI;DJI FC220;6.17;usercontribution
-DJI;DJI FC220;6.17;usercontribution
-DJI;DJI FC300C;6.17;usercontribution
-DJI;DJI FC300S;6.16;usercontribution
-DJI;DJI FC300S;6.16;usercontribution
-DJI;DJI FC300X;6.16;usercontribution
-DJI;DJI FC300X;6.16;usercontribution
-DJI;DJI FC300XW;6.17;usercontribution
-DJI;DJI FC330;6.17;usercontribution
-DJI;DJI FC350;6.17;usercontribution
-DJI;DJI FC350;6.17;usercontribution
-DJI;DJI FC550;17.3;usercontribution
-DJI;DJI FC550RAW;17.3;usercontribution
-DJI;DJI FC6310;13.2;usercontribution
-DJI;DJI FC6310R;13.2;usercontribution
-DJI;DJI FC6310S;13.2;usercontribution
-DJI;DJI FC6510;13.2;usercontribution
-DJI;DJI FC6520;17.3;usercontribution
-DJI;DJI FC6540;23.5;usercontribution
-DJI;DJI Phantom 4;6.3;dxomark
-DJI;DJI PHANTOM VISION FC200;6.17;usercontribution
-DJI;DJI PHANTOM VISION FC200;6.17;usercontribution
-DJI;DJI Phantom4 Pro;13.2;dxomark
-DJI;DJI Zenmuse X4S;13.2;dxomark
-DJI;DJI Zenmuse X5S;17.3;dxomark
-DJI;DJI Zenmuse X7;23.5;dxomark
+DJI;FC1102;6.17;usercontribution
+DJI;FC2103;6.17;usercontribution
+DJI;FC220;6.17;usercontribution
+DJI;FC220;6.17;usercontribution
+DJI;FC300C;6.17;usercontribution
+DJI;FC300S;6.16;usercontribution
+DJI;FC300S;6.16;usercontribution
+DJI;FC300X;6.16;usercontribution
+DJI;FC300X;6.16;usercontribution
+DJI;FC300XW;6.17;usercontribution
+DJI;FC330;6.17;usercontribution
+DJI;FC350;6.17;usercontribution
+DJI;FC350;6.17;usercontribution
+DJI;FC550;17.3;usercontribution
+DJI;FC550RAW;17.3;usercontribution
+DJI;FC6310;13.2;usercontribution
+DJI;FC6310R;13.2;usercontribution
+DJI;FC6310S;13.2;usercontribution
+DJI;FC6510;13.2;usercontribution
+DJI;FC6520;17.3;usercontribution
+DJI;FC6540;23.5;usercontribution
+DJI;FC7203;6.16;usercontribution
+DJI;Phantom 4;6.3;dxomark
+DJI;Phantom 4 Pro;13.2;dxomark
+DJI;Phantom Vision FC200;6.17;usercontribution
+DJI;Zenmuse X4S;13.2;dxomark
+DJI;Zenmuse X5S;17.3;dxomark
+DJI;Zenmuse X7;23.5;dxomark
+DJI;Zenmuse Z30;5.23;usercontribution
 DJI;X3;6.17;usercontribution
 DJI;X5R;17.3;usercontribution
 Doogee;Doogee BL12000;4.74;devicespecifications
@@ -6765,6 +6766,7 @@ Xiaomi;Xiaomi Mi 5s;6.25;devicespecifications
 Xiaomi;Xiaomi Mi 5s Plus;4.71;devicespecifications
 Xiaomi;Xiaomi Mi 5X;5.11;devicespecifications
 Xiaomi;Xiaomi Mi 6;4.96;devicespecifications
+Xiaomi;Xiaomi Mi 8;5.64;usercontribution,kimovil
 Xiaomi;Xiaomi Mi A2 Lite;2.98;devicespecifications
 Xiaomi;Xiaomi Mi Max;4.74;devicespecifications
 Xiaomi;Xiaomi Mi Max 2;4.96;devicespecifications
@@ -6795,6 +6797,9 @@ Xiaomi;Xiaomi Redmi 3S 32GB;4.69;devicespecifications
 Xiaomi;Xiaomi Redmi 5;5.11;devicespecifications
 Xiaomi;Xiaomi Redmi 5 Plus;5.11;devicespecifications
 Xiaomi;Xiaomi Redmi 6 Pro;2.98;devicespecifications
+Xiaomi;Xiaomi Redmi 7;4.96;usercontribution,kimovil
+Xiaomi;Xiaomi Redmi 7A;4.96;usercontribution,kimovil
+Xiaomi;Xiaomi Redmi 7 Pro;5.54;usercontribution,kimovil
 Xiaomi;Xiaomi Redmi Note;4.6;devicespecifications
 Xiaomi;Xiaomi Redmi Note 2;4.69;devicespecifications
 Xiaomi;Xiaomi Redmi Note 2 Prime;4.69;devicespecifications
