@@ -747,26 +747,26 @@ void ReconstructionEngine_panorama::Compute_Relative_Rotations(rotationAveraging
   }
 }
 
-bool ReconstructionEngine_panorama::buildLandmarks() {
-
-  /*Remove all landmarks*/
+bool ReconstructionEngine_panorama::buildLandmarks()
+{
+  // Remove all landmarks
   _sfmData.getLandmarks().clear();
 
   size_t count = 0;
-  for (const sfmData::Constraint2D & c : _sfmData.getConstraints2D()) {
-
-    /*Retrieve camera parameters*/
+  for (const sfmData::Constraint2D & c : _sfmData.getConstraints2D())
+  {
+    // Retrieve camera parameters
     const sfmData::View & v1 = _sfmData.getView(c.ViewFirst);
     std::shared_ptr<camera::IntrinsicBase> cam1 = _sfmData.getIntrinsicsharedPtr(v1.getIntrinsicId());
     sfmData::CameraPose pose = _sfmData.getPose(v1);
 
-    /*From 2D to sphere*/
+    // From 2D to sphere
     Vec3 pt = cam1->toUnitSphere(cam1->remove_disto(cam1->ima2cam(c.ObservationFirst.x)));
 
-    /*To world coordinates*/
+    // To world coordinates
     Vec3 wpt = pose.getTransform().rotation().transpose() * pt;
 
-    /*Store landmark*/
+    // Store landmark
     Landmark l;
     l.observations[c.ViewFirst] = c.ObservationFirst;
     l.observations[c.ViewSecond] = c.ObservationSecond;

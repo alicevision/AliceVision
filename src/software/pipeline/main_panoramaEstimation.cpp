@@ -351,22 +351,20 @@ int main(int argc, char **argv)
 
   if(!inputSfmData.structure.empty())
   {
-    ALICEVISION_LOG_ERROR("Part computed SfMData are not currently supported in Global SfM." << std::endl << "Please use Incremental SfM. Aborted");
+    ALICEVISION_LOG_ERROR("Partially computed SfMData is not currently supported in PanoramaEstimation.");
     return EXIT_FAILURE;
   }
 
   if(!inputSfmData.getRigs().empty())
   {
-    ALICEVISION_LOG_ERROR("Rigs are not currently supported in Global SfM." << std::endl << "Please use Incremental SfM. Aborted");
+    ALICEVISION_LOG_ERROR("Rigs are not currently supported in PanoramaEstimation.");
     return EXIT_FAILURE;
   }
 
-  
-
   sfmData::Poses & initial_poses = inputSfmData.getPoses();
   Eigen::Matrix3d ref_R_base = Eigen::Matrix3d::Identity();
-  if (!initial_poses.empty()) { 
-    
+  if (!initial_poses.empty())
+  {
     ref_R_base = initial_poses.begin()->second.getTransform().rotation();
   }
 
@@ -419,8 +417,8 @@ int main(int argc, char **argv)
   // configure relative rotation method (from essential or from homography matrix)
   sfmEngine.SetRelativeRotationMethod(sfm::ERelativeRotationMethod(relativeRotationMethod));
 
-
-  if(!sfmEngine.process()) {
+  if(!sfmEngine.process())
+  {
     return EXIT_FAILURE;
   }
 
@@ -430,45 +428,45 @@ int main(int argc, char **argv)
     sfmEngine.getSfMData().addMatchesFolders(matchesFolders);
     sfmEngine.getSfMData().setAbsolutePath(outSfMDataFilename);
   }
-  
+
   if(refine)
   {
     sfmDataIO::Save(sfmEngine.getSfMData(), (fs::path(outDirectory) / "BA_before.abc").string(), sfmDataIO::ESfMData::ALL);
-    if (!sfmEngine.Adjust()) {
+    if (!sfmEngine.Adjust())
+    {
       return EXIT_FAILURE;
     }
     sfmDataIO::Save(sfmEngine.getSfMData(), (fs::path(outDirectory) / "BA_after.abc").string(), sfmDataIO::ESfMData::ALL);
   }
-  
 
-  
   sfmData::SfMData& outSfmData = sfmEngine.getSfMData();
-  
+
   /**
    * If an initial set of poses was available, make sure at least one pose is aligned with it
    */
   sfmData::Poses & final_poses = outSfmData.getPoses();
-  if (!final_poses.empty() && !initial_poses.empty()) { 
-    
+  if (!final_poses.empty() && !initial_poses.empty())
+  {
     Eigen::Matrix3d ref_R_current = final_poses.begin()->second.getTransform().rotation();
     Eigen::Matrix3d R_restore = ref_R_current.transpose() * ref_R_base;
     
-    for (auto & pose : outSfmData.getPoses()) {    
+    for (auto & pose : outSfmData.getPoses())
+    {
       geometry::Pose3 p = pose.second.getTransform();
 
-      Eigen::Matrix3d newR = p.rotation() * R_restore ;
+      Eigen::Matrix3d newR = p.rotation() * R_restore;
       p.rotation() = newR;
       pose.second.setTransform(p);
     }
   }
-
 
   /***
    * Handle image orientation
   */
   Eigen::Matrix3d R_metadata = Eigen::Matrix3d::Identity();
   sfmData::EEXIFOrientation metadata_orientation = outSfmData.getViews().begin()->second->getMetadataOrientation();
-  switch (metadata_orientation) {
+  switch (metadata_orientation)
+  {
   case sfmData::EEXIFOrientation::REVERSED:
     R_metadata = Eigen::AngleAxisd(M_PI, Vec3(0,1,0));
     break;
@@ -494,13 +492,13 @@ int main(int argc, char **argv)
     break;
   }
 
-  for (auto & pose : outSfmData.getPoses()) {    
+  for (auto & pose : outSfmData.getPoses())
+  {
     geometry::Pose3 p = pose.second.getTransform();
     Eigen::Matrix3d newR = p.rotation() * R_metadata;
     p.rotation() = newR;
     pose.second.setTransform(p);
   }
-
 
   /******
    * Final report
@@ -512,10 +510,9 @@ int main(int argc, char **argv)
     << "\t- # input images: " << outSfmData.getViews().size() << std::endl
     << "\t- # cameras calibrated: " << outSfmData.getPoses().size());
 
-
   /*Add offsets to rotations*/
-  for (auto& pose: outSfmData.getPoses()) {
-
+  for (auto& pose: outSfmData.getPoses())
+  {
     geometry::Pose3 p = pose.second.getTransform();
     Eigen::Matrix3d matLongitude = Eigen::AngleAxisd(degreeToRadian(offsetLongitude), Vec3(0,1,0)).toRotationMatrix();
     Eigen::Matrix3d matLatitude = Eigen::AngleAxisd(degreeToRadian(offsetLatitude), Vec3(1,0,0)).toRotationMatrix();
