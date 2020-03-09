@@ -452,7 +452,9 @@ inline int is_finite(const double val)
 template <typename Type>
 struct MinMaxMeanMedian
 {
-    Type min, max, mean, median;
+    Type min{}, max{}, mean{}, median{};
+
+    MinMaxMeanMedian() = default;
 
     template <typename DataInputIterator>
     MinMaxMeanMedian(DataInputIterator begin, DataInputIterator end)

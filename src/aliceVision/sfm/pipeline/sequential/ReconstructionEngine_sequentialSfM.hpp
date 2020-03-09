@@ -243,27 +243,6 @@ private:
   bool getBestInitialImagePairs(std::vector<Pair>& out_bestImagePairs, IndexT filterViewId = UndefinedIndexT) const;
 
   /**
-   * @brief Compute MSE (Mean Square Error) and a histogram of residual values.
-   * @param[out] histogram
-   * @return the mean number of residual values
-   */
-  double computeResidualsHistogram(Histogram<double>* histogram) const;
-
-  /**
-   * @brief Compute MSE (Mean Square Error) and a histogram of landmarks' observations size.
-   * @param[out] histogram
-   * @return the mean number of observations per landmark
-   */
-  double computeObservationsLengthsHistogram(Histogram<double>* histogram) const;
-
-  /**
-  * @brief Compute MSE (Mean Square Error) and a histogram of landmarks per view.
-  * @param[out] histogram
-  * @return the mean number of landmarks per view or -1 if no landmarks
-  */
-  double computeLandmarksPerViewHistogram(Histogram<double> * histo) const;
-
-  /**
    * @brief Compute a score of the view for a subset of features. This is
    *        used for the next best view choice.
    *
