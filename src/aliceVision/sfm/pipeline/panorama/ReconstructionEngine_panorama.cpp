@@ -312,10 +312,6 @@ bool ReconstructionEngine_panorama::process()
     _htmlDocStream->pushInfo(os.str());
   }
 
-  if (!buildLandmarks()) {
-    return false;
-  }
-
   return true;
 }
 
@@ -428,10 +424,6 @@ bool ReconstructionEngine_panorama::Adjust()
   else
   {
     ALICEVISION_LOG_INFO("Failed to refine Everything.");
-  }
-
-  if (!buildLandmarks()) {
-    return false;
   }
 
   return success;
@@ -776,6 +768,8 @@ bool ReconstructionEngine_panorama::buildLandmarks() {
 
     /*Store landmark*/
     Landmark l;
+    l.observations[c.ViewFirst] = c.ObservationFirst;
+    l.observations[c.ViewSecond] = c.ObservationSecond;
     l.X = wpt;
     _sfmData.getLandmarks()[count] = l;
     count++;

@@ -159,10 +159,11 @@ public:
 
   virtual bool process();
 
+  bool buildLandmarks();
+
 protected:
   /// Compute from relative rotations the global rotations of the camera poses
   bool Compute_Global_Rotations(const aliceVision::rotationAveraging::RelativeRotations& vec_relatives_R, HashMap<IndexT, Mat3>& map_globalR);
-  bool buildLandmarks();
 
 public:
   /// Adjust the scene (& remove outliers)

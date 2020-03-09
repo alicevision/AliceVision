@@ -524,9 +524,11 @@ int main(int argc, char **argv)
     pose.second.setTransform(p);
   }
 
-  
-  /** 
-   * export to disk computed scene (data & visualizable results) 
+  sfmEngine.buildLandmarks();
+  sfmEngine.colorize();
+
+  /**
+   * export to disk computed scene (data & visualizable results)
   **/
   ALICEVISION_LOG_INFO("Export SfMData to disk");
   sfmDataIO::Save(outSfmData, outSfMDataFilename, sfmDataIO::ESfMData::ALL);
