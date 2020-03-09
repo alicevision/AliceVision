@@ -16,7 +16,7 @@
 #include <aliceVision/image/all.hpp>
 #include <aliceVision/config.hpp>
 
-#include "dependencies/histogram/histogram.hpp"
+#include <aliceVision/utils/Histogram.hpp>
 #include "dependencies/htmlDoc/htmlDoc.hpp"
 
 #define BOOST_TEST_MODULE GainOffsetConstraintBuilder

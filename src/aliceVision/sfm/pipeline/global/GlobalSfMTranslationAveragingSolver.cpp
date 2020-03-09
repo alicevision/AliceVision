@@ -28,7 +28,7 @@
 #include <aliceVision/config.hpp>
 #include <aliceVision/alicevision_omp.hpp>
 
-#include <dependencies/histogram/histogram.hpp>
+#include <aliceVision/utils/Histogram.hpp>
 
 #include <boost/progress.hpp>
 

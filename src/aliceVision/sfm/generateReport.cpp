@@ -8,8 +8,8 @@
 #include "generateReport.hpp"
 #include <aliceVision/sfmData/SfMData.hpp>
 
+#include <aliceVision/utils/Histogram.hpp>
 #include <dependencies/htmlDoc/htmlDoc.hpp>
-#include <dependencies/histogram/histogram.hpp>
 #include <dependencies/vectorGraphics/svgDrawer.hpp>
 
 #include <boost/filesystem.hpp>

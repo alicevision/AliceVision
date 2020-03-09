@@ -11,7 +11,7 @@
 #include <aliceVision/multiview/rotationAveraging/rotationAveraging.hpp>
 #include <aliceVision/stl/mapUtils.hpp>
 
-#include <dependencies/histogram/histogram.hpp>
+#include <aliceVision/utils/Histogram.hpp>
 
 namespace aliceVision {
 namespace sfm {

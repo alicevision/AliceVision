@@ -10,8 +10,8 @@
 #include <aliceVision/numeric/numeric.hpp>
 #include <aliceVision/geometry/rigidTransformation3D.hpp>
 
+#include <aliceVision/utils/Histogram.hpp>
 #include <dependencies/htmlDoc/htmlDoc.hpp>
-#include <dependencies/histogram/histogram.hpp>
 #include <dependencies/vectorGraphics/svgDrawer.hpp>
 
 #include <boost/filesystem.hpp>
