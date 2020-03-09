@@ -7,7 +7,7 @@
 #pragma once
 
 #include <aliceVision/sfmData/SfMData.hpp>
-#include <aliceVision/track/Track.hpp>
+#include <aliceVision/track/TracksBuilder.hpp>
 
 namespace aliceVision {
 namespace sfm {

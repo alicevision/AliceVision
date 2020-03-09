@@ -13,7 +13,7 @@
 #include <aliceVision/feature/feature.hpp>
 #include <aliceVision/matching/IndMatch.hpp>
 #include <aliceVision/matching/io.hpp>
-#include <aliceVision/track/Track.hpp>
+#include <aliceVision/track/TracksBuilder.hpp>
 #include <aliceVision/image/all.hpp>
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/cmdline.hpp>

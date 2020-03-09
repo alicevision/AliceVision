@@ -11,7 +11,7 @@
 #include <aliceVision/multiview/translationAveraging/common.hpp>
 #include <aliceVision/feature/FeaturesPerView.hpp>
 #include <aliceVision/sfm/pipeline/pairwiseMatchesIO.hpp>
-#include <aliceVision/track/Track.hpp>
+#include <aliceVision/track/TracksBuilder.hpp>
 #include <aliceVision/graph/graph.hpp>
 
 namespace aliceVision {

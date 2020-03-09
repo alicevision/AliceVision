@@ -1,11 +1,12 @@
 # Headers
 set(tracks_files_headers
   Track.hpp
+  TracksBuilder.hpp
 )
 
 # Sources
 set(tracks_files_sources
-  Track.cpp
+  TracksBuilder.cpp
 )
 
 alicevision_add_library(aliceVision_track

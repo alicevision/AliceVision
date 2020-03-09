@@ -7,7 +7,7 @@
 #pragma once
 
 #include <aliceVision/types.hpp>
-#include <aliceVision/track/Track.hpp>
+#include <aliceVision/track/TracksBuilder.hpp>
 #include <aliceVision/sfm/BundleAdjustment.hpp>
 
 namespace aliceVision {

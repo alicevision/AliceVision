@@ -13,9 +13,9 @@
 #include <aliceVision/sfm/pipeline/pairwiseMatchesIO.hpp>
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
 #include <aliceVision/feature/FeaturesPerView.hpp>
-#include <aliceVision/track/Track.hpp>
+#include <aliceVision/track/TracksBuilder.hpp>
 #include <dependencies/htmlDoc/htmlDoc.hpp>
-#include <dependencies/histogram/histogram.hpp>
+#include <aliceVision/utils/Histogram.hpp>
 
 #include <boost/filesystem.hpp>
 #include <boost/property_tree/ptree.hpp>
