@@ -87,7 +87,8 @@ void ReconstructionEngine_globalSfM::SetFeaturesProvider(feature::FeaturesPerVie
           for (PointFeatures::iterator iterPt = iterFeatPerDesc.second.begin();
             iterPt != iterFeatPerDesc.second.end(); ++iterPt)
           {
-            const Vec3 bearingVector = (*cam)(cam->get_ud_pixel(iterPt->coords().cast<double>()));
+            const Vec2 pt = iterPt->coords().cast<double>();
+            const Vec3 bearingVector = cam->toUnitSphere(cam->remove_disto(cam->ima2cam(pt)));
             iterPt->coords() << (bearingVector.head(2) / bearingVector(2)).cast<float>();
           }
         }
@@ -530,6 +531,7 @@ void ReconstructionEngine_globalSfM::Compute_Relative_Rotations(rotationAveragin
       // Since we use normalized features, we will use unit image size and intrinsic matrix:
       const std::pair<size_t, size_t> imageSize(1., 1.);
       const Mat3 K  = Mat3::Identity();
+
 
       if(!robustRelativePose(K, K, x1, x2, relativePose_info, imageSize, imageSize, 256))
       {

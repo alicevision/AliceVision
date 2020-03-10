@@ -266,16 +266,6 @@ public:
   virtual bool updateFromParams(const std::vector<double>& params) = 0;
 
   /**
-   * @brief Get bearing vector of p point (image coordinate)
-   * @param[in] p Vec2
-   * @return Vec3 bearing vector
-   */
-  virtual Vec3 operator () (const Vec2& p) const
-  {
-    return toUnitSphere(p);
-  }
-
-  /**
    * @brief Transform a point from the camera plane to the image plane
    * @param[in] p A point from the camera plane
    * @return Image plane point
@@ -467,8 +457,8 @@ inline double AngleBetweenRays(const geometry::Pose3& pose1,
   // X = R.t() * K.inv() * x + C // Camera world point
   // getting the ray:
   // ray = X - C = R.t() * K.inv() * x
-  const Vec3 ray1 = (pose1.rotation().transpose() * intrinsic1->operator()(x1)).normalized();
-  const Vec3 ray2 = (pose2.rotation().transpose() * intrinsic2->operator()(x2)).normalized();
+  const Vec3 ray1 = (pose1.rotation().transpose() * intrinsic1->toUnitSphere(intrinsic1->remove_disto(intrinsic1->ima2cam(x1)))).normalized();
+  const Vec3 ray2 = (pose2.rotation().transpose() * intrinsic2->toUnitSphere(intrinsic2->remove_disto(intrinsic2->ima2cam(x2)))).normalized();
   return AngleBetweenRays(ray1, ray2);
 }
 
