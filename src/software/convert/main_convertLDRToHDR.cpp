@@ -595,8 +595,11 @@ int main(int argc, char * argv[])
       case ECalibrationMethod::LAGUERRE:
       {
           ALICEVISION_LOG_INFO("Laguerre calibration");
-          if (calibrationNbPoints <= 0)
+          if(calibrationNbPoints <= 0)
+          {
               calibrationNbPoints = 1000000;
+          }
+
           hdr::LaguerreBACalibration calibration;
           calibration.process(groupedFilenames, channelQuantization, groupedExposures, calibrationNbPoints, calibrationDownscale, fisheye, refineExposures, response);
       }
