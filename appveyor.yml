@@ -63,8 +63,9 @@ build:
 cache:
   c:\tools\vcpkg\installed\
 
+after_build:
 # zip Win64 build and push build to artifacts
-7z a alicevisionWin64snapshot.zip %APPVEYOR_BUILD_FOLDER%\build\Windows-AMD64\Release\*.*
+  - 7z a alicevisionWin64snapshot.zip %APPVEYOR_BUILD_FOLDER%\build\Windows-AMD64\Release\*.*
 
 artifacts:
   - path: alicevisionWin64snapshot.zip
