@@ -86,7 +86,7 @@ class Pinhole : public IntrinsicsScaleOffsetDisto
 
   Vec2 project(const geometry::Pose3& pose, const Vec3& pt, bool applyDistortion = true) const override
   {
-    const Vec3 X = pose.rotation() * pt; // apply pose
+    const Vec3 X = pose(pt); // apply pose
     const Vec2 P = X.head<2>() / X(2);
 
     const Vec2 distorted = this->add_disto(P);
