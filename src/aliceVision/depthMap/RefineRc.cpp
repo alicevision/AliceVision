@@ -60,11 +60,11 @@ void RefineRc::getDepthPixSizeMapFromSGM(DepthSimMap& out_depthSimMapScale1Step1
         for(int x = 0; x < w11; ++x)
         {
             const Point3d p = _sp.mp.CArr[_rc] + (_sp.mp.iCamArr[_rc] * Point2d(static_cast<float>(x), static_cast<float>(y))).normalize() * out_depthSimMapScale1Step1._dsm[y * w11 + x].depth;
-
+            DepthSim& depthSim = out_depthSimMapScale1Step1._dsm[y * w11 + x];
             if(_userTcOrPixSize)
-                out_depthSimMapScale1Step1._dsm[y * w11 + x].sim = _sp.mp.getCamsMinPixelSize(p, _refineTCams);
+                depthSim.sim = _sp.mp.getCamsMinPixelSize(p, _refineTCams);
             else
-                out_depthSimMapScale1Step1._dsm[y * w11 + x].sim = _sp.mp.getCamPixelSize(p, _rc);
+                depthSim.sim = _sp.mp.getCamPixelSize(p, _rc);
         }
     }
 }

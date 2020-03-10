@@ -30,8 +30,17 @@ __global__ void refine_compUpdateYKNCCSimMapPatch_kernel(int rc_cam_cache_idx,
     float odpt = *get2DBufferAt(depthMap, depthMap_p, tile_x, tile_y);
     float osim = 1.0f;
 
-    // If we have an initial depth value, we can refine it
-    if(odpt > 0.0f)
+    float* osim_ptr = get2DBufferAt(osimMap, osimMap_p, tile_x, tile_y);
+    float* odpt_ptr = get2DBufferAt(odptMap, odptMap_p, tile_x, tile_y);
+
+    const float4 gcr = tex2D_float4(rc_tex, pix.x + 0.5f, pix.y + 0.5f);
+    if(odpt <= 0.0f || gcr.w == 0.0f)
+    {
+        *osim_ptr = osim;
+        *odpt_ptr = odpt;
+        return;
+    }
+
     {
         float3 p = get3DPointForPixelAndDepthFromRC(rc_cam_cache_idx, pix, odpt);
         move3DPointByTcOrRcPixStep(rc_cam_cache_idx, tc_cam_cache_idx, p, tcStep, moveByTcOrRc);
@@ -46,8 +55,6 @@ __global__ void refine_compUpdateYKNCCSimMapPatch_kernel(int rc_cam_cache_idx,
         osim = compNCCby3DptsYK(rc_tex, tc_tex, rc_cam_cache_idx, tc_cam_cache_idx, ptch, wsh, rcWidth, rcHeight, tcWidth, tcHeight, gammaC, gammaP);
     }
 
-    float* osim_ptr = get2DBufferAt(osimMap, osimMap_p, tile_x, tile_y);
-    float* odpt_ptr = get2DBufferAt(odptMap, odptMap_p, tile_x, tile_y);
     if(tcStep == 0.0f)
     {
         // For the first iteration, we initialize the values
