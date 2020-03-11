@@ -65,7 +65,7 @@ inline EINTRINSIC EINTRINSIC_stringToEnum(const std::string& intrinsic)
 // Return if the camera type is a valid enum
 inline bool isValid(EINTRINSIC eintrinsic)
 {
-  return eintrinsic > PINHOLE_CAMERA && eintrinsic < CAMERA_END;
+  return eintrinsic >= PINHOLE_CAMERA && eintrinsic < CAMERA_END;
 }
 
 inline bool isPinhole(EINTRINSIC eintrinsic)
