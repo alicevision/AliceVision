@@ -69,6 +69,28 @@ void RefineRc::getDepthPixSizeMapFromSGM(DepthSimMap& out_depthSimMapScale1Step1
     }
 }
 
+void RefineRc::filterMaskedPixels(DepthSimMap& out_depthSimMap, int rc)
+{
+    mvsUtils::ImagesCache<ImageRGBAf>::ImgSharedPtr img = _sp.cps._ic.getImg_sync(rc);
+
+    const int h = _sp.mp.getHeight(rc);
+    const int w = _sp.mp.getWidth(rc);
+    for(int y = 0; y < h; ++y)
+    {
+        for(int x = 0; x < w; ++x)
+        {
+            const ColorRGBAf& floatRGBA = img->at(x, y);
+            if(floatRGBA.a < 0.1f)
+            {
+                DepthSim& depthSim = out_depthSimMap._dsm[y * w + x];
+
+                depthSim.depth = -1.0;
+                depthSim.sim = -1.0;
+            }
+        }
+    }
+}
+
 void RefineRc::refineAndFuseDepthSimMapCUDA(DepthSimMap& out_depthSimMapFused, const DepthSimMap& depthPixSizeMapVis)
 {
     auto startTime = std::chrono::high_resolution_clock::now();
@@ -208,6 +230,7 @@ bool RefineRc::refinerc(bool checkIfExists)
 
     DepthSimMap depthPixSizeMapVis(_rc, _sp.mp, 1, 1);
     getDepthPixSizeMapFromSGM(depthPixSizeMapVis);
+    filterMaskedPixels(depthPixSizeMapVis, _rc);
 
     if (_sp.exportIntermediateResults)
     {
