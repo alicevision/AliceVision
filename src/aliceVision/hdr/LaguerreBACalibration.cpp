@@ -51,8 +51,8 @@ double d_laguerreFunction_d_param(double a, double x)
     double cos_m_pi_x = cos(m_pi_x);
     double nom = a * sin_m_pi_x;
     double denom = 1.0 - a * cos_m_pi_x;
-    double atanx = atan(nom / denom);
-    double res = x + c * atanx;
+    /*double atanx = atan(nom / denom);
+    double res = x + c * atanx;*/
 
     double d_res_d_atanx = c;
     double d_atanx_d_nom = denom / (nom * nom + denom * denom);
@@ -73,8 +73,8 @@ double d_laguerreFunction_d_x(double a, double x)
     double cos_m_pi_x = cos(m_pi_x);
     double nom = a * sin_m_pi_x;
     double denom = 1.0 - a * cos_m_pi_x;
-    double atanx = atan(nom / denom);
-    double res = x + c * atanx;
+    /*double atanx = atan(nom / denom);
+    double res = x + c * atanx;*/
 
     double d_res_d_atanx = c;
     double d_atanx_d_nom = denom / (nom * nom + denom * denom);
@@ -334,6 +334,7 @@ void LaguerreBACalibration::process(const std::vector<std::vector<std::string>>&
                 if(first)
                 {
                     problem.SetParameterBlockConstant(&expA);
+                    first = false;
                 }
             }
         }

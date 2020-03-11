@@ -212,8 +212,6 @@ public:
     P(0) = cos(angle_radial) * radius;
     P(1) = sin(angle_radial) * radius;
 
-    const Vec2 distorted = this->add_disto(P);
-
     return getDerivativeCam2ImaWrtPoint() * getDerivativeAddDistoWrtDisto(P);
   }
 

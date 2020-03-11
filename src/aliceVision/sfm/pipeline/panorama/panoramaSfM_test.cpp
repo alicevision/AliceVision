@@ -55,14 +55,14 @@ BOOST_AUTO_TEST_CASE(PANORAMA_SFM)
     ALICEVISION_LOG_INFO("K2:\n" << K2);
 
     // 2d points on each side as projection of the 3D points
-    const Mat2X pts1 = (K1 * pts3d).colwise().hnormalized();
+    //const Mat2X pts1 = (K1 * pts3d).colwise().hnormalized();
     //        ALICEVISION_LOG_INFO("pts1:\n" << pts1);
-    const Mat2X pts2 = (K2 * rotation *  pts3d).colwise().hnormalized();
+    //const Mat2X pts2 = (K2 * rotation *  pts3d).colwise().hnormalized();
     //        ALICEVISION_LOG_INFO("pts2:\n" << pts2);
 
     // test the uncalibrated version, just pass the 2d points and compute R
 
-    const double epsilon = 1e-4;
+    //const double epsilon = 1e-4;
 
     // Relative Rotation from H
   /*  {

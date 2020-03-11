@@ -104,7 +104,7 @@ public:
   CircleDetector() = delete;
 
   CircleDetector(size_t width, size_t height, size_t minimal_size) 
-  : _source_width(width), _source_height(height), _minimal_size(minimal_size) {
+  : _source_width(width), _source_height(height), _minimal_size(minimal_size), _radius(0) {
   }
 
   bool appendImage(const image::Image<float> & grayscale_input) {
@@ -154,7 +154,7 @@ public:
     image::Image<float> gradientImage(max_radius_i, angles_bins);
 
     int max = pyramid.countLevels() - 1;
-    int diff = max - level;
+    /*int diff = max - level;*/
     int min_radius = 8;
     int radius = min_radius;// * pow(2, diff);
     
