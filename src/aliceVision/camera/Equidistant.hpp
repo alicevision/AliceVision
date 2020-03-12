@@ -184,8 +184,6 @@ public:
     d_P_d_angles(1, 0) = cos(angle_radial) * radius;
     d_P_d_angles(1, 1) = sin(angle_radial) * d_radius_d_angle_Z;
 
-    const Vec2 distorted = this->add_disto(P);
-
     return getDerivativeCam2ImaWrtPoint() * getDerivativeAddDistoWrtPt(P) * d_P_d_angles * d_angles_d_X * d_X_d_pt;
   }
 

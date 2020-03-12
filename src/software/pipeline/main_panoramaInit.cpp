@@ -153,7 +153,7 @@ public:
 
     image::Image<float> gradientImage(max_radius_i, angles_bins);
 
-    int max = pyramid.countLevels() - 1;
+    /*int max = pyramid.countLevels() - 1;*/
     /*int diff = max - level;*/
     int min_radius = 8;
     int radius = min_radius;// * pow(2, diff);
