@@ -67,8 +67,7 @@ cache:
 
 after_build:
   - 7z a %APPVEYOR_BUILD_FOLDER%\build\alicevisionWin64snapshot.zip %APPVEYOR_BUILD_FOLDER%\build\Windows-AMD64\Release\*
-  - cd %APPVEYOR_BUILD_FOLDER%\build\
-  - dir
+  - appveyor PushArtifact alicevisionWin64snapshot.zip
   
 artifacts:
   - path: build\alicevisionWin64snapshot.zip
