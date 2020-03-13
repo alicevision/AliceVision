@@ -71,5 +71,5 @@ after_build:
   - dir
   
 artifacts:
-  - path: C:\projects\alicevision\build\alicevisionWin64snapshot.zip
+  - path: build\alicevisionWin64snapshot.zip
     name: alicevisionWin64snapshot
