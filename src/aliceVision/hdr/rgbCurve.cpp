@@ -65,11 +65,12 @@ void rgbCurve::setGamma()
     }
 }
 
-void rgbCurve::setEmor()
+void rgbCurve::setEmor(size_t dim )
 {
   const std::size_t emorSize = std::pow(2, 10);
   const std::size_t curveSize = getSize();
-  const double* ptrf0 = getEmorInvCurve(0);
+  const double* ptrf0 = getEmorInvCurve(dim);
+  
   std::vector<double> f0;
   if(curveSize == emorSize)
   {

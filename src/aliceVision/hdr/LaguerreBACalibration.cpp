@@ -90,37 +90,8 @@ double d_laguerreFunction_d_x(double a, double x)
                             d_atanx_d_denom * d_denom_d_cos_m_pi_x * d_cos_m_pi_x_d_m_pi_x * d_m_pi_x_d_x);
 }
 
-/**
- *
- */
-struct HdrResidual
-{
-    HdrResidual(double a, double b)
-        : _colorA(a)
-        , _colorB(b)
-    {
-    }
 
-    template <typename T>
-    bool operator()(const T* const laguerreParam, const T* const expA, const T* const expB, T* residual) const
-    {
-        T laguerre_param = laguerreParam[0];
-        T colorA = T(_colorA);
-        T colorB = T(_colorB);
-
-        T errorCost =
-            laguerreFunctionInv(laguerre_param, laguerreFunction(laguerre_param, colorA) * (*expB) / (*expA)) - colorB;
-        residual[0] = errorCost;
-
-        return true;
-    }
-
-private:
-    double _colorA;
-    double _colorB;
-};
-
-class HdrResidualAnalytic : public ceres::SizedCostFunction<1, 1, 1, 1>
+class HdrResidualAnalytic : public ceres::SizedCostFunction<2, 1, 1>
 {
 public:
     HdrResidualAnalytic(double a, double b)
@@ -132,13 +103,16 @@ public:
     bool Evaluate(double const* const* parameters, double* residuals, double** jacobians) const override
     {
         double laguerre_param = parameters[0][0];
-        double expA = parameters[1][0];
-        double expB = parameters[2][0];
+        double ratio_exp = parameters[1][0];
 
-        double ratio_exp = (expB) / (expA);
-        double a = laguerreFunction(laguerre_param, _colorA) * ratio_exp;
-        double errorCost = laguerreFunctionInv(laguerre_param, a) - _colorB;
-        residuals[0] = errorCost;
+        double a = laguerreFunction(laguerre_param, _colorA) / ratio_exp;
+        double b = laguerreFunction(laguerre_param, _colorB) * ratio_exp;
+
+        double errorCost_1 = laguerreFunctionInv(laguerre_param, a) - _colorB;
+        double errorCost_2 = laguerreFunctionInv(laguerre_param, b) - _colorA;
+        
+        residuals[0] = errorCost_1;
+        residuals[1] = errorCost_2;
 
         if(jacobians == nullptr)
         {
@@ -147,21 +121,17 @@ public:
 
         if(jacobians[0] != nullptr)
         {
-            double d_laguerreFunctionInv_d_laguerre_param = -d_laguerreFunction_d_param(-laguerre_param, a) +
-                                                            d_laguerreFunction_d_x(-laguerre_param, a) * ratio_exp *
-                                                                d_laguerreFunction_d_param(laguerre_param, _colorA);
+            double d_errorCost_1_d_laguerre_param = -d_laguerreFunction_d_param(-laguerre_param, a) + d_laguerreFunction_d_x(-laguerre_param, a) * (1.0/ratio_exp) * d_laguerreFunction_d_param(laguerre_param, _colorA);
+            double d_errorCost_2_d_laguerre_param = -d_laguerreFunction_d_param(-laguerre_param, b) + d_laguerreFunction_d_x(-laguerre_param, b) * ratio_exp * d_laguerreFunction_d_param(laguerre_param, _colorB);
 
-            jacobians[0][0] = d_laguerreFunctionInv_d_laguerre_param;
+            jacobians[0][0] = d_errorCost_1_d_laguerre_param;
+            jacobians[0][1] = d_errorCost_2_d_laguerre_param;
         }
 
         if(jacobians[1] != nullptr)
         {
-            jacobians[1][0] = d_laguerreFunction_d_x(-laguerre_param, a) * laguerreFunction(laguerre_param, _colorA) * (-expB / (expA * expA));
-        }
-
-        if(jacobians[2] != nullptr)
-        {
-            jacobians[2][0] = d_laguerreFunction_d_x(-laguerre_param, a) * laguerreFunction(laguerre_param, _colorA) * (1.0 / expA);
+            jacobians[1][0] = d_laguerreFunction_d_x(-laguerre_param, a) * laguerreFunction(laguerre_param, _colorA) * (-1.0 / (ratio_exp * ratio_exp));
+            jacobians[1][1] = d_laguerreFunction_d_x(-laguerre_param, b) * laguerreFunction(laguerre_param, _colorA);
         }
 
         return true;
@@ -172,225 +142,158 @@ private:
     double _colorB;
 };
 
+class ExposureConstraint : public ceres::SizedCostFunction<1, 1>
+{
+public:
+    ExposureConstraint(double ratio) : _ratio(ratio)
+    {
+    }
+
+    bool Evaluate(double const* const* parameters, double* residuals, double** jacobians) const override
+    {
+        double ratio_cur = parameters[0][0];
+
+        const double w = 1000.0;
+        residuals[0] = w * (ratio_cur - _ratio);
+
+        if(jacobians == nullptr)
+        {
+            return true;
+        }
+
+        if (jacobians[0] != nullptr) {
+            jacobians[0][0] = w;
+        }
+
+        return true;
+    }
+private:
+    double _ratio;
+};
+
 void LaguerreBACalibration::process(const std::vector<std::vector<std::string>>& imagePathsGroups,
                                     const std::size_t channelQuantization,
                                     std::vector<std::vector<float>>& cameraExposures, int nbPoints, int imageDownscale,
                                     bool fisheye, bool refineExposures, rgbCurve& response)
 {
+    /*Extract samples from images*/
     ALICEVISION_LOG_DEBUG("Extract color samples");
     std::vector<std::vector<ImageSamples>> samples;
     extractSamples(samples, imagePathsGroups, cameraExposures, nbPoints, imageDownscale, fisheye);
 
-    ALICEVISION_LOG_DEBUG("Create exposure list");
-    std::map<std::pair<int, float>, double> exposures;
-    for(int i = 0; i < cameraExposures.size(); ++i)
-    {
-        const std::vector<float>& camExp = cameraExposures[i];
-        for(int j = 0; j < camExp.size(); ++j)
-        {
-            const auto& exp = camExp[j];
 
-            ALICEVISION_LOG_TRACE(" * " << imagePathsGroups[i][j] << ": " << exp);
+    std::vector<std::vector<double>> exposuresRatios;
 
-            // TODO: camId
-            exposures[std::make_pair(0, exp)] = exp;
+    for (std::vector<float> & group : cameraExposures) {
+        std::vector<double> dest;
+
+        for (int index = 0; index < group.size() - 1; index++) {
+            
+            double exposure_first = group[index];
+            double exposure_second = group[index + 1];
+            dest.push_back(exposure_second / exposure_first);
         }
+        
+        exposuresRatios.push_back(dest);
     }
+
     std::array<double, 3> laguerreParam = {0.0, 0.0, 0.0};
-    std::array<double, 3> relativeWB = {1.0, 1.0, 1.0};
 
-    ALICEVISION_LOG_DEBUG("Create BA problem");
     ceres::Problem problem;
+    ceres::LossFunction* lossFunction = nullptr;
 
-    // Should we expose the LOSS function parameter?
-    ceres::LossFunction* lossFunction = new ceres::HuberLoss(Square(0.12)); // 0.12 ~= 30/255
-
-    // In the Bundle Adjustment each image is optimized relativelty to the next one. The images are ordered by
-    // exposures. But the exposures need to be different between 2 consecutive images to get constraints. So if multiple
-    // images have been taken with the same parameters, we search for the next closest exposure (larger or smaller). For
-    // example a dataset of 6 images with 4 different exposures:
-    //       0        1        2        3        4        5
-    //     1/800    1/800 -- 1/400 -- 1/200    1/200 -- 1/100
-    //       \_________________/        \________________/
-    // Without duplicates the relative indexes would be: [1, 2, 3, 4, 5, 4]
-    // In this example with 2 duplicates, the relative indexes are: [2, 2, 3, 5, 5, 3]
-    std::vector<std::vector<int>> closestRelativeExpIndex;
-    {
-        closestRelativeExpIndex.resize(cameraExposures.size());
-        for(int i = 0; i < cameraExposures.size(); ++i)
-        {
-            const std::vector<float>& camExp = cameraExposures[i];
-            std::vector<int>& camRelativeExpIndex = closestRelativeExpIndex[i];
-            camRelativeExpIndex.resize(camExp.size(), -1);
-            for(int j = 0; j < camExp.size(); ++j)
-            {
-                // Search in the following indexes
-                for(int rj = j + 1; rj < camExp.size(); ++rj)
-                {
-                    if(camExp[rj] != camExp[j])
-                    {
-                        camRelativeExpIndex[j] = rj;
-                        break;
-                    }
-                }
-                if(camRelativeExpIndex[j] != -1)
-                    continue;
-                // Search in backward direction
-                for(int rj = j - 1; rj >= 0; --rj)
-                {
-                    if(camExp[rj] != camExp[j])
-                    {
-                        camRelativeExpIndex[j] = rj;
-                        break;
-                    }
-                }
-            }
-        }
-        /*
-        // Log relative indexes
-        for (int i = 0; i < closestRelativeExpIndex.size(); ++i)
-        {
-            std::vector<int>& camRelativeExpIndex = closestRelativeExpIndex[i];
-            for (int j = 0; j < camRelativeExpIndex.size(); ++j)
-            {
-                ALICEVISION_LOG_TRACE(" * closestRelativeExpIndex[" << i << "][" << j << "] = " <<
-        closestRelativeExpIndex[i][j]);
-            }
-        }*/
-    }
-
-    bool first = true;
+    
     // Convert selected samples into residual blocks
-    for(int g = 0; g < samples.size(); ++g)
+    for (int groupId = 0; groupId < samples.size(); ++groupId)
     {
-        std::vector<ImageSamples>& hdrSamples = samples[g];
+        std::vector<ImageSamples> & group = samples[groupId];
 
-        ALICEVISION_LOG_TRACE("Group: " << g << ", hdr brakets: " << hdrSamples.size()
-                                        << ", nb color samples: " << hdrSamples[0].colors.size());
+        for (int imageId = 0; imageId < group.size() - 1; imageId++) {
 
-        for(int i = 0; i < hdrSamples[0].colors.size(); ++i)
-        {
-            for(int h = 0; h < hdrSamples.size(); ++h)
+            const ImageSamples & samples = group[imageId];
+            const ImageSamples & samplesOther = group[imageId + 1];
+
+            double * ratioExp = &(exposuresRatios[groupId][imageId]);
+
+            for(int sampleId = 0; sampleId < samples.colors.size(); sampleId++)
             {
-                int hNext = closestRelativeExpIndex[g][h];
-                if(h == hNext)
-                    throw std::runtime_error(
-                        "Error in exposure chain. Relative exposure refer to itself (h: " + std::to_string(h) + ").");
-                if(hNext < h)
-                {
-                    // The residual cost is bidirectional. So if 2 elements refer to each other, it will be a
-                    // duplicates, so we have to skip one of them.
-                    int hNextNext = closestRelativeExpIndex[g][hNext];
-                    if(hNextNext == h)
-                        continue;
-                }
-
-                double& expA = exposures[std::make_pair(0, cameraExposures[g][h])];
-                double& expB = exposures[std::make_pair(0, cameraExposures[g][hNext])];
-
-                /*problem.AddResidualBlock(new ceres::AutoDiffCostFunction<HdrResidual, 1, 1, 1, 1>(
-                                            new HdrResidual( hdrSamples[h].colors[i].r(),
-                hdrSamples[hNext].colors[i].r())), lossFunction, &(laguerreParam.data()[0]), &expA, &expB);
-
-                problem.AddResidualBlock(new ceres::AutoDiffCostFunction<HdrResidual, 1, 1, 1, 1>(new HdrResidual(
-                                             hdrSamples[hNext].colors[i].r(), hdrSamples[h].colors[i].r())),
-                                         lossFunction, &(laguerreParam.data()[0]), &expB, &expA);
-
-                problem.AddResidualBlock(new ceres::AutoDiffCostFunction<HdrResidual, 1, 1, 1, 1>(new HdrResidual(
-                                             hdrSamples[h].colors[i].g(), hdrSamples[hNext].colors[i].g())),
-                                         lossFunction, &(laguerreParam.data()[1]), &expA, &expB);
-
-                problem.AddResidualBlock(new ceres::AutoDiffCostFunction<HdrResidual, 1, 1, 1, 1>(new HdrResidual(
-                                             hdrSamples[hNext].colors[i].g(), hdrSamples[h].colors[i].g())),
-                                         lossFunction, &(laguerreParam.data()[1]), &expB, &expA);
-
-                problem.AddResidualBlock(new ceres::AutoDiffCostFunction<HdrResidual, 1, 1, 1, 1>(new HdrResidual(
-                                             hdrSamples[h].colors[i].b(), hdrSamples[hNext].colors[i].b())),
-                                         lossFunction, &(laguerreParam.data()[2]), &expA, &expB);
-
-                problem.AddResidualBlock(new ceres::AutoDiffCostFunction<HdrResidual, 1, 1, 1, 1>(new HdrResidual(
-                                             hdrSamples[hNext].colors[i].b(), hdrSamples[h].colors[i].b())),
-                                         lossFunction, &(laguerreParam.data()[2]), &expB, &expA);*/
-
-                problem.AddResidualBlock(
-                    new HdrResidualAnalytic(hdrSamples[h].colors[i].r(), hdrSamples[hNext].colors[i].r()), lossFunction,
-                    &(laguerreParam.data()[0]), &expA, &expB);
-                problem.AddResidualBlock(
-                    new HdrResidualAnalytic(hdrSamples[hNext].colors[i].r(), hdrSamples[h].colors[i].r()), lossFunction,
-                    &(laguerreParam.data()[0]), &expB, &expA);
-                problem.AddResidualBlock(
-                    new HdrResidualAnalytic(hdrSamples[h].colors[i].g(), hdrSamples[hNext].colors[i].g()), lossFunction,
-                    &(laguerreParam.data()[1]), &expA, &expB);
-                problem.AddResidualBlock(
-                    new HdrResidualAnalytic(hdrSamples[hNext].colors[i].g(), hdrSamples[h].colors[i].g()), lossFunction,
-                    &(laguerreParam.data()[1]), &expB, &expA);
-                problem.AddResidualBlock(
-                    new HdrResidualAnalytic(hdrSamples[h].colors[i].b(), hdrSamples[hNext].colors[i].b()), lossFunction,
-                    &(laguerreParam.data()[2]), &expA, &expB);
-                problem.AddResidualBlock(
-                    new HdrResidualAnalytic(hdrSamples[hNext].colors[i].b(), hdrSamples[h].colors[i].b()), lossFunction,
-                    &(laguerreParam.data()[2]), &expB, &expA);
-
-                if(first)
-                {
-                    problem.SetParameterBlockConstant(&expA);
-                    first = false;
-                }
+                problem.AddResidualBlock(new HdrResidualAnalytic(samples.colors[sampleId].r(), samplesOther.colors[sampleId].r()), lossFunction, &(laguerreParam.data()[0]), ratioExp);
+                problem.AddResidualBlock(new HdrResidualAnalytic(samples.colors[sampleId].g(), samplesOther.colors[sampleId].g()), lossFunction, &(laguerreParam.data()[1]), ratioExp);
+                problem.AddResidualBlock(new HdrResidualAnalytic(samples.colors[sampleId].b(), samplesOther.colors[sampleId].b()), lossFunction, &(laguerreParam.data()[2]), ratioExp);
             }
         }
     }
 
-    if(!refineExposures)
+
+
+    if (!refineExposures)
     {
-        for(auto& exp : exposures)
+        /*Fix exposures*/
+        for (int groupId = 0; groupId < exposuresRatios.size(); ++groupId)
         {
-            problem.SetParameterBlockConstant(&exp.second);
+            std::vector<double> & group = exposuresRatios[groupId];
+
+            for (int ratioId = 0; ratioId < group.size(); ratioId++) {
+
+                double * expratio = &(group[ratioId]);
+                problem.SetParameterBlockConstant(expratio);
+            }
         }
     }
+    else {
+        for (int groupId = 0; groupId < exposuresRatios.size(); ++groupId)
+        {
+            std::vector<double> & group = exposuresRatios[groupId];
+
+            for (int ratioId = 0; ratioId < group.size(); ratioId++) {
+
+                problem.AddResidualBlock(new ExposureConstraint(group[ratioId]), nullptr, &(group[ratioId]));
+            }
+        }
+    }
+    
 
     ALICEVISION_LOG_INFO("BA Solve");
 
     ceres::Solver::Options solverOptions;
-    solverOptions.linear_solver_type = ceres::SPARSE_NORMAL_CHOLESKY;
+    //solverOptions.minimizer_type = ceres::LINE_SEARCH;
+    solverOptions.trust_region_strategy_type = ceres::LEVENBERG_MARQUARDT;
+    solverOptions.linear_solver_type = ceres::DENSE_NORMAL_CHOLESKY;
     solverOptions.minimizer_progress_to_stdout = true;
-
+    solverOptions.use_inner_iterations = true;
+    solverOptions.use_nonmonotonic_steps = true;
+    
+    
     ceres::Solver::Summary summary;
     ceres::Solve(solverOptions, &problem, &summary);
 
-    ALICEVISION_LOG_TRACE(summary.BriefReport());
-
-    ALICEVISION_LOG_INFO("Laguerre params: " << laguerreParam);
-    ALICEVISION_LOG_INFO("Relative WB: " << relativeWB);
-    ALICEVISION_LOG_INFO("Exposures:");
-    for(const auto& expIt : exposures)
-    {
-        ALICEVISION_LOG_INFO(" * [" << expIt.first.first << ", " << expIt.first.second << "]: " << expIt.second);
-    }
+    std::cout << (summary.FullReport()) << std::endl;
 
     for(unsigned int channel = 0; channel < 3; ++channel)
     {
         std::vector<float>& curve = response.getCurve(channel);
         const double step = 1.0 / double(curve.size());
+
         for(unsigned int i = 0; i < curve.size(); ++i)
         {
-            curve[i] = relativeWB[channel] * laguerreFunction(laguerreParam[channel], i * step);
+            curve[i] = laguerreFunction(laguerreParam[channel], i * step);
         }
     }
 
     if(refineExposures)
     {
-        {
-            // TODO: realign exposures on input values?
-        }
+        for(int groupId = 0; groupId < exposuresRatios.size(); groupId++)
+        {   
+            std::vector<double> & groupRatios = exposuresRatios[groupId];
+            std::vector<float> & groupDestination = cameraExposures[groupId];
 
-        // Update input exposures with optimized exposure values
-        for(int i = 0; i < cameraExposures.size(); ++i)
-        {
-            std::vector<float>& camExp = cameraExposures[i];
-            for(int j = 0; j < camExp.size(); ++j)
+            for (int j = 0; j < groupRatios.size(); ++j)
             {
-                camExp[j] = exposures[std::make_pair(0, camExp[j])];
+                groupDestination[j + 1] = groupDestination[j] * groupRatios[j];
+                std::cout << groupRatios[j] << " ";
             }
+
+            std::cout << std::endl;
         }
     }
 }

@@ -159,7 +159,7 @@ public:
   /**
     * @brief Set curves to Grossberg mean function of emor model
     */
-  void setEmor();
+  void setEmor(size_t dim = 0);
 
   /**
     *@brief Set curves to gaussian
