@@ -1656,14 +1656,15 @@ void ReconstructionEngine_sequentialSfM::updateScene(const IndexT viewIndex, con
   {
     const Vec3 X = resectionData.pt3D.col(i);
     const Vec2 x = resectionData.pt2D.col(i);
-    Landmark& landmark = _sfmData.structure[*iterTrackId];
-    double scale = _featuresPerView->getFeatures(viewIndex, landmark.descType)[i].scale(); // TODO: check i index, TODO: replace x() with scale()
     const Vec2 residual = resectionData.optionalIntrinsic->residual(resectionData.pose, X, x);
     if (residual.norm() < resectionData.error_max &&
         resectionData.pose.depth(X) > 0)
     {
+      Landmark& landmark = _sfmData.structure[*iterTrackId];
+      const IndexT idFeat = resectionData.featuresId[i].second;
+      const double scale = _featuresPerView->getFeatures(viewIndex, landmark.descType)[idFeat].scale();
       // Inlier, add the point to the reconstructed track
-      landmark.observations[viewIndex] = Observation(x, resectionData.featuresId[i].second, scale);
+      landmark.observations[viewIndex] = Observation(x, idFeat, scale);
     }
   }
 }

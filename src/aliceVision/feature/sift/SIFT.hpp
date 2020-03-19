@@ -10,7 +10,7 @@
 #include <aliceVision/feature/Descriptor.hpp>
 #include <aliceVision/feature/ImageDescriber.hpp>
 #include <aliceVision/feature/regionsFactory.hpp>
-// #include <aliceVision/config.hpp> // TO CHECK
+#include <aliceVision/config.hpp>
 #include <aliceVision/system/Logger.hpp>
 
 extern "C" {

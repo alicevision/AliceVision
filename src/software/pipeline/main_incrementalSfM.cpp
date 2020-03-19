@@ -81,7 +81,6 @@ int main(int argc, char **argv)
   std::string outputSfM;
 
   // user optional parameters
-  // user optional parameters
   std::string outputSfMViewsAndPoses;
   std::string extraInfoFolder;
   std::string describerTypesName = feature::EImageDescriberType_enumToString(feature::EImageDescriberType::SIFT);
