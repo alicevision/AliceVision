@@ -1662,7 +1662,7 @@ void ReconstructionEngine_sequentialSfM::updateScene(const IndexT viewIndex, con
     {
       Landmark& landmark = _sfmData.structure[*iterTrackId];
       const IndexT idFeat = resectionData.featuresId[i].second;
-      const double scale = _featuresPerView->getFeatures(viewIndex, landmark.descType)[idFeat].scale();
+      const double scale = (_params.featureConstraint == EFeatureConstraint::BASIC) ? 0.0 : _featuresPerView->getFeatures(viewIndex, landmark.descType)[idFeat].scale();
       // Inlier, add the point to the reconstructed track
       landmark.observations[viewIndex] = Observation(x, idFeat, scale);
     }
@@ -1877,7 +1877,8 @@ void ReconstructionEngine_sequentialSfM::triangulate_multiViewsLORANSAC(SfMData&
       {
         const Vec2 x = _featuresPerView->getFeatures(viewId, track.descType)[track.featPerView.at(viewId)].coords().cast<double>();
         const feature::PointFeature& p = _featuresPerView->getFeatures(viewId, track.descType)[track.featPerView.at(viewId)];
-        landmark.observations[viewId] = Observation(x, track.featPerView.at(viewId), p.scale());
+        const double scale = (_params.featureConstraint == EFeatureConstraint::BASIC) ? 0.0 : p.scale();
+        landmark.observations[viewId] = Observation(x, track.featPerView.at(viewId), scale);
       }
 #pragma omp critical
       {
@@ -1971,7 +1972,8 @@ void ReconstructionEngine_sequentialSfM::triangulate_2Views(SfMData& scene, cons
               const double acThreshold = (acThresholdIt != _map_ACThreshold.end()) ? acThresholdIt->second : 4.0;
               if (poseI.depth(landmark.X) > 0 && residual.norm() < std::max(4.0, acThreshold))
               {
-                landmark.observations[I] = Observation(xI, track.featPerView.at(I), featI.scale());
+                const double scale = (_params.featureConstraint == EFeatureConstraint::BASIC) ? 0.0 : featI.scale();
+                landmark.observations[I] = Observation(xI, track.featPerView.at(I), scale);
                 ++extented_track;
               }
             }
@@ -1983,7 +1985,8 @@ void ReconstructionEngine_sequentialSfM::triangulate_2Views(SfMData& scene, cons
               const double acThreshold = (acThresholdIt != _map_ACThreshold.end()) ? acThresholdIt->second : 4.0;
               if (poseJ.depth(landmark.X) > 0 && residual.norm() < std::max(4.0, acThreshold))
               {
-                landmark.observations[J] = Observation(xJ, track.featPerView.at(J), featJ.scale());
+                const double scale = (_params.featureConstraint == EFeatureConstraint::BASIC) ? 0.0 : featJ.scale();
+                landmark.observations[J] = Observation(xJ, track.featPerView.at(J), scale);
                 ++extented_track;
               }
             }
@@ -2034,8 +2037,10 @@ void ReconstructionEngine_sequentialSfM::triangulate_2Views(SfMData& scene, cons
               landmark.X = X_euclidean;
               landmark.descType = track.descType;
               
-              landmark.observations[I] = Observation(xI, track.featPerView.at(I), featI.scale());
-              landmark.observations[J] = Observation(xJ, track.featPerView.at(J), featJ.scale());
+              const double scaleI = (_params.featureConstraint == EFeatureConstraint::BASIC) ? 0.0 : featI.scale();
+              const double scaleJ = (_params.featureConstraint == EFeatureConstraint::BASIC) ? 0.0 : featJ.scale();
+              landmark.observations[I] = Observation(xI, track.featPerView.at(I), scaleI);
+              landmark.observations[J] = Observation(xJ, track.featPerView.at(J), scaleJ);
               
               ++new_added_track;
             } // critical

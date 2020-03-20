@@ -301,7 +301,9 @@ bool ReconstructionEngine_globalSfM::Compute_Initial_Structure(matching::Pairwis
         const size_t imaIndex = it->first;
         const size_t featIndex = it->second;
         const PointFeature & pt = _featuresPerView->getFeatures(imaIndex, track.descType)[featIndex];
-        obs[imaIndex] = Observation(pt.coords().cast<double>(), featIndex, pt.scale());
+
+        const double scale = (_featureConstraint == EFeatureConstraint::BASIC) ? 0.0 : pt.scale();
+        obs[imaIndex] = Observation(pt.coords().cast<double>(), featIndex, scale);
       }
     }
 
@@ -443,7 +445,6 @@ void ReconstructionEngine_globalSfM::Compute_Relative_Rotations(rotationAveragin
     poseWiseMatches[Pair(v1->getPoseId(), v2->getPoseId())].insert(pair);
   }
 
-  const double unknownScale = 0.0;
   boost::progress_display progressBar( poseWiseMatches.size(), std::cout, "\n- Relative pose computation -\n" );
   #pragma omp parallel for schedule(dynamic)
   // Compute the relative pose from pairwise point matches:
@@ -564,8 +565,10 @@ void ReconstructionEngine_globalSfM::Compute_Relative_Rotations(rotationAveragin
             Vec3 X;
             TriangulateDLT(P1, x1_, P2, x2_, &X);
             Observations obs;
-            obs[view_I->getViewId()] = Observation(x1_, match._i, p1.scale());
-            obs[view_J->getViewId()] = Observation(x2_, match._j, p2.scale());
+            const double scaleI = (_featureConstraint == EFeatureConstraint::BASIC) ? 0.0 : p1.scale();
+            const double scaleJ = (_featureConstraint == EFeatureConstraint::BASIC) ? 0.0 : p2.scale();
+            obs[view_I->getViewId()] = Observation(x1_, match._i, scaleI);
+            obs[view_J->getViewId()] = Observation(x2_, match._j, scaleJ);
             Landmark& newLandmark = landmarks[landmarkId++];
             newLandmark.descType = descType;
             newLandmark.observations = obs;
