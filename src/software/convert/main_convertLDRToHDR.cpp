@@ -588,7 +588,7 @@ int main(int argc, char * argv[])
           ALICEVISION_LOG_INFO("Grossberg calibration");
           if (calibrationNbPoints <= 0)
               calibrationNbPoints = 1000000;
-          hdr::GrossbergCalibrate calibration(9);
+          hdr::GrossbergCalibrate calibration(5);
           calibration.process(groupedFilenames, channelQuantization, groupedExposures, calibrationNbPoints, fisheye, response);
       }
       break;

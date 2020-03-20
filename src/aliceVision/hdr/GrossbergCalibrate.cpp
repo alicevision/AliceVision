@@ -36,7 +36,7 @@ void GrossbergCalibrate::process(const std::vector<std::vector<std::string>>& im
 
     ALICEVISION_LOG_DEBUG("Extract color samples");
     std::vector<std::vector<ImageSamples>> samples;
-    extractSamples(samples, imagePathsGroups, times, nbPoints, 1, fisheye);
+    extractSamples(samples, imagePathsGroups, times, nbPoints, 1.0, fisheye);
 
     // set channels count always RGB
     static const std::size_t channels = 3;
@@ -61,6 +61,7 @@ void GrossbergCalibrate::process(const std::vector<std::vector<std::string>>& im
       size_t groupsize = samples[group].size();
       count_measures += (groupsize - 1) * samples[group][0].colors.size();
     }
+           
 
     for (int channel = 0; channel < 3; channel++) {
       Eigen::MatrixXd E(count_measures, _dimension);
@@ -95,16 +96,18 @@ void GrossbergCalibrate::process(const std::vector<std::vector<std::string>>& im
               float valA = Ba(channel); 
               float valB = Bb(channel);
 
-              valA /= 0.90;
-              valB /= 0.90;
+              
+              valA /= 0.95;
+              valB /= 0.95;
 
-              if (valB > 1.00) {
+              if (valB > 1.0) {
                 E(rowId, dim) = 0;
                 v(rowId, 0) = 0;
                 rowId++;
+
                 continue;
               }
-  
+
               E(rowId, dim) = fdim(valA, 0) - k * fdim(valB, 0);
               v(rowId, 0) = f0(valA, 0) - k * f0(valB, 0);
               rowId++;
@@ -135,10 +138,10 @@ void GrossbergCalibrate::process(const std::vector<std::vector<std::string>>& im
         double eval_next = double(i + 1) * step;
         dF0(i, 0)  = f0(eval_next, channel) - f0(eval_cur, channel);
       }
-      //dF0(channelQuantization - 1, 0) = f0(0.5, channel) - 0.25;
-
+      
       Eigen::MatrixXd D(channelQuantization - 1, _dimension);
       D.setZero();
+
       for (int dim = 0; dim < _dimension; dim++) {
         rgbCurve fdim(channelQuantization);
         fdim.setEmor(dim + 1);
@@ -148,8 +151,6 @@ void GrossbergCalibrate::process(const std::vector<std::vector<std::string>>& im
           double eval_next = double(i + 1) * step;
           D(i, dim)  = fdim(eval_next, channel) - fdim(eval_cur, channel);
         }
-
-        //D(channelQuantization - 1, dim) = fdim(0.5, channel);
       }
 
       quadprogpp::Matrix<double> G(H.rows(), H.cols());
@@ -201,7 +202,6 @@ void GrossbergCalibrate::process(const std::vector<std::vector<std::string>>& im
         c(i, 0)= x[i];
       }
 
-      //std::cout << c.transpose() * H * c + d.transpose() * c << std::endl;
 
       /*
       Create final curve
@@ -211,17 +211,29 @@ void GrossbergCalibrate::process(const std::vector<std::vector<std::string>>& im
       {
         rgbCurve f0(channelQuantization);
         f0.setEmor(0);
+
+        double val = double(i) * step;
+        val = val / 0.95;
+        if (val > 1.0) {
+          val = 1.0;
+        }
             
-        double val = f0(i * step, channel);
+        double curve_val = f0(val, channel);
         for (int d = 0; d < _dimension; d++) {
 
           rgbCurve fdim(channelQuantization);
           fdim.setEmor(d + 1);
 
-          val += x[d] * fdim(i * step, channel);
+          double val = double(i) * step;
+          val /= 0.95;
+
+          if (val > 1.0) {
+            val = 1.0;
+          }
+          curve_val += c(d) * fdim(val, channel);
         }
 
-        curve[i] = val;
+        curve[i] = curve_val;
       }
     }
 }

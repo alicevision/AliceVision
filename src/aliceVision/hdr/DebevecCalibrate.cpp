@@ -12,8 +12,8 @@
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/image/all.hpp>
 #include <aliceVision/image/io.hpp>
-
 #include <OpenImageIO/imagebufalgo.h>
+#include "sampling.hpp"
 
 
 namespace aliceVision {
@@ -38,6 +38,11 @@ bool DebevecCalibrate::process(const std::vector< std::vector<std::string>> & im
   // Always 3 channels for the input images
   static const std::size_t channelsCount = 3;
 
+  /*Extract samples*/
+  ALICEVISION_LOG_DEBUG("Extract color samples");
+  std::vector<std::vector<ImageSamples>> samples;
+  extractSamples(samples, imagePathsGroups, times, nbPoints, calibrationDownscale, fisheye);
+
   // Initialize response
   response = rgbCurve(channelQuantization);
 
@@ -55,117 +60,31 @@ bool DebevecCalibrate::process(const std::vector< std::vector<std::string>> & im
   }
 
   size_t count = 0;
-  for (unsigned int g = 0; g < nbGroups; g++)
-  {
-    const std::vector<std::string > &imagePaths = imagePathsGroups[g];
-    std::vector<image::Image<image::RGBfColor>> ldrImagesGroup(imagePaths.size());
- 
-    for (int i = 0; i < imagePaths.size(); i++)
-    {
-      image::readImage(imagePaths[i], ldrImagesGroup[i], image::EImageColorSpace::SRGB);
-      if (calibrationDownscale != 1.0f)
-      {
-          image::Image<image::RGBfColor>& img = ldrImagesGroup[i];
-          unsigned int w = img.Width();
-          unsigned int h = img.Height();
-          unsigned int nw = (unsigned int)(floor(float(w) / calibrationDownscale));
-          unsigned int nh = (unsigned int)(floor(float(h) / calibrationDownscale));
-
-          image::Image<image::RGBfColor> rescaled(nw, nh);
-
-          oiio::ImageSpec imageSpecResized(nw, nh, 3, oiio::TypeDesc::FLOAT);
-          oiio::ImageSpec imageSpecOrigin(w, h, 3, oiio::TypeDesc::FLOAT);
-          oiio::ImageBuf bufferOrigin(imageSpecOrigin, img.data());
-          oiio::ImageBuf bufferResized(imageSpecResized, rescaled.data());
-          oiio::ImageBufAlgo::resample(bufferResized, bufferOrigin);
-
-          const oiio::ImageBuf inBuf(oiio::ImageSpec(w, h, 3, oiio::TypeDesc::FLOAT), img.data());
-          oiio::ImageBuf outBuf(oiio::ImageSpec(nw, nh, 3, oiio::TypeDesc::FLOAT), rescaled.data());
-
-          oiio::ImageBufAlgo::resize(outBuf, inBuf);
-          img.swap(rescaled);
-      }
-    }
-
-    const std::vector<float> & ldrTimes = times[g];
-    const std::size_t width = ldrImagesGroup.front().Width();
-    const std::size_t height = ldrImagesGroup.front().Height();
-
-    // If images are fisheye, we take only pixels inside a disk with a radius of image's minimum side
-    if(fisheye)
-    {
-      const std::size_t minSize = std::min(width, height) * 0.97;
-      const Vec2i center(width/2, height/2);
-
-      const int xMin = std::ceil(center(0) - minSize/2);
-      const int yMin = std::ceil(center(1) - minSize/2);
-      const int xMax = std::floor(center(0) + minSize/2);
-      const int yMax = std::floor(center(1) + minSize/2);
-      const std::size_t maxDist2 = pow(minSize * 0.5, 2);
-
-      const int step = std::ceil(minSize / sqrt(samplesPerImage));
-      for(unsigned int j=0; j<nbImages; ++j)
-      {
-        int countValidPixels = 0;
+  for (size_t groupId = 0; groupId < samples.size(); groupId++) {
+    
+    std::vector<ImageSamples> & group = samples[groupId];
+          
+    for (size_t bracketId = 0; bracketId < group.size() - 1; bracketId++) {
+            
+      ImageSamples & bracket_cur = group[bracketId];
+      
+      for (size_t sampleId = 0; sampleId < bracket_cur.colors.size(); sampleId++) {
         
-        const image::Image<image::RGBfColor> &image = ldrImagesGroup.at(j);
-        const float time = std::log(ldrTimes.at(j));
-        for(int y = yMin; y < yMax-step; y+=step)
-        {
-          for(int x = xMin; x < xMax-step; x+=step)
-          {
-            std::size_t dist2 = pow(center(0)-x, 2) + pow(center(1)-y, 2);
+        for (int channel = 0; channel < channelsCount; channel++) {
+          float sample = bracket_cur.colors[sampleId](channel);
+          float w_ij = weight(sample, channel);
+          const float time = std::log(bracket_cur.exposure);
+          std::size_t index = std::round(sample * (channelQuantization - 1));
 
-            if(dist2 > maxDist2)
-            {
-                continue;
-            }
-
-            for (int channel = 0; channel < channelsCount; channel++)
-            {
-              float sample = clamp(image(y, x)(channel), 0.f, 1.f);
-              float w_ij = weight(sample, channel);
-              std::size_t index = std::round(sample * (channelQuantization - 1));
-
-              tripletList_array[channel].push_back(T(count, index, w_ij));
-              tripletList_array[channel].push_back(T(count, channelQuantization + g * samplesPerImage + countValidPixels, -w_ij));
-
-              b_array[channel](count) = w_ij * time;
-            }
-
-            count += 1;
-            countValidPixels += 1;
-          }
+          tripletList_array[channel].push_back(T(count, index, w_ij));
+          tripletList_array[channel].push_back(T(count, channelQuantization + groupId * samplesPerImage + sampleId, -w_ij));
+          b_array[channel](count) = w_ij * time;
         }
+
+        count++;
       }
     }
-    else
-    {
-      const int step = std::floor(width*height / samplesPerImage);
-      for(unsigned int j=0; j<nbImages; ++j)
-      {
-        const image::Image<image::RGBfColor> &image = ldrImagesGroup.at(j);
-        const float time = std::log(ldrTimes.at(j));
-        
-        for(unsigned int i=0; i<samplesPerImage; ++i)
-        {
-          for (int channel = 0; channel < channelsCount; channel++)
-          {
-            float sample = clamp(image(step*i)(channel), 0.f, 1.f);
-            float w_ij = weight(sample, channel);
-            std::size_t index = std::round(sample * (channelQuantization - 1));
-
-            tripletList_array[channel].push_back(T(count, index, w_ij));
-            tripletList_array[channel].push_back(T(count, channelQuantization + g*samplesPerImage + i, -w_ij));
-
-            b_array[channel](count) = w_ij * time;
-          }
-
-          count += 1;
-        }
-      }
-    }
-  }
+  }       
 
   // fix the curve by setting its middle value to zero
   for (int channel = 0; channel < channelsCount; channel++)
@@ -175,7 +94,7 @@ bool DebevecCalibrate::process(const std::vector< std::vector<std::string>> & im
   count += 1;
 
   // include the smoothness equations
-  for(std::size_t k = 0; k<channelQuantization - 2; k++)
+  for(std::size_t k = 0; k < channelQuantization - 2; k++)
   {
     for (int channel = 0; channel < channelsCount; channel++)
     {
@@ -187,6 +106,7 @@ bool DebevecCalibrate::process(const std::vector< std::vector<std::string>> & im
 
     count++;
   }
+
 
   for (int channel = 0; channel < channelsCount; channel ++)
   {
