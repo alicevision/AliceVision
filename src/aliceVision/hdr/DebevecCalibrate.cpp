@@ -31,10 +31,6 @@ bool DebevecCalibrate::process(const std::vector< std::vector<std::string>> & im
                                const float lambda,
                                rgbCurve &response)
 {
-  const int nbGroups = imagePathsGroups.size();
-  const int nbImages = imagePathsGroups.front().size();
-  const int samplesPerImage = nbPoints / (nbGroups*nbImages);
-
   // Always 3 channels for the input images
   static const std::size_t channelsCount = 3;
 
@@ -42,6 +38,26 @@ bool DebevecCalibrate::process(const std::vector< std::vector<std::string>> & im
   ALICEVISION_LOG_DEBUG("Extract color samples");
   std::vector<std::vector<ImageSamples>> samples;
   extractSamples(samples, imagePathsGroups, times, nbPoints, calibrationDownscale, fisheye);
+  
+  /*
+  Count really extracted amount of points
+  (observed in multiple brackets)
+  */
+  size_t countPoints = 0;
+  size_t countMeasures = 0;
+  std::vector<size_t> countPointPerGroup;
+  for (size_t groupId = 0; groupId < samples.size(); groupId++) {
+    
+    size_t count = 0;
+    std::vector<ImageSamples> & group = samples[groupId];  
+    if (group.size() > 0) {
+      count = group[0].colors.size();
+    }
+
+    countPointPerGroup.push_back(count);
+    countPoints += count;
+    countMeasures += count * group.size();
+  }
 
   // Initialize response
   response = rgbCurve(channelQuantization);
@@ -54,12 +70,12 @@ bool DebevecCalibrate::process(const std::vector< std::vector<std::string>> & im
   for(unsigned int channel=0; channel < channelsCount; ++channel)
   {
     Vec & b = b_array[channel];
-    b = Vec::Zero(nbPoints + channelQuantization + 1);
+    b = Vec::Zero(countMeasures + channelQuantization + 1);
     std::vector<T> & tripletList = tripletList_array[channel];
-    tripletList.reserve(2 * nbPoints + 1 + 3 * channelQuantization);
   }
 
   size_t count = 0;
+  size_t previousSamplesCount = 0;
   for (size_t groupId = 0; groupId < samples.size(); groupId++) {
     
     std::vector<ImageSamples> & group = samples[groupId];
@@ -72,33 +88,45 @@ bool DebevecCalibrate::process(const std::vector< std::vector<std::string>> & im
         
         for (int channel = 0; channel < channelsCount; channel++) {
           float sample = bracket_cur.colors[sampleId](channel);
+          
           float w_ij = weight(sample, channel);
           const float time = std::log(bracket_cur.exposure);
           std::size_t index = std::round(sample * (channelQuantization - 1));
 
           tripletList_array[channel].push_back(T(count, index, w_ij));
-          tripletList_array[channel].push_back(T(count, channelQuantization + groupId * samplesPerImage + sampleId, -w_ij));
-          b_array[channel](count) = w_ij * time;
+          tripletList_array[channel].push_back(T(count, channelQuantization + previousSamplesCount + sampleId, -w_ij));
+          b_array[channel][count] = w_ij * time;
         }
 
         count++;
       }
     }
+
+    previousSamplesCount += countPointPerGroup[groupId];
   }       
 
-  // fix the curve by setting its middle value to zero
+  /**
+   * Fix scale
+   * Enforce f(0.5) = 0.0
+   */
   for (int channel = 0; channel < channelsCount; channel++)
   {
     tripletList_array[channel].push_back(T(count, std::floor(channelQuantization/2), 1.f));
   }
   count += 1;
 
-  // include the smoothness equations
-  for(std::size_t k = 0; k < channelQuantization - 2; k++)
+  
+  /* Make sure the discrete response curve has a minimal second derivative */
+  for (std::size_t k = 0; k < channelQuantization - 2; k++)
   {
     for (int channel = 0; channel < channelsCount; channel++)
     {
+      /*
+      Simple derivatives of second derivative wrt to the k+1 element
+      f''(x) = f(x + 1) - 2 * f(x) + f(x - 1)
+      */
       float w = weight.getValue(k + 1, channel);
+      
       tripletList_array[channel].push_back(T(count, k, lambda * w));
       tripletList_array[channel].push_back(T(count, k + 1, - 2.f * lambda * w));
       tripletList_array[channel].push_back(T(count, k + 2, lambda * w));
@@ -110,7 +138,8 @@ bool DebevecCalibrate::process(const std::vector< std::vector<std::string>> & im
 
   for (int channel = 0; channel < channelsCount; channel ++)
   {
-    sMat A(count, channelQuantization + samplesPerImage * nbGroups);
+    sMat A(count, channelQuantization + countPoints);
+    
     A.setFromTriplets(tripletList_array[channel].begin(), tripletList_array[channel].end());
     b_array[channel].conservativeResize(count);
 
@@ -132,8 +161,6 @@ bool DebevecCalibrate::process(const std::vector< std::vector<std::string>> & im
     {
       return false;
     }
-
-    double relative_error = (A*x - b_array[channel]).norm() / b_array[channel].norm();
 
     // Copy the result to the response curve
     for(std::size_t k = 0; k < channelQuantization; ++k)

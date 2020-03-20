@@ -16,7 +16,6 @@ namespace hdr {
 struct ImageSamples
 {
     std::vector<image::Rgb<double>> colors;
-    int camId = 0;
     double exposure = 0.0;
 };
 

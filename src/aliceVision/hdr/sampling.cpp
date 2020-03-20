@@ -52,7 +52,7 @@ void extractSamples(
         {
             out_hdrSamples[i].exposure = exposures[i];
             out_hdrSamples[i].colors.reserve(samplesPerImage);
-            std::vector<Rgb<double>>& colors = out_hdrSamples[i].colors;
+            std::vector<Rgb<double>> & colors = out_hdrSamples[i].colors;
 
             Image<RGBfColor> img;
             readImage(imagePaths[i], img, EImageColorSpace::LINEAR);
@@ -104,7 +104,13 @@ void extractSamples(
                             continue;
                     }
                     RGBfColor& c = img(y, x);
-                    colors.push_back(Rgb<double>(c(0), c(1), c(2)));
+                    
+                    float r = std::min(1.0f, std::max(0.0f, c.r()));
+                    float g = std::min(1.0f, std::max(0.0f, c.r()));
+                    float b = std::min(1.0f, std::max(0.0f, c.r()));
+
+
+                    colors.push_back(Rgb<double>(r, g, b));
                 }
             }
         }
