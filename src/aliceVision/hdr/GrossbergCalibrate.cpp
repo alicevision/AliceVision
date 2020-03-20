@@ -95,13 +95,25 @@ void GrossbergCalibrate::process(const std::vector<std::vector<std::string>>& im
               float valA = Ba(channel); 
               float valB = Bb(channel);
 
-              E(rowId, dim) = fdim(valA, 0) - k*fdim(valB, 0);
-              v(rowId, 0) = f0(valA, 0) - k*f0(valB, 0);
+              valA /= 0.90;
+              valB /= 0.90;
+
+              if (valB > 1.00) {
+                E(rowId, dim) = 0;
+                v(rowId, 0) = 0;
+                rowId++;
+                continue;
+              }
+  
+              E(rowId, dim) = fdim(valA, 0) - k * fdim(valB, 0);
+              v(rowId, 0) = f0(valA, 0) - k * f0(valB, 0);
               rowId++;
             }
           }
         }
       }
+
+     
 
       /* Get first linear solution */
       Eigen::VectorXd c = (E.transpose() * E).inverse() * E.transpose() * -v; 
