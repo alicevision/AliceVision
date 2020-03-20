@@ -62,14 +62,14 @@ s.t.
 #ifndef _QUADPROGPP
 #define _QUADPROGPP
 
-#include "Array.hh"
+#include <Eigen/Dense>
 
 namespace quadprogpp {
 
-double solve_quadprog(Matrix<double>& G, Vector<double>& g0, 
-                      const Matrix<double>& CE, const Vector<double>& ce0,  
-                      const Matrix<double>& CI, const Vector<double>& ci0, 
-                      Vector<double>& x);
+double solve_quadprog(Eigen::MatrixXd & G, Eigen::VectorXd& g0, 
+                      const Eigen::MatrixXd& CE, const Eigen::VectorXd& ce0,  
+                      const Eigen::MatrixXd& CI, const Eigen::VectorXd& ci0, 
+                      Eigen::VectorXd & x);
 
 }  // namespace quadprogpp
 

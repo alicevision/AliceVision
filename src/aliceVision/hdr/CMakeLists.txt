@@ -21,7 +21,6 @@ set(hdr_files_sources
  DebevecCalibrate.cpp
  GrossbergCalibrate.cpp
  emorCurve.cpp
- Array.cc
  QuadProg++.cc
 )
 

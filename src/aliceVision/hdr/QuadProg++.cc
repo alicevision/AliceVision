@@ -22,47 +22,47 @@ File $Id: QuadProg++.cc 232 2007-06-21 12:29:00Z digasper $
 namespace quadprogpp {
 
 // Utility functions for updating some data needed by the solution method 
-void compute_d(Vector<double>& d, const Matrix<double>& J, const Vector<double>& np);
-void update_z(Vector<double>& z, const Matrix<double>& J, const Vector<double>& d, int iq);
-void update_r(const Matrix<double>& R, Vector<double>& r, const Vector<double>& d, int iq);
-bool add_constraint(Matrix<double>& R, Matrix<double>& J, Vector<double>& d, unsigned int& iq, double& rnorm);
-void delete_constraint(Matrix<double>& R, Matrix<double>& J, Vector<int>& A, Vector<double>& u, unsigned int n, int p, unsigned int& iq, int l);
+void compute_d(Eigen::VectorXd & d, const Eigen::MatrixXd & J, const Eigen::VectorXd & np);
+void update_z(Eigen::VectorXd & z, const Eigen::MatrixXd & J, const Eigen::VectorXd & d, int iq);
+void update_r(const Eigen::MatrixXd & R, Eigen::VectorXd & r, const Eigen::VectorXd & d, int iq);
+bool add_constraint(Eigen::MatrixXd & R, Eigen::MatrixXd & J, Eigen::VectorXd & d, unsigned int& iq, double& rnorm);
+void delete_constraint(Eigen::MatrixXd & R, Eigen::MatrixXd & J, Eigen::Vector<int, Eigen::Dynamic> & A, Eigen::VectorXd & u, unsigned int n, int p, unsigned int& iq, int l);
 
 // Utility functions for computing the Cholesky decomposition and solving
 // linear systems
-void cholesky_decomposition(Matrix<double>& A);
-void cholesky_solve(const Matrix<double>& L, Vector<double>& x, const Vector<double>& b);
-void forward_elimination(const Matrix<double>& L, Vector<double>& y, const Vector<double>& b);
-void backward_elimination(const Matrix<double>& U, Vector<double>& x, const Vector<double>& y);
+void cholesky_decomposition(Eigen::MatrixXd & A);
+void cholesky_solve(const Eigen::MatrixXd & L, Eigen::VectorXd & x, const Eigen::VectorXd & b);
+void forward_elimination(const Eigen::MatrixXd & L, Eigen::VectorXd & y, const Eigen::VectorXd & b);
+void backward_elimination(const Eigen::MatrixXd & U, Eigen::VectorXd & x, const Eigen::VectorXd & y);
 
 // Utility functions for computing the scalar product and the euclidean 
 // distance between two numbers
-double scalar_product(const Vector<double>& x, const Vector<double>& y);
+double scalar_product(const Eigen::VectorXd & x, const Eigen::VectorXd & y);
 double distance(double a, double b);
 
 // Utility functions for printing vectors and matrices
-void print_matrix(const char* name, const Matrix<double>& A, int n = -1, int m = -1);
+void print_matrix(const char* name, const Eigen::MatrixXd & A, int n = -1, int m = -1);
 
 template<typename T>
-void print_vector(const char* name, const Vector<T>& v, int n = -1);
+void print_vector(const char* name, const Eigen::Vector<T, Eigen::Dynamic>& v, int n = -1);
 
 // The Solving function, implementing the Goldfarb-Idnani method
 
-double solve_quadprog(Matrix<double>& G, Vector<double>& g0, 
-                      const Matrix<double>& CE, const Vector<double>& ce0,  
-                      const Matrix<double>& CI, const Vector<double>& ci0, 
-                      Vector<double>& x)
+double solve_quadprog(Eigen::MatrixXd & G, Eigen::VectorXd & g0, 
+                      const Eigen::MatrixXd & CE, const Eigen::VectorXd & ce0,  
+                      const Eigen::MatrixXd & CI, const Eigen::VectorXd & ci0, 
+                      Eigen::VectorXd & x)
 {
   std::ostringstream msg;
-  unsigned int n = G.ncols(), p = CE.ncols(), m = CI.ncols();
-  if (G.nrows() != n)
+  unsigned int n = G.cols(), p = CE.cols(), m = CI.cols();
+  if (G.rows() != n)
   {
-    msg << "The matrix G is not a squared matrix (" << G.nrows() << " x " << G.ncols() << ")";
+    msg << "The matrix G is not a squared matrix (" << G.rows() << " x " << G.cols() << ")";
     throw std::logic_error(msg.str());
   }
-  if (CE.nrows() != n)
+  if (CE.rows() != n)
   {
-    msg << "The matrix CE is incompatible (incorrect number of rows " << CE.nrows() << " , expecting " << n << ")";
+    msg << "The matrix CE is incompatible (incorrect number of rows " << CE.rows() << " , expecting " << n << ")";
     throw std::logic_error(msg.str());
   }
   if (ce0.size() != p)
@@ -70,9 +70,9 @@ double solve_quadprog(Matrix<double>& G, Vector<double>& g0,
     msg << "The vector ce0 is incompatible (incorrect dimension " << ce0.size() << ", expecting " << p << ")";
     throw std::logic_error(msg.str());
   }
-  if (CI.nrows() != n)
+  if (CI.rows() != n)
   {
-    msg << "The matrix CI is incompatible (incorrect number of rows " << CI.nrows() << " , expecting " << n << ")";
+    msg << "The matrix CI is incompatible (incorrect number of rows " << CI.rows() << " , expecting " << n << ")";
     throw std::logic_error(msg.str());
   }
   if (ci0.size() != m)
@@ -83,8 +83,8 @@ double solve_quadprog(Matrix<double>& G, Vector<double>& g0,
   x.resize(n);
   register unsigned int i, j, k, l; /* indices */
   int ip; // this is the index of the constraint to be added to the active set
-  Matrix<double> R(n, n), J(n, n);
-  Vector<double> s(m + p), z(n), r(m + p), d(n), np(n), u(m + p), x_old(n), u_old(m + p);
+  Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> R(n, n), J(n, n);
+  Eigen::Vector<double, Eigen::Dynamic> s(m + p), z(n), r(m + p), d(n), np(n), u(m + p), x_old(n), u_old(m + p);
   double f_value, psi, c1, c2, sum, ss, R_norm;
   double inf;
   if (std::numeric_limits<double>::has_infinity)
@@ -93,9 +93,10 @@ double solve_quadprog(Matrix<double>& G, Vector<double>& g0,
     inf = 1.0E300;
   double t, t1, t2; /* t is the step lenght, which is the minimum of the partial step length t1 
     * and the full step length t2 */
-  Vector<int> A(m + p), A_old(m + p), iai(m + p);
+  
+  Eigen::Vector<int, Eigen::Dynamic> A(m + p), A_old(m + p), iai(m + p);
   unsigned int iq, iter = 0;
-  Vector<bool> iaexcl(m + p);
+  Eigen::Vector<bool, Eigen::Dynamic> iaexcl(m + p);
 	
 
   
@@ -107,7 +108,7 @@ double solve_quadprog(Matrix<double>& G, Vector<double>& g0,
   c1 = 0.0;
   for (i = 0; i < n; i++)
   {
-    c1 += G[i][i];
+    c1 += G(i,i);
   }
   /* decompose the matrix G in the form L^T L */
   cholesky_decomposition(G);
@@ -117,7 +118,7 @@ double solve_quadprog(Matrix<double>& G, Vector<double>& g0,
   {
     d[i] = 0.0;
     for (j = 0; j < n; j++)
-      R[i][j] = 0.0;
+      R(i, j) = 0.0;
   }
   R_norm = 1.0; /* this variable will hold the norm of the matrix R */
   
@@ -128,7 +129,7 @@ double solve_quadprog(Matrix<double>& G, Vector<double>& g0,
     d[i] = 1.0;
     forward_elimination(G, z, d);
     for (j = 0; j < n; j++)
-      J[i][j] = z[j];
+      J(i, j) = z[j];
     c2 += z[i];
     d[i] = 0.0;
   }
@@ -152,7 +153,7 @@ double solve_quadprog(Matrix<double>& G, Vector<double>& g0,
   for (i = 0; i < p; i++)
   {
     for (j = 0; j < n; j++)
-      np[j] = CE[j][i];
+      np[j] = CE(j, i);
     compute_d(d, J, np);
     update_z(z, J, d, iq);
     update_r(R, r, d, iq);
@@ -205,7 +206,7 @@ l1:	iter++;
     iaexcl[i] = true;
     sum = 0.0;
     for (j = 0; j < n; j++)
-      sum += CI[j][i] * x[j];
+      sum += CI(j, i) * x[j];
     sum += ci0[i];
     s[i] = sum;
     psi += std::min(0.0, sum);
@@ -244,7 +245,7 @@ l2: /* Step 2: check for feasibility and determine a new S-pair */
   
   /* set np = n[ip] */
   for (i = 0; i < n; i++)
-    np[i] = CI[i][ip];
+    np[i] = CI(i, ip);
   /* set u = [u 0]^T */
   u[iq] = 0.0;
   /* add ip to the active set A */
@@ -361,13 +362,13 @@ l2a:/* Step 2a: determine step direction */
   /* update s[ip] = CI * x + ci0 */
   sum = 0.0;
   for (k = 0; k < n; k++)
-    sum += CI[k][ip] * x[k];
+    sum += CI(k, ip) * x[k];
   s[ip] = sum + ci0[ip];
   
   goto l2a;
 }
 
-inline void compute_d(Vector<double>& d, const Matrix<double>& J, const Vector<double>& np)
+inline void compute_d(Eigen::VectorXd & d, const Eigen::MatrixXd & J, const Eigen::VectorXd & np)
 {
   register int i, j, n = d.size();
   register double sum;
@@ -377,12 +378,12 @@ inline void compute_d(Vector<double>& d, const Matrix<double>& J, const Vector<d
   {
     sum = 0.0;
     for (j = 0; j < n; j++)
-      sum += J[j][i] * np[j];
+      sum += J(j, i) * np[j];
     d[i] = sum;
   }
 }
 
-inline void update_z(Vector<double>& z, const Matrix<double>& J, const Vector<double>& d, int iq)
+inline void update_z(Eigen::VectorXd & z, const Eigen::MatrixXd & J, const Eigen::VectorXd & d, int iq)
 {
   register int i, j, n = z.size();
 	
@@ -391,11 +392,11 @@ inline void update_z(Vector<double>& z, const Matrix<double>& J, const Vector<do
   {
     z[i] = 0.0;
     for (j = iq; j < n; j++)
-      z[i] += J[i][j] * d[j];
+      z[i] += J(i, j) * d[j];
   }
 }
 
-inline void update_r(const Matrix<double>& R, Vector<double>& r, const Vector<double>& d, int iq)
+inline void update_r(const Eigen::MatrixXd & R, Eigen::VectorXd & r, const Eigen::VectorXd & d, int iq)
 {
   register int i, j;
   register double sum;
@@ -405,12 +406,12 @@ inline void update_r(const Matrix<double>& R, Vector<double>& r, const Vector<do
   {
     sum = 0.0;
     for (j = i + 1; j < iq; j++)
-      sum += R[i][j] * r[j];
-    r[i] = (d[i] - sum) / R[i][i];
+      sum += R(i, j) * r[j];
+    r[i] = (d[i] - sum) / R(i, i);
   }
 }
 
-bool add_constraint(Matrix<double>& R, Matrix<double>& J, Vector<double>& d, unsigned int& iq, double& R_norm)
+bool add_constraint(Eigen::MatrixXd & R, Eigen::MatrixXd & J, Eigen::VectorXd & d, unsigned int& iq, double& R_norm)
 {
   unsigned int n = d.size();
 
@@ -450,10 +451,10 @@ bool add_constraint(Matrix<double>& R, Matrix<double>& J, Vector<double>& d, uns
     xny = ss / (1.0 + cc);
     for (k = 0; k < n; k++)
     {
-      t1 = J[k][j - 1];
-      t2 = J[k][j];
-      J[k][j - 1] = t1 * cc + t2 * ss;
-      J[k][j] = xny * (t1 + J[k][j - 1]) - t2;
+      t1 = J(k, j - 1);
+      t2 = J(k, j);
+      J(k, j - 1) = t1 * cc + t2 * ss;
+      J(k, j) = xny * (t1 + J(k, j - 1)) - t2;
     }
   }
   /* update the number of constraints added*/
@@ -462,7 +463,7 @@ bool add_constraint(Matrix<double>& R, Matrix<double>& J, Vector<double>& d, uns
     into column iq - 1 of R
     */
   for (i = 0; i < iq; i++)
-    R[i][iq - 1] = d[i];
+    R(i, iq - 1) = d[i];
 
   
   if (fabs(d[iq - 1]) <= std::numeric_limits<double>::epsilon() * R_norm) 
@@ -474,7 +475,7 @@ bool add_constraint(Matrix<double>& R, Matrix<double>& J, Vector<double>& d, uns
   return true;
 }
 
-void delete_constraint(Matrix<double>& R, Matrix<double>& J, Vector<int>& A, Vector<double>& u, unsigned int n, int p, unsigned int& iq, int l)
+void delete_constraint(Eigen::MatrixXd & R, Eigen::MatrixXd & J, Eigen::Vector<int, Eigen::Dynamic>& A, Eigen::VectorXd & u, unsigned int n, int p, unsigned int& iq, int l)
 {
 #ifdef TRACE_SOLVER
   std::cout << "Delete constraint " << l << ' ' << iq;
@@ -504,7 +505,7 @@ void delete_constraint(Matrix<double>& R, Matrix<double>& J, Vector<int>& A, Vec
       A[i] = A[i + 1];
       u[i] = u[i + 1];
       for (j = 0; j < n; j++)
-        R[j][i] = R[j][i + 1];
+        R(j, i) = R(j, i + 1);
     }
       
   A[iq - 1] = A[iq];
@@ -512,7 +513,7 @@ void delete_constraint(Matrix<double>& R, Matrix<double>& J, Vector<int>& A, Vec
   A[iq] = 0; 
   u[iq] = 0.0;
   for (j = 0; j < iq; j++)
-    R[j][iq - 1] = 0.0;
+    R(j, iq - 1) = 0.0;
   /* constraint has been fully removed */
   iq--;
 #ifdef TRACE_SOLVER
@@ -524,37 +525,37 @@ void delete_constraint(Matrix<double>& R, Matrix<double>& J, Vector<int>& A, Vec
   
   for (j = qq; j < iq; j++)
   {
-    cc = R[j][j];
-    ss = R[j + 1][j];
+    cc = R(j, j);
+    ss = R(j + 1, j);
     h = distance(cc, ss);
     if (fabs(h) < std::numeric_limits<double>::epsilon()) // h == 0
       continue;
     cc = cc / h;
     ss = ss / h;
-    R[j + 1][j] = 0.0;
+    R(j + 1, j) = 0.0;
     if (cc < 0.0)
     {
-      R[j][j] = -h;
+      R(j, j) = -h;
       cc = -cc;
       ss = -ss;
     }
     else
-      R[j][j] = h;
+      R(j, j) = h;
     
     xny = ss / (1.0 + cc);
     for (k = j + 1; k < iq; k++)
     {
-      t1 = R[j][k];
-      t2 = R[j + 1][k];
-      R[j][k] = t1 * cc + t2 * ss;
-      R[j + 1][k] = xny * (t1 + R[j][k]) - t2;
+      t1 = R(j, k);
+      t2 = R(j + 1, k);
+      R(j, k) = t1 * cc + t2 * ss;
+      R(j + 1, k) = xny * (t1 + R(j, k)) - t2;
     }
     for (k = 0; k < n; k++)
     {
-      t1 = J[k][j];
-      t2 = J[k][j + 1];
-      J[k][j] = t1 * cc + t2 * ss;
-      J[k][j + 1] = xny * (J[k][j] + t1) - t2;
+      t1 = J(k, j);
+      t2 = J(k, j + 1);
+      J(k, j) = t1 * cc + t2 * ss;
+      J(k, j + 1) = xny * (J(k, j) + t1) - t2;
     }
   }
 }
@@ -579,7 +580,7 @@ inline double distance(double a, double b)
 }
 
 
-inline double scalar_product(const Vector<double>& x, const Vector<double>& y)
+inline double scalar_product(const Eigen::VectorXd & x, const Eigen::VectorXd & y)
 {
   register int i, n = x.size();
   register double sum;
@@ -590,18 +591,18 @@ inline double scalar_product(const Vector<double>& x, const Vector<double>& y)
   return sum;			
 }
 
-void cholesky_decomposition(Matrix<double>& A) 
+void cholesky_decomposition(Eigen::MatrixXd & A) 
 {
-  register int i, j, k, n = A.nrows();
+  register int i, j, k, n = A.rows();
   register double sum;
 	
   for (i = 0; i < n; i++)
   {
     for (j = i; j < n; j++)
     {
-      sum = A[i][j];
+      sum = A(i, j);
       for (k = i - 1; k >= 0; k--)
-        sum -= A[i][k]*A[j][k];
+        sum -= A(i, k)*A(j, k);
       if (i == j) 
 	    {
 	      if (sum <= 0.0)
@@ -613,20 +614,20 @@ void cholesky_decomposition(Matrix<double>& A)
           throw std::logic_error(os.str());
           exit(-1);
         }
-	      A[i][i] = sqrt(sum);
+	      A(i, i) = sqrt(sum);
 	    }
       else
-        A[j][i] = sum / A[i][i];
+        A(j, i) = sum / A(i, i);
     }
     for (k = i + 1; k < n; k++)
-      A[i][k] = A[k][i];
+      A(i, k) = A(k, i);
   } 
 }
 
-void cholesky_solve(const Matrix<double>& L, Vector<double>& x, const Vector<double>& b)
+void cholesky_solve(const Eigen::MatrixXd & L, Eigen::VectorXd & x, const Eigen::VectorXd & b)
 {
-  int n = L.nrows();
-  Vector<double> y(n);
+  int n = L.rows();
+  Eigen::Vector<double, Eigen::Dynamic> y(n);
 	
   /* Solve L * y = b */
   forward_elimination(L, y, b);
@@ -634,49 +635,49 @@ void cholesky_solve(const Matrix<double>& L, Vector<double>& x, const Vector<dou
   backward_elimination(L, x, y);
 }
 
-inline void forward_elimination(const Matrix<double>& L, Vector<double>& y, const Vector<double>& b)
+inline void forward_elimination(const Eigen::MatrixXd & L, Eigen::VectorXd & y, const Eigen::VectorXd & b)
 {
-  register int i, j, n = L.nrows();
+  register int i, j, n = L.rows();
 	
-  y[0] = b[0] / L[0][0];
+  y[0] = b[0] / L(0, 0);
   for (i = 1; i < n; i++)
   {
     y[i] = b[i];
     for (j = 0; j < i; j++)
-      y[i] -= L[i][j] * y[j];
-    y[i] = y[i] / L[i][i];
+      y[i] -= L(i, j) * y[j];
+    y[i] = y[i] / L(i, i);
   }
 }
 
-inline void backward_elimination(const Matrix<double>& U, Vector<double>& x, const Vector<double>& y)
+inline void backward_elimination(const Eigen::MatrixXd & U, Eigen::VectorXd & x, const Eigen::VectorXd & y)
 {
-  register int i, j, n = U.nrows();
+  register int i, j, n = U.rows();
 	
-  x[n - 1] = y[n - 1] / U[n - 1][n - 1];
+  x[n - 1] = y[n - 1] / U(n - 1, n - 1);
   for (i = n - 2; i >= 0; i--)
   {
     x[i] = y[i];
     for (j = i + 1; j < n; j++)
-      x[i] -= U[i][j] * x[j];
-    x[i] = x[i] / U[i][i];
+      x[i] -= U(i, j) * x[j];
+    x[i] = x[i] / U(i, i);
   }
 }
 
-void print_matrix(const char* name, const Matrix<double>& A, int n, int m)
+void print_matrix(const char* name, const Eigen::MatrixXd & A, int n, int m)
 {
   std::ostringstream s;
   std::string t;
   if (n == -1)
-    n = A.nrows();
+    n = A.rows();
   if (m == -1)
-    m = A.ncols();
+    m = A.cols();
 	
   s << name << ": " << std::endl;
   for (int i = 0; i < n; i++)
   {
     s << " ";
     for (int j = 0; j < m; j++)
-      s << A[i][j] << ", ";
+      s << A(i, j) << ", ";
     s << std::endl;
   }
   t = s.str();
@@ -686,7 +687,7 @@ void print_matrix(const char* name, const Matrix<double>& A, int n, int m)
 }
 
 template<typename T>
-void print_vector(const char* name, const Vector<T>& v, int n)
+void print_vector(const char* name, const Eigen::Vector<T, Eigen::Dynamic> & v, int n)
 {
   std::ostringstream s;
   std::string t;

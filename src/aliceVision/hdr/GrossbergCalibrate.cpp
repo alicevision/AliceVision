@@ -11,8 +11,6 @@
 #include <aliceVision/system/Logger.hpp>
 #include <Eigen/Dense>
 #include "sampling.hpp"
-
-#include "Array.hh"
 #include "QuadProg++.hh"
 
 namespace aliceVision
@@ -121,7 +119,7 @@ void GrossbergCalibrate::process(const std::vector<std::vector<std::string>>& im
       /* Get first linear solution */
       Eigen::VectorXd c = (E.transpose() * E).inverse() * E.transpose() * -v; 
       Eigen::MatrixXd H = E.transpose() * E;
-      Eigen::MatrixXd d = E.transpose() * v;
+      Eigen::VectorXd d = (E.transpose() * v).col(0);
 
       /**
        * d (f0(val) + sum_i(c_i * f_i(val))) d_val > 0
@@ -152,56 +150,24 @@ void GrossbergCalibrate::process(const std::vector<std::vector<std::string>>& im
           D(i, dim)  = fdim(eval_next, channel) - fdim(eval_cur, channel);
         }
       }
+   
 
-      quadprogpp::Matrix<double> G(H.rows(), H.cols());
-      for (int i = 0; i < H.rows(); i++) {
-        for (int j = 0; j < H.cols(); j++) {
-          G[i][j] = H(i, j);
-        }
-      }
-
-      quadprogpp::Vector<double> g0(d.rows());
-      for (int i = 0; i < d.rows(); i++) {
-        g0[i] = d(i, 0);
-      }
-    
-      quadprogpp::Matrix<double> CI(D.cols(), D.rows());
-      for (int i = 0; i < D.rows(); i++) {
-        for (int j = 0; j < D.cols(); j++) {
-          CI[j][i] = D(i, j);
-        }
-      }
-
-      quadprogpp::Vector<double> ci0(dF0.rows());
-      for (int i = 0; i < dF0.rows(); i++) {
-        ci0[i] = dF0(i, 0);
-      }
-
-      quadprogpp::Matrix<double> CE(_dimension, 1);
+      Eigen::MatrixXd CE(_dimension, 1);
       for (int i = 0; i < 1; i++) {
         for (int j = 0; j < _dimension; j++) {
           rgbCurve fdim(channelQuantization);
           fdim.setEmor(j + 1);
-          CE[j][i] = fdim(1.0, channel);
+          CE(j, i) = fdim(1.0, channel);
         }
       }
 
-      quadprogpp::Vector<double> ce0(1);
+      Eigen::Vector<double, Eigen::Dynamic> ce0(1);
       for (int i = 0; i < 1; i++) {
         ce0[i] = 0;
       }
-
-      quadprogpp::Vector<double> x(c.rows());
-      for (int i = 0; i < c.rows(); i++) {
-        x[i] = c(i, 0);
-      }
       
-      quadprogpp::solve_quadprog(G, g0, CE, ce0, CI, ci0, x);
+      quadprogpp::solve_quadprog(H, d, CE, ce0, D.transpose(), dF0, c);
       
-      for (int i = 0; i < c.rows(); i++) {
-        c(i, 0)= x[i];
-      }
-
 
       /*
       Create final curve
