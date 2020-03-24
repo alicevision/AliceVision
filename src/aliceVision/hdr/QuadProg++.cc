@@ -26,7 +26,7 @@ void compute_d(Eigen::VectorXd & d, const Eigen::MatrixXd & J, const Eigen::Vect
 void update_z(Eigen::VectorXd & z, const Eigen::MatrixXd & J, const Eigen::VectorXd & d, int iq);
 void update_r(const Eigen::MatrixXd & R, Eigen::VectorXd & r, const Eigen::VectorXd & d, int iq);
 bool add_constraint(Eigen::MatrixXd & R, Eigen::MatrixXd & J, Eigen::VectorXd & d, unsigned int& iq, double& rnorm);
-void delete_constraint(Eigen::MatrixXd & R, Eigen::MatrixXd & J, Eigen::Vector<int, Eigen::Dynamic> & A, Eigen::VectorXd & u, unsigned int n, int p, unsigned int& iq, int l);
+void delete_constraint(Eigen::MatrixXd & R, Eigen::MatrixXd & J, Eigen::VectorXi & A, Eigen::VectorXd & u, unsigned int n, int p, unsigned int& iq, int l);
 
 // Utility functions for computing the Cholesky decomposition and solving
 // linear systems
@@ -44,7 +44,7 @@ double distance(double a, double b);
 void print_matrix(const char* name, const Eigen::MatrixXd & A, int n = -1, int m = -1);
 
 template<typename T>
-void print_vector(const char* name, const Eigen::Vector<T, Eigen::Dynamic>& v, int n = -1);
+void print_vector(const char* name, const Eigen::Matrix<T, Eigen::Dynamic, 1>& v, int n = -1);
 
 // The Solving function, implementing the Goldfarb-Idnani method
 
@@ -84,7 +84,7 @@ double solve_quadprog(Eigen::MatrixXd & G, Eigen::VectorXd & g0,
   register unsigned int i, j, k, l; /* indices */
   int ip; // this is the index of the constraint to be added to the active set
   Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> R(n, n), J(n, n);
-  Eigen::Vector<double, Eigen::Dynamic> s(m + p), z(n), r(m + p), d(n), np(n), u(m + p), x_old(n), u_old(m + p);
+  Eigen::VectorXd s(m + p), z(n), r(m + p), d(n), np(n), u(m + p), x_old(n), u_old(m + p);
   double f_value, psi, c1, c2, sum, ss, R_norm;
   double inf;
   if (std::numeric_limits<double>::has_infinity)
@@ -94,9 +94,9 @@ double solve_quadprog(Eigen::MatrixXd & G, Eigen::VectorXd & g0,
   double t, t1, t2; /* t is the step lenght, which is the minimum of the partial step length t1 
     * and the full step length t2 */
   
-  Eigen::Vector<int, Eigen::Dynamic> A(m + p), A_old(m + p), iai(m + p);
+  Eigen::VectorXi A(m + p), A_old(m + p), iai(m + p);
   unsigned int iq, iter = 0;
-  Eigen::Vector<bool, Eigen::Dynamic> iaexcl(m + p);
+  Eigen::Matrix<bool, Eigen::Dynamic, 1> iaexcl(m + p);
 	
 
   
@@ -475,7 +475,7 @@ bool add_constraint(Eigen::MatrixXd & R, Eigen::MatrixXd & J, Eigen::VectorXd & 
   return true;
 }
 
-void delete_constraint(Eigen::MatrixXd & R, Eigen::MatrixXd & J, Eigen::Vector<int, Eigen::Dynamic>& A, Eigen::VectorXd & u, unsigned int n, int p, unsigned int& iq, int l)
+void delete_constraint(Eigen::MatrixXd & R, Eigen::MatrixXd & J, Eigen::VectorXi& A, Eigen::VectorXd & u, unsigned int n, int p, unsigned int& iq, int l)
 {
 #ifdef TRACE_SOLVER
   std::cout << "Delete constraint " << l << ' ' << iq;
@@ -627,7 +627,7 @@ void cholesky_decomposition(Eigen::MatrixXd & A)
 void cholesky_solve(const Eigen::MatrixXd & L, Eigen::VectorXd & x, const Eigen::VectorXd & b)
 {
   int n = L.rows();
-  Eigen::Vector<double, Eigen::Dynamic> y(n);
+  Eigen::VectorXd y(n);
 	
   /* Solve L * y = b */
   forward_elimination(L, y, b);
@@ -687,7 +687,7 @@ void print_matrix(const char* name, const Eigen::MatrixXd & A, int n, int m)
 }
 
 template<typename T>
-void print_vector(const char* name, const Eigen::Vector<T, Eigen::Dynamic> & v, int n)
+void print_vector(const char* name, const Eigen::Matrix<T, Eigen::Dynamic, 1> & v, int n)
 {
   std::ostringstream s;
   std::string t;

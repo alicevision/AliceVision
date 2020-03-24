@@ -1184,7 +1184,7 @@ int main(int argc, char **argv) {
   /* Store output */
   ALICEVISION_LOG_INFO("Write output panorama to file " << outputPanorama);
   const aliceVision::image::Image<image::RGBAfColor> & panorama = compositer->getPanorama();
-  image::writeImage(outputPanorama, panorama, image::EImageColorSpace::SRGB);
+  image::writeImage(outputPanorama, panorama, image::EImageColorSpace::AUTO);
 
 
   return EXIT_SUCCESS;

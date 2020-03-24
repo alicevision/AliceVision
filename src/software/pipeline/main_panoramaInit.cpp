@@ -544,6 +544,7 @@ int main(int argc, char * argv[])
   std::string sfmOutputDataFilename;
 
   bool useFisheye = false;
+  bool estimateFisheyeCircle = true;
   Vec2 fisheyeCenterOffset(0, 0);
   double fisheyeRadius = 96.0;
 
@@ -568,6 +569,8 @@ int main(int argc, char * argv[])
   po::options_description fisheyeParams("Fisheye parameters");
   fisheyeParams.add_options()
     ("useFisheye", po::value<bool>(&useFisheye), "Declare all input images as fisheye with 'equidistant' model.")
+    ("estimateFisheyeCircle", po::value<bool>(&estimateFisheyeCircle),
+      "Automatically estimate the Fisheye Circle center and radius instead of using user values.")
     ("fisheyeCenterOffset_x", po::value<double>(&fisheyeCenterOffset(0)), "Fisheye circle's center offset X (pixels).")
     ("fisheyeCenterOffset_y", po::value<double>(&fisheyeCenterOffset(1)), "Fisheye circle's center offset Y (pixels).")
     ("fisheyeRadius,r", po::value<double>(&fisheyeRadius), "Fisheye circle's radius (% of image shortest side).")
@@ -737,7 +740,7 @@ int main(int argc, char * argv[])
   {
     int equidistantCount = 0;
 
-    if(fisheyeRadius == 0)
+    if(useFisheye && estimateFisheyeCircle)
     {
       
       if(sfmData.getIntrinsics().size() != 1)
