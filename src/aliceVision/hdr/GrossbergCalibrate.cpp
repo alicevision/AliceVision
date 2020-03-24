@@ -161,7 +161,7 @@ void GrossbergCalibrate::process(const std::vector<std::vector<std::string>>& im
         }
       }
 
-      Eigen::Vector<double, Eigen::Dynamic> ce0(1);
+      Eigen::VectorXd ce0(1);
       for (int i = 0; i < 1; i++) {
         ce0[i] = 0;
       }
