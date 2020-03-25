@@ -510,15 +510,15 @@ public:
     image::DrawCircle(_center_x, _center_y, _radius, image::RGBfColor(1.0f), &dest);
   }*/
 
-  double getCenterX() const {
+  double getCircleCenterX() const {
     return _center_x;
   }
 
-  double getCenterY() const {
+  double getCircleCenterY() const {
     return _center_y;
   }
 
-  double getRadius() const {
+  double getCircleRadius() const {
     return _radius;
   }
 
@@ -778,9 +778,9 @@ int main(int argc, char * argv[])
           return EXIT_FAILURE;
         }
 
-        double cx = detector.getCenterX();
-        double cy = detector.getCenterY();
-        double r = detector.getRadius();
+        double cx = detector.getCircleCenterX();
+        double cy = detector.getCircleCenterY();
+        double r = detector.getCircleRadius();
 
         // Update parameters with estimated values
         fisheyeCenterOffset(0) = cx - 0.5*double(intrinsic->w());
@@ -805,10 +805,10 @@ int main(int argc, char * argv[])
       }
       ALICEVISION_LOG_INFO("Update EquiDistant camera intrinsic " << intrinsic_pair.first << " with center and offset.");
 
-      equidistant->setCenterX(double(equidistant->w()) / 2.0 + fisheyeCenterOffset(0));
-      equidistant->setCenterY(double(equidistant->h()) / 2.0 + fisheyeCenterOffset(1));
+      equidistant->setCircleCenterX(double(equidistant->w()) / 2.0 + fisheyeCenterOffset(0));
+      equidistant->setCircleCenterY(double(equidistant->h()) / 2.0 + fisheyeCenterOffset(1));
 
-      equidistant->setRadius(fisheyeRadius / 100.0 * 0.5 * std::min(double(equidistant->w()),double(equidistant->h())));
+      equidistant->setCircleRadius(fisheyeRadius / 100.0 * 0.5 * std::min(double(equidistant->w()),double(equidistant->h())));
       ++equidistantCount;
     }
 

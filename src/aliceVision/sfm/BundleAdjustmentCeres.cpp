@@ -95,7 +95,7 @@ ceres::CostFunction* createConstraintsCostFunctionFromIntrinsics(const Intrinsic
   double radius = 0.0;
   const camera::EquiDistant * equi = dynamic_cast<const camera::EquiDistant *>(intrinsicPtr);
   if (equi) {
-    radius = equi->getRadius();
+    radius = equi->getCircleRadius();
   }
 
   switch(intrinsicPtr->getType())

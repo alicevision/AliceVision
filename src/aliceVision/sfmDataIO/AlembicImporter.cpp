@@ -448,17 +448,17 @@ bool readCamera(const ICamera& camera, const M44d& mat, sfmData::SfMData& sfmDat
       {
         initialFocalLengthPix = getAbcProp<Alembic::Abc::IDoubleProperty>(userProps, *propHeader, "mvg_initialFocalLengthPix", sampleFrame);
       }
-      if(const Alembic::Abc::PropertyHeader *propHeader = userProps.getPropertyHeader("mvg_fisheyeCenterX"))
+      if(const Alembic::Abc::PropertyHeader *propHeader = userProps.getPropertyHeader("mvg_fisheyeCircleCenterX"))
       {
-        fisheyeCenterX = getAbcProp<Alembic::Abc::IDoubleProperty>(userProps, *propHeader, "mvg_fisheyeCenterX", sampleFrame);
+        fisheyeCenterX = getAbcProp<Alembic::Abc::IDoubleProperty>(userProps, *propHeader, "mvg_fisheyeCircleCenterX", sampleFrame);
       }
-      if(const Alembic::Abc::PropertyHeader *propHeader = userProps.getPropertyHeader("mvg_fisheyeCenterY"))
+      if(const Alembic::Abc::PropertyHeader *propHeader = userProps.getPropertyHeader("mvg_fisheyeCircleCenterY"))
       {
-        fisheyeCenterY = getAbcProp<Alembic::Abc::IDoubleProperty>(userProps, *propHeader, "mvg_fisheyeCenterY", sampleFrame);
+        fisheyeCenterY = getAbcProp<Alembic::Abc::IDoubleProperty>(userProps, *propHeader, "mvg_fisheyeCircleCenterY", sampleFrame);
       }
-      if(const Alembic::Abc::PropertyHeader *propHeader = userProps.getPropertyHeader("mvg_fisheyeRadius"))
+      if(const Alembic::Abc::PropertyHeader *propHeader = userProps.getPropertyHeader("mvg_fisheyeCircleRadius"))
       {
-        fisheyeRadius = getAbcProp<Alembic::Abc::IDoubleProperty>(userProps, *propHeader, "mvg_fisheyeRadius", sampleFrame);
+        fisheyeRadius = getAbcProp<Alembic::Abc::IDoubleProperty>(userProps, *propHeader, "mvg_fisheyeCircleRadius", sampleFrame);
       }
       if(userProps.getPropertyHeader("mvg_intrinsicParams"))
       {
@@ -498,9 +498,9 @@ bool readCamera(const ICamera& camera, const M44d& mat, sfmData::SfMData& sfmDat
 
     std::shared_ptr<camera::EquiDistant> casted = std::dynamic_pointer_cast<camera::EquiDistant>(intrinsic);
     if (casted) {
-      casted->setCenterX(fisheyeCenterX);
-      casted->setCenterY(fisheyeCenterY);
-      casted->setRadius(fisheyeRadius);
+      casted->setCircleCenterX(fisheyeCenterX);
+      casted->setCircleCenterY(fisheyeCenterY);
+      casted->setCircleRadius(fisheyeRadius);
     }
 
     if(intrinsicLocked)

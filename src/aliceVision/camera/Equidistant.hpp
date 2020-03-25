@@ -36,13 +36,16 @@ public:
   EquiDistant(unsigned int w, unsigned int h, double fov, double ppx, double ppy,
               std::shared_ptr<Distortion> distortion = nullptr)
       : IntrinsicsScaleOffsetDisto(w, h, fov, fov, ppx, ppy, distortion)
-      , _radius(std::min(w, h) * 0.5)
-      , _center(w / 2.0, h / 2.0)
+      , _circleRadius(std::min(w, h) * 0.5)
+      , _circleCenter(w / 2.0, h / 2.0)
   {
   }
 
-  EquiDistant(unsigned int w, unsigned int h, double fov, double ppx, double ppy, double radiuspixels, std::shared_ptr<Distortion> distortion = nullptr)
-  : IntrinsicsScaleOffsetDisto(w, h, fov, fov, ppx, ppy, distortion), _radius(radiuspixels), _center(w/2.0, h/2.0)
+  EquiDistant(unsigned int w, unsigned int h, double fov, double ppx, double ppy, double circleRadiusPix,
+              std::shared_ptr<Distortion> distortion = nullptr)
+      : IntrinsicsScaleOffsetDisto(w, h, fov, fov, ppx, ppy, distortion)
+      , _circleRadius(circleRadiusPix)
+      , _circleCenter(w / 2.0, h / 2.0)
   {
   }
 
@@ -57,12 +60,12 @@ public:
   {
     *this = dynamic_cast<const EquiDistant&>(other); 
   }
-  
+
   bool isValid() const override
   {
     return _scale(0) > 0 && IntrinsicBase::isValid(); 
   }
-  
+
   EINTRINSIC getType() const override
   {
     return EQUIDISTANT_CAMERA; 
@@ -123,7 +126,6 @@ public:
     d_angles_d_X(1, 1) = d_angle_Z_d_len2d * d_len2d_d_X(1);
     d_angles_d_X(1, 2) = - len2d / (len2d * len2d + X(2) * X(2));
 
-
     const double rsensor = std::min(sensorWidth(), sensorHeight());
     const double rscale = sensorWidth() / std::max(w(), h());
     const double fmm = _scale(0) * rscale;
@@ -174,7 +176,6 @@ public:
     d_angles_d_X(1, 1) = d_angle_Z_d_len2d * d_len2d_d_X(1);
     d_angles_d_X(1, 2) = - len2d / (len2d * len2d + X(2) * X(2));
 
-
     const double rsensor = std::min(sensorWidth(), sensorHeight());
     const double rscale = sensorWidth() / std::max(w(), h());
     const double fmm = _scale(0) * rscale;
@@ -199,7 +200,6 @@ public:
 
   Eigen::Matrix<double, 2, 3> getDerivativeProjectWrtDisto(const geometry::Pose3& pose, const Vec3 & pt)
   {
-    
     const Vec3 X = pose.rotation() * pt;
 
     /* Compute angle with optical center */
@@ -248,7 +248,6 @@ public:
     Eigen::Matrix<double, 2, 1> d_P_d_radius;
     d_P_d_radius(0, 0) = cos(angle_radial);
     d_P_d_radius(1, 0) = sin(angle_radial);
-
 
     Eigen::Matrix<double, 1, 1> d_radius_d_fov;
     d_radius_d_fov(0, 0) = (- 2.0 * angle_Z / (fov * fov));
@@ -337,7 +336,7 @@ public:
 
     return d_ret_d_angles * d_angles_d_fov * d_fov_d_scale;
   }
-  
+
   double imagePlaneToCameraPlaneError(double value) const override
   {
     return value / _scale(0);
@@ -346,31 +345,28 @@ public:
   // Transform a point from the camera plane to the image plane
   Vec2 cam2ima(const Vec2& p) const override
   {
-    return _radius * p  + _offset;
+    return _circleRadius * p  + _offset;
   }
 
   Eigen::Matrix2d getDerivativeCam2ImaWrtPoint() const override
   {
-
-    return Eigen::Matrix2d::Identity() * _radius;
+    return Eigen::Matrix2d::Identity() * _circleRadius;
   }
 
   // Transform a point from the image plane to the camera plane
   Vec2 ima2cam(const Vec2& p) const override
   {
-    return (p - _offset) / _radius;
+    return (p - _offset) / _circleRadius;
   }
 
   Eigen::Matrix2d getDerivativeIma2CamWrtPoint() const override
   {
-
-    return Eigen::Matrix2d::Identity() * (1.0 / _radius);
+    return Eigen::Matrix2d::Identity() * (1.0 / _circleRadius);
   }
 
   Eigen::Matrix2d getDerivativeIma2CamWrtPrincipalPoint() const override
   {
-
-    return Eigen::Matrix2d::Identity() * (-1.0 / _radius);
+    return Eigen::Matrix2d::Identity() * (-1.0 / _circleRadius);
   }
 
   /**
@@ -389,43 +385,43 @@ public:
       return false;
 
     const Vec2 proj = project(geometry::Pose3(), ray, true);
-    const Vec2 centered = proj - Vec2(_center(0), _center(1));
-    return  centered.norm() <= _radius;
+    const Vec2 centered = proj - Vec2(_circleCenter(0), _circleCenter(1));
+    return  centered.norm() <= _circleRadius;
   }
 
-  double getRadius() const
+  double getCircleRadius() const
   {
-    return _radius;
+    return _circleRadius;
   }
 
-  void setRadius(double radius)
+  void setCircleRadius(double radius)
   {
-    _radius = radius;
+    _circleRadius = radius;
   }
 
-  double getCenterX() const
+  double getCircleCenterX() const
   {
-    return _center(0);
+    return _circleCenter(0);
   }
 
-  void setCenterX(double x)
+  void setCircleCenterX(double x)
   {
-    _center(0) = x;
+    _circleCenter(0) = x;
   }
 
-  double getCenterY() const
+  double getCircleCenterY() const
   {
-    return _center(1);
+    return _circleCenter(1);
   }
 
-  void setCenterY(double y)
+  void setCircleCenterY(double y)
   {
-    _center(1) = y;
+    _circleCenter(1) = y;
   }
 
 protected:
-  double _radius{0.0};
-  Vec2 _center{0.0, 0.0};
+  double _circleRadius{0.0};
+  Vec2 _circleCenter{0.0, 0.0};
 };
 
 } // namespace camera

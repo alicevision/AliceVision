@@ -105,14 +105,16 @@ void saveIntrinsic(const std::string& name, IndexT intrinsicId, const std::share
   intrinsicTree.put("initializationMode", camera::EIntrinsicInitMode_enumToString(intrinsic->getInitializationMode()));
 
   std::shared_ptr<camera::IntrinsicsScaleOffset> intrinsicScaleOffset = std::dynamic_pointer_cast<camera::IntrinsicsScaleOffset>(intrinsic);
-  if (intrinsicScaleOffset) {
+  if (intrinsicScaleOffset)
+  {
     intrinsicTree.put("pxInitialFocalLength", intrinsicScaleOffset->initialScale());
     intrinsicTree.put("pxFocalLength", intrinsicScaleOffset->getScale()(0));
     saveMatrix("principalPoint", intrinsicScaleOffset->getOffset(), intrinsicTree);
   }
 
   std::shared_ptr<camera::IntrinsicsScaleOffsetDisto> intrinsicScaleOffsetDisto = std::dynamic_pointer_cast<camera::IntrinsicsScaleOffsetDisto>(intrinsic);
-  if (intrinsicScaleOffsetDisto) {
+  if (intrinsicScaleOffsetDisto)
+  {
     bpt::ptree distParamsTree;
 
     for(double param : intrinsicScaleOffsetDisto->getDistortionParams())
@@ -126,10 +128,11 @@ void saveIntrinsic(const std::string& name, IndexT intrinsicId, const std::share
   }
 
   std::shared_ptr<camera::EquiDistant> intrinsicEquidistant = std::dynamic_pointer_cast<camera::EquiDistant>(intrinsic);
-  if (intrinsicEquidistant) {
-    intrinsicTree.put("fisheyeCenterX", intrinsicEquidistant->getCenterX());
-    intrinsicTree.put("fisheyeCenterY", intrinsicEquidistant->getCenterY());
-    intrinsicTree.put("fisheyeRadius", intrinsicEquidistant->getRadius());
+  if (intrinsicEquidistant)
+  {
+    intrinsicTree.put("fisheyeCircleCenterX", intrinsicEquidistant->getCircleCenterX());
+    intrinsicTree.put("fisheyeCircleCenterY", intrinsicEquidistant->getCircleCenterY());
+    intrinsicTree.put("fisheyeCircleRadius", intrinsicEquidistant->getCircleRadius());
   }
 
   intrinsicTree.put("locked", static_cast<int>(intrinsic->isLocked())); // convert bool to integer to avoid using "true/false" in exported file instead of "1/0".
@@ -176,7 +179,8 @@ void loadIntrinsic(IndexT& intrinsicId, std::shared_ptr<camera::IntrinsicBase>& 
 
   // Load distortion
   std::shared_ptr<camera::IntrinsicsScaleOffsetDisto> intrinsicWithDistoEnabled = std::dynamic_pointer_cast<camera::IntrinsicsScaleOffsetDisto>(intrinsic);
-  if (intrinsicWithDistoEnabled != nullptr) {
+  if (intrinsicWithDistoEnabled != nullptr)
+  {
     std::vector<double> distortionParams;
     for(bpt::ptree::value_type &paramNode : intrinsicTree.get_child("distortionParams"))
       distortionParams.emplace_back(paramNode.second.get_value<double>());
@@ -188,10 +192,11 @@ void loadIntrinsic(IndexT& intrinsicId, std::shared_ptr<camera::IntrinsicBase>& 
 
   // Load EquiDistant params
   std::shared_ptr<camera::EquiDistant> intrinsicEquiDistant = std::dynamic_pointer_cast<camera::EquiDistant>(intrinsic);
-  if (intrinsicEquiDistant != nullptr) {
-    intrinsicEquiDistant->setCenterX(intrinsicTree.get<double>("fisheyeCenterX", 0.0));
-    intrinsicEquiDistant->setCenterY(intrinsicTree.get<double>("fisheyeCenterY", 0.0));
-    intrinsicEquiDistant->setRadius(intrinsicTree.get<double>("fisheyeRadius", 1.0));
+  if (intrinsicEquiDistant != nullptr)
+  {
+    intrinsicEquiDistant->setCircleCenterX(intrinsicTree.get<double>("fisheyeCircleCenterX", 0.0));
+    intrinsicEquiDistant->setCircleCenterY(intrinsicTree.get<double>("fisheyeCircleCenterY", 0.0));
+    intrinsicEquiDistant->setCircleRadius(intrinsicTree.get<double>("fisheyeCircleRadius", 1.0));
   }
 }
 
