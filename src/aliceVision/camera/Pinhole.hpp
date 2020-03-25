@@ -214,8 +214,8 @@ class Pinhole : public IntrinsicsScaleOffsetDisto
    */
   bool isVisibleRay(const Vec3 & ray) const override
   {
-    
-    if (ray(2) < 0)
+    // if(ray(2) <= 0.0)
+    if(ray(2) < std::numeric_limits<double>::epsilon())
     {
       return false;
     }
