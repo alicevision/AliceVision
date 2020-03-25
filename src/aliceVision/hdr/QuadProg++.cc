@@ -149,7 +149,6 @@ double solve_quadprog(Eigen::MatrixXd & G, Eigen::VectorXd & g0,
   
   /* Add equality constraints to the working set A */
   iq = 0;
-  std::cout << p << std::endl;
   for (i = 0; i < p; i++)
   {
     for (j = 0; j < n; j++)

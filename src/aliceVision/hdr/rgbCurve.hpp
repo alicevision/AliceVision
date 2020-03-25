@@ -369,8 +369,12 @@ public:
   std::size_t getIndex(float sample, float& fractionalPart) const
   {
     assert(getSize() != 0);
+
     float infIndex;
-    fractionalPart = std::modf(std::max(0.f, std::min(1.f, sample)) * getSize() - 2, &infIndex);
+    float size = getSize() - 1.0f;
+    float valueScaled = std::max(0.f, std::min(1.f, sample)) * size;
+    fractionalPart = std::modf(valueScaled, &infIndex);
+
     return std::size_t(infIndex);
   }
 
