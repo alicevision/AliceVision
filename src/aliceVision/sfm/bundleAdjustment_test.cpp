@@ -305,6 +305,7 @@ SfMData getInputScene(const NViewDataSet & d, const NViewDatasetConfigurator & c
   }
 
   // 4. Landmarks
+  const double unknownScale = 0.0;
   for (int i = 0; i < npoints; ++i) {
 
     // Collect the image of point i in each frame.
@@ -316,7 +317,7 @@ SfMData getInputScene(const NViewDataSet & d, const NViewDatasetConfigurator & c
       pt(0) += rand()/RAND_MAX - .5;
       pt(1) += rand()/RAND_MAX - .5;
 
-      landmark.observations[j] = Observation(pt, i);
+      landmark.observations[j] = Observation(pt, i, unknownScale);
     }
     sfm_data.structure[i] = landmark;
   }

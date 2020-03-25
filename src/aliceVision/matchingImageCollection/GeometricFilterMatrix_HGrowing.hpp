@@ -82,8 +82,8 @@ struct GrowParameters
  * @param[in] param The parameters of the algorihm.
  * @return true if the \c transformation is different than the identity matrix.
  */
-bool growHomography(const std::vector<feature::SIOPointFeature> &featuresI,
-                    const std::vector<feature::SIOPointFeature> &featuresJ,
+bool growHomography(const std::vector<feature::PointFeature> &featuresI,
+                    const std::vector<feature::PointFeature> &featuresJ,
                     const matching::IndMatches &matches,
                     const IndexT &seedMatchId,
                     std::set<IndexT> &planarMatchesIndices,
@@ -118,8 +118,8 @@ struct HGrowingFilteringParam
  * @param[out] outGeometricInliers All the matches that supports one of the found homographies.
  * @param[in] param The parameters of the algorithm.
  */
-void filterMatchesByHGrowing(const std::vector<feature::SIOPointFeature>& siofeatures_I,
-                             const std::vector<feature::SIOPointFeature>& siofeatures_J,
+void filterMatchesByHGrowing(const std::vector<feature::PointFeature>& siofeatures_I,
+                             const std::vector<feature::PointFeature>& siofeatures_J,
                              const matching::IndMatches& putativeMatches,
                              std::vector<std::pair<Mat3,
                              matching::IndMatches>>& homographiesAndMatches,
@@ -139,8 +139,8 @@ void filterMatchesByHGrowing(const std::vector<feature::SIOPointFeature>& siofea
  */
 void drawHomographyMatches(const sfmData::View &viewI,
                            const sfmData::View &viewJ,
-                           const std::vector<feature::SIOPointFeature> &siofeatures_I,
-                           const std::vector<feature::SIOPointFeature> &siofeatures_J,
+                           const std::vector<feature::PointFeature> &siofeatures_I,
+                           const std::vector<feature::PointFeature> &siofeatures_J,
                            const std::vector<std::pair<Mat3, matching::IndMatches>> &homographiesAndMatches,
                            const matching::IndMatches &putativeMatches,
                            const std::string &outFilename);
@@ -223,13 +223,11 @@ struct GeometricFilterMatrix_HGrowing : public GeometricFilterMatrix
 
       const Regions & regions_I = regionsPerView.getRegions(viewId_I, descType);
       const Regions & regions_J = regionsPerView.getRegions(viewId_J, descType);
-      const std::vector<SIOPointFeature>& siofeatures_I = getSIOPointFeatures(regions_I);
-      const std::vector<SIOPointFeature>& siofeatures_J = getSIOPointFeatures(regions_J);
 
       std::vector<std::pair<Mat3, matching::IndMatches>> homographiesAndMatches;
       matching::IndMatches outGeometricInliers;
-      filterMatchesByHGrowing(siofeatures_I,
-                              siofeatures_J,
+      filterMatchesByHGrowing(regions_I.Features(),
+                              regions_J.Features(),
                               putativeMatchesPerType.at(descType),
                               homographiesAndMatches,
                               outGeometricInliers,
@@ -243,7 +241,6 @@ struct GeometricFilterMatrix_HGrowing : public GeometricFilterMatrix
         continue;
       }
 
-
       if (boost::filesystem::exists(outputSvgDir))
       {
         const std::size_t nbMatches = outGeometricInliers.size();
@@ -254,8 +251,8 @@ struct GeometricFilterMatrix_HGrowing : public GeometricFilterMatrix
         const std::string outFilename = (boost::filesystem::path(outputSvgDir) / boost::filesystem::path(name)).string();
         drawHomographyMatches(viewI,
                               viewJ,
-                              siofeatures_I,
-                              siofeatures_J,
+                              regions_I.Features(),
+                              regions_J.Features(),
                               homographiesAndMatches,
                               putativeMatchesPerType.at(descType),
                               outFilename);

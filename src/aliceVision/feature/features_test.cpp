@@ -22,7 +22,7 @@ using namespace aliceVision;
 using namespace aliceVision::feature;
 
 // Define a feature and a container of features
-typedef SIOPointFeature Feature_T;
+typedef PointFeature Feature_T;
 typedef std::vector<Feature_T> Feats_T;
 
 // Define a descriptor and a container of descriptors

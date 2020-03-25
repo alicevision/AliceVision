@@ -658,7 +658,10 @@ void ReconstructionEngine_panorama::Compute_Relative_Rotations(rotationAveraging
               Vec2 pt1 = _featuresPerView->getFeatures(I, descType)[match._i].coords().cast<double>();
               Vec2 pt2 = _featuresPerView->getFeatures(J, descType)[match._j].coords().cast<double>();
 
-              sfm::Constraint2D constraint(I, sfm::Observation(pt1, 0), J, sfm::Observation(pt2, 0));
+              const PointFeature& pI = _featuresPerView->getFeatures(I, descType)[match._i];
+              const PointFeature& pJ = _featuresPerView->getFeatures(J, descType)[match._j];
+
+              sfm::Constraint2D constraint(I, sfm::Observation(pt1, 0, pI.scale()), J, sfm::Observation(pt2, 0, pJ.scale()));
               constraints2d.push_back(constraint);
 
               index_inlier++;

@@ -18,7 +18,7 @@ namespace feature {
 /// Association storage of associated feature and descriptor for a given image.
 /// Load, save, R/W accessor operation.
 ///
-/// typedef vector<SIOPointFeature> featsT;
+/// typedef vector<PointFeature> featsT;
 /// typedef vector<Descriptor<uchar,128> > descsT;
 /// KeypointSet< featsT, descsT > kpSet;
 template<typename FeaturesT, typename DescriptorsT>

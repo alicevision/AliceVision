@@ -8,6 +8,7 @@
 #pragma once
 
 #include <aliceVision/types.hpp>
+#include <aliceVision/sfm/BundleAdjustment.hpp>
 
 namespace aliceVision {
 
@@ -33,6 +34,7 @@ inline PairSet Pair_filter(const IterablePairs& pairs, const IterableIndex& inde
 /// Remove observations with too large reprojection error.
 /// Return the number of removed tracks.
 IndexT RemoveOutliers_PixelResidualError(sfmData::SfMData& sfmData,
+                                         EFeatureConstraint featureConstraint,
                                          const double dThresholdPixel,
                                          const unsigned int minTrackLength = 2);
 

@@ -200,8 +200,8 @@ VLD::VLD( const ImageScale& series, T const& P1, T const& P2 ) : contrast( 0.0 )
 
 float KVLD( const Image< float >& I1,
             const Image< float >& I2,
-            const std::vector<feature::SIOPointFeature> & F1,
-            const std::vector<feature::SIOPointFeature> & F2,
+            const std::vector<feature::PointFeature> & F1,
+            const std::vector<feature::PointFeature> & F2,
             const vector< Pair >& matches,
             vector< Pair >& matchesFiltered,
             vector< double >& score,

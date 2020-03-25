@@ -86,8 +86,8 @@ private :
 
 //=============================IO interface ======================//
 
-std::ofstream& writeDetector( std::ofstream& out, const aliceVision::feature::SIOPointFeature& vect );
-std::ifstream& readDetector( std::ifstream& in, aliceVision::feature::SIOPointFeature& point );
+std::ofstream& writeDetector( std::ofstream& out, const aliceVision::feature::PointFeature& vect );
+std::ifstream& readDetector( std::ifstream& in, aliceVision::feature::PointFeature& point );
 //======================================elemetuary operations================================//
 template < typename T >
 inline T point_distance( const T x1, const T y1, const T x2, const T y2 )

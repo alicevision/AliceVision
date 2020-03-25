@@ -10,6 +10,7 @@
 #include "aliceVision/colorHarmonization/CommonDataByPair.hpp"
 #include "aliceVision/matching/IndMatch.hpp"
 #include "aliceVision/feature/feature.hpp"
+#include "aliceVision/feature/RegionsPerView.hpp"
 
 #include <vector>
 
@@ -53,8 +54,8 @@ public:
 
       for(const matching::IndMatch& match : matchesPerDescIt.second) //< loop over matches
       {
-        const feature::SIOPointFeature& L = feature::getSIOPointFeatures(*_regionsL.at(descType)).at(match._i);
-        const feature::SIOPointFeature& R = feature::getSIOPointFeatures(*_regionsR.at(descType)).at(match._j);
+        const feature::PointFeature& L = _regionsL.at(descType)->Features().at(match._i);
+        const feature::PointFeature& R = _regionsR.at(descType)->Features().at(match._j);
 
         image::FilledCircle( L.x(), L.y(), ( int )_radius, ( unsigned char ) 255, &maskLeft );
         image::FilledCircle( R.x(), R.y(), ( int )_radius, ( unsigned char ) 255, &maskRight );
