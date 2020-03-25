@@ -67,7 +67,7 @@ void StructureComputation_blind::triangulate(sfmData::SfMData& sfmData) const
 
           const Pose3 pose = sfmData.getPose(*view).getTransform();
           trianObj.add(
-            pinHoleCam->get_projective_equivalent(pose),
+            pinHoleCam->getProjectiveEquivalent(pose),
             cam->get_ud_pixel(itObs.second.x));
         }
       }
@@ -265,7 +265,7 @@ Vec3 StructureComputation_robust::track_sample_triangulation(const sfmData::SfMD
 
     const Pose3 pose = sfmData.getPose(*view).getTransform();
     trianObj.add(
-      camPinHole->get_projective_equivalent(pose),
+      camPinHole->getProjectiveEquivalent(pose),
       cam->get_ud_pixel(itObs->second.x));
   }
   return trianObj.compute();

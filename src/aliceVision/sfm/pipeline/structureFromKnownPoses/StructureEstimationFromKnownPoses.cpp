@@ -114,8 +114,8 @@ void StructureEstimationFromKnownPoses::match(const SfMData& sfmData,
         ALICEVISION_LOG_ERROR("Camera is not pinhole in match");
       }
       
-      const Mat34 P_L = pinHoleCamL->get_projective_equivalent(poseL);
-      const Mat34 P_R = pinHoleCamR->get_projective_equivalent(poseR);
+      const Mat34 P_L = pinHoleCamL->getProjectiveEquivalent(poseL);
+      const Mat34 P_R = pinHoleCamR->getProjectiveEquivalent(poseR);
 
       const Mat3 F_lr = F_from_P(P_L, P_R);
       std::vector<feature::EImageDescriberType> commonDescTypes = regionsPerView.getCommonDescTypes(*it);
@@ -235,7 +235,7 @@ void StructureEstimationFromKnownPoses::filter(
 
               const Pose3 pose = sfmData.getPose(*view).getTransform();
               const Vec2 pt = regionsPerView.getRegions(imaIndex, subTrack.descType).GetRegionPosition(featIndex);
-              trianObj.add(camPinHole->get_projective_equivalent(pose), cam->get_ud_pixel(pt));
+              trianObj.add(camPinHole->getProjectiveEquivalent(pose), cam->get_ud_pixel(pt));
             }
             const Vec3 Xs = trianObj.compute();
             if (trianObj.minDepth() > 0 && trianObj.error()/(double)trianObj.size() < 4.0)

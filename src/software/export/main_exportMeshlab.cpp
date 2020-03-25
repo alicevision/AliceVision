@@ -134,7 +134,7 @@ int main(int argc, char **argv)
       continue;
     }
     
-    Mat34 P = camPinHole->get_projective_equivalent(pose);
+    Mat34 P = camPinHole->getProjectiveEquivalent(pose);
 
     for ( int i = 1; i < 3 ; ++i)
       for ( int j = 0; j < 4; ++j)

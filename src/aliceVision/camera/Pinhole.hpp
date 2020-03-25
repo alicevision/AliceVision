@@ -59,14 +59,15 @@ class Pinhole : public IntrinsicsScaleOffsetDisto
     return PINHOLE_CAMERA; 
   }
 
-  Mat3 K() const { 
+  Mat3 K() const
+  {
     Mat3 K;
-    
-    K  << _scale_x, 0.0, _offset_y, 
-          0.0, _scale_y, _offset_y, 
+
+    K  << _scale_x, 0.0, _offset_y,
+          0.0, _scale_y, _offset_y,
           0.0, 0.0, 1.0;
 
-    return K; 
+    return K;
   }
 
   void setK(double focal_length_pix, double ppx, double ppy)
@@ -77,7 +78,8 @@ class Pinhole : public IntrinsicsScaleOffsetDisto
     _offset_y = ppy;
   }
   
-  void setK(const Mat3 & K) {
+  void setK(const Mat3 & K)
+  {
     _scale_x = K(0, 0);
     _scale_y = K(1, 1);
     _offset_x = K(0, 2);
@@ -97,7 +99,6 @@ class Pinhole : public IntrinsicsScaleOffsetDisto
 
   Eigen::Matrix<double, 2, 9> getDerivativeProjectWrtRotation(const geometry::Pose3& pose, const Vec3 & pt)
   {
-    
     const Vec3 X = pose.rotation() * pt; // apply pose
 
     const Eigen::Matrix<double, 3, 9> d_X_d_R = getJacobian_AB_wrt_A<3, 3, 1>(pose.rotation(), pt);
@@ -115,8 +116,8 @@ class Pinhole : public IntrinsicsScaleOffsetDisto
     return getDerivativeCam2ImaWrtPoint() * getDerivativeAddDistoWrtPt(P) * d_P_d_X * d_X_d_R;
   }
 
-  Eigen::Matrix<double, 2, 3> getDerivativeProjectWrtPoint(const geometry::Pose3& pose, const Vec3 & pt) {
-
+  Eigen::Matrix<double, 2, 3> getDerivativeProjectWrtPoint(const geometry::Pose3& pose, const Vec3 & pt)
+  {
     const Vec3 X = pose.rotation() * pt; // apply pose
 
     const Eigen::Matrix<double, 3, 3>& d_X_d_P = pose.rotation();
@@ -142,8 +143,8 @@ class Pinhole : public IntrinsicsScaleOffsetDisto
     return getDerivativeCam2ImaWrtPoint() * getDerivativeAddDistoWrtDisto(P);
   }
   
-  Eigen::Matrix<double, 2, 2> getDerivativeProjectWrtPrincipalPoint(const geometry::Pose3& pose, const Vec3 & pt) {
-
+  Eigen::Matrix<double, 2, 2> getDerivativeProjectWrtPrincipalPoint(const geometry::Pose3& pose, const Vec3 & pt)
+  {
     return getDerivativeCam2ImaWrtPrincipalPoint();
   }
 
@@ -195,7 +196,7 @@ class Pinhole : public IntrinsicsScaleOffsetDisto
     return value / focal();
   }
 
-  Mat34 get_projective_equivalent(const geometry::Pose3 & pose) const
+  Mat34 getProjectiveEquivalent(const geometry::Pose3 & pose) const
   {
     Mat34 P;
     Mat3 K = Eigen::Matrix3d::Identity();

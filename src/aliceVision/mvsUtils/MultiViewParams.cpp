@@ -300,7 +300,7 @@ void MultiViewParams::loadMatricesFromSfM(int index)
     return;
   }
 
-  const Mat34 P = ptrPinHole->get_projective_equivalent(_sfmData.getPose(view).getTransform());
+  const Mat34 P = ptrPinHole->getProjectiveEquivalent(_sfmData.getPose(view).getTransform());
   std::vector<double> vP(P.size());
   Eigen::Map<RowMatrixXd>(vP.data(), P.rows(), P.cols()) = P;
 

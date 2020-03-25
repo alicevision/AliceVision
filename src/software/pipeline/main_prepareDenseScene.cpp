@@ -112,7 +112,7 @@ bool prepareDenseScene(const SfMData& sfmData,
         continue;
       }
 
-      Mat34 P = camPinHole->get_projective_equivalent(pose);
+      Mat34 P = camPinHole->getProjectiveEquivalent(pose);
 
       // get camera intrinsics matrices
       const Mat3 K = dynamic_cast<const Pinhole*>(sfmData.getIntrinsicPtr(view->getIntrinsicId()))->K();

@@ -1289,8 +1289,8 @@ bool ReconstructionEngine_sequentialSfM::getBestInitialImagePairs(std::vector<Pa
       std::vector<std::size_t> validCommonTracksIds(relativePose_info.vec_inliers.size());
       const Pose3 pose_I = Pose3(Mat3::Identity(), Vec3::Zero());
       const Pose3 pose_J = relativePose_info.relativePose;
-      const Mat34 PI = camI->get_projective_equivalent(pose_I);
-      const Mat34 PJ = camJ->get_projective_equivalent(pose_J);
+      const Mat34 PI = camI->getProjectiveEquivalent(pose_I);
+      const Mat34 PJ = camJ->getProjectiveEquivalent(pose_J);
       std::size_t i = 0;
       for (const size_t inlier_idx: relativePose_info.vec_inliers)
       {
@@ -1808,9 +1808,9 @@ void ReconstructionEngine_sequentialSfM::triangulate_multiViewsLORANSAC(SfMData&
       const Vec2 xJ = _featuresPerView->getFeatures(J, track.descType)[track.featPerView.at(J)].coords().cast<double>();
   
       // -- Triangulate:
-      TriangulateDLT(camIPinHole->get_projective_equivalent(poseI), 
+      TriangulateDLT(camIPinHole->getProjectiveEquivalent(poseI), 
                      camI->get_ud_pixel(xI), 
-                     camJPinHole->get_projective_equivalent(poseJ), 
+                     camJPinHole->getProjectiveEquivalent(poseJ), 
                      camI->get_ud_pixel(xJ), 
                      &X_euclidean);
       
@@ -1858,7 +1858,7 @@ void ReconstructionEngine_sequentialSfM::triangulate_multiViewsLORANSAC(SfMData&
           const Vec2 x_ud = cam->get_ud_pixel(_featuresPerView->getFeatures(viewId, track.descType)[track.featPerView.at(viewId)].coords().cast<double>()); // undistorted 2D point
           features(0,i) = x_ud(0); 
           features(1,i) = x_ud(1);  
-          Ps.push_back(camPinHole->get_projective_equivalent(scene.getPose(*view).getTransform()));
+          Ps.push_back(camPinHole->getProjectiveEquivalent(scene.getPose(*view).getTransform()));
           i++;
         }
       }
@@ -2029,8 +2029,8 @@ void ReconstructionEngine_sequentialSfM::triangulate_2Views(SfMData& scene, cons
           Vec3 X_euclidean = Vec3::Zero();
           const Vec2 xI_ud = camI->get_ud_pixel(xI);
           const Vec2 xJ_ud = camJ->get_ud_pixel(xJ);
-          const Mat34 pI = camIPinHole->get_projective_equivalent(poseI);
-          const Mat34 pJ = camJPinHole->get_projective_equivalent(poseJ);
+          const Mat34 pI = camIPinHole->getProjectiveEquivalent(poseI);
+          const Mat34 pJ = camJPinHole->getProjectiveEquivalent(poseJ);
           
           TriangulateDLT(pI, xI_ud, pJ, xJ_ud, &X_euclidean);
           

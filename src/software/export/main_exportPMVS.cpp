@@ -94,7 +94,7 @@ bool exportToPMVSFormat(
       }
 
       // We have a valid view with a corresponding camera & pose
-      const Mat34 P = camPinHole->get_projective_equivalent(pose);
+      const Mat34 P = camPinHole->getProjectiveEquivalent(pose);
       std::ostringstream os;
       os << std::setw(8) << std::setfill('0') << map_viewIdToContiguous[view->getViewId()];
       std::ofstream file((fs::path(sOutDirectory) / std::string("txt") / (os.str() + ".txt")).string());

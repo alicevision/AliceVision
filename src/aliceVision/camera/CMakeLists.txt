@@ -17,6 +17,7 @@ set(camera_files_headers
 	PinholeFisheye.hpp
 	PinholeFisheye1.hpp
 	PinholeRadial.hpp
+	Equidistant.hpp
 	EquidistantRadial.hpp
 )
 

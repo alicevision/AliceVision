@@ -221,7 +221,7 @@ int main(int argc, char **argv)
   sfmEngine.SetMatchesProvider(&pairwiseMatches);
 
   // configure reconstruction parameters
-  sfmEngine.setLockAllIntrinsics(lockAllIntrinsics); // TODO: rename param
+  sfmEngine.setLockAllIntrinsics(lockAllIntrinsics);
 
   // configure motion averaging method
   sfmEngine.SetRotationAveragingMethod(sfm::ERotationAveragingMethod(rotationAveragingMethod));

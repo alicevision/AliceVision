@@ -556,8 +556,8 @@ void ReconstructionEngine_globalSfM::Compute_Relative_Rotations(rotationAveragin
         tinyScene.setPose(*view_J, CameraPose(poseJ));
 
         // Init structure
-        const Mat34 P1 = camIPinHole->get_projective_equivalent(poseI);
-        const Mat34 P2 = camJPinHole->get_projective_equivalent(poseJ);
+        const Mat34 P1 = camIPinHole->getProjectiveEquivalent(poseI);
+        const Mat34 P2 = camJPinHole->getProjectiveEquivalent(poseJ);
         Landmarks & landmarks = tinyScene.structure;
 
         size_t landmarkId = 0;
