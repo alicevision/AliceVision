@@ -68,8 +68,8 @@ bool refineSequence(std::vector<LocalizationResult> & vec_localizationResult,
       // no distortion refinement
       ALICEVISION_LOG_DEBUG("Optical distortion won't be considered");
       // just add a simple pinhole camera with the same K as the input camera
-      Vec2 pp = currIntrinsics->principal_point();
-      tinyScene.intrinsics[intrinsicID] = std::make_shared<camera::Pinhole>(currIntrinsics->w(), currIntrinsics->h(), currIntrinsics->focal(), pp(0), pp(1));
+      Vec2 pp = currIntrinsics->getPrincipalPoint();
+      tinyScene.intrinsics[intrinsicID] = std::make_shared<camera::Pinhole>(currIntrinsics->w(), currIntrinsics->h(), currIntrinsics->getFocalLengthPix(), pp(0), pp(1));
     }
     else
     {

@@ -17,13 +17,24 @@
 namespace aliceVision {
 namespace camera {
 
-/// Implement a Pinhole camera with a 3 radial distortion coefficients.
-/// x_d = x_u (1 + K_1 r^2 + K_2 r^4 + K_3 r^6)
+/**
+ * @brief EquiDistantRadialK3 is a camera model used for fisheye optics with 3 radial distortion coefficients.
+ * x_d = x_u (1 + K_1 r^2 + K_2 r^4 + K_3 r^6)
+ *
+ * See https://en.wikipedia.org/wiki/Fisheye_lens
+ */
 class EquiDistantRadialK3 : public EquiDistant
 {
-  public:
+public:
+  EquiDistantRadialK3() = default;
 
-  explicit EquiDistantRadialK3(int w = 0, int h = 0, double focal = 0.0, double ppx = 0, double ppy = 0, double radius = 1980.0, double k1 = 0.0, double k2 = 0.0, double k3 = 0.0)
+  explicit EquiDistantRadialK3(int w, int h, double focal, double ppx, double ppy,
+                               double k1 = 0.0, double k2 = 0.0, double k3 = 0.0)
+    : EquiDistant(w, h, focal, ppx, ppy, std::min(w, h) * 0.5, std::shared_ptr<Distortion>(new DistortionRadialK3PT(k1, k2, k3)))
+  {
+  }
+
+  explicit EquiDistantRadialK3(int w, int h, double focal, double ppx, double ppy, double radius, double k1 = 0.0, double k2 = 0.0, double k3 = 0.0)
   : EquiDistant(w, h, focal, ppx, ppy, radius, std::shared_ptr<Distortion>(new DistortionRadialK3PT(k1, k2, k3)))
   {
   }

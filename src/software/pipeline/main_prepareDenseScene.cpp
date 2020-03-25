@@ -220,7 +220,7 @@ bool prepareDenseScene(const SfMData& sfmData,
       }
       
       // undistort
-      if(cam->isValid() && cam->have_disto())
+      if(cam->isValid() && cam->hasDistortion())
       {
         // undistort the image and save it
         UndistortImage(image, cam, image_ud, FBLACK);

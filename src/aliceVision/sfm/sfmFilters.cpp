@@ -75,7 +75,7 @@ IndexT RemoveOutliers_AngleError(sfmData::SfMData& sfmData, const double dMinAcc
         const geometry::Pose3 pose2 = sfmData.getPose(*view2).getTransform();
         const camera::IntrinsicBase * intrinsic2 = sfmData.intrinsics.at(view2->getIntrinsicId()).get();
 
-        const double angle = AngleBetweenRays(pose1, intrinsic1, pose2, intrinsic2, itObs1->second.x, itObs2->second.x);
+        const double angle = angleBetweenRays(pose1, intrinsic1, pose2, intrinsic2, itObs1->second.x, itObs2->second.x);
         max_angle = std::max(angle, max_angle);
       }
     }

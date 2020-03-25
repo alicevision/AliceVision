@@ -25,13 +25,13 @@ public:
     }
 
     /// Add distortion to the point p (assume p is in the camera frame [normalized coordinates])
-    virtual Vec2 add_disto(const Vec2& p) const
+    virtual Vec2 addDistortion(const Vec2& p) const
     {
         return p;
     }
 
     /// Remove distortion (return p' such that disto(p') = p)
-    virtual Vec2 remove_disto(const Vec2& p) const
+    virtual Vec2 removeDistortion(const Vec2& p) const
     {
         return p;
     }

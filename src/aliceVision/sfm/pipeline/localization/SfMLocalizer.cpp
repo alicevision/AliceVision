@@ -73,7 +73,7 @@ bool SfMLocalizer::Localize(const Pair& imageSize,
   {
     // undistort the points if the camera has a distortion model
     Mat pt2Dundistorted;
-    const bool hasDistortion = pinholeCam->have_disto();
+    const bool hasDistortion = pinholeCam->hasDistortion();
     if(hasDistortion)
     {
       const std::size_t numPts = resectionData.pt2D.cols();

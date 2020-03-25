@@ -561,8 +561,8 @@ void ReconstructionEngine_panorama::Compute_Relative_Rotations(rotationAveraging
           const feature::PointFeature & feat_I = feats_I[match._i];
           const feature::PointFeature & feat_J = feats_J[match._j];
 
-          const Vec3 bearingVector_I = cam_I->toUnitSphere(cam_I->remove_disto(cam_I->ima2cam(feat_I.coords().cast<double>())));
-          const Vec3 bearingVector_J = cam_J->toUnitSphere(cam_J->remove_disto(cam_J->ima2cam(feat_J.coords().cast<double>())));
+          const Vec3 bearingVector_I = cam_I->toUnitSphere(cam_I->removeDistortion(cam_I->ima2cam(feat_I.coords().cast<double>())));
+          const Vec3 bearingVector_J = cam_J->toUnitSphere(cam_J->removeDistortion(cam_J->ima2cam(feat_J.coords().cast<double>())));
 
           
 
@@ -578,11 +578,9 @@ void ReconstructionEngine_panorama::Compute_Relative_Rotations(rotationAveraging
       }
       assert(nbBearing == iBearing);
 
-      
-
       RelativePoseInfo relativePose_info;
       // Compute max authorized error as geometric mean of camera plane tolerated residual error
-      relativePose_info.initial_residual_tolerance = std::pow(cam_I->imagePlane_toCameraPlaneError(2.5) * cam_J->imagePlane_toCameraPlaneError(2.5), 1./2.);
+      relativePose_info.initial_residual_tolerance = std::pow(cam_I->imagePlaneToCameraPlaneError(2.5) * cam_J->imagePlaneToCameraPlaneError(2.5), 1./2.);
 
       // Since we use normalized features, we will use unit image size and intrinsic matrix:
       const std::pair<size_t, size_t> imageSize(1., 1.);
@@ -602,7 +600,7 @@ void ReconstructionEngine_panorama::Compute_Relative_Rotations(rotationAveraging
         case RELATIVE_ROTATION_FROM_H:
         {
           RelativeRotationInfo relativeRotation_info;
-          relativeRotation_info._initialResidualTolerance = std::pow(cam_I->imagePlane_toCameraPlaneError(2.5) * cam_J->imagePlane_toCameraPlaneError(2.5), 1./2.);
+          relativeRotation_info._initialResidualTolerance = std::pow(cam_I->imagePlaneToCameraPlaneError(2.5) * cam_J->imagePlaneToCameraPlaneError(2.5), 1./2.);
           
           if(!robustRelativeRotation_fromH(x1, x2, imageSize, imageSize, relativeRotation_info))
           {
@@ -619,7 +617,7 @@ void ReconstructionEngine_panorama::Compute_Relative_Rotations(rotationAveraging
         case RELATIVE_ROTATION_FROM_R:
         {
           RelativeRotationInfo relativeRotation_info;
-          relativeRotation_info._initialResidualTolerance = std::pow(cam_I->imagePlane_toCameraPlaneError(2.5) * cam_J->imagePlane_toCameraPlaneError(2.5), 1./2.);
+          relativeRotation_info._initialResidualTolerance = std::pow(cam_I->imagePlaneToCameraPlaneError(2.5) * cam_J->imagePlaneToCameraPlaneError(2.5), 1./2.);
           
           if(!robustRelativeRotation_fromR(x1, x2, imageSize, imageSize, relativeRotation_info))
           {
@@ -761,7 +759,7 @@ bool ReconstructionEngine_panorama::buildLandmarks()
     sfmData::CameraPose pose = _sfmData.getPose(v1);
 
     // From 2D to sphere
-    Vec3 pt = cam1->toUnitSphere(cam1->remove_disto(cam1->ima2cam(c.ObservationFirst.x)));
+    Vec3 pt = cam1->toUnitSphere(cam1->removeDistortion(cam1->ima2cam(c.ObservationFirst.x)));
 
     // To world coordinates
     Vec3 wpt = pose.getTransform().rotation().transpose() * pt;

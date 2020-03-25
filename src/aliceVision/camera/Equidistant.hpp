@@ -23,33 +23,48 @@
 namespace aliceVision {
 namespace camera {
 
-/// Define a classic Pinhole camera
+/**
+ * @brief EquiDistant is a camera model used for fisheye optics.
+ * See https://en.wikipedia.org/wiki/Fisheye_lens
+ * 
+ */
 class EquiDistant : public IntrinsicsScaleOffsetDisto
 {
 public:
-
   EquiDistant() = default;
 
-  EquiDistant(unsigned int w, unsigned int h, double fov, double ppx, double ppy, double radiuspixels = 1980.00, std::shared_ptr<Distortion> distortion = nullptr)
-  : IntrinsicsScaleOffsetDisto(w, h, fov, fov, ppx, ppy, distortion), _radius(radiuspixels), _center_x(w/2.0), _center_y(h/2.0)
+  EquiDistant(unsigned int w, unsigned int h, double fov, double ppx, double ppy,
+              std::shared_ptr<Distortion> distortion = nullptr)
+      : IntrinsicsScaleOffsetDisto(w, h, fov, fov, ppx, ppy, distortion)
+      , _radius(std::min(w, h) * 0.5)
+      , _center(w / 2.0, h / 2.0)
+  {
+  }
+
+  EquiDistant(unsigned int w, unsigned int h, double fov, double ppx, double ppy, double radiuspixels, std::shared_ptr<Distortion> distortion = nullptr)
+  : IntrinsicsScaleOffsetDisto(w, h, fov, fov, ppx, ppy, distortion), _radius(radiuspixels), _center(w/2.0, h/2.0)
   {
   }
 
   ~EquiDistant() override = default;
 
-  EquiDistant* clone() const override {
+  EquiDistant* clone() const override
+  {
     return new EquiDistant(*this); 
   }
 
-  void assign(const IntrinsicBase& other) override {
+  void assign(const IntrinsicBase& other) override
+  {
     *this = dynamic_cast<const EquiDistant&>(other); 
   }
   
-  bool isValid() const override {
-    return focal() > 0 && IntrinsicBase::isValid(); 
+  bool isValid() const override
+  {
+    return _scale(0) > 0 && IntrinsicBase::isValid(); 
   }
   
-  EINTRINSIC getType() const override {
+  EINTRINSIC getType() const override
+  {
     return EQUIDISTANT_CAMERA; 
   }
 
@@ -57,7 +72,7 @@ public:
   {    
     double rsensor = std::min(sensorWidth(), sensorHeight());
     double rscale = sensorWidth() / std::max(w(), h());
-    double fmm = _scale_x * rscale;
+    double fmm = _scale(0) * rscale;
     double fov = rsensor / fmm;
 
     const Vec3 X = pose.rotation() * pt;
@@ -75,8 +90,7 @@ public:
     P(0) = cos(angle_radial) * radius;
     P(1) = sin(angle_radial) * radius;
 
-  
-    const Vec2 pt_disto = this->add_disto(P);
+    const Vec2 pt_disto = this->addDistortion(P);
     const Vec2 pt_ima = this->cam2ima(pt_disto);
 
     return pt_ima;
@@ -84,7 +98,6 @@ public:
 
   Eigen::Matrix<double, 2, 9> getDerivativeProjectWrtRotation(const geometry::Pose3& pose, const Vec3 & pt)
   {
-    
     const Vec3 X = pose.rotation() * pt;
 
     const Eigen::Matrix<double, 3, 9> d_X_d_R = getJacobian_AB_wrt_A<3, 3, 1>(pose.rotation(), pt);
@@ -113,7 +126,7 @@ public:
 
     const double rsensor = std::min(sensorWidth(), sensorHeight());
     const double rscale = sensorWidth() / std::max(w(), h());
-    const double fmm = _scale_x * rscale;
+    const double fmm = _scale(0) * rscale;
     const double fov = rsensor / fmm;
 
     const double radius = angle_Z / (0.5 * fov);
@@ -136,7 +149,6 @@ public:
 
   Eigen::Matrix<double, 2, 3> getDerivativeProjectWrtPoint(const geometry::Pose3& pose, const Vec3 & pt)
   {
-
     Vec3 X = pose.rotation() * pt;
 
     const Eigen::Matrix3d& d_X_d_pt = pose.rotation();
@@ -165,7 +177,7 @@ public:
 
     const double rsensor = std::min(sensorWidth(), sensorHeight());
     const double rscale = sensorWidth() / std::max(w(), h());
-    const double fmm = _scale_x * rscale;
+    const double fmm = _scale(0) * rscale;
     const double fov = rsensor / fmm;
     const double radius = angle_Z / (0.5 * fov);
 
@@ -199,7 +211,7 @@ public:
 
     const double rsensor = std::min(sensorWidth(), sensorHeight());
     const double rscale = sensorWidth() / std::max(w(), h());
-    const double fmm = _scale_x * rscale;
+    const double fmm = _scale(0) * rscale;
     const double fov = rsensor / fmm;
     const double radius = angle_Z / (0.5 * fov);
 
@@ -213,7 +225,6 @@ public:
 
   Eigen::Matrix<double, 2, 1> getDerivativeProjectWrtScale(const geometry::Pose3& pose, const Vec3 & pt)
   {
-
     const Vec3 X = pose.rotation() * pt;
 
     /* Compute angle with optical center */
@@ -225,7 +236,7 @@ public:
 
     const double rsensor = std::min(sensorWidth(), sensorHeight());
     const double rscale = sensorWidth() / std::max(w(), h());
-    const double fmm = _scale_x * rscale;
+    const double fmm = _scale(0) * rscale;
     const double fov = rsensor / fmm;
     const double radius = angle_Z / (0.5 * fov);
 
@@ -243,24 +254,21 @@ public:
     d_radius_d_fov(0, 0) = (- 2.0 * angle_Z / (fov * fov));
 
     Eigen::Matrix<double, 1, 1> d_fov_d_scale;
-    d_fov_d_scale(0, 0) = - rsensor / (_scale_x * _scale_x * rscale);
-
+    d_fov_d_scale(0, 0) = -rsensor / (_scale(0) * _scale(0) * rscale);
 
     return getDerivativeCam2ImaWrtPoint() * getDerivativeAddDistoWrtPt(P) * d_P_d_radius * d_radius_d_fov * d_fov_d_scale;
   }
 
   Eigen::Matrix<double, 2, 2> getDerivativeProjectWrtPrincipalPoint(const geometry::Pose3& pose, const Vec3 & pt)
   {
-
     return getDerivativeCam2ImaWrtPrincipalPoint();
   }
 
   Vec3 toUnitSphere(const Vec2 & pt) const override
   {
-
     const double rsensor = std::min(sensorWidth(), sensorHeight());
     const double rscale = sensorWidth() / std::max(w(), h());
-    const double fmm = _scale_x * rscale;
+    const double fmm = _scale(0) * rscale;
     const double fov = rsensor / fmm;
 
     const double angle_radial = atan2(pt(1), pt(0));
@@ -276,10 +284,9 @@ public:
 
   Eigen::Matrix<double, 3, 2> getDerivativetoUnitSphereWrtPoint(const Vec2 & pt)
   {
-
     const double rsensor = std::min(sensorWidth(), sensorHeight());
     const double rscale = sensorWidth() / std::max(w(), h());
-    const double fmm = _scale_x * rscale;
+    const double fmm = _scale(0) * rscale;
     const double fov = rsensor / fmm;
 
     const double angle_radial = atan2(pt(1), pt(0));
@@ -304,10 +311,9 @@ public:
 
   Eigen::Matrix<double, 3, 1> getDerivativetoUnitSphereWrtScale(const Vec2 & pt)
   {
-
     const double rsensor = std::min(sensorWidth(), sensorHeight());
     const double rscale = sensorWidth() / std::max(w(), h());
-    const double fmm = _scale_x * rscale;
+    const double fmm = _scale(0) * rscale;
     const double fov = rsensor / fmm;
 
     const double angle_radial = atan2(pt(1), pt(0));
@@ -327,20 +333,20 @@ public:
     d_angles_d_fov(1, 0) = pt.norm() * 0.5;
 
     Eigen::Matrix<double, 1, 1> d_fov_d_scale;
-    d_fov_d_scale(0, 0) = - rsensor / (_scale_x * _scale_x * rscale);  
+    d_fov_d_scale(0, 0) = -rsensor / (_scale(0) * _scale(0) * rscale);  
 
     return d_ret_d_angles * d_angles_d_fov * d_fov_d_scale;
   }
   
-  double imagePlane_toCameraPlaneError(double value) const override
+  double imagePlaneToCameraPlaneError(double value) const override
   {
-    return value / focal();
+    return value / _scale(0);
   }
 
   // Transform a point from the camera plane to the image plane
   Vec2 cam2ima(const Vec2& p) const override
   {
-    return _radius * p  + principal_point();
+    return _radius * p  + _offset;
   }
 
   Eigen::Matrix2d getDerivativeCam2ImaWrtPoint() const override
@@ -352,7 +358,7 @@ public:
   // Transform a point from the image plane to the camera plane
   Vec2 ima2cam(const Vec2& p) const override
   {
-    return (p -  principal_point()) / _radius;
+    return (p - _offset) / _radius;
   }
 
   Eigen::Matrix2d getDerivativeIma2CamWrtPoint() const override
@@ -375,16 +381,15 @@ public:
   {
     const double rsensor = std::min(sensorWidth(), sensorHeight());
     const double rscale = sensorWidth() / std::max(w(), h());
-    const double fmm = _scale_x * rscale;
+    const double fmm = _scale(0) * rscale;
     const double fov = rsensor / fmm;
 
     double angle = std::acos(ray.normalized().dot(Eigen::Vector3d::UnitZ()));
-    if (std::abs(angle) > 1.2 * (0.5 * fov)) return false;
+    if(std::abs(angle) > 1.2 * (0.5 * fov))
+      return false;
 
     const Vec2 proj = project(geometry::Pose3(), ray, true);
-
-    const Vec2 centered = proj - Vec2(_center_x, _center_y);
-
+    const Vec2 centered = proj - Vec2(_center(0), _center(1));
     return  centered.norm() <= _radius;
   }
 
@@ -400,28 +405,27 @@ public:
 
   double getCenterX() const
   {
-    return _center_x;
+    return _center(0);
   }
 
   void setCenterX(double x)
   {
-    _center_x = x;
+    _center(0) = x;
   }
 
   double getCenterY() const
   {
-    return _center_y;
+    return _center(1);
   }
 
   void setCenterY(double y)
   {
-    _center_y = y;
+    _center(1) = y;
   }
 
 protected:
-  double _radius{};
-  double _center_x{};
-  double _center_y{};
+  double _radius{0.0};
+  Vec2 _center{0.0, 0.0};
 };
 
 } // namespace camera

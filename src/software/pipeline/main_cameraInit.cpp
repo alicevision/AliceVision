@@ -576,7 +576,7 @@ int main(int argc, char **argv)
       intrinsicBase->setSensorHeight(sensorWidth * imageRatio);
     }
 
-    if(intrinsic && intrinsic->getFocalLengthPix() > 0)
+    if(intrinsic && intrinsic->isValid())
     {
       // the view intrinsic is initialized
       #pragma omp atomic
@@ -635,8 +635,8 @@ int main(int argc, char **argv)
         }
       }
 
-      // If we have not managed to initialize the focal length, we need to use the
-      if(intrinsic->getFocalLengthPix() <= 0 && focalLengthmm > 0)
+      // If we have not managed to initialize the focal length, we need to use the focalLength in mm
+      if(intrinsic->getScale()(0) <= 0 && focalLengthmm > 0)
       {
         intrinsic->setSerialNumber(intrinsic->serialNumber() + "_FocalLengthMM_" + std::to_string(focalLengthmm));
       }

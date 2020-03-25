@@ -88,7 +88,7 @@ void ReconstructionEngine_globalSfM::SetFeaturesProvider(feature::FeaturesPerVie
             iterPt != iterFeatPerDesc.second.end(); ++iterPt)
           {
             const Vec2 pt = iterPt->coords().cast<double>();
-            const Vec3 bearingVector = cam->toUnitSphere(cam->remove_disto(cam->ima2cam(pt)));
+            const Vec3 bearingVector = cam->toUnitSphere(cam->removeDistortion(cam->ima2cam(pt)));
             iterPt->coords() << (bearingVector.head(2) / bearingVector(2)).cast<float>();
           }
         }
@@ -524,8 +524,8 @@ void ReconstructionEngine_globalSfM::Compute_Relative_Rotations(rotationAveragin
       RelativePoseInfo relativePose_info;
       // Compute max authorized error as geometric mean of camera plane tolerated residual error
       relativePose_info.initial_residual_tolerance = std::pow(
-        cam_I->imagePlane_toCameraPlaneError(2.5) *
-        cam_J->imagePlane_toCameraPlaneError(2.5),
+        cam_I->imagePlaneToCameraPlaneError(2.5) *
+        cam_J->imagePlaneToCameraPlaneError(2.5),
         1./2.);
 
       // Since we use normalized features, we will use unit image size and intrinsic matrix:

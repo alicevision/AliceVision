@@ -189,7 +189,7 @@ void AlembicExporter::DataImpl::addCamera(const std::string& name,
     const float sensorWidth = intrinsicCasted->sensorWidth();
     const float sensorHeight = intrinsicCasted->sensorHeight();
     const float sensorWidth_pix = std::max(imgWidth, imgHeight);
-    const float focalLength_pix = static_cast<const float>(intrinsicCasted->focal());
+    const float focalLength_pix = static_cast<const float>(intrinsicCasted->getScale()(0));
     const float focalLength_mm = sensorWidth * focalLength_pix / sensorWidth_pix;
     const float pix2mm = sensorWidth / sensorWidth_pix;
 
@@ -597,7 +597,7 @@ void AlembicExporter::addCameraKeyframe(const geometry::Pose3& pose,
   const float imgWidth = cam->w();
   const float imgHeight = cam->h();
   const float sensorWidth_pix = std::max(imgWidth, imgHeight);
-  const float focalLength_pix = static_cast<const float>(cam->focal());
+  const float focalLength_pix = static_cast<const float>(cam->getScale()(0));
   const float focalLength_mm = sensorWidthMM * focalLength_pix / sensorWidth_pix;
   const float pix2mm = sensorWidthMM / sensorWidth_pix;
 

@@ -648,7 +648,7 @@ bool GlobalSfMTranslationAveragingSolver::Estimate_T_triplet(
     const camera::Pinhole * intrinsic = dynamic_cast< const camera::Pinhole * > (intrinsicPtr);
     if (intrinsic && intrinsic->isValid())
     {
-      min_focal = std::min(min_focal, intrinsic->focal());
+      min_focal = std::min(min_focal, intrinsic->getFocalLengthPix());
     }
   }
   if (min_focal == std::numeric_limits<double>::max())
@@ -732,7 +732,7 @@ bool GlobalSfMTranslationAveragingSolver::Estimate_T_triplet(
       const View * view = sfm_data.getViews().at(viewIndex).get();
       const camera::IntrinsicBase *  cam = sfm_data.getIntrinsics().find(view->getIntrinsicId())->second.get();
       const camera::Pinhole * intrinsicPtr = dynamic_cast< const camera::Pinhole * >(cam);
-      const Vec2 principal_point = intrinsicPtr->principal_point();
+      const Vec2 principal_point = intrinsicPtr->getPrincipalPoint();
 
       // get normalized feature
       const feature::PointFeature & pt = normalizedFeaturesPerView.getFeatures(viewIndex)[featIndex];

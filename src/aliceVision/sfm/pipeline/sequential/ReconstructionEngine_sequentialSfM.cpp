@@ -1300,7 +1300,7 @@ bool ReconstructionEngine_sequentialSfM::getBestInitialImagePairs(std::vector<Pa
         auto iter = map_tracksCommon[trackId].featPerView.begin();
         const Vec2 featI = _featuresPerView->getFeatures(I, map_tracksCommon[trackId].descType)[iter->second].coords().cast<double>();
         const Vec2 featJ = _featuresPerView->getFeatures(J, map_tracksCommon[trackId].descType)[(++iter)->second].coords().cast<double>();
-        vec_angles[i] = AngleBetweenRays(pose_I, camI, pose_J, camJ, featI, featJ);
+        vec_angles[i] = angleBetweenRays(pose_I, camI, pose_J, camJ, featI, featJ);
         validCommonTracksIds[i] = trackId;
         ++i;
       }
@@ -1691,7 +1691,7 @@ bool ReconstructionEngine_sequentialSfM::checkAngles(const Vec3 &pt3D, const std
     {
       if (viewIdA < viewIdB)
       {
-        double angle_deg = AngleBetweenRays(scene.getPose(*scene.getViews().at(viewIdA).get()).getTransform(),
+        double angle_deg = angleBetweenRays(scene.getPose(*scene.getViews().at(viewIdA).get()).getTransform(),
                                            scene.getPose(*scene.getViews().at(viewIdB).get()).getTransform(),
                                            pt3D);
         if (angle_deg >= kMinAngle)
@@ -1824,7 +1824,7 @@ void ReconstructionEngine_sequentialSfM::triangulate_multiViewsLORANSAC(SfMData&
       const double& acThresholdI = (acThresholdItI != _map_ACThreshold.end()) ? acThresholdItI->second : 4.0;
       const double& acThresholdJ = (acThresholdItJ != _map_ACThreshold.end()) ? acThresholdItJ->second : 4.0;
       
-      if (AngleBetweenRays(poseI, camI.get(), poseJ, camJ.get(), xI, xJ) < _params.minAngleForTriangulation ||
+      if (angleBetweenRays(poseI, camI.get(), poseJ, camJ.get(), xI, xJ) < _params.minAngleForTriangulation ||
           poseI.depth(X_euclidean) < 0 || 
           poseJ.depth(X_euclidean) < 0 || 
           camI->residual(poseI, X_euclidean, xI).norm() > acThresholdI || 
@@ -2038,7 +2038,7 @@ void ReconstructionEngine_sequentialSfM::triangulate_2Views(SfMData& scene, cons
           //  - Check angle (small angle leads imprecise triangulation)
           //  - Check positive depth
           //  - Check residual values
-          const double angle = AngleBetweenRays(poseI, camI.get(), poseJ, camJ.get(), xI, xJ);
+          const double angle = angleBetweenRays(poseI, camI.get(), poseJ, camJ.get(), xI, xJ);
           const Vec2 residualI = camI->residual(poseI, X_euclidean, xI);
           const Vec2 residualJ = camJ->residual(poseJ, X_euclidean, xJ);
           

@@ -593,7 +593,7 @@ StaticVector<int> MultiViewParams::findNearestCamsFromLandmarks(int rc, int nbNe
       const geometry::Pose3 otherPose = _sfmData.getPose(otherView).getTransform();
       const camera::IntrinsicBase* otherIntrinsicPtr = _sfmData.getIntrinsicPtr(otherView.getIntrinsicId());
 
-      const double angle = camera::AngleBetweenRays(pose, intrinsicPtr, otherPose, otherIntrinsicPtr, viewObsIt->second.x, observationPair.second.x);
+      const double angle = camera::angleBetweenRays(pose, intrinsicPtr, otherPose, otherIntrinsicPtr, viewObsIt->second.x, observationPair.second.x);
 
       if(angle < _minViewAngle || angle > _maxViewAngle)
         continue;

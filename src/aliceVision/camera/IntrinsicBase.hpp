@@ -67,7 +67,7 @@ public:
    */
   inline double sensorWidth() const
   {
-    return _sensor_width;
+    return _sensorWidth;
   }
 
   /**
@@ -76,7 +76,7 @@ public:
    */
   inline double sensorHeight() const
   {
-    return _sensor_height;
+    return _sensorHeight;
   }
 
   /**
@@ -106,8 +106,8 @@ public:
   {
     return _w == other._w &&
            _h == other._h &&
-           _sensor_width == other._sensor_width &&
-           _sensor_height == other._sensor_height &&
+           _sensorWidth == other._sensorWidth &&
+           _sensorHeight == other._sensorHeight &&
            _serialNumber == other._serialNumber &&
            _initializationMode == other._initializationMode &&
            getType() == other.getType() &&
@@ -195,7 +195,7 @@ public:
    */
   inline void setSensorWidth(double width)
   {
-    _sensor_width = width;
+    _sensorWidth = width;
   }
 
   /**
@@ -204,7 +204,7 @@ public:
    */
   inline void setSensorHeight(double height)
   {
-    _sensor_height = height;
+    _sensorHeight = height;
   }
   
   /**
@@ -283,7 +283,7 @@ public:
    * @brief Camera model handle a distortion field
    * @return True if the camera model handle a distortion field
    */
-  virtual bool have_disto() const
+  virtual bool hasDistortion() const
   {
     return false;
   }
@@ -293,14 +293,14 @@ public:
    * @param[in] p The point
    * @return The point with added distortion field
    */
-  virtual Vec2 add_disto(const Vec2& p) const = 0;
+  virtual Vec2 addDistortion(const Vec2& p) const = 0;
 
   /**
    * @brief Remove the distortion to a camera point (that is in normalized camera frame)
    * @param[in] p The point
    * @return The point with removed distortion field
    */
-  virtual Vec2 remove_disto(const Vec2& p) const = 0;
+  virtual Vec2 removeDistortion(const Vec2& p) const = 0;
 
   /**
    * @brief Return the undistorted pixel (with removed distortion)
@@ -321,7 +321,7 @@ public:
    * @param[in] value Given unit pixel error
    * @return Normalized unit pixel error to the camera plane
    */
-  virtual double imagePlane_toCameraPlaneError(double value) const = 0;
+  virtual double imagePlaneToCameraPlaneError(double value) const = 0;
 
 
   /**
@@ -331,11 +331,6 @@ public:
   virtual bool isValid() const
   {
     return _w != 0 && _h != 0;
-  }
-
-  virtual bool hasDistortion() const
-  {
-    return false;
   }
 
   /**
@@ -382,8 +377,8 @@ public:
     stl::hash_combine(seed, static_cast<int>(this->getType()));
     stl::hash_combine(seed, _w);
     stl::hash_combine(seed, _h);
-    stl::hash_combine(seed, _sensor_width);
-    stl::hash_combine(seed, _sensor_height);
+    stl::hash_combine(seed, _sensorWidth);
+    stl::hash_combine(seed, _sensorHeight);
     stl::hash_combine(seed, _serialNumber);
     const std::vector<double> params = this->getParams();
     for(double param : params)
@@ -418,8 +413,8 @@ protected:
   bool _locked = false;
   unsigned int _w = 0;
   unsigned int _h = 0;
-  double _sensor_width = 36.0;
-  double _sensor_height = 24.0;
+  double _sensorWidth = 36.0;
+  double _sensorHeight = 24.0;
   std::string _serialNumber;
 };
 
@@ -429,7 +424,7 @@ protected:
  * @param[in] ray2 Second bearing vector ray
  * @return The angle (degree) between two bearing vector rays
  */
-inline double AngleBetweenRays(const Vec3& ray1, const Vec3& ray2)
+inline double angleBetweenRays(const Vec3& ray1, const Vec3& ray2)
 {
   const double mag = ray1.norm() * ray2.norm();
   const double dotAngle = ray1.dot(ray2);
@@ -446,7 +441,7 @@ inline double AngleBetweenRays(const Vec3& ray1, const Vec3& ray2)
  * @param[in] x2 Second image point
  * @return The angle (degree) between two bearing vector rays
  */
-inline double AngleBetweenRays(const geometry::Pose3& pose1,
+inline double angleBetweenRays(const geometry::Pose3& pose1,
                                const IntrinsicBase* intrinsic1,
                                const geometry::Pose3& pose2,
                                const IntrinsicBase* intrinsic2,
@@ -457,9 +452,9 @@ inline double AngleBetweenRays(const geometry::Pose3& pose1,
   // X = R.t() * K.inv() * x + C // Camera world point
   // getting the ray:
   // ray = X - C = R.t() * K.inv() * x
-  const Vec3 ray1 = (pose1.rotation().transpose() * intrinsic1->toUnitSphere(intrinsic1->remove_disto(intrinsic1->ima2cam(x1)))).normalized();
-  const Vec3 ray2 = (pose2.rotation().transpose() * intrinsic2->toUnitSphere(intrinsic2->remove_disto(intrinsic2->ima2cam(x2)))).normalized();
-  return AngleBetweenRays(ray1, ray2);
+  const Vec3 ray1 = (pose1.rotation().transpose() * intrinsic1->toUnitSphere(intrinsic1->removeDistortion(intrinsic1->ima2cam(x1)))).normalized();
+  const Vec3 ray2 = (pose2.rotation().transpose() * intrinsic2->toUnitSphere(intrinsic2->removeDistortion(intrinsic2->ima2cam(x2)))).normalized();
+  return angleBetweenRays(ray1, ray2);
 }
 
 /**
@@ -469,13 +464,13 @@ inline double AngleBetweenRays(const geometry::Pose3& pose1,
  * @param[in] pt3D The 3d point
  * @return The angle (degree) between two poses and a 3D point.
  */
-inline double AngleBetweenRays(const geometry::Pose3& pose1,
+inline double angleBetweenRays(const geometry::Pose3& pose1,
                                const geometry::Pose3& pose2,
                                const Vec3& pt3D)
 {
   const Vec3 ray1 = pt3D - pose1.center();
   const Vec3 ray2 = pt3D - pose2.center();
-  return AngleBetweenRays(ray1, ray2);
+  return angleBetweenRays(ray1, ray2);
 }
 
 } // namespace camera
@@ -492,8 +487,10 @@ Eigen::Matrix<double, M*N, M*N> getJacobian_At_wrt_A()
 	ret.fill(0);
 
 	size_t pos_at = 0;
-	for (size_t i = 0; i < M; i++) {
-		for (size_t j = 0; j < N; j++) {
+	for (size_t i = 0; i < M; i++)
+    {
+		for (size_t j = 0; j < N; j++)
+        {
 			size_t pos_a = N * j + i;
 			ret(pos_at, pos_a) = 1;
 
@@ -518,13 +515,13 @@ Eigen::Matrix<double, M*K, M*N> getJacobian_AB_wrt_A(const Eigen::Matrix<double,
 
 	Eigen::Matrix<double, K, N> Bt = B.transpose();
 
-	for (size_t row = 0; row < K; row++) {
-		for (size_t col = 0; col < N; col++) {
-
+	for (size_t row = 0; row < K; row++)
+    {
+		for (size_t col = 0; col < N; col++)
+        {
 			ret.template block<M, M>(row * M, col * M) = Bt(row, col) * Eigen::Matrix<double, M, M>::Identity();
 		}
 	}
-
 
 	return ret;
 }
@@ -547,8 +544,8 @@ Eigen::Matrix<double, M*K, N*K> getJacobian_AB_wrt_B(const Eigen::Matrix<double,
 
 	ret.fill(0);
 
-	for (size_t index = 0; index < K; index++) {
-
+	for (size_t index = 0; index < K; index++)
+    {
 		ret.template block<M, N>(M * index, N * index) = A;
 	}
 

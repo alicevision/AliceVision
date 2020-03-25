@@ -57,7 +57,7 @@ public:
   DistortionRadialK1* clone() const override { return new DistortionRadialK1(*this); }
 
   /// Add distortion to the point p (assume p is in the camera frame [normalized coordinates])
-  Vec2 add_disto(const Vec2 & p) const override
+  Vec2 addDistortion(const Vec2 & p) const override
   {
     const double k1 = _distortionParams.at(0);
 
@@ -115,7 +115,7 @@ public:
   }
 
   /// Remove distortion (return p' such that disto(p') = p)
-  Vec2 remove_disto(const Vec2& p) const override
+  Vec2 removeDistortion(const Vec2& p) const override
   {
     // Compute the radius from which the point p comes from thanks to a bisection
     // Minimize disto(radius(p')^2) == actual Squared(radius(p))
@@ -135,7 +135,7 @@ public:
       return Eigen::Matrix2d::Identity();
     }
 
-    const Vec2 undist = remove_disto(p);
+    const Vec2 undist = removeDistortion(p);
 
     const Eigen::Matrix2d Jinv = getDerivativeAddDistoWrtPt(undist);
 
@@ -151,7 +151,7 @@ public:
       return Eigen::Matrix<double, 2, 1>::Zero();
     }
 
-    const Vec2 p_undist = remove_disto(p);
+    const Vec2 p_undist = removeDistortion(p);
 
     const double k1 = _distortionParams[0];
 
@@ -200,7 +200,7 @@ public:
   DistortionRadialK3* clone() const override { return new DistortionRadialK3(*this); }
 
   /// Add distortion to the point p (assume p is in the camera frame [normalized coordinates])
-  Vec2 add_disto(const Vec2 & p) const override
+  Vec2 addDistortion(const Vec2 & p) const override
   {
     const double k1 = _distortionParams[0];
     const double k2 = _distortionParams[1];
@@ -275,7 +275,7 @@ public:
 
 
   /// Remove distortion (return p' such that disto(p') = p)
-  Vec2 remove_disto(const Vec2& p) const override
+  Vec2 removeDistortion(const Vec2& p) const override
   {
     // Compute the radius from which the point p comes from thanks to a bisection
     // Minimize disto(radius(p')^2) == actual Squared(radius(p))
@@ -296,7 +296,7 @@ public:
       return Eigen::Matrix2d::Identity();
     }
 
-    const Vec2 undist = remove_disto(p);
+    const Vec2 undist = removeDistortion(p);
 
     const Eigen::Matrix2d Jinv = getDerivativeAddDistoWrtPt(undist);
 
@@ -312,7 +312,7 @@ public:
       return Eigen::Matrix<double, 2, 3>::Zero();
     }
 
-    Vec2 p_undist = remove_disto(p);
+    Vec2 p_undist = removeDistortion(p);
 
     const double k1 = _distortionParams[0];
     const double k2 = _distortionParams[1];
@@ -371,7 +371,7 @@ public:
   DistortionRadialK3PT* clone() const override { return new DistortionRadialK3PT(*this); }
 
   /// Add distortion to the point p (assume p is in the camera frame [normalized coordinates])
-  Vec2 add_disto(const Vec2 & p) const override
+  Vec2 addDistortion(const Vec2 & p) const override
   {
     const double k1 = _distortionParams[0];
     const double k2 = _distortionParams[1];
@@ -467,7 +467,7 @@ public:
       return Eigen::Matrix2d::Identity();
     }
 
-    Vec2 undist = remove_disto(p);
+    Vec2 undist = removeDistortion(p);
 
     Eigen::Matrix2d Jinv = getDerivativeAddDistoWrtPt(undist);
 
@@ -487,7 +487,7 @@ public:
       return Eigen::Matrix<double, 2, 3>::Zero();
     }
 
-    Vec2 p_undist = remove_disto(p);
+    Vec2 p_undist = removeDistortion(p);
     double r = sqrt(p_undist(0) * p_undist(0) + p_undist(1) * p_undist(1));
 
     const double r2 = r * r;
@@ -523,7 +523,7 @@ public:
   }
 
   /// Remove distortion (return p' such that disto(p') = p)
-  Vec2 remove_disto(const Vec2& p) const override
+  Vec2 removeDistortion(const Vec2& p) const override
   {
     // Compute the radius from which the point p comes from thanks to a bisection
     // Minimize disto(radius(p')^2) == actual Squared(radius(p))

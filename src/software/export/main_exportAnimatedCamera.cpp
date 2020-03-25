@@ -165,7 +165,7 @@ int main(int argc, char** argv)
 
       image::readImage(view.getImagePath(), image, image::EImageColorSpace::LINEAR);
 
-      if(cam->isValid() && cam->have_disto())
+      if(cam->isValid() && cam->hasDistortion())
       {
         // undistort the image and save it
         camera::UndistortImage(image, cam, image_ud, image::FBLACK, true); // correct principal point

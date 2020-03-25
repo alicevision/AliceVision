@@ -226,7 +226,7 @@ public:
     geometry::Pose3 T(R, Vec3({0,0,0}));
 
     Vec2 pt_i_cam = _intrinsic->ima2cam(pt_i);
-    Vec2 pt_i_undist = _intrinsic->remove_disto(pt_i_cam);
+    Vec2 pt_i_undist = _intrinsic->removeDistortion(pt_i_cam);
     Vec3 pt_i_sphere = _intrinsic->toUnitSphere(pt_i_undist);
 
     Vec2 pt_j_est = _intrinsic->project(T, pt_i_sphere, true);
@@ -310,7 +310,7 @@ public:
     geometry::Pose3 T(R, Vec3({0,0,0}));
 
     Vec2 pt_i_cam = _intrinsic->ima2cam(pt_i);
-    Vec2 pt_i_undist = _intrinsic->remove_disto(pt_i_cam);
+    Vec2 pt_i_undist = _intrinsic->removeDistortion(pt_i_cam);
     Vec3 pt_i_sphere = _intrinsic->toUnitSphere(pt_i_undist);
 
     Vec2 pt_j_est = _intrinsic->project(T, pt_i_sphere, true);

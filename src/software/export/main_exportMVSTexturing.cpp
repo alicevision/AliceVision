@@ -114,8 +114,8 @@ int main(int argc, char **argv)
     const Vec3& t = pose.translation();
     const Mat3& R = pose.rotation();
     // Intrinsic
-    const double f = pinhole_cam->focal();
-    const Vec2 pp = pinhole_cam->principal_point();
+    const double f = pinhole_cam->getFocalLengthPix();
+    const Vec2 pp = pinhole_cam->getPrincipalPoint();
 
     // Image size in px
     const int w = pinhole_cam->w();
@@ -133,7 +133,7 @@ int main(int argc, char **argv)
         << f / largerDim << " 0 0 1 " << pp(0) / w << " " << pp(1) / h;
     outfile.close();
     
-    if(cam->have_disto())
+    if(cam->hasDistortion())
       bOneHaveDisto = true;
   }
   

@@ -31,18 +31,18 @@ public:
     }
 
     /// Add distortion to the point p (assume p is in the camera frame [normalized coordinates])
-    Vec2 add_disto(const Vec2& p) const override
+    Vec2 addDistortion(const Vec2& p) const override
     {
         return (p + distoFunction(_distortionParams, p));
     }
 
     /// Remove distortion (return p' such that disto(p') = p)
-    Vec2 remove_disto(const Vec2& p) const override
+    Vec2 removeDistortion(const Vec2& p) const override
     {
         const double epsilon = 1e-8; // criteria to stop the iteration
         Vec2 p_u = p;
 
-        while((add_disto(p_u) - p).lpNorm<1>() > epsilon) // manhattan distance between the two points
+        while((addDistortion(p_u) - p).lpNorm<1>() > epsilon) // manhattan distance between the two points
         {
             p_u = p - distoFunction(_distortionParams, p_u);
         }

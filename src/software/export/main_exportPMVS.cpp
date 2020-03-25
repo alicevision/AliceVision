@@ -120,7 +120,7 @@ bool exportToPMVSFormat(
       os << std::setw(8) << std::setfill('0') << map_viewIdToContiguous[view->getViewId()];
       const std::string dstImage = (fs::path(sOutDirectory) / std::string("visualize") / (os.str() + ".jpg")).string();
       const IntrinsicBase * cam = iterIntrinsic->second.get();
-      if (cam->isValid() && cam->have_disto())
+      if (cam->isValid() && cam->hasDistortion())
       {
         // undistort the image and save it
         readImage( srcImage, image, image::EImageColorSpace::NO_CONVERSION);
@@ -267,7 +267,7 @@ bool exportToBundlerFormat(
       if(isPinhole(iterIntrinsic->second.get()->getType()))
       {
         const Pinhole * cam = dynamic_cast<const Pinhole*>(iterIntrinsic->second.get());
-        const double focal = cam->focal();
+        const double focal = cam->getFocalLengthPix();
         const Mat3 R = D * pose.rotation();
         const Vec3 t = D * pose.translation();
 

@@ -31,7 +31,7 @@ public:
   }
 
   /// Add distortion to the point p (assume p is in the camera frame [normalized coordinates])
-  Vec2 add_disto(const Vec2 & p) const override
+  Vec2 addDistortion(const Vec2 & p) const override
   {
     const double eps = 1e-8;
     const double r = std::hypot(p(0), p(1));
@@ -136,7 +136,7 @@ public:
   }
 
   /// Remove distortion (return p' such that disto(p') = p)
-  Vec2 remove_disto(const Vec2& p) const override
+  Vec2 removeDistortion(const Vec2& p) const override
   {
     const double eps = 1e-8;
     double scale = 1.0;
@@ -166,7 +166,7 @@ public:
       return Eigen::Matrix2d::Identity();
     }
 
-    const Vec2 undist = remove_disto(p);
+    const Vec2 undist = removeDistortion(p);
 
     const Eigen::Matrix2d Jinv = getDerivativeAddDistoWrtPt(undist);
 
@@ -181,7 +181,7 @@ public:
       return Eigen::Matrix<double, 2, 4>::Zero();
     }
 
-    const Vec2 p_undist = remove_disto(p);
+    const Vec2 p_undist = removeDistortion(p);
     const double r = sqrt(p_undist(0) * p_undist(0) + p_undist(1) * p_undist(1));
 
     const double k1 = _distortionParams.at(0);

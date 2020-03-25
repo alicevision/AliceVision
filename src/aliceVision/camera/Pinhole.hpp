@@ -23,8 +23,7 @@ namespace camera {
 /// Define a classic Pinhole camera
 class Pinhole : public IntrinsicsScaleOffsetDisto
 {
-  public:
-
+public:
   Pinhole() = default;
 
   Pinhole(unsigned int w, unsigned int h, const Mat3& K) :
@@ -48,12 +47,16 @@ class Pinhole : public IntrinsicsScaleOffsetDisto
   {
     *this = dynamic_cast<const Pinhole&>(other); 
   }
-  
+
+  double getFocalLengthPix() const { return _scale(0); }
+
+  Vec2 getPrincipalPoint() const { return _offset; }
+
   bool isValid() const override
   {
-    return focal() > 0 && IntrinsicBase::isValid(); 
+    return getFocalLengthPix() > 0 && IntrinsicBase::isValid(); 
   }
-  
+
   EINTRINSIC getType() const override
   {
     return PINHOLE_CAMERA; 
@@ -62,28 +65,26 @@ class Pinhole : public IntrinsicsScaleOffsetDisto
   Mat3 K() const
   {
     Mat3 K;
-
-    K  << _scale_x, 0.0, _offset_y,
-          0.0, _scale_y, _offset_y,
+    K  << _scale(0), 0.0, _offset(0),
+          0.0, _scale(1), _offset(1),
           0.0, 0.0, 1.0;
-
     return K;
   }
 
-  void setK(double focal_length_pix, double ppx, double ppy)
+  void setK(double focalLengthPix, double ppx, double ppy)
   {
-    _scale_x = focal_length_pix;
-    _scale_y = focal_length_pix;
-    _offset_x = ppx;
-    _offset_y = ppy;
+    _scale(0) = focalLengthPix;
+    _scale(1) = focalLengthPix;
+    _offset(0) = ppx;
+    _offset(1) = ppy;
   }
   
   void setK(const Mat3 & K)
   {
-    _scale_x = K(0, 0);
-    _scale_y = K(1, 1);
-    _offset_x = K(0, 2);
-    _offset_y = K(1, 2);
+    _scale(0) = K(0, 0);
+    _scale(1) = K(1, 1);
+    _offset(0) = K(0, 2);
+    _offset(1) = K(1, 2);
   }
 
   Vec2 project(const geometry::Pose3& pose, const Vec3& pt, bool applyDistortion = true) const override
@@ -91,7 +92,7 @@ class Pinhole : public IntrinsicsScaleOffsetDisto
     const Vec3 X = pose(pt); // apply pose
     const Vec2 P = X.head<2>() / X(2);
 
-    const Vec2 distorted = this->add_disto(P);
+    const Vec2 distorted = this->addDistortion(P);
     const Vec2 impt = this->cam2ima(distorted);
 
     return impt;
@@ -142,7 +143,7 @@ class Pinhole : public IntrinsicsScaleOffsetDisto
 
     return getDerivativeCam2ImaWrtPoint() * getDerivativeAddDistoWrtDisto(P);
   }
-  
+
   Eigen::Matrix<double, 2, 2> getDerivativeProjectWrtPrincipalPoint(const geometry::Pose3& pose, const Vec3 & pt)
   {
     return getDerivativeCam2ImaWrtPrincipalPoint();
@@ -154,7 +155,7 @@ class Pinhole : public IntrinsicsScaleOffsetDisto
     const Vec3 X = pose.rotation() * pt; // apply pose
     const Vec2 P = X.head<2>() / X(2);
 
-    const Vec2 distorted = this->add_disto(P);
+    const Vec2 distorted = this->addDistortion(P);
 
     return getDerivativeCam2ImaWrtScale(distorted);
   }
@@ -169,13 +170,11 @@ class Pinhole : public IntrinsicsScaleOffsetDisto
 
   Eigen::Matrix<double, 3, 2> getDerivativetoUnitSphereWrtPoint(const Vec2 & pt)
   {
-
     double norm2 = pt(0)*pt(0) + pt(1)*pt(1) + 1.0;
     double norm = sqrt(norm2);
 
     const Vec3 ptcam = pt.homogeneous();
 
-    
     Eigen::Matrix<double, 1, 2> d_norm_d_pt;
     d_norm_d_pt(0, 0) = pt(0) / norm;
     d_norm_d_pt(0, 1) = pt(1) / norm;
@@ -191,19 +190,19 @@ class Pinhole : public IntrinsicsScaleOffsetDisto
     return (norm * d_ptcam_d_pt - ptcam * d_norm_d_pt) / norm2;
   }
   
-  double imagePlane_toCameraPlaneError(double value) const override
+  double imagePlaneToCameraPlaneError(double value) const override
   {
-    return value / focal();
+    return value / _scale(0);
   }
 
   Mat34 getProjectiveEquivalent(const geometry::Pose3 & pose) const
   {
     Mat34 P;
     Mat3 K = Eigen::Matrix3d::Identity();
-    K(0, 0) = _scale_x;
-    K(1, 1) = _scale_y;
-    K(0, 2) = _offset_x;
-    K(1, 2) = _offset_y;
+    K(0, 0) = _scale(0);
+    K(1, 1) = _scale(1);
+    K(0, 2) = _offset(0);
+    K(1, 2) = _offset(1);
 
     P_From_KRt(K, pose.rotation(), pose.translation(), &P);
     return P;
@@ -223,10 +222,10 @@ class Pinhole : public IntrinsicsScaleOffsetDisto
 
     const Vec2 proj = ray.head(2) / ray(2);
 
-    const Vec2 p1 = remove_disto(ima2cam(Vec2(0,0)));
-    const Vec2 p2 = remove_disto(ima2cam(Vec2(_w,0)));
-    const Vec2 p3 = remove_disto(ima2cam(Vec2(_w,_h)));
-    const Vec2 p4 = remove_disto(ima2cam(Vec2(0,_h)));
+    const Vec2 p1 = removeDistortion(ima2cam(Vec2(0,0)));
+    const Vec2 p2 = removeDistortion(ima2cam(Vec2(_w,0)));
+    const Vec2 p3 = removeDistortion(ima2cam(Vec2(_w,_h)));
+    const Vec2 p4 = removeDistortion(ima2cam(Vec2(0,_h)));
 
     double xmin = std::min(p4(0), (std::min(p3(0), std::min(p1(0), p2(0)))));
     double ymin = std::min(p4(1), (std::min(p3(1), std::min(p1(1), p2(1)))));

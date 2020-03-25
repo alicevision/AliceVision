@@ -20,107 +20,101 @@ class IntrinsicsScaleOffset: public IntrinsicBase
 public:
   IntrinsicsScaleOffset() = default;
 
-  IntrinsicsScaleOffset(unsigned int w, unsigned int h, double scale_x, double scale_y, double offset_x, double offset_y) :
-  IntrinsicBase(w, h), _scale_x(scale_x), _scale_y(scale_y), _offset_x(offset_x), _offset_y(offset_y) {
-  }
+  IntrinsicsScaleOffset(unsigned int w, unsigned int h, double scale_x, double scale_y, double offset_x, double offset_y)
+    : IntrinsicBase(w, h)
+    , _scale(scale_x, scale_y)
+    , _offset(offset_x, offset_y)
+  {}
+
+  ~IntrinsicsScaleOffset() override = default;
 
   void copyFrom(const IntrinsicsScaleOffset& other)
   {
     *this = other;
   }
 
-  inline double focal() const {
-    return _scale_x;
+  void setScale(double x, double y)
+  {
+    _scale(0) = x;
+    _scale(1) = y;
   }
 
-  void setScale(double x, double y) {
-    _scale_x = x;
-    _scale_y = y;
-  } 
-  
-  inline Vec2 principal_point() const {
-    return {_offset_x, _offset_y};
+  inline Vec2 getScale() const { return _scale; }
+
+  void setOffset(double offset_x, double offset_y)
+  {
+    _offset(0) = offset_x;
+    _offset(1) = offset_y;
   }
 
-  double getFocalLengthPix() const { 
-    return _scale_x; 
-  }
-
-  Vec2 getPrincipalPoint() const { 
-    return {_offset_x, _offset_y};
-  }
-
-  void setOffset(double offset_x, double offset_y) {
-    _offset_x = offset_x;
-    _offset_y = offset_y;
-  }
+  inline Vec2 getOffset() const { return _offset; }
 
   // Transform a point from the camera plane to the image plane
   Vec2 cam2ima(const Vec2& p) const override
   {
-    return focal() * p + principal_point();
+    return p.cwiseProduct(_scale) + _offset;
   }
 
-  virtual Eigen::Matrix<double, 2, 1> getDerivativeCam2ImaWrtScale(const Vec2& p) const {
+  virtual Vec2 getDerivativeCam2ImaWrtScale(const Vec2& p) const
+  {
     return p;
   }
 
-  virtual Eigen::Matrix2d getDerivativeCam2ImaWrtPoint() const {
-
-    return Eigen::Matrix2d::Identity() * focal();
+  virtual Eigen::Matrix2d getDerivativeCam2ImaWrtPoint() const
+  {
+    return Eigen::Matrix2d::Identity() * _scale(0);
   }
 
-  virtual Eigen::Matrix2d getDerivativeCam2ImaWrtPrincipalPoint() const {
-
+  virtual Eigen::Matrix2d getDerivativeCam2ImaWrtPrincipalPoint() const
+  {
     return Eigen::Matrix2d::Identity();
   }
 
   // Transform a point from the image plane to the camera plane
   Vec2 ima2cam(const Vec2& p) const override
   {
-    return ( p -  principal_point() ) / focal();
+    return (p - _offset) / _scale(0);
   }
 
-  virtual Eigen::Matrix<double, 2, 1> getDerivativeIma2CamWrtScale(const Vec2& p) const {
-
-    return - (p -  principal_point()) / (focal() * focal());;
+  virtual Eigen::Matrix<double, 2, 1> getDerivativeIma2CamWrtScale(const Vec2& p) const
+  {
+      return -(p - _offset) / (_scale(0) * _scale(0));
   }
 
-  virtual Eigen::Matrix2d getDerivativeIma2CamWrtPoint() const {
-
-    return Eigen::Matrix2d::Identity() * (1.0 / focal());
+  virtual Eigen::Matrix2d getDerivativeIma2CamWrtPoint() const
+  {
+      return Eigen::Matrix2d::Identity() * (1.0 / _scale(0));
   }
 
-  virtual Eigen::Matrix2d getDerivativeIma2CamWrtPrincipalPoint() const {
-
-    return Eigen::Matrix2d::Identity() * (-1.0 / focal());
+  virtual Eigen::Matrix2d getDerivativeIma2CamWrtPrincipalPoint() const
+  {
+    return Eigen::Matrix2d::Identity() * (-1.0 / _scale(0));
   }
 
   /**
    * @brief Rescale intrinsics to reflect a rescale of the camera image
    * @param factor a scale factor
    */
-  void rescale(float factor) override {
-
+  void rescale(float factor) override
+  {
     IntrinsicBase::rescale(factor);
 
-    _scale_x *= factor;
-    _scale_y *= factor;
-    _offset_x *= factor;
-    _offset_y *= factor;
+    _scale *= factor;
+    _offset *= factor;
   }
 
   // Data wrapper for non linear optimization (update from data)
   bool updateFromParams(const std::vector<double>& params) override
   {
-    if (params.size() != 3) {
+    if (params.size() != 3)
+    {
       return false;
     }
 
-    _scale_x = params[0];
-    _scale_y = params[0];
-    _offset_x = params[1];
-    _offset_y = params[2];
+    _scale(0) = params[0];
+    _scale(1) = params[0];
+    _offset(0) = params[1];
+    _offset(1) = params[2];
 
     return true;
   }
@@ -142,13 +136,9 @@ public:
     return _initialScale;
   }
 
-~IntrinsicsScaleOffset() override = default;
-
 protected:
-  double _scale_x{1.0};
-  double _scale_y{1.0};
-  double _offset_x{0.0};
-  double _offset_y{0.0};
+  Vec2 _scale{1.0, 1.0};
+  Vec2 _offset{0.0, 0.0};
   double _initialScale{-1};
 };
 

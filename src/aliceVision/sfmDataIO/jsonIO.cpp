@@ -107,8 +107,8 @@ void saveIntrinsic(const std::string& name, IndexT intrinsicId, const std::share
   std::shared_ptr<camera::IntrinsicsScaleOffset> intrinsicScaleOffset = std::dynamic_pointer_cast<camera::IntrinsicsScaleOffset>(intrinsic);
   if (intrinsicScaleOffset) {
     intrinsicTree.put("pxInitialFocalLength", intrinsicScaleOffset->initialScale());
-    intrinsicTree.put("pxFocalLength", intrinsicScaleOffset->getFocalLengthPix());
-    saveMatrix("principalPoint", intrinsicScaleOffset->getPrincipalPoint(), intrinsicTree);
+    intrinsicTree.put("pxFocalLength", intrinsicScaleOffset->getScale()(0));
+    saveMatrix("principalPoint", intrinsicScaleOffset->getOffset(), intrinsicTree);
   }
 
   std::shared_ptr<camera::IntrinsicsScaleOffsetDisto> intrinsicScaleOffsetDisto = std::dynamic_pointer_cast<camera::IntrinsicsScaleOffsetDisto>(intrinsic);
