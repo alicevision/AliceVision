@@ -149,7 +149,8 @@ double solve_quadprog(Eigen::MatrixXd & G, Eigen::VectorXd & g0,
   
   /* Add equality constraints to the working set A */
   iq = 0;
-  for (i = 0; i < p; i++)
+  
+  for (i = 0; i < 0; i++)
   {
     for (j = 0; j < n; j++)
       np[j] = CE(j, i);
@@ -176,12 +177,12 @@ double solve_quadprog(Eigen::MatrixXd & G, Eigen::VectorXd & g0,
     f_value += 0.5 * (t2 * t2) * scalar_product(z, np);
     A[i] = -i - 1;
     
-    /*if (!add_constraint(R, J, d, iq, R_norm))
+    if (!add_constraint(R, J, d, iq, R_norm))
     {	  
       // Equality constraints are linearly dependent
       throw std::runtime_error("EQ Constraints are linearly dependent");
       return f_value;
-    }*/
+    }
   }
   
   /* set iai = K \ A */
