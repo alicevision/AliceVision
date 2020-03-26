@@ -58,7 +58,6 @@ int main(int argc, char **argv)
   sfm::ERelativeRotationMethod relativeRotationMethod = sfm::RELATIVE_ROTATION_FROM_E;
   bool refine = true;
   bool lockAllIntrinsics = false;
-  int orientation = 0;
   float offsetLongitude = 0.0f;
   float offsetLatitude = 0.0f;
 
@@ -90,8 +89,6 @@ int main(int argc, char **argv)
       "* from essential matrix"
       "* from rotation matrix"
       "* from homography matrix")
-    ("orientation", po::value<int>(&orientation)->default_value(orientation),
-      "Orientation")
     ("offsetLongitude", po::value<float>(&offsetLongitude)->default_value(offsetLongitude),
       "offset to camera longitude")
     ("offsetLatitude", po::value<float>(&offsetLatitude)->default_value(offsetLatitude),
