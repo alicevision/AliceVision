@@ -50,6 +50,8 @@ int main(int argc, char ** argv)
   std::string outputFolder;
   std::vector<std::string> featuresFolders;
   std::vector<std::string> matchesFolders;
+  bool clearForks = true;
+  int minTrackLength = 2;
 
   // user optional parameters
 
@@ -70,6 +72,10 @@ int main(int argc, char ** argv)
 
   po::options_description optionalParams("Optional parameters");
   optionalParams.add_options()
+    ("clearForks", po::value<bool>(&clearForks),
+      "Filter tracks forks.")
+    ("minTrackLength", po::value<int>(&minTrackLength),
+      "Minimum track length.")
     ("describerTypes,d", po::value<std::string>(&describerTypesName)->default_value(describerTypesName),
       feature::EImageDescriberType_informations().c_str());
 
@@ -153,7 +159,7 @@ int main(int argc, char ** argv)
     const aliceVision::matching::PairwiseMatches& map_Matches = pairwiseMatches;
     track::TracksBuilder tracksBuilder;
     tracksBuilder.build(map_Matches);
-    tracksBuilder.filter();
+    tracksBuilder.filter(clearForks, minTrackLength);
     tracksBuilder.exportToSTL(mapTracks);
 
     ALICEVISION_LOG_INFO("# tracks: " << tracksBuilder.nbTracks());

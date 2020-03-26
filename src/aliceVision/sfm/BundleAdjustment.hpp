@@ -8,6 +8,9 @@
 #pragma once
 
 #include <boost/detail/bitmask.hpp>
+#include <string>
+#include <algorithm>
+#include <stdexcept>
 
 namespace aliceVision {
 
@@ -16,6 +19,58 @@ class SfMData;
 } // namespace sfmData
 
 namespace sfm {
+
+/**
+ * @brief Defines basic, scale and covariance options for features that can be used in a bundle adjustment.
+ */
+enum class EFeatureConstraint
+{
+  BASIC = 0,
+  SCALE = 1
+};
+
+/**
+*@brief convert an enum ESfMobservationConstraint to its corresponding string
+*
+*/
+inline std::string ESfMobservationConstraint_enumToString(EFeatureConstraint m)
+{
+  switch(m)
+  {
+    case EFeatureConstraint::BASIC: return "Basic";
+    case EFeatureConstraint::SCALE: return "Scale";
+  }
+  throw std::out_of_range("Invalid ESfMobservationConstraint enum: " + std::to_string(int(m)));
+}
+
+/**
+* @brief convert a string featureConstraint to its corresponding enum featureConstraint
+* @param String
+* @return ESfMobservationConstraint
+*/
+inline EFeatureConstraint ESfMobservationConstraint_stringToEnum(const std::string& m)
+{
+  std::string featureConstraint = m;
+  std::transform(featureConstraint.begin(), featureConstraint.end(), featureConstraint.begin(), ::tolower);
+
+  if(featureConstraint == "basic") return EFeatureConstraint::BASIC;
+  if(featureConstraint == "scale") return EFeatureConstraint::SCALE;
+
+  throw std::out_of_range("Invalid ESfMobservationConstraint: " + m);
+}
+
+inline std::ostream& operator<<(std::ostream& os, EFeatureConstraint m)
+{
+    return os << ESfMobservationConstraint_enumToString(m);
+}
+
+inline std::istream& operator>>(std::istream& in, EFeatureConstraint& m)
+{
+    std::string token;
+    in >> token;
+    m = ESfMobservationConstraint_stringToEnum(token);
+    return in;
+}
 
 class BundleAdjustment
 {

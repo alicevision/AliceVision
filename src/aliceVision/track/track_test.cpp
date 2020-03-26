@@ -145,7 +145,7 @@ BOOST_AUTO_TEST_CASE(Track_Conflict) {
   trackBuilder.build( map_pairwisematches );
 
   BOOST_CHECK_EQUAL(3, trackBuilder.nbTracks());
-  trackBuilder.filter(); // Key feature tested here to kill the conflicted track
+  trackBuilder.filter(true, 2); // Key feature tested here to kill the conflicted track
   BOOST_CHECK_EQUAL(2, trackBuilder.nbTracks());
 
   TracksMap map_tracks;

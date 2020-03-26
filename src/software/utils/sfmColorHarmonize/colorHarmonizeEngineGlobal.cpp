@@ -50,7 +50,7 @@ using namespace aliceVision::lInfinity;
 using namespace aliceVision::sfm;
 using namespace aliceVision::sfmData;
 
-typedef feature::SIOPointFeature FeatureT;
+typedef feature::PointFeature FeatureT;
 typedef vector<FeatureT> featsT;
 
 ColorHarmonizationEngineGlobal::ColorHarmonizationEngineGlobal(
@@ -254,8 +254,8 @@ bool ColorHarmonizationEngineGlobal::Process()
             p_imaNames.first,
             p_imaNames.second,
             matches,
-            feature::getSIOPointFeatures(_regionsPerView.getRegions(viewI, descType)),
-            feature::getSIOPointFeatures(_regionsPerView.getRegions(viewJ, descType)));
+            _regionsPerView.getRegions(viewI, descType).Features(),
+            _regionsPerView.getRegions(viewJ, descType).Features());
 
           dataSelector.computeMask( maskI, maskJ );
         }

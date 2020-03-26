@@ -277,6 +277,9 @@ private:
   /// user Ceres options to use in the solver
   CeresOptions _ceresOptions;
 
+  /// user FeatureConstraint options to use
+  EFeatureConstraint _featureConstraint;
+
   /// last adjustment iteration statisics
   Statistics _statistics;
 

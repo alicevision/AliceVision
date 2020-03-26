@@ -117,13 +117,14 @@ SfMData createTestScene(IndexT singleViewsCount,
     nbIntrinsics += subPoseCount;
   }
 
+  const double unknownScale = 0.0;
   // Fill with not meaningful tracks
   for(IndexT i = 0; i < pointCount; ++i)
   {
     // Add structure
     Observations observations;
-    observations[0] = Observation( Vec2(std::rand() % 10000, std::rand() % 10000), 0);
-    observations[1] = Observation( Vec2(std::rand() % 10000, std::rand() % 10000), 1);
+    observations[0] = Observation( Vec2(std::rand() % 10000, std::rand() % 10000), 0, unknownScale);
+    observations[1] = Observation( Vec2(std::rand() % 10000, std::rand() % 10000), 1, unknownScale);
     sfm_data.structure[i].observations = observations;
     sfm_data.structure[i].X = Vec3(std::rand() % 10000, std::rand() % 10000, std::rand() % 10000);
     sfm_data.structure[i].rgb = image::RGBColor((std::rand() % 1000) / 1000.0, (std::rand() % 1000) / 1000.0, (std::rand() % 1000) / 1000.0);

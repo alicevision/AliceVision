@@ -165,8 +165,8 @@ public:
 
 float KVLD(const aliceVision::image::Image< float >& I1,
   const aliceVision::image::Image< float >& I2,
-  const std::vector<aliceVision::feature::SIOPointFeature> & F1,
-  const std::vector<aliceVision::feature::SIOPointFeature> & F2,
+  const std::vector<aliceVision::feature::PointFeature> & F1,
+  const std::vector<aliceVision::feature::PointFeature> & F2,
   const std::vector< aliceVision::Pair >& matches,
   std::vector< aliceVision::Pair >& matchesFiltered,
   std::vector< double >& score,

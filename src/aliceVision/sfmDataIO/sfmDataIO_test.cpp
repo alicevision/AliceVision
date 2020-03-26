@@ -60,9 +60,10 @@ sfmData::SfMData createTestScene(std::size_t viewsCount = 2, std::size_t observa
 
   // Fill with not meaningful tracks
   sfmData::Observations observations;
+  const double unknownScale = 0.0;
   for(std::size_t i = 0; i < observationCount; ++i)
   {
-    observations[i] = sfmData::Observation( Vec2(i,i), i);
+    observations[i] = sfmData::Observation( Vec2(i,i), i, unknownScale);
   }
 
   sfmData.structure[0].observations = observations;

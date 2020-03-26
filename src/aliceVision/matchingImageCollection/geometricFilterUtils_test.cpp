@@ -49,7 +49,7 @@ BOOST_AUTO_TEST_CASE(matchingImageCollection_centerMatrix)
 BOOST_AUTO_TEST_CASE(matchingImageCollection_similarityEstimation)
 {
   // same point should give the identity matrix
-  const feature::SIOPointFeature feat1 {1.0f, 5.0f, 1.0f, 0.1f};
+  const feature::PointFeature feat1 {1.0f, 5.0f, 1.0f, 0.1f};
   Mat3 S;
   matchingImageCollection::computeSimilarity(feat1, feat1, S);
 
@@ -62,7 +62,7 @@ BOOST_AUTO_TEST_CASE(matchingImageCollection_similarityEstimation)
     // generate a random point with a random scale and orientation
     const Vec2f point = Vec2f::Random();
     const Vec2f param = Vec2f::Random();
-    const feature::SIOPointFeature feat2 {point(0), point(1), param(0), param(1)};
+    const feature::PointFeature feat2 {point(0), point(1), param(0), param(1)};
 
     // estimate the similarity
     matchingImageCollection::computeSimilarity(feat1, feat2, S);

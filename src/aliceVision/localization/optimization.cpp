@@ -100,6 +100,7 @@ bool refineSequence(std::vector<LocalizationResult> & vec_localizationResult,
     }
   }
   
+  const double unknownScale = 0.0;
   for(size_t viewID = 0; viewID < numViews; ++viewID)
   {
     LocalizationResult &currResult = vec_localizationResult[viewID];
@@ -165,7 +166,7 @@ bool refineSequence(std::vector<LocalizationResult> & vec_localizationResult,
         }
 
         // the 3D point exists already, add the observation
-        landmark.observations[viewID] =  sfmData::Observation(feature, match.featId);
+        landmark.observations[viewID] =  sfmData::Observation(feature, match.featId, unknownScale);
       }
       else
       {
@@ -173,7 +174,7 @@ bool refineSequence(std::vector<LocalizationResult> & vec_localizationResult,
         sfmData::Landmark newLandmark;
         newLandmark.descType = match.descType;
         newLandmark.X = currResult.getPt3D().col(idx);
-        newLandmark.observations[viewID] = sfmData::Observation(feature, match.featId);
+        newLandmark.observations[viewID] = sfmData::Observation(feature, match.featId, unknownScale);
         tinyScene.structure[match.landmarkId] = std::move(newLandmark);
       }
     }

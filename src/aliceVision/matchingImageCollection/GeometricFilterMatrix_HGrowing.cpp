@@ -61,8 +61,8 @@ std::size_t GeometricFilterMatrix_HGrowing::getNbAllVerifiedMatches() const
 
 
 
-bool growHomography(const std::vector<feature::SIOPointFeature> &featuresI,
-                    const std::vector<feature::SIOPointFeature> &featuresJ,
+bool growHomography(const std::vector<feature::PointFeature> &featuresI,
+                    const std::vector<feature::PointFeature> &featuresJ,
                     const matching::IndMatches &matches,
                     const IndexT &seedMatchId,
                     std::set<IndexT> &planarMatchesIndices, Mat3 &transformation,
@@ -74,8 +74,8 @@ bool growHomography(const std::vector<feature::SIOPointFeature> &featuresI,
   transformation = Mat3::Identity();
 
   const matching::IndMatch & seedMatch = matches.at(seedMatchId);
-  const feature::SIOPointFeature & seedFeatureI = featuresI.at(seedMatch._i);
-  const feature::SIOPointFeature & seedFeatureJ = featuresJ.at(seedMatch._j);
+  const feature::PointFeature & seedFeatureI = featuresI.at(seedMatch._i);
+  const feature::PointFeature & seedFeatureJ = featuresJ.at(seedMatch._j);
 
   double currTolerance;
 
@@ -111,8 +111,8 @@ bool growHomography(const std::vector<feature::SIOPointFeature> &featuresI,
 
 
 
-void filterMatchesByHGrowing(const std::vector<feature::SIOPointFeature>& siofeatures_I,
-                             const std::vector<feature::SIOPointFeature>& siofeatures_J,
+void filterMatchesByHGrowing(const std::vector<feature::PointFeature>& siofeatures_I,
+                             const std::vector<feature::PointFeature>& siofeatures_J,
                              const matching::IndMatches& putativeMatches,
                              std::vector<std::pair<Mat3, matching::IndMatches>>& homographiesAndMatches,
                              matching::IndMatches& outGeometricInliers,
@@ -210,8 +210,8 @@ void filterMatchesByHGrowing(const std::vector<feature::SIOPointFeature>& siofea
 
 void drawHomographyMatches(const sfmData::View &viewI,
                            const sfmData::View &viewJ,
-                           const std::vector<feature::SIOPointFeature> &siofeatures_I,
-                           const std::vector<feature::SIOPointFeature> &siofeatures_J,
+                           const std::vector<feature::PointFeature> &siofeatures_I,
+                           const std::vector<feature::PointFeature> &siofeatures_J,
                            const std::vector<std::pair<Mat3, matching::IndMatches>> &homographiesAndMatches,
                            const matching::IndMatches &putativeMatches,
                            const std::string &outFilename)

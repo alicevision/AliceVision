@@ -145,7 +145,7 @@ namespace feature {
     const image::Image<Real> &Lx,
     const image::Image<Real> &Ly,
     const int id_octave ,
-    const SIOPointFeature & ipt ,
+    const PointFeature & ipt ,
     Descriptor<bool, 486> & desc )
   {
     // // Note : in KAZE description we compute descriptor of previous slice and never the current one

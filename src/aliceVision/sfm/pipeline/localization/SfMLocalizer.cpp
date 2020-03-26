@@ -197,13 +197,14 @@ bool SfMLocalizer::RefinePose(camera::IntrinsicBase* intrinsics,
   std::shared_ptr<camera::IntrinsicBase> localIntrinsics(intrinsics->clone());
   tinyScene.intrinsics[0] = localIntrinsics;
 
+  const double unknownScale = 0.0;
   // structure data (2D-3D correspondences)
   for(std::size_t i = 0; i < matchingData.vec_inliers.size(); ++i)
   {
     const std::size_t idx = matchingData.vec_inliers[i];
     sfmData::Landmark landmark;
     landmark.X = matchingData.pt3D.col(idx);
-    landmark.observations[0] = sfmData::Observation(matchingData.pt2D.col(idx), UndefinedIndexT);
+    landmark.observations[0] = sfmData::Observation(matchingData.pt2D.col(idx), UndefinedIndexT, unknownScale); // TODO-SCALE
     tinyScene.structure[i] = std::move(landmark);
   }
 
