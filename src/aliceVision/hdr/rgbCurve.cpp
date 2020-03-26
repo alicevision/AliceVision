@@ -69,6 +69,46 @@ void rgbCurve::setEmor(size_t dim )
 {
   const std::size_t emorSize = std::pow(2, 10);
   const std::size_t curveSize = getSize();
+  const double* ptrf0 = getEmorCurve(dim);
+  
+  std::vector<double> f0;
+  if(curveSize == emorSize)
+  {
+    for(auto &curve : _data)
+      curve.assign(ptrf0, ptrf0 + emorSize);
+  }
+  else if(emorSize > curveSize)
+  {
+    f0.assign(ptrf0, ptrf0 + emorSize);
+    std::vector<float> emor = std::vector<float>(f0.begin(), f0.end());
+
+    std::size_t step = emorSize/curveSize;
+    for(auto &curve : _data)
+    {
+      for(std::size_t i = 0; i<curveSize; ++i)
+        curve.at(i) = emor.at(step*i);
+    }
+  }
+  else
+  {
+    f0.assign(ptrf0, ptrf0 + emorSize);
+    std::vector<float> emor = std::vector<float>(f0.begin(), f0.end());
+
+    std::size_t step = curveSize/emorSize;
+    for(auto &curve : _data)
+    {
+      for(std::size_t i = 0; i<emorSize-1; ++i)
+        curve.at(i*step) = emor.at(i);
+      curve.at(emorSize*step-1) = emor.at(emorSize-1);
+    }
+    interpolateMissingValues();
+  }
+}
+
+void rgbCurve::setEmorInv(size_t dim )
+{
+  const std::size_t emorSize = std::pow(2, 10);
+  const std::size_t curveSize = getSize();
   const double* ptrf0 = getEmorInvCurve(dim);
   
   std::vector<double> f0;
