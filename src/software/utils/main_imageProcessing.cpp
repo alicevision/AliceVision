@@ -37,6 +37,7 @@ int main(int argc, char * argv[])
     std::string sfmInputDataFilename = "";
     std::string sfmOutputDataFilepath = "";
     bool reconstructedViewsOnly = false;
+    bool keepImageFilename = false;
     bool exposureCompensation = false;
     float downscale = 1.0f;
     float contrast = 1.0f;
@@ -64,6 +65,8 @@ int main(int argc, char * argv[])
     optionalParams.add_options()
         ("reconstructedViewsOnly", po::value<bool>(&reconstructedViewsOnly)->default_value(reconstructedViewsOnly),
          "Process only recontructed views or all views.")
+        ("keepImageFilename", po::value<bool>(&keepImageFilename)->default_value(keepImageFilename),
+         "Keep images filenames instead of using UIDs.")
         ("downscale", po::value<float>(&downscale)->default_value(downscale),
          "Downscale Factor (1.0: no change).")
 
@@ -222,7 +225,8 @@ int main(int argc, char * argv[])
 
         // Save the image
         const std::string ext = extension.empty() ? fs::path(view.getImagePath()).extension().string() : (std::string(".") + extension);
-        const std::string outputImagePath = (fs::path(outputPath) / (std::to_string(view.getViewId()) + ext)).string();
+        const std::string stem = keepImageFilename ? fs::path(view.getImagePath()).stem().string() : std::to_string(view.getViewId());
+        const std::string outputImagePath = (fs::path(outputPath) / (stem + ext)).string();
 
         ALICEVISION_LOG_INFO("Export image: '" << outputImagePath << "'.");
         image::writeImage(outputImagePath, image, image::EImageColorSpace::AUTO, metadata);
