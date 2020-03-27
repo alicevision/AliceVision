@@ -63,7 +63,7 @@ build:
 cache:
   c:\tools\vcpkg\installed\
 
-# zip Win64 build and push build to artifacts, include Licenses and Copyright information
+# 7zip Win64 build and push build to artifacts, include Licenses and Copyright information
 
 after_build:
   - COPY "%APPVEYOR_BUILD_FOLDER%\COPYING.md" "%APPVEYOR_BUILD_FOLDER%\build\Windows-AMD64\Release\"
