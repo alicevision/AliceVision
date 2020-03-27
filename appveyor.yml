@@ -66,10 +66,8 @@ cache:
 # 7zip Win64 build and push build to artifacts, include Licenses and Copyright information
 
 after_build:
-#  - COPY "%APPVEYOR_BUILD_FOLDER%\COPYING.md" "%APPVEYOR_BUILD_FOLDER%\build\Windows-AMD64\Release\"
-#  - COPY "%APPVEYOR_BUILD_FOLDER%\LICENSE*" "%APPVEYOR_BUILD_FOLDER%\build\Windows-AMD64\Release\"
   - set BUILD_ARCHIVE=%APPVEYOR_BUILD_FOLDER%\build\alicevisionWin64snapshot-%APPVEYOR_PULL_REQUEST_HEAD_COMMIT%.zip
-  - 7z a %BUILD_ARCHIVE% %APPVEYOR_BUILD_FOLDER%\build\Windows-AMD64\Release\*
+  - 7z a %BUILD_ARCHIVE% %APPVEYOR_BUILD_FOLDER%\build\Windows-AMD64\Release\* %APPVEYOR_BUILD_FOLDER%\LICENSE* %APPVEYOR_BUILD_FOLDER%\COPYING.md
 
 artifacts:
   - path: 'build\*.zip'
