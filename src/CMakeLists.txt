@@ -64,7 +64,7 @@ trilean_option(ALICEVISION_USE_UNCERTAINTYTE "Enable Uncertainty computation" AU
 trilean_option(ALICEVISION_USE_CUDA "Enable CUDA" ON)
 trilean_option(ALICEVISION_USE_OPENCV "Build opencv+aliceVision samples programs" OFF)
 
-option(ALICEVISION_USE_OCVSIFT "Add or not OpenCV SIFT in available features" ON)
+mark_as_advanced(FORCE ALICEVISION_USE_OCVSIFT "Add or not OpenCV SIFT in available features" OFF)
 
 option(ALICEVISION_USE_MESHSDFILTER "Use MeshSDFilter library (enable MeshDenoising and MeshDecimate)" ON)
 
