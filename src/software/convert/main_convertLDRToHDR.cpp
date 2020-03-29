@@ -417,13 +417,9 @@ int main(int argc, char * argv[])
     });
 
     // Target views are the middle exposed views
-    int middleIndex = group.size() / 2;
-
-    // If odd size, choose the more exposed view
-    if (group.size() % 2 && group.size() > 1)
-    {
-      middleIndex++;
-    }
+    // For add number, there is no ambiguity on the middle image.
+    // For even number, we arbitrarily choose the more exposed view.
+    const int middleIndex = group.size() / 2;
 
     targetViews.push_back(group[middleIndex]);
   }
