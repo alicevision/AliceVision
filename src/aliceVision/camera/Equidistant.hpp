@@ -73,25 +73,23 @@ public:
 
   Vec2 project(const geometry::Pose3& pose, const Vec3& pt, bool applyDistortion = true) const override
   {    
-    double rsensor = std::min(sensorWidth(), sensorHeight());
-    double rscale = sensorWidth() / std::max(w(), h());
-    double fmm = _scale(0) * rscale;
-    double fov = rsensor / fmm;
+    const double rsensor = std::min(sensorWidth(), sensorHeight());
+    const double rscale = sensorWidth() / std::max(w(), h());
+    const double fmm = _scale(0) * rscale;
+    const double fov = rsensor / fmm;
 
     const Vec3 X = pose.rotation() * pt;
 
     /* Compute angle with optical center */
-    double angle_Z = std::atan2(sqrt(X(0) * X(0) + X(1) * X(1)), X(2));
+    const double angle_Z = std::atan2(sqrt(X(0) * X(0) + X(1) * X(1)), X(2));
     
     /* Ignore depth component and compute radial angle */
-    double angle_radial = std::atan2(X(1), X(0));
+    const double angle_radial = std::atan2(X(1), X(0));
 
-    double radius = angle_Z / (0.5 * fov);
+    const double radius = angle_Z / (0.5 * fov);
 
     /* radius = focal * angle_Z */
-    Vec2 P;
-    P(0) = cos(angle_radial) * radius;
-    P(1) = sin(angle_radial) * radius;
+    const Vec2 P{cos(angle_radial) * radius, sin(angle_radial) * radius};
 
     const Vec2 pt_disto = this->addDistortion(P);
     const Vec2 pt_ima = this->cam2ima(pt_disto);
