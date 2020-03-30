@@ -63,11 +63,8 @@ trilean_option(ALICEVISION_USE_ALEMBIC "Enable Alembic I/O" AUTO)
 trilean_option(ALICEVISION_USE_UNCERTAINTYTE "Enable Uncertainty computation" AUTO)
 trilean_option(ALICEVISION_USE_CUDA "Enable CUDA" ON)
 trilean_option(ALICEVISION_USE_OPENCV "Build opencv+aliceVision samples programs" OFF)
-
-# Since OpenCV 3, SIFT is no longer in the default modules. See
-# https://github.com/itseez/opencv_contrib for more informations.
-# Enable this to be able to use OpenCV SIFT in main_ComputeFeatures_OpenCV.
 option(ALICEVISION_USE_OCVSIFT "Add or not OpenCV SIFT in available features" OFF)
+mark_as_advanced(FORCE ALICEVISION_USE_OCVSIFT)
 
 option(ALICEVISION_USE_MESHSDFILTER "Use MeshSDFilter library (enable MeshDenoising and MeshDecimate)" ON)
 
