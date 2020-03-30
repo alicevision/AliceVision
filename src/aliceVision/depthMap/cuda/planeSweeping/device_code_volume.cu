@@ -55,7 +55,7 @@ __global__ void volume_slice_kernel(
                                     int rcWidth, int rcHeight,
                                     int tcWidth, int tcHeight,
                                     int wsh,
-                                    const float gammaC, const float gammaP,
+                                    const float gammaCInv, const float gammaPInv,
                                     TSim* volume_1st, int volume1st_s, int volume1st_p,
                                     TSim* volume_2nd, int volume2nd_s, int volume2nd_p,
                                     int volStepXY,
@@ -93,12 +93,16 @@ __global__ void volume_slice_kernel(
                          tc_cam_cache_idx,
                          ptcho, fpPlaneDepth, make_int2(x, y)); // no texture use
 
-    float fsim = compNCCby3DptsYK(rc_tex, tc_tex,
-                                  rc_cam_cache_idx, tc_cam_cache_idx,
-                                  ptcho, wsh,
-                                  rcWidth, rcHeight,
-                                  tcWidth, tcHeight,
-                                  gammaC, gammaP);
+    //float fsim = compNCCby3DptsYK(rc_tex, tc_tex, rc_cam_cache_idx, tc_cam_cache_idx, ptcho, wsh, rcWidth, rcHeight,
+    //                            tcWidth, tcHeight, gammaCInv, gammaPInv);
+
+    float fsim;
+    if (wsh == 4)
+        fsim = compNCCby3DptsYK_WSH<4, 9, 9>(rc_tex, tc_tex, rc_cam_cache_idx, tc_cam_cache_idx, ptcho,
+                                                          rcWidth, rcHeight, tcWidth, tcHeight, gammaCInv, gammaPInv);
+    else
+        fsim = compNCCby3DptsYK(rc_tex, tc_tex, rc_cam_cache_idx, tc_cam_cache_idx, ptcho, wsh, rcWidth, rcHeight,
+                                tcWidth, tcHeight, gammaCInv, gammaPInv);
 
     constexpr const float fminVal = -1.0f;
     constexpr const float fmaxVal = 1.0f;
@@ -134,6 +138,71 @@ __global__ void volume_slice_kernel(
     else if (fsim < *fsim_2nd)
     {
         *fsim_2nd = TSim(fsim);
+    }
+}
+
+template<int WSH, int UNROLL_Y = 1, int UNROLL_X = 2*WSH+1>
+__global__ void volume_slice_wsh_kernel(cudaTextureObject_t rc_tex, cudaTextureObject_t tc_tex, int rc_cam_cache_idx,
+                                    int tc_cam_cache_idx, const float* depths_d, const int lowestUsedDepth,
+                                    const int nbDepthsToSearch, int rcWidth, int rcHeight, int tcWidth, int tcHeight,
+                                    const float gammaC, const float gammaP, TSim* volume_1st, int volume1st_s,
+                                    int volume1st_p, TSim* volume_2nd, int volume2nd_s, int volume2nd_p, int volStepXY,
+                                    int volDimX, int volDimY)
+{
+    /*
+     * Note !
+     * volDimX == width  / volStepXY
+     * volDimY == height / volStepXY
+     * width and height are needed to compute transformations,
+     * volDimX and volDimY may be the number of samples, reducing memory or computation
+     */
+
+    const int vx = blockIdx.x * blockDim.x + threadIdx.x;
+    const int vy = blockIdx.y * blockDim.y + threadIdx.y;
+    const int vz = blockIdx.z; // * blockDim.z + threadIdx.z;
+
+    if(vx >= volDimX || vy >= volDimY) // || vz >= volDimZ
+        return;
+    // if (vz >= nbDepthsToSearch)
+    //  return;
+
+    const int x = vx * volStepXY;
+    const int y = vy * volStepXY;
+
+    // if(x >= rcWidth || y >= rcHeight)
+    //     return;
+
+    const int zIndex = lowestUsedDepth + vz;
+    const float fpPlaneDepth = depths_d[zIndex];
+
+    Patch ptcho;
+    volume_computePatch(rc_cam_cache_idx, tc_cam_cache_idx, ptcho, fpPlaneDepth, make_int2(x, y)); // no texture use
+
+    float fsim = compNCCby3DptsYK_WSH<WSH, UNROLL_Y, UNROLL_X>(rc_tex, tc_tex, rc_cam_cache_idx, tc_cam_cache_idx, ptcho, rcWidth,
+                                             rcHeight, tcWidth, tcHeight, gammaC, gammaP);
+
+    constexpr const float fminVal = -1.0f;
+    constexpr const float fmaxVal = 1.0f;
+    constexpr const float fmultiplier = 1.0f / (fmaxVal - fminVal);
+    fsim = (fsim - fminVal) * fmultiplier;
+#ifdef TSIM_USE_FLOAT
+    // no clamp
+#else
+    fsim = fminf(1.0f, fmaxf(0.0f, fsim));
+#endif
+    fsim *= 255.0f; // Currently needed for the next step... (TODO: should be removed at some point)
+
+    TSim* fsim_1st = get3DBufferAt(volume_1st, volume1st_s, volume1st_p, vx, vy, zIndex);
+    TSim* fsim_2nd = get3DBufferAt(volume_2nd, volume2nd_s, volume2nd_p, vx, vy, zIndex);
+
+    if(fsim < *fsim_1st)
+    {
+        *fsim_2nd = *fsim_1st;
+        *fsim_1st = fsim;
+    }
+    else if(fsim < *fsim_2nd)
+    {
+        *fsim_2nd = fsim;
     }
 }
 

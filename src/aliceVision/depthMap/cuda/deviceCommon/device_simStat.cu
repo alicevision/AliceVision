@@ -67,6 +67,22 @@ struct simStat
 
     __device__ float getVarianceXY() const { return (xysum / count - (xsum * ysum) / (count * count)); }
 
+    __device__ float computeSim()
+    {
+        // NCC
+        float d = getVarianceX() * getVarianceY();
+        float sim = 1.0f;
+        if(fabs(d) > 0.0f)
+        {
+            sim = getVarianceXY() / sqrtf(d);
+            sim = 0.0f - sim;
+        }
+
+        // sim = fmaxf(sim, -1.0f); // clamp
+        // sim = fminf(sim, 1.0f);
+        return sim;
+    }
+
     /**
     * @brief Variance of X
     * formula: sum(w*x*x) / sum(w) - sum(w*x)^2 / sum(w)^2
@@ -103,6 +119,15 @@ struct simStat
     {
         // NCC
         const float rawSim = getVarianceXYW() / sqrtf(getVarianceXW() * getVarianceYW());
+        const float sim = isfinite(rawSim) ? -rawSim : 1.0f;
+        // sim = fmaxf(fminf(sim, 1.0f), -1.0f); // clamp
+        return sim;
+    }
+
+    __device__ float __computeWSim()
+    {
+        // NCC
+        const float rawSim = __fdividef(getVarianceXYW(), sqrtf(getVarianceXW() * getVarianceYW()));
         const float sim = isfinite(rawSim) ? -rawSim : 1.0f;
         // sim = fmaxf(fminf(sim, 1.0f), -1.0f); // clamp
         return sim;

@@ -69,11 +69,28 @@ __device__ static inline void normalize(float3& a)
     a.z /= d;
 }
 
+__device__ static inline void __normalize(float3& a)
+{
+    float d = sqrtf(dot(a, a));
+    const float rec_d = __fdividef(1.0f, d);
+    a.x *= rec_d;
+    a.y *= rec_d;
+    a.z *= rec_d;
+}
+
 __device__ static inline void normalize(float2& a)
 {
     float d = sqrtf(dot(a, a));
     a.x /= d;
     a.y /= d;
+}
+
+__device__ static inline void __normalize(float2& a)
+{
+    float d = sqrtf(dot(a, a));
+    const float rec_d = __fdividef(1.0f, d);
+    a.x *= rec_d;
+    a.y *= rec_d;
 }
 
 __device__ static inline float3 M3x3mulV3( const float* M3x3, const float3& V)

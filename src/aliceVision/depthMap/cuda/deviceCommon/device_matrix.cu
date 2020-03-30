@@ -20,6 +20,13 @@ __device__ float2 project3DPoint( const float* M3x4, const float3& V)
     return make_float2(p.x / p.z, p.y / p.z);
 }
 
+__device__ float2 __project3DPointf(const float* M3x4, const float3& V)
+{
+    float3 p = M3x4mulV3(M3x4, V);
+    const float rcp_pz =  __fdividef(1.0f, p.z);  //__frcp_rn(p.z);//
+    return make_float2(p.x * rcp_pz, p.y * rcp_pz);
+}
+
 __device__ void M3x3mulM3x3(float* O3x3, const float* A3x3, const float* B3x3)
 {
     O3x3[0] = A3x3[0] * B3x3[0] + A3x3[3] * B3x3[1] + A3x3[6] * B3x3[2];

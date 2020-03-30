@@ -238,9 +238,8 @@ public:
                                               const StaticVector<StaticVector<DepthSim> *>& dataMaps, int nSamplesHalf,
                                               int nDepthsToRefine, float sigma);
 
-    bool optimizeDepthSimMapGradientDescent(StaticVector<DepthSim>& oDepthSimMap,
-                                            const StaticVector<DepthSim>& sgmDepthPixSizeMap,
-                                            const StaticVector<DepthSim>& refinedDepthSimMap,
+    bool optimizeDepthSimMapGradientDescent(PinnedDepthSims& oDepthSimMap, const PinnedDepthSims& sgmDepthPixSizeMap,
+                                            const PinnedDepthSims& refinedDepthSimMap,
                                             int rc, int nSamplesHalf,
                                             int nDepthsToRefine, float sigma, int nIters, int yFrom, int hPart);
 

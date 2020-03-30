@@ -35,7 +35,7 @@ DepthSimMap::~DepthSimMap()
 {
 }
 
- DepthSim getPixelValueInterpolated(const StaticVector<DepthSim>& depthSimMap, float x, float y, int width, int height)
+ DepthSim getPixelValueInterpolated(const StaticVector<DepthSim, PinnedMemoryAllocator<DepthSim>>& depthSimMap, float x, float y, int width, int height)
 {
     // get the image index in the memory
     const float xFloat = x - 0.5;

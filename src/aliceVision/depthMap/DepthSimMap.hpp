@@ -12,6 +12,7 @@
 #include <aliceVision/mvsData/Point3d.hpp>
 #include <aliceVision/mvsData/StaticVector.hpp>
 #include <aliceVision/mvsUtils/MultiViewParams.hpp>
+#include <cuda_runtime.h>
 
 namespace aliceVision {
 namespace depthMap {
@@ -83,6 +84,58 @@ public:
 };
 
 
+template <class T>
+struct PinnedMemoryAllocator
+{
+    typedef T value_type;
+
+    // Default constructor
+    PinnedMemoryAllocator() noexcept {}
+
+    // Converting copy constructor
+    template <class U>
+    PinnedMemoryAllocator(const PinnedMemoryAllocator<U>&) noexcept
+    {
+    }
+
+    template <class U>
+    bool operator==(const PinnedMemoryAllocator<U>&) const noexcept
+    {
+        return true;
+    }
+
+    template <class U>
+    bool operator!=(const PinnedMemoryAllocator<U>&) const noexcept
+    {
+        return false;
+    }
+
+    T* allocate(const size_t n) const
+    {
+        if(n == 0)
+            return nullptr;
+
+        if(n > std::numeric_limits<size_t>::max() / sizeof(T))
+            throw std::bad_array_new_length();
+
+        void* ptr = nullptr;
+        cudaError_t error = cudaMallocHost(&ptr, n * sizeof(T));
+        if(error)
+            throw std::bad_alloc();
+
+        return static_cast<T*>(ptr);
+    }
+
+    void deallocate(T* const ptr, size_t) const
+    {
+        cudaError_t error = cudaFreeHost(ptr);
+        if(error)
+            throw std::runtime_error("[cudaFreeHost] failed");
+    }
+};
+
+typedef StaticVector<DepthSim, PinnedMemoryAllocator<DepthSim>> PinnedDepthSims;
+
 class DepthSimMap
 {
 public:
@@ -90,7 +143,7 @@ public:
     const int _scale;
     const int _step;
     int _rc, _w, _h;
-    StaticVector<DepthSim> _dsm; //< depth similarity map
+    PinnedDepthSims _dsm; //< depth similarity map
 
     DepthSimMap(int rc, mvsUtils::MultiViewParams& mp, int scale, int step);
     ~DepthSimMap();

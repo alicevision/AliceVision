@@ -139,7 +139,7 @@ void RefineRc::refineAndFuseDepthSimMapCUDA(DepthSimMap& out_depthSimMapFused, c
         {
             StaticVector<DepthSim>* dataMapHPart = new StaticVector<DepthSim>();
             dataMapHPart->resize(w11 * hPartHeight);
-            const StaticVector<DepthSim>& dsm = dataMaps[i]->_dsm;
+            const PinnedDepthSims& dsm = dataMaps[i]->_dsm;
 
 #pragma omp parallel for
             for(int y = 0; y < hPartHeight; y++)

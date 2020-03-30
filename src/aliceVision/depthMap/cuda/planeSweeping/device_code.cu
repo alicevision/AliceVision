@@ -57,6 +57,20 @@ __device__ void move3DPointByRcPixSize( int cam_cache_idx,
     p = p + rpv * rcPixSize;
 }
 
+__device__ void move3DPointByRcPixSize(const float3& C, float3& p, float rcPixSize)
+{
+    float3 rpv = p - C;
+    normalize(rpv);
+    p = p + rpv * rcPixSize;
+}
+
+__device__ void __move3DPointByRcPixSize(const float3& C, float3& p, float rcPixSize)
+{
+    float3 rpv = p - C;
+    __normalize(rpv);
+    p = p + rpv * rcPixSize;
+}
+
 __device__ void move3DPointByTcPixStep( int rc_cam_cache_idx,
                                         int tc_cam_cache_idx,
                                         float3& p, float tcPixStep)
@@ -82,9 +96,57 @@ __device__ void move3DPointByTcPixStep( int rc_cam_cache_idx,
     p = triangulateMatchRef(rc_cam_cache_idx, tc_cam_cache_idx, rp, tpd);
 }
 
-__device__ float move3DPointByTcOrRcPixStep(int rc_cam_cache_idx,
-                                            int tc_cam_cache_idx,
-                                            float3& p, float pixStep, bool moveByTcOrRc)
+
+__device__ void move3DPointByTcPixStep(const float* rc_P, const float* rc_iP, const float3 rc_C, const float* tc_P, const float* tc_iP, const float3 tc_C, float3& p, float tcPixStep)
+{
+    float3 rpv = rc_C - p;
+    float3 prp = p;
+    float3 prp1 = p + rpv / 2.0f;
+
+    float2 rp;
+    getPixelFor3DPoint(rc_P, rp, prp);
+
+    float2 tpo;
+    getPixelFor3DPoint(tc_P, tpo, prp);
+
+    float2 tpv;
+    getPixelFor3DPoint(tc_P, tpv, prp1);
+
+    tpv = tpv - tpo;
+    normalize(tpv);
+
+    float2 tpd = tpo + tpv * tcPixStep;
+
+    p = triangulateMatchRef(rc_iP, rc_C, tc_iP, tc_C, rp, tpd);
+}
+
+__device__ void __move3DPointByTcPixStep(const float* rc_P, const float* rc_iP, const float3 rc_C, const float* tc_P,
+    const float* tc_iP, const float3 tc_C, float3& p, float tcPixStep)
+{
+    float3 rpv = rc_C - p;
+    float3 prp = p;
+    float3 prp1 = p + rpv / 2.0f;
+
+    float2 rp;
+    __getPixelFor3DPoint(rc_P, rp, prp);
+
+    float2 tpo;
+    __getPixelFor3DPoint(tc_P, tpo, prp);
+
+    float2 tpv;
+    __getPixelFor3DPoint(tc_P, tpv, prp1);
+
+    tpv = tpv - tpo;
+    __normalize(tpv);
+
+    float2 tpd = tpo + tpv * tcPixStep;
+
+    p = __triangulateMatchRef(rc_iP, rc_C, tc_iP, tc_C, rp, tpd);
+}
+
+__device__ float move3DPointByTcOrRcPixStep( int rc_cam_cache_idx,
+                                             int tc_cam_cache_idx,
+                                             float3& p, float pixStep, bool moveByTcOrRc)
 {
     if(moveByTcOrRc == true)
     {
@@ -99,6 +161,44 @@ __device__ float move3DPointByTcOrRcPixStep(int rc_cam_cache_idx,
         return pixSize;
     }
 }
+
+__device__ float move3DPointByTcOrRcPixStep(const float* rc_P, const float* rc_iP, const float3 rc_C, const float* tc_P,
+    const float* tc_iP, const float3 tc_C, float3& p,
+    float pixStep, bool moveByTcOrRc)
+{
+    if (moveByTcOrRc == true)
+    {
+        move3DPointByTcPixStep(rc_P, rc_iP, rc_C, tc_P,
+            tc_iP, tc_C, p, pixStep);
+        return 0.0f;
+    }
+    else
+    {
+        float pixSize = pixStep * computePixSize(rc_P, rc_iP, rc_C, p);
+        move3DPointByRcPixSize(rc_C, p, pixSize);
+
+        return pixSize;
+    }
+}
+
+__device__ float __move3DPointByTcOrRcPixStep(const float* rc_P, const float* rc_iP, const float3 rc_C, const float* tc_P,
+    const float* tc_iP, const float3 tc_C, float3& p, float pixStep,
+    bool moveByTcOrRc)
+{
+    if (moveByTcOrRc == true)
+    {
+        __move3DPointByTcPixStep(rc_P, rc_iP, rc_C, tc_P, tc_iP, tc_C, p, pixStep);
+        return 0.0f;
+    }
+    else
+    {
+        float pixSize = pixStep * computePixSize(rc_P, rc_iP, rc_C, p);
+        __move3DPointByRcPixSize(rc_C, p, pixSize);
+
+        return pixSize;
+    }
+}
+
 
 __global__ void getSilhoueteMap_kernel(cudaTextureObject_t rc_tex, bool* out, int out_p, int step, int width, int height, const uchar4 maskColorLab)
 {

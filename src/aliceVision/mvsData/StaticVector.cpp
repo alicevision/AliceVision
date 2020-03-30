@@ -10,7 +10,7 @@
 
 namespace aliceVision {
 
-int getArrayLengthFromFile(std::string fileName)
+int getArrayLengthFromFile(const std::string& fileName)
 {
     FILE* f = fopen(fileName.c_str(), "rb");
     if(f == nullptr)

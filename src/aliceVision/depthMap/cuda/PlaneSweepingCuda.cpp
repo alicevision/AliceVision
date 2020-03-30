@@ -133,7 +133,42 @@ void copy(CudaHostMemoryHeap<float2, 2>& outHmh, const StaticVector<DepthSim>& i
     }
 }
 
+void copy(CudaHostMemoryHeap<float2, 2>& outHmh, const PinnedDepthSims& inDepthSimMap, int yFrom)
+{
+    const int w = outHmh.getSize()[0];
+    const int h = outHmh.getSize()[1];
+    for(int y = 0; y < h; ++y)
+    {
+        for(int x = 0; x < w; ++x)
+        {
+            int jO = (y + yFrom) * w + x;
+            float2& h_data = outHmh(x, y);
+            const DepthSim& data = inDepthSimMap[jO];
+            h_data.x = data.depth;
+            h_data.y = data.sim;
+        }
+    }
+}
+
 void copy(StaticVector<DepthSim>& outDepthSimMap, const CudaHostMemoryHeap<float2, 2>& inHmh, int yFrom)
+{
+    const int w = inHmh.getSize()[0];
+    const int h = inHmh.getSize()[1];
+    for (int y = 0; y < h; ++y)
+    {
+        for (int x = 0; x < w; ++x)
+        {
+            int jO = (y + yFrom) * w + x;
+            DepthSim& oDepthSim = outDepthSimMap[jO];
+            const float2& h_depthSim = inHmh(x, y);
+
+            oDepthSim.depth = h_depthSim.x;
+            oDepthSim.sim = h_depthSim.y;
+        }
+    }
+}
+
+void copy(PinnedDepthSims& outDepthSimMap, const CudaHostMemoryHeap<float2, 2>& inHmh, int yFrom)
 {
     const int w = inHmh.getSize()[0];
     const int h = inHmh.getSize()[1];
@@ -932,9 +967,9 @@ bool PlaneSweepingCuda::fuseDepthSimMapsGaussianKernelVoting(int w, int h, Stati
     return true;
 }
 
-bool PlaneSweepingCuda::optimizeDepthSimMapGradientDescent(StaticVector<DepthSim>& oDepthSimMap,
-                                                           const StaticVector<DepthSim>& sgmDepthPixSizeMap,
-                                                           const StaticVector<DepthSim>& refinedDepthSimMap,
+bool PlaneSweepingCuda::optimizeDepthSimMapGradientDescent(PinnedDepthSims& oDepthSimMap,
+                                                           const PinnedDepthSims& sgmDepthPixSizeMap,
+                                                           const PinnedDepthSims& refinedDepthSimMap,
                                                            int rc_global_id,
                                                            int nSamplesHalf, int nDepthsToRefine, float sigma,
                                                            int nIters, int yFrom, int hPart)

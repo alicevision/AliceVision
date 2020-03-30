@@ -537,6 +537,9 @@ void SimilarityVolume::compute(
     ALICEVISION_CU_PRINT_DEBUG("Cell RC: " << rcam.camId << ", TC: " << tcam.camId << ", nb all depths: " << (int)_depths_d.getUnitsTotal() << ", start depth: " << cell.getDepthToStart() << ", nb depths to search: " << cell.getDepthsToSearch());
 
     {
+      const float gammaCInv = 1.0f / gammaC;
+      const float gammaPInv = 1.0f / gammaP;
+
       const int startDepthIndex = cell.getDepthToStart();
       const int nbDepthsToSearch = cell.getDepthsToSearch();
 
@@ -563,6 +566,50 @@ void SimilarityVolume::compute(
       Pyramid& tc_pyramid = *tcam.pyramid;
       cudaTextureObject_t rc_tex = rc_pyramid[PrevScale()].tex;
       cudaTextureObject_t tc_tex = tc_pyramid[PrevScale()].tex;
+
+      switch (wsh)
+      {
+          //case(1):
+          //{
+          //    volume_slice_wsh_kernel<1><<<grid, _block, 0, SweepStream(streamIndex)>>>(
+          //        rc_tex, tc_tex, rcam.param_dev.i, tcam.param_dev.i, _depths_d.getBuffer(), startDepthIndex,
+          //        nbDepthsToSearch, rcWidth / _scale, rcHeight / _scale, tcWidth / _scale, tcHeight / _scale,
+          //        gammaCInv, gammaPInv, gpu_volume_1st, volBestSim_dmp.getBytesPaddedUpToDim(1),
+          //        volBestSim_dmp.getBytesPaddedUpToDim(0), gpu_volume_2nd, volSecBestSim_dmp.getBytesPaddedUpToDim(1),
+          //        volSecBestSim_dmp.getBytesPaddedUpToDim(0), _stepXY, _dimX, _dimY);
+          //    break;
+          //}
+          //case(2):
+          //{
+          //    volume_slice_wsh_kernel<2><<<grid, _block, 0, SweepStream(streamIndex)>>>(
+          //        rc_tex, tc_tex, rcam.param_dev.i, tcam.param_dev.i, _depths_d.getBuffer(), startDepthIndex,
+          //        nbDepthsToSearch, rcWidth / _scale, rcHeight / _scale, tcWidth / _scale, tcHeight / _scale, gammaCInv,
+          //        gammaPInv, gpu_volume_1st, volBestSim_dmp.getBytesPaddedUpToDim(1),
+          //        volBestSim_dmp.getBytesPaddedUpToDim(0), gpu_volume_2nd, volSecBestSim_dmp.getBytesPaddedUpToDim(1),
+          //        volSecBestSim_dmp.getBytesPaddedUpToDim(0), _stepXY, _dimX, _dimY);
+          //    break;
+          //}
+          //case(3):
+          //{
+          //    volume_slice_wsh_kernel<3><<<grid, _block, 0, SweepStream(streamIndex)>>>(
+          //        rc_tex, tc_tex, rcam.param_dev.i, tcam.param_dev.i, _depths_d.getBuffer(), startDepthIndex,
+          //        nbDepthsToSearch, rcWidth / _scale, rcHeight / _scale, tcWidth / _scale, tcHeight / _scale, gammaCInv,
+          //        gammaPInv, gpu_volume_1st, volBestSim_dmp.getBytesPaddedUpToDim(1),
+          //        volBestSim_dmp.getBytesPaddedUpToDim(0), gpu_volume_2nd, volSecBestSim_dmp.getBytesPaddedUpToDim(1),
+          //        volSecBestSim_dmp.getBytesPaddedUpToDim(0), _stepXY, _dimX, _dimY);
+          //    break;
+          //}
+          //case(4):
+          //{
+          //    volume_slice_wsh_kernel<4,1,9><<<grid, _block, 0, SweepStream(streamIndex)>>>(
+          //        rc_tex, tc_tex, rcam.param_dev.i, tcam.param_dev.i, _depths_d.getBuffer(), startDepthIndex,
+          //        nbDepthsToSearch, rcWidth / _scale, rcHeight / _scale, tcWidth / _scale, tcHeight / _scale, gammaCInv,
+          //        gammaPInv, gpu_volume_1st, volBestSim_dmp.getBytesPaddedUpToDim(1),
+          //        volBestSim_dmp.getBytesPaddedUpToDim(0), gpu_volume_2nd, volSecBestSim_dmp.getBytesPaddedUpToDim(1),
+          //        volSecBestSim_dmp.getBytesPaddedUpToDim(0), _stepXY, _dimX, _dimY);
+          //    break;
+          //}
+          default:
       volume_slice_kernel
             <<<grid, _block, 0, SweepStream(streamIndex)>>>
             ( rc_tex,
@@ -575,7 +622,7 @@ void SimilarityVolume::compute(
               rcWidth / _scale, rcHeight / _scale,
               tcWidth / _scale, tcHeight / _scale,
               wsh,
-              gammaC, gammaP,
+              gammaCInv, gammaPInv,
               gpu_volume_1st,
               volBestSim_dmp.getBytesPaddedUpToDim(1),
               volBestSim_dmp.getBytesPaddedUpToDim(0),
@@ -584,6 +631,8 @@ void SimilarityVolume::compute(
               volSecBestSim_dmp.getBytesPaddedUpToDim(0),
               _stepXY,
               _dimX, _dimY);
+
+        }
 
         // cudaDeviceSynchronize();
         // CHECK_CUDA_ERROR();

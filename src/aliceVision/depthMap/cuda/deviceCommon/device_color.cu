@@ -130,8 +130,7 @@ inline __device__ float rgb2gray(const uchar4 c)
  * @param[in] gammaP Strength of Grouping by Proximity          8 / 4
  * @return distance value
  */
-inline __device__ float CostYKfromLab(const int dx, const int dy, const float4 c1, const float4 c2, const float gammaC,
-                                      const float gammaP)
+inline __device__ float CostYKfromLab(const int dx, const int dy, const float4 c1, const float4 c2, const float gammaCInv, const float gammaPInv)
 {
     // const float deltaC = 0; // ignore colour difference
 
@@ -157,28 +156,19 @@ inline __device__ float CostYKfromLab(const int dx, const int dy, const float4 c
     float deltaC = Euclidean3(c1, c2);
     // const float deltaC = fmaxf(fabs(c1.x-c2.x),fmaxf(fabs(c1.y-c2.y),fabs(c1.z-c2.z)));
 
-    deltaC /= gammaC;
+    deltaC *= gammaCInv;
 
     // spatial distance to the center of the patch (in pixels)
-    float deltaP = sqrtf(float(dx * dx + dy * dy));
+    float deltaP = __fsqrt_rn(float(dx * dx + dy * dy));
 
-    deltaP /= gammaP;
+    deltaP *= gammaPInv;
 
     deltaC += deltaP;
 
-    return __expf(-deltaC); // Yoon & Kweon
+    return expf(-deltaC); // Yoon & Kweon
     // return __expf(-(deltaC * deltaC / (2 * gammaC * gammaC))) * sqrtf(__expf(-(deltaP * deltaP / (2 * gammaP * gammaP)))); // DCB
 }
-/*
-inline __device__ float CostYKfromLab(const float4 c1, const float4 c2, const float gammaC)
-{
-    // Euclidean distance in Lab, assuming linear RGB
-    const float deltaC = Euclidean3(c1, c2);
-    // const float deltaC = fmaxf(fabs(c1.x-c2.x),fmaxf(fabs(c1.y-c2.y),fabs(c1.z-c2.z)));
 
-    return __expf(-(deltaC / gammaC)); // Yoon & Kweon
-}
-*/
 __global__ void rgb2lab_kernel(CudaRGBA* irgbaOlab, int irgbaOlab_p, int width, int height)
 {
     int x = blockIdx.x * blockDim.x + threadIdx.x;

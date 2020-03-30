@@ -43,6 +43,54 @@ __device__ void computeRotCSEpip( int rc_cam_cache_idx,
     normalize(ptch.x);
 }
 
+__device__ void computeRotCSEpip(const float3& rc_C, const float3& tc_C, Patch& ptch)
+{
+    // Vector from the reference camera to the 3d point
+    float3 v1 = rc_C - ptch.p;
+    // Vector from the target camera to the 3d point
+    float3 v2 = tc_C - ptch.p;
+    normalize(v1);
+    normalize(v2);
+
+    // y has to be ortogonal to the epipolar plane
+    // n has to be on the epipolar plane
+    // x has to be on the epipolar plane
+
+    ptch.y = cross(v1, v2);
+    normalize(ptch.y);
+
+    ptch.n = (v1 + v2) / 2.0f; // IMPORTANT !!!
+    normalize(ptch.n);
+    // ptch.n = sg_s_r.ZVect; //IMPORTANT !!!
+
+    ptch.x = cross(ptch.y, ptch.n);
+    normalize(ptch.x);
+}
+
+__device__ void __computeRotCSEpip(const float3& rc_C, const float3& tc_C, Patch& ptch)
+{
+    // Vector from the reference camera to the 3d point
+    float3 v1 = rc_C - ptch.p;
+    // Vector from the target camera to the 3d point
+    float3 v2 = tc_C - ptch.p;
+    __normalize(v1);
+    __normalize(v2);
+
+    // y has to be ortogonal to the epipolar plane
+    // n has to be on the epipolar plane
+    // x has to be on the epipolar plane
+
+    ptch.y = cross(v1, v2);
+    //__normalize(ptch.y); // Not necessary since v1 and v2 are normalized!
+
+    ptch.n = (v1 + v2) / 2.0f; // IMPORTANT !!!
+    __normalize(ptch.n);
+    // ptch.n = sg_s_r.ZVect; //IMPORTANT !!!
+
+    ptch.x = cross(ptch.y, ptch.n);
+   // __normalize(ptch.x);  // Not necessary since ptch.y and ptch.n are normalized!
+}
+
 __device__ int angleBetwUnitV1andUnitV2(float3& V1, float3& V2)
 {
     return (int)fabs(acos(V1.x * V2.x + V1.y * V2.y + V1.z * V2.z) / (CUDART_PI_F / 180.0f));
@@ -173,28 +221,17 @@ __device__ float compNCCbyH(const CameraStructBase& rc_cam, const CameraStructBa
  * @return similarity value
  *         or invalid similarity (CUDART_INF_F) if uninitialized or masked
  */
-__device__ float compNCCby3DptsYK( cudaTextureObject_t rc_tex,
-                                   cudaTextureObject_t tc_tex,
-                                   int rc_cam_cache_idx,
-                                   int tc_cam_cache_idx,
-                                   const Patch& ptch,
-                                   int wsh,
-                                   int rc_width, int rc_height,
-                                   int tc_width, int tc_height,
-                                   const float _gammaC, const float _gammaP)
+__device__ float compNCCby3DptsYK(cudaTextureObject_t rc_tex, cudaTextureObject_t tc_tex, const float* rc_P,
+    const float* tc_P, const Patch& ptch, int wsh, int rc_width, int rc_height,
+                                  int tc_width, int tc_height, const float _gammaCInv, const float _gammaPInv)
 {
-    const CameraStructBase& rcCam = camsBasesDev[rc_cam_cache_idx];
-    const CameraStructBase& tcCam = camsBasesDev[tc_cam_cache_idx];
-
     float3 p = ptch.p;
-    float2 rp = project3DPoint(rcCam.P, p);
-    float2 tp = project3DPoint(tcCam.P, p);
+    float2 rp = project3DPoint(rc_P, p);
+    float2 tp = project3DPoint(tc_P, p);
 
     const float dd = wsh + 2.0f; // TODO FACA
-    if((rp.x < dd) || (rp.x > (float)(rc_width  - 1) - dd) ||
-       (rp.y < dd) || (rp.y > (float)(rc_height - 1) - dd) ||
-       (tp.x < dd) || (tp.x > (float)(tc_width  - 1) - dd) ||
-       (tp.y < dd) || (tp.y > (float)(tc_height - 1) - dd))
+    if ((rp.x < dd) || (rp.x >(float)(rc_width - 1) - dd) || (rp.y < dd) || (rp.y >(float)(rc_height - 1) - dd) ||
+        (tp.x < dd) || (tp.x >(float)(tc_width - 1) - dd) || (tp.y < dd) || (tp.y >(float)(tc_height - 1) - dd))
     {
         return CUDART_INF_F; // uninitialized
     }
@@ -210,19 +247,19 @@ __device__ float compNCCby3DptsYK( cudaTextureObject_t rc_tex,
     if (gcr.w == 0.0f || gct.w == 0.0f)
         return CUDART_INF_F; // if no alpha, invalid pixel from input mask
 
-    float gammaC = _gammaC;
+    float gammaCInv = _gammaCInv;
     // float gammaC = ((gcr.w>0)||(gct.w>0))?sigmoid(_gammaC,25.5f,20.0f,10.0f,fmaxf(gcr.w,gct.w)):_gammaC;
     // float gammaP = ((gcr.w>0)||(gct.w>0))?sigmoid(1.5,(float)(wsh+3),30.0f,20.0f,fmaxf(gcr.w,gct.w)):_gammaP;
-    float gammaP = _gammaP;
+    float gammaPInv = _gammaPInv;
 
     simStat sst;
-    for(int yp = -wsh; yp <= wsh; yp++)
+    for (int yp = -wsh; yp <= wsh; yp++)
     {
-        for(int xp = -wsh; xp <= wsh; xp++)
+        for (int xp = -wsh; xp <= wsh; xp++)
         {
             p = ptch.p + ptch.x * (float)(ptch.d * (float)xp) + ptch.y * (float)(ptch.d * (float)yp);
-            float2 rp1 = project3DPoint(rcCam.P, p);
-            float2 tp1 = project3DPoint(tcCam.P, p);
+            float2 rp1 = project3DPoint(rc_P, p);
+            float2 tp1 = project3DPoint(tc_P, p);
 
             // see CUDA_C_Programming_Guide.pdf ... E.2 pp132-133 ... adding 0.5 caises that tex2D return for point i,j
             // exactly value od I(i,j) ... it is what we want
@@ -235,18 +272,99 @@ __device__ float compNCCby3DptsYK( cudaTextureObject_t rc_tex,
 
             // Weighting is based on:
             //  * color difference to the center pixel of the patch:
-            //    ** low value (close to 0) means that the color is different from the center pixel (ie. strongly supported surface)
+            //    ** low value (close to 0) means that the color is different from the center pixel (ie. strongly
+            //    supported surface)
             //    ** high value (close to 1) means that the color is close the center pixel (ie. uniform color)
             //  * distance in image to the center pixel of the patch:
             //    ** low value (close to 0) means that the pixel is close to the center of the patch
             //    ** high value (close to 1) means that the pixel is far from the center of the patch
-            float w = CostYKfromLab(xp, yp, gcr, gcr1, gammaC, gammaP) * CostYKfromLab(xp, yp, gct, gct1, gammaC, gammaP);
+            float w =
+                CostYKfromLab(xp, yp, gcr, gcr1, gammaCInv, gammaPInv) * CostYKfromLab(xp, yp, gct, gct1, gammaCInv, gammaPInv);
             assert(w >= 0.f);
             assert(w <= 1.f);
             sst.update(gcr1.x, gct1.x, w);
         }
     }
     return sst.computeWSim();
+}
+
+__device__ float compNCCby3DptsYK(cudaTextureObject_t rc_tex, cudaTextureObject_t tc_tex, int rc_cam_cache_idx,
+                                  int tc_cam_cache_idx, const Patch& ptch, int wsh, int rc_width, int rc_height,
+                                  int tc_width, int tc_height, const float _gammaCInv, const float _gammaPInv)
+{
+    const CameraStructBase& rcCam = camsBasesDev[rc_cam_cache_idx];
+    const CameraStructBase& tcCam = camsBasesDev[tc_cam_cache_idx];
+
+    return compNCCby3DptsYK(rc_tex, tc_tex, rcCam.P, tcCam.P, ptch, wsh, rc_width, rc_height, tc_width, tc_height,
+                            _gammaCInv, _gammaPInv);
+}
+
+template<int WSH, int UNROLL_Y, int UNROLL_X>
+__device__ float compNCCby3DptsYK_WSH(cudaTextureObject_t rc_tex, cudaTextureObject_t tc_tex, int rc_cam_cache_idx,
+                                        int tc_cam_cache_idx, const Patch& ptch, int rc_width, int rc_height,
+                                        int tc_width, int tc_height, const float _gammaCInv, const float _gammaPInv)
+{
+    const CameraStructBase& rcCam = camsBasesDev[rc_cam_cache_idx];
+    const CameraStructBase& tcCam = camsBasesDev[tc_cam_cache_idx];
+
+    float3 p = ptch.p;
+    float2 rp = __project3DPointf(rcCam.P, p);
+    float2 tp = __project3DPointf(tcCam.P, p);
+
+    const float dd = WSH + 2.0f; // TODO FACA
+    if((rp.x < dd) || (rp.x > (float)(rc_width - 1) - dd) || (rp.y < dd) || (rp.y > (float)(rc_height - 1) - dd) ||
+       (tp.x < dd) || (tp.x > (float)(tc_width - 1) - dd) || (tp.y < dd) || (tp.y > (float)(tc_height - 1) - dd))
+    {
+        return 1.0f;
+    }
+
+    // see CUDA_C_Programming_Guide.pdf ... E.2 pp132-133 ... adding 0.5 caises that tex2D return for point i,j exactly
+    // value od I(i,j) ... it is what we want
+    float4 gcr = tex2D_float4(rc_tex, rp.x + 0.5f, rp.y + 0.5f);
+    float4 gct = tex2D_float4(tc_tex, tp.x + 0.5f, tp.y + 0.5f);
+
+    // printf("gcr: R: %f, G: %f, B: %f, A: %f", gcr.x, gcr.y, gcr.z, gcr.w);
+    // printf("gct: R: %f, G: %f, B: %f, A: %f", gct.x, gct.y, gct.z, gct.w);
+
+    if(gcr.w == 0.0f || gct.w == 0.0f)
+        return 1.0f; // if no alpha, invalid pixel from input mask
+
+    simStat sst;
+#pragma unroll UNROLL_Y
+    for(int yp = -WSH; yp <= WSH; ++yp)
+    {
+#pragma unroll UNROLL_X
+        for(int xp = -WSH; xp <= WSH; ++xp)
+        {
+            p = ptch.p + ptch.x * (float)(ptch.d * (float)xp) + ptch.y * (float)(ptch.d * (float)yp);
+            float2 rp1 = __project3DPointf(rcCam.P, p);
+            float2 tp1 = __project3DPointf(tcCam.P, p);
+
+            // see CUDA_C_Programming_Guide.pdf ... E.2 pp132-133 ... adding 0.5 caises that tex2D return for point i,j
+            // exactly value od I(i,j) ... it is what we want
+            float4 gcr1 = tex2D_float4(rc_tex, rp1.x + 0.5f, rp1.y + 0.5f);
+            float4 gct1 = tex2D_float4(tc_tex, tp1.x + 0.5f, tp1.y + 0.5f);
+
+            // TODO: Does it make a difference to accurately test it for each pixel of the patch?
+            // if (gcr1.w == 0.0f || gct1.w == 0.0f)
+            //     continue;
+
+            // Weighting is based on:
+            //  * color difference to the center pixel of the patch:
+            //    ** low value (close to 0) means that the color is different from the center pixel (ie. strongly
+            //    supported surface)
+            //    ** high value (close to 1) means that the color is close the center pixel (ie. uniform color)
+            //  * distance in image to the center pixel of the patch:
+            //    ** low value (close to 0) means that the pixel is close to the center of the patch
+            //    ** high value (close to 1) means that the pixel is far from the center of the patch
+            float w =
+                CostYKfromLab(xp, yp, gcr, gcr1, _gammaCInv, _gammaPInv) * CostYKfromLab(xp, yp, gct, gct1, _gammaCInv, _gammaPInv);
+            assert(w >= 0.f);
+            assert(w <= 1.f);
+            sst.update(gcr1.x, gct1.x, w);
+        }
+    }
+    return sst.__computeWSim();
 }
 
 
@@ -263,6 +381,31 @@ __device__ void getPixelFor3DPoint( int cam_cache_idx,
     else
     {
         out = make_float2(p.x / p.z, p.y / p.z);
+    }
+}
+
+
+__device__ void getPixelFor3DPoint(const float* P, float2& out, float3& X)
+{
+    float3 p = M3x4mulV3(P, X);
+    out = make_float2(p.x / p.z, p.y / p.z);
+
+    if (p.z < 0.0f)
+    {
+        out.x = -1.0f;
+        out.y = -1.0f;
+    }
+}
+
+__device__ void __getPixelFor3DPoint(const float* P, float2& out, float3& X)
+{
+    float3 p = M3x4mulV3(P, X);
+    out = make_float2(__fdividef(p.x, p.z), __fdividef(p.y, p.z));
+
+    if (p.z < 0.0f)
+    {
+        out.x = -1.0f;
+        out.y = -1.0f;
     }
 }
 
@@ -299,6 +442,29 @@ __device__ float3 get3DPointForPixelAndDepthFromRC( int cam_cache_idx,
     return cam.C + rpv * depth;
 }
 
+__device__ float3 __get3DPointForPixelAndDepthFromRC(int cam_cache_idx,
+    const float2& pix, float depth)
+{
+    const CameraStructBase& cam = camsBasesDev[cam_cache_idx];
+    float3 rpv = M3x3mulV2(cam.iP, pix);
+    __normalize(rpv);
+    return cam.C + rpv * depth;
+}
+
+__device__ float3 get3DPointForPixelAndDepthFromRC(const float* iP, const float3 C, const float2& pix, float depth)
+{
+    float3 rpv = M3x3mulV2(iP, pix);
+    normalize(rpv);
+    return C + rpv * depth;
+}
+
+__device__ float3 __get3DPointForPixelAndDepthFromRC(const float* iP, const float3 C, const float2& pix, float depth)
+{
+    float3 rpv = M3x3mulV2(iP, pix);
+    __normalize(rpv);
+    return C + rpv * depth;
+}
+
 __device__ float3 get3DPointForPixelAndDepthFromRC( int cam_cache_idx,
                                                     const int2& pixi, float depth)
 {
@@ -306,6 +472,22 @@ __device__ float3 get3DPointForPixelAndDepthFromRC( int cam_cache_idx,
     pix.x = (float)pixi.x;
     pix.y = (float)pixi.y;
     return get3DPointForPixelAndDepthFromRC(cam_cache_idx, pix, depth);
+}
+
+__device__ float3 get3DPointForPixelAndDepthFromRC(const float* iP, const float3 C, const int2& pixi, float depth)
+{
+    float2 pix;
+    pix.x = (float)pixi.x;
+    pix.y = (float)pixi.y;
+    return get3DPointForPixelAndDepthFromRC(iP, C, pix, depth);
+}
+
+__device__ float3 __get3DPointForPixelAndDepthFromRC(const float* iP, const float3 C, const int2& pixi, float depth)
+{
+    float2 pix;
+    pix.x = (float)pixi.x;
+    pix.y = (float)pixi.y;
+    return get3DPointForPixelAndDepthFromRC(iP, C, pix, depth);
 }
 
 __device__ float3 triangulateMatchRef( int rc_cam_cache_idx,
@@ -334,6 +516,47 @@ __device__ float3 triangulateMatchRef( int rc_cam_cache_idx,
     return rcCam.C + refvect * k;
 }
 
+
+
+__device__ float3 triangulateMatchRef(const float* rc_iP, const float3 rc_C, const float* tc_iP, const float3 tc_C,
+    float2& refpix, float2& tarpix)
+{
+    float3 refvect = M3x3mulV2(rc_iP, refpix);
+    normalize(refvect);
+    float3 refpoint = refvect + rc_C;
+
+    float3 tarvect = M3x3mulV2(tc_iP, tarpix);
+    normalize(tarvect);
+    float3 tarpoint = tarvect + tc_C;
+
+    float k, l;
+    float3 lli1, lli2;
+
+    lineLineIntersect(&k, &l, &lli1, &lli2, rc_C, refpoint,
+        tc_C, tarpoint);
+
+    return rc_C + refvect * k;
+}
+
+__device__ float3 __triangulateMatchRef(const float* rc_iP, const float3 rc_C, const float* tc_iP, const float3 tc_C,
+    float2& refpix, float2& tarpix)
+{
+    float3 refvect = M3x3mulV2(rc_iP, refpix);
+    __normalize(refvect);
+    float3 refpoint = refvect + rc_C;
+
+    float3 tarvect = M3x3mulV2(tc_iP, tarpix);
+    __normalize(tarvect);
+    float3 tarpoint = tarvect + tc_C;
+
+    float k, l;
+    float3 lli1, lli2;
+
+    lineLineIntersect(&k, &l, &lli1, &lli2, rc_C, refpoint, tc_C, tarpoint);
+
+    return rc_C + refvect * k;
+}
+
 __device__ float computePixSize( int cam_cache_idx,
                                  const float3& p)
 {
@@ -344,6 +567,26 @@ __device__ float computePixSize( int cam_cache_idx,
     float3 refvect = M3x3mulV2(cam.iP, rp1);
     normalize(refvect);
     return pointLineDistance3D(p, cam.C, refvect);
+}
+
+__device__ float computePixSize(const float* P, const float* iP, const float3 C, const float3& p)
+{
+    float2 rp = project3DPoint(P, p);
+    float2 rp1 = rp + make_float2(1.0f, 0.0f);
+
+    float3 refvect = M3x3mulV2(iP, rp1);
+    normalize(refvect);
+    return pointLineDistance3D(p, C, refvect);
+}
+
+__device__ float __computePixSize(const float* P, const float* iP, const float3 C, const float3& p)
+{
+    float2 rp = __project3DPointf(P, p);
+    float2 rp1 = rp + make_float2(1.0f, 0.0f);
+
+    float3 refvect = M3x3mulV2(iP, rp1);
+    __normalize(refvect);
+    return pointLineDistance3D(p, C, refvect);
 }
 
 __device__ float refineDepthSubPixel(const float3& depths, const float3& sims)

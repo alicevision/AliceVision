@@ -223,7 +223,7 @@ __global__ void fuse_optimizeDepthSimMap_kernel(cudaTextureObject_t rc_tex,
 
         // if depthEnergy > weightedColorVariance   => energyLowerThanVarianceWeight=0 => smooth
         // else:                                    => energyLowerThanVarianceWeight=1 => use fineDM
-        // weightedColorVariance max value is 30, so if depthEnergy > 30 (which means depthAngle < 150°) energyLowerThanVarianceWeight will be 0
+        // weightedColorVariance max value is 30, so if depthEnergy > 30 (which means depthAngle < 150) energyLowerThanVarianceWeight will be 0
         // https://www.desmos.com/calculator/jzbweilb85
         const float energyLowerThanVarianceWeight = sigmoid(0.0f, 1.0f, 30.0f, weightedColorVariance, depthEnergy); // TODO: 30 => 60
 
