@@ -591,16 +591,9 @@ inline double distance(double a, double b)
   return a1 * sqrt(2.0);
 }
 
-
-inline double scalar_product(const Eigen::VectorXd & x, const Eigen::VectorXd & y)
+inline double scalar_product(const Eigen::VectorXd& x, const Eigen::VectorXd& y)
 {
-  int i, n = x.size();
-  double sum;
-	
-  sum = 0.0;
-  for (i = 0; i < n; i++)
-    sum += x[i] * y[i];
-  return sum;			
+    return x.dot(y);
 }
 
 void cholesky_decomposition(Eigen::MatrixXd & A) 
