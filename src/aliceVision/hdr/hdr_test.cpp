@@ -20,22 +20,28 @@ using namespace aliceVision;
 
 bool buildBrackets(std::vector<std::string> & paths, std::vector<float> & times, const hdr::rgbCurve & gt_response) {
   
-  
-  times = {1.0 / 8000.0, 1.0 / 1600.0, 1.0 / 320.0, 1.0 / 60.0, 1.0/ 13.0, 1.0 / 4.0,  0.8};
+
+  times = {0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0};
   
   std::default_random_engine generator;
   std::uniform_real_distribution<float> distribution(0.0f, 1.0f);
 
   /* Generate a random image */
-  image::Image<image::RGBfColor> img(512, 512, true, image::RGBfColor(0.0f));
+  image::Image<image::RGBfColor> img(128, 128, true, image::RGBfColor(0.0f));
+  int val = 0;
   for (int i = 0; i < img.Height(); i++) {
     for (int j = 0; j < img.Width(); j++) {
-      float r = distribution(generator);
-      float g = distribution(generator);
-      float b = distribution(generator);
+      float r = val / 1023.0;
+      float g = val / 1023.0;
+      float b = val / 1023.0;
       img(i, j) = image::RGBfColor(r, g, b);
+      val++;
+      if (val > 1023) {
+        val = 0;
+      }
     }
   }
+
 
   for (double time : times) {
     image::Image<image::RGBfColor> img_bracket(img.Width(), img.Height());
@@ -108,20 +114,21 @@ BOOST_AUTO_TEST_CASE(hdr_laguerre)
     double ratioExposures = times[imageId] / times[imageId + 1];
 
     bool relatively_similar = true;
+    double max_diff = 0.0;
     for (int i = 0; i < imgA.Height(); i++) {
       for (int j = 0; j < imgA.Width(); j++) {
         image::RGBfColor Ba = imgA(i, j);
         image::RGBfColor Bb = imgB(i, j);
         for (int k = 0; k < 3; k++) {
           double diff = std::abs(response(Ba(k), k) - ratioExposures * response(Bb(k), k));
+          max_diff = std::max(diff, max_diff);
             
-          if (diff > 1e-3) {
+          if (diff > 5e-3) {
             relatively_similar = false;
           }
         }
       } 
     }
-
     BOOST_CHECK(relatively_similar);
   }
 }
@@ -156,9 +163,9 @@ BOOST_AUTO_TEST_CASE(hdr_debevec)
   hdr::rgbCurve calibrationWeight(quantization);
 
   calibrationWeight.setTriangular();
-  calib.process(all_paths, quantization, exposures, 10000, 2.0, false, calibrationWeight, 0.01, response);
+  calib.process(all_paths, quantization, exposures, 60000, 1.0, false, calibrationWeight, 0.01, response);
   response.exponential();
-  response.scale();
+  response.scaleChannelWise();
 
   for (int imageId = 0; imageId < paths.size() - 1; imageId++) {
     image::Image<image::RGBfColor> imgA, imgB;
@@ -168,22 +175,24 @@ BOOST_AUTO_TEST_CASE(hdr_debevec)
     BOOST_CHECK(imgA.size() == imgB.size());
     double ratioExposures = times[imageId] / times[imageId + 1];
 
+    double max_diff = 0.0;
     bool relatively_similar = true;
     for (int i = 0; i < imgA.Height(); i++) {
       for (int j = 0; j < imgA.Width(); j++) {
         image::RGBfColor Ba = imgA(i, j);
         image::RGBfColor Bb = imgB(i, j);
-        for (int k = 0; k < 1; k++) {
+        for (int k = 0; k < 3; k++) {
           double diff = std::abs(response(Ba(k), k) - ratioExposures * response(Bb(k), k));
-            
+          max_diff = std::max(diff, max_diff);
+
           if (diff > 5e-3) {
-            std::cout << diff << " " << k << " " << i << " " << j << " " << Ba(k) << " " << Bb(k) << " " << ratioExposures << " " << imageId << std::endl;
             relatively_similar = false;
           }
         }
       }
     }
 
+    std::cout << max_diff << std::endl;
     BOOST_CHECK(relatively_similar);
   }
 }
@@ -227,7 +236,7 @@ BOOST_AUTO_TEST_CASE(hdr_grossberg)
 
   hdr::GrossbergCalibrate calib(9);
   hdr::rgbCurve response(quantization);
-  const size_t nbPoints = 100000;
+  const size_t nbPoints = 400000;
   calib.process(all_paths, quantization, exposures, nbPoints, false, response);
 
   for (int imageId = 0; imageId < paths.size() - 1; imageId++) {
@@ -240,6 +249,7 @@ BOOST_AUTO_TEST_CASE(hdr_grossberg)
     double ratioExposures = times[imageId] / times[imageId + 1];
 
     bool relatively_similar = true;
+    double max_diff = 0.0;
     for (int i = 0; i < imgA.Height(); i++) {
       for (int j = 0; j < imgA.Width(); j++) {
 
@@ -252,16 +262,16 @@ BOOST_AUTO_TEST_CASE(hdr_grossberg)
           float valB = Bb(k);
 
           double diff = std::abs(response(valA, k) - ratioExposures * response(valB, k));
+          max_diff = std::max(diff, max_diff);
           
           if (diff > 5e-3) {
-            std::cout << diff << " " << k << " " << i << " " << j << " " << valA << " " << valB << " " << ratioExposures << " " << imageId << std::endl;
-            
             relatively_similar = false;
           }
         }
       }
     }
 
+    std::cout << max_diff << std::endl;
     BOOST_CHECK(relatively_similar);
   }
 }

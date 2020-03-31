@@ -370,6 +370,18 @@ void rgbCurve::scale()
             value = (value - minTot) / (maxTot - minTot);
 }
 
+void rgbCurve::scaleChannelWise()
+{
+    for(auto &curve : _data)
+    {
+        float minV = *std::min_element(curve.begin(), curve.end());
+        float maxV = *std::max_element(curve.begin(), curve.end());
+        for(auto &value : curve) {
+            value = (value - minV) / (maxV - minV);
+        }
+    }       
+}
+
 void rgbCurve::interpolateMissingValues()
 {
     for(auto &curve : _data)

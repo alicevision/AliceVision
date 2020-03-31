@@ -17,21 +17,13 @@ namespace hdr {
 
 using namespace aliceVision::image;
 
-void extractSamples(
-    std::vector<std::vector<ImageSamples>>& out_samples,
-    const std::vector<std::vector<std::string>>& imagePathsGroups,
-    const std::vector< std::vector<float> >& cameraExposures,
-    int nbPoints,
-    int calibrationDownscale,
-    bool fisheye
-    )
+void extractSamples(std::vector<std::vector<ImageSamples>>& out_samples, const std::vector<std::vector<std::string>>& imagePathsGroups, const std::vector< std::vector<float> >& cameraExposures, int nbPoints, int calibrationDownscale, bool fisheye)
 {
     const int nbGroups = imagePathsGroups.size();
     out_samples.resize(nbGroups);
 
     int averallNbImages = 0;
-    for (const auto& imgPaths : imagePathsGroups)
-    {
+    for (const auto& imgPaths : imagePathsGroups) {
         averallNbImages += imgPaths.size();
     }
     const int samplesPerImage = nbPoints / averallNbImages;
@@ -54,8 +46,16 @@ void extractSamples(
             out_hdrSamples[i].colors.reserve(samplesPerImage);
             std::vector<Rgb<double>> & colors = out_hdrSamples[i].colors;
 
+
+            /**
+             * Load image
+            */
             Image<RGBfColor> img;
             readImage(imagePaths[i], img, EImageColorSpace::LINEAR);
+
+            /**
+             * Resize image 
+             */
             if (calibrationDownscale != 1.0f)
             {
                 unsigned int w = img.Width();
@@ -81,31 +81,52 @@ void extractSamples(
             const std::size_t width = img.Width();
             const std::size_t height = img.Height();
 
-            const std::size_t minSize = std::min(width, height) * 0.97;
-            const Vec2i center(width / 2, height / 2);
+            if (!fisheye) {
 
-            const int xMin = std::ceil(center(0) - minSize / 2);
-            const int yMin = std::ceil(center(1) - minSize / 2);
-            const int xMax = std::floor(center(0) + minSize / 2);
-            const int yMax = std::floor(center(1) + minSize / 2);
-            const std::size_t maxDist2 = pow(minSize * 0.5, 2);
+                double dwidth = double(width);
+                double dheight = double(height);
 
-            const int step = std::ceil(minSize / sqrt(samplesPerImage));
+                double ratio = dwidth / dheight;
+                double countWidth = sqrt(double(samplesPerImage)) * ratio;
+                double countHeight = sqrt(double(samplesPerImage)) / ratio;
 
-            // extract samples
-            for (int y = yMin; y <= yMax - step; y += step)
-            {
-                for (int x = xMin; x <= xMax - step; x += step)
-                {
-                    if (fisheye)
-                    {
-                        std::size_t dist2 = pow(center(0) - x, 2) + pow(center(1) - y, 2);
-                        if (dist2 > maxDist2)
-                            continue;
+                
+                int stepHeight = std::floor(dheight / countHeight);
+                if (stepHeight < 1) stepHeight = 1;
+                int stepWidth = std::floor(dwidth / countWidth);
+                if (stepWidth < 1) stepWidth = 1;
+
+                for (int y = 0; y < height; y += stepHeight) {
+                    for (int x = 0; x < width; x += stepWidth) {
+
+                        RGBfColor& c = img(y, x);
+                        colors.push_back(Rgb<double>(c.r(), c.g(), c.b()));
                     }
-                    RGBfColor& c = img(y, x);
+                }     
+            }
+            else {
+                const std::size_t minSize = std::min(width, height) * 0.97;
+                const Vec2i center(width / 2, height / 2);
 
-                    colors.push_back(Rgb<double>(c.r(), c.g(), c.b()));
+                const int xMin = std::ceil(center(0) - minSize / 2);
+                const int yMin = std::ceil(center(1) - minSize / 2);
+                const int xMax = std::floor(center(0) + minSize / 2);
+                const int yMax = std::floor(center(1) + minSize / 2);
+                const std::size_t maxDist2 = pow(minSize * 0.5, 2);
+                const int step = std::ceil(minSize / sqrt(samplesPerImage));
+
+                // extract samples
+                for (int y = yMin; y <= yMax - step; y += step) {
+                    for (int x = xMin; x <= xMax - step; x += step) {
+                        std::size_t dist2 = pow(center(0) - x, 2) + pow(center(1) - y, 2);
+                        if (dist2 > maxDist2) {
+                            continue;
+                        }
+                        
+                        RGBfColor& c = img(y, x);
+
+                        colors.push_back(Rgb<double>(c.r(), c.g(), c.b()));
+                    }
                 }
             }
         }
