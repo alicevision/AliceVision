@@ -134,9 +134,7 @@ public:
     const double d_radius_d_angle_Z = 1.0 / (0.5 * fov);
 
     /* radius = focal * angle_Z */
-    Vec2 P;
-    P(0) = cos(angle_radial) * radius;
-    P(1) = sin(angle_radial) * radius;
+    const Vec2 P{cos(angle_radial) * radius, sin(angle_radial) * radius};
 
     Eigen::Matrix<double, 2, 2> d_P_d_angles;
     d_P_d_angles(0, 0) = - sin(angle_radial) * radius;
@@ -183,9 +181,7 @@ public:
     double d_radius_d_angle_Z = 1.0 / (0.5 * fov);
 
     /* radius = focal * angle_Z */
-    Vec2 P;
-    P(0) = cos(angle_radial) * radius;
-    P(1) = sin(angle_radial) * radius;
+    const Vec2 P{cos(angle_radial) * radius, sin(angle_radial) * radius};
 
     Eigen::Matrix<double, 2, 2> d_P_d_angles;
     d_P_d_angles(0, 0) = - sin(angle_radial) * radius;
@@ -214,9 +210,7 @@ public:
     const double radius = angle_Z / (0.5 * fov);
 
     /* radius = focal * angle_Z */
-    Vec2 P;
-    P(0) = cos(angle_radial) * radius;
-    P(1) = sin(angle_radial) * radius;
+    const Vec2 P{cos(angle_radial) * radius, sin(angle_radial) * radius};
 
     return getDerivativeCam2ImaWrtPoint() * getDerivativeAddDistoWrtDisto(P);
   }
@@ -239,9 +233,7 @@ public:
     const double radius = angle_Z / (0.5 * fov);
 
     /* radius = focal * angle_Z */
-    Vec2 P;
-    P(0) = cos(angle_radial) * radius;
-    P(1) = sin(angle_radial) * radius;
+    const Vec2 P{cos(angle_radial) * radius, sin(angle_radial) * radius};
 
     Eigen::Matrix<double, 2, 1> d_P_d_radius;
     d_P_d_radius(0, 0) = cos(angle_radial);
@@ -271,10 +263,9 @@ public:
     const double angle_radial = atan2(pt(1), pt(0));
     const double angle_Z = pt.norm() * 0.5 * fov;
 
-    Vec3 ret;
-    ret(0) = cos(angle_radial) /** / 1.0 / **/ * sin(angle_Z);
-    ret(1) = sin(angle_radial) /** / 1.0 / **/ * sin(angle_Z);
-    ret(2) = cos(angle_Z);
+    const Vec3 ret{cos(angle_radial) /** / 1.0 / **/ * sin(angle_Z),
+                   sin(angle_radial) /** / 1.0 / **/ * sin(angle_Z),
+                   cos(angle_Z)};
 
     return ret;
   }
