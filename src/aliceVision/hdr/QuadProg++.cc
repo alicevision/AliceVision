@@ -86,11 +86,8 @@ double solve_quadprog(Eigen::MatrixXd & G, Eigen::VectorXd & g0,
   Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> R(n, n), J(n, n);
   Eigen::VectorXd s(m + p), z(n), r(m + p), d(n), np(n), u(m + p), x_old(n), u_old(m + p);
   double f_value, psi, c1, c2, sum, ss, R_norm;
-  double inf;
-  if (std::numeric_limits<double>::has_infinity)
-    inf = std::numeric_limits<double>::infinity();
-  else
-    inf = 1.0E300;
+  const double inf = std::numeric_limits<double>::infinity();
+
   double t, t1, t2; /* t is the step lenght, which is the minimum of the partial step length t1 
     * and the full step length t2 */
   
