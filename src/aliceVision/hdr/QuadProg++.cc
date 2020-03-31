@@ -495,19 +495,20 @@ void delete_constraint(Eigen::MatrixXd & R, Eigen::MatrixXd & J, Eigen::VectorXi
 #ifdef TRACE_SOLVER
   std::cout << "Delete constraint " << l << ' ' << iq;
 #endif
-  unsigned int i, j, k, qq = 0; // just to prevent warnings from smart compilers
+  Eigen::Index qq{0};
   double cc, ss, h, xny, t1, t2;
 
   bool found = false;
   /* Find the index qq for active constraint l to be removed */
-  for (i = p; i < iq; i++)
+  for(Eigen::Index i = p; i < iq; ++i)
+  {
     if (A[i] == l)
     {
       qq = i;
       found = true;
       break;
     }
-
+  }
   if(!found)
   {
     std::ostringstream os;
@@ -515,20 +516,24 @@ void delete_constraint(Eigen::MatrixXd & R, Eigen::MatrixXd & J, Eigen::VectorXi
     throw std::invalid_argument(os.str());
   }
   /* remove the constraint from the active set and the duals */
-  for (i = qq; i < iq - 1; i++)
+    for(Eigen::Index i = qq; i < iq - 1; ++i)
     {
       A[i] = A[i + 1];
       u[i] = u[i + 1];
-      for (j = 0; j < n; j++)
-        R(j, i) = R(j, i + 1);
+      for(Eigen::Index j = 0; j < n; ++j)
+      {
+          R(j, i) = R(j, i + 1);
+      }
     }
       
   A[iq - 1] = A[iq];
   u[iq - 1] = u[iq];
   A[iq] = 0; 
   u[iq] = 0.0;
-  for (j = 0; j < iq; j++)
-    R(j, iq - 1) = 0.0;
+  for(Eigen::Index j = 0; j < iq; ++j)
+  {
+      R(j, iq - 1) = 0.0;
+  }
   /* constraint has been fully removed */
   iq--;
 #ifdef TRACE_SOLVER
@@ -537,8 +542,8 @@ void delete_constraint(Eigen::MatrixXd & R, Eigen::MatrixXd & J, Eigen::VectorXi
   
   if (iq == 0)
     return;
-  
-  for (j = qq; j < iq; j++)
+
+  for(Eigen::Index j = qq; j < iq; ++j)
   {
     cc = R(j, j);
     ss = R(j + 1, j);
@@ -558,14 +563,14 @@ void delete_constraint(Eigen::MatrixXd & R, Eigen::MatrixXd & J, Eigen::VectorXi
       R(j, j) = h;
     
     xny = ss / (1.0 + cc);
-    for (k = j + 1; k < iq; k++)
+    for(Eigen::Index k = j + 1; k < iq; ++k)
     {
       t1 = R(j, k);
       t2 = R(j + 1, k);
       R(j, k) = t1 * cc + t2 * ss;
       R(j + 1, k) = xny * (t1 + R(j, k)) - t2;
     }
-    for (k = 0; k < n; k++)
+    for(Eigen::Index k = 0; k < n; ++k)
     {
       t1 = J(k, j);
       t2 = J(k, j + 1);
