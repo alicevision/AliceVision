@@ -15,10 +15,10 @@ namespace aliceVision {
 namespace hdr {
 
 void RobertsonCalibrate::process(const std::vector< std::vector< image::Image<image::RGBfColor> > > &ldrImageGroups,
-                                 const std::size_t channelQuantization,
+                                 std::size_t channelQuantization,
                                  const std::vector< std::vector<float> > &times,
-                                 const int nbPoints,
-                                 const bool fisheye,
+                                 int nbPoints,
+                                 bool fisheye,
                                  const rgbCurve &weight,
                                  rgbCurve &response)
 {

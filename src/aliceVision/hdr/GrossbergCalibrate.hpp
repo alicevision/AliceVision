@@ -17,7 +17,7 @@ namespace hdr {
 class GrossbergCalibrate
 {
 public:
-  explicit GrossbergCalibrate(const unsigned int dimension);
+  explicit GrossbergCalibrate(unsigned int dimension);
 
 
   /**
@@ -30,10 +30,10 @@ public:
    * @param[out] camera response function
    */
   void process(const std::vector<std::vector<std::string>>& imagePathsGroups,
-               const std::size_t channelQuantization,
+               std::size_t channelQuantization,
                const std::vector< std::vector<float> > &times,
-               const int nbPoints,
-               const bool fisheye,
+               int nbPoints,
+               bool fisheye,
                rgbCurve &response);
 
 private:

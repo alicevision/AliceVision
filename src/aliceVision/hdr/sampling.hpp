@@ -16,18 +16,15 @@ namespace hdr {
 struct ImageSamples
 {
     std::vector<image::Rgb<double>> colors;
-    double exposure = 0.0;
+    double exposure{0.0};
 };
 
-
-void extractSamples(
-    std::vector<std::vector<ImageSamples>>& out_samples,
-    const std::vector<std::vector<std::string>>& imagePathsGroups,
-    const std::vector< std::vector<float> >& cameraExposures,
-    int nbPoints,
-    int calibrationDownscale,
-    bool fisheye);
-
+void extractSamples(std::vector<std::vector<ImageSamples>>& out_samples,
+                    const std::vector<std::vector<std::string>>& imagePathsGroups,
+                    const std::vector<std::vector<float>>& cameraExposures,
+                    int nbPoints,
+                    int calibrationDownscale,
+                    bool fisheye);
 
 } // namespace hdr
 } // namespace aliceVision

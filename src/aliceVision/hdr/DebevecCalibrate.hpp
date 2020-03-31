@@ -28,13 +28,13 @@ public:
    * @param[out] camera response function
    */
   bool process(const std::vector<std::vector<std::string>> &ldrImageGroups,
-               const std::size_t channelQuantization,
+               std::size_t channelQuantization,
                const std::vector<std::vector<float>> &times,
-               const int nbPoints,
-               const int calibrationDownscale,
-               const bool fisheye,
+               int nbPoints,
+               int calibrationDownscale,
+               bool fisheye,
                const rgbCurve &weight,
-               const float lambda,
+               float lambda,
                rgbCurve &response);
 
 };

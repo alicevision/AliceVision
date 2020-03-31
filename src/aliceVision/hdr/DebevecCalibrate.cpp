@@ -24,11 +24,11 @@ using T = Eigen::Triplet<double>;
 bool DebevecCalibrate::process(const std::vector< std::vector<std::string>> & imagePathsGroups,
                                const std::size_t channelQuantization,
                                const std::vector<std::vector<float> > &times,
-                               const int nbPoints,
-                               const int calibrationDownscale,
-                               const bool fisheye,
+                               int nbPoints,
+                               int calibrationDownscale,
+                               bool fisheye,
                                const rgbCurve &weight,
-                               const float lambda,
+                               float lambda,
                                rgbCurve &response)
 {
   // Always 3 channels for the input images
