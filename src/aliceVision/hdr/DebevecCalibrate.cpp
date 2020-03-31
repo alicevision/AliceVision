@@ -38,131 +38,151 @@ bool DebevecCalibrate::process(const std::vector< std::vector<std::string>> & im
   ALICEVISION_LOG_DEBUG("Extract color samples");
   std::vector<std::vector<ImageSamples>> samples;
   extractSamples(samples, imagePathsGroups, times, nbPoints, calibrationDownscale, fisheye);
+
+  using columnValue = std::pair<size_t, double>;
+  using columnValue3 = std::array<columnValue, 3>;
   
   /*
   Count really extracted amount of points
   (observed in multiple brackets)
   */
-  size_t countPoints = 0;
-  size_t countMeasures = 0;
   std::vector<size_t> countPointPerGroup;
+  size_t totalPoints = 0;
   for (size_t groupId = 0; groupId < samples.size(); groupId++) {
     
     size_t count = 0;
     std::vector<ImageSamples> & group = samples[groupId];  
+    
     if (group.size() > 0) {
       count = group[0].colors.size();
     }
 
     countPointPerGroup.push_back(count);
-    countPoints += count;
-    countMeasures += count * group.size();
+    totalPoints += count;
   }
+
+  ALICEVISION_LOG_INFO("Debevec calibration with " << totalPoints << " samples.");
 
   // Initialize response
   response = rgbCurve(channelQuantization);
 
   // Store intermediate data for all three channels
-  Vec b_array[channelsCount];
-  std::vector<T> tripletList_array[channelsCount];
 
   // Initialize intermediate buffers
   for(unsigned int channel=0; channel < channelsCount; ++channel)
   {
-    Vec & b = b_array[channel];
-    b = Vec::Zero(countMeasures + channelQuantization + 1);
-    std::vector<T> & tripletList = tripletList_array[channel];
-  }
-
-  size_t count = 0;
-  size_t previousSamplesCount = 0;
-  for (size_t groupId = 0; groupId < samples.size(); groupId++) {
+    std::vector<double> Mright_squared(totalPoints);
     
-    std::vector<ImageSamples> & group = samples[groupId];
-          
-    for (size_t bracketId = 0; bracketId < group.size() - 1; bracketId++) {
-            
-      ImageSamples & bracket_cur = group[bracketId];
+    Eigen::MatrixXd A(channelQuantization, channelQuantization);
+    Eigen::MatrixXd B(channelQuantization, totalPoints);
+    Eigen::DiagonalMatrix<double, Eigen::Dynamic> Dinv(totalPoints);
+    Eigen::VectorXd h1(channelQuantization);
+    Eigen::VectorXd h2(totalPoints);
+    
+    /*Initialize*/
+    A.fill(0);
+    B.fill(0);
+    h1.fill(0);
+    h2.fill(0);
+    Dinv.setZero();
+
+    size_t countPoints = 0;
+    for (size_t groupId = 0; groupId < samples.size(); groupId++) {
       
-      for (size_t sampleId = 0; sampleId < bracket_cur.colors.size(); sampleId++) {
+      std::vector<ImageSamples> & group = samples[groupId];
+            
+      for (size_t bracketId = 0; bracketId < group.size(); bracketId++) {
+              
+        ImageSamples & bracket_cur = group[bracketId];
         
-        for (int channel = 0; channel < channelsCount; channel++) {
-          float sample = bracket_cur.colors[sampleId](channel);
+        for (size_t sampleId = 0; sampleId < bracket_cur.colors.size(); sampleId++) {
           
-          float w_ij = weight(sample, channel);
+          float sample = clamp(bracket_cur.colors[sampleId](channel), 0.0, 1.0);
+          
+            
+          float w_ij = std::max(1e-6f, weight(sample, channel));
           const float time = std::log(bracket_cur.exposure);
           std::size_t index = std::round(sample * (channelQuantization - 1));
+            
+          std::size_t pospoint = countPoints + sampleId;
 
-          tripletList_array[channel].push_back(T(count, index, w_ij));
-          tripletList_array[channel].push_back(T(count, channelQuantization + previousSamplesCount + sampleId, -w_ij));
-          b_array[channel][count] = w_ij * time;
+          double w_ij_2 = w_ij * w_ij;
+          double w_ij2_time = w_ij_2 * time;
+          
+          Dinv.diagonal()[pospoint] += w_ij_2;
+
+          A(index, index) += w_ij_2;
+          B(index, pospoint) -= w_ij_2;
+          h1(index) += w_ij2_time;
+          h2(pospoint) += -w_ij2_time;
         }
-
-        count++;
       }
-    }
 
-    previousSamplesCount += countPointPerGroup[groupId];
-  }       
-
-  /**
-   * Fix scale
-   * Enforce f(0.5) = 0.0
-   */
-  for (int channel = 0; channel < channelsCount; channel++)
-  {
-    tripletList_array[channel].push_back(T(count, std::floor(channelQuantization/2), 1.f));
-  }
-  count += 1;
-
+      countPoints += countPointPerGroup[groupId];
+    }     
   
-  /* Make sure the discrete response curve has a minimal second derivative */
-  for (std::size_t k = 0; k < channelQuantization - 2; k++)
-  {
-    for (int channel = 0; channel < channelsCount; channel++)
+    /* Make sure the discrete response curve has a minimal second derivative */
+    for (std::size_t k = 0; k < channelQuantization - 2; k++)
     {
       /*
       Simple derivatives of second derivative wrt to the k+1 element
       f''(x) = f(x + 1) - 2 * f(x) + f(x - 1)
       */
       float w = weight.getValue(k + 1, channel);
-      
-      tripletList_array[channel].push_back(T(count, k, lambda * w));
-      tripletList_array[channel].push_back(T(count, k + 1, - 2.f * lambda * w));
-      tripletList_array[channel].push_back(T(count, k + 2, lambda * w));
+        
+      double v1 = lambda * w;
+      double v2 = -2.0f * lambda * w;
+      double v3 = lambda * w;
+
+      A(k, k) += v1 * v1; 
+      A(k, k + 1) += v1 * v2; 
+      A(k, k + 2) += v1 * v3; 
+
+      A(k + 1, k) += v2 * v1; 
+      A(k + 1, k + 1) += v2 * v2; 
+      A(k + 1, k + 2) += v2 * v3; 
+
+      A(k + 2, k) += v3 * v1; 
+      A(k + 2, k + 1) += v3 * v2; 
+      A(k + 2, k + 2) += v3 * v3; 
     }
 
-    count++;
-  }
-
-
-  for (int channel = 0; channel < channelsCount; channel ++)
-  {
-    sMat A(count, channelQuantization + countPoints);
+    /**
+     * Fix scale
+     * Enforce f(0.5) = 0.0
+     */
+    size_t pos_middle = std::floor(channelQuantization/2);
+    A(pos_middle, pos_middle) += 1.0f;
+    /*
+    M is 
     
-    A.setFromTriplets(tripletList_array[channel].begin(), tripletList_array[channel].end());
-    b_array[channel].conservativeResize(count);
+    [ATL ATR]   [[Mgradient       ][     0]]
+    [ABL ABR] = [[constraintMiddle][     0]]
+                [Mleft               Mright]
+    */
 
-    // solve the system using SVD decomposition
-    A.makeCompressed();
-    Eigen::SparseQR<sMat, Eigen::COLAMDOrdering<int>> solver;
-    solver.compute(A);
 
-    // Check solver failure
-    if (solver.info() != Eigen::Success)
-    {
-      return false;
+    /*
+    [A B] = [Atl Atr]^T [Atl Atr] = [Atl   0]^T [Atl   0]
+    [C D]   [Abl Abr]   [Abl Abr]   [Abl Abr]   [Abl Abr]
+    [A B] = [Atl^T Abl^T][Atl   0] = [Atl^TAtl + Abl^TAbl Abl^TAbr]
+    [C D]   [0     Abr^T][Abl Abr]   [Abr^TAbl            Abr^TAbr]
+    [h1] = [Atl^T bh + Abl^T bb] = [Abl^T bb]
+    [h2]   [Atr^T bh + Abr^T bb]   [Abr^T bb]
+    */
+    Eigen::MatrixXd C = B.transpose();
+
+    for (int i = 0; i < Dinv.rows(); i++) {
+      Dinv.diagonal()[i] = 1.0 /  Dinv.diagonal()[i];
     }
 
-    Vec x = solver.solve(b_array[channel]);
+    Eigen::MatrixXd Bdinv = B * Dinv;
+    Eigen::MatrixXd left = A - Bdinv * C;
+    Eigen::VectorXd right = h1 - Bdinv * h2;
 
-    // Check solver failure
-    if(solver.info() != Eigen::Success)
-    {
-      return false;
-    }
+    Eigen::VectorXd x = left.lu().solve(right);
 
-    // Copy the result to the response curve
+    /* Copy the result to the response curve */
     for(std::size_t k = 0; k < channelQuantization; ++k)
     {
       response.setValue(k, channel, x(k));

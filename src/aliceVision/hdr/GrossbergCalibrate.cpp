@@ -127,6 +127,7 @@ void GrossbergCalibrate::process(const std::vector<std::vector<std::string>>& im
       for (int i = 0; i < channelQuantization - 1; i++) {
         double eval_cur = double(i) * step;
         double eval_next = double(i + 1) * step;
+        
         dF0(i, 0)  = (f0(eval_next, channel) - f0(eval_cur, channel)) / step;
       }
       
@@ -148,8 +149,6 @@ void GrossbergCalibrate::process(const std::vector<std::vector<std::string>>& im
       Eigen::MatrixXd CE(_dimension, 1);
       for (int i = 0; i < 1; i++) {
         for (int j = 0; j < _dimension; j++) {
-          rgbCurve fdim(channelQuantization);
-          fdim.setEmorInv(j + 1);
           CE(j, i) = 0.0;
         }
       }

@@ -226,6 +226,11 @@ public:
   void scale();
 
   /**
+    * @brief scale the curve between 0 and 1
+    */
+  void scaleChannelWise();
+
+  /**
     * @brief interpolates all values at zero with the previous an the next value
     */
   void interpolateMissingValues();
