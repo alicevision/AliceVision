@@ -58,9 +58,7 @@ s.t.
  of the MIT license.  See the LICENSE file for details.
 */
 
-
-#ifndef _QUADPROGPP
-#define _QUADPROGPP
+#pragma once
 
 #include <Eigen/Dense>
 
@@ -72,5 +70,3 @@ double solve_quadprog(Eigen::MatrixXd & G, Eigen::VectorXd& g0,
                       Eigen::VectorXd & x);
 
 }  // namespace quadprogpp
-
-#endif // #define _QUADPROGPP
