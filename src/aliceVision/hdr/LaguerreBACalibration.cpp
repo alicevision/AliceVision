@@ -26,8 +26,6 @@ namespace hdr
 
 using namespace aliceVision::image;
 
-LaguerreBACalibration::LaguerreBACalibration() {}
-
 template <typename T>
 T laguerreFunction(const T& a, const T& x)
 {

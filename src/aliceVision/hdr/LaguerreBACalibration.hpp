@@ -29,7 +29,7 @@ namespace hdr {
 class LaguerreBACalibration
 {
 public:
-  explicit LaguerreBACalibration();
+  explicit LaguerreBACalibration() = default;
 
   /**
    * @brief
