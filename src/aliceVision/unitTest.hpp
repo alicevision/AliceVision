@@ -12,6 +12,20 @@
 
 #include <boost/test/included/unit_test.hpp>
 
+#define EXPECT_MATRIX_CLOSE_FRACTION(a, b, tolerance) \
+do { \
+  bool dims_match = (a.rows() == b.rows()) && (a.cols() == b.cols()); \
+  BOOST_CHECK_EQUAL(a.rows(),b.rows()); \
+  BOOST_CHECK_EQUAL(a.cols(),b.cols()); \
+  if (dims_match) { \
+    for (int r = 0; r < a.rows(); ++r) { \
+      for (int c = 0; c < a.cols(); ++c) { \
+        BOOST_CHECK_CLOSE_FRACTION(a(r, c), b(r, c), tolerance); \
+      } \
+    } \
+  } \
+} while(false);
+
 #define EXPECT_MATRIX_NEAR(a, b, tolerance) \
 do { \
   bool dims_match = (a.rows() == b.rows()) && (a.cols() == b.cols()); \
