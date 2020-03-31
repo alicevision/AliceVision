@@ -25,7 +25,7 @@ namespace quadprogpp {
 void compute_d(Eigen::VectorXd & d, const Eigen::MatrixXd & J, const Eigen::VectorXd & np);
 void update_z(Eigen::VectorXd & z, const Eigen::MatrixXd & J, const Eigen::VectorXd & d, int iq);
 void update_r(const Eigen::MatrixXd & R, Eigen::VectorXd & r, const Eigen::VectorXd & d, int iq);
-bool add_constraint(Eigen::MatrixXd & R, Eigen::MatrixXd & J, Eigen::VectorXd & d, unsigned int& iq, double& rnorm);
+bool add_constraint(Eigen::MatrixXd & R, Eigen::MatrixXd & J, Eigen::VectorXd & d, unsigned int& iq, double& R_norm);
 void delete_constraint(Eigen::MatrixXd & R, Eigen::MatrixXd & J, Eigen::VectorXi & A, Eigen::VectorXd & u, unsigned int n, int p, unsigned int& iq, int l);
 
 // Utility functions for computing the Cholesky decomposition and solving
