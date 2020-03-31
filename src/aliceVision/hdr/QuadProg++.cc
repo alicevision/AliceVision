@@ -612,7 +612,6 @@ void cholesky_decomposition(Eigen::MatrixXd & A)
           print_matrix("A", A);
           os << "Error in cholesky decomposition, sum: " << sum;
           throw std::logic_error(os.str());
-          exit(-1);
         }
 	      A(i, i) = sqrt(sum);
 	    }
