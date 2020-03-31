@@ -370,8 +370,8 @@ l2a:/* Step 2a: determine step direction */
 
 inline void compute_d(Eigen::VectorXd & d, const Eigen::MatrixXd & J, const Eigen::VectorXd & np)
 {
-  register int i, j, n = d.size();
-  register double sum;
+  int i, j, n = d.size();
+  double sum;
   
   /* compute d = H^T * np */
   for (i = 0; i < n; i++)
@@ -385,7 +385,7 @@ inline void compute_d(Eigen::VectorXd & d, const Eigen::MatrixXd & J, const Eige
 
 inline void update_z(Eigen::VectorXd & z, const Eigen::MatrixXd & J, const Eigen::VectorXd & d, int iq)
 {
-  register int i, j, n = z.size();
+  int i, j, n = z.size();
 	
   /* setting of z = H * d */
   for (i = 0; i < n; i++)
@@ -398,8 +398,8 @@ inline void update_z(Eigen::VectorXd & z, const Eigen::MatrixXd & J, const Eigen
 
 inline void update_r(const Eigen::MatrixXd & R, Eigen::VectorXd & r, const Eigen::VectorXd & d, int iq)
 {
-  register int i, j;
-  register double sum;
+  int i, j;
+  double sum;
   
   /* setting of r = R^-1 d */
   for (i = iq - 1; i >= 0; i--)
@@ -415,7 +415,7 @@ bool add_constraint(Eigen::MatrixXd & R, Eigen::MatrixXd & J, Eigen::VectorXd & 
 {
   unsigned int n = d.size();
 
-  register unsigned int i, j, k;
+  unsigned int i, j, k;
   double cc, ss, h, t1, t2, xny;
 	
   /* we have to find the Givens rotation which will reduce the element
@@ -480,7 +480,7 @@ void delete_constraint(Eigen::MatrixXd & R, Eigen::MatrixXd & J, Eigen::VectorXi
 #ifdef TRACE_SOLVER
   std::cout << "Delete constraint " << l << ' ' << iq;
 #endif
-  register unsigned int i, j, k, qq = 0; // just to prevent warnings from smart compilers
+  unsigned int i, j, k, qq = 0; // just to prevent warnings from smart compilers
   double cc, ss, h, xny, t1, t2;
 
   bool found = false;
@@ -562,7 +562,7 @@ void delete_constraint(Eigen::MatrixXd & R, Eigen::MatrixXd & J, Eigen::VectorXi
 
 inline double distance(double a, double b)
 {
-  register double a1, b1, t;
+  double a1, b1, t;
   a1 = fabs(a);
   b1 = fabs(b);
   if (a1 > b1) 
@@ -582,8 +582,8 @@ inline double distance(double a, double b)
 
 inline double scalar_product(const Eigen::VectorXd & x, const Eigen::VectorXd & y)
 {
-  register int i, n = x.size();
-  register double sum;
+  int i, n = x.size();
+  double sum;
 	
   sum = 0.0;
   for (i = 0; i < n; i++)
@@ -593,8 +593,8 @@ inline double scalar_product(const Eigen::VectorXd & x, const Eigen::VectorXd & 
 
 void cholesky_decomposition(Eigen::MatrixXd & A) 
 {
-  register int i, j, k, n = A.rows();
-  register double sum;
+  int i, j, k, n = A.rows();
+  double sum;
 	
   for (i = 0; i < n; i++)
   {
@@ -637,7 +637,7 @@ void cholesky_solve(const Eigen::MatrixXd & L, Eigen::VectorXd & x, const Eigen:
 
 inline void forward_elimination(const Eigen::MatrixXd & L, Eigen::VectorXd & y, const Eigen::VectorXd & b)
 {
-  register int i, j, n = L.rows();
+  int i, j, n = L.rows();
 	
   y[0] = b[0] / L(0, 0);
   for (i = 1; i < n; i++)
@@ -651,7 +651,7 @@ inline void forward_elimination(const Eigen::MatrixXd & L, Eigen::VectorXd & y, 
 
 inline void backward_elimination(const Eigen::MatrixXd & U, Eigen::VectorXd & x, const Eigen::VectorXd & y)
 {
-  register int i, j, n = U.rows();
+  int i, j, n = U.rows();
 	
   x[n - 1] = y[n - 1] / U(n - 1, n - 1);
   for (i = n - 2; i >= 0; i--)
