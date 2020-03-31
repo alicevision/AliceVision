@@ -14,14 +14,19 @@ namespace camera {
 
 namespace radial_distortion{
 
-  /// Solve by bisection the p' radius such that Square(disto(radius(p'))) = r^2
+    /**
+    * @brief Solve by bisection the p' radius such that Square(disto(radius(p'))) = r^2
+    * @param[in] params the distortion parameters.
+    * @param[in] r2 targeted radius
+    * @param[in] functor functor to solve Square(disto(radius(p'))) = r^2
+    * @param epsilon minimum error to stop the bisection
+    * @return optimal radius
+    */
   template <class Disto_Functor>
-  double bisection_Radius_Solve(
-    const std::vector<double> & params, // radial distortion parameters
-    double r2, // targeted radius
-    Disto_Functor & functor,
-    double epsilon = 1e-8 // criteria to stop the bisection
-  )
+  double bisection_Radius_Solve(const std::vector<double> & params, // radial distortion parameters
+                                double r2,
+                                Disto_Functor & functor,
+                                double epsilon = 1e-8)
   {
     // Guess plausible upper and lower bound
     double lowerbound = r2, upbound = r2;
@@ -43,15 +48,27 @@ namespace radial_distortion{
 
 } // namespace radial_distortion
 
+/**
+ * @class DistortionRadialK1
+ * @brief Radial distortion with a single distortion coefficient.
+ * \f$ x_d = x_u (1 + K_1 r^2 ) \f$
+ */
 class DistortionRadialK1 : public Distortion {
 public:
 
+  /**
+   * @brief Default contructor, no distortion
+   */
   DistortionRadialK1() {
     _distortionParams = {0.0};
   }
 
-  explicit DistortionRadialK1(double p1) {
-    _distortionParams = {p1};
+  /**
+   * @brief Constructor with the single distortion coefficient.
+   * @param[in] k1 the distortion coefficient
+   */
+  explicit DistortionRadialK1(double k1) {
+    _distortionParams = {k1};
   }
 
   DistortionRadialK1* clone() const override { return new DistortionRadialK1(*this); }
@@ -185,16 +202,31 @@ public:
   ~DistortionRadialK1() override = default;
 };
 
+
+/**
+ * @class DistortionRadialK3
+ * @brief Radial distortion modeled with a 6th degree polynomial with three distortion coefficients.
+ * \f$ x_d = x_u (1 + K_1 r^2 + K_2 r^4 + K_3 r^6) \f$
+ */
 class DistortionRadialK3 : public Distortion {
 public:
+  /**
+   * @brief Default constructor, no distortion.
+   */
   DistortionRadialK3()
   {
     _distortionParams = {0.0, 0.0, 0.0};
   }
 
-  explicit DistortionRadialK3(double p1, double p2, double p3)
+  /**
+   * @brief Constructor with the three coefficients
+   * @param[in] k1 first coefficient
+   * @param[in] k2 second coefficient
+   * @param[in] k3 third coefficient
+   */
+  explicit DistortionRadialK3(double k1, double k2, double k3)
   {
-    _distortionParams = {p1, p2, p3};
+    _distortionParams = {k1, k2, k3};
   }
 
   DistortionRadialK3* clone() const override { return new DistortionRadialK3(*this); }
@@ -363,9 +395,9 @@ public:
     _distortionParams = {0.0, 0.0, 0.0};
   }
 
-  explicit DistortionRadialK3PT(double p1, double p2, double p3)
+  explicit DistortionRadialK3PT(double k1, double k2, double k3)
   {
-    _distortionParams = {p1, p2, p3};
+    _distortionParams = {k1, k2, k3};
   }
 
   DistortionRadialK3PT* clone() const override { return new DistortionRadialK3PT(*this); }
