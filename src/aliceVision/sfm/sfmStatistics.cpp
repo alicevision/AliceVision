@@ -6,6 +6,9 @@
 
 #include "sfmStatistics.hpp"
 
+#include <aliceVision/sfm/pipeline/localization/SfMLocalizer.hpp>
+
+
 namespace aliceVision {
 namespace sfm {
 
@@ -94,9 +97,9 @@ void computeObservationsLengthsHistogram(const sfmData::SfMData& sfmData, MinMax
   }
 }
 
-void computeLandmarksPerViewHistogram(const sfmData::SfMData& sfmData, MinMaxMeanMedian<double>& out_stats, track::TracksPerView& tracksPerView, Histogram<double>* histo)
+void computeLandmarksPerViewHistogram(const sfmData::SfMData& sfmData, MinMaxMeanMedian<double>& out_stats, track::TracksPerView tracksPerView, Histogram<double>* histo)
 {
-  if (sfmData.getLandmarks().empty())
+  if(sfmData.getLandmarks().empty())
     return;
 
   // Collect tracks size: number of 2D observations per 3D points
@@ -108,14 +111,17 @@ void computeLandmarksPerViewHistogram(const sfmData::SfMData& sfmData, MinMaxMea
     std::inserter(landmarksId, landmarksId.begin()),
     stl::RetrieveKey());
 
-  for (const auto &viewIt : sfmData.getViews())
+  for(const auto &viewIt : sfmData.getViews())
   {
     const sfmData::View & view = *viewIt.second;
-    if (!sfmData.isPoseAndIntrinsicDefined(view.getViewId()))
+    if(!sfmData.isPoseAndIntrinsicDefined(view.getViewId()))
       continue;
 
     aliceVision::track::TrackIdSet viewLandmarksIds;
     {
+      ALICEVISION_LOG_INFO("[AliceVision] sfmStatistics::computeLandmarksPerViewHistogram view.getViewId(): " << view.getViewId());
+      ALICEVISION_LOG_INFO("[AliceVision] sfmStatistics::computeLandmarksPerViewHistogram tracksPerView.at(view.getViewId()): " << tracksPerView.at(view.getViewId()));
+
       const aliceVision::track::TrackIdSet& viewTracksIds = tracksPerView.at(view.getViewId());
       // Get the ids of the already reconstructed tracks
       std::set_intersection(viewTracksIds.begin(), viewTracksIds.end(),
@@ -129,7 +135,7 @@ void computeLandmarksPerViewHistogram(const sfmData::SfMData& sfmData, MinMaxMea
 
   if (histo)
   {
-    *histo = Histogram<double>(out_stats.min, (out_stats.max + 1), 10);
+    *histo = Histogram<double>(0, sfmData.getViews().size(), sfmData.getViews().size());
     histo->Add(nbLandmarksPerView.begin(), nbLandmarksPerView.end());
   }
 }
@@ -167,63 +173,47 @@ void computeScaleHistogram(const sfmData::SfMData& sfmData, MinMaxMeanMedian<dou
       *histo = Histogram<double>(0.0, std::ceil(out_stats.max), std::ceil(out_stats.max));
       histo->Add(vec_scaleObservations.begin(), vec_scaleObservations.end());
     }
+}
+
+void computeResidualsPerView(const sfmData::SfMData& sfmData, int& nbViews, std::vector<double>& nbResidualsPerViewMin,
+                                      std::vector<double>& nbResidualsPerViewMax, std::vector<double>& nbResidualsPerViewMean,
+                                      std::vector<double>& nbResidualsPerViewMedian)
+{
+    if(sfmData.getLandmarks().empty())
+      return;
+
+    for(const auto &viewIt : sfmData.getViews())
+    {
+        MinMaxMeanMedian<double> residualStats;
+        Histogram<double> residual_histogram = Histogram<double>();
+        computeResidualsHistogram(sfmData, residualStats, &residual_histogram, {viewIt.first});
+        nbResidualsPerViewMin.push_back(residualStats.min);
+        nbResidualsPerViewMax.push_back(residualStats.max);
+        nbResidualsPerViewMean.push_back(residualStats.mean);
+        nbResidualsPerViewMedian.push_back(residualStats.median);
+        nbViews++;
+    }
+
+    assert(!nbResidualsPerViewMin.empty() && !nbResidualsPerViewMax.empty() && !nbResidualsPerViewMean.empty() && !nbResidualsPerViewMedian.empty());
 
 }
 
-/*void computeResidualsPerViewHistogram(const sfmData::SfMData& sfmData, MinMaxMeanMedian<double>& out_stats, Histogram<double>* out_histogram)
+void computePointsValidatedPerView(const sfmData::SfMData& sfmData, int& nbViews, std::vector<double> nbPointsValidatedPerView)
 {
-
-    if (sfmData.getLandmarks().empty())
+    if(sfmData.getLandmarks().empty())
       return;
 
-    // Collect tracks size: number of 2D observations per 3D points
-    std::vector<double> nbResidualsPerView;
-    nbResidualsPerView.reserve(sfmData.getViews().size());
-
-    std::set<std::size_t> landmarksId;
-    std::transform(sfmData.getLandmarks().begin(), sfmData.getLandmarks().end(),
-      std::inserter(landmarksId, landmarksId.begin()),
-      stl::RetrieveKey());
-
-    for (const auto &viewIt : sfmData.getViews())
+    sfm::ImageLocalizerMatchData matchData;
+    for(const auto &viewIt : sfmData.getViews())
     {
-      const sfmData::View & view = *viewIt.second;
-      if (!sfmData.isPoseAndIntrinsicDefined(view.getViewId()))
-        continue;
-
-
-
-
-*/
-      /*aliceVision::track::TrackIdSet viewLandmarksIds;
-      {
-        const aliceVision::track::TrackIdSet& viewTracksIds = tracksPerView.at(view.getViewId());
-        // Get the ids of the already reconstructed tracks
-        std::set_intersection(viewTracksIds.begin(), viewTracksIds.end(),
-          landmarksId.begin(), landmarksId.end(),
-          std::inserter(viewLandmarksIds, viewLandmarksIds.begin()));
-      }*/
-
-     /* const sfmData::View& view = sfmData.getView(obs.first);
-      const aliceVision::geometry::Pose3 pose = sfmData.getPose(view).getTransform();
-      const std::shared_ptr<aliceVision::camera::IntrinsicBase> intrinsic = sfmData.getIntrinsics().find(view.getIntrinsicId())->second;
-      const Vec2 residual = intrinsic->residual(pose, track.second.X, obs.second.x);
-      vec_residuals.push_back( fabs(residual(0)) );
-      vec_residuals.push_back( fabs(residual(1)) );*/
-
-
-    /*  nbResidualsPerView.push_back(viewResidualsIds.size());
+        double resultValidated = matchData.vec_inliers.size();
+        ALICEVISION_LOG_INFO("[AliceVision] sfmstatistics computePointsValidated resultValidated: " << resultValidated);
+        nbPointsValidatedPerView.push_back(resultValidated);
+        nbViews++;
     }
 
-    out_stats = MinMaxMeanMedian<double>(nbResidualsPerView.begin(), nbResidualsPerView.end());
-
-    if (out_histogram)
-    {
-      *out_histogram = Histogram<double>(out_stats.min, (out_stats.max + 1), 10);
-      out_histogram->Add(nbResidualsPerView.begin(), nbResidualsPerView.end());
-    }
-
-}*/
+    assert(!nbPointsValidatedPerView.empty());
+}
 
 }
 }

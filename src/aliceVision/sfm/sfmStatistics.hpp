@@ -41,7 +41,7 @@ void computeObservationsLengthsHistogram(const sfmData::SfMData& sfmData, MinMax
  * @param[out] out_stats
  * @param[out] landmarksPerViewHistogram
  */
-void computeLandmarksPerViewHistogram(const sfmData::SfMData& sfmData, MinMaxMeanMedian<double>& out_stats, track::TracksPerView& _map_tracksPerView, Histogram<double>* landmarksPerViewHistogram);
+void computeLandmarksPerViewHistogram(const sfmData::SfMData& sfmData, MinMaxMeanMedian<double>& out_stats, track::TracksPerView _mapTracksPerView, Histogram<double>* landmarksPerViewHistogram);
 
 /**
  * @brief Compute histogram of scale for features and observations
@@ -56,10 +56,16 @@ void computeScaleHistogram(const sfmData::SfMData& sfmData, MinMaxMeanMedian<dou
 /**
  * @brief Compute histogram of residuals per view
  * @param[in] sfmData
- * @param[out] out_stats
- * @param[out] residualsPerViewHistogram
  */
-//void computeResidualsPerViewHistogram(const sfmData::SfMData& sfmData, MinMaxMeanMedian<double>& out_stats, Histogram<double>* out_histogram);
+void computeResidualsPerView(const sfmData::SfMData& sfmData, int& nbViews, std::vector<double>& nbResidualsPerViewMin,
+                                      std::vector<double>& nbResidualsPerViewMax, std::vector<double>& nbResidualsPerViewMean,
+                                      std::vector<double>& nbResidualsPerViewMedian);
+
+/**
+ * @brief Compute histogram of residuals per view
+ * @param[in] sfmData
+ */
+void computePointsValidatedPerView(const sfmData::SfMData& sfmData, int& nbViews, std::vector<double>& nbPointsValidatedPerView);
 
 }
 }
