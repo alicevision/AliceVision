@@ -227,25 +227,20 @@ void LaguerreBACalibration::process(const std::vector<std::vector<std::string>>&
     if (!refineExposures)
     {
         /*Fix exposures*/
-        for (int groupId = 0; groupId < exposuresRatios.size(); ++groupId)
+        for (auto & group : exposuresRatios)
         {
-            std::vector<double> & group = exposuresRatios[groupId];
-
-            for (int ratioId = 0; ratioId < group.size(); ratioId++) {
-
-                double * expratio = &(group[ratioId]);
-                problem.SetParameterBlockConstant(expratio);
+            for(auto & expratio: group)
+            {
+                problem.SetParameterBlockConstant(&expratio);
             }
         }
     }
     else {
-        for (int groupId = 0; groupId < exposuresRatios.size(); ++groupId)
+        for (auto & group : exposuresRatios)
         {
-            std::vector<double> & group = exposuresRatios[groupId];
-
-            for (int ratioId = 0; ratioId < group.size(); ratioId++) {
-
-                problem.AddResidualBlock(new ExposureConstraint(group[ratioId]), nullptr, &(group[ratioId]));
+            for (double & ratioId : group)
+            {
+                problem.AddResidualBlock(new ExposureConstraint(ratioId), nullptr, &ratioId);
             }
         }
     }
