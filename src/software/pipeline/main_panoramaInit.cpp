@@ -276,9 +276,10 @@ public:
       }
 
       size_t count = 0;
-      for (int i = 0; i < selected_points.size(); i++) {
-        double cx = selected_points[i](0) - res(0);
-        double cy = selected_points[i](1) - res(1);
+      for(const auto& point : selected_points)
+      {
+        double cx = point(0) - res(0);
+        double cy = point(1) - res(1);
         double r = res(2);
 
         double dist = std::abs(sqrt(cx * cx + cy * cy) - r);
