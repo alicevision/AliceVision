@@ -385,14 +385,13 @@ l2a:/* Step 2a: determine step direction */
 
 inline void compute_d(Eigen::VectorXd & d, const Eigen::MatrixXd & J, const Eigen::VectorXd & np)
 {
-  int i, j, n = d.size();
-  double sum;
-  
+  const auto n = d.size();
+
   /* compute d = H^T * np */
-  for (i = 0; i < n; i++)
+  for(Eigen::Index i = 0; i < n; ++i)
   {
-    sum = 0.0;
-    for (j = 0; j < n; j++)
+    double sum{0.0};
+    for(Eigen::Index j = 0; j < n; ++j)
       sum += J(j, i) * np[j];
     d[i] = sum;
   }
@@ -400,27 +399,24 @@ inline void compute_d(Eigen::VectorXd & d, const Eigen::MatrixXd & J, const Eige
 
 inline void update_z(Eigen::VectorXd & z, const Eigen::MatrixXd & J, const Eigen::VectorXd & d, int iq)
 {
-  int i, j, n = z.size();
+  const auto n = z.size();
 	
   /* setting of z = H * d */
-  for (i = 0; i < n; i++)
+  for(Eigen::Index i = 0; i < n; ++i)
   {
     z[i] = 0.0;
-    for (j = iq; j < n; j++)
+    for(Eigen::Index j = iq; j < n; ++j)
       z[i] += J(i, j) * d[j];
   }
 }
 
 inline void update_r(const Eigen::MatrixXd & R, Eigen::VectorXd & r, const Eigen::VectorXd & d, int iq)
 {
-  int i, j;
-  double sum;
-  
   /* setting of r = R^-1 d */
-  for (i = iq - 1; i >= 0; i--)
+  for(Eigen::Index i = iq - 1; i >= 0; --i)
   {
-    sum = 0.0;
-    for (j = i + 1; j < iq; j++)
+    double sum{0.0};
+    for(Eigen::Index j = i + 1; j < iq; ++j)
       sum += R(i, j) * r[j];
     r[i] = (d[i] - sum) / R(i, i);
   }
@@ -429,7 +425,7 @@ inline void update_r(const Eigen::MatrixXd & R, Eigen::VectorXd & r, const Eigen
 bool add_constraint(Eigen::MatrixXd & R, Eigen::MatrixXd & J, Eigen::VectorXd & d, unsigned int& iq, double& R_norm)
 {
   const auto n = d.size();
-	  
+
   /* we have to find the Givens rotation which will reduce the element
     d[j] to zero.
     if it is already zero we don't have to do anything, except of
