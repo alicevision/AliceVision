@@ -143,7 +143,7 @@ private:
 class ExposureConstraint : public ceres::SizedCostFunction<1, 1>
 {
 public:
-    ExposureConstraint(double ratio) : _ratio(ratio)
+    explicit ExposureConstraint(double ratio) : _ratio(ratio)
     {
     }
 
