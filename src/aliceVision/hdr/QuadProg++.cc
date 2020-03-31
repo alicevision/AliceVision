@@ -496,7 +496,6 @@ void delete_constraint(Eigen::MatrixXd & R, Eigen::MatrixXd & J, Eigen::VectorXi
   std::cout << "Delete constraint " << l << ' ' << iq;
 #endif
   Eigen::Index qq{0};
-  double cc, ss, h, xny, t1, t2;
 
   bool found = false;
   /* Find the index qq for active constraint l to be removed */
@@ -545,9 +544,9 @@ void delete_constraint(Eigen::MatrixXd & R, Eigen::MatrixXd & J, Eigen::VectorXi
 
   for(Eigen::Index j = qq; j < iq; ++j)
   {
-    cc = R(j, j);
-    ss = R(j + 1, j);
-    h = distance(cc, ss);
+    auto cc = R(j, j);
+    auto ss = R(j + 1, j);
+    const auto h = distance(cc, ss);
     if (fabs(h) < std::numeric_limits<double>::epsilon()) // h == 0
       continue;
     cc = cc / h;
@@ -561,19 +560,19 @@ void delete_constraint(Eigen::MatrixXd & R, Eigen::MatrixXd & J, Eigen::VectorXi
     }
     else
       R(j, j) = h;
-    
-    xny = ss / (1.0 + cc);
+
+    const auto xny = ss / (1.0 + cc);
     for(Eigen::Index k = j + 1; k < iq; ++k)
     {
-      t1 = R(j, k);
-      t2 = R(j + 1, k);
+      const auto t1 = R(j, k);
+      const auto t2 = R(j + 1, k);
       R(j, k) = t1 * cc + t2 * ss;
       R(j + 1, k) = xny * (t1 + R(j, k)) - t2;
     }
     for(Eigen::Index k = 0; k < n; ++k)
     {
-      t1 = J(k, j);
-      t2 = J(k, j + 1);
+      const auto t1 = J(k, j);
+      const auto t2 = J(k, j + 1);
       J(k, j) = t1 * cc + t2 * ss;
       J(k, j + 1) = xny * (J(k, j) + t1) - t2;
     }
