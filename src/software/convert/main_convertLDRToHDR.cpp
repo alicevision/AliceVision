@@ -512,7 +512,7 @@ int main(int argc, char * argv[])
 
   hdr::rgbCurve response(channelQuantization);
 
-  const float lambda = channelQuantization * 1.f;
+  const float lambda = 0.1f;
 
   // calculate the response function according to the method given in argument or take the response provided by the user
   {
