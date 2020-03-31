@@ -428,16 +428,13 @@ inline void update_r(const Eigen::MatrixXd & R, Eigen::VectorXd & r, const Eigen
 
 bool add_constraint(Eigen::MatrixXd & R, Eigen::MatrixXd & J, Eigen::VectorXd & d, unsigned int& iq, double& R_norm)
 {
-  unsigned int n = d.size();
-
-  unsigned int i, j, k;
-  double cc, ss, h, t1, t2, xny;
-	
+  const auto n = d.size();
+	  
   /* we have to find the Givens rotation which will reduce the element
     d[j] to zero.
     if it is already zero we don't have to do anything, except of
-    decreasing j */  
-  for (j = n - 1; j >= iq + 1; j--)
+    decreasing j */
+  for(Eigen::Index j = n - 1; j >= iq + 1; --j)
   {
     /* The Givens rotation is done with the matrix (cc cs, cs -cc).
     If cc is one, then element (j) of d is zero compared with element
@@ -447,9 +444,9 @@ bool add_constraint(Eigen::MatrixXd & R, Eigen::MatrixXd & J, Eigen::VectorXd & 
     update d depending on the sign of gs.
     Otherwise we have to apply the Givens rotation to these columns.
     The i - 1 element of d has to be updated to h. */
-    cc = d[j - 1];
-    ss = d[j];
-    h = distance(cc, ss);
+    auto cc = d[j - 1];
+    auto ss = d[j];
+    const auto h = distance(cc, ss);
     if (fabs(h) < std::numeric_limits<double>::epsilon()) // h == 0
       continue;
     d[j] = 0.0;
@@ -463,11 +460,11 @@ bool add_constraint(Eigen::MatrixXd & R, Eigen::MatrixXd & J, Eigen::VectorXd & 
     }
     else
       d[j - 1] = h;
-    xny = ss / (1.0 + cc);
-    for (k = 0; k < n; k++)
+    const auto xny = ss / (1.0 + cc);
+    for(Eigen::Index k = 0; k < n; ++k)
     {
-      t1 = J(k, j - 1);
-      t2 = J(k, j);
+      const auto t1 = J(k, j - 1);
+      const auto t2 = J(k, j);
       J(k, j - 1) = t1 * cc + t2 * ss;
       J(k, j) = xny * (t1 + J(k, j - 1)) - t2;
     }
@@ -477,7 +474,7 @@ bool add_constraint(Eigen::MatrixXd & R, Eigen::MatrixXd & J, Eigen::VectorXd & 
   /* To update R we have to put the iq components of the d vector
     into column iq - 1 of R
     */
-  for (i = 0; i < iq; i++)
+  for(Eigen::Index i = 0; i < iq; ++i)
     R(i, iq - 1) = d[i];
 
   
