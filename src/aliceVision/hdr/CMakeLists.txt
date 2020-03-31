@@ -9,6 +9,7 @@ set(hdr_files_headers
  DebevecCalibrate.hpp
  GrossbergCalibrate.hpp
  emorCurve.hpp
+ QuadProg++.hpp
 )
 
 # Sources
@@ -21,7 +22,7 @@ set(hdr_files_sources
  DebevecCalibrate.cpp
  GrossbergCalibrate.cpp
  emorCurve.cpp
- QuadProg++.cc
+ QuadProg++.cpp
 )
 
 alicevision_add_library(aliceVision_hdr

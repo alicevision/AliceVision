@@ -5,13 +5,13 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "GrossbergCalibrate.hpp"
-#include <iostream>
-#include <cassert>
+#include "QuadProg++.hpp"
+#include "sampling.hpp"
+#include <Eigen/Dense>
 #include <aliceVision/alicevision_omp.hpp>
 #include <aliceVision/system/Logger.hpp>
-#include <Eigen/Dense>
-#include "sampling.hpp"
-#include "QuadProg++.hh"
+#include <cassert>
+#include <iostream>
 
 namespace aliceVision
 {

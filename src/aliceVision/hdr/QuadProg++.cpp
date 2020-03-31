@@ -11,7 +11,7 @@ File $Id: QuadProg++.cc 232 2007-06-21 12:29:00Z digasper $
 
  */
 
-#include "QuadProg++.hh"
+#include "QuadProg++.hpp"
 #include <algorithm>
 #include <cmath>
 #include <iostream>
