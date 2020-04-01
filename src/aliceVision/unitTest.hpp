@@ -13,7 +13,7 @@
 #include <boost/test/included/unit_test.hpp>
 
 #define EXPECT_MATRIX_CLOSE_FRACTION(a, b, tolerance) \
-do { \
+{ \
   bool dims_match = (a.rows() == b.rows()) && (a.cols() == b.cols()); \
   BOOST_CHECK_EQUAL(a.rows(),b.rows()); \
   BOOST_CHECK_EQUAL(a.cols(),b.cols()); \
@@ -24,10 +24,10 @@ do { \
       } \
     } \
   } \
-} while(false);
+}
 
 #define EXPECT_MATRIX_NEAR(a, b, tolerance) \
-do { \
+{ \
   bool dims_match = (a.rows() == b.rows()) && (a.cols() == b.cols()); \
   BOOST_CHECK_EQUAL(a.rows(),b.rows()); \
   BOOST_CHECK_EQUAL(a.cols(),b.cols()); \
@@ -38,19 +38,19 @@ do { \
       } \
     } \
   } \
-} while(false);
+}
 
 #define EXPECT_MATRIX_NEAR_ZERO(a, tolerance) \
-do { \
+{ \
   for (int r = 0; r < a.rows(); ++r) { \
     for (int c = 0; c < a.cols(); ++c) { \
       BOOST_CHECK_SMALL(a(r, c), tolerance) \
     } \
   } \
-} while(false);
+}
 
 #define EXPECT_MATRIX_EQ(a, b) \
-do { \
+{ \
   bool dims_match = (a.rows() == b.rows()) && (a.cols() == b.cols()); \
   BOOST_CHECK_EQUAL(a.rows(),b.rows()); \
   BOOST_CHECK_EQUAL(a.cols(),b.cols()); \
@@ -61,13 +61,13 @@ do { \
       } \
     } \
   } \
-} while(false);
+}
 
 #define EXPECT_EQ(a, b) BOOST_CHECK_EQUAL(a,b);
 
 // Check that sin(angle(a, b)) < tolerance.
 #define EXPECT_MATRIX_PROP(a, b, tolerance) \
-do { \
+{ \
   bool dims_match = (a.rows() == b.rows()) && (a.cols() == b.cols()); \
   BOOST_CHECK_EQUAL(a.rows(), b.rows()); \
   BOOST_CHECK_EQUAL(a.cols(), b.cols()); \
@@ -78,4 +78,4 @@ do { \
       BOOST_CHECK_SMALL(s, tolerance); \
     } \
   } \
-} while(false);
+}
