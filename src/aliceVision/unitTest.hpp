@@ -57,13 +57,13 @@ do { \
   if (dims_match) { \
     for (int r = 0; r < a.rows(); ++r) { \
       for (int c = 0; c < a.cols(); ++c) { \
-        CHECK_EQUAL(a(r, c), b(r, c)) \
+        BOOST_CHECK_EQUAL(a(r, c), b(r, c)) \
       } \
     } \
   } \
 } while(false);
 
-#define EXPECT_EQ(a, b) CHECK_EQUAL(a,b);
+#define EXPECT_EQ(a, b) BOOST_CHECK_EQUAL(a,b);
 
 // Check that sin(angle(a, b)) < tolerance.
 #define EXPECT_MATRIX_PROP(a, b, tolerance) \
