@@ -24,7 +24,7 @@ file.close()
 
 # process
 sensors = [entry.split(';')  for entry in database]
-sensors.sort(key=lambda t : tuple(s.lower() if isinstance(s,str) else s for s in t))
+sensors.sort(key=lambda t : tuple(s.lower() if isinstance(s, (str, bytes)) else s for s in t))
 outDatabase = ""
 for entry in sensors:
 	outDatabase += ';'.join(entry)
