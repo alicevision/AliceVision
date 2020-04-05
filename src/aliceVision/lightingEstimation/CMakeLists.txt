@@ -15,7 +15,6 @@ alicevision_add_library(aliceVision_lightingEstimation
   PUBLIC_LINKS
     aliceVision_image
     aliceVision_system
-    Eigen3::Eigen
 )
 
 
