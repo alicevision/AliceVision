@@ -5,7 +5,7 @@
 function(alicevision_add_library library_name)
   set(options USE_CUDA)
   set(singleValues "")
-  set(multipleValues SOURCES PUBLIC_LINKS PRIVATE_LINKS PUBLIC_INCLUDE_DIRS PRIVATE_INCLUDE_DIRS)
+  set(multipleValues SOURCES PUBLIC_LINKS PRIVATE_LINKS PUBLIC_INCLUDE_DIRS PRIVATE_INCLUDE_DIRS PUBLIC_DEFINITIONS PRIVATE_DEFINITIONS)
 
   cmake_parse_arguments(LIBRARY "${options}" "${singleValues}" "${multipleValues}" ${ARGN})
 
@@ -60,6 +60,11 @@ function(alicevision_add_library library_name)
            ${LIBRARY_PUBLIC_INCLUDE_DIRS}
 
     PRIVATE ${LIBRARY_PRIVATE_INCLUDE_DIRS}
+  )
+
+  target_compile_definitions(${library_name}
+    PUBLIC ${LIBRARY_PUBLIC_DEFINITIONS}
+    PRIVATE ${LIBRARY_PRIVATE_DEFINITIONS}
   )
 
   set_property(TARGET ${library_name}

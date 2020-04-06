@@ -128,7 +128,7 @@ int main(int argc, char **argv)
   int flags = (flagViews   ? sfmDataIO::VIEWS        : 0)
        | (flagIntrinsics   ? sfmDataIO::INTRINSICS   : 0)
        | (flagExtrinsics   ? sfmDataIO::EXTRINSICS   : 0)
-       | (flagObservations ? sfmDataIO::OBSERVATIONS : 0)
+       | (flagObservations ? sfmDataIO::OBSERVATIONS_WITH_FEATURES : 0)
        | (flagStructure    ? sfmDataIO::STRUCTURE    : 0);
 
   flags = (flags) ? flags : sfmDataIO::ALL;

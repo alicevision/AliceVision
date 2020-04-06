@@ -8,7 +8,6 @@
 #include <aliceVision/image/all.hpp>
 #include "rgbCurve.hpp"
 #include <aliceVision/numeric/numeric.hpp>
-#include <Eigen/SparseQR>
 
 namespace aliceVision {
 namespace hdr {

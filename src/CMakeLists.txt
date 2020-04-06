@@ -329,11 +329,9 @@ endif()
 # ==============================================================================
 find_package(Eigen3 3.3 REQUIRED)
 if(Eigen3_FOUND OR EIGEN3_FOUND)
-  # message(FATAL_ERROR "EIGEN_INCLUDE_DIR: ${EIGEN_INCLUDE_DIR}")
-  include_directories(${EIGEN_INCLUDE_DIR})
+  message(STATUS "EIGEN_INCLUDE_DIR: ${EIGEN_INCLUDE_DIR}")
   # See https://eigen.tuxfamily.org/dox/group__TopicUnalignedArrayAssert.html
-  add_definitions("-DEIGEN_DONT_ALIGN_STATICALLY=1")
-  add_definitions("-DEIGEN_DONT_VECTORIZE=1")
+  set(AV_EIGEN_DEFINITIONS EIGEN_DONT_ALIGN_STATICALLY EIGEN_DONT_VECTORIZE)
 else()
   message(FATAL_ERROR " EIGEN NOT FOUND. EIGEN_INCLUDE_DIR: ${EIGEN_INCLUDE_DIR}")
 endif()

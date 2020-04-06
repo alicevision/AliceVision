@@ -7,7 +7,6 @@
 #pragma once
 
 #include <stdint.h>
-//#include <iostream>
 #include <Eigen/Core>
 
 namespace aliceVision {

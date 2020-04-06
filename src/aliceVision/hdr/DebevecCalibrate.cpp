@@ -5,15 +5,19 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "DebevecCalibrate.hpp"
-#include <iostream>
-#include <fstream>
-#include <cassert>
+
 #include <aliceVision/alicevision_omp.hpp>
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/image/all.hpp>
 #include <aliceVision/image/io.hpp>
 
 #include <OpenImageIO/imagebufalgo.h>
+
+#include <Eigen/SparseQR>
+
+#include <iostream>
+#include <fstream>
+#include <cassert>
 
 
 namespace aliceVision {

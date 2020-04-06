@@ -29,11 +29,10 @@ typedef std::vector<Pair> PairVec;
 
 #ifdef ALICEVISION_UNORDERED_MAP
 template<typename Key, typename Value>
-struct HashMap : std::unordered_map<Key, Value> {};
+using HashMap = std::unordered_map<Key, Value>;
 #else
 template<typename K, typename V>
-struct HashMap : std::map<K, V, std::less<K>,
- Eigen::aligned_allocator<std::pair<const K,V> > > {};
+using HashMap = std::map<K, V, std::less<K>, Eigen::aligned_allocator<std::pair<const K,V> > >;
 #endif
 
 
