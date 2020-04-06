@@ -12,7 +12,6 @@
 #include "aliceVision/matchingImageCollection/geometricFilterUtils.hpp"
 #include "aliceVision/sfmData/SfMData.hpp"
 
-#include <Eigen/Geometry>
 #include <boost/filesystem.hpp>
 
 #include <cmath>
