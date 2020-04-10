@@ -17,7 +17,12 @@ jobs:
   recent activity. It will be closed if no further activity occurs. Thank you
   for your contributions.'
         stale-issue-label: 'stale'
-        days-before-stale: 120
+        days-before-stale: 360
         days-before-close: 7
         exempt-pr-label: 'type:pr'
-        exempt-issue-label: 'feature'
+        exempt-issue-label: 
+        - 'feature'
+        - 'do not close'
+        - 'feature request'
+        - 'scope:doc'
+        - 'new feature'
