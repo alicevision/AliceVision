@@ -1,4 +1,4 @@
-// This file is part of the AliceVision project.
+﻿// This file is part of the AliceVision project.
 // Copyright (c) 2015 AliceVision contributors.
 // Copyright (c) 2012 openMVG contributors.
 // This Source Code Form is subject to the terms of the Mozilla Public License,
@@ -9,6 +9,7 @@
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
 #include <aliceVision/sfm/pipeline/regionsIO.hpp>
 #include <aliceVision/sfm/pipeline/ReconstructionEngine.hpp>
+#include <aliceVision/sfm/pipeline/structureFromKnownPoses/StructureEstimationFromKnownPoses.hpp>
 #include <aliceVision/feature/FeaturesPerView.hpp>
 #include <aliceVision/feature/RegionsPerView.hpp>
 #include <aliceVision/feature/ImageDescriber.hpp>
@@ -99,12 +100,13 @@ int main(int argc, char **argv)
   std::string geometricFilterTypeName = matchingImageCollection::EGeometricFilterType_enumToString(matchingImageCollection::EGeometricFilterType::FUNDAMENTAL_MATRIX);
   std::string describerTypesName = feature::EImageDescriberType_enumToString(feature::EImageDescriberType::SIFT);
   float distRatio = 0.8f;
-  std::string predefinedPairList;
+  std::vector<std::string> predefinedPairList;
   int rangeStart = -1;
   int rangeSize = 0;
   std::string nearestMatchingMethod = "ANN_L2";
   robustEstimation::ERobustEstimator geometricEstimator = robustEstimation::ERobustEstimator::ACRANSAC;
   double geometricErrorMax = 0.0; //< the maximum reprojection error allowed for image matching with geometric validation
+  double knownPosesGeometricErrorMax = 4.0;
   bool savePutativeMatches = false;
   bool guidedMatching = false;
   int maxIteration = 2048;
@@ -112,6 +114,7 @@ int main(int argc, char **argv)
   size_t numMatchesToKeep = 0;
   bool useGridSort = true;
   bool exportDebugFiles = false;
+  bool matchFromKnownCameraPoses = false;
   const std::string fileExtension = "txt";
 
   po::options_description allParams(
@@ -137,8 +140,8 @@ int main(int argc, char **argv)
       matchingImageCollection::EGeometricFilterType_informations().c_str())
     ("describerTypes,d", po::value<std::string>(&describerTypesName)->default_value(describerTypesName),
       feature::EImageDescriberType_informations().c_str())
-    ("imagePairsList,l", po::value<std::string>(&predefinedPairList)->default_value(predefinedPairList),
-      "Path to a file which contains the list of image pairs to match.")
+    ("imagePairsList,l", po::value<std::vector<std::string>>(&predefinedPairList)->multitoken(),
+      "Path(s) to one or more files which contain the list of image pairs to match.")
     ("photometricMatchingMethod,p", po::value<std::string>(&nearestMatchingMethod)->default_value(nearestMatchingMethod),
       "For Scalar based regions descriptor:\n"
       "* BRUTE_FORCE_L2: L2 BruteForce matching\n"
@@ -153,8 +156,14 @@ int main(int argc, char **argv)
       "* acransac: A-Contrario Ransac\n"
       "* loransac: LO-Ransac (only available for fundamental matrix). Need to set '--geometricError'")
     ("geometricError", po::value<double>(&geometricErrorMax)->default_value(geometricErrorMax), 
-          "Maximum error (in pixels) allowed for features matching during geometric verification. "
-          "If set to 0 it lets the ACRansac select an optimal value.")
+      "Maximum error (in pixels) allowed for features matching during geometric verification. "
+      "If set to 0 it lets the ACRansac select an optimal value.")
+    ("matchFromKnownCameraPoses", po::value<bool>(&matchFromKnownCameraPoses)->default_value(matchFromKnownCameraPoses),
+      "Enable the usage of geometric information from known camera poses to guide the feature matching. "
+      "If some cameras have unknown poses (so there is no geometric prior), the standard feature matching will be performed.")
+    ("knownPosesGeometricErrorMax", po::value<double>(&knownPosesGeometricErrorMax)->default_value(knownPosesGeometricErrorMax),
+      "Maximum error (in pixels) allowed for features matching guided by geometric information from known camera poses. "
+      "If set to 0 it lets the ACRansac select an optimal value.")
     ("savePutativeMatches", po::value<bool>(&savePutativeMatches)->default_value(savePutativeMatches),
       "Save putative matches.")
     ("guidedMatching", po::value<bool>(&guidedMatching)->default_value(guidedMatching),
@@ -242,7 +251,7 @@ int main(int argc, char **argv)
   // a. Load SfMData (image view & intrinsics data)
 
   SfMData sfmData;
-  if(!sfmDataIO::Load(sfmData, sfmDataFilename, sfmDataIO::ESfMData(sfmDataIO::VIEWS|sfmDataIO::INTRINSICS)))
+  if(!sfmDataIO::Load(sfmData, sfmDataFilename, sfmDataIO::ESfMData(sfmDataIO::VIEWS|sfmDataIO::INTRINSICS|sfmDataIO::EXTRINSICS)))
   {
     ALICEVISION_LOG_ERROR("The input SfMData file '" << sfmDataFilename << "' cannot be read.");
     return EXIT_FAILURE;
@@ -262,9 +271,12 @@ int main(int argc, char **argv)
   }
   else
   {
-    ALICEVISION_LOG_INFO("Load pair list from file: " << predefinedPairList);
-    if(!loadPairs(predefinedPairList, pairs, rangeStart, rangeSize))
-        return EXIT_FAILURE;
+    for(const std::string& imagePairsFile: predefinedPairList)
+    {
+      ALICEVISION_LOG_INFO("Load pair list from file: " << imagePairsFile);
+      if(!loadPairs(imagePairsFile, pairs, rangeStart, rangeSize))
+          return EXIT_FAILURE;
+    }
   }
 
   if(pairs.empty())
@@ -283,8 +295,6 @@ int main(int argc, char **argv)
     filter.insert(pair.second);
   }
 
-  ALICEVISION_LOG_INFO("Putative matches");
-
   PairwiseMatches mapPutativesMatches;
 
   // allocate the right Matcher according the Matching requested method
@@ -293,7 +303,9 @@ int main(int argc, char **argv)
 
   const std::vector<feature::EImageDescriberType> describerTypes = feature::EImageDescriberType_stringToEnums(describerTypesName);
 
-  ALICEVISION_LOG_INFO("There are " + std::to_string(sfmData.getViews().size()) + " views and " + std::to_string(pairs.size()) + " image pairs.");
+  ALICEVISION_LOG_INFO("There are " << sfmData.getViews().size() << " views and " << pairs.size() << " image pairs.");
+
+  ALICEVISION_LOG_INFO("Load features and descriptors");
 
   // load the corresponding view regions
   RegionsPerView regionPerView;
@@ -305,22 +317,60 @@ int main(int argc, char **argv)
 
   // perform the matching
   system::Timer timer;
+  PairSet pairsPoseKnown;
+  PairSet pairsPoseUnknown;
 
-  for(const feature::EImageDescriberType descType : describerTypes)
+  if(matchFromKnownCameraPoses)
   {
-    assert(descType != feature::EImageDescriberType::UNINITIALIZED);
-    ALICEVISION_LOG_INFO(EImageDescriberType_enumToString(descType) + " Regions Matching");
+      for(const auto& p: pairs)
+      {
+        if(sfmData.isPoseAndIntrinsicDefined(p.first) && sfmData.isPoseAndIntrinsicDefined(p.second))
+        {
+            pairsPoseKnown.insert(p);
+        }
+        else
+        {
+            pairsPoseUnknown.insert(p);
+        }
+      }
+  }
+  else
+  {
+      pairsPoseUnknown = pairs;
+  }
 
-    // photometric matching of putative pairs
-    imageCollectionMatcher->Match(regionPerView, pairs, descType, mapPutativesMatches);
+  if(!pairsPoseKnown.empty())
+  {
+    // compute matches from known camera poses when you have an initialization on the camera poses
+    ALICEVISION_LOG_INFO("Putative matches from known poses: " << pairsPoseKnown.size() << " image pairs.");
 
-    // TODO: DELI
-    // if(!guided_matching) regionPerView.clearDescriptors()
+    sfm::StructureEstimationFromKnownPoses structureEstimator;
+    structureEstimator.match(sfmData, pairsPoseKnown, regionPerView, knownPosesGeometricErrorMax);
+    mapPutativesMatches = structureEstimator.getPutativesMatches();
+  }
+
+  if(!pairsPoseUnknown.empty())
+  {
+      ALICEVISION_LOG_INFO("Putative matches (unknown poses): " << pairsPoseUnknown.size() << " image pairs.");
+      // match feature descriptors between them without geometric notion
+
+      for(const feature::EImageDescriberType descType : describerTypes)
+      {
+        assert(descType != feature::EImageDescriberType::UNINITIALIZED);
+        ALICEVISION_LOG_INFO(EImageDescriberType_enumToString(descType) + " Regions Matching");
+
+        // photometric matching of putative pairs
+        imageCollectionMatcher->Match(regionPerView, pairsPoseUnknown, descType, mapPutativesMatches);
+
+        // TODO: DELI
+        // if(!guided_matching) regionPerView.clearDescriptors()
+      }
+
   }
 
   if(mapPutativesMatches.empty())
   {
-    ALICEVISION_LOG_INFO("No putative matches.");
+    ALICEVISION_LOG_INFO("No putative feature matches.");
     // If we only compute a selection of matches, we may have no match.
     return rangeSize ? EXIT_SUCCESS : EXIT_FAILURE;
   }
@@ -500,8 +550,8 @@ int main(int argc, char **argv)
         assert(descType != feature::EImageDescriberType::UNINITIALIZED);
         const aliceVision::matching::IndMatches& inputMatches = match.second;
 
-        const feature::FeatRegions<feature::SIOPointFeature>* rRegions = dynamic_cast<const feature::FeatRegions<feature::SIOPointFeature>*>(&regionPerView.getRegions(indexImagePair.second, descType));
-        const feature::FeatRegions<feature::SIOPointFeature>* lRegions = dynamic_cast<const feature::FeatRegions<feature::SIOPointFeature>*>(&regionPerView.getRegions(indexImagePair.first, descType));
+        const feature::Regions* rRegions = &regionPerView.getRegions(indexImagePair.second, descType);
+        const feature::Regions* lRegions = &regionPerView.getRegions(indexImagePair.first, descType);
 
         // get the regions for the current view pair:
         if(rRegions && lRegions)

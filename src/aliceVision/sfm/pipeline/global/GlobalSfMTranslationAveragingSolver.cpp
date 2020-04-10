@@ -373,7 +373,7 @@ void GlobalSfMTranslationAveragingSolver::ComputePutativeTranslation_EdgesCovera
       {
         aliceVision::track::TracksBuilder tracksBuilder;
         tracksBuilder.build(map_triplet_matches);
-        tracksBuilder.filter(3);
+        tracksBuilder.filter(true,3);
 
         #pragma omp critical
         map_tracksPerTriplets[i] = tracksBuilder.nbTracks(); //count the # of matches in the UF tree
@@ -612,7 +612,7 @@ bool GlobalSfMTranslationAveragingSolver::Estimate_T_triplet(
 
   aliceVision::track::TracksBuilder tracksBuilder;
   tracksBuilder.build(map_triplet_matches);
-  tracksBuilder.filter(3);
+  tracksBuilder.filter(true,3);
   tracksBuilder.exportToSTL(tracks);
 
   if (tracks.size() < 30)

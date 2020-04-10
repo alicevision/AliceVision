@@ -48,7 +48,7 @@ bool ImageDescriber_AKAZE_OCV::describe(const image::Image<unsigned char>& image
 
   for(const auto& i_keypoint : vec_keypoints)
   {
-    SIOPointFeature feat(i_keypoint.pt.x, i_keypoint.pt.y, i_keypoint.size, i_keypoint.angle);
+    PointFeature feat(i_keypoint.pt.x, i_keypoint.pt.y, i_keypoint.size, i_keypoint.angle);
     regionsCasted->Features().push_back(feat);
 
     memcpy(descriptor.getData(),

@@ -100,7 +100,7 @@ public:
   }
 
   /**
-   * @brief Return the errors associated to the model and  each sample point
+   * @brief Return the errors associated to the model and each sample point
    * @param[in] model
    * @param[out] errors
    */

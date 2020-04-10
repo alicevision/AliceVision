@@ -29,7 +29,7 @@ alicevision_add_library(aliceVision_mesh
     aliceVision_mvsData
     aliceVision_mvsUtils
     Geogram::geogram
-    ${Boost_FILESYSTEM_LIBRARY}
+    Boost::filesystem
   PRIVATE_LINKS
     aliceVision_system
 )

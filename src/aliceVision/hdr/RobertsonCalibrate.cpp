@@ -124,7 +124,7 @@ void RobertsonCalibrate::process(const std::vector< std::vector< image::Image<im
     //initialize radiance
     for(std::size_t g = 0; g < nbGroups; ++g)
     {
-      merge.process(ldrImageGroups[g], times[g], weight, response, _radiance[g], 1.f, true);
+      merge.process(ldrImageGroups[g], times[g], weight, response, _radiance[g], 1.f);
     }
 
     ALICEVISION_LOG_TRACE("2) initialization new response ");

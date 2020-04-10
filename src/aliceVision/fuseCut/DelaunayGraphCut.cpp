@@ -542,6 +542,30 @@ StaticVector<StaticVector<int>*>* DelaunayGraphCut::createPtsCams()
     return out;
 }
 
+void DelaunayGraphCut::createPtsCams(StaticVector<StaticVector<int>>& out_ptsCams)
+{
+    long t = std::clock();
+    ALICEVISION_LOG_INFO("Extract visibilities.");
+    int npts = getNbVertices();
+
+    out_ptsCams.reserve(npts);
+
+    for(const GC_vertexInfo& v: _verticesAttr)
+    {
+        StaticVector<int> cams;
+        cams.reserve(v.getNbCameras());
+        for(int c = 0; c < v.getNbCameras(); c++)
+        {
+            cams.push_back(v.cams[c]);
+        }
+        out_ptsCams.push_back(cams);
+    } // for i
+
+    ALICEVISION_LOG_INFO("Extract visibilities done.");
+
+    mvsUtils::printfElapsedTime(t, "Extract visibilities ");
+}
+
 StaticVector<int>* DelaunayGraphCut::getPtsCamsHist()
 {
     int maxnCams = 0;
@@ -2736,12 +2760,12 @@ mesh::Mesh* DelaunayGraphCut::createMesh(bool filterHelperPointsTriangles)
     mesh::Mesh* me = new mesh::Mesh();
 
     // TODO: copy only surface points and remap visibilities
-    me->pts = new StaticVector<Point3d>();
-    me->pts->reserve(_verticesCoords.size());
+    me->pts = StaticVector<Point3d>();
+    me->pts.reserve(_verticesCoords.size());
 
     for(const Point3d& p: _verticesCoords)
     {
-        me->pts->push_back(p);
+        me->pts.push_back(p);
     }
 
     std::vector<bool> reliableVertices;
@@ -2790,8 +2814,8 @@ mesh::Mesh* DelaunayGraphCut::createMesh(bool filterHelperPointsTriangles)
         }
     }
 
-    me->tris = new StaticVector<mesh::Mesh::triangle>();
-    me->tris->reserve(nbSurfaceFacets);
+    me->tris = StaticVector<mesh::Mesh::triangle>();
+    me->tris.reserve(nbSurfaceFacets);
 
     // loop over all facets
     for(CellIndex ci = 0; ci < _cellIsFull.size(); ++ci)
@@ -2878,7 +2902,7 @@ mesh::Mesh* DelaunayGraphCut::createMesh(bool filterHelperPointsTriangles)
                 t.v[0] = vertices[0];
                 t.v[1] = vertices[1];
                 t.v[2] = vertices[2];
-                me->tris->push_back(t);
+                me->tris.push_back(t);
             }
             else
             {
@@ -2887,7 +2911,7 @@ mesh::Mesh* DelaunayGraphCut::createMesh(bool filterHelperPointsTriangles)
                 t.v[0] = vertices[0];
                 t.v[1] = vertices[2];
                 t.v[2] = vertices[1];
-                me->tris->push_back(t);
+                me->tris.push_back(t);
             }
         }
     }

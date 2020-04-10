@@ -22,8 +22,8 @@ alicevision_add_library(aliceVision_calibration
     aliceVision_image
     aliceVision_system
     aliceVision_dataio
-    ${Boost_FILESYSTEM_LIBRARY}
-    ${Boost_PROGRAM_OPTIONS_LIBRARY}
+    Boost::filesystem
+    Boost::program_options
 )
 
 if(ALICEVISION_HAVE_CCTAG)

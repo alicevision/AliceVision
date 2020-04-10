@@ -8,7 +8,6 @@
 #include <aliceVision/image/all.hpp>
 #include "rgbCurve.hpp"
 #include <aliceVision/numeric/numeric.hpp>
-#include <Eigen/SparseQR>
 
 namespace aliceVision {
 namespace hdr {
@@ -27,10 +26,11 @@ public:
    * @param[in] lambda (parameter of smoothness)
    * @param[out] camera response function
    */
-  void process(const std::vector< std::vector< image::Image<image::RGBfColor> > > &ldrImageGroups,
+  bool process(const std::vector<std::vector<std::string>> &ldrImageGroups,
                const std::size_t channelQuantization,
-               const std::vector< std::vector<float> > &times,
+               const std::vector<std::vector<float>> &times,
                const int nbPoints,
+               const int calibrationDownscale,
                const bool fisheye,
                const rgbCurve &weight,
                const float lambda,

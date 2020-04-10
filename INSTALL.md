@@ -90,7 +90,8 @@ set VCPKG_ROOT=%cd%
 
 vcpkg install ^
           boost-algorithm boost-accumulators boost-atomic boost-container boost-date-time boost-exception boost-filesystem boost-graph boost-log ^
-          boost-program-options boost-property-tree boost-ptr-container boost-regex boost-serialization boost-system boost-test boost-thread ^
+          boost-program-options boost-property-tree boost-ptr-container boost-regex boost-serialization boost-system boost-test boost-thread boost-timer ^
+          lz4 ^
           openexr ^
           openimageio[libraw] ^
           alembic ^
@@ -389,11 +390,11 @@ docker build --tag alicevision:ubuntu18.04-cuda9.2 -f Dockerfile_ubuntu .
 
 Parameters `OS_TAG` and `CUDA_TAG` can be passed to build the image with a specific OS and CUDA version.
 Use NPROC=8 to select the number of cores to use, 1 by default.
-For example, in order to create a CentOS 7 with Cuda 9.2, use:
+For example, the first line of below's commands shows the example to create docker for a CentOS 7 with Cuda 9.2 and second line for Ubuntu 16.04 with Cuda 8.0:
 
 ```
-docker build --build-arg OS_TAG=7 CUDA_TAG=9.2 --tag alicevision:centos7-cuda9.2 .
-docker build --build-arg OS_TAG=16.04 CUDA_TAG=8.0 NPROC=8 --tag alicevision:ubuntu16.04-cuda8.0 -f Dockerfile_ubuntu .
+docker build --build-arg OS_TAG=7 --build-arg CUDA_TAG=9.2 --tag alicevision:centos7-cuda9.2 .
+docker build --build-arg OS_TAG=16.04 --build-arg CUDA_TAG=8.0 --build-arg NPROC=8 --tag alicevision:ubuntu16.04-cuda8.0 -f Dockerfile_ubuntu .
 ```
 
 In order to run the image [nvidia docker](https://github.com/nvidia/nvidia-docker/wiki/Installation-(version-2.0)) is needed.

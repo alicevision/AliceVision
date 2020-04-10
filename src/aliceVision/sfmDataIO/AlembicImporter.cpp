@@ -221,6 +221,7 @@ bool readPointCloud(IObject iObj, M44d mat, sfmData::SfMData &sfmdata, ESfMData 
 
     UInt32ArraySamplePtr sampleVisibilityFeatId;
     FloatArraySamplePtr sampleVisibilityFeatPos;
+    FloatArraySamplePtr sampleVisibilityFeatScale;
 
     if(userProps.getPropertyHeader("mvg_visibilityFeatId") &&
        userProps.getPropertyHeader("mvg_visibilityFeatPos") &&
@@ -232,6 +233,12 @@ bool readPointCloud(IObject iObj, M44d mat, sfmData::SfMData &sfmdata, ESfMData 
       IFloatArrayProperty propVisibilityFeatPos(userProps, "mvg_visibilityFeatPos");
       propVisibilityFeatPos.get(sampleVisibilityFeatPos);
 
+      if(userProps && userProps.getPropertyHeader("mvg_visibilityFeatScale"))
+      {
+          IFloatArrayProperty propVisibilityFeatScale(userProps, "mvg_visibilityFeatScale");
+          propVisibilityFeatScale.get(sampleVisibilityFeatScale);
+      }
+
       if(sampleVisibilityViewId->size() != sampleVisibilityFeatId->size() ||
          2*sampleVisibilityViewId->size() != sampleVisibilityFeatPos->size())
       {
@@ -241,13 +248,23 @@ bool readPointCloud(IObject iObj, M44d mat, sfmData::SfMData &sfmdata, ESfMData 
                               "# features 2D pos: " << sampleVisibilityFeatPos->size() << ".");
         return false;
       }
+
+    }
+    else {
+        ALICEVISION_LOG_WARNING("Alembic LOAD: NO OBSERVATIONS_WITH_FEATURES: "
+                                << ", mvg_visibilityFeatId: " << long(userProps.getPropertyHeader("mvg_visibilityFeatId"))
+                                << ", mvg_visibilityFeatPos: " << long(userProps.getPropertyHeader("mvg_visibilityFeatPos"))
+                                << ", OBSERVATIONS_WITH_FEATURES flag: " << bool(flags_part & ESfMData::OBSERVATIONS_WITH_FEATURES)
+                                );
     }
 
     const bool hasFeatures = (sampleVisibilityFeatId != nullptr) && (sampleVisibilityFeatId->size() > 0);
+
     std::size_t obsGlobalIndex = 0;
     for(std::size_t point3d_i = 0; point3d_i < positions->size(); ++point3d_i)
     {
-      sfmData::Landmark& landmark = sfmdata.structure[nbPointsInit + point3d_i];
+      const int landmarkId = nbPointsInit + point3d_i;
+      sfmData::Landmark& landmark = sfmdata.structure[landmarkId];
 
       // Number of observation for this 3d point
       const std::size_t visibilitySize = (*sampleVisibilitySize)[point3d_i];
@@ -259,13 +276,19 @@ bool readPointCloud(IObject iObj, M44d mat, sfmData::SfMData &sfmdata, ESfMData 
         if(hasFeatures)
         {
           const int featId = (*sampleVisibilityFeatId)[obsGlobalIndex];
-          sfmData::Observation& observations = landmark.observations[viewId];
-          observations.id_feat = featId;
+          sfmData::Observation& observation = landmark.observations[viewId];
+          observation.id_feat = featId;
 
           const float posX = (*sampleVisibilityFeatPos)[2 * obsGlobalIndex];
           const float posY = (*sampleVisibilityFeatPos)[2 * obsGlobalIndex + 1];
-          observations.x[0] = posX;
-          observations.x[1] = posY;
+          observation.x[0] = posX;
+          observation.x[1] = posY;
+
+          // for compatibility with previous version without scale
+          if(sampleVisibilityFeatScale)
+          {
+              observation.scale = (*sampleVisibilityFeatScale)[obsGlobalIndex];
+          }
         }
         else
         {

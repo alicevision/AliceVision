@@ -65,8 +65,8 @@ export GT_TEST_SOURCE="${GT_TEST_ROOT}/gt_source"
 export GT_TEST_RESULTS="${GT_TEST_ROOT}/result.json"
 export GT_TEST_OUTPUT="${GT_TEST_ROOT}/gt_output"
 # CMAKE
-export CMAKE_VERSION_SHORT=3.4
-export CMAKE_VERSION=3.4.1
+export CMAKE_VERSION_SHORT=3.11
+export CMAKE_VERSION=3.11.4
 export CMAKE_URL="https://cmake.org/files/v${CMAKE_VERSION_SHORT}/cmake-${CMAKE_VERSION}-Linux-x86_64.tar.gz"
 export CMAKE_ROOT="${TRAVIS_BUILD_DIR}/cmake-${CMAKE_VERSION}"
 export CMAKE_INSTALL="${CMAKE_ROOT}/install"

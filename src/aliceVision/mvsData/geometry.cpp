@@ -403,22 +403,22 @@ bool isPointInTriangle(const Point2d& A, const Point2d& B, const Point2d& C, con
     return isPointInTriangle(computeBarycentricCoordinates(A, B, C, P));
 }
 
-bool lineSegmentsIntersect2DTest(const Point2d* A, const Point2d* B, const Point2d* C, const Point2d* D)
+bool lineSegmentsIntersect2DTest(const Point2d& A, const Point2d& B, const Point2d& C, const Point2d& D)
 {
-    float r = ((A->y - C->y) * (D->x - C->x) - (A->x - C->x) * (D->y - C->y)) /
-              ((B->x - A->x) * (D->y - C->y) - (B->y - A->y) * (D->x - C->x));
-    float s = ((A->y - C->y) * (B->x - A->x) - (A->x - C->x) * (B->y - A->y)) /
-              ((B->x - A->x) * (D->y - C->y) - (B->y - A->y) * (D->x - C->x));
+    float r = ((A.y - C.y) * (D.x - C.x) - (A.x - C.x) * (D.y - C.y)) /
+              ((B.x - A.x) * (D.y - C.y) - (B.y - A.y) * (D.x - C.x));
+    float s = ((A.y - C.y) * (B.x - A.x) - (A.x - C.x) * (B.y - A.y)) /
+              ((B.x - A.x) * (D.y - C.y) - (B.y - A.y) * (D.x - C.x));
     return ((r >= 0.0) && (r <= 1.0) && (s >= 0.0) && (s <= 1.0));
 }
 
-bool lineSegmentsIntersect2DTest(Point2d* S, const Point2d* A, const Point2d* B, const Point2d* C, const Point2d* D)
+bool lineSegmentsIntersect2DTest(Point2d& S, const Point2d& A, const Point2d& B, const Point2d& C, const Point2d& D)
 {
-    float r = ((A->y - C->y) * (D->x - C->x) - (A->x - C->x) * (D->y - C->y)) /
-              ((B->x - A->x) * (D->y - C->y) - (B->y - A->y) * (D->x - C->x));
-    float s = ((A->y - C->y) * (B->x - A->x) - (A->x - C->x) * (B->y - A->y)) /
-              ((B->x - A->x) * (D->y - C->y) - (B->y - A->y) * (D->x - C->x));
-    *S = *A + (*B - *A) * r;
+    float r = ((A.y - C.y) * (D.x - C.x) - (A.x - C.x) * (D.y - C.y)) /
+              ((B.x - A.x) * (D.y - C.y) - (B.y - A.y) * (D.x - C.x));
+    float s = ((A.y - C.y) * (B.x - A.x) - (A.x - C.x) * (B.y - A.y)) /
+              ((B.x - A.x) * (D.y - C.y) - (B.y - A.y) * (D.x - C.x));
+    S = A + (B - A) * r;
     return ((r >= 0.0) && (r <= 1.0) && (s >= 0.0) && (s <= 1.0));
 }
 

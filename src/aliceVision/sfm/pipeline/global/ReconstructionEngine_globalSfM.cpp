@@ -197,7 +197,8 @@ bool ReconstructionEngine_globalSfM::Compute_Global_Rotations(const rotationAver
   const ERelativeRotationInferenceMethod eRelativeRotationInferenceMethod = TRIPLET_ROTATION_INFERENCE_COMPOSITION_ERROR; //TRIPLET_ROTATION_INFERENCE_NONE;
 
   GlobalSfMRotationAveragingSolver rotationAveraging_solver;
-  const bool b_rotationAveraging = rotationAveraging_solver.Run(_eRotationAveragingMethod, eRelativeRotationInferenceMethod, relatives_R, global_rotations);
+  //-- Rejection triplet that are 'not' identity rotation (error to identity > 5°)
+  const bool b_rotationAveraging = rotationAveraging_solver.Run(_eRotationAveragingMethod, eRelativeRotationInferenceMethod, relatives_R, 5.0, global_rotations);
 
   ALICEVISION_LOG_DEBUG("Found #global_rotations: " << global_rotations.size());
 
@@ -280,7 +281,7 @@ bool ReconstructionEngine_globalSfM::Compute_Initial_Structure(matching::Pairwis
     // Use triplet validated matches
     tracksBuilder.build(tripletWise_matches);
 #endif
-    tracksBuilder.filter(3);
+    tracksBuilder.filter(true,3);
     TracksMap map_selectedTracks; // reconstructed track (visibility per 3D point)
     tracksBuilder.exportToSTL(map_selectedTracks);
 
@@ -300,7 +301,9 @@ bool ReconstructionEngine_globalSfM::Compute_Initial_Structure(matching::Pairwis
         const size_t imaIndex = it->first;
         const size_t featIndex = it->second;
         const PointFeature & pt = _featuresPerView->getFeatures(imaIndex, track.descType)[featIndex];
-        obs[imaIndex] = Observation(pt.coords().cast<double>(), featIndex);
+
+        const double scale = (_featureConstraint == EFeatureConstraint::BASIC) ? 0.0 : pt.scale();
+        obs[imaIndex] = Observation(pt.coords().cast<double>(), featIndex, scale);
       }
     }
 
@@ -360,7 +363,7 @@ bool ReconstructionEngine_globalSfM::Compute_Initial_Structure(matching::Pairwis
 bool ReconstructionEngine_globalSfM::Adjust()
 {
   // refine sfm  scene (in a 3 iteration process (free the parameters regarding their incertainty order)):
-  BundleAdjustmentCeres::CeresOptions options;
+  BundleAdjustmentCeres::CeresOptions options; 
   options.useParametersOrdering = false; // disable parameters ordering
 
   BundleAdjustmentCeres BA(options);
@@ -388,7 +391,7 @@ bool ReconstructionEngine_globalSfM::Adjust()
 
   // Remove outliers (max_angle, residual error)
   const size_t pointcount_initial = _sfmData.structure.size();
-  RemoveOutliers_PixelResidualError(_sfmData, 4.0);
+  RemoveOutliers_PixelResidualError(_sfmData, _featureConstraint, 4.0);
   const size_t pointcount_pixelresidual_filter = _sfmData.structure.size();
   RemoveOutliers_AngleError(_sfmData, 2.0);
   const size_t pointcount_angular_filter = _sfmData.structure.size();
@@ -555,13 +558,17 @@ void ReconstructionEngine_globalSfM::Compute_Relative_Rotations(rotationAveragin
           const matching::IndMatches & matches = matchesPerDescIt.second;
           for (const matching::IndMatch& match: matches)
           {
-            const Vec2 x1_ = _featuresPerView->getFeatures(I, descType)[match._i].coords().cast<double>();
-            const Vec2 x2_ = _featuresPerView->getFeatures(J, descType)[match._j].coords().cast<double>();
+            const PointFeature& p1 = _featuresPerView->getFeatures(I, descType)[match._i];
+            const PointFeature& p2 = _featuresPerView->getFeatures(J, descType)[match._j];
+            const Vec2 x1_ = p1.coords().cast<double>();
+            const Vec2 x2_ = p2.coords().cast<double>();
             Vec3 X;
             multiview::TriangulateDLT(P1, x1_, P2, x2_, &X);
             Observations obs;
-            obs[view_I->getViewId()] = Observation(x1_, match._i);
-            obs[view_J->getViewId()] = Observation(x2_, match._j);
+            const double scaleI = (_featureConstraint == EFeatureConstraint::BASIC) ? 0.0 : p1.scale();
+            const double scaleJ = (_featureConstraint == EFeatureConstraint::BASIC) ? 0.0 : p2.scale();
+            obs[view_I->getViewId()] = Observation(x1_, match._i, scaleI);
+            obs[view_J->getViewId()] = Observation(x2_, match._j, scaleJ);
             Landmark& newLandmark = landmarks[landmarkId++];
             newLandmark.descType = descType;
             newLandmark.observations = obs;

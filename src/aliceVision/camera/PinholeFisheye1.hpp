@@ -34,14 +34,14 @@ public:
   {
   }
 
-  PinholeFisheye1* clone() const { return new PinholeFisheye1(*this); }
-  void assign(const IntrinsicBase& other) { *this = dynamic_cast<const PinholeFisheye1&>(other); }
+  PinholeFisheye1* clone() const override { return new PinholeFisheye1(*this); }
+  void assign(const IntrinsicBase& other) override { *this = dynamic_cast<const PinholeFisheye1&>(other); }
 
-  EINTRINSIC getType() const { return PINHOLE_CAMERA_FISHEYE1; }
+  EINTRINSIC getType() const override { return PINHOLE_CAMERA_FISHEYE1; }
 
-  virtual bool have_disto() const { return true;}
+  virtual bool have_disto() const override { return true;}
 
-  virtual Vec2 add_disto(const Vec2 & p) const
+  virtual Vec2 add_disto(const Vec2 & p) const override
   {
     const double k1 = _distortionParams.at(0);
     const double r = std::hypot(p(0), p(1));
@@ -49,7 +49,7 @@ public:
     return  p * coef;
   }
 
-  virtual Vec2 remove_disto(const Vec2 & p) const
+  virtual Vec2 remove_disto(const Vec2 & p) const override
   {
     const double k1 = _distortionParams.at(0);
     const double r = std::hypot(p(0), p(1));
@@ -58,13 +58,13 @@ public:
   }
 
   /// Return the un-distorted pixel (with removed distortion)
-  virtual Vec2 get_ud_pixel(const Vec2& p) const
+  virtual Vec2 get_ud_pixel(const Vec2& p) const override
   {
     return cam2ima( remove_disto(ima2cam(p)) );
   }
 
   /// Return the distorted pixel (with added distortion)
-  virtual Vec2 get_d_pixel(const Vec2& p) const
+  virtual Vec2 get_d_pixel(const Vec2& p) const override
   {
     return cam2ima( add_disto(ima2cam(p)) );
   }

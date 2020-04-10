@@ -45,8 +45,36 @@ inline void getCommonViewsWithPoses(const sfmData::SfMData& sfmDataA,
   }
 }
 
+inline void getCommonPoseId(const sfmData::SfMData& sfmDataA,
+                            const sfmData::SfMData& sfmDataB,
+                            std::vector<IndexT>& outIndexes)
+{
+    for (const auto& poseA : sfmDataA.getPoses())
+    {
+        if (sfmDataB.getPoses().find(poseA.first) != sfmDataB.getPoses().end())
+        {
+            outIndexes.push_back(poseA.first);
+        }
+    }
+}
+
+
+void matchViewsByFilePattern(
+    const sfmData::SfMData& sfmDataA,
+    const sfmData::SfMData& sfmDataB,
+    const std::string& filePatternMatching,
+    std::vector<std::pair<IndexT, IndexT>>& out_commonViewIds);
+
+
+void matchViewsByMetadataMatching(
+    const sfmData::SfMData& sfmDataA,
+    const sfmData::SfMData& sfmDataB,
+    const std::vector<std::string>& metadataList,
+    std::vector<std::pair<IndexT, IndexT>>& out_commonViewIds);
+
+
 /**
- * @brief Compute a 5DOF rigid transform between the two set of cameras.
+ * @brief Compute a 5DOF rigid transform between the two set of cameras based on common viewIds.
  *
  * @param[in] sfmDataA
  * @param[in] sfmDataB
@@ -55,11 +83,52 @@ inline void getCommonViewsWithPoses(const sfmData::SfMData& sfmDataA,
  * @param[out] out_t output translation vector
  * @return true if it finds a similarity transformation
  */
-bool computeSimilarity(const sfmData::SfMData& sfmDataA,
+bool computeSimilarityFromCommonCameras_viewId(const sfmData::SfMData& sfmDataA,
                        const sfmData::SfMData& sfmDataB,
                        double* out_S,
                        Mat3* out_R,
                        Vec3* out_t);
+
+/**
+* @brief Compute a 5DOF rigid transform between the two set of cameras based on common poseIds.
+*
+* @param[in] sfmDataA
+* @param[in] sfmDataB
+* @param[out] out_S output scale factor
+* @param[out] out_R output rotation 3x3 matrix
+* @param[out] out_t output translation vector
+* @return true if it finds a similarity transformation
+*/
+bool computeSimilarityFromCommonCameras_poseId(
+    const sfmData::SfMData& sfmDataA,
+    const sfmData::SfMData& sfmDataB,
+    double* out_S,
+    Mat3* out_R,
+    Vec3* out_t);
+
+bool computeSimilarityFromCommonCameras_imageFileMatching(
+    const sfmData::SfMData& sfmDataA,
+    const sfmData::SfMData& sfmDataB,
+    const std::string& filePatternMatching,
+    double* out_S,
+    Mat3* out_R,
+    Vec3* out_t);
+
+bool computeSimilarityFromCommonCameras_metadataMatching(
+    const sfmData::SfMData& sfmDataA,
+    const sfmData::SfMData& sfmDataB,
+    const std::vector<std::string>& metadataList,
+    double* out_S,
+    Mat3* out_R,
+    Vec3* out_t);
+
+
+bool computeSimilarityFromCommonMarkers(
+    const sfmData::SfMData& sfmDataA,
+    const sfmData::SfMData& sfmDataB,
+    double* out_S,
+    Mat3* out_R,
+    Vec3* out_t);
 
 
 /**
@@ -155,6 +224,35 @@ void computeNewCoordinateSystemFromSingleCamera(const sfmData::SfMData& sfmData,
                                                 double& out_S,
                                                 Mat3& out_R,
                                                 Vec3& out_t);
+
+struct MarkerWithCoord
+{
+    int id;
+    Vec3 coord;
+};
+
+std::istream& operator>>(std::istream& in, MarkerWithCoord& marker);
+
+std::ostream& operator<<(std::ostream& os, const MarkerWithCoord& marker);
+
+/**
+* @brief Compute a new coordinate system so that markers are aligned with the target coordinates.
+*
+* @param[in] sfmData
+* @param[in] imageDescriberType
+* @param[in] markers: markers id associated to a target 3D coordinate
+* @param[in] withScaling
+* @param[out] out_S scale
+* @param[out] out_R rotation
+* @param[out] out_t translation
+*/
+bool computeNewCoordinateSystemFromSpecificMarkers(const sfmData::SfMData& sfmData,
+    const feature::EImageDescriberType& imageDescriberType,
+    const std::vector<MarkerWithCoord>& markers,
+    bool withScaling,
+    double& out_S,
+    Mat3& out_R,
+    Vec3& out_t);
 
 } // namespace sfm
 } // namespace aliceVision

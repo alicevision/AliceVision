@@ -71,7 +71,7 @@ alicevision_add_library(aliceVision_feature
     aliceVision_gpu
     vlsift
   PRIVATE_LINKS
-    ${Boost_FILESYSTEM_LIBRARY}
+    Boost::filesystem
 )
 
 # Link CCTAG library

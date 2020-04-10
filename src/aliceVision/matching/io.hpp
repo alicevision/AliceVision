@@ -50,7 +50,8 @@ bool Load(PairwiseMatches& matches,
   const std::set<IndexT>& viewsKeysFilter,
   const std::vector<std::string>& folders,
   const std::vector<feature::EImageDescriberType>& descTypesFilter,
-  const int maxNbMatches = 0);
+  const int maxNbMatches = 0,
+  const int minNbMatches =0);
 
 /**
  * @brief Filter to keep only specific viewIds.

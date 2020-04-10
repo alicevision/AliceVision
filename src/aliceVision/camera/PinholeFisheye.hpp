@@ -33,14 +33,14 @@ class PinholeFisheye : public Pinhole
   {
   }
 
-  PinholeFisheye* clone() const { return new PinholeFisheye(*this); }
-  void assign(const IntrinsicBase& other) { *this = dynamic_cast<const PinholeFisheye&>(other); }
+  PinholeFisheye* clone() const override { return new PinholeFisheye(*this); }
+  void assign(const IntrinsicBase& other) override { *this = dynamic_cast<const PinholeFisheye&>(other); }
 
-  EINTRINSIC getType() const { return PINHOLE_CAMERA_FISHEYE; }
+  EINTRINSIC getType() const override { return PINHOLE_CAMERA_FISHEYE; }
 
-  virtual bool have_disto() const { return true;}
+  virtual bool have_disto() const override { return true;}
 
-  virtual Vec2 add_disto(const Vec2 & p) const
+  virtual Vec2 add_disto(const Vec2 & p) const override
   {
     const std::vector<double>& distortionParams = getDistortionParams();
     const double eps = 1e-8;
@@ -62,7 +62,7 @@ class PinholeFisheye : public Pinhole
     return  p*cdist;
   }
 
-  virtual Vec2 remove_disto(const Vec2 & p) const
+  virtual Vec2 remove_disto(const Vec2 & p) const override
   {
     const double eps = 1e-8;
     double scale = 1.0;
@@ -89,15 +89,23 @@ class PinholeFisheye : public Pinhole
   }
 
   /// Return the un-distorted pixel (with removed distortion)
-  virtual Vec2 get_ud_pixel(const Vec2& p) const
+  virtual Vec2 get_ud_pixel(const Vec2& p) const override
   {
     return cam2ima( remove_disto(ima2cam(p)) );
   }
 
   /// Return the distorted pixel (with added distortion)
-  virtual Vec2 get_d_pixel(const Vec2& p) const
+  virtual Vec2 get_d_pixel(const Vec2& p) const override
   {
     return cam2ima( add_disto(ima2cam(p)) );
+  }
+
+  virtual bool isVisibleRay(const Vec3 & ray) const override {
+    if (ray(2) < 0.0) {
+      return false;
+    }
+    
+    return true;
   }
 };
 

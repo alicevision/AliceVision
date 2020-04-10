@@ -207,6 +207,22 @@ private:
   void addLandmarksToProblem(const sfmData::SfMData& sfmData, ERefineOptions refineOptions, ceres::Problem& problem);
 
   /**
+   * @brief Create a residual block for each 2D constraints
+   * @param[in] sfmData The input SfMData contains all the information about the reconstruction, notably the intrinsics
+   * @param[in] refineOptions The chosen refine flag
+   * @param[out] problem The Ceres bundle adjustement problem
+   */
+  void addConstraints2DToProblem(const sfmData::SfMData& sfmData, ERefineOptions refineOptions, ceres::Problem& problem);
+
+  /**
+   * @brief Create a residual block for each rotation priors
+   * @param[in] sfmData The input SfMData contains all the information about the reconstruction, notably the intrinsics
+   * @param[in] refineOptions The chosen refine flag
+   * @param[out] problem The Ceres bundle adjustement problem
+   */
+  void addRotationPriorsToProblem(const sfmData::SfMData& sfmData, ERefineOptions refineOptions, ceres::Problem& problem);
+
+  /**
    * @brief Create the Ceres bundle adjustement problem with:
    *  - extrincics and intrinsics parameters blocks.
    *  - residuals blocks for each observation.
@@ -261,6 +277,9 @@ private:
   /// user Ceres options to use in the solver
   CeresOptions _ceresOptions;
 
+  /// user FeatureConstraint options to use
+  EFeatureConstraint _featureConstraint;
+
   /// last adjustment iteration statisics
   Statistics _statistics;
 
@@ -280,6 +299,7 @@ private:
   /// rig sub-poses blocks wrapper
   /// block: ceres angleAxis(3) + translation(3)
   HashMap<IndexT, HashMap<IndexT, std::array<double,6>>> _rigBlocks;
+
 };
 
 } // namespace sfm

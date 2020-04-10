@@ -140,6 +140,6 @@ struct CameraMatrices
     float f, k1, k2;
 };
 
-int indexOfSortedVoxelArrByX(int val, StaticVector<Voxel>* values, int startId, int stopId);
+int indexOfSortedVoxelArrByX(int val, StaticVector<Voxel>& values, int startId, int stopId);
 
 } // namespace aliceVision

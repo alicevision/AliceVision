@@ -65,6 +65,9 @@ public:
     Reference front() { return _data.front(); }
     ConstReference front() const { return _data.front(); }
 
+    Reference back() { return _data.back(); }
+    ConstReference back() const { return _data.back(); }
+
     const std::vector<T>& getData() const { return _data; }
     std::vector<T>& getDataWritable() { return _data; }
     int size() const { return _data.size(); }
@@ -108,6 +111,11 @@ public:
     void push_back_arr(StaticVector<T>* arr)
     {
         _data.insert(_data.end(), arr->getData().begin(), arr->getData().end());
+    }
+
+    void push_back_arr(StaticVector<T>& arr)
+    {
+        _data.insert(_data.end(), arr.getData().begin(), arr.getData().end());
     }
 
     void remove(int i)
@@ -177,11 +185,19 @@ public:
 using StaticVectorBool = StaticVector<char>;
 
 template <class T>
-int sizeOfStaticVector(StaticVector<T>* a)
+int sizeOfStaticVector(const StaticVector<T>* a)
 {
     if(a == nullptr)
         return 0;
     return a->size();
+}
+
+template <class T>
+int sizeOfStaticVector(const StaticVector<T>& a)
+{
+    if(a.empty())
+        return 0;
+    return a.size();
 }
 
 template <class T>
@@ -231,7 +247,35 @@ void saveArrayOfArraysToFile(std::string fileName, StaticVector<StaticVector<T>*
 }
 
 template <class T>
-StaticVector<StaticVector<T>*>* loadArrayOfArraysFromFile(std::string fileName)
+void saveArrayOfArraysToFile(const std::string fileName, StaticVector<StaticVector<T>>& aa)
+{
+    ALICEVISION_LOG_DEBUG("[IO] saveArrayOfArraysToFile: " << fileName);
+    FILE* f = fopen(fileName.c_str(), "wb");
+    int n = aa.size();
+    fwrite(&n, sizeof(int), 1, f);
+    for(int i = 0; i < n; i++)
+    {
+        int m = 0;
+        StaticVector<T>& a = aa[i];
+        if(a.empty())
+        {
+            fwrite(&m, sizeof(int), 1, f);
+        }
+        else
+        {
+            m = a.size();
+            fwrite(&m, sizeof(int), 1, f);
+            if(m > 0)
+            {
+                fwrite(&a[0], sizeof(T), m, f);
+            };
+        };
+    };
+    fclose(f);
+}
+
+template <class T>
+StaticVector<StaticVector<T>*>* loadArrayOfArraysFromFile(const std::string& fileName)
 {
     ALICEVISION_LOG_DEBUG("[IO] loadArrayOfArraysFromFile: " << fileName);
     FILE* f = fopen(fileName.c_str(), "rb");
@@ -278,13 +322,58 @@ StaticVector<StaticVector<T>*>* loadArrayOfArraysFromFile(std::string fileName)
 }
 
 template <class T>
-void saveArrayToFile(std::string fileName, const StaticVector<T>& a, bool docompress = true)
+void loadArrayOfArraysFromFile(StaticVector<StaticVector<T>>& out_aa, const std::string& fileName)
+{
+    ALICEVISION_LOG_DEBUG("[IO] loadArrayOfArraysFromFile: " << fileName);
+    FILE* f = fopen(fileName.c_str(), "rb");
+    if(f == nullptr)
+    {
+        ALICEVISION_THROW_ERROR("[IO] loadArrayOfArraysFromFile: can't open file " << fileName);
+    }
+
+    int n = 0;
+    size_t retval = fread(&n, sizeof(int), 1, f);
+    if( retval != 1 )
+    {
+        fclose(f);
+        ALICEVISION_THROW_ERROR("[IO] loadArrayOfArraysFromFile: can't read outer array size");
+    }
+
+    out_aa.reserve(n);
+    out_aa.resize(n);
+    for(int i = 0; i < n; i++)
+    {
+        int m = 0;
+        retval = fread(&m, sizeof(int), 1, f);
+        if( retval != 1 )
+        {
+            fclose(f);
+            ALICEVISION_THROW_ERROR("[IO] loadArrayOfArraysFromFile: can't read inner array size");
+        }
+        if(m > 0)
+        {
+            StaticVector<T>& a = out_aa[i];
+            a.resize(m);
+            retval = fread(&a[0], sizeof(T), m, f);
+            if( retval != m )
+            {
+                fclose(f);
+                ALICEVISION_THROW_ERROR("[IO] loadArrayOfArraysFromFile: can't read vector element");
+            }
+        };
+    };
+    fclose(f);
+}
+
+
+template <class T>
+void saveArrayToFile(const std::string& fileName, const StaticVector<T>& a, bool docompress = true)
 {
     saveArrayToFile( fileName, &a, docompress );
 }
 
 template <class T>
-void saveArrayToFile(std::string fileName, const StaticVector<T>* a, bool docompress = true)
+void saveArrayToFile(const std::string& fileName, const StaticVector<T>* a, bool docompress = true)
 {
     ALICEVISION_LOG_DEBUG("[IO] saveArrayToFile: " << fileName);
 
@@ -427,7 +516,7 @@ void saveArrayToFile(std::string fileName, const StaticVector<T>* a, bool docomp
 }
 
 template <class T>
-StaticVector<T>* loadArrayFromFile(std::string fileName, bool printfWarning = false)
+StaticVector<T>* loadArrayFromFile(const std::string& fileName, bool printfWarning = false)
 {
     ALICEVISION_LOG_DEBUG("[IO] loadArrayFromFile: " << fileName);
 
@@ -514,7 +603,7 @@ StaticVector<T>* loadArrayFromFile(std::string fileName, bool printfWarning = fa
 }
 
 template <class T>
-bool loadArrayFromFile( StaticVector<T>& out, std::string fileName, bool printfWarning = false)
+bool loadArrayFromFile( StaticVector<T>& out, const std::string& fileName, bool printfWarning = false)
 {
     ALICEVISION_LOG_DEBUG("[IO] loadArrayFromFile: " << fileName);
 
@@ -578,7 +667,7 @@ bool loadArrayFromFile( StaticVector<T>& out, std::string fileName, bool printfW
 }
 
 template <class T>
-void loadArrayFromFileIntoArray(StaticVector<T>* a, std::string fileName, bool printfWarning = false)
+void loadArrayFromFileIntoArray(StaticVector<T>* a, const std::string& fileName, bool printfWarning = false)
 {
     ALICEVISION_LOG_DEBUG("[IO] loadArrayFromFileIntoArray: " << fileName);
 
@@ -648,6 +737,20 @@ void deleteArrayOfArrays(StaticVector<StaticVector<T>*>** aa)
         };
     };
     delete(*aa);
+}
+
+template <class T>
+void deleteArrayOfArrays(StaticVector<StaticVector<T>*>& aa)
+{
+    for(int i = 0; i < aa.size(); i++)
+    {
+        if(aa[i] != NULL)
+        {
+            delete aa[i];
+            aa[i] = NULL;
+        };
+    };
+    aa.clear();
 }
 
 template <class T>

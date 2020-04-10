@@ -123,7 +123,7 @@ inline std::ostream& operator<<(std::ostream& os, const KeypointId& k)
  *  TracksBuilder tracksBuilder;
  *  track::Tracks tracks;
  *  tracksBuilder.build(matches); // build: Efficient fusion of correspondences
- *  tracksBuilder.filter();           // filter: Remove track that have conflict
+ *  tracksBuilder.filter(true, 2);           // filter: Remove track that have conflict
  *  tracksBuilder.exportToSTL(tracks); // build tracks with STL compliant type
  * @endcode
  */
@@ -162,10 +162,11 @@ struct TracksBuilder
 
   /**
    * @brief Remove bad tracks (too short or track with ids collision)
-   * @param[in] minTrackLength
+   * @param[in] clearForks: remove tracks with multiple observation in a single image
+   * @param[in] minTrackLength: minimal number of observations to keep the track
    * @param[in] multithreaded Is multithreaded
    */
-  void filter(std::size_t minTrackLength = 2, bool multithreaded = true);
+  void filter(bool clearForks, std::size_t minTrackLength, bool multithreaded = true);
 
   /**
    * @brief Export to stream

@@ -56,6 +56,10 @@ void generateSyntheticFeatures(feature::FeaturesPerView& out_featuresPerView,
       out_featuresPerView.addFeatures(it.first, descType, pointFeatures);
     }
   }
+  // Use arbitrary values for feature scale and orientation
+  const float scale = 0.0f;
+  const float orientation = 0.0f;
+
   // Fill with the observation values
   for(const auto& it: sfmData.getLandmarks())
   {
@@ -66,7 +70,7 @@ void generateSyntheticFeatures(feature::FeaturesPerView& out_featuresPerView,
       const IndexT viewId = obsIt.first;
       const sfmData::Observation& obs = obsIt.second;
 
-      out_featuresPerView.getFeaturesPerDesc(viewId)[descType][obs.id_feat] = feature::PointFeature(obs.x(0) + noise(generator), obs.x(1) + noise(generator));
+      out_featuresPerView.getFeaturesPerDesc(viewId)[descType][obs.id_feat] = feature::PointFeature(obs.x(0) + noise(generator), obs.x(1) + noise(generator), scale, orientation);
     }
   }
 }

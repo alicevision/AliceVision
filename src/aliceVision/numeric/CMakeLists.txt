@@ -14,6 +14,9 @@ alicevision_add_library(aliceVision_numeric
   SOURCES ${numeric_files_headers} ${numeric_files_sources}
   PUBLIC_LINKS
     Eigen3::Eigen
+    Boost::boost
+  PUBLIC_DEFINITIONS
+  	${AV_EIGEN_DEFINITIONS}
 )
 
 # Unit tests

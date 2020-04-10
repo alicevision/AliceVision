@@ -63,7 +63,7 @@ bool ImageDescriber_AKAZE::describe(const image::Image<float>& image,
           point.angle = 0.0f;
 
         regionsCasted->Features()[i] =
-          SIOPointFeature(point.x, point.y, point.size, point.angle);
+          PointFeature(point.x, point.y, point.size, point.angle);
 
         ComputeMSURFDescriptor(cur_slice.Lx, cur_slice.Ly, point.octave,
           regionsCasted->Features()[i],
@@ -102,12 +102,12 @@ bool ImageDescriber_AKAZE::describe(const image::Image<float>& image,
           point.angle = 0.0f;
 
         regionsCasted->Features()[i] =
-          SIOPointFeature(point.x, point.y, point.size, point.angle);
+          PointFeature(point.x, point.y, point.size, point.angle);
 
         // compute LIOP descriptor (do not need rotation computation, since
         // LIOP descriptor is rotation invariant).
         // rescale for LIOP patch extraction
-        const SIOPointFeature fp = SIOPointFeature(point.x, point.y, point.size/2.0, point.angle);
+        const PointFeature fp = PointFeature(point.x, point.y, point.size/2.0, point.angle);
 
         float desc[144];
         liop_extractor.extract(image, fp, desc);
@@ -143,7 +143,7 @@ bool ImageDescriber_AKAZE::describe(const image::Image<float>& image,
         else
           point.angle = 0.0f;
 
-        regionsCasted->Features()[i] = SIOPointFeature(point.x, point.y, point.size, point.angle);
+        regionsCasted->Features()[i] = PointFeature(point.x, point.y, point.size, point.angle);
 
         // compute MLDB descriptor
         Descriptor<bool,486> desc;

@@ -6,6 +6,7 @@
 
 #include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
+#include <aliceVision/sfm/FrustumFilter.hpp>
 #include <aliceVision/voctree/Database.hpp>
 #include <aliceVision/voctree/VocabularyTree.hpp>
 #include <aliceVision/voctree/databaseIO.hpp>
@@ -33,6 +34,7 @@
 static const int DIMENSION = 128;
 
 using namespace aliceVision;
+using namespace aliceVision::voctree;
 
 namespace po = boost::program_options;
 namespace fs = boost::filesystem;
@@ -97,6 +99,68 @@ std::ostream& operator<<(std::ostream& os, const OrderedPairList & pl)
 }
 
 /**
+* @brief Mode to select the type of image matching
+*/
+enum class EImageMatchingMethod
+{
+  EXHAUSTIVE = 0,
+  VOCABULARYTREE = 1,
+  SEQUENTIAL = 2,
+  SEQUENTIAL_AND_VOCABULARYTREE = 3,
+  FRUSTUM=4
+};
+
+/**
+*@brief convert an enum EImageMatchingMethod to its corresponding string
+*
+*/
+inline std::string EImageMatchingMethod_enumToString(EImageMatchingMethod m)
+{
+  switch(m)
+  {
+    case EImageMatchingMethod::EXHAUSTIVE: return "Exhaustive";
+    case EImageMatchingMethod::VOCABULARYTREE: return "VocabularyTree";
+    case EImageMatchingMethod::SEQUENTIAL: return "Sequential";
+    case EImageMatchingMethod::SEQUENTIAL_AND_VOCABULARYTREE: return "SequentialAndVocabularyTree";
+    case EImageMatchingMethod::FRUSTUM: return "Frustum";
+  }
+  throw std::out_of_range("Invalid EImageMatchingMethod enum: " + std::to_string(int(m)));
+}
+
+/**
+* @brief convert a string treeMode to its corresponding enum treeMode
+* @param String
+* @return EImageMatchingMethod
+*/
+inline EImageMatchingMethod EImageMatchingMethod_stringToEnum(const std::string& m)
+{
+  std::string mode = m;
+  std::transform(mode.begin(), mode.end(), mode.begin(), ::tolower);
+
+  if(mode == "exhaustive") return EImageMatchingMethod::EXHAUSTIVE;
+  if(mode == "vocabularytree") return EImageMatchingMethod::VOCABULARYTREE;
+  if(mode == "sequential") return EImageMatchingMethod::SEQUENTIAL;
+  if(mode == "sequentialandvocabularytree") return EImageMatchingMethod::SEQUENTIAL_AND_VOCABULARYTREE;
+  if(mode == "frustum") return EImageMatchingMethod::FRUSTUM;
+
+  throw std::out_of_range("Invalid EImageMatchingMethod: " + m);
+}
+
+inline std::ostream& operator<<(std::ostream& os, EImageMatchingMethod m)
+{
+    return os << EImageMatchingMethod_enumToString(m);
+}
+
+inline std::istream& operator>>(std::istream& in, EImageMatchingMethod& m)
+{
+    std::string token;
+    in >> token;
+    m = EImageMatchingMethod_stringToEnum(token);
+    return in;
+}
+
+
+/**
  * @brief Mode to combine image matching between two SfMDatas
  */
 enum class EImageMatchingMode
@@ -106,7 +170,6 @@ enum class EImageMatchingMode
   A_B,
   A_A
 };
-
 
 /**
  * @brief get informations about each EImageMatchingMode
@@ -213,6 +276,26 @@ void convertAllMatchesToPairList(const PairList &allMatches, std::size_t numMatc
   }
 }
 
+void generateSequentialMatches(const sfmData::SfMData& sfmData, size_t nbMatches, OrderedPairList& outPairList)
+{
+    std::vector<std::pair<std::string, IndexT>> sortedImagePaths;
+    sortedImagePaths.reserve(sfmData.getViews().size());
+    for(const auto& vIt: sfmData.getViews())
+    {
+        sortedImagePaths.emplace_back(vIt.second->getImagePath(), vIt.first);
+    }
+    std::sort(sortedImagePaths.begin(), sortedImagePaths.end());
+    for(size_t i = 0; i < sortedImagePaths.size(); ++i)
+    {
+        for(size_t n = i+1, nMax = std::min(i+nbMatches+1, sortedImagePaths.size()); n < nMax; ++n)
+        {
+            size_t a = sortedImagePaths[i].second;
+            size_t b = sortedImagePaths[n].second;
+            outPairList[std::min(a, b)].insert(std::max(a, b));
+        }
+    }
+}
+
 void generateAllMatchesInOneMap(const std::map<IndexT, std::string>& descriptorsFiles, OrderedPairList& outPairList)
 {
   for(const auto& descItA: descriptorsFiles)
@@ -260,7 +343,6 @@ void generateAllMatchesBetweenTwoMap(const std::map<IndexT, std::string>& descri
     }
   }
 }
-
 
 void generateFromVoctree(PairList& allMatches,
                          const std::map<IndexT, std::string>& descriptorsFiles,
@@ -325,6 +407,142 @@ void generateFromVoctree(PairList& allMatches,
   }
 }
 
+void conditionVocTree(const std::string& treeName, bool withWeights, const std::string& weightsName, const EImageMatchingMode matchingMode, const std::vector<std::string>& featuresFolders,
+                      const sfmData::SfMData& sfmDataA, std::size_t nbMaxDescriptors, const std::string& sfmDataFilenameA, const sfmData::SfMData& sfmDataB, const std::string& sfmDataFilenameB,
+                      bool useMultiSfM, const std::map<IndexT, std::string>& descriptorsFilesA, std::size_t numImageQuery, OrderedPairList& selectedPairs)
+{
+    if(treeName.empty())
+    {
+        throw std::runtime_error("No vocabulary tree argument.");
+    }
+
+    // load vocabulary tree
+    ALICEVISION_LOG_INFO("Loading vocabulary tree");
+
+    auto loadVoctree_start = std::chrono::steady_clock::now();
+    aliceVision::voctree::VocabularyTree<DescriptorFloat> tree(treeName);
+    auto loadVoctree_elapsed = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::steady_clock::now() - loadVoctree_start);
+    {
+      std::stringstream ss;
+      ss << "tree loaded with:" << std::endl << "\t- " << tree.levels() << " levels" << std::endl;
+      ss << "\t- " << tree.splits() << " branching factor" << std::endl;
+      ss << "\tin " << loadVoctree_elapsed.count() << " seconds" << std::endl;
+      ALICEVISION_LOG_INFO(ss.str());
+    }
+
+    // create the databases
+    ALICEVISION_LOG_INFO("Creating the databases...");
+
+    // add each object (document) to the database
+    aliceVision::voctree::Database db(tree.words());
+    aliceVision::voctree::Database db2;
+
+    if(withWeights)
+    {
+      ALICEVISION_LOG_INFO("Loading weights...");
+      db.loadWeights(weightsName);
+    }
+    else
+    {
+      ALICEVISION_LOG_INFO("No weights specified, skipping...");
+    }
+
+    if(matchingMode == EImageMatchingMode::A_A_AND_A_B)
+      db2 = db; // initialize database2 with database1 initialization
+
+    // read the descriptors and populate the databases
+    {
+      std::stringstream ss;
+
+      for(const std::string& featuresFolder : featuresFolders)
+        ss << "\t- " << featuresFolder << std::endl;
+
+      ALICEVISION_LOG_INFO("Reading descriptors from: " << std::endl << ss.str());
+
+      std::size_t nbFeaturesLoadedInputA = 0;
+      std::size_t nbFeaturesLoadedInputB = 0;
+      std::size_t nbSetDescriptors = 0;
+
+      auto detect_start = std::chrono::steady_clock::now();
+      {
+        if((matchingMode == EImageMatchingMode::A_A_AND_A_B) ||
+           (matchingMode == EImageMatchingMode::A_AB) ||
+           (matchingMode == EImageMatchingMode::A_A))
+        {
+          nbFeaturesLoadedInputA = voctree::populateDatabase<DescriptorUChar>(sfmDataA, featuresFolders, tree, db, nbMaxDescriptors);
+          nbSetDescriptors = db.getSparseHistogramPerImage().size();
+
+          if(nbFeaturesLoadedInputA == 0)
+          {
+            throw std::runtime_error("No descriptors loaded in '" + sfmDataFilenameA + "'");
+          }
+        }
+
+        if((matchingMode == EImageMatchingMode::A_AB) ||
+           (matchingMode == EImageMatchingMode::A_B))
+        {
+          nbFeaturesLoadedInputB = voctree::populateDatabase<DescriptorUChar>(sfmDataB, featuresFolders, tree, db, nbMaxDescriptors);
+          nbSetDescriptors = db.getSparseHistogramPerImage().size();
+        }
+
+        if(matchingMode == EImageMatchingMode::A_A_AND_A_B)
+        {
+          nbFeaturesLoadedInputB = voctree::populateDatabase<DescriptorUChar>(sfmDataB, featuresFolders, tree, db2, nbMaxDescriptors);
+          nbSetDescriptors += db2.getSparseHistogramPerImage().size();
+        }
+
+        if(useMultiSfM && (nbFeaturesLoadedInputB == 0))
+        {
+          throw std::runtime_error("No descriptors loaded in '" + sfmDataFilenameB + "'");
+        }
+      }
+      auto detect_elapsed = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::steady_clock::now() - detect_start);
+
+      ALICEVISION_LOG_INFO("Read " << nbSetDescriptors << " sets of descriptors for a total of " << (nbFeaturesLoadedInputA + nbFeaturesLoadedInputB) << " features");
+      ALICEVISION_LOG_INFO("Reading took " << detect_elapsed.count() << " sec.");
+    }
+
+    if(!withWeights)
+    {
+      // compute and save the word weights
+      ALICEVISION_LOG_INFO("Computing weights...");
+
+      db.computeTfIdfWeights();
+
+      if(matchingMode == EImageMatchingMode::A_A_AND_A_B)
+        db2.computeTfIdfWeights();
+    }
+
+    {
+      PairList allMatches;
+
+      ALICEVISION_LOG_INFO("Query all documents");
+
+      auto detect_start = std::chrono::steady_clock::now();
+
+      if(matchingMode == EImageMatchingMode::A_A_AND_A_B)
+      {
+        generateFromVoctree(allMatches, descriptorsFilesA, db,  tree, EImageMatchingMode::A_A, nbMaxDescriptors, numImageQuery);
+        generateFromVoctree(allMatches, descriptorsFilesA, db2, tree, EImageMatchingMode::A_B, nbMaxDescriptors, numImageQuery);
+      }
+      else
+      {
+        generateFromVoctree(allMatches, descriptorsFilesA, db, tree, matchingMode,  nbMaxDescriptors, numImageQuery);
+      }
+
+      auto detect_elapsed = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::steady_clock::now() - detect_start);
+      ALICEVISION_LOG_INFO("Query all documents took " << detect_elapsed.count() << " sec.");
+
+      // process pair list
+      detect_start = std::chrono::steady_clock::now();
+
+      ALICEVISION_LOG_INFO("Convert all matches to pairList");
+      convertAllMatchesToPairList(allMatches, numImageQuery, selectedPairs);
+      detect_elapsed = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::steady_clock::now() - detect_start);
+      ALICEVISION_LOG_INFO("Convert all matches to pairList took " << detect_elapsed.count() << " sec.");
+    }
+}
+
 int main(int argc, char** argv)
 {
   // command-line parameters
@@ -335,23 +553,26 @@ int main(int argc, char** argv)
   std::string sfmDataFilenameA;
   /// the folder(s) containing the extracted features with their associated descriptors
   std::vector<std::string> featuresFolders;
-  /// the filename of the voctree
-  std::string treeName;
   /// the file in which to save the results
   std::string outputFile;
 
   // user optional parameters
-
+  EImageMatchingMethod method = EImageMatchingMethod::VOCABULARYTREE;
   /// minimal number of images to use the vocabulary tree
   std::size_t minNbImages = 200;
   /// the file containing the list of features
   std::size_t nbMaxDescriptors = 500;
-  /// the number of matches to retrieve for each image
+  /// the number of matches to retrieve for each image in Vocabulary Tree Mode
   std::size_t numImageQuery = 50;
+  /// the number of neighbors to retrieve for each image in Sequential Mode
+  std::size_t numImageQuerySequential = 50;
+  /// the filename of the voctree
+  std::string treeFilepath;
   /// the filename for the voctree weights
-  std::string weightsName;
+  std::string weightsFilepath;
   /// flag for the optional weights file
   bool withWeights = false;
+
 
   // multiple SfM parameters
 
@@ -377,14 +598,18 @@ int main(int argc, char** argv)
       "SfMData file.")
     ("featuresFolders,f", po::value<std::vector<std::string>>(&featuresFolders)->multitoken()->required(),
       "Path to folder(s) containing the extracted features.")
-    ("tree,t", po::value<std::string>(&treeName),
-      "Input file path of the vocabulary tree. This file can be generated by createVoctree. "
-      "This software is intended to be used with a generic, pre-trained vocabulary tree.")
     ("output,o", po::value<std::string>(&outputFile)->required(),
       "Filepath to the output file with the list of selected image pairs.");
 
   po::options_description optionalParams("Optional parameters");
   optionalParams.add_options()
+    ("method", po::value<EImageMatchingMethod>(&method)->default_value(method),
+      "Method used to select the image pairs to match:\n"
+      " * VocabularyTree: select images that appear to share content\n"
+      " * Sequential: use images neighbors based on filename\n"
+      " * SequentialAndVocabularyTree: combine both previous approaches\n"
+      " * Exhaustive: all images combinations\n"
+      " * Frustum: images with camera frustum intersection (only for cameras with known poses)\n")
     ("minNbImages", po::value<std::size_t>(&minNbImages)->default_value(minNbImages),
       "Minimal number of images to use the vocabulary tree. If we have less images than this threshold, we will compute all matching combinations.")
     ("maxDescriptors", po::value<std::size_t>(&nbMaxDescriptors)->default_value(nbMaxDescriptors),
@@ -392,7 +617,13 @@ int main(int argc, char** argv)
     ("nbMatches", po::value<std::size_t>(&numImageQuery)->default_value(numImageQuery),
       "The number of matches to retrieve for each image (If 0 it will "
       "retrieve all the matches).")
-    ("weights,w", po::value<std::string>(&weightsName),
+    ("nbNeighbors", po::value<std::size_t>(&numImageQuerySequential)->default_value(numImageQuerySequential),
+      "The number of neighbors to retrieve for each image (If 0 it will "
+      "retrieve all the neighbors).")
+    ("tree,t", po::value<std::string>(&treeFilepath)->default_value(treeFilepath),
+      "Input file path of the vocabulary tree. This file can be generated by 'createVoctree'. "
+      "This software is intended to be used with a generic, pre-trained vocabulary tree.")
+    ("weights,w", po::value<std::string>(&weightsFilepath)->default_value(weightsFilepath),
       "Input name for the vocabulary tree weight file, if not provided all voctree leaves will have the same weight.");
 
   po::options_description multiSfMParams("Multiple SfM");
@@ -455,7 +686,8 @@ int main(int argc, char** argv)
   // load SfMData
   sfmData::SfMData sfmDataA, sfmDataB;
 
-  if(!sfmDataIO::Load(sfmDataA, sfmDataFilenameA, sfmDataIO::ESfMData::ALL))
+  using namespace sfmDataIO;
+  if(!sfmDataIO::Load(sfmDataA, sfmDataFilenameA, ESfMData(ESfMData::VIEWS|ESfMData::EXTRINSICS|ESfMData::INTRINSICS)))
   {
     ALICEVISION_LOG_ERROR("The input SfMData file '" + sfmDataFilenameA + "' cannot be read.");
     return EXIT_FAILURE;
@@ -463,7 +695,7 @@ int main(int argc, char** argv)
 
   if(useMultiSfM)
   {
-    if(!sfmDataIO::Load(sfmDataB, sfmDataFilenameB, sfmDataIO::ESfMData::ALL))
+    if(!sfmDataIO::Load(sfmDataB, sfmDataFilenameB, ESfMData(ESfMData::VIEWS|ESfMData::EXTRINSICS|ESfMData::INTRINSICS)))
     {
       ALICEVISION_LOG_ERROR("The input SfMData file '" + sfmDataFilenameB + "' cannot be read.");
       return EXIT_FAILURE;
@@ -488,156 +720,59 @@ int main(int argc, char** argv)
   if(useMultiSfM)
     aliceVision::voctree::getListOfDescriptorFiles(sfmDataB, featuresFolders, descriptorsFilesB);
 
-  if(treeName.empty() && (descriptorsFilesA.size() + descriptorsFilesB.size()) > 200)
-    ALICEVISION_LOG_WARNING("No vocabulary tree argument, so it will use the brute force approach which can be compute intensive for aliceVision_featureMatching.");
-
-  if(treeName.empty() || (descriptorsFilesA.size() + descriptorsFilesB.size()) < minNbImages)
+  // if not enough images to use the VOCABULARYTREE use the EXHAUSTIVE method
+  if(method == EImageMatchingMethod::VOCABULARYTREE || method == EImageMatchingMethod::SEQUENTIAL_AND_VOCABULARYTREE)
   {
-    ALICEVISION_LOG_INFO("Brute force generation");
-
-    if((matchingMode == EImageMatchingMode::A_A_AND_A_B) ||
-       (matchingMode == EImageMatchingMode::A_AB) ||
-       (matchingMode == EImageMatchingMode::A_A))
-      generateAllMatchesInOneMap(descriptorsFilesA, selectedPairs);
-
-    if((matchingMode == EImageMatchingMode::A_A_AND_A_B) ||
-       (matchingMode == EImageMatchingMode::A_AB) ||
-       (matchingMode == EImageMatchingMode::A_B))
-      generateAllMatchesBetweenTwoMap(descriptorsFilesA, descriptorsFilesB, selectedPairs);
+    if((descriptorsFilesA.size() + descriptorsFilesB.size()) < minNbImages)
+    {
+      ALICEVISION_LOG_DEBUG("Use EXHAUSTIVE method instead of VOCABULARYTREE (less images than minNbImages).");
+      method = EImageMatchingMethod::EXHAUSTIVE;
+    }
   }
 
-  // if selectedPairs is not already computed by a brute force approach,
-  // we compute it with the vocabulary tree approach.
-  if(selectedPairs.empty())
+  switch(method)
   {
-    // load vocabulary tree
-    ALICEVISION_LOG_INFO("Loading vocabulary tree");
-
-    auto loadVoctree_start = std::chrono::steady_clock::now();
-    aliceVision::voctree::VocabularyTree<DescriptorFloat> tree(treeName);
-    auto loadVoctree_elapsed = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::steady_clock::now() - loadVoctree_start);
+    case EImageMatchingMethod::EXHAUSTIVE:
     {
-      std::stringstream ss;
-      ss << "tree loaded with:" << std::endl << "\t- " << tree.levels() << " levels" << std::endl;
-      ss << "\t- " << tree.splits() << " branching factor" << std::endl;
-      ss << "\tin " << loadVoctree_elapsed.count() << " seconds" << std::endl;
-      ALICEVISION_LOG_INFO(ss.str());
+      if((matchingMode == EImageMatchingMode::A_A_AND_A_B) ||
+         (matchingMode == EImageMatchingMode::A_AB) ||
+         (matchingMode == EImageMatchingMode::A_A))
+        generateAllMatchesInOneMap(descriptorsFilesA, selectedPairs);
+
+      if((matchingMode == EImageMatchingMode::A_A_AND_A_B) ||
+         (matchingMode == EImageMatchingMode::A_AB) ||
+         (matchingMode == EImageMatchingMode::A_B))
+        generateAllMatchesBetweenTwoMap(descriptorsFilesA, descriptorsFilesB, selectedPairs);
+      break;
     }
-
-    // create the databases
-    ALICEVISION_LOG_INFO("Creating the databases...");
-
-    // add each object (document) to the database
-    aliceVision::voctree::Database db(tree.words());
-    aliceVision::voctree::Database db2;
-
-    if(withWeights)
+    case EImageMatchingMethod::VOCABULARYTREE:
     {
-      ALICEVISION_LOG_INFO("Loading weights...");
-      db.loadWeights(weightsName);
+      conditionVocTree(treeFilepath, withWeights, weightsFilepath, matchingMode,featuresFolders, sfmDataA, nbMaxDescriptors, sfmDataFilenameA, sfmDataB,
+                       sfmDataFilenameB, useMultiSfM, descriptorsFilesA,  numImageQuery, selectedPairs);
+      break;
     }
-    else
+    case EImageMatchingMethod::SEQUENTIAL:
     {
-      ALICEVISION_LOG_INFO("No weights specified, skipping...");
+      generateSequentialMatches(sfmDataA, numImageQuerySequential, selectedPairs);
+      break;
     }
-
-    if(matchingMode == EImageMatchingMode::A_A_AND_A_B)
-      db2 = db; // initialize database2 with database1 initialization
-
-    // read the descriptors and populate the databases
+    case EImageMatchingMethod::SEQUENTIAL_AND_VOCABULARYTREE:
     {
-      std::stringstream ss;
-
-      for(const std::string& featuresFolder : featuresFolders)
-        ss << "\t- " << featuresFolder << std::endl;
-
-      ALICEVISION_LOG_INFO("Reading descriptors from: " << std::endl << ss.str());
-
-      std::size_t nbFeaturesLoadedInputA = 0;
-      std::size_t nbFeaturesLoadedInputB = 0;
-      std::size_t nbSetDescriptors = 0;
-
-      auto detect_start = std::chrono::steady_clock::now();
+      generateSequentialMatches(sfmDataA, numImageQuerySequential, selectedPairs);
+      conditionVocTree(treeFilepath, withWeights, weightsFilepath, matchingMode,featuresFolders, sfmDataA, nbMaxDescriptors, sfmDataFilenameA, sfmDataB,
+                       sfmDataFilenameB, useMultiSfM, descriptorsFilesA,  numImageQuery, selectedPairs);
+      break;
+    }
+    case EImageMatchingMethod::FRUSTUM:
+    {
+      // For all cameras with valid extrinsic/intrinsic, we select the camera with common visibilities based on cameras' frustum.
+      // We use an epsilon near value for the frustum, to ensure that mulitple images with a pure rotation will not intersect at the nodal point.
+      PairSet pairs = sfm::FrustumFilter(sfmDataA, 0.01).getFrustumIntersectionPairs();
+      for(const auto& p: pairs)
       {
-
-        if((matchingMode == EImageMatchingMode::A_A_AND_A_B) ||
-           (matchingMode == EImageMatchingMode::A_AB) ||
-           (matchingMode == EImageMatchingMode::A_A))
-        {
-          nbFeaturesLoadedInputA = voctree::populateDatabase<DescriptorUChar>(sfmDataA, featuresFolders, tree, db, nbMaxDescriptors);
-          nbSetDescriptors = db.getSparseHistogramPerImage().size();
-
-          if(nbFeaturesLoadedInputA == 0)
-          {
-            ALICEVISION_LOG_ERROR("No descriptors loaded in '" + sfmDataFilenameA + "'");
-            return EXIT_FAILURE;
-          }
-        }
-
-        if((matchingMode == EImageMatchingMode::A_AB) ||
-           (matchingMode == EImageMatchingMode::A_B))
-        {
-          nbFeaturesLoadedInputB = voctree::populateDatabase<DescriptorUChar>(sfmDataB, featuresFolders, tree, db, nbMaxDescriptors);
-          nbSetDescriptors = db.getSparseHistogramPerImage().size();
-        }
-
-        if(matchingMode == EImageMatchingMode::A_A_AND_A_B)
-        {
-          nbFeaturesLoadedInputB = voctree::populateDatabase<DescriptorUChar>(sfmDataB, featuresFolders, tree, db2, nbMaxDescriptors);
-          nbSetDescriptors += db2.getSparseHistogramPerImage().size();
-        }
-
-        if(useMultiSfM && (nbFeaturesLoadedInputB == 0))
-        {
-          ALICEVISION_LOG_ERROR("No descriptors loaded in '" + sfmDataFilenameB + "'");
-          return EXIT_FAILURE;
-        }
+          selectedPairs[p.first].insert(p.second);
       }
-
-      auto detect_elapsed = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::steady_clock::now() - detect_start);
-
-      ALICEVISION_LOG_INFO("Read " << nbSetDescriptors << " sets of descriptors for a total of " << (nbFeaturesLoadedInputA + nbFeaturesLoadedInputB) << " features");
-      ALICEVISION_LOG_INFO("Reading took " << detect_elapsed.count() << " sec.");
-    }
-
-    if(!withWeights)
-    {
-      // compute and save the word weights
-      ALICEVISION_LOG_INFO("Computing weights...");
-
-      db.computeTfIdfWeights();
-
-      if(matchingMode == EImageMatchingMode::A_A_AND_A_B)
-        db2.computeTfIdfWeights();
-    }
-
-    {
-      PairList allMatches;
-
-      ALICEVISION_LOG_INFO("Query all documents");
-
-      auto detect_start = std::chrono::steady_clock::now();
-
-      if(matchingMode == EImageMatchingMode::A_A_AND_A_B)
-      {
-        generateFromVoctree(allMatches, descriptorsFilesA, db,  tree, EImageMatchingMode::A_A, nbMaxDescriptors, numImageQuery);
-        generateFromVoctree(allMatches, descriptorsFilesA, db2, tree, EImageMatchingMode::A_B, nbMaxDescriptors, numImageQuery);
-      }
-      else
-      {
-        generateFromVoctree(allMatches, descriptorsFilesA, db, tree, matchingMode,  nbMaxDescriptors, numImageQuery);
-      }
-
-      auto detect_elapsed = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::steady_clock::now() - detect_start);
-      ALICEVISION_LOG_INFO("Query all documents took " << detect_elapsed.count() << " sec.");
-
-      // process pair list
-      detect_start = std::chrono::steady_clock::now();
-
-      ALICEVISION_LOG_INFO("Convert all matches to pairList");
-      convertAllMatchesToPairList(allMatches, numImageQuery, selectedPairs);
-      detect_elapsed = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::steady_clock::now() - detect_start);
-      ALICEVISION_LOG_INFO("Convert all matches to pairList took " << detect_elapsed.count() << " sec.");
+      break;
     }
   }
 

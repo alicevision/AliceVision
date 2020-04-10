@@ -15,6 +15,8 @@
 #include <aliceVision/system/cmdline.hpp>
 #include <aliceVision/types.hpp>
 #include <aliceVision/config.hpp>
+#include <aliceVision/track/Track.hpp>
+#include <aliceVision/sfm/BundleAdjustment.hpp>
 
 #include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>
@@ -30,6 +32,9 @@ using namespace aliceVision;
 
 namespace po = boost::program_options;
 namespace fs = boost::filesystem;
+using namespace aliceVision::track;
+using namespace aliceVision::sfm;
+
 
 /**
  * @brief Retrieve the view id in the sfmData from the image filename.
@@ -76,7 +81,6 @@ int main(int argc, char **argv)
   std::string outputSfM;
 
   // user optional parameters
-
   std::string outputSfMViewsAndPoses;
   std::string extraInfoFolder;
   std::string describerTypesName = feature::EImageDescriberType_enumToString(feature::EImageDescriberType::SIFT);
@@ -85,6 +89,7 @@ int main(int argc, char **argv)
   sfm::ReconstructionEngine_sequentialSfM::Params sfmParams;
   bool lockScenePreviouslyReconstructed = true;
   int maxNbMatches = 0;
+  int minNbMatches = 0;
   bool useOnlyMatchesFromInputFolder = false;
 
   po::options_description allParams(
@@ -98,13 +103,14 @@ int main(int argc, char **argv)
       "SfMData file.")
     ("output,o", po::value<std::string>(&outputSfM)->required(),
       "Path to the output SfMData file.")
-    ("featuresFolders,f", po::value<std::vector<std::string>>(&featuresFolders)->multitoken()->required(),
-      "Path to folder(s) containing the extracted features.")
-    ("matchesFolders,m", po::value<std::vector<std::string>>(&matchesFolders)->multitoken()->required(),
-      "Path to folder(s) in which computed matches are stored.");
+    ;
 
   po::options_description optionalParams("Optional parameters");
   optionalParams.add_options()
+    ("featuresFolders,f", po::value<std::vector<std::string>>(&featuresFolders)->multitoken(),
+      "Path to folder(s) containing the extracted features.")
+    ("matchesFolders,m", po::value<std::vector<std::string>>(&matchesFolders)->multitoken(),
+      "Path to folder(s) in which computed matches are stored.")
     ("outputViewsAndPoses", po::value<std::string>(&outputSfMViewsAndPoses)->default_value(outputSfMViewsAndPoses),
       "Path to the output SfMData file (with only views and poses).")
     ("extraInfoFolder", po::value<std::string>(&extraInfoFolder)->default_value(extraInfoFolder),
@@ -116,6 +122,9 @@ int main(int argc, char **argv)
     ("maxNumberOfMatches", po::value<int>(&maxNbMatches)->default_value(maxNbMatches),
       "Maximum number of matches per image pair (and per feature type). "
       "This can be useful to have a quick reconstruction overview. 0 means no limit.")
+    ("minNumberOfMatches", po::value<int>(&minNbMatches)->default_value(minNbMatches),
+      "Minimum number of matches per image pair (and per feature type). "
+      "This can be useful to have a meaningful reconstruction with accurate keypoints. 0 means no limit.")
     ("minInputTrackLength", po::value<int>(&sfmParams.minInputTrackLength)->default_value(sfmParams.minInputTrackLength),
       "Minimum track length in input of SfM.")
     ("minAngleForTriangulation", po::value<double>(&sfmParams.minAngleForTriangulation)->default_value(sfmParams.minAngleForTriangulation),
@@ -152,12 +161,14 @@ int main(int argc, char **argv)
     ("useOnlyMatchesFromInputFolder", po::value<bool>(&useOnlyMatchesFromInputFolder)->default_value(useOnlyMatchesFromInputFolder),
       "Use only matches from the input matchesFolder parameter.\n"
       "Matches folders previously added to the SfMData file will be ignored.")
-    ("useTrackFiltering", po::value<bool>(&sfmParams.useTrackFiltering)->default_value(sfmParams.useTrackFiltering),
-      "Enable/Disable the track filtering.\n")
+    ("filterTrackForks", po::value<bool>(&sfmParams.filterTrackForks)->default_value(sfmParams.filterTrackForks),
+      "Enable/Disable the track forks removal. A track contains a fork when incoherent matches leads to multiple features in the same image for a single track.\n")
     ("useRigConstraint", po::value<bool>(&sfmParams.useRigConstraint)->default_value(sfmParams.useRigConstraint),
       "Enable/Disable rig constraint.\n")
     ("lockScenePreviouslyReconstructed", po::value<bool>(&lockScenePreviouslyReconstructed)->default_value(lockScenePreviouslyReconstructed),
-      "Lock/Unlock scene previously reconstructed.\n");
+      "Lock/Unlock scene previously reconstructed.\n")
+    ("observationConstraint", po::value<EFeatureConstraint>(&sfmParams.featureConstraint)->default_value(sfmParams.featureConstraint),
+      "Use of an observation constraint : basic, scale the observation or use of the covariance.\n");
 
   po::options_description logParams("Log parameters");
   logParams.add_options()
@@ -240,7 +251,7 @@ int main(int argc, char **argv)
   
   // matches reading
   matching::PairwiseMatches pairwiseMatches;
-  if(!sfm::loadPairwiseMatches(pairwiseMatches, sfmData, matchesFolders, describerTypes, maxNbMatches, useOnlyMatchesFromInputFolder))
+  if(!sfm::loadPairwiseMatches(pairwiseMatches, sfmData, matchesFolders, describerTypes, maxNbMatches, minNbMatches, useOnlyMatchesFromInputFolder))
   {
     ALICEVISION_LOG_ERROR("Unable to load matches.");
     return EXIT_FAILURE;
@@ -298,15 +309,16 @@ int main(int argc, char **argv)
   if(!sfmEngine.process())
     return EXIT_FAILURE;
 
-  // get the color for the 3D points
-  sfmEngine.colorize();
-
   // set featuresFolders and matchesFolders relative paths
   {
-    sfmEngine.getSfMData().addFeaturesFolders(featuresFolders);
-    sfmEngine.getSfMData().addMatchesFolders(matchesFolders);
-    sfmEngine.getSfMData().setAbsolutePath(outputSfM);
+      sfmEngine.getSfMData().addFeaturesFolders(featuresFolders);
+      sfmEngine.getSfMData().addMatchesFolders(matchesFolders);
+      sfmEngine.getSfMData().setAbsolutePath(outputSfM);
   }
+
+  // get the color for the 3D points
+  sfmEngine.colorize();
+  sfmEngine.retrieveMarkersId();
 
   ALICEVISION_LOG_INFO("Structure from motion took (s): " + std::to_string(timer.elapsed()));
   ALICEVISION_LOG_INFO("Generating HTML report...");

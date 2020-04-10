@@ -430,7 +430,8 @@ struct Sampler2d
     _sampler( dx , coefs_x ) ;
     _sampler( dy , coefs_y ) ;
 
-    typename RealPixel<T>::real_type res(0) ;
+    // Default color constructor init all channels to zero
+    typename RealPixel<T>::real_type res;
 
     // integer position of sample (x,y)
     const int grid_x = static_cast<int>( floor( x ) );
@@ -476,7 +477,15 @@ struct Sampler2d
     // If value too small, it should be so instable, so return the sampled value
     if( total_weight <= 0.2 )
     {
-      return T();
+      int row = floor(y);
+      int col = floor(x);
+
+      if (row < 0) row = 0;
+      if (col < 0) col = 0;
+      if (row >= im_height) row = im_height - 1;
+      if (col >= im_width) col = im_width - 1;
+
+      return src(row, col);
     }
 
     if( total_weight != 1.0 )

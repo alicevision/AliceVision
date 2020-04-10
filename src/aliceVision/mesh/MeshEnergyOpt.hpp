@@ -19,11 +19,11 @@ public:
     explicit MeshEnergyOpt(mvsUtils::MultiViewParams* _mp);
     ~MeshEnergyOpt();
 
-    bool optimizeSmooth(float lambda, int niter, StaticVectorBool* ptsCanMove);
+    bool optimizeSmooth(float lambda, int niter, StaticVectorBool& ptsCanMove);
 
 private:
-    StaticVector<Point3d>* computeLaplacianPtsParallel();
-    void updateGradientParallel(float lambda, const Point3d& LU, const Point3d& RD, StaticVectorBool* ptsCanMove);
+    void computeLaplacianPtsParallel(StaticVector<Point3d>& out_lapPts);
+    void updateGradientParallel(float lambda, const Point3d& LU, const Point3d& RD, StaticVectorBool& ptsCanMove);
 };
 
 } // namespace mesh

@@ -19,6 +19,7 @@
 #include <boost/log/expressions/attr.hpp>
 #include <boost/log/expressions/message.hpp>
 #include <boost/log/support/date_time.hpp>
+#include <boost/algorithm/string.hpp>
 
 #if BOOST_VERSION >= 105600
 #include <boost/core/null_deleter.hpp>
@@ -30,6 +31,48 @@
 
 namespace aliceVision {
 namespace system {
+
+std::string EVerboseLevel_enumToString(EVerboseLevel verboseLevel)
+{
+    switch(verboseLevel)
+    {
+        case EVerboseLevel::Fatal:   return "fatal";
+        case EVerboseLevel::Error:   return "error";
+        case EVerboseLevel::Warning: return "warning";
+        case EVerboseLevel::Info:    return "info";
+        case EVerboseLevel::Debug:   return "debug";
+        case EVerboseLevel::Trace:   return "trace";
+    }
+    throw std::out_of_range("Invalid verbose level enum");
+}
+
+EVerboseLevel EVerboseLevel_stringToEnum(std::string verboseLevel)
+{
+    boost::to_lower(verboseLevel);
+
+    if(verboseLevel == "fatal")   return EVerboseLevel::Fatal;
+    if(verboseLevel == "error")   return EVerboseLevel::Error;
+    if(verboseLevel == "warning") return EVerboseLevel::Warning;
+    if(verboseLevel == "info")    return EVerboseLevel::Info;
+    if(verboseLevel == "debug")   return EVerboseLevel::Debug;
+    if(verboseLevel == "trace")   return EVerboseLevel::Trace;
+
+    throw std::out_of_range("Invalid verbose level : '" + verboseLevel + "'");
+}
+
+std::ostream& operator<<(std::ostream& os, EVerboseLevel verboseLevel)
+{
+    os << EVerboseLevel_enumToString(verboseLevel);
+    return os;
+}
+
+std::istream& operator>>(std::istream& in, EVerboseLevel& verboseLevel)
+{
+    std::string token;
+    in >> token;
+    verboseLevel = EVerboseLevel_stringToEnum(token);
+    return in;
+}
 
 std::shared_ptr<Logger> Logger::_instance = nullptr;
 

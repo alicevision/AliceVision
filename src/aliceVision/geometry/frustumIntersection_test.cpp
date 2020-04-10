@@ -20,7 +20,7 @@
 using namespace aliceVision;
 using namespace aliceVision::geometry;
 using namespace aliceVision::geometry::halfPlane;
-using namespace std;
+
 
 //--
 // Camera frustum intersection unit test
@@ -74,6 +74,24 @@ BOOST_AUTO_TEST_CASE(intersection)
         Frustum(principal_Point*2, principal_Point*2,
           d._K[i], d._R[i], d._C[i], minDepth, maxDepth));
       BOOST_CHECK(vec_frustum[i].isTruncated());
+    }
+
+    // Check that frustums have an overlap
+    for (int i = 0; i < iNviews; ++i)
+      for (int j = 0; j < iNviews; ++j)
+        BOOST_CHECK(vec_frustum[i].intersect(vec_frustum[j]));
+  }
+
+  //Test with partially truncated frustum
+  {
+    //Build frustum with near and far plane defined by a different value
+    std::vector<Frustum> vec_frustum;
+    for (int i=0; i < iNviews; ++i)
+    {
+      vec_frustum.push_back(
+        Frustum(principal_Point*2, principal_Point*2,
+                d._K[i], d._R[i], d._C[i], 0.1, -1.0));
+      BOOST_CHECK(vec_frustum[i].isPartiallyTruncated());
     }
 
     // Check that frustums have an overlap
@@ -169,3 +187,127 @@ BOOST_AUTO_TEST_CASE(empty_intersection)
     }
   }
 }
+
+void createPanoramaScene(double coeff, NViewDataSet& d, const int iNviews, const int iNbPoints, const int principal_Point)
+{
+    // Create a panorama scene
+    //--
+    // Create a panorama scene with a field of view
+    //  depending on a coefficient and the number of views
+    // 1 camera looks to iNviews different directions
+    //--
+
+    double field_of_view = (360.0*coeff)/iNviews;
+    double focalRatio = 0.5/(tan(0.5*degreeToRadian(field_of_view)));
+    double focalLengthPix=focalRatio*2*principal_Point;
+    NViewDatasetConfigurator config(focalLengthPix, focalLengthPix, principal_Point, principal_Point, 1, 0);
+    d._n = iNviews;
+    d._K.resize(iNviews);
+    d._R.resize(iNviews);
+    d._t.resize(iNviews);
+    d._C.resize(iNviews);
+
+    for (size_t i = 0; i < iNviews; ++i)
+    {
+      Vec3 camera_center(0., 0., 0.);
+      const double theta = i * 2 * M_PI / iNviews;
+      d._C[i] = camera_center;
+      // Circle
+      Vec3 lookdir(sin(theta), 0.0, cos(theta)); // Y axis UP
+
+      d._K[i] << config._fx,           0, config._cx,
+                          0,  config._fy, config._cy,
+                          0,           0,          1;
+      d._R[i] = LookAt(lookdir);  // Y axis UP
+      d._t[i] = -d._R[i] * camera_center; // [t]=[-RC] Cf HZ.
+    }
+
+}
+
+BOOST_AUTO_TEST_CASE(panorama_intersection)
+{
+  // Create partially truncated frustum
+  //--
+  // 1 camera looks to 4 different directions on a circle
+  // Create a panorama scene with a field of view
+  //  more than 90° for each view which means no overlap
+  //--
+
+  const int principal_Point = 500;
+  // Setup a panorama camera rig: cameras rotations around a nodal point
+  const int iNviews = 4;
+  const int iNbPoints = 6;
+  NViewDataSet d;
+  double coeff = 1.2; // overlap coefficient: more than 1 means overlap
+  // create panorama scene
+  createPanoramaScene(coeff, d, iNviews, iNbPoints, principal_Point);
+
+  //Test with partially truncated frustum
+  {
+    //Build frustum with near and far plane defined by a different value
+    std::vector<Frustum> vec_frustum;
+    for (int i=0; i < iNviews; ++i)
+    {
+      vec_frustum.push_back(
+        Frustum(principal_Point*2, principal_Point*2,
+                d._K[i], d._R[i], d._t[i], 0.1, -1.0));
+      BOOST_CHECK(vec_frustum[i].isPartiallyTruncated());
+    }
+
+    //Check that there is overlap between all frustums
+    for (int i = 0; i < iNviews; ++i)
+    {
+      int j = (i+1) % iNviews;
+      BOOST_CHECK(vec_frustum[i].intersect(vec_frustum[j]));
+
+      int k = (i-1+iNviews) % iNviews;
+      BOOST_CHECK(vec_frustum[i].intersect(vec_frustum[k]));
+    }
+  }
+}
+
+BOOST_AUTO_TEST_CASE(panorama_without_intersection)
+{
+  // Create partially truncated frustum
+  //--
+  // 1 camera looks to 4 different directions on a circle
+  // Create a panorama scene with a field of view
+  //  less than 90° for each view which means no overlap
+  //--
+
+  const int principal_Point = 500;
+  // Setup a panorama camera rig: cameras rotations around a nodal point
+  const int iNviews = 4;
+  const int iNbPoints = 6;
+  NViewDataSet d;
+  double coeff = 0.8;  // overlap coefficient: less than 1 means no overlap
+
+  //create panorama scene
+  createPanoramaScene(coeff, d, iNviews, iNbPoints, principal_Point);
+
+  //Test with partially truncated frustum
+  {
+    //Build frustum with near and far plane defined by a different value
+    std::vector<Frustum> vec_frustum;
+    for (int i=0; i < iNviews; ++i)
+    {
+      vec_frustum.push_back(
+        Frustum(principal_Point*2, principal_Point*2,
+                d._K[i], d._R[i], d._t[i], 0.1, -1.0));
+      BOOST_CHECK(vec_frustum[i].isPartiallyTruncated());
+    }
+
+    //Check that there is no overlap between all frustums
+    for (int i = 0; i < iNviews; ++i)
+    {
+      for (int j = 0; j < iNviews; ++j)
+      {
+        if(i == j)
+            continue;
+
+        BOOST_CHECK(!vec_frustum[i].intersect(vec_frustum[j]));
+      }
+    }
+  }
+}
+

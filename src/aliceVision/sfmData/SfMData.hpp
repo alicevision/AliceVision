@@ -9,6 +9,8 @@
 
 #include <aliceVision/sfmData/CameraPose.hpp>
 #include <aliceVision/sfmData/Landmark.hpp>
+#include <aliceVision/sfmData/Constraint2D.hpp>
+#include <aliceVision/sfmData/RotationPrior.hpp>
 #include <aliceVision/sfmData/View.hpp>
 #include <aliceVision/sfmData/Rig.hpp>
 #include <aliceVision/camera/camera.hpp>
@@ -41,6 +43,12 @@ using PosesUncertainty = HashMap<IndexT, Vec6>;
 /// Define uncertainty per landmark
 using LandmarksUncertainty = HashMap<IndexT, Vec3>;
 
+///Define a collection of constraints
+using Constraints2D = std::vector<Constraint2D>;
+
+///Define a collection of rotation priors
+using RotationPriors = std::vector<RotationPrior>;
+
 /**
  * @brief SfMData container
  * Store structure and camera properties
@@ -60,6 +68,10 @@ public:
   PosesUncertainty _posesUncertainty;
   /// Uncertainty per landmark
   LandmarksUncertainty _landmarksUncertainty;
+  /// 2D Constraints
+  Constraints2D constraints2d;
+  /// Rotation priors
+  RotationPriors rotationpriors;
 
   // Operators
 
@@ -101,6 +113,20 @@ public:
    */
   const Landmarks& getLandmarks() const {return structure;}
   Landmarks& getLandmarks() {return structure;}
+
+  /**
+   * @brief Get Constraints2D
+   * @return Constraints2D
+   */
+  const Constraints2D& getConstraints2D() const {return constraints2d;}
+  Constraints2D& getConstraints2D() {return constraints2d;}
+
+  /**
+   * @brief Get RotationPriors
+   * @return RotationPriors
+   */
+  const RotationPriors& getRotationPriors() const {return rotationpriors;}
+  RotationPriors& getRotationPriors() {return rotationpriors;}
 
   /**
    * @brief Get control points
@@ -297,30 +323,57 @@ public:
     return _rigs.at(view.getRigId());
   }
 
+  std::set<feature::EImageDescriberType> getLandmarkDescTypes() const
+  {
+    std::set<feature::EImageDescriberType> output;
+    for (auto s : getLandmarks())
+    {
+      output.insert(s.second.descType);
+    }
+    return output;
+  }
+
+  std::map<feature::EImageDescriberType, int> getLandmarkDescTypesUsages() const
+  {
+    std::map<feature::EImageDescriberType, int> output;
+    for (auto s : getLandmarks())
+    {
+      if (output.find(s.second.descType) == output.end())
+      {
+        output[s.second.descType] = 1;
+      }
+      else
+      {
+        ++output[s.second.descType];
+      }
+    }
+    return output;
+  }
+
   /**
-   * @brief Get the median Exposure Value (Ev) of
+   * @brief Get the median Camera Exposure Setting
    * @return
    */
-  float getMedianEv() const
+  float getMedianCameraExposureSetting() const
   {
-    std::vector<float> evList;
-    evList.reserve(views.size());
+    std::vector<float> cameraExposureList;
+    cameraExposureList.reserve(views.size());
 
     for(const auto& view : views)
     {
-        float ev = view.second->getEv();
-        if(ev != -1.0f)
+        float ce = view.second->getCameraExposureSetting();
+        if(ce != -1.0f)
         {
-            auto find = std::find(std::begin(evList), std::end(evList), ev);
-            if(find == std::end(evList))
-                evList.emplace_back(ev);
+            auto find = std::find(std::begin(cameraExposureList), std::end(cameraExposureList), ce);
+            if(find == std::end(cameraExposureList))
+                cameraExposureList.emplace_back(ce);
         }
     }
 
-    std::nth_element(evList.begin(), evList.begin() + evList.size()/2, evList.end());
-    float evMedian = evList[evList.size()/2];
+    std::nth_element(cameraExposureList.begin(), cameraExposureList.begin() + cameraExposureList.size()/2, cameraExposureList.end());
+    float ceMedian = cameraExposureList[cameraExposureList.size()/2];
 
-    return evMedian;
+    return ceMedian;
   }
 
   /**

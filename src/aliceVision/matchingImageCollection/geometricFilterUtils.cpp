@@ -56,8 +56,8 @@ void centerMatrix(const Eigen::Matrix2Xf & points2d, Mat3 & t)
 }
 
 
-void centeringMatrices(const std::vector<feature::SIOPointFeature> & featuresI,
-                       const std::vector<feature::SIOPointFeature> & featuresJ,
+void centeringMatrices(const std::vector<feature::PointFeature> & featuresI,
+                       const std::vector<feature::PointFeature> & featuresJ,
                        const matching::IndMatches & matches,
                        Mat3 & cI,
                        Mat3 & cJ,
@@ -94,8 +94,8 @@ void centeringMatrices(const std::vector<feature::SIOPointFeature> & featuresI,
   centerMatrix(ptsJ, cJ);
 }
 
-void computeSimilarity(const feature::SIOPointFeature & feat1,
-                       const feature::SIOPointFeature & feat2,
+void computeSimilarity(const feature::PointFeature & feat1,
+                       const feature::PointFeature & feat2,
                        Mat3 & S)
 {
   S = Mat3::Identity();
@@ -125,8 +125,8 @@ void computeSimilarity(const feature::SIOPointFeature & feat1,
   S = A2 * A1.inverse();
 }
 
-void estimateAffinity(const std::vector<feature::SIOPointFeature> & featuresI,
-                      const std::vector<feature::SIOPointFeature> & featuresJ,
+void estimateAffinity(const std::vector<feature::PointFeature> & featuresI,
+                      const std::vector<feature::PointFeature> & featuresJ,
                       const matching::IndMatches & matches,
                       Mat3 & affineTransformation,
                       const std::set<IndexT> & usefulMatchesId)
@@ -155,8 +155,8 @@ void estimateAffinity(const std::vector<feature::SIOPointFeature> & featuresI,
   int iMatch = 0;
   for (IndexT matchId : matchesId)
   {
-    const feature::SIOPointFeature & featI = featuresI.at(matches.at(matchId)._i);
-    const feature::SIOPointFeature & featJ = featuresJ.at(matches.at(matchId)._j);
+    const feature::PointFeature & featI = featuresI.at(matches.at(matchId)._i);
+    const feature::PointFeature & featJ = featuresJ.at(matches.at(matchId)._j);
     const Vec2 featICoords (featI.x(), featI.y());
 
     M.block(iMatch,0,1,3) = featICoords.homogeneous().transpose();
@@ -175,8 +175,8 @@ void estimateAffinity(const std::vector<feature::SIOPointFeature> & featuresI,
   affineTransformation(2,2) = 1.;
 }
 
-void estimateHomography(const std::vector<feature::SIOPointFeature> &featuresI,
-                        const std::vector<feature::SIOPointFeature> &featuresJ,
+void estimateHomography(const std::vector<feature::PointFeature> &featuresI,
+                        const std::vector<feature::PointFeature> &featuresJ,
                         const matching::IndMatches &matches,
                         Mat3 &H,
                         const std::set<IndexT> &usefulMatchesId)
@@ -208,8 +208,8 @@ void estimateHomography(const std::vector<feature::SIOPointFeature> &featuresI,
   IndexT iMatch = 0;
   for(IndexT matchId : matchesId)
   {
-    const feature::SIOPointFeature & featI = featuresI.at(matches.at(matchId)._i);
-    const feature::SIOPointFeature & featJ = featuresJ.at(matches.at(matchId)._j);
+    const feature::PointFeature & featI = featuresI.at(matches.at(matchId)._i);
+    const feature::PointFeature & featJ = featuresJ.at(matches.at(matchId)._j);
     Vec2 fI(featI.x(), featI.y());
     Vec2 fJ(featJ.x(), featJ.y());
     Vec3 ptI = CI * fI.homogeneous();
@@ -234,8 +234,8 @@ void estimateHomography(const std::vector<feature::SIOPointFeature> &featuresI,
     H /= H(2,2);
 }
 
-void findTransformationInliers(const std::vector<feature::SIOPointFeature> &featuresI,
-                               const std::vector<feature::SIOPointFeature> &featuresJ,
+void findTransformationInliers(const std::vector<feature::PointFeature> &featuresI,
+                               const std::vector<feature::PointFeature> &featuresJ,
                                const matching::IndMatches &matches,
                                const Mat3 &transformation,
                                double tolerance,
@@ -247,8 +247,8 @@ void findTransformationInliers(const std::vector<feature::SIOPointFeature> &feat
 #pragma omp parallel for
   for (int iMatch = 0; iMatch < matches.size(); ++iMatch)
   {
-    const feature::SIOPointFeature & featI = featuresI.at(matches.at(iMatch)._i);
-    const feature::SIOPointFeature & featJ = featuresJ.at(matches.at(iMatch)._j);
+    const feature::PointFeature & featI = featuresI.at(matches.at(iMatch)._i);
+    const feature::PointFeature & featJ = featuresJ.at(matches.at(iMatch)._j);
 
     const Vec2 ptI(featI.x(), featI.y());
     const Vec2 ptJ(featJ.x(), featJ.y());
@@ -354,8 +354,8 @@ public:
     double _softThresh;
 };
 
-bool refineHomography(const std::vector<feature::SIOPointFeature> &featuresI,
-                      const std::vector<feature::SIOPointFeature> &featuresJ,
+bool refineHomography(const std::vector<feature::PointFeature> &featuresI,
+                      const std::vector<feature::PointFeature> &featuresJ,
                       const matching::IndMatches& remainingMatches,
                       Mat3& homography,
                       std::set<IndexT>& bestMatchesId,

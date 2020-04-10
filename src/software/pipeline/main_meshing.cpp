@@ -87,26 +87,27 @@ inline std::istream& operator>>(std::istream& in, ERepartitionMode& out_mode)
 void createDenseSfMData(const sfmData::SfMData& sfmData,
                         const mvsUtils::MultiViewParams& mp,
                         const std::vector<Point3d>& vertices,
-                        const StaticVector<StaticVector<int>*>& ptsCams,
+                        const StaticVector<StaticVector<int>>& ptsCams,
                         sfmData::SfMData& outSfmData
 )
 {
   outSfmData = sfmData;
   outSfmData.getLandmarks().clear();
 
+  const double unknownScale = 0.0;
   for(std::size_t i = 0; i < vertices.size(); ++i)
   {
     const Point3d& point = vertices.at(i);
     const Vec3 pt3D(point.x, point.y, point.z);
     sfmData::Landmark landmark(pt3D, feature::EImageDescriberType::UNKNOWN);
     // set landmark observations from ptsCams if any
-    if(!ptsCams[i]->empty())
+    if(!ptsCams[i].empty())
     {
-      for(int cam : *(ptsCams[i]))
+      for(int cam : ptsCams[i])
       {
         const sfmData::View& view = sfmData.getView(mp.getViewId(cam));
         const camera::IntrinsicBase* intrinsicPtr = sfmData.getIntrinsicPtr(view.getIntrinsicId());
-        const sfmData::Observation observation(intrinsicPtr->project(sfmData.getPose(view).getTransform(), pt3D, true), UndefinedIndexT); // apply distortion
+        const sfmData::Observation observation(intrinsicPtr->project(sfmData.getPose(view).getTransform(), pt3D, true), UndefinedIndexT, unknownScale); // apply distortion
         landmark.observations[view.getViewId()] = observation;
       }
     }
@@ -305,7 +306,7 @@ int main(int argc, char* argv[])
     ALICEVISION_LOG_WARNING("partitioningMode: " << partitioningMode);
 
     mesh::Mesh* mesh = nullptr;
-    StaticVector<StaticVector<int>*>* ptsCams = nullptr;
+    StaticVector<StaticVector<int>> ptsCams;
 
     switch(repartitionMode)
     {
@@ -336,7 +337,7 @@ int main(int argc, char* argv[])
                     fuseCut::reconstructSpaceAccordingToVoxelsArray(voxelsArrayFileName, &lsbase);
                     // Join meshes and ptsCams
                     mesh = fuseCut::joinMeshes(voxelsArrayFileName, &lsbase);
-                    ptsCams = fuseCut::loadLargeScalePtsCams(lsbase.getRecsDirs(voxelsArray));
+                    fuseCut::loadLargeScalePtsCams(lsbase.getRecsDirs(voxelsArray), ptsCams);
                     break;
                 }
                 case ePartitioningSingleBlock:
@@ -396,7 +397,7 @@ int main(int argc, char* argv[])
                     delaunayGC.createGraphCut(hexah, cams, (fuseCut::VoxelsGrid*)&rp, outDirectory.string()+"/", lsbase.getSpaceCamsTracksDir(), false, lsbase.getSpaceSteps());
                     delaunayGC.graphCutPostProcessing();
                     mesh = delaunayGC.createMesh();
-                    ptsCams = delaunayGC.createPtsCams();
+                    delaunayGC.createPtsCams(ptsCams);
                     mesh::meshPostProcessing(mesh, ptsCams, mp, outDirectory.string()+"/", nullptr, hexah);
                     break;
                 }
@@ -468,20 +469,20 @@ int main(int argc, char* argv[])
                     if(saveRawDensePointCloud)
                     {
                       ALICEVISION_LOG_INFO("Save dense point cloud before cut and filtering.");
-                      StaticVector<StaticVector<int>*>* ptsCams = delaunayGC.createPtsCams();
+                      StaticVector<StaticVector<int>> ptsCams;
+                      delaunayGC.createPtsCams(ptsCams);
                       sfmData::SfMData densePointCloud;
-                      createDenseSfMData(sfmData, mp, delaunayGC._verticesCoords, *ptsCams, densePointCloud);
+                      createDenseSfMData(sfmData, mp, delaunayGC._verticesCoords, ptsCams, densePointCloud);
                       removeLandmarksWithoutObservations(densePointCloud);
                       if(colorizeOutput)
                         sfmData::colorizeTracks(densePointCloud);
                       sfmDataIO::Save(densePointCloud, (outDirectory/"densePointCloud_raw.abc").string(), sfmDataIO::ESfMData::ALL_DENSE);
-                      deleteArrayOfArrays(&ptsCams);
                     }
 
                     delaunayGC.createGraphCut(&hexah[0], cams, nullptr, outDirectory.string()+"/", outDirectory.string()+"/SpaceCamsTracks/", false, spaceSteps);
                     delaunayGC.graphCutPostProcessing();
                     mesh = delaunayGC.createMesh();
-                    ptsCams = delaunayGC.createPtsCams();
+                    delaunayGC.createPtsCams(ptsCams);
                     mesh::meshPostProcessing(mesh, ptsCams, mp, outDirectory.string()+"/", nullptr, &hexah[0]);
 
                     break;
@@ -501,16 +502,14 @@ int main(int argc, char* argv[])
     // - dense point-cloud with observations as sfmData
     // - mesh as .obj
 
-    if(mesh == nullptr || mesh->pts->empty() || mesh->tris->empty())
+    if(mesh == nullptr || mesh->pts.empty() || mesh->tris.empty())
       throw std::runtime_error("No valid mesh was generated.");
 
-    if(ptsCams == nullptr)
+    if(ptsCams.empty())
       throw std::runtime_error("Points visibilities data has not been initialized.");
 
     sfmData::SfMData densePointCloud;
-    createDenseSfMData(sfmData, mp, mesh->pts->getData(), *ptsCams, densePointCloud);
-
-    deleteArrayOfArrays<int>(&ptsCams);
+    createDenseSfMData(sfmData, mp, mesh->pts.getData(), ptsCams, densePointCloud);
 
     if(colorizeOutput)
     {
@@ -519,8 +518,8 @@ int main(int argc, char* argv[])
       // to have a 1:1 mapping between points and mesh vertices
       const auto& landmarks = densePointCloud.getLandmarks();
       std::vector<rgb>& colors = mesh->colors();
-      colors.resize(mesh->pts->size(), {0, 0, 0});
-      for(std::size_t i = 0; i < mesh->pts->size(); ++i)
+      colors.resize(mesh->pts.size(), {0, 0, 0});
+      for(std::size_t i = 0; i < mesh->pts.size(); ++i)
       {
         const auto& c = landmarks.at(i).rgb;
         colors[i] = {c.r(), c.g(), c.b()};

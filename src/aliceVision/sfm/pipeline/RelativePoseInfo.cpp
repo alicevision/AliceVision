@@ -104,14 +104,21 @@ bool robustRelativePose(const Mat3& K1, const Mat3& K2,
   relativePose_info.found_residual_precision = acRansacOut.first;
 
   if(relativePose_info.vec_inliers.size() < kernel.getMinimumNbRequiredSamples() * ALICEVISION_MINIMUM_SAMPLES_COEF)
+  {
+    ALICEVISION_LOG_INFO("robustRelativePose: no sufficient coverage (the model does not support enough samples): " << relativePose_info.vec_inliers.size());
     return false; // no sufficient coverage (the model does not support enough samples)
+  }
 
   // estimation of the relative poses
   Mat3 R;
   Vec3 t;
-
-  if(!estimate_Rt_fromE(K1, K2, x1, x2, relativePose_info.essential_matrix, relativePose_info.vec_inliers, &R, &t))
+  if (!estimate_Rt_fromE(
+    K1, K2, x1, x2,
+    relativePose_info.essential_matrix, relativePose_info.vec_inliers, &R, &t))
+  {
+    ALICEVISION_LOG_INFO("robustRelativePose: cannot find a valid [R|t] couple that makes the inliers in front of the camera.");
     return false; // cannot find a valid [R|t] couple that makes the inliers in front of the camera.
+  }
 
   // Store [R|C] for the second camera, since the first camera is [Id|0]
   relativePose_info.relativePose = geometry::Pose3(R, -R.transpose() * t);

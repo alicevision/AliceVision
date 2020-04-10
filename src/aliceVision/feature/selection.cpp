@@ -23,12 +23,12 @@ const size_t gridSize = 3;
 */
 void sortMatches_byFeaturesScale(
 	const aliceVision::matching::IndMatches& inputMatches,
-	const aliceVision::feature::FeatRegions<aliceVision::feature::SIOPointFeature>& regionsI,
-	const aliceVision::feature::FeatRegions<aliceVision::feature::SIOPointFeature>& regionsJ,
+    const aliceVision::feature::Regions& regionsI,
+    const aliceVision::feature::Regions& regionsJ,
 	aliceVision::matching::IndMatches& outputMatches)
 {
-	const std::vector<aliceVision::feature::SIOPointFeature>& vecFeatureI = regionsI.Features();
-	const std::vector<aliceVision::feature::SIOPointFeature>& vecFeatureJ = regionsJ.Features();
+    const std::vector<aliceVision::feature::PointFeature>& vecFeatureI = regionsI.Features();
+    const std::vector<aliceVision::feature::PointFeature>& vecFeatureJ = regionsJ.Features();
 
 	//outputMatches will contain the sorted matches if inputMatches.
 	outputMatches.reserve(inputMatches.size());
@@ -38,17 +38,17 @@ void sortMatches_byFeaturesScale(
 	std::vector<std::pair<float, size_t>> vecFeatureScale;
 
 	for (size_t i = 0; i < inputMatches.size(); i++)
-  {
+    {
 		float scale1 = vecFeatureI[inputMatches[i]._i].scale();
 		float scale2 = vecFeatureJ[inputMatches[i]._j].scale();
 		vecFeatureScale.emplace_back((scale1 + scale2) / 2.0, i);
-	}
+    }
 
 	std::sort(vecFeatureScale.begin(), vecFeatureScale.end(), matchCompare);
 
 	//The sorted match vector is filled according to the result of the sorting above.
 	for (size_t i = 0; i < vecFeatureScale.size(); i++)
-  {
+    {
 		outputMatches.push_back(inputMatches[vecFeatureScale[i].second]);
 	}
 }
@@ -96,8 +96,8 @@ void thresholdMatches(aliceVision::matching::IndMatches& outputMatches, const st
  * @param[in] sfm_data The sfm data file
  * @param[out] outMatches The remaining matches
  */
-void matchesGridFiltering(const aliceVision::feature::FeatRegions<aliceVision::feature::SIOPointFeature>& lRegions, 
-        const aliceVision::feature::FeatRegions<aliceVision::feature::SIOPointFeature>& rRegions, 
+void matchesGridFiltering(const aliceVision::feature::Regions& lRegions,
+        const aliceVision::feature::Regions& rRegions,
         const aliceVision::Pair& indexImagePair,
         const aliceVision::sfmData::SfMData sfm_data, 
         aliceVision::matching::IndMatches& outMatches)
@@ -121,8 +121,8 @@ void matchesGridFiltering(const aliceVision::feature::FeatRegions<aliceVision::f
   // Split matches in grid cells
   for(const auto& match: outMatches)
   {
-    const aliceVision::feature::SIOPointFeature& leftPoint = lRegions.Features()[match._i];
-    const aliceVision::feature::SIOPointFeature& rightPoint = rRegions.Features()[match._j];
+    const aliceVision::feature::PointFeature& leftPoint = lRegions.Features()[match._i];
+    const aliceVision::feature::PointFeature& rightPoint = rRegions.Features()[match._j];
     
     const float leftGridIndex_f = std::floor(leftPoint.x() / (float)leftCellWidth) + std::floor(leftPoint.y() / (float)leftCellHeight) * gridSize;
     const float rightGridIndex_f = std::floor(rightPoint.x() / (float)rightCellWidth) + std::floor(rightPoint.y() / (float)rightCellHeight) * gridSize;

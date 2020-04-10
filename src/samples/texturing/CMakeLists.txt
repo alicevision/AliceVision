@@ -3,7 +3,8 @@ alicevision_add_software(aliceVision_samples_evcorrection
   FOLDER ${FOLDER_SAMPLES} 
   LINKS aliceVision_system 
         aliceVision_sfmData 
-        aliceVision_image 
-        ${Boost_LIBRARIES} 
+        aliceVision_image
+        Boost::program_options
+        Boost::filesystem
         ${OPENIMAGEIO_LIBRARIES} 
 )

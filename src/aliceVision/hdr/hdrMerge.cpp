@@ -10,39 +10,67 @@
 #include <limits>
 #include <iostream>
 #include <fstream>
+
 #include <aliceVision/alicevision_omp.hpp>
+#include <aliceVision/system/Logger.hpp>
 
 
 namespace aliceVision {
 namespace hdr {
-  
+
+/**
+ * f(x)=min + (max-min) * \frac{1}{1 + e^{10 * (x - mid) / width}}
+ * https://www.desmos.com/calculator/xamvguu8zw
+ *              ____
+ * sigmoid:         \________
+ *                sigMid
+ */
+inline float sigmoid(float zeroVal, float endVal, float sigwidth, float sigMid, float xval)
+{
+    return zeroVal + (endVal - zeroVal) * (1.0f / (1.0f + expf(10.0f * ((xval - sigMid) / sigwidth))));
+}
+
+/**
+ * https://www.desmos.com/calculator/cvu8s3rlvy
+ *
+ *                       ____
+ * sigmoid inv:  _______/
+ *                    sigMid
+ */
+inline float sigmoidInv(float zeroVal, float endVal, float sigwidth, float sigMid, float xval)
+{
+    return zeroVal + (endVal - zeroVal) * (1.0f / (1.0f + expf(10.0f * ((sigMid - xval) / sigwidth))));
+}
+
 void hdrMerge::process(const std::vector< image::Image<image::RGBfColor> > &images,
-                              const std::vector<float> &times,
-                              const rgbCurve &weight,
-                              const rgbCurve &response,
-                              image::Image<image::RGBfColor> &radiance,
-                              float targetTime,
-                              bool robCalibrate,
-                              float clampedValueCorrection)
+                        const std::vector<float> &times,
+                        const rgbCurve &weight,
+                        const rgbCurve &response,
+                        image::Image<image::RGBfColor> &radiance,
+                        float targetCameraExposure)
 {
   //checks
   assert(!response.isEmpty());
   assert(!images.empty());
   assert(images.size() == times.size());
 
-  //reset radiance image
-  radiance.fill(image::RGBfColor(0.f, 0.f, 0.f));
-
-  //get images width, height
+  // get images width, height
   const std::size_t width = images.front().Width();
   const std::size_t height = images.front().Height();
 
-//  //min and max trusted values
-//  const float minTrustedValue = 0.0f - std::numeric_limits<float>::epsilon();
-//  const float maxTrustedValue = 1.0f + std::numeric_limits<float>::epsilon();
+  // resize and reset radiance image to 0.0
+  radiance.resize(width, height, true, image::RGBfColor(0.f, 0.f, 0.f));
 
-  const float maxLum = 1000.0;
-  const float minLum = 0.0001;
+  ALICEVISION_LOG_TRACE("[hdrMerge] Images to fuse:");
+  for(int i = 0; i < images.size(); ++i)
+  {
+    ALICEVISION_LOG_TRACE(images[i].Width() << "x" << images[i].Height() << ", time: " << times[i]);
+  }
+
+  rgbCurve weightShortestExposure = weight;
+  weightShortestExposure.freezeSecondPartValues();
+  rgbCurve weightLongestExposure = weight;
+  weightLongestExposure.freezeFirstPartValues();
 
   #pragma omp parallel for
   for(int y = 0; y < height; ++y)
@@ -52,81 +80,146 @@ void hdrMerge::process(const std::vector< image::Image<image::RGBfColor> > &imag
       //for each pixels
       image::RGBfColor &radianceColor = radiance(y, x);
 
-//      double highValue = images.at(0)(y, x).maxCoeff();
-//      double lowValue = images.at(images.size()-1)(y, x).minCoeff();
-
       for(std::size_t channel = 0; channel < 3; ++channel)
       {
         double wsum = 0.0;
         double wdiv = 0.0;
-        double highValue = images.at(0)(y, x)(channel);
-        double lowValue = images.at(images.size()-1)(y, x)(channel);
 
-//        float minTimeSaturation = std::numeric_limits<float>::max();
-//        float maxTimeSaturation = std::numeric_limits<float>::min();
-
-
-        for(std::size_t i = 0; i < images.size(); ++i)
+        // Merge shortest exposure
         {
-          //for each images
+            int exposureIndex = 0;
+
+            // for each image
+            const double value = images[exposureIndex](y, x)(channel);
+            const double time = times[exposureIndex];
+            //
+            // weightShortestExposure:          _______
+            //                          _______/
+            //                                0      1
+            double w = std::max(0.001f, weightShortestExposure(value, channel));
+
+            const double r = response(value, channel);
+
+            wsum += w * r / time;
+            wdiv += w;
+        }
+        // Merge intermediate exposures
+        for(std::size_t i = 1; i < images.size() - 1; ++i)
+        {
+          // for each image
           const double value = images[i](y, x)(channel);
           const double time = times[i];
-          double w = std::max(0.f, weight(value, channel) - weight(0.05, 0));
+          //
+          // weight:          ____
+          //          _______/    \________
+          //                0      1
+          double w = std::max(0.001f, weight(value, channel));
 
           const double r = response(value, channel);
-
           wsum += w * r / time;
           wdiv += w;
         }
-
-        double clampedHighValue = 1.0 - (1.0 / (1.0 + expf(10.0 * ((highValue - 0.9) / 0.2))));
-        double clampedLowValue = 1.0 / (1.0 + expf(10.0 * ((lowValue - 0.005) / 0.01)));
-
-
-        if(!robCalibrate && clampedValueCorrection != 0.f)
+        // Merge longest exposure
         {
-          radianceColor(channel) = (1.0 - clampedHighValue - clampedLowValue) * wsum / std::max(0.001, wdiv) * targetTime + clampedHighValue * maxLum * clampedValueCorrection + clampedLowValue * minLum * clampedValueCorrection;
-//          radianceColor(channel) = (1.0 - clampedHighValue - clampedLowValue) * wsum / std::max(0.001, wdiv) + clampedHighValue * maxLum * clampedValueCorrection + clampedLowValue * minLum * clampedValueCorrection;
+            int exposureIndex = images.size() - 1;
+
+            // for each image
+            const double value = images[exposureIndex](y, x)(channel);
+            const double time = times[exposureIndex];
+            //
+            // weightLongestExposure:  ____________
+            //                                      \_______
+            //                                0      1
+            double w = std::max(0.001f, weightLongestExposure(value, channel));
+
+            const double r = response(value, channel);
+
+            wsum += w * r / time;
+            wdiv += w;
         }
-        else
-        {
-          radianceColor(channel) = wsum / std::max(0.001, wdiv) * targetTime;
-//          radianceColor(channel) = wsum / std::max(0.001, wdiv);
-        }
-
-
-//          //saturation detection
-//          if(value > maxTrustedValue)
-//          {
-//            minTimeSaturation = std::min(minTimeSaturation, time);
-//          }
-//
-//          if(value < minTrustedValue)
-//          {
-//            maxTimeSaturation = std::max(maxTimeSaturation, time);
-//          }
-
-//        //saturation correction
-//        if((wdiv == 0.0f) &&
-//               (maxTimeSaturation > std::numeric_limits<float>::min()))
-//        {
-//          wsum = minTrustedValue;
-//          wdiv = maxTimeSaturation;
-//        }
-//2
-//        if((wdiv == 0.0f) &&
-//               (minTimeSaturation < std::numeric_limits<float>::max()))
-//        {
-//          wsum = maxTrustedValue;
-//          wdiv = minTimeSaturation;
-//        }
-
+        radianceColor(channel) = wsum / std::max(0.001, wdiv) * targetCameraExposure;
       }
-
     }
   }
 }
 
+void hdrMerge::postProcessHighlight(const std::vector< image::Image<image::RGBfColor> > &images,
+    const std::vector<float> &times,
+    const rgbCurve &weight,
+    const rgbCurve &response,
+    image::Image<image::RGBfColor> &radiance,
+    float targetCameraExposure,
+    float highlightCorrectionFactor,
+    float highlightTargetLux)
+{
+    //checks
+    assert(!response.isEmpty());
+    assert(!images.empty());
+    assert(images.size() == times.size());
+
+    if (highlightCorrectionFactor == 0.0f)
+        return;
+
+    const image::Image<image::RGBfColor>& inputImage = images.front();
+    // Target Camera Exposure = 1 for EV-0 (iso=100, shutter=1, fnumber=1) => 2.5 lux
+    float highlightTarget = highlightTargetLux * targetCameraExposure * 2.5;
+
+    // get images width, height
+    const std::size_t width = inputImage.Width();
+    const std::size_t height = inputImage.Height();
+
+    image::Image<float> isPixelClamped(width, height);
+
+#pragma omp parallel for
+    for (int y = 0; y < height; ++y)
+    {
+        for (int x = 0; x < width; ++x)
+        {
+            //for each pixels
+            image::RGBfColor &radianceColor = radiance(y, x);
+
+            float& isClamped = isPixelClamped(y, x);
+            isClamped = 0.0f;
+
+            for (std::size_t channel = 0; channel < 3; ++channel)
+            {
+                const float value = inputImage(y, x)(channel);
+
+                // https://www.desmos.com/calculator/vpvzmidy1a
+                //                       ____
+                // sigmoid inv:  _______/
+                //                  0    1
+                const float isChannelClamped = sigmoidInv(0.0f, 1.0f, /*sigWidth=*/0.08f,  /*sigMid=*/0.95f, value);
+                isClamped += isChannelClamped;
+            }
+            isPixelClamped(y, x) /= 3.0;
+        }
+    }
+
+    image::Image<float> isPixelClamped_g(width, height);
+    image::ImageGaussianFilter(isPixelClamped, 1.0f, isPixelClamped_g, 3, 3);
+
+#pragma omp parallel for
+    for (int y = 0; y < height; ++y)
+    {
+        for (int x = 0; x < width; ++x)
+        {
+            image::RGBfColor& radianceColor = radiance(y, x);
+
+            double clampingCompensation = highlightCorrectionFactor * (isPixelClamped_g(y, x) / 3.0);
+            double clampingCompensationInv = (1.0 - clampingCompensation);
+            assert(clampingCompensation <= 1.0);
+
+            for (std::size_t channel = 0; channel < 3; ++channel)
+            {
+                if(highlightTarget > radianceColor(channel))
+                {
+                    radianceColor(channel) = clampingCompensation * highlightTarget + clampingCompensationInv * radianceColor(channel);
+                }
+            }
+        }
+    }
+}
 
 } // namespace hdr
 } // namespace aliceVision

@@ -65,6 +65,7 @@ private:
   ERotationAveragingMethod _eRotationAveragingMethod;
   ETranslationAveragingMethod _eTranslationAveragingMethod;
   bool _lockAllIntrinsics = false;
+  EFeatureConstraint _featureConstraint = EFeatureConstraint::BASIC;
 
   // Data provider
   feature::FeaturesPerView* _featuresPerView;

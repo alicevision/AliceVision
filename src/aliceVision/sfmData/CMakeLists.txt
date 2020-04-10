@@ -26,7 +26,7 @@ alicevision_add_library(aliceVision_sfmData
     aliceVision_geometry
     aliceVision_camera
     aliceVision_stl
-    ${Boost_FILESYSTEM_LIBRARY}
+    Boost::filesystem
 )
 
 # Unit tests

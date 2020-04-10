@@ -5,14 +5,17 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
-#include "aliceVision/image/all.hpp"
-#include "aliceVision/feature/feature.hpp"
-#include "aliceVision/feature/sift/ImageDescriber_SIFT.hpp"
-#include "aliceVision/matching/RegionsMatcher.hpp"
-#include "aliceVision/multiview/fundamentalKernelSolver.hpp"
-#include "aliceVision/multiview/conditioning.hpp"
-#include "aliceVision/robustEstimation/ACRansac.hpp"
-#include "aliceVision/robustEstimation/ACRansacKernelAdaptator.hpp"
+#include <aliceVision/image/all.hpp>
+#include <aliceVision/feature/feature.hpp>
+#include <aliceVision/feature/sift/ImageDescriber_SIFT.hpp>
+#include <aliceVision/matching/RegionsMatcher.hpp>
+#include <aliceVision/multiview/RelativePoseKernel.hpp>
+#include <aliceVision/multiview/relativePose/Fundamental10PSolver.hpp>
+#include <aliceVision/multiview/relativePose/FundamentalError.hpp>
+#include <aliceVision/multiview/Unnormalizer.hpp>
+#include <aliceVision/robustEstimation/conditioning.hpp>
+#include <aliceVision/robustEstimation/ACRansac.hpp>
+#include <aliceVision/robustEstimation/IRansacKernel.hpp>
 #include <aliceVision/feature/svgVisualization.hpp>
 
 #include "dependencies/vectorGraphics/svgDrawer.hpp"
@@ -81,9 +84,9 @@ int main(int argc, char **argv)
   }
 
   Image<float> imageLeft, imageRight;
-  readImage(filenameLeft, imageLeft);
+  readImage(filenameLeft, imageLeft, EImageColorSpace::LINEAR);
   const auto imageLeftSize = std::make_pair<std::size_t, std::size_t>(imageLeft.Width(), imageLeft.Height());
-  readImage(filenameRight, imageRight);
+  readImage(filenameRight, imageRight, EImageColorSpace::LINEAR);
   const auto imageRightSize = std::make_pair<std::size_t, std::size_t>(imageRight.Width(), imageRight.Height());
 
   //--
@@ -103,22 +106,20 @@ int main(int argc, char **argv)
   const SIFT_Regions* regionsL = dynamic_cast<SIFT_Regions*>(regions_perImage.at(0).get());
   const SIFT_Regions* regionsR = dynamic_cast<SIFT_Regions*>(regions_perImage.at(1).get());
 
-  const PointFeatures
-    featsL = regions_perImage.at(0)->GetRegionsPositions(),
-    featsR = regions_perImage.at(1)->GetRegionsPositions();
+  const PointFeatures& featsL = regions_perImage.at(0)->Features();
+  const PointFeatures& featsR = regions_perImage.at(1)->Features();
 
   // Show both images side by side
   {
     const string out_filename = "01.features."+describerTypesName+".svg";
     drawKeypointsSideBySide(filenameLeft,
                             imageLeftSize,
-                            feature::getSIOPointFeatures(*regions_perImage.at(0)),
+                            featsL,
                             filenameRight,
                             imageRightSize,
-                            feature::getSIOPointFeatures(*regions_perImage.at(1)),
+                            featsR,
                             out_filename);
   }
-
 
   std::vector<IndMatch> vec_PutativeMatches;
   //-- Perform matching -> find Nearest neighbor, filtered with Distance ratio
@@ -133,12 +134,8 @@ int main(int argc, char **argv)
   // two ways to show the matches
   {
     // side by side
-    drawMatchesSideBySide(filenameLeft,
-                          imageLeftSize,
-                          feature::getSIOPointFeatures(*regions_perImage.at(0)),
-                          filenameRight,
-                          imageRightSize,
-                          feature::getSIOPointFeatures(*regions_perImage.at(1)),
+    drawMatchesSideBySide(filenameLeft, imageLeftSize, featsL,
+                          filenameRight, imageRightSize, featsR,
                           vec_PutativeMatches,
                           "02.putativeMatchesSideBySide." + describerTypesName + ".svg");
   }
@@ -147,10 +144,7 @@ int main(int argc, char **argv)
 
     const bool isLeft = true;
     const bool richKpts = false;
-    saveMatchesAsMotion(filenameLeft,
-                        imageLeftSize,
-                        feature::getSIOPointFeatures(*regions_perImage.at(0)),
-                        feature::getSIOPointFeatures(*regions_perImage.at(1)),
+    saveMatchesAsMotion(filenameLeft, imageLeftSize, featsL, featsR,
                         vec_PutativeMatches,
                         "03.putativeMatchesMotion."+describerTypesName+".svg",
                         isLeft, richKpts);
@@ -178,26 +172,26 @@ int main(int argc, char **argv)
 
     //-- Fundamental robust estimation
     std::vector<size_t> vec_inliers;
-    typedef ACKernelAdaptor<
-      aliceVision::fundamental::kernel::TenPointSolver,
-      aliceVision::fundamental::kernel::SymmetricEpipolarDistanceError,
-      UnnormalizerT,
-      Mat3>
-      KernelType;
+    typedef multiview::RelativePoseKernel<
+        multiview::relativePose::Fundamental10PSolver,
+        multiview::relativePose::FundamentalSymmetricEpipolarDistanceError,
+        multiview::UnnormalizerT,
+        multiview::relativePose::Fundamental10PModel>
+        KernelType;
 
     KernelType kernel(
       xL, imageLeft.Width(), imageLeft.Height(),
       xR, imageRight.Width(), imageRight.Height(),
       true); // configure as point to line error model.
 
-    Mat3 F;
-    const std::pair<double,double> ACRansacOut = ACRANSAC(kernel, vec_inliers, 1024, &F,
+    multiview::relativePose::Fundamental10PModel F;
+    const std::pair<double, double> ACRansacOut = robustEstimation::ACRANSAC(kernel, vec_inliers, 1024, &F,
       Square(4.0)); // Upper bound of authorized threshold
     
     const double & thresholdF = ACRansacOut.first;
 
     // Check the fundamental support some point to be considered as valid
-    if (vec_inliers.size() > KernelType::MINIMUM_SAMPLES *2.5) 
+    if(vec_inliers.size() > kernel.getMinimumNbRequiredSamples() * 2.5) 
     {
       std::cout << "\nFound a fundamental under the confidence threshold of: "
         << thresholdF << " pixels\n\twith: " << vec_inliers.size() << " inliers"
@@ -212,15 +206,15 @@ int main(int argc, char **argv)
       svgStream.drawImage(filenameRight, imageRight.Width(), imageRight.Height(), imageLeft.Width());
       for ( size_t i = 0; i < vec_inliers.size(); ++i)  
       {
-        const SIOPointFeature & LL = regionsL->Features()[vec_PutativeMatches[vec_inliers[i]]._i];
-        const SIOPointFeature & RR = regionsR->Features()[vec_PutativeMatches[vec_inliers[i]]._j];
+        const PointFeature & LL = regionsL->Features()[vec_PutativeMatches[vec_inliers[i]]._i];
+        const PointFeature & RR = regionsR->Features()[vec_PutativeMatches[vec_inliers[i]]._j];
         const Vec2f L = LL.coords();
         const Vec2f R = RR.coords();
         svgStream.drawLine(L.x(), L.y(), R.x()+imageLeft.Width(), R.y(), svgStyle().stroke("green", 2.0));
         svgStream.drawCircle(L.x(), L.y(), LL.scale(), svgStyle().stroke("yellow", 2.0));
         svgStream.drawCircle(R.x()+imageLeft.Width(), R.y(), RR.scale(),svgStyle().stroke("yellow", 2.0));
         // residual computation
-        vec_residuals[i] = std::sqrt(KernelType::ErrorT::Error(F,
+        vec_residuals[i] = std::sqrt(KernelType::ErrorT().error(F,
                                        LL.coords().cast<double>(),
                                        RR.coords().cast<double>()));
       }

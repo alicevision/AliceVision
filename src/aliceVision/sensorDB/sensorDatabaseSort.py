@@ -8,6 +8,12 @@
 
 import argparse
 
+try:
+    _ = basestring
+except NameError:
+    # 'basestring' is undefined, so it must be Python 3
+    basestring = (str, bytes)
+
 # command line
 parser = argparse.ArgumentParser(description='Sort sensor width camera database by the brand / model name')
 parser.add_argument('-i', '--input', metavar='inputSensorDatabase.txt', required=True, type=str,
@@ -24,7 +30,7 @@ file.close()
 
 # process
 sensors = [entry.split(';')  for entry in database]
-sensors.sort(key=lambda t : tuple(s.lower() if isinstance(s,basestring) else s for s in t))
+sensors.sort(key=lambda t : tuple(s.lower() if isinstance(s, basestring) else s for s in t))
 outDatabase = ""
 for entry in sensors:
 	outDatabase += ';'.join(entry)
