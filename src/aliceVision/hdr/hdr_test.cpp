@@ -21,7 +21,7 @@ using namespace aliceVision;
 bool buildBrackets(std::vector<std::string> & paths, std::vector<float> & times, const hdr::rgbCurve & gt_response) {
   
   
-  times = {1.0 / 8000.0, 1.0 / 1600.0, 1.0 / 320.0, 1.0 / 60.0, 1.0/ 13.0, 1.0 / 4.0,  0.5, 0.92};
+  times = {1.0 / 8000.0, 1.0 / 1600.0, 1.0 / 320.0, 1.0 / 60.0, 1.0/ 13.0, 1.0 / 4.0,  0.8};
   
   std::default_random_engine generator;
   std::uniform_real_distribution<float> distribution(0.0f, 1.0f);
@@ -66,7 +66,7 @@ bool buildBrackets(std::vector<std::string> & paths, std::vector<float> & times,
 }
 
 
-/*BOOST_AUTO_TEST_CASE(hdr_laguerre)
+BOOST_AUTO_TEST_CASE(hdr_laguerre)
 {
   std::vector<std::string> paths;
   std::vector<float> times;
@@ -117,7 +117,6 @@ bool buildBrackets(std::vector<std::string> & paths, std::vector<float> & times,
             
           if (diff > 1e-3) {
             relatively_similar = false;
-            return;
           }
         }
       } 
@@ -125,9 +124,9 @@ bool buildBrackets(std::vector<std::string> & paths, std::vector<float> & times,
 
     BOOST_CHECK(relatively_similar);
   }
-}*/
+}
 
-/*
+
 BOOST_AUTO_TEST_CASE(hdr_debevec)
 {
   std::vector<std::string> paths;
@@ -157,9 +156,9 @@ BOOST_AUTO_TEST_CASE(hdr_debevec)
   hdr::rgbCurve calibrationWeight(quantization);
 
   calibrationWeight.setTriangular();
-  calib.process(all_paths, quantization, exposures, 10000, 1.0, false, calibrationWeight, 0.1, response);
+  calib.process(all_paths, quantization, exposures, 10000, 2.0, false, calibrationWeight, 0.01, response);
   response.exponential();
-  //response.scale();
+  response.scale();
 
   for (int imageId = 0; imageId < paths.size() - 1; imageId++) {
     image::Image<image::RGBfColor> imgA, imgB;
@@ -177,7 +176,7 @@ BOOST_AUTO_TEST_CASE(hdr_debevec)
         for (int k = 0; k < 1; k++) {
           double diff = std::abs(response(Ba(k), k) - ratioExposures * response(Bb(k), k));
             
-          if (diff > 1e-3) {
+          if (diff > 5e-3) {
             std::cout << diff << " " << k << " " << i << " " << j << " " << Ba(k) << " " << Bb(k) << " " << ratioExposures << " " << imageId << std::endl;
             relatively_similar = false;
           }
@@ -187,7 +186,7 @@ BOOST_AUTO_TEST_CASE(hdr_debevec)
 
     BOOST_CHECK(relatively_similar);
   }
-}*/
+}
 
 
 BOOST_AUTO_TEST_CASE(hdr_grossberg)
@@ -199,12 +198,22 @@ BOOST_AUTO_TEST_CASE(hdr_grossberg)
   hdr::rgbCurve gt_curve(quantization);
   
   
-  std::array<float, 3> laguerreParams = {-0.2, -0.2, -0.2};
-  for (int i = 0; i < quantization; i++) {
-    float x = float(i) / float(quantization - 1);
-    gt_curve.getCurve(0)[i] = hdr::laguerreFunction(laguerreParams[0], x);
-    gt_curve.getCurve(1)[i] = hdr::laguerreFunction(laguerreParams[1], x);
-    gt_curve.getCurve(2)[i] = hdr::laguerreFunction(laguerreParams[2], x);
+  gt_curve.setEmor(0);
+  std::array<double, 3> grossberg_params[3] = { 
+    {0.1, -0.3, 0.2}, 
+    {0.4, 0.1, 0.1}, 
+    {-0.8, -0.3, -0.4}
+  };
+
+  for (int dim = 0; dim < 3; dim++) {
+    hdr::rgbCurve dim_curve(quantization);
+    dim_curve.setEmor(dim + 1);
+
+    for (int k = 0; k < quantization; k++) {
+      gt_curve.getCurve(0)[k] += grossberg_params[0][dim] * dim_curve.getCurve(0)[k];
+      gt_curve.getCurve(1)[k] += grossberg_params[1][dim] * dim_curve.getCurve(0)[k];
+      gt_curve.getCurve(2)[k] += grossberg_params[2][dim] * dim_curve.getCurve(0)[k];
+    }
   }
 
 
@@ -238,11 +247,15 @@ BOOST_AUTO_TEST_CASE(hdr_grossberg)
         image::RGBfColor Bb = imgB(i, j);
 
         for (int k = 0; k < 3; k++) {
-          double diff = std::abs(response(Ba(k), k) - ratioExposures * response(Bb(k), k));
+
+          float valA = Ba(k);
+          float valB = Bb(k);
+
+          double diff = std::abs(response(valA, k) - ratioExposures * response(valB, k));
           
-          if (diff > 1e-3) {
-            std::cout << diff << " " << k << " " << i << " " << j << " " << Ba(k) << " " << Bb(k) << " " << ratioExposures << " " << imageId << std::endl;
-            return ;
+          if (diff > 5e-3) {
+            std::cout << diff << " " << k << " " << i << " " << j << " " << valA << " " << valB << " " << ratioExposures << " " << imageId << std::endl;
+            
             relatively_similar = false;
           }
         }
