@@ -252,7 +252,7 @@ void LaguerreBACalibration::process(const std::vector<std::vector<std::string>>&
         std::cout << laguerreParam[channel] << std::endl;
         for(unsigned int i = 0; i < curve.size(); ++i)
         {
-            curve[i] = laguerreFunction(laguerreParam[channel], i * step);
+            curve[i] = laguerreFunctionInv(laguerreParam[channel], i * step);
         }
     }
 

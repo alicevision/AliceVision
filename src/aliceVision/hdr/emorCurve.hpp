@@ -27,6 +27,13 @@ const std::size_t kEmorQuantization = 1024;
  */
 const double* getEmorInvCurve(int i);
 
+/**
+ * @brief hcurve accessor
+ * @param[in] index of the emor curve
+ * @return a pointer to the first element of the ith array of kEmorInv
+ */
+const double* getEmorCurve(int i);
+
 
 } // namespace hdr
 } // namespace aliceVision

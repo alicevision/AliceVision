@@ -44,7 +44,7 @@ void GrossbergCalibrate::process(const std::vector<std::vector<std::string>>& im
 
     // initialize response with g0 from invEmor
     response = rgbCurve(channelQuantization);
-    response.setEmor(0);
+    response.setEmorInv(0);
 
     const std::size_t emorSize = std::pow(2, 10);
     if (channelQuantization !=emorSize) {
@@ -69,12 +69,12 @@ void GrossbergCalibrate::process(const std::vector<std::vector<std::string>>& im
       Eigen::MatrixXd v(count_measures, 1);
 
       rgbCurve f0(channelQuantization);
-      f0.setEmor(0);
+      f0.setEmorInv(0);
 
       for (size_t dim = 0; dim < _dimension; dim++) {
 
         rgbCurve fdim(channelQuantization);
-        fdim.setEmor(dim + 1);
+        fdim.setEmorInv(dim + 1);
 
         size_t rowId = 0;
         for (size_t groupId = 0; groupId < samples.size(); groupId++) {
@@ -147,7 +147,7 @@ void GrossbergCalibrate::process(const std::vector<std::vector<std::string>>& im
 
       for (int dim = 0; dim < _dimension; dim++) {
         rgbCurve fdim(channelQuantization);
-        fdim.setEmor(dim + 1);
+        fdim.setEmorInv(dim + 1);
 
         for (int i = 0; i < channelQuantization - 1; i++) {
           double eval_cur = double(i) * step;
@@ -161,7 +161,7 @@ void GrossbergCalibrate::process(const std::vector<std::vector<std::string>>& im
       for (int i = 0; i < 1; i++) {
         for (int j = 0; j < _dimension; j++) {
           rgbCurve fdim(channelQuantization);
-          fdim.setEmor(j + 1);
+          fdim.setEmorInv(j + 1);
           CE(j, i) = fdim(1.0, channel);
         }
       }
@@ -171,9 +171,8 @@ void GrossbergCalibrate::process(const std::vector<std::vector<std::string>>& im
         ce0[i] = 0;
       }
 
-      
+    
       quadprogpp::solve_quadprog(H, d, CE, ce0, D.transpose(), dF0, c);
-      
 
       /*
       Create final curve
@@ -182,7 +181,7 @@ void GrossbergCalibrate::process(const std::vector<std::vector<std::string>>& im
       for(unsigned int i = 0; i < curve.size(); ++i)
       {
         rgbCurve f0(channelQuantization);
-        f0.setEmor(0);
+        f0.setEmorInv(0);
 
         double val = double(i) * step;
         /*val = val / 0.95;
@@ -194,7 +193,7 @@ void GrossbergCalibrate::process(const std::vector<std::vector<std::string>>& im
         for (int d = 0; d < _dimension; d++) {
 
           rgbCurve fdim(channelQuantization);
-          fdim.setEmor(d + 1);
+          fdim.setEmorInv(d + 1);
 
           double val = double(i) * step;
           /*val /= 0.95;

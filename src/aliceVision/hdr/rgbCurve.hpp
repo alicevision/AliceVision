@@ -159,6 +159,12 @@ public:
   /**
     * @brief Set curves to Grossberg mean function of emor model
     */
+  void setEmorInv(size_t dim = 0);
+
+
+  /**
+    * @brief Set curves to Grossberg mean function of emor model
+    */
   void setEmor(size_t dim = 0);
 
   /**
