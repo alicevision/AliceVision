@@ -19,26 +19,10 @@
 #include <cassert>
 #include <numeric>
 
-namespace aliceVision
-{
-namespace hdr
-{
+namespace aliceVision {
+namespace hdr {
 
 using namespace aliceVision::image;
-
-template <typename T>
-T laguerreFunction(const T& a, const T& x)
-{
-    // https://www.desmos.com/calculator/ib1y06t4pe
-    using namespace boost::math::constants;
-    constexpr double c = 2.0 / pi<double>();
-    return x + c * atan((a * sin(pi<double>() * x)) / (1.0 - a * cos(pi<double>() * x)));
-}
-template <typename T>
-T laguerreFunctionInv(const T& a, const T& x)
-{
-    return laguerreFunction(-a, x);
-}
 
 double d_laguerreFunction_d_param(double a, double x)
 {
@@ -54,7 +38,7 @@ double d_laguerreFunction_d_param(double a, double x)
 
     double d_res_d_atanx = c;
     double d_atanx_d_nom = denom / (nom * nom + denom * denom);
-    double d_atanx_d_denom = -denom / (nom * nom + denom * denom);
+    double d_atanx_d_denom = - nom / (nom * nom + denom * denom);
 
     double d_nom_d_a = sin_m_pi_x;
     double d_denom_d_a = -cos_m_pi_x;
@@ -71,21 +55,18 @@ double d_laguerreFunction_d_x(double a, double x)
     double cos_m_pi_x = cos(m_pi_x);
     double nom = a * sin_m_pi_x;
     double denom = 1.0 - a * cos_m_pi_x;
-    /*double atanx = atan(nom / denom);
-    double res = x + c * atanx;*/
 
     double d_res_d_atanx = c;
     double d_atanx_d_nom = denom / (nom * nom + denom * denom);
-    double d_atanx_d_denom = -denom / (nom * nom + denom * denom);
+    double d_atanx_d_denom = -nom / (nom * nom + denom * denom);
 
     double d_nom_d_sin_m_pi_x = a;
     double d_denom_d_cos_m_pi_x = -a;
-    double d_sin_m_pi_x_d_m_pi_x = -cos(m_pi_x);
-    double d_cos_m_pi_x_d_m_pi_x = sin(m_pi_x);
+    double d_sin_m_pi_x_d_m_pi_x = cos(m_pi_x);
+    double d_cos_m_pi_x_d_m_pi_x = -sin(m_pi_x);
     double d_m_pi_x_d_x = M_PI;
 
-    return d_res_d_atanx * (d_atanx_d_nom * d_nom_d_sin_m_pi_x * d_sin_m_pi_x_d_m_pi_x * d_m_pi_x_d_x +
-                            d_atanx_d_denom * d_denom_d_cos_m_pi_x * d_cos_m_pi_x_d_m_pi_x * d_m_pi_x_d_x);
+    return 1.0 + d_res_d_atanx * (d_atanx_d_nom * d_nom_d_sin_m_pi_x * d_sin_m_pi_x_d_m_pi_x * d_m_pi_x_d_x + d_atanx_d_denom * d_denom_d_cos_m_pi_x * d_cos_m_pi_x_d_m_pi_x * d_m_pi_x_d_x);
 }
 
 
@@ -101,13 +82,13 @@ public:
     bool Evaluate(double const* const* parameters, double* residuals, double** jacobians) const override
     {
         double laguerre_param = parameters[0][0];
-        double ratio_exp = parameters[1][0];
+        double ratio_expB_over_expA = parameters[1][0];
 
-        double a = laguerreFunction(laguerre_param, _colorA) / ratio_exp;
-        double b = laguerreFunction(laguerre_param, _colorB) * ratio_exp;
+        double a = laguerreFunctionInv(laguerre_param, _colorA) * ratio_expB_over_expA;
+        double b = laguerreFunctionInv(laguerre_param, _colorB) / ratio_expB_over_expA;
 
-        double errorCost_1 = laguerreFunctionInv(laguerre_param, a) - _colorB;
-        double errorCost_2 = laguerreFunctionInv(laguerre_param, b) - _colorA;
+        double errorCost_1 = laguerreFunction(laguerre_param, a) - _colorB;
+        double errorCost_2 = laguerreFunction(laguerre_param, b) - _colorA;
         
         residuals[0] = errorCost_1;
         residuals[1] = errorCost_2;
@@ -119,8 +100,8 @@ public:
 
         if(jacobians[0] != nullptr)
         {
-            double d_errorCost_1_d_laguerre_param = -d_laguerreFunction_d_param(-laguerre_param, a) + d_laguerreFunction_d_x(-laguerre_param, a) * (1.0/ratio_exp) * d_laguerreFunction_d_param(laguerre_param, _colorA);
-            double d_errorCost_2_d_laguerre_param = -d_laguerreFunction_d_param(-laguerre_param, b) + d_laguerreFunction_d_x(-laguerre_param, b) * ratio_exp * d_laguerreFunction_d_param(laguerre_param, _colorB);
+            double d_errorCost_1_d_laguerre_param = d_laguerreFunction_d_param(laguerre_param, a) + d_laguerreFunction_d_x(laguerre_param, a) * ratio_expB_over_expA * -d_laguerreFunction_d_param(-laguerre_param, _colorA);
+            double d_errorCost_2_d_laguerre_param = d_laguerreFunction_d_param(laguerre_param, b) + d_laguerreFunction_d_x(laguerre_param, b) / ratio_expB_over_expA * -d_laguerreFunction_d_param(-laguerre_param, _colorB);
 
             jacobians[0][0] = d_errorCost_1_d_laguerre_param;
             jacobians[0][1] = d_errorCost_2_d_laguerre_param;
@@ -128,8 +109,8 @@ public:
 
         if(jacobians[1] != nullptr)
         {
-            jacobians[1][0] = d_laguerreFunction_d_x(-laguerre_param, a) * laguerreFunction(laguerre_param, _colorA) * (-1.0 / (ratio_exp * ratio_exp));
-            jacobians[1][1] = d_laguerreFunction_d_x(-laguerre_param, b) * laguerreFunction(laguerre_param, _colorA);
+            jacobians[1][0] = d_laguerreFunction_d_x(laguerre_param, a) * laguerreFunctionInv(laguerre_param, _colorA);
+            jacobians[1][1] = d_laguerreFunction_d_x(laguerre_param, b) * laguerreFunctionInv(laguerre_param, _colorB) * (-1.0 / (ratio_expB_over_expA * ratio_expB_over_expA));
         }
 
         return true;
@@ -178,8 +159,7 @@ void LaguerreBACalibration::process(const std::vector<std::vector<std::string>>&
     ALICEVISION_LOG_DEBUG("Extract color samples");
     std::vector<std::vector<ImageSamples>> samples;
     extractSamples(samples, imagePathsGroups, cameraExposures, nbPoints, imageDownscale, fisheye);
-
-
+    
     std::vector<std::vector<double>> exposuresRatios;
 
     for (std::vector<float> & group : cameraExposures) {
@@ -195,7 +175,7 @@ void LaguerreBACalibration::process(const std::vector<std::vector<std::string>>&
         exposuresRatios.push_back(dest);
     }
 
-    std::array<double, 3> laguerreParam = {0.0, 0.0, 0.0};
+    std::array<double, 3> laguerreParam = {0, 0, 0};
 
     ceres::Problem problem;
     ceres::LossFunction* lossFunction = nullptr;
@@ -222,7 +202,7 @@ void LaguerreBACalibration::process(const std::vector<std::vector<std::string>>&
         }
     }
 
-
+    
 
     if (!refineExposures)
     {
@@ -254,19 +234,22 @@ void LaguerreBACalibration::process(const std::vector<std::vector<std::string>>&
     solverOptions.linear_solver_type = ceres::DENSE_NORMAL_CHOLESKY;
     solverOptions.minimizer_progress_to_stdout = true;
     solverOptions.use_inner_iterations = true;
-    solverOptions.use_nonmonotonic_steps = true;
-    
+    solverOptions.use_nonmonotonic_steps = false;
+    solverOptions.max_num_iterations = 100;
+    solverOptions.function_tolerance = 1e-16;
+    solverOptions.parameter_tolerance = 1e-16;
     
     ceres::Solver::Summary summary;
     ceres::Solve(solverOptions, &problem, &summary);
 
-    std::cout << (summary.FullReport()) << std::endl;
+    std::cout << summary.FullReport() << std::endl;
 
     for(unsigned int channel = 0; channel < 3; ++channel)
     {
         std::vector<float>& curve = response.getCurve(channel);
         const double step = 1.0 / double(curve.size());
 
+        std::cout << laguerreParam[channel] << std::endl;
         for(unsigned int i = 0; i < curve.size(); ++i)
         {
             curve[i] = laguerreFunction(laguerreParam[channel], i * step);
@@ -283,10 +266,7 @@ void LaguerreBACalibration::process(const std::vector<std::vector<std::string>>&
             for (int j = 0; j < groupRatios.size(); ++j)
             {
                 groupDestination[j + 1] = groupDestination[j] * groupRatios[j];
-                std::cout << groupRatios[j] << " ";
             }
-
-            std::cout << std::endl;
         }
     }
 }

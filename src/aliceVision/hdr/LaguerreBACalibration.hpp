@@ -51,5 +51,21 @@ public:
       rgbCurve &response);
 };
 
+template <typename T>
+T laguerreFunction(const T& a, const T& x)
+{
+    // https://www.desmos.com/calculator/ib1y06t4pe
+    using namespace boost::math::constants;
+    constexpr double c = 2.0 / pi<double>();
+    return x + c * atan((a * sin(pi<double>() * x)) / (1.0 - a * cos(pi<double>() * x)));
+}
+
+template <typename T>
+T laguerreFunctionInv(const T& a, const T& x)
+{
+    return laguerreFunction(-a, x);
+}
+
+
 } // namespace hdr
 } // namespace aliceVision

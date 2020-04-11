@@ -44,7 +44,7 @@ void GrossbergCalibrate::process(const std::vector<std::vector<std::string>>& im
 
     // initialize response with g0 from invEmor
     response = rgbCurve(channelQuantization);
-    response.setEmor(3);
+    response.setEmor(0);
 
     const std::size_t emorSize = std::pow(2, 10);
     if (channelQuantization !=emorSize) {
@@ -62,7 +62,7 @@ void GrossbergCalibrate::process(const std::vector<std::vector<std::string>>& im
       size_t groupsize = samples[group].size();
       count_measures += (groupsize - 1) * samples[group][0].colors.size();
     }
-           
+        
 
     for (int channel = 0; channel < 3; channel++) {
       Eigen::MatrixXd E(count_measures, _dimension);
@@ -98,16 +98,16 @@ void GrossbergCalibrate::process(const std::vector<std::vector<std::string>>& im
               float valB = Bb(channel);
 
               
-              valA /= 0.95;
-              valB /= 0.95;
+              /*valA /= 0.95;
+              valB /= 0.95;*/
 
-              if (valB > 1.0) {
+              /*if (valB > 1.0) {
                 E(rowId, dim) = 0;
                 v(rowId, 0) = 0;
                 rowId++;
 
                 continue;
-              }
+              }*/
 
               E(rowId, dim) = fdim(valA, 0) - k * fdim(valB, 0);
               v(rowId, 0) = f0(valA, 0) - k * f0(valB, 0);
@@ -117,12 +117,14 @@ void GrossbergCalibrate::process(const std::vector<std::vector<std::string>>& im
         }
       }
 
-     
+      
+
 
       /* Get first linear solution */
       Eigen::VectorXd c = (E.transpose() * E).inverse() * E.transpose() * -v; 
       Eigen::MatrixXd H = E.transpose() * E;
       Eigen::VectorXd d = (E.transpose() * v).col(0);
+
 
       /**
        * d (f0(val) + sum_i(c_i * f_i(val))) d_val > 0
@@ -168,6 +170,7 @@ void GrossbergCalibrate::process(const std::vector<std::vector<std::string>>& im
       for (int i = 0; i < 1; i++) {
         ce0[i] = 0;
       }
+
       
       quadprogpp::solve_quadprog(H, d, CE, ce0, D.transpose(), dF0, c);
       
@@ -182,10 +185,10 @@ void GrossbergCalibrate::process(const std::vector<std::vector<std::string>>& im
         f0.setEmor(0);
 
         double val = double(i) * step;
-        val = val / 0.95;
+        /*val = val / 0.95;
         if (val > 1.0) {
           val = 1.0;
-        }
+        }*/
             
         double curve_val = f0(val, channel);
         for (int d = 0; d < _dimension; d++) {
@@ -194,11 +197,11 @@ void GrossbergCalibrate::process(const std::vector<std::vector<std::string>>& im
           fdim.setEmor(d + 1);
 
           double val = double(i) * step;
-          val /= 0.95;
+          /*val /= 0.95;
 
           if (val > 1.0) {
             val = 1.0;
-          }
+          }*/
           curve_val += c(d) * fdim(val, channel);
         }
 

@@ -104,13 +104,8 @@ void extractSamples(
                             continue;
                     }
                     RGBfColor& c = img(y, x);
-                    
-                    float r = std::min(1.0f, std::max(0.0f, c.r()));
-                    float g = std::min(1.0f, std::max(0.0f, c.r()));
-                    float b = std::min(1.0f, std::max(0.0f, c.r()));
 
-
-                    colors.push_back(Rgb<double>(r, g, b));
+                    colors.push_back(Rgb<double>(c.r(), c.g(), c.b()));
                 }
             }
         }
