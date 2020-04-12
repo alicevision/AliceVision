@@ -13,10 +13,8 @@
 #include <cassert>
 #include <iostream>
 
-namespace aliceVision
-{
-namespace hdr
-{
+namespace aliceVision {
+namespace hdr {
 
 GrossbergCalibrate::GrossbergCalibrate(unsigned int dimension)
 {
@@ -24,11 +22,8 @@ GrossbergCalibrate::GrossbergCalibrate(unsigned int dimension)
 }
 
 void GrossbergCalibrate::process(const std::vector<std::vector<std::string>>& imagePathsGroups,
-                                 std::size_t channelQuantization,
-                                 const std::vector<std::vector<float>>& times,
-                                 int nbPoints,
-                                 bool fisheye,
-                                 rgbCurve& response)
+                                 std::size_t channelQuantization, const std::vector<std::vector<float>>& times,
+                                 int nbPoints, bool fisheye, rgbCurve& response)
 {
     const int nbGroups = imagePathsGroups.size();
     const int nbImages = imagePathsGroups.front().size();
@@ -47,142 +42,139 @@ void GrossbergCalibrate::process(const std::vector<std::vector<std::string>>& im
     response.setEmorInv(0);
 
     const std::size_t emorSize = std::pow(2, 10);
-    if (channelQuantization !=emorSize) {
-      ALICEVISION_LOG_ERROR("Incompatible channel quantization");
-      return;
+    if(channelQuantization != emorSize)
+    {
+        ALICEVISION_LOG_ERROR("Incompatible channel quantization");
+        return;
     }
 
-    //finv(f(e1*E)) = finv(f(e2*E))
-    //g(Ba) - k*g(Bb) = 0
-    //f0(Ba) + sum(c_i * f_i(Ba)) - k*f0(Bb) - k*sum(c_i * f_i(Bb)) = 0
-    //sum(c_i * f_i(Ba)) - k*sum(c_i * f_i(Bb)) = k*f0(Bb) - f0(Ba)
+    // finv(f(e1*E)) = finv(f(e2*E))
+    // g(Ba) - k*g(Bb) = 0
+    // f0(Ba) + sum(c_i * f_i(Ba)) - k*f0(Bb) - k*sum(c_i * f_i(Bb)) = 0
+    // sum(c_i * f_i(Ba)) - k*sum(c_i * f_i(Bb)) = k*f0(Bb) - f0(Ba)
 
     size_t count_measures = 0;
-    for (size_t group = 0; group < samples.size(); group++) {
-      size_t groupsize = samples[group].size();
-      count_measures += (groupsize - 1) * samples[group][0].colors.size();
+    for(size_t group = 0; group < samples.size(); group++)
+    {
+        size_t groupsize = samples[group].size();
+        count_measures += (groupsize - 1) * samples[group][0].colors.size();
     }
-        
 
-    for (int channel = 0; channel < 3; channel++) {
-      Eigen::MatrixXd E(count_measures, _dimension);
-      Eigen::MatrixXd v(count_measures, 1);
+    for(int channel = 0; channel < 3; channel++)
+    {
+        Eigen::MatrixXd E(count_measures, _dimension);
+        Eigen::MatrixXd v(count_measures, 1);
 
-      rgbCurve f0(channelQuantization);
-      f0.setEmorInv(0);
-
-      for (size_t dim = 0; dim < _dimension; dim++) {
-
-        rgbCurve fdim(channelQuantization);
-        fdim.setEmorInv(dim + 1);
-
-        size_t rowId = 0;
-        for (size_t groupId = 0; groupId < samples.size(); groupId++) {
-
-          std::vector<ImageSamples> & group = samples[groupId];
-          
-
-          for (size_t bracketId = 0; bracketId < group.size() - 1; bracketId++) {
-            
-            ImageSamples & bracket_cur = group[bracketId];
-            ImageSamples & bracket_next = group[bracketId + 1];
-
-            double k = bracket_cur.exposure / bracket_next.exposure;
-            
-            for (size_t sampleId = 0; sampleId < bracket_cur.colors.size(); sampleId++) {
-
-              image::Rgb<double> Ba = bracket_cur.colors[sampleId];
-              image::Rgb<double> Bb = bracket_next.colors[sampleId];
-
-              float valA = Ba(channel); 
-              float valB = Bb(channel);
-
-              E(rowId, dim) = fdim(valA, 0) - k * fdim(valB, 0);
-              v(rowId, 0) = f0(valA, 0) - k * f0(valB, 0);
-              rowId++;
-            }
-          }
-        }
-      }
-
-      
-
-
-      /* Get first linear solution */
-      Eigen::VectorXd c = (E.transpose() * E).inverse() * E.transpose() * -v; 
-      Eigen::MatrixXd H = E.transpose() * E;
-      Eigen::VectorXd d = (E.transpose() * v).col(0);
-
-
-      /**
-       * d (f0(val) + sum_i(c_i * f_i(val))) d_val > 0
-       * d (f0(val)) + sum_i(d(c_i * f_i(val))) > 0
-       * d (f0(val)) + sum_i(c_i * d_f_i(val)) > 0 
-       * 
-       * f(x) ~ f(x+1) - f(x)
-       * d (f0(val)) + sum_i(c_i * f(val + 1) - c_i * f(val)) > 0 
-       */
-      Eigen::MatrixXd dF0(channelQuantization - 1, 1);
-      dF0.setZero();
-      for (int i = 0; i < channelQuantization - 1; i++) {
-        double eval_cur = double(i) * step;
-        double eval_next = double(i + 1) * step;
-        
-        dF0(i, 0)  = (f0(eval_next, channel) - f0(eval_cur, channel)) / step;
-      }
-      
-      Eigen::MatrixXd D(channelQuantization - 1, _dimension);
-      D.setZero();
-
-      for (int dim = 0; dim < _dimension; dim++) {
-        rgbCurve fdim(channelQuantization);
-        fdim.setEmorInv(dim + 1);
-
-        for (int i = 0; i < channelQuantization - 1; i++) {
-          double eval_cur = double(i) * step;
-          double eval_next = double(i + 1) * step;
-          D(i, dim)  = (c(dim) * (fdim(eval_next, channel) - fdim(eval_cur, channel))) / step;
-        }
-      }
-   
-
-      Eigen::MatrixXd CE(_dimension, 1);
-      for (int i = 0; i < 1; i++) {
-        for (int j = 0; j < _dimension; j++) {
-          CE(j, i) = 0.0;
-        }
-      }
-
-      Eigen::VectorXd ce0(1);
-      for (int i = 0; i < 1; i++) {
-        ce0[i] = 0.0;
-      }
-
-      
-
-    
-      quadprogpp::solve_quadprog(H, d, CE, ce0, D.transpose(), dF0, c);
-
-      /*
-      Create final curve
-      */
-      std::vector<float>& curve = response.getCurve(channel);
-      for(unsigned int i = 0; i < curve.size(); ++i)
-      {
         rgbCurve f0(channelQuantization);
         f0.setEmorInv(0);
 
-        double val = double(i) * step;            
-        double curve_val = f0(val, 0);
-        for (int d = 0; d < _dimension; d++) {
+        for(size_t dim = 0; dim < _dimension; dim++)
+        {
+            rgbCurve fdim(channelQuantization);
+            fdim.setEmorInv(dim + 1);
 
-          rgbCurve fdim(channelQuantization);
-          fdim.setEmorInv(d + 1);
-          curve_val += c(d) * fdim(val, 0);
+            size_t rowId = 0;
+            for(size_t groupId = 0; groupId < samples.size(); groupId++)
+            {
+                const std::vector<ImageSamples>& group = samples[groupId];
+
+                for(size_t bracketId = 0; bracketId < group.size() - 1; bracketId++)
+                {
+                    const ImageSamples& bracket_cur = group[bracketId];
+                    const ImageSamples& bracket_next = group[bracketId + 1];
+
+                    const double k = bracket_cur.exposure / bracket_next.exposure;
+
+                    for(size_t sampleId = 0; sampleId < bracket_cur.colors.size(); sampleId++)
+                    {
+                        image::Rgb<double> Ba = bracket_cur.colors[sampleId];
+                        image::Rgb<double> Bb = bracket_next.colors[sampleId];
+
+                        float valA = Ba(channel);
+                        float valB = Bb(channel);
+
+                        E(rowId, dim) = fdim(valA, 0) - k * fdim(valB, 0);
+                        v(rowId, 0) = f0(valA, 0) - k * f0(valB, 0);
+                        rowId++;
+                    }
+                }
+            }
         }
 
-        curve[i] = curve_val;
-      }
+        // Get first linear solution
+        Eigen::VectorXd c = (E.transpose() * E).inverse() * E.transpose() * -v;
+        Eigen::MatrixXd H = E.transpose() * E;
+        Eigen::VectorXd d = (E.transpose() * v).col(0);
+
+        // d (f0(val) + sum_i(c_i * f_i(val))) d_val > 0
+        // d (f0(val)) + sum_i(d(c_i * f_i(val))) > 0
+        // d (f0(val)) + sum_i(c_i * d_f_i(val)) > 0
+        //
+        // f(x) ~ f(x+1) - f(x)
+        // d (f0(val)) + sum_i(c_i * f(val + 1) - c_i * f(val)) > 0
+
+        Eigen::MatrixXd dF0(channelQuantization - 1, 1);
+        dF0.setZero();
+        for(int i = 0; i < channelQuantization - 1; i++)
+        {
+            double eval_cur = double(i) * step;
+            double eval_next = double(i + 1) * step;
+
+            dF0(i, 0) = (f0(eval_next, channel) - f0(eval_cur, channel)) / step;
+        }
+
+        Eigen::MatrixXd D(channelQuantization - 1, _dimension);
+        D.setZero();
+
+        for(int dim = 0; dim < _dimension; dim++)
+        {
+            rgbCurve fdim(channelQuantization);
+            fdim.setEmorInv(dim + 1);
+
+            for(int i = 0; i < channelQuantization - 1; i++)
+            {
+                double eval_cur = double(i) * step;
+                double eval_next = double(i + 1) * step;
+                D(i, dim) = (c(dim) * (fdim(eval_next, channel) - fdim(eval_cur, channel))) / step;
+            }
+        }
+
+        Eigen::MatrixXd CE(_dimension, 1);
+        for(int i = 0; i < 1; i++)
+        {
+            for(int j = 0; j < _dimension; j++)
+            {
+                CE(j, i) = 0.0;
+            }
+        }
+
+        Eigen::VectorXd ce0(1);
+        for(int i = 0; i < 1; i++)
+        {
+            ce0[i] = 0.0;
+        }
+
+        quadprogpp::solve_quadprog(H, d, CE, ce0, D.transpose(), dF0, c);
+
+        // Create final curve
+        std::vector<float>& curve = response.getCurve(channel);
+        for(unsigned int i = 0; i < curve.size(); ++i)
+        {
+            rgbCurve f0(channelQuantization);
+            f0.setEmorInv(0);
+
+            const double val = double(i) * step;
+            double curve_val = f0(val, 0);
+            for(int d = 0; d < _dimension; d++)
+            {
+
+                rgbCurve fdim(channelQuantization);
+                fdim.setEmorInv(d + 1);
+                curve_val += c(d) * fdim(val, 0);
+            }
+
+            curve[i] = curve_val;
+        }
     }
 }
 
