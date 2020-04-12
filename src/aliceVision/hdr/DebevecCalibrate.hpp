@@ -5,14 +5,26 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #pragma once
-#include <aliceVision/image/all.hpp>
+
 #include "rgbCurve.hpp"
-#include <aliceVision/numeric/numeric.hpp>
-#include <Eigen/SparseQR>
+
+#include <vector>
+#include <string>
+
 
 namespace aliceVision {
 namespace hdr {
 
+/**
+ * @brief Calibration of the Camera Response Function (CRF) from multiple LDR images.
+ *
+ * The implementation is based on the following paper:
+ * P. Debevec and J. Malik. Recovering high dynamic range radiance maps from photographs.
+ * In Proceedings of the 24th Annual Conference on Computer Graphics and Interactive Techniques,
+ * SIGGRAPH 97, pages 369-378, 1997.
+ *
+ * https://dl.acm.org/doi/pdf/10.1145/1401132.1401174
+ */
 class DebevecCalibrate
 {
 public:  

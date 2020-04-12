@@ -6,14 +6,26 @@
 
 #pragma once
 
-#include <aliceVision/image/all.hpp>
-#include <aliceVision/numeric/numeric.hpp>
 #include "emorCurve.hpp"
 #include "rgbCurve.hpp"
+
 
 namespace aliceVision {
 namespace hdr {
 
+/**
+ * @brief Calibration of the Camera Response Function (CRF) from multiple LDR images.
+ *
+ * The implementation is based on the following papers:
+ *
+ * M. D. Grossberg and S. K. Nayar. Modeling the space of camera response functions.
+ * Society Conference on Computer Vision and Pattern Recognition, 2003. Proceedings. (Vol. 2, pp. II-602). IEEE.
+ * https://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.177.7118&rep=rep1&type=pdf
+ *
+ * M. D. Grossberg and S. K. Nayar. Modeling the space of camera response functions.
+ * IEEE Transactions on Pattern Analysis and Machine Intelligence, 26(10) 1272-1282, 2004.
+ * https://www.researchgate.net/profile/Michael_Grossberg/publication/3193780_Modeling_the_space_of_camera_response_functions/links/0deec5214cc89adc87000000/Modeling-the-space-of-camera-response-functions.pdf
+ */
 class GrossbergCalibrate
 {
 public:

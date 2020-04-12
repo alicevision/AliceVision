@@ -5,13 +5,23 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #pragma once
+
 #include "hdrMerge.hpp"
 #include "rgbCurve.hpp"
-#include <aliceVision/image/all.hpp>
+
+#include <aliceVision/image/Image.hpp>
+
 
 namespace aliceVision {
 namespace hdr {
 
+/**
+ * @brief Calibration of the Camera Response Function (CRF) from multiple LDR images.
+ *
+ * The implementation is based on the following paper:
+ * M. A. Robertson, S. B., and R. L. Stevenson. Estimation-theoretic approach to dynamic range enhancement using multiple exposures.
+ * Journal of Electronic Imaging, 12 :2003, 1999.
+ */
 class RobertsonCalibrate
 {
   public:

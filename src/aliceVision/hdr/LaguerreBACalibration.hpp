@@ -6,18 +6,20 @@
 
 #pragma once
 
-#include <aliceVision/image/all.hpp>
-#include <aliceVision/numeric/numeric.hpp>
 #include "emorCurve.hpp"
 #include "rgbCurve.hpp"
+
 
 namespace aliceVision {
 namespace hdr {
 
 /**
+ * @brief Calibration of the Camera Response Function (CRF) from multiple LDR images.
+ *
  * The implementation is based on the following paper:
  * "Mapping Colour in Image Stitching Applications", David Hasler, Sabine Susstrunk, 2003, JVCIR-2004
  * https://infoscience.epfl.ch/record/50201/files/hs03_JVCIR.pdf
+ *
  * Itself based on:
  * "Radiometric Self Calibration", Tomoo Mitsunaga, Shree K. Nayar, CVPR-1999
  * http://www.cs.columbia.edu/CAVE/publications/pdfs/Mitsunaga_CVPR99.pdf
