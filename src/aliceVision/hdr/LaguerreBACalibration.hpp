@@ -9,6 +9,8 @@
 #include "emorCurve.hpp"
 #include "rgbCurve.hpp"
 
+#include <boost/math/constants/constants.hpp>
+
 
 namespace aliceVision {
 namespace hdr {
