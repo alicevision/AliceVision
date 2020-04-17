@@ -12,6 +12,7 @@
 #include <aliceVision/sfm/pipeline/global/ReconstructionEngine_globalSfM.hpp>
 #include <aliceVision/system/Timer.hpp>
 #include <aliceVision/system/Logger.hpp>
+#include <aliceVision/system/main.hpp>
 #include <aliceVision/system/cmdline.hpp>
 
 #include <boost/program_options.hpp>
