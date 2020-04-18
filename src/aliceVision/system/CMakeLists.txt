@@ -12,7 +12,6 @@ set(system_files_headers
 # Sources
 set(system_files_sources
   cpu.cpp
-  main.cpp
   MemoryInfo.cpp
   Timer.cpp
   Logger.cpp

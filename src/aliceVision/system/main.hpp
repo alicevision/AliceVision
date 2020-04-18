@@ -6,19 +6,39 @@
 
 #pragma once
 
-// This one will be "main()" provided by the app
-extern int aliceVision_main(int argc, char* argv[]);
-/* This is the wrapper around aliceVision_main() (below).
- * Pass in function pointer to support shared linking. */
-extern int aliceVision_main_wrapper(int(*realMain)(int, char*[]), int argc, char* argv[]);
+/**
+ * @file \c main() function wrapper
+ * Provides an implementation of \c main() that automatically catches and logs
+ * otherwise unhandled exception.
+ *
+ * To use you need to change your source file containing \c main() as such:
+ * 1. Include this header
+ * 2. Rename \c main() to \c aliceVision_main()
+ */
+
+#include "Logger.hpp"
+
+#include <stdexcept>
+
+/**
+ * @brief Name of the application entry function, replacing \c main().
+ */
+int aliceVision_main(int argc, char* argv[]);
 
 // Inline to ensure the right main() is used (libf2c also has one...)
-#if !defined(_ALICEVISION_SYSTEM_MAIN_IMPL)
 int main(int argc, char* argv[])
 {
-  return aliceVision_main_wrapper(&aliceVision_main, argc, argv);
+    try
+    {
+        return aliceVision_main(argc, argv);
+    }
+    catch(const std::exception& e)
+    {
+        ALICEVISION_LOG_FATAL(e.what());
+    }
+    catch(...)
+    {
+        ALICEVISION_LOG_FATAL("Unknown exception");
+    }
+    return EXIT_FAILURE;
 }
-#endif // _ALICEVISION_SYSTEM_MAIN_IMPL
-
-// This one will be "main()" provided by the app
-#define main  aliceVision_main
