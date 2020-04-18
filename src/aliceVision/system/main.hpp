@@ -9,9 +9,9 @@
 /**
  * @file \c main() function wrapper
  * Provides an implementation of \c main() that automatically catches and logs
- * otherwise unhandled exception.
+ * otherwise unhandled exceptions.
  *
- * To use you need to change your source file containing \c main() as such:
+ * To use this wrapper you need to change your source file containing \c main() as such:
  * 1. Include this header
  * 2. Rename \c main() to \c aliceVision_main()
  */
