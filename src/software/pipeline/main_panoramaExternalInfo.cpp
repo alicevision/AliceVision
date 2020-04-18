@@ -21,7 +21,7 @@ namespace po = boost::program_options;
 namespace fs = boost::filesystem;
 namespace pt = boost::property_tree;
 
-int main(int argc, char * argv[]) {
+int aliceVision_main(int argc, char * argv[]) {
   std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
   std::string externalInfoFilename = "";
   std::string sfmInputDataFilename = "";

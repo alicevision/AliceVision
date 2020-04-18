@@ -168,7 +168,7 @@ inline std::istream& operator>>(std::istream& in, EGroupCameraFallback& s)
  * @brief Create the description of an input image dataset for AliceVision toolsuite
  * - Export a SfMData file with View & Intrinsic data
  */
-int main(int argc, char **argv)
+int aliceVision_main(int argc, char **argv)
 {
   // command-line parameters
 

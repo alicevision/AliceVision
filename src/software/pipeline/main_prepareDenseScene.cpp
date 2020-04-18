@@ -232,7 +232,7 @@ bool prepareDenseScene(const SfMData& sfmData,
   return true;
 }
 
-int main(int argc, char *argv[])
+int aliceVision_main(int argc, char *argv[])
 {
   // command-line parameters
 

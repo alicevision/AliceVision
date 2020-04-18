@@ -29,7 +29,7 @@ using namespace aliceVision;
 
 namespace po = boost::program_options;
 
-int main(int argc, char* argv[])
+int aliceVision_main(int argc, char* argv[])
 {
     system::Timer timer;
 

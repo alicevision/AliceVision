@@ -255,7 +255,7 @@ private:
 
 /// - Compute view image description (feature & descriptor extraction)
 /// - Export computed data
-int main(int argc, char **argv)
+int aliceVision_main(int argc, char **argv)
 {
   // command-line parameters
 

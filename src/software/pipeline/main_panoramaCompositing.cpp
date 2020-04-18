@@ -854,7 +854,7 @@ protected:
   size_t _bands;
 };
 
-int main(int argc, char **argv) {
+int aliceVision_main(int argc, char **argv) {
 
   /**
    * Program description

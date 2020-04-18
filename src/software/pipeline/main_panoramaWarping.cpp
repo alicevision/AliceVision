@@ -1089,7 +1089,7 @@ bool computeOptimalPanoramaSize(std::pair<int, int> & optimalSize, const sfmData
   return true;
 }
 
-int main(int argc, char **argv) {
+int aliceVision_main(int argc, char **argv) {
 
   /**
    * Program description

@@ -544,7 +544,7 @@ void conditionVocTree(const std::string& treeName, bool withWeights, const std::
     }
 }
 
-int main(int argc, char** argv)
+int aliceVision_main(int argc, char** argv)
 {
   // command-line parameters
 

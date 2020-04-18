@@ -59,7 +59,7 @@ std::string myToString(std::size_t i, std::size_t zeroPadding)
 }
 
 
-int main(int argc, char** argv)
+int aliceVision_main(int argc, char** argv)
 {
   // common parameters
   /// the AliceVision .json/abc data file

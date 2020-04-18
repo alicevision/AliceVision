@@ -61,7 +61,7 @@ std::string myToString(std::size_t i, std::size_t zeroPadding)
   return ss.str();
 }
 
-int main(int argc, char** argv)
+int aliceVision_main(int argc, char** argv)
 {
   /// the calibration file
   std::string calibFile;

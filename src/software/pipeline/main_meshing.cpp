@@ -130,7 +130,7 @@ void removeLandmarksWithoutObservations(sfmData::SfMData& sfmData)
 }
 
 
-int main(int argc, char* argv[])
+int aliceVision_main(int argc, char* argv[])
 {
     system::Timer timer;
 
