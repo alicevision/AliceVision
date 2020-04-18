@@ -520,4 +520,6 @@ int main(int argc, char** argv)
   ALICEVISION_COUT("Mean time for localization:   " << bacc::mean(stats) << " [ms]");
   ALICEVISION_COUT("Max time for localization:   " << bacc::max(stats) << " [ms]");
   ALICEVISION_COUT("Min time for localization:   " << bacc::min(stats) << " [ms]");
+
+  return EXIT_SUCCESS;
 }
