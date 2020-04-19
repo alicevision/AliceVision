@@ -8,6 +8,7 @@
 #include <aliceVision/image/io.hpp>
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/cmdline.hpp>
+#include <aliceVision/system/main.hpp>
 
 /*SFMData*/
 #include <aliceVision/sfmData/SfMData.hpp>
@@ -100,7 +101,7 @@ inline std::istream& operator>>(std::istream& in, ECalibrationMethod& calibratio
 }
 
 
-int main(int argc, char * argv[])
+int aliceVision_main(int argc, char * argv[])
 {
   std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
   std::string sfmInputDataFilename = "";

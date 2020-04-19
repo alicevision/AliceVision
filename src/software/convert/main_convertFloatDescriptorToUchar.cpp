@@ -7,6 +7,7 @@
 #include <aliceVision/feature/Descriptor.hpp>
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/cmdline.hpp>
+#include <aliceVision/system/main.hpp>
 
 #include <boost/progress.hpp>
 #include <boost/filesystem.hpp>
@@ -25,7 +26,7 @@ using namespace aliceVision;
 namespace po = boost::program_options;
 namespace fs = boost::filesystem;
 
-int main( int argc, char** argv )
+int aliceVision_main( int argc, char** argv )
 {
   std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
   std::string outputFolder;
@@ -181,4 +182,6 @@ int main( int argc, char** argv )
     }
   }
   ALICEVISION_LOG_INFO("Converted " << countDesc << " files .desc and copied " << countFeat << " files .feat");
+
+  return EXIT_SUCCESS;
 }
