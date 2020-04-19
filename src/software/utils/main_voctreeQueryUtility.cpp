@@ -14,6 +14,7 @@
 #include <aliceVision/matching/IndMatch.hpp>
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/cmdline.hpp>
+#include <aliceVision/system/main.hpp>
 #include <aliceVision/types.hpp>
 
 #include <Eigen/Core>
@@ -107,7 +108,7 @@ static const std::string programDescription =
  * This program is used to create a database with a provided dataset of image descriptors using a trained vocabulary tree
  * The database is then queried with the same images in order to retrieve for each image the set of most similar images in the dataset
  */
-int main(int argc, char** argv)
+int aliceVision_main(int argc, char** argv)
 {
   std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
   /// the filename for the voctree weights
