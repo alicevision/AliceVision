@@ -25,7 +25,11 @@
  */
 int aliceVision_main(int argc, char* argv[]);
 
-// Inline to ensure the right main() is used (libf2c also has one...)
+/* Implementation of the unique main() entry point.
+ * This method will call aliceVision_main() and, in case of any exception not
+ * handled there, catch those and log the error message.
+ * On Windows, unhandled exceptions abort the program with the cause hard to
+ * find out, something this main() function avoids. */
 int main(int argc, char* argv[])
 {
     try
