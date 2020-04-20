@@ -32,4 +32,5 @@ alicevision_add_library(aliceVision_mesh
     Boost::filesystem
   PRIVATE_LINKS
     aliceVision_system
+    Boost::boost
 )
