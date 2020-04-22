@@ -406,6 +406,9 @@ int main(int argc, char * argv[])
           ALICEVISION_LOG_ERROR("Exposure groups do not have a consistent number of brackets.");
       }
   }
+  else if (nbBrackets == 1) {
+    byPass = true;
+  }
 
   std::vector<std::shared_ptr<sfmData::View>> targetViews;
   for (auto & group : groupedViews)
