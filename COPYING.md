@@ -84,6 +84,7 @@ This program is based on works distributed under the terms of another license(s)
 
 *   __Instant Meshes__  
     Copyright (c) 2015 Wenzel Jakob, Daniele Panozzo, Marco Tarini, and Olga Sorkine-Hornung. All rights reserved.
+    
     Distributed under an open [License](https://github.com/wjakob/instant-meshes/blob/master/LICENSE.txt)
 
 *   __Lemon__  
