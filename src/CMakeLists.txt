@@ -66,7 +66,7 @@ trilean_option(ALICEVISION_USE_OPENCV "Build opencv+aliceVision samples programs
 option(ALICEVISION_USE_OCVSIFT "Add or not OpenCV SIFT in available features" OFF)
 mark_as_advanced(FORCE ALICEVISION_USE_OCVSIFT)
 
-option(ALICEVISION_USE_MESHSDFILTER "Use MeshSDFilter library (enable MeshDenoising and MeshDecimate)" ON
+option(ALICEVISION_USE_MESHSDFILTER "Use MeshSDFilter library (enable MeshDenoising and MeshDecimate)" ON)
 
 option(ALICEVISION_USE_INSTANT_MESHES "Use InstantMeshes" ON)
 
