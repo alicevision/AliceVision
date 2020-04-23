@@ -66,7 +66,9 @@ trilean_option(ALICEVISION_USE_OPENCV "Build opencv+aliceVision samples programs
 option(ALICEVISION_USE_OCVSIFT "Add or not OpenCV SIFT in available features" OFF)
 mark_as_advanced(FORCE ALICEVISION_USE_OCVSIFT)
 
-option(ALICEVISION_USE_MESHSDFILTER "Use MeshSDFilter library (enable MeshDenoising and MeshDecimate)" ON)
+option(ALICEVISION_USE_MESHSDFILTER "Use MeshSDFilter library (enable MeshDenoising and MeshDecimate)" ON
+
+option(ALICEVISION_USE_INSTANT_MESHES "Use InstantMeshes" ON)
 
 option(ALICEVISION_REQUIRE_CERES_WITH_SUITESPARSE "Require Ceres with SuiteSparse (ensure best performances)" ON)
 
@@ -664,6 +666,20 @@ if(ALICEVISION_BUILD_MVS)
   if(ALICEVISION_USE_MESHSDFILTER STREQUAL "ON")
     set(ALICEVISION_HAVE_MESHSDFILTER 1)
     add_subdirectory(dependencies/MeshSDFilter)
+  endif()
+endif()
+
+# ==============================================================================
+# InstantMeshes
+# ==============================================================================
+# - optional, only internal and enabled only if ALICEVISION_USE_INSTANT_MESHES is ON
+# ==============================================================================
+set(ALICEVISION_HAVE_INSTANT_MESHES 0)
+
+if(ALICEVISION_BUILD_MVS)
+  if(ALICEVISION_USE_INSTANT_MESHES STREQUAL "ON")
+    set(ALICEVISION_HAVE_INSTANT_MESHES 1)
+    add_subdirectory(dependencies/instant-meshes)
   endif()
 endif()
 
