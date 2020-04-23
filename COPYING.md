@@ -82,6 +82,10 @@ This program is based on works distributed under the terms of another license(s)
     Copyright (c) Pierre Moulon.  
     Distributed under the [MPL2 license](http://opensource.org/licenses/MPL-2.0).
 
+*   __Instant Meshes__  
+    Copyright (c) 2015 Wenzel Jakob, Daniele Panozzo, Marco Tarini, and Olga Sorkine-Hornung. All rights reserved.
+    Distributed under an open [License](https://github.com/wjakob/instant-meshes/blob/master/LICENSE.txt)
+
 *   __Lemon__  
     [http://lemon.cs.elte.hu/trac/lemon](http://lemon.cs.elte.hu/trac/lemon)  
     Copyright (c) Lemon authors.  
