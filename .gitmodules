@@ -7,3 +7,6 @@
 [submodule "src/dependencies/nanoflann"]
 	path = src/dependencies/nanoflann
 	url = https://github.com/alicevision/nanoflann.git
+[submodule "src/dependencies/instant-meshes"]
+	path = src/dependencies/instant-meshes
+	url = https://github.com/wjakob/instant-meshes.git
