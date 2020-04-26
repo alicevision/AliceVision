@@ -18,7 +18,7 @@
 #define BOOST_TEST_MODULE LocalizationResult
 
 #include <boost/test/unit_test.hpp>
-#include <boost/test/floating_point_comparison.hpp>
+#include <boost/test/tools/floating_point_comparison.hpp>
 #include <aliceVision/unitTest.hpp>
 
 namespace fs = boost::filesystem;

@@ -9,7 +9,7 @@
 #define BOOST_TEST_MODULE pinholeFisheye1
 
 #include <boost/test/unit_test.hpp>
-#include <boost/test/floating_point_comparison.hpp>
+#include <boost/test/tools/floating_point_comparison.hpp>
 #include <aliceVision/unitTest.hpp>
 
 using namespace aliceVision;

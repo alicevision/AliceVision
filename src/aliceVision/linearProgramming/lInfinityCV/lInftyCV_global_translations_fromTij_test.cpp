@@ -14,7 +14,7 @@
 #define BOOST_TEST_MODULE translation_averaging_globalTi_from_tijs
 
 #include <boost/test/unit_test.hpp>
-#include <boost/test/floating_point_comparison.hpp>
+#include <boost/test/tools/floating_point_comparison.hpp>
 #include <aliceVision/unitTest.hpp>
 
 using namespace aliceVision;
