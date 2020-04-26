@@ -14,7 +14,8 @@
 #include <vector>
 
 #define BOOST_TEST_MODULE voctreeBuilder
-#include <boost/test/included/unit_test.hpp>
+
+#include <boost/test/unit_test.hpp>
 #include <boost/test/floating_point_comparison.hpp>
 
 BOOST_AUTO_TEST_CASE(voctreeBuilder)

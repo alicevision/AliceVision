@@ -10,7 +10,8 @@
 #include <aliceVision/multiview/resection/P4PfSolver.hpp>
 #include <aliceVision/multiview/NViewDataSet.hpp>
 
-#include <boost/test/included/unit_test.hpp>
+
+#include <boost/test/unit_test.hpp>
 #include <boost/test/floating_point_comparison.hpp>
 
 #include <vector>

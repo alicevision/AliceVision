@@ -15,7 +15,8 @@
 #include "dependencies/vectorGraphics/svgDrawer.hpp"
 
 #define BOOST_TEST_MODULE LMFunctor
-#include <boost/test/included/unit_test.hpp>
+
+#include <boost/test/unit_test.hpp>
 #include <boost/test/floating_point_comparison.hpp>
 #include <aliceVision/unitTest.hpp>
 
