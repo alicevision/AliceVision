@@ -24,4 +24,5 @@ alicevision_add_library(aliceVision_mvsUtils
   PRIVATE_LINKS
     aliceVision_system
     Boost::filesystem
+    Boost::boost
 )

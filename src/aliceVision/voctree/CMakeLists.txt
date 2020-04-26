@@ -25,6 +25,7 @@ alicevision_add_library(aliceVision_voctree
     aliceVision_feature
     aliceVision_sfmData
     aliceVision_system
+    Boost::boost
   PRIVATE_LINKS
     Boost::filesystem
 )
