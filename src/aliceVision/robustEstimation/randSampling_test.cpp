@@ -8,6 +8,7 @@
 #include "aliceVision/robustEstimation/randSampling.hpp"
 #include <set>
 #include <vector>
+#include <iostream>
 
 #define BOOST_TEST_MODULE randSampling
 
