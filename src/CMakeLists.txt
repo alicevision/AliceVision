@@ -73,10 +73,7 @@ option(ALICEVISION_USE_RPATH "Add RPATH on software with relative paths to libra
 
 option(ALICEVISION_BUILD_TESTS "Build AliceVision tests" OFF)
 
-if(NOT DEFINED BUILD_SHARED_LIBS)
-  # Use shared libs by default
-  set(BUILD_SHARED_LIBS ON)
-endif()
+option(BUILD_SHARED_LIBS "Build shared libraries" ON)
 
 # Default build is in Release mode
 if(NOT CMAKE_BUILD_TYPE AND NOT MSVC)
