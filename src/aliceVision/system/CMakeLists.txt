@@ -21,8 +21,8 @@ alicevision_add_library(aliceVision_system
   SOURCES ${system_files_headers} ${system_files_sources}
   PUBLIC_LINKS
     Boost::log
-    Boost::thread
     Boost::log_setup
+    Boost::thread
     Boost::system
     Boost::date_time
     Boost::program_options

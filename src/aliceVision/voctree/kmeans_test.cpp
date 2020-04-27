@@ -13,8 +13,9 @@
 #include <random>
 
 #define BOOST_TEST_MODULE kmeans
-#include <boost/test/included/unit_test.hpp>
-#include <boost/test/floating_point_comparison.hpp>
+
+#include <boost/test/unit_test.hpp>
+#include <boost/test/tools/floating_point_comparison.hpp>
 
 BOOST_AUTO_TEST_CASE(kmeanInitializer)
 {
