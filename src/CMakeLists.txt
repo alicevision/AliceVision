@@ -47,7 +47,6 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # ==============================================================================
 # AliceVision build options
 # ==============================================================================
-option(ALICEVISION_BUILD_SHARED "Build AliceVision shared libs" ON)
 option(ALICEVISION_BUILD_SFM "Build AliceVision SfM part" ON)
 option(ALICEVISION_BUILD_MVS "Build AliceVision MVS part" ON)
 option(ALICEVISION_BUILD_HDR "Build AliceVision HDR part" ON)
@@ -72,9 +71,20 @@ option(ALICEVISION_REQUIRE_CERES_WITH_SUITESPARSE "Require Ceres with SuiteSpars
 
 option(ALICEVISION_USE_RPATH "Add RPATH on software with relative paths to libraries" ON)
 
+option(ALICEVISION_BUILD_TESTS "Build AliceVision tests" OFF)
+
+option(BUILD_SHARED_LIBS "Build shared libraries" ON)
+
 # Default build is in Release mode
 if(NOT CMAKE_BUILD_TYPE AND NOT MSVC)
   set(CMAKE_BUILD_TYPE "Release")
+endif()
+
+# ==============================================================================
+# Enable cmake UNIT TEST framework
+# ==============================================================================
+if(ALICEVISION_BUILD_TESTS AND NOT CMAKE_TESTING_ENABLED)
+  enable_testing()
 endif()
 
 # ==============================================================================
@@ -84,6 +94,10 @@ endif()
 # ==============================================================================
 include(GNUInstallDirs)
 
+if(CMAKE_BUILD_TYPE MATCHES Release)
+    message(STATUS "Force CMAKE_INSTALL_DO_STRIP in Release")
+    set(CMAKE_INSTALL_DO_STRIP TRUE)
+endif()
 
 if(ALICEVISION_USE_RPATH)
   if(APPLE)
@@ -125,15 +139,11 @@ if(${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION} VERSION_LESS 3.10)
   set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake/compatibilityCUDA)
 endif()
 
-# Set shared or static mode
-if(ALICEVISION_BUILD_SHARED)
-  set(BUILD_SHARED_LIBS ON)
+if(BUILD_SHARED_LIBS)
   if(WIN32)
     # Export all symbols from the dynamic libraries by default (avoid dllexport markup)
     set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
   endif()
-elseif()
-  set(BUILD_SHARED_LIBS OFF)
 endif()
 
 # ==============================================================================
@@ -264,9 +274,13 @@ endif()
 # Disable BOOST autolink
 add_definitions(-DBOOST_ALL_NO_LIB)
 
-# Force BOOST to use dynamic libraries (avoid link error with boost program_options)
-# https://lists.boost.org/boost-users/2009/11/54015.php
-add_definitions(-DBOOST_ALL_DYN_LINK)
+if(BUILD_SHARED_LIBS)
+  # Force BOOST to use dynamic libraries (avoid link error with boost program_options)
+  # https://lists.boost.org/boost-users/2009/11/54015.php
+  add_definitions(-DBOOST_ALL_DYN_LINK)
+else()
+  set(Boost_USE_STATIC_LIBS ON)
+endif()
 
 if(BOOST_NO_CXX11)
   # Avoid link errors on boost filesystem copy_file function
@@ -289,7 +303,7 @@ endif()
 # OpenImageIO
 # ==============================================================================
 find_package(OpenImageIO 1.8 REQUIRED)
-if(OPENIMAGEIO_FOUND)
+if(OPENIMAGEIO_FOUND OR OpenImageIO_FOUND)
   message(STATUS "OpenImageIO found.")
   if(UNIX)
     # Add DL dependency on linux
@@ -885,7 +899,7 @@ endif()
 # ==============================================================================
 message("\n")
 message("** AliceVision version: " ${ALICEVISION_VERSION})
-message("** Build Shared libs: " ${ALICEVISION_BUILD_SHARED})
+message("** Build Shared libs: " ${BUILD_SHARED_LIBS})
 message("** Build SfM part: " ${ALICEVISION_BUILD_SFM})
 message("** Build MVS part: " ${ALICEVISION_BUILD_MVS})
 message("** Build AliceVision tests: " ${ALICEVISION_BUILD_TESTS})

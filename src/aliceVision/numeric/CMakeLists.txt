@@ -15,8 +15,10 @@ alicevision_add_library(aliceVision_numeric
   PUBLIC_LINKS
     Eigen3::Eigen
     Boost::boost
+    Boost::log
+    Boost::log_setup
   PUBLIC_DEFINITIONS
-  	${AV_EIGEN_DEFINITIONS}
+    ${AV_EIGEN_DEFINITIONS}
 )
 
 # Unit tests

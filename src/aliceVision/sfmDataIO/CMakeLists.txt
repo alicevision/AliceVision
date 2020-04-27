@@ -36,6 +36,7 @@ alicevision_add_library(aliceVision_sfmDataIO
     Boost::filesystem
   PRIVATE_LINKS
     Boost::regex
+    Boost::boost
 )
 
 

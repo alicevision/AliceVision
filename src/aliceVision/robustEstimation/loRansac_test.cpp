@@ -11,15 +11,16 @@
 #include <aliceVision/robustEstimation/ScoreEvaluator.hpp>
 #include <aliceVision/robustEstimation/lineTestGenerator.hpp>
 
-#define BOOST_TEST_MODULE robustEstimation_LO_Ransac
-#include <boost/test/included/unit_test.hpp>
-#include <boost/test/floating_point_comparison.hpp>
-
 #include <iostream>
 #include <random>
 #include <fstream>
 #include <vector>
 #include <string>
+
+#define BOOST_TEST_MODULE robustEstimationLORansac
+
+#include <boost/test/unit_test.hpp>
+#include <boost/test/tools/floating_point_comparison.hpp>
 
 using namespace aliceVision;
 using namespace aliceVision::robustEstimation;

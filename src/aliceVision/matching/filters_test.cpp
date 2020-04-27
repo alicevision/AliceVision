@@ -8,7 +8,8 @@
 #include "aliceVision/matching/filters.hpp"
 
 #define BOOST_TEST_MODULE matchingFilters
-#include <boost/test/included/unit_test.hpp>
+
+#include <boost/test/unit_test.hpp>
 
 using namespace aliceVision;
 using namespace aliceVision::matching;

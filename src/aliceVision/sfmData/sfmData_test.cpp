@@ -3,7 +3,8 @@
 #include <aliceVision/sfmData/SfMData.hpp>
 
 #define BOOST_TEST_MODULE sfmData
-#include <boost/test/included/unit_test.hpp>
+
+#include <boost/test/unit_test.hpp>
 
 using namespace aliceVision;
 namespace fs = boost::filesystem;

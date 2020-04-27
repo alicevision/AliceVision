@@ -14,8 +14,9 @@
 #include <dependencies/vectorGraphics/svgDrawer.hpp>
 
 #define BOOST_TEST_MODULE robustEstimation_AC_Ransac
-#include <boost/test/included/unit_test.hpp>
-#include <boost/test/floating_point_comparison.hpp>
+
+#include <boost/test/unit_test.hpp>
+#include <boost/test/tools/floating_point_comparison.hpp>
 
 #include <iterator>
 #include <random>

@@ -24,8 +24,9 @@
 #include "aliceVision/linearProgramming/lInfinityCV/triangulation.hpp"
 
 #define BOOST_TEST_MODULE lInfinityCVTriangulation
-#include <boost/test/included/unit_test.hpp>
-#include <boost/test/floating_point_comparison.hpp>
+
+#include <boost/test/unit_test.hpp>
+#include <boost/test/tools/floating_point_comparison.hpp>
 
 using namespace aliceVision;
 using namespace linearProgramming;
