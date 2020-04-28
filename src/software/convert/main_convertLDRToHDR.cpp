@@ -540,7 +540,7 @@ int main(int argc, char * argv[])
           ALICEVISION_LOG_INFO("Debevec calibration");
           const float lambda = channelQuantization * 1.f;
           if(calibrationNbPoints <= 0)
-              calibrationNbPoints = 10000;
+              calibrationNbPoints = 1000000;
           hdr::DebevecCalibrate calibration;
           calibration.process(groupedFilenames, channelQuantization, groupedExposures, calibrationNbPoints, calibrationDownscale, fisheye, calibrationWeight, lambda, response);
 
