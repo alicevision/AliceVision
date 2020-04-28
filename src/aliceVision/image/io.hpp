@@ -13,7 +13,6 @@
 #include <OpenImageIO/paramlist.h>
 #include <OpenImageIO/imagebuf.h>
 
-#include <boost/algorithm/string.hpp>
 #include <string>
 
 namespace oiio = OIIO;

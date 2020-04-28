@@ -45,7 +45,7 @@ public:
 
   void extract(
     const image::Image<float> & I,
-    const SIOPointFeature & feat,
+    const PointFeature & feat,
     float desc[144]);
 
   void CreateLIOP_GOrder(

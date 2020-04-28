@@ -13,8 +13,9 @@
 #include <vector>
 
 #define BOOST_TEST_MODULE Feature
-#include <boost/test/included/unit_test.hpp>
-#include <boost/test/floating_point_comparison.hpp>
+
+#include <boost/test/unit_test.hpp>
+#include <boost/test/tools/floating_point_comparison.hpp>
 
 using namespace std;
 using std::string;
@@ -22,7 +23,7 @@ using namespace aliceVision;
 using namespace aliceVision::feature;
 
 // Define a feature and a container of features
-typedef SIOPointFeature Feature_T;
+typedef PointFeature Feature_T;
 typedef std::vector<Feature_T> Feats_T;
 
 // Define a descriptor and a container of descriptors

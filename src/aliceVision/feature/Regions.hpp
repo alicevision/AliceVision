@@ -23,7 +23,7 @@ namespace aliceVision {
 namespace feature {
 
 /**
- * @brief Store a featureIndes and the associated point3dId
+ * @brief Store a featureIndex and the associated point3dId
  */
 struct FeatureInImage
 {
@@ -43,11 +43,41 @@ struct FeatureInImage
 
 /// Describe an image a set of regions (position, ...) + attributes
 /// Each region is described by a set of attributes (descriptor)
+/**
+ * @brief The Regions class describe a set of regions extracted from an image.
+ *        It contains both a feature (position, scale, orientation) and a descriptor (photometric neighborhood description).
+ */
 class Regions
 {
 public:
 
   virtual ~Regions() = 0;
+
+protected:
+  std::vector<PointFeature> _vec_feats;    // region features
+
+public:
+  void LoadFeatures(const std::string& sfileNameFeats)
+  {
+    loadFeatsFromFile(sfileNameFeats, _vec_feats);
+  }
+
+  PointFeatures GetRegionsPositions() const
+  {
+    return PointFeatures(_vec_feats.begin(), _vec_feats.end());
+  }
+
+  Vec2 GetRegionPosition(std::size_t i) const
+  {
+    return Vec2f(_vec_feats[i].coords()).cast<double>();
+  }
+
+  /// Return the number of defined regions
+  std::size_t RegionCount() const {return _vec_feats.size();}
+
+  /// Mutable and non-mutable PointFeature getters.
+  inline std::vector<PointFeature> & Features() { return _vec_feats; }
+  inline const std::vector<PointFeature> & Features() const { return _vec_feats; }
 
   //--
   // IO - one file for region features, one file for region descriptors
@@ -63,9 +93,6 @@ public:
 
   virtual void SaveDesc(const std::string& sfileNameDescs) const = 0;
 
-  virtual void LoadFeatures(
-    const std::string& sfileNameFeats) = 0;
-
   //--
   //- Basic description of a descriptor [Type, Length]
   //--
@@ -75,13 +102,6 @@ public:
   /// basis element used for description
   virtual std::string Type_id() const = 0;
   virtual std::size_t DescriptorLength() const = 0;
-
-  //-- Assume that a region can always be represented at least by a 2D positions
-  virtual PointFeatures GetRegionsPositions() const = 0;
-  virtual Vec2 GetRegionPosition(std::size_t i) const = 0;
-
-  /// Return the number of defined regions
-  virtual std::size_t RegionCount() const = 0;
 
   /**
    * @brief Return a blind pointer to the container of the descriptors array.
@@ -119,55 +139,6 @@ public:
 
 inline Regions::~Regions() {}
 
-template<typename FeatT>
-class FeatRegions : public Regions
-{
-public:
-  /// Region type
-  typedef FeatT FeatureT;
-  /// Container for multiple regions
-  typedef std::vector<FeatureT> FeatsT;
-
-  virtual ~FeatRegions() {}
-
-protected:
-  std::vector<FeatureT> _vec_feats;    // region features
-
-public:
-  void LoadFeatures(const std::string& sfileNameFeats)
-  {
-    loadFeatsFromFile(sfileNameFeats, _vec_feats);
-  }
-
-  PointFeatures GetRegionsPositions() const
-  {
-    return PointFeatures(_vec_feats.begin(), _vec_feats.end());
-  }
-
-  Vec2 GetRegionPosition(std::size_t i) const
-  {
-    return Vec2f(_vec_feats[i].coords()).cast<double>();
-  }
-
-  /// Return the number of defined regions
-  std::size_t RegionCount() const {return _vec_feats.size();}
-
-  /// Mutable and non-mutable FeatureT getters.
-  inline std::vector<FeatureT> & Features() { return _vec_feats; }
-  inline const std::vector<FeatureT> & Features() const { return _vec_feats; }
-};
-
-inline const std::vector<SIOPointFeature>& getSIOPointFeatures(const Regions& regions)
-{
-  static const std::vector<SIOPointFeature> emptyFeats;
-
-  const FeatRegions<SIOPointFeature>* sioFeatures = dynamic_cast<const FeatRegions<SIOPointFeature>*>(&regions);
-  if(sioFeatures == nullptr)
-    return emptyFeats;
-  return sioFeatures->Features();
-}
-
-
 enum class ERegionType: bool
 {
   Binary = 0,
@@ -191,11 +162,11 @@ struct SquaredMetric<T, ERegionType::Binary>
 };
 
 
-template<typename FeatT, typename T, std::size_t L, ERegionType regionType>
-class FeatDescRegions : public FeatRegions<FeatT>
+template<typename T, std::size_t L, ERegionType regionType>
+class FeatDescRegions : public Regions
 {
 public:
-  typedef FeatDescRegions<FeatT, T, L, regionType> This;
+  typedef FeatDescRegions<T, L, regionType> This;
   /// Region descriptor
   typedef Descriptor<T, L> DescriptorT;
   /// Container for multiple regions description
@@ -318,11 +289,11 @@ public:
 };
 
 
-template<typename FeatT, typename T, std::size_t L>
-using ScalarRegions = FeatDescRegions<FeatT, T, L, ERegionType::Scalar>;
+template<typename T, std::size_t L>
+using ScalarRegions = FeatDescRegions<T, L, ERegionType::Scalar>;
 
-template<typename FeatT, std::size_t L>
-using BinaryRegions = FeatDescRegions<FeatT, unsigned char, L, ERegionType::Binary>;
+template<std::size_t L>
+using BinaryRegions = FeatDescRegions<unsigned char, L, ERegionType::Binary>;
 
 
 

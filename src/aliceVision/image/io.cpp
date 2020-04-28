@@ -15,6 +15,7 @@
 #include <OpenEXR/half.h>
 
 #include <boost/filesystem.hpp>
+#include <boost/algorithm/string.hpp>
 
 #include <cstring>
 #include <stdexcept>

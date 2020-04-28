@@ -16,6 +16,7 @@
 #include <aliceVision/types.hpp>
 #include <aliceVision/config.hpp>
 #include <aliceVision/track/Track.hpp>
+#include <aliceVision/sfm/BundleAdjustment.hpp>
 
 #include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>
@@ -32,6 +33,8 @@ using namespace aliceVision;
 namespace po = boost::program_options;
 namespace fs = boost::filesystem;
 using namespace aliceVision::track;
+using namespace aliceVision::sfm;
+
 
 /**
  * @brief Retrieve the view id in the sfmData from the image filename.
@@ -78,7 +81,6 @@ int main(int argc, char **argv)
   std::string outputSfM;
 
   // user optional parameters
-
   std::string outputSfMViewsAndPoses;
   std::string extraInfoFolder;
   std::string describerTypesName = feature::EImageDescriberType_enumToString(feature::EImageDescriberType::SIFT);
@@ -170,7 +172,9 @@ int main(int argc, char **argv)
     ("rigMinNbCamerasForCalibration", po::value<int>(&sfmParams.rig.minNbCamerasForCalibration)->default_value(sfmParams.rig.minNbCamerasForCalibration),
         "Minimal number of cameras to start the calibration of the rig.\n")
     ("lockScenePreviouslyReconstructed", po::value<bool>(&lockScenePreviouslyReconstructed)->default_value(lockScenePreviouslyReconstructed),
-      "Lock/Unlock scene previously reconstructed.\n");
+      "Lock/Unlock scene previously reconstructed.\n")
+    ("observationConstraint", po::value<EFeatureConstraint>(&sfmParams.featureConstraint)->default_value(sfmParams.featureConstraint),
+      "Use of an observation constraint : basic, scale the observation or use of the covariance.\n");
 
   po::options_description logParams("Log parameters");
   logParams.add_options()

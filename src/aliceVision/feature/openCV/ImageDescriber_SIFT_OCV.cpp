@@ -161,7 +161,7 @@ bool ImageDescriber_SIFT_openCV::describe(const image::Image<unsigned char>& ima
   int cpt = 0;
   for(const auto& i_kp : v_keypoints)
   {
-    SIOPointFeature feat(i_kp.pt.x, i_kp.pt.y, i_kp.size, i_kp.angle);
+    PointFeature feat(i_kp.pt.x, i_kp.pt.y, i_kp.size, i_kp.angle);
     regionsCasted->Features().push_back(feat);
 
     Descriptor<unsigned char, 128> desc;

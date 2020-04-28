@@ -198,7 +198,7 @@ void StructureEstimationFromKnownPoses::filter(
 
         if (map_matchesIJK.size() >= 2) {
           tracksBuilder.build(map_matchesIJK);
-          tracksBuilder.filter(3, false);
+          tracksBuilder.filter(true,3, false);
           tracksBuilder.exportToSTL(map_tracksCommon);
         }
 
@@ -251,7 +251,7 @@ void StructureEstimationFromKnownPoses::triangulate(
   track::TracksMap map_tracksCommon;
   track::TracksBuilder tracksBuilder;
   tracksBuilder.build(_tripletMatches);
-  tracksBuilder.filter(3);
+  tracksBuilder.filter(true,3);
   tracksBuilder.exportToSTL(map_tracksCommon);
   matching::PairwiseMatches().swap(_tripletMatches);
 
@@ -272,8 +272,10 @@ void StructureEstimationFromKnownPoses::triangulate(
     {
       const size_t imaIndex = it->first;
       const size_t featIndex = it->second;
-      const Vec2 pt = regionsPerView.getRegions(imaIndex, track.descType).GetRegionPosition(featIndex);
-      observations[imaIndex] = Observation(pt, featIndex);
+      const feature::Regions& regions = regionsPerView.getRegions(imaIndex, track.descType);
+      const feature::PointFeature& feat = regions.Features()[featIndex];
+
+      observations[imaIndex] = Observation(feat.coords().cast<double>(), featIndex, feat.scale());
     }
   }
 

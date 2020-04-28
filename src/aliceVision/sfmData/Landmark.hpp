@@ -21,14 +21,16 @@ namespace sfmData {
  */
 struct Observation
 {
-  Observation(): id_feat(UndefinedIndexT) {}
-  Observation(const Vec2 & p, IndexT idFeat)
+  Observation() {}
+  Observation(const Vec2 & p, IndexT idFeat, double scale_)
     : x(p)
     , id_feat(idFeat)
+    , scale(scale_)
   {}
 
   Vec2 x;
-  IndexT id_feat;
+  IndexT id_feat = UndefinedIndexT;
+  double scale = 0.0;
 
   bool operator==(const Observation& other) const
   {

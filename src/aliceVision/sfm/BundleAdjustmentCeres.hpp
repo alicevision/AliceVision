@@ -279,6 +279,9 @@ private:
   CeresOptions _ceresOptions;
   int _minNbImagesToRefineOpticalCenter = 3;
 
+  /// user FeatureConstraint options to use
+  EFeatureConstraint _featureConstraint;
+
   /// last adjustment iteration statisics
   Statistics _statistics;
 

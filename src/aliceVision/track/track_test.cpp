@@ -12,8 +12,9 @@
 #include <utility>
 
 #define BOOST_TEST_MODULE Track
-#include <boost/test/included/unit_test.hpp>
-#include <boost/test/floating_point_comparison.hpp>
+
+#include <boost/test/unit_test.hpp>
+#include <boost/test/tools/floating_point_comparison.hpp>
 
 using namespace aliceVision::feature;
 using namespace aliceVision::track;
@@ -145,7 +146,7 @@ BOOST_AUTO_TEST_CASE(Track_Conflict) {
   trackBuilder.build( map_pairwisematches );
 
   BOOST_CHECK_EQUAL(3, trackBuilder.nbTracks());
-  trackBuilder.filter(); // Key feature tested here to kill the conflicted track
+  trackBuilder.filter(true, 2); // Key feature tested here to kill the conflicted track
   BOOST_CHECK_EQUAL(2, trackBuilder.nbTracks());
 
   TracksMap map_tracks;

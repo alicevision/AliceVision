@@ -1352,34 +1352,35 @@ Dexp;Dexp Ixion X355 Zenith;4.82;devicespecifications
 Dexp;Dexp Ixion XL 5;4.69;devicespecifications
 Dexp;Dexp Ixion XL140 Flash;3.67;devicespecifications
 Dexp;Dexp Ixion XL240 Triforce;3.6;devicespecifications
-DJI;DJI FC1102;6.17;usercontribution
-DJI;DJI FC2103;6.17;usercontribution
-DJI;DJI FC220;6.17;usercontribution
-DJI;DJI FC220;6.17;usercontribution
-DJI;DJI FC300C;6.17;usercontribution
-DJI;DJI FC300S;6.16;usercontribution
-DJI;DJI FC300S;6.16;usercontribution
-DJI;DJI FC300X;6.16;usercontribution
-DJI;DJI FC300X;6.16;usercontribution
-DJI;DJI FC300XW;6.17;usercontribution
-DJI;DJI FC330;6.17;usercontribution
-DJI;DJI FC350;6.17;usercontribution
-DJI;DJI FC350;6.17;usercontribution
-DJI;DJI FC550;17.3;usercontribution
-DJI;DJI FC550RAW;17.3;usercontribution
-DJI;DJI FC6310;13.2;usercontribution
-DJI;DJI FC6310R;13.2;usercontribution
-DJI;DJI FC6310S;13.2;usercontribution
-DJI;DJI FC6510;13.2;usercontribution
-DJI;DJI FC6520;17.3;usercontribution
-DJI;DJI FC6540;23.5;usercontribution
-DJI;DJI Phantom 4;6.3;dxomark
-DJI;DJI PHANTOM VISION FC200;6.17;usercontribution
-DJI;DJI PHANTOM VISION FC200;6.17;usercontribution
-DJI;DJI Phantom4 Pro;13.2;dxomark
-DJI;DJI Zenmuse X4S;13.2;dxomark
-DJI;DJI Zenmuse X5S;17.3;dxomark
-DJI;DJI Zenmuse X7;23.5;dxomark
+DJI;FC1102;6.17;usercontribution
+DJI;FC2103;6.17;usercontribution
+DJI;FC220;6.17;usercontribution
+DJI;FC220;6.17;usercontribution
+DJI;FC300C;6.17;usercontribution
+DJI;FC300S;6.16;usercontribution
+DJI;FC300S;6.16;usercontribution
+DJI;FC300X;6.16;usercontribution
+DJI;FC300X;6.16;usercontribution
+DJI;FC300XW;6.17;usercontribution
+DJI;FC330;6.17;usercontribution
+DJI;FC350;6.17;usercontribution
+DJI;FC350;6.17;usercontribution
+DJI;FC550;17.3;usercontribution
+DJI;FC550RAW;17.3;usercontribution
+DJI;FC6310;13.2;usercontribution
+DJI;FC6310R;13.2;usercontribution
+DJI;FC6310S;13.2;usercontribution
+DJI;FC6510;13.2;usercontribution
+DJI;FC6520;17.3;usercontribution
+DJI;FC6540;23.5;usercontribution
+DJI;FC7203;6.16;usercontribution
+DJI;Phantom 4;6.3;dxomark
+DJI;Phantom 4 Pro;13.2;dxomark
+DJI;Phantom Vision FC200;6.17;usercontribution
+DJI;Zenmuse X4S;13.2;dxomark
+DJI;Zenmuse X5S;17.3;dxomark
+DJI;Zenmuse X7;23.5;dxomark
+DJI;Zenmuse Z30;5.23;usercontribution
 DJI;X3;6.17;usercontribution
 DJI;X5R;17.3;usercontribution
 Doogee;Doogee BL12000;4.74;devicespecifications
@@ -4202,6 +4203,7 @@ OnePlus;Oneplus A6000;5.5;devicespecifications
 OnePlus;Oneplus A6003;5.5;devicespecifications
 OnePlus;Oneplus A6010;5.5;devicespecifications
 OnePlus;Oneplus A6013;5.5;devicespecifications
+OnePlus;OnePlus HD1913;6.4;usercontribution
 Oneplus;Oneplus One;4.69;devicespecifications
 Oneplus;Oneplus X;4.69;devicespecifications
 Onkyo;Onkyo Granbeat;5.22;devicespecifications
@@ -5263,6 +5265,7 @@ Samsung;Samsung EX2F;7.44;dpreview,digicamdb,dxomark
 Samsung;Samsung Galaxy A5;4.69;devicespecifications
 Samsung;Samsung Galaxy A5 Duos;4.69;devicespecifications
 Samsung;Samsung Galaxy A8;5.3;devicespecifications
+Samsung;Samsung Galaxy A8 SM-A530W;5.3;devicespecifications
 Samsung;Samsung Galaxy A8 SM-A800F;5.3;devicespecifications
 Samsung;Samsung Galaxy A9;4.69;devicespecifications
 Samsung;Samsung Galaxy C5;4.74;devicespecifications
@@ -5294,6 +5297,7 @@ Samsung;Samsung Galaxy Note FE SD820;3.6;devicespecifications
 Samsung;Samsung Galaxy Note5;5.95;devicespecifications
 Samsung;Samsung Galaxy Note7 Exynos;3.6;devicespecifications
 Samsung;Samsung Galaxy Note7 SD820;3.6;devicespecifications
+Samsung;Samsung Galaxy Note9 SM-N960U;5.644;devicespecifications
 Samsung;Samsung Galaxy NX;23.5;dpreview,digicamdb
 Samsung;Samsung Galaxy Round;4.54;devicespecifications
 Samsung;Samsung Galaxy S2;4.54;devicespecifications
@@ -5332,6 +5336,7 @@ Samsung;Samsung Galaxy S7 Exynos;3.2;devicespecifications
 Samsung;Samsung Galaxy S8;5.75;usercontribution
 Samsung;Samsung Galaxy S9;5.75;usercontribution
 Samsung;Samsung SM-G935F;3.2;devicespecifications
+Samsung;Samsung SM-G975U;5.66;devicespecifications
 Samsung;Samsung Galaxy S7 SD820;3.2;devicespecifications
 Samsung;Samsung Galaxy Tab S 10.5 LTE;3.6;devicespecifications
 Samsung;Samsung Galaxy Tab S 10.5 Wi-Fi;3.6;devicespecifications
@@ -5478,6 +5483,7 @@ Samsung;Samsung SM-G935F;3.2;devicespecifications
 Samsung;Samsung SM-G935F;5.76;usercontribution
 Samsung;Samsung SM-G950F;5.76;usercontribution
 Samsung;Samsung SM-G955F;5.76;usercontribution
+Samsung;Samsung SM-G965F;5.64;usercontribution
 Samsung;Samsung ST10;5.744;dpreview,digicamdb
 Samsung;Samsung ST100;6.17;dpreview,digicamdb
 Samsung;Samsung ST1000;6.16;digicamdb
@@ -5709,6 +5715,7 @@ Sony;G3221;6.17;devicespecifications
 Sony;G3223;6.17;devicespecifications
 Sony;G3226;6.17;devicespecifications
 Sony;H3113;6.17;usercontribution
+Sony;H8266;6.17;usercontribution
 Sony;ILCA-77M2;23.5;usercontribution
 Sony;ILCE-5000;23.2;usercontribution
 Sony;ILCE-5100;23.5;usercontribution
@@ -6751,6 +6758,7 @@ Winnovo;Winnovo K54;2.65;devicespecifications
 Winnovo;Winnovo K56;2.65;devicespecifications
 Wolder;Wolder Wiam #65;5.99;devicespecifications
 Xgody;Xgody Y20;3.68;devicespecifications
+Xiaomi;POCOPHONE F1;5.64;deviceranks
 Xiaomi;Mi A1;5.11;devicespecifications
 Xiaomi;Xiaomi Mi 3;4.69;devicespecifications
 Xiaomi;Xiaomi Mi 3 TD;4.69;devicespecifications
@@ -6765,6 +6773,7 @@ Xiaomi;Xiaomi Mi 5s;6.25;devicespecifications
 Xiaomi;Xiaomi Mi 5s Plus;4.71;devicespecifications
 Xiaomi;Xiaomi Mi 5X;5.11;devicespecifications
 Xiaomi;Xiaomi Mi 6;4.96;devicespecifications
+Xiaomi;Xiaomi Mi 8;5.64;usercontribution,kimovil
 Xiaomi;Xiaomi Mi A2 Lite;2.98;devicespecifications
 Xiaomi;Xiaomi Mi Max;4.74;devicespecifications
 Xiaomi;Xiaomi Mi Max 2;4.96;devicespecifications
@@ -6793,8 +6802,12 @@ Xiaomi;Xiaomi Redmi 3 Pro;4.69;devicespecifications
 Xiaomi;Xiaomi Redmi 3S 16GB;4.69;devicespecifications
 Xiaomi;Xiaomi Redmi 3S 32GB;4.69;devicespecifications
 Xiaomi;Xiaomi Redmi 5;5.11;devicespecifications
+Xiaomi;Xiaomi Redmi 5A;4.71;devicespecifications
 Xiaomi;Xiaomi Redmi 5 Plus;5.11;devicespecifications
 Xiaomi;Xiaomi Redmi 6 Pro;2.98;devicespecifications
+Xiaomi;Xiaomi Redmi 7;4.96;usercontribution,kimovil
+Xiaomi;Xiaomi Redmi 7A;4.96;usercontribution,kimovil
+Xiaomi;Xiaomi Redmi 7 Pro;5.54;usercontribution,kimovil
 Xiaomi;Xiaomi Redmi Note;4.6;devicespecifications
 Xiaomi;Xiaomi Redmi Note 2;4.69;devicespecifications
 Xiaomi;Xiaomi Redmi Note 2 Prime;4.69;devicespecifications

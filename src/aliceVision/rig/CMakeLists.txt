@@ -17,7 +17,6 @@ alicevision_add_library(aliceVision_rig
     aliceVision_localization
     aliceVision_numeric
     ${CERES_LIBRARIES}
-    Eigen3::Eigen
   PRIVATE_LINKS
     aliceVision_sfm
     aliceVision_system

@@ -96,6 +96,7 @@ sfmData::SfMData getInputScene(const NViewDataSet& d,
   }
 
   // 4. Landmarks
+  const double unknownScale = 0.0;
   for(int i = 0; i < npoints; ++i)
   {
     // Collect the image of point i in each frame.
@@ -103,7 +104,7 @@ sfmData::SfMData getInputScene(const NViewDataSet& d,
     landmark.X = d._X.col(i);
     for (int j = 0; j < nviews; ++j) {
       const Vec2 pt = d._x[j].col(i);
-      landmark.observations[j] = sfmData::Observation(pt, i);
+      landmark.observations[j] = sfmData::Observation(pt, i, unknownScale);
     }
     sfmData.structure[i] = landmark;
   }
@@ -178,6 +179,7 @@ sfmData::SfMData getInputRigScene(const NViewDataSet& d,
   }
 
   // 5. Landmarks
+  const double unknownScale = 0.0;
   for(int landmarkId = 0; landmarkId < nbPoints; ++landmarkId)
   {
     // Collect the image of point i in each frame.
@@ -188,7 +190,7 @@ sfmData::SfMData getInputRigScene(const NViewDataSet& d,
       const sfmData::View& view = *sfmData.views.at(viewId);
       const geometry::Pose3 camPose = sfmData.getPose(view).getTransform();
       const Vec2 pt = Project(sfmData.intrinsics.at(0)->get_projective_equivalent(camPose), landmark.X);
-      landmark.observations[viewId] = sfmData::Observation(pt, landmarkId);
+      landmark.observations[viewId] = sfmData::Observation(pt, landmarkId, unknownScale);
     }
     sfmData.structure[landmarkId] = landmark;
   }

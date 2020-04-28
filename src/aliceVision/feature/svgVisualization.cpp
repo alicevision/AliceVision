@@ -62,10 +62,10 @@ float getStrokeEstimate(const std::pair<size_t,size_t> & imgSize)
 
 void drawMatchesSideBySide(const std::string& imagePathLeft,
                            const std::pair<size_t,size_t>& imageSizeLeft,
-                           const std::vector<feature::SIOPointFeature>& keypointsLeft,
+                           const std::vector<feature::PointFeature>& keypointsLeft,
                            const std::string& imagePathRight,
                            const std::pair<size_t,size_t>& imageSizeRight,
-                           const std::vector<feature::SIOPointFeature>& keypointsRight,
+                           const std::vector<feature::PointFeature>& keypointsRight,
                            const matching::IndMatches& matches,
                            const std::string &outputSVGPath)
 {
@@ -115,10 +115,10 @@ void drawMatchesSideBySide(const std::string& imagePathLeft,
 
 void drawHomographyMatches(const std::string& imagePathLeft,
                            const std::pair<size_t,size_t>& imageSizeLeft,
-                           const std::vector<feature::SIOPointFeature>& siofeatures_I,
+                           const std::vector<feature::PointFeature>& siofeatures_I,
                            const std::string& imagePathRight,
                            const std::pair<size_t,size_t>& imageSizeRight,
-                           const std::vector<feature::SIOPointFeature>& siofeatures_J,
+                           const std::vector<feature::PointFeature>& siofeatures_J,
                            const std::vector<std::pair<Mat3, matching::IndMatches>>& homographiesAndMatches,
                            const matching::IndMatches& putativeMatches,
                            const std::string& outFilename)
@@ -137,8 +137,8 @@ void drawHomographyMatches(const std::string& imagePathLeft,
   {
     const float radius{1.f};
     const float strokeSize{2.f};
-    const feature::SIOPointFeature &fI = siofeatures_I.at(match._i);
-    const feature::SIOPointFeature &fJ = siofeatures_J.at(match._j);
+    const feature::PointFeature &fI = siofeatures_I.at(match._i);
+    const feature::PointFeature &fJ = siofeatures_J.at(match._j);
     const svg::svgStyle style = svg::svgStyle().stroke("white", strokeSize);
 
     svgStream.drawCircle(fI.x(), fI.y(), radius, style);
@@ -158,8 +158,8 @@ void drawHomographyMatches(const std::string& imagePathLeft,
 
       for (const auto &match : bestMatchesId)
       {
-        const feature::SIOPointFeature &fI = siofeatures_I.at(match._i);
-        const feature::SIOPointFeature &fJ = siofeatures_J.at(match._j);
+        const feature::PointFeature &fI = siofeatures_I.at(match._i);
+        const feature::PointFeature &fJ = siofeatures_J.at(match._j);
 
         const svg::svgStyle style = svg::svgStyle().stroke(color, strokeSize);
 
@@ -232,7 +232,7 @@ void saveMatches2SVG(const std::string &imagePathLeft,
 
 void saveKeypoints2SVG(const std::string &inputImagePath,
                        const std::pair<size_t,size_t> & imageSize,
-                       const std::vector<feature::SIOPointFeature> &keypoints,
+                       const std::vector<feature::PointFeature> &keypoints,
                        const std::string &outputSVGPath,
                        bool richKeypoint /*= true*/)
 {
@@ -245,7 +245,7 @@ void saveKeypoints2SVG(const std::string &inputImagePath,
   const float radius = getRadiusEstimate(imageSize);
   const float strokeWidth = getStrokeEstimate(imageSize);
   
-  for(const feature::SIOPointFeature &kpt : keypoints) 
+  for(const feature::PointFeature &kpt : keypoints)
   {
     svgStream.drawCircle(kpt.x(), kpt.y(), (richKeypoint) ? kpt.scale()*radius : radius, svg::svgStyle().stroke("yellow", strokeWidth));
     if(richKeypoint)
@@ -280,10 +280,10 @@ void saveKeypoints2SVG(const std::string &inputImagePath,
  */
 void drawKeypointsSideBySide(const std::string&imagePathLeft,
                              const std::pair<size_t,size_t>& imageSizeLeft,
-                             const std::vector<feature::SIOPointFeature>& keypointsLeft,
+                             const std::vector<feature::PointFeature>& keypointsLeft,
                              const std::string &imagePathRight,
                              const std::pair<size_t,size_t>& imageSizeRight,
-                             const std::vector<feature::SIOPointFeature>& keypointsRight,
+                             const std::vector<feature::PointFeature>& keypointsRight,
                              const std::string &outputSVGPath,
                              bool richKeypoint)
 {
@@ -557,8 +557,8 @@ void saveEpipolarGeometry2SVG(const std::string &imagePath,
 
 void saveMatchesAsMotion(const std::string &imagePath,
                          const std::pair<size_t, size_t> & imageSize,
-                         const std::vector<feature::SIOPointFeature> &keypoints,
-                         const std::vector<feature::SIOPointFeature> &otherKeypoints,
+                         const std::vector<feature::PointFeature> &keypoints,
+                         const std::vector<feature::PointFeature> &otherKeypoints,
                          const matching::IndMatches &matches,
                          const std::string &outputSVGPath,
                          bool left,
@@ -595,8 +595,8 @@ void saveMatchesAsMotion(const std::string &imagePath,
 
 void saveMatchesAsMotion(const std::string &imagePath,
                          const std::pair<size_t, size_t> & imageSize,
-                         const std::vector<feature::SIOPointFeature> &keypoints,
-                         const std::vector<feature::SIOPointFeature> &otherKeypoints,
+                         const std::vector<feature::PointFeature> &keypoints,
+                         const std::vector<feature::PointFeature> &otherKeypoints,
                          const std::vector<std::pair<Mat3, matching::IndMatches>>& homographiesAndMatches,
                          const std::string &outputSVGPath,
                          bool left,

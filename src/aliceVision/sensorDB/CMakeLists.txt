@@ -17,6 +17,7 @@ alicevision_add_library(aliceVision_sensorDB
   PRIVATE_LINKS
     Boost::filesystem
     Boost::system
+    Boost::boost
 )
 
 # Install DB
