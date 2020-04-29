@@ -7,11 +7,52 @@
 
 #include "TracksBuilder.hpp"
 
+#include <lemon/list_graph.h>
+#include <lemon/unionfind.h>
+
+
 namespace aliceVision {
 namespace track {
 
 using namespace aliceVision::matching;
 using namespace lemon;
+
+/// IndexedFeaturePair is: map<viewId, keypointId>
+using IndexedFeaturePair = std::pair<std::size_t, KeypointId>;
+using IndexMap = lemon::ListDigraph::NodeMap<std::size_t>;
+using UnionFindObject = lemon::UnionFindEnum< IndexMap >;
+
+using MapNodeToIndex = stl::flat_map< lemon::ListDigraph::Node, IndexedFeaturePair>;
+using MapIndexToNode = stl::flat_map< IndexedFeaturePair, lemon::ListDigraph::Node >;
+
+struct TracksBuilderData
+{
+  /// graph container to create the node
+  lemon::ListDigraph graph;
+  /// node to index map
+  MapNodeToIndex map_nodeToIndex;
+  std::unique_ptr<IndexMap> index;
+  std::unique_ptr<UnionFindObject> tracksUF;
+
+  const UnionFindObject& getUnionFindEnum() const
+  {
+    return *tracksUF;
+  }
+
+  const MapNodeToIndex& getReverseMap() const
+  {
+    return map_nodeToIndex;
+  }
+};
+
+TracksBuilder::TracksBuilder()
+{
+    _d.reset(new TracksBuilderData());
+}
+
+TracksBuilder::~TracksBuilder()
+{
+}
 
 void TracksBuilder::build(const PairwiseMatches& pairwiseMatches)
 {
@@ -45,22 +86,22 @@ void TracksBuilder::build(const PairwiseMatches& pairwiseMatches)
   // build the node indirection for each referenced feature
   MapIndexToNode map_indexToNode;
   map_indexToNode.reserve(allFeatures.size());
-  _map_nodeToIndex.reserve(allFeatures.size());
+  _d->map_nodeToIndex.reserve(allFeatures.size());
 
   for(const IndexedFeaturePair& featPair: allFeatures)
   {
-    lemon::ListDigraph::Node node = _graph.addNode();
+    lemon::ListDigraph::Node node = _d->graph.addNode();
     map_indexToNode.insert(std::make_pair(featPair, node));
-    _map_nodeToIndex.insert(std::make_pair(node, featPair));
+    _d->map_nodeToIndex.insert(std::make_pair(node, featPair));
   }
 
   // add the element of myset to the UnionFind insert method.
-  _index = std::unique_ptr<IndexMap>( new IndexMap(_graph) );
-  _tracksUF = std::unique_ptr<UnionFindObject>(new UnionFindObject(*_index));
+  _d->index.reset(new IndexMap(_d->graph));
+  _d->tracksUF.reset(new UnionFindObject(*_d->index));
 
-  for(ListDigraph::NodeIt it(_graph); it != INVALID; ++it)
+  for(ListDigraph::NodeIt it(_d->graph); it != INVALID; ++it)
   {
-    _tracksUF->insert(it);
+    _d->tracksUF->insert(it);
   }
 
   // make the union according the pair matches
@@ -79,7 +120,7 @@ void TracksBuilder::build(const PairwiseMatches& pairwiseMatches)
       {
         IndexedFeaturePair pairI(I, KeypointId(descType, m._i));
         IndexedFeaturePair pairJ(J, KeypointId(descType, m._j));
-        _tracksUF->join(map_indexToNode[pairI], map_indexToNode[pairJ]);
+        _d->tracksUF->join(map_indexToNode[pairI], map_indexToNode[pairJ]);
       }
     }
   }
@@ -96,16 +137,16 @@ void TracksBuilder::filter(bool clearForks, std::size_t minTrackLength, bool mul
   std::set<int> set_classToErase;
 
 #pragma omp parallel if(multithreaded)
-  for(lemon::UnionFindEnum<IndexMap>::ClassIt cit(*_tracksUF); cit != INVALID; ++cit)
+  for(lemon::UnionFindEnum<IndexMap>::ClassIt cit(*_d->tracksUF); cit != INVALID; ++cit)
   {
 
 #pragma omp single nowait
     {
       std::size_t cpt = 0;
       std::set<std::size_t> myset;
-      for(lemon::UnionFindEnum<IndexMap>::ItemIt iit(*_tracksUF, cit); iit != INVALID; ++iit)
+      for(lemon::UnionFindEnum<IndexMap>::ItemIt iit(*_d->tracksUF, cit); iit != INVALID; ++iit)
       {
-        myset.insert(_map_nodeToIndex[iit].first);
+        myset.insert(_d->map_nodeToIndex[iit].first);
         ++cpt;
       }
       if((clearForks && myset.size() != cpt) || myset.size() < minTrackLength)
@@ -117,25 +158,25 @@ void TracksBuilder::filter(bool clearForks, std::size_t minTrackLength, bool mul
   }
 
   std::for_each(set_classToErase.begin(), set_classToErase.end(),
-    std::bind1st(std::mem_fun(&UnionFindObject::eraseClass), _tracksUF.get()));
+    std::bind1st(std::mem_fun(&UnionFindObject::eraseClass), _d->tracksUF.get()));
 }
 
 bool TracksBuilder::exportToStream(std::ostream& os)
 {
   std::size_t cpt = 0;
-  for(lemon::UnionFindEnum< IndexMap >::ClassIt cit(*_tracksUF); cit != INVALID; ++cit)
+  for(lemon::UnionFindEnum< IndexMap >::ClassIt cit(*_d->tracksUF); cit != INVALID; ++cit)
   {
     os << "Class: " << cpt++ << std::endl;
     std::size_t cptTrackLength = 0;
-    for(lemon::UnionFindEnum< IndexMap >::ItemIt iit(*_tracksUF, cit); iit != INVALID; ++iit)
+    for(lemon::UnionFindEnum< IndexMap >::ItemIt iit(*_d->tracksUF, cit); iit != INVALID; ++iit)
     {
       ++cptTrackLength;
     }
     os << "\t" << "track length: " << cptTrackLength << std::endl;
 
-    for(lemon::UnionFindEnum< IndexMap >::ItemIt iit(*_tracksUF, cit); iit != INVALID; ++iit)
+    for(lemon::UnionFindEnum< IndexMap >::ItemIt iit(*_d->tracksUF, cit); iit != INVALID; ++iit)
     {
-      os << _map_nodeToIndex[ iit ].first << "  " << _map_nodeToIndex[ iit ].second << std::endl;
+      os << _d->map_nodeToIndex[ iit ].first << "  " << _d->map_nodeToIndex[ iit ].second << std::endl;
     }
   }
   return os.good();
@@ -146,16 +187,16 @@ void TracksBuilder::exportToSTL(TracksMap& allTracks) const
   allTracks.clear();
 
   std::size_t trackIndex = 0;
-  for(lemon::UnionFindEnum< IndexMap >::ClassIt cit(*_tracksUF); cit != INVALID; ++cit, ++trackIndex)
+  for(lemon::UnionFindEnum< IndexMap >::ClassIt cit(*_d->tracksUF); cit != INVALID; ++cit, ++trackIndex)
   {
     // create the output track
     std::pair<TracksMap::iterator, bool> ret = allTracks.insert(std::make_pair(trackIndex, Track()));
 
     Track& outTrack = ret.first->second;
 
-    for(lemon::UnionFindEnum< IndexMap >::ItemIt iit(*_tracksUF, cit); iit != INVALID; ++iit)
+    for(lemon::UnionFindEnum< IndexMap >::ItemIt iit(*_d->tracksUF, cit); iit != INVALID; ++iit)
     {
-      const IndexedFeaturePair & currentPair = _map_nodeToIndex.at(iit);
+      const IndexedFeaturePair & currentPair = _d->map_nodeToIndex.at(iit);
       // all descType inside the track will be the same
       outTrack.descType = currentPair.second.descType;
       outTrack.featPerView[currentPair.first] = currentPair.second.featIndex;
@@ -163,162 +204,13 @@ void TracksBuilder::exportToSTL(TracksMap& allTracks) const
   }
 }
 
-namespace tracksUtilsMap {
-
-bool getCommonTracksInImages(const std::set<std::size_t>& imageIndexes,
-                             const TracksMap& tracksIn,
-                             TracksMap& map_tracksOut)
+std::size_t TracksBuilder::nbTracks() const
 {
-  assert(!imageIndexes.empty());
-  map_tracksOut.clear();
-
-  // go along the tracks
-  for(auto& trackIn: tracksIn)
-  {
-    // look if the track contains the provided view index & save the point ids
-    Track map_temp;
-    for(std::size_t imageIndex: imageIndexes)
-    {
-      auto iterSearch = trackIn.second.featPerView.find(imageIndex);
-      if (iterSearch == trackIn.second.featPerView.end())
-          break; // at least one request image is not in the track
-      map_temp.featPerView[iterSearch->first] = iterSearch->second;
-      map_temp.descType = trackIn.second.descType;
-    }
-    // if we have a feature for each input image
-    // we can add it to the output tracks.
-    if(map_temp.featPerView.size() == imageIndexes.size())
-      map_tracksOut[trackIn.first] = std::move(map_temp);
-  }
-  return !map_tracksOut.empty();
+    std::size_t cpt = 0;
+    for(lemon::UnionFindEnum< IndexMap >::ClassIt cit(*_d->tracksUF); cit != lemon::INVALID; ++cit)
+        ++cpt;
+    return cpt;
 }
 
-
-void getCommonTracksInImages(const std::set<std::size_t>& imageIndexes,
-                             const TracksPerView& tracksPerView,
-                             std::set<std::size_t>& visibleTracks)
-{
-  assert(!imageIndexes.empty());
-  visibleTracks.clear();
-
-  // take the first image id
-  std::set<std::size_t>::const_iterator it = imageIndexes.cbegin();
-  {
-    TracksPerView::const_iterator tracksPerViewIt = tracksPerView.find(*it);
-    // if there are no tracks for the first view just return as there will not be
-    // any common track
-    if(tracksPerViewIt == tracksPerView.end())
-    {
-      // one image is not present in the tracksPerView, so there is no track in common
-      visibleTracks.clear();
-      return;
-    }
-    const TrackIdSet& imageTracks = tracksPerViewIt->second;
-    // copy all the visible tracks by the first image
-    visibleTracks.insert(imageTracks.cbegin(), imageTracks.cend());
-  }
-  ++it;
-  // for each of the remaining view
-  for(; it != imageIndexes.cend(); ++it)
-  {
-    // if there are no tracks for this view just return
-    TracksPerView::const_iterator tracksPerViewIt = tracksPerView.find(*it);
-    if(tracksPerViewIt == tracksPerView.end())
-    {
-      // one image is not present in the tracksPerView, so there is no track in common
-      visibleTracks.clear();
-      return;
-    }
-    const TrackIdSet& imageTracks = tracksPerViewIt->second;
-    std::set<std::size_t> tmp;
-    std::set_intersection(
-        visibleTracks.cbegin(), visibleTracks.cend(),
-        imageTracks.cbegin(), imageTracks.cend(),
-        std::inserter(tmp, tmp.begin()));
-    visibleTracks.swap(tmp);
-  }
-}
-
-bool getCommonTracksInImagesFast(const std::set<std::size_t>& imageIndexes,
-                                 const TracksMap& tracksIn,
-                                 const TracksPerView& tracksPerView,
-                                 TracksMap& tracksOut)
-{
-  assert(!imageIndexes.empty());
-  tracksOut.clear();
-
-  std::set<std::size_t> set_visibleTracks;
-  getCommonTracksInImages(imageIndexes, tracksPerView, set_visibleTracks);
-
-  // go along the tracks
-  for(std::size_t visibleTrack: set_visibleTracks)
-  {
-    TracksMap::const_iterator itTrackIn = tracksIn.find(visibleTrack);
-    if(itTrackIn == tracksIn.end())
-      continue;
-    const Track& trackFeatsIn = itTrackIn->second;
-    Track& trackFeatsOut = tracksOut[visibleTrack];
-    trackFeatsOut.descType = trackFeatsIn.descType;
-    for(std::size_t imageIndex: imageIndexes)
-    {
-      const auto trackFeatsInIt = trackFeatsIn.featPerView.find(imageIndex);
-      if(trackFeatsInIt != trackFeatsIn.featPerView.end())
-        trackFeatsOut.featPerView[imageIndex] = trackFeatsInIt->second;
-    }
-    assert(trackFeatsOut.featPerView.size() == imageIndexes.size());
-  }
-  return !tracksOut.empty();
-}
-
-void getTracksInImages(const std::set<std::size_t>& imagesId,
-                       const TracksMap& tracks,
-                       std::set<std::size_t>& tracksId)
-{
-  tracksId.clear();
-  for(const std::size_t id : imagesId)
-  {
-    std::set<std::size_t> currentImageTracks;
-    getTracksInImage(id, tracks, currentImageTracks);
-    tracksId.insert(currentImageTracks.begin(), currentImageTracks.end());
-  }
-}
-
-void getTracksInImagesFast(const std::set<IndexT>& imagesId,
-                           const TracksPerView& tracksPerView,
-                           std::set<IndexT>& tracksIds)
-{
-  tracksIds.clear();
-  for(const std::size_t id : imagesId)
-  {
-    std::set<std::size_t> currentImageTracks;
-    getTracksInImageFast(id, tracksPerView, currentImageTracks);
-    tracksIds.insert(currentImageTracks.begin(), currentImageTracks.end());
-  }
-}
-  
-void computeTracksPerView(const TracksMap& tracks, TracksPerView& tracksPerView)
-{
-  for(const auto& track: tracks)
-  {
-    for(const auto& feat: track.second.featPerView)
-    {
-      TrackIdSet& tracksSet = tracksPerView[feat.first];
-      if(tracksSet.empty())
-        tracksSet.reserve(1000);
-      tracksSet.push_back(track.first);
-    }
-  }
-
-  // sort tracks Ids in each view
-#pragma omp parallel for
-  for(int i = 0; i < tracksPerView.size(); ++i)
-  {
-    TracksPerView::iterator it = tracksPerView.begin();
-    std::advance(it, i);
-    std::sort(it->second.begin(), it->second.end());
-  }
-}
-
-} // namespace tracksUtilsMap
 } // namespace track
 } // namespace aliceVision

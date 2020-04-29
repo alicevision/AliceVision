@@ -8,6 +8,7 @@
 #include <aliceVision/stl/stl.hpp>
 #include <aliceVision/sfmData/SfMData.hpp>
 #include <boost/filesystem.hpp>
+
 #include <lemon/bfs.h>
 
 #include <fstream>

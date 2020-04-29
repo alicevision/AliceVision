@@ -218,7 +218,7 @@ private:
     /// tracks index for resection
     std::set<std::size_t> tracksId;
     /// features index for resection
-    std::vector<track::tracksUtilsMap::FeatureId> featuresId;
+    std::vector<track::FeatureId> featuresId;
     /// pose estimated by the resection
     geometry::Pose3 pose;
     /// intrinsic estimated by resection

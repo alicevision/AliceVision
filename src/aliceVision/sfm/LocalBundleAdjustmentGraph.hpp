@@ -10,6 +10,9 @@
 #include <aliceVision/track/TracksBuilder.hpp>
 #include <aliceVision/sfm/BundleAdjustment.hpp>
 
+#include <lemon/list_graph.h>
+
+
 namespace aliceVision {
 
 namespace sfmData {

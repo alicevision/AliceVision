@@ -15,6 +15,7 @@
 #include <aliceVision/sfm/sfmStatistics.hpp>
 
 #include <aliceVision/feature/FeaturesPerView.hpp>
+#include <aliceVision/graph/connectedComponent.hpp>
 #include <aliceVision/matching/IndMatch.hpp>
 #include <aliceVision/multiview/essential.hpp>
 #include <aliceVision/multiview/triangulation/triangulationDLT.hpp>
@@ -22,11 +23,12 @@
 #include <aliceVision/multiview/triangulation/NViewsTriangulationLORansac.hpp>
 #include <aliceVision/robustEstimation/LORansac.hpp>
 #include <aliceVision/robustEstimation/ScoreEvaluator.hpp>
-#include <aliceVision/graph/connectedComponent.hpp>
 #include <aliceVision/stl/stl.hpp>
 #include <aliceVision/system/Timer.hpp>
 #include <aliceVision/system/cpu.hpp>
 #include <aliceVision/system/MemoryInfo.hpp>
+#include <aliceVision/track/TracksBuilder.hpp>
+#include <aliceVision/track/tracksUtils.hpp>
 
 #include <dependencies/htmlDoc/htmlDoc.hpp>
 
@@ -251,7 +253,7 @@ std::size_t ReconstructionEngine_sequentialSfM::fuseMatchesIntoTracks()
         // create an entry in the map
         _map_tracksPerView[viewIt.first];
     }
-    track::tracksUtilsMap::computeTracksPerView(_map_tracks, _map_tracksPerView);
+    track::computeTracksPerView(_map_tracks, _map_tracksPerView);
     ALICEVISION_LOG_DEBUG("Build tracks pyramid per view");
     computeTracksPyramidPerView(
             _map_tracksPerView, _map_tracks, _sfmData.views, *_featuresPerView, _params.pyramidBase, _params.pyramidDepth, _map_featsPyramidPerView);
@@ -259,14 +261,14 @@ std::size_t ReconstructionEngine_sequentialSfM::fuseMatchesIntoTracks()
     // display stats
     {
       std::set<size_t> imagesId;
-      track::tracksUtilsMap::imageIdInTracks(_map_tracksPerView, imagesId);
+      track::imageIdInTracks(_map_tracksPerView, imagesId);
 
       ALICEVISION_LOG_INFO("Fuse matches into tracks: " << std::endl
         << "\t- # tracks: " << tracksBuilder.nbTracks() << std::endl
         << "\t- # images in tracks: " << imagesId.size());
 
       std::map<size_t, size_t> map_Occurence_TrackLength;
-      track::tracksUtilsMap::tracksLength(_map_tracks, map_Occurence_TrackLength);
+      track::tracksLength(_map_tracks, map_Occurence_TrackLength);
       ALICEVISION_LOG_INFO("TrackLength, Occurrence");
       for(const auto& iter: map_Occurence_TrackLength)
       {
@@ -1077,7 +1079,7 @@ bool ReconstructionEngine_sequentialSfM::makeInitialPair3D(const Pair& currentPa
   // b. get common features between the two views
   // use the track to have a more dense match correspondence set
   aliceVision::track::TracksMap commonTracks;
-  track::tracksUtilsMap::getCommonTracksInImagesFast({I, J}, _map_tracks, _map_tracksPerView, commonTracks);
+  track::getCommonTracksInImagesFast({I, J}, _map_tracks, _map_tracksPerView, commonTracks);
 
   // copy point to arrays
   const std::size_t n = commonTracks.size();
@@ -1271,7 +1273,7 @@ bool ReconstructionEngine_sequentialSfM::getBestInitialImagePairs(std::vector<Pa
 
     aliceVision::track::TracksMap map_tracksCommon;
     const std::set<size_t> set_imageIndex= {I, J};
-    track::tracksUtilsMap::getCommonTracksInImagesFast(set_imageIndex, _map_tracks, _map_tracksPerView, map_tracksCommon);
+    track::getCommonTracksInImagesFast(set_imageIndex, _map_tracks, _map_tracksPerView, map_tracksCommon);
 
     // Copy points correspondences to arrays for relative pose estimation
     const size_t n = map_tracksCommon.size();
@@ -1439,7 +1441,7 @@ bool ReconstructionEngine_sequentialSfM::computeResection(const IndexT viewId, R
   
   // Get back featId associated to a tracksID already reconstructed.
   // These 2D/3D associations will be used for the resection.
-  tracksUtilsMap::getFeatureIdInViewPerTrack(_map_tracks,
+  getFeatureIdInViewPerTrack(_map_tracks,
                                              resectionData.tracksId,
                                              viewId,
                                              &resectionData.featuresId);
@@ -1455,7 +1457,7 @@ bool ReconstructionEngine_sequentialSfM::computeResection(const IndexT viewId, R
   
   std::size_t cpt = 0;
   std::set<std::size_t>::const_iterator iterTrackId = resectionData.tracksId.begin();
-  for (std::vector<tracksUtilsMap::FeatureId>::const_iterator iterfeatId = resectionData.featuresId.begin();
+  for (std::vector<FeatureId>::const_iterator iterfeatId = resectionData.featuresId.begin();
        iterfeatId != resectionData.featuresId.end();
        ++iterfeatId, ++iterTrackId, ++cpt)
   {
@@ -1620,7 +1622,7 @@ void ReconstructionEngine_sequentialSfM::getTracksToTriangulate(const std::set<I
   allReconstructedViews.insert(newReconstructedViews.begin(), newReconstructedViews.end());
   
   std::set<IndexT> allTracksInNewViews;
-  track::tracksUtilsMap::getTracksInImagesFast(newReconstructedViews, _map_tracksPerView, allTracksInNewViews);
+  track::getTracksInImagesFast(newReconstructedViews, _map_tracksPerView, allTracksInNewViews);
   
   std::set<IndexT>::iterator it;
 #pragma omp parallel private(it)
@@ -1839,7 +1841,7 @@ void ReconstructionEngine_sequentialSfM::triangulate_2Views(SfMData& scene, cons
       // Find track correspondences between I and J
       const std::set<std::size_t> set_viewIndex = { I, J };
       track::TracksMap map_tracksCommonIJ;
-      track::tracksUtilsMap::getCommonTracksInImagesFast(set_viewIndex, _map_tracks, _map_tracksPerView, map_tracksCommonIJ);
+      track::getCommonTracksInImagesFast(set_viewIndex, _map_tracks, _map_tracksPerView, map_tracksCommonIJ);
 
       const View* viewI = scene.getViews().at(I).get();
       const View* viewJ = scene.getViews().at(J).get();
@@ -1874,6 +1876,7 @@ void ReconstructionEngine_sequentialSfM::triangulate_2Views(SfMData& scene, cons
             if (landmark.observations.count(I) == 0)
             {
               const Vec2 residual = camI->residual(poseI, landmark.X, xI);
+              // TODO: scale in residual
               const auto& acThresholdIt = _map_ACThreshold.find(I);
               // TODO assert(acThresholdIt != _map_ACThreshold.end());
               const double acThreshold = (acThresholdIt != _map_ACThreshold.end()) ? acThresholdIt->second : 4.0;
