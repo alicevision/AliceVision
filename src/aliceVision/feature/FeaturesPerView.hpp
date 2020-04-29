@@ -47,6 +47,17 @@ public:
     return _data.at(viewId);
   }
 
+  std::size_t getNbFeatures(IndexT viewId) const
+  {
+      MapFeaturesPerDesc f = getFeaturesPerDesc(viewId);
+      std::size_t count = 0;
+      for(const auto& it: f)
+      {
+          count += it.second.size();
+      }
+      return count;
+  }
+
   const MapFeaturesPerDesc& getDataPerDesc(IndexT viewId) const
   {
     return _data.at(viewId);

@@ -9,6 +9,7 @@
 #include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/numeric/numeric.hpp>
 #include <aliceVision/track/Track.hpp>
+#include <aliceVision/track/tracksUtils.hpp>
 #include <aliceVision/stl/mapUtils.hpp>
 
 #include <aliceVision/utils/Histogram.hpp>
@@ -24,7 +25,7 @@ namespace sfm {
  * @param[out] out_histogram
  * @param[in] specificViews: Limit stats to specific views. If empty, compute stats for all views.
  */
-void computeResidualsHistogram(const sfmData::SfMData& sfmData, MinMaxMeanMedian<double>& out_stats, Histogram<double>* out_histogram, const std::set<IndexT>& specificViews = std::set<IndexT>());
+void computeResidualsHistogram(const sfmData::SfMData& sfmData, BoxStats<double>& out_stats, Histogram<double>* out_histogram, const std::set<IndexT>& specificViews = std::set<IndexT>());
 
 /**
  * @brief Compute histogram of observations lengths
@@ -33,7 +34,7 @@ void computeResidualsHistogram(const sfmData::SfMData& sfmData, MinMaxMeanMedian
  * @param[out] observationsLengthHistogram
  * @param[in] specificViews: Limit stats to specific views. If empty, compute stats for all views
  */
-void computeObservationsLengthsHistogram(const sfmData::SfMData& sfmData, MinMaxMeanMedian<double>& out_stats, int& overallNbObservations, Histogram<double>* observationsLengthHistogram, const std::set<IndexT>& specificViews = std::set<IndexT>());
+void computeObservationsLengthsHistogram(const sfmData::SfMData& sfmData, BoxStats<double>& out_stats, int& overallNbObservations, Histogram<double>* observationsLengthHistogram, const std::set<IndexT>& specificViews = std::set<IndexT>());
 
 /**
  * @brief Compute histogram of landmarks per view
@@ -41,7 +42,22 @@ void computeObservationsLengthsHistogram(const sfmData::SfMData& sfmData, MinMax
  * @param[out] out_stats
  * @param[out] landmarksPerViewHistogram
  */
-void computeLandmarksPerViewHistogram(const sfmData::SfMData& sfmData, MinMaxMeanMedian<double>& out_stats, track::TracksPerView _mapTracksPerView, Histogram<double>* landmarksPerViewHistogram);
+void computeLandmarksPerViewHistogram(const sfmData::SfMData& sfmData, BoxStats<double>& out_stats, Histogram<double>* landmarksPerViewHistogram);
+
+/**
+ * @brief computeLandmarksPerView
+ * @param[in] sfmData
+ * @param[out] out_nbLandmarksPerView
+ */
+void computeLandmarksPerView(const sfmData::SfMData& sfmData, std::vector<int>& out_nbLandmarksPerView);
+
+/**
+ * @brief computeFeatMatchPerView
+ * @param[in] sfmData
+ * @param[out] out_featPerView
+ * @param[out] out_matchPerView
+ */
+void computeFeatMatchPerView(const sfmData::SfMData& sfmData, std::vector<size_t>& out_featPerView, std::vector<size_t>& out_matchPerView);
 
 /**
  * @brief Compute histogram of scale for features and observations
@@ -51,7 +67,7 @@ void computeLandmarksPerViewHistogram(const sfmData::SfMData& sfmData, MinMaxMea
  * @param[out] scaleHistogram
  * @param[in] specificViews: Limit stats to specific views. If empty, no stats computed
  */
-void computeScaleHistogram(const sfmData::SfMData& sfmData, MinMaxMeanMedian<double>& out_stats, Histogram<double>* scaleHistogram, const std::set<IndexT>& specificViews = std::set<IndexT>());
+void computeScaleHistogram(const sfmData::SfMData& sfmData, BoxStats<double>& out_stats, Histogram<double>* scaleHistogram, const std::set<IndexT>& specificViews = std::set<IndexT>());
 
 /**
  * @brief Compute histogram of residuals per view
@@ -59,13 +75,17 @@ void computeScaleHistogram(const sfmData::SfMData& sfmData, MinMaxMeanMedian<dou
  */
 void computeResidualsPerView(const sfmData::SfMData& sfmData, int& nbViews, std::vector<double>& nbResidualsPerViewMin,
                                       std::vector<double>& nbResidualsPerViewMax, std::vector<double>& nbResidualsPerViewMean,
-                                      std::vector<double>& nbResidualsPerViewMedian);
+                                      std::vector<double>& nbResidualsPerViewMedian, std::vector<double>& nbResidualsPerViewFirstQuartile,
+                                      std::vector<double>& nbResidualsPerViewThirdQuartile);
 
 /**
- * @brief Compute histogram of residuals per view
+ * @brief Compute histogram of observations lengths per view
  * @param[in] sfmData
  */
-void computePointsValidatedPerView(const sfmData::SfMData& sfmData, int& nbViews, std::vector<double>& nbPointsValidatedPerView);
+void computeObservationsLengthsPerView(const sfmData::SfMData& sfmData, int& nbViews, std::vector<double>& nbObservationsLengthsPerViewMin,
+                                      std::vector<double>& nbObservationsLengthsPerViewMax, std::vector<double>& nbObservationsLengthsPerViewMean,
+                                      std::vector<double>& nbObservationsLengthsPerViewMedian, std::vector<double>& nbResidualsPerViewFirstQuartile,
+                                      std::vector<double>& nbResidualsPerViewThirdQuartile);
 
 }
 }
