@@ -1,6 +1,6 @@
 version: '1.0.{build}'
 
-image: Visual Studio 2015
+image: Visual Studio 2019
 
 branches:
   only:
@@ -44,7 +44,7 @@ before_build:
     - cd %APPVEYOR_BUILD_FOLDER%
     - md build
     - cd build
-    - cmake .. -G "Visual Studio 14 2015 Win64"
+    - cmake ..
             -DCMAKE_BUILD_TYPE=%CONFIGURATION%
             -DALICEVISION_USE_INTERNAL_CERES:BOOL=OFF
             -DALICEVISION_USE_CUDA:BOOL=ON
