@@ -1,21 +1,13 @@
-version: '1.0.{build}'
-
 image: Visual Studio 2019
+configuration: Release
 
 branches:
   only:
     - master
     - develop  # PRs are built
 
-platform:
-  - x64
-
 # environment: 
 #   APPVEYOR_SAVE_CACHE_ON_ERROR: true
-
-configuration:
-  - Release
-  # - Debug
 
 install:
     - git submodule update --init --recursive
@@ -53,7 +45,7 @@ before_build:
     - ls -l
 
 build:
-  project: $(APPVEYOR_BUILD_FOLDER)\build\aliceVision.sln
+  project: build\aliceVision.sln
   verbosity: minimal
 
 #comment the above and uncomment the following to just build the dependencies
