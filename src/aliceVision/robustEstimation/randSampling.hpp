@@ -12,6 +12,7 @@
 #include <algorithm>
 #include <cstdlib>
 #include <random>
+#include <numeric>
 #include <cassert>
 
 namespace aliceVision {
