@@ -229,7 +229,9 @@ int main() {
       << "\t-- Residual min:\t" << stats.min << "\n"
       << "\t-- Residual median:\t" << stats.median << "\n"
       << "\t-- Residual max:\t " << stats.max << "\n"
-      << "\t-- Residual mean:\t " << stats.mean << std::endl;
+      << "\t-- Residual mean:\t " << stats.mean << "\n"
+      << "\t-- Residual first quartile:\t " << stats.firstQuartile << "\n"
+      << "\t-- Residual third quartile:\t " << stats.thirdQuartile <<std::endl;
 
       // Export as PLY (camera pos + 3Dpoints)
       std::vector<Vec3> vec_camPos;

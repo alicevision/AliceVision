@@ -169,10 +169,10 @@ inline void EvaluteToGT(
 //  std::cout << "\nAngular residuals (Degree) \n";
 //  copy(vec_angularErrors.begin(), vec_angularErrors.end(), std::ostream_iterator<double>(std::cout, " , "));
 
-  MinMaxMeanMedian<double> statsBaseline(vec_baselineErrors.begin(), vec_baselineErrors.end());
+  BoxStats<double> statsBaseline(vec_baselineErrors.begin(), vec_baselineErrors.end());
   std::cout << std::endl << "\nBaseline error statistics:\n" << statsBaseline;
 
-  MinMaxMeanMedian<double> statsAngular(vec_angularErrors.begin(), vec_angularErrors.end());
+  BoxStats<double> statsAngular(vec_angularErrors.begin(), vec_angularErrors.end());
   std::cout << std::endl << "\nAngular error statistics:\n" << statsAngular;
 
   // Export camera position (viewable)

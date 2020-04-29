@@ -737,21 +737,23 @@ void ReconstructionEngine_sequentialSfM::exportStatistics(double reconstructionT
   // residual histogram
   Histogram<double> residualHistogram;
   {
-      MinMaxMeanMedian<double> residualStats;
+      BoxStats<double> residualStats;
       computeResidualsHistogram(_sfmData, residualStats, &residualHistogram);
       ALICEVISION_LOG_DEBUG(
         "\t- # Landmarks: " << _sfmData.getLandmarks().size() << std::endl <<
         "\t- Residual min: " << residualStats.min << std::endl <<
         "\t- Residual median: " << residualStats.median << std::endl <<
         "\t- Residual max: "  << residualStats.max << std::endl <<
-        "\t- Residual mean: " << residualStats.mean);
+        "\t- Residual mean: " << residualStats.mean << std::endl <<
+        "\t- Residual first quartile: " << residualStats.firstQuartile << std::endl <<
+        "\t- Residual third quartile: " << residualStats.thirdQuartile);
       ALICEVISION_LOG_INFO("Histogram of residuals:" << residualHistogram.ToString("", 2));
   }
 
   // tracks lengths histogram
   Histogram<double> observationsLengthHistogram;
   {
-      MinMaxMeanMedian<double> observationsLengthStats;
+      BoxStats<double> observationsLengthStats;
       int overallNbObservations = 0;
       computeObservationsLengthsHistogram(_sfmData, observationsLengthStats, overallNbObservations, &observationsLengthHistogram);
       ALICEVISION_LOG_INFO("# landmarks: " << _sfmData.getLandmarks().size());
@@ -763,8 +765,8 @@ void ReconstructionEngine_sequentialSfM::exportStatistics(double reconstructionT
   // nb landmarks per view histogram
   Histogram<double> landmarksPerViewHistogram;
   {
-      MinMaxMeanMedian<double> landmarksPerViewStats;
-      computeLandmarksPerViewHistogram(_sfmData, landmarksPerViewStats, _map_tracksPerView, &landmarksPerViewHistogram);
+      BoxStats<double> landmarksPerViewStats;
+      computeLandmarksPerViewHistogram(_sfmData, landmarksPerViewStats, &landmarksPerViewHistogram);
       ALICEVISION_LOG_INFO("Landmarks per view min: " << landmarksPerViewStats.min << ", mean: " << landmarksPerViewStats.mean << ", median: " << landmarksPerViewStats.median << ", max: " << landmarksPerViewStats.max);
       ALICEVISION_LOG_INFO("Histogram of nb landmarks per view:" << landmarksPerViewHistogram.ToString<int>("", 3));
   }
@@ -1147,7 +1149,7 @@ bool ReconstructionEngine_sequentialSfM::makeInitialPair3D(const Pair& currentPa
 
     // save outlier residual information
     Histogram<double> residualHistogram;
-    MinMaxMeanMedian<double> residualStats;
+    BoxStats<double> residualStats;
     computeResidualsHistogram(_sfmData, residualStats, &residualHistogram);
     ALICEVISION_LOG_DEBUG("MSE Residual initial pair inlier: " << residualStats.mean);
 

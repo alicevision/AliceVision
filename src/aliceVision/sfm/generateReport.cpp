@@ -103,7 +103,7 @@ bool generateSfMReport(const sfmData::SfMData& sfmData,
         const std::vector<double>& residuals = residuals_per_view.at(id_view);
         if(!residuals.empty())
         {
-          MinMaxMeanMedian<double> stats(residuals.begin(), residuals.end());
+          BoxStats<double> stats(residuals.begin(), residuals.end());
           os << sColBegin << residuals.size()/2 << sColEnd // #observations
             << sColBegin << stats.min << sColEnd
             << sColBegin << stats.median << sColEnd
