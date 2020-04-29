@@ -47,7 +47,6 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # ==============================================================================
 # AliceVision build options
 # ==============================================================================
-option(ALICEVISION_BUILD_SHARED "Build AliceVision shared libs" ON)
 option(ALICEVISION_BUILD_SFM "Build AliceVision SfM part" ON)
 option(ALICEVISION_BUILD_MVS "Build AliceVision MVS part" ON)
 option(ALICEVISION_BUILD_HDR "Build AliceVision HDR part" ON)
@@ -63,11 +62,8 @@ trilean_option(ALICEVISION_USE_ALEMBIC "Enable Alembic I/O" AUTO)
 trilean_option(ALICEVISION_USE_UNCERTAINTYTE "Enable Uncertainty computation" AUTO)
 trilean_option(ALICEVISION_USE_CUDA "Enable CUDA" ON)
 trilean_option(ALICEVISION_USE_OPENCV "Build opencv+aliceVision samples programs" OFF)
-
-# Since OpenCV 3, SIFT is no longer in the default modules. See
-# https://github.com/itseez/opencv_contrib for more informations.
-# Enable this to be able to use OpenCV SIFT in main_ComputeFeatures_OpenCV.
 option(ALICEVISION_USE_OCVSIFT "Add or not OpenCV SIFT in available features" OFF)
+mark_as_advanced(FORCE ALICEVISION_USE_OCVSIFT)
 
 option(ALICEVISION_USE_MESHSDFILTER "Use MeshSDFilter library (enable MeshDenoising and MeshDecimate)" ON)
 
@@ -75,9 +71,20 @@ option(ALICEVISION_REQUIRE_CERES_WITH_SUITESPARSE "Require Ceres with SuiteSpars
 
 option(ALICEVISION_USE_RPATH "Add RPATH on software with relative paths to libraries" ON)
 
+option(ALICEVISION_BUILD_TESTS "Build AliceVision tests" OFF)
+
+option(BUILD_SHARED_LIBS "Build shared libraries" ON)
+
 # Default build is in Release mode
 if(NOT CMAKE_BUILD_TYPE AND NOT MSVC)
   set(CMAKE_BUILD_TYPE "Release")
+endif()
+
+# ==============================================================================
+# Enable cmake UNIT TEST framework
+# ==============================================================================
+if(ALICEVISION_BUILD_TESTS AND NOT CMAKE_TESTING_ENABLED)
+  enable_testing()
 endif()
 
 # ==============================================================================
@@ -87,6 +94,10 @@ endif()
 # ==============================================================================
 include(GNUInstallDirs)
 
+if(CMAKE_BUILD_TYPE MATCHES Release)
+    message(STATUS "Force CMAKE_INSTALL_DO_STRIP in Release")
+    set(CMAKE_INSTALL_DO_STRIP TRUE)
+endif()
 
 if(ALICEVISION_USE_RPATH)
   if(APPLE)
@@ -128,15 +139,11 @@ if(${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION} VERSION_LESS 3.10)
   set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake/compatibilityCUDA)
 endif()
 
-# Set shared or static mode
-if(ALICEVISION_BUILD_SHARED)
-  set(BUILD_SHARED_LIBS ON)
+if(BUILD_SHARED_LIBS)
   if(WIN32)
     # Export all symbols from the dynamic libraries by default (avoid dllexport markup)
     set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
   endif()
-elseif()
-  set(BUILD_SHARED_LIBS OFF)
 endif()
 
 # ==============================================================================
@@ -267,9 +274,13 @@ endif()
 # Disable BOOST autolink
 add_definitions(-DBOOST_ALL_NO_LIB)
 
-# Force BOOST to use dynamic libraries (avoid link error with boost program_options)
-# https://lists.boost.org/boost-users/2009/11/54015.php
-add_definitions(-DBOOST_ALL_DYN_LINK)
+if(BUILD_SHARED_LIBS)
+  # Force BOOST to use dynamic libraries (avoid link error with boost program_options)
+  # https://lists.boost.org/boost-users/2009/11/54015.php
+  add_definitions(-DBOOST_ALL_DYN_LINK)
+else()
+  set(Boost_USE_STATIC_LIBS ON)
+endif()
 
 if(BOOST_NO_CXX11)
   # Avoid link errors on boost filesystem copy_file function
@@ -292,7 +303,7 @@ endif()
 # OpenImageIO
 # ==============================================================================
 find_package(OpenImageIO 1.8 REQUIRED)
-if(OPENIMAGEIO_FOUND)
+if(OPENIMAGEIO_FOUND OR OpenImageIO_FOUND)
   message(STATUS "OpenImageIO found.")
   if(UNIX)
     # Add DL dependency on linux
@@ -332,11 +343,9 @@ endif()
 # ==============================================================================
 find_package(Eigen3 3.3 REQUIRED)
 if(Eigen3_FOUND OR EIGEN3_FOUND)
-  # message(FATAL_ERROR "EIGEN_INCLUDE_DIR: ${EIGEN_INCLUDE_DIR}")
-  include_directories(${EIGEN3_INCLUDE_DIR})
+  # message(STATUS "EIGEN_INCLUDE_DIR: ${EIGEN_INCLUDE_DIR}")
   # See https://eigen.tuxfamily.org/dox/group__TopicUnalignedArrayAssert.html
-  add_definitions("-DEIGEN_DONT_ALIGN_STATICALLY=1")
-  add_definitions("-DEIGEN_DONT_VECTORIZE=1")
+  set(AV_EIGEN_DEFINITIONS EIGEN_DONT_ALIGN_STATICALLY EIGEN_DONT_VECTORIZE)
 else()
   message(FATAL_ERROR " EIGEN NOT FOUND. EIGEN_INCLUDE_DIR: ${EIGEN_INCLUDE_DIR}")
 endif()
@@ -890,7 +899,7 @@ endif()
 # ==============================================================================
 message("\n")
 message("** AliceVision version: " ${ALICEVISION_VERSION})
-message("** Build Shared libs: " ${ALICEVISION_BUILD_SHARED})
+message("** Build Shared libs: " ${BUILD_SHARED_LIBS})
 message("** Build SfM part: " ${ALICEVISION_BUILD_SFM})
 message("** Build MVS part: " ${ALICEVISION_BUILD_MVS})
 message("** Build AliceVision tests: " ${ALICEVISION_BUILD_TESTS})

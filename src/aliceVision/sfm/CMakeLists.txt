@@ -74,6 +74,7 @@ alicevision_add_library(aliceVision_sfm
     aliceVision_sfmData
     aliceVision_sfmDataIO
     Boost::filesystem
+    Boost::boost
     ${CERES_LIBRARIES}
 )
 

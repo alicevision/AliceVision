@@ -15,8 +15,9 @@
 #include <iostream>
 
 #define BOOST_TEST_MODULE PANORAMA_SFM
-#include <boost/test/included/unit_test.hpp>
-#include <boost/test/floating_point_comparison.hpp>
+
+#include <boost/test/unit_test.hpp>
+#include <boost/test/tools/floating_point_comparison.hpp>
 #include <aliceVision/unitTest.hpp>
 
 using namespace aliceVision;

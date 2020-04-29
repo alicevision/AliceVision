@@ -18,6 +18,7 @@
 #include <fstream>
 #include <cassert>
 
+
 namespace aliceVision {
 namespace hdr {
 

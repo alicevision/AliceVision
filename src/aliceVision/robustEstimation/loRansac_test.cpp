@@ -20,8 +20,9 @@
 #include <string>
 
 #define BOOST_TEST_MODULE robustEstimationLORansac
-#include <boost/test/included/unit_test.hpp>
-#include <boost/test/floating_point_comparison.hpp>
+
+#include <boost/test/unit_test.hpp>
+#include <boost/test/tools/floating_point_comparison.hpp>
 
 using namespace aliceVision;
 using namespace aliceVision::robustEstimation;

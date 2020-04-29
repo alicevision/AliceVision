@@ -270,6 +270,7 @@ void saveLandmark(const std::string& name, IndexT landmarkId, const sfmData::Lan
       {
         obsTree.put("featureId", observation.id_feat);
         saveMatrix("x", observation.x, obsTree);
+        obsTree.put("scale", observation.scale);
       }
 
       observationsTree.push_back(std::make_pair("", obsTree));
@@ -302,6 +303,7 @@ void loadLandmark(IndexT& landmarkId, sfmData::Landmark& landmark, bpt::ptree& l
       {
         observation.id_feat = obsTree.get<IndexT>("featureId");
         loadMatrix("x", observation.x, obsTree);
+        observation.scale = obsTree.get<double>("scale", 0.0);
       }
 
       landmark.observations.emplace(obsTree.get<IndexT>("observationId"), observation);

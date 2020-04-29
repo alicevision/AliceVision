@@ -10,7 +10,8 @@
 
 #include "aliceVision/numeric/numeric.hpp"
 
-#include <boost/test/included/unit_test.hpp>
+
+#include <boost/test/unit_test.hpp>
 
 #define EXPECT_MATRIX_CLOSE_FRACTION(a, b, tolerance) \
 { \

@@ -447,11 +447,13 @@ void AlembicExporter::addLandmarks(const sfmData::Landmarks& landmarks, const sf
     std::vector<::uint32_t> visibilityFeatId;
     visibilityViewId.reserve(nbObservations);
 
-    std::vector<float>featPos2d;
+    std::vector<float> featPos2d;
+    std::vector<float> featScale;
     if(withFeatures)
     {
       featPos2d.reserve(nbObservations*2);
       visibilityFeatId.reserve(nbObservations);
+      featScale.reserve(nbObservations);
     }
 
     for (const auto& landmark : landmarks)
@@ -472,6 +474,8 @@ void AlembicExporter::addLandmarks(const sfmData::Landmarks& landmarks, const sf
           // feature 2D position (x, y))
           featPos2d.emplace_back(obs.x[0]);
           featPos2d.emplace_back(obs.x[1]);
+
+          featScale.emplace_back(obs.scale);
         }
       }
     }
@@ -483,6 +487,7 @@ void AlembicExporter::addLandmarks(const sfmData::Landmarks& landmarks, const sf
     {
       OUInt32ArrayProperty(userProps, "mvg_visibilityFeatId" ).set(visibilityFeatId);
       OFloatArrayProperty(userProps, "mvg_visibilityFeatPos" ).set(featPos2d); // feature position (x,y)
+      OFloatArrayProperty(userProps, "mvg_visibilityFeatScale" ).set(featScale);
     }
   }
   if(!landmarksUncertainty.empty())

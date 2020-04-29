@@ -11,8 +11,6 @@
 #include <aliceVision/numeric/numeric.hpp>
 #include <aliceVision/config.hpp>
 
-#include <Eigen/Dense>
-
 #include <vector>
 #include <map>
 

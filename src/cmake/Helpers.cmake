@@ -5,7 +5,7 @@
 function(alicevision_add_library library_name)
   set(options USE_CUDA)
   set(singleValues "")
-  set(multipleValues SOURCES PUBLIC_LINKS PRIVATE_LINKS PUBLIC_INCLUDE_DIRS PRIVATE_INCLUDE_DIRS)
+  set(multipleValues SOURCES PUBLIC_LINKS PRIVATE_LINKS PUBLIC_INCLUDE_DIRS PRIVATE_INCLUDE_DIRS PUBLIC_DEFINITIONS PRIVATE_DEFINITIONS)
 
   cmake_parse_arguments(LIBRARY "${options}" "${singleValues}" "${multipleValues}" ${ARGN})
 
@@ -60,6 +60,11 @@ function(alicevision_add_library library_name)
            ${LIBRARY_PUBLIC_INCLUDE_DIRS}
 
     PRIVATE ${LIBRARY_PRIVATE_INCLUDE_DIRS}
+  )
+
+  target_compile_definitions(${library_name}
+    PUBLIC ${LIBRARY_PUBLIC_DEFINITIONS}
+    PRIVATE ${LIBRARY_PRIVATE_DEFINITIONS}
   )
 
   set_property(TARGET ${library_name}
@@ -226,8 +231,16 @@ function(alicevision_add_test test_file)
     PROPERTY FOLDER Test
   )
 
-  add_test(NAME ${TEST_EXECUTABLE_NAME}
+  add_test(NAME test_${TEST_EXECUTABLE_NAME}
            WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
            COMMAND $<TARGET_FILE:${TEST_EXECUTABLE_NAME}> --catch_system_error=yes --log_level=all
   )
+
+  if(UNIX)
+    # setup LD_LIBRARY_PATH for running tests
+    get_property(TEST_LINK_DIRS TARGET ${TEST_EXECUTABLE_NAME} PROPERTY LINK_DIRECTORIES)
+
+    set_property(TEST test_${TEST_EXECUTABLE_NAME} PROPERTY ENVIRONMENT "LD_LIBRARY_PATH=${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}:${TEST_LINK_DIRS}:$ENV{LD_LIBRARY_PATH}")
+  endif()
+
 endfunction()

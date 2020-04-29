@@ -7,7 +7,8 @@
 #include <aliceVision/system/Logger.hpp>
 
 #define BOOST_TEST_MODULE Logger
-#include <boost/test/included/unit_test.hpp>
+
+#include <boost/test/unit_test.hpp>
 #include <boost/algorithm/string.hpp>
 
 #include <array>

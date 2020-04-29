@@ -12,8 +12,9 @@
 #include <utility>
 
 #define BOOST_TEST_MODULE Track
-#include <boost/test/included/unit_test.hpp>
-#include <boost/test/floating_point_comparison.hpp>
+
+#include <boost/test/unit_test.hpp>
+#include <boost/test/tools/floating_point_comparison.hpp>
 
 using namespace aliceVision::feature;
 using namespace aliceVision::track;
