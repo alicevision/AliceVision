@@ -11,6 +11,7 @@
 
 #include <string>
 #include <utility>
+#include <regex>
 
 namespace aliceVision {
 namespace sfmData {
@@ -338,6 +339,8 @@ public:
       return std::stod(getMetadata("Exif:FocalLength"));
     if(hasDigitMetadata("focalLength"))
       return std::stod(getMetadata("focalLength"));
+    if(hasDigitMetadata("FocalLength"))
+      return std::stod(getMetadata("FocalLength"));
     return -1;
   }
 
@@ -504,6 +507,53 @@ public:
     _resectionId = resectionId;
   }
 
+  bool readFraction(std::string & translated, const std::string & str) {
+    std::smatch m;
+    std::regex pattern_frac("([0-9]+)\\/([0-9]+)");
+
+    if (!std::regex_search(str, m, pattern_frac)) {
+      return false;
+    }
+
+    int num = std::stoi(m[1].str());
+    int denum = std::stoi(m[2].str());
+
+    double result = double(num)/double(denum);
+    translated = std::to_string(result);
+
+    return true;
+  }
+
+  void translateMetaDataFromNuke() {
+    std::smatch m;
+    std::string fraction;
+    std::map<std::string, std::string> translated;
+    std::regex pattern_base("nuke/exif/[0-9]+/([a-zA-Z]+)");
+    std::regex pattern_alt("exif/[0-9]+/([a-zA-Z]+)");
+    
+
+    for (auto pair : _metadata) {
+      
+      std::string key = pair.first;
+
+      if (std::regex_search(key, m, pattern_base)) {
+        key = m[1].str();
+      }
+      else if (std::regex_search(pair.first, m, pattern_alt)) {
+        key = m[1].str();
+      }
+        
+      if (readFraction(fraction, pair.second)) {
+        translated[key] = fraction;
+      }
+      else {
+        translated[key] = pair.second;
+      }
+    }  
+
+    _metadata = translated;
+  }
+
   /**
    * @brief Set view metadata
    * @param[in] metadata The metadata map
@@ -511,6 +561,7 @@ public:
   void setMetadata(const std::map<std::string, std::string>& metadata)
   {
     _metadata = metadata;
+    translateMetaDataFromNuke();
   }
 
   /**
