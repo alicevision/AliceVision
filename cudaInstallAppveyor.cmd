@@ -9,7 +9,7 @@ set OS_PLATFORM=win10
 set CUDA_VERSION=%CUDA_VERSION_MAJOR%.%CUDA_VERSION_MINOR%
 set CUDA_VERSION_FULL=%CUDA_VERSION%.%CUDA_VERSION_MICRO%
 set CUDA_SDK_FILENAME=cuda_%CUDA_VERSION_FULL%_%DRIVER_VERSION%_%OS_PLATFORM%
-set CUDA_SDK_URL=https://developer.nvidia.com/compute/cuda/%CUDA_VERSION%/Prod/local_installers/%CUDA_SDK_FILENAME%.exe
+set CUDA_SDK_URL=https://developer.download.nvidia.com/compute/cuda/%CUDA_VERSION%/Prod/local_installers/%CUDA_SDK_FILENAME%.exe
 
 echo Downloading CUDA toolkit %CUDA_VERSION_FULL%
 echo -- url: %CUDA_SDK_URL%
