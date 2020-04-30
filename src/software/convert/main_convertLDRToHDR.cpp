@@ -666,8 +666,7 @@ int main(int argc, char * argv[])
   {
       std::string methodName = EFunctionType_enumToString(fusionWeightFunction);
       std::string outputHtmlPath = (fs::path(outputPath) / (std::string("fusion_weight_") + methodName + std::string(".html"))).string();
-
-      calibrationWeight.writeHtml(outputHtmlPath, "Fusion weight: " + methodName);
+      fusionWeight.writeHtml(outputHtmlPath, "Fusion weight: " + methodName);
   }
 
   image::EImageColorSpace mergeColorspace = image::EImageColorSpace::LINEAR;
