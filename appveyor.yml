@@ -36,7 +36,7 @@ before_build:
     - cd %APPVEYOR_BUILD_FOLDER%
     - md build
     - cd build
-    - cmake ..
+    - cmake .. -A x64
             -DCMAKE_BUILD_TYPE=%CONFIGURATION%
             -DALICEVISION_USE_INTERNAL_CERES:BOOL=OFF
             -DALICEVISION_USE_CUDA:BOOL=ON
