@@ -28,7 +28,7 @@ install:
           eigen3 
           ceres[suitesparse]
           cuda
-          --triplet %PLATFORM%-win10
+          --triplet x64-windows
           --recurse
     - vcpkg list
 
