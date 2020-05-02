@@ -80,7 +80,7 @@ BOOST_AUTO_TEST_CASE(MaxConsensusLineFitter_TooFewPoints)
         3;   // y = 2x + 1 with x = 1
   LineKernel kernel(xy);
   std::vector<std::size_t> inliers;
-  LineKernel::ModelT model = maxConsensus(kernel, ScoreEvaluator<LineKernel>(0.3), &inliers);
+  const LineKernel::ModelT model = maxConsensus(kernel, ScoreEvaluator<LineKernel>(0.3), &inliers);
   BOOST_CHECK_EQUAL(0, inliers.size());
 }
 
