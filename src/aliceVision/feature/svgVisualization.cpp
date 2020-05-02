@@ -118,7 +118,6 @@ inline void drawInliersSideBySide(svg::svgDrawer& svgStream,
         const auto currMatch = matches[idx];
         const feature::PointFeature &L = keypointsLeft[currMatch._i];
         const feature::PointFeature &R = keypointsRight[currMatch._j];
-        const float xRight = R.x() + offset;
 
         drawMatchesSideBySide(svgStream, L, R,  offset, radiusLeft, radiusRight, strokeLeft, strokeRight, lineStyle, leftStyle, rightStyle);
     }
