@@ -28,19 +28,15 @@ void colEchelonForm(Eigen::MatrixBase<Derived>& M, double pivtol = 1e-12)
 
   Eigen::Index i = 0;
   Eigen::Index j = 0;
-  Eigen::Index k = 0;
-  Eigen::Index col = 0;
-
-  Scalar p, tp;
 
   while((i < m) && (j < n))
   {
-    p = std::numeric_limits<Scalar>::min();
-    col = i;
+    Scalar p = std::numeric_limits<Scalar>::min();
+    Eigen::Index col = i;
 
-    for(k = i; k < m; ++k)
+    for(Eigen::Index k = i; k < m; ++k)
     {
-      tp = std::abs(M(j, k));
+      Scalar tp = std::abs(M(j, k));
       if(tp > p)
       {
         p = tp;
@@ -61,7 +57,7 @@ void colEchelonForm(Eigen::MatrixBase<Derived>& M, double pivtol = 1e-12)
       M.block(j + 1, i, n - j - 1, 1) /= M(j, i);
       M(j, i) = 1.0;
 
-      for(k = 0; k < m; ++k)
+      for(Eigen::Index k = 0; k < m; ++k)
       {
         if(k == i)
           continue;
