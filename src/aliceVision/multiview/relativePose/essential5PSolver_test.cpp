@@ -166,11 +166,20 @@ BOOST_AUTO_TEST_CASE(FivePointsRelativePose_Random)
 
   solver.solve(d.x1, d.x2, Es);
 
+  BOOST_CHECK(!Es.empty());
+
   // Recover rotation and translation from E
   Rs.resize(Es.size());
   ts.resize(Es.size());
   for(std::size_t s = 0; s < Es.size(); ++s)
   {
+    for(Eigen::Index c = 0; c < d.x1.cols(); ++c)
+    {
+        const double v = d.x2.col(c).homogeneous().transpose() * Es.at(s).getMatrix() *
+                         d.x1.col(c).homogeneous();
+        BOOST_CHECK_SMALL(v, 1.0e-8);
+    }
+
     Vec2 x1Col = d.x1.col(0);
     Vec2 x2Col = d.x2.col(0);
     BOOST_CHECK(
