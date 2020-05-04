@@ -214,7 +214,7 @@ int aliceVision_main(int argc, char** argv)
        isSequence = true;
     }
 
-    std::string dateTimeMetadata = view.getMetadataOrEmpty("Exif:DateTimeOriginal");
+    std::string dateTimeMetadata = view.getMetadata({"Exif:DateTimeOriginal", "DateTimeOriginal"});
 
     if(!dateTimeMetadata.empty()) // picture
     {

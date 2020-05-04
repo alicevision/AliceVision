@@ -38,3 +38,7 @@ alicevision_add_test(sfmData_test.cpp
   LINKS aliceVision_sfmData
         aliceVision_system
 )
+alicevision_add_test(view_test.cpp
+  NAME "view"
+  LINKS aliceVision_sfmData
+)
