@@ -117,12 +117,13 @@ VoctreeLocalizer::Algorithm VoctreeLocalizer::initFromString(const std::string &
 }
 
 
-VoctreeLocalizer::VoctreeLocalizer(const sfmData::SfMData &sfmData,
+VoctreeLocalizer::VoctreeLocalizer(std::mt19937 & generator,
+                                   const sfmData::SfMData &sfmData,
                                    const std::string &descriptorsFolder,
                                    const std::string &vocTreeFilepath,
                                    const std::string &weightsFilepath,
                                    const std::vector<feature::EImageDescriberType>& matchingDescTypes)
-  : ILocalizer()
+  : ILocalizer(generator)
   , _frameBuffer(5)
 {
   using namespace aliceVision::feature;
@@ -535,7 +536,7 @@ bool VoctreeLocalizer::localizeFirstBestResult(const feature::MapRegionsPerDesc 
     // Do the resectioning: compute the camera pose.
     resectionData.error_max = param._errorMax;
     ALICEVISION_LOG_DEBUG("[poseEstimation]\tEstimating camera pose...");
-    bool bResection = sfm::SfMLocalizer::Localize(queryImageSize,
+    bool bResection = sfm::SfMLocalizer::Localize(_generator, queryImageSize,
                                                    // pass the input intrinsic if they are valid, null otherwise
                                                    (useInputIntrinsics) ? &queryIntrinsics : nullptr,
                                                    resectionData,
@@ -651,7 +652,8 @@ bool VoctreeLocalizer::localizeAllResults(const feature::MapRegionsPerDesc &quer
   // Do the resectioning: compute the camera pose.
   resectionData.error_max = param._errorMax;
   ALICEVISION_LOG_DEBUG("[poseEstimation]\tEstimating camera pose...");
-  const bool bResection = sfm::SfMLocalizer::Localize(queryImageSize,
+  const bool bResection = sfm::SfMLocalizer::Localize(_generator,
+                                                      queryImageSize,
                                                       // pass the input intrinsic if they are valid, null otherwise
                                                       (useInputIntrinsics) ? &queryIntrinsics : nullptr,
                                                       resectionData,
@@ -1098,7 +1100,7 @@ bool VoctreeLocalizer::robustMatching(matching::RegionsDatabaseMatcherPerDesc & 
   }
 
   // perform the geometric filtering
-  matchingImageCollection::GeometricFilterMatrix_F_AC geometricFilter(matchingError, 5000, estimator);
+  matchingImageCollection::GeometricFilterMatrix_F_AC geometricFilter(_generator, matchingError, 5000, estimator);
 
   matching::MatchesPerDescType geometricInliersPerType;
   EstimationStatus estimationState = geometricFilter.geometricEstimation(

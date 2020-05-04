@@ -11,6 +11,7 @@
 #include <aliceVision/geometry/Pose3.hpp>
 
 #include <vector>
+#include <random>
 
 namespace aliceVision {
 namespace sfm {
@@ -54,6 +55,7 @@ struct RelativePoseInfo
  * @brief Estimate the Relative pose between two views from point matches and K matrices
  *  by using a robust essential matrix estimation.
  *
+ * @param[in] generator a reandom generator object
  * @param[in] K1 camera 1 intrinsics
  * @param[in] K2 camera 2 intrinsics
  * @param[in] x1 camera 1 image points
@@ -65,6 +67,7 @@ struct RelativePoseInfo
  */
 bool robustRelativePose
 (
+  std::mt19937 & generator,
   const Mat3 & K1, const Mat3 & K2,
   const Mat & x1, const Mat & x2,
   RelativePoseInfo & relativePose_info,

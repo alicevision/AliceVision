@@ -48,6 +48,7 @@ using namespace aliceVision::sfmData;
 using namespace aliceVision::robustEstimation;
 
 bool robustRelativeRotation_fromE(
+  std::mt19937 & generator,
   const Mat3 & K1, const Mat3 & K2,
   const Mat & x1, const Mat & x2,
   const std::pair<size_t, size_t> & size_ima1,
@@ -69,7 +70,7 @@ bool robustRelativeRotation_fromE(
                     x2, size_ima2.first, size_ima2.second, K1, K2);
 
   // Robustly estimation of the Essential matrix and its precision
-  const std::pair<double,double> acRansacOut = ACRANSAC(kernel, relativePose_info.vec_inliers,
+  const std::pair<double,double> acRansacOut = ACRANSAC(generator, kernel, relativePose_info.vec_inliers,
     max_iteration_count, &relativePose_info.essential_matrix, relativePose_info.initial_residual_tolerance);
   relativePose_info.found_residual_precision = acRansacOut.first;
 
@@ -125,6 +126,7 @@ aliceVision::Mat3 decomposePureRotationHomography(const Mat3 &homography, const 
 
 /**
  * @brief Estimate the homography between two views using corresponding points such that \f$ x_2 \sim H x_1 \f$
+ * @param[in] generator the random number generator
  * @param[in] x1 The points on the first image.
  * @param[in] x2 The corresponding points on the second image.
  * @param[in] imgSize1 The size of the first image.
@@ -133,7 +135,8 @@ aliceVision::Mat3 decomposePureRotationHomography(const Mat3 &homography, const 
  * @param[out] vec_inliers The inliers satisfying the homography as a list of indices.
  * @return the status of the estimation.
  */
-aliceVision::EstimationStatus robustHomographyEstimationAC(const Mat2X &x1,
+aliceVision::EstimationStatus robustHomographyEstimationAC(std::mt19937 & generator,
+                                                           const Mat2X &x1,
                                                            const Mat2X &x2,
                                                            const std::pair<std::size_t, std::size_t> &imgSize1,
                                                            const std::pair<std::size_t, std::size_t> &imgSize2,
@@ -151,10 +154,7 @@ aliceVision::EstimationStatus robustHomographyEstimationAC(const Mat2X &x1,
                       false); // configure as point to point error model.
 
 
-    const std::pair<double, double> ACRansacOut = robustEstimation::ACRANSAC(kernel, vec_inliers,
-                                                                                          1024,
-                                                                                          &H,
-                                                                                          std::numeric_limits<double>::infinity());
+    const std::pair<double, double> ACRansacOut = robustEstimation::ACRANSAC(generator, kernel, vec_inliers, 1024, &H, std::numeric_limits<double>::infinity());
 
     const bool valid{!vec_inliers.empty()};
     //@fixme
@@ -163,7 +163,8 @@ aliceVision::EstimationStatus robustHomographyEstimationAC(const Mat2X &x1,
     return {valid, hasStrongSupport};
 }
 
-bool robustRelativeRotation_fromH(const Mat3 &K1,
+bool robustRelativeRotation_fromH(std::mt19937 & generator,
+                            const Mat3 &K1,
                             const Mat3 &K2,
                             const Mat2X &x1,
                             const Mat2X &x2,
@@ -175,7 +176,7 @@ bool robustRelativeRotation_fromH(const Mat3 &K1,
     std::vector<std::size_t> vec_inliers{};
 
     // estimate the homography
-    const auto status = robustHomographyEstimationAC(x1, x2, imgSize1, imgSize2, relativeRotationInfo._homography,
+    const auto status = robustHomographyEstimationAC(generator, x1, x2, imgSize1, imgSize2, relativeRotationInfo._homography,
                                                      relativeRotationInfo._inliers);
 
     if (!status.isValid && !status.hasStrongSupport)
@@ -193,10 +194,11 @@ bool robustRelativeRotation_fromH(const Mat3 &K1,
 
 
 
-ReconstructionEngine_panorama::ReconstructionEngine_panorama(const SfMData& sfmData,
+ReconstructionEngine_panorama::ReconstructionEngine_panorama(std::mt19937 & generator, 
+                                                               const SfMData& sfmData,
                                                                const std::string& outDirectory,
                                                                const std::string& loggingFile)
-  : ReconstructionEngine(sfmData, outDirectory)
+  : ReconstructionEngine(generator, sfmData, outDirectory)
   , _loggingFile(loggingFile)
   , _normalizedFeaturesPerView(nullptr)
 {
@@ -574,7 +576,7 @@ void ReconstructionEngine_panorama::Compute_Relative_Rotations(rotationAveraging
       {
         case RELATIVE_ROTATION_FROM_E:
         {
-          if(!robustRelativeRotation_fromE(K, K, x1, x2, imageSize, imageSize, relativePose_info))
+          if(!robustRelativeRotation_fromE(_generator, K, K, x1, x2, imageSize, imageSize, relativePose_info))
           {
             ALICEVISION_LOG_INFO("Relative pose computation: i: " << i << ", (" << I << ", " << J <<") => FAILED");
             continue;
@@ -586,7 +588,7 @@ void ReconstructionEngine_panorama::Compute_Relative_Rotations(rotationAveraging
           RelativeRotationInfo relativeRotation_info;
           relativeRotation_info._initialResidualTolerance = std::pow(cam_I->imagePlane_toCameraPlaneError(2.5) * cam_J->imagePlane_toCameraPlaneError(2.5), 1./2.);
           
-          if(!robustRelativeRotation_fromH(K, K, x1, x2, imageSize, imageSize, relativeRotation_info))
+          if(!robustRelativeRotation_fromH(_generator, K, K, x1, x2, imageSize, imageSize, relativeRotation_info))
           {
             ALICEVISION_LOG_INFO("Relative pose computation: i: " << i << ", (" << I << ", " << J <<") => FAILED");
             continue;

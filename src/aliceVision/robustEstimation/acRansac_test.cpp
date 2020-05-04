@@ -129,13 +129,14 @@ BOOST_AUTO_TEST_CASE(RansacLineFitter_OutlierFree)
           3, 5, 7, 9, 11;
 
   // The base estimator
+  std::mt19937 generator;
   ACRANSACOneViewKernel<LineSolver, pointToLineError, Vec2> lineKernel(xy, 12, 12);
 
   // Check the best model that fit the most of the data
   //  in a robust framework (ACRANSAC).
   std::vector<std::size_t> vec_inliers;
   Vec2 line;
-  ACRANSAC(lineKernel, vec_inliers, 300, &line);
+  ACRANSAC(generator, lineKernel, vec_inliers, 300, &line);
 
   BOOST_CHECK_SMALL(2.0-line[1], 1e-9);
   BOOST_CHECK_SMALL(1.0-line[0], 1e-9);
@@ -154,7 +155,8 @@ BOOST_AUTO_TEST_CASE(RansacLineFitter_OutlierFree_DoNotGetBackModel)
 
   ACRANSACOneViewKernel<LineSolver, pointToLineError, Vec2> lineKernel(xy, 12, 12);
   std::vector<std::size_t> vec_inliers;
-  ACRANSAC(lineKernel, vec_inliers);
+  std::mt19937 generator;
+  ACRANSAC(generator, lineKernel, vec_inliers);
 
   BOOST_CHECK_EQUAL(5, vec_inliers.size());
 }
@@ -174,7 +176,8 @@ BOOST_AUTO_TEST_CASE(RansacLineFitter_OneOutlier)
   //  in a robust framework (ACRANSAC).
   std::vector<std::size_t> vec_inliers;
   Vec2 line;
-  ACRANSAC(lineKernel, vec_inliers, 300, &line);
+  std::mt19937 generator;
+  ACRANSAC(generator, lineKernel, vec_inliers, 300, &line);
 
   BOOST_CHECK_SMALL(2.0-line[1], 1e-9);
   BOOST_CHECK_SMALL(1.0-line[0], 1e-9);
@@ -193,7 +196,8 @@ BOOST_AUTO_TEST_CASE(RansacLineFitter_TooFewPoints)
   xy << 1, 2;
   ACRANSACOneViewKernel<LineSolver, pointToLineError, Vec2> lineKernel(xy, 12, 12);
   std::vector<std::size_t> vec_inliers;
-  ACRANSAC(lineKernel, vec_inliers);
+  std::mt19937 generator;
+  ACRANSAC(generator, lineKernel, vec_inliers);
 
   BOOST_CHECK_EQUAL(0, vec_inliers.size());
 }
@@ -220,7 +224,7 @@ BOOST_AUTO_TEST_CASE(RansacLineFitter_RealisticCase)
   }
 
   // Setup a normal distribution in order to make outlier not aligned
-  std::mt19937 gen;
+  std::mt19937 generator;
   std::normal_distribution<> d(0, 5); // More or less 5 units
 
   //-- Simulate outliers (for the asked percentage amount of the datum)
@@ -232,7 +236,7 @@ BOOST_AUTO_TEST_CASE(RansacLineFitter_RealisticCase)
     const std::size_t randomIndex = vec_samples[i];
     // Start from a outlier point (0,0)
     // and move it in a given small range (since it must remains in an outlier area)
-    xy.col(randomIndex) << d(gen), d(gen);
+    xy.col(randomIndex) << d(generator), d(generator);
   }
 
   // The base estimator
@@ -242,7 +246,7 @@ BOOST_AUTO_TEST_CASE(RansacLineFitter_RealisticCase)
   //  in a robust framework (ACRANSAC).
   std::vector<std::size_t> vec_inliers;
   Vec2 line;
-  ACRANSAC(lineKernel, vec_inliers, 300, &line);
+  ACRANSAC(generator, lineKernel, vec_inliers, 300, &line);
 
   BOOST_CHECK_EQUAL(NbPoints - nbPtToNoise, vec_inliers.size());
   BOOST_CHECK_SMALL(GTModel(0)-line[0], 1e-9);
@@ -255,6 +259,7 @@ BOOST_AUTO_TEST_CASE(RansacLineFitter_RealisticCase)
 void generateLine(Mat & points, std::size_t nbPoints, int W, int H, float noise, float outlierRatio)
 {
   points = Mat(2, nbPoints);
+  std::mt19937 generator;
 
   Vec2 lineEq(50, 0.3);
 
@@ -272,7 +277,7 @@ void generateLine(Mat & points, std::size_t nbPoints, int W, int H, float noise,
   // generate outlier
   std::normal_distribution<> d_outlier(0, 0.2);
   std::size_t count = outlierRatio * nbPoints;
-  const auto vec_indices = randSample<std::size_t>(0, nbPoints, count);
+  const auto vec_indices = randSample<std::mt19937, std::size_t>(generator, 0, nbPoints, count);
 //  std::copy(vec_indices.begin(), vec_indices.end(), std::ostream_iterator<int>(std::cout, " "));
 //  std::cout  << "\n";
   assert(vec_indices.size() == count);
@@ -318,7 +323,7 @@ struct IndMatchd
 
 BOOST_AUTO_TEST_CASE(RansacLineFitter_ACRANSACSimu)
 {
-
+  std::mt19937 generator;
   const int S = 100;
   const int W = S, H = S;
   const float outlierRatio = .3f;
@@ -335,6 +340,7 @@ BOOST_AUTO_TEST_CASE(RansacLineFitter_ACRANSACSimu)
   for(const auto& iter : vec_gaussianValue)
   {
     const double gaussianNoiseLevel = iter;
+    
 
     std::size_t numPoints = 2.0 * S * sqrt(2.0);
 
@@ -350,7 +356,7 @@ BOOST_AUTO_TEST_CASE(RansacLineFitter_ACRANSACSimu)
     // Check the best model that fit the most of the data
     //  in a robust framework (ACRANSAC).
     std::vector<std::size_t> vec_inliers;
-    const std::pair<double,double> ret = ACRANSAC(lineKernel, vec_inliers, 1000, &line);
+    const std::pair<double,double> ret = ACRANSAC(generator, lineKernel, vec_inliers, 1000, &line);
     const double errorMax = ret.first;
 
     cout << "gaussianNoiseLevel " << gaussianNoiseLevel << " \tsqrt(errorMax) " << sqrt(errorMax) << std::endl; 

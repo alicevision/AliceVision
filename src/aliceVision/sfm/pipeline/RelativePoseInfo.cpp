@@ -77,6 +77,7 @@ bool estimate_Rt_fromE(const Mat3 & K1, const Mat3 & K2,
 using namespace aliceVision::robustEstimation;
 
 bool robustRelativePose(
+  std::mt19937 & generator,
   const Mat3 & K1, const Mat3 & K2,
   const Mat & x1, const Mat & x2,
   RelativePoseInfo & relativePose_info,
@@ -98,7 +99,7 @@ bool robustRelativePose(
                     x2, size_ima2.first, size_ima2.second, K1, K2);
 
   // Robustly estimation of the Essential matrix and its precision
-  const std::pair<double,double> acRansacOut = ACRANSAC(kernel, relativePose_info.vec_inliers,
+  const std::pair<double,double> acRansacOut = ACRANSAC(generator, kernel, relativePose_info.vec_inliers,
     max_iteration_count, &relativePose_info.essential_matrix, relativePose_info.initial_residual_tolerance);
   relativePose_info.found_residual_precision = acRansacOut.first;
 

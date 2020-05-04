@@ -100,6 +100,8 @@ int main(int argc, char **argv)
   if (!fs::exists(outputFolder))
     fs::create_directory(outputFolder);
 
+  std::mt19937 generator;
+
   // load GT camera rotations & positions [R|C]:
   sfmData::SfMData sfmData_gt;
 
@@ -156,7 +158,7 @@ int main(int argc, char **argv)
 
   // evaluation
   htmlDocument::htmlDocumentStream _htmlDocStream("aliceVision Quality evaluation.");
-  EvaluteToGT(vec_camPosGT, vec_C, vec_camRotGT, vec_camRot, outputFolder, &_htmlDocStream);
+  EvaluteToGT(generator, vec_camPosGT, vec_C, vec_camRotGT, vec_camRot, outputFolder, &_htmlDocStream);
 
   std::ofstream htmlFileStream((fs::path(outputFolder) / "ExternalCalib_Report.html").string());
   htmlFileStream << _htmlDocStream.getDoc();

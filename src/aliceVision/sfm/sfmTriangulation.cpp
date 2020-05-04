@@ -97,8 +97,8 @@ void StructureComputation_blind::triangulate(sfmData::SfMData& sfmData) const
   }
 }
 
-StructureComputation_robust::StructureComputation_robust(bool verbose)
-  : StructureComputation_basis(verbose)
+StructureComputation_robust::StructureComputation_robust(std::mt19937 & generator, bool verbose)
+  : StructureComputation_basis(verbose), _generator(generator)
 {}
 
 void StructureComputation_robust::triangulate(sfmData::SfMData& sfmData) const
@@ -177,7 +177,7 @@ bool StructureComputation_robust::robust_triangulation(const sfmData::SfMData& s
   for(IndexT i = 0; i < nbIter; ++i)
   {
     std::set<IndexT> samples;
-    robustEstimation::UniformSample(std::min(std::size_t(min_sample_index), observations.size()), observations.size(), samples);
+    robustEstimation::UniformSample(_generator, std::min(std::size_t(min_sample_index), observations.size()), observations.size(), samples);
 
     // Hypothesis generation.
     const Vec3 current_model = track_sample_triangulation(sfmData, observations, samples);

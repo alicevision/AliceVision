@@ -31,8 +31,9 @@ namespace robustEstimation{
 // 2. Kernel::MINIMUM_SAMPLES
 // 3. Kernel::Fit(vector<int>, vector<Kernel::Model> *)
 // 4. Kernel::Error(Model, int) -> error
-template<typename Kernel, typename Scorer>
+template<typename RandomT, typename Kernel, typename Scorer>
 typename Kernel::Model RANSAC(
+  RandomT & generator,
   const Kernel &kernel,
   const Scorer &scorer,
   std::vector<size_t> *best_inliers = nullptr,
@@ -72,7 +73,7 @@ typename Kernel::Model RANSAC(
     iteration < really_max_iterations; ++iteration) 
   {
       std::vector<size_t> sample;
-      UniformSample(min_samples, total_samples, sample);
+      UniformSample(generator, min_samples, total_samples, sample);
 
       std::vector<typename Kernel::Model> models;
       kernel.Fit(sample, &models);

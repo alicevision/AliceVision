@@ -35,7 +35,8 @@ BOOST_AUTO_TEST_CASE(MaxConsensusLineFitter_OutlierFree) {
   // Check the best model that fit the most of the data
   //  in a robust framework (Ransac).
   std::vector<size_t> vec_inliers;
-  Vec2 model = RANSAC(kernel, ScoreEvaluator<LineKernel>(0.3), &vec_inliers);
+  std::mt19937 generator;
+  Vec2 model = RANSAC(generator, kernel, ScoreEvaluator<LineKernel>(0.3), &vec_inliers);
   BOOST_CHECK_SMALL(2.0-model[1], 1e-9);
   BOOST_CHECK_SMALL(1.0-model[0], 1e-9);
   BOOST_CHECK_EQUAL(5, vec_inliers.size());
@@ -52,7 +53,8 @@ BOOST_AUTO_TEST_CASE(MaxConsensusLineFitter_OneOutlier) {
   LineKernel kernel(xy);
 
   std::vector<size_t> vec_inliers;
-  Vec2 model = RANSAC(kernel, ScoreEvaluator<LineKernel>(0.3), &vec_inliers);
+  std::mt19937 generator;
+  Vec2 model = RANSAC(generator, kernel, ScoreEvaluator<LineKernel>(0.3), &vec_inliers);
   BOOST_CHECK_SMALL(2.0-model[1], 1e-9);
   BOOST_CHECK_SMALL(1.0-model[0], 1e-9);
   BOOST_CHECK_EQUAL(5, vec_inliers.size());
@@ -68,7 +70,8 @@ BOOST_AUTO_TEST_CASE(MaxConsensusLineFitter_TooFewPoints) {
         3;   // y = 2x + 1 with x = 1
   LineKernel kernel(xy);
   std::vector<size_t> vec_inliers;
-  Vec2 model = RANSAC(kernel, ScoreEvaluator<LineKernel>(0.3), &vec_inliers);
+  std::mt19937 generator;
+  Vec2 model = RANSAC(generator, kernel, ScoreEvaluator<LineKernel>(0.3), &vec_inliers);
   BOOST_CHECK_EQUAL(0, vec_inliers.size());
 }
 
@@ -94,7 +97,8 @@ BOOST_AUTO_TEST_CASE(MaxConsensusLineFitter_RealisticCase) {
 
   LineKernel kernel(xy);
   std::vector<size_t> vec_inliers;
-  Vec2 model = RANSAC(kernel, ScoreEvaluator<LineKernel>(0.3), &vec_inliers);
+  std::mt19937 generator;
+  Vec2 model = RANSAC(generator, kernel, ScoreEvaluator<LineKernel>(0.3), &vec_inliers);
   BOOST_CHECK_EQUAL(NbPoints-nbPtToNoise, vec_inliers.size());
   BOOST_CHECK_SMALL((-2.0)-model[0], 1e-9);
   BOOST_CHECK_SMALL( 6.3-model[1], 1e-9);

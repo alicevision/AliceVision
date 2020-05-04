@@ -10,6 +10,7 @@
 #include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/feature/RegionsPerView.hpp>
 #include <aliceVision/matching/IndMatch.hpp>
+#include <random>
 
 namespace aliceVision {
 namespace sfm {
@@ -17,6 +18,7 @@ namespace sfm {
 class StructureEstimationFromKnownPoses
 {
 public:
+  StructureEstimationFromKnownPoses(std::mt19937 & generator) : _generator(generator) {}
 
   /// Use geometry of the views to compute a putative structure from features and descriptors.
   void run(sfmData::SfMData& sfmData,
@@ -51,6 +53,7 @@ private:
   //--
   matching::PairwiseMatches _putativeMatches;
   matching::PairwiseMatches _tripletMatches;
+  std::mt19937 & _generator;
 };
 
 } // namespace sfm

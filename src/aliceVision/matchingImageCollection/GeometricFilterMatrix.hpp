@@ -7,6 +7,8 @@
 
 #pragma once
 
+#include <random>
+
 namespace aliceVision {
 
 
@@ -28,10 +30,11 @@ namespace matchingImageCollection {
 
 struct GeometricFilterMatrix
 {
-  GeometricFilterMatrix(double precision,
+  GeometricFilterMatrix(std::mt19937 & generator,
+                        double precision,
                         double precisionRobust,
                         std::size_t stIteration)
-    : m_dPrecision(precision)
+    : m_generator(generator), m_dPrecision(precision)
     , m_dPrecision_robust(precisionRobust)
     , m_stIteration(stIteration)
   {}
@@ -58,6 +61,7 @@ struct GeometricFilterMatrix
   double m_dPrecision;  //upper_bound precision used for robust estimation
   double m_dPrecision_robust;
   std::size_t m_stIteration; //maximal number of iteration for robust estimation
+  std::mt19937 & m_generator;
 };
 
 

@@ -60,7 +60,7 @@ using OccurenceMap = std::map<OccurenceKey, std::size_t>;
 class ILocalizer
 {
 public:
-    ILocalizer() : _isInit(false) { };
+    ILocalizer(std::mt19937 & generator) : _generator(generator), _isInit(false) { };
 
     // Only relevant for CCTagLocalizer
     virtual void setCudaPipe(int) { }
@@ -116,7 +116,7 @@ public:
 protected:
   bool _isInit;
   sfmData::SfMData _sfm_data;
-
+  std::mt19937 & _generator;
 };
 
 } //namespace aliceVision 

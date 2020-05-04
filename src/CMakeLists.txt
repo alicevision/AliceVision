@@ -247,7 +247,7 @@ if(ALICEVISION_HAVE_OPENMP)
   if(NOT MSVC)
     if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
       # for those using the clang with OpenMP support
-      list(APPEND ALICEVISION_LIBRARY_DEPENDENCIES iomp)
+      list(APPEND ALICEVISION_LIBRARY_DEPENDENCIES iomp5)
     else()
     list(APPEND ALICEVISION_LIBRARY_DEPENDENCIES gomp)
     endif()

@@ -250,6 +250,8 @@ int main(int argc, char **argv)
 
   // a. Load SfMData (image view & intrinsics data)
 
+  std::mt19937 generator;
+
   SfMData sfmData;
   if(!sfmDataIO::Load(sfmData, sfmDataFilename, sfmDataIO::ESfMData(sfmDataIO::VIEWS|sfmDataIO::INTRINSICS|sfmDataIO::EXTRINSICS)))
   {
@@ -344,7 +346,7 @@ int main(int argc, char **argv)
     // compute matches from known camera poses when you have an initialization on the camera poses
     ALICEVISION_LOG_INFO("Putative matches from known poses: " << pairsPoseKnown.size() << " image pairs.");
 
-    sfm::StructureEstimationFromKnownPoses structureEstimator;
+    sfm::StructureEstimationFromKnownPoses structureEstimator(generator);
     structureEstimator.match(sfmData, pairsPoseKnown, regionPerView, knownPosesGeometricErrorMax);
     mapPutativesMatches = structureEstimator.getPutativesMatches();
   }
@@ -459,7 +461,7 @@ int main(int argc, char **argv)
       matchingImageCollection::robustModelEstimation(geometricMatches,
         &sfmData,
         regionPerView,
-        GeometricFilterMatrix_F_AC(geometricErrorMax, maxIteration, geometricEstimator),
+        GeometricFilterMatrix_F_AC(generator, geometricErrorMax, maxIteration, geometricEstimator),
         mapPutativesMatches,
         guidedMatching);
     }
@@ -470,7 +472,7 @@ int main(int argc, char **argv)
       matchingImageCollection::robustModelEstimation(geometricMatches,
         &sfmData,
         regionPerView,
-        GeometricFilterMatrix_E_AC(std::numeric_limits<double>::infinity(), maxIteration),
+        GeometricFilterMatrix_E_AC(generator, std::numeric_limits<double>::infinity(), maxIteration),
         mapPutativesMatches,
         guidedMatching);
 
@@ -499,7 +501,7 @@ int main(int argc, char **argv)
       matchingImageCollection::robustModelEstimation(geometricMatches,
         &sfmData,
         regionPerView,
-        GeometricFilterMatrix_H_AC(std::numeric_limits<double>::infinity(), maxIteration),
+        GeometricFilterMatrix_H_AC(generator, std::numeric_limits<double>::infinity(), maxIteration),
         mapPutativesMatches, guidedMatching,
         onlyGuidedMatching ? -1.0 : 0.6);
     }
@@ -510,7 +512,7 @@ int main(int argc, char **argv)
       matchingImageCollection::robustModelEstimation(geometricMatches,
         &sfmData,
         regionPerView,
-        GeometricFilterMatrix_HGrowing(std::numeric_limits<double>::infinity(), maxIteration),
+        GeometricFilterMatrix_HGrowing(generator, std::numeric_limits<double>::infinity(), maxIteration),
         mapPutativesMatches,
         guidedMatching);
     }

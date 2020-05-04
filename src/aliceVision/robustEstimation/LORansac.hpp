@@ -247,6 +247,7 @@ double iterativeReweightedLeastSquares(const Kernel &kernel,
  * @see aliceVision/robustEstimation/LORansacKernelAdaptor.hpp
  * @tparam Scorer The scorer used in the LORansac estimator @see ScoreEvaluator
  * 
+ * @param[in] generator Random number generator initialized
  * @param[in] kernel The kernel used in the LORansac estimator.
  * @param[in] scorer The scorer used in the LORansac estimator.
  * @param[in,out] best_model In input the model estimated by a minimum solver, as
@@ -257,8 +258,9 @@ double iterativeReweightedLeastSquares(const Kernel &kernel,
  * @param[in] minSampleSize Size of the inner sample used for re-estimation.
  * @return the best score of the best model as computed by Scorer.
  */
-template<typename Kernel, typename Scorer>
-double localOptimization(const Kernel &kernel,
+template<typename RandomT, typename Kernel, typename Scorer>
+double localOptimization(RandomT & generator,
+                         const Kernel &kernel,
                          const Scorer &scorer,
                          typename Kernel::Model &bestModel,
                          std::vector<std::size_t> &bestInliers,
@@ -327,7 +329,7 @@ double localOptimization(const Kernel &kernel,
   for(std::size_t i = 0; i < numRep; ++i)
   {
     std::vector<std::size_t> sample;
-    UniformSample(sampleSize, inliersBase, sample);
+    UniformSample(generator, sampleSize, inliersBase, sample);
     assert(sampleSize > Kernel::MINIMUM_LSSAMPLES);
     assert(sample.size() > Kernel::MINIMUM_LSSAMPLES);
   
@@ -370,7 +372,8 @@ double localOptimization(const Kernel &kernel,
  * minimum solver and a LS solver, the latter used here for the IRLS 
  * @see aliceVision/robustEstimation/LORansacKernelAdaptor.hpp
  * @tparam Scorer The scorer used in the LORansac estimator @see ScoreEvaluator
- * 
+ *
+ * @param[in] generator Random number generator initialized
  * @param[in] kernel The kernel containing the problem to solve.
  * @param[in] scorer The scorer used to asses the model quality.
  * @param[out] best_inliers The indices of the samples supporting the best model.
@@ -381,8 +384,8 @@ double localOptimization(const Kernel &kernel,
  * @param[in] outliers_probability The wanted probability of picking outliers.
  * @return The best model found.
  */
-template<typename Kernel, typename Scorer>
-typename Kernel::Model LO_RANSAC(const Kernel &kernel,
+template<typename RandomT, typename Kernel, typename Scorer>
+typename Kernel::Model LO_RANSAC(RandomT & generator, const Kernel &kernel,
                                 const Scorer &scorer,
                                 std::vector<std::size_t> *best_inliers = NULL,
                                 double *best_score = NULL,
@@ -419,7 +422,7 @@ typename Kernel::Model LO_RANSAC(const Kernel &kernel,
   for(iteration = 0; iteration < max_iterations; ++iteration) 
   {
     std::vector<std::size_t> sample;
-    UniformSample(min_samples, total_samples, sample);
+    UniformSample(generator, min_samples, total_samples, sample);
 
     std::vector<typename Kernel::Model> models;
     kernel.Fit(sample, &models);
@@ -451,7 +454,7 @@ typename Kernel::Model LO_RANSAC(const Kernel &kernel,
         
         if(inliers.size() > Kernel::MINIMUM_LSSAMPLES)
         {
-          score = localOptimization(kernel, scorer, bestModel, inliers);
+          score = localOptimization(generator, kernel, scorer, bestModel, inliers);
         }
         
         if(bVerbose)

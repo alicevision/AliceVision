@@ -10,6 +10,7 @@
 #include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/sfmData/colorize.hpp>
 
+#include <random>
 #include <string>
 
 namespace aliceVision {
@@ -31,9 +32,10 @@ public:
    * @param[in] sfmData The input SfMData of the scene
    * @param[in] outFolder The folder where outputs will be stored
    */
-  ReconstructionEngine(const sfmData::SfMData& sfmData, const std::string& outFolder)
-    : _outputFolder(outFolder)
-    , _sfmData(sfmData)
+  ReconstructionEngine(std::mt19937 & generator, const sfmData::SfMData& sfmData, const std::string& outFolder)
+    : _generator(generator),
+      _outputFolder(outFolder),
+      _sfmData(sfmData)
   {}
 
   virtual ~ReconstructionEngine() {}
@@ -81,6 +83,8 @@ protected:
   std::string _outputFolder;
   /// Internal SfMData
   sfmData::SfMData _sfmData;
+  /// Random generator
+  std::mt19937 & _generator;
 };
 
 

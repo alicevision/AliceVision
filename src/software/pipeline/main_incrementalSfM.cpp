@@ -296,7 +296,9 @@ int main(int argc, char **argv)
     }
   }
 
-  sfm::ReconstructionEngine_sequentialSfM sfmEngine(
+  std::mt19937 generator;
+
+  sfm::ReconstructionEngine_sequentialSfM sfmEngine(generator,
     sfmData,
     sfmParams,
     extraInfoFolder,

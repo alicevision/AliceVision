@@ -9,7 +9,7 @@
 #pragma once
 
 #include <aliceVision/numeric/numeric.hpp>
-
+#include <random>
 #include <vector>
 
 namespace aliceVision {
@@ -54,13 +54,15 @@ void TriangulateNViewAlgebraic(const Mat2X &x,
  * Algorithm is Lo-RANSAC
  * It can return the the list of the cameras set as intlier by the Lo-RANSAC algorithm.
  * 
+ * @param[in] generator Random number generator initialized
  * @param[in] x are 2D coordinates (x,y,1) in each image
  * @param[in] Ps is the list of projective matrices for each camera
  * @param[out] X is the estimated 3D point
  * @param[out] inliersIndex (optional) store the index of the cameras (following Ps ordering, not the view_id) set as Inliers by Lo-RANSAC
  * @param[in] thresholdError (optional) set a threashold value to the Lo-RANSAC scorer
  */                               
-void TriangulateNViewLORANSAC(const Mat2X &x, 
+void TriangulateNViewLORANSAC(std::mt19937 & generator,
+                              const Mat2X &x, 
                               const std::vector< Mat34 > &Ps,
                               Vec4 *X,
                               std::vector<std::size_t> *inliersIndex = NULL,

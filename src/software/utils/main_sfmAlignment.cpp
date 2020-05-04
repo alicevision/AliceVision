@@ -174,6 +174,8 @@ int main(int argc, char **argv)
   // set verbose level
   system::Logger::get()->setLogLevel(verboseLevel);
 
+  std::mt19937 generator;
+
   // Load input scene
   sfmData::SfMData sfmDataIn;
   if(!sfmDataIO::Load(sfmDataIn, sfmDataFilename, sfmDataIO::ESfMData::ALL))
@@ -201,27 +203,27 @@ int main(int argc, char **argv)
   {
     case EAlignmentMethod::FROM_CAMERAS_VIEWID:
     {
-      hasValidSimilarity = sfm::computeSimilarityFromCommonCameras_viewId(sfmDataIn, sfmDataInRef, &S, &R, &t);
+      hasValidSimilarity = sfm::computeSimilarityFromCommonCameras_viewId(generator, sfmDataIn, sfmDataInRef, &S, &R, &t);
       break;
     }
     case EAlignmentMethod::FROM_CAMERAS_POSEID:
     {
-      hasValidSimilarity = sfm::computeSimilarityFromCommonCameras_poseId(sfmDataIn, sfmDataInRef, &S, &R, &t);
+      hasValidSimilarity = sfm::computeSimilarityFromCommonCameras_poseId(generator, sfmDataIn, sfmDataInRef, &S, &R, &t);
       break;
     }
     case EAlignmentMethod::FROM_CAMERAS_FILEPATH:
     {
-      hasValidSimilarity = sfm::computeSimilarityFromCommonCameras_imageFileMatching(sfmDataIn, sfmDataInRef, fileMatchingPattern, &S, &R, &t);
+      hasValidSimilarity = sfm::computeSimilarityFromCommonCameras_imageFileMatching(generator, sfmDataIn, sfmDataInRef, fileMatchingPattern, &S, &R, &t);
       break;
     }
     case EAlignmentMethod::FROM_CAMERAS_METADATA:
     {
-      hasValidSimilarity = sfm::computeSimilarityFromCommonCameras_metadataMatching(sfmDataIn, sfmDataInRef, metadataMatchingList, &S, &R, &t);
+      hasValidSimilarity = sfm::computeSimilarityFromCommonCameras_metadataMatching(generator, sfmDataIn, sfmDataInRef, metadataMatchingList, &S, &R, &t);
       break;
     }
     case EAlignmentMethod::FROM_MARKERS:
     {
-      hasValidSimilarity = sfm::computeSimilarityFromCommonMarkers(sfmDataIn, sfmDataInRef, &S, &R, &t);
+      hasValidSimilarity = sfm::computeSimilarityFromCommonMarkers(generator, sfmDataIn, sfmDataInRef, &S, &R, &t);
       break;
     }
   }

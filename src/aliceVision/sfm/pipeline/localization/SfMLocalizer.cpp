@@ -30,7 +30,7 @@ struct ResectionSquaredResidualError
   }
 };
 
-bool SfMLocalizer::Localize(const Pair& imageSize,
+bool SfMLocalizer::Localize(std::mt19937 & generator, const Pair& imageSize,
                             const camera::IntrinsicBase* optionalIntrinsics,
                             ImageLocalizerMatchData& resectionData,
                             geometry::Pose3& pose,
@@ -65,7 +65,7 @@ bool SfMLocalizer::Localize(const Pair& imageSize,
     KernelType kernel(resectionData.pt2D, imageSize.first, imageSize.second, resectionData.pt3D);
     // Robust estimation of the Projection matrix and its precision
     const std::pair<double,double> ACRansacOut =
-      aliceVision::robustEstimation::ACRANSAC(kernel, resectionData.vec_inliers, resectionData.max_iteration, &P, precision);
+      aliceVision::robustEstimation::ACRANSAC(generator, kernel, resectionData.vec_inliers, resectionData.max_iteration, &P, precision);
     // Update the upper bound precision of the model found by AC-RANSAC
     resectionData.error_max = ACRansacOut.first;
   }
@@ -102,7 +102,7 @@ bool SfMLocalizer::Localize(const Pair& imageSize,
 
         // Robust estimation of the Projection matrix and its precision
         const std::pair<double, double> ACRansacOut =
-                aliceVision::robustEstimation::ACRANSAC(kernel, resectionData.vec_inliers, resectionData.max_iteration, &P, precision);
+                aliceVision::robustEstimation::ACRANSAC(generator, kernel, resectionData.vec_inliers, resectionData.max_iteration, &P, precision);
         // Update the upper bound precision of the model found by AC-RANSAC
         resectionData.error_max = ACRansacOut.first;
         break;
@@ -141,7 +141,7 @@ bool SfMLocalizer::Localize(const Pair& imageSize,
         // @todo refactor, maybe move scorer directly inside the kernel
         const double threshold = resectionData.error_max * resectionData.error_max * (kernel.normalizer2()(0, 0) * kernel.normalizer2()(0, 0));
         robustEstimation::ScoreEvaluator<KernelType> scorer(threshold);
-        P = robustEstimation::LO_RANSAC(kernel, scorer, &resectionData.vec_inliers);
+        P = robustEstimation::LO_RANSAC(generator, kernel, scorer, &resectionData.vec_inliers);
         break;
       }
 

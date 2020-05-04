@@ -42,6 +42,7 @@ BOOST_AUTO_TEST_CASE(GLOBAL_SFM_RotationAveragingL2_TranslationAveragingL1)
 {
   const int nviews = 6;
   const int npoints = 64;
+  std::mt19937 generator;
   const NViewDatasetConfigurator config;
   const NViewDataSet d = NRealisticCamerasRing(nviews, npoints, config);
 
@@ -54,6 +55,7 @@ BOOST_AUTO_TEST_CASE(GLOBAL_SFM_RotationAveragingL2_TranslationAveragingL1)
   sfmData2.structure.clear();
 
   ReconstructionEngine_globalSfM sfmEngine(
+    generator,
     sfmData2,
     "./",
     "./Reconstruction_Report.html");
@@ -92,6 +94,7 @@ BOOST_AUTO_TEST_CASE(GLOBAL_SFM_RotationAveragingL1_TranslationAveragingL1)
 {
   const int nviews = 6;
   const int npoints = 64;
+  std::mt19937 generator;
   const NViewDatasetConfigurator config;
   const NViewDataSet d = NRealisticCamerasRing(nviews, npoints, config);
 
@@ -104,6 +107,7 @@ BOOST_AUTO_TEST_CASE(GLOBAL_SFM_RotationAveragingL1_TranslationAveragingL1)
   sfmData2.structure.clear();
 
   ReconstructionEngine_globalSfM sfmEngine(
+    generator,
     sfmData2,
     "./",
     "./Reconstruction_Report.html");
@@ -142,6 +146,7 @@ BOOST_AUTO_TEST_CASE(GLOBAL_SFM_RotationAveragingL2_TranslationAveragingL2_Chord
 {
   const int nviews = 6;
   const int npoints = 64;
+  std::mt19937 generator;
   const NViewDatasetConfigurator config;
   const NViewDataSet d = NRealisticCamerasRing(nviews, npoints, config);
 
@@ -154,6 +159,7 @@ BOOST_AUTO_TEST_CASE(GLOBAL_SFM_RotationAveragingL2_TranslationAveragingL2_Chord
   sfmData2.structure.clear();
 
   ReconstructionEngine_globalSfM sfmEngine(
+    generator,
     sfmData2,
     "./",
     "./Reconstruction_Report.html");
@@ -197,13 +203,14 @@ BOOST_AUTO_TEST_CASE(GLOBAL_SFM_RotationAveragingL2_TranslationAveragingSoftL1)
 
   // Translate the input dataset to a SfMData scene
   const SfMData sfmData = getInputScene(d, config, PINHOLE_CAMERA);
+  std::mt19937 generator;
 
   // Remove poses and structure
   SfMData sfmData2 = sfmData;
   sfmData2.getPoses().clear();
   sfmData2.structure.clear();
 
-  ReconstructionEngine_globalSfM sfmEngine(
+  ReconstructionEngine_globalSfM sfmEngine(generator,
     sfmData2,
     "./",
     "./Reconstruction_Report.html");

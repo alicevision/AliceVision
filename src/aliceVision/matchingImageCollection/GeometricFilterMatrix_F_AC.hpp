@@ -29,10 +29,11 @@ namespace matchingImageCollection {
 struct GeometricFilterMatrix_F_AC: public GeometricFilterMatrix
 {
   GeometricFilterMatrix_F_AC(
+    std::mt19937 & generator,
     double dPrecision = std::numeric_limits<double>::infinity(),
     size_t iteration = 1024,
     robustEstimation::ERobustEstimator estimator = robustEstimation::ERobustEstimator::ACRANSAC)
-    : GeometricFilterMatrix(dPrecision, std::numeric_limits<double>::infinity(), iteration)
+    : GeometricFilterMatrix(generator, dPrecision, std::numeric_limits<double>::infinity(), iteration)
     , m_F(Mat3::Identity())
     , m_estimator(estimator)
   {}
@@ -172,7 +173,7 @@ struct GeometricFilterMatrix_F_AC: public GeometricFilterMatrix
         // Robustly estimate the Fundamental matrix with A Contrario ransac
         const double upper_bound_precision = Square(m_dPrecision);
         const std::pair<double,double> ACRansacOut =
-          ACRANSAC(kernel, out_inliers, m_stIteration, &m_F, upper_bound_precision);
+          ACRANSAC(m_generator, kernel, out_inliers, m_stIteration, &m_F, upper_bound_precision);
 
         if(out_inliers.empty())
           return std::make_pair(false, KernelType::MINIMUM_SAMPLES);
@@ -204,7 +205,7 @@ struct GeometricFilterMatrix_F_AC: public GeometricFilterMatrix
         const double normalizedThreshold = Square(m_dPrecision * kernel.normalizer2()(0, 0));
         ScoreEvaluator<KernelType> scorer(normalizedThreshold);
 
-        m_F = LO_RANSAC(kernel, scorer, &out_inliers);
+        m_F = LO_RANSAC(m_generator, kernel, scorer, &out_inliers);
 
         if(out_inliers.empty())
           return std::make_pair(false, KernelType::MINIMUM_SAMPLES);

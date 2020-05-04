@@ -25,9 +25,10 @@ namespace matchingImageCollection {
 struct GeometricFilterMatrix_H_AC : public GeometricFilterMatrix
 {
   GeometricFilterMatrix_H_AC(
+    std::mt19937 &generator,
     double dPrecision = std::numeric_limits<double>::infinity(),
     size_t iteration = 1024)
-    : GeometricFilterMatrix(dPrecision, std::numeric_limits<double>::infinity(), iteration)
+    : GeometricFilterMatrix(generator, dPrecision, std::numeric_limits<double>::infinity(), iteration)
     , m_H(Mat3::Identity())
   {}
 
@@ -76,7 +77,7 @@ struct GeometricFilterMatrix_H_AC : public GeometricFilterMatrix
     const double upper_bound_precision = Square(m_dPrecision);
 
     std::vector<size_t> inliers;
-    const std::pair<double,double> ACRansacOut = ACRANSAC(kernel, inliers, m_stIteration, &m_H, upper_bound_precision);
+    const std::pair<double,double> ACRansacOut = ACRANSAC(m_generator, kernel, inliers, m_stIteration, &m_H, upper_bound_precision);
 
     if (inliers.empty())
       return EstimationStatus(false, false);

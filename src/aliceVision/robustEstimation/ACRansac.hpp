@@ -148,6 +148,7 @@ inline ErrorIndex bestNFA(
 /**
  * @brief ACRANSAC routine (ErrorThreshold, NFA)
  *
+ * @param[in] generator Random number generator initialized
  * @param[in] kernel model and metric object
  * @param[out] vec_inliers points that fit the estimated model
  * @param[in] nIter maximum number of consecutive iterations
@@ -156,8 +157,8 @@ inline ErrorIndex bestNFA(
  *
  * @return (errorMax, minNFA)
  */
-template<typename Kernel>
-std::pair<double, double> ACRANSAC(const Kernel &kernel,
+template<typename RandomT, typename Kernel>
+std::pair<double, double> ACRANSAC(RandomT & generator, const Kernel &kernel,
   std::vector<size_t> & vec_inliers,
   size_t nIter = 1024,
   typename Kernel::Model * model = nullptr,
@@ -201,9 +202,9 @@ std::pair<double, double> ACRANSAC(const Kernel &kernel,
   {
     std::vector< std::size_t> vec_sample(sizeSample); // Sample indices
     if (bACRansacMode)
-      UniformSample(sizeSample, vec_index, vec_sample); // Get random sample
+      UniformSample(generator, sizeSample, vec_index, vec_sample); // Get random sample
     else
-      UniformSample(sizeSample, nData, vec_sample); // Get random sample
+      UniformSample(generator, sizeSample, nData, vec_sample); // Get random sample
 
     std::vector<typename Kernel::Model> vec_models; // Up to max_models solutions
     kernel.Fit(vec_sample, &vec_models);

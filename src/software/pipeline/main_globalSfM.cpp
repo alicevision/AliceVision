@@ -132,6 +132,8 @@ int main(int argc, char **argv)
     return EXIT_FAILURE;
   }
 
+  std::mt19937 generator;
+
   // load input SfMData scene
   sfmData::SfMData sfmData;
   if(!sfmDataIO::Load(sfmData, sfmDataFilename, sfmDataIO::ESfMData(sfmDataIO::VIEWS|sfmDataIO::INTRINSICS)))
@@ -183,7 +185,7 @@ int main(int argc, char **argv)
 
   // global SfM reconstruction process
   aliceVision::system::Timer timer;
-  sfm::ReconstructionEngine_globalSfM sfmEngine(
+  sfm::ReconstructionEngine_globalSfM sfmEngine(generator,
     sfmData,
     outDirectory,
     (fs::path(outDirectory) / "sfm_log.html").string());

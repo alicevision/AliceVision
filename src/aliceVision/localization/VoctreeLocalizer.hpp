@@ -82,6 +82,7 @@ public:
   /**
    * @brief Initialize a localizer based on a vocabulary tree
    * 
+   * @param[in] generator the random number generator object
    * @param[in] sfmData The sfmdata containing the scene
    * reconstruction.
    * @param[in] descriptorsFolder The path to the directory containing the features 
@@ -95,7 +96,8 @@ public:
    *
    * It enable the use of combined SIFT and CCTAG features.
    */
-  VoctreeLocalizer(const sfmData::SfMData &sfmData,
+  VoctreeLocalizer(std::mt19937 & generator,
+                   const sfmData::SfMData &sfmData,
                    const std::string &descriptorsFolder,
                    const std::string &vocTreeFilepath,
                    const std::string &weightsFilepath,

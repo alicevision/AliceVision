@@ -111,7 +111,8 @@ bool growHomography(const std::vector<feature::PointFeature> &featuresI,
 
 
 
-void filterMatchesByHGrowing(const std::vector<feature::PointFeature>& siofeatures_I,
+void filterMatchesByHGrowing(std::mt19937 & generator, 
+                             const std::vector<feature::PointFeature>& siofeatures_I,
                              const std::vector<feature::PointFeature>& siofeatures_J,
                              const matching::IndMatches& putativeMatches,
                              std::vector<std::pair<Mat3, matching::IndMatches>>& homographiesAndMatches,
@@ -123,7 +124,7 @@ void filterMatchesByHGrowing(const std::vector<feature::PointFeature>& siofeatur
   using namespace aliceVision::matching;
 
   IndMatches remainingMatches = putativeMatches;
-  GeometricFilterMatrix_HGrowing dummy;
+  GeometricFilterMatrix_HGrowing dummy(generator);
 
   for(IndexT iH = 0; iH < param._maxNbHomographies; ++iH)
   {

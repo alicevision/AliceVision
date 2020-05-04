@@ -110,6 +110,8 @@ int main(int argc, char **argv)
   // set verbose level
   system::Logger::get()->setLogLevel(verboseLevel);
 
+  std::mt19937 generator;
+
   // Load input SfM_Data scene
   sfmData::SfMData sfmData;
   if(!sfmDataIO::Load(sfmData, sfmDataFilename, sfmDataIO::ESfMData::ALL))
@@ -190,7 +192,7 @@ int main(int argc, char **argv)
   matching_data.error_max = maxResidualError;
 
   // Try to localize the image in the database thanks to its regions
-  if (!localizer.Localize(
+  if (!localizer.Localize(generator,
     Pair(imageGray.Width(), imageGray.Height()),
     optional_intrinsic.get(),
     *(query_regions.get()),

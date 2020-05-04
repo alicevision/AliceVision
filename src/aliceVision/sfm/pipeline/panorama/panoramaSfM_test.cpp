@@ -32,7 +32,9 @@ using namespace aliceVision::sfmData;
 
 
 BOOST_AUTO_TEST_CASE(PANORAMA_SFM)
-{
+{   
+    std::mt19937 generator;
+
     // rotation between the two views
     const Mat3 rotation = aliceVision::rotationXYZ(0.01, -0.001, -0.2);
     ALICEVISION_LOG_INFO("Ground truth rotation:\n" << rotation);
@@ -69,7 +71,7 @@ BOOST_AUTO_TEST_CASE(PANORAMA_SFM)
     {
         RelativeRotationInfo rotationInfo{};
     ALICEVISION_LOG_INFO("\n\n###########################################\nUncalibrated from H");
-        robustRelativeRotation_fromH(K1, K2, pts1, pts2,
+        robustRelativeRotation_fromH(generator, K1, K2, pts1, pts2,
                               std::make_pair<std::size_t, std::size_t>(1920, 1080),
                               std::make_pair<std::size_t, std::size_t>(1920, 1080),
                               rotationInfo);
@@ -80,7 +82,7 @@ BOOST_AUTO_TEST_CASE(PANORAMA_SFM)
 
         // test the calibrated version, compute normalized points for each view (by multiplying by the inverse of K) and estimate H and R
     ALICEVISION_LOG_INFO("\n\n###########################################\nCalibrated from H");
-        robustRelativeRotation_fromH(Mat3::Identity(), Mat3::Identity(),
+        robustRelativeRotation_fromH(generator, Mat3::Identity(), Mat3::Identity(),
                               (K1.inverse()*pts1.colwise().homogeneous()).colwise().hnormalized(),
                               (K2.inverse()*pts2.colwise().homogeneous()).colwise().hnormalized(),
                               std::make_pair<std::size_t, std::size_t>(1920, 1080),

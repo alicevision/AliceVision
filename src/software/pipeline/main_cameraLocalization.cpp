@@ -264,6 +264,8 @@ int main(int argc, char** argv)
     return EXIT_FAILURE;
   }
 
+  std::mt19937 generator;
+
   const double defaultLoRansacMatchingError = 4.0;
   const double defaultLoRansacResectionError = 4.0;
   if(!robustEstimation::adjustRobustEstimatorThreshold(matchingEstimator, matchingErrorMax, defaultLoRansacMatchingError) ||
@@ -337,7 +339,8 @@ int main(int argc, char** argv)
 #endif
   {
 
-    localization::VoctreeLocalizer* tmpLoc = new localization::VoctreeLocalizer(sfmData,
+    localization::VoctreeLocalizer* tmpLoc = new localization::VoctreeLocalizer(generator, 
+                                                   sfmData,
                                                    descriptorsFolder,
                                                    vocTreeFilepath,
                                                    weightsFilepath,

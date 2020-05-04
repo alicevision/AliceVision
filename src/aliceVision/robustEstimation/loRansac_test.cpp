@@ -81,6 +81,7 @@ void lineFittingTest(std::size_t numPoints,
 {
   assert(outlierRatio >= 0 && outlierRatio < 1);
   assert(gaussianNoiseLevel >= 0);
+  std::mt19937 generator;
   
   Mat2X xy(2, numPoints);
   vector<std::size_t> vec_inliersGT;
@@ -91,7 +92,7 @@ void lineFittingTest(std::size_t numPoints,
   const double threshold = (withNoise) ? 3 * gaussianNoiseLevel : 0.3;
   LineKernelLoRansac kernel(xy);
 
-  estimatedModel = LO_RANSAC(kernel, ScoreEvaluator<LineKernel>(threshold), &vec_inliers);
+  estimatedModel = LO_RANSAC(generator, kernel, ScoreEvaluator<LineKernel>(threshold), &vec_inliers);
   ALICEVISION_LOG_DEBUG("#inliers found : " << vec_inliers.size()
           << " expected: " << numPoints - expectedInliers);
   ALICEVISION_LOG_DEBUG("model[0] found : " << estimatedModel[0]

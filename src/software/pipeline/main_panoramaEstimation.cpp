@@ -154,6 +154,8 @@ int main(int argc, char **argv)
     return EXIT_FAILURE;
   }
 
+  std::mt19937 generator;
+
   // load input SfMData scene
   sfmData::SfMData inputSfmData;
   if(!sfmDataIO::Load(inputSfmData, sfmDataFilename, sfmDataIO::ESfMData(sfmDataIO::VIEWS|sfmDataIO::INTRINSICS|sfmDataIO::EXTRINSICS)))
@@ -213,6 +215,7 @@ int main(int argc, char **argv)
   // Panorama reconstruction process
   aliceVision::system::Timer timer;
   sfm::ReconstructionEngine_panorama sfmEngine(
+    generator,
     inputSfmData,
     outDirectory,
     (fs::path(outDirectory) / "sfm_log.html").string());

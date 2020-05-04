@@ -38,7 +38,7 @@ public:
 
   /**
   * @brief Try to localize an image in the database
-  *
+  * @param[in] generator the random number generator to use in ransac
   * @param[in] imageSize the w,h image size
   * @param[in] optionalIntrinsics camera intrinsic if known (else nullptr)
   * @param[in] queryRegions the image regions (type must be the same as the database)
@@ -46,7 +46,7 @@ public:
   * @param[out] resectionData matching data (2D-3D and inliers; optional)
   * @return True if a putative pose has been estimated
   */
-  bool Localize(const Pair& imageSize,
+  bool Localize(std::mt19937 & generator, const Pair& imageSize,
                 const camera::IntrinsicBase* optionalIntrinsics,
                 const feature::Regions& queryRegions,
                 geometry::Pose3& pose,

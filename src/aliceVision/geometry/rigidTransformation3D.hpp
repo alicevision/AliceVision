@@ -10,6 +10,8 @@
 #include <aliceVision/numeric/numeric.hpp>
 #include <aliceVision/numeric/LMFunctor.hpp>
 
+#include <random>
+
 namespace aliceVision {
 namespace geometry {
 
@@ -267,6 +269,7 @@ private:
 /**
  * @brief Uses AC ransac to robustly estimate the similarity between two sets of points.
  * 
+ * @param[in] generator the random number generator
  * @param[in] x1 The first 3xN matrix of euclidean points.
  * @param[in] x2 The second 3xN matrix of euclidean points.
  * @param[out] S The scale factor.
@@ -277,7 +280,8 @@ private:
  * @return true if the found transformation is a similarity
  * @see FindRTS()
  */
-bool ACRansac_FindRTS(const Mat &x1,
+bool ACRansac_FindRTS(std::mt19937 & generator,
+                      const Mat &x1,
                       const Mat &x2,
                       double &S,
                       Vec3 &t,
@@ -288,6 +292,7 @@ bool ACRansac_FindRTS(const Mat &x1,
 /**
  * @brief Uses AC ransac to robustly estimate the similarity between two sets of 
  * points. Just a wrapper that output the similarity in matrix form
+ * @param[in] generator the random number generator
  * @param[in] x1 The first 3xN matrix of euclidean points.
  * @param[in] x2 The second 3xN matrix of euclidean points.
  * @param[out] RTS The 4x4 similarity matrix. 
@@ -297,7 +302,8 @@ bool ACRansac_FindRTS(const Mat &x1,
  * @see geometry::FindRTS()
  * @see geometry::ACRansac_FindRTS()
  */
-inline bool ACRansac_FindRTS(const Mat &x1,
+inline bool ACRansac_FindRTS(std::mt19937 & generator,
+                             const Mat &x1,
                              const Mat &x2, 
                              Mat4 &RTS, 
                              std::vector<std::size_t> &vec_inliers,
@@ -306,7 +312,7 @@ inline bool ACRansac_FindRTS(const Mat &x1,
   double S;
   Vec3 t; 
   Mat3 R; 
-  const bool good = ACRansac_FindRTS(x1, x2, S, t, R, vec_inliers, refine);
+  const bool good = ACRansac_FindRTS(generator, x1, x2, S, t, R, vec_inliers, refine);
   if(good)
     composeRTS(S, t, R, RTS);
   

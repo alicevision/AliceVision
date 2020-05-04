@@ -69,7 +69,8 @@ public:
   /**
    * @brief Use features in normalized camera frames
    */
-  bool Run(ETranslationAveragingMethod eTranslationAveragingMethod,
+  bool Run(std::mt19937 & generator,
+           ETranslationAveragingMethod eTranslationAveragingMethod,
            sfmData::SfMData& sfmData,
            const feature::FeaturesPerView& normalizedFeaturesPerView,
            const matching::PairwiseMatches& pairwiseMatches,
@@ -81,7 +82,9 @@ private:
            sfmData::SfMData& sfmData,
            const HashMap<IndexT, Mat3> & map_globalR);
 
-  void Compute_translations(const sfmData::SfMData& sfmData,
+  void Compute_translations(
+           std::mt19937 & generator,
+           const sfmData::SfMData& sfmData,
            const feature::FeaturesPerView& normalizedFeaturesPerView,
            const matching::PairwiseMatches& pairwiseMatches,
            const HashMap<IndexT, Mat3>& map_globalR,
@@ -93,7 +96,8 @@ private:
    * Use an edge coverage algorithm to reduce the graph covering complexity
    * Complexity: sub-linear in term of edges count.
    */
-  void ComputePutativeTranslation_EdgesCoverage(const sfmData::SfMData& sfmData,
+  void ComputePutativeTranslation_EdgesCoverage(std::mt19937 & generator,
+           const sfmData::SfMData& sfmData,
            const HashMap<IndexT, Mat3>& map_globalR,
            const feature::FeaturesPerView& normalizedFeaturesPerView,
            const matching::PairwiseMatches& pairwiseMatches,
@@ -103,7 +107,8 @@ private:
   /**
    * @brief Robust estimation and refinement of a translation and 3D points of an image triplets.
    */
-  bool Estimate_T_triplet(const sfmData::SfMData& sfmData,
+  bool Estimate_T_triplet(std::mt19937 & generator,
+           const sfmData::SfMData& sfmData,
            const HashMap<IndexT, Mat3>& map_globalR,
            const feature::FeaturesPerView& normalizedFeaturesPerView,
            const matching::PairwiseMatches& pairwiseMatches,

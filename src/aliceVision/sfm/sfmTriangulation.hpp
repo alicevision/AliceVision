@@ -9,6 +9,7 @@
 
 #include <aliceVision/types.hpp>
 #include <aliceVision/sfmData/SfMData.hpp>
+#include <random>
 
 namespace aliceVision {
 namespace sfm {
@@ -42,7 +43,7 @@ struct StructureComputation_blind: public StructureComputation_basis
 // - Check cheirality and a pixel residual error (TODO: make it a parameter)
 struct StructureComputation_robust: public StructureComputation_basis
 {
-  StructureComputation_robust(bool verbose = false);
+  StructureComputation_robust(std::mt19937 & generator, bool verbose = false);
 
   virtual void triangulate(sfmData::SfMData& sfmData) const;
 
@@ -64,6 +65,9 @@ private:
   Vec3 track_sample_triangulation(const sfmData::SfMData& sfmData,
                                   const sfmData::Observations& observations,
                                   const std::set<IndexT>& samples) const;
+                            
+private:
+  std::mt19937 & _generator;
 };
 
 } // namespace sfm

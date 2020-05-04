@@ -22,7 +22,8 @@ class ReconstructionEngine_globalSfM : public ReconstructionEngine
 {
 public:
 
-  ReconstructionEngine_globalSfM(const sfmData::SfMData& sfmData,
+  ReconstructionEngine_globalSfM(std::mt19937 & generator,
+                                 const sfmData::SfMData& sfmData,
                                  const std::string& outDirectory,
                                  const std::string& loggingFile = "");
 

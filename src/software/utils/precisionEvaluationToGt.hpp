@@ -26,6 +26,7 @@ namespace aliceVision
 
 /// Compute a 5DOF rigid transform between the two camera trajectories
 inline bool computeSimilarity(
+  std::mt19937 & generator,
   const std::vector<Vec3> & vec_camPosGT,
   const std::vector<Vec3> & vec_camPosComputed,
   std::vector<Vec3> & vec_camPosComputed_T,
@@ -49,7 +50,7 @@ inline bool computeSimilarity(
   Vec3 t;
   Mat3 R;
   std::vector<std::size_t> inliers;
-  if(!aliceVision::geometry::ACRansac_FindRTS(x1, x2, S, t, R, inliers, true))
+  if(!aliceVision::geometry::ACRansac_FindRTS(generator, x1, x2, S, t, R, inliers, true))
     return false;
 
   vec_camPosComputed_T.resize(vec_camPosGT.size());
@@ -105,6 +106,7 @@ inline bool exportToPly(const std::vector<Vec3> & vec_camPosGT,
 /// Compare two camera path (translation and rotation residual after a 5DOF rigid registration)
 /// Export computed statistics to a HTLM stream
 inline void EvaluteToGT(
+  std::mt19937 & generator,
   const std::vector<Vec3> & vec_camCenterGT,
   const std::vector<Vec3> & vec_camCenterComputed,
   const std::vector<Mat3> & vec_camRotGT,
@@ -125,7 +127,7 @@ inline void EvaluteToGT(
   Vec3 t;
   double scale;
   
-  computeSimilarity(vec_camCenterGT, vec_camCenterComputed, vec_camPosComputed_T, &scale, &R, &t);
+  computeSimilarity(generator, vec_camCenterGT, vec_camCenterComputed, vec_camPosComputed_T, &scale, &R, &t);
   
   std::cout << "\nEstimated similarity transformation between the sequences\n";
   std::cout << "R\n" << R << std::endl;

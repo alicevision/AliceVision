@@ -12,6 +12,7 @@
 #include <aliceVision/feature/RegionsPerView.hpp>
 #include <aliceVision/robustEstimation/estimators.hpp>
 
+#include <random>
 #include <cstddef>
 #include <limits>
 
@@ -61,6 +62,7 @@ public:
   /**
   * @brief Try to localize an image in the database
   *
+  * @param[in] generator the random number generator to use in ransac
   * @param[in] imageSize the w,h image size
   * @param[in] optionalIntrinsics camera intrinsic if known (else nullptr)
   * @param[in] queryRegions the image regions (type must be the same as the database)
@@ -68,7 +70,7 @@ public:
   * @param[out] resectionData matching data (2D-3D and inliers; optional)
   * @return True if a putative pose has been estimated
   */
-  virtual bool Localize(const Pair& imageSize,
+  virtual bool Localize(std::mt19937 & generator, const Pair& imageSize,
                         const camera::IntrinsicBase* optionalIntrinsics,
                         const feature::Regions& queryRegions,
                         geometry::Pose3& pose,
@@ -79,6 +81,7 @@ public:
   /**
   * @brief Try to localize an image from known 2D-3D matches
   *
+  * @param[in] generator the random number generator to use in ransac
   * @param[in] imageSize the w,h image size
   * @param[in] optionalIntrinsics camera intrinsic if known (else nullptr)
   * @param[in,out] resectionData matching data (with filled 2D-3D correspondences).
@@ -88,7 +91,7 @@ public:
    * frameworks are ERobustEstimator::ACRANSAC and ERobustEstimator::LORANSAC.
   * @return True if a putative pose has been estimated
   */
-  static bool Localize(const Pair& imageSize,
+  static bool Localize(std::mt19937 & generator, const Pair& imageSize,
                        const camera::IntrinsicBase* optionalIntrinsics,
                        ImageLocalizerMatchData& resectionData,
                        geometry::Pose3& pose,

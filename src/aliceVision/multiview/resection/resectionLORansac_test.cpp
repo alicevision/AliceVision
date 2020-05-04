@@ -201,12 +201,12 @@ BOOST_AUTO_TEST_CASE(P3P_Ransac_noisyFromImagePoints)
     Mat pts2Dnorm;
     ApplyTransformationToPoints(pts2D, Kgt.inverse(), &pts2Dnorm);
     KernelType kernel(pts2Dnorm, pts3D, Mat3::Identity());
-
+    
     std::vector<std::size_t> vec_inliers;
     const double threshold = 2*gaussianNoiseLevel;
     const double normalizedThreshold = Square(threshold / FOCAL);
     robustEstimation::ScoreEvaluator<KernelType> scorer(normalizedThreshold);
-    Mat34 Pest = robustEstimation::LO_RANSAC(kernel, scorer, &vec_inliers);
+    Mat34 Pest = robustEstimation::LO_RANSAC(gen, kernel, scorer, &vec_inliers);
     
     const std::size_t numInliersFound = vec_inliers.size();
     const std::size_t numInliersExpected = nbPoints-vec_outliers.size();

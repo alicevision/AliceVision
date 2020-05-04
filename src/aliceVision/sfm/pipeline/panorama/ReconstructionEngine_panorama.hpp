@@ -84,6 +84,7 @@ struct RelativeRotationInfo
 
 /**
  * @brief Estimate the relative pose between two views.
+ * @param[in] generator the random number generator
  * @param[in] K1 3x3 calibration matrix of the first view.
  * @param[in] K2 3x3 calibration matrix of the second view.
  * @param[in] x1 The points on the first image.
@@ -94,7 +95,8 @@ struct RelativeRotationInfo
  * @param[in] maxIterationCount Max number of iteration for the ransac process.
  * @return true if a homography has been estimated.
  */
-bool robustRelativeRotation_fromE(const Mat3 & K1, const Mat3 & K2,
+bool robustRelativeRotation_fromE(std::mt19937 & generator, 
+                                  const Mat3 & K1, const Mat3 & K2,
                                   const Mat & x1, const Mat & x2,
                                   const std::pair<size_t, size_t> & size_ima1,
                                   const std::pair<size_t, size_t> & size_ima2,
@@ -103,6 +105,7 @@ bool robustRelativeRotation_fromE(const Mat3 & K1, const Mat3 & K2,
 
 /**
  * @brief Estimate the relative rotation between two views related by a pure rotation.
+ * @param[in] generator the random number generator
  * @param[in] K1 3x3 calibration matrix of the first view.
  * @param[in] K2 3x3 calibration matrix of the second view.
  * @param[in] x1 The points on the first image.
@@ -113,7 +116,8 @@ bool robustRelativeRotation_fromE(const Mat3 & K1, const Mat3 & K2,
  * @param[in] maxIterationCount Max number of iteration for the ransac process.
  * @return true if a homography has been estimated.
  */
-bool robustRelativeRotation_fromH(const Mat3 &K1, const Mat3 &K2,
+bool robustRelativeRotation_fromH(std::mt19937 & generator, 
+                                  const Mat3 &K1, const Mat3 &K2,
                                   const Mat2X &x1, const Mat2X &x2,
                                   const std::pair<size_t, size_t> &imgSize1,
                                   const std::pair<size_t, size_t> &imgSize2,
@@ -127,7 +131,8 @@ class ReconstructionEngine_panorama : public ReconstructionEngine
 {
 public:
 
-  ReconstructionEngine_panorama(const sfmData::SfMData& sfmData,
+  ReconstructionEngine_panorama(std::mt19937 & generator,
+                                 const sfmData::SfMData& sfmData,
                                  const std::string& outDirectory,
                                  const std::string& loggingFile = "");
 

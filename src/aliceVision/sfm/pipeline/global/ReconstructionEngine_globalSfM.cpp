@@ -33,10 +33,11 @@ using namespace aliceVision::geometry;
 using namespace aliceVision::feature;
 using namespace aliceVision::sfmData;
 
-ReconstructionEngine_globalSfM::ReconstructionEngine_globalSfM(const SfMData& sfmData,
+ReconstructionEngine_globalSfM::ReconstructionEngine_globalSfM(std::mt19937 & generator,
+                                                               const SfMData& sfmData,
                                                                const std::string& outDirectory,
                                                                const std::string& loggingFile)
-  : ReconstructionEngine(sfmData, outDirectory)
+  : ReconstructionEngine(generator, sfmData, outDirectory)
   , _loggingFile(loggingFile)
   , _normalizedFeaturesPerView(nullptr)
 {
@@ -243,6 +244,7 @@ bool ReconstructionEngine_globalSfM::Compute_Global_Translations(const HashMap<I
   // Translation averaging (compute translations & update them to a global common coordinates system)
   GlobalSfMTranslationAveragingSolver translation_averaging_solver;
   const bool bTranslationAveraging = translation_averaging_solver.Run(
+    _generator,
     _eTranslationAveragingMethod,
     _sfmData,
     *_normalizedFeaturesPerView.get(),
@@ -521,7 +523,7 @@ void ReconstructionEngine_globalSfM::Compute_Relative_Rotations(rotationAveragin
       const std::pair<size_t, size_t> imageSize(1., 1.);
       const Mat3 K  = Mat3::Identity();
 
-      if(!robustRelativePose(K, K, x1, x2, relativePose_info, imageSize, imageSize, 256))
+      if(!robustRelativePose(_generator, K, K, x1, x2, relativePose_info, imageSize, imageSize, 256))
       {
         continue;
       }

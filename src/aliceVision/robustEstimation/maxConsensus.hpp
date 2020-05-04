@@ -29,8 +29,8 @@ namespace robustEstimation{
 /// 2. Kernel::MINIMUM_SAMPLES
 /// 3. Kernel::Fit(vector<int>, vector<Kernel::Model> *)
 /// 4. Kernel::Error(Model, int) -> error
-template<typename Kernel, typename Scorer>
-typename Kernel::Model MaxConsensus(const Kernel &kernel,
+template<typename RandomT, typename Kernel, typename Scorer>
+typename Kernel::Model MaxConsensus(RandomT generator, const Kernel &kernel,
   const Scorer &scorer,
   std::vector<std::size_t> *best_inliers = nullptr, std::size_t max_iteration = 1024) {
 
@@ -61,7 +61,7 @@ typename Kernel::Model MaxConsensus(const Kernel &kernel,
     for(std::size_t iteration = 0;  iteration < max_iteration; ++iteration) 
     {
       std::vector<std::size_t> sample;
-      UniformSample(min_samples, total_samples, sample);
+      UniformSample(generator, min_samples, total_samples, sample);
 
       std::vector<typename Kernel::Model> models;
       kernel.Fit(sample, &models);

@@ -123,11 +123,12 @@ void computeTracksPyramidPerView(
 }
 
 ReconstructionEngine_sequentialSfM::ReconstructionEngine_sequentialSfM(
+  std::mt19937 & generator,
   const SfMData& sfmData,
   const Params& params,
   const std::string& outputFolder,
   const std::string& loggingFile)
-  : ReconstructionEngine(sfmData, outputFolder),
+  : ReconstructionEngine(generator, sfmData, outputFolder),
     _params(params),
     _htmlLogFile(loggingFile),
     _sfmStepFolder((fs::path(outputFolder) / "intermediate_steps").string())
@@ -1080,7 +1081,7 @@ bool ReconstructionEngine_sequentialSfM::makeInitialPair3D(const Pair& currentPa
   const std::pair<std::size_t, std::size_t> imageSizeI(camI->w(), camI->h());
   const std::pair<std::size_t, std::size_t> imageSizeJ(camJ->w(), camJ->h());
 
-  if(!robustRelativePose(camI->K(), camJ->K(), xI, xJ, relativePoseInfo, imageSizeI, imageSizeJ, 4096))
+  if(!robustRelativePose(_generator, camI->K(), camJ->K(), xI, xJ, relativePoseInfo, imageSizeI, imageSizeJ, 4096))
   {
     ALICEVISION_LOG_WARNING("Robust estimation failed to compute E for this pair");
     return false;
@@ -1275,7 +1276,7 @@ bool ReconstructionEngine_sequentialSfM::getBestInitialImagePairs(std::vector<Pa
     RelativePoseInfo relativePose_info;
     relativePose_info.initial_residual_tolerance = Square(4.0);
     
-    const bool relativePoseSuccess = robustRelativePose(
+    const bool relativePoseSuccess = robustRelativePose(_generator,
           camI->K(), camJ->K(),
           xI, xJ, relativePose_info,
           std::make_pair(camI->w(), camI->h()), std::make_pair(camJ->w(), camJ->h()),
@@ -1561,7 +1562,7 @@ bool ReconstructionEngine_sequentialSfM::computeResection(const IndexT viewId, R
   // C. Do the resectioning: compute the camera pose.
   ALICEVISION_LOG_INFO("[" << _sfmData.getValidViews().size()+1 << "/" << _sfmData.getViews().size() << "] Robust Resection of view: " << viewId);
 
-  const bool bResection = sfm::SfMLocalizer::Localize(
+  const bool bResection = sfm::SfMLocalizer::Localize(_generator,
       Pair(view_I->getWidth(), view_I->getHeight()),
       resectionData.optionalIntrinsic.get(),
       resectionData,
@@ -1849,7 +1850,7 @@ void ReconstructionEngine_sequentialSfM::triangulate_multiViewsLORANSAC(SfMData&
       Vec4 X_homogeneous = Vec4::Zero();
       std::vector<std::size_t> inliersIndex;
       
-      TriangulateNViewLORANSAC(features, Ps, &X_homogeneous, &inliersIndex, 8.0);
+      TriangulateNViewLORANSAC(_generator, features, Ps, &X_homogeneous, &inliersIndex, 8.0);
       
       HomogeneousToEuclidean(X_homogeneous, &X_euclidean);     
       

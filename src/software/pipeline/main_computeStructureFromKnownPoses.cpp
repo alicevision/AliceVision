@@ -102,6 +102,8 @@ int main(int argc, char **argv)
   // set verbose level
   system::Logger::get()->setLogLevel(verboseLevel);
   
+  std::mt19937 generator;
+
   // load input SfMData scene
   sfmData::SfMData sfmData;
   if(!sfmDataIO::Load(sfmData, sfmDataFilename, sfmDataIO::ESfMData(sfmDataIO::VIEWS|sfmDataIO::INTRINSICS|sfmDataIO::EXTRINSICS)))
@@ -154,7 +156,8 @@ int main(int argc, char **argv)
   sfmData.structure.clear();
 
   // compute Structure from known camera poses
-  sfm::StructureEstimationFromKnownPoses structureEstimator;
+  
+  sfm::StructureEstimationFromKnownPoses structureEstimator(generator);
   structureEstimator.match(sfmData, pairs, regionsPerView, geometricErrorMax);
 
   // unload descriptors before triangulation

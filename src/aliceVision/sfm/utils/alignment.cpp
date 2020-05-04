@@ -56,7 +56,8 @@ std::ostream& operator<<(std::ostream& os, const MarkerWithCoord& marker)
     return os;
 }
 
-bool computeSimilarityFromCommonViews(const sfmData::SfMData& sfmDataA,
+bool computeSimilarityFromCommonViews(std::mt19937 & generator,
+    const sfmData::SfMData& sfmDataA,
     const sfmData::SfMData& sfmDataB,
     const std::vector<std::pair<IndexT, IndexT>>& commonViewIds,
     double* out_S,
@@ -106,7 +107,7 @@ bool computeSimilarityFromCommonViews(const sfmData::SfMData& sfmDataA,
     Mat3 R;
     std::vector<std::size_t> inliers;
 
-    if (!aliceVision::geometry::ACRansac_FindRTS(xA, xB, S, t, R, inliers, true))
+    if (!aliceVision::geometry::ACRansac_FindRTS(generator, xA, xB, S, t, R, inliers, true))
         return false;
 
     ALICEVISION_LOG_DEBUG("There are " << reconstructedCommonViewIds.size() << " common cameras and " << inliers.size() << " were used to compute the similarity transform.");
@@ -118,7 +119,8 @@ bool computeSimilarityFromCommonViews(const sfmData::SfMData& sfmDataA,
     return true;
 }
 
-bool computeSimilarityFromCommonCameras_viewId(const sfmData::SfMData& sfmDataA,
+bool computeSimilarityFromCommonCameras_viewId(std::mt19937 & generator,
+                       const sfmData::SfMData& sfmDataA,
                        const sfmData::SfMData& sfmDataB,
                        double* out_S,
                        Mat3* out_R,
@@ -137,10 +139,11 @@ bool computeSimilarityFromCommonCameras_viewId(const sfmData::SfMData& sfmDataA,
   {
       commonViewIds_pairs.push_back(std::make_pair(id, id));
   }
-  return computeSimilarityFromCommonViews(sfmDataA, sfmDataB, commonViewIds_pairs, out_S, out_R, out_t);
+  return computeSimilarityFromCommonViews(generator, sfmDataA, sfmDataB, commonViewIds_pairs, out_S, out_R, out_t);
 }
 
 bool computeSimilarityFromCommonCameras_poseId(
+        std::mt19937 & generator,
         const sfmData::SfMData& sfmDataA,
         const sfmData::SfMData& sfmDataB,
         double* out_S,
@@ -183,7 +186,7 @@ bool computeSimilarityFromCommonCameras_poseId(
     Mat3 R;
     std::vector<std::size_t> inliers;
 
-    if (!aliceVision::geometry::ACRansac_FindRTS(xA, xB, S, t, R, inliers, true))
+    if (!aliceVision::geometry::ACRansac_FindRTS(generator, xA, xB, S, t, R, inliers, true))
         return false;
 
     ALICEVISION_LOG_DEBUG("There are " << commonPoseIds.size() << " common camera poses and " << inliers.size() << " were used to compute the similarity transform.");
@@ -270,6 +273,7 @@ void matchViewsByFilePattern(
 
 
 bool computeSimilarityFromCommonCameras_imageFileMatching(
+    std::mt19937 & generator,
     const sfmData::SfMData& sfmDataA,
     const sfmData::SfMData& sfmDataB,
     const std::string& filePatternMatching,
@@ -286,7 +290,7 @@ bool computeSimilarityFromCommonCameras_imageFileMatching(
 
     ALICEVISION_LOG_DEBUG("Found " << commonViewIds.size() << " common views.");
 
-    return computeSimilarityFromCommonViews(sfmDataA, sfmDataB, commonViewIds, out_S, out_R, out_t);
+    return computeSimilarityFromCommonViews(generator, sfmDataA, sfmDataB, commonViewIds, out_S, out_R, out_t);
 }
 
 
@@ -352,6 +356,7 @@ void matchViewsByMetadataMatching(
 }
 
 bool computeSimilarityFromCommonCameras_metadataMatching(
+    std::mt19937 & generator,
     const sfmData::SfMData& sfmDataA,
     const sfmData::SfMData& sfmDataB,
     const std::vector<std::string>& metadataList,
@@ -368,7 +373,7 @@ bool computeSimilarityFromCommonCameras_metadataMatching(
 
     ALICEVISION_LOG_DEBUG("Found " << commonViewIds.size() << " common views.");
 
-    return computeSimilarityFromCommonViews(sfmDataA, sfmDataB, commonViewIds, out_S, out_R, out_t);
+    return computeSimilarityFromCommonViews(generator, sfmDataA, sfmDataB, commonViewIds, out_S, out_R, out_t);
 }
 
 
@@ -404,6 +409,7 @@ std::map<std::pair<feature::EImageDescriberType, int>, IndexT> getUniqueMarkers(
 
 
 bool computeSimilarityFromCommonMarkers(
+    std::mt19937 & generator,
     const sfmData::SfMData& sfmDataA,
     const sfmData::SfMData& sfmDataB,
     double* out_S,
@@ -468,7 +474,7 @@ bool computeSimilarityFromCommonMarkers(
     Mat3 R;
     std::vector<std::size_t> inliers;
 
-    if (!aliceVision::geometry::ACRansac_FindRTS(xA, xB, S, t, R, inliers, true))
+    if (!aliceVision::geometry::ACRansac_FindRTS(generator, xA, xB, S, t, R, inliers, true))
         return false;
 
     ALICEVISION_LOG_DEBUG("There are " << commonLandmarks.size() << " common markers and " << inliers.size() << " were used to compute the similarity transform.");

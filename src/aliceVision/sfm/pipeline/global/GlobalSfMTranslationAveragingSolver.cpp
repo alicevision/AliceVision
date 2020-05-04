@@ -40,7 +40,8 @@ using namespace aliceVision::geometry;
 using namespace aliceVision::sfmData;
 
 /// Use features in normalized camera frames
-bool GlobalSfMTranslationAveragingSolver::Run(ETranslationAveragingMethod eTranslationAveragingMethod,
+bool GlobalSfMTranslationAveragingSolver::Run(std::mt19937 & generator,
+                    ETranslationAveragingMethod eTranslationAveragingMethod,
                     SfMData& sfmData,
                     const feature::FeaturesPerView& normalizedFeaturesPerView,
                     const matching::PairwiseMatches& pairwiseMatches,
@@ -48,7 +49,8 @@ bool GlobalSfMTranslationAveragingSolver::Run(ETranslationAveragingMethod eTrans
                     matching::PairwiseMatches& tripletWise_matches)
 {
   // Compute the relative translations and save them to vec_initialRijTijEstimates:
-  Compute_translations(sfmData,
+  Compute_translations(generator,
+        sfmData,
         normalizedFeaturesPerView,
         pairwiseMatches,
         map_globalR,
@@ -275,7 +277,9 @@ bool GlobalSfMTranslationAveragingSolver::Translation_averaging(ETranslationAver
   return true;
 }
 
-void GlobalSfMTranslationAveragingSolver::Compute_translations(const SfMData& sfmData,
+void GlobalSfMTranslationAveragingSolver::Compute_translations(
+          std::mt19937 & generator,
+          const SfMData& sfmData,
           const feature::FeaturesPerView & normalizedFeaturesPerView,
           const matching::PairwiseMatches & pairwiseMatches,
           const HashMap<IndexT, Mat3> & map_globalR,
@@ -289,6 +293,7 @@ void GlobalSfMTranslationAveragingSolver::Compute_translations(const SfMData& sf
   // Compute relative translations over the graph of global rotations
   //  thanks to an edge coverage algorithm
   ComputePutativeTranslation_EdgesCoverage(
+    generator,
     sfmData,
     map_globalR,
     normalizedFeaturesPerView,
@@ -299,7 +304,9 @@ void GlobalSfMTranslationAveragingSolver::Compute_translations(const SfMData& sf
 
 //-- Perform a trifocal estimation of the graph contained in vec_triplets with an
 // edge coverage algorithm. Its complexity is sub-linear in term of edges count.
-void GlobalSfMTranslationAveragingSolver::ComputePutativeTranslation_EdgesCoverage(const SfMData & sfmData,
+void GlobalSfMTranslationAveragingSolver::ComputePutativeTranslation_EdgesCoverage(
+  std::mt19937 & generator,
+  const SfMData & sfmData,
   const HashMap<IndexT, Mat3> & map_globalR,
   const feature::FeaturesPerView & normalizedFeaturesPerView,
   const matching::PairwiseMatches & pairwiseMatches,
@@ -460,6 +467,7 @@ void GlobalSfMTranslationAveragingSolver::ComputePutativeTranslation_EdgesCovera
 
           const std::string sOutDirectory = "./";
           const bool bTriplet_estimation = Estimate_T_triplet(
+              generator,
               sfmData,
               map_globalR,
               normalizedFeaturesPerView,
@@ -581,6 +589,7 @@ void GlobalSfMTranslationAveragingSolver::ComputePutativeTranslation_EdgesCovera
 
 // Robust estimation and refinement of a translation and 3D points of an image triplets.
 bool GlobalSfMTranslationAveragingSolver::Estimate_T_triplet(
+  std::mt19937 & generator,
   const SfMData& sfmData,
   const HashMap<IndexT, Mat3>& map_globalR,
   const feature::FeaturesPerView& normalizedFeaturesPerView,
@@ -674,7 +683,7 @@ bool GlobalSfMTranslationAveragingSolver::Estimate_T_triplet(
 
   TrifocalTensorModel T;
   const std::pair<double,double> acStat =
-    robustEstimation::ACRANSAC(kernel, vec_inliers, ORSA_ITER, &T, precision/min_focal);
+    robustEstimation::ACRANSAC(generator, kernel, vec_inliers, ORSA_ITER, &T, precision/min_focal);
   // If robust estimation fails => stop.
   if (precision == std::numeric_limits<double>::infinity())
     return false;

@@ -10,6 +10,8 @@
 #include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/geometry/Pose3.hpp>
 
+#include <random>
+
 namespace aliceVision {
 namespace sfm {
 
@@ -75,7 +77,7 @@ void matchViewsByMetadataMatching(
 
 /**
  * @brief Compute a 5DOF rigid transform between the two set of cameras based on common viewIds.
- *
+ * @param[in] generator the random generator object
  * @param[in] sfmDataA
  * @param[in] sfmDataB
  * @param[out] out_S output scale factor
@@ -83,7 +85,8 @@ void matchViewsByMetadataMatching(
  * @param[out] out_t output translation vector
  * @return true if it finds a similarity transformation
  */
-bool computeSimilarityFromCommonCameras_viewId(const sfmData::SfMData& sfmDataA,
+bool computeSimilarityFromCommonCameras_viewId(std::mt19937 & generator,
+                       const sfmData::SfMData& sfmDataA,
                        const sfmData::SfMData& sfmDataB,
                        double* out_S,
                        Mat3* out_R,
@@ -92,6 +95,7 @@ bool computeSimilarityFromCommonCameras_viewId(const sfmData::SfMData& sfmDataA,
 /**
 * @brief Compute a 5DOF rigid transform between the two set of cameras based on common poseIds.
 *
+* @param[in] generator the random generator object
 * @param[in] sfmDataA
 * @param[in] sfmDataB
 * @param[out] out_S output scale factor
@@ -100,6 +104,7 @@ bool computeSimilarityFromCommonCameras_viewId(const sfmData::SfMData& sfmDataA,
 * @return true if it finds a similarity transformation
 */
 bool computeSimilarityFromCommonCameras_poseId(
+    std::mt19937 & generator,
     const sfmData::SfMData& sfmDataA,
     const sfmData::SfMData& sfmDataB,
     double* out_S,
@@ -107,6 +112,7 @@ bool computeSimilarityFromCommonCameras_poseId(
     Vec3* out_t);
 
 bool computeSimilarityFromCommonCameras_imageFileMatching(
+    std::mt19937 & generator,
     const sfmData::SfMData& sfmDataA,
     const sfmData::SfMData& sfmDataB,
     const std::string& filePatternMatching,
@@ -115,6 +121,7 @@ bool computeSimilarityFromCommonCameras_imageFileMatching(
     Vec3* out_t);
 
 bool computeSimilarityFromCommonCameras_metadataMatching(
+    std::mt19937 & generator,
     const sfmData::SfMData& sfmDataA,
     const sfmData::SfMData& sfmDataB,
     const std::vector<std::string>& metadataList,
@@ -124,6 +131,7 @@ bool computeSimilarityFromCommonCameras_metadataMatching(
 
 
 bool computeSimilarityFromCommonMarkers(
+    std::mt19937 & generator,
     const sfmData::SfMData& sfmDataA,
     const sfmData::SfMData& sfmDataB,
     double* out_S,

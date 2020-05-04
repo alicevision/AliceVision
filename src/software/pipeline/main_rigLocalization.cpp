@@ -254,8 +254,9 @@ int main(int argc, char** argv)
   ALICEVISION_COUT("Program called with the following parameters:");
   ALICEVISION_COUT(vm);
 
+  std::mt19937 generator;
+
   std::unique_ptr<localization::LocalizerParameters> param;
-  
   std::unique_ptr<localization::ILocalizer> localizer;
 
   // load SfMData
@@ -270,7 +271,8 @@ int main(int argc, char** argv)
   if(useVoctreeLocalizer)
   {
     ALICEVISION_COUT("Localizing sequence using the voctree localizer");
-    localization::VoctreeLocalizer* tmpLoc = new localization::VoctreeLocalizer(sfmData,
+    localization::VoctreeLocalizer* tmpLoc = new localization::VoctreeLocalizer(generator, 
+                                                            sfmData,
                                                             descriptorsFolder,
                                                             vocTreeFilepath,
                                                             weightsFilepath,

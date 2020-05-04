@@ -45,7 +45,8 @@ BOOST_AUTO_TEST_CASE(Resection_L_Infinity_Robust_OutlierFree) {
     const Mat & pt3D = d2._X;
     KernelType kernel(pt2D, pt3D);
     ScoreEvaluator<KernelType> scorer(2*Square(0.6));
-    Mat34 P = MaxConsensus(kernel, scorer, nullptr, 128);
+    std::mt19937 generator;
+    Mat34 P = MaxConsensus(generator, kernel, scorer, nullptr, 128);
 
     // Check that Projection matrix is near to the GT :
     Mat34 GT_ProjectionMatrix = d.P(nResectionCameraIndex).array()
@@ -98,7 +99,8 @@ BOOST_AUTO_TEST_CASE(Resection_L_Infinity_Robust_OneOutlier) {
     const Mat & pt3D = d2._X;
     KernelType kernel(pt2D, pt3D);
     ScoreEvaluator<KernelType> scorer(Square(0.1)); //Highly intolerant for the test
-    Mat34 P = MaxConsensus(kernel, scorer, nullptr, 128);
+    std::mt19937 generator;
+    Mat34 P = MaxConsensus(generator, kernel, scorer, nullptr, 128);
 
     // Check that Projection matrix is near to the GT :
     Mat34 GT_ProjectionMatrix = d.P(nResectionCameraIndex).array()

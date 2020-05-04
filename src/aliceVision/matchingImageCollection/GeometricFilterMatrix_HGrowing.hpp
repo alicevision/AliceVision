@@ -117,7 +117,8 @@ struct HGrowingFilteringParam
  * @param[out] outGeometricInliers All the matches that supports one of the found homographies.
  * @param[in] param The parameters of the algorithm.
  */
-void filterMatchesByHGrowing(const std::vector<feature::PointFeature>& siofeatures_I,
+void filterMatchesByHGrowing(std::mt19937 & generator,
+                             const std::vector<feature::PointFeature>& siofeatures_I,
                              const std::vector<feature::PointFeature>& siofeatures_J,
                              const matching::IndMatches& putativeMatches,
                              std::vector<std::pair<Mat3,
@@ -148,9 +149,10 @@ void drawHomographyMatches(const sfmData::View &viewI,
 struct GeometricFilterMatrix_HGrowing : public GeometricFilterMatrix
 {
     explicit GeometricFilterMatrix_HGrowing(
+          std::mt19937 & generator,
           double dPrecision = std::numeric_limits<double>::infinity(),
           size_t iteration = 1024)
-              : GeometricFilterMatrix(dPrecision, std::numeric_limits<double>::infinity(), iteration)
+              : GeometricFilterMatrix(generator, dPrecision, std::numeric_limits<double>::infinity(), iteration)
   { }
   
   /**
@@ -225,7 +227,8 @@ struct GeometricFilterMatrix_HGrowing : public GeometricFilterMatrix
 
       std::vector<std::pair<Mat3, matching::IndMatches>> homographiesAndMatches;
       matching::IndMatches outGeometricInliers;
-      filterMatchesByHGrowing(regions_I.Features(),
+      filterMatchesByHGrowing(m_generator,
+                              regions_I.Features(),
                               regions_J.Features(),
                               putativeMatchesPerType.at(descType),
                               homographiesAndMatches,

@@ -88,7 +88,8 @@ public:
 
 public:
 
-  ReconstructionEngine_sequentialSfM(const sfmData::SfMData& sfmData,
+  ReconstructionEngine_sequentialSfM(std::mt19937 & generator,
+                                     const sfmData::SfMData& sfmData,
                                      const Params& params,
                                      const std::string& outputFolder,
                                      const std::string& loggingFile = "");

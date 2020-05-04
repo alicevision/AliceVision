@@ -21,6 +21,8 @@ using namespace aliceVision::robustEstimation;
 // Assert that each time exactly N random number are picked (no repetition)
 BOOST_AUTO_TEST_CASE(UniformSampleTest_NoRepetions) {
 
+  std::mt19937 generator;
+
   for(std::size_t upperBound = 1; upperBound < 513; upperBound *= 2)
   { 
     //Size of the data set
@@ -29,7 +31,7 @@ BOOST_AUTO_TEST_CASE(UniformSampleTest_NoRepetions) {
       //Size of the consensus set
       std::vector<std::size_t> samples;
       std::cout << "Upper " << upperBound << " Lower " << 0 << " numSamples " << numSamples << "\n";
-      UniformSample(numSamples, upperBound, samples);
+      UniformSample(generator, numSamples, upperBound, samples);
       std::set<std::size_t> myset;
       for(const auto& s : samples) 
       {
@@ -44,6 +46,8 @@ BOOST_AUTO_TEST_CASE(UniformSampleTest_NoRepetions) {
 
 BOOST_AUTO_TEST_CASE(UniformSampleTest_UniformSampleSet) {
 
+  std::mt19937 generator;
+
   for(std::size_t upperBound = 1; upperBound < 513; upperBound *= 2)
   { 
     //Size of the data set
@@ -52,7 +56,7 @@ BOOST_AUTO_TEST_CASE(UniformSampleTest_UniformSampleSet) {
       //Size of the consensus set
       std::cout << "Upper " << upperBound << " Lower " << 0 << " numSamples " << numSample << "\n";
       std::set<std::size_t> samples;
-      UniformSample(numSample, upperBound, samples);
+      UniformSample(generator, numSample, upperBound, samples);
       BOOST_CHECK_EQUAL(numSample, samples.size());
       for(const auto& s : samples) 
       {
@@ -65,6 +69,7 @@ BOOST_AUTO_TEST_CASE(UniformSampleTest_UniformSampleSet) {
 
 BOOST_AUTO_TEST_CASE(UniformSampleTest_NoRepetionsBeginEnd) {
 
+  std::mt19937 generator;
   for(std::size_t upperBound = 1; upperBound < 513; upperBound *= 2)
   { 
     //Size of the data set
@@ -75,7 +80,7 @@ BOOST_AUTO_TEST_CASE(UniformSampleTest_NoRepetionsBeginEnd) {
       const std::size_t begin = upperBound-numSamples;
       std::cout << "Upper " << upperBound << " Lower " << begin << " numSamples " << numSamples << "\n";
       std::vector<std::size_t> samples;
-      UniformSample(begin, upperBound, numSamples, samples);
+      UniformSample(generator, begin, upperBound, numSamples, samples);
       std::set<std::size_t> myset;
       for(const auto& s : samples) 
       {
@@ -90,13 +95,15 @@ BOOST_AUTO_TEST_CASE(UniformSampleTest_NoRepetionsBeginEnd) {
 
 BOOST_AUTO_TEST_CASE(UniformSampleTest_randSample) {
   
+  std::mt19937 generator;
+
   for(std::size_t upperBound = 1; upperBound < 513; upperBound *= 2)
   { 
     for(std::size_t numSamples = 1; numSamples <= upperBound; numSamples *= 2)
     { 
       assert(upperBound >= numSamples);
       const std::size_t lowerBound = upperBound-numSamples;
-      const auto samples = randSample<std::size_t>(lowerBound, upperBound, numSamples);
+      const auto samples = randSample<std::mt19937, std::size_t>(generator, lowerBound, upperBound, numSamples);
       
       std::set<std::size_t> myset;
       std::cout << "Upper " << upperBound << " Lower " << lowerBound << " numSamples " << numSamples << "\n";

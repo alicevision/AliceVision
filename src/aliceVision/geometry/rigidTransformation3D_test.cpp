@@ -9,6 +9,7 @@
 #include "aliceVision/robustEstimation/ACRansac.hpp"
 
 #include <iostream>
+#include <random>
 
 #define BOOST_TEST_MODULE rigidTransformation3D
 
@@ -146,8 +147,9 @@ BOOST_AUTO_TEST_CASE(SRT_precision_ACRANSAC_noNoise)
   Mat3 Rc;
   Vec3 tc;
 
+  std::mt19937 generator;
   std::vector<std::size_t> vec_inliers;
-  const bool result = ACRansac_FindRTS(x1, x2, Sc, tc, Rc, vec_inliers, true);
+  const bool result = ACRansac_FindRTS(generator, x1, x2, Sc, tc, Rc, vec_inliers, true);
 
   BOOST_CHECK(result);
   BOOST_CHECK(vec_inliers.size() == nbPoints);
@@ -202,8 +204,9 @@ BOOST_AUTO_TEST_CASE(SRT_precision_ACRANSAC_noiseByShuffling)
   Mat3 Rc;
   Vec3 tc;
 
+  std::mt19937 generator;
   std::vector<std::size_t> vec_inliers;
-  const bool result = ACRansac_FindRTS(x1, x2, Sc, tc, Rc, vec_inliers, true);
+  const bool result = ACRansac_FindRTS(generator, x1, x2, Sc, tc, Rc, vec_inliers, true);
 
   ALICEVISION_LOG_DEBUG(
           "Scale " << Sc << "\n" <<
