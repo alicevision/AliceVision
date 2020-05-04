@@ -159,59 +159,54 @@ BOOST_AUTO_TEST_CASE(o2_Evaluation)
 
 BOOST_AUTO_TEST_CASE(FivePointsRelativePose_Random)
 {
-  TestData d = SomeTestData();
-
-  std::vector<robustEstimation::Mat3Model> Es;
-  std::vector<Mat3> Rs;
-  std::vector<Vec3> ts;
-
-  multiview::relativePose::Essential5PSolver solver;
-
-  solver.solve(d.x1, d.x2, Es);
-
-  BOOST_CHECK(!Es.empty());
-
-  // Recover rotation and translation from E
-  Rs.resize(Es.size());
-  ts.resize(Es.size());
-  for(std::size_t s = 0; s < Es.size(); ++s)
-  {
-    for(Eigen::Index c = 0; c < d.x1.cols(); ++c)
+    for(std::size_t trial = 0; trial < 100; ++trial)
     {
-        const double v = d.x2.col(c).homogeneous().transpose() * Es.at(s).getMatrix() *
-                         d.x1.col(c).homogeneous();
-        BOOST_CHECK_SMALL(v, 1.0e-8);
+        TestData d = SomeTestData();
+
+        std::vector<robustEstimation::Mat3Model> Es;
+        std::vector<Mat3> Rs;
+        std::vector<Vec3> ts;
+
+        multiview::relativePose::Essential5PSolver solver;
+
+        solver.solve(d.x1, d.x2, Es);
+
+        BOOST_CHECK(!Es.empty());
+
+        // Recover rotation and translation from E
+        Rs.resize(Es.size());
+        ts.resize(Es.size());
+        for(std::size_t s = 0; s < Es.size(); ++s)
+        {
+            for(Eigen::Index c = 0; c < d.x1.cols(); ++c)
+            {
+                const double v =
+                    d.x2.col(c).homogeneous().transpose() * Es.at(s).getMatrix() * d.x1.col(c).homogeneous();
+                BOOST_CHECK_SMALL(v, 1.0e-6);
+            }
+
+            Vec2 x1Col = d.x1.col(0);
+            Vec2 x2Col = d.x2.col(0);
+            BOOST_CHECK(motionFromEssentialAndCorrespondence(Es.at(s).getMatrix(), Mat3::Identity(), x1Col,
+                                                             Mat3::Identity(), x2Col, &Rs[s], &ts[s]));
+        }
+
+        bool bsolution_found = false;
+
+        for(std::size_t i = 0; i < Es.size(); ++i)
+        {
+//            std::cout << i << std::endl;
+
+            // check that we find the correct relative orientation.
+            if(FrobeniusDistance(d.R, Rs[i]) < 1e-3 && (d.t / d.t.norm() - ts[i] / ts[i].norm()).norm() < 1e-3)
+            {
+                bsolution_found = true;
+                // Check that E holds the essential matrix constraints.
+                EXPECT_ESSENTIAL_MATRIX_PROPERTIES(Es.at(i).getMatrix(), 1e-8);
+            }
+        }
+        BOOST_CHECK(bsolution_found);
     }
-
-    Vec2 x1Col = d.x1.col(0);
-    Vec2 x2Col = d.x2.col(0);
-    BOOST_CHECK(
-      motionFromEssentialAndCorrespondence(Es.at(s).getMatrix(),
-                                         Mat3::Identity(),
-                                         x1Col,
-                                         Mat3::Identity(),
-                                         x2Col,
-                                         &Rs[s],
-                                         &ts[s]));
-  }
-
-  bool bsolution_found = false;
-
-  for(std::size_t i = 0; i < Es.size(); ++i)
-  {
-    std::cout << i << std::endl;
-
-    // check that we find the correct relative orientation.
-    if(FrobeniusDistance(d.R, Rs[i]) < 1e-3
-        && (d.t / d.t.norm() - ts[i] / ts[i].norm()).norm() < 1e-3 )
-    {
-      bsolution_found = true;
-      // Check that E holds the essential matrix constraints.
-      EXPECT_ESSENTIAL_MATRIX_PROPERTIES(Es.at(i).getMatrix(), 1e-8);
-    }
-  }
-  // almost one solution must find the correct relative orientation
-  BOOST_CHECK(bsolution_found);
 }
 
 BOOST_AUTO_TEST_CASE(FivePointsRelativePose_test_data_sets)
