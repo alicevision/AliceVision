@@ -89,6 +89,7 @@ typedef Eigen::VectorXd Vec;
 typedef Eigen::Matrix<unsigned int, Eigen::Dynamic, 1> Vecu;
 typedef Eigen::MatrixXf Matf;
 typedef Eigen::VectorXf Vecf;
+using Vecb = Eigen::Matrix<bool, Eigen::Dynamic, 1>;
 
 typedef Eigen::Matrix<double, 2, Eigen::Dynamic> Mat2X;
 typedef Eigen::Matrix<double, 3, Eigen::Dynamic> Mat3X;

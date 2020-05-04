@@ -44,6 +44,25 @@ Mat3 F_from_P(const Mat34& P1, const Mat34& P2);
 double Depth(const Mat3& R, const Vec3& t, const Vec3& X);
 
 /**
+ * @brief Test whether the given points are in front of the camera.
+ * @param[in] R the camera rotation.
+ * @param[in] t the camera translation.
+ * @param[in] X the 3D points to test.
+ * @return A vector of boolean of the same size as the number ot points. The corresponding value is true if the point
+ * is in front of the camera, false otherwise.
+ */
+Vecb cheiralityTest(const Mat3 &R, const Vec3 &t, const Mat3X &X);
+
+/**
+ * @brief Test whether all the given points are in front of the camera.
+ * @param[in] R the camera rotation.
+ * @param[in] t the camera translation.
+ * @param[in] X the 3D points to test.
+ * @return true if all the points is in front of the camera, false otherwise.
+ */
+bool cheiralityTestAll(const Mat3 &R, const Vec3 &t, const Mat3X &X);
+
+/**
  * @brief Compute P*[X|1.0]. Transformed from homogeneous to euclidean coordinates.
  */
 Vec2 project(const Mat34& P, const Vec3& X);

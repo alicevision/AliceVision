@@ -211,6 +211,16 @@ double Depth(const Mat3 &R, const Vec3 &t, const Vec3 &X)
   return (R*X)[2] + t[2];
 }
 
+Vecb cheiralityTest(const Mat3 &R, const Vec3 &t, const Mat3X &X)
+{
+    return ((R*X).row(2) + t[2]*Mat::Ones(1, X.cols())).array() >= .0;
+}
+
+bool cheiralityTestAll(const Mat3 &R, const Vec3 &t, const Mat3X &X)
+{
+    return cheiralityTest(R, t, X).all();
+}
+
 Vec3 euclideanToHomogeneous(const Vec2 &x)
 {
   return x.homogeneous();
