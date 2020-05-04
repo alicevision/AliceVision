@@ -52,8 +52,11 @@ TestData SomeTestData()
   d.X.row(2).array() += 1.0;
 
   d.R = RotationAroundZ(0.3) * RotationAroundX(0.1) * RotationAroundY(0.2);
-  // d.t.setRandom();
-  d.t << 0.0, 10.0, 0.0;
+  do
+  {
+      d.t.setRandom();
+  }while(!cheiralityTestAll(d.R, d.t, d.X));
+
 
   essentialFromRt(Mat3::Identity(), Vec3::Zero(), d.R, d.t, &d.E);
 
