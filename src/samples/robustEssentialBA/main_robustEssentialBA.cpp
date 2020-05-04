@@ -53,6 +53,8 @@ bool readIntrinsic(const std::string & fileName, Mat3 & K);
 ///   way 2: independent cameras motion [R|t], shared focal [f] and structure
 int main() {
 
+  std::mt19937 generator;
+
   const std::string sInputDir = string("../") + string(THIS_SOURCE_DIR) + "/imageData/SceauxCastle/";
   Image<RGBColor> image;
   const string jpg_filenameL = sInputDir + "100_7101.jpg";
@@ -165,7 +167,7 @@ int main() {
     std::pair<size_t, size_t> size_imaL(imageL.Width(), imageL.Height());
     std::pair<size_t, size_t> size_imaR(imageR.Width(), imageR.Height());
     RelativePoseInfo relativePose_info;
-    if (!robustRelativePose(K, K, xL, xR, relativePose_info, size_imaL, size_imaR, 256))
+    if (!robustRelativePose(generator, K, K, xL, xR, relativePose_info, size_imaL, size_imaR, 256))
     {
       std::cerr << " /!\\ Robust relative pose estimation failure."
         << std::endl;

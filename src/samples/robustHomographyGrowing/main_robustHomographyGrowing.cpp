@@ -169,6 +169,7 @@ int main(int argc, char **argv)
   ALICEVISION_COUT(vm);
 
   Image<RGBColor> image;
+  std::mt19937 generator;
 
   Image<float> imageLeft, imageRight;
   readImage(filenameLeft, imageLeft, image::EImageColorSpace::NO_CONVERSION);
@@ -276,7 +277,7 @@ int main(int argc, char **argv)
   // First sort the putative matches by increasing distance ratio value
   sortMatches_byDistanceRatio(vec_PutativeMatches);
 
-  matchingImageCollection::filterMatchesByHGrowing(regions_perImage.at(0).get()->Features(),
+  matchingImageCollection::filterMatchesByHGrowing(generator, regions_perImage.at(0).get()->Features(),
                                                    regions_perImage.at(1).get()->Features(),
                                                    vec_PutativeMatches,
                                                    homographiesAndMatches,

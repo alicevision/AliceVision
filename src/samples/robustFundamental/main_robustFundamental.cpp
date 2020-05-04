@@ -76,6 +76,8 @@ int main(int argc, char **argv)
     return EXIT_FAILURE;
   }
 
+  std::mt19937 generator;
+
   Image<unsigned char> imageL, imageR;
   readImage(jpgFilenameL, imageL, image::EImageColorSpace::NO_CONVERSION);
   readImage(jpgFilenameR, imageR, image::EImageColorSpace::NO_CONVERSION);
@@ -185,7 +187,7 @@ int main(int argc, char **argv)
       true); // configure as point to line error model.
 
     Mat3 F;
-    const std::pair<double,double> ACRansacOut = ACRANSAC(kernel, vec_inliers, 1024, &F,
+    const std::pair<double,double> ACRansacOut = ACRANSAC(generator, kernel, vec_inliers, 1024, &F,
       Square(4.0)); // Upper bound of authorized threshold
     
     const double & thresholdF = ACRansacOut.first;

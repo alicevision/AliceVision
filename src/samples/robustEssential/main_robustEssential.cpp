@@ -45,6 +45,8 @@ bool exportToPly(const std::vector<Vec3> & vec_points,
 
 int main() {
 
+  std::mt19937 generator;
+
   const std::string sInputDir = string("../") + string(THIS_SOURCE_DIR) + "/imageData/SceauxCastle/";
   const string jpg_filenameL = sInputDir + "100_7101.jpg";
   const string jpg_filenameR = sInputDir + "100_7102.jpg";
@@ -156,7 +158,7 @@ int main() {
     std::pair<size_t, size_t> size_imaL(imageL.Width(), imageL.Height());
     std::pair<size_t, size_t> size_imaR(imageR.Width(), imageR.Height());
     sfm::RelativePoseInfo relativePose_info;
-    if (!sfm::robustRelativePose(K, K, xL, xR, relativePose_info, size_imaL, size_imaR, 256))
+    if (!sfm::robustRelativePose(generator, K, K, xL, xR, relativePose_info, size_imaL, size_imaR, 256))
     {
       std::cerr << " /!\\ Robust relative pose estimation failure."
         << std::endl;

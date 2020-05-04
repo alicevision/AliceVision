@@ -34,6 +34,7 @@ using namespace std;
 
 int main() {
 
+  std::mt19937 generator;
   const std::string sInputDir = string("../") + string(THIS_SOURCE_DIR) + "/imageData/SceauxCastle/";
   Image<RGBColor> image;
   const string jpg_filenameL = sInputDir + "100_7101.jpg";
@@ -141,7 +142,7 @@ int main() {
       true); // configure as point to line error model.
 
     Mat3 F;
-    const std::pair<double,double> ACRansacOut = ACRANSAC(kernel, vec_inliers, 1024, &F,
+    const std::pair<double,double> ACRansacOut = ACRANSAC(generator, kernel, vec_inliers, 1024, &F,
       Square(4.0)); // Upper bound of authorized threshold
     const double & thresholdF = ACRansacOut.first;
 

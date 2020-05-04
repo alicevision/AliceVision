@@ -33,6 +33,7 @@ using namespace svg;
 using namespace std;
 
 int main() {
+  std::mt19937 generator;
 
   Image<RGBColor> image;
   const string jpg_filenameL = string("../") + string(THIS_SOURCE_DIR) + "/imageData/StanfordMobileVisualSearch/Ace_0.png";
@@ -140,7 +141,7 @@ int main() {
       false); // configure as point to point error model.
 
     Mat3 H;
-    const std::pair<double,double> ACRansacOut = ACRANSAC(kernel, vec_inliers, 1024, &H,
+    const std::pair<double,double> ACRansacOut = ACRANSAC(generator, kernel, vec_inliers, 1024, &H,
       std::numeric_limits<double>::infinity());
     const double & thresholdH = ACRansacOut.first;
 

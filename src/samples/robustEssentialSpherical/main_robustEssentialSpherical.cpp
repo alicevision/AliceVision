@@ -22,6 +22,7 @@
 
 #include <string>
 #include <iostream>
+#include <random>
 
 // These constants define the current software version.
 // They must be updated when the command line is changed.
@@ -40,6 +41,7 @@ int main() {
   std::cout << "Compute the relative pose between two spherical image."
    << "\nUse an Acontrario robust estimation based on angular errors." << std::endl;
 
+  std::mt19937 generator;
   const std::string sInputDir = std::string(THIS_SOURCE_DIR);
   const string jpg_filenameL = sInputDir + "/SponzaLion000.jpg";
 
@@ -164,8 +166,7 @@ int main() {
       // Robust estimation of the Essential matrix and it's precision
       Mat3 E;
       const double precision = std::numeric_limits<double>::infinity();
-      const std::pair<double,double> ACRansacOut =
-        ACRANSAC(kernel, vec_inliers, 1024, &E, precision);
+      const std::pair<double,double> ACRansacOut = ACRANSAC(generator, kernel, vec_inliers, 1024, &E, precision);
       const double & threshold = ACRansacOut.first;
       const double & NFA = ACRansacOut.second;
 
