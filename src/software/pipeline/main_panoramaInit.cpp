@@ -695,9 +695,12 @@ int main(int argc, char * argv[])
     std::vector<std::pair<std::string, int>> names_with_id;
     for (auto v : sfmData.getViews())
     {
-      names_with_id.push_back(std::make_pair(v.second->getImagePath(), v.first));
+      boost::filesystem::path path_image(v.second->getImagePath());
+      names_with_id.push_back(std::make_pair(path_image.stem().string(), v.first));
     }
     std::sort(names_with_id.begin(), names_with_id.end());
+
+    
 
     size_t index = 0;
     for (auto &item_rotation: rotations)
