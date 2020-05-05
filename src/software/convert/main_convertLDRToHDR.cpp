@@ -106,26 +106,20 @@ Eigen::Matrix3d getRotationForCode(int code) {
 
   switch (code)
   {
-  case 1:
-    R_metadata = Eigen::AngleAxisd(M_PI, Vec3(0,1,0));
-    break;
-  case 2:
-    R_metadata = Eigen::AngleAxisd(M_PI, Vec3(1,0,0));
+  case 0:
+    R_metadata = Eigen::Matrix3d::Identity();
     break;
   case 3:
-    R_metadata = Eigen::AngleAxisd(M_PI, Vec3(1,0,0)) * Eigen::AngleAxisd(M_PI, Vec3(0,1,0));
-    break;
-  case 4:
-    R_metadata = Eigen::AngleAxisd(-M_PI_2, Vec3(0,0,1)) * Eigen::AngleAxisd(M_PI, Vec3(0,1,0));
+    R_metadata = Eigen::AngleAxisd(M_PI, Vec3(0,0,1));
     break;
   case 5:
     R_metadata = Eigen::AngleAxisd(-M_PI_2, Vec3(0,0,1));
     break;  
   case 6:
-    R_metadata = Eigen::AngleAxisd(M_PI_2, Vec3(0,0,1)) * Eigen::AngleAxisd(M_PI, Vec3(0,1,0));
-    break;
-  case 7:
     R_metadata = Eigen::AngleAxisd(M_PI_2, Vec3(0,0,1));
+    break;
+  default:
+    ALICEVISION_LOG_ERROR("RotationCode flip is not valid ?");
     break;
   }
 
@@ -257,112 +251,164 @@ int main(int argc, char * argv[])
     ALICEVISION_LOG_ERROR("Multiple intrinsics : Different kind of images in dataset");
     return EXIT_FAILURE;
   }
+
+  if (sfmData.getIntrinsics().size() > 1) {
+    
+    unsigned int refw = sfmData.getIntrinsics().begin()->second->w();
+    unsigned int refh = sfmData.getIntrinsics().begin()->second->h();
+
+    for (auto item : sfmData.getIntrinsics()) {
+      if (item.second->w() == refw && item.second->h() == refh) {
+        continue;
+      }
+
+      if (item.second->w() == refh && item.second->h() == refw) {
+        continue;
+      }
+
+      ALICEVISION_LOG_ERROR("Multiple intrinsics : Different kind of images in dataset");
+      return EXIT_FAILURE;
+    }
+  }
   
   sfmData::Views & views = sfmData.getViews();
 
+  /* Read the flip values from metadata, or create it if necessary*/
   std::map<int, size_t> count_flips;
   for (const auto & v : views) {
     if (v.second->hasMetadata("raw:flip")) {
-      
       std::string str = v.second->getMetadata("raw:flip");
       int flip_code = std::stoi(str);
       count_flips[flip_code]++;
     }
+    else {
+      /* Add fake raw:flip if needed */
+      int width = v.second->getWidth();
+      int height = v.second->getHeight();
+      if (width > height) {
+        v.second->addMetadata("raw:flip", "0");
+        count_flips[0]++;
+      } else {
+        v.second->addMetadata("raw:flip", "5");
+        count_flips[5]++;
+      }
+    }
   }
-
+  
   if (count_flips.size() <= 1 && sfmData.getIntrinsics().size() == 2) {
     ALICEVISION_LOG_ERROR("Multiple intrinsics : Different kind of images in dataset");
     return EXIT_FAILURE;
   }
 
-  
 
-  if (count_flips.size() > 0) {
-    int max_flip = -1; 
-    size_t max_count = 0;
-    for (auto item : count_flips) {
-      if (item.second > max_count) {
-        max_flip = item.first;
-        max_count = item.second;
-      }
-    }
-
-    for (auto & v : views)
-    {
-      if (!v.second->hasMetadata("raw:flip")) {
-        continue;
-      }
-
-      std::string str = v.second->getMetadata("raw:flip");
-      int flip_code = std::stoi(str);
-
-      if (flip_code == max_flip) {
-        continue;
-      }
-
-      Eigen::Matrix3d R = getRotationForCode(flip_code) * getRotationForCode(max_flip).transpose();
-      Eigen::AngleAxisd aa(R);
-      Eigen::Vector3d axis = aa.axis();
-      double angle = aa.angle();
-
-      if (axis(0) < -0.99) {
-        axis(0) = 1.0;
-        angle = -angle;
-      }
-      if (axis(1) < -0.99) {
-        axis(1) = 1.0;
-        angle = -angle;
-      }
-      if (axis(2) < -0.99) {
-        axis(2) = 1.0;
-        angle = -angle;
-      }
-
-      /*Prepare output file*/
-      image::Image<image::RGBfColor> output;
-      boost::filesystem::path origImgPath(v.second->getImagePath());
-      std::string origFilename = origImgPath.stem().string();
-      std::string rotatedImagePath = (fs::path(outputPath) / (origFilename + ".exr")).string();
-      oiio::ParamValueList metadata = image::readImageMetadata(v.second->getImagePath());
-
-      /*Read input file*/
-      image::Image<image::RGBfColor> originalImage;
-      image::readImage(v.second->getImagePath(), originalImage, image::EImageColorSpace::LINEAR);
-      oiio::ImageBuf bufInput(oiio::ImageSpec(originalImage.Width(), originalImage.Height(), 3, oiio::TypeDesc::FLOAT), originalImage.data());
-
-      /**/
-      bool validTransform = false;
-      if (axis(1) > 0.99) {
-        if (std::abs(std::abs(angle) - M_PI) < 1e-4) {
-          validTransform = true;
-          output.resize(originalImage.Width(), originalImage.Height());
-          oiio::ImageBuf bufOutput(oiio::ImageSpec(output.Width(), output.Height(), 3, oiio::TypeDesc::FLOAT), output.data());
-          oiio::ImageBufAlgo::flop(bufOutput, bufInput);
-        }
-      }
-      else if (axis(2) > 0.99) {
-        if (std::abs(angle - M_PI_2) < 1e-4) {
-          validTransform = true;
-          output.resize(originalImage.Height(), originalImage.Width());
-          oiio::ImageBuf bufOutput(oiio::ImageSpec(output.Width(), output.Height(), 3, oiio::TypeDesc::FLOAT), output.data());
-          oiio::ImageBufAlgo::rotate90(bufOutput, bufInput);
-        }
-      }
-      
-      if (validTransform == false) {
-        ALICEVISION_LOG_ERROR("Unrecognized intermediate transformation : ");
-        ALICEVISION_LOG_ERROR(axis.transpose());
-        ALICEVISION_LOG_ERROR(angle);
-        return EXIT_FAILURE;
-      }
-      
-      
-      image::writeImage(rotatedImagePath, output, image::EImageColorSpace::AUTO, metadata);
-      v.second->setWidth(output.Width());
-      v.second->setHeight(output.Height());
-      v.second->setImagePath(rotatedImagePath);
+  /*Decide which rotation is the most used*/
+  int max_flip = -1; 
+  size_t max_count = 0;
+  for (auto item : count_flips) {
+    if (item.second > max_count) {
+      max_flip = item.first;
+      max_count = item.second;
     }
   }
+
+  /*Get the intrinsic of the best flip*/
+  IndexT refIntrinsic = UndefinedIndexT;
+  for (auto & v : views)
+  {
+    /* Now, all views have raw:flip */
+    std::string str = v.second->getMetadata("raw:flip");
+    int flip_code = std::stoi(str);
+
+    if (flip_code == max_flip) {
+      IndexT intid = v.second->getIntrinsicId();
+      if (refIntrinsic != intid && refIntrinsic != UndefinedIndexT) {
+        ALICEVISION_LOG_ERROR("Multiple intrinsics for the correct flip code !");
+        return EXIT_FAILURE;
+      }
+
+      refIntrinsic = intid;
+    }
+  }
+
+  for (sfmData::Intrinsics::iterator it = sfmData.getIntrinsics().begin(); it != sfmData.getIntrinsics().end(); it++) {
+    if (it->first != refIntrinsic) {
+      it = sfmData.getIntrinsics().erase(it);
+    }
+  }
+
+  for (auto & v : views)
+  {
+    /* Now, all views have raw:flip */
+    std::string str = v.second->getMetadata("raw:flip");
+    int flip_code = std::stoi(str);
+
+    if (flip_code == max_flip) {
+      continue;
+    }
+
+    if (refIntrinsic != v.second->getIntrinsicId()) {
+      v.second->setIntrinsicId(refIntrinsic);
+    }
+
+    Eigen::Matrix3d R = getRotationForCode(flip_code) * getRotationForCode(max_flip).transpose();
+    Eigen::AngleAxisd aa(R);
+    Eigen::Vector3d axis = aa.axis();
+    double angle = aa.angle();
+
+    if (axis(2) < -0.99) {
+      axis(2) = 1.0;
+      angle = -angle;
+    }
+
+    /*Prepare output file*/
+    image::Image<image::RGBfColor> output;
+    boost::filesystem::path origImgPath(v.second->getImagePath());
+    std::string origFilename = origImgPath.stem().string();
+    std::string rotatedImagePath = (fs::path(outputPath) / (origFilename + ".exr")).string();
+    oiio::ParamValueList metadata = image::readImageMetadata(v.second->getImagePath());
+
+    /*Read input file*/
+    image::Image<image::RGBfColor> originalImage;
+    image::readImage(v.second->getImagePath(), originalImage, image::EImageColorSpace::LINEAR);
+    oiio::ImageBuf bufInput(oiio::ImageSpec(originalImage.Width(), originalImage.Height(), 3, oiio::TypeDesc::FLOAT), originalImage.data());
+
+    /*Find the correct operation to perform*/
+    bool validTransform = false;
+    if (axis(2) > 0.99) {
+      if (std::abs(angle - M_PI_2) < 1e-4) {
+        validTransform = true;
+        output.resize(originalImage.Height(), originalImage.Width());
+        oiio::ImageBuf bufOutput(oiio::ImageSpec(output.Width(), output.Height(), 3, oiio::TypeDesc::FLOAT), output.data());
+        oiio::ImageBufAlgo::rotate90(bufOutput, bufInput);
+      }
+      else if (std::abs(angle + M_PI_2) < 1e-4) {
+        validTransform = true;
+        output.resize(originalImage.Height(), originalImage.Width());
+        oiio::ImageBuf bufOutput(oiio::ImageSpec(output.Width(), output.Height(), 3, oiio::TypeDesc::FLOAT), output.data());
+        oiio::ImageBufAlgo::rotate90(bufOutput, bufInput);
+      }
+      else if (std::abs(std::abs(angle) - M_PI) < 1e-4) {
+        validTransform = true;
+        output.resize(originalImage.Width(), originalImage.Height());
+        oiio::ImageBuf bufOutput(oiio::ImageSpec(output.Width(), output.Height(), 3, oiio::TypeDesc::FLOAT), output.data());
+        oiio::ImageBufAlgo::rotate180(bufOutput, bufInput);
+      }
+    }
+    
+    if (validTransform == false) {
+      ALICEVISION_LOG_ERROR("Unrecognized intermediate transformation : ");
+      ALICEVISION_LOG_ERROR(axis.transpose());
+      ALICEVISION_LOG_ERROR(angle);
+      return EXIT_FAILURE;
+    }
+    
+    
+    image::writeImage(rotatedImagePath, output, image::EImageColorSpace::AUTO, metadata);
+    v.second->setWidth(output.Width());
+    v.second->setHeight(output.Height());
+    v.second->setImagePath(rotatedImagePath);
+  }
+  
 
   // Order views by their image names (without path and extension to make sure we handle rotated images)
   std::vector<std::shared_ptr<sfmData::View>> viewsOrderedByName;
