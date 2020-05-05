@@ -248,7 +248,7 @@ int main(int argc, char * argv[])
   // Make sure there is only one kind of image in dataset
   if (sfmData.getIntrinsics().size() > 2)
   {
-    ALICEVISION_LOG_ERROR("Multiple intrinsics : Different kind of images in dataset");
+    ALICEVISION_LOG_ERROR("Only one intrinsic allowed (" << sfmData.getIntrinsics().size() << " found)");
     return EXIT_FAILURE;
   }
 
@@ -296,7 +296,7 @@ int main(int argc, char * argv[])
   }
   
   if (count_flips.size() <= 1 && sfmData.getIntrinsics().size() == 2) {
-    ALICEVISION_LOG_ERROR("Multiple intrinsics : Different kind of images in dataset");
+    ALICEVISION_LOG_ERROR("Only one intrinsic allowed (" << sfmData.getIntrinsics().size() << " found, count flips: " << count_flips.size() << ")");
     return EXIT_FAILURE;
   }
 
