@@ -19,6 +19,8 @@ option(AV_BUILD_ALICEVISION "Enable building of AliceVision" ON)
 
 option(AV_USE_CUDA "Enable CUDA" ON)
 
+option(BUILD_SHARED_LIBS "Build shared libraries" ON)
+
 if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE Release CACHE STRING "Build type for AliceVision" FORCE)
 endif()
@@ -234,7 +236,7 @@ set(SUITESPARSE_TARGET suitesparse)
 set(SUITESPARSE_INTERNAL_MAKE_CMD LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR} make BLAS="${BLAS_LIBRARIES}" LAPACK="${LAPACK_LIBRARIES}")
 ExternalProject_Add(${SUITESPARSE_TARGET}
        # URL https://github.com/DrTimothyAldenDavis/SuiteSparse/archive/v4.5.6.tar.gz
-       URL https://github.com/DrTimothyAldenDavis/SuiteSparse/archive/v5.6.0.tar.gz  # requires gxx >= 4.9, centos 7 use gxx-4.8.5 by default
+       URL https://github.com/DrTimothyAldenDavis/SuiteSparse/archive/v5.7.2.tar.gz  # requires gxx >= 4.9, centos 7 use gxx-4.8.5 by default
        PREFIX ${BUILD_DIR}
        BUILD_IN_SOURCE 0
        BUILD_ALWAYS 0
