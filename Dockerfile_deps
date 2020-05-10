@@ -17,8 +17,8 @@ LABEL maintainer="AliceVision Team alicevision-team@googlegroups.com"
 # OS/Version (FILE): cat /etc/issue.net
 # Cuda version (ENV): $CUDA_VERSION
 
-ENV AV_DEV=/opt/AliceVisionDeps_git \
-    AV_BUILD=/tmp/AliceVisionDeps_build \
+ENV AV_DEPS_DEV=/opt/AliceVisionDeps_git \
+    AV_DEPS_BUILD=/tmp/AliceVisionDeps_build \
     AV_INSTALL=/opt/AliceVision_install \
     AV_BUNDLE=/opt/AliceVision_bundle \
     PATH="${PATH}:${AV_BUNDLE}" \
@@ -69,12 +69,27 @@ RUN wget https://cmake.org/files/v3.16/cmake-3.16.3.tar.gz && tar zxvf cmake-3.1
 WORKDIR "${AV_BUNDLE}/share/aliceVision"
 RUN wget https://gitlab.com/alicevision/trainedVocabularyTreeData/raw/master/vlfeat_K80L3.SIFT.tree
 
-COPY . "${AV_DEV}"
+COPY . "${AV_DEPS_DEV}"
 
-WORKDIR "${AV_BUILD}"
-RUN cmake "${AV_DEV}" -DCMAKE_BUILD_TYPE=Release -DALICEVISION_BUILD_DEPENDENCIES:BOOL=ON -DAV_BUILD_ALICEVISION:BOOL=OFF -DCMAKE_INSTALL_PREFIX="${AV_INSTALL}" -DALICEVISION_BUNDLE_PREFIX="${AV_BUNDLE}"
+WORKDIR "${AV_DEPS_BUILD}"
+# Build and clear build files in one line to reduce image size (avoid intermediate cache)
+RUN \
+\
+cmake "${AV_DEPS_DEV}" -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS:BOOL=ON -DALICEVISION_BUILD_DEPENDENCIES:BOOL=ON -DAV_DEPS_BUILD_ALICEVISION:BOOL=OFF -DCMAKE_INSTALL_PREFIX="${AV_INSTALL}" -DALICEVISION_BUNDLE_PREFIX="${AV_BUNDLE}" && \
+\
+make -j8 && \
+\
+make install && \
+\
+mv ${AV_INSTALL}/bin ${AV_INSTALL}/bin_deps && \
+\
+cd /opt && \
+\
+rm -rf "${AV_DEPS_BUILD}"
 
-WORKDIR "${AV_BUILD}"
+## To debug a specific library
+
+# WORKDIR "${AV_DEPS_BUILD}"
 # RUN make zlib
 # RUN make geogram
 # RUN make tbb
@@ -93,5 +108,3 @@ WORKDIR "${AV_BUILD}"
 # RUN make alembic
 # RUN make popsift
 
-RUN make install && mv ${AV_INSTALL}/bin ${AV_INSTALL}/bin_deps
-# && cd /opt && rm -rf "${AV_BUILD}"
