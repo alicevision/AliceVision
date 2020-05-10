@@ -12,8 +12,8 @@ namespace voctree {
 float sparseDistance(const SparseHistogram& v1, const SparseHistogram& v2, const std::string &distanceMethod, const std::vector<float>& word_weights)
 {
 
-  float distance = 0.0f;
-  float epsilon = 0.001;
+  float distance{0.0f};
+  const float epsilon{0.001f};
   
   SparseHistogram::const_iterator i1 = v1.begin(), i1e = v1.end();
   SparseHistogram::const_iterator i2 = v2.begin(), i2e = v2.end();
@@ -56,9 +56,9 @@ float sparseDistance(const SparseHistogram& v1, const SparseHistogram& v2, const
   
   else if(distanceMethod == "commonPoints")
   {
-    double score = 0.0;
-    double N1 = 0.0;
-    double N2 = 0.0;
+    float score{0.f};
+    float N1{0.f};
+    float N2{0.f};
     
     while(i1 != i1e && i2 != i2e)
     {
@@ -99,9 +99,9 @@ float sparseDistance(const SparseHistogram& v1, const SparseHistogram& v2, const
   
   else if(distanceMethod == "strongCommonPoints")
   {
-    double score = 0.0;
-    double N1 = 0.0;
-    double N2 = 0.0;
+    float score{0.f};
+    float N1{0.f};
+    float N2{0.f};
     
     while(i1 != i1e && i2 != i2e)
     {
@@ -117,7 +117,7 @@ float sparseDistance(const SparseHistogram& v1, const SparseHistogram& v2, const
       }
       else
       {
-        if( ( fabs(i1->second.size() - 1.0) < epsilon ) && ( fabs(i2->second.size() - 1.0) < epsilon) )
+        if( ( fabs(i1->second.size() - 1.f) < epsilon ) && ( fabs(i2->second.size() - 1.f) < epsilon) )
         {
           score += 1;
           N1 += 1;
@@ -145,9 +145,9 @@ float sparseDistance(const SparseHistogram& v1, const SparseHistogram& v2, const
   
   else if(distanceMethod == "weightedStrongCommonPoints")
   {
-    double score = 0.0;
-    double N1 = 0.0;
-    double N2 = 0.0;
+    float score{0.f};
+    float N1{0.f};
+    float N2{0.f};
     
     while(i1 != i1e && i2 != i2e)
     {
@@ -161,7 +161,7 @@ float sparseDistance(const SparseHistogram& v1, const SparseHistogram& v2, const
         N1 += i1->second.size()*word_weights[i1->first];
          ++i1;
       }
-        if( ( fabs(i1->second.size() - 1.0) < epsilon ) && ( fabs(i2->second.size() - 1.0) < epsilon) )
+        if( ( fabs(i1->second.size() - 1.f) < epsilon ) && ( fabs(i2->second.size() - 1.f) < epsilon) )
         {
           score += word_weights[i1->first];
           N1 += word_weights[i1->first];
@@ -188,10 +188,10 @@ float sparseDistance(const SparseHistogram& v1, const SparseHistogram& v2, const
   
   else if(distanceMethod == "inversedWeightedCommonPoints")
   {
-    double score = 0.0;
-    double N1 = 0.0;
-    double N2 = 0.0;
     std::map<int,int> compteur;
+    float score{0.f};
+    float N1{0.f};
+    float N2{0.f};
     
     while(i1 != i1e && i2 != i2e)
     {
@@ -223,7 +223,7 @@ float sparseDistance(const SparseHistogram& v1, const SparseHistogram& v2, const
 
     while(i2 != i2e)
     {
-      N2 += i2->second.size() / word_weights[i2->first];;
+      N2 += i2->second.size() / word_weights[i2->first];
       ++i2;
     }
     
