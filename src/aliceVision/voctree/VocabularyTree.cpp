@@ -18,7 +18,7 @@ float sparseDistance(const SparseHistogram& v1, const SparseHistogram& v2, const
   SparseHistogram::const_iterator i1 = v1.begin(), i1e = v1.end();
   SparseHistogram::const_iterator i2 = v2.begin(), i2e = v2.end();
   
-  if(distanceMethod.compare("classic") == 0) 
+  if(distanceMethod == "classic")
   {      
     while(i1 != i1e && i2 != i2e)
     {
@@ -54,7 +54,7 @@ float sparseDistance(const SparseHistogram& v1, const SparseHistogram& v2, const
     }
   }
   
-  else if(distanceMethod.compare("commonPoints") == 0) 
+  else if(distanceMethod == "commonPoints")
   {
     double score = 0.0;
     double N1 = 0.0;
@@ -97,7 +97,7 @@ float sparseDistance(const SparseHistogram& v1, const SparseHistogram& v2, const
     distance = - score;
   }
   
-  else if(distanceMethod.compare("strongCommonPoints") == 0) 
+  else if(distanceMethod == "strongCommonPoints")
   {
     double score = 0.0;
     double N1 = 0.0;
@@ -143,7 +143,7 @@ float sparseDistance(const SparseHistogram& v1, const SparseHistogram& v2, const
     distance = - score;
   }
   
-  else if(distanceMethod.compare("weightedStrongCommonPoints") == 0) 
+  else if(distanceMethod == "weightedStrongCommonPoints")
   {
     double score = 0.0;
     double N1 = 0.0;
@@ -186,7 +186,7 @@ float sparseDistance(const SparseHistogram& v1, const SparseHistogram& v2, const
     distance = - score;
   }
   
-  else if(distanceMethod.compare("inversedWeightedCommonPoints") == 0)
+  else if(distanceMethod == "inversedWeightedCommonPoints")
   {
     double score = 0.0;
     double N1 = 0.0;
