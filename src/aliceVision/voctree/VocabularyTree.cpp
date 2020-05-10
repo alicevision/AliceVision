@@ -34,7 +34,8 @@ float sparseDistance(const SparseHistogram& v1, const SparseHistogram& v2, const
       }
       else
       {
-        distance += fabs(i1->second.size() - i2->second.size());
+        const auto val = std::minmax(i1->second.size(), i2->second.size());
+        distance += static_cast<float>(val.second - val.first);
         ++i1;
         ++i2;
       }
