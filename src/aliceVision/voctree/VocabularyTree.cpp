@@ -6,6 +6,8 @@
 
 #include "VocabularyTree.hpp"
 
+#include <algorithm>
+
 namespace aliceVision {
 namespace voctree {
 
