@@ -22,25 +22,34 @@ ENV AV_DEV=/opt/AliceVisionDeps_git \
     AV_INSTALL=/opt/AliceVision_install \
     AV_BUNDLE=/opt/AliceVision_bundle \
     PATH="${PATH}:${AV_BUNDLE}" \
-    VERBOSE=1
+    VERBOSE=1 \
+    YUM_INSTALL='yum install -y --setopt=tsflags=nodocs'
 
+#
 # Install all compilation tools
 # - file and openssl are needed for cmake
-RUN yum -y install centos-release-scl
-RUN yum -y install \
-        devtoolset-6 \
-        devtoolset-6-make \
-        devtoolset-6-gcc-gfortran \
-        file \
-        git \
-        wget \
-        unzip \
-        yasm \
-        pkg-config \
-        libtool \
-        nasm \
-        automake \
-        openssl-devel
+#
+# Workaround to give access to deprecated devtoolset-6 is taken from ASWF container:
+# https://github.com/AcademySoftwareFoundation/aswf-docker/blob/master/scripts/common/install_yumpackages.sh#L119
+#
+# Install packages one by one with yum to ensure that it creates an error if a package is missing.
+#
+RUN $YUM_INSTALL centos-release-scl-rh && \
+    $YUM_INSTALL yum-utils && \
+    sed -i 's/7/7.6.1810/g; s|^#\s*\(baseurl=http://\)mirror|\1vault|g; /mirrorlist/d' /etc/yum.repos.d/CentOS-SCLo-*.repo && \
+    yum clean all && \
+    $YUM_INSTALL devtoolset-6-toolchain --nogpgcheck && \
+    $YUM_INSTALL --enablerepo=extras epel-release && \
+    $YUM_INSTALL file && \
+    $YUM_INSTALL git && \
+    $YUM_INSTALL wget && \
+    $YUM_INSTALL unzip && \
+    $YUM_INSTALL yasm && \
+    $YUM_INSTALL pkgconfig && \
+    $YUM_INSTALL libtool && \
+    $YUM_INSTALL nasm && \
+    $YUM_INSTALL automake && \
+    $YUM_INSTALL openssl-devel
 
 # Okay, change our shell to specifically use our software collections.
 # (default was SHELL [ "/bin/sh", "-c" ])
