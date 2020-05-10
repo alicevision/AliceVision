@@ -63,11 +63,11 @@ if (EXISTS "${OPENEXR_INCLUDE_PATH}/OpenEXR/ImfMultiPartInputFile.h")
 
     # Must be at least 2.0
     file(STRINGS "${OPENEXR_INCLUDE_PATH}/OpenEXR/OpenEXRConfig.h" TMP REGEX "^#define OPENEXR_VERSION_STRING .*$")
-    string (REGEX MATCHALL "[0-9]+[.0-9]+" OPENEXR_VERSION ${TMP})
+    string (REGEX MATCHALL "[0-9]+[.0-9]+" OPENEXR_VERSION "${TMP}")
     file(STRINGS "${OPENEXR_INCLUDE_PATH}/OpenEXR/OpenEXRConfig.h" TMP REGEX "^#define OPENEXR_VERSION_MAJOR .*$")
-    string (REGEX MATCHALL "[0-9]+" OPENEXR_VERSION_MAJOR ${TMP})
+    string (REGEX MATCHALL "[0-9]+" OPENEXR_VERSION_MAJOR "${TMP}")
     file(STRINGS "${OPENEXR_INCLUDE_PATH}/OpenEXR/OpenEXRConfig.h" TMP REGEX "^#define OPENEXR_VERSION_MINOR .*$")
-    string (REGEX MATCHALL "[0-9]+" OPENEXR_VERSION_MINOR ${TMP})
+    string (REGEX MATCHALL "[0-9]+" OPENEXR_VERSION_MINOR "${TMP}")
 else ()
     message(STATUS  "File ${OPENEXR_INCLUDE_PATH}/OpenEXR/ImfMultiPartInputFile.h does not exist. Default to 1.6.1")
     # Assume an old one, predates 2.x that had versions
