@@ -15,8 +15,10 @@ float sparseDistance(const SparseHistogram& v1, const SparseHistogram& v2, const
   float distance{0.0f};
   const float epsilon{0.001f};
   
-  SparseHistogram::const_iterator i1 = v1.begin(), i1e = v1.end();
-  SparseHistogram::const_iterator i2 = v2.begin(), i2e = v2.end();
+  auto i1 = v1.cbegin();
+  auto i1e = v1.cend();
+  auto i2 = v2.cbegin();
+  auto i2e = v2.cend();
   
   if(distanceMethod == "classic")
   {      
