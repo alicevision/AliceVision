@@ -17,122 +17,383 @@ namespace hdr {
 
 using namespace aliceVision::image;
 
-void extractSamples(std::vector<std::vector<ImageSamples>>& out_samples, const std::vector<std::vector<std::string>>& imagePathsGroups, const std::vector< std::vector<float> >& cameraExposures, int nbPoints, int calibrationDownscale, bool fisheye)
-{
-    const int nbGroups = imagePathsGroups.size();
-    out_samples.resize(nbGroups);
+struct Descriptor {
+    float exposure;
+    int channel;
+    int quantizedValue;
 
-    int averallNbImages = 0;
-    for (const auto& imgPaths : imagePathsGroups) {
-        averallNbImages += imgPaths.size();
+    bool operator<(const Descriptor &o )  const {
+
+        if (exposure < o.exposure) return true;
+        if (exposure == o.exposure && channel < o.channel) return true;
+        if (exposure == o.exposure && channel == o.channel && quantizedValue < o.quantizedValue) return true;
+
+        return false;
     }
-    const int samplesPerImage = nbPoints / averallNbImages;
+};
 
-    ALICEVISION_LOG_TRACE("samplesPerImage: " << samplesPerImage);
+void integral(image::Image<image::RGBfColor> & dest, image::Image<image::RGBfColor> & source) {
 
-    #pragma omp parallel for num_threads(3)
-    for (int g = 0; g<nbGroups; ++g)
-    {
-        std::vector<ImageSamples>& out_hdrSamples = out_samples[g];
+    /*
+    A B C 
+    D E F 
+    G H I
+    J K L
+    = 
+    A            A+B                A+B+C
+    A+D          A+B+D+E            A+B+C+D+E+F
+    A+D+G        A+B+D+E+G+H        A+B+C+D+E+F+G+H+I
+    A+D+G+J      A+B+D+E+G+H+J+K    A+B+C+D+E+F+G+H+I+J+K+L
+    */
 
-        const std::vector<std::string > &imagePaths = imagePathsGroups[g];
-        out_hdrSamples.resize(imagePaths.size());
+    dest.resize(source.Width(), source.Height());
 
-        const std::vector<float>& exposures = cameraExposures[g];
+    dest(0, 0) = source(0, 0);
+    for (int j = 1; j < source.Width(); j++) {
+        dest(0, j) = dest(0, j - 1) + source(0, j);
+    }
 
-        for (unsigned int i = 0; i < imagePaths.size(); ++i)
-        {
-            out_hdrSamples[i].exposure = exposures[i];
-            out_hdrSamples[i].colors.reserve(samplesPerImage);
-            std::vector<Rgb<double>> & colors = out_hdrSamples[i].colors;
+    for (int i = 1; i < source.Height(); i++) {
+
+        dest(i, 0) = dest(i - 1, 0) + source(i, 0);
+
+        for (int j = 1; j < source.Width(); j++) {
+
+            dest(i, j) = dest(i, j - 1) - dest(i - 1, j - 1) + dest(i - 1, j) + source(i, j);
+        }
+    }
+}
+
+void square(image::Image<image::RGBfColor> & dest, image::Image<image::RGBfColor> & source) {
+
+    dest.resize(source.Width(), source.Height());
+
+    for (int i = 0; i < source.Height(); i++) {
+
+        for (int j = 0; j < source.Width(); j++) {
+
+            dest(i, j).r() = source(i, j).r() * source(i, j).r();
+            dest(i, j).g() = source(i, j).g() * source(i, j).g();
+            dest(i, j).g() = source(i, j).b() * source(i, j).b();
+        }
+    }
+}
 
 
-            /**
-             * Load image
-            */
-            Image<RGBfColor> img;
-            readImage(imagePaths[i], img, EImageColorSpace::LINEAR);
 
-            /**
-             * Resize image 
-             */
-            if (calibrationDownscale != 1.0f)
-            {
-                unsigned int w = img.Width();
-                unsigned int h = img.Height();
-                unsigned int nw = (unsigned int)(floor(float(w) / calibrationDownscale));
-                unsigned int nh = (unsigned int)(floor(float(h) / calibrationDownscale));
+bool extractSamples(std::vector<ImageSample>& out_samples, const std::vector<std::string> & imagePaths, const std::vector<float>& times, const size_t channelQuantization)
+{
+    const int radius = 5;
+    const int diameter = (radius * 2) + 1;
+    const float area = float(diameter * diameter);
 
-                image::Image<image::RGBfColor> rescaled(nw, nh);
+    /* For all brackets, For each pixel, compute image sample */
+    image::Image<ImageSample> samples;
+    for (unsigned int idBracket = 0; idBracket < imagePaths.size(); idBracket++)
+    {   
+        const float exposure = times[idBracket];
 
-                oiio::ImageSpec imageSpecResized(nw, nh, 3, oiio::TypeDesc::FLOAT);
-                oiio::ImageSpec imageSpecOrigin(w, h, 3, oiio::TypeDesc::FLOAT);
-                oiio::ImageBuf bufferOrigin(imageSpecOrigin, img.data());
-                oiio::ImageBuf bufferResized(imageSpecResized, rescaled.data());
-                oiio::ImageBufAlgo::resample(bufferResized, bufferOrigin);
+        /**
+         * Load image
+        */
+        Image<RGBfColor> img, imgSquare;
+        Image<RGBfColor> imgIntegral, imgIntegralSquare;
+        readImage(imagePaths[idBracket], img, EImageColorSpace::LINEAR);
+        
+        if (idBracket == 0) {
+            samples.resize(img.Width(), img.Height());
+        }
+        
+        /**
+        * Stats for deviation
+        */
+        square(imgSquare, img);
+        integral(imgIntegral, img);
+        integral(imgIntegralSquare, imgSquare);
 
-                const oiio::ImageBuf inBuf(oiio::ImageSpec(w, h, 3, oiio::TypeDesc::FLOAT), img.data());
-                oiio::ImageBuf outBuf(oiio::ImageSpec(nw, nh, 3, oiio::TypeDesc::FLOAT), rescaled.data());
+        for (int i = radius; i < img.Height() - radius; i++)  {
+            for (int j = radius; j < img.Width() - radius; j++)  {
 
-                oiio::ImageBufAlgo::resize(outBuf, inBuf);
-                img.swap(rescaled);
-            }
-
-            const std::size_t width = img.Width();
-            const std::size_t height = img.Height();
-
-            if (!fisheye) {
-
-                double dwidth = double(width);
-                double dheight = double(height);
-
-                double ratio = dwidth / dheight;
-                double countWidth = sqrt(double(samplesPerImage)) * ratio;
-                double countHeight = sqrt(double(samplesPerImage)) / ratio;
-
+                image::RGBfColor S1 = imgIntegral(i + radius, j + radius) + imgIntegral(i - radius, j - radius) - imgIntegral(i + radius, j - radius) - imgIntegral(i - radius, j + radius);
+                image::RGBfColor S2 = imgIntegralSquare(i + radius, j + radius) + imgIntegralSquare(i - radius, j - radius) - imgIntegralSquare(i + radius, j - radius) - imgIntegralSquare(i - radius, j + radius);
                 
-                int stepHeight = std::floor(dheight / countHeight);
-                if (stepHeight < 1) stepHeight = 1;
-                int stepWidth = std::floor(dwidth / countWidth);
-                if (stepWidth < 1) stepWidth = 1;
+                PixelDescription pd;
+                
+                pd.exposure = exposure;
+                pd.mean.r() = S1.r() / area;
+                pd.mean.g() = S1.g() / area;
+                pd.mean.b() = S1.b() / area;
+                pd.variance.r() = (S2.r() - (S1.r()*S1.r()) / area) / area;
+                pd.variance.g() = (S2.g() - (S1.g()*S1.g()) / area) / area;
+                pd.variance.b() = (S2.b() - (S1.b()*S1.b()) / area) / area;
 
-                for (int y = 0; y < height; y += stepHeight) {
-                    for (int x = 0; x < width; x += stepWidth) {
-
-                        RGBfColor& c = img(y, x);
-                        colors.push_back(Rgb<double>(c.r(), c.g(), c.b()));
-                    }
-                }     
+                samples(i, j).x = j;
+                samples(i, j).y = i;
+                samples(i, j).descriptions.push_back(pd);
             }
-            else {
-                const std::size_t minSize = std::min(width, height) * 0.97;
-                const Vec2i center(width / 2, height / 2);
+        }            
+    }
 
-                const int xMin = std::ceil(center(0) - minSize / 2);
-                const int yMin = std::ceil(center(1) - minSize / 2);
-                const int xMax = std::floor(center(0) + minSize / 2);
-                const int yMax = std::floor(center(1) + minSize / 2);
-                const std::size_t maxDist2 = pow(minSize * 0.5, 2);
-                const int step = std::ceil(minSize / sqrt(samplesPerImage));
+    if (samples.Width() == 0) {
+        /*Why ? just to be sure*/
+        return false;
+    }
 
-                // extract samples
-                for (int y = yMin; y <= yMax - step; y += step) {
-                    for (int x = xMin; x <= xMax - step; x += step) {
-                        std::size_t dist2 = pow(center(0) - x, 2) + pow(center(1) - y, 2);
-                        if (dist2 > maxDist2) {
-                            continue;
-                        }
-                        
-                        RGBfColor& c = img(y, x);
+    /*Create samples image*/
+    for (int i = radius; i < samples.Height() - radius; i++)  {
+        for (int j = radius; j < samples.Width() - radius; j++)  {
+            
+            ImageSample & sample = samples(i, j);
+            if (sample.descriptions.size() < 2) {
+                continue;
+            }
 
-                        colors.push_back(Rgb<double>(c.r(), c.g(), c.b()));
+            int last_ok = 0;
+
+            /*
+            Make sure we don't have a patch with high variance on any bracket
+            */
+            bool valid = true;
+            for (int k = 0; k < sample.descriptions.size(); k++) {
+                
+                if (sample.descriptions[k].variance.r() > 0.05) {
+                    valid = false;
+                    break;
+                }
+
+                if (sample.descriptions[k].variance.g() > 0.05) {
+                    valid = false;
+                    break;
+                }
+
+                if (sample.descriptions[k].variance.b() > 0.05) {
+                    valid = false;
+                    break;
+                }
+            }
+
+            if (!valid) {
+                sample.descriptions.clear();
+                continue;
+            }
+
+            /* Makes sure the curve is monotonic */
+            int lastvalid = 0;
+            for (int k = 1; k < sample.descriptions.size(); k++) {
+                bool valid = false;
+
+                if (sample.descriptions[k].mean.r() > 1.0) {
+                    continue;
+                }
+
+                if (sample.descriptions[k].mean.g() > 1.0) {
+                    continue;
+                }
+
+                if (sample.descriptions[k].mean.b() > 1.0) {
+                    continue;
+                }
+
+                if (sample.descriptions[k].mean.r() > 1.004 * sample.descriptions[k - 1].mean.r()) {
+                    valid = true;
+                }
+
+                if (sample.descriptions[k].mean.g() > 1.004 * sample.descriptions[k - 1].mean.g()) {
+                    valid = true;
+                }
+
+                if (sample.descriptions[k].mean.b() > 1.004 * sample.descriptions[k - 1].mean.b()) {
+                    valid = true;
+                }
+
+                if (sample.descriptions[k].mean.r() < sample.descriptions[k - 1].mean.r()) {
+                    valid = false;
+                }
+
+                if (sample.descriptions[k].mean.g() < sample.descriptions[k - 1].mean.g()) {
+                    valid = false;
+                }
+
+                if (sample.descriptions[k].mean.b() < sample.descriptions[k - 1].mean.b()) {
+                    valid = false;
+                }
+
+                if (sample.descriptions[k - 1].mean.norm() > 0.1) {
+                    
+                    /*Check that both colors are similars*/
+                    float n1 = sample.descriptions[k - 1].mean.norm();
+                    float n2 = sample.descriptions[k].mean.norm();
+                    float dot = sample.descriptions[k - 1].mean.dot(sample.descriptions[k].mean);
+                    float cosa = dot / (n1*n2);
+                    if (cosa < 0.95) {
+                        valid = false;
+                    }
+                }
+
+                if (valid) {
+                    lastvalid = k;
+                }
+                else {
+                    break;
+                }
+            }
+
+            if (lastvalid == 0) {
+                sample.descriptions.clear();
+            }
+            else if (lastvalid < (sample.descriptions.size() - 1)) {
+                sample.descriptions.resize(lastvalid + 1);
+            }
+        }
+    }
+
+
+    using Coordinates = std::pair<int, int>;
+    using CoordinatesList = std::vector<Coordinates>;
+    using Counters = std::map<Descriptor, CoordinatesList>;
+    Counters counters;
+
+    for (int i = radius; i < samples.Height() - radius; i++)  {
+        for (int j = radius; j < samples.Width() - radius; j++)  {
+
+            ImageSample & sample = samples(i, j);
+            Descriptor desc;
+
+            for (int k = 0; k < sample.descriptions.size(); k++) { 
+                
+                desc.exposure = sample.descriptions[k].exposure;
+
+                for (int channel = 0; channel < 3; channel++) {
+
+                    desc.channel = channel;
+                    
+                    /* Get quantized value */
+                    desc.quantizedValue = int(std::round(sample.descriptions[k].mean(channel)  * (channelQuantization - 1)));
+                    if (desc.quantizedValue < 0 || desc.quantizedValue >= channelQuantization) {
+                        continue;
+                    }
+                    
+                    Coordinates coordinates = std::make_pair(sample.x, sample.y);
+                    counters[desc].push_back(coordinates);
+                }
+            }
+        }
+    }
+
+    const size_t maxCountSample = 300;
+    Descriptor desc;
+    for (unsigned int idBracket = 0; idBracket < imagePaths.size(); idBracket++) {
+
+        desc.exposure = times[idBracket];
+
+        for (int channel = 0; channel < 3; channel++) {
+
+            desc.channel = channel;
+
+            for (int k = 0; k < 1024; k++) {
+
+                desc.quantizedValue = k;
+
+                if (counters.find(desc) == counters.end()) {
+                    continue;
+                }
+
+                if (counters[desc].size() > maxCountSample) {
+
+                    /*Shuffle and ignore the exceeding samples*/
+                    std::random_shuffle(counters[desc].begin(), counters[desc].end());
+                    counters[desc].resize(maxCountSample);
+                }
+
+                for (int l = 0; l < counters[desc].size(); l++) {
+                    Coordinates coords = counters[desc][l];
+                    
+                    if (samples(coords.second, coords.first).descriptions.size() > 0) {
+                        out_samples.push_back(samples(coords.second, coords.first));
+                        samples(coords.second, coords.first).descriptions.clear();
                     }
                 }
             }
         }
     }
+
+    return true;
 }
 
+bool extractSamplesGroups(std::vector<std::vector<ImageSample>> & out_samples, const std::vector<std::vector<std::string>> & imagePaths, const std::vector<std::vector<float>>& times, const size_t channelQuantization) {
+
+    std::vector<std::vector<ImageSample>> nonFilteredSamples;
+    out_samples.resize(imagePaths.size());
+
+    using SampleRef = std::pair<int, int>;
+    using SampleRefList = std::vector<SampleRef>;
+    using MapSampleRefList = std::map<Descriptor, SampleRefList>;
+
+    MapSampleRefList mapSampleRefList;
+
+    for (int idGroup = 0; idGroup < imagePaths.size(); idGroup++) {
+        
+        std::vector<ImageSample> groupSamples;
+        if (!extractSamples(groupSamples, imagePaths[idGroup], times[idGroup], channelQuantization)) {
+            return false;
+        }
+
+        nonFilteredSamples.push_back(groupSamples);
+    }
+
+    for (int idGroup = 0; idGroup < imagePaths.size(); idGroup++) {
+        
+        std::vector<ImageSample> & groupSamples = nonFilteredSamples[idGroup];
+
+        for (int idSample = 0; idSample < groupSamples.size(); idSample++) {
+
+            SampleRef s;
+            s.first = idGroup;
+            s.second = idSample;
+            
+            const ImageSample & sample = groupSamples[idSample];
+
+            for (int idDesc = 0; idDesc < sample.descriptions.size(); idDesc++) {
+                
+                Descriptor desc;
+                desc.exposure = sample.descriptions[idDesc].exposure;
+
+                for (int channel = 0; channel < 3; channel++) {
+                    
+                    desc.channel = channel;
+                    
+                    /* Get quantized value */
+                    desc.quantizedValue = int(std::round(sample.descriptions[idDesc].mean(channel)  * (channelQuantization - 1)));
+                    if (desc.quantizedValue < 0 || desc.quantizedValue >= channelQuantization) {
+                        continue;
+                    }
+
+                    mapSampleRefList[desc].push_back(s);
+                }
+            }
+        }
+    }
+
+    const size_t maxCountSample = 200;
+    for (auto & list : mapSampleRefList) {
+
+        if (list.second.size() > maxCountSample) {
+             /*Shuffle and ignore the exceeding samples*/
+            std::random_shuffle(list.second.begin(), list.second.end());
+            list.second.resize(maxCountSample);
+        }
+
+        for (auto & item : list.second) {
+            
+            if (nonFilteredSamples[item.first][item.second].descriptions.size() > 0) {
+                out_samples[item.first].push_back(nonFilteredSamples[item.first][item.second]);
+                nonFilteredSamples[item.first][item.second].descriptions.clear();
+            }
+        }
+    }
+
+    return true;
+}
 
 
 } // namespace hdr

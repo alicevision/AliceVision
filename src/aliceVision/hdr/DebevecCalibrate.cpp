@@ -33,24 +33,16 @@ bool DebevecCalibrate::process(const std::vector<std::vector<std::string>>& imag
 
     /*Extract samples*/
     ALICEVISION_LOG_DEBUG("Extract color samples");
-    std::vector<std::vector<ImageSamples>> samples;
-    extractSamples(samples, imagePathsGroups, times, nbPoints, calibrationDownscale, fisheye);
+    std::vector<std::vector<ImageSample>> samples;
+    extractSamplesGroups(samples, imagePathsGroups, times, channelQuantization);
 
     // Count really extracted amount of points (observed in multiple brackets)
     std::vector<size_t> countPointPerGroup;
     size_t totalPoints = 0;
     for(size_t groupId = 0; groupId < samples.size(); groupId++)
     {
-        size_t count = 0;
-        std::vector<ImageSamples>& group = samples[groupId];
-
-        if(group.size() > 0)
-        {
-            count = group[0].colors.size();
-        }
-
-        countPointPerGroup.push_back(count);
-        totalPoints += count;
+        std::vector<ImageSample> & group = samples[groupId];
+        totalPoints += group.size();
     }
 
     ALICEVISION_LOG_INFO("Debevec calibration with " << totalPoints << " samples.");
@@ -79,27 +71,30 @@ bool DebevecCalibrate::process(const std::vector<std::vector<std::string>>& imag
         size_t countPoints = 0;
         for(size_t groupId = 0; groupId < samples.size(); groupId++)
         {
-            const std::vector<ImageSamples>& group = samples[groupId];
+            /*Process a group of brackets*/
+            const std::vector<ImageSample>& group = samples[groupId];
+            const std::vector<float> & local_times = times[groupId];
 
-            for(size_t bracketId = 0; bracketId < group.size(); bracketId++)
-            {
-                const ImageSamples& bracket_cur = group[bracketId];
+            for (size_t sampleId = 0; sampleId < group.size(); sampleId++) {
+                
+                const ImageSample & sample = group[sampleId];
+                
+                for (size_t bracketPos = 0; bracketPos < sample.descriptions.size(); bracketPos++) {
+                    
+                    const float time = std::log(sample.descriptions[bracketPos].exposure);
 
-                for(size_t sampleId = 0; sampleId < bracket_cur.colors.size(); sampleId++)
-                {
-                    const float sample = clamp(bracket_cur.colors[sampleId](channel), 0.0, 1.0);
+                    const float value = clamp(sample.descriptions[bracketPos].mean(channel), 0.0f, 1.0f);
+                    const std::size_t quantizedValue = std::round(value * (channelQuantization - 1));
+                    const std::size_t index = quantizedValue;
 
-                    const float w_ij = std::max(1e-6f, weight(sample, channel));
-                    const float time = std::log(bracket_cur.exposure);
-                    const std::size_t index = std::round(sample * (channelQuantization - 1));
-
+                    const float w_ij = std::max(1e-6f, weight(value, channel));
+                    
                     const std::size_t pospoint = countPoints + sampleId;
 
                     const double w_ij_2 = w_ij * w_ij;
                     const double w_ij2_time = w_ij_2 * time;
 
                     Dinv.diagonal()[pospoint] += w_ij_2;
-
                     A(index, index) += w_ij_2;
                     B(index, pospoint) -= w_ij_2;
                     h1(index) += w_ij2_time;
@@ -107,7 +102,8 @@ bool DebevecCalibrate::process(const std::vector<std::vector<std::string>>& imag
                 }
             }
 
-            countPoints += countPointPerGroup[groupId];
+            countPoints += group.size();
+            
         }
 
         // Make sure the discrete response curve has a minimal second derivative

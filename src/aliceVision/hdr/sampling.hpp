@@ -13,18 +13,24 @@ namespace aliceVision {
 namespace hdr {
 
 
-struct ImageSamples
-{
-    std::vector<image::Rgb<double>> colors;
-    double exposure{0.0};
+struct PixelDescription {
+    float exposure;
+    image::Rgb<float> mean;
+    image::Rgb<float> variance;
 };
 
-void extractSamples(std::vector<std::vector<ImageSamples>>& out_samples,
-                    const std::vector<std::vector<std::string>>& imagePathsGroups,
-                    const std::vector<std::vector<float>>& cameraExposures,
-                    int nbPoints,
-                    int calibrationDownscale,
-                    bool fisheye);
+struct ImageSample
+{
+    size_t x = 0;
+    size_t y = 0;
+    std::vector<PixelDescription> descriptions;
+
+    ImageSample() = default;
+    ImageSample(int val) {};
+};
+
+bool extractSamples(std::vector<ImageSample>& out_samples, const std::vector<std::string> & imagePaths, const std::vector<float>& times, const size_t channelQuantization);
+bool extractSamplesGroups(std::vector<std::vector<ImageSample>> & out_samples, const std::vector<std::vector<std::string>> & imagePaths, const std::vector<std::vector<float>>& times, const size_t channelQuantization);
 
 } // namespace hdr
 } // namespace aliceVision
