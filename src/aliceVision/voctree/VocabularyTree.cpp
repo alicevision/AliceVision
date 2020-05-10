@@ -190,10 +190,10 @@ float sparseDistance(const SparseHistogram& v1, const SparseHistogram& v2, const
   
   else if(distanceMethod == "inversedWeightedCommonPoints")
   {
-    std::map<int,int> compteur;
     float score{0.f};
     float N1{0.f};
     float N2{0.f};
+    std::map<int,int> counter;
     
     while(i1 != i1e && i2 != i2e)
     {
@@ -209,7 +209,7 @@ float sparseDistance(const SparseHistogram& v1, const SparseHistogram& v2, const
       }
       else
       {
-        compteur[i1->first] += std::min(i1->second.size(), i2->second.size());
+        counter[i1->first] += std::min(i1->second.size(), i2->second.size());
         N1 += i1->second.size() / word_weights[i1->first];
         N2 += i2->second.size() / word_weights[i2->first];
         ++i1;
@@ -229,8 +229,8 @@ float sparseDistance(const SparseHistogram& v1, const SparseHistogram& v2, const
       ++i2;
     }
     
-    for(auto iCompteur = compteur.begin(); iCompteur != compteur.end(); iCompteur++)
-      score += (1.0/iCompteur->second) * word_weights[iCompteur->first];
+    for(const auto elem : counter)
+      score += (1.f/ elem.second) * word_weights[elem.first];
     
     distance = - score;
   }
