@@ -19,6 +19,8 @@ option(AV_BUILD_ALICEVISION "Enable building of AliceVision" ON)
 
 option(AV_USE_CUDA "Enable CUDA" ON)
 
+option(BUILD_SHARED_LIBS "Build shared libraries" ON)
+
 if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE Release CACHE STRING "Build type for AliceVision" FORCE)
 endif()
@@ -178,6 +180,7 @@ set(TBB_CMAKE_FLAGS -DTBB_INCLUDE_DIRS:PATH=${CMAKE_INSTALL_PREFIX}/include -DTB
 
 # Add Eigen
 set(EIGEN_TARGET eigen)
+set(EIGEN_DISABLE_ALIGN_FLAGS -DEIGEN_MAX_ALIGN_BYTES=0 -DEIGEN_MAX_STATIC_ALIGN_BYTES=0)
 ExternalProject_Add(${EIGEN_TARGET}
        URL https://github.com/eigenteam/eigen-git-mirror/archive/3.3.7.tar.gz
        PREFIX ${BUILD_DIR}
@@ -187,9 +190,9 @@ ExternalProject_Add(${EIGEN_TARGET}
        SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/eigen
        BINARY_DIR ${BUILD_DIR}/eigen_build
        INSTALL_DIR ${CMAKE_INSTALL_PREFIX}
-       CONFIGURE_COMMAND ${CMAKE_COMMAND} ${CMAKE_CORE_BUILD_FLAGS} -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR> <SOURCE_DIR>
+       CONFIGURE_COMMAND ${CMAKE_COMMAND} ${CMAKE_CORE_BUILD_FLAGS} ${EIGEN_DISABLE_ALIGN_FLAGS} -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR> <SOURCE_DIR>
        )
-set(EIGEN_CMAKE_FLAGS -DEigen3_DIR:PATH=${CMAKE_INSTALL_PREFIX}/share/eigen3/cmake -DEIGEN3_INCLUDE_DIR=${CMAKE_INSTALL_PREFIX}/include/eigen3 -DEIGEN_INCLUDE_DIR=${CMAKE_INSTALL_PREFIX}/include/eigen3 -DEigen_INCLUDE_DIR=${CMAKE_INSTALL_PREFIX}/include/eigen3)
+set(EIGEN_CMAKE_FLAGS ${EIGEN_DISABLE_ALIGN_FLAGS} -DEigen3_DIR:PATH=${CMAKE_INSTALL_PREFIX}/share/eigen3/cmake -DEIGEN3_INCLUDE_DIR=${CMAKE_INSTALL_PREFIX}/include/eigen3 -DEIGEN_INCLUDE_DIR=${CMAKE_INSTALL_PREFIX}/include/eigen3 -DEigen_INCLUDE_DIR=${CMAKE_INSTALL_PREFIX}/include/eigen3)
 
 if(AV_BUILD_OPENGV)
 set(OPENGV_TARGET opengv)
@@ -234,7 +237,7 @@ set(SUITESPARSE_TARGET suitesparse)
 set(SUITESPARSE_INTERNAL_MAKE_CMD LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR} make BLAS="${BLAS_LIBRARIES}" LAPACK="${LAPACK_LIBRARIES}")
 ExternalProject_Add(${SUITESPARSE_TARGET}
        # URL https://github.com/DrTimothyAldenDavis/SuiteSparse/archive/v4.5.6.tar.gz
-       URL https://github.com/DrTimothyAldenDavis/SuiteSparse/archive/v5.6.0.tar.gz  # requires gxx >= 4.9, centos 7 use gxx-4.8.5 by default
+       URL https://github.com/DrTimothyAldenDavis/SuiteSparse/archive/v5.7.2.tar.gz  # requires gxx >= 4.9, centos 7 use gxx-4.8.5 by default
        PREFIX ${BUILD_DIR}
        BUILD_IN_SOURCE 0
        BUILD_ALWAYS 0

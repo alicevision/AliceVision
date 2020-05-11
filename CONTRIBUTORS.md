@@ -12,6 +12,7 @@ Individuals
 - Clement Debize
 - Cyril Pichard
 - Fabien Castan
+- Fabien Servant
 - Gregoire De Lillo
 - Havard Espeland
 - Jean Melou

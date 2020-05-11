@@ -119,7 +119,7 @@ void Database::find( const SparseHistogram& query, std::size_t N, std::vector<Do
   {
     // for each document/image in the database compute the distance between the 
     // histograms of the query image and the others
-    float distance = sparseDistance(query, document.second, distanceMethod, word_weights_);
+    const float distance = sparseDistance(query, document.second, distanceMethod, word_weights_);
     acc(DocMatch(document.first, distance));
   }
 
