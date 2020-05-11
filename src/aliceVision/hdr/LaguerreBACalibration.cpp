@@ -138,7 +138,7 @@ public:
     {
         double ratio_cur = parameters[0][0];
 
-        const double w = 1000.0;
+        const double w = 1.0;
         residuals[0] = w * (ratio_cur - _ratio);
 
         if(jacobians == nullptr)
@@ -165,24 +165,21 @@ void LaguerreBACalibration::process(const std::vector<std::vector<std::string>>&
 {
     /*Extract samples from images*/
     ALICEVISION_LOG_DEBUG("Extract color samples");
-    std::vector<std::vector<ImageSamples>> samples;
-    extractSamples(samples, imagePathsGroups, cameraExposures, nbPoints, imageDownscale, fisheye);
+    std::vector<std::vector<ImageSample>> samples;
+    extractSamplesGroups(samples, imagePathsGroups, cameraExposures, channelQuantization);
 
-    std::vector<std::vector<double>> exposuresRatios;
 
+    std::map<std::pair<float, float>, double> exposureParameters;
     for(std::vector<float>& group : cameraExposures)
     {
-        std::vector<double> dest;
-
         for(int index = 0; index < group.size() - 1; index++)
         {
+            std::pair<float, float> exposurePair;
+            exposurePair.first = group[index];
+            exposurePair.second = group[index + 1];
 
-            double exposure_first = group[index];
-            double exposure_second = group[index + 1];
-            dest.push_back(exposure_second / exposure_first);
-        }
-
-        exposuresRatios.push_back(dest);
+            exposureParameters[exposurePair] = double(exposurePair.second) / double(exposurePair.first);
+        } 
     }
 
     std::array<double, 3> laguerreParam = {0, 0, 0};
@@ -190,60 +187,54 @@ void LaguerreBACalibration::process(const std::vector<std::vector<std::string>>&
     ceres::Problem problem;
     ceres::LossFunction* lossFunction = nullptr;
 
+    for(auto& param : exposureParameters) {
+        problem.AddParameterBlock(&param.second, 1);
+    }
+
     // Convert selected samples into residual blocks
     for(int groupId = 0; groupId < samples.size(); ++groupId)
     {
-        std::vector<ImageSamples>& group = samples[groupId];
+        std::vector<ImageSample> & group = samples[groupId];
 
-        for(int imageId = 0; imageId < group.size() - 1; imageId++)
-        {
+        for (int sampleId = 0; sampleId < group.size(); sampleId++) {
 
-            const ImageSamples& samples = group[imageId];
-            const ImageSamples& samplesOther = group[imageId + 1];
+            ImageSample & sample = group[sampleId];
 
-            double* ratioExp = &(exposuresRatios[groupId][imageId]);
+            for (int bracketPos = 0; bracketPos < sample.descriptions.size() - 1; bracketPos++) {
+                
+                std::pair<float, float> exposurePair;
+                exposurePair.first = sample.descriptions[bracketPos].exposure;
+                exposurePair.second = sample.descriptions[bracketPos + 1].exposure;
 
-            for(int sampleId = 0; sampleId < samples.colors.size(); sampleId++)
-            {
-                problem.AddResidualBlock(
-                    new HdrResidualAnalytic(samples.colors[sampleId].r(), samplesOther.colors[sampleId].r()),
-                    lossFunction, &(laguerreParam.data()[0]), ratioExp);
-                problem.AddResidualBlock(
-                    new HdrResidualAnalytic(samples.colors[sampleId].g(), samplesOther.colors[sampleId].g()),
-                    lossFunction, &(laguerreParam.data()[1]), ratioExp);
-                problem.AddResidualBlock(
-                    new HdrResidualAnalytic(samples.colors[sampleId].b(), samplesOther.colors[sampleId].b()),
-                    lossFunction, &(laguerreParam.data()[2]), ratioExp);
+                double * expParam = &exposureParameters[exposurePair];
+
+                for (int channel = 0; channel < 3; channel++) {
+                    ceres::CostFunction * cost = new HdrResidualAnalytic(sample.descriptions[bracketPos].mean(channel), sample.descriptions[bracketPos + 1].mean(channel));
+                    problem.AddResidualBlock(cost, lossFunction, &(laguerreParam.data()[channel]), expParam);
+                }
             }
         }
     }
 
     if(!refineExposures)
     {
-        /*Fix exposures*/
-        for(auto& group : exposuresRatios)
+        for(auto& param : exposureParameters)
         {
-            for(auto& expratio : group)
-            {
-                problem.SetParameterBlockConstant(&expratio);
-            }
+            problem.AddParameterBlock(&param.second, 1);
+            problem.SetParameterBlockConstant(&param.second);
         }
     }
     else
     {
-        for(auto& group : exposuresRatios)
+        for(auto& param : exposureParameters)
         {
-            for(double& ratioId : group)
-            {
-                problem.AddResidualBlock(new ExposureConstraint(ratioId), nullptr, &ratioId);
-            }
+            problem.AddResidualBlock(new ExposureConstraint(param.second), nullptr, &param.second);
         }
     }
 
     ALICEVISION_LOG_INFO("BA Solve");
 
     ceres::Solver::Options solverOptions;
-    // solverOptions.minimizer_type = ceres::LINE_SEARCH;
     solverOptions.trust_region_strategy_type = ceres::LEVENBERG_MARQUARDT;
     solverOptions.linear_solver_type = ceres::DENSE_NORMAL_CHOLESKY;
     solverOptions.minimizer_progress_to_stdout = true;
@@ -258,7 +249,7 @@ void LaguerreBACalibration::process(const std::vector<std::vector<std::string>>&
 
     std::cout << summary.FullReport() << std::endl;
 
-    for(unsigned int channel = 0; channel < 3; ++channel)
+    for (unsigned int channel = 0; channel < 3; ++channel)
     {
         std::vector<float>& curve = response.getCurve(channel);
         const double step = 1.0 / double(curve.size());
@@ -272,15 +263,23 @@ void LaguerreBACalibration::process(const std::vector<std::vector<std::string>>&
 
     if(refineExposures)
     {
-        for(int groupId = 0; groupId < exposuresRatios.size(); groupId++)
-        {
-            std::vector<double>& groupRatios = exposuresRatios[groupId];
-            std::vector<float>& groupDestination = cameraExposures[groupId];
-
-            for(int j = 0; j < groupRatios.size(); ++j)
+        for(size_t idGroup = 0; idGroup < cameraExposures.size(); idGroup++) 
+        {   
+            std::vector<float> & group = cameraExposures[idGroup];
+            
+            //Copy !
+            std::vector<float> res = cameraExposures[idGroup];
+        
+            for(int index = 0; index < group.size() - 1; index++)
             {
-                groupDestination[j + 1] = groupDestination[j] * groupRatios[j];
+                std::pair<float, float> exposurePair;
+                exposurePair.first = group[index];
+                exposurePair.second = group[index + 1];
+                double value = exposureParameters[exposurePair];
+                res[index + 1] = (res[res.size() - 1] * value);
             }
+
+            cameraExposures[idGroup] = res;
         }
     }
 }
