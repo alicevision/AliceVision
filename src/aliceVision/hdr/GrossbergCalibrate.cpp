@@ -25,14 +25,11 @@ void GrossbergCalibrate::process(const std::vector<std::vector<std::string>>& im
                                  std::size_t channelQuantization, const std::vector<std::vector<float>>& times,
                                  int nbPoints, bool fisheye, rgbCurve& response)
 {
-    const int nbGroups = imagePathsGroups.size();
-    const int nbImages = imagePathsGroups.front().size();
-    const int samplesPerImage = nbPoints / (nbGroups * nbImages);
     const double step = 1.0 / double(channelQuantization - 1);
 
     ALICEVISION_LOG_DEBUG("Extract color samples");
-    std::vector<std::vector<ImageSamples>> samples;
-    extractSamples(samples, imagePathsGroups, times, nbPoints, 1.0, fisheye);
+    std::vector<std::vector<ImageSample>> samples;
+    extractSamplesGroups(samples, imagePathsGroups, times, channelQuantization);
 
     // set channels count always RGB
     static const std::size_t channels = 3;
@@ -56,8 +53,11 @@ void GrossbergCalibrate::process(const std::vector<std::vector<std::string>>& im
     size_t count_measures = 0;
     for(size_t group = 0; group < samples.size(); group++)
     {
-        size_t groupsize = samples[group].size();
-        count_measures += (groupsize - 1) * samples[group][0].colors.size();
+        std::vector<ImageSample> & groupSamples = samples[group];
+
+        for (size_t sampleId = 0; sampleId < groupSamples.size(); sampleId++) {
+            count_measures += groupSamples[sampleId].descriptions.size() - 1;
+        }
     }
 
     for(int channel = 0; channel < 3; channel++)
@@ -76,19 +76,18 @@ void GrossbergCalibrate::process(const std::vector<std::vector<std::string>>& im
             size_t rowId = 0;
             for(size_t groupId = 0; groupId < samples.size(); groupId++)
             {
-                const std::vector<ImageSamples>& group = samples[groupId];
+                const std::vector<ImageSample>& groupSamples = samples[groupId];
 
-                for(size_t bracketId = 0; bracketId < group.size() - 1; bracketId++)
+                for(size_t sampleId = 0; sampleId < groupSamples.size(); sampleId++)
                 {
-                    const ImageSamples& bracket_cur = group[bracketId];
-                    const ImageSamples& bracket_next = group[bracketId + 1];
+                    const ImageSample & sample = groupSamples[sampleId];
 
-                    const double k = bracket_cur.exposure / bracket_next.exposure;
-
-                    for(size_t sampleId = 0; sampleId < bracket_cur.colors.size(); sampleId++)
+                    for(size_t bracketPos = 0; bracketPos < sample.descriptions.size() - 1; bracketPos++)
                     {
-                        image::Rgb<double> Ba = bracket_cur.colors[sampleId];
-                        image::Rgb<double> Bb = bracket_next.colors[sampleId];
+                        image::Rgb<float> Ba = sample.descriptions[bracketPos].mean;
+                        image::Rgb<float> Bb = sample.descriptions[bracketPos + 1].mean;
+
+                        const double k = sample.descriptions[bracketPos].exposure / sample.descriptions[bracketPos + 1].exposure;
 
                         float valA = Ba(channel);
                         float valB = Bb(channel);
@@ -105,6 +104,7 @@ void GrossbergCalibrate::process(const std::vector<std::vector<std::string>>& im
         Eigen::VectorXd c = (E.transpose() * E).inverse() * E.transpose() * -v;
         Eigen::MatrixXd H = E.transpose() * E;
         Eigen::VectorXd d = (E.transpose() * v).col(0);
+
 
         // d (f0(val) + sum_i(c_i * f_i(val))) d_val > 0
         // d (f0(val)) + sum_i(d(c_i * f_i(val))) > 0
