@@ -424,7 +424,7 @@ set(BOOST_CMAKE_FLAGS -DBOOST_ROOT=${CMAKE_INSTALL_PREFIX})
 # Add OpenImageIO
 set(OPENIMAGEIO_TARGET openimageio)
 ExternalProject_Add(${OPENIMAGEIO_TARGET}
-      URL https://github.com/OpenImageIO/oiio/archive/Release-2.1.12.0.tar.gz
+      URL https://github.com/OpenImageIO/oiio/archive/Release-2.1.15.0.tar.gz
       PREFIX ${BUILD_DIR}
       BUILD_IN_SOURCE 0
       BUILD_ALWAYS 0
