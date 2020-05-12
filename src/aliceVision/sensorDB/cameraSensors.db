@@ -3039,12 +3039,19 @@ Meizu;Meizu M5c;3.67;devicespecifications
 Meizu;Meizu M5s;4.71;devicespecifications
 Meizu;Meizu M6;4.71;devicespecifications
 Meizu;Meizu M6T;4.71;devicespecifications
+Meizu;Meizu M16s;6.4;devicespecifications,usercontribution
+Meizu;Meizu M16s Pro;6.4;devicespecifications,usercontribution
+Meizu;Meizu M16T;5.64;devicespecifications,usercontribution
+Meizu;Meizu M16Xs;6.4;devicespecifications,usercontribution
+Meizu;Meizu M17;7.4;devicespecifications,usercontribution
+Meizu;Meizu M17T;7.4;devicespecifications,usercontribution
 Meizu;Meizu MX3;4.54;devicespecifications
 Meizu;Meizu MX4;6.17;devicespecifications
 Meizu;Meizu MX4 Pro;6.17;devicespecifications
 Meizu;Meizu MX4 Ubuntu Edition;6.17;devicespecifications
 Meizu;Meizu MX5;6.17;devicespecifications
 Meizu;Meizu MX6;4.96;devicespecifications
+Meizu;Meizu Note 9;6.4;devicespecifications,usercontribution
 Meizu;Meizu Pro 5;5.99;devicespecifications
 Meizu;Meizu Pro 5 Ubuntu Edition;5.99;devicespecifications
 Meizu;Meizu Pro 6;5.99;devicespecifications
@@ -3057,6 +3064,7 @@ Meizu;Meizu Pro 7 Standard Edition;4.96;devicespecifications
 Meizu;Meizu U10;4.73;devicespecifications
 Meizu;Meizu U20;4.82;devicespecifications
 Meizu;Meizu X;4.96;devicespecifications
+Meizu;Meizu Z;6.29;devicespecifications,usercontribution
 Micromax;Micromax Canvas 5 E481;4.69;devicespecifications
 Micromax;Micromax Canvas Evok E483;4.69;devicespecifications
 Micromax;Micromax Canvas Gold A300;5.95;devicespecifications
