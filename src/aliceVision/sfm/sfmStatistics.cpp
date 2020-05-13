@@ -177,23 +177,31 @@ void computeLandmarksPerView(const sfmData::SfMData& sfmData, std::vector<int>& 
 
     std::map<IndexT, int> nbLandmarksPerView;
 
-    for(const auto& landmark: sfmData.getLandmarks())
+
+    for(const auto& landmark : sfmData.getLandmarks())
     {
-        for(const auto& obsIt: landmark.second.observations)
+        const aliceVision::sfmData::Observations & observations = landmark.second.observations;
+        for(const auto& obs: observations)
         {
-            const auto& viewId = obsIt.first;
-            auto it = nbLandmarksPerView.find(viewId);
+            auto it = nbLandmarksPerView.find(obs.first);
             if(it != nbLandmarksPerView.end())
                 ++(it->second);
             else
-                nbLandmarksPerView[viewId] = 1;
+                nbLandmarksPerView[obs.first] = 1;
         }
     }
     if(nbLandmarksPerView.empty())
         return;
 
-    for(const auto& it: nbLandmarksPerView)
-        out_nbLandmarksPerView.push_back(it.second);
+    out_nbLandmarksPerView.reserve(nbLandmarksPerView.size());
+    for(const auto& viewIt: sfmData.getViews())
+    {
+        const auto it = nbLandmarksPerView.find(viewIt.first);
+        int nbLandmarks = 0;
+        if(it != nbLandmarksPerView.end())
+            nbLandmarks = it->second;
+        out_nbLandmarksPerView.push_back(nbLandmarks);
+    }
 }
 
 void computeFeatMatchPerView(const sfmData::SfMData& sfmData, std::vector<std::size_t>& out_featPerView, std::vector<std::size_t>& out_matchPerView)
@@ -278,17 +286,13 @@ void computeScaleHistogram(const sfmData::SfMData& sfmData, BoxStats<double>& ou
                     continue;
             }
             vec_scaleObservations.push_back(obs.second.scale);
-            // ALICEVISION_LOG_INFO("[AliceVision] sfmtstatistics::computescaleHistogram landmark: " << landmark.first << ", scale: " << obs.second.scale);
         }
     }
 
     if(vec_scaleObservations.empty())
         return;
 
-   // ALICEVISION_LOG_INFO("[AliceVision] sfmtstatistics::computescaleHistogram vec_scaleObservations.size(): " << vec_scaleObservations.size());
-
     out_stats = BoxStats<double>(vec_scaleObservations.begin(), vec_scaleObservations.end());
-   // ALICEVISION_LOG_INFO("[AliceVision] sfmtstatistics::computescaleHistogram out_stats " << out_stats);
 
     if (out_histogram)
     {
@@ -306,21 +310,55 @@ void computeResidualsPerView(const sfmData::SfMData& sfmData, int& nbViews, std:
     if(sfmData.getLandmarks().empty())
       return;
 
-    for(const auto &viewIt : sfmData.getViews())
+    nbViews = sfmData.getViews().size();
+    nbResidualsPerViewMin.resize(nbViews);
+    nbResidualsPerViewMax.resize(nbViews);
+    nbResidualsPerViewMean.resize(nbViews);
+    nbResidualsPerViewMedian.resize(nbViews);
+    nbResidualsPerViewFirstQuartile.resize(nbViews);
+    nbResidualsPerViewThirdQuartile.resize(nbViews);
+
+    // Collect residuals (number of residuals per 3D points) of all landmarks visible in each view
+    std::map<IndexT, std::vector<double>> residualsPerView;
+
+    for(const auto &landmark : sfmData.getLandmarks())
     {
-        BoxStats<double> residualStats;
-        Histogram<double> residual_histogram = Histogram<double>();
-        computeResidualsHistogram(sfmData, residualStats, &residual_histogram, {viewIt.first});
-        nbResidualsPerViewMin.push_back(residualStats.min);
-        nbResidualsPerViewMax.push_back(residualStats.max);
-        nbResidualsPerViewMean.push_back(residualStats.mean);
-        nbResidualsPerViewMedian.push_back(residualStats.median);
-        nbResidualsPerViewFirstQuartile.push_back(residualStats.firstQuartile);
-        nbResidualsPerViewThirdQuartile.push_back(residualStats.thirdQuartile);
-        nbViews++;
+      const aliceVision::sfmData::Observations & observations = landmark.second.observations;
+      for(const auto& obs: observations)
+      {
+        const sfmData::View& view = sfmData.getView(obs.first);
+        const aliceVision::geometry::Pose3 pose = sfmData.getPose(view).getTransform();
+        const std::shared_ptr<aliceVision::camera::IntrinsicBase> intrinsic = sfmData.getIntrinsics().find(view.getIntrinsicId())->second;
+        const Vec2 residual = intrinsic->residual(pose, landmark.second.X, obs.second.x);
+        residualsPerView[obs.first].push_back(residual.norm());
+      }
     }
 
-    // assert(!nbResidualsPerViewMin.empty() && !nbResidualsPerViewMax.empty() && !nbResidualsPerViewMean.empty() && !nbResidualsPerViewMedian.empty());
+    std::vector<IndexT> viewKeys;
+    for(const auto& v: sfmData.getViews())
+        viewKeys.push_back(v.first);
+
+    #pragma omp parallel for
+    for(int viewIdx = 0; viewIdx < nbViews; ++viewIdx)
+    {
+        const IndexT viewId = viewKeys[viewIdx];
+
+        const auto it = residualsPerView.find(viewId);
+        if(it == residualsPerView.end())
+            continue;
+        const std::vector<double>& residuals = it->second;
+        BoxStats<double> residualStats(residuals.begin(), residuals.end());
+        Histogram<double> residual_histogram = Histogram<double>(residualStats.min, residualStats.max+1, residualStats.max - residualStats.min +1);
+        residual_histogram.Add(residuals.begin(), residuals.end());
+
+        nbResidualsPerViewMin[viewIdx] = residualStats.min;
+        nbResidualsPerViewMax[viewIdx] = residualStats.max;
+        nbResidualsPerViewMean[viewIdx] = residualStats.mean;
+        nbResidualsPerViewMedian[viewIdx] = residualStats.median;
+        nbResidualsPerViewFirstQuartile[viewIdx] = residualStats.firstQuartile;
+        nbResidualsPerViewThirdQuartile[viewIdx] = residualStats.thirdQuartile;
+    }
+
 }
 
 void computeObservationsLengthsPerView(const sfmData::SfMData& sfmData, int& nbViews, std::vector<double>& nbObservationsLengthsPerViewMin,
@@ -331,21 +369,45 @@ void computeObservationsLengthsPerView(const sfmData::SfMData& sfmData, int& nbV
     if(sfmData.getLandmarks().empty())
       return;
 
-    int overallNbObservations = 0;
+    nbViews = sfmData.getViews().size();
+    nbObservationsLengthsPerViewMin.resize(nbViews);
+    nbObservationsLengthsPerViewMax.resize(nbViews);
+    nbObservationsLengthsPerViewMean.resize(nbViews);
+    nbObservationsLengthsPerViewMedian.resize(nbViews);
+    nbObservationsLengthsPerViewFirstQuartile.resize(nbViews);
+    nbObservationsLengthsPerViewThirdQuartile.resize(nbViews);
 
-    for(const auto &viewIt : sfmData.getViews())
+    // Collect observations length (number of 2D observations per 3D points) of all landmarks visible in each view
+    std::map<IndexT, std::vector<int>> observationLengthsPerView;
+
+    for(const auto& landmark : sfmData.getLandmarks())
     {
-        BoxStats<double> observationsLengthsStats;
-        Histogram<double> observationsLengths_histogram = Histogram<double>();
-        computeObservationsLengthsHistogram(sfmData, observationsLengthsStats, overallNbObservations, &observationsLengths_histogram, {viewIt.first});
-        nbObservationsLengthsPerViewMin.push_back(observationsLengthsStats.min);
-        nbObservationsLengthsPerViewMax.push_back(observationsLengthsStats.max);
-        nbObservationsLengthsPerViewMean.push_back(observationsLengthsStats.mean);
-        nbObservationsLengthsPerViewMedian.push_back(observationsLengthsStats.median);
-        nbObservationsLengthsPerViewFirstQuartile.push_back(observationsLengthsStats.firstQuartile);
-        nbObservationsLengthsPerViewThirdQuartile.push_back(observationsLengthsStats.thirdQuartile);
+        const aliceVision::sfmData::Observations & observations = landmark.second.observations;
+        for(const auto& obs: observations)
+        {
+            observationLengthsPerView[obs.first].push_back(observations.size());
+        }
+    }
 
-        nbViews++;
+    std::vector<IndexT> viewKeys;
+    for(const auto& v: sfmData.getViews())
+        viewKeys.push_back(v.first);
+
+    #pragma omp parallel for
+    for(int viewIdx = 0; viewIdx < nbViews; ++viewIdx)
+    {
+        const IndexT viewId = viewKeys[viewIdx];
+        const std::vector<int>& nbObservations = observationLengthsPerView[viewId];
+        BoxStats<double> observationsLengthsStats(nbObservations.begin(), nbObservations.end());
+        Histogram<double> observationsLengths_histogram(observationsLengthsStats.min, observationsLengthsStats.max + 1, observationsLengthsStats.max - observationsLengthsStats.min + 1);
+        observationsLengths_histogram.Add(nbObservations.begin(), nbObservations.end());
+
+        nbObservationsLengthsPerViewMin[viewIdx] = observationsLengthsStats.min;
+        nbObservationsLengthsPerViewMax[viewIdx] = observationsLengthsStats.max;
+        nbObservationsLengthsPerViewMean[viewIdx] = observationsLengthsStats.mean;
+        nbObservationsLengthsPerViewMedian[viewIdx] = observationsLengthsStats.median;
+        nbObservationsLengthsPerViewFirstQuartile[viewIdx] = observationsLengthsStats.firstQuartile;
+        nbObservationsLengthsPerViewThirdQuartile[viewIdx] = observationsLengthsStats.thirdQuartile;
     }
 
 }
