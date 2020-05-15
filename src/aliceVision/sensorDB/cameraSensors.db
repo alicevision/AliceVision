@@ -6755,8 +6755,15 @@ Vivitar;Vivitar ViviCam 8625;7.11;digicamdb
 Vivitar;Vivitar ViviCam V8025;7.11;digicamdb
 Vivitar;Vivitar ViviCam X30;7.11;digicamdb
 Vivitar;Vivitar ViviCam X60;7.11;digicamdb
+Vivo;Vivo iQOO 3;6.4;;devicespecifications,usercontribution
+Vivo;Vivo iQOO 3 5G;6.4;;devicespecifications,usercontribution
+Vivo;Vivo iQOO Neo 3;6.4;;devicespecifications,usercontribution
+Vivo;Vivo S6;6.4;;devicespecifications,usercontribution
 Vivo;Vivo V7;4.74;devicespecifications
 Vivo;Vivo V7Plus;4.74;devicespecifications
+Vivo;Vivo V19;6.4;;devicespecifications,usercontribution
+Vivo;Vivo V1981A;6.4;;devicespecifications,usercontribution
+Vivo;Vivo V1962A;6.4;;devicespecifications,usercontribution
 Vivo;Vivo X5;4.69;devicespecifications
 Vivo;Vivo X5M;4.69;devicespecifications
 Vivo;Vivo X5Max;4.69;devicespecifications
@@ -6766,6 +6773,7 @@ Vivo;Vivo X5Max+;4.69;devicespecifications
 Vivo;Vivo X5S;4.69;devicespecifications
 Vivo;Vivo X5V;4.69;devicespecifications
 Vivo;Vivo X7 Plus;5.22;devicespecifications
+Vivo;Vivo X30 Pro AW;7.4;devicespecifications,usercontribution
 Vivo;Vivo Xplay;4.69;devicespecifications
 Vivo;Vivo Xplay 3S;4.69;devicespecifications
 Vivo;Vivo Xplay5;5.22;devicespecifications
@@ -6777,6 +6785,7 @@ Vivo;Vivo Y15;4.59;devicespecifications
 Vivo;Vivo Y29L;4.69;devicespecifications
 Vivo;Vivo Y69;4.69;devicespecifications
 Vivo;Vivo Y79;4.74;devicespecifications
+Vivo;Vivo Z6;6.4;;devicespecifications,usercontribution
 Vivo;Vivo Z10;4.74;devicespecifications
 Vkworld;Vkworld S8;4.82;devicespecifications
 Vkworld;Vkworld T1 Plus;4.71;devicespecifications
