@@ -2056,6 +2056,7 @@ Gretel;Gretel GT6000;2.92;devicespecifications
 Gretel;Gretel S55;3.67;devicespecifications
 Haier;Haier i701;4.69;devicespecifications
 Haier;Haier Voyage V5;4.69;devicespecifications
+Hasselblad;Hasselblad 907X 50C;43.8;hasselblad
 Hasselblad;Hasselblad CFV 50c;43.8;dxomark
 Hasselblad;Hasselblad H3DII 39;49.0;dxomark
 Hasselblad;Hasselblad H3DII 50;49.0;dxomark
@@ -2063,6 +2064,7 @@ Hasselblad;Hasselblad H4D 200MS;49.1;dxomark
 Hasselblad;Hasselblad H5D 200c;43.8;dxomark
 Hasselblad;Hasselblad H5D 50c;43.8;dxomark
 Hasselblad;Hasselblad H6D-100c;53.4;dxomark
+Hasselblad;Hasselblad H6D-400c MS;53.4;hasselblad
 Hasselblad;Hasselblad H6D-50c;43.8;dxomark
 Hasselblad;Hasselblad HV;35.8;dxomark
 Hasselblad;Hasselblad L1D-20c;13.2;usercontribution
@@ -2072,7 +2074,6 @@ Hasselblad;Hasselblad Stellar;13.2;dxomark
 Hasselblad;Hasselblad Stellar II;13.2;dxomark
 Hasselblad;Hasselblad X1D;44.0;dpreview
 Hasselblad;Hasselblad X1D-50c;43.8;imaging-resource,dxomark
-Hasselblad;L1D-20c;15.86;digicamdb
 Helio;Helio S1;4.69;devicespecifications
 Helio;Helio S10;4.71;devicespecifications
 Helio;Helio S25;4.71;devicespecifications
