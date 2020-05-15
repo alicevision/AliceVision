@@ -2974,25 +2974,70 @@ Lg;Lg G5;5.95;devicespecifications
 Lg;Lg G5 SE;5.95;devicespecifications
 Lg;Lg G6;4.71;devicespecifications
 Lg;Lg G6+;4.71;devicespecifications
+LG;Lg G8 ThinQ;5.64;devicespecifications,usercontribution
+LG;Lg G810EAW;5.64;devicespecifications,usercontribution
+LG;Lg G820N;5.64;devicespecifications,usercontribution
+LG;Lg G820QM;5.64;devicespecifications,usercontribution
+LG;Lg G820V;5.64;devicespecifications,usercontribution
+LG;Lg G8s ThinQ;5.64;devicespecifications,usercontribution
+LG;Lg G8X ThinQ;5.64;devicespecifications,usercontribution
 Lg;Lg Google Nexus 5;4.54;devicespecifications
 Lg;Lg K8;4.6;devicespecifications
+Lg;Lg K12+;4.65;devicespecifications,usercontribution
+Lg;Lg K40;4.65;devicespecifications,usercontribution
+Lg;Lg L-41A;6.4;devicespecifications,usercontribution
 Lg;Lg Nexus 4;3.67;devicespecifications
 Lg;Lg Nexus 5X;6.25;devicespecifications
 Lg;Lg Optimus G LS970;4.69;devicespecifications
+Lg;Lg Q720CS;4.65;devicespecifications,usercontribution
+Lg;Lg Q720TS;4.65;devicespecifications,usercontribution
+Lg;Lg Q9 One;4.65;devicespecifications,usercontribution
+Lg;Lg Q9 One Android One;4.65;devicespecifications,usercontribution
+Lg;Lg Style3;6.4;devicespecifications,usercontribution
+Lg;Lg Stylo 5x;4.65;devicespecifications,usercontribution
+Lg;Lg Stylo5;4.65;devicespecifications,usercontribution
+Lg;Lg ThinQ 5G;4.03;devicespecifications,usercontribution
 Lg;Lg V10;5.95;devicespecifications
 Lg;Lg V20;5.22;devicespecifications
+Lg;Lg V50;4.03;devicespecifications,usercontribution
+Lg;Lg V50S ThinQ;5.64;devicespecifications,usercontribution
+Lg;Lg V60 ThinQ;7.42;devicespecifications,usercontribution
+Lg;Lg Velvet;6.4;devicespecifications,usercontribution
+Lg;Lg X4 (2019);4.65;devicespecifications,usercontribution
+Lg;Lg X420BMW;4.65;devicespecifications,usercontribution
+Lg;Lg X420EM;4.65;devicespecifications,usercontribution
+Lg;Lg X420EMW;4.65;devicespecifications,usercontribution
+Lg;Lg X6;4.65;devicespecifications,usercontribution
 Lg;Lg Zero;3.7;devicespecifications
 Lg;LG-H815;5.08;usercontribution
+LG Electronics;LM-G810EAW;5.64;devicespecifications,usercontribution
+LG Electronics;LM-G820N;5.64;devicespecifications,usercontribution
+LG Electronics;LM-G820QM;5.64;devicespecifications,usercontribution
+LG Electronics;LM-G820V;5.64;devicespecifications,usercontribution
+LG Electronics;LM-G850EM;5.64;devicespecifications,usercontribution
+LG Electronics;LM-G850UM;5.64;devicespecifications,usercontribution
+LG Electronics;LG-G900N;6.4;devicespecifications,usercontribution
 LG Electronics;LG-H870;4.71;usercontribution
 LG Electronics;LG-H870;4.71;usercontribution
 LG Electronics;LG-H870DS;5.867;usercontribution
 LG Electronics;LG-H930;5.893;usercontribution
 LG Electronics;LG-H932;5.893;usercontribution
-LGE;Nexus 5X;6.25;usercontribution
 LG Electronics;LG-H870DS;5.867;usercontribution
 LG Electronics;LG-H873;4.8;usercontribution
 LG Electronics;LG-H930;5.893;usercontribution
 LG Electronics;LG-H932;5.893;usercontribution
+LG Electronics;LG-V510;5.64;devicespecifications,usercontribution
+LG Electronics;LM-Q720CS;4.65;devicespecifications,usercontribution
+LG Electronics;LM-Q720TS;4.65;devicespecifications,usercontribution
+LG Electronics;LM-V450PM;4.03;devicespecifications,usercontribution
+LG Electronics;LM-V450VM;4.03;devicespecifications,usercontribution
+LG Electronics;LM-V500N;4.03;devicespecifications,usercontribution
+LG Electronics;LM-V600EA;7.42;devicespecifications,usercontribution
+LG Electronics;LM-X420BMW;4.65;devicespecifications,usercontribution
+LG Electronics;LM-X420EM;4.65;devicespecifications,usercontribution
+LG Electronics;LM-X420EMW;4.65;devicespecifications,usercontribution
+LG Electronics;LM-X420N;4.65;devicespecifications,usercontribution
+LG Electronics;LM-X625N;4.65;devicespecifications,usercontribution
 LGE;Nexus 5X;6.25;usercontribution
 Lyf;Lyf Water 2;4.69;devicespecifications
 Lyf;Lyf Wind 4;3.6;devicespecifications
@@ -3023,6 +3068,7 @@ Meizu;Meizu Blue Charm Metal;2.95;devicespecifications
 Meizu;Meizu Blue Charm Metal Telecom;2.95;devicespecifications
 Meizu;Meizu C9;3.67;devicespecifications
 Meizu;Meizu C9 Pro;4.69;devicespecifications
+Meizu;Meizu E3;5.64;devicespecifications,usercontribution
 Meizu;Meizu m1;4.69;devicespecifications
 Meizu;Meizu m1 note;4.69;devicespecifications
 Meizu;Meizu m1 note Telecom;4.69;devicespecifications
@@ -3038,6 +3084,7 @@ Meizu;Meizu M5 note;4.82;devicespecifications
 Meizu;Meizu M5c;3.67;devicespecifications
 Meizu;Meizu M5s;4.71;devicespecifications
 Meizu;Meizu M6;4.71;devicespecifications
+Meizu;Meizu M6 note;5.64;devicespecifications,usercontribution
 Meizu;Meizu M6T;4.71;devicespecifications
 Meizu;Meizu M16s;6.4;devicespecifications,usercontribution
 Meizu;Meizu M16s Pro;6.4;devicespecifications,usercontribution
@@ -3064,6 +3111,7 @@ Meizu;Meizu Pro 7 Standard Edition;4.96;devicespecifications
 Meizu;Meizu U10;4.73;devicespecifications
 Meizu;Meizu U20;4.82;devicespecifications
 Meizu;Meizu X;4.96;devicespecifications
+Meizu;Meizu X8;5.64;devicespecifications,usercontribution
 Meizu;Meizu Z;6.29;devicespecifications,usercontribution
 Micromax;Micromax Canvas 5 E481;4.69;devicespecifications
 Micromax;Micromax Canvas Evok E483;4.69;devicespecifications
