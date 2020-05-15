@@ -205,7 +205,8 @@ void initAlbedo(image::Image<image::RGBfColor>& albedo, const image::Image<image
       const oiio::ImageBuf pictureBuf(oiio::ImageSpec(picture.Width(), picture.Height(), 3, oiio::TypeDesc::FLOAT), const_cast<void*>((void*)&picture(0,0)(0)));
       oiio::ImageBuf albedoBuf(oiio::ImageSpec(picture.Width(), picture.Height(), 3, oiio::TypeDesc::FLOAT), albedo.data());
       oiio::ImageBufAlgo::median_filter(albedoBuf, pictureBuf, albedoEstimationFilterSize, albedoEstimationFilterSize);
-      image::writeImage((fs::path(outputFolder) / (std::to_string(viewId) + "_albedo.jpg")).string(), albedo);
+      image::writeImage((fs::path(outputFolder) / (std::to_string(viewId) + "_albedo.jpg")).string(), albedo,
+                        image::EImageColorSpace::AUTO);
     }
     break;
     case EAlbedoEstimation::BLUR_FILTER:
@@ -216,7 +217,8 @@ void initAlbedo(image::Image<image::RGBfColor>& albedo, const image::Image<image
       oiio::ImageBuf K;
       oiio::ImageBufAlgo::make_kernel(K, "gaussian", albedoEstimationFilterSize, albedoEstimationFilterSize);
       oiio::ImageBufAlgo::convolve(albedoBuf, pictureBuf, K);
-      image::writeImage((fs::path(outputFolder) / (std::to_string(viewId) + "_albedo.jpg")).string(), albedo);
+      image::writeImage((fs::path(outputFolder) / (std::to_string(viewId) + "_albedo.jpg")).string(), albedo,
+                        image::EImageColorSpace::AUTO);
     }
     break;
   }
@@ -243,7 +245,8 @@ void initAlbedo(image::Image<float>& albedo, const image::Image<float>& picture,
       const oiio::ImageBuf pictureBuf(oiio::ImageSpec(picture.Width(), picture.Height(), 1, oiio::TypeDesc::FLOAT), const_cast<float*>(picture.data()));
       oiio::ImageBuf albedoBuf(oiio::ImageSpec(picture.Width(), picture.Height(), 1, oiio::TypeDesc::FLOAT), albedo.data());
       oiio::ImageBufAlgo::median_filter(albedoBuf, pictureBuf, albedoEstimationFilterSize, albedoEstimationFilterSize);
-      image::writeImage((fs::path(outputFolder) / (std::to_string(viewId) + "_albedo.jpg")).string(), albedo);
+      image::writeImage((fs::path(outputFolder) / (std::to_string(viewId) + "_albedo.jpg")).string(), albedo,
+                        image::EImageColorSpace::AUTO);
     }
     break;
     case EAlbedoEstimation::BLUR_FILTER:
@@ -254,7 +257,8 @@ void initAlbedo(image::Image<float>& albedo, const image::Image<float>& picture,
       oiio::ImageBuf K;
       oiio::ImageBufAlgo::make_kernel(K, "gaussian", albedoEstimationFilterSize, albedoEstimationFilterSize);
       oiio::ImageBufAlgo::convolve(albedoBuf, pictureBuf, K);
-      image::writeImage((fs::path(outputFolder) / (std::to_string(viewId) + "_albedo.jpg")).string(), albedo);
+      image::writeImage((fs::path(outputFolder) / (std::to_string(viewId) + "_albedo.jpg")).string(), albedo,
+                        image::EImageColorSpace::AUTO);
     }
     break;
   }
@@ -362,12 +366,12 @@ int main(int argc, char** argv)
     const std::string normalsPath = mvsUtils::getFileNameFromViewId(&mp, viewId, mvsUtils::EFileType::normalMap, 0);
 
     image::Image<image::RGBfColor> normals;
-    image::readImage(normalsPath, normals);
+    image::readImage(normalsPath, normals, image::EImageColorSpace::LINEAR);
 
     if(lightingColor == ELightingColor::Luminance)
     {
       image::Image<float> albedo, picture;
-      image::readImage(picturePath, picture);
+      image::readImage(picturePath, picture, image::EImageColorSpace::LINEAR);
 
       initAlbedo(albedo, picture, albedoEstimationMethod, albedoEstimationFilterSize, outputFolder, viewId);
 
@@ -376,7 +380,7 @@ int main(int argc, char** argv)
     else if(lightingColor == ELightingColor::RGB)
     {
       image::Image<image::RGBfColor> albedo, picture;
-      image::readImage(picturePath, picture);
+      image::readImage(picturePath, picture, image::EImageColorSpace::LINEAR);
 
       initAlbedo(albedo, picture, albedoEstimationMethod, albedoEstimationFilterSize, outputFolder, viewId);
 
