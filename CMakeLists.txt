@@ -509,7 +509,7 @@ if(AV_BUILD_CCTAG)
 set(CCTAG_TARGET cctag)
 ExternalProject_Add(${CCTAG_TARGET}
       GIT_REPOSITORY https://github.com/alicevision/CCTag
-      GIT_TAG e73cd5e88b05b551e0d67c2607b1216937b938c9
+      GIT_TAG c8bebbbd15ba450bd7655f87aba34ab0c2d32f57
       PREFIX ${BUILD_DIR}
       BUILD_IN_SOURCE 0
       BUILD_ALWAYS 0
