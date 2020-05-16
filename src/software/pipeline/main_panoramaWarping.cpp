@@ -16,6 +16,7 @@
 /*Reading command line options*/
 #include <boost/program_options.hpp>
 #include <aliceVision/system/cmdline.hpp>
+#include <aliceVision/system/main.hpp>
 
 /*IO*/
 #include <fstream>
@@ -1088,7 +1089,7 @@ bool computeOptimalPanoramaSize(std::pair<int, int> & optimalSize, const sfmData
   return true;
 }
 
-int main(int argc, char **argv) {
+int aliceVision_main(int argc, char **argv) {
 
   /**
    * Program description

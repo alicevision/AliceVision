@@ -15,6 +15,7 @@
 #include <aliceVision/feature/svgVisualization.hpp>
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/cmdline.hpp>
+#include <aliceVision/system/main.hpp>
 
 #include <dependencies/vectorGraphics/svgDrawer.hpp>
 
@@ -71,7 +72,7 @@ void hslToRgb(float h, float s, float l,
   }
 }
 
-int main(int argc, char ** argv)
+int aliceVision_main(int argc, char ** argv)
 {
   // command-line parameters
 
