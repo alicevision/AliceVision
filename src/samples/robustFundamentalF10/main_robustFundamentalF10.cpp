@@ -83,11 +83,12 @@ int main(int argc, char **argv)
     return EXIT_FAILURE;
   }
 
-  Image<float> imageLeft, imageRight;
+  Image<float> imageLeft;
   readImage(filenameLeft, imageLeft, EImageColorSpace::LINEAR);
-  const auto imageLeftSize = std::make_pair<std::size_t, std::size_t>(imageLeft.Width(), imageLeft.Height());
+  const auto imageLeftSize = std::make_pair(imageLeft.Width(), imageLeft.Height());
+  Image<float> imageRight;
   readImage(filenameRight, imageRight, EImageColorSpace::LINEAR);
-  const auto imageRightSize = std::make_pair<std::size_t, std::size_t>(imageRight.Width(), imageRight.Height());
+  const auto imageRightSize = std::make_pair(imageRight.Width(), imageRight.Height());
 
   //--
   // Detect regions thanks to an image_describer
