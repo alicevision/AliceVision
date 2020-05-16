@@ -10,6 +10,7 @@
 #include <aliceVision/rig/Rig.hpp>
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/cmdline.hpp>
+#include <aliceVision/system/main.hpp>
 
 #include <boost/program_options.hpp> 
 #include <boost/progress.hpp>
@@ -39,7 +40,7 @@ static std::vector<double> ReadIntrinsicsFile(const std::string& fname)
   return v;
 }
 
-int main(int argc, char** argv)
+int aliceVision_main(int argc, char** argv)
 {
   std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
   std::string exportFile;

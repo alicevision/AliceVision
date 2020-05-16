@@ -10,6 +10,7 @@
 #include <aliceVision/image/Sampler.hpp>
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/cmdline.hpp>
+#include <aliceVision/system/main.hpp>
 
 #include <dependencies/vectorGraphics/svgDrawer.hpp>
 
@@ -303,7 +304,7 @@ bool splitEquirectangularDemo(const std::string& imagePath, const std::string& o
   return true;
 }
 
-int main(int argc, char** argv)
+int aliceVision_main(int argc, char** argv)
 {
   // command-line parameters
   std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());

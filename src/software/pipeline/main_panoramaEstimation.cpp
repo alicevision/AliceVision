@@ -13,6 +13,7 @@
 #include <aliceVision/sfm/utils/alignment.hpp>
 #include <aliceVision/system/Timer.hpp>
 #include <aliceVision/system/Logger.hpp>
+#include <aliceVision/system/main.hpp>
 #include <aliceVision/system/cmdline.hpp>
 #include <aliceVision/image/all.hpp>
 
@@ -42,7 +43,7 @@ inline std::istream& operator>>(std::istream& in, std::pair<int, int>& out)
     return in;
 }
 
-int main(int argc, char **argv)
+int aliceVision_main(int argc, char **argv)
 {
   // command-line parameters
 

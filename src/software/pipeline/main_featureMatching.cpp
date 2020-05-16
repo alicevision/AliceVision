@@ -25,6 +25,7 @@
 #include <aliceVision/matchingImageCollection/GeometricFilterType.hpp>
 #include <aliceVision/matching/pairwiseAdjacencyDisplay.hpp>
 #include <aliceVision/matching/io.hpp>
+#include <aliceVision/system/main.hpp>
 #include <aliceVision/system/Timer.hpp>
 #include <aliceVision/system/cmdline.hpp>
 #include <aliceVision/feature/selection.hpp>
@@ -86,7 +87,7 @@ void getStatsMap(const PairwiseMatches& map)
 /// - Compute putative local feature matches (descriptors matching)
 /// - Compute geometric coherent feature matches (robust model estimation from putative matches)
 /// - Export computed data
-int main(int argc, char **argv)
+int aliceVision_main(int argc, char **argv)
 {
   // command-line parameters
 

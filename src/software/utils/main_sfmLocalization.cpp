@@ -14,6 +14,7 @@
 #include <aliceVision/system/Timer.hpp>
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/cmdline.hpp>
+#include <aliceVision/system/main.hpp>
 
 #include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>
@@ -35,7 +36,7 @@ namespace fs = boost::filesystem;
 //   if 3D-2D matches are found
 // - A demonstration mode (default):
 //   - try to locate all the view of the SfM_Data reconstruction
-int main(int argc, char **argv)
+int aliceVision_main(int argc, char **argv)
 {
   // command-line parameters
 

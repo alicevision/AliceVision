@@ -16,6 +16,7 @@
 #include <aliceVision/mvsUtils/ImagesCache.hpp>
 #include <aliceVision/system/cmdline.hpp>
 #include <aliceVision/system/Logger.hpp>
+#include <aliceVision/system/main.hpp>
 #include <aliceVision/system/Timer.hpp>
 
 #include <boost/program_options.hpp>
@@ -36,7 +37,7 @@ bfs::path absolutePathNoExt(const bfs::path& p)
     return p.parent_path() / p.stem();
 }
 
-int main(int argc, char* argv[])
+int aliceVision_main(int argc, char* argv[])
 {
     system::Timer timer;
 

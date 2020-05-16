@@ -18,6 +18,7 @@
 #include <aliceVision/robustEstimation/estimators.hpp>
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/cmdline.hpp>
+#include <aliceVision/system/main.hpp>
 
 #include <boost/filesystem.hpp>
 #include <boost/progress.hpp>
@@ -58,7 +59,7 @@ std::string myToString(std::size_t i, std::size_t zeroPadding)
 }
 
 
-int main(int argc, char** argv)
+int aliceVision_main(int argc, char** argv)
 {
   // common parameters
   /// the AliceVision .json/abc data file

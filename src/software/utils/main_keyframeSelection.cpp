@@ -7,6 +7,7 @@
 #include <aliceVision/keyframe/KeyframeSelector.hpp>
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/cmdline.hpp>
+#include <aliceVision/system/main.hpp>
 
 #include <boost/program_options.hpp> 
 #include <boost/filesystem.hpp>
@@ -24,7 +25,7 @@ using namespace aliceVision::keyframe;
 namespace po = boost::program_options;
 namespace fs = boost::filesystem;
 
-int main(int argc, char** argv)
+int aliceVision_main(int argc, char** argv)
 {
   // command-line parameters
   std::string verboseLevel = aliceVision::system::EVerboseLevel_enumToString(aliceVision::system::Logger::getDefaultVerboseLevel());

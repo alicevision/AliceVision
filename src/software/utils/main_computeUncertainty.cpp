@@ -8,6 +8,7 @@
 #include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
 #include <aliceVision/system/cmdline.hpp>
+#include <aliceVision/system/main.hpp>
 #include <aliceVision/config.hpp>
 
 #include <uncertaintyTE/uncertainty.h>
@@ -31,7 +32,7 @@ using namespace aliceVision::sfmDataIO;
 namespace po = boost::program_options;
 
 
-int main(int argc, char **argv)
+int aliceVision_main(int argc, char **argv)
 {
   // command-line parameters
 

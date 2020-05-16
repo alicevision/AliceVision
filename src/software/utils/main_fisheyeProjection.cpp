@@ -11,6 +11,7 @@
 #include <aliceVision/image/convertion.hpp>
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/cmdline.hpp>
+#include <aliceVision/system/main.hpp>
 #include <aliceVision/camera/camera.hpp>
 
 #include <dependencies/vectorGraphics/svgDrawer.hpp>
@@ -252,7 +253,7 @@ void stitchPanorama(const std::vector<std::string>& imagePaths, const std::vecto
 }
 
 
-int main(int argc, char** argv)
+int aliceVision_main(int argc, char** argv)
 {
   // command-line parameters
   std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());

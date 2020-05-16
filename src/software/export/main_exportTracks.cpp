@@ -17,6 +17,7 @@
 #include <aliceVision/image/all.hpp>
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/cmdline.hpp>
+#include <aliceVision/system/main.hpp>
 
 #include <software/utils/sfmHelper/sfmIOHelper.hpp>
 
@@ -41,7 +42,7 @@ using namespace svg;
 namespace po = boost::program_options;
 namespace fs = boost::filesystem;
 
-int main(int argc, char ** argv)
+int aliceVision_main(int argc, char ** argv)
 {
   // command-line parameters
 
