@@ -115,7 +115,7 @@ void CreateCameraSystem(const Mat3& KK,
                         Mat3  *R_expected,
                         Vec3  *T_expected)
 {
-  int num_points = x_image.cols();
+  const auto num_points = x_image.cols();
 
   Mat3X x_unit_cam(3, num_points);
   x_unit_cam = KK.inverse() * x_image;
