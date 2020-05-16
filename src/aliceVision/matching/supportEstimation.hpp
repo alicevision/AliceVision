@@ -12,7 +12,7 @@
 #include <vector>
 
 namespace aliceVision {
-namespace robustEstimation {
+namespace matching {
 
 #define ALICEVISION_MINIMUM_SAMPLES_COEF 7 // TODO: TO REMOVE
 
@@ -62,5 +62,5 @@ inline bool hasStrongSupport(const matching::MatchesPerDescType& matchesPerDesc,
   return (score > minimumSamples);
 }
 
-} // namespace robustEstimation
-} // namespace aliceVision
+}
+}

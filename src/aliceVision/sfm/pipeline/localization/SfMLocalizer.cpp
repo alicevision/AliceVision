@@ -11,7 +11,7 @@
 #include <aliceVision/robustEstimation/ACRansac.hpp>
 #include <aliceVision/robustEstimation/LORansac.hpp>
 #include <aliceVision/robustEstimation/ScoreEvaluator.hpp>
-#include <aliceVision/robustEstimation/supportEstimation.hpp>
+#include <aliceVision/matching/supportEstimation.hpp>
 #include <aliceVision/multiview/resection/P3PSolver.hpp>
 #include <aliceVision/multiview/resection/ResectionKernel.hpp>
 #include <aliceVision/multiview/resection/Resection6PSolver.hpp>
@@ -140,7 +140,7 @@ bool SfMLocalizer::Localize(const Pair& imageSize,
     }
   }
 
-  const bool resection = robustEstimation::hasStrongSupport(resectionData.vec_inliers, resectionData.vec_descType, minimumSamples);
+  const bool resection = matching::hasStrongSupport(resectionData.vec_inliers, resectionData.vec_descType, minimumSamples);
 
   if(!resection)
   {

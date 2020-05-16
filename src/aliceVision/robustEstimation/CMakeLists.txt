@@ -14,9 +14,7 @@ set(robustEstimation_files_headers
   ransacTools.hpp
   randSampling.hpp
   leastMedianOfSquares.hpp
-  guidedMatching.hpp
   ScoreEvaluator.hpp
-  supportEstimation.hpp
   maxConsensus.hpp
 )
 
@@ -28,9 +26,6 @@ set(robustEstimation_files_sources
 alicevision_add_library(aliceVision_robustEstimation
   SOURCES ${robustEstimation_files_headers} ${robustEstimation_files_sources}
   PUBLIC_LINKS
-    aliceVision_camera
-    aliceVision_feature
-    aliceVision_matching
     aliceVision_numeric
     aliceVision_system
 )

@@ -9,7 +9,7 @@
 #include <aliceVision/feature/feature.hpp>
 #include <aliceVision/feature/sift/ImageDescriber_SIFT.hpp>
 #include <aliceVision/feature/akaze/ImageDescriber_AKAZE.hpp>
-#include <aliceVision/robustEstimation/guidedMatching.hpp>
+#include <aliceVision/matching/guidedMatching.hpp>
 #include <aliceVision/multiview/relativePose/HomographyKernel.hpp>
 #include <aliceVision/matching/RegionsMatcher.hpp>
 
@@ -366,7 +366,7 @@ int main(int argc, char **argv)
           PointsToMat(pointsFeaturesI, xI);
 
           IndMatches matches_0I;
-          robustEstimation::guidedMatching<robustEstimation::Mat3Model, multiview::relativePose::HomographyAsymmetricError>(
+          matching::guidedMatching<robustEstimation::Mat3Model, multiview::relativePose::HomographyAsymmetricError>(
             robustEstimation::Mat3Model(dataset.H(i).transpose()), x0, xI, Square(m_dPrecision_robust), matches_0I);
 
           std::cout << "Feature repeatablity Results" << "\n"
@@ -403,7 +403,7 @@ int main(int argc, char **argv)
           PointsToMat(putativesMatches, pointsFeatures0, pointsFeaturesI, x0, xI);
 
           IndMatches matches_0I;
-          robustEstimation::guidedMatching<robustEstimation::Mat3Model, multiview::relativePose::HomographyAsymmetricError>(
+          matching::guidedMatching<robustEstimation::Mat3Model, multiview::relativePose::HomographyAsymmetricError>(
             robustEstimation::Mat3Model(dataset.H(i).transpose()), x0, xI, Square(m_dPrecision_robust), matches_0I);
 
           std::cout << "Feature matching repeatability Results" << "\n"

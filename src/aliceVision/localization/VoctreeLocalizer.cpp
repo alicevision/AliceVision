@@ -21,7 +21,7 @@
 #include <aliceVision/matchingImageCollection/GeometricFilterMatrix.hpp>
 #include <aliceVision/numeric/numeric.hpp>
 #include <aliceVision/multiview/relativePose/FundamentalError.hpp>
-#include <aliceVision/robustEstimation/guidedMatching.hpp>
+#include <aliceVision/matching/guidedMatching.hpp>
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/Timer.hpp>
 
@@ -1137,7 +1137,7 @@ bool VoctreeLocalizer::robustMatching(matching::RegionsDatabaseMatcherPerDesc & 
 
   robustEstimation::Mat3Model model(geometricFilter.m_F);
 
-  robustEstimation::guidedMatching<robustEstimation::Mat3Model, multiview::relativePose::FundamentalEpipolarDistanceError>(
+  matching::guidedMatching<robustEstimation::Mat3Model, multiview::relativePose::FundamentalEpipolarDistanceError>(
         model,
         queryIntrinsicsBase,                  // camera::IntrinsicBase of the matched image
         matchers.getDatabaseRegionsPerDesc(), // feature::Regions

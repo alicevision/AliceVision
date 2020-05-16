@@ -26,7 +26,7 @@
 #include <aliceVision/robustEstimation/ACRansac.hpp>
 #include <aliceVision/robustEstimation/IRansacKernel.hpp>
 #include <aliceVision/robustEstimation/conditioning.hpp>
-#include <aliceVision/robustEstimation/supportEstimation.hpp>
+#include <aliceVision/matching/supportEstimation.hpp>
 
 
 #include <dependencies/htmlDoc/htmlDoc.hpp>

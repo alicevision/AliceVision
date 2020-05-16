@@ -13,7 +13,7 @@
 #include <aliceVision/robustEstimation/conditioning.hpp>
 #include <aliceVision/robustEstimation/ACRansac.hpp>
 #include <aliceVision/multiview/RelativePoseKernel.hpp>
-#include <aliceVision/robustEstimation/guidedMatching.hpp>
+#include <aliceVision/matching/guidedMatching.hpp>
 
 #include <dependencies/vectorGraphics/svgDrawer.hpp>
 
@@ -198,14 +198,14 @@ int main() {
 
       //a. by considering only the geometric error
 
-      robustEstimation::guidedMatching<robustEstimation::Mat3Model, multiview::relativePose::FundamentalEpipolarDistanceError>(
+      matching::guidedMatching<robustEstimation::Mat3Model, multiview::relativePose::FundamentalEpipolarDistanceError>(
         F, xL, xR, Square(thresholdF), vec_corresponding_indexes[0]);
       std::cout << "\nGuided Fundamental matching (geometric error) found "
         << vec_corresponding_indexes[0].size() << " correspondences."
         << std::endl;
 
       // b. by considering geometric error and descriptor distance ratio
-      robustEstimation::guidedMatching<robustEstimation::Mat3Model, multiview::relativePose::FundamentalEpipolarDistanceError>(
+        matching::guidedMatching<robustEstimation::Mat3Model, multiview::relativePose::FundamentalEpipolarDistanceError>(
         F,
         NULL, *regions_perImage.at(0), // Null since no Intrinsic is defined
         NULL, *regions_perImage.at(1), // Null since no Intrinsic is defined

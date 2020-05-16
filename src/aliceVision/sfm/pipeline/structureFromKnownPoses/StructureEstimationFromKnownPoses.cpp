@@ -8,7 +8,7 @@
 #include "StructureEstimationFromKnownPoses.hpp"
 #include <aliceVision/matching/IndMatch.hpp>
 #include <aliceVision/matching/metric.hpp>
-#include <aliceVision/robustEstimation/guidedMatching.hpp>
+#include <aliceVision/matching/guidedMatching.hpp>
 #include <aliceVision/multiview/relativePose/FundamentalError.hpp>
 #include <aliceVision/multiview/triangulation/Triangulation.hpp>
 #include <aliceVision/graph/graph.hpp>
@@ -113,7 +113,7 @@ void StructureEstimationFromKnownPoses::match(const SfMData& sfmData,
       {
         std::vector<matching::IndMatch> matches;
 #ifdef ALICEVISION_EXHAUSTIVE_MATCHING
-          robustEstimation::guidedMatching
+          matching::guidedMatching
           <Mat3, multiview::relativePose::FundamentalEpipolarDistanceError>
           (
             F_lr,
@@ -129,7 +129,7 @@ void StructureEstimationFromKnownPoses::match(const SfMData& sfmData,
         const Vec3 epipole2  = epipole_from_P(P_R, poseL);
 
         //const feature::Regions& regions = regionsPerView.getRegions(it->first);
-        robustEstimation::guidedMatchingFundamentalFast<multiview::relativePose::FundamentalEpipolarDistanceError>
+        matching::guidedMatchingFundamentalFast<multiview::relativePose::FundamentalEpipolarDistanceError>
           (
             F_lr,
             epipole2,

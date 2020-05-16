@@ -14,8 +14,8 @@
 #include <aliceVision/robustEstimation/ACRansac.hpp>
 #include <aliceVision/robustEstimation/LORansac.hpp>
 #include <aliceVision/robustEstimation/ScoreEvaluator.hpp>
-#include <aliceVision/robustEstimation/guidedMatching.hpp>
-#include <aliceVision/robustEstimation/supportEstimation.hpp>
+#include <aliceVision/matching/guidedMatching.hpp>
+#include <aliceVision/matching/supportEstimation.hpp>
 #include <aliceVision/multiview/essential.hpp>
 #include <aliceVision/multiview/relativePose/Fundamental7PSolver.hpp>
 #include <aliceVision/multiview/relativePose/Fundamental8PSolver.hpp>
@@ -143,7 +143,7 @@ struct GeometricFilterMatrix_F_AC : public GeometricFilterMatrix
     copyInlierMatches(inliers, putativeMatchesPerType, descTypes, out_geometricInliersPerType);
 
     // have matches has strong support
-    const bool hasStrongSupport = robustEstimation::hasStrongSupport(out_geometricInliersPerType, estimationPair.second);
+    const bool hasStrongSupport = matching::hasStrongSupport(out_geometricInliersPerType, estimationPair.second);
 
     return EstimationStatus(true, hasStrongSupport);
   }
@@ -274,7 +274,7 @@ struct GeometricFilterMatrix_F_AC : public GeometricFilterMatrix
       robustEstimation::Mat3Model model(m_F);
 
       // check the features correspondences that agree in the geometric and photometric domain
-      robustEstimation::guidedMatching<robustEstimation::Mat3Model, multiview::relativePose::FundamentalEpipolarDistanceError>(
+      matching::guidedMatching<robustEstimation::Mat3Model, multiview::relativePose::FundamentalEpipolarDistanceError>(
         model,
         camI,                            // camera::IntrinsicBase
         regionsPerView.getAllRegions(I), // feature::Regions

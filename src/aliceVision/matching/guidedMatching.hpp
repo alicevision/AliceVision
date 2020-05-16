@@ -16,7 +16,7 @@
 #include <vector>
 
 namespace aliceVision {
-namespace robustEstimation {
+namespace matching {
 
 /**
  * @brief Guided Matching (features only):
@@ -510,5 +510,5 @@ void guidedMatchingFundamentalFast(const Mat3& FMat,
   }
 }
 
-} // namespace robustEstimation
-} // namespace aliceVision
+}
+}

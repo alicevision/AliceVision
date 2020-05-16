@@ -11,7 +11,7 @@
 #include <aliceVision/matching/IndMatch.hpp>
 #include <aliceVision/matchingImageCollection/GeometricFilterMatrix.hpp>
 #include <aliceVision/robustEstimation/ACRansac.hpp>
-#include <aliceVision/robustEstimation/guidedMatching.hpp>
+#include <aliceVision/matching/guidedMatching.hpp>
 #include <aliceVision/multiview/RelativePoseKernel.hpp>
 #include <aliceVision/multiview/relativePose/Essential5PSolver.hpp>
 #include <aliceVision/multiview/relativePose/FundamentalError.hpp>
@@ -108,7 +108,7 @@ struct GeometricFilterMatrix_E_AC : public GeometricFilterMatrix
                       out_geometricInliersPerType);
 
     // check if resection has strong support
-    const bool hasStrongSupport = robustEstimation::hasStrongSupport(out_geometricInliersPerType, kernel.getMinimumNbRequiredSamples());
+    const bool hasStrongSupport = matching::hasStrongSupport(out_geometricInliersPerType, kernel.getMinimumNbRequiredSamples());
 
     return EstimationStatus(true, hasStrongSupport);
   }
@@ -156,7 +156,7 @@ struct GeometricFilterMatrix_E_AC : public GeometricFilterMatrix
 
       robustEstimation::Mat3Model model(F);
       // multiview::relativePose::FundamentalSymmetricEpipolarDistanceError
-      robustEstimation::guidedMatching<robustEstimation::Mat3Model, multiview::relativePose::FundamentalEpipolarDistanceError>(
+      matching::guidedMatching<robustEstimation::Mat3Model, multiview::relativePose::FundamentalEpipolarDistanceError>(
             model,
             camI, regionsPerView.getAllRegions(I),
             camJ, regionsPerView.getAllRegions(J),

@@ -6,7 +6,7 @@
 
 #include "rigResection.hpp"
 #include <aliceVision/system/Logger.hpp>
-#include <aliceVision/robustEstimation/supportEstimation.hpp>
+#include <aliceVision/matching/supportEstimation.hpp>
 
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_OPENGV)
 #include <Eigen/Eigen>
@@ -201,7 +201,7 @@ EstimationStatus rigResection(const std::vector<Mat> &pts2d,
   if(descTypesPerCamera)
   {
     // Check if estimation has strong support
-    hasStrongSupport = robustEstimation::hasStrongSupport(inliers, *descTypesPerCamera, 3);
+    hasStrongSupport = matching::hasStrongSupport(inliers, *descTypesPerCamera, 3);
   }
   return EstimationStatus(true, hasStrongSupport);
 }
