@@ -21,6 +21,7 @@ set(matching_files_headers
 # Sources
 set(matching_files_sources
   io.cpp
+  guidedMatching.cpp
   matcherType.cpp
   RegionsMatcher.cpp
   supportEstimation.cpp
