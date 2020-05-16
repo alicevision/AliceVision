@@ -96,7 +96,7 @@ struct P5PfrError : public ISolverErrorResection<P5PfrModel>
 
 
 /**
- * @brief Compute the absolute pose, focal length and radial distorsion of a camera using three 3D-to-2D correspondences
+ * @brief Compute the absolute pose, focal length and radial distortion of a camera using three 3D-to-2D correspondences
  * @author Tomas Pajdla, adapted to aliceVision by Michal Polic
  * @ref [1] Time solution to the absolute pose problem with unknown radial distortion and focal length
  *          Kukelova, Z., Bujnak, M., and Pajdla T.
@@ -130,7 +130,7 @@ public:
    *
    * @param[in] x2d featureVectors 2 x 5 matrix with feature vectors with principal point at [0; 0] (each column is a vector)
    * @param[in] x3d worldPoints 3 x 5 matrix with corresponding 3D world points (each column is a point)
-   * @param[in] numOfRadialCoeff Reperesents how many radial distorsion parameters should be computed [min 1, max 3]
+   * @param[in] numOfRadialCoeff number of radial distortion parameters to be computed [min 1, max 3]
    * @param[out] models M x n vector that will contain the each solution in structure M
    */
   void solve(const Mat& x2d, const Mat& x3d, std::vector<P5PfrModel>& models) const override
@@ -141,11 +141,11 @@ public:
     assert(5 == x2d.cols());
     assert(numOfRadialCoeff_ >= 1 && numOfRadialCoeff_ <= 3 && "P5PfrSolver error: the number of radial parameters must be between 1 to 3 !");
 
-    // the radial distorision is represented by: the radial division undistortion
+    // the radial distortion is represented by: the radial division undistortion
     if(!computePosesRD(x2d, x3d, numOfRadialCoeff_, &models))
       models.clear();
 
-    // the radial distorision is represented by: Brown polynomial distortion model
+    // the radial distortion is represented by: Brown polynomial distortion model
     //if(!P5PfrSolver::computePosesRP(x2d, x3d, numR, &models))
     //    models.clear();
   }
