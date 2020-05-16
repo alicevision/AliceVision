@@ -23,6 +23,7 @@ set(matching_files_sources
   io.cpp
   matcherType.cpp
   RegionsMatcher.cpp
+  supportEstimation.cpp
 )
 
 alicevision_add_library(aliceVision_matching
