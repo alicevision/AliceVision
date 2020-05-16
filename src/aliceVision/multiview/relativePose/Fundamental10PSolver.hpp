@@ -13,27 +13,50 @@ namespace aliceVision {
 namespace multiview {
 namespace relativePose {
 
+/***
+ * @brief Model for relative pose and two radial distortion coefficients.
+ */
 struct Fundamental10PModel : public robustEstimation::Mat3Model
 {
   using Mat21 = Eigen::Matrix<double, 2, 1>;
 
-  Fundamental10PModel()
-    : robustEstimation::Mat3Model()
-  {}
+  Fundamental10PModel() = default;
 
+  /**
+   * @brief Constructor
+   * @param[in] F the 3x3 fundamental matrix.
+   * @param[in] L a 2x1 matrix containing the two radial distortion parameters.
+   */
   Fundamental10PModel(const Mat3& F, const Mat21& L)
     : robustEstimation::Mat3Model(F) , _L(L)
   {}
 
+  /**
+   * @brief Get the estimated radial distortion parameters.
+   * @return the radial distortion parameters as a 2x1 matrix.
+   */
   inline const Mat21& getRadialDistortion() const
   {
     return _L;
   }
 
+  /**
+   * @brief Get the estimated fundamental matrix.
+   * @return the fundamental matrix.
+   */
+  inline const Mat3& getFundamentalMatrix() const
+  {
+    return getMatrix();
+  }
+
 private:
+  /// the two radial distortion parameters
   Mat21 _L;
 };
 
+/***
+ * @brief Solver for the relative pose and two radial distortion coefficients for two cameras from 10 correspondences.
+ */
 class Fundamental10PSolver : public robustEstimation::ISolver<Fundamental10PModel>
 {
 public:
@@ -57,7 +80,7 @@ public:
   }
 
   /**
-   * @brief Computes the relative pose and two radial disortion coefficients for two cameras from 10 correspondences.
+   * @brief Computes the relative pose and two radial distortion coefficients for two cameras from 10 correspondences.
    * @see Efficient Solution to the Epipolar Geometry for Radially Distorted Cameras,
    *			The IEEE International Conference on Computer Vision (ICCV),
    *      Zuzana Kukelova, Jan Heller, Martin Bujnak, Andrew Fitzgibbon, Tomas Pajdla
