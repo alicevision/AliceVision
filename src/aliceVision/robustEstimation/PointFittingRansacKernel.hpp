@@ -45,7 +45,7 @@ public:
    * @brief Return the minimum number of required samples for the solver
    * @return minimum number of required samples
    */
-  virtual std::size_t getMinimumNbRequiredSamples() const override
+  std::size_t getMinimumNbRequiredSamples() const override
   {
     return KernelBase::getMinimumNbRequiredSamples();
   }
@@ -59,7 +59,7 @@ public:
    * @brief Return the maximum number of models for the solver
    * @return maximum number of models
    */
-  virtual std::size_t getMaximumNbModels() const override
+  std::size_t getMaximumNbModels() const override
   {
     return KernelBase::getMaximumNbModels();
   }
@@ -71,13 +71,13 @@ public:
    * the minimal estimation.
    * @param[out] models The model(s) estimated by the minimal solver.
    */
-  virtual void fit(const std::vector<std::size_t>& samples, std::vector<ModelT_>& models) const override
+  void fit(const std::vector<std::size_t>& samples, std::vector<ModelT_>& models) const override
   {
     KernelBase::fit(samples, models);
   }
 
 
-  virtual void fitLS(const std::vector<std::size_t>& inliers, std::vector<ModelT_>& models, const std::vector<double>* weights = nullptr) const override
+  void fitLS(const std::vector<std::size_t>& inliers, std::vector<ModelT_>& models, const std::vector<double>* weights = nullptr) const override
   {
     const Mat x1 = ExtractColumns(KernelBase::_x1, inliers);
     const Mat x2 = ExtractColumns(KernelBase::_x2, inliers);
@@ -88,7 +88,7 @@ public:
       _solverLs.solve(x1, x2, models, *weights);
   }
 
-  virtual void computeWeights(const ModelT_& model, const std::vector<std::size_t>& inliers,  std::vector<double>& weights, const double eps = 0.001) const override
+  void computeWeights(const ModelT_& model, const std::vector<std::size_t>& inliers,  std::vector<double>& weights, const double eps = 0.001) const override
   {
     const auto numInliers = inliers.size();
     weights.resize(numInliers);
@@ -107,7 +107,7 @@ public:
    * @param[in] model The model to consider.
    * @return The estimation error for the given element and the given model.
    */
-  virtual double error(std::size_t sample, const ModelT_& model) const override
+  double error(std::size_t sample, const ModelT_& model) const override
   {
     return KernelBase::error(sample, model);
   }
@@ -117,7 +117,7 @@ public:
    * @param[in] model The model to consider.
    * @param[out] vec_errors The vector containing all the estimation errors for every element.
    */
-  virtual void errors(const ModelT_& model, std::vector<double>& errors) const override
+  void errors(const ModelT_& model, std::vector<double>& errors) const override
   {
     KernelBase::errors(model, errors);
   }
@@ -132,7 +132,7 @@ public:
    * @brief The number of elements in the data.
    * @return the number of elements in the data.
    */
-  virtual std::size_t nbSamples() const override
+  std::size_t nbSamples() const override
   {
     return KernelBase::nbSamples();
   }

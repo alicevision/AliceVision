@@ -148,7 +148,7 @@ public:
    * @param[in] samples
    * @param[out] models
    */
-  inline virtual void fit(const std::vector<std::size_t>& samples, std::vector<ModelT_>& models) const override
+  inline void fit(const std::vector<std::size_t>& samples, std::vector<ModelT_>& models) const override
   {
     const Mat x1 = ExtractColumns(KernelBase::_x1, samples);
     const Mat x2 = ExtractColumns(KernelBase::_x2, samples);
@@ -169,7 +169,7 @@ public:
 
     KernelBase::_kernelSolver.solve(x1_normalized, x2_normalized, models);
 
-    // unormalize model from the computed conditioning.
+    // unnormalize model from the computed conditioning.
     for(int i = 0; i < models.size(); ++i)
       UnnormalizerT_::unnormalize(T1, T2, &(models.at(i).getMatrix()));
   }
