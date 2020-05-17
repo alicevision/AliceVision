@@ -50,9 +50,7 @@ TracksBuilder::TracksBuilder()
     _d.reset(new TracksBuilderData());
 }
 
-TracksBuilder::~TracksBuilder()
-{
-}
+TracksBuilder::~TracksBuilder() = default;
 
 void TracksBuilder::build(const PairwiseMatches& pairwiseMatches)
 {
