@@ -7,6 +7,9 @@
 
 #include "tracksUtils.hpp"
 
+#include <iterator>
+
+
 namespace aliceVision {
 namespace track {
 
