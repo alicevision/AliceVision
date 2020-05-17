@@ -17,14 +17,16 @@
 #include <aliceVision/track/Track.hpp>
 #include <aliceVision/config.hpp>
 
-
 #include <aliceVision/numeric/numeric.hpp>
-#include <aliceVision/multiview/essentialKernelSolver.hpp>
-#include <aliceVision/multiview/projection.hpp>
+#include <aliceVision/multiview/RelativePoseKernel.hpp>
+#include <aliceVision/multiview/relativePose/Homography4PSolver.hpp>
+#include <aliceVision/multiview/relativePose/HomographyError.hpp>
+#include <aliceVision/multiview/relativePose/EssentialKernel.hpp>
+#include <aliceVision/numeric/projection.hpp>
 #include <aliceVision/robustEstimation/ACRansac.hpp>
-#include <aliceVision/robustEstimation/ACRansacKernelAdaptator.hpp>
-#include <aliceVision/multiview/homographyKernelSolver.hpp>
-#include <aliceVision/multiview/conditioning.hpp>
+#include <aliceVision/robustEstimation/IRansacKernel.hpp>
+#include <aliceVision/robustEstimation/conditioning.hpp>
+#include <aliceVision/matching/supportEstimation.hpp>
 
 
 #include <dependencies/htmlDoc/htmlDoc.hpp>
@@ -43,10 +45,6 @@ using namespace aliceVision::geometry;
 using namespace aliceVision::feature;
 using namespace aliceVision::sfmData;
 
-
-
-using namespace aliceVision::robustEstimation;
-
 bool robustRelativeRotation_fromE(
   const Mat3 & K1, const Mat3 & K2,
   const Mat & x1, const Mat & x2,
@@ -56,24 +54,23 @@ bool robustRelativeRotation_fromE(
   const size_t max_iteration_count)
 {
   // Use the 5 point solver to estimate E
-  typedef essential::kernel::FivePointKernel SolverType;
   // Define the AContrario adaptor
-  typedef ACKernelAdaptorEssential<
-      SolverType,
-      aliceVision::fundamental::kernel::EpipolarDistanceError,
-      UnnormalizerT,
-      Mat3>
-      KernelType;
+  using KernelType = multiview::RelativePoseKernel_K<
+        multiview::relativePose::Essential5PSolver,
+        multiview::relativePose::FundamentalSymmetricEpipolarDistanceError,
+        robustEstimation::Mat3Model>;
 
   KernelType kernel(x1, size_ima1.first, size_ima1.second,
                     x2, size_ima2.first, size_ima2.second, K1, K2);
 
   // Robustly estimation of the Essential matrix and its precision
-  const std::pair<double,double> acRansacOut = ACRANSAC(kernel, relativePose_info.vec_inliers,
-    max_iteration_count, &relativePose_info.essential_matrix, relativePose_info.initial_residual_tolerance);
+  robustEstimation::Mat3Model model;
+  const std::pair<double, double> acRansacOut = robustEstimation::ACRANSAC(kernel, relativePose_info.vec_inliers, max_iteration_count, &model,
+      relativePose_info.initial_residual_tolerance);
+  relativePose_info.essential_matrix = model.getMatrix();
   relativePose_info.found_residual_precision = acRansacOut.first;
 
-  if (relativePose_info.vec_inliers.size() < SolverType::MINIMUM_SAMPLES * ALICEVISION_MINIMUM_SAMPLES_COEF )
+  if (relativePose_info.vec_inliers.size() < kernel.getMinimumNbRequiredSamples() * ALICEVISION_MINIMUM_SAMPLES_COEF)
   {
     ALICEVISION_LOG_INFO("robustRelativePose: no sufficient coverage (the model does not support enough samples): " << relativePose_info.vec_inliers.size());
     return false; // no sufficient coverage (the model does not support enough samples)
@@ -140,25 +137,26 @@ aliceVision::EstimationStatus robustHomographyEstimationAC(const Mat2X &x1,
                                                            Mat3 &H,
                                                            std::vector<std::size_t> &vec_inliers)
 {
-    using KernelType = robustEstimation::ACKernelAdaptor<
-            homography::kernel::FourPointSolver,
-            homography::kernel::AsymmetricError,
-            UnnormalizerI,
-            Mat3>;
+    using KernelType = multiview::RelativePoseKernel<
+            multiview::relativePose::Homography4PSolver,
+            multiview::relativePose::HomographyAsymmetricError,
+            multiview::UnnormalizerI,
+            robustEstimation::Mat3Model>;
 
     KernelType kernel(x1, imgSize1.first, imgSize1.second,
                       x2, imgSize2.first, imgSize2.second,
                       false); // configure as point to point error model.
 
-
+    robustEstimation::Mat3Model model;
     const std::pair<double, double> ACRansacOut = robustEstimation::ACRANSAC(kernel, vec_inliers,
                                                                                           1024,
-                                                                                          &H,
+                                                                                          &model,
                                                                                           std::numeric_limits<double>::infinity());
+    H = model.getMatrix();
 
     const bool valid{!vec_inliers.empty()};
     //@fixme
-    const bool hasStrongSupport{vec_inliers.size() > KernelType::MINIMUM_SAMPLES * 2.5};
+    const bool hasStrongSupport{vec_inliers.size() > kernel.getMinimumNbRequiredSamples() * ALICEVISION_MINIMUM_SAMPLES_COEF};
 
     return {valid, hasStrongSupport};
 }

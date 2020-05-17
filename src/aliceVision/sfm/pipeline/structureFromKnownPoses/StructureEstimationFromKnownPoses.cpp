@@ -8,8 +8,8 @@
 #include "StructureEstimationFromKnownPoses.hpp"
 #include <aliceVision/matching/IndMatch.hpp>
 #include <aliceVision/matching/metric.hpp>
-#include <aliceVision/robustEstimation/guidedMatching.hpp>
-#include <aliceVision/multiview/fundamentalKernelSolver.hpp>
+#include <aliceVision/matching/guidedMatching.hpp>
+#include <aliceVision/multiview/relativePose/FundamentalError.hpp>
 #include <aliceVision/multiview/triangulation/Triangulation.hpp>
 #include <aliceVision/graph/graph.hpp>
 #include <aliceVision/track/Track.hpp>
@@ -112,9 +112,9 @@ void StructureEstimationFromKnownPoses::match(const SfMData& sfmData,
       for(feature::EImageDescriberType descType: commonDescTypes)
       {
         std::vector<matching::IndMatch> matches;
-      #ifdef ALICEVISION_EXHAUSTIVE_MATCHING
-        robustEstimation::GuidedMatching
-          <Mat3, fundamental::kernel::EpipolarDistanceError>
+#ifdef ALICEVISION_EXHAUSTIVE_MATCHING
+          matching::guidedMatching
+          <Mat3, multiview::relativePose::FundamentalEpipolarDistanceError>
           (
             F_lr,
             iterIntrinsicL->second.get(),
@@ -129,8 +129,7 @@ void StructureEstimationFromKnownPoses::match(const SfMData& sfmData,
         const Vec3 epipole2  = epipole_from_P(P_R, poseL);
 
         //const feature::Regions& regions = regionsPerView.getRegions(it->first);
-        robustEstimation::GuidedMatching_Fundamental_Fast
-          <fundamental::kernel::EpipolarDistanceError>
+        matching::guidedMatchingFundamentalFast<multiview::relativePose::FundamentalEpipolarDistanceError>
           (
             F_lr,
             epipole2,
@@ -207,7 +206,7 @@ void StructureEstimationFromKnownPoses::filter(
           iterTracks != map_tracksCommon.end(); ++iterTracks) {
           {
             const track::Track & subTrack = iterTracks->second;
-            Triangulation trianObj;
+            multiview::Triangulation trianObj;
             for (auto iter = subTrack.featPerView.begin(); iter != subTrack.featPerView.end(); ++iter)
             {
               const size_t imaIndex = iter->first;

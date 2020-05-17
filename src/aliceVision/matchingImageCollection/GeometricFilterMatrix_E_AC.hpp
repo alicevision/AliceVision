@@ -7,109 +7,108 @@
 
 #pragma once
 
-#include "aliceVision/types.hpp"
-#include "aliceVision/multiview/essentialKernelSolver.hpp"
-#include "aliceVision/multiview/essential.hpp"
-#include "aliceVision/robustEstimation/ACRansac.hpp"
-#include "aliceVision/robustEstimation/ACRansacKernelAdaptator.hpp"
-#include "aliceVision/robustEstimation/guidedMatching.hpp"
-#include <limits>
+#include <aliceVision/types.hpp>
+#include <aliceVision/matching/IndMatch.hpp>
+#include <aliceVision/matchingImageCollection/GeometricFilterMatrix.hpp>
+#include <aliceVision/robustEstimation/ACRansac.hpp>
+#include <aliceVision/matching/guidedMatching.hpp>
+#include <aliceVision/multiview/RelativePoseKernel.hpp>
+#include <aliceVision/multiview/relativePose/Essential5PSolver.hpp>
+#include <aliceVision/multiview/relativePose/FundamentalError.hpp>
+#include <aliceVision/multiview/essential.hpp>
+#include <aliceVision/multiview/RelativePoseKernel.hpp>
+#include <aliceVision/feature/RegionsPerView.hpp>
+#include <aliceVision/sfmData/SfMData.hpp>
 
-#include "aliceVision/matching/IndMatch.hpp"
-#include "aliceVision/sfmData/SfMData.hpp"
-#include "aliceVision/feature/RegionsPerView.hpp"
-#include "aliceVision/matchingImageCollection/GeometricFilterMatrix.hpp"
+#include <limits>
 
 namespace aliceVision {
 namespace matchingImageCollection {
 
-//-- A contrario essential matrix estimation template functor used for filter pair of putative correspondences
+/**
+ * @brief A contrario essential matrix estimation template functor used for filter pair of putative correspondences
+ */
 struct GeometricFilterMatrix_E_AC : public GeometricFilterMatrix
 {
-  GeometricFilterMatrix_E_AC(
-    double dPrecision = std::numeric_limits<double>::infinity(),
-    size_t iteration = 1024)
+  GeometricFilterMatrix_E_AC(double dPrecision = std::numeric_limits<double>::infinity(),
+                             std::size_t iteration = 1024)
     : GeometricFilterMatrix(dPrecision, std::numeric_limits<double>::infinity(), iteration)
     , m_E(Mat3::Identity())
   {}
 
   /**
    * @brief Given two sets of image points, it estimates the essential matrix
-   * relating them using a robust method (like A Contrario Ransac).
+   *        relating them using a robust method (like A Contrario Ransac).
    */
   template<typename Regions_or_Features_ProviderT>
-  EstimationStatus geometricEstimation(
-    const sfmData::SfMData * sfmData,
-    const Regions_or_Features_ProviderT& regionsPerView,
-    const Pair& pairIndex,
-    const matching::MatchesPerDescType & putativeMatchesPerType,
-    matching::MatchesPerDescType & out_geometricInliersPerType)
+  EstimationStatus geometricEstimation(const sfmData::SfMData* sfmData,
+                                       const Regions_or_Features_ProviderT& regionsPerView,
+                                       const Pair& pairIndex,
+                                       const matching::MatchesPerDescType& putativeMatchesPerType,
+                                       matching::MatchesPerDescType& out_geometricInliersPerType)
   {
-    using namespace aliceVision;
-    using namespace aliceVision::robustEstimation;
     out_geometricInliersPerType.clear();
 
-    // Get back corresponding view index
-    const IndexT iIndex = pairIndex.first;
-    const IndexT jIndex = pairIndex.second;
+    // get back corresponding view index
+    const IndexT I = pairIndex.first;
+    const IndexT J = pairIndex.second;
 
     const std::vector<feature::EImageDescriberType> descTypes = regionsPerView.getCommonDescTypes(pairIndex);
+
     if(descTypes.empty())
       return EstimationStatus(false, false);
 
-    // Reject pair with missing Intrinsic information
-    const sfmData::View * view_I = sfmData->views.at(iIndex).get();
-    const sfmData::View * view_J = sfmData->views.at(jIndex).get();
+    // reject pair with missing Intrinsic information
+    const sfmData::View& viewI = sfmData->getView(I);
+    const sfmData::View& viewJ = sfmData->getView(J);
 
-    // Check that valid cameras can be retrieved for the pair of views
-    const camera::IntrinsicBase * cam_I = sfmData->getIntrinsicPtr(view_I->getIntrinsicId());
-    const camera::IntrinsicBase * cam_J = sfmData->getIntrinsicPtr(view_J->getIntrinsicId());
+    // check that valid cameras can be retrieved for the pair of views
+    const camera::IntrinsicBase* camI = sfmData->getIntrinsicPtr(viewI.getIntrinsicId());
+    const camera::IntrinsicBase* camJ = sfmData->getIntrinsicPtr(viewJ.getIntrinsicId());
 
-    if (!cam_I || !cam_J)
-      return EstimationStatus(false, false);
-    if ( !isPinhole(cam_I->getType()) || !isPinhole(cam_J->getType()))
+    if(!camI || !camJ)
       return EstimationStatus(false, false);
 
-    // Get corresponding point regions arrays
+    if(!isPinhole(camI->getType()) || !isPinhole(camJ->getType()))
+      return EstimationStatus(false, false);
+
+    // get corresponding point regions arrays
     Mat xI,xJ;
     fillMatricesWithUndistortFeaturesMatches(pairIndex, putativeMatchesPerType, sfmData, regionsPerView, descTypes, xI, xJ);
 
-    // Define the AContrario adapted Essential matrix solver
-    typedef ACKernelAdaptorEssential<
-        aliceVision::essential::kernel::FivePointKernel,
-        aliceVision::fundamental::kernel::EpipolarDistanceError,
-        UnnormalizerT,
-        Mat3>
-        KernelType;
+    // define the AContrario adapted Essential matrix solver
+    using KernelT = multiview::RelativePoseKernel_K<
+                    multiview::relativePose::Essential5PSolver,
+                    multiview::relativePose::FundamentalEpipolarDistanceError,
+                    robustEstimation::Mat3Model>;
 
-    const camera::Pinhole * ptrPinhole_I = (const camera::Pinhole*)(cam_I);
-    const camera::Pinhole * ptrPinhole_J = (const camera::Pinhole*)(cam_J);
+    const camera::Pinhole* ptrPinholeI = (const camera::Pinhole*)(camI);
+    const camera::Pinhole* ptrPinholeJ = (const camera::Pinhole*)(camJ);
 
-    KernelType kernel(
-      xI, sfmData->getViews().at(iIndex)->getWidth(), sfmData->getViews().at(iIndex)->getHeight(),
-      xJ, sfmData->getViews().at(jIndex)->getWidth(), sfmData->getViews().at(jIndex)->getHeight(),
-      ptrPinhole_I->K(), ptrPinhole_J->K());
+    const KernelT kernel(xI, viewI.getWidth(), viewI.getHeight(),
+                         xJ, viewJ.getWidth(), viewJ.getHeight(), ptrPinholeI->K(), ptrPinholeJ->K());
 
-    // Robustly estimate the Essential matrix with A Contrario ransac
-    const double upper_bound_precision = Square(m_dPrecision);
+    // robustly estimate the Essential matrix with A Contrario ransac
+    const double upperBoundPrecision = Square(m_dPrecision);
 
-    std::vector<size_t> inliers;
-    const std::pair<double,double> ACRansacOut = ACRANSAC(kernel, inliers, m_stIteration, &m_E, upper_bound_precision);
+    std::vector<std::size_t> inliers;
+    robustEstimation::Mat3Model model;
+    const std::pair<double,double> ACRansacOut = robustEstimation::ACRANSAC(kernel, inliers, m_stIteration, &model, upperBoundPrecision);
+    m_E = model.getMatrix();
 
     if (inliers.empty())
       return EstimationStatus(false, false);
 
     m_dPrecision_robust = ACRansacOut.first;
 
-    // Fill geometricInliersPerType with inliers from putativeMatchesPerType
-    copyInlierMatches(
-          inliers,
-          putativeMatchesPerType,
-          descTypes,
-          out_geometricInliersPerType);
+    // fill geometricInliersPerType with inliers from putativeMatchesPerType
+    copyInlierMatches(inliers,
+                      putativeMatchesPerType,
+                      descTypes,
+                      out_geometricInliersPerType);
 
-    // Check if resection has strong support
-    const bool hasStrongSupport = robustEstimation::hasStrongSupport(out_geometricInliersPerType, KernelType::MINIMUM_SAMPLES);
+    // check if resection has strong support
+    const bool hasStrongSupport = matching::hasStrongSupport(out_geometricInliersPerType, kernel.getMinimumNbRequiredSamples());
 
     return EstimationStatus(true, hasStrongSupport);
   }
@@ -123,57 +122,52 @@ struct GeometricFilterMatrix_E_AC : public GeometricFilterMatrix
    * @param matches
    * @return
    */
-  bool Geometry_guided_matching
-  (
-    const sfmData::SfMData * sfmData,
-    const feature::RegionsPerView& regionsPerView,
-    const Pair imageIdsPair,
-    const double dDistanceRatio,
-    matching::MatchesPerDescType & matches) override
+  bool Geometry_guided_matching(const sfmData::SfMData* sfmData,
+                                const feature::RegionsPerView& regionsPerView,
+                                const Pair imageIdsPair,
+                                const double dDistanceRatio,
+                                matching::MatchesPerDescType& matches) override
   {
-    if (m_dPrecision_robust != std::numeric_limits<double>::infinity())
+    if(!std::isinf(m_dPrecision_robust))
     {
-      // Get back corresponding view index
-      const IndexT viewId_I = imageIdsPair.first;
-      const IndexT viewId_J = imageIdsPair.second;
+      // get back corresponding view index
+      const IndexT I = imageIdsPair.first;
+      const IndexT J = imageIdsPair.second;
 
-      const sfmData::View * view_I = sfmData->views.at(viewId_I).get();
-      const sfmData::View * view_J = sfmData->views.at(viewId_J).get();
+      const sfmData::View& viewI = sfmData->getView(I);
+      const sfmData::View& viewJ = sfmData->getView(J);
 
-      // Check that valid cameras can be retrieved for the pair of views
-      const camera::IntrinsicBase * cam_I =
-        sfmData->getIntrinsics().count(view_I->getIntrinsicId()) ?
-          sfmData->getIntrinsics().at(view_I->getIntrinsicId()).get() : nullptr;
-      const camera::IntrinsicBase * cam_J =
-        sfmData->getIntrinsics().count(view_J->getIntrinsicId()) ?
-          sfmData->getIntrinsics().at(view_J->getIntrinsicId()).get() : nullptr;
-
-      if (!cam_I || !cam_J)
+      // check that valid cameras can be retrieved for the pair of views
+      const camera::IntrinsicBase* camI = sfmData->getIntrinsics().count(viewI.getIntrinsicId()) ?
+                                          sfmData->getIntrinsics().at(viewI.getIntrinsicId()).get() : nullptr;
+      const camera::IntrinsicBase* camJ = sfmData->getIntrinsics().count(viewJ.getIntrinsicId()) ?
+                                          sfmData->getIntrinsics().at(viewJ.getIntrinsicId()).get() : nullptr;
+      if(!camI || !camJ)
         return false;
 
-      if ( !isPinhole(cam_I->getType()) || !isPinhole(cam_J->getType()))
+      if(!isPinhole(camI->getType()) || !isPinhole(camJ->getType()))
         return false;
 
-      const camera::Pinhole * ptrPinhole_I = (const camera::Pinhole*)(cam_I);
-      const camera::Pinhole * ptrPinhole_J = (const camera::Pinhole*)(cam_J);
+      const camera::Pinhole* ptrPinholeI = (const camera::Pinhole*)(camI);
+      const camera::Pinhole* ptrPinholeJ = (const camera::Pinhole*)(camJ);
 
       Mat3 F;
-      FundamentalFromEssential(m_E, ptrPinhole_I->K(), ptrPinhole_J->K(), &F);
+      fundamentalFromEssential(m_E, ptrPinholeI->K(), ptrPinholeJ->K(), &F);
 
-      robustEstimation::GuidedMatching<Mat3,
-            aliceVision::fundamental::kernel::EpipolarDistanceError>(
-            //aliceVision::fundamental::kernel::SymmetricEpipolarDistanceError>(
-        F,
-        cam_I, regionsPerView.getAllRegions(viewId_I),
-        cam_J, regionsPerView.getAllRegions(viewId_J),
-        Square(m_dPrecision_robust), Square(dDistanceRatio),
-        matches);
+      robustEstimation::Mat3Model model(F);
+      // multiview::relativePose::FundamentalSymmetricEpipolarDistanceError
+      matching::guidedMatching<robustEstimation::Mat3Model, multiview::relativePose::FundamentalEpipolarDistanceError>(
+            model,
+            camI, regionsPerView.getAllRegions(I),
+            camJ, regionsPerView.getAllRegions(J),
+            Square(m_dPrecision_robust), Square(dDistanceRatio),
+            matches);
     }
+
     return matches.getNbAllMatches() != 0;
   }
 
-  //
-  //-- Stored data
+  // stored data
   Mat3 m_E;
 };
 

@@ -1294,7 +1294,7 @@ bool ReconstructionEngine_sequentialSfM::getBestInitialImagePairs(std::vector<Pa
       for (const size_t inlier_idx: relativePose_info.vec_inliers)
       {
         Vec3 X;
-        TriangulateDLT(PI, xI.col(inlier_idx), PJ, xJ.col(inlier_idx), &X);
+        multiview::TriangulateDLT(PI, xI.col(inlier_idx), PJ, xJ.col(inlier_idx), &X);
         IndexT trackId = commonTracksIds[inlier_idx];
         auto iter = map_tracksCommon[trackId].featPerView.begin();
         const Vec2 featI = _featuresPerView->getFeatures(I, map_tracksCommon[trackId].descType)[iter->second].coords().cast<double>();
@@ -1615,7 +1615,7 @@ bool ReconstructionEngine_sequentialSfM::computeResection(const IndexT viewId, R
       // setup a default camera model from the found projection matrix
       Mat3 K, R;
       Vec3 t;
-      KRt_From_P(resectionData.projection_matrix, &K, &R, &t);
+      KRt_from_P(resectionData.projection_matrix, &K, &R, &t);
       
       const double focal = (K(0,0) + K(1,1))/2.0;
       const Vec2 principal_point(K(0,2), K(1,2));
@@ -1797,7 +1797,7 @@ void ReconstructionEngine_sequentialSfM::triangulate_multiViewsLORANSAC(SfMData&
       const Vec2 xJ = _featuresPerView->getFeatures(J, track.descType)[track.featPerView.at(J)].coords().cast<double>();
   
       // -- Triangulate:
-      TriangulateDLT(camI->get_projective_equivalent(poseI), 
+      multiview::TriangulateDLT(camI->get_projective_equivalent(poseI),
                      camI->get_ud_pixel(xI), 
                      camJ->get_projective_equivalent(poseJ), 
                      camI->get_ud_pixel(xJ), 
@@ -1849,9 +1849,9 @@ void ReconstructionEngine_sequentialSfM::triangulate_multiViewsLORANSAC(SfMData&
       Vec4 X_homogeneous = Vec4::Zero();
       std::vector<std::size_t> inliersIndex;
       
-      TriangulateNViewLORANSAC(features, Ps, &X_homogeneous, &inliersIndex, 8.0);
+      multiview::TriangulateNViewLORANSAC(features, Ps, &X_homogeneous, &inliersIndex, 8.0);
       
-      HomogeneousToEuclidean(X_homogeneous, &X_euclidean);     
+      homogeneousToEuclidean(X_homogeneous, &X_euclidean);     
       
       // observations = {350, 380, 442} | inliersIndex = [0, 1] | inliers = {350, 380}
       for (const auto & id : inliersIndex)
@@ -2006,7 +2006,7 @@ void ReconstructionEngine_sequentialSfM::triangulate_2Views(SfMData& scene, cons
           const Mat34 pI = camI->get_projective_equivalent(poseI);
           const Mat34 pJ = camJ->get_projective_equivalent(poseJ);
           
-          TriangulateDLT(pI, xI_ud, pJ, xJ_ud, &X_euclidean);
+          multiview::TriangulateDLT(pI, xI_ud, pJ, xJ_ud, &X_euclidean);
           
           // Check triangulation results
           //  - Check angle (small angle leads imprecise triangulation)

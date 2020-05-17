@@ -8,10 +8,10 @@
 #pragma once
 
 #include <aliceVision/numeric/numeric.hpp>
+#include <aliceVision/numeric/projection.hpp>
+#include <aliceVision/geometry/Pose3.hpp>
 #include <aliceVision/camera/cameraCommon.hpp>
 #include <aliceVision/camera/IntrinsicBase.hpp>
-#include <aliceVision/geometry/Pose3.hpp>
-#include <aliceVision/multiview/projection.hpp>
 
 #include <vector>
 #include <sstream>
@@ -106,7 +106,7 @@ class Pinhole : public IntrinsicBase
   virtual Mat34 get_projective_equivalent(const geometry::Pose3 & pose) const override
   {
     Mat34 P;
-    P_From_KRt(K(), pose.rotation(), pose.translation(), &P);
+    P_from_KRt(K(), pose.rotation(), pose.translation(), &P);
     return P;
   }
 

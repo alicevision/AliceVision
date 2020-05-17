@@ -42,7 +42,7 @@ BOOST_AUTO_TEST_CASE(translation_averaging_globalTi_from_tijs) {
       bCardiod, bRelative_Translation_PerTriplet
     );
 
-  d.ExportToPLY("global_translations_from_Tij_GT.ply");
+  d.exportToPLY("global_translations_from_Tij_GT.ply");
   visibleCamPosToSVGSurface(d._C, "global_translations_from_Tij_GT.svg");
 
   //-- Compute the global translations from the translation heading directions

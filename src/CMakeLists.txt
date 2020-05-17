@@ -278,6 +278,7 @@ if(BUILD_SHARED_LIBS)
   # Force BOOST to use dynamic libraries (avoid link error with boost program_options)
   # https://lists.boost.org/boost-users/2009/11/54015.php
   add_definitions(-DBOOST_ALL_DYN_LINK)
+  add_definitions(-DBOOST_TEST_DYN_LINK)
 else()
   set(Boost_USE_STATIC_LIBS ON)
 endif()

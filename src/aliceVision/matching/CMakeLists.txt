@@ -7,6 +7,7 @@ set(matching_files_headers
   IndMatch.hpp
   IndMatchDecorator.hpp
   filters.hpp
+  guidedMatching.hpp
   io.hpp
   matcherType.hpp
   metric.hpp
@@ -14,18 +15,22 @@ set(matching_files_headers
   CascadeHasher.hpp
   RegionsMatcher.hpp
   pairwiseAdjacencyDisplay.hpp
+  supportEstimation.hpp
 )
 
 # Sources
 set(matching_files_sources
   io.cpp
+  guidedMatching.cpp
   matcherType.cpp
   RegionsMatcher.cpp
+  supportEstimation.cpp
 )
 
 alicevision_add_library(aliceVision_matching
   SOURCES ${matching_files_headers} ${matching_files_sources}
   PUBLIC_LINKS
+    aliceVision_camera
     aliceVision_feature
     aliceVision_numeric
     aliceVision_stl

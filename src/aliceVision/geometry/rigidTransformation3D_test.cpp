@@ -5,8 +5,8 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
-#include "rigidTransformation3D.hpp"
-#include "aliceVision/robustEstimation/ACRansac.hpp"
+#include <aliceVision/geometry/rigidTransformation3D.hpp>
+#include <aliceVision/robustEstimation/ACRansac.hpp>
 
 #include <iostream>
 
@@ -146,11 +146,11 @@ BOOST_AUTO_TEST_CASE(SRT_precision_ACRANSAC_noNoise)
   Mat3 Rc;
   Vec3 tc;
 
-  std::vector<std::size_t> vec_inliers;
-  const bool result = ACRansac_FindRTS(x1, x2, Sc, tc, Rc, vec_inliers, true);
+  std::vector<std::size_t> inliers;
+  const bool result = ACRansac_FindRTS(x1, x2, Sc, tc, Rc, inliers, true);
 
   BOOST_CHECK(result);
-  BOOST_CHECK(vec_inliers.size() == nbPoints);
+  BOOST_CHECK(inliers.size() == nbPoints);
 
   ALICEVISION_LOG_DEBUG(
           "Scale " << Sc << "\n" <<
@@ -167,9 +167,12 @@ BOOST_AUTO_TEST_CASE(SRT_precision_ACRANSAC_noNoise)
   Mat4 RTS;
   composeRTS(Sc, tc, Rc, RTS);
 
+  robustEstimation::MatrixModel<Mat4> modelRTS(RTS);
+  geometry::RTSSquaredResidualError errorEstimator;
+
   for(std::size_t i = 0; i < nbPoints; ++i)
   {
-    const double error = geometry::RTSSquaredResidualError::Error(RTS, x1.col(i), x2.col(i));
+    const double error = errorEstimator.error(modelRTS, x1.col(i), x2.col(i));
     BOOST_CHECK_SMALL(error, 1e-9);
   }
 }
@@ -202,8 +205,8 @@ BOOST_AUTO_TEST_CASE(SRT_precision_ACRANSAC_noiseByShuffling)
   Mat3 Rc;
   Vec3 tc;
 
-  std::vector<std::size_t> vec_inliers;
-  const bool result = ACRansac_FindRTS(x1, x2, Sc, tc, Rc, vec_inliers, true);
+  std::vector<std::size_t> inliers;
+  const bool result = ACRansac_FindRTS(x1, x2, Sc, tc, Rc, inliers, true);
 
   ALICEVISION_LOG_DEBUG(
           "Scale " << Sc << "\n" <<
@@ -217,7 +220,7 @@ BOOST_AUTO_TEST_CASE(SRT_precision_ACRANSAC_noiseByShuffling)
   
   BOOST_CHECK(result);
   // all the points must be inliers (no noise)
-  const std::size_t nbInliers = vec_inliers.size();
+  const std::size_t nbInliers = inliers.size();
   BOOST_CHECK(nbInliers == nbPoints - nbNoisy);
 
   Mat inliers1 = Mat3X(3, nbInliers);
@@ -225,8 +228,8 @@ BOOST_AUTO_TEST_CASE(SRT_precision_ACRANSAC_noiseByShuffling)
 
   for(std::size_t i = 0; i < nbInliers; ++i)
   {
-    inliers1.col(i) = x1.col(vec_inliers[i]);
-    inliers2.col(i) = x2.col(vec_inliers[i]);
+    inliers1.col(i) = x1.col(inliers[i]);
+    inliers2.col(i) = x2.col(inliers[i]);
   }
 
   // check scale
@@ -235,10 +238,13 @@ BOOST_AUTO_TEST_CASE(SRT_precision_ACRANSAC_noiseByShuffling)
   Mat4 RTS;
   composeRTS(Sc, tc, Rc, RTS);
 
+  robustEstimation::MatrixModel<Mat4> modelRTS(RTS);
+  geometry::RTSSquaredResidualError errorEstimator;
+
   // check the residuals for the inliers
   for(std::size_t i = 0; i < nbInliers; ++i)
   {
-    const double error = geometry::RTSSquaredResidualError::Error(RTS, inliers1.col(i), inliers2.col(i));
+    const double error = errorEstimator.error(modelRTS, inliers1.col(i), inliers2.col(i));
     BOOST_CHECK_SMALL(error, 1e-9);
   }
 }
