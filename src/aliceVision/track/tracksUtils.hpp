@@ -157,8 +157,9 @@ inline bool getFeatureIdInViewPerTrack(const TracksMap& allTracks,
 struct FunctorMapFirstEqual : public std::unary_function <TracksMap , bool>
 {
   std::size_t id;
-  FunctorMapFirstEqual(std::size_t val):id(val){};
-  bool operator()(const std::pair<std::size_t, Track > & val) {
+
+  explicit FunctorMapFirstEqual(std::size_t val) : id(val) { };
+
     return ( id == val.first);
   }
 };
