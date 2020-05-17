@@ -17,7 +17,7 @@ namespace track {
 struct TracksBuilderData;
 
 /**
- * @brief Allows to create Tracks from a set of Matches accross Views.
+ * @brief Allows to create Tracks from a set of Matches across Views.
  *
  * Implementation of [1] an efficient algorithm to compute track from pairwise
  * correspondences.
