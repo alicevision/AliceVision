@@ -78,7 +78,7 @@ inline void getTracksInImage(const std::size_t& imageIndex,
                              std::set<std::size_t>& tracksIds)
 {
   tracksIds.clear();
-  for(auto& track: tracks)
+  for(const auto& track: tracks)
   {
     const auto iterSearch = track.second.featPerView.find(imageIndex);
     if(iterSearch != track.second.featPerView.end())
