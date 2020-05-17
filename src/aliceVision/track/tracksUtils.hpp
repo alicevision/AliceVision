@@ -160,6 +160,8 @@ struct FunctorMapFirstEqual : public std::unary_function <TracksMap , bool>
 
   explicit FunctorMapFirstEqual(std::size_t val) : id(val) { };
 
+  bool operator()(const std::pair<std::size_t, Track > & val) const
+  {
     return ( id == val.first);
   }
 };
