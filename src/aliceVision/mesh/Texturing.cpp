@@ -132,8 +132,8 @@ void Texturing::generateUVsBasicMethod(mvsUtils::MultiViewParams& mp)
         throw std::runtime_error("Points visibilities are required for basic unwrap method.");
 
     // automatic uv atlasing
-    ALICEVISION_LOG_INFO("Generating UVs (textureSide: " << texParams.textureSide << "; padding: " << texParams.padding << ").");
-    UVAtlas mua(*mesh, mp, texParams.textureSide, texParams.padding);
+    ALICEVISION_LOG_INFO("Generating UVs (textureSize: " << texParams.textureSize << "; padding: " << texParams.padding << ").");
+    UVAtlas mua(*mesh, mp, texParams.textureSize, texParams.padding);
 
     // create a new mesh to store data
     mesh->trisUvIds.reserve(mesh->tris.size());
@@ -190,7 +190,7 @@ void Texturing::generateUVsBasicMethod(mvsUtils::MultiViewParams& mp)
                             // get pixel offset in reference camera space with applied downscale
                             Point2d dp = (pix - sourceLU) * chart.downscale;
                             // add this offset to targetLU to get final pixel coordinates + normalize
-                            uvPix = (targetLU + dp) / (float)mua.textureSide();
+                            uvPix = (targetLU + dp) / (float)mua.textureSize();
                             uvPix.y = 1.0 - uvPix.y;
 
                             // sanity check: discard invalid UVs
@@ -266,7 +266,7 @@ void Texturing::generateTextures(const mvsUtils::MultiViewParams& mp,
     system::MemoryInfo memInfo = system::getMemoryInfo();
     const std::size_t imageMaxMemSize =  mp.getMaxImageWidth() * mp.getMaxImageHeight() * sizeof(Color) / std::pow(2,20); //MB
     const std::size_t imagePyramidMaxMemSize = texParams.nbBand * imageMaxMemSize;
-    const std::size_t atlasContribMemSize = texParams.textureSide * texParams.textureSide * (sizeof(Color)+sizeof(float)) / std::pow(2,20); //MB
+    const std::size_t atlasContribMemSize = texParams.textureSize * texParams.textureSize * (sizeof(Color)+sizeof(float)) / std::pow(2,20); //MB
     const std::size_t atlasPyramidMaxMemSize = texParams.nbBand * atlasContribMemSize;
 
     const int freeRam = int(memInfo.freeRam / std::pow(2,20));
@@ -311,7 +311,7 @@ void Texturing::generateTexturesSubSet(const mvsUtils::MultiViewParams& mp,
     if(atlasIDs.size() > _atlases.size())
         throw std::runtime_error("Invalid atlas IDs ");
 
-    unsigned int textureSize = texParams.textureSide * texParams.textureSide;
+    unsigned int textureSize = texParams.textureSize * texParams.textureSize;
 
     // We select the best cameras for each triangle and store it per camera for each output texture files.
     // Triangles contributions are stored per frequency bands for multi-band blending.
@@ -451,7 +451,7 @@ void Texturing::generateTexturesSubSet(const mvsUtils::MultiViewParams& mp,
     //pyramid of atlases frequency bands
     std::map<AtlasIndex, AccuPyramid> accuPyramids;
     for(std::size_t atlasID: atlasIDs)
-        accuPyramids[atlasID].init(texParams.nbBand, texParams.textureSide, texParams.textureSide);
+        accuPyramids[atlasID].init(texParams.nbBand, texParams.textureSize, texParams.textureSize);
 
     //for each camera, for each texture, iterate over triangles and fill the accuPyramids map
     for(int camId = 0; camId < contributionsPerCamera.size(); ++camId)
@@ -509,7 +509,7 @@ void Texturing::generateTexturesSubSet(const mvsUtils::MultiViewParams& mp,
                        // UDIM: remap coordinates between [0,1]
                        uv = uv - udimBL;
 
-                       triPixs[k] = uv * texParams.textureSide;   // UV coordinates
+                       triPixs[k] = uv * texParams.textureSize;   // UV coordinates
                     }
 
                     // compute triangle bounding box in pixel indexes
@@ -521,8 +521,8 @@ void Texturing::generateTexturesSubSet(const mvsUtils::MultiViewParams& mp,
                     RD.x = static_cast<int>(std::ceil(std::max(std::max(triPixs[0].x, triPixs[1].x), triPixs[2].x)));
                     RD.y = static_cast<int>(std::ceil(std::max(std::max(triPixs[0].y, triPixs[1].y), triPixs[2].y)));
 
-                    // sanity check: clamp values to [0; textureSide]
-                    int texSide = static_cast<int>(texParams.textureSide);
+                    // sanity check: clamp values to [0; textureSize]
+                    int texSide = static_cast<int>(texParams.textureSize);
                     LU.x = clamp(LU.x, 0, texSide);
                     LU.y = clamp(LU.y, 0, texSide);
                     RD.x = clamp(RD.x, 0, texSide);
@@ -544,9 +544,9 @@ void Texturing::generateTexturesSubSet(const mvsUtils::MultiViewParams& mp,
                            }
 
                            // remap 'y' to image coordinates system (inverted Y axis)
-                           const unsigned int y_ = (texParams.textureSide - 1) - y;
+                           const unsigned int y_ = (texParams.textureSize - 1) - y;
                            // 1D pixel index
-                           unsigned int xyoffset = y_ * texParams.textureSide + x;
+                           unsigned int xyoffset = y_ * texParams.textureSize + x;
                            // get 3D coordinates
                            Point3d pt3d = barycentricToCartesian(triPts, barycCoords);
                            // get 2D coordinates in source image
@@ -599,10 +599,10 @@ void Texturing::generateTexturesSubSet(const mvsUtils::MultiViewParams& mp,
                     //write the number of contributions for each texture
                     std::vector<float> imgContrib(textureSize);
 
-                    for(unsigned int yp = 0; yp < texParams.textureSide; ++yp)
+                    for(unsigned int yp = 0; yp < texParams.textureSize; ++yp)
                     {
-                        unsigned int yoffset = yp * texParams.textureSide;
-                        for(unsigned int xp = 0; xp < texParams.textureSide; ++xp)
+                        unsigned int yoffset = yp * texParams.textureSize;
+                        for(unsigned int xp = 0; xp < texParams.textureSize; ++xp)
                         {
                             unsigned int xyoffset = yoffset + xp;
                             imgContrib[xyoffset] = atlasLevelTexture.imgCount[xyoffset];
@@ -616,17 +616,17 @@ void Texturing::generateTexturesSubSet(const mvsUtils::MultiViewParams& mp,
                     OutputFileColorSpace colorspace(EImageColorSpace::SRGB, EImageColorSpace::AUTO);
                     if(texParams.convertLAB)
                         colorspace.from = EImageColorSpace::LAB;
-                    writeImage(texturePath.string(), texParams.textureSide, texParams.textureSide, imgContrib, EImageQuality::OPTIMIZED, colorspace);
+                    writeImage(texturePath.string(), texParams.textureSize, texParams.textureSize, imgContrib, EImageQuality::OPTIMIZED, colorspace);
                 }
             }
         }
 #endif
 
         ALICEVISION_LOG_INFO("  - Computing final (average) color.");
-        for(unsigned int yp = 0; yp < texParams.textureSide; ++yp)
+        for(unsigned int yp = 0; yp < texParams.textureSize; ++yp)
         {
-            unsigned int yoffset = yp * texParams.textureSide;
-            for(unsigned int xp = 0; xp < texParams.textureSide; ++xp)
+            unsigned int yoffset = yp * texParams.textureSize;
+            for(unsigned int xp = 0; xp < texParams.textureSize; ++xp)
             {
                 unsigned int xyoffset = yoffset + xp;
 
@@ -658,10 +658,10 @@ void Texturing::generateTexturesSubSet(const mvsUtils::MultiViewParams& mp,
 #endif
 
         // Fuse frequency bands into the first buffer, calculate final texture
-        for(unsigned int yp = 0; yp < texParams.textureSide; ++yp)
+        for(unsigned int yp = 0; yp < texParams.textureSize; ++yp)
         {
-            unsigned int yoffset = yp * texParams.textureSide;
-            for(unsigned int xp = 0; xp < texParams.textureSide; ++xp)
+            unsigned int yoffset = yp * texParams.textureSize;
+            for(unsigned int xp = 0; xp < texParams.textureSize; ++xp)
             {
                 unsigned int xyoffset = yoffset + xp;
                 for(std::size_t level = 1; level < accuPyramid.pyramid.size(); ++level)
@@ -678,7 +678,7 @@ void Texturing::generateTexturesSubSet(const mvsUtils::MultiViewParams& mp,
 void Texturing::writeTexture(AccuImage& atlasTexture, const std::size_t atlasID, const boost::filesystem::path &outPath,
                              imageIO::EImageFileType textureFileType, const int level)
 {
-    unsigned int outTextureSide = texParams.textureSide;
+    unsigned int outTextureSize = texParams.textureSize;
     // WARNING: we modify the "imgCount" to apply the padding (to avoid the creation of a new buffer)
     // edge padding (dilate gutter)
     if(!texParams.fillHoles && texParams.padding > 0 && level < 0)
@@ -687,10 +687,10 @@ void Texturing::writeTexture(AccuImage& atlasTexture, const std::size_t atlasID,
         ALICEVISION_LOG_INFO("  - Edge padding (" << padding << " pixels).");
 
         // Init valid values to 1
-        for(unsigned int y = 0; y < outTextureSide; ++y)
+        for(unsigned int y = 0; y < outTextureSize; ++y)
         {
-            unsigned int yoffset = y * outTextureSide;
-            for(unsigned int x = 0; x < outTextureSide; ++x)
+            unsigned int yoffset = y * outTextureSize;
+            for(unsigned int x = 0; x < outTextureSize; ++x)
             {
                 unsigned int xyoffset = yoffset + x;
                 if(atlasTexture.imgCount[xyoffset] > 0)
@@ -699,16 +699,16 @@ void Texturing::writeTexture(AccuImage& atlasTexture, const std::size_t atlasID,
         }
 
         //up-left to bottom-right
-        for(unsigned int y = 1; y < outTextureSide-1; ++y)
+        for(unsigned int y = 1; y < outTextureSize-1; ++y)
         {
-            unsigned int yoffset = y * outTextureSide;
-            for(unsigned int x = 1; x < outTextureSide-1; ++x)
+            unsigned int yoffset = y * outTextureSize;
+            for(unsigned int x = 1; x < outTextureSize-1; ++x)
             {
                 unsigned int xyoffset = yoffset + x;
                 if(atlasTexture.imgCount[xyoffset] > 0)
                     continue;
 
-                const int upCount = atlasTexture.imgCount[xyoffset - outTextureSide];
+                const int upCount = atlasTexture.imgCount[xyoffset - outTextureSize];
                 const int leftCount = atlasTexture.imgCount[xyoffset - 1];
                 //if pixel on the edge of a chart
                 if(leftCount > 0)
@@ -718,7 +718,7 @@ void Texturing::writeTexture(AccuImage& atlasTexture, const std::size_t atlasID,
                 }
                 else if(upCount > 0)
                 {
-                    atlasTexture.img[xyoffset] = atlasTexture.img[xyoffset - outTextureSide];
+                    atlasTexture.img[xyoffset] = atlasTexture.img[xyoffset - outTextureSize];
                     atlasTexture.imgCount[xyoffset] = - 1;
                 }
                 //
@@ -729,24 +729,24 @@ void Texturing::writeTexture(AccuImage& atlasTexture, const std::size_t atlasID,
                 }
                 else if (upCount < 0 && - upCount < padding)
                 {
-                    atlasTexture.img[xyoffset] = atlasTexture.img[xyoffset - outTextureSide];
+                    atlasTexture.img[xyoffset] = atlasTexture.img[xyoffset - outTextureSize];
                     atlasTexture.imgCount[xyoffset] = upCount - 1;
                 }
             }
         }
 
         //bottom-right to up-left
-        for(unsigned int y = 1; y < outTextureSide-1; ++y)
+        for(unsigned int y = 1; y < outTextureSize-1; ++y)
         {
-            unsigned int yoffset = (outTextureSide - 1 - y) * outTextureSide;
-            for(unsigned int x = 1; x < outTextureSide-1; ++x)
+            unsigned int yoffset = (outTextureSize - 1 - y) * outTextureSize;
+            for(unsigned int x = 1; x < outTextureSize-1; ++x)
             {
-                unsigned int xyoffset = yoffset + (outTextureSide - 1 - x);
+                unsigned int xyoffset = yoffset + (outTextureSize - 1 - x);
                 if(atlasTexture.imgCount[xyoffset] > 0)
                     continue;
 
-                const int upCount = atlasTexture.imgCount[xyoffset - outTextureSide];
-                const int downCount = atlasTexture.imgCount[xyoffset + outTextureSide];
+                const int upCount = atlasTexture.imgCount[xyoffset - outTextureSize];
+                const int downCount = atlasTexture.imgCount[xyoffset + outTextureSize];
                 const int rightCount = atlasTexture.imgCount[xyoffset + 1];
                 const int leftCount = atlasTexture.imgCount[xyoffset - 1];
                 if(rightCount > 0)
@@ -756,7 +756,7 @@ void Texturing::writeTexture(AccuImage& atlasTexture, const std::size_t atlasID,
                 }
                 else if(downCount > 0)
                 {
-                    atlasTexture.img[xyoffset] = atlasTexture.img[xyoffset + outTextureSide];
+                    atlasTexture.img[xyoffset] = atlasTexture.img[xyoffset + outTextureSize];
                     atlasTexture.imgCount[xyoffset] = - 1;
                 }
                 else if ((rightCount < 0 && - rightCount < padding) &&
@@ -771,7 +771,7 @@ void Texturing::writeTexture(AccuImage& atlasTexture, const std::size_t atlasID,
                          (upCount == 0 || downCount > upCount)
                          )
                 {
-                    atlasTexture.img[xyoffset] = atlasTexture.img[xyoffset + outTextureSide];
+                    atlasTexture.img[xyoffset] = atlasTexture.img[xyoffset + outTextureSize];
                     atlasTexture.imgCount[xyoffset] = downCount - 1;
                 }
             }
@@ -783,10 +783,10 @@ void Texturing::writeTexture(AccuImage& atlasTexture, const std::size_t atlasID,
     {
         ALICEVISION_LOG_INFO("  - Filling texture holes.");
         std::vector<float> alphaBuffer(atlasTexture.img.size());
-        for(unsigned int yp = 0; yp < texParams.textureSide; ++yp)
+        for(unsigned int yp = 0; yp < texParams.textureSize; ++yp)
         {
-            unsigned int yoffset = yp * texParams.textureSide;
-            for(unsigned int xp = 0; xp < texParams.textureSide; ++xp)
+            unsigned int yoffset = yp * texParams.textureSize;
+            for(unsigned int xp = 0; xp < texParams.textureSize; ++xp)
             {
                 unsigned int xyoffset = yoffset + xp;
                 alphaBuffer[xyoffset] = atlasTexture.imgCount[xyoffset] ? 1 : 0;
