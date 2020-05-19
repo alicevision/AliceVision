@@ -63,9 +63,9 @@ public:
     void filter(bool clearForks = true, std::size_t minTrackLength = 2, bool multithreaded = true);
 
     /**
-    * @brief Export to stream
-    * @param[out] os stream
-    * @return
+    * @brief Export data of tracks to stream
+    * @param[out] os char output stream
+    * @return true if no error flag are set
     */
     bool exportToStream(std::ostream& os);
 

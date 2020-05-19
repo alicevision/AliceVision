@@ -12,9 +12,6 @@
 namespace aliceVision {
 namespace track {
 
-using namespace aliceVision::matching;
-
-
 /**
  * @brief Find common tracks between images.
  * @param[in] imageIndexes: set of images we are looking for common tracks
@@ -73,18 +70,9 @@ void getTracksInImagesFast(const std::set<IndexT>& imagesId,
  * @param[in] tracks all tracks of the scene.
  * @param[out] tracksIds the tracks in the image
  */
-inline void getTracksInImage(const std::size_t& imageIndex,
+void getTracksInImage(const std::size_t& imageIndex,
                              const TracksMap& tracks,
-                             std::set<std::size_t>& tracksIds)
-{
-  tracksIds.clear();
-  for(const auto& track: tracks)
-  {
-    const auto iterSearch = track.second.featPerView.find(imageIndex);
-    if(iterSearch != track.second.featPerView.end())
-      tracksIds.insert(track.first);
-  }
-}
+                             std::set<std::size_t>& tracksIds);
 
 /**
  * @brief Find all the visible tracks from a set of images.
@@ -92,67 +80,38 @@ inline void getTracksInImage(const std::size_t& imageIndex,
  * @param[in] map_tracksPerView for each view the id of the visible tracks.
  * @param[out] tracksIds the tracks in the images
  */
-inline void getTracksInImageFast(const std::size_t& imageId,
+void getTracksInImageFast(const std::size_t& imageId,
                                  const TracksPerView& tracksPerView,
-                                 std::set<std::size_t>& tracksIds)
-{
-  if(tracksPerView.find(imageId) == tracksPerView.end())
-    return;
-
-  const TrackIdSet& imageTracks = tracksPerView.at(imageId);
-  tracksIds.clear();
-  tracksIds.insert(imageTracks.cbegin(), imageTracks.cend());
-}
+                                 std::set<std::size_t>& tracksIds);
 
 /**
- * @brief computeTracksPerView
- * @param[in] tracks
- * @param[out] tracksPerView
+ * @brief Compute the number of tracks for each view
+ * @param[in] tracks all tracks of the scene as a map {trackId, track}
+ * @param[out] tracksPerView : for each view the id of the visible tracks as a map {viewID, vector<trackID>}
  */
 void computeTracksPerView(const TracksMap& tracks, TracksPerView& tracksPerView);
 
 /**
  * @brief Return the tracksId as a set (sorted increasing)
- * @param[in] tracks
- * @param[out] tracksIds
+ * @param[in] tracks all tracks of the scene as a map {trackId, track}
+ * @param[out] tracksIds the tracks in the images
  */
-inline void getTracksIdVector(const TracksMap& tracks,
-                              std::set<std::size_t>* tracksIds)
-{
-  tracksIds->clear();
-  for (TracksMap::const_iterator iterT = tracks.begin(); iterT != tracks.end(); ++iterT)
-    tracksIds->insert(iterT->first);
-}
+void getTracksIdVector(const TracksMap& tracks,
+                              std::set<std::size_t>* tracksIds);
 
 /**
  * @brief Get feature id (with associated describer type) in the specified view for each TrackId
- * @param[in] allTracks
- * @param[in] trackIds
- * @param[in] viewId
- * @param[out] out_featId
- * @return
+ * @param[in] allTracks all tracks of the scene as a map {trackId, track}
+ * @param[in] trackIds the tracks in the images
+ * @param[in] viewId: ImageId we are looking for features
+ * @param[out] out_featId the number of features in the image as a vector
+ * @return true if the vector of features Ids is not empty
  */
-inline bool getFeatureIdInViewPerTrack(const TracksMap& allTracks,
+bool getFeatureIdInViewPerTrack(const TracksMap& allTracks,
                                        const std::set<std::size_t>& trackIds,
                                        IndexT viewId,
-                                       std::vector<FeatureId>* out_featId)
-{
-  for(std::size_t trackId: trackIds)
-  {
-    TracksMap::const_iterator iterT = allTracks.find(trackId);
+                                       std::vector<FeatureId>* out_featId);
 
-    // ignore it if the track doesn't exist
-    if(iterT == allTracks.end())
-      continue;
-
-    // try to find imageIndex
-    const Track& map_ref = iterT->second;
-    auto iterSearch = map_ref.featPerView.find(viewId);
-    if(iterSearch != map_ref.featPerView.end())
-      out_featId->emplace_back(map_ref.descType, iterSearch->second);
-  }
-  return !out_featId->empty();
-}
 
 struct FunctorMapFirstEqual : public std::unary_function <TracksMap , bool>
 {
@@ -179,78 +138,33 @@ struct FunctorMapFirstEqual : public std::unary_function <TracksMap , bool>
  * @warning The input tracks must be composed of only two images index.
  * @warning Image index are considered sorted (increasing order).
  */
-inline void tracksToIndexedMatches(const TracksMap& tracks,
+void tracksToIndexedMatches(const TracksMap& tracks,
                                    const std::vector<IndexT>& filterIndex,
-                                   std::vector<IndMatch>* out_index)
-{
-
-  std::vector<IndMatch>& vec_indexref = *out_index;
-  vec_indexref.clear();
-
-  for(std::size_t i = 0; i < filterIndex.size(); ++i)
-  {
-    // retrieve the track information from the current index i.
-    TracksMap::const_iterator itF = std::find_if(tracks.begin(), tracks.end(), FunctorMapFirstEqual(filterIndex[i]));
-
-    // the current track.
-    const Track& map_ref = itF->second;
-
-    // check we have 2 elements for a track.
-    assert(map_ref.featPerView.size() == 2);
-
-    const IndexT indexI = (map_ref.featPerView.begin())->second;
-    const IndexT indexJ = (++map_ref.featPerView.begin())->second;
-
-    vec_indexref.emplace_back(indexI, indexJ);
-  }
-}
+                                   std::vector<IndMatch>* out_index);
 
 /**
  * @brief Return the occurrence of tracks length.
- * @param[in] tracks
- * @param[out] occurenceTrackLength
+ * @param[in] tracks all tracks of the scene as a map {trackId, track}
+ * @param[out] occurenceTrackLength : the occurence length of each trackId in the scene
  */
-inline void tracksLength(const TracksMap& tracks,
-                         std::map<std::size_t, std::size_t>& occurenceTrackLength)
-{
-  for(TracksMap::const_iterator iterT = tracks.begin(); iterT != tracks.end(); ++iterT)
-  {
-    const std::size_t trLength = iterT->second.featPerView.size();
-
-    if(occurenceTrackLength.end() == occurenceTrackLength.find(trLength))
-      occurenceTrackLength[trLength] = 1;
-    else
-      occurenceTrackLength[trLength] += 1;
-  }
-}
+void tracksLength(const TracksMap& tracks,
+                         std::map<std::size_t, std::size_t>& occurenceTrackLength);
 
 /**
  * @brief Return a set containing the image Id considered in the tracks container.
- * @param[in] tracksPerView
- * @param[out] imagesId
+ * @param[in] tracksPerView the visible tracks as a map {viewID, vector<trackID>}
+ * @param[out] imagesId set of images considered in the visible tracks container.
  */
-inline void imageIdInTracks(const TracksPerView& tracksPerView,
-                            std::set<std::size_t>& imagesId)
-{
-  for(const auto& viewTracks: tracksPerView)
-    imagesId.insert(viewTracks.first);
-}
+void imageIdInTracks(const TracksPerView& tracksPerView,
+                            std::set<std::size_t>& imagesId);
 
 /**
  * @brief Return a set containing the image Id considered in the tracks container.
- * @param[in] tracks
- * @param[out] imagesId
+ * @param[in] tracks all tracks of the scene as a map {trackId, track}
+ * @param[out] imagesId set of images considered in the tracks container.
  */
-inline void imageIdInTracks(const TracksMap& tracks,
-                            std::set<std::size_t>& imagesId)
-{
-  for (TracksMap::const_iterator iterT = tracks.begin(); iterT != tracks.end(); ++iterT)
-  {
-    const Track& map_ref = iterT->second;
-    for(auto iter = map_ref.featPerView.begin(); iter != map_ref.featPerView.end(); ++iter)
-      imagesId.insert(iter->first);
-  }
-}
+void imageIdInTracks(const TracksMap& tracks,
+                            std::set<std::size_t>& imagesId);
 
 } // namespace track
 } // namespace aliceVision

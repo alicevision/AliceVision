@@ -145,7 +145,32 @@ void getTracksInImagesFast(const std::set<IndexT>& imagesId,
     tracksIds.insert(currentImageTracks.begin(), currentImageTracks.end());
   }
 }
-  
+
+void getTracksInImage(const std::size_t& imageIndex,
+                             const TracksMap& tracks,
+                             std::set<std::size_t>& tracksIds)
+{
+  tracksIds.clear();
+  for(auto& track: tracks)
+  {
+    const auto iterSearch = track.second.featPerView.find(imageIndex);
+    if(iterSearch != track.second.featPerView.end())
+      tracksIds.insert(track.first);
+  }
+}
+
+void getTracksInImageFast(const std::size_t& imageId,
+                                 const TracksPerView& tracksPerView,
+                                 std::set<std::size_t>& tracksIds)
+{
+  if(tracksPerView.find(imageId) == tracksPerView.end())
+    return;
+
+  const TrackIdSet& imageTracks = tracksPerView.at(imageId);
+  tracksIds.clear();
+  tracksIds.insert(imageTracks.cbegin(), imageTracks.cend());
+}
+
 void computeTracksPerView(const TracksMap& tracks, TracksPerView& tracksPerView)
 {
   for(const auto& track: tracks)
@@ -166,6 +191,94 @@ void computeTracksPerView(const TracksMap& tracks, TracksPerView& tracksPerView)
     TracksPerView::iterator it = tracksPerView.begin();
     std::advance(it, i);
     std::sort(it->second.begin(), it->second.end());
+  }
+}
+
+void getTracksIdVector(const TracksMap& tracks,
+                              std::set<std::size_t>* tracksIds)
+{
+  tracksIds->clear();
+  for (TracksMap::const_iterator iterT = tracks.begin(); iterT != tracks.end(); ++iterT)
+    tracksIds->insert(iterT->first);
+}
+
+bool getFeatureIdInViewPerTrack(const TracksMap& allTracks,
+                                       const std::set<std::size_t>& trackIds,
+                                       IndexT viewId,
+                                       std::vector<FeatureId>* out_featId)
+{
+  for(std::size_t trackId: trackIds)
+  {
+    TracksMap::const_iterator iterT = allTracks.find(trackId);
+
+    // ignore it if the track doesn't exist
+    if(iterT == allTracks.end())
+      continue;
+
+    // try to find imageIndex
+    const Track& map_ref = iterT->second;
+    auto iterSearch = map_ref.featPerView.find(viewId);
+    if(iterSearch != map_ref.featPerView.end())
+      out_featId->emplace_back(map_ref.descType, iterSearch->second);
+  }
+  return !out_featId->empty();
+}
+
+void tracksToIndexedMatches(const TracksMap& tracks,
+                                   const std::vector<IndexT>& filterIndex,
+                                   std::vector<IndMatch>* out_index)
+{
+
+  std::vector<IndMatch>& vec_indexref = *out_index;
+  vec_indexref.clear();
+
+  for(std::size_t i = 0; i < filterIndex.size(); ++i)
+  {
+    // retrieve the track information from the current index i.
+    TracksMap::const_iterator itF = std::find_if(tracks.begin(), tracks.end(), FunctorMapFirstEqual(filterIndex[i]));
+
+    // the current track.
+    const Track& map_ref = itF->second;
+
+    // check we have 2 elements for a track.
+    assert(map_ref.featPerView.size() == 2);
+
+    const IndexT indexI = (map_ref.featPerView.begin())->second;
+    const IndexT indexJ = (++map_ref.featPerView.begin())->second;
+
+    vec_indexref.emplace_back(indexI, indexJ);
+  }
+}
+
+void tracksLength(const TracksMap& tracks,
+                         std::map<std::size_t, std::size_t>& occurenceTrackLength)
+{
+  for(TracksMap::const_iterator iterT = tracks.begin(); iterT != tracks.end(); ++iterT)
+  {
+    const std::size_t trLength = iterT->second.featPerView.size();
+
+    if(occurenceTrackLength.end() == occurenceTrackLength.find(trLength))
+      occurenceTrackLength[trLength] = 1;
+    else
+      occurenceTrackLength[trLength] += 1;
+  }
+}
+
+void imageIdInTracks(const TracksPerView& tracksPerView,
+                            std::set<std::size_t>& imagesId)
+{
+  for(const auto& viewTracks: tracksPerView)
+    imagesId.insert(viewTracks.first);
+}
+
+void imageIdInTracks(const TracksMap& tracks,
+                            std::set<std::size_t>& imagesId)
+{
+  for (TracksMap::const_iterator iterT = tracks.begin(); iterT != tracks.end(); ++iterT)
+  {
+    const Track& map_ref = iterT->second;
+    for(auto iter = map_ref.featPerView.begin(); iter != map_ref.featPerView.end(); ++iter)
+      imagesId.insert(iter->first);
   }
 }
 
