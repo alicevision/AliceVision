@@ -564,7 +564,7 @@ void ReconstructionEngine_globalSfM::Compute_Relative_Rotations(rotationAveragin
             const Vec2 x1_ = p1.coords().cast<double>();
             const Vec2 x2_ = p2.coords().cast<double>();
             Vec3 X;
-            TriangulateDLT(P1, x1_, P2, x2_, &X);
+            multiview::TriangulateDLT(P1, x1_, P2, x2_, &X);
             Observations obs;
             const double scaleI = (_featureConstraint == EFeatureConstraint::BASIC) ? 0.0 : p1.scale();
             const double scaleJ = (_featureConstraint == EFeatureConstraint::BASIC) ? 0.0 : p2.scale();
@@ -598,7 +598,7 @@ void ReconstructionEngine_globalSfM::Compute_Relative_Rotations(rotationAveragin
           // Compute relative motion and save it
           Mat3 Rrel;
           Vec3 trel;
-          RelativeCameraMotion(R1, t1, R2, t2, &Rrel, &trel);
+          relativeCameraMotion(R1, t1, R2, t2, &Rrel, &trel);
           // Update found relative pose
           relativePose_info.relativePose = Pose3(Rrel, -Rrel.transpose() * trel);
         }

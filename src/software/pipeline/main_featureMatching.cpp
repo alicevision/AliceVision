@@ -466,12 +466,23 @@ int aliceVision_main(int argc, char **argv)
     }
     break;
 
+  case EGeometricFilterType::FUNDAMENTAL_WITH_DISTORTION:
+  {
+    matchingImageCollection::robustModelEstimation(geometricMatches,
+      &sfmData,
+      regionPerView,
+      GeometricFilterMatrix_F_AC(geometricErrorMax, maxIteration, geometricEstimator, true),
+      mapPutativesMatches,
+      guidedMatching);
+  }
+  break;
+
     case EGeometricFilterType::ESSENTIAL_MATRIX:
     {
       matchingImageCollection::robustModelEstimation(geometricMatches,
         &sfmData,
         regionPerView,
-        GeometricFilterMatrix_E_AC(std::numeric_limits<double>::infinity(), maxIteration),
+        GeometricFilterMatrix_E_AC(geometricErrorMax, maxIteration),
         mapPutativesMatches,
         guidedMatching);
 
@@ -500,7 +511,7 @@ int aliceVision_main(int argc, char **argv)
       matchingImageCollection::robustModelEstimation(geometricMatches,
         &sfmData,
         regionPerView,
-        GeometricFilterMatrix_H_AC(std::numeric_limits<double>::infinity(), maxIteration),
+        GeometricFilterMatrix_H_AC(geometricErrorMax, maxIteration),
         mapPutativesMatches, guidedMatching,
         onlyGuidedMatching ? -1.0 : 0.6);
     }
@@ -511,7 +522,7 @@ int aliceVision_main(int argc, char **argv)
       matchingImageCollection::robustModelEstimation(geometricMatches,
         &sfmData,
         regionPerView,
-        GeometricFilterMatrix_HGrowing(std::numeric_limits<double>::infinity(), maxIteration),
+        GeometricFilterMatrix_HGrowing(geometricErrorMax, maxIteration),
         mapPutativesMatches,
         guidedMatching);
     }

@@ -9,31 +9,8 @@
 
 #pragma once
 
-//-------------------
-// Generic implementation of ACRANSAC
-//-------------------
-// The A contrario parametrization have been first explained in [1] and
-//  later extended to generic model estimation in [2] (with a demonstration for
-//  the homography) and extended and use at large scale for Structure from
-//  Motion in [3].
-//
-//--
-//  [1] Lionel Moisan, Berenger Stival,
-//  A probalistic criterion to detect rigid point matches between
-//  two images and estimate the fundamental matrix.
-//  IJCV 04.
-//--
-//  [2] Lionel Moisan, Pierre Moulon, Pascal Monasse.
-//  Automatic Homographic Registration of a Pair of Images,
-//    with A Contrario Elimination of Outliers
-//  Image Processing On Line (IPOL), 2012.
-//  http://dx.doi.org/10.5201/ipol.2012.mmm-oh
-//--
-//  [3] Pierre Moulon, Pascal Monasse and Renaud Marlet.
-//  Adaptive Structure from Motion with a contrario mode estimation.
-//  In 11th Asian Conference on Computer Vision (ACCV 2012)
-//--
-
+#include <aliceVision/robustEstimation/randSampling.hpp>
+#include <aliceVision/system/Logger.hpp>
 
 #include <algorithm>
 #include <cmath>
@@ -43,89 +20,97 @@
 #include <numeric>
 #include <vector>
 
-#include <aliceVision/robustEstimation/randSampling.hpp>
-#include <aliceVision/system/Logger.hpp>
+/**
+ * @brief Generic implementation of ACRANSAC
+ *
+ * The A contrario parametrization have been first explained in [1] and
+ * later extended to generic model estimation in [2] (with a demonstration for
+ * the homography) and extended and use at large scale for Structure from Motion in [3].
+ *
+ * @ref [1] Lionel Moisan, Berenger Stival.
+ *          A probalistic criterion to detect rigid point matches between
+ *          two images and estimate the fundamental matrix.
+ *          IJCV 04.
+ *
+ * @ref [2] Lionel Moisan, Pierre Moulon, Pascal Monasse.
+ *          Automatic Homographic Registration of a Pair of Images,
+ *          with A Contrario Elimination of Outliers
+ *          Image Processing On Line (IPOL), 2012.
+ *          http://dx.doi.org/10.5201/ipol.2012.mmm-oh
+ *
+ * @ref [3] Pierre Moulon, Pascal Monasse and Renaud Marlet.
+ *          Adaptive Structure from Motion with a contrario mode estimation.
+ *          In 11th Asian Conference on Computer Vision (ACCV 2012)
+ */
 
 namespace aliceVision {
 namespace robustEstimation{
 
-/// logarithm (base 10) of binomial coefficient
+/**
+ * @brief Logarithm (base 10) of binomial coefficient
+ */
 template <typename T>
-T logcombi
-(
-  size_t k,
-  size_t n,
-  const std::vector<T> & vec_log10 // lookuptable in [0,n+1]
-)
+T logcombi(std::size_t k, std::size_t n, const std::vector<T>& vec_log10) // vec_log10: lookuptable in [0,n+1]
+
 {
   if (k>=n || k<=0) return(0.0f);
   if (n-k<k) k=n-k;
   T r = 0.0f;
-  for (size_t i = 1; i <= k; ++i)
+  for (std::size_t i = 1; i <= k; ++i)
     r += vec_log10[n-i+1] - vec_log10[i];
   return r;
 }
 
-/// tabulate logcombi(.,n)
+/**
+ * @brief Tabulate logcombi(.,n)
+ */
 template<typename Type>
-void makelogcombi_n
-(
-  size_t n,
-  std::vector<Type> & l,
-  std::vector<Type> & vec_log10 // lookuptable [0,n+1]
-)
+void makelogcombi_n(std::size_t n, std::vector<Type>& l, std::vector<Type>& vec_log10) // vec_log10: lookuptable [0,n+1]
 {
   l.resize(n+1);
-  for (size_t k = 0; k <= n; ++k)
+  for (std::size_t k = 0; k <= n; ++k)
     l[k] = logcombi<Type>(k, n, vec_log10);
 }
 
-/// tabulate logcombi(k,.)
+/**
+ * @brief Tabulate logcombi(k,.)
+ */
 template<typename Type>
-void makelogcombi_k
-(
-  size_t k,
-  size_t nmax,
-  std::vector<Type> & l,
-  std::vector<Type> & vec_log10 // lookuptable [0,n+1]
-)
+void makelogcombi_k(std::size_t k, std::size_t nmax, std::vector<Type>& l, std::vector<Type>& vec_log10) // vec_log10: lookuptable [0,n+1]
 {
   l.resize(nmax+1);
-  for (size_t n = 0; n <= nmax; ++n)
+  for (std::size_t n = 0; n <= nmax; ++n)
     l[n] = logcombi<Type>(k, n, vec_log10);
 }
 
 template <typename Type>
-void makelogcombi
-(
-  size_t k,
-  size_t n,
-  std::vector<Type> & vec_logc_k,
-  std::vector<Type> & vec_logc_n)
+void makelogcombi(std::size_t k, std::size_t n, std::vector<Type>& vec_logc_k, std::vector<Type>& vec_logc_n)
 {
   // compute a lookuptable of log10 value for the range [0,n+1]
   std::vector<Type> vec_log10(n + 1);
-  for (size_t k = 0; k <= n; ++k)
+  for (std::size_t k = 0; k <= n; ++k)
     vec_log10[k] = log10((Type)k);
 
   makelogcombi_n(n, vec_logc_n, vec_log10);
   makelogcombi_k(k, n, vec_logc_k, vec_log10);
 }
 
+/**
+ * @brief NFA and associated index
+ */
+using ErrorIndex = std::pair<double,size_t>;
 
-/// NFA and associated index
-typedef std::pair<double,size_t> ErrorIndex;
-
-/// Find best NFA and its index wrt square error threshold in e.
-inline ErrorIndex bestNFA(
-  int startIndex, //number of point required for estimation
-  double logalpha0,
-  const std::vector<ErrorIndex>& e,
-  double loge0,
-  double maxThreshold,
-  const std::vector<float> &logc_n,
-  const std::vector<float> &logc_k,
-  double multError = 1.0)
+/**
+ * @brief Find best NFA and its index wrt square error threshold in e.
+ */
+inline ErrorIndex bestNFA(int startIndex, //number of point required for estimation
+                          double logalpha0,
+                          const std::vector<ErrorIndex>& e,
+                          double loge0,
+                          double maxThreshold,
+                          const std::vector<float> &logc_n,
+                          const std::vector<float> &logc_k,
+                          double multError = 1.0)
 {
   ErrorIndex bestIndex(std::numeric_limits<double>::infinity(), startIndex);
   const size_t n = e.size();
@@ -157,17 +142,17 @@ inline ErrorIndex bestNFA(
  * @return (errorMax, minNFA)
  */
 template<typename Kernel>
-std::pair<double, double> ACRANSAC(const Kernel &kernel,
-  std::vector<size_t> & vec_inliers,
-  size_t nIter = 1024,
-  typename Kernel::Model * model = nullptr,
-  double precision = std::numeric_limits<double>::infinity())
+std::pair<double, double> ACRANSAC(const Kernel& kernel,
+                                   std::vector<size_t>& vec_inliers,
+                                   std::size_t nIter = 1024,
+                                   typename Kernel::ModelT* model = nullptr,
+                                   double precision = std::numeric_limits<double>::infinity())
 {
   vec_inliers.clear();
 
-  const size_t sizeSample = Kernel::MINIMUM_SAMPLES;
-  const size_t nData = kernel.NumSamples();
-  if (nData <= (size_t)sizeSample)
+  const std::size_t sizeSample = kernel.getMinimumNbRequiredSamples();
+  const std::size_t nData = kernel.nbSamples();
+  if (nData <= (std::size_t)sizeSample)
     return std::make_pair(0.0,0.0);
 
   const double maxThreshold = (precision==std::numeric_limits<double>::infinity()) ?
@@ -182,7 +167,7 @@ std::pair<double, double> ACRANSAC(const Kernel &kernel,
   std::iota(vec_index.begin(), vec_index.end(), 0);
 
   // Precompute log combi
-  const double loge0 = log10((double)Kernel::MAX_MODELS * (nData-sizeSample));
+  const double loge0 = log10((double)kernel.getMaximumNbModels() * (nData-sizeSample));
   std::vector<float> vec_logc_n, vec_logc_k;
   makelogcombi(sizeSample, nData, vec_logc_k, vec_logc_n);
 
@@ -197,28 +182,28 @@ std::pair<double, double> ACRANSAC(const Kernel &kernel,
   bool bACRansacMode = (precision == std::numeric_limits<double>::infinity());
 
   // Main estimation loop.
-  for (size_t iter=0; iter < nIter; ++iter)
+  for(std::size_t iter = 0; iter < nIter; ++iter)
   {
-    std::vector< std::size_t> vec_sample(sizeSample); // Sample indices
+    std::vector<std::size_t> vec_sample(sizeSample); // Sample indices
     if (bACRansacMode)
-      UniformSample(sizeSample, vec_index, vec_sample); // Get random sample
+      uniformSample(sizeSample, vec_index, vec_sample); // Get random sample
     else
-      UniformSample(sizeSample, nData, vec_sample); // Get random sample
+      uniformSample(sizeSample, nData, vec_sample); // Get random sample
 
-    std::vector<typename Kernel::Model> vec_models; // Up to max_models solutions
-    kernel.Fit(vec_sample, &vec_models);
+    std::vector<typename Kernel::ModelT> vec_models; // Up to max_models solutions
+    kernel.fit(vec_sample, vec_models);
 
     // Evaluate models
     bool better = false;
-    for (size_t k = 0; k < vec_models.size(); ++k)
+    for (std::size_t k = 0; k < vec_models.size(); ++k)
     {
       // Residuals computation and ordering
-      kernel.Errors(vec_models[k], vec_residuals_);
+      kernel.errors(vec_models[k], vec_residuals_);
 
       if (!bACRansacMode)
       {
         unsigned int nInlier = 0;
-        for (size_t i = 0; i < nData; ++i)
+        for (std::size_t i = 0; i < nData; ++i)
         {
           if (vec_residuals_[i] <= maxThreshold)
             ++nInlier;
@@ -300,7 +285,7 @@ std::pair<double, double> ACRANSAC(const Kernel &kernel,
   if (!vec_inliers.empty())
   {
     if (model)
-      kernel.Unnormalize(model);
+      kernel.unnormalize(*model);
     errorMax = kernel.unormalizeError(errorMax);
   }
 

@@ -27,31 +27,31 @@ namespace robustEstimation{
 // 3. A way to convert samples to a model.
 // 4. A way to convert samples and a model to an error.
 //
-// 1. Kernel::Model
-// 2. Kernel::MINIMUM_SAMPLES
-// 3. Kernel::Fit(vector<int>, vector<Kernel::Model> *)
-// 4. Kernel::Error(Model, int) -> error
+// 1. Kernel::ModelT
+// 2. Kernel::getMinimumNbRequiredSamples()
+// 3. Kernel::fit(vector<int>, vector<Kernel::Model> *)
+// 4. Kernel::error(Model, int) -> error
 template<typename Kernel, typename Scorer>
-typename Kernel::Model RANSAC(
-  const Kernel &kernel,
-  const Scorer &scorer,
-  std::vector<size_t> *best_inliers = nullptr,
-  double *best_score = nullptr,
+typename Kernel::ModelT RANSAC(
+  const Kernel& kernel,
+  const Scorer& scorer,
+  std::vector<std::size_t>* best_inliers = nullptr,
+  double* best_score = nullptr,
   bool bVerbose = true,
   double outliers_probability = 1e-2)
 {
   assert(outliers_probability < 1.0);
   assert(outliers_probability > 0.0);
   size_t iteration = 0;
-  const size_t min_samples = Kernel::MINIMUM_SAMPLES;
-  const size_t total_samples = kernel.NumSamples();
+  const size_t min_samples = kernel.getMinimumNbRequiredSamples();
+  const size_t total_samples = kernel.nbSamples();
 
   size_t max_iterations = 100;
   const size_t really_max_iterations = 4096;
 
   size_t best_num_inliers = 0;
   double best_inlier_ratio = 0.0;
-  typename Kernel::Model best_model;
+  typename Kernel::ModelT best_model;
 
   // Test if we have sufficient points for the kernel.
   if (total_samples < min_samples) 
@@ -72,16 +72,16 @@ typename Kernel::Model RANSAC(
     iteration < really_max_iterations; ++iteration) 
   {
       std::vector<size_t> sample;
-      UniformSample(min_samples, total_samples, sample);
+      uniformSample(min_samples, total_samples, sample);
 
-      std::vector<typename Kernel::Model> models;
-      kernel.Fit(sample, &models);
+      std::vector<typename Kernel::ModelT> models;
+      kernel.fit(sample, models);
 
       // Compute the inlier list for each fit.
       for (size_t i = 0; i < models.size(); ++i) 
       {
         std::vector<size_t> inliers;
-        scorer.Score(kernel, models[i], all_samples, &inliers);
+        scorer.score(kernel, models[i], all_samples, inliers);
 
         if (best_num_inliers < inliers.size()) 
         {
@@ -101,7 +101,7 @@ typename Kernel::Model RANSAC(
         }
           if (best_inlier_ratio) 
           {
-          max_iterations = IterationsRequired(min_samples,
+          max_iterations = iterationsRequired(min_samples,
             outliers_probability,
             best_inlier_ratio);
             if(bVerbose)
@@ -114,7 +114,7 @@ typename Kernel::Model RANSAC(
     *best_score = best_num_inliers;
   
   if(best_num_inliers)
-    kernel.Unnormalize(&best_model);
+    kernel.unnormalize(best_model);
   
   return best_model;
 }

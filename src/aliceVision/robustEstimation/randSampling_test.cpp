@@ -29,7 +29,7 @@ BOOST_AUTO_TEST_CASE(UniformSampleTest_NoRepetions) {
       //Size of the consensus set
       std::vector<std::size_t> samples;
       std::cout << "Upper " << upperBound << " Lower " << 0 << " numSamples " << numSamples << "\n";
-      UniformSample(numSamples, upperBound, samples);
+      uniformSample(numSamples, upperBound, samples);
       std::set<std::size_t> myset;
       for(const auto& s : samples) 
       {
@@ -52,7 +52,7 @@ BOOST_AUTO_TEST_CASE(UniformSampleTest_UniformSampleSet) {
       //Size of the consensus set
       std::cout << "Upper " << upperBound << " Lower " << 0 << " numSamples " << numSample << "\n";
       std::set<std::size_t> samples;
-      UniformSample(numSample, upperBound, samples);
+      uniformSample(numSample, upperBound, samples);
       BOOST_CHECK_EQUAL(numSample, samples.size());
       for(const auto& s : samples) 
       {
@@ -75,7 +75,7 @@ BOOST_AUTO_TEST_CASE(UniformSampleTest_NoRepetionsBeginEnd) {
       const std::size_t begin = upperBound-numSamples;
       std::cout << "Upper " << upperBound << " Lower " << begin << " numSamples " << numSamples << "\n";
       std::vector<std::size_t> samples;
-      UniformSample(begin, upperBound, numSamples, samples);
+      uniformSample(begin, upperBound, numSamples, samples);
       std::set<std::size_t> myset;
       for(const auto& s : samples) 
       {

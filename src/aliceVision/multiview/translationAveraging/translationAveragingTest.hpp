@@ -158,7 +158,7 @@ NViewDataSet Setup_RelativeTranslations_AndNviewDataset
     {
       Mat3 RijGt;
       Vec3 tij;
-      RelativeCameraMotion(RI, ti, RJ, tj, &RijGt, &tij);
+      relativeCameraMotion(RI, ti, RJ, tj, &RijGt, &tij);
       vec_relative_estimates.push_back(
         std::make_pair(std::make_pair(I, J), std::make_pair(RijGt, tij)));
     }

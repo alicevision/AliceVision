@@ -189,7 +189,7 @@ sfmData::SfMData getInputRigScene(const NViewDataSet& d,
     {
       const sfmData::View& view = *sfmData.views.at(viewId);
       const geometry::Pose3 camPose = sfmData.getPose(view).getTransform();
-      const Vec2 pt = Project(sfmData.intrinsics.at(0)->get_projective_equivalent(camPose), landmark.X);
+      const Vec2 pt = project(sfmData.intrinsics.at(0)->get_projective_equivalent(camPose), landmark.X);
       landmark.observations[viewId] = sfmData::Observation(pt, landmarkId, unknownScale);
     }
     sfmData.structure[landmarkId] = landmark;
