@@ -64,7 +64,7 @@ std::string EVisibilityRemappingMethod_enumToString(EVisibilityRemappingMethod m
 
 struct TexturingParams
 {
-    unsigned int textureSize = 8192;
+    unsigned int textureWidth = 8192;
     unsigned int downscale = 1;
     bool useUDIM = true;
     bool fillHoles = false;
