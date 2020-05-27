@@ -15,8 +15,8 @@ namespace mesh {
 using namespace std;
 
 UVAtlas::UVAtlas(const Mesh& mesh, mvsUtils::MultiViewParams& mp,
-                                 unsigned int textureSize, unsigned int gutterSize)
-    : _textureSize(textureSize)
+                                 unsigned int textureWidth, unsigned int gutterSize)
+    : _textureWidth(textureWidth)
     , _gutterSize(gutterSize)
     , _mesh(mesh)
 {
@@ -265,8 +265,8 @@ void UVAtlas::createTextureAtlases(vector<Chart>& charts, mvsUtils::MultiViewPar
         ChartRect* root = new ChartRect();
         root->LU.x = 0;
         root->LU.y = 0;
-        root->RD.x = _textureSize - 1;
-        root->RD.y = _textureSize - 1;
+        root->RD.x = _textureWidth - 1;
+        root->RD.y = _textureWidth - 1;
 
         const auto insertChart = [&](size_t idx) -> bool
         {
