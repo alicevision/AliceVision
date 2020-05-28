@@ -14,7 +14,8 @@
 #include <aliceVision/system/Timer.hpp>
 #include <aliceVision/stl/stl.hpp>
 #include <aliceVision/multiview/essential.hpp>
-#include <aliceVision/track/Track.hpp>
+#include <aliceVision/track/TracksBuilder.hpp>
+#include <aliceVision/track/tracksUtils.hpp>
 #include <aliceVision/config.hpp>
 
 #include <dependencies/htmlDoc/htmlDoc.hpp>
@@ -276,7 +277,7 @@ bool ReconstructionEngine_globalSfM::Compute_Initial_Structure(matching::Pairwis
         pose_supported_matches.insert(pairwiseMatchesIt);
       }
     }
-    tracksBuilder.Build(pose_supported_matches);
+    tracksBuilder.build(pose_supported_matches);
 #else
     // Use triplet validated matches
     tracksBuilder.build(tripletWise_matches);
@@ -314,7 +315,7 @@ bool ReconstructionEngine_globalSfM::Compute_Initial_Structure(matching::Pairwis
       //    - number of images
       //    - number of tracks
       std::set<size_t> set_imagesId;
-      tracksUtilsMap::imageIdInTracks(map_selectedTracks, set_imagesId);
+      imageIdInTracks(map_selectedTracks, set_imagesId);
       osTrack << "------------------" << "\n"
         << "-- Tracks Stats --" << "\n"
         << " Tracks number: " << tracksBuilder.nbTracks() << "\n"
@@ -325,7 +326,7 @@ bool ReconstructionEngine_globalSfM::Compute_Initial_Structure(matching::Pairwis
       osTrack << "\n------------------" << "\n";
 
       std::map<size_t, size_t> map_Occurence_TrackLength;
-      tracksUtilsMap::tracksLength(map_selectedTracks, map_Occurence_TrackLength);
+      tracksLength(map_selectedTracks, map_Occurence_TrackLength);
       osTrack << "TrackLength, Occurrence" << "\n";
       for (std::map<size_t, size_t>::const_iterator iter = map_Occurence_TrackLength.begin();
         iter != map_Occurence_TrackLength.end(); ++iter)  {

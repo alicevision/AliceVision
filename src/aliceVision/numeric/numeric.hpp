@@ -452,12 +452,14 @@ inline int is_finite(const double val)
  *  values of an iterable sequence.
  */
 template <typename Type>
-struct MinMaxMeanMedian
+struct BoxStats
 {
-    Type min, max, mean, median;
+    Type min{}, max{}, mean{}, median{}, firstQuartile{}, thirdQuartile{};
+
+    BoxStats() = default;
 
     template <typename DataInputIterator>
-    MinMaxMeanMedian(DataInputIterator begin, DataInputIterator end)
+    BoxStats(DataInputIterator begin, DataInputIterator end)
     {
       compute(begin, end);
     }
@@ -471,6 +473,8 @@ struct MinMaxMeanMedian
         max = 0;
         mean = 0;
         median = 0;
+        firstQuartile = 0;
+        thirdQuartile = 0;
         return;
       }
 
@@ -481,16 +485,21 @@ struct MinMaxMeanMedian
       mean = accumulate(vec_val.begin(), vec_val.end(), Type(0))
               / static_cast<Type> (vec_val.size());
       median = vec_val[vec_val.size() / 2];
+      firstQuartile = vec_val[vec_val.size() / 4];
+      thirdQuartile = vec_val[(vec_val.size() * 3) / 4];
     }
 };
 
 template <typename Type>
-inline std::ostream& operator<<(std::ostream& os, const MinMaxMeanMedian<Type> obj)
+inline std::ostream& operator<<(std::ostream& os, const BoxStats<Type> obj)
 {
   os << "\t min: " << obj.min << "\n"
         "\t mean: " << obj.mean << "\n"
         "\t median: " << obj.median << "\n"
-        "\t max: " << obj.max;
+        "\t max: " << obj.max << "\n"
+        "\t first quartile: " << obj.firstQuartile << "\n"
+        "\t third quartile: " << obj.thirdQuartile;
+
   return os;
 }
 

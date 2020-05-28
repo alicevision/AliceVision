@@ -12,7 +12,7 @@
 #include <aliceVision/multiview/relativePose/FundamentalError.hpp>
 #include <aliceVision/multiview/triangulation/Triangulation.hpp>
 #include <aliceVision/graph/graph.hpp>
-#include <aliceVision/track/Track.hpp>
+#include <aliceVision/track/TracksBuilder.hpp>
 #include <aliceVision/sfm/sfmTriangulation.hpp>
 #include <aliceVision/config.hpp>
 

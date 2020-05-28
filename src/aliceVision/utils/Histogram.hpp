@@ -1,5 +1,10 @@
-#ifndef HISTOGRAMMING_H
-#define HISTOGRAMMING_H
+// This file is part of the AliceVision project.
+// Copyright (c) 2011, 2012, 2013 Pierre MOULON
+// This Source Code Form is subject to the terms of the Mozilla Public License,
+// v. 2.0. If a copy of the MPL was not distributed with this file,
+// You can obtain one at https://mozilla.org/MPL/2.0/.
+
+#pragma once
 
 #include <iomanip>
 #include <numeric>
@@ -7,24 +12,8 @@
 #include <string>
 #include <vector>
 
-/**
- * @file histogram.h
- * @brief Histogram computes the distrubution function (df) of 
- *  unique sended value or iterable data
- *  inside the provided range.
- * @author Pierre MOULON base on work from Jansson Consulting 
- * 2009-06-30, updated 2011-06-17 and 2011-08-03 Dedicated to the public domain.
- * 
- *
- * Copyright (c) 2011, 2012, 2013 Pierre MOULON
- * All rights reserved.
- *
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
-*/
+namespace aliceVision {
 
-namespace {
 // A histogram class.
 // The Histogram object can keep a tally of values
 // within a range, the range is arranged into some
@@ -39,6 +28,13 @@ namespace {
 //  - use vector array to avoid memory managment
 //  - add value by sequence with iterator
 
+/**
+ * @brief Histogram computes the distrubution function (df) of
+ *  unique sended value or iterable data inside the provided range.
+ *
+ * @author Pierre MOULON base on work from Jansson Consulting
+ * 2009-06-30, updated 2011-06-17 and 2011-08-03 Dedicated to the public domain.
+ */
 template <typename T>
 class Histogram
 {
@@ -102,7 +98,9 @@ public:
     return underflow;
   }
   // Get frequencies
-  const std::vector<size_t> & GetHist() const {return freq;}
+  const std::vector<size_t> & GetHist() const { return freq; }
+  std::vector<size_t> & GetHist() { return freq; }
+
   // Get XbinsValue
   std::vector<T> GetXbinsValue() const
   {
@@ -141,6 +139,4 @@ private:
   size_t overflow, underflow; //count under/over flow
 };
 
-} // namespace
-
-#endif // HISTOGRAMMING_H
+}

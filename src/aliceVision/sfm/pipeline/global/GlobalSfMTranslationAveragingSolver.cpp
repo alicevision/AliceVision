@@ -16,7 +16,7 @@
 #include <aliceVision/multiview/translationAveraging/common.hpp>
 #include <aliceVision/multiview/translationAveraging/solver.hpp>
 #include <aliceVision/graph/graph.hpp>
-#include <aliceVision/track/Track.hpp>
+#include <aliceVision/track/TracksBuilder.hpp>
 #include <aliceVision/stl/stl.hpp>
 #include <aliceVision/system/Timer.hpp>
 #include <aliceVision/linearProgramming/linearProgramming.hpp>
@@ -28,7 +28,7 @@
 #include <aliceVision/config.hpp>
 #include <aliceVision/alicevision_omp.hpp>
 
-#include <dependencies/histogram/histogram.hpp>
+#include <aliceVision/utils/Histogram.hpp>
 
 #include <boost/progress.hpp>
 

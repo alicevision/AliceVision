@@ -16,7 +16,7 @@
 #include <aliceVision/system/cmdline.hpp>
 #include <aliceVision/types.hpp>
 #include <aliceVision/config.hpp>
-#include <aliceVision/track/Track.hpp>
+#include <aliceVision/track/TracksBuilder.hpp>
 #include <aliceVision/sfm/BundleAdjustment.hpp>
 
 #include <boost/program_options.hpp>

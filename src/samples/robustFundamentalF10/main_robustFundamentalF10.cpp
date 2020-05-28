@@ -225,14 +225,10 @@ int main(int argc, char **argv)
       svgFile.close();
 
       // Display some statistics of reprojection errors
-      MinMaxMeanMedian<float> stats(vec_residuals.begin(), vec_residuals.end());
+      BoxStats<float> stats(vec_residuals.begin(), vec_residuals.end());
 
       std::cout << std::endl
-        << "Fundamental matrix estimation, residuals statistics:" << "\n"
-        << "\t-- Residual min:\t" << stats.min << std::endl
-        << "\t-- Residual median:\t" << stats.median << std::endl
-        << "\t-- Residual max:\t "  << stats.max << std::endl
-        << "\t-- Residual mean:\t " << stats.mean << std::endl;
+        << "Fundamental matrix estimation, residuals statistics:" << "\n" << stats << std::endl;
     }
     else  
     {

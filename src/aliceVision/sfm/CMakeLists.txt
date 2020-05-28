@@ -28,6 +28,7 @@ set(sfm_files_headers
   generateReport.hpp
   sfm.hpp
   sfmFilters.hpp
+  sfmStatistics.hpp
   sfmTriangulation.hpp
 )
 
@@ -53,6 +54,7 @@ set(sfm_files_sources
   FrustumFilter.cpp
   generateReport.cpp
   sfmFilters.cpp
+  sfmStatistics.cpp
   sfmTriangulation.cpp
 )
 

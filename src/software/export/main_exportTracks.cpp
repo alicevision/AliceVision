@@ -13,7 +13,8 @@
 #include <aliceVision/feature/feature.hpp>
 #include <aliceVision/matching/IndMatch.hpp>
 #include <aliceVision/matching/io.hpp>
-#include <aliceVision/track/Track.hpp>
+#include <aliceVision/track/TracksBuilder.hpp>
+#include <aliceVision/track/tracksUtils.hpp>
 #include <aliceVision/image/all.hpp>
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/cmdline.hpp>
@@ -197,7 +198,7 @@ int aliceVision_main(int argc, char ** argv)
       setImageIndex.insert(viewI->getViewId());
       setImageIndex.insert(viewJ->getViewId());
 
-      tracksUtilsMap::getCommonTracksInImages(setImageIndex, mapTracks, mapTracksCommon);
+      getCommonTracksInImages(setImageIndex, mapTracks, mapTracksCommon);
 
       if(mapTracksCommon.empty())
       {

@@ -175,14 +175,16 @@ int main() {
       svgFile.close();
 
       // Display some statistics of reprojection errors
-      MinMaxMeanMedian<float> stats(vec_residuals.begin(), vec_residuals.end());
+      BoxStats<float> stats(vec_residuals.begin(), vec_residuals.end());
 
       std::cout << std::endl
         << "Homography matrix estimation, residuals statistics:" << "\n"
         << "\t-- Residual min:\t" << stats.min << std::endl
         << "\t-- Residual median:\t" << stats.median << std::endl
         << "\t-- Residual max:\t "  << stats.max << std::endl
-        << "\t-- Residual mean:\t " << stats.mean << std::endl;
+        << "\t-- Residual mean:\t " << stats.mean << std::endl
+        << "\t-- Residual first quartile:\t "  << stats.firstQuartile << std::endl
+        << "\t-- Residual third quartile:\t "  << stats.thirdQuartile << std::endl;
 
       // --
       // Perform GUIDED MATCHING
