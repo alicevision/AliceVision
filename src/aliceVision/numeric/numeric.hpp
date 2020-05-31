@@ -51,54 +51,56 @@ namespace aliceVision {
 
 using Eigen::Map;
 
-typedef Eigen::NumTraits<double> EigenDoubleTraits;
+using EigenDoubleTraits = Eigen::NumTraits<double>;
 
-typedef Eigen::Vector3d Vec3;
-typedef Eigen::Vector2i Vec2i;
-typedef Eigen::Vector2f Vec2f;
-typedef Eigen::Vector3f Vec3f;
-typedef Eigen::Matrix<double, 9, 1> Vec9;
+using Vec3 = Eigen::Vector3d;
+using Vec2i = Eigen::Vector2i;
+using Vec2f = Eigen::Vector2f;
+using Vec3f = Eigen::Vector3f;
+using Vec9 = Eigen::Matrix<double, 9, 1>;
 
-typedef Eigen::Quaternion<double> Quaternion;
+using Quaternion = Eigen::Quaternion<double>;
 
-typedef Eigen::Matrix<double, 3, 3> Mat3;
+using Mat3 = Eigen::Matrix<double, 3, 3>;
 
 #if defined(ENV32BIT)
-typedef Eigen::Matrix<double, 2, 3, Eigen::DontAlign> Mat23;
-typedef Eigen::Matrix<double, 3, 4, Eigen::DontAlign> Mat34;
-typedef Eigen::Matrix<double, 2, 1, Eigen::DontAlign> Vec2;
-typedef Eigen::Matrix<double, 4, 1, Eigen::DontAlign> Vec4;
-typedef Eigen::Matrix<double, 6, 1, Eigen::DontAlign> Vec6;
+using Mat23 = Eigen::Matrix<double, 2, 3, Eigen::DontAlign>;
+using Mat34 = Eigen::Matrix<double, 3, 4, Eigen::DontAlign>;
+using Vec2 = Eigen::Matrix<double, 2, 1, Eigen::DontAlign>;
+using Vec4 = Eigen::Matrix<double, 4, 1, Eigen::DontAlign>;
+using Vec6 = Eigen::Matrix<double, 6, 1, Eigen::DontAlign>;
 #else // 64 bits compiler
-typedef Eigen::Matrix<double, 2, 3> Mat23;
-typedef Eigen::Matrix<double, 3, 4> Mat34;
-typedef Eigen::Vector2d Vec2;
-typedef Eigen::Vector4d Vec4;
-typedef Eigen::Matrix<double, 6, 1> Vec6;
+using Mat23 = Eigen::Matrix<double, 2, 3>;
+using Mat34 = Eigen::Matrix<double, 3, 4>;
+using Vec2 = Eigen::Vector2d;
+using Vec4 = Eigen::Vector4d;
+using Vec6 = Eigen::Matrix<double, 6, 1>;
 #endif
 
 
-typedef Eigen::Matrix<double, 4, 4> Mat4;
-typedef Eigen::Matrix<unsigned int, Eigen::Dynamic, Eigen::Dynamic> Matu;
+using Mat4 = Eigen::Matrix<double, 4, 4>;
+using Matu = Eigen::Matrix<unsigned int, Eigen::Dynamic, Eigen::Dynamic>;
 
-typedef Eigen::Matrix<double, 3, 3, Eigen::RowMajor> RMat3;
+using RMat3 = Eigen::Matrix<double, 3, 3, Eigen::RowMajor>;
 
 //-- General purpose Matrix and Vector
-typedef Eigen::MatrixXd Mat;
-typedef Eigen::VectorXd Vec;
-typedef Eigen::Matrix<unsigned int, Eigen::Dynamic, 1> Vecu;
-typedef Eigen::MatrixXf Matf;
-typedef Eigen::VectorXf Vecf;
+using Mat = Eigen::MatrixXd;
+using Vec = Eigen::VectorXd;
+using Vecu = Eigen::Matrix<unsigned int, Eigen::Dynamic, 1>;
+using Matf = Eigen::MatrixXf;
+using Vecf = Eigen::VectorXf;
+using Vecb = Eigen::Matrix<bool, Eigen::Dynamic, 1>;
 
-typedef Eigen::Matrix<double, 2, Eigen::Dynamic> Mat2X;
-typedef Eigen::Matrix<double, 3, Eigen::Dynamic> Mat3X;
-typedef Eigen::Matrix<double, 4, Eigen::Dynamic> Mat4X;
+using Mat2X = Eigen::Matrix<double, 2, Eigen::Dynamic>;
+using Mat3X = Eigen::Matrix<double, 3, Eigen::Dynamic>;
+using Mat4X = Eigen::Matrix<double, 4, Eigen::Dynamic>;
 
-typedef Eigen::Matrix<double, Eigen::Dynamic, 9> MatX9;
+using MatX9 = Eigen::Matrix<double, Eigen::Dynamic, 9>;
+using Mat9 = Eigen::Matrix<double, 9, 9>;
 
 //-- Sparse Matrix (Column major, and row major)
-typedef Eigen::SparseMatrix<double> sMat;
-typedef Eigen::SparseMatrix<double, Eigen::RowMajor> sRMat;
+using sMat = Eigen::SparseMatrix<double>;
+using sRMat = Eigen::SparseMatrix<double, Eigen::RowMajor>;
 
 //--------------
 //-- Function --
@@ -312,7 +314,7 @@ Mat3 LookAt2(const Vec3 &eyePosition3D,
 template<typename Derived1, typename Derived2>
 struct hstack_return
 {
-  typedef typename Derived1::Scalar Scalar;
+  using Scalar = typename Derived1::Scalar;
 
   enum
   {
@@ -343,7 +345,7 @@ HStack(const Eigen::MatrixBase<Derived1>& lhs, const Eigen::MatrixBase<Derived2>
 template<typename Derived1, typename Derived2>
 struct vstack_return
 {
-  typedef typename Derived1::Scalar Scalar;
+  using Scalar = typename Derived1::Scalar;
 
   enum
   {
@@ -450,12 +452,14 @@ inline int is_finite(const double val)
  *  values of an iterable sequence.
  */
 template <typename Type>
-struct MinMaxMeanMedian
+struct BoxStats
 {
-    Type min, max, mean, median;
+    Type min{}, max{}, mean{}, median{}, firstQuartile{}, thirdQuartile{};
+
+    BoxStats() = default;
 
     template <typename DataInputIterator>
-    MinMaxMeanMedian(DataInputIterator begin, DataInputIterator end)
+    BoxStats(DataInputIterator begin, DataInputIterator end)
     {
       compute(begin, end);
     }
@@ -469,6 +473,8 @@ struct MinMaxMeanMedian
         max = 0;
         mean = 0;
         median = 0;
+        firstQuartile = 0;
+        thirdQuartile = 0;
         return;
       }
 
@@ -479,16 +485,21 @@ struct MinMaxMeanMedian
       mean = accumulate(vec_val.begin(), vec_val.end(), Type(0))
               / static_cast<Type> (vec_val.size());
       median = vec_val[vec_val.size() / 2];
+      firstQuartile = vec_val[vec_val.size() / 4];
+      thirdQuartile = vec_val[(vec_val.size() * 3) / 4];
     }
 };
 
 template <typename Type>
-inline std::ostream& operator<<(std::ostream& os, const MinMaxMeanMedian<Type> obj)
+inline std::ostream& operator<<(std::ostream& os, const BoxStats<Type> obj)
 {
   os << "\t min: " << obj.min << "\n"
         "\t mean: " << obj.mean << "\n"
         "\t median: " << obj.median << "\n"
-        "\t max: " << obj.max;
+        "\t max: " << obj.max << "\n"
+        "\t first quartile: " << obj.firstQuartile << "\n"
+        "\t third quartile: " << obj.thirdQuartile;
+
   return os;
 }
 

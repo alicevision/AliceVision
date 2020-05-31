@@ -143,7 +143,7 @@ bool ImageDescriber_CCTAG::describe(const image::Image<unsigned char>& image,
       }
       desc[cctag.id()] = (unsigned char) 255;
       regionsCasted->Descriptors().push_back(desc);
-      const float scale = std::max(cctag.outerEllipse().a(), cctag.outerEllipse().b());
+      const float scale = std::max(cctag.rescaledOuterEllipse().a(), cctag.rescaledOuterEllipse().b());
       regionsCasted->Features().push_back(PointFeature(cctag.x(), cctag.y(), scale, orientation));
     }
   }

@@ -9,10 +9,10 @@
 #include "aliceVision/feature/feature.hpp"
 #include "aliceVision/feature/sift/ImageDescriber_SIFT.hpp"
 #include "aliceVision/matching/RegionsMatcher.hpp"
-#include "aliceVision/multiview/fundamentalKernelSolver.hpp"
-#include "aliceVision/multiview/conditioning.hpp"
+#include "aliceVision/multiview/relativePose/FundamentalKernel.hpp"
+#include "aliceVision/robustEstimation/conditioning.hpp"
 #include "aliceVision/robustEstimation/ACRansac.hpp"
-#include "aliceVision/robustEstimation/ACRansacKernelAdaptator.hpp"
+#include "aliceVision/multiview/RelativePoseKernel.hpp"
 
 #include "dependencies/vectorGraphics/svgDrawer.hpp"
 
@@ -172,11 +172,11 @@ int main(int argc, char **argv)
 
     //-- Fundamental robust estimation
     std::vector<size_t> vec_inliers;
-    typedef ACKernelAdaptor<
-      aliceVision::fundamental::kernel::SevenPointSolver,
-      aliceVision::fundamental::kernel::SymmetricEpipolarDistanceError,
-      UnnormalizerT,
-      Mat3>
+    typedef multiview::RelativePoseKernel<
+      multiview::relativePose::Fundamental7PSolver,
+      multiview::relativePose::FundamentalSymmetricEpipolarDistanceError,
+      multiview::UnnormalizerT,
+      robustEstimation::Mat3Model>
       KernelType;
 
     KernelType kernel(
@@ -184,14 +184,14 @@ int main(int argc, char **argv)
       xR, imageR.Width(), imageR.Height(),
       true); // configure as point to line error model.
 
-    Mat3 F;
+    robustEstimation::Mat3Model F;
     const std::pair<double,double> ACRansacOut = ACRANSAC(kernel, vec_inliers, 1024, &F,
       Square(4.0)); // Upper bound of authorized threshold
     
     const double & thresholdF = ACRansacOut.first;
 
     // Check the fundamental support some point to be considered as valid
-    if (vec_inliers.size() > KernelType::MINIMUM_SAMPLES *2.5) 
+    if (vec_inliers.size() > kernel.getMinimumNbRequiredSamples() *2.5)
     {
       std::cout << "\nFound a fundamental under the confidence threshold of: "
         << thresholdF << " pixels\n\twith: " << vec_inliers.size() << " inliers"
@@ -214,9 +214,7 @@ int main(int argc, char **argv)
         svgStream.drawCircle(L.x(), L.y(), LL.scale(), svgStyle().stroke("yellow", 2.0));
         svgStream.drawCircle(R.x()+imageL.Width(), R.y(), RR.scale(),svgStyle().stroke("yellow", 2.0));
         // residual computation
-        vec_residuals[i] = std::sqrt(KernelType::ErrorT::Error(F,
-                                       LL.coords().cast<double>(),
-                                       RR.coords().cast<double>()));
+        vec_residuals[i] = std::sqrt(KernelType::ErrorT().error(F, LL.coords().cast<double>(), RR.coords().cast<double>()));
       }
       const string out_filename = "04_ACRansacFundamental.svg";
       ofstream svgFile( out_filename.c_str() );
@@ -224,14 +222,16 @@ int main(int argc, char **argv)
       svgFile.close();
 
       // Display some statistics of reprojection errors
-      MinMaxMeanMedian<float> stats(vec_residuals.begin(), vec_residuals.end());
+      BoxStats<float> stats(vec_residuals.begin(), vec_residuals.end());
 
       std::cout << std::endl
         << "Fundamental matrix estimation, residuals statistics:" << "\n"
         << "\t-- Residual min:\t" << stats.min << std::endl
         << "\t-- Residual median:\t" << stats.median << std::endl
         << "\t-- Residual max:\t "  << stats.max << std::endl
-        << "\t-- Residual mean:\t " << stats.mean << std::endl;
+        << "\t-- Residual mean:\t " << stats.mean << std::endl
+        << "\t-- Residual first quartile:\t "  << stats.firstQuartile << std::endl
+        << "\t-- Residual third quartile:\t "  << stats.thirdQuartile << std::endl;
     }
     else  
     {

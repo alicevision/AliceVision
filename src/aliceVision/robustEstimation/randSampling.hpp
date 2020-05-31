@@ -12,6 +12,7 @@
 #include <algorithm>
 #include <cstdlib>
 #include <random>
+#include <numeric>
 #include <cassert>
 
 namespace aliceVision {
@@ -89,7 +90,7 @@ inline std::vector<IntT> randSample(IntT lowerBound,
 * @param[out] samples The set containing the random numbers in the range [0, upperBound)
 */
 template<typename IntT>
-inline void UniformSample(std::size_t numSamples,
+inline void uniformSample(std::size_t numSamples,
                           std::size_t upperBound,
                           std::set<IntT> &samples)
 {
@@ -113,7 +114,7 @@ inline void UniformSample(std::size_t numSamples,
  * @param[out] samples The vector containing the samples.
  */
 template<typename IntT>
-inline void UniformSample(std::size_t lowerBound,
+inline void uniformSample(std::size_t lowerBound,
                           std::size_t upperBound,
                           std::size_t numSamples,
                           std::vector<IntT> &samples)
@@ -129,11 +130,11 @@ inline void UniformSample(std::size_t lowerBound,
  * @param[out] samples The vector containing the samples.
  */
 template<typename IntT>
-inline void UniformSample(std::size_t numSamples,
+inline void uniformSample(std::size_t numSamples,
                           std::size_t upperBound,
                           std::vector<IntT> &samples)
 {
-  UniformSample(0, upperBound, numSamples, samples);
+  uniformSample(0, upperBound, numSamples, samples);
 }
 
 /**
@@ -144,7 +145,7 @@ inline void UniformSample(std::size_t numSamples,
  * @param[in] elements The possible data indices.
  * @param[out] sample The random sample of sizeSample indices.
  */
-inline void UniformSample(std::size_t sampleSize,
+inline void uniformSample(std::size_t sampleSize,
                           const std::vector<std::size_t>& elements,
                           std::vector<std::size_t>& sample)
 {

@@ -49,17 +49,33 @@ namespace pretty_print
         struct has_begin_end : private sfinae_base
         {
         private:
+#ifdef _MSC_VER
+            // Work around MSVC ICE in 15.9.x by moving decltype out to template
+            // typename
+            template <typename C, typename LEFT = C::const_iterator(C::*)() const>
+            static yes & f(typename std::enable_if<
+                std::is_same<decltype(static_cast<typename LEFT>(&C::begin)),
+                             typename C::const_iterator(C::*)() const>::value>::type *);
+#else // _MSCV_VER
             template <typename C>
             static yes & f(typename std::enable_if<
                 std::is_same<decltype(static_cast<typename C::const_iterator(C::*)() const>(&C::begin)),
                              typename C::const_iterator(C::*)() const>::value>::type *);
+#endif // _MSCV_VER
 
             template <typename C> static no & f(...);
 
+#ifdef _MSC_VER
+            template <typename C, typename LEFT = C::const_iterator(C::*)() const>
+            static yes & g(typename std::enable_if<
+                 std::is_same<decltype(static_cast<typename LEFT>(&C::end)),
+                              typename C::const_iterator(C::*)() const>::value, void>::type*);
+#else // _MSCV_VER
             template <typename C>
             static yes & g(typename std::enable_if<
-                std::is_same<decltype(static_cast<typename C::const_iterator(C::*)() const>(&C::end)),
-                             typename C::const_iterator(C::*)() const>::value, void>::type*);
+                 std::is_same<decltype(static_cast<typename C::const_iterator(C::*)() const>(&C::end)),
+                              typename C::const_iterator(C::*)() const>::value, void>::type*);
+#endif // _MSCV_VER
 
             template <typename C> static no & g(...);
 

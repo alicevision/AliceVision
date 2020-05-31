@@ -11,8 +11,12 @@
 #include <aliceVision/alicevision_omp.hpp>
 #include <aliceVision/sfm/BundleAdjustment.hpp>
 #include <aliceVision/sfm/LocalBundleAdjustmentGraph.hpp>
+#include <aliceVision/numeric/numeric.hpp>
 
 #include <ceres/ceres.h>
+
+#include <memory>
+
 
 namespace aliceVision {
 
@@ -36,6 +40,7 @@ public:
       , nbThreads(multithreaded ? omp_get_max_threads() : 1) // set number of threads, 1 if OpenMP is not enabled
     {
       setDenseBA(); // use dense BA by default
+      lossFunction.reset(new ceres::HuberLoss(Square(4.0)));
     }
 
     void setDenseBA();
@@ -45,6 +50,7 @@ public:
     ceres::PreconditionerType preconditionerType;
     ceres::SparseLinearAlgebraLibraryType sparseLinearAlgebraLibraryType;
     ceres::ParameterBlockOrdering linearSolverOrdering;
+    std::shared_ptr<ceres::LossFunction> lossFunction;
     unsigned int nbThreads;
     bool useParametersOrdering = true;
     bool summary = false;

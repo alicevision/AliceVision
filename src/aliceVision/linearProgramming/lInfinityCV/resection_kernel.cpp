@@ -5,12 +5,12 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
-#include "aliceVision/linearProgramming/ISolver.hpp"
-#include "aliceVision/linearProgramming/OSIXSolver.hpp"
-#include "aliceVision/linearProgramming/bisectionLP.hpp"
+#include <aliceVision/linearProgramming/ISolver.hpp>
+#include <aliceVision/linearProgramming/OSIXSolver.hpp>
+#include <aliceVision/linearProgramming/bisectionLP.hpp>
 
-#include "aliceVision/linearProgramming/lInfinityCV/resection.hpp"
-#include "aliceVision/linearProgramming/lInfinityCV/resection_kernel.hpp"
+#include <aliceVision/linearProgramming/lInfinityCV/resection.hpp>
+#include <aliceVision/linearProgramming/lInfinityCV/resection_kernel.hpp>
 
 #include <cassert>
 
@@ -28,7 +28,8 @@ void translate(const Mat3X & X, const Vec3 & vecTranslation,
   }
 }
 
-void l1SixPointResectionSolver::Solve(const Mat &pt2D, const Mat &pt3d, vector<Mat34> *Ps) {
+void l1SixPointResectionSolver::solve(const Mat &pt2D, const Mat &pt3d, std::vector<robustEstimation::Mat34Model>& Ps) const
+{
   assert(2 == pt2D.rows());
   assert(3 == pt3d.rows());
   assert(6 <= pt2D.cols());
@@ -60,7 +61,7 @@ void l1SixPointResectionSolver::Solve(const Mat &pt2D, const Mat &pt3d, vector<M
          vec_solution[4], vec_solution[5], vec_solution[6], vec_solution[7],
          vec_solution[8], vec_solution[9], vec_solution[10], 1.0;
     P = P * translationMatrix;
-    Ps->push_back(P);
+    Ps.emplace_back(P);
   }
 }
 

@@ -9,7 +9,7 @@
 #include <vector>
 
 #include "aliceVision/multiview/NViewDataSet.hpp"
-#include "aliceVision/multiview/projection.hpp"
+#include "aliceVision/numeric/projection.hpp"
 #include <aliceVision/config.hpp>
 
 #include "aliceVision/linearProgramming/ISolver.hpp"
@@ -47,7 +47,7 @@ BOOST_AUTO_TEST_CASE(Resection_L_Infinity_OSICLP) {
   const NViewDataSet d = NRealisticCamerasRing(nViews, nbPoints,
     NViewDatasetConfigurator(1,1,0,0,5,0)); // Suppose a camera with Unit matrix as K
 
-  d.ExportToPLY("test_Before_Infinity.ply");
+  d.exportToPLY("test_Before_Infinity.ply");
   //-- Modify a dataset (set to 0 and parse new value) (Assert good values)
   NViewDataSet d2 = d;
 
@@ -94,7 +94,7 @@ BOOST_AUTO_TEST_CASE(Resection_L_Infinity_OSICLP) {
     Mat34 COMPUTED_ProjectionMatrix = P.array() / P.norm();
     EXPECT_MATRIX_NEAR(GT_ProjectionMatrix, COMPUTED_ProjectionMatrix, 1e-4);
   }
-  d2.ExportToPLY("test_After_Infinity.ply");
+  d2.exportToPLY("test_After_Infinity.ply");
 }
 
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_MOSEK)
@@ -105,7 +105,7 @@ BOOST_AUTO_TEST_CASE(Resection_L_Infinity_MOSEK) {
   const NViewDataSet d = NRealisticCamerasRing(nViews, nbPoints,
     NViewDatasetConfigurator(1,1,0,0,5,0)); // Suppose a camera with Unit matrix as K
 
-  d.ExportToPLY("test_Before_Infinity.ply");
+  d.exportToPLY("test_Before_Infinity.ply");
   //-- Modify a dataset (set to 0 and parse new value) (Assert good values)
   NViewDataSet d2 = d;
 
@@ -152,6 +152,6 @@ BOOST_AUTO_TEST_CASE(Resection_L_Infinity_MOSEK) {
     Mat34 COMPUTED_ProjectionMatrix = P.array() / P.norm();
     EXPECT_MATRIX_NEAR(GT_ProjectionMatrix, COMPUTED_ProjectionMatrix, 1e-4);
   }
-  d2.ExportToPLY("test_After_Infinity.ply");
+  d2.exportToPLY("test_After_Infinity.ply");
 }
 #endif // #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_MOSEK)

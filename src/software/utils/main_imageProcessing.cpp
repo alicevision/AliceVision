@@ -2,6 +2,7 @@
 #include <aliceVision/image/all.hpp>
 #include <aliceVision/system/cmdline.hpp>
 #include <aliceVision/system/Logger.hpp>
+#include <aliceVision/system/main.hpp>
 #include <aliceVision/numeric/numeric.hpp>
 #include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
@@ -26,7 +27,7 @@ namespace po = boost::program_options;
 namespace fs = boost::filesystem;
 
 
-int main(int argc, char * argv[])
+int aliceVision_main(int argc, char * argv[])
 {
     std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
     std::string sfmInputDataFilename = "";

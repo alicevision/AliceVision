@@ -51,7 +51,7 @@ void StructureComputation_blind::triangulate(sfmData::SfMData& sfmData) const
         ++(*my_progress_bar);
       }
       // Triangulate each landmark
-      Triangulation trianObj;
+      multiview::Triangulation trianObj;
       const sfmData::Observations & observations = iterTracks->second.observations;
       for(const auto& itObs : observations)
       {
@@ -183,7 +183,7 @@ bool StructureComputation_robust::robust_triangulation(const sfmData::SfMData& s
   for(IndexT i = 0; i < nbIter; ++i)
   {
     std::set<IndexT> samples;
-    robustEstimation::UniformSample(std::min(std::size_t(min_sample_index), observations.size()), observations.size(), samples);
+    robustEstimation::uniformSample(std::min(std::size_t(min_sample_index), observations.size()), observations.size(), samples);
 
     // Hypothesis generation.
     const Vec3 current_model = track_sample_triangulation(sfmData, observations, samples);
@@ -248,7 +248,7 @@ Vec3 StructureComputation_robust::track_sample_triangulation(const sfmData::SfMD
                                                              const sfmData::Observations& observations,
                                                              const std::set<IndexT>& samples) const
 {
-  Triangulation trianObj;
+  multiview::Triangulation trianObj;
   for (const IndexT idx : samples)
   {
     assert(idx < observations.size());

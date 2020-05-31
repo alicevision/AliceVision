@@ -25,6 +25,7 @@
 #include <aliceVision/matchingImageCollection/GeometricFilterType.hpp>
 #include <aliceVision/matching/pairwiseAdjacencyDisplay.hpp>
 #include <aliceVision/matching/io.hpp>
+#include <aliceVision/system/main.hpp>
 #include <aliceVision/system/Timer.hpp>
 #include <aliceVision/system/cmdline.hpp>
 #include <aliceVision/feature/selection.hpp>
@@ -86,7 +87,7 @@ void getStatsMap(const PairwiseMatches& map)
 /// - Compute putative local feature matches (descriptors matching)
 /// - Compute geometric coherent feature matches (robust model estimation from putative matches)
 /// - Export computed data
-int main(int argc, char **argv)
+int aliceVision_main(int argc, char **argv)
 {
   // command-line parameters
 
@@ -465,12 +466,23 @@ int main(int argc, char **argv)
     }
     break;
 
+  case EGeometricFilterType::FUNDAMENTAL_WITH_DISTORTION:
+  {
+    matchingImageCollection::robustModelEstimation(geometricMatches,
+      &sfmData,
+      regionPerView,
+      GeometricFilterMatrix_F_AC(geometricErrorMax, maxIteration, geometricEstimator, true),
+      mapPutativesMatches,
+      guidedMatching);
+  }
+  break;
+
     case EGeometricFilterType::ESSENTIAL_MATRIX:
     {
       matchingImageCollection::robustModelEstimation(geometricMatches,
         &sfmData,
         regionPerView,
-        GeometricFilterMatrix_E_AC(std::numeric_limits<double>::infinity(), maxIteration),
+        GeometricFilterMatrix_E_AC(geometricErrorMax, maxIteration),
         mapPutativesMatches,
         guidedMatching);
 
@@ -499,7 +511,7 @@ int main(int argc, char **argv)
       matchingImageCollection::robustModelEstimation(geometricMatches,
         &sfmData,
         regionPerView,
-        GeometricFilterMatrix_H_AC(std::numeric_limits<double>::infinity(), maxIteration),
+        GeometricFilterMatrix_H_AC(geometricErrorMax, maxIteration),
         mapPutativesMatches, guidedMatching,
         onlyGuidedMatching ? -1.0 : 0.6);
     }
@@ -510,7 +522,7 @@ int main(int argc, char **argv)
       matchingImageCollection::robustModelEstimation(geometricMatches,
         &sfmData,
         regionPerView,
-        GeometricFilterMatrix_HGrowing(std::numeric_limits<double>::infinity(), maxIteration),
+        GeometricFilterMatrix_HGrowing(geometricErrorMax, maxIteration),
         mapPutativesMatches,
         guidedMatching);
     }

@@ -18,6 +18,7 @@
 #include <aliceVision/robustEstimation/estimators.hpp>
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/cmdline.hpp>
+#include <aliceVision/system/main.hpp>
 
 #include <boost/filesystem.hpp>
 #include <boost/progress.hpp>
@@ -59,7 +60,7 @@ std::string myToString(std::size_t i, std::size_t zeroPadding)
 }
 
 
-int main(int argc, char** argv)
+int aliceVision_main(int argc, char** argv)
 {
   // common parameters
   /// the AliceVision .json/abc data file
@@ -486,4 +487,6 @@ int main(int argc, char** argv)
   ALICEVISION_COUT("Mean time for localization:   " << bacc::mean(stats) << " [ms]");
   ALICEVISION_COUT("Max time for localization:   " << bacc::max(stats) << " [ms]");
   ALICEVISION_COUT("Min time for localization:   " << bacc::min(stats) << " [ms]");
+
+  return EXIT_SUCCESS;
 }

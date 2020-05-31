@@ -9,6 +9,7 @@
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
 #include <aliceVision/numeric/numeric.hpp>
 #include <aliceVision/image/all.hpp>
+#include <aliceVision/system/main.hpp>
 
 #include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>
@@ -29,7 +30,7 @@ using namespace aliceVision::sfmData;
 namespace po = boost::program_options;
 namespace fs = boost::filesystem;
 
-int main(int argc, char **argv)
+int aliceVision_main(int argc, char **argv)
 {
   // command-line parameters
 
@@ -142,7 +143,7 @@ int main(int argc, char **argv)
 
     Mat3 R, K;
     Vec3 t;
-    KRt_From_P( P, &K, &R, &t);
+    KRt_from_P( P, &K, &R, &t);
 
     const Vec3 optical_center = R.transpose() * t;
 

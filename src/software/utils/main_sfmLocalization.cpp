@@ -14,6 +14,7 @@
 #include <aliceVision/system/Timer.hpp>
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/cmdline.hpp>
+#include <aliceVision/system/main.hpp>
 
 #include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>
@@ -35,7 +36,7 @@ namespace fs = boost::filesystem;
 //   if 3D-2D matches are found
 // - A demonstration mode (default):
 //   - try to locate all the view of the SfM_Data reconstruction
-int main(int argc, char **argv)
+int aliceVision_main(int argc, char **argv)
 {
   // command-line parameters
 
@@ -211,7 +212,7 @@ int main(int argc, char **argv)
       // setup a default camera model from the found projection matrix
       Mat3 K, R;
       Vec3 t;
-      KRt_From_P(matching_data.projection_matrix, &K, &R, &t);
+      KRt_from_P(matching_data.projection_matrix, &K, &R, &t);
 
       const double focal = (K(0,0) + K(1,1))/2.0;
       const Vec2 principal_point(K(0,2), K(1,2));

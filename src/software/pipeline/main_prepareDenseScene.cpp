@@ -9,6 +9,7 @@
 #include <aliceVision/image/all.hpp>
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/cmdline.hpp>
+#include <aliceVision/system/main.hpp>
 #include <aliceVision/config.hpp>
 
 #include <boost/program_options.hpp>
@@ -239,7 +240,7 @@ bool prepareDenseScene(const SfMData& sfmData,
   return true;
 }
 
-int main(int argc, char *argv[])
+int aliceVision_main(int argc, char *argv[])
 {
   // command-line parameters
 

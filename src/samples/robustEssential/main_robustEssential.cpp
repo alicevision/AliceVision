@@ -207,7 +207,7 @@ int main() {
       const PointFeature & RR = regionsR->Features()[vec_PutativeMatches[relativePose_info.vec_inliers[i]]._j];
       // Point triangulation
       Vec3 X;
-      TriangulateDLT(P1, LL.coords().cast<double>(), P2, RR.coords().cast<double>(), &X);
+      multiview::TriangulateDLT(P1, LL.coords().cast<double>(), P2, RR.coords().cast<double>(), &X);
       // Reject point that is behind the camera
       if (pose0.depth(X) < 0 && pose1.depth(X) < 0)
         continue;
@@ -222,14 +222,10 @@ int main() {
     }
 
     // Display some statistics of reprojection errors
-    MinMaxMeanMedian<float> stats(vec_residuals.begin(), vec_residuals.end());
+    BoxStats<float> stats(vec_residuals.begin(), vec_residuals.end());
 
     std::cout << std::endl
-      << "Triangulation residuals statistics:" << "\n"
-      << "\t-- Residual min:\t" << stats.min << "\n"
-      << "\t-- Residual median:\t" << stats.median << "\n"
-      << "\t-- Residual max:\t " << stats.max << "\n"
-      << "\t-- Residual mean:\t " << stats.mean << std::endl;
+      << "Triangulation residuals statistics:" << "\n" << stats << std::endl;
 
       // Export as PLY (camera pos + 3Dpoints)
       std::vector<Vec3> vec_camPos;

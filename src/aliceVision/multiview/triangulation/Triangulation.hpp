@@ -9,10 +9,12 @@
 #pragma once
 
 #include <aliceVision/numeric/numeric.hpp>
+#include <aliceVision/robustEstimation/ISolver.hpp>
 
 #include <vector>
 
 namespace aliceVision {
+namespace multiview {
 
 /**
  * @brief Compute a 3D position of a point from several images of it. In particular,
@@ -106,13 +108,30 @@ protected:
 
 struct TriangulateNViewsSolver 
 {
-  enum { MINIMUM_SAMPLES = 2 };
-  enum { MAX_MODELS = 1 };
 
-  static void Solve(const Mat2X &x, const std::vector< Mat34 > &Ps, std::vector<Vec4> &X);
+  /**
+   * @brief Return the minimum number of required samples
+   * @return minimum number of required samples
+   */
+  inline std::size_t getMinimumNbRequiredSamples() const
+  {
+    return 2;
+  }
+
+  /**
+   * @brief Return the maximum number of models
+   * @return maximum number of models
+   */
+  inline std::size_t getMaximumNbModels() const
+  {
+    return 1;
+  }
+
+  void solve(const Mat2X& x, const std::vector<Mat34>& Ps, std::vector<robustEstimation::MatrixModel<Vec4>>& X) const;
   
-  static void Solve(const Mat2X &x, const std::vector< Mat34 > &Ps, std::vector<Vec4> &X, const std::vector<double> &weights);
+  void solve(const Mat2X& x, const std::vector<Mat34>& Ps, std::vector<robustEstimation::MatrixModel<Vec4>>& X, const std::vector<double>& weights) const;
 
 };
 
+} // namespace multiview
 } // namespace aliceVision

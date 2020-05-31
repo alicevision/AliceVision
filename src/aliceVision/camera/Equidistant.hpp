@@ -8,10 +8,10 @@
 #pragma once
 
 #include <aliceVision/numeric/numeric.hpp>
+#include <aliceVision/numeric/projection.hpp>
 #include <aliceVision/camera/cameraCommon.hpp>
 #include <aliceVision/camera/IntrinsicsScaleOffsetDisto.hpp>
 #include <aliceVision/geometry/Pose3.hpp>
-#include <aliceVision/multiview/projection.hpp>
 
 #include "DistortionFisheye1.hpp"
 

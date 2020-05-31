@@ -8,6 +8,7 @@
 #include <aliceVision/image/io.hpp>
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/cmdline.hpp>
+#include <aliceVision/system/main.hpp>
 #include <OpenImageIO/imagebufalgo.h>
 
 /*SFMData*/
@@ -126,7 +127,7 @@ Eigen::Matrix3d getRotationForCode(int code) {
   return R_metadata;
 }
 
-int main(int argc, char * argv[])
+int aliceVision_main(int argc, char * argv[])
 {
   std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
   std::string sfmInputDataFilename = "";

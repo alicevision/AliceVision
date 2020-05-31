@@ -7,9 +7,11 @@
 
 #pragma once
 
-#include "aliceVision/image/all.hpp"
-#include "dependencies/histogram/histogram.hpp"
+#include <aliceVision/image/all.hpp>
+#include <aliceVision/utils/Histogram.hpp>
+
 #include <string>
+
 
 namespace aliceVision {
 namespace colorHarmonization {

@@ -286,7 +286,6 @@ void BundleAdjustmentCeres::setSolverOptions(ceres::Solver::Options& solverOptio
   solverOptions.logging_type = ceres::SILENT;
   solverOptions.num_threads = _ceresOptions.nbThreads;
 
-
 #if CERES_VERSION_MAJOR < 2
   solverOptions.num_linear_solver_threads = _ceresOptions.nbThreads;
 #endif
@@ -533,7 +532,7 @@ void BundleAdjustmentCeres::addLandmarksToProblem(const sfmData::SfMData& sfmDat
 
   // set a LossFunction to be less penalized by false measurements.
   // note: set it to NULL if you don't want use a lossFunction.
-  ceres::LossFunction* lossFunction = new ceres::HuberLoss(Square(4.0)); // TODO: make the LOSS function and the parameter an option
+  ceres::LossFunction* lossFunction = _ceresOptions.lossFunction.get();
 
   // build the residual blocks corresponding to the track observations
   for(const auto& landmarkPair: sfmData.getLandmarks())
@@ -623,7 +622,7 @@ void BundleAdjustmentCeres::addConstraints2DToProblem(const sfmData::SfMData& sf
 {
   // set a LossFunction to be less penalized by false measurements.
   // note: set it to NULL if you don't want use a lossFunction.
-  ceres::LossFunction* lossFunction = nullptr; new ceres::HuberLoss(Square(4.0)); // TODO: make the LOSS function and the parameter an option
+  ceres::LossFunction* lossFunction = _ceresOptions.lossFunction.get();
 
   for (const auto & constraint : sfmData.getConstraints2D()) {
     const sfmData::View& view_1 = sfmData.getView(constraint.ViewFirst);
@@ -785,7 +784,9 @@ void BundleAdjustmentCeres::createJacobian(const sfmData::SfMData& sfmData,
                                            ceres::CRSMatrix& jacobian)
 {
   // create problem
-  ceres::Problem problem;
+  ceres::Problem::Options problemOptions;
+  problemOptions.loss_function_ownership = ceres::DO_NOT_TAKE_OWNERSHIP;
+  ceres::Problem problem(problemOptions);
   createProblem(sfmData, refineOptions, problem);
 
   // configure Jacobian engine
@@ -802,7 +803,9 @@ void BundleAdjustmentCeres::createJacobian(const sfmData::SfMData& sfmData,
 bool BundleAdjustmentCeres::adjust(sfmData::SfMData& sfmData, ERefineOptions refineOptions)
 {
   // create problem
-  ceres::Problem problem;
+  ceres::Problem::Options problemOptions;
+  problemOptions.loss_function_ownership = ceres::DO_NOT_TAKE_OWNERSHIP;
+  ceres::Problem problem(problemOptions);
   createProblem(sfmData, refineOptions, problem);
 
   // configure a Bundle Adjustment engine and run it

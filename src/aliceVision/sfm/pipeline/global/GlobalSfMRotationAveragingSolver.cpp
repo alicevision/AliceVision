@@ -11,7 +11,7 @@
 #include <aliceVision/multiview/rotationAveraging/rotationAveraging.hpp>
 #include <aliceVision/stl/mapUtils.hpp>
 
-#include <dependencies/histogram/histogram.hpp>
+#include <aliceVision/utils/Histogram.hpp>
 
 namespace aliceVision {
 namespace sfm {
@@ -239,7 +239,7 @@ void GlobalSfMRotationAveragingSolver::TripletRotationRejection(
 
   // Display statistics about rotation triplets error:
   ALICEVISION_LOG_DEBUG("Statistics about rotation triplets:");
-  ALICEVISION_LOG_DEBUG(MinMaxMeanMedian<float>(vec_errToIdentityPerTriplet.begin(), vec_errToIdentityPerTriplet.end()));
+  ALICEVISION_LOG_DEBUG(BoxStats<float>(vec_errToIdentityPerTriplet.begin(), vec_errToIdentityPerTriplet.end()));
 
   std::sort(vec_errToIdentityPerTriplet.begin(), vec_errToIdentityPerTriplet.end());
 

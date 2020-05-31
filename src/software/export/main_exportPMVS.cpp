@@ -8,6 +8,7 @@
 #include <aliceVision/sfmData/SfMData.hpp>
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
 #include <aliceVision/image/all.hpp>
+#include <aliceVision/system/main.hpp>
 
 #include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>
@@ -311,7 +312,7 @@ bool exportToBundlerFormat(
   return true;
 }
 
-int main(int argc, char *argv[])
+int aliceVision_main(int argc, char *argv[])
 {
   // command-line parameters
 

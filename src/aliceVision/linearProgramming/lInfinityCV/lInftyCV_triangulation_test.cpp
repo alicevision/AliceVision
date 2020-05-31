@@ -12,7 +12,7 @@
 #include "aliceVision/numeric/numeric.hpp"
 #include <aliceVision/config.hpp>
 
-#include "aliceVision/multiview/projection.hpp"
+#include "aliceVision/numeric/projection.hpp"
 
 #include "aliceVision/linearProgramming/ISolver.hpp"
 #include "aliceVision/linearProgramming/OSIXSolver.hpp"
@@ -39,7 +39,7 @@ BOOST_AUTO_TEST_CASE(lInfinityCV_Triangulation_OSICLPSOLVER) {
 
   std::vector<Mat34> vec_Pi;
 
-  d.ExportToPLY("test_Before_Infinity_Triangulation_OSICLP.ply");
+  d.exportToPLY("test_Before_Infinity_Triangulation_OSICLP.ply");
   //-- Test triangulation of all the point
   NViewDataSet d2 = d;
   d2._X.fill(0); //Set _Xi of dataset 2 to 0 to be sure of new data computation
@@ -76,7 +76,7 @@ BOOST_AUTO_TEST_CASE(lInfinityCV_Triangulation_OSICLPSOLVER) {
     const Vec3 & X = XSolution;
     Vec2 x1, xsum(0.0,0.0);
     for (int i = 0; i < d2._n; ++i) {
-      x1 = Project(d2.P(i), X);
+      x1 = project(d2.P(i), X);
       xsum += Vec2((x1-x_ij.col(i)).array().pow(2));
     }
     double dResidual2D = (xsum.array().sqrt().sum());
@@ -88,7 +88,7 @@ BOOST_AUTO_TEST_CASE(lInfinityCV_Triangulation_OSICLPSOLVER) {
     BOOST_CHECK_SMALL(dResidual2D, 1e-5);
     BOOST_CHECK_SMALL(dResidual3D, 1e-5);
   }
-  d2.ExportToPLY("test_After_Infinity_Triangulation_OSICLP.ply");
+  d2.exportToPLY("test_After_Infinity_Triangulation_OSICLP.ply");
 }
 
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_MOSEK)
@@ -99,7 +99,7 @@ BOOST_AUTO_TEST_CASE(computervision_Triangulation_MOSEK) {
 
   std::vector<Mat34> vec_Pi;
 
-  d.ExportToPLY("test_Before_Infinity_Triangulation_MOSEK.ply");
+  d.exportToPLY("test_Before_Infinity_Triangulation_MOSEK.ply");
   //-- Test triangulation of all the point
   NViewDataSet d2 = d;
   d2._X.fill(0); //Set _Xi of dataset 2 to 0 to be sure of new data computation
@@ -136,7 +136,7 @@ BOOST_AUTO_TEST_CASE(computervision_Triangulation_MOSEK) {
     const Vec3 & X = XSolution;
     Vec2 x1, xsum(0.0,0.0);
     for (int i = 0; i < d2._n; ++i) {
-      x1 = Project(d2.P(i), X);
+      x1 = project(d2.P(i), X);
       xsum += Vec2((x1-x_ij.col(i)).array().pow(2));
     }
     double dResidual2D = (xsum.array().sqrt().sum());
@@ -148,6 +148,6 @@ BOOST_AUTO_TEST_CASE(computervision_Triangulation_MOSEK) {
     BOOST_CHECK_SMALL(dResidual2D, 1e-5);
     BOOST_CHECK_SMALL(dResidual3D, 1e-5);
   }
-  d2.ExportToPLY("test_After_Infinity_Triangulation_MOSEK.ply");
+  d2.exportToPLY("test_After_Infinity_Triangulation_MOSEK.ply");
 }
 #endif // ALICEVISION_HAVE_MOSEK

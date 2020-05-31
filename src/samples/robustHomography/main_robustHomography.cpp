@@ -10,10 +10,12 @@
 #include "aliceVision/feature/feature.hpp"
 #include "aliceVision/feature/sift/ImageDescriber_SIFT.hpp"
 #include "aliceVision/matching/RegionsMatcher.hpp"
-#include "aliceVision/multiview/homographyKernelSolver.hpp"
-#include "aliceVision/multiview/conditioning.hpp"
+#include "aliceVision/multiview/relativePose/Homography4PSolver.hpp"
+#include "aliceVision/multiview/relativePose/HomographyError.hpp"
+#include "aliceVision/multiview/Unnormalizer.hpp"
+#include "aliceVision/robustEstimation/conditioning.hpp"
 #include "aliceVision/robustEstimation/ACRansac.hpp"
-#include "aliceVision/robustEstimation/ACRansacKernelAdaptator.hpp"
+#include "aliceVision/multiview/RelativePoseKernel.hpp"
 
 #include "dependencies/vectorGraphics/svgDrawer.hpp"
 
@@ -127,11 +129,11 @@ int main() {
 
     //-- Homography robust estimation
     std::vector<size_t> vec_inliers;
-    typedef ACKernelAdaptor<
-      aliceVision::homography::kernel::FourPointSolver,
-      aliceVision::homography::kernel::AsymmetricError,
-      UnnormalizerI,
-      Mat3>
+    typedef multiview::RelativePoseKernel<
+      multiview::relativePose::Homography4PSolver,
+      multiview::relativePose::HomographyAsymmetricError,
+      multiview::UnnormalizerI,
+      robustEstimation::Mat3Model>
       KernelType;
 
     KernelType kernel(
@@ -139,13 +141,13 @@ int main() {
       xR, imageR.Width(), imageR.Height(),
       false); // configure as point to point error model.
 
-    Mat3 H;
+    robustEstimation::Mat3Model H;
     const std::pair<double,double> ACRansacOut = ACRANSAC(kernel, vec_inliers, 1024, &H,
       std::numeric_limits<double>::infinity());
     const double & thresholdH = ACRansacOut.first;
 
     // Check the homography support some point to be considered as valid
-    if (vec_inliers.size() > KernelType::MINIMUM_SAMPLES *2.5) {
+    if (vec_inliers.size() > kernel.getMinimumNbRequiredSamples() *2.5) {
 
       std::cout << "\nFound a homography under the confidence threshold of: "
         << thresholdH << " pixels\n\twith: " << vec_inliers.size() << " inliers"
@@ -167,9 +169,7 @@ int main() {
         svgStream.drawCircle(L.x(), L.y(), LL.scale(), svgStyle().stroke("yellow", 2.0));
         svgStream.drawCircle(R.x()+imageL.Width(), R.y(), RR.scale(),svgStyle().stroke("yellow", 2.0));
         // residual computation
-        vec_residuals[i] = std::sqrt(KernelType::ErrorT::Error(H,
-                                       LL.coords().cast<double>(),
-                                       RR.coords().cast<double>()));
+        vec_residuals[i] = std::sqrt(KernelType::ErrorT().error(H, LL.coords().cast<double>(), RR.coords().cast<double>()));
       }
       string out_filename = "04_ACRansacHomography.svg";
       ofstream svgFile( out_filename.c_str() );
@@ -177,14 +177,16 @@ int main() {
       svgFile.close();
 
       // Display some statistics of reprojection errors
-      MinMaxMeanMedian<float> stats(vec_residuals.begin(), vec_residuals.end());
+      BoxStats<float> stats(vec_residuals.begin(), vec_residuals.end());
 
       std::cout << std::endl
         << "Homography matrix estimation, residuals statistics:" << "\n"
         << "\t-- Residual min:\t" << stats.min << std::endl
         << "\t-- Residual median:\t" << stats.median << std::endl
         << "\t-- Residual max:\t "  << stats.max << std::endl
-        << "\t-- Residual mean:\t " << stats.mean << std::endl;
+        << "\t-- Residual mean:\t " << stats.mean << std::endl
+        << "\t-- Residual first quartile:\t "  << stats.firstQuartile << std::endl
+        << "\t-- Residual third quartile:\t "  << stats.thirdQuartile << std::endl;
 
       //---------------------------------------
       // Warp the images to fit the reference view
@@ -195,7 +197,7 @@ int main() {
 
       // Create and fill the output image
       Image<RGBColor> imaOut(imageL.Width(), imageL.Height());
-      image::Warp(image, H, imaOut);
+      image::Warp(image, H.getMatrix(), imaOut);
       const std::string imageNameOut = "query_warped.png";
       writeImage(imageNameOut, imaOut, image::EImageColorSpace::NO_CONVERSION);
     }

@@ -14,7 +14,8 @@
 #include <aliceVision/system/Timer.hpp>
 #include <aliceVision/stl/stl.hpp>
 #include <aliceVision/multiview/essential.hpp>
-#include <aliceVision/track/Track.hpp>
+#include <aliceVision/track/TracksBuilder.hpp>
+#include <aliceVision/track/tracksUtils.hpp>
 #include <aliceVision/config.hpp>
 
 #include <dependencies/htmlDoc/htmlDoc.hpp>
@@ -277,7 +278,7 @@ bool ReconstructionEngine_globalSfM::Compute_Initial_Structure(matching::Pairwis
         pose_supported_matches.insert(pairwiseMatchesIt);
       }
     }
-    tracksBuilder.Build(pose_supported_matches);
+    tracksBuilder.build(pose_supported_matches);
 #else
     // Use triplet validated matches
     tracksBuilder.build(tripletWise_matches);
@@ -315,7 +316,7 @@ bool ReconstructionEngine_globalSfM::Compute_Initial_Structure(matching::Pairwis
       //    - number of images
       //    - number of tracks
       std::set<size_t> set_imagesId;
-      tracksUtilsMap::imageIdInTracks(map_selectedTracks, set_imagesId);
+      imageIdInTracks(map_selectedTracks, set_imagesId);
       osTrack << "------------------" << "\n"
         << "-- Tracks Stats --" << "\n"
         << " Tracks number: " << tracksBuilder.nbTracks() << "\n"
@@ -326,7 +327,7 @@ bool ReconstructionEngine_globalSfM::Compute_Initial_Structure(matching::Pairwis
       osTrack << "\n------------------" << "\n";
 
       std::map<size_t, size_t> map_Occurence_TrackLength;
-      tracksUtilsMap::tracksLength(map_selectedTracks, map_Occurence_TrackLength);
+      tracksLength(map_selectedTracks, map_Occurence_TrackLength);
       osTrack << "TrackLength, Occurrence" << "\n";
       for (std::map<size_t, size_t>::const_iterator iter = map_Occurence_TrackLength.begin();
         iter != map_Occurence_TrackLength.end(); ++iter)  {
@@ -577,7 +578,7 @@ void ReconstructionEngine_globalSfM::Compute_Relative_Rotations(rotationAveragin
             const Vec2 x1_ = p1.coords().cast<double>();
             const Vec2 x2_ = p2.coords().cast<double>();
             Vec3 X;
-            TriangulateDLT(P1, x1_, P2, x2_, &X);
+            multiview::TriangulateDLT(P1, x1_, P2, x2_, &X);
             Observations obs;
             const double scaleI = (_featureConstraint == EFeatureConstraint::BASIC) ? 0.0 : p1.scale();
             const double scaleJ = (_featureConstraint == EFeatureConstraint::BASIC) ? 0.0 : p2.scale();
@@ -611,7 +612,7 @@ void ReconstructionEngine_globalSfM::Compute_Relative_Rotations(rotationAveragin
           // Compute relative motion and save it
           Mat3 Rrel;
           Vec3 trel;
-          RelativeCameraMotion(R1, t1, R2, t2, &Rrel, &trel);
+          relativeCameraMotion(R1, t1, R2, t2, &Rrel, &trel);
           // Update found relative pose
           relativePose_info.relativePose = Pose3(Rrel, -Rrel.transpose() * trel);
         }

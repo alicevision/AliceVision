@@ -9,6 +9,7 @@
 #include "affineSolver.hpp"
 
 namespace aliceVision {
+namespace multiview {
 
 // Parametrization
 // a b x
@@ -22,7 +23,7 @@ namespace aliceVision {
 //                      | d |
 //                      | x |
 //                      | y |
-bool Affine2DFromCorrespondencesLinear(const Mat &x1, const Mat &x2,
+bool affine2DFromCorrespondencesLinear(const Mat &x1, const Mat &x2,
                                        Mat3 *M,
                                        double expected_precision) {
   assert(2 == x1.rows());
@@ -77,7 +78,7 @@ bool Affine2DFromCorrespondencesLinear(const Mat &x1, const Mat &x2,
 //                                      | x |
 //                                      | y |
 //                                      | z |
-bool Affine3DFromCorrespondencesLinear(const Mat &x1,
+bool affine3DFromCorrespondencesLinear(const Mat &x1,
                                        const Mat &x2,
                                        Mat4 *M,
                                        double expected_precision) {
@@ -124,4 +125,7 @@ bool Affine3DFromCorrespondencesLinear(const Mat &x1,
     return false;
   }
 }
+
+} // namespace multiview
 } // namespace aliceVision
+

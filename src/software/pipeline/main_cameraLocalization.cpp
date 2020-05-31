@@ -20,6 +20,7 @@
 #include <aliceVision/sfmDataIO/sfmDataIO.hpp>
 #include <aliceVision/robustEstimation/estimators.hpp>
 #include <aliceVision/system/Logger.hpp>
+#include <aliceVision/system/main.hpp>
 #include <aliceVision/system/cmdline.hpp>
 
 #include <boost/filesystem.hpp>
@@ -60,7 +61,7 @@ std::string myToString(std::size_t i, std::size_t zeroPadding)
   return ss.str();
 }
 
-int main(int argc, char** argv)
+int aliceVision_main(int argc, char** argv)
 {
   /// the calibration file
   std::string calibFile;
@@ -519,4 +520,6 @@ int main(int argc, char** argv)
   ALICEVISION_COUT("Mean time for localization:   " << bacc::mean(stats) << " [ms]");
   ALICEVISION_COUT("Max time for localization:   " << bacc::max(stats) << " [ms]");
   ALICEVISION_COUT("Min time for localization:   " << bacc::min(stats) << " [ms]");
+
+  return EXIT_SUCCESS;
 }

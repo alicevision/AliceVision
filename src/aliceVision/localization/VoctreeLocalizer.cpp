@@ -20,7 +20,8 @@
 #include <aliceVision/matchingImageCollection/GeometricFilterMatrix_F_AC.hpp>
 #include <aliceVision/matchingImageCollection/GeometricFilterMatrix.hpp>
 #include <aliceVision/numeric/numeric.hpp>
-#include <aliceVision/robustEstimation/guidedMatching.hpp>
+#include <aliceVision/multiview/relativePose/FundamentalError.hpp>
+#include <aliceVision/matching/guidedMatching.hpp>
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/Timer.hpp>
 
@@ -563,7 +564,7 @@ bool VoctreeLocalizer::localizeFirstBestResult(const feature::MapRegionsPerDesc 
       Vec3 t_;
       // Decompose the projection matrix  to get K, R and t using 
       // RQ decomposition
-      KRt_From_P(resectionData.projection_matrix, &K_, &R_, &t_);
+      KRt_from_P(resectionData.projection_matrix, &K_, &R_, &t_);
       ALICEVISION_LOG_DEBUG("K estimated\n" << K_);
       queryIntrinsics.setK(K_);
       queryIntrinsics.setWidth(queryImageSize.first);
@@ -687,7 +688,7 @@ bool VoctreeLocalizer::localizeAllResults(const feature::MapRegionsPerDesc &quer
     Vec3 t_;
     // Decompose the projection matrix  to get K, R and t using 
     // RQ decomposition
-    KRt_From_P(resectionData.projection_matrix, &K_, &R_, &t_);
+    KRt_from_P(resectionData.projection_matrix, &K_, &R_, &t_);
     queryIntrinsics.setK(K_);
     ALICEVISION_LOG_DEBUG("K estimated\n" << K_);
     queryIntrinsics.setWidth(queryImageSize.first);
@@ -1133,14 +1134,15 @@ bool VoctreeLocalizer::robustMatching(matching::RegionsDatabaseMatcherPerDesc & 
   // perform guided matching.
   // So we ignore the previous matches and recompute all matches.
   out_featureMatches.clear();
-  robustEstimation::GuidedMatching<
-          Mat3,
-          aliceVision::fundamental::kernel::EpipolarDistanceError>(
-        geometricFilter.m_F,
-        queryIntrinsicsBase, // camera::IntrinsicBase of the matched image
+
+  robustEstimation::Mat3Model model(geometricFilter.m_F);
+
+  matching::guidedMatching<robustEstimation::Mat3Model, multiview::relativePose::FundamentalEpipolarDistanceError>(
+        model,
+        queryIntrinsicsBase,                  // camera::IntrinsicBase of the matched image
         matchers.getDatabaseRegionsPerDesc(), // feature::Regions
-        matchedIntrinsicsBase, // camera::IntrinsicBase of the query image
-        matchedRegions, // feature::Regions
+        matchedIntrinsicsBase,                // camera::IntrinsicBase of the query image
+        matchedRegions,                       // feature::Regions
         Square(geometricFilter.m_dPrecision_robust),
         Square(fDistRatio),
         out_featureMatches); // output

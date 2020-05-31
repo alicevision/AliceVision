@@ -13,6 +13,7 @@
 #include <aliceVision/feature/Descriptor.hpp>
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/cmdline.hpp>
+#include <aliceVision/system/main.hpp>
 
 #include <Eigen/Core>
 
@@ -42,7 +43,7 @@ typedef aliceVision::feature::Descriptor<unsigned char, DIMENSION> DescriptorUCh
 /*
  * This program is used to load the sift descriptors from a list of files and create a vocabulary tree
  */
-int main(int argc, char** argv)
+int aliceVision_main(int argc, char** argv)
 {
   std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
   int tbVerbosity = 2;

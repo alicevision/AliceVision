@@ -197,7 +197,7 @@ sfmData::SfMData getInputRigScene(const NViewDataSet& d,
         continue;
       }
 
-      const Vec2 pt = Project(camPinHole->getProjectiveEquivalent(camPose), landmark.X);
+      const Vec2 pt = project(camPinHole->getProjectiveEquivalent(camPose), landmark.X);
       landmark.observations[viewId] = sfmData::Observation(pt, landmarkId, unknownScale);
     }
     sfmData.structure[landmarkId] = landmark;

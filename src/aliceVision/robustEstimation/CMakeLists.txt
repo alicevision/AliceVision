@@ -1,27 +1,31 @@
 # Headers
-set(robustEstimation_files_headers
-  guidedMatching.hpp
-  lineTestGenerator.hpp
-  randSampling.hpp
-  LineKernel.hpp
-  Ransac.hpp
-  ACRansac.hpp
-  ACRansacKernelAdaptator.hpp
-  LORansac.hpp
-  LORansacKernelAdaptor.hpp
-  ransacTools.hpp
+set(robustEstimation_files_headers 
+  conditioning.hpp
   estimators.hpp
-  maxConsensus.hpp
+  LineKernel.hpp
+  lineTestGenerator.hpp
+  PointFittingKernel.hpp
+  PointFittingRansacKernel.hpp
+  ISolver.hpp
+  IRansacKernel.hpp
+  Ransac.hpp 
+  ACRansac.hpp
+  LORansac.hpp
+  ransacTools.hpp
+  randSampling.hpp
   leastMedianOfSquares.hpp
   ScoreEvaluator.hpp
+  maxConsensus.hpp
 )
 
-alicevision_add_interface(aliceVision_robustEstimation
-  SOURCES ${robustEstimation_files_headers}
-  LINKS
-    aliceVision_camera
-    aliceVision_feature
-    aliceVision_matching
+# Sources
+set(robustEstimation_files_sources
+  conditioning.cpp
+)
+
+alicevision_add_library(aliceVision_robustEstimation
+  SOURCES ${robustEstimation_files_headers} ${robustEstimation_files_sources}
+  PUBLIC_LINKS
     aliceVision_numeric
     aliceVision_system
 )

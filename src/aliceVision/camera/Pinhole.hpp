@@ -8,10 +8,11 @@
 #pragma once
 
 #include <aliceVision/numeric/numeric.hpp>
+#include <aliceVision/numeric/projection.hpp>
+#include <aliceVision/geometry/Pose3.hpp>
 #include <aliceVision/camera/cameraCommon.hpp>
 #include <aliceVision/camera/IntrinsicsScaleOffsetDisto.hpp>
 #include <aliceVision/geometry/Pose3.hpp>
-#include <aliceVision/multiview/projection.hpp>
 
 #include <vector>
 #include <sstream>
@@ -204,7 +205,7 @@ public:
     K(0, 2) = _offset(0);
     K(1, 2) = _offset(1);
 
-    P_From_KRt(K, pose.rotation(), pose.translation(), &P);
+    P_from_KRt(K, pose.rotation(), pose.translation(), &P);
     return P;
   }
 

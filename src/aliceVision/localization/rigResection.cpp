@@ -5,8 +5,9 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "rigResection.hpp"
-#include "aliceVision/robustEstimation/ACRansacKernelAdaptator.hpp"
 #include <aliceVision/system/Logger.hpp>
+#include <aliceVision/matching/supportEstimation.hpp>
+
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_OPENGV)
 #include <Eigen/Eigen>
 #include <opengv/absolute_pose/methods.hpp>
@@ -200,7 +201,7 @@ EstimationStatus rigResection(const std::vector<Mat> &pts2d,
   if(descTypesPerCamera)
   {
     // Check if estimation has strong support
-    hasStrongSupport = robustEstimation::hasStrongSupport(inliers, *descTypesPerCamera, 3);
+    hasStrongSupport = matching::hasStrongSupport(inliers, *descTypesPerCamera, 3);
   }
   return EstimationStatus(true, hasStrongSupport);
 }

@@ -10,8 +10,8 @@
 #include "aliceVision/numeric/numeric.hpp"
 #include "aliceVision/config.hpp"
 
-#include "aliceVision/multiview/projection.hpp"
-#include "aliceVision/multiview/conditioning.hpp"
+#include "aliceVision/numeric/projection.hpp"
+#include "aliceVision/robustEstimation/conditioning.hpp"
 #include "aliceVision/multiview/triangulation/Triangulation.hpp"
 
 // Linear programming solver(s)
@@ -35,16 +35,16 @@ struct TrifocalTensorModel {
   static double Error(const TrifocalTensorModel & t, const Vec2 & pt1, const Vec2 & pt2, const Vec2 & pt3)
   {
     // Triangulate
-    Triangulation triangulationObj;
+    multiview::Triangulation triangulationObj;
     triangulationObj.add(t.P1, pt1);
     triangulationObj.add(t.P2, pt2);
     triangulationObj.add(t.P3, pt3);
     const Vec3 X = triangulationObj.compute();
 
     // Return the maximum observed reprojection error
-    const double pt1ReProj = (Project(t.P1, X) - pt1).squaredNorm();
-    const double pt2ReProj = (Project(t.P2, X) - pt2).squaredNorm();
-    const double pt3ReProj = (Project(t.P3, X) - pt3).squaredNorm();
+    const double pt1ReProj = (project(t.P1, X) - pt1).squaredNorm();
+    const double pt2ReProj = (project(t.P2, X) - pt2).squaredNorm();
+    const double pt3ReProj = (project(t.P3, X) - pt3).squaredNorm();
 
     return std::max(pt1ReProj, std::max(pt2ReProj,pt3ReProj));
   }
@@ -59,15 +59,31 @@ namespace aliceVision{
 using namespace aliceVision::trifocal::kernel;
 
 /// Solve the translations and the structure of a view-triplet that have known rotations
-struct translations_Triplet_Solver {
-  enum { MINIMUM_SAMPLES = 4 };
-  enum { MAX_MODELS = 1 };
+struct translations_Triplet_Solver
+{
+  /**
+   * @brief Return the minimum number of required samples
+   * @return minimum number of required samples
+   */
+  std::size_t getMinimumNbRequiredSamples() const
+  {
+    return 4;
+  }
+
+  /**
+   * @brief Return the maximum number of models
+   * @return maximum number of models
+   */
+   std::size_t getMaximumNbModels() const
+   {
+    return 1;
+   }
 
   /// Solve the computation of the "tensor".
-  static void Solve(
+  void solve(
     const Mat &pt0, const Mat & pt1, const Mat & pt2,
-    const std::vector<Mat3> & vec_KR, std::vector<TrifocalTensorModel> *P,
-    const double ThresholdUpperBound)
+    const std::vector<Mat3> & vec_KR, std::vector<TrifocalTensorModel> &P,
+    const double ThresholdUpperBound) const
   {
     //Build the megaMatMatrix
     const int n_obs = pt0.cols();
@@ -82,7 +98,7 @@ struct translations_Triplet_Solver {
       }
     }
     //-- Solve the LInfinity translation and structure from Rotation and points data.
-    std::vector<double> vec_solution((3 + MINIMUM_SAMPLES)*3);
+    std::vector<double> vec_solution((3 + getMinimumNbRequiredSamples())*3);
 
     using namespace aliceVision::lInfinityCV;
 
@@ -111,12 +127,12 @@ struct translations_Triplet_Solver {
       PTemp.P2 = HStack(vec_KR[1], vec_tis[1]);
       PTemp.P3 = HStack(vec_KR[2], vec_tis[2]);
 
-      P->push_back(PTemp);
+      P.push_back(PTemp);
     }
   }
 
   // Compute the residual of reprojections
-  static double Error(
+  static double error(
     const TrifocalTensorModel & Tensor,
     const Vec2 & pt0, const Vec2 & pt1, const Vec2 & pt2)
   {
