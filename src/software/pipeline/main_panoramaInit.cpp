@@ -819,11 +819,12 @@ int main(int argc, char * argv[])
     ALICEVISION_LOG_INFO(equidistantCount << " equidistant camera intrinsics have been updated");
   }
 
-  if (!sfmDataIO::Save(sfmData, sfmOutputDataFilename, sfmDataIO::ESfMData(sfmDataIO::ALL)))
+  ALICEVISION_LOG_INFO("Export SfM: " << sfmOutputDataFilename);
+  if(!sfmDataIO::Save(sfmData, sfmOutputDataFilename, sfmDataIO::ESfMData(sfmDataIO::ALL)))
   {
     ALICEVISION_LOG_ERROR("The output SfMData file '" << sfmOutputDataFilename << "' cannot be write.");
     return EXIT_FAILURE;
   }
 
-  return 0;
+  return EXIT_SUCCESS;
 }

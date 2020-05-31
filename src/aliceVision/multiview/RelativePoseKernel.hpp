@@ -193,7 +193,7 @@ public:
         : _x1(x1.rows(), x1.cols())
         , _x2(x2.rows(), x2.cols())
         , KernelBase(_x1, _x2)
-        , _logalpha0_(M_PI)
+        , _logalpha0(M_PI)
     {
         assert(3 == x1.rows());
         assert(x1.rows() == x2.rows());
