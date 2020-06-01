@@ -1,7 +1,7 @@
 #include <boost/filesystem.hpp>
 
 #define BOOST_TEST_MODULE hdr
-#include <boost/test/included/unit_test.hpp>
+#include <boost/test/unit_test.hpp>
 #include <boost/filesystem.hpp>
 
 #include <aliceVision/image/all.hpp>
