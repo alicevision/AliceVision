@@ -413,7 +413,7 @@ bool ReconstructionEngine_panorama::Adjust()
   options.useParametersOrdering = false;
   options.summary = true;
   
-  /*Minimize only rotation first*/
+  // Start bundle with rotation only
   BundleAdjustmentPanoramaCeres BA(options);
   bool success = BA.adjust(_sfmData, BundleAdjustmentPanoramaCeres::REFINE_ROTATION);
   if(success)
@@ -423,20 +423,37 @@ bool ReconstructionEngine_panorama::Adjust()
   else
   {
     ALICEVISION_LOG_INFO("Failed to refine the rotations only.");
+    return false;
   }
 
-  /*Minimize All then*/
-  success = BA.adjust(_sfmData, BundleAdjustmentPanoramaCeres::REFINE_ROTATION | BundleAdjustmentPanoramaCeres::REFINE_INTRINSICS_FOCAL | BundleAdjustmentPanoramaCeres::REFINE_INTRINSICS_OPTICALCENTER_ALWAYS | BundleAdjustmentPanoramaCeres::REFINE_INTRINSICS_DISTORTION);
+  success = BA.adjust(_sfmData, BundleAdjustmentPanoramaCeres::REFINE_ROTATION |
+                                BundleAdjustmentPanoramaCeres::REFINE_INTRINSICS_FOCAL);
   if(success)
   {
-    ALICEVISION_LOG_INFO("Bundle successfully refined.");
+    ALICEVISION_LOG_INFO("Bundle successfully refined: Rotation + Focal");
   }
   else
   {
-    ALICEVISION_LOG_INFO("Failed to refine Everything.");
+    ALICEVISION_LOG_INFO("Failed to refine: Rotation + Focal");
+      return false;
   }
 
-  return success;
+  // Minimize All
+  success = BA.adjust(_sfmData, BundleAdjustmentPanoramaCeres::REFINE_ROTATION |
+                                BundleAdjustmentPanoramaCeres::REFINE_INTRINSICS_FOCAL |
+                                BundleAdjustmentPanoramaCeres::REFINE_INTRINSICS_DISTORTION |
+                                BundleAdjustmentPanoramaCeres::REFINE_INTRINSICS_OPTICALCENTER_ALWAYS);
+  if(success)
+  {
+      ALICEVISION_LOG_INFO("Bundle successfully refined: Rotation + Focal + Optical Center + Distortion");
+  }
+  else
+  {
+      ALICEVISION_LOG_INFO("Failed to refine: Rotation + Focal + Distortion + Optical Center");
+      return false;
+  }
+
+  return true;
 }
 
 void ReconstructionEngine_panorama::Compute_Relative_Rotations(rotationAveraging::RelativeRotations& vec_relatives_R)
