@@ -592,12 +592,12 @@ else()
 # Add sources
 add_subdirectory(src)
 
-endif()
-
 install(
-    FILES LICENSE-MPL2.md LICENSE-MIT-libmv.md COPYING.md CONTRIBUTORS.md
-    DESTINATION ${CMAKE_INSTALL_DATADIR}/aliceVision
-    )
+        FILES LICENSE-MPL2.md LICENSE-MIT-libmv.md COPYING.md CONTRIBUTORS.md
+        DESTINATION ${CMAKE_INSTALL_DATADIR}/aliceVision
+)
+
+endif()
 
 # Bundle target (see src/cmake/MakeBundle.cmake)
 # Note: require that the install rule has been executed
