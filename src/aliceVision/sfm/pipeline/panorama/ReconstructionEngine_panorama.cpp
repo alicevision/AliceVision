@@ -76,7 +76,7 @@ bool robustRelativeRotation_fromE(
   relativePose_info.essential_matrix = model.getMatrix();
   relativePose_info.found_residual_precision = acRansacOut.first;
 
-  if (relativePose_info.vec_inliers.size() < kernel.getMinimumNbRequiredSamples() * ALICEVISION_MINIMUM_SAMPLES_COEF)
+  if (relativePose_info.vec_inliers.size() < kernel.getMinimumNbRequiredSamples() * 2.5); // consider ALICEVISION_MINIMUM_SAMPLES_COEF
   {
     ALICEVISION_LOG_INFO("robustRelativePose: no sufficient coverage (the model does not support enough samples): " << relativePose_info.vec_inliers.size());
     return false; // no sufficient coverage (the model does not support enough samples)
@@ -153,7 +153,7 @@ aliceVision::EstimationStatus robustHomographyEstimationAC(const Mat2X &x1,
 
     const bool valid{!vec_inliers.empty()};
 
-    const bool hasStrongSupport{vec_inliers.size() > kernel.getMinimumNbRequiredSamples() * ALICEVISION_MINIMUM_SAMPLES_COEF};
+    const bool hasStrongSupport{vec_inliers.size() > kernel.getMinimumNbRequiredSamples() * 2.5}; // consider ALICEVISION_MINIMUM_SAMPLES_COEF
 
     return {valid, hasStrongSupport};
 }
@@ -170,12 +170,15 @@ aliceVision::EstimationStatus robustHomographyEstimationAC(const Mat2X &x1,
  */
 aliceVision::EstimationStatus robustRotationEstimationAC(const Mat3X &x1, const Mat3X &x2, const std::pair<std::size_t, std::size_t> &imgSize1, const std::pair<std::size_t, std::size_t> &imgSize2,  Mat3 &R, std::vector<std::size_t> &vec_inliers)
 {
-    using KernelType = multiview::RelativePoseKernel<multiview::relativePose::Rotation3PSolver,
-                                                     multiview::relativePose::RotationError,
-                                                     multiview::UnnormalizerI,
-                                                     robustEstimation::Mat3Model>;
+    // using KernelType = multiview::RelativePoseKernel<
+    using KernelType = multiview::RelativePoseSphericalKernel<
+                           multiview::relativePose::Rotation3PSolver,
+                           multiview::relativePose::RotationError,
+                           multiview::UnnormalizerI,
+                           robustEstimation::Mat3Model>;
 
-    KernelType kernel(x1, imgSize1.first, imgSize1.second, x2, imgSize2.first, imgSize2.second, false);  // configure as point to point error model.
+    // KernelType kernel(x1, imgSize1.first, imgSize1.second, x2, imgSize2.first, imgSize2.second, false);  // configure as point to point error model.
+    KernelType kernel(x1, x2); // configure as point to point error model.
 
     robustEstimation::Mat3Model model;
     /*const std::pair<double, double> ACRansacOut =*/robustEstimation::ACRANSAC(kernel, vec_inliers, 1024, &model, std::numeric_limits<double>::infinity());
@@ -183,7 +186,7 @@ aliceVision::EstimationStatus robustRotationEstimationAC(const Mat3X &x1, const 
 
     const bool valid{!vec_inliers.empty()};
 
-    const bool hasStrongSupport{vec_inliers.size() > kernel.getMinimumNbRequiredSamples() * ALICEVISION_MINIMUM_SAMPLES_COEF};
+    const bool hasStrongSupport{vec_inliers.size() > kernel.getMinimumNbRequiredSamples() * 2.5}; // consider ALICEVISION_MINIMUM_SAMPLES_COEF
 
     return {valid, hasStrongSupport};
 }
@@ -426,6 +429,7 @@ bool ReconstructionEngine_panorama::Adjust()
     return false;
   }
 
+  /*
   success = BA.adjust(_sfmData, BundleAdjustmentPanoramaCeres::REFINE_ROTATION |
                                 BundleAdjustmentPanoramaCeres::REFINE_INTRINSICS_FOCAL);
   if(success)
@@ -437,6 +441,7 @@ bool ReconstructionEngine_panorama::Adjust()
     ALICEVISION_LOG_INFO("Failed to refine: Rotation + Focal");
       return false;
   }
+  */
 
   // Minimize All
   success = BA.adjust(_sfmData, BundleAdjustmentPanoramaCeres::REFINE_ROTATION |
