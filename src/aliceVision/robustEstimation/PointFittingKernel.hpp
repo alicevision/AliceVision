@@ -127,9 +127,9 @@ protected:
   /// right corresponding data
   const Mat& _x2;
   /// two view solver
-  const SolverT _kernelSolver = SolverT();
+  const SolverT _kernelSolver{};
   /// solver error estimation
-  const ErrorT _errorEstimator = ErrorT();
+  const ErrorT _errorEstimator{};
 };
 
 template<typename SolverT_, typename ErrorT_, typename UnnormalizerT_, typename ModelT_ = Mat3Model>

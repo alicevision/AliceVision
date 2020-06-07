@@ -97,7 +97,7 @@ public:
       const auto idx = inliers[sample];
       weights[sample] = KernelBase::_errorEstimator.error(model, KernelBase::_x1.col(idx), KernelBase::_x2.col(idx));
       // avoid division by zero
-      weights[sample] = 1/std::pow(std::max(eps, weights[sample]), 2);
+      weights[sample] = 1.0 / std::pow(std::max(eps, weights[sample]), 2);
     }
   }
 
@@ -149,7 +149,7 @@ public:
   virtual Mat3 normalizer2() const = 0;
 
 private:
-  const SolverLsT_ _solverLs = SolverLsT_();
+  const SolverLsT_ _solverLs{};
 };
 
 } // namespace robustEstimation
