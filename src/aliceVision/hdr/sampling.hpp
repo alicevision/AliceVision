@@ -26,7 +26,6 @@ struct ImageSample
     std::vector<PixelDescription> descriptions;
 
     ImageSample() = default;
-    ImageSample(int val) {};
 };
 
 bool extractSamples(std::vector<ImageSample>& out_samples, const std::vector<std::string> & imagePaths, const std::vector<float>& times, const size_t channelQuantization);

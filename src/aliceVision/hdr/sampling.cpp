@@ -17,16 +17,20 @@ namespace hdr {
 
 using namespace aliceVision::image;
 
-struct Descriptor {
+struct Descriptor
+{
     float exposure;
     int channel;
     int quantizedValue;
 
-    bool operator<(const Descriptor &o )  const {
-
-        if (exposure < o.exposure) return true;
-        if (exposure == o.exposure && channel < o.channel) return true;
-        if (exposure == o.exposure && channel == o.channel && quantizedValue < o.quantizedValue) return true;
+    bool operator<(const Descriptor &o )  const
+    {
+        if (exposure < o.exposure)
+            return true;
+        if (exposure == o.exposure && channel < o.channel)
+            return true;
+        if (exposure == o.exposure && channel == o.channel && quantizedValue < o.quantizedValue)
+            return true;
 
         return false;
     }
@@ -64,8 +68,8 @@ void integral(image::Image<image::RGBfColor> & dest, image::Image<image::RGBfCol
     }
 }
 
-void square(image::Image<image::RGBfColor> & dest, image::Image<image::RGBfColor> & source) {
-
+void square(image::Image<image::RGBfColor> & dest, image::Image<image::RGBfColor> & source)
+{
     dest.resize(source.Width(), source.Height());
 
     for (int i = 0; i < source.Height(); i++) {

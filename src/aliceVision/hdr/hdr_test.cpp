@@ -240,9 +240,9 @@ BOOST_AUTO_TEST_CASE(hdr_grossberg)
 
     hdr::GrossbergCalibrate calib(9);
     hdr::rgbCurve response(quantization);
-    const size_t nbPoints = 400000;
     // TODO: fix "Error in cholesky decomposition"
     /*
+    const size_t nbPoints = 400000;
     calib.process(all_paths, quantization, exposures, nbPoints, false, response);
 
     for(int imageId = 0; imageId < paths.size() - 1; imageId++)

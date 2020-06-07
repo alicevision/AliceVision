@@ -732,7 +732,6 @@ bool GlobalSfMTranslationAveragingSolver::Estimate_T_triplet(
       const View * view = sfm_data.getViews().at(viewIndex).get();
       const camera::IntrinsicBase *  cam = sfm_data.getIntrinsics().find(view->getIntrinsicId())->second.get();
       const camera::Pinhole * intrinsicPtr = dynamic_cast< const camera::Pinhole * >(cam);
-      const Vec2 principal_point = intrinsicPtr->getPrincipalPoint();
 
       // get normalized feature
       const feature::PointFeature & pt = normalizedFeaturesPerView.getFeatures(viewIndex)[featIndex];
