@@ -555,26 +555,30 @@ void ReconstructionEngine_panorama::Compute_Relative_Rotations(rotationAveraging
       std::shared_ptr<camera::EquiDistant> cam_J_equidistant = std::dynamic_pointer_cast<camera::EquiDistant>(cam_J);
 
       bool useSpherical = false;
-      if (cam_I_equidistant && cam_J_equidistant) {
+      if (cam_I_equidistant && cam_J_equidistant)
+      {
         useSpherical = true;
       }
 
-      if (_eRelativeRotationMethod == RELATIVE_ROTATION_FROM_R) {
+      if (_eRelativeRotationMethod == RELATIVE_ROTATION_FROM_R)
+      {
         useSpherical = true;
       }
     
-      /* Build a list of pairs in meters*/
+      // Build a list of pairs in meters
       const matching::MatchesPerDescType & matchesPerDesc = _pairwiseMatches->at(pairIterator);
       const std::size_t nbBearing = matchesPerDesc.getNbAllMatches();
       std::size_t iBearing = 0;
 
       Mat x1, x2;
       
-      if (useSpherical) {
+      if (useSpherical)
+      {
         x1 = Mat(3, nbBearing);
         x2 = Mat(3, nbBearing);
       }
-      else {
+      else
+      {
         x1 = Mat(2, nbBearing);
         x2 = Mat(2, nbBearing);
       }
@@ -596,13 +600,13 @@ void ReconstructionEngine_panorama::Compute_Relative_Rotations(rotationAveraging
           const Vec3 bearingVector_I = cam_I->toUnitSphere(cam_I->removeDistortion(cam_I->ima2cam(feat_I.coords().cast<double>())));
           const Vec3 bearingVector_J = cam_J->toUnitSphere(cam_J->removeDistortion(cam_J->ima2cam(feat_J.coords().cast<double>())));
 
-          
-
-          if (useSpherical) {
+          if (useSpherical)
+          {
             x1.col(iBearing) = bearingVector_I;
             x2.col(iBearing++) = bearingVector_J;
           }
-          else {
+          else
+          {
             x1.col(iBearing) = bearingVector_I.head(2) / bearingVector_I(2);
             x2.col(iBearing++) = bearingVector_J.head(2) / bearingVector_J(2);
           }
@@ -673,7 +677,8 @@ void ReconstructionEngine_panorama::Compute_Relative_Rotations(rotationAveraging
       If an existing prior on rotation exists, then make sure the found detected rotation is not stupid
       */
       double weight = relativePose_info.vec_inliers.size();
-      if (_sfmData.isPoseAndIntrinsicDefined(view_I) && _sfmData.isPoseAndIntrinsicDefined(view_J)) {
+      if (_sfmData.isPoseAndIntrinsicDefined(view_I) && _sfmData.isPoseAndIntrinsicDefined(view_J))
+      {
         CameraPose iTo = _sfmData.getAbsolutePose(view_I->getPoseId());
         CameraPose jTo = _sfmData.getAbsolutePose(view_J->getPoseId());
         Eigen::Matrix3d iRo = iTo.getTransform().rotation();
@@ -684,25 +689,29 @@ void ReconstructionEngine_panorama::Compute_Relative_Rotations(rotationAveraging
 
         Eigen::AngleAxisd checker;
         checker.fromRotationMatrix(jRi_est * jRi.transpose());
-        if (std::abs(radianToDegree(checker.angle())) > 5) {
+        if (std::abs(radianToDegree(checker.angle())) > 5)
+        {
           relativePose_info.relativePose = geometry::Pose3(jRi, Vec3::Zero());
           relativePose_info.vec_inliers.clear();
           weight = 1.0;
         }
       }
 
-      /*Add connection to find best constraints*/
-      if (connection_size.find(I) == connection_size.end()) {
+      // Add connection to find best constraints
+      if (connection_size.find(I) == connection_size.end())
+      {
         connection_size[I] = 0;
       }
       connection_size[I] += relativePose_info.vec_inliers.size();
-      if (connection_size.find(J) == connection_size.end()) {
+      if (connection_size.find(J) == connection_size.end())
+      {
         connection_size[J] = 0;
       }
       connection_size[J] += relativePose_info.vec_inliers.size();
 
-      /*Sort all inliers by increasing ids*/
-      if (relativePose_info.vec_inliers.size() > 0) {
+      // Sort all inliers by increasing ids
+      if (relativePose_info.vec_inliers.size() > 0)
+      {
         std::sort(relativePose_info.vec_inliers.begin(), relativePose_info.vec_inliers.end());
 
         size_t index = 0;
@@ -715,8 +724,8 @@ void ReconstructionEngine_panorama::Compute_Relative_Rotations(rotationAveraging
           for (const auto & match : matches)
           {
             size_t next_inlier = relativePose_info.vec_inliers[index_inlier];
-            if (index == next_inlier) {
-              
+            if (index == next_inlier)
+            {
               Vec2 pt1 = _featuresPerView->getFeatures(I, descType)[match._i].coords().cast<double>();
               Vec2 pt2 = _featuresPerView->getFeatures(J, descType)[match._j].coords().cast<double>();
 
@@ -726,10 +735,10 @@ void ReconstructionEngine_panorama::Compute_Relative_Rotations(rotationAveraging
               sfm::Constraint2D constraint(I, sfm::Observation(pt1, 0, pI.scale()), J, sfm::Observation(pt2, 0, pJ.scale()));
               constraints2d.push_back(constraint);
 
-               index_inlier++;
+               ++index_inlier;
             }
 
-            index++;
+            ++index;
           }
         }
       }
@@ -743,8 +752,7 @@ void ReconstructionEngine_panorama::Compute_Relative_Rotations(rotationAveraging
     }
   } // for all relative pose
 
- 
-  /*Debug result*/
+  // Debug result
   ALICEVISION_LOG_DEBUG("Compute_Relative_Rotations: vec_relatives_R.size(): " << vec_relatives_R.size());
   for(rotationAveraging::RelativeRotation& rotation: vec_relatives_R)
   {
