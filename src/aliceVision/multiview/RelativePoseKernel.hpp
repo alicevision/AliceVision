@@ -182,7 +182,7 @@ private:
  * that depends of the error model (point to line, or point to point)
  * This kernel adapter is working for affine, homography, fundamental matrix estimation.
  */
-template <typename SolverT_, typename ErrorT_, typename UnnormalizerT_, typename ModelT_ = robustEstimation::Mat3Model,
+template <typename SolverT_, typename ErrorT_, typename ModelT_ = robustEstimation::Mat3Model,
           typename SolverLsT_ = robustEstimation::UndefinedSolver<ModelT_>>
 class RelativePoseSphericalKernel: public robustEstimation::PointFittingRansacKernel<SolverT_, ErrorT_, ModelT_, SolverLsT_>
 {
@@ -202,6 +202,7 @@ public:
 
     void unnormalize(ModelT_& model) const override
     {
+        // do nothing, no normalization in this case
     }
 
     double logalpha0() const override { return _logalpha0; }
@@ -215,7 +216,7 @@ protected:
     /// Normalized input data
     Mat _x1, _x2;
     /// Alpha0 is used to make the error adaptive to the image size
-    double _logalpha0;
+    const double _logalpha0;
 };
 
 

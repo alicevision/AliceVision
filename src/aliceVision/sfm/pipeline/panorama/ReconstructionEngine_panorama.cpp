@@ -174,7 +174,6 @@ aliceVision::EstimationStatus robustRotationEstimationAC(const Mat3X &x1, const 
     using KernelType = multiview::RelativePoseSphericalKernel<
                            multiview::relativePose::Rotation3PSolver,
                            multiview::relativePose::RotationError,
-                           multiview::UnnormalizerI,
                            robustEstimation::Mat3Model>;
 
     // KernelType kernel(x1, imgSize1.first, imgSize1.second, x2, imgSize2.first, imgSize2.second, false);  // configure as point to point error model.

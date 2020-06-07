@@ -194,7 +194,6 @@ struct GeometricFilterMatrix_F_AC : public GeometricFilterMatrix
       using KernelT = multiview::RelativePoseSphericalKernel<
                           multiview::relativePose::Fundamental7PSphericalSolver,
                           multiview::relativePose::EpipolarSphericalDistanceError,
-                          multiview::UnnormalizerT,
                           robustEstimation::Mat3Model>;
 
       // TODO FACA: move normalization into the kernel?
