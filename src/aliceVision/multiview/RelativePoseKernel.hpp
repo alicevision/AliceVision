@@ -38,9 +38,9 @@ public:
   RelativePoseKernel(const Mat& x1, int w1, int h1,
                      const Mat& x2, int w2, int h2,
                      bool pointToLine = true)
-    : _x1(x1.rows(), x1.cols())
-    , _x2(x2.rows(), x2.cols())
-    , KernelBase(_x1, _x2)
+    : _x1n(x1.rows(), x1.cols())
+    , _x2n(x2.rows(), x2.cols())
+    , KernelBase(_x1n, _x2n)  // provide a reference to the internal var members
     , _logalpha0(0.0)
     , _N1(3, 3)
     , _N2(3, 3)
@@ -50,8 +50,8 @@ public:
     assert(x1.rows() == x2.rows());
     assert(x1.cols() == x2.cols());
 
-    robustEstimation::normalizePointsFromImageSize(x1, &_x1, &_N1, w1, h1);
-    robustEstimation::normalizePointsFromImageSize(x2, &_x2, &_N2, w2, h2);
+    robustEstimation::normalizePointsFromImageSize(x1, &_x1n, &_N1, w1, h1);
+    robustEstimation::normalizePointsFromImageSize(x2, &_x2n, &_N2, w2, h2);
 
     // logAlpha0 is used to make error data scale invariant
     if(pointToLine)
@@ -84,7 +84,7 @@ public:
 
 protected:
   /// Normalized input data
-  Mat _x1, _x2;
+  Mat _x1n, _x2n;
   /// Matrix used to normalize data
   Mat3 _N1, _N2;
   /// Alpha0 is used to make the error adaptive to the image size
