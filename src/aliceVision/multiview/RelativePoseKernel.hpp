@@ -190,9 +190,7 @@ public:
     using KernelBase = robustEstimation::PointFittingRansacKernel<SolverT_, ErrorT_, ModelT_, SolverLsT_>;
 
     RelativePoseSphericalKernel(const Mat& x1, const Mat& x2)
-        : _x1(x1.rows(), x1.cols())
-        , _x2(x2.rows(), x2.cols())
-        , KernelBase(_x1, _x2)
+        : KernelBase(x1, x2)  // provide a reference to the input matrices
         , _logalpha0(M_PI)
     {
         assert(3 == x1.rows());
@@ -213,8 +211,6 @@ public:
     double unormalizeError(double val) const override { return sqrt(val); }
 
 protected:
-    /// Normalized input data
-    Mat _x1, _x2;
     /// Alpha0 is used to make the error adaptive to the image size
     const double _logalpha0;
 };
