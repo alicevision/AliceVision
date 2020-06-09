@@ -67,7 +67,7 @@ std::istream& operator>>(std::istream& in, EImageDescriberPreset& p);
 class ImageDescriber
 {
 public:
-  ImageDescriber() {}
+  ImageDescriber() = default;
 
   virtual ~ImageDescriber() {}
 
