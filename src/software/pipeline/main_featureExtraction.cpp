@@ -61,6 +61,8 @@ class FeatureExtractor
       , outputBasename(fs::path(fs::path(outputFolder) / fs::path(std::to_string(view.getViewId()))).string())
     {}
 
+    ~ViewJob() = default;
+
     bool useGPU() const
     {
       return !gpuImageDescriberIndexes.empty();
@@ -203,6 +205,8 @@ public:
         computeViewJob(job, true);
     }
   }
+
+  ~FeatureExtractor() = default;
 
 private:
 
