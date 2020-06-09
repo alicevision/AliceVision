@@ -26,6 +26,63 @@ using namespace aliceVision;
 namespace po = boost::program_options;
 namespace fs = boost::filesystem;
 
+void processImage(image::Image<image::RGBfColor>& image, float downscale, float contrast, int medianFilter, int sharpenWidth, float sharpenContrast, float sharpenThreshold)
+{
+    unsigned int nchannels = 3;
+
+    if(downscale != 1.0f)
+    {
+        const unsigned int w = image.Width();
+        const unsigned int h = image.Height();
+        const unsigned int nw = (unsigned int)(floor(float(w) / downscale));
+        const unsigned int nh = (unsigned int)(floor(float(h) / downscale));
+
+        image::Image<image::RGBfColor> rescaled(nw, nh);
+
+        const oiio::ImageSpec imageSpecResized(nw, nh, 3, oiio::TypeDesc::FLOAT);
+        const oiio::ImageSpec imageSpecOrigin(w, h, 3, oiio::TypeDesc::FLOAT);
+        oiio::ImageBuf bufferOrigin(imageSpecOrigin, image.data());
+        oiio::ImageBuf bufferResized(imageSpecResized, rescaled.data());
+        oiio::ImageBufAlgo::resample(bufferResized, bufferOrigin);
+
+        const oiio::ImageBuf inBuf(oiio::ImageSpec(w, h, nchannels, oiio::TypeDesc::FLOAT), image.data());
+        oiio::ImageBuf outBuf(oiio::ImageSpec(nw, nh, nchannels, oiio::TypeDesc::FLOAT), rescaled.data());
+
+        oiio::ImageBufAlgo::resize(outBuf, inBuf);
+
+        image.swap(rescaled);
+    }
+    
+    #if OIIO_VERSION >= (10000 * 2 + 100 * 0 + 0) // OIIO_VERSION >= 2.0.0
+    if(contrast != 1.0f)
+    {
+        image::Image<image::RGBfColor> filtered(image.Width(), image.Height());
+        const oiio::ImageBuf inBuf(oiio::ImageSpec(image.Width(), image.Height(), nchannels, oiio::TypeDesc::FLOAT), image.data());
+        oiio::ImageBuf outBuf(oiio::ImageSpec(image.Width(), image.Height(), nchannels, oiio::TypeDesc::FLOAT), filtered.data());
+        oiio::ImageBufAlgo::contrast_remap(outBuf, inBuf, 0.0f, 1.0f, 0.0f, 1.0f, contrast);
+
+        image.swap(filtered);
+    }
+    #endif
+    if(medianFilter >= 3)
+    {
+        image::Image<image::RGBfColor> filtered(image.Width(), image.Height());
+        const oiio::ImageBuf inBuf(oiio::ImageSpec(image.Width(), image.Height(), nchannels, oiio::TypeDesc::FLOAT), image.data());
+        oiio::ImageBuf outBuf(oiio::ImageSpec(image.Width(), image.Height(), nchannels, oiio::TypeDesc::FLOAT), filtered.data());
+        oiio::ImageBufAlgo::median_filter(outBuf, inBuf, medianFilter);
+
+        image.swap(filtered);
+    }
+    if(sharpenWidth >= 3.f && sharpenContrast > 0.f)
+    {
+        image::Image<image::RGBfColor> filtered(image.Width(), image.Height());
+        const oiio::ImageBuf inBuf(oiio::ImageSpec(image.Width(), image.Height(), nchannels, oiio::TypeDesc::FLOAT), image.data());
+        oiio::ImageBuf outBuf(oiio::ImageSpec(image.Width(), image.Height(), nchannels, oiio::TypeDesc::FLOAT), filtered.data());
+        oiio::ImageBufAlgo::unsharp_mask(outBuf, inBuf, "gaussian", sharpenWidth, sharpenContrast, sharpenThreshold);
+
+        image.swap(filtered);
+    }
+}
 
 int aliceVision_main(int argc, char * argv[])
 {
@@ -151,31 +208,8 @@ int aliceVision_main(int argc, char * argv[])
         image::readImage(view.getImagePath(), image, image::EImageColorSpace::LINEAR);
         oiio::ParamValueList metadata = image::readImageMetadata(view.getImagePath());
 
-        unsigned int nchannels = 3;
-
-        if (downscale != 1.0f)
-        {
-            const unsigned int w = view.getWidth();
-            const unsigned int h = view.getHeight();
-            const unsigned int nw = (unsigned int)(floor(float(w) / downscale));
-            const unsigned int nh = (unsigned int)(floor(float(h) / downscale));
-
-            image::Image<image::RGBfColor> rescaled(nw, nh);
-
-            const oiio::ImageSpec imageSpecResized(nw, nh, 3, oiio::TypeDesc::FLOAT);
-            const oiio::ImageSpec imageSpecOrigin(w, h, 3, oiio::TypeDesc::FLOAT);
-            oiio::ImageBuf bufferOrigin(imageSpecOrigin, image.data());
-            oiio::ImageBuf bufferResized(imageSpecResized, rescaled.data());
-            oiio::ImageBufAlgo::resample(bufferResized, bufferOrigin);
-
-            const oiio::ImageBuf inBuf(oiio::ImageSpec(w, h, nchannels, oiio::TypeDesc::FLOAT), image.data());
-            oiio::ImageBuf outBuf(oiio::ImageSpec(nw, nh, nchannels, oiio::TypeDesc::FLOAT), rescaled.data());
-
-            oiio::ImageBufAlgo::resize(outBuf, inBuf);
-
-            image.swap(rescaled);
-        }
-        if (exposureCompensation)
+        // if exposureCompensation is needed for sfmData fIles
+        if(exposureCompensation)
         {
             const float medianCameraExposure = sfmData.getMedianCameraExposureSetting();
             const float cameraExposure = view.getCameraExposureSetting();
@@ -187,34 +221,9 @@ int aliceVision_main(int argc, char * argv[])
             for (int i = 0; i < image.Width() * image.Height(); ++i)
                 image(i) = image(i) * exposureCompensation;
         }
-        if (contrast != 1.0f)
-        {
-    #if OIIO_VERSION >= (10000 * 2 + 100 * 0 + 0) // OIIO_VERSION >= 2.0.0
-            image::Image<image::RGBfColor> filtered(image.Width(), image.Height());
-            const oiio::ImageBuf inBuf(oiio::ImageSpec(image.Width(), image.Height(), nchannels, oiio::TypeDesc::FLOAT), image.data());
-            oiio::ImageBuf outBuf(oiio::ImageSpec(image.Width(), image.Height(), nchannels, oiio::TypeDesc::FLOAT), filtered.data());
-            oiio::ImageBufAlgo::contrast_remap(outBuf, inBuf, 0.0f, 1.0f, 0.0f, 1.0f, contrast);
-            image.swap(filtered);
-    #endif
-        }
-        if (medianFilter >= 3)
-        {
-            image::Image<image::RGBfColor> filtered(image.Width(), image.Height());
-            const oiio::ImageBuf inBuf(oiio::ImageSpec(image.Width(), image.Height(), nchannels, oiio::TypeDesc::FLOAT), image.data());
-            oiio::ImageBuf outBuf(oiio::ImageSpec(image.Width(), image.Height(), nchannels, oiio::TypeDesc::FLOAT), filtered.data());
-            oiio::ImageBufAlgo::median_filter(outBuf, inBuf, medianFilter);
 
-            image.swap(filtered);
-        }
-        if (sharpenWidth >= 3.f && sharpenContrast > 0.f)
-        {
-            image::Image<image::RGBfColor> filtered(image.Width(), image.Height());
-            const oiio::ImageBuf inBuf(oiio::ImageSpec(image.Width(), image.Height(), nchannels, oiio::TypeDesc::FLOAT), image.data());
-            oiio::ImageBuf outBuf(oiio::ImageSpec(image.Width(), image.Height(), nchannels, oiio::TypeDesc::FLOAT), filtered.data());
-            oiio::ImageBufAlgo::unsharp_mask(outBuf, inBuf, "gaussian", sharpenWidth, sharpenContrast, sharpenThreshold);
-
-            image.swap(filtered);
-        }
+        // Image processing
+        processImage(image, downscale, contrast, medianFilter, sharpenWidth, sharpenContrast, sharpenThreshold);
 
         // Save the image
         const std::string ext = extension.empty() ? fs::path(view.getImagePath()).extension().string() : (std::string(".") + extension);
