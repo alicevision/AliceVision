@@ -81,7 +81,7 @@ void ImageDescriber_SIFT_popSIFT::resetConfiguration()
   cudaDeviceReset();
 
   popsift::cuda::device_prop_t deviceInfo;
-  deviceInfo.set(0, true); // use only the first device & print informations
+  deviceInfo.set(0, true); // use only the first device & print information
 
   // reset configuration
   popsift::Config config;
