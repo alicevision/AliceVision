@@ -69,7 +69,7 @@ class ImageDescriber
 public:
   ImageDescriber() = default;
 
-  virtual ~ImageDescriber() {}
+  virtual ~ImageDescriber() = default;
 
   /**
    * @brief Check if the image describer use CUDA
