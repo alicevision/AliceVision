@@ -94,7 +94,7 @@ public:
    */
   bool describe(const image::Image<float>& image,
                 std::unique_ptr<Regions>& regions,
-                const image::Image<unsigned char>* mask = NULL) override;
+                const image::Image<unsigned char>* mask = nullptr) override;
 
   /**
    * @brief Allocate Regions type depending of the ImageDescriber
