@@ -215,7 +215,7 @@ private:
 
     const auto imageDescriberIndexes = useGPU ? job.gpuImageDescriberIndexes : job.cpuImageDescriberIndexes;
 
-    for(auto& imageDescriberIndex : imageDescriberIndexes)
+    for(const auto & imageDescriberIndex : imageDescriberIndexes)
     {
       const auto& imageDescriber = _imageDescribers.at(imageDescriberIndex);
       const feature::EImageDescriberType imageDescriberType = imageDescriber->getDescriberType();
