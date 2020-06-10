@@ -14,7 +14,7 @@
 
 #include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>
-
+#include <boost/algorithm/string.hpp>
 
 
 // These constants define the current software version.
@@ -183,9 +183,9 @@ int aliceVision_main(int argc, char * argv[])
         return EXIT_FAILURE;
     }
 
-      // Analyze output path
-    const boost::filesystem::path path(sfmOutputDataFilepath);
-    const std::string outputPath = path.parent_path().string();
+    // check if is sfm data file
+    if(fs::path(sfmInputDataFilename).extension().string() == ".abc")
+    {
 
       // Read input
     sfmData::SfMData sfmData;
@@ -227,7 +227,9 @@ int aliceVision_main(int argc, char * argv[])
 
         // Save the image
         const std::string ext = extension.empty() ? fs::path(view.getImagePath()).extension().string() : (std::string(".") + extension);
-        const std::string outputImagePath = (fs::path(outputPath) / (std::to_string(view.getViewId()) + ext)).string();
+
+        // Analyze output path
+        const std::string outputImagePath = (fs::path(sfmOutputDataFilepath).parent_path() / (std::to_string(view.getViewId()) + ext)).string();
 
         ALICEVISION_LOG_INFO("Export image: '" << outputImagePath << "'.");
         image::writeImage(outputImagePath, image, image::EImageColorSpace::AUTO, metadata);
@@ -251,6 +253,67 @@ int aliceVision_main(int argc, char * argv[])
     {
         ALICEVISION_LOG_ERROR("The output SfMData file '" << sfmOutputDataFilepath << "' cannot be written.");
         return EXIT_FAILURE;
+    }
+    }
+    else
+    {
+        const fs::path inputPath(sfmInputDataFilename);
+        std::string inputDirPath;
+        std::vector<std::string> filesNames;
+
+        if(fs::is_regular_file(inputPath))
+        {
+            inputDirPath = inputPath.parent_path().string();
+            filesNames.push_back( inputPath.filename().string() );
+        }
+        else
+        {
+            if(extension == "")
+            {
+                ALICEVISION_LOG_ERROR("The extension files must be specified for the directory path '" << sfmInputDataFilename << "'");
+                return EXIT_FAILURE;
+            }
+
+            inputDirPath = inputPath.string();
+            // Iterate over files in directory
+            for(fs::directory_entry& entry : fs::directory_iterator(inputPath))
+            {
+                // Get lowerCase extension string
+                const std::string ext = boost::to_lower_copy(entry.path().extension().string());
+
+                // If files in input directory match selected extension
+                if(ext == (std::string(".") + extension))
+                {
+                    const std::string entryFileName = entry.path().filename().string();
+                    filesNames.emplace_back(entryFileName);
+                }
+            }
+
+            if(!filesNames.size())
+            {
+                ALICEVISION_LOG_WARNING("Any images was found in this directory '" << inputPath << "' , the file extension ." << extension << " may be incorrect ?");
+            }
+        }
+
+        for(const std::string& fileName : filesNames)
+        {
+            const std::string inputFilePath = (fs::path(inputDirPath) / fileName).string();
+            const std::string outputFilePath = (fs::path(sfmOutputDataFilepath).parent_path() / fileName).string();
+
+            ALICEVISION_LOG_INFO("Process image '" << fileName << "'");
+
+            // Read original image
+            image::Image<image::RGBfColor> image;
+            image::readImage(inputFilePath, image, image::EImageColorSpace::LINEAR);
+            const oiio::ParamValueList metadata = image::readImageMetadata(inputFilePath);
+
+            // Image processing
+            processImage(image, downscale, contrast, medianFilter, sharpenWidth, sharpenContrast, sharpenThreshold);
+
+            // Save the image
+            ALICEVISION_LOG_INFO("Export image: '" << outputFilePath << "'.");
+            image::writeImage(outputFilePath, image, image::EImageColorSpace::AUTO, metadata);
+        }
     }
 
     return 0;
