@@ -16,7 +16,6 @@
 #include <boost/filesystem.hpp>
 #include <boost/algorithm/string.hpp>
 
-
 // These constants define the current software version.
 // They must be updated when the command line is changed.
 #define ALICEVISION_SOFTWARE_VERSION_MAJOR 2
@@ -183,77 +182,75 @@ int aliceVision_main(int argc, char * argv[])
         return EXIT_FAILURE;
     }
 
-    // check if is sfm data file
+    // Check if is sfm data file
     if(fs::path(sfmInputDataFilename).extension().string() == ".abc")
     {
-
-      // Read input
-    sfmData::SfMData sfmData;
-    if(!sfmDataIO::Load(sfmData, sfmInputDataFilename, sfmDataIO::ESfMData(sfmDataIO::ALL)))
-    {
-        ALICEVISION_LOG_ERROR("The input SfMData file '" << sfmInputDataFilename << "' cannot be read.");
-        return EXIT_FAILURE;
-    }
-
-    for (auto & viewIt : sfmData.getViews())
-    {
-        auto& view = *viewIt.second;
-        if(reconstructedViewsOnly && !sfmData.isPoseAndIntrinsicDefined(&view))
-            continue;
-
-        ALICEVISION_LOG_INFO("Process view '" << view.getViewId() << "', url: '" << view.getImagePath() << "'");
-
-        // Read original image
-        image::Image<image::RGBfColor> image;
-        image::readImage(view.getImagePath(), image, image::EImageColorSpace::LINEAR);
-        oiio::ParamValueList metadata = image::readImageMetadata(view.getImagePath());
-
-        // if exposureCompensation is needed for sfmData fIles
-        if(exposureCompensation)
+        sfmData::SfMData sfmData;
+        if(!sfmDataIO::Load(sfmData, sfmInputDataFilename, sfmDataIO::ESfMData(sfmDataIO::ALL)))
         {
-            const float medianCameraExposure = sfmData.getMedianCameraExposureSetting();
-            const float cameraExposure = view.getCameraExposureSetting();
-            const float ev = std::log2(1.0 / cameraExposure);
-            const float exposureCompensation = medianCameraExposure / cameraExposure;
-
-            ALICEVISION_LOG_INFO("View: " << view.getViewId() << ", Ev: " << ev << ", Ev compensation: " << exposureCompensation);
-
-            for (int i = 0; i < image.Width() * image.Height(); ++i)
-                image(i) = image(i) * exposureCompensation;
+            ALICEVISION_LOG_ERROR("The input SfMData file '" << sfmInputDataFilename << "' cannot be read.");
+            return EXIT_FAILURE;
         }
 
-        // Image processing
-        processImage(image, downscale, contrast, medianFilter, sharpenWidth, sharpenContrast, sharpenThreshold);
-
-        // Save the image
-        const std::string ext = extension.empty() ? fs::path(view.getImagePath()).extension().string() : (std::string(".") + extension);
-
-        // Analyze output path
-        const std::string outputImagePath = (fs::path(sfmOutputDataFilepath).parent_path() / (std::to_string(view.getViewId()) + ext)).string();
-
-        ALICEVISION_LOG_INFO("Export image: '" << outputImagePath << "'.");
-        image::writeImage(outputImagePath, image, image::EImageColorSpace::AUTO, metadata);
-
-        // Update view for this modification
-        view.setImagePath(outputImagePath);
-        view.setWidth(image.Width());
-        view.setHeight(image.Height());
-    }
-
-    if (downscale != 1.0f)
-    {
-        for (auto & i : sfmData.getIntrinsics())
+        for (auto & viewIt : sfmData.getViews())
         {
-          i.second->rescale(downscale);
-      }
-    }
+            auto& view = *viewIt.second;
+            if(reconstructedViewsOnly && !sfmData.isPoseAndIntrinsicDefined(&view))
+                continue;
 
-      // Save sfmData with modified path to images
-    if (!sfmDataIO::Save(sfmData, sfmOutputDataFilepath, sfmDataIO::ESfMData(sfmDataIO::ALL)))
-    {
-        ALICEVISION_LOG_ERROR("The output SfMData file '" << sfmOutputDataFilepath << "' cannot be written.");
-        return EXIT_FAILURE;
-    }
+            ALICEVISION_LOG_INFO("Process view '" << view.getViewId() << "', url: '" << view.getImagePath() << "'");
+
+            // Read original image
+            image::Image<image::RGBfColor> image;
+            image::readImage(view.getImagePath(), image, image::EImageColorSpace::LINEAR);
+            oiio::ParamValueList metadata = image::readImageMetadata(view.getImagePath());
+
+            // If exposureCompensation is needed for sfmData fIles
+            if(exposureCompensation)
+            {
+                const float medianCameraExposure = sfmData.getMedianCameraExposureSetting();
+                const float cameraExposure = view.getCameraExposureSetting();
+                const float ev = std::log2(1.0 / cameraExposure);
+                const float exposureCompensation = medianCameraExposure / cameraExposure;
+
+                ALICEVISION_LOG_INFO("View: " << view.getViewId() << ", Ev: " << ev << ", Ev compensation: " << exposureCompensation);
+
+                for (int i = 0; i < image.Width() * image.Height(); ++i)
+                    image(i) = image(i) * exposureCompensation;
+            }
+
+            // Image processing
+            processImage(image, downscale, contrast, medianFilter, sharpenWidth, sharpenContrast, sharpenThreshold);
+
+            // Save the image
+            const std::string ext = extension.empty() ? fs::path(view.getImagePath()).extension().string() : (std::string(".") + extension);
+
+            // Analyze output path
+            const std::string outputImagePath = (fs::path(sfmOutputDataFilepath).parent_path() / (std::to_string(view.getViewId()) + ext)).string();
+
+            ALICEVISION_LOG_INFO("Export image: '" << outputImagePath << "'.");
+            image::writeImage(outputImagePath, image, image::EImageColorSpace::AUTO, metadata);
+
+            // Update view for this modification
+            view.setImagePath(outputImagePath);
+            view.setWidth(image.Width());
+            view.setHeight(image.Height());
+        }
+
+        if (downscale != 1.0f)
+        {
+            for (auto & i : sfmData.getIntrinsics())
+            {
+                i.second->rescale(downscale);
+            }
+        }
+
+        // Save sfmData with modified path to images
+        if (!sfmDataIO::Save(sfmData, sfmOutputDataFilepath, sfmDataIO::ESfMData(sfmDataIO::ALL)))
+        {
+            ALICEVISION_LOG_ERROR("The output SfMData file '" << sfmOutputDataFilepath << "' cannot be written.");
+            return EXIT_FAILURE;
+        }
     }
     else
     {
