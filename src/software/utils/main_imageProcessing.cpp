@@ -25,16 +25,30 @@ using namespace aliceVision;
 namespace po = boost::program_options;
 namespace fs = boost::filesystem;
 
-void processImage(image::Image<image::RGBAfColor>& image, float downscale, float contrast, int medianFilter, int sharpenWidth, float sharpenContrast, float sharpenThreshold, bool fillholes)
+struct ProcessingParams
+{
+    bool reconstructedViewsOnly = false;
+    bool exposureCompensation = false;
+    float downscale = 1.0f;
+    float contrast = 1.0f;
+    int medianFilter = 0;
+    bool fillHoles = false;
+
+    int sharpenWidth = 1;
+    float sharpenContrast = 1.f;
+    float sharpenThreshold = 0.f;
+};
+
+void processImage(image::Image<image::RGBAfColor>& image, const ProcessingParams& pParams)
 {
     unsigned int nchannels = 3;
 
-    if(downscale != 1.0f)
+    if (pParams.downscale != 1.0f)
     {
         const unsigned int w = image.Width();
         const unsigned int h = image.Height();
-        const unsigned int nw = (unsigned int)(floor(float(w) / downscale));
-        const unsigned int nh = (unsigned int)(floor(float(h) / downscale));
+        const unsigned int nw = (unsigned int)(floor(float(w) / pParams.downscale));
+        const unsigned int nh = (unsigned int)(floor(float(h) / pParams.downscale));
 
         image::Image<image::RGBAfColor> rescaled(nw, nh);
 
@@ -53,36 +67,36 @@ void processImage(image::Image<image::RGBAfColor>& image, float downscale, float
     }
     
     #if OIIO_VERSION >= (10000 * 2 + 100 * 0 + 0) // OIIO_VERSION >= 2.0.0
-    if(contrast != 1.0f)
+    if (pParams.contrast != 1.0f)
     {
         image::Image<image::RGBAfColor> filtered(image.Width(), image.Height());
         const oiio::ImageBuf inBuf(oiio::ImageSpec(image.Width(), image.Height(), nchannels, oiio::TypeDesc::FLOAT), image.data());
         oiio::ImageBuf outBuf(oiio::ImageSpec(image.Width(), image.Height(), nchannels, oiio::TypeDesc::FLOAT), filtered.data());
-        oiio::ImageBufAlgo::contrast_remap(outBuf, inBuf, 0.0f, 1.0f, 0.0f, 1.0f, contrast);
+        oiio::ImageBufAlgo::contrast_remap(outBuf, inBuf, 0.0f, 1.0f, 0.0f, 1.0f, pParams.contrast);
 
         image.swap(filtered);
     }
     #endif
-    if(medianFilter >= 3)
+    if (pParams.medianFilter >= 3)
     {
         image::Image<image::RGBAfColor> filtered(image.Width(), image.Height());
         const oiio::ImageBuf inBuf(oiio::ImageSpec(image.Width(), image.Height(), nchannels, oiio::TypeDesc::FLOAT), image.data());
         oiio::ImageBuf outBuf(oiio::ImageSpec(image.Width(), image.Height(), nchannels, oiio::TypeDesc::FLOAT), filtered.data());
-        oiio::ImageBufAlgo::median_filter(outBuf, inBuf, medianFilter);
+        oiio::ImageBufAlgo::median_filter(outBuf, inBuf, pParams.medianFilter);
 
         image.swap(filtered);
     }
-    if(sharpenWidth >= 3.f && sharpenContrast > 0.f)
+    if (pParams.sharpenWidth >= 3.f && pParams.sharpenContrast > 0.f)
     {
         image::Image<image::RGBAfColor> filtered(image.Width(), image.Height());
         const oiio::ImageBuf inBuf(oiio::ImageSpec(image.Width(), image.Height(), nchannels, oiio::TypeDesc::FLOAT), image.data());
         oiio::ImageBuf outBuf(oiio::ImageSpec(image.Width(), image.Height(), nchannels, oiio::TypeDesc::FLOAT), filtered.data());
-        oiio::ImageBufAlgo::unsharp_mask(outBuf, inBuf, "gaussian", sharpenWidth, sharpenContrast, sharpenThreshold);
+        oiio::ImageBufAlgo::unsharp_mask(outBuf, inBuf, "gaussian", pParams.sharpenWidth, pParams.sharpenContrast, pParams.sharpenThreshold);
 
         image.swap(filtered);
     }
     
-    if(fillholes)
+    if (pParams.fillHoles)
     {
         image::Image<image::RGBAfColor> filtered(image.Width(), image.Height());
         const oiio::ImageBuf inBuf(oiio::ImageSpec(image.Width(), image.Height(), nchannels+1, oiio::TypeDesc::FLOAT), image.data());
@@ -98,17 +112,9 @@ int aliceVision_main(int argc, char * argv[])
     std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
     std::string sfmInputDataFilename = "";
     std::string sfmOutputDataFilepath = "";
-    bool reconstructedViewsOnly = false;
-    bool exposureCompensation = false;
-    float downscale = 1.0f;
-    float contrast = 1.0f;
-    int medianFilter = 0;
-    bool fillHoles = false;
     std::string extension;
 
-    int sharpenWidth = 1;
-    float sharpenContrast = 1.f;
-    float sharpenThreshold = 0.f;
+    ProcessingParams pParams;
 
     // Command line parameters
     po::options_description allParams(
@@ -125,27 +131,27 @@ int aliceVision_main(int argc, char * argv[])
 
     po::options_description optionalParams("Optional parameters");
     optionalParams.add_options()
-        ("reconstructedViewsOnly", po::value<bool>(&reconstructedViewsOnly)->default_value(reconstructedViewsOnly),
+        ("reconstructedViewsOnly", po::value<bool>(&pParams.reconstructedViewsOnly)->default_value(pParams.reconstructedViewsOnly),
          "Process only recontructed views or all views.")
-        ("downscale", po::value<float>(&downscale)->default_value(downscale),
+        ("downscale", po::value<float>(&pParams.downscale)->default_value(pParams.downscale),
          "Downscale Factor (1.0: no change).")
 
-        ("exposureCompensation", po::value<bool>(&exposureCompensation)->default_value(exposureCompensation),
+        ("exposureCompensation", po::value<bool>(& pParams.exposureCompensation)->default_value(pParams.exposureCompensation),
          "Exposure Compensation.")
 
-        ("contrast", po::value<float>(&contrast)->default_value(contrast),
+        ("contrast", po::value<float>(&pParams.contrast)->default_value(pParams.contrast),
          "Contrast Factor (1.0: no change).")
-        ("medianFilter", po::value<int>(&medianFilter)->default_value(medianFilter),
+        ("medianFilter", po::value<int>(&pParams.medianFilter)->default_value(pParams.medianFilter),
          "Median Filter (0: no filter).")
 
-        ("sharpenWidth", po::value<int>(&sharpenWidth)->default_value(sharpenWidth),
+        ("sharpenWidth", po::value<int>(&pParams.sharpenWidth)->default_value(pParams.sharpenWidth),
          "Sharpen kernel width (<3: no sharpening).")
-        ("sharpenContrast", po::value<float>(&sharpenContrast)->default_value(sharpenContrast),
+        ("sharpenContrast", po::value<float>(&pParams.sharpenContrast)->default_value(pParams.sharpenContrast),
          "Sharpen contrast value (0.0: no sharpening).")
-        ("sharpenThreshold", po::value<float>(&sharpenThreshold)->default_value(sharpenThreshold),
+        ("sharpenThreshold", po::value<float>(&pParams.sharpenThreshold)->default_value(pParams.sharpenThreshold),
          "Threshold for minimal variation for contrast to avoid sharpening of small noise (0.0: no noise threshold).")
 
-        ("fillHoles", po::value<bool>(&fillHoles)->default_value(fillHoles),
+        ("fillHoles", po::value<bool>(&pParams.fillHoles)->default_value(pParams.fillHoles),
          "Fill Holes.")
 
         ("extension", po::value<std::string>(&extension)->default_value(extension),
@@ -164,7 +170,7 @@ int aliceVision_main(int argc, char * argv[])
     {
         po::store(po::parse_command_line(argc, argv, allParams), vm);
 
-        if(vm.count("help") || (argc == 1))
+        if (vm.count("help") || (argc == 1))
         {
           ALICEVISION_COUT(allParams);
           return EXIT_SUCCESS;
@@ -190,17 +196,17 @@ int aliceVision_main(int argc, char * argv[])
       // Set verbose level
     system::Logger::get()->setLogLevel(verboseLevel);
 
-    if (downscale < 0.0001f || downscale > 1.0f)
+    if (pParams.downscale < 0.0001f || pParams.downscale > 1.0f)
     {
         ALICEVISION_LOG_ERROR("Invalid scale factor, downscale should be in range [0.0001, 1].");
         return EXIT_FAILURE;
     }
 
     // Check if is sfm data file
-    if(fs::path(sfmInputDataFilename).extension().string() == ".abc")
+    if (fs::path(sfmInputDataFilename).extension().string() == ".abc")
     {
         sfmData::SfMData sfmData;
-        if(!sfmDataIO::Load(sfmData, sfmInputDataFilename, sfmDataIO::ESfMData(sfmDataIO::ALL)))
+        if (!sfmDataIO::Load(sfmData, sfmInputDataFilename, sfmDataIO::ESfMData(sfmDataIO::ALL)))
         {
             ALICEVISION_LOG_ERROR("The input SfMData file '" << sfmInputDataFilename << "' cannot be read.");
             return EXIT_FAILURE;
@@ -209,7 +215,7 @@ int aliceVision_main(int argc, char * argv[])
         for (auto & viewIt : sfmData.getViews())
         {
             auto& view = *viewIt.second;
-            if(reconstructedViewsOnly && !sfmData.isPoseAndIntrinsicDefined(&view))
+            if (pParams.reconstructedViewsOnly && !sfmData.isPoseAndIntrinsicDefined(&view))
                 continue;
 
             ALICEVISION_LOG_INFO("Process view '" << view.getViewId() << "', url: '" << view.getImagePath() << "'");
@@ -220,7 +226,7 @@ int aliceVision_main(int argc, char * argv[])
             oiio::ParamValueList metadata = image::readImageMetadata(view.getImagePath());
 
             // If exposureCompensation is needed for sfmData fIles
-            if(exposureCompensation)
+            if (pParams.exposureCompensation)
             {
                 const float medianCameraExposure = sfmData.getMedianCameraExposureSetting();
                 const float cameraExposure = view.getCameraExposureSetting();
@@ -234,7 +240,7 @@ int aliceVision_main(int argc, char * argv[])
             }
 
             // Image processing
-            processImage(image, downscale, contrast, medianFilter, sharpenWidth, sharpenContrast, sharpenThreshold, fillHoles);
+            processImage(image, pParams);
 
             // Save the image
             const std::string ext = extension.empty() ? fs::path(view.getImagePath()).extension().string() : (std::string(".") + extension);
@@ -251,11 +257,11 @@ int aliceVision_main(int argc, char * argv[])
             view.setHeight(image.Height());
         }
 
-        if (downscale != 1.0f)
+        if (pParams.downscale != 1.0f)
         {
             for (auto & i : sfmData.getIntrinsics())
             {
-                i.second->rescale(downscale);
+                i.second->rescale(pParams.downscale);
             }
         }
 
@@ -272,14 +278,14 @@ int aliceVision_main(int argc, char * argv[])
         std::string inputDirPath;
         std::vector<std::string> filesNames;
 
-        if(fs::is_regular_file(inputPath))
+        if (fs::is_regular_file(inputPath))
         {
             inputDirPath = inputPath.parent_path().string();
             filesNames.push_back( inputPath.filename().string() );
         }
         else
         {
-            if(extension == "")
+            if (extension == "")
             {
                 ALICEVISION_LOG_ERROR("The extension files must be specified for the directory path '" << sfmInputDataFilename << "'");
                 return EXIT_FAILURE;
@@ -293,14 +299,14 @@ int aliceVision_main(int argc, char * argv[])
                 const std::string ext = boost::to_lower_copy(entry.path().extension().string());
 
                 // If files in input directory match selected extension
-                if(ext == (std::string(".") + extension))
+                if (ext == (std::string(".") + extension))
                 {
                     const std::string entryFileName = entry.path().filename().string();
                     filesNames.emplace_back(entryFileName);
                 }
             }
 
-            if(!filesNames.size())
+            if (!filesNames.size())
             {
                 ALICEVISION_LOG_WARNING("Any images was found in this directory '" << inputPath << "' , the file extension ." << extension << " may be incorrect ?");
             }
@@ -319,7 +325,7 @@ int aliceVision_main(int argc, char * argv[])
             const oiio::ParamValueList metadata = image::readImageMetadata(inputFilePath);
 
             // Image processing
-            processImage(image, downscale, contrast, medianFilter, sharpenWidth, sharpenContrast, sharpenThreshold, fillHoles);
+            processImage(image, pParams);
 
             // Save the image
             ALICEVISION_LOG_INFO("Export image: '" << outputFilePath << "'.");
