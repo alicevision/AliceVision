@@ -25,7 +25,7 @@ using namespace aliceVision;
 namespace po = boost::program_options;
 namespace fs = boost::filesystem;
 
-void processImage(image::Image<image::RGBfColor>& image, float downscale, float contrast, int medianFilter, int sharpenWidth, float sharpenContrast, float sharpenThreshold)
+void processImage(image::Image<image::RGBAfColor>& image, float downscale, float contrast, int medianFilter, int sharpenWidth, float sharpenContrast, float sharpenThreshold, bool fillholes)
 {
     unsigned int nchannels = 3;
 
@@ -36,7 +36,7 @@ void processImage(image::Image<image::RGBfColor>& image, float downscale, float 
         const unsigned int nw = (unsigned int)(floor(float(w) / downscale));
         const unsigned int nh = (unsigned int)(floor(float(h) / downscale));
 
-        image::Image<image::RGBfColor> rescaled(nw, nh);
+        image::Image<image::RGBAfColor> rescaled(nw, nh);
 
         const oiio::ImageSpec imageSpecResized(nw, nh, 3, oiio::TypeDesc::FLOAT);
         const oiio::ImageSpec imageSpecOrigin(w, h, 3, oiio::TypeDesc::FLOAT);
@@ -55,7 +55,7 @@ void processImage(image::Image<image::RGBfColor>& image, float downscale, float 
     #if OIIO_VERSION >= (10000 * 2 + 100 * 0 + 0) // OIIO_VERSION >= 2.0.0
     if(contrast != 1.0f)
     {
-        image::Image<image::RGBfColor> filtered(image.Width(), image.Height());
+        image::Image<image::RGBAfColor> filtered(image.Width(), image.Height());
         const oiio::ImageBuf inBuf(oiio::ImageSpec(image.Width(), image.Height(), nchannels, oiio::TypeDesc::FLOAT), image.data());
         oiio::ImageBuf outBuf(oiio::ImageSpec(image.Width(), image.Height(), nchannels, oiio::TypeDesc::FLOAT), filtered.data());
         oiio::ImageBufAlgo::contrast_remap(outBuf, inBuf, 0.0f, 1.0f, 0.0f, 1.0f, contrast);
@@ -65,7 +65,7 @@ void processImage(image::Image<image::RGBfColor>& image, float downscale, float 
     #endif
     if(medianFilter >= 3)
     {
-        image::Image<image::RGBfColor> filtered(image.Width(), image.Height());
+        image::Image<image::RGBAfColor> filtered(image.Width(), image.Height());
         const oiio::ImageBuf inBuf(oiio::ImageSpec(image.Width(), image.Height(), nchannels, oiio::TypeDesc::FLOAT), image.data());
         oiio::ImageBuf outBuf(oiio::ImageSpec(image.Width(), image.Height(), nchannels, oiio::TypeDesc::FLOAT), filtered.data());
         oiio::ImageBufAlgo::median_filter(outBuf, inBuf, medianFilter);
@@ -74,10 +74,20 @@ void processImage(image::Image<image::RGBfColor>& image, float downscale, float 
     }
     if(sharpenWidth >= 3.f && sharpenContrast > 0.f)
     {
-        image::Image<image::RGBfColor> filtered(image.Width(), image.Height());
+        image::Image<image::RGBAfColor> filtered(image.Width(), image.Height());
         const oiio::ImageBuf inBuf(oiio::ImageSpec(image.Width(), image.Height(), nchannels, oiio::TypeDesc::FLOAT), image.data());
         oiio::ImageBuf outBuf(oiio::ImageSpec(image.Width(), image.Height(), nchannels, oiio::TypeDesc::FLOAT), filtered.data());
         oiio::ImageBufAlgo::unsharp_mask(outBuf, inBuf, "gaussian", sharpenWidth, sharpenContrast, sharpenThreshold);
+
+        image.swap(filtered);
+    }
+    
+    if(fillholes)
+    {
+        image::Image<image::RGBAfColor> filtered(image.Width(), image.Height());
+        const oiio::ImageBuf inBuf(oiio::ImageSpec(image.Width(), image.Height(), nchannels+1, oiio::TypeDesc::FLOAT), image.data());
+        oiio::ImageBuf outBuf(oiio::ImageSpec(image.Width(), image.Height(), nchannels+1, oiio::TypeDesc::FLOAT), filtered.data());
+        oiio::ImageBufAlgo::fillholes_pushpull(outBuf, inBuf);
 
         image.swap(filtered);
     }
@@ -93,6 +103,7 @@ int aliceVision_main(int argc, char * argv[])
     float downscale = 1.0f;
     float contrast = 1.0f;
     int medianFilter = 0;
+    bool fillHoles = false;
     std::string extension;
 
     int sharpenWidth = 1;
@@ -133,6 +144,9 @@ int aliceVision_main(int argc, char * argv[])
          "Sharpen contrast value (0.0: no sharpening).")
         ("sharpenThreshold", po::value<float>(&sharpenThreshold)->default_value(sharpenThreshold),
          "Threshold for minimal variation for contrast to avoid sharpening of small noise (0.0: no noise threshold).")
+
+        ("fillHoles", po::value<bool>(&fillHoles)->default_value(fillHoles),
+         "Fill Holes.")
 
         ("extension", po::value<std::string>(&extension)->default_value(extension),
          "Output image extension (like exr, or empty to keep the source file format.")
@@ -201,7 +215,7 @@ int aliceVision_main(int argc, char * argv[])
             ALICEVISION_LOG_INFO("Process view '" << view.getViewId() << "', url: '" << view.getImagePath() << "'");
 
             // Read original image
-            image::Image<image::RGBfColor> image;
+            image::Image<image::RGBAfColor> image;
             image::readImage(view.getImagePath(), image, image::EImageColorSpace::LINEAR);
             oiio::ParamValueList metadata = image::readImageMetadata(view.getImagePath());
 
@@ -220,7 +234,7 @@ int aliceVision_main(int argc, char * argv[])
             }
 
             // Image processing
-            processImage(image, downscale, contrast, medianFilter, sharpenWidth, sharpenContrast, sharpenThreshold);
+            processImage(image, downscale, contrast, medianFilter, sharpenWidth, sharpenContrast, sharpenThreshold, fillHoles);
 
             // Save the image
             const std::string ext = extension.empty() ? fs::path(view.getImagePath()).extension().string() : (std::string(".") + extension);
@@ -300,12 +314,12 @@ int aliceVision_main(int argc, char * argv[])
             ALICEVISION_LOG_INFO("Process image '" << fileName << "'");
 
             // Read original image
-            image::Image<image::RGBfColor> image;
+            image::Image<image::RGBAfColor> image;
             image::readImage(inputFilePath, image, image::EImageColorSpace::LINEAR);
             const oiio::ParamValueList metadata = image::readImageMetadata(inputFilePath);
 
             // Image processing
-            processImage(image, downscale, contrast, medianFilter, sharpenWidth, sharpenContrast, sharpenThreshold);
+            processImage(image, downscale, contrast, medianFilter, sharpenWidth, sharpenContrast, sharpenThreshold, fillHoles);
 
             // Save the image
             ALICEVISION_LOG_INFO("Export image: '" << outputFilePath << "'.");
