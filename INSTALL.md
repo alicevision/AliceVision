@@ -5,7 +5,7 @@ Build instructions
 ------------------
 
 Required tools:
-* CMake >= 3.4
+* CMake >= 3.11
 * Git
 * C/C++ compiler (gcc or visual studio or clang) with C++11 support.
 
