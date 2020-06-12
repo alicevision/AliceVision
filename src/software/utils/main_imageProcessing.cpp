@@ -16,6 +16,10 @@
 #include <boost/filesystem.hpp>
 #include <boost/algorithm/string.hpp>
 
+#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_OPENCV)
+#include <opencv2/imgproc.hpp>
+#endif
+
 // These constants define the current software version.
 // They must be updated when the command line is changed.
 #define ALICEVISION_SOFTWARE_VERSION_MAJOR 2
@@ -37,7 +41,44 @@ struct ProcessingParams
     int sharpenWidth = 1;
     float sharpenContrast = 1.f;
     float sharpenThreshold = 0.f;
+
+    bool bilateralFilter = false;
+    int BilateralFilterDistance = 0;
+    float BilateralFilterSigmaColor = 0;
+    float BilateralFilterSigmaSpace = 0;
 };
+
+#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_OPENCV)
+// Conversion functions used for bilateral filter
+cv::Mat imageToCvMat(const image::Image<image::RGBAfColor>& img)
+{  
+    cv::Mat mat(img.Width(), img.Height(), CV_32FC3);
+    for(int row = 0; row < img.Height(); row++)
+    {
+        image::RGBfColor* rowPtr = mat.ptr<image::RGBfColor>(row);
+        for(int col = 0; col < img.Width(); col++)
+        {
+            image::RGBfColor& matPixel = rowPtr[col];
+            const image::RGBAfColor& imgPixel = img(col, row);
+            matPixel = image::RGBfColor(imgPixel.b(), imgPixel.g(), imgPixel.r());
+        }
+    }
+    return mat;
+}
+
+void cvMatToImage(const cv::Mat& matIn, image::Image<image::RGBAfColor>& imageOut)
+{
+    for(int row = 0; row < imageOut.Height(); row++)
+    {
+        const image::RGBfColor* rowPtr = matIn.ptr<image::RGBfColor>(row);
+        for(int col = 0; col < imageOut.Width(); col++)
+        {
+            const image::RGBfColor& matPixel = rowPtr[col];
+            imageOut(col, row) = image::RGBAfColor(matPixel.b(), matPixel.g(), matPixel.r(), imageOut(col, row).a());
+        }
+    }
+}
+#endif
 
 void processImage(image::Image<image::RGBAfColor>& image, const ProcessingParams& pParams)
 {
@@ -96,7 +137,24 @@ void processImage(image::Image<image::RGBAfColor>& image, const ProcessingParams
         image.swap(filtered);
     }
     
-    if (pParams.fillHoles)
+    if (pParams.bilateralFilter)
+    {
+        #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_OPENCV)
+            // Create temporary OpenCV Mat (keep only 3 Channels) to handled Eigen data of our image
+            cv::Mat openCVMatIn = imageToCvMat(image);
+            cv::Mat openCVMatOut(image.Width(), image.Height(), CV_32FC3);
+
+            cv::bilateralFilter(openCVMatIn, openCVMatOut, pParams.BilateralFilterDistance, pParams.BilateralFilterSigmaColor, pParams.BilateralFilterSigmaSpace);
+
+            // Copy filtered data from openCV Mat(3 channels) to our image(keep the alpha channel unfiltered)
+            cvMatToImage(openCVMatOut, image);
+        #else
+            ALICEVISION_LOG_ERROR("Unsupported mode! If you intended to use a bilateral filter, please add OpenCV support.");
+            return EXIT_FAILURE;
+        #endif
+    }
+
+    if(pParams.fillHoles)
     {
         image::Image<image::RGBAfColor> filtered(image.Width(), image.Height());
         const oiio::ImageBuf inBuf(oiio::ImageSpec(image.Width(), image.Height(), nchannels+1, oiio::TypeDesc::FLOAT), image.data());
@@ -154,6 +212,16 @@ int aliceVision_main(int argc, char * argv[])
         ("fillHoles", po::value<bool>(&pParams.fillHoles)->default_value(pParams.fillHoles),
          "Fill Holes.")
 
+        #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_OPENCV)
+            ("bilateralFilter", po::value<bool>(&pParams.bilateralFilter)->default_value(pParams.bilateralFilter),
+             "use bilateral Filter")
+            ("BilateralFilterDistance", po::value<int>(&pParams.BilateralFilterDistance)->default_value(pParams.BilateralFilterDistance),
+             "Diameter of each pixel neighborhood that is used during filtering (if <=0 is computed proportionaly from sigmaSpace).")
+            ("BilateralFilterSigmaSpace",po::value<float>(&pParams.BilateralFilterSigmaSpace)->default_value(pParams.BilateralFilterSigmaSpace),
+             "Filter sigma in the coordinate space.")
+            ("BilateralFilterSigmaColor",po::value<float>(&pParams.BilateralFilterSigmaColor)->default_value(pParams.BilateralFilterSigmaColor),
+             "Filter sigma in the color space.")
+        #endif
         ("extension", po::value<std::string>(&extension)->default_value(extension),
          "Output image extension (like exr, or empty to keep the source file format.")
         ;
