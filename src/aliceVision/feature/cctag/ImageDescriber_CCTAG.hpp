@@ -28,8 +28,9 @@ namespace feature {
 class ImageDescriber_CCTAG : public ImageDescriber
 {
 public:
-  ImageDescriber_CCTAG(const std::size_t nRings = 3);
-  ~ImageDescriber_CCTAG();
+  explicit ImageDescriber_CCTAG(const std::size_t nRings = 3);
+
+  ~ImageDescriber_CCTAG() override = default;
 
   /**
    * @brief Check if the image describer use CUDA
@@ -106,8 +107,9 @@ public:
 
   struct CCTagParameters
   {
-    CCTagParameters(size_t nRings);
-    ~CCTagParameters();
+    explicit CCTagParameters(size_t nRings);
+
+    ~CCTagParameters() = default;
 
     bool setPreset(EImageDescriberPreset preset);
 

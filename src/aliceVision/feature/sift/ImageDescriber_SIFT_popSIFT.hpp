@@ -26,11 +26,7 @@ namespace feature {
 class ImageDescriber_SIFT_popSIFT : public ImageDescriber
 {
 public:
-  ImageDescriber_SIFT_popSIFT(const SiftParams& params = SiftParams(), bool isOriented = true)
-    : ImageDescriber()
-    , _params(params)
-    , _isOriented(isOriented)
-  {}
+  explicit ImageDescriber_SIFT_popSIFT(const SiftParams& params = SiftParams(), bool isOriented = true);
 
   /**
    * @brief Check if the image describer use CUDA
@@ -98,7 +94,7 @@ public:
    */
   bool describe(const image::Image<float>& image,
                 std::unique_ptr<Regions>& regions,
-                const image::Image<unsigned char>* mask = NULL) override;
+                const image::Image<unsigned char>* mask = nullptr) override;
 
   /**
    * @brief Allocate Regions type depending of the ImageDescriber
@@ -109,6 +105,11 @@ public:
     regions.reset(new SIFT_Regions);
   }
 
+  /**
+   * @brief Destructor
+   */
+  ~ImageDescriber_SIFT_popSIFT() override;
+
 private:
 
   void resetConfiguration();
@@ -116,6 +117,7 @@ private:
   SiftParams _params;
   bool _isOriented = true;
   static std::unique_ptr<PopSift> _popSift;
+  static std::atomic<int> _instanceCounter;
 };
 
 } // namespace feature

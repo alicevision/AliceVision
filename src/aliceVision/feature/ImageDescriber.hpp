@@ -67,9 +67,9 @@ std::istream& operator>>(std::istream& in, EImageDescriberPreset& p);
 class ImageDescriber
 {
 public:
-  ImageDescriber() {}
+  ImageDescriber() = default;
 
-  virtual ~ImageDescriber() {}
+  virtual ~ImageDescriber() = default;
 
   /**
    * @brief Check if the image describer use CUDA

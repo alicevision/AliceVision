@@ -41,7 +41,7 @@ struct AKAZEParams
 class ImageDescriber_AKAZE : public ImageDescriber
 {
 public:
-  ImageDescriber_AKAZE(const AKAZEParams& params = AKAZEParams(), bool isOriented = true)
+  explicit ImageDescriber_AKAZE(const AKAZEParams& params = AKAZEParams(), bool isOriented = true)
     : ImageDescriber()
     , _params(params)
     , _isOriented(isOriented)
@@ -175,6 +175,8 @@ public:
       case AKAZE_MLDB:  regions.reset(new AKAZE_BinaryRegions); break;
     }
   }
+
+  ~ImageDescriber_AKAZE() override = default;
 
 private:
   AKAZEParams _params;
