@@ -78,10 +78,7 @@ bool LoadMatchFile(PairwiseMatches& matches, const std::string& filepath)
   return false;
 }
 
-
-void filterMatchesByViews(
-  PairwiseMatches & matches,
-  const std::set<IndexT> & viewsKeys)
+void filterMatchesByViews(PairwiseMatches& matches, const std::set<IndexT>& viewsKeys)
 {
   matching::PairwiseMatches filteredMatches;
   for (matching::PairwiseMatches::const_iterator iter = matches.begin();
@@ -97,14 +94,11 @@ void filterMatchesByViews(
   matches.swap(filteredMatches);
 }
 
-void filterTopMatches(
-  PairwiseMatches & allMatches,
-  const int limitNum,
-  const int minNum)
+void filterTopMatches(PairwiseMatches& allMatches,  int maxNum, int minNum)
 {
-  if (limitNum <= 0 && minNum <=0)
+  if (maxNum <= 0 && minNum <=0)
     return;
-  if (limitNum > 0 && minNum > limitNum)
+  if (maxNum > 0 && minNum > maxNum)
     throw std::runtime_error("The minimum number of matches is higher than the maximum.");
 
   for(auto& matchesPerDesc: allMatches)
@@ -114,15 +108,13 @@ void filterTopMatches(
       IndMatches& m = matches.second;
       if (minNum > 0 && m.size() < minNum)
         m.clear();
-      else if (limitNum > 0 && m.size() > limitNum)
-        m.erase(m.begin()+limitNum, m.end());
+      else if (maxNum > 0 && m.size() > maxNum)
+        m.erase(m.begin()+ maxNum, m.end());
     }
   }
 }
 
-void filterMatchesByDesc(
-  PairwiseMatches & allMatches,
-  const std::vector<feature::EImageDescriberType>& descTypesFilter)
+void filterMatchesByDesc(PairwiseMatches& allMatches, const std::vector<feature::EImageDescriberType>& descTypesFilter)
 {
   matching::PairwiseMatches filteredMatches;
   for(const auto& matchesPerDesc: allMatches)
@@ -138,12 +130,10 @@ void filterMatchesByDesc(
   allMatches.swap(filteredMatches);
 }
 
-
-std::size_t LoadMatchFilePerImage(
-  PairwiseMatches& matches,
-  const std::set<IndexT>& viewsKeys,
-  const std::string& folder,
-  const std::string& basename)
+std::size_t LoadMatchFilePerImage(PairwiseMatches& matches,
+                                  const std::set<IndexT>& viewsKeys,
+                                  const std::string& folder,
+                                  const std::string& extension)
 {
   int nbLoadedMatchFiles = 0;
   // Load one match file per image
@@ -153,7 +143,7 @@ std::size_t LoadMatchFilePerImage(
     std::set<IndexT>::const_iterator it = viewsKeys.begin();
     std::advance(it, i);
     const IndexT idView = *it;
-    const std::string matchFilename = std::to_string(idView) + "." + basename;
+    const std::string matchFilename = std::to_string(idView) + "." + extension;
     PairwiseMatches fileMatches;
     if(!LoadMatchFile(fileMatches, (fs::path(folder) / matchFilename).string() ))
     {
@@ -232,13 +222,12 @@ std::size_t loadMatchesFromFolder(PairwiseMatches& matches, const std::string& f
   return nbLoadedMatchFiles;
 }
 
-bool Load(
-  PairwiseMatches& matches,
-  const std::set<IndexT>& viewsKeysFilter,
-  const std::vector<std::string>& folders,
-  const std::vector<feature::EImageDescriberType>& descTypesFilter,
-  const int maxNbMatches,
-  const int minNbMatches)
+bool Load(PairwiseMatches& matches,
+          const std::set<IndexT>& viewsKeysFilter,
+          const std::vector<std::string>& folders,
+          const std::vector<feature::EImageDescriberType>& descTypesFilter,
+          int maxNbMatches,
+          int minNbMatches)
 {
   std::size_t nbLoadedMatchFiles = 0;
   const std::string pattern = "matches.txt";
@@ -332,8 +321,7 @@ public:
     , m_ext(fs::extension(filename))
   {}
 
-  ~MatchExporter()
-  {}
+  ~MatchExporter() = default;
   
   void saveGlobalFile()
   {
@@ -380,14 +368,11 @@ public:
   std::string m_filename;
 };
 
-
-bool Save(
-  const PairwiseMatches & matches,
-  const std::string & folder,
-  const std::string & extension,
-  bool matchFilePerImage,
-  const std::string& prefix
-  )
+bool Save(const PairwiseMatches& matches,
+          const std::string& folder,
+          const std::string& extension,
+          bool matchFilePerImage,
+          const std::string& prefix)
 {
   const std::string filename = prefix + "matches." + extension;
   MatchExporter exporter(matches, folder, filename);
