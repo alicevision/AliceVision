@@ -889,9 +889,20 @@ void DelaunayGraphCut::fuseFromDepthMaps(const StaticVector<int>& cams, const Po
                 }
 
                 const std::string nmodMapFilepath = getFileNameFromIndex(mp, c, mvsUtils::EFileType::nmodMap, 0);
-                imageIO::readImage(nmodMapFilepath, wTmp, hTmp, numOfModalsMap, imageIO::EImageColorSpace::NO_CONVERSION);
-                if(wTmp != width || hTmp != height)
-                    throw std::runtime_error("Wrong nmod map dimensions: " + nmodMapFilepath);
+                // If we have an nModMap in input (from depthmapfilter) use it,
+                // else init with a constant value.
+                if(boost::filesystem::exists(nmodMapFilepath))
+                {
+                    imageIO::readImage(nmodMapFilepath, wTmp, hTmp, numOfModalsMap,
+                                       imageIO::EImageColorSpace::NO_CONVERSION);
+                    if(wTmp != width || hTmp != height)
+                        throw std::runtime_error("Wrong nmod map dimensions: " + nmodMapFilepath);
+                }
+                else
+                {
+                    ALICEVISION_LOG_WARNING("nModMap file can't be found.");
+                    numOfModalsMap.resize(width*height, 1);
+                }
             }
 
             int syMax = std::ceil(height/step);
