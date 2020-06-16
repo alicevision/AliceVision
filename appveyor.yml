@@ -1,21 +1,13 @@
-version: '1.0.{build}'
-
-image: Visual Studio 2015
+image: Visual Studio 2019
+configuration: Release
 
 branches:
   only:
     - master
     - develop  # PRs are built
 
-platform:
-  - x64
-
 # environment: 
 #   APPVEYOR_SAVE_CACHE_ON_ERROR: true
-
-configuration:
-  - Release
-  # - Debug
 
 install:
     - git submodule update --init --recursive
@@ -36,7 +28,7 @@ install:
           eigen3 
           ceres[suitesparse]
           cuda
-          --triplet %PLATFORM%-windows
+          --triplet x64-windows
           --recurse
     - vcpkg list
 
@@ -44,7 +36,7 @@ before_build:
     - cd %APPVEYOR_BUILD_FOLDER%
     - md build
     - cd build
-    - cmake .. -G "Visual Studio 14 2015 Win64"
+    - cmake .. -A x64
             -DCMAKE_BUILD_TYPE=%CONFIGURATION%
             -DALICEVISION_USE_INTERNAL_CERES:BOOL=OFF
             -DALICEVISION_USE_CUDA:BOOL=ON
@@ -53,7 +45,7 @@ before_build:
     - ls -l
 
 build:
-  project: $(APPVEYOR_BUILD_FOLDER)\build\aliceVision.sln
+  project: build\aliceVision.sln
   verbosity: minimal
 
 #comment the above and uncomment the following to just build the dependencies
